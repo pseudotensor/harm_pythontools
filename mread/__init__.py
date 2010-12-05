@@ -1,3 +1,11 @@
+from matplotlib import rc
+#rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
+## for Palatino and other serif fonts use:
+#rc('font',**{'family':'serif','serif':['Palatino']})
+rc('text', usetex=True)
+
+#from pylab import figure, axes, plot, xlabel, ylabel, title, grid, savefig, show
+
 import numpy as np
 import array
 import scipy as sc
@@ -215,30 +223,35 @@ def fhorvstime(ihor):
     return((ts,fs))
 
 def plotit(ts,fs):
+    #rc('font', family='serif')
     plt.plot(ts,fs,label='$\Phi_h$: Horizon (Absolute) Magnetic Flux')
-    plt.plot(ts,fs,'r+', label='$\Phi_h$: Data Points')
+    plt.plot(ts,fs,'r+', label=r'$\Phi_h$: Data Points')
     plt.legend(loc='upper right')
-    xlabel('$t (GM/c^3)$')
-    ylabel('$\Phi_{\rm h}$') #,fontsize=16)
+    plt.xlabel(r'$t\;(GM/c^3)$')
+    plt.ylabel(r'$\Phi_h$',fontsize=16)
     #title("\TeX\ is Number $\displaystyle\sum_{n=1}^\infty\frac{-e^{i\pi}}{2^n}$!", 
     #      fontsize=16, color='r')
-    grid(True)
+    plt.grid(True)
 
 
 def test():
     t=np.arange(10)
     f=np.arange(10)**2
     plt.plot(t,f,label='$\Phi$')
+    plt.legend(loc='upper right')
+    plt.xlabel('$t (GM/c^3)$')
+    plt.ylabel(r'$\textrm{h}$',fontsize=16)
     plt.legend()
 
 if __name__ == "__main__":
     import sys
     #mainfunc()
-    grid3d("gdump")
-    jrdp3d("fieldline0250.bin")
+    #grid3d("gdump")
+    #jrdp3d("fieldline0250.bin")
     #cvel()
     #plc(rho)
-    ts,fs=fhorvstime(10)
+    #ts,fs=fhorvstime(10)
     plotit(ts,fs)
+    #test()
 
 
