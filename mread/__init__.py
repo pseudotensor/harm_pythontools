@@ -2,6 +2,8 @@ from matplotlib import rc
 #rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 ## for Palatino and other serif fonts use:
 #rc('font',**{'family':'serif','serif':['Palatino']})
+rc('mathtext',fontset='cm')
+rc('mathtext',rm='stix')
 rc('text', usetex=True)
 
 #from pylab import figure, axes, plot, xlabel, ylabel, title, grid, savefig, show
@@ -204,6 +206,14 @@ def horfluxcalc(ihor):
     fabs = dfabs.sum(axis=0)
     return(fabs)
 
+def diskfluxcalc(jmid):
+    """
+    Computes the absolute flux through the disk midplane at j = jmid
+    """
+    #1D function of theta only:
+    dfabs = (gdet[:,jmid,:]*np.abs(B[2,:,jmid,:])).sum(1)*_dx1*_dx3
+    fabs = dfabs.sum(axis=0)
+    return(fabs)
 
 def fhorvstime(ihor):
     """
@@ -239,8 +249,8 @@ def test():
     f=np.arange(10)**2
     plt.plot(t,f,label='$\Phi$')
     plt.legend(loc='upper right')
-    plt.xlabel('$t (GM/c^3)$')
-    plt.ylabel(r'$\textrm{h}$',fontsize=16)
+    plt.xlabel(r'$t (GM/c^3)$')
+    plt.ylabel(r'$\Phi_\textrm{h}$',fontsize=16)
     plt.legend()
 
 if __name__ == "__main__":
@@ -250,8 +260,10 @@ if __name__ == "__main__":
     #jrdp3d("fieldline0250.bin")
     #cvel()
     #plc(rho)
+    jrdp3d("fieldline0000.bin")
+    diskflux=diskfluxcalc(ny/2)
     #ts,fs=fhorvstime(10)
-    plotit(ts,fs)
+    plotit(ts,fs/diskflux)
     #test()
 
 
