@@ -1,10 +1,11 @@
 from matplotlib import rc
+#rc('verbose', level='debug')
 #rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 ## for Palatino and other serif fonts use:
 #rc('font',**{'family':'serif','serif':['Palatino']})
-rc('mathtext',fontset='cm')
-rc('mathtext',rm='stix')
-rc('text', usetex=True)
+#rc('mathtext',fontset='cm')
+#rc('mathtext',rm='stix')
+#rc('text', usetex=True)
 
 #from pylab import figure, axes, plot, xlabel, ylabel, title, grid, savefig, show
 
@@ -28,12 +29,10 @@ def plc(myvar): #plc
     res = plt.contour(x1[:,:,0],x2[:,:,0],myvar[:,:,0],15)
     plt.colorbar()
 
-def mainfunc():
+def mainfunc(imgname):
     global xi,yi,zi,CS
-    grid3d("gdump")
-    jrdp3d("fieldline0250.bin")
-    daphi=gdet*B[1]
-    absflux=abs(daphi*_dx2*_dx3).sum(2).sum(1)
+    #grid3d("gdump")
+    #jrdp3d("fieldline0250.bin")
     xraw=r*np.sin(h)
     yraw=r*np.cos(h)
     lrhoraw=np.log10(rho)
@@ -50,7 +49,7 @@ def mainfunc():
     yi = np.linspace(-41.0, 41.0, 800)
     # grid the data.
     zi = griddata((x, y), lrho, (xi[None,:], yi[:,None]), method='cubic')
-    interior = np.sqrt((xi[None,:]**2) + (yi[:,None]**2)) < 1+np.sqrt(1-0.9**2)
+    interior = np.sqrt((xi[None,:]**2) + (yi[:,None]**2)) < 1+np.sqrt(1-a**2)
     #zi[interior] = np.ma.masked
     zim = ma.masked_where(interior, zi)
     palette=cm.jet
@@ -69,7 +68,7 @@ def mainfunc():
     plt.colorbar(CS) # draw colorbar
     plt.xlim(-40,40)
     plt.ylim(-40,40)
-    plt.title('Density test')
+    plt.title('t = %f' % t)
     #plt.show()
     # rbf = Rbf(x[0:288:8,:,0].view().reshape(-1),y[0:288:8,:,0].view().reshape(-1),rho[0:288:8,:,0].view().reshape(-1),epsilon=2)
     # ZI = rbf( XI, YI )
@@ -140,6 +139,7 @@ def cvel():
 
 def grid3d(dumpname): #read gdump: header and body
     global nx,ny,nz,_dx1,_dx2_,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,conn,gn3,gv3,ck,dxdxp,gdet
+    print( "Reading grid from " + "dumps/" + dumpname + " ..." )
     gin = open( "dumps/" + dumpname, "rb" )
     header = gin.readline().split()
     nx = int(header[1])
@@ -150,19 +150,25 @@ def grid3d(dumpname): #read gdump: header and body
     _dx3=float(header[9])
     gin.close()
     #read gdump
+    
     gd = np.loadtxt( "dumps/gdump", 
-                     dtype=float, 
-                     skiprows=1, 
-                     unpack = True ).view().reshape((-1,nx,ny,nz), order='F')
+                      dtype=float, 
+                      skiprows=1, 
+                      unpack = True ).view().reshape((-1,nx,ny,nz), order='F')
+    #gd = np.genfromtxt( "dumps/gdump", 
+    #                 dtype=float, 
+    #                 skip_header=1, 
+    #                 skip_footer=nx*ny*(nz-1),
+    #                 unpack = True ).view().reshape((137,nx,ny,nz), order='F')
     ti,tj,tk,x1,x2,x3,r,h,ph = gd[0:9,:,:,:].view() 
     #get the right order of indices by reversing the order of indices i,j(,k)
-    conn=gd[9:73].view().reshape((4,4,4,nx,ny,nz), order='F').transpose(2,1,0,3,4,5)
+    #conn=gd[9:73].view().reshape((4,4,4,nx,ny,nz), order='F').transpose(2,1,0,3,4,5)
     gn3 = gd[73:89].view().reshape((4,4,nx,ny,nz), order='F').transpose(1,0,2,3,4)
     gv3 = gd[89:105].view().reshape((4,4,nx,ny,nz), order='F').transpose(1,0,2,3,4)
     gdet = gd[105]
     ck = gd[106:110].view().reshape((4,nx,ny,nz), order='F')
     dxdxp = gd[110:136].view().reshape((4,4,nx,ny,nz), order='F').transpose(1,0,2,3,4)
-
+    print( "Done!" )
 
 def mdot(a,b):
     """
@@ -195,7 +201,20 @@ def fieldcalc():
     """
     daphi = (gdet*B[1]).sum(2)*_dx2*_dx3
     aphi=daphi.cumsum(axis=1)
-    return(aphi)
+    return(aphi[:,:,None])
+
+def fieldcalc2():
+    """
+    Computes the field vector potential
+    """
+    #daphi = (gdet*B[1]).sum(2)*_dx2*_dx3
+    #aphi=daphi.cumsum(axis=1)
+    daphi = (-gdet*B[2]).sum(2)*_dx2*_dx3
+    #sc.zeros_like(B[1,:,:,0:1])
+    daphi1 = (gdet[0]*B[1,0]).sum(1).cumsum(axis=0)*_dx2*_dx3
+    daphi[0,:] += daphi1
+    aphi=daphi.cumsum(axis=0)
+    return(aphi[:,:,None])
 
 def horfluxcalc(ihor):
     """
@@ -205,6 +224,15 @@ def horfluxcalc(ihor):
     dfabs = (gdet[ihor]*np.abs(B[1,ihor])).sum(1)*_dx2*_dx3
     fabs = dfabs.sum(axis=0)
     return(fabs)
+
+def mdotcalc(ihor):
+    """
+    Computes the absolute flux through the sphere i = ihor
+    """
+    #1D function of theta only:
+    mdot = (-gdet[ihor]*rho[ihor]*uu[1,ihor]).sum()*_dx2*_dx3
+    return(mdot)
+
 
 def diskfluxcalc(jmid):
     """
@@ -217,53 +245,74 @@ def diskfluxcalc(jmid):
 
 def fhorvstime(ihor):
     """
-    Returns a tuple (ts,fs): lists of times and horizon (absolute) fluxes
+    Returns a tuple (ts,fs,mdot): lists of times, horizon fluxes, and Mdot
     """
     flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
-    ts=np.empty(len(flist))
-    fs=np.empty(len(flist))
-    findex=0
-    for fname in flist:
+    ts=np.empty(len(flist),dtype=float)
+    fs=np.empty(len(flist),dtype=float)
+    mdot=np.empty(len(flist),dtype=float)
+    for findex, fname in enumerate(flist):
         print( "Reading " + fname + " ..." )
         jrdp3d("../"+fname)
         fs[findex]=horfluxcalc(ihor)
+        mdot[findex]=mdotcalc(ihor)
         ts[findex]=t
-        findex+=1
     print( "Done!" )
-    return((ts,fs))
+    return((ts,fs,mdot))
 
-def plotit(ts,fs):
+def plotit(ts,fs,md):
     #rc('font', family='serif')
-    plt.plot(ts,fs,label='$\Phi_h$: Horizon (Absolute) Magnetic Flux')
-    plt.plot(ts,fs,'r+', label=r'$\Phi_h$: Data Points')
-    plt.legend(loc='upper right')
-    plt.xlabel(r'$t\;(GM/c^3)$')
-    plt.ylabel(r'$\Phi_h$',fontsize=16)
+    #plt.figure( figsize=(12,9) )
+    fig,plotlist=plt.subplots(nrows=2,ncols=1,sharex=True,figsize=(12,9))
+    plotlist[0].plot(ts,fs,label=r'$\Phi_{\rm h}/0.5\Phi_{\rm i}$: Normalized Horizon Magnetic Flux')
+    plotlist[0].plot(ts,fs,'r+', label=r'$\Phi_{\rm h}/0.5\Phi_{\rm i}$: Data Points')
+    plotlist[0].legend(loc='lower right')
+    #plt.xlabel(r'$t\;(GM/c^3)$')
+    plotlist[0].set_ylabel(r'$\Phi_{\rm h}$',fontsize=16)
+    plt.setp( plotlist[0].get_xticklabels(), visible=False)
+    plotlist[0].grid(True)
+    #
+    #plotlist[1].subplot(212,sharex=True)
+    plotlist[1].plot(ts,md,label=r'$\dot M_{\rm h}$: Horizon Accretion Rate')
+    plotlist[1].plot(ts,md,'r+', label=r'$\dot M_{\rm h}$: Data Points')
+    plotlist[1].legend(loc='upper right')
+    plotlist[1].set_xlabel(r'$t\;(GM/c^3)$')
+    plotlist[1].set_ylabel(r'$\dot M_{\rm h}$',fontsize=16)
+
     #title("\TeX\ is Number $\displaystyle\sum_{n=1}^\infty\frac{-e^{i\pi}}{2^n}$!", 
     #      fontsize=16, color='r')
-    plt.grid(True)
+    plotlist[1].grid(True)
+    fig.savefig('test.pdf')
 
 
 def test():
     t=np.arange(10)
     f=np.arange(10)**2
     plt.plot(t,f,label='$\Phi$')
+    plt.title(r"This is a title")
     plt.legend(loc='upper right')
     plt.xlabel(r'$t (GM/c^3)$')
-    plt.ylabel(r'$\Phi_\textrm{h}$',fontsize=16)
-    plt.legend()
+    plt.ylabel(r'$\Phi_{\rm h}$',fontsize=16)
+    #plt.legend()
 
 if __name__ == "__main__":
     import sys
     #mainfunc()
-    #grid3d("gdump")
-    #jrdp3d("fieldline0250.bin")
+    grid3d("gdump")
+    jrdp3d("fieldline0250.bin")
     #cvel()
     #plc(rho)
-    jrdp3d("fieldline0000.bin")
-    diskflux=diskfluxcalc(ny/2)
-    #ts,fs=fhorvstime(10)
-    plotit(ts,fs/diskflux)
+    #jrdp3d("fieldline0000.bin")
+    #diskflux=diskfluxcalc(ny/2)
+    #ts,fs,md=fhorvstime(10)
+    #plotit(ts,fs/(0.5*diskflux),md)
+    #jrdp3d("fieldline0320.bin")
+    plt.figure(1)
+    aphi=fieldcalc()
+    plc(aphi)
+    plt.figure(2)
+    aphi2=fieldcalc2()
+    plc(aphi2)
     #test()
 
 
