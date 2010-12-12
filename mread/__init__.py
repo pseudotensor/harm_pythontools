@@ -29,10 +29,13 @@ def Qmri():
     """
     Computes number of theta cells resolving one MIR wavelength
     """
+def plco(myvar,xcoord=None,ycoord=None,**kwargs):
+    plt.clf()
+    plc(myvar,xcoord,ycoord,**kwargs)
 
-def plc(myvar,**kwargs): #plc
-    xcoord = kwargs.pop('x1', None)
-    ycoord = kwargs.pop('x2', None)
+def plc(myvar,xcoord=None,ycoord=None,**kwargs): #plc
+    #xcoord = kwargs.pop('x1', None)
+    #ycoord = kwargs.pop('x2', None)
     cb = kwargs.pop('cb', False)
     if( xcoord == None or ycoord == None ):
         res = plt.contour(myvar[:,:,0].transpose(),15,**kwargs)
@@ -177,7 +180,7 @@ def rrdump(dumpname):
     if 'gv3' in globals() and 'gn3' in globals(): 
         vd = mdot(gv3,vu)
         gamma = (1+mdot(mdot(gv3,vu),vu))**0.5
-        etad = sc.zeros_like(vu)
+        etad = np.zeros_like(vu)
         etad[0] = -1/(-gn3[0,0])**0.5      #ZAMO frame velocity (definition)
         etau = mdot(gn3,etad)
         uu = gamma * etau + vu
@@ -232,7 +235,7 @@ def rd(dump):
     v1m,v1p,v2m,v2p,v3m,v3p=gd[46:52]
 
 def rfd(fieldlinefilename,**kwargs):
-    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,rho,ug,uu,uut,uu,B,uux
+    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,rho,lrho,ug,uu,uut,uu,B,uux
     #read image
     fin = open( "dumps/" + fieldlinefilename, "rb" )
     header = fin.readline().split()
@@ -245,11 +248,12 @@ def rfd(fieldlinefilename,**kwargs):
     _dx3=float(header[9])
     gam=float(header[11])
     a=float(header[12])
-    body = np.fromfile(fin,dtype=np.single,count=nx*ny*nz*11)
+    body = np.fromfile(fin,dtype=np.single,count=-1)
     fin.close()
     d=body.view().reshape((-1,nx,ny,nz),order='F')
     #rho, u, -hu_t, -T^t_t/U0, u^t, v1,v2,v3,B1,B2,B3
     rho=d[0,:,:,:]
+    lrho = np.log10(rho)
     ug=d[1,:,:,:]
     uu=d[4:8,:,:,:]  #note uu[i] are 3-velocities (as read from the fieldline file)
     #uut=np.copy(d[4,:,:,:])
@@ -260,7 +264,7 @@ def rfd(fieldlinefilename,**kwargs):
     uu[1:4]=uu[1:4] * uu[0]
     useoldfmt = kwargs.pop('oldfmt',False)
     #old image format
-    B = sc.zeros_like(uu)
+    B = np.zeros_like(uu)
     B[1:4,:,:,:]=d[8:11,:,:,:]
     if(useoldfmt == False): 
         #new image format additionally contains gdet*B^i
@@ -283,13 +287,13 @@ def rfd(fieldlinefilename,**kwargs):
 def cvel():
     global ud,etad, etau, gamma, vu, vd, bu, bd, bsq
     ud = mdot(gv3,uu)                  #g_mn u^n
-    etad = sc.zeros_like(uu)
+    etad = np.zeros_like(uu)
     etad[0] = -1/(-gn3[0,0])**0.5      #ZAMO frame velocity (definition)
     etau = mdot(gn3,etad)
     gamma=mdot(uu,etad)                #Lorentz factor as measured by ZAMO
     vu = uu - gamma*etau               #u^m = v^m + gamma eta^m
     vd = mdot(gv3,vu)
-    bu=sc.empty_like(uu)              #allocate memory for bu
+    bu=np.empty_like(uu)              #allocate memory for bu
     #set component per component
     bu[0]=mdot(B[1:4], ud[1:4])             #B^i u_i
     bu[1:4]=(B[1:4] + bu[0]*uu[1:4])/uu[0]  #b^i = (B^i + b^t u^i)/u^t
@@ -309,10 +313,15 @@ def grid3d(dumpname): #read gdump: header and body
     _dx1=float(header[7])
     _dx2=float(header[8])
     _dx3=float(header[9])
-    gin.close()
     #read gdump
     #
-    gd = np.loadtxt( "dumps/gdump", 
+    if dumpname.endswith(".bin"):
+        body = np.fromfile(gin,dtype=np.double,count=-1)  #nx*ny*nz*11)
+        gd = body.view().reshape((-1,nx,ny,nz),order='F')
+        gin.close()
+    else:
+        gin.close()
+        gd = np.loadtxt( "dumps/" + dumpname, 
                       dtype=float, 
                       skiprows=1, 
                       unpack = True ).view().reshape((-1,nx,ny,nz), order='F')
@@ -328,7 +337,7 @@ def grid3d(dumpname): #read gdump: header and body
     gv3 = gd[89:105].view().reshape((4,4,nx,ny,nz), order='F').transpose(1,0,2,3,4)
     gdet = gd[105]
     ck = gd[106:110].view().reshape((4,nx,ny,nz), order='F')
-    dxdxp = gd[110:136].view().reshape((4,4,nx,ny,nz), order='F').transpose(1,0,2,3,4)
+    dxdxp = gd[110:126].view().reshape((4,4,nx,ny,nz), order='F').transpose(1,0,2,3,4)
     print( "Done!" )
 
 def grid3dlight(dumpname): #read gdump: header and body
@@ -399,15 +408,15 @@ def mdot(a,b):
     if a.ndim == 4 and b.ndim == 4:
           c = (a*b).sum(0)
     elif a.ndim == 5 and b.ndim == 4:
-          c = sc.empty_like(a[:,0,:,:,:])      
+          c = np.empty_like(a[:,0,:,:,:])      
           for i in range(a.shape[0]):
                 c[i,:,:,:] = (a[i,:,:,:,:]*b).sum(0)
     elif a.ndim == 4 and b.ndim == 5:
-          c = sc.empty_like(b[0,:,:,:,:])      
+          c = np.empty_like(b[0,:,:,:,:])      
           for i in range(b.shape[1]):
                 c[i,:,:,:] = (a*b[:,i,:,:,:]).sum(0)
     elif a.ndim == 5 and b.ndim == 5:
-          c = sc.empty((a.shape[0],b.shape[1],a.shape[2],a.shape[3],a.shape[4]))
+          c = np.empty((a.shape[0],b.shape[1],a.shape[2],a.shape[3],a.shape[4]))
           for i in range(c.shape[0]):
                 for j in range(c.shape[1]):
                       c[i,j,:,:,:] = (a[i,:,:,:,:]*b[:,j,:,:,:]).sum(0)
@@ -449,7 +458,7 @@ def fieldcalc2():
     #daphi = (gdet*B[1]).sum(2)*_dx2*_dx3
     #aphi=daphi.cumsum(axis=1)
     daphi = (-gdet*B[2]).sum(2)*_dx2*_dx3
-    #sc.zeros_like(B[1,:,:,0:1])
+    #np.zeros_like(B[1,:,:,0:1])
     daphi1 = (gdet[0]*B[1,0]).sum(1).cumsum(axis=0)*_dx2*_dx3
     daphi[0,:] += daphi1
     aphi=daphi.cumsum(axis=0)
@@ -462,7 +471,7 @@ def fieldcalc2U():
     #daphi = (gdet*B[1]).sum(2)*_dx2*_dx3
     #aphi=daphi.cumsum(axis=1)
     daphi = (-gdetB[2]).sum(2)*_dx2*_dx3
-    #sc.zeros_like(B[1,:,:,0:1])
+    #np.zeros_like(B[1,:,:,0:1])
     daphi1 = (gdetB[1,0]).sum(1).cumsum(axis=0)*_dx2*_dx3
     daphi[0,:] += daphi1
     aphi=daphi.cumsum(axis=0)
@@ -588,7 +597,7 @@ if __name__ == "__main__":
     #
     #plt.clf(); rfd("fieldline0000.bin"); aphi=fieldcalc(); plc(ug/bsq) 
     #rfd("fieldline0002.bin")
-    if True:
+    if False:
         grid3d("gdump"); rfd("fieldline0000.bin"); rrdump("rdump--0000"); plt.clf(); cvel(); plc(bsq,cb=True)
         plt.clf();plt.plot(x1[:,ny/2,0],(bsq/(2*(gam-1)*ug))[:,ny/2,0])
         plt.plot(x1[:,ny/2,0],(bsq/(2*(gam-1)*ug))[:,ny/2,0],'+')
