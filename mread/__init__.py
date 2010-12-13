@@ -37,10 +37,11 @@ def plc(myvar,xcoord=None,ycoord=None,**kwargs): #plc
     #xcoord = kwargs.pop('x1', None)
     #ycoord = kwargs.pop('x2', None)
     cb = kwargs.pop('cb', False)
+    nc = kwargs.pop('nc', 15)
     if( xcoord == None or ycoord == None ):
-        res = plt.contour(myvar[:,:,0].transpose(),15,**kwargs)
+        res = plt.contour(myvar[:,:,0].transpose(),nc,**kwargs)
     else:
-        res = plt.contour(xcoord[:,:,0],ycoord[:,:,0],myvar[:,:,0],15,**kwargs)
+        res = plt.contour(xcoord[:,:,0],ycoord[:,:,0],myvar[:,:,0],nc,**kwargs)
     if( cb == True): #use color bar
         plt.colorbar()
 
@@ -200,7 +201,7 @@ def fieldcalcU():
     return(aphi)
 
 def rd(dump):
-    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,ti,tj,tk,x1,x2,x3,r,h,ph,rho,ug,vu,B,pg,cs2,Sden,U,divb,uu,ud,bu,bd
+    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,ti,tj,tk,x1,x2,x3,r,h,ph,rho,ug,vu,B,pg,cs2,Sden,U,gdetB,divb,uu,ud,bu,bd
     global v1m,v1p,v2m,v2p,v3m,v3p,bsq
     #read image
     fin = open( "dumps/" + dump, "rb" )
@@ -226,6 +227,8 @@ def rd(dump):
     B[1:4] = gd[14:17]
     pg,cs2,Sden = gd[17:20]
     U = gd[20:29]
+    gdetB = np.zeros_like(B)
+    gdetB[1:4] = U[5:8]
     divb = gd[29]
     uu = gd[30:34]
     ud = gd[34:38]
@@ -233,6 +236,18 @@ def rd(dump):
     bd = gd[42:46]
     bsq = mdot(bu,bd)
     v1m,v1p,v2m,v2p,v3m,v3p=gd[46:52]
+
+def rgd(fieldlinefilename,**kwargs):
+    if not os.path.isfile(os.path.join("dumps/", fieldlinefilename)):
+        print( "File " + fieldlinefilename + " does not exist. Aborting." )
+        return
+    if 'gv3' not in globals():
+        gdumpname = glob.glob( os.path.join("dumps/", "gdump*") )
+        #read the 1st found file
+        grid3d(os.path.basename(gdumpname[0]))
+    rfd(fieldlinefilename,**kwargs)
+    cvel()
+    
 
 def rfd(fieldlinefilename,**kwargs):
     global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,rho,lrho,ug,uu,uut,uu,B,uux,gdetB
@@ -262,14 +277,14 @@ def rfd(fieldlinefilename,**kwargs):
     #for i in range(1,4):
     #    uux[i,:,:,:] = uux[i,:,:,:] * uux[0,:,:,:]  
     uu[1:4]=uu[1:4] * uu[0]
-    useoldfmt = kwargs.pop('oldfmt',False)
     #old image format
     B = np.zeros_like(uu)
     B[1:4,:,:,:]=d[8:11,:,:,:]
-    if(useoldfmt == False): 
+    #if the input file contains additional data
+    if(d.shape[0]>=14): 
         #new image format additionally contains gdet*B^i
         gdetB = np.zeros_like(B)
-        gdetB[1:4] = d[8:11,:,:,:]
+        gdetB[1:4] = d[11:14,:,:,:]
     #     if 'gdet' in globals():
     #         #first set everything approximately (B's are at shifted locations by half-cell)
     #         B = gdetB/gdet  
@@ -290,7 +305,7 @@ def cvel():
     etad = np.zeros_like(uu)
     etad[0] = -1/(-gn3[0,0])**0.5      #ZAMO frame velocity (definition)
     etau = mdot(gn3,etad)
-    gamma=mdot(uu,etad)                #Lorentz factor as measured by ZAMO
+    gamma=-mdot(uu,etad)                #Lorentz factor as measured by ZAMO
     vu = uu - gamma*etau               #u^m = v^m + gamma eta^m
     vd = mdot(gv3,vu)
     bu=np.empty_like(uu)              #allocate memory for bu
@@ -581,8 +596,8 @@ if __name__ == "__main__":
         for findex, fname in enumerate(flist):
             print( "Reading " + fname + " ..." )
             rfd("../"+fname)
-            mkframe("lrho%04d" % findex, vmin=-8,vmax=0.2)
             plt.clf()
+            mkframe("lrho%04d" % findex, vmin=-8,vmax=0.2)
         print( "Done!" )
     if False:
         #rfd("fieldline0000.bin")  #to define _dx#
@@ -594,7 +609,7 @@ if __name__ == "__main__":
             plt.clf()
             mkframe("lrho%04d" % findex, vmin=-8,vmax=0.2)
         print( "Done!" )
-    #
+    #ffmpeg -fflags +genpts -r 4 -i lrho%04d.png -vcodec mpeg4 mov.avi
     #plt.clf(); rfd("fieldline0000.bin"); aphi=fieldcalc(); plc(ug/bsq) 
     #rfd("fieldline0002.bin")
     if False:
@@ -602,3 +617,5 @@ if __name__ == "__main__":
         plt.clf();plt.plot(x1[:,ny/2,0],(bsq/(2*(gam-1)*ug))[:,ny/2,0])
         plt.plot(x1[:,ny/2,0],(bsq/(2*(gam-1)*ug))[:,ny/2,0],'+')
         plt.plot(x1[:,ny/2,0],(0.01*rho)[:,ny/2,0])
+    if False:
+        plt.clf();plco(lrho,r*np.sin(h),r*np.cos(h),cb=True,levels=np.arange(-12,0,0.5)); plt.xlim(0,40); plt.ylim(-20,20)
