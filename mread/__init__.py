@@ -235,7 +235,7 @@ def rd(dump):
     v1m,v1p,v2m,v2p,v3m,v3p=gd[46:52]
 
 def rfd(fieldlinefilename,**kwargs):
-    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,rho,lrho,ug,uu,uut,uu,B,uux
+    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,rho,lrho,ug,uu,uut,uu,B,uux,gdetB
     #read image
     fin = open( "dumps/" + fieldlinefilename, "rb" )
     header = fin.readline().split()
