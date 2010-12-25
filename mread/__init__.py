@@ -27,8 +27,11 @@ import pylab
 
 def Qmri():
     """
-    Computes number of theta cells resolving one MIR wavelength
+    APPROXIMATELY Computes number of theta cells resolving one MIR wavelength
     """
+    global bu,rho,uu,_dx2
+    res=np.abs(bu[2]/np.sqrt(rho)/((uu[3]+1e-15)/uu[0])/_dx2)
+    return(res)
 def plco(myvar,xcoord=None,ycoord=None,**kwargs):
     plt.clf()
     plc(myvar,xcoord,ycoord,**kwargs)
@@ -656,7 +659,7 @@ def test():
     plt.ylabel(r'$\Phi_{\rm h}$',fontsize=16)
     #plt.legend()
 
-def gen_vpot():
+def gen_vpot(whichloop=None,phase=0.0):
     global rho_av, rho_max, var, uq, aaphi, aB, B, res,ud,etad, etau, gamma, vu, vd, bu, bd, bsq
     #res=np.abs(bu[2]/np.sqrt(rho)/((uu[3]+1e-15)/uu[0])/_dx2)
     #plco(res,cb=True)
@@ -669,16 +672,30 @@ def gen_vpot():
     rho_av[1:nx,1:ny,0:1] = 0.25*(rho[0:nx-1,0:ny-1,0:1]+rho[1:nx,0:ny-1,0:1]+rho[0:nx-1,1:ny,0:1]+rho[1:nx,1:ny,0:1])
     rho_max=np.max(rho_av)
     #define aphi
-    var = (rho_av/rho_max) #**gam #*r[:,:,0:1]**1
-    varc = (rho/rho_max) #**gam #*r[:,:,0:1]**1
+    var = (r[:,:,0:1]**2*rho_av/rho_max) #**gam #*r[:,:,0:1]**1
+    varc = (r[:,:,0:1]**2*rho/rho_max) #**gam #*r[:,:,0:1]**1
     #note r should be shifted, too (not done yet):
     maxvar=np.max(var)
     maxvarc=np.max(varc)
     uq = (var-0.2*maxvar) #*r[:,:,0:1]**0.75 #/(0.1**2+(h-np.pi/2)**2)
     uqc = (varc-0.2*maxvarc) #*r[:,:,0:1]**0.75 #/(0.1**2+(h-np.pi/2)**2)
-    #aaphi = uq**2 * np.sin( np.log(r[:,:,0:1]/startfield)/fieldhor )
-    aaphi = uq**2 #* np.log(r[:,:,0:1]/startfield)
+    arg = np.log(r[:,:,0:1]/startfield)/fieldhor-phase*np.pi
+    aaphi = uq**2 * np.sin( arg )**1
+    aaphi[uq<0] = 0
+    if whichloop != None:
+        notuse1 = arg > np.pi*(whichloop+1)
+        notuse2 = arg < np.pi*whichloop
+        aaphi[notuse1] = 0.0
+        aaphi[notuse2] = 0.0
+    #aaphi = uq**2 #* np.log(r[:,:,0:1]/startfield)
     #aaphi = uq**(2)
+    aphi2B(aaphi)
+    #reset field components outside torus to zero
+    B[1,uqc<0] = 0
+    B[2,uqc<0] = 0
+    return(aaphi)
+def aphi2B(aaphi):
+    global B
     aB = np.zeros_like(B)
     aB[1,1:nx,0:ny-1] =(aaphi[1:nx,1:ny]-aaphi[1:nx,0:ny-1]) / (0.5*(gdet[0:nx-1,0:ny-1]+gdet[1:nx,0:ny-1])*_dx2)
     aB[2,0:nx-1,1:ny] =(aaphi[1:nx,1:ny]-aaphi[0:nx-1,1:ny]) / (0.5*(gdet[0:nx-1,0:ny-1]+gdet[0:nx-1,1:ny])*_dx1)
@@ -688,10 +705,8 @@ def gen_vpot():
     #properly center the field
     B[1,0:nx-1,0:ny,:] = (aB[1,0:nx-1,0:ny,:] + aB[1,1:nx,0:ny,:])/2
     B[2,0:nx,0:ny-1,:] = (aB[2,0:nx,1:ny,:] + aB[2,0:nx,0:ny-1,:])/2
-    B[1,uqc<0] = 0
-    B[2,uqc<0] = 0
-    cvel()
-    res=np.abs(bu[2]/np.sqrt(rho)/((uu[3]+1e-15)/uu[0])/_dx2)
+def pl(x,y):
+    plt.plot(x[:,ny/2,0],y[:,ny/2,0])
 
 if __name__ == "__main__":
     import sys
@@ -712,7 +727,7 @@ if __name__ == "__main__":
     #aphi2=fieldcalc2()
     #plc(aphi2)
     #test()
-    if True:
+    if False:
         grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]) )
         flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
         for findex, fname in enumerate(flist):
@@ -748,4 +763,32 @@ if __name__ == "__main__":
         plt.clf(); plt.plot(x1[:,ny/2,0],aphi[:,ny/2,0])
     if False:
         gen_vpot()
-        
+    if True:
+        npow=4
+        ap=np.zeros((6,rho.shape[0],rho.shape[1],rho.shape[2]))
+        #gives nearly uniform aphi at maxes
+        #c=np.array([10,1.5,1,1,2.7,16])
+        #gives uniform bsq/rho**gam at maxes
+        c=np.array([3.5,2,1,2,3,10])
+        phases=np.array([0,0.5,1,1.5,2,2.5])
+        for i,phase in enumerate(phases):
+            ap[i]=c[i]*gen_vpot(whichloop=0,phase=phase)
+        aaphi = np.sum(ap,axis=0)
+        plt.clf()
+        if True:
+            plt.plot(x1[:,ny/2,0],((ap[0]))[:,ny/2,0])
+            plt.plot(x1[:,ny/2,0],((ap[1]))[:,ny/2,0])
+            plt.plot(x1[:,ny/2,0],((ap[2]))[:,ny/2,0])
+            plt.plot(x1[:,ny/2,0],((ap[3]))[:,ny/2,0])
+            plt.plot(x1[:,ny/2,0],((ap[4]))[:,ny/2,0])
+            plt.plot(x1[:,ny/2,0],((ap[5]))[:,ny/2,0])
+            plt.plot(x1[:,ny/2,0],((aaphi))[:,ny/2,0])
+        aphi2B(aaphi)
+        cvel()
+        res=Qmri()
+        #plt.plot(x1[:,ny/2,0],(res)[:,ny/2,0])
+        #plt.clf();pl(x1,res)
+        #plt.clf();pl(x1,aaphi)
+        plco(bsq/rho**gam,cb=True)
+        #plco(res,cb=True)
+
