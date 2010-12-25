@@ -215,8 +215,13 @@ def rd(dump):
     _dx3=float(header[9])
     gam=float(header[11])
     a=float(header[12])
-    fin.close()
-    gd = np.loadtxt( "dumps/"+dump, 
+    if dump.endswith(".bin"):
+        body = np.fromfile(fin,dtype=np.double,count=-1)  #nx*ny*nz*11)
+        gd = body.view().reshape((-1,nx,ny,nz),order='F')
+        fin.close()
+    else:
+        fin.close()
+        gd = np.loadtxt( "dumps/"+dump, 
                       dtype=float, 
                       skiprows=1, 
                       unpack = True ).view().reshape((-1,nx,ny,nz), order='F')
@@ -387,6 +392,85 @@ def grid3dlight(dumpname): #read gdump: header and body
     #gdet = gd[105]
     #ck = gd[106:110].view().reshape((4,nx,ny,nz), order='F')
     #dxdxp = gd[110:136].view().reshape((4,4,nx,ny,nz), order='F').transpose(1,0,2,3,4)
+
+def rdebug(debugfname):
+    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a
+    global fail0,floor0,limitgamma0,inflow0,failrho0,failu0,failrhou0,precgam0,precu0,toentropy0,tocold0,eosfail0
+    global fail1,floor1,limitgamma1,inflow1,failrho1,failu1,failrhou1,precgam1,precu1,toentropy1,tocold1,eosfail1
+    global fail2,floor2,limitgamma2,inflow2,failrho2,failu2,failrhou2,precgam2,precu2,toentropy2,tocold2,eosfail2
+    global fail3,floor3,limitgamma3,inflow3,failrho3,failu3,failrhou3,precgam3,precu3,toentropy3,tocold3,eosfail3
+    #read image
+    fin = open( "dumps/" + debugfname, "rb" )
+    header = fin.readline().split()
+    t = np.float64(header[0])
+    nx = int(header[1])
+    ny = int(header[2])
+    nz = int(header[3])
+    _dx1=float(header[7])
+    _dx2=float(header[8])
+    _dx3=float(header[9])
+    gam=float(header[11])
+    a=float(header[12])
+    if debugfname.endswith(".bin"):
+        body = np.fromfile(fin,dtype=np.double,count=-1)  #nx*ny*nz*11)
+        gd = body.view().reshape((-1,nx,ny,nz),order='F')
+        fin.close()
+    else:
+        fin.close()
+        gd = np.loadtxt( "dumps/"+debugfname, 
+                      dtype=float, 
+                      skiprows=1, 
+                      unpack = True ).view().reshape((-1,nx,ny,nz), order='F')
+    (
+       fail0,floor0,limitgamma0,inflow0,failrho0,failu0,failrhou0,precgam0,precu0,toentropy0,tocold0,eosfail0,
+       fail1,floor1,limitgamma1,inflow1,failrho1,failu1,failrhou1,precgam1,precu1,toentropy1,tocold1,eosfail1,
+       fail2,floor2,limitgamma2,inflow2,failrho2,failu2,failrhou2,precgam2,precu2,toentropy2,tocold2,eosfail2,
+       fail3,floor3,limitgamma3,inflow3,failrho3,failu3,failrhou3,precgam3,precu3,toentropy3,tocold3,eosfail3
+    ) = gd[0:48,:,:,:].view() 
+ 
+    # shows where *ever* failed or not
+    lg1fail=np.log10(fail0+1)
+    lg1tot=np.log10(fail0+failrho0+failu0+failrhou0+1)
+    #
+    lg1precgam=np.log10(precgam0+1)
+    lg1precu=np.log10(precu0+1)
+    #
+    failtot0=fail0+failrho0+failu0+failrhou0
+    failtot1=fail1+failrho1+failu1+failrhou1
+    failtot2=fail2+failrho2+failu2+failrhou2
+    failtot3=fail3+failrho3+failu3+failrhou3
+    #
+    lgftot0=np.log10(failtot0+1)
+    lgftot1=np.log10(failtot1+1)
+    lgftot2=np.log10(failtot2+1)
+    lgftot3=np.log10(failtot3+1)
+    #
+    failtot0sum=np.sum(failtot0)
+    failtot1sum=np.sum(failtot1)
+    failtot2sum=np.sum(failtot2)
+    failtot3sum=np.sum(failtot3)
+    #
+    print( "failtotsum(0,1,2,3): %10d, %10d, %10d, %10d" % (failtot0sum, failtot1sum, failtot2sum, failtot3sum) )
+    #
+    # absolute totals
+    dtot0=fail0+floor0+limitgamma0+failrho0+failu0+failrhou0+precgam0+precu0
+    dtot1=fail1+floor1+limitgamma1+failrho1+failu1+failrhou1+precgam1+precu1
+    dtot2=fail2+floor2+limitgamma2+failrho2+failu2+failrhou2+precgam2+precu2
+    dtot3=fail3+floor3+limitgamma3+failrho3+failu3+failrhou3+precgam3+precu3
+    #
+    lgdtot0=np.log10(dtot0+1)
+    lgdtot1=np.log10(dtot1+1)
+    lgdtot2=np.log10(dtot2+1)
+    lgdtot3=np.log10(dtot3+1)
+    #
+    dtot0sum=np.sum(dtot0)
+    dtot1sum=np.sum(dtot1)
+    dtot2sum=np.sum(dtot2)
+    dtot3sum=np.sum(dtot3)
+    #
+    print( "   dtotsum(0,1,2,3): %10d, %10d, %10d, %10d" % (dtot0sum, dtot1sum, dtot2sum, dtot3sum) )
+    #
+
 
 def rfdgrid(dumpname): #read gdump: header and body
     global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,conn,gn3,gv3,ck,dxdxp,gdet
@@ -572,6 +656,43 @@ def test():
     plt.ylabel(r'$\Phi_{\rm h}$',fontsize=16)
     #plt.legend()
 
+def gen_vpot():
+    global rho_av, rho_max, var, uq, aaphi, aB, B, res,ud,etad, etau, gamma, vu, vd, bu, bd, bsq
+    #res=np.abs(bu[2]/np.sqrt(rho)/((uu[3]+1e-15)/uu[0])/_dx2)
+    #plco(res,cb=True)
+    #plt.plot(ti[:,ny/2,0],res[:,ny/2,0])
+    fieldhor = 0.194
+    rin = 10
+    startfield = 1.1 * rin
+    rho_av = np.copy(rho[:,:,0:1])
+    #average to corners
+    rho_av[1:nx,1:ny,0:1] = 0.25*(rho[0:nx-1,0:ny-1,0:1]+rho[1:nx,0:ny-1,0:1]+rho[0:nx-1,1:ny,0:1]+rho[1:nx,1:ny,0:1])
+    rho_max=np.max(rho_av)
+    #define aphi
+    var = (rho_av/rho_max) #**gam #*r[:,:,0:1]**1
+    varc = (rho/rho_max) #**gam #*r[:,:,0:1]**1
+    #note r should be shifted, too (not done yet):
+    maxvar=np.max(var)
+    maxvarc=np.max(varc)
+    uq = (var-0.2*maxvar) #*r[:,:,0:1]**0.75 #/(0.1**2+(h-np.pi/2)**2)
+    uqc = (varc-0.2*maxvarc) #*r[:,:,0:1]**0.75 #/(0.1**2+(h-np.pi/2)**2)
+    #aaphi = uq**2 * np.sin( np.log(r[:,:,0:1]/startfield)/fieldhor )
+    aaphi = uq**2 #* np.log(r[:,:,0:1]/startfield)
+    #aaphi = uq**(2)
+    aB = np.zeros_like(B)
+    aB[1,1:nx,0:ny-1] =(aaphi[1:nx,1:ny]-aaphi[1:nx,0:ny-1]) / (0.5*(gdet[0:nx-1,0:ny-1]+gdet[1:nx,0:ny-1])*_dx2)
+    aB[2,0:nx-1,1:ny] =(aaphi[1:nx,1:ny]-aaphi[0:nx-1,1:ny]) / (0.5*(gdet[0:nx-1,0:ny-1]+gdet[0:nx-1,1:ny])*_dx1)
+    #ab[3] is zeroes
+    #
+    B=aB+0.0
+    #properly center the field
+    B[1,0:nx-1,0:ny,:] = (aB[1,0:nx-1,0:ny,:] + aB[1,1:nx,0:ny,:])/2
+    B[2,0:nx,0:ny-1,:] = (aB[2,0:nx,1:ny,:] + aB[2,0:nx,0:ny-1,:])/2
+    B[1,uqc<0] = 0
+    B[2,uqc<0] = 0
+    cvel()
+    res=np.abs(bu[2]/np.sqrt(rho)/((uu[3]+1e-15)/uu[0])/_dx2)
+
 if __name__ == "__main__":
     import sys
     #mainfunc()
@@ -591,7 +712,8 @@ if __name__ == "__main__":
     #aphi2=fieldcalc2()
     #plc(aphi2)
     #test()
-    if False:
+    if True:
+        grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]) )
         flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
         for findex, fname in enumerate(flist):
             print( "Reading " + fname + " ..." )
@@ -609,7 +731,7 @@ if __name__ == "__main__":
             plt.clf()
             mkframe("lrho%04d" % findex, vmin=-8,vmax=0.2)
         print( "Done!" )
-    #ffmpeg -fflags +genpts -r 4 -i lrho%04d.png -vcodec mpeg4 mov.avi
+    #ffmpeg -fflags +genpts -r 10 -i lrho%04d.png -vcodec mpeg4 -qmax 2 mov.avi
     #plt.clf(); rfd("fieldline0000.bin"); aphi=fieldcalc(); plc(ug/bsq) 
     #rfd("fieldline0002.bin")
     if False:
@@ -619,3 +741,11 @@ if __name__ == "__main__":
         plt.plot(x1[:,ny/2,0],(0.01*rho)[:,ny/2,0])
     if False:
         plt.clf();plco(lrho,r*np.sin(h),r*np.cos(h),cb=True,levels=np.arange(-12,0,0.5)); plt.xlim(0,40); plt.ylim(-20,20)
+    if False:
+        rd( os.path.basename(glob.glob(os.path.join("dumps/", "dump0000*"))[0]) )
+        #rrdump("rdump--0000")
+        aphi = fieldcalc()
+        plt.clf(); plt.plot(x1[:,ny/2,0],aphi[:,ny/2,0])
+    if False:
+        gen_vpot()
+        
