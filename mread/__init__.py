@@ -660,7 +660,7 @@ def test():
     #plt.legend()
 
 def gen_vpot(whichloop=None,phase=0.0):
-    global rho_av, rho_max, var, uq, aaphi, aB, B, res,ud,etad, etau, gamma, vu, vd, bu, bd, bsq
+    global rho_av, rho_max, var, uq, aB, B, res,ud,etad, etau, gamma, vu, vd, bu, bd, bsq, phi
     #res=np.abs(bu[2]/np.sqrt(rho)/((uu[3]+1e-15)/uu[0])/_dx2)
     #plco(res,cb=True)
     #plt.plot(ti[:,ny/2,0],res[:,ny/2,0])
@@ -679,8 +679,10 @@ def gen_vpot(whichloop=None,phase=0.0):
     maxvarc=np.max(varc)
     uq = (var-0.2*maxvar) #*r[:,:,0:1]**0.75 #/(0.1**2+(h-np.pi/2)**2)
     uqc = (varc-0.2*maxvarc) #*r[:,:,0:1]**0.75 #/(0.1**2+(h-np.pi/2)**2)
-    arg = np.log(r[:,:,0:1]/startfield)/fieldhor-phase*np.pi
+    phi = np.log(r[:,:,0:1]/startfield)/fieldhor
+    arg = phi-phase*np.pi
     aaphi = uq**2 * np.sin( arg )**1
+    #aaphi = uq**2 * (1+0.2*np.sin( arg )**1)
     aaphi[uq<0] = 0
     if whichloop != None:
         notuse1 = arg > np.pi*(whichloop+1)
@@ -707,6 +709,9 @@ def aphi2B(aaphi):
     B[2,0:nx,0:ny-1,:] = (aB[2,0:nx,1:ny,:] + aB[2,0:nx,0:ny-1,:])/2
 def pl(x,y):
     plt.plot(x[:,ny/2,0],y[:,ny/2,0])
+
+def fac(ph):
+    return(1+0.5*((ph/np.pi-1.5)/0.5)**2)
 
 if __name__ == "__main__":
     import sys
@@ -766,6 +771,7 @@ if __name__ == "__main__":
     if True:
         npow=4
         ap=np.zeros((6,rho.shape[0],rho.shape[1],rho.shape[2]))
+        ap1=np.zeros((6,rho.shape[0],rho.shape[1],rho.shape[2]))
         #gives nearly uniform aphi at maxes
         #c=np.array([10,1.5,1,1,2.7,16])
         #gives uniform bsq/rho**gam at maxes
@@ -773,7 +779,10 @@ if __name__ == "__main__":
         phases=np.array([0,0.5,1,1.5,2,2.5])
         for i,phase in enumerate(phases):
             ap[i]=c[i]*gen_vpot(whichloop=0,phase=phase)
+            ap1[i]=gen_vpot(whichloop=0,phase=phase)
         aaphi = np.sum(ap,axis=0)
+        aaphi1 = np.sum(ap1,axis=0)
+        aaphi2 = aaphi1 * fac(phi)
         plt.clf()
         if True:
             plt.plot(x1[:,ny/2,0],((ap[0]))[:,ny/2,0])
@@ -783,6 +792,20 @@ if __name__ == "__main__":
             plt.plot(x1[:,ny/2,0],((ap[4]))[:,ny/2,0])
             plt.plot(x1[:,ny/2,0],((ap[5]))[:,ny/2,0])
             plt.plot(x1[:,ny/2,0],((aaphi))[:,ny/2,0])
+        aphi2B(aaphi2)
+        cvel()
+        res=Qmri()
+        #plt.plot(x1[:,ny/2,0],(res)[:,ny/2,0])
+        #plt.clf();pl(x1,res)
+        #plt.clf();pl(x1,aaphi)
+        #plco(bsq/rho**gam,cb=True)
+        #plco(res,cb=True)
+        #pl(ti,10*fac(phi)); plt.ylim(0,ny-1)
+        #pl(x1,res)
+        #pl(x1,aaphi2)
+        pl(x1,aaphi1)
+    if False:
+        aaphi=gen_vpot()
         aphi2B(aaphi)
         cvel()
         res=Qmri()
@@ -791,4 +814,4 @@ if __name__ == "__main__":
         #plt.clf();pl(x1,aaphi)
         plco(bsq/rho**gam,cb=True)
         #plco(res,cb=True)
-
+        
