@@ -659,21 +659,28 @@ def test():
     plt.ylabel(r'$\Phi_{\rm h}$',fontsize=16)
     #plt.legend()
 
-def gen_vpot(whichloop=None,phase=0.0):
+def gen_vpot(whichloop=None,phase=0.0,whichfield=None,fieldhor=0.194,rin=10):
+    #whichfield = 0 -- single loop follows density contours
+    #whichfield = None -- alternating loops
     global rho_av, rho_max, var, uq, aB, B, res,ud,etad, etau, gamma, vu, vd, bu, bd, bsq, phi
     #res=np.abs(bu[2]/np.sqrt(rho)/((uu[3]+1e-15)/uu[0])/_dx2)
     #plco(res,cb=True)
     #plt.plot(ti[:,ny/2,0],res[:,ny/2,0])
-    fieldhor = 0.194
-    rin = 10
+    #Old settings (now incorporated as defaults in this function call):
+    #fieldhor = 0.194
+    #rin = 10
     startfield = 1.1 * rin
     rho_av = np.copy(rho[:,:,0:1])
     #average to corners
     rho_av[1:nx,1:ny,0:1] = 0.25*(rho[0:nx-1,0:ny-1,0:1]+rho[1:nx,0:ny-1,0:1]+rho[0:nx-1,1:ny,0:1]+rho[1:nx,1:ny,0:1])
     rho_max=np.max(rho_av)
     #define aphi
-    var = (r[:,:,0:1]**2*rho_av/rho_max) #**gam #*r[:,:,0:1]**1
-    varc = (r[:,:,0:1]**2*rho/rho_max) #**gam #*r[:,:,0:1]**1
+    if( whichfield == None ):
+        var = (r[:,:,0:1]**2*rho_av/rho_max) #**gam #*r[:,:,0:1]**1
+        varc = (r[:,:,0:1]**2*rho/rho_max) #**gam #*r[:,:,0:1]**1
+    else:
+        var = (rho_av/rho_max) #**gam #*r[:,:,0:1]**1
+        varc = (rho/rho_max) #**gam #*r[:,:,0:1]**1
     #note r should be shifted, too (not done yet):
     maxvar=np.max(var)
     maxvarc=np.max(varc)
@@ -681,7 +688,11 @@ def gen_vpot(whichloop=None,phase=0.0):
     uqc = (varc-0.2*maxvarc) #*r[:,:,0:1]**0.75 #/(0.1**2+(h-np.pi/2)**2)
     phi = np.log(r[:,:,0:1]/startfield)/fieldhor
     arg = phi-phase*np.pi
-    aaphi = uq**2 * np.sin( arg )**1
+    #aaphi = uq**2 * (r-startfield)**1.1
+    if( whichfield == None ):
+        aaphi = uq**2 * np.sin( arg )**1
+    elif( whichfield == 0 ):
+        aaphi = uq**2
     #aaphi = uq**2 * (1+0.2*np.sin( arg )**1)
     aaphi[uq<0] = 0
     if whichloop != None:
@@ -768,7 +779,10 @@ if __name__ == "__main__":
         plt.clf(); plt.plot(x1[:,ny/2,0],aphi[:,ny/2,0])
     if False:
         gen_vpot()
-    if True:
+    if False:
+        #Generates 6 co-aligned half-loops which combine into one big loop.
+        #However, the field is noisy and probably the total flux in the big
+        #loop is smaller than max possible given max ibeta.
         npow=4
         ap=np.zeros((6,rho.shape[0],rho.shape[1],rho.shape[2]))
         ap1=np.zeros((6,rho.shape[0],rho.shape[1],rho.shape[2]))
@@ -804,8 +818,9 @@ if __name__ == "__main__":
         #pl(x1,res)
         #pl(x1,aaphi2)
         pl(x1,aaphi1)
-    if False:
-        aaphi=gen_vpot()
+    if True:
+        #generate single loop
+        aaphi=gen_vpot(whichfield=0)
         aphi2B(aaphi)
         cvel()
         res=Qmri()
