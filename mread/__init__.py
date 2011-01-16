@@ -11,8 +11,8 @@ from matplotlib import rc
 
 import numpy as np
 import array
-import scipy as sc
-from scipy.interpolate import griddata
+#import scipy as sc
+#from scipy.interpolate import griddata
 #from scipy.interpolate import Rbf
 import matplotlib.pyplot as plt
 from matplotlib import cm
@@ -65,7 +65,7 @@ def reinterp(vartointerp,extent,ncell):
     xi = np.linspace(extent[0], extent[1], ncell)
     yi = np.linspace(extent[2], extent[3], ncell)
     # grid the data.
-    zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method='linear')
+    #zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method='linear')
     interior = np.sqrt((xi[None,:]**2) + (yi[:,None]**2)) < 1+np.sqrt(1-a**2)
     #zi[interior] = np.ma.masked
     varinterpolated = ma.masked_where(interior, zi)
@@ -537,6 +537,14 @@ def mysum2(vec):
     #return( vec[:,:,0][:,:,None]*nz )
     return( np.sum(vec, axis=2)[:,:,None] )
 
+def fcalc():
+    """
+    Computes the field vector potential
+    """
+    daphi = np.sum(gdet*B[1],axis=2)*_dx2*_dx3
+    aphi=daphi.cumsum(axis=1)
+    return(aphi)
+
 def fieldcalcp():
     """
     Computes the field vector potential
@@ -662,7 +670,7 @@ def test():
 def gen_vpot(whichloop=None,phase=0.0,whichfield=None,fieldhor=0.194,rin=10):
     #whichfield = 0 -- single loop follows density contours
     #whichfield = None -- alternating loops
-    global rho_av, rho_max, var, uq, aB, B, res,ud,etad, etau, gamma, vu, vd, bu, bd, bsq, phi
+    global rho_av, rho_max, var, uq, uqc, aB, B, res,ud,etad, etau, gamma, vu, vd, bu, bd, bsq, phi
     #res=np.abs(bu[2]/np.sqrt(rho)/((uu[3]+1e-15)/uu[0])/_dx2)
     #plco(res,cb=True)
     #plt.plot(ti[:,ny/2,0],res[:,ny/2,0])
@@ -690,7 +698,7 @@ def gen_vpot(whichloop=None,phase=0.0,whichfield=None,fieldhor=0.194,rin=10):
     arg = phi-phase*np.pi
     #aaphi = uq**2 * (r-startfield)**1.1
     if( whichfield == None ):
-        aaphi = uq**2 * np.sin( arg )**1
+        aaphi = uq**2 #* np.sin( arg )**1
     elif( whichfield == 0 ):
         aaphi = uq**2
     #aaphi = uq**2 * (1+0.2*np.sin( arg )**1)
@@ -707,8 +715,11 @@ def gen_vpot(whichloop=None,phase=0.0,whichfield=None,fieldhor=0.194,rin=10):
     B[1,uqc<0] = 0
     B[2,uqc<0] = 0
     return(aaphi)
+
 def aphi2B(aaphi):
-    global B
+    #aB -- face-centered
+    #B -- cell-centered
+    global B, aB
     aB = np.zeros_like(B)
     aB[1,1:nx,0:ny-1] =(aaphi[1:nx,1:ny]-aaphi[1:nx,0:ny-1]) / (0.5*(gdet[0:nx-1,0:ny-1]+gdet[1:nx,0:ny-1])*_dx2)
     aB[2,0:nx-1,1:ny] =(aaphi[1:nx,1:ny]-aaphi[0:nx-1,1:ny]) / (0.5*(gdet[0:nx-1,0:ny-1]+gdet[0:nx-1,1:ny])*_dx1)
@@ -723,6 +734,18 @@ def pl(x,y):
 
 def fac(ph):
     return(1+0.5*((ph/np.pi-1.5)/0.5)**2)
+
+def qavg2(q):
+    qavg2[0:nx,1:ny,:] = (q[0:nx,1:ny,:] + q[0:nx,0:ny-1,:])/2
+    return(qavg2)
+
+def qavg1(q):
+    qavg1[1:nx,0:ny,:] = (q[0:nx-1,0:ny,:] + q[1:nx,0:ny,:])/2
+    return(qavg1)
+
+def qavg0(q):
+    qavg0[1:nx,1:ny,0:1] = 0.25*(q[0:nx-1,0:ny-1,0:1]+q[1:nx,0:ny-1,0:1]+q[0:nx-1,1:ny,0:1]+q[1:nx,1:ny,0:1])
+    return(qavg0)
 
 if __name__ == "__main__":
     import sys
@@ -819,14 +842,33 @@ if __name__ == "__main__":
         #pl(x1,aaphi2)
         pl(x1,aaphi1)
     if True:
+        grid3d("gdump.bin")
+        rfd("fieldline0000.bin")
         #generate single loop
-        aaphi=gen_vpot(whichfield=0)
+        aaphi=gen_vpot(whichfield=None)
         aphi2B(aaphi)
         cvel()
         res=Qmri()
+        #
+        targbsqoug = 100
+        rat = 1+np.zeros_like(rho)
+        tmp = uqc+0.
+        ratval = (bsq/ug/targbsqoug)**0.5
+        rat[tmp>0] = ratval[tmp>0]
+        B[1] /= rat
+        B[2] /= rat
+        cvel()
+        rat1 = bsq/ug
+        B[1,rat1>targbsqoug+1]=0
+        B[2,rat1>targbsqoug+1]=0
+        cvel()
+        rat2 = bsq/ug
+        aphim=fieldcalcm()
+        aphip=fieldcalcp()
+        
         #plt.plot(x1[:,ny/2,0],(res)[:,ny/2,0])
         #plt.clf();pl(x1,res)
         #plt.clf();pl(x1,aaphi)
-        plco(bsq/rho**gam,cb=True)
+        #plco(bsq/rho**gam,cb=True)
         #plco(res,cb=True)
         
