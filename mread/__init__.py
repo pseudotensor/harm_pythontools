@@ -670,7 +670,7 @@ def test():
 def gen_vpot(whichloop=None,phase=0.0,whichfield=None,fieldhor=0.194,rin=10):
     #whichfield = 0 -- single loop follows density contours
     #whichfield = None -- alternating loops
-    global rho_av, rho_max, var, uq, uqc, aB, B, res,ud,etad, etau, gamma, vu, vd, bu, bd, bsq, phi
+    global rho_av, rho_max, var, uq, uqc, uqcomax, aB, B, res,ud,etad, etau, gamma, vu, vd, bu, bd, bsq, phi
     #res=np.abs(bu[2]/np.sqrt(rho)/((uu[3]+1e-15)/uu[0])/_dx2)
     #plco(res,cb=True)
     #plt.plot(ti[:,ny/2,0],res[:,ny/2,0])
@@ -692,8 +692,9 @@ def gen_vpot(whichloop=None,phase=0.0,whichfield=None,fieldhor=0.194,rin=10):
     #note r should be shifted, too (not done yet):
     maxvar=np.max(var)
     maxvarc=np.max(varc)
-    uq = (var-0.2*maxvar) #*r[:,:,0:1]**0.75 #/(0.1**2+(h-np.pi/2)**2)
-    uqc = (varc-0.2*maxvarc) #*r[:,:,0:1]**0.75 #/(0.1**2+(h-np.pi/2)**2)
+    uq = (var-0.1*maxvar) #*r[:,:,0:1]**0.75 #/(0.1**2+(h-np.pi/2)**2)
+    uqc = (varc-0.1*maxvarc) #*r[:,:,0:1]**0.75 #/(0.1**2+(h-np.pi/2)**2)
+    uqcomax = varc/maxvarc
     phi = np.log(r[:,:,0:1]/startfield)/fieldhor
     arg = phi-phase*np.pi
     #aaphi = uq**2 * (r-startfield)**1.1
@@ -735,15 +736,15 @@ def pl(x,y):
 def fac(ph):
     return(1+0.5*((ph/np.pi-1.5)/0.5)**2)
 
-def qavg2(q):
+def avg2c2f(q):
     qavg2[0:nx,1:ny,:] = (q[0:nx,1:ny,:] + q[0:nx,0:ny-1,:])/2
     return(qavg2)
 
-def qavg1(q):
+def avg1c2f(q):
     qavg1[1:nx,0:ny,:] = (q[0:nx-1,0:ny,:] + q[1:nx,0:ny,:])/2
     return(qavg1)
 
-def qavg0(q):
+def avg0c2f(q):
     qavg0[1:nx,1:ny,0:1] = 0.25*(q[0:nx-1,0:ny-1,0:1]+q[1:nx,0:ny-1,0:1]+q[0:nx-1,1:ny,0:1]+q[1:nx,1:ny,0:1])
     return(qavg0)
 
@@ -850,22 +851,20 @@ if __name__ == "__main__":
         cvel()
         res=Qmri()
         #
-        targbsqoug = 100
-        rat = 1+np.zeros_like(rho)
-        tmp = uqc+0.
-        ratval = (bsq/ug/targbsqoug)**0.5
-        rat[tmp>0] = ratval[tmp>0]
-        B[1] /= rat
-        B[2] /= rat
-        cvel()
-        rat1 = bsq/ug
-        B[1,rat1>targbsqoug+1]=0
-        B[2,rat1>targbsqoug+1]=0
-        cvel()
-        rat2 = bsq/ug
+        constbsqoug = 1./100.
+        profile = ((uqcomax-0.15)/0.2)
+        profile[profile>1] = 1
+        profile[profile<0] = 0
+        #profile = np.sin(profile*np.pi/2)
+        targbsqoug = constbsqoug*profile
+        rat = ( targbsqoug/(bsq/ug+1e-15) )**0.5
+        B[1] *= rat
+        B[2] *= rat
+        #cvel()
         aphim=fieldcalcm()
         aphip=fieldcalcp()
-        
+        aphi2B(aphim)
+        cvel()
         #plt.plot(x1[:,ny/2,0],(res)[:,ny/2,0])
         #plt.clf();pl(x1,res)
         #plt.clf();pl(x1,aaphi)
