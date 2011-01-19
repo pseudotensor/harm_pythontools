@@ -203,6 +203,26 @@ def fieldcalcU():
     aphi[0:nx-1] = 0.5*(aphi[0:nx-1]+aphi[1:nx]) #and in r
     return(aphi)
 
+def fieldcalcface():
+    """
+    Computes the field vector potential
+    """
+    daphi = mysum2(gdetB[1])*_dx2*_dx3
+    aphi=daphi.cumsum(axis=1)
+    aphi-=daphi #correction for half-cell shift between face and center in theta
+    #aphi[0:nx-1] = 0.5*(aphi[0:nx-1]+aphi[1:nx]) #and in r
+    return(aphi)
+
+def fieldcalcface2():
+    """
+    Computes the field vector potential
+    """
+    daphi = np.sum(gdetB[2], axis=2)[:,:,None]*_dx1*_dx3
+    aphi=daphi.cumsum(axis=0)
+    aphi-=daphi #correction for half-cell shift between face and center in theta
+    #aphi[0:nx-1] = 0.5*(aphi[0:nx-1]+aphi[1:nx]) #and in r
+    return(aphi)
+
 def rd(dump):
     global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,ti,tj,tk,x1,x2,x3,r,h,ph,rho,ug,vu,B,pg,cs2,Sden,U,gdetB,divb,uu,ud,bu,bd
     global v1m,v1p,v2m,v2p,v3m,v3p,bsq
@@ -713,17 +733,20 @@ def gen_vpot(whichloop=None,phase=0.0,whichfield=None,fieldhor=0.194,rin=10):
     #aaphi = uq**(2)
     aphi2B(aaphi)
     #reset field components outside torus to zero
-    B[1,uqc<0] = 0
-    B[2,uqc<0] = 0
+    #B[1,uqc<0] = 0
+    #B[2,uqc<0] = 0
     return(aaphi)
 
 def aphi2B(aaphi):
     #aB -- face-centered
     #B -- cell-centered
-    global B, aB
+    global B, aB, gdetB
     aB = np.zeros_like(B)
-    aB[1,1:nx,0:ny-1] =(aaphi[1:nx,1:ny]-aaphi[1:nx,0:ny-1]) / (0.5*(gdet[0:nx-1,0:ny-1]+gdet[1:nx,0:ny-1])*_dx2)
-    aB[2,0:nx-1,1:ny] =(aaphi[1:nx,1:ny]-aaphi[0:nx-1,1:ny]) / (0.5*(gdet[0:nx-1,0:ny-1]+gdet[0:nx-1,1:ny])*_dx1)
+    gdetB = np.zeros_like(B)
+    gdetB[1,1:nx,0:ny-1] = (aaphi[1:nx,1:ny]-aaphi[1:nx,0:ny-1])/_dx2
+    gdetB[2,0:nx-1,1:ny] = (aaphi[1:nx,1:ny]-aaphi[0:nx-1,1:ny])/_dx1
+    aB[1,1:nx,0:ny-1] = gdetB[1,1:nx,0:ny-1] / (0.5*(gdet[0:nx-1,0:ny-1]+gdet[1:nx,0:ny-1]))
+    aB[2,0:nx-1,1:ny] = gdetB[2,0:nx-1,1:ny] / (0.5*(gdet[0:nx-1,0:ny-1]+gdet[0:nx-1,1:ny]))
     #ab[3] is zeroes
     #
     B=aB+0.0
@@ -736,17 +759,30 @@ def pl(x,y):
 def fac(ph):
     return(1+0.5*((ph/np.pi-1.5)/0.5)**2)
 
-def avg2c2f(q):
+def avg2ctof(q):
+    qavg2 = np.empty_like(q)
     qavg2[0:nx,1:ny,:] = (q[0:nx,1:ny,:] + q[0:nx,0:ny-1,:])/2
     return(qavg2)
 
-def avg1c2f(q):
+def avg1ctof(q):
+    qavg1 = np.empty_like(q)
     qavg1[1:nx,0:ny,:] = (q[0:nx-1,0:ny,:] + q[1:nx,0:ny,:])/2
     return(qavg1)
 
-def avg0c2f(q):
-    qavg0[1:nx,1:ny,0:1] = 0.25*(q[0:nx-1,0:ny-1,0:1]+q[1:nx,0:ny-1,0:1]+q[0:nx-1,1:ny,0:1]+q[1:nx,1:ny,0:1])
-    return(qavg0)
+def avg0ctof(q):
+    resavg0 = np.empty_like(q)
+    resavg0[1:nx,1:ny,0:1] = 0.25*(q[0:nx-1,0:ny-1,0:1]+q[1:nx,0:ny-1,0:1]+q[0:nx-1,1:ny,0:1]+q[1:nx,1:ny,0:1])
+    return(resavg0)
+
+def normalize_field(targbsqoug):
+    global B, gdetB, bsq, ug
+    maxbsqoug = np.max(bsq/ug)
+    rat = np.sqrt(targbsqoug/maxbsqoug)
+    #rescale all field components
+    B *= rat
+    gdetB *= rat
+    #recompute derived quantities
+    cvel()
 
 if __name__ == "__main__":
     import sys
@@ -858,13 +894,28 @@ if __name__ == "__main__":
         #profile = np.sin(profile*np.pi/2)
         targbsqoug = constbsqoug*profile
         rat = ( targbsqoug/(bsq/ug+1e-15) )**0.5
-        B[1] *= rat
-        B[2] *= rat
-        #cvel()
-        aphim=fieldcalcm()
-        aphip=fieldcalcp()
-        aphi2B(aphim)
-        cvel()
+        if False:
+            B[1] *= rat
+            B[2] *= rat
+            #cvel()
+            aphim=fieldcalcm()
+            aphip=fieldcalcp()
+            #aphi0 = avg0c2f(aphim)
+            aphi2B(aphim)
+            cvel()
+        if True:
+            rat2 = avg2ctof( rat )
+            rat1 = avg1ctof( rat )
+            gdetB[1] *= rat1
+            gdetB[2] *= rat2
+            #at this point divb!=0
+            #to remove monopoles, compute vector potential
+            aphi = fieldcalcface()
+            #and compute the field from the potential
+            #(this leaves B[1] the same and resets B[2]
+            aphi2B(aphi)
+            cvel()
+            normalize_field(constbsqoug)
         #plt.plot(x1[:,ny/2,0],(res)[:,ny/2,0])
         #plt.clf();pl(x1,res)
         #plt.clf();pl(x1,aaphi)
