@@ -266,7 +266,7 @@ def rd(dump):
     bsq = mdot(bu,bd)
     v1m,v1p,v2m,v2p,v3m,v3p=gd[46:52]
 
-def rgd(fieldlinefilename,**kwargs):
+def rgfd(fieldlinefilename,**kwargs):
     if not os.path.isfile(os.path.join("dumps/", fieldlinefilename)):
         print( "File " + fieldlinefilename + " does not exist. Aborting." )
         return
@@ -884,7 +884,7 @@ if __name__ == "__main__":
         #pl(x1,res)
         #pl(x1,aaphi2)
         pl(x1,aaphi1)
-    if True:
+    if False:
         grid3d("gdump.bin")
         rfd("fieldline0000.bin")
         #generate single loop
