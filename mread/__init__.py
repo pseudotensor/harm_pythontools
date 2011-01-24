@@ -211,6 +211,7 @@ def fieldcalcface():
     aphi=daphi.cumsum(axis=1)
     aphi-=daphi #correction for half-cell shift between face and center in theta
     #aphi[0:nx-1] = 0.5*(aphi[0:nx-1]+aphi[1:nx]) #and in r
+    aphi[:,ny-1:ny/2:-1,:] = aphi[:,1:ny/2,:]
     return(aphi)
 
 def fieldcalcface2():
@@ -611,8 +612,9 @@ def horfluxcalc(ihor):
     """
     Computes the absolute flux through the sphere i = ihor
     """
+    global gdetB, _dx2, _dx3
     #1D function of theta only:
-    dfabs = (gdet[ihor]*np.abs(B[1,ihor])).sum(1)*_dx2*_dx3
+    dfabs = (np.abs(getB[1,ihor])).sum(1)*_dx2*_dx3
     fabs = dfabs.sum(axis=0)
     return(fabs)
 
@@ -621,16 +623,20 @@ def mdotcalc(ihor):
     Computes the absolute flux through the sphere i = ihor
     """
     #1D function of theta only:
+    global gdet, rho, uu, _dx3, _dx3
     mdot = (-gdet[ihor]*rho[ihor]*uu[1,ihor]).sum()*_dx2*_dx3
     return(mdot)
 
 
-def diskfluxcalc(jmid):
+def diskfluxcalc(jmid,rmax=None):
     """
     Computes the absolute flux through the disk midplane at j = jmid
     """
+    global gdetB,_dx1,_dx3,r
     #1D function of theta only:
-    dfabs = (gdet[:,jmid,:]*np.abs(B[2,:,jmid,:])).sum(1)*_dx1*_dx3
+    dfabs = (np.abs(gdetB[2,:,jmid,:])).sum(1)*_dx1*_dx3
+    if rmax != None:
+        dfabs = dfabs[r[:,0,0]<rmax]
     fabs = dfabs.sum(axis=0)
     return(fabs)
 
@@ -712,8 +718,8 @@ def gen_vpot(whichloop=None,phase=0.0,whichfield=None,fieldhor=0.194,rin=10):
     #note r should be shifted, too (not done yet):
     maxvar=np.max(var)
     maxvarc=np.max(varc)
-    uq = (var-0.1*maxvar) #*r[:,:,0:1]**0.75 #/(0.1**2+(h-np.pi/2)**2)
-    uqc = (varc-0.1*maxvarc) #*r[:,:,0:1]**0.75 #/(0.1**2+(h-np.pi/2)**2)
+    uq = (var-0.0001*maxvar) #*r[:,:,0:1]**0.75 #/(0.1**2+(h-np.pi/2)**2)
+    uqc = (varc-0.0001*maxvarc) #*r[:,:,0:1]**0.75 #/(0.1**2+(h-np.pi/2)**2)
     uqcomax = varc/maxvarc
     phi = np.log(r[:,:,0:1]/startfield)/fieldhor
     arg = phi-phase*np.pi
@@ -749,7 +755,7 @@ def aphi2B(aaphi):
     aB[2,0:nx-1,1:ny] = gdetB[2,0:nx-1,1:ny] / (0.5*(gdet[0:nx-1,0:ny-1]+gdet[0:nx-1,1:ny]))
     #ab[3] is zeroes
     #
-    B=aB+0.0
+    B=np.zeros_like(aB)
     #properly center the field
     B[1,0:nx-1,0:ny,:] = (aB[1,0:nx-1,0:ny,:] + aB[1,1:nx,0:ny,:])/2
     B[2,0:nx,0:ny-1,:] = (aB[2,0:nx,1:ny,:] + aB[2,0:nx,0:ny-1,:])/2
@@ -888,7 +894,7 @@ if __name__ == "__main__":
         res=Qmri()
         #
         constbsqoug = 1./100.
-        profile = ((uqcomax-0.15)/0.2)
+        profile = ((uqcomax-0.001)/0.001)
         profile[profile>1] = 1
         profile[profile<0] = 0
         #profile = np.sin(profile*np.pi/2)
@@ -903,22 +909,52 @@ if __name__ == "__main__":
             #aphi0 = avg0c2f(aphim)
             aphi2B(aphim)
             cvel()
-        if True:
+        if False:
             rat2 = avg2ctof( rat )
             rat1 = avg1ctof( rat )
             gdetB[1] *= rat1
             gdetB[2] *= rat2
-            #at this point divb!=0
+            #at this point divb!=0, i.e. there are monopoles
             #to remove monopoles, compute vector potential
             aphi = fieldcalcface()
             #and compute the field from the potential
             #(this leaves B[1] the same and resets B[2]
             aphi2B(aphi)
-            cvel()
-            normalize_field(constbsqoug)
+        if True:
+            rat2 = avg2ctof( rat )
+            rat1 = avg1ctof( rat )
+            gdetB[1] *= rat1
+            gdetB[2] *= rat2
+            if False:
+                minB1 = np.min(gdetB[1]/gdet)/1.5
+                maxB1 = np.max(gdetB[1]/gdet)/1.5
+                #gdetB1old=np.copy(gdetB[1])
+                (gdetB[1])[gdetB[1]<gdet*minB1] = (minB1*gdet)[gdetB[1]<gdet*minB1]
+                (gdetB[1])[gdetB[1]>gdet*maxB1] = (maxB1*gdet)[gdetB[1]>gdet*maxB1]
+            #gdetB1new=np.copy(gdetB[1])
+            #at this point divb!=0, i.e. there are monopoles
+            #to remove monopoles, compute vector potential
+            aphi = fieldcalcface()
+            #and compute the field from the potential
+            #(this leaves B[1] the same and resets B[2]
+            aphi2B(aphi)
+        cvel()
+        normalize_field(constbsqoug)
+        cvel()
+        print("Disk flux = %g" % diskfluxcalc(ny/2) )
         #plt.plot(x1[:,ny/2,0],(res)[:,ny/2,0])
         #plt.clf();pl(x1,res)
         #plt.clf();pl(x1,aaphi)
         #plco(bsq/rho**gam,cb=True)
         #plco(res,cb=True)
-        
+def plotbs(dy=0):
+    plt.clf();
+    plot(ti[:,ny/2,0],B[1,:,ny/2+dy,0])
+    plot(ti[:,ny/2,0],B[2,:,ny/2+dy,0])
+    plot(ti[:,ny/2,0],(bsq/ug)[:,ny/2+dy,0]/100)
+    plot(ti[:,ny/2,0],(gdetB[1]/gdet)[:,ny/2+dy,0])
+def plotaphi(dy=0):
+    aphi=fieldcalc()
+    plot(r[:,ny/2,0],aphi[:,ny/2,0])
+    xlim(xmin=10,xmax=100)
+
