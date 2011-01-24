@@ -614,7 +614,7 @@ def horfluxcalc(ihor):
     """
     global gdetB, _dx2, _dx3
     #1D function of theta only:
-    dfabs = (np.abs(getB[1,ihor])).sum(1)*_dx2*_dx3
+    dfabs = (np.abs(gdetB[1,ihor])).sum(1)*_dx2*_dx3
     fabs = dfabs.sum(axis=0)
     return(fabs)
 
