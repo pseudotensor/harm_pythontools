@@ -617,7 +617,7 @@ def horfluxcalc(ihor):
     dfabs = (np.abs(gdetB[1,ihor])).sum(1)*_dx2*_dx3
     fabs = dfabs.sum(axis=0)
     #account for the wedge
-    fabs *= 2*np.pi/(dxdxp[3,3,0,0,0]*nz)
+    fabs *= 2*np.pi/(dxdxp[3,3,0,0,0]*nz*_dx3)
     return(fabs)
 
 def mdotcalc(ihor):
