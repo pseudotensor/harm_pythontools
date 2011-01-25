@@ -564,6 +564,7 @@ def fcalc():
     """
     daphi = np.sum(gdet*B[1],axis=2)*_dx2*_dx3
     aphi=daphi.cumsum(axis=1)
+    scaletofullwedge(aphi)
     return(aphi)
 
 def fieldcalcp():
@@ -572,6 +573,7 @@ def fieldcalcp():
     """
     daphi = mysum2(gdet*B[1])*_dx2*_dx3
     aphi=daphi.cumsum(axis=1)
+    scaletofullwedge(aphi)
     return(aphi)
 
 def fieldcalcm():
@@ -580,6 +582,7 @@ def fieldcalcm():
     """
     daphi = mysum2(gdet*B[1])*_dx2*_dx3
     aphi=(-daphi[:,::-1].cumsum(axis=1))[:,::-1]
+    scaletofullwedge(aphi)
     return(aphi)
 
 def fieldcalc2():
@@ -593,6 +596,7 @@ def fieldcalc2():
     daphi1 = (gdet[0]*B[1,0]).sum(1).cumsum(axis=0)*_dx2*_dx3
     daphi[0,:] += daphi1
     aphi=daphi.cumsum(axis=0)
+    scaletofullwedge(aphi)
     return(aphi[:,:,None])
 
 def fieldcalc2U():
@@ -606,6 +610,7 @@ def fieldcalc2U():
     daphi1 = (gdetB[1,0]).sum(1).cumsum(axis=0)*_dx2*_dx3
     daphi[0,:] += daphi1
     aphi=daphi.cumsum(axis=0)
+    scaletofullwedge(aphi)
     return(aphi[:,:,None])
 
 def horfluxcalc(ihor):
@@ -617,8 +622,12 @@ def horfluxcalc(ihor):
     dfabs = (np.abs(gdetB[1,ihor])).sum(1)*_dx2*_dx3
     fabs = dfabs.sum(axis=0)
     #account for the wedge
-    fabs *= 2*np.pi/(dxdxp[3,3,0,0,0]*nz*_dx3)
+    scaletofullwedge(fabs)
+    #fabs *= 2*np.pi/(dxdxp[3,3,0,0,0]*nz*_dx3)
     return(fabs)
+
+def scaletofullwedge(val):
+    return(val * 2*np.pi/(dxdxp[3,3,0,0,0]*nz*_dx3))
 
 def mdotcalc(ihor):
     """
@@ -627,6 +636,7 @@ def mdotcalc(ihor):
     #1D function of theta only:
     global gdet, rho, uu, _dx3, _dx3
     mdot = (-gdet[ihor]*rho[ihor]*uu[1,ihor]).sum()*_dx2*_dx3
+    scaletofullwedge(mdot)
     return(mdot)
 
 
@@ -640,6 +650,7 @@ def diskfluxcalc(jmid,rmax=None):
     if rmax != None:
         dfabs = dfabs[r[:,0,0]<rmax]
     fabs = dfabs.sum(axis=0)
+    scaletofullwedge(fabs)
     return(fabs)
 
 def fhorvstime(ihor):
@@ -653,8 +664,8 @@ def fhorvstime(ihor):
     for findex, fname in enumerate(flist):
         print( "Reading " + fname + " ..." )
         rfd("../"+fname)
-        fs[findex]=horfluxcalc(ihor)
-        mdot[findex]=mdotcalc(ihor)
+        fs[findex]=scaletofullwedge(horfluxcalc(ihor))
+        mdot[findex]=scaletofullwedge(mdotcalc(ihor))
         ts[findex]=t
     print( "Done!" )
     return((ts,fs,mdot))
