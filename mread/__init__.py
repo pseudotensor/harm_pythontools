@@ -12,7 +12,7 @@ from matplotlib import rc
 import numpy as np
 import array
 #import scipy as sc
-#from scipy.interpolate import griddata
+from scipy.interpolate import griddata
 #from scipy.interpolate import Rbf
 import matplotlib.pyplot as plt
 from matplotlib import cm
@@ -65,7 +65,7 @@ def reinterp(vartointerp,extent,ncell):
     xi = np.linspace(extent[0], extent[1], ncell)
     yi = np.linspace(extent[2], extent[3], ncell)
     # grid the data.
-    #zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method='linear')
+    zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method='linear')
     interior = np.sqrt((xi[None,:]**2) + (yi[:,None]**2)) < 1+np.sqrt(1-a**2)
     #zi[interior] = np.ma.masked
     varinterpolated = ma.masked_where(interior, zi)
@@ -83,8 +83,9 @@ def mkframe(fname,vmin=None,vmax=None):
     iaphi = reinterp(aphi,extent,ncell)
     ilrho = reinterp(np.log10(rho),extent,ncell)
     #maxabsiaphi=np.max(np.abs(iaphi))
-    maxabsiaphi=6
-    levs=np.linspace(-maxabsiaphi,maxabsiaphi,128)
+    maxabsiaphi = 12 #50
+    ncont = 128 #30
+    levs=np.linspace(-maxabsiaphi,maxabsiaphi,ncont)
     cset2 = plt.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
     #for c in cset2.collections:
     #    c.set_linestyle('solid')
@@ -201,6 +202,7 @@ def fieldcalcU():
     aphi=daphi.cumsum(axis=1)
     aphi-=0.5*daphi #correction for half-cell shift between face and center in theta
     aphi[0:nx-1] = 0.5*(aphi[0:nx-1]+aphi[1:nx]) #and in r
+    aphi/=(nz*_dx3)
     return(aphi)
 
 def fieldcalcface():
@@ -212,6 +214,7 @@ def fieldcalcface():
     aphi-=daphi #correction for half-cell shift between face and center in theta
     #aphi[0:nx-1] = 0.5*(aphi[0:nx-1]+aphi[1:nx]) #and in r
     aphi[:,ny-1:ny/2:-1,:] = aphi[:,1:ny/2,:]
+    aphi/=(nz*_dx3)
     return(aphi)
 
 def fieldcalcface2():
@@ -222,6 +225,7 @@ def fieldcalcface2():
     aphi=daphi.cumsum(axis=0)
     aphi-=daphi #correction for half-cell shift between face and center in theta
     #aphi[0:nx-1] = 0.5*(aphi[0:nx-1]+aphi[1:nx]) #and in r
+    aphi/=(nz*_dx3)
     return(aphi)
 
 def rd(dump):
@@ -314,6 +318,12 @@ def rfd(fieldlinefilename,**kwargs):
         #new image format additionally contains gdet*B^i
         gdetB = np.zeros_like(B)
         gdetB[1:4] = d[11:14,:,:,:]
+    else:
+        print("No data on gdetB, approximating it.")
+        gdetB = np.zeros_like(B)
+        gdetB[1] = gdet * B[1]
+        gdetB[2] = gdet * B[2]
+        gdetB[3] = gdet * B[3]
     #     if 'gdet' in globals():
     #         #first set everything approximately (B's are at shifted locations by half-cell)
     #         B = gdetB/gdet  
@@ -564,7 +574,7 @@ def fcalc():
     """
     daphi = np.sum(gdet*B[1],axis=2)*_dx2*_dx3
     aphi=daphi.cumsum(axis=1)
-    scaletofullwedge(aphi)
+    aphi/=(nz*_dx3)
     return(aphi)
 
 def fieldcalcp():
@@ -573,7 +583,7 @@ def fieldcalcp():
     """
     daphi = mysum2(gdet*B[1])*_dx2*_dx3
     aphi=daphi.cumsum(axis=1)
-    scaletofullwedge(aphi)
+    aphi/=(nz*_dx3)
     return(aphi)
 
 def fieldcalcm():
@@ -582,7 +592,7 @@ def fieldcalcm():
     """
     daphi = mysum2(gdet*B[1])*_dx2*_dx3
     aphi=(-daphi[:,::-1].cumsum(axis=1))[:,::-1]
-    scaletofullwedge(aphi)
+    aphi/=(nz*_dx3)
     return(aphi)
 
 def fieldcalc2():
@@ -596,7 +606,7 @@ def fieldcalc2():
     daphi1 = (gdet[0]*B[1,0]).sum(1).cumsum(axis=0)*_dx2*_dx3
     daphi[0,:] += daphi1
     aphi=daphi.cumsum(axis=0)
-    scaletofullwedge(aphi)
+    aphi/=(nz*_dx3)
     return(aphi[:,:,None])
 
 def fieldcalc2U():
@@ -623,7 +633,7 @@ def horfluxcalc(ihor):
     fabs = dfabs.sum(axis=0)
     #account for the wedge
     scaletofullwedge(fabs)
-    #fabs *= 2*np.pi/(dxdxp[3,3,0,0,0]*nz*_dx3)
+    #fabs *= 
     return(fabs)
 
 def scaletofullwedge(val):
@@ -635,9 +645,9 @@ def mdotcalc(ihor):
     """
     #1D function of theta only:
     global gdet, rho, uu, _dx3, _dx3
-    mdot = (-gdet[ihor]*rho[ihor]*uu[1,ihor]).sum()*_dx2*_dx3
-    scaletofullwedge(mdot)
-    return(mdot)
+    md = (-gdet[ihor]*rho[ihor]*uu[1,ihor]).sum()*_dx2*_dx3
+    scaletofullwedge(md)
+    return(md)
 
 
 def diskfluxcalc(jmid,rmax=None):
@@ -660,23 +670,23 @@ def fhorvstime(ihor):
     flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
     ts=np.empty(len(flist),dtype=float)
     fs=np.empty(len(flist),dtype=float)
-    mdot=np.empty(len(flist),dtype=float)
+    md=np.empty(len(flist),dtype=float)
     for findex, fname in enumerate(flist):
         print( "Reading " + fname + " ..." )
         rfd("../"+fname)
-        fs[findex]=scaletofullwedge(horfluxcalc(ihor))
-        mdot[findex]=scaletofullwedge(mdotcalc(ihor))
+        fs[findex]=horfluxcalc(ihor)
+        md[findex]=mdotcalc(ihor)
         ts[findex]=t
     print( "Done!" )
-    return((ts,fs,mdot))
+    return((ts,fs,md))
 
 def plotit(ts,fs,md):
     #rc('font', family='serif')
     #plt.figure( figsize=(12,9) )
     fig,plotlist=plt.subplots(nrows=2,ncols=1,sharex=True,figsize=(12,9))
     #plt.subplots_adjust(hspace=0.4) #increase vertical spacing to avoid crowding
-    plotlist[0].plot(ts,fs,label=r'$\Phi_{\rm h}/0.5\Phi_{\rm i}$: Normalized Horizon Magnetic Flux')
-    plotlist[0].plot(ts,fs,'r+', label=r'$\Phi_{\rm h}/0.5\Phi_{\rm i}$: Data Points')
+    plotlist[0].plot(ts,fs,label=r'$\Phi_{\rm h}/\Phi_{\rm i}$: Normalized Horizon Magnetic Flux')
+    plotlist[0].plot(ts,fs,'r+') #, label=r'$\Phi_{\rm h}/0.5\Phi_{\rm i}$: Data Points')
     plotlist[0].legend(loc='lower right')
     #plt.xlabel(r'$t\;(GM/c^3)$')
     plotlist[0].set_ylabel(r'$\Phi_{\rm h}$',fontsize=16)
@@ -685,7 +695,7 @@ def plotit(ts,fs,md):
     #
     #plotlist[1].subplot(212,sharex=True)
     plotlist[1].plot(ts,md,label=r'$\dot M_{\rm h}$: Horizon Accretion Rate')
-    plotlist[1].plot(ts,md,'r+', label=r'$\dot M_{\rm h}$: Data Points')
+    plotlist[1].plot(ts,md,'r+') #, label=r'$\dot M_{\rm h}$: Data Points')
     plotlist[1].legend(loc='upper right')
     plotlist[1].set_xlabel(r'$t\;(GM/c^3)$')
     plotlist[1].set_ylabel(r'$\dot M_{\rm h}$',fontsize=16)
@@ -806,22 +816,24 @@ def normalize_field(targbsqoug):
 if __name__ == "__main__":
     import sys
     #mainfunc()
-    #grid3d("gdump")
-    #rfd("fieldline0250.bin")
-    #cvel()
-    #plc(rho)
-    #rfd("fieldline0000.bin")
-    #diskflux=diskfluxcalc(ny/2)
-    #ts,fs,md=fhorvstime(10)
-    #plotit(ts,fs/(0.5*diskflux),md)
-    #rfd("fieldline0320.bin")
-    #plt.figure(1)
-    #aphi=fieldcalc()
-    #plc(aphi)
-    #plt.figure(2)
-    #aphi2=fieldcalc2()
-    #plc(aphi2)
-    #test()
+    if False:
+        #grid3d("gdump")
+        #rfd("fieldline0250.bin")
+        #cvel()
+        #plc(rho)
+        rgfd("fieldline0000.bin")
+        diskflux=diskfluxcalc(ny/2)
+        ts,fs,md=fhorvstime(11)
+        plotit(ts,fs/(diskflux),md)
+    if False:
+        rfd("fieldline0320.bin")
+        plt.figure(1)
+        aphi=fieldcalc()
+        plc(aphi)
+        plt.figure(2)
+        aphi2=fieldcalc2()
+        plc(aphi2)
+        test()
     if False:
         grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]) )
         flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
@@ -834,10 +846,10 @@ if __name__ == "__main__":
     if False:
         #rfd("fieldline0000.bin")  #to define _dx#
         #grid3dlight("gdump")
-        flist = glob.glob( os.path.join("dumps/", "rdump--*") )
+        flist = glob.glob( os.path.join("dumps/", "fieldline*") )
         for findex, fname in enumerate(flist):
             print( "Reading " + fname + " ..." )
-            rrdump("../"+fname)
+            rfd("../"+fname)
             plt.clf()
             mkframe("lrho%04d" % findex, vmin=-8,vmax=0.2)
         print( "Done!" )
