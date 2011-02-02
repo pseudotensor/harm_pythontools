@@ -897,22 +897,24 @@ if __name__ == "__main__":
         #pl(x1,res)
         #pl(x1,aaphi2)
         pl(x1,aaphi1)
-    if False:
-        grid3d("gdump.bin")
-        rfd("fieldline0000.bin")
-        #generate single loop
+    if True:
+        rgfd("fieldline0000.bin")
+        #generate your favorite vector potential
         aaphi=gen_vpot(whichfield=None)
+        #compute the field from that potential
         aphi2B(aaphi)
         cvel()
-        res=Qmri()
-        #
-        constbsqoug = 1./100.
-        profile = ((uqcomax-0.001)/0.001)
+        #generate smoothing function
+        profile = ((uqcomax-0.05)/0.1)
         profile[profile>1] = 1
         profile[profile<0] = 0
-        #profile = np.sin(profile*np.pi/2)
+        #set target beta and desired bsqoug
+        beta = 100.
+        constbsqoug = 2*(gam-1)/beta
+        #smooth bsqoug
         targbsqoug = constbsqoug*profile
         rat = ( targbsqoug/(bsq/ug+1e-15) )**0.5
+        #rescale the field
         if False:
             B[1] *= rat
             B[2] *= rat
@@ -939,6 +941,7 @@ if __name__ == "__main__":
             gdetB[1] *= rat1
             gdetB[2] *= rat2
             if False:
+            #unsuccessful try to chop off the field spike in the middle of the loop
                 minB1 = np.min(gdetB[1]/gdet)/1.5
                 maxB1 = np.max(gdetB[1]/gdet)/1.5
                 #gdetB1old=np.copy(gdetB[1])
@@ -954,7 +957,7 @@ if __name__ == "__main__":
         cvel()
         normalize_field(constbsqoug)
         cvel()
-        print("Disk flux = %g" % diskfluxcalc(ny/2) )
+        print("Disk flux = %g (@r<20: %g)" % (diskfluxcalc(ny/2), diskfluxcalc(ny/2,rmax=20)) )
         #plt.plot(x1[:,ny/2,0],(res)[:,ny/2,0])
         #plt.clf();pl(x1,res)
         #plt.clf();pl(x1,aaphi)
