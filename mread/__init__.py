@@ -741,9 +741,9 @@ def gen_vpot(whichloop=None,phase=0.0,whichfield=None,fieldhor=0.194,rin=10):
     #note r should be shifted, too (not done yet):
     maxvar=np.max(var)
     maxvarc=np.max(varc)
-    uq = (var-0.0001*maxvar) #*r[:,:,0:1]**0.75 #/(0.1**2+(h-np.pi/2)**2)
-    uqc = (varc-0.0001*maxvarc) #*r[:,:,0:1]**0.75 #/(0.1**2+(h-np.pi/2)**2)
-    uqcomax = varc/maxvarc
+    uq = (var-0.0*maxvar) #*r[:,:,0:1]**0.75 #/(0.1**2+(h-np.pi/2)**2)
+    uqc = (varc-0.0*maxvarc) #*r[:,:,0:1]**0.75 #/(0.1**2+(h-np.pi/2)**2)
+    uqcomax = varc/maxvarc #rho/rho_max #varc/maxvarc
     phi = np.log(r[:,:,0:1]/startfield)/fieldhor
     arg = phi-phase*np.pi
     #aaphi = uq**2 * (r-startfield)**1.1
