@@ -741,9 +741,9 @@ def gen_vpot(whichloop=None,phase=0.0,whichfield=None,fieldhor=0.194,rin=10):
     #note r should be shifted, too (not done yet):
     maxvar=np.max(var)
     maxvarc=np.max(varc)
-    uq = (var-0.0001*maxvar) #*r[:,:,0:1]**0.75 #/(0.1**2+(h-np.pi/2)**2)
-    uqc = (varc-0.0001*maxvarc) #*r[:,:,0:1]**0.75 #/(0.1**2+(h-np.pi/2)**2)
-    uqcomax = varc/maxvarc
+    uq = (var-0.0*maxvar) #*r[:,:,0:1]**0.75 #/(0.1**2+(h-np.pi/2)**2)
+    uqc = (varc-0.0*maxvarc) #*r[:,:,0:1]**0.75 #/(0.1**2+(h-np.pi/2)**2)
+    uqcomax = varc/maxvarc #rho/rho_max #varc/maxvarc
     phi = np.log(r[:,:,0:1]/startfield)/fieldhor
     arg = phi-phase*np.pi
     #aaphi = uq**2 * (r-startfield)**1.1
@@ -805,7 +805,7 @@ def avg0ctof(q):
 
 def normalize_field(targbsqoug):
     global B, gdetB, bsq, ug
-    maxbsqoug = np.max(bsq/ug)
+    maxbsqoug = np.max(bsq/(ug+1e-5))
     rat = np.sqrt(targbsqoug/maxbsqoug)
     #rescale all field components
     B *= rat
@@ -911,21 +911,24 @@ if __name__ == "__main__":
         pl(x1,aaphi1)
     if False:
         rgfd("fieldline0000.bin")
-        #generate your favorite vector potential
-        aaphi=gen_vpot(whichfield=None)
-        #compute the field from that potential
-        aphi2B(aaphi)
-        cvel()
-        #generate smoothing function
-        profile = ((uqcomax-0.05)/0.1)
-        profile[profile>1] = 1
-        profile[profile<0] = 0
-        #set target beta and desired bsqoug
-        beta = 100.
-        constbsqoug = 2*(gam-1)/beta
-        #smooth bsqoug
-        targbsqoug = constbsqoug*profile
-        rat = ( targbsqoug/(bsq/ug+1e-15) )**0.5
+        if True:
+            #generate your favorite vector potential
+            aaphi=gen_vpot(whichfield=None)
+            #compute the field from that potential
+            aphi2B(aaphi)
+            B[2] = 1*B[2]
+            cvel()
+            #generate smoothing function
+            profile = ((uqcomax-0.05)/0.1)
+            profile[profile>1] = 1
+            profile[profile<0] = 0
+            #set target beta and desired bsqoug
+            beta = 100.
+            constbsqoug = 2*(gam-1)/beta
+            #smooth bsqoug
+            targbsqoug = constbsqoug*profile
+            rat = ( targbsqoug/(bsq/ug+1e-15) )**0.5
+            cvel()
         #rescale the field
         if False:
             B[1] *= rat
@@ -936,18 +939,12 @@ if __name__ == "__main__":
             #aphi0 = avg0c2f(aphim)
             aphi2B(aphim)
             cvel()
-        if False:
+        if True:
             rat2 = avg2ctof( rat )
             rat1 = avg1ctof( rat )
             gdetB[1] *= rat1
             gdetB[2] *= rat2
-            #at this point divb!=0, i.e. there are monopoles
-            #to remove monopoles, compute vector potential
-            aphi = fieldcalcface()
-            #and compute the field from the potential
-            #(this leaves B[1] the same and resets B[2]
-            aphi2B(aphi)
-        if True:
+        if False:
             rat2 = avg2ctof( rat )
             rat1 = avg1ctof( rat )
             gdetB[1] *= rat1
@@ -960,6 +957,7 @@ if __name__ == "__main__":
                 (gdetB[1])[gdetB[1]<gdet*minB1] = (minB1*gdet)[gdetB[1]<gdet*minB1]
                 (gdetB[1])[gdetB[1]>gdet*maxB1] = (maxB1*gdet)[gdetB[1]>gdet*maxB1]
             #gdetB1new=np.copy(gdetB[1])
+        if True:
             #at this point divb!=0, i.e. there are monopoles
             #to remove monopoles, compute vector potential
             aphi = fieldcalcface()
