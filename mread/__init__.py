@@ -909,7 +909,7 @@ if __name__ == "__main__":
         #pl(x1,res)
         #pl(x1,aaphi2)
         pl(x1,aaphi1)
-    if True:
+    if False:
         rgfd("fieldline0000.bin")
         #generate your favorite vector potential
         aaphi=gen_vpot(whichfield=None)
