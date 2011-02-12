@@ -909,9 +909,9 @@ if __name__ == "__main__":
         #pl(x1,res)
         #pl(x1,aaphi2)
         pl(x1,aaphi1)
-    if False:
+    if True:
         rgfd("fieldline0000.bin")
-        if True:
+        if False:
             #generate your favorite vector potential
             aaphi=gen_vpot(whichfield=None)
             #compute the field from that potential
@@ -939,7 +939,7 @@ if __name__ == "__main__":
             #aphi0 = avg0c2f(aphim)
             aphi2B(aphim)
             cvel()
-        if True:
+        if False:
             rat2 = avg2ctof( rat )
             rat1 = avg1ctof( rat )
             gdetB[1] *= rat1
@@ -957,16 +957,17 @@ if __name__ == "__main__":
                 (gdetB[1])[gdetB[1]<gdet*minB1] = (minB1*gdet)[gdetB[1]<gdet*minB1]
                 (gdetB[1])[gdetB[1]>gdet*maxB1] = (maxB1*gdet)[gdetB[1]>gdet*maxB1]
             #gdetB1new=np.copy(gdetB[1])
-        if True:
+        if False:
             #at this point divb!=0, i.e. there are monopoles
             #to remove monopoles, compute vector potential
             aphi = fieldcalcface()
             #and compute the field from the potential
             #(this leaves B[1] the same and resets B[2]
             aphi2B(aphi)
-        cvel()
-        normalize_field(constbsqoug)
-        cvel()
+        if False:
+            cvel()
+            normalize_field(constbsqoug)
+            cvel()
         print("Disk flux = %g (@r<20: %g)" % (diskfluxcalc(ny/2), diskfluxcalc(ny/2,rmax=20)) )
         #plt.plot(x1[:,ny/2,0],(res)[:,ny/2,0])
         #plt.clf();pl(x1,res)
