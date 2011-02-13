@@ -25,6 +25,9 @@ def plco(myvar,xcoord=None,ycoord=None,**kwargs):
 def plc(myvar,xcoord=None,ycoord=None,**kwargs): #plc
     #xcoord = kwargs.pop('x1', None)
     #ycoord = kwargs.pop('x2', None)
+    if(np.min(myvar)==np.max(myvar)):
+        print("The quantity you are trying to plot is a constant = %g." % np.min(myvar))
+        return
     cb = kwargs.pop('cb', False)
     nc = kwargs.pop('nc', 15)
     if( xcoord == None or ycoord == None ):
@@ -327,6 +330,10 @@ def rdebug(debugfname):
     global fail1,floor1,limitgamma1,inflow1,failrho1,failu1,failrhou1,precgam1,precu1,toentropy1,tocold1,eosfail1
     global fail2,floor2,limitgamma2,inflow2,failrho2,failu2,failrhou2,precgam2,precu2,toentropy2,tocold2,eosfail2
     global fail3,floor3,limitgamma3,inflow3,failrho3,failu3,failrhou3,precgam3,precu3,toentropy3,tocold3,eosfail3
+    global dtot0, dtot1, dtot2, dtot3
+    global lgdtot0, lgdtot1, lgdtot2, lgdtot3
+    global failtot0, failtot1, failtot2, failtot3 
+    global lgftot0, lgftot1, lgftot2, lgftot3 
     #read image
     fin = open( "dumps/" + debugfname, "rb" )
     header = fin.readline().split()
@@ -557,21 +564,21 @@ if __name__ == "__main__":
         ts,fs,md=fhorvstime(11)
         plotit(ts,fs/(diskflux),md)
 
-    if False:
+    if True:
         #check for failures example: read in debug0010 and plot failure locations
-        rdebug("debug0010")
+        rdebug("debug0019.bin")
 
         #plot critical failure locations (cumulative over all time)
         plt.figure()
-        plco(fail0)
+        plco(fail0,cb=True)
         #plot critical failure locations (over last dump or image or sth else cycle)
         #replace fail1 with fail2 or fail3 to check different cycles
         plt.figure()
-        plco(fail1) #can replace fail1 with fail2 or fail3
+        plco(fail1,cb=True) #can replace fail1 with fail2 or fail3
 
         #plot all failure locations (see rdebug macro; cumulative over all time)        
         plt.figure()
-        plco(dtot0)
+        plco(dtot0,cb=True)
 
     if False:
         #make a movie of the simulation
