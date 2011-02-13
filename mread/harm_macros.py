@@ -558,15 +558,15 @@ if __name__ == "__main__":
     import sys
 
     if False:
-        #plot disk flux and mdot vs. time from a series of fieldline dumps
+        #plot horizon magnetic flux and mdot vs. time from a series of fieldline dumps
         rgfd("fieldline0000.bin")
         diskflux=diskfluxcalc(ny/2)
         ts,fs,md=fhorvstime(11)
         plotit(ts,fs/(diskflux),md)
 
     if False:
-        #check for failures example: read in debug0010 and plot failure locations
-        rdebug("debug0019.bin")
+        #check for failures example: read in debug0010 and plot failure locations; if using binary output, append ".bin" to the filename
+        rdebug("debug0010")
 
         #plot critical failure locations (cumulative over all time)
         plt.figure()
