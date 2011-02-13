@@ -72,8 +72,8 @@ def mkframe(fname,vmin=None,vmax=None):
     iaphi = reinterp(aphi,extent,ncell)
     ilrho = reinterp(np.log10(rho),extent,ncell)
     #maxabsiaphi=np.max(np.abs(iaphi))
-    maxabsiaphi = 12 #50
-    ncont = 128 #30
+    maxabsiaphi = 100 #50
+    ncont = 50 #30
     levs=np.linspace(-maxabsiaphi,maxabsiaphi,ncont)
     cset2 = plt.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
     #for c in cset2.collections:
@@ -564,7 +564,7 @@ if __name__ == "__main__":
         ts,fs,md=fhorvstime(11)
         plotit(ts,fs/(diskflux),md)
 
-    if True:
+    if False:
         #check for failures example: read in debug0010 and plot failure locations
         rdebug("debug0019.bin")
 
