@@ -789,8 +789,8 @@ def aphi2B(aaphi):
     #properly center the field
     B[1,0:nx-1,0:ny,:] = (aB[1,0:nx-1,0:ny,:] + aB[1,1:nx,0:ny,:])/2
     B[2,0:nx,0:ny-1,:] = (aB[2,0:nx,1:ny,:] + aB[2,0:nx,0:ny-1,:])/2
-def pl(x,y):
-    plt.plot(x[:,ny/2,0],y[:,ny/2,0])
+def pl(x,y,j=ny/2):
+    plt.plot(x[:,j,0],y[:,j,0])
 
 def fac(ph):
     return(1+0.5*((ph/np.pi-1.5)/0.5)**2)
@@ -828,7 +828,8 @@ if __name__ == "__main__":
         #rfd("fieldline0250.bin")
         #cvel()
         #plc(rho)
-        rgfd("fieldline0000.bin")
+        grid3d("gdump.bin")
+        rfd("fieldline0000.bin")
         diskflux=diskfluxcalc(ny/2)
         ts,fs,md=fhorvstime(11)
         plotit(ts,fs/(diskflux),md)
@@ -917,7 +918,8 @@ if __name__ == "__main__":
         #pl(x1,aaphi2)
         pl(x1,aaphi1)
     if True:
-        rgfd("fieldline0000.bin")
+        grid3d("gdump.bin")
+        rfd("fieldline0000.bin")
         if False:
             #generate your favorite vector potential
             aaphi=gen_vpot(whichfield=None)
