@@ -83,8 +83,8 @@ def mkframe(fname,vmin=None,vmax=None):
     iaphi = reinterp(aphi,extent,ncell)
     ilrho = reinterp(np.log10(rho),extent,ncell)
     #maxabsiaphi=np.max(np.abs(iaphi))
-    maxabsiaphi = 12 #50
-    ncont = 128 #30
+    maxabsiaphi = 100 #50
+    ncont = 150 #30
     levs=np.linspace(-maxabsiaphi,maxabsiaphi,ncont)
     cset2 = plt.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
     #for c in cset2.collections:
@@ -96,7 +96,8 @@ def mkframe(fname,vmin=None,vmax=None):
     plt.colorbar(CS) # draw colorbar
     plt.xlim(extent[0],extent[1])
     plt.ylim(extent[2],extent[3])
-    plt.title(r'$\log_{10}\rho$ at $t = %4.0f$' % t)
+    #plt.title(r'$\log_{10}\rho$ at $t = %4.0f$' % t)
+    plt.title('log rho at t = %4.0f' % t)
     plt.savefig( fname + '.png' )
 
 def mainfunc(imgname):
@@ -800,7 +801,7 @@ def avg1ctof(q):
 
 def avg0ctof(q):
     resavg0 = np.empty_like(q)
-    resavg0[1:nx,1:ny,0:1] = 0.25*(q[0:nx-1,0:ny-1,0:1]+q[1:nx,0:ny-1,0:1]+q[0:nx-1,1:ny,0:1]+q[1:nx,1:ny,0:1])
+    resavg0[1:nx,1:ny,:] = 0.25*(q[0:nx-1,0:ny-1,:]+q[1:nx,0:ny-1,:]+q[0:nx-1,1:ny,:]+q[1:nx,1:ny,:])
     return(resavg0)
 
 def normalize_field(targbsqoug):
@@ -843,17 +844,25 @@ if __name__ == "__main__":
             plt.clf()
             mkframe("lrho%04d" % findex, vmin=-8,vmax=0.2)
         print( "Done!" )
-    if False:
+    if True:
+        grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]) )
         #rfd("fieldline0000.bin")  #to define _dx#
         #grid3dlight("gdump")
-        flist = glob.glob( os.path.join("dumps/", "fieldline*") )
+        flist = glob.glob( os.path.join("dumps/", "fieldline*[05].bin") )
         for findex, fname in enumerate(flist):
-            print( "Reading " + fname + " ..." )
-            rfd("../"+fname)
-            plt.clf()
-            mkframe("lrho%04d" % findex, vmin=-8,vmax=0.2)
+            if os.path.isfile("lrho%04d.png" % findex):
+                print( "Skipping " + fname + " as lrho%04d.png exists" % findex );
+            else:
+                print( "Processing " + fname + " ..." )
+                rfd("../"+fname)
+                plt.clf()
+                mkframe("lrho%04d" % findex, vmin=-8,vmax=0.2)
         print( "Done!" )
-    #ffmpeg -fflags +genpts -r 10 -i lrho%04d.png -vcodec mpeg4 -qmax 2 mov.avi
+        #print( "Now you can make a movie by running:" )
+        #print( "ffmpeg -fflags +genpts -r 10 -i lrho%04d.png -vcodec mpeg4 -qmax 5 mov.avi" )
+        os.system("ffmpeg -fflags +genpts -r 20 -i lrho%04d.png -vcodec mpeg4 -qmax 5 mov.avi")
+        os.system("scp mov.avi 128.112.70.42:Research/movies/mov_`basename \`pwd\``.avi")
+
     #plt.clf(); rfd("fieldline0000.bin"); aphi=fieldcalc(); plc(ug/bsq) 
     #rfd("fieldline0002.bin")
     if False:
@@ -909,7 +918,7 @@ if __name__ == "__main__":
         #pl(x1,res)
         #pl(x1,aaphi2)
         pl(x1,aaphi1)
-    if True:
+    if False:
         rgfd("fieldline0000.bin")
         if False:
             #generate your favorite vector potential
