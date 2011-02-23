@@ -540,6 +540,19 @@ def rfdgrid(dumpname): #read gdump: header and body
     #                 unpack = True ).view().reshape((137,nx,ny,nz), order='F')
     ti,tj,tk,x1,x2,x3,r,h,ph,gdet = gd[:,:,:,:].view() 
 
+def compute_delta():
+    """
+    Returns a unit matrix
+    """
+    global delta
+    if 'delta' in globals():
+        return delta
+
+    delta = np.zeros_like(gcov)
+    for i in arange(0,4):
+        delta[i:i] = 1+0*gcov[i,i]
+    return(delta)
+
 def mdot(a,b):
     """
     Computes a contraction of two tensors/vectors.  Assumes
@@ -687,6 +700,19 @@ def fhorvstime(ihor):
         ts[findex]=t
     print( "Done!" )
     return((ts,fs,md))
+
+def Tcalcud():
+    global Tud
+    w=rho+gam*ug
+    eta=w+bsq
+    Tud = np.zeros_like(gcov)
+    for mu in arange(4):
+        for nu in arange(4):
+            if(mu==nu): delta = 1
+            else: delta = 0
+            Tud[mu,nu] = (rho+(gam-1)*ug+bsq)*uu[mu]*ud[nu]+((gam-1)*ug+bsq/2)*delta-bu[mu]*bd[nu]
+    return(Tud)
+    
 
 def plotit(ts,fs,md):
     #rc('font', family='serif')
@@ -852,7 +878,7 @@ if __name__ == "__main__":
             plt.clf()
             mkframe("lrho%04d" % findex, vmin=-8,vmax=0.2)
         print( "Done!" )
-    if True:
+    if False:
         grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]) )
         #rfd("fieldline0000.bin")  #to define _dx#
         #grid3dlight("gdump")
@@ -873,6 +899,11 @@ if __name__ == "__main__":
 
     #plt.clf(); rfd("fieldline0000.bin"); aphi=fieldcalc(); plc(ug/bsq) 
     #rfd("fieldline0002.bin")
+    if True:
+        grid3d( "gdump.bin" )
+        rfd("fieldline0000.bin")
+        plt.clf();
+        mkframe("lrho%04d" % 0, vmin=-8,vmax=0.2)
     if False:
         grid3d("gdump"); rfd("fieldline0000.bin"); rrdump("rdump--0000"); plt.clf(); cvel(); plc(bsq,cb=True)
         plt.clf();plt.plot(x1[:,ny/2,0],(bsq/(2*(gam-1)*ug))[:,ny/2,0])
