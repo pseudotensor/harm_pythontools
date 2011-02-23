@@ -860,8 +860,9 @@ if __name__ == "__main__":
         print( "Done!" )
         #print( "Now you can make a movie by running:" )
         #print( "ffmpeg -fflags +genpts -r 10 -i lrho%04d.png -vcodec mpeg4 -qmax 5 mov.avi" )
-        os.system("ffmpeg -fflags +genpts -r 20 -i lrho%04d.png -vcodec mpeg4 -qmax 5 mov.avi")
-        os.system("scp mov.avi 128.112.70.42:Research/movies/mov_`basename \`pwd\``.avi")
+        os.system("mv mov.avi mov.bak.avi")
+        os.system("ffmpeg -fflags +genpts -r 10 -i lrho%04d.png -vcodec mpeg4 -qmax 5 mov.avi")
+        #os.system("scp mov.avi 128.112.70.76:Research/movies/mov_`basename \`pwd\``.avi")
 
     #plt.clf(); rfd("fieldline0000.bin"); aphi=fieldcalc(); plc(ug/bsq) 
     #rfd("fieldline0002.bin")
