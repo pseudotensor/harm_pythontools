@@ -163,7 +163,7 @@ def mainfunc(imgname):
     # plt.show()
 
 def rrdump(dumpname):
-    global nx,ny,nz,t,a,rho,ug,vu,vd,B,gd,numcols,gdetB
+    global nx,ny,nz,t,a,rho,ug,vu,vd,B,gd,gd1,numcols,gdetB
     #print( "Reading " + "dumps/" + dumpname + " ..." )
     gin = open( "dumps/" + dumpname, "rb" )
     header = gin.readline().split()
@@ -172,8 +172,15 @@ def rrdump(dumpname):
     nz = int(header[2])
     t  = float(header[3])
     a  = float(header[6])
-    gin.close()
-    gd1 = np.loadtxt( "dumps/" + dumpname, 
+    nx+=8
+    ny+=8
+    if dumpname.endswith(".bin"):
+        body = np.fromfile(gin,dtype=np.double,count=-1)  #nx*ny*nz*11)
+        gd1 = body
+        gin.close()
+    else:
+        gin.close()
+        gd1 = np.loadtxt( "dumps/"+dump, 
                       dtype=float, 
                       skiprows=1, 
                       unpack = True )
