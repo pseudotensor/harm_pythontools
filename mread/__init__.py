@@ -555,9 +555,9 @@ def compute_delta():
     if 'delta' in globals():
         return delta
 
-    delta = np.zeros_like(gcov)
+    delta = np.zeros_like(gv3)
     for i in arange(0,4):
-        delta[i:i] = 1+0*gcov[i,i]
+        delta[i:i] = 1+0*gv3[i,i]
     return(delta)
 
 def mdot(a,b):
@@ -709,17 +709,34 @@ def fhorvstime(ihor):
     return((ts,fs,md))
 
 def Tcalcud():
-    global Tud
-    w=rho+gam*ug
+    global Tud, TudEM, TudMA
+    pg = (gam-1)*ug
+    w=rho+ug+pg
     eta=w+bsq
-    Tud = np.zeros_like(gcov)
-    for mu in arange(4):
-        for nu in arange(4):
+    Tud = np.zeros_like(gv3)
+    TudMA = np.zeros_like(gv3)
+    TudEM = np.zeros_like(gv3)
+    for mu in np.arange(4):
+        for nu in np.arange(4):
             if(mu==nu): delta = 1
             else: delta = 0
-            Tud[mu,nu] = (rho+(gam-1)*ug+bsq)*uu[mu]*ud[nu]+((gam-1)*ug+bsq/2)*delta-bu[mu]*bd[nu]
-    return(Tud)
+            TudEM[mu,nu] = bsq*uu[mu]*ud[nu] + 0.5*bsq*delta - bu[mu]*bd[nu]
+            TudMA[mu,nu] = w*uu[mu]*ud[nu]+pg*delta
+            #Tud[mu,nu] = eta*uu[mu]*ud[nu]+(pg+0.5*bsq)*delta-bu[mu]*bd[nu]
+            Tud[mu,nu] = TudEM[mu,nu] + TudMA[mu,nu]
+
+def jetpowcalc(ihor):
+    jetpowden = gdet*TudEM[1,0]
+    #jetpowden[tj>=ny-2] = 0*jetpowden[tj>=ny-2]
+    jetpowden[tj<1] = 0*jetpowden[tj<1]
+    jetpowden[bsq/rho<10] = 0*jetpowden[bsq/rho<10]
+    jetpowtot = np.sum(scaletofullwedge(jetpowden[ihor])*_dx2*_dx3)
+    return(jetpowtot)
     
+def mdotcalc(ihor):
+    mdotden = -gdet*rho*uu[1]
+    mdottot = np.sum(scaletofullwedge(mdotden[ihor])*_dx2*_dx3)
+    return(mdottot)
 
 def plotit(ts,fs,md):
     #rc('font', family='serif')
