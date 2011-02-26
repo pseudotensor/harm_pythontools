@@ -955,7 +955,7 @@ if __name__ == "__main__":
 
     #plt.clf(); rfd("fieldline0000.bin"); aphi=fieldcalc(); plc(ug/bsq) 
     #rfd("fieldline0002.bin")
-    if True:
+    if False:
         grid3d( "gdump.bin" )
         rfd("fieldline0000.bin")
         plt.clf();
