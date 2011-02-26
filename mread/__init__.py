@@ -840,7 +840,10 @@ def aphi2B(aaphi):
     #properly center the field
     B[1,0:nx-1,0:ny,:] = (aB[1,0:nx-1,0:ny,:] + aB[1,1:nx,0:ny,:])/2
     B[2,0:nx,0:ny-1,:] = (aB[2,0:nx,1:ny,:] + aB[2,0:nx,0:ny-1,:])/2
-def pl(x,y,j=ny/2):
+
+def pl(x,y,j=None):
+    global ny
+    if j == None: j = ny/2
     plt.plot(x[:,j,0],y[:,j,0])
 
 def fac(ph):
@@ -870,6 +873,34 @@ def normalize_field(targbsqoug):
     gdetB *= rat
     #recompute derived quantities
     cvel()
+def plotbs(dy=0):
+    plt.clf();
+    plot(ti[:,ny/2,0],B[1,:,ny/2+dy,0])
+    plot(ti[:,ny/2,0],B[2,:,ny/2+dy,0])
+    plot(ti[:,ny/2,0],(bsq/ug)[:,ny/2+dy,0]/100)
+    plot(ti[:,ny/2,0],(gdetB[1]/gdet)[:,ny/2+dy,0])
+def plotaphi(dy=0):
+    aphi=fieldcalc()
+    plot(r[:,ny/2,0],aphi[:,ny/2,0])
+    xlim(xmin=10,xmax=100)
+
+def face2centdonor():
+    global bcent
+    bcent=np.zeros_like(B)
+    bcent[1][0:nx-1,:,:]=0.5*(gdetB[1][0:nx-1,:,:]+gdetB[2][1:nx,:,:])/gdet[0:nx-1,:,:]
+    bcent[2][:,0:ny-1,:]=0.5*(gdetB[2][:,0:ny-1,:]+gdetB[2][:,1:ny,:])/gdet[:,0:ny-1,:]
+    bcent[3][:,:,0:nz-1]=0.5*(gdetB[2][:,:,0:nz-1]+gdetB[2][:,:,1:nz])/gdet[:,:,0:nz-1]
+
+def pf(dir=2):
+    grid3d("gdump.bin")
+    #rfd("fieldline0001.bin")
+    rrdump("rdump--0000.bin")
+    face2centdonor(); 
+    plt.clf(); 
+    plt.plot(tj[0,:,0],dxdxp[dir,dir][0,:,0]*bcent[dir,0,:,0]);
+    plt.plot(tj[0,:,0],dxdxp[dir,dir][0,:,0]*B[dir,0,:,0]);
+
+
 
 if __name__ == "__main__":
     import sys
@@ -1042,19 +1073,10 @@ if __name__ == "__main__":
             normalize_field(constbsqoug)
             cvel()
         print("Disk flux = %g (@r<20: %g)" % (diskfluxcalc(ny/2), diskfluxcalc(ny/2,rmax=20)) )
+    if True:
+        pf()
         #plt.plot(x1[:,ny/2,0],(res)[:,ny/2,0])
         #plt.clf();pl(x1,res)
         #plt.clf();pl(x1,aaphi)
         #plco(bsq/rho**gam,cb=True)
         #plco(res,cb=True)
-def plotbs(dy=0):
-    plt.clf();
-    plot(ti[:,ny/2,0],B[1,:,ny/2+dy,0])
-    plot(ti[:,ny/2,0],B[2,:,ny/2+dy,0])
-    plot(ti[:,ny/2,0],(bsq/ug)[:,ny/2+dy,0]/100)
-    plot(ti[:,ny/2,0],(gdetB[1]/gdet)[:,ny/2+dy,0])
-def plotaphi(dy=0):
-    aphi=fieldcalc()
-    plot(r[:,ny/2,0],aphi[:,ny/2,0])
-    xlim(xmin=10,xmax=100)
-
