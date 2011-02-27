@@ -174,6 +174,7 @@ def rrdump(dumpname):
     a  = float(header[6])
     nx+=8
     ny+=8
+    nz+=8
     if dumpname.endswith(".bin"):
         body = np.fromfile(gin,dtype=np.double,count=-1)  #nx*ny*nz*11)
         gd1 = body
@@ -240,7 +241,7 @@ def fieldcalcface2():
     return(aphi)
 
 def rd(dump):
-    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,ti,tj,tk,x1,x2,x3,r,h,ph,rho,ug,vu,B,pg,cs2,Sden,U,gdetB,divb,uu,ud,bu,bd
+    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,ti,tj,tk,x1,x2,x3,r,h,ph,rho,ug,vu,B,pg,cs2,Sden,U,gdetB,divb,uu,ud,bu,bd
     global v1m,v1p,v2m,v2p,v3m,v3p,bsq
     #read image
     fin = open( "dumps/" + dump, "rb" )
@@ -254,6 +255,8 @@ def rd(dump):
     _dx3=float(header[9])
     gam=float(header[11])
     a=float(header[12])
+    Rin=float(header[14])
+    Rout=float(header[15])
     if dump.endswith(".bin"):
         body = np.fromfile(fin,dtype=np.double,count=-1)  #nx*ny*nz*11)
         gd = body.view().reshape((-1,nx,ny,nz),order='F')
@@ -294,7 +297,7 @@ def rgfd(fieldlinefilename,**kwargs):
     
 
 def rfd(fieldlinefilename,**kwargs):
-    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,rho,lrho,ug,uu,uut,uu,B,uux,gdetB
+    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,rho,lrho,ug,uu,uut,uu,B,uux,gdetB
     #read image
     fin = open( "dumps/" + fieldlinefilename, "rb" )
     header = fin.readline().split()
@@ -307,6 +310,8 @@ def rfd(fieldlinefilename,**kwargs):
     _dx3=float(header[9])
     gam=float(header[11])
     a=float(header[12])
+    Rin=float(header[14])
+    Rout=float(header[15])
     body = np.fromfile(fin,dtype=np.single,count=-1)
     fin.close()
     d=body.view().reshape((-1,nx,ny,nz),order='F')
@@ -678,7 +683,7 @@ def mdotcalc(ihor):
     return(md)
 
 
-def diskfluxcalc(jmid,rmax=None):
+def diskfluxcalc(jmid,rmin=None,rmax=None):
     """
     Computes the absolute flux through the disk midplane at j = jmid
     """
@@ -686,7 +691,9 @@ def diskfluxcalc(jmid,rmax=None):
     #1D function of theta only:
     dfabs = (np.abs(gdetB[2,:,jmid,:])).sum(1)*_dx1*_dx3
     if rmax != None:
-        dfabs = dfabs[r[:,0,0]<rmax]
+        dfabs = dfabs[r[:,0,0]<=rmax]
+    if rmin != None:
+        dfabs = dfabs[r[:,0,0]>=rmin]
     fabs = dfabs.sum(axis=0)
     scaletofullwedge(fabs)
     return(fabs)
@@ -892,13 +899,18 @@ def face2centdonor():
     bcent[3][:,:,0:nz-1]=0.5*(gdetB[2][:,:,0:nz-1]+gdetB[2][:,:,1:nz])/gdet[:,:,0:nz-1]
 
 def pf(dir=2):
+    global bcent
     grid3d("gdump.bin")
     #rfd("fieldline0001.bin")
-    rrdump("rdump--0000.bin")
+    #rrdump("rdump--0000.bin")
+    rd("dump0000.bin")
     face2centdonor(); 
     plt.clf(); 
-    plt.plot(tj[0,:,0],dxdxp[dir,dir][0,:,0]*bcent[dir,0,:,0]);
-    plt.plot(tj[0,:,0],dxdxp[dir,dir][0,:,0]*B[dir,0,:,0]);
+    myi = 20
+    myk = 0
+    plt.plot(tj[myi,:,myk],bcent[dir,myi,:,myk]);
+    plt.plot(tj[myi,:,myk],B[dir,myi,:,myk]);
+    plt.plot(tj[myi,0:ny-1,myk]+0.5,gdetB[dir,myi,1:ny,myk]/(0.5*(gdet[myi,0:ny-1,myk]+gdet[myi,1:ny,myk])))
 
 
 
@@ -1074,7 +1086,15 @@ if __name__ == "__main__":
             cvel()
         print("Disk flux = %g (@r<20: %g)" % (diskfluxcalc(ny/2), diskfluxcalc(ny/2,rmax=20)) )
     if True:
-        pf()
+        #pf()
+        grid3d("gdump.bin")
+        rd("dump0000.bin")
+        cvel()
+        plco(np.log10(rho))
+        plc(bsq/rho**gam)
+        print("Disk flux = %g (@r<20: %g)" % (diskfluxcalc(ny/2,rmax=Rout), diskfluxcalc(ny/2,rmax=20)) )
+        rh = 1+(1-a**2)**0.5
+        print "r[5] = %g\n" % (r[9,0,0]/rh) + "r[10] = %g\n" % (r[14,0,0]/rh)
         #plt.plot(x1[:,ny/2,0],(res)[:,ny/2,0])
         #plt.clf();pl(x1,res)
         #plt.clf();pl(x1,aaphi)
