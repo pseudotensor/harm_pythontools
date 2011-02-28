@@ -25,12 +25,26 @@ import pylab
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
+def horcalc():
+    """
+    Compute root mean square deviation of disk body from equatorial plane
+    """
+    hoverr=(np.sum(np.sum(gdet*rho*(h-np.pi/2)**2,axis=2),axis=1)/np.sum(np.sum(gdet*rho,axis=2),axis=1))**0.5
+    return(hoverr)
+
 def Qmri():
     """
     APPROXIMATELY Computes number of theta cells resolving one MIR wavelength
     """
     global bu,rho,uu,_dx2
-    res=np.abs(bu[2]/np.sqrt(rho)/((uu[3]+1e-15)/uu[0])/_dx2)
+    cvel()
+    #corrected this expression to include both 2pi and dxdxp[3][3]
+    #also corrected defition of va^2 to contain bsq+gam*ug term
+    #need to figure out how to properly measure this in fluid frame
+    vau2 = np.abs(bu[2])/np.sqrt(rho+bsq+gam*ug)
+    omega = dxdxp[3][3]*uu[3]/uu[0]+1e-15
+    lambdamriu2 = 2*np.pi * vau2 / omega
+    res=lambdamriu2/_dx2
     return(res)
 def plco(myvar,xcoord=None,ycoord=None,**kwargs):
     plt.clf()
@@ -1095,6 +1109,9 @@ if __name__ == "__main__":
         print("Disk flux = %g (@r<20: %g)" % (diskfluxcalc(ny/2,rmax=Rout), diskfluxcalc(ny/2,rmax=20)) )
         rh = 1+(1-a**2)**0.5
         print "r[5] = %g\n" % (r[9,0,0]/rh) + "r[10] = %g\n" % (r[14,0,0]/rh)
+        res = Qmri()
+        res[res>20] = 20+0*res[res>20]
+        plc(res,cb=True)
         #plt.plot(x1[:,ny/2,0],(res)[:,ny/2,0])
         #plt.clf();pl(x1,res)
         #plt.clf();pl(x1,aaphi)
