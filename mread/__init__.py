@@ -717,6 +717,7 @@ def mfjhorvstime(ihor):
     Returns a tuple (ts,fs,mdot,pjetem,pjettot): lists of times, horizon fluxes, and Mdot
     """
     flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+    flist.sort()
     ts=np.empty(len(flist),dtype=float)
     fs=np.empty(len(flist),dtype=float)
     md=np.empty(len(flist),dtype=float)
