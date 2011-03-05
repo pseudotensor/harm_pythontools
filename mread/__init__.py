@@ -825,7 +825,7 @@ def plotj(ts,fs,md,jem,jtot):
     plt.clf()
     fig,plotlist=plt.subplots(nrows=3,ncols=1,sharex=True,figsize=(12,12))
     plottitle = "a = %g: %s" % ( a, os.path.basename(os.getcwd()) )
-    #plt.suptitle( plottitle )
+    plt.suptitle( plottitle )
     plt.subplots_adjust(hspace=0.1) #increase vertical spacing to avoid crowding
     plotlist[0].plot(ts,fs,label=r'$\Phi_{\rm h}/\Phi_{\rm i}$')
     plotlist[0].plot(ts,fs,'r+') #, label=r'$\Phi_{\rm h}/0.5\Phi_{\rm i}$: Data Points')
@@ -857,7 +857,7 @@ def plotj(ts,fs,md,jem,jtot):
     plotlist[0].grid(True)
     plotlist[1].grid(True)
     plotlist[2].grid(True)
-    fig.savefig('pjet.pdf')
+    fig.savefig('pjet_%s.pdf' % os.path.basename(os.getcwd()) )
 
 
 def test():
@@ -1017,6 +1017,7 @@ if __name__ == "__main__":
         ts,fs,md=fhorvstime(11)
         plotit(ts,fs/(diskflux),md)
     if True:
+        #cd ~/run; for f in rtf*; do cd ~/run/$f; (nice -n 10 python  ~/py/mread/__init__.py &> python.out); done
         grid3d("gdump.bin")
         rfd("fieldline0000.bin")
         diskflux=diskfluxcalc(ny/2)
@@ -1191,7 +1192,7 @@ if __name__ == "__main__":
         plc(bsq/rho**gam)
         print("Disk flux = %g (@r<20: %g)" % (diskfluxcalc(ny/2,rmax=Rout), diskfluxcalc(ny/2,rmax=20)) )
         rh = 1+(1-a**2)**0.5
-        print "r[5] = %g\n" % (r[9,0,0]/rh) + "r[10] = %g\n" % (r[14,0,0]/rh)
+        print "r[5]/rh = %g\n" % (r[5,0,0]/rh) + "r[10]/rh = %g\n" % (r[10,0,0]/rh)
         res = Qmri()
         res[res>20] = 20+0*res[res>20]
         plc(res,cb=True)
@@ -1229,5 +1230,9 @@ if __name__ == "__main__":
         Tcalcud()
         jetpowcalc(whichbsqorho=0)[11]
         mdotcalc(11)
-
-        
+    if False:
+        cvel()
+        #entk=((gam-1)*ug/rho**gam);entk[entk>1]=0*entk[entk>1]+1;
+        #plt.clf();
+        #plt.figure();
+        #pl(r,np.log10(entk));plt.xlim(1,20);plt.ylim(-3,-0.5)
