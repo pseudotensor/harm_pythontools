@@ -712,6 +712,31 @@ def diskfluxcalc(jmid,rmin=None,rmax=None):
     scaletofullwedge(fabs)
     return(fabs)
 
+def mfjhorvstime(ihor):
+    """
+    Returns a tuple (ts,fs,mdot,pjetem,pjettot): lists of times, horizon fluxes, and Mdot
+    """
+    flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+    ts=np.empty(len(flist),dtype=float)
+    fs=np.empty(len(flist),dtype=float)
+    md=np.empty(len(flist),dtype=float)
+    jem=np.empty(len(flist),dtype=float)
+    jtot=np.empty(len(flist),dtype=float)
+    for findex, fname in enumerate(flist):
+        print( "Reading " + fname + " ..." )
+        rfd("../"+fname)
+        cvel()
+        Tcalcud()
+        fs[findex]=horfluxcalc(ihor)
+        md[findex]=mdotcalc(ihor)
+        #EM
+        jem[findex]=jetpowcalc(0)[ihor]
+        #tot
+        jtot[findex]=jetpowcalc(2)[ihor]
+        ts[findex]=t
+    print( "Done!" )
+    return((ts,fs,md,jem,jtot))
+
 def fhorvstime(ihor):
     """
     Returns a tuple (ts,fs,mdot): lists of times, horizon fluxes, and Mdot
@@ -746,17 +771,27 @@ def Tcalcud():
             #Tud[mu,nu] = eta*uu[mu]*ud[nu]+(pg+0.5*bsq)*delta-bu[mu]*bd[nu]
             Tud[mu,nu] = TudEM[mu,nu] + TudMA[mu,nu]
 
-def jetpowcalc(ihor):
-    jetpowden = gdet*TudEM[1,0]
+def jetpowcalc(which=2,minbsqorho=10):
+    if which==0:
+        jetpowden = -gdet*TudEM[1,0]
+    if which==1:
+        jetpowden = -gdet*TudMA[1,0]
+    if which==2:
+        jetpowden = -gdet*Tud[1,0]
     #jetpowden[tj>=ny-2] = 0*jetpowden[tj>=ny-2]
-    jetpowden[tj<1] = 0*jetpowden[tj<1]
-    jetpowden[bsq/rho<10] = 0*jetpowden[bsq/rho<10]
-    jetpowtot = np.sum(scaletofullwedge(jetpowden[ihor])*_dx2*_dx3)
+    #jetpowden[tj<1] = 0*jetpowden[tj<1]
+    jetpowden[bsq/rho<minbsqorho] = 0*jetpowden[bsq/rho<minbsqorho]
+    jetpowtot = scaletofullwedge(np.sum(np.sum(jetpowden,axis=2),axis=1)*_dx2*_dx3)
+    #print "which = %d, minbsqorho = %g" % (which, minbsqorho)
     return(jetpowtot)
     
-def mdotcalc(ihor):
-    mdotden = -gdet*rho*uu[1]
-    mdottot = np.sum(scaletofullwedge(mdotden[ihor])*_dx2*_dx3)
+def mdotcalc(whichi=None):
+    if whichi == None:
+        mdotden = -gdet*rho*uu[1]
+        mdottot = scaletofullwedge(np.sum(np.sum(mdotden,axis=2),axis=1)*_dx2*_dx3)
+    else:
+        mdotden = -gdet*rho*uu[1]
+        mdottot = scaletofullwedge(np.sum(mdotden[whichi])*_dx2*_dx3)
     return(mdottot)
 
 def plotit(ts,fs,md):
@@ -783,6 +818,46 @@ def plotit(ts,fs,md):
     #      fontsize=16, color='r')
     plotlist[1].grid(True)
     fig.savefig('test.pdf')
+
+def plotj(ts,fs,md,jem,jtot):
+    #rc('font', family='serif')
+    #plt.figure( figsize=(12,9) )
+    plt.clf()
+    fig,plotlist=plt.subplots(nrows=3,ncols=1,sharex=True,figsize=(12,12))
+    plottitle = "a = %g: %s" % ( a, os.path.basename(os.getcwd()) )
+    #plt.suptitle( plottitle )
+    plt.subplots_adjust(hspace=0.1) #increase vertical spacing to avoid crowding
+    plotlist[0].plot(ts,fs,label=r'$\Phi_{\rm h}/\Phi_{\rm i}$')
+    plotlist[0].plot(ts,fs,'r+') #, label=r'$\Phi_{\rm h}/0.5\Phi_{\rm i}$: Data Points')
+    plotlist[0].legend(loc='lower right')
+    #plt.xlabel(r'$t\;(GM/c^3)$')
+    plotlist[0].set_ylabel(r'$\Phi_{\rm h}$',fontsize=16)
+    plt.setp( plotlist[0].get_xticklabels(), visible=False)
+    plotlist[0].grid(True)
+    #
+    #plotlist[1].subplot(212,sharex=True)
+    plotlist[1].plot(ts,md,label=r'$\dot M_{\rm h}$')
+    plotlist[1].plot(ts,md,'r+') #, label=r'$\dot M_{\rm h}$: Data Points')
+    plotlist[1].legend(loc='lower right')
+    #plotlist[1].set_xlabel(r'$t\;(GM/c^3)$')
+    plotlist[1].set_ylabel(r'$\dot M_{\rm h}$',fontsize=16)
+    plt.setp( plotlist[1].get_xticklabels(), visible=False)
+    
+    #plotlist[2].subplot(212,sharex=True)
+    plotlist[2].plot(ts,jem/md,label=r'$\dot P_{\rm j,em}/\dot M$')
+    plotlist[2].plot(ts,jem/md,'r+') #, label=r'$\dot M_{\rm h}$: Data Points')
+    plotlist[2].plot(ts,jtot/md,label=r'$\dot P_{\rm j,tot}/\dot M$')
+    plotlist[2].plot(ts,jtot/md,'r+') #, label=r'$\dot M_{\rm h}$: Data Points')
+    plotlist[2].legend(loc='lower right')
+    plotlist[2].set_xlabel(r'$t\;(GM/c^3)$')
+    plotlist[2].set_ylabel(r'$\dot P_{\rm j}/\dot M_{\rm h}$',fontsize=16)
+
+    #title("\TeX\ is Number $\displaystyle\sum_{n=1}^\infty\frac{-e^{i\pi}}{2^n}$!", 
+    #      fontsize=16, color='r')
+    plotlist[0].grid(True)
+    plotlist[1].grid(True)
+    plotlist[2].grid(True)
+    fig.savefig('pjet.pdf')
 
 
 def test():
@@ -941,6 +1016,12 @@ if __name__ == "__main__":
         diskflux=diskfluxcalc(ny/2)
         ts,fs,md=fhorvstime(11)
         plotit(ts,fs/(diskflux),md)
+    if True:
+        grid3d("gdump.bin")
+        rfd("fieldline0000.bin")
+        diskflux=diskfluxcalc(ny/2)
+        ts,fs,md,jem,jtot=mfjhorvstime(11)
+        plotj(ts,fs/(diskflux),md,jem,jtot)
     if False:
         rfd("fieldline0320.bin")
         plt.figure(1)
@@ -959,7 +1040,7 @@ if __name__ == "__main__":
             plt.clf()
             mkframe("lrho%04d" % findex, vmin=-8,vmax=0.2)
         print( "Done!" )
-    if True:
+    if False:
         #To generate movies for all sub-folders of a folder:
         #cd ~/Research/runart; for f in *; do cd ~/Research/runart/$f; (python  ~/py/mread/__init__.py &> python.out &); done
         grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]) )
@@ -1141,3 +1222,12 @@ if __name__ == "__main__":
         hf=horfluxcalc(ihor)
         df=diskfluxcalc(ny/2,rmin=1+(1-a**2)**0.5)
         print "Final   (t=%-8g): BHflux = %g, Diskflux = %g" % (t, hf, df)
+    if False:
+        grid3d("gdump.bin")
+        rfd("fieldline0222.bin")
+        cvel()
+        Tcalcud()
+        jetpowcalc(whichbsqorho=0)[11]
+        mdotcalc(11)
+
+        
