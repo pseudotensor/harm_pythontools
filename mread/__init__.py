@@ -959,11 +959,13 @@ if __name__ == "__main__":
             plt.clf()
             mkframe("lrho%04d" % findex, vmin=-8,vmax=0.2)
         print( "Done!" )
-    if False:
+    if True:
+        #To generate movies for all sub-folders of a folder:
+        #cd ~/Research/runart; for f in *; do cd ~/Research/runart/$f; (python  ~/py/mread/__init__.py &> python.out &); done
         grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]) )
         #rfd("fieldline0000.bin")  #to define _dx#
         #grid3dlight("gdump")
-        flist = glob.glob( os.path.join("dumps/", "fieldline*[05].bin") )
+        flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
         for findex, fname in enumerate(flist):
             if os.path.isfile("lrho%04d.png" % findex):
                 print( "Skipping " + fname + " as lrho%04d.png exists" % findex );
@@ -1099,7 +1101,7 @@ if __name__ == "__main__":
             normalize_field(constbsqoug)
             cvel()
         print("Disk flux = %g (@r<20: %g)" % (diskfluxcalc(ny/2), diskfluxcalc(ny/2,rmax=20)) )
-    if True:
+    if False:
         #pf()
         grid3d("gdump.bin")
         rd("dump0000.bin")
@@ -1117,3 +1119,25 @@ if __name__ == "__main__":
         #plt.clf();pl(x1,aaphi)
         #plco(bsq/rho**gam,cb=True)
         #plco(res,cb=True)
+    if False:
+        rin=15;
+        R=r*np.sin(h);z=r*np.cos(h);
+        alpha=1.5;t=0.9;aphi=(R/rin)**2/(1+(np.abs(z)/t/rin/(1+np.log10(1+r/rin)**2))**alpha)**(2/alpha); aphi[aphi>1]=0*aphi[aphi>1]+1; plco(np.log10(rho));plc(aphi)
+    if False:
+        grid3d("gdump.bin")
+        rd("dump0000.bin")
+        aphi=fieldcalcface()
+        plco(np.log10(rho))
+        plc(aphi,nc=50)
+    if False:
+        grid3d("gdump.bin")
+        rfd("fieldline0020.bin")
+        ihor = 11;
+        hf=horfluxcalc(ihor)
+        df=diskfluxcalc(ny/2)
+        print "Initial (t=%-8g): BHflux = %g, Diskflux = %g" % (t, hf, df)
+        rfd("fieldline0400.bin")
+        ihor = 11;
+        hf=horfluxcalc(ihor)
+        df=diskfluxcalc(ny/2,rmin=1+(1-a**2)**0.5)
+        print "Final   (t=%-8g): BHflux = %g, Diskflux = %g" % (t, hf, df)
