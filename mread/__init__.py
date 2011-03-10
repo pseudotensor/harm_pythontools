@@ -77,7 +77,8 @@ def reinterp(vartointerp,extent,ncell):
     #mirror
     x=np.concatenate((-x,x))
     y=np.concatenate((y,y))
-    var=np.concatenate((vartointerp[:,:,0].view().reshape(-1),var))
+    kval=min(vartointerp.shape[2]-1,nz/2)
+    var=np.concatenate((vartointerp[:,:,kval].view().reshape(-1),var))
     # define grid.
     xi = np.linspace(extent[0], extent[1], ncell)
     yi = np.linspace(extent[2], extent[3], ncell)
@@ -88,10 +89,8 @@ def reinterp(vartointerp,extent,ncell):
     varinterpolated = ma.masked_where(interior, zi)
     return(varinterpolated)
     
-def mkframe(fname,vmin=None,vmax=None):
-    len = 60
+def mkframe(fname,vmin=None,vmax=None,len=20,ncell=800):
     extent=(-len,len,-len,len)
-    ncell=800
     palette=cm.jet
     palette.set_bad('k', 1.0)
     palette.set_over('r', 1.0)
@@ -101,7 +100,7 @@ def mkframe(fname,vmin=None,vmax=None):
     ilrho = reinterp(np.log10(rho),extent,ncell)
     #maxabsiaphi=np.max(np.abs(iaphi))
     maxabsiaphi = 100 #50
-    ncont = 150 #30
+    ncont = 100 #30
     levs=np.linspace(-maxabsiaphi,maxabsiaphi,ncont)
     cset2 = plt.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
     #for c in cset2.collections:
@@ -735,6 +734,13 @@ def mfjhorvstime(ihor):
         #tot
         jtot[findex]=jetpowcalc(2)[ihor]
         ts[findex]=t
+        #if os.path.isfile("lrho%04d.png" % findex):
+        #    print( "Skipping " + fname + " as lrho%04d.png exists" % findex );
+        #else:
+        #    print( "Reinterpolating " + fname + " ..." )
+        #    plt.figure(0)
+        #    plt.clf()
+        #    mkframe("lrho%04d" % findex, vmin=-8,vmax=0.2)
     print( "Done!" )
     return((ts,fs,md,jem,jtot))
 
@@ -829,7 +835,7 @@ def plotj(ts,fs,md,jem,jtot):
     plt.suptitle( plottitle )
     plt.subplots_adjust(hspace=0.1) #increase vertical spacing to avoid crowding
     plotlist[0].plot(ts,fs,label=r'$\Phi_{\rm h}/\Phi_{\rm i}$')
-    plotlist[0].plot(ts,fs,'r+') #, label=r'$\Phi_{\rm h}/0.5\Phi_{\rm i}$: Data Points')
+    #plotlist[0].plot(ts,fs,'r+') #, label=r'$\Phi_{\rm h}/0.5\Phi_{\rm i}$: Data Points')
     plotlist[0].legend(loc='lower right')
     #plt.xlabel(r'$t\;(GM/c^3)$')
     plotlist[0].set_ylabel(r'$\Phi_{\rm h}$',fontsize=16)
@@ -838,7 +844,7 @@ def plotj(ts,fs,md,jem,jtot):
     #
     #plotlist[1].subplot(212,sharex=True)
     plotlist[1].plot(ts,md,label=r'$\dot M_{\rm h}$')
-    plotlist[1].plot(ts,md,'r+') #, label=r'$\dot M_{\rm h}$: Data Points')
+    #plotlist[1].plot(ts,md,'r+') #, label=r'$\dot M_{\rm h}$: Data Points')
     plotlist[1].legend(loc='lower right')
     #plotlist[1].set_xlabel(r'$t\;(GM/c^3)$')
     plotlist[1].set_ylabel(r'$\dot M_{\rm h}$',fontsize=16)
@@ -846,9 +852,9 @@ def plotj(ts,fs,md,jem,jtot):
     
     #plotlist[2].subplot(212,sharex=True)
     plotlist[2].plot(ts,jem/md,label=r'$\dot P_{\rm j,em}/\dot M$')
-    plotlist[2].plot(ts,jem/md,'r+') #, label=r'$\dot M_{\rm h}$: Data Points')
+    #plotlist[2].plot(ts,jem/md,'r+') #, label=r'$\dot M_{\rm h}$: Data Points')
     plotlist[2].plot(ts,jtot/md,label=r'$\dot P_{\rm j,tot}/\dot M$')
-    plotlist[2].plot(ts,jtot/md,'r+') #, label=r'$\dot M_{\rm h}$: Data Points')
+    #plotlist[2].plot(ts,jtot/md,'r+') #, label=r'$\dot M_{\rm h}$: Data Points')
     plotlist[2].legend(loc='lower right')
     plotlist[2].set_xlabel(r'$t\;(GM/c^3)$')
     plotlist[2].set_ylabel(r'$\dot P_{\rm j}/\dot M_{\rm h}$',fontsize=16)
@@ -1003,6 +1009,8 @@ def pf(dir=2):
     plt.plot(tj[myi,0:ny-1,myk]+0.5,gdetB[dir,myi,1:ny,myk]/(0.5*(gdet[myi,0:ny-1,myk]+gdet[myi,1:ny,myk])))
 
 
+def choptop(var,maxvar):
+    var[var>maxvar]=0*var[var>maxvar]+maxvar
 
 if __name__ == "__main__":
     import sys
@@ -1017,7 +1025,7 @@ if __name__ == "__main__":
         diskflux=diskfluxcalc(ny/2)
         ts,fs,md=fhorvstime(11)
         plotit(ts,fs/(diskflux),md)
-    if True:
+    if False:
         #cd ~/run; for f in rtf*; do cd ~/run/$f; (nice -n 10 python  ~/py/mread/__init__.py &> python.out); done
         grid3d("gdump.bin")
         rfd("fieldline0000.bin")
@@ -1043,6 +1051,19 @@ if __name__ == "__main__":
             mkframe("lrho%04d" % findex, vmin=-8,vmax=0.2)
         print( "Done!" )
     if False:
+        grid3d("gdump.bin")
+        rfd("fieldline0000.bin")
+        ihor = 11;
+        hf=horfluxcalc(ihor)
+        df=diskfluxcalc(ny/2)
+        print "Initial (t=%-8g): BHflux = %g, Diskflux = %g" % (t, hf, df)
+        rfd("fieldline1308.bin")
+        ihor = 11;
+        hf=horfluxcalc(ihor)
+        df=diskfluxcalc(ny/2,rmin=1+(1-a**2)**0.5)
+        print "Final   (t=%-8g): BHflux = %g, Diskflux = %g" % (t, hf, df)
+    if True:
+        len=10
         #To generate movies for all sub-folders of a folder:
         #cd ~/Research/runart; for f in *; do cd ~/Research/runart/$f; (python  ~/py/mread/__init__.py &> python.out &); done
         grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]) )
@@ -1050,18 +1071,18 @@ if __name__ == "__main__":
         #grid3dlight("gdump")
         flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
         for findex, fname in enumerate(flist):
-            if os.path.isfile("lrho%04d.png" % findex):
-                print( "Skipping " + fname + " as lrho%04d.png exists" % findex );
+            if os.path.isfile("lrho%04d_%g.png" % (findex,len)):
+                print( "Skipping " + fname + " as lrho%04d_%g.png exists" % (findex,len) );
             else:
                 print( "Processing " + fname + " ..." )
                 rfd("../"+fname)
                 plt.clf()
-                mkframe("lrho%04d" % findex, vmin=-8,vmax=0.2)
+                mkframe("lrho%04d_%g" % (findex,len), vmin=-8,vmax=1.0,len=len)
         print( "Done!" )
         #print( "Now you can make a movie by running:" )
         #print( "ffmpeg -fflags +genpts -r 10 -i lrho%04d.png -vcodec mpeg4 -qmax 5 mov.avi" )
-        os.system("mv mov.avi mov.bak.avi")
-        os.system("ffmpeg -fflags +genpts -r 10 -i lrho%04d.png -vcodec mpeg4 -qmax 5 mov.avi")
+        os.system("mv mov_%g.avi mov_%g.bak.avi" % (len, len) )
+        os.system("ffmpeg -fflags +genpts -r 10 -i lrho%%04d_%g.png -vcodec mpeg4 -qmax 5 mov_%g.avi" % (len, len) )
         #os.system("scp mov.avi 128.112.70.76:Research/movies/mov_`basename \`pwd\``.avi")
 
     #plt.clf(); rfd("fieldline0000.bin"); aphi=fieldcalc(); plc(ug/bsq) 
@@ -1212,18 +1233,6 @@ if __name__ == "__main__":
         aphi=fieldcalcface()
         plco(np.log10(rho))
         plc(aphi,nc=50)
-    if False:
-        grid3d("gdump.bin")
-        rfd("fieldline0020.bin")
-        ihor = 11;
-        hf=horfluxcalc(ihor)
-        df=diskfluxcalc(ny/2)
-        print "Initial (t=%-8g): BHflux = %g, Diskflux = %g" % (t, hf, df)
-        rfd("fieldline0400.bin")
-        ihor = 11;
-        hf=horfluxcalc(ihor)
-        df=diskfluxcalc(ny/2,rmin=1+(1-a**2)**0.5)
-        print "Final   (t=%-8g): BHflux = %g, Diskflux = %g" % (t, hf, df)
     if False:
         grid3d("gdump.bin")
         rfd("fieldline0222.bin")
