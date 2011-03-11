@@ -33,17 +33,24 @@ def horcalc():
     hoverr=(np.sum(np.sum(gdet*rho*(h-thetamid)**2,axis=2),axis=1) / np.sum(np.sum(gdet*rho,axis=2),axis=1))**0.5
     return((hoverr,thetamid))
 
-def intnhor(qty,hoverr=None,numhover=2):
+def inthor(qty,dtheta=None,numhoverr=2,hoverr=None):
     if hoverr == None:
-        hoverr,thetamid = horcalc()
+        if dtheta == None:
+            hoverr,thetamid = horcalc()
+        else:
+            numhoverr = 1
+            hoverr = dtheta
+            thetamid = np.pi/2
     integrand = qty
-    insidenhor = np.abs(h-thetamid)<numhoverr*hoverr
-    integral=np.sum(np.sum(integrand*insidenhor,axis=2),axis=1)
+    insidenumhor = np.abs(h-thetamid)<numhoverr*hoverr
+    integral=np.sum(np.sum(integrand*insidenumhor,axis=2),axis=1)*_dx2*dx3
+    scaletofullwedge(integral)
     return(integral)
 
-def intfullpi(qty):
+def inttheta(qty,dtheta=pi/2):
     integrand = qty
-    integral=np.sum(np.sum(integrand,axis=2),axis=1)
+    insidedtheta = np.abs(h-np.pi/2)<=dtheta
+    integral=np.sum(np.sum(integrand*insidetheta,axis=2),axis=1)
     return(integral)
 
     
@@ -61,6 +68,7 @@ def Qmri():
     lambdamriu2 = 2*np.pi * vau2 / omega
     res=lambdamriu2/_dx2
     return(res)
+
 def plco(myvar,xcoord=None,ycoord=None,**kwargs):
     plt.clf()
     plc(myvar,xcoord,ycoord,**kwargs)
@@ -200,9 +208,9 @@ def rrdump(dumpname):
     nz = int(header[2])
     t  = float(header[3])
     a  = float(header[6])
-    nx+=8
-    ny+=8
-    nz+=8
+    #nx+=8
+    #ny+=8
+    #nz+=8
     if dumpname.endswith(".bin"):
         body = np.fromfile(gin,dtype=np.double,count=-1)  #nx*ny*nz*11)
         gd1 = body
@@ -704,14 +712,17 @@ def horfluxcalc(ihor=None,minbsqorho=10):
 def scaletofullwedge(val):
     return(val * 2*np.pi/(dxdxp[3,3,0,0,0]*nz*_dx3))
 
-def mdotcalc(ihor):
+def mdotcalc(ihor=None,hor=None):
     """
     Computes the absolute flux through the sphere i = ihor
     """
     #1D function of theta only:
     global gdet, rho, uu, _dx3, _dx3
-    md = (-gdet[ihor]*rho[ihor]*uu[1,ihor]).sum()*_dx2*_dx3
-    scaletofullwedge(md)
+    md = (-gdet*rho*uu[1]).sum()*_dx2*_dx3
+    if(ihor==None):
+        scaletofullwedge(md)
+    else
+        scaletofullwedge(md[ihor])
     return(md)
 
 
@@ -774,24 +785,52 @@ def getqtyvstime(ihor):
     qtymem=np.empty((nqty,len(flist),nx),dtype=float)
     i=0
     ts=qtymem[i];i+=1
-    fs=qtymem[i];i+=1
-    fsj=qtymem[i];i+=1
-    md=qtymem[i];i+=1
-    pjem=qtymem[i];i+=1
-    pjtot=qtymem[i];i+=1
+    #HoverR
+    hoverr=qtymem[i];i+=1
+    #Flux
+    fstot=qtymem[i];i+=1
+    fsj5=qtymem[i];i+=1
+    fsj10=qtymem[i];i+=1
+    #Mdot
+    mdtot=qtymem[i];i+=1
+    md2h=qtymem[i];i+=1
+    md4h=qtymem[i];i+=1
+    md2hor=qtymem[i];i+=1
+    #Edot
+    edtot=qtymem[i];i+=1
+    ed2h=qtymem[i];i+=1
+    ed4h=qtymem[i];i+=1
+    ed2hor=qtymem[i];i+=1
+    #Pjet
+    pjem5=qtymem[i];i+=1
+    pjem10=qtymem[i];i+=1
+    pjma5=qtymem[i];i+=1
+    pjma10=qtymem[i];i+=1
     for findex, fname in enumerate(flist):
         print( "Reading " + fname + " ..." )
         rfd("../"+fname)
         cvel()
         Tcalcud()
-        fs[findex]=horfluxcalc(minbsqorho=0)
-        fsj[findex]=horfluxcalc(minbsqorho=10)
-        md[findex]=mdotcalc()
-        #EM
-        pjem[findex]=jetpowcalc(0)
-        #tot
-        pjtot[findex]=jetpowcalc(2)
         ts[findex,0]=t
+        #Flux
+        fstot[findex]=horfluxcalc(minbsqorho=0)
+        fsj5[findex]=horfluxcalc(minbsqorho=5)
+        fsj10[findex]=horfluxcalc(minbsqorho=10)
+        #Mdot
+        mdtot[findex]=mdotcalc()
+        md2h[findex]=mdotcalc()
+        md4h[findex]=mdotcalc()
+        md2hor[findex]=mdotcalc()
+        #Edot
+        edtot[findex]=mdotcalc()
+        ed2h[findex]=mdotcalc()
+        ed4h[findex]=mdotcalc()
+        ed2hor[findex]=mdotcalc()
+        #Pjet
+        pjem5[findex]=jetpowcalc(0)
+        pjem10[findex]=jetpowcalc(0)
+        pjma5[findex]=jetpowcalc(1)
+        pjma10[findex]=jetpowcalc(1)
         #if os.path.isfile("lrho%04d.png" % findex):
         #    print( "Skipping " + fname + " as lrho%04d.png exists" % findex );
         #else:
