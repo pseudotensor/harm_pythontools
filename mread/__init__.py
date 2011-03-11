@@ -29,12 +29,27 @@ def horcalc():
     """
     Compute root mean square deviation of disk body from equatorial plane
     """
-    hoverr=(np.sum(np.sum(gdet*rho*(h-np.pi/2)**2,axis=2),axis=1)/np.sum(np.sum(gdet*rho,axis=2),axis=1))**0.5
-    return(hoverr)
+    thetamid=np.sum(np.sum(gdet*rho*h,axis=2),axis=1) / np.sum(np.sum(gdet*rho,axis=2),axis=1)
+    hoverr=(np.sum(np.sum(gdet*rho*(h-thetamid)**2,axis=2),axis=1) / np.sum(np.sum(gdet*rho,axis=2),axis=1))**0.5
+    return((hoverr,thetamid))
 
+def intnhor(qty,hoverr=None,numhover=2):
+    if hoverr == None:
+        hoverr,thetamid = horcalc()
+    integrand = qty
+    insidenhor = np.abs(h-thetamid)<numhoverr*hoverr
+    integral=np.sum(np.sum(integrand*insidenhor,axis=2),axis=1)
+    return(integral)
+
+def intfullpi(qty):
+    integrand = qty
+    integral=np.sum(np.sum(integrand,axis=2),axis=1)
+    return(integral)
+
+    
 def Qmri():
     """
-    APPROXIMATELY Computes number of theta cells resolving one MIR wavelength
+    APPROXIMATELY Computes number of theta cells resolving one MRI wavelength
     """
     global bu,rho,uu,_dx2
     cvel()
@@ -669,18 +684,22 @@ def fieldcalc2U():
     scaletofullwedge(aphi)
     return(aphi[:,:,None])
 
-def horfluxcalc(ihor):
+def horfluxcalc(ihor=None,minbsqorho=10):
     """
     Computes the absolute flux through the sphere i = ihor
     """
     global gdetB, _dx2, _dx3
     #1D function of theta only:
-    dfabs = (np.abs(gdetB[1,ihor])).sum(1)*_dx2*_dx3
+    dfabs = (np.abs(gdetB[1]*(bsq/rho>minbsqorho))).sum(2)*_dx2*_dx3
     fabs = dfabs.sum(axis=0)
     #account for the wedge
     scaletofullwedge(fabs)
     #fabs *= 
-    return(fabs)
+    if ihor == None:
+        return(fabs)
+    else:
+        return(fabs[ihor])
+
 
 def scaletofullwedge(val):
     return(val * 2*np.pi/(dxdxp[3,3,0,0,0]*nz*_dx3))
@@ -743,6 +762,45 @@ def mfjhorvstime(ihor):
         #    mkframe("lrho%04d" % findex, vmin=-8,vmax=0.2)
     print( "Done!" )
     return((ts,fs,md,jem,jtot))
+
+def getqtyvstime(ihor):
+    """
+    Returns a tuple (ts,fs,mdot,pjetem,pjettot): lists of times, horizon fluxes, and Mdot
+    """
+    flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+    flist.sort()
+    nqty=10
+    #store 1D data
+    qtymem=np.empty((nqty,len(flist),nx),dtype=float)
+    i=0
+    ts=qtymem[i];i+=1
+    fs=qtymem[i];i+=1
+    fsj=qtymem[i];i+=1
+    md=qtymem[i];i+=1
+    pjem=qtymem[i];i+=1
+    pjtot=qtymem[i];i+=1
+    for findex, fname in enumerate(flist):
+        print( "Reading " + fname + " ..." )
+        rfd("../"+fname)
+        cvel()
+        Tcalcud()
+        fs[findex]=horfluxcalc(minbsqorho=0)
+        fsj[findex]=horfluxcalc(minbsqorho=10)
+        md[findex]=mdotcalc()
+        #EM
+        pjem[findex]=jetpowcalc(0)
+        #tot
+        pjtot[findex]=jetpowcalc(2)
+        ts[findex,0]=t
+        #if os.path.isfile("lrho%04d.png" % findex):
+        #    print( "Skipping " + fname + " as lrho%04d.png exists" % findex );
+        #else:
+        #    print( "Reinterpolating " + fname + " ..." )
+        #    plt.figure(0)
+        #    plt.clf()
+        #    mkframe("lrho%04d" % findex, vmin=-8,vmax=0.2)
+    print( "Done!" )
+    return((ts,fs,md,pjem,pjtot))
 
 def fhorvstime(ihor):
     """
