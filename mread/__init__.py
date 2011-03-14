@@ -29,25 +29,35 @@ def horcalc():
     """
     Compute root mean square deviation of disk body from equatorial plane
     """
-    thetamid=np.sum(np.sum(gdet*rho*h,axis=2),axis=1) / np.sum(np.sum(gdet*rho,axis=2),axis=1)
-    hoverr=(np.sum(np.sum(gdet*rho*(h-thetamid)**2,axis=2),axis=1) / np.sum(np.sum(gdet*rho,axis=2),axis=1))**0.5
-    return((hoverr,thetamid))
+    thetamid2d=(gdet*rho*h).sum(axis=1) / (gdet*rho).sum(axis=1)
+    thetamid3d=np.empty_like(h)
+    hoverr3d=np.empty_like(h)
+    for j in np.arange(0,ny):
+        thetamid3d[:,j] = thetamid2d
+    hoverr2d=((gdet*rho*(h-thetamid3d)**2).sum(axis=1) / (gdet*rho).sum(axis=1))**0.5
+    for j in np.arange(0,ny):
+        hoverr3d[:,j] = hoverr2d
+    return((hoverr3d,thetamid3d))
 
-def intangle(qty,dtheta=None,numhoverr=1,hoverr=None,thetamid=np.pi/2:
+def intangle(qty,dtheta=None,numhoverr=1,hoverr=None,thetamid=np.pi/2,minbsqorho=None):
     if hoverr == None:
         if dtheta == None:
             hoverr,thetamid = horcalc()
         else:
-            if(dtheta == None) dtheta = np.pi/2
+            if dtheta == None: dtheta = np.pi/2
             hoverr = dtheta
             thetamid = np.pi/2
     integrand = qty
     insidenumhor = np.abs(h-thetamid)<numhoverr*hoverr
-    integral=(integrand*insidenumhor).sum(axis=2).sum(axis=1)*_dx2*dx3
+    if minbsqorho != None:
+        insidebsqorho = bsq/rho<minbsqorho
+    else:
+        insidebsqorho = 1
+    integral=(integrand*insidenumhor*insidebsqorho).sum(axis=2).sum(axis=1)*_dx2*_dx3
     scaletofullwedge(integral)
     return(integral)
 
-def inttheta(qty,dtheta=pi/2):
+def inttheta(qty,dtheta=np.pi/2):
     integrand = qty
     insidedtheta = np.abs(h-np.pi/2)<=dtheta
     integral=np.sum(np.sum(integrand*insidetheta,axis=2),axis=1)
@@ -699,7 +709,7 @@ def horfluxcalc(ihor=None,minbsqorho=10):
     global gdetB, _dx2, _dx3
     #1D function of theta only:
     dfabs = (np.abs(gdetB[1]*(bsq/rho>minbsqorho))).sum(2)*_dx2*_dx3
-    fabs = dfabs.sum(axis=0)
+    fabs = dfabs.sum(axis=1)
     #account for the wedge
     scaletofullwedge(fabs)
     #fabs *= 
@@ -712,15 +722,25 @@ def horfluxcalc(ihor=None,minbsqorho=10):
 def scaletofullwedge(val):
     return(val * 2*np.pi/(dxdxp[3,3,0,0,0]*nz*_dx3))
 
+# def mdotcalc(whichi=None,minbsqorho=None):
+#     mdotden = -gdet*rho*uu[1]
+#     if minbsqorho != None:
+#         mdotden[bsq/rho<minbsqorho<minbsqorho] = 0*mdotden[bsq/rho<minbsqorho<minbsqorho] 
+#     mdottot = scaletofullwedge(np.sum(np.sum(mdotden,axis=2),axis=1)*_dx2*_dx3)
+#     if whichi == None:
+#         return(mdottot)
+#     else:
+#         return(mdottot[whichi])
+
 def mdotcalc(ihor=None,**kwargs):
     """
     Computes the absolute flux through the sphere i = ihor
     """
     #1D function of theta only:
     md = intangle( rho*uu[1], **kwargs)
-    if(ihor==None):
+    if ihor==None:
         return(md)
-    else
+    else:
         return(md[ihor])
 
 def diskfluxcalc(jmid,rmin=None,rmax=None):
@@ -777,25 +797,79 @@ def getqtyvstime(ihor,horval=0.2):
     """
     flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
     flist.sort()
-    nqty=10
+    nqty=67
     #store 1D data
-    qtymem=np.empty((nqty,len(flist),nx),dtype=float)
+    numtimeslices=len(flist)
+    qtymem=np.empty((nqty,numtimeslices,nx),dtype=float)
+    #
+    print "Number of time slices: %d" % numtimeslices
+    if os.path.isfile("qty.npy"):
+        qtymem2=np.load( "qty.npy" )
+        numtimeslices2 = qtymem2.shape[1]
+        print "Number of previously saved time slices: %d" % numtimeslices2 
+        if( numtimeslices2 > numtimeslices ):
+            print "Number of previously saved time slices is > than of timeslices to be loaded, re-using previously saved time slices"
+            return(qtymem2)
+        else:
+            print "Number of previously saved time slices is <= than of timeslices to be loaded, re-using previously saved time slices"
+            qtymem[:,0:numtimeslices2] = qtymem2[:,0:numtimeslices2]
+    else:
+        numtimeslices2 = 0
+    #qty defs
     i=0
     ts=qtymem[i];i+=1
-    rhos=qtymem[i];i+=1
-    ugs=qtymem[i];i+=1
-    uu0=qtymem[i];i+=1
-    uus1=qtymem[i];i+=1
-    uuas1=qtymem[i];i+=1
-    uus3=qtymem[i];i+=1
-    uuas3=qtymem[i];i+=1
-    Bs1=qtymem[i];i+=1
-    Bas1=qtymem[i];i+=1
-    Bs3=qtymem[i];i+=1
-    Bas3=qtymem[i];i+=1
-    #HoverR
+    #hoverr
     hoverr=qtymem[i];i+=1
     thetamid=qtymem[i];i+=1
+    #rhosq
+    rhosqs=qtymem[i];i+=1
+    rhosrhosq=qtymem[i];i+=1
+    ugsrhosq=qtymem[i];i+=1
+    uu0rhosq=qtymem[i];i+=1
+    uus1rhosq=qtymem[i];i+=1
+    uuas1rhosq=qtymem[i];i+=1
+    uus3rhosq=qtymem[i];i+=1
+    uuas3rhosq=qtymem[i];i+=1
+    Bs1rhosq=qtymem[i];i+=1
+    Bas1rhosq=qtymem[i];i+=1
+    Bs3rhosq=qtymem[i];i+=1
+    Bas3rhosq=qtymem[i];i+=1
+    #2h
+    rhos2h=qtymem[i];i+=1
+    ugs2h=qtymem[i];i+=1
+    uu02h=qtymem[i];i+=1
+    uus12h=qtymem[i];i+=1
+    uuas12h=qtymem[i];i+=1
+    uus32h=qtymem[i];i+=1
+    uuas32h=qtymem[i];i+=1
+    Bs12h=qtymem[i];i+=1
+    Bas12h=qtymem[i];i+=1
+    Bs32h=qtymem[i];i+=1
+    Bas32h=qtymem[i];i+=1
+    #4h
+    rhos4h=qtymem[i];i+=1
+    ugs4h=qtymem[i];i+=1
+    uu04h=qtymem[i];i+=1
+    uus14h=qtymem[i];i+=1
+    uuas14h=qtymem[i];i+=1
+    uus34h=qtymem[i];i+=1
+    uuas34h=qtymem[i];i+=1
+    Bs14h=qtymem[i];i+=1
+    Bas14h=qtymem[i];i+=1
+    Bs34h=qtymem[i];i+=1
+    Bas34h=qtymem[i];i+=1
+    #2hor
+    rhos2h=qtymem[i];i+=1
+    ugs2h=qtymem[i];i+=1
+    uu02h=qtymem[i];i+=1
+    uus12h=qtymem[i];i+=1
+    uuas12h=qtymem[i];i+=1
+    uus32h=qtymem[i];i+=1
+    uuas32h=qtymem[i];i+=1
+    Bs12h=qtymem[i];i+=1
+    Bas12h=qtymem[i];i+=1
+    Bs32h=qtymem[i];i+=1
+    Bas32h=qtymem[i];i+=1
     #Flux
     fstot=qtymem[i];i+=1
     fsj5=qtymem[i];i+=1
@@ -806,6 +880,8 @@ def getqtyvstime(ihor,horval=0.2):
     md4h=qtymem[i];i+=1
     md2hor=qtymem[i];i+=1
     mdrhosq=qtymem[i];i+=1
+    md5=qtymem[i];i+=1
+    md10=qtymem[i];i+=1
     #Edot
     edtot=qtymem[i];i+=1
     ed2h=qtymem[i];i+=1
@@ -817,17 +893,27 @@ def getqtyvstime(ihor,horval=0.2):
     pjem10=qtymem[i];i+=1
     pjma5=qtymem[i];i+=1
     pjma10=qtymem[i];i+=1
+    print "Total number of quantities: %d" % i
+    #end qty defs
     for findex, fname in enumerate(flist):
+        #skip pre-loaded time slices
+        if findex < numtimeslices2: 
+            continue
         print( "Reading " + fname + " ..." )
         rfd("../"+fname)
         cvel()
         Tcalcud()
         ts[findex,0]=t
+        #HoverR
+        hoverr3d,thetamid3d=horcalc()
+        hoverr[findex]=hoverr3d.sum(2).sum(1)/(ny*nz)
+        thetamid[findex]=thetamid3d.sum(2).sum(1)/(ny*nz)
+        #rhosq:
         rhosqint=intangle(gdet*rho**2)
         rhosqs[findex]=rhosqint
         rhosrhosq[findex]=intangle(gdet*rho**2*rho)/rhosqint
         ugsrhosq[findex]=intangle(gdet*rho**2*ug)/rhosqint
-        uu0rhosq[findex]=intangle(gdet*rho**2*uu0)/rhosqint
+        uu0rhosq[findex]=intangle(gdet*rho**2*uu[0])/rhosqint
         uus1rhosq[findex]=intangle(gdet*rho**2*uu[1])/rhosqint
         uuas1rhosq[findex]=intangle(gdet*rho**2*np.abs(uu[1]))/rhosqint
         uus3rhosq[findex]=intangle(gdet*rho**2*uu[3])/rhosqint
@@ -840,7 +926,7 @@ def getqtyvstime(ihor,horval=0.2):
         gdetint=intangle(gdet,dtheta=2*horval)
         rhos2h[findex]=intangle(gdet*rho,dtheta=2*horval)/gdetint
         ugs2h[findex]=intangle(gdet*ug,dtheta=2*horval)/gdetint
-        uu02h[findex]=intangle(gdet*uu0,dtheta=2*horval)/gdetint
+        uu02h[findex]=intangle(gdet*uu[0],dtheta=2*horval)/gdetint
         uus12h[findex]=intangle(gdet*uu[1],dtheta=2*horval)/gdetint
         uuas12h[findex]=intangle(gdet*np.abs(uu[1]),dtheta=2*horval)/gdetint
         uus32h[findex]=intangle(gdet*uu[3],dtheta=2*horval)/gdetint
@@ -853,7 +939,7 @@ def getqtyvstime(ihor,horval=0.2):
         gdetint=intangle(gdet,dtheta=4*horval)
         rhos4h[findex]=intangle(gdet*rho,dtheta=4*horval)/gdetint
         ugs4h[findex]=intangle(gdet*ug,dtheta=4*horval)/gdetint
-        uu04h[findex]=intangle(gdet*uu0,dtheta=4*horval)/gdetint
+        uu04h[findex]=intangle(gdet*uu[0],dtheta=4*horval)/gdetint
         uus14h[findex]=intangle(gdet*uu[1],dtheta=4*horval)/gdetint
         uuas14h[findex]=intangle(gdet*np.abs(uu[1]),dtheta=4*horval)/gdetint
         uus34h[findex]=intangle(gdet*uu[3],dtheta=4*horval)/gdetint
@@ -864,19 +950,18 @@ def getqtyvstime(ihor,horval=0.2):
         Bas34h[findex]=intangle(gdet*np.abs(B[3]),dtheta=4*horval)/gdetint
         #2hor
         gdetint=intangle(gdet,dtheta=2*horval)
-        rhos2h[findex]=intangle(gdet*rho,dtheta=2*horval,numhoverr=2,hoverr=hoverr[findex],thetamid=thetamid[findex])/gdetint
-        ugs2h[findex]=intangle(gdet*ug,dtheta=2*horval,numhoverr=2,hoverr=hoverr[findex],thetamid=thetamid[findex])/gdetint
-        uu02h[findex]=intangle(gdet*uu0,dtheta=2*horval,numhoverr=2,hoverr=hoverr[findex],thetamid=thetamid[findex])/gdetint
-        uus12h[findex]=intangle(gdet*uu[1],dtheta=2*horval,numhoverr=2,hoverr=hoverr[findex],thetamid=thetamid[findex])/gdetint
-        uuas12h[findex]=intangle(gdet*np.abs(uu[1]),dtheta=2*horval,numhoverr=2,hoverr=hoverr[findex],thetamid=thetamid[findex])/gdetint
-        uus32h[findex]=intangle(gdet*uu[3],dtheta=2*horval,numhoverr=2,hoverr=hoverr[findex],thetamid=thetamid[findex])/gdetint
-        uuas32h[findex]=intangle(gdet*np.abs(uu[3]),dtheta=2*horval,numhoverr=2,hoverr=hoverr[findex],thetamid=thetamid[findex])/gdetint
-        Bs12h[findex]=intangle(gdet*B[1],dtheta=2*horval,numhoverr=2,hoverr=hoverr[findex],thetamid=thetamid[findex])/gdetint
-        Bas12h[findex]=intangle(gdet*np.abs(B[1]),dtheta=2*horval,numhoverr=2,hoverr=hoverr[findex],thetamid=thetamid[findex])/gdetint
-        Bs32h[findex]=intangle(gdet*B[3],dtheta=2*horval,numhoverr=2,hoverr=hoverr[findex],thetamid=thetamid[findex])/gdetint
-        Bas32h[findex]=intangle(gdet*np.abs(B[3]),dtheta=2*horval,numhoverr=2,hoverr=hoverr[findex],thetamid=thetamid[findex])/gdetint
-        #HoverR
-        hoverr[findex],thetamid[findex]=horcalc()
+        keywords={'dtheta': 2*horval,'numhoverr': 2, 'hoverr': hoverr3d, 'thetamid': thetamid3d}
+        rhos2h[findex]=intangle(gdet*rho,**keywords)/gdetint
+        ugs2h[findex]=intangle(gdet*ug,**keywords)/gdetint
+        uu02h[findex]=intangle(gdet*uu[0],**keywords)/gdetint
+        uus12h[findex]=intangle(gdet*uu[1],**keywords)/gdetint
+        uuas12h[findex]=intangle(gdet*np.abs(uu[1]),**keywords)/gdetint
+        uus32h[findex]=intangle(gdet*uu[3],**keywords)/gdetint
+        uuas32h[findex]=intangle(gdet*np.abs(uu[3]),**keywords)/gdetint
+        Bs12h[findex]=intangle(gdet*B[1],**keywords)/gdetint
+        Bas12h[findex]=intangle(gdet*np.abs(B[1]),**keywords)/gdetint
+        Bs32h[findex]=intangle(gdet*B[3],**keywords)/gdetint
+        Bas32h[findex]=intangle(gdet*np.abs(B[3]),**keywords)/gdetint
         #Flux
         fstot[findex]=horfluxcalc(minbsqorho=0)
         fsj5[findex]=horfluxcalc(minbsqorho=5)
@@ -885,13 +970,15 @@ def getqtyvstime(ihor,horval=0.2):
         mdtot[findex]=mdotcalc()
         md2h[findex]=mdotcalc(dtheta=2*horval)
         md4h[findex]=mdotcalc(dtheta=4*horval)
-        md2hor[findex]=mdotcalc(numhoverr=2,hoverr=hoverr[findex],thetamid=thetamid[findex])
-        mdrhosq[findex]=intangle(gdet*rho**2*rho*uu1)/rhosqs[findex]
+        md2hor[findex]=mdotcalc(numhoverr=2,hoverr=hoverr3d,thetamid=thetamid3d)
+        mdrhosq[findex]=intangle(gdet*rho**2*rho*uu[1])/rhosqs[findex]
+        md5[findex]=intangle(gdet*rho*uu[1],minbsqorho=5)
+        md10[findex]=intangle(gdet*rho*uu[1],minbsqorho=10)
         #Edot
         edtot[findex]=intangle(gdet*Tud[1][0])
         ed2h[findex]=intangle(gdet*Tud[1][0],dtheta=2*horval)
         ed4h[findex]=intangle(gdet*Tud[1][0],dtheta=4*horval)
-        ed2hor[findex]=intangle(gdet*Tud[1][0],numhoverr=2,hoverr=hoverr[findex],thetamid=thetamid[findex])
+        ed2hor[findex]=intangle(gdet*Tud[1][0],numhoverr=2,hoverr=hoverr3d,thetamid=thetamid3d)
         edrhosq[findex]=intangle(gdet*rho**2*Tud[1][0])/rhosqs[findex]
         #Pjet
         pjem5[findex]=jetpowcalc(0,minbsqorho=5)
@@ -905,8 +992,10 @@ def getqtyvstime(ihor,horval=0.2):
         #    plt.figure(0)
         #    plt.clf()
         #    mkframe("lrho%04d" % findex, vmin=-8,vmax=0.2)
+    print( "Saving to file..." )
+    np.save( "qty.npy", qtymem )
     print( "Done!" )
-    return((ts,fs,md,pjem,pjtot))
+    return(qtymem)
 
 def fhorvstime(ihor):
     """
@@ -956,15 +1045,6 @@ def jetpowcalc(which=2,minbsqorho=10):
     #print "which = %d, minbsqorho = %g" % (which, minbsqorho)
     return(jetpowtot)
     
-def mdotcalc(whichi=None):
-    if whichi == None:
-        mdotden = -gdet*rho*uu[1]
-        mdottot = scaletofullwedge(np.sum(np.sum(mdotden,axis=2),axis=1)*_dx2*_dx3)
-    else:
-        mdotden = -gdet*rho*uu[1]
-        mdottot = scaletofullwedge(np.sum(mdotden[whichi])*_dx2*_dx3)
-    return(mdottot)
-
 def plotit(ts,fs,md):
     #rc('font', family='serif')
     #plt.figure( figsize=(12,9) )
@@ -989,6 +1069,140 @@ def plotit(ts,fs,md):
     #      fontsize=16, color='r')
     plotlist[1].grid(True)
     fig.savefig('test.pdf')
+
+def plotqtyvstime(qtymem,ihor=11):
+    ###############################
+    #copy this from getqtyvstime()
+    ###############################
+    #qty defs
+    i=0
+    ts=qtymem[i];i+=1
+    #hoverr
+    hoverr=qtymem[i];i+=1
+    thetamid=qtymem[i];i+=1
+    #rhosq
+    rhosqs=qtymem[i];i+=1
+    rhosrhosq=qtymem[i];i+=1
+    ugsrhosq=qtymem[i];i+=1
+    uu0rhosq=qtymem[i];i+=1
+    uus1rhosq=qtymem[i];i+=1
+    uuas1rhosq=qtymem[i];i+=1
+    uus3rhosq=qtymem[i];i+=1
+    uuas3rhosq=qtymem[i];i+=1
+    Bs1rhosq=qtymem[i];i+=1
+    Bas1rhosq=qtymem[i];i+=1
+    Bs3rhosq=qtymem[i];i+=1
+    Bas3rhosq=qtymem[i];i+=1
+    #2h
+    rhos2h=qtymem[i];i+=1
+    ugs2h=qtymem[i];i+=1
+    uu02h=qtymem[i];i+=1
+    uus12h=qtymem[i];i+=1
+    uuas12h=qtymem[i];i+=1
+    uus32h=qtymem[i];i+=1
+    uuas32h=qtymem[i];i+=1
+    Bs12h=qtymem[i];i+=1
+    Bas12h=qtymem[i];i+=1
+    Bs32h=qtymem[i];i+=1
+    Bas32h=qtymem[i];i+=1
+    #4h
+    rhos4h=qtymem[i];i+=1
+    ugs4h=qtymem[i];i+=1
+    uu04h=qtymem[i];i+=1
+    uus14h=qtymem[i];i+=1
+    uuas14h=qtymem[i];i+=1
+    uus34h=qtymem[i];i+=1
+    uuas34h=qtymem[i];i+=1
+    Bs14h=qtymem[i];i+=1
+    Bas14h=qtymem[i];i+=1
+    Bs34h=qtymem[i];i+=1
+    Bas34h=qtymem[i];i+=1
+    #2hor
+    rhos2h=qtymem[i];i+=1
+    ugs2h=qtymem[i];i+=1
+    uu02h=qtymem[i];i+=1
+    uus12h=qtymem[i];i+=1
+    uuas12h=qtymem[i];i+=1
+    uus32h=qtymem[i];i+=1
+    uuas32h=qtymem[i];i+=1
+    Bs12h=qtymem[i];i+=1
+    Bas12h=qtymem[i];i+=1
+    Bs32h=qtymem[i];i+=1
+    Bas32h=qtymem[i];i+=1
+    #Flux
+    fstot=qtymem[i];i+=1
+    fsj5=qtymem[i];i+=1
+    fsj10=qtymem[i];i+=1
+    #Mdot
+    mdtot=qtymem[i];i+=1
+    md2h=qtymem[i];i+=1
+    md4h=qtymem[i];i+=1
+    md2hor=qtymem[i];i+=1
+    mdrhosq=qtymem[i];i+=1
+    md5=qtymem[i];i+=1
+    md10=qtymem[i];i+=1
+    #Edot
+    edtot=qtymem[i];i+=1
+    ed2h=qtymem[i];i+=1
+    ed4h=qtymem[i];i+=1
+    ed2hor=qtymem[i];i+=1
+    edrhosq=qtymem[i];i+=1
+    #Pjet
+    pjem5=qtymem[i];i+=1
+    pjem10=qtymem[i];i+=1
+    pjma5=qtymem[i];i+=1
+    pjma10=qtymem[i];i+=1
+    #end qty defs
+    ##############################
+    #end copy
+    ##############################
+    #
+    #rc('font', family='serif')
+    #plt.figure( figsize=(12,9) )
+    plt.clf()
+    fig,plotlist=plt.subplots(nrows=3,ncols=1,sharex=True,figsize=(12,12))
+    plottitle = "a = %g: %s" % ( a, os.path.basename(os.getcwd()) )
+    plt.suptitle( plottitle )
+    plt.subplots_adjust(hspace=0.1) #increase vertical spacing to avoid crowding
+    plotlist[0].plot(ts,fstot[:,ihor],label=r'$\Phi_{\rm h,tot}$')
+    plotlist[0].plot(ts,fsj5[:,ihor],label=r'$\Phi_{\rm h,5}$')
+    plotlist[0].plot(ts,fsj10[:,ihor],label=r'$\Phi_{\rm h,10}$')
+    #plotlist[0].plot(ts,fs,'r+') #, label=r'$\Phi_{\rm h}/0.5\Phi_{\rm i}$: Data Points')
+    plotlist[0].legend(loc='upper left')
+    #plt.xlabel(r'$t\;(GM/c^3)$')
+    plotlist[0].set_ylabel(r'$\Phi_{\rm h}$',fontsize=16)
+    plt.setp( plotlist[0].get_xticklabels(), visible=False)
+    plotlist[0].grid(True)
+    #
+    #plotlist[1].subplot(212,sharex=True)
+    plotlist[1].plot(ts,mdtot[:,ihor],label=r'$\dot M_{\rm h,tot}$')
+    plotlist[1].plot(ts,md2h[:,ihor],label=r'$\dot M_{\rm h,2h}$')
+    plotlist[1].plot(ts,md4h[:,ihor],label=r'$\dot M_{\rm h,4h}$')
+    plotlist[1].plot(ts,md2hor[:,ihor],label=r'$\dot M_{\rm h,2hor}$')
+    plotlist[1].plot(ts,mdrhosq[:,ihor],label=r'$\dot M_{\rm h,rhosq}$')
+    plotlist[1].plot(ts,md5[:,ihor],label=r'$\dot M_{\rm h,5}$')
+    plotlist[1].plot(ts,md10[:,ihor],label=r'$\dot M_{\rm h,10}$')
+    #plotlist[1].plot(ts,md,'r+') #, label=r'$\dot M_{\rm h}$: Data Points')
+    plotlist[1].legend(loc='upper left')
+    #plotlist[1].set_xlabel(r'$t\;(GM/c^3)$')
+    plotlist[1].set_ylabel(r'$\dot M_{\rm h}$',fontsize=16)
+    plt.setp( plotlist[1].get_xticklabels(), visible=False)
+    
+    #plotlist[2].subplot(212,sharex=True)
+    plotlist[2].plot(ts,(pjem5/mdtot),label=r'$\dot P_{\rm j,em}/\dot M_{\rm tot}$')
+    #plotlist[2].plot(ts,jem/md,'r+') #, label=r'$\dot M_{\rm h}$: Data Points')
+    plotlist[2].plot(ts,(pjem10/mdtot),label=r'$\dot P_{\rm j,tot}/\dot M_{\rm tot}$')
+    #plotlist[2].plot(ts,jtot/md,'r+') #, label=r'$\dot M_{\rm h}$: Data Points')
+    plotlist[2].legend(loc='upper left')
+    plotlist[2].set_xlabel(r'$t\;(GM/c^3)$')
+    plotlist[2].set_ylabel(r'$\dot P_{\rm j}/\dot M_{\rm h}$',fontsize=16)
+
+    #title("\TeX\ is Number $\displaystyle\sum_{n=1}^\infty\frac{-e^{i\pi}}{2^n}$!", 
+    #      fontsize=16, color='r')
+    plotlist[0].grid(True)
+    plotlist[1].grid(True)
+    plotlist[2].grid(True)
+    fig.savefig('pjet_%s.pdf' % os.path.basename(os.getcwd()) )
 
 def plotj(ts,fs,md,jem,jtot):
     #rc('font', family='serif')
@@ -1173,8 +1387,11 @@ def pf(dir=2):
     plt.plot(tj[myi,0:ny-1,myk]+0.5,gdetB[dir,myi,1:ny,myk]/(0.5*(gdet[myi,0:ny-1,myk]+gdet[myi,1:ny,myk])))
 
 
-def choptop(var,maxvar):
+def chophi(var,maxvar):
     var[var>maxvar]=0*var[var>maxvar]+maxvar
+
+def choplo(var,minvar):
+    var[var<minvar]=0*var[var<minvar]+minvar
 
 if __name__ == "__main__":
     import sys
@@ -1196,6 +1413,13 @@ if __name__ == "__main__":
         diskflux=diskfluxcalc(ny/2)
         ts,fs,md,jem,jtot=mfjhorvstime(11)
         plotj(ts,fs/(diskflux),md,jem,jtot)
+    if True:
+        #cd ~/run; for f in rtf*; do cd ~/run/$f; (nice -n 10 python  ~/py/mread/__init__.py &> python.out); done
+        grid3d("gdump.bin")
+        rfd("fieldline0000.bin")
+        diskflux=diskfluxcalc(ny/2)
+        qtymem=getqtyvstime(11,0.2)
+        plotqtyvstime(qtymem)
     if False:
         rfd("fieldline0320.bin")
         plt.figure(1)
@@ -1226,7 +1450,7 @@ if __name__ == "__main__":
         hf=horfluxcalc(ihor)
         df=diskfluxcalc(ny/2,rmin=1+(1-a**2)**0.5)
         print "Final   (t=%-8g): BHflux = %g, Diskflux = %g" % (t, hf, df)
-    if True:
+    if False:
         len=10
         #To generate movies for all sub-folders of a folder:
         #cd ~/Research/runart; for f in *; do cd ~/Research/runart/$f; (python  ~/py/mread/__init__.py &> python.out &); done
