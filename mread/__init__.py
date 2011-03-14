@@ -33,17 +33,17 @@ def horcalc():
     hoverr=(np.sum(np.sum(gdet*rho*(h-thetamid)**2,axis=2),axis=1) / np.sum(np.sum(gdet*rho,axis=2),axis=1))**0.5
     return((hoverr,thetamid))
 
-def inthor(qty,dtheta=None,numhoverr=2,hoverr=None):
+def intangle(qty,dtheta=None,numhoverr=1,hoverr=None,thetamid=np.pi/2:
     if hoverr == None:
         if dtheta == None:
             hoverr,thetamid = horcalc()
         else:
-            numhoverr = 1
+            if(dtheta == None) dtheta = np.pi/2
             hoverr = dtheta
             thetamid = np.pi/2
     integrand = qty
     insidenumhor = np.abs(h-thetamid)<numhoverr*hoverr
-    integral=np.sum(np.sum(integrand*insidenumhor,axis=2),axis=1)*_dx2*dx3
+    integral=(integrand*insidenumhor).sum(axis=2).sum(axis=1)*_dx2*dx3
     scaletofullwedge(integral)
     return(integral)
 
@@ -712,19 +712,16 @@ def horfluxcalc(ihor=None,minbsqorho=10):
 def scaletofullwedge(val):
     return(val * 2*np.pi/(dxdxp[3,3,0,0,0]*nz*_dx3))
 
-def mdotcalc(ihor=None,hor=None):
+def mdotcalc(ihor=None,**kwargs):
     """
     Computes the absolute flux through the sphere i = ihor
     """
     #1D function of theta only:
-    global gdet, rho, uu, _dx3, _dx3
-    md = (-gdet*rho*uu[1]).sum()*_dx2*_dx3
+    md = intangle( rho*uu[1], **kwargs)
     if(ihor==None):
-        scaletofullwedge(md)
+        return(md)
     else
-        scaletofullwedge(md[ihor])
-    return(md)
-
+        return(md[ihor])
 
 def diskfluxcalc(jmid,rmin=None,rmax=None):
     """
@@ -774,7 +771,7 @@ def mfjhorvstime(ihor):
     print( "Done!" )
     return((ts,fs,md,jem,jtot))
 
-def getqtyvstime(ihor):
+def getqtyvstime(ihor,horval=0.2):
     """
     Returns a tuple (ts,fs,mdot,pjetem,pjettot): lists of times, horizon fluxes, and Mdot
     """
@@ -785,8 +782,20 @@ def getqtyvstime(ihor):
     qtymem=np.empty((nqty,len(flist),nx),dtype=float)
     i=0
     ts=qtymem[i];i+=1
+    rhos=qtymem[i];i+=1
+    ugs=qtymem[i];i+=1
+    uu0=qtymem[i];i+=1
+    uus1=qtymem[i];i+=1
+    uuas1=qtymem[i];i+=1
+    uus3=qtymem[i];i+=1
+    uuas3=qtymem[i];i+=1
+    Bs1=qtymem[i];i+=1
+    Bas1=qtymem[i];i+=1
+    Bs3=qtymem[i];i+=1
+    Bas3=qtymem[i];i+=1
     #HoverR
     hoverr=qtymem[i];i+=1
+    thetamid=qtymem[i];i+=1
     #Flux
     fstot=qtymem[i];i+=1
     fsj5=qtymem[i];i+=1
@@ -796,11 +805,13 @@ def getqtyvstime(ihor):
     md2h=qtymem[i];i+=1
     md4h=qtymem[i];i+=1
     md2hor=qtymem[i];i+=1
+    mdrhosq=qtymem[i];i+=1
     #Edot
     edtot=qtymem[i];i+=1
     ed2h=qtymem[i];i+=1
     ed4h=qtymem[i];i+=1
     ed2hor=qtymem[i];i+=1
+    edrhosq=qtymem[i];i+=1
     #Pjet
     pjem5=qtymem[i];i+=1
     pjem10=qtymem[i];i+=1
@@ -812,25 +823,81 @@ def getqtyvstime(ihor):
         cvel()
         Tcalcud()
         ts[findex,0]=t
+        rhosqint=intangle(gdet*rho**2)
+        rhosqs[findex]=rhosqint
+        rhosrhosq[findex]=intangle(gdet*rho**2*rho)/rhosqint
+        ugsrhosq[findex]=intangle(gdet*rho**2*ug)/rhosqint
+        uu0rhosq[findex]=intangle(gdet*rho**2*uu0)/rhosqint
+        uus1rhosq[findex]=intangle(gdet*rho**2*uu[1])/rhosqint
+        uuas1rhosq[findex]=intangle(gdet*rho**2*np.abs(uu[1]))/rhosqint
+        uus3rhosq[findex]=intangle(gdet*rho**2*uu[3])/rhosqint
+        uuas3rhosq[findex]=intangle(gdet*rho**2*np.abs(uu[3]))/rhosqint
+        Bs1rhosq[findex]=intangle(gdet*rho**2*B[1])/rhosqint
+        Bas1rhosq[findex]=intangle(gdet*rho**2*np.abs(B[1]))/rhosqint
+        Bs3rhosq[findex]=intangle(gdet*rho**2*B[3])/rhosqint
+        Bas3rhosq[findex]=intangle(gdet*rho**2*np.abs(B[3]))/rhosqint
+        #2h
+        gdetint=intangle(gdet,dtheta=2*horval)
+        rhos2h[findex]=intangle(gdet*rho,dtheta=2*horval)/gdetint
+        ugs2h[findex]=intangle(gdet*ug,dtheta=2*horval)/gdetint
+        uu02h[findex]=intangle(gdet*uu0,dtheta=2*horval)/gdetint
+        uus12h[findex]=intangle(gdet*uu[1],dtheta=2*horval)/gdetint
+        uuas12h[findex]=intangle(gdet*np.abs(uu[1]),dtheta=2*horval)/gdetint
+        uus32h[findex]=intangle(gdet*uu[3],dtheta=2*horval)/gdetint
+        uuas32h[findex]=intangle(gdet*np.abs(uu[3]),dtheta=2*horval)/gdetint
+        Bs12h[findex]=intangle(gdet*B[1],dtheta=2*horval)/gdetint
+        Bas12h[findex]=intangle(gdet*np.abs(B[1]),dtheta=2*horval)/gdetint
+        Bs32h[findex]=intangle(gdet*B[3],dtheta=2*horval)/gdetint
+        Bas32h[findex]=intangle(gdet*np.abs(B[3]),dtheta=2*horval)/gdetint
+        #4h
+        gdetint=intangle(gdet,dtheta=4*horval)
+        rhos4h[findex]=intangle(gdet*rho,dtheta=4*horval)/gdetint
+        ugs4h[findex]=intangle(gdet*ug,dtheta=4*horval)/gdetint
+        uu04h[findex]=intangle(gdet*uu0,dtheta=4*horval)/gdetint
+        uus14h[findex]=intangle(gdet*uu[1],dtheta=4*horval)/gdetint
+        uuas14h[findex]=intangle(gdet*np.abs(uu[1]),dtheta=4*horval)/gdetint
+        uus34h[findex]=intangle(gdet*uu[3],dtheta=4*horval)/gdetint
+        uuas34h[findex]=intangle(gdet*np.abs(uu[3]),dtheta=4*horval)/gdetint
+        Bs14h[findex]=intangle(gdet*B[1],dtheta=4*horval)/gdetint
+        Bas14h[findex]=intangle(gdet*np.abs(B[1]),dtheta=4*horval)/gdetint
+        Bs34h[findex]=intangle(gdet*B[3],dtheta=4*horval)/gdetint
+        Bas34h[findex]=intangle(gdet*np.abs(B[3]),dtheta=4*horval)/gdetint
+        #2hor
+        gdetint=intangle(gdet,dtheta=2*horval)
+        rhos2h[findex]=intangle(gdet*rho,dtheta=2*horval,numhoverr=2,hoverr=hoverr[findex],thetamid=thetamid[findex])/gdetint
+        ugs2h[findex]=intangle(gdet*ug,dtheta=2*horval,numhoverr=2,hoverr=hoverr[findex],thetamid=thetamid[findex])/gdetint
+        uu02h[findex]=intangle(gdet*uu0,dtheta=2*horval,numhoverr=2,hoverr=hoverr[findex],thetamid=thetamid[findex])/gdetint
+        uus12h[findex]=intangle(gdet*uu[1],dtheta=2*horval,numhoverr=2,hoverr=hoverr[findex],thetamid=thetamid[findex])/gdetint
+        uuas12h[findex]=intangle(gdet*np.abs(uu[1]),dtheta=2*horval,numhoverr=2,hoverr=hoverr[findex],thetamid=thetamid[findex])/gdetint
+        uus32h[findex]=intangle(gdet*uu[3],dtheta=2*horval,numhoverr=2,hoverr=hoverr[findex],thetamid=thetamid[findex])/gdetint
+        uuas32h[findex]=intangle(gdet*np.abs(uu[3]),dtheta=2*horval,numhoverr=2,hoverr=hoverr[findex],thetamid=thetamid[findex])/gdetint
+        Bs12h[findex]=intangle(gdet*B[1],dtheta=2*horval,numhoverr=2,hoverr=hoverr[findex],thetamid=thetamid[findex])/gdetint
+        Bas12h[findex]=intangle(gdet*np.abs(B[1]),dtheta=2*horval,numhoverr=2,hoverr=hoverr[findex],thetamid=thetamid[findex])/gdetint
+        Bs32h[findex]=intangle(gdet*B[3],dtheta=2*horval,numhoverr=2,hoverr=hoverr[findex],thetamid=thetamid[findex])/gdetint
+        Bas32h[findex]=intangle(gdet*np.abs(B[3]),dtheta=2*horval,numhoverr=2,hoverr=hoverr[findex],thetamid=thetamid[findex])/gdetint
+        #HoverR
+        hoverr[findex],thetamid[findex]=horcalc()
         #Flux
         fstot[findex]=horfluxcalc(minbsqorho=0)
         fsj5[findex]=horfluxcalc(minbsqorho=5)
         fsj10[findex]=horfluxcalc(minbsqorho=10)
         #Mdot
         mdtot[findex]=mdotcalc()
-        md2h[findex]=mdotcalc()
-        md4h[findex]=mdotcalc()
-        md2hor[findex]=mdotcalc()
+        md2h[findex]=mdotcalc(dtheta=2*horval)
+        md4h[findex]=mdotcalc(dtheta=4*horval)
+        md2hor[findex]=mdotcalc(numhoverr=2,hoverr=hoverr[findex],thetamid=thetamid[findex])
+        mdrhosq[findex]=intangle(gdet*rho**2*rho*uu1)/rhosqs[findex]
         #Edot
-        edtot[findex]=mdotcalc()
-        ed2h[findex]=mdotcalc()
-        ed4h[findex]=mdotcalc()
-        ed2hor[findex]=mdotcalc()
+        edtot[findex]=intangle(gdet*Tud[1][0])
+        ed2h[findex]=intangle(gdet*Tud[1][0],dtheta=2*horval)
+        ed4h[findex]=intangle(gdet*Tud[1][0],dtheta=4*horval)
+        ed2hor[findex]=intangle(gdet*Tud[1][0],numhoverr=2,hoverr=hoverr[findex],thetamid=thetamid[findex])
+        edrhosq[findex]=intangle(gdet*rho**2*Tud[1][0])/rhosqs[findex]
         #Pjet
-        pjem5[findex]=jetpowcalc(0)
-        pjem10[findex]=jetpowcalc(0)
-        pjma5[findex]=jetpowcalc(1)
-        pjma10[findex]=jetpowcalc(1)
+        pjem5[findex]=jetpowcalc(0,minbsqorho=5)
+        pjem10[findex]=jetpowcalc(0,minbsqorho=10)
+        pjma5[findex]=jetpowcalc(1,minbsqorho=5)
+        pjma10[findex]=jetpowcalc(1,minbsqorho=10)
         #if os.path.isfile("lrho%04d.png" % findex):
         #    print( "Skipping " + fname + " as lrho%04d.png exists" % findex );
         #else:
