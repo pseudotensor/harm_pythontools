@@ -51,7 +51,7 @@ def intangle(qty,hoverr=None,thetamid=np.pi/2,minbsqorho=None,which=1):
     else:
         insidebsqorho = 1
     integral=(integrand*insidehor*insidebsqorho*which).sum(axis=2).sum(axis=1)*_dx2*_dx3
-    scaletofullwedge(integral)
+    integral=scaletofullwedge(integral)
     return(integral)
 
 # def inttheta(qty,dtheta=np.pi/2):
@@ -696,7 +696,7 @@ def fieldcalc2U():
     daphi1 = (gdetB[1,0]).sum(1).cumsum(axis=0)*_dx2*_dx3
     daphi[0,:] += daphi1
     aphi=daphi.cumsum(axis=0)
-    scaletofullwedge(aphi)
+    aphi=scaletofullwedge(aphi)
     return(aphi[:,:,None])
 
 def horfluxcalc(ihor=None,minbsqorho=10):
@@ -708,7 +708,7 @@ def horfluxcalc(ihor=None,minbsqorho=10):
     dfabs = (np.abs(gdetB[1]*(bsq/rho>minbsqorho))).sum(2)*_dx2*_dx3
     fabs = dfabs.sum(axis=1)
     #account for the wedge
-    scaletofullwedge(fabs)
+    fabs=scaletofullwedge(fabs)
     #fabs *= 
     if ihor == None:
         return(fabs)
@@ -748,11 +748,11 @@ def diskfluxcalc(jmid,rmin=None,rmax=None):
     #1D function of theta only:
     dfabs = (np.abs(gdetB[2,:,jmid,:])).sum(1)*_dx1*_dx3
     if rmax != None:
-        dfabs = dfabs[r[:,0,0]<=rmax]
+        dfabs = dfabs*(r[:,0,0]<=rmax)
     if rmin != None:
-        dfabs = dfabs[r[:,0,0]>=rmin]
+        dfabs = dfabs*(r[:,0,0]>=rmin)
     fabs = dfabs.sum(axis=0)
-    scaletofullwedge(fabs)
+    fabs=scaletofullwedge(fabs)
     return(fabs)
 
 def mfjhorvstime(ihor):
@@ -982,7 +982,7 @@ def getqtyvstime(ihor,horval=0.2):
         md2hor[findex]=mdotcalc(hoverr=2*hoverr3d,thetamid=thetamid3d)
         md5[findex]=intangle(-gdet*rho*uu[1],minbsqorho=5)
         md10[findex]=intangle(-gdet*rho*uu[1],minbsqorho=10)
-        mdrhosq[findex]=((-gdet*rho**2*rho*uu[1]).sum(1)/maxrhosq2d).sum(1)*_dx2*_dx3 #need to scale to full wedge!
+        mdrhosq[findex]=scaletofullwedge(((-gdet*rho**2*rho*uu[1]).sum(1)/maxrhosq2d).sum(1)*_dx2*_dx3)
         #mdrhosq[findex]=(-gdet*rho**2*rho*uu[1]).sum(1).sum(1)/(-gdet*rho**2).sum(1).sum(1)*(-gdet).sum(1).sum(1)*_dx2*_dx3
         #Edot
         edtot[findex]=intangle(-gdet*Tud[1][0])
@@ -992,7 +992,7 @@ def getqtyvstime(ihor,horval=0.2):
         ed2h[findex]=intangle(-gdet*Tud[1][0],hoverr=2*horval)
         ed4h[findex]=intangle(-gdet*Tud[1][0],hoverr=4*horval)
         ed2hor[findex]=intangle(-gdet*Tud[1][0],hoverr=2*hoverr3d,thetamid=thetamid3d)
-        edrhosq[findex]=((-gdet*rho**2*Tud[1][0]).sum(1)/maxrhosq2d).sum(1)*_dx2*_dx3 #need to scale to full wedge!
+        edrhosq[findex]=scaletofullwedge(((-gdet*rho**2*Tud[1][0]).sum(1)/maxrhosq2d).sum(1)*_dx2*_dx3)
         #Pjet
         pjem5[findex]=jetpowcalc(0,minbsqorho=5)
         pjem10[findex]=jetpowcalc(0,minbsqorho=10)
@@ -1264,7 +1264,7 @@ def plotj(ts,fs,md,jem,jtot):
     plotlist[0].grid(True)
     plotlist[1].grid(True)
     plotlist[2].grid(True)
-    fig.savefig('pjet_%s.pdf' % os.path.basename(os.getcwd()) )
+    fig.savefig('pjetf_%s.pdf' % os.path.basename(os.getcwd()) )
 
 
 def test():
