@@ -804,11 +804,11 @@ def getqtyvstime(ihor,horval=0.2):
         qtymem2=np.load( "qty.npy" )
         numtimeslices2 = qtymem2.shape[1]
         print "Number of previously saved time slices: %d" % numtimeslices2 
-        if( numtimeslices2 > numtimeslices ):
-            print "Number of previously saved time slices is > than of timeslices to be loaded, re-using previously saved time slices"
+        if( numtimeslices2 >= numtimeslices ):
+            print "Number of previously saved time slices is >= than of timeslices to be loaded, re-using previously saved time slices"
             return(qtymem2)
         else:
-            print "Number of previously saved time slices is <= than of timeslices to be loaded, re-using previously saved time slices"
+            print "Number of previously saved time slices is < than of timeslices to be loaded, re-using previously saved time slices"
             qtymem[:,0:numtimeslices2] = qtymem2[:,0:numtimeslices2]
             qtymem2=None
     else:
