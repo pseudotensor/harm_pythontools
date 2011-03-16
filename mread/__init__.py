@@ -1176,8 +1176,8 @@ def plotqtyvstime(qtymem,ihor=11):
     #
     #rc('font', family='serif')
     #plt.figure( figsize=(12,9) )
-    #plt.clf()
-    fig,plotlist=plt.subplots(nrows=4,ncols=1,sharex=True,figsize=(12,16))
+    fig,plotlist=plt.subplots(nrows=4,ncols=1,sharex=True,figsize=(12,16),num=1)
+    plt.clf()
     plottitle = "a = %g: %s" % ( a, os.path.basename(os.getcwd()) )
     plt.suptitle( plottitle )
     plt.subplots_adjust(hspace=0.1) #increase vertical spacing to avoid crowding
