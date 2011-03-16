@@ -13,6 +13,7 @@ import numpy as np
 import array
 #import scipy as sc
 from scipy.interpolate import griddata
+from scipy.interpolate import interp1d
 #from scipy.interpolate import Rbf
 import matplotlib.pyplot as plt
 from matplotlib import cm
@@ -1083,6 +1084,10 @@ def plotit(ts,fs,md):
     plotlist[1].grid(True)
     fig.savefig('test.pdf')
 
+def iofr(rval):
+    res = interp1d(r[:,0,0], ti[:,0,0], kind='cubic')
+    return(np.floor(res(rval)+0.5))
+
 def plotqtyvstime(qtymem,ihor=11):
     ###############################
     #copy this from getqtyvstime()
@@ -1228,54 +1233,73 @@ def plotqtyvstime(qtymem,ihor=11):
     plotlist[1].grid(True)
     plotlist[2].grid(True)
     plotlist[3].grid(True)
-    fig.savefig('pjet_%s.pdf' % os.path.basename(os.getcwd()) )
+    fig.savefig('pjet1_%s.pdf' % os.path.basename(os.getcwd()) )
 
     #density/velocity/hor figure
+    rhor=1+(1-a**2)**0.5
     fig,plotlist=plt.subplots(nrows=4,ncols=1,sharex=True,figsize=(12,16),num=2)
     plt.clf()
     plottitle = r"\rho,u^r,h/r: a = %g: %s" % ( a, os.path.basename(os.getcwd()) )
     plt.suptitle( plottitle )
     plt.subplots_adjust(hspace=0.1) #increase vertical spacing to avoid crowding
     #print fstot[:,ihor].shape
-    plotlist[0].plot(ts,hoverr[:,ihor],label=r'($h/r)_{\rm h}$')
-    plotlist[0].plot(ts,hoverr[:,ihor],label=r'($h/r)_{\rm h}$') ##### continue here
-    plotlist[0].plot(ts,hoverr[:,ihor],label=r'($h/r)_{\rm h}$')
+    plotlist[0].plot(ts,hoverr[:,ihor],label=r'$(h/r)_{\rm h}$')
+    plotlist[0].plot(ts,hoverr[:,iofr(2)],label=r'$(h/r)_{\rm 2}$') ##### continue here
+    plotlist[0].plot(ts,hoverr[:,iofr(4)],label=r'$(h/r)_{\rm 4}$')
+    plotlist[0].plot(ts,hoverr[:,iofr(8)],label=r'$(h/r)_{\rm 8}$')
+    plotlist[0].plot(ts,hoverr[:,iofr(10)],label=r'$(h/r)_{\rm 10}$')
+    plotlist[0].plot(ts,hoverr[:,iofr(12)],label=r'$(h/r)_{\rm 12}$')
+    plotlist[0].plot(ts,hoverr[:,iofr(15)],label=r'$(h/r)_{\rm 15}$')
+    #thetamid
+    plotlist[0].plot(ts,(thetamid-np.pi/2)[:,ihor],'-',label=r'$\theta_{\rm,h}$')
+    plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(2)],'-',label=r'$\theta_{\rm,2}$') ##### continue here
+    plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(4)],'-',label=r'$\theta_{\rm,4}$')
+    plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(8)],'-',label=r'$\theta_{\rm,8}$')
+    plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(10)],'-',label=r'$\theta_{\rm,10}$')
+    plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(12)],'-',label=r'$\theta_{\rm,12}$')
+    plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(15)],'-',label=r'$\theta_{\rm,15}$')
     #plotlist[0].plot(ts,fs,'r+') #, label=r'$\Phi_{\rm h}/0.5\Phi_{\rm i}$: Data Points')
-    plotlist[0].legend(loc='upper left')
+    #legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
+    plotlist[0].legend(loc='upper left',ncol=3)
     #plt.xlabel(r'$t\;(GM/c^3)$')
-    plotlist[0].set_ylabel(r'$\Phi_{\rm h}$',fontsize=16)
+    plotlist[0].set_ylabel(r'$h/r$',fontsize=16)
     plt.setp( plotlist[0].get_xticklabels(), visible=False)
     plotlist[0].grid(True)
     #
     #plotlist[1].subplot(212,sharex=True)
-    plotlist[1].plot(ts,np.abs(mdtot[:,ihor])*2,label=r'$\dot M_{\rm h,tot}$')
-    plotlist[1].plot(ts,np.abs(mdtot[:,ihor]-md5[:,ihor])*2,label=r'$\dot M_{\rm h,tot,bsqorho<5}$')
-    plotlist[1].plot(ts,np.abs(mdtot[:,ihor]-md10[:,ihor])*2,label=r'$\dot M_{\rm h,tot,bsqorho<10}$')
-    #plotlist[1].plot(ts,np.abs(md2h[:,ihor])/2,label=r'$\dot M_{\rm h,2h}$')
-    #plotlist[1].plot(ts,np.abs(md4h[:,ihor])/2,label=r'$\dot M_{\rm h,4h}$')
-    #plotlist[1].plot(ts,np.abs(md2hor[:,ihor])/2,label=r'$\dot M_{\rm h,2hor}$')
-    plotlist[1].plot(ts,np.abs(mdrhosq[:,ihor])*2,label=r'$\dot M_{\rm h,rhosq}$')
-    plotlist[1].plot(ts,np.abs(md5[:,ihor])*2,label=r'$\dot M_{\rm h,5}$')
-    plotlist[1].plot(ts,np.abs(md10[:,ihor])*2,label=r'$\dot M_{\rm h,10}$')
-    #plotlist[1].plot(ts,np.abs(md[:,ihor]),'r+') #, label=r'$\dot M_{\rm h}$: Data Points')
+    plotlist[1].plot(ts,(uus12hor*dxdxp[1][1][:,0,0])[:,ihor],label=r'$u^r_{\rm h}$')
+    plotlist[1].plot(ts,(uus12hor*dxdxp[1][1][:,0,0])[:,iofr(2)],label=r'$u^r_{\rm 2}$') ##### continue here
+    plotlist[1].plot(ts,(uus12hor*dxdxp[1][1][:,0,0])[:,iofr(4)],label=r'$u^r_{\rm 4}$')
+    plotlist[1].plot(ts,(uus12hor*dxdxp[1][1][:,0,0])[:,iofr(8)],label=r'$u^r_{\rm 8}$')
+    plotlist[1].plot(ts,(uus12hor*dxdxp[1][1][:,0,0])[:,iofr(10)],label=r'$u^r_{\rm 10}$')
+    plotlist[1].plot(ts,(uus12hor*dxdxp[1][1][:,0,0])[:,iofr(12)],label=r'$u^r_{\rm 12}$')
+    plotlist[1].plot(ts,(uus12hor*dxdxp[1][1][:,0,0])[:,iofr(15)],label=r'$u^r_{\rm 15}$')
     plotlist[1].legend(loc='upper left')
     #plotlist[1].set_xlabel(r'$t\;(GM/c^3)$')
-    plotlist[1].set_ylabel(r'$\dot M_{\rm h}$',fontsize=16)
+    plotlist[1].set_ylabel(r'$u^r$',fontsize=16)
     plt.setp( plotlist[1].get_xticklabels(), visible=False)
     
-    plotlist[2].plot(ts,(pjem5[:,ihor]),label=r'$\dot P_{\rm j,em5}$')
-    plotlist[2].plot(ts,(pjem10[:,ihor]),label=r'$\dot P_{\rm j,em10}$')
+    plotlist[2].plot(ts,rhos2hor[:,ihor],label=r'$u^r_{\rm h}$')
+    plotlist[2].plot(ts,rhos2hor[:,iofr(2)],label=r'$u^r_{\rm 2}$') ##### continue here
+    plotlist[2].plot(ts,rhos2hor[:,iofr(4)],label=r'$u^r_{\rm 4}$')
+    plotlist[2].plot(ts,rhos2hor[:,iofr(8)],label=r'$u^r_{\rm 8}$')
+    plotlist[2].plot(ts,rhos2hor[:,iofr(10)],label=r'$u^r_{\rm 10}$')
+    plotlist[2].plot(ts,rhos2hor[:,iofr(12)],label=r'$u^r_{\rm 12}$')
+    plotlist[2].plot(ts,rhos2hor[:,iofr(15)],label=r'$u^r_{\rm 15}$')
     plotlist[2].legend(loc='upper left')
     #plotlist[2].set_xlabel(r'$t\;(GM/c^3)$')
-    plotlist[2].set_ylabel(r'$\dot P_{\rm j}$',fontsize=16)
+    plotlist[2].set_ylabel(r'$\rho$',fontsize=16)
 
-    plotlist[3].plot(ts,(pjem10[:,ihor]/mdtot[:,ihor]/2),label=r'$\dot P_{\rm j,em10}/\dot M_{\rm tot}$')
-    plotlist[3].plot(ts,(pjem5[:,ihor]/(mdtot[:,ihor]-md5[:,ihor])/2),label=r'$\dot P_{\rm j,em5}/\dot M_{{\rm tot},b^2/\rho<5}$')
-    plotlist[3].plot(ts,(pjem10[:,ihor]/(mdtot[:,ihor]-md10[:,ihor])/2),label=r'$\dot P_{\rm j,em10}/\dot M_{{\rm tot},b^2/\rho<10}$')
-    plotlist[3].set_ylim(0,6)
+    plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,ihor],label=r'$u^r_{\rm h}$')
+    plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(2)],label=r'$u^r_{\rm 2}$') ##### continue here
+    plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(4)],label=r'$u^r_{\rm 4}$')
+    plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(8)],label=r'$u^r_{\rm 8}$')
+    plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(10)],label=r'$u^r_{\rm 10}$')
+    plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(12)],label=r'$u^r_{\rm 12}$')
+    plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(15)],label=r'$u^r_{\rm 15}$')
     plotlist[3].legend(loc='upper left')
     plotlist[3].set_xlabel(r'$t\;(GM/c^3)$')
-    plotlist[3].set_ylabel(r'$\dot P_{\rm j}/\dot M_{\rm h}$',fontsize=16)
+    plotlist[3].set_ylabel(r'$u_g/\rho$',fontsize=16)
 
     #title("\TeX\ is Number $\displaystyle\sum_{n=1}^\infty\frac{-e^{i\pi}}{2^n}$!", 
     #      fontsize=16, color='r')
@@ -1283,7 +1307,7 @@ def plotqtyvstime(qtymem,ihor=11):
     plotlist[1].grid(True)
     plotlist[2].grid(True)
     plotlist[3].grid(True)
-    fig.savefig('pjet_%s.pdf' % os.path.basename(os.getcwd()) )
+    fig.savefig('pjet2_%s.pdf' % os.path.basename(os.getcwd()) )
 
 def plotj(ts,fs,md,jem,jtot):
     #rc('font', family='serif')
@@ -1501,9 +1525,11 @@ if __name__ == "__main__":
         #cd ~/run; for f in rtf*; do cd ~/run/$f; (nice -n 10 python  ~/py/mread/__init__.py &> python.out); done
         grid3d("gdump.bin")
         rfd("fieldline0000.bin")
+        rhor=1+(1-a**2)**0.5
+        ihor = np.floor(iofr(rhor)+0.5);
         #diskflux=diskfluxcalc(ny/2)
         qtymem=None #clear to free mem
-        qtymem=getqtyvstime(11,0.2)
+        qtymem=getqtyvstime(ihor,0.2)
         plotqtyvstime(qtymem)
     if False:
         rfd("fieldline0320.bin")
@@ -1526,14 +1552,14 @@ if __name__ == "__main__":
     if False:
         grid3d("gdump.bin")
         rfd("fieldline0000.bin")
-        ihor = 11;
+        rhor=1+(1+a**2)**0.5
+        ihor = np.floor(iofr(rhor)+0.5);
         hf=horfluxcalc(ihor)
         df=diskfluxcalc(ny/2)
         print "Initial (t=%-8g): BHflux = %g, Diskflux = %g" % (t, hf, df)
         rfd("fieldline1308.bin")
-        ihor = 11;
         hf=horfluxcalc(ihor)
-        df=diskfluxcalc(ny/2,rmin=1+(1-a**2)**0.5)
+        df=diskfluxcalc(ny/2,rmin=rhor)
         print "Final   (t=%-8g): BHflux = %g, Diskflux = %g" % (t, hf, df)
     if False:
         len=10
