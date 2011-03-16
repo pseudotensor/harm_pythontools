@@ -1212,8 +1212,10 @@ def plotqtyvstime(qtymem,ihor=11):
     plotlist[2].set_xlabel(r'$t\;(GM/c^3)$')
     plotlist[2].set_ylabel(r'$\dot P_{\rm j}/\dot M_{\rm h}$',fontsize=16)
 
-    plotlist[3].plot(ts,(pjem5[:,ihor]/mdtot[:,ihor]),label=r'$\dot P_{\rm j,em5}/\dot M_{\rm tot}$')
-    plotlist[3].plot(ts,(pjem10[:,ihor]/mdtot[:,ihor]),label=r'$\dot P_{\rm j,em10}/\dot M_{\rm tot}$')
+    plotlist[3].plot(ts,(pjem10[:,ihor]/mdtot[:,ihor]/2),label=r'$\dot P_{\rm j,em10}/\dot M_{\rm tot}$')
+    plotlist[3].plot(ts,(pjem5[:,ihor]/(mdtot[:,ihor]-md5[:,ihor])/2),label=r'$\dot P_{\rm j,em5}/\dot M_{{\rm tot},b^2/\rho<5}$')
+    plotlist[3].plot(ts,(pjem10[:,ihor]/(mdtot[:,ihor]-md10[:,ihor])/2),label=r'$\dot P_{\rm j,em10}/\dot M_{{\rm tot},b^2/\rho<10}$')
+    plotlist[3].set_ylim(0,6)
     plotlist[3].legend(loc='upper left')
     plotlist[3].set_xlabel(r'$t\;(GM/c^3)$')
     plotlist[3].set_ylabel(r'$\dot P_{\rm j}/\dot M_{\rm h}$',fontsize=16)
