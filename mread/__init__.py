@@ -1006,7 +1006,7 @@ def getqtyvstime(ihor,horval=0.2):
         #    plt.clf()
         #    mkframe("lrho%04d" % findex, vmin=-8,vmax=0.2)
     print( "Saving to file..." )
-    np.save( "qty.npy", qtymem )
+    np.save( "qty2.npy", qtymem )
     print( "Done!" )
     return(qtymem)
 
