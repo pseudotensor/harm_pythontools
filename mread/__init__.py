@@ -26,16 +26,16 @@ import pylab
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
-def horcalc():
+def horcalc(which=1):
     """
     Compute root mean square deviation of disk body from equatorial plane
     """
-    thetamid2d=(gdet*rho*h).sum(axis=1) / (gdet*rho).sum(axis=1)
+    thetamid2d=(gdet*rho*h*which).sum(axis=1) / (gdet*rho*which).sum(axis=1)
     thetamid3d=np.empty_like(h)
     hoverr3d=np.empty_like(h)
     for j in np.arange(0,ny):
         thetamid3d[:,j] = thetamid2d
-    hoverr2d=((gdet*rho*(h-thetamid3d)**2).sum(axis=1) / (gdet*rho).sum(axis=1))**0.5
+    hoverr2d=((gdet*rho*(h-thetamid3d)**2*which).sum(axis=1) / (gdet*rho*which).sum(axis=1))**0.5
     for j in np.arange(0,ny):
         hoverr3d[:,j] = hoverr2d
     return((hoverr3d,thetamid3d))
@@ -795,14 +795,14 @@ def getqtyvstime(ihor,horval=0.2):
     """
     flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
     flist.sort()
-    nqty=71
+    nqty=98+134
     #store 1D data
     numtimeslices=len(flist)
     qtymem=np.zeros((nqty,numtimeslices,nx),dtype=np.float32)
     #
     print "Number of time slices: %d" % numtimeslices
-    if os.path.isfile("qty.npy"):
-        qtymem2=np.load( "qty.npy" )
+    if os.path.isfile("qty2.npy"):
+        qtymem2=np.load( "qty2.npy" )
         numtimeslices2 = qtymem2.shape[1]
         print "Number of previously saved time slices: %d" % numtimeslices2 
         if( numtimeslices2 >= numtimeslices ):
@@ -831,9 +831,12 @@ def getqtyvstime(ihor,horval=0.2):
     uuas3rhosq=qtymem[i];i+=1
     Bs1rhosq=qtymem[i];i+=1
     Bas1rhosq=qtymem[i];i+=1
+    Bs2rhosq=qtymem[i];i+=1
+    Bas2rhosq=qtymem[i];i+=1
     Bs3rhosq=qtymem[i];i+=1
     Bas3rhosq=qtymem[i];i+=1
     #2h
+    gdetint2h=qtymem[i];i+=1
     rhos2h=qtymem[i];i+=1
     ugs2h=qtymem[i];i+=1
     uu02h=qtymem[i];i+=1
@@ -843,9 +846,12 @@ def getqtyvstime(ihor,horval=0.2):
     uuas32h=qtymem[i];i+=1
     Bs12h=qtymem[i];i+=1
     Bas12h=qtymem[i];i+=1
+    Bs22h=qtymem[i];i+=1
+    Bas22h=qtymem[i];i+=1
     Bs32h=qtymem[i];i+=1
     Bas32h=qtymem[i];i+=1
     #4h
+    gdetint4h=qtymem[i];i+=1
     rhos4h=qtymem[i];i+=1
     ugs4h=qtymem[i];i+=1
     uu04h=qtymem[i];i+=1
@@ -855,11 +861,17 @@ def getqtyvstime(ihor,horval=0.2):
     uuas34h=qtymem[i];i+=1
     Bs14h=qtymem[i];i+=1
     Bas14h=qtymem[i];i+=1
+    Bs24h=qtymem[i];i+=1
+    Bas24h=qtymem[i];i+=1
     Bs34h=qtymem[i];i+=1
     Bas34h=qtymem[i];i+=1
     #2hor
+    gdetint2hor=qtymem[i];i+=1
     rhos2hor=qtymem[i];i+=1
     ugs2hor=qtymem[i];i+=1
+    bsqs2hor=qtymem[i];i+=1
+    bsqorhos2hor=qtymem[i];i+=1
+    bsqougs2hor=qtymem[i];i+=1
     uu02hor=qtymem[i];i+=1
     uus12hor=qtymem[i];i+=1
     uuas12hor=qtymem[i];i+=1
@@ -867,12 +879,18 @@ def getqtyvstime(ihor,horval=0.2):
     uuas32hor=qtymem[i];i+=1
     Bs12hor=qtymem[i];i+=1
     Bas12hor=qtymem[i];i+=1
+    Bs22hor=qtymem[i];i+=1
+    Bas22hor=qtymem[i];i+=1
     Bs32hor=qtymem[i];i+=1
     Bas32hor=qtymem[i];i+=1
     #Flux
     fstot=qtymem[i];i+=1
+    fs2hor=qtymem[i];i+=1
     fsj5=qtymem[i];i+=1
     fsj10=qtymem[i];i+=1
+    fsj20=qtymem[i];i+=1
+    fsj30=qtymem[i];i+=1
+    fsj40=qtymem[i];i+=1
     #Mdot
     mdtot=qtymem[i];i+=1
     md2h=qtymem[i];i+=1
@@ -880,6 +898,9 @@ def getqtyvstime(ihor,horval=0.2):
     md2hor=qtymem[i];i+=1
     md5=qtymem[i];i+=1
     md10=qtymem[i];i+=1
+    md20=qtymem[i];i+=1
+    md30=qtymem[i];i+=1
+    md40=qtymem[i];i+=1
     mdrhosq=qtymem[i];i+=1
     mdtotbound=qtymem[i];i+=1
     #Edot
@@ -894,9 +915,15 @@ def getqtyvstime(ihor,horval=0.2):
     #Pjet
     pjem5=qtymem[i];i+=1
     pjem10=qtymem[i];i+=1
+    pjem20=qtymem[i];i+=1
+    pjem30=qtymem[i];i+=1
+    pjem40=qtymem[i];i+=1
     pjma5=qtymem[i];i+=1
     pjma10=qtymem[i];i+=1
-    print "Total number of quantities: %d" % i
+    pjma20=qtymem[i];i+=1
+    pjma30=qtymem[i];i+=1
+    pjma40=qtymem[i];i+=1
+    print "Total number of quantities: %d+134 = %d" % (i, i+134)
     #end qty defs
     for findex, fname in enumerate(flist):
         #skip pre-loaded time slices
@@ -908,82 +935,107 @@ def getqtyvstime(ihor,horval=0.2):
         Tcalcud()
         ts[findex]=t
         #HoverR
-        hoverr3d,thetamid3d=horcalc()
+        diskcondition=bsq/rho<10
+        hoverr3d,thetamid3d=horcalc(which=diskcondition)
         hoverr[findex]=hoverr3d.sum(2).sum(1)/(ny*nz)
         thetamid[findex]=thetamid3d.sum(2).sum(1)/(ny*nz)
         #rhosq:
-        gdetint=intangle(gdet)
-        rhosqint=intangle(gdet*rho**2)
+        keywordsrhosq={'which': diskcondition}
+        gdetint=intangle(gdet,**keywordsrhosq)
+        rhosqint=intangle(gdet*rho**2,**keywordsrhosq)
         rhosqs[findex]=rhosqint
-        maxrhosq2d=(rho**2).max(1)
+        maxrhosq2d=(rho**2*diskcondition).max(1)
         maxrhosq3d=np.empty_like(rho)
         for j in np.arange(0,ny):
             maxrhosq3d[:,j,:] = maxrhosq2d
-        rhosrhosq[findex]=intangle(gdet*rho**2*rho)/rhosqint
-        ugsrhosq[findex]=intangle(gdet*rho**2*ug)/rhosqint
-        uu0rhosq[findex]=intangle(gdet*rho**2*uu[0])/rhosqint
-        uus1rhosq[findex]=intangle(gdet*rho**2*uu[1])/rhosqint
-        uuas1rhosq[findex]=intangle(gdet*rho**2*np.abs(uu[1]))/rhosqint
-        uus3rhosq[findex]=intangle(gdet*rho**2*uu[3])/rhosqint
-        uuas3rhosq[findex]=intangle(gdet*rho**2*np.abs(uu[3]))/rhosqint
-        Bs1rhosq[findex]=intangle(gdet*rho**2*B[1])/rhosqint
-        Bas1rhosq[findex]=intangle(gdet*rho**2*np.abs(B[1]))/rhosqint
-        Bs3rhosq[findex]=intangle(gdet*rho**2*B[3])/rhosqint
-        Bas3rhosq[findex]=intangle(gdet*rho**2*np.abs(B[3]))/rhosqint
+        rhosrhosq[findex]=intangle(gdet*rho**2*rho,**keywordsrhosq)/rhosqint
+        ugsrhosq[findex]=intangle(gdet*rho**2*ug,**keywordsrhosq)/rhosqint
+        uu0rhosq[findex]=intangle(gdet*rho**2*uu[0],**keywordsrhosq)/rhosqint
+        uus1rhosq[findex]=intangle(gdet*rho**2*uu[1],**keywordsrhosq)/rhosqint
+        uuas1rhosq[findex]=intangle(gdet*rho**2*np.abs(uu[1]),**keywordsrhosq)/rhosqint
+        uus3rhosq[findex]=intangle(gdet*rho**2*uu[3],**keywordsrhosq)/rhosqint
+        uuas3rhosq[findex]=intangle(gdet*rho**2*np.abs(uu[3]),**keywordsrhosq)/rhosqint
+        Bs1rhosq[findex]=intangle(gdetB[1]*rho**2,**keywordsrhosq)/rhosqint
+        Bas1rhosq[findex]=intangle(np.abs(gdetB[1])*rho**2,**keywordsrhosq)/rhosqint
+        Bs2rhosq[findex]=intangle(gdetB[2]*rho**2,**keywordsrhosq)/rhosqint
+        Bas2rhosq[findex]=intangle(np.abs(gdetB[2])*rho**2,**keywordsrhosq)/rhosqint
+        Bs3rhosq[findex]=intangle(gdetB[3]*rho**2,**keywordsrhosq)/rhosqint
+        Bas3rhosq[findex]=intangle(np.abs(gdetB[3])*rho**2,**keywordsrhosq)/rhosqint
         #2h
-        gdetint=intangle(gdet,hoverr=2*horval)
-        rhos2h[findex]=intangle(gdet*rho,hoverr=2*horval)/gdetint
-        ugs2h[findex]=intangle(gdet*ug,hoverr=2*horval)/gdetint
-        uu02h[findex]=intangle(gdet*uu[0],hoverr=2*horval)/gdetint
-        uus12h[findex]=intangle(gdet*uu[1],hoverr=2*horval)/gdetint
-        uuas12h[findex]=intangle(gdet*np.abs(uu[1]),hoverr=2*horval)/gdetint
-        uus32h[findex]=intangle(gdet*uu[3],hoverr=2*horval)/gdetint
-        uuas32h[findex]=intangle(gdet*np.abs(uu[3]),hoverr=2*horval)/gdetint
-        Bs12h[findex]=intangle(gdet*B[1],hoverr=2*horval)/gdetint
-        Bas12h[findex]=intangle(gdet*np.abs(B[1]),hoverr=2*horval)/gdetint
-        Bs32h[findex]=intangle(gdet*B[3],hoverr=2*horval)/gdetint
-        Bas32h[findex]=intangle(gdet*np.abs(B[3]),hoverr=2*horval)/gdetint
+        keywords2h={'hoverr': 2*horval, 'which': diskcondition}
+        gdetint=intangle(gdet,**keywords2h)
+        gdetint2h[findex]=gdetint
+        rhos2h[findex]=intangle(gdet*rho,**keywords2h)/gdetint
+        ugs2h[findex]=intangle(gdet*ug,**keywords2h)/gdetint
+        uu02h[findex]=intangle(gdet*uu[0],**keywords2h)/gdetint
+        uus12h[findex]=intangle(gdet*uu[1],**keywords2h)/gdetint
+        uuas12h[findex]=intangle(gdet*np.abs(uu[1]),**keywords2h)/gdetint
+        uus32h[findex]=intangle(gdet*uu[3],**keywords2h)/gdetint
+        uuas32h[findex]=intangle(gdet*np.abs(uu[3]),**keywords2h)/gdetint
+        Bs12h[findex]=intangle(gdetB[1],**keywords2h)/gdetint
+        Bas12h[findex]=intangle(np.abs(gdetB[1]),**keywords2h)/gdetint
+        Bs22h[findex]=intangle(gdetB[2],**keywords2h)/gdetint
+        Bas22h[findex]=intangle(np.abs(gdetB[2]),**keywords2h)/gdetint
+        Bs32h[findex]=intangle(gdetB[3],**keywords2h)/gdetint
+        Bas32h[findex]=intangle(np.abs(gdetB[3]),**keywords2h)/gdetint
         #4h
-        gdetint=intangle(gdet,hoverr=2*horval)
-        rhos4h[findex]=intangle(gdet*rho,hoverr=4*horval)/gdetint
-        ugs4h[findex]=intangle(gdet*ug,hoverr=4*horval)/gdetint
-        uu04h[findex]=intangle(gdet*uu[0],hoverr=4*horval)/gdetint
-        uus14h[findex]=intangle(gdet*uu[1],hoverr=4*horval)/gdetint
-        uuas14h[findex]=intangle(gdet*np.abs(uu[1]),hoverr=4*horval)/gdetint
-        uus34h[findex]=intangle(gdet*uu[3],hoverr=4*horval)/gdetint
-        uuas34h[findex]=intangle(gdet*np.abs(uu[3]),hoverr=4*horval)/gdetint
-        Bs14h[findex]=intangle(gdet*B[1],hoverr=4*horval)/gdetint
-        Bas14h[findex]=intangle(gdet*np.abs(B[1]),hoverr=4*horval)/gdetint
-        Bs34h[findex]=intangle(gdet*B[3],hoverr=4*horval)/gdetint
-        Bas34h[findex]=intangle(gdet*np.abs(B[3]),hoverr=4*horval)/gdetint
+        keywords4h={'hoverr': 4*horval, 'which': diskcondition}
+        gdetint=intangle(gdet,**keywords4h)
+        gdetint4h[findex]=gdetint
+        rhos4h[findex]=intangle(gdet*rho,**keywords4h)/gdetint
+        ugs4h[findex]=intangle(gdet*ug,**keywords4h)/gdetint
+        uu04h[findex]=intangle(gdet*uu[0],**keywords4h)/gdetint
+        uus14h[findex]=intangle(gdet*uu[1],**keywords4h)/gdetint
+        uuas14h[findex]=intangle(gdet*np.abs(uu[1]),**keywords4h)/gdetint
+        uus34h[findex]=intangle(gdet*uu[3],**keywords4h)/gdetint
+        uuas34h[findex]=intangle(gdet*np.abs(uu[3]),**keywords4h)/gdetint
+        Bs14h[findex]=intangle(gdetB[1],**keywords4h)/gdetint
+        Bas14h[findex]=intangle(np.abs(gdetB[1]),**keywords4h)/gdetint
+        Bs24h[findex]=intangle(gdetB[2],**keywords4h)/gdetint
+        Bas24h[findex]=intangle(np.abs(gdetB[2]),**keywords4h)/gdetint
+        Bs34h[findex]=intangle(gdetB[3],**keywords4h)/gdetint
+        Bas34h[findex]=intangle(np.abs(gdetB[3]),**keywords4h)/gdetint
         #2hor
-        gdetint=intangle(gdet,hoverr=2*horval)
-        keywords={'hoverr': 2*hoverr3d, 'thetamid': thetamid3d}
-        rhos2hor[findex]=intangle(gdet*rho,**keywords)/gdetint
-        ugs2hor[findex]=intangle(gdet*ug,**keywords)/gdetint
-        uu02hor[findex]=intangle(gdet*uu[0],**keywords)/gdetint
-        uus12hor[findex]=intangle(gdet*uu[1],**keywords)/gdetint
-        uuas12hor[findex]=intangle(gdet*np.abs(uu[1]),**keywords)/gdetint
-        uus32hor[findex]=intangle(gdet*uu[3],**keywords)/gdetint
-        uuas32hor[findex]=intangle(gdet*np.abs(uu[3]),**keywords)/gdetint
-        Bs12hor[findex]=intangle(gdet*B[1],**keywords)/gdetint
-        Bas12hor[findex]=intangle(gdet*np.abs(B[1]),**keywords)/gdetint
-        Bs32hor[findex]=intangle(gdet*B[3],**keywords)/gdetint
-        Bas32hor[findex]=intangle(gdet*np.abs(B[3]),**keywords)/gdetint
+        keywords2hor={'hoverr': 2*hoverr3d, 'thetamid': thetamid3d, 'which': diskcondition}
+        gdetint=intangle(gdet,**keywords2hor)
+        gdetint2hor[findex]=gdetint
+        rhos2hor[findex]=intangle(gdet*rho,**keywords2hor)/gdetint
+        ugs2hor[findex]=intangle(gdet*ug,**keywords2hor)/gdetint
+        bsqs2hor[findex]=intangle(bsq,**keywords2hor)/gdetint
+        bsqorhos2hor[findex]=intangle(bsq/rho,**keywords2hor)/gdetint
+        bsqougs2hor[findex]=intangle(bsq/ug,**keywords2hor)/gdetint
+        uu02hor[findex]=intangle(gdet*uu[0],**keywords2hor)/gdetint
+        uus12hor[findex]=intangle(gdet*uu[1],**keywords2hor)/gdetint
+        uuas12hor[findex]=intangle(gdet*np.abs(uu[1]),**keywords2hor)/gdetint
+        uus32hor[findex]=intangle(gdet*uu[3],**keywords2hor)/gdetint
+        uuas32hor[findex]=intangle(gdet*np.abs(uu[3]),**keywords2hor)/gdetint
+        Bs12hor[findex]=intangle(gdetB[1],**keywords2hor)/gdetint
+        Bas12hor[findex]=intangle(np.abs(gdetB[1]),**keywords2hor)/gdetint
+        Bs22hor[findex]=intangle(gdetB[2],**keywords2hor)/gdetint
+        Bas22hor[findex]=intangle(np.abs(gdetB[2]),**keywords2hor)/gdetint
+        Bs32hor[findex]=intangle(gdetB[3],**keywords2hor)/gdetint
+        Bas32hor[findex]=intangle(np.abs(gdetB[3]),**keywords2hor)/gdetint
         #Flux
         fstot[findex]=horfluxcalc(minbsqorho=0)
+        fs2hor[findex]==intangle(np.abs(gdetB[1]),**keywords2hor)
         fsj5[findex]=horfluxcalc(minbsqorho=5)
         fsj10[findex]=horfluxcalc(minbsqorho=10)
+        fsj20[findex]=horfluxcalc(minbsqorho=20)
+        fsj30[findex]=horfluxcalc(minbsqorho=30)
+        fsj40[findex]=horfluxcalc(minbsqorho=40)
         #Mdot
         enth=1+ug*gam/rho
         mdtot[findex]=mdotcalc()
         mdtotbound[findex]=mdotcalc(which=(-enth*ud[0]<=1))
-        md2h[findex]=mdotcalc(hoverr=2*horval)
-        md4h[findex]=mdotcalc(hoverr=4*horval)
-        md2hor[findex]=mdotcalc(hoverr=2*hoverr3d,thetamid=thetamid3d)
+        md2h[findex]=mdotcalc(**keywords2h)
+        md4h[findex]=mdotcalc(**keywords4h)
+        md2hor[findex]=mdotcalc(**keywords2hor)
         md5[findex]=intangle(-gdet*rho*uu[1],minbsqorho=5)
         md10[findex]=intangle(-gdet*rho*uu[1],minbsqorho=10)
-        mdrhosq[findex]=scaletofullwedge(((-gdet*rho**2*rho*uu[1]).sum(1)/maxrhosq2d).sum(1)*_dx2*_dx3)
+        md20[findex]=intangle(-gdet*rho*uu[1],minbsqorho=20)
+        md30[findex]=intangle(-gdet*rho*uu[1],minbsqorho=30)
+        md40[findex]=intangle(-gdet*rho*uu[1],minbsqorho=40)
+        mdrhosq[findex]=scaletofullwedge(((-gdet*rho**2*rho*uu[1]*diskcondition).sum(1)/maxrhosq2d).sum(1)*_dx2*_dx3)
         #mdrhosq[findex]=(-gdet*rho**2*rho*uu[1]).sum(1).sum(1)/(-gdet*rho**2).sum(1).sum(1)*(-gdet).sum(1).sum(1)*_dx2*_dx3
         #Edot
         edtot[findex]=intangle(-gdet*Tud[1][0])
@@ -997,8 +1049,186 @@ def getqtyvstime(ihor,horval=0.2):
         #Pjet
         pjem5[findex]=jetpowcalc(0,minbsqorho=5)
         pjem10[findex]=jetpowcalc(0,minbsqorho=10)
+        pjem20[findex]=jetpowcalc(0,minbsqorho=20)
+        pjem30[findex]=jetpowcalc(0,minbsqorho=30)
+        pjem40[findex]=jetpowcalc(0,minbsqorho=40)
         pjma5[findex]=jetpowcalc(1,minbsqorho=5)
         pjma10[findex]=jetpowcalc(1,minbsqorho=10)
+        pjma20[findex]=jetpowcalc(1,minbsqorho=20)
+        pjma30[findex]=jetpowcalc(1,minbsqorho=30)
+        pjma40[findex]=jetpowcalc(1,minbsqorho=40)
+
+        #Bob's 1D quantities
+        dVF=_dx1*_dx2*_dx3
+        dVA=_dx2*_dx3
+        Dt=1
+        TT=0
+        RR=1
+        TH=2
+        PH=3
+	qtymem[i+0,findex]=intangle(Dt*dVF*gdet*rho,**keywords2hor)
+	qtymem[i+1,findex]=intangle(Dt*dVF*gdet*rho*rho,**keywords2hor)
+	qtymem[i+2,findex]=intangle(Dt*dVF*gdet*rho*ug,**keywords2hor)
+	qtymem[i+3,findex]=intangle(Dt*dVF*gdet*rho*bsq,**keywords2hor)
+
+	qtymem[i+4,findex]=intangle(Dt*dVF*gdet*rho*uu[1],**keywords2hor) #pr[2]
+	qtymem[i+5,findex]=intangle(Dt*dVF*gdet*rho*uu[2],**keywords2hor) #pr[3]
+	qtymem[i+6,findex]=intangle(Dt*dVF*gdet*rho*uu[3],**keywords2hor) #pr[4]
+
+	qtymem[i+7,findex]=intangle(Dt*dVF*gdet*rho*B[1],**keywords2hor) #pr[5]
+	qtymem[i+8,findex]=intangle(Dt*dVF*gdet*rho*B[2],**keywords2hor) #pr[6]
+	qtymem[i+9,findex]=intangle(Dt*dVF*gdet*rho*B[3],**keywords2hor) #pr[7]
+
+	#rho * u * u
+
+	qtymem[i+10,findex]=intangle(Dt*dVA*gdet*rho*(ud[TT])*(ud[TT]),**keywords2hor)
+	qtymem[i+11,findex]=intangle(Dt*dVA*gdet*rho*(ud[TT])*(ud[RR]),**keywords2hor)
+	qtymem[i+12,findex]=intangle(Dt*dVA*gdet*rho*(ud[TT])*(ud[TH]),**keywords2hor)
+	qtymem[i+13,findex]=intangle(Dt*dVA*gdet*rho*(ud[TT])*(ud[PH]),**keywords2hor)
+	qtymem[i+14,findex]=intangle(Dt*dVA*gdet*rho*(ud[RR])*(ud[RR]),**keywords2hor)
+	qtymem[i+15,findex]=intangle(Dt*dVA*gdet*rho*(ud[RR])*(ud[TH]),**keywords2hor)
+	qtymem[i+16,findex]=intangle(Dt*dVA*gdet*rho*(ud[RR])*(ud[PH]),**keywords2hor)
+	qtymem[i+17,findex]=intangle(Dt*dVA*gdet*rho*(ud[TH])*(ud[TH]),**keywords2hor)
+	qtymem[i+18,findex]=intangle(Dt*dVA*gdet*rho*(ud[TH])*(ud[PH]),**keywords2hor)
+	qtymem[i+19,findex]=intangle(Dt*dVA*gdet*rho*(ud[PH])*(ud[PH]),**keywords2hor)
+
+	qtymem[i+20,findex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(ud[TT]),**keywords2hor)
+	qtymem[i+21,findex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(ud[RR]),**keywords2hor)
+	qtymem[i+22,findex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(ud[TH]),**keywords2hor)
+	qtymem[i+23,findex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(ud[PH]),**keywords2hor)
+	qtymem[i+24,findex]=intangle(Dt*dVA*gdet*rho*(uu[RR])*(ud[RR]),**keywords2hor)
+	qtymem[i+25,findex]=intangle(Dt*dVA*gdet*rho*(uu[RR])*(ud[TH]),**keywords2hor)
+	qtymem[i+26,findex]=intangle(Dt*dVA*gdet*rho*(uu[RR])*(ud[PH]),**keywords2hor)
+	qtymem[i+27,findex]=intangle(Dt*dVA*gdet*rho*(uu[TH])*(ud[TH]),**keywords2hor)
+	qtymem[i+28,findex]=intangle(Dt*dVA*gdet*rho*(uu[TH])*(ud[PH]),**keywords2hor)
+	qtymem[i+29,findex]=intangle(Dt*dVA*gdet*rho*(uu[PH])*(ud[PH]),**keywords2hor)
+
+	qtymem[i+30,findex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(uu[TT]),**keywords2hor)
+	qtymem[i+31,findex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(uu[RR]),**keywords2hor)
+	qtymem[i+32,findex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(uu[TH]),**keywords2hor)
+	qtymem[i+33,findex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(uu[PH]),**keywords2hor)
+	qtymem[i+34,findex]=intangle(Dt*dVA*gdet*rho*(uu[RR])*(uu[RR]),**keywords2hor)
+	qtymem[i+35,findex]=intangle(Dt*dVA*gdet*rho*(uu[RR])*(uu[TH]),**keywords2hor)
+	qtymem[i+36,findex]=intangle(Dt*dVA*gdet*rho*(uu[RR])*(uu[PH]),**keywords2hor)
+	qtymem[i+37,findex]=intangle(Dt*dVA*gdet*rho*(uu[TH])*(uu[TH]),**keywords2hor)
+	qtymem[i+38,findex]=intangle(Dt*dVA*gdet*rho*(uu[TH])*(uu[PH]),**keywords2hor)
+	qtymem[i+39,findex]=intangle(Dt*dVA*gdet*rho*(uu[PH])*(uu[PH]),**keywords2hor)
+
+
+	#UU * u * u
+
+	qtymem[i+40,findex]=intangle(Dt*dVA*gdet*ug*(ud[TT])*(ud[TT]),**keywords2hor)
+	qtymem[i+41,findex]=intangle(Dt*dVA*gdet*ug*(ud[TT])*(ud[RR]),**keywords2hor)
+	qtymem[i+42,findex]=intangle(Dt*dVA*gdet*ug*(ud[TT])*(ud[TH]),**keywords2hor)
+	qtymem[i+43,findex]=intangle(Dt*dVA*gdet*ug*(ud[TT])*(ud[PH]),**keywords2hor)
+	qtymem[i+44,findex]=intangle(Dt*dVA*gdet*ug*(ud[RR])*(ud[RR]),**keywords2hor)
+	qtymem[i+45,findex]=intangle(Dt*dVA*gdet*ug*(ud[RR])*(ud[TH]),**keywords2hor)
+	qtymem[i+46,findex]=intangle(Dt*dVA*gdet*ug*(ud[RR])*(ud[PH]),**keywords2hor)
+	qtymem[i+47,findex]=intangle(Dt*dVA*gdet*ug*(ud[TH])*(ud[TH]),**keywords2hor)
+	qtymem[i+48,findex]=intangle(Dt*dVA*gdet*ug*(ud[TH])*(ud[PH]),**keywords2hor)
+	qtymem[i+49,findex]=intangle(Dt*dVA*gdet*ug*(ud[PH])*(ud[PH]),**keywords2hor)
+
+	qtymem[i+50,findex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(ud[TT]),**keywords2hor)
+	qtymem[i+51,findex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(ud[RR]),**keywords2hor)
+	qtymem[i+52,findex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(ud[TH]),**keywords2hor)
+	qtymem[i+53,findex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(ud[PH]),**keywords2hor)
+	qtymem[i+54,findex]=intangle(Dt*dVA*gdet*ug*(uu[RR])*(ud[RR]),**keywords2hor)
+	qtymem[i+55,findex]=intangle(Dt*dVA*gdet*ug*(uu[RR])*(ud[TH]),**keywords2hor)
+	qtymem[i+56,findex]=intangle(Dt*dVA*gdet*ug*(uu[RR])*(ud[PH]),**keywords2hor)
+	qtymem[i+57,findex]=intangle(Dt*dVA*gdet*ug*(uu[TH])*(ud[TH]),**keywords2hor)
+	qtymem[i+58,findex]=intangle(Dt*dVA*gdet*ug*(uu[TH])*(ud[PH]),**keywords2hor)
+	qtymem[i+59,findex]=intangle(Dt*dVA*gdet*ug*(uu[PH])*(ud[PH]),**keywords2hor)
+
+	qtymem[i+60,findex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(uu[TT]),**keywords2hor)
+	qtymem[i+61,findex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(uu[RR]),**keywords2hor)
+	qtymem[i+62,findex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(uu[TH]),**keywords2hor)
+	qtymem[i+63,findex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(uu[PH]),**keywords2hor)
+	qtymem[i+64,findex]=intangle(Dt*dVA*gdet*ug*(uu[RR])*(uu[RR]),**keywords2hor)
+	qtymem[i+65,findex]=intangle(Dt*dVA*gdet*ug*(uu[RR])*(uu[TH]),**keywords2hor)
+	qtymem[i+66,findex]=intangle(Dt*dVA*gdet*ug*(uu[RR])*(uu[PH]),**keywords2hor)
+	qtymem[i+67,findex]=intangle(Dt*dVA*gdet*ug*(uu[TH])*(uu[TH]),**keywords2hor)
+	qtymem[i+68,findex]=intangle(Dt*dVA*gdet*ug*(uu[TH])*(uu[PH]),**keywords2hor)
+	qtymem[i+69,findex]=intangle(Dt*dVA*gdet*ug*(uu[PH])*(uu[PH]),**keywords2hor)
+
+	#bsq * u * u
+
+	qtymem[i+70,findex]=intangle(Dt*dVA*gdet*bsq*(ud[TT])*(ud[TT]),**keywords2hor)
+	qtymem[i+71,findex]=intangle(Dt*dVA*gdet*bsq*(ud[TT])*(ud[RR]),**keywords2hor)
+	qtymem[i+72,findex]=intangle(Dt*dVA*gdet*bsq*(ud[TT])*(ud[TH]),**keywords2hor)
+	qtymem[i+73,findex]=intangle(Dt*dVA*gdet*bsq*(ud[TT])*(ud[PH]),**keywords2hor)
+	qtymem[i+74,findex]=intangle(Dt*dVA*gdet*bsq*(ud[RR])*(ud[RR]),**keywords2hor)
+	qtymem[i+75,findex]=intangle(Dt*dVA*gdet*bsq*(ud[RR])*(ud[TH]),**keywords2hor)
+	qtymem[i+76,findex]=intangle(Dt*dVA*gdet*bsq*(ud[RR])*(ud[PH]),**keywords2hor)
+	qtymem[i+77,findex]=intangle(Dt*dVA*gdet*bsq*(ud[TH])*(ud[TH]),**keywords2hor)
+	qtymem[i+78,findex]=intangle(Dt*dVA*gdet*bsq*(ud[TH])*(ud[PH]),**keywords2hor)
+	qtymem[i+79,findex]=intangle(Dt*dVA*gdet*bsq*(ud[PH])*(ud[PH]),**keywords2hor)
+
+	qtymem[i+80,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(ud[TT]),**keywords2hor)
+	qtymem[i+81,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(ud[RR]),**keywords2hor)
+	qtymem[i+82,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(ud[TH]),**keywords2hor)
+	qtymem[i+83,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(ud[PH]),**keywords2hor)
+	qtymem[i+84,findex]=intangle(Dt*dVA*gdet*bsq*(uu[RR])*(ud[RR]),**keywords2hor)
+	qtymem[i+85,findex]=intangle(Dt*dVA*gdet*bsq*(uu[RR])*(ud[TH]),**keywords2hor)
+	qtymem[i+86,findex]=intangle(Dt*dVA*gdet*bsq*(uu[RR])*(ud[PH]),**keywords2hor)
+	qtymem[i+87,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TH])*(ud[TH]),**keywords2hor)
+	qtymem[i+88,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TH])*(ud[PH]),**keywords2hor)
+	qtymem[i+89,findex]=intangle(Dt*dVA*gdet*bsq*(uu[PH])*(ud[PH]),**keywords2hor)
+
+	qtymem[i+90,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(uu[TT]),**keywords2hor)
+	qtymem[i+91,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(uu[RR]),**keywords2hor)
+	qtymem[i+92,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(uu[TH]),**keywords2hor)
+	qtymem[i+93,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(uu[PH]),**keywords2hor)
+	qtymem[i+94,findex]=intangle(Dt*dVA*gdet*bsq*(uu[RR])*(uu[RR]),**keywords2hor)
+	qtymem[i+95,findex]=intangle(Dt*dVA*gdet*bsq*(uu[RR])*(uu[TH]),**keywords2hor)
+	qtymem[i+96,findex]=intangle(Dt*dVA*gdet*bsq*(uu[RR])*(uu[PH]),**keywords2hor)
+	qtymem[i+97,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TH])*(uu[TH]),**keywords2hor)
+	qtymem[i+98,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TH])*(uu[PH]),**keywords2hor)
+	qtymem[i+99,findex]=intangle(Dt*dVA*gdet*bsq*(uu[PH])*(uu[PH]),**keywords2hor)
+
+	# b * b
+
+	qtymem[i+100,findex]=intangle(Dt*dVA*gdet*(bd[TT])*(bd[TT]),**keywords2hor)
+	qtymem[i+101,findex]=intangle(Dt*dVA*gdet*(bd[TT])*(bd[RR]),**keywords2hor)
+	qtymem[i+102,findex]=intangle(Dt*dVA*gdet*(bd[TT])*(bd[TH]),**keywords2hor)
+	qtymem[i+103,findex]=intangle(Dt*dVA*gdet*(bd[TT])*(bd[PH]),**keywords2hor)
+	qtymem[i+104,findex]=intangle(Dt*dVA*gdet*(bd[RR])*(bd[RR]),**keywords2hor)
+	qtymem[i+105,findex]=intangle(Dt*dVA*gdet*(bd[RR])*(bd[TH]),**keywords2hor)
+	qtymem[i+106,findex]=intangle(Dt*dVA*gdet*(bd[RR])*(bd[PH]),**keywords2hor)
+	qtymem[i+107,findex]=intangle(Dt*dVA*gdet*(bd[TH])*(bd[TH]),**keywords2hor)
+	qtymem[i+108,findex]=intangle(Dt*dVA*gdet*(bd[TH])*(bd[PH]),**keywords2hor)
+	qtymem[i+109,findex]=intangle(Dt*dVA*gdet*(bd[PH])*(bd[PH]),**keywords2hor)
+
+	qtymem[i+110,findex]=intangle(Dt*dVA*gdet*(bu[TT])*(bd[TT]),**keywords2hor)
+	qtymem[i+111,findex]=intangle(Dt*dVA*gdet*(bu[TT])*(bd[RR]),**keywords2hor)
+	qtymem[i+112,findex]=intangle(Dt*dVA*gdet*(bu[TT])*(bd[TH]),**keywords2hor)
+	qtymem[i+113,findex]=intangle(Dt*dVA*gdet*(bu[TT])*(bd[PH]),**keywords2hor)
+	qtymem[i+114,findex]=intangle(Dt*dVA*gdet*(bu[RR])*(bd[RR]),**keywords2hor)
+	qtymem[i+115,findex]=intangle(Dt*dVA*gdet*(bu[RR])*(bd[TH]),**keywords2hor)
+	qtymem[i+116,findex]=intangle(Dt*dVA*gdet*(bu[RR])*(bd[PH]),**keywords2hor)
+	qtymem[i+117,findex]=intangle(Dt*dVA*gdet*(bu[TH])*(bd[TH]),**keywords2hor)
+	qtymem[i+118,findex]=intangle(Dt*dVA*gdet*(bu[TH])*(bd[PH]),**keywords2hor)
+	qtymem[i+119,findex]=intangle(Dt*dVA*gdet*(bu[PH])*(bd[PH]),**keywords2hor)
+
+	qtymem[i+120,findex]=intangle(Dt*dVA*gdet*(bu[TT])*(bu[TT]),**keywords2hor)
+	qtymem[i+121,findex]=intangle(Dt*dVA*gdet*(bu[TT])*(bu[RR]),**keywords2hor)
+	qtymem[i+122,findex]=intangle(Dt*dVA*gdet*(bu[TT])*(bu[TH]),**keywords2hor)
+	qtymem[i+123,findex]=intangle(Dt*dVA*gdet*(bu[TT])*(bu[PH]),**keywords2hor)
+	qtymem[i+124,findex]=intangle(Dt*dVA*gdet*(bu[RR])*(bu[RR]),**keywords2hor)
+	qtymem[i+125,findex]=intangle(Dt*dVA*gdet*(bu[RR])*(bu[TH]),**keywords2hor)
+	qtymem[i+126,findex]=intangle(Dt*dVA*gdet*(bu[RR])*(bu[PH]),**keywords2hor)
+	qtymem[i+127,findex]=intangle(Dt*dVA*gdet*(bu[TH])*(bu[TH]),**keywords2hor)
+	qtymem[i+128,findex]=intangle(Dt*dVA*gdet*(bu[TH])*(bu[PH]),**keywords2hor)
+	qtymem[i+129,findex]=intangle(Dt*dVA*gdet*(bu[PH])*(bu[PH]),**keywords2hor)
+
+
+	#mass flux
+	qtymem[i+130,findex]=intangle(Dt*dVA*gdet*rho*(uu[TT]),**keywords2hor)
+	qtymem[i+131,findex]=intangle(Dt*dVA*gdet*rho*(uu[RR]),**keywords2hor)
+	qtymem[i+132,findex]=intangle(Dt*dVA*gdet*rho*(uu[TH]),**keywords2hor)
+	qtymem[i+133,findex]=intangle(Dt*dVA*gdet*rho*(uu[PH]),**keywords2hor)
+        
+        #END BOB's QUANTITIES
+
         #if os.path.isfile("lrho%04d.png" % findex):
         #    print( "Skipping " + fname + " as lrho%04d.png exists" % findex );
         #else:
@@ -1109,9 +1339,12 @@ def plotqtyvstime(qtymem,ihor=11):
     uuas3rhosq=qtymem[i];i+=1
     Bs1rhosq=qtymem[i];i+=1
     Bas1rhosq=qtymem[i];i+=1
+    Bs2rhosq=qtymem[i];i+=1
+    Bas2rhosq=qtymem[i];i+=1
     Bs3rhosq=qtymem[i];i+=1
     Bas3rhosq=qtymem[i];i+=1
     #2h
+    gdetint2h=qtymem[i];i+=1
     rhos2h=qtymem[i];i+=1
     ugs2h=qtymem[i];i+=1
     uu02h=qtymem[i];i+=1
@@ -1121,9 +1354,12 @@ def plotqtyvstime(qtymem,ihor=11):
     uuas32h=qtymem[i];i+=1
     Bs12h=qtymem[i];i+=1
     Bas12h=qtymem[i];i+=1
+    Bs22h=qtymem[i];i+=1
+    Bas22h=qtymem[i];i+=1
     Bs32h=qtymem[i];i+=1
     Bas32h=qtymem[i];i+=1
     #4h
+    gdetint4h=qtymem[i];i+=1
     rhos4h=qtymem[i];i+=1
     ugs4h=qtymem[i];i+=1
     uu04h=qtymem[i];i+=1
@@ -1133,11 +1369,17 @@ def plotqtyvstime(qtymem,ihor=11):
     uuas34h=qtymem[i];i+=1
     Bs14h=qtymem[i];i+=1
     Bas14h=qtymem[i];i+=1
+    Bs24h=qtymem[i];i+=1
+    Bas24h=qtymem[i];i+=1
     Bs34h=qtymem[i];i+=1
     Bas34h=qtymem[i];i+=1
     #2hor
+    gdetint2hor=qtymem[i];i+=1
     rhos2hor=qtymem[i];i+=1
     ugs2hor=qtymem[i];i+=1
+    bsqs2hor=qtymem[i];i+=1
+    bsqorhos2hor=qtymem[i];i+=1
+    bsqougs2hor=qtymem[i];i+=1
     uu02hor=qtymem[i];i+=1
     uus12hor=qtymem[i];i+=1
     uuas12hor=qtymem[i];i+=1
@@ -1145,12 +1387,18 @@ def plotqtyvstime(qtymem,ihor=11):
     uuas32hor=qtymem[i];i+=1
     Bs12hor=qtymem[i];i+=1
     Bas12hor=qtymem[i];i+=1
+    Bs22hor=qtymem[i];i+=1
+    Bas22hor=qtymem[i];i+=1
     Bs32hor=qtymem[i];i+=1
     Bas32hor=qtymem[i];i+=1
     #Flux
     fstot=qtymem[i];i+=1
+    fs2hor=qtymem[i];i+=1
     fsj5=qtymem[i];i+=1
     fsj10=qtymem[i];i+=1
+    fsj20=qtymem[i];i+=1
+    fsj30=qtymem[i];i+=1
+    fsj40=qtymem[i];i+=1
     #Mdot
     mdtot=qtymem[i];i+=1
     md2h=qtymem[i];i+=1
@@ -1158,6 +1406,9 @@ def plotqtyvstime(qtymem,ihor=11):
     md2hor=qtymem[i];i+=1
     md5=qtymem[i];i+=1
     md10=qtymem[i];i+=1
+    md20=qtymem[i];i+=1
+    md30=qtymem[i];i+=1
+    md40=qtymem[i];i+=1
     mdrhosq=qtymem[i];i+=1
     mdtotbound=qtymem[i];i+=1
     #Edot
@@ -1172,8 +1423,14 @@ def plotqtyvstime(qtymem,ihor=11):
     #Pjet
     pjem5=qtymem[i];i+=1
     pjem10=qtymem[i];i+=1
+    pjem20=qtymem[i];i+=1
+    pjem30=qtymem[i];i+=1
+    pjem40=qtymem[i];i+=1
     pjma5=qtymem[i];i+=1
     pjma10=qtymem[i];i+=1
+    pjma20=qtymem[i];i+=1
+    pjma30=qtymem[i];i+=1
+    pjma40=qtymem[i];i+=1
     #end qty defs
     ##############################
     #end copy
@@ -1182,7 +1439,7 @@ def plotqtyvstime(qtymem,ihor=11):
     #rc('font', family='serif')
     #plt.figure( figsize=(12,9) )
     fig,plotlist=plt.subplots(nrows=4,ncols=1,sharex=True,figsize=(12,16),num=1)
-    plt.clf()
+    #plt.clf()
     plottitle = "a = %g: %s" % ( a, os.path.basename(os.getcwd()) )
     plt.suptitle( plottitle )
     plt.subplots_adjust(hspace=0.1) #increase vertical spacing to avoid crowding
@@ -1198,15 +1455,15 @@ def plotqtyvstime(qtymem,ihor=11):
     plotlist[0].grid(True)
     #
     #plotlist[1].subplot(212,sharex=True)
-    plotlist[1].plot(ts,np.abs(mdtot[:,ihor])*2,label=r'$\dot M_{\rm h,tot}$')
-    plotlist[1].plot(ts,np.abs(mdtot[:,ihor]-md5[:,ihor])*2,label=r'$\dot M_{\rm h,tot,bsqorho<5}$')
-    plotlist[1].plot(ts,np.abs(mdtot[:,ihor]-md10[:,ihor])*2,label=r'$\dot M_{\rm h,tot,bsqorho<10}$')
-    #plotlist[1].plot(ts,np.abs(md2h[:,ihor])/2,label=r'$\dot M_{\rm h,2h}$')
-    #plotlist[1].plot(ts,np.abs(md4h[:,ihor])/2,label=r'$\dot M_{\rm h,4h}$')
-    #plotlist[1].plot(ts,np.abs(md2hor[:,ihor])/2,label=r'$\dot M_{\rm h,2hor}$')
-    plotlist[1].plot(ts,np.abs(mdrhosq[:,ihor])*2,label=r'$\dot M_{\rm h,rhosq}$')
-    plotlist[1].plot(ts,np.abs(md5[:,ihor])*2,label=r'$\dot M_{\rm h,5}$')
-    plotlist[1].plot(ts,np.abs(md10[:,ihor])*2,label=r'$\dot M_{\rm h,10}$')
+    plotlist[1].plot(ts,np.abs(mdtot[:,ihor]),label=r'$\dot M_{\rm h,tot}$')
+    plotlist[1].plot(ts,np.abs(mdtot[:,ihor]-md5[:,ihor]),label=r'$\dot M_{\rm h,tot,bsqorho<5}$')
+    plotlist[1].plot(ts,np.abs(mdtot[:,ihor]-md10[:,ihor]),label=r'$\dot M_{\rm h,tot,bsqorho<10}$')
+    #plotlist[1].plot(ts,np.abs(md2h[:,ihor]),label=r'$\dot M_{\rm h,2h}$')
+    #plotlist[1].plot(ts,np.abs(md4h[:,ihor]),label=r'$\dot M_{\rm h,4h}$')
+    #plotlist[1].plot(ts,np.abs(md2hor[:,ihor]),label=r'$\dot M_{\rm h,2hor}$')
+    plotlist[1].plot(ts,np.abs(mdrhosq[:,ihor]),label=r'$\dot M_{\rm h,rhosq}$')
+    plotlist[1].plot(ts,np.abs(md5[:,ihor]),label=r'$\dot M_{\rm h,5}$')
+    plotlist[1].plot(ts,np.abs(md10[:,ihor]),label=r'$\dot M_{\rm h,10}$')
     #plotlist[1].plot(ts,np.abs(md[:,ihor]),'r+') #, label=r'$\dot M_{\rm h}$: Data Points')
     plotlist[1].legend(loc='upper left')
     #plotlist[1].set_xlabel(r'$t\;(GM/c^3)$')
@@ -1219,9 +1476,9 @@ def plotqtyvstime(qtymem,ihor=11):
     #plotlist[2].set_xlabel(r'$t\;(GM/c^3)$')
     plotlist[2].set_ylabel(r'$\dot P_{\rm j}$',fontsize=16)
 
-    plotlist[3].plot(ts,(pjem10[:,ihor]/mdtot[:,ihor]/2),label=r'$\dot P_{\rm j,em10}/\dot M_{\rm tot}$')
-    plotlist[3].plot(ts,(pjem5[:,ihor]/(mdtot[:,ihor]-md5[:,ihor])/2),label=r'$\dot P_{\rm j,em5}/\dot M_{{\rm tot},b^2/\rho<5}$')
-    plotlist[3].plot(ts,(pjem10[:,ihor]/(mdtot[:,ihor]-md10[:,ihor])/2),label=r'$\dot P_{\rm j,em10}/\dot M_{{\rm tot},b^2/\rho<10}$')
+    plotlist[3].plot(ts,(pjem10[:,ihor]/mdtot[:,ihor]),label=r'$\dot P_{\rm j,em10}/\dot M_{\rm tot}$')
+    plotlist[3].plot(ts,(pjem5[:,ihor]/(mdtot[:,ihor]-md5[:,ihor])),label=r'$\dot P_{\rm j,em5}/\dot M_{{\rm tot},b^2/\rho<5}$')
+    plotlist[3].plot(ts,(pjem10[:,ihor]/(mdtot[:,ihor]-md10[:,ihor])),label=r'$\dot P_{\rm j,em10}/\dot M_{{\rm tot},b^2/\rho<10}$')
     plotlist[3].set_ylim(0,6)
     plotlist[3].legend(loc='upper left')
     plotlist[3].set_xlabel(r'$t\;(GM/c^3)$')
@@ -1238,7 +1495,7 @@ def plotqtyvstime(qtymem,ihor=11):
     #density/velocity/hor figure
     rhor=1+(1-a**2)**0.5
     fig,plotlist=plt.subplots(nrows=4,ncols=1,sharex=True,figsize=(12,16),num=2)
-    plt.clf()
+    #plt.clf()
     plottitle = r"\rho,u^r,h/r: a = %g: %s" % ( a, os.path.basename(os.getcwd()) )
     plt.suptitle( plottitle )
     plt.subplots_adjust(hspace=0.1) #increase vertical spacing to avoid crowding
@@ -1247,45 +1504,45 @@ def plotqtyvstime(qtymem,ihor=11):
     plotlist[0].plot(ts,hoverr[:,iofr(2)],label=r'$(h/r)_{\rm 2}$') ##### continue here
     plotlist[0].plot(ts,hoverr[:,iofr(4)],label=r'$(h/r)_{\rm 4}$')
     plotlist[0].plot(ts,hoverr[:,iofr(8)],label=r'$(h/r)_{\rm 8}$')
-    plotlist[0].plot(ts,hoverr[:,iofr(10)],label=r'$(h/r)_{\rm 10}$')
-    plotlist[0].plot(ts,hoverr[:,iofr(12)],label=r'$(h/r)_{\rm 12}$')
-    plotlist[0].plot(ts,hoverr[:,iofr(15)],label=r'$(h/r)_{\rm 15}$')
+    #lotlist[0].plot(ts,hoverr[:,iofr(10)],label=r'$(h/r)_{\rm 10}$')
+    #plotlist[0].plot(ts,hoverr[:,iofr(12)],label=r'$(h/r)_{\rm 12}$')
+    #plotlist[0].plot(ts,hoverr[:,iofr(15)],label=r'$(h/r)_{\rm 15}$')
     #thetamid
-    plotlist[0].plot(ts,(thetamid-np.pi/2)[:,ihor],'-',label=r'$\theta_{\rm,h}$')
-    plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(2)],'-',label=r'$\theta_{\rm,2}$') ##### continue here
-    plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(4)],'-',label=r'$\theta_{\rm,4}$')
-    plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(8)],'-',label=r'$\theta_{\rm,8}$')
-    plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(10)],'-',label=r'$\theta_{\rm,10}$')
-    plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(12)],'-',label=r'$\theta_{\rm,12}$')
-    plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(15)],'-',label=r'$\theta_{\rm,15}$')
+    plotlist[0].plot(ts,(thetamid-np.pi/2)[:,ihor],'--',label=r'$\theta_{\rm h}$')
+    plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(2)],'--',label=r'$\theta_{\rm 2}$') ##### continue here
+    plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(4)],'--',label=r'$\theta_{\rm 4}$')
+    plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(8)],'--',label=r'$\theta_{\rm 8}$')
+    #plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(10)],'--',label=r'$\theta_{\rm 10}$')
+    #plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(12)],'--',label=r'$\theta_{\rm 12}$')
+    #plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(15)],'--',label=r'$\theta_{\rm 15}$')
     #plotlist[0].plot(ts,fs,'r+') #, label=r'$\Phi_{\rm h}/0.5\Phi_{\rm i}$: Data Points')
     #legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
-    plotlist[0].legend(loc='upper left',ncol=3)
+    plotlist[0].legend(loc='upper right',ncol=4)
     #plt.xlabel(r'$t\;(GM/c^3)$')
     plotlist[0].set_ylabel(r'$h/r$',fontsize=16)
     plt.setp( plotlist[0].get_xticklabels(), visible=False)
     plotlist[0].grid(True)
     #
     #plotlist[1].subplot(212,sharex=True)
-    plotlist[1].plot(ts,(uus12hor*dxdxp[1][1][:,0,0])[:,ihor],label=r'$u^r_{\rm h}$')
-    plotlist[1].plot(ts,(uus12hor*dxdxp[1][1][:,0,0])[:,iofr(2)],label=r'$u^r_{\rm 2}$') ##### continue here
-    plotlist[1].plot(ts,(uus12hor*dxdxp[1][1][:,0,0])[:,iofr(4)],label=r'$u^r_{\rm 4}$')
-    plotlist[1].plot(ts,(uus12hor*dxdxp[1][1][:,0,0])[:,iofr(8)],label=r'$u^r_{\rm 8}$')
-    plotlist[1].plot(ts,(uus12hor*dxdxp[1][1][:,0,0])[:,iofr(10)],label=r'$u^r_{\rm 10}$')
-    plotlist[1].plot(ts,(uus12hor*dxdxp[1][1][:,0,0])[:,iofr(12)],label=r'$u^r_{\rm 12}$')
-    plotlist[1].plot(ts,(uus12hor*dxdxp[1][1][:,0,0])[:,iofr(15)],label=r'$u^r_{\rm 15}$')
-    plotlist[1].legend(loc='upper left')
+    plotlist[1].plot(ts,(-uus12hor*dxdxp[1][1][:,0,0])[:,ihor],label=r'$-u^r_{\rm h}$')
+    plotlist[1].plot(ts,(-uus12hor*dxdxp[1][1][:,0,0])[:,iofr(2)],label=r'$-u^r_{\rm 2}$') ##### continue here
+    plotlist[1].plot(ts,(-uus12hor*dxdxp[1][1][:,0,0])[:,iofr(4)],label=r'$-u^r_{\rm 4}$')
+    plotlist[1].plot(ts,(-uus12hor*dxdxp[1][1][:,0,0])[:,iofr(8)],label=r'$-u^r_{\rm 8}$')
+    #plotlist[1].plot(ts,(-uus12hor*dxdxp[1][1][:,0,0])[:,iofr(10)],label=r'$-u^r_{\rm 10}$')
+    #plotlist[1].plot(ts,(-uus12hor*dxdxp[1][1][:,0,0])[:,iofr(12)],label=r'$-u^r_{\rm 12}$')
+    #plotlist[1].plot(ts,(-uus12hor*dxdxp[1][1][:,0,0])[:,iofr(15)],label=r'$-u^r_{\rm 15}$')
+    plotlist[1].legend(loc='upper right')
     #plotlist[1].set_xlabel(r'$t\;(GM/c^3)$')
     plotlist[1].set_ylabel(r'$u^r$',fontsize=16)
     plt.setp( plotlist[1].get_xticklabels(), visible=False)
     
-    plotlist[2].plot(ts,rhos2hor[:,ihor],label=r'$u^r_{\rm h}$')
-    plotlist[2].plot(ts,rhos2hor[:,iofr(2)],label=r'$u^r_{\rm 2}$') ##### continue here
-    plotlist[2].plot(ts,rhos2hor[:,iofr(4)],label=r'$u^r_{\rm 4}$')
-    plotlist[2].plot(ts,rhos2hor[:,iofr(8)],label=r'$u^r_{\rm 8}$')
-    plotlist[2].plot(ts,rhos2hor[:,iofr(10)],label=r'$u^r_{\rm 10}$')
-    plotlist[2].plot(ts,rhos2hor[:,iofr(12)],label=r'$u^r_{\rm 12}$')
-    plotlist[2].plot(ts,rhos2hor[:,iofr(15)],label=r'$u^r_{\rm 15}$')
+    plotlist[2].plot(ts,rhos2hor[:,ihor],label=r'$\rho_{\rm h}$')
+    plotlist[2].plot(ts,rhos2hor[:,iofr(2)],label=r'$\rho_{\rm 2}$') ##### continue here
+    plotlist[2].plot(ts,rhos2hor[:,iofr(4)],label=r'$\rho_{\rm 4}$')
+    plotlist[2].plot(ts,rhos2hor[:,iofr(8)],label=r'$\rho_{\rm 8}$')
+    #plotlist[2].plot(ts,rhos2hor[:,iofr(10)],label=r'$\rho_{\rm 10}$')
+    #plotlist[2].plot(ts,rhos2hor[:,iofr(12)],label=r'$\rho_{\rm 12}$')
+    #plotlist[2].plot(ts,rhos2hor[:,iofr(15)],label=r'$\rho_{\rm 15}$')
     plotlist[2].legend(loc='upper left')
     #plotlist[2].set_xlabel(r'$t\;(GM/c^3)$')
     plotlist[2].set_ylabel(r'$\rho$',fontsize=16)
@@ -1294,9 +1551,9 @@ def plotqtyvstime(qtymem,ihor=11):
     plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(2)],label=r'$u^r_{\rm 2}$') ##### continue here
     plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(4)],label=r'$u^r_{\rm 4}$')
     plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(8)],label=r'$u^r_{\rm 8}$')
-    plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(10)],label=r'$u^r_{\rm 10}$')
-    plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(12)],label=r'$u^r_{\rm 12}$')
-    plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(15)],label=r'$u^r_{\rm 15}$')
+    #plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(10)],label=r'$u^r_{\rm 10}$')
+    #plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(12)],label=r'$u^r_{\rm 12}$')
+    #plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(15)],label=r'$u^r_{\rm 15}$')
     plotlist[3].legend(loc='upper left')
     plotlist[3].set_xlabel(r'$t\;(GM/c^3)$')
     plotlist[3].set_ylabel(r'$u_g/\rho$',fontsize=16)
