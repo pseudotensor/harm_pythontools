@@ -30,12 +30,17 @@ def horcalc(which=1):
     """
     Compute root mean square deviation of disk body from equatorial plane
     """
-    thetamid2d=(gdet*rho*h*which).sum(axis=1) / (gdet*rho*which).sum(axis=1)
+    tiny=np.finfo(rho.dtype).tiny
+    up=(gdet*rho*(h-np.pi/2)*which).sum(axis=1)
+    dn=(gdet*rho*which).sum(axis=1)
+    thetamid2d=up/(dn+tiny)+np.pi/2
     thetamid3d=np.empty_like(h)
     hoverr3d=np.empty_like(h)
     for j in np.arange(0,ny):
         thetamid3d[:,j] = thetamid2d
-    hoverr2d=((gdet*rho*(h-thetamid3d)**2*which).sum(axis=1) / (gdet*rho*which).sum(axis=1))**0.5
+    up=(gdet*rho*(h-thetamid3d)**2*which).sum(axis=1)
+    dn=(gdet*rho*which).sum(axis=1)
+    hoverr2d= (up/(dn+tiny))**0.5
     for j in np.arange(0,ny):
         hoverr3d[:,j] = hoverr2d
     return((hoverr3d,thetamid3d))
@@ -793,12 +798,14 @@ def getqtyvstime(ihor,horval=0.2):
     """
     Returns a tuple (ts,fs,mdot,pjetem,pjettot): lists of times, horizon fluxes, and Mdot
     """
+    tiny=np.finfo(rho.dtype).tiny
     flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
     flist.sort()
     nqty=98+134
     #store 1D data
     numtimeslices=len(flist)
     qtymem=np.zeros((nqty,numtimeslices,nx),dtype=np.float32)
+    #np.seterr(invalid='raise',divide='raise')
     #
     print "Number of time slices: %d" % numtimeslices
     if os.path.isfile("qty2.npy"):
@@ -942,9 +949,9 @@ def getqtyvstime(ihor,horval=0.2):
         #rhosq:
         keywordsrhosq={'which': diskcondition}
         gdetint=intangle(gdet,**keywordsrhosq)
-        rhosqint=intangle(gdet*rho**2,**keywordsrhosq)
+        rhosqint=intangle(gdet*rho**2,**keywordsrhosq)+tiny
         rhosqs[findex]=rhosqint
-        maxrhosq2d=(rho**2*diskcondition).max(1)
+        maxrhosq2d=(rho**2*diskcondition).max(1)+tiny
         maxrhosq3d=np.empty_like(rho)
         for j in np.arange(0,ny):
             maxrhosq3d[:,j,:] = maxrhosq2d
@@ -963,7 +970,7 @@ def getqtyvstime(ihor,horval=0.2):
         Bas3rhosq[findex]=intangle(np.abs(gdetB[3])*rho**2,**keywordsrhosq)/rhosqint
         #2h
         keywords2h={'hoverr': 2*horval, 'which': diskcondition}
-        gdetint=intangle(gdet,**keywords2h)
+        gdetint=intangle(gdet,**keywords2h)+tiny
         gdetint2h[findex]=gdetint
         rhos2h[findex]=intangle(gdet*rho,**keywords2h)/gdetint
         ugs2h[findex]=intangle(gdet*ug,**keywords2h)/gdetint
@@ -981,7 +988,7 @@ def getqtyvstime(ihor,horval=0.2):
         #4h
         keywords4h={'hoverr': 4*horval, 'which': diskcondition}
         gdetint=intangle(gdet,**keywords4h)
-        gdetint4h[findex]=gdetint
+        gdetint4h[findex]=gdetint+tiny
         rhos4h[findex]=intangle(gdet*rho,**keywords4h)/gdetint
         ugs4h[findex]=intangle(gdet*ug,**keywords4h)/gdetint
         uu04h[findex]=intangle(gdet*uu[0],**keywords4h)/gdetint
@@ -998,7 +1005,7 @@ def getqtyvstime(ihor,horval=0.2):
         #2hor
         keywords2hor={'hoverr': 2*hoverr3d, 'thetamid': thetamid3d, 'which': diskcondition}
         gdetint=intangle(gdet,**keywords2hor)
-        gdetint2hor[findex]=gdetint
+        gdetint2hor[findex]=gdetint+tiny
         rhos2hor[findex]=intangle(gdet*rho,**keywords2hor)/gdetint
         ugs2hor[findex]=intangle(gdet*ug,**keywords2hor)/gdetint
         bsqs2hor[findex]=intangle(bsq,**keywords2hor)/gdetint
