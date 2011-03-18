@@ -124,6 +124,30 @@ def reinterp(vartointerp,extent,ncell):
     #zi[interior] = np.ma.masked
     varinterpolated = ma.masked_where(interior, zi)
     return(varinterpolated)
+
+def reinterprphi(vartointerp,extent,ncell):
+    global xi,yi,zi
+    #grid3d("gdump")
+    #rfd("fieldline0250.bin")
+    xraw=r*np.sin(h)
+    yraw=r*np.cos(h)
+    x=xraw[:,:,0].view().reshape(-1)
+    y=yraw[:,:,0].view().reshape(-1)
+    var=vartointerp[:,:,0].view().reshape(-1)
+    #mirror
+    x=np.concatenate((-x,x))
+    y=np.concatenate((y,y))
+    kval=min(vartointerp.shape[2]-1,nz/2)
+    var=np.concatenate((vartointerp[:,:,kval].view().reshape(-1),var))
+    # define grid.
+    xi = np.linspace(extent[0], extent[1], ncell)
+    yi = np.linspace(extent[2], extent[3], ncell)
+    # grid the data.
+    zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method='linear')
+    interior = np.sqrt((xi[None,:]**2) + (yi[:,None]**2)) < 1+np.sqrt(1-a**2)
+    #zi[interior] = np.ma.masked
+    varinterpolated = ma.masked_where(interior, zi)
+    return(varinterpolated)
     
 def mkframe(fname,vmin=None,vmax=None,len=20,ncell=800):
     extent=(-len,len,-len,len)
@@ -139,6 +163,33 @@ def mkframe(fname,vmin=None,vmax=None,len=20,ncell=800):
     ncont = 100 #30
     levs=np.linspace(-maxabsiaphi,maxabsiaphi,ncont)
     cset2 = plt.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
+    #for c in cset2.collections:
+    #    c.set_linestyle('solid')
+    #CS = plt.contourf(xi,yi,zi,15,cmap=palette)
+    CS = plt.imshow(ilrho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
+    #CS.cmap=cm.jet
+    #CS.set_axis_bgcolor("#bdb76b")
+    plt.colorbar(CS) # draw colorbar
+    plt.xlim(extent[0],extent[1])
+    plt.ylim(extent[2],extent[3])
+    #plt.title(r'$\log_{10}\rho$ at $t = %4.0f$' % t)
+    plt.title('log rho at t = %4.0f' % t)
+    plt.savefig( fname + '.png' )
+
+def mkframerphi(fname,vmin=None,vmax=None,len=20,ncell=800):
+    extent=(-len,len,-len,len)
+    palette=cm.jet
+    palette.set_bad('k', 1.0)
+    palette.set_over('r', 1.0)
+    palette.set_under('g', 1.0)
+    #aphi = fieldcalc()
+    #iaphi = reinterp(aphi,extent,ncell)
+    ilrho = reinterprphi(np.log10(rho),extent,ncell)
+    #maxabsiaphi=np.max(np.abs(iaphi))
+    #maxabsiaphi = 100 #50
+    #ncont = 100 #30
+    #levs=np.linspace(-maxabsiaphi,maxabsiaphi,ncont)
+    #cset2 = plt.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
     #for c in cset2.collections:
     #    c.set_linestyle('solid')
     #CS = plt.contourf(xi,yi,zi,15,cmap=palette)
