@@ -15,6 +15,7 @@ import array
 from scipy.interpolate import griddata
 from scipy.interpolate import interp1d
 #from scipy.interpolate import Rbf
+from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from numpy import ma
@@ -125,20 +126,19 @@ def reinterp(vartointerp,extent,ncell):
     varinterpolated = ma.masked_where(interior, zi)
     return(varinterpolated)
 
-def reinterprphi(vartointerp,extent,ncell):
+def reinterpxy(vartointerp,extent,ncell):
     global xi,yi,zi
     #grid3d("gdump")
     #rfd("fieldline0250.bin")
-    xraw=r*np.sin(h)
-    yraw=r*np.cos(h)
-    x=xraw[:,:,0].view().reshape(-1)
-    y=yraw[:,:,0].view().reshape(-1)
-    var=vartointerp[:,:,0].view().reshape(-1)
+    xraw=r*np.sin(h)*np.cos(ph)
+    yraw=r*np.sin(h)*np.sin(ph)
+    x=xraw[:,ny/2,:].view().reshape(-1)
+    y=yraw[:,ny/2,:].view().reshape(-1)
+    var=vartointerp[:,ny/2,:].view().reshape(-1)
     #mirror
     x=np.concatenate((-x,x))
-    y=np.concatenate((y,y))
-    kval=min(vartointerp.shape[2]-1,nz/2)
-    var=np.concatenate((vartointerp[:,:,kval].view().reshape(-1),var))
+    y=np.concatenate((-y,y))
+    var=np.concatenate((var,var))
     # define grid.
     xi = np.linspace(extent[0], extent[1], ncell)
     yi = np.linspace(extent[2], extent[3], ncell)
@@ -149,7 +149,7 @@ def reinterprphi(vartointerp,extent,ncell):
     varinterpolated = ma.masked_where(interior, zi)
     return(varinterpolated)
     
-def mkframe(fname,vmin=None,vmax=None,len=20,ncell=800):
+def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True):
     extent=(-len,len,-len,len)
     palette=cm.jet
     palette.set_bad('k', 1.0)
@@ -162,21 +162,30 @@ def mkframe(fname,vmin=None,vmax=None,len=20,ncell=800):
     maxabsiaphi = 100 #50
     ncont = 100 #30
     levs=np.linspace(-maxabsiaphi,maxabsiaphi,ncont)
-    cset2 = plt.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
     #for c in cset2.collections:
     #    c.set_linestyle('solid')
     #CS = plt.contourf(xi,yi,zi,15,cmap=palette)
-    CS = plt.imshow(ilrho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
+    if ax == None:
+        CS = plt.imshow(ilrho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
+        cset2 = plt.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
+        plt.xlim(extent[0],extent[1])
+        plt.ylim(extent[2],extent[3])
+    else:
+        CS = ax.imshow(ilrho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
+        cset2 = ax.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
+        ax.set_xlim(extent[0],extent[1])
+        ax.set_ylim(extent[2],extent[3])
     #CS.cmap=cm.jet
     #CS.set_axis_bgcolor("#bdb76b")
-    plt.colorbar(CS) # draw colorbar
-    plt.xlim(extent[0],extent[1])
-    plt.ylim(extent[2],extent[3])
+    if True == cb:
+        plt.colorbar(CS,ax=ax) # draw colorbar
     #plt.title(r'$\log_{10}\rho$ at $t = %4.0f$' % t)
-    plt.title('log rho at t = %4.0f' % t)
-    plt.savefig( fname + '.png' )
+    if True == pt:
+        plt.title('log rho at t = %4.0f' % t)
+    #if None != fname:
+    #    plt.savefig( fname + '.png' )
 
-def mkframerphi(fname,vmin=None,vmax=None,len=20,ncell=800):
+def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True):
     extent=(-len,len,-len,len)
     palette=cm.jet
     palette.set_bad('k', 1.0)
@@ -184,7 +193,7 @@ def mkframerphi(fname,vmin=None,vmax=None,len=20,ncell=800):
     palette.set_under('g', 1.0)
     #aphi = fieldcalc()
     #iaphi = reinterp(aphi,extent,ncell)
-    ilrho = reinterprphi(np.log10(rho),extent,ncell)
+    ilrho = reinterpxy(np.log10(rho),extent,ncell)
     #maxabsiaphi=np.max(np.abs(iaphi))
     #maxabsiaphi = 100 #50
     #ncont = 100 #30
@@ -193,15 +202,23 @@ def mkframerphi(fname,vmin=None,vmax=None,len=20,ncell=800):
     #for c in cset2.collections:
     #    c.set_linestyle('solid')
     #CS = plt.contourf(xi,yi,zi,15,cmap=palette)
-    CS = plt.imshow(ilrho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
+    if ax == None:
+        CS = plt.imshow(ilrho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
+        plt.xlim(extent[0],extent[1])
+        plt.ylim(extent[2],extent[3])
+    else:
+        CS = ax.imshow(ilrho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
+        ax.set_xlim(extent[0],extent[1])
+        ax.set_ylim(extent[2],extent[3])
     #CS.cmap=cm.jet
     #CS.set_axis_bgcolor("#bdb76b")
-    plt.colorbar(CS) # draw colorbar
-    plt.xlim(extent[0],extent[1])
-    plt.ylim(extent[2],extent[3])
+    if True == cb:
+        plt.colorbar(CS,ax=ax) # draw colorbar
     #plt.title(r'$\log_{10}\rho$ at $t = %4.0f$' % t)
-    plt.title('log rho at t = %4.0f' % t)
-    plt.savefig( fname + '.png' )
+    if True == pt:
+        plt.title('log rho at t = %4.0f' % t)
+    #if None != fname:
+    #    plt.savefig( fname + '.png' )
 
 def mainfunc(imgname):
     global xi,yi,zi,CS
@@ -2006,6 +2023,38 @@ if __name__ == "__main__":
         hf=horfluxcalc(ihor)
         df=diskfluxcalc(ny/2,rmin=rhor)
         print "Final   (t=%-8g): BHflux = %g, Diskflux = %g" % (t, hf, df)
+    if True:
+        #Rz and xy planes side by side
+        len=10
+        #To generate movies for all sub-folders of a folder:
+        #cd ~/Research/runart; for f in *; do cd ~/Research/runart/$f; (python  ~/py/mread/__init__.py &> python.out &); done
+        grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]) )
+        #rfd("fieldline0000.bin")  #to define _dx#
+        #grid3dlight("gdump")
+        flist = glob.glob( os.path.join("dumps/", "fieldline1000.bin") )
+        for findex, fname in enumerate(flist):
+            if os.path.isfile("lrho%04d_Rzxy%g.png" % (findex,len)):
+                print( "Skipping " + fname + " as lrho%04d_Rzxy%g.png exists" % (findex,len) );
+            else:
+                print( "Processing " + fname + " ..." )
+                rfd("../"+fname)
+                plt.figure(0)
+                plt.clf()
+                plt.suptitle(r'log rho at t = %4.0f' % t)
+                gs1 = GridSpec(1, 1)
+                gs1.update(left=0.05, right=0.45, top=0.95, bottom=0.33, wspace=0.05)
+                ax1 = plt.subplot(gs1[:, -1])
+                mkframe("lrho%04d_%g" % (findex,len), vmin=-8,vmax=1.5,len=len,ax=ax1,cb=False,pt=False)
+                gs2 = GridSpec(1, 1)
+                gs2.update(left=0.5, right=1, top=0.95, bottom=0.33, wspace=0.05)
+                ax2 = plt.subplot(gs2[:, -1])
+                mkframexy("lrho%04d_xy%g" % (findex,len), vmin=-8,vmax=1.5,len=len,ax=ax2,cb=True,pt=False)
+        print( "Done!" )
+        #print( "Now you can make a movie by running:" )
+        #print( "ffmpeg -fflags +genpts -r 10 -i lrho%04d.png -vcodec mpeg4 -qmax 5 mov.avi" )
+        os.system("mv mov_%s_Rzxy%g.avi mov_%s_Rzxy%g.bak.avi" % ( os.path.basename(os.getcwd()), len, os.path.basename(os.getcwd()), len) )
+        os.system("ffmpeg -fflags +genpts -r 10 -i lrho%%04d_Rzxy%g.png -vcodec mpeg4 -qmax 5 mov_%s_Rzxy%g.avi" % (len, os.path.basename(os.getcwd()), len) )
+        #os.system("scp mov.avi 128.112.70.76:Research/movies/mov_`basename \`pwd\``.avi")
     if False:
         len=10
         #To generate movies for all sub-folders of a folder:
@@ -2013,20 +2062,20 @@ if __name__ == "__main__":
         grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]) )
         #rfd("fieldline0000.bin")  #to define _dx#
         #grid3dlight("gdump")
-        flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+        flist = glob.glob( os.path.join("dumps/", "fieldline0000.bin") )
         for findex, fname in enumerate(flist):
-            if os.path.isfile("lrho%04d_%g.png" % (findex,len)):
-                print( "Skipping " + fname + " as lrho%04d_%g.png exists" % (findex,len) );
+            if os.path.isfile("lrho%04d_xy%g.png" % (findex,len)):
+                print( "Skipping " + fname + " as lrho%04d_xy%g.png exists" % (findex,len) );
             else:
                 print( "Processing " + fname + " ..." )
                 rfd("../"+fname)
                 plt.clf()
-                mkframe("lrho%04d_%g" % (findex,len), vmin=-8,vmax=1.0,len=len)
+                mkframexy("lrho%04d_xy%g" % (findex,len), vmin=-8,vmax=1.5,len=len)
         print( "Done!" )
         #print( "Now you can make a movie by running:" )
         #print( "ffmpeg -fflags +genpts -r 10 -i lrho%04d.png -vcodec mpeg4 -qmax 5 mov.avi" )
-        os.system("mv mov_%g.avi mov_%g.bak.avi" % (len, len) )
-        os.system("ffmpeg -fflags +genpts -r 10 -i lrho%%04d_%g.png -vcodec mpeg4 -qmax 5 mov_%g.avi" % (len, len) )
+        os.system("mv mov_%s_xy%g.avi mov_%s_xy%g.bak.avi" % ( os.path.basename(os.getcwd()), len, os.path.basename(os.getcwd()), len) )
+        os.system("ffmpeg -fflags +genpts -r 10 -i lrho%%04d_xy%g.png -vcodec mpeg4 -qmax 5 mov_%s_xy%g.avi" % (len, os.path.basename(os.getcwd()), len) )
         #os.system("scp mov.avi 128.112.70.76:Research/movies/mov_`basename \`pwd\``.avi")
 
     #plt.clf(); rfd("fieldline0000.bin"); aphi=fieldcalc(); plc(ug/bsq) 
