@@ -120,7 +120,7 @@ def reinterp(vartointerp,extent,ncell):
     xi = np.linspace(extent[0], extent[1], ncell)
     yi = np.linspace(extent[2], extent[3], ncell)
     # grid the data.
-    zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method='linear')
+    zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method='cubic')
     interior = np.sqrt((xi[None,:]**2) + (yi[:,None]**2)) < 1+np.sqrt(1-a**2)
     #zi[interior] = np.ma.masked
     varinterpolated = ma.masked_where(interior, zi)
