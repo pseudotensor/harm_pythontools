@@ -149,7 +149,7 @@ def reinterpxy(vartointerp,extent,ncell):
     varinterpolated = ma.masked_where(interior, zi)
     return(varinterpolated)
     
-def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True):
+def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1):
     extent=(-len,len,-len,len)
     palette=cm.jet
     palette.set_bad('k', 1.0)
@@ -178,14 +178,14 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True):
     #CS.cmap=cm.jet
     #CS.set_axis_bgcolor("#bdb76b")
     if True == cb:
-        plt.colorbar(CS,ax=ax) # draw colorbar
+        plt.colorbar(CS,ax=ax,shrink=shrink) # draw colorbar
     #plt.title(r'$\log_{10}\rho$ at $t = %4.0f$' % t)
     if True == pt:
         plt.title('log rho at t = %4.0f' % t)
     #if None != fname:
     #    plt.savefig( fname + '.png' )
 
-def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True):
+def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1):
     extent=(-len,len,-len,len)
     palette=cm.jet
     palette.set_bad('k', 1.0)
@@ -213,7 +213,7 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
     #CS.cmap=cm.jet
     #CS.set_axis_bgcolor("#bdb76b")
     if True == cb:
-        plt.colorbar(CS,ax=ax) # draw colorbar
+        plt.colorbar(CS,ax=ax,shrink=shrink) # draw colorbar
     #plt.title(r'$\log_{10}\rho$ at $t = %4.0f$' % t)
     if True == pt:
         plt.title('log rho at t = %4.0f' % t)
@@ -833,7 +833,7 @@ def mfjhorvstime(ihor):
     """
     Returns a tuple (ts,fs,mdot,pjetem,pjettot): lists of times, horizon fluxes, and Mdot
     """
-    flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+    flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
     flist.sort()
     ts=np.empty(len(flist),dtype=np.float32)
     fs=np.empty(len(flist),dtype=np.float32)
@@ -1401,7 +1401,7 @@ def iofr(rval):
     res = interp1d(r[:,0,0], ti[:,0,0], kind='cubic')
     return(np.floor(res(rval)+0.5))
 
-def plotqtyvstime(qtymem,ihor=11):
+def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
     ###############################
     #copy this from getqtyvstime()
     ###############################
@@ -1622,141 +1622,178 @@ def plotqtyvstime(qtymem,ihor=11):
         pjetfinavg = (pjem10[:,ihor])[(ts<ftf)*(ts>=fti)].sum()/(pjem10[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0]
     else:
         dotavg=0
-    fig,plotlist=plt.subplots(nrows=4,ncols=1,sharex=True,figsize=(12,16),num=1)
-    #plt.clf()
-    plottitle = "a = %g: %s" % ( a, os.path.basename(os.getcwd()) )
-    plt.suptitle( plottitle )
-    plt.subplots_adjust(hspace=0.1) #increase vertical spacing to avoid crowding
-    print fstot[:,ihor].shape
-    plotlist[0].plot(ts,fstot[:,ihor],label=r'$\Phi_{\rm h,tot}$')
-    #plotlist[0].plot(ts,fsj5[:,ihor],label=r'$\Phi_{\rm h,5}$')
-    plotlist[0].plot(ts,fsj10[:,ihor],label=r'$\Phi_{\rm h,10}$')
-    #plotlist[0].plot(ts,fs,'r+') #, label=r'$\Phi_{\rm h}/0.5\Phi_{\rm i}$: Data Points')
-    plotlist[0].legend(loc='upper left')
-    #plt.xlabel(r'$t\;(GM/c^3)$')
-    plotlist[0].set_ylabel(r'$\Phi_{\rm h}$',fontsize=16)
-    plt.setp( plotlist[0].get_xticklabels(), visible=False)
-    plotlist[0].grid(True)
-    #
-    #plotlist[1].subplot(212,sharex=True)
-    #plotlist[1].plot(ts,np.abs(mdtot[:,ihor]),label=r'$\dot M_{\rm h,tot}$')
-    #plotlist[1].plot(ts,np.abs(mdtot[:,ihor]-md5[:,ihor]),label=r'$\dot M_{\rm h,tot,bsqorho<5}$')
-    plotlist[1].plot(ts,np.abs(mdtot[:,ihor]-md10[:,ihor]),label=r'$\dot M_{{\rm h,tot}, b^2/rho<10}$')
-    if dotavg:
-        plotlist[1].plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+mdotiniavg,label=r'$\langle \dot M_{{\rm h,tot}, b^2/\rho<10}\rangle_{i}$')
-        plotlist[1].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotfinavg,label=r'$\langle \dot M_{{\rm h,tot}, b^2/\rho<10}\rangle_{f}$')
-    #plotlist[1].plot(ts,np.abs(md2h[:,ihor]),label=r'$\dot M_{\rm h,2h}$')
-    #plotlist[1].plot(ts,np.abs(md4h[:,ihor]),label=r'$\dot M_{\rm h,4h}$')
-    #plotlist[1].plot(ts,np.abs(md2hor[:,ihor]),label=r'$\dot M_{\rm h,2hor}$')
-    #plotlist[1].plot(ts,np.abs(mdrhosq[:,ihor]),label=r'$\dot M_{\rm h,rhosq}$')
-    #plotlist[1].plot(ts,np.abs(md5[:,ihor]),label=r'$\dot M_{\rm h,5}$')
-    plotlist[1].plot(ts,np.abs(md10[:,ihor]),label=r'$\dot M_{\rm h,10}$')
-    #plotlist[1].plot(ts,np.abs(md[:,ihor]),'r+') #, label=r'$\dot M_{\rm h}$: Data Points')
-    plotlist[1].legend(loc='upper left')
-    #plotlist[1].set_xlabel(r'$t\;(GM/c^3)$')
-    plotlist[1].set_ylabel(r'$\dot M_{\rm h}$',fontsize=16)
-    plt.setp( plotlist[1].get_xticklabels(), visible=False)
     
-    #plotlist[2].plot(ts,(pjem5[:,ihor]),label=r'$\dot P_{\rm j,em5}$')
-    plotlist[2].plot(ts,(pjem10[:,ihor]),label=r'$\dot P_{\rm j,em10}$')
-    if dotavg:
-        plotlist[2].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg,label=r'$\langle \dot P_{{\rm j,em10}\rangle_{f}}$')
-    plotlist[2].legend(loc='upper left')
-    #plotlist[2].set_xlabel(r'$t\;(GM/c^3)$')
-    plotlist[2].set_ylabel(r'$\dot P_{\rm j}$',fontsize=16)
+    if whichplot == 1:
+        ax.plot(ts,np.abs(mdtot[:,ihor]-md10[:,ihor]))#,label=r'$\dot M$')
+        if findex != None:
+            ax.plot(ts[findex],np.abs(mdtot[:,ihor]-md10[:,ihor])[findex],'ro')#,label=r'$\dot M$')
+        #ax.legend(loc='upper left')
+        if dotavg:
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotfinavg)#,label=r'$\langle \dot M\rangle$')
+        ax.set_ylabel(r'$\dot M$',fontsize=16)
+        plt.setp( ax.get_xticklabels(), visible=False)
+    if whichplot == 2:
+        ax.plot(ts,(pjem10[:,ihor]),label=r'P_{\rm j}$')
+        #ax.legend(loc='upper left')
+        if dotavg:
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg)#,label=r'$\langle P_{\rm j}\rangle$')
+        ax.set_ylabel(r'$P_{\rm j}$',fontsize=16)
+        plt.setp( ax.get_xticklabels(), visible=False)
+    if whichplot == 3:
+        ax.plot(ts,(pjem10[:,ihor]/(mdtot[:,ihor]-md10[:,ihor])))#,label=r'$P_{\rm j}/\dot M$')
+        #ax.legend(loc='upper left')
+        if dotavg:
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg/mdotfinavg)#,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+        ax.set_ylim(0,4)
+        #ax.set_xlabel(r'$t\;(GM/c^3)$')
+        ax.set_ylabel(r'$P_{\rm j}/\dot M$',fontsize=16)
+    if whichplot == 4:
+        ax.plot(ts,pjem10[:,ihor]/mdotfinavg)#,label=r'$P_{\rm j}/\dot M$')
+        if findex != None:
+            ax.plot(ts[findex],(pjem10[:,ihor]/mdotfinavg)[findex],'ro')#,label=r'$\dot M$')
+        #ax.legend(loc='upper left')
+        if dotavg:
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg/mdotfinavg)#,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+        #ax.set_ylim(0,2)
+        ax.set_xlabel(r'$t\;(GM/c^3)$')
+        ax.set_ylabel(r'$P_{\rm j}/\langle\dot M\rangle$',fontsize=16,ha='right')
+        
+    if whichplot == None:
+        fig,plotlist=plt.subplots(nrows=4,ncols=1,sharex=True,figsize=(12,16),num=1)
+        #plt.clf()
+        plottitle = "a = %g: %s" % ( a, os.path.basename(os.getcwd()) )
+        plt.suptitle( plottitle )
+        plt.subplots_adjust(hspace=0.1) #increase vertical spacing to avoid crowding
+        print fstot[:,ihor].shape
+        plotlist[0].plot(ts,fstot[:,ihor],label=r'$\Phi_{\rm h,tot}$')
+        #plotlist[0].plot(ts,fsj5[:,ihor],label=r'$\Phi_{\rm h,5}$')
+        plotlist[0].plot(ts,fsj10[:,ihor],label=r'$\Phi_{\rm h,10}$')
+        #plotlist[0].plot(ts,fs,'r+') #, label=r'$\Phi_{\rm h}/0.5\Phi_{\rm i}$: Data Points')
+        plotlist[0].legend(loc='upper left')
+        #plt.xlabel(r'$t\;(GM/c^3)$')
+        plotlist[0].set_ylabel(r'$\Phi_{\rm h}$',fontsize=16)
+        plt.setp( plotlist[0].get_xticklabels(), visible=False)
+        plotlist[0].grid(True)
+        #
+        #plotlist[1].subplot(212,sharex=True)
+        #plotlist[1].plot(ts,np.abs(mdtot[:,ihor]),label=r'$\dot M_{\rm h,tot}$')
+        #plotlist[1].plot(ts,np.abs(mdtot[:,ihor]-md5[:,ihor]),label=r'$\dot M_{\rm h,tot,bsqorho<5}$')
+        plotlist[1].plot(ts,np.abs(mdtot[:,ihor]-md10[:,ihor]),label=r'$\dot M_{{\rm h,tot}, b^2/rho<10}$')
+        if dotavg:
+            plotlist[1].plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+mdotiniavg,label=r'$\langle \dot M_{{\rm h,tot}, b^2/\rho<10}\rangle_{i}$')
+            plotlist[1].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotfinavg,label=r'$\langle \dot M_{{\rm h,tot}, b^2/\rho<10}\rangle_{f}$')
+        #plotlist[1].plot(ts,np.abs(md2h[:,ihor]),label=r'$\dot M_{\rm h,2h}$')
+        #plotlist[1].plot(ts,np.abs(md4h[:,ihor]),label=r'$\dot M_{\rm h,4h}$')
+        #plotlist[1].plot(ts,np.abs(md2hor[:,ihor]),label=r'$\dot M_{\rm h,2hor}$')
+        #plotlist[1].plot(ts,np.abs(mdrhosq[:,ihor]),label=r'$\dot M_{\rm h,rhosq}$')
+        #plotlist[1].plot(ts,np.abs(md5[:,ihor]),label=r'$\dot M_{\rm h,5}$')
+        plotlist[1].plot(ts,np.abs(md10[:,ihor]),label=r'$\dot M_{\rm h,10}$')
+        #plotlist[1].plot(ts,np.abs(md[:,ihor]),'r+') #, label=r'$\dot M_{\rm h}$: Data Points')
+        plotlist[1].legend(loc='upper left')
+        #plotlist[1].set_xlabel(r'$t\;(GM/c^3)$')
+        plotlist[1].set_ylabel(r'$\dot M_{\rm h}$',fontsize=16)
+        plt.setp( plotlist[1].get_xticklabels(), visible=False)
 
-    #plotlist[3].plot(ts,(pjem10[:,ihor]/mdtot[:,ihor]),label=r'$\dot P_{\rm j,em10}/\dot M_{\rm tot}$')
-    #plotlist[3].plot(ts,(pjem5[:,ihor]/(mdtot[:,ihor]-md5[:,ihor])),label=r'$\dot P_{\rm j,em5}/\dot M_{{\rm tot},b^2/\rho<5}$')
-    plotlist[3].plot(ts,(pjem10[:,ihor]/(mdtot[:,ihor]-md10[:,ihor])),label=r'$\dot \eta_{10}=P_{\rm j,em10}/\dot M_{{\rm tot},b^2/\rho<10}$')
-    if dotavg:
-        plotlist[3].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg/mdotiniavg,label=r'$\langle P_j\rangle/\langle\dot M_i\rangle_{f}$')
-        plotlist[3].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg/mdotfinavg,label=r'$\langle P_j\rangle/\langle\dot M_f\rangle_{f}$')
-    plotlist[3].set_ylim(0,6)
-    plotlist[3].legend(loc='upper left')
-    plotlist[3].set_xlabel(r'$t\;(GM/c^3)$')
-    plotlist[3].set_ylabel(r'$\dot P_{\rm j}/\dot M_{\rm h}$',fontsize=16)
+        #plotlist[2].plot(ts,(pjem5[:,ihor]),label=r'$P_{\rm j,em5}$')
+        plotlist[2].plot(ts,(pjem10[:,ihor]),label=r'$P_{\rm j,em10}$')
+        if dotavg:
+            plotlist[2].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg,label=r'$\langle P_{{\rm j,em10}\rangle_{f}}$')
+        plotlist[2].legend(loc='upper left')
+        #plotlist[2].set_xlabel(r'$t\;(GM/c^3)$')
+        plotlist[2].set_ylabel(r'$P_{\rm j}$',fontsize=16)
 
-    #title("\TeX\ is Number $\displaystyle\sum_{n=1}^\infty\frac{-e^{i\pi}}{2^n}$!", 
-    #      fontsize=16, color='r')
-    plotlist[0].grid(True)
-    plotlist[1].grid(True)
-    plotlist[2].grid(True)
-    plotlist[3].grid(True)
-    fig.savefig('pjet1_%s.pdf' % os.path.basename(os.getcwd()) )
+        #plotlist[3].plot(ts,(pjem10[:,ihor]/mdtot[:,ihor]),label=r'$P_{\rm j,em10}/\dot M_{\rm tot}$')
+        #plotlist[3].plot(ts,(pjem5[:,ihor]/(mdtot[:,ihor]-md5[:,ihor])),label=r'$P_{\rm j,em5}/\dot M_{{\rm tot},b^2/\rho<5}$')
+        plotlist[3].plot(ts,(pjem10[:,ihor]/(mdtot[:,ihor]-md10[:,ihor])),label=r'$\dot \eta_{10}=P_{\rm j,em10}/\dot M_{{\rm tot},b^2/\rho<10}$')
+        if dotavg:
+            plotlist[3].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg/mdotiniavg,label=r'$\langle P_j\rangle/\langle\dot M_i\rangle_{f}$')
+            plotlist[3].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg/mdotfinavg,label=r'$\langle P_j\rangle/\langle\dot M_f\rangle_{f}$')
+        plotlist[3].set_ylim(0,6)
+        plotlist[3].legend(loc='upper left')
+        plotlist[3].set_xlabel(r'$t\;(GM/c^3)$')
+        plotlist[3].set_ylabel(r'$P_{\rm j}/\dot M_{\rm h}$',fontsize=16)
 
-    #density/velocity/hor figure
-    rhor=1+(1-a**2)**0.5
-    fig,plotlist=plt.subplots(nrows=4,ncols=1,sharex=True,figsize=(12,16),num=2)
-    #plt.clf()
-    plottitle = r"\rho,u^r,h/r: a = %g: %s" % ( a, os.path.basename(os.getcwd()) )
-    plt.suptitle( plottitle )
-    plt.subplots_adjust(hspace=0.1) #increase vertical spacing to avoid crowding
-    #print fstot[:,ihor].shape
-    plotlist[0].plot(ts,hoverr[:,ihor],label=r'$(h/r)_{\rm h}$')
-    plotlist[0].plot(ts,hoverr[:,iofr(2)],label=r'$(h/r)_{\rm 2}$') ##### continue here
-    plotlist[0].plot(ts,hoverr[:,iofr(4)],label=r'$(h/r)_{\rm 4}$')
-    plotlist[0].plot(ts,hoverr[:,iofr(8)],label=r'$(h/r)_{\rm 8}$')
-    #lotlist[0].plot(ts,hoverr[:,iofr(10)],label=r'$(h/r)_{\rm 10}$')
-    #plotlist[0].plot(ts,hoverr[:,iofr(12)],label=r'$(h/r)_{\rm 12}$')
-    #plotlist[0].plot(ts,hoverr[:,iofr(15)],label=r'$(h/r)_{\rm 15}$')
-    #thetamid
-    plotlist[0].plot(ts,(thetamid-np.pi/2)[:,ihor],'--',label=r'$\theta_{\rm h}$')
-    plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(2)],'--',label=r'$\theta_{\rm 2}$') ##### continue here
-    plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(4)],'--',label=r'$\theta_{\rm 4}$')
-    plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(8)],'--',label=r'$\theta_{\rm 8}$')
-    #plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(10)],'--',label=r'$\theta_{\rm 10}$')
-    #plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(12)],'--',label=r'$\theta_{\rm 12}$')
-    #plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(15)],'--',label=r'$\theta_{\rm 15}$')
-    #plotlist[0].plot(ts,fs,'r+') #, label=r'$\Phi_{\rm h}/0.5\Phi_{\rm i}$: Data Points')
-    #legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
-    plotlist[0].legend(loc='upper right',ncol=4)
-    #plt.xlabel(r'$t\;(GM/c^3)$')
-    plotlist[0].set_ylabel(r'$h/r$',fontsize=16)
-    plt.setp( plotlist[0].get_xticklabels(), visible=False)
-    plotlist[0].grid(True)
-    #
-    #plotlist[1].subplot(212,sharex=True)
-    plotlist[1].plot(ts,(-uus12hor*dxdxp[1][1][:,0,0])[:,ihor],label=r'$-u^r_{\rm h}$')
-    plotlist[1].plot(ts,(-uus12hor*dxdxp[1][1][:,0,0])[:,iofr(2)],label=r'$-u^r_{\rm 2}$') ##### continue here
-    plotlist[1].plot(ts,(-uus12hor*dxdxp[1][1][:,0,0])[:,iofr(4)],label=r'$-u^r_{\rm 4}$')
-    plotlist[1].plot(ts,(-uus12hor*dxdxp[1][1][:,0,0])[:,iofr(8)],label=r'$-u^r_{\rm 8}$')
-    #plotlist[1].plot(ts,(-uus12hor*dxdxp[1][1][:,0,0])[:,iofr(10)],label=r'$-u^r_{\rm 10}$')
-    #plotlist[1].plot(ts,(-uus12hor*dxdxp[1][1][:,0,0])[:,iofr(12)],label=r'$-u^r_{\rm 12}$')
-    #plotlist[1].plot(ts,(-uus12hor*dxdxp[1][1][:,0,0])[:,iofr(15)],label=r'$-u^r_{\rm 15}$')
-    plotlist[1].legend(loc='upper right')
-    #plotlist[1].set_xlabel(r'$t\;(GM/c^3)$')
-    plotlist[1].set_ylabel(r'$u^r$',fontsize=16)
-    plt.setp( plotlist[1].get_xticklabels(), visible=False)
-    
-    plotlist[2].plot(ts,rhos2hor[:,ihor],label=r'$\rho_{\rm h}$')
-    plotlist[2].plot(ts,rhos2hor[:,iofr(2)],label=r'$\rho_{\rm 2}$') ##### continue here
-    plotlist[2].plot(ts,rhos2hor[:,iofr(4)],label=r'$\rho_{\rm 4}$')
-    plotlist[2].plot(ts,rhos2hor[:,iofr(8)],label=r'$\rho_{\rm 8}$')
-    #plotlist[2].plot(ts,rhos2hor[:,iofr(10)],label=r'$\rho_{\rm 10}$')
-    #plotlist[2].plot(ts,rhos2hor[:,iofr(12)],label=r'$\rho_{\rm 12}$')
-    #plotlist[2].plot(ts,rhos2hor[:,iofr(15)],label=r'$\rho_{\rm 15}$')
-    plotlist[2].legend(loc='upper left')
-    #plotlist[2].set_xlabel(r'$t\;(GM/c^3)$')
-    plotlist[2].set_ylabel(r'$\rho$',fontsize=16)
+        #title("\TeX\ is Number $\displaystyle\sum_{n=1}^\infty\frac{-e^{i\pi}}{2^n}$!", 
+        #      fontsize=16, color='r')
+        plotlist[0].grid(True)
+        plotlist[1].grid(True)
+        plotlist[2].grid(True)
+        plotlist[3].grid(True)
+        fig.savefig('pjet1_%s.pdf' % os.path.basename(os.getcwd()) )
 
-    plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,ihor],label=r'$u^r_{\rm h}$')
-    plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(2)],label=r'$u^r_{\rm 2}$') ##### continue here
-    plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(4)],label=r'$u^r_{\rm 4}$')
-    plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(8)],label=r'$u^r_{\rm 8}$')
-    #plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(10)],label=r'$u^r_{\rm 10}$')
-    #plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(12)],label=r'$u^r_{\rm 12}$')
-    #plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(15)],label=r'$u^r_{\rm 15}$')
-    plotlist[3].legend(loc='upper left')
-    plotlist[3].set_xlabel(r'$t\;(GM/c^3)$')
-    plotlist[3].set_ylabel(r'$u_g/\rho$',fontsize=16)
+        #density/velocity/hor figure
+        rhor=1+(1-a**2)**0.5
+        fig,plotlist=plt.subplots(nrows=4,ncols=1,sharex=True,figsize=(12,16),num=2)
+        #plt.clf()
+        plottitle = r"\rho,u^r,h/r: a = %g: %s" % ( a, os.path.basename(os.getcwd()) )
+        plt.suptitle( plottitle )
+        plt.subplots_adjust(hspace=0.1) #increase vertical spacing to avoid crowding
+        #print fstot[:,ihor].shape
+        plotlist[0].plot(ts,hoverr[:,ihor],label=r'$(h/r)_{\rm h}$')
+        plotlist[0].plot(ts,hoverr[:,iofr(2)],label=r'$(h/r)_{\rm 2}$') ##### continue here
+        plotlist[0].plot(ts,hoverr[:,iofr(4)],label=r'$(h/r)_{\rm 4}$')
+        plotlist[0].plot(ts,hoverr[:,iofr(8)],label=r'$(h/r)_{\rm 8}$')
+        #lotlist[0].plot(ts,hoverr[:,iofr(10)],label=r'$(h/r)_{\rm 10}$')
+        #plotlist[0].plot(ts,hoverr[:,iofr(12)],label=r'$(h/r)_{\rm 12}$')
+        #plotlist[0].plot(ts,hoverr[:,iofr(15)],label=r'$(h/r)_{\rm 15}$')
+        #thetamid
+        plotlist[0].plot(ts,(thetamid-np.pi/2)[:,ihor],'--',label=r'$\theta_{\rm h}$')
+        plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(2)],'--',label=r'$\theta_{\rm 2}$') ##### continue here
+        plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(4)],'--',label=r'$\theta_{\rm 4}$')
+        plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(8)],'--',label=r'$\theta_{\rm 8}$')
+        #plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(10)],'--',label=r'$\theta_{\rm 10}$')
+        #plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(12)],'--',label=r'$\theta_{\rm 12}$')
+        #plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(15)],'--',label=r'$\theta_{\rm 15}$')
+        #plotlist[0].plot(ts,fs,'r+') #, label=r'$\Phi_{\rm h}/0.5\Phi_{\rm i}$: Data Points')
+        #legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
+        plotlist[0].legend(loc='upper right',ncol=4)
+        #plt.xlabel(r'$t\;(GM/c^3)$')
+        plotlist[0].set_ylabel(r'$h/r$',fontsize=16)
+        plt.setp( plotlist[0].get_xticklabels(), visible=False)
+        plotlist[0].grid(True)
+        #
+        #plotlist[1].subplot(212,sharex=True)
+        plotlist[1].plot(ts,(-uus12hor*dxdxp[1][1][:,0,0])[:,ihor],label=r'$-u^r_{\rm h}$')
+        plotlist[1].plot(ts,(-uus12hor*dxdxp[1][1][:,0,0])[:,iofr(2)],label=r'$-u^r_{\rm 2}$') ##### continue here
+        plotlist[1].plot(ts,(-uus12hor*dxdxp[1][1][:,0,0])[:,iofr(4)],label=r'$-u^r_{\rm 4}$')
+        plotlist[1].plot(ts,(-uus12hor*dxdxp[1][1][:,0,0])[:,iofr(8)],label=r'$-u^r_{\rm 8}$')
+        #plotlist[1].plot(ts,(-uus12hor*dxdxp[1][1][:,0,0])[:,iofr(10)],label=r'$-u^r_{\rm 10}$')
+        #plotlist[1].plot(ts,(-uus12hor*dxdxp[1][1][:,0,0])[:,iofr(12)],label=r'$-u^r_{\rm 12}$')
+        #plotlist[1].plot(ts,(-uus12hor*dxdxp[1][1][:,0,0])[:,iofr(15)],label=r'$-u^r_{\rm 15}$')
+        plotlist[1].legend(loc='upper right')
+        #plotlist[1].set_xlabel(r'$t\;(GM/c^3)$')
+        plotlist[1].set_ylabel(r'$u^r$',fontsize=16)
+        plt.setp( plotlist[1].get_xticklabels(), visible=False)
 
-    #title("\TeX\ is Number $\displaystyle\sum_{n=1}^\infty\frac{-e^{i\pi}}{2^n}$!", 
-    #      fontsize=16, color='r')
-    plotlist[0].grid(True)
-    plotlist[1].grid(True)
-    plotlist[2].grid(True)
-    plotlist[3].grid(True)
-    fig.savefig('pjet2_%s.pdf' % os.path.basename(os.getcwd()) )
+        plotlist[2].plot(ts,rhos2hor[:,ihor],label=r'$\rho_{\rm h}$')
+        plotlist[2].plot(ts,rhos2hor[:,iofr(2)],label=r'$\rho_{\rm 2}$') ##### continue here
+        plotlist[2].plot(ts,rhos2hor[:,iofr(4)],label=r'$\rho_{\rm 4}$')
+        plotlist[2].plot(ts,rhos2hor[:,iofr(8)],label=r'$\rho_{\rm 8}$')
+        #plotlist[2].plot(ts,rhos2hor[:,iofr(10)],label=r'$\rho_{\rm 10}$')
+        #plotlist[2].plot(ts,rhos2hor[:,iofr(12)],label=r'$\rho_{\rm 12}$')
+        #plotlist[2].plot(ts,rhos2hor[:,iofr(15)],label=r'$\rho_{\rm 15}$')
+        plotlist[2].legend(loc='upper left')
+        #plotlist[2].set_xlabel(r'$t\;(GM/c^3)$')
+        plotlist[2].set_ylabel(r'$\rho$',fontsize=16)
+
+        plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,ihor],label=r'$u^r_{\rm h}$')
+        plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(2)],label=r'$u^r_{\rm 2}$') ##### continue here
+        plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(4)],label=r'$u^r_{\rm 4}$')
+        plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(8)],label=r'$u^r_{\rm 8}$')
+        #plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(10)],label=r'$u^r_{\rm 10}$')
+        #plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(12)],label=r'$u^r_{\rm 12}$')
+        #plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(15)],label=r'$u^r_{\rm 15}$')
+        plotlist[3].legend(loc='upper left')
+        plotlist[3].set_xlabel(r'$t\;(GM/c^3)$')
+        plotlist[3].set_ylabel(r'$u_g/\rho$',fontsize=16)
+
+        #title("\TeX\ is Number $\displaystyle\sum_{n=1}^\infty\frac{-e^{i\pi}}{2^n}$!", 
+        #      fontsize=16, color='r')
+        plotlist[0].grid(True)
+        plotlist[1].grid(True)
+        plotlist[2].grid(True)
+        plotlist[3].grid(True)
+        fig.savefig('pjet2_%s.pdf' % os.path.basename(os.getcwd()) )
 
 def plotj(ts,fs,md,jem,jtot):
     #rc('font', family='serif')
@@ -1783,13 +1820,13 @@ def plotj(ts,fs,md,jem,jtot):
     plt.setp( plotlist[1].get_xticklabels(), visible=False)
     
     #plotlist[2].subplot(212,sharex=True)
-    plotlist[2].plot(ts,jem/md,label=r'$\dot P_{\rm j,em}/\dot M$')
+    plotlist[2].plot(ts,jem/md,label=r'$P_{\rm j,em}/\dot M$')
     #plotlist[2].plot(ts,jem/md,'r+') #, label=r'$\dot M_{\rm h}$: Data Points')
-    plotlist[2].plot(ts,jtot/md,label=r'$\dot P_{\rm j,tot}/\dot M$')
+    plotlist[2].plot(ts,jtot/md,label=r'$P_{\rm j,tot}/\dot M$')
     #plotlist[2].plot(ts,jtot/md,'r+') #, label=r'$\dot M_{\rm h}$: Data Points')
     plotlist[2].legend(loc='lower right')
     plotlist[2].set_xlabel(r'$t\;(GM/c^3)$')
-    plotlist[2].set_ylabel(r'$\dot P_{\rm j}/\dot M_{\rm h}$',fontsize=16)
+    plotlist[2].set_ylabel(r'$P_{\rm j}/\dot M_{\rm h}$',fontsize=16)
 
     #title("\TeX\ is Number $\displaystyle\sum_{n=1}^\infty\frac{-e^{i\pi}}{2^n}$!", 
     #      fontsize=16, color='r')
@@ -2004,7 +2041,7 @@ if __name__ == "__main__":
         test()
     if False:
         grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]) )
-        flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+        flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ))
         for findex, fname in enumerate(flist):
             print( "Reading " + fname + " ..." )
             rfd("../"+fname)
@@ -2025,35 +2062,83 @@ if __name__ == "__main__":
         print "Final   (t=%-8g): BHflux = %g, Diskflux = %g" % (t, hf, df)
     if True:
         #Rz and xy planes side by side
-        len=10
+        plotlenf=10
+        plotleni=50
+        plotlenti=4000
+        plotlentf=4500
         #To generate movies for all sub-folders of a folder:
         #cd ~/Research/runart; for f in *; do cd ~/Research/runart/$f; (python  ~/py/mread/__init__.py &> python.out &); done
-        grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]) )
-        #rfd("fieldline0000.bin")  #to define _dx#
+        #grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]) )
+        #rfd("fieldline0000.bin")  #to definea
         #grid3dlight("gdump")
-        flist = glob.glob( os.path.join("dumps/", "fieldline1000.bin") )
+        #qtymem=None #clear to free mem
+        #rhor=1+(1+a**2)**0.5
+        #ihor = np.floor(iofr(rhor)+0.5);
+        #qtymem=getqtyvstime(ihor,0.2)
+        flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
         for findex, fname in enumerate(flist):
-            if os.path.isfile("lrho%04d_Rzxy%g.png" % (findex,len)):
-                print( "Skipping " + fname + " as lrho%04d_Rzxy%g.png exists" % (findex,len) );
+            if os.path.isfile("lrho%04d_Rzxym.png" % (findex)):
+                print( "Skipping " + fname + " as lrho%04d_Rzxym.png exists" % (findex) );
             else:
                 print( "Processing " + fname + " ..." )
                 rfd("../"+fname)
-                plt.figure(0)
+                plotlen = plotleni+(plotlenf-plotleni)*(t-plotlenti)/(plotlentf-plotlenti)
+                plotlen = min(plotlen,plotleni)
+                plotlen = max(plotlen,plotlenf)
+                plt.figure(0, figsize=(12,8), dpi=100)
                 plt.clf()
-                plt.suptitle(r'log rho at t = %4.0f' % t)
+                plt.suptitle(r'$\log_{10}\rho$ at t = %4.0f' % t)
+                #mdot,pjet,pjet/mdot plots
+                gs3 = GridSpec(2, 2)
+                gs3.update(left=0.05, right=0.95, top=0.30, bottom=0.03, wspace=0.01, hspace=0.04)
+                #mdot
+                ax31 = plt.subplot(gs3[-2,:])
+                plotqtyvstime(qtymem,ax=ax31,whichplot=1,findex=findex)
+                ymax=ax31.get_ylim()[1]
+                ax31.set_yticks((ymax/2,ymax))
+                ax31.grid(True)
+                #pjet
+                # ax32 = plt.subplot(gs3[-2,:])
+                # plotqtyvstime(qtymem,ax=ax32,whichplot=2)
+                # ymax=ax32.get_ylim()[1]
+                # ax32.set_yticks((ymax/2,ymax))
+                # ax32.grid(True)
+                #pjet/mdot
+                # ax33 = plt.subplot(gs3[-1,:])
+                # plotqtyvstime(qtymem,ax=ax33,whichplot=3)
+                # ymax=ax33.get_ylim()[1]
+                # ax33.set_yticks((ymax/2,ymax))
+                # ax33.grid(True)
+                #pjet/<mdot>
+                ax34 = plt.subplot(gs3[-1,:])
+                plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findex)
+                ymax=ax34.get_ylim()[1]
+                if 1 < ymax and ymax < 2: 
+                    ymax = 2
+                    tck=(1,2)
+                elif ymax < 1: 
+                    ymax = 1
+                    tck=(0.5,1)
+                else:
+                    tck=np.arange(1,np.floor(ymax)+1)
+                ax34.set_yticks(tck)
+                ax34.grid(True)
+                #Rz xy
                 gs1 = GridSpec(1, 1)
                 gs1.update(left=0.05, right=0.45, top=0.95, bottom=0.33, wspace=0.05)
                 ax1 = plt.subplot(gs1[:, -1])
-                mkframe("lrho%04d_%g" % (findex,len), vmin=-8,vmax=1.5,len=len,ax=ax1,cb=False,pt=False)
+                mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-8,vmax=1.5,len=plotlen,ax=ax1,cb=False,pt=False)
                 gs2 = GridSpec(1, 1)
                 gs2.update(left=0.5, right=1, top=0.95, bottom=0.33, wspace=0.05)
                 ax2 = plt.subplot(gs2[:, -1])
-                mkframexy("lrho%04d_xy%g" % (findex,len), vmin=-8,vmax=1.5,len=len,ax=ax2,cb=True,pt=False)
+                mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-8,vmax=1.5,len=plotlen,ax=ax2,cb=True,pt=False)
+                plt.savefig( "lrho%04d_Rzxym.png" % (findex)  )
+                #print xxx
         print( "Done!" )
         #print( "Now you can make a movie by running:" )
         #print( "ffmpeg -fflags +genpts -r 10 -i lrho%04d.png -vcodec mpeg4 -qmax 5 mov.avi" )
-        os.system("mv mov_%s_Rzxy%g.avi mov_%s_Rzxy%g.bak.avi" % ( os.path.basename(os.getcwd()), len, os.path.basename(os.getcwd()), len) )
-        os.system("ffmpeg -fflags +genpts -r 10 -i lrho%%04d_Rzxy%g.png -vcodec mpeg4 -qmax 5 mov_%s_Rzxy%g.avi" % (len, os.path.basename(os.getcwd()), len) )
+        os.system("mv mov_%s_Rzxym.avi mov_%s_Rzxym.bak.avi" % ( os.path.basename(os.getcwd()), plotlen, os.path.basename(os.getcwd()), plotlen) )
+        os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym.png -vcodec mpeg4 -qmax 5 mov_%s_Rzxym.avi" % (plotlen, os.path.basename(os.getcwd()), plotlen) )
         #os.system("scp mov.avi 128.112.70.76:Research/movies/mov_`basename \`pwd\``.avi")
     if False:
         len=10
@@ -2062,7 +2147,7 @@ if __name__ == "__main__":
         grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]) )
         #rfd("fieldline0000.bin")  #to define _dx#
         #grid3dlight("gdump")
-        flist = glob.glob( os.path.join("dumps/", "fieldline0000.bin") )
+        flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline0000.bin") ) )
         for findex, fname in enumerate(flist):
             if os.path.isfile("lrho%04d_xy%g.png" % (findex,len)):
                 print( "Skipping " + fname + " as lrho%04d_xy%g.png exists" % (findex,len) );
