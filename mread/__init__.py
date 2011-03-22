@@ -102,7 +102,7 @@ def plc(myvar,xcoord=None,ycoord=None,**kwargs): #plc
     if( cb == True): #use color bar
         plt.colorbar()
 
-def reinterp(vartointerp,extent,ncell):
+def reinterp(vartointerp,extent,ncell,domask=1):
     global xi,yi,zi
     #grid3d("gdump")
     #rfd("fieldline0250.bin")
@@ -123,7 +123,10 @@ def reinterp(vartointerp,extent,ncell):
     zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method='cubic')
     interior = np.sqrt((xi[None,:]**2) + (yi[:,None]**2)) < 1+np.sqrt(1-a**2)
     #zi[interior] = np.ma.masked
-    varinterpolated = ma.masked_where(interior, zi)
+    if domask:
+        varinterpolated = ma.masked_where(interior, zi)
+    else:
+        varinterpolated = zi
     return(varinterpolated)
 
 def reinterpxy(vartointerp,extent,ncell):
@@ -153,10 +156,10 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
     extent=(-len,len,-len,len)
     palette=cm.jet
     palette.set_bad('k', 1.0)
-    palette.set_over('r', 1.0)
-    palette.set_under('g', 1.0)
+    #palette.set_over('r', 1.0)
+    #palette.set_under('g', 1.0)
     aphi = fieldcalc()
-    iaphi = reinterp(aphi,extent,ncell)
+    iaphi = reinterp(aphi,extent,ncell,domask=0)
     ilrho = reinterp(np.log10(rho),extent,ncell)
     #maxabsiaphi=np.max(np.abs(iaphi))
     maxabsiaphi = 100 #50
@@ -189,8 +192,8 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
     extent=(-len,len,-len,len)
     palette=cm.jet
     palette.set_bad('k', 1.0)
-    palette.set_over('r', 1.0)
-    palette.set_under('g', 1.0)
+    #palette.set_over('r', 1.0)
+    #palette.set_under('g', 1.0)
     #aphi = fieldcalc()
     #iaphi = reinterp(aphi,extent,ncell)
     ilrho = reinterpxy(np.log10(rho),extent,ncell)
@@ -2068,17 +2071,17 @@ if __name__ == "__main__":
         plotlentf=4500
         #To generate movies for all sub-folders of a folder:
         #cd ~/Research/runart; for f in *; do cd ~/Research/runart/$f; (python  ~/py/mread/__init__.py &> python.out &); done
-        #grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]) )
-        #rfd("fieldline0000.bin")  #to definea
+        grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]) )
+        rfd("fieldline0000.bin")  #to definea
         #grid3dlight("gdump")
-        #qtymem=None #clear to free mem
-        #rhor=1+(1+a**2)**0.5
-        #ihor = np.floor(iofr(rhor)+0.5);
-        #qtymem=getqtyvstime(ihor,0.2)
+        qtymem=None #clear to free mem
+        rhor=1+(1+a**2)**0.5
+        ihor = np.floor(iofr(rhor)+0.5);
+        qtymem=getqtyvstime(ihor,0.2)
         flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
         for findex, fname in enumerate(flist):
-            if os.path.isfile("lrho%04d_Rzxym.png" % (findex)):
-                print( "Skipping " + fname + " as lrho%04d_Rzxym.png exists" % (findex) );
+            if os.path.isfile("lrho%04d_Rzxym1.png" % (findex)):
+                print( "Skipping " + fname + " as lrho%04d_Rzxym1.png exists" % (findex) );
             else:
                 print( "Processing " + fname + " ..." )
                 rfd("../"+fname)
@@ -2095,6 +2098,7 @@ if __name__ == "__main__":
                 ax31 = plt.subplot(gs3[-2,:])
                 plotqtyvstime(qtymem,ax=ax31,whichplot=1,findex=findex)
                 ymax=ax31.get_ylim()[1]
+                ymax=2*(np.floor(np.floor(ymax+1.5)/2))
                 ax31.set_yticks((ymax/2,ymax))
                 ax31.grid(True)
                 #pjet
@@ -2116,12 +2120,18 @@ if __name__ == "__main__":
                 if 1 < ymax and ymax < 2: 
                     ymax = 2
                     tck=(1,2)
+                    ax34.set_yticks(tck)
+                    #ax34.set_yticklabels(('','1','2'))
                 elif ymax < 1: 
                     ymax = 1
                     tck=(0.5,1)
+                    ax34.set_yticks(tck)
+                    ax34.set_yticklabels(('','1'))
                 else:
-                    tck=np.arange(1,np.floor(ymax)+1)
-                ax34.set_yticks(tck)
+                    ymax=np.floor(ymax)+1
+                    tck=np.arange(1,ymax)
+                    ax34.set_yticks(tck)
+                #ax34.set_ylim((0,ymax))
                 ax34.grid(True)
                 #Rz xy
                 gs1 = GridSpec(1, 1)
@@ -2132,13 +2142,16 @@ if __name__ == "__main__":
                 gs2.update(left=0.5, right=1, top=0.95, bottom=0.33, wspace=0.05)
                 ax2 = plt.subplot(gs2[:, -1])
                 mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-8,vmax=1.5,len=plotlen,ax=ax2,cb=True,pt=False)
-                plt.savefig( "lrho%04d_Rzxym.png" % (findex)  )
+                #print xxx
+                plt.savefig( "lrho%04d_Rzxym1.png" % (findex)  )
                 #print xxx
         print( "Done!" )
         #print( "Now you can make a movie by running:" )
         #print( "ffmpeg -fflags +genpts -r 10 -i lrho%04d.png -vcodec mpeg4 -qmax 5 mov.avi" )
-        os.system("mv mov_%s_Rzxym.avi mov_%s_Rzxym.bak.avi" % ( os.path.basename(os.getcwd()), plotlen, os.path.basename(os.getcwd()), plotlen) )
-        os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym.png -vcodec mpeg4 -qmax 5 mov_%s_Rzxym.avi" % (plotlen, os.path.basename(os.getcwd()), plotlen) )
+        os.system("mv mov_%s_Rzxym1.avi mov_%s_Rzxym1.bak.avi" % ( os.path.basename(os.getcwd()), os.path.basename(os.getcwd())) )
+        #os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 mov_%s_Rzxym1.avi" % (os.path.basename(os.getcwd())) )
+        os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 1 mov_%s_Rzxym1p1.avi" % (os.path.basename(os.getcwd())) )
+        os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 2 mov_%s_Rzxym1.avi" % (os.path.basename(os.getcwd())) )
         #os.system("scp mov.avi 128.112.70.76:Research/movies/mov_`basename \`pwd\``.avi")
     if False:
         len=10
