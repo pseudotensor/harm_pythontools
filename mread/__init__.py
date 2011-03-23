@@ -146,7 +146,7 @@ def reinterpxy(vartointerp,extent,ncell):
     xi = np.linspace(extent[0], extent[1], ncell)
     yi = np.linspace(extent[2], extent[3], ncell)
     # grid the data.
-    zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method='linear')
+    zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method='cubic')
     interior = np.sqrt((xi[None,:]**2) + (yi[:,None]**2)) < 1+np.sqrt(1-a**2)
     #zi[interior] = np.ma.masked
     varinterpolated = ma.masked_where(interior, zi)
@@ -1401,7 +1401,7 @@ def plotit(ts,fs,md):
     fig.savefig('test.pdf')
 
 def iofr(rval):
-    res = interp1d(r[:,0,0], ti[:,0,0], kind='cubic')
+    res = interp1d(r[:,0,0], ti[:,0,0], kind='linear')
     return(np.floor(res(rval)+0.5))
 
 def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
