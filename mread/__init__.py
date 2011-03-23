@@ -2131,7 +2131,8 @@ if __name__ == "__main__":
                     ymax=np.floor(ymax)+1
                     tck=np.arange(1,ymax)
                     ax34.set_yticks(tck)
-                #ax34.set_ylim((0,ymax))
+                #reset lower limit to 0
+                ax34.set_ylim((0,ax34.get_ylim()[1]))
                 ax34.grid(True)
                 #Rz xy
                 gs1 = GridSpec(1, 1)
