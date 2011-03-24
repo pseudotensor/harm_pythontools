@@ -1405,6 +1405,7 @@ def iofr(rval):
     return(np.floor(res(rval)+0.5))
 
 def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
+    global mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
     ###############################
     #copy this from getqtyvstime()
     ###############################
@@ -1622,6 +1623,11 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
         ftf = gd1[3]
         mdotiniavg = (mdtot[:,ihor]-md10[:,ihor])[(ts<itf)*(ts>=iti)].sum()/(mdtot[:,ihor]-md10[:,ihor])[(ts<itf)*(ts>=iti)].shape[0]
         mdotfinavg = (mdtot[:,ihor]-md10[:,ihor])[(ts<ftf)*(ts>=fti)].sum()/(mdtot[:,ihor]-md10[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0]
+        mdotfinavgvsr5 = (mdtot[:,:]-md5[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(mdtot[:,:]-md5[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
+        mdotfinavgvsr10 = (mdtot[:,:]-md10[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(mdtot[:,:]-md10[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
+        mdotfinavgvsr20 = (mdtot[:,:]-md20[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(mdtot[:,:]-md20[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
+        mdotfinavgvsr30 = (mdtot[:,:]-md30[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(mdtot[:,:]-md30[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
+        mdotfinavgvsr40 = (mdtot[:,:]-md40[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(mdtot[:,:]-md40[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
         pjetfinavg = (pjem10[:,ihor])[(ts<ftf)*(ts>=fti)].sum()/(pjem10[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0]
     else:
         dotavg=0
@@ -1682,6 +1688,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
         #plotlist[1].plot(ts,np.abs(mdtot[:,ihor]),label=r'$\dot M_{\rm h,tot}$')
         #plotlist[1].plot(ts,np.abs(mdtot[:,ihor]-md5[:,ihor]),label=r'$\dot M_{\rm h,tot,bsqorho<5}$')
         plotlist[1].plot(ts,np.abs(mdtot[:,ihor]-md10[:,ihor]),label=r'$\dot M_{{\rm h,tot}, b^2/rho<10}$')
+        plotlist[1].plot(ts,np.abs(mdtot[:,ihor]-md40[:,ihor]),label=r'$\dot M_{{\rm h,tot}, b^2/rho<40}$')
         if dotavg:
             plotlist[1].plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+mdotiniavg,label=r'$\langle \dot M_{{\rm h,tot}, b^2/\rho<10}\rangle_{i}$')
             plotlist[1].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotfinavg,label=r'$\langle \dot M_{{\rm h,tot}, b^2/\rho<10}\rangle_{f}$')
@@ -1691,6 +1698,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
         #plotlist[1].plot(ts,np.abs(mdrhosq[:,ihor]),label=r'$\dot M_{\rm h,rhosq}$')
         #plotlist[1].plot(ts,np.abs(md5[:,ihor]),label=r'$\dot M_{\rm h,5}$')
         plotlist[1].plot(ts,np.abs(md10[:,ihor]),label=r'$\dot M_{\rm h,10}$')
+        plotlist[1].plot(ts,np.abs(md40[:,ihor]),label=r'$\dot M_{\rm h,40}$')
         #plotlist[1].plot(ts,np.abs(md[:,ihor]),'r+') #, label=r'$\dot M_{\rm h}$: Data Points')
         plotlist[1].legend(loc='upper left')
         #plotlist[1].set_xlabel(r'$t\;(GM/c^3)$')
@@ -1797,6 +1805,19 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
         plotlist[2].grid(True)
         plotlist[3].grid(True)
         fig.savefig('pjet2_%s.pdf' % os.path.basename(os.getcwd()) )
+    
+        plt.figure(3)
+        plt.clf()
+        plt.plot(r[:,0,0],mdotfinavgvsr5,label=r'$\dot M_{b^2/\rho<5}$')
+        plt.plot(r[:,0,0],mdotfinavgvsr10,label=r'$\dot M_{b^2/\rho<10}$')
+        plt.plot(r[:,0,0],mdotfinavgvsr20,label=r'$\dot M_{b^2/\rho<20}$')
+        plt.plot(r[:,0,0],mdotfinavgvsr30,label=r'$\dot M_{b^2/\rho<30}$')
+        plt.plot(r[:,0,0],mdotfinavgvsr40,label=r'$\dot M_{b^2/\rho<40}$')
+        plt.xlim(1+(1-a**2)**0.5,20)
+        plt.ylim(0,np.max(mdotfinavgvsr40[r[:,0,0]<20]))
+        plt.legend(loc='lower right')
+        plt.grid()
+        plt.savefig('pjet3_%s.pdf' % os.path.basename(os.getcwd()) )
 
 def plotj(ts,fs,md,jem,jtot):
     #rc('font', family='serif')
