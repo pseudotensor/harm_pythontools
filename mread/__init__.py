@@ -403,6 +403,7 @@ def rd(dump):
     bd = gd[42:46]
     bsq = mdot(bu,bd)
     v1m,v1p,v2m,v2p,v3m,v3p=gd[46:52]
+    gdet=gd[53]
 
 def rgfd(fieldlinefilename,**kwargs):
     if not os.path.isfile(os.path.join("dumps/", fieldlinefilename)):
