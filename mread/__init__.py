@@ -22,6 +22,7 @@ from numpy import ma
 import matplotlib.colors as colors
 import os,glob
 import pylab
+import sys
 
 
 #global rho, ug, vu, uu, B, CS
@@ -1012,13 +1013,16 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0):
         print "Total number of quantities: %d+134 = %d" % (i, i+134)
     else:
         print "Total number of quantities: %d" % (i)
+    sys.stdout.flush()
     #end qty defs
     for findex, fname in enumerate(flist):
         #skip pre-loaded time slices
         if findex < numtimeslices2: 
             continue
         print( "Reading " + fname + " ..." )
+        sys.stdout.flush()
         rfd("../"+fname)
+        print( "Computing " + fname + " ..." )
         cvel()
         Tcalcud()
         ts[findex]=t
