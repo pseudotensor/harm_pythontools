@@ -2069,7 +2069,7 @@ if __name__ == "__main__":
         diskflux=diskfluxcalc(ny/2)
         ts,fs,md,jem,jtot=mfjhorvstime(11)
         plotj(ts,fs/(diskflux),md,jem,jtot)
-    if False:
+    if True:
         #NEW FORMAT
         #Plot qtys vs. time
         #cd ~/run; for f in rtf*; do cd ~/run/$f; (nice -n 10 python  ~/py/mread/__init__.py &> python.out); done
@@ -2380,7 +2380,7 @@ if __name__ == "__main__":
         rin=15;
         R=r*np.sin(h);z=r*np.cos(h);
         alpha=1.5;t=0.9;aphi=(R/rin)**2/(1+(np.abs(z)/t/rin/(1+np.log10(1+r/rin)**2))**alpha)**(2/alpha); aphi[aphi>1]=0*aphi[aphi>1]+1; plco(np.log10(rho));plc(aphi)
-    if True:
+    if False:
         grid3d("gdump.bin")
         rd("dump0040.bin")
         aphi=fieldcalcface()
