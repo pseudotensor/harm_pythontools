@@ -1654,6 +1654,13 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
         pjmafinavgvsr20 = (pjma20[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjma20[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
         pjmafinavgvsr30 = (pjma30[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjma30[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
         pjmafinavgvsr40 = (pjma40[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjma40[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
+        pjtotfinavgvsr = pjemfinavgvsr + pjmafinavgvsr
+        pjtotfinavgvsr5 = pjemfinavgvsr5 + pjmafinavgvsr5
+        pjtotfinavgvsr10 = pjemfinavgvsr10 + pjmafinavgvsr10
+        pjtotfinavgvsr20 = pjemfinavgvsr20 + pjmafinavgvsr20
+        pjtotfinavgvsr30 = pjemfinavgvsr30 + pjmafinavgvsr30
+        pjtotfinavgvsr40 = pjemfinavgvsr40 + pjmafinavgvsr40
+        
     else:
         dotavg=0
     
@@ -1847,15 +1854,22 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
 
         plt.figure(4)
         plt.clf()
-        plt.plot(r[:,0,0],pjemfinavgvsr,label=r'$\dot P_{\rm tot}$')
-        plt.plot(r[:,0,0],pjemfinavgvsr5,label=r'$\dot P_{b^2/\rho<5}$')
-        plt.plot(r[:,0,0],pjemfinavgvsr10,label=r'$\dot P_{b^2/\rho<10}$')
-        plt.plot(r[:,0,0],pjemfinavgvsr20,label=r'$\dot P_{b^2/\rho<20}$')
-        plt.plot(r[:,0,0],pjemfinavgvsr30,label=r'$\dot P_{b^2/\rho<30}$')
-        plt.plot(r[:,0,0],pjemfinavgvsr40,label=r'$\dot P_{b^2/\rho<40}$')
-        plt.xlim(1+(1-a**2)**0.5,20)
-        plt.ylim(0,np.max(pjemfinavgvsr[r[:,0,0]<20]))
-        plt.legend(loc='lower right')
+        rmax=50
+        plt.plot(r[:,0,0],pjemfinavgvsr,'b',label=r'$\dot Pem_{\rm tot}$')
+        plt.plot(r[:,0,0],pjemfinavgvsr5,'g',label=r'$\dot Pem_{b^2/\rho>5}$')
+        plt.plot(r[:,0,0],pjemfinavgvsr10,'r',label=r'$\dot Pem_{b^2/\rho>10}$')
+        plt.plot(r[:,0,0],pjemfinavgvsr20,'c',label=r'$\dot Pem_{b^2/\rho>20}$')
+        plt.plot(r[:,0,0],pjemfinavgvsr30,'m',label=r'$\dot Pem_{b^2/\rho>30}$')
+        plt.plot(r[:,0,0],pjemfinavgvsr40,'y',label=r'$\dot Pem_{b^2/\rho>40}$')
+        plt.plot(r[:,0,0],pjtotfinavgvsr,'b--',label=r'$\dot P_{\rm tot}$')
+        plt.plot(r[:,0,0],pjtotfinavgvsr5,'g--',label=r'$\dot P_{b^2/\rho>5}$')
+        plt.plot(r[:,0,0],pjtotfinavgvsr10,'r--',label=r'$\dot P_{b^2/\rho>10}$')
+        plt.plot(r[:,0,0],pjtotfinavgvsr20,'c--',label=r'$\dot P_{b^2/\rho>20}$')
+        plt.plot(r[:,0,0],pjtotfinavgvsr30,'m--',label=r'$\dot P_{b^2/\rho>30}$')
+        plt.plot(r[:,0,0],pjtotfinavgvsr40,'y--',label=r'$\dot P_{b^2/\rho>40}$')
+        plt.xlim(1+(1-a**2)**0.5,rmax)
+        plt.ylim(0,np.max(pjemfinavgvsr[r[:,0,0]<rmax]))
+        plt.legend(loc='lower right',ncol=2)
         plt.grid()
         plt.savefig('pjet4_%s.pdf' % os.path.basename(os.getcwd()) )
 
