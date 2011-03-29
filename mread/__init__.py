@@ -1634,13 +1634,13 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
         ftf = gd1[3]
         mdotiniavg = (mdtot[:,ihor]-md10[:,ihor])[(ts<itf)*(ts>=iti)].sum()/(mdtot[:,ihor]-md10[:,ihor])[(ts<itf)*(ts>=iti)].shape[0]
         #mdotfinavg = (mdtot[:,ihor]-md10[:,ihor])[(ts<ftf)*(ts>=fti)].sum()/(mdtot[:,ihor]-md10[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0]
-        mdotfinavg = mdotfinavgvsr30[r[:,0,0]<10].sum()/mdotfinavgvsr30[r[:,0,0]<10].shape[0]
         mdotfinavgvsr = (mdtot[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(mdtot[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
         mdotfinavgvsr5 = (mdtot[:,:]-md5[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(mdtot[:,:]-md5[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
         mdotfinavgvsr10 = (mdtot[:,:]-md10[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(mdtot[:,:]-md10[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
         mdotfinavgvsr20 = (mdtot[:,:]-md20[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(mdtot[:,:]-md20[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
         mdotfinavgvsr30 = (mdtot[:,:]-md30[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(mdtot[:,:]-md30[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
         mdotfinavgvsr40 = (mdtot[:,:]-md40[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(mdtot[:,:]-md40[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
+        mdotfinavg = mdotfinavgvsr30[r[:,0,0]<10].sum()/mdotfinavgvsr30[r[:,0,0]<10].shape[0]
         pjetfinavg = (pjem30[:,ihor])[(ts<ftf)*(ts>=fti)].sum()/(pjem30[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0]
         pjemfinavgvsr = ((edtot-edma)[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/((edtot-edma)[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
         pjemfinavgvsr5 = (pjem5[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjem5[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
@@ -2074,11 +2074,12 @@ if __name__ == "__main__":
         #Plot qtys vs. time
         #cd ~/run; for f in rtf*; do cd ~/run/$f; (nice -n 10 python  ~/py/mread/__init__.py &> python.out); done
         grid3d("gdump.bin")
+        #rd("dump0000.bin")
         rfd("fieldline0000.bin")
         rhor=1+(1-a**2)**0.5
         ihor = np.floor(iofr(rhor)+0.5);
         #diskflux=diskfluxcalc(ny/2)
-        qtymem=None #clear to free mem
+        #qtymem=None #clear to free mem
         qtymem=getqtyvstime(ihor,0.2)
         plotqtyvstime(qtymem)
     if False:
@@ -2123,7 +2124,7 @@ if __name__ == "__main__":
         hf=horfluxcalc(ihor)
         df=diskfluxcalc(ny/2,rmin=rhor)
         print "Final   (t=%-8g): BHflux = %g, Diskflux = %g" % (t, hf, df)
-    if True:
+    if False:
         #Rz and xy planes side by side
         plotlenf=10
         plotleni=50
@@ -2379,9 +2380,9 @@ if __name__ == "__main__":
         rin=15;
         R=r*np.sin(h);z=r*np.cos(h);
         alpha=1.5;t=0.9;aphi=(R/rin)**2/(1+(np.abs(z)/t/rin/(1+np.log10(1+r/rin)**2))**alpha)**(2/alpha); aphi[aphi>1]=0*aphi[aphi>1]+1; plco(np.log10(rho));plc(aphi)
-    if False:
+    if True:
         grid3d("gdump.bin")
-        rd("dump0000.bin")
+        rd("dump0040.bin")
         aphi=fieldcalcface()
         plco(np.log10(rho))
         plc(aphi,nc=50)
