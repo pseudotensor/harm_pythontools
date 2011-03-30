@@ -895,7 +895,7 @@ def mfjhorvstime(ihor):
     print( "Done!" )
     return((ts,fs,md,jem,jtot))
 
-def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0):
+def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichpiece=None,totpiece=None):
     """
     Returns a tuple (ts,fs,mdot,pjetem,pjettot): lists of times, horizon fluxes, and Mdot
     """
