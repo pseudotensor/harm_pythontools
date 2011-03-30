@@ -493,6 +493,31 @@ def cvel():
     bsq=mdot(bu,bd)
 
 
+def decolumnify(fname):
+    print( "Reading data from " + "dumps/" + dumpname + " ..." )
+    gin = open( "dumps/" + dumpname + "-col0000", "rb" )
+    header = gin.readline()
+    gin.close()
+    headersplt = header.split()
+    nx = int(headersplt[1])
+    ny = int(headersplt[2])
+    nz = int(headersplt[3])
+    gout = open( "dumps/" + dumpname, "wb" )
+    gout.write(header)
+    flist = np.sort(glob.glob( os.path.join("dumps/", "gdump.bin-col*") ) )
+    numfiles = flist.shape[0]
+    gd = np.zeros((numfiles,nx,ny,nz),order='F',dtype=np.float64)
+    for i,f in enumerate(flist):
+        print( "Reading from " + f + " ..." )
+        gin = open( f, "rb" )
+        header = gin.readline()
+        body = np.fromfile(gin,dtype=np.float64,count=-1)  #nx*ny*nz*1
+        gd[i:i+1] = body.view().reshape((-1,nx,ny,nz),order='F')
+        gin.close()
+    gd.tofile(dumpname)
+    gout.close()
+             
+    
 
 def grid3d(dumpname): #read gdump: header and body
     global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,conn,gn3,gv3,ck,dxdxp,gdet
@@ -1632,37 +1657,43 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
         itf = gd1[1]
         fti = gd1[2]
         ftf = gd1[3]
-        mdotiniavg = (mdtot[:,ihor]-md10[:,ihor])[(ts<itf)*(ts>=iti)].sum()/(mdtot[:,ihor]-md10[:,ihor])[(ts<itf)*(ts>=iti)].shape[0]
-        #mdotfinavg = (mdtot[:,ihor]-md10[:,ihor])[(ts<ftf)*(ts>=fti)].sum()/(mdtot[:,ihor]-md10[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0]
-        mdotfinavgvsr = (mdtot[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(mdtot[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-        mdotfinavgvsr5 = (mdtot[:,:]-md5[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(mdtot[:,:]-md5[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-        mdotfinavgvsr10 = (mdtot[:,:]-md10[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(mdtot[:,:]-md10[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-        mdotfinavgvsr20 = (mdtot[:,:]-md20[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(mdtot[:,:]-md20[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-        mdotfinavgvsr30 = (mdtot[:,:]-md30[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(mdtot[:,:]-md30[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-        mdotfinavgvsr40 = (mdtot[:,:]-md40[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(mdtot[:,:]-md40[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-        mdotfinavg = mdotfinavgvsr30[r[:,0,0]<10].sum()/mdotfinavgvsr30[r[:,0,0]<10].shape[0]
-        pjetfinavg = (pjem30[:,ihor])[(ts<ftf)*(ts>=fti)].sum()/(pjem30[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0]
-        pjemfinavgvsr = ((edtot-edma)[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/((edtot-edma)[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-        pjemfinavgvsr5 = (pjem5[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjem5[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-        pjemfinavgvsr10 = (pjem10[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjem10[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-        pjemfinavgvsr20 = (pjem20[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjem20[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-        pjemfinavgvsr30 = (pjem30[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjem30[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-        pjemfinavgvsr40 = (pjem40[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjem40[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-        pjmafinavgvsr = (edma[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(edma[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-        pjmafinavgvsr5 = (pjma5[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjma5[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-        pjmafinavgvsr10 = (pjma10[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjma10[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-        pjmafinavgvsr20 = (pjma20[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjma20[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-        pjmafinavgvsr30 = (pjma30[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjma30[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-        pjmafinavgvsr40 = (pjma40[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjma40[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-        pjtotfinavgvsr = pjemfinavgvsr + pjmafinavgvsr
-        pjtotfinavgvsr5 = pjemfinavgvsr5 + pjmafinavgvsr5
-        pjtotfinavgvsr10 = pjemfinavgvsr10 + pjmafinavgvsr10
-        pjtotfinavgvsr20 = pjemfinavgvsr20 + pjmafinavgvsr20
-        pjtotfinavgvsr30 = pjemfinavgvsr30 + pjmafinavgvsr30
-        pjtotfinavgvsr40 = pjemfinavgvsr40 + pjmafinavgvsr40
-        
     else:
-        dotavg=0
+        print( "Warning: titf.txt not found: using default numbers for averaging" )
+        dotavg=1
+        iti = 3000
+        itf = 4000
+        fti = 5000
+        ftf = 1e5
+
+    mdotiniavg = (mdtot[:,ihor]-md10[:,ihor])[(ts<itf)*(ts>=iti)].sum()/(mdtot[:,ihor]-md10[:,ihor])[(ts<itf)*(ts>=iti)].shape[0]
+    #mdotfinavg = (mdtot[:,ihor]-md10[:,ihor])[(ts<ftf)*(ts>=fti)].sum()/(mdtot[:,ihor]-md10[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0]
+    mdotfinavgvsr = (mdtot[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(mdtot[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
+    mdotfinavgvsr5 = (mdtot[:,:]-md5[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(mdtot[:,:]-md5[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
+    mdotfinavgvsr10 = (mdtot[:,:]-md10[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(mdtot[:,:]-md10[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
+    mdotfinavgvsr20 = (mdtot[:,:]-md20[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(mdtot[:,:]-md20[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
+    mdotfinavgvsr30 = (mdtot[:,:]-md30[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(mdtot[:,:]-md30[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
+    mdotfinavgvsr40 = (mdtot[:,:]-md40[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(mdtot[:,:]-md40[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
+    mdotfinavg = mdotfinavgvsr30[r[:,0,0]<10].sum()/mdotfinavgvsr30[r[:,0,0]<10].shape[0]
+    pjetfinavg = (pjem30[:,ihor])[(ts<ftf)*(ts>=fti)].sum()/(pjem30[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0]
+    pjemfinavgvsr = ((edtot-edma)[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/((edtot-edma)[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
+    pjemfinavgvsr5 = (pjem5[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjem5[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
+    pjemfinavgvsr10 = (pjem10[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjem10[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
+    pjemfinavgvsr20 = (pjem20[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjem20[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
+    pjemfinavgvsr30 = (pjem30[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjem30[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
+    pjemfinavgvsr40 = (pjem40[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjem40[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
+    pjmafinavgvsr = (edma[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(edma[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
+    pjmafinavgvsr5 = (pjma5[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjma5[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
+    pjmafinavgvsr10 = (pjma10[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjma10[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
+    pjmafinavgvsr20 = (pjma20[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjma20[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
+    pjmafinavgvsr30 = (pjma30[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjma30[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
+    pjmafinavgvsr40 = (pjma40[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjma40[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
+    pjtotfinavgvsr = pjemfinavgvsr + pjmafinavgvsr
+    pjtotfinavgvsr5 = pjemfinavgvsr5 + pjmafinavgvsr5
+    pjtotfinavgvsr10 = pjemfinavgvsr10 + pjmafinavgvsr10
+    pjtotfinavgvsr20 = pjemfinavgvsr20 + pjmafinavgvsr20
+    pjtotfinavgvsr30 = pjemfinavgvsr30 + pjmafinavgvsr30
+    pjtotfinavgvsr40 = pjemfinavgvsr40 + pjmafinavgvsr40
+        
     
     if whichplot == 1:
         ax.plot(ts,np.abs(mdtot[:,ihor]-md10[:,ihor]))#,label=r'$\dot M$')
@@ -2096,6 +2127,16 @@ if __name__ == "__main__":
         #qtymem=None #clear to free mem
         qtymem=getqtyvstime(ihor,0.2)
         plotqtyvstime(qtymem)
+    if False:
+        rfd("fieldline2344.bin")
+        cvel()
+        Tcalcud()
+        xxx=-Tud[1,0]/(rho*uu[1])
+        yyy=choplo(chophi(xxx.sum(2)/nz,50),-50)[:,:,None]
+        plco(yyy,cb=True,nc=20)
+        aphi=fieldcalcface()
+        plc(aphi,nc=30)
+
     if False:
         #OLD FORMAT
         #Plot qtys vs. time
