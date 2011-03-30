@@ -895,10 +895,32 @@ def mfjhorvstime(ihor):
     print( "Done!" )
     return((ts,fs,md,jem,jtot))
 
-def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0):
+def mergeqtyvstime(n):
+    for i in np.arange(n):
+        #load each file
+        fname = "qty2_%d_%d.npy" % (i, n)
+        print( "Loading " + fname + " ..." )
+        sys.stdout.flush()
+        qtymemtemp = np.load( fname )
+        #per-element sum contents of each file
+        if i == 0:
+            qtymem = np.copy(qtymemtemp)
+        else:
+            qtymem += qtymemtemp
+    fname = "qty2.npy"
+    print( "Saving into " + fname + " ..." )
+    sys.stdout.flush()
+    np.save( fname , qtymem )
+    print( "Done!" )
+        
+
+def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
     """
     Returns a tuple (ts,fs,mdot,pjetem,pjettot): lists of times, horizon fluxes, and Mdot
     """
+    if whichn != None and (whichi < 0 or whichi > whichn):
+        print( "whichi = %d shoudl be >= 0 and < whichn = %d" % (whichi, whichn) )
+        return( -1 )
     tiny=np.finfo(rho.dtype).tiny
     flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
     flist.sort()
@@ -1041,9 +1063,14 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0):
         print "Total number of quantities: %d+134 = %d" % (i, i+134)
     else:
         print "Total number of quantities: %d" % (i)
+    if( whichi >=0 and whichn > 0 ):
+        print "Doing every %d-th slice of %d" % (whichi, whichn)
     sys.stdout.flush()
     #end qty defs
     for findex, fname in enumerate(flist):
+        if( whichi >=0 and whichn > 0 ):
+            if( findex % whichn != whichi ):
+                continue
         #skip pre-loaded time slices
         if findex < numtimeslices2: 
             continue
@@ -1051,6 +1078,7 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0):
         sys.stdout.flush()
         rfd("../"+fname)
         print( "Computing " + fname + " ..." )
+        sys.stdout.flush()
         cvel()
         Tcalcud()
         ts[findex]=t
@@ -1356,7 +1384,10 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0):
         #    plt.clf()
         #    mkframe("lrho%04d" % findex, vmin=-8,vmax=0.2)
     print( "Saving to file..." )
-    np.save( "qty2.npy", qtymem )
+    if( whichi >=0 and whichn > 0 ):
+        np.save( "qty2_%d_%d.npy" % (whichi, whichn), qtymem )
+    else:
+        np.save( "qty2.npy", qtymem )
     print( "Done!" )
     return(qtymem)
 
@@ -2128,8 +2159,16 @@ if __name__ == "__main__":
         ihor = np.floor(iofr(rhor)+0.5);
         #diskflux=diskfluxcalc(ny/2)
         #qtymem=None #clear to free mem
-        qtymem=getqtyvstime(ihor,0.2)
-        plotqtyvstime(qtymem)
+        if len(sys.argv[1:])==2 and sys.argv[1].isdigit() and sys.argv[2].isdigit():
+            whichi = int(sys.argv[1])
+            whichn = int(sys.argv[2])
+            if whichi >= whichn:
+                mergeqtyvstime(whichn)
+            else:
+                qtymem=getqtyvstime(ihor,0.2,whichi=whichi,whichn=whichn)
+        else:
+            qtymem=getqtyvstime(ihor,0.2)
+            plotqtyvstime(qtymem)
     if False:
         rfd("fieldline2344.bin")
         cvel()
