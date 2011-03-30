@@ -493,7 +493,7 @@ def cvel():
     bsq=mdot(bu,bd)
 
 
-def decolumnify(fname):
+def decolumnify(dumpname):
     print( "Reading data from " + "dumps/" + dumpname + " ..." )
     gin = open( "dumps/" + dumpname + "-col0000", "rb" )
     header = gin.readline()
@@ -506,16 +506,19 @@ def decolumnify(fname):
     gout.write(header)
     flist = np.sort(glob.glob( os.path.join("dumps/", "gdump.bin-col*") ) )
     numfiles = flist.shape[0]
-    gd = np.zeros((numfiles,nx,ny,nz),order='F',dtype=np.float64)
+    gd = np.zeros((nz,ny,nx,numfiles),order='C',dtype=np.float64)
     for i,f in enumerate(flist):
         print( "Reading from " + f + " ..." )
         gin = open( f, "rb" )
         header = gin.readline()
         body = np.fromfile(gin,dtype=np.float64,count=-1)  #nx*ny*nz*1
-        gd[i:i+1] = body.view().reshape((-1,nx,ny,nz),order='F')
+        gd[:,:,:,i:i+1] = body.view().reshape((nz,ny,nx,-1),order='C')
         gin.close()
-    gd.tofile(dumpname)
+    print( "Writing to file..." )
+    gd.tofile(gout)
     gout.close()
+    print( "Done!" )
+
              
     
 
