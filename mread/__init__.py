@@ -504,6 +504,8 @@ def decolumnify(dumpname):
     nz = int(headersplt[3])
     gout = open( "dumps/" + dumpname, "wb" )
     gout.write(header)
+    gout.flush()
+    os.fsync(gout.fileno())
     flist = np.sort(glob.glob( os.path.join("dumps/", "gdump.bin-col*") ) )
     numfiles = flist.shape[0]
     gd = np.zeros((nz,ny,nx,numfiles),order='C',dtype=np.float64)
