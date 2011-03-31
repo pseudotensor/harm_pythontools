@@ -902,11 +902,10 @@ def mergeqtyvstime(n):
         print( "Loading " + fname + " ..." )
         sys.stdout.flush()
         qtymemtemp = np.load( fname )
-        #per-element sum contents of each file
+        #per-element sum relevant parts of each file
         if i == 0:
-            qtymem = np.copy(qtymemtemp)
-        else:
-            qtymem += qtymemtemp
+            qtymem = np.zeros_like(qtymemtemp)
+        qtymem[i::n] += qtymemtemp[i::n]
     fname = "qty2.npy"
     print( "Saving into " + fname + " ..." )
     sys.stdout.flush()
