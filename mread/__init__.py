@@ -1817,16 +1817,26 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
         #plotlist[2].set_xlabel(r'$t\;(GM/c^3)$')
         plotlist[2].set_ylabel(r'$P_{\rm j}$',fontsize=16)
 
+        etajetavg = pjetfinavg/mdotfinavg
         #plotlist[3].plot(ts,(pjem10[:,ihor]/mdtot[:,ihor]),label=r'$P_{\rm j,em10}/\dot M_{\rm tot}$')
         #plotlist[3].plot(ts,(pjem5[:,ihor]/(mdtot[:,ihor]-md5[:,ihor])),label=r'$P_{\rm j,em5}/\dot M_{{\rm tot},b^2/\rho<5}$')
         plotlist[3].plot(ts,(pjem30[:,ihor]/mdotfinavg),label=r'$\dot \eta_{10}=P_{\rm j,em10}/\dot M_{{\rm tot},b^2/\rho<30}$')
         if dotavg:
-            plotlist[3].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg/mdotiniavg,label=r'$\langle P_j\rangle/\langle\dot M_i\rangle_{f}$')
+            #plotlist[3].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg/mdotiniavg,label=r'$\langle P_j\rangle/\langle\dot M_i\rangle_{f}$')
             plotlist[3].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg/mdotfinavg,label=r'$\langle P_j\rangle/\langle\dot M_f\rangle_{f}$')
         #plotlist[3].set_ylim(0,6)
         plotlist[3].legend(loc='upper left')
         plotlist[3].set_xlabel(r'$t\;(GM/c^3)$')
         plotlist[3].set_ylabel(r'$P_{\rm j}/\dot M_{\rm h}$',fontsize=16)
+
+        foutpower = open( "pjet_power_%s.txt" %  os.path.basename(os.getcwd()), "w" )
+        foutpower.write( "#Mdot   Pjet    Etajet\n"  )
+        foutpower.write( "%f %f %f\n" % (mdotfinavg, pjetfinavg, etajetavg) )
+        #flush to disk just in case to make sure all is written
+        foutpower.flush()
+        os.fsync(foutpower.fileno())
+        foutpower.close()
+
 
         #title("\TeX\ is Number $\displaystyle\sum_{n=1}^\infty\frac{-e^{i\pi}}{2^n}$!", 
         #      fontsize=16, color='r')
