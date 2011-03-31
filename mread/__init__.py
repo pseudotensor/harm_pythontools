@@ -931,8 +931,12 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
     #np.seterr(invalid='raise',divide='raise')
     #
     print "Number of time slices: %d" % numtimeslices
-    if fmtver == 2 and os.path.isfile("qty2.npy"):
-        qtymem2=np.load( "qty2.npy" )
+    if whichi >=0 and whichi < whichn:
+        fname = "qty2_%d_%d.npy" % (whichi, whichn)
+    else:
+        fname = "qty2.npy" 
+    if fmtver == 2 and os.path.isfile( fname ):
+        qtymem2=np.load( fname )
         numtimeslices2 = qtymem2.shape[1]
         print "Number of previously saved time slices: %d" % numtimeslices2 
         if( numtimeslices2 >= numtimeslices ):
