@@ -535,6 +535,10 @@ def grid3d(dumpname): #read gdump: header and body
     _dx1=float(header[7])
     _dx2=float(header[8])
     _dx3=float(header[9])
+    gam=float(header[11])
+    a=float(header[12])
+    Rin=float(header[14])
+    Rout=float(header[15])
     #read gdump
     #
     if dumpname.endswith(".bin"):
