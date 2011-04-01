@@ -1830,8 +1830,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
         plotlist[3].set_ylabel(r'$P_{\rm j}/\dot M_{\rm h}$',fontsize=16)
 
         foutpower = open( "pjet_power_%s.txt" %  os.path.basename(os.getcwd()), "w" )
-        foutpower.write( "#Mdot   Pjet    Etajet\n"  )
-        foutpower.write( "%f %f %f\n" % (mdotfinavg, pjetfinavg, etajetavg) )
+        #foutpower.write( "#Mdot   Pjet    Etajet\n"  )
+        foutpower.write( "%s %f %f %f %f\n" % (os.path.basename(os.getcwd()), a, mdotfinavg, pjetfinavg, etajetavg) )
         #flush to disk just in case to make sure all is written
         foutpower.flush()
         os.fsync(foutpower.fileno())
