@@ -2262,6 +2262,7 @@ if __name__ == "__main__":
             whichi = int(sys.argv[1])
             whichn = int(sys.argv[2])
             print( "Doing every %d slice of total %d slices" % (whichi, whichn) )
+            sys.stdout.flush()
         else:
             whichi = None
             whichn = None
@@ -2272,6 +2273,7 @@ if __name__ == "__main__":
                 print( "Skipping " + fname + " as lrho%04d_Rzxym1.png exists" % (findex) );
             else:
                 print( "Processing " + fname + " ..." )
+                sys.stdout.flush()
                 rfd("../"+fname)
                 plotlen = plotleni+(plotlenf-plotleni)*(t-plotlenti)/(plotlentf-plotlenti)
                 plotlen = min(plotlen,plotleni)
@@ -2335,6 +2337,7 @@ if __name__ == "__main__":
                 plt.savefig( "lrho%04d_Rzxym1.png" % (findex)  )
                 #print xxx
         print( "Done!" )
+        sys.stdout.flush()
         #print( "Now you can make a movie by running:" )
         #print( "ffmpeg -fflags +genpts -r 10 -i lrho%04d.png -vcodec mpeg4 -qmax 5 mov.avi" )
         os.system("mv mov_%s_Rzxym1.avi mov_%s_Rzxym1.bak.avi" % ( os.path.basename(os.getcwd()), os.path.basename(os.getcwd())) )
