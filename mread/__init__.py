@@ -2258,7 +2258,16 @@ if __name__ == "__main__":
         ihor = np.floor(iofr(rhor)+0.5);
         qtymem=getqtyvstime(ihor,0.2)
         flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
+        if len(sys.argv[1:])==2 and sys.argv[1].isdigit() and sys.argv[2].isdigit():
+            whichi = int(sys.argv[1])
+            whichn = int(sys.argv[2])
+            print( "Doing every %d slice of total %d slices" % (whichi, whichn) )
+        else:
+            whichi = None
+            whichn = None
         for findex, fname in enumerate(flist):
+            if whichn != None and findex % whichn != whichi:
+                continue
             if os.path.isfile("lrho%04d_Rzxym1.png" % (findex)):
                 print( "Skipping " + fname + " as lrho%04d_Rzxym1.png exists" % (findex) );
             else:
