@@ -1739,11 +1739,11 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
     pjtotfinavgvsr30 = pjemfinavgvsr30 + pjmafinavgvsr30
     pjtotfinavgvsr40 = pjemfinavgvsr40 + pjmafinavgvsr40
 
-    fstotfinavg = (fstot[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(fstot[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-    fstotsqfinavg = ( (fstot[:,:]**2)[(ts<ftf)*(ts>=fti)].sum(0)/(fstot[:,:])[(ts<ftf)*(ts>=fti)].shape[0] )**0.5
+    fstotfinavg = (fstot[:,ihor])[(ts<ftf)*(ts>=fti)].sum(0)/(fstot[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0]
+    fstotsqfinavg = ( (fstot[:,ihor]**2)[(ts<ftf)*(ts>=fti)].sum(0)/(fstot[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0] )**0.5
         
-    fsj30finavg = (fsj30[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(fsj30[:,:])[(ts<ftf)*(ts>=fti)].shape[0] 
-    fsj30sqfinavg = ( (fsj30[:,:]**2)[(ts<ftf)*(ts>=fti)].sum(0)/(fsj30[:,:])[(ts<ftf)*(ts>=fti)].shape[0] )**0.5
+    fsj30finavg = (fsj30[:,ihor])[(ts<ftf)*(ts>=fti)].sum(0)/(fsj30[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0] 
+    fsj30sqfinavg = ( (fsj30[:,ihor]**2)[(ts<ftf)*(ts>=fti)].sum(0)/(fsj30[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0] )**0.5
     
     if whichplot == 1:
         ax.plot(ts,np.abs(mdtot[:,ihor]-md10[:,ihor]))#,label=r'$\dot M$')
