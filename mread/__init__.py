@@ -504,6 +504,8 @@ def decolumnify(dumpname):
     nz = int(headersplt[3])
     gout = open( "dumps/" + dumpname, "wb" )
     gout.write(header)
+    gout.flush()
+    os.fsync(gout.fileno())
     flist = np.sort(glob.glob( os.path.join("dumps/", "gdump.bin-col*") ) )
     numfiles = flist.shape[0]
     gd = np.zeros((nz,ny,nx,numfiles),order='C',dtype=np.float64)
@@ -523,7 +525,7 @@ def decolumnify(dumpname):
     
 
 def grid3d(dumpname): #read gdump: header and body
-    global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,conn,gn3,gv3,ck,dxdxp,gdet
+    global nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,ti,tj,tk,x1,x2,x3,r,h,ph,conn,gn3,gv3,ck,dxdxp,gdet
     print( "Reading grid from " + "dumps/" + dumpname + " ..." )
     gin = open( "dumps/" + dumpname, "rb" )
     header = gin.readline().split()
@@ -533,6 +535,10 @@ def grid3d(dumpname): #read gdump: header and body
     _dx1=float(header[7])
     _dx2=float(header[8])
     _dx3=float(header[9])
+    gam=float(header[11])
+    a=float(header[12])
+    Rin=float(header[14])
+    Rout=float(header[15])
     #read gdump
     #
     if dumpname.endswith(".bin"):
@@ -895,10 +901,33 @@ def mfjhorvstime(ihor):
     print( "Done!" )
     return((ts,fs,md,jem,jtot))
 
-def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichpiece=None,totpiece=None):
+def mergeqtyvstime(n):
+    for i in np.arange(n):
+        #load each file
+        fname = "qty2_%d_%d.npy" % (i, n)
+        print( "Loading " + fname + " ..." )
+        sys.stdout.flush()
+        qtymemtemp = np.load( fname )
+        #per-element sum relevant parts of each file
+        if i == 0:
+            qtymem = np.zeros_like(qtymemtemp)
+        #1st index: whichqty
+        #2nd index: whichdumpnumber
+        qtymem[:,i::n] += qtymemtemp[:,i::n]
+    fname = "qty2.npy"
+    print( "Saving into " + fname + " ..." )
+    sys.stdout.flush()
+    np.save( fname , qtymem )
+    print( "Done!" )
+        
+
+def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
     """
     Returns a tuple (ts,fs,mdot,pjetem,pjettot): lists of times, horizon fluxes, and Mdot
     """
+    if whichn != None and (whichi < 0 or whichi > whichn):
+        print( "whichi = %d shoudl be >= 0 and < whichn = %d" % (whichi, whichn) )
+        return( -1 )
     tiny=np.finfo(rho.dtype).tiny
     flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
     flist.sort()
@@ -909,8 +938,12 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichpiece=None,totpiece=None)
     #np.seterr(invalid='raise',divide='raise')
     #
     print "Number of time slices: %d" % numtimeslices
-    if fmtver == 2 and os.path.isfile("qty2.npy"):
-        qtymem2=np.load( "qty2.npy" )
+    if whichi >=0 and whichi < whichn:
+        fname = "qty2_%d_%d.npy" % (whichi, whichn)
+    else:
+        fname = "qty2.npy" 
+    if fmtver == 2 and os.path.isfile( fname ):
+        qtymem2=np.load( fname )
         numtimeslices2 = qtymem2.shape[1]
         print "Number of previously saved time slices: %d" % numtimeslices2 
         if( numtimeslices2 >= numtimeslices ):
@@ -1041,9 +1074,14 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichpiece=None,totpiece=None)
         print "Total number of quantities: %d+134 = %d" % (i, i+134)
     else:
         print "Total number of quantities: %d" % (i)
+    if( whichi >=0 and whichn > 0 ):
+        print "Doing every %d-th slice of %d" % (whichi, whichn)
     sys.stdout.flush()
     #end qty defs
     for findex, fname in enumerate(flist):
+        if( whichi >=0 and whichn > 0 ):
+            if( findex % whichn != whichi ):
+                continue
         #skip pre-loaded time slices
         if findex < numtimeslices2: 
             continue
@@ -1051,6 +1089,7 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichpiece=None,totpiece=None)
         sys.stdout.flush()
         rfd("../"+fname)
         print( "Computing " + fname + " ..." )
+        sys.stdout.flush()
         cvel()
         Tcalcud()
         ts[findex]=t
@@ -1356,7 +1395,10 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichpiece=None,totpiece=None)
         #    plt.clf()
         #    mkframe("lrho%04d" % findex, vmin=-8,vmax=0.2)
     print( "Saving to file..." )
-    np.save( "qty2.npy", qtymem )
+    if( whichi >=0 and whichn > 0 ):
+        np.save( "qty2_%d_%d.npy" % (whichi, whichn), qtymem )
+    else:
+        np.save( "qty2.npy", qtymem )
     print( "Done!" )
     return(qtymem)
 
@@ -1756,7 +1798,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
         plotlist[1].plot(ts,np.abs(mdtot[:,ihor]-md10[:,ihor]),label=r'$\dot M_{{\rm h,tot}, b^2/rho<10}$')
         plotlist[1].plot(ts,np.abs(mdtot[:,ihor]-md30[:,ihor]),label=r'$\dot M_{{\rm h,tot}, b^2/rho<30}$')
         if dotavg:
-            plotlist[1].plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+mdotiniavg,label=r'$\langle \dot M_{{\rm h,tot}, b^2/\rho<10}\rangle_{i}$')
+            #plotlist[1].plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+mdotiniavg,label=r'$\langle \dot M_{{\rm h,tot}, b^2/\rho<10}\rangle_{i}$')
             plotlist[1].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotfinavg,label=r'$\langle \dot M_{{\rm h,tot}, b^2/\rho<10}\rangle_{f}$')
         #plotlist[1].plot(ts,np.abs(md2h[:,ihor]),label=r'$\dot M_{\rm h,2h}$')
         #plotlist[1].plot(ts,np.abs(md4h[:,ihor]),label=r'$\dot M_{\rm h,4h}$')
@@ -1779,16 +1821,26 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
         #plotlist[2].set_xlabel(r'$t\;(GM/c^3)$')
         plotlist[2].set_ylabel(r'$P_{\rm j}$',fontsize=16)
 
+        etajetavg = pjetfinavg/mdotfinavg
         #plotlist[3].plot(ts,(pjem10[:,ihor]/mdtot[:,ihor]),label=r'$P_{\rm j,em10}/\dot M_{\rm tot}$')
         #plotlist[3].plot(ts,(pjem5[:,ihor]/(mdtot[:,ihor]-md5[:,ihor])),label=r'$P_{\rm j,em5}/\dot M_{{\rm tot},b^2/\rho<5}$')
         plotlist[3].plot(ts,(pjem30[:,ihor]/mdotfinavg),label=r'$\dot \eta_{10}=P_{\rm j,em10}/\dot M_{{\rm tot},b^2/\rho<30}$')
         if dotavg:
-            plotlist[3].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg/mdotiniavg,label=r'$\langle P_j\rangle/\langle\dot M_i\rangle_{f}$')
-            plotlist[3].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg/mdotfinavg,label=r'$\langle P_j\rangle/\langle\dot M_f\rangle_{f}$')
+            #plotlist[3].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg/mdotiniavg,label=r'$\langle P_j\rangle/\langle\dot M_i\rangle_{f}$')
+            plotlist[3].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg/mdotfinavg,'r',label=r'$\langle P_j\rangle/\langle\dot M_f\rangle_{f}$')
         #plotlist[3].set_ylim(0,6)
         plotlist[3].legend(loc='upper left')
         plotlist[3].set_xlabel(r'$t\;(GM/c^3)$')
         plotlist[3].set_ylabel(r'$P_{\rm j}/\dot M_{\rm h}$',fontsize=16)
+
+        foutpower = open( "pjet_power_%s.txt" %  os.path.basename(os.getcwd()), "w" )
+        #foutpower.write( "#Mdot   Pjet    Etajet\n"  )
+        foutpower.write( "%s %f %f %f %f\n" % (os.path.basename(os.getcwd()), a, mdotfinavg, pjetfinavg, etajetavg) )
+        #flush to disk just in case to make sure all is written
+        foutpower.flush()
+        os.fsync(foutpower.fileno())
+        foutpower.close()
+
 
         #title("\TeX\ is Number $\displaystyle\sum_{n=1}^\infty\frac{-e^{i\pi}}{2^n}$!", 
         #      fontsize=16, color='r')
@@ -2098,6 +2150,16 @@ def choplo(var,minvar):
     var[var<minvar]=0*var[var<minvar]+minvar
     return(var)
 
+def plotpowers(fname):
+    gd1 = np.loadtxt( fname, unpack = True, usecols = [1,2,3,4] )
+    #gd=gd1.view().reshape((-1,nx,ny,nz), order='F')
+    mya=np.arange(-1,1,0.001)
+    myomh = mya / 2/ (1+(1-mya**2))**0.5
+    mypwr = 5*myomh**2
+    plt.plot(mya,mypwr)
+
+
+
 if __name__ == "__main__":
     #mainfunc()
     if False:
@@ -2128,8 +2190,16 @@ if __name__ == "__main__":
         ihor = np.floor(iofr(rhor)+0.5);
         #diskflux=diskfluxcalc(ny/2)
         #qtymem=None #clear to free mem
-        qtymem=getqtyvstime(ihor,0.2)
-        plotqtyvstime(qtymem)
+        if len(sys.argv[1:])==2 and sys.argv[1].isdigit() and sys.argv[2].isdigit():
+            whichi = int(sys.argv[1])
+            whichn = int(sys.argv[2])
+            if whichi >= whichn:
+                mergeqtyvstime(whichn)
+            else:
+                qtymem=getqtyvstime(ihor,0.2,whichi=whichi,whichn=whichn)
+        else:
+            qtymem=getqtyvstime(ihor,0.2)
+            plotqtyvstime(qtymem)
     if False:
         rfd("fieldline2344.bin")
         cvel()
@@ -2198,11 +2268,22 @@ if __name__ == "__main__":
         ihor = np.floor(iofr(rhor)+0.5);
         qtymem=getqtyvstime(ihor,0.2)
         flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
+        if len(sys.argv[1:])==2 and sys.argv[1].isdigit() and sys.argv[2].isdigit():
+            whichi = int(sys.argv[1])
+            whichn = int(sys.argv[2])
+            print( "Doing every %d slice of total %d slices" % (whichi, whichn) )
+            sys.stdout.flush()
+        else:
+            whichi = None
+            whichn = None
         for findex, fname in enumerate(flist):
+            if whichn != None and findex % whichn != whichi:
+                continue
             if os.path.isfile("lrho%04d_Rzxym1.png" % (findex)):
                 print( "Skipping " + fname + " as lrho%04d_Rzxym1.png exists" % (findex) );
             else:
                 print( "Processing " + fname + " ..." )
+                sys.stdout.flush()
                 rfd("../"+fname)
                 plotlen = plotleni+(plotlenf-plotleni)*(t-plotlenti)/(plotlentf-plotlenti)
                 plotlen = min(plotlen,plotleni)
@@ -2266,6 +2347,7 @@ if __name__ == "__main__":
                 plt.savefig( "lrho%04d_Rzxym1.png" % (findex)  )
                 #print xxx
         print( "Done!" )
+        sys.stdout.flush()
         #print( "Now you can make a movie by running:" )
         #print( "ffmpeg -fflags +genpts -r 10 -i lrho%04d.png -vcodec mpeg4 -qmax 5 mov.avi" )
         os.system("mv mov_%s_Rzxym1.avi mov_%s_Rzxym1.bak.avi" % ( os.path.basename(os.getcwd()), os.path.basename(os.getcwd())) )
