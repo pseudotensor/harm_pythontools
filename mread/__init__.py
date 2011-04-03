@@ -1738,7 +1738,12 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
     pjtotfinavgvsr20 = pjemfinavgvsr20 + pjmafinavgvsr20
     pjtotfinavgvsr30 = pjemfinavgvsr30 + pjmafinavgvsr30
     pjtotfinavgvsr40 = pjemfinavgvsr40 + pjmafinavgvsr40
+
+    fstotfinavg = (fstot[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(fstot[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
+    fstotsqfinavg = ( (fstot[:,:]**2)[(ts<ftf)*(ts>=fti)].sum(0)/(fstot[:,:])[(ts<ftf)*(ts>=fti)].shape[0] )**0.5
         
+    fsj30finavg = (fsj30[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(fsj30[:,:])[(ts<ftf)*(ts>=fti)].shape[0] 
+    fsj30sqfinavg = ( (fsj30[:,:]**2)[(ts<ftf)*(ts>=fti)].sum(0)/(fsj30[:,:])[(ts<ftf)*(ts>=fti)].shape[0] )**0.5
     
     if whichplot == 1:
         ax.plot(ts,np.abs(mdtot[:,ihor]-md10[:,ihor]))#,label=r'$\dot M$')
@@ -1786,6 +1791,9 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
         #plotlist[0].plot(ts,fsj5[:,ihor],label=r'$\Phi_{\rm h,5}$')
         plotlist[0].plot(ts,fsj30[:,ihor],label=r'$\Phi_{\rm h,30}$')
         #plotlist[0].plot(ts,fs,'r+') #, label=r'$\Phi_{\rm h}/0.5\Phi_{\rm i}$: Data Points')
+        if dotavg:
+            plotlist[0].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+fstotsqfinavg,label=r'$\langle \Phi^2_{\rm h,tot}\rangle^{1/2}$')
+            plotlist[0].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+fs30sqfinavg,label=r'$\langle \Phi^2_{\rm h,30}\rangle^{1/2}$')
         plotlist[0].legend(loc='upper left')
         #plt.xlabel(r'$t\;(GM/c^3)$')
         plotlist[0].set_ylabel(r'$\Phi_{\rm h}$',fontsize=16)
@@ -1834,8 +1842,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
         plotlist[3].set_ylabel(r'$P_{\rm j}/\dot M_{\rm h}$',fontsize=16)
 
         foutpower = open( "pjet_power_%s.txt" %  os.path.basename(os.getcwd()), "w" )
-        #foutpower.write( "#Mdot   Pjet    Etajet\n"  )
-        foutpower.write( "%s %f %f %f %f\n" % (os.path.basename(os.getcwd()), a, mdotfinavg, pjetfinavg, etajetavg) )
+        #foutpower.write( "#Name a Mdot   Pjet    Etajet  Psitot Psisqtot**0.5 Psijet Psisqjet**0.5\n"  )
+        foutpower.write( "%s %f %f %f %f %f %f %f %f\n" % (os.path.basename(os.getcwd()), a, mdotfinavg, pjetfinavg, etajetavg, fstotfinavg, fstotsqfinavg, fsj30finavg, fsj30sqfinavg) )
         #flush to disk just in case to make sure all is written
         foutpower.flush()
         os.fsync(foutpower.fileno())
