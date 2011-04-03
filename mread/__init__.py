@@ -2210,12 +2210,15 @@ def Risco(a):
     return(risco)
 
 def plotpowers(fname,hor=0):
-    plt.figure(1)
-    plt.clf()
-    gd1 = np.loadtxt( fname, unpack = True, usecols = [1,2,3,4] )
+    gd1 = np.loadtxt( fname, unpack = True, usecols = [1,2,3,4,5,6,7,8] )
     #gd=gd1.view().reshape((-1,nx,ny,nz), order='F')
     alist = gd1[0]
+    rhorlist = 1+(1-alist**2)**0.5
+    omhlist = alist / 2 / rhorlist
+    mdotlist = gd1[1]
     etalist = gd1[3]
+    psitotsqlist = gd1[5]
+    psi30sqlist = gd1[7]
     mya=np.arange(-1,1,0.001)
     rhor = 1+(1-mya**2)**0.5
     myomh = mya / 2/ rhor
@@ -2226,9 +2229,34 @@ def plotpowers(fname,hor=0):
     #myr = Risco(mya) #does not work at all: a < 0 power is much greater than a > 0
     myr = rhor
     myeta = mypwr * (mya**2+3*myr**2)/3 / (2*np.pi*horx)
+    plt.figure(1)
+    plt.clf()
     plt.plot( mya, myeta )
     #plt.plot(mya,mya**2)
     plt.plot(alist,etalist,'o')
+    plt.plot(mspina6[mhor6==hor],5*mpow6[mhor6==hor])
+    plt.plot(mspina2[mhor2==hor],5*mpow2a[mhor2==hor])
+    #
+    plt.figure(2)
+    plt.clf()
+    #plt.plot( mya, myeta )
+    #plt.plot(mya,mya**2)
+    y = (psi30sqlist)**2/(2*mdotlist)
+    plt.plot(alist,y/np.max(y),'o')
+    plt.ylim(ymin=0)
+    #plt.plot(alist,2*mdotlist/(psitotsqlist)**2,'o')
+    #plt.plot(mspina6[mhor6==hor],5*mpow6[mhor6==hor])
+    #plt.plot(mspina2[mhor2==hor],5*mpow2a[mhor2==hor])
+    plt.figure(3)
+    plt.clf()
+    #plt.plot( mya, myeta )
+    #plt.plot(mya,mya**2)
+    psi=1
+    pwrlist = (psi30sqlist/2/np.pi)**2*2.0000 * 1.*1.0472*omhlist**2 * 1.5*(psi**2-psi**3/3)
+    plt.plot(alist,pwrlist/mdotlist,'o')
+    plt.ylim(ymin=0,ymax=3)
+    #plt.plot(alist,2*mdotlist/(psitotsqlist)**2,'o')
+    plt.plot( mya, myeta )
     plt.plot(mspina6[mhor6==hor],5*mpow6[mhor6==hor])
     plt.plot(mspina2[mhor2==hor],5*mpow2a[mhor2==hor])
     # psi = 1
