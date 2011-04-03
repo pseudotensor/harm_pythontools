@@ -2150,6 +2150,16 @@ def choplo(var,minvar):
     var[var<minvar]=0*var[var<minvar]+minvar
     return(var)
 
+def plotpowers(fname):
+    gd1 = np.loadtxt( fname, unpack = True, usecols = [1,2,3,4] )
+    #gd=gd1.view().reshape((-1,nx,ny,nz), order='F')
+    mya=np.arange(-1,1,0.001)
+    myomh = mya / 2/ (1+(1-mya**2))**0.5
+    mypwr = 5*myomh**2
+    plt.plot(mya,mypwr)
+
+
+
 if __name__ == "__main__":
     #mainfunc()
     if False:
