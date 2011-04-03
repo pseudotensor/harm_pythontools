@@ -2150,18 +2150,70 @@ def choplo(var,minvar):
     var[var<minvar]=0*var[var<minvar]+minvar
     return(var)
 
-def plotpowers(fname):
+def Risco(a):
+    Z1 = 1 + (1. - a**2)**(1./3.) * ((1. + a)**(1./3.) + (1. - a)**(1./3.))
+    Z2 = (3*a**2 + Z1**2)**(1./2.)
+    risco = 3 + Z2 - np.sign(a)* ( (3 - Z1)*(3 + Z1 + 2*Z2) )**0.5
+    return(risco)
+
+def plotpowers(fname,hor=0):
+    plt.figure(1)
+    plt.clf()
     gd1 = np.loadtxt( fname, unpack = True, usecols = [1,2,3,4] )
     #gd=gd1.view().reshape((-1,nx,ny,nz), order='F')
+    alist = gd1[0]
+    etalist = gd1[3]
     mya=np.arange(-1,1,0.001)
-    myomh = mya / 2/ (1+(1-mya**2))**0.5
-    mypwr = 5*myomh**2
-    plt.plot(mya,mypwr)
+    rhor = 1+(1-mya**2)**0.5
+    myomh = mya / 2/ rhor
+    #mypwr = 5*myomh**2
+    psi = 1
+    mypwr = 2.0000 * 1.*1.0472*myomh**2 * 1.5*(psi**2-psi**3/3)
+    horx=0.125
+    #myr = Risco(mya) #does not work at all: a < 0 power is much greater than a > 0
+    myr = rhor
+    myeta = mypwr * (mya**2+3*myr**2)/3 / (2*np.pi*horx)
+    plt.plot( mya, myeta )
+    #plt.plot(mya,mya**2)
+    plt.plot(alist,etalist,'o')
+    plt.plot(mspina6[mhor6==hor],5*mpow6[mhor6==hor])
+    plt.plot(mspina2[mhor2==hor],5*mpow2a[mhor2==hor])
+    # psi = 1
+    # mp = 2.0000 * 1.*1.0472*myomh**2 * 1.5*(psi**2-psi**3/3)
+    # plt.plot(mya,1.5*mp)
+    # plt.figure(2)
+    # plt.clf()
+    # plt.plot(mya,myomh)
+    # plt.plot(mspina2[mhor2==hor],momh2[mhor2==hor])
+    
 
-
+def readmytests1():
+    global momh2, mhor2, mpsi2, mpow2, mBr2, mtheta2, mspina2, mpow2a
+    global momh4, mhor4, mpsi4, mpow4, mBr4, mtheta4, mspina4
+    global momh6, mhor6, mpsi6, mpow6, mBr6, mtheta6, mspina6
+    #
+    gd2 = np.loadtxt( "mytest2", unpack = True )
+    momh2, mhor2, mpsi2, mpow2, mBr2 = gd2[0:5]
+    mtheta2 = np.pi/2-mhor2
+    mspina2 = 4*momh2/(1+4*momh2**2)
+    psi = (1-np.cos(np.pi/2-mhor2))
+    mpow2a = 2.0000 * 1.*1.0472*momh2**2 * 1.5*(psi**2-psi**3/3)  #for two jets? 1.0472=pi/3
+    #
+    gd4 = np.loadtxt( "mytest4", unpack = True )
+    momh4, mhor4, mpsi4, mpow4, mBr4 = gd4[0:5]
+    mtheta4 = np.pi/2-mhor4
+    mspina4 = 4*momh4/(1+4*momh4**2)
+    #
+    gd6 = np.loadtxt( "mytest6", unpack = True )
+    momh6, mhor6, mpsi6, mpow6, mBr6 = gd6[0:5]
+    mtheta6 = np.pi/2-mhor6
+    mspina6 = 4*momh6/(1+4*momh6**2)
 
 if __name__ == "__main__":
     #mainfunc()
+    if True:
+        readmytests1()
+        plotpowers('powerlist.txt')
     if False:
         #grid3d("gdump")
         #rfd("fieldline0250.bin")
