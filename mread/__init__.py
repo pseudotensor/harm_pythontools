@@ -1442,6 +1442,51 @@ def Tcalcud():
             #Tud[mu,nu] = eta*uu[mu]*ud[nu]+(pg+0.5*bsq)*delta-bu[mu]*bd[nu]
             Tud[mu,nu] = TudEM[mu,nu] + TudMA[mu,nu]
 
+def faraday():
+    global fdd, fuu, omegaf1, omegaf2
+    # these are native values according to HARM
+    fdd = np.zeros(gv3.shape,dtype=rho.dtype)
+    #fdd[0,0]=0*gdet
+    #fdd[1,1]=0*gdet
+    #fdd[2,2]=0*gdet
+    #fdd[3,3]=0*gdet
+    fdd[0,1]=gdet*(uu[2]*bu[3]-uu[3]*bu[2]) # f_tr
+    fdd[1,0]=-fdd[0,1]
+    fdd[0,2]=gdet*(uu[3]*bu[1]-uu[1]*bu[3]) # f_th
+    fdd[2,0]=-fdd[0,2]
+    fdd[0,3]=gdet*(uu[1]*bu[2]-uu[2]*bu[1]) # f_tp
+    fdd[3,0]=-fdd[0,3]
+    fdd[1,3]=gdet*(uu[2]*bu[0]-uu[0]*bu[2]) # f_rp = gdet*B2
+    fdd[3,1]=-fdd[1,3]
+    fdd[2,3]=gdet*(uu[0]*bu[1]-uu[1]*bu[0]) # f_hp = gdet*B1
+    fdd[3,2]=-fdd[2,3]
+    fdd[1,2]=gdet*(uu[0]*bu[3]-uu[3]*bu[0]) # f_rh = gdet*B3
+    fdd[2,1]=-fdd[1,2]
+    #
+    fuu = np.zeros(gv3.shape,dtype=rho.dtype)
+    #fuu[0,0]=0*gdet
+    #fuu[1,1]=0*gdet
+    #fuu[2,2]=0*gdet
+    #fuu[3,3]=0*gdet
+    fuu[0,1]=-1/gdet*(ud[2]*bd[3]-ud[3]*bd[2]) # f^tr
+    fuu[1,0]=-fuu[0,1]
+    fuu[0,2]=-1/gdet*(ud[3]*bd[1]-ud[1]*bd[3]) # f^th
+    fuu[2,0]=-fuu[0,2]
+    fuu[0,3]=-1/gdet*(ud[1]*bd[2]-ud[2]*bd[1]) # f^tp
+    fuu[3,0]=-fuu[0,3]
+    fuu[1,3]=-1/gdet*(ud[2]*bd[0]-ud[0]*bd[2]) # f^rp
+    fuu[3,1]=-fuu[1,3]
+    fuu[2,3]=-1/gdet*(ud[0]*bd[1]-ud[1]*bd[0]) # f^hp
+    fuu[3,2]=-fuu[2,3]
+    fuu[1,2]=-1/gdet*(ud[0]*bd[3]-ud[3]*bd[0]) # f^rh
+    fuu[2,1]=-fuu[1,2]
+    #
+    # these 2 are equal in degen electrodynamics when d/dt=d/dphi->0
+    omegaf1=fdd[0,1]/fdd[1,3] # = ftr/frp
+    omegaf2=fdd[0,2]/fdd[2,3] # = fth/fhp
+    #
+
+
 def jetpowcalc(which=2,minbsqorho=10):
     if which==0:
         jetpowden = -gdet*TudEM[1,0]
