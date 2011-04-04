@@ -2224,7 +2224,7 @@ def plotpowers(fname,hor=0):
     myomh = mya / 2/ rhor
     #mypwr = 5*myomh**2
     psi = 1
-    mypwr = 2.0000 * 1.*1.0472*myomh**2 * 1.5*(psi**2-psi**3/3)
+    mypwr = 2.0000 * 1.*1.0472*myomh**2 * 1.5*(psi**2-psi**3/3) #prefactor = 2pi/3, consistent with (A7) from TMN10a
     horx=0.125
     #myr = Risco(mya) #does not work at all: a < 0 power is much greater than a > 0
     myr = rhor
@@ -2252,7 +2252,8 @@ def plotpowers(fname,hor=0):
     #plt.plot( mya, myeta )
     #plt.plot(mya,mya**2)
     psi=1
-    pwrlist = (psi30sqlist/2/np.pi)**2*2.0000 * 1.*1.0472*omhlist**2 * 1.5*(psi**2-psi**3/3)
+    #divide flux by 2 (converts flux to single hemisphere) and by dxdxp33 (accounts for A_3 -> A_\phi):
+    pwrlist = (psi30sqlist/2/dxdxp[3,3,0,0,0])**2*2.0000 * 1.*1.0472*omhlist**2 * 1.5*(psi**2-psi**3/3)
     plt.plot(alist,pwrlist/mdotlist,'o')
     plt.ylim(ymin=0,ymax=3)
     #plt.plot(alist,2*mdotlist/(psitotsqlist)**2,'o')
