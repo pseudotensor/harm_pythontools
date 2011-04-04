@@ -2291,6 +2291,24 @@ def readmytests1():
     mtheta6 = np.pi/2-mhor6
     mspina6 = 4*momh6/(1+4*momh6**2)
 
+def plotomegaf2hor():
+    #plot omegaf2/omegah on the horizon
+    plt.clf(); 
+    rhor = 1 + (1-a**2)**0.5
+    omh = a / (2*rhor)
+    ihor = iofr(rhor)
+    rhoavg=(rho[ihor].sum(1)/nz)
+    bsqorhoavg=(bsq/rho)[ihor].sum(1)/nz
+    TudEM10avg = (-gdet*TudEM[1,0])[ihor].sum(1)/nz
+    Etot = (-gdet*TudEM[1,0])[ihor].sum()*_dx2*_dx3*2
+    plt.plot(tj[ihor,:,0],omegaf2[ihor].sum(1)/nz*dxdxp[3][3][0,0,0]/omh); 
+    plt.plot(tj[ihor,:,0],0.5*rhoavg/np.max(rhoavg)); 
+    plt.plot(tj[ihor,:,0],bsqorhoavg/100); 
+    plt.plot(tj[ihor,:,0],0.5*TudEM10avg/np.max(TudEM10avg)); 
+    print( "Etot = %g" % Etot )
+    plt.ylim(0,0.5)
+
+
 if __name__ == "__main__":
     #mainfunc()
     if True:
