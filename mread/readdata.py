@@ -143,11 +143,15 @@ if __name__ == "__main__":
     #read in the 0th dump file
     rfd("fieldline0000.bin")
     #plot log10(radius) vs. grid index, ti
-    plt.plot( ti[:,0,0], np.log10(r[:,0,0]) )
-    plt.figure((6,12))
-    #theta grid lines
-    plc(ti,xcoord=r*np.sin(h),ycoord=r*cos(h))
-    #radial grid lines
-    plc(tj,xcoord=r*np.sin(h),ycoord=r*cos(h))
-    plt.xlim(0,20)
-    plt.ylim(-20,20)
+    #plt.plot( ti[:,0,0], np.log10(r[:,0,0]) )
+    plt.figure( 1, figsize=(6,12) )
+    plt.clf()
+    small=1e-5
+    #theta grid lines through cell centers
+    levs = np.linspace(0,nx-1-small,nx-1)
+    plc(ti,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=levs,colors='k')
+    #radial grid lines through cell centers
+    levs = np.linspace(0,ny-1-small,ny-1)
+    plc(tj,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=levs,colors='k')
+    plt.xlim(0,5)
+    plt.ylim(-5,5)
