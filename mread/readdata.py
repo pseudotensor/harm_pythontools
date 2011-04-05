@@ -153,6 +153,7 @@ if __name__ == "__main__":
     plc(tj,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=levs,colors='k')
     plt.xlim(0,5)
     plt.ylim(-5,5)
+    plt.savefig("grid.png")
     #
     #Read in the dump file and plot it
     #
@@ -164,4 +165,5 @@ if __name__ == "__main__":
     plc(lrho,xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,nc=50)
     plt.xlim(0,5)
     plt.ylim(-5,5)
+    plt.savefig("logdensity.png")
     
