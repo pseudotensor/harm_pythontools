@@ -140,8 +140,6 @@ if __name__ == "__main__":
     #cd into the directory that contains the dumps/ directory
     #read in the grid file
     grid3d("gdump.bin")
-    #read in the 0th dump file
-    rfd("fieldline0000.bin")
     #plot log10(radius) vs. grid index, ti
     #plt.plot( ti[:,0,0], np.log10(r[:,0,0]) )
     plt.figure( 1, figsize=(6,12) )
@@ -155,3 +153,15 @@ if __name__ == "__main__":
     plc(tj,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=levs,colors='k')
     plt.xlim(0,5)
     plt.ylim(-5,5)
+    #
+    #Read in the dump file and plot it
+    #
+    #read in the 1000th dump file
+    plt.figure( 2, figsize=(6,12) )
+    plt.clf()
+    rfd("fieldline1000.bin")
+    #plot contours of density
+    plc(lrho,xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,nc=50)
+    plt.xlim(0,5)
+    plt.ylim(-5,5)
+    
