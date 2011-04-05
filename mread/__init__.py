@@ -2254,7 +2254,7 @@ def plotpowers(fname,hor=0):
     psi=1
     #divide flux by 2 (converts flux to single hemisphere) and by dxdxp33 (accounts for A_3 -> A_\phi):
     pwrlist = (psi30sqlist/2/dxdxp[3,3,0,0,0])**2*2.0000 * 1.*1.0472*omhlist**2 * 1.5*(psi**2-psi**3/3)
-    plt.plot(alist,pwrlist/mdotlist,'o')
+    plt.plot(alist,pwrlist/mdotlist/1.5,'o')
     plt.ylim(ymin=0,ymax=3)
     #plt.plot(alist,2*mdotlist/(psitotsqlist)**2,'o')
     plt.plot( mya, myeta )
