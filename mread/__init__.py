@@ -2310,7 +2310,36 @@ def plotomegaf2hor():
 
 
 if __name__ == "__main__":
-    #mainfunc()
+    if True:
+        #cd into the directory that contains the dumps/ directory
+        #read in the grid file
+        grid3d("gdump.bin")
+        #plot log10(radius) vs. grid index, ti
+        #plt.plot( ti[:,0,0], np.log10(r[:,0,0]) )
+        plt.figure( 1, figsize=(6,12) )
+        plt.clf()
+        small=1e-5
+        #theta grid lines through cell centers
+        levs = np.linspace(0,nx-1-small,nx)
+        plc(ti,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=levs,colors='k')
+        #radial grid lines through cell centers
+        levs = np.linspace(0,ny-1-small,ny)
+        plc(tj,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=levs,colors='k')
+        plt.xlim(0,2)
+        plt.ylim(-2,2)
+        plt.savefig("grid.png")
+        #
+        #Read in the dump file and plot it
+        #
+        #read in the 1000th dump file
+        plt.figure( 2, figsize=(6,12) )
+        plt.clf()
+        rfd("fieldline1000.bin")
+        #plot contours of density
+        plc(lrho,xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,nc=50)
+        plt.xlim(0,2)
+        plt.ylim(-2,2)
+        plt.savefig("logdensity.png")
     if False:
         grid3d("gdump.bin"); rfd("fieldline0000.bin")
         aphi = fieldcalcface()

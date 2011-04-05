@@ -146,10 +146,10 @@ if __name__ == "__main__":
     plt.clf()
     small=1e-5
     #theta grid lines through cell centers
-    levs = np.linspace(0,nx-1-small,nx-1)
+    levs = np.linspace(0,nx-1-small,nx)
     plc(ti,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=levs,colors='k')
     #radial grid lines through cell centers
-    levs = np.linspace(0,ny-1-small,ny-1)
+    levs = np.linspace(0,ny-1-small,ny)
     plc(tj,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=levs,colors='k')
     plt.xlim(0,5)
     plt.ylim(-5,5)
