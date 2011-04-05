@@ -2311,6 +2311,14 @@ def plotomegaf2hor():
 
 if __name__ == "__main__":
     #mainfunc()
+    if False:
+        grid3d("gdump.bin"); rfd("fieldline0000.bin")
+        aphi = fieldcalcface()
+        sig=intangle(gdet*rho)
+        plt.clf()
+        plt.plot(r[:,0,0],-gdetB[2,:,ny/2,0]/dxdxp[1,1,:,ny/2,0]/dxdxp[3,3,0,0,0]/sig) 
+        plt.xlim(0,200)
+        plt.ylim(0,2)
     if True:
         readmytests1()
         plotpowers('powerlist.txt')
