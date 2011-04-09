@@ -140,9 +140,10 @@ def reinterpxy(vartointerp,extent,ncell):
     y=yraw[:,ny/2,:].view().reshape(-1)
     var=vartointerp[:,ny/2,:].view().reshape(-1)
     #mirror
-    x=np.concatenate((-x,x))
-    y=np.concatenate((-y,y))
-    var=np.concatenate((var,var))
+    if nz*_dx3*dxdxp[3,3,0,0,0] < 0.99 * 2 * np.pi:
+        x=np.concatenate((-x,x))
+        y=np.concatenate((-y,y))
+        var=np.concatenate((var,var))
     # define grid.
     xi = np.linspace(extent[0], extent[1], ncell)
     yi = np.linspace(extent[2], extent[3], ncell)
