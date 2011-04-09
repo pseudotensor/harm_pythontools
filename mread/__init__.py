@@ -1813,6 +1813,20 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
     pjtotfinavgvsr30 = pjemfinavgvsr30 + pjmafinavgvsr30
     pjtotfinavgvsr40 = pjemfinavgvsr40 + pjmafinavgvsr40
 
+    #radius of stagnation point (Pjmabsqorho5(rstag) = 0)
+    istag=(ti[:,0,0][pjmafinavgvsr5>0])[0]
+    rstag=r[istag,0,0]
+    i2stag=iofr(2*rstag)
+    i4stag=iofr(4*rstag)
+    i8stag=iofr(8*rstag)
+    pjtotfinavgvsr5max    = np.max(pjtotfinavgvsr5)
+    pjtotfinavgvsr5rstag  = pjtotfinavgvsr5[istag]
+    pjtotfinavgvsr5r2stag = pjtotfinavgvsr5[i2stag]
+    pjtotfinavgvsr5r4stag = pjtotfinavgvsr5[i4stag]
+    pjtotfinavgvsr5r8stag = pjtotfinavgvsr5[i8stag]
+    
+    
+
     fstotfinavg = (fstot[:,ihor])[(ts<ftf)*(ts>=fti)].sum(0)/(fstot[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0]
     fstotsqfinavg = ( (fstot[:,ihor]**2)[(ts<ftf)*(ts>=fti)].sum(0)/(fstot[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0] )**0.5
         
@@ -1916,8 +1930,12 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
         plotlist[3].set_ylabel(r'$P_{\rm j}/\dot M_{\rm h}$',fontsize=16)
 
         foutpower = open( "pjet_power_%s.txt" %  os.path.basename(os.getcwd()), "w" )
-        #foutpower.write( "#Name a Mdot   Pjet    Etajet  Psitot Psisqtot**0.5 Psijet Psisqjet**0.5\n"  )
-        foutpower.write( "%s %f %f %f %f %f %f %f %f\n" % (os.path.basename(os.getcwd()), a, mdotfinavg, pjetfinavg, etajetavg, fstotfinavg, fstotsqfinavg, fsj30finavg, fsj30sqfinavg) )
+        #foutpower.write( "#Name a Mdot   Pjet    Etajet  Psitot Psisqtot**0.5 Psijet Psisqjet**0.5 rstag Pjtotmax Pjtot1rstag Pjtot2rstag Pjtot4rstag Pjtot8rstag\n"  )
+        foutpower.write( "%s %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n" % (os.path.basename(os.getcwd()), a, mdotfinavg, 
+                                                                       pjetfinavg, etajetavg, fstotfinavg, 
+                                                                       fstotsqfinavg, fsj30finavg, fsj30sqfinavg, 
+                                                                       rstag, pjtotfinavgvsr5max, pjtotfinavgvsr5rstag, 
+                                                                       pjtotfinavgvsr5r2stag, pjtotfinavgvsr5r4stag, pjtotfinavgvsr5r8stag) )
         #flush to disk just in case to make sure all is written
         foutpower.flush()
         os.fsync(foutpower.fileno())
