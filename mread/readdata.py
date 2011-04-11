@@ -8,6 +8,7 @@ def grid3d(dumpname): #read grid dump file: header and body
     #There are more variables, e.g., dxdxp, which is the Jacobian of (x1,x2,x3)->(r,h,ph) transformation, that I can
     #go over, if needed.
     global nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,ti,tj,tk,x1,x2,x3,r,h,ph,conn,gn3,gv3,ck,dxdxp,gdet
+    global tif,tjf,tkf,rf,hf,phf
     print( "Reading grid from " + "dumps/" + dumpname + " ..." )
     gin = open( "dumps/" + dumpname, "rb" )
     #First line of grid dump file is a text line that contains general grid information:
@@ -53,6 +54,50 @@ def grid3d(dumpname): #read grid dump file: header and body
     ck = gd[106:110].view().reshape((4,nx,ny,nz), order='F')
     #grid mapping Jacobian
     dxdxp = gd[110:126].view().reshape((4,4,nx,ny,nz), order='F').transpose(1,0,2,3,4)
+    #CELL VERTICES:
+    #RADIAL:
+    #add an extra dimension to rf container since one more faces than centers
+    rf = np.zeros((r.shape[0]+1,r.shape[1]+1,r.shape[2]+1))
+    #operate on log(r): average becomes geometric mean, etc
+    rf[1:nx,0:ny,0:nz] = (r[1:nx]*r[0:nx-1])**0.5 #- 0.125*(dxdxp[1,1,1:nx]/r[1:nx]-dxdxp[1,1,0:nx-1]/r[0:nx-1])*_dx1
+    #extend in theta
+    rf[1:nx,ny,0:nz] = rf[1:nx,ny-1,0:nz]
+    #extend in phi
+    rf[1:nx,:,nz]   = rf[1:nx,:,nz-1]
+    #extend in r
+    rf[0] = 0*rf[0] + Rin
+    rf[nx] = 0*rf[nx] + Rout
+    #ANGULAR:
+    hf = np.zeros((h.shape[0]+1,h.shape[1]+1,h.shape[2]+1))
+    hf[0:nx,1:ny,0:nz] = 0.5*(h[:,1:ny]+h[:,0:ny-1]) #- 0.125*(dxdxp[2,2,:,1:ny]-dxdxp[2,2,:,0:ny-1])*_dx2
+    hf[1:nx-1,1:ny,0:nz] = 0.5*(hf[0:nx-2,1:ny,0:nz]+hf[1:nx-1,1:ny,0:nz])
+    #populate ghost cells in r
+    hf[nx,1:ny,0:nz] = hf[nx-1,1:ny,0:nz]
+    #populate ghost cells in phi
+    hf[:,1:ny,nz] = hf[:,1:ny,nz-1]
+    #populate ghost cells in theta (note: no need for this since already initialized everything to zero)
+    hf[:,0] = 0*hf[:,0] + 0
+    hf[:,ny] = 0*hf[:,ny] + np.pi
+    #TOROIDAL:
+    phf = np.zeros((ph.shape[0]+1,ph.shape[1]+1,ph.shape[2]+1))
+    phf[0:nx,0:ny,0:nz] = ph[0:nx,0:ny,0:nz] - dxdxp[3,3,0,0,0]*0.5*_dx3
+    #extend in phi
+    phf[0:nx,0:ny,nz]   = ph[0:nx,0:ny,nz-1] + dxdxp[3,3,0,0,0]*0.5*_dx3
+    #extend in r
+    phf[nx,0:ny,:]   =   phf[nx-1,0:ny,:]
+    #extend in theta
+    phf[:,ny,:]   =   phf[:,ny-1,:]
+    #indices
+    #tif=np.zeros(ti.shape[0]+1,ti.shape[1]+1,ti.shape[2]+1)
+    #tjf=np.zeros(tj.shape[0]+1,tj.shape[1]+1,tj.shape[2]+1)
+    #tkf=np.zeros(tk.shape[0]+1,tk.shape[1]+1,tk.shape[2]+1)
+    tif=np.arange(0,(nx+1)*(ny+1)*(nz+1)).reshape((nx+1,ny+1,nz+1),order='F')
+    tjf=np.arange(0,(nx+1)*(ny+1)*(nz+1)).reshape((nx+1,ny+1,nz+1),order='F')
+    tkf=np.arange(0,(nx+1)*(ny+1)*(nz+1)).reshape((nx+1,ny+1,nz+1),order='F')
+    tif %= (nx+1)
+    tjf /= (nx+1)
+    tjf %= (ny+1)
+    tkf /= (ny+1)*(nz+1)
     print( "Done!" )
 
 def rfd(fieldlinefilename,**kwargs):
@@ -147,12 +192,16 @@ if __name__ == "__main__":
     small=1e-5
     #theta grid lines through cell centers
     levs = np.linspace(0,nx-1-small,nx)
-    plc(ti,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=levs,colors='k')
-    #radial grid lines through cell centers
+    plc(ti,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=levs,colors='#0fffff')
     levs = np.linspace(0,ny-1-small,ny)
-    plc(tj,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=levs,colors='k')
-    plt.xlim(0,5)
-    plt.ylim(-5,5)
+    plc(tj,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=levs,colors='#0fffff')
+    levs = np.linspace(0,nx-small,nx+1)
+    plc(tif,xcoord=rf*np.sin(hf),ycoord=rf*np.cos(hf),levels=levs,colors='k')
+    #radial grid lines through cell centers
+    levs = np.linspace(0,ny-small,ny+1)
+    plc(tjf,xcoord=rf*np.sin(hf),ycoord=rf*np.cos(hf),levels=levs,colors='k')
+    plt.xlim(0,2)
+    plt.ylim(-2,2)
     plt.savefig("grid.png")
     #
     #Read in the dump file and plot it
@@ -163,7 +212,7 @@ if __name__ == "__main__":
     rfd("fieldline1000.bin")
     #plot contours of density
     plc(lrho,xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,nc=50)
-    plt.xlim(0,5)
-    plt.ylim(-5,5)
+    plt.xlim(0,2)
+    plt.ylim(-2,2)
     plt.savefig("logdensity.png")
     
