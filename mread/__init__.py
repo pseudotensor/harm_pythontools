@@ -2402,7 +2402,7 @@ def plotomegaf2hor():
 
 
 if __name__ == "__main__":
-    if True:
+    if False:
         #cd into the directory that contains the dumps/ directory
         #read in the grid file
         grid3d("gdump.bin")
