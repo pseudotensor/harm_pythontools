@@ -2257,51 +2257,79 @@ def Risco(a):
     return(risco)
 
 def plotpowers(fname,hor=0):
-    gd1 = np.loadtxt( fname, unpack = True, usecols = [1,2,3,4,5,6,7,8] )
+    gd1 = np.loadtxt( fname, unpack = True, usecols = [1,2,3,4,5,6,7,8,9,10,11,12,13,14] )
     #gd=gd1.view().reshape((-1,nx,ny,nz), order='F')
     alist = gd1[0]
     rhorlist = 1+(1-alist**2)**0.5
     omhlist = alist / 2 / rhorlist
     mdotlist = gd1[1]
-    etalist = gd1[3]
+    #etalist = gd1[3]
+    powlist=gd1[12] #pow(2*rstag)
+    etalist = powlist/mdotlist
     psitotsqlist = gd1[5]
     psi30sqlist = gd1[7]
     mya=np.arange(-1,1,0.001)
     rhor = 1+(1-mya**2)**0.5
     myomh = mya / 2/ rhor
     #mypwr = 5*myomh**2
-    psi = 1
+    psi = 1.0
     mypwr = 2.0000 * 1.*1.0472*myomh**2 * 1.5*(psi**2-psi**3/3) #prefactor = 2pi/3, consistent with (A7) from TMN10a
-    horx=0.125
+    horx=0.09333
     #myr = Risco(mya) #does not work at all: a < 0 power is much greater than a > 0
-    myr = rhor
-    myeta = mypwr * (mya**2+3*myr**2)/3 / (2*np.pi*horx)
+    myeta = mypwr * (mya**2+3*rhor**2)/3 / (2*np.pi*horx)
     plt.figure(1)
     plt.clf()
-    plt.plot( mya, myeta )
+    #plt.plot( mya, myeta )
+    rhor6 = 1+(1-mspina6[mhor6==hor]**2)**0.5
+    #Tried to equate pressures -- works but mistake in calculaton -- wrong power
+    #plt.plot(mspina6[mhor6==hor],mpow6[mhor6==hor]* ((mspina6[mhor6==hor]**2+3*rhor6**2)/3/(2*np.pi*horx)) )
+    #Simple multiplication by rhor -- works!  \Phi^2/Mdot * rhor ~ const
+    plt.plot(mspina6[mhor6==hor],2.7*mpow6[mhor6==hor]*rhor6 )
     #plt.plot(mya,mya**2)
     plt.plot(alist,etalist,'o')
     plt.plot(mspina6[mhor6==hor],5*mpow6[mhor6==hor])
-    plt.plot(mspina2[mhor2==hor],5*mpow2a[mhor2==hor])
+    #plt.plot(mspina2[mhor2==hor],5*mpow2a[mhor2==hor])
+    #
+    # plt.figure(5)
+    # plt.clf()
+    # plt.plot(mspina6[mhor6==hor],mpow6[mhor6==hor] )
+    # plt.plot(mspina2[mhor2==hor],mpow2a[mhor2==hor] )
+    # mpow2ahere = 2.0000 * 1.*1.0472*momh2**2 * 1.5*(psi**2-psi**3/3)
+    # plt.plot(mspina2[mhor2==hor], mpow2ahere[mhor2==hor])
+    #plt.plot(mya,mya**2)
+    #plt.plot(mya,mypwr)
     #
     plt.figure(2)
     plt.clf()
     #plt.plot( mya, myeta )
     #plt.plot(mya,mya**2)
+    #y = (psi30sqlist)**2/(2*mdotlist)
     y = (psi30sqlist)**2/(2*mdotlist)
-    plt.plot(alist,y/np.max(y),'o')
+    plt.plot(alist,y,'o')
+    plt.plot(mya,(250+0*mya)*rhor) 
+    plt.plot(mya,250./((3./(mya**2 + 3*rhor**2))**2*2*rhor**2)) 
+    #plt.plot(mya,((mya**2+3*rhor**2)/3)**2/(2/rhor)) 
     plt.ylim(ymin=0)
     #plt.plot(alist,2*mdotlist/(psitotsqlist)**2,'o')
     #plt.plot(mspina6[mhor6==hor],5*mpow6[mhor6==hor])
     #plt.plot(mspina2[mhor2==hor],5*mpow2a[mhor2==hor])
+    # plt.figure(4)
+    # plt.clf()
+    # y = (psi30sqlist)**2/(2*mdotlist*rhorlist**2)
+    # plt.plot(alist,1/(y/np.max(y)),'o')
+    # plt.plot(mya,Risco(mya)**(1./2.)*0.9) 
+    # plt.ylim(ymin=0)
     plt.figure(3)
     plt.clf()
     #plt.plot( mya, myeta )
     #plt.plot(mya,mya**2)
-    psi=1
+    psi=1.0
+    pow6func = interp1d(momh6[mhor6==hor], mpow6[mhor6==hor])
     #divide flux by 2 (converts flux to single hemisphere) and by dxdxp33 (accounts for A_3 -> A_\phi):
-    pwrlist = (psi30sqlist/2/dxdxp[3,3,0,0,0])**2*2.0000 * 1.*1.0472*omhlist**2 * 1.5*(psi**2-psi**3/3)
-    plt.plot(alist,pwrlist/mdotlist/1.5,'o')
+    # pwrlist = (psi30sqlist/2/(2*np.pi))**2*2.0000 * 1.*1.0472*omhlist**2 * 1.5*(psi**2-psi**3/3)
+    # plt.plot(alist,pwrlist6/mdotlist,'o')
+    pwrlist6 = (psi30sqlist/2/(2*np.pi))**2*pow6func(np.abs(omhlist))
+    plt.plot(alist,pwrlist6/mdotlist,'o')
     plt.ylim(ymin=0,ymax=3)
     #plt.plot(alist,2*mdotlist/(psitotsqlist)**2,'o')
     plt.plot( mya, myeta )
@@ -2357,7 +2385,7 @@ def plotomegaf2hor():
 
 
 if __name__ == "__main__":
-    if True:
+    if False:
         #cd into the directory that contains the dumps/ directory
         #read in the grid file
         grid3d("gdump.bin")
@@ -2415,7 +2443,7 @@ if __name__ == "__main__":
         diskflux=diskfluxcalc(ny/2)
         ts,fs,md,jem,jtot=mfjhorvstime(11)
         plotj(ts,fs/(diskflux),md,jem,jtot)
-    if True:
+    if False:
         #NEW FORMAT
         #Plot qtys vs. time
         #cd ~/run; for f in rtf*; do cd ~/run/$f; (nice -n 10 python  ~/py/mread/__init__.py &> python.out); done
