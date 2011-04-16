@@ -2507,7 +2507,7 @@ if __name__ == "__main__":
         plt.plot(r[:,0,0],-gdetB[2,:,ny/2,0]/dxdxp[1,1,:,ny/2,0]/dxdxp[3,3,0,0,0]/sig) 
         plt.xlim(0,200)
         plt.ylim(0,2)
-    if True:
+    if False:
         readmytests1()
         plotpowers('powerlist.txt')
     if False:
