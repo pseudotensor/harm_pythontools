@@ -2428,6 +2428,41 @@ def plotomegaf2hor():
     print( "Etot = %g" % Etot )
     plt.ylim(0,0.5)
 
+def plotakshay():
+    #grid3d("gdump.bin")
+    #rfd("fieldline4670.bin")
+    #cvel()
+    #rhor = 1+(1-a**2)**0.5
+    #ihor = iofr(rhor)
+    iref = 0
+    rref = r[iref,0,0]
+    #far view
+    plt.figure(1)
+    plt.clf()
+    #Density
+    plt.suptitle(r"Angular density profile ($a = %g$ at $i = %d$, $r = %g$, $t = %g$)" % (a, iref, rref,t))
+    plt.plot(h[iref,:,0],rho[iref,:,0])
+    plt.plot(h[iref,:,0],rho[iref,:,0],'o')
+    plt.xlim(0,3.5)
+    plt.xlabel(r"$\theta-\pi/2$")
+    plt.ylabel(r"$\rho$")
+    plt.savefig("rho-i0.pdf")
+    #close view
+    plt.figure(2)
+    plt.clf()
+    #Density
+    plt.suptitle(r"[blowup] Angular density profile ($a = %g$ at $i = %d$, $r = %g$, $t = %g)$" % (a, iref, rref,t))
+    plt.plot(h[iref,:,0]-np.pi/2,rho[iref,:,0])
+    plt.plot(h[iref,:,0]-np.pi/2,rho[iref,:,0],'o')
+    plt.xlim(-0.2,0.2)
+    plt.xlabel(r"$\theta-\pi/2$")
+    plt.ylabel(r"$\rho$")
+    plt.savefig("rho-i0_blowup.pdf")
+    #Time step
+    #dt2 = _dx2 / amax(np.abs(v2m),np.abs(v2p)) 
+    #plt.plot(h[iref,:,0]-np.pi/2,dt2*1000)
+ 
+
 
 if __name__ == "__main__":
     if False:
