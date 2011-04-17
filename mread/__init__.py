@@ -2786,7 +2786,7 @@ if __name__ == "__main__":
             for whichgroup in np.arange(whichgroup,1000,step):
                 avgmem = get2davg(whichgroup=whichgroup,itemspergroup=itemspergroup)
             #plot2davg(avgmem)
-       elif len(sys.argv[1:])==3 and sys.argv[1].isdigit() and sys.argv[2].isdigit() and sys.argv[3].isdigit():
+        elif len(sys.argv[1:])==3 and sys.argv[1].isdigit() and sys.argv[2].isdigit() and sys.argv[3].isdigit():
             whichgroups = int(sys.argv[1])
             whichgroupe = int(sys.argv[2])
             step = int(sys.argv[3])
