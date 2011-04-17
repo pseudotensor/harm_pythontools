@@ -45,13 +45,18 @@ def get2davg(whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergroup=20):
         print( "File %s exists, loading from file..." % fname )
         avgtot=np.load( fname )
         return( avgtot )
+    n2avg = 0
     for (i,g) in enumerate(np.arange(whichgroups,whichgroupe)):
         avgone=get2davgone( whichgroup = g, itemspergroup = itemspergroup )
+        if avgone == None:
+            continue
         if 0==i:
             avgtot = np.zeros_like(avgone)
         avgtot += avgone
+        n2avg += 1
     #get the average
-    n2avg = whichgroupe - whichgroups
+    if n2avg == 0:
+        return( None )
     avgtot /= n2avg
     #only save if more than 1 dump
     if n2avg > 1:
@@ -75,7 +80,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     #
     #print "Number of time slices: %d" % flist.shape[0]
     #store 2D data
-    navg=1000
+    navg=163
     avgmem=np.zeros((navg,nx,ny),dtype=np.float32)
     #avg defs
     i=0
@@ -189,6 +194,9 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         avg_bubd+=mdot(bu,bd).sum(-1)
         # u^m u_l
         avg_uuud+=uuud
+    if nitems[0] == 0:
+        print( "No files found" )
+        return None
     #divide all lines but the header line [which holds (ts,te,nitems)]
     #by the number of elements to get time averages
     avgmem[1:]/=(float(nitems[0])*float(nz))
@@ -2770,8 +2778,10 @@ if __name__ == "__main__":
         rfd("fieldline0000.bin")
         if len(sys.argv[1:])==2 and sys.argv[1].isdigit() and sys.argv[2].isdigit():
             whichgroup = int(sys.argv[1])
-            itemspergroup = int(sys.argv[2])
-            avgmem = get2davg(whichgroup=whichgroup,itemspergroup=itemspergroup)
+            step = int(sys.argv[2])
+            itemspergroup = 20
+            for whichgroup in np.arange(whichgroup,1000,step):
+                avgmem = get2davg(whichgroup=whichgroup,itemspergroup=itemspergroup)
             #plot2davg(avgmem)
     if False:
         rfd("fieldline2344.bin")
