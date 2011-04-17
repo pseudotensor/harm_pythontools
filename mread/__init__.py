@@ -137,23 +137,23 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     print "Doing %d-th group of %d items" % (whichgroup, itemspergroup)
     sys.stdout.flush()
     #end avg defs
-    for findex, fname in enumerate(flist):
+    for fldindex, fldname in enumerate(flist):
         if( whichgroup >=0 and itemspergroup > 0 ):
-            if( findex / itemspergroup != whichgroup ):
+            if( fldindex / itemspergroup != whichgroup ):
                 continue
-        print( "Reading " + fname + " ..." )
+        print( "Reading " + fldname + " ..." )
         sys.stdout.flush()
-        rfd("../"+fname)
-        print( "Computing " + fname + " ..." )
+        rfd("../"+fldname)
+        print( "Computing " + fldname + " ..." )
         sys.stdout.flush()
         cvel()
         Tcalcud()
         faraday()
         #if first item in group
-        if findex == itemspergroup * whichgroup:
+        if fldindex == itemspergroup * whichgroup:
             ts[0]=t
         #if last item in group
-        if findex == itemspergroup * whichgroup + (itemspergroup - 1):
+        if fldindex == itemspergroup * whichgroup + (itemspergroup - 1):
             te[0]=t
         nitems[0]+=1
         #quantities
