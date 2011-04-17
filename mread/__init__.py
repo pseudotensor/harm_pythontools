@@ -197,6 +197,48 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     print( "Done!" )
     return(avgmem)
 
+def plot2davg(avgmem):
+    ##### assignments
+    #quantities
+    avg_rho=avgmem[i,:,:];i+=1
+    avg_ug=avgmem[i,:,:];i+=1
+    avg_bsq=avgmem[i,:,:];i+=1
+    n=4
+    avg_uu=avgmem[i:i+n,:,:];i+=n
+    avg_bu=avgmem[i:i+n,:,:];i+=n
+    avg_ud=avgmem[i:i+n,:,:];i+=n
+    avg_bd=avgmem[i:i+n,:,:];i+=n
+    #cell-centered magnetic field components
+    n=3;
+    avg_B=avgmem[i:i+n,:,:];i+=n
+    avg_gdetB=avgmem[i:i+n,:,:];i+=n
+    avg_omegaf2=avgmem[i,:,:];i+=1
+    #
+    n=4
+    avg_rhouu=avgmem[i:i+n,:,:];i+=n
+    avg_rhobu=avgmem[i:i+n,:,:];i+=n
+    avg_rhoud=avgmem[i:i+n,:,:];i+=n
+    avg_rhobd=avgmem[i:i+n,:,:];i+=n
+    avg_uguu=avgmem[i:i+n,:,:];i+=n
+    avg_ugud=avgmem[i:i+n,:,:];i+=n
+    #
+    n=16
+    #energy fluxes and faraday
+    avg_Tud=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+    avg_fdd=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+    # part1: rho u^m u_l
+    avg_rhouuud=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+    # part2: u u^m u_l
+    avg_uguuud=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+    # part3: b^2 u^m u_l
+    avg_bsquuud=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+    # part6: b^m b_l
+    avg_bubd=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+    # u^m u_l
+    avg_uuud=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+    #######
+    plco( np.log10(avg_rho), cb=True )
+
 def horcalc(which=1):
     """
     Compute root mean square deviation of disk body from equatorial plane
@@ -2725,7 +2767,8 @@ if __name__ == "__main__":
         if len(sys.argv[1:])==2 and sys.argv[1].isdigit() and sys.argv[2].isdigit():
             whichgroup = int(sys.argv[1])
             itemspergroup = int(sys.argv[2])
-            get2davg(whichgroup=whichgroup,itemspergroup=itemspergroup)
+            avgmem = get2davg(whichgroup=whichgroup,itemspergroup=itemspergroup)
+            plot2davg(avgmem)
     if False:
         rfd("fieldline2344.bin")
         cvel()
