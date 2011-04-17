@@ -35,7 +35,7 @@ def get2davg(whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergroup=20):
     elif whichgroupe < 0:
         whichgroupe = whichgroups + 1
     #check values for sanity
-    if whichgroups < 0 or whichgroupe < 0 or whichgroups <= whichgroupe or itemspergroup <= 0:
+    if whichgroups < 0 or whichgroupe < 0 or whichgroups >= whichgroupe or itemspergroup <= 0:
         print( "whichgroups = %d, whichgroupe = %d, itemspergroup = %d not allowed" 
                % (whichgroups, whichgroupe, itemspergroup) )
         return None
@@ -73,7 +73,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
     flist.sort()
     #
-    print "Number of time slices: %d" % numtimeslices
+    #print "Number of time slices: %d" % flist.shape[0]
     #store 2D data
     navg=1000
     avgmem=np.zeros((navg,nx,ny),dtype=np.float32)
@@ -132,8 +132,8 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     sys.stdout.flush()
     #end avg defs
     for findex, fname in enumerate(flist):
-        if( whichgroup >=0 and itermspergroup > 0 ):
-            if( findex / itermspergroup != whichgroup ):
+        if( whichgroup >=0 and itemspergroup > 0 ):
+            if( findex / itemspergroup != whichgroup ):
                 continue
         print( "Reading " + fname + " ..." )
         sys.stdout.flush()
@@ -151,42 +151,42 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
             te[0]=t
         nitems[0]+=1
         #quantities
-        avg_rho+=rho.sum(2)
-        avg_ug+=ug.sum(2)
-        avg_bsq+=bsq.sum(2)
-        avg_uu+=uu.sum(2)
-        avg_bu+=bu.sum(2)
-        avg_ud+=ud.sum(2)
-        avg_bd+=bd.sum(2)
+        avg_rho+=rho.sum(-1)
+        avg_ug+=ug.sum(-1)
+        avg_bsq+=bsq.sum(-1)
+        avg_uu+=uu.sum(-1)
+        avg_bu+=bu.sum(-1)
+        avg_ud+=ud.sum(-1)
+        avg_bd+=bd.sum(-1)
         #cell-centered magnetic field components
         n=3;
-        avg_B+=B[1:4].sum(2)
-        avg_gdetB+=gdetB[1:4].sum(2)
+        avg_B+=B[1:4].sum(-1)
+        avg_gdetB+=gdetB[1:4].sum(-1)
         #
-        avg_omegaf2+=omegaf2.sum(2)
+        avg_omegaf2+=omegaf2.sum(-1)
         #
         n=4
-        avg_rhouu+=(rho*uu).sum(2)
-        avg_rhobu+=(rho*bu).sum(2)
-        avg_rhoud+=(rho*ud).sum(2)
-        avg_rhobd+=(rho*bd).sum(2)
-        avg_uguu+=(ug*uu).sum(2)
-        avg_ugud+=(ug*ud).sum(2)
+        avg_rhouu+=(rho*uu).sum(-1)
+        avg_rhobu+=(rho*bu).sum(-1)
+        avg_rhoud+=(rho*ud).sum(-1)
+        avg_rhobd+=(rho*bd).sum(-1)
+        avg_uguu+=(ug*uu).sum(-1)
+        avg_ugud+=(ug*ud).sum(-1)
         #
         n=16
         #energy fluxes and faraday
-        avg_Tud+=Tud.sum(2)
-        avg_fdd+=fdd.sum(2)
+        avg_Tud+=Tud.sum(-1)
+        avg_fdd+=fdd.sum(-1)
         #
-        uuud=mdot(uu,ud).sum(2)
+        uuud=mdot(uu,ud).sum(-1)
         # part1: rho u^m u_l
-        avg_rhouuud+=rho.sum(2)*uuud
+        avg_rhouuud+=rho.sum(-1)*uuud
         # part2: u u^m u_l
-        avg_uguuud+=ug.sum(2)*uuud
+        avg_uguuud+=ug.sum(-1)*uuud
         # part3: b^2 u^m u_l
-        avg_bsquuud+=bsq.sum(2)*uuud
+        avg_bsquuud+=bsq.sum(-1)*uuud
         # part6: b^m b_l
-        avg_bubd+=mdot(bu,bd).sum(2)
+        avg_bubd+=mdot(bu,bd).sum(-1)
         # u^m u_l
         avg_uuud+=uuud
     #divide all lines but the header line [which holds (ts,te,nitems)]
@@ -198,6 +198,10 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     return(avgmem)
 
 def plot2davg(avgmem):
+    i=0
+    ts=avgmem[i,0,:];
+    te=avgmem[i,1,:]; 
+    nitems=avgmem[i,2,:];i+=1
     ##### assignments
     #quantities
     avg_rho=avgmem[i,:,:];i+=1
@@ -237,7 +241,7 @@ def plot2davg(avgmem):
     # u^m u_l
     avg_uuud=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
     #######
-    plco( np.log10(avg_rho), cb=True )
+    plco( np.log10(avg_rho[:,:,None]), cb=True )
 
 def horcalc(which=1):
     """
@@ -2768,7 +2772,7 @@ if __name__ == "__main__":
             whichgroup = int(sys.argv[1])
             itemspergroup = int(sys.argv[2])
             avgmem = get2davg(whichgroup=whichgroup,itemspergroup=itemspergroup)
-            plot2davg(avgmem)
+            #plot2davg(avgmem)
     if False:
         rfd("fieldline2344.bin")
         cvel()
