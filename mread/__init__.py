@@ -28,6 +28,175 @@ import sys
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
+def get2davg(whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergroup=20):
+    if whichgroup >= 0:
+        whichgroups = whichgroup
+        whichgroupe = whichgroup + 1
+    elif whichgroupe < 0:
+        whichgroupe = whichgroups + 1
+    #check values for sanity
+    if whichgroups < 0 or whichgroupe < 0 or whichgroups <= whichgroupe or itemspergroup <= 0:
+        print( "whichgroups = %d, whichgroupe = %d, itemspergroup = %d not allowed" 
+               % (whichgroups, whichgroupe, itemspergroup) )
+        return None
+    #
+    fname = "avg2d%02d_%02d_%02d.npy" % (itemspergroup, whichgroups, whichgroupe)
+    if os.path.isfile( fname ):
+        print( "File %s exists, loading from file..." % fname )
+        avgtot=np.load( fname )
+        return( avgtot )
+    for (i,g) in enumerate(np.arange(whichgroups,whichgroupe)):
+        avgone=get2davgone( whichgroup = g, itemspergroup = itemspergroup )
+        if 0==i:
+            avgtot = np.zeros_like(avgone)
+        avgtot += avgone
+    #get the average
+    n2avg = whichgroupe - whichgroups
+    avgtot /= n2avg
+    #only save if more than 1 dump
+    if n2avg > 1:
+        np.save( fname, avgtot )
+    return( avgtot )
+    
+def get2davgone(whichgroup=-1,itemspergroup=20):
+    """
+    """
+    if whichgroup < 0 or itemspergroup <= 0:
+        print( "whichgroup = %d, itemspergroup = %d not allowed" % (whichgroup, itemspergroup) )
+        return None
+    fname = "avg2d%02d_%02d.npy" % (itemspergroup, whichgroup)
+    if os.path.isfile( fname ):
+        print( "File %s exists, loading from file..." % fname )
+        avgmem=np.load( fname )
+        return( avgmem )
+    tiny=np.finfo(rho.dtype).tiny
+    flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+    flist.sort()
+    #
+    print "Number of time slices: %d" % numtimeslices
+    #store 2D data
+    navg=1000
+    avgmem=np.zeros((navg,nx,ny),dtype=np.float32)
+    #avg defs
+    i=0
+    ts=avgmem[i,0,:];
+    te=avgmem[i,1,:]; 
+    nitems=avgmem[i,2,:];i+=1
+    #quantities
+    avg_rho=avgmem[i,:,:];i+=1
+    avg_ug=avgmem[i,:,:];i+=1
+    avg_bsq=avgmem[i,:,:];i+=1
+    n=4
+    avg_uu=avgmem[i:i+n,:,:];i+=n
+    avg_bu=avgmem[i:i+n,:,:];i+=n
+    avg_ud=avgmem[i:i+n,:,:];i+=n
+    avg_bd=avgmem[i:i+n,:,:];i+=n
+    #cell-centered magnetic field components
+    n=3;
+    avg_B=avgmem[i:i+n,:,:];i+=n
+    avg_gdetB=avgmem[i:i+n,:,:];i+=n
+    avg_omegaf2=avgmem[i,:,:];i+=1
+    #
+    n=4
+    avg_rhouu=avgmem[i:i+n,:,:];i+=n
+    avg_rhobu=avgmem[i:i+n,:,:];i+=n
+    avg_rhoud=avgmem[i:i+n,:,:];i+=n
+    avg_rhobd=avgmem[i:i+n,:,:];i+=n
+    avg_uguu=avgmem[i:i+n,:,:];i+=n
+    avg_ugud=avgmem[i:i+n,:,:];i+=n
+    #
+    n=16
+    #energy fluxes and faraday
+    avg_Tud=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+    avg_fdd=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+    # part1: rho u^m u_l
+    avg_rhouuud=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+    # part2: u u^m u_l
+    avg_uguuud=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+    # part3: b^2 u^m u_l
+    avg_bsquuud=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+    # part6: b^m b_l
+    avg_bubd=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+    # u^m u_l
+    avg_uuud=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+    ##
+    ######################################
+    ##
+    ## NEED TO ADD vmin/vmax VELOCITY COMPONENTS
+    ##
+    ######################################
+    ##
+
+    print "Total number of quantities: %d" % (i)
+    print "Doing %d-th group of %d items" % (whichgroup, itemspergroup)
+    sys.stdout.flush()
+    #end avg defs
+    for findex, fname in enumerate(flist):
+        if( whichgroup >=0 and itermspergroup > 0 ):
+            if( findex / itermspergroup != whichgroup ):
+                continue
+        print( "Reading " + fname + " ..." )
+        sys.stdout.flush()
+        rfd("../"+fname)
+        print( "Computing " + fname + " ..." )
+        sys.stdout.flush()
+        cvel()
+        Tcalcud()
+        faraday()
+        #if first item in group
+        if findex == itemspergroup * whichgroup:
+            ts[0]=t
+        #if last item in group
+        if findex == itemspergroup * whichgroup + (itemspergroup - 1):
+            te[0]=t
+        nitems[0]+=1
+        #quantities
+        avg_rho+=rho.sum(2)
+        avg_ug+=ug.sum(2)
+        avg_bsq+=bsq.sum(2)
+        avg_uu+=uu.sum(2)
+        avg_bu+=bu.sum(2)
+        avg_ud+=ud.sum(2)
+        avg_bd+=bd.sum(2)
+        #cell-centered magnetic field components
+        n=3;
+        avg_B+=B[1:4].sum(2)
+        avg_gdetB+=gdetB[1:4].sum(2)
+        #
+        avg_omegaf2+=omegaf2.sum(2)
+        #
+        n=4
+        avg_rhouu+=(rho*uu).sum(2)
+        avg_rhobu+=(rho*bu).sum(2)
+        avg_rhoud+=(rho*ud).sum(2)
+        avg_rhobd+=(rho*bd).sum(2)
+        avg_uguu+=(ug*uu).sum(2)
+        avg_ugud+=(ug*ud).sum(2)
+        #
+        n=16
+        #energy fluxes and faraday
+        avg_Tud+=Tud.sum(2)
+        avg_fdd+=fdd.sum(2)
+        #
+        uuud=mdot(uu,ud).sum(2)
+        # part1: rho u^m u_l
+        avg_rhouuud+=rho.sum(2)*uuud
+        # part2: u u^m u_l
+        avg_uguuud+=ug.sum(2)*uuud
+        # part3: b^2 u^m u_l
+        avg_bsquuud+=bsq.sum(2)*uuud
+        # part6: b^m b_l
+        avg_bubd+=mdot(bu,bd).sum(2)
+        # u^m u_l
+        avg_uuud+=uuud
+    #divide all lines but the header line [which holds (ts,te,nitems)]
+    #by the number of elements to get time averages
+    avgmem[1:]/=(float(nitems[0])*float(nz))
+    print( "Saving to file..." )
+    np.save( fname, avgmem )
+    print( "Done!" )
+    return(avgmem)
+
 def horcalc(which=1):
     """
     Compute root mean square deviation of disk body from equatorial plane
@@ -2548,6 +2717,15 @@ if __name__ == "__main__":
         else:
             qtymem=getqtyvstime(ihor,0.2)
             plotqtyvstime(qtymem)
+    if False:
+        #2DAVG
+        grid3d("gdump.bin")
+        #rd("dump0000.bin")
+        rfd("fieldline0000.bin")
+        if len(sys.argv[1:])==2 and sys.argv[1].isdigit() and sys.argv[2].isdigit():
+            whichgroup = int(sys.argv[1])
+            itemspergroup = int(sys.argv[2])
+            get2davg(whichgroup=whichgroup,itemspergroup=itemspergroup)
     if False:
         rfd("fieldline2344.bin")
         cvel()
