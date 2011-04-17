@@ -91,6 +91,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     avg_rho=avgmem[i,:,:];i+=1
     avg_ug=avgmem[i,:,:];i+=1
     avg_bsq=avgmem[i,:,:];i+=1
+    avg_unb=avgmem[i,:,:];i+=1
     n=4
     avg_uu=avgmem[i:i+n,:,:];i+=n
     avg_bu=avgmem[i:i+n,:,:];i+=n
@@ -159,6 +160,8 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         avg_rho+=rho.sum(-1)
         avg_ug+=ug.sum(-1)
         avg_bsq+=bsq.sum(-1)
+        enth=1+ug*gam/rho
+        avg_unb+=(enth*ud[0]).sum(-1)
         avg_uu+=uu.sum(-1)
         avg_bu+=bu.sum(-1)
         avg_ud+=ud.sum(-1)
