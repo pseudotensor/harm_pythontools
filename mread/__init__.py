@@ -80,7 +80,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     #
     #print "Number of time slices: %d" % flist.shape[0]
     #store 2D data
-    navg=163
+    navg=164
     avgmem=np.zeros((navg,nx,ny),dtype=np.float32)
     #avg defs
     i=0
