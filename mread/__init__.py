@@ -124,6 +124,8 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     # part6: b^m b_l
     avg_bubd=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
     # u^m u_l
+    print( "i = %d, avgmem.shape[0] = %d " % (i, avgmem.shape[0]) )
+    sys.stdout.flush()
     avg_uuud=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
     ##
     ######################################
