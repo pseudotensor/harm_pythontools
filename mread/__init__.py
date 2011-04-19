@@ -130,12 +130,12 @@ def assignavg2dvars(avgmem):
         avg_TudMA=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
         #mu,sigma
         n=1
-        avg_mu=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
-        avg_sigma=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
-        avg_bsqorho=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+        avg_mu=avgmem[i:i+n,:,:];i+=n
+        avg_sigma=avgmem[i:i+n,:,:];i+=n
+        avg_bsqorho=avgmem[i:i+n,:,:];i+=n
         n=3
-        avg_absB=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
-        avg_absgdetB=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+        avg_absB=avgmem[i:i+n,:,:];i+=n
+        avg_absgdetB=avgmem[i:i+n,:,:];i+=n
 
 
 def get2davgone(whichgroup=-1,itemspergroup=20):
