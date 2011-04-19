@@ -247,7 +247,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         return None
     #divide all lines but the header line [which holds (ts,te,nitems)]
     #by the number of elements to get time averages
-    avgmem[1:]/=(float(nitems[0])*float(nz))
+    avgmem[1:]/=(np.float32(nitems[0])*np.float32(nz))
     print( "Saving to file..." )
     np.save( fname, avgmem )
     print( "Done!" )
