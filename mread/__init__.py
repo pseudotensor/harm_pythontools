@@ -2915,6 +2915,7 @@ if __name__ == "__main__":
                 mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-8,vmax=1.5,len=plotlen,ax=ax2,cb=True,pt=False)
                 #print xxx
                 plt.savefig( "lrho%04d_Rzxym1.png" % (findex)  )
+                plt.savefig( "lrho%04d_Rzxym1.eps" % (findex)  )
                 #print xxx
         print( "Done!" )
         sys.stdout.flush()
