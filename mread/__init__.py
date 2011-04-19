@@ -78,7 +78,6 @@ def get2davg(whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergroup=20):
 def assignavg2dvars(avgmem):
     global avg_ts,avg_te,avg_nitems,avg_rho,avg_ug,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
     global avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB
-
     #avg defs
     i=0
     avg_ts=avgmem[i,0,:];
@@ -132,9 +131,9 @@ def assignavg2dvars(avgmem):
         avg_TudMA=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
         #mu,sigma
         n=1
-        avg_mu=avgmem[i:i+n,:,:];i+=n
-        avg_sigma=avgmem[i:i+n,:,:];i+=n
-        avg_bsqorho=avgmem[i:i+n,:,:];i+=n
+        avg_mu=avgmem[i,:,:];i+=n
+        avg_sigma=avgmem[i,:,:];i+=n
+        avg_bsqorho=avgmem[i,:,:];i+=n
         n=3
         avg_absB=avgmem[i:i+n,:,:];i+=n
         avg_absgdetB=avgmem[i:i+n,:,:];i+=n
@@ -143,6 +142,8 @@ def assignavg2dvars(avgmem):
 def get2davgone(whichgroup=-1,itemspergroup=20):
     """
     """
+    global avg_ts,avg_te,avg_nitems,avg_rho,avg_ug,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
+    global avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB
     if whichgroup < 0 or itemspergroup <= 0:
         print( "whichgroup = %d, itemspergroup = %d not allowed" % (whichgroup, itemspergroup) )
         return None
@@ -167,7 +168,6 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     ##
     ######################################
     ##
-
     #print "Total number of quantities: %d" % (i)
     print "Doing %d-th group of %d items" % (whichgroup, itemspergroup)
     sys.stdout.flush()
@@ -236,12 +236,12 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         avg_TudEM+=TudEM.sum(-1)
         avg_TudMA+=TudMA.sum(-1)
         #mu,sigma
-        avg_mu += Tud[1,0]/(rho*uu[1])
-        avg_sigma += TudEM[1,0]/avg_TudMA[1,0]
-        avg_bsqorho += bsq/rho
+        avg_mu += (-Tud[1,0]/(rho*uu[1])).sum(-1)
+        avg_sigma += (-TudEM[1,0]/TudMA[1,0]).sum(-1)
+        avg_bsqorho += (bsq/rho).sum(-1)
         n=3
-        avg_absB += np.abs(B[1:4])
-        avg_absgdetB += np.abs(gdetB[1:4])
+        avg_absB += np.abs(B[1:4]).sum(-1)
+        avg_absgdetB += np.abs(gdetB[1:4]).sum(-1)
     if avg_nitems[0] == 0:
         print( "No files found" )
         return None
