@@ -56,8 +56,7 @@ def get2davg(whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergroup=20):
         if 0==i:
             avgtot = np.zeros_like(avgone)
             ts=avgone[0,0,0]
-        elif numrange-1==i:
-            tf=avgone[0,1,0]
+        tf=avgone[0,1,0]
         avgtot += avgone
         nitems += avgone[0,2,0]
         n2avg += 1
