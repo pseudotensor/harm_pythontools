@@ -219,7 +219,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         avg_Tud+=Tud.sum(-1)
         avg_fdd+=fdd.sum(-1)
         #
-        uuud=mdot(uu,ud).sum(-1)
+        uuud=odot(uu,ud).sum(-1)
         # part1: rho u^m u_l
         avg_rhouuud+=rho.sum(-1)*uuud
         # part2: u u^m u_l
@@ -227,7 +227,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         # part3: b^2 u^m u_l
         avg_bsquuud+=bsq.sum(-1)*uuud
         # part6: b^m b_l
-        avg_bubd+=mdot(bu,bd).sum(-1)
+        avg_bubd+=odot(bu,bd).sum(-1)
         # u^m u_l
         avg_uuud+=uuud
         #EM/MA
