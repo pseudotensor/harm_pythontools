@@ -73,7 +73,7 @@ def get2davg(whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergroup=20):
         np.save( fname, avgtot )
     return( avgtot )
     
-def assignavg2dvars():
+def assignavg2dvars(avgmem):
     global avg_ts,avg_te,avg_nitems,avg_rho,avg_ug,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
     #avg defs
     i=0
@@ -140,7 +140,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     #store 2D data
     navg=164
     avgmem=np.zeros((navg,nx,ny),dtype=np.float32)
-    assignavg2dvars()
+    assignavg2dvars(avgmem)
     ##
     ######################################
     ##
@@ -225,7 +225,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     return(avgmem)
 
 def plot2davg(avgmem):
-    assignavg2dvars()
+    assignavg2dvars(avgmem)
     plco( np.log10(avg_rho[:,:,None]), cb=True )
 
 def horcalc(which=1):
