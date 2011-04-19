@@ -122,6 +122,21 @@ def assignavg2dvars(avgmem):
     #print( "i = %d, avgmem.shape[0] = %d " % (i, avgmem.shape[0]) )
     #sys.stdout.flush()
     avg_uuud=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+    #new format, extra columns
+    if( avgmem.shape[0] > 164 ):
+        n=16
+        #EM/MA
+        avg_TudEM=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+        avg_TudMA=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+        #mu,sigma
+        n=1
+        avg_mu=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+        avg_sigma=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+        avg_bsqorho=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+        n=3
+        avg_absB=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+        avg_absgdetB=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+
 
 def get2davgone(whichgroup=-1,itemspergroup=20):
     """
@@ -140,7 +155,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     #
     #print "Number of time slices: %d" % flist.shape[0]
     #store 2D data
-    navg=164
+    navg=205
     avgmem=np.zeros((navg,nx,ny),dtype=np.float32)
     assignavg2dvars(avgmem)
     ##
@@ -215,6 +230,16 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         avg_bubd+=mdot(bu,bd).sum(-1)
         # u^m u_l
         avg_uuud+=uuud
+        #EM/MA
+        avg_TudEM+=TudEM.sum(-1)
+        avg_TudMA+=TudMA.sum(-1)
+        #mu,sigma
+        avg_mu += Tud[1,0]/(rho*uu[1])
+        avg_sigma += TudEM[1,0]/avg_TudMA[1,0]
+        avg_bsqorho += bsq/rho
+        n=3
+        avg_absB += np.abs(B[1:4])
+        avg_absgdetB += np.abs(gdetB[1:4])
     if avg_nitems[0] == 0:
         print( "No files found" )
         return None
