@@ -47,20 +47,23 @@ def get2davg(whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergroup=20):
         return( avgtot )
     n2avg = 0
     nitems = 0
-    for (i,g) in enumerate(np.arange(whichgroups,whichgroupe)):
+    myrange = np.arange(whichgroups,whichgroupe)
+    numrange = myrange.shape[0]
+    for (i,g) in enumerate(myrange):
         avgone=get2davgone( whichgroup = g, itemspergroup = itemspergroup )
         if avgone == None:
             continue
         if 0==i:
             avgtot = np.zeros_like(avgone)
             ts=avgone[0,0,0]
+        elif numrange-1==i:
+            tf=avgone[0,1,0]
         avgtot += avgone
         nitems += avgone[0,2,0]
         n2avg += 1
-    tf = avgone[0,1,0]
-    avgone[0,0,0] = ts
-    avgone[0,1,0] = tf
-    avgone[0,2,0] = nitems
+    avgtot[0,0,0] = ts
+    avgtot[0,1,0] = tf
+    avgtot[0,2,0] = nitems
     #get the average
     if n2avg == 0:
         print( "0 total files, so no data generated." )
