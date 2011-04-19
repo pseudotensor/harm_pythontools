@@ -1022,6 +1022,14 @@ def compute_delta():
         delta[i:i] = 1+0*gv3[i,i]
     return(delta)
 
+def odot(a,b):
+    """ Outer product of two vectors a^mu b_nu"""
+    outer_product = np.zeros(gv3.shape,dtype=np.float32,order='F')
+    for mu in np.arange(4):
+        for nu in np.arange(4):
+            outer_product[mu,nu] = a[mu]*b[nu]
+    return(outer_product)
+
 def mdot(a,b):
     """
     Computes a contraction of two tensors/vectors.  Assumes
