@@ -149,7 +149,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     ######################################
     ##
 
-    print "Total number of quantities: %d" % (i)
+    #print "Total number of quantities: %d" % (i)
     print "Doing %d-th group of %d items" % (whichgroup, itemspergroup)
     sys.stdout.flush()
     #end avg defs
