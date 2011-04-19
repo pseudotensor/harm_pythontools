@@ -40,53 +40,46 @@ def get2davg(whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergroup=20):
                % (whichgroups, whichgroupe, itemspergroup) )
         return None
     #
-    fname = "avg2d%02d_%02d_%02d.npy" % (itemspergroup, whichgroups, whichgroupe)
+    fname = "avg2d%02d_%04d_%04d.npy" % (itemspergroup, whichgroups, whichgroupe)
     if os.path.isfile( fname ):
         print( "File %s exists, loading from file..." % fname )
         avgtot=np.load( fname )
         return( avgtot )
     n2avg = 0
+    nitems = 0
     for (i,g) in enumerate(np.arange(whichgroups,whichgroupe)):
         avgone=get2davgone( whichgroup = g, itemspergroup = itemspergroup )
         if avgone == None:
             continue
         if 0==i:
             avgtot = np.zeros_like(avgone)
+            ts=avgone[i,0,0]
         avgtot += avgone
+        nitems += avgone[i,2,0]
         n2avg += 1
+    tf = avgone[i,1,0]
+    avgone[i,0,0] = ts
+    avgone[i,1,0] = tf
+    avgone[i,2,0] = nitems
     #get the average
     if n2avg == 0:
+        print( "0 total files, so no data generated." )
         return( None )
-    avgtot /= n2avg
+    #avoid renormalizing the header
+    avgtot[1:] /= n2avg
     #only save if more than 1 dump
     if n2avg > 1:
+        print( "Saving data to file..." )
         np.save( fname, avgtot )
     return( avgtot )
     
-def get2davgone(whichgroup=-1,itemspergroup=20):
-    """
-    """
-    if whichgroup < 0 or itemspergroup <= 0:
-        print( "whichgroup = %d, itemspergroup = %d not allowed" % (whichgroup, itemspergroup) )
-        return None
-    fname = "avg2d%02d_%02d.npy" % (itemspergroup, whichgroup)
-    if os.path.isfile( fname ):
-        print( "File %s exists, loading from file..." % fname )
-        avgmem=np.load( fname )
-        return( avgmem )
-    tiny=np.finfo(rho.dtype).tiny
-    flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
-    flist.sort()
-    #
-    #print "Number of time slices: %d" % flist.shape[0]
-    #store 2D data
-    navg=164
-    avgmem=np.zeros((navg,nx,ny),dtype=np.float32)
+def assignavg2dvars():
+    global avg_ts,avg_te,avg_nitems,avg_rho,avg_ug,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
     #avg defs
     i=0
-    ts=avgmem[i,0,:];
-    te=avgmem[i,1,:]; 
-    nitems=avgmem[i,2,:];i+=1
+    avg_ts=avgmem[i,0,:];
+    avg_te=avgmem[i,1,:]; 
+    avg_nitems=avgmem[i,2,:];i+=1
     #quantities
     avg_rho=avgmem[i,:,:];i+=1
     avg_ug=avgmem[i,:,:];i+=1
@@ -127,6 +120,27 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     #print( "i = %d, avgmem.shape[0] = %d " % (i, avgmem.shape[0]) )
     #sys.stdout.flush()
     avg_uuud=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+
+def get2davgone(whichgroup=-1,itemspergroup=20):
+    """
+    """
+    if whichgroup < 0 or itemspergroup <= 0:
+        print( "whichgroup = %d, itemspergroup = %d not allowed" % (whichgroup, itemspergroup) )
+        return None
+    fname = "avg2d%02d_%02d.npy" % (itemspergroup, whichgroup)
+    if os.path.isfile( fname ):
+        print( "File %s exists, loading from file..." % fname )
+        avgmem=np.load( fname )
+        return( avgmem )
+    tiny=np.finfo(rho.dtype).tiny
+    flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+    flist.sort()
+    #
+    #print "Number of time slices: %d" % flist.shape[0]
+    #store 2D data
+    navg=164
+    avgmem=np.zeros((navg,nx,ny),dtype=np.float32)
+    assignavg2dvars()
     ##
     ######################################
     ##
@@ -153,11 +167,11 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         faraday()
         #if first item in group
         if fldindex == itemspergroup * whichgroup:
-            ts[0]=t
+            avg_ts[0]=t
         #if last item in group
         if fldindex == itemspergroup * whichgroup + (itemspergroup - 1):
-            te[0]=t
-        nitems[0]+=1
+            avg_te[0]=t
+        avg_nitems[0]+=1
         #quantities
         avg_rho+=rho.sum(-1)
         avg_ug+=ug.sum(-1)
@@ -199,7 +213,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         avg_bubd+=mdot(bu,bd).sum(-1)
         # u^m u_l
         avg_uuud+=uuud
-    if nitems[0] == 0:
+    if avg_nitems[0] == 0:
         print( "No files found" )
         return None
     #divide all lines but the header line [which holds (ts,te,nitems)]
@@ -211,49 +225,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     return(avgmem)
 
 def plot2davg(avgmem):
-    i=0
-    ts=avgmem[i,0,:];
-    te=avgmem[i,1,:]; 
-    nitems=avgmem[i,2,:];i+=1
-    ##### assignments
-    #quantities
-    avg_rho=avgmem[i,:,:];i+=1
-    avg_ug=avgmem[i,:,:];i+=1
-    avg_bsq=avgmem[i,:,:];i+=1
-    n=4
-    avg_uu=avgmem[i:i+n,:,:];i+=n
-    avg_bu=avgmem[i:i+n,:,:];i+=n
-    avg_ud=avgmem[i:i+n,:,:];i+=n
-    avg_bd=avgmem[i:i+n,:,:];i+=n
-    #cell-centered magnetic field components
-    n=3;
-    avg_B=avgmem[i:i+n,:,:];i+=n
-    avg_gdetB=avgmem[i:i+n,:,:];i+=n
-    avg_omegaf2=avgmem[i,:,:];i+=1
-    #
-    n=4
-    avg_rhouu=avgmem[i:i+n,:,:];i+=n
-    avg_rhobu=avgmem[i:i+n,:,:];i+=n
-    avg_rhoud=avgmem[i:i+n,:,:];i+=n
-    avg_rhobd=avgmem[i:i+n,:,:];i+=n
-    avg_uguu=avgmem[i:i+n,:,:];i+=n
-    avg_ugud=avgmem[i:i+n,:,:];i+=n
-    #
-    n=16
-    #energy fluxes and faraday
-    avg_Tud=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
-    avg_fdd=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
-    # part1: rho u^m u_l
-    avg_rhouuud=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
-    # part2: u u^m u_l
-    avg_uguuud=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
-    # part3: b^2 u^m u_l
-    avg_bsquuud=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
-    # part6: b^m b_l
-    avg_bubd=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
-    # u^m u_l
-    avg_uuud=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
-    #######
+    assignavg2dvars()
     plco( np.log10(avg_rho[:,:,None]), cb=True )
 
 def horcalc(which=1):
