@@ -776,7 +776,7 @@ def decolumnify(dumpname):
              
     
 
-def grid3d(dumpname): #read grid dump file: header and body
+def grid3d(dumpname,use2d=False): #read grid dump file: header and body
     #The internal cell indices along the three axes: (ti, tj, tk)
     #The internal uniform coordinates, (x1, x2, x3), are mapped into the physical
     #non-uniform coordinates, (r, h, ph), which correspond to radius (r), polar angle (theta), and toroidal angle (phi).
@@ -807,57 +807,62 @@ def grid3d(dumpname): #read grid dump file: header and body
     Rout=float(header[15])
     #read grid dump per-cell data
     #
+    if use2d:
+        lnz = 1
+    else:
+        lnz = nz
+    ncols = 126
     if dumpname.endswith(".bin"):
-        body = np.fromfile(gin,dtype=np.float64,count=-1) 
-        gd = body.view().reshape((-1,nx,ny,nz),order='F')
+        body = np.fromfile(gin,dtype=np.float64,count=ncols*nx*ny*lnz) 
+        gd = body.view().reshape((-1,nx,ny,lnz),order='F')
         gin.close()
     else:
         gin.close()
         gd = np.loadtxt( "dumps/" + dumpname, 
                       dtype=np.float64, 
                       skiprows=1, 
-                      unpack = True ).view().reshape((-1,nx,ny,nz), order='F')
+                      unpack = True ).view().reshape((126,nx,ny,lnz), order='F')
     ti,tj,tk,x1,x2,x3,r,h,ph = gd[0:9,:,:,:].view() 
     #get the right order of indices by reversing the order of indices i,j(,k)
-    #conn=gd[9:73].view().reshape((4,4,4,nx,ny,nz), order='F').transpose(2,1,0,3,4,5)
+    #conn=gd[9:73].view().reshape((4,4,4,nx,ny,lnz), order='F').transpose(2,1,0,3,4,5)
     #contravariant metric components, g^{\mu\nu}
-    gn3 = gd[73:89].view().reshape((4,4,nx,ny,nz), order='F').transpose(1,0,2,3,4)
+    gn3 = gd[73:89].view().reshape((4,4,nx,ny,lnz), order='F').transpose(1,0,2,3,4)
     #covariant metric components, g_{\mu\nu}
-    gv3 = gd[89:105].view().reshape((4,4,nx,ny,nz), order='F').transpose(1,0,2,3,4)
+    gv3 = gd[89:105].view().reshape((4,4,nx,ny,lnz), order='F').transpose(1,0,2,3,4)
     #metric determinant
     gdet = gd[105]
-    ck = gd[106:110].view().reshape((4,nx,ny,nz), order='F')
+    ck = gd[106:110].view().reshape((4,nx,ny,lnz), order='F')
     #grid mapping Jacobian
-    dxdxp = gd[110:126].view().reshape((4,4,nx,ny,nz), order='F').transpose(1,0,2,3,4)
+    dxdxp = gd[110:126].view().reshape((4,4,nx,ny,lnz), order='F').transpose(1,0,2,3,4)
     #CELL VERTICES:
     #RADIAL:
     #add an extra dimension to rf container since one more faces than centers
     rf = np.zeros((r.shape[0]+1,r.shape[1]+1,r.shape[2]+1))
     #operate on log(r): average becomes geometric mean, etc
-    rf[1:nx,0:ny,0:nz] = (r[1:nx]*r[0:nx-1])**0.5 #- 0.125*(dxdxp[1,1,1:nx]/r[1:nx]-dxdxp[1,1,0:nx-1]/r[0:nx-1])*_dx1
+    rf[1:nx,0:ny,0:lnz] = (r[1:nx]*r[0:nx-1])**0.5 #- 0.125*(dxdxp[1,1,1:nx]/r[1:nx]-dxdxp[1,1,0:nx-1]/r[0:nx-1])*_dx1
     #extend in theta
-    rf[1:nx,ny,0:nz] = rf[1:nx,ny-1,0:nz]
+    rf[1:nx,ny,0:lnz] = rf[1:nx,ny-1,0:lnz]
     #extend in phi
-    rf[1:nx,:,nz]   = rf[1:nx,:,nz-1]
+    rf[1:nx,:,lnz]   = rf[1:nx,:,lnz-1]
     #extend in r
     rf[0] = 0*rf[0] + Rin
     rf[nx] = 0*rf[nx] + Rout
     #ANGULAR:
     hf = np.zeros((h.shape[0]+1,h.shape[1]+1,h.shape[2]+1))
-    hf[0:nx,1:ny,0:nz] = 0.5*(h[:,1:ny]+h[:,0:ny-1]) #- 0.125*(dxdxp[2,2,:,1:ny]-dxdxp[2,2,:,0:ny-1])*_dx2
-    hf[1:nx-1,1:ny,0:nz] = 0.5*(hf[0:nx-2,1:ny,0:nz]+hf[1:nx-1,1:ny,0:nz])
+    hf[0:nx,1:ny,0:lnz] = 0.5*(h[:,1:ny]+h[:,0:ny-1]) #- 0.125*(dxdxp[2,2,:,1:ny]-dxdxp[2,2,:,0:ny-1])*_dx2
+    hf[1:nx-1,1:ny,0:lnz] = 0.5*(hf[0:nx-2,1:ny,0:lnz]+hf[1:nx-1,1:ny,0:lnz])
     #populate ghost cells in r
-    hf[nx,1:ny,0:nz] = hf[nx-1,1:ny,0:nz]
+    hf[nx,1:ny,0:lnz] = hf[nx-1,1:ny,0:lnz]
     #populate ghost cells in phi
-    hf[:,1:ny,nz] = hf[:,1:ny,nz-1]
+    hf[:,1:ny,lnz] = hf[:,1:ny,lnz-1]
     #populate ghost cells in theta (note: no need for this since already initialized everything to zero)
     hf[:,0] = 0*hf[:,0] + 0
     hf[:,ny] = 0*hf[:,ny] + np.pi
     #TOROIDAL:
     phf = np.zeros((ph.shape[0]+1,ph.shape[1]+1,ph.shape[2]+1))
-    phf[0:nx,0:ny,0:nz] = ph[0:nx,0:ny,0:nz] - dxdxp[3,3,0,0,0]*0.5*_dx3
+    phf[0:nx,0:ny,0:lnz] = ph[0:nx,0:ny,0:lnz] - dxdxp[3,3,0,0,0]*0.5*_dx3
     #extend in phi
-    phf[0:nx,0:ny,nz]   = ph[0:nx,0:ny,nz-1] + dxdxp[3,3,0,0,0]*0.5*_dx3
+    phf[0:nx,0:ny,lnz]   = ph[0:nx,0:ny,lnz-1] + dxdxp[3,3,0,0,0]*0.5*_dx3
     #extend in r
     phf[nx,0:ny,:]   =   phf[nx-1,0:ny,:]
     #extend in theta
@@ -866,13 +871,13 @@ def grid3d(dumpname): #read grid dump file: header and body
     #tif=np.zeros(ti.shape[0]+1,ti.shape[1]+1,ti.shape[2]+1)
     #tjf=np.zeros(tj.shape[0]+1,tj.shape[1]+1,tj.shape[2]+1)
     #tkf=np.zeros(tk.shape[0]+1,tk.shape[1]+1,tk.shape[2]+1)
-    tif=np.arange(0,(nx+1)*(ny+1)*(nz+1)).reshape((nx+1,ny+1,nz+1),order='F')
-    tjf=np.arange(0,(nx+1)*(ny+1)*(nz+1)).reshape((nx+1,ny+1,nz+1),order='F')
-    tkf=np.arange(0,(nx+1)*(ny+1)*(nz+1)).reshape((nx+1,ny+1,nz+1),order='F')
+    tif=np.arange(0,(nx+1)*(ny+1)*(lnz+1)).reshape((nx+1,ny+1,lnz+1),order='F')
+    tjf=np.arange(0,(nx+1)*(ny+1)*(lnz+1)).reshape((nx+1,ny+1,lnz+1),order='F')
+    tkf=np.arange(0,(nx+1)*(ny+1)*(lnz+1)).reshape((nx+1,ny+1,lnz+1),order='F')
     tif %= (nx+1)
     tjf /= (nx+1)
     tjf %= (ny+1)
-    tkf /= (ny+1)*(nz+1)
+    tkf /= (ny+1)*(lnz+1)
     print( "Done!" )
 
 def grid3dlight(dumpname): #read gdump: header and body
@@ -1024,15 +1029,16 @@ def compute_delta():
     global delta
     if 'delta' in globals():
         return delta
-
-    delta = np.zeros_like(gv3)
+    #
+    delta = np.zeros_like((4,4,nx,ny,nz))
     for i in arange(0,4):
-        delta[i:i] = 1+0*gv3[i,i]
+        delta[i,i] = 1
     return(delta)
 
 def odot(a,b):
     """ Outer product of two vectors a^mu b_nu"""
-    outer_product = np.zeros(gv3.shape,dtype=np.float32,order='F')
+    #the shape of the product is (4,4,nx,ny,max(a.nz,b.nz))
+    outer_product = np.zeros(np.concatenate((np.array((4,4)),amax(a[0].shape,b[0].shape))),dtype=np.float32,order='F')
     for mu in np.arange(4):
         for nu in np.arange(4):
             outer_product[mu,nu] = a[mu]*b[nu]
@@ -1047,15 +1053,15 @@ def mdot(a,b):
     if a.ndim == 4 and b.ndim == 4:
           c = (a*b).sum(0)
     elif a.ndim == 5 and b.ndim == 4:
-          c = np.empty(a[:,0,:,:,:].shape,dtype=b.dtype)      
+          c = np.empty(amax(a[:,0,:,:,:].shape,b.shape),dtype=b.dtype)      
           for i in range(a.shape[0]):
                 c[i,:,:,:] = (a[i,:,:,:,:]*b).sum(0)
     elif a.ndim == 4 and b.ndim == 5:
-          c = np.empty(b[0,:,:,:,:],dtype=a.dtype)      
+          c = np.empty(amax(b[0,:,:,:,:].shape,a.shape),dtype=a.dtype)      
           for i in range(b.shape[1]):
                 c[i,:,:,:] = (a*b[:,i,:,:,:]).sum(0)
     elif a.ndim == 5 and b.ndim == 5:
-          c = np.empty((a.shape[0],b.shape[1],a.shape[2],a.shape[3],a.shape[4]),dtype=a.dtype)
+          c = np.empty((a.shape[0],b.shape[1],a.shape[2],a.shape[3],max(a.shape[4],b.shape[4])),dtype=a.dtype)
           for i in range(c.shape[0]):
                 for j in range(c.shape[1]):
                       c[i,j,:,:,:] = (a[i,:,:,:,:]*b[:,j,:,:,:]).sum(0)
@@ -1736,7 +1742,9 @@ def fhorvstime(ihor):
     print( "Done!" )
     return((ts,fs,md))
 
-def amax(arr1,arr2):
+def amax(arg1,arg2):
+    arr1 = np.array(arg1)
+    arr2 = np.array(arg2)
     ret=np.zeros_like(arr1)
     ret[arr1>=arr2]=arr1[arr1>=arr2]
     ret[arr2>arr1]=arr2[arr2>arr1]
@@ -1747,9 +1755,9 @@ def Tcalcud():
     pg = (gam-1)*ug
     w=rho+ug+pg
     eta=w+bsq
-    Tud = np.zeros(gv3.shape,dtype=np.float32,order='F')
-    TudMA = np.zeros(gv3.shape,dtype=np.float32,order='F')
-    TudEM = np.zeros(gv3.shape,dtype=np.float32,order='F')
+    Tud = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
+    TudMA = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
+    TudEM = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
     for mu in np.arange(4):
         for nu in np.arange(4):
             if(mu==nu): delta = 1
@@ -1762,7 +1770,7 @@ def Tcalcud():
 def faraday():
     global fdd, fuu, omegaf1, omegaf2
     # these are native values according to HARM
-    fdd = np.zeros(gv3.shape,dtype=rho.dtype)
+    fdd = np.zeros((4,4,nx,ny,nz),dtype=rho.dtype)
     #fdd[0,0]=0*gdet
     #fdd[1,1]=0*gdet
     #fdd[2,2]=0*gdet
@@ -1780,7 +1788,7 @@ def faraday():
     fdd[1,2]=gdet*(uu[0]*bu[3]-uu[3]*bu[0]) # f_rh = gdet*B3
     fdd[2,1]=-fdd[1,2]
     #
-    fuu = np.zeros(gv3.shape,dtype=rho.dtype)
+    fuu = np.zeros((4,4,nx,ny,nz),dtype=rho.dtype)
     #fuu[0,0]=0*gdet
     #fuu[1,1]=0*gdet
     #fuu[2,2]=0*gdet
