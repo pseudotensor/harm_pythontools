@@ -137,6 +137,8 @@ def assignavg2dvars(avgmem):
         n=3
         avg_absB=avgmem[i:i+n,:,:];i+=n
         avg_absgdetB=avgmem[i:i+n,:,:];i+=n
+    else:
+        print( "Old format: missing avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, etc." )
 
 
 def get2davgone(whichgroup=-1,itemspergroup=20):
@@ -253,8 +255,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     print( "Done!" )
     return(avgmem)
 
-def plot2davg(avgmem):
-    assignavg2dvars(avgmem)
+def plot2davg():
     plco( np.log10(avg_rho[:,:,None]), cb=True )
 
 def horcalc(which=1):
@@ -325,6 +326,11 @@ def plc(myvar,xcoord=None,ycoord=None,**kwargs): #plc
         return
     cb = kwargs.pop('cb', False)
     nc = kwargs.pop('nc', 15)
+    k = kwargs.pop('k',0)
+    if None != xcoord and None != ycoord:
+        xcoord = xcoord[:,:,None] if xcoord.ndim == 2 else xcoord[:,:,k:k+1]
+        ycoord = ycoord[:,:,None] if ycoord.ndim == 2 else ycoord[:,:,k:k+1]
+    myvar = myvar[:,:,None] if myvar.ndim == 2 else myvar[:,:,k:k+1]
     if( xcoord == None or ycoord == None ):
         res = plt.contour(myvar[:,:,0].transpose(),nc,**kwargs)
     else:
@@ -2787,9 +2793,10 @@ if __name__ == "__main__":
             plotqtyvstime(qtymem)
     if False:
         #2DAVG
-        grid3d("gdump.bin")
-        #rd("dump0000.bin")
-        rfd("fieldline0000.bin")
+        if len(sys.argv[1:])!=0:
+            grid3d("gdump.bin")
+            #rd("dump0000.bin")
+            rfd("fieldline0000.bin")
         if len(sys.argv[1:])==2 and sys.argv[1].isdigit() and sys.argv[2].isdigit():
             whichgroup = int(sys.argv[1])
             step = int(sys.argv[2])
@@ -2807,6 +2814,8 @@ if __name__ == "__main__":
             else:
                 for whichgroup in np.arange(whichgroups,whichgroupe,step):
                     avgmem = get2davg(whichgroup=whichgroup,itemspergroup=itemspergroup)
+            assignavg2dvars(avgmem)
+            plot2davg()
     if False:
         rfd("fieldline2344.bin")
         cvel()
