@@ -84,59 +84,62 @@ def assignavg2dvars(avgmem):
     avg_te=avgmem[i,1,:]; 
     avg_nitems=avgmem[i,2,:];i+=1
     #quantities
-    avg_rho=avgmem[i,:,:];i+=1
-    avg_ug=avgmem[i,:,:];i+=1
-    avg_bsq=avgmem[i,:,:];i+=1
-    avg_unb=avgmem[i,:,:];i+=1
+    avg_rho=avgmem[i,:,:,None];i+=1
+    avg_ug=avgmem[i,:,:,None];i+=1
+    avg_bsq=avgmem[i,:,:,None];i+=1
+    avg_unb=avgmem[i,:,:,None];i+=1
     n=4
-    avg_uu=avgmem[i:i+n,:,:];i+=n
-    avg_bu=avgmem[i:i+n,:,:];i+=n
-    avg_ud=avgmem[i:i+n,:,:];i+=n
-    avg_bd=avgmem[i:i+n,:,:];i+=n
+    avg_uu=avgmem[i:i+n,:,:,None];i+=n
+    avg_bu=avgmem[i:i+n,:,:,None];i+=n
+    avg_ud=avgmem[i:i+n,:,:,None];i+=n
+    avg_bd=avgmem[i:i+n,:,:,None];i+=n
     #cell-centered magnetic field components
     n=3;
-    avg_B=avgmem[i:i+n,:,:];i+=n
-    avg_gdetB=avgmem[i:i+n,:,:];i+=n
-    avg_omegaf2=avgmem[i,:,:];i+=1
+    avg_B=avgmem[i:i+n,:,:,None];i+=n
+    avg_gdetB=avgmem[i:i+n,:,:,None];i+=n
+    avg_omegaf2=avgmem[i,:,:,None];i+=1
     #
     n=4
-    avg_rhouu=avgmem[i:i+n,:,:];i+=n
-    avg_rhobu=avgmem[i:i+n,:,:];i+=n
-    avg_rhoud=avgmem[i:i+n,:,:];i+=n
-    avg_rhobd=avgmem[i:i+n,:,:];i+=n
-    avg_uguu=avgmem[i:i+n,:,:];i+=n
-    avg_ugud=avgmem[i:i+n,:,:];i+=n
+    avg_rhouu=avgmem[i:i+n,:,:,None];i+=n
+    avg_rhobu=avgmem[i:i+n,:,:,None];i+=n
+    avg_rhoud=avgmem[i:i+n,:,:,None];i+=n
+    avg_rhobd=avgmem[i:i+n,:,:,None];i+=n
+    avg_uguu=avgmem[i:i+n,:,:,None];i+=n
+    avg_ugud=avgmem[i:i+n,:,:,None];i+=n
     #
     n=16
     #energy fluxes and faraday
-    avg_Tud=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
-    avg_fdd=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+    avg_Tud=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
+    avg_fdd=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
     # part1: rho u^m u_l
-    avg_rhouuud=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+    avg_rhouuud=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
     # part2: u u^m u_l
-    avg_uguuud=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+    avg_uguuud=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
     # part3: b^2 u^m u_l
-    avg_bsquuud=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+    avg_bsquuud=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
     # part6: b^m b_l
-    avg_bubd=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+    avg_bubd=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
     # u^m u_l
     #print( "i = %d, avgmem.shape[0] = %d " % (i, avgmem.shape[0]) )
     #sys.stdout.flush()
-    avg_uuud=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+    avg_uuud=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
     #new format, extra columns
     if( avgmem.shape[0] > 164 ):
         n=16
         #EM/MA
-        avg_TudEM=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
-        avg_TudMA=avgmem[i:i+n,:,:].reshape((4,4,nx,ny));i+=n
+        avg_TudEM=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
+        avg_TudMA=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
         #mu,sigma
         n=1
-        avg_mu=avgmem[i,:,:];i+=n
-        avg_sigma=avgmem[i,:,:];i+=n
-        avg_bsqorho=avgmem[i,:,:];i+=n
+        avg_mu=avgmem[i,:,:,None];i+=n
+        avg_sigma=avgmem[i,:,:,None];i+=n
+        avg_bsqorho=avgmem[i,:,:,None];i+=n
         n=3
-        avg_absB=avgmem[i:i+n,:,:];i+=n
-        avg_absgdetB=avgmem[i:i+n,:,:];i+=n
+        avg_absB=avgmem[i:i+n,:,:,None];i+=n
+        avg_absgdetB=avgmem[i:i+n,:,:,None];i+=n
+        if( avgmem.shape[0] > 205 ):
+            n=1
+            avg_psisq=avgmem[i,:,:,None];i+=n
     else:
         print( "Old format: missing avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, etc." )
 
@@ -194,56 +197,59 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
             avg_te[0]=t
         avg_nitems[0]+=1
         #quantities
-        avg_rho+=rho.sum(-1)
-        avg_ug+=ug.sum(-1)
-        avg_bsq+=bsq.sum(-1)
+        avg_rho+=rho.sum(-1)[:,:,None]
+        avg_ug+=ug.sum(-1)[:,:,None]
+        avg_bsq+=bsq.sum(-1)[:,:,None]
         enth=1+ug*gam/rho
-        avg_unb+=(enth*ud[0]).sum(-1)
-        avg_uu+=uu.sum(-1)
-        avg_bu+=bu.sum(-1)
-        avg_ud+=ud.sum(-1)
-        avg_bd+=bd.sum(-1)
+        avg_unb+=(enth*ud[0]).sum(-1)[:,:,None]
+        avg_uu+=uu.sum(-1)[:,:,:,None]
+        avg_bu+=bu.sum(-1)[:,:,:,None]
+        avg_ud+=ud.sum(-1)[:,:,:,None]
+        avg_bd+=bd.sum(-1)[:,:,:,None]
         #cell-centered magnetic field components
         n=3;
-        avg_B+=B[1:4].sum(-1)
-        avg_gdetB+=gdetB[1:4].sum(-1)
+        avg_B+=B[1:4].sum(-1)[:,:,:,None]
+        avg_gdetB+=gdetB[1:4].sum(-1)[:,:,:,None]
         #
-        avg_omegaf2+=omegaf2.sum(-1)
+        avg_omegaf2+=omegaf2.sum(-1)[:,:,None]
         #
         n=4
-        avg_rhouu+=(rho*uu).sum(-1)
-        avg_rhobu+=(rho*bu).sum(-1)
-        avg_rhoud+=(rho*ud).sum(-1)
-        avg_rhobd+=(rho*bd).sum(-1)
-        avg_uguu+=(ug*uu).sum(-1)
-        avg_ugud+=(ug*ud).sum(-1)
+        avg_rhouu+=(rho*uu).sum(-1)[:,:,:,None]
+        avg_rhobu+=(rho*bu).sum(-1)[:,:,:,None]
+        avg_rhoud+=(rho*ud).sum(-1)[:,:,:,None]
+        avg_rhobd+=(rho*bd).sum(-1)[:,:,:,None]
+        avg_uguu+=(ug*uu).sum(-1)[:,:,:,None]
+        avg_ugud+=(ug*ud).sum(-1)[:,:,:,None]
         #
         n=16
         #energy fluxes and faraday
-        avg_Tud+=Tud.sum(-1)
-        avg_fdd+=fdd.sum(-1)
+        avg_Tud+=Tud.sum(-1)[:,:,:,:,None]
+        avg_fdd+=fdd.sum(-1)[:,:,:,:,None]
         #
-        uuud=odot(uu,ud).sum(-1)
+        uuud=odot(uu,ud).sum(-1)[:,:,:,:,None]
         # part1: rho u^m u_l
-        avg_rhouuud+=rho.sum(-1)*uuud
+        avg_rhouuud+=rho.sum(-1)[:,:,:,:,None]*uuud
         # part2: u u^m u_l
-        avg_uguuud+=ug.sum(-1)*uuud
+        avg_uguuud+=ug.sum(-1)[:,:,:,:,None]*uuud
         # part3: b^2 u^m u_l
-        avg_bsquuud+=bsq.sum(-1)*uuud
+        avg_bsquuud+=bsq.sum(-1)[:,:,:,:,None]*uuud
         # part6: b^m b_l
-        avg_bubd+=odot(bu,bd).sum(-1)
+        avg_bubd+=odot(bu,bd)[:,:,:,:,None].sum(-1)
         # u^m u_l
         avg_uuud+=uuud
         #EM/MA
-        avg_TudEM+=TudEM.sum(-1)
-        avg_TudMA+=TudMA.sum(-1)
+        avg_TudEM+=TudEM.sum(-1)[:,:,:,:,None]
+        avg_TudMA+=TudMA.sum(-1)[:,:,:,:,None]
         #mu,sigma
-        avg_mu += (-Tud[1,0]/(rho*uu[1])).sum(-1)
-        avg_sigma += (-TudEM[1,0]/TudMA[1,0]).sum(-1)
-        avg_bsqorho += (bsq/rho).sum(-1)
+        avg_mu += (-Tud[1,0]/(rho*uu[1])).sum(-1)[:,:,None]
+        avg_sigma += (-TudEM[1,0]/TudMA[1,0]).sum(-1)[:,:,None]
+        avg_bsqorho += (bsq/rho).sum(-1)[:,:,None]
         n=3
-        avg_absB += np.abs(B[1:4]).sum(-1)
-        avg_absgdetB += np.abs(gdetB[1:4]).sum(-1)
+        avg_absB += np.abs(B[1:4]).sum(-1)[:,:,:,None]
+        avg_absgdetB += np.abs(gdetB[1:4]).sum(-1)[:,:,:,None]
+        n=1
+        aphi = fieldcalcface()
+        avg_psisq += (aphi.sum(-1)**2)
     if avg_nitems[0] == 0:
         print( "No files found" )
         return None
@@ -256,7 +262,79 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     return(avgmem)
 
 def plot2davg():
-    plco( np.log10(avg_rho[:,:,None]), cb=True )
+    global eout1, eout2, eout, avg_aphi
+    #sum away from theta = 0
+    rhor=1+(1-a**2)**0.5
+    ihor=iofr(rhor)
+    avg_aphi=fieldcalcface(gdetB1=avg_gdetB[0])
+    maxaphibh = np.max(avg_aphi[ihor])
+    eout1 = (-gdet*avg_Tud[1,0]*_dx2*_dx3).sum(axis=2).cumsum(axis=1)
+    eout1 = scaletofullwedge(eout1)
+    #sum from from theta = pi
+    eout2 = (-gdet*avg_Tud[1,0]*_dx2*_dx3)[:,::-1].sum(axis=2).cumsum(axis=1)[:,::-1]
+    eout2 = scaletofullwedge(eout2)
+    eout = np.zeros_like(eout1)
+    eout[tj[:,:,0]>ny/2] = eout2[tj[:,:,0]>ny/2]
+    eout[tj[:,:,0]<=ny/2] = eout1[tj[:,:,0]<=ny/2]
+    #FIG 1
+    plt.figure(1)
+    plt.clf()
+    #plco( np.log10(avg_rho), cb=True )
+    plco(choplo(chophi(avg_mu,40),2),cb=True,nc=39)
+    plc(aphi)
+    #FIG 2
+    plt.figure(2)
+    plt.clf()
+    r1 = 100
+    r2 = 200
+    gs3 = GridSpec(3, 3)
+    #gs3.update(left=0.05, right=0.95, top=0.30, bottom=0.03, wspace=0.01, hspace=0.04)
+    #mdot
+    ax31 = plt.subplot(gs3[-3,:])
+    #ymax=ax31.get_ylim()[1]
+    #ymax=2*(np.floor(np.floor(ymax+1.5)/2))
+    #ax31.set_yticks((ymax/2,ymax))
+    i=iofr(r1)
+    plt.plot( aphi[i,:,0]/maxaphibh, eout[i,:],'g-' )
+    i=iofr(r2)
+    plt.plot( aphi[i,:,0]/maxaphibh, eout[i,:],'b-' )
+    plt.xlim( 0, 2 )
+    plt.ylabel(r"$P_{\rm j,enc}(\Psi)$")
+    ax31.grid(True)
+    ax32 = plt.subplot(gs3[-2,:])
+    i=iofr(r1)
+    plt.plot( aphi[i,:,0]/maxaphibh, avg_mu[i,:],'g-' )
+    plt.plot( aphi[i,:,0]/maxaphibh, avg_bsqorho[i,:],'g--' )
+    i=iofr(r2)
+    plt.plot( aphi[i,:,0]/maxaphibh, avg_mu[i,:], 'b-' )
+    plt.plot( aphi[i,:,0]/maxaphibh, avg_bsqorho[i,:],'b--' )
+    plt.xlim( 0, 2 )
+    plt.ylim( 0,50)
+    plt.ylabel(r"$\mu(\Psi)$")
+    ax32.grid(True)
+    ax33 = plt.subplot(gs3[-1,:])
+    myunb = np.copy(avg_unb)
+    myunb[-myunb<=1.01]=myunb[-myunb<=1.01]*0
+    i=iofr(r1)
+    #plt.plot( aphi[i,:,0]/maxaphibh, avg_B[0,i,:]/(avg_rhouu[1,i]),'g-' )
+    plt.plot( aphi[i,:,0]/maxaphibh, -myunb[i,:],'g-' )
+    plt.plot( aphi[i,:,0]/maxaphibh, (avg_uu[1]*dxdxp[1,1])[i,:],'g--' )
+    i=iofr(r2)
+    #plt.plot( aphi[i,:,0]/maxaphibh, avg_B[0,i,:]/(avg_rhouu[1,i]),'b-' )
+    plt.plot( aphi[i,:,0]/maxaphibh, -myunb[i,:],'b-' )
+    plt.plot( aphi[i,:,0]/maxaphibh, (avg_uu[1]*dxdxp[1,1])[i,:],'b--' )
+    plt.xlim( 0, 2 )
+    plt.ylim( -0.5,2)
+    plt.ylabel(r"$(1+u/\rho) u_t$")
+    ax33.grid(True)
+    #print maxaphibh
+    #FIG 3
+    plt.figure(3)
+    plt.clf()
+    plt.plot( hf[ihor,0:128,0], avg_aphi[ihor,:] )
+    i=iofr(60)
+    plt.plot( hf[i,0:128,0], avg_aphi[i,:] )
+    
 
 def horcalc(which=1):
     """
@@ -574,16 +652,16 @@ def fieldcalcU():
     aphi/=(nz*_dx3)
     return(aphi)
 
-def fieldcalcface():
+def fieldcalcface(gdetB1=gdetB[1]):
     """
     Computes the field vector potential
     """
-    daphi = mysum2(gdetB[1])*_dx2*_dx3
+    daphi = mysum2(gdetB1)*_dx2
     aphi=daphi.cumsum(axis=1)
     aphi-=daphi #correction for half-cell shift between face and center in theta
     #aphi[0:nx-1] = 0.5*(aphi[0:nx-1]+aphi[1:nx]) #and in r
     aphi[:,ny-1:ny/2:-1,:] = aphi[:,1:ny/2,:]
-    aphi/=(nz*_dx3)
+    #aphi/=(nz)
     return(aphi)
 
 def fieldcalcface2():
@@ -2539,12 +2617,14 @@ def pf(dir=2):
 
 
 def chophi(var,maxvar):
-    var[var>maxvar]=0*var[var>maxvar]+maxvar
-    return(var)
+    newvar = np.copy(var)
+    newvar[var>maxvar]=0*var[var>maxvar]+maxvar
+    return(newvar)
 
 def choplo(var,minvar):
-    var[var<minvar]=0*var[var<minvar]+minvar
-    return(var)
+    newvar = np.copy(var)
+    newvar[var<minvar]=0*var[var<minvar]+minvar
+    return(newvar)
 
 def Risco(a):
     Z1 = 1 + (1. - a**2)**(1./3.) * ((1. + a)**(1./3.) + (1. - a)**(1./3.))
