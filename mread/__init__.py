@@ -249,7 +249,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         avg_absgdetB += np.abs(gdetB[1:4]).sum(-1)[:,:,:,None]
         n=1
         aphi = fieldcalcface()
-        avg_psisq += (aphi.sum(-1)**2)
+        avg_psisq += ((_dx3*aphi.sum(-1))**2)[:,:,None]
     if avg_nitems[0] == 0:
         print( "No files found" )
         return None
@@ -652,10 +652,12 @@ def fieldcalcU():
     aphi/=(nz*_dx3)
     return(aphi)
 
-def fieldcalcface(gdetB1=gdetB[1]):
+def fieldcalcface(gdetB1=None):
     """
     Computes the field vector potential
     """
+    if gdetB1 == None:
+        gdetB1 = gdetB[1]
     daphi = mysum2(gdetB1)*_dx2
     aphi=daphi.cumsum(axis=1)
     aphi-=daphi #correction for half-cell shift between face and center in theta
