@@ -140,6 +140,8 @@ def assignavg2dvars(avgmem):
         if( avgmem.shape[0] > 205 ):
             n=1
             avg_psisq=avgmem[i,:,:,None];i+=n
+        else:
+            print( "Old-ish format: missing avg_psisq." )
     else:
         print( "Old format: missing avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, etc." )
 
