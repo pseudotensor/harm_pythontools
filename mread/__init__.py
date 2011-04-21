@@ -263,21 +263,26 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     print( "Done!" )
     return(avgmem)
 
-def plot2davg():
-    global eout1, eout2, eout, avg_aphi
+def plot2davg(dosq=True):
+    global eout1, eout2, eout, avg_aphi,powjetwind,powjet
     #sum away from theta = 0
     rhor=1+(1-a**2)**0.5
     ihor=iofr(rhor)
-    avg_aphi=fieldcalcface(gdetB1=avg_gdetB[0])
-    maxaphibh = np.max(avg_aphi[ihor])
-    eout1 = (-gdet*avg_Tud[1,0]*_dx2*_dx3).sum(axis=2).cumsum(axis=1)
-    eout1 = scaletofullwedge(eout1)
+    avg_aphi = scaletofullwedge(nz*_dx3*fieldcalcface(gdetB1=avg_gdetB[0]))
+    avg_aphi2 = scaletofullwedge((nz*avg_psisq)**0.5)
+    aphi = avg_aphi2 if dosq==True else avg_aphi
+    maxaphibh = np.max(aphi[ihor])
+    eout1den = scaletofullwedge(nz*(-gdet*avg_Tud[1,0]*_dx2*_dx3).sum(axis=2))
+    eout1 = eout1den.cumsum(axis=1)
     #sum from from theta = pi
-    eout2 = (-gdet*avg_Tud[1,0]*_dx2*_dx3)[:,::-1].sum(axis=2).cumsum(axis=1)[:,::-1]
-    eout2 = scaletofullwedge(eout2)
+    eout2den = scaletofullwedge(nz*(-gdet*avg_Tud[1,0]*_dx2*_dx3)[:,::-1].sum(axis=2))
+    eout2 = eout2den.cumsum(axis=1)[:,::-1]
     eout = np.zeros_like(eout1)
     eout[tj[:,:,0]>ny/2] = eout2[tj[:,:,0]>ny/2]
     eout[tj[:,:,0]<=ny/2] = eout1[tj[:,:,0]<=ny/2]
+    eoutden = np.zeros_like(eout1den)
+    eoutden[tj[:,:,0]>ny/2] = eout2den[tj[:,:,0]>ny/2]
+    eoutden[tj[:,:,0]<=ny/2] = eout1den[tj[:,:,0]<=ny/2]
     #FIG 1
     plt.figure(1)
     plt.clf()
@@ -286,9 +291,20 @@ def plot2davg():
     plc(avg_aphi)
     #FIG 2
     plt.figure(2)
-    plt.clf()
-    r1 = 100
-    r2 = 200
+    aphip1 = np.zeros((aphi.shape[0],aphi.shape[1]+1,aphi.shape[2]))    
+    aphip1[:,0:ny] = aphi
+    daphi = np.zeros_like(ti)
+    daphi[:,0:ny]=aphip1[:,1:ny+1]-aphip1[:,0:ny]
+    jmin = np.zeros((nx,ny))
+    jmax = np.zeros((nx,ny))
+    for i in np.arange(0,nx):
+        jmin[i] = tj[i,:,0][daphi[i,:,0]<0][0]-1
+        jmax[i] = tj[i,:,0][daphi[i,:,0]>0][-1]+1
+    powjetwind = (eoutden*(tj[:,:,0]<jmin)).sum(-1)+(eoutden*(tj[:,:,0]>jmax)).sum(-1)
+    powjet = (eoutden*(aphi[:,:,0]<maxaphibh)).sum(-1)
+    #plt.clf()
+    r1 = 90
+    r2 = 140
     gs3 = GridSpec(3, 3)
     #gs3.update(left=0.05, right=0.95, top=0.30, bottom=0.03, wspace=0.01, hspace=0.04)
     #mdot
@@ -316,7 +332,8 @@ def plot2davg():
     ax32.grid(True)
     ax33 = plt.subplot(gs3[-1,:])
     myunb = np.copy(avg_unb)
-    myunb[-myunb<=1.01]=myunb[-myunb<=1.01]*0
+    cutoff=0.000
+    myunb[-myunb<=1.+cutoff]=myunb[-myunb<=1.0+cutoff]*0
     i=iofr(r1)
     #plt.plot( aphi[i,:,0]/maxaphibh, avg_B[0,i,:]/(avg_rhouu[1,i]),'g-' )
     plt.plot( aphi[i,:,0]/maxaphibh, -myunb[i,:],'g-' )
@@ -333,10 +350,18 @@ def plot2davg():
     #FIG 3
     plt.figure(3)
     plt.clf()
-    plt.plot( hf[ihor,0:128,0], avg_aphi[ihor,:] )
-    i=iofr(60)
-    plt.plot( hf[i,0:128,0], avg_aphi[i,:] )
-    
+    i=iofr(r1)
+    plt.plot( hf[i,0:128,0], aphi[i,:]/maxaphibh, 'g' )
+    plt.plot( hf[i,0:128,0], aphi[i,:]/maxaphibh, 'gx' )
+    i=iofr(r2)
+    plt.plot( hf[i,0:128,0], aphi[i,:]/maxaphibh, 'b' )
+    plt.plot( hf[i,0:128,0], aphi[i,:]/maxaphibh, 'bx' )
+    plt.grid()
+    plt.figure(5)
+    plt.clf()
+    plt.plot(powjetwind)
+    plt.plot(powjet)
+
 
 def horcalc(which=1):
     """
