@@ -283,7 +283,7 @@ def plot2davg():
     plt.clf()
     #plco( np.log10(avg_rho), cb=True )
     plco(choplo(chophi(avg_mu,40),2),cb=True,nc=39)
-    plc(aphi)
+    plc(avg_aphi)
     #FIG 2
     plt.figure(2)
     plt.clf()
