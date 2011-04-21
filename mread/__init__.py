@@ -228,11 +228,11 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         #
         uuud=odot(uu,ud).sum(-1)[:,:,:,:,None]
         # part1: rho u^m u_l
-        avg_rhouuud+=rho.sum(-1)[:,:,:,:,None]*uuud
+        avg_rhouuud+=rho.sum(-1)[:,:,None]*uuud
         # part2: u u^m u_l
-        avg_uguuud+=ug.sum(-1)[:,:,:,:,None]*uuud
+        avg_uguuud+=ug.sum(-1)[:,:,None]*uuud
         # part3: b^2 u^m u_l
-        avg_bsquuud+=bsq.sum(-1)[:,:,:,:,None]*uuud
+        avg_bsquuud+=bsq.sum(-1)[:,:,None]*uuud
         # part6: b^m b_l
         avg_bubd+=odot(bu,bd)[:,:,:,:,None].sum(-1)
         # u^m u_l
