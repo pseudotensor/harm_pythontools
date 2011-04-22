@@ -291,11 +291,13 @@ def findroot1d( f, x, isleft=True, nbnd = 1 ):
     else:
         interpcoef = -coef
     n = x.shape[0]
-    i = np.arange(0,n)
+    ilist = np.arange(0,n)
     indexlist = f*coef<0
     if( not indexlist.any() ):
         return( float('nan') )
-    i0 = i[indexlist][ind]
+    i0 = ilist[indexlist][ind]
+    if f[i0]*f[i0-dir] > 0:
+        raise( "Could not bracket root" )
     ir = i0 + nbnd*dir
     il = i0 - (nbnd+1)*dir
     #limit il, ir to be between 0 and n-1:
@@ -304,11 +306,35 @@ def findroot1d( f, x, isleft=True, nbnd = 1 ):
     #order them
     istart = min(il,ir)
     iend = max(il,ir)
-    #print( "istart, iend: [%d,%d], " % ( istart, iend+1 ) )
-    #xxx
-    xinterp = interp1d( interpcoef*f[istart:iend+1], x[istart:iend+1], kind='cubic', copy = False )
-    #xxx
-    return( xinterp(0.0) )
+    kind = 'cubic'
+    x2interp = x[istart:iend+1]
+    f2interp = interpcoef*f[istart:iend+1]
+    #
+    if f2interp.shape[0] < 4 or (f2interp[:-1]>=f2interp[1:]).any():
+        #too few elements or non-monotonic behavior
+        ir = i0 
+        il = i0 - dir
+        #limit il, ir to be between 0 and n-1:
+        ir = max(0,min(ir,n-1))
+        il = max(0,min(il,n-1))
+        #order them
+        istart = min(il,ir)
+        iend = max(il,ir)
+        kind = 'linear'
+        x2interp = x[istart:iend+1]
+        f2interp = interpcoef*f[istart:iend+1]
+    #
+    if f2interp.shape[0]==1:
+        #too few elements
+        kind='nearest'
+        raise( "Too few entries" )
+        xinterp = interp1d( f2interp, x2interp, kind=kind, copy = False )
+    else:
+        xinterp = interp1d( f2interp, x2interp, kind=kind, copy = False )
+    ans = xinterp(0.0)
+    if ans < min(x[i0],x[i0-dir]) or ans > max(x[i0],x[i0-dir]):
+        raise( "ans = %g out of bounds, (%g,%g)" % (ans,x[i0-dir],x[i0]) )
+    return( ans )
 
 def plot2davg(dosq=True):
     global eout1, eout2, eout, avg_aphi,powjetwind,powjet,jminjet,jmaxjet,jminwind,jmaxwind
@@ -323,10 +349,12 @@ def plot2davg(dosq=True):
     eout1den = scaletofullwedge(nz*(-gdet*avg_Tud[1,0]*_dx2*_dx3).sum(axis=2))
     eout1denEM = scaletofullwedge(nz*(-gdet*avg_TudEM[1,0]*_dx2*_dx3).sum(axis=2))
     eout1 = eout1den.cumsum(axis=1)
+    eout1EM = eout1denEM.cumsum(axis=1)
     #sum from from theta = pi
     eout2den = scaletofullwedge(nz*(-gdet*avg_Tud[1,0]*_dx2*_dx3)[:,::-1].sum(axis=2))
     eout2denEM = scaletofullwedge(nz*(-gdet*avg_TudEM[1,0]*_dx2*_dx3)[:,::-1].sum(axis=2))
     eout2 = eout2den.cumsum(axis=1)[:,::-1]
+    eout2EM = eout2denEM.cumsum(axis=1)[:,::-1]
     eout = np.zeros_like(eout1)
     eout[tj[:,:,0]>ny/2] = eout2[tj[:,:,0]>ny/2]
     eout[tj[:,:,0]<=ny/2] = eout1[tj[:,:,0]<=ny/2]
@@ -361,12 +389,35 @@ def plot2davg(dosq=True):
         jmaxjet[i] = tj[i,:,0][(aphi[i,:,0]>=maxaphibh)+(tj[i,:,0]==ny/2+1)][-1]+1
         jminwind[i] = tj[i,:,0][((-avg_unb[i,:,0]>1.0+unbcutoff)*(avg_uu[1,i,:,0]>0)+(tj[i,:,0]<=jminjet[i]))==0][0]-1
         jmaxwind[i] = tj[i,:,0][((-avg_unb[i,:,0]>1.0+unbcutoff)*(avg_uu[1,i,:,0]>0)+(tj[i,:,0]>=jmaxjet[i]))==0][-1]+1
-    powjetwind = (eoutden*(tj[:,:,0]<jminwind[:,None])).sum(-1)+(eoutden*(tj[:,:,0]>jmaxwind[:,None])).sum(-1)
-    powjet = (eoutden*(tj[:,:,0]<jminjet[:,None])).sum(-1)+(eoutden*(tj[:,:,0]>jmaxjet[:,None])).sum(-1)
-    powjetEM = (eoutdenEM*(tj[:,:,0]<jminjet[:,None])).sum(-1)+(eoutdenEM*(tj[:,:,0]>jmaxjet[:,None])).sum(-1)
-    #xxx
+    powxjetwind = (eoutden*(tj[:,:,0]<jminwind[:,None])).sum(-1)+(eoutden*(tj[:,:,0]>jmaxwind[:,None])).sum(-1)
+    powxjet = (eoutden*(tj[:,:,0]<jminjet[:,None])).sum(-1)+(eoutden*(tj[:,:,0]>jmaxjet[:,None])).sum(-1)
+    powxjetEM = (eoutdenEM*(tj[:,:,0]<jminjet[:,None])).sum(-1)+(eoutdenEM*(tj[:,:,0]>jmaxjet[:,None])).sum(-1)
+    #
+    powjet1aphi = findroot2d( aphi[:,0:ny-1,0]-maxaphibh, eout1[:,1:ny], isleft=True )
+    powjet2aphi = findroot2d( aphi[:,:,0]-maxaphibh, eout2, isleft=False )
+    #powjet1mid = np.float32(findroot2d( hf[:-1,1:ny+1,0]-np.pi/2., eout1, isleft=True ))
+    #powjet2mid = np.float32(findroot2d( hf[:-1,0:ny,0]-np.pi/2., eout2, isleft=False ))
+    powjet1 = powjet1aphi #amin(powjet1aphi,powjet1mid)
+    powjet2 = powjet1aphi #amin(powjet2aphi,powjet2mid)
+    powjet = powjet1+powjet2
+    #
+    powjetEM1aphi = findroot2d( aphi[:,0:ny-1,0]-maxaphibh, eout1EM[:,1:ny], isleft=True )
+    powjetEM2aphi = findroot2d( aphi[:,:,0]-maxaphibh, eout2EM, isleft=False )
+    #powjetEM1mid = np.float32(findroot2d( hf[:-1,1:ny+1,0]-np.pi/2., eout1, isleft=True ))
+    #powjetEM2mid = np.float32(findroot2d( hf[:-1,0:ny,0]-np.pi/2., eout2, isleft=False ))
+    powjetEM1 = powjetEM1aphi #amin(powjetEM1aphi,powjetEM1mid)
+    powjetEM2 = powjetEM2aphi #amin(powjetEM2aphi,powjetEM2mid)
+    powjetEM = powjetEM1+powjetEM2
+    #
+    powjetwind1a = findroot2d( (-avg_unb[:,:,0]-(1.0+unbcutoff))*(avg_uu[1,:,:,0]), eout1, isleft=True )
+    powjetwind2a = findroot2d( (-avg_unb[:,:,0]-(1.0+unbcutoff))*(avg_uu[1,:,:,0]), eout2, isleft=False )
+    #limit jet+wind power to be no smaller than jet power
+    powjetwind1 = amax(powjet1,powjetwind1a)
+    powjetwind2 = amax(powjet2,powjetwind2a)
+    powjetwind = powjetwind1 + powjetwind2
+    #
     #plt.clf()
-    r1 = 173
+    r1 = 74.339592777217106
     r2 = 206
     gs3 = GridSpec(3, 3)
     #gs3.update(left=0.05, right=0.95, top=0.30, bottom=0.03, wspace=0.01, hspace=0.04)
@@ -385,6 +436,7 @@ def plot2davg(dosq=True):
     ax31.grid(True)
     ax32 = plt.subplot(gs3[-2,:])
     i=iofr(r1)
+    print i
     plt.plot( aphi[i,:,0]/maxaphibh, avg_mu[i,:],'g-' )
     plt.plot( aphi[i,:,0]/maxaphibh, avg_bsqorho[i,:],'g--' )
     i=iofr(r2)
@@ -424,7 +476,8 @@ def plot2davg(dosq=True):
     plt.clf()
     plt.plot(powjetwind,'g')
     plt.plot(powjet,'b')
-    plt.plot(powjetEM,'b--')
+    plt.plot(powxjet,'b--')
+    plt.plot(powjetEM,'k')
 
 
 def horcalc(which=1):
@@ -1919,6 +1972,13 @@ def amax(arg1,arg2):
     ret=np.zeros_like(arr1)
     ret[arr1>=arr2]=arr1[arr1>=arr2]
     ret[arr2>arr1]=arr2[arr2>arr1]
+    return(ret)
+def amin(arg1,arg2):
+    arr1 = np.array(arg1)
+    arr2 = np.array(arg2)
+    ret=np.zeros_like(arr1)
+    ret[arr1<=arr2]=arr1[arr1<=arr2]
+    ret[arr2<arr1]=arr2[arr2<arr1]
     return(ret)
 
 def Tcalcud():
