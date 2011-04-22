@@ -263,6 +263,15 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     print( "Done!" )
     return(avgmem)
 
+def findroot2d( f, x, isleft=True, nbnd = 1 ):
+    """ returns roots, x[i], so that f(x) = 0 """
+    n = f.shape[0]
+    xsol = np.empty((n),dtype=f.dtype)
+    for i in np.arange(0,n):
+        xsol[i] = findroot1d( f[i], x[i], isleft, nbnd )
+    return( xsol )
+        
+    
 def findroot1d( f, x, isleft=True, nbnd = 1 ):
     """ find a 1-D root """
     if isleft==True:
@@ -283,7 +292,10 @@ def findroot1d( f, x, isleft=True, nbnd = 1 ):
         interpcoef = -coef
     n = x.shape[0]
     i = np.arange(0,n)
-    i0 = i[f*coef<0][ind]
+    indexlist = f*coef<0
+    if( not indexlist.any() ):
+        return( float('nan') )
+    i0 = i[indexlist][ind]
     ir = i0 + nbnd*dir
     il = i0 - (nbnd+1)*dir
     #limit il, ir to be between 0 and n-1:
