@@ -264,8 +264,9 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     return(avgmem)
 
 def plot2davg(dosq=True):
-    global eout1, eout2, eout, avg_aphi,powjetwind,powjet
+    global eout1, eout2, eout, avg_aphi,powjetwind,powjet,jminjet,jmaxjet,jminwind,jmaxwind
     #sum away from theta = 0
+    unbcutoff=0.0
     rhor=1+(1-a**2)**0.5
     ihor=iofr(rhor)
     avg_aphi = scaletofullwedge(nz*_dx3*fieldcalcface(gdetB1=avg_gdetB[0]))
@@ -295,15 +296,20 @@ def plot2davg(dosq=True):
     aphip1[:,0:ny] = aphi
     daphi = np.zeros_like(ti)
     daphi[:,0:ny]=aphip1[:,1:ny+1]-aphip1[:,0:ny]
-    jmin = np.zeros((nx,ny))
-    jmax = np.zeros((nx,ny))
+    jminwind = np.zeros((nx))
+    jmaxwind = np.zeros((nx))
+    jminjet = np.zeros((nx))
+    jmaxjet = np.zeros((nx))
     for i in np.arange(0,nx):
-        jmin[i] = tj[i,:,0][daphi[i,:,0]<0][0]-1
-        jmax[i] = tj[i,:,0][daphi[i,:,0]>0][-1]+1
-    powjetwind = (eoutden*(tj[:,:,0]<jmin)).sum(-1)+(eoutden*(tj[:,:,0]>jmax)).sum(-1)
-    powjet = (eoutden*(aphi[:,:,0]<maxaphibh)).sum(-1)
+        jminjet[i] = tj[i,:,0][(aphi[i,:,0]>=maxaphibh)+(tj[i,:,0]==ny/2)][0]-1
+        jmaxjet[i] = tj[i,:,0][(aphi[i,:,0]>=maxaphibh)+(tj[i,:,0]==ny/2+1)][-1]+1
+        jminwind[i] = tj[i,:,0][((daphi[i,:,0]>0)*(-avg_unb[i,:,0]>1.0+unbcutoff)*(avg_uu[1,i,:,0]>0)+(tj[i,:,0]<=jminjet[i]))==0][0]-0
+        jmaxwind[i] = tj[i,:,0][((daphi[i,:,0]<0)*(-avg_unb[i,:,0]>1.0+unbcutoff)*(avg_uu[1,i,:,0]>0)+(tj[i,:,0]>=jmaxjet[i]))==0][-1]+0
+    powjetwind = (eoutden*(tj[:,:,0]<jminwind[:,None])).sum(-1)+(eoutden*(tj[:,:,0]>jmaxwind[:,None])).sum(-1)
+    powjet = (eoutden*(tj[:,:,0]<jminjet[:,None])).sum(-1)+(eoutden*(tj[:,:,0]>jmaxjet[:,None])).sum(-1)
+    #xxx
     #plt.clf()
-    r1 = 90
+    r1 = 100
     r2 = 140
     gs3 = GridSpec(3, 3)
     #gs3.update(left=0.05, right=0.95, top=0.30, bottom=0.03, wspace=0.01, hspace=0.04)
@@ -317,6 +323,7 @@ def plot2davg(dosq=True):
     i=iofr(r2)
     plt.plot( aphi[i,:,0]/maxaphibh, eout[i,:],'b-' )
     plt.xlim( 0, 2 )
+    plt.ylim( 0, 20 )
     plt.ylabel(r"$P_{\rm j,enc}(\Psi)$")
     ax31.grid(True)
     ax32 = plt.subplot(gs3[-2,:])
@@ -332,8 +339,7 @@ def plot2davg(dosq=True):
     ax32.grid(True)
     ax33 = plt.subplot(gs3[-1,:])
     myunb = np.copy(avg_unb)
-    cutoff=0.000
-    myunb[-myunb<=1.+cutoff]=myunb[-myunb<=1.0+cutoff]*0
+    myunb[-myunb<=1.+unbcutoff]=myunb[-myunb<=1.0+unbcutoff]*0
     i=iofr(r1)
     #plt.plot( aphi[i,:,0]/maxaphibh, avg_B[0,i,:]/(avg_rhouu[1,i]),'g-' )
     plt.plot( aphi[i,:,0]/maxaphibh, -myunb[i,:],'g-' )
@@ -359,8 +365,8 @@ def plot2davg(dosq=True):
     plt.grid()
     plt.figure(5)
     plt.clf()
-    plt.plot(powjetwind)
-    plt.plot(powjet)
+    plt.plot(powjetwind,'g')
+    plt.plot(powjet,'b')
 
 
 def horcalc(which=1):
@@ -2932,7 +2938,7 @@ if __name__ == "__main__":
                 for whichgroup in np.arange(whichgroups,whichgroupe,step):
                     avgmem = get2davg(whichgroup=whichgroup,itemspergroup=itemspergroup)
             assignavg2dvars(avgmem)
-            plot2davg()
+        plot2davg()
     if False:
         rfd("fieldline2344.bin")
         cvel()
