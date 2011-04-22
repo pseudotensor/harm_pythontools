@@ -274,9 +274,11 @@ def plot2davg(dosq=True):
     aphi = avg_aphi2 if dosq==True else avg_aphi
     maxaphibh = np.max(aphi[ihor])
     eout1den = scaletofullwedge(nz*(-gdet*avg_Tud[1,0]*_dx2*_dx3).sum(axis=2))
+    eout1denEM = scaletofullwedge(nz*(-gdet*avg_TudEM[1,0]*_dx2*_dx3).sum(axis=2))
     eout1 = eout1den.cumsum(axis=1)
     #sum from from theta = pi
     eout2den = scaletofullwedge(nz*(-gdet*avg_Tud[1,0]*_dx2*_dx3)[:,::-1].sum(axis=2))
+    eout2denEM = scaletofullwedge(nz*(-gdet*avg_TudEM[1,0]*_dx2*_dx3)[:,::-1].sum(axis=2))
     eout2 = eout2den.cumsum(axis=1)[:,::-1]
     eout = np.zeros_like(eout1)
     eout[tj[:,:,0]>ny/2] = eout2[tj[:,:,0]>ny/2]
@@ -284,6 +286,9 @@ def plot2davg(dosq=True):
     eoutden = np.zeros_like(eout1den)
     eoutden[tj[:,:,0]>ny/2] = eout2den[tj[:,:,0]>ny/2]
     eoutden[tj[:,:,0]<=ny/2] = eout1den[tj[:,:,0]<=ny/2]
+    eoutdenEM = np.zeros_like(eout1denEM)
+    eoutdenEM[tj[:,:,0]>ny/2] = eout2denEM[tj[:,:,0]>ny/2]
+    eoutdenEM[tj[:,:,0]<=ny/2] = eout1denEM[tj[:,:,0]<=ny/2]
     #FIG 1
     plt.figure(1)
     plt.clf()
@@ -307,6 +312,7 @@ def plot2davg(dosq=True):
         jmaxwind[i] = tj[i,:,0][((daphi[i,:,0]<0)*(-avg_unb[i,:,0]>1.0+unbcutoff)*(avg_uu[1,i,:,0]>0)+(tj[i,:,0]>=jmaxjet[i]))==0][-1]+0
     powjetwind = (eoutden*(tj[:,:,0]<jminwind[:,None])).sum(-1)+(eoutden*(tj[:,:,0]>jmaxwind[:,None])).sum(-1)
     powjet = (eoutden*(tj[:,:,0]<jminjet[:,None])).sum(-1)+(eoutden*(tj[:,:,0]>jmaxjet[:,None])).sum(-1)
+    powjetEM = (eoutdenEM*(tj[:,:,0]<jminjet[:,None])).sum(-1)+(eoutdenEM*(tj[:,:,0]>jmaxjet[:,None])).sum(-1)
     #xxx
     #plt.clf()
     r1 = 100
@@ -365,8 +371,9 @@ def plot2davg(dosq=True):
     plt.grid()
     plt.figure(5)
     plt.clf()
-    plt.plot(powjetwind,'g')
-    plt.plot(powjet,'b')
+    plt.plot(np.log10(r[:,0,0]),powjetwind,'g')
+    plt.plot(np.log10(r[:,0,0]),powjet,'b')
+    plt.plot(np.log10(r[:,0,0]),powjetEM,'b--')
 
 
 def horcalc(which=1):
