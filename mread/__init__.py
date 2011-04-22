@@ -263,6 +263,41 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     print( "Done!" )
     return(avgmem)
 
+def findroot1d( f, x, isleft=True, nbnd = 1 ):
+    """ find a 1-D root """
+    if isleft==True:
+        ind=0
+        dir=1
+    else:
+        ind=-1
+        dir=-1
+    if f[ind] > 0:
+        coef = 1
+    else:
+        coef = -1
+    #multiplies the final function so f is increasing
+    #otherwise scipy gives an error
+    if isleft == False:
+        interpcoef = coef
+    else:
+        interpcoef = -coef
+    n = x.shape[0]
+    i = np.arange(0,n)
+    i0 = i[f*coef<0][ind]
+    ir = i0 + nbnd*dir
+    il = i0 - (nbnd+1)*dir
+    #limit il, ir to be between 0 and n-1:
+    ir = max(0,min(ir,n-1))
+    il = max(0,min(il,n-1))
+    #order them
+    istart = min(il,ir)
+    iend = max(il,ir)
+    #print( "istart, iend: [%d,%d], " % ( istart, iend+1 ) )
+    #xxx
+    xinterp = interp1d( interpcoef*f[istart:iend+1], x[istart:iend+1], kind='cubic', copy = False )
+    #xxx
+    return( xinterp(0.0) )
+
 def plot2davg(dosq=True):
     global eout1, eout2, eout, avg_aphi,powjetwind,powjet,jminjet,jmaxjet,jminwind,jmaxwind
     #sum away from theta = 0
