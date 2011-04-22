@@ -2921,10 +2921,10 @@ if __name__ == "__main__":
         else:
             qtymem=getqtyvstime(ihor,0.2)
             plotqtyvstime(qtymem)
-    if False:
+    if True:
         #2DAVG
         if len(sys.argv[1:])!=0:
-            grid3d("gdump.bin")
+            grid3d("gdump.bin",use2d=True)
             #rd("dump0000.bin")
             rfd("fieldline0000.bin")
         if len(sys.argv[1:])==2 and sys.argv[1].isdigit() and sys.argv[2].isdigit():
