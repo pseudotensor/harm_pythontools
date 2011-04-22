@@ -266,7 +266,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
 def plot2davg(dosq=True):
     global eout1, eout2, eout, avg_aphi,powjetwind,powjet,jminjet,jmaxjet,jminwind,jmaxwind
     #sum away from theta = 0
-    unbcutoff=0.0
+    unbcutoff=0.01
     rhor=1+(1-a**2)**0.5
     ihor=iofr(rhor)
     avg_aphi = scaletofullwedge(nz*_dx3*fieldcalcface(gdetB1=avg_gdetB[0]))
@@ -306,17 +306,21 @@ def plot2davg(dosq=True):
     jminjet = np.zeros((nx))
     jmaxjet = np.zeros((nx))
     for i in np.arange(0,nx):
+        # jminjet[i] = tj[i,:,0][(aphi[i,:,0]>=maxaphibh)+(tj[i,:,0]==ny/2)][0]-1
+        # jmaxjet[i] = tj[i,:,0][(aphi[i,:,0]>=maxaphibh)+(tj[i,:,0]==ny/2+1)][-1]+1
+        # jminwind[i] = tj[i,:,0][((daphi[i,:,0]>0)*(-avg_unb[i,:,0]>1.0+unbcutoff)*(avg_uu[1,i,:,0]>0)+(tj[i,:,0]<=jminjet[i]))==0][0]-0
+        # jmaxwind[i] = tj[i,:,0][((daphi[i,:,0]<0)*(-avg_unb[i,:,0]>1.0+unbcutoff)*(avg_uu[1,i,:,0]>0)+(tj[i,:,0]>=jmaxjet[i]))==0][-1]+0
         jminjet[i] = tj[i,:,0][(aphi[i,:,0]>=maxaphibh)+(tj[i,:,0]==ny/2)][0]-1
         jmaxjet[i] = tj[i,:,0][(aphi[i,:,0]>=maxaphibh)+(tj[i,:,0]==ny/2+1)][-1]+1
-        jminwind[i] = tj[i,:,0][((daphi[i,:,0]>0)*(-avg_unb[i,:,0]>1.0+unbcutoff)*(avg_uu[1,i,:,0]>0)+(tj[i,:,0]<=jminjet[i]))==0][0]-0
-        jmaxwind[i] = tj[i,:,0][((daphi[i,:,0]<0)*(-avg_unb[i,:,0]>1.0+unbcutoff)*(avg_uu[1,i,:,0]>0)+(tj[i,:,0]>=jmaxjet[i]))==0][-1]+0
+        jminwind[i] = tj[i,:,0][((-avg_unb[i,:,0]>1.0+unbcutoff)*(avg_uu[1,i,:,0]>0)+(tj[i,:,0]<=jminjet[i]))==0][0]-1
+        jmaxwind[i] = tj[i,:,0][((-avg_unb[i,:,0]>1.0+unbcutoff)*(avg_uu[1,i,:,0]>0)+(tj[i,:,0]>=jmaxjet[i]))==0][-1]+1
     powjetwind = (eoutden*(tj[:,:,0]<jminwind[:,None])).sum(-1)+(eoutden*(tj[:,:,0]>jmaxwind[:,None])).sum(-1)
     powjet = (eoutden*(tj[:,:,0]<jminjet[:,None])).sum(-1)+(eoutden*(tj[:,:,0]>jmaxjet[:,None])).sum(-1)
     powjetEM = (eoutdenEM*(tj[:,:,0]<jminjet[:,None])).sum(-1)+(eoutdenEM*(tj[:,:,0]>jmaxjet[:,None])).sum(-1)
     #xxx
     #plt.clf()
-    r1 = 100
-    r2 = 140
+    r1 = 173
+    r2 = 206
     gs3 = GridSpec(3, 3)
     #gs3.update(left=0.05, right=0.95, top=0.30, bottom=0.03, wspace=0.01, hspace=0.04)
     #mdot
@@ -371,9 +375,9 @@ def plot2davg(dosq=True):
     plt.grid()
     plt.figure(5)
     plt.clf()
-    plt.plot(np.log10(r[:,0,0]),powjetwind,'g')
-    plt.plot(np.log10(r[:,0,0]),powjet,'b')
-    plt.plot(np.log10(r[:,0,0]),powjetEM,'b--')
+    plt.plot(powjetwind,'g')
+    plt.plot(powjet,'b')
+    plt.plot(powjetEM,'b--')
 
 
 def horcalc(which=1):
