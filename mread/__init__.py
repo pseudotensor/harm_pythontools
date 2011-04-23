@@ -297,7 +297,7 @@ def findroot1d( f, x, isleft=True, nbnd = 1 ):
         return( float('nan') )
     i0 = ilist[indexlist][ind]
     if f[i0]*f[i0-dir] > 0:
-        raise( "Could not bracket root" )
+        raise( ValueError("Could not bracket root") )
     ir = i0 + nbnd*dir
     il = i0 - (nbnd+1)*dir
     #limit il, ir to be between 0 and n-1:
@@ -332,29 +332,31 @@ def findroot1d( f, x, isleft=True, nbnd = 1 ):
     else:
         xinterp = interp1d( f2interp, x2interp, kind=kind, copy = False )
     ans = xinterp(0.0)
-    if ans < min(x[i0],x[i0-dir]) or ans > max(x[i0],x[i0-dir]):
-        raise( "ans = %g out of bounds, (%g,%g)" % (ans,x[i0-dir],x[i0]) )
+    #if ans < min(x[i0],x[i0-dir]) or ans > max(x[i0],x[i0-dir]):
+    #    raise( ValueError("ans = %g out of bounds, (%g,%g)" % (ans,x[i0-dir],x[i0])) )
     return( ans )
 
 def plot2davg(dosq=True):
-    global eout1, eout2, eout, avg_aphi,powjetwind,powjet,jminjet,jmaxjet,jminwind,jmaxwind
+    global eout1, eout2, eout, avg_aphi,avg_aphi2,powjetwind,powjet,jminjet,jmaxjet,jminwind,jmaxwind
     #sum away from theta = 0
     unbcutoff=0.01
     rhor=1+(1-a**2)**0.5
     ihor=iofr(rhor)
     avg_aphi = scaletofullwedge(nz*_dx3*fieldcalcface(gdetB1=avg_gdetB[0]))
     avg_aphi2 = scaletofullwedge((nz*avg_psisq)**0.5)
-    aphi = avg_aphi2 if dosq==True else avg_aphi
+    aphi1 = scaletofullwedge(_dx3*_dx2*(avg_gdetB[0]).cumsum(1))
+    aphi2 = scaletofullwedge(-_dx3*_dx2*(avg_gdetB[0])[:,::-1].cumsum(1)[:,::-1])
+    aphi = avg_aphi if dosq==True else avg_aphi
     maxaphibh = np.max(aphi[ihor])
     eout1den = scaletofullwedge(nz*(-gdet*avg_Tud[1,0]*_dx2*_dx3).sum(axis=2))
     eout1denEM = scaletofullwedge(nz*(-gdet*avg_TudEM[1,0]*_dx2*_dx3).sum(axis=2))
     eout1 = eout1den.cumsum(axis=1)
-    eout1EM = eout1denEM.cumsum(axis=1)
+    eoutEM1 = eout1denEM.cumsum(axis=1)
     #sum from from theta = pi
     eout2den = scaletofullwedge(nz*(-gdet*avg_Tud[1,0]*_dx2*_dx3)[:,::-1].sum(axis=2))
     eout2denEM = scaletofullwedge(nz*(-gdet*avg_TudEM[1,0]*_dx2*_dx3)[:,::-1].sum(axis=2))
     eout2 = eout2den.cumsum(axis=1)[:,::-1]
-    eout2EM = eout2denEM.cumsum(axis=1)[:,::-1]
+    eoutEM2 = eout2denEM.cumsum(axis=1)[:,::-1]
     eout = np.zeros_like(eout1)
     eout[tj[:,:,0]>ny/2] = eout2[tj[:,:,0]>ny/2]
     eout[tj[:,:,0]<=ny/2] = eout1[tj[:,:,0]<=ny/2]
@@ -370,8 +372,6 @@ def plot2davg(dosq=True):
     #plco( np.log10(avg_rho), cb=True )
     plco(choplo(chophi(avg_mu,40),2),cb=True,nc=39)
     plc(avg_aphi)
-    #FIG 2
-    plt.figure(2)
     aphip1 = np.zeros((aphi.shape[0],aphi.shape[1]+1,aphi.shape[2]))    
     aphip1[:,0:ny] = aphi
     daphi = np.zeros_like(ti)
@@ -393,20 +393,24 @@ def plot2davg(dosq=True):
     powxjet = (eoutden*(tj[:,:,0]<jminjet[:,None])).sum(-1)+(eoutden*(tj[:,:,0]>jmaxjet[:,None])).sum(-1)
     powxjetEM = (eoutdenEM*(tj[:,:,0]<jminjet[:,None])).sum(-1)+(eoutdenEM*(tj[:,:,0]>jmaxjet[:,None])).sum(-1)
     #
-    powjet1aphi = findroot2d( aphi[:,0:ny-1,0]-maxaphibh, eout1[:,1:ny], isleft=True )
-    powjet2aphi = findroot2d( aphi[:,:,0]-maxaphibh, eout2, isleft=False )
-    #powjet1mid = np.float32(findroot2d( hf[:-1,1:ny+1,0]-np.pi/2., eout1, isleft=True ))
-    #powjet2mid = np.float32(findroot2d( hf[:-1,0:ny,0]-np.pi/2., eout2, isleft=False ))
-    powjet1 = powjet1aphi #amin(powjet1aphi,powjet1mid)
-    powjet2 = powjet1aphi #amin(powjet2aphi,powjet2mid)
+    #return aphi to be defined at same locations as eout
+    aphix = np.zeros_like(aphi)
+    aphix[:,0:ny/2] = aphi[:,1:ny/2+1]
+    aphix[:,ny/2:] = aphi[:,ny/2:]
+    #
+    #Probably Correct way
+    #plt.plot(findroot2d(aphix[:,:,0]-maxaphibh,eout)+findroot2d(aphix[:,:,0]-maxaphibh,eout,isleft=False))
+    #
+    powjet1aphi = findroot2d( aphi1[:,:,0]-maxaphibh, eout1, isleft=True )
+    powjet2aphi = findroot2d( aphi2[:,:,0]-maxaphibh, eout2, isleft=False )
+    powjet1 = powjet1aphi
+    powjet2 = powjet2aphi
     powjet = powjet1+powjet2
     #
-    powjetEM1aphi = findroot2d( aphi[:,0:ny-1,0]-maxaphibh, eout1EM[:,1:ny], isleft=True )
-    powjetEM2aphi = findroot2d( aphi[:,:,0]-maxaphibh, eout2EM, isleft=False )
-    #powjetEM1mid = np.float32(findroot2d( hf[:-1,1:ny+1,0]-np.pi/2., eout1, isleft=True ))
-    #powjetEM2mid = np.float32(findroot2d( hf[:-1,0:ny,0]-np.pi/2., eout2, isleft=False ))
-    powjetEM1 = powjetEM1aphi #amin(powjetEM1aphi,powjetEM1mid)
-    powjetEM2 = powjetEM2aphi #amin(powjetEM2aphi,powjetEM2mid)
+    powjetEM1aphi = findroot2d( aphi1[:,:,0]-maxaphibh, eoutEM1, isleft=True )
+    powjetEM2aphi = findroot2d( aphi2[:,:,0]-maxaphibh, eoutEM2, isleft=False )
+    powjetEM1 = powjetEM1aphi
+    powjetEM2 = powjetEM2aphi
     powjetEM = powjetEM1+powjetEM2
     #
     powjetwind1a = findroot2d( (-avg_unb[:,:,0]-(1.0+unbcutoff))*(avg_uu[1,:,:,0]), eout1, isleft=True )
@@ -419,6 +423,12 @@ def plot2davg(dosq=True):
     #plt.clf()
     r1 = 74.339592777217106
     r2 = 206
+    ############
+    #
+    # FIG 2
+    #
+    ############
+    plt.figure(2)
     gs3 = GridSpec(3, 3)
     #gs3.update(left=0.05, right=0.95, top=0.30, bottom=0.03, wspace=0.01, hspace=0.04)
     #mdot
@@ -443,7 +453,7 @@ def plot2davg(dosq=True):
     plt.plot( aphi[i,:,0]/maxaphibh, avg_mu[i,:], 'b-' )
     plt.plot( aphi[i,:,0]/maxaphibh, avg_bsqorho[i,:],'b--' )
     plt.xlim( 0, 2 )
-    plt.ylim( 0,50)
+    plt.ylim( 0, 4 )
     plt.ylabel(r"$\mu(\Psi)$")
     ax32.grid(True)
     ax33 = plt.subplot(gs3[-1,:])
@@ -474,11 +484,13 @@ def plot2davg(dosq=True):
     plt.grid()
     plt.figure(5)
     plt.clf()
-    plt.plot(powjetwind,'g')
+    plt.plot(powjetwind,'r')
     plt.plot(powjet,'b')
+    #plt.plot(findroot2d(aphix[:,:,0]-maxaphibh,eout)+findroot2d(aphix[:,:,0]-maxaphibh,eout,isleft=False),'y--')
     plt.plot(powxjet,'b--')
+    plt.plot(powxjetwind,'g')
     plt.plot(powjetEM,'k')
-
+    #xxx
 
 def horcalc(which=1):
     """
@@ -800,14 +812,15 @@ def fieldcalcface(gdetB1=None):
     """
     Computes the field vector potential
     """
+    global aphi
     if gdetB1 == None:
         gdetB1 = gdetB[1]
-    daphi = mysum2(gdetB1)*_dx2
-    aphi=daphi.cumsum(axis=1)
-    aphi-=daphi #correction for half-cell shift between face and center in theta
-    #aphi[0:nx-1] = 0.5*(aphi[0:nx-1]+aphi[1:nx]) #and in r
-    aphi[:,ny-1:ny/2:-1,:] = aphi[:,1:ny/2,:]
-    #aphi/=(nz)
+    #average in phi and add up
+    daphi = (gdetB1).sum(-1)[:,:,None]/nz*_dx2
+    aphi = np.zeros_like(daphi)
+    aphi[:,1:ny/2+1]=(daphi.cumsum(axis=1))[:,0:ny/2]
+    #sum up from the other pole
+    aphi[:,ny/2+1:ny]=(-daphi[:,::-1].cumsum(axis=1))[:,::-1][:,ny/2+1:ny]
     return(aphi)
 
 def fieldcalcface2():
