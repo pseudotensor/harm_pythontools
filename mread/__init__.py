@@ -339,7 +339,7 @@ def findroot1d( f, x, isleft=True, nbnd = 1 ):
 def plot2davg(dosq=True):
     global eout1, eout2, eout, avg_aphi,avg_aphi2,powjetwind,powjet,jminjet,jmaxjet,jminwind,jmaxwind
     #sum away from theta = 0
-    unbcutoff=0.01
+    unbcutoff=0.02
     rhor=1+(1-a**2)**0.5
     ihor=iofr(rhor)
     avg_aphi = scaletofullwedge(nz*_dx3*fieldcalcface(gdetB1=avg_gdetB[0]))
@@ -413,11 +413,13 @@ def plot2davg(dosq=True):
     powjetEM2 = powjetEM2aphi
     powjetEM = powjetEM1+powjetEM2
     #
-    powjetwind1a = findroot2d( (-avg_unb[:,:,0]-(1.0+unbcutoff))*(avg_uu[1,:,:,0]), eout1, isleft=True )
-    powjetwind2a = findroot2d( (-avg_unb[:,:,0]-(1.0+unbcutoff))*(avg_uu[1,:,:,0]), eout2, isleft=False )
+    #powjetwind1a = findroot2d( (-avg_unb[:,:,0]-(1.0+unbcutoff))*(avg_uu[1,:,:,0]), eout1, isleft=True )
+    #powjetwind2a = findroot2d( (-avg_unb[:,:,0]-(1.0+unbcutoff))*(avg_uu[1,:,:,0]), eout2, isleft=False )
+    powjetwind1a = findroot2d( (-avg_unb[:,:,0]-(1.0+unbcutoff)), eout1, isleft=True )
+    powjetwind2a = findroot2d( (-avg_unb[:,:,0]-(1.0+unbcutoff)), eout2, isleft=False )
     #limit jet+wind power to be no smaller than jet power
-    powjetwind1 = amax(powjet1,powjetwind1a)
-    powjetwind2 = amax(powjet2,powjetwind2a)
+    powjetwind1 = powjetwind1a #amax(powjet1,powjetwind1a)
+    powjetwind2 = powjetwind2a #amax(powjet2,powjetwind2a)
     powjetwind = powjetwind1 + powjetwind2
     #
     #plt.clf()
