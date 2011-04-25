@@ -78,6 +78,7 @@ def get2davg(whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergroup=20):
 def assignavg2dvars(avgmem):
     global avg_ts,avg_te,avg_nitems,avg_rho,avg_ug,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
     global avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
+    global avg_gamma
     #avg defs
     i=0
     avg_ts=avgmem[i,0,:];
@@ -144,6 +145,8 @@ def assignavg2dvars(avgmem):
             print( "Old-ish format: missing avg_psisq." )
     else:
         print( "Old format: missing avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, etc." )
+    #derived quantities
+    avg_gamma=avg_uu[0]/(-gn3[0,0])**0.5
 
 
 def get2davgone(whichgroup=-1,itemspergroup=20):
@@ -337,9 +340,9 @@ def findroot1d( f, x, isleft=True, nbnd = 1 ):
     return( ans )
 
 def plot2davg(dosq=True):
-    global eout1, eout2, eout, avg_aphi,avg_aphi2,powjetwind,powjet,jminjet,jmaxjet,jminwind,jmaxwind
+    global eout1, eout2, eout, avg_aphi,avg_aphi2,powjetwind,powjet,jminjet,jmaxjet,jminwind,jmaxwind,mymu,maxaphibh
     #sum away from theta = 0
-    unbcutoff=0.02
+    unbcutoff=0.001
     rhor=1+(1-a**2)**0.5
     ihor=iofr(rhor)
     avg_aphi = scaletofullwedge(nz*_dx3*fieldcalcface(gdetB1=avg_gdetB[0]))
@@ -401,8 +404,17 @@ def plot2davg(dosq=True):
     #Probably Correct way
     #plt.plot(findroot2d(aphix[:,:,0]-maxaphibh,eout)+findroot2d(aphix[:,:,0]-maxaphibh,eout,isleft=False))
     #
-    powjet1aphi = findroot2d( aphi1[:,:,0]-maxaphibh, eout1, isleft=True )
-    powjet2aphi = findroot2d( aphi2[:,:,0]-maxaphibh, eout2, isleft=False )
+    #mymu = amin(20+0*avg_mu,amax(-(ny/2 - np.abs(tj-ny/2.-0.5)-15),amax(avg_mu*0+1,avg_mu)))
+    mymu = np.copy(avg_mu)
+    mymu[(tj[:,:,0] > ny-10)+(tj[:,:,0] < 10)]=50
+    powjet1aphia = findroot2d( (aphi1[:,:,0]-maxaphibh), eout1, isleft=True )
+    powjet2aphia = findroot2d( (aphi2[:,:,0]-maxaphibh), eout2, isleft=False )
+    powjet1aphi = np.copy(powjet1aphia)
+    powjet2aphi = np.copy(powjet2aphia)
+    powjet1aphi[r[:,0,0]>43] = findroot2d( -mymu[:,:,0]+2, eout1, isleft=True )[r[:,0,0]>43]
+    powjet2aphi[r[:,0,0]>43] = findroot2d( -mymu[:,:,0]+2, eout2, isleft=False )[r[:,0,0]>43]
+    powjet1aphi = amin(powjet1aphi,powjet1aphia)
+    powjet2aphi = amin(powjet2aphi,powjet2aphia)
     powjet1 = powjet1aphi
     powjet2 = powjet2aphi
     powjet = powjet1+powjet2
@@ -450,12 +462,14 @@ def plot2davg(dosq=True):
     i=iofr(r1)
     print i
     plt.plot( aphi[i,:,0]/maxaphibh, avg_mu[i,:],'g-' )
-    plt.plot( aphi[i,:,0]/maxaphibh, avg_bsqorho[i,:],'g--' )
+    plt.plot( aphi[i,:,0]/maxaphibh, avg_gamma[i,:]*(avg_bsqorho[i,:]+1),'g--' )
     i=iofr(r2)
     plt.plot( aphi[i,:,0]/maxaphibh, avg_mu[i,:], 'b-' )
-    plt.plot( aphi[i,:,0]/maxaphibh, avg_bsqorho[i,:],'b--' )
+    #somehow don't show up on plot; maybe make use of avg_bsquuud, etc.
+    plt.plot( aphi[i,:,0]/maxaphibh, avg_ud[0,i,:]*((gam*avg_ug/avg_rho+avg_bsqorho)[i,:]+1),'b--' )
+    plt.plot( aphi[i,:,0]/maxaphibh, avg_ud[0,i,:]*(-avg_sigma[i,:]+1),'b-.' )
     plt.xlim( 0, 2 )
-    plt.ylim( 0, 4 )
+    plt.ylim( 0, 10 )
     plt.ylabel(r"$\mu(\Psi)$")
     ax32.grid(True)
     ax33 = plt.subplot(gs3[-1,:])
@@ -484,16 +498,38 @@ def plot2davg(dosq=True):
     plt.plot( hf[i,0:128,0], aphi[i,:]/maxaphibh, 'b' )
     plt.plot( hf[i,0:128,0], aphi[i,:]/maxaphibh, 'bx' )
     plt.grid()
+    ##############
+    #
+    #  FIGURE 5
+    #
+    ##############
     plt.figure(5)
     plt.clf()
-    plt.plot(powjetwind,'r')
-    plt.plot(powjet,'b')
+    plt.plot(r[:,0,0],powjetwind,'r')
+    plt.plot(r[:,0,0],powjet,'b')
+    plt.ylim(0,60)
+    plt.xlim(0,250)
     #plt.plot(findroot2d(aphix[:,:,0]-maxaphibh,eout)+findroot2d(aphix[:,:,0]-maxaphibh,eout,isleft=False),'y--')
-    plt.plot(powxjet,'b--')
-    plt.plot(powxjetwind,'g')
+    #plt.plot(powxjet,'b--')
+    #plt.plot(powxjetwind,'g')
     plt.plot(powjetEM,'k')
+    plt.grid()
     #xxx
-
+    ##############
+    #
+    #  FIGURE 6
+    #
+    ##############
+    plt.figure(6)
+    plco(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),colors='k',nc=30)
+    plt.xlim(0,150); plt.ylim(-250,250)
+    #plc(avg_uu[1]*dxdxp[1][1],xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,))
+    #plc(avg_uu[1]*dxdxp[1][1],xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,),colors='g')
+    plc(-avg_unb[:,:,0]-(1.0),levels=(0,0.01,0.1),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    plc(avg_mu[:,:,0]-(1.0),levels=(0,0.01,0.1),colors='r',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    rfd("fieldline0000.bin")
+    #plc(lrho,xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    
 def horcalc(which=1):
     """
     Compute root mean square deviation of disk body from equatorial plane
@@ -3070,6 +3106,7 @@ if __name__ == "__main__":
             else:
                 for whichgroup in np.arange(whichgroups,whichgroupe,step):
                     avgmem = get2davg(whichgroup=whichgroup,itemspergroup=itemspergroup)
+            print( "Assigning averages..." )
             assignavg2dvars(avgmem)
         plot2davg()
     if False:
