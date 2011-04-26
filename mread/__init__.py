@@ -408,7 +408,7 @@ def findroot1d( f, x, isleft=True, nbnd = 1 ):
     #order them
     istart = min(il,ir)
     iend = max(il,ir)
-    kind = 'cubic'
+    kind = 'linear'
     x2interp = x[istart:iend+1]
     f2interp = interpcoef*f[istart:iend+1]
     #
