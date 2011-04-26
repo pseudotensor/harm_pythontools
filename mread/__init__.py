@@ -980,10 +980,15 @@ def fieldcalcface2():
     aphi/=(nz*_dx3)
     return(aphi)
 
-def rd(dump):
+def rdo(dump,oldfmt=False):
+    """ Read in old dump format """
+    rd(dump,oldfmt=True)
+
+def rd(dump,oldfmt=False):
     global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,ti,tj,tk,x1,x2,x3,r,h,ph,rho,ug,vu,B,pg,cs2,Sden,U,gdetB,divb,uu,ud,bu,bd
-    global v1m,v1p,v2m,v2p,v3m,v3p,bsq
+    global v1m,v1p,v2m,v2p,v3m,v3p,bsq,olddumpfmt
     #read image
+    olddumpfmt = oldfmt
     fin = open( "dumps/" + dump, "rb" )
     header = fin.readline().split()
     t = np.float64(header[0])
@@ -1012,18 +1017,32 @@ def rd(dump):
     B=np.zeros_like(gd[0:4])
     vu[1:4] = gd[11:14]
     B[1:4] = gd[14:17]
-    pg,cs2,Sden = gd[17:20]
-    U = gd[20:29]
-    gdetB = np.zeros_like(B)
-    gdetB[1:4] = U[5:8]
-    divb = gd[29]
-    uu = gd[30:34]
-    ud = gd[34:38]
-    bu = gd[38:42]
-    bd = gd[42:46]
-    bsq = mdot(bu,bd)
-    v1m,v1p,v2m,v2p,v3m,v3p=gd[46:52]
-    gdet=gd[53]
+    if not oldfmt:
+        pg,cs2,Sden = gd[17:20]
+        U = gd[20:29]
+        gdetB = np.zeros_like(B)
+        gdetB[1:4] = U[5:8]
+        divb = gd[29]
+        uu = gd[30:34]
+        ud = gd[34:38]
+        bu = gd[38:42]
+        bd = gd[42:46]
+        bsq = mdot(bu,bd)
+        v1m,v1p,v2m,v2p,v3m,v3p=gd[46:52]
+        gdet=gd[53]
+    else:
+        U = gd[17:25]
+        divb = gd[25]
+        uu = gd[26:30]
+        ud = gd[30:34]
+        bu = gd[34:38]
+        bd = gd[38:42]
+        bsq = mdot(bu,bd)
+        v1m,v1p,v2m,v2p,v3m,v3p=gd[42:48]
+        gdet=gd[48]
+        #gdetB = np.zeros_like(B)
+        #gdetB[1:4] = U[5:8]
+        gdetB = gdet*B
 
 def rgfd(fieldlinefilename,**kwargs):
     if not os.path.isfile(os.path.join("dumps/", fieldlinefilename)):
