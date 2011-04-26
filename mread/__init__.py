@@ -266,7 +266,79 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     print( "Done!" )
     return(avgmem)
 
-def findroot2d( f, x, isleft=True, nbnd = 1 ):
+def extractlena():
+    #along field lines 0.5,0.8,0.99
+    cvel()
+    Tcalcud()
+    faraday()
+    psi=fieldcalctoth()/dxdxp[3][3][:,:,0]
+    #
+    Br = dxdxp[1,1]*B[1]+dxdxp[1,2]*B[2]
+    Bh = dxdxp[2,1]*B[1]+dxdxp[2,2]*B[2]
+    Bp = B[3]*dxdxp[3,3]
+    #
+    Brnorm=Br
+    Bhnorm=Bh*np.abs(r)
+    Bpnorm=Bp*np.abs(r*np.sin(h))
+    #
+    Bznorm=Brnorm*np.cos(h)-Bhnorm*np.sin(h)
+    BRnorm=Brnorm*np.sin(h)+Bhnorm*np.cos(h)
+    #
+    eta=rho*uu[1]/B[1]
+    #
+    z = -r*np.cos(h)
+    R = r*np.sin(h)
+    #
+    uur = dxdxp[1,1]*uu[1]+dxdxp[1,2]*uu[2]
+    uuh = dxdxp[2,1]*uu[1]+dxdxp[2,2]*uu[2]
+    uup = uu[3] * dxdxp[3,3]
+    #
+    uurnorm = uur
+    uuhnorm=uuh*np.abs(r)
+    uupnorm=uup*np.abs(r*np.sin(h))
+    #
+    #(cpsi, cr, ch, cR, cz, cBr, cBtheta, cBphi, ceta, crho, cuur, cuutheta, cuuphi, cgamma, comegaf, cmu, csigma, cbsq) = cvals
+
+    vals = (psi, r, h, R, z, -Brnorm, -Bhnorm, -Bpnorm, -eta, rho, uurnorm, uuhnorm, uupnorm, gamma, omegaf2*dxdxp[3][3], mu, sigma, bsq)
+    nu = 1.0
+    om0 = 0.75
+
+    for psi0 in (0.2, 0.4, 0.6, 0.8, 0.9, 0.99, 1.0):
+        #FIELDLINE: psi = psi0
+        fname = "fieldline_nu%0.3g_om%0.2g_psi%0.3g.dat" % (nu, om0, psi0)
+        print( "Doing psi = %0.3g, fname = %s" % (psi0, fname) )
+        sys.stdout.flush()
+        cvals = findroot2d(psi-psi0, vals, axis = 0 )
+        fp = open( fname, "wt" )
+        fp.write( "#psi, r, \\theta, R, z, B^r, B^\\theta, B^\\phi, \\eta, rho, u^r, u^\\theta, u^\\phi, \\gamma, \\Omega_F, \\mu, \\sigma, b^2 = B^2-E^2\n" )
+        fp.flush()
+        os.fsync(fp.fileno())
+        np.savetxt( fp, np.array(cvals,dtype=np.float64).transpose(), fmt='%21.15g' )
+        fp.close()
+
+    for z0 in (10, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 5e10):
+        #FIELDLINE: psi = psi0
+        fname = "fieldline_nu%0.3g_om%0.3g_z%0.3g.dat" % (nu, om0, z0)
+        print( "Doing z0 = %0.3g, fname = %s" % (z0, fname) )
+        sys.stdout.flush()
+        cvals = findroot2d(z-z0, vals, axis = 1 )
+        fp = open( fname, "wt" )
+        fp.write( "#psi, r, \\theta, R, z, B^r, B^\\theta, B^\\phi, \\eta, rho, u^r, u^\\theta, u^\\phi, \\gamma, \\Omega_F, \\mu, \\sigma, b^2 = B^2-E^2\n" )
+        fp.flush()
+        os.fsync(fp.fileno())
+        np.savetxt( fp, np.array(cvals,dtype=np.float64).transpose(), fmt='%21.15g' )
+        fp.close()
+
+def readlena(fname):
+    global cpsi, cr, ch, cR, cz, cBr, cBtheta, cBphi, ceta, crho, cuur, cuutheta, cuuphi, cgamma, comegaf, cmu, csigma, cbsq
+    cvals = np.loadtxt( fname, 
+                      dtype=np.float64, 
+                      skiprows=1, 
+                      unpack = True )
+    cpsi, cr, ch, cR, cz, cBr, cBtheta, cBphi, ceta, crho, cuur, cuutheta, cuuphi, cgamma, comegaf, cmu, csigma, cbsq = cvals    
+    return(cvals)
+
+def findroot2d( fin, xin, isleft=True, nbnd = 1, axis = 0 ):
     """ returns roots, x[i], so that f(x) = 0 """
     n = f.shape[0]
     xsol = np.empty((n),dtype=f.dtype)
