@@ -340,11 +340,37 @@ def readlena(fname):
 
 def findroot2d( fin, xin, isleft=True, nbnd = 1, axis = 0 ):
     """ returns roots, x[i], so that f(x) = 0 """
-    n = f.shape[0]
-    xsol = np.empty((n),dtype=f.dtype)
-    for i in np.arange(0,n):
-        xsol[i] = findroot1d( f[i], x[i], isleft, nbnd )
-    return( xsol )
+    if fin.ndim == 3:
+        fin = fin[:,:,0]
+    if fin.ndim != 2:
+        raise( ValueError( "fin.ndim = %d, should be 2" % fin.ndim ) )
+    if axis == 1:
+        f = fin.transpose()
+    else:
+        f = fin
+    if not isinstance(xin,tuple):
+        xtuple = (xin,)
+    else:
+        xtuple = xin
+    xout = ()
+    for (j, x) in enumerate(xtuple):
+        if x.ndim == 3:
+            x = x[:,:,0]
+        if x.ndim != 2:
+            raise( ValueError( "x[%d].ndim = %d, should be 2" % (j, x.ndim) ) )
+        n = f.shape[0]
+        if axis == 1:
+            x = x.transpose()
+        if f.shape != x.shape:
+            raise( ValueError( "f and x have different shapes" ) )
+        xsol = np.empty((n),dtype=f.dtype)
+        for i in np.arange(0,n):
+            xsol[i] = findroot1d( f[i], x[i], isleft, nbnd )
+        xout += (xsol,)
+    if len(xout) == 1:
+        return( xout[0] )
+    else:
+        return( xout )
         
     
 def findroot1d( f, x, isleft=True, nbnd = 1 ):
@@ -369,7 +395,8 @@ def findroot1d( f, x, isleft=True, nbnd = 1 ):
     ilist = np.arange(0,n)
     indexlist = f*coef<0
     if( not indexlist.any() ):
-        return( float('nan') )
+        return( x[ind] )
+        #return( float('nan') )
     i0 = ilist[indexlist][ind]
     if f[i0]*f[i0-dir] > 0:
         raise( ValueError("Could not bracket root") )
@@ -906,6 +933,15 @@ def rrdump(dumpname):
     else:
         print( 'Metric (gv3, gn3) not defined, I am skipping the computation of uu and ud' )
 
+
+def fieldcalctoth():
+    """
+    Computes the field vector potential
+    """
+    daphi = -(gdetB[1]).sum(-1)*_dx2/nz
+    aphi=daphi[:,::-1].cumsum(axis=1)[:,::-1]
+    aphi-=0.5*daphi #correction for half-cell shift between face and center in theta
+    return(aphi)
    
 def fieldcalcU():
     """
@@ -1129,7 +1165,7 @@ def grid3d(dumpname,use2d=False): #read grid dump file: header and body
     #non-uniform coordinates, (r, h, ph), which correspond to radius (r), polar angle (theta), and toroidal angle (phi).
     #There are more variables, e.g., dxdxp, which is the Jacobian of (x1,x2,x3)->(r,h,ph) transformation, that I can
     #go over, if needed.
-    global nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,ti,tj,tk,x1,x2,x3,r,h,ph,conn,gn3,gv3,ck,dxdxp,gdet
+    global nx,ny,nz,_startx1,_startx2,_startx3,_dx1,_dx2,_dx3,gam,a,Rin,Rout,ti,tj,tk,x1,x2,x3,r,h,ph,conn,gn3,gv3,ck,dxdxp,gdet
     global tif,tjf,tkf,rf,hf,phf
     print( "Reading grid from " + "dumps/" + dumpname + " ..." )
     gin = open( "dumps/" + dumpname, "rb" )
@@ -1139,6 +1175,10 @@ def grid3d(dumpname,use2d=False): #read grid dump file: header and body
     nx = int(header[1])
     ny = int(header[2])
     nz = int(header[3])
+    #grid internal coordinates starting point
+    _startx1=float(header[4])
+    _startx2=float(header[5])
+    _startx3=float(header[6])
     #cell size in internal coordintes
     _dx1=float(header[7])
     _dx2=float(header[8])
@@ -2106,20 +2146,23 @@ def amin(arg1,arg2):
 
 def Tcalcud():
     global Tud, TudEM, TudMA
+    global mu, sigma
     pg = (gam-1)*ug
     w=rho+ug+pg
     eta=w+bsq
     Tud = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
     TudMA = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
     TudEM = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
-    for mu in np.arange(4):
+    for kapa in np.arange(4):
         for nu in np.arange(4):
-            if(mu==nu): delta = 1
+            if(kapa==nu): delta = 1
             else: delta = 0
-            TudEM[mu,nu] = bsq*uu[mu]*ud[nu] + 0.5*bsq*delta - bu[mu]*bd[nu]
-            TudMA[mu,nu] = w*uu[mu]*ud[nu]+pg*delta
-            #Tud[mu,nu] = eta*uu[mu]*ud[nu]+(pg+0.5*bsq)*delta-bu[mu]*bd[nu]
-            Tud[mu,nu] = TudEM[mu,nu] + TudMA[mu,nu]
+            TudEM[kapa,nu] = bsq*uu[kapa]*ud[nu] + 0.5*bsq*delta - bu[kapa]*bd[nu]
+            TudMA[kapa,nu] = w*uu[kapa]*ud[nu]+pg*delta
+            #Tud[kapa,nu] = eta*uu[kapa]*ud[nu]+(pg+0.5*bsq)*delta-bu[kapa]*bd[nu]
+            Tud[kapa,nu] = TudEM[kapa,nu] + TudMA[kapa,nu]
+    mu = -Tud[1,0]/(rho*uu[1])
+    sigma = TudEM[1,0]/TudMA[1,0]
 
 def faraday():
     global fdd, fuu, omegaf1, omegaf2
