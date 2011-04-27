@@ -142,7 +142,10 @@ def assignavg2dvars(avgmem):
             n=1
             avg_psisq=avgmem[i,:,:,None];i+=n
         else:
-            print( "Old-ish format: missing avg_psisq." )
+            n=1
+            print( "Old-ish format: missing avg_psisq, filling it in with zeros." )
+            avg_psisq=np.zeros_like(avg_mu);i+=n
+
     else:
         print( "Old format: missing avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, etc." )
     #derived quantities
@@ -528,9 +531,11 @@ def plot2davg(dosq=True):
     #powjetwind2a = findroot2d( (-avg_unb[:,:,0]-(1.0+unbcutoff))*(avg_uu[1,:,:,0]), eout2, isleft=False )
     powjetwind1a = findroot2d( (-avg_unb[:,:,0]-(1.0+unbcutoff)), eout1, isleft=True )
     powjetwind2a = findroot2d( (-avg_unb[:,:,0]-(1.0+unbcutoff)), eout2, isleft=False )
+    powjetwind1b = findroot2d( daphi[:,:,0], eout1, isleft=True )
+    powjetwind2b = findroot2d( daphi[:,:,0], eout2, isleft=False )
     #limit jet+wind power to be no smaller than jet power
-    powjetwind1 = powjetwind1a #amax(powjet1,powjetwind1a)
-    powjetwind2 = powjetwind2a #amax(powjet2,powjetwind2a)
+    powjetwind1 = amin(powjetwind1b,powjetwind1a) #amax(powjet1,powjetwind1a)
+    powjetwind2 = amin(powjetwind2b,powjetwind2a) #amax(powjet2,powjetwind2a)
     powjetwind = powjetwind1 + powjetwind2
     #
     #plt.clf()
@@ -621,12 +626,16 @@ def plot2davg(dosq=True):
     ##############
     plt.figure(6)
     plco(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),colors='k',nc=30)
-    plt.xlim(0,150); plt.ylim(-250,250)
+    plt.xlim(0,500); plt.ylim(-250,250)
     #plc(avg_uu[1]*dxdxp[1][1],xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,))
     #plc(avg_uu[1]*dxdxp[1][1],xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,),colors='g')
-    plc(-avg_unb[:,:,0]-(1.0),levels=(0,0.01,0.1),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-    plc(avg_mu[:,:,0]-(1.0),levels=(0,0.01,0.1),colors='r',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    #plc(-avg_unb[:,:,0]-(1.0),levels=(0,0.01,0.1),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    plc(chophi(choplo(-avg_unb[:,:,0]-(1.0),0),0.001),xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    #plc(avg_mu[:,:,0]-(1.0),levels=(0,0.01,0.1),colors='r',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
     rfd("fieldline0000.bin")
+    #plc(np.log10(avg_rho),xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    plc(avg_uu[1],levels=(0,),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    plc(daphi,levels=(0,),colors='r',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
     #plc(lrho,xcoord=r*np.sin(h),ycoord=r*np.cos(h))
     
 def horcalc(which=1):
