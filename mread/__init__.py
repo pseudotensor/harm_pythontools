@@ -341,7 +341,7 @@ def readlena(fname):
     cpsi, cr, ch, cR, cz, cBr, cBtheta, cBphi, ceta, crho, cuur, cuutheta, cuuphi, cgamma, comegaf, cmu, csigma, cbsq = cvals    
     return(cvals)
 
-def findroot2d( fin, xin, isleft=True, nbnd = 1, axis = 0 ):
+def findroot2d( fin, xin, isleft=True, nbnd = 1, axis = 0, fallback = True ):
     """ returns roots, x[i], so that f(x) = 0 """
     if fin.ndim == 3:
         fin = fin[:,:,0]
@@ -368,7 +368,7 @@ def findroot2d( fin, xin, isleft=True, nbnd = 1, axis = 0 ):
             raise( ValueError( "f and x have different shapes" ) )
         xsol = np.empty((n),dtype=f.dtype)
         for i in np.arange(0,n):
-            xsol[i] = findroot1d( f[i], x[i], isleft, nbnd )
+            xsol[i] = findroot1d( f[i], x[i], isleft, nbnd, fallback )
         xout += (xsol,)
     if len(xout) == 1:
         return( xout[0] )
@@ -376,7 +376,7 @@ def findroot2d( fin, xin, isleft=True, nbnd = 1, axis = 0 ):
         return( xout )
         
     
-def findroot1d( f, x, isleft=True, nbnd = 1 ):
+def findroot1d( f, x, isleft=True, nbnd = 1, fallback = True ):
     """ find a 1-D root """
     if isleft==True:
         ind=0
@@ -398,8 +398,10 @@ def findroot1d( f, x, isleft=True, nbnd = 1 ):
     ilist = np.arange(0,n)
     indexlist = f*coef<0
     if( not indexlist.any() ):
-        return( x[ind] )
-        #return( float('nan') )
+        if fallback:
+            return( x[ind] )
+        else:
+            return( float('nan') )
     i0 = ilist[indexlist][ind]
     if f[i0]*f[i0-dir] > 0:
         raise( ValueError("Could not bracket root") )
