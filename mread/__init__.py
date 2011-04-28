@@ -457,13 +457,17 @@ def plot2davg(dosq=True):
     maxaphibh = np.max(aphi[ihor])
     eout1den = scaletofullwedge(nz*(-gdet*avg_Tud[1,0]*_dx2*_dx3).sum(axis=2))
     eout1denEM = scaletofullwedge(nz*(-gdet*avg_TudEM[1,0]*_dx2*_dx3).sum(axis=2))
+    eout1denMA = scaletofullwedge(nz*(-gdet*avg_TudMA[1,0]*_dx2*_dx3).sum(axis=2))
     eout1 = eout1den.cumsum(axis=1)
     eoutEM1 = eout1denEM.cumsum(axis=1)
+    eoutMA1 = eout1denMA.cumsum(axis=1)
     #sum from from theta = pi
     eout2den = scaletofullwedge(nz*(-gdet*avg_Tud[1,0]*_dx2*_dx3)[:,::-1].sum(axis=2))
     eout2denEM = scaletofullwedge(nz*(-gdet*avg_TudEM[1,0]*_dx2*_dx3)[:,::-1].sum(axis=2))
+    eout2denMA = scaletofullwedge(nz*(-gdet*avg_TudMA[1,0]*_dx2*_dx3)[:,::-1].sum(axis=2))
     eout2 = eout2den.cumsum(axis=1)[:,::-1]
     eoutEM2 = eout2denEM.cumsum(axis=1)[:,::-1]
+    eoutMA2 = eout2denMA.cumsum(axis=1)[:,::-1]
     eout = np.zeros_like(eout1)
     eout[tj[:,:,0]>ny/2] = eout2[tj[:,:,0]>ny/2]
     eout[tj[:,:,0]<=ny/2] = eout1[tj[:,:,0]<=ny/2]
@@ -511,6 +515,7 @@ def plot2davg(dosq=True):
     #mymu = amin(20+0*avg_mu,amax(-(ny/2 - np.abs(tj-ny/2.-0.5)-15),amax(avg_mu*0+1,avg_mu)))
     mymu = np.copy(avg_mu)
     mymu[(tj[:,:,0] > ny-10)+(tj[:,:,0] < 10)]=50
+    #tot
     powjet1aphia = findroot2d( (aphi1[:,:,0]-maxaphibh), eout1, isleft=True )
     powjet2aphia = findroot2d( (aphi2[:,:,0]-maxaphibh), eout2, isleft=False )
     powjet1aphi = np.copy(powjet1aphia)
@@ -522,23 +527,51 @@ def plot2davg(dosq=True):
     powjet1 = powjet1aphi
     powjet2 = powjet2aphi
     powjet = powjet1+powjet2
-    #
-    powjetEM1aphi = findroot2d( aphi1[:,:,0]-maxaphibh, eoutEM1, isleft=True )
-    powjetEM2aphi = findroot2d( aphi2[:,:,0]-maxaphibh, eoutEM2, isleft=False )
+    #EM
+    powjetEM1aphia = findroot2d( (aphi1[:,:,0]-maxaphibh), eoutEM1, isleft=True )
+    powjetEM2aphia = findroot2d( (aphi2[:,:,0]-maxaphibh), eoutEM2, isleft=False )
+    powjetEM1aphi = np.copy(powjetEM1aphia)
+    powjetEM2aphi = np.copy(powjetEM2aphia)
+    powjetEM1aphi[r[:,0,0]>43] = findroot2d( -mymu[:,:,0]+2, eoutEM1, isleft=True )[r[:,0,0]>43]
+    powjetEM2aphi[r[:,0,0]>43] = findroot2d( -mymu[:,:,0]+2, eoutEM2, isleft=False )[r[:,0,0]>43]
+    powjetEM1aphi = amin(powjetEM1aphi,powjetEM1aphia)
+    powjetEM2aphi = amin(powjetEM2aphi,powjetEM2aphia)
     powjetEM1 = powjetEM1aphi
     powjetEM2 = powjetEM2aphi
     powjetEM = powjetEM1+powjetEM2
     #
+    #MA
+    powjetMA1aphia = findroot2d( (aphi1[:,:,0]-maxaphibh), eoutMA1, isleft=True )
+    powjetMA2aphia = findroot2d( (aphi2[:,:,0]-maxaphibh), eoutMA2, isleft=False )
+    powjetMA1aphi = np.copy(powjetMA1aphia)
+    powjetMA2aphi = np.copy(powjetMA2aphia)
+    powjetMA1aphi[r[:,0,0]>43] = findroot2d( -mymu[:,:,0]+2, eoutMA1, isleft=True )[r[:,0,0]>43]
+    powjetMA2aphi[r[:,0,0]>43] = findroot2d( -mymu[:,:,0]+2, eoutMA2, isleft=False )[r[:,0,0]>43]
+    powjetMA1aphi = amin(powjetMA1aphi,powjetMA1aphia)
+    powjetMA2aphi = amin(powjetMA2aphi,powjetMA2aphia)
+    powjetMA1 = powjetMA1aphi
+    powjetMA2 = powjetMA2aphi
+    powjetMA = powjetMA1+powjetMA2
+    #
+    # powjetEM1aphi = findroot2d( aphi1[:,:,0]-maxaphibh, eoutEM1, isleft=True )
+    # powjetEM2aphi = findroot2d( aphi2[:,:,0]-maxaphibh, eoutEM2, isleft=False )
+    # powjetEM1 = powjetEM1aphi
+    # powjetEM2 = powjetEM2aphi
+    # powjetEM = powjetEM1+powjetEM2
+    #
     #powjetwind1a = findroot2d( (-avg_unb[:,:,0]-(1.0+unbcutoff))*(avg_uu[1,:,:,0]), eout1, isleft=True )
     #powjetwind2a = findroot2d( (-avg_unb[:,:,0]-(1.0+unbcutoff))*(avg_uu[1,:,:,0]), eout2, isleft=False )
-    powjetwind1a = findroot2d( (-avg_unb[:,:,0]-(1.0+unbcutoff)), eout1, isleft=True )
-    powjetwind2a = findroot2d( (-avg_unb[:,:,0]-(1.0+unbcutoff)), eout2, isleft=False )
-    powjetwind1b = findroot2d( daphi[:,:,0], eout1, isleft=True )
-    powjetwind2b = findroot2d( daphi[:,:,0], eout2, isleft=False )
+    hjetwind1a = findroot2d( (-avg_unb[:,:,0]-(1.0+unbcutoff)), h, isleft=True )
+    hjetwind2a = findroot2d( (-avg_unb[:,:,0]-(1.0+unbcutoff)), h, isleft=False )
+    hjetwind1b = findroot2d( daphi[:,:,0], h, isleft=True )
+    hjetwind2b = findroot2d( daphi[:,:,0], h, isleft=False )
     #limit jet+wind power to be no smaller than jet power
-    powjetwind1 = amin(powjetwind1b,powjetwind1a) #amax(powjet1,powjetwind1a)
-    powjetwind2 = amin(powjetwind2b,powjetwind2a) #amax(powjet2,powjetwind2a)
+    hjetwind1 = amin(hjetwind1b, hjetwind1a) #amax(powjet1,powjetwind1a)
+    hjetwind2 = amax(hjetwind2b, hjetwind2a) #amax(powjet2,powjetwind2a)
+    powjetwind1 = findroot2d( h-hjetwind1[:,None,None], eout1, isleft=True )
+    powjetwind2 = findroot2d( h-hjetwind2[:,None,None], eout2, isleft=False )
     powjetwind = powjetwind1 + powjetwind2
+    #xxx
     #
     #plt.clf()
     r1 = 74.339592777217106
@@ -614,11 +647,14 @@ def plot2davg(dosq=True):
     plt.plot(r[:,0,0],powjetwind,'r')
     plt.plot(r[:,0,0],powjet,'b')
     plt.ylim(0,60)
-    plt.xlim(0,250)
+    plt.xlim(0,600)
     #plt.plot(findroot2d(aphix[:,:,0]-maxaphibh,eout)+findroot2d(aphix[:,:,0]-maxaphibh,eout,isleft=False),'y--')
     #plt.plot(powxjet,'b--')
+    plt.plot(powxjetEM,'b--')
     #plt.plot(powxjetwind,'g')
     plt.plot(powjetEM,'k')
+    plt.plot(powjetMA,'k')
+    plt.plot(powjetEM+powjetMA,'k')
     plt.grid()
     #xxx
     ##############
@@ -626,18 +662,24 @@ def plot2davg(dosq=True):
     #  FIGURE 6
     #
     ##############
+    #
     plt.figure(6)
     plco(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),colors='k',nc=30)
-    plt.xlim(0,500); plt.ylim(-250,250)
+    plt.xlim(0,300); plt.ylim(-600,600)
     #plc(avg_uu[1]*dxdxp[1][1],xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,))
     #plc(avg_uu[1]*dxdxp[1][1],xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,),colors='g')
     #plc(-avg_unb[:,:,0]-(1.0),levels=(0,0.01,0.1),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-    plc(chophi(choplo(-avg_unb[:,:,0]-(1.0),0),0.001),xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    #plc(chophi(choplo(-avg_unb[:,:,0]-(1.0),0),0.001),xcoord=r*np.sin(h),ycoord=r*np.cos(h))
     #plc(avg_mu[:,:,0]-(1.0),levels=(0,0.01,0.1),colors='r',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
     rfd("fieldline0000.bin")
     #plc(np.log10(avg_rho),xcoord=r*np.sin(h),ycoord=r*np.cos(h))
     plc(avg_uu[1],levels=(0,),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
     plc(daphi,levels=(0,),colors='r',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    plc(h-hjetwind1[:,None,None],levels=(0,),colors='c',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    plc(h-hjetwind2[:,None,None],levels=(0,),colors='y',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    plc(chophi(choplo(-avg_sigma,0.1),10),xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    #xxx
+    #plc(h,xcoord=r*np.sin(h),ycoord=r*np.cos(h))
     #plc(lrho,xcoord=r*np.sin(h),ycoord=r*np.cos(h))
     
 def horcalc(which=1):
