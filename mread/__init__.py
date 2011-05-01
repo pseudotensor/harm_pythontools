@@ -449,25 +449,31 @@ def plot2davg(dosq=True):
     unbcutoff=0.001
     rhor=1+(1-a**2)**0.5
     ihor=iofr(rhor)
-    avg_aphi = scaletofullwedge(nz*_dx3*fieldcalcface(gdetB1=avg_gdetB[0]))
+    avg_aphi = scaletofullwedge(nz*_dx3*fieldcalc(gdetB1=avg_gdetB[0]))
     avg_aphi2 = scaletofullwedge((nz*avg_psisq)**0.5)
-    aphi1 = scaletofullwedge(_dx3*_dx2*(avg_gdetB[0]).cumsum(1))
-    aphi2 = scaletofullwedge(-_dx3*_dx2*(avg_gdetB[0])[:,::-1].cumsum(1)[:,::-1])
+    #aphi1 = scaletofullwedge(_dx3*_dx2*(avg_gdetB[0]).cumsum(1))
+    #aphi2 = scaletofullwedge(-_dx3*_dx2*(avg_gdetB[0])[:,::-1].cumsum(1)[:,::-1])
     aphi = avg_aphi if dosq==True else avg_aphi
+    aphi1 = aphi
+    aphi2 = aphi
     maxaphibh = np.max(aphi[ihor])
-    eout1den = scaletofullwedge(nz*(-gdet*avg_Tud[1,0]*_dx2*_dx3).sum(axis=2))
+    eout1den   = scaletofullwedge(nz*(-gdet*avg_Tud[1,0]*_dx2*_dx3).sum(axis=2))
     eout1denEM = scaletofullwedge(nz*(-gdet*avg_TudEM[1,0]*_dx2*_dx3).sum(axis=2))
     eout1denMA = scaletofullwedge(nz*(-gdet*avg_TudMA[1,0]*_dx2*_dx3).sum(axis=2))
-    eout1 = eout1den.cumsum(axis=1)
+    #eout1den=eout1denEM+eout1denMA
+    #eout1   = eout1den.cumsum(axis=1)
     eoutEM1 = eout1denEM.cumsum(axis=1)
     eoutMA1 = eout1denMA.cumsum(axis=1)
+    eout1 = eoutEM1+eoutMA1
     #sum from from theta = pi
-    eout2den = scaletofullwedge(nz*(-gdet*avg_Tud[1,0]*_dx2*_dx3)[:,::-1].sum(axis=2))
+    eout2den   = scaletofullwedge(nz*(-gdet*avg_Tud[1,0]*_dx2*_dx3)[:,::-1].sum(axis=2))
     eout2denEM = scaletofullwedge(nz*(-gdet*avg_TudEM[1,0]*_dx2*_dx3)[:,::-1].sum(axis=2))
     eout2denMA = scaletofullwedge(nz*(-gdet*avg_TudMA[1,0]*_dx2*_dx3)[:,::-1].sum(axis=2))
-    eout2 = eout2den.cumsum(axis=1)[:,::-1]
+    #eout2den=eout2denEM+eout2denMA
+    #eout2   = eout2den.cumsum(axis=1)[:,::-1]
     eoutEM2 = eout2denEM.cumsum(axis=1)[:,::-1]
     eoutMA2 = eout2denMA.cumsum(axis=1)[:,::-1]
+    eout2 = eoutEM2+eoutMA2
     eout = np.zeros_like(eout1)
     eout[tj[:,:,0]>ny/2] = eout2[tj[:,:,0]>ny/2]
     eout[tj[:,:,0]<=ny/2] = eout1[tj[:,:,0]<=ny/2]
@@ -477,12 +483,16 @@ def plot2davg(dosq=True):
     eoutdenEM = np.zeros_like(eout1denEM)
     eoutdenEM[tj[:,:,0]>ny/2] = eout2denEM[tj[:,:,0]>ny/2]
     eoutdenEM[tj[:,:,0]<=ny/2] = eout1denEM[tj[:,:,0]<=ny/2]
-    #FIG 1
+    ##################
+    #
+    # FIGURE 1
+    #
+    ##################
     plt.figure(1)
     plt.clf()
     #plco( np.log10(avg_rho), cb=True )
     plco(choplo(chophi(avg_mu,40),2),cb=True,nc=39)
-    plc(avg_aphi)
+    plc(avg_aphi,nc=30)
     aphip1 = np.zeros((aphi.shape[0],aphi.shape[1]+1,aphi.shape[2]))    
     aphip1[:,0:ny] = aphi
     daphi = np.zeros_like(ti)
@@ -516,41 +526,33 @@ def plot2davg(dosq=True):
     mymu = np.copy(avg_mu)
     mymu[(tj[:,:,0] > ny-10)+(tj[:,:,0] < 10)]=50
     #tot
-    powjet1aphia = findroot2d( (aphi1[:,:,0]-maxaphibh), eout1, isleft=True )
-    powjet2aphia = findroot2d( (aphi2[:,:,0]-maxaphibh), eout2, isleft=False )
-    powjet1aphi = np.copy(powjet1aphia)
-    powjet2aphi = np.copy(powjet2aphia)
-    powjet1aphi[r[:,0,0]>43] = findroot2d( -mymu[:,:,0]+2, eout1, isleft=True )[r[:,0,0]>43]
-    powjet2aphi[r[:,0,0]>43] = findroot2d( -mymu[:,:,0]+2, eout2, isleft=False )[r[:,0,0]>43]
-    powjet1aphi = amin(powjet1aphi,powjet1aphia)
-    powjet2aphi = amin(powjet2aphi,powjet2aphia)
-    powjet1 = powjet1aphi
-    powjet2 = powjet2aphi
+    if False:
+        #keep same sign in jet
+        hjet1aphia = findroot2d( (aphi1[:,:,0]-maxaphibh)*daphi[:,:,0], h, isleft=True )
+        hjet2aphia = findroot2d( (aphi2[:,:,0]-maxaphibh)*daphi[:,:,0], h, isleft=False )
+    else:
+        #allow different signs in jet
+        hjet1aphia = findroot2d( (aphi1[:,:,0]-maxaphibh), h, isleft=True )
+        hjet2aphia = findroot2d( (aphi2[:,:,0]-maxaphibh), h, isleft=False )
+    hjet1aphi = np.copy(hjet1aphia)
+    hjet2aphi = np.copy(hjet2aphia)
+    if False:
+        rx=50
+        hjet1aphi[r[:,0,0]>rx] = findroot2d( -mymu[:,:,0]+2, h, isleft=True )[r[:,0,0]>rx]
+        hjet2aphi[r[:,0,0]>rx] = findroot2d( -mymu[:,:,0]+2, h, isleft=False )[r[:,0,0]>rx]
+        hjet1aphi = amin(hjet1aphi,hjet1aphia)
+        hjet2aphi = amax(hjet2aphi,hjet2aphia)
+    powjet1 = findroot2d( h[:,:,0] - hjet1aphi[:,None], eout1, isleft=True )
+    powjet2 = findroot2d( h[:,:,0] - hjet2aphi[:,None], eout2, isleft=False )
     powjet = powjet1+powjet2
     #EM
-    powjetEM1aphia = findroot2d( (aphi1[:,:,0]-maxaphibh), eoutEM1, isleft=True )
-    powjetEM2aphia = findroot2d( (aphi2[:,:,0]-maxaphibh), eoutEM2, isleft=False )
-    powjetEM1aphi = np.copy(powjetEM1aphia)
-    powjetEM2aphi = np.copy(powjetEM2aphia)
-    powjetEM1aphi[r[:,0,0]>43] = findroot2d( -mymu[:,:,0]+2, eoutEM1, isleft=True )[r[:,0,0]>43]
-    powjetEM2aphi[r[:,0,0]>43] = findroot2d( -mymu[:,:,0]+2, eoutEM2, isleft=False )[r[:,0,0]>43]
-    powjetEM1aphi = amin(powjetEM1aphi,powjetEM1aphia)
-    powjetEM2aphi = amin(powjetEM2aphi,powjetEM2aphia)
-    powjetEM1 = powjetEM1aphi
-    powjetEM2 = powjetEM2aphi
+    powjetEM1 = findroot2d( h[:,:,0] - hjet1aphi[:,None], eoutEM1, isleft=True )
+    powjetEM2 = findroot2d( h[:,:,0] - hjet2aphi[:,None], eoutEM2, isleft=False )
     powjetEM = powjetEM1+powjetEM2
     #
     #MA
-    powjetMA1aphia = findroot2d( (aphi1[:,:,0]-maxaphibh), eoutMA1, isleft=True )
-    powjetMA2aphia = findroot2d( (aphi2[:,:,0]-maxaphibh), eoutMA2, isleft=False )
-    powjetMA1aphi = np.copy(powjetMA1aphia)
-    powjetMA2aphi = np.copy(powjetMA2aphia)
-    powjetMA1aphi[r[:,0,0]>43] = findroot2d( -mymu[:,:,0]+2, eoutMA1, isleft=True )[r[:,0,0]>43]
-    powjetMA2aphi[r[:,0,0]>43] = findroot2d( -mymu[:,:,0]+2, eoutMA2, isleft=False )[r[:,0,0]>43]
-    powjetMA1aphi = amin(powjetMA1aphi,powjetMA1aphia)
-    powjetMA2aphi = amin(powjetMA2aphi,powjetMA2aphia)
-    powjetMA1 = powjetMA1aphi
-    powjetMA2 = powjetMA2aphi
+    powjetMA1 = findroot2d( h[:,:,0] - hjet1aphi[:,None], eoutMA1, isleft=True )
+    powjetMA2 = findroot2d( h[:,:,0] - hjet2aphi[:,None], eoutMA2, isleft=False )
     powjetMA = powjetMA1+powjetMA2
     #
     # powjetEM1aphi = findroot2d( aphi1[:,:,0]-maxaphibh, eoutEM1, isleft=True )
@@ -566,8 +568,12 @@ def plot2davg(dosq=True):
     hjetwind1b = findroot2d( daphi[:,:,0], h, isleft=True )
     hjetwind2b = findroot2d( daphi[:,:,0], h, isleft=False )
     #limit jet+wind power to be no smaller than jet power
-    hjetwind1 = amin(hjetwind1b, hjetwind1a) #amax(powjet1,powjetwind1a)
-    hjetwind2 = amax(hjetwind2b, hjetwind2a) #amax(powjet2,powjetwind2a)
+    if False:
+        hjetwind1 = amin(hjetwind1b, hjetwind1a) #amax(powjet1,powjetwind1a)
+        hjetwind2 = amax(hjetwind2b, hjetwind2a) #amax(powjet2,powjetwind2a)
+    else:
+        hjetwind1 = hjetwind1a
+        hjetwind2 = hjetwind2a
     powjetwind1 = findroot2d( h-hjetwind1[:,None,None], eout1, isleft=True )
     powjetwind2 = findroot2d( h-hjetwind2[:,None,None], eout2, isleft=False )
     powjetwind = powjetwind1 + powjetwind2
@@ -582,6 +588,7 @@ def plot2davg(dosq=True):
     #
     ############
     plt.figure(2)
+    plt.clf()
     gs3 = GridSpec(3, 3)
     #gs3.update(left=0.05, right=0.95, top=0.30, bottom=0.03, wspace=0.01, hspace=0.04)
     #mdot
@@ -635,7 +642,7 @@ def plot2davg(dosq=True):
     plt.plot( hf[i,0:128,0], aphi[i,:]/maxaphibh, 'gx' )
     i=iofr(r2)
     plt.plot( hf[i,0:128,0], aphi[i,:]/maxaphibh, 'b' )
-    plt.plot( hf[i,0:128,0], aphi[i,:]/maxaphibh, 'bx' )
+    #plt.plot( hf[i,0:128,0], aphi[i,:]/maxaphibh, 'bx' )
     plt.grid()
     ##############
     #
@@ -646,16 +653,21 @@ def plot2davg(dosq=True):
     plt.clf()
     plt.plot(r[:,0,0],powjetwind,'r')
     plt.plot(r[:,0,0],powjet,'b')
-    plt.ylim(0,60)
-    plt.xlim(0,600)
+    #plt.plot(r[:,0,0],powjet,'bx')
+    plt.ylim(0,80)
+    plt.xlim(0,1500)
     #plt.plot(findroot2d(aphix[:,:,0]-maxaphibh,eout)+findroot2d(aphix[:,:,0]-maxaphibh,eout,isleft=False),'y--')
     #plt.plot(powxjet,'b--')
-    plt.plot(powxjetEM,'b--')
-    #plt.plot(powxjetwind,'g')
-    plt.plot(powjetEM,'k')
-    plt.plot(powjetMA,'k')
-    plt.plot(powjetEM+powjetMA,'k')
+    plt.plot(r[:,0,0],powxjetEM,'b--')
+    #plt.plot(r[:,0,0],powxjetwind,'g')
+    plt.plot(r[:,0,0],powjetEM,'k')
+    plt.plot(r[:,0,0],powjetMA,'k')
+    #plt.plot(r[:,0,0],powjetEM+powjetMA,'k')
     plt.grid()
+    plt.figure(8)
+    plt.clf()
+    plt.plot(r[:,0,0],hjet1aphia,'k')
+    plt.xlim(0,1500)
     #xxx
     ##############
     #
@@ -665,19 +677,33 @@ def plot2davg(dosq=True):
     #
     plt.figure(6)
     plco(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),colors='k',nc=30)
-    plt.xlim(0,300); plt.ylim(-600,600)
+    d=1100
+    plt.xlim(0,d); plt.ylim(-d,d)
+    plc(aphi-maxaphibh,levels=(0,),colors='b',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    plc(h-hjet1aphi[:,None,None],levels=(0,),colors='m',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    plc(h-hjet2aphi[:,None,None],levels=(0,),colors='m',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    plc(h-hjetwind1[:,None,None],levels=(0,),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    plc(h-hjetwind2[:,None,None],levels=(0,),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    #plc(chophi(choplo(-avg_unb[:,:,0]-(1.0),0),0.001),xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    #plc(avg_gamma,nc=50,xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True)
+    #
+    #plc(chophi((r/rhor)**0.75*(1-np.abs(np.cos(h))),1),xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    #plc(avg_omegaf2*2*np.pi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True)
     #plc(avg_uu[1]*dxdxp[1][1],xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,))
     #plc(avg_uu[1]*dxdxp[1][1],xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,),colors='g')
     #plc(-avg_unb[:,:,0]-(1.0),levels=(0,0.01,0.1),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-    #plc(chophi(choplo(-avg_unb[:,:,0]-(1.0),0),0.001),xcoord=r*np.sin(h),ycoord=r*np.cos(h))
     #plc(avg_mu[:,:,0]-(1.0),levels=(0,0.01,0.1),colors='r',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-    rfd("fieldline0000.bin")
-    #plc(np.log10(avg_rho),xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-    plc(avg_uu[1],levels=(0,),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-    plc(daphi,levels=(0,),colors='r',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-    plc(h-hjetwind1[:,None,None],levels=(0,),colors='c',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-    plc(h-hjetwind2[:,None,None],levels=(0,),colors='y',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-    plc(chophi(choplo(-avg_sigma,0.1),10),xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    if False:
+        plc(chophi(choplo(-avg_unb[:,:,0]-(1.0),0),0.001),xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        rfd("fieldline0000.bin")
+        #plc(np.log10(avg_rho),xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        plc(avg_uu[1],levels=(0,),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        #plc(daphi,levels=(0,),colors='r',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        #plc(h-hjet1aphia[:,None,None],levels=(0,),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        plc(h-hjetwind1[:,None,None],levels=(0,),colors='c',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        plc(h-hjetwind2[:,None,None],levels=(0,),colors='y',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        plc(chophi(choplo(-avg_sigma,0.1),10),xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        plc(chophi((r/rhor)**0.75*(1-np.abs(np.cos(h))),1),xcoord=r*np.sin(h),ycoord=r*np.cos(h))
     #xxx
     #plc(h,xcoord=r*np.sin(h),ycoord=r*np.cos(h))
     #plc(lrho,xcoord=r*np.sin(h),ycoord=r*np.cos(h))
@@ -996,11 +1022,13 @@ def fieldcalctoth():
     aphi-=0.5*daphi #correction for half-cell shift between face and center in theta
     return(aphi)
    
-def fieldcalcU():
+def fieldcalcU(gdetB1=None):
     """
     Computes the field vector potential
     """
-    daphi = mysum2(gdetB[1])*_dx2*_dx3
+    if gdetB1 == None:
+        gdetB1 = gdetB[1]
+    daphi = (gdetB1).sum(-1)[:,:,None]*_dx2*_dx3
     aphi=daphi.cumsum(axis=1)
     aphi-=0.5*daphi #correction for half-cell shift between face and center in theta
     aphi[0:nx-1] = 0.5*(aphi[0:nx-1]+aphi[1:nx]) #and in r
@@ -1528,12 +1556,12 @@ def mdot(a,b):
            raise Exception('mdot', 'wrong dimensions')
     return c
 
-def fieldcalc():
+def fieldcalc(gdetB1=None):
     """
     Computes the field vector potential
     """
     #return((1-h[:,:,0]/np.pi)[:,:,None]*fieldcalcp()+(h[:,:,0]/np.pi)[:,:,None]*fieldcalcm())
-    return(fieldcalcU())
+    return(fieldcalcU(gdetB1))
 
 def mysum2(vec):
     #return( vec[:,:,0][:,:,None]*nz )
