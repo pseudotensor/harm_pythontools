@@ -341,7 +341,7 @@ def readlena(fname):
     cpsi, cr, ch, cR, cz, cBr, cBtheta, cBphi, ceta, crho, cuur, cuutheta, cuuphi, cgamma, comegaf, cmu, csigma, cbsq = cvals    
     return(cvals)
 
-def findroot2d( fin, xin, isleft=True, nbnd = 1, axis = 0, fallback = True ):
+def findroot2d( fin, xin, isleft=True, nbnd = 1, axis = 0, fallback = 0, fallbackval = 0 ):
     """ returns roots, x[i], so that f(x) = 0 """
     if fin.ndim == 3:
         fin = fin[:,:,0]
@@ -368,7 +368,7 @@ def findroot2d( fin, xin, isleft=True, nbnd = 1, axis = 0, fallback = True ):
             raise( ValueError( "f and x have different shapes" ) )
         xsol = np.empty((n),dtype=f.dtype)
         for i in np.arange(0,n):
-            xsol[i] = findroot1d( f[i], x[i], isleft, nbnd, fallback )
+            xsol[i] = findroot1d( f[i], x[i], isleft, nbnd, fallback, fallbackval )
         xout += (xsol,)
     if len(xout) == 1:
         return( xout[0] )
@@ -376,8 +376,9 @@ def findroot2d( fin, xin, isleft=True, nbnd = 1, axis = 0, fallback = True ):
         return( xout )
         
     
-def findroot1d( f, x, isleft=True, nbnd = 1, fallback = True ):
+def findroot1d( f, x, isleft=True, nbnd = 1, fallback = 0, fallbackval = 0 ):
     """ find a 1-D root """
+    #fallback=1
     if isleft==True:
         ind=0
         dir=1
@@ -398,10 +399,10 @@ def findroot1d( f, x, isleft=True, nbnd = 1, fallback = True ):
     ilist = np.arange(0,n)
     indexlist = f*coef<0
     if( not indexlist.any() ):
-        if fallback:
-            return( x[ind] )
-        else:
+        if not fallback:
             return( float('nan') )
+        else:
+            return( fallbackval )
     i0 = ilist[indexlist][ind]
     if f[i0]*f[i0-dir] > 0:
         raise( ValueError("Could not bracket root") )
@@ -524,35 +525,57 @@ def plot2davg(dosq=True):
     #
     #mymu = amin(20+0*avg_mu,amax(-(ny/2 - np.abs(tj-ny/2.-0.5)-15),amax(avg_mu*0+1,avg_mu)))
     mymu = np.copy(avg_mu)
-    mymu[(tj[:,:,0] > ny-10)+(tj[:,:,0] < 10)]=50
+    mymu[(tj[:,:,0] > ny-15)+(tj[:,:,0] < 15)]=50
+    mymu[mymu<1]=50
     #tot
     if False:
         #keep same sign in jet
-        hjet1aphia = findroot2d( (aphi1[:,:,0]-maxaphibh)*daphi[:,:,0], h, isleft=True )
-        hjet2aphia = findroot2d( (aphi2[:,:,0]-maxaphibh)*daphi[:,:,0], h, isleft=False )
+        hjet1aphia = findroot2d( (aphi1[:,:,0]-maxaphibh)*daphi[:,:,0], h, isleft=True, fallback = 1, fallbackval = np.pi/2 )
+        hjet2aphia = findroot2d( (aphi2[:,:,0]-maxaphibh)*daphi[:,:,0], h, isleft=False, fallback = 1, fallbackval = np.pi/2 )
     else:
         #allow different signs in jet
-        hjet1aphia = findroot2d( (aphi1[:,:,0]-maxaphibh), h, isleft=True )
-        hjet2aphia = findroot2d( (aphi2[:,:,0]-maxaphibh), h, isleft=False )
+        hjet1aphia = findroot2d( (aphi1[:,:,0]-maxaphibh), h, isleft=True, fallback = 1, fallbackval = np.pi/2 )
+        hjet2aphia = findroot2d( (aphi2[:,:,0]-maxaphibh), h, isleft=False, fallback = 1, fallbackval = np.pi/2 )
+    hjet1aphia*=3
+    hjet2aphia=np.pi-(np.pi-hjet2aphia)*3
     hjet1aphi = np.copy(hjet1aphia)
     hjet2aphi = np.copy(hjet2aphia)
-    if False:
-        rx=50
-        hjet1aphi[r[:,0,0]>rx] = findroot2d( -mymu[:,:,0]+2, h, isleft=True )[r[:,0,0]>rx]
-        hjet2aphi[r[:,0,0]>rx] = findroot2d( -mymu[:,:,0]+2, h, isleft=False )[r[:,0,0]>rx]
+    if True:
+        rx=1
+        mumin=1.005
+        hjet1aphi[r[:,0,0]>rx] = findroot2d( -mymu[:,:,0]+mumin, h, isleft=True, fallback = 1, fallbackval = np.pi/2  )[r[:,0,0]>rx]
+        hjet2aphi[r[:,0,0]>rx] = findroot2d( -mymu[:,:,0]+mumin, h, isleft=False, fallback = 1, fallbackval = np.pi/2  )[r[:,0,0]>rx]
+        #hjet1aphi[r[:,0,0]>rx] = findroot2d( -np.float32(avg_gamma[:,:,0])+1.16, h, isleft=True )[r[:,0,0]>rx]
+        #hjet2aphi[r[:,0,0]>rx] = findroot2d( -np.float32(avg_gamma[:,:,0])+1.16, h, isleft=False )[r[:,0,0]>rx]
         hjet1aphi = amin(hjet1aphi,hjet1aphia)
         hjet2aphi = amax(hjet2aphi,hjet2aphia)
-    powjet1 = findroot2d( h[:,:,0] - hjet1aphi[:,None], eout1, isleft=True )
-    powjet2 = findroot2d( h[:,:,0] - hjet2aphi[:,None], eout2, isleft=False )
+    powjet1 = findroot2d( h[:,:,0] - hjet1aphi[:,None], eout1, isleft=True, fallback = 1, fallbackval = np.pi/2 )
+    powjet2 = findroot2d( h[:,:,0] - hjet2aphi[:,None], eout2, isleft=False, fallback = 1, fallbackval = np.pi/2 )
     powjet = powjet1+powjet2
+    #
+    #Write out power
+    #
+    rprintout = 200.
+    powjetatr = powjet[iofr(rprintout)]
+    print( "Pjet(r=%g) = %g" % ( rprintout, powjetatr ) )
+    foutpower = open( "pjet_2davg_%s.txt" %  os.path.basename(os.getcwd()), "w" )
+    #foutpower.write( "#Name a Mdot   Pjet    Etajet  Psitot Psisqtot**0.5 Psijet Psisqjet**0.5 rstag Pjtotmax Pjtot1rstag Pjtot2rstag Pjtot4rstag Pjtot8rstag\n"  )
+    foutpower.write( "%s %f %f %f\n" % (os.path.basename(os.getcwd()), a, powjetatr, rprintout) )
+    #flush to disk just in case to make sure all is written
+    foutpower.flush()
+    os.fsync(foutpower.fileno())
+    foutpower.close()
+    #
     #EM
-    powjetEM1 = findroot2d( h[:,:,0] - hjet1aphi[:,None], eoutEM1, isleft=True )
-    powjetEM2 = findroot2d( h[:,:,0] - hjet2aphi[:,None], eoutEM2, isleft=False )
+    #
+    powjetEM1 = findroot2d( h[:,:,0] - hjet1aphi[:,None], eoutEM1, isleft=True, fallback = 1, fallbackval = np.pi/2 )
+    powjetEM2 = findroot2d( h[:,:,0] - hjet2aphi[:,None], eoutEM2, isleft=False, fallback = 1, fallbackval = np.pi/2 )
     powjetEM = powjetEM1+powjetEM2
     #
     #MA
-    powjetMA1 = findroot2d( h[:,:,0] - hjet1aphi[:,None], eoutMA1, isleft=True )
-    powjetMA2 = findroot2d( h[:,:,0] - hjet2aphi[:,None], eoutMA2, isleft=False )
+    #
+    powjetMA1 = findroot2d( h[:,:,0] - hjet1aphi[:,None], eoutMA1, isleft=True, fallback = 1, fallbackval = np.pi/2 )
+    powjetMA2 = findroot2d( h[:,:,0] - hjet2aphi[:,None], eoutMA2, isleft=False, fallback = 1, fallbackval = np.pi/2 )
     powjetMA = powjetMA1+powjetMA2
     #
     # powjetEM1aphi = findroot2d( aphi1[:,:,0]-maxaphibh, eoutEM1, isleft=True )
@@ -563,10 +586,10 @@ def plot2davg(dosq=True):
     #
     #powjetwind1a = findroot2d( (-avg_unb[:,:,0]-(1.0+unbcutoff))*(avg_uu[1,:,:,0]), eout1, isleft=True )
     #powjetwind2a = findroot2d( (-avg_unb[:,:,0]-(1.0+unbcutoff))*(avg_uu[1,:,:,0]), eout2, isleft=False )
-    hjetwind1a = findroot2d( (-avg_unb[:,:,0]-(1.0+unbcutoff)), h, isleft=True )
-    hjetwind2a = findroot2d( (-avg_unb[:,:,0]-(1.0+unbcutoff)), h, isleft=False )
-    hjetwind1b = findroot2d( daphi[:,:,0], h, isleft=True )
-    hjetwind2b = findroot2d( daphi[:,:,0], h, isleft=False )
+    hjetwind1a = findroot2d( (-avg_unb[:,:,0]-(1.0+unbcutoff)), h, isleft=True, fallback = 1, fallbackval = np.pi/2 )
+    hjetwind2a = findroot2d( (-avg_unb[:,:,0]-(1.0+unbcutoff)), h, isleft=False, fallback = 1, fallbackval = np.pi/2 )
+    hjetwind1b = findroot2d( daphi[:,:,0], h, isleft=True, fallback = 1, fallbackval = np.pi/2 )
+    hjetwind2b = findroot2d( daphi[:,:,0], h, isleft=False, fallback = 1, fallbackval = np.pi/2 )
     #limit jet+wind power to be no smaller than jet power
     if False:
         hjetwind1 = amin(hjetwind1b, hjetwind1a) #amax(powjet1,powjetwind1a)
@@ -574,8 +597,8 @@ def plot2davg(dosq=True):
     else:
         hjetwind1 = hjetwind1a
         hjetwind2 = hjetwind2a
-    powjetwind1 = findroot2d( h-hjetwind1[:,None,None], eout1, isleft=True )
-    powjetwind2 = findroot2d( h-hjetwind2[:,None,None], eout2, isleft=False )
+    powjetwind1 = findroot2d( h-hjetwind1[:,None,None], eout1, isleft=True, fallback = 1, fallbackval = np.pi/2 )
+    powjetwind2 = findroot2d( h-hjetwind2[:,None,None], eout2, isleft=False, fallback = 1, fallbackval = np.pi/2 )
     powjetwind = powjetwind1 + powjetwind2
     #xxx
     #
