@@ -679,19 +679,20 @@ def plot2davg(dosq=True):
     plt.plot(r[:,0,0],powjetwind,'r')
     plt.plot(r[:,0,0],powjet,'b')
     #plt.plot(r[:,0,0],powjet,'bx')
-    plt.ylim(0,80)
+    plt.ylim(0,30)
     plt.xlim(0,1500)
     #plt.plot(findroot2d(aphix[:,:,0]-maxaphibh,eout)+findroot2d(aphix[:,:,0]-maxaphibh,eout,isleft=False),'y--')
     #plt.plot(powxjet,'b--')
-    plt.plot(r[:,0,0],powxjetEM,'b--')
+    #plt.plot(r[:,0,0],powxjetEM,'b--')
     #plt.plot(r[:,0,0],powxjetwind,'g')
     plt.plot(r[:,0,0],powjetEM,'k')
-    plt.plot(r[:,0,0],powjetMA,'k')
+    plt.plot(r[:,0,0],powjetMA,'k--')
     #plt.plot(r[:,0,0],powjetEM+powjetMA,'k')
     plt.grid()
     plt.figure(8)
     plt.clf()
-    plt.plot(r[:,0,0],hjet1aphia,'k')
+    plt.plot(r[:,0,0],hjet1aphi,'k')
+    plt.plot(r[:,0,0],np.pi-hjet2aphi,'k:')
     plt.xlim(0,1500)
     #xxx
     ##############
@@ -702,8 +703,8 @@ def plot2davg(dosq=True):
     #
     plt.figure(6)
     plco(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),colors='k',nc=30)
-    d=1100
-    plt.xlim(0,d); plt.ylim(-d,d)
+    d=500
+    plt.xlim(0,d/2.); plt.ylim(-d,d)
     plc(aphi-maxaphibh,levels=(0,),colors='b',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
     plc(h-hjet1aphi[:,None,None],levels=(0,),colors='m',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
     plc(h-hjet2aphi[:,None,None],levels=(0,),colors='m',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
