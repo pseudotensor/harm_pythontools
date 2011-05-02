@@ -446,6 +446,8 @@ def findroot1d( f, x, isleft=True, nbnd = 1, fallback = 0, fallbackval = 0 ):
 
 def plot2davg(dosq=True):
     global eout1, eout2, eout, avg_aphi,avg_aphi2,powjetwind,powjet,jminjet,jmaxjet,jminwind,jmaxwind,mymu,maxaphibh
+    #use ratio of averages since more stable definition:
+    avg_mu = -avg_Tud[1,0] / avg_rhouu[1]
     #sum away from theta = 0
     unbcutoff=0.001
     rhor=1+(1-a**2)**0.5
