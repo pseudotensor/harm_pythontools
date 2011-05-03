@@ -447,12 +447,19 @@ def findroot1d( f, x, isleft=True, nbnd = 1, fallback = 0, fallbackval = 0 ):
 def plot2davg(dosq=True):
     global eout1, eout2, eout, avg_aphi,avg_aphi2,powjetwind,powjet,jminjet,jmaxjet,jminwind,jmaxwind,mymu,maxaphibh
     #use ratio of averages since more stable definition:
+    #
     avg_mu = -avg_Tud[1,0] / avg_rhouu[1]
     avg_unb = avg_TudMA[1,0] / avg_rhouu[1]
     #sum away from theta = 0
+    muminwind=1./(1.-0.1**2)**0.5
+    muminjet=2.0
     unbcutoff=0.001
     rhor=1+(1-a**2)**0.5
     ihor=iofr(rhor)
+    #
+    qtymem=getqtyvstime(ihor,0.2)
+    md = plotqtyvstime(qtymem,ihor=ihor,whichplot=-1)
+    #
     avg_aphi = scaletofullwedge(nz*_dx3*fieldcalc(gdetB1=avg_gdetB[0]))
     avg_aphi2 = scaletofullwedge((nz*avg_psisq)**0.5)
     #aphi1 = scaletofullwedge(_dx3*_dx2*(avg_gdetB[0]).cumsum(1))
@@ -461,6 +468,9 @@ def plot2davg(dosq=True):
     aphi1 = aphi
     aphi2 = aphi
     maxaphibh = np.max(aphi[ihor])
+    mdotden    = scaletofullwedge(nz*(-gdet*avg_rhouu[1]*_dx2*_dx3).sum(axis=2))
+    mdottot       = mdotden.sum(-1)
+    #
     eout1den   = scaletofullwedge(nz*(-gdet*avg_Tud[1,0]*_dx2*_dx3).sum(axis=2))
     eout1denEM = scaletofullwedge(nz*(-gdet*avg_TudEM[1,0]*_dx2*_dx3).sum(axis=2))
     eout1denMA = scaletofullwedge(nz*(-gdet*avg_TudMA[1,0]*_dx2*_dx3).sum(axis=2))
@@ -487,46 +497,11 @@ def plot2davg(dosq=True):
     eoutdenEM = np.zeros_like(eout1denEM)
     eoutdenEM[tj[:,:,0]>ny/2] = eout2denEM[tj[:,:,0]>ny/2]
     eoutdenEM[tj[:,:,0]<=ny/2] = eout1denEM[tj[:,:,0]<=ny/2]
-    ##################
-    #
-    # FIGURE 1
-    #
-    ##################
-    plt.figure(1)
-    plt.clf()
-    #plco( np.log10(avg_rho), cb=True )
-    plco(choplo(chophi(avg_mu,40),2),cb=True,nc=39)
-    plc(avg_aphi,nc=30)
     aphip1 = np.zeros((aphi.shape[0],aphi.shape[1]+1,aphi.shape[2]))    
     aphip1[:,0:ny] = aphi
     daphi = np.zeros_like(ti)
     daphi[:,0:ny]=aphip1[:,1:ny+1]-aphip1[:,0:ny]
-    jminwind = np.zeros((nx))
-    jmaxwind = np.zeros((nx))
-    jminjet = np.zeros((nx))
-    jmaxjet = np.zeros((nx))
-    for i in np.arange(0,nx):
-        # jminjet[i] = tj[i,:,0][(aphi[i,:,0]>=maxaphibh)+(tj[i,:,0]==ny/2)][0]-1
-        # jmaxjet[i] = tj[i,:,0][(aphi[i,:,0]>=maxaphibh)+(tj[i,:,0]==ny/2+1)][-1]+1
-        # jminwind[i] = tj[i,:,0][((daphi[i,:,0]>0)*(-avg_unb[i,:,0]>1.0+unbcutoff)*(avg_uu[1,i,:,0]>0)+(tj[i,:,0]<=jminjet[i]))==0][0]-0
-        # jmaxwind[i] = tj[i,:,0][((daphi[i,:,0]<0)*(-avg_unb[i,:,0]>1.0+unbcutoff)*(avg_uu[1,i,:,0]>0)+(tj[i,:,0]>=jmaxjet[i]))==0][-1]+0
-        jminjet[i] = tj[i,:,0][(aphi[i,:,0]>=maxaphibh)+(tj[i,:,0]==ny/2)][0]-1
-        jmaxjet[i] = tj[i,:,0][(aphi[i,:,0]>=maxaphibh)+(tj[i,:,0]==ny/2+1)][-1]+1
-        jminwind[i] = tj[i,:,0][((-avg_unb[i,:,0]>1.0+unbcutoff)*(avg_uu[1,i,:,0]>0)+(tj[i,:,0]<=jminjet[i]))==0][0]-1
-        jmaxwind[i] = tj[i,:,0][((-avg_unb[i,:,0]>1.0+unbcutoff)*(avg_uu[1,i,:,0]>0)+(tj[i,:,0]>=jmaxjet[i]))==0][-1]+1
-    powxjetwind = (eoutden*(tj[:,:,0]<jminwind[:,None])).sum(-1)+(eoutden*(tj[:,:,0]>jmaxwind[:,None])).sum(-1)
-    powxjet = (eoutden*(tj[:,:,0]<jminjet[:,None])).sum(-1)+(eoutden*(tj[:,:,0]>jmaxjet[:,None])).sum(-1)
-    powxjetEM = (eoutdenEM*(tj[:,:,0]<jminjet[:,None])).sum(-1)+(eoutdenEM*(tj[:,:,0]>jmaxjet[:,None])).sum(-1)
     #
-    #return aphi to be defined at same locations as eout
-    aphix = np.zeros_like(aphi)
-    aphix[:,0:ny/2] = aphi[:,1:ny/2+1]
-    aphix[:,ny/2:] = aphi[:,ny/2:]
-    #
-    #Probably Correct way
-    #plt.plot(findroot2d(aphix[:,:,0]-maxaphibh,eout)+findroot2d(aphix[:,:,0]-maxaphibh,eout,isleft=False))
-    #
-    #mymu = amin(20+0*avg_mu,amax(-(ny/2 - np.abs(tj-ny/2.-0.5)-15),amax(avg_mu*0+1,avg_mu)))
     mymu = np.copy(avg_mu)
     mymu[(tj[:,:,0] > ny-15)+(tj[:,:,0] < 15)]=50
     mymu[mymu<1]=50
@@ -539,35 +514,24 @@ def plot2davg(dosq=True):
         #allow different signs in jet
         hjet1aphia = findroot2d( (aphi1[:,:,0]-maxaphibh), h, isleft=True, fallback = 1, fallbackval = np.pi/2 )
         hjet2aphia = findroot2d( (aphi2[:,:,0]-maxaphibh), h, isleft=False, fallback = 1, fallbackval = np.pi/2 )
-    hjet1aphia*=3
-    hjet2aphia=np.pi-(np.pi-hjet2aphia)*3
+    #hjet1aphia*=3
+    #hjet2aphia=np.pi-(np.pi-hjet2aphia)*3
     hjet1aphi = np.copy(hjet1aphia)
     hjet2aphi = np.copy(hjet2aphia)
     if True:
         rx=1
-        mumin=1.005
-        hjet1aphi[r[:,0,0]>rx] = findroot2d( -mymu[:,:,0]+mumin, h, isleft=True, fallback = 1, fallbackval = np.pi/2  )[r[:,0,0]>rx]
-        hjet2aphi[r[:,0,0]>rx] = findroot2d( -mymu[:,:,0]+mumin, h, isleft=False, fallback = 1, fallbackval = np.pi/2  )[r[:,0,0]>rx]
-        #hjet1aphi[r[:,0,0]>rx] = findroot2d( -np.float32(avg_gamma[:,:,0])+1.16, h, isleft=True )[r[:,0,0]>rx]
-        #hjet2aphi[r[:,0,0]>rx] = findroot2d( -np.float32(avg_gamma[:,:,0])+1.16, h, isleft=False )[r[:,0,0]>rx]
+        hjet1aphi[r[:,0,0]>rx] = findroot2d( -mymu[:,:,0]+muminjet, h, isleft=True, fallback = 1, fallbackval = np.pi/2  )[r[:,0,0]>rx]
+        hjet2aphi[r[:,0,0]>rx] = findroot2d( -mymu[:,:,0]+muminjet, h, isleft=False, fallback = 1, fallbackval = np.pi/2  )[r[:,0,0]>rx]
         hjet1aphi = amin(hjet1aphi,hjet1aphia)
         hjet2aphi = amax(hjet2aphi,hjet2aphia)
+        hwind1aphi = findroot2d( -mymu[:,:,0]+muminwind, h, isleft=True, fallback = 1, fallbackval = np.pi/2  )
+        hwind2aphi = findroot2d( -mymu[:,:,0]+muminwind, h, isleft=False, fallback = 1, fallbackval = np.pi/2  )
     powjet1 = findroot2d( h[:,:,0] - hjet1aphi[:,None], eout1, isleft=True, fallback = 1, fallbackval = np.pi/2 )
     powjet2 = findroot2d( h[:,:,0] - hjet2aphi[:,None], eout2, isleft=False, fallback = 1, fallbackval = np.pi/2 )
     powjet = powjet1+powjet2
-    #
-    #Write out power
-    #
-    rprintout = 200.
-    powjetatr = powjet[iofr(rprintout)]
-    print( "Pjet(r=%g) = %g" % ( rprintout, powjetatr ) )
-    foutpower = open( "pjet_2davg_%s.txt" %  os.path.basename(os.getcwd()), "w" )
-    #foutpower.write( "#Name a Mdot   Pjet    Etajet  Psitot Psisqtot**0.5 Psijet Psisqjet**0.5 rstag Pjtotmax Pjtot1rstag Pjtot2rstag Pjtot4rstag Pjtot8rstag\n"  )
-    foutpower.write( "%s %f %f %f\n" % (os.path.basename(os.getcwd()), a, powjetatr, rprintout) )
-    #flush to disk just in case to make sure all is written
-    foutpower.flush()
-    os.fsync(foutpower.fileno())
-    foutpower.close()
+    powwind1 = findroot2d( h[:,:,0] - hwind1aphi[:,None], eout1, isleft=True, fallback = 1, fallbackval = np.pi/2 )
+    powwind2 = findroot2d( h[:,:,0] - hwind2aphi[:,None], eout2, isleft=False, fallback = 1, fallbackval = np.pi/2 )
+    powwind = powwind1+powwind2
     #
     #EM
     #
@@ -603,7 +567,30 @@ def plot2davg(dosq=True):
     powjetwind1 = findroot2d( h-hjetwind1[:,None,None], eout1, isleft=True, fallback = 1, fallbackval = np.pi/2 )
     powjetwind2 = findroot2d( h-hjetwind2[:,None,None], eout2, isleft=False, fallback = 1, fallbackval = np.pi/2 )
     powjetwind = powjetwind1 + powjetwind2
+    #
+    #Write out power
+    #
+    rprintout = 200.
+    powjetatr = powjet[iofr(rprintout)]
+    powjetwindatr = powjetwind[iofr(rprintout)]
+    powwindatr = powwind[iofr(rprintout)]
+    print( "r = %g: etajet = %g, Pjet = %g, etawind = %g, Pwind = %g" % ( rprintout, powjetatr/md, powjetatr, powwindatr/md, powwindatr ) )
+    foutpower = open( "pjet_2davg_%s.txt" %  os.path.basename(os.getcwd()), "w" )
+    printjetwindpower(filehandle = foutpower, r = 200., stage = 0, powjet = powjet, powwind = powwind, muminjet = muminjet, muminwind = muminwind, md=md)
+    printjetwindpower(filehandle = foutpower, r = 400., stage = 1, powjet = powjet, powwind = powwind, muminjet = muminjet, muminwind = muminwind, md=md)
+    printjetwindpower(filehandle = foutpower, r = 600., stage = 2, powjet = powjet, powwind = powwind, muminjet = muminjet, muminwind = muminwind, md=md)
+    foutpower.close()
     #xxx
+    ##################
+    #
+    # FIGURE 1
+    #
+    ##################
+    plt.figure(1)
+    plt.clf()
+    #plco( np.log10(avg_rho), cb=True )
+    plco(choplo(chophi(avg_mu,40),2),cb=True,nc=39)
+    plc(avg_aphi,nc=30)
     #
     #plt.clf()
     r1 = 74.339592777217106
@@ -677,17 +664,19 @@ def plot2davg(dosq=True):
     ##############
     plt.figure(5)
     plt.clf()
-    plt.plot(r[:,0,0],powjetwind,'r')
-    plt.plot(r[:,0,0],powjet,'b')
+    plt.plot(r[:,0,0],powjetwind,'g')
+    plt.plot(r[:,0,0],powwind,'c')
+    plt.plot(r[:,0,0],powjet,'m')
+    plt.plot(r[:,0,0],mdottot,'r')
     #plt.plot(r[:,0,0],powjet,'bx')
-    plt.ylim(0,30)
+    plt.ylim(0,70)
     plt.xlim(0,1500)
     #plt.plot(findroot2d(aphix[:,:,0]-maxaphibh,eout)+findroot2d(aphix[:,:,0]-maxaphibh,eout,isleft=False),'y--')
     #plt.plot(powxjet,'b--')
     #plt.plot(r[:,0,0],powxjetEM,'b--')
     #plt.plot(r[:,0,0],powxjetwind,'g')
-    plt.plot(r[:,0,0],powjetEM,'k')
-    plt.plot(r[:,0,0],powjetMA,'k--')
+    plt.plot(r[:,0,0],powjetEM,'m:')
+    plt.plot(r[:,0,0],powjetMA,'m--')
     #plt.plot(r[:,0,0],powjetEM+powjetMA,'k')
     plt.grid()
     plt.figure(8)
@@ -704,11 +693,14 @@ def plot2davg(dosq=True):
     #
     plt.figure(6)
     plco(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),colors='k',nc=30)
+    #plc(daphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,),colors='r')
     d=500
     plt.xlim(0,d/2.); plt.ylim(-d,d)
     plc(aphi-maxaphibh,levels=(0,),colors='b',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
     plc(h-hjet1aphi[:,None,None],levels=(0,),colors='m',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
     plc(h-hjet2aphi[:,None,None],levels=(0,),colors='m',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    plc(h-hwind1aphi[:,None,None],levels=(0,),colors='c',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    plc(h-hwind2aphi[:,None,None],levels=(0,),colors='c',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
     plc(h-hjetwind1[:,None,None],levels=(0,),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
     plc(h-hjetwind2[:,None,None],levels=(0,),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
     #plc(chophi(choplo(-avg_unb[:,:,0]-(1.0),0),0.001),xcoord=r*np.sin(h),ycoord=r*np.cos(h))
@@ -734,6 +726,27 @@ def plot2davg(dosq=True):
     #xxx
     #plc(h,xcoord=r*np.sin(h),ycoord=r*np.cos(h))
     #plc(lrho,xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+
+def printjetwindpower(filehandle = None, r = None, stage = 0, powjet = 0, powwind = 0, muminjet = 0, muminwind = 0, md = 0):
+    if filehandle == None or r == None:
+        raise( ValuseError("filehandle and r have to be specified") )
+    #
+    #foutpower.write( "#Name a Mdot   Pjet    Etajet  Psitot Psisqtot**0.5 Psijet Psisqjet**0.5 rstag Pjtotmax Pjtot1rstag Pjtot2rstag Pjtot4rstag Pjtot8rstag\n"  )
+    #
+    i = iofr(r)
+    if stage == 0:
+        #initial stage
+        filehandle.write( "%s %f %f %f %f %f %f" % (os.path.basename(os.getcwd()), a, avg_ts[0], avg_te[0], muminjet, muminwind, md) )
+    if stage == 1:
+        #intermediate stage
+        filehandle.write( " %f %f %f" % (powjet[i], powwind[i], r) )
+    if stage == 2:
+        #final stage
+        filehandle.write( " %f %f %f\n" % (powjet[i], powwind[i], r) )
+    #flush to disk just in case to make sure all is written
+    filehandle.flush()
+    os.fsync(filehandle.fileno())
+    
     
 def horcalc(which=1):
     """
@@ -2687,7 +2700,23 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
         #ax.set_ylim(0,2)
         ax.set_xlabel(r'$t\;(GM/c^3)$')
         ax.set_ylabel(r'$P_{\rm j}/\langle\dot M\rangle$',fontsize=16,ha='right')
-        
+
+    if whichplot == -1:
+        etajetavg = pjetfinavg/mdotfinavg
+        foutpower = open( "pjet_power_%s.txt" %  os.path.basename(os.getcwd()), "w" )
+        #foutpower.write( "#Name a Mdot   Pjet    Etajet  Psitot Psisqtot**0.5 Psijet Psisqjet**0.5 rstag Pjtotmax Pjtot1rstag Pjtot2rstag Pjtot4rstag Pjtot8rstag\n"  )
+        foutpower.write( "%s %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n" % (os.path.basename(os.getcwd()), a, mdotfinavg, 
+                                                                       pjetfinavg, etajetavg, fstotfinavg, 
+                                                                       fstotsqfinavg, fsj30finavg, fsj30sqfinavg, 
+                                                                       rstag, pjtotfinavgvsr5max, pjtotfinavgvsr5rstag, 
+                                                                       pjtotfinavgvsr5r2stag, pjtotfinavgvsr5r4stag, pjtotfinavgvsr5r8stag) )
+        #flush to disk just in case to make sure all is written
+        foutpower.flush()
+        os.fsync(foutpower.fileno())
+        foutpower.close()
+        return( mdotfinavg )
+
+       
     if whichplot == None:
         fig,plotlist=plt.subplots(nrows=4,ncols=1,sharex=True,figsize=(12,16),num=1)
         #plt.clf()
@@ -2737,7 +2766,6 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
         #plotlist[2].set_xlabel(r'$t\;(GM/c^3)$')
         plotlist[2].set_ylabel(r'$P_{\rm j}$',fontsize=16)
 
-        etajetavg = pjetfinavg/mdotfinavg
         #plotlist[3].plot(ts,(pjem10[:,ihor]/mdtot[:,ihor]),label=r'$P_{\rm j,em10}/\dot M_{\rm tot}$')
         #plotlist[3].plot(ts,(pjem5[:,ihor]/(mdtot[:,ihor]-md5[:,ihor])),label=r'$P_{\rm j,em5}/\dot M_{{\rm tot},b^2/\rho<5}$')
         plotlist[3].plot(ts,(pjem30[:,ihor]/mdotfinavg),label=r'$\dot \eta_{10}=P_{\rm j,em10}/\dot M_{{\rm tot},b^2/\rho<30}$')
@@ -2748,19 +2776,6 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
         plotlist[3].legend(loc='upper left')
         plotlist[3].set_xlabel(r'$t\;(GM/c^3)$')
         plotlist[3].set_ylabel(r'$P_{\rm j}/\dot M_{\rm h}$',fontsize=16)
-
-        foutpower = open( "pjet_power_%s.txt" %  os.path.basename(os.getcwd()), "w" )
-        #foutpower.write( "#Name a Mdot   Pjet    Etajet  Psitot Psisqtot**0.5 Psijet Psisqjet**0.5 rstag Pjtotmax Pjtot1rstag Pjtot2rstag Pjtot4rstag Pjtot8rstag\n"  )
-        foutpower.write( "%s %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n" % (os.path.basename(os.getcwd()), a, mdotfinavg, 
-                                                                       pjetfinavg, etajetavg, fstotfinavg, 
-                                                                       fstotsqfinavg, fsj30finavg, fsj30sqfinavg, 
-                                                                       rstag, pjtotfinavgvsr5max, pjtotfinavgvsr5rstag, 
-                                                                       pjtotfinavgvsr5r2stag, pjtotfinavgvsr5r4stag, pjtotfinavgvsr5r8stag) )
-        #flush to disk just in case to make sure all is written
-        foutpower.flush()
-        os.fsync(foutpower.fileno())
-        foutpower.close()
-
 
         #title("\TeX\ is Number $\displaystyle\sum_{n=1}^\infty\frac{-e^{i\pi}}{2^n}$!", 
         #      fontsize=16, color='r')
@@ -3078,18 +3093,30 @@ def Risco(a):
     risco = 3 + Z2 - np.sign(a)* ( (3 - Z1)*(3 + Z1 + 2*Z2) )**0.5
     return(risco)
 
-def plotpowers(fname,hor=0):
-    gd1 = np.loadtxt( fname, unpack = True, usecols = [1,2,3,4,5,6,7,8,9,10,11,12,13,14] )
-    #gd=gd1.view().reshape((-1,nx,ny,nz), order='F')
-    alist = gd1[0]
-    rhorlist = 1+(1-alist**2)**0.5
-    omhlist = alist / 2 / rhorlist
-    mdotlist = gd1[1]
-    #etalist = gd1[3]
-    powlist=gd1[12] #pow(2*rstag)
+def plotpowers(fname,hor=0,format=1):
+    if format == 0: #old format
+        gd1 = np.loadtxt( fname, unpack = True, usecols = [1,2,3,4,5,6,7,8,9,10,11,12,13,14] )
+        #gd=gd1.view().reshape((-1,nx,ny,nz), order='F')
+        alist = gd1[0]
+        rhorlist = 1+(1-alist**2)**0.5
+        omhlist = alist / 2 / rhorlist
+        mdotlist = gd1[1]
+        #etalist = gd1[3]
+        powlist=gd1[12] #pow(2*rstag)
+        psitotsqlist = gd1[5]
+        psi30sqlist = gd1[7]
+    elif format == 1: #new avg2d format
+        gd1 = np.loadtxt( fname, unpack = True, usecols = [1,2,3,4,5,6,7,8,9,10,11,12] )
+        #gd=gd1.view().reshape((-1,nx,ny,nz), order='F')
+        alist = gd1[0]
+        rhorlist = 1+(1-alist**2)**0.5
+        omhlist = alist / 2 / rhorlist
+        mdotlist = gd1[5]
+        #etalist = gd1[3]
+        powlist=gd1[6] #pow(2*rstag)
+        powwindlist=gd1[7]
     etalist = powlist/mdotlist
-    psitotsqlist = gd1[5]
-    psi30sqlist = gd1[7]
+    etawindlist = powwindlist/mdotlist
     mya=np.arange(-1,1,0.001)
     rhor = 1+(1-mya**2)**0.5
     myomh = mya / 2/ rhor
@@ -3106,10 +3133,11 @@ def plotpowers(fname,hor=0):
     #Tried to equate pressures -- works but mistake in calculaton -- wrong power
     #plt.plot(mspina6[mhor6==hor],mpow6[mhor6==hor]* ((mspina6[mhor6==hor]**2+3*rhor6**2)/3/(2*np.pi*horx)) )
     #Simple multiplication by rhor -- works!  \Phi^2/Mdot * rhor ~ const
-    plt.plot(mspina6[mhor6==hor],2.7*mpow6[mhor6==hor]*rhor6 )
+    plt.plot(mspina6[mhor6==hor],3.75*mpow6[mhor6==hor]*rhor6 )
     #plt.plot(mya,mya**2)
     plt.plot(alist,etalist,'o')
-    plt.plot(mspina6[mhor6==hor],5*mpow6[mhor6==hor])
+    plt.plot(alist,etawindlist,'x')
+    plt.plot(mspina6[mhor6==hor],6.94*mpow6[mhor6==hor])
     #plt.plot(mspina2[mhor2==hor],5*mpow2a[mhor2==hor])
     #
     # plt.figure(5)
@@ -3121,26 +3149,27 @@ def plotpowers(fname,hor=0):
     #plt.plot(mya,mya**2)
     #plt.plot(mya,mypwr)
     #
-    plt.figure(2)
-    plt.clf()
-    #plt.plot( mya, myeta )
-    #plt.plot(mya,mya**2)
-    #y = (psi30sqlist)**2/(2*mdotlist)
-    y = (psi30sqlist)**2/(2*mdotlist)
-    plt.plot(alist,y,'o')
-    plt.plot(mya,(250+0*mya)*rhor) 
-    plt.plot(mya,250./((3./(mya**2 + 3*rhor**2))**2*2*rhor**2)) 
-    #plt.plot(mya,((mya**2+3*rhor**2)/3)**2/(2/rhor)) 
-    plt.ylim(ymin=0)
-    #plt.plot(alist,2*mdotlist/(psitotsqlist)**2,'o')
-    #plt.plot(mspina6[mhor6==hor],5*mpow6[mhor6==hor])
-    #plt.plot(mspina2[mhor2==hor],5*mpow2a[mhor2==hor])
-    # plt.figure(4)
-    # plt.clf()
-    # y = (psi30sqlist)**2/(2*mdotlist*rhorlist**2)
-    # plt.plot(alist,1/(y/np.max(y)),'o')
-    # plt.plot(mya,Risco(mya)**(1./2.)*0.9) 
-    # plt.ylim(ymin=0)
+    if format == 0:
+        plt.figure(2)
+        plt.clf()
+        #plt.plot( mya, myeta )
+        #plt.plot(mya,mya**2)
+        #y = (psi30sqlist)**2/(2*mdotlist)
+        y = (psi30sqlist)**2/(2*mdotlist)
+        plt.plot(alist,y,'o')
+        plt.plot(mya,(250+0*mya)*rhor) 
+        plt.plot(mya,250./((3./(mya**2 + 3*rhor**2))**2*2*rhor**2)) 
+        #plt.plot(mya,((mya**2+3*rhor**2)/3)**2/(2/rhor)) 
+        plt.ylim(ymin=0)
+        #plt.plot(alist,2*mdotlist/(psitotsqlist)**2,'o')
+        #plt.plot(mspina6[mhor6==hor],5*mpow6[mhor6==hor])
+        #plt.plot(mspina2[mhor2==hor],5*mpow2a[mhor2==hor])
+        # plt.figure(4)
+        # plt.clf()
+        # y = (psi30sqlist)**2/(2*mdotlist*rhorlist**2)
+        # plt.plot(alist,1/(y/np.max(y)),'o')
+        # plt.plot(mya,Risco(mya)**(1./2.)*0.9) 
+        # plt.ylim(ymin=0)
     plt.figure(3)
     plt.clf()
     #plt.plot( mya, myeta )
@@ -3150,8 +3179,9 @@ def plotpowers(fname,hor=0):
     #divide flux by 2 (converts flux to single hemisphere) and by dxdxp33 (accounts for A_3 -> A_\phi):
     # pwrlist = (psi30sqlist/2/(2*np.pi))**2*2.0000 * 1.*1.0472*omhlist**2 * 1.5*(psi**2-psi**3/3)
     # plt.plot(alist,pwrlist6/mdotlist,'o')
-    pwrlist6 = (psi30sqlist/2/(2*np.pi))**2*pow6func(np.abs(omhlist))
-    plt.plot(alist,pwrlist6/mdotlist,'o')
+    if format == 0:
+        pwrlist6 = (psi30sqlist/2/(2*np.pi))**2*pow6func(np.abs(omhlist))
+        plt.plot(alist,pwrlist6/mdotlist,'o')
     plt.ylim(ymin=0,ymax=3)
     #plt.plot(alist,2*mdotlist/(psitotsqlist)**2,'o')
     plt.plot( mya, myeta )
