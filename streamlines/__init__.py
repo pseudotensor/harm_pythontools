@@ -142,7 +142,7 @@ class Streamlines(object):
              self.v[j+1,i]*(1-ai)*aj +
              self.v[j+1,i+1]*ai*aj)
 
-        self.used[j:j+self.spacing,i:i+self.spacing] = True
+        self.used[max(0,j-self.spacing+1):j+self.spacing,max(0,i-self.spacing+1):i+self.spacing] = True
 
         return u,v
 
