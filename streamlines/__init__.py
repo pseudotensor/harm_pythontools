@@ -353,8 +353,8 @@ def streamplot(x, y, u, v, density=1, linewidth=1,
              (segments, **args)
         pylab.gca().add_collection(lc)
             
-        ## Add arrows half way along each trajectory.
-        for n in numpy.arange((len(tx)%dtx)/2+dtx/2,len(tx)-2,dtx):
+        ## Add arrows every dtx along each trajectory.
+        for n in numpy.arange(max((len(tx)%dtx)/2+dtx/2,1),len(tx)-2,dtx):
             #n = len(tx)/2
             if type(linewidth) == numpy.ndarray:
                 arrowlinewidth = args['linewidth'][n]
@@ -362,7 +362,7 @@ def streamplot(x, y, u, v, density=1, linewidth=1,
             if type(color) == numpy.ndarray:            
                 arrowcolor = args['color'][n]
 
-            p = mpp.FancyArrowPatch((tx[n],ty[n]), (tx[n+1],ty[n+1]),
+            p = mpp.FancyArrowPatch((tx[n-1],ty[n-1]), (tx[n+1],ty[n+1]),
                                 arrowstyle='->', lw=arrowlinewidth,
                                 mutation_scale=20*arrowsize, color=arrowcolor)
             pylab.gca().add_patch(p)
