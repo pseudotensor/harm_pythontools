@@ -354,7 +354,7 @@ def streamplot(x, y, u, v, density=1, linewidth=1,
         pylab.gca().add_collection(lc)
             
         ## Add arrows half way along each trajectory.
-        for n in numpy.arange((len(tx)%dtx)/2+dtx/2,len(tx)-1,dtx):
+        for n in numpy.arange((len(tx)%dtx)/2+dtx/2,len(tx)-2,dtx):
             #n = len(tx)/2
             if type(linewidth) == numpy.ndarray:
                 arrowlinewidth = args['linewidth'][n]
