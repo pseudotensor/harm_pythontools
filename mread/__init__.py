@@ -3427,7 +3427,7 @@ if __name__ == "__main__":
         else:
             qtymem=getqtyvstime(ihor,0.2)
             plotqtyvstime(qtymem)
-    if True:
+    if False:
         #2DAVG
         if len(sys.argv[1:])!=0:
             grid3d("gdump.bin",use2d=True)
@@ -3505,7 +3505,7 @@ if __name__ == "__main__":
         hf=horfluxcalc(ihor)
         df=diskfluxcalc(ny/2,rmin=rhor)
         print "Final   (t=%-8g): BHflux = %g, Diskflux = %g" % (t, hf, df)
-    if False:
+    if True:
         #Rz and xy planes side by side
         plotlenf=10
         plotleni=50
