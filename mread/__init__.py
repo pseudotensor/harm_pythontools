@@ -2741,15 +2741,25 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
     fsj30finavg = (fsj30[:,ihor])[(ts<ftf)*(ts>=fti)].sum(0)/(fsj30[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0] 
     fsj30sqfinavg = ( (fsj30[:,ihor]**2)[(ts<ftf)*(ts>=fti)].sum(0)/(fsj30[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0] )**0.5
     
+    #######################
+    #
+    # Mdot ***
+    #
+    #######################
     if whichplot == 1:
-        ax.plot(ts,np.abs(mdtot[:,ihor]-md10[:,ihor]))#,label=r'$\dot M$')
+        ax.plot(ts,np.abs(mdtot[:,ihor]-md30[:,ihor]))#,label=r'$\dot M$')
         if findex != None:
-            ax.plot(ts[findex],np.abs(mdtot[:,ihor]-md10[:,ihor])[findex],'ro')#,label=r'$\dot M$')
+            ax.plot(ts[findex],np.abs(mdtot[:,ihor]-md30[:,ihor])[findex],'ro')#,label=r'$\dot M$')
         #ax.legend(loc='upper left')
         if dotavg:
             ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotfinavg)#,label=r'$\langle \dot M\rangle$')
         ax.set_ylabel(r'$\dot M$',fontsize=16)
         plt.setp( ax.get_xticklabels(), visible=False)
+    #######################
+    #
+    # Pjet
+    #
+    #######################
     if whichplot == 2:
         ax.plot(ts,(pjem10[:,ihor]),label=r'P_{\rm j}$')
         #ax.legend(loc='upper left')
@@ -2757,6 +2767,11 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
             ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg)#,label=r'$\langle P_{\rm j}\rangle$')
         ax.set_ylabel(r'$P_{\rm j}$',fontsize=16)
         plt.setp( ax.get_xticklabels(), visible=False)
+    #######################
+    #
+    # eta instantaneous
+    #
+    #######################
     if whichplot == 3:
         ax.plot(ts,(pjem10[:,ihor]/(mdtot[:,ihor]-md10[:,ihor])))#,label=r'$P_{\rm j}/\dot M$')
         #ax.legend(loc='upper left')
@@ -2765,16 +2780,38 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
         ax.set_ylim(0,4)
         #ax.set_xlabel(r'$t\;(GM/c^3)$')
         ax.set_ylabel(r'$P_{\rm j}/\dot M$',fontsize=16)
+    #######################
+    #
+    # eta ***
+    #
+    #######################
     if whichplot == 4:
-        ax.plot(ts,pjem10[:,ihor]/mdotfinavg)#,label=r'$P_{\rm j}/\dot M$')
+        ax.plot(ts,pjem30[:,ihor]/mdotfinavg)#,label=r'$P_{\rm j}/\dot M$')
         if findex != None:
-            ax.plot(ts[findex],(pjem10[:,ihor]/mdotfinavg)[findex],'ro')#,label=r'$\dot M$')
+            ax.plot(ts[findex],(pjem30[:,ihor]/mdotfinavg)[findex],'ro')#,label=r'$\dot M$')
         #ax.legend(loc='upper left')
         if dotavg:
             ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg/mdotfinavg)#,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
         #ax.set_ylim(0,2)
         ax.set_xlabel(r'$t\;(GM/c^3)$')
         ax.set_ylabel(r'$P_{\rm j}/\langle\dot M\rangle$',fontsize=16,ha='right')
+    #######################
+    #
+    # \Phi ***
+    #
+    #######################
+    if whichplot == 5:
+        omh = a / (2*(1+(1-a**2)**0.5))
+        #To approximately get efficiency:
+        #ax.plot(ts,2./3.*np.pi*omh**2*np.abs(fsj30[:,ihor]/4/np.pi)**2/mdotfinavg)
+        ax.plot(ts,(2./3.*np.pi*omh**2)**0.5*np.abs(fsj30[:,ihor]/4/np.pi)/mdotfinavg**0.5)
+        if findex != None:
+            ax.plot(ts[findex],(2./3.*np.pi*omh**2)**0.5*np.abs(fsj30[:,ihor]/4/np.pi)[findex]/mdotfinavg**0.5,'ro')
+        #ax.legend(loc='upper left')
+        if dotavg:
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+(2./3.*np.pi*omh**2)**0.5*(fsj30sqfinavg/4/np.pi)/mdotfinavg**0.5)
+        ax.set_ylabel(r'$\ \ \ k\Phi/\langle\dot M\rangle^{\!1/2}$',fontsize=16)
+        plt.setp( ax.get_xticklabels(), visible=False )
 
     if whichplot == -1:
         etajetavg = pjetfinavg/mdotfinavg
@@ -3550,14 +3587,15 @@ if __name__ == "__main__":
                 plotlen = plotleni+(plotlenf-plotleni)*(t-plotlenti)/(plotlentf-plotlenti)
                 plotlen = min(plotlen,plotleni)
                 plotlen = max(plotlen,plotlenf)
-                plt.figure(0, figsize=(12,8), dpi=100)
+                plt.figure(0, figsize=(12,9), dpi=100)
                 plt.clf()
-                plt.suptitle(r'$\log_{10}\rho$ at t = %4.0f' % t)
+                #SWITCH OFF SUPTITLE
+                #plt.suptitle(r'$\log_{10}\rho$ at t = %4.0f' % t)
                 #mdot,pjet,pjet/mdot plots
-                gs3 = GridSpec(2, 2)
-                gs3.update(left=0.05, right=0.95, top=0.30, bottom=0.03, wspace=0.01, hspace=0.04)
+                gs3 = GridSpec(3, 3)
+                gs3.update(left=0.05, right=0.95, top=0.34, bottom=0.03, wspace=0.01, hspace=0.04)
                 #mdot
-                ax31 = plt.subplot(gs3[-2,:])
+                ax31 = plt.subplot(gs3[-3,:])
                 plotqtyvstime(qtymem,ax=ax31,whichplot=1,findex=findex)
                 ymax=ax31.get_ylim()[1]
                 ymax=2*(np.floor(np.floor(ymax+1.5)/2))
@@ -3575,13 +3613,36 @@ if __name__ == "__main__":
                 # ymax=ax33.get_ylim()[1]
                 # ax33.set_yticks((ymax/2,ymax))
                 # ax33.grid(True)
+                #
+                #\phi
+                #
+                ax35 = plt.subplot(gs3[-2,:])
+                plotqtyvstime(qtymem,ax=ax35,whichplot=5,findex=findex)
+                ymax=ax35.get_ylim()[1]
+                if 1 < ymax and ymax < 2: 
+                    #ymax = 2
+                    tck=(1,)
+                    ax35.set_yticks(tck)
+                    #ax35.set_yticklabels(('','1','2'))
+                elif ymax < 1: 
+                    ymax = 1
+                    tck=(0.5,1)
+                    ax35.set_yticks(tck)
+                    ax35.set_yticklabels(('','1'))
+                else:
+                    ymax=np.floor(ymax)+1
+                    tck=np.arange(1,ymax)
+                    ax35.set_yticks(tck)
+                ax35.grid(True)
+                #
                 #pjet/<mdot>
+                #
                 ax34 = plt.subplot(gs3[-1,:])
                 plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findex)
                 ymax=ax34.get_ylim()[1]
                 if 1 < ymax and ymax < 2: 
-                    ymax = 2
-                    tck=(1,2)
+                    #ymax = 2
+                    tck=(1,)
                     ax34.set_yticks(tck)
                     #ax34.set_yticklabels(('','1','2'))
                 elif ymax < 1: 
@@ -3598,11 +3659,11 @@ if __name__ == "__main__":
                 ax34.grid(True)
                 #Rz xy
                 gs1 = GridSpec(1, 1)
-                gs1.update(left=0.05, right=0.45, top=0.95, bottom=0.33, wspace=0.05)
+                gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.37, wspace=0.05)
                 ax1 = plt.subplot(gs1[:, -1])
                 mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False)
                 gs2 = GridSpec(1, 1)
-                gs2.update(left=0.5, right=1, top=0.95, bottom=0.33, wspace=0.05)
+                gs2.update(left=0.5, right=1, top=0.99, bottom=0.37, wspace=0.05)
                 ax2 = plt.subplot(gs2[:, -1])
                 mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False)
                 #print xxx
