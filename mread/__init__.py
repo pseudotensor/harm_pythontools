@@ -866,9 +866,10 @@ def reinterpxy(vartointerp,extent,ncell,domask=1):
     #rfd("fieldline0250.bin")
     xraw=r*np.sin(h)*np.cos(ph)
     yraw=r*np.sin(h)*np.sin(ph)
-    x=xraw[:,ny/2,:].view().reshape(-1)
-    y=yraw[:,ny/2,:].view().reshape(-1)
-    var=vartointerp[:,ny/2,:].view().reshape(-1)
+    #2 cells below the midplane
+    x=xraw[:,ny/2+1,:].view().reshape(-1)
+    y=yraw[:,ny/2+1,:].view().reshape(-1)
+    var=vartointerp[:,ny/2+1,:].view().reshape(-1)
     #mirror
     if nz*_dx3*dxdxp[3,3,0,0,0] < 0.99 * 2 * np.pi:
         x=np.concatenate((-x,x))
