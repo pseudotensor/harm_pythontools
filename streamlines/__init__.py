@@ -30,7 +30,7 @@ import matplotlib.patches as mpp
 
 def streamplot(x, y, u, v, density=1, linewidth=1,
                color='k', cmap=None, norm=None, vmax=None, vmin=None,
-               arrowsize=1, INTEGRATOR='RK4',dtx=10):
+               arrowsize=1, INTEGRATOR='RK4',dtx=10,ax=None,setxylim=False):
     '''Draws streamlines of a vector flow.
 
     * x and y are 1d arrays defining an *evenly spaced* grid.
@@ -94,6 +94,9 @@ def streamplot(x, y, u, v, density=1, linewidth=1,
     ## blank-index space
     bx_spacing = NGX/float(NBX-1)
     by_spacing = NGY/float(NBY-1)
+    
+    if ax is None:
+        ax = pylab.gca()
 
     def blank_pos(xi, yi):
         ## Takes grid space coords and returns nearest space in
@@ -351,24 +354,25 @@ def streamplot(x, y, u, v, density=1, linewidth=1,
         
         lc = matplotlib.collections.LineCollection\
              (segments, **args)
-        pylab.gca().add_collection(lc)
+        ax.add_collection(lc)
             
         ## Add arrows every dtx along each trajectory.
-        for n in numpy.arange(max((len(tx)%dtx)/2+dtx/2,1),len(tx)-2,dtx):
-            #n = len(tx)/2
+        #for n in numpy.arange(max((len(tx)%dtx)/2+dtx/2,1),len(tx)-2,dtx):
+        if True:
+            n = len(tx)/2
             if type(linewidth) == numpy.ndarray:
                 arrowlinewidth = args['linewidth'][n]
 
             if type(color) == numpy.ndarray:            
                 arrowcolor = args['color'][n]
 
-            p = mpp.FancyArrowPatch((tx[n-1],ty[n-1]), (tx[n+1],ty[n+1]),
+            p = mpp.FancyArrowPatch((tx[n],ty[n]), (tx[n+1],ty[n+1]),
                                 arrowstyle='->', lw=arrowlinewidth,
                                 mutation_scale=20*arrowsize, color=arrowcolor)
-            pylab.gca().add_patch(p)
-
-    pylab.xlim(x.min(), x.max())
-    pylab.ylim(y.min(), y.max())    
+            ax.add_patch(p)
+    if setxylim:
+        ax.set_xlim(x.min(), x.max())
+        ax.set_ylim(y.min(), y.max())    
     return
 
 def test():
@@ -380,10 +384,14 @@ def test():
     speed = numpy.sqrt(u*u + v*v)
     pylab.subplot(121)
     streamplot(x, y, u, v, density=1, INTEGRATOR='RK4', color='b')
+    plt.xlim(x.min(),x.max())
+    plt.ylim(y.min(),y.max())
     pylab.subplot(122)
     streamplot(x, y, u, v, density=(1,1), INTEGRATOR='RK4', color=u,
                linewidth=5*speed/speed.max())
-    pylab.show()
+    plt.xlim(x.min(),x.max())
+    plt.ylim(y.min(),y.max())
+    #pylab.show()
 
 if __name__ == '__main__':
     test()
