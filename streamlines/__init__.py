@@ -170,6 +170,12 @@ def streamplot(x, y, u, v, density=1, linewidth=1,
                 except OverflowError:
                     # Overflow -- break (AT)
                     break
+                except numpy.ma.MaskError:
+                    # Attribute -- break (AT)
+                    break
+                except ValueError:
+                    # ValueError -- break (AT)
+                    break
                 xi += ds*(k1x+2*k2x+2*k3x+k4x) / 6.
                 yi += ds*(k1y+2*k2y+2*k3y+k4y) / 6.
                 # Final position might be out of the domain
