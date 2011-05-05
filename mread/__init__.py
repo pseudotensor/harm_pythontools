@@ -921,6 +921,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         iBR = reinterp(BRnorm,extent,ncell,isasymmetric=True,domask=0) #isasymmetric = True tells to flip the sign across polar axis
         iibeta = reinterp(0.5*bsq/(gam-1)/ug,extent,ncell,domask=0)
         ibsqorho = reinterp(bsq/rho,extent,ncell,domask=0)
+        ibsqo2rho = 0.5 * ibsqorho
         xi = np.linspace(extent[0], extent[1], ncell)
         yi = np.linspace(extent[2], extent[3], ncell)
         #myspeed=np.sqrt(iBR**2+iBz**2)
@@ -934,7 +935,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         if not dostreamlines:
             cset2 = plt.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
         else:
-            lw = 1+1*ftr(np.log10(amax(ibsqorho,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
+            lw = 0.5+1*ftr(np.log10(amax(ibsqo2rho,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
             lw += 1*ftr(np.log10(amax(iibeta,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
             lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
             streamplot(yi,xi,iBR,iBz,density=2,linewidth=lw,ax=ax)
@@ -946,7 +947,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         if not dostreamlines:
             cset2 = ax.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
         else:
-            lw = 1+1*ftr(np.log10(amax(ibsqorho,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
+            lw = 0.5+1*ftr(np.log10(amax(ibsqo2rho,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
             lw += 1*ftr(np.log10(amax(iibeta,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
             lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
             streamplot(yi,xi,iBR,iBz,density=2,linewidth=lw,ax=ax)
@@ -998,6 +999,7 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
         iBy = reinterpxy(Bynorm,extent,ncell,domask=0)
         iibeta = reinterpxy(0.5*bsq/(gam-1)/ug,extent,ncell,domask=0)
         ibsqorho = reinterpxy(bsq/rho,extent,ncell,domask=0)
+        ibsqo2rho = 0.5 * ibsqorho
         xi = np.linspace(extent[0], extent[1], ncell)
         yi = np.linspace(extent[2], extent[3], ncell)
     if ax == None:
@@ -1007,7 +1009,7 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
     else:
         CS = ax.imshow(ilrho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
         if dostreamlines:
-            lw = 1+1*ftr(np.log10(amax(ibsqorho,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
+            lw = 0.5+1*ftr(np.log10(amax(ibsqo2rho,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
             lw += 1*ftr(np.log10(amax(iibeta,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
             lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
             streamplot(yi,xi,iBx,iBy,density=2,linewidth=lw)
