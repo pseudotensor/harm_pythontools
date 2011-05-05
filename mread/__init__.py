@@ -3600,11 +3600,11 @@ if __name__ == "__main__":
                 gs1 = GridSpec(1, 1)
                 gs1.update(left=0.05, right=0.45, top=0.95, bottom=0.33, wspace=0.05)
                 ax1 = plt.subplot(gs1[:, -1])
-                mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-8,vmax=1.5,len=plotlen,ax=ax1,cb=False,pt=False)
+                mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False)
                 gs2 = GridSpec(1, 1)
                 gs2.update(left=0.5, right=1, top=0.95, bottom=0.33, wspace=0.05)
                 ax2 = plt.subplot(gs2[:, -1])
-                mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-8,vmax=1.5,len=plotlen,ax=ax2,cb=True,pt=False)
+                mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False)
                 #print xxx
                 plt.savefig( "lrho%04d_Rzxym1.png" % (findex)  )
                 plt.savefig( "lrho%04d_Rzxym1.eps" % (findex)  )
