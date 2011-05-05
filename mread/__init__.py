@@ -1,4 +1,5 @@
 from matplotlib import rc
+from streamlines import streamplot
 #rc('verbose', level='debug')
 #rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 ## for Palatino and other serif fonts use:
@@ -23,6 +24,7 @@ import matplotlib.colors as colors
 import os,glob
 import pylab
 import sys
+import streamlines
 
 
 #global rho, ug, vu, uu, B, CS
@@ -828,7 +830,7 @@ def plc(myvar,xcoord=None,ycoord=None,**kwargs): #plc
     if( cb == True): #use color bar
         plt.colorbar()
 
-def reinterp(vartointerp,extent,ncell,domask=1):
+def reinterp(vartointerp,extent,ncell,domask=1,isasymmetric=False):
     global xi,yi,zi
     #grid3d("gdump")
     #rfd("fieldline0250.bin")
@@ -841,7 +843,10 @@ def reinterp(vartointerp,extent,ncell,domask=1):
     x=np.concatenate((-x,x))
     y=np.concatenate((y,y))
     kval=min(vartointerp.shape[2]-1,nz/2)
-    var=np.concatenate((vartointerp[:,:,kval].view().reshape(-1),var))
+    varmirror = vartointerp[:,:,kval].view().reshape(-1)
+    if isasymmetric:
+        varmirror *= -1.
+    var=np.concatenate((varmirror,var))
     # define grid.
     xi = np.linspace(extent[0], extent[1], ncell)
     yi = np.linspace(extent[2], extent[3], ncell)
@@ -855,7 +860,7 @@ def reinterp(vartointerp,extent,ncell,domask=1):
         varinterpolated = zi
     return(varinterpolated)
 
-def reinterpxy(vartointerp,extent,ncell):
+def reinterpxy(vartointerp,extent,ncell,domask=1):
     global xi,yi,zi
     #grid3d("gdump")
     #rfd("fieldline0250.bin")
@@ -876,33 +881,75 @@ def reinterpxy(vartointerp,extent,ncell):
     zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method='cubic')
     interior = np.sqrt((xi[None,:]**2) + (yi[:,None]**2)) < 1+np.sqrt(1-a**2)
     #zi[interior] = np.ma.masked
-    varinterpolated = ma.masked_where(interior, zi)
+    if domask:
+        varinterpolated = ma.masked_where(interior, zi)
+    else:
+        varinterpolated = zi
     return(varinterpolated)
     
-def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1):
+def ftr(x,xb,xf):
+    return( amax(0.0*x,amin(1.0+0.0*x,1.0*(x-xb)/(xf-xb))) )
+    
+def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True):
     extent=(-len,len,-len,len)
     palette=cm.jet
     palette.set_bad('k', 1.0)
     #palette.set_over('r', 1.0)
     #palette.set_under('g', 1.0)
-    aphi = fieldcalc()
-    iaphi = reinterp(aphi,extent,ncell,domask=0)
     ilrho = reinterp(np.log10(rho),extent,ncell)
-    #maxabsiaphi=np.max(np.abs(iaphi))
-    maxabsiaphi = 100 #50
-    ncont = 100 #30
-    levs=np.linspace(-maxabsiaphi,maxabsiaphi,ncont)
+    if not dostreamlines:
+        aphi = fieldcalc()
+        iaphi = reinterp(aphi,extent,ncell,domask=0)
+        #maxabsiaphi=np.max(np.abs(iaphi))
+        maxabsiaphi = 100 #50
+        ncont = 100 #30
+        levs=np.linspace(-maxabsiaphi,maxabsiaphi,ncont)
+    else:
+        Br = dxdxp[1,1]*B[1]+dxdxp[1,2]*B[2]
+        Bh = dxdxp[2,1]*B[1]+dxdxp[2,2]*B[2]
+        Bp = B[3]*dxdxp[3,3]
+        #
+        Brnorm=Br
+        Bhnorm=Bh*np.abs(r)
+        Bpnorm=Bp*np.abs(r*np.sin(h))
+        #
+        Bznorm=Brnorm*np.cos(h)-Bhnorm*np.sin(h)
+        BRnorm=Brnorm*np.sin(h)+Bhnorm*np.cos(h)
+        #
+        iBz = reinterp(Bznorm,extent,ncell,domask=0)
+        iBR = reinterp(BRnorm,extent,ncell,isasymmetric=True,domask=0) #isasymmetric = True tells to flip the sign across polar axis
+        iibeta = reinterp(0.5*bsq/(gam-1)/ug,extent,ncell,domask=0)
+        ibsqorho = reinterp(bsq/rho,extent,ncell,domask=0)
+        xi = np.linspace(extent[0], extent[1], ncell)
+        yi = np.linspace(extent[2], extent[3], ncell)
+        #myspeed=np.sqrt(iBR**2+iBz**2)
+    #
+    #myslines=streamplot(ti[:,0,0],tj[0,:,0],avg_gdetB[0,:,:,0].transpose(),avg_gdetB[1,:,:,0].transpose(),density=1,linewidth=1)
     #for c in cset2.collections:
     #    c.set_linestyle('solid')
     #CS = plt.contourf(xi,yi,zi,15,cmap=palette)
     if ax == None:
         CS = plt.imshow(ilrho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
-        cset2 = plt.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
+        if not dostreamlines:
+            cset2 = plt.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
+        else:
+            lw = 1+1*ftr(np.log10(amax(ibsqorho,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
+            lw += 1*ftr(np.log10(amax(iibeta,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
+            lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
+            streamplot(yi,xi,iBR,iBz,density=2,linewidth=lw,ax=ax)
+            #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
         plt.xlim(extent[0],extent[1])
         plt.ylim(extent[2],extent[3])
     else:
         CS = ax.imshow(ilrho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
-        cset2 = ax.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
+        if not dostreamlines:
+            cset2 = ax.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
+        else:
+            lw = 1+1*ftr(np.log10(amax(ibsqorho,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
+            lw += 1*ftr(np.log10(amax(iibeta,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
+            lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
+            streamplot(yi,xi,iBR,iBz,density=2,linewidth=lw,ax=ax)
+            #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
         ax.set_xlim(extent[0],extent[1])
         ax.set_ylim(extent[2],extent[3])
     #CS.cmap=cm.jet
@@ -915,7 +962,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
     #if None != fname:
     #    plt.savefig( fname + '.png' )
 
-def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1):
+def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True):
     extent=(-len,len,-len,len)
     palette=cm.jet
     palette.set_bad('k', 1.0)
@@ -932,12 +979,37 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
     #for c in cset2.collections:
     #    c.set_linestyle('solid')
     #CS = plt.contourf(xi,yi,zi,15,cmap=palette)
+    if dostreamlines:
+        Br = dxdxp[1,1]*B[1]+dxdxp[1,2]*B[2]
+        Bh = dxdxp[2,1]*B[1]+dxdxp[2,2]*B[2]
+        Bp = B[3]*dxdxp[3,3]
+        #
+        Brnorm=Br
+        Bhnorm=Bh*np.abs(r)
+        Bpnorm=Bp*np.abs(r*np.sin(h))
+        #
+        Bznorm=Brnorm*np.cos(h)-Bhnorm*np.sin(h)
+        BRnorm=Brnorm*np.sin(h)+Bhnorm*np.cos(h)
+        Bxnorm=BRnorm*np.cos(ph)-Bpnorm*np.sin(ph)
+        Bynorm=BRnorm*np.sin(ph)+Bpnorm*np.cos(ph)
+        #
+        iBx = reinterpxy(Bxnorm,extent,ncell,domask=0)
+        iBy = reinterpxy(Bynorm,extent,ncell,domask=0)
+        iibeta = reinterpxy(0.5*bsq/(gam-1)/ug,extent,ncell,domask=0)
+        ibsqorho = reinterpxy(bsq/rho,extent,ncell,domask=0)
+        xi = np.linspace(extent[0], extent[1], ncell)
+        yi = np.linspace(extent[2], extent[3], ncell)
     if ax == None:
         CS = plt.imshow(ilrho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
         plt.xlim(extent[0],extent[1])
         plt.ylim(extent[2],extent[3])
     else:
         CS = ax.imshow(ilrho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
+        if dostreamlines:
+            lw = 1+1*ftr(np.log10(amax(ibsqorho,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
+            lw += 1*ftr(np.log10(amax(iibeta,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
+            lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
+            streamplot(yi,xi,iBx,iBy,density=2,linewidth=lw)
         ax.set_xlim(extent[0],extent[1])
         ax.set_ylim(extent[2],extent[3])
     #CS.cmap=cm.jet
@@ -3437,19 +3509,11 @@ if __name__ == "__main__":
         #Rz and xy planes side by side
         plotlenf=10
         plotleni=50
-        plotlenti=4000
-        plotlentf=4500
+        plotlenti=40000
+        plotlentf=45000
         #To generate movies for all sub-folders of a folder:
         #cd ~/Research/runart; for f in *; do cd ~/Research/runart/$f; (python  ~/py/mread/__init__.py &> python.out &); done
-        grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]) )
-        rfd("fieldline0000.bin")  #to definea
-        #grid3dlight("gdump")
-        qtymem=None #clear to free mem
-        rhor=1+(1+a**2)**0.5
-        ihor = np.floor(iofr(rhor)+0.5);
-        qtymem=getqtyvstime(ihor,0.2)
-        flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
-        if len(sys.argv[1:])==2 and sys.argv[1].isdigit() and sys.argv[2].isdigit():
+        if len(sys.argv[1:])==2 and sys.argv[1].isdigit() and (sys.argv[2].isdigit() or sys.argv[2][0]=="-") :
             whichi = int(sys.argv[1])
             whichn = int(sys.argv[2])
             print( "Doing every %d slice of total %d slices" % (whichi, whichn) )
@@ -3457,6 +3521,19 @@ if __name__ == "__main__":
         else:
             whichi = None
             whichn = None
+        if whichn < 0 and whichn is not None:
+            whichn = -whichn
+        else:
+            grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=True )
+            rd( "dump0000.bin" )
+            rfd("fieldline0000.bin")  #to definea
+            #grid3dlight("gdump")
+            qtymem=None #clear to free mem
+            rhor=1+(1+a**2)**0.5
+            ihor = np.floor(iofr(rhor)+0.5);
+            qtymem=getqtyvstime(ihor,0.2)
+            flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
+
         for findex, fname in enumerate(flist):
             if whichn != None and findex % whichn != whichi:
                 continue
@@ -3466,6 +3543,7 @@ if __name__ == "__main__":
                 print( "Processing " + fname + " ..." )
                 sys.stdout.flush()
                 rfd("../"+fname)
+                cvel() #for calculating bsq
                 plotlen = plotleni+(plotlenf-plotleni)*(t-plotlenti)/(plotlentf-plotlenti)
                 plotlen = min(plotlen,plotleni)
                 plotlen = max(plotlen,plotlenf)
@@ -3530,13 +3608,14 @@ if __name__ == "__main__":
                 #print xxx
         print( "Done!" )
         sys.stdout.flush()
-        #print( "Now you can make a movie by running:" )
-        #print( "ffmpeg -fflags +genpts -r 10 -i lrho%04d.png -vcodec mpeg4 -qmax 5 mov.avi" )
-        os.system("mv mov_%s_Rzxym1.avi mov_%s_Rzxym1.bak.avi" % ( os.path.basename(os.getcwd()), os.path.basename(os.getcwd())) )
-        #os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 mov_%s_Rzxym1.avi" % (os.path.basename(os.getcwd())) )
-        os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 1 mov_%s_Rzxym1p1.avi" % (os.path.basename(os.getcwd())) )
-        os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 2 mov_%s_Rzxym1.avi" % (os.path.basename(os.getcwd())) )
-        #os.system("scp mov.avi 128.112.70.76:Research/movies/mov_`basename \`pwd\``.avi")
+        if False:
+            #print( "Now you can make a movie by running:" )
+            #print( "ffmpeg -fflags +genpts -r 10 -i lrho%04d.png -vcodec mpeg4 -qmax 5 mov.avi" )
+            os.system("mv mov_%s_Rzxym1.avi mov_%s_Rzxym1.bak.avi" % ( os.path.basename(os.getcwd()), os.path.basename(os.getcwd())) )
+            #os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 mov_%s_Rzxym1.avi" % (os.path.basename(os.getcwd())) )
+            os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 1 mov_%s_Rzxym1p1.avi" % (os.path.basename(os.getcwd())) )
+            os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 2 mov_%s_Rzxym1.avi" % (os.path.basename(os.getcwd())) )
+            #os.system("scp mov.avi 128.112.70.76:Research/movies/mov_`basename \`pwd\``.avi")
     if False:
         len=10
         #To generate movies for all sub-folders of a folder:
