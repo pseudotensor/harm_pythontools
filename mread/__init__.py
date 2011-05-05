@@ -2810,7 +2810,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
         #ax.legend(loc='upper left')
         if dotavg:
             ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+(2./3.*np.pi*omh**2)**0.5*(fsj30sqfinavg/4/np.pi)/mdotfinavg**0.5)
-        ax.set_ylabel(r'$\ \ \ k\Phi/\langle\dot M\rangle^{\!1/2}$',fontsize=16)
+        ax.set_ylabel(r'$\ \ \ k\Phi_j/\langle\dot M\rangle^{\!1/2}$',fontsize=16)
         plt.setp( ax.get_xticklabels(), visible=False )
 
     if whichplot == -1:
