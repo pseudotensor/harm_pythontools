@@ -1,5 +1,6 @@
 from matplotlib import rc
 from streamlines import streamplot
+from streamlines import fstreamplot
 #rc('verbose', level='debug')
 #rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 ## for Palatino and other serif fonts use:
@@ -852,9 +853,9 @@ def reinterp(vartointerp,extent,ncell,domask=1,isasymmetric=False):
     yi = np.linspace(extent[2], extent[3], ncell)
     # grid the data.
     zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method='cubic')
-    interior = np.sqrt((xi[None,:]**2) + (yi[:,None]**2)) < 1+np.sqrt(1-a**2)
     #zi[interior] = np.ma.masked
-    if domask:
+    if domask!=0:
+        interior = np.sqrt((xi[None,:]**2) + (yi[:,None]**2)) < (1+np.sqrt(1-a**2))*domask
         varinterpolated = ma.masked_where(interior, zi)
     else:
         varinterpolated = zi
@@ -880,9 +881,9 @@ def reinterpxy(vartointerp,extent,ncell,domask=1):
     yi = np.linspace(extent[2], extent[3], ncell)
     # grid the data.
     zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method='cubic')
-    interior = np.sqrt((xi[None,:]**2) + (yi[:,None]**2)) < 1+np.sqrt(1-a**2)
     #zi[interior] = np.ma.masked
-    if domask:
+    if domask!=0:
+        interior = np.sqrt((xi[None,:]**2) + (yi[:,None]**2)) < (1+np.sqrt(1-a**2))*domask
         varinterpolated = ma.masked_where(interior, zi)
     else:
         varinterpolated = zi
@@ -906,6 +907,8 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         ncont = 100 #30
         levs=np.linspace(-maxabsiaphi,maxabsiaphi,ncont)
     else:
+        aphi = fieldcalc()
+        iaphi = reinterp(aphi,extent,ncell,domask=0)
         Br = dxdxp[1,1]*B[1]+dxdxp[1,2]*B[2]
         Bh = dxdxp[2,1]*B[1]+dxdxp[2,2]*B[2]
         Bp = B[3]*dxdxp[3,3]
@@ -917,8 +920,8 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         Bznorm=Brnorm*np.cos(h)-Bhnorm*np.sin(h)
         BRnorm=Brnorm*np.sin(h)+Bhnorm*np.cos(h)
         #
-        iBz = reinterp(Bznorm,extent,ncell,domask=0)
-        iBR = reinterp(BRnorm,extent,ncell,isasymmetric=True,domask=0) #isasymmetric = True tells to flip the sign across polar axis
+        iBz = reinterp(Bznorm,extent,ncell,domask=0.4)
+        iBR = reinterp(BRnorm,extent,ncell,isasymmetric=True,domask=0.4) #isasymmetric = True tells to flip the sign across polar axis
         iibeta = reinterp(0.5*bsq/(gam-1)/ug,extent,ncell,domask=0)
         ibsqorho = reinterp(bsq/rho,extent,ncell,domask=0)
         ibsqo2rho = 0.5 * ibsqorho
@@ -938,7 +941,9 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
             lw = 0.5+1*ftr(np.log10(amax(ibsqo2rho,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
             lw += 1*ftr(np.log10(amax(iibeta,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
             lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
-            streamplot(yi,xi,iBR,iBz,density=2,linewidth=lw,ax=ax)
+            # if t < 1500:
+            #     lw *= ftr(ilrho,-2.,-1.9)
+            fstreamplot(yi,xi,iBR,iBz,density=1,linewidth=lw,ax=ax)
             #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
         plt.xlim(extent[0],extent[1])
         plt.ylim(extent[2],extent[3])
@@ -950,7 +955,9 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
             lw = 0.5+1*ftr(np.log10(amax(ibsqo2rho,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
             lw += 1*ftr(np.log10(amax(iibeta,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
             lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
-            streamplot(yi,xi,iBR,iBz,density=2,linewidth=lw,ax=ax)
+            # if t < 1500:
+            lw *= ftr(iaphi,0.001,0.002)
+            fstreamplot(yi,xi,iBR,iBz,density=1,linewidth=lw,ax=ax)
             #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
         ax.set_xlim(extent[0],extent[1])
         ax.set_ylim(extent[2],extent[3])
@@ -970,9 +977,9 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
     palette.set_bad('k', 1.0)
     #palette.set_over('r', 1.0)
     #palette.set_under('g', 1.0)
-    #aphi = fieldcalc()
-    #iaphi = reinterp(aphi,extent,ncell)
     ilrho = reinterpxy(np.log10(rho),extent,ncell)
+    aphi = fieldcalc()+rho*0
+    iaphi = reinterpxy(aphi,extent,ncell)
     #maxabsiaphi=np.max(np.abs(iaphi))
     #maxabsiaphi = 100 #50
     #ncont = 100 #30
@@ -1012,7 +1019,10 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
             lw = 0.5+1*ftr(np.log10(amax(ibsqo2rho,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
             lw += 1*ftr(np.log10(amax(iibeta,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
             lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
-            streamplot(yi,xi,iBx,iBy,density=2,linewidth=lw)
+            # if t < 1500:
+            #     lw *= ftr(ilrho,-2.,-1.9)
+            lw *= ftr(iaphi,0.001,0.002)
+            streamplot(yi,xi,iBx,iBy,density=1,linewidth=lw)
         ax.set_xlim(extent[0],extent[1])
         ax.set_ylim(extent[2],extent[3])
     #CS.cmap=cm.jet
@@ -3665,7 +3675,7 @@ if __name__ == "__main__":
                 gs2 = GridSpec(1, 1)
                 gs2.update(left=0.5, right=1, top=0.99, bottom=0.45, wspace=0.05)
                 ax2 = plt.subplot(gs2[:, -1])
-                mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False)
+                mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True)
                 #print xxx
                 plt.savefig( "lrho%04d_Rzxym1.png" % (findex)  )
                 plt.savefig( "lrho%04d_Rzxym1.eps" % (findex)  )
