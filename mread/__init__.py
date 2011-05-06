@@ -929,7 +929,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         yi = np.linspace(extent[2], extent[3], ncell)
         #myspeed=np.sqrt(iBR**2+iBz**2)
     #
-    #myslines=streamplot(ti[:,0,0],tj[0,:,0],avg_gdetB[0,:,:,0].transpose(),avg_gdetB[1,:,:,0].transpose(),density=2,downsample=2,linewidth=1)
+    #myslines=streamplot(ti[:,0,0],tj[0,:,0],avg_gdetB[0,:,:,0].transpose(),avg_gdetB[1,:,:,0].transpose(),density=2,downsample=4,linewidth=1)
     #for c in cset2.collections:
     #    c.set_linestyle('solid')
     #CS = plt.contourf(xi,yi,zi,15,cmap=palette)
@@ -943,7 +943,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
             lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
             # if t < 1500:
             #     lw *= ftr(ilrho,-2.,-1.9)
-            fstreamplot(yi,xi,iBR,iBz,density=2,downsample=2,linewidth=lw,ax=ax,detectLoops=True,dodiskfield=False,dobhfield=True,startatmidplane=True,a=a)
+            fstreamplot(yi,xi,iBR,iBz,density=2,downsample=4,linewidth=lw,ax=ax,detectLoops=True,dodiskfield=False,dobhfield=True,startatmidplane=True,a=a)
             #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
         plt.xlim(extent[0],extent[1])
         plt.ylim(extent[2],extent[3])
@@ -957,7 +957,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
             lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
             # if t < 1500:
             lw *= ftr(iaphi,0.001,0.002)
-            fstreamplot(yi,xi,iBR,iBz,density=2,downsample=2,linewidth=lw,ax=ax,detectLoops=True,dodiskfield=False,dobhfield=True,startatmidplane=True,a=a)
+            fstreamplot(yi,xi,iBR,iBz,density=2,downsample=4,linewidth=lw,ax=ax,detectLoops=True,dodiskfield=False,dobhfield=True,startatmidplane=True,a=a)
             #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
         ax.set_xlim(extent[0],extent[1])
         ax.set_ylim(extent[2],extent[3])

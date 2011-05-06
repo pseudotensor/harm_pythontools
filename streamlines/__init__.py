@@ -727,27 +727,40 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
     NDX = NBX / downsample
     NDY = NBY / downsample
 
-    maxindent = (max(NDX,NDY))/2
-    
     #if downsampling, only send in streamlines from boundaries
     if downsample != 1:
-        maxindent = 1
-
-    for indent in range(maxindent):
-        for xi in range(max(NDX,NDY)-2*indent):
-            traj((xi+indent)*downsample, indent*downsample)  #lower y
-            traj((xi+indent)*downsample, NBY-1-indent*downsample) #upper y
-            if startatmidplane and indent == 0:
+        indent = 1
+        for xi in range(downsample/2,max(NBX,NBY)-2*indent,downsample):
+        #for xi in range(max(NBX,NBY)-2*indent):
+            traj(xi+indent, indent)  #lower y
+            traj(xi+indent, NBY-1-indent) #upper y
+            if startatmidplane and indent == 1:
                 #for trajectories that start at left or right wall,
                 #send them in symmetrically away from midplane
-                if xi+indent < NDY/2:
-                    traj(indent*downsample, NBY/2+downsample/2+(xi+indent)*downsample)  #lower x
-                    traj(indent*downsample, NBY/2-1-downsample/2-(xi+indent)*downsample)  #lower x
-                    traj(NBX-1-indent*downsample, NBY/2+downsample/2+(xi+indent)*downsample) #upper x
-                    traj(NBX-1-indent*downsample, NBY/2-1-downsample/2-(xi+indent)*downsample) #upper x
+                if xi+indent < NBY/2:
+                    traj(indent, NBY/2+xi+indent)  #lower x
+                    traj(indent, NBY/2-xi-indent-1)  #lower x
+                    traj(NBX-1-indent, NBY/2+xi+indent) #upper x
+                    traj(NBX-1-indent, NBY/2-xi-indent-1) #upper x
             else:
-                traj(indent*downsample, (xi+indent)*downsample)  #lower x
-                traj(NBX-1-indent*downsample, (xi+indent)*downsample) #upper x
+                traj(indent, xi+indent)  #lower x
+                traj(NBX-1-indent, xi+indent) #upper x
+    else:
+        for indent in range((max(NBX,NBY))/2):
+            for xi in range(max(NBX,NBY)-2*indent):
+                traj(xi+indent, indent)  #lower y
+                traj(xi+indent, NBY-1-indent) #upper y
+                if startatmidplane and indent == 0:
+                    #for trajectories that start at left or right wall,
+                    #send them in symmetrically away from midplane
+                    if xi+indent < NBY/2:
+                        traj(indent, NBY/2+xi+indent)  #lower x
+                        traj(indent, NBY/2-xi-indent-1)  #lower x
+                        traj(NBX-1-indent, NBY/2+xi+indent) #upper x
+                        traj(NBX-1-indent, NBY/2-xi-indent-1) #upper x
+                else:
+                    traj(indent, xi+indent)  #lower x
+                    traj(NBX-1-indent, xi+indent) #upper x
 
     ## PLOTTING HERE.
     #pylab.pcolormesh(numpy.linspace(x.min(), x.max(), NBX+1),
