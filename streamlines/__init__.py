@@ -559,7 +559,8 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
                         by_changes.append(new_yb)
                         xb = new_xb
                         yb = new_yb
-                    elif useblank:
+                    elif useblank or numpy.abs(xyabsofxyi(xi,yi)[0]) > 10:
+                        #if using blank array or if outside the jet region (|R|<10)
                         break
                 if stotal > 2: #AT: increase this to reach boundaries
                     break
@@ -698,6 +699,11 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
         xi = 1. * (xabs - XOFF) / (DX)
         yi = 1. * (yabs - YOFF) / (DY)
         return xi, yi
+
+    def xyabsofxyi( xi, yi ):
+        xabs = xi * DX + XOFF
+        yabs = yi * DY + YOFF
+        return xabs, yabs
 
     ## Now we build up the trajectory set. I've found it best to look
     ## for blank==0 along the edges first, and work inwards.
