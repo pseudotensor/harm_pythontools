@@ -384,7 +384,7 @@ def streamplot(x, y, u, v, density=1, linewidth=1,
 
 def fstreamplot(x, y, u, v, density=1, linewidth=1,
                color='k', cmap=None, norm=None, vmax=None, vmin=None,
-               arrowsize=1, INTEGRATOR='RK4',dtx=10,ax=None,setxylim=False,useblank=True,detectLoops=True,dobhfield=True):
+               arrowsize=1, INTEGRATOR='RK4',dtx=10,ax=None,setxylim=False,useblank=True,detectLoops=True,dobhfield=False,dodiskfield=False):
     '''Draws streamlines of a vector flow.
 
     * x and y are 1d arrays defining an *evenly spaced* grid.
@@ -500,7 +500,7 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
             vi = value_at(v, xi, yi)
             return -ui*dt_ds, -vi*dt_ds
 
-        check = lambda xi, yi: xi>0 and xi+1<NGX-1 and yi>0 and yi+1<NGY-1
+        check = lambda xi, yi: xi>1 and xi+1<NGX-1 and yi>1 and yi+1<NGY-1
 
         bx_changes = []
         by_changes = []
@@ -692,26 +692,29 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
 
     ## Now we build up the trajectory set. I've found it best to look
     ## for blank==0 along the edges first, and work inwards.
-    num = 16 #20*density
-    a=0.9
-    rh = 1+(1-a**2)**0.5
-    rad = 1.*rh
-    #for th in numpy.linspace(0,2*numpy.pi,num=num,endpoint=False):
-    for it in range(num):
-        th = (2*it+1)*numpy.pi/num
-        xabs = rad * numpy.sin(th)
-        yabs = rad * numpy.cos(th)
-        xb, yb = xybofxyabs(xabs,yabs)
-        #print( "th=%f,x=%f,y=%f,xb=%f,yb=%f" % (th, xabs, yabs, xb, yb) )
-        traj( xb, yb, useblank = False, doreport = True )
-        
-    yabs = 0
-    for Rabs in numpy.linspace(x.max(),0,num):
-        if Rabs > rad:
-            xb, yb = xybofxyabs( Rabs, yabs )
-            traj(xb, yb, useblank = True)
-            xb, yb = xybofxyabs( -Rabs, yabs )
-            traj(xb, yb, useblank = True)
+
+    if dobhfield:
+        num = 16 #20*density
+        a=0.9
+        rh = 1+(1-a**2)**0.5
+        rad = 1.*rh
+        #for th in numpy.linspace(0,2*numpy.pi,num=num,endpoint=False):
+        for it in range(num):
+            th = (2*it+1)*numpy.pi/num
+            xabs = rad * numpy.sin(th)
+            yabs = rad * numpy.cos(th)
+            xb, yb = xybofxyabs(xabs,yabs)
+            #print( "th=%f,x=%f,y=%f,xb=%f,yb=%f" % (th, xabs, yabs, xb, yb) )
+            traj( xb, yb, useblank = False, doreport = True )
+
+    if dodiskfield:
+        yabs = 0
+        for Rabs in numpy.linspace(x.max(),0,num):
+            if Rabs > rad:
+                xb, yb = xybofxyabs( Rabs, yabs )
+                traj(xb, yb, useblank = True)
+                xb, yb = xybofxyabs( -Rabs, yabs )
+                traj(xb, yb, useblank = True)
 
 
     for indent in range((max(NBX,NBY))/2):
