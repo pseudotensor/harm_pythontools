@@ -697,7 +697,7 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
         num = 16 #20*density
         a=0.9
         rh = 1+(1-a**2)**0.5
-        rad = 1.*rh
+        rad = 0.9*rh
         #for th in numpy.linspace(0,2*numpy.pi,num=num,endpoint=False):
         for it in range(num):
             th = (2*it+1)*numpy.pi/num

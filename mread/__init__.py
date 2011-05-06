@@ -898,7 +898,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
     palette.set_bad('k', 1.0)
     #palette.set_over('r', 1.0)
     #palette.set_under('g', 1.0)
-    ilrho = reinterp(np.log10(rho),extent,ncell,domask=1.1)
+    ilrho = reinterp(np.log10(rho),extent,ncell,domask=1.0)
     if not dostreamlines:
         aphi = fieldcalc()
         iaphi = reinterp(aphi,extent,ncell,domask=0)
@@ -977,7 +977,7 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
     palette.set_bad('k', 1.0)
     #palette.set_over('r', 1.0)
     #palette.set_under('g', 1.0)
-    ilrho = reinterpxy(np.log10(rho),extent,ncell,domask=1.1)
+    ilrho = reinterpxy(np.log10(rho),extent,ncell,domask=1.0)
     aphi = fieldcalc()+rho*0
     iaphi = reinterpxy(aphi,extent,ncell)
     #maxabsiaphi=np.max(np.abs(iaphi))
