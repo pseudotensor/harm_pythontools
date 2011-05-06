@@ -140,7 +140,8 @@ def streamplot(x, y, u, v, density=1, linewidth=1,
             vi = value_at(v, xi, yi)
             return -ui*dt_ds, -vi*dt_ds
 
-        check = lambda xi, yi: xi>=0 and xi<NGX-1 and yi>=0 and yi<NGY-1
+        check = lambda xi, yi: xi>0 and xi+1<NGX-1 and yi>0 and yi+1<NGY-1
+        #check = lambda xi, yi: xi>=0 and xi<NGX-1 and yi>=0 and yi<NGY-1
 
         bx_changes = []
         by_changes = []
@@ -383,7 +384,7 @@ def streamplot(x, y, u, v, density=1, linewidth=1,
 
 def fstreamplot(x, y, u, v, density=1, linewidth=1,
                color='k', cmap=None, norm=None, vmax=None, vmin=None,
-               arrowsize=1, INTEGRATOR='RK4',dtx=10,ax=None,setxylim=False,useblank=True):
+               arrowsize=1, INTEGRATOR='RK4',dtx=10,ax=None,setxylim=False,useblank=True,detectLoops=True,dobhfield=True):
     '''Draws streamlines of a vector flow.
 
     * x and y are 1d arrays defining an *evenly spaced* grid.
@@ -435,12 +436,12 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
     ## approximate spacing between trajectories.
     if type(density) == float or type(density) == int:
         assert density > 0
-        NBX = int(31*density)
-        NBY = int(31*density)
+        NBX = int(30*density)
+        NBY = int(30*density)
     else:
         assert len(density) > 0
-        NBX = int(31*density[0])
-        NBY = int(31*density[1])            
+        NBX = int(30*density[0])
+        NBY = int(30*density[1])            
     blank = numpy.zeros((NBY,NBX))
     
     ## Constants for conversion between grid-index space and
@@ -476,6 +477,12 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
         a1 = a10*(1-xt) + a11*xt
         return a0*(1-yt) + a1*yt
 
+    def detectLoop(xi,yi,xVals, yVals, ds):
+        """ Detect closed loops and nodes in a streamline. """
+        D = numpy.array([numpy.hypot(xi-xj, yi-yj)
+                      for xj,yj in zip(xVals,yVals)])
+        return (D < 0.9 * ds * max(NGX,NGY)).any()
+
     def rk4_integrate(x0, y0, useblank = True):
         ## This function does RK4 forward and back trajectories from
         ## the initial conditions, with the odd 'blank array'
@@ -493,7 +500,7 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
             vi = value_at(v, xi, yi)
             return -ui*dt_ds, -vi*dt_ds
 
-        check = lambda xi, yi: xi>=0 and xi<NGX-1 and yi>=0 and yi<NGY-1
+        check = lambda xi, yi: xi>0 and xi+1<NGX-1 and yi>0 and yi+1<NGY-1
 
         bx_changes = []
         by_changes = []
@@ -501,6 +508,7 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
         ## Integrator function
         def rk4(x0, y0, f, useblank = True):
             ds = 0.01 #min(1./NGX, 1./NGY, 0.01)
+            nstep = 0
             stotal = 0
             xi = x0
             yi = y0
@@ -534,6 +542,7 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
                 # Final position might be out of the domain
                 if not check(xi, yi): break
                 stotal += ds
+                nstep += 1
                 # Next, if s gets to thres, check blank.
                 new_xb, new_yb = blank_pos(xi, yi)
                 if new_xb != xb or new_yb != yb:
@@ -547,6 +556,8 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
                     elif useblank:
                         break
                 if stotal > 2: #AT: increase this to reach boundaries
+                    break
+                if detectLoops and nstep % 5 == 0 and detectLoop(xi, yi, xf_traj, yf_traj, ds): #AT: avoid loops
                     break
             return stotal, xf_traj, yf_traj
         
@@ -684,7 +695,7 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
     num = 16 #20*density
     a=0.9
     rh = 1+(1-a**2)**0.5
-    rad = 1.5*rh
+    rad = 1.*rh
     #for th in numpy.linspace(0,2*numpy.pi,num=num,endpoint=False):
     for it in range(num):
         th = (2*it+1)*numpy.pi/num
@@ -698,9 +709,9 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
     for Rabs in numpy.linspace(x.max(),0,num):
         if Rabs > rad:
             xb, yb = xybofxyabs( Rabs, yabs )
-            traj(xb, yb, useblank = False)
+            traj(xb, yb, useblank = True)
             xb, yb = xybofxyabs( -Rabs, yabs )
-            traj(xb, yb, useblank = False)
+            traj(xb, yb, useblank = True)
 
 
     for indent in range((max(NBX,NBY))/2):
