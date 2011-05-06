@@ -943,7 +943,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
             lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
             # if t < 1500:
             #     lw *= ftr(ilrho,-2.,-1.9)
-            fstreamplot(yi,xi,iBR,iBz,density=1,linewidth=lw,ax=ax,detectLoops=True,dodiskfield=False,dobhfield=True)
+            fstreamplot(yi,xi,iBR,iBz,density=1,linewidth=lw,ax=ax,detectLoops=True,dodiskfield=False,dobhfield=True,startatmidplane=True)
             #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
         plt.xlim(extent[0],extent[1])
         plt.ylim(extent[2],extent[3])
@@ -957,7 +957,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
             lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
             # if t < 1500:
             lw *= ftr(iaphi,0.001,0.002)
-            fstreamplot(yi,xi,iBR,iBz,density=1,linewidth=lw,ax=ax,detectLoops=True,dodiskfield=False,dobhfield=True)
+            fstreamplot(yi,xi,iBR,iBz,density=1,linewidth=lw,ax=ax,detectLoops=True,dodiskfield=False,dobhfield=True,startatmidplane=False)
             #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
         ax.set_xlim(extent[0],extent[1])
         ax.set_ylim(extent[2],extent[3])
@@ -1022,7 +1022,7 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
             # if t < 1500:
             #     lw *= ftr(ilrho,-2.,-1.9)
             lw *= ftr(iaphi,0.001,0.002)
-            fstreamplot(yi,xi,iBx,iBy,density=1,linewidth=lw,detectLoops=True,dodiskfield=False,dobhfield=False)
+            fstreamplot(yi,xi,iBx,iBy,density=1,linewidth=lw,detectLoops=True,dodiskfield=False,dobhfield=False,startatmidplane=False)
         ax.set_xlim(extent[0],extent[1])
         ax.set_ylim(extent[2],extent[3])
     #CS.cmap=cm.jet

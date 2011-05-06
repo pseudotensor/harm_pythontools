@@ -384,7 +384,7 @@ def streamplot(x, y, u, v, density=1, linewidth=1,
 
 def fstreamplot(x, y, u, v, density=1, linewidth=1,
                color='k', cmap=None, norm=None, vmax=None, vmin=None,
-               arrowsize=1, INTEGRATOR='RK4',dtx=10,ax=None,setxylim=False,useblank=True,detectLoops=True,dobhfield=False,dodiskfield=False):
+               arrowsize=1, INTEGRATOR='RK4',dtx=10,ax=None,setxylim=False,useblank=True,detectLoops=True,dobhfield=False,dodiskfield=False,startatmidplane=False):
     '''Draws streamlines of a vector flow.
 
     * x and y are 1d arrays defining an *evenly spaced* grid.
@@ -721,8 +721,17 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
         for xi in range(max(NBX,NBY)-2*indent):
             traj(xi+indent, indent)  #lower y
             traj(xi+indent, NBY-1-indent) #upper y
-            traj(indent, xi+indent)  #lower x
-            traj(NBX-1-indent, xi+indent) #upper x
+            if startatmidplane and indent == 0:
+                #for trajectories that start at left or right wall,
+                #send them in symmetrically away from midplane
+                if xi+indent < NBY/2:
+                    traj(indent, NBY/2+xi+indent)  #lower x
+                    traj(indent, NBY/2-xi-indent-1)  #lower x
+                    traj(NBX-1-indent, NBY/2+xi+indent) #upper x
+                    traj(NBX-1-indent, NBY/2-xi-indent-1) #upper x
+            else:
+                traj(indent, xi+indent)  #lower x
+                traj(NBX-1-indent, xi+indent) #upper x
 
     ## PLOTTING HERE.
     #pylab.pcolormesh(numpy.linspace(x.min(), x.max(), NBX+1),
