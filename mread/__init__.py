@@ -1002,8 +1002,8 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
         Bxnorm=BRnorm*np.cos(ph)-Bpnorm*np.sin(ph)
         Bynorm=BRnorm*np.sin(ph)+Bpnorm*np.cos(ph)
         #
-        iBx = reinterpxy(Bxnorm,extent,ncell,domask=0.4)
-        iBy = reinterpxy(Bynorm,extent,ncell,domask=0.4)
+        iBx = reinterpxy(Bxnorm,extent,ncell,domask=1)
+        iBy = reinterpxy(Bynorm,extent,ncell,domask=1)
         iibeta = reinterpxy(0.5*bsq/(gam-1)/ug,extent,ncell,domask=0)
         ibsqorho = reinterpxy(bsq/rho,extent,ncell,domask=0)
         ibsqo2rho = 0.5 * ibsqorho
