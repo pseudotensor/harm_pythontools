@@ -436,17 +436,17 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
     ## approximate spacing between trajectories.
     if type(density) == float or type(density) == int:
         assert density > 0
-        NBX = int(32*density)
-        NBY = int(32*density)
+        NBX = int(32*density)+3
+        NBY = int(32*density)+3
     else:
         assert len(density) > 0
-        NBX = int(32*density[0])
-        NBY = int(32*density[1])
+        NBX = int(32*density[0])+3
+        NBY = int(32*density[1])+3
 
     downsample = int(downsample)
     assert downsample > 0
-    assert NBX % downsample == 0
-    assert NBY % downsample == 0
+    assert (NBX-3) % downsample == 0
+    assert (NBY-3) % downsample == 0
 
     blank = numpy.zeros((NBY,NBX))
     
@@ -730,16 +730,11 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
                 xb, yb = xybofxyabs( -Rabs, yabs )
                 traj(xb, yb, useblank = True)
 
-    NDX = NBX / downsample
-    NDY = NBY / downsample
-
     #if downsampling, only send in streamlines from boundaries
     if downsample != 1:
         indent = 1
         for xi in range(downsample/2,max(NBX,NBY)-2*indent,downsample):
         #for xi in range(max(NBX,NBY)-2*indent):
-            traj(xi+indent, indent)  #lower y
-            traj(xi+indent, NBY-1-indent) #upper y
             if startatmidplane and indent == 1:
                 #for trajectories that start at left or right wall,
                 #send them in symmetrically away from midplane
@@ -751,6 +746,8 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
             else:
                 traj(indent, xi+indent)  #lower x
                 traj(NBX-1-indent, xi+indent) #upper x
+            traj(xi+indent, indent)  #lower y
+            traj(xi+indent, NBY-1-indent) #upper y
     else:
         for indent in range((max(NBX,NBY))/2):
             for xi in range(max(NBX,NBY)-2*indent):
