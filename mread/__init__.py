@@ -3587,9 +3587,9 @@ if __name__ == "__main__":
             flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
 
         for findex, fname in enumerate(flist):
-            if dontloadfiles == False and findex % whichn != whichi:
+            if findex % whichn != whichi:
                 continue
-            if whichn >= 0 and os.path.isfile("lrho%04d_Rzxym1.png" % (findex)):
+            if dontloadfiles == False and os.path.isfile("lrho%04d_Rzxym1.png" % (findex)):
                 print( "Skipping " + fname + " as lrho%04d_Rzxym1.png exists" % (findex) );
             else:
                 print( "Processing " + fname + " ..." )
