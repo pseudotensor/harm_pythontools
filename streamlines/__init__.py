@@ -557,7 +557,7 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
                         break
                 if stotal > 2: #AT: increase this to reach boundaries
                     break
-                if detectLoops and nstep % 5 == 0 and detectLoop(xi, yi, xf_traj, yf_traj, ds): #AT: avoid loops
+                if detectLoops and nstep % 3 == 0 and detectLoop(xi, yi, xf_traj, yf_traj, ds): #AT: avoid loops
                     break
             return stotal, xf_traj, yf_traj
         
