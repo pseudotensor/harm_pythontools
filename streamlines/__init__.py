@@ -695,12 +695,12 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
         traj( xb, yb, useblank = False, doreport = True )
         
     yabs = 0
-    for Rabs in numpy.linspace(0,x.max(),num):
+    for Rabs in numpy.linspace(x.max(),0,num):
         if Rabs > rad:
             xb, yb = xybofxyabs( Rabs, yabs )
-            traj(xb, yb, useblank = True)
+            traj(xb, yb, useblank = False)
             xb, yb = xybofxyabs( -Rabs, yabs )
-            traj(xb, yb, useblank = True)
+            traj(xb, yb, useblank = False)
 
 
     for indent in range((max(NBX,NBY))/2):

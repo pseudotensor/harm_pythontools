@@ -3573,7 +3573,9 @@ if __name__ == "__main__":
             whichn = None
         if whichn < 0 and whichn is not None:
             whichn = -whichn
+            dontloadfiles = True
         else:
+            dontloadfiles = False
             grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=True )
             rd( "dump0000.bin" )
             rfd("fieldline0000.bin")  #to definea
@@ -3585,9 +3587,9 @@ if __name__ == "__main__":
             flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
 
         for findex, fname in enumerate(flist):
-            if whichn != None and findex % whichn != whichi:
+            if dontloadfiles == False and findex % whichn != whichi:
                 continue
-            if os.path.isfile("lrho%04d_Rzxym1.png" % (findex)):
+            if whichn >= 0 and os.path.isfile("lrho%04d_Rzxym1.png" % (findex)):
                 print( "Skipping " + fname + " as lrho%04d_Rzxym1.png exists" % (findex) );
             else:
                 print( "Processing " + fname + " ..." )
