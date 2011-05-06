@@ -384,7 +384,7 @@ def streamplot(x, y, u, v, density=1, linewidth=1,
 
 def fstreamplot(x, y, u, v, density=1, linewidth=1,
                color='k', cmap=None, norm=None, vmax=None, vmin=None,
-               arrowsize=1, INTEGRATOR='RK4',dtx=10,ax=None,setxylim=False,useblank=True,detectLoops=True,dobhfield=False,dodiskfield=False,startatmidplane=False,a=0.0):
+               arrowsize=1, INTEGRATOR='RK4',dtx=10,ax=None,setxylim=False,useblank=True,detectLoops=True,dobhfield=False,dodiskfield=False,startatmidplane=False,a=0.0,downsample=1):
     '''Draws streamlines of a vector flow.
 
     * x and y are 1d arrays defining an *evenly spaced* grid.
@@ -436,12 +436,18 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
     ## approximate spacing between trajectories.
     if type(density) == float or type(density) == int:
         assert density > 0
-        NBX = int(30*density)
-        NBY = int(30*density)
+        NBX = int(32*density)
+        NBY = int(32*density)
     else:
         assert len(density) > 0
-        NBX = int(30*density[0])
-        NBY = int(30*density[1])            
+        NBX = int(32*density[0])
+        NBY = int(32*density[1])
+
+    downsample = int(downsample)
+    assert downsample > 0
+    assert NBX % downsample == 0
+    assert NBY % downsample == 0
+
     blank = numpy.zeros((NBY,NBX))
     
     ## Constants for conversion between grid-index space and
@@ -665,6 +671,9 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
 
     ## A quick function for integrating trajectories if blank==0.
     trajectories = []
+    def trajd(xb, yb, useblank = True, doreport = False):
+        return traj(xb*downsample, yb*downsample, useblank, doreport)
+
     def traj(xb, yb, useblank = True, doreport = False):
         if xb < 0 or xb >= NBX or yb < 0 or yb >= NBY:
             return
@@ -715,22 +724,30 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
                 xb, yb = xybofxyabs( -Rabs, yabs )
                 traj(xb, yb, useblank = True)
 
+    NDX = NBX / downsample
+    NDY = NBY / downsample
 
-    for indent in range((max(NBX,NBY))/2):
-        for xi in range(max(NBX,NBY)-2*indent):
-            traj(xi+indent, indent)  #lower y
-            traj(xi+indent, NBY-1-indent) #upper y
+    maxindent = (max(NDX,NDY))/2
+    
+    #if downsampling, only send in streamlines from boundaries
+    if downsample != 1:
+        maxindent = 1
+
+    for indent in range(maxindent):
+        for xi in range(max(NDX,NDY)-2*indent):
+            traj((xi+indent)*downsample, indent*downsample)  #lower y
+            traj((xi+indent)*downsample, NBY-1-indent*downsample) #upper y
             if startatmidplane and indent == 0:
                 #for trajectories that start at left or right wall,
                 #send them in symmetrically away from midplane
-                if xi+indent < NBY/2:
-                    traj(indent, NBY/2+xi+indent)  #lower x
-                    traj(indent, NBY/2-xi-indent-1)  #lower x
-                    traj(NBX-1-indent, NBY/2+xi+indent) #upper x
-                    traj(NBX-1-indent, NBY/2-xi-indent-1) #upper x
+                if xi+indent < NDY/2:
+                    traj(indent*downsample, NBY/2+downsample/2+(xi+indent)*downsample)  #lower x
+                    traj(indent*downsample, NBY/2-1-downsample/2-(xi+indent)*downsample)  #lower x
+                    traj(NBX-1-indent*downsample, NBY/2+downsample/2+(xi+indent)*downsample) #upper x
+                    traj(NBX-1-indent*downsample, NBY/2-1-downsample/2-(xi+indent)*downsample) #upper x
             else:
-                traj(indent, xi+indent)  #lower x
-                traj(NBX-1-indent, xi+indent) #upper x
+                traj(indent*downsample, (xi+indent)*downsample)  #lower x
+                traj(NBX-1-indent*downsample, (xi+indent)*downsample) #upper x
 
     ## PLOTTING HERE.
     #pylab.pcolormesh(numpy.linspace(x.min(), x.max(), NBX+1),
