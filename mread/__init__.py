@@ -740,7 +740,7 @@ def printjetwindpower(filehandle = None, r = None, stage = 0, powjet = 0, powwin
     if stage == 0:
         #initial stage
         filehandle.write( "%s %f %f %f %f %f %f" % (os.path.basename(os.getcwd()), a, avg_ts[0], avg_te[0], muminjet, muminwind, md) )
-    if stage == 1:
+    if stage == 0 or stage == 1:
         #intermediate stage
         filehandle.write( " %f %f %f" % (powjet[i], powwind[i], r) )
     if stage == 2:
