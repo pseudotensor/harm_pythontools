@@ -489,7 +489,7 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
                       for xj,yj in zip(xVals,yVals)])
         return (D < 0.9 * ds * max(NGX,NGY)).any()
 
-    def rk4_integrate(x0, y0, useblank = True):
+    def rk4_integrate(x0, y0, useblank = True, checkalongx = False):
         ## This function does RK4 forward and back trajectories from
         ## the initial conditions, with the odd 'blank array'
         ## termination conditions. TODO tidy the integration loops.
@@ -675,11 +675,14 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
     def trajd(xb, yb, useblank = True, doreport = False):
         return traj(xb*downsample, yb*downsample, useblank, doreport)
 
-    def traj(xb, yb, useblank = True, doreport = False):
+    def traj(xb, yb, useblank = True, doreport = False, checkalongx = False):
         if xb < 0 or xb >= NBX or yb < 0 or yb >= NBY:
             return
+        if checkalongx and downsample != 1:
+            if blank[yb,max(0,xb-downsample+1):min(NBX-1,xb+downsample)].any():
+                return
         if not useblank or blank[yb, xb] == 0:
-            t = rk4_integrate(xb*bx_spacing, yb*by_spacing, useblank)
+            t = rk4_integrate(xb*bx_spacing, yb*by_spacing, useblank, checkalongx)
             if t != None:
                 trajectories.append(t)
             elif doreport:
@@ -746,8 +749,8 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
             else:
                 traj(indent, xi+indent)  #lower x
                 traj(NBX-1-indent, xi+indent) #upper x
-            traj(xi+indent, indent)  #lower y
-            traj(xi+indent, NBY-1-indent) #upper y
+            traj(xi+indent, indent, checkalongx = True)  #lower y
+            traj(xi+indent, NBY-1-indent, checkalongx = True) #upper y
     else:
         for indent in range((max(NBX,NBY))/2):
             for xi in range(max(NBX,NBY)-2*indent):
