@@ -718,6 +718,9 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
         #for th in numpy.linspace(0,2*numpy.pi,num=num,endpoint=False):
         for it in range(num):
             th = (2*it+1)*numpy.pi/num
+            if numpy.abs(numpy.sin(th)) > numpy.sin(numpy.pi/3.):
+                #avoid low-latitude field lines
+                continue
             xabs = rad * numpy.sin(th)
             yabs = rad * numpy.cos(th)
             xb, yb = xybofxyabs(xabs,yabs)
