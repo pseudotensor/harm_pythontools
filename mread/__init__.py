@@ -3228,15 +3228,25 @@ def plotpowers(fname,hor=0,format=1):
         psitotsqlist = gd1[5]
         psi30sqlist = gd1[7]
     elif format == 1: #new avg2d format
-        gd1 = np.loadtxt( fname, unpack = True, usecols = [1,2,3,4,5,6,7,8,9,10,11,12] )
+        gd1 = np.loadtxt( fname, unpack = True, usecols = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15] )
         #gd=gd1.view().reshape((-1,nx,ny,nz), order='F')
         alist = gd1[0]
         rhorlist = 1+(1-alist**2)**0.5
         omhlist = alist / 2 / rhorlist
         mdotlist = gd1[5]
         #etalist = gd1[3]
-        powlist=gd1[6] #pow(2*rstag)
+        #1
+        powlist=gd1[6]
         powwindlist=gd1[7]
+        rlist=gd1[8]
+        #2
+        powlist2=gd1[9]
+        powwindlist2=gd1[10]
+        rlist2=gd1[11]
+        #3
+        powlist3=gd1[12]
+        powwindlist3=gd1[13]
+        rlist3=gd1[14]
     etalist = powlist/mdotlist
     etawindlist = powwindlist/mdotlist
     mya=np.arange(-1,1,0.001)
@@ -3248,18 +3258,24 @@ def plotpowers(fname,hor=0,format=1):
     horx=0.09333
     #myr = Risco(mya) #does not work at all: a < 0 power is much greater than a > 0
     myeta = mypwr * (mya**2+3*rhor**2)/3 / (2*np.pi*horx)
-    plt.figure(1)
+    plt.figure(1, figsize=(6,4),dpi=100)
     plt.clf()
     #plt.plot( mya, myeta )
     rhor6 = 1+(1-mspina6[mhor6==hor]**2)**0.5
     #Tried to equate pressures -- works but mistake in calculaton -- wrong power
     #plt.plot(mspina6[mhor6==hor],mpow6[mhor6==hor]* ((mspina6[mhor6==hor]**2+3*rhor6**2)/3/(2*np.pi*horx)) )
     #Simple multiplication by rhor -- works!  \Phi^2/Mdot * rhor ~ const
-    plt.plot(mspina6[mhor6==hor],3.75*mpow6[mhor6==hor]*rhor6 )
+    fac = 0.9
+    plt.grid()
     #plt.plot(mya,mya**2)
-    plt.plot(alist,etalist,'o')
-    plt.plot(alist,etawindlist,'x')
-    plt.plot(mspina6[mhor6==hor],6.94*mpow6[mhor6==hor])
+    plt.plot(mspina6[mhor6==hor],fac*6.94*mpow6[mhor6==hor],'r--',label=r'$\alpha P_{\rm BZ,6}$')
+    plt.plot(mspina6[mhor6==hor],fac*3.75*mpow6[mhor6==hor]*rhor6,'r',label=r'$\alpha P_{\rm BZ,6}\times\, r_h$' )
+    plt.plot(alist,etawindlist,'go',label=r'$\eta_{\rm wind}$')
+    plt.plot(alist,etalist,'ro',label=r'$\eta_{\rm j}$')
+    plt.legend(ncol=2,loc='upper left')
+    plt.xlabel(r"$a$",fontsize='x-large')
+    plt.ylabel(r"$\eta$",fontsize='x-large')
+    plt.savefig("jetwindeta.pdf")
     #plt.plot(mspina2[mhor2==hor],5*mpow2a[mhor2==hor])
     #
     # plt.figure(5)
@@ -3438,7 +3454,10 @@ if __name__ == "__main__":
         plt.ylim(0,2)
     if False:
         readmytests1()
-        plotpowers('powerlist.txt')
+        plotpowers('powerlist.txt',format=0) #old format
+    if False:
+        readmytests1()
+        plotpowers('powerlist2davg.txt',format=1) #new format; data from 2d average dumps
     if False:
         #grid3d("gdump")
         #rfd("fieldline0250.bin")
