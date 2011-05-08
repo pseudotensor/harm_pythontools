@@ -3574,6 +3574,31 @@ if __name__ == "__main__":
         hf=horfluxcalc(ihor)
         df=diskfluxcalc(ny/2,rmin=rhor)
         print "Final   (t=%-8g): BHflux = %g, Diskflux = %g" % (t, hf, df)
+    if False:
+        if len(sys.argv[1:])==2 and sys.argv[1].isdigit() and (sys.argv[2].isdigit() or sys.argv[2][0]=="-") :
+            whichi = int(sys.argv[1])
+            whichn = int(sys.argv[2])
+            sys.stdout.flush()
+        if whichn < 0 and whichn is not None:
+            whichn = -whichn
+            dontloadfiles = True
+        else:
+            dontloadfiles = False
+            grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=True )
+            rd( "dump0000.bin" )
+            qtymem=None #clear to free mem
+            rhor=1+(1+a**2)**0.5
+            ihor = np.floor(iofr(rhor)+0.5);
+            qtymem=getqtyvstime(ihor,0.2)
+            flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
+        fname=flist[whichi]
+        print( "Processing " + fname + " ..." )
+        sys.stdout.flush()
+        rfd("../"+fname)
+        cvel() #for calculating bsq
+        plt.figure(0, figsize=(12,9), dpi=100)
+        plt.clf()
+        mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False)
     if True:
         #Rz and xy planes side by side
         plotlenf=10
