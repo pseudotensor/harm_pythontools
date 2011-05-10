@@ -592,12 +592,14 @@ def plot2davg(dosq=True):
     plt.figure(1)
     plt.clf()
     #plco( np.log10(avg_rho), cb=True )
-    plco(choplo(chophi(avg_mu,40),2),cb=True,nc=39)
-    plc(avg_aphi,nc=30)
+    #plco(choplo(chophi(avg_mu,40),2),cb=True,nc=39)
+    plco(avg_mu,levels=np.concatenate(((1.01,),np.arange(2,120,1.))),cb=True)
+    #plc(avg_aphi,nc=30,cmap=cm.bone)
+    #plc(avg_gamma,levels=np.arange(1.,3.4,0.1),cb=True)
     #
     #plt.clf()
-    r1 = 74.339592777217106
-    r2 = 206
+    r1 = 250
+    r2 = 1000
     ############
     #
     # FIG 2
@@ -654,11 +656,11 @@ def plot2davg(dosq=True):
     plt.figure(3)
     plt.clf()
     i=iofr(r1)
-    plt.plot( hf[i,0:128,0], aphi[i,:]/maxaphibh, 'g' )
-    plt.plot( hf[i,0:128,0], aphi[i,:]/maxaphibh, 'gx' )
+    plt.plot( aphi[i,:]/maxaphibh, 'g' )
+    plt.plot( aphi[i,:]/maxaphibh, 'gx' )
     i=iofr(r2)
-    plt.plot( hf[i,0:128,0], aphi[i,:]/maxaphibh, 'b' )
-    #plt.plot( hf[i,0:128,0], aphi[i,:]/maxaphibh, 'bx' )
+    plt.plot( aphi[i,:]/maxaphibh, 'b' )
+    plt.plot( aphi[i,:]/maxaphibh, 'bx' )
     plt.grid()
     ##############
     #
@@ -685,6 +687,7 @@ def plot2davg(dosq=True):
     plt.figure(8)
     plt.clf()
     plt.plot(r[:,0,0],hjet1aphi,'k')
+    plt.plot(r[:,0,0],h[:,ny/4,0],'g')
     plt.plot(r[:,0,0],np.pi-hjet2aphi,'k:')
     plt.xlim(0,1500)
     #xxx
