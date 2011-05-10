@@ -506,7 +506,7 @@ def plot2davg(dosq=True):
     daphi[:,0:ny]=aphip1[:,1:ny+1]-aphip1[:,0:ny]
     #
     mymu = np.copy(avg_mu)
-    mymu[(tj[:,:,0] > ny-15)+(tj[:,:,0] < 15)]=50
+    mymu[(tj[:,:,0] > ny-10)+(tj[:,:,0] < 10)]=50
     mymu[mymu<1]=50
     #tot
     if False:
