@@ -3411,7 +3411,7 @@ def plotakshay():
     #plt.plot(h[iref,:,0]-np.pi/2,dt2*1000)
  
 def plotrfisco():
-    plco(v1p,levels=(0,),xcoord=r*np.sin(h),ycoord=r*np.cos(h)); plt.xlim(0,10); plt.ylim(-5,5)
+    plco(v1p,levels=(0,),xcoord=r*np.sin(h),ycoord=r*np.cos(h),colors='c'); plt.xlim(0,10); plt.ylim(-5,5)
     plc(np.log10(rho),xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True)
     rh=1+(1-a**2)**0.5
     plc(r-rh,levels=(0,),colors='k',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
