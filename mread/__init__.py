@@ -3412,12 +3412,13 @@ def plotakshay():
  
 def plotrfisco():
     plco(v1p,levels=(0,),xcoord=r*np.sin(h),ycoord=r*np.cos(h)); plt.xlim(0,10); plt.ylim(-5,5)
+    plc(np.log10(rho),xcoord=r*np.sin(h),ycoord=r*np.cos(h)
     rh=1+(1-a**2)**0.5
     plc(r-rh,levels=(0,),colors='k',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
     risco = Risco(a)
     print( "Risco(a=%g) = %g" % (a, risco) )
     plc(r*np.sin(h)-risco,levels=(0,),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-    
+    plt.grid()
 
 if __name__ == "__main__":
     if False:
