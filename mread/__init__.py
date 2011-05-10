@@ -3499,7 +3499,7 @@ if __name__ == "__main__":
         else:
             qtymem=getqtyvstime(ihor,0.2)
             plotqtyvstime(qtymem)
-    if False:
+    if True:
         #2DAVG
         if len(sys.argv[1:])!=0:
             grid3d("gdump.bin",use2d=True)
@@ -3602,7 +3602,7 @@ if __name__ == "__main__":
         plt.figure(0, figsize=(12,9), dpi=100)
         plt.clf()
         mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False)
-    if True:
+    if False:
         #Rz and xy planes side by side
         plotlenf=10
         plotleni=50
