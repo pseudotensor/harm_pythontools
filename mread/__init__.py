@@ -3261,7 +3261,7 @@ def plotpowers(fname,hor=0,format=1):
     horx=0.09333
     #myr = Risco(mya) #does not work at all: a < 0 power is much greater than a > 0
     myeta = mypwr * (mya**2+3*rhor**2)/3 / (2*np.pi*horx)
-    plt.figure(1, figsize=(6,4),dpi=100)
+    plt.figure(1, figsize=(6,4),dpi=200)
     plt.clf()
     #plt.plot( mya, myeta )
     rhor6 = 1+(1-mspina6[mhor6==hor]**2)**0.5
