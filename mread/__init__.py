@@ -577,7 +577,7 @@ def plot2davg(dosq=True):
     powjetatr = powjet[iofr(rprintout)]
     powjetwindatr = powjetwind[iofr(rprintout)]
     powwindatr = powwind[iofr(rprintout)]
-    print( "r = %g: etajet = %g, Pjet = %g, etawind = %g, Pwind = %g" % ( rprintout, powjetatr/md, powjetatr, powwindatr/md, powwindatr ) )
+    print( "r = %g: Mdot = %g, etajet = %g, Pjet = %g, etawind = %g, Pwind = %g" % ( rprintout, md, powjetatr/md, powjetatr, powwindatr/md, powwindatr ) )
     foutpower = open( "pjet_2davg_%s.txt" %  os.path.basename(os.getcwd()), "w" )
     printjetwindpower(filehandle = foutpower, r = 200., stage = 0, powjet = powjet, powwind = powwind, muminjet = muminjet, muminwind = muminwind, md=md)
     printjetwindpower(filehandle = foutpower, r = 400., stage = 1, powjet = powjet, powwind = powwind, muminjet = muminjet, muminwind = muminwind, md=md)
