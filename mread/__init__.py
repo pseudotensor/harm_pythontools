@@ -3410,7 +3410,14 @@ def plotakshay():
     #dt2 = _dx2 / amax(np.abs(v2m),np.abs(v2p)) 
     #plt.plot(h[iref,:,0]-np.pi/2,dt2*1000)
  
-
+def plotrfisco():
+    plco(v1p,levels=(0,),xcoord=r*np.sin(h),ycoord=r*np.cos(h)); plt.xlim(0,10); plt.ylim(-5,5)
+    rh=1+(1-a**2)**0.5
+    plc(r-rh,levels=(0,),colors='k',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    risco = Risco()
+    print( "Risco(a=%g) = %g" % (a, risco) )
+    plc(r*np.sin(h)-risco,levels=(0,),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    
 
 if __name__ == "__main__":
     if False:
