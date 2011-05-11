@@ -3428,6 +3428,7 @@ def plotaphivsr():
     plt.grid()
     plt.legend()
     plt.xlabel(r'$r$')
+    plt.ylim(0,20)
 
 if __name__ == "__main__":
     if False:
