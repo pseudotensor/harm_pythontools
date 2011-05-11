@@ -3420,6 +3420,12 @@ def plotrfisco():
     plc(r*np.sin(h)-risco,levels=(0,),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
     plt.grid()
 
+def plotaphivsr():
+    plt.clf();plt.semilogx(r[:,0,0],aphi[:,ny/2,0]/10,label='\Phi/10')
+    plt.semilogx(r[:,0,0],15+lrho[:,ny/2,0],label='\log_{10}\rho+15')
+    plt.semilogx(r[:,0,0],20+np.log10(ug[:,ny/2,0]),label=')\log_{10}u_g+20'
+    plt.grid()
+
 if __name__ == "__main__":
     if False:
         #cd into the directory that contains the dumps/ directory
