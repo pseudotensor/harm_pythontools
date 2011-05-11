@@ -3423,9 +3423,11 @@ def plotrfisco():
 def plotaphivsr():
     plt.clf();plt.semilogx(r[:,0,0],aphi[:,ny/2,0]/10,label=r'$\Phi/10$')
     plt.semilogx(r[:,0,0],15+lrho[:,ny/2,0],label=r'$\log_{10}\rho+15$')
-    plt.semilogx(r[:,0,0],20+np.log10(ug[:,ny/2,0]),label=r'$\log_{10}u_g+20$')
+    plt.semilogx(r[:,0,0],20+np.log10(ug[:,ny/2,0]),label=r'$\log_{10}u_g\!\!+20$')
+    plt.semilogx(r[:,0,0],(r[:,0,0]-34)**(2./3.)/2.1,label=r'$\propto r^{2/3}\!\!$')
     plt.grid()
     plt.legend()
+    plt.xlabel(r'$r$')
 
 if __name__ == "__main__":
     if False:
