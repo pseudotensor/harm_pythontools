@@ -3278,7 +3278,8 @@ def plotpowers(fname,hor=0,format=1):
     plt.legend(ncol=2,loc='upper left')
     plt.xlabel(r"$a$",fontsize='x-large')
     plt.ylabel(r"$\eta$",fontsize='x-large')
-    plt.savefig("jetwindeta.pdf")
+    plt.savefig("jetwindeta.pdf",bbox_inches='tight',pad_inches=0)
+    plt.savefig("jetwindeta.eps",bbox_inches='tight',pad_inches=0)
     #plt.plot(mspina2[mhor2==hor],5*mpow2a[mhor2==hor])
     #
     # plt.figure(5)
