@@ -456,7 +456,7 @@ def plot2davg(dosq=True):
     #sum away from theta = 0
     muminwind=1./(1.-0.1**2)**0.5
     muminjet=2.0
-    unbcutoff=0.001
+    unbcutoff=0 #1./(1.-0.1**2)**0.5-1
     rhor=1+(1-a**2)**0.5
     ihor=iofr(rhor)
     #
@@ -669,19 +669,22 @@ def plot2davg(dosq=True):
     ##############
     plt.figure(5)
     plt.clf()
-    plt.plot(r[:,0,0],powjetwind,'g')
-    plt.plot(r[:,0,0],powwind,'c')
-    plt.plot(r[:,0,0],powjet,'m')
-    plt.plot(r[:,0,0],mdottot,'r')
+    plt.plot(r[:,0,0],powjet,'m',label=r'$P_{jet,EM+MA}$')
+    #plt.plot(r[:,0,0],mdottot,'r')
     #plt.plot(r[:,0,0],powjet,'bx')
-    plt.ylim(0,70)
-    plt.xlim(0,1500)
+    plt.ylim(0,50)
+    plt.xlim(rhor,800)
     #plt.plot(findroot2d(aphix[:,:,0]-maxaphibh,eout)+findroot2d(aphix[:,:,0]-maxaphibh,eout,isleft=False),'y--')
     #plt.plot(powxjet,'b--')
     #plt.plot(r[:,0,0],powxjetEM,'b--')
     #plt.plot(r[:,0,0],powxjetwind,'g')
-    plt.plot(r[:,0,0],powjetEM,'m:')
-    plt.plot(r[:,0,0],powjetMA,'m--')
+    plt.plot(r[:,0,0],powjetEM,'m-.',label=r'$P_{jet,EM}$')
+    plt.plot(r[:,0,0],powjetMA,'m--',label=r'$P_{jet,MA}$')
+    plt.plot(r[iofr(16):,0,0],powjetwind[iofr(16):],'g',label=r'$P_{unbound}(-u_t(1+\Gamma u_g/\rho)>1)$')
+    plt.plot(r[iofr(100):,0,0],powwind[iofr(100):],'c',label=r'$P_{jetwind}(\mu>1.005)$')
+    plt.legend(loc='center right',ncol=2)
+    plt.ylabel(r'Energy fluxes in jet region, $\mu>2$')
+    plt.xlabel(r'$r$')
     #plt.plot(r[:,0,0],powjetEM+powjetMA,'k')
     plt.grid()
     plt.figure(8)
