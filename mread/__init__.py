@@ -19,6 +19,7 @@ from scipy.interpolate import interp1d
 #from scipy.interpolate import Rbf
 from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
+from matplotlib import mpl
 from matplotlib import cm
 from numpy import ma
 import matplotlib.colors as colors
@@ -921,7 +922,7 @@ def reinterpxy(vartointerp,extent,ncell,domask=1):
 def ftr(x,xb,xf):
     return( amax(0.0*x,amin(1.0+0.0*x,1.0*(x-xb)/(xf-xb))) )
     
-def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True):
+def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2):
     extent=(-len,len,-len,len)
     palette=cm.jet
     palette.set_bad('k', 1.0)
@@ -986,7 +987,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
             lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
             # if t < 1500:
             lw *= ftr(iaphi,0.001,0.002)
-            fstreamplot(yi,xi,iBR,iBz,density=2,downsample=4,linewidth=lw,ax=ax,detectLoops=True,dodiskfield=False,dobhfield=True,startatmidplane=True,a=a)
+            fstreamplot(yi,xi,iBR,iBz,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=True,dodiskfield=dodiskfield,dobhfield=True,startatmidplane=True,a=a)
             #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
         ax.set_xlim(extent[0],extent[1])
         ax.set_ylim(extent[2],extent[3])
@@ -2788,11 +2789,15 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
     if whichplot == 1:
         ax.plot(ts,np.abs(mdtot[:,ihor]-md30[:,ihor]))#,label=r'$\dot M$')
         if findex != None:
-            ax.plot(ts[findex],np.abs(mdtot[:,ihor]-md30[:,ihor])[findex],'ro')#,label=r'$\dot M$')
+            if not isinstance(findex,tuple):
+                ax.plot(ts[findex],np.abs(mdtot[:,ihor]-md30[:,ihor])[findex],'ro')#,label=r'$\dot M$')
+            else:
+                for fi in findex:
+                    ax.plot(ts[fi],np.abs(mdtot[:,ihor]-md30[:,ihor])[fi],'ro')#,label=r'$\dot M$')
         #ax.legend(loc='upper left')
         if dotavg:
             ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotfinavg)#,label=r'$\langle \dot M\rangle$')
-        ax.set_ylabel(r'$\dot M$',fontsize=16)
+        ax.set_ylabel(r'$\dot Mc^2$',fontsize=16)
         plt.setp( ax.get_xticklabels(), visible=False)
     #######################
     #
@@ -2827,13 +2832,17 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
     if whichplot == 4:
         ax.plot(ts,pjem30[:,ihor]/mdotfinavg)#,label=r'$P_{\rm j}/\dot M$')
         if findex != None:
-            ax.plot(ts[findex],(pjem30[:,ihor]/mdotfinavg)[findex],'ro')#,label=r'$\dot M$')
+            if not isinstance(findex,tuple):
+                ax.plot(ts[findex],(pjem30[:,ihor]/mdotfinavg)[findex],'ro')#,label=r'$\dot M$')
+            else:
+                for fi in findex:
+                    ax.plot(ts[fi],(pjem30[:,ihor]/mdotfinavg)[fi],'ro')#,label=r'$\dot M$')
         #ax.legend(loc='upper left')
         if dotavg:
             ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg/mdotfinavg)#,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
         #ax.set_ylim(0,2)
-        ax.set_xlabel(r'$t\;(GM/c^3)$')
-        ax.set_ylabel(r'$P_{\rm j}/\langle\dot M\rangle$',fontsize=16,ha='right')
+        ax.set_xlabel(r'$t\;[r_g/c]$',fontsize=16)
+        ax.set_ylabel(r'$\eta_{\rm jet}$',fontsize=16,ha='right')
     #######################
     #
     # \Phi ***
@@ -2843,13 +2852,19 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
         omh = a / (2*(1+(1-a**2)**0.5))
         #To approximately get efficiency:
         #ax.plot(ts,2./3.*np.pi*omh**2*np.abs(fsj30[:,ihor]/4/np.pi)**2/mdotfinavg)
-        ax.plot(ts,(2./3.*np.pi*omh**2)**0.5*np.abs(fsj30[:,ihor]/4/np.pi)/mdotfinavg**0.5)
+        #prefactor to get sqrt(eta): (2./3.*np.pi*omh**2)**0.5
+        ax.plot(ts,np.abs(fsj30[:,ihor]/4/np.pi)/mdotfinavg**0.5)
         if findex != None:
-            ax.plot(ts[findex],(2./3.*np.pi*omh**2)**0.5*np.abs(fsj30[:,ihor]/4/np.pi)[findex]/mdotfinavg**0.5,'ro')
+            if not isinstance(findex,tuple):
+                ax.plot(ts[findex],np.abs(fsj30[:,ihor]/4/np.pi)[findex]/mdotfinavg**0.5,'ro')
+            else:
+                for fi in findex:
+                    ax.plot(ts[fi],np.abs(fsj30[:,ihor]/4/np.pi)[fi]/mdotfinavg**0.5,'ro')
         #ax.legend(loc='upper left')
         if dotavg:
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+(2./3.*np.pi*omh**2)**0.5*(fsj30finavg/4/np.pi)/mdotfinavg**0.5)
-        ax.set_ylabel(r'$\ \ \ k\Phi_j/\langle\dot M\rangle^{\!1/2}$',fontsize=16)
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+(fsj30finavg/4/np.pi)/mdotfinavg**0.5)
+        #ax.set_ylabel(r'$\ \ \ k\Phi_j/\langle\dot M\rangle^{\!1/2}$',fontsize=16)
+        ax.set_ylabel(r'$\phi_{\rm jet}$',fontsize=16)
         plt.setp( ax.get_xticklabels(), visible=False )
 
     if whichplot == -1:
@@ -2926,7 +2941,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
         #plotlist[3].set_ylim(0,6)
         plotlist[3].legend(loc='upper left')
         plotlist[3].set_xlabel(r'$t\;(GM/c^3)$')
-        plotlist[3].set_ylabel(r'$P_{\rm j}/\dot M_{\rm h}$',fontsize=16)
+        #plotlist[3].set_ylabel(r'$P_{\rm j}/\dot M_{\rm h}$',fontsize=16)
+        plotlist[3].set_ylabel(r'$\eta_{\rm jet}$',fontsize=16)
 
         #title("\TeX\ is Number $\displaystyle\sum_{n=1}^\infty\frac{-e^{i\pi}}{2^n}$!", 
         #      fontsize=16, color='r')
@@ -3297,6 +3313,9 @@ def plotpowers(fname,hor=0,format=1):
     f1n = 1.4
     f2 = 0.
     f = f0 * (1 + (f1*(1+np.sign(myomh))/2. + f1n*(1-np.sign(myomh))/2.) * myomh + f2 * myomh**2)
+    #gammie way -- too large amplitude
+    #gammieparamopi = (8./3.*(3.-mya**2+3.*(1-mya**2)**0.5))**0.5
+    #f = f0 * 0.25 * gammieparamopi
     #mypwr = 5*myomh**2
     psi = 1.0
     mypwr = 2.0000 * 1.*1.0472*myomh**2 * 1.5*(psi**2-psi**3/3) #prefactor = 2pi/3, consistent with (A7) from TMN10a
@@ -3314,21 +3333,26 @@ def plotpowers(fname,hor=0,format=1):
     plt.grid()
     #plt.plot(mya,mya**2)
     #plt.plot(alist,etawindlist,'go',label=r'$\eta_{\rm jet}+\eta_{\rm wind}$')
-    plt.plot(alist,etalist,'ro',label=r'$\eta_{\rm jet}$')
-    plt.plot(alist,etawindlist-etalist,'gv',label=r'$\eta_{\rm wind}$')
     # plt.plot(mspina6[mhor6==hor],fac*6.94*mpow6[mhor6==hor],'r--',label=r'$P_{\rm BZ,6}$')
     # plt.plot(mspina6[mhor6==hor],fac*3.75*mpow6[mhor6==hor]*rhor6,'r',label=r'$P_{\rm BZ,6}\times\, r_h$' )
-    myomh6=np.concatenate((-momh6[mhor6==hor][::-1],momh6[mhor6==hor]))
-    myspina6=np.concatenate((-mspina6[mhor6==hor][::-1],mspina6[mhor6==hor]))
-    mypow6 = np.concatenate((mpow6[mhor6==hor][::-1],mpow6[mhor6==hor]))
+    if False:
+        myomh6=np.concatenate((-momh6[mhor6==hor][::-1],momh6[mhor6==hor]))
+        myspina6=np.concatenate((-mspina6[mhor6==hor][::-1],mspina6[mhor6==hor]))
+        mypow6 = np.concatenate((mpow6[mhor6==hor][::-1],mpow6[mhor6==hor]))
+    else:
+        myomh6=momh6[mhor6==hor]
+        myspina6=mspina6[mhor6==hor]
+        mypow6 = mpow6[mhor6==hor]
     mypsiosqrtmdot = f0*(1.+(f1*(1+np.sign(myomh6))/2. + f1n*(1-np.sign(myomh6))/2.)*myomh6)
     myeta6 = (mypsiosqrtmdot)**2*mypow6
-    plt.plot(myspina6,myeta6,'r:',label=r'$P_{\rm BZ,6}$')
-    plt.plot(myspina6,fac*myeta6,'r',label=r'$P_{\rm BZ,6}$')
-    plt.ylim(0,1.5)
-    plt.legend(ncol=2,loc='upper left')
+    #plt.plot(myspina6,myeta6,'r:',label=r'$P_{\rm BZ,6}$')
+    plt.plot(myspina6,100*fac*myeta6,'r',label=r'$P_{\rm BZ}$')
+    plt.plot(alist,100*etalist,'ro',label=r'$\eta_{\rm jet}$')
+    plt.plot(alist,100*(etawindlist-etalist),'gv',label=r'$\eta_{\rm wind}$')
+    plt.ylim(0,150)
+    plt.legend(ncol=3,loc='upper left')
     plt.xlabel(r"$a$",fontsize='x-large')
-    plt.ylabel(r"$\eta$",fontsize='x-large')
+    plt.ylabel(r"$\eta\  [\%]$",fontsize='x-large')
     plt.savefig("jetwindeta.pdf",bbox_inches='tight',pad_inches=0)
     plt.savefig("jetwindeta.eps",bbox_inches='tight',pad_inches=0)
     #plt.plot(mspina2[mhor2==hor],5*mpow2a[mhor2==hor])
@@ -3552,7 +3576,7 @@ if __name__ == "__main__":
     if False:
         readmytests1()
         plotpowers('powerlist.txt',format=0) #old format
-    if True:
+    if False:
         readmytests1()
         plotpowers('powerlist2davg.txt',format=1) #new format; data from 2d average dumps
     if False:
@@ -3833,6 +3857,277 @@ if __name__ == "__main__":
             os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 1 mov_%s_Rzxym1p1.avi" % (os.path.basename(os.getcwd())) )
             os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 2 mov_%s_Rzxym1.avi" % (os.path.basename(os.getcwd())) )
             #os.system("scp mov.avi 128.112.70.76:Research/movies/mov_`basename \`pwd\``.avi")
+    if True:
+        #FIGURE 1 Rz and xy planes side by side
+        doslines=True
+        plotlenf=10
+        plotleni=25
+        plen=plotleni
+        plotlenti=40000
+        plotlentf=45000
+        bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
+        #To generate movies for all sub-folders of a folder:
+        #cd ~/Research/runart; for f in *; do cd ~/Research/runart/$f; (python  ~/py/mread/__init__.py &> python.out &); done
+        if len(sys.argv[1:])==2 and sys.argv[1].isdigit() and (sys.argv[2].isdigit() or sys.argv[2][0]=="-") :
+            whichi = int(sys.argv[1])
+            whichn = int(sys.argv[2])
+            print( "Doing every %d slice of total %d slices" % (whichi, whichn) )
+            sys.stdout.flush()
+        else:
+            whichi = None
+            whichn = None
+        if whichn < 0 and whichn is not None:
+            whichn = -whichn
+            dontloadfiles = True
+        else:
+            dontloadfiles = False
+            grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=True )
+            rd( "dump0000.bin" )
+            rfd("fieldline0000.bin")  #to definea
+            #grid3dlight("gdump")
+            qtymem=None #clear to free mem
+            rhor=1+(1+a**2)**0.5
+            ihor = np.floor(iofr(rhor)+0.5);
+            qtymem=getqtyvstime(ihor,0.2)
+            flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
+        #make accretion rate plot, etc.
+        sys.stdout.flush()
+        plotlen = plotleni+(plotlenf-plotleni)*(t-plotlenti)/(plotlentf-plotlenti)
+        plotlen = min(plotlen,plotleni)
+        plotlen = max(plotlen,plotlenf)
+        fig=plt.figure(0, figsize=(12,9), dpi=100)
+        plt.clf()
+        findexlist=(0,600,1285,1459)
+        #SWITCH OFF SUPTITLE
+        #plt.suptitle(r'$\log_{10}\rho$ at t = %4.0f' % t)
+        #mdot,pjet,pjet/mdot plots
+        findex = 0
+        gs3 = GridSpec(3, 3)
+        gs3.update(left=0.05, right=0.95, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
+        #mdot
+        ax31 = plt.subplot(gs3[-3,:])
+        plotqtyvstime(qtymem,ax=ax31,whichplot=1,findex=findexlist) #AT: need to specify index!
+        ymax=ax31.get_ylim()[1]
+        ymax=2*(np.floor(np.floor(ymax+1.5)/2))
+        ax31.set_yticks((ymax/2,ymax))
+        #ax31.set_xlabel(r"$t\ [r_g/c]")
+        ax31.grid(True)
+        plt.text(ax31.get_xlim()[1]/40., 0.8*ax31.get_ylim()[1], "$(\mathrm{i})$", size=16, rotation=0.,
+                 ha="center", va="center",
+                 color='k',weight='regular',bbox=bbox_props
+                 )
+        #pjet
+        # ax32 = plt.subplot(gs3[-2,:])
+        # plotqtyvstime(qtymem,ax=ax32,whichplot=2)
+        # ymax=ax32.get_ylim()[1]
+        # ax32.set_yticks((ymax/2,ymax))
+        # ax32.grid(True)
+        #pjet/mdot
+        # ax33 = plt.subplot(gs3[-1,:])
+        # plotqtyvstime(qtymem,ax=ax33,whichplot=3)
+        # ymax=ax33.get_ylim()[1]
+        # ax33.set_yticks((ymax/2,ymax))
+        # ax33.grid(True)
+        #
+        #\phi
+        #
+
+        # plt.text(250, 0.9*ymax, "i", size=10, rotation=0.,
+        #          ha="center", va="center",
+        #          bbox = dict(boxstyle="square",
+        #                      ec=(1., 0.5, 0.5),
+        #                      fc=(1., 0.8, 0.8),
+        #                      )
+        #          )
+        ax35 = plt.subplot(gs3[-2,:])
+        plotqtyvstime(qtymem,ax=ax35,whichplot=5,findex=findexlist)
+        ymax=ax35.get_ylim()[1]
+        if 1 < ymax and ymax < 2: 
+            #ymax = 2
+            tck=(1,)
+            ax35.set_yticks(tck)
+            #ax35.set_yticklabels(('','1','2'))
+        elif ymax < 1: 
+            ymax = 1
+            tck=(0.5,1)
+            ax35.set_yticks(tck)
+            ax35.set_yticklabels(('','1'))
+        else:
+            ymax=np.floor(ymax)+1
+            tck=np.arange(1,ymax)
+            ax35.set_yticks(tck)
+        ax35.grid(True)
+        plt.text(ax35.get_xlim()[1]/40., 0.8*ax35.get_ylim()[1], r"$(\mathrm{j})$", size=16, rotation=0.,
+                 ha="center", va="center",
+                 color='k',weight='regular',bbox=bbox_props
+                 )
+        #
+        #pjet/<mdot>
+        #
+        ax34 = plt.subplot(gs3[-1,:])
+        plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findexlist)
+        ymax=ax34.get_ylim()[1]
+        if 1 < ymax and ymax < 2: 
+            #ymax = 2
+            tck=(1,)
+            ax34.set_yticks(tck)
+            #ax34.set_yticklabels(('','1','2'))
+        elif ymax < 1: 
+            ymax = 1
+            tck=(0.5,1)
+            ax34.set_yticks(tck)
+            ax34.set_yticklabels(('','1'))
+        else:
+            ymax=np.floor(ymax)+1
+            tck=np.arange(1,ymax)
+            ax34.set_yticks(tck)
+        #reset lower limit to 0
+        ax34.set_ylim((0,ax34.get_ylim()[1]))
+        ax34.grid(True)
+        plt.text(ax34.get_xlim()[1]/40., 0.8*ax34.get_ylim()[1], r"$(\mathrm{k})$", size=16, rotation=0.,
+                 ha="center", va="center",
+                 color='k',weight='regular',bbox=bbox_props
+                 )
+        #
+        #
+        # Make Frames
+        #
+        dogrid = False
+        downsample=4
+        density=2
+        dodiskfield=True
+        minlenbhfield=0.03
+        minlendiskfield=0.03
+        fname = "fieldline0000.bin"
+        rfd(fname)
+        cvel() #for calculating bsq
+        #
+        # PLOT 1
+        #
+        fname = "fieldline0000.bin"
+        rfd(fname)
+        cvel() #for calculating bsq
+        #xz
+        gs1 = GridSpec(4, 4)
+        gs1.update(left=0.04, right=0.94, top=0.995, bottom=0.48, wspace=0.05)
+        #
+        ax1 = plt.subplot(gs1[0:2, 0])
+        plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{a})$", size=16, rotation=0.,
+                 ha="center", va="center",
+                 color='k',weight='regular',bbox=bbox_props
+                 )
+        mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=False)
+        ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
+        if dogrid: plt.grid()
+        #xy
+        ax2 = plt.subplot(gs1[2:4, 0])
+        mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=False)
+        plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{b})$", size=16, rotation=0.,
+                 ha="center", va="center",
+                 color='k',weight='regular',bbox=bbox_props
+                 )
+        ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
+        ax2.set_ylabel(r'$y\ [r_g]$',fontsize=16,ha='center')
+        if dogrid: plt.grid()
+        plt.subplots_adjust(hspace=0.03) #increase vertical spacing to avoid crowding
+        #
+        # PLOT 2
+        #
+        fname = "fieldline0600.bin"
+        rfd(fname)
+        cvel() #for calculating bsq
+        #Rz
+        #gs1 = GridSpec(4, 4)
+        #
+        ax1 = plt.subplot(gs1[0:2, 1])
+        plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{c})$", size=16, rotation=0.,
+                 ha="center", va="center",
+                 color='k',weight='regular',bbox=bbox_props
+                 )
+        mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield)
+        if dogrid: plt.grid()
+        #xy
+        ax2 = plt.subplot(gs1[2:4, 1])
+        plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{d})$", size=16, rotation=0.,
+                 ha="center", va="center",
+                 color='k',weight='regular',bbox=bbox_props
+                 )
+        mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=False)
+        ax2.set_xlabel(r'$x\ [r_g]$',fontsize=15)
+        if dogrid: plt.grid()
+        plt.subplots_adjust(hspace=0.03) #increase vertical spacing to avoid crowding
+        #
+        # PLOT 3
+        #
+        fname = "fieldline1285.bin"
+        rfd(fname)
+        cvel() #for calculating bsq
+        #Rz
+        ax1 = plt.subplot(gs1[0:2, 2])
+        plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{e})$", size=16, rotation=0.,
+                 ha="center", va="center",
+                 color='k',weight='regular',bbox=bbox_props
+                 )
+        mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield)
+        if dogrid: plt.grid()
+        #xy
+        ax2 = plt.subplot(gs1[2:4, 2])
+        plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{f})$", size=16, rotation=0.,
+                 ha="center", va="center",
+                 color='k',weight='regular',bbox=bbox_props
+                 )
+        mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=False)
+        ax2.set_xlabel(r'$x\ [r_g]$',fontsize=15)
+        if dogrid: plt.grid()
+        plt.subplots_adjust(hspace=0.03) #increase vertical spacing to avoid crowding
+        #
+        # PLOT 4
+        #
+        fname = "fieldline1459.bin"
+        rfd(fname)
+        cvel() #for calculating bsq
+        #Rz
+        ax1 = plt.subplot(gs1[0:2, 3])
+        plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{g})$", size=16, rotation=0.,
+                 ha="center", va="center",
+                 color='k',weight='regular',bbox=bbox_props
+                 )
+        mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield)
+        if dogrid: plt.grid()
+        #xy
+        ax2 = plt.subplot(gs1[2:4, 3])
+        plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{h})$", size=16, rotation=0.,
+                 ha="center", va="center",
+                 color='k',weight='regular',bbox=bbox_props
+                 )
+        mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=False)
+        ax2.set_xlabel(r'$x\ [r_g]$',fontsize=15)
+        if dogrid: plt.grid()
+        #
+        plt.subplots_adjust(hspace=0.03) #increase vertical spacing to avoid crowding
+        #
+        #(left=0.02, right=0.94, top=0.99, bottom=0.45, wspace=0.05)
+        ax1 = fig.add_axes([0.94, 0.48, 0.02, 0.515])
+        #
+        # Set the colormap and norm to correspond to the data for which
+        # the colorbar will be used.
+        cmap = mpl.cm.jet
+        norm = mpl.colors.Normalize(vmin=-6, vmax=0.5625)
+        # ColorbarBase derives from ScalarMappable and puts a colorbar
+        # in a specified axes, so it has everything needed for a
+        # standalone colorbar.  There are many more kwargs, but the
+        # following gives a basic continuous colorbar with ticks
+        # and labels.
+        cb1 = mpl.colorbar.ColorbarBase(ax1, cmap=cmap,
+                                           norm=norm,
+                                           orientation='vertical')
+        #
+        #
+        plt.savefig( "lrho%04d_Rzxym1.png" % (findex)  )
+        plt.savefig( "lrho%04d_Rzxym1.eps" % (findex)  )
+        #
+        print( "Done!" )
+        sys.stdout.flush()
     if False:
         len=10
         #To generate movies for all sub-folders of a folder:
