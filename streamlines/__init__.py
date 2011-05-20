@@ -291,7 +291,7 @@ def streamplot(x, y, u, v, density=1, linewidth=1,
 
         ## Tests to check length of traj. Remember, s in units of axes.
         if len(x_traj) < 1: return None
-        if stotal > .2:
+        if stotal > 0.2:
             initxb, inityb = blank_pos(x0, y0)
             blank[inityb, initxb] = 1
             return x_traj, y_traj
@@ -384,7 +384,7 @@ def streamplot(x, y, u, v, density=1, linewidth=1,
 
 def fstreamplot(x, y, u, v, density=1, linewidth=1,
                color='k', cmap=None, norm=None, vmax=None, vmin=None,
-               arrowsize=1, INTEGRATOR='RK4',dtx=10,ax=None,setxylim=False,useblank=True,detectLoops=True,dobhfield=False,dodiskfield=False,startatmidplane=False,a=0.0,downsample=1):
+               arrowsize=1, INTEGRATOR='RK4',dtx=10,ax=None,setxylim=False,useblank=True,detectLoops=True,dobhfield=False,dodiskfield=False,startatmidplane=False,a=0.0,downsample=1,minlendiskfield=0.2,minlenbhfield=0.2):
     '''Draws streamlines of a vector flow.
 
     * x and y are 1d arrays defining an *evenly spaced* grid.
@@ -489,7 +489,7 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
                       for xj,yj in zip(xVals,yVals)])
         return (D < 0.9 * ds * max(NGX,NGY)).any()
 
-    def rk4_integrate(x0, y0, useblank = True, checkalongx = False):
+    def rk4_integrate(x0, y0, useblank = True, checkalongx = False, minlength=0.2):
         ## This function does RK4 forward and back trajectories from
         ## the initial conditions, with the odd 'blank array'
         ## termination conditions. TODO tidy the integration loops.
@@ -661,7 +661,7 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
 
         ## Tests to check length of traj. Remember, s in units of axes.
         if len(x_traj) < 1: return None
-        if stotal > .2:
+        if stotal > minlength:
             initxb, inityb = blank_pos(x0, y0)
             blank[inityb, initxb] = 1
             return x_traj, y_traj
@@ -675,14 +675,14 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
     def trajd(xb, yb, useblank = True, doreport = False):
         return traj(xb*downsample, yb*downsample, useblank, doreport)
 
-    def traj(xb, yb, useblank = True, doreport = False, checkalongx = False):
+    def traj(xb, yb, useblank = True, doreport = False, checkalongx = False, minlength = 0.2):
         if xb < 0 or xb >= NBX or yb < 0 or yb >= NBY:
             return
         if checkalongx and downsample != 1:
             if blank[yb,max(0,xb-downsample+1):min(NBX-1,xb+downsample)].any():
                 return
         if not useblank or blank[yb, xb] == 0:
-            t = rk4_integrate(xb*bx_spacing, yb*by_spacing, useblank, checkalongx)
+            t = rk4_integrate(xb*bx_spacing, yb*by_spacing, useblank, checkalongx, minlength)
             if t != None:
                 trajectories.append(t)
             elif doreport:
@@ -711,10 +711,10 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
     ## Now we build up the trajectory set. I've found it best to look
     ## for blank==0 along the edges first, and work inwards.
 
+    rh = 1+(1-a**2)**0.5
+    rad = 0.9*rh
     if dobhfield:
         num = 16 #20*density
-        rh = 1+(1-a**2)**0.5
-        rad = 0.9*rh
         #for th in numpy.linspace(0,2*numpy.pi,num=num,endpoint=False):
         for it in range(num):
             th = (2*it+1)*numpy.pi/num
@@ -725,16 +725,7 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
             yabs = rad * numpy.cos(th)
             xb, yb = xybofxyabs(xabs,yabs)
             #print( "th=%f,x=%f,y=%f,xb=%f,yb=%f" % (th, xabs, yabs, xb, yb) )
-            traj( xb, yb, useblank = False, doreport = True )
-
-    if dodiskfield:
-        yabs = 0
-        for Rabs in numpy.linspace(x.max(),0,num):
-            if Rabs > rad:
-                xb, yb = xybofxyabs( Rabs, yabs )
-                traj(xb, yb, useblank = True)
-                xb, yb = xybofxyabs( -Rabs, yabs )
-                traj(xb, yb, useblank = True)
+            traj( xb, yb, useblank = False, doreport = True, minlength = minlenbhfield )
 
     #if downsampling, only send in streamlines from boundaries
     if downsample != 1:
@@ -770,6 +761,17 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
                 else:
                     traj(indent, xi+indent)  #lower x
                     traj(NBX-1-indent, xi+indent) #upper x
+
+    #do at the end, use shorter minimal length
+    if dodiskfield:
+        num=32
+        yabs = 0
+        for Rabs in numpy.linspace(x.max(),0,num):
+            if Rabs > rad:
+                xb, yb = xybofxyabs( Rabs, yabs )
+                traj(xb, yb, useblank = True, minlength = minlendiskfield)
+                xb, yb = xybofxyabs( -Rabs, yabs )
+                traj(xb, yb, useblank = True, minlength = minlendiskfield)
 
     ## PLOTTING HERE.
     #pylab.pcolormesh(numpy.linspace(x.min(), x.max(), NBX+1),
