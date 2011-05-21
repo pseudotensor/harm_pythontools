@@ -1896,7 +1896,8 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
     tiny=np.finfo(rho.dtype).tiny
     flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
     flist.sort()
-    nqty=98+134*(dobob==1)
+    nqtyold=98+134*(dobob==1)
+    nqty=98+134*(dobob==1)+32
     #store 1D data
     numtimeslices=len(flist)
     qtymem=np.zeros((nqty,numtimeslices,nx),dtype=np.float32)
@@ -1910,6 +1911,8 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
     if fmtver == 2 and os.path.isfile( fname ):
         qtymem2=np.load( fname )
         numtimeslices2 = qtymem2.shape[1]
+        #require same number of variables, don't allow format changes on the fly for safety
+        assert qtymem2.shape[0] == qtymem.shape[0]
         print "Number of previously saved time slices: %d" % numtimeslices2 
         if( numtimeslices2 >= numtimeslices ):
             print "Number of previously saved time slices is >= than of timeslices to be loaded, re-using previously saved time slices"
@@ -2035,6 +2038,76 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
     pjma20=qtymem[i];i+=1
     pjma30=qtymem[i];i+=1
     pjma40=qtymem[i];i+=1
+    #new format?
+    if qtymem.shape[0] > nqtyold:
+        #yes!
+        pjem_n_mu10=qtymem[i];i+=1
+        pjem_n_mu5=qtymem[i];i+=1
+        pjem_n_mu2=qtymem[i];i+=1
+        pjem_n_mu1=qtymem[i];i+=1
+        pjke_n_mu10=qtymem[i];i+=1
+        pjke_n_mu5=qtymem[i];i+=1
+        pjke_n_mu2=qtymem[i];i+=1
+        pjke_n_mu1=qtymem[i];i+=1
+        pjma_n_mu10=qtymem[i];i+=1
+        pjma_n_mu5=qtymem[i];i+=1
+        pjma_n_mu2=qtymem[i];i+=1
+        pjma_n_mu1=qtymem[i];i+=1
+        phiabsj_n_mu10=qtymem[i];i+=1
+        phiabsj_n_mu5=qtymem[i];i+=1
+        phiabsj_n_mu2=qtymem[i];i+=1
+        phiabsj_n_mu1=qtymem[i];i+=1
+        pjem_s_mu10=qtymem[i];i+=1
+        pjem_s_mu5=qtymem[i];i+=1
+        pjem_s_mu2=qtymem[i];i+=1
+        pjem_s_mu1=qtymem[i];i+=1
+        pjke_s_mu10=qtymem[i];i+=1
+        pjke_s_mu5=qtymem[i];i+=1
+        pjke_s_mu2=qtymem[i];i+=1
+        pjke_s_mu1=qtymem[i];i+=1
+        pjma_s_mu10=qtymem[i];i+=1
+        pjma_s_mu5=qtymem[i];i+=1
+        pjma_s_mu2=qtymem[i];i+=1
+        pjma_s_mu1=qtymem[i];i+=1
+        phiabsj_s_mu10=qtymem[i];i+=1
+        phiabsj_s_mu5=qtymem[i];i+=1
+        phiabsj_s_mu2=qtymem[i];i+=1
+        phiabsj_s_mu1=qtymem[i];i+=1
+    else:
+        print( "Oldish format: missing north/south jet power and flux" )
+        sys.stdout.flush()
+        pjem_n_mu10=None
+        pjem_n_mu5=None
+        pjem_n_mu2=None
+        pjem_n_mu1=None
+        pjke_n_mu10=None
+        pjke_n_mu5=None
+        pjke_n_mu2=None
+        pjke_n_mu1=None
+        pjma_n_mu10=None
+        pjma_n_mu5=None
+        pjma_n_mu2=None
+        pjma_n_mu1=None
+        phiabsj_n_mu10=None
+        phiabsj_n_mu5=None
+        phiabsj_n_mu2=None
+        phiabsj_n_mu1=None
+        pjem_s_mu10=None
+        pjem_s_mu5=None
+        pjem_s_mu2=None
+        pjem_s_mu1=None
+        pjke_s_mu10=None
+        pjke_s_mu5=None
+        pjke_s_mu2=None
+        pjke_s_mu1=None
+        pjma_s_mu10=None
+        pjma_s_mu5=None
+        pjma_s_mu2=None
+        pjma_s_mu1=None
+        phiabsj_s_mu10=None
+        phiabsj_s_mu5=None
+        phiabsj_s_mu2=None
+        phiabsj_s_mu1=None
     if dobob == 1:
         print "Total number of quantities: %d+134 = %d" % (i, i+134)
     else:
@@ -2181,6 +2254,44 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
         pjma20[findex]=jetpowcalc(1,minbsqorho=20)
         pjma30[findex]=jetpowcalc(1,minbsqorho=30)
         pjma40[findex]=jetpowcalc(1,minbsqorho=40)
+
+        #new format?
+        if qtymem.shape[0] > nqtyold:
+            #yes!
+            #north hemisphere
+            pjem_n_mu10[findex]=jetpowcalc(0,minmu=10,donorthsouth=1)
+            pjem_n_mu5[findex]=jetpowcalc(0,minmu=5,donorthsouth=1)
+            pjem_n_mu2[findex]=jetpowcalc(0,minmu=2,donorthsouth=1)
+            pjem_n_mu1[findex]=jetpowcalc(0,minmu=1,donorthsouth=1)
+            pjke_n_mu10[findex]=jetpowcalc(3,minmu=10,donorthsouth=1)
+            pjke_n_mu5[findex]=jetpowcalc(3,minmu=5,donorthsouth=1)
+            pjke_n_mu2[findex]=jetpowcalc(3,minmu=2,donorthsouth=1)
+            pjke_n_mu1[findex]=jetpowcalc(3,minmu=1,donorthsouth=1)
+            pjma_n_mu10[findex]=jetpowcalc(1,minmu=10,donorthsouth=1)
+            pjma_n_mu5[findex]=jetpowcalc(1,minmu=5,donorthsouth=1)
+            pjma_n_mu2[findex]=jetpowcalc(1,minmu=2,donorthsouth=1)
+            pjma_n_mu1[findex]=jetpowcalc(1,minmu=1,donorthsouth=1)
+            phiabsj_n_mu10[findex]=jetpowcalc(4,minmu=10,donorthsouth=1)
+            phiabsj_n_mu5[findex]=jetpowcalc(4,minmu=5,donorthsouth=1)
+            phiabsj_n_mu2[findex]=jetpowcalc(4,minmu=2,donorthsouth=1)
+            phiabsj_n_mu1[findex]=jetpowcalc(4,minmu=1,donorthsouth=1)
+            #south hemisphere
+            pjem_s_mu10[findex]=jetpowcalc(0,minmu=10,donorthsouth=-1)
+            pjem_s_mu5[findex]=jetpowcalc(0,minmu=5,donorthsouth=-1)
+            pjem_s_mu2[findex]=jetpowcalc(0,minmu=2,donorthsouth=-1)
+            pjem_s_mu1[findex]=jetpowcalc(0,minmu=1,donorthsouth=-1)
+            pjke_s_mu10[findex]=jetpowcalc(3,minmu=10,donorthsouth=-1)
+            pjke_s_mu5[findex]=jetpowcalc(3,minmu=5,donorthsouth=-1)
+            pjke_s_mu2[findex]=jetpowcalc(3,minmu=2,donorthsouth=-1)
+            pjke_s_mu1[findex]=jetpowcalc(3,minmu=1,donorthsouth=-1)
+            pjma_s_mu10[findex]=jetpowcalc(1,minmu=10,donorthsouth=-1)
+            pjma_s_mu5[findex]=jetpowcalc(1,minmu=5,donorthsouth=-1)
+            pjma_s_mu2[findex]=jetpowcalc(1,minmu=2,donorthsouth=-1)
+            pjma_s_mu1[findex]=jetpowcalc(1,minmu=1,donorthsouth=-1)
+            phiabsj_s_mu10[findex]=jetpowcalc(4,minmu=10,donorthsouth=-1)
+            phiabsj_s_mu5[findex]=jetpowcalc(4,minmu=5,donorthsouth=-1)
+            phiabsj_s_mu2[findex]=jetpowcalc(4,minmu=2,donorthsouth=-1)
+            phiabsj_s_mu1[findex]=jetpowcalc(4,minmu=1,donorthsouth=-1)
 
         #Bob's 1D quantities
         if dobob==1:
@@ -2402,6 +2513,8 @@ def amin(arg1,arg2):
 def Tcalcud():
     global Tud, TudEM, TudMA
     global mu, sigma
+    global enth
+    global unb, isunbound
     pg = (gam-1)*ug
     w=rho+ug+pg
     eta=w+bsq
@@ -2418,6 +2531,9 @@ def Tcalcud():
             Tud[kapa,nu] = TudEM[kapa,nu] + TudMA[kapa,nu]
     mu = -Tud[1,0]/(rho*uu[1])
     sigma = TudEM[1,0]/TudMA[1,0]
+    enth=1+ug*gam/rho
+    unb=enth*ud[0]
+    isunbound=(-unb>1.0)
 
 def faraday():
     global fdd, fuu, omegaf1, omegaf2
@@ -2464,16 +2580,45 @@ def faraday():
     #
 
 
-def jetpowcalc(which=2,minbsqorho=10):
+def jetpowcalc(which=2,minbsqorho=10,minmu=None,donorthsouth=0):
     if which==0:
         jetpowden = -gdet*TudEM[1,0]
     if which==1:
         jetpowden = -gdet*TudMA[1,0]
     if which==2:
         jetpowden = -gdet*Tud[1,0]
+    if which==3:
+        #rest-mass flux
+        jetpowden = gdet*rho*uu[1]
+    if which==4:
+        #phi (mag. flux)
+        jetpowden = np.abs(gdetB[1])
     #jetpowden[tj>=ny-2] = 0*jetpowden[tj>=ny-2]
     #jetpowden[tj<1] = 0*jetpowden[tj<1]
-    jetpowden[bsq/rho<minbsqorho] = 0*jetpowden[bsq/rho<minbsqorho]
+    if minmu is None:
+        jetpowden[bsq/rho<minbsqorho] = 0*jetpowden[bsq/rho<minbsqorho]
+    else:
+        #zero out outside jet (cut out low magnetization region)
+        cond=(mu<minmu)
+        jetpowden[cond] = 0*jetpowden[cond]
+        #zero out bound region
+        cond=(1-isunbound)
+        jetpowden[cond] = 0*jetpowden[cond]
+        #zero out infalling region
+        cond=(uu[1]<=0.0)
+        jetpowden[cond] = 0*jetpowden[cond]
+    # 1 = north
+    #-1 = south
+    if donorthsouth==1:
+        #NORTH
+        #[zero out south hemisphere]
+        cond = (tj>=ny/2)
+        jetpowden[cond] = 0 * jetpowden[cond]
+    elif donorthsouth==-1:
+        #SOUTH
+        #[zero out north hemisphere]
+        cond = (tj<ny/2)
+        jetpowden[cond] = 0 * jetpowden[cond]
     jetpowtot = scaletofullwedge(np.sum(np.sum(jetpowden,axis=2),axis=1)*_dx2*_dx3)
     #print "which = %d, minbsqorho = %g" % (which, minbsqorho)
     return(jetpowtot)
@@ -2509,6 +2654,8 @@ def iofr(rval):
 
 def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
     global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
+    nqtyold=98
+    nqty=98+32
     ###############################
     #copy this from getqtyvstime()
     ###############################
@@ -2707,6 +2854,42 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
         pjma20=qtymem[i];i+=1
         pjma30=qtymem[i];i+=1
         pjma40=qtymem[i];i+=1
+        #new format?
+        if qtymem.shape[0] > nqtyold:
+            #yes!
+            pjem_mu10=qtymem[i];i+=1
+            pjem_mu5=qtymem[i];i+=1
+            pjem_mu2=qtymem[i];i+=1
+            pjem_mu1=qtymem[i];i+=1
+            pjke_mu10=qtymem[i];i+=1
+            pjke_mu5=qtymem[i];i+=1
+            pjke_mu2=qtymem[i];i+=1
+            pjke_mu1=qtymem[i];i+=1
+            pjma_mu10=qtymem[i];i+=1
+            pjma_mu5=qtymem[i];i+=1
+            pjma_mu2=qtymem[i];i+=1
+            pjma_mu1=qtymem[i];i+=1
+            phiabsj_mu10=qtymem[i];i+=1
+            phiabsj_mu5=qtymem[i];i+=1
+            phiabsj_mu2=qtymem[i];i+=1
+            phiabsj_mu1=qtymem[i];i+=1
+        else:
+            pjem_mu10=None
+            pjem_mu5=None
+            pjem_mu2=None
+            pjem_mu1=None
+            pjke_mu10=None
+            pjke_mu5=None
+            pjke_mu2=None
+            pjke_mu1=None
+            pjma_mu10=None
+            pjma_mu5=None
+            pjma_mu2=None
+            pjma_mu1=None
+            phiabsj_mu10=None
+            phiabsj_mu5=None
+            phiabsj_mu2=None
+            phiabsj_mu1=None
     #end qty defs
     ##############################
     #end copy
@@ -3596,7 +3779,7 @@ if __name__ == "__main__":
         diskflux=diskfluxcalc(ny/2)
         ts,fs,md,jem,jtot=mfjhorvstime(11)
         plotj(ts,fs/(diskflux),md,jem,jtot)
-    if False:
+    if True:
         #NEW FORMAT
         #Plot qtys vs. time
         #cd ~/run; for f in rtf*; do cd ~/run/$f; (nice -n 10 python  ~/py/mread/__init__.py &> python.out); done
@@ -3857,8 +4040,8 @@ if __name__ == "__main__":
             os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 1 mov_%s_Rzxym1p1.avi" % (os.path.basename(os.getcwd())) )
             os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 2 mov_%s_Rzxym1.avi" % (os.path.basename(os.getcwd())) )
             #os.system("scp mov.avi 128.112.70.76:Research/movies/mov_`basename \`pwd\``.avi")
-    if True:
-        #FIGURE 1 Rz and xy planes side by side
+    if False:
+        #FIGURE 1 LOTSOPANELS
         doslines=True
         plotlenf=10
         plotleni=25
