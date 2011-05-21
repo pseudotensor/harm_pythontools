@@ -2045,10 +2045,10 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
         pjem_n_mu5=qtymem[i];i+=1
         pjem_n_mu2=qtymem[i];i+=1
         pjem_n_mu1=qtymem[i];i+=1
-        pjke_n_mu10=qtymem[i];i+=1
-        pjke_n_mu5=qtymem[i];i+=1
-        pjke_n_mu2=qtymem[i];i+=1
-        pjke_n_mu1=qtymem[i];i+=1
+        pjrm_n_mu10=qtymem[i];i+=1
+        pjrm_n_mu5=qtymem[i];i+=1
+        pjrm_n_mu2=qtymem[i];i+=1
+        pjrm_n_mu1=qtymem[i];i+=1
         pjma_n_mu10=qtymem[i];i+=1
         pjma_n_mu5=qtymem[i];i+=1
         pjma_n_mu2=qtymem[i];i+=1
@@ -2061,10 +2061,10 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
         pjem_s_mu5=qtymem[i];i+=1
         pjem_s_mu2=qtymem[i];i+=1
         pjem_s_mu1=qtymem[i];i+=1
-        pjke_s_mu10=qtymem[i];i+=1
-        pjke_s_mu5=qtymem[i];i+=1
-        pjke_s_mu2=qtymem[i];i+=1
-        pjke_s_mu1=qtymem[i];i+=1
+        pjrm_s_mu10=qtymem[i];i+=1
+        pjrm_s_mu5=qtymem[i];i+=1
+        pjrm_s_mu2=qtymem[i];i+=1
+        pjrm_s_mu1=qtymem[i];i+=1
         pjma_s_mu10=qtymem[i];i+=1
         pjma_s_mu5=qtymem[i];i+=1
         pjma_s_mu2=qtymem[i];i+=1
@@ -2080,10 +2080,10 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
         pjem_n_mu5=None
         pjem_n_mu2=None
         pjem_n_mu1=None
-        pjke_n_mu10=None
-        pjke_n_mu5=None
-        pjke_n_mu2=None
-        pjke_n_mu1=None
+        pjrm_n_mu10=None
+        pjrm_n_mu5=None
+        pjrm_n_mu2=None
+        pjrm_n_mu1=None
         pjma_n_mu10=None
         pjma_n_mu5=None
         pjma_n_mu2=None
@@ -2096,10 +2096,10 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
         pjem_s_mu5=None
         pjem_s_mu2=None
         pjem_s_mu1=None
-        pjke_s_mu10=None
-        pjke_s_mu5=None
-        pjke_s_mu2=None
-        pjke_s_mu1=None
+        pjrm_s_mu10=None
+        pjrm_s_mu5=None
+        pjrm_s_mu2=None
+        pjrm_s_mu1=None
         pjma_s_mu10=None
         pjma_s_mu5=None
         pjma_s_mu2=None
@@ -2263,10 +2263,10 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
             pjem_n_mu5[findex]=jetpowcalc(0,minmu=5,donorthsouth=1)
             pjem_n_mu2[findex]=jetpowcalc(0,minmu=2,donorthsouth=1)
             pjem_n_mu1[findex]=jetpowcalc(0,minmu=1,donorthsouth=1)
-            pjke_n_mu10[findex]=jetpowcalc(3,minmu=10,donorthsouth=1)
-            pjke_n_mu5[findex]=jetpowcalc(3,minmu=5,donorthsouth=1)
-            pjke_n_mu2[findex]=jetpowcalc(3,minmu=2,donorthsouth=1)
-            pjke_n_mu1[findex]=jetpowcalc(3,minmu=1,donorthsouth=1)
+            pjrm_n_mu10[findex]=jetpowcalc(3,minmu=10,donorthsouth=1)
+            pjrm_n_mu5[findex]=jetpowcalc(3,minmu=5,donorthsouth=1)
+            pjrm_n_mu2[findex]=jetpowcalc(3,minmu=2,donorthsouth=1)
+            pjrm_n_mu1[findex]=jetpowcalc(3,minmu=1,donorthsouth=1)
             pjma_n_mu10[findex]=jetpowcalc(1,minmu=10,donorthsouth=1)
             pjma_n_mu5[findex]=jetpowcalc(1,minmu=5,donorthsouth=1)
             pjma_n_mu2[findex]=jetpowcalc(1,minmu=2,donorthsouth=1)
@@ -2280,10 +2280,10 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
             pjem_s_mu5[findex]=jetpowcalc(0,minmu=5,donorthsouth=-1)
             pjem_s_mu2[findex]=jetpowcalc(0,minmu=2,donorthsouth=-1)
             pjem_s_mu1[findex]=jetpowcalc(0,minmu=1,donorthsouth=-1)
-            pjke_s_mu10[findex]=jetpowcalc(3,minmu=10,donorthsouth=-1)
-            pjke_s_mu5[findex]=jetpowcalc(3,minmu=5,donorthsouth=-1)
-            pjke_s_mu2[findex]=jetpowcalc(3,minmu=2,donorthsouth=-1)
-            pjke_s_mu1[findex]=jetpowcalc(3,minmu=1,donorthsouth=-1)
+            pjrm_s_mu10[findex]=jetpowcalc(3,minmu=10,donorthsouth=-1)
+            pjrm_s_mu5[findex]=jetpowcalc(3,minmu=5,donorthsouth=-1)
+            pjrm_s_mu2[findex]=jetpowcalc(3,minmu=2,donorthsouth=-1)
+            pjrm_s_mu1[findex]=jetpowcalc(3,minmu=1,donorthsouth=-1)
             pjma_s_mu10[findex]=jetpowcalc(1,minmu=10,donorthsouth=-1)
             pjma_s_mu5[findex]=jetpowcalc(1,minmu=5,donorthsouth=-1)
             pjma_s_mu2[findex]=jetpowcalc(1,minmu=2,donorthsouth=-1)
@@ -2857,10 +2857,10 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
             pjem_mu5=qtymem[i];i+=1
             pjem_mu2=qtymem[i];i+=1
             pjem_mu1=qtymem[i];i+=1
-            pjke_mu10=qtymem[i];i+=1
-            pjke_mu5=qtymem[i];i+=1
-            pjke_mu2=qtymem[i];i+=1
-            pjke_mu1=qtymem[i];i+=1
+            pjrm_mu10=qtymem[i];i+=1
+            pjrm_mu5=qtymem[i];i+=1
+            pjrm_mu2=qtymem[i];i+=1
+            pjrm_mu1=qtymem[i];i+=1
             pjma_mu10=qtymem[i];i+=1
             pjma_mu5=qtymem[i];i+=1
             pjma_mu2=qtymem[i];i+=1
@@ -2874,10 +2874,10 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
             pjem_mu5=None
             pjem_mu2=None
             pjem_mu1=None
-            pjke_mu10=None
-            pjke_mu5=None
-            pjke_mu2=None
-            pjke_mu1=None
+            pjrm_mu10=None
+            pjrm_mu5=None
+            pjrm_mu2=None
+            pjrm_mu1=None
             pjma_mu10=None
             pjma_mu5=None
             pjma_mu2=None
