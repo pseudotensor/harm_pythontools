@@ -2600,25 +2600,21 @@ def jetpowcalc(which=2,minbsqorho=10,minmu=None,donorthsouth=0):
     else:
         #zero out outside jet (cut out low magnetization region)
         cond=(mu<minmu)
-        jetpowden[cond] = 0*jetpowden[cond]
         #zero out bound region
-        cond=(1-isunbound)
-        jetpowden[cond] = 0*jetpowden[cond]
+        cond+=(1-isunbound)
         #zero out infalling region
-        cond=(uu[1]<=0.0)
+        cond+=(uu[1]<=0.0)
+        # 1 = north
+        #-1 = south
+        if donorthsouth==1:
+            #NORTH
+            #[zero out south hemisphere]
+            cond += (tj>=ny/2)
+        elif donorthsouth==-1:
+            #SOUTH
+            #[zero out north hemisphere]
+            cond += (tj<ny/2)
         jetpowden[cond] = 0*jetpowden[cond]
-    # 1 = north
-    #-1 = south
-    if donorthsouth==1:
-        #NORTH
-        #[zero out south hemisphere]
-        cond = (tj>=ny/2)
-        jetpowden[cond] = 0 * jetpowden[cond]
-    elif donorthsouth==-1:
-        #SOUTH
-        #[zero out north hemisphere]
-        cond = (tj<ny/2)
-        jetpowden[cond] = 0 * jetpowden[cond]
     jetpowtot = scaletofullwedge(np.sum(np.sum(jetpowden,axis=2),axis=1)*_dx2*_dx3)
     #print "which = %d, minbsqorho = %g" % (which, minbsqorho)
     return(jetpowtot)
@@ -3783,8 +3779,8 @@ if __name__ == "__main__":
         #NEW FORMAT
         #Plot qtys vs. time
         #cd ~/run; for f in rtf*; do cd ~/run/$f; (nice -n 10 python  ~/py/mread/__init__.py &> python.out); done
-        grid3d("gdump.bin")
-        #rd("dump0000.bin")
+        grid3d("gdump.bin",use2d=True)
+        rd("dump0000.bin")
         rfd("fieldline0000.bin")
         rhor=1+(1-a**2)**0.5
         ihor = np.floor(iofr(rhor)+0.5);
