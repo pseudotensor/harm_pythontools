@@ -3516,8 +3516,7 @@ def plotpowers(fname,hor=0,format=1):
     #Tried to equate pressures -- works but mistake in calculaton -- wrong power
     #plt.plot(mspina6[mhor6==hor],mpow6[mhor6==hor]* ((mspina6[mhor6==hor]**2+3*rhor6**2)/3/(2*np.pi*horx)) )
     #Simple multiplication by rhor -- works!  \Phi^2/Mdot * rhor ~ const
-    fac = 0.8
-    plt.grid()
+    fac = 0.838783 #0.044/(1./(6*np.pi))
     #plt.plot(mya,mya**2)
     #plt.plot(alist,etawindlist,'go',label=r'$\eta_{\rm jet}+\eta_{\rm wind}$')
     # plt.plot(mspina6[mhor6==hor],fac*6.94*mpow6[mhor6==hor],'r--',label=r'$P_{\rm BZ,6}$')
@@ -3532,21 +3531,6 @@ def plotpowers(fname,hor=0,format=1):
         mypow6 = mpow6[mhor6==hor]
     mypsiosqrtmdot = f0*(1.+(f1*(1+np.sign(myomh6))/2. + f1n*(1-np.sign(myomh6))/2.)*myomh6)
     myeta6 = (mypsiosqrtmdot)**2*mypow6
-    #
-    plt.figure(1, figsize=(6,4),dpi=200)
-    plt.clf()
-    #plt.plot(myspina6,myeta6,'r:',label=r'$P_{\rm BZ,6}$')
-    plt.plot(myspina6,100*fac*myeta6,'r',label=r'$P_{\rm BZ}$')
-    plt.plot(alist,100*etalist,'ro',label=r'$\eta_{\rm jet}$')
-    plt.plot(alist,100*(etawindlist-etalist),'gv',label=r'$\eta_{\rm wind}$')
-    plt.ylim(0,150)
-    plt.legend(ncol=3,loc='upper left')
-    plt.xlabel(r"$a$",fontsize='x-large')
-    plt.ylabel(r"$\eta\  [\%]$",fontsize='x-large')
-    plt.savefig("jetwindeta.pdf",bbox_inches='tight',pad_inches=0)
-    plt.savefig("jetwindeta.eps",bbox_inches='tight',pad_inches=0)
-    #plt.plot(mspina2[mhor2==hor],5*mpow2a[mhor2==hor])
-    #
     # plt.figure(5)
     # plt.clf()
     # plt.plot(mspina6[mhor6==hor],mpow6[mhor6==hor] )
@@ -3601,6 +3585,38 @@ def plotpowers(fname,hor=0,format=1):
         # plt.plot(alist,1/(y/np.max(y)),'o')
         # plt.plot(mya,Risco(mya)**(1./2.)*0.9) 
         # plt.ylim(ymin=0)
+    #
+    plt.figure(1, figsize=(6,4),dpi=200)
+    plt.clf()
+    gs = GridSpec(2, 2)
+    gs.update(left=0.12, right=0.95, top=0.95, bottom=0.1, wspace=0.01, hspace=0.04)
+    #mdot
+    ax1 = plt.subplot(gs[-2,:])
+    plt.plot(alist,y1,'ro',label=r'$\phi_{\rm BH}$')
+    plt.plot(mya[mya>0],f[mya>0],'k',label=r'$\phi_{\rm BH,fit}=\phi_0+\phi_1 \Omega_{\rm H}$')
+    # plt.plot(mya,(250+0*mya)*rhor) 
+    # plt.plot(mya,250./((3./(mya**2 + 3*rhor**2))**2*2*rhor**2)) 
+    #plt.plot(mya,((mya**2+3*rhor**2)/3)**2/(2/rhor)) 
+    plt.ylim(ymin=0.0001)
+    plt.ylabel(r"$\phi$",fontsize='x-large',ha='right')
+    plt.grid()
+    plt.legend(ncol=2,loc='lower center')
+    #
+    ax2 = plt.subplot(gs[-1,:])
+    #plt.plot(myspina6,myeta6,'r:',label=r'$\eta_{\rm BZ,6}$')
+    plt.plot(alist,100*etalist,'ro',label=r'$\eta_{\rm jet}$')
+    plt.plot(alist,100*(etawindlist-etalist),'gv',label=r'$\eta_{\rm wind}$')
+    plt.plot(myspina6,0.9*100*fac*myeta6,'k',label=r'$0.9\eta_{\rm BZ6}(\phi_{\rm BH,fit})$' )
+    plt.ylim(0,150)
+    plt.grid()
+    plt.legend(ncol=3,loc='upper left')
+    plt.xlabel(r"$a$",fontsize='x-large')
+    plt.ylabel(r"$\eta\  [\%]$",fontsize='x-large',ha='right')
+    plt.savefig("jetwindeta.pdf",bbox_inches='tight',pad_inches=0)
+    plt.savefig("jetwindeta.eps",bbox_inches='tight',pad_inches=0)
+    #plt.plot(mspina2[mhor2==hor],5*mpow2a[mhor2==hor])
+    #
+    #
     plt.figure(3)
     plt.clf()
     #plt.plot( mya, myeta )
