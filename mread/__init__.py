@@ -452,6 +452,8 @@ def plot2davg(dosq=True):
     global eout1, eout2, eout, avg_aphi,avg_aphi2,powjetwind,powjet,jminjet,jmaxjet,jminwind,jmaxwind,mymu,maxaphibh
     #use ratio of averages since more stable definition:
     #
+    etad = np.zeros_like(uu)
+    etad[0] = -1/(-gn3[0,0])**0.5
     avg_mu = -avg_Tud[1,0] / avg_rhouu[1]
     avg_unb = avg_TudMA[1,0] / avg_rhouu[1]
     #sum away from theta = 0
@@ -486,6 +488,7 @@ def plot2davg(dosq=True):
     eoutMA1 = eout1denMA.cumsum(axis=1)
     eoutKE1 = eout1denKE.cumsum(axis=1)
     eout1 = eoutEM1+eoutMA1
+    eouttot = eout1den.sum(axis=-1)
     #sum from from theta = pi
     eout2den   = scaletofullwedge(nz*(-gdet*avg_Tud[1,0]*_dx2*_dx3)[:,::-1].sum(axis=2))
     eout2denEM = scaletofullwedge(nz*(-gdet*avg_TudEM[1,0]*_dx2*_dx3)[:,::-1].sum(axis=2))
@@ -694,11 +697,12 @@ def plot2davg(dosq=True):
     #plt.plot(r[:,0,0],mdottot,'r')
     #plt.plot(r[:,0,0],powjet,'bx')
     plt.ylim(0,20)
-    plt.xlim(rhor,300)
+    plt.xlim(rhor,30)
     #plt.plot(findroot2d(aphix[:,:,0]-maxaphibh,eout)+findroot2d(aphix[:,:,0]-maxaphibh,eout,isleft=False),'y--')
     #plt.plot(powxjet,'b--')
     #plt.plot(r[:,0,0],powxjetEM,'b--')
     #plt.plot(r[:,0,0],powxjetwind,'g')
+    plt.plot(r[:,0,0],eouttot,'r',label=r'$P_{tot}$')
     plt.plot(r[:,0,0],powjetEM,'m-.',label=r'$P_{jet,EM}$')
     plt.plot(r[:,0,0],powjetKE,'m--',label=r'$P_{jet,KE}$')
     plt.plot(r[:,0,0],powjetEMKE,'m',label=r'$P_{jet,EMKE}$')
@@ -1912,12 +1916,12 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
         qtymem2=np.load( fname )
         numtimeslices2 = qtymem2.shape[1]
         #require same number of variables, don't allow format changes on the fly for safety
-        assert qtymem2.shape[0] == qtymem.shape[0]
         print "Number of previously saved time slices: %d" % numtimeslices2 
         if( numtimeslices2 >= numtimeslices ):
             print "Number of previously saved time slices is >= than of timeslices to be loaded, re-using previously saved time slices"
             return(qtymem2)
         else:
+            assert qtymem2.shape[0] == qtymem.shape[0]
             print "Number of previously saved time slices is < than of timeslices to be loaded, re-using previously saved time slices"
             qtymem[:,0:numtimeslices2] = qtymem2[:,0:numtimeslices2]
             qtymem2=None
@@ -2908,7 +2912,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
         dotavg=1
         iti = 3000
         itf = 4000
-        fti = 5000
+        fti = 8000
         ftf = 1e5
 
     mdotiniavg = (mdtot[:,ihor]-md10[:,ihor])[(ts<itf)*(ts>=iti)].sum()/(mdtot[:,ihor]-md10[:,ihor])[(ts<itf)*(ts>=iti)].shape[0]
@@ -3483,11 +3487,17 @@ def plotpowers(fname,hor=0,format=1):
         rlist3=gd1[24]
     etalist = powEMKElist/mdotlist
     etawindlist = powwindEMKElist/mdotlist
+    gin = open( fname, "rt" )
+    emptyline = gin.readline()
+    for i in np.arange(alist.shape[0]):
+        simname = gin.readline().split()[0]
+        print '%.2g & %.5g & %.5g & %.5g & %% %s' % (alist[i], 100*etalist[i], 100*(etawindlist[i]-etalist[i]), 100*etawindlist[i], simname)
+    gin.close()
     mya=np.arange(-1,1,0.001)
     rhor = 1+(1-mya**2)**0.5
     myomh = mya / 2/ rhor
     #fitting function
-    f0 = 2.62
+    f0 = 2.9
     f1 = -0.6
     f1n = 1.4
     f2 = 0.
@@ -3501,14 +3511,12 @@ def plotpowers(fname,hor=0,format=1):
     horx=0.09333
     #myr = Risco(mya) #does not work at all: a < 0 power is much greater than a > 0
     myeta = mypwr * (mya**2+3*rhor**2)/3 / (2*np.pi*horx)
-    plt.figure(1, figsize=(6,4),dpi=200)
-    plt.clf()
     #plt.plot( mya, myeta )
     rhor6 = 1+(1-mspina6[mhor6==hor]**2)**0.5
     #Tried to equate pressures -- works but mistake in calculaton -- wrong power
     #plt.plot(mspina6[mhor6==hor],mpow6[mhor6==hor]* ((mspina6[mhor6==hor]**2+3*rhor6**2)/3/(2*np.pi*horx)) )
     #Simple multiplication by rhor -- works!  \Phi^2/Mdot * rhor ~ const
-    fac = 0.9
+    fac = 0.8
     plt.grid()
     #plt.plot(mya,mya**2)
     #plt.plot(alist,etawindlist,'go',label=r'$\eta_{\rm jet}+\eta_{\rm wind}$')
@@ -3524,6 +3532,9 @@ def plotpowers(fname,hor=0,format=1):
         mypow6 = mpow6[mhor6==hor]
     mypsiosqrtmdot = f0*(1.+(f1*(1+np.sign(myomh6))/2. + f1n*(1-np.sign(myomh6))/2.)*myomh6)
     myeta6 = (mypsiosqrtmdot)**2*mypow6
+    #
+    plt.figure(1, figsize=(6,4),dpi=200)
+    plt.clf()
     #plt.plot(myspina6,myeta6,'r:',label=r'$P_{\rm BZ,6}$')
     plt.plot(myspina6,100*fac*myeta6,'r',label=r'$P_{\rm BZ}$')
     plt.plot(alist,100*etalist,'ro',label=r'$\eta_{\rm jet}$')
@@ -3575,7 +3586,7 @@ def plotpowers(fname,hor=0,format=1):
         y = (f30sqlist/2./(2*np.pi))/(mdotlist)**0.5
         y1= (fsqtotlist/2./(2*np.pi))/(mdotlist)**0.5
         #plt.plot(alist,y,'bo')
-        plt.plot(alist,y,'ro')
+        plt.plot(alist,y1,'ro')
         plt.plot(mya,f,'g')
         # plt.plot(mya,(250+0*mya)*rhor) 
         # plt.plot(mya,250./((3./(mya**2 + 3*rhor**2))**2*2*rhor**2)) 
@@ -3709,6 +3720,44 @@ def plotaphivsr():
     plt.xlabel(r'$r$')
     plt.ylim(0,20)
 
+def div( vec ):
+    res = np.zeros_like(vec[1])
+    res[0:-1]  = (vec[1][1:]-vec[1][:-1])
+    return( res )
+
+def plotdiv():    
+    global madded, eadded
+    rh = 1+(1-a**2)**0.5
+    omegah=a/2/rh
+    etad = np.zeros_like(uu)
+    mdotden = (gdet[:,:,0:1]*avg_rhouu)[1]
+    mdotval = scaletofullwedge(nz*(mdotden*_dx2*_dx3).sum(axis=-1).sum(-1))
+    edotval = -scaletofullwedge(nz*(gdet*avg_Tud[1,0]*_dx2*_dx3).sum(axis=-1).sum(-1))
+    ldotval = scaletofullwedge(nz*(gdet*avg_Tud[1,3]/dxdxp[3][3][:,:,0:1]*_dx2*_dx3).sum(axis=-1).sum(-1))
+    etad[0] = -1/(-gn3[0,0])**0.5
+    gdetdivrhouu=div(gdet[:,:,0:1]*avg_rhouu)
+    etot = scaletofullwedge(nz*(-gdet*avg_Tud[1,0]*_dx2*_dx3).sum(axis=-1).sum(-1))
+    madded = scaletofullwedge(nz*(gdetdivrhouu*_dx2*_dx3).sum(axis=-1)).sum(-1).cumsum(0)
+    madded -= madded[iofr(10)]
+    eadded = scaletofullwedge(nz*(etad[0]*gdetdivrhouu*_dx2*_dx3).sum(axis=-1)).sum(-1).cumsum(0)
+    eadded -= eadded[iofr(10)]
+    eadded/=nz
+    plt.figure(10)
+    #xxx
+    #plt.plot(r[:,0,0], mdotval-mdotval[iofr(10)],label="mdotval")
+    #$plt.plot(r[:,0,0], madded,label="madded")
+    #plt.plot(r[:,0,0], eadded,label="eadded")
+    plt.plot(r[:,0,0], edotval,label="Etot")
+    plt.plot(r[:,0,0], ldotval/10.,label="Ltot/10")
+    #plt.plot(r[:,0,0], ldotval*omegah,label="Omegah * Ltot")
+    plt.plot(r[:,0,0], -mdotval,label="Mtot")
+    plt.ylim(0,10)
+    plt.legend(loc='lower right')
+    rh = 1+(1-a**2)**0.5
+    plt.xlim(rh,30)
+    #plt.ylim(-20,20)
+    #res[:,1:-1] += (vec[2][:,2:]-vec[2][:,:-2])  
+
 if __name__ == "__main__":
     if False:
         #cd into the directory that contains the dumps/ directory
@@ -3755,7 +3804,7 @@ if __name__ == "__main__":
     if False:
         readmytests1()
         plotpowers('powerlist.txt',format=0) #old format
-    if False:
+    if True:
         readmytests1()
         plotpowers('powerlist2davg.txt',format=1) #new format; data from 2d average dumps
     if False:
@@ -3775,7 +3824,7 @@ if __name__ == "__main__":
         diskflux=diskfluxcalc(ny/2)
         ts,fs,md,jem,jtot=mfjhorvstime(11)
         plotj(ts,fs/(diskflux),md,jem,jtot)
-    if True:
+    if False:
         #NEW FORMAT
         #Plot qtys vs. time
         #cd ~/run; for f in rtf*; do cd ~/run/$f; (nice -n 10 python  ~/py/mread/__init__.py &> python.out); done
