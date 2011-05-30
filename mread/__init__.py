@@ -3592,26 +3592,36 @@ def plotpowers(fname,hor=0,format=1):
     gs.update(left=0.12, right=0.95, top=0.95, bottom=0.1, wspace=0.01, hspace=0.04)
     #mdot
     ax1 = plt.subplot(gs[-2,:])
-    plt.plot(alist,y1,'ro',label=r'$\phi_{\rm BH}$')
-    plt.plot(mya[mya>0],f[mya>0],'k',label=r'$\phi_{\rm BH,fit}=\phi_0+\phi_1 \Omega_{\rm H}$')
+    plt.plot(alist,y1,'ro',label=r'$\langle\phi_{\rm BH}^2\rangle^{1/2}$')
+    plt.plot(mya[mya>0],f[mya>0],'k',label=r'$\phi_{\rm fit}=2.9(1-0.6 \Omega_{\rm H})$')
     # plt.plot(mya,(250+0*mya)*rhor) 
     # plt.plot(mya,250./((3./(mya**2 + 3*rhor**2))**2*2*rhor**2)) 
     #plt.plot(mya,((mya**2+3*rhor**2)/3)**2/(2/rhor)) 
     plt.ylim(ymin=0.0001)
     plt.ylabel(r"$\phi$",fontsize='x-large',ha='right')
     plt.grid()
-    plt.legend(ncol=2,loc='lower center')
+    plt.setp( ax1.get_xticklabels(), visible=False )
+    plt.legend(ncol=1,loc='lower center')
+    bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
+    plt.text(-0.9, 2.5, r"$(\mathrm{a})$", size=16, rotation=0.,
+             ha="center", va="center",
+             color='k',weight='regular',bbox=bbox_props
+             )
     #
     ax2 = plt.subplot(gs[-1,:])
     #plt.plot(myspina6,myeta6,'r:',label=r'$\eta_{\rm BZ,6}$')
     plt.plot(alist,100*etalist,'ro',label=r'$\eta_{\rm jet}$')
     plt.plot(alist,100*(etawindlist-etalist),'gv',label=r'$\eta_{\rm wind}$')
-    plt.plot(myspina6,0.9*100*fac*myeta6,'k',label=r'$0.9\eta_{\rm BZ6}(\phi_{\rm BH,fit})$' )
+    plt.plot(myspina6,0.9*100*fac*myeta6,'k',label=r'$0.9\eta_{\rm BZ6}(\phi_{\rm fit})$' )
     plt.ylim(0,150)
     plt.grid()
-    plt.legend(ncol=3,loc='upper left')
+    plt.legend(ncol=1,loc='upper center')
     plt.xlabel(r"$a$",fontsize='x-large')
     plt.ylabel(r"$\eta\  [\%]$",fontsize='x-large',ha='right')
+    plt.text(-0.9, 125, r"$(\mathrm{b})$", size=16, rotation=0.,
+             ha="center", va="center",
+             color='k',weight='regular',bbox=bbox_props
+             )
     plt.savefig("jetwindeta.pdf",bbox_inches='tight',pad_inches=0)
     plt.savefig("jetwindeta.eps",bbox_inches='tight',pad_inches=0)
     #plt.plot(mspina2[mhor2==hor],5*mpow2a[mhor2==hor])
