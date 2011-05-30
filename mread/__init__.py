@@ -32,19 +32,22 @@ import streamlines
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
-def get2davg(whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergroup=20):
+def get2davg(usedefault=0,whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergroup=20):
     if whichgroup >= 0:
         whichgroups = whichgroup
         whichgroupe = whichgroup + 1
     elif whichgroupe < 0:
         whichgroupe = whichgroups + 1
     #check values for sanity
-    if whichgroups < 0 or whichgroupe < 0 or whichgroups >= whichgroupe or itemspergroup <= 0:
+    if usedefault == 0 and (whichgroups < 0 or whichgroupe < 0 or whichgroups >= whichgroupe or itemspergroup <= 0):
         print( "whichgroups = %d, whichgroupe = %d, itemspergroup = %d not allowed" 
                % (whichgroups, whichgroupe, itemspergroup) )
         return None
     #
-    fname = "avg2d%02d_%04d_%04d.npy" % (itemspergroup, whichgroups, whichgroupe)
+    if usedefault:
+        fname = "avg2d.npy"
+    else:
+        fname = "avg2d%02d_%04d_%04d.npy" % (itemspergroup, whichgroups, whichgroupe)
     if os.path.isfile( fname ):
         print( "File %s exists, loading from file..." % fname )
         avgtot=np.load( fname )
@@ -464,7 +467,16 @@ def plot2davg(dosq=True):
     ihor=iofr(rhor)
     #
     qtymem=getqtyvstime(ihor,0.2)
-    md, ftot, fsqtot, f30, fsq30, pjemtot  = plotqtyvstime(qtymem,ihor=ihor,whichplot=-1)
+    if avg_ts[0] != 0:
+        fti = avg_ts[0]
+    else:
+        fti = 8000
+    if avg_te[0] != 0:
+        ftf = avg_te[0]
+    else:
+        ftf = 1e5
+    print( "Using: ti = %g, tf = %g" % (fti,ftf) )
+    md, ftot, fsqtot, f30, fsq30, pjemtot  = plotqtyvstime(qtymem,ihor=ihor,whichplot=-1,fti=fti,ftf=ftf)
     #
     avg_aphi = scaletofullwedge(nz*_dx3*fieldcalc(gdetB1=avg_gdetB[0]))
     avg_aphi2 = scaletofullwedge((nz*avg_psisq)**0.5)
@@ -2654,7 +2666,7 @@ def iofr(rval):
     res = interp1d(r[:,0,0], ti[:,0,0], kind='linear')
     return(np.floor(res(rval)+0.5))
 
-def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
+def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf=None):
     global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
     nqtyold=98
     nqty=98+32
@@ -2899,7 +2911,10 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
     #
     #rc('font', family='serif')
     #plt.figure( figsize=(12,9) )
-    if os.path.isfile(os.path.join("titf.txt")):
+    if ftf is not None:
+        iti = 1000 #dummy
+        itf = 2000 #dummy
+    elif os.path.isfile(os.path.join("titf.txt")):
         dotavg=1
         gd1 = np.loadtxt( "titf.txt",
                           dtype=np.float64, 
@@ -3492,6 +3507,7 @@ def plotpowers(fname,hor=0,format=1):
         powwindlist3=gd1[i]; i+=1
         rlist3=gd1[i]; i+=1
     etalist = powEMKElist/mdotlist
+    etaEMlist = eoutEMtotlist/mdotlist
     etawindlist = powwindEMKElist/mdotlist
     gin = open( fname, "rt" )
     emptyline = gin.readline()
@@ -3592,19 +3608,19 @@ def plotpowers(fname,hor=0,format=1):
         # plt.plot(mya,Risco(mya)**(1./2.)*0.9) 
         # plt.ylim(ymin=0)
     #
-    plt.figure(1, figsize=(6,4),dpi=200)
+    plt.figure(1, figsize=(6,5.8),dpi=200)
     plt.clf()
-    gs = GridSpec(2, 2)
-    gs.update(left=0.12, right=0.95, top=0.95, bottom=0.1, wspace=0.01, hspace=0.04)
+    gs = GridSpec(3, 3)
+    gs.update(left=0.12, right=0.94, top=0.95, bottom=0.1, wspace=0.01, hspace=0.04)
     #mdot
-    ax1 = plt.subplot(gs[-2,:])
+    ax1 = plt.subplot(gs[0,:])
     plt.plot(alist,y1,'ro',label=r'$\langle\phi_{\rm BH}^2\rangle^{1/2}$')
-    plt.plot(mya[mya>0],f[mya>0],'k',label=r'$\phi_{\rm fit}=2.9(1-0.6 \Omega_{\rm H})$')
+    plt.plot(mya[mya>0],f[mya>0],'k-',label=r'$\phi_{\rm fit}=2.9(1-0.6 \Omega_{\rm H})$')
     # plt.plot(mya,(250+0*mya)*rhor) 
     # plt.plot(mya,250./((3./(mya**2 + 3*rhor**2))**2*2*rhor**2)) 
     #plt.plot(mya,((mya**2+3*rhor**2)/3)**2/(2/rhor)) 
     plt.ylim(ymin=0.0001)
-    plt.ylabel(r"$\phi$",fontsize='x-large',ha='right')
+    plt.ylabel(r"$\phi$",fontsize='x-large',ha='center',labelpad=16)
     plt.grid()
     plt.setp( ax1.get_xticklabels(), visible=False )
     plt.legend(ncol=1,loc='lower center')
@@ -3613,23 +3629,59 @@ def plotpowers(fname,hor=0,format=1):
              ha="center", va="center",
              color='k',weight='regular',bbox=bbox_props
              )
+    #second y-axis
+    ax1r = ax1.twinx()
+    ax1r.set_xlim(-1,1)
+    ax1r.set_ylim(ax1.get_ylim())
     #
-    ax2 = plt.subplot(gs[-1,:])
-    #plt.plot(myspina6,myeta6,'r:',label=r'$\eta_{\rm BZ,6}$')
-    plt.plot(alist,100*etalist,'ro',label=r'$\eta_{\rm jet}$')
-    plt.plot(alist,100*(etawindlist-etalist),'gv',label=r'$\eta_{\rm wind}$')
-    plt.plot(myspina6,0.9*100*fac*myeta6,'k',label=r'$0.9\eta_{\rm BZ6}(\phi_{\rm fit})$' )
-    plt.ylim(0,150)
+    ax2 = plt.subplot(gs[1,:])
+    plt.plot(alist,100*etaEMlist,'ro',label=r'$\eta_{\rm BH}$')
+    #plt.plot(alist,100*(etawindlist-etalist),'gv',label=r'$\eta_{\rm wind}$')
+    #plt.plot(myspina6,0.9*100*fac*myeta6,'k',label=r'$0.9\eta_{\rm BZ6}(\phi_{\rm fit})$' )
+    plt.plot(myspina6,100*fac*myeta6,'k-',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$' )
+    plt.ylim(0.0001,150)
     plt.grid()
-    plt.legend(ncol=1,loc='upper center')
-    plt.xlabel(r"$a$",fontsize='x-large')
-    plt.ylabel(r"$\eta\  [\%]$",fontsize='x-large',ha='right')
+    plt.setp( ax2.get_xticklabels(), visible=False )
+    plt.ylabel(r"$\eta(r_g)\  [\%]$",fontsize='x-large',ha='center',labelpad=12)
     plt.text(-0.9, 125, r"$(\mathrm{b})$", size=16, rotation=0.,
              ha="center", va="center",
              color='k',weight='regular',bbox=bbox_props
              )
-    plt.savefig("jetwindeta.pdf",bbox_inches='tight',pad_inches=0)
-    plt.savefig("jetwindeta.eps",bbox_inches='tight',pad_inches=0)
+    plt.legend(ncol=2,loc='upper center')
+    #second y-axis
+    ax2r = ax2.twinx()
+    ax2r.set_xlim(-1,1)
+    ax2r.set_ylim(0.0001,150)
+    #
+    ax3 = plt.subplot(gs[-1,:])
+    newy1 = 100*fac*myeta6
+    newy2 = 0.8*100*fac*myeta6
+    ax3.fill_between(myspina6,newy1,newy2,where=newy1>newy2,facecolor=(1,0.8,0.8,1),edgecolor=(1,0.8,0.8,1))
+    #plt.plot(myspina6,myeta6,'r:',label=r'$\eta_{\rm BZ,6}$')
+    plt.plot(alist,100*etalist,'ro',label=r'$\eta_{\rm jet}$')
+    #plt.plot(alist,100*etaEMlist,'rx',label=r'$\eta_{\rm jet}$')
+    plt.plot(alist,100*(etawindlist-etalist),'gv',label=r'$\eta_{\rm wind}$')
+    plt.plot(myspina6,100*fac*myeta6,'k-',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$' )
+    plt.plot(myspina6,0.9*100*fac*myeta6,'k--',label=r'$0.9\eta_{\rm BZ6}(\phi_{\rm fit})$' )
+    plt.ylim(0.0001,150)
+    plt.grid()
+    plt.legend(ncol=2,loc='upper center')
+    plt.xlabel(r"$a$",fontsize='x-large')
+    plt.ylabel(r"$\eta(100r_g)\  [\%]$",fontsize='x-large',ha='center',labelpad=12)
+    plt.text(-0.9, 125, r"$(\mathrm{c})$", size=16, rotation=0.,
+             ha="center", va="center",
+             color='k',weight='regular',bbox=bbox_props
+             )
+    #second y-axis
+    ax3r = ax3.twinx()
+    ax3r.set_xlim(-1,1)
+    ax3r.set_ylim(ax3.get_ylim())
+    #
+    #plt.savefig("jetwindeta.pdf",bbox_inches='tight',pad_inches=0)
+    #plt.savefig("jetwindeta.eps",bbox_inches='tight',pad_inches=0)
+    plt.savefig("jetwindeta.pdf",bbox_inches='tight',pad_inches=0.02)
+    plt.savefig("jetwindeta.eps",bbox_inches='tight',pad_inches=0.02)
+    plt.savefig("jetwindeta.png",bbox_inches='tight',pad_inches=0.02)
     #plt.plot(mspina2[mhor2==hor],5*mpow2a[mhor2==hor])
     #
     #
@@ -3877,7 +3929,7 @@ if __name__ == "__main__":
         else:
             qtymem=getqtyvstime(ihor,0.2)
             plotqtyvstime(qtymem)
-    if True:
+    if False:
         #2DAVG
         if len(sys.argv[1:])!=0:
             grid3d("gdump.bin",use2d=True)
@@ -3895,7 +3947,9 @@ if __name__ == "__main__":
             whichgroupe = int(sys.argv[2])
             step = int(sys.argv[3])
             itemspergroup = 20
-            if step == 1:
+            if step == 0:
+                avgmem = get2davg(usedefault=1)
+            elif step == 1:
                 avgmem = get2davg(whichgroups=whichgroups,whichgroupe=whichgroupe,itemspergroup=itemspergroup)
             else:
                 for whichgroup in np.arange(whichgroups,whichgroupe,step):
@@ -4117,7 +4171,7 @@ if __name__ == "__main__":
             os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 1 mov_%s_Rzxym1p1.avi" % (os.path.basename(os.getcwd())) )
             os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 2 mov_%s_Rzxym1.avi" % (os.path.basename(os.getcwd())) )
             #os.system("scp mov.avi 128.112.70.76:Research/movies/mov_`basename \`pwd\``.avi")
-    if False:
+    if True:
         #FIGURE 1 LOTSOPANELS
         doslines=True
         plotlenf=10
