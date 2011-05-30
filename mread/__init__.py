@@ -2974,29 +2974,30 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         fti = 8000
         ftf = 1e5
 
-    mdotiniavg = (mdtot[:,ihor]-md10[:,ihor])[(ts<itf)*(ts>=iti)].sum()/(mdtot[:,ihor]-md10[:,ihor])[(ts<itf)*(ts>=iti)].shape[0]
+    mdotiniavg = timeavg(mdtot[:,ihor]-md10[:,ihor],ts,fti,ftf)
     #mdotfinavg = (mdtot[:,ihor]-md10[:,ihor])[(ts<ftf)*(ts>=fti)].sum()/(mdtot[:,ihor]-md10[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0]
-    mdotfinavgvsr = (mdtot[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(mdtot[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-    mdotfinavgvsr5 = (mdtot[:,:]-md5[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(mdtot[:,:]-md5[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-    mdotfinavgvsr10 = (mdtot[:,:]-md10[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(mdtot[:,:]-md10[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-    mdotfinavgvsr20 = (mdtot[:,:]-md20[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(mdtot[:,:]-md20[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-    mdotfinavgvsr30 = (mdtot[:,:]-md30[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(mdtot[:,:]-md30[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-    mdotfinavgvsr40 = (mdtot[:,:]-md40[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(mdtot[:,:]-md40[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-    mdotfinavg = mdotfinavgvsr30[r[:,0,0]<10].sum()/mdotfinavgvsr30[r[:,0,0]<10].shape[0]
-    pjetfinavg = (pjem30[:,ihor])[(ts<ftf)*(ts>=fti)].sum()/(pjem30[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0]
-    pjemfinavgvsr = ((edtot-edma)[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/((edtot-edma)[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-    pjemfinavgvsr5 = (pjem5[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjem5[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-    pjemfinavgvsr10 = (pjem10[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjem10[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-    pjemfinavgvsr20 = (pjem20[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjem20[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-    pjemfinavgvsr30 = (pjem30[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjem30[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-    pjemfinavgvsr40 = (pjem40[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjem40[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-    pjemfinavgtot = ((edtot-edma)[:,ihor])[(ts<ftf)*(ts>=fti)].sum()/((edtot-edma)[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0]
-    pjmafinavgvsr = (edma[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(edma[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-    pjmafinavgvsr5 = (pjma5[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjma5[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-    pjmafinavgvsr10 = (pjma10[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjma10[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-    pjmafinavgvsr20 = (pjma20[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjma20[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-    pjmafinavgvsr30 = (pjma30[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjma30[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
-    pjmafinavgvsr40 = (pjma40[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjma40[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
+    mdotfinavgvsr = timeavg(mdtot,ts,fti,ftf)
+    mdotfinavgvsr5 = timeavg(mdtot[:,:]-md5[:,:],ts,fti,ftf)
+    mdotfinavgvsr10 = timeavg(mdtot[:,:]-md10[:,:],ts,fti,ftf)
+    mdotfinavgvsr20 = timeavg(mdtot[:,:]-md20[:,:],ts,fti,ftf)
+    mdotfinavgvsr30 = timeavg(mdtot[:,:]-md30[:,:],ts,fti,ftf)
+    mdotfinavgvsr40 = timeavg(mdtot[:,:]-md40[:,:],ts,fti,ftf)
+    mdotfinavg = np.float64(mdotfinavgvsr30)[r[:,0,0]<10].mean()
+    pjetfinavg = timeavg(pjem30[:,ihor],ts,fti,ftf)
+    pjemfinavgvsr = timeavg(edtot-edma,ts,fti,ftf)
+    pjemtot = edtot-edma
+    pjemfinavgvsr5 = timeavg(pjem5[:,:],ts,fti,ftf)
+    pjemfinavgvsr10 = timeavg(pjem10[:,:],ts,fti,ftf)
+    pjemfinavgvsr20 = timeavg(pjem20[:,:],ts,fti,ftf)
+    pjemfinavgvsr30 = timeavg(pjem30[:,:],ts,fti,ftf)
+    pjemfinavgvsr40 = timeavg(pjem40[:,:],ts,fti,ftf)
+    pjemfinavgtot = timeavg((edtot-edma)[:,ihor],ts,fti,ftf)
+    pjmafinavgvsr = timeavg(edma[:,:],ts,fti,ftf)
+    pjmafinavgvsr5 = timeavg(pjma5[:,:],ts,fti,ftf)
+    pjmafinavgvsr10 = timeavg(pjma10[:,:],ts,fti,ftf)
+    pjmafinavgvsr20 = timeavg(pjma20[:,:],ts,fti,ftf)
+    pjmafinavgvsr30 = timeavg(pjma30[:,:],ts,fti,ftf)
+    pjmafinavgvsr40 = timeavg(pjma40[:,:],ts,fti,ftf)
     pjtotfinavgvsr = pjemfinavgvsr + pjmafinavgvsr
     pjtotfinavgvsr5 = pjemfinavgvsr5 + pjmafinavgvsr5
     pjtotfinavgvsr10 = pjemfinavgvsr10 + pjmafinavgvsr10
@@ -3018,11 +3019,11 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     
     
 
-    fstotfinavg = (fstot[:,ihor])[(ts<ftf)*(ts>=fti)].sum(0)/(fstot[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0]
-    fstotsqfinavg = ( (fstot[:,ihor]**2)[(ts<ftf)*(ts>=fti)].sum(0)/(fstot[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0] )**0.5
+    fstotfinavg = timeavg(fstot[:,ihor],ts,fti,ftf)
+    fstotsqfinavg = timeavg(fstot[:,ihor]**2,ts,fti,ftf)**0.5
         
-    fsj30finavg = (fsj30[:,ihor])[(ts<ftf)*(ts>=fti)].sum(0)/(fsj30[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0] 
-    fsj30sqfinavg = ( (fsj30[:,ihor]**2)[(ts<ftf)*(ts>=fti)].sum(0)/(fsj30[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0] )**0.5
+    fsj30finavg = timeavg(fsj30[:,ihor],ts,fti,ftf)
+    fsj30sqfinavg = timeavg(fsj30[:,ihor]**2,ts,fti,ftf)**0.5
     
     #######################
     #
@@ -3305,6 +3306,12 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         plt.legend(loc='lower right',ncol=2)
         plt.grid()
         plt.savefig('pjet4_%s.pdf' % os.path.basename(os.getcwd()) )
+
+def timeavg( qty, ts, fti, ftf ):
+    cond = (ts<ftf)*(ts>=fti)
+    qtycond = np.float64(qty[cond])
+    qtyavg = qtycond.mean(axis=0)
+    return( qtyavg )
 
 def plotj(ts,fs,md,jem,jtot):
     #rc('font', family='serif')
