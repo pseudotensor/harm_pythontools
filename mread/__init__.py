@@ -2871,39 +2871,81 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         #new format?
         if qtymem.shape[0] > nqtyold:
             #yes!
-            pjem_mu10=qtymem[i];i+=1
-            pjem_mu5=qtymem[i];i+=1
-            pjem_mu2=qtymem[i];i+=1
-            pjem_mu1=qtymem[i];i+=1
-            pjrm_mu10=qtymem[i];i+=1
-            pjrm_mu5=qtymem[i];i+=1
-            pjrm_mu2=qtymem[i];i+=1
-            pjrm_mu1=qtymem[i];i+=1
-            pjma_mu10=qtymem[i];i+=1
-            pjma_mu5=qtymem[i];i+=1
-            pjma_mu2=qtymem[i];i+=1
-            pjma_mu1=qtymem[i];i+=1
-            phiabsj_mu10=qtymem[i];i+=1
-            phiabsj_mu5=qtymem[i];i+=1
-            phiabsj_mu2=qtymem[i];i+=1
-            phiabsj_mu1=qtymem[i];i+=1
+            pjem_n_mu10=qtymem[i];i+=1
+            pjem_n_mu5=qtymem[i];i+=1
+            pjem_n_mu2=qtymem[i];i+=1
+            pjem_n_mu1=qtymem[i];i+=1
+            pjrm_n_mu10=qtymem[i];i+=1
+            pjrm_n_mu5=qtymem[i];i+=1
+            pjrm_n_mu2=qtymem[i];i+=1
+            pjrm_n_mu1=qtymem[i];i+=1
+            pjma_n_mu10=qtymem[i];i+=1
+            pjma_n_mu5=qtymem[i];i+=1
+            pjma_n_mu2=qtymem[i];i+=1
+            pjma_n_mu1=qtymem[i];i+=1
+            phiabsj_n_mu10=qtymem[i];i+=1
+            phiabsj_n_mu5=qtymem[i];i+=1
+            phiabsj_n_mu2=qtymem[i];i+=1
+            phiabsj_n_mu1=qtymem[i];i+=1
+            pjem_s_mu10=qtymem[i];i+=1
+            pjem_s_mu5=qtymem[i];i+=1
+            pjem_s_mu2=qtymem[i];i+=1
+            pjem_s_mu1=qtymem[i];i+=1
+            pjrm_s_mu10=qtymem[i];i+=1
+            pjrm_s_mu5=qtymem[i];i+=1
+            pjrm_s_mu2=qtymem[i];i+=1
+            pjrm_s_mu1=qtymem[i];i+=1
+            pjma_s_mu10=qtymem[i];i+=1
+            pjma_s_mu5=qtymem[i];i+=1
+            pjma_s_mu2=qtymem[i];i+=1
+            pjma_s_mu1=qtymem[i];i+=1
+            phiabsj_s_mu10=qtymem[i];i+=1
+            phiabsj_s_mu5=qtymem[i];i+=1
+            phiabsj_s_mu2=qtymem[i];i+=1
+            phiabsj_s_mu1=qtymem[i];i+=1
+            #derived
+            pjke_n_mu2 = pjem_n_mu2 + pjma_n_mu2 - pjrm_n_mu2
+            pjke_s_mu2 = pjem_s_mu2 + pjma_s_mu2 - pjrm_s_mu2
+            pjke_mu2 = pjke_n_mu2 + pjke_s_mu2
         else:
-            pjem_mu10=None
-            pjem_mu5=None
-            pjem_mu2=None
-            pjem_mu1=None
-            pjrm_mu10=None
-            pjrm_mu5=None
-            pjrm_mu2=None
-            pjrm_mu1=None
-            pjma_mu10=None
-            pjma_mu5=None
-            pjma_mu2=None
-            pjma_mu1=None
-            phiabsj_mu10=None
-            phiabsj_mu5=None
-            phiabsj_mu2=None
-            phiabsj_mu1=None
+            print( "Oldish format: missing north/south jet power and flux" )
+            sys.stdout.flush()
+            pjem_n_mu10=None
+            pjem_n_mu5=None
+            pjem_n_mu2=None
+            pjem_n_mu1=None
+            pjrm_n_mu10=None
+            pjrm_n_mu5=None
+            pjrm_n_mu2=None
+            pjrm_n_mu1=None
+            pjma_n_mu10=None
+            pjma_n_mu5=None
+            pjma_n_mu2=None
+            pjma_n_mu1=None
+            phiabsj_n_mu10=None
+            phiabsj_n_mu5=None
+            phiabsj_n_mu2=None
+            phiabsj_n_mu1=None
+            pjem_s_mu10=None
+            pjem_s_mu5=None
+            pjem_s_mu2=None
+            pjem_s_mu1=None
+            pjrm_s_mu10=None
+            pjrm_s_mu5=None
+            pjrm_s_mu2=None
+            pjrm_s_mu1=None
+            pjma_s_mu10=None
+            pjma_s_mu5=None
+            pjma_s_mu2=None
+            pjma_s_mu1=None
+            phiabsj_s_mu10=None
+            phiabsj_s_mu5=None
+            phiabsj_s_mu2=None
+            phiabsj_s_mu1=None
+            #derived
+            pjke_n_mu2=None
+            pjke_s_mu2=None
+            pjke_mu2=None
     #end qty defs
     ##############################
     #end copy
@@ -3031,19 +3073,21 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     #######################
     if whichplot == 4:
-        ax.plot(ts,pjem30[:,ihor]/mdotfinavg)#,label=r'$P_{\rm j}/\dot M$')
+        ax.plot(ts,pjemtot[:,ihor]/mdotfinavg,'b')#,label=r'$P_{\rm j}/\dot M$')
+        ax.plot(ts,pjke_mu2[:,iofr(100)]/mdotfinavg,'r--')#,label=r'$P_{\rm j}/\dot M$')
         if findex != None:
             if not isinstance(findex,tuple):
-                ax.plot(ts[findex],(pjem30[:,ihor]/mdotfinavg)[findex],'ro')#,label=r'$\dot M$')
+                ax.plot(ts[findex],(pjemtot[:,ihor]/mdotfinavg)[findex],'ro')#,label=r'$\dot M$')
             else:
                 for fi in findex:
-                    ax.plot(ts[fi],(pjem30[:,ihor]/mdotfinavg)[fi],'ro')#,label=r'$\dot M$')
+                    ax.plot(ts[fi],(pjemtot[:,ihor]/mdotfinavg)[fi],'ro')#,label=r'$\dot M$')
         #ax.legend(loc='upper left')
         if dotavg:
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg/mdotfinavg)#,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjemfinavgtot/mdotfinavg,'r') #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
         #ax.set_ylim(0,2)
         ax.set_xlabel(r'$t\;[r_g/c]$',fontsize=16)
         ax.set_ylabel(r'$\eta_{\rm jet}$',fontsize=16,ha='right')
+        #xxx
     #######################
     #
     # \Phi ***
@@ -3054,18 +3098,18 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         #To approximately get efficiency:
         #ax.plot(ts,2./3.*np.pi*omh**2*np.abs(fsj30[:,ihor]/4/np.pi)**2/mdotfinavg)
         #prefactor to get sqrt(eta): (2./3.*np.pi*omh**2)**0.5
-        ax.plot(ts,np.abs(fsj30[:,ihor]/4/np.pi)/mdotfinavg**0.5)
+        ax.plot(ts,np.abs(fstot[:,ihor]/4/np.pi)/mdotfinavg**0.5)
         if findex != None:
             if not isinstance(findex,tuple):
-                ax.plot(ts[findex],np.abs(fsj30[:,ihor]/4/np.pi)[findex]/mdotfinavg**0.5,'ro')
+                ax.plot(ts[findex],np.abs(fstot[:,ihor]/4/np.pi)[findex]/mdotfinavg**0.5,'ro')
             else:
                 for fi in findex:
-                    ax.plot(ts[fi],np.abs(fsj30[:,ihor]/4/np.pi)[fi]/mdotfinavg**0.5,'ro')
+                    ax.plot(ts[fi],np.abs(fstot[:,ihor]/4/np.pi)[fi]/mdotfinavg**0.5,'ro')
         #ax.legend(loc='upper left')
         if dotavg:
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+(fsj30finavg/4/np.pi)/mdotfinavg**0.5)
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+(fstotsqfinavg/4/np.pi)/mdotfinavg**0.5)
         #ax.set_ylabel(r'$\ \ \ k\Phi_j/\langle\dot M\rangle^{\!1/2}$',fontsize=16)
-        ax.set_ylabel(r'$\phi_{\rm jet}$',fontsize=16)
+        ax.set_ylabel(r'$\phi_{\rm BH}$',fontsize=16)
         plt.setp( ax.get_xticklabels(), visible=False )
 
     if whichplot == -1:
@@ -4212,7 +4256,8 @@ if __name__ == "__main__":
         plotlen = max(plotlen,plotlenf)
         fig=plt.figure(0, figsize=(12,9), dpi=100)
         plt.clf()
-        findexlist=(0,600,1285,1459)
+        #findexlist=(0,600,1285,1459)
+        findexlist=(0,600,1225,1369)
         #SWITCH OFF SUPTITLE
         #plt.suptitle(r'$\log_{10}\rho$ at t = %4.0f' % t)
         #mdot,pjet,pjet/mdot plots
@@ -4313,13 +4358,10 @@ if __name__ == "__main__":
         dodiskfield=True
         minlenbhfield=0.03
         minlendiskfield=0.03
-        fname = "fieldline0000.bin"
-        rfd(fname)
-        cvel() #for calculating bsq
         #
         # PLOT 1
         #
-        fname = "fieldline0000.bin"
+        fname = "fieldline%04d.bin" % findexlist[0]
         rfd(fname)
         cvel() #for calculating bsq
         #xz
@@ -4348,7 +4390,7 @@ if __name__ == "__main__":
         #
         # PLOT 2
         #
-        fname = "fieldline0600.bin"
+        fname = "fieldline%04d.bin" % findexlist[1]
         rfd(fname)
         cvel() #for calculating bsq
         #Rz
@@ -4374,7 +4416,7 @@ if __name__ == "__main__":
         #
         # PLOT 3
         #
-        fname = "fieldline1285.bin"
+        fname = "fieldline%04d.bin" % findexlist[2]
         rfd(fname)
         cvel() #for calculating bsq
         #Rz
@@ -4398,7 +4440,7 @@ if __name__ == "__main__":
         #
         # PLOT 4
         #
-        fname = "fieldline1459.bin"
+        fname = "fieldline%04d.bin" % findexlist[3]
         rfd(fname)
         cvel() #for calculating bsq
         #Rz
