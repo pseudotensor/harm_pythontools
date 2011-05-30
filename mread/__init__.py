@@ -464,7 +464,7 @@ def plot2davg(dosq=True):
     ihor=iofr(rhor)
     #
     qtymem=getqtyvstime(ihor,0.2)
-    md, ftot, fsqtot, f30, fsq30 = plotqtyvstime(qtymem,ihor=ihor,whichplot=-1)
+    md, ftot, fsqtot, f30, fsq30, pjemtot  = plotqtyvstime(qtymem,ihor=ihor,whichplot=-1)
     #
     avg_aphi = scaletofullwedge(nz*_dx3*fieldcalc(gdetB1=avg_gdetB[0]))
     avg_aphi2 = scaletofullwedge((nz*avg_psisq)**0.5)
@@ -485,6 +485,7 @@ def plot2davg(dosq=True):
     #eout1den=eout1denEM+eout1denMA
     #eout1   = eout1den.cumsum(axis=1)
     eoutEM1 = eout1denEM.cumsum(axis=1)
+    eoutEMtot = eout1denEM.sum(axis=1)[ihor]
     eoutMA1 = eout1denMA.cumsum(axis=1)
     eoutKE1 = eout1denKE.cumsum(axis=1)
     eout1 = eoutEM1+eoutMA1
@@ -601,9 +602,10 @@ def plot2davg(dosq=True):
     powjetatr = powjetEMKE[iofr(rprintout)]
     powjetwindatr = powjetwindEMKE[iofr(rprintout)]
     powwindatr = powwindEMKE[iofr(rprintout)]
-    print( "r = %g: Mdot = %g, etajet = %g, Pjet = %g, etawind = %g, Pwind = %g, Ftot = %g, Fsqtot = %g" % ( rprintout, md, powjetatr/md, powjetatr, powjetwindatr/md, powjetwindatr, ftot, fsqtot ) )
+    print( "r = %g: Mdot = %g, etajet = %g, Pjet = %g, etawind = %g, Pwind = %g, Ftot = %g, Fsqtot = %g, pjemtot = %g, eoutEMtot = %g" % ( rprintout, md, powjetatr/md, powjetatr, powjetwindatr/md, powjetwindatr, ftot, fsqtot, pjemtot, eoutEMtot ) )
     foutpower = open( "pjet_2davg_%s.txt" %  os.path.basename(os.getcwd()), "w" )
-    printjetwindpower(filehandle = foutpower, r = 100., stage = 0, powjet = powjet, powwind = powwind, muminjet = muminjet, muminwind = muminwind, md=md, powjetEMKE=powjetEMKE, powjetwindEMKE=powjetwindEMKE, ftot=ftot, fsqtot=fsqtot, f30=f30, fsq30=fsq30)
+    printjetwindpower(filehandle = foutpower, r = 100., stage = 0, powjet = powjet, powwind = powwind, muminjet = muminjet, muminwind = muminwind, md=md, powjetEMKE=powjetEMKE, powjetwindEMKE=powjetwindEMKE, 
+                      ftot=ftot, fsqtot=fsqtot, f30=f30, fsq30=fsq30, pjemtot=pjemtot, eoutEMtot=eoutEMtot)
     printjetwindpower(filehandle = foutpower, r = 200., stage = 1, powjet = powjet, powwind = powwind, muminjet = muminjet, muminwind = muminwind, md=md, powjetEMKE=powjetEMKE, powjetwindEMKE=powjetwindEMKE)
     printjetwindpower(filehandle = foutpower, r = 400., stage = 2, powjet = powjet, powwind = powwind, muminjet = muminjet, muminwind = muminwind, md=md, powjetEMKE=powjetEMKE, powjetwindEMKE=powjetwindEMKE)
     foutpower.close()
@@ -764,7 +766,7 @@ def plot2davg(dosq=True):
     #plc(h,xcoord=r*np.sin(h),ycoord=r*np.cos(h))
     #plc(lrho,xcoord=r*np.sin(h),ycoord=r*np.cos(h))
 
-def printjetwindpower(filehandle = None, r = None, stage = 0, powjet = 0, powwind = 0, muminjet = 0, muminwind = 0, md = 0, powjetEMKE=0, powjetwindEMKE=0, ftot=0, fsqtot=0, f30=0, fsq30=0):
+def printjetwindpower(filehandle = None, r = None, stage = 0, powjet = 0, powwind = 0, muminjet = 0, muminwind = 0, md = 0, powjetEMKE=0, powjetwindEMKE=0, ftot=0, fsqtot=0, f30=0, fsq30=0, pjemtot=0, eoutEMtot = 0):
     if filehandle == None or r == None:
         raise( ValuseError("filehandle and r have to be specified") )
     #
@@ -773,7 +775,7 @@ def printjetwindpower(filehandle = None, r = None, stage = 0, powjet = 0, powwin
     i = iofr(r)
     if stage == 0:
         #initial stage
-        filehandle.write( "%s %f %f %f %f %f %f %f %f %f %f" % (os.path.basename(os.getcwd()), a, avg_ts[0], avg_te[0], muminjet, muminwind, md, ftot, fsqtot, f30, fsq30) )
+        filehandle.write( "%s %f %f %f %f %f %f %f %f %f %f %f %f" % (os.path.basename(os.getcwd()), a, avg_ts[0], avg_te[0], muminjet, muminwind, md, ftot, fsqtot, f30, fsq30, pjemtot, eoutEMtot) )
     if stage == 0 or stage == 1:
         #intermediate stage
         filehandle.write( " %f %f %f %f %f" % (powjetEMKE[i], powjetwindEMKE[i], powjet[i], powwind[i], r) )
@@ -2931,6 +2933,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
     pjemfinavgvsr20 = (pjem20[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjem20[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
     pjemfinavgvsr30 = (pjem30[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjem30[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
     pjemfinavgvsr40 = (pjem40[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjem40[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
+    pjemfinavgtot = ((edtot-edma)[:,ihor])[(ts<ftf)*(ts>=fti)].sum()/((edtot-edma)[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0]
     pjmafinavgvsr = (edma[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(edma[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
     pjmafinavgvsr5 = (pjma5[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjma5[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
     pjmafinavgvsr10 = (pjma10[:,:])[(ts<ftf)*(ts>=fti)].sum(0)/(pjma10[:,:])[(ts<ftf)*(ts>=fti)].shape[0]
@@ -3063,7 +3066,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None):
         foutpower.flush()
         os.fsync(foutpower.fileno())
         foutpower.close()
-        return( mdotfinavg, fstotfinavg, fstotsqfinavg, fsj30finavg, fsj30sqfinavg )
+        return( mdotfinavg, fstotfinavg, fstotsqfinavg, fsj30finavg, fsj30sqfinavg, pjemfinavgtot )
 
        
     if whichplot == None:
@@ -3456,7 +3459,7 @@ def plotpowers(fname,hor=0,format=1):
         psitotsqlist = gd1[5]
         psi30sqlist = gd1[7]
     elif format == 1: #new avg2d format
-        gd1 = np.loadtxt( fname, unpack = True, usecols = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25] )
+        gd1 = np.loadtxt( fname, unpack = True, usecols = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27] )
         #gd=gd1.view().reshape((-1,nx,ny,nz), order='F')
         alist = gd1[0]
         rhorlist = 1+(1-alist**2)**0.5
@@ -3466,25 +3469,28 @@ def plotpowers(fname,hor=0,format=1):
         fsqtotlist=gd1[7]
         f30list=gd1[8]
         f30sqlist=gd1[9]
+        pjetemtotlist=gd1[10]
+        eoutEMtotlist=gd1[11]
         #etalist = gd1[3]
+        i = 12
         #1
-        powEMKElist=gd1[10]
-        powwindEMKElist=gd1[11]
-        powlist=gd1[12]
-        powwindlist=gd1[13]
-        rlist=gd1[14]
+        powEMKElist=gd1[i]; i+=1
+        powwindEMKElist=gd1[i]; i+=1
+        powlist=gd1[i]; i+=1
+        powwindlist=gd1[i]; i+=1
+        rlist=gd1[i]; i+=1
         #2
-        powEMKElist2=gd1[15]
-        powwindlEMKEist2=gd1[16]
-        powlist2=gd1[17]
-        powwindlist2=gd1[18]
-        rlist2=gd1[19]
+        powEMKElist2=gd1[i]; i+=1
+        powwindlEMKEist2=gd1[i]; i+=1
+        powlist2=gd1[i]; i+=1
+        powwindlist2=gd1[i]; i+=1
+        rlist2=gd1[i]; i+=1
         #3
-        powEMKElist3=gd1[20]
-        powwindEMKElist3=gd1[21]
-        powlist3=gd1[22]
-        powwindlist3=gd1[23]
-        rlist3=gd1[24]
+        powEMKElist3=gd1[i]; i+=1
+        powwindEMKElist3=gd1[i]; i+=1
+        powlist3=gd1[i]; i+=1
+        powwindlist3=gd1[i]; i+=1
+        rlist3=gd1[i]; i+=1
     etalist = powEMKElist/mdotlist
     etawindlist = powwindEMKElist/mdotlist
     gin = open( fname, "rt" )
@@ -3830,7 +3836,7 @@ if __name__ == "__main__":
     if False:
         readmytests1()
         plotpowers('powerlist.txt',format=0) #old format
-    if True:
+    if False:
         readmytests1()
         plotpowers('powerlist2davg.txt',format=1) #new format; data from 2d average dumps
     if False:
@@ -3871,7 +3877,7 @@ if __name__ == "__main__":
         else:
             qtymem=getqtyvstime(ihor,0.2)
             plotqtyvstime(qtymem)
-    if False:
+    if True:
         #2DAVG
         if len(sys.argv[1:])!=0:
             grid3d("gdump.bin",use2d=True)
