@@ -940,7 +940,7 @@ def reinterpxy(vartointerp,extent,ncell,domask=1):
 def ftr(x,xb,xf):
     return( amax(0.0*x,amin(1.0+0.0*x,1.0*(x-xb)/(xf-xb))) )
     
-def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True):
+def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01):
     extent=(-len,len,-len,len)
     palette=cm.jet
     palette.set_bad('k', 1.0)
@@ -968,8 +968,8 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         Bznorm=Brnorm*np.cos(h)-Bhnorm*np.sin(h)
         BRnorm=Brnorm*np.sin(h)+Bhnorm*np.cos(h)
         #
-        iBz = reinterp(Bznorm,extent,ncell,domask=0.4)
-        iBR = reinterp(BRnorm,extent,ncell,isasymmetric=True,domask=0.4) #isasymmetric = True tells to flip the sign across polar axis
+        iBz = reinterp(Bznorm,extent,ncell,domask=0.8)
+        iBR = reinterp(BRnorm,extent,ncell,isasymmetric=True,domask=0.8) #isasymmetric = True tells to flip the sign across polar axis
         if dovarylw:
             iibeta = reinterp(0.5*bsq/(gam-1)/ug,extent,ncell,domask=0)
             ibsqorho = reinterp(bsq/rho,extent,ncell,domask=0)
@@ -1010,7 +1010,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
             lw *= ftr(iaphi,0.001,0.002)
         else:
             lw = 1
-        fstreamplot(yi,xi,iBR,iBz,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=True,dodiskfield=dodiskfield,dobhfield=True,startatmidplane=True,a=a)
+        fstreamplot(yi,xi,iBR,iBz,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=True,dodiskfield=dodiskfield,dobhfield=dobhfield,startatmidplane=True,a=a,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,dsval=dsval,color='k')
         #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
     ax.set_xlim(extent[0],extent[1])
     ax.set_ylim(extent[2],extent[3])
@@ -4272,7 +4272,7 @@ if __name__ == "__main__":
         B[3] = avg_B[2]
         bsq = avg_bsq
         plt.figure(1)
-        mkframe("myframe",len=25.1,ax=plt.gca(),density=2,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5)
+        mkframe("myframe",len=25.1,ax=plt.gca(),density=2,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=20,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.01)
     if False:
         #FIGURE 1 LOTSOPANELS
         doslines=True
