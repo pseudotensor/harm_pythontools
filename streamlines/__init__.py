@@ -384,7 +384,7 @@ def streamplot(x, y, u, v, density=1, linewidth=1,
 
 def fstreamplot(x, y, u, v, density=1, linewidth=1,
                color='k', cmap=None, norm=None, vmax=None, vmin=None,
-               arrowsize=1, INTEGRATOR='RK4',dtx=10,ax=None,setxylim=False,useblank=True,detectLoops=True,dobhfield=False,dodiskfield=False,startatmidplane=False,a=0.0,downsample=1,minlendiskfield=0.2,minlenbhfield=0.2):
+               arrowsize=1, INTEGRATOR='RK4',dtx=10,ax=None,setxylim=False,useblank=True,detectLoops=True,dobhfield=False,dodiskfield=False,startatmidplane=False,a=0.0,downsample=1,minlendiskfield=0.2,minlenbhfield=0.2,dsval=0.01):
     '''Draws streamlines of a vector flow.
 
     * x and y are 1d arrays defining an *evenly spaced* grid.
@@ -513,7 +513,7 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
 
         ## Integrator function
         def rk4(x0, y0, f, useblank = True):
-            ds = 0.01 #min(1./NGX, 1./NGY, 0.01)
+            ds = dsval #min(1./NGX, 1./NGY, 0.01)
             nstep = 0
             stotal = 0
             xi = x0
@@ -712,7 +712,7 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
     ## for blank==0 along the edges first, and work inwards.
 
     rh = 1+(1-a**2)**0.5
-    rad = 0.9*rh
+    rad = 0.95*rh
     if dobhfield:
         if dobhfield == 1:
             num = 16 #20*density
