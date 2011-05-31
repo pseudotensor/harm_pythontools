@@ -940,7 +940,7 @@ def reinterpxy(vartointerp,extent,ncell,domask=1):
 def ftr(x,xb,xf):
     return( amax(0.0*x,amin(1.0+0.0*x,1.0*(x-xb)/(xf-xb))) )
     
-def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2):
+def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True):
     extent=(-len,len,-len,len)
     palette=cm.jet
     palette.set_bad('k', 1.0)
@@ -970,9 +970,10 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         #
         iBz = reinterp(Bznorm,extent,ncell,domask=0.4)
         iBR = reinterp(BRnorm,extent,ncell,isasymmetric=True,domask=0.4) #isasymmetric = True tells to flip the sign across polar axis
-        iibeta = reinterp(0.5*bsq/(gam-1)/ug,extent,ncell,domask=0)
-        ibsqorho = reinterp(bsq/rho,extent,ncell,domask=0)
-        ibsqo2rho = 0.5 * ibsqorho
+        if dovarylw:
+            iibeta = reinterp(0.5*bsq/(gam-1)/ug,extent,ncell,domask=0)
+            ibsqorho = reinterp(bsq/rho,extent,ncell,domask=0)
+            ibsqo2rho = 0.5 * ibsqorho
         xi = np.linspace(extent[0], extent[1], ncell)
         yi = np.linspace(extent[2], extent[3], ncell)
         #myspeed=np.sqrt(iBR**2+iBz**2)
@@ -982,33 +983,37 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
     #    c.set_linestyle('solid')
     #CS = plt.contourf(xi,yi,zi,15,cmap=palette)
     if ax == None:
-        CS = plt.imshow(ilrho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
-        if not dostreamlines:
-            cset2 = plt.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
-        else:
-            lw = 0.5+1*ftr(np.log10(amax(ibsqo2rho,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
-            lw += 1*ftr(np.log10(amax(iibeta,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
-            lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
-            # if t < 1500:
-            #     lw *= ftr(ilrho,-2.,-1.9)
-            fstreamplot(yi,xi,iBR,iBz,density=2,downsample=4,linewidth=lw,ax=ax,detectLoops=True,dodiskfield=False,dobhfield=True,startatmidplane=True,a=a)
-            #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
-        plt.xlim(extent[0],extent[1])
-        plt.ylim(extent[2],extent[3])
-    else:
+        ax = plt.gca()
+        # CS = plt.imshow(ilrho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
+        # if not dostreamlines:
+        #     cset2 = plt.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
+        # else:
+        #     lw = 0.5+1*ftr(np.log10(amax(ibsqo2rho,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
+        #     lw += 1*ftr(np.log10(amax(iibeta,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
+        #     lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
+        #     # if t < 1500:
+        #     #     lw *= ftr(ilrho,-2.,-1.9)
+        #     fstreamplot(yi,xi,iBR,iBz,density=2,downsample=4,linewidth=lw,ax=ax,detectLoops=True,dodiskfield=False,dobhfield=True,startatmidplane=True,a=a)
+        #     #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
+        # plt.xlim(extent[0],extent[1])
+        # plt.ylim(extent[2],extent[3])
+    if dorho or True:
         CS = ax.imshow(ilrho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
-        if not dostreamlines:
-            cset2 = ax.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
-        else:
+    if not dostreamlines:
+        cset2 = ax.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
+    else:
+        if dovarylw:
             lw = 0.5+1*ftr(np.log10(amax(ibsqo2rho,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
             lw += 1*ftr(np.log10(amax(iibeta,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
             lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
             # if t < 1500:
             lw *= ftr(iaphi,0.001,0.002)
-            fstreamplot(yi,xi,iBR,iBz,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=True,dodiskfield=dodiskfield,dobhfield=True,startatmidplane=True,a=a)
-            #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
-        ax.set_xlim(extent[0],extent[1])
-        ax.set_ylim(extent[2],extent[3])
+        else:
+            lw = 1
+        fstreamplot(yi,xi,iBR,iBz,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=True,dodiskfield=dodiskfield,dobhfield=True,startatmidplane=True,a=a)
+        #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
+    ax.set_xlim(extent[0],extent[1])
+    ax.set_ylim(extent[2],extent[3])
     #CS.cmap=cm.jet
     #CS.set_axis_bgcolor("#bdb76b")
     if True == cb:
@@ -4258,6 +4263,17 @@ if __name__ == "__main__":
             os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 2 mov_%s_Rzxym1.avi" % (os.path.basename(os.getcwd())) )
             #os.system("scp mov.avi 128.112.70.76:Research/movies/mov_`basename \`pwd\``.avi")
     if True:
+        grid3d("gdump.bin",use2d=True)
+        rfd("fieldline0000.bin")
+        avgmem = get2davg(usedefault=1)
+        assignavg2dvars(avgmem)
+        B[1] = avg_B[0]
+        B[2] = avg_B[1]
+        B[3] = avg_B[2]
+        bsq = avg_bsq
+        plt.figure(1)
+        mkframe("myframe",len=25.1,ax=plt.gca(),density=2,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5)
+    if False:
         #FIGURE 1 LOTSOPANELS
         doslines=True
         plotlenf=10
