@@ -940,7 +940,7 @@ def reinterpxy(vartointerp,extent,ncell,domask=1):
 def ftr(x,xb,xf):
     return( amax(0.0*x,amin(1.0+0.0*x,1.0*(x-xb)/(xf-xb))) )
     
-def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,dovelplot=False,colorfield='k',colorvel='k'):
+def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k'):
     extent=(-len,len,-len,len)
     palette=cm.jet
     palette.set_bad('k', 1.0)
@@ -970,20 +970,6 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         #
         iBz = reinterp(Bznorm,extent,ncell,domask=0.8)
         iBR = reinterp(BRnorm,extent,ncell,isasymmetric=True,domask=0.8) #isasymmetric = True tells to flip the sign across polar axis
-        if dovelplot:
-            uur = dxdxp[1,1]*uu[1]+dxdxp[1,2]*uu[2]
-            uuh = dxdxp[2,1]*uu[1]+dxdxp[2,2]*uu[2]
-            uup = uu[3]*dxdxp[3,3]
-            #
-            uurnorm=uur
-            uuhnorm=uuh*np.abs(r)
-            uupnorm=uup*np.abs(r*np.sin(h))
-            #
-            uuznorm=uurnorm*np.cos(h)-uuhnorm*np.sin(h)
-            uuRnorm=uurnorm*np.sin(h)+uuhnorm*np.cos(h)
-            #
-            iuuz = reinterp(uuznorm,extent,ncell,domask=0.8)
-            iuuR = reinterp(uuRnorm,extent,ncell,isasymmetric=True,domask=0.8) #isasymmetric = True tells to flip the sign across polar axis
         if dovarylw:
             iibeta = reinterp(0.5*bsq/(gam-1)/ug,extent,ncell,domask=0)
             ibsqorho = reinterp(bsq/rho,extent,ncell,domask=0)
@@ -1024,9 +1010,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
             lw *= ftr(iaphi,0.001,0.002)
         else:
             lw = 1
-        fstreamplot(yi,xi,iBR,iBz,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=True,dodiskfield=dodiskfield,dobhfield=dobhfield,startatmidplane=True,a=a,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,dsval=dsval,color=colorfield)
-        if dovelplot:
-            fstreamplot(yi,xi,iuuR,iuuz,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=True,dodiskfield=dodiskfield,dobhfield=dobhfield,startatmidplane=True,a=a,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,dsval=dsval,color=colorvel)
+        fstreamplot(yi,xi,iBR,iBz,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=True,dodiskfield=dodiskfield,dobhfield=dobhfield,startatmidplane=True,a=a,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,dsval=dsval,color=color)
         #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
     ax.set_xlim(extent[0],extent[1])
     ax.set_ylim(extent[2],extent[3])
@@ -4283,13 +4267,14 @@ if __name__ == "__main__":
         rfd("fieldline0000.bin")
         avgmem = get2davg(usedefault=1)
         assignavg2dvars(avgmem)
-        B[1] = avg_B[0]
-        B[2] = avg_B[1]
-        B[3] = avg_B[2]
-        uu[0:] = avg_uu[0:]
+        # B[1] = avg_B[0]
+        # B[2] = avg_B[1]
+        # B[3] = avg_B[2]
+        # uu[0:] = avg_uu[0:]
+        B[1:] = avg_uu[1:]
         bsq = avg_bsq
         plt.figure(1)
-        mkframe("myframe",len=25.1,ax=plt.gca(),density=2,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=20,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.01,dovelplot=True,colorfield='k',colorvel='r')
+        mkframe("myframe",len=25.1,ax=plt.gca(),density=2,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=20,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.01,color='k')
     if False:
         #FIGURE 1 LOTSOPANELS
         doslines=True
