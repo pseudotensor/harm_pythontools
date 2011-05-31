@@ -679,9 +679,9 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
         if xb < 0 or xb >= NBX or yb < 0 or yb >= NBY:
             return
         if checkalongx and downsample != 1:
-            if blank[yb,max(0,xb-downsample+1):min(NBX-1,xb+downsample)].any():
-                return
-        if not useblank or blank[yb, xb] == 0:
+           if blank[yb+0.5,max(0,xb+0.5-downsample+1):min(NBX-1,xb+0.5+downsample)].any():
+               return
+        if not useblank or blank[yb+0.5, xb+0.5] == 0:
             t = rk4_integrate(xb*bx_spacing, yb*by_spacing, useblank, checkalongx, minlength)
             if t != None:
                 trajectories.append(t)
@@ -714,11 +714,14 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
     rh = 1+(1-a**2)**0.5
     rad = 0.9*rh
     if dobhfield:
-        num = 16 #20*density
+        if dobhfield == 1:
+            num = 16 #20*density
+        else:
+            num = dobhfield
         #for th in numpy.linspace(0,2*numpy.pi,num=num,endpoint=False):
         for it in range(num):
             th = (2*it+1)*numpy.pi/num
-            if numpy.abs(numpy.sin(th)) > numpy.sin(numpy.pi/3.):
+            if dobhfield == 1 and numpy.abs(numpy.sin(th)) > numpy.sin(numpy.pi/3.):
                 #avoid low-latitude field lines
                 continue
             xabs = rad * numpy.sin(th)
@@ -730,8 +733,8 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
     #if downsampling, only send in streamlines from boundaries
     if downsample != 1:
         indent = 1
-        for xi in range(downsample/2,max(NBX,NBY)-2*indent,downsample):
         #for xi in range(max(NBX,NBY)-2*indent):
+        for xi in range(downsample/2,max(NBX,NBY)-2*indent,downsample):
             if startatmidplane and indent == 1:
                 #for trajectories that start at left or right wall,
                 #send them in symmetrically away from midplane
