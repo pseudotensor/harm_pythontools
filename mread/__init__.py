@@ -3046,10 +3046,10 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         ax.plot(ts,np.abs(mdtot[:,ihor]-md30[:,ihor]),'b',label=r'$\dot Mc^2$')
         if findex != None:
             if not isinstance(findex,tuple):
-                ax.plot(ts[findex],np.abs(mdtot[:,ihor]-md30[:,ihor])[findex],'o',mfc='b',mec='m')
+                ax.plot(ts[findex],np.abs(mdtot[:,ihor]-md30[:,ihor])[findex],'o',mfc='b',mec='m',mew=2)
             else:
                 for fi in findex:
-                    ax.plot(ts[fi],np.abs(mdtot[:,ihor]-md30[:,ihor])[fi],'o',mfc='b',mec='m',lw=2)#,label=r'$\dot M$')
+                    ax.plot(ts[fi],np.abs(mdtot[:,ihor]-md30[:,ihor])[fi],'o',mfc='b',mec='m',lw=2,mew=2)#,label=r'$\dot M$')
         #ax.legend(loc='upper left')
         ax.set_ylabel(r'$\dot Mc^2$',fontsize=16)
         plt.setp( ax.get_xticklabels(), visible=False)
@@ -3098,7 +3098,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         if findex != None:
             if not isinstance(findex,tuple):
                 ax.plot(ts[findex],etaj[findex],'rs')#,label=r'$\dot M$')
-                ax.plot(ts[findex],etabh[findex],'o',mfc='b',mec='m',lw=2)#,label=r'$\dot M$')
+                ax.plot(ts[findex],etabh[findex],'o',mfc='b',mec='m',lw=2,mew=2)#,label=r'$\dot M$')
                 ax.plot(ts[findex],etaw[findex],'gv')#,label=r'$\dot M$')
             else:
                 for fi in findex:
@@ -3134,12 +3134,12 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         if findex != None:
             if not isinstance(findex,tuple):
                 ax.plot(ts[findex],phij[findex],'rs')
-                ax.plot(ts[findex],phibh[findex],'o',mfc='b',mec='m',lw=2)
+                ax.plot(ts[findex],phibh[findex],'o',mfc='b',mec='m',lw=2,mew=2)
                 #ax.plot(ts[findex],phiw[findex],'gv')
             else:
                 for fi in findex:
                     ax.plot(ts[fi],phij[fi],'rs')
-                    ax.plot(ts[fi],phibh[fi],'o',mfc='b',mec='m',lw=2)
+                    ax.plot(ts[fi],phibh[fi],'o',mfc='b',mec='m',lw=2,mew=2)
                     #ax.plot(ts[fi],phiw[fi],'gv')
         #ax.legend(loc='upper left')
         #ax.set_ylabel(r'$\ \ \ k\Phi_j/\langle\dot M\rangle^{\!1/2}$',fontsize=16)
@@ -3699,7 +3699,7 @@ def plotpowers(fname,hor=0,format=1):
     gs.update(left=0.12, right=0.94, top=0.95, bottom=0.1, wspace=0.01, hspace=0.04)
     #mdot
     ax1 = plt.subplot(gs[0,:])
-    plt.plot(alist,y1,'ro',label=r'$\langle\phi_{\rm BH}^2\rangle^{1/2}$')
+    plt.plot(alist,y1,'o',label=r'$\langle\phi_{\rm BH}^2\rangle^{1/2}$',mfc='b',mec='m',mew=2)
     plt.plot(mya[mya>0],f[mya>0],'k-',label=r'$\phi_{\rm fit}=2.9(1-0.6 \Omega_{\rm H})$')
     # plt.plot(mya,(250+0*mya)*rhor) 
     # plt.plot(mya,250./((3./(mya**2 + 3*rhor**2))**2*2*rhor**2)) 
@@ -3720,7 +3720,7 @@ def plotpowers(fname,hor=0,format=1):
     ax1r.set_ylim(ax1.get_ylim())
     #
     ax2 = plt.subplot(gs[1,:])
-    plt.plot(alist,100*etaEMlist,'ro',label=r'$\eta_{\rm BH}$')
+    plt.plot(alist,100*etaEMlist,'o',label=r'$\eta_{\rm BH}$',mfc='b',mec='m',mew=2)
     #plt.plot(alist,100*(etawindlist-etalist),'gv',label=r'$\eta_{\rm wind}$')
     #plt.plot(myspina6,0.9*100*fac*myeta6,'k',label=r'$0.9\eta_{\rm BZ6}(\phi_{\rm fit})$' )
     plt.plot(myspina6,100*fac*myeta6,'k-',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$' )
@@ -3743,7 +3743,7 @@ def plotpowers(fname,hor=0,format=1):
     newy2 = 0.8*100*fac*myeta6
     ax3.fill_between(myspina6,newy1,newy2,where=newy1>newy2,facecolor=(1,0.8,0.8,1),edgecolor=(1,0.8,0.8,1))
     #plt.plot(myspina6,myeta6,'r:',label=r'$\eta_{\rm BZ,6}$')
-    plt.plot(alist,100*etalist,'ro',label=r'$\eta_{\rm jet}$')
+    plt.plot(alist,100*etalist,'rs',label=r'$\eta_{\rm jet}$')
     #plt.plot(alist,100*etaEMlist,'rx',label=r'$\eta_{\rm jet}$')
     plt.plot(alist,100*(etawindlist-etalist),'gv',label=r'$\eta_{\rm wind}$')
     plt.plot(myspina6,100*fac*myeta6,'k-',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$' )
@@ -3973,7 +3973,7 @@ if __name__ == "__main__":
     if False:
         readmytests1()
         plotpowers('powerlist.txt',format=0) #old format
-    if False:
+    if True:
         readmytests1()
         plotpowers('powerlist2davg.txt',format=1) #new format; data from 2d average dumps
     if False:
@@ -4256,7 +4256,7 @@ if __name__ == "__main__":
             os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 1 mov_%s_Rzxym1p1.avi" % (os.path.basename(os.getcwd())) )
             os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 2 mov_%s_Rzxym1.avi" % (os.path.basename(os.getcwd())) )
             #os.system("scp mov.avi 128.112.70.76:Research/movies/mov_`basename \`pwd\``.avi")
-    if True:
+    if False:
         #FIGURE 1 LOTSOPANELS
         doslines=True
         plotlenf=10
