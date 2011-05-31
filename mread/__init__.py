@@ -3090,9 +3090,9 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         etaj = pjke_mu2[:,iofr(100)]/mdotfinavg
         etaw = (pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotfinavg
         if dotavg:
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(etaj,ts,fti,ftf),'--',color=(fc,1,fc)) #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(etaj,ts,fti,ftf),'--',color=(fc,fc+0.5*(1-fc),fc)) #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
             ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(etabh,ts,fti,ftf),color=(1,fc,fc)) #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
-            #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(etaw,ts,fti,ftf),'-.',color=(fc,1,fc)) #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+            #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(etaw,ts,fti,ftf),'-.',color=(fc,fc+0.5*(1-fc),fc)) #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
         ax.plot(ts,etabh,'r',label=r'$\eta_{\rm BH}$')
         ax.plot(ts,etaj,'g--',label=r'$\eta_{\rm jet}$')
         ax.plot(ts,etaw,'b-.',label=r'$\eta_{\rm wind}$')
@@ -3123,7 +3123,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         phij=phiabsj_mu2[:,iofr(100)]/4/np.pi/mdotfinavg**0.5
         phiw=(phiabsj_mu1-phiabsj_mu2)[:,iofr(100)]/4/np.pi/mdotfinavg**0.5
         if dotavg:
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phij**2,ts,fti,ftf)**0.5,'--',color=(fc,1,fc))
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phij**2,ts,fti,ftf)**0.5,'--',color=(fc,fc+0.5*(1-fc),fc))
             ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phibh**2,ts,fti,ftf)**0.5,color=(1,fc,fc))
             #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phiw**2,ts,fti,ftf)**0.5,'-.',color=(fc,fc,1))
         #To approximately get efficiency:
