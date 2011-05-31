@@ -3035,6 +3035,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     fsj30finavg = timeavg(fsj30[:,ihor],ts,fti,ftf)
     fsj30sqfinavg = timeavg(fsj30[:,ihor]**2,ts,fti,ftf)**0.5
     
+    fc=0
     #######################
     #
     # Mdot ***
@@ -3042,14 +3043,14 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #######################
     if whichplot == 1:
         if dotavg:
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotfinavg,color=(0.5,0.5,1))
-        ax.plot(ts,np.abs(mdtot[:,ihor]-md30[:,ihor]),'b',label=r'$\dot Mc^2$')
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotfinavg,color=(1,fc,fc))
+        ax.plot(ts,np.abs(mdtot[:,ihor]-md30[:,ihor]),'r',label=r'$\dot Mc^2$')
         if findex != None:
             if not isinstance(findex,tuple):
-                ax.plot(ts[findex],np.abs(mdtot[:,ihor]-md30[:,ihor])[findex],'o',mfc='b',mec='m',mew=2)
+                ax.plot(ts[findex],np.abs(mdtot[:,ihor]-md30[:,ihor])[findex],'o',mfc='r')
             else:
                 for fi in findex:
-                    ax.plot(ts[fi],np.abs(mdtot[:,ihor]-md30[:,ihor])[fi],'o',mfc='b',mec='m',lw=2,mew=2)#,label=r'$\dot M$')
+                    ax.plot(ts[fi],np.abs(mdtot[:,ihor]-md30[:,ihor])[fi],'o',mfc='r')#,label=r'$\dot M$')
         #ax.legend(loc='upper left')
         ax.set_ylabel(r'$\dot Mc^2$',fontsize=16)
         plt.setp( ax.get_xticklabels(), visible=False)
@@ -3089,22 +3090,22 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         etaj = pjke_mu2[:,iofr(100)]/mdotfinavg
         etaw = (pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotfinavg
         if dotavg:
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(etaj,ts,fti,ftf),'--',color=(1,0.5,0.5)) #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(etabh,ts,fti,ftf),color=(0.5,0.5,1)) #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
-            #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(etaw,ts,fti,ftf),'-.',color=(0.5,1,0.5)) #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
-        ax.plot(ts,etabh,'b',label=r'$\eta_{\rm BH}$')
-        ax.plot(ts,etaj,'r--',label=r'$\eta_{\rm jet}$')
-        ax.plot(ts,etaw,'g-.',label=r'$\eta_{\rm wind}$')
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(etaj,ts,fti,ftf),'--',color=(fc,1,fc)) #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(etabh,ts,fti,ftf),color=(1,fc,fc)) #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+            #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(etaw,ts,fti,ftf),'-.',color=(fc,1,fc)) #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+        ax.plot(ts,etabh,'r',label=r'$\eta_{\rm BH}$')
+        ax.plot(ts,etaj,'g--',label=r'$\eta_{\rm jet}$')
+        ax.plot(ts,etaw,'b-.',label=r'$\eta_{\rm wind}$')
         if findex != None:
             if not isinstance(findex,tuple):
-                ax.plot(ts[findex],etaj[findex],'rs')#,label=r'$\dot M$')
-                ax.plot(ts[findex],etabh[findex],'o',mfc='b',mec='m',lw=2,mew=2)#,label=r'$\dot M$')
-                ax.plot(ts[findex],etaw[findex],'gv')#,label=r'$\dot M$')
+                ax.plot(ts[findex],etaj[findex],'gs')
+                ax.plot(ts[findex],etabh[findex],'o',mfc='r')
+                ax.plot(ts[findex],etaw[findex],'bv')
             else:
                 for fi in findex:
-                    ax.plot(ts[fi],etaj[fi],'rs')#,label=r'$\dot M$')
-                    ax.plot(ts[fi],etabh[fi],'o',mfc='b',mec='m')#,label=r'$\dot M$')
-                    ax.plot(ts[fi],etaw[fi],'gv')#,label=r'$\dot M$')
+                    ax.plot(ts[fi],etaw[fi],'bv')#,label=r'$\dot M$')
+                    ax.plot(ts[fi],etaj[fi],'gs')#,label=r'$\dot M$')
+                    ax.plot(ts[fi],etabh[fi],'o',mfc='r')#,label=r'$\dot M$')
         #ax.legend(loc='upper left')
         #ax.set_ylim(0,2)
         ax.set_xlabel(r'$t\;[r_g/c]$',fontsize=16)
@@ -3122,25 +3123,25 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         phij=phiabsj_mu2[:,iofr(100)]/4/np.pi/mdotfinavg**0.5
         phiw=(phiabsj_mu1-phiabsj_mu2)[:,iofr(100)]/4/np.pi/mdotfinavg**0.5
         if dotavg:
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phij**2,ts,fti,ftf)**0.5,'--',color=(1,0.5,0.5))
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phibh**2,ts,fti,ftf)**0.5,color=(0.5,0.5,1))
-            #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phiw**2,ts,fti,ftf)**0.5,'-.',color=(0.5,1,0.5))
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phij**2,ts,fti,ftf)**0.5,'--',color=(fc,1,fc))
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phibh**2,ts,fti,ftf)**0.5,color=(1,fc,fc))
+            #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phiw**2,ts,fti,ftf)**0.5,'-.',color=(fc,fc,1))
         #To approximately get efficiency:
         #ax.plot(ts,2./3.*np.pi*omh**2*np.abs(fsj30[:,ihor]/4/np.pi)**2/mdotfinavg)
         #prefactor to get sqrt(eta): (2./3.*np.pi*omh**2)**0.5
-        ax.plot(ts,phibh,'b',label=r'$\phi_{\rm BH}$')
-        ax.plot(ts,phij,'r--',label=r'$\phi_{\rm jet}$')
-        #ax.plot(ts,phiw,'g-.',label=r'$\phi_{\rm wind}$')
+        ax.plot(ts,phibh,'r',label=r'$\phi_{\rm BH}$')
+        ax.plot(ts,phij,'g--',label=r'$\phi_{\rm jet}$')
+        #ax.plot(ts,phiw,'b-.',label=r'$\phi_{\rm wind}$')
         if findex != None:
             if not isinstance(findex,tuple):
-                ax.plot(ts[findex],phij[findex],'rs')
-                ax.plot(ts[findex],phibh[findex],'o',mfc='b',mec='m',lw=2,mew=2)
-                #ax.plot(ts[findex],phiw[findex],'gv')
+                ax.plot(ts[findex],phij[findex],'gs')
+                ax.plot(ts[findex],phibh[findex],'o',mfc='r')
+                #ax.plot(ts[findex],phiw[findex],'bv')
             else:
                 for fi in findex:
-                    ax.plot(ts[fi],phij[fi],'rs')
-                    ax.plot(ts[fi],phibh[fi],'o',mfc='b',mec='m',lw=2,mew=2)
-                    #ax.plot(ts[fi],phiw[fi],'gv')
+                    ax.plot(ts[fi],phij[fi],'gs')
+                    ax.plot(ts[fi],phibh[fi],'o',mfc='r')
+                    #ax.plot(ts[fi],phiw[fi],'bv')
         #ax.legend(loc='upper left')
         #ax.set_ylabel(r'$\ \ \ k\Phi_j/\langle\dot M\rangle^{\!1/2}$',fontsize=16)
         ax.set_ylabel(r'$\phi$',fontsize=16)
@@ -3699,7 +3700,7 @@ def plotpowers(fname,hor=0,format=1):
     gs.update(left=0.12, right=0.94, top=0.95, bottom=0.1, wspace=0.01, hspace=0.04)
     #mdot
     ax1 = plt.subplot(gs[0,:])
-    plt.plot(alist,y1,'o',label=r'$\langle\phi_{\rm BH}^2\rangle^{1/2}$',mfc='b',mec='m',mew=2)
+    plt.plot(alist,y1,'o',label=r'$\langle\phi_{\rm BH}^2\rangle^{1/2}$',mfc='r')
     plt.plot(mya[mya>0],f[mya>0],'k-',label=r'$\phi_{\rm fit}=2.9(1-0.6 \Omega_{\rm H})$')
     # plt.plot(mya,(250+0*mya)*rhor) 
     # plt.plot(mya,250./((3./(mya**2 + 3*rhor**2))**2*2*rhor**2)) 
@@ -3720,7 +3721,7 @@ def plotpowers(fname,hor=0,format=1):
     ax1r.set_ylim(ax1.get_ylim())
     #
     ax2 = plt.subplot(gs[1,:])
-    plt.plot(alist,100*etaEMlist,'o',label=r'$\eta_{\rm BH}$',mfc='b',mec='m',mew=2)
+    plt.plot(alist,100*etaEMlist,'o',label=r'$\eta_{\rm BH}$',mfc='r')
     #plt.plot(alist,100*(etawindlist-etalist),'gv',label=r'$\eta_{\rm wind}$')
     #plt.plot(myspina6,0.9*100*fac*myeta6,'k',label=r'$0.9\eta_{\rm BZ6}(\phi_{\rm fit})$' )
     plt.plot(myspina6,100*fac*myeta6,'k-',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$' )
@@ -3741,11 +3742,11 @@ def plotpowers(fname,hor=0,format=1):
     ax3 = plt.subplot(gs[-1,:])
     newy1 = 100*fac*myeta6
     newy2 = 0.8*100*fac*myeta6
-    ax3.fill_between(myspina6,newy1,newy2,where=newy1>newy2,facecolor=(1,0.8,0.8,1),edgecolor=(1,0.8,0.8,1))
+    ax3.fill_between(myspina6,newy1,newy2,where=newy1>newy2,facecolor=(0.8,1,0.8,1),edgecolor=(0.8,1,0.8,1))
     #plt.plot(myspina6,myeta6,'r:',label=r'$\eta_{\rm BZ,6}$')
-    plt.plot(alist,100*etalist,'rs',label=r'$\eta_{\rm jet}$')
+    plt.plot(alist,100*etalist,'gs',label=r'$\eta_{\rm jet}$')
     #plt.plot(alist,100*etaEMlist,'rx',label=r'$\eta_{\rm jet}$')
-    plt.plot(alist,100*(etawindlist-etalist),'gv',label=r'$\eta_{\rm wind}$')
+    plt.plot(alist,100*(etawindlist-etalist),'bv',label=r'$\eta_{\rm wind}$')
     plt.plot(myspina6,100*fac*myeta6,'k-',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$' )
     plt.plot(myspina6,0.9*100*fac*myeta6,'k--',label=r'$0.9\eta_{\rm BZ6}(\phi_{\rm fit})$' )
     plt.ylim(0.0001,150)
@@ -3973,7 +3974,7 @@ if __name__ == "__main__":
     if False:
         readmytests1()
         plotpowers('powerlist.txt',format=0) #old format
-    if True:
+    if False:
         readmytests1()
         plotpowers('powerlist2davg.txt',format=1) #new format; data from 2d average dumps
     if False:
@@ -4256,7 +4257,7 @@ if __name__ == "__main__":
             os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 1 mov_%s_Rzxym1p1.avi" % (os.path.basename(os.getcwd())) )
             os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 2 mov_%s_Rzxym1.avi" % (os.path.basename(os.getcwd())) )
             #os.system("scp mov.avi 128.112.70.76:Research/movies/mov_`basename \`pwd\``.avi")
-    if False:
+    if True:
         #FIGURE 1 LOTSOPANELS
         doslines=True
         plotlenf=10
