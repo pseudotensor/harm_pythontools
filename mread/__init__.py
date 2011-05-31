@@ -2907,6 +2907,11 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             pjke_n_mu2 = pjem_n_mu2 + pjma_n_mu2 - pjrm_n_mu2
             pjke_s_mu2 = pjem_s_mu2 + pjma_s_mu2 - pjrm_s_mu2
             pjke_mu2 = pjke_n_mu2 + pjke_s_mu2
+            pjke_n_mu1 = pjem_n_mu1 + pjma_n_mu1 - pjrm_n_mu1
+            pjke_s_mu1 = pjem_s_mu1 + pjma_s_mu1 - pjrm_s_mu1
+            pjke_mu1 = pjke_n_mu1 + pjke_s_mu1
+            phiabsj_mu2 = phiabsj_n_mu2 + phiabsj_s_mu2
+            phiabsj_mu1 = phiabsj_n_mu1 + phiabsj_s_mu1
         else:
             print( "Oldish format: missing north/south jet power and flux" )
             sys.stdout.flush()
@@ -2946,6 +2951,11 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             pjke_n_mu2=None
             pjke_s_mu2=None
             pjke_mu2=None
+            pjke_n_mu1=None
+            pjke_s_mu1=None
+            pjke_mu1=None
+            phiabsj_mu2=None
+            phiabsj_mu1=None
     #end qty defs
     ##############################
     #end copy
@@ -3031,18 +3041,19 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     #######################
     if whichplot == 1:
-        ax.plot(ts,np.abs(mdtot[:,ihor]-md30[:,ihor]))#,label=r'$\dot M$')
+        if dotavg:
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotfinavg,color=(0.5,0.5,1))
+        ax.plot(ts,np.abs(mdtot[:,ihor]-md30[:,ihor]),'b',label=r'$\dot Mc^2$')
         if findex != None:
             if not isinstance(findex,tuple):
-                ax.plot(ts[findex],np.abs(mdtot[:,ihor]-md30[:,ihor])[findex],'ro')#,label=r'$\dot M$')
+                ax.plot(ts[findex],np.abs(mdtot[:,ihor]-md30[:,ihor])[findex],'o',mfc='b',mec='m')
             else:
                 for fi in findex:
-                    ax.plot(ts[fi],np.abs(mdtot[:,ihor]-md30[:,ihor])[fi],'ro')#,label=r'$\dot M$')
+                    ax.plot(ts[fi],np.abs(mdtot[:,ihor]-md30[:,ihor])[fi],'o',mfc='b',mec='m',lw=2)#,label=r'$\dot M$')
         #ax.legend(loc='upper left')
-        if dotavg:
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotfinavg)#,label=r'$\langle \dot M\rangle$')
         ax.set_ylabel(r'$\dot Mc^2$',fontsize=16)
         plt.setp( ax.get_xticklabels(), visible=False)
+        plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderaxespad=0,frameon=True,labelspacing=0)
     #######################
     #
     # Pjet
@@ -3074,20 +3085,31 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     #######################
     if whichplot == 4:
-        ax.plot(ts,pjemtot[:,ihor]/mdotfinavg,'b')#,label=r'$P_{\rm j}/\dot M$')
-        ax.plot(ts,pjke_mu2[:,iofr(100)]/mdotfinavg,'r--')#,label=r'$P_{\rm j}/\dot M$')
+        etabh = pjemtot[:,ihor]/mdotfinavg
+        etaj = pjke_mu2[:,iofr(100)]/mdotfinavg
+        etaw = (pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotfinavg
+        if dotavg:
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(etaj,ts,fti,ftf),'--',color=(1,0.5,0.5)) #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(etabh,ts,fti,ftf),color=(0.5,0.5,1)) #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+            #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(etaw,ts,fti,ftf),'-.',color=(0.5,1,0.5)) #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+        ax.plot(ts,etabh,'b',label=r'$\eta_{\rm BH}$')
+        ax.plot(ts,etaj,'r--',label=r'$\eta_{\rm jet}$')
+        ax.plot(ts,etaw,'g-.',label=r'$\eta_{\rm wind}$')
         if findex != None:
             if not isinstance(findex,tuple):
-                ax.plot(ts[findex],(pjemtot[:,ihor]/mdotfinavg)[findex],'ro')#,label=r'$\dot M$')
+                ax.plot(ts[findex],etaj[findex],'rs')#,label=r'$\dot M$')
+                ax.plot(ts[findex],etabh[findex],'o',mfc='b',mec='m',lw=2)#,label=r'$\dot M$')
+                ax.plot(ts[findex],etaw[findex],'gv')#,label=r'$\dot M$')
             else:
                 for fi in findex:
-                    ax.plot(ts[fi],(pjemtot[:,ihor]/mdotfinavg)[fi],'ro')#,label=r'$\dot M$')
+                    ax.plot(ts[fi],etaj[fi],'rs')#,label=r'$\dot M$')
+                    ax.plot(ts[fi],etabh[fi],'o',mfc='b',mec='m')#,label=r'$\dot M$')
+                    ax.plot(ts[fi],etaw[fi],'gv')#,label=r'$\dot M$')
         #ax.legend(loc='upper left')
-        if dotavg:
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjemfinavgtot/mdotfinavg,'r') #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
         #ax.set_ylim(0,2)
         ax.set_xlabel(r'$t\;[r_g/c]$',fontsize=16)
-        ax.set_ylabel(r'$\eta_{\rm jet}$',fontsize=16,ha='right')
+        ax.set_ylabel(r'$\eta$',fontsize=16,ha='right')
+        plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
         #xxx
     #######################
     #
@@ -3096,21 +3118,33 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #######################
     if whichplot == 5:
         omh = a / (2*(1+(1-a**2)**0.5))
+        phibh=fstot[:,ihor]/4/np.pi/mdotfinavg**0.5
+        phij=phiabsj_mu2[:,iofr(100)]/4/np.pi/mdotfinavg**0.5
+        phiw=(phiabsj_mu1-phiabsj_mu2)[:,iofr(100)]/4/np.pi/mdotfinavg**0.5
+        if dotavg:
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phij**2,ts,fti,ftf)**0.5,'--',color=(1,0.5,0.5))
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phibh**2,ts,fti,ftf)**0.5,color=(0.5,0.5,1))
+            #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phiw**2,ts,fti,ftf)**0.5,'-.',color=(0.5,1,0.5))
         #To approximately get efficiency:
         #ax.plot(ts,2./3.*np.pi*omh**2*np.abs(fsj30[:,ihor]/4/np.pi)**2/mdotfinavg)
         #prefactor to get sqrt(eta): (2./3.*np.pi*omh**2)**0.5
-        ax.plot(ts,np.abs(fstot[:,ihor]/4/np.pi)/mdotfinavg**0.5)
+        ax.plot(ts,phibh,'b',label=r'$\phi_{\rm BH}$')
+        ax.plot(ts,phij,'r--',label=r'$\phi_{\rm jet}$')
+        #ax.plot(ts,phiw,'g-.',label=r'$\phi_{\rm wind}$')
         if findex != None:
             if not isinstance(findex,tuple):
-                ax.plot(ts[findex],np.abs(fstot[:,ihor]/4/np.pi)[findex]/mdotfinavg**0.5,'ro')
+                ax.plot(ts[findex],phij[findex],'rs')
+                ax.plot(ts[findex],phibh[findex],'o',mfc='b',mec='m',lw=2)
+                #ax.plot(ts[findex],phiw[findex],'gv')
             else:
                 for fi in findex:
-                    ax.plot(ts[fi],np.abs(fstot[:,ihor]/4/np.pi)[fi]/mdotfinavg**0.5,'ro')
+                    ax.plot(ts[fi],phij[fi],'rs')
+                    ax.plot(ts[fi],phibh[fi],'o',mfc='b',mec='m',lw=2)
+                    #ax.plot(ts[fi],phiw[fi],'gv')
         #ax.legend(loc='upper left')
-        if dotavg:
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+(fstotsqfinavg/4/np.pi)/mdotfinavg**0.5)
         #ax.set_ylabel(r'$\ \ \ k\Phi_j/\langle\dot M\rangle^{\!1/2}$',fontsize=16)
-        ax.set_ylabel(r'$\phi_{\rm BH}$',fontsize=16)
+        ax.set_ylabel(r'$\phi$',fontsize=16)
+        plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
         plt.setp( ax.get_xticklabels(), visible=False )
 
     if whichplot == -1:
@@ -4270,7 +4304,7 @@ if __name__ == "__main__":
         #mdot,pjet,pjet/mdot plots
         findex = 0
         gs3 = GridSpec(3, 3)
-        gs3.update(left=0.05, right=0.95, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
+        gs3.update(left=0.05, right=0.975, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
         #mdot
         ax31 = plt.subplot(gs3[-3,:])
         plotqtyvstime(qtymem,ax=ax31,whichplot=1,findex=findexlist) #AT: need to specify index!
@@ -4279,10 +4313,13 @@ if __name__ == "__main__":
         ax31.set_yticks((ymax/2,ymax))
         #ax31.set_xlabel(r"$t\ [r_g/c]")
         ax31.grid(True)
-        plt.text(ax31.get_xlim()[1]/40., 0.8*ax31.get_ylim()[1], "$(\mathrm{i})$", size=16, rotation=0.,
+        plt.text(ax31.get_xlim()[1]/40., 0.8*ax31.get_ylim()[1], "$(\mathrm{e})$", size=16, rotation=0.,
                  ha="center", va="center",
                  color='k',weight='regular',bbox=bbox_props
                  )
+        ax31r = ax31.twinx()
+        ax31r.set_ylim(ax31.get_ylim())
+        ax31r.set_yticks((ymax/2,ymax))
         #pjet
         # ax32 = plt.subplot(gs3[-2,:])
         # plotqtyvstime(qtymem,ax=ax32,whichplot=2)
@@ -4324,10 +4361,13 @@ if __name__ == "__main__":
             tck=np.arange(1,ymax)
             ax35.set_yticks(tck)
         ax35.grid(True)
-        plt.text(ax35.get_xlim()[1]/40., 0.8*ax35.get_ylim()[1], r"$(\mathrm{j})$", size=16, rotation=0.,
+        plt.text(ax35.get_xlim()[1]/40., 0.8*ax35.get_ylim()[1], r"$(\mathrm{f})$", size=16, rotation=0.,
                  ha="center", va="center",
                  color='k',weight='regular',bbox=bbox_props
                  )
+        ax35r = ax35.twinx()
+        ax35r.set_ylim(ax35.get_ylim())
+        ax35r.set_yticks(tck)
         #
         #pjet/<mdot>
         #
@@ -4351,144 +4391,171 @@ if __name__ == "__main__":
         #reset lower limit to 0
         ax34.set_ylim((0,ax34.get_ylim()[1]))
         ax34.grid(True)
-        plt.text(ax34.get_xlim()[1]/40., 0.8*ax34.get_ylim()[1], r"$(\mathrm{k})$", size=16, rotation=0.,
+        plt.text(ax34.get_xlim()[1]/40., 0.8*ax34.get_ylim()[1], r"$(\mathrm{g})$", size=16, rotation=0.,
                  ha="center", va="center",
                  color='k',weight='regular',bbox=bbox_props
                  )
+        ax34r = ax34.twinx()
+        ax34r.set_ylim(ax34.get_ylim())
+        ax34r.set_yticks(tck)
         #
-        #
-        # Make Frames
-        #
-        dogrid = False
-        downsample=4
-        density=2
-        dodiskfield=True
-        minlenbhfield=0.03
-        minlendiskfield=0.03
-        #
-        # PLOT 1
-        #
-        fname = "fieldline%04d.bin" % findexlist[0]
-        rfd(fname)
-        cvel() #for calculating bsq
-        #xz
-        gs1 = GridSpec(4, 4)
-        gs1.update(left=0.04, right=0.94, top=0.995, bottom=0.48, wspace=0.05)
-        #
-        ax1 = plt.subplot(gs1[0:2, 0])
-        plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{a})$", size=16, rotation=0.,
-                 ha="center", va="center",
-                 color='k',weight='regular',bbox=bbox_props
-                 )
-        mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=False)
-        ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
-        if dogrid: plt.grid()
-        #xy
-        ax2 = plt.subplot(gs1[2:4, 0])
-        mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=False)
-        plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{b})$", size=16, rotation=0.,
-                 ha="center", va="center",
-                 color='k',weight='regular',bbox=bbox_props
-                 )
-        ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
-        ax2.set_ylabel(r'$y\ [r_g]$',fontsize=16,ha='center')
-        if dogrid: plt.grid()
-        plt.subplots_adjust(hspace=0.03) #increase vertical spacing to avoid crowding
-        #
-        # PLOT 2
-        #
-        fname = "fieldline%04d.bin" % findexlist[1]
-        rfd(fname)
-        cvel() #for calculating bsq
-        #Rz
-        #gs1 = GridSpec(4, 4)
-        #
-        ax1 = plt.subplot(gs1[0:2, 1])
-        plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{c})$", size=16, rotation=0.,
-                 ha="center", va="center",
-                 color='k',weight='regular',bbox=bbox_props
-                 )
-        mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield)
-        if dogrid: plt.grid()
-        #xy
-        ax2 = plt.subplot(gs1[2:4, 1])
-        plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{d})$", size=16, rotation=0.,
-                 ha="center", va="center",
-                 color='k',weight='regular',bbox=bbox_props
-                 )
-        mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=False)
-        ax2.set_xlabel(r'$x\ [r_g]$',fontsize=15)
-        if dogrid: plt.grid()
-        plt.subplots_adjust(hspace=0.03) #increase vertical spacing to avoid crowding
-        #
-        # PLOT 3
-        #
-        fname = "fieldline%04d.bin" % findexlist[2]
-        rfd(fname)
-        cvel() #for calculating bsq
-        #Rz
-        ax1 = plt.subplot(gs1[0:2, 2])
-        plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{e})$", size=16, rotation=0.,
-                 ha="center", va="center",
-                 color='k',weight='regular',bbox=bbox_props
-                 )
-        mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield)
-        if dogrid: plt.grid()
-        #xy
-        ax2 = plt.subplot(gs1[2:4, 2])
-        plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{f})$", size=16, rotation=0.,
-                 ha="center", va="center",
-                 color='k',weight='regular',bbox=bbox_props
-                 )
-        mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=False)
-        ax2.set_xlabel(r'$x\ [r_g]$',fontsize=15)
-        if dogrid: plt.grid()
-        plt.subplots_adjust(hspace=0.03) #increase vertical spacing to avoid crowding
-        #
-        # PLOT 4
-        #
-        fname = "fieldline%04d.bin" % findexlist[3]
-        rfd(fname)
-        cvel() #for calculating bsq
-        #Rz
-        ax1 = plt.subplot(gs1[0:2, 3])
-        plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{g})$", size=16, rotation=0.,
-                 ha="center", va="center",
-                 color='k',weight='regular',bbox=bbox_props
-                 )
-        mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield)
-        if dogrid: plt.grid()
-        #xy
-        ax2 = plt.subplot(gs1[2:4, 3])
-        plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{h})$", size=16, rotation=0.,
-                 ha="center", va="center",
-                 color='k',weight='regular',bbox=bbox_props
-                 )
-        mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=False)
-        ax2.set_xlabel(r'$x\ [r_g]$',fontsize=15)
-        if dogrid: plt.grid()
-        #
-        plt.subplots_adjust(hspace=0.03) #increase vertical spacing to avoid crowding
-        #
-        #(left=0.02, right=0.94, top=0.99, bottom=0.45, wspace=0.05)
-        ax1 = fig.add_axes([0.94, 0.48, 0.02, 0.515])
-        #
-        # Set the colormap and norm to correspond to the data for which
-        # the colorbar will be used.
-        cmap = mpl.cm.jet
-        norm = mpl.colors.Normalize(vmin=-6, vmax=0.5625)
-        # ColorbarBase derives from ScalarMappable and puts a colorbar
-        # in a specified axes, so it has everything needed for a
-        # standalone colorbar.  There are many more kwargs, but the
-        # following gives a basic continuous colorbar with ticks
-        # and labels.
-        cb1 = mpl.colorbar.ColorbarBase(ax1, cmap=cmap,
-                                           norm=norm,
-                                           orientation='vertical')
-        #
-        #
-        plt.savefig( "lrho%04d_Rzxym1.png" % (findex)  )
-        plt.savefig( "lrho%04d_Rzxym1.eps" % (findex)  )
+        domakeframes=True
+        if domakeframes:
+            #
+            # Make Frames
+            #
+            dogrid = False
+            downsample=4
+            density=2
+            dodiskfield=True
+            minlenbhfield=0.03
+            minlendiskfield=0.03
+            #
+            # PLOT 1
+            #
+            fname = "fieldline%04d.bin" % findexlist[0]
+            rfd(fname)
+            cvel() #for calculating bsq
+            #xz
+            gs1 = GridSpec(4, 4)
+            gs1.update(left=0.04, right=0.94, top=0.995, bottom=0.48, wspace=0.05)
+            #
+            ax1 = plt.subplot(gs1[2:4, 0])
+            # plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{a})$", size=16, rotation=0.,
+            #          ha="center", va="center",
+            #          color='k',weight='regular',bbox=bbox_props
+            #          )
+            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=False)
+            ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
+            ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
+            if dogrid: plt.grid()
+            #xy
+            ax2 = plt.subplot(gs1[0:2, 0])
+            mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=False)
+            plt.setp( ax2.get_xticklabels(), visible=False)
+            plt.text(-0.75*plen, 0.8*plen, r"$(\mathrm{a})$", size=16, rotation=0.,
+                     ha="center", va="center",
+                     color='w',weight='regular' #,bbox=bbox_props
+                     )
+            plt.text(0.9*plen, 0.8*plen, r"$t=%g$" % np.floor(t), size=16, rotation=0.,
+                     ha="right", va="center",
+                     color='w',weight='regular' #,bbox=bbox_props
+                     )
+            ax2.set_ylabel(r'$y\ [r_g]$',fontsize=16,ha='center')
+            if dogrid: plt.grid()
+            plt.subplots_adjust(hspace=0.03) #increase vertical spacing to avoid crowding
+            #
+            # PLOT 2
+            #
+            fname = "fieldline%04d.bin" % findexlist[1]
+            rfd(fname)
+            cvel() #for calculating bsq
+            #Rz
+            #gs1 = GridSpec(4, 4)
+            #
+            ax1 = plt.subplot(gs1[2:4, 1])
+            # plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{c})$", size=16, rotation=0.,
+            #          ha="center", va="center",
+            #          color='k',weight='regular',bbox=bbox_props
+            #          )
+            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,
+                    ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,
+                    density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield)
+            ax1.set_xlabel(r'$x\ [r_g]$',fontsize=15)
+            if dogrid: plt.grid()
+            #xy
+            ax2 = plt.subplot(gs1[0:2, 1])
+            plt.text(-0.75*plen, 0.8*plen, r"$(\mathrm{b})$", size=16, rotation=0.,
+                     ha="center", va="center",
+                     color='w',weight='regular' #,bbox=bbox_props
+                     )
+            mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=False)
+            plt.setp( ax2.get_xticklabels(), visible=False)
+            plt.text(0.9*plen, 0.8*plen, r"$t=%g$" % np.floor(t), size=16, rotation=0.,
+                     ha="right", va="center",
+                     color='w',weight='regular' #,bbox=bbox_props
+                     )
+            if dogrid: plt.grid()
+            plt.subplots_adjust(hspace=0.03) #increase vertical spacing to avoid crowding
+            #
+            # PLOT 3
+            #
+            fname = "fieldline%04d.bin" % findexlist[2]
+            rfd(fname)
+            cvel() #for calculating bsq
+            #Rz
+            ax1 = plt.subplot(gs1[2:4, 2])
+            # plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{e})$", size=16, rotation=0.,
+            #          ha="center", va="center",
+            #          color='k',weight='regular',bbox=bbox_props
+            #          )
+            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield)
+            ax1.set_xlabel(r'$x\ [r_g]$',fontsize=15)
+            if dogrid: plt.grid()
+            #xy
+            ax2 = plt.subplot(gs1[0:2, 2])
+            plt.text(-0.75*plen, 0.8*plen, r"$(\mathrm{c})$", size=16, rotation=0.,
+                     ha="center", va="center",
+                     color='w',weight='regular' #,bbox=bbox_props
+                     )
+            plt.text(0.9*plen, 0.8*plen, r"$t=%g$" % np.floor(t), size=16, rotation=0.,
+                     ha="right", va="center",
+                     color='w',weight='regular' #,bbox=bbox_props
+                     )
+            mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=False)
+            plt.setp( ax2.get_xticklabels(), visible=False)
+            if dogrid: plt.grid()
+            plt.subplots_adjust(hspace=0.03) #increase vertical spacing to avoid crowding
+            #
+            # PLOT 4
+            #
+            fname = "fieldline%04d.bin" % findexlist[3]
+            rfd(fname)
+            cvel() #for calculating bsq
+            #Rz
+            ax1 = plt.subplot(gs1[2:4, 3])
+            # plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{g})$", size=16, rotation=0.,
+            #          ha="center", va="center",
+            #          color='k',weight='regular',bbox=bbox_props
+            #          )
+            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield)
+            ax1.set_xlabel(r'$x\ [r_g]$',fontsize=15)
+            if dogrid: plt.grid()
+            #xy
+            ax2 = plt.subplot(gs1[0:2, 3])
+            plt.text(-0.75*plen, 0.8*plen, r"$(\mathrm{d})$", size=16, rotation=0.,
+                     ha="center", va="center",
+                     color='w',weight='regular' #,bbox=bbox_props
+                     )
+            plt.text(0.9*plen, 0.8*plen, r"$t=%g$" % np.floor(t), size=16, rotation=0.,
+                     ha="right", va="center",
+                     color='w',weight='regular' #,bbox=bbox_props
+                     )
+            mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=False)
+            plt.setp( ax2.get_xticklabels(), visible=False)
+            if dogrid: plt.grid()
+            #
+            plt.subplots_adjust(hspace=0.03) #increase vertical spacing to avoid crowding
+            #
+            #(left=0.02, right=0.94, top=0.99, bottom=0.45, wspace=0.05)
+            ax1 = fig.add_axes([0.94, 0.48, 0.02, 0.515])
+            #
+            # Set the colormap and norm to correspond to the data for which
+            # the colorbar will be used.
+            cmap = mpl.cm.jet
+            norm = mpl.colors.Normalize(vmin=-6, vmax=0.5625)
+            # ColorbarBase derives from ScalarMappable and puts a colorbar
+            # in a specified axes, so it has everything needed for a
+            # standalone colorbar.  There are many more kwargs, but the
+            # following gives a basic continuous colorbar with ticks
+            # and labels.
+            cb1 = mpl.colorbar.ColorbarBase(ax1, cmap=cmap,
+                                               norm=norm,
+                                               orientation='vertical')
+            #
+            #
+            plt.savefig( "lrho%04d_Rzxym1.png" % (findex)  )
+            plt.savefig( "lrho%04d_Rzxym1.eps" % (findex)  )
         #
         print( "Done!" )
         sys.stdout.flush()
