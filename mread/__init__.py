@@ -940,7 +940,7 @@ def reinterpxy(vartointerp,extent,ncell,domask=1):
 def ftr(x,xb,xf):
     return( amax(0.0*x,amin(1.0+0.0*x,1.0*(x-xb)/(xf-xb))) )
     
-def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k'):
+def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None):
     extent=(-len,len,-len,len)
     palette=cm.jet
     palette.set_bad('k', 1.0)
@@ -970,6 +970,30 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         #
         iBz = reinterp(Bznorm,extent,ncell,domask=0.8)
         iBR = reinterp(BRnorm,extent,ncell,isasymmetric=True,domask=0.8) #isasymmetric = True tells to flip the sign across polar axis
+        #
+        if dorandomcolor:
+            Ba=np.copy(B)
+            cond = (B[1]<0)
+            Ba[2,cond]*=-1
+            Ba[3,cond]*=-1
+            Ba[1,cond]*=-1
+            Bar = dxdxp[1,1]*Ba[1]+dxdxp[1,2]*Ba[2]
+            Bah = dxdxp[2,1]*Ba[1]+dxdxp[2,2]*Ba[2]
+            Bap = Ba[3]*dxdxp[3,3]
+            #
+            Barnorm=Bar
+            Bahnorm=Bah*np.abs(r)
+            Bapnorm=Bap*np.abs(r*np.sin(h))
+            #
+            Baznorm=Barnorm*np.cos(h)-Bahnorm*np.sin(h)
+            BaRnorm=Barnorm*np.sin(h)+Bahnorm*np.cos(h)
+            #
+            iBaz = reinterp(Baznorm,extent,ncell,domask=0.8)
+            iBaR = reinterp(BaRnorm,extent,ncell,isasymmetric=True,domask=0.8) #isasymmetric = True tells to flip the sign across polar axis
+        else:
+            iBaz = None
+            iBaR = None
+        #
         if dovarylw:
             iibeta = reinterp(0.5*bsq/(gam-1)/ug,extent,ncell,domask=0)
             ibsqorho = reinterp(bsq/rho,extent,ncell,domask=0)
@@ -997,7 +1021,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         #     #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
         # plt.xlim(extent[0],extent[1])
         # plt.ylim(extent[2],extent[3])
-    if dorho or True:
+    if dorho:
         CS = ax.imshow(ilrho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
     if not dostreamlines:
         cset2 = ax.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
@@ -1008,9 +1032,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
             lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
             # if t < 1500:
             lw *= ftr(iaphi,0.001,0.002)
-        else:
-            lw = 1
-        fstreamplot(yi,xi,iBR,iBz,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=True,dodiskfield=dodiskfield,dobhfield=dobhfield,startatmidplane=True,a=a,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,dsval=dsval,color=color)
+        fstreamplot(yi,xi,iBR,iBz,ua=iBaR,va=iBaz,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=True,dodiskfield=dodiskfield,dobhfield=dobhfield,startatmidplane=True,a=a,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,dsval=dsval,color=color,doarrows=doarrows,dorandomcolor=dorandomcolor)
         #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
     ax.set_xlim(extent[0],extent[1])
     ax.set_ylim(extent[2],extent[3])
@@ -4267,14 +4289,20 @@ if __name__ == "__main__":
         rfd("fieldline0000.bin")
         avgmem = get2davg(usedefault=1)
         assignavg2dvars(avgmem)
-        # B[1] = avg_B[0]
-        # B[2] = avg_B[1]
-        # B[3] = avg_B[2]
-        # uu[0:] = avg_uu[0:]
-        B[1:] = avg_uu[1:]
-        bsq = avg_bsq
-        plt.figure(1)
-        mkframe("myframe",len=25.1,ax=plt.gca(),density=2,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=20,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.01,color='k')
+        if False:
+            #field
+            B[1] = avg_B[0]
+            B[2] = avg_B[1]
+            B[3] = avg_B[2]
+            bsq = avg_bsq
+            plt.figure(1)
+            mkframe("myframe",len=25.1,ax=plt.gca(),density=2,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=20,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.01,color='k')
+        if True:
+            #velocity
+            B[1:] = avg_uu[1:]
+            bsq = avg_bsq
+            plt.figure(1)
+            mkframe("myframe",len=25.1,ax=plt.gca(),density=8,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=200,dodiskfield=False,minlenbhfield=0.01,minlendiskfield=0.5,dsval=0.01,color='k',doarrows=False,dorandomcolor=True,lw=2)
     if False:
         #FIGURE 1 LOTSOPANELS
         doslines=True

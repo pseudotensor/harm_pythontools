@@ -382,9 +382,9 @@ def streamplot(x, y, u, v, density=1, linewidth=1,
         ax.set_ylim(y.min(), y.max())    
     return
 
-def fstreamplot(x, y, u, v, density=1, linewidth=1,
+def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
                color='k', cmap=None, norm=None, vmax=None, vmin=None,
-               arrowsize=1, INTEGRATOR='RK4',dtx=10,ax=None,setxylim=False,useblank=True,detectLoops=True,dobhfield=False,dodiskfield=False,startatmidplane=False,a=0.0,downsample=1,minlendiskfield=0.2,minlenbhfield=0.2,dsval=0.01):
+               arrowsize=1, INTEGRATOR='RK4',dtx=10,ax=None,setxylim=False,useblank=True,detectLoops=True,dobhfield=False,dodiskfield=False,startatmidplane=False,a=0.0,downsample=1,minlendiskfield=0.2,minlenbhfield=0.2,dsval=0.01,doarrows=False,dorandomcolor=False):
     '''Draws streamlines of a vector flow.
 
     * x and y are 1d arrays defining an *evenly spaced* grid.
@@ -428,6 +428,20 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
     u *= NGX
     v *= NGY
     ## Now u and v in grid-coordinates.
+
+    if (ua is not None) and (va is not None):
+        ## Now rescale velocity onto axes-coordinates
+        ua = ua / (x[-1]-x[0])
+        va = va / (y[-1]-y[0])
+        speed = numpy.sqrt(ua*ua+va*va)
+        ## s (path length) will now be in axes-coordinates, but we must
+        ## rescale ua for integrations.
+        ua *= NGX
+        va *= NGY
+        ## Now u and v in grid-coordinates.
+
+    #u = ua
+    #v = va
 
     ## Blank array: This is the heart of the algorithm. It begins life
     ## zeroed, but is set to one when a streamline passes through each
@@ -714,6 +728,12 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
     rh = 1+(1-a**2)**0.5
     rad = 0.95*rh
     if dobhfield:
+        if (ua is not None) and (va is not None):
+            ubackup = u
+            vbackup = v
+            u = ua
+            v = va
+            rad *= 3.
         if dobhfield == 1:
             num = 16 #20*density
         else:
@@ -729,6 +749,10 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
             xb, yb = xybofxyabs(xabs,yabs)
             #print( "th=%f,x=%f,y=%f,xb=%f,yb=%f" % (th, xabs, yabs, xb, yb) )
             traj( xb, yb, useblank = False, doreport = True, minlength = minlenbhfield )
+        if (ua is not None) and (va is not None):
+            u = ubackup
+            v = vbackup
+            rad /= 3.
 
     #if downsampling, only send in streamlines from boundaries
     if downsample != 1:
@@ -813,6 +837,9 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
                                  (value_at(color, tgx, tgy)[:-1]))
             arrowcolor = args['color'][len(tgx)/2]
         else:
+            if dorandomcolor:
+                val = numpy.random.rand(1)[0]
+                color = (val,val,val) 
             args['color'] = color
             arrowcolor = color
         
@@ -822,7 +849,7 @@ def fstreamplot(x, y, u, v, density=1, linewidth=1,
             
         ## Add arrows every dtx along each trajectory.
         #for n in numpy.arange(max((len(tx)%dtx)/2+dtx/2,1),len(tx)-2,dtx):
-        if True:
+        if doarrows:
             n = len(tx)/2
             if type(linewidth) == numpy.ndarray:
                 arrowlinewidth = args['linewidth'][n]
