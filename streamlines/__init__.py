@@ -384,7 +384,7 @@ def streamplot(x, y, u, v, density=1, linewidth=1,
 
 def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
                color='k', cmap=None, norm=None, vmax=None, vmin=None,
-               arrowsize=1, INTEGRATOR='RK4',dtx=10,ax=None,setxylim=False,useblank=True,detectLoops=True,dobhfield=False,dodiskfield=False,startatmidplane=False,a=0.0,downsample=1,minlendiskfield=0.2,minlenbhfield=0.2,dsval=0.01,doarrows=False,dorandomcolor=False):
+               arrowsize=1, INTEGRATOR='RK4',dtx=10,ax=None,setxylim=False,useblank=True,detectLoops=True,dobhfield=False,dodiskfield=False,startatmidplane=False,a=0.0,downsample=1,minlendiskfield=0.2,minlenbhfield=0.2,dsval=0.01,doarrows=False,dorandomcolor=False,skipblankint=False):
     '''Draws streamlines of a vector flow.
 
     * x and y are 1d arrays defining an *evenly spaced* grid.
@@ -527,9 +527,9 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
 
         ## Integrator function
         def rk4(x0, y0, f, useblank = True):
-            ds = dsval #min(1./NGX, 1./NGY, 0.01)
+            ds = numpy.float64(dsval) #min(1./NGX, 1./NGY, 0.01)
             nstep = 0
-            stotal = 0
+            stotal = numpy.float64(0)
             xi = x0
             yi = y0
             xb, yb = blank_pos(xi, yi)
@@ -563,11 +563,14 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
                 if not check(xi, yi): break
                 stotal += ds
                 nstep += 1
+                if nstep > 3000:
+                    #keep nstep within reasonable bounds
+                    nstep -= 3000
                 # Next, if s gets to thres, check blank.
                 new_xb, new_yb = blank_pos(xi, yi)
                 if new_xb != xb or new_yb != yb:
                     # New square, so check and colour. Quit if required.
-                    if blank[new_yb,new_xb] == 0:
+                    if blank[new_yb,new_xb] == 0 or skipblankint:
                         blank[new_yb,new_xb] = 1
                         bx_changes.append(new_xb)
                         by_changes.append(new_yb)
@@ -733,7 +736,7 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
             vbackup = v
             u = ua
             v = va
-            rad *= 3.
+            rad *= 5.
         if dobhfield == 1:
             num = 16 #20*density
         else:
@@ -752,14 +755,14 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
         if (ua is not None) and (va is not None):
             u = ubackup
             v = vbackup
-            rad /= 3.
+            rad /= 5.
 
     #if downsampling, only send in streamlines from boundaries
     if downsample != 1:
-        indent = 1
+        indent = 3
         #for xi in range(max(NBX,NBY)-2*indent):
         for xi in range(downsample/2,max(NBX,NBY)-2*indent,downsample):
-            if startatmidplane and indent == 1:
+            if False and startatmidplane and indent == 1:
                 #for trajectories that start at left or right wall,
                 #send them in symmetrically away from midplane
                 if xi+indent < NBY/2:
@@ -812,6 +815,8 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
         if cmap == None: cmap = matplotlib.cm.get_cmap(
             matplotlib.rcParams['image.cmap'])
     
+    trajectories.reverse()
+
     for t in trajectories:
         # Finally apply the rescale to adjust back to user-coords from
         # grid-index coordinates.
