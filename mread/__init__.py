@@ -4302,7 +4302,7 @@ if __name__ == "__main__":
             B[1:] = avg_uu[1:]
             bsq = avg_bsq
             plt.figure(1)
-            mkframe("myframe",len=25.1,ax=plt.gca(),density=32,downsample=2,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=0,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=3,skipblankint=True,detectLoops=False,ncell=800,minindent=5)
+            mkframe("myframe",len=25.1,ax=plt.gca(),density=32,downsample=2,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=3,skipblankint=True,detectLoops=False,ncell=800,minindent=5)
     if False:
         #FIGURE 1 LOTSOPANELS
         doslines=True

@@ -384,7 +384,7 @@ def streamplot(x, y, u, v, density=1, linewidth=1,
 
 def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
                color='k', cmap=None, norm=None, vmax=None, vmin=None,
-               arrowsize=1, INTEGRATOR='RK4',dtx=10,ax=None,setxylim=False,useblank=True,detectLoops=True,dobhfield=False,dodiskfield=False,startatmidplane=False,a=0.0,downsample=1,minlendiskfield=0.2,minlenbhfield=0.2,dsval=0.01,doarrows=False,dorandomcolor=False,skipblankint=False,minindent=1):
+               arrowsize=1, INTEGRATOR='RK4',dtx=10,ax=None,setxylim=False,useblank=True,detectLoops=True,dobhfield=False,dodiskfield=False,startatmidplane=False,a=0.0,downsample=1,minlendiskfield=0.2,minlenbhfield=0.2,dsval=0.01,doarrows=False,dorandomcolor=False,skipblankint=False,minindent=1,symmy=True):
     '''Draws streamlines of a vector flow.
 
     * x and y are 1d arrays defining an *evenly spaced* grid.
@@ -773,13 +773,29 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
             else:
                 traj(indent, xi+indent)  #lower x
                 traj(NBX-1-indent, xi+indent) #upper x
-            traj(xi+indent, indent, checkalongx = True)  #lower y
-            traj(xi+indent, NBY-1-indent, checkalongx = True) #upper y
+            if symmy: 
+                if xi+indent < NBX/2:
+                    #symmetrize y
+                    traj(xi+indent, indent, checkalongx = True)  #lower y
+                    traj(NBX-1-(xi+indent), indent, checkalongx = True)  #lower y
+                    traj(xi+indent, NBY-1-indent, checkalongx = True) #upper y
+                    traj(NBX-1-(xi+indent), NBY-1-indent, checkalongx = True) #upper y
+            else:
+                traj(xi+indent, indent, checkalongx = True)  #lower y
+                traj(xi+indent, NBY-1-indent, checkalongx = True) #upper y
     else:
-        for indent in range((max(NBX,NBY))/2):
+        for indent in range(minindent,(max(NBX,NBY))/2):
             for xi in range(max(NBX,NBY)-2*indent):
-                traj(xi+indent, indent)  #lower y
-                traj(xi+indent, NBY-1-indent) #upper y
+                if symmy: 
+                    if xi+indent < NBX/2:
+                        #symmetrize y
+                        traj(xi+indent, indent)  #lower y
+                        traj(NBX-1-(xi+indent), indent)  #lower y
+                        traj(xi+indent, NBY-1-indent) #upper y
+                        traj(NBX-1-(xi+indent), NBY-1-indent) #upper y
+                else:
+                    traj(xi+indent, indent)  #lower y
+                    traj(xi+indent, NBY-1-indent) #upper y
                 if startatmidplane and indent == 0:
                     #for trajectories that start at left or right wall,
                     #send them in symmetrically away from midplane
