@@ -384,7 +384,7 @@ def streamplot(x, y, u, v, density=1, linewidth=1,
 
 def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
                color='k', cmap=None, norm=None, vmax=None, vmin=None,
-               arrowsize=1, INTEGRATOR='RK4',dtx=10,ax=None,setxylim=False,useblank=True,detectLoops=True,dobhfield=False,dodiskfield=False,startatmidplane=False,a=0.0,downsample=1,minlendiskfield=0.2,minlenbhfield=0.2,dsval=0.01,doarrows=False,dorandomcolor=False,skipblankint=False):
+               arrowsize=1, INTEGRATOR='RK4',dtx=10,ax=None,setxylim=False,useblank=True,detectLoops=True,dobhfield=False,dodiskfield=False,startatmidplane=False,a=0.0,downsample=1,minlendiskfield=0.2,minlenbhfield=0.2,dsval=0.01,doarrows=False,dorandomcolor=False,skipblankint=False,minindent=1):
     '''Draws streamlines of a vector flow.
 
     * x and y are 1d arrays defining an *evenly spaced* grid.
@@ -736,7 +736,7 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
             vbackup = v
             u = ua
             v = va
-            rad *= 5.
+            rad *= 3.
         if dobhfield == 1:
             num = 16 #20*density
         else:
@@ -755,14 +755,14 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
         if (ua is not None) and (va is not None):
             u = ubackup
             v = vbackup
-            rad /= 5.
+            rad /= 3.
 
     #if downsampling, only send in streamlines from boundaries
     if downsample != 1:
-        indent = 3
+        indent = minindent
         #for xi in range(max(NBX,NBY)-2*indent):
         for xi in range(downsample/2,max(NBX,NBY)-2*indent,downsample):
-            if False and startatmidplane and indent == 1:
+            if False and startatmidplane and indent == minindent:
                 #for trajectories that start at left or right wall,
                 #send them in symmetrically away from midplane
                 if xi+indent < NBY/2:
