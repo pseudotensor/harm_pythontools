@@ -733,7 +733,7 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
     ## for blank==0 along the edges first, and work inwards.
 
     rh = 1+(1-a**2)**0.5
-    rad = 0.95*rh
+    rad = 0.9*rh
     if dobhfield:
         if (ua is not None) and (va is not None):
             ubackup = u
