@@ -376,7 +376,8 @@ def streamplot(x, y, u, v, density=1, linewidth=1,
             p = mpp.FancyArrowPatch((tx[n],ty[n]), (tx[n+1],ty[n+1]),
                                 arrowstyle='->', lw=arrowlinewidth,
                                 mutation_scale=20*arrowsize, color=arrowcolor)
-            ax.add_patch(p)
+            ptch=ax.add_patch(p)
+            ptch.zorder(20) #same as line
     if setxylim:
         ax.set_xlim(x.min(), x.max())
         ax.set_ylim(y.min(), y.max())    
@@ -384,7 +385,7 @@ def streamplot(x, y, u, v, density=1, linewidth=1,
 
 def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
                color='k', cmap=None, norm=None, vmax=None, vmin=None,
-               arrowsize=1, INTEGRATOR='RK4',dtx=10,ax=None,setxylim=False,useblank=True,detectLoops=True,dobhfield=False,dodiskfield=False,startatmidplane=False,a=0.0,downsample=1,minlendiskfield=0.2,minlenbhfield=0.2,dsval=0.01,doarrows=False,dorandomcolor=False,skipblankint=False,minindent=1,symmy=True):
+               arrowsize=1, INTEGRATOR='RK4',dtx=10,ax=None,setxylim=False,useblank=True,detectLoops=True,dobhfield=False,dodiskfield=False,startatmidplane=False,a=0.0,downsample=1,minlendiskfield=0.2,minlenbhfield=0.2,dsval=0.01,doarrows=True,dorandomcolor=False,skipblankint=False,minindent=1,symmy=True,minlengthdefault=0.2):
     '''Draws streamlines of a vector flow.
 
     * x and y are 1d arrays defining an *evenly spaced* grid.
@@ -503,10 +504,13 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
                       for xj,yj in zip(xVals,yVals)])
         return (D < 0.9 * ds * max(NGX,NGY)).any()
 
-    def rk4_integrate(x0, y0, useblank = True, checkalongx = False, minlength=0.2):
+    def rk4_integrate(x0, y0, useblank = True, checkalongx = False, minlength=None):
         ## This function does RK4 forward and back trajectories from
         ## the initial conditions, with the odd 'blank array'
         ## termination conditions. TODO tidy the integration loops.
+
+        if minlength == None:
+            minlength = minlengthdefault
         
         def f(xi, yi):
             dt_ds = 1./value_at(speed, xi, yi)
@@ -762,7 +766,7 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
         indent = minindent
         #for xi in range(max(NBX,NBY)-2*indent):
         for xi in range(downsample/2,max(NBX,NBY)-2*indent,downsample):
-            if False and startatmidplane and indent == minindent:
+            if startatmidplane and indent == minindent:
                 #for trajectories that start at left or right wall,
                 #send them in symmetrically away from midplane
                 if xi+indent < NBY/2:
@@ -878,10 +882,11 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
             if type(color) == numpy.ndarray:            
                 arrowcolor = args['color'][n]
 
-            p = mpp.FancyArrowPatch((tx[n],ty[n]), (tx[n+1],ty[n+1]),
+            p = mpp.FancyArrowPatch((tx[n-1],ty[n-1]), (tx[n+1],ty[n+1]),
                                 arrowstyle='->', lw=arrowlinewidth,
                                 mutation_scale=20*arrowsize, color=arrowcolor)
-            ax.add_patch(p)
+            ptch=ax.add_patch(p)
+            ptch.set_zorder(2) #same as line
     if setxylim:
         ax.set_xlim(x.min(), x.max())
         ax.set_ylim(y.min(), y.max())    
