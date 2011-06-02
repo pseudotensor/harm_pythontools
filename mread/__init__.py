@@ -4476,8 +4476,8 @@ if __name__ == "__main__":
             downsample=4
             density=2
             dodiskfield=True
-            minlenbhfield=0.03
-            minlendiskfield=0.03
+            minlenbhfield=0.2
+            minlendiskfield=0.2
             #
             # PLOT 1
             #
