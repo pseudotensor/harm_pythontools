@@ -27,6 +27,7 @@ import os,glob
 import pylab
 import sys
 import streamlines
+from matplotlib.patches import Ellipse
 
 
 #global rho, ug, vu, uu, B, CS
@@ -940,7 +941,7 @@ def reinterpxy(vartointerp,extent,ncell,domask=1):
 def ftr(x,xb,xf):
     return( amax(0.0*x,amin(1.0+0.0*x,1.0*(x-xb)/(xf-xb))) )
     
-def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1):
+def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True):
     extent=(-len,len,-len,len)
     palette=cm.jet
     palette.set_bad('k', 1.0)
@@ -1032,7 +1033,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
             lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
             # if t < 1500:
             lw *= ftr(iaphi,0.001,0.002)
-        fstreamplot(yi,xi,iBR,iBz,ua=iBaR,va=iBaz,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=detectLoops,dodiskfield=dodiskfield,dobhfield=dobhfield,startatmidplane=True,a=a,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,dsval=dsval,color=color,doarrows=doarrows,dorandomcolor=dorandomcolor,skipblankint=skipblankint,minindent=minindent)
+        fstreamplot(yi,xi,iBR,iBz,ua=iBaR,va=iBaz,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=detectLoops,dodiskfield=dodiskfield,dobhfield=dobhfield,startatmidplane=startatmidplane,a=a,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,dsval=dsval,color=color,doarrows=doarrows,dorandomcolor=dorandomcolor,skipblankint=skipblankint,minindent=minindent,minlengthdefault=minlengthdefault)
         #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
     ax.set_xlim(extent[0],extent[1])
     ax.set_ylim(extent[2],extent[3])
@@ -4284,26 +4285,46 @@ if __name__ == "__main__":
             os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 1 mov_%s_Rzxym1p1.avi" % (os.path.basename(os.getcwd())) )
             os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 2 mov_%s_Rzxym1.avi" % (os.path.basename(os.getcwd())) )
             #os.system("scp mov.avi 128.112.70.76:Research/movies/mov_`basename \`pwd\``.avi")
-    if True:
+    if False:
         grid3d("gdump.bin",use2d=True)
         rfd("fieldline0000.bin")
         avgmem = get2davg(usedefault=1)
         assignavg2dvars(avgmem)
-        if False:
+        fig=plt.figure(1,figsize=(4,3),dpi=300)
+        ax = fig.add_subplot(111, aspect='equal')
+        if True:
+            #velocity
+            B[1:] = avg_uu[1:]
+            bsq = avg_bsq
+            mkframe("myframe",len=25.1,ax=ax,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
+        if True:
             #field
             B[1] = avg_B[0]
             B[2] = avg_B[1]
             B[3] = avg_B[2]
             bsq = avg_bsq
             plt.figure(1)
-            mkframe("myframe",len=25.1,ax=plt.gca(),density=2,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=20,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.01,color='k')
-        if True:
-            #velocity
-            B[1:] = avg_uu[1:]
-            bsq = avg_bsq
-            plt.figure(1)
-            mkframe("myframe",len=25.1,ax=plt.gca(),density=32,downsample=2,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=3,skipblankint=True,detectLoops=False,ncell=800,minindent=5)
-    if False:
+            mkframe("myframe",len=25.1,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=12,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.01,color='r',lw=1,startatmidplane=True)
+        if False:
+            x = (r*np.sin(h))[:,:,0]
+            z = (r*np.cos(h))[:,:,0]
+            x = np.concatenate(-x,x)
+            z = np.concatenate(y,y)
+            mu = np.concatenate(avg_mu[:,:,0],avg_mu[:,:,0])
+            plt.contourf( x, z, mu )
+        ax.set_aspect('equal')   
+        rhor=1+(1-a**2)**0.5
+        el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
+        art=ax.add_artist(el)
+        art.set_zorder(20)
+        plt.xlim(-20,20)
+        plt.ylim(-20,20)
+        plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
+        plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=15,fontsize=16)
+        # plt.savefig("fig2.pdf",bbox_inches='tight',pad_inches=0.02)
+        # plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02)
+        plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02)
+    if True:
         #FIGURE 1 LOTSOPANELS
         doslines=True
         plotlenf=10
@@ -4508,7 +4529,7 @@ if __name__ == "__main__":
             mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,
                     ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,
                     density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield)
-            ax1.set_xlabel(r'$x\ [r_g]$',fontsize=15)
+            ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
             if dogrid: plt.grid()
             #xy
             ax2 = plt.subplot(gs1[0:2, 1])
@@ -4537,7 +4558,7 @@ if __name__ == "__main__":
             #          color='k',weight='regular',bbox=bbox_props
             #          )
             mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield)
-            ax1.set_xlabel(r'$x\ [r_g]$',fontsize=15)
+            ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
             if dogrid: plt.grid()
             #xy
             ax2 = plt.subplot(gs1[0:2, 2])
@@ -4566,7 +4587,7 @@ if __name__ == "__main__":
             #          color='k',weight='regular',bbox=bbox_props
             #          )
             mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield)
-            ax1.set_xlabel(r'$x\ [r_g]$',fontsize=15)
+            ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
             if dogrid: plt.grid()
             #xy
             ax2 = plt.subplot(gs1[0:2, 3])
