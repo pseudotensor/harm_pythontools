@@ -3080,7 +3080,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
                 for fi in findex:
                     ax.plot(ts[fi],np.abs(mdtot[:,ihor]-md30[:,ihor])[fi],'o',mfc='r')#,label=r'$\dot M$')
         #ax.legend(loc='upper left')
-        ax.set_ylabel(r'$\dot Mc^2$',fontsize=16)
+        ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,labelpad=9)
         plt.setp( ax.get_xticklabels(), visible=False)
         plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderaxespad=0,frameon=True,labelspacing=0)
     #######################
@@ -3114,9 +3114,9 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     #######################
     if whichplot == 4:
-        etabh = pjemtot[:,ihor]/mdotfinavg
-        etaj = pjke_mu2[:,iofr(100)]/mdotfinavg
-        etaw = (pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotfinavg
+        etabh = 100*pjemtot[:,ihor]/mdotfinavg
+        etaj = 100*pjke_mu2[:,iofr(100)]/mdotfinavg
+        etaw = 100*(pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotfinavg
         if dotavg:
             ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(etaj,ts,fti,ftf),'--',color=(fc,fc+0.5*(1-fc),fc)) #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
             ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(etabh,ts,fti,ftf),color=(1,fc,fc)) #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
@@ -3137,7 +3137,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         #ax.legend(loc='upper left')
         #ax.set_ylim(0,2)
         ax.set_xlabel(r'$t\;[r_g/c]$',fontsize=16)
-        ax.set_ylabel(r'$\eta$',fontsize=16,ha='right')
+        ax.set_ylabel(r'$\eta\ [\%]$',fontsize=16,ha='left',labelpad=20)
         plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
         #xxx
     #######################
@@ -3172,7 +3172,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
                     #ax.plot(ts[fi],phiw[fi],'bv')
         #ax.legend(loc='upper left')
         #ax.set_ylabel(r'$\ \ \ k\Phi_j/\langle\dot M\rangle^{\!1/2}$',fontsize=16)
-        ax.set_ylabel(r'$\phi$',fontsize=16)
+        ax.set_ylabel(r'$\phi$',fontsize=16,labelpad=16)
         plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
         plt.setp( ax.get_xticklabels(), visible=False )
 
@@ -4285,18 +4285,19 @@ if __name__ == "__main__":
             os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 1 mov_%s_Rzxym1p1.avi" % (os.path.basename(os.getcwd())) )
             os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 2 mov_%s_Rzxym1.avi" % (os.path.basename(os.getcwd())) )
             #os.system("scp mov.avi 128.112.70.76:Research/movies/mov_`basename \`pwd\``.avi")
-    if False:
+    if True:
+        #fig2
         grid3d("gdump.bin",use2d=True)
         rfd("fieldline0000.bin")
         avgmem = get2davg(usedefault=1)
         assignavg2dvars(avgmem)
-        fig=plt.figure(1,figsize=(4,3),dpi=300)
+        fig=plt.figure(1,figsize=(12,9))
         ax = fig.add_subplot(111, aspect='equal')
-        if True:
+        if False:
             #velocity
             B[1:] = avg_uu[1:]
             bsq = avg_bsq
-            mkframe("myframe",len=25.1,ax=ax,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
+            mkframe("myframe",len=30,ax=ax,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
         if True:
             #field
             B[1] = avg_B[0]
@@ -4317,14 +4318,14 @@ if __name__ == "__main__":
         el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
         art=ax.add_artist(el)
         art.set_zorder(20)
-        plt.xlim(-20,20)
-        plt.ylim(-20,20)
+        plt.xlim(-25,25)
+        plt.ylim(-25,25)
         plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
         plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=15,fontsize=16)
         # plt.savefig("fig2.pdf",bbox_inches='tight',pad_inches=0.02)
         # plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02)
         plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02)
-    if True:
+    if False:
         #FIGURE 1 LOTSOPANELS
         doslines=True
         plotlenf=10
@@ -4372,7 +4373,7 @@ if __name__ == "__main__":
         #mdot,pjet,pjet/mdot plots
         findex = 0
         gs3 = GridSpec(3, 3)
-        gs3.update(left=0.05, right=0.975, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
+        gs3.update(left=0.055, right=0.97, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
         #mdot
         ax31 = plt.subplot(gs3[-3,:])
         plotqtyvstime(qtymem,ax=ax31,whichplot=1,findex=findexlist) #AT: need to specify index!
@@ -4442,19 +4443,20 @@ if __name__ == "__main__":
         ax34 = plt.subplot(gs3[-1,:])
         plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findexlist)
         ymax=ax34.get_ylim()[1]
-        if 1 < ymax and ymax < 2: 
+        if 100 < ymax and ymax < 200: 
             #ymax = 2
-            tck=(1,)
+            tck=(100,)
             ax34.set_yticks(tck)
-            #ax34.set_yticklabels(('','1','2'))
-        elif ymax < 1: 
-            ymax = 1
-            tck=(0.5,1)
+            #ax34.set_yticklabels(('','100','200'))
+        elif ymax < 100: 
+            ymax = 100
+            tck=(50,100)
             ax34.set_yticks(tck)
-            ax34.set_yticklabels(('','1'))
+            ax34.set_yticklabels(('','100'))
         else:
-            ymax=np.floor(ymax)+1
-            tck=np.arange(1,ymax)
+            ymax=np.floor(ymax/100.)+1
+            ymax*=100
+            tck=np.arange(1,ymax/100.)*100
             ax34.set_yticks(tck)
         #reset lower limit to 0
         ax34.set_ylim((0,ax34.get_ylim()[1]))
