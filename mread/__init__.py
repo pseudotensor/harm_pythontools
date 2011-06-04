@@ -941,12 +941,14 @@ def reinterpxy(vartointerp,extent,ncell,domask=1):
 def ftr(x,xb,xf):
     return( amax(0.0*x,amin(1.0+0.0*x,1.0*(x-xb)/(xf-xb))) )
     
-def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True):
+def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False):
     extent=(-len,len,-len,len)
     palette=cm.jet
     palette.set_bad('k', 1.0)
     #palette.set_over('r', 1.0)
     #palette.set_under('g', 1.0)
+    rhor=1+(1-a**2)**0.5
+    ihor = iofr(rhor)
     ilrho = reinterp(np.log10(rho),extent,ncell,domask=1.0)
     if not dostreamlines:
         aphi = fieldcalc()
@@ -994,6 +996,8 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         else:
             iBaz = None
             iBaR = None
+        if showjet:
+            imu = reinterp(mu,extent,ncell,domask=0.8)
         #
         if dovarylw:
             iibeta = reinterp(0.5*bsq/(gam-1)/ug,extent,ncell,domask=0)
@@ -1024,6 +1028,9 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         # plt.ylim(extent[2],extent[3])
     if dorho:
         CS = ax.imshow(ilrho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
+    if showjet:
+        ax.contour(imu,linewidths=0.5,colors='g', extent=extent,hold='on',origin='lower',levels=(2,))
+        ax.contour(iaphi,linewidths=0.5,colors='b', extent=extent,hold='on',origin='lower',levels=(aphi[ihor,ny/2,0],))
     if not dostreamlines:
         cset2 = ax.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
     else:
@@ -4287,6 +4294,7 @@ if __name__ == "__main__":
             #os.system("scp mov.avi 128.112.70.76:Research/movies/mov_`basename \`pwd\``.avi")
     if True:
         #fig2
+        mylen = 30
         grid3d("gdump.bin",use2d=True)
         rfd("fieldline0000.bin")
         avgmem = get2davg(usedefault=1)
@@ -4297,7 +4305,7 @@ if __name__ == "__main__":
             #velocity
             B[1:] = avg_uu[1:]
             bsq = avg_bsq
-            mkframe("myframe",len=30,ax=ax,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
+            mkframe("myframe",len=mylen,ax=ax,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
         if True:
             #field
             B[1] = avg_B[0]
@@ -4305,7 +4313,9 @@ if __name__ == "__main__":
             B[3] = avg_B[2]
             bsq = avg_bsq
             plt.figure(1)
-            mkframe("myframe",len=25.1,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=12,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.01,color='r',lw=1,startatmidplane=True)
+            gdetB[1:] = avg_gdetB[0:]
+            mu = avg_mu
+            mkframe("myframe",len=25./30.*mylen,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=12,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.01,color='r',lw=1,startatmidplane=True,showjet=False)
         if False:
             x = (r*np.sin(h))[:,:,0]
             z = (r*np.cos(h))[:,:,0]
@@ -4318,8 +4328,9 @@ if __name__ == "__main__":
         el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
         art=ax.add_artist(el)
         art.set_zorder(20)
-        plt.xlim(-25,25)
-        plt.ylim(-25,25)
+        mylenshow = 25./30.*mylen
+        plt.xlim(-mylenshow,mylenshow)
+        plt.ylim(-mylenshow,mylenshow)
         plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
         plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=15,fontsize=16)
         # plt.savefig("fig2.pdf",bbox_inches='tight',pad_inches=0.02)
