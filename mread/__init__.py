@@ -1177,7 +1177,7 @@ def mainfunc(imgname):
     # plt.title('Grid plot')
     # plt.show()
 
-def rrdump(dumpname):
+def rrdump(dumpname,write2xphi=False):
     global nx,ny,nz,t,a,rho,ug,vu,vd,B,gd,gd1,numcols,gdetB
     #print( "Reading " + "dumps/" + dumpname + " ..." )
     gin = open( "dumps/" + dumpname, "rb" )
@@ -1192,15 +1192,15 @@ def rrdump(dumpname):
     #nz+=8
     if dumpname.endswith(".bin"):
         body = np.fromfile(gin,dtype=np.float64,count=-1)  #nx*ny*nz*11)
-        gd1 = body
+        gdraw = body
         gin.close()
     else:
         gin.close()
-        gd1 = np.loadtxt( "dumps/"+dump, 
+        gdraw = np.loadtxt( "dumps/"+dump, 
                       dtype=np.float64, 
                       skiprows=1, 
                       unpack = True )
-    gd=gd1.view().reshape((-1,nx,ny,nz), order='F')
+    gd=gdraw.view().reshape((-1,nx,ny,nz), order='F')
     rho,ug = gd[0:2,:,:,:].view() 
     B = np.zeros_like(gd[4:8])
     vu = np.zeros_like(B)
@@ -1219,7 +1219,34 @@ def rrdump(dumpname):
         ud = mdot(gv3,uu)
     else:
         print( 'Metric (gv3, gn3) not defined, I am skipping the computation of uu and ud' )
-
+    if write2xphi:
+        print( "Writing out 2xphi rdump...", )
+        #write out a dump with twice as many cells in phi-direction:
+        gout = open( "dumps/" + dumpname + "2xphi", "wb" )
+        #double the number of phi-cells
+        header[2] = "%d" % (2*nz)
+        for headerel in header:
+            s = "%s " % headerel
+            gout.write( s )
+        gout.write( "\n" )
+        gout.flush()
+        os.fsync(gout.fileno())
+        #reshape the rdump content
+        gd1 = gdraw.view().reshape((nz,ny,nx,-1),order='C')
+        #allocate memory for refined grid, nz' = 2*nz
+        gd2 = np.zeros((2*nz,ny,nx,numcols),order='C',dtype=np.float64)
+        #copy even k's
+        gd2[0::2,:,:,:] = gd1[:,:,:,:]
+        #copy odd k's
+        gd2[1::2,:,:,:] = gd1[:,:,:,:]
+        #in the new cells, adjust gdetB[3] to be averages of immediately adjacent cells (this ensures divb=0)
+        gdetB3index = numcols/2+5+2
+        gd2[1:-1:2,:,:,gdetB3index] = 0.5*(gd1[:-1,:,:,gdetB3index]+gd1[1:,:,:,gdetB3index])
+        gd2[-1,:,:,gdetB3index] = 0.5*(gd1[0,:,:,gdetB3index]+gd1[-1,:,:,gdetB3index])
+        gd2.tofile(gout)
+        gout.close()
+        print( " done!" )
+        
 
 def fieldcalctoth():
     """
@@ -4292,7 +4319,7 @@ if __name__ == "__main__":
             os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 1 mov_%s_Rzxym1p1.avi" % (os.path.basename(os.getcwd())) )
             os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 2 mov_%s_Rzxym1.avi" % (os.path.basename(os.getcwd())) )
             #os.system("scp mov.avi 128.112.70.76:Research/movies/mov_`basename \`pwd\``.avi")
-    if True:
+    if False:
         #fig2
         mylen = 30
         grid3d("gdump.bin",use2d=True)
