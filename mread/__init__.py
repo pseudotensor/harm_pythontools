@@ -3697,7 +3697,7 @@ def plotpowers(fname,hor=0,format=1):
     emptyline = gin.readline()
     for i in np.arange(alist.shape[0]):
         simname = gin.readline().split()[0]
-        print '%.2g & %.5g & %.5g & %.5g & %% %s' % (alist[i], 100*etalist[i], 100*(etawindlist[i]-etalist[i]), 100*etawindlist[i], simname)
+        print '%.2g & %.5g & %.5g & %.5g & %.5g & %% %s' % (alist[i], 100*etaEMlist[i], 100*etalist[i], 100*(etawindlist[i]-etalist[i]), 100*etawindlist[i], simname)
     gin.close()
     mya=np.arange(-1,1,0.001)
     rhor = 1+(1-mya**2)**0.5
@@ -4073,6 +4073,7 @@ if __name__ == "__main__":
         readmytests1()
         plotpowers('powerlist.txt',format=0) #old format
     if False:
+        #Figure 3
         readmytests1()
         plotpowers('powerlist2davg.txt',format=1) #new format; data from 2d average dumps
     if False:
@@ -4399,7 +4400,7 @@ if __name__ == "__main__":
         # plt.savefig("fig2.pdf",bbox_inches='tight',pad_inches=0.02)
         # plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02)
         plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02)
-    if True:
+    if False:
         #FIGURE 1 LOTSOPANELS
         doslines=True
         plotlenf=10
