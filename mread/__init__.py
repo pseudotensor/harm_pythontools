@@ -3048,13 +3048,17 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
 
     mdotiniavg = timeavg(mdtot[:,ihor]-md10[:,ihor],ts,fti,ftf)
     #mdotfinavg = (mdtot[:,ihor]-md10[:,ihor])[(ts<ftf)*(ts>=fti)].sum()/(mdtot[:,ihor]-md10[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0]
+    mdotiniavgvsr = timeavg(mdtot,ts,iti,itf)
     mdotfinavgvsr = timeavg(mdtot,ts,fti,ftf)
     mdotfinavgvsr5 = timeavg(mdtot[:,:]-md5[:,:],ts,fti,ftf)
     mdotfinavgvsr10 = timeavg(mdtot[:,:]-md10[:,:],ts,fti,ftf)
     mdotfinavgvsr20 = timeavg(mdtot[:,:]-md20[:,:],ts,fti,ftf)
     mdotfinavgvsr30 = timeavg(mdtot[:,:]-md30[:,:],ts,fti,ftf)
+    mdotiniavgvsr30 = timeavg(mdtot[:,:]-md30[:,:],ts,iti,itf)
     mdotfinavgvsr40 = timeavg(mdtot[:,:]-md40[:,:],ts,fti,ftf)
+    mdotiniavg = np.float64(mdotiniavgvsr30)[r[:,0,0]<10].mean()
     mdotfinavg = np.float64(mdotfinavgvsr30)[r[:,0,0]<10].mean()
+    pjetiniavg = timeavg(pjem30[:,ihor],ts,iti,itf)
     pjetfinavg = timeavg(pjem30[:,ihor],ts,fti,ftf)
     pjemfinavgvsr = timeavg(edtot-edma,ts,fti,ftf)
     pjemtot = edtot-edma
@@ -3106,6 +3110,9 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     if whichplot == 1:
         if dotavg:
             ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotfinavg,color=(1,fc,fc))
+            if(iti>fti):
+                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+mdotiniavg,color=(1,fc,fc))
+                
         ax.plot(ts,np.abs(mdtot[:,ihor]-md30[:,ihor]),'r',label=r'$\dot Mc^2$')
         if findex != None:
             if not isinstance(findex,tuple):
@@ -3151,10 +3158,26 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         etabh = 100*pjemtot[:,ihor]/mdotfinavg
         etaj = 100*pjke_mu2[:,iofr(100)]/mdotfinavg
         etaw = 100*(pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotfinavg
+        etabh2 = 100*pjemtot[:,ihor]/mdotiniavg
+        etaj2 = 100*pjke_mu2[:,iofr(100)]/mdotiniavg
+        etaw2 = 100*(pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotiniavg
+        if(iti>fti):
+            #use mdot averaged over the same time interval for iti<t<=itf
+            icond=(ti[:,0,0]>=iti)*(ti[:,0,0]<itf)
+            etabh[icond]=etabh2[icond]
+            etaj[icond]=etaj2[icond]
+            etaw[icond]=etaw2[icond]
         if dotavg:
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(etaj,ts,fti,ftf),'--',color=(fc,fc+0.5*(1-fc),fc)) #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(etabh,ts,fti,ftf),color=(1,fc,fc)) #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
-            #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(etaw,ts,fti,ftf),'-.',color=(fc,fc+0.5*(1-fc),fc)) #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(etaj,ts,fti,ftf),'--',color=(fc,fc+0.5*(1-fc),fc)) 
+            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(etabh,ts,fti,ftf),color=(1,fc,fc)) 
+            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+            #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(etaw,ts,fti,ftf),'-.',color=(fc,fc+0.5*(1-fc),fc)) 
+            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+            if(iti>fti):
+                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+timeavg(etaj2,ts,iti,itf),'--',color=(fc,fc+0.5*(1-fc),fc))
+                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+timeavg(etabh2,ts,iti,itf),color=(1,fc,fc))
+                #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(etaw2,ts,fti,ftf),'-.',color=(fc,fc+0.5*(1-fc),fc)) 
         ax.plot(ts,etabh,'r',label=r'$\eta_{\rm BH}$')
         ax.plot(ts,etaj,'g--',label=r'$\eta_{\rm jet}$')
         ax.plot(ts,etaw,'b-.',label=r'$\eta_{\rm wind}$')
@@ -3184,10 +3207,23 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         phibh=fstot[:,ihor]/4/np.pi/mdotfinavg**0.5
         phij=phiabsj_mu2[:,iofr(100)]/4/np.pi/mdotfinavg**0.5
         phiw=(phiabsj_mu1-phiabsj_mu2)[:,iofr(100)]/4/np.pi/mdotfinavg**0.5
+        phibh2=fstot[:,ihor]/4/np.pi/mdotiniavg**0.5
+        phij2=phiabsj_mu2[:,iofr(100)]/4/np.pi/mdotiniavg**0.5
+        phiw2=(phiabsj_mu1-phiabsj_mu2)[:,iofr(100)]/4/np.pi/mdotiniavg**0.5
+        if(iti>fti):
+            #use phi averaged over the same time interval for iti<t<=itf
+            icond=(ti[:,0,0]>=iti)*(ti[:,0,0]<itf)
+            phibh[icond]=phibh2[icond]
+            phij[icond]=phij2[icond]
+            phiw[icond]=phiw2[icond]
         if dotavg:
             ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phij**2,ts,fti,ftf)**0.5,'--',color=(fc,fc+0.5*(1-fc),fc))
             ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phibh**2,ts,fti,ftf)**0.5,color=(1,fc,fc))
             #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phiw**2,ts,fti,ftf)**0.5,'-.',color=(fc,fc,1))
+            if(iti>fti):
+                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+timeavg(phij2**2,ts,iti,itf)**0.5,'--',color=(fc,fc+0.5*(1-fc),fc))
+                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+timeavg(phibh2**2,ts,iti,itf)**0.5,color=(1,fc,fc))
+                #ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+timeavg(phiw2**2,ts,iti,itf)**0.5,'-.',color=(fc,fc,1))
         #To approximately get efficiency:
         #ax.plot(ts,2./3.*np.pi*omh**2*np.abs(fsj30[:,ihor]/4/np.pi)**2/mdotfinavg)
         #prefactor to get sqrt(eta): (2./3.*np.pi*omh**2)**0.5
@@ -4363,7 +4399,7 @@ if __name__ == "__main__":
         # plt.savefig("fig2.pdf",bbox_inches='tight',pad_inches=0.02)
         # plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02)
         plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02)
-    if False:
+    if True:
         #FIGURE 1 LOTSOPANELS
         doslines=True
         plotlenf=10
