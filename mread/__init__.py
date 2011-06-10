@@ -3173,23 +3173,29 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         etabh2 = 100*pjemtot[:,ihor]/mdotiniavg
         etaj2 = 100*pjke_mu2[:,iofr(100)]/mdotiniavg
         etaw2 = 100*(pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotiniavg
-        if(iti>fti):
+        if(1 and iti>fti):
             #use mdot averaged over the same time interval for iti<t<=itf
-            icond=(ti[:,0,0]>=iti)*(ti[:,0,0]<itf)
+            icond=(ts>=iti)*(ts<itf)
             etabh[icond]=etabh2[icond]
             etaj[icond]=etaj2[icond]
             etaw[icond]=etaw2[icond]
         if dotavg:
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(etaj,ts,fti,ftf),'--',color=(fc,fc+0.5*(1-fc),fc)) 
+            etaj_avg = timeavg(etaj,ts,fti,ftf)
+            etabh_avg = timeavg(etabh,ts,fti,ftf)
+            etaw_avg = timeavg(etaw,ts,fti,ftf)
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaj_avg,'--',color=(fc,fc+0.5*(1-fc),fc)) 
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(etabh,ts,fti,ftf),color=(1,fc,fc)) 
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etabh_avg,color=(1,fc,fc)) 
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
-            #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(etaw,ts,fti,ftf),'-.',color=(fc,fc+0.5*(1-fc),fc)) 
+            #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaw_avg,'-.',color=(fc,fc+0.5*(1-fc),fc)) 
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
             if(iti>fti):
-                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+timeavg(etaj2,ts,iti,itf),'--',color=(fc,fc+0.5*(1-fc),fc))
-                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+timeavg(etabh2,ts,iti,itf),color=(1,fc,fc))
-                #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(etaw2,ts,fti,ftf),'-.',color=(fc,fc+0.5*(1-fc),fc)) 
+                etaj2_avg = timeavg(etaj2,ts,iti,itf)
+                etabh2_avg = timeavg(etabh2,ts,iti,itf)
+                etaw2_avg = timeavg(etaw2,ts,iti,itf)
+                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etaj2_avg,'--',color=(fc,fc+0.5*(1-fc),fc))
+                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etabh2_avg,color=(1,fc,fc))
+                #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaw2_avg,'-.',color=(fc,fc+0.5*(1-fc),fc)) 
         ax.plot(ts,etabh,'r',label=r'$\eta_{\rm BH}$')
         ax.plot(ts,etaj,'g--',label=r'$\eta_{\rm jet}$')
         ax.plot(ts,etaw,'b-.',label=r'$\eta_{\rm wind}$')
@@ -3208,6 +3214,12 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         ax.set_xlabel(r'$t\;[r_g/c]$',fontsize=16)
         ax.set_ylabel(r'$\eta\ [\%]$',fontsize=16,ha='left',labelpad=20)
         plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
+
+
+        print( "eta_BH = %g, eta_j = %g, eta_w = %g, eta_jw = %g" % ( etabh_avg, etaj_avg, etaw_avg, etaj_avg + etaw_avg) )
+        if iti > fti:
+            print( "eta_BH2 = %g, eta_j2 = %g, eta_w2 = %g, eta_jw2 = %g" % ( etabh2_avg, etaj2_avg, etaw2_avg, etaj2_avg + etaw2_avg ) )
+
         #xxx
     #######################
     #
@@ -3222,9 +3234,9 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         phibh2=fstot[:,ihor]/4/np.pi/mdotiniavg**0.5
         phij2=phiabsj_mu2[:,iofr(100)]/4/np.pi/mdotiniavg**0.5
         phiw2=(phiabsj_mu1-phiabsj_mu2)[:,iofr(100)]/4/np.pi/mdotiniavg**0.5
-        if(iti>fti):
+        if(1 and iti>fti):
             #use phi averaged over the same time interval for iti<t<=itf
-            icond=(ti[:,0,0]>=iti)*(ti[:,0,0]<itf)
+            icond=(ts>=iti)*(ts<itf)
             phibh[icond]=phibh2[icond]
             phij[icond]=phij2[icond]
             phiw[icond]=phiw2[icond]
@@ -3709,7 +3721,7 @@ def plotpowers(fname,hor=0,format=1):
     emptyline = gin.readline()
     for i in np.arange(alist.shape[0]):
         simname = gin.readline().split()[0]
-        print '%.2g & %.5g & %.5g & %.5g & %.5g & %% %s' % (alist[i], 100*etaEMlist[i], 100*etalist[i], 100*(etawindlist[i]-etalist[i]), 100*etawindlist[i], simname)
+        print '%.2g & %.3g & %.3g & %.3g & %.3g & %% %s' % (alist[i], 100*etaEMlist[i], 100*etalist[i], 100*(etawindlist[i]-etalist[i]), 100*etawindlist[i], simname)
     gin.close()
     mya=np.arange(-1,1,0.001)
     rhor = 1+(1-mya**2)**0.5
@@ -3816,7 +3828,7 @@ def plotpowers(fname,hor=0,format=1):
     # plt.plot(mya,250./((3./(mya**2 + 3*rhor**2))**2*2*rhor**2)) 
     #plt.plot(mya,((mya**2+3*rhor**2)/3)**2/(2/rhor)) 
     plt.ylim(ymin=0.0001)
-    plt.ylabel(r"$\phi$",fontsize='x-large',ha='center',labelpad=16)
+    plt.ylabel(r"$\phi_{\rm BH}$",fontsize='x-large',ha='center',labelpad=16)
     plt.grid()
     plt.setp( ax1.get_xticklabels(), visible=False )
     plt.legend(ncol=1,loc='lower center')
@@ -3838,7 +3850,7 @@ def plotpowers(fname,hor=0,format=1):
     plt.ylim(0.0001,150)
     plt.grid()
     plt.setp( ax2.get_xticklabels(), visible=False )
-    plt.ylabel(r"$\eta(r_g)\  [\%]$",fontsize='x-large',ha='center',labelpad=12)
+    plt.ylabel(r"$\eta_{\rm BH}\  [\%]$",fontsize='x-large',ha='center',labelpad=12)
     plt.text(-0.9, 125, r"$(\mathrm{b})$", size=16, rotation=0.,
              ha="center", va="center",
              color='k',weight='regular',bbox=bbox_props
@@ -3863,7 +3875,7 @@ def plotpowers(fname,hor=0,format=1):
     plt.grid()
     plt.legend(ncol=2,loc='upper center')
     plt.xlabel(r"$a$",fontsize='x-large')
-    plt.ylabel(r"$\eta(100r_g)\  [\%]$",fontsize='x-large',ha='center',labelpad=12)
+    plt.ylabel(r"$\eta_{\rm jet},\ \eta_{\rm wind}\  [\%]$",fontsize='x-large',ha='center',labelpad=12)
     plt.text(-0.9, 125, r"$(\mathrm{c})$", size=16, rotation=0.,
              ha="center", va="center",
              color='k',weight='regular',bbox=bbox_props
@@ -4414,6 +4426,8 @@ if __name__ == "__main__":
         plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02)
     if False:
         #FIGURE 1 LOTSOPANELS
+        #Figure 1
+        domakeframes=True
         doslines=True
         plotlenf=10
         plotleni=25
@@ -4556,7 +4570,6 @@ if __name__ == "__main__":
         ax34r.set_ylim(ax34.get_ylim())
         ax34r.set_yticks(tck)
         #
-        domakeframes=True
         if domakeframes:
             #
             # Make Frames
