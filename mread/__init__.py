@@ -1977,7 +1977,7 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
     flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
     flist.sort()
     nqtyold=98+134*(dobob==1)
-    nqty=98+134*(dobob==1)+32
+    nqty=98+134*(dobob==1)+32+1
     #store 1D data
     numtimeslices=len(flist)
     qtymem=np.zeros((nqty,numtimeslices,nx),dtype=np.float32)
@@ -2153,6 +2153,10 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
         phiabsj_s_mu5=qtymem[i];i+=1
         phiabsj_s_mu2=qtymem[i];i+=1
         phiabsj_s_mu1=qtymem[i];i+=1
+        if i < qtymem.shape[0]:
+            ldtot=qtymem[i];i+=1
+        else:
+            ldtot=None
     else:
         print( "Oldish format: missing north/south jet power and flux" )
         sys.stdout.flush()
@@ -2188,6 +2192,7 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
         phiabsj_s_mu5=None
         phiabsj_s_mu2=None
         phiabsj_s_mu1=None
+        ldtot=None
     if dobob == 1:
         print "Total number of quantities: %d+134 = %d" % (i, i+134)
     else:
@@ -2372,6 +2377,8 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
             phiabsj_s_mu5[findex]=jetpowcalc(4,minmu=5,donorthsouth=-1)
             phiabsj_s_mu2[findex]=jetpowcalc(4,minmu=2,donorthsouth=-1)
             phiabsj_s_mu1[findex]=jetpowcalc(4,minmu=1,donorthsouth=-1)
+            if ldtot is not None:
+                ldtot[findex]=intangle(gdet*Tud[3][0])
 
         #Bob's 1D quantities
         if dobob==1:
@@ -2731,7 +2738,7 @@ def iofr(rval):
 def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf=None):
     global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
     nqtyold=98
-    nqty=98+32
+    nqty=98+32+1
     ###############################
     #copy this from getqtyvstime()
     ###############################
@@ -2965,6 +2972,10 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             phiabsj_s_mu5=qtymem[i];i+=1
             phiabsj_s_mu2=qtymem[i];i+=1
             phiabsj_s_mu1=qtymem[i];i+=1
+            if i < qtymem.shape[0]:
+                ldtot=qtymem[i];i+=1
+            else:
+                ldtot=None
             #derived
             pjke_n_mu2 = pjem_n_mu2 + pjma_n_mu2 - pjrm_n_mu2
             pjke_s_mu2 = pjem_s_mu2 + pjma_s_mu2 - pjrm_s_mu2
@@ -3009,6 +3020,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             phiabsj_s_mu5=None
             phiabsj_s_mu2=None
             phiabsj_s_mu1=None
+            ldtot=None
             #derived
             pjke_n_mu2=None
             pjke_s_mu2=None
