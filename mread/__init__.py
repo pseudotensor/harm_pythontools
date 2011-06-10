@@ -808,8 +808,8 @@ def horcalc(which=1):
     up=(gdet*rho*(h-np.pi/2)*which).sum(axis=1)
     dn=(gdet*rho*which).sum(axis=1)
     thetamid2d=up/(dn+tiny)+np.pi/2
-    thetamid3d=np.empty_like(h)
-    hoverr3d=np.empty_like(h)
+    thetamid3d=np.empty((nx,ny,nz),dtype=h.dtype)
+    hoverr3d=np.empty((nx,ny,nz),dtype=h.dtype)
     for j in np.arange(0,ny):
         thetamid3d[:,j] = thetamid2d
     up=(gdet*rho*(h-thetamid3d)**2*which).sum(axis=1)
