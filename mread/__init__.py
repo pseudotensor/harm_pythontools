@@ -4122,7 +4122,7 @@ if __name__ == "__main__":
         #Plot qtys vs. time
         #cd ~/run; for f in rtf*; do cd ~/run/$f; (nice -n 10 python  ~/py/mread/__init__.py &> python.out); done
         grid3d("gdump.bin",use2d=True)
-        rd("dump0000.bin")
+        #rd("dump0000.bin")
         rfd("fieldline0000.bin")
         rhor=1+(1-a**2)**0.5
         ihor = np.floor(iofr(rhor)+0.5);
