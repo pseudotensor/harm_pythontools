@@ -1177,6 +1177,35 @@ def mainfunc(imgname):
     # plt.title('Grid plot')
     # plt.show()
 
+def rfloor(dumpname):
+    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,dUfloor
+    #read image
+    fin = open( "dumps/" + dumpname, "rb" )
+    header = fin.readline().split()
+    t = np.float64(header[0])
+    nx = int(header[1])
+    ny = int(header[2])
+    nz = int(header[3])
+    _dx1=float(header[7])
+    _dx2=float(header[8])
+    _dx3=float(header[9])
+    gam=float(header[11])
+    a=float(header[12])
+    Rin=float(header[14])
+    Rout=float(header[15])
+    if dumpname.endswith(".bin"):
+        body = np.fromfile(fin,dtype=np.float64,count=-1)  #nx*ny*nz*11)
+        gd = body.view().reshape((-1,nx,ny,nz),order='F')
+        fin.close()
+    else:
+        fin.close()
+        gd = np.loadtxt( "dumps/"+dumpname, 
+                      dtype=np.float64, 
+                      skiprows=1, 
+                      unpack = True ).view().reshape((-1,nx,ny,nz), order='F')
+    dUfloor = gd[:,:,:,:].view() 
+    return
+
 def rrdump(dumpname,write2xphi=False):
     global nx,ny,nz,t,a,rho,ug,vu,vd,B,gd,gd1,numcols,gdetB
     #print( "Reading " + "dumps/" + dumpname + " ..." )
@@ -1973,7 +2002,10 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
     if whichn != None and (whichi < 0 or whichi > whichn):
         print( "whichi = %d shoudl be >= 0 and < whichn = %d" % (whichi, whichn) )
         return( -1 )
-    tiny=np.finfo(rho.dtype).tiny
+    if 'rho' in globals():
+        tiny=np.finfo(rho.dtype).tiny
+    else:
+        tiny = np.finfo(np.float64).tiny
     flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
     flist.sort()
     nqtyold=98+134*(dobob==1)
@@ -3058,10 +3090,18 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         fti = 8000
         ftf = 1e5
 
-    mdotiniavg = timeavg(mdtot[:,ihor]-md10[:,ihor],ts,fti,ftf)
+    #mdotiniavg = timeavg(mdtot[:,ihor]-md10[:,ihor],ts,fti,ftf)
     #mdotfinavg = (mdtot[:,ihor]-md10[:,ihor])[(ts<ftf)*(ts>=fti)].sum()/(mdtot[:,ihor]-md10[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0]
     mdotiniavgvsr = timeavg(mdtot,ts,iti,itf)
     mdotfinavgvsr = timeavg(mdtot,ts,fti,ftf)
+    # full (disk + jet) accretion rate
+    mdtotvsr = mdotfinavgvsr
+    edtotvsr = timeavg(edtot,ts,fti,ftf)
+    if ldtot is not None:
+        ldtotvsr = timeavg(ldtot,ts,fti,ftf)
+    else:
+        ldtotvsr = None
+    #########
     mdotfinavgvsr5 = timeavg(mdtot[:,:]-md5[:,:],ts,fti,ftf)
     mdotfinavgvsr10 = timeavg(mdtot[:,:]-md10[:,:],ts,fti,ftf)
     mdotfinavgvsr20 = timeavg(mdtot[:,:]-md20[:,:],ts,fti,ftf)
@@ -3285,6 +3325,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         foutpower.close()
         return( mdotfinavg, fstotfinavg, fstotsqfinavg, fsj30finavg, fsj30sqfinavg, pjemfinavgtot )
 
+    if whichplot == -2:
+        return( mdtotvsr, edtotvsr, ldtotvsr )
        
     if whichplot == None:
         fig,plotlist=plt.subplots(nrows=4,ncols=1,sharex=True,figsize=(12,16),num=1)
@@ -3469,6 +3511,40 @@ def timeavg( qty, ts, fti, ftf ):
     qtycond = np.float64(qty[cond])
     qtyavg = qtycond.mean(axis=0)
     return( qtyavg )
+
+def takeoutfloors():
+    global DUfloor, qtymem
+    #Mdot, E, L
+    DTd = 800.
+    fti = 8000.
+    ftf = 15000
+    grid3d("gdump.bin",use2d=True)
+    rfloor("failfloordudump0100.bin")
+    Ufloor0100 = dUfloor[0,:,:,:].sum(-1).sum(-1).cumsum()/DTd
+    rfloor("failfloordudump0108.bin")
+    Ufloor0108 = dUfloor[0,:,:,:].sum(-1).sum(-1).cumsum()/DTd
+    DUfloor = Ufloor0108 - Ufloor0100
+    #rfd("fieldline0000.bin")
+    rhor = 1+(1-a**2)**0.5
+    ihor = iofr(rhor)
+    qtymem=getqtyvstime(ihor,0.2)
+    mdtotvsr, edtotvsr, ldtotvsr = plotqtyvstime( qtymem, whichplot = -2, fti=fti, ftf=ftf )
+    #floor info
+    #reset zero to where floors are probably not activated, say at r = 1e4
+    myi=iofr(20)
+    DUfloor -= DUfloor[myi]
+    #xxx
+    #FIGURE:
+    plt.figure(1)
+    plt.plot(r[:,0,0],mdtotvsr,label=r"$\dot M$")
+    plt.plot(r[:,0,0],mdtotvsr+DUfloor,label=r"$\dot M+dU^t$")
+    plt.plot(r[:,0,0],DUfloor,label=r"$dU^t$")
+    #plt.plot(r[:,0,0],DUfloor*1e4,label=r"$dU^t\times10^4$")
+    plt.legend()
+    plt.xlim(rhor,12)
+    plt.ylim(-3,15)
+    plt.grid()
+    
 
 def plotj(ts,fs,md,jem,jtot):
     #rc('font', family='serif')
