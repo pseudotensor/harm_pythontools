@@ -3513,38 +3513,71 @@ def timeavg( qty, ts, fti, ftf ):
     return( qtyavg )
 
 def takeoutfloors():
-    global DUfloor, qtymem
+    global DUfloor, qtymem, DUfloorori, etad0
     #Mdot, E, L
     DTd = 800.
     fti = 8000.
     ftf = 15000
-    grid3d("gdump.bin",use2d=True)
-    rfloor("failfloordudump0100.bin")
-    Ufloor0100 = dUfloor[0,:,:,:].sum(-1).sum(-1).cumsum()/DTd
-    rfloor("failfloordudump0108.bin")
-    Ufloor0108 = dUfloor[0,:,:,:].sum(-1).sum(-1).cumsum()/DTd
-    DUfloor = Ufloor0108 - Ufloor0100
-    #rfd("fieldline0000.bin")
+    doreload =0
+    if doreload:
+        grid3d("gdump.bin",use2d=True)
+        etad0 = -1/(-gn3[0,0])**0.5
+        rfloor("failfloordudump0100.bin")
+        rhor = 1+(1-a**2)**0.5
+        ihor = iofr(rhor)
+        Ufloor0100 = dUfloor[:,:,:,:].sum(-1).sum(-1).cumsum(-1)/DTd
+        Ufloor0100[1] = (dUfloor[0,:,:,:]*etad0).sum(-1).sum(-1).cumsum(-1)/DTd
+        #choplo(chophi(dUfloor[1,:,2:ny-1,:],0.05),-0.05).sum(-1).sum(-1).cumsum(-1)/DTd
+        #dUfloor[:,:,1:ny-1,:].sum(-1).sum(-1).cumsum(-1)/DTd
+        rfloor("failfloordudump0108.bin")
+        Ufloor0108 = dUfloor[:,:,:,:].sum(-1).sum(-1).cumsum(-1)/DTd
+        Ufloor0108[1] = (dUfloor[0,:,:,:]*etad0).sum(-1).sum(-1).cumsum(-1)/DTd
+        #choplo(chophi(dUfloor[1,:,2:ny-1,:],0.05),-0.05).sum(-1).sum(-1).cumsum(-1)/DTd 
+        DUfloorori = Ufloor0108 - Ufloor0100
+        qtymem=getqtyvstime(ihor,0.2)
+        #floor info
+        #reset zero to where floors are probably not activated, say at r = 1e4
+        myi=iofr(20)
+        DUfloor = DUfloorori - DUfloorori[:,myi:myi+1]
+    DUfloor0 = DUfloor[0]
+    DUfloor1 = DUfloor[1]
+    DUfloor4 = DUfloor[4]
+    mdtotvsr, edtotvsr, ldtotvsr = plotqtyvstime( qtymem, whichplot = -2, fti=fti, ftf=ftf )
     rhor = 1+(1-a**2)**0.5
     ihor = iofr(rhor)
-    qtymem=getqtyvstime(ihor,0.2)
-    mdtotvsr, edtotvsr, ldtotvsr = plotqtyvstime( qtymem, whichplot = -2, fti=fti, ftf=ftf )
-    #floor info
-    #reset zero to where floors are probably not activated, say at r = 1e4
-    myi=iofr(20)
-    DUfloor -= DUfloor[myi]
-    #xxx
-    #FIGURE:
+    #FIGURE: mass
     plt.figure(1)
-    plt.plot(r[:,0,0],mdtotvsr,label=r"$\dot M$")
-    plt.plot(r[:,0,0],mdtotvsr+DUfloor,label=r"$\dot M+dU^t$")
-    plt.plot(r[:,0,0],DUfloor,label=r"$dU^t$")
+    #plt.plot(r[:,0,0],mdtotvsr,label=r"$\dot M$")
+    plt.plot(r[:,0,0],mdtotvsr+DUfloor0,label=r"$\dot M$")
+    plt.plot(r[:,0,0],-ldtotvsr,label=r"$L$")
+    plt.plot(r[:,0,0],edtotvsr,label=r"$E$")
+    #plt.plot(r[:,0,0],DUfloor0,label=r"$dU^t$")
     #plt.plot(r[:,0,0],DUfloor*1e4,label=r"$dU^t\times10^4$")
     plt.legend()
-    plt.xlim(rhor,12)
-    plt.ylim(-3,15)
+    plt.xlim(rhor,20)
+    plt.ylim(0,20)
     plt.grid()
-    
+    plt.xlabel(r"$r [r_g]$",fontsize=16)
+    plt.ylabel("Flux",fontsize=16)
+    plt.savefig("fig4.pdf",bbox_inches='tight',pad_inches=0.02)
+    plt.savefig("fig4.eps",bbox_inches='tight',pad_inches=0.02)
+    plt.savefig("fig4.png",bbox_inches='tight',pad_inches=0.02)
+    #FIGURE: energy
+    #plt.figure(2)
+    #plt.plot(r[:,0,0],edtotvsr+DUfloor1,label=r"$\dot E+dU^1$")
+    #plt.plot(r[:,0,0],DUfloor1,label=r"$dU^1$")
+    #plt.legend()
+    #plt.xlim(rhor,12)
+    #plt.ylim(-3,20)
+    #plt.grid()
+    #
+    plt.figure(2)
+    plt.plot(r[:,0,0],ldtotvsr,label=r"$L$")
+    plt.plot(r[:,0,0],ldtotvsr+DUfloor4,label=r"$Lwoutfloor$")
+    plt.xlim(rhor,12)
+    #plt.ylim(-3,20)
+    plt.grid()
+
 
 def plotj(ts,fs,md,jem,jtot):
     #rc('font', family='serif')
