@@ -3223,6 +3223,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             etaj_avg = timeavg(etaj,ts,fti,ftf)
             etabh_avg = timeavg(etabh,ts,fti,ftf)
             etaw_avg = timeavg(etaw,ts,fti,ftf)
+            ptot_avg = timeavg(pjemtot[:,ihor],ts,fti,ftf)
             ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaj_avg,'--',color=(fc,fc+0.5*(1-fc),fc)) 
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
             ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etabh_avg,color=(1,fc,fc)) 
@@ -3233,6 +3234,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
                 etaj2_avg = timeavg(etaj2,ts,iti,itf)
                 etabh2_avg = timeavg(etabh2,ts,iti,itf)
                 etaw2_avg = timeavg(etaw2,ts,iti,itf)
+                ptot2_avg = timeavg(pjemtot[:,ihor],ts,iti,itf)
                 ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etaj2_avg,'--',color=(fc,fc+0.5*(1-fc),fc))
                 ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etabh2_avg,color=(1,fc,fc))
                 #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaw2_avg,'-.',color=(fc,fc+0.5*(1-fc),fc)) 
@@ -3256,9 +3258,9 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
 
 
-        print( "eta_BH = %g, eta_j = %g, eta_w = %g, eta_jw = %g" % ( etabh_avg, etaj_avg, etaw_avg, etaj_avg + etaw_avg) )
+        print( "eta_BH = %g, eta_j = %g, eta_w = %g, eta_jw = %g, mdot = %g, ptot_BH = %g" % ( etabh_avg, etaj_avg, etaw_avg, etaj_avg + etaw_avg, mdotfinavg, ptot_avg ) )
         if iti > fti:
-            print( "eta_BH2 = %g, eta_j2 = %g, eta_w2 = %g, eta_jw2 = %g" % ( etabh2_avg, etaj2_avg, etaw2_avg, etaj2_avg + etaw2_avg ) )
+            print( "eta_BH2 = %g, eta_j2 = %g, eta_w2 = %g, eta_jw2 = %g, mdot2 = %g, ptot2_BH = %g" % ( etabh2_avg, etaj2_avg, etaw2_avg, etaj2_avg + etaw2_avg, mdotiniavg, ptot2_avg ) )
 
         #xxx
     #######################
@@ -3281,12 +3283,16 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             phij[icond]=phij2[icond]
             phiw[icond]=phiw2[icond]
         if dotavg:
+            phibh_avg = timeavg(phibh**2,ts,fti,ftf)**0.5
+            fstot_avg = timeavg(fstot[:,ihor]**2,ts,fti,ftf)**0.5
             ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phij**2,ts,fti,ftf)**0.5,'--',color=(fc,fc+0.5*(1-fc),fc))
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phibh**2,ts,fti,ftf)**0.5,color=(1,fc,fc))
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+phibh_avg,color=(1,fc,fc))
             #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phiw**2,ts,fti,ftf)**0.5,'-.',color=(fc,fc,1))
             if(iti>fti):
+                phibh2_avg = timeavg(phibh2**2,ts,iti,itf)**0.5
+                fstot2_avg = timeavg(fstot[:,ihor]**2,ts,iti,itf)**0.5
                 ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+timeavg(phij2**2,ts,iti,itf)**0.5,'--',color=(fc,fc+0.5*(1-fc),fc))
-                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+timeavg(phibh2**2,ts,iti,itf)**0.5,color=(1,fc,fc))
+                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+phibh2_avg,color=(1,fc,fc))
                 #ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+timeavg(phiw2**2,ts,iti,itf)**0.5,'-.',color=(fc,fc,1))
         #To approximately get efficiency:
         #ax.plot(ts,2./3.*np.pi*omh**2*np.abs(fsj30[:,ihor]/4/np.pi)**2/mdotfinavg)
@@ -3309,6 +3315,9 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         ax.set_ylabel(r'$\phi$',fontsize=16,labelpad=16)
         plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
         plt.setp( ax.get_xticklabels(), visible=False )
+        print( "phi_BH = %g, fstot = %g" % ( phibh_avg, fstot_avg ) )
+        if iti > fti:
+            print( "phi2_BH = %g, fstot2 = %g" % ( phibh2_avg, fstot2_avg ) )
 
     if whichplot == -1:
         etajetavg = pjetfinavg/mdotfinavg
