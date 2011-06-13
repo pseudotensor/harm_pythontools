@@ -2410,7 +2410,7 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
             phiabsj_s_mu2[findex]=jetpowcalc(4,minmu=2,donorthsouth=-1)
             phiabsj_s_mu1[findex]=jetpowcalc(4,minmu=1,donorthsouth=-1)
             if ldtot is not None:
-                ldtot[findex]=intangle(gdet*Tud[3][0])
+                ldtot[findex]=intangle(gdet*Tud[1][3])
 
         #Bob's 1D quantities
         if dobob==1:
