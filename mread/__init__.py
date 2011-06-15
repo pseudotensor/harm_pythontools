@@ -3097,6 +3097,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     # full (disk + jet) accretion rate
     mdtotvsr = mdotfinavgvsr
     edtotvsr = timeavg(edtot,ts,fti,ftf)
+    edmavsr = timeavg(edma,ts,fti,ftf)
     if ldtot is not None:
         ldtotvsr = timeavg(ldtot,ts,fti,ftf)
     else:
@@ -3335,7 +3336,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         return( mdotfinavg, fstotfinavg, fstotsqfinavg, fsj30finavg, fsj30sqfinavg, pjemfinavgtot )
 
     if whichplot == -2:
-        return( mdtotvsr, edtotvsr, ldtotvsr )
+        return( mdtotvsr, edtotvsr, edmavsr, ldtotvsr )
        
     if whichplot == None:
         fig,plotlist=plt.subplots(nrows=4,ncols=1,sharex=True,figsize=(12,16),num=1)
@@ -3526,8 +3527,8 @@ def takeoutfloors():
     #Mdot, E, L
     DTd = 800.
     fti = 8000.
-    ftf = 15000
-    doreload =0
+    ftf = 14500.
+    doreload =1
     if doreload:
         grid3d("gdump.bin",use2d=True)
         etad0 = -1/(-gn3[0,0])**0.5
@@ -3535,13 +3536,14 @@ def takeoutfloors():
         rhor = 1+(1-a**2)**0.5
         ihor = iofr(rhor)
         Ufloor0100 = dUfloor[:,:,:,:].sum(-1).sum(-1).cumsum(-1)/DTd
-        Ufloor0100[1] = (dUfloor[0,:,:,:]*etad0).sum(-1).sum(-1).cumsum(-1)/DTd
+        #Ufloor0100[1] = (dUfloor[0,:,:,:]*etad0).sum(-1).sum(-1).cumsum(-1)/DTd
         #choplo(chophi(dUfloor[1,:,2:ny-1,:],0.05),-0.05).sum(-1).sum(-1).cumsum(-1)/DTd
-        #dUfloor[:,:,1:ny-1,:].sum(-1).sum(-1).cumsum(-1)/DTd
+        Ufloor0100[1:5] = dUfloor[1:5,:,1:ny-1,:].sum(-1).sum(-1).cumsum(-1)/DTd
         rfloor("failfloordudump0108.bin")
         Ufloor0108 = dUfloor[:,:,:,:].sum(-1).sum(-1).cumsum(-1)/DTd
-        Ufloor0108[1] = (dUfloor[0,:,:,:]*etad0).sum(-1).sum(-1).cumsum(-1)/DTd
-        #choplo(chophi(dUfloor[1,:,2:ny-1,:],0.05),-0.05).sum(-1).sum(-1).cumsum(-1)/DTd 
+        #Ufloor0108[1] = (dUfloor[0,:,:,:]*etad0).sum(-1).sum(-1).cumsum(-1)/DTd
+        #Ufloor0108[1] = choplo(chophi(dUfloor[1,:,2:ny-1,:],0.05),-0.05).sum(-1).sum(-1).cumsum(-1)/DTd 
+        Ufloor0108[1:5] = dUfloor[1:5,:,1:ny-1,:].sum(-1).sum(-1).cumsum(-1)/DTd 
         DUfloorori = Ufloor0108 - Ufloor0100
         qtymem=getqtyvstime(ihor,0.2)
         #floor info
@@ -3551,20 +3553,21 @@ def takeoutfloors():
     DUfloor0 = DUfloor[0]
     DUfloor1 = DUfloor[1]
     DUfloor4 = DUfloor[4]
-    mdtotvsr, edtotvsr, ldtotvsr = plotqtyvstime( qtymem, whichplot = -2, fti=fti, ftf=ftf )
+    mdtotvsr, edtotvsr, edmavsr, ldtotvsr = plotqtyvstime( qtymem, whichplot = -2, fti=fti, ftf=ftf )
     rhor = 1+(1-a**2)**0.5
+    rh=rhor
     ihor = iofr(rhor)
     #FIGURE: mass
     plt.figure(1)
     #plt.plot(r[:,0,0],mdtotvsr,label=r"$\dot M$")
-    plt.plot(r[:,0,0],mdtotvsr+DUfloor0,label=r"$\dot M$")
-    plt.plot(r[:,0,0],-ldtotvsr,label=r"$L$")
-    plt.plot(r[:,0,0],edtotvsr,label=r"$E$")
+    plt.plot(r[:,0,0],-(mdtotvsr+DUfloor0),label=r"$F_M$")
+    plt.plot(r[:,0,0],ldtotvsr/dxdxp[3][3][:,0,0]/10.,label=r"$F_L/10$")
+    plt.plot(r[:,0,0],edtotvsr,label=r"$F_E$")
     #plt.plot(r[:,0,0],DUfloor0,label=r"$dU^t$")
     #plt.plot(r[:,0,0],DUfloor*1e4,label=r"$dU^t\times10^4$")
     plt.legend()
     plt.xlim(rhor,20)
-    plt.ylim(0,20)
+    plt.ylim(-10,10)
     plt.grid()
     plt.xlabel(r"$r [r_g]$",fontsize=16)
     plt.ylabel("Flux",fontsize=16)
@@ -3580,12 +3583,38 @@ def takeoutfloors():
     #plt.ylim(-3,20)
     #plt.grid()
     #
+    avgmem = get2davg(usedefault=1)
+    assignavg2dvars(avgmem)
+    edtot2davg = (gdet[:,:,0:1]*avg_Tud[1][0][:,:,0:1]*_dx2*_dx3*nz).sum(-1).sum(-1)
+    rhouuudtot2davg = (gdet[:,:,0:1]*avg_rhouuud[1][0][:,:,0:1]*_dx2*_dx3*nz).sum(-1).sum(-1)
+    uguuudtot2davg = (gdet[:,:,0:1]*avg_uguuud[1][0][:,:,0:1]*_dx2*_dx3*nz).sum(-1).sum(-1)
+    avg_tudmass = (gdet[:,:,0:1]*(avg_rhouu[1])*(avg_ud[0])*_dx2*_dx3*nz).sum(-1).sum(-1)
+    avg_tudug = (gdet[:,:,0:1]*(avg_uguu[1])*(avg_ud[0])*_dx2*_dx3*nz).sum(-1).sum(-1)
+    avg_tudmassug = (gdet[:,:,0:1]*(avg_rhouu[1]+avg_uguu[1])*(avg_ud[0])*_dx2*_dx3*nz).sum(-1).sum(-1)
+    #
     plt.figure(2)
-    plt.plot(r[:,0,0],ldtotvsr,label=r"$L$")
-    plt.plot(r[:,0,0],ldtotvsr+DUfloor4,label=r"$Lwoutfloor$")
-    plt.xlim(rhor,12)
+    plt.plot(r[:,0,0],edtotvsr,label="tot")
+    plt.plot(r[:,0,0],-edtot2davg,label="tot2davg")
+    #plt.plot(r[:,0,0],-rhouuudtot2davg,label="rhouuud")
+    #plt.plot(r[:,0,0],-gam*uguuudtot2davg,label="gamuguuud")
+    myma=-(rhouuudtot2davg+gam*uguuudtot2davg)
+    plt.plot(r[:,0,0],-avg_tudmass,label="mymass")
+    plt.plot(r[:,0,0],-avg_tudmassug,label="mymassug")
+    plt.plot(r[:,0,0],-avg_tudug,label="myug")
+    plt.plot(r[:,0,0],edmavsr,label="ma")
+    plt.plot(r[:,0,0],edtotvsr-edmavsr,label="tot-ma")
+    #plt.plot(r[:,0,0],DUfloor[1])
+    plt.xlim(rh,20); plt.ylim(-20,20)
+    plt.legend()
+    #plt.plot(r[:,0,0],ldtotvsr+DUfloor4,label=r"$Lwoutfloor$")
+    #plt.xlim(rhor,12)
     #plt.ylim(-3,20)
+    #xx
     plt.grid()
+    #
+    plt.figure(3)
+    plt.plot(r[:,0,0],-edtot2davg,label="tot2davg")
+
 
 
 def plotj(ts,fs,md,jem,jtot):
@@ -4545,7 +4574,7 @@ if __name__ == "__main__":
     if False:
         #FIGURE 1 LOTSOPANELS
         #Figure 1
-        domakeframes=True
+        domakeframes=False
         doslines=True
         plotlenf=10
         plotleni=25
