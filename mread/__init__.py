@@ -4495,19 +4495,20 @@ if __name__ == "__main__":
                 ax34 = plt.subplot(gs3[-1,:])
                 plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findex)
                 ymax=ax34.get_ylim()[1]
-                if 1 < ymax/100. and ymax/100. < 2: 
+                if 100 < ymax and ymax < 200: 
                     #ymax = 2
                     tck=(100,)
                     ax34.set_yticks(tck)
-                    #ax34.set_yticklabels(('','1','2'))
-                elif ymax/100. < 1: 
-                    ymax = 100.
-                    tck=(50.,100.)
+                    #ax34.set_yticklabels(('','100','200'))
+                elif ymax < 100: 
+                    ymax = 100
+                    tck=(50,100)
                     ax34.set_yticks(tck)
                     ax34.set_yticklabels(('','100'))
                 else:
-                    ymax=(np.floor(ymax/100.)+1)*100.
-                    tck=np.arange(100.,ymax)
+                    ymax=np.floor(ymax/100.)+1
+                    ymax*=100
+                    tck=np.arange(1,ymax/100.)*100
                     ax34.set_yticks(tck)
                 #reset lower limit to 0
                 ax34.set_ylim((0,ax34.get_ylim()[1]))
