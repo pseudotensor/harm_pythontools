@@ -3529,27 +3529,31 @@ def takeoutfloors():
     fti = 8000.
     ftf = 14500.
     doreload =1
+    dotakeoutfloors=0
     if doreload:
         grid3d("gdump.bin",use2d=True)
         etad0 = -1/(-gn3[0,0])**0.5
-        rfloor("failfloordudump0100.bin")
         rhor = 1+(1-a**2)**0.5
         ihor = iofr(rhor)
-        Ufloor0100 = dUfloor[:,:,:,:].sum(-1).sum(-1).cumsum(-1)/DTd
-        #Ufloor0100[1] = (dUfloor[0,:,:,:]*etad0).sum(-1).sum(-1).cumsum(-1)/DTd
-        #choplo(chophi(dUfloor[1,:,2:ny-1,:],0.05),-0.05).sum(-1).sum(-1).cumsum(-1)/DTd
-        Ufloor0100[1:5] = dUfloor[1:5,:,1:ny-1,:].sum(-1).sum(-1).cumsum(-1)/DTd
-        rfloor("failfloordudump0108.bin")
-        Ufloor0108 = dUfloor[:,:,:,:].sum(-1).sum(-1).cumsum(-1)/DTd
-        #Ufloor0108[1] = (dUfloor[0,:,:,:]*etad0).sum(-1).sum(-1).cumsum(-1)/DTd
-        #Ufloor0108[1] = choplo(chophi(dUfloor[1,:,2:ny-1,:],0.05),-0.05).sum(-1).sum(-1).cumsum(-1)/DTd 
-        Ufloor0108[1:5] = dUfloor[1:5,:,1:ny-1,:].sum(-1).sum(-1).cumsum(-1)/DTd 
-        DUfloorori = Ufloor0108 - Ufloor0100
         qtymem=getqtyvstime(ihor,0.2)
-        #floor info
-        #reset zero to where floors are probably not activated, say at r = 1e4
-        myi=iofr(20)
-        DUfloor = DUfloorori - DUfloorori[:,myi:myi+1]
+        if dotakeoutfloors:
+            rfloor("failfloordudump0100.bin")
+            Ufloor0100 = dUfloor[:,:,:,:].sum(-1).sum(-1).cumsum(-1)/DTd
+            #Ufloor0100[1] = (dUfloor[0,:,:,:]*etad0).sum(-1).sum(-1).cumsum(-1)/DTd
+            #choplo(chophi(dUfloor[1,:,2:ny-1,:],0.05),-0.05).sum(-1).sum(-1).cumsum(-1)/DTd
+            Ufloor0100[1:5] = dUfloor[1:5,:,1:ny-1,:].sum(-1).sum(-1).cumsum(-1)/DTd
+            rfloor("failfloordudump0108.bin")
+            Ufloor0108 = dUfloor[:,:,:,:].sum(-1).sum(-1).cumsum(-1)/DTd
+            #Ufloor0108[1] = (dUfloor[0,:,:,:]*etad0).sum(-1).sum(-1).cumsum(-1)/DTd
+            #Ufloor0108[1] = choplo(chophi(dUfloor[1,:,2:ny-1,:],0.05),-0.05).sum(-1).sum(-1).cumsum(-1)/DTd 
+            Ufloor0108[1:5] = dUfloor[1:5,:,1:ny-1,:].sum(-1).sum(-1).cumsum(-1)/DTd 
+            DUfloorori = Ufloor0108 - Ufloor0100
+            #floor info
+            #reset zero to where floors are probably not activated, say at r = 1e4
+            myi=iofr(20)
+            DUfloor = DUfloorori - DUfloorori[:,myi:myi+1]
+        else:
+            DUfloor=np.zeros((8,nx),dtype=np.float64)
     DUfloor0 = DUfloor[0]
     DUfloor1 = DUfloor[1]
     DUfloor4 = DUfloor[4]
@@ -3559,15 +3563,18 @@ def takeoutfloors():
     ihor = iofr(rhor)
     #FIGURE: mass
     plt.figure(1)
-    #plt.plot(r[:,0,0],mdtotvsr,label=r"$\dot M$")
-    plt.plot(r[:,0,0],-(mdtotvsr+DUfloor0),label=r"$F_M$")
-    plt.plot(r[:,0,0],ldtotvsr/dxdxp[3][3][:,0,0]/10.,label=r"$F_L/10$")
-    plt.plot(r[:,0,0],edtotvsr,label=r"$F_E$")
+    plt.clf()
+    plt.plot(r[:,0,0],-mdtotvsr,'b--',label=r"$F_M$ (uncorrected for floors)")
+    if dotakeoutfloors:
+        plt.plot(r[:,0,0],-(mdtotvsr+DUfloor0),'b',label=r"$F_M$ (corrected for floors)")
+    if ldtotvsr is not None:
+        plt.plot(r[:,0,0],ldtotvsr/dxdxp[3][3][:,0,0]/10.,'g',label=r"$F_L/10$")
+    plt.plot(r[:,0,0],edtotvsr,'r',label=r"$F_E$")
     #plt.plot(r[:,0,0],DUfloor0,label=r"$dU^t$")
     #plt.plot(r[:,0,0],DUfloor*1e4,label=r"$dU^t\times10^4$")
-    plt.legend()
+    plt.legend(loc='upper right')
     plt.xlim(rhor,20)
-    plt.ylim(-10,10)
+    plt.ylim(-15,15)
     plt.grid()
     plt.xlabel(r"$r [r_g]$",fontsize=16)
     plt.ylabel("Flux",fontsize=16)
@@ -3606,7 +3613,8 @@ def takeoutfloors():
     #plt.plot(r[:,0,0],DUfloor[1])
     plt.xlim(rh,20); plt.ylim(-20,20)
     plt.legend()
-    #plt.plot(r[:,0,0],ldtotvsr+DUfloor4,label=r"$Lwoutfloor$")
+    if ldtotvsr is not None:
+        plt.plot(r[:,0,0],ldtotvsr+DUfloor4,label=r"$Lwoutfloor$")
     #plt.xlim(rhor,12)
     #plt.ylim(-3,20)
     #xx
