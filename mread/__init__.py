@@ -11,6 +11,7 @@ from streamlines import fstreamplot
 
 #from pylab import figure, axes, plot, xlabel, ylabel, title, grid, savefig, show
 
+import gc
 import numpy as np
 import array
 #import scipy as sc
@@ -452,7 +453,7 @@ def findroot1d( f, x, isleft=True, nbnd = 1, fallback = 0, fallbackval = 0 ):
     #    raise( ValueError("ans = %g out of bounds, (%g,%g)" % (ans,x[i0-dir],x[i0])) )
     return( ans )
 
-def plot2davg(dosq=True):
+def plot2davg(dosq=True,whichplot=-1):
     global eout1, eout2, eout, avg_aphi,avg_aphi2,powjetwind,powjet,jminjet,jmaxjet,jminwind,jmaxwind,mymu,maxaphibh
     #use ratio of averages since more stable definition:
     #
@@ -527,6 +528,7 @@ def plot2davg(dosq=True):
     aphip1[:,0:ny] = aphi
     daphi = np.zeros_like(ti)
     daphi[:,0:ny]=aphip1[:,1:ny+1]-aphip1[:,0:ny]
+    mdot = scaletofullwedge(nz*(gdet*avg_rhouu[1]*_dx2*_dx3)).sum(-1).sum(-1)
     #
     mymu = np.copy(avg_mu)
     mymu[(tj[:,:,0] > ny-10)+(tj[:,:,0] < 10)]=50
@@ -538,13 +540,13 @@ def plot2davg(dosq=True):
         hjet2aphia = findroot2d( (aphi2[:,:,0]-maxaphibh)*daphi[:,:,0], h, isleft=False, fallback = 1, fallbackval = np.pi/2 )
     else:
         #allow different signs in jet
-        hjet1aphia = findroot2d( (aphi1[:,:,0]-maxaphibh), h, isleft=True, fallback = 1, fallbackval = np.pi/2 )
-        hjet2aphia = findroot2d( (aphi2[:,:,0]-maxaphibh), h, isleft=False, fallback = 1, fallbackval = np.pi/2 )
+        hjet1aphia = findroot2d( (aphi1[:,:,0]-1*maxaphibh), h, isleft=True, fallback = 1, fallbackval = np.pi/2 )
+        hjet2aphia = findroot2d( (aphi2[:,:,0]-1*maxaphibh), h, isleft=False, fallback = 1, fallbackval = np.pi/2 )
     #hjet1aphia*=3
     #hjet2aphia=np.pi-(np.pi-hjet2aphia)*3
     hjet1aphi = np.copy(hjet1aphia)
     hjet2aphi = np.copy(hjet2aphia)
-    if True:
+    if False:
         rx=1
         hjet1aphi[r[:,0,0]>rx] = findroot2d( -mymu[:,:,0]+muminjet, h, isleft=True, fallback = 1, fallbackval = np.pi/2  )[r[:,0,0]>rx]
         hjet2aphi[r[:,0,0]>rx] = findroot2d( -mymu[:,:,0]+muminjet, h, isleft=False, fallback = 1, fallbackval = np.pi/2  )[r[:,0,0]>rx]
@@ -552,15 +554,44 @@ def plot2davg(dosq=True):
         hjet2aphi = amax(hjet2aphi,hjet2aphia)
         hwind1aphi = findroot2d( -mymu[:,:,0]+muminwind, h, isleft=True, fallback = 1, fallbackval = np.pi/2  )
         hwind2aphi = findroot2d( -mymu[:,:,0]+muminwind, h, isleft=False, fallback = 1, fallbackval = np.pi/2  )
-    powjet1 = findroot2d( h[:,:,0] - hjet1aphi[:,None], eout1, isleft=True, fallback = 1, fallbackval = np.pi/2 )
-    powjet2 = findroot2d( h[:,:,0] - hjet2aphi[:,None], eout2, isleft=False, fallback = 1, fallbackval = np.pi/2 )
-    powjet = powjet1+powjet2
+    else:
+        hwind1aphi = findroot2d( -avg_uu[1,:,0:ny/2,0], h[:,0:ny/2], isleft=False, fallback = 1, fallbackval = np.pi/2  )
+        hwind2aphi = findroot2d( -avg_uu[1,:,ny/2:ny,0], h[:,ny/2:ny], isleft=True, fallback = 1, fallbackval = np.pi/2  )
+    ################
+    #WIND
+    ################
+    #
     powwind1 = findroot2d( h[:,:,0] - hwind1aphi[:,None], eout1, isleft=True, fallback = 1, fallbackval = np.pi/2 )
     powwind2 = findroot2d( h[:,:,0] - hwind2aphi[:,None], eout2, isleft=False, fallback = 1, fallbackval = np.pi/2 )
     powwind = powwind1+powwind2
+    powwindEM1 = findroot2d( h[:,:,0] - hwind1aphi[:,None], eoutEM1, isleft=True, fallback = 1, fallbackval = np.pi/2 )
+    powwindEM2 = findroot2d( h[:,:,0] - hwind2aphi[:,None], eoutEM2, isleft=False, fallback = 1, fallbackval = np.pi/2 )
+    powwindEM = powwindEM1+powwindEM2
+    powwindMA1 = findroot2d( h[:,:,0] - hwind1aphi[:,None], eoutMA1, isleft=True, fallback = 1, fallbackval = np.pi/2 )
+    powwindMA2 = findroot2d( h[:,:,0] - hwind2aphi[:,None], eoutMA2, isleft=False, fallback = 1, fallbackval = np.pi/2 )
+    powwindMA = powwindMA1+powwindMA2
     powwindEMKE1 = findroot2d( h[:,:,0] - hwind1aphi[:,None], eoutEM1+eoutKE1, isleft=True, fallback = 1, fallbackval = np.pi/2 )
     powwindEMKE2 = findroot2d( h[:,:,0] - hwind2aphi[:,None], eoutEM2+eoutKE2, isleft=False, fallback = 1, fallbackval = np.pi/2 )
     powwindEMKE = powwindEMKE1+powwindEMKE2
+    powtot1 = eout1[:,ny/2-1]
+    powtot2 = eout2[:,ny/2]
+    powtot = powtot1 + powtot2
+    powtotEM1 = eoutEM1[:,ny/2-1]
+    powtotEM2 = eoutEM2[:,ny/2]
+    powtotEM = powtotEM1 + powtotEM2
+    powtotMA1 = eoutMA1[:,ny/2-1]
+    powtotMA2 = eoutMA2[:,ny/2]
+    powtotMA = powtotMA1 + powtotMA2
+    #
+    ################
+    # JET
+    ################
+    #
+    #Tot
+    #
+    powjet1 = findroot2d( h[:,:,0] - hjet1aphi[:,None], eout1, isleft=True, fallback = 1, fallbackval = np.pi/2 )
+    powjet2 = findroot2d( h[:,:,0] - hjet2aphi[:,None], eout2, isleft=False, fallback = 1, fallbackval = np.pi/2 )
+    powjet = powjet1+powjet2
     #
     #EM
     #
@@ -582,6 +613,8 @@ def plot2davg(dosq=True):
     powjetMA1 = findroot2d( h[:,:,0] - hjet1aphi[:,None], eoutMA1, isleft=True, fallback = 1, fallbackval = np.pi/2 )
     powjetMA2 = findroot2d( h[:,:,0] - hjet2aphi[:,None], eoutMA2, isleft=False, fallback = 1, fallbackval = np.pi/2 )
     powjetMA = powjetMA1+powjetMA2
+    #
+    #################
     #
     # powjetEM1aphi = findroot2d( aphi1[:,:,0]-maxaphibh, eoutEM1, isleft=True )
     # powjetEM2aphi = findroot2d( aphi2[:,:,0]-maxaphibh, eoutEM2, isleft=False )
@@ -622,159 +655,207 @@ def plot2davg(dosq=True):
     printjetwindpower(filehandle = foutpower, r = 200., stage = 1, powjet = powjet, powwind = powwind, muminjet = muminjet, muminwind = muminwind, md=md, powjetEMKE=powjetEMKE, powjetwindEMKE=powjetwindEMKE)
     printjetwindpower(filehandle = foutpower, r = 400., stage = 2, powjet = powjet, powwind = powwind, muminjet = muminjet, muminwind = muminwind, md=md, powjetEMKE=powjetEMKE, powjetwindEMKE=powjetwindEMKE)
     foutpower.close()
-    #xxx
-    ##################
-    #
-    # FIGURE 1
-    #
-    ##################
-    plt.figure(1)
-    plt.clf()
-    #plco( np.log10(avg_rho), cb=True )
-    #plco(choplo(chophi(avg_mu,40),2),cb=True,nc=39)
-    plco(avg_mu,levels=np.concatenate(((1.01,),np.arange(2,120,1.))),cb=True)
-    #plc(avg_aphi,nc=30,cmap=cm.bone)
-    #plc(avg_gamma,levels=np.arange(1.,3.4,0.1),cb=True)
-    #
-    #plt.clf()
-    r1 = 250
-    r2 = 1000
-    ############
-    #
-    # FIG 2
-    #
-    ############
-    plt.figure(2)
-    plt.clf()
-    gs3 = GridSpec(3, 3)
-    #gs3.update(left=0.05, right=0.95, top=0.30, bottom=0.03, wspace=0.01, hspace=0.04)
-    #mdot
-    ax31 = plt.subplot(gs3[-3,:])
-    #ymax=ax31.get_ylim()[1]
-    #ymax=2*(np.floor(np.floor(ymax+1.5)/2))
-    #ax31.set_yticks((ymax/2,ymax))
-    i=iofr(r1)
-    plt.plot( aphi[i,:,0]/maxaphibh, eout[i,:],'g-' )
-    i=iofr(r2)
-    plt.plot( aphi[i,:,0]/maxaphibh, eout[i,:],'b-' )
-    plt.xlim( 0, 2 )
-    plt.ylim( 0, 20 )
-    plt.ylabel(r"$P_{\rm j,enc}(\Psi)$")
-    ax31.grid(True)
-    ax32 = plt.subplot(gs3[-2,:])
-    i=iofr(r1)
-    print i
-    plt.plot( aphi[i,:,0]/maxaphibh, avg_mu[i,:],'g-' )
-    plt.plot( aphi[i,:,0]/maxaphibh, avg_gamma[i,:]*(avg_bsqorho[i,:]+1),'g--' )
-    i=iofr(r2)
-    plt.plot( aphi[i,:,0]/maxaphibh, avg_mu[i,:], 'b-' )
-    #somehow don't show up on plot; maybe make use of avg_bsquuud, etc.
-    plt.plot( aphi[i,:,0]/maxaphibh, avg_ud[0,i,:]*((gam*avg_ug/avg_rho+avg_bsqorho)[i,:]+1),'b--' )
-    plt.plot( aphi[i,:,0]/maxaphibh, avg_ud[0,i,:]*(-avg_sigma[i,:]+1),'b-.' )
-    plt.xlim( 0, 2 )
-    plt.ylim( 0, 10 )
-    plt.ylabel(r"$\mu(\Psi)$")
-    ax32.grid(True)
-    ax33 = plt.subplot(gs3[-1,:])
-    myunb = np.copy(avg_unb)
-    myunb[-myunb<=1.+unbcutoff]=myunb[-myunb<=1.0+unbcutoff]*0
-    i=iofr(r1)
-    #plt.plot( aphi[i,:,0]/maxaphibh, avg_B[0,i,:]/(avg_rhouu[1,i]),'g-' )
-    plt.plot( aphi[i,:,0]/maxaphibh, -myunb[i,:],'g-' )
-    plt.plot( aphi[i,:,0]/maxaphibh, (avg_uu[1]*dxdxp[1,1])[i,:],'g--' )
-    i=iofr(r2)
-    #plt.plot( aphi[i,:,0]/maxaphibh, avg_B[0,i,:]/(avg_rhouu[1,i]),'b-' )
-    plt.plot( aphi[i,:,0]/maxaphibh, -myunb[i,:],'b-' )
-    plt.plot( aphi[i,:,0]/maxaphibh, (avg_uu[1]*dxdxp[1,1])[i,:],'b--' )
-    plt.xlim( 0, 2 )
-    plt.ylim( -0.5,2)
-    plt.ylabel(r"$(1+u/\rho) u_t$")
-    ax33.grid(True)
-    #print maxaphibh
-    #FIG 3
-    plt.figure(3)
-    plt.clf()
-    i=iofr(r1)
-    plt.plot( aphi[i,:]/maxaphibh, 'g' )
-    plt.plot( aphi[i,:]/maxaphibh, 'gx' )
-    i=iofr(r2)
-    plt.plot( aphi[i,:]/maxaphibh, 'b' )
-    plt.plot( aphi[i,:]/maxaphibh, 'bx' )
-    plt.grid()
-    ##############
-    #
-    #  FIGURE 5
-    #
-    ##############
-    plt.figure(5)
-    plt.clf()
-    plt.plot(r[:,0,0],powjet,'m:',label=r'$P_{jet,EM+MA}$')
-    #plt.plot(r[:,0,0],mdottot,'r')
-    #plt.plot(r[:,0,0],powjet,'bx')
-    plt.ylim(0,20)
-    plt.xlim(rhor,30)
-    #plt.plot(findroot2d(aphix[:,:,0]-maxaphibh,eout)+findroot2d(aphix[:,:,0]-maxaphibh,eout,isleft=False),'y--')
-    #plt.plot(powxjet,'b--')
-    #plt.plot(r[:,0,0],powxjetEM,'b--')
-    #plt.plot(r[:,0,0],powxjetwind,'g')
-    plt.plot(r[:,0,0],eouttot,'r',label=r'$P_{tot}$')
-    plt.plot(r[:,0,0],powjetEM,'m-.',label=r'$P_{jet,EM}$')
-    plt.plot(r[:,0,0],powjetKE,'m--',label=r'$P_{jet,KE}$')
-    plt.plot(r[:,0,0],powjetEMKE,'m',label=r'$P_{jet,EMKE}$')
-    #xxx
-    #plt.plot(r[iofr(16):,0,0],powjetwind[iofr(16):],'g',label=r'$P_{unbound}(-u_t(1+\Gamma u_g/\rho)>1)$')
-    #plt.plot(r[iofr(100):,0,0],powwind[iofr(100):],'c',label=r'$P_{jetwind}(\mu>1.005)$')
-    plt.plot(r[iofr(10):,0,0],powjetwindEMKE[iofr(10):],'c--',label=r'$P_{jetwindEMKE}$')
-    plt.legend(loc='upper right',ncol=3)
-    plt.ylabel(r'Energy fluxes in jet region, $\mu>2$')
-    plt.xlabel(r'$r$')
-    #plt.plot(r[:,0,0],powjetEM+powjetMA,'k')
-    plt.grid()
-    plt.figure(8)
-    plt.clf()
-    plt.plot(r[:,0,0],hjet1aphi,'k')
-    plt.plot(r[:,0,0],h[:,ny/4,0],'g')
-    plt.plot(r[:,0,0],np.pi-hjet2aphi,'k:')
-    plt.xlim(0,1500)
-    #xxx
-    ##############
-    #
-    #  FIGURE 6
-    #
-    ##############
-    #
-    plt.figure(6)
-    plco(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),colors='k',nc=30)
-    #plc(daphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,),colors='r')
-    d=500
-    plt.xlim(0,d/2.); plt.ylim(-d,d)
-    plc(aphi-maxaphibh,levels=(0,),colors='b',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-    plc(h-hjet1aphi[:,None,None],levels=(0,),colors='m',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-    plc(h-hjet2aphi[:,None,None],levels=(0,),colors='m',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-    plc(h-hwind1aphi[:,None,None],levels=(0,),colors='c',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-    plc(h-hwind2aphi[:,None,None],levels=(0,),colors='c',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-    plc(h-hjetwind1[:,None,None],levels=(0,),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-    plc(h-hjetwind2[:,None,None],levels=(0,),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-    #plc(chophi(choplo(-avg_unb[:,:,0]-(1.0),0),0.001),xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-    #plc(avg_gamma,nc=50,xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True)
-    #
-    #plc(chophi((r/rhor)**0.75*(1-np.abs(np.cos(h))),1),xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-    #plc(avg_omegaf2*2*np.pi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True)
-    #plc(avg_uu[1]*dxdxp[1][1],xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,))
-    #plc(avg_uu[1]*dxdxp[1][1],xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,),colors='g')
-    #plc(-avg_unb[:,:,0]-(1.0),levels=(0,0.01,0.1),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-    #plc(avg_mu[:,:,0]-(1.0),levels=(0,0.01,0.1),colors='r',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-    if False:
-        plc(chophi(choplo(-avg_unb[:,:,0]-(1.0),0),0.001),xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-        rfd("fieldline0000.bin")
-        #plc(np.log10(avg_rho),xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-        plc(avg_uu[1],levels=(0,),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-        #plc(daphi,levels=(0,),colors='r',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-        #plc(h-hjet1aphia[:,None,None],levels=(0,),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-        plc(h-hjetwind1[:,None,None],levels=(0,),colors='c',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-        plc(h-hjetwind2[:,None,None],levels=(0,),colors='y',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-        plc(chophi(choplo(-avg_sigma,0.1),10),xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-        plc(chophi((r/rhor)**0.75*(1-np.abs(np.cos(h))),1),xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    #HHH
+    if whichplot==1:
+        #Plot jet, wind, disk powers vs. r
+        plt.figure(1)
+        plt.clf()
+        rhor=1+(1-a**2)**0.5
+        r1d=r[:,0,0]
+        plt.plot(r1d, powjet, 'b', lw=3,label=r"$P_{\rm j,tot}$")
+        plt.plot(r1d, powjetEM, 'b', lw=1,label=r"$P_{\rm j,EM}$")
+        plt.plot(r1d, powjetMA, 'b--',lw=1,label=r"$P_{\rm j,MA}$")
+        cond=(r1d>5)
+        plt.plot(r1d[cond], (powwind-powjet)[cond], 'g', lw=3, label=r"$P_{\rm w,tot}$")
+        plt.plot(r1d[cond], (powwindEM-powjetEM)[cond], 'g', lw=1, label=r"$P_{\rm w,EM}$")
+        plt.plot(r1d[cond], (powwindMA-powjetMA)[cond], 'g--',lw=1, label=r"$P_{\rm w,MA}$")
+        plt.plot(r1d[cond], (powtot-powwind)[cond], 'c', lw=3, label=r"$P_{\rm d,tot}$")
+        plt.plot(r1d[cond], (powtotEM-powwindEM)[cond], 'c', lw=1, label=r"$P_{\rm d,EM}$")
+        plt.plot(r1d[cond], (powtotMA-powwindMA)[cond], 'c--',lw=1, label=r"$P_{\rm d,MA}$")
+        plt.plot(r1d, (powtot-powjet), 'm', lw=3, label=r"$P_{\rm d+w,tot}$")
+        plt.plot(r1d, (powtotEM-powjetEM), 'm', lw=1, label=r"$P_{\rm d+w,EM}$")
+        plt.plot(r1d, (powtotMA-powjetMA), 'm--',lw=1, label=r"$P_{\rm d+w,MA}$")
+        plt.plot(r1d, powtot, 'r', lw=3, label=r"$P_{\rm tot}$")
+        plt.plot(r1d, powtotEM, 'r', lw=1, label=r"$P_{\rm tot,EM}$")
+        plt.plot(r1d, powtotMA, 'r--',lw=1, label=r"$P_{\rm tot,MA}$")
+        plt.plot(r1d, mdot, 'y',lw=3, label=r"$\dot M$")
+        plt.legend(ncol=6)
+        #plt.plot(r1d, powwind-powjet, label=r"$P_{\rm jet,tot}$")
+        plt.xlim(rhor,35)
+        plt.ylim(-20,30)
+        plt.xlabel(r"$r\ [r_g]$",fontsize=16)
+        plt.ylabel("Fluxes",fontsize=16)
+        plt.grid()
+        #
+        plt.figure(2)
+        plt.clf()
+        #plco(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),colors='k',nc=30)
+        #plc(daphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,),colors='r')
+        d=500
+        plt.xlim(0,d/2.); plt.ylim(-d,d)
+        plc(aphi-maxaphibh,levels=(0,),colors='b',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        plc(h-hjet1aphi[:,None,None],levels=(0,),colors='m',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        plc(h-hjet2aphi[:,None,None],levels=(0,),colors='m',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        plc(h-hwind1aphi[:,None,None],levels=(0,),colors='c',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        plc(h-hwind2aphi[:,None,None],levels=(0,),colors='c',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        plc(avg_uu[1,:,:,0],levels=(0,),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        #plc(h-hjetwind1[:,None,None],levels=(0,),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        #plc(h-hjetwind2[:,None,None],levels=(0,),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+     #
+    if whichplot==-1:
+        #PLOT EVERYTHING
+        ##################
+        #
+        # FIGURE 1
+        #
+        ##################
+        plt.figure(1)
+        plt.clf()
+        #plco( np.log10(avg_rho), cb=True )
+        #plco(choplo(chophi(avg_mu,40),2),cb=True,nc=39)
+        plco(avg_mu,levels=np.concatenate(((1.01,),np.arange(2,120,1.))),cb=True)
+        #plc(avg_aphi,nc=30,cmap=cm.bone)
+        #plc(avg_gamma,levels=np.arange(1.,3.4,0.1),cb=True)
+        #
+        #plt.clf()
+        r1 = 250
+        r2 = 1000
+        ############
+        #
+        # FIG 2
+        #
+        ############
+        plt.figure(2)
+        plt.clf()
+        gs3 = GridSpec(3, 3)
+        #gs3.update(left=0.05, right=0.95, top=0.30, bottom=0.03, wspace=0.01, hspace=0.04)
+        #mdot
+        ax31 = plt.subplot(gs3[-3,:])
+        #ymax=ax31.get_ylim()[1]
+        #ymax=2*(np.floor(np.floor(ymax+1.5)/2))
+        #ax31.set_yticks((ymax/2,ymax))
+        i=iofr(r1)
+        plt.plot( aphi[i,:,0]/maxaphibh, eout[i,:],'g-' )
+        i=iofr(r2)
+        plt.plot( aphi[i,:,0]/maxaphibh, eout[i,:],'b-' )
+        plt.xlim( 0, 2 )
+        plt.ylim( 0, 20 )
+        plt.ylabel(r"$P_{\rm j,enc}(\Psi)$")
+        ax31.grid(True)
+        ax32 = plt.subplot(gs3[-2,:])
+        i=iofr(r1)
+        print i
+        plt.plot( aphi[i,:,0]/maxaphibh, avg_mu[i,:],'g-' )
+        plt.plot( aphi[i,:,0]/maxaphibh, avg_gamma[i,:]*(avg_bsqorho[i,:]+1),'g--' )
+        i=iofr(r2)
+        plt.plot( aphi[i,:,0]/maxaphibh, avg_mu[i,:], 'b-' )
+        #somehow don't show up on plot; maybe make use of avg_bsquuud, etc.
+        plt.plot( aphi[i,:,0]/maxaphibh, avg_ud[0,i,:]*((gam*avg_ug/avg_rho+avg_bsqorho)[i,:]+1),'b--' )
+        plt.plot( aphi[i,:,0]/maxaphibh, avg_ud[0,i,:]*(-avg_sigma[i,:]+1),'b-.' )
+        plt.xlim( 0, 2 )
+        plt.ylim( 0, 10 )
+        plt.ylabel(r"$\mu(\Psi)$")
+        ax32.grid(True)
+        ax33 = plt.subplot(gs3[-1,:])
+        myunb = np.copy(avg_unb)
+        myunb[-myunb<=1.+unbcutoff]=myunb[-myunb<=1.0+unbcutoff]*0
+        i=iofr(r1)
+        #plt.plot( aphi[i,:,0]/maxaphibh, avg_B[0,i,:]/(avg_rhouu[1,i]),'g-' )
+        plt.plot( aphi[i,:,0]/maxaphibh, -myunb[i,:],'g-' )
+        plt.plot( aphi[i,:,0]/maxaphibh, (avg_uu[1]*dxdxp[1,1])[i,:],'g--' )
+        i=iofr(r2)
+        #plt.plot( aphi[i,:,0]/maxaphibh, avg_B[0,i,:]/(avg_rhouu[1,i]),'b-' )
+        plt.plot( aphi[i,:,0]/maxaphibh, -myunb[i,:],'b-' )
+        plt.plot( aphi[i,:,0]/maxaphibh, (avg_uu[1]*dxdxp[1,1])[i,:],'b--' )
+        plt.xlim( 0, 2 )
+        plt.ylim( -0.5,2)
+        plt.ylabel(r"$(1+u/\rho) u_t$")
+        ax33.grid(True)
+        #print maxaphibh
+        #FIG 3
+        plt.figure(3)
+        plt.clf()
+        i=iofr(r1)
+        plt.plot( aphi[i,:]/maxaphibh, 'g' )
+        plt.plot( aphi[i,:]/maxaphibh, 'gx' )
+        i=iofr(r2)
+        plt.plot( aphi[i,:]/maxaphibh, 'b' )
+        plt.plot( aphi[i,:]/maxaphibh, 'bx' )
+        plt.grid()
+        ##############
+        #
+        #  FIGURE 5
+        #
+        ##############
+        plt.figure(5)
+        plt.clf()
+        plt.plot(r[:,0,0],powjet,'m:',label=r'$P_{jet,EM+MA}$')
+        #plt.plot(r[:,0,0],mdottot,'r')
+        #plt.plot(r[:,0,0],powjet,'bx')
+        plt.ylim(0,20)
+        plt.xlim(rhor,30)
+        #plt.plot(findroot2d(aphix[:,:,0]-maxaphibh,eout)+findroot2d(aphix[:,:,0]-maxaphibh,eout,isleft=False),'y--')
+        #plt.plot(powxjet,'b--')
+        #plt.plot(r[:,0,0],powxjetEM,'b--')
+        #plt.plot(r[:,0,0],powxjetwind,'g')
+        plt.plot(r[:,0,0],eouttot,'r',label=r'$P_{tot}$')
+        plt.plot(r[:,0,0],powjetEM,'m-.',label=r'$P_{jet,EM}$')
+        plt.plot(r[:,0,0],powjetKE,'m--',label=r'$P_{jet,KE}$')
+        plt.plot(r[:,0,0],powjetEMKE,'m',label=r'$P_{jet,EMKE}$')
+        #xxx
+        #plt.plot(r[iofr(16):,0,0],powjetwind[iofr(16):],'g',label=r'$P_{unbound}(-u_t(1+\Gamma u_g/\rho)>1)$')
+        #plt.plot(r[iofr(100):,0,0],powwind[iofr(100):],'c',label=r'$P_{jetwind}(\mu>1.005)$')
+        plt.plot(r[iofr(10):,0,0],powjetwindEMKE[iofr(10):],'c--',label=r'$P_{jetwindEMKE}$')
+        plt.legend(loc='upper right',ncol=3)
+        plt.ylabel(r'Energy fluxes in jet region, $\mu>2$')
+        plt.xlabel(r'$r$')
+        #plt.plot(r[:,0,0],powjetEM+powjetMA,'k')
+        plt.grid()
+        plt.figure(8)
+        plt.clf()
+        plt.plot(r[:,0,0],hjet1aphi,'k')
+        plt.plot(r[:,0,0],h[:,ny/4,0],'g')
+        plt.plot(r[:,0,0],np.pi-hjet2aphi,'k:')
+        plt.xlim(0,1500)
+        #xxx
+        ##############
+        #
+        #  FIGURE 6
+        #
+        ##############
+        #
+        plt.figure(6)
+        plco(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),colors='k',nc=30)
+        #plc(daphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,),colors='r')
+        d=500
+        plt.xlim(0,d/2.); plt.ylim(-d,d)
+        plc(aphi-maxaphibh,levels=(0,),colors='b',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        plc(h-hjet1aphi[:,None,None],levels=(0,),colors='m',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        plc(h-hjet2aphi[:,None,None],levels=(0,),colors='m',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        plc(h-hwind1aphi[:,None,None],levels=(0,),colors='c',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        plc(h-hwind2aphi[:,None,None],levels=(0,),colors='c',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        plc(h-hjetwind1[:,None,None],levels=(0,),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        plc(h-hjetwind2[:,None,None],levels=(0,),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        #plc(chophi(choplo(-avg_unb[:,:,0]-(1.0),0),0.001),xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        #plc(avg_gamma,nc=50,xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True)
+        #
+        #plc(chophi((r/rhor)**0.75*(1-np.abs(np.cos(h))),1),xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        #plc(avg_omegaf2*2*np.pi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True)
+        #plc(avg_uu[1]*dxdxp[1][1],xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,))
+        #plc(avg_uu[1]*dxdxp[1][1],xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,),colors='g')
+        #plc(-avg_unb[:,:,0]-(1.0),levels=(0,0.01,0.1),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        #plc(avg_mu[:,:,0]-(1.0),levels=(0,0.01,0.1),colors='r',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        if False:
+            plc(chophi(choplo(-avg_unb[:,:,0]-(1.0),0),0.001),xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+            rfd("fieldline0000.bin")
+            #plc(np.log10(avg_rho),xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+            plc(avg_uu[1],levels=(0,),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+            #plc(daphi,levels=(0,),colors='r',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+            #plc(h-hjet1aphia[:,None,None],levels=(0,),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+            plc(h-hjetwind1[:,None,None],levels=(0,),colors='c',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+            plc(h-hjetwind2[:,None,None],levels=(0,),colors='y',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+            plc(chophi(choplo(-avg_sigma,0.1),10),xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+            plc(chophi((r/rhor)**0.75*(1-np.abs(np.cos(h))),1),xcoord=r*np.sin(h),ycoord=r*np.cos(h))
     #xxx
     #plc(h,xcoord=r*np.sin(h),ycoord=r*np.cos(h))
     #plc(lrho,xcoord=r*np.sin(h),ycoord=r*np.cos(h))
@@ -3337,7 +3418,82 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
 
     if whichplot == -2:
         return( mdtotvsr, edtotvsr, edmavsr, ldtotvsr )
+
+    if whichplot == -300:
+        #BL metric g_rr
+        rh = 1+(1-a**2)**0.5
+        r1d = r[:,0,0]
+        Sigma = r**2+a**2*np.cos(h)**2
+        Delta = r**2-2*r+a**2
+        gdrr = Sigma/Delta
+        gdtt = -(1-2*r/Sigma)
+        #
+        uutKS = uu[0]
+        uurKS = dxdxp[1,1]*uu[1]
+        uuhKS = dxdxp[2,2]*uu[2] + dxdxp[2,1]*uu[1]
+        uupKS = dxdxp[3,3]*uu[3]
+        uurBL = uurKS
+        uutBL = uutKS - 2*(r/Delta)*uurKS - (a/Delta) * uupKS
+        vurBL = uurBL / uutBL
+        vrBL = gdrr**0.5*vurBL 
+        plt.figure(2)
+        plt.loglog( r1d, -vrBL[:,ny/2].mean(-1), 'r', label=r"$t=%g$" % t )
+        plt.xlim( rh, 100 )
+        plt.ylim( 1e-3, 2 )
+        plt.legend( loc = 'lower left' )
        
+    if whichplot == -3:
+        #BL metric g_rr
+        rh = 1+(1-a**2)**0.5
+        r1d = r[:,0,0]
+        Sigma = r**2+a**2*np.cos(h)**2
+        Delta = r**2-2*r+a**2
+        gdrr = Sigma/Delta
+        gdtt = -(1-2*r/Sigma)
+        #
+        uutKS = uu02h
+        uurKS = dxdxp[1,1,None,:,ny/2,0]*uus12h
+        uupKS = dxdxp[3,3,None,:,ny/2,0]*uus32h
+        uurBL = uurKS
+        uutBL = uutKS - 2*(r/Delta)[None,:,ny/2,0]*uurKS - (a/Delta)[None,:,ny/2,0] * uupKS
+        vurBL = uurBL / uutBL
+        vrBL = gdrr[None,:,ny/2,0]**0.5*vurBL 
+        t1 = 0.5e4
+        t2 = 1e4
+        avg1_vr = timeavg(vrBL,ts,t1,t2) 
+        t1 = 1e4
+        t2 = 1.5e4
+        avg2_vr = timeavg(vrBL,ts,t1,t2) 
+        t1 = 1.5e4
+        t2 = 2e4
+        avg3_vr = timeavg(vrBL,ts,t1,t2) 
+        plt.figure(1)
+        plt.loglog( r1d, -avg1_vr, 'r', label=r"$5,000<t<10,000$" )
+        plt.loglog( r1d, -avg2_vr, 'g', label=r"$10,000<t<15,000$" )
+        plt.loglog( r1d, -avg3_vr, 'b', label=r"$15,000<t<20,000$" )
+        plt.xlim( rh, 200 )
+        plt.ylim( 1e-3, 2 )
+        plt.grid()
+        plt.ylabel( r"$v_{\hat r}$", fontsize = 20 )
+        plt.xlabel( r"$r$", fontsize = 20 )
+        plt.legend( loc = 'upper right' )
+
+    if whichplot == -4:
+        rh = 1+(1-a**2)**0.5
+        r1d = r[:,0,0]
+        plt.figure(1)
+        plt.loglog( r1d, timeavg(rhos2h,ts,5000,10000), 'r', label=r"$5,000<t<10,000$" )
+        plt.loglog( r1d, timeavg(rhos2h,ts,10000,15000), 'g', label=r"$10,000<t<15,000$" )
+        plt.loglog( r1d, timeavg(rhos2h,ts,15000,20000), 'b', label=r"$15,000<t<20,000$" )
+        plt.xlabel(r"$r$", fontsize = 15)
+        plt.ylabel(r"$\rho$", fontsize = 15)
+        plt.xlim( rh, 100 )
+        plt.ylim( 1e-2, 15 )
+        plt.grid()
+        plt.legend( loc = 'lower left' )
+
+    #if whichplot == -5:
+        
     if whichplot == None:
         fig,plotlist=plt.subplots(nrows=4,ncols=1,sharex=True,figsize=(12,16),num=1)
         #plt.clf()
@@ -3518,17 +3674,18 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
 
 def timeavg( qty, ts, fti, ftf ):
     cond = (ts<ftf)*(ts>=fti)
-    qtycond = np.float64(qty[cond])
-    qtyavg = qtycond.mean(axis=0)
+    #use masked array to remove any stray NaN's
+    qtycond = np.ma.masked_array(qty[cond],np.isnan(qty[cond]))
+    qtyavg = qtycond.mean(axis=0,dtype=np.float64)
     return( qtyavg )
 
-def takeoutfloors():
+def takeoutfloors(doreload=1):
     global DUfloor, qtymem, DUfloorori, etad0
     #Mdot, E, L
     DTd = 800.
-    fti = 8000.
-    ftf = 14500.
-    doreload =1
+    fti = 8000
+    ftf = 20000.
+    #doreload =0
     if doreload:
         grid3d("gdump.bin",use2d=True)
         etad0 = -1/(-gn3[0,0])**0.5
@@ -3565,9 +3722,9 @@ def takeoutfloors():
     plt.plot(r[:,0,0],edtotvsr,label=r"$F_E$")
     #plt.plot(r[:,0,0],DUfloor0,label=r"$dU^t$")
     #plt.plot(r[:,0,0],DUfloor*1e4,label=r"$dU^t\times10^4$")
-    plt.legend()
-    plt.xlim(rhor,20)
-    plt.ylim(-10,10)
+    plt.legend(loc='lower right')
+    plt.xlim(rhor,100)
+    plt.ylim(-15,15)
     plt.grid()
     plt.xlabel(r"$r [r_g]$",fontsize=16)
     plt.ylabel("Flux",fontsize=16)
@@ -3592,28 +3749,28 @@ def takeoutfloors():
     avg_tudug = (gdet[:,:,0:1]*(avg_uguu[1])*(avg_ud[0])*_dx2*_dx3*nz).sum(-1).sum(-1)
     avg_tudmassug = (gdet[:,:,0:1]*(avg_rhouu[1]+avg_uguu[1])*(avg_ud[0])*_dx2*_dx3*nz).sum(-1).sum(-1)
     #
-    plt.figure(2)
-    plt.plot(r[:,0,0],edtotvsr,label="tot")
-    plt.plot(r[:,0,0],-edtot2davg,label="tot2davg")
-    #plt.plot(r[:,0,0],-rhouuudtot2davg,label="rhouuud")
-    #plt.plot(r[:,0,0],-gam*uguuudtot2davg,label="gamuguuud")
-    myma=-(rhouuudtot2davg+gam*uguuudtot2davg)
-    plt.plot(r[:,0,0],-avg_tudmass,label="mymass")
-    plt.plot(r[:,0,0],-avg_tudmassug,label="mymassug")
-    plt.plot(r[:,0,0],-avg_tudug,label="myug")
-    plt.plot(r[:,0,0],edmavsr,label="ma")
-    plt.plot(r[:,0,0],edtotvsr-edmavsr,label="tot-ma")
-    #plt.plot(r[:,0,0],DUfloor[1])
-    plt.xlim(rh,20); plt.ylim(-20,20)
-    plt.legend()
-    #plt.plot(r[:,0,0],ldtotvsr+DUfloor4,label=r"$Lwoutfloor$")
-    #plt.xlim(rhor,12)
-    #plt.ylim(-3,20)
-    #xx
-    plt.grid()
-    #
-    plt.figure(3)
-    plt.plot(r[:,0,0],-edtot2davg,label="tot2davg")
+    # plt.figure(2)
+    # plt.plot(r[:,0,0],edtotvsr,label="tot")
+    # plt.plot(r[:,0,0],-edtot2davg,label="tot2davg")
+    # #plt.plot(r[:,0,0],-rhouuudtot2davg,label="rhouuud")
+    # #plt.plot(r[:,0,0],-gam*uguuudtot2davg,label="gamuguuud")
+    # myma=-(rhouuudtot2davg+gam*uguuudtot2davg)
+    # plt.plot(r[:,0,0],-avg_tudmass,label="mymass")
+    # plt.plot(r[:,0,0],-avg_tudmassug,label="mymassug")
+    # plt.plot(r[:,0,0],-avg_tudug,label="myug")
+    # plt.plot(r[:,0,0],edmavsr,label="ma")
+    # plt.plot(r[:,0,0],edtotvsr-edmavsr,label="tot-ma")
+    # #plt.plot(r[:,0,0],DUfloor[1])
+    # plt.xlim(rh,20); plt.ylim(-20,20)
+    # plt.legend()
+    # #plt.plot(r[:,0,0],ldtotvsr+DUfloor4,label=r"$Lwoutfloor$")
+    # #plt.xlim(rhor,12)
+    # #plt.ylim(-3,20)
+    # #xx
+    # plt.grid()
+    # #
+    # plt.figure(3)
+    # plt.plot(r[:,0,0],-edtot2davg,label="tot2davg")
 
 
 
@@ -4286,6 +4443,21 @@ if __name__ == "__main__":
             qtymem=getqtyvstime(ihor,0.2)
             plotqtyvstime(qtymem)
     if False:
+        #VRPLOT
+        #grid3d("gdump.bin",use2d=True)
+        #rd("dump0000.bin")
+        #rfd("fieldline0000.bin")
+        rhor=1+(1-a**2)**0.5
+        ihor = np.floor(iofr(rhor)+0.5);
+        #diskflux=diskfluxcalc(ny/2)
+        #qtymem=None #clear to free mem
+        #qtymem=getqtyvstime(ihor,0.2)
+        plt.figure(1)
+        plotqtyvstime(qtymem,whichplot=-3)
+        #plt.figure(2)
+        #plotqtyvstime(qtymem,whichplot=-4)
+        
+    if True:
         #2DAVG
         if len(sys.argv[1:])!=0:
             grid3d("gdump.bin",use2d=True)
@@ -4312,7 +4484,8 @@ if __name__ == "__main__":
                     avgmem = get2davg(whichgroup=whichgroup,itemspergroup=itemspergroup)
             print( "Assigning averages..." )
             assignavg2dvars(avgmem)
-        plot2davg()
+        plot2davg(whichplot=1)
+        gc.collect()
     if False:
         rfd("fieldline2344.bin")
         cvel()
