@@ -4621,7 +4621,8 @@ if __name__ == "__main__":
                 #plt.suptitle(r'$\log_{10}\rho$ at t = %4.0f' % t)
                 #mdot,pjet,pjet/mdot plots
                 gs3 = GridSpec(3, 3)
-                gs3.update(left=0.05, right=0.95, top=0.42, bottom=0.03, wspace=0.01, hspace=0.04)
+                #gs3.update(left=0.055, right=0.97, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
+                gs3.update(left=0.055, right=0.95, top=0.42, bottom=0.03, wspace=0.01, hspace=0.04)
                 #mdot
                 ax31 = plt.subplot(gs3[-3,:])
                 plotqtyvstime(qtymem,ax=ax31,whichplot=1,findex=findex)
