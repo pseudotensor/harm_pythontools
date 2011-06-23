@@ -3265,6 +3265,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         #ax.legend(loc='upper left')
         ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,labelpad=9)
         plt.setp( ax.get_xticklabels(), visible=False)
+        ax.set_xlim(ts[0],ts[-1])
         if showextra:
             plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderaxespad=0,frameon=True,labelspacing=0)
     #######################
@@ -3279,6 +3280,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg)#,label=r'$\langle P_{\rm j}\rangle$')
         ax.set_ylabel(r'$P_{\rm j}$',fontsize=16)
         plt.setp( ax.get_xticklabels(), visible=False)
+        ax.set_xlim(ts[0],ts[-1])
     #######################
     #
     # eta instantaneous
@@ -3292,6 +3294,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         ax.set_ylim(0,4)
         #ax.set_xlabel(r'$t\;(GM/c^3)$')
         ax.set_ylabel(r'$P_{\rm j}/\dot M$',fontsize=16)
+        ax.set_xlim(ts[0],ts[-1])
     #######################
     #
     # eta ***
@@ -3352,6 +3355,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         #ax.set_ylim(0,2)
         ax.set_xlabel(r'$t\;[r_g/c]$',fontsize=16)
         ax.set_ylabel(r'$\eta\ [\%]$',fontsize=16,ha='left',labelpad=20)
+        ax.set_xlim(ts[0],ts[-1])
         if showextra:
             plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
 
@@ -3398,6 +3402,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         #ax.plot(ts,2./3.*np.pi*omh**2*np.abs(fsj30[:,ihor]/4/np.pi)**2/mdotfinavg)
         #prefactor to get sqrt(eta): (2./3.*np.pi*omh**2)**0.5
         ax.plot(ts,phibh,clr,label=r'$\phi_{\rm BH}$')
+        ax.set_xlim(ts[0],ts[-1])
         if showextra:
             ax.plot(ts,phij,'g--',label=r'$\phi_{\rm jet}$')
         #ax.plot(ts,phiw,'b-.',label=r'$\phi_{\rm wind}$')
@@ -4496,7 +4501,7 @@ if __name__ == "__main__":
         #plt.figure(2)
         #plotqtyvstime(qtymem,whichplot=-4)
         
-    if True:
+    if False:
         #2DAVG
         if len(sys.argv[1:])!=0:
             grid3d("gdump.bin",use2d=True)
@@ -4788,6 +4793,10 @@ if __name__ == "__main__":
     if True:
         #FIGURE 1 LOTSOPANELS
         #Figure 1
+        #To make plot, run 
+        #run ~/py/mread/__init__.py 1 1
+        #To re-make plot without reloading the fiels, run
+        #run ~/py/mread/__init__.py 1 -1
         domakeframes=True
         doslines=True
         plotlenf=10
