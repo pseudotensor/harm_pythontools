@@ -3682,31 +3682,37 @@ def timeavg( qty, ts, fti, ftf ):
     return( qtyavg )
 
 def takeoutfloors(doreload=1):
-    global DUfloor, qtymem, DUfloorori, etad0
+    global DUfloor, qtymem, DUfloorori, etad0, deltaUfloor
     #Mdot, E, L
-    DTd = 800.
-    fti = 8000.
-    ftf = 14500.
-    doreload =1
-    dotakeoutfloors=0
+    DTd = 100.
+    fti = 15000.
+    ftf = 20000.
+    dotakeoutfloors=1
     if doreload:
         grid3d("gdump.bin",use2d=True)
         etad0 = -1/(-gn3[0,0])**0.5
-        rhor = 1+(1-a**2)**0.5
+        #!!!rhor = 1+(1-a**2)**0.5
         ihor = iofr(rhor)
         qtymem=getqtyvstime(ihor,0.2)
         if dotakeoutfloors:
-            rfloor("failfloordudump0100.bin")
-            Ufloor0100 = dUfloor[:,:,:,:].sum(-1).sum(-1).cumsum(-1)/DTd
+            rfloor("failfloordudump0200.bin")
+            Ufloor0100 = dUfloor[:,:,0:ny,:].sum(-1).sum(-1).cumsum(-1)/DTd
+            dUfloor1=dUfloor
             #Ufloor0100[1] = (dUfloor[0,:,:,:]*etad0).sum(-1).sum(-1).cumsum(-1)/DTd
             #choplo(chophi(dUfloor[1,:,2:ny-1,:],0.05),-0.05).sum(-1).sum(-1).cumsum(-1)/DTd
-            Ufloor0100[1:5] = dUfloor[1:5,:,1:ny-1,:].sum(-1).sum(-1).cumsum(-1)/DTd
-            rfloor("failfloordudump0108.bin")
-            Ufloor0108 = dUfloor[:,:,:,:].sum(-1).sum(-1).cumsum(-1)/DTd
+            #Ufloor0100[1:5] = dUfloor[1:5,:,1:ny-1,:].sum(-1).sum(-1).cumsum(-1)/DTd
+            #Ufloor0100[1:2]=choplo(chophi(dUfloor[1,:,0:ny,:],0.05),-0.05).sum(-1).sum(-1).cumsum(-1)/DTd
+            rfloor("failfloordudump0201.bin")
+            Ufloor0108 = dUfloor[:,:,0:ny,:].sum(-1).sum(-1).cumsum(-1)/DTd
+            dUfloor2=dUfloor
+            deltaUfloor = dUfloor2-dUfloor1
+            dUfloor1=0
+            dUfloor1=0
             #Ufloor0108[1] = (dUfloor[0,:,:,:]*etad0).sum(-1).sum(-1).cumsum(-1)/DTd
             #Ufloor0108[1] = choplo(chophi(dUfloor[1,:,2:ny-1,:],0.05),-0.05).sum(-1).sum(-1).cumsum(-1)/DTd 
-            Ufloor0108[1:5] = dUfloor[1:5,:,1:ny-1,:].sum(-1).sum(-1).cumsum(-1)/DTd 
-            DUfloorori = Ufloor0108 - Ufloor0100
+            #Ufloor0108[1:5] = dUfloor[1:5,:,1:ny-1,:].sum(-1).sum(-1).cumsum(-1)/DTd 
+            #Ufloor0108[1:2]=choplo(chophi(dUfloor[1,:,0:ny,:],0.05),-0.05).sum(-1).sum(-1).cumsum(-1)/DTd
+            DUfloorori = (Ufloor0108 - Ufloor0100)
             #floor info
             #reset zero to where floors are probably not activated, say at r = 1e4
             myi=iofr(20)
@@ -3726,13 +3732,15 @@ def takeoutfloors(doreload=1):
     plt.plot(r[:,0,0],-mdtotvsr,'b--',label=r"$F_M$ (uncorrected for floors)")
     if dotakeoutfloors:
         plt.plot(r[:,0,0],-(mdtotvsr+DUfloor0),'b',label=r"$F_M$ (corrected for floors)")
+        plt.plot(r[:,0,0],(edtotvsr+DUfloor1),'r',label=r"$F_E$ (corrected for floors)")
+        plt.plot(r[:,0,0],(DUfloor1),'r:',label=r"$dF_E$")
     if ldtotvsr is not None:
         plt.plot(r[:,0,0],ldtotvsr/dxdxp[3][3][:,0,0]/10.,'g',label=r"$F_L/10$")
-    plt.plot(r[:,0,0],edtotvsr,'r',label=r"$F_E$")
+    plt.plot(r[:,0,0],edtotvsr,'r--',label=r"$F_E$ (uncorrected for floors)")
     #plt.plot(r[:,0,0],DUfloor0,label=r"$dU^t$")
     #plt.plot(r[:,0,0],DUfloor*1e4,label=r"$dU^t\times10^4$")
     plt.legend(loc='lower right')
-    plt.xlim(rhor,100)
+    plt.xlim(rhor,20)
     plt.ylim(-15,15)
     plt.grid()
     plt.xlabel(r"$r [r_g]$",fontsize=16)
@@ -3781,6 +3789,7 @@ def takeoutfloors(doreload=1):
     #
     plt.figure(3)
     plt.plot(r[:,0,0],-edtot2davg,label="tot2davg")
+    gc.collect()
 
 
 
