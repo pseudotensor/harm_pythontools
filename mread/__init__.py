@@ -1488,7 +1488,7 @@ def rfd(fieldlinefilename,**kwargs):
     #Velocity components: u1, u2, u3, 
     #Cell-centered magnetic field components: B1, B2, B3, 
     #Face-centered magnetic field components multiplied by metric determinant: gdetB1, gdetB2, gdetB3
-    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,rho,lrho,ug,uu,uut,uu,B,uux,gdetB
+    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,rho,lrho,ug,uu,uut,uu,B,uux,gdetB,rhor
     #read image
     fin = open( "dumps/" + fieldlinefilename, "rb" )
     header = fin.readline().split()
@@ -1507,6 +1507,7 @@ def rfd(fieldlinefilename,**kwargs):
     gam=float(header[11])
     #black hole spin
     a=float(header[12])
+    rhor = 1+(1-a**2)**0.5
     #Spherical polar radius of the innermost radial cell
     Rin=float(header[14])
     #Spherical polar radius of the outermost radial cell
@@ -1611,7 +1612,7 @@ def grid3d(dumpname,use2d=False): #read grid dump file: header and body
     #There are more variables, e.g., dxdxp, which is the Jacobian of (x1,x2,x3)->(r,h,ph) transformation, that I can
     #go over, if needed.
     global nx,ny,nz,_startx1,_startx2,_startx3,_dx1,_dx2,_dx3,gam,a,Rin,Rout,ti,tj,tk,x1,x2,x3,r,h,ph,conn,gn3,gv3,ck,dxdxp,gdet
-    global tif,tjf,tkf,rf,hf,phf
+    global tif,tjf,tkf,rf,hf,phf,rhor
     print( "Reading grid from " + "dumps/" + dumpname + " ..." )
     gin = open( "dumps/" + dumpname, "rb" )
     #First line of grid dump file is a text line that contains general grid information:
@@ -1633,6 +1634,7 @@ def grid3d(dumpname,use2d=False): #read grid dump file: header and body
     gam=float(header[11])
     #black hole spin
     a=float(header[12])
+    rhor = 1+(1-a**2)**0.5
     #Spherical polar radius of the innermost radial cell
     Rin=float(header[14])
     #Spherical polar radius of the outermost radial cell
@@ -3564,7 +3566,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         fig.savefig('pjet1_%s.pdf' % os.path.basename(os.getcwd()) )
 
         #density/velocity/hor figure
-        rhor=1+(1-a**2)**0.5
+        #!!!rhor=1+(1-a**2)**0.5
         fig,plotlist=plt.subplots(nrows=4,ncols=1,sharex=True,figsize=(12,16),num=2)
         #plt.clf()
         plottitle = r"\rho,u^r,h/r: a = %g: %s" % ( a, os.path.basename(os.getcwd()) )
@@ -3715,7 +3717,7 @@ def takeoutfloors(doreload=1):
     DUfloor1 = DUfloor[1]
     DUfloor4 = DUfloor[4]
     mdtotvsr, edtotvsr, edmavsr, ldtotvsr = plotqtyvstime( qtymem, whichplot = -2, fti=fti, ftf=ftf )
-    rhor = 1+(1-a**2)**0.5
+    #!!!rhor = 1+(1-a**2)**0.5
     rh=rhor
     ihor = iofr(rhor)
     #FIGURE: mass
