@@ -2767,7 +2767,7 @@ def iofr(rval):
     res = interp1d(r[:,0,0], ti[:,0,0], kind='linear')
     return(np.floor(res(rval)+0.5))
 
-def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf=None):
+def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False):
     global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
     nqtyold=98
     nqty=98+32+1
@@ -3155,6 +3155,12 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     fsj30sqfinavg = timeavg(fsj30[:,ihor]**2,ts,fti,ftf)**0.5
     
     fc=0
+    if showextra:
+        ofc = 1
+        clr = 'r'
+    else:
+        ofc = 0
+        clr = 'k'
     #######################
     #
     # Mdot ***
@@ -3162,11 +3168,11 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #######################
     if whichplot == 1:
         if dotavg:
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotfinavg,color=(1,fc,fc))
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotfinavg,color=(ofc,fc,fc))
             if(iti>fti):
-                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+mdotiniavg,color=(1,fc,fc))
+                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+mdotiniavg,color=(ofc,fc,fc))
                 
-        ax.plot(ts,np.abs(mdtot[:,ihor]-md30[:,ihor]),'r',label=r'$\dot Mc^2$')
+        ax.plot(ts,np.abs(mdtot[:,ihor]-md30[:,ihor]),clr,label=r'$\dot Mc^2$')
         if findex != None:
             if not isinstance(findex,tuple):
                 ax.plot(ts[findex],np.abs(mdtot[:,ihor]-md30[:,ihor])[findex],'o',mfc='r')
@@ -3176,7 +3182,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         #ax.legend(loc='upper left')
         ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,labelpad=9)
         plt.setp( ax.get_xticklabels(), visible=False)
-        plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderaxespad=0,frameon=True,labelspacing=0)
+        if showextra:
+            plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderaxespad=0,frameon=True,labelspacing=0)
     #######################
     #
     # Pjet
@@ -3225,9 +3232,10 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             etabh_avg = timeavg(etabh,ts,fti,ftf)
             etaw_avg = timeavg(etaw,ts,fti,ftf)
             ptot_avg = timeavg(pjemtot[:,ihor],ts,fti,ftf)
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaj_avg,'--',color=(fc,fc+0.5*(1-fc),fc)) 
+            if showextra:
+                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaj_avg,'--',color=(fc,fc+0.5*(1-fc),fc)) 
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etabh_avg,color=(1,fc,fc)) 
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etabh_avg,color=(ofc,fc,fc)) 
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
             #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaw_avg,'-.',color=(fc,fc+0.5*(1-fc),fc)) 
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
@@ -3236,27 +3244,33 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
                 etabh2_avg = timeavg(etabh2,ts,iti,itf)
                 etaw2_avg = timeavg(etaw2,ts,iti,itf)
                 ptot2_avg = timeavg(pjemtot[:,ihor],ts,iti,itf)
-                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etaj2_avg,'--',color=(fc,fc+0.5*(1-fc),fc))
-                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etabh2_avg,color=(1,fc,fc))
+                if showextra:
+                    ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etaj2_avg,'--',color=(fc,fc+0.5*(1-fc),fc))
+                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etabh2_avg,color=(ofc,fc,fc))
                 #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaw2_avg,'-.',color=(fc,fc+0.5*(1-fc),fc)) 
-        ax.plot(ts,etabh,'r',label=r'$\eta_{\rm BH}$')
-        ax.plot(ts,etaj,'g--',label=r'$\eta_{\rm jet}$')
-        ax.plot(ts,etaw,'b-.',label=r'$\eta_{\rm wind}$')
+        ax.plot(ts,etabh,clr,label=r'$\eta_{\rm BH}$')
+        if showextra:
+            ax.plot(ts,etaj,'g--',label=r'$\eta_{\rm jet}$')
+            ax.plot(ts,etaw,'b-.',label=r'$\eta_{\rm wind}$')
         if findex != None:
             if not isinstance(findex,tuple):
-                ax.plot(ts[findex],etaj[findex],'gs')
+                if showextra:
+                    ax.plot(ts[findex],etaj[findex],'gs')
                 ax.plot(ts[findex],etabh[findex],'o',mfc='r')
-                ax.plot(ts[findex],etaw[findex],'bv')
+                if showextra:
+                    ax.plot(ts[findex],etaw[findex],'bv')
             else:
                 for fi in findex:
-                    ax.plot(ts[fi],etaw[fi],'bv')#,label=r'$\dot M$')
-                    ax.plot(ts[fi],etaj[fi],'gs')#,label=r'$\dot M$')
+                    if showextra:
+                        ax.plot(ts[fi],etaw[fi],'bv')#,label=r'$\dot M$')
+                        ax.plot(ts[fi],etaj[fi],'gs')#,label=r'$\dot M$')
                     ax.plot(ts[fi],etabh[fi],'o',mfc='r')#,label=r'$\dot M$')
         #ax.legend(loc='upper left')
         #ax.set_ylim(0,2)
         ax.set_xlabel(r'$t\;[r_g/c]$',fontsize=16)
         ax.set_ylabel(r'$\eta\ [\%]$',fontsize=16,ha='left',labelpad=20)
-        plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
+        if showextra:
+            plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
 
 
         print( "eta_BH = %g, eta_j = %g, eta_w = %g, eta_jw = %g, mdot = %g, ptot_BH = %g" % ( etabh_avg, etaj_avg, etaw_avg, etaj_avg + etaw_avg, mdotfinavg, ptot_avg ) )
@@ -3286,35 +3300,41 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         if dotavg:
             phibh_avg = timeavg(phibh**2,ts,fti,ftf)**0.5
             fstot_avg = timeavg(fstot[:,ihor]**2,ts,fti,ftf)**0.5
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phij**2,ts,fti,ftf)**0.5,'--',color=(fc,fc+0.5*(1-fc),fc))
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+phibh_avg,color=(1,fc,fc))
+            if showextra:
+                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phij**2,ts,fti,ftf)**0.5,'--',color=(fc,fc+0.5*(1-fc),fc))
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+phibh_avg,color=(ofc,fc,fc))
             #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phiw**2,ts,fti,ftf)**0.5,'-.',color=(fc,fc,1))
             if(iti>fti):
                 phibh2_avg = timeavg(phibh2**2,ts,iti,itf)**0.5
                 fstot2_avg = timeavg(fstot[:,ihor]**2,ts,iti,itf)**0.5
-                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+timeavg(phij2**2,ts,iti,itf)**0.5,'--',color=(fc,fc+0.5*(1-fc),fc))
-                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+phibh2_avg,color=(1,fc,fc))
+                if showextra:
+                    ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+timeavg(phij2**2,ts,iti,itf)**0.5,'--',color=(fc,fc+0.5*(1-fc),fc))
+                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+phibh2_avg,color=(ofc,fc,fc))
                 #ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+timeavg(phiw2**2,ts,iti,itf)**0.5,'-.',color=(fc,fc,1))
         #To approximately get efficiency:
         #ax.plot(ts,2./3.*np.pi*omh**2*np.abs(fsj30[:,ihor]/4/np.pi)**2/mdotfinavg)
         #prefactor to get sqrt(eta): (2./3.*np.pi*omh**2)**0.5
-        ax.plot(ts,phibh,'r',label=r'$\phi_{\rm BH}$')
-        ax.plot(ts,phij,'g--',label=r'$\phi_{\rm jet}$')
+        ax.plot(ts,phibh,clr,label=r'$\phi_{\rm BH}$')
+        if showextra:
+            ax.plot(ts,phij,'g--',label=r'$\phi_{\rm jet}$')
         #ax.plot(ts,phiw,'b-.',label=r'$\phi_{\rm wind}$')
         if findex != None:
             if not isinstance(findex,tuple):
-                ax.plot(ts[findex],phij[findex],'gs')
+                if showextra:
+                    ax.plot(ts[findex],phij[findex],'gs')
                 ax.plot(ts[findex],phibh[findex],'o',mfc='r')
                 #ax.plot(ts[findex],phiw[findex],'bv')
             else:
                 for fi in findex:
-                    ax.plot(ts[fi],phij[fi],'gs')
+                    if showextra:
+                        ax.plot(ts[fi],phij[fi],'gs')
                     ax.plot(ts[fi],phibh[fi],'o',mfc='r')
                     #ax.plot(ts[fi],phiw[fi],'bv')
         #ax.legend(loc='upper left')
         #ax.set_ylabel(r'$\ \ \ k\Phi_j/\langle\dot M\rangle^{\!1/2}$',fontsize=16)
         ax.set_ylabel(r'$\phi$',fontsize=16,labelpad=16)
-        plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
+        if showextra:
+            plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
         plt.setp( ax.get_xticklabels(), visible=False )
         print( "phi_BH = %g, fstot = %g" % ( phibh_avg, fstot_avg ) )
         if iti > fti:
@@ -3526,7 +3546,7 @@ def takeoutfloors():
     global DUfloor, qtymem, DUfloorori, etad0
     #Mdot, E, L
     DTd = 800.
-    fti = 8000.
+    fti = 10000.
     ftf = 14500.
     doreload =1
     dotakeoutfloors=0
@@ -4580,10 +4600,10 @@ if __name__ == "__main__":
         # plt.savefig("fig2.pdf",bbox_inches='tight',pad_inches=0.02)
         # plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02)
         plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02)
-    if False:
+    if True:
         #FIGURE 1 LOTSOPANELS
         #Figure 1
-        domakeframes=False
+        domakeframes=True
         doslines=True
         plotlenf=10
         plotleni=25
