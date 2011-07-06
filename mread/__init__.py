@@ -3709,9 +3709,9 @@ def timeavg( qty, ts, fti, ftf ):
 def takeoutfloors(doreload=1):
     global DUfloor, qtymem, DUfloorori, etad0, deltaUfloor
     #Mdot, E, L
-    DTd = 100.
-    fti = 15000.
-    ftf = 20000.
+    DTd = 22200-22167.669585504507268 #22119.452438349220756
+    fti = 20000.
+    ftf = 21000.
     dotakeoutfloors=1
     if doreload:
         grid3d("gdump.bin",use2d=True)
@@ -3720,14 +3720,16 @@ def takeoutfloors(doreload=1):
         ihor = iofr(rhor)
         qtymem=getqtyvstime(ihor,0.2)
         if dotakeoutfloors:
-            rfloor("failfloordudump0200.bin")
+            rfloor("failfloordudump0222.bin")
+            #dUfloor=dUfloor*0
+            dUfloor[:,:,:,:]=dUfloor[:,:,:,:]*0.0
             Ufloor0100 = dUfloor[:,:,0:ny,:].sum(-1).sum(-1).cumsum(-1)/DTd
             dUfloor1=dUfloor
             #Ufloor0100[1] = (dUfloor[0,:,:,:]*etad0).sum(-1).sum(-1).cumsum(-1)/DTd
             #choplo(chophi(dUfloor[1,:,2:ny-1,:],0.05),-0.05).sum(-1).sum(-1).cumsum(-1)/DTd
             #Ufloor0100[1:5] = dUfloor[1:5,:,1:ny-1,:].sum(-1).sum(-1).cumsum(-1)/DTd
             #Ufloor0100[1:2]=choplo(chophi(dUfloor[1,:,0:ny,:],0.05),-0.05).sum(-1).sum(-1).cumsum(-1)/DTd
-            rfloor("failfloordudump0201.bin")
+            rfloor("failfloordudump0222.bin")
             Ufloor0108 = dUfloor[:,:,0:ny,:].sum(-1).sum(-1).cumsum(-1)/DTd
             dUfloor2=dUfloor
             deltaUfloor = dUfloor2-dUfloor1
@@ -3748,6 +3750,9 @@ def takeoutfloors(doreload=1):
     DUfloor1 = DUfloor[1]
     DUfloor4 = DUfloor[4]
     mdtotvsr, edtotvsr, edmavsr, ldtotvsr = plotqtyvstime( qtymem, whichplot = -2, fti=fti, ftf=ftf )
+    #avgmem = get2davg(usedefault=1)
+    #assignavg2dvars(avgmem)
+    #edtotvsr = -(gdet[:,1:ny-1,0:1]*avg_Tud[1][0][:,1:ny-1,0:1]*_dx2*_dx3*nz).sum(-1).sum(-1)
     #!!!rhor = 1+(1-a**2)**0.5
     rh=rhor
     ihor = iofr(rhor)
@@ -4790,7 +4795,7 @@ if __name__ == "__main__":
         # plt.savefig("fig2.pdf",bbox_inches='tight',pad_inches=0.02)
         # plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02)
         plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02)
-    if True:
+    if False:
         #FIGURE 1 LOTSOPANELS
         #Figure 1
         #To make plot, run 
