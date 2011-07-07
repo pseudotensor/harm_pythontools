@@ -3218,16 +3218,30 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     pjtotfinavgvsr40 = pjemfinavgvsr40 + pjmafinavgvsr40
 
     #radius of stagnation point (Pjmabsqorho5(rstag) = 0)
-    istag=(ti[:,0,0][pjmafinavgvsr5>0])[0]
-    rstag=r[istag,0,0]
-    i2stag=iofr(2*rstag)
-    i4stag=iofr(4*rstag)
-    i8stag=iofr(8*rstag)
-    pjtotfinavgvsr5max    = np.max(pjtotfinavgvsr5)
-    pjtotfinavgvsr5rstag  = pjtotfinavgvsr5[istag]
-    pjtotfinavgvsr5r2stag = pjtotfinavgvsr5[i2stag]
-    pjtotfinavgvsr5r4stag = pjtotfinavgvsr5[i4stag]
-    pjtotfinavgvsr5r8stag = pjtotfinavgvsr5[i8stag]
+    indices=ti[:,0,0][pjmafinavgvsr5>0]
+    if indices.shape[0]>0:
+        istag=indices[0]
+        rstag=r[istag,0,0]
+        i2stag=iofr(2*rstag)
+        i4stag=iofr(4*rstag)
+        i8stag=iofr(8*rstag)
+        pjtotfinavgvsr5max    = np.max(pjtotfinavgvsr5)
+        pjtotfinavgvsr5rstag  = pjtotfinavgvsr5[istag]
+        pjtotfinavgvsr5r2stag = pjtotfinavgvsr5[i2stag]
+        pjtotfinavgvsr5r4stag = pjtotfinavgvsr5[i4stag]
+        pjtotfinavgvsr5r8stag = pjtotfinavgvsr5[i8stag]
+    else:
+        istag=0
+        rstag=0
+        i2stag=0
+        i4stag=0
+        i8stag=0
+        pjtotfinavgvsr5max    = np.max(pjtotfinavgvsr5)
+        pjtotfinavgvsr5rstag  = 0
+        pjtotfinavgvsr5r2stag = 0
+        pjtotfinavgvsr5r4stag = 0
+        pjtotfinavgvsr5r8stag = 0
+
     
     
 
@@ -3706,36 +3720,49 @@ def timeavg( qty, ts, fti, ftf ):
     qtyavg = qtycond.mean(axis=0,dtype=np.float64)
     return( qtyavg )
 
-def takeoutfloors(doreload=1):
+def takeoutfloors(doreload=1,dotakeoutfloors=1):
     global DUfloor, qtymem, DUfloorori, etad0, deltaUfloor
     #Mdot, E, L
-    DTd = 22200-22167.669585504507268 #22119.452438349220756
-    fti = 20000.
-    ftf = 21000.
-    dotakeoutfloors=1
+    grid3d("gdump.bin",use2d=True)
+    if a == 0.99:
+        DTd = 22200-22167.669585504507268 #22119.452438349220756
+        fti = 20000.
+        ftf = 21000.
+    elif a == 0.5:
+        DTd = 400
+        fti = 10000.
+        ftf = 13000.
+    else:
+        print( "Using default values for fti and ftf..." )
+        DTd = 100
+        fti = 10000.
+        ftf = 15000.
+    #dotakeoutfloors=1
     if doreload:
-        grid3d("gdump.bin",use2d=True)
         etad0 = -1/(-gn3[0,0])**0.5
         #!!!rhor = 1+(1-a**2)**0.5
         ihor = iofr(rhor)
         qtymem=getqtyvstime(ihor,0.2)
         if dotakeoutfloors:
-            rfloor("failfloordudump0222.bin")
-            #dUfloor=dUfloor*0
-            dUfloor[:,:,:,:]=dUfloor[:,:,:,:]*0.0
-            Ufloor0100 = dUfloor[:,:,0:ny,:].sum(-1).sum(-1).cumsum(-1)/DTd
+            if a==0.99:
+                rfloor("failfloordudump0222.bin")
+                dUfloor[:,:,:,:]=dUfloor[:,:,:,:]*0.0
+            else:
+                rfloor("failfloordudump0126.bin")
+            Ufloor0100 = dUfloor[:,:,0:ny,:].sum(-1).sum(-1).cumsum(-1)*scaletofullwedge(1.)/DTd
             dUfloor1=dUfloor
-            #Ufloor0100[1] = (dUfloor[0,:,:,:]*etad0).sum(-1).sum(-1).cumsum(-1)/DTd
+            Ufloor0100[1] = (dUfloor[0,:,:,:]*etad0).sum(-1).sum(-1).cumsum(-1)*scaletofullwedge(1.)/DTd
             #choplo(chophi(dUfloor[1,:,2:ny-1,:],0.05),-0.05).sum(-1).sum(-1).cumsum(-1)/DTd
             #Ufloor0100[1:5] = dUfloor[1:5,:,1:ny-1,:].sum(-1).sum(-1).cumsum(-1)/DTd
             #Ufloor0100[1:2]=choplo(chophi(dUfloor[1,:,0:ny,:],0.05),-0.05).sum(-1).sum(-1).cumsum(-1)/DTd
-            rfloor("failfloordudump0222.bin")
-            Ufloor0108 = dUfloor[:,:,0:ny,:].sum(-1).sum(-1).cumsum(-1)/DTd
+            if a==0.99:
+                rfloor("failfloordudump0222.bin")
+            else:
+                rfloor("failfloordudump0130.bin")
+            Ufloor0108 = dUfloor[:,:,0:ny,:].sum(-1).sum(-1).cumsum(-1)*scaletofullwedge(1.)/DTd
             dUfloor2=dUfloor
             deltaUfloor = dUfloor2-dUfloor1
-            dUfloor1=0
-            dUfloor1=0
-            #Ufloor0108[1] = (dUfloor[0,:,:,:]*etad0).sum(-1).sum(-1).cumsum(-1)/DTd
+            Ufloor0108[1] = (dUfloor[0,:,:,:]*etad0).sum(-1).sum(-1).cumsum(-1)*scaletofullwedge(1.)/DTd
             #Ufloor0108[1] = choplo(chophi(dUfloor[1,:,2:ny-1,:],0.05),-0.05).sum(-1).sum(-1).cumsum(-1)/DTd 
             #Ufloor0108[1:5] = dUfloor[1:5,:,1:ny-1,:].sum(-1).sum(-1).cumsum(-1)/DTd 
             #Ufloor0108[1:2]=choplo(chophi(dUfloor[1,:,0:ny,:],0.05),-0.05).sum(-1).sum(-1).cumsum(-1)/DTd
