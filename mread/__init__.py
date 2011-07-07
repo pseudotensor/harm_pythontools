@@ -5316,3 +5316,37 @@ if __name__ == "__main__":
         #plt.clf();
         #plt.figure();
         #pl(r,np.log10(entk));plt.xlim(1,20);plt.ylim(-3,-0.5)
+    if True:
+        #Short tutorial. Some of the names will sound familiar :)
+        print( "Running a short tutorial: read in grid, 0th dump, plot and compute some things." )
+        #1 read in gdump (specifying "use2d=True" reads in just one r-theta slice to save memory)
+        grid3d("gdump.bin", use2d = True)
+        #2 read in dump0000
+        rd("dump0000.bin")
+        #   or, instead of dump, you could read in fieldline0000.bin
+        rfd("fieldline0000.bin")
+        #3 compute extra things
+        cvel()
+        Tcalcud()
+        faraday()
+        #4 compute vector potential
+        aphi = fieldcalc()
+        #5 plot density and overplotted vector potential
+        plt.figure(1)  #open figure 1
+        plco(lrho,cb=True,nc=25) #plco -- erases and plots; cb=True tells it to draw color bar, nc = number of contours
+        plc(aphi,colors='k') #plc -- overplots without erasing; colors='k' says plot in blac'k'
+        #6 compute u^\phi
+        uuphi = uu[3] * dxdxp[3,3]
+        #7 compute u_\phi
+        #  first, lower the index
+        ud_computed = mdot(gv3,uu)  #<-- this is already computed as 'ud' inside of cvel() call
+        #  then, take 3rd component and convert to phi from x3
+        udphi = (ud_computed/dxdxp[3,3])[3]
+        #8 phi-average density
+        rhophiavg = rho.mean(axis=-1)  #-1 says to average over the last dimension
+        #9 clean up some memory
+        ud_computed = None
+        uuphi = None
+        udphi = None
+        aphi = None
+        gc.collect()
