@@ -1369,14 +1369,15 @@ def fieldcalctoth():
    
 def fieldcalcU(gdetB1=None):
     """
-    Computes the field vector potential
+    Computes cell-centered vector potential
     """
-    if gdetB1 == None:
-        gdetB1 = gdetB[1]
-    daphi = (gdetB1).sum(-1)[:,:,None]*_dx2*_dx3
-    aphi=daphi.cumsum(axis=1)
-    aphi-=0.5*daphi #correction for half-cell shift between face and center in theta
-    aphi[0:nx-1] = 0.5*(aphi[0:nx-1]+aphi[1:nx]) #and in r
+    aphi=fieldcalcface(gdetB1)
+    #center it properly in theta
+    aphi[:,0:ny-1]=0.5*(aphi[:,0:ny-1]+aphi[:,1:ny]) 
+    #special treatment for last cell since no cell at j = ny, and we know aphi[:,ny] should vanish
+    aphi[:,ny-1] *= 0.5
+    #and in r
+    aphi[0:nx-1] = 0.5*(aphi[0:nx-1]  +aphi[1:nx])
     aphi/=(nz*_dx3)
     return(aphi)
 
