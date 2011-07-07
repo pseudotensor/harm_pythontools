@@ -5324,19 +5324,31 @@ if __name__ == "__main__":
         #1 read in gdump (specifying "use2d=True" reads in just one r-theta slice to save memory)
         grid3d("gdump.bin", use2d = True)
         #2 read in dump0000
-        rd("dump0000.bin")
+        doreaddump = 0
+        if doreaddump:
+            rd("dump0000.bin")
         #   or, instead of dump, you could read in fieldline0000.bin
         rfd("fieldline0000.bin")
         #3 compute extra things
-        cvel()
-        Tcalcud()
-        faraday()
+        docomputeextrathings = False
+        if docomputeextrathings:
+            cvel()
+            Tcalcud()
+            faraday()
         #4 compute vector potential
         aphi = fieldcalc()
         #5 plot density and overplotted vector potential
         plt.figure(1)  #open figure 1
-        plco(lrho,cb=True,nc=25) #plco -- erases and plots; cb=True tells it to draw color bar, nc = number of contours
+        plco(lrho,cb=True,nc=50) #plco -- erases and plots; cb=True tells it to draw color bar, nc = number of contours
         plc(aphi,colors='k') #plc -- overplots without erasing; colors='k' says plot in blac'k'
+        #5a compute same in x-z coordinates
+        fig = plt.figure(2)  #open figure 2
+        ax = fig.add_subplot(111, aspect='equal')
+        plco(lrho,cb=True,nc=50,xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        plc(aphi,nc=100,colors='k',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        plt.xlim(0,50)
+        plt.ylim(-25,25)
+        ax.set_aspect('equal')   
         #6 compute u^\phi
         uuphi = uu[3] * dxdxp[3,3]
         #7 compute u_\phi
