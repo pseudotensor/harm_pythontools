@@ -937,11 +937,11 @@ def Qmri():
     res=lambdamriu2/_dx2
     return(res)
 
-def plco(myvar,xcoord=None,ycoord=None,**kwargs):
+def plco(myvar,xcoord=None,ycoord=None,ax=None,**kwargs):
     plt.clf()
-    plc(myvar,xcoord,ycoord,**kwargs)
+    plc(myvar,xcoord,ycoord,ax,**kwargs)
 
-def plc(myvar,xcoord=None,ycoord=None,**kwargs): #plc
+def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
     #xcoord = kwargs.pop('x1', None)
     #ycoord = kwargs.pop('x2', None)
     if(np.min(myvar)==np.max(myvar)):
@@ -954,12 +954,14 @@ def plc(myvar,xcoord=None,ycoord=None,**kwargs): #plc
         xcoord = xcoord[:,:,None] if xcoord.ndim == 2 else xcoord[:,:,k:k+1]
         ycoord = ycoord[:,:,None] if ycoord.ndim == 2 else ycoord[:,:,k:k+1]
     myvar = myvar[:,:,None] if myvar.ndim == 2 else myvar[:,:,k:k+1]
+    if ax is None:
+        ax = plt.gca()
     if( xcoord == None or ycoord == None ):
-        res = plt.contour(myvar[:,:,0].transpose(),nc,**kwargs)
+        res = ax.contour(myvar[:,:,0].transpose(),nc,**kwargs)
     else:
-        res = plt.contour(xcoord[:,:,0],ycoord[:,:,0],myvar[:,:,0],nc,**kwargs)
+        res = ax.contour(xcoord[:,:,0],ycoord[:,:,0],myvar[:,:,0],nc,**kwargs)
     if( cb == True): #use color bar
-        plt.colorbar()
+        plt.colorbar(res,ax=ax)
 
 def reinterp(vartointerp,extent,ncell,domask=1,isasymmetric=False):
     global xi,yi,zi
