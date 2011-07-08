@@ -3718,10 +3718,11 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         plt.grid()
         plt.savefig('pjet4_%s.pdf' % os.path.basename(os.getcwd()) )
 
-def timeavg( qty, ts, fti, ftf ):
+def timeavg( qty, ts, fti, ftf, step = 1 ):
     cond = (ts<ftf)*(ts>=fti)
     #use masked array to remove any stray NaN's
     qtycond = np.ma.masked_array(qty[cond],np.isnan(qty[cond]))
+    qtycond = qtycond[::step]
     qtyavg = qtycond.mean(axis=0,dtype=np.float64)
     return( qtyavg )
 
@@ -3856,7 +3857,8 @@ def takeoutfloors(doreload=1,dotakeoutfloors=1):
         plt.plot(r[:,0,0],Fe,'r',label=r"$F_E$")
         plt.plot(r[:,0,0],(DUfloor1),'r:')
     eta = ((Fm-Fe)/Fm)
-    print("Efficiency = %g, %g, %g" % ( eta[iofr(5)], eta[iofr(10)], eta[iofr(20)] ) )
+    etap = (Fm-Fe)/Fe
+    print("Eff = %g, Eff' = %g" % ( eta[iofr(5)], etap[iofr(5)] ) )
     #plt.plot(r[:,0,0],DUfloor0,label=r"$dU^t$")
     #plt.plot(r[:,0,0],DUfloor*1e4,label=r"$dU^t\times10^4$")
     plt.legend(loc='lower right',ncol=3)
