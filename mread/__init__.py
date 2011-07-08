@@ -3755,7 +3755,7 @@ def getstagparams(var=None,rmax=20,doplot=1,doreadgrid=1):
         return istag, jstag, hstag, rstag
 
 def takeoutfloors(doreload=1,dotakeoutfloors=1):
-    global DUfloor, qtymem, DUfloorori, etad0
+    global dUfloor, qtymem, DUfloorori, etad0
     #Mdot, E, L
     grid3d("gdump.bin",use2d=True)
     istag, jstag, hstag, rstag = getstagparams(rmax=20,doplot=0,doreadgrid=0)
@@ -3797,17 +3797,12 @@ def takeoutfloors(doreload=1,dotakeoutfloors=1):
                 rfloor("failfloordudump0103.bin")
             #add back in rest-mass energy to conserved energy
             dUfloor[1] -= dUfloor[0]
-            UfloorA = dUfloor[:,:,js:ny-js,:].sum(1+PH).cumsum(1+RR)
-            UfloorAstag0, UfloorAstag1, UfloorAstag4 = getstagparams(
-                var=(UfloorA[0],UfloorA[1],UfloorA[4]),rmax=20,doplot=0,doreadgrid=0)
-            #xxx
-            UfloorA[0] -= UfloorAstag0[None,:]
-            UfloorA[1] -= UfloorAstag1[None,:]
-            UfloorA[4] -= UfloorAstag4[None,:]
-            # UfloorA[0] -= UfloorA[0][None,iofr(20)]
-            # UfloorA[1] -= UfloorA[1][None,iofr(20)]
-            # UfloorA[4] -= UfloorA[4][None,iofr(20)]
-            UfloorAsum = UfloorA.sum(-1)*scaletofullwedge(1.)/DTd
+            condin = (avg_uu[1]<0)*(r[:,:,0:1]<20)
+            condout = 1 - condin
+            UfloorAout = (dUfloor*condout[None,:,:,:]).sum(1+PH).sum(1+TH).cumsum(1+RR)
+            UfloorAin = (dUfloor*condin[None,:,:,:]).sum(1+PH).sum(1+TH).cumsum(1+RR)
+            UfloorA = (UfloorAin-UfloorAin[:,nx-1:nx]) + UfloorAout
+            UfloorAsum = UfloorA*scaletofullwedge(1.)/DTd
             #xxx
             #wrong -- UfloorA[1] += (dUfloor[0,:,js:ny-js,:]*etad0[:,js:ny-js,:]).sum(-1).sum(-1).cumsum(-1)*scaletofullwedge(1.)/DTd
             #########################################
@@ -3821,17 +3816,10 @@ def takeoutfloors(doreload=1,dotakeoutfloors=1):
                 rfloor("failfloordudump0130.bin")
             #add back in rest-mass energy to conserved energy
             dUfloor[1] -= dUfloor[0]
-            UfloorB = dUfloor[:,:,js:ny-js,:].sum(1+PH).cumsum(1+RR)
-            UfloorBstag0, UfloorBstag1, UfloorBstag4 = getstagparams(
-                var=(UfloorB[0],UfloorB[1],UfloorB[4]),rmax=20,doplot=0,doreadgrid=0)
-            #xxx
-            UfloorB[0] -= UfloorBstag0[None,:]
-            UfloorB[1] -= UfloorBstag1[None,:]
-            UfloorB[4] -= UfloorBstag4[None,:]
-            # UfloorB[0] -= UfloorB[0][None,iofr(20)]
-            # UfloorB[1] -= UfloorB[1][None,iofr(20)]
-            # UfloorB[4] -= UfloorB[4][None,iofr(20)]
-            UfloorBsum = UfloorB.sum(-1)*scaletofullwedge(1.)/DTd
+            UfloorBout = (dUfloor*condout[None,:,:,:]).sum(1+PH).sum(1+TH).cumsum(1+RR)
+            UfloorBin = (dUfloor*condin[None,:,:,:]).sum(1+PH).sum(1+TH).cumsum(1+RR)
+            UfloorB = (UfloorBin-UfloorBin[:,nx-1:nx]) + UfloorBout
+            UfloorBsum = UfloorB*scaletofullwedge(1.)/DTd
             if a==0.99:
                 DUfloor = (UfloorBsum - UfloorAsum)
             else:
@@ -3853,19 +3841,25 @@ def takeoutfloors(doreload=1,dotakeoutfloors=1):
     #FIGURE: mass
     plt.figure(1)
     plt.clf()
-    plt.plot(r[:,0,0],-mdtotvsr,'b--',label=r"$F_M$ (uncorrected for floors)")
+    plt.plot(r[:,0,0],mdtotvsr,'b--',label=r"$F_M$ (raw)")
     if dotakeoutfloors:
-        plt.plot(r[:,0,0],-(mdtotvsr+DUfloor0),'b',label=r"$F_M$ (corrected for floors)")
-        plt.plot(r[:,0,0],(edtotvsr+DUfloor1),'r',label=r"$F_E$ (corrected for floors)")
-        plt.plot(r[:,0,0],(DUfloor1),'r:',label=r"$dF_E$")
+        Fm=(mdtotvsr+DUfloor0)
+        plt.plot(r[:,0,0],Fm,'b',label=r"$F_M$")
     if ldtotvsr is not None:
-        plt.plot(r[:,0,0],ldtotvsr/dxdxp[3][3][:,0,0]/10.,'g--',label=r"$F_L/10$ (uncorrected for floors)")
+        Fl=-(ldtotvsr+DUfloor4)
+        plt.plot(r[:,0,0],-ldtotvsr/dxdxp[3][3][:,0,0]/10.,'g--',label=r"$F_L/10$ (raw)")
         if dotakeoutfloors:
-            plt.plot(r[:,0,0],(ldtotvsr/dxdxp[3][3][:,0,0]+DUfloor4)/10.,'g',label=r"$F_L/10$ (corrected for floors)")
-    plt.plot(r[:,0,0],edtotvsr,'r--',label=r"$F_E$ (uncorrected for floors)")
+            plt.plot(r[:,0,0],Fl/dxdxp[3][3][:,0,0]/10.,'g',label=r"$F_L/10$")
+    plt.plot(r[:,0,0],-edtotvsr,'r--',label=r"$F_E$ (raw)")
+    if dotakeoutfloors:
+        Fe=-(edtotvsr+DUfloor1)
+        plt.plot(r[:,0,0],Fe,'r',label=r"$F_E$")
+        plt.plot(r[:,0,0],(DUfloor1),'r:')
+    eta = ((Fm-Fe)/Fm)
+    print("Efficiency = %g, %g, %g" % ( eta[iofr(5)], eta[iofr(10)], eta[iofr(20)] ) )
     #plt.plot(r[:,0,0],DUfloor0,label=r"$dU^t$")
     #plt.plot(r[:,0,0],DUfloor*1e4,label=r"$dU^t\times10^4$")
-    plt.legend(loc='lower right')
+    plt.legend(loc='lower right',ncol=3)
     plt.xlim(rhor,20)
     plt.ylim(-15,15)
     plt.grid()
@@ -3891,31 +3885,32 @@ def takeoutfloors(doreload=1,dotakeoutfloors=1):
     avg_tudmass = (gdet[:,:,0:1]*(avg_rhouu[1])*(avg_ud[0])*_dx2*_dx3*nz).sum(-1).sum(-1)
     avg_tudug = (gdet[:,:,0:1]*(avg_uguu[1])*(avg_ud[0])*_dx2*_dx3*nz).sum(-1).sum(-1)
     avg_tudmassug = (gdet[:,:,0:1]*(avg_rhouu[1]+avg_uguu[1])*(avg_ud[0])*_dx2*_dx3*nz).sum(-1).sum(-1)
+    gc.collect()
     #
-    plt.figure(2)
-    plt.plot(r[:,0,0],edtotvsr,label="tot")
-    plt.plot(r[:,0,0],-edtot2davg,label="tot2davg")
-    #plt.plot(r[:,0,0],-rhouuudtot2davg,label="rhouuud")
-    #plt.plot(r[:,0,0],-gam*uguuudtot2davg,label="gamuguuud")
-    myma=-(rhouuudtot2davg+gam*uguuudtot2davg)
-    plt.plot(r[:,0,0],-avg_tudmass,label="mymass")
-    plt.plot(r[:,0,0],-avg_tudmassug,label="mymassug")
-    plt.plot(r[:,0,0],-avg_tudug,label="myug")
-    plt.plot(r[:,0,0],edmavsr,label="ma")
-    plt.plot(r[:,0,0],edtotvsr-edmavsr,label="tot-ma")
-    #plt.plot(r[:,0,0],DUfloor[1])
-    plt.xlim(rh,20); plt.ylim(-20,20)
-    plt.legend()
-    if ldtotvsr is not None:
-        plt.plot(r[:,0,0],ldtotvsr+DUfloor4,label=r"$Lwoutfloor$")
+    # plt.figure(2)
+    # plt.plot(r[:,0,0],edtotvsr,label="tot")
+    # plt.plot(r[:,0,0],-edtot2davg,label="tot2davg")
+    # #plt.plot(r[:,0,0],-rhouuudtot2davg,label="rhouuud")
+    # #plt.plot(r[:,0,0],-gam*uguuudtot2davg,label="gamuguuud")
+    # myma=-(rhouuudtot2davg+gam*uguuudtot2davg)
+    # plt.plot(r[:,0,0],-avg_tudmass,label="mymass")
+    # plt.plot(r[:,0,0],-avg_tudmassug,label="mymassug")
+    # plt.plot(r[:,0,0],-avg_tudug,label="myug")
+    # plt.plot(r[:,0,0],edmavsr,label="ma")
+    # plt.plot(r[:,0,0],edtotvsr-edmavsr,label="tot-ma")
+    # #plt.plot(r[:,0,0],DUfloor[1])
+    # plt.xlim(rh,20); plt.ylim(-20,20)
+    # plt.legend()
+    # if ldtotvsr is not None:
+    #     plt.plot(r[:,0,0],ldtotvsr+DUfloor4,label=r"$Lwoutfloor$")
     #plt.xlim(rhor,12)
     #plt.ylim(-3,20)
     #xx
-    plt.grid()
-    #
-    plt.figure(3)
-    plt.plot(r[:,0,0],-edtot2davg,label="tot2davg")
-    gc.collect()
+    # plt.grid()
+    # #
+    # plt.figure(3)
+    # plt.plot(r[:,0,0],-edtot2davg,label="tot2davg")
+    # gc.collect()
 
 
 
