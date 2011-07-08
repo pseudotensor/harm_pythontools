@@ -351,7 +351,9 @@ def readlena(fname):
     return(cvals)
 
 def findroot2d( fin, xin, isleft=True, nbnd = 1, axis = 0, fallback = 0, fallbackval = 0 ):
-    """ returns roots, x[i], so that f(x) = 0 """
+    """ returns roots, y(x), so that f(x,y(x)) = 0 (here axis = 0)
+        (axis selects independent variable)
+    """
     if fin.ndim == 3:
         fin = fin[:,:,0]
     if fin.ndim != 2:
