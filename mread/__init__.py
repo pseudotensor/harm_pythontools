@@ -3725,17 +3725,50 @@ def timeavg( qty, ts, fti, ftf ):
     qtyavg = qtycond.mean(axis=0,dtype=np.float64)
     return( qtyavg )
 
+def getstagparams(var=None,rmax=20,doplot=1,doreadgrid=1):
+    if doreadgrid:
+        grid3d("gdump.bin",use2d=True)
+    avgmem = get2davg(usedefault=1)
+    assignavg2dvars(avgmem)
+    #a large enough distance that floors are not applied, yet close enough that reaches inflow equilibrium
+    rnoflooradded=20
+    #radial index and radius of stagnation surface
+    sol = avg_uu[1]*(r-rmax)
+    istag = np.floor( findroot2d(sol, ti, axis = 1, isleft=True, fallback = 1, fallbackval = iofr(rnoflooradded)) + 0.5 )
+    jstag = np.floor( findroot2d(sol, tj, axis = 1, isleft=True, fallback = 1, fallbackval = iofr(rnoflooradded)) + 0.5 )
+    rstag = findroot2d( sol, r, axis = 1, isleft=True, fallback = 1, fallbackval = rnoflooradded )
+    hstag = findroot2d( sol, h, axis = 1, isleft=True, fallback = 1, fallbackval = np.pi/2.)
+    if doplot:
+        plt.figure(1)
+        plt.clf()
+        plt.plot(hstag,rstag)
+        plt.figure(2)
+        plco(avg_uu[1],levels=(0,),colors='k',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        plt.xlim(0,10)
+        plt.ylim(-5,5)
+    #cond=(ti==istag[None,:,None])*(tj==jstag[None,:,None])
+    #print( zip(r[cond],rstag) )
+    if var is not None:
+        varstag = findroot2d( avg_uu[1], var, axis = 1, isleft=True, fallback = 0)
+        return varstag
+    else:
+        return istag, jstag, hstag, rstag
+
 def takeoutfloors(doreload=1,dotakeoutfloors=1):
-    global DUfloor, qtymem, DUfloorori, etad0, deltaUfloor
+    global DUfloor, qtymem, DUfloorori, etad0
     #Mdot, E, L
     grid3d("gdump.bin",use2d=True)
+    istag, jstag, hstag, rstag = getstagparams(rmax=20,doplot=0,doreadgrid=0)
     if a == 0.99:
-        DTd = 22200-22167.669585504507268 #22119.452438349220756
-        fti = 20000.
-        ftf = 21000.
+        print( "Using a = 0.99 settings")
+        #DTd = 22800-22231.9647756934 + 22200-22167.669585504507268 #22119.452438349220756
+        DTd = 22400-22300
+        fti = 14700.
+        ftf = 25000.
     elif a == 0.5:
-        DTd = 400
-        fti = 10000.
+        print( "Using a = 0.5 settings")
+        DTd = 13000.-10300.
+        fti = 10300.
         ftf = 13000.
     else:
         print( "Using default values for fti and ftf..." )
@@ -3743,39 +3776,68 @@ def takeoutfloors(doreload=1,dotakeoutfloors=1):
         fti = 10000.
         ftf = 15000.
     #dotakeoutfloors=1
+    RR=0
+    TH=1
+    PH=2
     if doreload:
         etad0 = -1/(-gn3[0,0])**0.5
         #!!!rhor = 1+(1-a**2)**0.5
         ihor = iofr(rhor)
         qtymem=getqtyvstime(ihor,0.2)
         if dotakeoutfloors:
+            js=0
+            #########################################
+            #
+            # Initial floor dump (A)
+            #
+            #########################################
             if a==0.99:
-                rfloor("failfloordudump0222.bin")
-                dUfloor[:,:,:,:]=dUfloor[:,:,:,:]*0.0
+                rfloor("failfloordudump0223.bin")
             else:
-                rfloor("failfloordudump0126.bin")
-            Ufloor0100 = dUfloor[:,:,0:ny,:].sum(-1).sum(-1).cumsum(-1)*scaletofullwedge(1.)/DTd
-            dUfloor1=dUfloor
-            Ufloor0100[1] = (dUfloor[0,:,:,:]*etad0).sum(-1).sum(-1).cumsum(-1)*scaletofullwedge(1.)/DTd
-            #choplo(chophi(dUfloor[1,:,2:ny-1,:],0.05),-0.05).sum(-1).sum(-1).cumsum(-1)/DTd
-            #Ufloor0100[1:5] = dUfloor[1:5,:,1:ny-1,:].sum(-1).sum(-1).cumsum(-1)/DTd
-            #Ufloor0100[1:2]=choplo(chophi(dUfloor[1,:,0:ny,:],0.05),-0.05).sum(-1).sum(-1).cumsum(-1)/DTd
+                rfloor("failfloordudump0103.bin")
+            #add back in rest-mass energy to conserved energy
+            dUfloor[1] -= dUfloor[0]
+            UfloorA = dUfloor[:,:,js:ny-js,:].sum(1+PH).cumsum(1+RR)
+            UfloorAstag0, UfloorAstag1, UfloorAstag4 = getstagparams(
+                var=(UfloorA[0],UfloorA[1],UfloorA[4]),rmax=20,doplot=0,doreadgrid=0)
+            #xxx
+            UfloorA[0] -= UfloorAstag0[None,:]
+            UfloorA[1] -= UfloorAstag1[None,:]
+            UfloorA[4] -= UfloorAstag4[None,:]
+            # UfloorA[0] -= UfloorA[0][None,iofr(20)]
+            # UfloorA[1] -= UfloorA[1][None,iofr(20)]
+            # UfloorA[4] -= UfloorA[4][None,iofr(20)]
+            UfloorAsum = UfloorA.sum(-1)*scaletofullwedge(1.)/DTd
+            #xxx
+            #wrong -- UfloorA[1] += (dUfloor[0,:,js:ny-js,:]*etad0[:,js:ny-js,:]).sum(-1).sum(-1).cumsum(-1)*scaletofullwedge(1.)/DTd
+            #########################################
+            #
+            # Final floor dump (B)
+            #
+            #########################################
             if a==0.99:
-                rfloor("failfloordudump0222.bin")
+                rfloor("failfloordudump0224.bin")
             else:
                 rfloor("failfloordudump0130.bin")
-            Ufloor0108 = dUfloor[:,:,0:ny,:].sum(-1).sum(-1).cumsum(-1)*scaletofullwedge(1.)/DTd
-            dUfloor2=dUfloor
-            deltaUfloor = dUfloor2-dUfloor1
-            Ufloor0108[1] = (dUfloor[0,:,:,:]*etad0).sum(-1).sum(-1).cumsum(-1)*scaletofullwedge(1.)/DTd
-            #Ufloor0108[1] = choplo(chophi(dUfloor[1,:,2:ny-1,:],0.05),-0.05).sum(-1).sum(-1).cumsum(-1)/DTd 
-            #Ufloor0108[1:5] = dUfloor[1:5,:,1:ny-1,:].sum(-1).sum(-1).cumsum(-1)/DTd 
-            #Ufloor0108[1:2]=choplo(chophi(dUfloor[1,:,0:ny,:],0.05),-0.05).sum(-1).sum(-1).cumsum(-1)/DTd
-            DUfloorori = (Ufloor0108 - Ufloor0100)
+            #add back in rest-mass energy to conserved energy
+            dUfloor[1] -= dUfloor[0]
+            UfloorB = dUfloor[:,:,js:ny-js,:].sum(1+PH).cumsum(1+RR)
+            UfloorBstag0, UfloorBstag1, UfloorBstag4 = getstagparams(
+                var=(UfloorB[0],UfloorB[1],UfloorB[4]),rmax=20,doplot=0,doreadgrid=0)
+            #xxx
+            UfloorB[0] -= UfloorBstag0[None,:]
+            UfloorB[1] -= UfloorBstag1[None,:]
+            UfloorB[4] -= UfloorBstag4[None,:]
+            # UfloorB[0] -= UfloorB[0][None,iofr(20)]
+            # UfloorB[1] -= UfloorB[1][None,iofr(20)]
+            # UfloorB[4] -= UfloorB[4][None,iofr(20)]
+            UfloorBsum = UfloorB.sum(-1)*scaletofullwedge(1.)/DTd
+            if a==0.99:
+                DUfloor = (UfloorBsum - UfloorAsum)
+            else:
+                DUfloor = (UfloorBsum - UfloorAsum)
             #floor info
             #reset zero to where floors are probably not activated, say at r = 1e4
-            myi=iofr(20)
-            DUfloor = DUfloorori - DUfloorori[:,myi:myi+1]
         else:
             DUfloor=np.zeros((8,nx),dtype=np.float64)
     DUfloor0 = DUfloor[0]
@@ -3797,7 +3859,9 @@ def takeoutfloors(doreload=1,dotakeoutfloors=1):
         plt.plot(r[:,0,0],(edtotvsr+DUfloor1),'r',label=r"$F_E$ (corrected for floors)")
         plt.plot(r[:,0,0],(DUfloor1),'r:',label=r"$dF_E$")
     if ldtotvsr is not None:
-        plt.plot(r[:,0,0],ldtotvsr/dxdxp[3][3][:,0,0]/10.,'g',label=r"$F_L/10$")
+        plt.plot(r[:,0,0],ldtotvsr/dxdxp[3][3][:,0,0]/10.,'g--',label=r"$F_L/10$ (uncorrected for floors)")
+        if dotakeoutfloors:
+            plt.plot(r[:,0,0],(ldtotvsr/dxdxp[3][3][:,0,0]+DUfloor4)/10.,'g',label=r"$F_L/10$ (corrected for floors)")
     plt.plot(r[:,0,0],edtotvsr,'r--',label=r"$F_E$ (uncorrected for floors)")
     #plt.plot(r[:,0,0],DUfloor0,label=r"$dU^t$")
     #plt.plot(r[:,0,0],DUfloor*1e4,label=r"$dU^t\times10^4$")
@@ -5320,7 +5384,7 @@ if __name__ == "__main__":
         #plt.clf();
         #plt.figure();
         #pl(r,np.log10(entk));plt.xlim(1,20);plt.ylim(-3,-0.5)
-    if True:
+    if False:
         #Short tutorial. Some of the names will sound familiar :)
         print( "Running a short tutorial: read in grid, 0th dump, plot and compute some things." )
         #1 read in gdump (specifying "use2d=True" reads in just one r-theta slice to save memory)
