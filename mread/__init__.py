@@ -351,7 +351,9 @@ def readlena(fname):
     return(cvals)
 
 def findroot2d( fin, xin, isleft=True, nbnd = 1, axis = 0, fallback = 0, fallbackval = 0 ):
-    """ returns roots, x[i], so that f(x) = 0 """
+    """ returns roots, y(x), so that f(x,y(x)) = 0 (here axis = 0)
+        (axis selects independent variable)
+    """
     if fin.ndim == 3:
         fin = fin[:,:,0]
     if fin.ndim != 2:
@@ -937,11 +939,11 @@ def Qmri():
     res=lambdamriu2/_dx2
     return(res)
 
-def plco(myvar,xcoord=None,ycoord=None,**kwargs):
+def plco(myvar,xcoord=None,ycoord=None,ax=None,**kwargs):
     plt.clf()
-    plc(myvar,xcoord,ycoord,**kwargs)
+    plc(myvar,xcoord,ycoord,ax,**kwargs)
 
-def plc(myvar,xcoord=None,ycoord=None,**kwargs): #plc
+def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
     #xcoord = kwargs.pop('x1', None)
     #ycoord = kwargs.pop('x2', None)
     if(np.min(myvar)==np.max(myvar)):
@@ -954,12 +956,14 @@ def plc(myvar,xcoord=None,ycoord=None,**kwargs): #plc
         xcoord = xcoord[:,:,None] if xcoord.ndim == 2 else xcoord[:,:,k:k+1]
         ycoord = ycoord[:,:,None] if ycoord.ndim == 2 else ycoord[:,:,k:k+1]
     myvar = myvar[:,:,None] if myvar.ndim == 2 else myvar[:,:,k:k+1]
+    if ax is None:
+        ax = plt.gca()
     if( xcoord == None or ycoord == None ):
-        res = plt.contour(myvar[:,:,0].transpose(),nc,**kwargs)
+        res = ax.contour(myvar[:,:,0].transpose(),nc,**kwargs)
     else:
-        res = plt.contour(xcoord[:,:,0],ycoord[:,:,0],myvar[:,:,0],nc,**kwargs)
+        res = ax.contour(xcoord[:,:,0],ycoord[:,:,0],myvar[:,:,0],nc,**kwargs)
     if( cb == True): #use color bar
-        plt.colorbar()
+        plt.colorbar(res,ax=ax)
 
 def reinterp(vartointerp,extent,ncell,domask=1,isasymmetric=False):
     global xi,yi,zi
@@ -1369,14 +1373,15 @@ def fieldcalctoth():
    
 def fieldcalcU(gdetB1=None):
     """
-    Computes the field vector potential
+    Computes cell-centered vector potential
     """
-    if gdetB1 == None:
-        gdetB1 = gdetB[1]
-    daphi = (gdetB1).sum(-1)[:,:,None]*_dx2*_dx3
-    aphi=daphi.cumsum(axis=1)
-    aphi-=0.5*daphi #correction for half-cell shift between face and center in theta
-    aphi[0:nx-1] = 0.5*(aphi[0:nx-1]+aphi[1:nx]) #and in r
+    aphi=fieldcalcface(gdetB1)
+    #center it properly in theta
+    aphi[:,0:ny-1]=0.5*(aphi[:,0:ny-1]+aphi[:,1:ny]) 
+    #special treatment for last cell since no cell at j = ny, and we know aphi[:,ny] should vanish
+    aphi[:,ny-1] *= 0.5
+    #and in r
+    aphi[0:nx-1] = 0.5*(aphi[0:nx-1]  +aphi[1:nx])
     aphi/=(nz*_dx3)
     return(aphi)
 
@@ -3218,16 +3223,30 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     pjtotfinavgvsr40 = pjemfinavgvsr40 + pjmafinavgvsr40
 
     #radius of stagnation point (Pjmabsqorho5(rstag) = 0)
-    istag=(ti[:,0,0][pjmafinavgvsr5>0])[0]
-    rstag=r[istag,0,0]
-    i2stag=iofr(2*rstag)
-    i4stag=iofr(4*rstag)
-    i8stag=iofr(8*rstag)
-    pjtotfinavgvsr5max    = np.max(pjtotfinavgvsr5)
-    pjtotfinavgvsr5rstag  = pjtotfinavgvsr5[istag]
-    pjtotfinavgvsr5r2stag = pjtotfinavgvsr5[i2stag]
-    pjtotfinavgvsr5r4stag = pjtotfinavgvsr5[i4stag]
-    pjtotfinavgvsr5r8stag = pjtotfinavgvsr5[i8stag]
+    indices=ti[:,0,0][pjmafinavgvsr5>0]
+    if indices.shape[0]>0:
+        istag=indices[0]
+        rstag=r[istag,0,0]
+        i2stag=iofr(2*rstag)
+        i4stag=iofr(4*rstag)
+        i8stag=iofr(8*rstag)
+        pjtotfinavgvsr5max    = np.max(pjtotfinavgvsr5)
+        pjtotfinavgvsr5rstag  = pjtotfinavgvsr5[istag]
+        pjtotfinavgvsr5r2stag = pjtotfinavgvsr5[i2stag]
+        pjtotfinavgvsr5r4stag = pjtotfinavgvsr5[i4stag]
+        pjtotfinavgvsr5r8stag = pjtotfinavgvsr5[i8stag]
+    else:
+        istag=0
+        rstag=0
+        i2stag=0
+        i4stag=0
+        i8stag=0
+        pjtotfinavgvsr5max    = np.max(pjtotfinavgvsr5)
+        pjtotfinavgvsr5rstag  = 0
+        pjtotfinavgvsr5r2stag = 0
+        pjtotfinavgvsr5r4stag = 0
+        pjtotfinavgvsr5r8stag = 0
+
     
     
 
@@ -3699,51 +3718,115 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         plt.grid()
         plt.savefig('pjet4_%s.pdf' % os.path.basename(os.getcwd()) )
 
-def timeavg( qty, ts, fti, ftf ):
+def timeavg( qty, ts, fti, ftf, step = 1 ):
     cond = (ts<ftf)*(ts>=fti)
     #use masked array to remove any stray NaN's
     qtycond = np.ma.masked_array(qty[cond],np.isnan(qty[cond]))
+    qtycond = qtycond[::step]
     qtyavg = qtycond.mean(axis=0,dtype=np.float64)
     return( qtyavg )
 
-def takeoutfloors(doreload=1):
-    global DUfloor, qtymem, DUfloorori, etad0, deltaUfloor
-    #Mdot, E, L
-    DTd = 22200-22167.669585504507268 #22119.452438349220756
-    fti = 20000.
-    ftf = 21000.
-    dotakeoutfloors=1
-    if doreload:
+def getstagparams(var=None,rmax=20,doplot=1,doreadgrid=1):
+    if doreadgrid:
         grid3d("gdump.bin",use2d=True)
+    avgmem = get2davg(usedefault=1)
+    assignavg2dvars(avgmem)
+    #a large enough distance that floors are not applied, yet close enough that reaches inflow equilibrium
+    rnoflooradded=20
+    #radial index and radius of stagnation surface
+    sol = avg_uu[1]*(r-rmax)
+    istag = np.floor( findroot2d(sol, ti, axis = 1, isleft=True, fallback = 1, fallbackval = iofr(rnoflooradded)) + 0.5 )
+    jstag = np.floor( findroot2d(sol, tj, axis = 1, isleft=True, fallback = 1, fallbackval = iofr(rnoflooradded)) + 0.5 )
+    rstag = findroot2d( sol, r, axis = 1, isleft=True, fallback = 1, fallbackval = rnoflooradded )
+    hstag = findroot2d( sol, h, axis = 1, isleft=True, fallback = 1, fallbackval = np.pi/2.)
+    if doplot:
+        plt.figure(1)
+        plt.clf()
+        plt.plot(hstag,rstag)
+        plt.figure(2)
+        plco(avg_uu[1],levels=(0,),colors='k',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        plt.xlim(0,10)
+        plt.ylim(-5,5)
+    #cond=(ti==istag[None,:,None])*(tj==jstag[None,:,None])
+    #print( zip(r[cond],rstag) )
+    if var is not None:
+        varstag = findroot2d( avg_uu[1], var, axis = 1, isleft=True, fallback = 0)
+        return varstag
+    else:
+        return istag, jstag, hstag, rstag
+
+def takeoutfloors(doreload=1,dotakeoutfloors=1):
+    global dUfloor, qtymem, DUfloorori, etad0
+    #Mdot, E, L
+    grid3d("gdump.bin",use2d=True)
+    istag, jstag, hstag, rstag = getstagparams(rmax=20,doplot=0,doreadgrid=0)
+    if a == 0.99:
+        print( "Using a = 0.99 settings")
+        #DTd = 22800-22231.9647756934 + 22200-22167.669585504507268 #22119.452438349220756
+        DTd = 22400-22300
+        fti = 14700.
+        ftf = 25000.
+    elif a == 0.5:
+        print( "Using a = 0.5 settings")
+        DTd = 13000.-10300.
+        fti = 10300.
+        ftf = 13000.
+    else:
+        print( "Using default values for fti and ftf..." )
+        DTd = 100
+        fti = 10000.
+        ftf = 15000.
+    #dotakeoutfloors=1
+    RR=0
+    TH=1
+    PH=2
+    if doreload:
         etad0 = -1/(-gn3[0,0])**0.5
         #!!!rhor = 1+(1-a**2)**0.5
         ihor = iofr(rhor)
         qtymem=getqtyvstime(ihor,0.2)
         if dotakeoutfloors:
-            rfloor("failfloordudump0222.bin")
-            #dUfloor=dUfloor*0
-            dUfloor[:,:,:,:]=dUfloor[:,:,:,:]*0.0
-            Ufloor0100 = dUfloor[:,:,0:ny,:].sum(-1).sum(-1).cumsum(-1)/DTd
-            dUfloor1=dUfloor
-            #Ufloor0100[1] = (dUfloor[0,:,:,:]*etad0).sum(-1).sum(-1).cumsum(-1)/DTd
-            #choplo(chophi(dUfloor[1,:,2:ny-1,:],0.05),-0.05).sum(-1).sum(-1).cumsum(-1)/DTd
-            #Ufloor0100[1:5] = dUfloor[1:5,:,1:ny-1,:].sum(-1).sum(-1).cumsum(-1)/DTd
-            #Ufloor0100[1:2]=choplo(chophi(dUfloor[1,:,0:ny,:],0.05),-0.05).sum(-1).sum(-1).cumsum(-1)/DTd
-            rfloor("failfloordudump0222.bin")
-            Ufloor0108 = dUfloor[:,:,0:ny,:].sum(-1).sum(-1).cumsum(-1)/DTd
-            dUfloor2=dUfloor
-            deltaUfloor = dUfloor2-dUfloor1
-            dUfloor1=0
-            dUfloor1=0
-            #Ufloor0108[1] = (dUfloor[0,:,:,:]*etad0).sum(-1).sum(-1).cumsum(-1)/DTd
-            #Ufloor0108[1] = choplo(chophi(dUfloor[1,:,2:ny-1,:],0.05),-0.05).sum(-1).sum(-1).cumsum(-1)/DTd 
-            #Ufloor0108[1:5] = dUfloor[1:5,:,1:ny-1,:].sum(-1).sum(-1).cumsum(-1)/DTd 
-            #Ufloor0108[1:2]=choplo(chophi(dUfloor[1,:,0:ny,:],0.05),-0.05).sum(-1).sum(-1).cumsum(-1)/DTd
-            DUfloorori = (Ufloor0108 - Ufloor0100)
+            js=0
+            #########################################
+            #
+            # Initial floor dump (A)
+            #
+            #########################################
+            if a==0.99:
+                rfloor("failfloordudump0223.bin")
+            else:
+                rfloor("failfloordudump0103.bin")
+            #add back in rest-mass energy to conserved energy
+            dUfloor[1] -= dUfloor[0]
+            condin = (avg_uu[1]<0)*(r[:,:,0:1]<20)
+            condout = 1 - condin
+            UfloorAout = (dUfloor*condout[None,:,:,:]).sum(1+PH).sum(1+TH).cumsum(1+RR)
+            UfloorAin = (dUfloor*condin[None,:,:,:]).sum(1+PH).sum(1+TH).cumsum(1+RR)
+            UfloorA = (UfloorAin-UfloorAin[:,nx-1:nx]) + UfloorAout
+            UfloorAsum = UfloorA*scaletofullwedge(1.)/DTd
+            #xxx
+            #wrong -- UfloorA[1] += (dUfloor[0,:,js:ny-js,:]*etad0[:,js:ny-js,:]).sum(-1).sum(-1).cumsum(-1)*scaletofullwedge(1.)/DTd
+            #########################################
+            #
+            # Final floor dump (B)
+            #
+            #########################################
+            if a==0.99:
+                rfloor("failfloordudump0224.bin")
+            else:
+                rfloor("failfloordudump0130.bin")
+            #add back in rest-mass energy to conserved energy
+            dUfloor[1] -= dUfloor[0]
+            UfloorBout = (dUfloor*condout[None,:,:,:]).sum(1+PH).sum(1+TH).cumsum(1+RR)
+            UfloorBin = (dUfloor*condin[None,:,:,:]).sum(1+PH).sum(1+TH).cumsum(1+RR)
+            UfloorB = (UfloorBin-UfloorBin[:,nx-1:nx]) + UfloorBout
+            UfloorBsum = UfloorB*scaletofullwedge(1.)/DTd
+            if a==0.99:
+                DUfloor = (UfloorBsum - UfloorAsum)
+            else:
+                DUfloor = (UfloorBsum - UfloorAsum)
             #floor info
             #reset zero to where floors are probably not activated, say at r = 1e4
-            myi=iofr(20)
-            DUfloor = DUfloorori - DUfloorori[:,myi:myi+1]
         else:
             DUfloor=np.zeros((8,nx),dtype=np.float64)
     DUfloor0 = DUfloor[0]
@@ -3759,17 +3842,26 @@ def takeoutfloors(doreload=1):
     #FIGURE: mass
     plt.figure(1)
     plt.clf()
-    plt.plot(r[:,0,0],-mdtotvsr,'b--',label=r"$F_M$ (uncorrected for floors)")
+    plt.plot(r[:,0,0],mdtotvsr,'b--',label=r"$F_M$ (raw)")
     if dotakeoutfloors:
-        plt.plot(r[:,0,0],-(mdtotvsr+DUfloor0),'b',label=r"$F_M$ (corrected for floors)")
-        plt.plot(r[:,0,0],(edtotvsr+DUfloor1),'r',label=r"$F_E$ (corrected for floors)")
-        plt.plot(r[:,0,0],(DUfloor1),'r:',label=r"$dF_E$")
+        Fm=(mdtotvsr+DUfloor0)
+        plt.plot(r[:,0,0],Fm,'b',label=r"$F_M$")
     if ldtotvsr is not None:
-        plt.plot(r[:,0,0],ldtotvsr/dxdxp[3][3][:,0,0]/10.,'g',label=r"$F_L/10$")
-    plt.plot(r[:,0,0],edtotvsr,'r--',label=r"$F_E$ (uncorrected for floors)")
+        Fl=-(ldtotvsr+DUfloor4)
+        plt.plot(r[:,0,0],-ldtotvsr/dxdxp[3][3][:,0,0]/10.,'g--',label=r"$F_L/10$ (raw)")
+        if dotakeoutfloors:
+            plt.plot(r[:,0,0],Fl/dxdxp[3][3][:,0,0]/10.,'g',label=r"$F_L/10$")
+    plt.plot(r[:,0,0],-edtotvsr,'r--',label=r"$F_E$ (raw)")
+    if dotakeoutfloors:
+        Fe=-(edtotvsr+DUfloor1)
+        plt.plot(r[:,0,0],Fe,'r',label=r"$F_E$")
+        plt.plot(r[:,0,0],(DUfloor1),'r:')
+    eta = ((Fm-Fe)/Fm)
+    etap = (Fm-Fe)/Fe
+    print("Eff = %g, Eff' = %g" % ( eta[iofr(5)], etap[iofr(5)] ) )
     #plt.plot(r[:,0,0],DUfloor0,label=r"$dU^t$")
     #plt.plot(r[:,0,0],DUfloor*1e4,label=r"$dU^t\times10^4$")
-    plt.legend(loc='lower right')
+    plt.legend(loc='lower right',ncol=3)
     plt.xlim(rhor,20)
     plt.ylim(-15,15)
     plt.grid()
@@ -3795,31 +3887,32 @@ def takeoutfloors(doreload=1):
     avg_tudmass = (gdet[:,:,0:1]*(avg_rhouu[1])*(avg_ud[0])*_dx2*_dx3*nz).sum(-1).sum(-1)
     avg_tudug = (gdet[:,:,0:1]*(avg_uguu[1])*(avg_ud[0])*_dx2*_dx3*nz).sum(-1).sum(-1)
     avg_tudmassug = (gdet[:,:,0:1]*(avg_rhouu[1]+avg_uguu[1])*(avg_ud[0])*_dx2*_dx3*nz).sum(-1).sum(-1)
+    gc.collect()
     #
-    plt.figure(2)
-    plt.plot(r[:,0,0],edtotvsr,label="tot")
-    plt.plot(r[:,0,0],-edtot2davg,label="tot2davg")
-    #plt.plot(r[:,0,0],-rhouuudtot2davg,label="rhouuud")
-    #plt.plot(r[:,0,0],-gam*uguuudtot2davg,label="gamuguuud")
-    myma=-(rhouuudtot2davg+gam*uguuudtot2davg)
-    plt.plot(r[:,0,0],-avg_tudmass,label="mymass")
-    plt.plot(r[:,0,0],-avg_tudmassug,label="mymassug")
-    plt.plot(r[:,0,0],-avg_tudug,label="myug")
-    plt.plot(r[:,0,0],edmavsr,label="ma")
-    plt.plot(r[:,0,0],edtotvsr-edmavsr,label="tot-ma")
-    #plt.plot(r[:,0,0],DUfloor[1])
-    plt.xlim(rh,20); plt.ylim(-20,20)
-    plt.legend()
-    if ldtotvsr is not None:
-        plt.plot(r[:,0,0],ldtotvsr+DUfloor4,label=r"$Lwoutfloor$")
+    # plt.figure(2)
+    # plt.plot(r[:,0,0],edtotvsr,label="tot")
+    # plt.plot(r[:,0,0],-edtot2davg,label="tot2davg")
+    # #plt.plot(r[:,0,0],-rhouuudtot2davg,label="rhouuud")
+    # #plt.plot(r[:,0,0],-gam*uguuudtot2davg,label="gamuguuud")
+    # myma=-(rhouuudtot2davg+gam*uguuudtot2davg)
+    # plt.plot(r[:,0,0],-avg_tudmass,label="mymass")
+    # plt.plot(r[:,0,0],-avg_tudmassug,label="mymassug")
+    # plt.plot(r[:,0,0],-avg_tudug,label="myug")
+    # plt.plot(r[:,0,0],edmavsr,label="ma")
+    # plt.plot(r[:,0,0],edtotvsr-edmavsr,label="tot-ma")
+    # #plt.plot(r[:,0,0],DUfloor[1])
+    # plt.xlim(rh,20); plt.ylim(-20,20)
+    # plt.legend()
+    # if ldtotvsr is not None:
+    #     plt.plot(r[:,0,0],ldtotvsr+DUfloor4,label=r"$Lwoutfloor$")
     #plt.xlim(rhor,12)
     #plt.ylim(-3,20)
     #xx
-    plt.grid()
-    #
-    plt.figure(3)
-    plt.plot(r[:,0,0],-edtot2davg,label="tot2davg")
-    gc.collect()
+    # plt.grid()
+    # #
+    # plt.figure(3)
+    # plt.plot(r[:,0,0],-edtot2davg,label="tot2davg")
+    # gc.collect()
 
 
 
@@ -5343,3 +5436,49 @@ if __name__ == "__main__":
         #plt.clf();
         #plt.figure();
         #pl(r,np.log10(entk));plt.xlim(1,20);plt.ylim(-3,-0.5)
+    if False:
+        #Short tutorial. Some of the names will sound familiar :)
+        print( "Running a short tutorial: read in grid, 0th dump, plot and compute some things." )
+        #1 read in gdump (specifying "use2d=True" reads in just one r-theta slice to save memory)
+        grid3d("gdump.bin", use2d = True)
+        #2 read in dump0000
+        doreaddump = 0
+        if doreaddump:
+            rd("dump0000.bin")
+        #   or, instead of dump, you could read in fieldline0000.bin
+        rfd("fieldline0000.bin")
+        #3 compute extra things
+        docomputeextrathings = False
+        if docomputeextrathings:
+            cvel()
+            Tcalcud()
+            faraday()
+        #4 compute vector potential
+        aphi = fieldcalc()
+        #5 plot density and overplotted vector potential
+        plt.figure(1)  #open figure 1
+        plco(lrho,cb=True,nc=50) #plco -- erases and plots; cb=True tells it to draw color bar, nc = number of contours
+        plc(aphi,colors='k') #plc -- overplots without erasing; colors='k' says plot in blac'k'
+        #5a compute same in x-z coordinates
+        fig = plt.figure(2)  #open figure 2
+        ax = fig.add_subplot(111, aspect='equal')
+        plco(lrho,cb=True,nc=50,xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        plc(aphi,nc=100,colors='k',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        plt.xlim(0,50)
+        plt.ylim(-25,25)
+        ax.set_aspect('equal')   
+        #6 compute u^\phi
+        uuphi = uu[3] * dxdxp[3,3]
+        #7 compute u_\phi
+        #  first, lower the index
+        ud_computed = mdot(gv3,uu)  #<-- this is already computed as 'ud' inside of cvel() call
+        #  then, take 3rd component and convert to phi from x3
+        udphi = (ud_computed/dxdxp[3,3])[3]
+        #8 phi-average density
+        rhophiavg = rho.mean(axis=-1)  #-1 says to average over the last dimension
+        #9 clean up some memory
+        ud_computed = None
+        uuphi = None
+        udphi = None
+        aphi = None
+        gc.collect()
