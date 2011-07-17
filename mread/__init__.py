@@ -2850,7 +2850,7 @@ def iofr(rval):
     res = interp1d(r[:,0,0], ti[:,0,0], kind='linear')
     return(np.floor(res(rval)+0.5))
 
-def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False):
+def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100):
     global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
     nqtyold=98
     nqty=98+32+1
@@ -3301,12 +3301,12 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     #######################
     if whichplot == 4:
-        etabh = 100*pjemtot[:,ihor]/mdotfinavg
-        etaj = 100*pjke_mu2[:,iofr(100)]/mdotfinavg
-        etaw = 100*(pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotfinavg
-        etabh2 = 100*pjemtot[:,ihor]/mdotiniavg
-        etaj2 = 100*pjke_mu2[:,iofr(100)]/mdotiniavg
-        etaw2 = 100*(pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotiniavg
+        etabh = prefactor*pjemtot[:,ihor]/mdotfinavg
+        etaj = prefactor*pjke_mu2[:,iofr(100)]/mdotfinavg
+        etaw = prefactor*(pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotfinavg
+        etabh2 = prefactor*pjemtot[:,ihor]/mdotiniavg
+        etaj2 = prefactor*pjke_mu2[:,iofr(100)]/mdotiniavg
+        etaw2 = prefactor*(pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotiniavg
         if(1 and iti>fti):
             #use mdot averaged over the same time interval for iti<t<=itf
             icond=(ts>=iti)*(ts<itf)
@@ -4402,6 +4402,61 @@ def plotdiv():
     plt.xlim(rh,30)
     #plt.ylim(-20,20)
     #res[:,1:-1] += (vec[2][:,2:]-vec[2][:,:-2])  
+
+def ploteta():
+    #FIGURE 1 LOTSOPANELS
+    #Figure 1
+    #To make plot, run 
+    #run ~/py/mread/__init__.py 1 1
+    #To re-make plot without reloading the fiels, run
+    #run ~/py/mread/__init__.py 1 -1
+    bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
+    #AT: plt.legend( loc = 'upper left', bbox_to_anchor = (0.5, 0.5) ) #0.5, 0.5 = center of plot
+    #To generate movies for all sub-folders of a folder:
+    #cd ~/Research/runart; for f in *; do cd ~/Research/runart/$f; (python  ~/py/mread/__init__.py &> python.out &); done
+    grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=True )
+    #rd( "dump0000.bin" )
+    #rfd("fieldline0000.bin")  #to definea
+    #grid3dlight("gdump")
+    qtymem=None #clear to free mem
+    rhor=1+(1+a**2)**0.5
+    ihor = np.floor(iofr(rhor)+0.5);
+    qtymem=getqtyvstime(ihor,0.2)
+    fig=plt.figure(0, figsize=(12,6), dpi=100)
+    plt.clf()
+    #
+    #pjet/<mdot>
+    #
+    ax34 = plt.gca()
+    plotqtyvstime(qtymem,ax=ax34,whichplot=4,prefactor=1)
+    ymax=ax34.get_ylim()[1]
+    if 1 < ymax and ymax < 2: 
+        #ymax = 2
+        tck=(1,)
+        ax34.set_yticks(tck)
+        #ax34.set_yticklabels(('','1','2'))
+    elif ymax < 1: 
+        ymax = 1
+        tck=(0.5,1)
+        ax34.set_yticks(tck)
+        ax34.set_yticklabels(('','1'))
+    else:
+        ymax=np.floor(ymax)+1
+        tck=np.arange(1,ymax)
+        ax34.set_yticks(tck)
+    #reset lower limit to 0
+    ax34.set_ylim((0,ax34.get_ylim()[1]))
+    ax34.grid(True)
+    ax34.set_ylabel(r"$\eta$")
+    # plt.text(ax34.get_xlim()[1]/40., 0.8*ax34.get_ylim()[1], r"$(\mathrm{g})$", size=16, rotation=0.,
+    #          ha="center", va="center",
+    #          color='k',weight='regular',bbox=bbox_props
+    #          )
+    ax34r = ax34.twinx()
+    ax34r.set_ylim(ax34.get_ylim())
+    ax34r.set_yticks(tck)
+    gc.collect()
+
 
 if __name__ == "__main__":
     if False:
