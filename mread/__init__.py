@@ -4550,8 +4550,549 @@ def ploteta():
     ax34r.set_yticks(tck)
     gc.collect()
 
+def mkmovie(framesize=50, domakeavi=False):
+    #Rz and xy planes side by side
+    plotlenf=10
+    plotleni=framesize
+    plotlenti=1e6 #so high that never gets used
+    plotlentf=2e6
+    #To generate movies for all sub-folders of a folder:
+    #cd ~/Research/runart; for f in *; do cd ~/Research/runart/$f; (python  ~/py/mread/__init__.py &> python.out &); done
+    if len(sys.argv[1:])==2 and sys.argv[1].isdigit() and (sys.argv[2].isdigit() or sys.argv[2][0]=="-") :
+        whichi = int(sys.argv[1])
+        whichn = int(sys.argv[2])
+        print( "Doing every %d slice of total %d slices" % (whichi, whichn) )
+        sys.stdout.flush()
+    else:
+        whichi = None
+        whichn = None
+    if whichn < 0 and whichn is not None:
+        whichn = -whichn
+        dontloadfiles = True
+    else:
+        dontloadfiles = False
+        grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=True )
+        rd( "dump0000.bin" )
+        rfd("fieldline0000.bin")  #to definea
+        #grid3dlight("gdump")
+        qtymem=None #clear to free mem
+        rhor=1+(1+a**2)**0.5
+        ihor = np.floor(iofr(rhor)+0.5);
+        qtymem=getqtyvstime(ihor,0.2)
+        flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
 
-if __name__ == "__main__":
+    for findex, fname in enumerate(flist):
+        if findex % whichn != whichi:
+            continue
+        if dontloadfiles == False and os.path.isfile("lrho%04d_Rzxym1.png" % (findex)):
+            print( "Skipping " + fname + " as lrho%04d_Rzxym1.png exists" % (findex) );
+        else:
+            print( "Processing " + fname + " ..." )
+            sys.stdout.flush()
+            rfd("../"+fname)
+            cvel() #for calculating bsq
+            plotlen = plotleni+(plotlenf-plotleni)*(t-plotlenti)/(plotlentf-plotlenti)
+            plotlen = min(plotlen,plotleni)
+            plotlen = max(plotlen,plotlenf)
+            plt.figure(0, figsize=(12,9), dpi=100)
+            plt.clf()
+            #SWITCH OFF SUPTITLE
+            #plt.suptitle(r'$\log_{10}\rho$ at t = %4.0f' % t)
+            #mdot,pjet,pjet/mdot plots
+            gs3 = GridSpec(3, 3)
+            #gs3.update(left=0.055, right=0.97, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
+            gs3.update(left=0.055, right=0.95, top=0.42, bottom=0.03, wspace=0.01, hspace=0.04)
+            #mdot
+            ax31 = plt.subplot(gs3[-3,:])
+            plotqtyvstime(qtymem,ax=ax31,whichplot=1,findex=findex)
+            ymax=ax31.get_ylim()[1]
+            ymax=2*(np.floor(np.floor(ymax+1.5)/2))
+            ax31.set_yticks((ymax/2,ymax))
+            ax31.grid(True)
+            #pjet
+            # ax32 = plt.subplot(gs3[-2,:])
+            # plotqtyvstime(qtymem,ax=ax32,whichplot=2)
+            # ymax=ax32.get_ylim()[1]
+            # ax32.set_yticks((ymax/2,ymax))
+            # ax32.grid(True)
+            #pjet/mdot
+            # ax33 = plt.subplot(gs3[-1,:])
+            # plotqtyvstime(qtymem,ax=ax33,whichplot=3)
+            # ymax=ax33.get_ylim()[1]
+            # ax33.set_yticks((ymax/2,ymax))
+            # ax33.grid(True)
+            #
+            #\phi
+            #
+            ax35 = plt.subplot(gs3[-2,:])
+            plotqtyvstime(qtymem,ax=ax35,whichplot=5,findex=findex)
+            ymax=ax35.get_ylim()[1]
+            if 1 < ymax and ymax < 2: 
+                #ymax = 2
+                tck=(1,)
+                ax35.set_yticks(tck)
+                #ax35.set_yticklabels(('','1','2'))
+            elif ymax < 1: 
+                ymax = 1
+                tck=(0.5,1)
+                ax35.set_yticks(tck)
+                ax35.set_yticklabels(('','1'))
+            else:
+                ymax=np.floor(ymax)+1
+                tck=np.arange(1,ymax)
+                ax35.set_yticks(tck)
+            ax35.grid(True)
+            #
+            #pjet/<mdot>
+            #
+            ax34 = plt.subplot(gs3[-1,:])
+            plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findex)
+            ymax=ax34.get_ylim()[1]
+            if 100 < ymax and ymax < 200: 
+                #ymax = 2
+                tck=(100,)
+                ax34.set_yticks(tck)
+                #ax34.set_yticklabels(('','100','200'))
+            elif ymax < 100: 
+                ymax = 100
+                tck=(50,100)
+                ax34.set_yticks(tck)
+                ax34.set_yticklabels(('','100'))
+            else:
+                ymax=np.floor(ymax/100.)+1
+                ymax*=100
+                tck=np.arange(1,ymax/100.)*100
+                ax34.set_yticks(tck)
+            #reset lower limit to 0
+            ax34.set_ylim((0,ax34.get_ylim()[1]))
+            ax34.grid(True)
+            #Rz xy
+            gs1 = GridSpec(1, 1)
+            gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.45, wspace=0.05)
+            ax1 = plt.subplot(gs1[:, -1])
+            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False)
+            gs2 = GridSpec(1, 1)
+            gs2.update(left=0.5, right=1, top=0.99, bottom=0.45, wspace=0.05)
+            ax2 = plt.subplot(gs2[:, -1])
+            mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True)
+            #print xxx
+            plt.savefig( "lrho%04d_Rzxym1.png" % (findex)  )
+            plt.savefig( "lrho%04d_Rzxym1.eps" % (findex)  )
+            #print xxx
+    print( "Done!" )
+    sys.stdout.flush()
+    if domakeavi:
+        #print( "Now you can make a movie by running:" )
+        #print( "ffmpeg -fflags +genpts -r 10 -i lrho%04d.png -vcodec mpeg4 -qmax 5 mov.avi" )
+        os.system("mv mov_%s_Rzxym1.avi mov_%s_Rzxym1.bak.avi" % ( os.path.basename(os.getcwd()), os.path.basename(os.getcwd())) )
+        #os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 mov_%s_Rzxym1.avi" % (os.path.basename(os.getcwd())) )
+        os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 1 mov_%s_Rzxym1p1.avi" % (os.path.basename(os.getcwd())) )
+        os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 2 mov_%s_Rzxym1.avi" % (os.path.basename(os.getcwd())) )
+        #os.system("scp mov.avi 128.112.70.76:Research/movies/mov_`basename \`pwd\``.avi")
+
+def mk2davg():
+    if len(sys.argv[1:])!=0:
+        grid3d("gdump.bin",use2d=True)
+        #rd("dump0000.bin")
+        rfd("fieldline0000.bin")
+    if len(sys.argv[1:])==2 and sys.argv[1].isdigit() and sys.argv[2].isdigit():
+        whichgroup = int(sys.argv[1])
+        step = int(sys.argv[2])
+        itemspergroup = 20
+        for whichgroup in np.arange(whichgroup,1000,step):
+            avgmem = get2davg(whichgroup=whichgroup,itemspergroup=itemspergroup)
+        #plot2davg(avgmem)
+    elif len(sys.argv[1:])==3 and sys.argv[1].isdigit() and sys.argv[2].isdigit() and sys.argv[3].isdigit():
+        whichgroups = int(sys.argv[1])
+        whichgroupe = int(sys.argv[2])
+        step = int(sys.argv[3])
+        itemspergroup = 20
+        if step == 0:
+            avgmem = get2davg(usedefault=1)
+        elif step == 1:
+            avgmem = get2davg(whichgroups=whichgroups,whichgroupe=whichgroupe,itemspergroup=itemspergroup)
+        else:
+            for whichgroup in np.arange(whichgroups,whichgroupe,step):
+                avgmem = get2davg(whichgroup=whichgroup,itemspergroup=itemspergroup)
+        print( "Assigning averages..." )
+        assignavg2dvars(avgmem)
+    plot2davg(whichplot=1)
+    gc.collect()
+
+def mkstreamlinefigure():
+    mylen = 30
+    grid3d("gdump.bin",use2d=True)
+    rfd("fieldline0000.bin")
+    avgmem = get2davg(usedefault=1)
+    assignavg2dvars(avgmem)
+    fig=plt.figure(1,figsize=(12,9))
+    ax = fig.add_subplot(111, aspect='equal')
+    if False:
+        #velocity
+        B[1:] = avg_uu[1:]
+        bsq = avg_bsq
+        mkframe("myframe",len=mylen,ax=ax,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
+    if True:
+        #field
+        B[1] = avg_B[0]
+        B[2] = avg_B[1]
+        B[3] = avg_B[2]
+        bsq = avg_bsq
+        plt.figure(1)
+        gdetB[1:] = avg_gdetB[0:]
+        mu = avg_mu
+        mkframe("myframe",len=25./30.*mylen,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=12,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.01,color='r',lw=1,startatmidplane=True,showjet=False)
+    if False:
+        x = (r*np.sin(h))[:,:,0]
+        z = (r*np.cos(h))[:,:,0]
+        x = np.concatenate(-x,x)
+        z = np.concatenate(y,y)
+        mu = np.concatenate(avg_mu[:,:,0],avg_mu[:,:,0])
+        plt.contourf( x, z, mu )
+    ax.set_aspect('equal')   
+    rhor=1+(1-a**2)**0.5
+    el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
+    art=ax.add_artist(el)
+    art.set_zorder(20)
+    mylenshow = 25./30.*mylen
+    plt.xlim(-mylenshow,mylenshow)
+    plt.ylim(-mylenshow,mylenshow)
+    plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
+    plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=15,fontsize=16)
+    # plt.savefig("fig2.pdf",bbox_inches='tight',pad_inches=0.02)
+    # plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02)
+    plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02)
+
+def mklotsopanels():
+    #Figure 1
+    #To make plot, run 
+    #run ~/py/mread/__init__.py 1 1
+    #To re-make plot without reloading the fiels, run
+    #run ~/py/mread/__init__.py 1 -1
+    domakeframes=True
+    doslines=True
+    plotlenf=10
+    plotleni=25
+    plen=plotleni
+    plotlenti=40000
+    plotlentf=45000
+    bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
+    #AT: plt.legend( loc = 'upper left', bbox_to_anchor = (0.5, 0.5) ) #0.5, 0.5 = center of plot
+    #To generate movies for all sub-folders of a folder:
+    #cd ~/Research/runart; for f in *; do cd ~/Research/runart/$f; (python  ~/py/mread/__init__.py &> python.out &); done
+    if len(sys.argv[1:])==2 and sys.argv[1].isdigit() and (sys.argv[2].isdigit() or sys.argv[2][0]=="-") :
+        whichi = int(sys.argv[1])
+        whichn = int(sys.argv[2])
+        print( "Doing every %d slice of total %d slices" % (whichi, whichn) )
+        sys.stdout.flush()
+    else:
+        whichi = None
+        whichn = None
+    if whichn < 0 and whichn is not None:
+        whichn = -whichn
+        dontloadfiles = True
+    else:
+        dontloadfiles = False
+        grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=True )
+        rd( "dump0000.bin" )
+        rfd("fieldline0000.bin")  #to definea
+        #grid3dlight("gdump")
+        qtymem=None #clear to free mem
+        rhor=1+(1+a**2)**0.5
+        ihor = np.floor(iofr(rhor)+0.5);
+        qtymem=getqtyvstime(ihor,0.2)
+        flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
+    #make accretion rate plot, etc.
+    sys.stdout.flush()
+    plotlen = plotleni+(plotlenf-plotleni)*(t-plotlenti)/(plotlentf-plotlenti)
+    plotlen = min(plotlen,plotleni)
+    plotlen = max(plotlen,plotlenf)
+    fig=plt.figure(0, figsize=(12,9), dpi=100)
+    plt.clf()
+    #findexlist=(0,600,1285,1459)
+    findexlist=(0,600,1225,1369)
+    #SWITCH OFF SUPTITLE
+    #plt.suptitle(r'$\log_{10}\rho$ at t = %4.0f' % t)
+    #mdot,pjet,pjet/mdot plots
+    findex = 0
+    gs3 = GridSpec(3, 3)
+    gs3.update(left=0.055, right=0.97, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
+    #mdot
+    ax31 = plt.subplot(gs3[-3,:])
+    plotqtyvstime(qtymem,ax=ax31,whichplot=1,findex=findexlist) #AT: need to specify index!
+    ymax=ax31.get_ylim()[1]
+    ymax=2*(np.floor(np.floor(ymax+1.5)/2))
+    ax31.set_yticks((ymax/2,ymax))
+    #ax31.set_xlabel(r"$t\ [r_g/c]")
+    ax31.grid(True)
+    plt.text(ax31.get_xlim()[1]/40., 0.8*ax31.get_ylim()[1], "$(\mathrm{e})$", size=16, rotation=0.,
+             ha="center", va="center",
+             color='k',weight='regular',bbox=bbox_props
+             )
+    ax31r = ax31.twinx()
+    ax31r.set_ylim(ax31.get_ylim())
+    ax31r.set_yticks((ymax/2,ymax))
+    #pjet
+    # ax32 = plt.subplot(gs3[-2,:])
+    # plotqtyvstime(qtymem,ax=ax32,whichplot=2)
+    # ymax=ax32.get_ylim()[1]
+    # ax32.set_yticks((ymax/2,ymax))
+    # ax32.grid(True)
+    #pjet/mdot
+    # ax33 = plt.subplot(gs3[-1,:])
+    # plotqtyvstime(qtymem,ax=ax33,whichplot=3)
+    # ymax=ax33.get_ylim()[1]
+    # ax33.set_yticks((ymax/2,ymax))
+    # ax33.grid(True)
+    #
+    #\phi
+    #
+
+    # plt.text(250, 0.9*ymax, "i", size=10, rotation=0.,
+    #          ha="center", va="center",
+    #          bbox = dict(boxstyle="square",
+    #                      ec=(1., 0.5, 0.5),
+    #                      fc=(1., 0.8, 0.8),
+    #                      )
+    #          )
+    ax35 = plt.subplot(gs3[-2,:])
+    plotqtyvstime(qtymem,ax=ax35,whichplot=5,findex=findexlist)
+    ymax=ax35.get_ylim()[1]
+    if 1 < ymax and ymax < 2: 
+        #ymax = 2
+        tck=(1,)
+        ax35.set_yticks(tck)
+        #ax35.set_yticklabels(('','1','2'))
+    elif ymax < 1: 
+        ymax = 1
+        tck=(0.5,1)
+        ax35.set_yticks(tck)
+        ax35.set_yticklabels(('','1'))
+    else:
+        ymax=np.floor(ymax)+1
+        tck=np.arange(1,ymax)
+        ax35.set_yticks(tck)
+    ax35.grid(True)
+    plt.text(ax35.get_xlim()[1]/40., 0.8*ax35.get_ylim()[1], r"$(\mathrm{f})$", size=16, rotation=0.,
+             ha="center", va="center",
+             color='k',weight='regular',bbox=bbox_props
+             )
+    ax35r = ax35.twinx()
+    ax35r.set_ylim(ax35.get_ylim())
+    ax35r.set_yticks(tck)
+    #
+    #pjet/<mdot>
+    #
+    ax34 = plt.subplot(gs3[-1,:])
+    plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findexlist)
+    ymax=ax34.get_ylim()[1]
+    if 100 < ymax and ymax < 200: 
+        #ymax = 2
+        tck=(100,)
+        ax34.set_yticks(tck)
+        #ax34.set_yticklabels(('','100','200'))
+    elif ymax < 100: 
+        ymax = 100
+        tck=(50,100)
+        ax34.set_yticks(tck)
+        ax34.set_yticklabels(('','100'))
+    else:
+        ymax=np.floor(ymax/100.)+1
+        ymax*=100
+        tck=np.arange(1,ymax/100.)*100
+        ax34.set_yticks(tck)
+    #reset lower limit to 0
+    ax34.set_ylim((0,ax34.get_ylim()[1]))
+    ax34.grid(True)
+    plt.text(ax34.get_xlim()[1]/40., 0.8*ax34.get_ylim()[1], r"$(\mathrm{g})$", size=16, rotation=0.,
+             ha="center", va="center",
+             color='k',weight='regular',bbox=bbox_props
+             )
+    ax34r = ax34.twinx()
+    ax34r.set_ylim(ax34.get_ylim())
+    ax34r.set_yticks(tck)
+    #
+    if domakeframes:
+        #
+        # Make Frames
+        #
+        dogrid = False
+        downsample=4
+        density=2
+        dodiskfield=True
+        minlenbhfield=0.2
+        minlendiskfield=0.2
+        #
+        # PLOT 1
+        #
+        fname = "fieldline%04d.bin" % findexlist[0]
+        rfd(fname)
+        cvel() #for calculating bsq
+        #xz
+        gs1 = GridSpec(4, 4)
+        gs1.update(left=0.04, right=0.94, top=0.995, bottom=0.48, wspace=0.05)
+        #
+        ax1 = plt.subplot(gs1[2:4, 0])
+        # plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{a})$", size=16, rotation=0.,
+        #          ha="center", va="center",
+        #          color='k',weight='regular',bbox=bbox_props
+        #          )
+        mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=False)
+        ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
+        ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
+        if dogrid: plt.grid()
+        #xy
+        ax2 = plt.subplot(gs1[0:2, 0])
+        mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=False)
+        plt.setp( ax2.get_xticklabels(), visible=False)
+        plt.text(-0.75*plen, 0.8*plen, r"$(\mathrm{a})$", size=16, rotation=0.,
+                 ha="center", va="center",
+                 color='w',weight='regular' #,bbox=bbox_props
+                 )
+        plt.text(0.9*plen, 0.8*plen, r"$t=%g$" % np.floor(t), size=16, rotation=0.,
+                 ha="right", va="center",
+                 color='w',weight='regular' #,bbox=bbox_props
+                 )
+        ax2.set_ylabel(r'$y\ [r_g]$',fontsize=16,ha='center')
+        if dogrid: plt.grid()
+        plt.subplots_adjust(hspace=0.03) #increase vertical spacing to avoid crowding
+        #
+        # PLOT 2
+        #
+        fname = "fieldline%04d.bin" % findexlist[1]
+        rfd(fname)
+        cvel() #for calculating bsq
+        #Rz
+        #gs1 = GridSpec(4, 4)
+        #
+        ax1 = plt.subplot(gs1[2:4, 1])
+        # plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{c})$", size=16, rotation=0.,
+        #          ha="center", va="center",
+        #          color='k',weight='regular',bbox=bbox_props
+        #          )
+        mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,
+                ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,
+                density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield)
+        ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
+        if dogrid: plt.grid()
+        #xy
+        ax2 = plt.subplot(gs1[0:2, 1])
+        plt.text(-0.75*plen, 0.8*plen, r"$(\mathrm{b})$", size=16, rotation=0.,
+                 ha="center", va="center",
+                 color='w',weight='regular' #,bbox=bbox_props
+                 )
+        mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=False)
+        plt.setp( ax2.get_xticklabels(), visible=False)
+        plt.text(0.9*plen, 0.8*plen, r"$t=%g$" % np.floor(t), size=16, rotation=0.,
+                 ha="right", va="center",
+                 color='w',weight='regular' #,bbox=bbox_props
+                 )
+        if dogrid: plt.grid()
+        plt.subplots_adjust(hspace=0.03) #increase vertical spacing to avoid crowding
+        #
+        # PLOT 3
+        #
+        fname = "fieldline%04d.bin" % findexlist[2]
+        rfd(fname)
+        cvel() #for calculating bsq
+        #Rz
+        ax1 = plt.subplot(gs1[2:4, 2])
+        # plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{e})$", size=16, rotation=0.,
+        #          ha="center", va="center",
+        #          color='k',weight='regular',bbox=bbox_props
+        #          )
+        mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield)
+        ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
+        if dogrid: plt.grid()
+        #xy
+        ax2 = plt.subplot(gs1[0:2, 2])
+        plt.text(-0.75*plen, 0.8*plen, r"$(\mathrm{c})$", size=16, rotation=0.,
+                 ha="center", va="center",
+                 color='w',weight='regular' #,bbox=bbox_props
+                 )
+        plt.text(0.9*plen, 0.8*plen, r"$t=%g$" % np.floor(t), size=16, rotation=0.,
+                 ha="right", va="center",
+                 color='w',weight='regular' #,bbox=bbox_props
+                 )
+        mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=False)
+        plt.setp( ax2.get_xticklabels(), visible=False)
+        if dogrid: plt.grid()
+        plt.subplots_adjust(hspace=0.03) #increase vertical spacing to avoid crowding
+        #
+        # PLOT 4
+        #
+        fname = "fieldline%04d.bin" % findexlist[3]
+        rfd(fname)
+        cvel() #for calculating bsq
+        #Rz
+        ax1 = plt.subplot(gs1[2:4, 3])
+        # plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{g})$", size=16, rotation=0.,
+        #          ha="center", va="center",
+        #          color='k',weight='regular',bbox=bbox_props
+        #          )
+        mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield)
+        ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
+        if dogrid: plt.grid()
+        #xy
+        ax2 = plt.subplot(gs1[0:2, 3])
+        plt.text(-0.75*plen, 0.8*plen, r"$(\mathrm{d})$", size=16, rotation=0.,
+                 ha="center", va="center",
+                 color='w',weight='regular' #,bbox=bbox_props
+                 )
+        plt.text(0.9*plen, 0.8*plen, r"$t=%g$" % np.floor(t), size=16, rotation=0.,
+                 ha="right", va="center",
+                 color='w',weight='regular' #,bbox=bbox_props
+                 )
+        mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=False)
+        plt.setp( ax2.get_xticklabels(), visible=False)
+        if dogrid: plt.grid()
+        #
+        plt.subplots_adjust(hspace=0.03) #increase vertical spacing to avoid crowding
+        #
+        #(left=0.02, right=0.94, top=0.99, bottom=0.45, wspace=0.05)
+        ax1 = fig.add_axes([0.94, 0.48, 0.02, 0.515])
+        #
+        # Set the colormap and norm to correspond to the data for which
+        # the colorbar will be used.
+        cmap = mpl.cm.jet
+        norm = mpl.colors.Normalize(vmin=-6, vmax=0.5625)
+        # ColorbarBase derives from ScalarMappable and puts a colorbar
+        # in a specified axes, so it has everything needed for a
+        # standalone colorbar.  There are many more kwargs, but the
+        # following gives a basic continuous colorbar with ticks
+        # and labels.
+        cb1 = mpl.colorbar.ColorbarBase(ax1, cmap=cmap,
+                                           norm=norm,
+                                           orientation='vertical')
+        #
+        #
+        plt.savefig( "fig1.png" )
+        plt.savefig( "fig1.eps" )
+    #
+    print( "Done!" )
+    sys.stdout.flush()
+
+def generate_time_series():
+        #cd ~/run; for f in rtf*; do cd ~/run/$f; (nice -n 10 python  ~/py/mread/__init__.py &> python.out); done
+        grid3d("gdump.bin",use2d=True)
+        #rd("dump0000.bin")
+        rfd("fieldline0000.bin")
+        rhor=1+(1-a**2)**0.5
+        ihor = np.floor(iofr(rhor)+0.5);
+        #diskflux=diskfluxcalc(ny/2)
+        #qtymem=None #clear to free mem
+        if len(sys.argv[1:])==2 and sys.argv[1].isdigit() and sys.argv[2].isdigit():
+            whichi = int(sys.argv[1])
+            whichn = int(sys.argv[2])
+            if whichi >= whichn:
+                mergeqtyvstime(whichn)
+            else:
+                qtymem=getqtyvstime(ihor,0.2,whichi=whichi,whichn=whichn)
+        else:
+            qtymem=getqtyvstime(ihor,0.2)
+            plotqtyvstime(qtymem)
+
+def oldstuff():
     if False:
         #cd into the directory that contains the dumps/ directory
         #read in the grid file
@@ -4595,13 +5136,6 @@ if __name__ == "__main__":
         plt.xlim(0,200)
         plt.ylim(0,2)
     if False:
-        readmytests1()
-        plotpowers('powerlist.txt',format=0) #old format
-    if False:
-        #Figure 3
-        readmytests1()
-        plotpowers('powerlist2davg.txt',format=1) #new format; data from 2d average dumps
-    if False:
         #grid3d("gdump")
         #rfd("fieldline0250.bin")
         #cvel()
@@ -4618,71 +5152,6 @@ if __name__ == "__main__":
         diskflux=diskfluxcalc(ny/2)
         ts,fs,md,jem,jtot=mfjhorvstime(11)
         plotj(ts,fs/(diskflux),md,jem,jtot)
-    if False:
-        #NEW FORMAT
-        #Plot qtys vs. time
-        #cd ~/run; for f in rtf*; do cd ~/run/$f; (nice -n 10 python  ~/py/mread/__init__.py &> python.out); done
-        grid3d("gdump.bin",use2d=True)
-        #rd("dump0000.bin")
-        rfd("fieldline0000.bin")
-        rhor=1+(1-a**2)**0.5
-        ihor = np.floor(iofr(rhor)+0.5);
-        #diskflux=diskfluxcalc(ny/2)
-        #qtymem=None #clear to free mem
-        if len(sys.argv[1:])==2 and sys.argv[1].isdigit() and sys.argv[2].isdigit():
-            whichi = int(sys.argv[1])
-            whichn = int(sys.argv[2])
-            if whichi >= whichn:
-                mergeqtyvstime(whichn)
-            else:
-                qtymem=getqtyvstime(ihor,0.2,whichi=whichi,whichn=whichn)
-        else:
-            qtymem=getqtyvstime(ihor,0.2)
-            plotqtyvstime(qtymem)
-    if False:
-        #VRPLOT
-        #grid3d("gdump.bin",use2d=True)
-        #rd("dump0000.bin")
-        #rfd("fieldline0000.bin")
-        rhor=1+(1-a**2)**0.5
-        ihor = np.floor(iofr(rhor)+0.5);
-        #diskflux=diskfluxcalc(ny/2)
-        #qtymem=None #clear to free mem
-        #qtymem=getqtyvstime(ihor,0.2)
-        plt.figure(1)
-        plotqtyvstime(qtymem,whichplot=-3)
-        #plt.figure(2)
-        #plotqtyvstime(qtymem,whichplot=-4)
-        
-    if False:
-        #2DAVG
-        if len(sys.argv[1:])!=0:
-            grid3d("gdump.bin",use2d=True)
-            #rd("dump0000.bin")
-            rfd("fieldline0000.bin")
-        if len(sys.argv[1:])==2 and sys.argv[1].isdigit() and sys.argv[2].isdigit():
-            whichgroup = int(sys.argv[1])
-            step = int(sys.argv[2])
-            itemspergroup = 20
-            for whichgroup in np.arange(whichgroup,1000,step):
-                avgmem = get2davg(whichgroup=whichgroup,itemspergroup=itemspergroup)
-            #plot2davg(avgmem)
-        elif len(sys.argv[1:])==3 and sys.argv[1].isdigit() and sys.argv[2].isdigit() and sys.argv[3].isdigit():
-            whichgroups = int(sys.argv[1])
-            whichgroupe = int(sys.argv[2])
-            step = int(sys.argv[3])
-            itemspergroup = 20
-            if step == 0:
-                avgmem = get2davg(usedefault=1)
-            elif step == 1:
-                avgmem = get2davg(whichgroups=whichgroups,whichgroupe=whichgroupe,itemspergroup=itemspergroup)
-            else:
-                for whichgroup in np.arange(whichgroups,whichgroupe,step):
-                    avgmem = get2davg(whichgroup=whichgroup,itemspergroup=itemspergroup)
-            print( "Assigning averages..." )
-            assignavg2dvars(avgmem)
-        plot2davg(whichplot=1)
-        gc.collect()
     if False:
         rfd("fieldline2344.bin")
         cvel()
@@ -4760,498 +5229,6 @@ if __name__ == "__main__":
         plt.figure(0, figsize=(12,9), dpi=100)
         plt.clf()
         mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False)
-    if False:
-        #Rz and xy planes side by side
-        plotlenf=10
-        plotleni=50
-        plotlenti=40000
-        plotlentf=45000
-        #To generate movies for all sub-folders of a folder:
-        #cd ~/Research/runart; for f in *; do cd ~/Research/runart/$f; (python  ~/py/mread/__init__.py &> python.out &); done
-        if len(sys.argv[1:])==2 and sys.argv[1].isdigit() and (sys.argv[2].isdigit() or sys.argv[2][0]=="-") :
-            whichi = int(sys.argv[1])
-            whichn = int(sys.argv[2])
-            print( "Doing every %d slice of total %d slices" % (whichi, whichn) )
-            sys.stdout.flush()
-        else:
-            whichi = None
-            whichn = None
-        if whichn < 0 and whichn is not None:
-            whichn = -whichn
-            dontloadfiles = True
-        else:
-            dontloadfiles = False
-            grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=True )
-            rd( "dump0000.bin" )
-            rfd("fieldline0000.bin")  #to definea
-            #grid3dlight("gdump")
-            qtymem=None #clear to free mem
-            rhor=1+(1+a**2)**0.5
-            ihor = np.floor(iofr(rhor)+0.5);
-            qtymem=getqtyvstime(ihor,0.2)
-            flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
-
-        for findex, fname in enumerate(flist):
-            if findex % whichn != whichi:
-                continue
-            if dontloadfiles == False and os.path.isfile("lrho%04d_Rzxym1.png" % (findex)):
-                print( "Skipping " + fname + " as lrho%04d_Rzxym1.png exists" % (findex) );
-            else:
-                print( "Processing " + fname + " ..." )
-                sys.stdout.flush()
-                rfd("../"+fname)
-                cvel() #for calculating bsq
-                plotlen = plotleni+(plotlenf-plotleni)*(t-plotlenti)/(plotlentf-plotlenti)
-                plotlen = min(plotlen,plotleni)
-                plotlen = max(plotlen,plotlenf)
-                plt.figure(0, figsize=(12,9), dpi=100)
-                plt.clf()
-                #SWITCH OFF SUPTITLE
-                #plt.suptitle(r'$\log_{10}\rho$ at t = %4.0f' % t)
-                #mdot,pjet,pjet/mdot plots
-                gs3 = GridSpec(3, 3)
-                #gs3.update(left=0.055, right=0.97, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
-                gs3.update(left=0.055, right=0.95, top=0.42, bottom=0.03, wspace=0.01, hspace=0.04)
-                #mdot
-                ax31 = plt.subplot(gs3[-3,:])
-                plotqtyvstime(qtymem,ax=ax31,whichplot=1,findex=findex)
-                ymax=ax31.get_ylim()[1]
-                ymax=2*(np.floor(np.floor(ymax+1.5)/2))
-                ax31.set_yticks((ymax/2,ymax))
-                ax31.grid(True)
-                #pjet
-                # ax32 = plt.subplot(gs3[-2,:])
-                # plotqtyvstime(qtymem,ax=ax32,whichplot=2)
-                # ymax=ax32.get_ylim()[1]
-                # ax32.set_yticks((ymax/2,ymax))
-                # ax32.grid(True)
-                #pjet/mdot
-                # ax33 = plt.subplot(gs3[-1,:])
-                # plotqtyvstime(qtymem,ax=ax33,whichplot=3)
-                # ymax=ax33.get_ylim()[1]
-                # ax33.set_yticks((ymax/2,ymax))
-                # ax33.grid(True)
-                #
-                #\phi
-                #
-                ax35 = plt.subplot(gs3[-2,:])
-                plotqtyvstime(qtymem,ax=ax35,whichplot=5,findex=findex)
-                ymax=ax35.get_ylim()[1]
-                if 1 < ymax and ymax < 2: 
-                    #ymax = 2
-                    tck=(1,)
-                    ax35.set_yticks(tck)
-                    #ax35.set_yticklabels(('','1','2'))
-                elif ymax < 1: 
-                    ymax = 1
-                    tck=(0.5,1)
-                    ax35.set_yticks(tck)
-                    ax35.set_yticklabels(('','1'))
-                else:
-                    ymax=np.floor(ymax)+1
-                    tck=np.arange(1,ymax)
-                    ax35.set_yticks(tck)
-                ax35.grid(True)
-                #
-                #pjet/<mdot>
-                #
-                ax34 = plt.subplot(gs3[-1,:])
-                plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findex)
-                ymax=ax34.get_ylim()[1]
-                if 100 < ymax and ymax < 200: 
-                    #ymax = 2
-                    tck=(100,)
-                    ax34.set_yticks(tck)
-                    #ax34.set_yticklabels(('','100','200'))
-                elif ymax < 100: 
-                    ymax = 100
-                    tck=(50,100)
-                    ax34.set_yticks(tck)
-                    ax34.set_yticklabels(('','100'))
-                else:
-                    ymax=np.floor(ymax/100.)+1
-                    ymax*=100
-                    tck=np.arange(1,ymax/100.)*100
-                    ax34.set_yticks(tck)
-                #reset lower limit to 0
-                ax34.set_ylim((0,ax34.get_ylim()[1]))
-                ax34.grid(True)
-                #Rz xy
-                gs1 = GridSpec(1, 1)
-                gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.45, wspace=0.05)
-                ax1 = plt.subplot(gs1[:, -1])
-                mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False)
-                gs2 = GridSpec(1, 1)
-                gs2.update(left=0.5, right=1, top=0.99, bottom=0.45, wspace=0.05)
-                ax2 = plt.subplot(gs2[:, -1])
-                mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True)
-                #print xxx
-                plt.savefig( "lrho%04d_Rzxym1.png" % (findex)  )
-                plt.savefig( "lrho%04d_Rzxym1.eps" % (findex)  )
-                #print xxx
-        print( "Done!" )
-        sys.stdout.flush()
-        if False:
-            #print( "Now you can make a movie by running:" )
-            #print( "ffmpeg -fflags +genpts -r 10 -i lrho%04d.png -vcodec mpeg4 -qmax 5 mov.avi" )
-            os.system("mv mov_%s_Rzxym1.avi mov_%s_Rzxym1.bak.avi" % ( os.path.basename(os.getcwd()), os.path.basename(os.getcwd())) )
-            #os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 mov_%s_Rzxym1.avi" % (os.path.basename(os.getcwd())) )
-            os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 1 mov_%s_Rzxym1p1.avi" % (os.path.basename(os.getcwd())) )
-            os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 2 mov_%s_Rzxym1.avi" % (os.path.basename(os.getcwd())) )
-            #os.system("scp mov.avi 128.112.70.76:Research/movies/mov_`basename \`pwd\``.avi")
-    if False:
-        #fig2
-        mylen = 30
-        grid3d("gdump.bin",use2d=True)
-        rfd("fieldline0000.bin")
-        avgmem = get2davg(usedefault=1)
-        assignavg2dvars(avgmem)
-        fig=plt.figure(1,figsize=(12,9))
-        ax = fig.add_subplot(111, aspect='equal')
-        if False:
-            #velocity
-            B[1:] = avg_uu[1:]
-            bsq = avg_bsq
-            mkframe("myframe",len=mylen,ax=ax,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
-        if True:
-            #field
-            B[1] = avg_B[0]
-            B[2] = avg_B[1]
-            B[3] = avg_B[2]
-            bsq = avg_bsq
-            plt.figure(1)
-            gdetB[1:] = avg_gdetB[0:]
-            mu = avg_mu
-            mkframe("myframe",len=25./30.*mylen,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=12,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.01,color='r',lw=1,startatmidplane=True,showjet=False)
-        if False:
-            x = (r*np.sin(h))[:,:,0]
-            z = (r*np.cos(h))[:,:,0]
-            x = np.concatenate(-x,x)
-            z = np.concatenate(y,y)
-            mu = np.concatenate(avg_mu[:,:,0],avg_mu[:,:,0])
-            plt.contourf( x, z, mu )
-        ax.set_aspect('equal')   
-        rhor=1+(1-a**2)**0.5
-        el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
-        art=ax.add_artist(el)
-        art.set_zorder(20)
-        mylenshow = 25./30.*mylen
-        plt.xlim(-mylenshow,mylenshow)
-        plt.ylim(-mylenshow,mylenshow)
-        plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
-        plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=15,fontsize=16)
-        # plt.savefig("fig2.pdf",bbox_inches='tight',pad_inches=0.02)
-        # plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02)
-        plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02)
-    if False:
-        #FIGURE 1 LOTSOPANELS
-        #Figure 1
-        #To make plot, run 
-        #run ~/py/mread/__init__.py 1 1
-        #To re-make plot without reloading the fiels, run
-        #run ~/py/mread/__init__.py 1 -1
-        domakeframes=True
-        doslines=True
-        plotlenf=10
-        plotleni=25
-        plen=plotleni
-        plotlenti=40000
-        plotlentf=45000
-        bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
-        #AT: plt.legend( loc = 'upper left', bbox_to_anchor = (0.5, 0.5) ) #0.5, 0.5 = center of plot
-        #To generate movies for all sub-folders of a folder:
-        #cd ~/Research/runart; for f in *; do cd ~/Research/runart/$f; (python  ~/py/mread/__init__.py &> python.out &); done
-        if len(sys.argv[1:])==2 and sys.argv[1].isdigit() and (sys.argv[2].isdigit() or sys.argv[2][0]=="-") :
-            whichi = int(sys.argv[1])
-            whichn = int(sys.argv[2])
-            print( "Doing every %d slice of total %d slices" % (whichi, whichn) )
-            sys.stdout.flush()
-        else:
-            whichi = None
-            whichn = None
-        if whichn < 0 and whichn is not None:
-            whichn = -whichn
-            dontloadfiles = True
-        else:
-            dontloadfiles = False
-            grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=True )
-            rd( "dump0000.bin" )
-            rfd("fieldline0000.bin")  #to definea
-            #grid3dlight("gdump")
-            qtymem=None #clear to free mem
-            rhor=1+(1+a**2)**0.5
-            ihor = np.floor(iofr(rhor)+0.5);
-            qtymem=getqtyvstime(ihor,0.2)
-            flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
-        #make accretion rate plot, etc.
-        sys.stdout.flush()
-        plotlen = plotleni+(plotlenf-plotleni)*(t-plotlenti)/(plotlentf-plotlenti)
-        plotlen = min(plotlen,plotleni)
-        plotlen = max(plotlen,plotlenf)
-        fig=plt.figure(0, figsize=(12,9), dpi=100)
-        plt.clf()
-        #findexlist=(0,600,1285,1459)
-        findexlist=(0,600,1225,1369)
-        #SWITCH OFF SUPTITLE
-        #plt.suptitle(r'$\log_{10}\rho$ at t = %4.0f' % t)
-        #mdot,pjet,pjet/mdot plots
-        findex = 0
-        gs3 = GridSpec(3, 3)
-        gs3.update(left=0.055, right=0.97, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
-        #mdot
-        ax31 = plt.subplot(gs3[-3,:])
-        plotqtyvstime(qtymem,ax=ax31,whichplot=1,findex=findexlist) #AT: need to specify index!
-        ymax=ax31.get_ylim()[1]
-        ymax=2*(np.floor(np.floor(ymax+1.5)/2))
-        ax31.set_yticks((ymax/2,ymax))
-        #ax31.set_xlabel(r"$t\ [r_g/c]")
-        ax31.grid(True)
-        plt.text(ax31.get_xlim()[1]/40., 0.8*ax31.get_ylim()[1], "$(\mathrm{e})$", size=16, rotation=0.,
-                 ha="center", va="center",
-                 color='k',weight='regular',bbox=bbox_props
-                 )
-        ax31r = ax31.twinx()
-        ax31r.set_ylim(ax31.get_ylim())
-        ax31r.set_yticks((ymax/2,ymax))
-        #pjet
-        # ax32 = plt.subplot(gs3[-2,:])
-        # plotqtyvstime(qtymem,ax=ax32,whichplot=2)
-        # ymax=ax32.get_ylim()[1]
-        # ax32.set_yticks((ymax/2,ymax))
-        # ax32.grid(True)
-        #pjet/mdot
-        # ax33 = plt.subplot(gs3[-1,:])
-        # plotqtyvstime(qtymem,ax=ax33,whichplot=3)
-        # ymax=ax33.get_ylim()[1]
-        # ax33.set_yticks((ymax/2,ymax))
-        # ax33.grid(True)
-        #
-        #\phi
-        #
-
-        # plt.text(250, 0.9*ymax, "i", size=10, rotation=0.,
-        #          ha="center", va="center",
-        #          bbox = dict(boxstyle="square",
-        #                      ec=(1., 0.5, 0.5),
-        #                      fc=(1., 0.8, 0.8),
-        #                      )
-        #          )
-        ax35 = plt.subplot(gs3[-2,:])
-        plotqtyvstime(qtymem,ax=ax35,whichplot=5,findex=findexlist)
-        ymax=ax35.get_ylim()[1]
-        if 1 < ymax and ymax < 2: 
-            #ymax = 2
-            tck=(1,)
-            ax35.set_yticks(tck)
-            #ax35.set_yticklabels(('','1','2'))
-        elif ymax < 1: 
-            ymax = 1
-            tck=(0.5,1)
-            ax35.set_yticks(tck)
-            ax35.set_yticklabels(('','1'))
-        else:
-            ymax=np.floor(ymax)+1
-            tck=np.arange(1,ymax)
-            ax35.set_yticks(tck)
-        ax35.grid(True)
-        plt.text(ax35.get_xlim()[1]/40., 0.8*ax35.get_ylim()[1], r"$(\mathrm{f})$", size=16, rotation=0.,
-                 ha="center", va="center",
-                 color='k',weight='regular',bbox=bbox_props
-                 )
-        ax35r = ax35.twinx()
-        ax35r.set_ylim(ax35.get_ylim())
-        ax35r.set_yticks(tck)
-        #
-        #pjet/<mdot>
-        #
-        ax34 = plt.subplot(gs3[-1,:])
-        plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findexlist)
-        ymax=ax34.get_ylim()[1]
-        if 100 < ymax and ymax < 200: 
-            #ymax = 2
-            tck=(100,)
-            ax34.set_yticks(tck)
-            #ax34.set_yticklabels(('','100','200'))
-        elif ymax < 100: 
-            ymax = 100
-            tck=(50,100)
-            ax34.set_yticks(tck)
-            ax34.set_yticklabels(('','100'))
-        else:
-            ymax=np.floor(ymax/100.)+1
-            ymax*=100
-            tck=np.arange(1,ymax/100.)*100
-            ax34.set_yticks(tck)
-        #reset lower limit to 0
-        ax34.set_ylim((0,ax34.get_ylim()[1]))
-        ax34.grid(True)
-        plt.text(ax34.get_xlim()[1]/40., 0.8*ax34.get_ylim()[1], r"$(\mathrm{g})$", size=16, rotation=0.,
-                 ha="center", va="center",
-                 color='k',weight='regular',bbox=bbox_props
-                 )
-        ax34r = ax34.twinx()
-        ax34r.set_ylim(ax34.get_ylim())
-        ax34r.set_yticks(tck)
-        #
-        if domakeframes:
-            #
-            # Make Frames
-            #
-            dogrid = False
-            downsample=4
-            density=2
-            dodiskfield=True
-            minlenbhfield=0.2
-            minlendiskfield=0.2
-            #
-            # PLOT 1
-            #
-            fname = "fieldline%04d.bin" % findexlist[0]
-            rfd(fname)
-            cvel() #for calculating bsq
-            #xz
-            gs1 = GridSpec(4, 4)
-            gs1.update(left=0.04, right=0.94, top=0.995, bottom=0.48, wspace=0.05)
-            #
-            ax1 = plt.subplot(gs1[2:4, 0])
-            # plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{a})$", size=16, rotation=0.,
-            #          ha="center", va="center",
-            #          color='k',weight='regular',bbox=bbox_props
-            #          )
-            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=False)
-            ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
-            ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
-            if dogrid: plt.grid()
-            #xy
-            ax2 = plt.subplot(gs1[0:2, 0])
-            mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=False)
-            plt.setp( ax2.get_xticklabels(), visible=False)
-            plt.text(-0.75*plen, 0.8*plen, r"$(\mathrm{a})$", size=16, rotation=0.,
-                     ha="center", va="center",
-                     color='w',weight='regular' #,bbox=bbox_props
-                     )
-            plt.text(0.9*plen, 0.8*plen, r"$t=%g$" % np.floor(t), size=16, rotation=0.,
-                     ha="right", va="center",
-                     color='w',weight='regular' #,bbox=bbox_props
-                     )
-            ax2.set_ylabel(r'$y\ [r_g]$',fontsize=16,ha='center')
-            if dogrid: plt.grid()
-            plt.subplots_adjust(hspace=0.03) #increase vertical spacing to avoid crowding
-            #
-            # PLOT 2
-            #
-            fname = "fieldline%04d.bin" % findexlist[1]
-            rfd(fname)
-            cvel() #for calculating bsq
-            #Rz
-            #gs1 = GridSpec(4, 4)
-            #
-            ax1 = plt.subplot(gs1[2:4, 1])
-            # plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{c})$", size=16, rotation=0.,
-            #          ha="center", va="center",
-            #          color='k',weight='regular',bbox=bbox_props
-            #          )
-            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,
-                    ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,
-                    density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield)
-            ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
-            if dogrid: plt.grid()
-            #xy
-            ax2 = plt.subplot(gs1[0:2, 1])
-            plt.text(-0.75*plen, 0.8*plen, r"$(\mathrm{b})$", size=16, rotation=0.,
-                     ha="center", va="center",
-                     color='w',weight='regular' #,bbox=bbox_props
-                     )
-            mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=False)
-            plt.setp( ax2.get_xticklabels(), visible=False)
-            plt.text(0.9*plen, 0.8*plen, r"$t=%g$" % np.floor(t), size=16, rotation=0.,
-                     ha="right", va="center",
-                     color='w',weight='regular' #,bbox=bbox_props
-                     )
-            if dogrid: plt.grid()
-            plt.subplots_adjust(hspace=0.03) #increase vertical spacing to avoid crowding
-            #
-            # PLOT 3
-            #
-            fname = "fieldline%04d.bin" % findexlist[2]
-            rfd(fname)
-            cvel() #for calculating bsq
-            #Rz
-            ax1 = plt.subplot(gs1[2:4, 2])
-            # plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{e})$", size=16, rotation=0.,
-            #          ha="center", va="center",
-            #          color='k',weight='regular',bbox=bbox_props
-            #          )
-            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield)
-            ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
-            if dogrid: plt.grid()
-            #xy
-            ax2 = plt.subplot(gs1[0:2, 2])
-            plt.text(-0.75*plen, 0.8*plen, r"$(\mathrm{c})$", size=16, rotation=0.,
-                     ha="center", va="center",
-                     color='w',weight='regular' #,bbox=bbox_props
-                     )
-            plt.text(0.9*plen, 0.8*plen, r"$t=%g$" % np.floor(t), size=16, rotation=0.,
-                     ha="right", va="center",
-                     color='w',weight='regular' #,bbox=bbox_props
-                     )
-            mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=False)
-            plt.setp( ax2.get_xticklabels(), visible=False)
-            if dogrid: plt.grid()
-            plt.subplots_adjust(hspace=0.03) #increase vertical spacing to avoid crowding
-            #
-            # PLOT 4
-            #
-            fname = "fieldline%04d.bin" % findexlist[3]
-            rfd(fname)
-            cvel() #for calculating bsq
-            #Rz
-            ax1 = plt.subplot(gs1[2:4, 3])
-            # plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{g})$", size=16, rotation=0.,
-            #          ha="center", va="center",
-            #          color='k',weight='regular',bbox=bbox_props
-            #          )
-            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield)
-            ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
-            if dogrid: plt.grid()
-            #xy
-            ax2 = plt.subplot(gs1[0:2, 3])
-            plt.text(-0.75*plen, 0.8*plen, r"$(\mathrm{d})$", size=16, rotation=0.,
-                     ha="center", va="center",
-                     color='w',weight='regular' #,bbox=bbox_props
-                     )
-            plt.text(0.9*plen, 0.8*plen, r"$t=%g$" % np.floor(t), size=16, rotation=0.,
-                     ha="right", va="center",
-                     color='w',weight='regular' #,bbox=bbox_props
-                     )
-            mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=False)
-            plt.setp( ax2.get_xticklabels(), visible=False)
-            if dogrid: plt.grid()
-            #
-            plt.subplots_adjust(hspace=0.03) #increase vertical spacing to avoid crowding
-            #
-            #(left=0.02, right=0.94, top=0.99, bottom=0.45, wspace=0.05)
-            ax1 = fig.add_axes([0.94, 0.48, 0.02, 0.515])
-            #
-            # Set the colormap and norm to correspond to the data for which
-            # the colorbar will be used.
-            cmap = mpl.cm.jet
-            norm = mpl.colors.Normalize(vmin=-6, vmax=0.5625)
-            # ColorbarBase derives from ScalarMappable and puts a colorbar
-            # in a specified axes, so it has everything needed for a
-            # standalone colorbar.  There are many more kwargs, but the
-            # following gives a basic continuous colorbar with ticks
-            # and labels.
-            cb1 = mpl.colorbar.ColorbarBase(ax1, cmap=cmap,
-                                               norm=norm,
-                                               orientation='vertical')
-            #
-            #
-            plt.savefig( "lrho%04d_Rzxym1.png" % (findex)  )
-            plt.savefig( "lrho%04d_Rzxym1.eps" % (findex)  )
-        #
-        print( "Done!" )
-        sys.stdout.flush()
     if False:
         len=10
         #To generate movies for all sub-folders of a folder:
@@ -5436,6 +5413,45 @@ if __name__ == "__main__":
         #plt.clf();
         #plt.figure();
         #pl(r,np.log10(entk));plt.xlim(1,20);plt.ylim(-3,-0.5)
+    if False:
+        #VRPLOT
+        #grid3d("gdump.bin",use2d=True)
+        #rd("dump0000.bin")
+        #rfd("fieldline0000.bin")
+        rhor=1+(1-a**2)**0.5
+        ihor = np.floor(iofr(rhor)+0.5);
+        #diskflux=diskfluxcalc(ny/2)
+        #qtymem=None #clear to free mem
+        #qtymem=getqtyvstime(ihor,0.2)
+        plt.figure(1)
+        plotqtyvstime(qtymem,whichplot=-3)
+        #plt.figure(2)
+        #plotqtyvstime(qtymem,whichplot=-4)
+
+if __name__ == "__main__":
+    if False:
+        readmytests1()
+        plotpowers('powerlist.txt',format=0) #old format
+    if False:
+        #Figure 3
+        readmytests1()
+        plotpowers('powerlist2davg.txt',format=1) #new format; data from 2d average dumps
+    if False:
+        #2DAVG
+        mk2davg()
+    if False:
+        #NEW FORMAT
+        #Plot qtys vs. time
+        generate_time_series()
+    if False:
+        #make a movie
+        mkmovie()
+    if False:
+        #fig2 with grayscalestreamlines and red field lines
+        mkstreamlinefigure()
+    if False:
+        #FIGURE 1 LOTSOPANELS
+        mklotsopanels()
     if False:
         #Short tutorial. Some of the names will sound familiar :)
         print( "Running a short tutorial: read in grid, 0th dump, plot and compute some things." )
