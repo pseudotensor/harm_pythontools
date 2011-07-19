@@ -3823,7 +3823,7 @@ def takeoutfloors(doreload=1,dotakeoutfloors=1):
         DU = np.zeros((8,nx),dtype=np.float64)
         DT = 0
         if dotakeoutfloors:
-            for (i,iDT) in enumerage(Dt):
+            for (i,iDT) in enumerate(Dt):
                 iDU = get_dUfloor( Dno[i] )
                 if iDT > 0:
                     DT += iDT
