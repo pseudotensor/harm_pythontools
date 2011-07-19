@@ -3823,16 +3823,20 @@ def takeoutfloors(doreload=1,dotakeoutfloors=1):
         ihor = iofr(rhor)
         qtymem=getqtyvstime(ihor,0.2)
         #initialize with zeros
-        DU = np.zeros((8,nx),dtype=np.float64)
         DT = 0
         if dotakeoutfloors:
             for (i,iDT) in enumerate(Dt):
                 iDU = get_dUfloor( Dno[i] )
                 if iDT > 0:
                     DT += iDT
-                DU += iDU * np.sign(iDT)
+                if i==0:
+                    DU = iDU
+                else:
+                    DU += iDU * np.sign(iDT)
             #average in time
             DU /= DT
+        else:
+            DU = np.zeros((8,nx),dtype=np.float64)
     DUfloor0 = DU[0]
     DUfloor1 = DU[1]
     DUfloor4 = DU[4]
