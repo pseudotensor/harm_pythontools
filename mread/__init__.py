@@ -1422,17 +1422,17 @@ def rd(dump,oldfmt=False):
     olddumpfmt = oldfmt
     fin = open( "dumps/" + dump, "rb" )
     header = fin.readline().split()
-    t = np.float64(header[0])
+    t = myfloat(np.float64(header[0]))
     nx = int(header[1])
     ny = int(header[2])
     nz = int(header[3])
-    _dx1=float(header[7])
-    _dx2=float(header[8])
-    _dx3=float(header[9])
-    gam=float(header[11])
-    a=float(header[12])
-    Rin=float(header[14])
-    Rout=float(header[15])
+    _dx1=myfloat(float(header[7]))
+    _dx2=myfloat(float(header[8]))
+    _dx3=myfloat(float(header[9]))
+    gam=myfloat(float(header[11]))
+    a=myfloat(float(header[12]))
+    Rin=myfloat(float(header[14]))
+    Rout=myfloat(float(header[15]))
     if dump.endswith(".bin"):
         body = np.fromfile(fin,dtype=np.float64,count=-1)  #nx*ny*nz*11)
         gd = body.view().reshape((-1,nx,ny,nz),order='F')
@@ -1443,6 +1443,8 @@ def rd(dump,oldfmt=False):
                       dtype=np.float64, 
                       skiprows=1, 
                       unpack = True ).view().reshape((-1,nx,ny,nz), order='F')
+    gd=myfloat(gd)
+    gc.collect()
     ti,tj,tk,x1,x2,x3,r,h,ph,rho,ug = gd[0:11,:,:,:].view() 
     vu=np.zeros_like(gd[0:4])
     B=np.zeros_like(gd[0:4])
@@ -1498,25 +1500,25 @@ def rfd(fieldlinefilename,**kwargs):
     fin = open( "dumps/" + fieldlinefilename, "rb" )
     header = fin.readline().split()
     #time of the dump
-    t = np.float64(header[0])
+    t = myfloat(np.float64(header[0]))
     #dimensions of the grid
     nx = int(header[1])
     ny = int(header[2])
     nz = int(header[3])
     #cell size in internal coordintes
-    _dx1=float(header[7])
-    _dx2=float(header[8])
-    _dx3=float(header[9])
+    _dx1=myfloat(float(header[7]))
+    _dx2=myfloat(float(header[8]))
+    _dx3=myfloat(float(header[9]))
     #other information: 
     #polytropic index
-    gam=float(header[11])
+    gam=myfloat(float(header[11]))
     #black hole spin
-    a=float(header[12])
+    a=myfloat(float(header[12]))
     rhor = 1+(1-a**2)**0.5
     #Spherical polar radius of the innermost radial cell
-    Rin=float(header[14])
+    Rin=myfloat(float(header[14]))
     #Spherical polar radius of the outermost radial cell
-    Rout=float(header[15])
+    Rout=myfloat(float(header[15]))
     #read grid dump per-cell data
     #
     body = np.fromfile(fin,dtype=np.float32,count=-1)
@@ -1608,9 +1610,14 @@ def decolumnify(dumpname):
     print( "Done!" )
 
              
-    
+def myfloat(f,acc=1):
+    """ acc=1 means np.float32, acc=2 means np.float64 """
+    if acc==1:
+        return( np.float32(f) )
+    else:
+        return( np.float64(f) )
 
-def grid3d(dumpname,use2d=False): #read grid dump file: header and body
+def grid3d(dumpname,use2d=False,doface=False): #read grid dump file: header and body
     #The internal cell indices along the three axes: (ti, tj, tk)
     #The internal uniform coordinates, (x1, x2, x3), are mapped into the physical
     #non-uniform coordinates, (r, h, ph), which correspond to radius (r), polar angle (theta), and toroidal angle (phi).
@@ -1627,23 +1634,23 @@ def grid3d(dumpname,use2d=False): #read grid dump file: header and body
     ny = int(header[2])
     nz = int(header[3])
     #grid internal coordinates starting point
-    _startx1=float(header[4])
-    _startx2=float(header[5])
-    _startx3=float(header[6])
+    _startx1=myfloat(float(header[4]))
+    _startx2=myfloat(float(header[5]))
+    _startx3=myfloat(float(header[6]))
     #cell size in internal coordintes
-    _dx1=float(header[7])
-    _dx2=float(header[8])
-    _dx3=float(header[9])
+    _dx1=myfloat(float(header[7]))
+    _dx2=myfloat(float(header[8]))
+    _dx3=myfloat(float(header[9]))
     #other information: 
     #polytropic index
-    gam=float(header[11])
+    gam=myfloat(float(header[11]))
     #black hole spin
-    a=float(header[12])
+    a=myfloat(float(header[12]))
     rhor = 1+(1-a**2)**0.5
     #Spherical polar radius of the innermost radial cell
-    Rin=float(header[14])
+    Rin=myfloat(float(header[14]))
     #Spherical polar radius of the outermost radial cell
-    Rout=float(header[15])
+    Rout=myfloat(float(header[15]))
     #read grid dump per-cell data
     #
     if use2d:
@@ -1661,7 +1668,9 @@ def grid3d(dumpname,use2d=False): #read grid dump file: header and body
                       dtype=np.float64, 
                       skiprows=1, 
                       unpack = True ).view().reshape((126,nx,ny,lnz), order='F')
-    ti,tj,tk,x1,x2,x3,r,h,ph = gd[0:9,:,:,:].view() 
+    gd=myfloat(gd)
+    gc.collect()
+    ti,tj,tk,x1,x2,x3,r,h,ph = gd[0:9,:,:,:].view()
     #get the right order of indices by reversing the order of indices i,j(,k)
     #conn=gd[9:73].view().reshape((4,4,4,nx,ny,lnz), order='F').transpose(2,1,0,3,4,5)
     #contravariant metric components, g^{\mu\nu}
@@ -1717,6 +1726,7 @@ def grid3d(dumpname,use2d=False): #read grid dump file: header and body
     tjf /= (nx+1)
     tjf %= (ny+1)
     tkf /= (ny+1)*(lnz+1)
+    gc.collect() #try to release unneeded memory
     print( "Done!" )
 
 def grid3dlight(dumpname): #read gdump: header and body
@@ -1769,11 +1779,11 @@ def rdebug(debugfname):
     nx = int(header[1])
     ny = int(header[2])
     nz = int(header[3])
-    _dx1=float(header[7])
-    _dx2=float(header[8])
-    _dx3=float(header[9])
-    gam=float(header[11])
-    a=float(header[12])
+    _dx1=myfloat(float(header[7]))
+    _dx2=myfloat(float(header[8]))
+    _dx3=myfloat(float(header[9]))
+    gam=myfloat(float(header[11]))
+    a=myfloat(float(header[12]))
     if debugfname.endswith(".bin"):
         body = np.fromfile(fin,dtype=np.float64,count=-1)  #nx*ny*nz*11)
         gd = body.view().reshape((-1,nx,ny,nz),order='F')
@@ -1784,6 +1794,7 @@ def rdebug(debugfname):
                       dtype=np.float64, 
                       skiprows=1, 
                       unpack = True ).view().reshape((-1,nx,ny,nz), order='F')
+    gd=myfloat(gd)
     (
        fail0,floor0,limitgamma0,inflow0,failrho0,failu0,failrhou0,precgam0,precu0,toentropy0,tocold0,eosfail0,
        fail1,floor1,limitgamma1,inflow1,failrho1,failu1,failrhou1,precgam1,precu1,toentropy1,tocold1,eosfail1,
