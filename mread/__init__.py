@@ -3786,7 +3786,7 @@ def takeoutfloors(doreload=1,dotakeoutfloors=1):
     #Mdot, E, L
     grid3d("gdump.bin",use2d=True)
     istag, jstag, hstag, rstag = getstagparams(rmax=20,doplot=0,doreadgrid=0)
-    if a == 0.99:
+    if np.abs(a - 0.99)<1e-4:
         print( "Using a = 0.99 settings")
         #DTd = 22800-22231.9647756934 + 22200-22167.669585504507268 #22119.452438349220756
         dt = 100.
@@ -3794,14 +3794,14 @@ def takeoutfloors(doreload=1,dotakeoutfloors=1):
         Dno = np.array([224.,223.])
         fti = 14700.
         ftf = 25000.
-    elif a == 0.5:
+    elif np.abs(a - 0.5)<1e-4:
         print( "Using a = 0.5 settings")
         dt = 13000.-10300.
         Dt = np.array([dt,-dt])
         Dno = np.array([130,103])
         fti = 10300.
         ftf = 13000.
-    elif a == 0.2:
+    elif np.abs(a - 0.2)<1e-4:
         print( "Using a = 0.2 settings")
         Dt = np.array([13300.-10366.5933313178])
         Dno = np.array([133])
