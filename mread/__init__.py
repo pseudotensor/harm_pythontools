@@ -3770,6 +3770,9 @@ def getstagparams(var=None,rmax=20,doplot=1,doreadgrid=1):
 
 def get_dUfloor( floordumpno, maxrinflowequilibrium = 20 ):
     """ maxrsteady should be chosen to be on the outside of the inflow equilibrium region """
+    RR=0
+    TH=1
+    PH=2
     rfloor( "failfloordudump%04d.bin" % floordumpno )
     #add back in rest-mass energy to conserved energy
     dUfloor[1] -= dUfloor[0]
