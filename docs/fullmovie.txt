@@ -7,8 +7,13 @@ Note: I compartmentalized the script a bit (checkout the new version).  The __ma
 
 If you want the movie to contain the bottom panel with Mdot vs. time, etc. you need to pre-generate the file, which I call qty2.npy: this file contains 1d information for every frame.  I generate qty2.npy by running generate_time_series().  To do this, you change "False" to "True" in the section of __main__ that runs generate_time_series(), and then run "python ~/py/mread/__init__.py" if you do that using 1 core.  If you use, e.g., 32 cores, then do:
 
-export n = 32
-for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31
+cd <directory that contains "dumps" directory>
+#export n=32
+#for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31
+
+# ki-jmck:
+export n=4
+for i in 0 1 2 3
 do
    echo running $i $n >> out
    sleep 5 #in order for all threads not to read in at once and overwhelm the drive
