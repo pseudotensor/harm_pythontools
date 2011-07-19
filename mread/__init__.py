@@ -1262,10 +1262,60 @@ def mainfunc(imgname):
     # plt.title('Grid plot')
     # plt.show()
 
+def ravg(dumpname):
+    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,avgU,avgTud10
+    #read image
+    ilist=np.array([128,144,160,176,192,208,224])
+    for (j,i) in enumerate(ilist):
+        fin = open( "dumps/%s-col%04d" % ( dumpname, i ) , "rb" )
+        print("Reading %s-col%04d..." % (dumpname,i) )
+        header = fin.readline().split()
+        t = myfloat(np.float64(header[0]))
+        nx = int(header[1])
+        ny = int(header[2])
+        nz = int(header[3])
+        if j == 0:
+            avgU=np.zeros((ilist.shape[0],nx,ny,nz),dtype=np.float32)
+        _dx1=myfloat(float(header[7]))
+        _dx2=myfloat(float(header[8]))
+        _dx3=myfloat(float(header[9]))
+        gam=myfloat(float(header[11]))
+        a=myfloat(float(header[12]))
+        Rin=myfloat(float(header[14]))
+        Rout=myfloat(float(header[15]))
+        if dumpname.endswith(".bin"):
+            body = np.fromfile(fin,dtype=np.float64,count=-1)  #nx*ny*nz*11)
+            gd = body.view().reshape((-1,nx,ny,nz),order='F')
+            fin.close()
+        else:
+            fin.close()
+            gd = np.loadtxt( "dumps/"+dumpname, 
+                          dtype=np.float64, 
+                          skiprows=1, 
+                          unpack = True ).view().reshape((-1,nx,ny,nz), order='F')
+        print np.max(gd)
+        avgU[j:j+1] = gd[:,:,:,:].view() 
+    avgTud10=avgU.sum(axis=0)
+    return
+
+def computeavg(qty):
+    avgqty=intangle(gdet*qty)
+    return(avgqty)
+
+def doall():
+    grid3d("gdump.bin",use2d=True)
+    ravg("avg0221.bin")
+    res=computeavg(avgTud10)
+    plt.clf()
+    plt.plot(r[:,0,0],res); 
+    plt.xlim(rhor,20)
+    plt.ylim(-15,15)
+
 def rfloor(dumpname):
     global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,dUfloor
     #read image
     fin = open( "dumps/" + dumpname, "rb" )
+    print("Reading %s..." % dumpname)
     header = fin.readline().split()
     t = np.float64(header[0])
     nx = int(header[1])
@@ -3789,14 +3839,59 @@ def takeoutfloors(doreload=1,dotakeoutfloors=1):
     #Mdot, E, L
     grid3d("gdump.bin",use2d=True)
     istag, jstag, hstag, rstag = getstagparams(rmax=20,doplot=0,doreadgrid=0)
-    if np.abs(a - 0.99)<1e-4:
-        print( "Using a = 0.99 settings")
+    if np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) < 1.5:
+        #hi-res 0.99 settings
+        print( "Using hires a = 0.99 settings")
         #DTd = 22800-22231.9647756934 + 22200-22167.669585504507268 #22119.452438349220756
         dt = 100.
-        Dt = np.array([dt,-dt])
-        Dno = np.array([224.,223.])
-        fti = 14700.
-        ftf = 25000.
+        # Dt = np.array([dt,-dt])
+        # Dno = np.array([224.,223.])
+        # fti = 14700.
+        # ftf = 25000.
+        Dt = np.array([28200-28097.4708711805,
+                       28000-27406.4732593203,
+                       27400-26763.9946654502,
+                       26700-26330.0889135128,
+                       26300-25799.8775611997,
+                       25700-25124.6341346588,
+                       25100-24594.4658011928,
+                       24500-23951.5226133435,
+                       23900-23292.5857662206,
+                       23200-22890.8671337456,
+                       22800-22231.9647756934,
+                       22200-22167.6695855045])
+        Dno = np.array([282,
+                        280,
+                        274,
+                        267,
+                        263,
+                        257,
+                        251,
+                        245,
+                        239,
+                        232,
+                        228,
+                        222])
+        fti = 22167.6695855045
+        ftf = 28200.
+    elif np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) > 1.5:
+        #lo-res 0.99 settings
+        print( "Using lores a = 0.99 settings")
+        dt = 100.
+        # Dt = np.array([13700-11887.3058391312,
+        #                11800.-11547.5107224568,
+        #                11500-9727.2561911212,
+        #                9700-8435.61370926043,
+        #                8400-8000,-(8400-8000)])
+        # Dno = np.array([137,
+        #                 118,
+        #                 115,
+        #                 97,
+        #                 84,80])
+        Dt = np.array([13700-11887.3058391312])
+        Dno = np.array([137])
+        fti = 11887.3058391312
+        ftf = 13700.
     elif np.abs(a - 0.5)<1e-4:
         print( "Using a = 0.5 settings")
         dt = 13000.-10300.
@@ -3826,6 +3921,7 @@ def takeoutfloors(doreload=1,dotakeoutfloors=1):
         DT = 0
         if dotakeoutfloors:
             for (i,iDT) in enumerate(Dt):
+                gc.collect() #try to clean up memory if not used
                 iDU = get_dUfloor( Dno[i] )
                 if iDT > 0:
                     DT += iDT
