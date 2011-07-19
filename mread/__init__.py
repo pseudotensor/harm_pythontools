@@ -3768,6 +3768,19 @@ def getstagparams(var=None,rmax=20,doplot=1,doreadgrid=1):
     else:
         return istag, jstag, hstag, rstag
 
+def get_dUfloor( floordumpno, maxrinflowequilibrium = 20 ):
+    """ maxrsteady should be chosen to be on the outside of the inflow equilibrium region """
+    rfloor( "failfloordudump%04d.bin" % floordumpno )
+    #add back in rest-mass energy to conserved energy
+    dUfloor[1] -= dUfloor[0]
+    condin = (avg_uu[1]<0)*(r[:,:,0:1]<maxrinflowequilibrium)
+    condout = 1 - condin
+    UfloorAout = (dUfloor*condout[None,:,:,:]).sum(1+PH).sum(1+TH).cumsum(1+RR)
+    UfloorAin = (dUfloor*condin[None,:,:,:]).sum(1+PH).sum(1+TH).cumsum(1+RR)
+    UfloorA = (UfloorAin-UfloorAin[:,nx-1:nx]) + UfloorAout
+    UfloorAsum = UfloorA*scaletofullwedge(1.)
+    return( UfloorAsum )
+
 def takeoutfloors(doreload=1,dotakeoutfloors=1):
     global dUfloor, qtymem, DUfloorori, etad0
     #Mdot, E, L
@@ -3776,19 +3789,27 @@ def takeoutfloors(doreload=1,dotakeoutfloors=1):
     if a == 0.99:
         print( "Using a = 0.99 settings")
         #DTd = 22800-22231.9647756934 + 22200-22167.669585504507268 #22119.452438349220756
-        DTd = 22400-22300
+        dt = 100.
+        Dt = np.array([dt,-dt])
+        Dno = np.array([224.,223.])
         fti = 14700.
         ftf = 25000.
     elif a == 0.5:
         print( "Using a = 0.5 settings")
-        DTd = 13000.-10300.
+        dt = 13000.-10300.
+        Dt = np.array([dt,-dt])
+        Dno = np.array([130,103])
         fti = 10300.
         ftf = 13000.
+    elif a == 0.2:
+        print( "Using a = 0.2 settings")
+        Dt = np.array([13300.-10366.5933313178])
+        Dno = np.array([133])
+        fti = 10366.5933313178
+        ftf = 13300.
     else:
-        print( "Using default values for fti and ftf..." )
-        DTd = 100
-        fti = 10000.
-        ftf = 15000.
+        print( "Unknown case: a = %g, aborting..." % a )
+        return
     #dotakeoutfloors=1
     RR=0
     TH=1
@@ -3798,53 +3819,20 @@ def takeoutfloors(doreload=1,dotakeoutfloors=1):
         #!!!rhor = 1+(1-a**2)**0.5
         ihor = iofr(rhor)
         qtymem=getqtyvstime(ihor,0.2)
+        #initialize with zeros
+        DU = np.zeros((8,nx),dtype=np.float64)
+        DT = 0
         if dotakeoutfloors:
-            js=0
-            #########################################
-            #
-            # Initial floor dump (A)
-            #
-            #########################################
-            if a==0.99:
-                rfloor("failfloordudump0223.bin")
-            else:
-                rfloor("failfloordudump0103.bin")
-            #add back in rest-mass energy to conserved energy
-            dUfloor[1] -= dUfloor[0]
-            condin = (avg_uu[1]<0)*(r[:,:,0:1]<20)
-            condout = 1 - condin
-            UfloorAout = (dUfloor*condout[None,:,:,:]).sum(1+PH).sum(1+TH).cumsum(1+RR)
-            UfloorAin = (dUfloor*condin[None,:,:,:]).sum(1+PH).sum(1+TH).cumsum(1+RR)
-            UfloorA = (UfloorAin-UfloorAin[:,nx-1:nx]) + UfloorAout
-            UfloorAsum = UfloorA*scaletofullwedge(1.)/DTd
-            #xxx
-            #wrong -- UfloorA[1] += (dUfloor[0,:,js:ny-js,:]*etad0[:,js:ny-js,:]).sum(-1).sum(-1).cumsum(-1)*scaletofullwedge(1.)/DTd
-            #########################################
-            #
-            # Final floor dump (B)
-            #
-            #########################################
-            if a==0.99:
-                rfloor("failfloordudump0224.bin")
-            else:
-                rfloor("failfloordudump0130.bin")
-            #add back in rest-mass energy to conserved energy
-            dUfloor[1] -= dUfloor[0]
-            UfloorBout = (dUfloor*condout[None,:,:,:]).sum(1+PH).sum(1+TH).cumsum(1+RR)
-            UfloorBin = (dUfloor*condin[None,:,:,:]).sum(1+PH).sum(1+TH).cumsum(1+RR)
-            UfloorB = (UfloorBin-UfloorBin[:,nx-1:nx]) + UfloorBout
-            UfloorBsum = UfloorB*scaletofullwedge(1.)/DTd
-            if a==0.99:
-                DUfloor = (UfloorBsum - UfloorAsum)
-            else:
-                DUfloor = (UfloorBsum - UfloorAsum)
-            #floor info
-            #reset zero to where floors are probably not activated, say at r = 1e4
-        else:
-            DUfloor=np.zeros((8,nx),dtype=np.float64)
-    DUfloor0 = DUfloor[0]
-    DUfloor1 = DUfloor[1]
-    DUfloor4 = DUfloor[4]
+            for (i,iDT) in enumerage(Dt):
+                iDU = get_dUfloor( Dno[i] )
+                if iDT > 0:
+                    DT += iDT
+                DU += iDU * np.sign(iDT)
+            #average in time
+            DU /= DT
+    DUfloor0 = DU[0]
+    DUfloor1 = DU[1]
+    DUfloor4 = DU[4]
     mdtotvsr, edtotvsr, edmavsr, ldtotvsr = plotqtyvstime( qtymem, whichplot = -2, fti=fti, ftf=ftf )
     #avgmem = get2davg(usedefault=1)
     #assignavg2dvars(avgmem)
