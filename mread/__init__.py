@@ -2328,6 +2328,8 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
         #skip pre-loaded time slices
         if findex < numtimeslices2: 
             continue
+        #call garbage collector -- trying to get req'd memory under control
+        gc.collect()
         print( "Reading " + fname + " ..." )
         sys.stdout.flush()
         rfd("../"+fname)
