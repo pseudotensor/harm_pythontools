@@ -1304,20 +1304,29 @@ def computeavg(qty):
 
 def doall():
     grid3d("gdump.bin",use2d=True)
-    ilist=np.arange(221,286)
-    dtlist=100.+0*ilist
-    dtlist[ilist==221]=22200-22167.6695855045
-    dtlist[ilist==222]=22300-22231.9647756934
-    dtlist[ilist==228]=22900-22890.8671337456
-    dtlist[ilist==232]=23300-23292.5857662206
-    dtlist[ilist==239]=24000-23951.5226133435
-    dtlist[ilist==245]=24600-24594.4658011928
-    dtlist[ilist==251]=25200-25124.6341346588
-    dtlist[ilist==257]=25800-25799.8775611997
-    dtlist[ilist==263]=26400-26330.0889135128
-    dtlist[ilist==267]=26800-26763.9946654502
-    dtlist[ilist==274]=27500-27406.4732593203
-    dtlist[ilist==280]=28100-28097.4708711805
+    
+    if np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) < 1.5:
+        #lo-res 0.99 settings
+        print( "Using hires a = 0.99 settings")
+        ilist=np.arange(221,286)
+        dtlist=100.+0*ilist
+        dtlist[ilist==221]=22200-22167.6695855045
+        dtlist[ilist==222]=22300-22231.9647756934
+        dtlist[ilist==228]=22900-22890.8671337456
+        dtlist[ilist==232]=23300-23292.5857662206
+        dtlist[ilist==239]=24000-23951.5226133435
+        dtlist[ilist==245]=24600-24594.4658011928
+        dtlist[ilist==251]=25200-25124.6341346588
+        dtlist[ilist==257]=25800-25799.8775611997
+        dtlist[ilist==263]=26400-26330.0889135128
+        dtlist[ilist==267]=26800-26763.9946654502
+        dtlist[ilist==274]=27500-27406.4732593203
+        dtlist[ilist==280]=28100-28097.4708711805
+    elif np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) > 1.5:
+        #lo-res 0.99 settings
+        print( "Using lores a = 0.99 settings")
+        ilist=np.arange(120,137)
+        dtlist=100.+0*ilist
 
     print dtlist 
 
@@ -1325,13 +1334,14 @@ def doall():
         dt=dtlist[j]
         ravg("avg%04d.bin" % i)
         if j == 0:
-            res=computeavg(avgTud10)*dt
+            FE=computeavg(avgTud10)*dt
         else:
-            res+=computeavg(avgTud10)*dt
+            FE+=computeavg(avgTud10)*dt
     #get time average by dividing by the total averaging time
-    res /= dtlist.sum()
+    FE /= dtlist.sum()
+    np.save("fe.npy",FE)
     plt.clf()
-    plt.plot(r[:,0,0],res); 
+    plt.plot(r[:,0,0],FE); 
     plt.xlim(rhor,20)
     plt.ylim(-15,15)
 
@@ -3961,6 +3971,8 @@ def takeoutfloors(doreload=1,dotakeoutfloors=1):
     DUfloor1 = DU[1]
     DUfloor4 = DU[4]
     mdtotvsr, edtotvsr, edmavsr, ldtotvsr = plotqtyvstime( qtymem, whichplot = -2, fti=fti, ftf=ftf )
+    FE=np.load("fe.npy")
+    #edtotvsr-=FE
     #avgmem = get2davg(usedefault=1)
     #assignavg2dvars(avgmem)
     #edtotvsr = -(gdet[:,1:ny-1,0:1]*avg_Tud[1][0][:,1:ny-1,0:1]*_dx2*_dx3*nz).sum(-1).sum(-1)
@@ -3980,9 +3992,11 @@ def takeoutfloors(doreload=1,dotakeoutfloors=1):
         if dotakeoutfloors:
             plt.plot(r[:,0,0],Fl/dxdxp[3][3][:,0,0]/10.,'g',label=r"$F_L/10$")
     plt.plot(r[:,0,0],-edtotvsr,'r--',label=r"$F_E$ (raw)")
+    plt.plot(r[:,0,0],FE,'k--',label=r"$F_E$")
     if dotakeoutfloors:
         Fe=-(edtotvsr+DUfloor1)
         plt.plot(r[:,0,0],Fe,'r',label=r"$F_E$")
+        plt.plot(r[:,0,0],FE-DUfloor1,'k',label=r"$F_E$")
         plt.plot(r[:,0,0],(DUfloor1),'r:')
     eta = ((Fm-Fe)/Fm)
     etap = (Fm-Fe)/Fe
@@ -3993,7 +4007,7 @@ def takeoutfloors(doreload=1,dotakeoutfloors=1):
     plt.xlim(rhor,20)
     plt.ylim(-15,15)
     plt.grid()
-    plt.xlabel(r"$r [r_g]$",fontsize=16)
+    plt.xlabel(r"$r\ [r_g]$",fontsize=16)
     plt.ylabel("Flux",fontsize=16)
     plt.savefig("fig4.pdf",bbox_inches='tight',pad_inches=0.02)
     plt.savefig("fig4.eps",bbox_inches='tight',pad_inches=0.02)
