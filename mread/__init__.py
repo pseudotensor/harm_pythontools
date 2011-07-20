@@ -1293,7 +1293,7 @@ def ravg(dumpname):
                           dtype=np.float64, 
                           skiprows=1, 
                           unpack = True ).view().reshape((-1,nx,ny,nz), order='F')
-        print np.max(gd)
+        #print np.max(gd)
         avgU[j:j+1] = gd[:,:,:,:].view() 
     avgTud10=avgU.sum(axis=0)
     return
@@ -1304,8 +1304,32 @@ def computeavg(qty):
 
 def doall():
     grid3d("gdump.bin",use2d=True)
-    ravg("avg0221.bin")
-    res=computeavg(avgTud10)
+    ilist=np.arange(221,286)
+    dtlist=100.+0*ilist
+    dtlist[ilist==221]=22200-22167.6695855045
+    dtlist[ilist==222]=22300-22231.9647756934
+    dtlist[ilist==228]=22900-22890.8671337456
+    dtlist[ilist==232]=23300-23292.5857662206
+    dtlist[ilist==239]=24000-23951.5226133435
+    dtlist[ilist==245]=24600-24594.4658011928
+    dtlist[ilist==251]=25200-25124.6341346588
+    dtlist[ilist==257]=25800-25799.8775611997
+    dtlist[ilist==263]=26400-26330.0889135128
+    dtlist[ilist==267]=26800-26763.9946654502
+    dtlist[ilist==274]=27500-27406.4732593203
+    dtlist[ilist==280]=28100-28097.4708711805
+
+    print dtlist 
+
+    for (j,i) in enumerate(ilist):
+        dt=dtlist[j]
+        ravg("avg%04d.bin" % i)
+        if j == 0:
+            res=computeavg(avgTud10)*dt
+        else:
+            res+=computeavg(avgTud10)*dt
+    #get time average by dividing by the total averaging time
+    res /= dtlist.sum()
     plt.clf()
     plt.plot(r[:,0,0],res); 
     plt.xlim(rhor,20)
