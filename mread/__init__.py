@@ -1487,7 +1487,9 @@ def rgfd(fieldlinefilename,**kwargs):
         grid3d(os.path.basename(gdumpname[0]))
     rfd(fieldlinefilename,**kwargs)
     cvel()
-    
+
+
+#  http://norvig.com/python-lisp.html   
 
 def rfd(fieldlinefilename,**kwargs):
     #read information from "fieldline" file: 
@@ -1519,37 +1521,61 @@ def rfd(fieldlinefilename,**kwargs):
     Rin=myfloat(float(header[14]))
     #Spherical polar radius of the outermost radial cell
     Rout=myfloat(float(header[15]))
+    numcolumns=int(header[29])
+    #
     #read grid dump per-cell data
     #
-    body = np.fromfile(fin,dtype=np.float32,count=-1)
-    fin.close()
-    d=body.view().reshape((-1,nx,ny,nz),order='F')
+    if(0):
+        # new way
+        # http://www.mail-archive.com/numpy-discussion@scipy.org/msg07631.html
+        # http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.html
+        # still doesn't quite work once beyond this function!
+        from numpy import memmap
+        d = np.memmap(fin, dtype='float32', mode='c', shape=(numcolumns,nx,ny,nz),order='F')
+    #
+    else:
+        # old way:
+        body = np.fromfile(fin,dtype=np.float32,count=-1)
+        #body = np.load(fin,dtype=np.float32,count=-1)
+        d=body.view().reshape((-1,nx,ny,nz),order='F')
+        del(body)
+    #
     #rho, u, -hu_t, -T^t_t/U0, u^t, v1,v2,v3,B1,B2,B3
     #matter density in the fluid frame
+    rho=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
     rho=d[0,:,:,:]
+    lrho=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
     lrho = np.log10(rho)
     #matter internal energy in the fluid frame
+    ug=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
     ug=d[1,:,:,:]
     #d[4] is the time component of 4-velocity, u^t
     #d[5:8] are 3-velocities, v^i
+    uu=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
     uu=d[4:8,:,:,:]  #again, note uu[i] are 3-velocities (as read from the fieldline file)
     #multiply by u^t to get 4-velocities: u^i = u^t v^i
     uu[1:4]=uu[1:4] * uu[0]
-    B = np.zeros_like(uu)
+    #B = np.zeros_like(uu)
     #cell-centered magnetic field components
-    B[1:4,:,:,:]=d[8:11,:,:,:]
+    #B[1:4,:,:,:]=d[8:11,:,:,:]
+    # start at 7 so B[1] is correct.  7=<ignore> 8=B[1] 9=B[2] 10=B[3]
+    # below assumes B[0] is never needed
+    B=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
+    B=d[7:11,:,:,:]
     #if the input file contains additional data
+    #
     if(d.shape[0]>=14): 
         #new image format additionally contains gdet*B^i
-        gdetB = np.zeros_like(B)
         #face-centered magnetic field components multiplied by gdet
-        gdetB[1:4] = d[11:14,:,:,:]
+        # below assumes gdetB[0] is never needed
+        gdetB=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
+        gdetB = d[10:14,:,:,:]
     else:
         print("No data on gdetB, approximating it.")
-        gdetB = np.zeros_like(B)
-        gdetB[1] = gdet * B[1]
-        gdetB[2] = gdet * B[2]
-        gdetB[3] = gdet * B[3]
+        gdetB = np.zeros((4,nx,ny,nz),dtype='float32',order='F')
+        gdetB[1:4] = gdet * B[1:4]
+        #
+
     #     if 'gdet' in globals():
     #         #first set everything approximately (B's are at shifted locations by half-cell)
     #         B = gdetB/gdet  
@@ -1562,6 +1588,11 @@ def rfd(fieldlinefilename,**kwargs):
     #     else:
     #         print( "rfd: warning: since gdet is not defined, I am skipping the computation of cell-centered fields, B" )
     # else:
+    #
+    # clean-up unused memory
+    del(d)
+    fin.close()
+    gc.collect()
 
 
 def cvel():

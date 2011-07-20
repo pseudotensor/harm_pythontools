@@ -1,52 +1,6 @@
-    4) Finally, I'd like to run your movie+eff computation script on my fieldline data for my 272x128x256 model.  I only need to modify it to read gdet from dump0000 so gdet B^i is computed.  
+Note: I compartmentalized the script a bit (checkout the new version).
+The __main__ function is much more compact now, should be easier to
+read.
 
-
-The streamline code does not need gdet B^i's.  It uses B^i's. 
-
-Note: I compartmentalized the script a bit (checkout the new version).  The __main__ function is much more compact now, should be easier to read.
-
-If you want the movie to contain the bottom panel with Mdot vs. time, etc. you need to pre-generate the file, which I call qty2.npy: this file contains 1d information for every frame.  I generate qty2.npy by running generate_time_series().  To do this, you change "False" to "True" in the section of __main__ that runs generate_time_series(), and then run "python ~/py/mread/__init__.py" if you do that using 1 core.  If you use, e.g., 32 cores, then do:
-
-cd <directory that contains "dumps" directory>
-#export n=32
-#for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31
-
-# ki-jmck:
-export n=4
-for i in 0 1 2 3
-do
-   echo running $i $n >> out
-   sleep 5 #in order for all threads not to read in at once and overwhelm the drive
-   nohup python $HOME/py/mread/__init__.py $i $n &> python_${i}_${n}.out &
-done
-wait
-#merge to single file
-nohup python $HOME/py/mread/__init__.py $n $n &> python_${n}_${n}.out
-#generate the plots
-nohup python $HOME/py/mread/__init__.py &> python.out
-
-This is a poor-man's parallelization technique: first, thread #i generates a file, qty_${i}_${n}.npy, which contains a fraction of time slices.  Then, I merge all these partial files into one single file.
-
-Now you are ready to generate movie frames, you can do that in parallel, too, in a very similar way.  First, you disable the time series section of ~/py/mread/__init__.py and instead enable the movie section.  Then do:
-
-export n=32
-echo "" > out
-for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31
-do
-   echo running $i $n >> out
-   nohup python $HOME/py/mread/__init__.py $i $n &> python_${i}_${n}.out &
-done
-
- 
-
-    Also, I have binary files.  Does your code read binary files?  
-
-
-yes, the code does read in binary files. This is in fact how I use it.
- 
-
-    Should I be able to easily modify your code to use the dump0000 file for gdet and then multiply Bi so gdetBi is computed?  Thanks!
-
-
-I don't think you need to modify anything (unless you changed the meaning of columns in output files or added extra columns to fieldline files which would be interpreted by my script as 3 extra columns which I added to output gdetB^i's).
+<see ../scripts/makemovie.sh>
 
