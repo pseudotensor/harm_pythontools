@@ -7,9 +7,9 @@ E_BADARGS=65
 
 if [ $# -ne $EXPECTED_ARGS ]
 then
-    echo "Usage: `basename $0` {arg1 arg2 arg3}"
+    echo "Usage: `basename $0` {skipfactor olddir newdir}"
+    echo "e.g. sh createlinksalt.sh 100 /data2/jmckinne/thickdisk7/ ./"
     exit $E_BADARGS
-    # e.g. sh createlinksalt.sh 100 /data2/jmckinne/thickdisk7/ ./
 fi
 
 # get args

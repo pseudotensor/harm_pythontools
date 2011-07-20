@@ -5,9 +5,9 @@ E_BADARGS=65
 
 if [ $# -ne $EXPECTED_ARGS ]
 then
-    echo "Usage: `basename $0` {arg1 arg2 arg3}"
+    echo "Usage: `basename $0` {make1d make2d makemovie}"
+    echo "e.g. sh makemovie.sh 1 1 0"
     exit $E_BADARGS
-    # e.g. sh makemovie.sh 1 1 0
 fi
 
 # MUST RUN THIS WITH "bash" not "sh" since on some systems that calls "dash" that doesn't correctly handle $RANDOM or other things
@@ -40,6 +40,7 @@ echo "initfile=$initfile"
 export myrand=${RANDOM}
 echo "RANDOM=$myrand"
 
+export localpath=`pwd`
 
 export runn=10
 export numparts=2
@@ -48,7 +49,7 @@ export numparts=2
 if [ $1 -eq 1 ]
 then
 
-    export myinitfile=$initfile.$myrand
+    export myinitfile=$localpath/__init__.py.$myrand
     echo "myinitfile=$myinitfile"
 
     sed -n '1h;1!H;${;g;s/if False:[\n \t]*#NEW FORMAT[\n \t]*#Plot qtys vs. time[\n \t]*generate_time_series()/if True:\n\t#NEW FORMAT\n\t#Plot qtys vs. time\n\tgenerate_time_series()/g;p;}'  $initfile > $myinitfile
@@ -118,7 +119,7 @@ then
     # 1) You disable the time series section of ~/py/mread/__init__.py and
     # instead enable the movie section
     
-    export myinitfile2=$initfile.$myrand.2
+    export myinitfile2=$localpath/__init__.py.$myrand.2
     echo "myinitfile2=$myinitfile.2"
     
     sed -n '1h;1!H;${;g;s/if False:[\n \t]*#make a movie[\n \t]*mkmovie()/if True:\n\t#make a movie\n\tmkmovie()/g;p;}'  $initfile > $myinitfile2
@@ -170,10 +171,24 @@ then
     
     fps=4
     #
-    ffmpeg -i lrho%04d_Rzxym1.png -r $fps lrho.mp4
+    #ffmpeg -i lrho%04d_Rzxym1.png -r $fps -sameq lrho.mp4
+    #ffmpeg -fflags +genpts -i lrho%04d_Rzxym1.png -r $fps -sameq lrho.avi
+
+    if [ 1 -eq 0 ]
+    then
+        # high quality 1 minute long no matter what framerate (-t 60 doesn't work)
+	ffmpeg -y -fflags +genpts -i lrho%04d_Rzxym1.png -r 25 -sameq -qmax 5 -vcodec mjpeg lrho25.avi 
+
+        # now set frame rate (changes duration)
+	ffmpeg -y -i lrho25.avi -f image2pipe -vcodec copy - </dev/null | ffmpeg -r $fps -f image2pipe -vcodec mjpeg -i - -vcodec copy -an lrho.avi
+    else
+        # Sasha's command:
+	ffmpeg -y -fflags +genpts -r $fps -i lrho%04d_Rzxym1.png -vcodec mpeg4 -sameq -qmax 5 lrho.avi
+    fi
 
 fi
 
 
 # mplayer -loop 0 lrho.avi
+
 
