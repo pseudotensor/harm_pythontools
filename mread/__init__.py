@@ -2210,6 +2210,7 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
         print "Number of previously saved time slices: %d" % numtimeslices2 
         if( numtimeslices2 >= numtimeslices ):
             print "Number of previously saved time slices is >= than of timeslices to be loaded, re-using previously saved time slices"
+            #np.save("qty2.npy",qtymem2[:,:-1])  #kill last time slice
             return(qtymem2)
         else:
             assert qtymem2.shape[0] == qtymem.shape[0]
@@ -2952,7 +2953,7 @@ def iofr(rval):
     res = interp1d(r[:,0,0], ti[:,0,0], kind='linear')
     return(np.floor(res(rval)+0.5))
 
-def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100):
+def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None):
     global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
     nqtyold=98
     nqty=98+32+1
@@ -3257,6 +3258,10 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     if ftf is not None:
         iti = 1000 #dummy
         itf = 2000 #dummy
+        if ftf > ts[-1]:
+            ftf = ts[-1]
+        print fti, ftf
+        dotavg=1
     elif os.path.isfile(os.path.join("titf.txt")):
         dotavg=1
         gd1 = np.loadtxt( "titf.txt",
@@ -3360,6 +3365,19 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     else:
         ofc = 0
         clr = 'k'
+
+    if epsFm is not None and epsFke is not None:
+        FMraw    = mdtot[:,ihor]
+        FM       = epsFm * mdtot[:,ihor]
+        FMavg    = epsFm * timeavg(mdtot,ts,fti,ftf)[ihor]
+        FMiniavg = epsFm * timeavg(mdtot,ts,iti,itf)[ihor] 
+        FEraw = -edtot[:,ihor]
+        FE= epsFke*(FMraw-FEraw)
+    else:
+        FMiniavg = mdotiniavg
+        FMavg = mdotfinavg
+        FM = mdtot[:,ihor]-md30[:,ihor]
+        FE = pjemtot[:,ihor]
     #######################
     #
     # Mdot ***
@@ -3367,17 +3385,17 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #######################
     if whichplot == 1:
         if dotavg:
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotfinavg,color=(ofc,fc,fc))
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+FMavg,color=(ofc,fc,fc))
             if(iti>fti):
                 ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+mdotiniavg,color=(ofc,fc,fc))
                 
-        ax.plot(ts,np.abs(mdtot[:,ihor]-md30[:,ihor]),clr,label=r'$\dot Mc^2$')
+        ax.plot(ts,np.abs(FM),clr,label=r'$\dot Mc^2$')
         if findex != None:
             if not isinstance(findex,tuple):
-                ax.plot(ts[findex],np.abs(mdtot[:,ihor]-md30[:,ihor])[findex],'o',mfc='r')
+                ax.plot(ts[findex],np.abs(FM)[findex],'o',mfc='r')
             else:
                 for fi in findex:
-                    ax.plot(ts[fi],np.abs(mdtot[:,ihor]-md30[:,ihor])[fi],'o',mfc='r')#,label=r'$\dot M$')
+                    ax.plot(ts[fi],np.abs(FM)[fi],'o',mfc='r')#,label=r'$\dot M$')
         #ax.legend(loc='upper left')
         ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,labelpad=9)
         plt.setp( ax.get_xticklabels(), visible=False)
@@ -3417,6 +3435,78 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     #######################
     if whichplot == 4:
+        etabh = prefactor*FE/FMavg
+        etaj = prefactor*pjke_mu2[:,iofr(100)]/mdotfinavg
+        etaw = prefactor*(pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotfinavg
+        etabh2 = prefactor*FE/FMiniavg
+        etaj2 = prefactor*pjke_mu2[:,iofr(100)]/mdotiniavg
+        etaw2 = prefactor*(pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotiniavg
+        if(1 and iti>fti):
+            #use mdot averaged over the same time interval for iti<t<=itf
+            icond=(ts>=iti)*(ts<itf)
+            etabh[icond]=etabh2[icond]
+            etaj[icond]=etaj2[icond]
+            etaw[icond]=etaw2[icond]
+        if dotavg:
+            etaj_avg = timeavg(etaj,ts,fti,ftf)
+            etabh_avg = timeavg(etabh,ts,fti,ftf)
+            etaw_avg = timeavg(etaw,ts,fti,ftf)
+            ptot_avg = timeavg(pjemtot[:,ihor],ts,fti,ftf)
+            if showextra:
+                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaj_avg,'--',color=(fc,fc+0.5*(1-fc),fc)) 
+            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etabh_avg,color=(ofc,fc,fc)) 
+            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+            #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaw_avg,'-.',color=(fc,fc+0.5*(1-fc),fc)) 
+            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+            if(iti>fti):
+                etaj2_avg = timeavg(etaj2,ts,iti,itf)
+                etabh2_avg = timeavg(etabh2,ts,iti,itf)
+                etaw2_avg = timeavg(etaw2,ts,iti,itf)
+                ptot2_avg = timeavg(pjemtot[:,ihor],ts,iti,itf)
+                if showextra:
+                    ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etaj2_avg,'--',color=(fc,fc+0.5*(1-fc),fc))
+                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etabh2_avg,color=(ofc,fc,fc))
+                #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaw2_avg,'-.',color=(fc,fc+0.5*(1-fc),fc)) 
+        ax.plot(ts,etabh,clr,label=r'$\eta_{\rm BH}$')
+        if showextra:
+            ax.plot(ts,etaj,'g--',label=r'$\eta_{\rm jet}$')
+            ax.plot(ts,etaw,'b-.',label=r'$\eta_{\rm wind}$')
+        if findex != None:
+            if not isinstance(findex,tuple):
+                if showextra:
+                    ax.plot(ts[findex],etaj[findex],'gs')
+                ax.plot(ts[findex],etabh[findex],'o',mfc='r')
+                if showextra:
+                    ax.plot(ts[findex],etaw[findex],'bv')
+            else:
+                for fi in findex:
+                    if showextra:
+                        ax.plot(ts[fi],etaw[fi],'bv')#,label=r'$\dot M$')
+                        ax.plot(ts[fi],etaj[fi],'gs')#,label=r'$\dot M$')
+                    ax.plot(ts[fi],etabh[fi],'o',mfc='r')#,label=r'$\dot M$')
+        #ax.legend(loc='upper left')
+        #ax.set_ylim(0,2)
+        ax.set_xlabel(r'$t\;[r_g/c]$',fontsize=16)
+        if prefactor == 100:
+            ax.set_ylabel(r'$\eta\ [\%]$',fontsize=16,ha='left',labelpad=20)
+        else:
+            ax.set_ylabel(r'$\eta\ [\%]$',fontsize=16,labelpad=16)
+        ax.set_xlim(ts[0],ts[-1])
+        if showextra:
+            plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
+
+
+        print( "eta_BH = %g, eta_j = %g, eta_w = %g, eta_jw = %g, mdot = %g, ptot_BH = %g" % ( etabh_avg, etaj_avg, etaw_avg, etaj_avg + etaw_avg, mdotfinavg, ptot_avg ) )
+        if iti > fti:
+            print( "eta_BH2 = %g, eta_j2 = %g, eta_w2 = %g, eta_jw2 = %g, mdot2 = %g, ptot2_BH = %g" % ( etabh2_avg, etaj2_avg, etaw2_avg, etaj2_avg + etaw2_avg, mdotiniavg, ptot2_avg ) )
+
+    #######################
+    #
+    # eta NEW ***
+    #
+    #######################
+    if whichplot == 6:
         etabh = prefactor*pjemtot[:,ihor]/mdotfinavg
         etaj = prefactor*pjke_mu2[:,iofr(100)]/mdotfinavg
         etaw = prefactor*(pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotfinavg
@@ -3861,6 +3951,8 @@ def get_dUfloor( floordumpno, maxrinflowequilibrium = 20 ):
     #add back in rest-mass energy to conserved energy
     dUfloor[1] -= dUfloor[0]
     condin = (avg_uu[1]<0)*(r[:,:,0:1]<maxrinflowequilibrium)
+    #uncomment this if don't want to use stagnation surface
+    #condin = (r[:,:,0:1]<maxrinflowequilibrium)
     condout = 1 - condin
     UfloorAout = (dUfloor*condout[None,:,:,:]).sum(1+PH).sum(1+TH).cumsum(1+RR)
     UfloorAin = (dUfloor*condin[None,:,:,:]).sum(1+PH).sum(1+TH).cumsum(1+RR)
@@ -3868,8 +3960,38 @@ def get_dUfloor( floordumpno, maxrinflowequilibrium = 20 ):
     UfloorAsum = UfloorA*scaletofullwedge(1.)
     return( UfloorAsum )
 
-def takeoutfloors(doreload=1,dotakeoutfloors=1):
-    global dUfloor, qtymem, DUfloorori, etad0
+def plotfluxes():
+    bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
+    plt.figure(4)
+    gs = GridSpec(2, 2)
+    gs.update(left=0.12, right=0.94, top=0.95, bottom=0.1, wspace=0.01, hspace=0.04)
+    ax1 = plt.subplot(gs[:,-2])
+    os.chdir("/home/atchekho/run/rtf2_15r34_2pi_a0.99gg500rbr1e3_0_0_0") 
+    takeoutfloors(ax=ax1,dolegend=True)
+    plt.text(ax1.get_xlim()[0]+(ax1.get_xlim()[1]-ax1.get_xlim()[0])/10., 
+             0.9*ax1.get_ylim()[1], "$(\mathrm{a})$", size=16, rotation=0.,
+             ha="center", va="center",
+             color='k',weight='regular',bbox=bbox_props
+             )
+    # ax1r = ax1.twinx()
+    # ax1r.set_ylim(ax1.get_ylim())
+    # ax1r.set_yticks((ymax/2,ymax))
+    ax1.set_ylabel("Fluxes",fontsize=16,labelpad=9)
+    ax2 = plt.subplot(gs[:,-1])
+    plt.setp( ax2.get_yticklabels(), visible=False )
+    os.chdir("/home/atchekho/run/rtf2_15r34.475_a0.5_0_0_0") 
+    takeoutfloors(ax=ax2,dolegend=True)
+    plt.text(ax2.get_xlim()[0]+(ax2.get_xlim()[1]-ax2.get_xlim()[0])/10., 
+             0.9*ax2.get_ylim()[1], "$(\mathrm{b})$", size=16, rotation=0.,
+             ha="center", va="center",
+             color='k',weight='regular',bbox=bbox_props
+             )
+    ax2r = ax2.twinx()
+    ax2r.set_ylim(ax2.get_ylim())
+    plt.savefig("fig4.eps",bbox_inches='tight',pad_inches=0.02)
+
+def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=None,isinteractive=1,returndf=0,dolegend=True):
+    global dUfloor, qtymem, DUfloorori, etad0, DU
     #Mdot, E, L
     grid3d("gdump.bin",use2d=True)
     istag, jstag, hstag, rstag = getstagparams(rmax=20,doplot=0,doreadgrid=0)
@@ -3906,8 +4028,8 @@ def takeoutfloors(doreload=1,dotakeoutfloors=1):
                         232,
                         228,
                         222])
-        fti = 22167.6695855045
-        ftf = 28200.
+        lfti = 22167.6695855045
+        lftf = 28200.
     elif np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) > 1.5:
         #lo-res 0.99 settings
         print( "Using lores a = 0.99 settings")
@@ -3924,24 +4046,27 @@ def takeoutfloors(doreload=1,dotakeoutfloors=1):
         #                 84,80])
         Dt = np.array([13700-11887.3058391312])
         Dno = np.array([137])
-        fti = 11887.3058391312
-        ftf = 13700.
+        lfti = 11887.3058391312
+        lftf = 13700.
     elif np.abs(a - 0.5)<1e-4:
         print( "Using a = 0.5 settings")
         dt = 13000.-10300.
         Dt = np.array([dt,-dt])
         Dno = np.array([130,103])
-        fti = 10300.
-        ftf = 13000.
+        lfti = 10300.
+        lftf = 13000.
     elif np.abs(a - 0.2)<1e-4:
         print( "Using a = 0.2 settings")
         Dt = np.array([13300.-10366.5933313178])
         Dno = np.array([133])
-        fti = 10366.5933313178
-        ftf = 13300.
+        lfti = 10366.5933313178
+        lftf = 13300.
     else:
         print( "Unknown case: a = %g, aborting..." % a )
         return
+    if fti is None or ftf is None:
+        fti = lfti
+        ftf = lftf
     #dotakeoutfloors=1
     RR=0
     TH=1
@@ -3970,8 +4095,10 @@ def takeoutfloors(doreload=1,dotakeoutfloors=1):
     DUfloor0 = DU[0]
     DUfloor1 = DU[1]
     DUfloor4 = DU[4]
+    #at this time we have the floor information, now get averages:
     mdtotvsr, edtotvsr, edmavsr, ldtotvsr = plotqtyvstime( qtymem, whichplot = -2, fti=fti, ftf=ftf )
-    FE=np.load("fe.npy")
+    if dofeavg:
+        FE=np.load("fe.npy")
     #edtotvsr-=FE
     #avgmem = get2davg(usedefault=1)
     #assignavg2dvars(avgmem)
@@ -3980,56 +4107,80 @@ def takeoutfloors(doreload=1,dotakeoutfloors=1):
     rh=rhor
     ihor = iofr(rhor)
     #FIGURE: mass
-    plt.figure(1)
-    plt.clf()
-    plt.plot(r[:,0,0],mdtotvsr,'b--',label=r"$F_M$ (raw)")
+    if isinteractive:
+        if ax is None:
+            plt.figure(1)
+            plt.clf()
+        if ax is None:
+            plt.plot(r[:,0,0],mdtotvsr,'b--',label=r"$F_M$ (raw)")
     if dotakeoutfloors:
         Fm=(mdtotvsr+DUfloor0)
-        plt.plot(r[:,0,0],Fm,'b',label=r"$F_M$")
+        if isinteractive:
+            plt.plot(r[:,0,0],Fm,'b',label=r"$F_M$")
     if ldtotvsr is not None:
         Fl=-(ldtotvsr+DUfloor4)
-        plt.plot(r[:,0,0],-ldtotvsr/dxdxp[3][3][:,0,0]/10.,'g--',label=r"$F_L/10$ (raw)")
-        if dotakeoutfloors:
+        if isinteractive and ax is None:
+            plt.plot(r[:,0,0],-ldtotvsr/dxdxp[3][3][:,0,0]/10.,'g--',label=r"$F_L/10$ (raw)")
+        if dotakeoutfloors and isinteractive:
             plt.plot(r[:,0,0],Fl/dxdxp[3][3][:,0,0]/10.,'g',label=r"$F_L/10$")
-    plt.plot(r[:,0,0],-edtotvsr,'r--',label=r"$F_E$ (raw)")
-    plt.plot(r[:,0,0],FE,'k--',label=r"$F_E$")
+    if isinteractive and ax is None:
+        plt.plot(r[:,0,0],-edtotvsr,'r--',label=r"$F_E$ (raw)")
+    if dofeavg and isinteractive and ax is None:
+        plt.plot(r[:,0,0],FE,'k--',label=r"$F_E$")
     if dotakeoutfloors:
         Fe=-(edtotvsr+DUfloor1)
-        plt.plot(r[:,0,0],Fe,'r',label=r"$F_E$")
-        plt.plot(r[:,0,0],FE-DUfloor1,'k',label=r"$F_E$")
-        plt.plot(r[:,0,0],(DUfloor1),'r:')
+        if isinteractive:
+            plt.plot(r[:,0,0],Fe,'r',label=r"$F_E$")
+        if dofeavg and isinteractive: 
+            plt.plot(r[:,0,0],FE-DUfloor1,'k',label=r"$F_E$")
+        if isinteractive and ax is None:
+            plt.plot(r[:,0,0],(DUfloor1),'r:')
     eta = ((Fm-Fe)/Fm)
     etap = (Fm-Fe)/Fe
-    print("Eff = %g, Eff' = %g" % ( eta[iofr(5)], etap[iofr(5)] ) )
-    #plt.plot(r[:,0,0],DUfloor0,label=r"$dU^t$")
-    #plt.plot(r[:,0,0],DUfloor*1e4,label=r"$dU^t\times10^4$")
-    plt.legend(loc='lower right',ncol=3)
-    plt.xlim(rhor,20)
-    plt.ylim(-15,15)
-    plt.grid()
-    plt.xlabel(r"$r\ [r_g]$",fontsize=16)
-    plt.ylabel("Flux",fontsize=16)
-    plt.savefig("fig4.pdf",bbox_inches='tight',pad_inches=0.02)
-    plt.savefig("fig4.eps",bbox_inches='tight',pad_inches=0.02)
-    plt.savefig("fig4.png",bbox_inches='tight',pad_inches=0.02)
-    #FIGURE: energy
-    #plt.figure(2)
-    #plt.plot(r[:,0,0],edtotvsr+DUfloor1,label=r"$\dot E+dU^1$")
-    #plt.plot(r[:,0,0],DUfloor1,label=r"$dU^1$")
-    #plt.legend()
-    #plt.xlim(rhor,12)
-    #plt.ylim(-3,20)
-    #plt.grid()
+    if isinteractive:
+        print("Eff = %g, Eff' = %g" % ( eta[iofr(5)], etap[iofr(5)] ) )
+        #plt.plot(r[:,0,0],DUfloor0,label=r"$dU^t$")
+        #plt.plot(r[:,0,0],DUfloor*1e4,label=r"$dU^t\times10^4$")
+        if dolegend:
+            plt.legend(loc='center right',ncol=1)
+        plt.xlim(rhor,20)
+        plt.ylim(-10,15)
+        plt.grid()
+        plt.xlabel(r"$r\ [r_g]$",fontsize=16)
+        if ax is None:
+            plt.ylabel("Flux",fontsize=16)
+            plt.savefig("fig4.pdf",bbox_inches='tight',pad_inches=0.02)
+            plt.savefig("fig4.eps",bbox_inches='tight',pad_inches=0.02)
+            plt.savefig("fig4.png",bbox_inches='tight',pad_inches=0.02)
+        #FIGURE: energy
+        #plt.figure(2)
+        #plt.plot(r[:,0,0],edtotvsr+DUfloor1,label=r"$\dot E+dU^1$")
+        #plt.plot(r[:,0,0],DUfloor1,label=r"$dU^1$")
+        #plt.legend()
+        #plt.xlim(rhor,12)
+        #plt.ylim(-3,20)
+        #plt.grid()
     #
-    avgmem = get2davg(usedefault=1)
-    assignavg2dvars(avgmem)
-    edtot2davg = (gdet[:,:,0:1]*avg_Tud[1][0][:,:,0:1]*_dx2*_dx3*nz).sum(-1).sum(-1)
-    rhouuudtot2davg = (gdet[:,:,0:1]*avg_rhouuud[1][0][:,:,0:1]*_dx2*_dx3*nz).sum(-1).sum(-1)
-    uguuudtot2davg = (gdet[:,:,0:1]*avg_uguuud[1][0][:,:,0:1]*_dx2*_dx3*nz).sum(-1).sum(-1)
-    avg_tudmass = (gdet[:,:,0:1]*(avg_rhouu[1])*(avg_ud[0])*_dx2*_dx3*nz).sum(-1).sum(-1)
-    avg_tudug = (gdet[:,:,0:1]*(avg_uguu[1])*(avg_ud[0])*_dx2*_dx3*nz).sum(-1).sum(-1)
-    avg_tudmassug = (gdet[:,:,0:1]*(avg_rhouu[1]+avg_uguu[1])*(avg_ud[0])*_dx2*_dx3*nz).sum(-1).sum(-1)
-    gc.collect()
+    if False:
+        avgmem = get2davg(usedefault=1)
+        assignavg2dvars(avgmem)
+        edtot2davg = (gdet[:,:,0:1]*avg_Tud[1][0][:,:,0:1]*_dx2*_dx3*nz).sum(-1).sum(-1)
+        rhouuudtot2davg = (gdet[:,:,0:1]*avg_rhouuud[1][0][:,:,0:1]*_dx2*_dx3*nz).sum(-1).sum(-1)
+        uguuudtot2davg = (gdet[:,:,0:1]*avg_uguuud[1][0][:,:,0:1]*_dx2*_dx3*nz).sum(-1).sum(-1)
+        avg_tudmass = (gdet[:,:,0:1]*(avg_rhouu[1])*(avg_ud[0])*_dx2*_dx3*nz).sum(-1).sum(-1)
+        avg_tudug = (gdet[:,:,0:1]*(avg_uguu[1])*(avg_ud[0])*_dx2*_dx3*nz).sum(-1).sum(-1)
+        avg_tudmassug = (gdet[:,:,0:1]*(avg_rhouu[1]+avg_uguu[1])*(avg_ud[0])*_dx2*_dx3*nz).sum(-1).sum(-1)
+        gc.collect()
+    #return efficiency at r = 5:
+    if returndf:
+        Fmraw = mdtotvsr[ihor]
+        Feraw = -edtotvsr[ihor]
+        Fmval = Fm[iofr(5)]
+        Feval = Fe[iofr(5)]
+        epsFm = Fmval/Fmraw
+        epsFke = (Fmval-Feval)/(Fmraw-Feraw)
+        return( (epsFm,epsFke) )
+    return( eta[iofr(5)] )
     #
     # plt.figure(2)
     # plt.plot(r[:,0,0],edtotvsr,label="tot")
@@ -4056,7 +4207,26 @@ def takeoutfloors(doreload=1,dotakeoutfloors=1):
     # plt.plot(r[:,0,0],-edtot2davg,label="tot2davg")
     # gc.collect()
 
-
+def computeeta(start_t=8000,numintervals=8,doreload=1):
+    #getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
+    grid3d("gdump.bin", use2d = True)
+    qtymem = getqtyvstime( iofr(rhor) )
+    start_of_sim_t = qtymem[0,0,0]
+    end_t = qtymem[0,-1,0]
+    a_t,t_step = np.linspace(start_t,end_t,numintervals,retstep=True,endpoint=False)
+    print( "start_t = %g, end_t = %g, step_t = %g" % (start_t,end_t,t_step) )
+    a_eta = np.zeros_like(a_t)
+    for (i,t_i) in enumerate(a_t):
+        if i == 0: 
+            doreload_local = doreload
+        else: 
+            doreload_local = 0
+        a_eta[i] = takeoutfloors(doreload=doreload_local,fti=t_i,ftf=t_i+t_step,isinteractive=0)
+    print("Efficiencies:")    
+    print a_eta
+    print( "Average efficiency = %g" % a_eta.mean() ) 
+    print( "Stdev eta: %g" % a_eta.std() )
+    
 
 def plotj(ts,fs,md,jem,jtot):
     #rc('font', family='serif')
@@ -4905,13 +5075,12 @@ def mkstreamlinefigure():
     # plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02)
     plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02)
 
-def mklotsopanels():
+def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,prefactor=100):
     #Figure 1
     #To make plot, run 
     #run ~/py/mread/__init__.py 1 1
     #To re-make plot without reloading the fiels, run
     #run ~/py/mread/__init__.py 1 -1
-    domakeframes=True
     doslines=True
     plotlenf=10
     plotleni=25
@@ -4961,7 +5130,7 @@ def mklotsopanels():
     gs3.update(left=0.055, right=0.97, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
     #mdot
     ax31 = plt.subplot(gs3[-3,:])
-    plotqtyvstime(qtymem,ax=ax31,whichplot=1,findex=findexlist) #AT: need to specify index!
+    plotqtyvstime(qtymem,ax=ax31,whichplot=1,findex=findexlist,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor) #AT: need to specify index!
     ymax=ax31.get_ylim()[1]
     ymax=2*(np.floor(np.floor(ymax+1.5)/2))
     ax31.set_yticks((ymax/2,ymax))
@@ -4998,7 +5167,7 @@ def mklotsopanels():
     #                      )
     #          )
     ax35 = plt.subplot(gs3[-2,:])
-    plotqtyvstime(qtymem,ax=ax35,whichplot=5,findex=findexlist)
+    plotqtyvstime(qtymem,ax=ax35,whichplot=5,findex=findexlist,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor)
     ymax=ax35.get_ylim()[1]
     if 1 < ymax and ymax < 2: 
         #ymax = 2
@@ -5026,22 +5195,22 @@ def mklotsopanels():
     #pjet/<mdot>
     #
     ax34 = plt.subplot(gs3[-1,:])
-    plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findexlist)
+    plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findexlist,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor)
     ymax=ax34.get_ylim()[1]
-    if 100 < ymax and ymax < 200: 
+    if prefactor < ymax and ymax < 2*prefactor: 
         #ymax = 2
-        tck=(100,)
+        tck=(prefactor,)
         ax34.set_yticks(tck)
         #ax34.set_yticklabels(('','100','200'))
-    elif ymax < 100: 
-        ymax = 100
-        tck=(50,100)
+    elif ymax < prefactor: 
+        ymax = prefactor
+        tck=(0.5*prefactor,prefactor)
         ax34.set_yticks(tck)
-        ax34.set_yticklabels(('','100'))
+        ax34.set_yticklabels(('','%d' % prefactor))
     else:
-        ymax=np.floor(ymax/100.)+1
-        ymax*=100
-        tck=np.arange(1,ymax/100.)*100
+        ymax=np.floor(ymax/prefactor)
+        ymax*=prefactor
+        tck=np.arange(1,ymax/prefactor)*prefactor
         ax34.set_yticks(tck)
     #reset lower limit to 0
     ax34.set_ylim((0,ax34.get_ylim()[1]))
@@ -5593,7 +5762,13 @@ if __name__ == "__main__":
         mkstreamlinefigure()
     if False:
         #FIGURE 1 LOTSOPANELS
-        mklotsopanels()
+        fti=8000
+        ftf=1e5
+        epsFm, epsFke = takeoutfloors(doreload=1,fti=fti,ftf=ftf,returndf=1,isinteractive=0)
+        #epsFm = 
+        #epsFke = 
+        print epsFm, epsFke
+        mklotsopanels(epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,domakeframes=True,prefactor=1)
     if False:
         #Short tutorial. Some of the names will sound familiar :)
         print( "Running a short tutorial: read in grid, 0th dump, plot and compute some things." )
