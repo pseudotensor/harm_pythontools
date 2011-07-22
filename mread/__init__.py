@@ -5084,17 +5084,32 @@ def mk2davg():
 
 def mkstreamlinefigure():
     mylen = 30
+    arrowsize=4
     grid3d("gdump.bin",use2d=True)
     rfd("fieldline0000.bin")
     avgmem = get2davg(usedefault=1)
     assignavg2dvars(avgmem)
-    fig=plt.figure(1,figsize=(12,9))
+    fig=plt.figure(1,figsize=(12,9),dpi=300)
+    fntsize=24
     ax = fig.add_subplot(111, aspect='equal')
-    if False:
+    if True:
         #velocity
         B[1:] = avg_uu[1:]
         bsq = avg_bsq
         mkframe("myframe",len=mylen,ax=ax,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
+    if True:
+        istag, jstag, hstag, rstag = getstagparams(doplot=0)
+        myRmax=4
+        #z>0
+        rs=rstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)>0]
+        hs=hstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)>0]
+        ax.plot(rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
+        ax.plot(-rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
+        #z<0
+        rs=rstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)<0]
+        hs=hstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)<0]
+        ax.plot(rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
+        ax.plot(-rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
     if True:
         #field
         B[1] = avg_B[0]
@@ -5104,7 +5119,7 @@ def mkstreamlinefigure():
         plt.figure(1)
         gdetB[1:] = avg_gdetB[0:]
         mu = avg_mu
-        mkframe("myframe",len=25./30.*mylen,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=12,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.01,color='r',lw=1,startatmidplane=True,showjet=False)
+        mkframe("myframe",len=25./30.*mylen,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=12,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.01,color='r',lw=2,startatmidplane=True,showjet=False,arrowsize=arrowsize)
     if False:
         x = (r*np.sin(h))[:,:,0]
         z = (r*np.cos(h))[:,:,0]
@@ -5120,11 +5135,13 @@ def mkstreamlinefigure():
     mylenshow = 25./30.*mylen
     plt.xlim(-mylenshow,mylenshow)
     plt.ylim(-mylenshow,mylenshow)
-    plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
-    plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=15,fontsize=16)
+    plt.xlabel(r"$x\ [r_g]$",fontsize=fntsize,ha='center')
+    plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=15,fontsize=fntsize)
+    for label in ax.get_xticklabels() + ax.get_yticklabels():
+        label.set_fontsize(fntsize)
     # plt.savefig("fig2.pdf",bbox_inches='tight',pad_inches=0.02)
     # plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02)
-    plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02)
+    plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02,dpi=300)
 
 def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,prefactor=100):
     #Figure 1
