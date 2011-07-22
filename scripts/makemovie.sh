@@ -1,4 +1,6 @@
 #!/bin/bash
+# MUST RUN THIS WITH "bash" not "sh" since on some systems that calls "dash" that doesn't correctly handle $RANDOM or other things
+
 
 EXPECTED_ARGS=3
 E_BADARGS=65
@@ -10,7 +12,6 @@ then
     exit $E_BADARGS
 fi
 
-# MUST RUN THIS WITH "bash" not "sh" since on some systems that calls "dash" that doesn't correctly handle $RANDOM or other things
 
 # If you want the movie to contain the bottom panel with Mdot
 # vs. time, etc. you need to pre-generate the file, which I call
@@ -28,6 +29,9 @@ fi
 # columns which I added to output gdetB^i's).
 
 # The streamline code does not need gdet B^i's.  It uses B^i's. 
+
+# Requirements:
+# A) Currently python script requires fieldline0000.bin to exist for getting parameters.  Can search/replace this name for another that actually exists if don't want to include that first file.
 
 # 2) Change "False" to "True" in the section of __main__ that runs
 # generate_time_series()
@@ -66,6 +70,15 @@ then
     # time slices.  Then, I merge all these partial files into one single
     # file.
     
+    # Requirements to consider inside __init__.py:
+    # A) Must have at least one fieldline????.bin dump beyond fti=8000 for averaging period or else script dies.
+    # or create a file titf.txt that contains the following:
+##comment
+#1000 2000 8000 20000
+#   last two numbers indicate range of averaging.  E.g., Set 8000->0 if only using fieldline0000.bin dump and no other dumps.
+
+    # Options to consider inside __init__.py:
+    # A) 
     
     export je=$(( $numparts - 1 ))
     # above two must be exactly divisible
@@ -124,6 +137,17 @@ then
     
     sed -n '1h;1!H;${;g;s/if False:[\n \t]*#make a movie[\n \t]*mkmovie()/if True:\n\t#make a movie\n\tmkmovie()/g;p;}'  $initfile > $myinitfile2
     
+    
+    # Options to consider inside __init__.py:
+    #
+    # A) can change showextra=False to True:
+    # def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=True,prefactor=100)
+    # 
+    #
+    # B) Can choose vmin and vmax for lrho range in movie:
+    # mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False)
+    # mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True)
+
     
     # 2) Now run job as before.  But makeing movie frames takes about 2X more memory, so increase parts by 2X
     
@@ -189,6 +213,8 @@ then
 fi
 
 
-# mplayer -loop 0 lrho.avi
+echo "Now do: mplayer -loop 0 lrho.avi"
+
+
 
 
