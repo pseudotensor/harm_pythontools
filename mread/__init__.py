@@ -3921,19 +3921,24 @@ def getstagparams(var=None,rmax=20,doplot=1,doreadgrid=1):
     avgmem = get2davg(usedefault=1)
     assignavg2dvars(avgmem)
     #a large enough distance that floors are not applied, yet close enough that reaches inflow equilibrium
-    rnoflooradded=20
+    rnoflooradded=rmax
     #radial index and radius of stagnation surface
     sol = avg_uu[1]*(r-rmax)
     istag = np.floor( findroot2d(sol, ti, axis = 1, isleft=True, fallback = 1, fallbackval = iofr(rnoflooradded)) + 0.5 )
     jstag = np.floor( findroot2d(sol, tj, axis = 1, isleft=True, fallback = 1, fallbackval = iofr(rnoflooradded)) + 0.5 )
     rstag = findroot2d( sol, r, axis = 1, isleft=True, fallback = 1, fallbackval = rnoflooradded )
     hstag = findroot2d( sol, h, axis = 1, isleft=True, fallback = 1, fallbackval = np.pi/2.)
+    for j in np.array([1,-2]):
+        rstag[j]=0.5*(rstag[j-1]+rstag[j+1])
+        istag[j]=iofr(rstag[j])
+        hstag[j]=h[istag[j],j,0]
     if doplot:
         plt.figure(1)
         plt.clf()
         plt.plot(hstag,rstag)
         plt.figure(2)
         plco(avg_uu[1],levels=(0,),colors='k',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        plt.plot(rstag*np.sin(hstag),rstag*np.cos(hstag))
         plt.xlim(0,10)
         plt.ylim(-5,5)
     #cond=(ti==istag[None,:,None])*(tj==jstag[None,:,None])
