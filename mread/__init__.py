@@ -1026,7 +1026,7 @@ def reinterpxy(vartointerp,extent,ncell,domask=1):
 def ftr(x,xb,xf):
     return( amax(0.0*x,amin(1.0+0.0*x,1.0*(x-xb)/(xf-xb))) )
     
-def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False):
+def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1):
     extent=(-len,len,-len,len)
     palette=cm.jet
     palette.set_bad('k', 1.0)
@@ -1125,7 +1125,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
             lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
             # if t < 1500:
             lw *= ftr(iaphi,0.001,0.002)
-        fstreamplot(yi,xi,iBR,iBz,ua=iBaR,va=iBaz,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=detectLoops,dodiskfield=dodiskfield,dobhfield=dobhfield,startatmidplane=startatmidplane,a=a,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,dsval=dsval,color=color,doarrows=doarrows,dorandomcolor=dorandomcolor,skipblankint=skipblankint,minindent=minindent,minlengthdefault=minlengthdefault)
+        fstreamplot(yi,xi,iBR,iBz,ua=iBaR,va=iBaz,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=detectLoops,dodiskfield=dodiskfield,dobhfield=dobhfield,startatmidplane=startatmidplane,a=a,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,dsval=dsval,color=color,doarrows=doarrows,dorandomcolor=dorandomcolor,skipblankint=skipblankint,minindent=minindent,minlengthdefault=minlengthdefault,arrowsize=arrowsize)
         #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
     ax.set_xlim(extent[0],extent[1])
     ax.set_ylim(extent[2],extent[3])
@@ -1139,7 +1139,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
     #if None != fname:
     #    plt.savefig( fname + '.png' )
 
-def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True):
+def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,arrowsize=1):
     extent=(-len,len,-len,len)
     palette=cm.jet
     palette.set_bad('k', 1.0)
@@ -1190,7 +1190,7 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
             # if t < 1500:
             #     lw *= ftr(ilrho,-2.,-1.9)
             lw *= ftr(iaphi,0.001,0.002)
-            fstreamplot(yi,xi,iBx,iBy,density=1,downsample=1,linewidth=lw,detectLoops=True,dodiskfield=False,dobhfield=False,startatmidplane=False,a=a)
+            fstreamplot(yi,xi,iBx,iBy,density=1,downsample=1,linewidth=lw,detectLoops=True,dodiskfield=False,dobhfield=False,startatmidplane=False,a=a,arrowsize=arrowsize)
         ax.set_xlim(extent[0],extent[1])
         ax.set_ylim(extent[2],extent[3])
     #CS.cmap=cm.jet
@@ -3960,34 +3960,72 @@ def get_dUfloor( floordumpno, maxrinflowequilibrium = 20 ):
     UfloorAsum = UfloorA*scaletofullwedge(1.)
     return( UfloorAsum )
 
-def plotfluxes():
+def plotfluxes(doreload=1):
+    global DU,DU1,DU2,qtymem,qtymem1,qtymem2
     bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
     plt.figure(4)
     gs = GridSpec(2, 2)
     gs.update(left=0.12, right=0.94, top=0.95, bottom=0.1, wspace=0.01, hspace=0.04)
-    ax1 = plt.subplot(gs[:,-2])
+    ax1 = plt.subplot(gs[-2,-2])
     os.chdir("/home/atchekho/run/rtf2_15r34_2pi_a0.99gg500rbr1e3_0_0_0") 
-    takeoutfloors(ax=ax1,dolegend=True)
+    if not doreload:
+        DU=DU1
+        qtymem=qtymem1
+    takeoutfloors(fti=7000,ftf=1e5,
+        ax=ax1,dolegend=False,doreload=doreload)
+    if doreload:
+        DU1=DU
+        qtymem1=qtymem
     plt.text(ax1.get_xlim()[0]+(ax1.get_xlim()[1]-ax1.get_xlim()[0])/10., 
-             0.9*ax1.get_ylim()[1], "$(\mathrm{a})$", size=16, rotation=0.,
+             0.85*ax1.get_ylim()[1], r"$(\mathrm{a})$", size=20, rotation=0.,
+             ha="center", va="center",
+             color='k',weight='regular',bbox=bbox_props
+             )
+    plt.text(ax1.get_xlim()[0]+(ax1.get_xlim()[1]-ax1.get_xlim()[0])/2., 
+             0.85*ax1.get_ylim()[1], r"$a=%g$" % a, size=20, rotation=0.,
+             ha="center", va="center",
+             color='k',weight='regular',bbox=bbox_props
+             )
+    plt.text(ax1.get_xlim()[0]+(ax1.get_xlim()[1]-ax1.get_xlim()[0])/2., 
+             -1.7, r"$F_E\!<0$", size=20, rotation=0.,
              ha="center", va="center",
              color='k',weight='regular',bbox=bbox_props
              )
     # ax1r = ax1.twinx()
     # ax1r.set_ylim(ax1.get_ylim())
     # ax1r.set_yticks((ymax/2,ymax))
-    ax1.set_ylabel("Fluxes",fontsize=16,labelpad=9)
-    ax2 = plt.subplot(gs[:,-1])
+    ax1.set_ylabel("Fluxes",fontsize=20,labelpad=4)
+    for label in ax1.get_xticklabels() + ax1.get_yticklabels():
+        label.set_fontsize(16)
+    ax2 = plt.subplot(gs[-2,-1])
     plt.setp( ax2.get_yticklabels(), visible=False )
     os.chdir("/home/atchekho/run/rtf2_15r34.475_a0.5_0_0_0") 
-    takeoutfloors(ax=ax2,dolegend=True)
+    if not doreload:
+        DU=DU2
+        qtymem=qtymem2
+    takeoutfloors(fti=10300,ftf=1e5,ax=ax2,dolegend=True,doreload=doreload)
+    if doreload:
+        DU2=DU
+        qtymem2=qtymem
     plt.text(ax2.get_xlim()[0]+(ax2.get_xlim()[1]-ax2.get_xlim()[0])/10., 
-             0.9*ax2.get_ylim()[1], "$(\mathrm{b})$", size=16, rotation=0.,
+             0.85*ax2.get_ylim()[1], r"$(\mathrm{b})$", size=20, rotation=0.,
              ha="center", va="center",
              color='k',weight='regular',bbox=bbox_props
              )
-    ax2r = ax2.twinx()
-    ax2r.set_ylim(ax2.get_ylim())
+    plt.text(ax2.get_xlim()[0]+(ax2.get_xlim()[1]-ax2.get_xlim()[0])/2., 
+             0.85*ax2.get_ylim()[1], r"$a=%g$" % a, size=20, rotation=0.,
+             ha="center", va="center",
+             color='k',weight='regular',bbox=bbox_props
+             )
+    plt.text(ax2.get_xlim()[0]+(ax2.get_xlim()[1]-ax2.get_xlim()[0])/2., 
+             6.5, r"$F_E\!>0$", size=20, rotation=0.,
+             ha="center", va="center",
+             color='k',weight='regular',bbox=bbox_props
+             )
+    #ax2r = ax2.twinx()
+    #ax2r.set_ylim(ax2.get_ylim())
+    for label in ax2.get_xticklabels() + ax2.get_yticklabels(): #+ ax2r.get_yticklabels():
+        label.set_fontsize(16)
     plt.savefig("fig4.eps",bbox_inches='tight',pad_inches=0.02)
 
 def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=None,isinteractive=1,returndf=0,dolegend=True):
@@ -4050,11 +4088,12 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         lftf = 13700.
     elif np.abs(a - 0.5)<1e-4:
         print( "Using a = 0.5 settings")
-        dt = 13000.-10300.
-        Dt = np.array([dt,-dt])
-        Dno = np.array([130,103])
-        lfti = 10300.
-        lftf = 13000.
+        dt1 = 13000.-10279.
+        dt2 = 10200.-10000.
+        Dt = np.array([dt1,dt2,-dt2])
+        Dno = np.array([130,102,100])
+        lfti = 10000.
+        lftf = 13095.
     elif np.abs(a - 0.2)<1e-4:
         print( "Using a = 0.2 settings")
         Dt = np.array([13300.-10366.5933313178])
@@ -4117,12 +4156,6 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         Fm=(mdtotvsr+DUfloor0)
         if isinteractive:
             plt.plot(r[:,0,0],Fm,'b',label=r"$F_M$")
-    if ldtotvsr is not None:
-        Fl=-(ldtotvsr+DUfloor4)
-        if isinteractive and ax is None:
-            plt.plot(r[:,0,0],-ldtotvsr/dxdxp[3][3][:,0,0]/10.,'g--',label=r"$F_L/10$ (raw)")
-        if dotakeoutfloors and isinteractive:
-            plt.plot(r[:,0,0],Fl/dxdxp[3][3][:,0,0]/10.,'g',label=r"$F_L/10$")
     if isinteractive and ax is None:
         plt.plot(r[:,0,0],-edtotvsr,'r--',label=r"$F_E$ (raw)")
     if dofeavg and isinteractive and ax is None:
@@ -4135,6 +4168,12 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
             plt.plot(r[:,0,0],FE-DUfloor1,'k',label=r"$F_E$")
         if isinteractive and ax is None:
             plt.plot(r[:,0,0],(DUfloor1),'r:')
+    if ldtotvsr is not None:
+        Fl=-(ldtotvsr+DUfloor4)
+        if isinteractive and ax is None:
+            plt.plot(r[:,0,0],-ldtotvsr/dxdxp[3][3][:,0,0]/10.,'g--',label=r"$F_L/10$ (raw)")
+        if dotakeoutfloors and isinteractive:
+            plt.plot(r[:,0,0],Fl/dxdxp[3][3][:,0,0]/10.,'g',label=r"$F_L/10$")
     eta = ((Fm-Fe)/Fm)
     etap = (Fm-Fe)/Fe
     if isinteractive:
@@ -4142,13 +4181,16 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #plt.plot(r[:,0,0],DUfloor0,label=r"$dU^t$")
         #plt.plot(r[:,0,0],DUfloor*1e4,label=r"$dU^t\times10^4$")
         if dolegend:
-            plt.legend(loc='center right',ncol=1)
-        plt.xlim(rhor,20)
-        plt.ylim(-10,15)
+            plt.legend(loc='lower right',bbox_to_anchor=(0.97,0.22),
+                       #borderpad = 1,
+                       borderaxespad=0,frameon=True,labelspacing=0,
+                       ncol=1)
+        plt.xlim(rhor,19.99)
+        plt.ylim(-10,18)
         plt.grid()
-        plt.xlabel(r"$r\ [r_g]$",fontsize=16)
+        plt.xlabel(r"$r\ [r_g]$",fontsize=20)
         if ax is None:
-            plt.ylabel("Flux",fontsize=16)
+            plt.ylabel("Fluxes",fontsize=20,ha='center')
             plt.savefig("fig4.pdf",bbox_inches='tight',pad_inches=0.02)
             plt.savefig("fig4.eps",bbox_inches='tight',pad_inches=0.02)
             plt.savefig("fig4.png",bbox_inches='tight',pad_inches=0.02)
@@ -4207,12 +4249,14 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     # plt.plot(r[:,0,0],-edtot2davg,label="tot2davg")
     # gc.collect()
 
-def computeeta(start_t=8000,numintervals=8,doreload=1):
+def computeeta(start_t=8000,end_t=1e5,numintervals=8,doreload=1):
     #getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
     grid3d("gdump.bin", use2d = True)
     qtymem = getqtyvstime( iofr(rhor) )
     start_of_sim_t = qtymem[0,0,0]
-    end_t = qtymem[0,-1,0]
+    end_t1 = qtymem[0,-1,0]
+    if end_t>end_t1:
+        end_t = end_t1
     a_t,t_step = np.linspace(start_t,end_t,numintervals,retstep=True,endpoint=False)
     print( "start_t = %g, end_t = %g, step_t = %g" % (start_t,end_t,t_step) )
     a_eta = np.zeros_like(a_t)
@@ -5196,6 +5240,7 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
     #
     ax34 = plt.subplot(gs3[-1,:])
     plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findexlist,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor)
+    #ax34.set_ylim((0,3.8))
     ymax=ax34.get_ylim()[1]
     if prefactor < ymax and ymax < 2*prefactor: 
         #ymax = 2
@@ -5208,7 +5253,7 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
         ax34.set_yticks(tck)
         ax34.set_yticklabels(('','%d' % prefactor))
     else:
-        ymax=np.floor(ymax/prefactor)
+        ymax=np.floor(ymax/prefactor)+1
         ymax*=prefactor
         tck=np.arange(1,ymax/prefactor)*prefactor
         ax34.set_yticks(tck)
@@ -5762,7 +5807,7 @@ if __name__ == "__main__":
         mkstreamlinefigure()
     if False:
         #FIGURE 1 LOTSOPANELS
-        fti=8000
+        fti=7000
         ftf=1e5
         epsFm, epsFke = takeoutfloors(doreload=1,fti=fti,ftf=ftf,returndf=1,isinteractive=0)
         #epsFm = 
