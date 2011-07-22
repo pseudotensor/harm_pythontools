@@ -2975,11 +2975,11 @@ def jetpowcalc(which=2,minbsqorho=10,minmu=None,maxmu=None,maxbeta=None,donorths
         # v4a=1 is same as bsq=rho when ug=pg=0
         # follow mu unless <0.1 since the mu is unreliable
         v4a=bsq/(rho+ug+(gam-1)*ug)
-        mufake=uu[0]*(1.0+v4a*v4a)
+        mum1fake=uu[0]*(1.0+v4a*v4a)-1.0
         if maxmu is None:
-            cond=(mufake<minmu)
+            cond=(mum1fake<minmu)
         else:
-            cond=(mufake>maxmu)            
+            cond=(mum1fake>maxmu)            
         #
         # avoid disk component that might be unbound and moving out as transient or as part of outer part of disk
         beta=((gam-1)*ug)/(bsq/2)
