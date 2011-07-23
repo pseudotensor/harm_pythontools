@@ -30,6 +30,9 @@ import sys
 import streamlines
 from matplotlib.patches import Ellipse
 
+#from matplotlib.pyplot import *
+#from numpy import *
+#from mpl_toolkits.axisartist import *
 
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
@@ -740,7 +743,7 @@ def plot2davg(dosq=True,whichplot=-1):
         ax31 = plt.subplot(gs3[-3,:])
         #ymax=ax31.get_ylim()[1]
         #ymax=2*(np.floor(np.floor(ymax+1.5)/2))
-        #ax31.set_yticks((ymax/2,ymax))
+        #ax31.set_yticks((ymax/2.0,ymax))
         i=iofr(r1)
         plt.plot( aphi[i,:,0]/maxaphibh, eout[i,:],'g-' )
         i=iofr(r2)
@@ -811,7 +814,7 @@ def plot2davg(dosq=True,whichplot=-1):
         plt.plot(r[:,0,0],powjetEMKE,'m',label=r'$P_{jet,EMKE}$')
         #xxx
         #plt.plot(r[iofr(16):,0,0],powjetwind[iofr(16):],'g',label=r'$P_{unbound}(-u_t(1+\Gamma u_g/\rho)>1)$')
-        #plt.plot(r[iofr(100):,0,0],powwind[iofr(100):],'c',label=r'$P_{jetwind}(\mu>1.005)$')
+        #plt.plot(r[iofr(rjet):,0,0],powwind[iofr(rjet):],'c',label=r'$P_{jetwind}(\mu>1.005)$')
         plt.plot(r[iofr(10):,0,0],powjetwindEMKE[iofr(10):],'c--',label=r'$P_{jetwindEMKE}$')
         plt.legend(loc='upper right',ncol=3)
         plt.ylabel(r'Energy fluxes in jet region, $\mu>2$')
@@ -907,7 +910,7 @@ def horcalc(which=1):
         hoverr3d[:,j] = hoverr2d
     return((hoverr3d,thetamid3d))
 
-def intangle(qty,hoverr=None,thetamid=np.pi/2,minbsqorho=None,which=1):
+def intangle(qty,hoverr=None,thetamid=np.pi/2,minbsqorho=None,mumax=None,mumin=None,maxbeta=None,which=1):
     #somehow gives slightly different answer than when computed directly
     if hoverr == None:
         hoverr = np.pi/2
@@ -918,7 +921,33 @@ def intangle(qty,hoverr=None,thetamid=np.pi/2,minbsqorho=None,which=1):
         insidebsqorho = bsq/rho>=minbsqorho
     else:
         insidebsqorho = 1
-    integral=(integrand*insidehor*insidebsqorho*which).sum(axis=2).sum(axis=1)*_dx2*_dx3
+    #
+    #
+    v4asq=bsq/(rho+ug+(gam-1)*ug)
+    mum1fake=uu[0]*(1.0+v4asq)-1.0
+    if mumax is None:
+        insidemumax = 1
+    else:
+        insidemumax = 1
+        insidemumax = insidemumax * (mum1fake<mumax)
+        insidemumax = insidemumax * (isunbound==1)
+        insidemumax = insidemumax * (uu[1]>0.0)
+    #
+    if mumin is None:
+        insidemumin = 1
+    else:
+        insidemumin = 1
+        insidemumin = insidemumin * (mum1fake>mumin)
+        insidemumin = insidemumin * (isunbound==1)
+        insidemumin = insidemumin * (uu[1]>0.0)
+    #
+    beta=((gam-1)*ug)/(bsq/2)
+    if maxbeta is None:
+        insidebeta = 1
+    else:
+        insidebeta = (beta>maxbeta)
+    #
+    integral=(integrand*insidehor*insidebsqorho*insidemumin*insidemumax*insidebeta*which).sum(axis=2).sum(axis=1)*_dx2*_dx3
     integral=scaletofullwedge(integral)
     return(integral)
 
@@ -1207,6 +1236,7 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
     #plt.title(r'$\log_{10}\rho$ at $t = %4.0f$' % t)
     if True == pt:
         plt.title('log rho at t = %4.0f' % t)
+    #
     #if None != fname:
     #    plt.savefig( fname + '.png' )
 
@@ -2232,7 +2262,7 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
     nqtyold=98+134*(dobob==1)
     nqtyold2=98+134*(dobob==1)+32+1
     # jon's mumax addition
-    nqty=98+134*(dobob==1)+32+1+8
+    nqty=98+134*(dobob==1)+32+1+8+2
     #store 1D data
     numtimeslices=len(flist)
     qtymem=np.zeros((nqty,numtimeslices,nx),dtype=np.float32)
@@ -2350,6 +2380,8 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
     md10=qtymem[i];i+=1
     md20=qtymem[i];i+=1
     md30=qtymem[i];i+=1
+    mdwind=qtymem[i];i+=1
+    mdjet=qtymem[i];i+=1
     md40=qtymem[i];i+=1
     mdrhosq=qtymem[i];i+=1
     mdtotbound=qtymem[i];i+=1
@@ -2380,42 +2412,42 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
         pjem_n_mu5=qtymem[i];i+=1
         pjem_n_mu2=qtymem[i];i+=1
         pjem_n_mu1=qtymem[i];i+=1
-        pjem_n_maxmu1=qtymem[i];i+=1
+        pjem_n_mumax1=qtymem[i];i+=1
         pjrm_n_mu10=qtymem[i];i+=1
         pjrm_n_mu5=qtymem[i];i+=1
         pjrm_n_mu2=qtymem[i];i+=1
         pjrm_n_mu1=qtymem[i];i+=1
-        pjrm_n_maxmu1=qtymem[i];i+=1
+        pjrm_n_mumax1=qtymem[i];i+=1
         pjma_n_mu10=qtymem[i];i+=1
         pjma_n_mu5=qtymem[i];i+=1
         pjma_n_mu2=qtymem[i];i+=1
         pjma_n_mu1=qtymem[i];i+=1
-        pjma_n_maxmu1=qtymem[i];i+=1
+        pjma_n_mumax1=qtymem[i];i+=1
         phiabsj_n_mu10=qtymem[i];i+=1
         phiabsj_n_mu5=qtymem[i];i+=1
         phiabsj_n_mu2=qtymem[i];i+=1
         phiabsj_n_mu1=qtymem[i];i+=1
-        phiabsj_n_maxmu1=qtymem[i];i+=1
+        phiabsj_n_mumax1=qtymem[i];i+=1
         pjem_s_mu10=qtymem[i];i+=1
         pjem_s_mu5=qtymem[i];i+=1
         pjem_s_mu2=qtymem[i];i+=1
         pjem_s_mu1=qtymem[i];i+=1
-        pjem_s_maxmu1=qtymem[i];i+=1
+        pjem_s_mumax1=qtymem[i];i+=1
         pjrm_s_mu10=qtymem[i];i+=1
         pjrm_s_mu5=qtymem[i];i+=1
         pjrm_s_mu2=qtymem[i];i+=1
         pjrm_s_mu1=qtymem[i];i+=1
-        pjrm_s_maxmu1=qtymem[i];i+=1
+        pjrm_s_mumax1=qtymem[i];i+=1
         pjma_s_mu10=qtymem[i];i+=1
         pjma_s_mu5=qtymem[i];i+=1
         pjma_s_mu2=qtymem[i];i+=1
         pjma_s_mu1=qtymem[i];i+=1
-        pjma_s_maxmu1=qtymem[i];i+=1
+        pjma_s_mumax1=qtymem[i];i+=1
         phiabsj_s_mu10=qtymem[i];i+=1
         phiabsj_s_mu5=qtymem[i];i+=1
         phiabsj_s_mu2=qtymem[i];i+=1
         phiabsj_s_mu1=qtymem[i];i+=1
-        phiabsj_s_maxmu1=qtymem[i];i+=1
+        phiabsj_s_mumax1=qtymem[i];i+=1
         if i < qtymem.shape[0]:
             ldtot=qtymem[i];i+=1
         else:
@@ -2427,42 +2459,42 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
         pjem_n_mu5=None
         pjem_n_mu2=None
         pjem_n_mu1=None
-        pjem_n_maxmu1=None
+        pjem_n_mumax1=None
         pjrm_n_mu10=None
         pjrm_n_mu5=None
         pjrm_n_mu2=None
         pjrm_n_mu1=None
-        pjrm_n_maxmu1=None
+        pjrm_n_mumax1=None
         pjma_n_mu10=None
         pjma_n_mu5=None
         pjma_n_mu2=None
         pjma_n_mu1=None
-        pjma_n_maxmu1=None
+        pjma_n_mumax1=None
         phiabsj_n_mu10=None
         phiabsj_n_mu5=None
         phiabsj_n_mu2=None
         phiabsj_n_mu1=None
-        phiabsj_n_maxmu1=None
+        phiabsj_n_mumax1=None
         pjem_s_mu10=None
         pjem_s_mu5=None
         pjem_s_mu2=None
         pjem_s_mu1=None
-        pjem_s_maxmu1=None
+        pjem_s_mumax1=None
         pjrm_s_mu10=None
         pjrm_s_mu5=None
         pjrm_s_mu2=None
         pjrm_s_mu1=None
-        pjrm_s_maxmu1=None
+        pjrm_s_mumax1=None
         pjma_s_mu10=None
         pjma_s_mu5=None
         pjma_s_mu2=None
         pjma_s_mu1=None
-        pjma_s_maxmu1=None
+        pjma_s_mumax1=None
         phiabsj_s_mu10=None
         phiabsj_s_mu5=None
         phiabsj_s_mu2=None
         phiabsj_s_mu1=None
-        phiabsj_s_maxmu1=None
+        phiabsj_s_mumax1=None
         ldtot=None
     if dobob == 1:
         print "Total number of quantities: %d+134 = %d" % (i, i+134)
@@ -2589,6 +2621,8 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
         md10[findex]=intangle(-gdet*rho*uu[1],minbsqorho=10)
         md20[findex]=intangle(-gdet*rho*uu[1],minbsqorho=20)
         md30[findex]=intangle(-gdet*rho*uu[1],minbsqorho=30)
+        mdwind[findex]=intangle(gdet*rho*uu[1],mumax=1,maxbeta=3)
+        mdjet[findex]=intangle(gdet*rho*uu[1],mumin=1)
         md40[findex]=intangle(-gdet*rho*uu[1],minbsqorho=40)
         mdrhosq[findex]=scaletofullwedge(((-gdet*rho**2*rho*uu[1]*diskcondition).sum(1)/maxrhosq2d).sum(1)*_dx2*_dx3)
         #mdrhosq[findex]=(-gdet*rho**2*rho*uu[1]).sum(1).sum(1)/(-gdet*rho**2).sum(1).sum(1)*(-gdet).sum(1).sum(1)*_dx2*_dx3
@@ -2617,47 +2651,47 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
         if qtymem.shape[0] > nqtyold:
             #yes!
             #north hemisphere
-            pjem_n_mu10[findex]=jetpowcalc(0,minmu=10,donorthsouth=1)
-            pjem_n_mu5[findex]=jetpowcalc(0,minmu=5,donorthsouth=1)
-            pjem_n_mu2[findex]=jetpowcalc(0,minmu=2,donorthsouth=1)
-            pjem_n_mu1[findex]=jetpowcalc(0,minmu=1,donorthsouth=1)
-            pjem_n_maxmu1[findex]=jetpowcalc(0,maxmu=1,maxbeta=3,donorthsouth=1)
-            pjrm_n_mu10[findex]=jetpowcalc(3,minmu=10,donorthsouth=1)
-            pjrm_n_mu5[findex]=jetpowcalc(3,minmu=5,donorthsouth=1)
-            pjrm_n_mu2[findex]=jetpowcalc(3,minmu=2,donorthsouth=1)
-            pjrm_n_mu1[findex]=jetpowcalc(3,minmu=1,donorthsouth=1)
-            pjrm_n_maxmu1[findex]=jetpowcalc(3,maxmu=1,maxbeta=3,donorthsouth=1)
-            pjma_n_mu10[findex]=jetpowcalc(1,minmu=10,donorthsouth=1)
-            pjma_n_mu5[findex]=jetpowcalc(1,minmu=5,donorthsouth=1)
-            pjma_n_mu2[findex]=jetpowcalc(1,minmu=2,donorthsouth=1)
-            pjma_n_mu1[findex]=jetpowcalc(1,minmu=1,donorthsouth=1)
-            pjma_n_maxmu1[findex]=jetpowcalc(1,maxmu=1,maxbeta=3,donorthsouth=1)
-            phiabsj_n_mu10[findex]=jetpowcalc(4,minmu=10,donorthsouth=1)
-            phiabsj_n_mu5[findex]=jetpowcalc(4,minmu=5,donorthsouth=1)
-            phiabsj_n_mu2[findex]=jetpowcalc(4,minmu=2,donorthsouth=1)
-            phiabsj_n_mu1[findex]=jetpowcalc(4,minmu=1,donorthsouth=1)
-            phiabsj_n_maxmu1[findex]=jetpowcalc(4,maxmu=1,maxbeta=3,donorthsouth=1)
+            pjem_n_mu10[findex]=jetpowcalc(0,mumin=10,donorthsouth=1)
+            pjem_n_mu5[findex]=jetpowcalc(0,mumin=5,donorthsouth=1)
+            pjem_n_mu2[findex]=jetpowcalc(0,mumin=2,donorthsouth=1)
+            pjem_n_mu1[findex]=jetpowcalc(0,mumin=1,donorthsouth=1)
+            pjem_n_mumax1[findex]=jetpowcalc(0,mumax=1,maxbeta=3,donorthsouth=1)
+            pjrm_n_mu10[findex]=jetpowcalc(3,mumin=10,donorthsouth=1)
+            pjrm_n_mu5[findex]=jetpowcalc(3,mumin=5,donorthsouth=1)
+            pjrm_n_mu2[findex]=jetpowcalc(3,mumin=2,donorthsouth=1)
+            pjrm_n_mu1[findex]=jetpowcalc(3,mumin=1,donorthsouth=1)
+            pjrm_n_mumax1[findex]=jetpowcalc(3,mumax=1,maxbeta=3,donorthsouth=1)
+            pjma_n_mu10[findex]=jetpowcalc(1,mumin=10,donorthsouth=1)
+            pjma_n_mu5[findex]=jetpowcalc(1,mumin=5,donorthsouth=1)
+            pjma_n_mu2[findex]=jetpowcalc(1,mumin=2,donorthsouth=1)
+            pjma_n_mu1[findex]=jetpowcalc(1,mumin=1,donorthsouth=1)
+            pjma_n_mumax1[findex]=jetpowcalc(1,mumax=1,maxbeta=3,donorthsouth=1)
+            phiabsj_n_mu10[findex]=jetpowcalc(4,mumin=10,donorthsouth=1)
+            phiabsj_n_mu5[findex]=jetpowcalc(4,mumin=5,donorthsouth=1)
+            phiabsj_n_mu2[findex]=jetpowcalc(4,mumin=2,donorthsouth=1)
+            phiabsj_n_mu1[findex]=jetpowcalc(4,mumin=1,donorthsouth=1)
+            phiabsj_n_mumax1[findex]=jetpowcalc(4,mumax=1,maxbeta=3,donorthsouth=1)
             #south hemisphere
-            pjem_s_mu10[findex]=jetpowcalc(0,minmu=10,donorthsouth=-1)
-            pjem_s_mu5[findex]=jetpowcalc(0,minmu=5,donorthsouth=-1)
-            pjem_s_mu2[findex]=jetpowcalc(0,minmu=2,donorthsouth=-1)
-            pjem_s_mu1[findex]=jetpowcalc(0,minmu=1,donorthsouth=-1)
-            pjem_s_maxmu1[findex]=jetpowcalc(0,maxmu=1,maxbeta=3,donorthsouth=-1)
-            pjrm_s_mu10[findex]=jetpowcalc(3,minmu=10,donorthsouth=-1)
-            pjrm_s_mu5[findex]=jetpowcalc(3,minmu=5,donorthsouth=-1)
-            pjrm_s_mu2[findex]=jetpowcalc(3,minmu=2,donorthsouth=-1)
-            pjrm_s_mu1[findex]=jetpowcalc(3,minmu=1,donorthsouth=-1)
-            pjrm_s_maxmu1[findex]=jetpowcalc(3,maxmu=1,maxbeta=3,donorthsouth=-1)
-            pjma_s_mu10[findex]=jetpowcalc(1,minmu=10,donorthsouth=-1)
-            pjma_s_mu5[findex]=jetpowcalc(1,minmu=5,donorthsouth=-1)
-            pjma_s_mu2[findex]=jetpowcalc(1,minmu=2,donorthsouth=-1)
-            pjma_s_mu1[findex]=jetpowcalc(1,minmu=1,donorthsouth=-1)
-            pjma_s_maxmu1[findex]=jetpowcalc(1,maxmu=1,maxbeta=3,donorthsouth=-1)
-            phiabsj_s_mu10[findex]=jetpowcalc(4,minmu=10,donorthsouth=-1)
-            phiabsj_s_mu5[findex]=jetpowcalc(4,minmu=5,donorthsouth=-1)
-            phiabsj_s_mu2[findex]=jetpowcalc(4,minmu=2,donorthsouth=-1)
-            phiabsj_s_mu1[findex]=jetpowcalc(4,minmu=1,donorthsouth=-1)
-            phiabsj_s_maxmu1[findex]=jetpowcalc(4,maxmu=1,maxbeta=3,donorthsouth=-1)
+            pjem_s_mu10[findex]=jetpowcalc(0,mumin=10,donorthsouth=-1)
+            pjem_s_mu5[findex]=jetpowcalc(0,mumin=5,donorthsouth=-1)
+            pjem_s_mu2[findex]=jetpowcalc(0,mumin=2,donorthsouth=-1)
+            pjem_s_mu1[findex]=jetpowcalc(0,mumin=1,donorthsouth=-1)
+            pjem_s_mumax1[findex]=jetpowcalc(0,mumax=1,maxbeta=3,donorthsouth=-1)
+            pjrm_s_mu10[findex]=jetpowcalc(3,mumin=10,donorthsouth=-1)
+            pjrm_s_mu5[findex]=jetpowcalc(3,mumin=5,donorthsouth=-1)
+            pjrm_s_mu2[findex]=jetpowcalc(3,mumin=2,donorthsouth=-1)
+            pjrm_s_mu1[findex]=jetpowcalc(3,mumin=1,donorthsouth=-1)
+            pjrm_s_mumax1[findex]=jetpowcalc(3,mumax=1,maxbeta=3,donorthsouth=-1)
+            pjma_s_mu10[findex]=jetpowcalc(1,mumin=10,donorthsouth=-1)
+            pjma_s_mu5[findex]=jetpowcalc(1,mumin=5,donorthsouth=-1)
+            pjma_s_mu2[findex]=jetpowcalc(1,mumin=2,donorthsouth=-1)
+            pjma_s_mu1[findex]=jetpowcalc(1,mumin=1,donorthsouth=-1)
+            pjma_s_mumax1[findex]=jetpowcalc(1,mumax=1,maxbeta=3,donorthsouth=-1)
+            phiabsj_s_mu10[findex]=jetpowcalc(4,mumin=10,donorthsouth=-1)
+            phiabsj_s_mu5[findex]=jetpowcalc(4,mumin=5,donorthsouth=-1)
+            phiabsj_s_mu2[findex]=jetpowcalc(4,mumin=2,donorthsouth=-1)
+            phiabsj_s_mu1[findex]=jetpowcalc(4,mumin=1,donorthsouth=-1)
+            phiabsj_s_mumax1[findex]=jetpowcalc(4,mumax=1,maxbeta=3,donorthsouth=-1)
             if ldtot is not None:
                 ldtot[findex]=intangle(gdet*Tud[1][3])
 
@@ -2949,7 +2983,7 @@ def faraday():
     #
 
 
-def jetpowcalc(which=2,minbsqorho=10,minmu=None,maxmu=None,maxbeta=None,donorthsouth=0):
+def jetpowcalc(which=2,minbsqorho=10,mumin=None,mumax=None,maxbeta=None,donorthsouth=0):
     if which==0:
         jetpowden = -gdet*TudEM[1,0]
     if which==1:
@@ -2964,22 +2998,22 @@ def jetpowcalc(which=2,minbsqorho=10,minmu=None,maxmu=None,maxbeta=None,donorths
         jetpowden = np.abs(gdetB[1])
     #jetpowden[tj>=ny-2] = 0*jetpowden[tj>=ny-2]
     #jetpowden[tj<1] = 0*jetpowden[tj<1]
-    if minmu is None:
+    if mumin is None:
         jetpowden[bsq/rho<minbsqorho] = 0*jetpowden[bsq/rho<minbsqorho]
     else:
         #zero out outside jet (cut out low magnetization region)
-        #cond=(mu<minmu)
+        #cond=(mu<mumin)
         #
         #zero out outside jet (cut out low magnetization region)
         # for u^r\to 0, \mu \to b^2 \gamma/\rho, but \mu numerically becomes sick, so look at 4-Alfven velocity instead
         # v4a=1 is same as bsq=rho when ug=pg=0
         # follow mu unless <0.1 since the mu is unreliable
-        v4a=bsq/(rho+ug+(gam-1)*ug)
-        mum1fake=uu[0]*(1.0+v4a*v4a)-1.0
-        if maxmu is None:
-            cond=(mum1fake<minmu)
+        v4asq=bsq/(rho+ug+(gam-1)*ug)
+        mum1fake=uu[0]*(1.0+v4asq)-1.0
+        if mumax is None:
+            cond=(mum1fake<mumin)
         else:
-            cond=(mum1fake>maxmu)            
+            cond=(mum1fake>mumax)            
         #
         # avoid disk component that might be unbound and moving out as transient or as part of outer part of disk
         beta=((gam-1)*ug)/(bsq/2)
@@ -3037,10 +3071,13 @@ def iofr(rval):
 
 def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=True,prefactor=100):
     global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
+    #
+    rjet=100.0
+    #
     nqtyold=98
     nqtyold2=98+32+1
     # with jon's mumax
-    nqty=98+32+1+8
+    nqty=98+32+1+8+2
     ###############################
     #copy this from getqtyvstime()
     ###############################
@@ -3216,6 +3253,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         md10=qtymem[i];i+=1
         md20=qtymem[i];i+=1
         md30=qtymem[i];i+=1
+        mdwind=qtymem[i];i+=1
+        mdjet=qtymem[i];i+=1
         md40=qtymem[i];i+=1
         mdrhosq=qtymem[i];i+=1
         mdtotbound=qtymem[i];i+=1
@@ -3246,43 +3285,43 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             pjem_n_mu5=qtymem[i];i+=1
             pjem_n_mu2=qtymem[i];i+=1
             pjem_n_mu1=qtymem[i];i+=1
-            pjem_n_maxmu1=qtymem[i];i+=1
+            pjem_n_mumax1=qtymem[i];i+=1
             pjrm_n_mu10=qtymem[i];i+=1
             pjrm_n_mu5=qtymem[i];i+=1
             pjrm_n_mu2=qtymem[i];i+=1
             pjrm_n_mu1=qtymem[i];i+=1
-            pjrm_n_maxmu1=qtymem[i];i+=1
+            pjrm_n_mumax1=qtymem[i];i+=1
             pjma_n_mu10=qtymem[i];i+=1
             pjma_n_mu5=qtymem[i];i+=1
             pjma_n_mu2=qtymem[i];i+=1
             pjma_n_mu1=qtymem[i];i+=1
-            pjma_n_maxmu1=qtymem[i];i+=1
+            pjma_n_mumax1=qtymem[i];i+=1
             phiabsj_n_mu10=qtymem[i];i+=1
             phiabsj_n_mu5=qtymem[i];i+=1
             phiabsj_n_mu2=qtymem[i];i+=1
             phiabsj_n_mu1=qtymem[i];i+=1
-            phiabsj_n_maxmu1=qtymem[i];i+=1
+            phiabsj_n_mumax1=qtymem[i];i+=1
             #
             pjem_s_mu10=qtymem[i];i+=1
             pjem_s_mu5=qtymem[i];i+=1
             pjem_s_mu2=qtymem[i];i+=1
             pjem_s_mu1=qtymem[i];i+=1
-            pjem_s_maxmu1=qtymem[i];i+=1
+            pjem_s_mumax1=qtymem[i];i+=1
             pjrm_s_mu10=qtymem[i];i+=1
             pjrm_s_mu5=qtymem[i];i+=1
             pjrm_s_mu2=qtymem[i];i+=1
             pjrm_s_mu1=qtymem[i];i+=1
-            pjrm_s_maxmu1=qtymem[i];i+=1
+            pjrm_s_mumax1=qtymem[i];i+=1
             pjma_s_mu10=qtymem[i];i+=1
             pjma_s_mu5=qtymem[i];i+=1
             pjma_s_mu2=qtymem[i];i+=1
             pjma_s_mu1=qtymem[i];i+=1
-            pjma_s_maxmu1=qtymem[i];i+=1
+            pjma_s_mumax1=qtymem[i];i+=1
             phiabsj_s_mu10=qtymem[i];i+=1
             phiabsj_s_mu5=qtymem[i];i+=1
             phiabsj_s_mu2=qtymem[i];i+=1
             phiabsj_s_mu1=qtymem[i];i+=1
-            phiabsj_s_maxmu1=qtymem[i];i+=1
+            phiabsj_s_mumax1=qtymem[i];i+=1
             if i < qtymem.shape[0]:
                 ldtot=qtymem[i];i+=1
             else:
@@ -3298,10 +3337,10 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             pjke_mu1 = pjke_n_mu1 + pjke_s_mu1
             phiabsj_mu1 = phiabsj_n_mu1 + phiabsj_s_mu1
             #
-            pjke_n_maxmu1 = pjem_n_maxmu1 + pjma_n_maxmu1 - pjrm_n_maxmu1
-            pjke_s_maxmu1 = pjem_s_maxmu1 + pjma_s_maxmu1 - pjrm_s_maxmu1
-            pjke_maxmu1 = pjke_n_maxmu1 + pjke_s_maxmu1
-            phiabsj_maxmu1 = phiabsj_n_maxmu1 + phiabsj_s_maxmu1
+            pjke_n_mumax1 = pjem_n_mumax1 + pjma_n_mumax1 - pjrm_n_mumax1
+            pjke_s_mumax1 = pjem_s_mumax1 + pjma_s_mumax1 - pjrm_s_mumax1
+            pjke_mumax1 = pjke_n_mumax1 + pjke_s_mumax1
+            phiabsj_mumax1 = phiabsj_n_mumax1 + phiabsj_s_mumax1
         else:
             print( "Oldish format: missing north/south jet power and flux" )
             sys.stdout.flush()
@@ -3309,42 +3348,42 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             pjem_n_mu5=None
             pjem_n_mu2=None
             pjem_n_mu1=None
-            pjem_n_maxmu1=None
+            pjem_n_mumax1=None
             pjrm_n_mu10=None
             pjrm_n_mu5=None
             pjrm_n_mu2=None
             pjrm_n_mu1=None
-            pjrm_n_maxmu1=None
+            pjrm_n_mumax1=None
             pjma_n_mu10=None
             pjma_n_mu5=None
             pjma_n_mu2=None
             pjma_n_mu1=None
-            pjma_n_maxmu1=None
+            pjma_n_mumax1=None
             phiabsj_n_mu10=None
             phiabsj_n_mu5=None
             phiabsj_n_mu2=None
             phiabsj_n_mu1=None
-            phiabsj_n_maxmu1=None
+            phiabsj_n_mumax1=None
             pjem_s_mu10=None
             pjem_s_mu5=None
             pjem_s_mu2=None
             pjem_s_mu1=None
-            pjem_s_maxmu1=None
+            pjem_s_mumax1=None
             pjrm_s_mu10=None
             pjrm_s_mu5=None
             pjrm_s_mu2=None
             pjrm_s_mu1=None
-            pjrm_s_maxmu1=None
+            pjrm_s_mumax1=None
             pjma_s_mu10=None
             pjma_s_mu5=None
             pjma_s_mu2=None
             pjma_s_mu1=None
-            pjma_s_maxmu1=None
+            pjma_s_mumax1=None
             phiabsj_s_mu10=None
             phiabsj_s_mu5=None
             phiabsj_s_mu2=None
             phiabsj_s_mu1=None
-            phiabsj_s_maxmu1=None
+            phiabsj_s_mumax1=None
             ldtot=None
             #derived
             pjke_n_mu2=None
@@ -3355,10 +3394,10 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             pjke_s_mu1=None
             pjke_mu1=None
             phiabsj_mu1=None
-            pjke_n_maxmu1=None
-            pjke_s_maxmu1=None
-            pjke_maxmu1=None
-            phiabsj_maxmu1=None
+            pjke_n_mumax1=None
+            pjke_s_mumax1=None
+            pjke_mumax1=None
+            phiabsj_mumax1=None
     #end qty defs
     ##############################
     #end copy
@@ -3408,11 +3447,26 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     mdotfinavgvsr5 = timeavg(mdtot[:,:]-md5[:,:],ts,fti,ftf)
     mdotfinavgvsr10 = timeavg(mdtot[:,:]-md10[:,:],ts,fti,ftf)
     mdotfinavgvsr20 = timeavg(mdtot[:,:]-md20[:,:],ts,fti,ftf)
+    #        etaj = prefactor*pjke_mu1[:,iofr(rjet)]/mdotfinavg
+
     mdotfinavgvsr30 = timeavg(mdtot[:,:]-md30[:,:],ts,fti,ftf)
+    #mdotwindfinavgvsr30 = timeavg(mdwind[:,:]-md30[:,:],ts,fti,ftf)
+    #mdotjetfinavgvsr30 = timeavg(mdjet[:,:]-md30[:,:],ts,fti,ftf)
+    #
     mdotiniavgvsr30 = timeavg(mdtot[:,:]-md30[:,:],ts,iti,itf)
+    #mdotwindiniavgvsr30 = timeavg(mdwind[:,:]-md30[:,:],ts,iti,itf)
+    #mdotjetiniavgvsr30 = timeavg(mdjet[:,:]-md30[:,:],ts,iti,itf)
+    #
     mdotfinavgvsr40 = timeavg(mdtot[:,:]-md40[:,:],ts,fti,ftf)
+    #
     mdotiniavg = np.float64(mdotiniavgvsr30)[r[:,0,0]<10].mean()
     mdotfinavg = np.float64(mdotfinavgvsr30)[r[:,0,0]<10].mean()
+    #
+    mdotwindiniavg = timeavg(np.abs(mdwind[:,iofr(rjet)]-md30[:,ihor]),ts,iti,itf)
+    mdotwindfinavg = timeavg(np.abs(mdwind[:,iofr(rjet)]-md30[:,ihor]),ts,fti,ftf)
+    mdotjetiniavg = timeavg(np.abs(mdjet[:,iofr(rjet)]-md30[:,ihor]),ts,iti,itf)
+    mdotjetfinavg = timeavg(np.abs(mdjet[:,iofr(rjet)]-md30[:,ihor]),ts,fti,ftf)
+    #
     pjetiniavg = timeavg(pjem30[:,ihor],ts,iti,itf)
     pjetfinavg = timeavg(pjem30[:,ihor],ts,fti,ftf)
     pjemfinavgvsr = timeavg(edtot-edma,ts,fti,ftf)
@@ -3482,27 +3536,57 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     # Mdot ***
     #
     #######################
+    #
     if whichplot == 1:
         if dotavg:
             ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotfinavg,color=(ofc,fc,fc))
+            if showextra:
+                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotjetfinavg,'--',color=(fc,fc+0.5*(1-fc),fc))
+                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotwindfinavg*0.1,'-.',color=(fc,fc,1))
             if(iti>fti):
                 ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+mdotiniavg,color=(ofc,fc,fc))
-                
+                if showextra:
+                    ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotjetiniavg,color=(fc,fc+0.5*(1-fc),fc))
+                    ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotwindiniavg*0.1,color=(fc,fc,1))
+        #
         ax.plot(ts,np.abs(mdtot[:,ihor]-md30[:,ihor]),clr,label=r'$\dot Mc^2$')
+        if showextra:
+            ax.plot(ts,np.abs(mdjet[:,iofr(rjet)]-md30[:,ihor]),'g--',label=r'$\dot M_{\rm jet}c^2$')
+            ax.plot(ts,0.1*np.abs(mdwind[:,iofr(rjet)]-md30[:,ihor]),'b-.',label=r'$0.1\dot M_{\rm wind}c^2$')
+
         if findex != None:
             if not isinstance(findex,tuple):
                 ax.plot(ts[findex],np.abs(mdtot[:,ihor]-md30[:,ihor])[findex],'o',mfc='r')
+                if showextra:
+                    ax.plot(ts[findex],np.abs(mdjet[:,iofr(rjet)]-md30[:,ihor])[findex],'gs')
+                    ax.plot(ts[findex],0.1*np.abs(mdwind[:,iofr(rjet)]-md30[:,ihor])[findex],'bv')
             else:
                 for fi in findex:
                     ax.plot(ts[fi],np.abs(mdtot[:,ihor]-md30[:,ihor])[fi],'o',mfc='r')#,label=r'$\dot M$')
-        #ax.legend(loc='upper left')
+                    if showextra:
+                        ax.plot(ts[fi],np.abs(mdjet[:,iofr(rjet)]-md30[:,ihor])[fi],'gs')
+                        ax.plot(ts[fi],0.1*np.abs(mdwind[:,iofr(rjet)]-md30[:,ihor])[fi],'bv')
+        #
         #ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,labelpad=9)
         ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,ha='left',labelpad=20)
-
         plt.setp( ax.get_xticklabels(), visible=False)
         ax.set_xlim(ts[0],ts[-1])
         if showextra:
+            # http://matplotlib.sourceforge.net/examples/pylab_examples/legend_demo.html
             plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderaxespad=0,frameon=True,labelspacing=0)
+            # set some legend properties.  All the code below is optional.  The
+            # defaults are usually sensible but if you need more control, this
+            # shows you how
+            leg = plt.gca().get_legend()
+            ltext  = leg.get_texts()  # all the text.Text instance in the legend
+            llines = leg.get_lines()  # all the lines.Line2D instance in the legend
+            frame  = leg.get_frame()  # the patch.Rectangle instance surrounding the legend
+            # see text.Text, lines.Line2D, and patches.Rectangle for more info on
+            # the settable properties of lines, text, and rectangles
+            #frame.set_facecolor('0.80')      # set the frame face color to light gray
+            plt.setp(ltext, fontsize=12)    # the legend text fontsize
+            #plt.setp(llines, linewidth=1.5)      # the legend linewidth
+            #leg.draw_frame(False)           # don't draw the legend frame
     #######################
     #
     # Pjet
@@ -3537,16 +3621,16 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #######################
     if whichplot == 4:
         etabh = prefactor*pjemtot[:,ihor]/mdotfinavg
-        #etaj = prefactor*pjke_mu2[:,iofr(100)]/mdotfinavg
-        #etaw = prefactor*(pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotfinavg
-        etaj = prefactor*pjke_mu1[:,iofr(100)]/mdotfinavg
-        etaw = prefactor*pjke_maxmu1[:,iofr(100)]/mdotfinavg
+        #etaj = prefactor*pjke_mu2[:,iofr(rjet)]/mdotfinavg
+        #etaw = prefactor*(pjke_mu1-pjke_mu2)[:,iofr(rjet)]/mdotfinavg
+        etaj = prefactor*pjke_mu1[:,iofr(rjet)]/mdotfinavg
+        etaw = prefactor*pjke_mumax1[:,iofr(rjet)]/mdotfinavg
         #
         etabh2 = prefactor*pjemtot[:,ihor]/mdotiniavg
-        #etaj2 = prefactor*pjke_mu2[:,iofr(100)]/mdotiniavg
-        #etaw2 = prefactor*(pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotiniavg
-        etaj2 = prefactor*pjke_mu1[:,iofr(100)]/mdotiniavg
-        etaw2 = prefactor*pjke_maxmu1[:,iofr(100)]/mdotiniavg
+        #etaj2 = prefactor*pjke_mu2[:,iofr(rjet)]/mdotiniavg
+        #etaw2 = prefactor*(pjke_mu1-pjke_mu2)[:,iofr(rjet)]/mdotiniavg
+        etaj2 = prefactor*pjke_mu1[:,iofr(rjet)]/mdotiniavg
+        etaw2 = prefactor*pjke_mumax1[:,iofr(rjet)]/mdotiniavg
         #
         if(1 and iti>fti):
             #use mdot averaged over the same time interval for iti<t<=itf
@@ -3559,51 +3643,65 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             etabh_avg = timeavg(etabh,ts,fti,ftf)
             etaw_avg = timeavg(etaw,ts,fti,ftf)
             ptot_avg = timeavg(pjemtot[:,ihor],ts,fti,ftf)
+            #
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etabh_avg,color=(ofc,fc,fc)) 
             if showextra:
                 ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaj_avg,'--',color=(fc,fc+0.5*(1-fc),fc)) 
+                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaw_avg,'-.',color=(fc,fc+0.5*(1-fc),fc)) 
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etabh_avg,color=(ofc,fc,fc)) 
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
-            #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaw_avg,'-.',color=(fc,fc+0.5*(1-fc),fc)) 
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
             if(iti>fti):
                 etaj2_avg = timeavg(etaj2,ts,iti,itf)
                 etabh2_avg = timeavg(etabh2,ts,iti,itf)
                 etaw2_avg = timeavg(etaw2,ts,iti,itf)
                 ptot2_avg = timeavg(pjemtot[:,ihor],ts,iti,itf)
+                #
+                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etabh2_avg,color=(ofc,fc,fc))
                 if showextra:
                     ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etaj2_avg,'--',color=(fc,fc+0.5*(1-fc),fc))
-                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etabh2_avg,color=(ofc,fc,fc))
-                #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaw2_avg,'-.',color=(fc,fc+0.5*(1-fc),fc)) 
+                    ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etaw2_avg,'-.',color=(fc,fc+0.5*(1-fc),fc))
+        #
         ax.plot(ts,etabh,clr,label=r'$\eta_{\rm BH}$')
         if showextra:
             ax.plot(ts,etaj,'g--',label=r'$\eta_{\rm jet}$')
             ax.plot(ts,etaw,'b-.',label=r'$\eta_{\rm wind}$')
         if findex != None:
             if not isinstance(findex,tuple):
-                if showextra:
-                    ax.plot(ts[findex],etaj[findex],'gs')
                 ax.plot(ts[findex],etabh[findex],'o',mfc='r')
                 if showextra:
+                    ax.plot(ts[findex],etaj[findex],'gs')
                     ax.plot(ts[findex],etaw[findex],'bv')
             else:
                 for fi in findex:
+                    ax.plot(ts[fi],etabh[fi],'o',mfc='r')#,label=r'$\dot M$')
                     if showextra:
                         ax.plot(ts[fi],etaw[fi],'bv')#,label=r'$\dot M$')
                         ax.plot(ts[fi],etaj[fi],'gs')#,label=r'$\dot M$')
-                    ax.plot(ts[fi],etabh[fi],'o',mfc='r')#,label=r'$\dot M$')
-        #ax.legend(loc='upper left')
         #ax.set_ylim(0,2)
         ax.set_xlabel(r'$t\;[r_g/c]$',fontsize=16)
         ax.set_ylabel(r'$\eta\ [\%]$',fontsize=16,ha='left',labelpad=20)
         ax.set_xlim(ts[0],ts[-1])
         if showextra:
             plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
+            # set some legend properties.  All the code below is optional.  The
+            # defaults are usually sensible but if you need more control, this
+            # shows you how
+            leg = plt.gca().get_legend()
+            ltext  = leg.get_texts()  # all the text.Text instance in the legend
+            llines = leg.get_lines()  # all the lines.Line2D instance in the legend
+            frame  = leg.get_frame()  # the patch.Rectangle instance surrounding the legend
+            # see text.Text, lines.Line2D, and patches.Rectangle for more info on
+            # the settable properties of lines, text, and rectangles
+            #frame.set_facecolor('0.80')      # set the frame face color to light gray
+            plt.setp(ltext, fontsize=12)    # the legend text fontsize
+            #plt.setp(llines, linewidth=1.5)      # the legend linewidth
+            #leg.draw_frame(False)           # don't draw the legend frame
 
 
-        print( "eta_BH = %g, eta_j = %g, eta_w = %g, eta_jw = %g, mdot = %g, ptot_BH = %g" % ( etabh_avg, etaj_avg, etaw_avg, etaj_avg + etaw_avg, mdotfinavg, ptot_avg ) )
+        print( "eta_BH = %g, eta_j = %g, eta_w = %g, eta_jw = %g, mdot = %g, mdotwind=%g, mdotjet=%g, ptot_BH = %g" % ( etabh_avg, etaj_avg, etaw_avg, etaj_avg + etaw_avg, mdotfinavg, mdotwindfinavg, mdotjetfinavg, ptot_avg ) )
         if iti > fti:
-            print( "eta_BH2 = %g, eta_j2 = %g, eta_w2 = %g, eta_jw2 = %g, mdot2 = %g, ptot2_BH = %g" % ( etabh2_avg, etaj2_avg, etaw2_avg, etaj2_avg + etaw2_avg, mdotiniavg, ptot2_avg ) )
+            print( "eta_BH2 = %g, eta_j2 = %g, eta_w2 = %g, eta_jw2 = %g, mdot2 = %g, mdotwind2=%g , mdotjet2=%g, ptot2_BH = %g" % ( etabh2_avg, etaj2_avg, etaw2_avg, etaj2_avg + etaw2_avg, mdotiniavg, mdotwindiniavg, mdotjetiniavg, ptot2_avg ) )
 
         #xxx
     #######################
@@ -3613,14 +3711,13 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #######################
     if whichplot == 5:
         # choose radius to measure jet quantities
-        rjet=100.0
         #
         omh = a / (2*(1+(1-a**2)**0.5))
         phibh=fstot[:,ihor]/4/np.pi/mdotfinavg**0.5
         #phij=phiabsj_mu2[:,iofr(rjet)]/4/np.pi/mdotfinavg**0.5
         #phiw=(phiabsj_mu1-phiabsj_mu2)[:,iofr(rjet)]/4/np.pi/mdotfinavg**0.5
         phij=phiabsj_mu1[:,iofr(rjet)]/4/np.pi/mdotfinavg**0.5
-        phiw=phiabsj_maxmu1[:,iofr(rjet)]/4/np.pi/mdotfinavg**0.5
+        phiw=phiabsj_mumax1[:,iofr(rjet)]/4/np.pi/mdotfinavg**0.5
         #
         #phijn=phiabsj_n_mu2[:,iofr(rjet)]/4/np.pi/mdotfinavg**0.5
         #phijs=phiabsj_s_mu2[:,iofr(rjet)]/4/np.pi/mdotfinavg**0.5
@@ -3631,7 +3728,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         #phij2=phiabsj_mu2[:,iofr(rjet)]/4/np.pi/mdotiniavg**0.5
         #phiw2=(phiabsj_mu1-phiabsj_mu2)[:,iofr(rjet)]/4/np.pi/mdotiniavg**0.5
         phij2=phiabsj_mu1[:,iofr(rjet)]/4/np.pi/mdotiniavg**0.5
-        phiw2=phiabsj_maxmu1[:,iofr(rjet)]/4/np.pi/mdotiniavg**0.5
+        phiw2=phiabsj_mumax1[:,iofr(rjet)]/4/np.pi/mdotiniavg**0.5
         #
         #phijn2=phiabsj_n_mu2[:,iofr(rjet)]/4/np.pi/mdotiniavg**0.5
         #phijs2=phiabsj_s_mu2[:,iofr(rjet)]/4/np.pi/mdotiniavg**0.5
@@ -3657,20 +3754,21 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             #
             if showextra:
                 ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phij**2,ts,fti,ftf)**0.5,'--',color=(fc,fc+0.5*(1-fc),fc))
+                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phiw**2,ts,fti,ftf)**0.5,'-.',color=(fc,fc,1))
             ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+phibh_avg,color=(ofc,fc,fc))
-            #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phiw**2,ts,fti,ftf)**0.5,'-.',color=(fc,fc,1))
             if(iti>fti):
                 phibh2_avg = timeavg(phibh2**2,ts,iti,itf)**0.5
                 fstot2_avg = timeavg(fstot[:,ihor]**2,ts,iti,itf)**0.5
                 if showextra:
                     ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+timeavg(phij2**2,ts,iti,itf)**0.5,'--',color=(fc,fc+0.5*(1-fc),fc))
+                    ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+timeavg(phiw2**2,ts,iti,itf)**0.5,'-.',color=(fc,fc,1))
                 ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+phibh2_avg,color=(ofc,fc,fc))
-                #ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+timeavg(phiw2**2,ts,iti,itf)**0.5,'-.',color=(fc,fc,1))
         #To approximately get efficiency:
         #ax.plot(ts,2./3.*np.pi*omh**2*np.abs(fsj30[:,ihor]/4/np.pi)**2/mdotfinavg)
         #prefactor to get sqrt(eta): (2./3.*np.pi*omh**2)**0.5
         ax.plot(ts,phibh,clr,label=r'$\phi_{\rm BH}$')
         ax.set_xlim(ts[0],ts[-1])
+        #
         if showextra:
             ax.plot(ts,phij,'g--',label=r'$\phi_{\rm jet}$')
             ax.plot(ts,phiw,'b-.',label=r'$\phi_{\rm wind}$')
@@ -3686,11 +3784,24 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
                         ax.plot(ts[fi],phij[fi],'gs')
                     ax.plot(ts[fi],phibh[fi],'o',mfc='r')
                     ax.plot(ts[fi],phiw[fi],'bv')
-        #ax.legend(loc='upper left')
         #ax.set_ylabel(r'$\ \ \ k\Phi_j/\langle\dot M\rangle^{\!1/2}$',fontsize=16)
-        ax.set_ylabel(r'$\phi$',fontsize=16,labelpad=16)
+        ax.set_ylabel(r'$\phi$',fontsize=16,ha='left',labelpad=20)
         if showextra:
             plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
+            # set some legend properties.  All the code below is optional.  The
+            # defaults are usually sensible but if you need more control, this
+            # shows you how
+            leg = plt.gca().get_legend()
+            ltext  = leg.get_texts()  # all the text.Text instance in the legend
+            llines = leg.get_lines()  # all the lines.Line2D instance in the legend
+            frame  = leg.get_frame()  # the patch.Rectangle instance surrounding the legend
+            # see text.Text, lines.Line2D, and patches.Rectangle for more info on
+            # the settable properties of lines, text, and rectangles
+            #frame.set_facecolor('0.80')      # set the frame face color to light gray
+            plt.setp(ltext, fontsize=12)    # the legend text fontsize
+            #plt.setp(llines, linewidth=1.5)      # the legend linewidth
+            #leg.draw_frame(False)           # don't draw the legend frame
+        #
         plt.setp( ax.get_xticklabels(), visible=False )
         print( "phi_BH = %g, fstot = %g" % ( phibh_avg, fstot_avg ) )
         print( "phi_jet = %g, phi_wind = %g" % ( phij_avg , phiw_avg ) )
@@ -4826,27 +4937,34 @@ def ploteta():
     fig=plt.figure(0, figsize=(12,6), dpi=100)
     plt.clf()
     #
-    #pjet/<mdot>
+    # eta = pjet/<mdot>
     #
     ax34 = plt.gca()
     plotqtyvstime(qtymem,ax=ax34,whichplot=4,prefactor=1)
     ymax=ax34.get_ylim()[1]
-    if 1 < ymax and ymax < 2: 
-        #ymax = 2
-        tck=(1,)
-        ax34.set_yticks(tck)
-        #ax34.set_yticklabels(('','1','2'))
-    elif ymax < 1: 
-        #ymax = 1
-        tck=(ymax/10,ymax)
-        ax34.set_yticks(tck)
-        ax34.set_yticklabels(('','1'))
-    else:
+    #if 1 < ymax and ymax < 2: 
+    #    #ymax = 2
+    #    tck=(1,)
+    #    ax34.set_yticks(tck)
+    #    #ax34.set_yticklabels(('','1','2'))
+    #elif ymax < 1: 
+    #    #ymax = 1
+    #    tck=np.arange(ymax/10,ymax)
+    #    ax34.set_yticks(tck)
+    #    #ax34.set_yticklabels(('','1'))
+    if ymax >= 1:
         ymax=np.floor(ymax)+1
         tck=np.arange(1,ymax)
         ax34.set_yticks(tck)
+    else:
+        #ymax=np.floor(ymax)+1
+        ymax=2*(np.floor(np.floor(ymax+1.5)/2))
+        tck=np.arange(0,ymax,ymax/2.0)
+        ax34.set_yticks(tck)
+    #
     #reset lower limit to 0
-    ax34.set_ylim((0,ax34.get_ylim()[1]))
+    #ax34.set_ylim((0,ax34.get_ylim()[1]))
+    ax34.set_ylim((0,ymax))
     ax34.grid(True)
     ax34.set_ylabel(r"$\eta$")
     # plt.text(ax34.get_xlim()[1]/40., 0.8*ax34.get_ylim()[1], r"$(\mathrm{g})$", size=16, rotation=0.,
@@ -4906,83 +5024,123 @@ def mkmovie(framesize=50, domakeavi=False):
             plt.clf()
             #SWITCH OFF SUPTITLE
             #plt.suptitle(r'$\log_{10}\rho$ at t = %4.0f' % t)
+            ##########
+            #
             #mdot,pjet,pjet/mdot plots
             gs3 = GridSpec(3, 3)
             gs3.update(left=0.055, right=0.97, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
             #gs3.update(left=0.055, right=0.95, top=0.42, bottom=0.03, wspace=0.01, hspace=0.04)
+            #
+            ##############
             #mdot
             ax31 = plt.subplot(gs3[-3,:])
             plotqtyvstime(qtymem,ax=ax31,whichplot=1,findex=findex)
             ymax=ax31.get_ylim()[1]
-            ymax=2*(np.floor(np.floor(ymax+1.5)/2))
-            ax31.set_yticks((ymax/2,ymax))
+            #ymax=2*(np.floor(np.floor(ymax+1.5)/2))
+            ax31.set_yticks((ymax/2.0,ymax,ymax/2.0))
             ax31.grid(True)
+            #ax31.set_ylim((0,ymax))
             #pjet
             # ax32 = plt.subplot(gs3[-2,:])
             # plotqtyvstime(qtymem,ax=ax32,whichplot=2)
             # ymax=ax32.get_ylim()[1]
-            # ax32.set_yticks((ymax/2,ymax))
+            # ax32.set_yticks((ymax/2.0,ymax))
             # ax32.grid(True)
             #pjet/mdot
             # ax33 = plt.subplot(gs3[-1,:])
             # plotqtyvstime(qtymem,ax=ax33,whichplot=3)
             # ymax=ax33.get_ylim()[1]
-            # ax33.set_yticks((ymax/2,ymax))
+            # ax33.set_yticks((ymax/2.0,ymax))
             # ax33.grid(True)
             #
+            ##############
             #\phi
             #
             ax35 = plt.subplot(gs3[-2,:])
             plotqtyvstime(qtymem,ax=ax35,whichplot=5,findex=findex)
             ymax=ax35.get_ylim()[1]
-            if 1 < ymax and ymax < 2: 
-                #ymax = 2
-                tck=(1,)
-                ax35.set_yticks(tck)
-                #ax35.set_yticklabels(('','1','2'))
-            elif ymax < 1: 
-                #ymax = 1
-                tck=(ymax/10,ymax)
-                ax35.set_yticks(tck)
-                ax35.set_yticklabels(('','1'))
-            else:
+            #if 1 < ymax and ymax < 2: 
+            #    #ymax = 2
+            #    tck=(1,)
+            #    ax35.set_yticks(tck)
+            #    #ax35.set_yticklabels(('','1','2'))
+            #elif ymax < 1: 
+            #    #ymax = 1
+            #    tck=(ymax/10,ymax)
+            #    ax35.set_yticks(tck)
+            #    ax35.set_yticklabels(('','1'))
+            if ymax >=1:
                 ymax=np.floor(ymax)+1
                 tck=np.arange(1,ymax)
                 ax35.set_yticks(tck)
+            elif ymax <1 and ymax > 0.1:
+                ymax=1
+                ax35.set_ylim((0,ymax))
+                tck=np.arange(ymax/2.0,(3.0/2.0)*ymax,ymax/2.0)
+                ax35.set_yticks(tck)
+            else:
+                ax35.set_yticks((ymax/2.0,ymax))
+                #ax35.set_ylim((0,ymax))
+            #
             ax35.grid(True)
             #
-            #pjet/<mdot>
+            #####################
+            # eta=pjet/<mdot>
             #
             ax34 = plt.subplot(gs3[-1,:])
             plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findex)
             ymax=ax34.get_ylim()[1]
-            if 100 < ymax and ymax < 200: 
-                #ymax = 2
-                tck=(100,)
-                ax34.set_yticks(tck)
-                #ax34.set_yticklabels(('','100','200'))
-            elif ymax < 100: 
-                #ymax = 100
-                tck=(ymax/10,ymax)
-                ax34.set_yticks(tck)
-                ax34.set_yticklabels(('','100'))
-            else:
+            #if 100 < ymax and ymax < 200: 
+            #    #ymax = 2
+            #    tck=(100,)
+            #    ax34.set_yticks(tck)
+            #    #ax34.set_yticklabels(('','100','200'))
+            #elif ymax < 100: 
+            #    #ymax = 100
+            #    tck=(ymax/10,ymax)
+            #    ax34.set_yticks(tck)
+            #    ax34.set_yticklabels(('','100'))
+            if ymax>=100:
                 ymax=np.floor(ymax/100.)+1
                 ymax*=100
                 tck=np.arange(1,ymax/100.)*100
                 ax34.set_yticks(tck)
-            #reset lower limit to 0
-            ax34.set_ylim((0,ax34.get_ylim()[1]))
+            elif ymax>=10:
+                ymax=np.floor(ymax/10.)+1
+                ymax*=10
+                tck=np.arange(1,ymax/10.)*10
+                ax34.set_yticks(tck)
+            else:
+                ax34.set_yticks((ymax/2.0,ymax))
+            #
             ax34.grid(True)
+            #reset lower limit to 0
             #Rz xy
+            #
+            # for Jon's new fiducial model
+            #vminforframe=-2.4
+            #vmaxforframe=1.5625
+            # for MB09 dipolar fiducial model
+            vminforframe=-4.0
+            vmaxforframe=0.5
+            #
             gs1 = GridSpec(1, 1)
-            gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.45, wspace=0.05)
+            gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
             ax1 = plt.subplot(gs1[:, -1])
-            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-2.4,vmax=1.5625,len=plotlen,ax=ax1,cb=False,pt=False)
+            mkframe("lrho%04d_Rz%g" % (findex,plotlen),vmin=vminforframe,vmax=vmaxforframe,len=plotlen,ax=ax1,cb=False,pt=False)
+            #
+            plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
+            plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=10,fontsize=16)
+            #
             gs2 = GridSpec(1, 1)
-            gs2.update(left=0.5, right=1, top=0.99, bottom=0.45, wspace=0.05)
+            gs2.update(left=0.5, right=1, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
             ax2 = plt.subplot(gs2[:, -1])
-            mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-2.4,vmax=1.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True)
+            mkframexy("lrho%04d_xy%g" % (findex,plotlen),vmin=vminforframe,vmax=vmaxforframe,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True)
+            #
+            plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
+            plt.ylabel(r"$y\ [r_g]$",ha='left',labelpad=10,fontsize=16)
+            #
+            #
             #print xxx
             plt.savefig( "lrho%04d_Rzxym1.png" % (findex)  )
             plt.savefig( "lrho%04d_Rzxym1.eps" % (findex)  )
@@ -5130,7 +5288,7 @@ def mklotsopanels():
     plotqtyvstime(qtymem,ax=ax31,whichplot=1,findex=findexlist) #AT: need to specify index!
     ymax=ax31.get_ylim()[1]
     ymax=2*(np.floor(np.floor(ymax+1.5)/2))
-    ax31.set_yticks((ymax/2,ymax))
+    ax31.set_yticks((0,ymax,ymax/2.0))
     #ax31.set_xlabel(r"$t\ [r_g/c]")
     ax31.grid(True)
     plt.text(ax31.get_xlim()[1]/40., 0.8*ax31.get_ylim()[1], "$(\mathrm{e})$", size=16, rotation=0.,
@@ -5139,18 +5297,18 @@ def mklotsopanels():
              )
     ax31r = ax31.twinx()
     ax31r.set_ylim(ax31.get_ylim())
-    ax31r.set_yticks((ymax/2,ymax))
+    ax31r.set_yticks((0,ymax,ymax/2.0))
     #pjet
     # ax32 = plt.subplot(gs3[-2,:])
     # plotqtyvstime(qtymem,ax=ax32,whichplot=2)
     # ymax=ax32.get_ylim()[1]
-    # ax32.set_yticks((ymax/2,ymax))
+    # ax32.set_yticks((ymax/2.0,ymax))
     # ax32.grid(True)
     #pjet/mdot
     # ax33 = plt.subplot(gs3[-1,:])
     # plotqtyvstime(qtymem,ax=ax33,whichplot=3)
     # ymax=ax33.get_ylim()[1]
-    # ax33.set_yticks((ymax/2,ymax))
+    # ax33.set_yticks((ymax/2.0,ymax))
     # ax33.grid(True)
     #
     #\phi
@@ -5166,20 +5324,24 @@ def mklotsopanels():
     ax35 = plt.subplot(gs3[-2,:])
     plotqtyvstime(qtymem,ax=ax35,whichplot=5,findex=findexlist)
     ymax=ax35.get_ylim()[1]
-    if 1 < ymax and ymax < 2: 
-        #ymax = 2
-        tck=(1,)
-        ax35.set_yticks(tck)
-        #ax35.set_yticklabels(('','1','2'))
-    elif ymax < 1: 
-        #ymax = 1
-        tck=(ymax/10,ymax)
-        ax35.set_yticks(tck)
-        ax35.set_yticklabels(('','1'))
-    else:
+    #if 1 < ymax and ymax < 2: 
+    #    #ymax = 2
+    #    tck=(1,)
+    #    ax35.set_yticks(tck)
+    #    #ax35.set_yticklabels(('','1','2'))
+    #elif ymax < 1: 
+    #    #ymax = 1
+    #    tck=(ymax/10,ymax)
+    #    ax35.set_yticks(tck)
+    #    ax35.set_yticklabels(('','1'))
+    if ymax >=1:
         ymax=np.floor(ymax)+1
         tck=np.arange(1,ymax)
         ax35.set_yticks(tck)
+    else:
+        ax35.set_yticks((ymax/2.0,ymax))
+        #ax35.set_ylim((0,ymax))
+    #
     ax35.grid(True)
     plt.text(ax35.get_xlim()[1]/40., 0.8*ax35.get_ylim()[1], r"$(\mathrm{f})$", size=16, rotation=0.,
              ha="center", va="center",
@@ -5194,24 +5356,27 @@ def mklotsopanels():
     ax34 = plt.subplot(gs3[-1,:])
     plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findexlist)
     ymax=ax34.get_ylim()[1]
-    if 100 < ymax and ymax < 200: 
-        #ymax = 2
-        tck=(100,)
-        ax34.set_yticks(tck)
-        #ax34.set_yticklabels(('','100','200'))
-    elif ymax < 100: 
-        #ymax = 100
-        tck=(ymax/10,ymax)
-        ax34.set_yticks(tck)
-        ax34.set_yticklabels(('','100'))
-    else:
+    #if 100 < ymax and ymax < 200: 
+    #    #ymax = 2
+    #    tck=(100,)
+    #    ax34.set_yticks(tck)
+    #    #ax34.set_yticklabels(('','100','200'))
+    #elif ymax < 100: 
+    #    #ymax = 100
+    #    tck=(ymax/10,ymax)
+    #    ax34.set_yticks(tck)
+    #    ax34.set_yticklabels(('','100'))
+    if ymax >=100:
         ymax=np.floor(ymax/100.)+1
         ymax*=100
         tck=np.arange(1,ymax/100.)*100
         ax34.set_yticks(tck)
-    #reset lower limit to 0
-    ax34.set_ylim((0,ax34.get_ylim()[1]))
+    else:
+        ax34.set_yticks((ymax/2.0,ymax))
+        #ax34.set_ylim((0,ymax))
+    #
     ax34.grid(True)
+    #reset lower limit to 0
     plt.text(ax34.get_xlim()[1]/40., 0.8*ax34.get_ylim()[1], r"$(\mathrm{g})$", size=16, rotation=0.,
              ha="center", va="center",
              color='k',weight='regular',bbox=bbox_props

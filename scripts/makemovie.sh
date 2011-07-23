@@ -54,7 +54,7 @@ if [ $1 -eq 1 ]
 then
 
     export myinitfile=$localpath/__init__.py.$myrand
-    echo "myinitfile=$myinitfile"
+    echo "myinitfile="${myinitfile}
 
     sed -n '1h;1!H;${;g;s/if False:[\n \t]*#NEW FORMAT[\n \t]*#Plot qtys vs. time[\n \t]*generate_time_series()/if True:\n\t#NEW FORMAT\n\t#Plot qtys vs. time\n\tgenerate_time_series()/g;p;}'  $initfile > $myinitfile
 
@@ -95,7 +95,7 @@ then
     
     for j in `seq 0 $je`
     do
-        echo "Data vs. Time: Starting simultaneous run of $ie jobs for group $j"
+        echo "Data vs. Time: Starting simultaneous run of $itot jobs for group $j"
         for i in `seq 0 $ie`
         do
     	    export runi=$(( $i + $itot * $j ))
@@ -108,7 +108,7 @@ then
 	    nohup python $myinitfile $runi $runn &> python_${runi}_${runn}.out &
 	done
 	wait
-	echo "Data vs. Time: Ending simultaneous run of $ie jobs for group $j"
+	echo "Data vs. Time: Ending simultaneous run of $itot jobs for group $j"
     done
     
     wait
@@ -132,8 +132,8 @@ then
     # 1) You disable the time series section of ~/py/mread/__init__.py and
     # instead enable the movie section
     
-    export myinitfile2=$localpath/__init__.py.$myrand.2
-    echo "myinitfile2=$myinitfile.2"
+    export myinitfile2=$localpath/__init__.py.${myrand}.2
+    echo "myinitfile2="${myinitfile}
     
     sed -n '1h;1!H;${;g;s/if False:[\n \t]*#make a movie[\n \t]*mkmovie()/if True:\n\t#make a movie\n\tmkmovie()/g;p;}'  $initfile > $myinitfile2
     
@@ -165,7 +165,7 @@ then
     
     for j in `seq 0 $je`
     do
-	echo "Movie Frames: Starting simultaneous run of $ie jobs for group $j"
+	echo "Movie Frames: Starting simultaneous run of $itot jobs for group $j"
 	for i in `seq 0 $ie`
 	do
 	    export runi=$(( $i + $itot * $j ))
@@ -178,7 +178,7 @@ then
 	    nohup python $myinitfile2 $runi $runn &> python_${runi}_${runn}.2.out &
 	done
 	wait
-	echo "Movie Frames: Ending simultaneous run of $ie jobs for group $j"
+	echo "Movie Frames: Ending simultaneous run of $itot jobs for group $j"
     done
     
     
