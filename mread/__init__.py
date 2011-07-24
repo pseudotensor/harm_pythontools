@@ -3537,35 +3537,44 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     #######################
     #
+    # MB09
+    windplotfactor=1.0
+    # thickdisk models
+    #windplotfactor=0.1
+    #
+    #
     if whichplot == 1:
         if dotavg:
             ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotfinavg,color=(ofc,fc,fc))
             if showextra:
                 ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotjetfinavg,'--',color=(fc,fc+0.5*(1-fc),fc))
-                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotwindfinavg*0.1,'-.',color=(fc,fc,1))
+                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotwindfinavg*windplotfactor,'-.',color=(fc,fc,1))
             if(iti>fti):
                 ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+mdotiniavg,color=(ofc,fc,fc))
                 if showextra:
                     ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotjetiniavg,color=(fc,fc+0.5*(1-fc),fc))
-                    ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotwindiniavg*0.1,color=(fc,fc,1))
+                    ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotwindiniavg*windplotfactor,color=(fc,fc,1))
         #
         ax.plot(ts,np.abs(mdtot[:,ihor]-md30[:,ihor]),clr,label=r'$\dot Mc^2$')
         if showextra:
             ax.plot(ts,np.abs(mdjet[:,iofr(rjet)]-md30[:,ihor]),'g--',label=r'$\dot M_{\rm jet}c^2$')
-            ax.plot(ts,0.1*np.abs(mdwind[:,iofr(rjet)]-md30[:,ihor]),'b-.',label=r'$0.1\dot M_{\rm wind}c^2$')
-
+            if windplotfactor==1.0:
+                ax.plot(ts,windplotfactor*np.abs(mdwind[:,iofr(rjet)]-md30[:,ihor]),'b-.',label=r'$\dot M_{\rm wind}c^2$')
+            elif windplotfactor==0.1:
+                ax.plot(ts,windplotfactor*np.abs(mdwind[:,iofr(rjet)]-md30[:,ihor]),'b-.',label=r'$0.1\dot M_{\rm wind}c^2$')
+        #
         if findex != None:
             if not isinstance(findex,tuple):
                 ax.plot(ts[findex],np.abs(mdtot[:,ihor]-md30[:,ihor])[findex],'o',mfc='r')
                 if showextra:
                     ax.plot(ts[findex],np.abs(mdjet[:,iofr(rjet)]-md30[:,ihor])[findex],'gs')
-                    ax.plot(ts[findex],0.1*np.abs(mdwind[:,iofr(rjet)]-md30[:,ihor])[findex],'bv')
+                    ax.plot(ts[findex],windplotfactor*np.abs(mdwind[:,iofr(rjet)]-md30[:,ihor])[findex],'bv')
             else:
                 for fi in findex:
                     ax.plot(ts[fi],np.abs(mdtot[:,ihor]-md30[:,ihor])[fi],'o',mfc='r')#,label=r'$\dot M$')
                     if showextra:
                         ax.plot(ts[fi],np.abs(mdjet[:,iofr(rjet)]-md30[:,ihor])[fi],'gs')
-                        ax.plot(ts[fi],0.1*np.abs(mdwind[:,iofr(rjet)]-md30[:,ihor])[fi],'bv')
+                        ax.plot(ts[fi],windplotfactor*np.abs(mdwind[:,iofr(rjet)]-md30[:,ihor])[fi],'bv')
         #
         #ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,labelpad=9)
         ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,ha='left',labelpad=20)
