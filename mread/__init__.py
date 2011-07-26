@@ -1059,7 +1059,23 @@ def reinterpxy(vartointerp,extent,ncell,domask=1):
     
 def ftr(x,xb,xf):
     return( amax(0.0*x,amin(1.0+0.0*x,1.0*(x-xb)/(xf-xb))) )
-    
+
+
+# What Sasha uses for streamlines:
+#    The new code is at http://www.atm.damtp.cam.ac.uk/people/tjf37/streamplot.py and 
+#there are new sample plots at 
+#http://www.atm.damtp.cam.ac.uk/people/tjf37/streamlines1.png and 
+#http://www.atm.damtp.cam.ac.uk/people/tjf37/streamlines2.png .
+
+# other stream line methods:
+# http://github.enthought.com/mayavi/mayavi/mlab.html
+# http://permalink.gmane.org/gmane.comp.python.matplotlib.general/26362
+# http://comments.gmane.org/gmane.comp.python.matplotlib.general/26354
+# http://mindseye.no/tag/python/
+# http://scikits.appspot.com/vectorplot  (includes LIC)
+# http://wiki.chem.vu.nl/dirac/index.php/How_to_plot_vector_fields_calculated_with_DIRAC11_as_streamline_plots_using_PyNGL
+
+
 def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False):
     extent=(-len,len,-len,len)
     palette=cm.jet
@@ -2261,8 +2277,8 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
     flist.sort()
     nqtyold=98+134*(dobob==1)
     nqtyold2=98+134*(dobob==1)+32+1
-    # jon's mumax addition
-    nqty=98+134*(dobob==1)+32+1+8+2
+    # jon's mumax addition and edm addition
+    nqty=98+134*(dobob==1)+32+1+8+2+1
     #store 1D data
     numtimeslices=len(flist)
     qtymem=np.zeros((nqty,numtimeslices,nx),dtype=np.float32)
@@ -2392,6 +2408,7 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
     ed2hor=qtymem[i];i+=1
     edrhosq=qtymem[i];i+=1
     edma=qtymem[i];i+=1
+    edm=qtymem[i];i+=1
     edtotbound=qtymem[i];i+=1
     edmabound=qtymem[i];i+=1
     #Pjet
@@ -2629,6 +2646,7 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
         #Edot
         edtot[findex]=intangle(-gdet*Tud[1][0])
         edma[findex]=intangle(-gdet*TudMA[1][0])
+        edm[findex]=intangle(gdet*rho*uu[1])
         edtotbound[findex]=intangle(-gdet*Tud[1][0],which=(-enth*ud[0]<=1))
         edmabound[findex]=intangle(-gdet*TudMA[1][0],which=(-enth*ud[0]<=1))
         ed2h[findex]=intangle(-gdet*Tud[1][0],hoverr=2*horval)
@@ -3076,8 +3094,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     nqtyold=98
     nqtyold2=98+32+1
-    # with jon's mumax
-    nqty=98+32+1+8+2
+    # with jon's mumax and new eff definition
+    nqty=98+32+1+8+2+1
     ###############################
     #copy this from getqtyvstime()
     ###############################
@@ -3158,6 +3176,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         ed2hor=qtymem[i]*2;i+=1
         edrhosq=qtymem[i]*2;i+=1
         edma=qtymem[i]*2;i+=1
+        edm=qtymem[i]*2;i+=1
         edtotbound=qtymem[i]*2;i+=1
         edmabound=qtymem[i]*2;i+=1
         #Pjet
@@ -3265,6 +3284,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         ed2hor=qtymem[i];i+=1
         edrhosq=qtymem[i];i+=1
         edma=qtymem[i];i+=1
+        edm=qtymem[i];i+=1
         edtotbound=qtymem[i];i+=1
         edmabound=qtymem[i];i+=1
         #Pjet
@@ -3434,6 +3454,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     mdtotvsr = mdotfinavgvsr
     edtotvsr = timeavg(edtot,ts,fti,ftf)
     edmavsr = timeavg(edma,ts,fti,ftf)
+    edmvsr = timeavg(edm,ts,fti,ftf)
     if ldtot is not None:
         ldtotvsr = timeavg(ldtot,ts,fti,ftf)
     else:
@@ -3469,15 +3490,23 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     pjetiniavg = timeavg(pjem30[:,ihor],ts,iti,itf)
     pjetfinavg = timeavg(pjem30[:,ihor],ts,fti,ftf)
-    pjemfinavgvsr = timeavg(edtot-edma,ts,fti,ftf)
-    pjemtot = edtot-edma
+    #pjemfinavgvsr = timeavg(edtot-edma,ts,fti,ftf)
+    #pjemtot = edtot-edma
+    # new efficiency definition
+    pjemfinavgvsr = timeavg(edtot-edm,ts,fti,ftf)
+    pjemtot = edtot-edm
     pjemfinavgvsr5 = timeavg(pjem5[:,:],ts,fti,ftf)
     pjemfinavgvsr10 = timeavg(pjem10[:,:],ts,fti,ftf)
     pjemfinavgvsr20 = timeavg(pjem20[:,:],ts,fti,ftf)
     pjemfinavgvsr30 = timeavg(pjem30[:,:],ts,fti,ftf)
     pjemfinavgvsr40 = timeavg(pjem40[:,:],ts,fti,ftf)
-    pjemfinavgtot = timeavg((edtot-edma)[:,ihor],ts,fti,ftf)
+    #
+    #pjemfinavgtot = timeavg((edtot-edma)[:,ihor],ts,fti,ftf)
+    #pjmafinavgvsr = timeavg(edma[:,:],ts,fti,ftf)
+    # new efficiency definition
+    pjemfinavgtot = timeavg((edtot-edm)[:,ihor],ts,fti,ftf)
     pjmafinavgvsr = timeavg(edma[:,:],ts,fti,ftf)
+    #
     pjmafinavgvsr5 = timeavg(pjma5[:,:],ts,fti,ftf)
     pjmafinavgvsr10 = timeavg(pjma10[:,:],ts,fti,ftf)
     pjmafinavgvsr20 = timeavg(pjma20[:,:],ts,fti,ftf)
@@ -3538,9 +3567,9 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #######################
     #
     # MB09
-    windplotfactor=1.0
+    #windplotfactor=1.0
     # thickdisk models
-    #windplotfactor=0.1
+    windplotfactor=0.1
     #
     #
     if whichplot == 1:
@@ -4327,7 +4356,7 @@ def takeoutfloors(doreload=1,dotakeoutfloors=1):
     # plt.plot(r[:,0,0],-avg_tudmassug,label="mymassug")
     # plt.plot(r[:,0,0],-avg_tudug,label="myug")
     # plt.plot(r[:,0,0],edmavsr,label="ma")
-    # plt.plot(r[:,0,0],edtotvsr-edmavsr,label="tot-ma")
+    # plt.plot(r[:,0,0],edtotvsr-edmvsr,label="tot-m")
     # #plt.plot(r[:,0,0],DUfloor[1])
     # plt.xlim(rh,20); plt.ylim(-20,20)
     # plt.legend()
@@ -4963,7 +4992,7 @@ def ploteta():
     #    #ax34.set_yticklabels(('','1'))
     if ymax >= 1:
         ymax=np.floor(ymax)+1
-        tck=np.arange(1,ymax)
+        tck=np.arange(1,ymax,(ymax-1.0)/2.0)
         ax34.set_yticks(tck)
     else:
         #ymax=np.floor(ymax)+1
@@ -5079,8 +5108,8 @@ def mkmovie(framesize=50, domakeavi=False):
             #    ax35.set_yticks(tck)
             #    ax35.set_yticklabels(('','1'))
             if ymax >=1:
-                ymax=np.floor(ymax)+1
-                tck=np.arange(1,ymax)
+                ymax=np.floor(ymax*0.9999)+1
+                tck=np.arange(1,ymax,(ymax-1.0)/2.0)
                 ax35.set_yticks(tck)
             elif ymax <1 and ymax > 0.1:
                 ymax=1
@@ -5110,14 +5139,14 @@ def mkmovie(framesize=50, domakeavi=False):
             #    ax34.set_yticks(tck)
             #    ax34.set_yticklabels(('','100'))
             if ymax>=100:
-                ymax=np.floor(ymax/100.)+1
+                ymax=np.floor(ymax/100.*0.9999)+1
                 ymax*=100
-                tck=np.arange(1,ymax/100.)*100
+                tck=np.arange(1,ymax/100.,(ymax/100.0-1.0)/2.0)*100
                 ax34.set_yticks(tck)
             elif ymax>=10:
-                ymax=np.floor(ymax/10.)+1
+                ymax=np.floor(ymax/10.*0.9999)+1
                 ymax*=10
-                tck=np.arange(1,ymax/10.)*10
+                tck=np.arange(1,ymax/10.,(ymax/10.0-1.0)/2.0)*10
                 ax34.set_yticks(tck)
             else:
                 ax34.set_yticks((ymax/2.0,ymax))
@@ -5127,11 +5156,11 @@ def mkmovie(framesize=50, domakeavi=False):
             #Rz xy
             #
             # for Jon's new fiducial model
-            #vminforframe=-2.4
-            #vmaxforframe=1.5625
+            vminforframe=-2.4
+            vmaxforframe=1.5625
             # for MB09 dipolar fiducial model
-            vminforframe=-4.0
-            vmaxforframe=0.5
+            #vminforframe=-4.0
+            #vmaxforframe=0.5
             #
             gs1 = GridSpec(1, 1)
             gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
@@ -5144,6 +5173,8 @@ def mkmovie(framesize=50, domakeavi=False):
             gs2 = GridSpec(1, 1)
             gs2.update(left=0.5, right=1, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
             ax2 = plt.subplot(gs2[:, -1])
+            #
+            # If using 2D data, then for now, have to replace below with mkframe version above and replace ax1->ax2
             mkframexy("lrho%04d_xy%g" % (findex,plotlen),vmin=vminforframe,vmax=vmaxforframe,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True)
             #
             plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
@@ -5344,8 +5375,8 @@ def mklotsopanels():
     #    ax35.set_yticks(tck)
     #    ax35.set_yticklabels(('','1'))
     if ymax >=1:
-        ymax=np.floor(ymax)+1
-        tck=np.arange(1,ymax)
+        ymax=np.floor(ymax*0.9999)+1
+        tck=np.arange(1,ymax,(ymax-1.0)/2.0)
         ax35.set_yticks(tck)
     else:
         ax35.set_yticks((ymax/2.0,ymax))
@@ -5376,9 +5407,9 @@ def mklotsopanels():
     #    ax34.set_yticks(tck)
     #    ax34.set_yticklabels(('','100'))
     if ymax >=100:
-        ymax=np.floor(ymax/100.)+1
+        ymax=np.floor(ymax/100.*0.9999)+1
         ymax*=100
-        tck=np.arange(1,ymax/100.)*100
+        tck=np.arange(1,ymax/100.,(ymax/100.0-1.0)/2.0)*100
         ax34.set_yticks(tck)
     else:
         ax34.set_yticks((ymax/2.0,ymax))

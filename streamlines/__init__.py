@@ -346,7 +346,7 @@ def streamplot(x, y, u, v, density=1, linewidth=1,
         args = {}
         if type(linewidth) == numpy.ndarray:
             args['linewidth'] = value_at(linewidth, tgx, tgy)[:-1]
-            arrowlinewidth = args['linewidth'][len(tgx)/2]
+            arrowlinewidth = args['linewidth'][int(len(tgx)/2.0)]
         else:
             args['linewidth'] = linewidth
             arrowlinewidth = linewidth
@@ -354,7 +354,7 @@ def streamplot(x, y, u, v, density=1, linewidth=1,
         if type(color) == numpy.ndarray:            
             args['color'] = cmap(norm(vmin=vmin,vmax=vmax)
                                  (value_at(color, tgx, tgy)[:-1]))
-            arrowcolor = args['color'][len(tgx)/2]
+            arrowcolor = args['color'][int(len(tgx)/2.0)]
         else:
             args['color'] = color
             arrowcolor = color
@@ -366,7 +366,7 @@ def streamplot(x, y, u, v, density=1, linewidth=1,
         ## Add arrows every dtx along each trajectory.
         #for n in numpy.arange(max((len(tx)%dtx)/2+dtx/2,1),len(tx)-2,dtx):
         if True:
-            n = len(tx)/2
+            n = int(len(tx)/2.0)
             if type(linewidth) == numpy.ndarray:
                 arrowlinewidth = args['linewidth'][n]
 
@@ -852,7 +852,7 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
         args = {}
         if type(linewidth) == numpy.ndarray:
             args['linewidth'] = value_at(linewidth, tgx, tgy)[:-1]
-            arrowlinewidth = args['linewidth'][len(tgx)/2]
+            arrowlinewidth = args['linewidth'][int(len(tgx)/2.0)]
         else:
             args['linewidth'] = linewidth
             arrowlinewidth = linewidth
@@ -860,7 +860,7 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
         if type(color) == numpy.ndarray:            
             args['color'] = cmap(norm(vmin=vmin,vmax=vmax)
                                  (value_at(color, tgx, tgy)[:-1]))
-            arrowcolor = args['color'][len(tgx)/2]
+            arrowcolor = args['color'][int(len(tgx)/2.0)]
         else:
             if dorandomcolor:
                 val = numpy.random.rand(1)[0]
@@ -875,7 +875,7 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
         ## Add arrows every dtx along each trajectory.
         #for n in numpy.arange(max((len(tx)%dtx)/2+dtx/2,1),len(tx)-2,dtx):
         if doarrows:
-            n = len(tx)/2
+            n = int(len(tx)/2.0)
             if type(linewidth) == numpy.ndarray:
                 arrowlinewidth = args['linewidth'][n]
 

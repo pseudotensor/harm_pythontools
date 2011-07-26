@@ -28,10 +28,44 @@ fi
 # fieldline files which would be interpreted by my script as 3 extra
 # columns which I added to output gdetB^i's).
 
-# The streamline code does not need gdet B^i's.  It uses B^i's. 
+# The streamline code does not need gdet B^i's.  It can use B^i's.
 
 # Requirements:
 # A) Currently python script requires fieldline0000.bin to exist for getting parameters.  Can search/replace this name for another that actually exists if don't want to include that first file.
+
+# Options: A)
+#
+# mklotsopanels() has hard-coded indexes of field line files that it
+# shows in different panels.  What you see is python complaining it
+# cannot find an element with index ti, which is one of the 4 indices
+# defined above, findexlist=(0,600,1225,1369) I presume you have less
+# than 1369 frames, hence there are problem.  Try resetting findexlist
+# to (0,1,2,3), and hopefully the macro will work.
+
+# Options: B)
+#
+#  In order to run mkstreamlinefigure(), you need to have generated 2D
+# average dump files beforehand (search for 2DAVG), created a combined
+# average file (for which you run the script with 2DAVG section
+# enabled, generate 2D average files, and then run the same script
+# again with 3 arguments: start end step, where start and end set the
+# starting and ending number of fieldline file group that you average
+# over, and each group by default contains 20 fieldline files) and
+# named it avg2d.npy .
+#
+#We can talk more about what you need to do in order to run each of
+#the sections of the file.  I have not put any time into making those
+#sections portable: as I explained, the code is quite raw!  You might
+#want to familiarize yourself with the tutorial first (did it work out
+#for you in the end?) and basic python operations.  I am afraid, in
+#order to figure out what is going on the script file, you have to be
+#able to read python and see what is done.
+#
+#One thing that can help you, is to enable python debugger.  For this, you run from inside ipython shell:
+#
+#pdb
+#
+#Then, whenever there is an error, you get into debugger, where you can evaluate variables, make plots, etc.
 
 # 2) Change "False" to "True" in the section of __main__ that runs
 # generate_time_series()
