@@ -5231,7 +5231,8 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
     fig=plt.figure(0, figsize=(12,9), dpi=100)
     plt.clf()
     #findexlist=(0,600,1285,1459)
-    findexlist=(0,600,1225,1369)
+    #findexlist=(0,600,1225,1369)
+    findexlist=(0,600,1225,3297)
     #SWITCH OFF SUPTITLE
     #plt.suptitle(r'$\log_{10}\rho$ at t = %4.0f' % t)
     #mdot,pjet,pjet/mdot plots
