@@ -1581,7 +1581,7 @@ def rfd(fieldlinefilename,**kwargs):
     #Velocity components: u1, u2, u3, 
     #Cell-centered magnetic field components: B1, B2, B3, 
     #Face-centered magnetic field components multiplied by metric determinant: gdetB1, gdetB2, gdetB3
-    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,rho,lrho,ug,uu,uut,uu,B,uux,gdetB,rhor
+    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,rho,lrho,ug,uu,uut,uu,B,uux,gdetB,rhor,r,h,ph
     #read image
     fin = open( "dumps/" + fieldlinefilename, "rb" )
     header = fin.readline().split()
@@ -1648,6 +1648,24 @@ def rfd(fieldlinefilename,**kwargs):
     #     else:
     #         print( "rfd: warning: since gdet is not defined, I am skipping the computation of cell-centered fields, B" )
     # else:
+    if 'r' in globals() and r.shape[2] != nz:
+        #dynamically change the 3rd dimension size
+        rnew = np.zeros((nx,ny,nz),dtype=r.dtype)
+        hnew = np.zeros((nx,ny,nz),dtype=h.dtype)
+        phnew = np.zeros((nx,ny,nz),dtype=ph.dtype)
+        rnew += r[:,:,0:1]
+        hnew += h[:,:,0:1]
+        #compute size of phi wedge assuming dxdxp[3][3] is up to date
+        phiwedge = dxdxp[3][3][0,0,0]*_dx3*nz
+        a_phi = phiwedge/(2.*nz)+np.linspace(0,phiwedge,num=nz,endpoint=False)
+        phnew += a_phi[None,None,:]
+        del r
+        del h
+        del ph
+        r = rnew
+        h = hnew
+        ph = phnew
+        gc.collect()
 
 
 def cvel():
