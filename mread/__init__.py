@@ -4971,7 +4971,7 @@ def mkmovie(framesize=50, domakeavi=False):
     else:
         dontloadfiles = False
         grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=True )
-        rd( "dump0000.bin" )
+        #rd( "dump0000.bin" )
         rfd("fieldline0000.bin")  #to definea
         #grid3dlight("gdump")
         qtymem=None #clear to free mem
@@ -4988,7 +4988,13 @@ def mkmovie(framesize=50, domakeavi=False):
         else:
             print( "Processing " + fname + " ..." )
             sys.stdout.flush()
+            # oldnz=nz
             rfd("../"+fname)
+            # if oldnz < nz:
+            #     #resolution changed on the fly, get correct-size arrays for r, h, ph
+            #     rd("dump0147.bin")
+            #     #reread the fieldline dump
+            #     rfd("../"+fname)
             cvel() #for calculating bsq
             plotlen = plotleni+(plotlenf-plotleni)*(t-plotlenti)/(plotlentf-plotlenti)
             plotlen = min(plotlen,plotleni)
@@ -5209,7 +5215,7 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
     else:
         dontloadfiles = False
         grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=True )
-        rd( "dump0000.bin" )
+        #rd( "dump0000.bin" )
         rfd("fieldline0000.bin")  #to definea
         #grid3dlight("gdump")
         qtymem=None #clear to free mem
