@@ -32,12 +32,26 @@ import sys
 import streamlines
 from matplotlib.patches import Ellipse
 
+import re
+#import sorting
+
+
 #from matplotlib.pyplot import *
 #from numpy import *
 #from mpl_toolkits.axisartist import *
 
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
+
+# sign function
+#http://fnielsen.posterous.com/where-is-the-sign-function-in-python
+
+def divideavoidinf(x):
+    SMALL=1E-300
+    y=1.0*np.sign(x)/(np.fabs(x)+SMALL)
+    return(y)
+
+
 
 def get2davg(usedefault=0,whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergroup=20):
     if whichgroup >= 0:
@@ -166,11 +180,36 @@ def assignavg2dvars(avgmem):
     avg_gamma=avg_uu[0]/(-gn3[0,0])**0.5
 
 
+# http://stackoverflow.com/questions/4265284/how-to-do-sort-v-in-osx
+# http://blog.pobblelabs.org/2007/12/11/exception-handling-slow/
+# http://nedbatchelder.com/blog/200712/human_sorting.html#comments
+# http://www.python-forum.org/pythonforum/viewtopic.php?f=3&t=22908
+# http://www.python-forum.org/pythonforum/viewtopic.php?f=3&t=24328
+
+def tryint(s):
+    try:
+        return int(s)
+    except:
+        return s
+    
+def alphanum_key(s):
+    """ Turn a string into a list of string and number chunks.
+        "z23a" -> ["z", 23, "a"]
+    """
+    return [ tryint(c) for c in re.split('([0-9]+)', s) ]
+
+def sort_nicely(l):
+    """ Sort the given list in the way that humans expect.
+    """
+    l.sort(key=alphanum_key)
+
+
 def get2davgone(whichgroup=-1,itemspergroup=20):
     """
     """
     global avg_ts,avg_te,avg_nitems,avg_rho,avg_ug,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
     global avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
+    global firstfieldlinefile
     if whichgroup < 0 or itemspergroup <= 0:
         print( "whichgroup = %d, itemspergroup = %d not allowed" % (whichgroup, itemspergroup) )
         return None
@@ -181,7 +220,9 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         return( avgmem )
     tiny=np.finfo(rho.dtype).tiny
     flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
-    flist.sort()
+    sort_nicely(flist)
+    firstfieldlinefile=flist[0]
+    #flist.sort()
     #
     #print "Number of time slices: %d" % flist.shape[0]
     #store 2D data
@@ -206,7 +247,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         print( "Reading " + fldname + " ..." )
         sys.stdout.flush()
         rfd("../"+fldname)
-        print( "Computing " + fldname + " ..." )
+        print( "Computing get2davgone:" + fldname + " ..." )
         sys.stdout.flush()
         cvel()
         Tcalcud()
@@ -943,7 +984,7 @@ def intangle(qty,hoverr=None,thetamid=np.pi/2,minbsqorho=None,mumax=None,mumin=N
         insidemumin = insidemumin * (isunbound==1)
         insidemumin = insidemumin * (uu[1]>0.0)
     #
-    beta=((gam-1)*ug)/(bsq/2)
+    beta=((gam-1)*ug)*divideavoidinf(bsq*0.5)
     if maxbeta is None:
         insidebeta = 1
     else:
@@ -1628,15 +1669,8 @@ def rgfd(fieldlinefilename,**kwargs):
 
 #  http://norvig.com/python-lisp.html   
 
-def rfd(fieldlinefilename,**kwargs):
-    #read information from "fieldline" file: 
-    #Densities: rho, u, 
-    #Velocity components: u1, u2, u3, 
-    #Cell-centered magnetic field components: B1, B2, B3, 
-    #Face-centered magnetic field components multiplied by metric determinant: gdetB1, gdetB2, gdetB3
-    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,rho,lrho,ug,uu,uut,uu,B,uux,gdetB,rhor,r,h,ph
-    #read image
-    fin = open( "dumps/" + fieldlinefilename, "rb" )
+def rfdheader():
+    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout
     header = fin.readline().split()
     #time of the dump
     t = myfloat(np.float64(header[0]))
@@ -1658,6 +1692,38 @@ def rfd(fieldlinefilename,**kwargs):
     Rin=myfloat(float(header[14]))
     #Spherical polar radius of the outermost radial cell
     Rout=myfloat(float(header[15]))
+
+def rfdheaderonly(fullfieldlinefilename="dumps/fieldline0000.bin"):
+    global fin
+    fin = open(fullfieldlinefilename, "rb" )
+    rfdheader()
+    fin.close()
+
+def rfdheaderfirstfile():
+    flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+    sort_nicely(flist)
+    firstfieldlinefile=flist[0]
+    #rfd("fieldline0000.bin")  #to definea
+    rfdheaderonly(firstfieldlinefile)
+
+def rfdfirstfile():
+    flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+    sort_nicely(flist)
+    firstfieldlinefile=flist[0]
+    rfd(firstfieldlinefile)
+
+
+def rfd(fieldlinefilename,**kwargs):
+    #read information from "fieldline" file: 
+    #Densities: rho, u, 
+    #Velocity components: u1, u2, u3, 
+    #Cell-centered magnetic field components: B1, B2, B3, 
+    #Face-centered magnetic field components multiplied by metric determinant: gdetB1, gdetB2, gdetB3
+    global rho,lrho,ug,uu,uut,uu,B,uux,gdetB,rhor,r,h,ph
+    #read image
+    global fin
+    fin = open( "dumps/" + fieldlinefilename, "rb" )
+    rfdheader()
     #
     #read grid dump per-cell data
     #
@@ -1743,7 +1809,8 @@ def rfd(fieldlinefilename,**kwargs):
         h = hnew
         ph = phnew
         gc.collect()
-
+    #
+    fin.close()
 
 def cvel():
     global ud,etad, etau, gamma, vu, vd, bu, bd, bsq
@@ -2226,8 +2293,11 @@ def mfjhorvstime(ihor):
     """
     Returns a tuple (ts,fs,mdot,pjetem,pjettot): lists of times, horizon fluxes, and Mdot
     """
-    flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
-    flist.sort()
+    #flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
+    #flist.sort()
+    flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+    sort_nicely(flist)
+    #
     ts=np.empty(len(flist),dtype=np.float32)
     fs=np.empty(len(flist),dtype=np.float32)
     md=np.empty(len(flist),dtype=np.float32)
@@ -2287,7 +2357,9 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
     else:
         tiny = np.finfo(np.float64).tiny
     flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
-    flist.sort()
+    #flist.sort()
+    sort_nicely(flist)
+    #
     nqtyold=98+134*(dobob==1)
     nqtyold2=98+134*(dobob==1)+32+1
     # jon's mumax addition and edm addition
@@ -2547,7 +2619,7 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
         print( "Reading " + fname + " ..." )
         sys.stdout.flush()
         rfd("../"+fname)
-        print( "Computing " + fname + " ..." )
+        print( "Computing getqtyvstime:" + fname + " ..." )
         sys.stdout.flush()
         cvel()
         Tcalcud()
@@ -2917,6 +2989,8 @@ def fhorvstime(ihor):
     Returns a tuple (ts,fs,mdot): lists of times, horizon fluxes, and Mdot
     """
     flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+    sort_nicely(flist)
+    #
     ts=np.empty(len(flist),dtype=np.float32)
     fs=np.empty(len(flist),dtype=np.float32)
     md=np.empty(len(flist),dtype=np.float32)
@@ -2963,9 +3037,10 @@ def Tcalcud():
             TudMA[kapa,nu] = w*uu[kapa]*ud[nu]+pg*delta
             #Tud[kapa,nu] = eta*uu[kapa]*ud[nu]+(pg+0.5*bsq)*delta-bu[kapa]*bd[nu]
             Tud[kapa,nu] = TudEM[kapa,nu] + TudMA[kapa,nu]
-    mu = -Tud[1,0]/(rho*uu[1])
+    #mu = -Tud[1,0]/(rho*uu[1])
+    mu = -Tud[1,0]*divideavoidinf(rho*uu[1])
     bsqo2rho = bsq/(2.0*rho)
-    sigma = TudEM[1,0]/TudMA[1,0]
+    sigma = TudEM[1,0]*divideavoidinf(TudMA[1,0])
     enth=1+ug*gam/rho
     unb=enth*ud[0]
     isunbound=(-unb>1.0)
@@ -3030,7 +3105,7 @@ def jetpowcalc(which=2,minbsqorho=10,mumin=None,mumax=None,maxbeta=None,donorths
         jetpowden = np.abs(gdetB[1])
     #jetpowden[tj>=ny-2] = 0*jetpowden[tj>=ny-2]
     #jetpowden[tj<1] = 0*jetpowden[tj<1]
-    if mumin is None:
+    if mumin is None and mumax is None:
         jetpowden[bsq/rho<minbsqorho] = 0*jetpowden[bsq/rho<minbsqorho]
     else:
         #zero out outside jet (cut out low magnetization region)
@@ -3048,7 +3123,7 @@ def jetpowcalc(which=2,minbsqorho=10,mumin=None,mumax=None,maxbeta=None,donorths
             cond=(mum1fake>mumax)            
         #
         # avoid disk component that might be unbound and moving out as transient or as part of outer part of disk
-        beta=((gam-1)*ug)/(bsq/2)
+        beta=((gam-1)*ug)*divideavoidinf(bsq*0.5)
         if maxbeta is None:
             donothing0000temp=1
         else:
@@ -3105,6 +3180,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
     #
     rjet=100.0
+    # jon's Choice below
+    showextra=True
     #
     nqtyold=98
     nqtyold2=98+32+1
@@ -5412,14 +5489,19 @@ def mkmovie(framesize=50, domakeavi=False):
         dontloadfiles = False
         grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=True )
         #rd( "dump0000.bin" )
-        rfd("fieldline0000.bin")  #to definea
+        #flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
+        flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+        sort_nicely(flist)
+        firstfieldlinefile=flist[0]
+        #rfd("fieldline0000.bin")  #to definea
+        rfdheaderonly(firstfieldlinefile)
+        #
         #grid3dlight("gdump")
         qtymem=None #clear to free mem
         rhor=1+(1+a**2)**0.5
         ihor = np.floor(iofr(rhor)+0.5);
         qtymem=getqtyvstime(ihor,0.2)
-        flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
-
+    #
     for findex, fname in enumerate(flist):
         if findex % whichn != whichi:
             continue
@@ -5581,7 +5663,9 @@ def mk2davg():
     if len(sys.argv[1:])!=0:
         grid3d("gdump.bin",use2d=True)
         #rd("dump0000.bin")
-        rfd("fieldline0000.bin")
+        #rfd("fieldline0000.bin")
+        rfdheaderfirstfile()
+        #
     if len(sys.argv[1:])==2 and sys.argv[1].isdigit() and sys.argv[2].isdigit():
         whichgroup = int(sys.argv[1])
         step = int(sys.argv[2])
@@ -5610,7 +5694,8 @@ def mkstreamlinefigure():
     mylen = 30
     arrowsize=4
     grid3d("gdump.bin",use2d=True)
-    rfd("fieldline0000.bin")
+    rfdheaderfirstfile()
+    #
     avgmem = get2davg(usedefault=1)
     assignavg2dvars(avgmem)
     fig=plt.figure(1,figsize=(12,9),dpi=300)
@@ -5698,13 +5783,16 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
         dontloadfiles = False
         grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=True )
         #rd( "dump0000.bin" )
-        rfd("fieldline0000.bin")  #to definea
+        rfdheaderfirstfile()
+        #
         #grid3dlight("gdump")
         qtymem=None #clear to free mem
         rhor=1+(1+a**2)**0.5
         ihor = np.floor(iofr(rhor)+0.5);
         qtymem=getqtyvstime(ihor,0.2)
-        flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
+        #flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
+        flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+        sort_nicely(flist)
     #make accretion rate plot, etc.
     sys.stdout.flush()
     plotlen = plotleni+(plotlenf-plotleni)*(t-plotlenti)/(plotlentf-plotlenti)
@@ -5795,11 +5883,15 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
     plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findexlist,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor)
     ax34.set_ylim((0,3.8))
     ymax=ax34.get_ylim()[1]
-# JON next 4 lines
+# JON next 7 lines
 #    if ymax >=100:
 #        ymax=np.floor(ymax/100.*0.9999)+1
 #        ymax*=100
 #        tck=np.arange(1,ymax/100.,(ymax/100.0-1.0)/2.0)*100
+#    else:
+#        ax34.set_yticks((ymax/2.0,ymax))
+#        #ax34.set_ylim((0,ymax))
+    #
     if prefactor < ymax and ymax < 2*prefactor: 
         #ymax = 2
         tck=(prefactor,)
@@ -5815,10 +5907,7 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
         ymax*=prefactor
         tck=np.arange(1,ymax/prefactor)*prefactor
         ax34.set_yticks(tck)
-    else:
-        ax34.set_yticks((ymax/2.0,ymax))
-        #ax34.set_ylim((0,ymax))
-    #
+    ax34.set_ylim((0,ax34.get_ylim()[1]))
     ax34.grid(True)
     #reset lower limit to 0
     plt.text(ax34.get_xlim()[1]/40., 0.8*ax34.get_ylim()[1], r"$(\mathrm{g})$", size=16, rotation=0.,
@@ -5993,7 +6082,8 @@ def generate_time_series():
         #cd ~/run; for f in rtf*; do cd ~/run/$f; (nice -n 10 python  ~/py/mread/__init__.py &> python.out); done
         grid3d("gdump.bin",use2d=True)
         #rd("dump0000.bin")
-        rfd("fieldline0000.bin")
+        rfdheaderfirstfile()
+        #
         rhor=1+(1-a**2)**0.5
         ihor = np.floor(iofr(rhor)+0.5);
         #diskflux=diskfluxcalc(ny/2)
@@ -6045,7 +6135,8 @@ def oldstuff():
         plt.ylim(-2,2)
         plt.savefig("logdensity.png")
     if False:
-        grid3d("gdump.bin"); rfd("fieldline0000.bin")
+        grid3d("gdump.bin"); 
+        rfdfirstfile()
         aphi = fieldcalcface()
         sig=intangle(gdet*rho)
         plt.clf()
@@ -6058,14 +6149,14 @@ def oldstuff():
         #cvel()
         #plc(rho)
         grid3d("gdump.bin")
-        rfd("fieldline0000.bin")
+        rfdfirstfile()
         diskflux=diskfluxcalc(ny/2)
         ts,fs,md=fhorvstime(11)
         plotit(ts,fs/(diskflux),md)
     if False:
         #cd ~/run; for f in rtf*; do cd ~/run/$f; (nice -n 10 python  ~/py/mread/__init__.py &> python.out); done
         grid3d("gdump.bin")
-        rfd("fieldline0000.bin")
+        rfdfirstfile()
         diskflux=diskfluxcalc(ny/2)
         ts,fs,md,jem,jtot=mfjhorvstime(11)
         plotj(ts,fs/(diskflux),md,jem,jtot)
@@ -6084,7 +6175,7 @@ def oldstuff():
         #Plot qtys vs. time
         #cd ~/run; for f in rtf*; do cd ~/run/$f; (nice -n 10 python  ~/py/mread/__init__.py &> python.out); done
         grid3d("gdump.bin")
-        rfd("fieldline0000.bin")
+        rfdfirstfile()
         rhor=1+(1-a**2)**0.5
         ihor = np.floor(iofr(rhor)+0.5);
         #diskflux=diskfluxcalc(ny/2)
@@ -6102,7 +6193,9 @@ def oldstuff():
         test()
     if False:
         grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]) )
-        flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ))
+        #flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ))
+        flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+        sort_nicely(flist)
         for findex, fname in enumerate(flist):
             print( "Reading " + fname + " ..." )
             rfd("../"+fname)
@@ -6111,7 +6204,7 @@ def oldstuff():
         print( "Done!" )
     if False:
         grid3d("gdump.bin")
-        rfd("fieldline0000.bin")
+        rfdfirstfile()
         rhor=1+(1+a**2)**0.5
         ihor = np.floor(iofr(rhor)+0.5);
         hf=horfluxcalc(ihor)
@@ -6137,7 +6230,9 @@ def oldstuff():
             rhor=1+(1+a**2)**0.5
             ihor = np.floor(iofr(rhor)+0.5);
             qtymem=getqtyvstime(ihor,0.2)
-            flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
+            #flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
+            flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+            sort_nicely(flist) 
         fname=flist[whichi]
         print( "Processing " + fname + " ..." )
         sys.stdout.flush()
@@ -6153,7 +6248,12 @@ def oldstuff():
         grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]) )
         #rfd("fieldline0000.bin")  #to define _dx#
         #grid3dlight("gdump")
-        flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline0000.bin") ) )
+        #flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline0000.bin") ) )
+        flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+        sort_nicely(flist)
+        firstfieldlinefile=flist[0]
+        flist=[firstfieldlinefile]
+        #
         for findex, fname in enumerate(flist):
             if os.path.isfile("lrho%04d_xy%g.png" % (findex,len)):
                 print( "Skipping " + fname + " as lrho%04d_xy%g.png exists" % (findex,len) );
@@ -6173,11 +6273,14 @@ def oldstuff():
     #rfd("fieldline0002.bin")
     if False:
         grid3d( "gdump.bin" )
-        rfd("fieldline0000.bin")
+        rfdfirstfile()
         plt.clf();
         mkframe("lrho%04d" % 0, vmin=-8,vmax=0.2)
     if False:
-        grid3d("gdump"); rfd("fieldline0000.bin"); rrdump("rdump--0000"); plt.clf(); cvel(); plc(bsq,cb=True)
+        grid3d("gdump");
+        rfdfirstfile()
+        rrdump("rdump--0000");
+        plt.clf(); cvel(); plc(bsq,cb=True)
         plt.clf();plt.plot(x1[:,ny/2,0],(bsq/(2*(gam-1)*ug))[:,ny/2,0])
         plt.plot(x1[:,ny/2,0],(bsq/(2*(gam-1)*ug))[:,ny/2,0],'+')
         plt.plot(x1[:,ny/2,0],(0.01*rho)[:,ny/2,0])
@@ -6230,7 +6333,10 @@ def oldstuff():
         #pl(x1,aaphi2)
         pl(x1,aaphi1)
     if False:
-        rgfd("fieldline0000.bin")
+        flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+        sort_nicely(flist)
+        firstfieldlinefile=flist[0]
+        rgfd(firstfieldlinefile)
         if False:
             #generate your favorite vector potential
             aaphi=gen_vpot(whichfield=None)
@@ -6247,7 +6353,7 @@ def oldstuff():
             constbsqoug = 2*(gam-1)/beta
             #smooth bsqoug
             targbsqoug = constbsqoug*profile
-            rat = ( targbsqoug/(bsq/ug+1e-15) )**0.5
+            rat = ( targbsqoug*divideavoidinf(bsq/ug) )**0.5
             cvel()
         #rescale the field
         if False:
@@ -6396,7 +6502,7 @@ if __name__ == "__main__":
         if doreaddump:
             rd("dump0000.bin")
         #   or, instead of dump, you could read in fieldline0000.bin
-        rfd("fieldline0000.bin")
+        rfdfirstfile()
         #3 compute extra things
         docomputeextrathings = False
         if docomputeextrathings:

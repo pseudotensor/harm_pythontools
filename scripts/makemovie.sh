@@ -115,9 +115,10 @@ then
     # A) 
     
     export je=$(( $numparts - 1 ))
-    # above two must be exactly divisible
     export itot=$(( $runn/$numparts ))
     export ie=$(( $itot -1 ))
+
+    export resid=$(( $runn - $itot * $numparts ))
     
     echo "Running with $itot cores simultaneously"
     
@@ -127,28 +128,50 @@ then
     
     # LOOP:
     
-    for j in `seq 0 $je`
+    for j in `seq 0 $numparts`
     do
-        echo "Data vs. Time: Starting simultaneous run of $itot jobs for group $j"
-        for i in `seq 0 $ie`
-        do
-    	    export runi=$(( $i + $itot * $j ))
-    	    textrun="Data vs. Time: Running i=$i j=$j giving runi=$runi with runn=$runn"
-    	    #echo $textrun >> out
-    	    echo $textrun
-            # sleep in order for all threads not to read in at once and overwhelm the drive
-    	    sleep 5
-            # run job
-	    nohup python $myinitfile $runi $runn &> python_${runi}_${runn}.out &
-	done
-	wait
-	echo "Data vs. Time: Ending simultaneous run of $itot jobs for group $j"
+
+	if [ $j -eq $numparts ]
+	then
+	    if [ $resid -gt 0 ]
+	    then
+		residie=$(( $resid - 1 ))
+		ilist=`seq 0 $residie`
+		doilist=1
+	    else
+		doilist=0
+	    fi
+	else
+	    ilist=`seq 0 $ie`
+	    doilist=1
+	fi
+
+	if [ $doilist -eq 1 ]
+	then
+            echo "Data vs. Time: Starting simultaneous run of $itot jobs for group $j"
+            for i in $ilist
+            do
+    		export runi=$(( $i + $itot * $j ))
+    		textrun="Data vs. Time: Running i=$i j=$j giving runi=$runi with runn=$runn"
+    	        #echo $textrun >> out
+    		echo $textrun
+                # sleep in order for all threads not to read in at once and overwhelm the drive
+	        # No, fieldline file itself of up to order 400M should be cached in memory for most systems.
+    		sleep 1
+                # run job
+		nohup python $myinitfile $runi $runn &> python_${runi}_${runn}.out &
+	    done
+	    wait
+	    echo "Data vs. Time: Ending simultaneous run of $itot jobs for group $j"
+	fi
     done
     
     wait
-    #merge to single file
+
+    echo "Merge to single file"
     nohup python $myinitfile $runn $runn &> python_${runn}_${runn}.out
-    #generate the plots
+
+    echo "Generate the plots"
     nohup python $myinitfile &> python.plot.out
     
     # remove created file
@@ -181,6 +204,9 @@ then
     # B) Can choose vmin and vmax for lrho range in movie:
     # mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False)
     # mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True)
+    #
+    # C) Can choose frame size by changing plotlen=# where # is # of M that plot will go to in each direction.  Change plotlen when plotgen being setup in mkmovie().  Or directly change mkmovie(framesize=50) to another #.
+
 
     
     # 2) Now run job as before.  But makeing movie frames takes about 2X more memory, so increase parts by 2X
@@ -190,7 +216,6 @@ then
 
     
     export je=$(( $numparts - 1 ))
-    # above two must be exactly divisible
     export itot=$(( $runn/$numparts ))
     export ie=$(( $itot -1 ))
     
@@ -207,7 +232,7 @@ then
     	    #echo $textrun >> out
 	    echo $textrun
             # sleep in order for all threads not to read in at once and overwhelm the drive
-	    sleep 5
+	    sleep 1
 	    # run job
 	    nohup python $myinitfile2 $runi $runn &> python_${runi}_${runn}.2.out &
 	done
