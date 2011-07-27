@@ -2973,7 +2973,7 @@ def iofr(rval):
     res = interp1d(r[:,0,0], ti[:,0,0], kind='linear')
     return(np.floor(res(rval)+0.5))
 
-def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None):
+def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None,sigma=1500.):
     global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
     nqtyold=98
     nqty=98+32+1
@@ -3389,8 +3389,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     if epsFm is not None and epsFke is not None:
         FMraw    = mdtot[:,ihor]
         FM       = epsFm * mdtot[:,ihor]
-        FMavg    = epsFm * timeavg(mdtot,ts,fti,ftf)[ihor]
-        FMiniavg = epsFm * timeavg(mdtot,ts,iti,itf)[ihor] 
+        FMavg    = epsFm * timeavg(mdtot[:,ihor],ts,fti,ftf,sigma=sigma)
+        FMiniavg = epsFm * timeavg(mdtot[:,ihor],ts,iti,itf) 
         FEraw = -edtot[:,ihor]
         FE= epsFke*(FMraw-FEraw)
     else:
@@ -3409,7 +3409,10 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #######################
     if whichplot == 1:
         if dotavg:
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+FMavg,color=(ofc,fc,fc),linestyle=lst)
+            if FMavg.shape[0] == 1:
+                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+FMavg,color=(ofc,fc,fc),linestyle=lst)
+            else:
+                ax.plot(ts,FMavg,color=(ofc,fc,fc),linestyle=lst)
             if(iti>fti):
                 ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+mdotiniavg,color=(ofc,fc,fc))
                 
@@ -3473,13 +3476,16 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             etaw[icond]=etaw2[icond]
         if dotavg:
             etaj_avg = timeavg(etaj,ts,fti,ftf)
-            etabh_avg = timeavg(etabh,ts,fti,ftf)
+            etabh_avg = timeavg(etabh,ts,fti,ftf,sigma=sigma)
             etaw_avg = timeavg(etaw,ts,fti,ftf)
             ptot_avg = timeavg(pjemtot[:,ihor],ts,fti,ftf)
             if showextra:
                 ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaj_avg,'--',color=(fc,fc+0.5*(1-fc),fc)) 
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etabh_avg,color=(ofc,fc,fc),linestyle=lst) 
+            if etabh_avg.shape[0] == 1:
+                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etabh_avg,color=(ofc,fc,fc),linestyle=lst) 
+            else:
+                ax.plot(ts,etabh_avg,color=(ofc,fc,fc),linestyle=lst) 
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
             #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaw_avg,'-.',color=(fc,fc+0.5*(1-fc),fc)) 
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
@@ -3521,7 +3527,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
 
 
-        print( "eta_BH = %g, eta_j = %g, eta_w = %g, eta_jw = %g, mdot = %g, ptot_BH = %g" % ( etabh_avg, etaj_avg, etaw_avg, etaj_avg + etaw_avg, mdotfinavg, ptot_avg ) )
+        if etabh_avg.shape[0] == 1:
+            print( "eta_BH = %g, eta_j = %g, eta_w = %g, eta_jw = %g, mdot = %g, ptot_BH = %g" % ( etabh_avg, etaj_avg, etaw_avg, etaj_avg + etaw_avg, mdotfinavg, ptot_avg ) )
         if iti > fti:
             print( "eta_BH2 = %g, eta_j2 = %g, eta_w2 = %g, eta_jw2 = %g, mdot2 = %g, ptot2_BH = %g" % ( etabh2_avg, etaj2_avg, etaw2_avg, etaj2_avg + etaw2_avg, mdotiniavg, ptot2_avg ) )
 
@@ -3615,11 +3622,14 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             phij[icond]=phij2[icond]
             phiw[icond]=phiw2[icond]
         if dotavg:
-            phibh_avg = timeavg(phibh**2,ts,fti,ftf)**0.5
+            phibh_avg = timeavg(phibh**2,ts,fti,ftf,sigma=sigma)**0.5
             fstot_avg = timeavg(fstot[:,ihor]**2,ts,fti,ftf)**0.5
             if showextra:
                 ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phij**2,ts,fti,ftf)**0.5,'--',color=(fc,fc+0.5*(1-fc),fc))
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+phibh_avg,color=(ofc,fc,fc),linestyle=lst)
+            if phibh_avg.shape[0] == 1:
+                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+phibh_avg,color=(ofc,fc,fc),linestyle=lst)
+            else:
+                ax.plot(ts,phibh_avg,color=(ofc,fc,fc),linestyle=lst)
             #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phiw**2,ts,fti,ftf)**0.5,'-.',color=(fc,fc,1))
             if(iti>fti):
                 phibh2_avg = timeavg(phibh2**2,ts,iti,itf)**0.5
@@ -3654,7 +3664,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         if showextra:
             plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
         plt.setp( ax.get_xticklabels(), visible=False )
-        print( "phi_BH = %g, fstot = %g" % ( phibh_avg, fstot_avg ) )
+        if phibh_avg.shape[0] == 1:
+            print( "phi_BH = %g, fstot = %g" % ( phibh_avg, fstot_avg ) )
         if iti > fti:
             print( "phi2_BH = %g, fstot2 = %g" % ( phibh2_avg, fstot2_avg ) )
 
@@ -3929,12 +3940,26 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         plt.grid()
         plt.savefig('pjet4_%s.pdf' % os.path.basename(os.getcwd()) )
 
-def timeavg( qty, ts, fti, ftf, step = 1 ):
-    cond = (ts<ftf)*(ts>=fti)
-    #use masked array to remove any stray NaN's
-    qtycond = np.ma.masked_array(qty[cond],np.isnan(qty[cond]))
-    qtycond = qtycond[::step]
-    qtyavg = qtycond.mean(axis=0,dtype=np.float64)
+def gaussf( x, x0, sigma ):
+    """ Returns normalized Gaussian centered at x0 with stdev sigma """
+    return( np.exp(-0.5*(x-x0)**2/sigma**2) / (np.sqrt(2*np.pi)*sigma) )
+
+def timeavg( qty, ts, fti, ftf, step = 1, sigma = None ):
+    if sigma is None:
+        cond = (ts<ftf)*(ts>=fti)
+        #use masked array to remove any stray NaN's
+        qtycond = np.ma.masked_array(qty[cond],np.isnan(qty[cond]))
+        qtycond = qtycond[::step]
+        qtyavg = qtycond.mean(axis=0,dtype=np.float64)
+    else:
+        qtycond = np.ma.masked_array(qty,np.isnan(qty))
+        qtyavg=np.zeros_like(qtycond)
+        for (i0,t0) in enumerate(ts):
+            mygauss_at_t0 = gaussf( ts, t0, sigma )
+            #assumes uniform spacing in time
+            if qtycond.ndim == 2:
+                mygauss_at_t0 = mygauss_at_t0[:,None]
+            qtyavg[i0] += (qtycond * mygauss_at_t0).sum(axis=0) / mygauss_at_t0.sum()
     return( qtyavg )
 
 def getstagparams(var=None,rmax=20,doplot=1,doreadgrid=1):
