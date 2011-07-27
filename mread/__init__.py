@@ -3606,8 +3606,30 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     # thickdisk models
     windplotfactor=0.1
     #
+    sashaplot1=0
     #
-    if whichplot == 1:
+    if whichplot == 1 and sashaplot1 == 1:
+        if dotavg:
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+FMavg,color=(ofc,fc,fc),linestyle=lst)
+            if(iti>fti):
+                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+mdotiniavg,color=(ofc,fc,fc))
+                
+        ax.plot(ts,np.abs(FM),clr,label=r'$\dot Mc^2$')
+        if findex != None:
+            if not isinstance(findex,tuple):
+                ax.plot(ts[findex],np.abs(FM)[findex],'o',mfc='r')
+            else:
+                for fi in findex:
+                    ax.plot(ts[fi],np.abs(FM)[fi],'o',mfc='r')#,label=r'$\dot M$')
+        #ax.legend(loc='upper left')
+        ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,labelpad=9)
+        plt.setp( ax.get_xticklabels(), visible=False)
+        ax.set_xlim(ts[0],ts[-1])
+        if showextra:
+            plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderaxespad=0,frameon=True,labelspacing=0)
+    #
+    #
+    if whichplot == 1 and sashaplot1 == 0:
         if dotavg:
             ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotfinavg,color=(ofc,fc,fc))
             if showextra:
@@ -3643,22 +3665,6 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         #ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,labelpad=9)
         ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,ha='left',labelpad=20)
         #
-# New by Sasha:
-#
-#            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+FMavg,color=(ofc,fc,fc),linestyle=lst)
-#            if(iti>fti):
-#                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+mdotiniavg,color=(ofc,fc,fc))
-#                
-#        ax.plot(ts,np.abs(FM),clr,label=r'$\dot Mc^2$')
-#        if findex != None:
-#            if not isinstance(findex,tuple):
-#                ax.plot(ts[findex],np.abs(FM)[findex],'o',mfc='r')
-#            else:
-#                for fi in findex:
-#                    ax.plot(ts[fi],np.abs(FM)[fi],'o',mfc='r')#,label=r'$\dot M$')
-#        #ax.legend(loc='upper left')
-#        ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,labelpad=9)
-#
         plt.setp( ax.get_xticklabels(), visible=False)
         ax.set_xlim(ts[0],ts[-1])
         if showextra:
@@ -3677,6 +3683,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             plt.setp(ltext, fontsize=12)    # the legend text fontsize
             #plt.setp(llines, linewidth=1.5)      # the legend linewidth
             #leg.draw_frame(False)           # don't draw the legend frame
+    #
+    #
     #######################
     #
     # Pjet
@@ -3709,7 +3717,12 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     # eta ***
     #
     #######################
-    if whichplot == 4:
+    #
+    sashaplot4=0
+    #
+    #
+    #
+    if whichplot == 4 and sashaplot4 == 1:
         etabh = prefactor*FE/FMavg
         etaj = prefactor*pjke_mu2[:,iofr(100)]/mdotfinavg
         etaw = prefactor*(pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotfinavg
@@ -3775,7 +3788,94 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         print( "eta_BH = %g, eta_j = %g, eta_w = %g, eta_jw = %g, mdot = %g, ptot_BH = %g" % ( etabh_avg, etaj_avg, etaw_avg, etaj_avg + etaw_avg, mdotfinavg, ptot_avg ) )
         if iti > fti:
             print( "eta_BH2 = %g, eta_j2 = %g, eta_w2 = %g, eta_jw2 = %g, mdot2 = %g, ptot2_BH = %g" % ( etabh2_avg, etaj2_avg, etaw2_avg, etaj2_avg + etaw2_avg, mdotiniavg, ptot2_avg ) )
+    #
+    #
+    #
+    if whichplot == 4 and sashaplot4 == 0:
+        etabh = prefactor*pjemtot[:,ihor]/mdotfinavg
+        #etaj = prefactor*pjke_mu2[:,iofr(rjet)]/mdotfinavg
+        #etaw = prefactor*(pjke_mu1-pjke_mu2)[:,iofr(rjet)]/mdotfinavg
+        etaj = prefactor*pjke_mu1[:,iofr(rjet)]/mdotfinavg
+        etaw = prefactor*pjke_mumax1[:,iofr(rjet)]/mdotfinavg
+        #
+        etabh2 = prefactor*pjemtot[:,ihor]/mdotiniavg
+        #etaj2 = prefactor*pjke_mu2[:,iofr(rjet)]/mdotiniavg
+        #etaw2 = prefactor*(pjke_mu1-pjke_mu2)[:,iofr(rjet)]/mdotiniavg
+        etaj2 = prefactor*pjke_mu1[:,iofr(rjet)]/mdotiniavg
+        etaw2 = prefactor*pjke_mumax1[:,iofr(rjet)]/mdotiniavg
+        #
+        if(1 and iti>fti):
+            #use mdot averaged over the same time interval for iti<t<=itf
+            icond=(ts>=iti)*(ts<itf)
+            etabh[icond]=etabh2[icond]
+            etaj[icond]=etaj2[icond]
+            etaw[icond]=etaw2[icond]
+        if dotavg:
+            etaj_avg = timeavg(etaj,ts,fti,ftf)
+            etabh_avg = timeavg(etabh,ts,fti,ftf)
+            etaw_avg = timeavg(etaw,ts,fti,ftf)
+            ptot_avg = timeavg(pjemtot[:,ihor],ts,fti,ftf)
+            #
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etabh_avg,color=(ofc,fc,fc)) 
+            if showextra:
+                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaj_avg,'--',color=(fc,fc+0.5*(1-fc),fc)) 
+                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaw_avg,'-.',color=(fc,fc+0.5*(1-fc),fc)) 
+            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+            if(iti>fti):
+                etaj2_avg = timeavg(etaj2,ts,iti,itf)
+                etabh2_avg = timeavg(etabh2,ts,iti,itf)
+                etaw2_avg = timeavg(etaw2,ts,iti,itf)
+                ptot2_avg = timeavg(pjemtot[:,ihor],ts,iti,itf)
+                #
+                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etabh2_avg,color=(ofc,fc,fc))
+                if showextra:
+                    ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etaj2_avg,'--',color=(fc,fc+0.5*(1-fc),fc))
+                    ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etaw2_avg,'-.',color=(fc,fc+0.5*(1-fc),fc))
+        #
+        ax.plot(ts,etabh,clr,label=r'$\eta_{\rm BH}$')
+        if showextra:
+            ax.plot(ts,etaj,'g--',label=r'$\eta_{\rm jet}$')
+            ax.plot(ts,etaw,'b-.',label=r'$\eta_{\rm wind}$')
+        if findex != None:
+            if not isinstance(findex,tuple):
+                ax.plot(ts[findex],etabh[findex],'o',mfc='r')
+                if showextra:
+                    ax.plot(ts[findex],etaj[findex],'gs')
+                    ax.plot(ts[findex],etaw[findex],'bv')
+            else:
+                for fi in findex:
+                    ax.plot(ts[fi],etabh[fi],'o',mfc='r')#,label=r'$\dot M$')
+                    if showextra:
+                        ax.plot(ts[fi],etaw[fi],'bv')#,label=r'$\dot M$')
+                        ax.plot(ts[fi],etaj[fi],'gs')#,label=r'$\dot M$')
+        #ax.set_ylim(0,2)
+        ax.set_xlabel(r'$t\;[r_g/c]$',fontsize=16)
+        ax.set_ylabel(r'$\eta\ [\%]$',fontsize=16,ha='left',labelpad=20)
+        ax.set_xlim(ts[0],ts[-1])
+        if showextra:
+            plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
+            # set some legend properties.  All the code below is optional.  The
+            # defaults are usually sensible but if you need more control, this
+            # shows you how
+            leg = plt.gca().get_legend()
+            ltext  = leg.get_texts()  # all the text.Text instance in the legend
+            llines = leg.get_lines()  # all the lines.Line2D instance in the legend
+            frame  = leg.get_frame()  # the patch.Rectangle instance surrounding the legend
+            # see text.Text, lines.Line2D, and patches.Rectangle for more info on
+            # the settable properties of lines, text, and rectangles
+            #frame.set_facecolor('0.80')      # set the frame face color to light gray
+            plt.setp(ltext, fontsize=12)    # the legend text fontsize
+            #plt.setp(llines, linewidth=1.5)      # the legend linewidth
+            #leg.draw_frame(False)           # don't draw the legend frame
 
+
+        print( "eta_BH = %g, eta_j = %g, eta_w = %g, eta_jw = %g, mdot = %g, mdotwind=%g, mdotjet=%g, ptot_BH = %g" % ( etabh_avg, etaj_avg, etaw_avg, etaj_avg + etaw_avg, mdotfinavg, mdotwindfinavg, mdotjetfinavg, ptot_avg ) )
+        if iti > fti:
+            print( "eta_BH2 = %g, eta_j2 = %g, eta_w2 = %g, eta_jw2 = %g, mdot2 = %g, mdotwind2=%g , mdotjet2=%g, ptot2_BH = %g" % ( etabh2_avg, etaj2_avg, etaw2_avg, etaj2_avg + etaw2_avg, mdotiniavg, mdotwindiniavg, mdotjetiniavg, ptot2_avg ) )
+
+        #xxx
     #######################
     #
     # eta NEW ***
@@ -3871,6 +3971,10 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     # \Phi ***
     #
     #######################
+    #        
+    sashaplot5 = 0
+    #        
+    #        
     if whichplot == 5:
         # choose radius to measure jet quantities
         #
@@ -3914,13 +4018,15 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             phijn_avg = timeavg(phijn**2,ts,fti,ftf)**0.5
             phijs_avg = timeavg(phijn**2,ts,fti,ftf)**0.5
             #
-            if showextra:
-                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phij**2,ts,fti,ftf)**0.5,'--',color=(fc,fc+0.5*(1-fc),fc))
-                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phiw**2,ts,fti,ftf)**0.5,'-.',color=(fc,fc,1))
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+phibh_avg,color=(ofc,fc,fc))
-# sasha 2 next
-#            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+phibh_avg,color=(ofc,fc,fc),linestyle=lst)
-#            #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phiw**2,ts,fti,ftf)**0.5,'-.',color=(fc,fc,1))
+            if sashaplot5==0:
+                if showextra:
+                    ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phij**2,ts,fti,ftf)**0.5,'--',color=(fc,fc+0.5*(1-fc),fc))
+                    ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phiw**2,ts,fti,ftf)**0.5,'-.',color=(fc,fc,1))
+                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+phibh_avg,color=(ofc,fc,fc))
+            else:
+                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+phibh_avg,color=(ofc,fc,fc),linestyle=lst)
+                #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phiw**2,ts,fti,ftf)**0.5,'-.',color=(fc,fc,1))
+            #
             if(iti>fti):
                 phibh2_avg = timeavg(phibh2**2,ts,iti,itf)**0.5
                 fstot2_avg = timeavg(fstot[:,ihor]**2,ts,iti,itf)**0.5
