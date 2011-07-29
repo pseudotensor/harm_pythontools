@@ -47,7 +47,7 @@ import re
 #http://fnielsen.posterous.com/where-is-the-sign-function-in-python
 
 def divideavoidinf(x):
-    SMALL=1E-300
+    SMALL=1E-30
     y=1.0*np.sign(x)/(np.fabs(x)+SMALL)
     return(y)
 
@@ -1814,6 +1814,8 @@ def rfd(fieldlinefilename,**kwargs):
 
 def cvel():
     global ud,etad, etau, gamma, vu, vd, bu, bd, bsq
+    #
+    #
     ud = mdot(gv3,uu)                  #g_mn u^n
     etad = np.zeros_like(uu)
     etad[0] = -1/(-gn3[0,0])**0.5      #ZAMO frame velocity (definition)
@@ -2344,8 +2346,10 @@ def mergeqtyvstime(n):
     np.save( fname , qtymem )
     print( "Done!" )
         
-
-def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
+#Sasha:
+#def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
+#Jon:
+def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
     """
     Returns a tuple (ts,fs,mdot,pjetem,pjettot): lists of times, horizon fluxes, and Mdot
     """
@@ -2362,8 +2366,11 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
     #
     nqtyold=98+134*(dobob==1)
     nqtyold2=98+134*(dobob==1)+32+1
-    # jon's mumax addition and edm addition
-    nqty=98+134*(dobob==1)+32+1+8+2+1
+    # jon's mumax addition and edm addition and ldot stuff
+    nqty=98+134*(dobob==1)+32 +2 +1+8+2+1+33
+    nqty=134*(dobob==1) + 1+4+14+14+15+17+7+13+9+10+40+33
+    # should be 177 things
+    #
     #store 1D data
     numtimeslices=len(flist)
     qtymem=np.zeros((nqty,numtimeslices,nx),dtype=np.float32)
@@ -2398,11 +2405,14 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
         numtimeslices2 = 0
     #qty defs
     i=0
+    # 1
     ts=qtymem[i,:,0];i+=1
-    #HoverR
+    #HoverR: 4
     hoverr=qtymem[i];i+=1
     thetamid=qtymem[i];i+=1
-    #rhosq:
+    hoverrcorona=qtymem[i];i+=1
+    thetamidcorona=qtymem[i];i+=1
+    #rhosq: 14
     rhosqs=qtymem[i];i+=1
     rhosrhosq=qtymem[i];i+=1
     ugsrhosq=qtymem[i];i+=1
@@ -2417,7 +2427,7 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
     Bas2rhosq=qtymem[i];i+=1
     Bs3rhosq=qtymem[i];i+=1
     Bas3rhosq=qtymem[i];i+=1
-    #2h
+    #2h: 14
     gdetint2h=qtymem[i];i+=1
     rhos2h=qtymem[i];i+=1
     ugs2h=qtymem[i];i+=1
@@ -2432,7 +2442,7 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
     Bas22h=qtymem[i];i+=1
     Bs32h=qtymem[i];i+=1
     Bas32h=qtymem[i];i+=1
-    #4h
+    #4h: 15
     gdetint4h=qtymem[i];i+=1
     rhos4h=qtymem[i];i+=1
     ugs4h=qtymem[i];i+=1
@@ -2447,7 +2457,7 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
     Bas24h=qtymem[i];i+=1
     Bs34h=qtymem[i];i+=1
     Bas34h=qtymem[i];i+=1
-    #2hor
+    #2hor: 17
     gdetint2hor=qtymem[i];i+=1
     rhos2hor=qtymem[i];i+=1
     ugs2hor=qtymem[i];i+=1
@@ -2465,7 +2475,7 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
     Bas22hor=qtymem[i];i+=1
     Bs32hor=qtymem[i];i+=1
     Bas32hor=qtymem[i];i+=1
-    #Flux
+    #Flux: 7
     fstot=qtymem[i];i+=1
     fs2hor=qtymem[i];i+=1
     fsj5=qtymem[i];i+=1
@@ -2473,7 +2483,7 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
     fsj20=qtymem[i];i+=1
     fsj30=qtymem[i];i+=1
     fsj40=qtymem[i];i+=1
-    #Mdot
+    #Mdot: 13
     mdtot=qtymem[i];i+=1
     md2h=qtymem[i];i+=1
     md4h=qtymem[i];i+=1
@@ -2487,7 +2497,7 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
     md40=qtymem[i];i+=1
     mdrhosq=qtymem[i];i+=1
     mdtotbound=qtymem[i];i+=1
-    #Edot
+    #Edot: 9
     edtot=qtymem[i];i+=1
     ed2h=qtymem[i];i+=1
     ed4h=qtymem[i];i+=1
@@ -2497,7 +2507,7 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
     edm=qtymem[i];i+=1
     edtotbound=qtymem[i];i+=1
     edmabound=qtymem[i];i+=1
-    #Pjet
+    #Pjet : 10
     pjem5=qtymem[i];i+=1
     pjem10=qtymem[i];i+=1
     pjem20=qtymem[i];i+=1
@@ -2510,6 +2520,7 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
     pjma40=qtymem[i];i+=1
     #new format?
     if qtymem.shape[0] > nqtyold:
+        # 40 more from pjem_n_mu10 to phiabsj_s_mumax1
         #yes!
         pjem_n_mu10=qtymem[i];i+=1
         pjem_n_mu5=qtymem[i];i+=1
@@ -2551,10 +2562,43 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
         phiabsj_s_mu2=qtymem[i];i+=1
         phiabsj_s_mu1=qtymem[i];i+=1
         phiabsj_s_mumax1=qtymem[i];i+=1
-        if i < qtymem.shape[0]:
-            ldtot=qtymem[i];i+=1
-        else:
-            ldtot=None
+        #
+        # 3+15+15=33 more ldot -> ljma_s_mumax1
+        ldtot=qtymem[i];i+=1
+        ldma=qtymem[i];i+=1
+        ldm=qtymem[i];i+=1
+        # and ldemtot = ldtot - ldmatot
+        ljem_n_mu10=qtymem[i];i+=1
+        ljem_n_mu5=qtymem[i];i+=1
+        ljem_n_mu2=qtymem[i];i+=1
+        ljem_n_mu1=qtymem[i];i+=1
+        ljem_n_mumax1=qtymem[i];i+=1
+        ljrm_n_mu10=qtymem[i];i+=1
+        ljrm_n_mu5=qtymem[i];i+=1
+        ljrm_n_mu2=qtymem[i];i+=1
+        ljrm_n_mu1=qtymem[i];i+=1
+        ljrm_n_mumax1=qtymem[i];i+=1
+        ljma_n_mu10=qtymem[i];i+=1
+        ljma_n_mu5=qtymem[i];i+=1
+        ljma_n_mu2=qtymem[i];i+=1
+        ljma_n_mu1=qtymem[i];i+=1
+        ljma_n_mumax1=qtymem[i];i+=1
+        #
+        ljem_s_mu10=qtymem[i];i+=1
+        ljem_s_mu5=qtymem[i];i+=1
+        ljem_s_mu2=qtymem[i];i+=1
+        ljem_s_mu1=qtymem[i];i+=1
+        ljem_s_mumax1=qtymem[i];i+=1
+        ljrm_s_mu10=qtymem[i];i+=1
+        ljrm_s_mu5=qtymem[i];i+=1
+        ljrm_s_mu2=qtymem[i];i+=1
+        ljrm_s_mu1=qtymem[i];i+=1
+        ljrm_s_mumax1=qtymem[i];i+=1
+        ljma_s_mu10=qtymem[i];i+=1
+        ljma_s_mu5=qtymem[i];i+=1
+        ljma_s_mu2=qtymem[i];i+=1
+        ljma_s_mu1=qtymem[i];i+=1
+        ljma_s_mumax1=qtymem[i];i+=1
     else:
         print( "Oldish format: missing north/south jet power and flux" )
         sys.stdout.flush()
@@ -2599,6 +2643,38 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
         phiabsj_s_mu1=None
         phiabsj_s_mumax1=None
         ldtot=None
+        ldma=None
+        ldm=None
+        ljem_n_mu10=None
+        ljem_n_mu5=None
+        ljem_n_mu2=None
+        ljem_n_mu1=None
+        ljem_n_mumax1=None
+        ljrm_n_mu10=None
+        ljrm_n_mu5=None
+        ljrm_n_mu2=None
+        ljrm_n_mu1=None
+        ljrm_n_mumax1=None
+        ljma_n_mu10=None
+        ljma_n_mu5=None
+        ljma_n_mu2=None
+        ljma_n_mu1=None
+        ljma_n_mumax1=None
+        ljem_s_mu10=None
+        ljem_s_mu5=None
+        ljem_s_mu2=None
+        ljem_s_mu1=None
+        ljem_s_mumax1=None
+        ljrm_s_mu10=None
+        ljrm_s_mu5=None
+        ljrm_s_mu2=None
+        ljrm_s_mu1=None
+        ljrm_s_mumax1=None
+        ljma_s_mu10=None
+        ljma_s_mu5=None
+        ljma_s_mu2=None
+        ljma_s_mu1=None
+        ljma_s_mumax1=None
     if dobob == 1:
         print "Total number of quantities: %d+134 = %d" % (i, i+134)
     else:
@@ -2624,11 +2700,22 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
         cvel()
         Tcalcud()
         ts[findex]=t
+        ###
         #HoverR
-        diskcondition=bsq/rho<10
+        #diskcondition=bsq/rho<1
+        beta=((gam-1)*ug)*divideavoidinf(bsq*0.5)
+        diskcondition=(beta>3.0)
+        diskcondition=diskcondition*(bsq/rho<1.0)
         hoverr3d,thetamid3d=horcalc(which=diskcondition)
         hoverr[findex]=hoverr3d.sum(2).sum(1)/(ny*nz)
         thetamid[findex]=thetamid3d.sum(2).sum(1)/(ny*nz)
+        #
+        coronacondition=(beta<1.0/3.0)
+        coronacondition=coronacondition*(bsq/rho<1.0)
+        hoverr3dcorona,thetamid3dcorona=horcalc(which=coronacondition)
+        hoverrcorona[findex]=hoverr3dcorona.sum(2).sum(1)/(ny*nz)
+        thetamidcorona[findex]=thetamid3dcorona.sum(2).sum(1)/(ny*nz)
+        ###
         #rhosq:
         keywordsrhosq={'which': diskcondition}
         gdetint=intangle(gdet,**keywordsrhosq)
@@ -2750,7 +2837,7 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
         pjma20[findex]=jetpowcalc(1,minbsqorho=20)
         pjma30[findex]=jetpowcalc(1,minbsqorho=30)
         pjma40[findex]=jetpowcalc(1,minbsqorho=40)
-
+        #
         #new format?
         if qtymem.shape[0] > nqtyold:
             #yes!
@@ -2796,9 +2883,42 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
             phiabsj_s_mu2[findex]=jetpowcalc(4,mumin=2,donorthsouth=-1)
             phiabsj_s_mu1[findex]=jetpowcalc(4,mumin=1,donorthsouth=-1)
             phiabsj_s_mumax1[findex]=jetpowcalc(4,mumax=1,maxbeta=3,donorthsouth=-1)
-            if ldtot is not None:
-                ldtot[findex]=intangle(gdet*Tud[1][3])
-
+            #
+            ldtot[findex]=intangle(gdet*Tud[1][3]/dxdxp[3,3])
+            ldma[findex]=intangle(gdet*TudMA[1][3]/dxdxp[3,3])
+            ldm[findex]=intangle(0.0*gdet*rho*uu[3]/dxdxp[3,3])
+            #
+            ljem_n_mu10[findex]=jetpowcalc(10,mumin=10,donorthsouth=1)
+            ljem_n_mu5[findex]=jetpowcalc(10,mumin=5,donorthsouth=1)
+            ljem_n_mu2[findex]=jetpowcalc(10,mumin=2,donorthsouth=1)
+            ljem_n_mu1[findex]=jetpowcalc(10,mumin=1,donorthsouth=1)
+            ljem_n_mumax1[findex]=jetpowcalc(10,mumax=1,maxbeta=3,donorthsouth=1)
+            ljrm_n_mu10[findex]=jetpowcalc(13,mumin=10,donorthsouth=1)
+            ljrm_n_mu5[findex]=jetpowcalc(13,mumin=5,donorthsouth=1)
+            ljrm_n_mu2[findex]=jetpowcalc(13,mumin=2,donorthsouth=1)
+            ljrm_n_mu1[findex]=jetpowcalc(13,mumin=1,donorthsouth=1)
+            ljrm_n_mumax1[findex]=jetpowcalc(13,mumax=1,maxbeta=3,donorthsouth=1)
+            ljma_n_mu10[findex]=jetpowcalc(11,mumin=10,donorthsouth=1)
+            ljma_n_mu5[findex]=jetpowcalc(11,mumin=5,donorthsouth=1)
+            ljma_n_mu2[findex]=jetpowcalc(11,mumin=2,donorthsouth=1)
+            ljma_n_mu1[findex]=jetpowcalc(11,mumin=1,donorthsouth=1)
+            ljma_n_mumax1[findex]=jetpowcalc(11,mumax=1,maxbeta=3,donorthsouth=1)
+            #
+            ljem_s_mu10[findex]=jetpowcalc(10,mumin=10,donorthsouth=-1)
+            ljem_s_mu5[findex]=jetpowcalc(10,mumin=5,donorthsouth=-1)
+            ljem_s_mu2[findex]=jetpowcalc(10,mumin=2,donorthsouth=-1)
+            ljem_s_mu1[findex]=jetpowcalc(10,mumin=1,donorthsouth=-1)
+            ljem_s_mumax1[findex]=jetpowcalc(10,mumax=1,maxbeta=3,donorthsouth=-1)
+            ljrm_s_mu10[findex]=jetpowcalc(13,mumin=10,donorthsouth=-1)
+            ljrm_s_mu5[findex]=jetpowcalc(13,mumin=5,donorthsouth=-1)
+            ljrm_s_mu2[findex]=jetpowcalc(13,mumin=2,donorthsouth=-1)
+            ljrm_s_mu1[findex]=jetpowcalc(13,mumin=1,donorthsouth=-1)
+            ljrm_s_mumax1[findex]=jetpowcalc(13,mumax=1,maxbeta=3,donorthsouth=-1)
+            ljma_s_mu10[findex]=jetpowcalc(11,mumin=10,donorthsouth=-1)
+            ljma_s_mu5[findex]=jetpowcalc(11,mumin=5,donorthsouth=-1)
+            ljma_s_mu2[findex]=jetpowcalc(11,mumin=2,donorthsouth=-1)
+            ljma_s_mu1[findex]=jetpowcalc(11,mumin=1,donorthsouth=-1)
+            ljma_s_mumax1[findex]=jetpowcalc(11,mumax=1,maxbeta=3,donorthsouth=-1)
         #Bob's 1D quantities
         if dobob==1:
                 dVF=_dx1*_dx2*_dx3
@@ -3091,15 +3211,24 @@ def faraday():
 
 
 def jetpowcalc(which=2,minbsqorho=10,mumin=None,mumax=None,maxbeta=None,donorthsouth=0):
+    if which==3:
+        #rest-mass flux
+        jetpowden = gdet*rho*uu[1]
     if which==0:
         jetpowden = -gdet*TudEM[1,0]
     if which==1:
         jetpowden = -gdet*TudMA[1,0]
     if which==2:
         jetpowden = -gdet*Tud[1,0]
-    if which==3:
+    if which==10:
+        jetpowden = gdet*TudEM[1,3]/dxdxp[3,3]
+    if which==11:
+        jetpowden = gdet*TudMA[1,3]/dxdxp[3,3]
+    if which==12:
+        jetpowden = gdet*Tud[1,3]/dxdxp[3,3]
+    if which==13:
         #rest-mass flux
-        jetpowden = gdet*rho*uu[1]
+        jetpowden = 0.0*gdet*rho*uu[3]*dxdxp[3,3]
     if which==4:
         #phi (mag. flux)
         jetpowden = np.abs(gdetB[1])
@@ -3185,8 +3314,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     nqtyold=98
     nqtyold2=98+32+1
-    # with jon's mumax and new eff definition
-    nqty=98+32+1+8+2+1
+    # with jon's mumax and new eff and new ldot stuff
+    nqty=1+4+14+14+15+17+7+13+9+10+40+33
     ###############################
     #copy this from getqtyvstime()
     ###############################
@@ -3198,6 +3327,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         #HoverR
         hoverr=qtymem[i];i+=1
         thetamid=qtymem[i];i+=1
+        hoverrcorona=qtymem[i];i+=1
+        thetamidcorona=qtymem[i];i+=1
         #rhosq:
         rhosqs=qtymem[i];i+=1
         rhosrhosq=qtymem[i];i+=1
@@ -3283,6 +3414,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         #HoverR
         hoverr=qtymem[i];i+=1
         thetamid=qtymem[i];i+=1
+        hoverrcorona=qtymem[i];i+=1
+        thetamidcorona=qtymem[i];i+=1
         #rhosq:
         rhosqs=qtymem[i];i+=1
         rhosrhosq=qtymem[i];i+=1
@@ -3378,6 +3511,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         edm=qtymem[i];i+=1
         edtotbound=qtymem[i];i+=1
         edmabound=qtymem[i];i+=1
+        #
         #Pjet
         pjem5=qtymem[i];i+=1
         pjem10=qtymem[i];i+=1
@@ -3433,10 +3567,45 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             phiabsj_s_mu2=qtymem[i];i+=1
             phiabsj_s_mu1=qtymem[i];i+=1
             phiabsj_s_mumax1=qtymem[i];i+=1
-            if i < qtymem.shape[0]:
-                ldtot=qtymem[i];i+=1
-            else:
-                ldtot=None
+            #
+            #
+            ldtot=qtymem[i];i+=1
+            ldma=qtymem[i];i+=1
+            ldm=qtymem[i];i+=1            
+            #
+            ljem_n_mu10=qtymem[i];i+=1
+            ljem_n_mu5=qtymem[i];i+=1
+            ljem_n_mu2=qtymem[i];i+=1
+            ljem_n_mu1=qtymem[i];i+=1
+            ljem_n_mumax1=qtymem[i];i+=1
+            ljrm_n_mu10=qtymem[i];i+=1
+            ljrm_n_mu5=qtymem[i];i+=1
+            ljrm_n_mu2=qtymem[i];i+=1
+            ljrm_n_mu1=qtymem[i];i+=1
+            ljrm_n_mumax1=qtymem[i];i+=1
+            ljma_n_mu10=qtymem[i];i+=1
+            ljma_n_mu5=qtymem[i];i+=1
+            ljma_n_mu2=qtymem[i];i+=1
+            ljma_n_mu1=qtymem[i];i+=1
+            ljma_n_mumax1=qtymem[i];i+=1
+            #
+            ljem_s_mu10=qtymem[i];i+=1
+            ljem_s_mu5=qtymem[i];i+=1
+            ljem_s_mu2=qtymem[i];i+=1
+            ljem_s_mu1=qtymem[i];i+=1
+            ljem_s_mumax1=qtymem[i];i+=1
+            ljrm_s_mu10=qtymem[i];i+=1
+            ljrm_s_mu5=qtymem[i];i+=1
+            ljrm_s_mu2=qtymem[i];i+=1
+            ljrm_s_mu1=qtymem[i];i+=1
+            ljrm_s_mumax1=qtymem[i];i+=1
+            ljma_s_mu10=qtymem[i];i+=1
+            ljma_s_mu5=qtymem[i];i+=1
+            ljma_s_mu2=qtymem[i];i+=1
+            ljma_s_mu1=qtymem[i];i+=1
+            ljma_s_mumax1=qtymem[i];i+=1
+            #
+            ################
             #derived
             pjke_n_mu2 = pjem_n_mu2 + pjma_n_mu2 - pjrm_n_mu2
             pjke_s_mu2 = pjem_s_mu2 + pjma_s_mu2 - pjrm_s_mu2
@@ -3452,6 +3621,16 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             pjke_s_mumax1 = pjem_s_mumax1 + pjma_s_mumax1 - pjrm_s_mumax1
             pjke_mumax1 = pjke_n_mumax1 + pjke_s_mumax1
             phiabsj_mumax1 = phiabsj_n_mumax1 + phiabsj_s_mumax1
+            #
+            ldem = ldtot - ldma
+            #
+            ljke_n_mu1 = ljem_n_mu1 + ljma_n_mu1 - ljrm_n_mu1
+            ljke_s_mu1 = ljem_s_mu1 + ljma_s_mu1 - ljrm_s_mu1
+            ljke_mu1 = ljke_n_mu1 + ljke_s_mu1
+            #
+            ljke_n_mumax1 = ljem_n_mumax1 + ljma_n_mumax1 - ljrm_n_mumax1
+            ljke_s_mumax1 = ljem_s_mumax1 + ljma_s_mumax1 - ljrm_s_mumax1
+            ljke_mumax1 = ljke_n_mumax1 + ljke_s_mumax1
         else:
             print( "Oldish format: missing north/south jet power and flux" )
             sys.stdout.flush()
@@ -3495,7 +3674,42 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             phiabsj_s_mu2=None
             phiabsj_s_mu1=None
             phiabsj_s_mumax1=None
+            #
             ldtot=None
+            ldma=None
+            ldm=None
+            ljem_n_mu10=None
+            ljem_n_mu5=None
+            ljem_n_mu2=None
+            ljem_n_mu1=None
+            ljem_n_mumax1=None
+            ljrm_n_mu10=None
+            ljrm_n_mu5=None
+            ljrm_n_mu2=None
+            ljrm_n_mu1=None
+            ljrm_n_mumax1=None
+            ljma_n_mu10=None
+            ljma_n_mu5=None
+            ljma_n_mu2=None
+            ljma_n_mu1=None
+            ljma_n_mumax1=None
+            ljem_s_mu10=None
+            ljem_s_mu5=None
+            ljem_s_mu2=None
+            ljem_s_mu1=None
+            ljem_s_mumax1=None
+            ljrm_s_mu10=None
+            ljrm_s_mu5=None
+            ljrm_s_mu2=None
+            ljrm_s_mu1=None
+            ljrm_s_mumax1=None
+            ljma_s_mu10=None
+            ljma_s_mu5=None
+            ljma_s_mu2=None
+            ljma_s_mu1=None
+            ljma_s_mumax1=None
+            #
+            ############
             #derived
             pjke_n_mu2=None
             pjke_s_mu2=None
@@ -3509,6 +3723,18 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             pjke_s_mumax1=None
             pjke_mumax1=None
             phiabsj_mumax1=None
+            #
+            ldem = ldtot - ldma
+            ljke_n_mu2=None
+            ljke_s_mu2=None
+            ljke_mu2=None
+            ljke_n_mu1=None
+            ljke_s_mu1=None
+            ljke_mu1=None
+            ljke_n_mumax1=None
+            ljke_s_mumax1=None
+            ljke_mumax1=None
+    #
     #end qty defs
     ##############################
     #end copy
@@ -3550,11 +3776,9 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     edtotvsr = timeavg(edtot,ts,fti,ftf)
     edmavsr = timeavg(edma,ts,fti,ftf)
     edmvsr = timeavg(edm,ts,fti,ftf)
-    if ldtot is not None:
-        ldtotvsr = timeavg(ldtot,ts,fti,ftf)
-    else:
-        ldtotvsr = None
-
+    ldtotvsr = timeavg(ldtot,ts,fti,ftf)
+    ldmavsr = timeavg(ldma,ts,fti,ftf)
+    ldmvsr = timeavg(ldm,ts,fti,ftf)
     #
     phiabsj_mu2vsr = timeavg(phiabsj_mu2[:,:],ts,fti,ftf)
     phiabsj_mu1vsr = timeavg(phiabsj_mu1[:,:],ts,fti,ftf)
@@ -3563,20 +3787,31 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     mdotfinavgvsr5 = timeavg(mdtot[:,:]-md5[:,:],ts,fti,ftf)
     mdotfinavgvsr10 = timeavg(mdtot[:,:]-md10[:,:],ts,fti,ftf)
     mdotfinavgvsr20 = timeavg(mdtot[:,:]-md20[:,:],ts,fti,ftf)
-    #        etaj = prefactor*pjke_mu1[:,iofr(rjet)]/mdotfinavg
-
+    #
+    #mdotfinavgvsr30 = timeavg(mdtot[:,:]-md30[:,:],ts,fti,ftf)
+    # Instead, pick Mdot at horizon
     mdotfinavgvsr30 = timeavg(mdtot[:,:]-md30[:,:],ts,fti,ftf)
+    mdotfinavgvsr30itself = timeavg(md30[:,:],ts,fti,ftf)
     #mdotwindfinavgvsr30 = timeavg(mdwind[:,:]-md30[:,:],ts,fti,ftf)
     #mdotjetfinavgvsr30 = timeavg(mdjet[:,:]-md30[:,:],ts,fti,ftf)
     #
+    #mdotiniavgvsr30 = timeavg(mdtot[:,:]-md30[:,:],ts,iti,itf)t
+    # Instead, pick Mdot at horizon
     mdotiniavgvsr30 = timeavg(mdtot[:,:]-md30[:,:],ts,iti,itf)
+    mdotiniavgvsr30itself = timeavg(md30[:,:],ts,iti,itf)
     #mdotwindiniavgvsr30 = timeavg(mdwind[:,:]-md30[:,:],ts,iti,itf)
     #mdotjetiniavgvsr30 = timeavg(mdjet[:,:]-md30[:,:],ts,iti,itf)
     #
     mdotfinavgvsr40 = timeavg(mdtot[:,:]-md40[:,:],ts,fti,ftf)
     #
-    mdotiniavg = np.float64(mdotiniavgvsr30)[r[:,0,0]<10].mean()
-    mdotfinavg = np.float64(mdotfinavgvsr30)[r[:,0,0]<10].mean()
+    # Below 2 used as divisor to get efficiencies and normalized magnetic flux
+    #mdotiniavg = np.float64(mdotiniavgvsr30)[r[:,0,0]<10].mean()
+    #mdotfinavg = np.float64(mdotfinavgvsr30)[r[:,0,0]<10].mean()
+    mdotiniavg = np.float64(mdotiniavgvsr30)[ihor]
+    mdotfinavg = np.float64(mdotfinavgvsr30)[ihor]
+    #
+    mdot30iniavg = np.float64(mdotiniavgvsr30itself)[ihor]
+    mdot30finavg = np.float64(mdotfinavgvsr30itself)[ihor]
     #
     mdotwindiniavg = timeavg(np.abs(mdwind[:,iofr(rjet)]-md30[:,ihor]),ts,iti,itf)
     mdotwindfinavg = timeavg(np.abs(mdwind[:,iofr(rjet)]-md30[:,ihor]),ts,fti,ftf)
@@ -3585,23 +3820,30 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     pjetiniavg = timeavg(pjem30[:,ihor],ts,iti,itf)
     pjetfinavg = timeavg(pjem30[:,ihor],ts,fti,ftf)
-    #pjemfinavgvsr = timeavg(edtot-edma,ts,fti,ftf)
-    #pjemtot = edtot-edma
-    # new efficiency definition
-    pjemfinavgvsr = timeavg(edtot-edm,ts,fti,ftf)
-    pjemtot = edtot-edm
+    #
+    # free energy
+    pjketot = edtot-edm
+    pjkefinavgtot = timeavg(pjketot[:,ihor],ts,fti,ftf)
+    pjkefinavgvsr = timeavg(pjketot,ts,fti,ftf)
+    #
+    # EM energy
+    pjemtot = edtot-edma
+    pjemfinavgtot = timeavg(pjemtot[:,ihor],ts,fti,ftf)
+    pjemfinavgvsr = timeavg(pjemtot,ts,fti,ftf)
+    #
+    # MA free energy
+    pjmaketot = edma-edm
+    pjmakefinavgtot = timeavg(pjmaketot[:,ihor],ts,fti,ftf)
+    pjmakefinavgvsr = timeavg(pjmaketot,ts,fti,ftf)
+    #
     pjemfinavgvsr5 = timeavg(pjem5[:,:],ts,fti,ftf)
     pjemfinavgvsr10 = timeavg(pjem10[:,:],ts,fti,ftf)
     pjemfinavgvsr20 = timeavg(pjem20[:,:],ts,fti,ftf)
     pjemfinavgvsr30 = timeavg(pjem30[:,:],ts,fti,ftf)
     pjemfinavgvsr40 = timeavg(pjem40[:,:],ts,fti,ftf)
     #
-    #pjemfinavgtot = timeavg((edtot-edma)[:,ihor],ts,fti,ftf)
-    #pjmafinavgvsr = timeavg(edma[:,:],ts,fti,ftf)
-    # new efficiency definition
-    pjemfinavgtot = timeavg((edtot-edm)[:,ihor],ts,fti,ftf)
-    pjmafinavgvsr = timeavg(edma[:,:],ts,fti,ftf)
     #
+    pjmafinavgvsr = timeavg(edma[:,:],ts,fti,ftf)
     pjmafinavgvsr5 = timeavg(pjma5[:,:],ts,fti,ftf)
     pjmafinavgvsr10 = timeavg(pjma10[:,:],ts,fti,ftf)
     pjmafinavgvsr20 = timeavg(pjma20[:,:],ts,fti,ftf)
@@ -3613,7 +3855,26 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     pjtotfinavgvsr20 = pjemfinavgvsr20 + pjmafinavgvsr20
     pjtotfinavgvsr30 = pjemfinavgvsr30 + pjmafinavgvsr30
     pjtotfinavgvsr40 = pjemfinavgvsr40 + pjmafinavgvsr40
-
+    #
+    # T^\mu_\nu + \rho_0 u^\mu \eta_\nu
+    # w u^r u_\phi vs. w u^r u_t
+    # u_\phi ~ R u^\phi ~ R v^\phi ~ R R^{-1/2} ~ R^{1/2}
+    # rho u^r u_\phi + rho u^r -> rho u^r (u_\phi+1) vs. rho u^r u_t + rho u^r -> rho u^r (u_t+1)
+    # free energy
+    ljketot = ldtot - ldm
+    ljkefinavgtot = timeavg(ljketot[:,ihor],ts,fti,ftf)
+    ljkefinavgvsr = timeavg(ljketot,ts,fti,ftf)
+    #
+    # EM energy
+    ljemtot = ldtot - ldma
+    ljemfinavgtot = timeavg(ljemtot[:,ihor],ts,fti,ftf)
+    ljemfinavgvsr = timeavg(ljemtot,ts,fti,ftf)
+    #
+    # MA free energy
+    ljmaketot = ldma - ldm
+    ljmakefinavgtot = timeavg(ljmaketot[:,ihor],ts,fti,ftf)
+    ljmakefinavgvsr = timeavg(ljmaketot,ts,fti,ftf)
+    #
     #radius of stagnation point (Pjmabsqorho5(rstag) = 0)
     indices=ti[:,0,0][pjmafinavgvsr5>0]
     if indices.shape[0]>0:
@@ -3664,10 +3925,16 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         FEraw = -edtot[:,ihor]
         FE= epsFke*(FMraw-FEraw)
     else:
-        FMiniavg = mdotiniavg
-        FMavg = mdotfinavg
-        FM = mdtot[:,ihor]-md30[:,ihor]
-        FE = pjemtot[:,ihor]
+        FMraw    = mdtot[:,ihor]
+        FM       = mdtot[:,ihor]
+        FMavg    = timeavg(mdtot,ts,fti,ftf)[ihor]
+        FMiniavg = timeavg(mdtot,ts,iti,itf)[ihor] 
+        FEraw = -edtot[:,ihor]
+        FE= (FMraw-FEraw)
+        #FMiniavg = mdotiniavg
+        #FMavg = mdotfinavg
+        #FM = mdtot[:,ihor]-md30[:,ihor]
+        #FE = pjemtot[:,ihor]
     if showextra:
         lst = 'solid'
     else:
@@ -3745,8 +4012,10 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         plt.setp( ax.get_xticklabels(), visible=False)
         ax.set_xlim(ts[0],ts[-1])
         if showextra:
+            # http://matplotlib.sourceforge.net/users/legend_guide.html
             # http://matplotlib.sourceforge.net/examples/pylab_examples/legend_demo.html
-            plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderaxespad=0,frameon=True,labelspacing=0)
+            plt.legend(loc='upper left',bbox_to_anchor=(0.02,0.98),ncol=1,borderaxespad=0,frameon=True,labelspacing=0)
+            #plt.legend(loc='upper left',ncol=1,borderaxespad=0,frameon=True,labelspacing=0)
             # set some legend properties.  All the code below is optional.  The
             # defaults are usually sensible but if you need more control, this
             # shows you how
@@ -3797,26 +4066,34 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     sashaplot4=0
     #
+    # Compute Sasha's version even if not plotting, so can output to file for comparison
+    # Sasha's whichplot==4 Calculation:
+    etabh = prefactor*FE/FMavg
+    etaj = prefactor*pjke_mu2[:,iofr(100)]/mdotfinavg
+    etaw = prefactor*(pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotfinavg
+    etabh2 = prefactor*FE/FMiniavg
+    etaj2 = prefactor*pjke_mu2[:,iofr(100)]/mdotiniavg
+    etaw2 = prefactor*(pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotiniavg
+    if(1 and iti>fti):
+        #use mdot averaged over the same time interval for iti<t<=itf
+        icond=(ts>=iti)*(ts<itf)
+        etabh[icond]=etabh2[icond]
+        etaj[icond]=etaj2[icond]
+        etaw[icond]=etaw2[icond]
+    if dotavg:
+        etaj_avg = timeavg(etaj,ts,fti,ftf)
+        etabh_avg = timeavg(etabh,ts,fti,ftf)
+        etaw_avg = timeavg(etaw,ts,fti,ftf)
+        ptot_avg = timeavg(pjemtot[:,ihor],ts,fti,ftf)
+        if(iti>fti):
+            etaj2_avg = timeavg(etaj2,ts,iti,itf)
+            etabh2_avg = timeavg(etabh2,ts,iti,itf)
+            etaw2_avg = timeavg(etaw2,ts,iti,itf)
+            ptot2_avg = timeavg(pjemtot[:,ihor],ts,iti,itf)
     #
-    #
+    # Sasha's whichplot==4 Plot:
     if whichplot == 4 and sashaplot4 == 1:
-        etabh = prefactor*FE/FMavg
-        etaj = prefactor*pjke_mu2[:,iofr(100)]/mdotfinavg
-        etaw = prefactor*(pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotfinavg
-        etabh2 = prefactor*FE/FMiniavg
-        etaj2 = prefactor*pjke_mu2[:,iofr(100)]/mdotiniavg
-        etaw2 = prefactor*(pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotiniavg
-        if(1 and iti>fti):
-            #use mdot averaged over the same time interval for iti<t<=itf
-            icond=(ts>=iti)*(ts<itf)
-            etabh[icond]=etabh2[icond]
-            etaj[icond]=etaj2[icond]
-            etaw[icond]=etaw2[icond]
         if dotavg:
-            etaj_avg = timeavg(etaj,ts,fti,ftf)
-            etabh_avg = timeavg(etabh,ts,fti,ftf)
-            etaw_avg = timeavg(etaw,ts,fti,ftf)
-            ptot_avg = timeavg(pjemtot[:,ihor],ts,fti,ftf)
             if showextra:
                 ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaj_avg,'--',color=(fc,fc+0.5*(1-fc),fc)) 
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
@@ -3825,10 +4102,6 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaw_avg,'-.',color=(fc,fc+0.5*(1-fc),fc)) 
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
             if(iti>fti):
-                etaj2_avg = timeavg(etaj2,ts,iti,itf)
-                etabh2_avg = timeavg(etabh2,ts,iti,itf)
-                etaw2_avg = timeavg(etaw2,ts,iti,itf)
-                ptot2_avg = timeavg(pjemtot[:,ihor],ts,iti,itf)
                 if showextra:
                     ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etaj2_avg,'--',color=(fc,fc+0.5*(1-fc),fc))
                 ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etabh2_avg,color=(ofc,fc,fc))
@@ -3859,40 +4132,136 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             ax.set_ylabel(r'$\eta$',fontsize=16,labelpad=16)
         ax.set_xlim(ts[0],ts[-1])
         if showextra:
-            plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
-
-
-        print( "eta_BH = %g, eta_j = %g, eta_w = %g, eta_jw = %g, mdot = %g, ptot_BH = %g" % ( etabh_avg, etaj_avg, etaw_avg, etaj_avg + etaw_avg, mdotfinavg, ptot_avg ) )
-        if iti > fti:
-            print( "eta_BH2 = %g, eta_j2 = %g, eta_w2 = %g, eta_jw2 = %g, mdot2 = %g, ptot2_BH = %g" % ( etabh2_avg, etaj2_avg, etaw2_avg, etaj2_avg + etaw2_avg, mdotiniavg, ptot2_avg ) )
+            plt.legend(loc='upper left',bbox_to_anchor=(0.02,0.98),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
+    #
+    # Done with Sasha's whichplot==4
+    # Print Sasha's result
+    print( "Sasha's values: (if epsFm=epsFke=1, then FMavg=mdot30+mdot)" )
+    if epsFm is not None:
+        print( "epsFm  = %g, epsFke= %g" % (epsFm , epsFke) )
+    else:
+        print( "epsFm  = 1, epsFke= 1")
+    #
+    print( "eta_BH = %g, eta_j = %g, eta_w = %g, eta_jw = %g, FMavg=%g, mdot = %g, mdot30 = %g, ptot_BH = %g" % ( etabh_avg, etaj_avg, etaw_avg, etaj_avg + etaw_avg, FMavg, mdotfinavg, mdot30finavg, ptot_avg ) )
+    if iti > fti:
+        print( "eta_BH2 = %g, eta_j2 = %g, eta_w2 = %g, eta_jw2 = %g, Fminiavg=%g, mdot2 = %g, mdot2_30=%g, ptot2_BH = %g" % ( etabh2_avg, etaj2_avg, etaw2_avg, etaj2_avg + etaw2_avg, Fminiavg, mdotiniavg, mdot30iniavg, ptot2_avg ) )
     #
     #
+    ######################################
     #
-    if whichplot == 4 and sashaplot4 == 0:
-        etabh = prefactor*pjemtot[:,ihor]/mdotfinavg
-        #etaj = prefactor*pjke_mu2[:,iofr(rjet)]/mdotfinavg
-        #etaw = prefactor*(pjke_mu1-pjke_mu2)[:,iofr(rjet)]/mdotfinavg
-        etaj = prefactor*pjke_mu1[:,iofr(rjet)]/mdotfinavg
-        etaw = prefactor*pjke_mumax1[:,iofr(rjet)]/mdotfinavg
+    # Jon's whichplot==4 Calculation:
+    etabh = prefactor*pjketot[:,ihor]/mdotfinavg
+    etabhEM = prefactor*pjemtot[:,ihor]/mdotfinavg
+    etabhMAKE = prefactor*pjmaketot[:,ihor]/mdotfinavg
+    etaj = prefactor*pjke_mu1[:,iofr(rjet)]/mdotfinavg
+    etaw = prefactor*pjke_mumax1[:,iofr(rjet)]/mdotfinavg
+    #
+    etabh2 = prefactor*pjketot[:,ihor]/mdotiniavg
+    etabhEM2 = prefactor*pjemtot[:,ihor]/mdotiniavg
+    etabhMAKE2 = prefactor*pjmaketot[:,ihor]/mdotiniavg
+    etaj2 = prefactor*pjke_mu1[:,iofr(rjet)]/mdotiniavg
+    etaw2 = prefactor*pjke_mumax1[:,iofr(rjet)]/mdotiniavg
+    #
+    # lj = angular momentum flux
+    letabh = prefactor*ljketot[:,ihor]/mdotfinavg
+    letabhEM = prefactor*ljemtot[:,ihor]/mdotfinavg
+    letabhMAKE = prefactor*ljmaketot[:,ihor]/mdotfinavg
+    letaj = prefactor*ljke_mu1[:,iofr(rjet)]/mdotfinavg
+    letaw = prefactor*ljke_mumax1[:,iofr(rjet)]/mdotfinavg
+    #
+    letabh2 = prefactor*ljketot[:,ihor]/mdotiniavg
+    letabhEM2 = prefactor*ljemtot[:,ihor]/mdotiniavg
+    letabhMAKE2 = prefactor*ljmaketot[:,ihor]/mdotiniavg
+    letaj2 = prefactor*ljke_mu1[:,iofr(rjet)]/mdotiniavg
+    letaw2 = prefactor*ljke_mumax1[:,iofr(rjet)]/mdotiniavg
+    #
+    hoverrhor=hoverr[:,ihor]
+    hoverr2=hoverr[:,iofr(2)]
+    hoverr5=hoverr[:,iofr(5)]
+    hoverr10=hoverr[:,iofr(10)]
+    hoverr20=hoverr[:,iofr(20)]
+    #
+    hoverrcoronahor=hoverrcorona[:,ihor]
+    hoverrcorona2=hoverrcorona[:,iofr(2)]
+    hoverrcorona5=hoverrcorona[:,iofr(5)]
+    hoverrcorona10=hoverrcorona[:,iofr(10)]
+    hoverrcorona20=hoverrcorona[:,iofr(20)]
+    #
+    if(1 and iti>fti):
+        #use mdot averaged over the same time interval for iti<t<=itf
+        icond=(ts>=iti)*(ts<itf)
         #
-        etabh2 = prefactor*pjemtot[:,ihor]/mdotiniavg
-        #etaj2 = prefactor*pjke_mu2[:,iofr(rjet)]/mdotiniavg
-        #etaw2 = prefactor*(pjke_mu1-pjke_mu2)[:,iofr(rjet)]/mdotiniavg
-        etaj2 = prefactor*pjke_mu1[:,iofr(rjet)]/mdotiniavg
-        etaw2 = prefactor*pjke_mumax1[:,iofr(rjet)]/mdotiniavg
+        etabh[icond]=etabh2[icond]
+        etabhEM[icond]=etabhEM2[icond]
+        etabhMAKE[icond]=etabhMAKE2[icond]
+        etaj[icond]=etaj2[icond]
+        etaw[icond]=etaw2[icond]
         #
-        if(1 and iti>fti):
-            #use mdot averaged over the same time interval for iti<t<=itf
-            icond=(ts>=iti)*(ts<itf)
-            etabh[icond]=etabh2[icond]
-            etaj[icond]=etaj2[icond]
-            etaw[icond]=etaw2[icond]
-        if dotavg:
-            etaj_avg = timeavg(etaj,ts,fti,ftf)
-            etabh_avg = timeavg(etabh,ts,fti,ftf)
-            etaw_avg = timeavg(etaw,ts,fti,ftf)
-            ptot_avg = timeavg(pjemtot[:,ihor],ts,fti,ftf)
+        letabh[icond]=letabh2[icond]
+        letabhEM[icond]=letabhEM2[icond]
+        letabhMAKE[icond]=letabhMAKE2[icond]
+        letaj[icond]=letaj2[icond]
+        letaw[icond]=letaw2[icond]
+        #
+    if dotavg:
+        etabh_avg = timeavg(etabh,ts,fti,ftf)
+        etabhEM_avg = timeavg(etabhEM,ts,fti,ftf)
+        etabhMAKE_avg = timeavg(etabhMAKE,ts,fti,ftf)
+        etaj_avg = timeavg(etaj,ts,fti,ftf)
+        etaw_avg = timeavg(etaw,ts,fti,ftf)
+        ptot_avg = timeavg(pjemtot[:,ihor],ts,fti,ftf)
+        #
+        letabh_avg = timeavg(letabh,ts,fti,ftf)
+        letabhEM_avg = timeavg(letabhEM,ts,fti,ftf)
+        letabhMAKE_avg = timeavg(letabhMAKE,ts,fti,ftf)
+        letaj_avg = timeavg(letaj,ts,fti,ftf)
+        letaw_avg = timeavg(letaw,ts,fti,ftf)
+        ltot_avg = timeavg(ljemtot[:,ihor],ts,fti,ftf)
+        #
+        hoverrhor_avg = timeavg(hoverrhor,ts,fti,ftf)
+        hoverr2_avg = timeavg(hoverr2,ts,fti,ftf)
+        hoverr5_avg = timeavg(hoverr5,ts,fti,ftf)
+        hoverr10_avg = timeavg(hoverr10,ts,fti,ftf)
+        hoverr20_avg = timeavg(hoverr20,ts,fti,ftf)
+        #
+        hoverrcoronahor_avg = timeavg(hoverrcoronahor,ts,fti,ftf)
+        hoverrcorona2_avg = timeavg(hoverrcorona2,ts,fti,ftf)
+        hoverrcorona5_avg = timeavg(hoverrcorona5,ts,fti,ftf)
+        hoverrcorona10_avg = timeavg(hoverrcorona10,ts,fti,ftf)
+        hoverrcorona20_avg = timeavg(hoverrcorona20,ts,fti,ftf)
+        #
+        if(iti>fti):
+            etabh2_avg = timeavg(etabh2,ts,iti,itf)
+            etabhEM2_avg = timeavg(etabhEM2,ts,iti,itf)
+            etabhMAKE2_avg = timeavg(etabhMAKE2,ts,iti,itf)
+            etaj2_avg = timeavg(etaj2,ts,iti,itf)
+            etaw2_avg = timeavg(etaw2,ts,iti,itf)
+            ptot2_avg = timeavg(pjemtot[:,ihor],ts,iti,itf)
             #
+            letabh2_avg = timeavg(letabh2,ts,iti,itf)
+            letabhEM2_avg = timeavg(letabhEM2,ts,iti,itf)
+            letabhMAKE2_avg = timeavg(letabhMAKE2,ts,iti,itf)
+            letaj2_avg = timeavg(letaj2,ts,iti,itf)
+            letaw2_avg = timeavg(letaw2,ts,iti,itf)
+            ltot2_avg = timeavg(ljemtot[:,ihor],ts,iti,itf)
+            #
+            hoverrhor2_avg = timeavg(hoverrhor,ts,iti,itf)
+            hoverr22_avg = timeavg(hoverr2,ts,iti,itf)
+            hoverr52_avg = timeavg(hoverr5,ts,iti,itf)
+            hoverr102_avg = timeavg(hoverr10,ts,iti,itf)
+            hoverr202_avg = timeavg(hoverr20,ts,iti,itf)
+            #
+            hoverrcoronahor2_avg = timeavg(hoverrcoronahor,ts,iti,itf)
+            hoverrcorona22_avg = timeavg(hoverrcorona2,ts,iti,itf)
+            hoverrcorona52_avg = timeavg(hoverrcorona5,ts,iti,itf)
+            hoverrcorona102_avg = timeavg(hoverrcorona10,ts,iti,itf)
+            hoverrcorona202_avg = timeavg(hoverrcorona20,ts,iti,itf)
+            #
+            #
+    #
+    # Jon's whichplot==4 Plot:
+    if whichplot == 4 and sashaplot4 == 0:
+        if dotavg:
             ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etabh_avg,color=(ofc,fc,fc)) 
             if showextra:
                 ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaj_avg,'--',color=(fc,fc+0.5*(1-fc),fc)) 
@@ -3901,11 +4270,6 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
             if(iti>fti):
-                etaj2_avg = timeavg(etaj2,ts,iti,itf)
-                etabh2_avg = timeavg(etabh2,ts,iti,itf)
-                etaw2_avg = timeavg(etaw2,ts,iti,itf)
-                ptot2_avg = timeavg(pjemtot[:,ihor],ts,iti,itf)
-                #
                 ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etabh2_avg,color=(ofc,fc,fc))
                 if showextra:
                     ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etaj2_avg,'--',color=(fc,fc+0.5*(1-fc),fc))
@@ -3932,7 +4296,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         ax.set_ylabel(r'$\eta\ [\%]$',fontsize=16,ha='left',labelpad=20)
         ax.set_xlim(ts[0],ts[-1])
         if showextra:
-            plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
+            plt.legend(loc='upper left',bbox_to_anchor=(0.02,0.98),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
             # set some legend properties.  All the code below is optional.  The
             # defaults are usually sensible but if you need more control, this
             # shows you how
@@ -3946,13 +4310,26 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             plt.setp(ltext, fontsize=12)    # the legend text fontsize
             #plt.setp(llines, linewidth=1.5)      # the legend linewidth
             #leg.draw_frame(False)           # don't draw the legend frame
-
-
-        print( "eta_BH = %g, eta_j = %g, eta_w = %g, eta_jw = %g, mdot = %g, mdotwind=%g, mdotjet=%g, ptot_BH = %g" % ( etabh_avg, etaj_avg, etaw_avg, etaj_avg + etaw_avg, mdotfinavg, mdotwindfinavg, mdotjetfinavg, ptot_avg ) )
-        if iti > fti:
-            print( "eta_BH2 = %g, eta_j2 = %g, eta_w2 = %g, eta_jw2 = %g, mdot2 = %g, mdotwind2=%g , mdotjet2=%g, ptot2_BH = %g" % ( etabh2_avg, etaj2_avg, etaw2_avg, etaj2_avg + etaw2_avg, mdotiniavg, mdotwindiniavg, mdotjetiniavg, ptot2_avg ) )
-
-        #xxx
+    #
+    # End Jon's whichplot==4 Plot
+    #
+    # Print's Jon's whichplot==4 Values:
+    #
+    print( "Jon's values: (recall mdotorig = mdot + mdot30 should be =FMavg)" )
+    #
+    print( "mdot = %g, mdotwind = %g, mdotjet = %g, mdot30 = %g" % ( mdotfinavg, mdotwindfinavg, mdotjetfinavg, mdot30finavg ) )
+    print( "eta_BH = %g, eta_BHEM = %g, eta_BHMAKE = %g, eta_j = %g, eta_w = %g, eta_jw = %g , ptot_BH = %g" % ( etabh_avg, etabhEM_avg, etabhMAKE_avg, etaj_avg, etaw_avg, etaj_avg + etaw_avg, ptot_avg ) )
+    print( "leta_BH = %g, leta_BHEM = %g, leta_BHMAKE = %g, leta_j = %g, leta_w = %g, leta_jw = %g, ltot_BH = %g" % ( letabh_avg, letabhEM_avg, letabhMAKE_avg, letaj_avg, letaw_avg, letaj_avg + letaw_avg, ltot_avg ) )
+    if iti > fti:
+        print( "mdot2 = %g, mdotwind2 = %g, mdotjet2 = %g, mdot2_30 = %g" % ( mdotiniavg, mdotwindiniavg, mdotjetiniavg, mdot30iniavg ) )
+        print( "eta_BH2 = %g, eta_BHEM2 = %g, eta_BHMAKE2 = %g, eta_j2 = %g, eta_w2 = %g, eta_jw2 = %g , ptot_BH2 = %g" % ( etabh2_avg, etabhEM2_avg, etabhMAKE2_avg, etaj2_avg, etaw2_avg, etaj2_avg + etaw2_avg, ptot2_avg ) )
+        print( "leta_BH2 = %g, leta_BHEM2 = %g, leta_BHMAKE2 = %g, leta_j2 = %g, leta_w2 = %g, leta_jw2 = %g, ltot_BH2 = %g" % ( letabh2_avg, letabhEM2_avg, letabhMAKE2_avg, letaj2_avg, letaw2_avg, letaj2_avg + letaw2_avg, ltot2_avg ) )
+    #        
+    print( "hoverrhor = %g, hoverr2 = %g, hoverr5 = %g, hoverr10 = %g, hoverr20 = %g" % ( hoverrhor_avg ,  hoverr2_avg , hoverr5_avg , hoverr10_avg ,  hoverr20_avg ) )
+    print( "hoverrcoronahor = %g, hoverrcorona2 = %g, hoverrcorona5 = %g, hoverrcorona10 = %g, hoverrcorona20 = %g" % ( hoverrcoronahor_avg ,  hoverrcorona2_avg , hoverrcorona5_avg , hoverrcorona10_avg ,  hoverrcorona20_avg ) )
+    #
+    #
+    #
     #######################
     #
     # eta NEW ***
@@ -4022,7 +4399,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         ax.set_ylabel(r'$\eta\ [\%]$',fontsize=16,ha='left',labelpad=20)
         ax.set_xlim(ts[0],ts[-1])
         if showextra:
-            plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
+            plt.legend(loc='upper left',bbox_to_anchor=(0.02,0.98),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
             # set some legend properties.  All the code below is optional.  The
             # defaults are usually sensible but if you need more control, this
             # shows you how
@@ -4037,7 +4414,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             #plt.setp(llines, linewidth=1.5)      # the legend linewidth
             #leg.draw_frame(False)           # don't draw the legend frame
 
-
+        print( "whichplot==6 values" )
         print( "eta_BH = %g, eta_j = %g, eta_w = %g, eta_jw = %g, mdot = %g, mdotwind=%g, mdotjet=%g, ptot_BH = %g" % ( etabh_avg, etaj_avg, etaw_avg, etaj_avg + etaw_avg, mdotfinavg, mdotwindfinavg, mdotjetfinavg, ptot_avg ) )
         if iti > fti:
             print( "eta_BH2 = %g, eta_j2 = %g, eta_w2 = %g, eta_jw2 = %g, mdot2 = %g, mdotwind2=%g , mdotjet2=%g, ptot2_BH = %g" % ( etabh2_avg, etaj2_avg, etaw2_avg, etaj2_avg + etaw2_avg, mdotiniavg, mdotwindiniavg, mdotjetiniavg, ptot2_avg ) )
@@ -4055,28 +4432,35 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     if whichplot == 5:
         # choose radius to measure jet quantities
         #
+        # New conversion from phibh[HL] (old had 1/(2\pi) bug) to phibh[Gaussian] to Upsilon
+        # (fstot/2) corresponds to half-flux on hole
+        # the sqrt(4\pi) converts flux from HL units to Gaussian units
+        # Finally, we really want to show Upsilon, which is \approx 0.2 \phibh[Gaussian], so go ahead and do that here and so redefine phibh
+        #
         omh = a / (2*(1+(1-a**2)**0.5))
-        phibh=fstot[:,ihor]/4/np.pi/mdotfinavg**0.5
-        #phij=phiabsj_mu2[:,iofr(rjet)]/4/np.pi/mdotfinavg**0.5
-        #phiw=(phiabsj_mu1-phiabsj_mu2)[:,iofr(rjet)]/4/np.pi/mdotfinavg**0.5
-        phij=phiabsj_mu1[:,iofr(rjet)]/4/np.pi/mdotfinavg**0.5
-        phiw=phiabsj_mumax1[:,iofr(rjet)]/4/np.pi/mdotfinavg**0.5
         #
-        #phijn=phiabsj_n_mu2[:,iofr(rjet)]/4/np.pi/mdotfinavg**0.5
-        #phijs=phiabsj_s_mu2[:,iofr(rjet)]/4/np.pi/mdotfinavg**0.5
-        phijn=phiabsj_n_mu1[:,iofr(rjet)]/4/np.pi/mdotfinavg**0.5
-        phijs=phiabsj_s_mu1[:,iofr(rjet)]/4/np.pi/mdotfinavg**0.5
+        # THESE ARE NOW UPSILON RATHER THAN phibh[Gaussian,halfflux] due to factor of 0.2
+        phibh=(fstot[:,ihor]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotfinavg**0.5
+        #phij=(phiabsj_mu2[:,iofr(rjet)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotfinavg**0.5
+        #phiw=((phiabsj_mu1-phiabsj_mu2)[:,iofr(rjet)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotfinavg**0.5
+        phij=(phiabsj_mu1[:,iofr(rjet)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotfinavg**0.5
+        phiw=(phiabsj_mumax1[:,iofr(rjet)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotfinavg**0.5
         #
-        phibh2=fstot[:,ihor]/4/np.pi/mdotiniavg**0.5
-        #phij2=phiabsj_mu2[:,iofr(rjet)]/4/np.pi/mdotiniavg**0.5
-        #phiw2=(phiabsj_mu1-phiabsj_mu2)[:,iofr(rjet)]/4/np.pi/mdotiniavg**0.5
-        phij2=phiabsj_mu1[:,iofr(rjet)]/4/np.pi/mdotiniavg**0.5
-        phiw2=phiabsj_mumax1[:,iofr(rjet)]/4/np.pi/mdotiniavg**0.5
+        #phijn=(phiabsj_n_mu2[:,iofr(rjet)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotfinavg**0.5
+        #phijs=(phiabsj_s_mu2[:,iofr(rjet)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotfinavg**0.5
+        phijn=(phiabsj_n_mu1[:,iofr(rjet)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotfinavg**0.5
+        phijs=(phiabsj_s_mu1[:,iofr(rjet)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotfinavg**0.5
         #
-        #phijn2=phiabsj_n_mu2[:,iofr(rjet)]/4/np.pi/mdotiniavg**0.5
-        #phijs2=phiabsj_s_mu2[:,iofr(rjet)]/4/np.pi/mdotiniavg**0.5
-        phijn2=phiabsj_n_mu1[:,iofr(rjet)]/4/np.pi/mdotiniavg**0.5
-        phijs2=phiabsj_s_mu1[:,iofr(rjet)]/4/np.pi/mdotiniavg**0.5
+        phibh2=(fstot[:,ihor]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotiniavg**0.5
+        #phij2=(phiabsj_mu2[:,iofr(rjet)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotiniavg**0.5
+        #phiw2=((phiabsj_mu1-phiabsj_mu2)[:,iofr(rjet)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotiniavg**0.5
+        phij2=(phiabsj_mu1[:,iofr(rjet)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotiniavg**0.5
+        phiw2=(phiabsj_mumax1[:,iofr(rjet)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotiniavg**0.5
+        #
+        #phijn2=(phiabsj_n_mu2[:,iofr(rjet)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotiniavg**0.5
+        #phijs2=(phiabsj_s_mu2[:,iofr(rjet)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotiniavg**0.5
+        phijn2=(phiabsj_n_mu1[:,iofr(rjet)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotiniavg**0.5
+        phijs2=(phiabsj_s_mu1[:,iofr(rjet)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotiniavg**0.5
         #
         if(1 and iti>fti):
             #use phi averaged over the same time interval for iti<t<=itf
@@ -4114,12 +4498,12 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         #To approximately get efficiency:
         #ax.plot(ts,2./3.*np.pi*omh**2*np.abs(fsj30[:,ihor]/4/np.pi)**2/mdotfinavg)
         #prefactor to get sqrt(eta): (2./3.*np.pi*omh**2)**0.5
-        ax.plot(ts,phibh,clr,label=r'$\phi_{\rm BH}$')
+        ax.plot(ts,phibh,clr,label=r'$\Upsilon_{\rm BH}$')
         ax.set_xlim(ts[0],ts[-1])
         #
         if showextra:
-            ax.plot(ts,phij,'g--',label=r'$\phi_{\rm jet}$')
-            ax.plot(ts,phiw,'b-.',label=r'$\phi_{\rm wind}$')
+            ax.plot(ts,phij,'g--',label=r'$\Upsilon_{\rm jet}$')
+            ax.plot(ts,phiw,'b-.',label=r'$\Upsilon_{\rm wind}$')
         if findex != None:
             if not isinstance(findex,tuple):
                 if showextra:
@@ -4132,10 +4516,9 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
                         ax.plot(ts[fi],phij[fi],'gs')
                     ax.plot(ts[fi],phibh[fi],'o',mfc='r')
                     ax.plot(ts[fi],phiw[fi],'bv')
-        #ax.set_ylabel(r'$\ \ \ k\Phi_j/\langle\dot M\rangle^{\!1/2}$',fontsize=16)
-        ax.set_ylabel(r'$\phi$',fontsize=16,ha='left',labelpad=20)
+        ax.set_ylabel(r'$\Upsilon$',fontsize=16,ha='left',labelpad=20)
         if showextra:
-            plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
+            plt.legend(loc='upper left',bbox_to_anchor=(0.02,0.98),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
             # set some legend properties.  All the code below is optional.  The
             # defaults are usually sensible but if you need more control, this
             # shows you how
@@ -4151,12 +4534,12 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             #leg.draw_frame(False)           # don't draw the legend frame
         #
         plt.setp( ax.get_xticklabels(), visible=False )
-        print( "phi_BH = %g, fstot = %g" % ( phibh_avg, fstot_avg ) )
-        print( "phi_jet = %g, phi_wind = %g" % ( phij_avg , phiw_avg ) )
-        print( "phi_jetn = %g, phi_jets = %g" % ( phijn_avg , phijs_avg ) )
+        print( "Upsilon_BH = %g, fstot = %g" % ( phibh_avg, fstot_avg ) )
+        print( "Upsilon_jet = %g, Upsilon_wind = %g" % ( phij_avg , phiw_avg ) )
+        print( "Upsilon_jetn = %g, Upsilon_jets = %g" % ( phijn_avg , phijs_avg ) )
         if iti > fti:
-            print( "phi2_BH = %g, fstot2 = %g" % ( phibh2_avg, fstot2_avg ) )
-
+            print( "Upsilon2_BH = %g, fstot2 = %g" % ( phibh2_avg, fstot2_avg ) )
+    #
     if whichplot == -1:
         etajetavg = pjetfinavg/mdotfinavg
         foutpower = open( "pjet_power_%s.txt" %  os.path.basename(os.getcwd()), "w" )
@@ -5637,8 +6020,12 @@ def mkmovie(framesize=50, domakeavi=False):
             gs2.update(left=0.5, right=1, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
             ax2 = plt.subplot(gs2[:, -1])
             #
-            # If using 2D data, then for now, have to replace below with mkframe version above and replace ax1->ax2
-            mkframexy("lrho%04d_xy%g" % (findex,plotlen),vmin=vminforframe,vmax=vmaxforframe,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True)
+            if nz==1:
+                mkframe("lrho%04d_xy%g" % (findex,plotlen),vmin=vminforframe,vmax=vmaxforframe,len=plotlen,ax=ax2,cb=True,dostreamlines=True)
+            else:
+                # If using 2D data, then for now, have to replace below with mkframe version above and replace ax1->ax2.  Some kind of qhull error.
+                mkframexy("lrho%04d_xy%g" % (findex,plotlen),vmin=vminforframe,vmax=vmaxforframe,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True)
+            #
             #
             plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
             plt.ylabel(r"$y\ [r_g]$",ha='left',labelpad=10,fontsize=16)
