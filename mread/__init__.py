@@ -2230,7 +2230,8 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
         print "Number of previously saved time slices: %d" % numtimeslices2 
         if( numtimeslices2 >= numtimeslices ):
             print "Number of previously saved time slices is >= than of timeslices to be loaded, re-using previously saved time slices"
-            #np.save("qty2.npy",qtymem2[:,:-1])  #kill last time slice
+            # qtymem2[:,1493]=0.5*(qtymem2[:,1492]+qtymem2[:,1494])
+            # np.save("qty2_new.npy",qtymem2)  #kill bad frame
             return(qtymem2)
         else:
             assert qtymem2.shape[0] == qtymem.shape[0]
