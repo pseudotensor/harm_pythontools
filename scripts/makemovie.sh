@@ -80,8 +80,8 @@ echo "RANDOM=$myrand"
 
 export localpath=`pwd`
 
-export runn=10
-export numparts=2
+export runn=7
+export numparts=1
 
 
 if [ $1 -eq 1 ]
@@ -115,6 +115,7 @@ then
     # A) 
     
     export je=$(( $numparts - 1 ))
+    # above two must be exactly divisible
     export itot=$(( $runn/$numparts ))
     export ie=$(( $itot -1 ))
 
@@ -211,33 +212,54 @@ then
     
     # 2) Now run job as before.  But makeing movie frames takes about 2X more memory, so increase parts by 2X
     
-    export runn=12
-    export numparts=4
+    export runn=6
+    export numparts=1
 
     
     export je=$(( $numparts - 1 ))
+    # above two must be exactly divisible
     export itot=$(( $runn/$numparts ))
     export ie=$(( $itot -1 ))
     
     echo "Running with $itot cores simultaneously"
     
     
-    for j in `seq 0 $je`
+    for j in `seq 0 $numparts`
     do
-	echo "Movie Frames: Starting simultaneous run of $itot jobs for group $j"
-	for i in `seq 0 $ie`
-	do
-	    export runi=$(( $i + $itot * $j ))
-	    textrun="Movie Frames: Running i=$i j=$j giving runi=$runi with runn=$runn"
-    	    #echo $textrun >> out
-	    echo $textrun
-            # sleep in order for all threads not to read in at once and overwhelm the drive
-	    sleep 1
-	    # run job
-	    nohup python $myinitfile2 $runi $runn &> python_${runi}_${runn}.2.out &
-	done
-	wait
-	echo "Movie Frames: Ending simultaneous run of $itot jobs for group $j"
+
+
+	if [ $j -eq $numparts ]
+	then
+	    if [ $resid -gt 0 ]
+	    then
+		residie=$(( $resid - 1 ))
+		ilist=`seq 0 $residie`
+		doilist=1
+	    else
+		doilist=0
+	    fi
+	else
+	    ilist=`seq 0 $ie`
+	    doilist=1
+	fi
+
+	if [ $doilist -eq 1 ]
+	then
+	    echo "Movie Frames: Starting simultaneous run of $itot jobs for group $j"
+	    for i in $ilist
+	    do
+		export runi=$(( $i + $itot * $j ))
+		textrun="Movie Frames: Running i=$i j=$j giving runi=$runi with runn=$runn"
+   	        #echo $textrun >> out
+		echo $textrun
+                # sleep in order for all threads not to read in at once and overwhelm the drive
+		sleep 1
+	        # run job
+		nohup python $myinitfile2 $runi $runn &> python_${runi}_${runn}.2.out &
+	    done
+	    wait
+	    echo "Movie Frames: Ending simultaneous run of $itot jobs for group $j"
+	fi
     done
     
     
