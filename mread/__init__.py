@@ -997,21 +997,24 @@ def Qmri_simple(which=1,hoverrwhich=None):
     return(qmri3d,q2mri3d,norm3d)
 
     
-def horcalc(which=1):
+def horcalc(which=1,denfactor=None):
     """
     Compute root mean square deviation of disk body from equatorial plane
     """
+    if denfactor is None:
+        denfactor=rho
+    #
     tiny=np.finfo(rho.dtype).tiny
-    up=(gdet*rho*(h-np.pi/2)*which).sum(axis=1)
-    dn=(gdet*rho*which).sum(axis=1)
+    up=(gdet*denfactor*(h-np.pi/2)*which).sum(axis=1)
+    dn=(gdet*denfactor*which).sum(axis=1)
     thetamid2d=up/(dn+tiny)+np.pi/2
     thetamid3d=np.empty((nx,ny,nz),dtype=h.dtype)
-    hoverr3d=np.empty((nx,ny,nz),dtype=h.dtype)
     for j in np.arange(0,ny):
         thetamid3d[:,j] = thetamid2d
-    up=(gdet*rho*(h-thetamid3d)**2*which).sum(axis=1)
-    dn=(gdet*rho*which).sum(axis=1)
+    up=(gdet*denfactor*(h-thetamid3d)**2*which).sum(axis=1)
+    dn=(gdet*denfactor*which).sum(axis=1)
     hoverr2d= (up/(dn+tiny))**0.5
+    hoverr3d=np.empty((nx,ny,nz),dtype=h.dtype)
     for j in np.arange(0,ny):
         hoverr3d[:,j] = hoverr2d
     return((hoverr3d,thetamid3d))
@@ -2429,7 +2432,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
     sort_nicely(flist)
     #
     # 149 things
-    nqtynonbob = 1+4+3+14+14+14+17+7+13+12+2+24+26
+    nqtynonbob = 1+6+3+14+14+14+17+7+13+12+2+24+26
     nqty=134*(dobob==1) + nqtynonbob
     #
     ####################################
@@ -2474,11 +2477,13 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
     i=0
     # 1
     ts=qtymem[i,:,0];i+=1
-    #HoverR: 4
+    #HoverR: 6
     hoverr=qtymem[i];i+=1
     thetamid=qtymem[i];i+=1
     hoverrcorona=qtymem[i];i+=1
     thetamidcorona=qtymem[i];i+=1
+    hoverrnonjet=qtymem[i];i+=1
+    thetamidnonjet=qtymem[i];i+=1
     # 3
     qmridisk=qtymem[i];i+=1
     q2mridisk=qtymem[i];i+=1
@@ -2702,19 +2707,23 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         #
         ##################################
         #HoverR
-        #diskcondition=bsq/rho<1
         beta=((gam-1)*ug)*divideavoidinf(bsq*0.5)
         diskcondition=(beta>3.0)
         diskcondition=diskcondition*(bsq/rho<1.0)
-        hoverr3d,thetamid3d=horcalc(which=diskcondition)
+        hoverr3d,thetamid3d=horcalc(which=diskcondition,denfactor=rho)
         hoverr[findex]=hoverr3d.sum(2).sum(1)/(ny*nz)
         thetamid[findex]=thetamid3d.sum(2).sum(1)/(ny*nz)
         #
-        coronacondition=(beta<1.0/3.0)
+        coronacondition=(beta<3.0)
         coronacondition=coronacondition*(bsq/rho<1.0)
-        hoverr3dcorona,thetamid3dcorona=horcalc(which=coronacondition)
+        hoverr3dcorona,thetamid3dcorona=horcalc(which=coronacondition,denfactor=bsq+rho+gam*ug)
         hoverrcorona[findex]=hoverr3dcorona.sum(2).sum(1)/(ny*nz)
         thetamidcorona[findex]=thetamid3dcorona.sum(2).sum(1)/(ny*nz)
+        #
+        nonjetcondition=(bsq/rho<30.0)
+        hoverr3dnonjet,thetamid3dnonjet=horcalc(which=nonjetcondition,denfactor=bsq+rho+gam*ug)
+        hoverrnonjet[findex]=hoverr3dnonjet.sum(2).sum(1)/(ny*nz)
+        thetamidnonjet[findex]=thetamid3dnonjet.sum(2).sum(1)/(ny*nz)
         #
         diskeqcondition=diskcondition
         qmri3ddisk,q2mri3ddisk,normmri3ddisk=Qmri_simple(which=diskeqcondition,hoverrwhich=hoverr3d)
@@ -3341,7 +3350,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     # jon's Choice below
     showextra=True
     #
-    nqtynonbob = 1+4+3+14+14+14+17+7+13+12+2+24+26
+    nqtynonbob = 1+6+3+14+14+14+17+7+13+12+2+24+26
     nqty=nqtynonbob
     ###############################
     #copy this from getqtyvstime()
@@ -3353,11 +3362,13 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     i=0
     # 1
     ts=qtymem[i,:,0];i+=1
-    #HoverR: 4
+    #HoverR: 6
     hoverr=qtymem[i];i+=1
     thetamid=qtymem[i];i+=1
     hoverrcorona=qtymem[i];i+=1
     thetamidcorona=qtymem[i];i+=1
+    hoverrnonjet=qtymem[i];i+=1
+    thetamidnonjet=qtymem[i];i+=1
     # 3
     qmridisk=qtymem[i];i+=1
     q2mridisk=qtymem[i];i+=1
@@ -4106,6 +4117,14 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     hoverrcorona100=hoverrcorona[:,iofr(100)]
     #
     #
+    hoverrnonjethor=hoverrnonjet[:,ihor]
+    hoverrnonjet2=hoverrnonjet[:,iofr(2)]
+    hoverrnonjet5=hoverrnonjet[:,iofr(5)]
+    hoverrnonjet10=hoverrnonjet[:,iofr(10)]
+    hoverrnonjet20=hoverrnonjet[:,iofr(20)]
+    hoverrnonjet100=hoverrnonjet[:,iofr(100)]
+    #
+    #
     if 1==0:
         qmridisk10=qmridisk[:,iofr(10)]
         qmridisk20=qmridisk[:,iofr(20)]
@@ -4218,6 +4237,13 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         hoverrcorona20_avg = timeavg(hoverrcorona20,ts,fti,ftf)
         hoverrcorona100_avg = timeavg(hoverrcorona100,ts,fti,ftf)
         #
+        hoverrnonjethor_avg = timeavg(hoverrnonjethor,ts,fti,ftf)
+        hoverrnonjet2_avg = timeavg(hoverrnonjet2,ts,fti,ftf)
+        hoverrnonjet5_avg = timeavg(hoverrnonjet5,ts,fti,ftf)
+        hoverrnonjet10_avg = timeavg(hoverrnonjet10,ts,fti,ftf)
+        hoverrnonjet20_avg = timeavg(hoverrnonjet20,ts,fti,ftf)
+        hoverrnonjet100_avg = timeavg(hoverrnonjet100,ts,fti,ftf)
+        #
         qmridisk10_avg = timeavg(qmridisk10,ts,fti,ftf)
         qmridisk20_avg = timeavg(qmridisk20,ts,fti,ftf)
         qmridisk100_avg = timeavg(qmridisk100,ts,fti,ftf)
@@ -4268,6 +4294,13 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             hoverrcorona102_avg = timeavg(hoverrcorona10,ts,iti,itf)
             hoverrcorona202_avg = timeavg(hoverrcorona20,ts,iti,itf)
             hoverrcorona1002_avg = timeavg(hoverrcorona100,ts,iti,itf)
+            #
+            hoverrnonjethor2_avg = timeavg(hoverrnonjethor,ts,iti,itf)
+            hoverrnonjet22_avg = timeavg(hoverrnonjet2,ts,iti,itf)
+            hoverrnonjet52_avg = timeavg(hoverrnonjet5,ts,iti,itf)
+            hoverrnonjet102_avg = timeavg(hoverrnonjet10,ts,iti,itf)
+            hoverrnonjet202_avg = timeavg(hoverrnonjet20,ts,iti,itf)
+            hoverrnonjet1002_avg = timeavg(hoverrnonjet100,ts,iti,itf)
             #
             qmridisk102_avg = timeavg(qmridisk10,ts,iti,itf)
             qmridisk202_avg = timeavg(qmridisk20,ts,iti,itf)
@@ -4339,6 +4372,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     print( "mdot = %g, mdot10 = %g, mdot30 = %g, mdotjet = %g, mdotwin = %g, mdotwout = %g" % ( mdotfinavg, mdot10finavg, mdot30finavg, mdotjetfinavg, mdotwinfinavg, mdotwoutfinavg) )
     print( "hoverrhor = %g, hoverr2 = %g, hoverr5 = %g, hoverr10 = %g, hoverr20 = %g, hoverr100 = %g" % ( hoverrhor_avg ,  hoverr2_avg , hoverr5_avg , hoverr10_avg ,  hoverr20_avg ,  hoverr100_avg ) )
     print( "hoverrcoronahor = %g, hoverrcorona2 = %g, hoverrcorona5 = %g, hoverrcorona10 = %g, hoverrcorona20 = %g, hoverrcorona100 = %g" % ( hoverrcoronahor_avg ,  hoverrcorona2_avg , hoverrcorona5_avg , hoverrcorona10_avg ,  hoverrcorona20_avg ,  hoverrcorona100_avg ) )
+    print( "hoverrnonjethor = %g, hoverrnonjet2 = %g, hoverrnonjet5 = %g, hoverrnonjet10 = %g, hoverrnonjet20 = %g, hoverrnonjet100 = %g" % ( hoverrnonjethor_avg ,  hoverrnonjet2_avg , hoverrnonjet5_avg , hoverrnonjet10_avg ,  hoverrnonjet20_avg ,  hoverrnonjet100_avg ) )
     print( "qmridisk10 = %g, qmridisk20 = %g, qmridisk100 = %g" % (  qmridisk10_avg ,  qmridisk20_avg ,  qmridisk100_avg ) )
     print( "q2mridisk10 = %g, q2mridisk20 = %g, q2mridisk100 = %g" % (  q2mridisk10_avg ,  q2mridisk20_avg ,  q2mridisk100_avg ) )
     #
@@ -4361,8 +4395,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     print( "Latex: %g & %g & %g & %g \\\\" % ( roundto2(mdotfinavg), roundto2(mdotjetfinavg), roundto2(mdotwinfinavg), roundto2(mdotwoutfinavg) ) )
     #
     # 8:
-    print( "Latex: Q_{1,\\rm MRI,20} & Q_{1,\\rm MRI,100} & Q_{2,\\rm MRI,20} & Q_{2,\\rm MRI,100} & \\left(\\frac{|h|}{r}\\right)^d_{\\rm BH}  & \\left(\\frac{|h|}{r}\\right)^d_{5} & \\left(\\frac{|h|}{r}\\right)^d_{20} & \\left(\\frac{|h|}{r}\\right)^d_{100} \\\\" )
-    print( "Latex: %g & %g & %g & %g & %g & %g & %g & %g  \\\\" % ( roundto2(qmridisk20_avg), roundto2(qmridisk100_avg), roundto2(q2mridisk20_avg), roundto2(q2mridisk100_avg), roundto2(hoverrhor_avg), roundto2( hoverr5_avg), roundto2(hoverr20_avg), roundto2(hoverr100_avg) ) )
+    print( "Latex: Q_{1,\\rm MRI,10} & Q_{1,\\rm MRI,20} & Q_{2,\\rm MRI,10} & Q_{2,\\rm MRI,20} & \\left(\\frac{|h|}{r}\\right)^d_{\\rm BH}  & \\left(\\frac{|h|}{r}\\right)^d_{5} & \\left(\\frac{|h|}{r}\\right)^d_{20} & \\left(\\frac{|h|}{r}\\right)^d_{100} & \\left(\\frac{|h|}{r}\\right)^j_{\\rm BH}  & \\left(\\frac{|h|}{r}\\right)^j_{5} & \\left(\\frac{|h|}{r}\\right)^j_{20} & \\left(\\frac{|h|}{r}\\right)^j_{100} \\\\" )
+    print( "Latex: %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g  \\\\" % ( roundto2(qmridisk10_avg), roundto2(qmridisk20_avg), roundto2(q2mridisk10_avg), roundto2(q2mridisk20_avg), roundto2(hoverrhor_avg), roundto2( hoverr5_avg), roundto2(hoverr20_avg), roundto2(hoverr100_avg), roundto2(hoverrnonjethor_avg), roundto2( hoverrnonjet5_avg), roundto2(hoverrnonjet20_avg), roundto2(hoverrnonjet100_avg) ) )
     #
     einf,linf=elinfcalc(a)
     etant=prefactor*(1.0-einf)
