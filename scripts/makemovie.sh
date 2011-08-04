@@ -160,7 +160,9 @@ then
 	        # No, fieldline file itself of up to order 400M should be cached in memory for most systems.
     		sleep 1
                 # run job
-		nohup python $myinitfile $runi $runn &> python_${runi}_${runn}.out &
+		#nohup python $myinitfile $runi $runn &> python_${runi}_${runn}.out &
+		((nohup python $myinitfile $runi $runn 2>&1 1>&3 | tee python_${runi}_${runn}.stderr.out) 3>&1 1>&2 | tee python_${runi}_${runn}.out) > python_${runi}_${runn}.full.out 2>&1 &
+
 	    done
 	    wait
 	    echo "Data vs. Time: Ending simultaneous run of $itot jobs for group $j"
@@ -170,10 +172,13 @@ then
     wait
 
     echo "Merge to single file"
-    nohup python $myinitfile $runn $runn &> python_${runn}_${runn}.out
+    #nohup python $myinitfile $runn $runn &> python_${runn}_${runn}.out
+    ((nohup python $myinitfile $runn $runn 2>&1 1>&3 | tee python_${runn}_${runn}.stderr.out) 3>&1 1>&2 | tee python_${runn}_${runn}.out) > python_${runn}_${runn}.full.out 2>&1
 
     echo "Generate the plots"
-    nohup python $myinitfile &> python.plot.out
+    # &> 
+    ((nohup python $myinitfile 2>&1 1>&3 | tee python.plot.stderr.out) 3>&1 1>&2 | tee python.plot.out) > python.plot.full.out 2>&1
+
     
     # remove created file
     rm -rf $myinitfile
@@ -255,7 +260,11 @@ then
                 # sleep in order for all threads not to read in at once and overwhelm the drive
 		sleep 1
 	        # run job
-		nohup python $myinitfile2 $runi $runn &> python_${runi}_${runn}.2.out &
+		#nohup python $myinitfile2 $runi $runn &> y &
+
+		((nohup python $myinitfile2 $runi $runn  2>&1 1>&3 | tee python_${runi}_${runn}.2.stderr.out) 3>&1 1>&2 | tee python_${runi}_${runn}.2.out) > python_${runi}_${runn}.2.full.out 2>&1 &
+
+
 	    done
 	    wait
 	    echo "Movie Frames: Ending simultaneous run of $itot jobs for group $j"
