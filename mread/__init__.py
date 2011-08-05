@@ -577,15 +577,24 @@ def plot2davg(dosq=True,whichplot=-1):
     rhor=1+(1-a**2)**0.5
     ihor=iofr(rhor)
     #
+    myMB09=0
+    #
+    if myMB09==1:
+	    defaultfti=2000
+	    defaultftf=1e5
+    else:
+	    defaultfti=8000
+	    defaultftf=1e5
+    #
     qtymem=getqtyvstime(ihor,0.2)
     if avg_ts[0] != 0:
         fti = avg_ts[0]
     else:
-        fti = 8000
+        fti = defaultfti
     if avg_te[0] != 0:
         ftf = avg_te[0]
     else:
-        ftf = 1e5
+        ftf = defaultftf
     print( "Using: ti = %g, tf = %g" % (fti,ftf) )
     md, ftot, fsqtot, f30, fsq30, pjemtot  = plotqtyvstime(qtymem,ihor=ihor,whichplot=-1,fti=fti,ftf=ftf)
     #
@@ -1132,25 +1141,29 @@ def betascalc(which=1,rdown=0.0,rup=1.0E3):
     ibeta=pb/pg
     beta=pg/pb
     #
-    rhomax=np.max(rho)
-    pgmax=np.max(pg)
-    pbmax=np.max(pb)
+    # don't take max over entire region since for thickdisk models with HyperExp, field is actually large at the equator at very large radii
+    condition1=(which)
+    condition1=condition1*(r<rup)
+    condition1=condition1*(r>rdown)
     #
-    condition=(which)
-    condition=condition*(r<rup)
-    condition=condition*(r>rdown)
-    condition=condition*(rho>0.25*rhomax)
-    condition=condition*(pg>0.25*pgmax)
+    rhomax=np.max(rho*condition1)
+    pgmax=np.max(pg*condition1)
+    pbmax=np.max(pb*condition1)
     #
-    ibetaavg=np.average(ibeta,weights=condition*gdet)
+    #condition2=condition1*(rho>0.25*rhomax)
+    #condition2=condition2*(pg>0.25*pgmax)
+    condition2=condition1
+    #
+    ibetaavg=np.average(ibeta,weights=condition2*gdet)
     betaavg=1.0/ibetaavg
-    pgavg=np.average(pg,weights=condition*gdet)
-    pbavg=np.average(pb,weights=condition*gdet)
+    pgavg=np.average(pg,weights=condition2*gdet)
+    pbavg=np.average(pb,weights=condition2*gdet)
     #
     # find actual minimum beta
-    #ibetamax=np.max(1.0/beta)
-    #betamin=1.0/ibetamax
-    betamin=np.min(beta)
+    ibetamax=np.max(condition1*ibeta)
+    betamin=1.0/ibetamax
+    #betamin=np.min(beta)
+    #betamin=np.min(beta)
     # find ratio of averages
     betaratofavg=pgavg/pbavg
     # ratio of maxes
@@ -3898,13 +3911,23 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         fti = gd1[2]
         ftf = gd1[3]
     else:
-        print( "Warning: titf.txt not found: using default numbers for averaging" )
         dotavg=1
+	#
+	myMB09=0
+	#
+	if myMB09==1:
+		defaultfti=2000
+		defaultftf=1e5
+	else:
+		defaultfti=8000
+		defaultftf=1e5
+        #
         iti = 3000
         itf = 4000
-        fti = 8000
-        ftf = 1e5
-
+        fti = defaultfti
+        ftf = defaultftf
+        print( "Warning: titf.txt not found: using default numbers for averaging: %g %g %g %g" % (iti, itf, fti, ftf) )
+    #
     #mdotiniavg = timeavg(mdtot[:,ihor]-md10[:,ihor],ts,fti,ftf)
     #mdotfinavg = (mdtot[:,ihor]-md10[:,ihor])[(ts<ftf)*(ts>=fti)].sum()/(mdtot[:,ihor]-md10[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0]
     mdotiniavgvsr = timeavg(mdtot,ts,iti,itf)
@@ -4315,7 +4338,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     print( "eta_BH = %g, eta_j = %g, eta_w = %g, eta_jw = %g, FMavg=%g, mdot = %g, mdot30 = %g, ptot_BH = %g" % ( etabh_avg, etaj_avg, etawout_avg, etaj_avg + etawout_avg, FMavg, mdotfinavg, mdot30finavg, ptot_avg ) )
     if iti > fti:
-        print( "eta_BH2 = %g, eta_j2 = %g, eta_w2 = %g, eta_jw2 = %g, Fminiavg=%g, mdot2 = %g, mdot230=%g, ptot2_BH = %g" % ( etabh2_avg, etaj2_avg, etawout2_avg, etaj2_avg + etawout2_avg, Fminiavg, mdotiniavg, mdot30iniavg, ptot2_avg ) )
+        print( "eta_BH2 = %g, eta_j2 = %g, eta_w2 = %g, eta_jw2 = %g, FMiniavg=%g, mdot2 = %g, mdot230=%g, ptot2_BH = %g" % ( etabh2_avg, etaj2_avg, etawout2_avg, etaj2_avg + etawout2_avg, FMiniavg, mdotiniavg, mdot30iniavg, ptot2_avg ) )
     #
     #
     ######################################
@@ -4732,6 +4755,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     print( "Jon's values: (recall mdotorig = mdot + mdot30 should be =FMavg)" )
     #
+    #
     print( "mdot = %g, mdot10 = %g, mdot30 = %g, mdotinin = %g, mdotinout=%g, mdotjet = %g, mdotwin = %g, mdotwout = %g" % ( mdotfinavg, mdot10finavg, mdot30finavg, mdotinrjetinfinavg, mdotinrjetoutfinavg, mdotjetfinavg, mdotwinfinavg, mdotwoutfinavg) )
     #
     print( "hoverrhor = %g, hoverr2 = %g, hoverr5 = %g, hoverr10 = %g, hoverr20 = %g, hoverr100 = %g" % ( hoverrhor_avg ,  hoverr2_avg , hoverr5_avg , hoverr10_avg ,  hoverr20_avg ,  hoverr100_avg ) )
@@ -4757,26 +4781,114 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     print( "leta_BH = %g, leta_BHEM = %g, leta_BHMAKE = %g, leta_jwout = %g, leta_j = %g, leta_jEM = %g, leta_jMAKE = %g, leta_win = %g, leta_winEM = %g, leta_winMAKE = %g, leta_wout = %g, leta_woutEM = %g, leta_woutMAKE = %g, lemtot_BH = %g" % ( letabh_avg, letabhEM_avg, letabhMAKE_avg, letaj_avg + letawout_avg, letaj_avg, letajEM_avg, letajMAKE_avg, letawin_avg, letawinEM_avg, letawinMAKE_avg, letawout_avg, letawoutEM_avg, letawoutMAKE_avg, lemtot_avg ) )
     #
     if iti > fti:
-        print("Incomplete output:")
-        print( "mdot2 = %g, mdot230 = %g, mdotjet2 = %g, mdotwin2 = %g, mdotwout2 = %g" % ( mdotiniavg, mdot30iniavg, mdotjetiniavg, mdotwiniavg, mdotwoutiavg ) )
-        print( "eta_BH2 = %g, eta_BHEM2 = %g, eta_BHMAKE2 = %g, eta_jw2 = %g, eta_j2 = %g, eta_jEM2 = %g, eta_jMAKE2 = %g, eta_w2 = %g, eta_wEM2 = %g, eta_wMAKE2 = %g , pemtot_BH2 = %g" % ( etabh2_avg, etabhEM2_avg, etabhMAKE2_avg, etaj2_avg + etaw2_avg, etaj2_avg, etajEM2_avg, etajMAKE2_avg, etaw2_avg, etawEM2_avg, etawMAKE2_avg, pemtot2_avg ) )
+        print( "incomplete output: %g %g" % (iti, fti) )
+        print( "mdot2 = %g, mdot230 = %g, mdotjet2 = %g, mdotwin2 = %g, mdotwout2 = %g" % ( mdotiniavg, mdot30iniavg, mdotjetiniavg, mdotwininiavg, mdotwoutiniavg ) )
+        print( "eta_BH2 = %g, eta_BHEM2 = %g, eta_BHMAKE2 = %g, eta_jw2 = %g, eta_j2 = %g, eta_jEM2 = %g, eta_jMAKE2 = %g, eta_w2 = %g, eta_wEM2 = %g, eta_wMAKE2 = %g , pemtot_BH2 = %g" % ( etabh2_avg, etabhEM2_avg, etabhMAKE2_avg, etaj2_avg + etawin2_avg, etaj2_avg, etajEM2_avg, etajMAKE2_avg, etawin2_avg, etawinEM2_avg, etawinMAKE2_avg, pemtot2_avg ) )
         #
-        print( "leta_BH2 = %g, leta_BHEM2 = %g, leta_BHMAKE2 = %g, leta_jw2 = %g, leta_j2 = %g, leta_jEM2 = %g, leta_jMAKE2 = %g, leta_w2 = %g, leta_wEM2 = %g, leta_wMAKE2 = %g , lemtot_BH2 = %g" % ( letabh2_avg, letabhEM2_avg, letabhMAKE2_avg, letaj2_avg + letaw2_avg, letaj2_avg, letajEM2_avg, letajMAKE2_avg, letaw2_avg, letawEM2_avg, letawMAKE2_avg, lemtot2_avg ) )
+        print( "leta_BH2 = %g, leta_BHEM2 = %g, leta_BHMAKE2 = %g, leta_jw2 = %g, leta_j2 = %g, leta_jEM2 = %g, leta_jMAKE2 = %g, leta_w2 = %g, leta_wEM2 = %g, leta_wMAKE2 = %g , lemtot_BH2 = %g" % ( letabh2_avg, letabhEM2_avg, letabhMAKE2_avg, letaj2_avg + letawin2_avg, letaj2_avg, letajEM2_avg, letajMAKE2_avg, letawin2_avg, letawinEM2_avg, letawinMAKE2_avg, lemtot2_avg ) )
     #
     #
+    #
+    global gridtype
+    if myMB09==1:
+	    gridtype="Exp Old"
+	    fieldtype="Poloidal Old"
+    elif Rout==26000:
+	    gridtype="Hyp Exp"
+    elif Rout==1000:
+	    gridtype="Exp"
+    else:
+	    gridtype="Unknownn Model Grid Type"
+    #
+    if modelname=="thickdisk7":
+	    fieldtype="Poloidal Flip"
+	    truemodelname="A94BfN40"
+    elif modelname=="thickdisk8":
+	    fieldtype="Poloidal Flip"
+	    truemodelname="A94BfN40\_C1"
+    elif modelname=="thickdisk11":
+	    fieldtype="Poloidal Flip"
+	    truemodelname="A94BfN40\_C2"
+    elif modelname=="thickdisk12":
+	    fieldtype="Poloidal Flip"
+	    truemodelname="A94BfN40\_C3"
+    elif modelname=="thickdisk13":
+	    fieldtype="Poloidal Flip"
+	    truemodelname="A94BfN40\_C4"
+    elif modelname=="run.liker2butbeta40":
+	    fieldtype="Poloidal Flip"
+	    truemodelname="A94BfN40\_C5"
+    elif modelname=="thickdiskrr2":
+	    fieldtype="Poloidal Flip"
+	    truemodelname="A-94BfN10"
+    elif modelname=="run.like8":
+	    fieldtype="Poloidal Flip"
+	    truemodelname="A-94BfN10\_C1"
+    elif modelname=="thickdisk16":
+	    fieldtype="Poloidal Flip"
+	    truemodelname="A-5BfN10"
+    elif modelname=="thickdisk5":
+	    fieldtype="Poloidal Flip"
+	    truemodelname="A0BfN10"
+    elif modelname=="thickdisk14":
+	    fieldtype="Poloidal Flip"
+	    truemodelname="A5BfN10"
+    elif modelname=="thickdiskr1":
+	    fieldtype="Poloidal Flip"
+	    truemodelname="A94BfN10"
+    elif modelname=="run.liker1":
+	    fieldtype="Poloidal Flip"
+	    truemodelname="A94BfN10\_C1"
+    elif modelname=="thickdiskr2":
+	    fieldtype="Poloidal Flip"
+	    truemodelname="A94BfN10\_R1"
+    elif modelname=="run.liker2":
+	    fieldtype="Poloidal Flip"
+	    truemodelname="A-94BfN40"
+    elif modelname=="thickdisk9":
+	    fieldtype="Poloidal"
+	    truemodelname="A94BpN10"
+    elif modelname=="thickdiskr3":
+	    fieldtype="Toroidal"
+	    truemodelname="A-94BtN10"
+    elif modelname=="thickdisk17":
+	    fieldtype="Toroidal"
+	    truemodelname="A-5BtN10"
+    elif modelname=="thickdisk10":
+	    fieldtype="Toroidal"
+	    truemodelname="A0BtN10"
+    elif modelname=="thickdisk15":
+	    fieldtype="Toroidal"
+	    truemodelname="A5BtN10"
+    elif modelname=="thickdisk2":
+	    fieldtype="Toroidal"
+	    truemodelname="A94BtN10"
+    elif modelname=="thickdisk3":
+	    fieldtype="Toroidal"
+	    truemodelname="A94BtN10\_R1"
+    elif modelname=="runlocaldipole3dfiducial":
+	    fieldtype="Poloidal Flip"
+	    truemodelname="MB09_D"
+    elif modelname=="sasha99":
+	    fieldtype="Poloidal2"
+	    truemodelname="A0.99fc"
+	    # specify grid type here
+	    gridtype="A0.99fc"
+    else:
+	    fieldtype="Unknown Model Field Type"
     #
     # 6:
-    print( "Latex: $\\dot{M}_{\\rm BH}$  & $\\dot{M}_{\\rm in,i}$ & $\\dot{M}_{\\rm in,o}$ & $\\dot{M}_{\\rm j}4 & $\\dot{M}_{\\rm w,i}$ & $\\dot{M}_{\\rm w,o}$ \\\\" )
-    print( "Latex: %g & %g & %g & %g & %g & %g \\\\" % ( roundto2(mdotfinavg), roundto2(mdotinrjetinfinavg), roundto2(mdotinrjetoutfinavg), roundto2(mdotjetfinavg), roundto2(mdotwinfinavg), roundto2(mdotwoutfinavg) ) )
+    print( "Latex5: Model Name & $\\dot{M}_{\\rm BH}$  & $\\dot{M}_{\\rm in,i}$ & $\\dot{M}_{\\rm in,o}$ & $\\dot{M}_{\\rm j}4 & $\\dot{M}_{\\rm w,i}$ & $\\dot{M}_{\\rm w,o}$ \\\\" )
+    print( "Latex5: %s         & %g & %g & %g & %g & %g & %g \\\\" % (truemodelname, roundto2(mdotfinavg), roundto2(mdotinrjetinfinavg), roundto2(mdotinrjetoutfinavg), roundto2(mdotjetfinavg), roundto2(mdotwinfinavg), roundto2(mdotwoutfinavg) ) )
     #
     # 12:
-    print( "Latex: $\\delta r:r \\delta\\theta:r\\sin\\theta \\delta\\phi$" )
-    print( "Latex: $r=r_+$ & $r=20$ & $r=100$ \\\\" )
-    print( "Latex: %g:%g:%g & %g:%g:%g & %g:%g:%g" % ( roundto2(drnormvsrhor), roundto2(dHnormvsrhor), roundto2(dPnormvsrhor), roundto2(drnormvsr20), roundto2(dHnormvsr20), roundto2(dPnormvsr20), roundto2(drnormvsr100), roundto2(dHnormvsr100), roundto2(dPnormvsr100) ) )
+    print( "Latex95: $\\delta r:r \\delta\\theta:r\\sin\\theta \\delta\\phi$" )
+    print( "Latex95: Model Name & $r=r_+$ & $r=20$ & $r=100$ \\\\" )
+    print( "Latex95: %s         & %g:%g:%g & %g:%g:%g & %g:%g:%g" % (truemodelname, roundto2(drnormvsrhor), roundto2(dHnormvsrhor), roundto2(dPnormvsrhor), roundto2(drnormvsr20), roundto2(dHnormvsr20), roundto2(dPnormvsr20), roundto2(drnormvsr100), roundto2(dHnormvsr100), roundto2(dPnormvsr100) ) )
     #
     # 8:
-    print("Latex: Model Name & $a$ & Field Type & $\\beta_{\\rm min}$ & $\\beta_{\\rm rat-of-avg} & $\\left(\\frac{|h|}{r}\\right)_{r_{\\rm max}}$ & $Q_{1,t=0,\\rm MRI,i}$  & $Q_{1,t=0,\\rm MRI,o}$ & $Q_{2,t=0,\\rm MRI,i}$ & $Q_{2,t=0,\\rm MRI,o}$  \\\\")
-    print("Latex:            & %g  &            & %g                  & %g                        & %g                                             & %g                       & %g                       & %g                      & %g \\\\" % (a,roundto2(betamin_t0),roundto2(betaratofavg_t0),roundto2(hoverratrmax_t0),roundto2(qmridisk20_t0), roundto2(qmridisk100_t0), roundto2(1.0/iq2mridisk20_t0), roundto2(1.0/iq2mridisk100_t0) ) )
+    print("Latex1: Model Name & $a$ & Field Type & $\\beta_{\\rm min}$ & $\\beta_{\\rm rat-of-avg} & $\\left(\\frac{|h|}{r}\\right)_{r_{\\rm max}}$ & $Q_{1,t=0,\\rm MRI,i}$  & $Q_{1,t=0,\\rm MRI,o}$ & $Q_{2,t=0,\\rm MRI,i}$ & $Q_{2,t=0,\\rm MRI,o}$  \\\\")
+    print("Latex1: %s         & %g  &  %s        & %g                  & %g                        & %g                                             & %g                       & %g                       & %g                      & %g \\\\" % (truemodelname,a,fieldtype,roundto2(betamin_t0),roundto2(betaratofavg_t0),roundto2(hoverratrmax_t0),roundto2(qmridisk20_t0), roundto2(qmridisk100_t0), roundto2(1.0/iq2mridisk20_t0), roundto2(1.0/iq2mridisk100_t0) ) )
     #
     # find true range that used for averaging
     truetmax=np.max(ts)
@@ -4787,27 +4899,28 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     if truetmax>ftf:
 	    truetmax=ftf
     #
+    #
     # 16:
-    print("Latex: Model Name  & Grid Type & $N_r$ & $N_\\theta$ & $N_\\phi$ & $R_{\\rm in}$ & $R_{\\rm out}$  & $A_{r=r_+}$ & $A_{r=10--20}$ & $A_{r=100}$ & $T_i$--$T_f$  \\\\")
-    print("Latex:             &           &  %g   & %g          & %g        & %g            & %g              & %g:%g:%g    & %g:%g:%g       & %g:%g:%g    & %g--%g \\\\" % (nx,ny,nz,Rin,Rout,roundto2(drnormvsrhor), roundto2(dHnormvsrhor), roundto2(dPnormvsrhor), roundto2(drnormvsr20), roundto2(dHnormvsr20), roundto2(dPnormvsr20), roundto2(drnormvsr100), roundto2(dHnormvsr100), roundto2(dPnormvsr100),truetmin,truetmax) )
+    print("Latex2: Model Name  & Grid Type & $N_r$ & $N_\\theta$ & $N_\\phi$ & $R_{\\rm in}$ & $R_{\\rm out}$  & $A_{r=r_+}$ & $A_{r=10--20}$ & $A_{r=100}$ & $T_i$--$T_f$  \\\\")
+    print("Latex2: %s          & %s        &  %g   & %g          & %g        & %g            & %g              & %g:%g:%g    & %g:%g:%g       & %g:%g:%g    & %g--%g \\\\" % (truemodelname,gridtype,nx,ny,nz,Rin,Rout,roundto2(drnormvsrhor), roundto2(dHnormvsrhor), roundto2(dPnormvsrhor), roundto2(drnormvsr20), roundto2(dHnormvsr20), roundto2(dPnormvsr20), roundto2(drnormvsr100), roundto2(dHnormvsr100), roundto2(dPnormvsr100),truetmin,truetmax) )
 
     #
     # 8:
-    print( "Latex: $Q_{1,t=0,\\rm MRI,10}$ & $Q_{1,t=0,\\rm MRI,20}$  & $Q_{1,t=0,\\rm MRI,100}$ & $Q_{2,t=0,\\rm MRI,10}$ & $Q_{2,t=0,\\rm MRI,20}$ & $Q_{2,t=0,\\rm MRI,100}$  \\\\" )
-    print( "Latex: %g & %g & %g & %g & %g & %g \\\\" % ( roundto2(qmridisk10_t0), roundto2(qmridisk20_t0), roundto2(qmridisk100_t0), roundto2(1.0/iq2mridisk10_t0), roundto2(1.0/iq2mridisk20_t0), roundto2(1.0/iq2mridisk100_t0) ) )
+    print( "Latex99: Model Name & $Q_{1,t=0,\\rm MRI,10}$ & $Q_{1,t=0,\\rm MRI,20}$  & $Q_{1,t=0,\\rm MRI,100}$ & $Q_{2,t=0,\\rm MRI,10}$ & $Q_{2,t=0,\\rm MRI,20}$ & $Q_{2,t=0,\\rm MRI,100}$  \\\\" )
+    print( "Latex99: %s         & %g & %g & %g & %g & %g & %g \\\\" % (truemodelname, roundto2(qmridisk10_t0), roundto2(qmridisk20_t0), roundto2(qmridisk100_t0), roundto2(1.0/iq2mridisk10_t0), roundto2(1.0/iq2mridisk20_t0), roundto2(1.0/iq2mridisk100_t0) ) )
     #
-    print( "Latex: $Q_{1,\\rm MRI,10}$ & $Q_{1,\\rm MRI,20}$  & $Q_{1,\\rm MRI,100}$ & $Q_{2,\\rm MRI,10}$ & $Q_{2,\\rm MRI,20}$ & $Q_{2,\\rm MRI,100}$  \\\\" )
-    print( "Latex: %g & %g & %g & %g & %g & %g \\\\" % ( roundto2(qmridisk10_avg), roundto2(qmridisk20_avg), roundto2(qmridisk100_avg), roundto2(1.0/iq2mridisk10_avg), roundto2(1.0/iq2mridisk20_avg), roundto2(1.0/iq2mridisk100_avg) ) )
+    print( "Latex4: Model Name & $Q_{1,\\rm MRI,10}$ & $Q_{1,\\rm MRI,20}$  & $Q_{1,\\rm MRI,100}$ & $Q_{2,\\rm MRI,10}$ & $Q_{2,\\rm MRI,20}$ & $Q_{2,\\rm MRI,100}$  \\\\" )
+    print( "Latex4: %s         & %g & %g & %g & %g & %g & %g \\\\" % (truemodelname, roundto2(qmridisk10_avg), roundto2(qmridisk20_avg), roundto2(qmridisk100_avg), roundto2(1.0/iq2mridisk10_avg), roundto2(1.0/iq2mridisk20_avg), roundto2(1.0/iq2mridisk100_avg) ) )
     #
     # 8:
-    print( "Latex: $Q_{1,t=0,\\rm MRI,10,w}$ & $Q_{1,t=0,\\rm MRI,20,w}$  & $Q_{1,t=0,\\rm MRI,100,w}$ & $Q_{2,t=0,\\rm MRI,10,w}$ & $Q_{2,t=0,\\rm MRI,20,w}$ & $Q_{2,t=0,\\rm MRI,100,w}$  \\\\" )
-    print( "Latex: %g & %g & %g & %g & %g & %g \\\\" % ( roundto2(qmridiskweak10_t0), roundto2(qmridiskweak20_t0), roundto2(qmridiskweak100_t0), roundto2(1.0/iq2mridiskweak10_t0), roundto2(1.0/iq2mridiskweak20_t0), roundto2(1.0/iq2mridiskweak100_t0) ) )
+    print( "Latex97: Model Name & $Q_{1,t=0,\\rm MRI,10,w}$ & $Q_{1,t=0,\\rm MRI,20,w}$  & $Q_{1,t=0,\\rm MRI,100,w}$ & $Q_{2,t=0,\\rm MRI,10,w}$ & $Q_{2,t=0,\\rm MRI,20,w}$ & $Q_{2,t=0,\\rm MRI,100,w}$  \\\\" )
+    print( "Latex97: %s         & %g & %g & %g & %g & %g & %g \\\\" % (truemodelname, roundto2(qmridiskweak10_t0), roundto2(qmridiskweak20_t0), roundto2(qmridiskweak100_t0), roundto2(1.0/iq2mridiskweak10_t0), roundto2(1.0/iq2mridiskweak20_t0), roundto2(1.0/iq2mridiskweak100_t0) ) )
     #
-    print( "Latex: $Q_{1,\\rm MRI,10,w}$ & $Q_{1,\\rm MRI,20,w}$  & $Q_{1,\\rm MRI,100,w}$ & $Q_{2,\\rm MRI,10,w}$ & $Q_{2,\\rm MRI,20,w}$ & $Q_{2,\\rm MRI,100,w}$  \\\\" )
-    print( "Latex: %g & %g & %g & %g & %g & %g \\\\" % ( roundto2(qmridiskweak10_avg), roundto2(qmridiskweak20_avg), roundto2(qmridiskweak100_avg), roundto2(1.0/iq2mridiskweak10_avg), roundto2(1.0/iq2mridiskweak20_avg), roundto2(1.0/iq2mridiskweak100_avg) ) )
+    print( "Latex96: Model Name & $Q_{1,\\rm MRI,10,w}$ & $Q_{1,\\rm MRI,20,w}$  & $Q_{1,\\rm MRI,100,w}$ & $Q_{2,\\rm MRI,10,w}$ & $Q_{2,\\rm MRI,20,w}$ & $Q_{2,\\rm MRI,100,w}$  \\\\" )
+    print( "Latex96: %s         & %g & %g & %g & %g & %g & %g \\\\" % (truemodelname, roundto2(qmridiskweak10_avg), roundto2(qmridiskweak20_avg), roundto2(qmridiskweak100_avg), roundto2(1.0/iq2mridiskweak10_avg), roundto2(1.0/iq2mridiskweak20_avg), roundto2(1.0/iq2mridiskweak100_avg) ) )
     #
-    print( "Latex: $\\left(\\frac{|h|}{r}\\right)^d_{\\rm BH}$  & $\\left(\\frac{|h|}{r}\\right)^d_{5}$ & $\\left(\\frac{|h|}{r}\\right)^d_{20}$ & $\\left(\\frac{|h|}{r}\\right)^d_{100}$ & $\\left(\\frac{|h|}{r}\\right)^c_{\\rm BH}$  & $\\left(\\frac{|h|}{r}\\right)^c_{5}$ & $\\left(\\frac{|h|}{r}\\right)^c_{20}$ & $\\left(\\frac{|h|}{r}\\right)^c_{100}$ & $\\left(\\frac{|h|}{r}\\right)^j_{\\rm BH}$  & $\\left(\\frac{|h|}{r}\\right)^j_{5}$ & $\\left(\\frac{|h|}{r}\\right)^j_{20}$ & $\\left(\\frac{|h|}{r}\\right)^j_{100}$ \\\\" )
-    print( "Latex: %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g  \\\\" % ( roundto2(hoverrhor_avg), roundto2( hoverr5_avg), roundto2(hoverr20_avg), roundto2(hoverr100_avg), roundto2(hoverrcoronahor_avg), roundto2( hoverrcorona5_avg), roundto2(hoverrcorona20_avg), roundto2(hoverrcorona100_avg), roundto2(hoverrjethor_avg), roundto2( hoverrjet5_avg), roundto2(hoverrjet20_avg), roundto2(hoverrjet100_avg) ) )
+    print( "Latex3: Model Name & $\\left(\\frac{|h|}{r}\\right)^d_{\\rm BH}$  & $\\left(\\frac{|h|}{r}\\right)^d_{5}$ & $\\left(\\frac{|h|}{r}\\right)^d_{20}$ & $\\left(\\frac{|h|}{r}\\right)^d_{100}$ & $\\left(\\frac{|h|}{r}\\right)^c_{\\rm BH}$  & $\\left(\\frac{|h|}{r}\\right)^c_{5}$ & $\\left(\\frac{|h|}{r}\\right)^c_{20}$ & $\\left(\\frac{|h|}{r}\\right)^c_{100}$ & $\\left(\\frac{|h|}{r}\\right)^j_{\\rm BH}$  & $\\left(\\frac{|h|}{r}\\right)^j_{5}$ & $\\left(\\frac{|h|}{r}\\right)^j_{20}$ & $\\left(\\frac{|h|}{r}\\right)^j_{100}$ \\\\" )
+    print( "Latex3: %s         & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g  \\\\" % (truemodelname, roundto2(hoverrhor_avg), roundto2( hoverr5_avg), roundto2(hoverr20_avg), roundto2(hoverr100_avg), roundto2(hoverrcoronahor_avg), roundto2( hoverrcorona5_avg), roundto2(hoverrcorona20_avg), roundto2(hoverrcorona100_avg), roundto2(hoverrjethor_avg), roundto2( hoverrjet5_avg), roundto2(hoverrjet20_avg), roundto2(hoverrjet100_avg) ) )
     #
     #
     einf,linf=elinfcalc(a)
@@ -4815,8 +4928,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     lnt=-linf
     #
     # 14:
-    print( "Latex: $\\eta_{\\rm BH}$ & $\\eta^{\\rm EM}_{\\rm BH}$ & $\\eta^{\\rm MAKE}_{\\rm BH}$ & $\\eta_{\\rm j+w}$ & $\\eta_{\\rm j}$ & $\\eta^{\\rm EM}_j$ & $\\eta^{\\rm MAKE}_{\\rm j}$ & $\\eta_{\\rm w,i}$ & $\\eta^{\\rm EM}_{\\rm w,i}$ & $\\eta^{\\rm MAKE}_{\\rm w,i}$ & $\\eta_{\\rm w,o}$ & $\\eta^{\\rm EM}_{\\rm w,o}$ & $\\eta^{\\rm MAKE}_{\\rm w,o}$ & $\\eta_{\\rm NT}$ \\\\" )
-    print( "Latex: %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g \\\\" % ( roundto2(etabh_avg), roundto2(etabhEM_avg), roundto2(etabhMAKE_avg), roundto2(etaj_avg + etawout_avg), roundto2(etaj_avg), roundto2(etajEM_avg), roundto2(etajMAKE_avg), roundto2(etawin_avg), roundto2(etawinEM_avg), roundto2(etawinMAKE_avg), roundto2(etawout_avg), roundto2(etawoutEM_avg), roundto2(etawoutMAKE_avg), roundto2(etant) ) )
+    print( "Latex6: Model Name & $\\eta_{\\rm BH}$ & $\\eta^{\\rm EM}_{\\rm BH}$ & $\\eta^{\\rm MAKE}_{\\rm BH}$ & $\\eta_{\\rm j+w,o}$ & $\\eta_{\\rm j}$ & $\\eta^{\\rm EM}_j$ & $\\eta^{\\rm MAKE}_{\\rm j}$ & $\\eta_{\\rm w,i}$ & $\\eta^{\\rm EM}_{\\rm w,i}$ & $\\eta^{\\rm MAKE}_{\\rm w,i}$ & $\\eta_{\\rm w,o}$ & $\\eta^{\\rm EM}_{\\rm w,o}$ & $\\eta^{\\rm MAKE}_{\\rm w,o}$ & $\\eta_{\\rm NT}$ \\\\" )
+    print( "Latex6: %s         & %g%% & %g%% & %g%% & %g%% & %g%% & %g%% & %g%% & %g%% & %g%% & %g%% & %g%% & %g%% & %g%% & %g%% \\\\" % (truemodelname, roundto2(etabh_avg), roundto2(etabhEM_avg), roundto2(etabhMAKE_avg), roundto2(etaj_avg + etawout_avg), roundto2(etaj_avg), roundto2(etajEM_avg), roundto2(etajMAKE_avg), roundto2(etawin_avg), roundto2(etawinEM_avg), roundto2(etawinMAKE_avg), roundto2(etawout_avg), roundto2(etawoutEM_avg), roundto2(etawoutMAKE_avg), roundto2(etant) ) )
     #
     lbh_avg=letabh_avg/prefactor
     lbhEM_avg=letabhEM_avg/prefactor
@@ -4833,8 +4946,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     lwoutMAKE_avg=letawoutMAKE_avg/prefactor
     #
     # 14:
-    print( "Latex: $l_{\\rm BH}$ & $l^{\\rm EM}_{\\rm BH}$ & $l^{\\rm MAKE}_{\\rm BH}$ & $l_{\\rm j+w,o}$ & $l_{\\rm j}$ & $l^{\\rm EM}_{\\rm j}$ & $l^{\\rm MAKE}_{\\rm j}$ & $l_{\\rm w,i}$ & $l^{\\rm EM}_{\\rm w,i}$ & $l^{\\rm MAKE}_{\\rm w,i}$ & $l_{\\rm w,o}$ & $l^{\\rm EM}_{\\rm w,o}$ & $l^{\\rm MAKE}_{\\rm w,o}$ & $l_{\\rm NT}$ \\\\" )
-    print( "Latex: %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g \\\\" % ( roundto2(lbh_avg), roundto2(lbhEM_avg), roundto2(lbhMAKE_avg), roundto2(ljwout_avg), roundto2(lj_avg), roundto2(ljEM_avg), roundto2(ljMAKE_avg), roundto2(lwin_avg), roundto2(lwinEM_avg), roundto2(lwinMAKE_avg), roundto2(lwout_avg), roundto2(lwoutEM_avg), roundto2(lwoutMAKE_avg), roundto2(lnt) ) )
+    print( "Latex7: Model Name & $l_{\\rm BH}$ & $l^{\\rm EM}_{\\rm BH}$ & $l^{\\rm MAKE}_{\\rm BH}$ & $l_{\\rm j+w,o}$ & $l_{\\rm j}$ & $l^{\\rm EM}_{\\rm j}$ & $l^{\\rm MAKE}_{\\rm j}$ & $l_{\\rm w,i}$ & $l^{\\rm EM}_{\\rm w,i}$ & $l^{\\rm MAKE}_{\\rm w,i}$ & $l_{\\rm w,o}$ & $l^{\\rm EM}_{\\rm w,o}$ & $l^{\\rm MAKE}_{\\rm w,o}$ & $l_{\\rm NT}$ \\\\" )
+    print( "Latex7: %s         & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g \\\\" % (truemodelname, roundto2(lbh_avg), roundto2(lbhEM_avg), roundto2(lbhMAKE_avg), roundto2(ljwout_avg), roundto2(lj_avg), roundto2(ljEM_avg), roundto2(ljMAKE_avg), roundto2(lwin_avg), roundto2(lwinEM_avg), roundto2(lwinMAKE_avg), roundto2(lwout_avg), roundto2(lwoutEM_avg), roundto2(lwoutMAKE_avg), roundto2(lnt) ) )
     #
     djdtnormbh  = (-lbh_avg) - 2.0*a*(1.0-etabh_avg/prefactor)
     djdtnormj   = (-lj_avg)  - 2.0*a*(1.0-etaj_avg/prefactor)
@@ -4944,7 +5057,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #        
     sashaplot5 = 0
     #
-    #print(feqtot[0,:])
+    # get initial extrema
     # get equatorial flux extrema at t=0 to normalize new flux on hole
     feqtotextrema=extrema(feqtot[0,:])
     print(feqtotextrema)
@@ -4952,6 +5065,14 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     numextrema=len(feqtotextremai)
     # first value is probably 0, so avoid it later below
     feqtotextremaval=feqtotextrema[1]
+    #
+    # also get final extrema
+    feqtotextremafinal=extrema(feqtot[-1,:])
+    print(feqtotextremafinal)
+    feqtotextremaifinal=feqtotextremafinal[0]
+    numextremafinal=len(feqtotextremaifinal)
+    # first value is probably 0, so avoid it later below
+    feqtotextremavalfinal=feqtotextremafinal[1]
     #
     # fstot is absolute flux, so for split-mono gives 2X potential near equator
     # positive fluxvsr means flux points towards \theta=\pi pole, so points in z-direction.
@@ -4966,22 +5087,39 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     fstotnorm4_avg=0.0
     fstotnorm5_avg=0.0
     #
+    sumextreme=0
+    abssumextreme=0
     if numextrema>1:
 	    fstotnorm1=(-fstot[:,ihor]/2.0)/feqtotextremaval[1]
 	    print("rext0=%g" % (r[feqtotextremai[0],0,0]) )
 	    print("rext1=%g" % (r[feqtotextremai[1],0,0]) )
+	    sumextreme+=feqtotextremaval[1]
+	    abssumextreme+=np.fabs(feqtotextremaval[1])
     if numextrema>2:
 	    fstotnorm2=(-fstot[:,ihor]/2.0)/feqtotextremaval[2]
 	    print("rext2=%g" % (r[feqtotextremai[2],0,0]) )
+	    sumextreme+=feqtotextremaval[2]
+	    abssumextreme+=np.fabs(feqtotextremaval[2])
     if numextrema>3:
 	    fstotnorm3=(-fstot[:,ihor]/2.0)/feqtotextremaval[3]
 	    print("rext3=%g" % (r[feqtotextremai[3],0,0]) )
+	    sumextreme+=feqtotextremaval[3]
+	    abssumextreme+=np.fabs(feqtotextremaval[3])
     if numextrema>4:
 	    fstotnorm4=(-fstot[:,ihor]/2.0)/feqtotextremaval[4]
 	    print("rext4=%g" % (r[feqtotextremai[4],0,0]) )
+	    sumextreme+=feqtotextremaval[4]
+	    abssumextreme+=np.fabs(feqtotextremaval[4])
     if numextrema>5:
 	    fstotnorm5=(-fstot[:,ihor]/2.0)/feqtotextremaval[5]
 	    print("rext5=%g" % (r[feqtotextremai[5],0,0]) )
+	    sumextreme+=feqtotextremaval[5]
+	    abssumextreme+=np.fabs(feqtotextremaval[5])
+    #
+    # below can be used to detect poloidal flips vs. poloidal (but not really vs. toroidal)
+    fracdiffabs=np.fabs(np.fabs(sumextreme)-abssumextreme)/((np.fabs(sumextreme)+abssumextreme))
+    #						   
+    #
     if dotavg:
   	    if numextrema>1:
 		    fstotnorm1_avg = timeavg(fstotnorm1**2,ts,fti,ftf)**0.5
@@ -5035,7 +5173,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         phibh[icond]=phibh2[icond]
         phij[icond]=phij2[icond]
         phijs[icond]=phijs2[icond]
-        phins[icond]=phijn2[icond]
+        phijn[icond]=phijn2[icond]
         phiwin[icond]=phiwin2[icond]
         phiwout[icond]=phiwout2[icond]
     if dotavg:
@@ -5048,6 +5186,9 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         phijn_avg = timeavg(phijn**2,ts,fti,ftf)**0.5
         phijs_avg = timeavg(phijn**2,ts,fti,ftf)**0.5
         #
+	if(iti>fti):
+                phibh2_avg = timeavg(phibh2**2,ts,iti,itf)**0.5
+                fstot2_avg = timeavg(fstot[:,ihor]**2,ts,iti,itf)**0.5
     #
     # For whichplot==5 Plot:
     if whichplot == 5:
@@ -5062,8 +5203,6 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
                 #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phiwout**2,ts,fti,ftf)**0.5,'-.',color=(fc,fc,1))
             #
             if(iti>fti):
-                phibh2_avg = timeavg(phibh2**2,ts,iti,itf)**0.5
-                fstot2_avg = timeavg(fstot[:,ihor]**2,ts,iti,itf)**0.5
                 if showextra:
                     ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+timeavg(phij2**2,ts,iti,itf)**0.5,'--',color=(fc,fc+0.5*(1-fc),fc))
                     ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+timeavg(phiwout2**2,ts,iti,itf)**0.5,'-.',color=(fc,fc,1))
@@ -5115,17 +5254,17 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     print( "Upsilon_jet = %g, Upsilon_w,i = %g, Upsilon_w,o = %g" % ( phij_avg , phiwin_avg , phiwout_avg ) )
     print( "Upsilon_jetn = %g, Upsilon_jets = %g" % ( phijn_avg , phijs_avg ) )
     if iti > fti:
-        print( "incomplete output" )
+        print( "incomplete output: %g %g" % (iti, fti) )
         print( "Upsilon2_BH = %g, fstot2 = %g" % ( phibh2_avg, fstot2_avg ) )
     #
     #
     #
     # 9:
-    print( "Latex: $\\Upsilon_{\\rm BH}$ & $\\Upsilon_{\\rm j}$ & $\\Upsilon_{\\rm w,i}$ & $\\Upsilon_{\\rm w,o}$ & $s_{\\rm BH}$ & $s_{\\rm j}$ & $s_{\\rm w,i}$ & $s_{\\rm w,o}$ & $s_{\\rm NT}$ \\\\" )
-    print( "Latex: %g & %g & %g & %g & %g & %g & %g & %g & %g \\\\" % ( roundto2(phibh_avg), roundto2(phij_avg), roundto2(phiwin_avg), roundto2(phiwout_avg), roundto2(djdtnormbh), roundto2(djdtnormj), roundto2(djdtnormwin), roundto2(djdtnormwout), roundto2(djdtnormnt) ) )
+    print( "Latex8: Model Name & $\\Upsilon_{\\rm BH}$ & $\\Upsilon_{\\rm j}$ & $\\Upsilon_{\\rm w,i}$ & $\\Upsilon_{\\rm w,o}$ & $s_{\\rm BH}$ & $s_{\\rm j}$ & $s_{\\rm w,i}$ & $s_{\\rm w,o}$ & $s_{\\rm NT}$ \\\\" )
+    print( "Latex8: %s         & %g & %g & %g & %g & %g & %g & %g & %g & %g \\\\" % (truemodelname, roundto2(phibh_avg), roundto2(phij_avg), roundto2(phiwin_avg), roundto2(phiwout_avg), roundto2(djdtnormbh), roundto2(djdtnormj), roundto2(djdtnormwin), roundto2(djdtnormwout), roundto2(djdtnormnt) ) )
     #
-    print( "Latex: $\\frac{\\Phi}{\\Phi_1(t=0)}$ & $\\frac{\\Phi}{\\Phi_2(t=0)} & $\\frac{\\Phi}{\\Phi_3(t=0)} & $\\frac{\\Phi}{\\Phi_4(t=0)} & $\\frac{\\Phi}{\\Phi_5(t=0)} \\\\ ")
-    print( "Latex: %g & %g & %g & %g & %g \\\\" % ( roundto2(fstotnorm1_avg),roundto2(fstotnorm2_avg),roundto2(fstotnorm3_avg),roundto2(fstotnorm4_avg),roundto2(fstotnorm5_avg) ) )
+    print( "Latex9: Model Name & $\\frac{\\Phi}{\\Phi_1(t=0)}$ & $\\frac{\\Phi}{\\Phi_2(t=0)} & $\\frac{\\Phi}{\\Phi_3(t=0)} & $\\frac{\\Phi}{\\Phi_4(t=0)} & $\\frac{\\Phi}{\\Phi_5(t=0)} \\\\ ")
+    print( "Latex9: %s         & %g & %g & %g & %g & %g \\\\" % (truemodelname, roundto2(fstotnorm1_avg),roundto2(fstotnorm2_avg),roundto2(fstotnorm3_avg),roundto2(fstotnorm4_avg),roundto2(fstotnorm5_avg) ) )
     #
     if whichplot == -1:
         etajetavg = pjetfinavg/mdotfinavg
@@ -5771,6 +5910,19 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     # gc.collect()
 
 def computeeta(start_t=8000,end_t=1e5,numintervals=8,doreload=1):
+    #
+    myMB09=0
+    #
+    if myMB09==1:
+	    defaultfti=2000
+	    defaultftf=1e5
+    else:
+	    defaultfti=8000
+	    defaultftf=1e5
+    #
+    start_t=defaultfti
+    end_t=defaultftf
+    #
     #getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
     grid3d("gdump.bin", use2d = True)
     qtymem = getqtyvstime( iofr(rhor) )
@@ -6472,9 +6624,16 @@ def mkmovie(framesize=50, domakeavi=False):
     plotlentf=2e6
     #To generate movies for all sub-folders of a folder:
     #cd ~/Research/runart; for f in *; do cd ~/Research/runart/$f; (python  ~/py/mread/__init__.py &> python.out &); done
-    if len(sys.argv[1:])==2 and sys.argv[1].isdigit() and (sys.argv[2].isdigit() or sys.argv[2][0]=="-") :
-        whichi = int(sys.argv[1])
-        whichn = int(sys.argv[2])
+    global modelname
+    if len(sys.argv[1:])>0:
+	    modelname = sys.argv[1]
+    else:
+	    modelname = "Unknown Model"
+    #
+    print("Model Name = %s" % (modelname) )
+    if len(sys.argv[1:])==3 and sys.argv[2].isdigit() and (sys.argv[3].isdigit() or sys.argv[3][0]=="-") :
+        whichi = int(sys.argv[2])
+        whichn = int(sys.argv[3])
         print( "Doing every %d slice of total %d slices" % (whichi, whichn) )
         sys.stdout.flush()
     else:
@@ -6667,23 +6826,30 @@ def mkmovie(framesize=50, domakeavi=False):
         #os.system("scp mov.avi 128.112.70.76:Research/movies/mov_`basename \`pwd\``.avi")
 
 def mk2davg():
-    if len(sys.argv[1:])!=0:
+    if len(sys.argv[1:])>1:
         grid3d("gdump.bin",use2d=True)
         #rd("dump0000.bin")
         #rfd("fieldline0000.bin")
         rfdheaderfirstfile()
-        #
-    if len(sys.argv[1:])==2 and sys.argv[1].isdigit() and sys.argv[2].isdigit():
-        whichgroup = int(sys.argv[1])
-        step = int(sys.argv[2])
+    #
+    global modelname
+    if len(sys.argv[1:])>0:
+	    modelname = sys.argv[1]
+    else:
+	    modelname = "Unknown Model"
+    #
+    print("Model Name = %s" % (modelname) )
+    if len(sys.argv[1:])==3 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
+        whichgroup = int(sys.argv[2])
+        step = int(sys.argv[3])
         itemspergroup = 20
         for whichgroup in np.arange(whichgroup,1000,step):
             avgmem = get2davg(whichgroup=whichgroup,itemspergroup=itemspergroup)
         #plot2davg(avgmem)
-    elif len(sys.argv[1:])==3 and sys.argv[1].isdigit() and sys.argv[2].isdigit() and sys.argv[3].isdigit():
-        whichgroups = int(sys.argv[1])
-        whichgroupe = int(sys.argv[2])
-        step = int(sys.argv[3])
+    elif len(sys.argv[1:])==4 and sys.argv[2].isdigit() and sys.argv[3].isdigit() and sys.argv[4].isdigit():
+        whichgroups = int(sys.argv[2])
+        whichgroupe = int(sys.argv[3])
+        step = int(sys.argv[4])
         itemspergroup = 20
         if step == 0:
             avgmem = get2davg(usedefault=1)
@@ -6775,9 +6941,16 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
     #AT: plt.legend( loc = 'upper left', bbox_to_anchor = (0.5, 0.5) ) #0.5, 0.5 = center of plot
     #To generate movies for all sub-folders of a folder:
     #cd ~/Research/runart; for f in *; do cd ~/Research/runart/$f; (python  ~/py/mread/__init__.py &> python.out &); done
-    if len(sys.argv[1:])==2 and sys.argv[1].isdigit() and (sys.argv[2].isdigit() or sys.argv[2][0]=="-") :
-        whichi = int(sys.argv[1])
-        whichn = int(sys.argv[2])
+    global modelname
+    if len(sys.argv[1:])>0:
+	    modelname = sys.argv[1]
+    else:
+	    modelname = "Unknown Model"
+    #
+    print("Model Name = %s" % (modelname) )
+    if len(sys.argv[1:])==3 and sys.argv[2].isdigit() and (sys.argv[3].isdigit() or sys.argv[3][0]=="-") :
+        whichi = int(sys.argv[2])
+        whichn = int(sys.argv[3])
         print( "Doing every %d slice of total %d slices" % (whichi, whichn) )
         sys.stdout.flush()
     else:
@@ -7095,9 +7268,16 @@ def generate_time_series():
         ihor = np.floor(iofr(rhor)+0.5);
         #diskflux=diskfluxcalc(ny/2)
         #qtymem=None #clear to free mem
-        if len(sys.argv[1:])==2 and sys.argv[1].isdigit() and sys.argv[2].isdigit():
-            whichi = int(sys.argv[1])
-            whichn = int(sys.argv[2])
+	global modelname
+	if len(sys.argv[1:])>0:
+		modelname = sys.argv[1]
+	else:
+		modelname = "Unknown Model"
+	#
+	print("Model Name = %s" % (modelname) )
+        if len(sys.argv[1:])==3 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
+            whichi = int(sys.argv[2])
+            whichn = int(sys.argv[3])
             if whichi >= whichn:
                 mergeqtyvstime(whichn)
             else:
@@ -7222,9 +7402,16 @@ def oldstuff():
         df=diskfluxcalc(ny/2,rmin=rhor)
         print "Final   (t=%-8g): BHflux = %g, Diskflux = %g" % (t, hf, df)
     if False:
-        if len(sys.argv[1:])==2 and sys.argv[1].isdigit() and (sys.argv[2].isdigit() or sys.argv[2][0]=="-") :
-            whichi = int(sys.argv[1])
-            whichn = int(sys.argv[2])
+        global modelname
+        if len(sys.argv[1:])>0:
+		modelname = sys.argv[1]
+	else:
+		modelname = "Unknown Model"
+        #
+	print("Model Name = %s" % (modelname) )
+        if len(sys.argv[1:])==3 and sys.argv[2].isdigit() and (sys.argv[3].isdigit() or sys.argv[3][0]=="-") :
+            whichi = int(sys.argv[2])
+            whichn = int(sys.argv[3])
             sys.stdout.flush()
         if whichn < 0 and whichn is not None:
             whichn = -whichn

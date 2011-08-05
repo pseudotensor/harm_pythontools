@@ -2,13 +2,13 @@
 # MUST RUN THIS WITH "bash" not "sh" since on some systems that calls "dash" that doesn't correctly handle $RANDOM or other things
 
 
-EXPECTED_ARGS=3
+EXPECTED_ARGS=4
 E_BADARGS=65
 
 if [ $# -ne $EXPECTED_ARGS ]
 then
-    echo "Usage: `basename $0` {make1d make2d makemovie}"
-    echo "e.g. sh makemovie.sh 1 1 0"
+    echo "Usage: `basename $0` {modelname make1d make2d makemovie}"
+    echo "e.g. sh makemovie.sh thickdisk7 1 1 0"
     exit $E_BADARGS
 fi
 
@@ -83,8 +83,13 @@ export localpath=`pwd`
 export runn=7
 export numparts=1
 
+modelname=$1
+make1d=$2
+make2d=$3
+makemovie=$4
 
-if [ $1 -eq 1 ]
+
+if [ $make1d -eq 1 ]
 then
 
     export myinitfile=$localpath/__init__.py.$myrand
@@ -124,7 +129,7 @@ then
     echo "Running with $itot cores simultaneously"
     
     # just a test:
-    # echo "nohup python $myinitfile $runi $runn &> python_${runi}_${runn}.out &"
+    # echo "nohup python $myinitfile $modelname $runi $runn &> python_${runi}_${runn}.out &"
     # exit 
     
     # LOOP:
@@ -160,8 +165,8 @@ then
 	        # No, fieldline file itself of up to order 400M should be cached in memory for most systems.
     		sleep 1
                 # run job
-		#nohup python $myinitfile $runi $runn &> python_${runi}_${runn}.out &
-		((nohup python $myinitfile $runi $runn 2>&1 1>&3 | tee python_${runi}_${runn}.stderr.out) 3>&1 1>&2 | tee python_${runi}_${runn}.out) > python_${runi}_${runn}.full.out 2>&1 &
+		#nohup python $myinitfile $modelname $runi $runn &> python_${runi}_${runn}.out &
+		((nohup python $myinitfile $modelname $runi $runn 2>&1 1>&3 | tee python_${runi}_${runn}.stderr.out) 3>&1 1>&2 | tee python_${runi}_${runn}.out) > python_${runi}_${runn}.full.out 2>&1 &
 
 	    done
 	    wait
@@ -172,12 +177,12 @@ then
     wait
 
     echo "Merge to single file"
-    #nohup python $myinitfile $runn $runn &> python_${runn}_${runn}.out
-    ((nohup python $myinitfile $runn $runn 2>&1 1>&3 | tee python_${runn}_${runn}.stderr.out) 3>&1 1>&2 | tee python_${runn}_${runn}.out) > python_${runn}_${runn}.full.out 2>&1
+    #nohup python $myinitfile $modelname $runn $runn &> python_${runn}_${runn}.out
+    ((nohup python $myinitfile $modelname $runn $runn 2>&1 1>&3 | tee python_${runn}_${runn}.stderr.out) 3>&1 1>&2 | tee python_${runn}_${runn}.out) > python_${runn}_${runn}.full.out 2>&1
 
     echo "Generate the plots"
     # &> 
-    ((nohup python $myinitfile 2>&1 1>&3 | tee python.plot.stderr.out) 3>&1 1>&2 | tee python.plot.out) > python.plot.full.out 2>&1
+    ((nohup python $myinitfile $modelname 2>&1 1>&3 | tee python.plot.stderr.out) 3>&1 1>&2 | tee python.plot.out) > python.plot.full.out 2>&1
 
     
     # remove created file
@@ -186,7 +191,7 @@ then
 fi
 
 
-if [ $2 -eq 1 ]
+if [ $make2d -eq 1 ]
 then
 
     # Now you are ready to generate movie frames, you can do that in
@@ -260,9 +265,9 @@ then
                 # sleep in order for all threads not to read in at once and overwhelm the drive
 		sleep 1
 	        # run job
-		#nohup python $myinitfile2 $runi $runn &> y &
+		#nohup python $myinitfile2 $modelname $runi $runn &> &
 
-		((nohup python $myinitfile2 $runi $runn  2>&1 1>&3 | tee python_${runi}_${runn}.2.stderr.out) 3>&1 1>&2 | tee python_${runi}_${runn}.2.out) > python_${runi}_${runn}.2.full.out 2>&1 &
+		((nohup python $myinitfile2 $modelname $runi $runn  2>&1 1>&3 | tee python_${runi}_${runn}.2.stderr.out) 3>&1 1>&2 | tee python_${runi}_${runn}.2.out) > python_${runi}_${runn}.2.full.out 2>&1 &
 
 
 	    done
@@ -278,7 +283,7 @@ then
 fi
 
 
-if [ $3 -eq 1 ]
+if [ $makemovie -eq 1 ]
 then
 
     #  now can create an avi with:

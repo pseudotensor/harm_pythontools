@@ -1,17 +1,32 @@
 #!/bin/bash
 # MUST RUN THIS WITH "bash" not "sh" since on some systems that calls "dash" that doesn't correctly handle $RANDOM or other things
 
+# Steps:
+#
+# 1) Ensure followed createlinks.sh for each directory.
+# 2) use the script
+
+# order of models as to appear in final table
+dircollect='thickdisk7 thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.liker2butbeta40 thickdiskrr2 run.like8 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 run.liker1 thickdiskr2 run.liker2 thickdisk9 thickdiskr3  thickdisk17 thickdisk10 thickdisk15 thickdisk2 thickdisk3 runlocaldipole3dfiducial sasha99'
+
 # note that thickdisk1 is actually bad, so ignore it.
-dirruns='thickdisk7 thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.liker2butbeta40 thickdiskrr2 run.like8 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 run.liker1 thickdiskr2 run.liker2 thickdisk9 thickdiskr3  thickdisk17 thickdisk10 thickdisk15 thickdisk2 thickdisk3 runlocaldipole3dfiducial'
+# can choose so do runs in different order than collection.
+#dirruns=$dircollect
+# do expensive thickdisk7 and sasha99 last so can test things
+dirruns='thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.liker2butbeta40 thickdiskrr2 run.like8 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 run.liker1 thickdiskr2 run.liker2 thickdisk9 thickdiskr3  thickdisk17 thickdisk10 thickdisk15 thickdisk2 thickdisk3 runlocaldipole3dfiducial thickdisk7 sasha99'
 
 
-EXPECTED_ARGS=5
+
+#modelnamelist='A94BfN40 A94BfN40\_C1  A94BfN40\_C2  A94BfN40\_C3  A94BfN40\_C4  A94BfN40\_C5  A-94BfN10     A-94BfN10\_C1 A-5BfN10      A0BfN10       A5BfN10       A94BfN10      A94BfN10\_C1  A94BfN10\_R1  A-94BfN40     A94BpN10      A-94BtN10     A-5BtN10      A0BtN10       A5BtN10       A94BtN10      A94BtN10\_R1  MB09_D      '
+
+
+EXPECTED_ARGS=7
 E_BADARGS=65
 
 if [ $# -ne $EXPECTED_ARGS ]
 then
-    echo "Usage: `basename $0` {moviedirname dolinks make1d make2d makemovie}"
-    echo "e.g. sh makeallmovie.sh moviefinal1 1 1 1 1"
+    echo "Usage: `basename $0` {moviedirname dolinks dofiles make1d make2d makemovie collect}"
+    echo "e.g. sh makeallmovie.sh moviefinal1 1 1 1 1 1 1"
     exit $E_BADARGS
 fi
 
@@ -19,24 +34,26 @@ fi
 # name of movie directory in each dirrun
 moviedirname=$1
 dolinks=$2
-make1d=$3
-make2d=$4
-makemovie=$5
-
+dofiles=$3
+make1d=$4
+make2d=$5
+makemovie=$6
+collect=$7
 
 
 # On ki-jmck in /data2/jmckinne/
 cd /data2/jmckinne/
 
-# 1) Ensure followed createlinks.sh for each directory.
+
+###################################
+if [ $dolinks -eq 1 ]
+then
+
+    echo "Doing Links"
 
 for thedir in $dirruns
 do
-    echo $thedir
-
-    if [ $dolinks -eq 1 ]
-    then
-
+    
     echo "Doing links for: "$thedir
 
 
@@ -89,9 +106,29 @@ do
     done
     #
     echo "Ensure fieldline0000.bin and last fieldline files exist: "$thedir
-    ln -s /data2/jmckinne/${thedir}/$firstfieldlinefile .
-    ln -s /data2/jmckinne/${thedir}/$lastfieldlinefile .
+    cd /data2/jmckinne/${thedir}/$moviedirname/dumps/
+    ln -s /data2/jmckinne/${thedir}/dumps/$firstfieldlinefile .
+    ln -s /data2/jmckinne/${thedir}/dumps/$lastfieldlinefile .
 
+
+
+done
+
+    echo "Done with links"
+
+fi
+
+
+###################################
+if [ $dofiles -eq 1 ]
+then
+
+    echo "Doing files"
+
+for thedir in $dirruns
+do
+
+    echo "Doing files for: "$thedir
 
 
     echo "cp makemovie.sh: "$thedir
@@ -122,6 +159,12 @@ do
         #in __init__.local.py:
         # for runlocaldipole3dfiducial myMB09=0 -> myMB09=1
 	sed 's/myMB09=0/myMB09=1/g' __init__.local.temp.py > __init__.local.py
+
+	# MB09 no longer needs this with myMB09 switch
+	#rm -rf titf.txt
+	#echo "#" >> titf.txt
+	#echo "0 1 2000 100000" >> titf.txt
+
     else
 	cp __init__.local.temp.py __init__.local.py
     fi
@@ -129,23 +172,82 @@ do
     rm -rf __init__.local.temp.py
 
 
-
-
-    fi
-
-
-
-    echo "Doing makemovielocal for: "$thedir
-
-    cd /data2/jmckinne/${thedir}/$moviedirname
-
-    #run makemovie.sh 1 1 1 or similar
-    sh makemovielocal.sh $make1d $make2d $makemovie
-
-
 done
 
+    echo "Done with files"
 
-echo "Done with all rundirs"
+
+fi
 
 
+
+
+##############################################
+make1d2dormovie=$(( $make1d + $make2d + $makemovie ))
+if [ $make1d2dormovie -gt 0 ]
+then
+
+    echo "Doing movie stuff"
+
+    for thedir in $dirruns
+    do
+	echo "Doing makemovielocal for: "$thedir
+
+	cd /data2/jmckinne/${thedir}/$moviedirname
+	
+        #run makemovie.sh 1 1 1 or similar
+	sh makemovielocal.sh ${thedir} $make1d $make2d $makemovie
+    done
+
+    echo "Done with movie"
+
+fi
+
+
+##############################################
+#
+echo "Now collect Latex results"
+if [ $collect -eq 1 ]
+then
+
+    echo "Doing collection"
+
+    # refresh tables.tex
+    rm  -rf tables$moviedirname.tex
+
+
+    for thedir in $dircollect
+    do
+	echo "Doing collection for: "$thedir
+	
+	cat /data2/jmckinne/${thedir}/$moviedirname/python.plot.out | grep Latex >> tables$moviedirname.tex
+    done
+
+
+    ##############################################
+    #
+    # Normal tables:
+    grep "Latex1:" tables$moviedirname.tex | sed 's/Latex1: //g' > table1$moviedirname.tex
+    grep "Latex2:" tables$moviedirname.tex | sed 's/Latex2: //g' > table2$moviedirname.tex
+    grep "Latex3:" tables$moviedirname.tex | sed 's/Latex3: //g' > table3$moviedirname.tex
+    grep "Latex4:" tables$moviedirname.tex | sed 's/Latex4: //g' > table4$moviedirname.tex
+    grep "Latex5:" tables$moviedirname.tex | sed 's/Latex5: //g' > table5$moviedirname.tex
+    grep "Latex6:" tables$moviedirname.tex | sed 's/Latex6: //g' > table6$moviedirname.tex
+    grep "Latex7:" tables$moviedirname.tex | sed 's/Latex7: //g' > table7$moviedirname.tex
+    grep "Latex8:" tables$moviedirname.tex | sed 's/Latex8: //g' > table8$moviedirname.tex
+    grep "Latex9:" tables$moviedirname.tex | sed 's/Latex9: //g' > table9$moviedirname.tex
+    # Aux tables:
+    grep "Latex95:" tables$moviedirname.tex | sed 's/Latex95: //g' > table95$moviedirname.tex
+    grep "Latex96:" tables$moviedirname.tex | sed 's/Latex96: //g' > table96$moviedirname.tex
+    grep "Latex97:" tables$moviedirname.tex | sed 's/Latex97: //g' > table97$moviedirname.tex
+    grep "Latex99:" tables$moviedirname.tex | sed 's/Latex99: //g' > table99$moviedirname.tex
+
+    echo "Done with collection"
+
+fi
+
+    
+
+
+
+echo "Done with all stages"
