@@ -4334,7 +4334,7 @@ def plotpowers(fname,hor=0,format=1):
     #Tried to equate pressures -- works but mistake in calculaton -- wrong power
     #plt.plot(mspina6[mhor6==hor],mpow6[mhor6==hor]* ((mspina6[mhor6==hor]**2+3*rhor6**2)/3/(2*np.pi*horx)) )
     #Simple multiplication by rhor -- works!  \Phi^2/Mdot * rhor ~ const
-    fac = 0.838783 #0.044/(1./(6*np.pi))
+    fac = 0.838783 #conversion to parabolic power from monopolar power = 0.044/(1./(6*np.pi))
     #plt.plot(mya,mya**2)
     #plt.plot(alist,etawindlist,'go',label=r'$\eta_{\rm jet}+\eta_{\rm wind}$')
     # plt.plot(mspina6[mhor6==hor],fac*6.94*mpow6[mhor6==hor],'r--',label=r'$P_{\rm BZ,6}$')
