@@ -156,14 +156,17 @@ do
 
     if [ "$thedir" == "runlocaldipole3dfiducial" ]
     then
+	nothing=1
         #in __init__.local.py:
         # for runlocaldipole3dfiducial myMB09=0 -> myMB09=1
-	sed 's/myMB09=0/myMB09=1/g' __init__.local.temp.py > __init__.local.py
+	#sed 's/myMB09=0/myMB09=1/g' __init__.local.temp.py > __init__.local.py
 
 	# MB09 no longer needs this with myMB09 switch
 	#rm -rf titf.txt
 	#echo "#" >> titf.txt
 	#echo "0 1 2000 100000" >> titf.txt
+
+	# switch no longer present or required as long as model name correct
 
     else
 	cp __init__.local.temp.py __init__.local.py
@@ -209,6 +212,8 @@ fi
 echo "Now collect Latex results"
 if [ $collect -eq 1 ]
 then
+
+    cd /data2/jmckinne/
 
     echo "Doing collection"
 
