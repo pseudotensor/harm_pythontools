@@ -3698,6 +3698,12 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     if whichplot == -2:
         return( mdtotvsr, edtotvsr, edmavsr, ldtotvsr )
 
+    if whichplot == -200:
+        return( mdtotvsr, edtotvsr, edmavsr, ldtotvsr,
+                mdotfinavgvsr5, mdotfinavgvsr10, mdotfinavgvsr20, mdotfinavgvsr30, mdotfinavgvsr40,
+                pjemfinavgvsr5, pjemfinavgvsr10, pjemfinavgvsr20, pjemfinavgvsr30, pjemfinavgvsr40,
+                pjmafinavgvsr5, pjmafinavgvsr10, pjmafinavgvsr20, pjmafinavgvsr30, pjmafinavgvsr40 )
+ 
     if whichplot == -300:
         #BL metric g_rr
         rh = 1+(1-a**2)**0.5
@@ -4110,7 +4116,7 @@ def plotfluxes(doreload=1):
         label.set_fontsize(16)
     plt.savefig("fig4.eps",bbox_inches='tight',pad_inches=0.02)
 
-def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=None,isinteractive=1,returndf=0,dolegend=True,plotldtot=True,lw=1):
+def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=None,isinteractive=1,returndf=0,dolegend=True,plotldtot=True,lw=1,plotFem=False):
     global dUfloor, qtymem, DUfloorori, etad0, DU
     #Mdot, E, L
     grid3d("gdump.bin",use2d=True)
@@ -4217,7 +4223,18 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     DUfloor1 = DU[1]
     DUfloor4 = DU[4]
     #at this time we have the floor information, now get averages:
-    mdtotvsr, edtotvsr, edmavsr, ldtotvsr = plotqtyvstime( qtymem, whichplot = -2, fti=fti, ftf=ftf )
+    #mdtotvsr, edtotvsr, edmavsr, ldtotvsr = plotqtyvstime( qtymem, whichplot = -2, fti=fti, ftf=ftf )
+    mdtotvsr, edtotvsr, edmavsr, ldtotvsr,\
+                mdotfinavgvsr5, mdotfinavgvsr10, mdotfinavgvsr20, mdotfinavgvsr30, mdotfinavgvsr40, \
+                pjemfinavgvsr5, pjemfinavgvsr10, pjemfinavgvsr20, pjemfinavgvsr30, pjemfinavgvsr40, \
+                pjmafinavgvsr5, pjmafinavgvsr10, pjmafinavgvsr20, pjmafinavgvsr30, pjmafinavgvsr40  \
+                = plotqtyvstime( qtymem, whichplot = -200, fti=fti, ftf=ftf )
+ 
+    FKE = -(edmavsr+mdtotvsr)
+    FKE10 = -((edmavsr-pjmafinavgvsr10) + mdotfinavgvsr10)
+
+    #electromagnetic flux
+    FEM=-(edtotvsr-edmavsr)
     if dofeavg:
         FE=np.load("fe.npy")
     #edtotvsr-=FE
@@ -4246,6 +4263,13 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         Fe=-(edtotvsr+DUfloor1)
         if isinteractive:
             plt.plot(r[:,0,0],Fe,'r',label=r"$F_E$",lw=2)
+            if plotFem:
+                #plt.plot(r[:,0,0],-FEM,'r--',label=r"$-F_{EM}$",lw=2)
+                #plt.plot(r[:,0,0],Fm*0+Fm[iofr(5)]-Fe[iofr(5)],'r-.',label=r"$(F_{M}-F_{E})[r=5r_g]$",lw=2)
+                plt.plot(r[:,0,0],-FEM+Fe[iofr(5)]-Fm[iofr(5)],'c',label=r"$F_{KE}$",lw=2)
+                #plt.plot(r[:,0,0],FKE,'b',label=r"$(F_{M}-F_{E})[r=5r_g]$",lw=2)
+                plt.plot(r[:,0,0],FKE10,'g',label=r"$F_{KE,b^2/\rho<10}$",lw=2)
+                #plt.plot(r[:,0,0],Fm+edtotvsr,'g:',label=r"$F_{EM}$",lw=2)
         if dofeavg and isinteractive: 
             plt.plot(r[:,0,0],FE-DUfloor1,'k',label=r"$F_E$",lw=2)
         if isinteractive and ax is None:
@@ -4263,7 +4287,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #plt.plot(r[:,0,0],DUfloor0,label=r"$dU^t$")
         #plt.plot(r[:,0,0],DUfloor*1e4,label=r"$dU^t\times10^4$")
         if dolegend:
-            plt.legend(loc='lower right',bbox_to_anchor=(0.97,0.22),
+            plt.legend(loc='lower right',bbox_to_anchor=(0.97,0.39),
                        #borderpad = 1,
                        borderaxespad=0,frameon=True,labelspacing=0,
                        ncol=1)
