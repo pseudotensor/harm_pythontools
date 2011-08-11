@@ -14,6 +14,7 @@ dircollect='thickdisk7 thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.liker2
 #dirruns=$dircollect
 # do expensive thickdisk7 and sasha99 last so can test things
 dirruns='thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.liker2butbeta40 thickdiskrr2 run.like8 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 run.liker1 thickdiskr2 run.liker2 thickdisk9 thickdiskr3  thickdisk17 thickdisk10 thickdisk15 thickdisk2 thickdisk3 runlocaldipole3dfiducial thickdisk7 sasha99'
+#dirruns='sasha99'
 
 
 
@@ -65,6 +66,10 @@ do
     rm -rf /data2/jmckinne/${thedir}/$moviedirname/*.png /data2/jmckinne/${thedir}/$moviedirname/*.eps /data2/jmckinne/${thedir}/$moviedirname/*.npy /data2/jmckinne/${thedir}/$moviedirname/python*.out /data2/jmckinne/${thedir}/$moviedirname/*.avi /data2/jmckinne/${thedir}/$moviedirname/*.pdf
 
     echo "create new links for: "$thedir
+
+    # number of files to keep
+    numkeep=150
+
     alias cp='cp'
     cp ~/py/scripts/createlinksalt.sh .
     sh createlinksalt.sh 1 /data2/jmckinne/${thedir} ./
@@ -82,28 +87,44 @@ do
     keepfilesstart=$(( (1 * $numfiles) / 2 ))
     keepfilesend=$(( $numfiles ))
     keepfilesdiff=$(( $keepfilesend - $keepfilesstart ))
-    #keepfieldlinelist=`ls -v | grep "fieldline" | tail -$keepfilesstart | head -$keepfilesdiff`
-    rmfieldlinelist=`ls -v | grep "fieldline" | head -$keepfilesstart | tail -$keepfilesdiff`
-    for fil in $rmfieldlinelist
-    do
-	rm -rf /data2/jmckinne/${thedir}/$moviedirname/dumps/$fil
-    done
+    # if above 1/2 kills more than want to keep, then avoid kill of 1/2
+    if [ $keepfilesdiff -lt $numkeep ]
+	then
+	keepfilesstart=0
+	keepfilesend=$numfiles
+	keepfilesdiff=$(( $keepfilesend - $keepfilesstart ))
+    else
+        #keepfieldlinelist=`ls -v | grep "fieldline" | tail -$keepfilesstart | head -$keepfilesdiff`
+	rmfieldlinelist=`ls -v | grep "fieldline" | head -$keepfilesstart | tail -$keepfilesdiff`
+	for fil in $rmfieldlinelist
+	do
+	    rm -rf /data2/jmckinne/${thedir}/$moviedirname/dumps/$fil
+	done
+    fi
     #
-    echo "now trim every so a file so only 50+2 files in the end: "$thedir
+    echo "now trim every so a file so only about numkeep+2 files in the end: "$thedir
     fieldlinelist=`ls -v | grep "fieldline"`
     numfiles=`echo $fieldlinelist | wc | awk '{print $2}'`
-    numkeep=52
+    #
     skipfactor=$(( $numfiles / $numkeep ))
-    iiter=0
-    for fil in $fieldlinelist
-    do
-	mymod=$(( $iiter % $skipfactor ))
-	if [ $mymod -ne 0 ]
+    if [ $skipfactor -eq 0 ]
+    then
+	resid=$(( $numfiles - $numkeep ))
+	echo "keeping bit extra: "$resid
+    fi
+    if [ $skipfactor -gt 0 ]
+    then
+	iiter=0
+	for fil in $fieldlinelist
+	do
+	    mymod=$(( $iiter % $skipfactor ))
+	    if [ $mymod -ne 0 ]
 	    then
-	    rm -rf /data2/jmckinne/${thedir}/$moviedirname/dumps/$fil
-	fi
-	iiter=$(( $iiter + 1 ))
-    done
+		rm -rf /data2/jmckinne/${thedir}/$moviedirname/dumps/$fil
+	    fi
+	    iiter=$(( $iiter + 1 ))
+	done
+    fi
     #
     echo "Ensure fieldline0000.bin and last fieldline files exist: "$thedir
     cd /data2/jmckinne/${thedir}/$moviedirname/dumps/

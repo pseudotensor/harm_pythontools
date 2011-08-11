@@ -1032,8 +1032,19 @@ def Qmri_simple(which=1,hoverrwhich=None,weak=None):
         res=np.fabs(lambda2/mydH)
         # MRI wavelengths over the whole disk
         if hoverrwhich is not None:
-            ires2=np.fabs(lambda2/(r*(2.0*hoverrwhich)))
-	    ires2[np.fabs(hoverrwhich)<10^(-10)]=0
+            #ires2=np.fabs(lambda2)
+            ires2=np.fabs(lambda2*divideavoidinf(r*(2.0*hoverrwhich)))
+            #sumhoverrwhich=np.sum(hoverrwhich)
+            #print("sumhoverrwhich")
+            #print(sumhoverrwhich)
+            #sumires2=np.sum(ires2)
+            #print("sumires2")
+            #print(sumires2)
+            #ires2=np.fabs(lambda2/(r*(2.0*0.2)))
+            ires2[np.fabs(hoverrwhich)<10^(-10)]=0
+            ires2[hoverrwhich!=hoverrwhich]=0
+            ires2[np.isnan(hoverrwhich)==1]=0
+            ires2[np.isinf(hoverrwhich)==1]=0
         else:
             ires2=0
         #
@@ -1043,7 +1054,6 @@ def Qmri_simple(which=1,hoverrwhich=None,weak=None):
     else:
 	    denfactor=(rho*bsq)**(0.5)
     #
-    # weight with res itself, since only care about parts of grid with strongest field (e.g., like weighting with va2sq
     # also weight with rho**2 so divisor on va2sq doesn't drop out.
     # so weight is where both rho and vau2 are large
     tiny=np.finfo(rho.dtype).tiny
@@ -1066,10 +1076,26 @@ def Qmri_simple(which=1,hoverrwhich=None,weak=None):
     if dnmin==0:
 	    print("Problem with dn for ires2")
     iq2mri2d= (up/(dn+tiny))**1.0
+
+    #sumiq2mri2d=np.sum(iq2mri2d)
+    #print("sumiq2mri2d")
+    #print(sumiq2mri2d)
+    
+    #print("iq2mri2d")
+    #print(iq2mri2d)
+
     iq2mri3d=np.empty((nx,ny,nz),dtype=rho.dtype)
     for j in np.arange(0,ny):
         iq2mri3d[:,j] = iq2mri2d
     #
+    #sumiq2mri3d=np.sum(iq2mri3d)
+    #print("sumiq2mri3d")
+    #print(sumiq2mri3d)
+
+    #sumnorm3d=np.sum(norm3d)
+    #print("sumnorm3d")
+    #print(sumnorm3d)
+
     return(qmri3d,iq2mri3d,norm3d)
 
     
@@ -4534,6 +4560,14 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     iq2mridisk10[:,qcondition2==False]=0
     iq2mridisk10=((iq2mridisk10[:,qcondition2]*normmridisk[:,qcondition2]).sum(axis=1))/((normmridisk[:,qcondition2]).sum(axis=1))
     #
+    #wtf1=np.sum(iq2mridisk10[:,qcondition2]*normmridisk[:,qcondition2],axis=1)
+    #wtf2=np.sum(iq2mridisk10[:,qcondition2],axis=1)
+    #wtf3=np.sum(normmridisk[:,qcondition2],axis=1)
+    #wtf4=np.sum(qcondition)
+    #print("god=%g %g %g %g" % ( wtf1[0],wtf2[0],wtf3[0],wtf4 ) )
+    #print("god1=%g %g %g %g" % ( wtf1[1],wtf2[1],wtf3[1],wtf4 ) )
+    #print("god2=%g %g %g %g" % ( wtf1[2],wtf2[2],wtf3[2],wtf4 ) )
+    #
     qmridiskweak10=np.copy(qmridiskweak)
     qmridiskweak10[:,qcondition2==False]=0
     qmridiskweak10=((qmridiskweak10[:,qcondition2]*normmridiskweak[:,qcondition2]).sum(axis=1))/((normmridiskweak[:,qcondition2]).sum(axis=1))
@@ -4576,11 +4610,6 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     iq2mridisk100[:,qcondition2==False]=0
     iq2mridisk100=((iq2mridisk100[:,qcondition2]*normmridisk[:,qcondition2]).sum(axis=1))/((normmridisk[:,qcondition2]).sum(axis=1))
     #
-    #wtf1=np.sum(iq2mridisk100[:,qcondition2]*normmridisk[:,qcondition2],axis=1)
-    #wtf2=np.sum(iq2mridisk100[:,qcondition2],axis=1)
-    #wtf3=np.sum(normmridisk[:,qcondition2],axis=1)
-    #wtf4=np.sum(qcondition)
-    #print("god=%g %g %g %g" % ( wtf1[0],wtf2[0],wtf3[0],wtf4 ) )
     #
     qmridiskweak100=np.copy(qmridiskweak)
     qmridiskweak100[:,qcondition2==False]=0
