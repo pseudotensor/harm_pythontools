@@ -2,13 +2,13 @@
 # MUST RUN THIS WITH "bash" not "sh" since on some systems that calls "dash" that doesn't correctly handle $RANDOM or other things
 
 
-EXPECTED_ARGS=4
+EXPECTED_ARGS=6
 E_BADARGS=65
 
 if [ $# -ne $EXPECTED_ARGS ]
 then
-    echo "Usage: `basename $0` {modelname make1d make2d makemovie}"
-    echo "e.g. sh makemovie.sh thickdisk7 1 1 0"
+    echo "Usage: `basename $0` {modelname make1d makemerge makeplot makeframes makemovie}"
+    echo "e.g. sh makemovie.sh thickdisk7 1 1 1 1 0"
     exit $E_BADARGS
 fi
 
@@ -85,17 +85,19 @@ export numparts=1
 
 modelname=$1
 make1d=$2
-make2d=$3
-makemovie=$4
+makemerge=$3
+makeplot=$4
+makeframes=$5
+makemovie=$6
 
 
 if [ $make1d -eq 1 ]
 then
 
-    export myinitfile=$localpath/__init__.py.$myrand
-    echo "myinitfile="${myinitfile}
+    export myinitfile1=$localpath/__init__.py.1.$myrand
+    echo "myinitfile1="${myinitfile1}
 
-    sed -n '1h;1!H;${;g;s/if False:[\n \t]*#NEW FORMAT[\n \t]*#Plot qtys vs. time[\n \t]*generate_time_series()/if True:\n\t#NEW FORMAT\n\t#Plot qtys vs. time\n\tgenerate_time_series()/g;p;}'  $initfile > $myinitfile
+    sed -n '1h;1!H;${;g;s/if False:[\n \t]*#NEW FORMAT[\n \t]*#Plot qtys vs. time[\n \t]*generate_time_series()/if True:\n\t#NEW FORMAT\n\t#Plot qtys vs. time\n\tgenerate_time_series()/g;p;}'  $initfile > $myinitfile1
 
 
     # 3) already be in <directory that contains "dumps" directory> or cd to it
@@ -129,7 +131,7 @@ then
     echo "Running with $itot cores simultaneously"
     
     # just a test:
-    # echo "nohup python $myinitfile $modelname $runi $runn &> python_${runi}_${runn}.out &"
+    # echo "nohup python $myinitfile1 $modelname $runi $runn &> python_${runi}_${runn}.out &"
     # exit 
     
     # LOOP:
@@ -165,8 +167,8 @@ then
 	        # No, fieldline file itself of up to order 400M should be cached in memory for most systems.
     		sleep 1
                 # run job
-		#nohup python $myinitfile $modelname $runi $runn &> python_${runi}_${runn}.out &
-		((nohup python $myinitfile $modelname $runi $runn 2>&1 1>&3 | tee python_${runi}_${runn}.stderr.out) 3>&1 1>&2 | tee python_${runi}_${runn}.out) > python_${runi}_${runn}.full.out 2>&1 &
+		#nohup python $myinitfile1 $modelname $runi $runn &> python_${runi}_${runn}.out &
+		((nohup python $myinitfile1 $modelname $runi $runn 2>&1 1>&3 | tee python_${runi}_${runn}.stderr.out) 3>&1 1>&2 | tee python_${runi}_${runn}.out) > python_${runi}_${runn}.full.out 2>&1 &
 
 	    done
 	    wait
@@ -176,22 +178,66 @@ then
     
     wait
 
+fi
+
+
+###################################
+#
+# Merge npy files
+#
+####################################
+if [ $makemerge -eq 1 ]
+then
+
+    export myinitfile2=$localpath/__init__.py.2.$myrand
+    echo "myinitfile2="${myinitfile2}
+
+    sed -n '1h;1!H;${;g;s/if False:[\n \t]*#NEW FORMAT[\n \t]*#Plot qtys vs. time[\n \t]*generate_time_series()/if True:\n\t#NEW FORMAT\n\t#Plot qtys vs. time\n\tgenerate_time_series()/g;p;}'  $initfile > $myinitfile2
+
+
     echo "Merge to single file"
-    #nohup python $myinitfile $modelname $runn $runn &> python_${runn}_${runn}.out
-    ((nohup python $myinitfile $modelname $runn $runn 2>&1 1>&3 | tee python_${runn}_${runn}.stderr.out) 3>&1 1>&2 | tee python_${runn}_${runn}.out) > python_${runn}_${runn}.full.out 2>&1
+    #nohup python $myinitfile2 $modelname $runn $runn &> python_${runn}_${runn}.out
+    ((nohup python $myinitfile2 $modelname $runn $runn 2>&1 1>&3 | tee python_${runn}_${runn}.stderr.out) 3>&1 1>&2 | tee python_${runn}_${runn}.out) > python_${runn}_${runn}.full.out 2>&1
 
-    echo "Generate the plots"
-    # &> 
-    ((nohup python $myinitfile $modelname 2>&1 1>&3 | tee python.plot.stderr.out) 3>&1 1>&2 | tee python.plot.out) > python.plot.full.out 2>&1
-
-    
     # remove created file
-    rm -rf $myinitfile
+    rm -rf $myinitfile2
 
 fi
 
 
-if [ $make2d -eq 1 ]
+
+###################################
+#
+# Maake plots and latex tables
+#
+####################################
+if [ $makeplot -eq 1 ]
+then
+
+    export myinitfile3=$localpath/__init__.py.3.$myrand
+    echo "myinitfile3="${myinitfile3}
+
+    sed -n '1h;1!H;${;g;s/if False:[\n \t]*#NEW FORMAT[\n \t]*#Plot qtys vs. time[\n \t]*generate_time_series()/if True:\n\t#NEW FORMAT\n\t#Plot qtys vs. time\n\tgenerate_time_series()/g;p;}'  $initfile > $myinitfile3
+
+
+    echo "Generate the plots"
+    # &> 
+    ((nohup python $myinitfile3 $modelname 2>&1 1>&3 | tee python.plot.stderr.out) 3>&1 1>&2 | tee python.plot.out) > python.plot.full.out 2>&1
+
+    
+    # remove created file
+    rm -rf $myinitfile3
+
+fi
+
+
+
+###################################
+#
+# MOVIE FRAMES
+#
+####################################
+if [ $makeframes -eq 1 ]
 then
 
     # Now you are ready to generate movie frames, you can do that in
@@ -200,10 +246,10 @@ then
     # 1) You disable the time series section of ~/py/mread/__init__.py and
     # instead enable the movie section
     
-    export myinitfile2=$localpath/__init__.py.${myrand}.2
-    echo "myinitfile2="${myinitfile}
+    export myinitfile4=$localpath/__init__.py.${myrand}.4
+    echo "myinitfile4="${myinitfile4}
     
-    sed -n '1h;1!H;${;g;s/if False:[\n \t]*#make a movie[\n \t]*mkmovie()/if True:\n\t#make a movie\n\tmkmovie()/g;p;}'  $initfile > $myinitfile2
+    sed -n '1h;1!H;${;g;s/if False:[\n \t]*#make a movie[\n \t]*mkmovie()/if True:\n\t#make a movie\n\tmkmovie()/g;p;}'  $initfile > $myinitfile4
     
     
     # Options to consider inside __init__.py:
@@ -265,9 +311,9 @@ then
                 # sleep in order for all threads not to read in at once and overwhelm the drive
 		sleep 1
 	        # run job
-		#nohup python $myinitfile2 $modelname $runi $runn &> &
+		#nohup python $myinitfile4 $modelname $runi $runn &> &
 
-		((nohup python $myinitfile2 $modelname $runi $runn  2>&1 1>&3 | tee python_${runi}_${runn}.2.stderr.out) 3>&1 1>&2 | tee python_${runi}_${runn}.2.out) > python_${runi}_${runn}.2.full.out 2>&1 &
+		((nohup python $myinitfile4 $modelname $runi $runn  2>&1 1>&3 | tee python_${runi}_${runn}.movieframes.stderr.out) 3>&1 1>&2 | tee python_${runi}_${runn}.movieframes.out) > python_${runi}_${runn}.movieframes.full.out 2>&1 &
 
 
 	    done
@@ -278,11 +324,16 @@ then
     
     
     # remove created file
-    rm -rf $myinitfile2
+    rm -rf $myinitfile4
     
 fi
 
 
+###################################
+#
+# MOVIE File
+#
+####################################
 if [ $makemovie -eq 1 ]
 then
 
@@ -305,10 +356,11 @@ then
 	ffmpeg -y -fflags +genpts -r $fps -i lrho%04d_Rzxym1.png -vcodec mpeg4 -sameq -qmax 5 lrho.avi
     fi
 
+    echo "Now do: mplayer -loop 0 lrho.avi"
+
 fi
 
 
-echo "Now do: mplayer -loop 0 lrho.avi"
 
 
 

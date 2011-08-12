@@ -21,13 +21,13 @@ dirruns='thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.liker2butbeta40 thic
 #modelnamelist='A94BfN40 A94BfN40\_C1  A94BfN40\_C2  A94BfN40\_C3  A94BfN40\_C4  A94BfN40\_C5  A-94BfN10     A-94BfN10\_C1 A-5BfN10      A0BfN10       A5BfN10       A94BfN10      A94BfN10\_C1  A94BfN10\_R1  A-94BfN40     A94BpN10      A-94BtN10     A-5BtN10      A0BtN10       A5BtN10       A94BtN10      A94BtN10\_R1  MB09_D      '
 
 
-EXPECTED_ARGS=7
+EXPECTED_ARGS=9
 E_BADARGS=65
 
 if [ $# -ne $EXPECTED_ARGS ]
 then
-    echo "Usage: `basename $0` {moviedirname dolinks dofiles make1d make2d makemovie collect}"
-    echo "e.g. sh makeallmovie.sh moviefinal1 1 1 1 1 1 1"
+    echo "Usage: `basename $0` {moviedirname dolinks dofiles make1d makemerge makeplot makeframes makemovie collect}"
+    echo "e.g. sh makeallmovie.sh moviefinal1 1 1 1 1 1 1 1 1"
     exit $E_BADARGS
 fi
 
@@ -37,9 +37,11 @@ moviedirname=$1
 dolinks=$2
 dofiles=$3
 make1d=$4
-make2d=$5
-makemovie=$6
-collect=$7
+makemerge=$5
+makeplot=$6
+makeframes=$7
+makemovie=$8
+collect=$9
 
 
 # On ki-jmck in /data2/jmckinne/
@@ -163,9 +165,12 @@ do
     # for runlocaldipole3dfiducial runn=12
     if [ "$thedir" == "thickdisk7" ]
 	then
-	sed -e 's/export runn=[0-9]*/export runn=5/g' makemovie.sh > makemovielocal.temp.sh
+	    sed -e 's/export runn=[0-9]*/export runn=5/g' makemovie.sh > makemovielocal.temp.sh
+    elif [ "$thedir" == "sasha99" ]
+	then
+	    sed -e 's/export runn=[0-9]*/export runn=8/g' makemovie.sh > makemovielocal.temp.sh
     else
-	sed -e 's/export runn=[0-9]*/export runn=12/g' makemovie.sh > makemovielocal.temp.sh
+	    sed -e 's/export runn=[0-9]*/export runn=12/g' makemovie.sh > makemovielocal.temp.sh
     fi
 
     # force use of local __init__.py file:
@@ -175,9 +180,9 @@ do
     echo "cp  __init__.py to __init__.local.py: "$thedir
     cp ~/py/mread/__init__.py __init__.local.temp.py
 
-    if [ "$thedir" == "runlocaldipole3dfiducial" ]
-    then
-	nothing=1
+    #if [ "$thedir" == "runlocaldipole3dfiducial" ]
+    #then
+	#nothing=1
         #in __init__.local.py:
         # for runlocaldipole3dfiducial myMB09=0 -> myMB09=1
 	#sed 's/myMB09=0/myMB09=1/g' __init__.local.temp.py > __init__.local.py
@@ -189,9 +194,11 @@ do
 
 	# switch no longer present or required as long as model name correct
 
-    else
+    #else
+	#    cp __init__.local.temp.py __init__.local.py
+    #fi
+
 	cp __init__.local.temp.py __init__.local.py
-    fi
 
     rm -rf __init__.local.temp.py
 
@@ -207,11 +214,11 @@ fi
 
 
 ##############################################
-make1d2dormovie=$(( $make1d + $make2d + $makemovie ))
+make1d2dormovie=$(( $make1d + $makemerge + $makeplot + $makeframes + $makemovie ))
 if [ $make1d2dormovie -gt 0 ]
 then
 
-    echo "Doing movie stuff"
+    echo "Doing makemovie.sh stuff"
 
     for thedir in $dirruns
     do
@@ -219,11 +226,10 @@ then
 
 	cd /data2/jmckinne/${thedir}/$moviedirname
 	
-        #run makemovie.sh 1 1 1 or similar
-	sh makemovielocal.sh ${thedir} $make1d $make2d $makemovie
+	sh makemovielocal.sh ${thedir} $make1d $makemerge $makeplot $makeframes $makemovie
     done
 
-    echo "Done with movie"
+    echo "Done with makemovie.sh stuff"
 
 fi
 
@@ -241,32 +247,37 @@ then
     # refresh tables.tex
     rm  -rf tables$moviedirname.tex
 
-
+    iiter=1
     for thedir in $dircollect
     do
-	echo "Doing collection for: "$thedir
-	
-	cat /data2/jmckinne/${thedir}/$moviedirname/python.plot.out | grep Latex >> tables$moviedirname.tex
+	    echo "Doing collection for: "$thedir
+        if [ $iiter -eq 1 ]
+        then
+		    cat /data2/jmckinne/${thedir}/$moviedirname/python.plot.out | grep "HLatex" >> tables$moviedirname.tex
+        fi
+		cat /data2/jmckinne/${thedir}/$moviedirname/python.plot.out | grep "VLatex" >> tables$moviedirname.tex
+
+        iiter=$(( $iiter+1))
     done
 
 
     ##############################################
     #
     # Normal tables:
-    grep "Latex1:" tables$moviedirname.tex | sed 's/Latex1: //g' > table1$moviedirname.tex
-    grep "Latex2:" tables$moviedirname.tex | sed 's/Latex2: //g' > table2$moviedirname.tex
-    grep "Latex3:" tables$moviedirname.tex | sed 's/Latex3: //g' > table3$moviedirname.tex
-    grep "Latex4:" tables$moviedirname.tex | sed 's/Latex4: //g' > table4$moviedirname.tex
-    grep "Latex5:" tables$moviedirname.tex | sed 's/Latex5: //g' > table5$moviedirname.tex
-    grep "Latex6:" tables$moviedirname.tex | sed 's/Latex6: //g' > table6$moviedirname.tex
-    grep "Latex7:" tables$moviedirname.tex | sed 's/Latex7: //g' > table7$moviedirname.tex
-    grep "Latex8:" tables$moviedirname.tex | sed 's/Latex8: //g' > table8$moviedirname.tex
-    grep "Latex9:" tables$moviedirname.tex | sed 's/Latex9: //g' > table9$moviedirname.tex
+    grep "Latex1:" tables$moviedirname.tex | sed 's/[HV]Latex1: //g'  | column  -t > table1$moviedirname.tex
+    grep "Latex2:" tables$moviedirname.tex | sed 's/[HV]Latex2: //g'  | column  -t > table2$moviedirname.tex
+    grep "Latex3:" tables$moviedirname.tex | sed 's/[HV]Latex3: //g'  | column  -t > table3$moviedirname.tex
+    grep "Latex4:" tables$moviedirname.tex | sed 's/[HV]Latex4: //g'  | column  -t > table4$moviedirname.tex
+    grep "Latex5:" tables$moviedirname.tex | sed 's/[HV]Latex5: //g'  | column  -t > table5$moviedirname.tex
+    grep "Latex6:" tables$moviedirname.tex | sed 's/[HV]Latex6: //g'  | column  -t > table6$moviedirname.tex
+    grep "Latex7:" tables$moviedirname.tex | sed 's/[HV]Latex7: //g'  | column  -t > table7$moviedirname.tex
+    grep "Latex8:" tables$moviedirname.tex | sed 's/[HV]Latex8: //g'  | column  -t > table8$moviedirname.tex
+    grep "Latex9:" tables$moviedirname.tex | sed 's/[HV]Latex9: //g'  | column  -t > table9$moviedirname.tex
     # Aux tables:
-    grep "Latex95:" tables$moviedirname.tex | sed 's/Latex95: //g' > table95$moviedirname.tex
-    grep "Latex96:" tables$moviedirname.tex | sed 's/Latex96: //g' > table96$moviedirname.tex
-    grep "Latex97:" tables$moviedirname.tex | sed 's/Latex97: //g' > table97$moviedirname.tex
-    grep "Latex99:" tables$moviedirname.tex | sed 's/Latex99: //g' > table99$moviedirname.tex
+    grep "Latex95:" tables$moviedirname.tex | sed 's/[HV]Latex95: //g'  | column  -t > table95$moviedirname.tex
+    grep "Latex96:" tables$moviedirname.tex | sed 's/[HV]Latex96: //g'  | column  -t > table96$moviedirname.tex
+    grep "Latex97:" tables$moviedirname.tex | sed 's/[HV]Latex97: //g'  | column  -t > table97$moviedirname.tex
+    grep "Latex99:" tables$moviedirname.tex | sed 's/[HV]Latex99: //g'  | column  -t > table99$moviedirname.tex
 
     echo "Done with collection"
 

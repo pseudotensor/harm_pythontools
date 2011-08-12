@@ -1046,7 +1046,8 @@ def Qmri_simple(which=1,hoverrwhich=None,weak=None):
             ires2[np.isnan(hoverrwhich)==1]=0
             ires2[np.isinf(hoverrwhich)==1]=0
         else:
-            ires2=0
+            # h/r=1 set, so can use <h/r>_t later so more stable result
+            ires2=np.fabs(lambda2*divideavoidinf(r*(2.0*1.0)))
         #
     #
     if weak==1:
@@ -1127,7 +1128,6 @@ def gridcalc(hoverr):
     """
     Compute dr:r d\theta : r\sin\theta d\phi along equator vs. radius
     """
-    
     #
     which=(np.fabs(h-np.pi*0.5)<=hoverr)
     norm = (which.sum(axis=1)).sum(axis=1)
@@ -3058,13 +3058,13 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         thetamidjet[findex]=thetamid3djet.sum(2).sum(1)/(ny*nz)
         #
         diskeqcondition=diskcondition
-        qmri3ddisk,iq2mri3ddisk,normmri3ddisk=Qmri_simple(which=diskeqcondition,hoverrwhich=hoverr3d)
+        qmri3ddisk,iq2mri3ddisk,normmri3ddisk=Qmri_simple(which=diskeqcondition)
         qmridisk[findex]=qmri3ddisk.sum(2).sum(1)/(ny*nz)
         # number of wavelengths per disk scale height
         iq2mridisk[findex]=iq2mri3ddisk.sum(2).sum(1)/(ny*nz)
         normmridisk[findex]=normmri3ddisk.sum(2).sum(1)/(ny*nz)
 	#
-        qmri3ddiskweak,iq2mri3ddiskweak,normmri3ddiskweak=Qmri_simple(weak=1,which=diskeqcondition,hoverrwhich=hoverr3d)
+        qmri3ddiskweak,iq2mri3ddiskweak,normmri3ddiskweak=Qmri_simple(weak=1,which=diskeqcondition)
         qmridiskweak[findex]=qmri3ddiskweak.sum(2).sum(1)/(ny*nz)
         # number of wavelengths per disk scale height
         iq2mridiskweak[findex]=iq2mri3ddiskweak.sum(2).sum(1)/(ny*nz)
@@ -4495,6 +4495,13 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     hoverr20=hoverr[:,iofr(20)]
     hoverr100=hoverr[:,iofr(100)]
     #
+    hoverrhor_t0 = hoverrhor[0]
+    hoverr2_t0 = hoverr2[0]
+    hoverr5_t0 = hoverr5[0]
+    hoverr10_t0 = hoverr10[0]
+    hoverr20_t0 = hoverr20[0]
+    hoverr100_t0 = hoverr100[0]
+    #
     if modelname=="runlocaldipole3dfiducial":
 	    hoverr12=hoverr[:,iofr(12)]
 	    hoverratrmax_t0=hoverr12[0]
@@ -4512,6 +4519,12 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     hoverrcorona20=hoverrcorona[:,iofr(20)]
     hoverrcorona100=hoverrcorona[:,iofr(100)]
     #
+    hoverrcoronahor_t0 = hoverrcoronahor[0]
+    hoverrcorona2_t0 = hoverrcorona2[0]
+    hoverrcorona5_t0 = hoverrcorona5[0]
+    hoverrcorona10_t0 = hoverrcorona10[0]
+    hoverrcorona20_t0 = hoverrcorona20[0]
+    hoverrcorona100_t0 = hoverrcorona100[0]
     #
     hoverrjethor=hoverrjet[:,ihor]
     hoverrjet2=hoverrjet[:,iofr(2)]
@@ -4519,6 +4532,13 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     hoverrjet10=hoverrjet[:,iofr(10)]
     hoverrjet20=hoverrjet[:,iofr(20)]
     hoverrjet100=hoverrjet[:,iofr(100)]
+    #
+    hoverrjethor_t0 = hoverrjethor[0]
+    hoverrjet2_t0 = hoverrjet2[0]
+    hoverrjet5_t0 = hoverrjet5[0]
+    hoverrjet10_t0 = hoverrjet10[0]
+    hoverrjet20_t0 = hoverrjet20[0]
+    hoverrjet100_t0 = hoverrjet100[0]
     #
     betamin_t0=betamin[0,0]
     betaavg_t0=betaavg[0,0]
@@ -4547,8 +4567,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     #
     #
-    qrin=10
-    qrout=50
+    qrin=5
+    qrout=15
     qcondition=(r[:,0,0]>qrin)
     qcondition=qcondition*(r[:,0,0]<qrout)
     qcondition2=qcondition
@@ -4576,8 +4596,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     iq2mridiskweak10=((iq2mridiskweak10[:,qcondition2]*normmridiskweak[:,qcondition2]).sum(axis=1))/((normmridiskweak[:,qcondition2]).sum(axis=1))
     #
     #
-    qrin=20
-    qrout=50
+    qrin=15
+    qrout=30
     qcondition=(r[:,0,0]>qrin)
     qcondition=qcondition*(r[:,0,0]<qrout)
     qcondition2=qcondition
@@ -4597,8 +4617,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     iq2mridiskweak20=((iq2mridiskweak20[:,qcondition2]*normmridiskweak[:,qcondition2]).sum(axis=1))/((normmridiskweak[:,qcondition2]).sum(axis=1))
     #
     #
-    qrin=100
-    qrout=150
+    qrin=90
+    qrout=110
     qcondition=(r[:,0,0]>qrin)
     qcondition=qcondition*(r[:,0,0]<qrout)
     qcondition2=qcondition
@@ -4627,9 +4647,9 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     print("qmridisk20_t0=%g" % (qmridisk20_t0) )
     print("qmridisk100_t0=%g" % (qmridisk100_t0) )
     #
-    iq2mridisk10_t0 = iq2mridisk10[0]
-    iq2mridisk20_t0 = iq2mridisk20[0]
-    iq2mridisk100_t0 = iq2mridisk100[0]
+    iq2mridisk10_t0 = iq2mridisk10[0]/hoverr10_t0
+    iq2mridisk20_t0 = iq2mridisk20[0]/hoverr20_t0
+    iq2mridisk100_t0 = iq2mridisk100[0]/hoverr100_t0
     print("iq2mridisk10_t0=%g iq2mridisk10_t0=%g" % (iq2mridisk10_t0,iq2mridisk10_t0) )
     print("iq2mridisk20_t0=%g iq2mridisk20_t0=%g" % (iq2mridisk20_t0,iq2mridisk20_t0) )
     print("iq2mridisk100_t0=%g iq2mridisk100_t0=%g" % (iq2mridisk100_t0,iq2mridisk100_t0) )
@@ -4642,9 +4662,9 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     print("qmridiskweak20_t0=%g qmridiskweak20_t0=%g" % (qmridiskweak20_t0,qmridiskweak20_t0) )
     print("qmridiskweak100_t0=%g qmridiskweak100_t0=%g" % (qmridiskweak100_t0,qmridiskweak100_t0) )
     #
-    iq2mridiskweak10_t0 = iq2mridiskweak10[0]
-    iq2mridiskweak20_t0 = iq2mridiskweak20[0]
-    iq2mridiskweak100_t0 = iq2mridiskweak100[0]
+    iq2mridiskweak10_t0 = iq2mridiskweak10[0]/hoverr10_t0
+    iq2mridiskweak20_t0 = iq2mridiskweak20[0]/hoverr20_t0
+    iq2mridiskweak100_t0 = iq2mridiskweak100[0]/hoverr100_t0
     print("iq2mridiskweak10_t0=%g iq2mridiskweak10_t0=%g" % (iq2mridiskweak10_t0,iq2mridiskweak10_t0) )
     print("iq2mridiskweak20_t0=%g iq2mridiskweak20_t0=%g" % (iq2mridiskweak20_t0,iq2mridiskweak20_t0) )
     print("iq2mridiskweak100_t0=%g iq2mridiskweak100_t0=%g" % (iq2mridiskweak100_t0,iq2mridiskweak100_t0) )
@@ -4733,17 +4753,17 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         qmridisk20_avg = timeavg(qmridisk20,ts,fti,ftf)
         qmridisk100_avg = timeavg(qmridisk100,ts,fti,ftf)
         #
-        iq2mridisk10_avg = timeavg(iq2mridisk10,ts,fti,ftf)
-        iq2mridisk20_avg = timeavg(iq2mridisk20,ts,fti,ftf)
-        iq2mridisk100_avg = timeavg(iq2mridisk100,ts,fti,ftf)
+        iq2mridisk10_avg = timeavg(iq2mridisk10,ts,fti,ftf)/hoverr10_avg
+        iq2mridisk20_avg = timeavg(iq2mridisk20,ts,fti,ftf)/hoverr20_avg
+        iq2mridisk100_avg = timeavg(iq2mridisk100,ts,fti,ftf)/hoverr100_avg
         #
         qmridiskweak10_avg = timeavg(qmridiskweak10,ts,fti,ftf)
         qmridiskweak20_avg = timeavg(qmridiskweak20,ts,fti,ftf)
         qmridiskweak100_avg = timeavg(qmridiskweak100,ts,fti,ftf)
         #
-        iq2mridiskweak10_avg = timeavg(iq2mridiskweak10,ts,fti,ftf)
-        iq2mridiskweak20_avg = timeavg(iq2mridiskweak20,ts,fti,ftf)
-        iq2mridiskweak100_avg = timeavg(iq2mridiskweak100,ts,fti,ftf)
+        iq2mridiskweak10_avg = timeavg(iq2mridiskweak10,ts,fti,ftf)/hoverr10_avg
+        iq2mridiskweak20_avg = timeavg(iq2mridiskweak20,ts,fti,ftf)/hoverr20_avg
+        iq2mridiskweak100_avg = timeavg(iq2mridiskweak100,ts,fti,ftf)/hoverr100_avg
         #
         #
         if(iti>fti):
@@ -4800,17 +4820,17 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             qmridisk202_avg = timeavg(qmridisk20,ts,iti,itf)
             qmridisk1002_avg = timeavg(qmridisk100,ts,iti,itf)
             #
-            iq2mridisk102_avg = timeavg(iq2mridisk10,ts,iti,itf)
-            iq2mridisk202_avg = timeavg(iq2mridisk20,ts,iti,itf)
-            iq2mridisk1002_avg = timeavg(iq2mridisk100,ts,iti,itf)
+            iq2mridisk102_avg = timeavg(iq2mridisk10,ts,iti,itf)/hoverr10_avg
+            iq2mridisk202_avg = timeavg(iq2mridisk20,ts,iti,itf)/hoverr20_avg
+            iq2mridisk1002_avg = timeavg(iq2mridisk100,ts,iti,itf)/hoverr100_avg
             #
             qmridiskweak102_avg = timeavg(qmridiskweak10,ts,iti,itf)
             qmridiskweak202_avg = timeavg(qmridiskweak20,ts,iti,itf)
             qmridiskweak1002_avg = timeavg(qmridiskweak100,ts,iti,itf)
             #
-            iq2mridiskweak102_avg = timeavg(iq2mridiskweak10,ts,iti,itf)
-            iq2mridiskweak202_avg = timeavg(iq2mridiskweak20,ts,iti,itf)
-            iq2mridiskweak1002_avg = timeavg(iq2mridiskweak100,ts,iti,itf)
+            iq2mridiskweak102_avg = timeavg(iq2mridiskweak10,ts,iti,itf)/hoverr10_avg
+            iq2mridiskweak202_avg = timeavg(iq2mridiskweak20,ts,iti,itf)/hoverr20_avg
+            iq2mridiskweak1002_avg = timeavg(iq2mridiskweak100,ts,iti,itf)/hoverr100_avg
             #
     #
     # Jon's whichplot==4 Plot:
@@ -4874,18 +4894,22 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     print( "mdot = %g, mdot10 = %g, mdot30 = %g, mdotinin = %g, mdotinout=%g, mdotjet = %g, mdotwin = %g, mdotwout = %g" % ( mdotfinavg, mdot10finavg, mdot30finavg, mdotinrjetinfinavg, mdotinrjetoutfinavg, mdotjetfinavg, mdotwinfinavg, mdotwoutfinavg) )
     #
-    print( "hoverrhor = %g, hoverr2 = %g, hoverr5 = %g, hoverr10 = %g, hoverr20 = %g, hoverr100 = %g" % ( hoverrhor_avg ,  hoverr2_avg , hoverr5_avg , hoverr10_avg ,  hoverr20_avg ,  hoverr100_avg ) )
-    print( "hoverrcoronahor = %g, hoverrcorona2 = %g, hoverrcorona5 = %g, hoverrcorona10 = %g, hoverrcorona20 = %g, hoverrcorona100 = %g" % ( hoverrcoronahor_avg ,  hoverrcorona2_avg , hoverrcorona5_avg , hoverrcorona10_avg ,  hoverrcorona20_avg ,  hoverrcorona100_avg ) )
-    print( "hoverrjethor = %g, hoverrjet2 = %g, hoverrjet5 = %g, hoverrjet10 = %g, hoverrjet20 = %g, hoverrjet100 = %g" % ( hoverrjethor_avg ,  hoverrjet2_avg , hoverrjet5_avg , hoverrjet10_avg ,  hoverrjet20_avg ,  hoverrjet100_avg ) )
+    print( "hoverrhor_t0 = %g, hoverr2_t0 = %g, hoverr5_t0 = %g, hoverr10_t0 = %g, hoverr20_t0 = %g, hoverr100_t0 = %g" % ( hoverrhor_t0 ,  hoverr2_t0 , hoverr5_t0 , hoverr10_t0 ,  hoverr20_t0 ,  hoverr100_t0 ) )
+    print( "hoverrcoronahor_t0 = %g, hoverrcorona2_t0 = %g, hoverrcorona5_t0 = %g, hoverrcorona10_t0 = %g, hoverrcorona20_t0 = %g, hoverrcorona100_t0 = %g" % ( hoverrcoronahor_t0 ,  hoverrcorona2_t0 , hoverrcorona5_t0 , hoverrcorona10_t0 ,  hoverrcorona20_t0 ,  hoverrcorona100_t0 ) )
+    print( "hoverrjethor_t0 = %g, hoverrjet2_t0 = %g, hoverrjet5_t0 = %g, hoverrjet10_t0 = %g, hoverrjet20_t0 = %g, hoverrjet100_t0 = %g" % ( hoverrjethor_t0 ,  hoverrjet2_t0 , hoverrjet5_t0 , hoverrjet10_t0 ,  hoverrjet20_t0 ,  hoverrjet100_t0 ) )
+    #
+    print( "hoverrhor_avg = %g, hoverr2_avg = %g, hoverr5_avg = %g, hoverr10_avg = %g, hoverr20_avg = %g, hoverr100_avg = %g" % ( hoverrhor_avg ,  hoverr2_avg , hoverr5_avg , hoverr10_avg ,  hoverr20_avg ,  hoverr100_avg ) )
+    print( "hoverrcoronahor_avg = %g, hoverrcorona2_avg = %g, hoverrcorona5_avg = %g, hoverrcorona10_avg = %g, hoverrcorona20_avg = %g, hoverrcorona100_avg = %g" % ( hoverrcoronahor_avg ,  hoverrcorona2_avg , hoverrcorona5_avg , hoverrcorona10_avg ,  hoverrcorona20_avg ,  hoverrcorona100_avg ) )
+    print( "hoverrjethor_avg = %g, hoverrjet2_avg = %g, hoverrjet5_avg = %g, hoverrjet10_avg = %g, hoverrjet20_avg = %g, hoverrjet100_avg = %g" % ( hoverrjethor_avg ,  hoverrjet2_avg , hoverrjet5_avg , hoverrjet10_avg ,  hoverrjet20_avg ,  hoverrjet100_avg ) )
     #
     #
-    print( "qmridisk10(t0) = %g, qmridisk20(t0) = %g, qmridisk100(t0) = %g" % (  qmridisk10_t0 ,  qmridisk20_t0 ,  qmridisk100_t0 ) )
-    print( "q2mridisk10(t0) = %g, q2mridisk20(t0) = %g, q2mridisk100(t0) = %g" % (  1.0/iq2mridisk10_t0 ,  1.0/iq2mridisk20_t0 ,  1.0/iq2mridisk100_t0 ) )
+    print( "qmridisk10_t0 = %g, qmridisk20_t0 = %g, qmridisk100_t0 = %g" % (  qmridisk10_t0 ,  qmridisk20_t0 ,  qmridisk100_t0 ) )
+    print( "q2mridisk10_t0 = %g, q2mridisk20_t0 = %g, q2mridisk100_t0 = %g" % (  1.0/iq2mridisk10_t0 ,  1.0/iq2mridisk20_t0 ,  1.0/iq2mridisk100_t0 ) )
     print( "qmridisk10 = %g, qmridisk20 = %g, qmridisk100 = %g" % (  qmridisk10_avg ,  qmridisk20_avg ,  qmridisk100_avg ) )
     print( "q2mridisk10 = %g, q2mridisk20 = %g, q2mridisk100 = %g" % (  1.0/iq2mridisk10_avg ,  1.0/iq2mridisk20_avg ,  1.0/iq2mridisk100_avg ) )
     #
-    print( "qmridiskweak10(t0) = %g, qmridiskweak20(t0) = %g, qmridiskweak100(t0) = %g" % (  qmridiskweak10_t0 ,  qmridiskweak20_t0 ,  qmridiskweak100_t0 ) )
-    print( "q2mridiskweak10(t0) = %g, q2mridiskweak20(t0) = %g, q2mridiskweak100(t0) = %g" % (  1.0/iq2mridiskweak10_t0 ,  1.0/iq2mridiskweak20_t0 ,  1.0/iq2mridiskweak100_t0 ) )
+    print( "qmridiskweak10_t0 = %g, qmridiskweak20_t0 = %g, qmridiskweak100_t0 = %g" % (  qmridiskweak10_t0 ,  qmridiskweak20_t0 ,  qmridiskweak100_t0 ) )
+    print( "q2mridiskweak10_t0 = %g, q2mridiskweak20_t0 = %g, q2mridiskweak100_t0 = %g" % (  1.0/iq2mridiskweak10_t0 ,  1.0/iq2mridiskweak20_t0 ,  1.0/iq2mridiskweak100_t0 ) )
     print( "qmridiskweak10 = %g, qmridiskweak20 = %g, qmridiskweak100 = %g" % (  qmridiskweak10_avg ,  qmridiskweak20_avg ,  qmridiskweak100_avg ) )
     print( "q2mridiskweak10 = %g, q2mridiskweak20 = %g, q2mridiskweak100 = %g" % (  1.0/iq2mridiskweak10_avg ,  1.0/iq2mridiskweak20_avg ,  1.0/iq2mridiskweak100_avg ) )
     #
@@ -4914,60 +4938,60 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     global gridtype
     if modelname=="runlocaldipole3dfiducial":
-	    gridtype="Exp Old"
+	    gridtype="ExpOld"
     elif modelname=="sasha99":
 	    gridtype="A0.99fc"
     elif Rout==26000:
-	    gridtype="Hyp Exp"
+	    gridtype="HypExp"
     elif Rout==1000:
 	    gridtype="Exp"
     else:
-	    gridtype="Unknownn Model Grid Type"
+	    gridtype="UnknownModelGridType"
     #
     if modelname=="thickdisk7":
-	    fieldtype="Poloidal Flip"
+	    fieldtype="PoloidalFlip"
 	    truemodelname="A94BfN40"
     elif modelname=="thickdisk8":
-	    fieldtype="Poloidal Flip"
+	    fieldtype="PoloidalFlip"
 	    truemodelname="A94BfN40\_C1"
     elif modelname=="thickdisk11":
-	    fieldtype="Poloidal Flip"
+	    fieldtype="PoloidalFlip"
 	    truemodelname="A94BfN40\_C2"
     elif modelname=="thickdisk12":
-	    fieldtype="Poloidal Flip"
+	    fieldtype="PoloidalFlip"
 	    truemodelname="A94BfN40\_C3"
     elif modelname=="thickdisk13":
-	    fieldtype="Poloidal Flip"
+	    fieldtype="PoloidalFlip"
 	    truemodelname="A94BfN40\_C4"
     elif modelname=="run.liker2butbeta40":
-	    fieldtype="Poloidal Flip"
+	    fieldtype="PoloidalFlip"
 	    truemodelname="A94BfN40\_C5"
     elif modelname=="thickdiskrr2":
-	    fieldtype="Poloidal Flip"
+	    fieldtype="PoloidalFlip"
 	    truemodelname="A-94BfN10"
     elif modelname=="run.like8":
-	    fieldtype="Poloidal Flip"
+	    fieldtype="PoloidalFlip"
 	    truemodelname="A-94BfN10\_C1"
     elif modelname=="thickdisk16":
-	    fieldtype="Poloidal Flip"
+	    fieldtype="PoloidalFlip"
 	    truemodelname="A-5BfN10"
     elif modelname=="thickdisk5":
-	    fieldtype="Poloidal Flip"
+	    fieldtype="PoloidalFlip"
 	    truemodelname="A0BfN10"
     elif modelname=="thickdisk14":
-	    fieldtype="Poloidal Flip"
+	    fieldtype="PoloidalFlip"
 	    truemodelname="A5BfN10"
     elif modelname=="thickdiskr1":
-	    fieldtype="Poloidal Flip"
+	    fieldtype="PoloidalFlip"
 	    truemodelname="A94BfN10"
     elif modelname=="run.liker1":
-	    fieldtype="Poloidal Flip"
+	    fieldtype="PoloidalFlip"
 	    truemodelname="A94BfN10\_C1"
     elif modelname=="thickdiskr2":
-	    fieldtype="Poloidal Flip"
+	    fieldtype="PoloidalFlip"
 	    truemodelname="A94BfN10\_R1"
     elif modelname=="run.liker2":
-	    fieldtype="Poloidal Flip"
+	    fieldtype="PoloidalFlip"
 	    truemodelname="A-94BfN40"
     elif modelname=="thickdisk9":
 	    fieldtype="Poloidal"
@@ -4997,26 +5021,45 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
 	    fieldtype="Poloidal2"
 	    truemodelname="A0.99fc"
     else:
-	    fieldtype="Unknown Model Field Type"
+	    fieldtype="UnknownModelFieldType"
     #
-    # 6:
-    print( "Latex5: Model Name & $\\dot{M}_{\\rm BH}$  & $\\dot{M}_{\\rm in,i}$ & $\\dot{M}_{\\rm in,o}$ & $\\dot{M}_{\\rm j}$ & $\\dot{M}_{\\rm w,i}$ & $\\dot{M}_{\\rm w,o}$ \\\\" )
-    print( "Latex5: %s         & %g & %g & %g & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(mdotfinavg), roundto2(mdotinrjetinfinavg), roundto2(mdotinrjetoutfinavg), roundto2(mdotjetfinavg), roundto2(mdotwinfinavg), roundto2(mdotwoutfinavg), modelname ) )
     #
-    # 12:
-    print( "Latex95: $\\delta r:r \\delta\\theta:r\\sin\\theta \\delta\\phi$" )
-    print( "Latex95: Model Name & $r_+$ & $r_i$ & $r_o$ \\\\" )
-    if modelname=="runlocaldipole3dfiducial":
-	    print( "Latex95:io %s         & %g:%g:%g & %g:%g:%g & %g:%g:%g \\\\ %% %s" % (truemodelname, roundto2(drnormvsrhor), roundto2(dHnormvsrhor), roundto2(dPnormvsrhor), roundto2(drnormvsr10), roundto2(dHnormvsr10), roundto2(dPnormvsr10), roundto2(drnormvsr20), roundto2(dHnormvsr20), roundto2(dPnormvsr20), modelname ) )
+    nzreal=nz
+    if modelname=="runlocaldipole3dfiducial" or modelname=="sasha99":
+        drnormh=drnormvsrhor
+        dHnormh=dHnormvsrhor
+        dPnormh=dPnormvsrhor
+        drnormi=drnormvsr10
+        dHnormi=dHnormvsr10
+        dPnormi=dPnormvsr10
+        drnormo=drnormvsr20
+        dHnormo=dHnormvsr20
+        dPnormo=dPnormvsr20
+        if modelname=="sasha99":
+            dPnormh/=2
+            dPnormi/=2
+            dPnormo/=2
+            nzreal=nz*2
+        #
+        qmriit0=qmridisk10_t0
+        qmriot0=qmridisk20_t0
+        iq2mriit0=iq2mridisk10_t0
+        iq2mriot0=iq2mridisk20_t0
     else:
-	    print( "Latex95: %s         & %g:%g:%g & %g:%g:%g & %g:%g:%g \\\\ %% %s" % (truemodelname, roundto2(drnormvsrhor), roundto2(dHnormvsrhor), roundto2(dPnormvsrhor), roundto2(drnormvsr20), roundto2(dHnormvsr20), roundto2(dPnormvsr20), roundto2(drnormvsr100), roundto2(dHnormvsr100), roundto2(dPnormvsr100), modelname ) )
-    #
-    # 8:
-    print("Latex1: Model Name & $a$ & Field Type & $\\beta_{\\rm min}$ & $\\beta_{\\rm rat-of-avg} & $\\beta_{\\rm rat-of-max} & $\\left(\\frac{|h|}{r}\\right)_{r_{\\rm max}}$ & $Q_{1,t=0,\\rm MRI,i}$  & $Q_{1,t=0,\\rm MRI,o}$ & $Q_{2,t=0,\\rm MRI,i}$ & $Q_{2,t=0,\\rm MRI,o}$  \\\\")
-    if modelname=="runlocaldipole3dfiducial":
-	    print("Latex1:io %s         & %g  &  %s        & %g                  & %g                        & %g                        & %g                                             & %g                       & %g                       & %g                      & %g \\\\ %% %s" % (truemodelname,a,fieldtype,roundto2(betamin_t0),roundto2(betaratofavg_t0),roundto2(betaratofmax_t0),roundto2(hoverratrmax_t0),roundto2(qmridisk10_t0), roundto2(qmridisk20_t0), roundto2(1.0/iq2mridisk10_t0), roundto2(1.0/iq2mridisk20_t0), modelname ) )
-    else:
-	    print("Latex1: %s         & %g  &  %s        & %g                  & %g                        & %g                        & %g                                             & %g                       & %g                       & %g                      & %g \\\\ %% %s" % (truemodelname,a,fieldtype,roundto2(betamin_t0),roundto2(betaratofavg_t0),roundto2(betaratofmax_t0),roundto2(hoverratrmax_t0),roundto2(qmridisk20_t0), roundto2(qmridisk100_t0), roundto2(1.0/iq2mridisk20_t0), roundto2(1.0/iq2mridisk100_t0), modelname ) )
+        drnormh=drnormvsrhor
+        dHnormh=dHnormvsrhor
+        dPnormh=dPnormvsrhor
+        drnormi=drnormvsr20
+        dHnormi=dHnormvsr20
+        dPnormi=dPnormvsr20
+        drnormo=drnormvsr100
+        dHnormo=dHnormvsr100
+        dPnormo=dPnormvsr100
+        #
+        qmriit0=qmridisk20_t0
+        qmriot0=qmridisk100_t0
+        iq2mriit0=iq2mridisk20_t0
+        iq2mriot0=iq2mridisk100_t0
     #
     # find true range that used for averaging
     truetmax=np.max(ts)
@@ -5027,30 +5070,45 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     if truetmax>ftf:
 	    truetmax=ftf
     #
+    if modelname=="runlocaldipole3dfiducial":
+	    gridtype="ExpOld"
+    elif modelname=="sasha99":
+	    gridtype="A0.99fc"
+    #
+    # 6:
+    print( "HLatex5: ModelName & $\\dot{M}_{\\rm{}BH}$  & $\\dot{M}_{\\rm{}in,i}$ & $\\dot{M}_{\\rm{}in,o}$ & $\\dot{M}_{\\rm{}j}$ & $\\dot{M}_{\\rm{}w,i}$ & $\\dot{M}_{\\rm{}w,o}$ \\\\" )
+    print( "VLatex5: %s         & %g & %g & %g & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(mdotfinavg), roundto2(mdotinrjetinfinavg), roundto2(mdotinrjetoutfinavg), roundto2(mdotjetfinavg), roundto2(mdotwinfinavg), roundto2(mdotwoutfinavg), modelname ) )
+    #
+    # 12:
+    print( "HLatex95: $\\delta r:r \\delta\\theta:r\\sin\\theta \\delta\\phi$" )
+    print( "HLatex95: ModelName & $r_+$ & $r_i$ & $r_o$ \\\\" )
+    print( "VLatex95: %s         & %g:%g:%g & %g:%g:%g & %g:%g:%g \\\\ %% %s" % (truemodelname, roundto2(drnormh), roundto2(dHnormh), roundto2(dPnormh), roundto2(drnormi), roundto2(dHnormi), roundto2(dPnormi), roundto2(drnormo), roundto2(dHnormo), roundto2(dPnormo), modelname ) )
+    #
+    # 8:
+    print("HLatex1: ModelName & $a$ & FieldType & $\\beta_{\\rm{}min}$ & $\\beta_{\\rm{}rat-of-avg} & $\\beta_{\\rm{}rat-of-max} & $\\left(\\frac{|h|}{r}\\right)_{r_{\\rm{}max}}$ & $Q_{1,t=0,\\rm{}MRI,i}$  & $Q_{1,t=0,\\rm{}MRI,o}$ & $Q_{2,t=0,\\rm{}MRI,i}$ & $Q_{2,t=0,\\rm{}MRI,o}$  \\\\")
+    print("VLatex1: %s         & %g  &  %s        & %g                  & %g                        & %g                        & %g                                             & %g                       & %g                       & %g                      & %g \\\\ %% %s" % (truemodelname,a,fieldtype,roundto2(betamin_t0),roundto2(betaratofavg_t0),roundto2(betaratofmax_t0),roundto2(hoverratrmax_t0),roundto2(qmriit0), roundto2(qmriot0), roundto2(1.0/iq2mriit0), roundto2(1.0/iq2mriot0), modelname ) )
     #
     # 16:
-    print("Latex2: Model Name  & Grid Type & $N_r$ & $N_\\theta$ & $N_\\phi$ & $R_{\\rm in}$ & $R_{\\rm out}$  & $A_{r=r_+}$ & $A_{r_i}$ & $A_{r_o}$ & $T_i$--$T_f$  \\\\")
-    if modelname=="runlocaldipole3dfiducial":
-	    print("Latex2:io %s          & %s        &  %g   & %g          & %g        & %g            & %g              & %g:%g:%g    & %g:%g:%g       & %g:%g:%g    & %g--%g \\\\ %% %s" % (truemodelname,gridtype,nx,ny,nz,Rin,Rout,roundto2(drnormvsrhor), roundto2(dHnormvsrhor), roundto2(dPnormvsrhor), roundto2(drnormvsr10), roundto2(dHnormvsr10), roundto2(dPnormvsr10), roundto2(drnormvsr20), roundto2(dHnormvsr20), roundto2(dPnormvsr20),truetmin,truetmax, modelname ) )
-    else:
-	    print("Latex2: %s          & %s        &  %g   & %g          & %g        & %g            & %g              & %g:%g:%g    & %g:%g:%g       & %g:%g:%g    & %g--%g \\\\ %% %s" % (truemodelname,gridtype,nx,ny,nz,Rin,Rout,roundto2(drnormvsrhor), roundto2(dHnormvsrhor), roundto2(dPnormvsrhor), roundto2(drnormvsr20), roundto2(dHnormvsr20), roundto2(dPnormvsr20), roundto2(drnormvsr100), roundto2(dHnormvsr100), roundto2(dPnormvsr100),truetmin,truetmax, modelname ) )
+    print("HLatex2: ModelName  & GridType & $N_r$ & $N_\\theta$ & $N_\\phi$ & $R_{\\rm{}in}$ & $R_{\\rm{}out}$  & $A_{r=r_+}$ & $A_{r_i}$ & $A_{r_o}$ & $T_i$--$T_f$  \\\\")
+    #
+    print("VLatex2: %s          & %s        &  %g   & %g          & %g        & %g            & %g              & %g:%g:%g    & %g:%g:%g       & %g:%g:%g    & %g--%g \\\\ %% %s" % (truemodelname,gridtype,nx,ny,nzreal,Rin,Rout,roundto2(drnormh), roundto2(dHnormh), roundto2(dPnormh), roundto2(drnormi), roundto2(dHnormi), roundto2(dPnormi), roundto2(drnormo), roundto2(dHnormo), roundto2(dPnormo),truetmin,truetmax, modelname ) )
     #
     # 8:
-    print( "Latex99: Model Name & $Q_{1,t=0,\\rm MRI,10}$ & $Q_{1,t=0,\\rm MRI,20}$  & $Q_{1,t=0,\\rm MRI,100}$ & $Q_{2,t=0,\\rm MRI,10}$ & $Q_{2,t=0,\\rm MRI,20}$ & $Q_{2,t=0,\\rm MRI,100}$  \\\\" )
-    print( "Latex99: %s         & %g & %g & %g & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(qmridisk10_t0), roundto2(qmridisk20_t0), roundto2(qmridisk100_t0), roundto2(1.0/iq2mridisk10_t0), roundto2(1.0/iq2mridisk20_t0), roundto2(1.0/iq2mridisk100_t0), modelname ) )
+    print( "HLatex99: ModelName & $Q_{1,t=0,\\rm{}MRI,10}$ & $Q_{1,t=0,\\rm{}MRI,20}$  & $Q_{1,t=0,\\rm{}MRI,100}$ & $Q_{2,t=0,\\rm{}MRI,10}$ & $Q_{2,t=0,\\rm{}MRI,20}$ & $Q_{2,t=0,\\rm{}MRI,100}$  \\\\" )
+    print( "VLatex99: %s         & %g & %g & %g & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(qmridisk10_t0), roundto2(qmridisk20_t0), roundto2(qmridisk100_t0), roundto2(1.0/iq2mridisk10_t0), roundto2(1.0/iq2mridisk20_t0), roundto2(1.0/iq2mridisk100_t0), modelname ) )
     #
-    print( "Latex4: Model Name & $Q_{1,\\rm MRI,10}$ & $Q_{1,\\rm MRI,20}$  & $Q_{1,\\rm MRI,100}$ & $Q_{2,\\rm MRI,10}$ & $Q_{2,\\rm MRI,20}$ & $Q_{2,\\rm MRI,100}$  \\\\" )
-    print( "Latex4: %s         & %g & %g & %g & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(qmridisk10_avg), roundto2(qmridisk20_avg), roundto2(qmridisk100_avg), roundto2(1.0/iq2mridisk10_avg), roundto2(1.0/iq2mridisk20_avg), roundto2(1.0/iq2mridisk100_avg), modelname ) )
+    print( "HLatex4: ModelName & $Q_{1,\\rm{}MRI,10}$ & $Q_{1,\\rm{}MRI,20}$  & $Q_{1,\\rm{}MRI,100}$ & $Q_{2,\\rm{}MRI,10}$ & $Q_{2,\\rm{}MRI,20}$ & $Q_{2,\\rm{}MRI,100}$  \\\\" )
+    print( "VLatex4: %s         & %g & %g & %g & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(qmridisk10_avg), roundto2(qmridisk20_avg), roundto2(qmridisk100_avg), roundto2(1.0/iq2mridisk10_avg), roundto2(1.0/iq2mridisk20_avg), roundto2(1.0/iq2mridisk100_avg), modelname ) )
     #
     # 8:
-    print( "Latex97: Model Name & $Q_{1,t=0,\\rm MRI,10,w}$ & $Q_{1,t=0,\\rm MRI,20,w}$  & $Q_{1,t=0,\\rm MRI,100,w}$ & $Q_{2,t=0,\\rm MRI,10,w}$ & $Q_{2,t=0,\\rm MRI,20,w}$ & $Q_{2,t=0,\\rm MRI,100,w}$  \\\\" )
-    print( "Latex97: %s         & %g & %g & %g & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(qmridiskweak10_t0), roundto2(qmridiskweak20_t0), roundto2(qmridiskweak100_t0), roundto2(1.0/iq2mridiskweak10_t0), roundto2(1.0/iq2mridiskweak20_t0), roundto2(1.0/iq2mridiskweak100_t0), modelname ) )
+    print( "HLatex97: ModelName & $Q_{1,t=0,\\rm{}MRI,10,w}$ & $Q_{1,t=0,\\rm{}MRI,20,w}$  & $Q_{1,t=0,\\rm{}MRI,100,w}$ & $Q_{2,t=0,\\rm{}MRI,10,w}$ & $Q_{2,t=0,\\rm{}MRI,20,w}$ & $Q_{2,t=0,\\rm{}MRI,100,w}$  \\\\" )
+    print( "VLatex97: %s         & %g & %g & %g & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(qmridiskweak10_t0), roundto2(qmridiskweak20_t0), roundto2(qmridiskweak100_t0), roundto2(1.0/iq2mridiskweak10_t0), roundto2(1.0/iq2mridiskweak20_t0), roundto2(1.0/iq2mridiskweak100_t0), modelname ) )
     #
-    print( "Latex96: Model Name & $Q_{1,\\rm MRI,10,w}$ & $Q_{1,\\rm MRI,20,w}$  & $Q_{1,\\rm MRI,100,w}$ & $Q_{2,\\rm MRI,10,w}$ & $Q_{2,\\rm MRI,20,w}$ & $Q_{2,\\rm MRI,100,w}$  \\\\" )
-    print( "Latex96: %s         & %g & %g & %g & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(qmridiskweak10_avg), roundto2(qmridiskweak20_avg), roundto2(qmridiskweak100_avg), roundto2(1.0/iq2mridiskweak10_avg), roundto2(1.0/iq2mridiskweak20_avg), roundto2(1.0/iq2mridiskweak100_avg), modelname ) )
+    print( "HLatex96: ModelName & $Q_{1,\\rm{}MRI,10,w}$ & $Q_{1,\\rm{}MRI,20,w}$  & $Q_{1,\\rm{}MRI,100,w}$ & $Q_{2,\\rm{}MRI,10,w}$ & $Q_{2,\\rm{}MRI,20,w}$ & $Q_{2,\\rm{}MRI,100,w}$  \\\\" )
+    print( "VLatex96: %s         & %g & %g & %g & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(qmridiskweak10_avg), roundto2(qmridiskweak20_avg), roundto2(qmridiskweak100_avg), roundto2(1.0/iq2mridiskweak10_avg), roundto2(1.0/iq2mridiskweak20_avg), roundto2(1.0/iq2mridiskweak100_avg), modelname ) )
     #
-    print( "Latex3: Model Name & $\\left(\\frac{|h|}{r}\\right)^d_{\\rm BH}$  & $\\left(\\frac{|h|}{r}\\right)^d_{5}$ & $\\left(\\frac{|h|}{r}\\right)^d_{20}$ & $\\left(\\frac{|h|}{r}\\right)^d_{100}$ & $\\left(\\frac{|h|}{r}\\right)^c_{\\rm BH}$  & $\\left(\\frac{|h|}{r}\\right)^c_{5}$ & $\\left(\\frac{|h|}{r}\\right)^c_{20}$ & $\\left(\\frac{|h|}{r}\\right)^c_{100}$ & $\\left(\\frac{|h|}{r}\\right)^j_{\\rm BH}$  & $\\left(\\frac{|h|}{r}\\right)^j_{5}$ & $\\left(\\frac{|h|}{r}\\right)^j_{20}$ & $\\left(\\frac{|h|}{r}\\right)^j_{100}$ \\\\" )
-    print( "Latex3: %s         & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g  \\\\ %% %s" % (truemodelname, roundto2(hoverrhor_avg), roundto2( hoverr5_avg), roundto2(hoverr20_avg), roundto2(hoverr100_avg), roundto2(hoverrcoronahor_avg), roundto2( hoverrcorona5_avg), roundto2(hoverrcorona20_avg), roundto2(hoverrcorona100_avg), roundto2(hoverrjethor_avg), roundto2( hoverrjet5_avg), roundto2(hoverrjet20_avg), roundto2(hoverrjet100_avg), modelname ) )
+    print( "HLatex3: ModelName & $\\left(\\frac{|h|}{r}\\right)^d_{\\rm{}BH}$  & $\\left(\\frac{|h|}{r}\\right)^d_{5}$ & $\\left(\\frac{|h|}{r}\\right)^d_{20}$ & $\\left(\\frac{|h|}{r}\\right)^d_{100}$ & $\\left(\\frac{|h|}{r}\\right)^c_{\\rm{}BH}$  & $\\left(\\frac{|h|}{r}\\right)^c_{5}$ & $\\left(\\frac{|h|}{r}\\right)^c_{20}$ & $\\left(\\frac{|h|}{r}\\right)^c_{100}$ & $\\left(\\frac{|h|}{r}\\right)^j_{\\rm{}BH}$  & $\\left(\\frac{|h|}{r}\\right)^j_{5}$ & $\\left(\\frac{|h|}{r}\\right)^j_{20}$ & $\\left(\\frac{|h|}{r}\\right)^j_{100}$ \\\\" )
+    print( "VLatex3: %s         & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g  \\\\ %% %s" % (truemodelname, roundto2(hoverrhor_avg), roundto2( hoverr5_avg), roundto2(hoverr20_avg), roundto2(hoverr100_avg), roundto2(hoverrcoronahor_avg), roundto2( hoverrcorona5_avg), roundto2(hoverrcorona20_avg), roundto2(hoverrcorona100_avg), roundto2(hoverrjethor_avg), roundto2( hoverrjet5_avg), roundto2(hoverrjet20_avg), roundto2(hoverrjet100_avg), modelname ) )
     #
     #
     einf,linf=elinfcalc(a)
@@ -5058,8 +5116,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     lnt=-linf
     #
     # 14:
-    print( "Latex6: Model Name & $\\eta_{\\rm BH}$ & $\\eta^{\\rm EM}_{\\rm BH}$ & $\\eta^{\\rm MAKE}_{\\rm BH}$ & $\\eta_{\\rm j+w,o}$ & $\\eta_{\\rm j}$ & $\\eta^{\\rm EM}_j$ & $\\eta^{\\rm MAKE}_{\\rm j}$ & $\\eta_{\\rm w,i}$ & $\\eta^{\\rm EM}_{\\rm w,i}$ & $\\eta^{\\rm MAKE}_{\\rm w,i}$ & $\\eta_{\\rm w,o}$ & $\\eta^{\\rm EM}_{\\rm w,o}$ & $\\eta^{\\rm MAKE}_{\\rm w,o}$ & $\\eta_{\\rm NT}$ \\\\" )
-    print( "Latex6: %s         & %g%% & %g%% & %g%% & %g%% & %g%% & %g%% & %g%% & %g%% & %g%% & %g%% & %g%% & %g%% & %g%% & %g%% \\\\ %% %s" % (truemodelname, roundto3(etabh_avg), roundto3(etabhEM_avg), roundto3(etabhMAKE_avg), roundto3(etaj_avg + etawout_avg), roundto3(etaj_avg), roundto3(etajEM_avg), roundto3(etajMAKE_avg), roundto3(etawin_avg), roundto3(etawinEM_avg), roundto3(etawinMAKE_avg), roundto3(etawout_avg), roundto3(etawoutEM_avg), roundto3(etawoutMAKE_avg), roundto3(etant), modelname ) )
+    print( "HLatex6: ModelName & $\\eta_{\\rm{}BH}$ & $\\eta^{\\rm{}EM}_{\\rm{}BH}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}BH}$ & $\\eta_{\\rm{}j+w,o}$ & $\\eta_{\\rm{}j}$ & $\\eta^{\\rm{}EM}_j$ & $\\eta^{\\rm{}MAKE}_{\\rm{}j}$ & $\\eta_{\\rm{}w,i}$ & $\\eta^{\\rm{}EM}_{\\rm{}w,i}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}w,i}$ & $\\eta_{\\rm{}w,o}$ & $\\eta^{\\rm{}EM}_{\\rm{}w,o}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}w,o}$ & $\\eta_{\\rm{}NT}$ \\\\" )
+    print( "VLatex6: %s         & %g%% & %g%% & %g%% & %g%% & %g%% & %g%% & %g%% & %g%% & %g%% & %g%% & %g%% & %g%% & %g%% & %g%% \\\\ %% %s" % (truemodelname, roundto3(etabh_avg), roundto3(etabhEM_avg), roundto3(etabhMAKE_avg), roundto3(etaj_avg + etawout_avg), roundto3(etaj_avg), roundto3(etajEM_avg), roundto3(etajMAKE_avg), roundto3(etawin_avg), roundto3(etawinEM_avg), roundto3(etawinMAKE_avg), roundto3(etawout_avg), roundto3(etawoutEM_avg), roundto3(etawoutMAKE_avg), roundto3(etant), modelname ) )
     #
     lbh_avg=letabh_avg/prefactor
     lbhEM_avg=letabhEM_avg/prefactor
@@ -5076,8 +5134,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     lwoutMAKE_avg=letawoutMAKE_avg/prefactor
     #
     # 14:
-    print( "Latex7: Model Name & $l_{\\rm BH}$ & $l^{\\rm EM}_{\\rm BH}$ & $l^{\\rm MAKE}_{\\rm BH}$ & $l_{\\rm j+w,o}$ & $l_{\\rm j}$ & $l^{\\rm EM}_{\\rm j}$ & $l^{\\rm MAKE}_{\\rm j}$ & $l_{\\rm w,i}$ & $l^{\\rm EM}_{\\rm w,i}$ & $l^{\\rm MAKE}_{\\rm w,i}$ & $l_{\\rm w,o}$ & $l^{\\rm EM}_{\\rm w,o}$ & $l^{\\rm MAKE}_{\\rm w,o}$ & $l_{\\rm NT}$ \\\\" )
-    print( "Latex7: %s         & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto3(lbh_avg), roundto3(lbhEM_avg), roundto3(lbhMAKE_avg), roundto3(ljwout_avg), roundto3(lj_avg), roundto3(ljEM_avg), roundto3(ljMAKE_avg), roundto3(lwin_avg), roundto3(lwinEM_avg), roundto3(lwinMAKE_avg), roundto3(lwout_avg), roundto3(lwoutEM_avg), roundto3(lwoutMAKE_avg), roundto3(lnt), modelname ) )
+    print( "HLatex7: ModelName & $l_{\\rm{}BH}$ & $l^{\\rm{}EM}_{\\rm{}BH}$ & $l^{\\rm{}MAKE}_{\\rm{}BH}$ & $l_{\\rm{}j+w,o}$ & $l_{\\rm{}j}$ & $l^{\\rm{}EM}_{\\rm{}j}$ & $l^{\\rm{}MAKE}_{\\rm{}j}$ & $l_{\\rm{}w,i}$ & $l^{\\rm{}EM}_{\\rm{}w,i}$ & $l^{\\rm{}MAKE}_{\\rm{}w,i}$ & $l_{\\rm{}w,o}$ & $l^{\\rm{}EM}_{\\rm{}w,o}$ & $l^{\\rm{}MAKE}_{\\rm{}w,o}$ & $l_{\\rm{}NT}$ \\\\" )
+    print( "VLatex7: %s         & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto3(lbh_avg), roundto3(lbhEM_avg), roundto3(lbhMAKE_avg), roundto3(ljwout_avg), roundto3(lj_avg), roundto3(ljEM_avg), roundto3(ljMAKE_avg), roundto3(lwin_avg), roundto3(lwinEM_avg), roundto3(lwinMAKE_avg), roundto3(lwout_avg), roundto3(lwoutEM_avg), roundto3(lwoutMAKE_avg), roundto3(lnt), modelname ) )
     #
     djdtnormbh  = (-lbh_avg) - 2.0*a*(1.0-etabh_avg/prefactor)
     djdtnormj   = (-lj_avg)  - 2.0*a*(1.0-etaj_avg/prefactor)
@@ -5085,7 +5143,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     djdtnormwout   = (-lwout_avg)  - 2.0*a*(1.0-etawout_avg/prefactor)
     djdtnormnt  = linf       - 2.0*a*einf
     # 5:
-    print( "s_{\\rm BH} & s_{\\rm j} & s_{\\rm w,i} & s_{\\rm w,o} & s_{\\rm NT} \\\\" )
+    print( "s_{\\rm{}BH} & s_{\\rm{}j} & s_{\\rm{}w,i} & s_{\\rm{}w,o} & s_{\\rm{}NT} \\\\" )
     print( "%g & %g & %g & %g & %g \\\\ %% %s" % ( roundto2(djdtnormbh), roundto2(djdtnormj), roundto2(djdtnormwin), roundto2(djdtnormwout), roundto2(djdtnormnt), modelname ) )
     #
     #
@@ -5392,11 +5450,11 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     #
     # 9:
-    print( "Latex8: Model Name & $\\Upsilon_{\\rm BH}$ & $\\Upsilon_{\\rm j}$ & $\\Upsilon_{\\rm w,i}$ & $\\Upsilon_{\\rm w,o}$ & $s_{\\rm BH}$ & $s_{\\rm j}$ & $s_{\\rm w,i}$ & $s_{\\rm w,o}$ & $s_{\\rm NT}$ \\\\" )
-    print( "Latex8: %s         & %g & %g & %g & %g & %g & %g & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(phibh_avg), roundto2(phij_avg), roundto2(phiwin_avg), roundto2(phiwout_avg), roundto2(djdtnormbh), roundto2(djdtnormj), roundto2(djdtnormwin), roundto2(djdtnormwout), roundto2(djdtnormnt), modelname ) )
+    print( "HLatex8: ModelName & $\\Upsilon_{\\rm{}BH}$ & $\\Upsilon_{\\rm{}j}$ & $\\Upsilon_{\\rm{}w,i}$ & $\\Upsilon_{\\rm{}w,o}$ & $s_{\\rm{}BH}$ & $s_{\\rm{}j}$ & $s_{\\rm{}w,i}$ & $s_{\\rm{}w,o}$ & $s_{\\rm{}NT}$ \\\\" )
+    print( "VLatex8: %s         & %g & %g & %g & %g & %g & %g & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(phibh_avg), roundto2(phij_avg), roundto2(phiwin_avg), roundto2(phiwout_avg), roundto2(djdtnormbh), roundto2(djdtnormj), roundto2(djdtnormwin), roundto2(djdtnormwout), roundto2(djdtnormnt), modelname ) )
     #
-    print( "Latex9: Model Name & $\\frac{\\Phi}{\\Phi_1(t=0)}$ & $\\frac{\\Phi}{\\Phi_2(t=0)} & $\\frac{\\Phi}{\\Phi_3(t=0)} & $\\frac{\\Phi}{\\Phi_4(t=0)} & $\\frac{\\Phi}{\\Phi_5(t=0)} \\\\ ")
-    print( "Latex9: %s         & %g & %g & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(fstotnorm1_avg),roundto2(fstotnorm2_avg),roundto2(fstotnorm3_avg),roundto2(fstotnorm4_avg),roundto2(fstotnorm5_avg), modelname ) )
+    print( "HLatex9: ModelName & $\\frac{\\Phi}{\\Phi_1(t=0)}$ & $\\frac{\\Phi}{\\Phi_2(t=0)} & $\\frac{\\Phi}{\\Phi_3(t=0)} & $\\frac{\\Phi}{\\Phi_4(t=0)} & $\\frac{\\Phi}{\\Phi_5(t=0)} \\\\ ")
+    print( "VLatex9: %s         & %g & %g & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(fstotnorm1_avg),roundto2(fstotnorm2_avg),roundto2(fstotnorm3_avg),roundto2(fstotnorm4_avg),roundto2(fstotnorm5_avg), modelname ) )
     #
     if whichplot == -1:
         etajetavg = pjetfinavg/mdotfinavg
@@ -6760,7 +6818,7 @@ def mkmovie(framesize=50, domakeavi=False):
     else:
 	    modelname = "Unknown Model"
     #
-    print("Model Name = %s" % (modelname) )
+    print("ModelName = %s" % (modelname) )
     if len(sys.argv[1:])==3 and sys.argv[2].isdigit() and (sys.argv[3].isdigit() or sys.argv[3][0]=="-") :
         whichi = int(sys.argv[2])
         whichn = int(sys.argv[3])
@@ -6972,7 +7030,7 @@ def mk2davg():
     else:
 	    modelname = "Unknown Model"
     #
-    print("Model Name = %s" % (modelname) )
+    print("ModelName = %s" % (modelname) )
     if len(sys.argv[1:])==3 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
         whichgroup = int(sys.argv[2])
         step = int(sys.argv[3])
@@ -7081,7 +7139,7 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
     else:
 	    modelname = "Unknown Model"
     #
-    print("Model Name = %s" % (modelname) )
+    print("ModelName = %s" % (modelname) )
     if len(sys.argv[1:])==3 and sys.argv[2].isdigit() and (sys.argv[3].isdigit() or sys.argv[3][0]=="-") :
         whichi = int(sys.argv[2])
         whichn = int(sys.argv[3])
@@ -7408,7 +7466,7 @@ def generate_time_series():
 	else:
 		modelname = "Unknown Model"
 	#
-	print("Model Name = %s" % (modelname) )
+	print("ModelName = %s" % (modelname) )
         if len(sys.argv[1:])==3 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
             whichi = int(sys.argv[2])
             whichn = int(sys.argv[3])
@@ -7540,9 +7598,9 @@ def oldstuff():
         if len(sys.argv[1:])>0:
 		modelname = sys.argv[1]
 	else:
-		modelname = "Unknown Model"
+		modelname = "UnknownModel"
         #
-	print("Model Name = %s" % (modelname) )
+	print("ModelName = %s" % (modelname) )
         if len(sys.argv[1:])==3 and sys.argv[2].isdigit() and (sys.argv[3].isdigit() or sys.argv[3][0]=="-") :
             whichi = int(sys.argv[2])
             whichn = int(sys.argv[3])
