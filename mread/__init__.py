@@ -5015,7 +5015,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
 	    fieldtype="Toroidal"
 	    truemodelname="A94BtN10\_R1"
     elif modelname=="runlocaldipole3dfiducial":
-	    fieldtype="Poloidal Old"
+	    fieldtype="PoloidalOld"
 	    truemodelname="MB09_D"
     elif modelname=="sasha99":
 	    fieldtype="Poloidal2"
@@ -5025,7 +5025,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     #
     nzreal=nz
-    if modelname=="runlocaldipole3dfiducial" or modelname=="sasha99":
+    #
+    if modelname=="runlocaldipole3dfiducial":
         drnormh=drnormvsrhor
         dHnormh=dHnormvsrhor
         dPnormh=dPnormvsrhor
@@ -5035,11 +5036,6 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         drnormo=drnormvsr20
         dHnormo=dHnormvsr20
         dPnormo=dPnormvsr20
-        if modelname=="sasha99":
-            dPnormh/=2
-            dPnormi/=2
-            dPnormo/=2
-            nzreal=nz*2
         #
         qmriit0=qmridisk10_t0
         qmriot0=qmridisk20_t0
@@ -5055,6 +5051,12 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         drnormo=drnormvsr100
         dHnormo=dHnormvsr100
         dPnormo=dPnormvsr100
+        #
+        if modelname=="sasha99":
+            dPnormh/=2
+            dPnormi/=2
+            dPnormo/=2
+            nzreal=nz*2
         #
         qmriit0=qmridisk20_t0
         qmriot0=qmridisk100_t0
