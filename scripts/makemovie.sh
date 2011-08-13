@@ -2,13 +2,13 @@
 # MUST RUN THIS WITH "bash" not "sh" since on some systems that calls "dash" that doesn't correctly handle $RANDOM or other things
 
 
-EXPECTED_ARGS=6
+EXPECTED_ARGS=9
 E_BADARGS=65
 
 if [ $# -ne $EXPECTED_ARGS ]
 then
-    echo "Usage: `basename $0` {modelname make1d makemerge makeplot makeframes makemovie}"
-    echo "e.g. sh makemovie.sh thickdisk7 1 1 1 1 0"
+    echo "Usage: `basename $0` {modelname make1d makemerge makeplot makeframes makemovie makeavg makeavgmerge makeavgplot}"
+    echo "e.g. sh makemovie.sh thickdisk7 1 1 1 1 0 0 0 0"
     exit $E_BADARGS
 fi
 
@@ -80,8 +80,6 @@ echo "RANDOM=$myrand"
 
 export localpath=`pwd`
 
-export runn=7
-export numparts=1
 
 modelname=$1
 make1d=$2
@@ -89,10 +87,22 @@ makemerge=$3
 makeplot=$4
 makeframes=$5
 makemovie=$6
+makeavg=$7
+makeavgmerge=$8
+makeavgplot=$9
 
 
+############################
+#
+# Make time series (vs. t and vs. r)
+#
+############################
 if [ $make1d -eq 1 ]
 then
+
+    export runn=7
+    export numparts=1
+
 
     export myinitfile1=$localpath/__init__.py.1.$myrand
     echo "myinitfile1="${myinitfile1}
@@ -178,6 +188,9 @@ then
     
     wait
 
+    # remove created file
+    rm -rf $myinitfile1
+
 fi
 
 
@@ -188,6 +201,10 @@ fi
 ####################################
 if [ $makemerge -eq 1 ]
 then
+
+    # runn should be same as when creating files
+    export runn=7
+
 
     export myinitfile2=$localpath/__init__.py.2.$myrand
     echo "myinitfile2="${myinitfile2}
@@ -239,6 +256,8 @@ fi
 ####################################
 if [ $makeframes -eq 1 ]
 then
+
+
 
     # Now you are ready to generate movie frames, you can do that in
     # parallel, too, in a very similar way.
@@ -362,6 +381,148 @@ fi
 
 
 
+
+###################################
+#
+# avg File (takes average of 20 fieldline files per avg file created)
+#
+####################################
+if [ $makeavg -eq 1 ]
+then
+
+    echo "Doing avg file"
+
+    export runn=7
+    export numparts=1
+
+
+    export myinitfile5=$localpath/__init__.py.5.$myrand
+    echo "myinitfile5="${myinitfile5}
+
+    sed -n '1h;1!H;${;g;s/if False:[\n \t]*#2DAVG[\n \t]*mk2davg()/if True:\n\t#2DAVG\n\tmk2davg()/g;p;}'  $initfile > $myinitfile5
+    
+    export je=$(( $numparts - 1 ))
+    # above two must be exactly divisible
+    export itot=$(( $runn/$numparts ))
+    export ie=$(( $itot -1 ))
+
+    export resid=$(( $runn - $itot * $numparts ))
+    
+    echo "Running with $itot cores simultaneously"
+    
+    # just a test:
+    # echo "nohup python $myinitfile1 $modelname $runi $runn &> python_${runi}_${runn}.out &"
+    # exit 
+    
+    # LOOP:
+    
+    for j in `seq 0 $numparts`
+    do
+
+	if [ $j -eq $numparts ]
+	then
+	    if [ $resid -gt 0 ]
+	    then
+		residie=$(( $resid - 1 ))
+		ilist=`seq 0 $residie`
+		doilist=1
+	    else
+		doilist=0
+	    fi
+	else
+	    ilist=`seq 0 $ie`
+	    doilist=1
+	fi
+
+	if [ $doilist -eq 1 ]
+	then
+            echo "Data vs. Time: Starting simultaneous run of $itot jobs for group $j"
+            for i in $ilist
+            do
+    		export runi=$(( $i + $itot * $j ))
+    		textrun="Data vs. Time: Running i=$i j=$j giving runi=$runi with runn=$runn"
+    	        #echo $textrun >> out
+    		echo $textrun
+                # sleep in order for all threads not to read in at once and overwhelm the drive
+	        # No, fieldline file itself of up to order 400M should be cached in memory for most systems.
+    		sleep 1
+            # run job
+		    ((nohup python $myinitfile5 $modelname $runi $runn 2>&1 1>&3 | tee python_${runi}_${runn}.avg.stderr.out) 3>&1 1>&2 | tee python_${runi}_${runn}.avg.out) > python_${runi}_${runn}.avg.full.out 2>&1 &
+
+	    done
+	    wait
+	    echo "Data vs. Time: Ending simultaneous run of $itot jobs for group $j"
+	fi
+    done
+    
+    wait
+
+    # remove created file
+    rm -rf $myinitfile5
+
+fi
+
+
+###################################
+#
+# Merge avg npy files
+#
+####################################
+if [ $makeavgmerge -eq 1 ]
+then
+
+    # should be same as when creating avg files
+    export runn=7
+
+
+    export myinitfile6=$localpath/__init__.py.6.$myrand
+    echo "myinitfile6="${myinitfile6}
+
+    sed -n '1h;1!H;${;g;s/if False:[\n \t]*#2DAVG[\n \t]*mk2davg()/if True:\n\t#2DAVG\n\tmk2davg()/g;p;}'  $initfile > $myinitfile6
+
+
+    echo "Merge avg files to single avg file"
+    # <index of first avg file to use> <index of last avg file to use> <step=1>
+    # must be step=1, or no merge occurs
+    step=1
+    ((nohup python $myinitfile6 $modelname 0 $runn $step 2>&1 1>&3 | tee python_${runn}_${runn}.avg.stderr.out) 3>&1 1>&2 | tee python_${runn}_${runn}.avg.out) > python_${runn}_${runn}.avg.full.out 2>&1
+
+    # remove created file
+    rm -rf $myinitfile6
+
+
+    # copy resulting avg file to avg2d.npy
+    avg2dmerge=`ls -vrt avg2d*_*_*.npy | head -1`    
+    cp $avg2dmerge avg2d.npy
+
+
+fi
+
+
+
+###################################
+#
+# Make avg plot
+#
+####################################
+if [ $makeavgplot -eq 1 ]
+then
+
+    export myinitfile7=$localpath/__init__.py.7.$myrand
+    echo "myinitfile7="${myinitfile7}
+
+    sed -n '1h;1!H;${;g;s/if False:[\n \t]*#fig2 with grayscalestreamlines and red field lines[\n \t]*mkstreamlinefigure()/if True:\n\t#fig2 with grayscalestreamlines and red field lines\n\tmkstreamlinefigure()/g;p;}'  $initfile > $myinitfile7
+
+
+    echo "Generate the avg plots"
+    # &> 
+    ((nohup python $myinitfile7 $modelname 2>&1 1>&3 | tee python.plot.avg.stderr.out) 3>&1 1>&2 | tee python.plot.avg.out) > python.plot.avg.full.out 2>&1
+
+    
+    # remove created file
+    rm -rf $myinitfile7
+
+fi
 
 
 

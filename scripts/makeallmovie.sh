@@ -21,13 +21,13 @@ dirruns='thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.liker2butbeta40 thic
 #modelnamelist='A94BfN40 A94BfN40\_C1  A94BfN40\_C2  A94BfN40\_C3  A94BfN40\_C4  A94BfN40\_C5  A-94BfN10     A-94BfN10\_C1 A-5BfN10      A0BfN10       A5BfN10       A94BfN10      A94BfN10\_C1  A94BfN10\_R1  A-94BfN40     A94BpN10      A-94BtN10     A-5BtN10      A0BtN10       A5BtN10       A94BtN10      A94BtN10\_R1  MB09_D      '
 
 
-EXPECTED_ARGS=9
+EXPECTED_ARGS=12
 E_BADARGS=65
 
 if [ $# -ne $EXPECTED_ARGS ]
 then
-    echo "Usage: `basename $0` {moviedirname dolinks dofiles make1d makemerge makeplot makeframes makemovie collect}"
-    echo "e.g. sh makeallmovie.sh moviefinal1 1 1 1 1 1 1 1 1"
+    echo "Usage: `basename $0` {moviedirname dolinks dofiles make1d makemerge makeplot makeframes makemovie makeavg makeavgmerge makeavgplot collect}"
+    echo "e.g. sh makeallmovie.sh moviefinal1 1 1 1 1 1 1 1 1 1 1 1"
     exit $E_BADARGS
 fi
 
@@ -41,7 +41,10 @@ makemerge=$5
 makeplot=$6
 makeframes=$7
 makemovie=$8
-collect=$9
+makeavg=$9
+makeavgmerge=${10}
+makeavgplot=${11}
+collect=${12}
 
 
 # On ki-jmck in /data2/jmckinne/
@@ -214,7 +217,7 @@ fi
 
 
 ##############################################
-make1d2dormovie=$(( $make1d + $makemerge + $makeplot + $makeframes + $makemovie ))
+make1d2dormovie=$(( $make1d + $makemerge + $makeplot + $makeframes + $makemovie + $makeavg + $makeavgmerge + $makeavgplot ))
 if [ $make1d2dormovie -gt 0 ]
 then
 
@@ -226,7 +229,7 @@ then
 
 	cd /data2/jmckinne/${thedir}/$moviedirname
 	
-	sh makemovielocal.sh ${thedir} $make1d $makemerge $makeplot $makeframes $makemovie
+	sh makemovielocal.sh ${thedir} $make1d $makemerge $makeplot $makeframes $makemovie $makeavg $makeavgmerge $makeavgplot
     done
 
     echo "Done with makemovie.sh stuff"

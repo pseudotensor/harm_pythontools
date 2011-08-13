@@ -1441,7 +1441,7 @@ def ftr(x,xb,xf):
 # http://wiki.chem.vu.nl/dirac/index.php/How_to_plot_vector_fields_calculated_with_DIRAC11_as_streamline_plots_using_PyNGL
 
 
-def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1):
+def mkframe(fname,ax=None,cb=True,useblank=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,domidfield=True,showjet=False,arrowsize=1):
     extent=(-len,len,-len,len)
     palette=cm.jet
     palette.set_bad('k', 1.0)
@@ -1460,13 +1460,17 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
     else:
         aphi = fieldcalc()
         iaphi = reinterp(aphi,extent,ncell,domask=0)
+        #
+        # convert from x^(i) to B^{r,h,ph}
         Br = dxdxp[1,1]*B[1]+dxdxp[1,2]*B[2]
         Bh = dxdxp[2,1]*B[1]+dxdxp[2,2]*B[2]
         Bp = B[3]*dxdxp[3,3]
         #
+        # note that this conversion to orthonormal basis ignores GR!
         Brnorm=Br
         Bhnorm=Bh*np.abs(r)
         Bpnorm=Bp*np.abs(r*np.sin(h))
+        #
         #
         Bznorm=Brnorm*np.cos(h)-Bhnorm*np.sin(h)
         BRnorm=Brnorm*np.sin(h)+Bhnorm*np.cos(h)
@@ -1540,7 +1544,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
             lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
             # if t < 1500:
             #lw *= ftr(iaphi,0.001,0.002)
-        fstreamplot(yi,xi,iBR,iBz,ua=iBaR,va=iBaz,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=detectLoops,dodiskfield=dodiskfield,dobhfield=dobhfield,startatmidplane=startatmidplane,a=a,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,dsval=dsval,color=color,doarrows=doarrows,dorandomcolor=dorandomcolor,skipblankint=skipblankint,minindent=minindent,minlengthdefault=minlengthdefault,arrowsize=arrowsize)
+        fstreamplot(yi,xi,iBR,iBz,ua=iBaR,va=iBaz,useblank=useblank,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=detectLoops,dodiskfield=dodiskfield,dobhfield=dobhfield,startatmidplane=startatmidplane,domidfield=domidfield,a=a,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,dsval=dsval,color=color,doarrows=doarrows,dorandomcolor=dorandomcolor,skipblankint=skipblankint,minindent=minindent,minlengthdefault=minlengthdefault,arrowsize=arrowsize)
         #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
     ax.set_xlim(extent[0],extent[1])
     ax.set_ylim(extent[2],extent[3])
@@ -4546,24 +4550,6 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     betaratofmax_t0=betaratofmax[0,0]
     print("betamin_t0=%g ,betaavg_t0=%g , betaratofavg_t0=%g , betaratofmax_t0=%g" % (betamin_t0, betaavg_t0, betaratofavg_t0, betaratofmax_t0) )
     #
-    # hoverr10 is function of time.  Unsure what time to choose.
-    # ts: carray of times of data
-    # fti: start avg time
-    # ftf: end avg time
-    # use end time by choosing -1 that wraps
-    drnormvsr,dHnormvsr,dPnormvsr=gridcalc(hoverr10[-1])
-    drnormvsrhor=drnormvsr[ihor]
-    dHnormvsrhor=dHnormvsr[ihor]
-    dPnormvsrhor=dPnormvsr[ihor]
-    drnormvsr10=drnormvsr[iofr(10)]
-    dHnormvsr10=dHnormvsr[iofr(10)]
-    dPnormvsr10=dPnormvsr[iofr(10)]
-    drnormvsr20=drnormvsr[iofr(20)]
-    dHnormvsr20=dHnormvsr[iofr(20)]
-    dPnormvsr20=dPnormvsr[iofr(20)]
-    drnormvsr100=drnormvsr[iofr(100)]
-    dHnormvsr100=dHnormvsr[iofr(100)]
-    dPnormvsr100=dPnormvsr[iofr(100)]
     #
     #
     #
@@ -4735,6 +4721,35 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         hoverr20_avg = timeavg(hoverr20,ts,fti,ftf)
         hoverr100_avg = timeavg(hoverr100,ts,fti,ftf)
         #
+        # hoverr10 is function of time.  Unsure what time to choose.
+        # ts: carray of times of data
+        # fti: start avg time
+        # ftf: end avg time
+        # use end time by choosing -1 that wraps
+        #drnormvsr,dHnormvsr,dPnormvsr=gridcalc(hoverr10[-1])
+        # run.liker2butbeta40 has issues with hoverr10[-1]
+        #drnormvsr,dHnormvsr,dPnormvsr=gridcalc(hoverr10_avg)
+        if modelname=="runlocaldipole3dfiducial":
+            hoverri=hoverr10_avg
+            hoverro=hoverr20_avg
+        else:
+            hoverri=hoverr20_avg
+            hoverro=hoverr100_avg            
+        #
+        drnormvsr,dHnormvsr,dPnormvsr=gridcalc(hoverro)
+        drnormvsrhor=drnormvsr[ihor]
+        dHnormvsrhor=dHnormvsr[ihor]
+        dPnormvsrhor=dPnormvsr[ihor]
+        drnormvsr10=drnormvsr[iofr(10)]
+        dHnormvsr10=dHnormvsr[iofr(10)]
+        dPnormvsr10=dPnormvsr[iofr(10)]
+        drnormvsr20=drnormvsr[iofr(20)]
+        dHnormvsr20=dHnormvsr[iofr(20)]
+        dPnormvsr20=dPnormvsr[iofr(20)]
+        drnormvsr100=drnormvsr[iofr(100)]
+        dHnormvsr100=dHnormvsr[iofr(100)]
+        dPnormvsr100=dPnormvsr[iofr(100)]
+        #
         hoverrcoronahor_avg = timeavg(hoverrcoronahor,ts,fti,ftf)
         hoverrcorona2_avg = timeavg(hoverrcorona2,ts,fti,ftf)
         hoverrcorona5_avg = timeavg(hoverrcorona5,ts,fti,ftf)
@@ -4834,99 +4849,6 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             #
     #
     # Jon's whichplot==4 Plot:
-    if whichplot == 4 and sashaplot4 == 0:
-        if dotavg:
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etabh_avg,color=(ofc,fc,fc)) 
-            if showextra:
-                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaj_avg,'--',color=(fc,fc+0.5*(1-fc),fc)) 
-                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etawout_avg,'-.',color=(fc,fc,1)) 
-            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
-            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
-            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
-            if(iti>fti):
-                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etabh2_avg,color=(ofc,fc,fc))
-                if showextra:
-                    ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etaj2_avg,'--',color=(fc,fc+0.5*(1-fc),fc))
-                    ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etawout2_avg,'-.',color=(fc,fc,1))
-        #
-        ax.plot(ts,etabh,clr,label=r'$\eta_{\rm BH}$')
-        if showextra:
-            ax.plot(ts,etaj,'g--',label=r'$\eta_{\rm j}$')
-            ax.plot(ts,etawout,'b-.',label=r'$\eta_{\rm w,o}$')
-        if findex != None:
-            if not isinstance(findex,tuple):
-                ax.plot(ts[findex],etabh[findex],'o',mfc='r')
-                if showextra:
-                    ax.plot(ts[findex],etaj[findex],'gs')
-                    ax.plot(ts[findex],etawout[findex],'bv')
-            else:
-                for fi in findex:
-                    ax.plot(ts[fi],etabh[fi],'o',mfc='r')#,label=r'$\dot M$')
-                    if showextra:
-                        ax.plot(ts[fi],etawout[fi],'bv')#,label=r'$\dot M$')
-                        ax.plot(ts[fi],etaj[fi],'gs')#,label=r'$\dot M$')
-        #ax.set_ylim(0,2)
-        ax.set_xlabel(r'$t\;[r_g/c]$',fontsize=16)
-        ax.set_ylabel(r'$\eta\ [\%]$',fontsize=16,ha='left',labelpad=20)
-        ax.set_xlim(ts[0],ts[-1])
-        if showextra:
-            plt.legend(loc='upper left',bbox_to_anchor=(0.02,0.98),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
-            # set some legend properties.  All the code below is optional.  The
-            # defaults are usually sensible but if you need more control, this
-            # shows you how
-            leg = plt.gca().get_legend()
-            ltext  = leg.get_texts()  # all the text.Text instance in the legend
-            llines = leg.get_lines()  # all the lines.Line2D instance in the legend
-            frame  = leg.get_frame()  # the patch.Rectangle instance surrounding the legend
-            # see text.Text, lines.Line2D, and patches.Rectangle for more info on
-            # the settable properties of lines, text, and rectangles
-            #frame.set_facecolor('0.80')      # set the frame face color to light gray
-            plt.setp(ltext, fontsize=12)    # the legend text fontsize
-            #plt.setp(llines, linewidth=1.5)      # the legend linewidth
-            #leg.draw_frame(False)           # don't draw the legend frame
-    #
-    # End Jon's whichplot==4 Plot
-    #
-    # Print's Jon's whichplot==4 Values:
-    #
-    print( "Jon's values: (recall mdotorig = mdot + mdot30 should be =FMavg)" )
-    #
-    #
-    print( "mdot = %g, mdot10 = %g, mdot30 = %g, mdotinin = %g, mdotinout=%g, mdotjet = %g, mdotwin = %g, mdotwout = %g" % ( mdotfinavg, mdot10finavg, mdot30finavg, mdotinrjetinfinavg, mdotinrjetoutfinavg, mdotjetfinavg, mdotwinfinavg, mdotwoutfinavg) )
-    #
-    print( "hoverrhor_t0 = %g, hoverr2_t0 = %g, hoverr5_t0 = %g, hoverr10_t0 = %g, hoverr20_t0 = %g, hoverr100_t0 = %g" % ( hoverrhor_t0 ,  hoverr2_t0 , hoverr5_t0 , hoverr10_t0 ,  hoverr20_t0 ,  hoverr100_t0 ) )
-    print( "hoverrcoronahor_t0 = %g, hoverrcorona2_t0 = %g, hoverrcorona5_t0 = %g, hoverrcorona10_t0 = %g, hoverrcorona20_t0 = %g, hoverrcorona100_t0 = %g" % ( hoverrcoronahor_t0 ,  hoverrcorona2_t0 , hoverrcorona5_t0 , hoverrcorona10_t0 ,  hoverrcorona20_t0 ,  hoverrcorona100_t0 ) )
-    print( "hoverrjethor_t0 = %g, hoverrjet2_t0 = %g, hoverrjet5_t0 = %g, hoverrjet10_t0 = %g, hoverrjet20_t0 = %g, hoverrjet100_t0 = %g" % ( hoverrjethor_t0 ,  hoverrjet2_t0 , hoverrjet5_t0 , hoverrjet10_t0 ,  hoverrjet20_t0 ,  hoverrjet100_t0 ) )
-    #
-    print( "hoverrhor_avg = %g, hoverr2_avg = %g, hoverr5_avg = %g, hoverr10_avg = %g, hoverr20_avg = %g, hoverr100_avg = %g" % ( hoverrhor_avg ,  hoverr2_avg , hoverr5_avg , hoverr10_avg ,  hoverr20_avg ,  hoverr100_avg ) )
-    print( "hoverrcoronahor_avg = %g, hoverrcorona2_avg = %g, hoverrcorona5_avg = %g, hoverrcorona10_avg = %g, hoverrcorona20_avg = %g, hoverrcorona100_avg = %g" % ( hoverrcoronahor_avg ,  hoverrcorona2_avg , hoverrcorona5_avg , hoverrcorona10_avg ,  hoverrcorona20_avg ,  hoverrcorona100_avg ) )
-    print( "hoverrjethor_avg = %g, hoverrjet2_avg = %g, hoverrjet5_avg = %g, hoverrjet10_avg = %g, hoverrjet20_avg = %g, hoverrjet100_avg = %g" % ( hoverrjethor_avg ,  hoverrjet2_avg , hoverrjet5_avg , hoverrjet10_avg ,  hoverrjet20_avg ,  hoverrjet100_avg ) )
-    #
-    #
-    print( "qmridisk10_t0 = %g, qmridisk20_t0 = %g, qmridisk100_t0 = %g" % (  qmridisk10_t0 ,  qmridisk20_t0 ,  qmridisk100_t0 ) )
-    print( "q2mridisk10_t0 = %g, q2mridisk20_t0 = %g, q2mridisk100_t0 = %g" % (  1.0/iq2mridisk10_t0 ,  1.0/iq2mridisk20_t0 ,  1.0/iq2mridisk100_t0 ) )
-    print( "qmridisk10 = %g, qmridisk20 = %g, qmridisk100 = %g" % (  qmridisk10_avg ,  qmridisk20_avg ,  qmridisk100_avg ) )
-    print( "q2mridisk10 = %g, q2mridisk20 = %g, q2mridisk100 = %g" % (  1.0/iq2mridisk10_avg ,  1.0/iq2mridisk20_avg ,  1.0/iq2mridisk100_avg ) )
-    #
-    print( "qmridiskweak10_t0 = %g, qmridiskweak20_t0 = %g, qmridiskweak100_t0 = %g" % (  qmridiskweak10_t0 ,  qmridiskweak20_t0 ,  qmridiskweak100_t0 ) )
-    print( "q2mridiskweak10_t0 = %g, q2mridiskweak20_t0 = %g, q2mridiskweak100_t0 = %g" % (  1.0/iq2mridiskweak10_t0 ,  1.0/iq2mridiskweak20_t0 ,  1.0/iq2mridiskweak100_t0 ) )
-    print( "qmridiskweak10 = %g, qmridiskweak20 = %g, qmridiskweak100 = %g" % (  qmridiskweak10_avg ,  qmridiskweak20_avg ,  qmridiskweak100_avg ) )
-    print( "q2mridiskweak10 = %g, q2mridiskweak20 = %g, q2mridiskweak100 = %g" % (  1.0/iq2mridiskweak10_avg ,  1.0/iq2mridiskweak20_avg ,  1.0/iq2mridiskweak100_avg ) )
-    #
-    #
-    print( "asphor = %g:%g:%g, asp10 = %g:%g:%g, asp20 = %g:%g:%g, asp100 = %g:%g:%g" % ( drnormvsrhor, dHnormvsrhor, dPnormvsrhor, drnormvsr10, dHnormvsr10, dPnormvsr10, drnormvsr20, dHnormvsr20, dPnormvsr20, drnormvsr100, dHnormvsr100, dPnormvsr100 ) )
-    #
-    print( "eta_BH = %g, eta_BHEM = %g, eta_BHMAKE = %g, eta_jwout = %g, eta_j = %g, eta_jEM = %g, eta_jMAKE = %g, eta_win = %g, eta_winEM = %g, eta_winMAKE = %g, eta_wout = %g, eta_woutEM = %g, eta_woutMAKE = %g, pemtot_BH = %g" % ( etabh_avg, etabhEM_avg, etabhMAKE_avg, etaj_avg + etawout_avg, etaj_avg, etajEM_avg, etajMAKE_avg, etawin_avg, etawinEM_avg, etawinMAKE_avg, etawout_avg, etawoutEM_avg, etawoutMAKE_avg, pemtot_avg ) )
-    #
-    print( "leta_BH = %g, leta_BHEM = %g, leta_BHMAKE = %g, leta_jwout = %g, leta_j = %g, leta_jEM = %g, leta_jMAKE = %g, leta_win = %g, leta_winEM = %g, leta_winMAKE = %g, leta_wout = %g, leta_woutEM = %g, leta_woutMAKE = %g, lemtot_BH = %g" % ( letabh_avg, letabhEM_avg, letabhMAKE_avg, letaj_avg + letawout_avg, letaj_avg, letajEM_avg, letajMAKE_avg, letawin_avg, letawinEM_avg, letawinMAKE_avg, letawout_avg, letawoutEM_avg, letawoutMAKE_avg, lemtot_avg ) )
-    #
-    if iti > fti:
-        print( "incomplete output: %g %g" % (iti, fti) )
-        print( "mdot2 = %g, mdot230 = %g, mdotjet2 = %g, mdotwin2 = %g, mdotwout2 = %g" % ( mdotiniavg, mdot30iniavg, mdotjetiniavg, mdotwininiavg, mdotwoutiniavg ) )
-        print( "eta_BH2 = %g, eta_BHEM2 = %g, eta_BHMAKE2 = %g, eta_jw2 = %g, eta_j2 = %g, eta_jEM2 = %g, eta_jMAKE2 = %g, eta_w2 = %g, eta_wEM2 = %g, eta_wMAKE2 = %g , pemtot_BH2 = %g" % ( etabh2_avg, etabhEM2_avg, etabhMAKE2_avg, etaj2_avg + etawin2_avg, etaj2_avg, etajEM2_avg, etajMAKE2_avg, etawin2_avg, etawinEM2_avg, etawinMAKE2_avg, pemtot2_avg ) )
-        #
-        print( "leta_BH2 = %g, leta_BHEM2 = %g, leta_BHMAKE2 = %g, leta_jw2 = %g, leta_j2 = %g, leta_jEM2 = %g, leta_jMAKE2 = %g, leta_w2 = %g, leta_wEM2 = %g, leta_wMAKE2 = %g , lemtot_BH2 = %g" % ( letabh2_avg, letabhEM2_avg, letabhMAKE2_avg, letaj2_avg + letawin2_avg, letaj2_avg, letajEM2_avg, letajMAKE2_avg, letawin2_avg, letawinEM2_avg, letawinMAKE2_avg, lemtot2_avg ) )
-    #
     if modelname=="runlocaldipole3dfiducial":
 	    windplotfactor=1.0
     elif modelname=="sasha99":
@@ -5076,6 +4998,99 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
 	    gridtype="ExpOld"
     elif modelname=="sasha99":
 	    gridtype="A0.99fc"
+    #
+    if whichplot == 4 and sashaplot4 == 0:
+        if dotavg:
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etabh_avg,color=(ofc,fc,fc)) 
+            if showextra:
+                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaj_avg,'--',color=(fc,fc+0.5*(1-fc),fc)) 
+                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etawout_avg,'-.',color=(fc,fc,1)) 
+            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+            if(iti>fti):
+                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etabh2_avg,color=(ofc,fc,fc))
+                if showextra:
+                    ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etaj2_avg,'--',color=(fc,fc+0.5*(1-fc),fc))
+                    ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etawout2_avg,'-.',color=(fc,fc,1))
+        #
+        ax.plot(ts,etabh,clr,label=r'$\eta_{\rm BH}$')
+        if showextra:
+            ax.plot(ts,etaj,'g--',label=r'$\eta_{\rm j}$')
+            ax.plot(ts,etawout,'b-.',label=r'$\eta_{\rm w,o}$')
+        if findex != None:
+            if not isinstance(findex,tuple):
+                ax.plot(ts[findex],etabh[findex],'o',mfc='r')
+                if showextra:
+                    ax.plot(ts[findex],etaj[findex],'gs')
+                    ax.plot(ts[findex],etawout[findex],'bv')
+            else:
+                for fi in findex:
+                    ax.plot(ts[fi],etabh[fi],'o',mfc='r')#,label=r'$\dot M$')
+                    if showextra:
+                        ax.plot(ts[fi],etawout[fi],'bv')#,label=r'$\dot M$')
+                        ax.plot(ts[fi],etaj[fi],'gs')#,label=r'$\dot M$')
+        #ax.set_ylim(0,2)
+        ax.set_xlabel(r'$t\;[r_g/c]$',fontsize=16)
+        ax.set_ylabel(r'$\eta\ [\%]$',fontsize=16,ha='left',labelpad=20)
+        ax.set_xlim(ts[0],ts[-1])
+        if showextra:
+            plt.legend(loc='upper left',bbox_to_anchor=(0.02,0.98),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
+            # set some legend properties.  All the code below is optional.  The
+            # defaults are usually sensible but if you need more control, this
+            # shows you how
+            leg = plt.gca().get_legend()
+            ltext  = leg.get_texts()  # all the text.Text instance in the legend
+            llines = leg.get_lines()  # all the lines.Line2D instance in the legend
+            frame  = leg.get_frame()  # the patch.Rectangle instance surrounding the legend
+            # see text.Text, lines.Line2D, and patches.Rectangle for more info on
+            # the settable properties of lines, text, and rectangles
+            #frame.set_facecolor('0.80')      # set the frame face color to light gray
+            plt.setp(ltext, fontsize=12)    # the legend text fontsize
+            #plt.setp(llines, linewidth=1.5)      # the legend linewidth
+            #leg.draw_frame(False)           # don't draw the legend frame
+    #
+    # End Jon's whichplot==4 Plot
+    #
+    # Print's Jon's whichplot==4 Values:
+    #
+    print( "Jon's values: (recall mdotorig = mdot + mdot30 should be =FMavg)" )
+    #
+    #
+    print( "mdot = %g, mdot10 = %g, mdot30 = %g, mdotinin = %g, mdotinout=%g, mdotjet = %g, mdotwin = %g, mdotwout = %g" % ( mdotfinavg, mdot10finavg, mdot30finavg, mdotinrjetinfinavg, mdotinrjetoutfinavg, mdotjetfinavg, mdotwinfinavg, mdotwoutfinavg) )
+    #
+    print( "hoverrhor_t0 = %g, hoverr2_t0 = %g, hoverr5_t0 = %g, hoverr10_t0 = %g, hoverr20_t0 = %g, hoverr100_t0 = %g" % ( hoverrhor_t0 ,  hoverr2_t0 , hoverr5_t0 , hoverr10_t0 ,  hoverr20_t0 ,  hoverr100_t0 ) )
+    print( "hoverrcoronahor_t0 = %g, hoverrcorona2_t0 = %g, hoverrcorona5_t0 = %g, hoverrcorona10_t0 = %g, hoverrcorona20_t0 = %g, hoverrcorona100_t0 = %g" % ( hoverrcoronahor_t0 ,  hoverrcorona2_t0 , hoverrcorona5_t0 , hoverrcorona10_t0 ,  hoverrcorona20_t0 ,  hoverrcorona100_t0 ) )
+    print( "hoverrjethor_t0 = %g, hoverrjet2_t0 = %g, hoverrjet5_t0 = %g, hoverrjet10_t0 = %g, hoverrjet20_t0 = %g, hoverrjet100_t0 = %g" % ( hoverrjethor_t0 ,  hoverrjet2_t0 , hoverrjet5_t0 , hoverrjet10_t0 ,  hoverrjet20_t0 ,  hoverrjet100_t0 ) )
+    #
+    print( "hoverrhor_avg = %g, hoverr2_avg = %g, hoverr5_avg = %g, hoverr10_avg = %g, hoverr20_avg = %g, hoverr100_avg = %g" % ( hoverrhor_avg ,  hoverr2_avg , hoverr5_avg , hoverr10_avg ,  hoverr20_avg ,  hoverr100_avg ) )
+    print( "hoverrcoronahor_avg = %g, hoverrcorona2_avg = %g, hoverrcorona5_avg = %g, hoverrcorona10_avg = %g, hoverrcorona20_avg = %g, hoverrcorona100_avg = %g" % ( hoverrcoronahor_avg ,  hoverrcorona2_avg , hoverrcorona5_avg , hoverrcorona10_avg ,  hoverrcorona20_avg ,  hoverrcorona100_avg ) )
+    print( "hoverrjethor_avg = %g, hoverrjet2_avg = %g, hoverrjet5_avg = %g, hoverrjet10_avg = %g, hoverrjet20_avg = %g, hoverrjet100_avg = %g" % ( hoverrjethor_avg ,  hoverrjet2_avg , hoverrjet5_avg , hoverrjet10_avg ,  hoverrjet20_avg ,  hoverrjet100_avg ) )
+    #
+    #
+    print( "qmridisk10_t0 = %g, qmridisk20_t0 = %g, qmridisk100_t0 = %g" % (  qmridisk10_t0 ,  qmridisk20_t0 ,  qmridisk100_t0 ) )
+    print( "q2mridisk10_t0 = %g, q2mridisk20_t0 = %g, q2mridisk100_t0 = %g" % (  1.0/iq2mridisk10_t0 ,  1.0/iq2mridisk20_t0 ,  1.0/iq2mridisk100_t0 ) )
+    print( "qmridisk10 = %g, qmridisk20 = %g, qmridisk100 = %g" % (  qmridisk10_avg ,  qmridisk20_avg ,  qmridisk100_avg ) )
+    print( "q2mridisk10 = %g, q2mridisk20 = %g, q2mridisk100 = %g" % (  1.0/iq2mridisk10_avg ,  1.0/iq2mridisk20_avg ,  1.0/iq2mridisk100_avg ) )
+    #
+    print( "qmridiskweak10_t0 = %g, qmridiskweak20_t0 = %g, qmridiskweak100_t0 = %g" % (  qmridiskweak10_t0 ,  qmridiskweak20_t0 ,  qmridiskweak100_t0 ) )
+    print( "q2mridiskweak10_t0 = %g, q2mridiskweak20_t0 = %g, q2mridiskweak100_t0 = %g" % (  1.0/iq2mridiskweak10_t0 ,  1.0/iq2mridiskweak20_t0 ,  1.0/iq2mridiskweak100_t0 ) )
+    print( "qmridiskweak10 = %g, qmridiskweak20 = %g, qmridiskweak100 = %g" % (  qmridiskweak10_avg ,  qmridiskweak20_avg ,  qmridiskweak100_avg ) )
+    print( "q2mridiskweak10 = %g, q2mridiskweak20 = %g, q2mridiskweak100 = %g" % (  1.0/iq2mridiskweak10_avg ,  1.0/iq2mridiskweak20_avg ,  1.0/iq2mridiskweak100_avg ) )
+    #
+    #
+    print( "asphor = %g:%g:%g, asp10 = %g:%g:%g, asp20 = %g:%g:%g, asp100 = %g:%g:%g" % ( drnormvsrhor, dHnormvsrhor, dPnormvsrhor, drnormvsr10, dHnormvsr10, dPnormvsr10, drnormvsr20, dHnormvsr20, dPnormvsr20, drnormvsr100, dHnormvsr100, dPnormvsr100 ) )
+    #
+    print( "eta_BH = %g, eta_BHEM = %g, eta_BHMAKE = %g, eta_jwout = %g, eta_j = %g, eta_jEM = %g, eta_jMAKE = %g, eta_win = %g, eta_winEM = %g, eta_winMAKE = %g, eta_wout = %g, eta_woutEM = %g, eta_woutMAKE = %g, pemtot_BH = %g" % ( etabh_avg, etabhEM_avg, etabhMAKE_avg, etaj_avg + etawout_avg, etaj_avg, etajEM_avg, etajMAKE_avg, etawin_avg, etawinEM_avg, etawinMAKE_avg, etawout_avg, etawoutEM_avg, etawoutMAKE_avg, pemtot_avg ) )
+    #
+    print( "leta_BH = %g, leta_BHEM = %g, leta_BHMAKE = %g, leta_jwout = %g, leta_j = %g, leta_jEM = %g, leta_jMAKE = %g, leta_win = %g, leta_winEM = %g, leta_winMAKE = %g, leta_wout = %g, leta_woutEM = %g, leta_woutMAKE = %g, lemtot_BH = %g" % ( letabh_avg, letabhEM_avg, letabhMAKE_avg, letaj_avg + letawout_avg, letaj_avg, letajEM_avg, letajMAKE_avg, letawin_avg, letawinEM_avg, letawinMAKE_avg, letawout_avg, letawoutEM_avg, letawoutMAKE_avg, lemtot_avg ) )
+    #
+    if iti > fti:
+        print( "incomplete output: %g %g" % (iti, fti) )
+        print( "mdot2 = %g, mdot230 = %g, mdotjet2 = %g, mdotwin2 = %g, mdotwout2 = %g" % ( mdotiniavg, mdot30iniavg, mdotjetiniavg, mdotwininiavg, mdotwoutiniavg ) )
+        print( "eta_BH2 = %g, eta_BHEM2 = %g, eta_BHMAKE2 = %g, eta_jw2 = %g, eta_j2 = %g, eta_jEM2 = %g, eta_jMAKE2 = %g, eta_w2 = %g, eta_wEM2 = %g, eta_wMAKE2 = %g , pemtot_BH2 = %g" % ( etabh2_avg, etabhEM2_avg, etabhMAKE2_avg, etaj2_avg + etawin2_avg, etaj2_avg, etajEM2_avg, etajMAKE2_avg, etawin2_avg, etawinEM2_avg, etawinMAKE2_avg, pemtot2_avg ) )
+        #
+        print( "leta_BH2 = %g, leta_BHEM2 = %g, leta_BHMAKE2 = %g, leta_jw2 = %g, leta_j2 = %g, leta_jEM2 = %g, leta_jMAKE2 = %g, leta_w2 = %g, leta_wEM2 = %g, leta_wMAKE2 = %g , lemtot_BH2 = %g" % ( letabh2_avg, letabhEM2_avg, letabhMAKE2_avg, letaj2_avg + letawin2_avg, letaj2_avg, letajEM2_avg, letajMAKE2_avg, letawin2_avg, letawinEM2_avg, letawinMAKE2_avg, lemtot2_avg ) )
     #
     # 6:
     print( "HLatex5: ModelName & $\\dot{M}_{\\rm{}BH}$  & $\\dot{M}_{\\rm{}in,i}$ & $\\dot{M}_{\\rm{}in,o}$ & $\\dot{M}_{\\rm{}j}$ & $\\dot{M}_{\\rm{}w,i}$ & $\\dot{M}_{\\rm{}w,o}$ \\\\" )
@@ -5761,10 +5776,13 @@ def getstagparams(var=None,rmax=20,doplot=1,doreadgrid=1):
     jstag = np.floor( findroot2d(sol, tj, axis = 1, isleft=True, fallback = 1, fallbackval = iofr(rnoflooradded)) + 0.5 )
     rstag = findroot2d( sol, r, axis = 1, isleft=True, fallback = 1, fallbackval = rnoflooradded )
     hstag = findroot2d( sol, h, axis = 1, isleft=True, fallback = 1, fallbackval = np.pi/2.)
-    for j in np.array([1,-2]):
-        rstag[j]=0.5*(rstag[j-1]+rstag[j+1])
-        istag[j]=iofr(rstag[j])
-        hstag[j]=h[istag[j],j,0]
+    # kill unphysical zigzag one cell away from pole
+    if 0==1:
+        for j in np.array([1,-2]):
+            rstag[j]=0.5*(rstag[j-1]+rstag[j+1])
+            istag[j]=iofr(rstag[j])
+            hstag[j]=h[istag[j],j,0]
+    #
     if doplot:
         plt.figure(1)
         plt.clf()
@@ -6965,19 +6983,19 @@ def mkmovie(framesize=50, domakeavi=False):
             #reset lower limit to 0
             #Rz xy
             #
-	    #
-	    if modelname=="runlocaldipole3dfiducial":
-		    # for MB09 dipolar fiducial model
-		    vminforframe=-4.0
-		    vmaxforframe=0.5
-	    elif modelname=="sasha99":
-		    vminforframe=-4.0
-		    vmaxforframe=0.5
-	    else:
-		    # for Jon's thickdisk models
-		    vminforframe=-2.4
-		    vmaxforframe=1.5625
-	    #
+            #
+            if modelname=="runlocaldipole3dfiducial":
+                # for MB09 dipolar fiducial model
+                vminforframe=-4.0
+                vmaxforframe=0.5
+            elif modelname=="sasha99":
+                vminforframe=-4.0
+                vmaxforframe=0.5
+            else:
+                # for Jon's thickdisk models
+                vminforframe=-2.4
+                vmaxforframe=1.5625
+            #
             #
             gs1 = GridSpec(1, 1)
             gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
@@ -7025,6 +7043,8 @@ def mk2davg():
         #rfdheaderfirstfile()
 	# gets structure of uu and other things
 	rfdfirstfile()
+    flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+    numfiles=len(flist)
     #
     global modelname
     if len(sys.argv[1:])>0:
@@ -7033,18 +7053,17 @@ def mk2davg():
 	    modelname = "Unknown Model"
     #
     print("ModelName = %s" % (modelname) )
+    itemspergroup = 20
     if len(sys.argv[1:])==3 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
         whichgroup = int(sys.argv[2])
         step = int(sys.argv[3])
-        itemspergroup = 20
-        for whichgroup in np.arange(whichgroup,1000,step):
+        for whichgroup in np.arange(whichgroup,int(np.ceil(1.0*numfiles/itemspergroup)),step):
             avgmem = get2davg(whichgroup=whichgroup,itemspergroup=itemspergroup)
         #plot2davg(avgmem)
     elif len(sys.argv[1:])==4 and sys.argv[2].isdigit() and sys.argv[3].isdigit() and sys.argv[4].isdigit():
         whichgroups = int(sys.argv[2])
         whichgroupe = int(sys.argv[3])
         step = int(sys.argv[4])
-        itemspergroup = 20
         if step == 0:
             avgmem = get2davg(usedefault=1)
         elif step == 1:
@@ -7054,7 +7073,11 @@ def mk2davg():
                 avgmem = get2davg(whichgroup=whichgroup,itemspergroup=itemspergroup)
         print( "Assigning averages..." )
         assignavg2dvars(avgmem)
-    plot2davg(whichplot=1)
+    #
+    # below is unnecessary and expensive (because repeats qty2.npy creation) if only doing avg with stream lines
+    if 1==0:
+        plot2davg(whichplot=1)
+    #
     gc.collect()
 
 def mkstreamlinefigure():
@@ -7068,12 +7091,41 @@ def mkstreamlinefigure():
     fig=plt.figure(1,figsize=(12,9),dpi=300)
     fntsize=24
     ax = fig.add_subplot(111, aspect='equal')
+    #
+    global modelname
+    if len(sys.argv[1:])>0:
+	    modelname = sys.argv[1]
+    else:
+	    modelname = "Unknown Model"
+    #
+    print("ModelName = %s" % (modelname) )
+    #
+    if modelname=="runlocaldipole3dfiducial":
+        # for MB09 dipolar fiducial model
+        vminforframe=-4.0
+        vmaxforframe=0.5
+    elif modelname=="sasha99":
+        vminforframe=-4.0
+        vmaxforframe=0.5
+    else:
+        # for Jon's thickdisk models
+        vminforframe=-2.4
+        vmaxforframe=1.5625
+    #
     if True:
+    #if False:
         #velocity
+        print("Doing velocity mkframe")
+        sys.stdout.flush()
         B[1:] = avg_uu[1:]
         bsq = avg_bsq
-        mkframe("myframe",len=mylen,ax=ax,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
+        # density=24 is highest quality but 10X-30X slower than density=8
+        mkframe("myframe",len=mylen,ax=ax,density=8,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=vminforframe,vmax=vmaxforframe,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
+    #
     if True:
+    #if False:
+        print("Doing stagnation surface")
+        sys.stdout.flush()
         istag, jstag, hstag, rstag = getstagparams(doplot=0)
         myRmax=4
         #z>0
@@ -7086,8 +7138,11 @@ def mkstreamlinefigure():
         hs=hstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)<0]
         ax.plot(rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
         ax.plot(-rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
+    #
     if True:
         #field
+        print("Doing field mkframe")
+        sys.stdout.flush()
         B[1] = avg_B[0]
         B[2] = avg_B[1]
         B[3] = avg_B[2]
@@ -7095,7 +7150,13 @@ def mkstreamlinefigure():
         plt.figure(1)
         gdetB[1:] = avg_gdetB[0:]
         mu = avg_mu
-        mkframe("myframe",len=25./30.*mylen,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=12,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.01,color='r',lw=2,startatmidplane=True,showjet=False,arrowsize=arrowsize)
+        # Sasha says this may help avoid field edge effects
+        #finallen=25./30.*mylen
+        finallen=mylen
+        #finallen=2.0*mylen
+        # usebland=True causes field lines to stop tracing when they get closer together at slightly larger distances.  
+        mkframe("myframe",useblank=False,len=finallen,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=vminforframe,vmax=vmaxforframe,dobhfield=8,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.01,color='r',lw=2,startatmidplane=True,domidfield=False,showjet=False,arrowsize=arrowsize)
+    #
     if False:
         x = (r*np.sin(h))[:,:,0]
         z = (r*np.cos(h))[:,:,0]
@@ -7103,6 +7164,9 @@ def mkstreamlinefigure():
         z = np.concatenate(y,y)
         mu = np.concatenate(avg_mu[:,:,0],avg_mu[:,:,0])
         plt.contourf( x, z, mu )
+    #
+    print("Writing File")
+    sys.stdout.flush()
     ax.set_aspect('equal')   
     rhor=1+(1-a**2)**0.5
     el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
@@ -7115,9 +7179,15 @@ def mkstreamlinefigure():
     plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=15,fontsize=fntsize)
     for label in ax.get_xticklabels() + ax.get_yticklabels():
         label.set_fontsize(fntsize)
-    # plt.savefig("fig2.pdf",bbox_inches='tight',pad_inches=0.02)
-    # plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02)
+    #
+    #plt.savefig("fig2.pdf",bbox_inches='tight',pad_inches=0.02,dpi=300)
+    #plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02,dpi=300)
+    # just convert png to eps or pdf after since otherwise too large
     plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02,dpi=300)
+    print("Done Writing File")
+    sys.stdout.flush()
+
+
 
 def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,prefactor=100):
     #Figure 1
