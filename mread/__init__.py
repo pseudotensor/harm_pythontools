@@ -5189,7 +5189,7 @@ def mk2davg():
     plot2davg(whichplot=1)
     gc.collect()
 
-def mkstreamlinefigure():
+def mkstreamlinefigure(doenergy=True):
     mylen = 30
     arrowsize=4
     grid3d("gdump.bin",use2d=True)
@@ -5199,9 +5199,14 @@ def mkstreamlinefigure():
     fig=plt.figure(1,figsize=(12,9),dpi=300)
     fntsize=24
     ax = fig.add_subplot(111, aspect='equal')
-    if True:
+    if doenergy==False:
         #velocity
         B[1:] = avg_uu[1:]
+        bsq = avg_bsq
+        mkframe("myframe",len=mylen,ax=ax,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
+    if doenergy==True:
+        #energy
+        B[1:] = avg_Tud[1:,0]
         bsq = avg_bsq
         mkframe("myframe",len=mylen,ax=ax,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
     if True:
@@ -5944,7 +5949,7 @@ if __name__ == "__main__":
     if False:
         #make a movie
         mkmovie()
-    if False:
+    if True:
         #fig2 with grayscalestreamlines and red field lines
         mkstreamlinefigure()
     if False:
