@@ -5190,6 +5190,50 @@ def mk2davg():
     plot2davg(whichplot=1)
     gc.collect()
 
+
+def mkonestreamline():
+    startxabs=20
+    a_startyabs=np.linspace(-6,6,num=10)
+    #DRAW FIGURE
+    #fig=plt.figure(1,figsize=(12,9),dpi=300)
+    fig=plt.figure(1)
+    fntsize=24
+    ax = fig.add_subplot(111, aspect='equal')
+    ax.set_aspect('equal')   
+    #TRACE ENERGY STREAMLINE
+    mylen = 30
+    grid3d("gdump.bin",use2d=True)
+    rfd("fieldline0000.bin")
+    avgmem = get2davg(usedefault=1)
+    assignavg2dvars(avgmem)
+    #energy
+    B[1:] = avg_Tud[1:,0]
+    bsq = avg_bsq
+    for startyabs in a_startyabs:
+        t = mkframe("myframe",len=mylen,ax=ax,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.1,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False,startxabs=startxabs,startyabs=startyabs)
+        if t is not None:
+            xtraj, ytraj = t
+            #DRAW STREAMLINE
+            ax.plot(xtraj,ytraj,'r-')
+            plt.draw()
+        else:
+            print("Got Null trajectory: (%f,%f)" % (startxabs, startyabs))
+            continue
+    rhor=1+(1-a**2)**0.5
+    el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
+    art=ax.add_artist(el)
+    art.set_zorder(20)
+    mylenshow = 25./30.*mylen
+    plt.xlim(-mylenshow,mylenshow)
+    plt.ylim(-mylenshow,mylenshow)
+    plt.xlabel(r"$x\ [r_g]$",fontsize=fntsize,ha='center')
+    plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=15,fontsize=fntsize)
+    for label in ax.get_xticklabels() + ax.get_yticklabels():
+        label.set_fontsize(fntsize)
+    # plt.savefig("fig2.pdf",bbox_inches='tight',pad_inches=0.02)
+    # plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02)
+    plt.savefig("fig2oneline.png",bbox_inches='tight',pad_inches=0.02,dpi=300)
+
 def mkstreamlinefigure(doenergy=True):
     mylen = 30
     arrowsize=4
