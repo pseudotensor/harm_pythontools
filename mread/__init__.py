@@ -4117,6 +4117,28 @@ def plotfluxes(doreload=1):
         label.set_fontsize(16)
     plt.savefig("fig4.eps",bbox_inches='tight',pad_inches=0.02)
 
+def get_dFfloor(Dt, Dno, dotakeoutfloors=True):
+    """ Returns the flux correction due to floor activations and fixups, 
+    requires gdump to be loaded [grid3d("gdump.bin",use2d=True)], and arrays, Dt and Dno, 
+    set up."""
+    #initialize with zeros
+    DT = 0
+    if dotakeoutfloors:
+        for (i,iDT) in enumerate(Dt):
+            gc.collect() #try to clean up memory if not used
+            iDU = get_dUfloor( Dno[i] )
+            if iDT > 0:
+                DT += iDT
+            if i==0:
+                DU = iDU
+            else:
+                DU += iDU * np.sign(iDT)
+        #average in time
+        DU /= DT
+    else:
+        DU = np.zeros((8,nx),dtype=np.float64)
+    return( DU )
+
 def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=None,isinteractive=1,returndf=0,dolegend=True,plotldtot=True,lw=1,plotFem=False):
     global dUfloor, qtymem, DUfloorori, etad0, DU
     #Mdot, E, L
@@ -4204,22 +4226,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #!!!rhor = 1+(1-a**2)**0.5
         ihor = iofr(rhor)
         qtymem=getqtyvstime(ihor,0.2)
-        #initialize with zeros
-        DT = 0
-        if dotakeoutfloors:
-            for (i,iDT) in enumerate(Dt):
-                gc.collect() #try to clean up memory if not used
-                iDU = get_dUfloor( Dno[i] )
-                if iDT > 0:
-                    DT += iDT
-                if i==0:
-                    DU = iDU
-                else:
-                    DU += iDU * np.sign(iDT)
-            #average in time
-            DU /= DT
-        else:
-            DU = np.zeros((8,nx),dtype=np.float64)
+        DU = get_dFfloor(Dt, Dno, dotakeoutfloors=dotakeoutfloors)
     DUfloor0 = DU[0]
     DUfloor1 = DU[1]
     DUfloor4 = DU[4]
