@@ -711,7 +711,7 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
                 print( "Trajectory with starting xb = %f, yb = %f did not work" % (xb, yb) )
 
     def xyabsofxyb( xb, yb ):
-        if len(xb) > 1 or len(yb) > 1:
+        if (isinstance(xb,tuple) and len(xb) > 1) or (isinstance(yb,tuple) and len(yb) > 1):
             xb = numpy.array(xb)
             yb = numpy.array(yb)
         xabs = xb * bx_spacing * DX + XOFF
@@ -729,7 +729,7 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
         return xi, yi
 
     def xyabsofxyi( xi, yi ):
-        if len(xi) > 1 or len(yi) > 1:
+        if (isinstance(xi,tuple) and len(xi) > 1) or (isinstance(yi,tuple) and len(yi) > 1):
             xi = numpy.array(xi)
             yi = numpy.array(yi)
         xabs = xi * DX + XOFF
