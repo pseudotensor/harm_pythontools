@@ -21,34 +21,37 @@ dirruns='thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.liker2butbeta40 thic
 #modelnamelist='A94BfN40 A94BfN40\_C1  A94BfN40\_C2  A94BfN40\_C3  A94BfN40\_C4  A94BfN40\_C5  A-94BfN10     A-94BfN10\_C1 A-5BfN10      A0BfN10       A5BfN10       A94BfN10      A94BfN10\_C1  A94BfN10\_R1  A-94BfN40     A94BpN10      A-94BtN10     A-5BtN10      A0BtN10       A5BtN10       A94BtN10      A94BtN10\_R1  MB09_D      '
 
 
-EXPECTED_ARGS=12
+EXPECTED_ARGS=13
 E_BADARGS=65
 
 if [ $# -ne $EXPECTED_ARGS ]
 then
-    echo "Usage: `basename $0` {moviedirname dolinks dofiles make1d makemerge makeplot makeframes makemovie makeavg makeavgmerge makeavgplot collect}"
-    echo "e.g. sh makeallmovie.sh moviefinal1 1 1 1 1 1 1 1 1 1 1 1"
+    echo "Usage: `basename $0` {moviedirname docleanexist dolinks dofiles make1d makemerge makeplot makeframes makemovie makeavg makeavgmerge makeavgplot collect}"
+    echo "e.g. sh makeallmovie.sh moviefinal1 1 1 1 1 1 1 1 1 1 1 1 1"
     exit $E_BADARGS
 fi
 
 
 # name of movie directory in each dirrun
 moviedirname=$1
-dolinks=$2
-dofiles=$3
-make1d=$4
-makemerge=$5
-makeplot=$6
-makeframes=$7
-makemovie=$8
-makeavg=$9
-makeavgmerge=${10}
-makeavgplot=${11}
-collect=${12}
+docleanexist=$2
+dolinks=$3
+dofiles=$4
+make1d=$5
+makemerge=$6
+makeplot=$7
+makeframes=$8
+makemovie=$9
+makeavg=${10}
+makeavgmerge=${11}
+makeavgplot=${12}
+collect=${13}
 
 
 # On ki-jmck in /data2/jmckinne/
 cd /data2/jmckinne/
+
+
 
 
 ###################################
@@ -67,13 +70,10 @@ do
     mkdir -p /data2/jmckinne/${thedir}/$moviedirname/dumps/
     cd /data2/jmckinne/${thedir}/$moviedirname
 
-    echo "clean movie directory in case already existed: "$thedir
-    rm -rf /data2/jmckinne/${thedir}/$moviedirname/*.png /data2/jmckinne/${thedir}/$moviedirname/*.eps /data2/jmckinne/${thedir}/$moviedirname/*.npy /data2/jmckinne/${thedir}/$moviedirname/python*.out /data2/jmckinne/${thedir}/$moviedirname/*.avi /data2/jmckinne/${thedir}/$moviedirname/*.pdf
-
-    echo "create new links for: "$thedir
+    echo "create new links (old links are removed) for: "$thedir
 
     # number of files to keep
-    numkeep=150
+    numkeep=300
 
     alias cp='cp'
     cp ~/py/scripts/createlinksalt.sh .
@@ -166,9 +166,10 @@ do
     # for thickdisk7 runn=5
     # for run.like8 run.liker1 run.liker2 runn=12
     # for runlocaldipole3dfiducial runn=12
+    # more like runn=4 for thickdisk7 for avg creation.
     if [ "$thedir" == "thickdisk7" ]
 	then
-	    sed -e 's/export runn=[0-9]*/export runn=5/g' makemovie.sh > makemovielocal.temp.sh
+	    sed -e 's/export runn=[0-9]*/export runn=4/g' makemovie.sh > makemovielocal.temp.sh
     elif [ "$thedir" == "sasha99" ]
 	then
 	    sed -e 's/export runn=[0-9]*/export runn=8/g' makemovie.sh > makemovielocal.temp.sh
@@ -228,6 +229,68 @@ then
 	echo "Doing makemovielocal for: "$thedir
 
 	cd /data2/jmckinne/${thedir}/$moviedirname
+
+    #################
+    if [ $docleanexist -eq 1 ]
+    then
+        
+        echo "clean: "$thedir
+        # only clean what one is redoing and isn't fully overwritten
+        if [ $make1d -eq 1 ]
+        then
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/qty2_[0-9]*_[0-9]*.npy
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.stderr.out
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.full.out
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.out
+        fi
+        if [ $makemerge -eq 1 ]
+        then
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/qty2.npy
+        fi
+        if [ $makeplot -eq 1 ]
+        then
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/*.pdf
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/python.plot.stderr.out
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/python.plot.full.out
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/python.plot.out
+        fi
+        if [ $makeframes -eq 1 ]
+        then
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.movieframes.stderr.out
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.movieframes.full.out
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.movieframes.out
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/*.png
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/*.eps
+        fi
+        if [ $makemovie -eq 1 ]
+        then
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/*.avi
+        fi
+        if [ $makeavg -eq 1 ]
+        then
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.avg.stderr.out
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.avg.full.out
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.avg.out
+        fi
+        if [ $makeavg -eq 1 ]
+        then
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/avg2d[0-9]*_[0-9]*.npy
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.avg.stderr.out
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.avg.full.out
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.avg.out
+        fi
+        if [ $makeavgmerge -eq 1 ]
+        then
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/avg2d[0-9]*_[0-9]*_[0-9]*.npy
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/avg2d.npy
+        fi
+        if [ $makeavgplot -eq 1 ]
+        then
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/fig2.png
+        fi
+    fi
+    ###############
+
 	
 	sh makemovielocal.sh ${thedir} $make1d $makemerge $makeplot $makeframes $makemovie $makeavg $makeavgmerge $makeavgplot
     done
