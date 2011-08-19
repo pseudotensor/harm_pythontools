@@ -5210,7 +5210,7 @@ def mk2davg():
 
 def mkonestreamline():
     startxabs=20
-    a_startyabs=np.linspace(-6,6,num=10)
+    a_startyabs=np.linspace(-6,6,num=20)
     #DRAW FIGURE
     #fig=plt.figure(1,figsize=(12,9),dpi=300)
     fig=plt.figure(1)
@@ -5224,14 +5224,15 @@ def mkonestreamline():
     avgmem = get2davg(usedefault=1)
     assignavg2dvars(avgmem)
     #energy
-    B[1:] = avg_Tud[1:,0]
+    #B[1:] = avg_Tud[1:,0]
+    B[1:] = avg_uu[1:]
     bsq = avg_bsq
     for startyabs in a_startyabs:
         t = mkframe("myframe",len=mylen,ax=ax,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.1,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False,startxabs=startxabs,startyabs=startyabs)
         if t is not None:
             xtraj, ytraj = t
             #DRAW STREAMLINE
-            ax.plot(xtraj,ytraj,'r-')
+            ax.plot(xtraj,ytraj,'g-')
             plt.draw()
         else:
             print("Got Null trajectory: (%f,%f)" % (startxabs, startyabs))
@@ -5251,8 +5252,8 @@ def mkonestreamline():
     # plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02)
     plt.savefig("fig2oneline.png",bbox_inches='tight',pad_inches=0.02,dpi=300)
 
-def mkstreamlinefigure(doenergy=True):
-    mylen = 30
+def mkstreamlinefigure(length=25,doenergy=True,frac=0.75):
+    mylen = length/frac
     arrowsize=4
     grid3d("gdump.bin",use2d=True)
     rfd("fieldline0000.bin")
@@ -5265,7 +5266,7 @@ def mkstreamlinefigure(doenergy=True):
         #velocity
         B[1:] = avg_uu[1:]
         bsq = avg_bsq
-        mkframe("myframe",len=mylen,ax=ax,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
+        mkframe("myframe",len=mylen,ax=ax,density=12,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
     if doenergy==True:
         #energy
         B[1:] = avg_Tud[1:,0]
@@ -5293,7 +5294,7 @@ def mkstreamlinefigure(doenergy=True):
         plt.figure(1)
         gdetB[1:] = avg_gdetB[0:]
         mu = avg_mu
-        mkframe("myframe",len=25./30.*mylen,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=12,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.01,color='r',lw=2,startatmidplane=True,showjet=False,arrowsize=arrowsize)
+        mkframe("myframe",len=frac*mylen,ax=ax,density=4,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=12,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.01,color='r',lw=2,startatmidplane=True,showjet=False,arrowsize=arrowsize)
     if False:
         x = (r*np.sin(h))[:,:,0]
         z = (r*np.cos(h))[:,:,0]
@@ -5306,7 +5307,7 @@ def mkstreamlinefigure(doenergy=True):
     el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
     art=ax.add_artist(el)
     art.set_zorder(20)
-    mylenshow = 25./30.*mylen
+    mylenshow = frac*mylen
     plt.xlim(-mylenshow,mylenshow)
     plt.ylim(-mylenshow,mylenshow)
     plt.xlabel(r"$x\ [r_g]$",fontsize=fntsize,ha='center')
