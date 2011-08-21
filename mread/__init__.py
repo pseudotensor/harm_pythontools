@@ -4098,7 +4098,8 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     global dUfloor, qtymem, DUfloorori, etad0, DU
     #Mdot, E, L
     grid3d("gdump.bin",use2d=True)
-    istag, jstag, hstag, rstag = getstagparams(rmax=20,doplot=0,doreadgrid=0)
+    if dotakeoutfloors:
+        istag, jstag, hstag, rstag = getstagparams(rmax=20,doplot=0,doreadgrid=0)
     if np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) < 1.5:
         #hi-res 0.99 settings
         print( "Using hires a = 0.99 settings")
@@ -4167,8 +4168,10 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         lfti = 10366.5933313178
         lftf = 13300.
     else:
-        print( "Unknown case: a = %g, aborting..." % a )
-        return
+        print( "Unknown case: a = %g, using defaults..." % a )
+        lfti = 10000.
+        lftf = 20000.
+        dotakeoutfloors = 0
     if fti is None or ftf is None:
         fti = lfti
         ftf = lftf
@@ -4218,8 +4221,10 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
             plt.clf()
         if ax is None:
             plt.plot(r[:,0,0],mdtotvsr,'b--',label=r"$F_M$ (raw)",lw=2)
+    Fm=(mdtotvsr+DUfloor0)
+    Fe=-(edtotvsr+DUfloor1)
+    Fl=-(ldtotvsr+DUfloor4)
     if dotakeoutfloors:
-        Fm=(mdtotvsr+DUfloor0)
         if isinteractive:
             plt.plot(r[:,0,0],Fm,'b',label=r"$F_M$",lw=2)
     if isinteractive and ax is None:
@@ -4227,7 +4232,6 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     if dofeavg and isinteractive and ax is None:
         plt.plot(r[:,0,0],FE,'k--',label=r"$F_E$",lw=2)
     if dotakeoutfloors:
-        Fe=-(edtotvsr+DUfloor1)
         if isinteractive:
             plt.plot(r[:,0,0],Fe,'r',label=r"$F_E$",lw=2)
         if dofeavg and isinteractive: 
@@ -4235,7 +4239,6 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         if isinteractive and ax is None:
             plt.plot(r[:,0,0],(DUfloor1),'r:',lw=2)
     if ldtotvsr is not None and plotldtot:
-        Fl=-(ldtotvsr+DUfloor4)
         if isinteractive and ax is None:
             plt.plot(r[:,0,0],-ldtotvsr/dxdxp[3][3][:,0,0]/10.,'g--',label=r"$F_L/10$ (raw)",lw=2)
         if dotakeoutfloors and isinteractive:
