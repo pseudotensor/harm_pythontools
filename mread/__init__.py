@@ -6013,9 +6013,10 @@ if __name__ == "__main__":
     if False:
         #make a movie
         mkmovie()
-    if True:
+    if False:
         #fig2 with grayscalestreamlines and red field lines
         mkstreamlinefigure()
+        #mkstreamlinefigure(length=4,doenergy=False)
     if False:
         #FIGURE 1 LOTSOPANELS
         fti=7000
