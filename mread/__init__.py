@@ -1028,7 +1028,7 @@ def reinterpxy(vartointerp,extent,ncell,domask=1):
 def ftr(x,xb,xf):
     return( amax(0.0*x,amin(1.0+0.0*x,1.0*(x-xb)/(xf-xb))) )
     
-def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1):
+def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None):
     extent=(-len,len,-len,len)
     palette=cm.jet
     palette.set_bad('k', 1.0)
@@ -1122,12 +1122,22 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         cset2 = ax.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
     else:
         if dovarylw:
-            lw = 0.5+1*ftr(np.log10(amax(ibsqo2rho,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
-            lw += 1*ftr(np.log10(amax(iibeta,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
-            lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
-            # if t < 1500:
-            lw *= ftr(iaphi,0.001,0.002)
-        fstreamplot(yi,xi,iBR,iBz,ua=iBaR,va=iBaz,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=detectLoops,dodiskfield=dodiskfield,dobhfield=dobhfield,startatmidplane=startatmidplane,a=a,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,dsval=dsval,color=color,doarrows=doarrows,dorandomcolor=dorandomcolor,skipblankint=skipblankint,minindent=minindent,minlengthdefault=minlengthdefault,arrowsize=arrowsize)
+            if False:
+                #old way
+                lw = 0.5+1*ftr(np.log10(amax(ibsqo2rho,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
+                lw += 1*ftr(np.log10(amax(iibeta,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
+                lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
+                # if t < 1500:
+                lw *= ftr(iaphi,0.001,0.002)
+            elif True:
+                #new way, to avoid glitches in u_g in jet region to affect field line thickness
+                lw1 = 2*ftr(np.log10(amax(ibsqo2rho,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
+                lw2 = ftr(np.log10(amax(iibeta,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
+                lw = 0.5 + amax(lw1,lw2)
+                #lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
+                # if t < 1500:
+                lw *= ftr(iaphi,0.001,0.002)
+        t = fstreamplot(yi,xi,iBR,iBz,ua=iBaR,va=iBaz,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=detectLoops,dodiskfield=dodiskfield,dobhfield=dobhfield,startatmidplane=startatmidplane,a=a,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,dsval=dsval,color=color,doarrows=doarrows,dorandomcolor=dorandomcolor,skipblankint=skipblankint,minindent=minindent,minlengthdefault=minlengthdefault,arrowsize=arrowsize,startxabs=startxabs,startyabs=startyabs)
         #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
     ax.set_xlim(extent[0],extent[1])
     ax.set_ylim(extent[2],extent[3])
@@ -1140,6 +1150,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         plt.title('log rho at t = %4.0f' % t)
     #if None != fname:
     #    plt.savefig( fname + '.png' )
+    return(t)
 
 def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,arrowsize=1):
     extent=(-len,len,-len,len)
@@ -2230,7 +2241,8 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
         print "Number of previously saved time slices: %d" % numtimeslices2 
         if( numtimeslices2 >= numtimeslices ):
             print "Number of previously saved time slices is >= than of timeslices to be loaded, re-using previously saved time slices"
-            #np.save("qty2.npy",qtymem2[:,:-1])  #kill last time slice
+            # qtymem2[:,1493]=0.5*(qtymem2[:,1492]+qtymem2[:,1494])
+            # np.save("qty2_new.npy",qtymem2)  #kill bad frame
             return(qtymem2)
         else:
             assert qtymem2.shape[0] == qtymem.shape[0]
@@ -2973,7 +2985,8 @@ def iofr(rval):
     res = interp1d(r[:,0,0], ti[:,0,0], kind='linear')
     return(np.floor(res(rval)+0.5))
 
-def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None,sigma=None):
+def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None,sigma=None,
+                  usegaussianunits=False):
     global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
     nqtyold=98
     nqty=98+32+1
@@ -3402,6 +3415,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         lst = 'solid'
     else:
         lst = 'dashed'
+    tmax=min(ts[-1],max(fti,ftf))
     #######################
     #
     # Mdot ***
@@ -3412,7 +3426,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             if len(FMavg.shape)==0:
                 ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+FMavg,color=(ofc,fc,fc),linestyle=lst)
             else:
-                ax.plot(ts,FMavg,color=(ofc,fc,fc),linestyle=lst)
+                ax.plot(ts[(ts<ftf)*(ts>=fti)],FMavg[(ts<ftf)*(ts>=fti)],color=(ofc,fc,fc),linestyle=lst)
             if(iti>fti):
                 ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+mdotiniavg,color=(ofc,fc,fc))
                 
@@ -3426,7 +3440,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         #ax.legend(loc='upper left')
         ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,labelpad=9)
         plt.setp( ax.get_xticklabels(), visible=False)
-        ax.set_xlim(ts[0],ts[-1])
+        ax.set_xlim(ts[0],tmax)
         if showextra:
             plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderaxespad=0,frameon=True,labelspacing=0)
     #######################
@@ -3441,7 +3455,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg)#,label=r'$\langle P_{\rm j}\rangle$')
         ax.set_ylabel(r'$P_{\rm j}$',fontsize=16)
         plt.setp( ax.get_xticklabels(), visible=False)
-        ax.set_xlim(ts[0],ts[-1])
+        ax.set_xlim(ts[0],tmax)
     #######################
     #
     # eta instantaneous
@@ -3455,7 +3469,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         ax.set_ylim(0,4)
         #ax.set_xlabel(r'$t\;(GM/c^3)$')
         ax.set_ylabel(r'$P_{\rm j}/\dot M$',fontsize=16)
-        ax.set_xlim(ts[0],ts[-1])
+        ax.set_xlim(ts[0],tmax)
     #######################
     #
     # eta ***
@@ -3463,6 +3477,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #######################
     if whichplot == 4:
         etabh = prefactor*FE/FMavg
+        etabh_nosigma = prefactor*FE/mdotfinavg
         etaj = prefactor*pjke_mu2[:,iofr(100)]/mdotfinavg
         etaw = prefactor*(pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotfinavg
         etabh2 = prefactor*FE/FMiniavg
@@ -3477,15 +3492,16 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         if dotavg:
             etaj_avg = timeavg(etaj,ts,fti,ftf)
             etabh_avg = timeavg(etabh,ts,fti,ftf,sigma=sigma)
+            etabh_avg_nosigma = timeavg(etabh_nosigma,ts,fti,ftf)
             etaw_avg = timeavg(etaw,ts,fti,ftf)
             ptot_avg = timeavg(pjemtot[:,ihor],ts,fti,ftf)
             if showextra:
                 ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaj_avg,'--',color=(fc,fc+0.5*(1-fc),fc)) 
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
-            if len(etabh_avg.shape)==0:
-                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etabh_avg,color=(ofc,fc,fc),linestyle=lst) 
-            else:
-                ax.plot(ts,etabh_avg,color=(ofc,fc,fc),linestyle=lst) 
+            #if len(etabh_avg.shape)==0:
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etabh_avg_nosigma,color=(ofc,fc,fc),linestyle=lst) 
+            #else:
+            #    ax.plot(ts[(ts<ftf)*(ts>=fti)],etabh_avg[(ts<ftf)*(ts>=fti)],color=(ofc,fc,fc),linestyle=lst) 
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
             #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaw_avg,'-.',color=(fc,fc+0.5*(1-fc),fc)) 
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
@@ -3522,13 +3538,13 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             ax.set_ylabel(r'$\eta\ [\%]$',fontsize=16,ha='left',labelpad=20)
         else:
             ax.set_ylabel(r'$\eta$',fontsize=16,labelpad=16)
-        ax.set_xlim(ts[0],ts[-1])
+        ax.set_xlim(ts[0],tmax)
         if showextra:
             plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
 
 
-        if len(etabh_avg.shape)==0:
-            print( "eta_BH = %g, eta_j = %g, eta_w = %g, eta_jw = %g, mdot = %g, ptot_BH = %g" % ( etabh_avg, etaj_avg, etaw_avg, etaj_avg + etaw_avg, mdotfinavg, ptot_avg ) )
+        if len(etabh_avg_nosigma.shape)==0:
+            print( "eta_BH = %g, eta_j = %g, eta_w = %g, eta_jw = %g, mdot = %g, ptot_BH = %g" % ( etabh_avg_nosigma, etaj_avg, etaw_avg, etaj_avg + etaw_avg, mdotfinavg, ptot_avg ) )
         if iti > fti:
             print( "eta_BH2 = %g, eta_j2 = %g, eta_w2 = %g, eta_jw2 = %g, mdot2 = %g, ptot2_BH = %g" % ( etabh2_avg, etaj2_avg, etaw2_avg, etaj2_avg + etaw2_avg, mdotiniavg, ptot2_avg ) )
 
@@ -3592,7 +3608,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         #ax.set_ylim(0,2)
         ax.set_xlabel(r'$t\;[r_g/c]$',fontsize=16)
         ax.set_ylabel(r'$\eta\ [\%]$',fontsize=16,ha='left',labelpad=20)
-        ax.set_xlim(ts[0],ts[-1])
+        ax.set_xlim(ts[0],tmax)
         if showextra:
             plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
 
@@ -3608,8 +3624,13 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     #######################
     if whichplot == 5:
+        if usegaussianunits == True:
+            unitsfactor = (4*np.pi)**0.5*2*np.pi
+        else:
+            unitsfactor = 1.
         omh = a / (2*(1+(1-a**2)**0.5))
-        phibh=fstot[:,ihor]/4/np.pi/mdotfinavg**0.5
+        phibh=fstot[:,ihor]/4/np.pi/FMavg**0.5
+        phibh_nosigma=fstot[:,ihor]/4/np.pi/mdotfinavg**0.5
         phij=phiabsj_mu2[:,iofr(100)]/4/np.pi/mdotfinavg**0.5
         phiw=(phiabsj_mu1-phiabsj_mu2)[:,iofr(100)]/4/np.pi/mdotfinavg**0.5
         phibh2=fstot[:,ihor]/4/np.pi/mdotiniavg**0.5
@@ -3623,49 +3644,50 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             phiw[icond]=phiw2[icond]
         if dotavg:
             phibh_avg = timeavg(phibh**2,ts,fti,ftf,sigma=sigma)**0.5
+            phibh_avg_nosigma = timeavg(phibh_nosigma**2,ts,fti,ftf)**0.5
             fstot_avg = timeavg(fstot[:,ihor]**2,ts,fti,ftf)**0.5
             if showextra:
-                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phij**2,ts,fti,ftf)**0.5,'--',color=(fc,fc+0.5*(1-fc),fc))
-            if len(phibh_avg.shape)==0:
-                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+phibh_avg,color=(ofc,fc,fc),linestyle=lst)
-            else:
-                ax.plot(ts,phibh_avg,color=(ofc,fc,fc),linestyle=lst)
-            #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+timeavg(phiw**2,ts,fti,ftf)**0.5,'-.',color=(fc,fc,1))
+                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+unitsfactor*timeavg(phij**2,ts,fti,ftf)**0.5,'--',color=(fc,fc+0.5*(1-fc),fc))
+            #if len(phibh_avg.shape)==0:
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+unitsfactor*phibh_avg_nosigma,color=(ofc,fc,fc),linestyle=lst)
+            #else:
+            #    ax.plot(ts[(ts<ftf)*(ts>=fti)],unitsfactor*phibh_avg[(ts<ftf)*(ts>=fti)],color=(ofc,fc,fc),linestyle=lst)
+            #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+unitsfactor*timeavg(phiw**2,ts,fti,ftf)**0.5,'-.',color=(fc,fc,1))
             if(iti>fti):
                 phibh2_avg = timeavg(phibh2**2,ts,iti,itf)**0.5
                 fstot2_avg = timeavg(fstot[:,ihor]**2,ts,iti,itf)**0.5
                 if showextra:
-                    ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+timeavg(phij2**2,ts,iti,itf)**0.5,'--',color=(fc,fc+0.5*(1-fc),fc))
-                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+phibh2_avg,color=(ofc,fc,fc))
-                #ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+timeavg(phiw2**2,ts,iti,itf)**0.5,'-.',color=(fc,fc,1))
+                    ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+unitsfactor*timeavg(phij2**2,ts,iti,itf)**0.5,'--',color=(fc,fc+0.5*(1-fc),fc))
+                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+unitsfactor*phibh2_avg,color=(ofc,fc,fc))
+                #ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+unitsfactor*timeavg(phiw2**2,ts,iti,itf)**0.5,'-.',color=(fc,fc,1))
         #To approximately get efficiency:
-        #ax.plot(ts,2./3.*np.pi*omh**2*np.abs(fsj30[:,ihor]/4/np.pi)**2/mdotfinavg)
+        #ax.plot(ts,unitsfactor*2./3.*np.pi*omh**2*np.abs(fsj30[:,ihor]/4/np.pi)**2/mdotfinavg)
         #prefactor to get sqrt(eta): (2./3.*np.pi*omh**2)**0.5
-        ax.plot(ts,phibh,clr,label=r'$\phi_{\rm BH}$')
-        ax.set_xlim(ts[0],ts[-1])
+        ax.plot(ts,unitsfactor*phibh,clr,label=r'$\phi_{\rm BH}$')
+        ax.set_xlim(ts[0],tmax)
         if showextra:
-            ax.plot(ts,phij,'g--',label=r'$\phi_{\rm jet}$')
-        #ax.plot(ts,phiw,'b-.',label=r'$\phi_{\rm wind}$')
+            ax.plot(ts,unitsfactor*phij,'g--',label=r'$\phi_{\rm jet}$')
+        #ax.plot(ts,unitsfactor*phiw,'b-.',label=r'$\phi_{\rm wind}$')
         if findex != None:
             if not isinstance(findex,tuple):
                 if showextra:
-                    ax.plot(ts[findex],phij[findex],'gs')
-                ax.plot(ts[findex],phibh[findex],'o',mfc='r')
-                #ax.plot(ts[findex],phiw[findex],'bv')
+                    ax.plot(ts[findex],unitsfactor*phij[findex],'gs')
+                ax.plot(ts[findex],unitsfactor*phibh[findex],'o',mfc='r')
+                #ax.plot(ts[findex],unitsfactor*phiw[findex],'bv')
             else:
                 for fi in findex:
                     if showextra:
-                        ax.plot(ts[fi],phij[fi],'gs')
-                    ax.plot(ts[fi],phibh[fi],'o',mfc='r')
-                    #ax.plot(ts[fi],phiw[fi],'bv')
+                        ax.plot(ts[fi],unitsfactor*phij[fi],'gs')
+                    ax.plot(ts[fi],unitsfactor*phibh[fi],'o',mfc='r')
+                    #ax.plot(ts[fi],unitsfactor*phiw[fi],'bv')
         #ax.legend(loc='upper left')
         #ax.set_ylabel(r'$\ \ \ k\Phi_j/\langle\dot M\rangle^{\!1/2}$',fontsize=16)
         ax.set_ylabel(r'$\phi$',fontsize=16,labelpad=16)
         if showextra:
             plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
         plt.setp( ax.get_xticklabels(), visible=False )
-        if len(phibh_avg.shape)==0:
-            print( "phi_BH = %g, fstot = %g" % ( phibh_avg, fstot_avg ) )
+        if len(phibh_avg_nosigma.shape)==0:
+            print( "phi_BH = %g, fstot = %g" % ( phibh_avg_nosigma, fstot_avg ) )
         if iti > fti:
             print( "phi2_BH = %g, fstot2 = %g" % ( phibh2_avg, fstot2_avg ) )
 
@@ -3687,6 +3709,12 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     if whichplot == -2:
         return( mdtotvsr, edtotvsr, edmavsr, ldtotvsr )
 
+    if whichplot == -200:
+        return( mdtotvsr, edtotvsr, edmavsr, ldtotvsr,
+                mdotfinavgvsr5, mdotfinavgvsr10, mdotfinavgvsr20, mdotfinavgvsr30, mdotfinavgvsr40,
+                pjemfinavgvsr5, pjemfinavgvsr10, pjemfinavgvsr20, pjemfinavgvsr30, pjemfinavgvsr40,
+                pjmafinavgvsr5, pjmafinavgvsr10, pjmafinavgvsr20, pjmafinavgvsr30, pjmafinavgvsr40 )
+ 
     if whichplot == -300:
         #BL metric g_rr
         rh = 1+(1-a**2)**0.5
@@ -3945,21 +3973,26 @@ def gaussf( x, x0, sigma ):
     return( np.exp(-0.5*(x-x0)**2/sigma**2) / (np.sqrt(2*np.pi)*sigma) )
 
 def timeavg( qty, ts, fti, ftf, step = 1, sigma = None ):
+    cond = (ts<ftf)*(ts>=fti)
     if sigma is None:
-        cond = (ts<ftf)*(ts>=fti)
         #use masked array to remove any stray NaN's
         qtycond = np.ma.masked_array(qty[cond],np.isnan(qty[cond]))
         qtycond = qtycond[::step]
         qtyavg = qtycond.mean(axis=0,dtype=np.float64)
     else:
-        qtycond = np.ma.masked_array(qty,np.isnan(qty))
-        qtyavg=np.zeros_like(qtycond)
+        qtym = np.ma.masked_array(qty,np.isnan(qty))
+        qtyavg=np.zeros_like(qtym)
         for (i0,t0) in enumerate(ts):
             mygauss_at_t0 = gaussf( ts, t0, sigma )
             #assumes uniform spacing in time
-            if qtycond.ndim == 2:
+            if qtym.ndim == 2:
                 mygauss_at_t0 = mygauss_at_t0[:,None]
-            qtyavg[i0] += (qtycond * mygauss_at_t0).sum(axis=0) / mygauss_at_t0.sum()
+            if t0 >= fti and t0 <= ftf:
+                qtyavg[i0] += (qtym * mygauss_at_t0)[cond].sum(axis=0) / mygauss_at_t0[cond].sum()
+        qtyavg[ts<fti] += qtyavg[ts>=fti][0]
+        qtyavg[ts>ftf] += qtyavg[ts<=ftf][-1]
+        #pdb.set_trace()
+
     return( qtyavg )
 
 def getstagparams(var=None,rmax=20,doplot=1,doreadgrid=1):
@@ -4094,7 +4127,29 @@ def plotfluxes(doreload=1):
         label.set_fontsize(16)
     plt.savefig("fig4.eps",bbox_inches='tight',pad_inches=0.02)
 
-def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=None,isinteractive=1,returndf=0,dolegend=True,plotldtot=True,lw=1):
+def get_dFfloor(Dt, Dno, dotakeoutfloors=True):
+    """ Returns the flux correction due to floor activations and fixups, 
+    requires gdump to be loaded [grid3d("gdump.bin",use2d=True)], and arrays, Dt and Dno, 
+    set up."""
+    #initialize with zeros
+    DT = 0
+    if dotakeoutfloors:
+        for (i,iDT) in enumerate(Dt):
+            gc.collect() #try to clean up memory if not used
+            iDU = get_dUfloor( Dno[i] )
+            if iDT > 0:
+                DT += iDT
+            if i==0:
+                DU = iDU
+            else:
+                DU += iDU * np.sign(iDT)
+        #average in time
+        DU /= DT
+    else:
+        DU = np.zeros((8,nx),dtype=np.float64)
+    return( DU )
+
+def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=None,isinteractive=1,returndf=0,dolegend=True,plotldtot=True,lw=1,plotFem=False):
     global dUfloor, qtymem, DUfloorori, etad0, DU
     #Mdot, E, L
     grid3d("gdump.bin",use2d=True)
@@ -4184,27 +4239,23 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #!!!rhor = 1+(1-a**2)**0.5
         ihor = iofr(rhor)
         qtymem=getqtyvstime(ihor,0.2)
-        #initialize with zeros
-        DT = 0
-        if dotakeoutfloors:
-            for (i,iDT) in enumerate(Dt):
-                gc.collect() #try to clean up memory if not used
-                iDU = get_dUfloor( Dno[i] )
-                if iDT > 0:
-                    DT += iDT
-                if i==0:
-                    DU = iDU
-                else:
-                    DU += iDU * np.sign(iDT)
-            #average in time
-            DU /= DT
-        else:
-            DU = np.zeros((8,nx),dtype=np.float64)
+        DU = get_dFfloor(Dt, Dno, dotakeoutfloors=dotakeoutfloors)
     DUfloor0 = DU[0]
     DUfloor1 = DU[1]
     DUfloor4 = DU[4]
     #at this time we have the floor information, now get averages:
-    mdtotvsr, edtotvsr, edmavsr, ldtotvsr = plotqtyvstime( qtymem, whichplot = -2, fti=fti, ftf=ftf )
+    #mdtotvsr, edtotvsr, edmavsr, ldtotvsr = plotqtyvstime( qtymem, whichplot = -2, fti=fti, ftf=ftf )
+    mdtotvsr, edtotvsr, edmavsr, ldtotvsr,\
+                mdotfinavgvsr5, mdotfinavgvsr10, mdotfinavgvsr20, mdotfinavgvsr30, mdotfinavgvsr40, \
+                pjemfinavgvsr5, pjemfinavgvsr10, pjemfinavgvsr20, pjemfinavgvsr30, pjemfinavgvsr40, \
+                pjmafinavgvsr5, pjmafinavgvsr10, pjmafinavgvsr20, pjmafinavgvsr30, pjmafinavgvsr40  \
+                = plotqtyvstime( qtymem, whichplot = -200, fti=fti, ftf=ftf )
+ 
+    FKE = -(edmavsr+mdtotvsr)
+    FKE10 = -((edmavsr-pjmafinavgvsr10) + mdotfinavgvsr10)
+
+    #electromagnetic flux
+    FEM=-(edtotvsr-edmavsr)
     if dofeavg:
         FE=np.load("fe.npy")
     #edtotvsr-=FE
@@ -4234,6 +4285,13 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     if dotakeoutfloors:
         if isinteractive:
             plt.plot(r[:,0,0],Fe,'r',label=r"$F_E$",lw=2)
+            if plotFem:
+                #plt.plot(r[:,0,0],-FEM,'r--',label=r"$-F_{EM}$",lw=2)
+                #plt.plot(r[:,0,0],Fm*0+Fm[iofr(5)]-Fe[iofr(5)],'r-.',label=r"$(F_{M}-F_{E})[r=5r_g]$",lw=2)
+                plt.plot(r[:,0,0],-FEM+Fe[iofr(5)]-Fm[iofr(5)],'c',label=r"$F_{KE}$",lw=2)
+                #plt.plot(r[:,0,0],FKE,'b',label=r"$(F_{M}-F_{E})[r=5r_g]$",lw=2)
+                plt.plot(r[:,0,0],FKE10,'g',label=r"$F_{KE,b^2/\rho<10}$",lw=2)
+                #plt.plot(r[:,0,0],Fm+edtotvsr,'g:',label=r"$F_{EM}$",lw=2)
         if dofeavg and isinteractive: 
             plt.plot(r[:,0,0],FE-DUfloor1,'k',label=r"$F_E$",lw=2)
         if isinteractive and ax is None:
@@ -4250,7 +4308,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #plt.plot(r[:,0,0],DUfloor0,label=r"$dU^t$")
         #plt.plot(r[:,0,0],DUfloor*1e4,label=r"$dU^t\times10^4$")
         if dolegend:
-            plt.legend(loc='lower right',bbox_to_anchor=(0.97,0.22),
+            plt.legend(loc='lower right',bbox_to_anchor=(0.97,0.39),
                        #borderpad = 1,
                        borderaxespad=0,frameon=True,labelspacing=0,
                        ncol=1)
@@ -4619,7 +4677,7 @@ def plotpowers(fname,hor=0,format=1):
     #Tried to equate pressures -- works but mistake in calculaton -- wrong power
     #plt.plot(mspina6[mhor6==hor],mpow6[mhor6==hor]* ((mspina6[mhor6==hor]**2+3*rhor6**2)/3/(2*np.pi*horx)) )
     #Simple multiplication by rhor -- works!  \Phi^2/Mdot * rhor ~ const
-    fac = 0.838783 #0.044/(1./(6*np.pi))
+    fac = 0.838783 #conversion to parabolic power from monopolar power = 0.044/(1./(6*np.pi))
     #plt.plot(mya,mya**2)
     #plt.plot(alist,etawindlist,'go',label=r'$\eta_{\rm jet}+\eta_{\rm wind}$')
     # plt.plot(mspina6[mhor6==hor],fac*6.94*mpow6[mhor6==hor],'r--',label=r'$P_{\rm BZ,6}$')
@@ -5152,8 +5210,53 @@ def mk2davg():
     plot2davg(whichplot=1)
     gc.collect()
 
-def mkstreamlinefigure():
+
+def mkonestreamline():
+    startxabs=20
+    a_startyabs=np.linspace(-6,6,num=20)
+    #DRAW FIGURE
+    #fig=plt.figure(1,figsize=(12,9),dpi=300)
+    fig=plt.figure(1)
+    fntsize=24
+    ax = fig.add_subplot(111, aspect='equal')
+    ax.set_aspect('equal')   
+    #TRACE ENERGY STREAMLINE
     mylen = 30
+    grid3d("gdump.bin",use2d=True)
+    rfd("fieldline0000.bin")
+    avgmem = get2davg(usedefault=1)
+    assignavg2dvars(avgmem)
+    #energy
+    #B[1:] = avg_Tud[1:,0]
+    B[1:] = avg_uu[1:]
+    bsq = avg_bsq
+    for startyabs in a_startyabs:
+        t = mkframe("myframe",len=mylen,ax=ax,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.1,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False,startxabs=startxabs,startyabs=startyabs)
+        if t is not None:
+            xtraj, ytraj = t
+            #DRAW STREAMLINE
+            ax.plot(xtraj,ytraj,'g-')
+            plt.draw()
+        else:
+            print("Got Null trajectory: (%f,%f)" % (startxabs, startyabs))
+            continue
+    rhor=1+(1-a**2)**0.5
+    el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
+    art=ax.add_artist(el)
+    art.set_zorder(20)
+    mylenshow = 25./30.*mylen
+    plt.xlim(-mylenshow,mylenshow)
+    plt.ylim(-mylenshow,mylenshow)
+    plt.xlabel(r"$x\ [r_g]$",fontsize=fntsize,ha='center')
+    plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=15,fontsize=fntsize)
+    for label in ax.get_xticklabels() + ax.get_yticklabels():
+        label.set_fontsize(fntsize)
+    # plt.savefig("fig2.pdf",bbox_inches='tight',pad_inches=0.02)
+    # plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02)
+    plt.savefig("fig2oneline.png",bbox_inches='tight',pad_inches=0.02,dpi=300)
+
+def mkstreamlinefigure(length=25,doenergy=True,frac=0.75):
+    mylen = length/frac
     arrowsize=4
     grid3d("gdump.bin",use2d=True)
     rfd("fieldline0000.bin")
@@ -5162,9 +5265,14 @@ def mkstreamlinefigure():
     fig=plt.figure(1,figsize=(12,9),dpi=300)
     fntsize=24
     ax = fig.add_subplot(111, aspect='equal')
-    if True:
+    if doenergy==False:
         #velocity
         B[1:] = avg_uu[1:]
+        bsq = avg_bsq
+        mkframe("myframe",len=mylen,ax=ax,density=12,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
+    if doenergy==True:
+        #energy
+        B[1:] = avg_Tud[1:,0]
         bsq = avg_bsq
         mkframe("myframe",len=mylen,ax=ax,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
     if True:
@@ -5189,7 +5297,7 @@ def mkstreamlinefigure():
         plt.figure(1)
         gdetB[1:] = avg_gdetB[0:]
         mu = avg_mu
-        mkframe("myframe",len=25./30.*mylen,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=12,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.01,color='r',lw=2,startatmidplane=True,showjet=False,arrowsize=arrowsize)
+        mkframe("myframe",len=frac*mylen,ax=ax,density=4,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=12,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.01,color='r',lw=2,startatmidplane=True,showjet=False,arrowsize=arrowsize)
     if False:
         x = (r*np.sin(h))[:,:,0]
         z = (r*np.cos(h))[:,:,0]
@@ -5202,7 +5310,7 @@ def mkstreamlinefigure():
     el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
     art=ax.add_artist(el)
     art.set_zorder(20)
-    mylenshow = 25./30.*mylen
+    mylenshow = frac*mylen
     plt.xlim(-mylenshow,mylenshow)
     plt.ylim(-mylenshow,mylenshow)
     plt.xlabel(r"$x\ [r_g]$",fontsize=fntsize,ha='center')
@@ -5213,7 +5321,8 @@ def mkstreamlinefigure():
     # plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02)
     plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02,dpi=300)
 
-def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,prefactor=100,sigma=None):
+def mklotsopanels(doreload=1,epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,prefactor=100,sigma=None,usegaussianunits=False,arrowsize=1):
+    global qtymem
     #Figure 1
     #To make plot, run 
     #run ~/py/mread/__init__.py 1 1
@@ -5246,10 +5355,10 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
         #rd( "dump0000.bin" )
         rfd("fieldline0000.bin")  #to definea
         #grid3dlight("gdump")
-        qtymem=None #clear to free mem
         rhor=1+(1+a**2)**0.5
         ihor = np.floor(iofr(rhor)+0.5);
-        qtymem=getqtyvstime(ihor,0.2)
+        if doreload == 1:
+            qtymem=getqtyvstime(ihor,0.2)
         flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
     #make accretion rate plot, etc.
     sys.stdout.flush()
@@ -5260,7 +5369,10 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
     plt.clf()
     #findexlist=(0,600,1285,1459)
     #findexlist=(0,600,1225,1369)
-    findexlist=(0,600,1225,3297)
+    #findexlist=(0,600,1225,3297)
+    #findexlist=(0,600,5403,5468)
+    #findexlist=(0,600,3297,5403)
+    findexlist=(0,1157,3297,5403)
     #SWITCH OFF SUPTITLE
     #plt.suptitle(r'$\log_{10}\rho$ at t = %4.0f' % t)
     #mdot,pjet,pjet/mdot plots
@@ -5306,7 +5418,7 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
     #                      )
     #          )
     ax35 = plt.subplot(gs3[-2,:])
-    plotqtyvstime(qtymem,ax=ax35,whichplot=5,findex=findexlist,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma)
+    plotqtyvstime(qtymem,ax=ax35,whichplot=5,findex=findexlist,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma,usegaussianunits=True)
     ymax=ax35.get_ylim()[1]
     if 1 < ymax and ymax < 2: 
         #ymax = 2
@@ -5320,9 +5432,16 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
         ax35.set_yticklabels(('','1'))
     else:
         ymax=np.floor(ymax)+1
-        tck=np.arange(1,ymax)
+        if ymax >= 60:
+            tck=np.arange(1,ymax/30.)*30.
+        elif ymax >= 10:
+            tck=np.arange(1,ymax/5.)*5.
+        else:
+            tck=np.arange(1,ymax)
         ax35.set_yticks(tck)
     ax35.grid(True)
+    if ymax >= 10:
+        ax35.set_ylabel(r"$\phi_{\rm BH}$",size=16,ha='left',labelpad=25)
     plt.text(ax35.get_xlim()[1]/40., 0.8*ax35.get_ylim()[1], r"$(\mathrm{f})$", size=16, rotation=0.,
              ha="center", va="center",
              color='k',weight='regular',bbox=bbox_props
@@ -5335,7 +5454,7 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
     #
     ax34 = plt.subplot(gs3[-1,:])
     plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findexlist,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma)
-    ax34.set_ylim((0,3.8))
+    ax34.set_ylim((0,3.8*prefactor))
     ymax=ax34.get_ylim()[1]
     if prefactor < ymax and ymax < 2*prefactor: 
         #ymax = 2
@@ -5388,7 +5507,7 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
         #          ha="center", va="center",
         #          color='k',weight='regular',bbox=bbox_props
         #          )
-        mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=False)
+        mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=False,arrowsize=arrowsize)
         ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
         ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         if dogrid: plt.grid()
@@ -5423,7 +5542,7 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
         #          )
         mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,
                 ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,
-                density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield)
+                density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,arrowsize=arrowsize)
         ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         if dogrid: plt.grid()
         #xy
@@ -5452,7 +5571,7 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
         #          ha="center", va="center",
         #          color='k',weight='regular',bbox=bbox_props
         #          )
-        mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield)
+        mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,arrowsize=arrowsize)
         ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         if dogrid: plt.grid()
         #xy
@@ -5481,7 +5600,7 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
         #          ha="center", va="center",
         #          color='k',weight='regular',bbox=bbox_props
         #          )
-        mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield)
+        mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,arrowsize=arrowsize)
         ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         if dogrid: plt.grid()
         #xy
@@ -5897,18 +6016,20 @@ if __name__ == "__main__":
     if False:
         #make a movie
         mkmovie()
-    if False:
+    if True:
         #fig2 with grayscalestreamlines and red field lines
         mkstreamlinefigure()
     if False:
         #FIGURE 1 LOTSOPANELS
         fti=7000
-        ftf=1e5
-        epsFm, epsFke = takeoutfloors(doreload=1,fti=fti,ftf=ftf,returndf=1,isinteractive=0)
+        ftf=30500
+        doreload = 1
+        domakeframes=1
+        epsFm, epsFke = takeoutfloors(doreload=doreload,fti=fti,ftf=ftf,returndf=1,isinteractive=0)
         #epsFm = 
         #epsFke = 
         print epsFm, epsFke
-        mklotsopanels(epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,domakeframes=True,prefactor=1,sigma=500.)
+        mklotsopanels(doreload=doreload,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,domakeframes=domakeframes,prefactor=100.,sigma=1500.,usegaussianunits=True,arrowsize=0.5)
     if False:
         grid3d( "gdump.bin",use2d=True )
         fno=0

@@ -385,7 +385,7 @@ def streamplot(x, y, u, v, density=1, linewidth=1,
 
 def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
                color='k', cmap=None, norm=None, vmax=None, vmin=None,
-               arrowsize=1, INTEGRATOR='RK4',dtx=10,ax=None,setxylim=False,useblank=True,detectLoops=True,dobhfield=False,dodiskfield=False,startatmidplane=False,a=0.0,downsample=1,minlendiskfield=0.2,minlenbhfield=0.2,dsval=0.01,doarrows=True,dorandomcolor=False,skipblankint=False,minindent=1,symmy=True,minlengthdefault=0.2):
+               arrowsize=1, INTEGRATOR='RK4',dtx=10,ax=None,setxylim=False,useblank=True,detectLoops=True,dobhfield=False,dodiskfield=False,startatmidplane=False,a=0.0,downsample=1,minlendiskfield=0.2,minlenbhfield=0.2,dsval=0.01,doarrows=True,dorandomcolor=False,skipblankint=False,minindent=1,symmy=True,minlengthdefault=0.2,startxabs=None,startyabs=None):
     '''Draws streamlines of a vector flow.
 
     * x and y are 1d arrays defining an *evenly spaced* grid.
@@ -706,12 +706,16 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
             t = rk4_integrate(xb*bx_spacing, yb*by_spacing, useblank, checkalongx, minlength)
             if t != None:
                 trajectories.append(t)
+                return( t )
             elif doreport:
                 print( "Trajectory with starting xb = %f, yb = %f did not work" % (xb, yb) )
 
     def xyabsofxyb( xb, yb ):
+        if (isinstance(xb,tuple) and len(xb) > 1) or (isinstance(yb,tuple) and len(yb) > 1):
+            xb = numpy.array(xb)
+            yb = numpy.array(yb)
         xabs = xb * bx_spacing * DX + XOFF
-        yabs = yb * bx_spacing * DY + YOFF
+        yabs = yb * by_spacing * DY + YOFF
         return xabs, yabs
 
     def xybofxyabs( xabs, yabs ):
@@ -725,12 +729,27 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
         return xi, yi
 
     def xyabsofxyi( xi, yi ):
+        if (isinstance(xi,tuple) and len(xi) > 1) or (isinstance(yi,tuple) and len(yi) > 1):
+            xi = numpy.array(xi)
+            yi = numpy.array(yi)
         xabs = xi * DX + XOFF
         yabs = yi * DY + YOFF
         return xabs, yabs
 
     ## Now we build up the trajectory set. I've found it best to look
     ## for blank==0 along the edges first, and work inwards.
+
+    if startxabs is not None and startyabs is not None:
+        #tracing a single trajectory
+        xb, yb = xybofxyabs(startxabs,startyabs)
+        #print( "th=%f,x=%f,y=%f,xb=%f,yb=%f" % (th, xabs, yabs, xb, yb) )
+        t = traj( xb, yb, useblank = False, doreport = True, minlength = minlendiskfield )       
+        if t is not None:
+            xi_traj, yi_traj = t
+            xabs_traj, yabs_traj = xyabsofxyi( xi_traj, yi_traj )
+            return( xabs_traj, yabs_traj )
+        else:
+            return( t )
 
     rh = 1+(1-a**2)**0.5
     rad = 0.9*rh
