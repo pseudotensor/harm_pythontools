@@ -4342,7 +4342,8 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
             plt.plot(r[:,0,0],mdtotvsr,'b--',label=r"$F_M$ (raw)",lw=2)
     Fm=(mdtotvsr+DUfloor0)
     Fe=-(edtotvsr+DUfloor1)
-    Fl=-(ldtotvsr+DUfloor4)
+    if ldtotvsr is not None:
+        Fl=-(ldtotvsr+DUfloor4)
     if dotakeoutfloors:
         if isinteractive:
             plt.plot(r[:,0,0],Fm,'b',label=r"$F_M$",lw=2)
