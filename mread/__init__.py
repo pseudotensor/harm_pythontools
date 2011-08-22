@@ -2209,7 +2209,7 @@ def mergeqtyvstime(n):
     print( "Done!" )
         
 
-def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
+def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None,docompute=True):
     """
     Returns a tuple (ts,fs,mdot,pjetem,pjettot): lists of times, horizon fluxes, and Mdot
     """
@@ -2243,6 +2243,9 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
             print "Number of previously saved time slices is >= than of timeslices to be loaded, re-using previously saved time slices"
             # qtymem2[:,1493]=0.5*(qtymem2[:,1492]+qtymem2[:,1494])
             # np.save("qty2_new.npy",qtymem2)  #kill bad frame
+            return(qtymem2)
+        elif docompute==False:
+            print "Read from %s" % fname
             return(qtymem2)
         else:
             assert qtymem2.shape[0] == qtymem.shape[0]
@@ -4155,6 +4158,8 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     grid3d("gdump.bin",use2d=True)
     if dotakeoutfloors:
         istag, jstag, hstag, rstag = getstagparams(rmax=20,doplot=0,doreadgrid=0)
+    #get base name of the current dir
+    bn=os.path.basename(os.getcwd())
     if np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) < 1.5:
         #hi-res 0.99 settings
         print( "Using hires a = 0.99 settings")
@@ -4208,6 +4213,42 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         Dno = np.array([137])
         lfti = 11887.3058391312
         lftf = 13700.
+    elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_20r45.35_0_0_0":
+        print( "Using a = 0.9 (rtf2_20r45.35_0_0_0) settings")
+        Dt = np.array([15100.-13152.0607139353,
+                       13000.-10814.6119443408,
+                       (10800.-9900.),
+                       -(10800.-9900.)])
+        Dno = np.array([151,
+                        130,
+                        108,
+                        99])
+        lfti = 9900.
+        lftf = 15695.
+    elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_pi_0_0_0":
+        print( "Using a = 0.9 (rtf2_15r34.1_pi_0_0_0) settings")
+        Dt = np.array([15600.-13898.007844829,
+                       13800.-12927.303703666,
+                       12900.-11126.259907352,
+                       11100.-9337.26983629822,
+                       9300.-8000.,
+                       -(9300.-8000.)])
+        Dno = np.array([156,
+                        138,
+                        129,
+                        111,
+                        93,
+                        80])
+        lfti = 8000.
+        lftf = 15695.
+    elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_2xphi_0_0_0":
+        print( "Using a = 0.9 (rtf2_15r34.1_2xphi_0_0_0) settings")
+        Dt = np.array([11600-9999.2977584592,
+                       9900-8355.23482702302])
+        Dno = np.array([116,
+                        99])
+        lfti = 8000.
+        lftf = 11625.
     elif np.abs(a - 0.5)<1e-4:
         print( "Using a = 0.5 settings")
         dt1 = 13000.-10279.
@@ -4222,11 +4263,38 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         Dno = np.array([133])
         lfti = 10366.5933313178
         lftf = 13300.
+    elif np.abs(a - 0.1)<1e-4:
+        print( "Using a = 0.1 settings")
+        Dt = np.array([20000.-18698.2882595555,
+                       18600.-15552.4457340615,
+                       15500.-12361.7572701913,
+                       12300.-10000.,
+                       -(12300.-10000.)])
+        Dno = np.array([200,
+                        186,
+                        155,
+                        123,
+                        100])
+        lfti = 10000.
+        lftf = 20000.
+    elif np.abs(a - 0.0)<1e-4:
+        print( "Using a = 0.0 settings")
+        Dt = np.array([18500.-15700.2418591157,
+                       15700.-12587.5162658605,
+                       12500.-10000.,
+                       -(12500.-10000.)])
+        Dno = np.array([185,
+                        157,
+                        125,
+                        100])
+        lfti = 10000.
+        lftf = 20000.
     else:
         print( "Unknown case: a = %g, using defaults..." % a )
         lfti = 10000.
         lftf = 20000.
         dotakeoutfloors = 0
+    #os.path.basename(os.getcwd())
     if fti is None or ftf is None:
         fti = lfti
         ftf = lftf
@@ -5642,7 +5710,7 @@ def mklotsopanels(doreload=1,epsFm=None,epsFke=None,fti=None,ftf=None,domakefram
     print( "Done!" )
     sys.stdout.flush()
 
-def generate_time_series():
+def generate_time_series(docompute=False):
         #cd ~/run; for f in rtf*; do cd ~/run/$f; (nice -n 10 python  ~/py/mread/__init__.py &> python.out); done
         grid3d("gdump.bin",use2d=True)
         #rd("dump0000.bin")
@@ -5657,9 +5725,9 @@ def generate_time_series():
             if whichi >= whichn:
                 mergeqtyvstime(whichn)
             else:
-                qtymem=getqtyvstime(ihor,0.2,whichi=whichi,whichn=whichn)
+                qtymem=getqtyvstime(ihor,0.2,whichi=whichi,whichn=whichn,docompute=docompute)
         else:
-            qtymem=getqtyvstime(ihor,0.2)
+            qtymem=getqtyvstime(ihor,0.2,docompute=docompute)
             plotqtyvstime(qtymem)
 
 def oldstuff():
@@ -6012,7 +6080,7 @@ if __name__ == "__main__":
     if False:
         #NEW FORMAT
         #Plot qtys vs. time
-        generate_time_series()
+        generate_time_series(docompute=True)
     if False:
         #make a movie
         mkmovie()
