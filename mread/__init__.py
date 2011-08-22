@@ -4248,7 +4248,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         Dno = np.array([116,
                         99])
         lfti = 8000.
-        lftf = 11625.
+        lftf = 20000.
     elif np.abs(a - 0.5)<1e-4:
         print( "Using a = 0.5 settings")
         dt1 = 13000.-10279.
