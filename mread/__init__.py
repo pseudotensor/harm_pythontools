@@ -4260,14 +4260,14 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     elif np.abs(a - (-0.9))<1e-4:
         #with less failfloordudumps:
         print( "Using a = -0.9 settings")
-        Dt = np.array([11300.-9727.2561911212,
-                        9700.-8435.61370926043,
-                        8400.-7000.,
-                      -(8400.-7000.)])
+        Dt = np.array([11300.-10106.5605346438,
+                       10100.-8039.58198814953,
+                       8000.-7000.,
+                      -(8000.-7000.)])
         Dno = np.array([113,
-                        97,
-                        84,
-                        80])
+                        101,
+                        80,
+                        70])
         lfti = 7000.
         lftf = 20000.
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_2xphi_0_0_0":
