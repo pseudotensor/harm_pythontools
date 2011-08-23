@@ -4530,9 +4530,10 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         rx = 5
         rj = 100
         foutpower.write( "%s %f %f %f %f %f %f %f %f\n" % (os.path.basename(os.getcwd()), a, 
-                                                                             eta[iofr(rx)], spar[iofr(rx)], 
-                                                                             Fm[iofr(rx)], Fe[iofr(rx)], Fl[iofr(rx)]/dxdxp[3][3][:,0,0],
-                                                                             pjke_mu2_avg[iofr(rj)], (pjke_mu1_avg-pjke_mu2_avg)[iofr(rj)]) )
+                                                           eta[iofr(rx)], spar[iofr(rx)], 
+                                                           Fm[iofr(rx)], Fe[iofr(rx)], Fl[iofr(rx)]/dxdxp[3][3][:,0,0],
+                                                           float(pjke_mu2_avg[iofr(rj)]), 
+                                                           float((pjke_mu1_avg-pjke_mu2_avg)[iofr(rj)]) ) )
         #flush to disk just in case to make sure all is written
         foutpower.flush()
         os.fsync(foutpower.fileno())
