@@ -4466,8 +4466,9 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #taken from Gammie, Shapiro, McKinney 2003
         spar = (Flphi-2*a*Fe)/Fm
     else:
-        Fl=None
-        spar=None
+        #put obviously bad number in
+        Fl=edtotvsr*0-1e11
+        spar=edtotvsr*0-1e11
     if dotakeoutfloors:
         if isinteractive and doplot:
             plt.plot(r[:,0,0],Fm,'b',label=r"$F_M$",lw=2)
