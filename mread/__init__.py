@@ -4430,7 +4430,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                 pjemfinavgvsr5, pjemfinavgvsr10, pjemfinavgvsr20, pjemfinavgvsr30, pjemfinavgvsr40, \
                 pjmafinavgvsr5, pjmafinavgvsr10, pjmafinavgvsr20, pjmafinavgvsr30, pjmafinavgvsr40, \
                 fstotfinavg, fstotsqfinavg, \
-                pjke_mu2, pjke_mu1 \
+                pjke_mu2_avg, pjke_mu1_avg \
                 = plotqtyvstime( qtymem, whichplot = -200, fti=fti, ftf=ftf )
  
     FKE = -(edmavsr+mdtotvsr)
