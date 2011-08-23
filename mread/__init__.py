@@ -3721,7 +3721,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
                 pjemfinavgvsr5, pjemfinavgvsr10, pjemfinavgvsr20, pjemfinavgvsr30, pjemfinavgvsr40,
                 pjmafinavgvsr5, pjmafinavgvsr10, pjmafinavgvsr20, pjmafinavgvsr30, pjmafinavgvsr40,
                 fstotfinavg, fstotsqfinavg,
-                pjke_mu2, pjke_mu1)
+                pjke_mu2_avg, pjke_mu1_avg)
  
     if whichplot == -300:
         #BL metric g_rr
@@ -4430,7 +4430,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                 pjemfinavgvsr5, pjemfinavgvsr10, pjemfinavgvsr20, pjemfinavgvsr30, pjemfinavgvsr40, \
                 pjmafinavgvsr5, pjmafinavgvsr10, pjmafinavgvsr20, pjmafinavgvsr30, pjmafinavgvsr40, \
                 fstotfinavg, fstotsqfinavg, \
-                pjke_mu2, pjke_mu1 \
+                pjke_mu2_avg, pjke_mu1_avg \
                 = plotqtyvstime( qtymem, whichplot = -200, fti=fti, ftf=ftf )
  
     FKE = -(edmavsr+mdtotvsr)
@@ -4532,7 +4532,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         foutpower.write( "%s %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n" % (os.path.basename(os.getcwd()), a, 
                                                                              eta[iofr(rx)], spar[iofr(rx)], 
                                                                              Fm[iofr(rx)], Fe[iofr(rx)], Fl[iofr(rx)]/dxdxp[3][3][:,0,0],
-                                                                             pjke_mu2[iofr(rj)], (pjke_mu1-pjke_mu2)[iofr(rj)]) )
+                                                                             pjke_mu2_avg[iofr(rj)], (pjke_mu1_avg-pjke_mu2_avg)[iofr(rj)]) )
         #flush to disk just in case to make sure all is written
         foutpower.flush()
         os.fsync(foutpower.fileno())
