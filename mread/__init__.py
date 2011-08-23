@@ -3229,6 +3229,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             if i < qtymem.shape[0]:
                 ldtot=qtymem[i];i+=1
             else:
+                print( "Oldish format: missing ldtot" )
                 ldtot=None
             #derived
             pjke_n_mu2 = pjem_n_mu2 + pjma_n_mu2 - pjrm_n_mu2
