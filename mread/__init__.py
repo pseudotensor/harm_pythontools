@@ -3716,7 +3716,9 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         return( mdtotvsr, edtotvsr, edmavsr, ldtotvsr,
                 mdotfinavgvsr5, mdotfinavgvsr10, mdotfinavgvsr20, mdotfinavgvsr30, mdotfinavgvsr40,
                 pjemfinavgvsr5, pjemfinavgvsr10, pjemfinavgvsr20, pjemfinavgvsr30, pjemfinavgvsr40,
-                pjmafinavgvsr5, pjmafinavgvsr10, pjmafinavgvsr20, pjmafinavgvsr30, pjmafinavgvsr40 )
+                pjmafinavgvsr5, pjmafinavgvsr10, pjmafinavgvsr20, pjmafinavgvsr30, pjmafinavgvsr40,
+                fstotfinavg, fstotsqfinavg,
+                pjke_mu2, pjke_mu1)
  
     if whichplot == -300:
         #BL metric g_rr
@@ -4152,7 +4154,7 @@ def get_dFfloor(Dt, Dno, dotakeoutfloors=True):
         DU = np.zeros((8,nx),dtype=np.float64)
     return( DU )
 
-def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=None,isinteractive=1,returndf=0,dolegend=True,plotldtot=True,lw=1,plotFem=False):
+def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=None,isinteractive=1,returndf=0,dolegend=True,plotldtot=True,lw=1,plotFem=False,writefile=True,doplot=True):
     global dUfloor, qtymem, DUfloorori, etad0, DU
     #Mdot, E, L
     grid3d("gdump.bin",use2d=True)
@@ -4423,7 +4425,9 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     mdtotvsr, edtotvsr, edmavsr, ldtotvsr,\
                 mdotfinavgvsr5, mdotfinavgvsr10, mdotfinavgvsr20, mdotfinavgvsr30, mdotfinavgvsr40, \
                 pjemfinavgvsr5, pjemfinavgvsr10, pjemfinavgvsr20, pjemfinavgvsr30, pjemfinavgvsr40, \
-                pjmafinavgvsr5, pjmafinavgvsr10, pjmafinavgvsr20, pjmafinavgvsr30, pjmafinavgvsr40  \
+                pjmafinavgvsr5, pjmafinavgvsr10, pjmafinavgvsr20, pjmafinavgvsr30, pjmafinavgvsr40, \
+                fstotfinavg, fstotsqfinavg, \
+                pjke_mu2, pjke_mu1 \
                 = plotqtyvstime( qtymem, whichplot = -200, fti=fti, ftf=ftf )
  
     FKE = -(edmavsr+mdtotvsr)
@@ -4445,21 +4449,31 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         if ax is None:
             plt.figure(1)
             plt.clf()
-        if ax is None:
+        if ax is None and doplot:
             plt.plot(r[:,0,0],mdtotvsr,'b--',label=r"$F_M$ (raw)",lw=2)
     Fm=(mdtotvsr+DUfloor0)
     Fe=-(edtotvsr+DUfloor1)
     if ldtotvsr is not None:
+        #** definition of ldtot: \int(gdet*Tud[1][3]): 
+        #   when u^r < 0 and u_\varphi > 0 (usual for prograde disk inflow), then ldtot < 0
+        #defined as positive when ang. mom. flows *into* BH
         Fl=-(ldtotvsr+DUfloor4)
+        Flphi=Fl/dxdxp[3][3][:,0,0]  #convert L_x3 into L_\varphi
+        #spin-up parameter
+        #taken from Gammie, Shapiro, McKinney 2003
+        spar = (Flphi-2*a*Fe)/Fm
+    else:
+        Fl=None
+        spar=None
     if dotakeoutfloors:
-        if isinteractive:
+        if isinteractive and doplot:
             plt.plot(r[:,0,0],Fm,'b',label=r"$F_M$",lw=2)
-    if isinteractive and ax is None:
+    if isinteractive and ax is None and doplot:
         plt.plot(r[:,0,0],-edtotvsr,'r--',label=r"$F_E$ (raw)",lw=2)
-    if dofeavg and isinteractive and ax is None:
+    if dofeavg and isinteractive and ax is None and doplot:
         plt.plot(r[:,0,0],FE,'k--',label=r"$F_E$",lw=2)
     if dotakeoutfloors:
-        if isinteractive:
+        if isinteractive and doplot:
             plt.plot(r[:,0,0],Fe,'r',label=r"$F_E$",lw=2)
             if plotFem:
                 #plt.plot(r[:,0,0],-FEM,'r--',label=r"$-F_{EM}$",lw=2)
@@ -4468,14 +4482,14 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                 #plt.plot(r[:,0,0],FKE,'b',label=r"$(F_{M}-F_{E})[r=5r_g]$",lw=2)
                 plt.plot(r[:,0,0],FKE10,'g',label=r"$F_{KE,b^2/\rho<10}$",lw=2)
                 #plt.plot(r[:,0,0],Fm+edtotvsr,'g:',label=r"$F_{EM}$",lw=2)
-        if dofeavg and isinteractive: 
+        if dofeavg and isinteractive and doplot: 
             plt.plot(r[:,0,0],FE-DUfloor1,'k',label=r"$F_E$",lw=2)
-        if isinteractive and ax is None:
+        if isinteractive and ax is None and doplot:
             plt.plot(r[:,0,0],(DUfloor1),'r:',lw=2)
-    if ldtotvsr is not None and plotldtot:
+    if ldtotvsr is not None and plotldtot and doplot:
         if isinteractive and ax is None:
             plt.plot(r[:,0,0],-ldtotvsr/dxdxp[3][3][:,0,0]/10.,'g--',label=r"$F_L/10$ (raw)",lw=2)
-        if dotakeoutfloors and isinteractive:
+        if dotakeoutfloors and isinteractive and doplot:
             plt.plot(r[:,0,0],Fl/dxdxp[3][3][:,0,0]/10.,'g',label=r"$F_L/10$",lw=2)
     eta = ((Fm-Fe)/Fm)
     etap = (Fm-Fe)/Fe
@@ -4483,29 +4497,43 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         print("Eff = %g, Eff' = %g" % ( eta[iofr(5)], etap[iofr(5)] ) )
         #plt.plot(r[:,0,0],DUfloor0,label=r"$dU^t$")
         #plt.plot(r[:,0,0],DUfloor*1e4,label=r"$dU^t\times10^4$")
-        if dolegend:
-            plt.legend(loc='lower right',bbox_to_anchor=(0.97,0.39),
-                       #borderpad = 1,
-                       borderaxespad=0,frameon=True,labelspacing=0,
-                       ncol=1)
-        plt.xlim(rhor,19.99)
-        plt.ylim(-10,18)
-        plt.grid()
-        plt.xlabel(r"$r\ [r_g]$",fontsize=20)
-        if ax is None:
-            plt.ylabel("Fluxes",fontsize=20,ha='center')
-            plt.savefig("fig4.pdf",bbox_inches='tight',pad_inches=0.02)
-            plt.savefig("fig4.eps",bbox_inches='tight',pad_inches=0.02)
-            plt.savefig("fig4.png",bbox_inches='tight',pad_inches=0.02)
-        #FIGURE: energy
-        #plt.figure(2)
-        #plt.plot(r[:,0,0],edtotvsr+DUfloor1,label=r"$\dot E+dU^1$")
-        #plt.plot(r[:,0,0],DUfloor1,label=r"$dU^1$")
-        #plt.legend()
-        #plt.xlim(rhor,12)
-        #plt.ylim(-3,20)
-        #plt.grid()
+        if doplot:
+            if dolegend:
+                plt.legend(loc='lower right',bbox_to_anchor=(0.97,0.39),
+                           #borderpad = 1,
+                           borderaxespad=0,frameon=True,labelspacing=0,
+                           ncol=1)
+            plt.xlim(rhor,19.99)
+            plt.ylim(-10,18)
+            plt.grid()
+            plt.xlabel(r"$r\ [r_g]$",fontsize=20)
+            if ax is None:
+                plt.ylabel("Fluxes",fontsize=20,ha='center')
+                plt.savefig("fig4.pdf",bbox_inches='tight',pad_inches=0.02)
+                plt.savefig("fig4.eps",bbox_inches='tight',pad_inches=0.02)
+                plt.savefig("fig4.png",bbox_inches='tight',pad_inches=0.02)
+            #FIGURE: energy
+            #plt.figure(2)
+            #plt.plot(r[:,0,0],edtotvsr+DUfloor1,label=r"$\dot E+dU^1$")
+            #plt.plot(r[:,0,0],DUfloor1,label=r"$dU^1$")
+            #plt.legend()
+            #plt.xlim(rhor,12)
+            #plt.ylim(-3,20)
+            #plt.grid()
     #
+    if writefile:
+        foutpower = open( "siminfo_%s.txt" %  os.path.basename(os.getcwd()), "w" )
+        #foutpower.write( "#Name a Mdot   Pjet    Etajet  Psitot Psisqtot**0.5 Psijet Psisqjet**0.5 rstag Pjtotmax Pjtot1rstag Pjtot2rstag Pjtot4rstag Pjtot8rstag\n"  )
+        rx = 5
+        rj = 100
+        foutpower.write( "%s %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n" % (os.path.basename(os.getcwd()), a, 
+                                                                             eta[iofr(rx)], spar[iofr(rx)], 
+                                                                             Fm[iofr(rx)], Fe[iofr(rx)], Fl[iofr(rx)]/dxdxp[3][3][:,0,0],
+                                                                             pjke_mu2[iofr(rj)], (pjke_mu1-pjke_mu2)[iofr(rj)]) )
+        #flush to disk just in case to make sure all is written
+        foutpower.flush()
+        os.fsync(foutpower.fileno())
+        foutpower.close()
     if False:
         avgmem = get2davg(usedefault=1)
         assignavg2dvars(avgmem)
@@ -4525,7 +4553,10 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         epsFm = Fmval/Fmraw
         epsFke = (Fmval-Feval)/(Fmraw-Feraw)
         return( (epsFm,epsFke) )
-    return( (eta[iofr(5)], Fm[iofr(5)], Fe[iofr(5)]) )
+    if ldtotvsr is not None:
+        return( (eta[iofr(5)], Fm[iofr(5)], Fe[iofr(5)], Fl[iofr(5)]) )
+    else:
+        return( (eta[iofr(5)], Fm[iofr(5)], Fe[iofr(5)], None) )
     #
     # plt.figure(2)
     # plt.plot(r[:,0,0],edtotvsr,label="tot")
