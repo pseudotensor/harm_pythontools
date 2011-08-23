@@ -4529,7 +4529,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #foutpower.write( "#Name a Mdot   Pjet    Etajet  Psitot Psisqtot**0.5 Psijet Psisqjet**0.5 rstag Pjtotmax Pjtot1rstag Pjtot2rstag Pjtot4rstag Pjtot8rstag\n"  )
         rx = 5
         rj = 100
-        foutpower.write( "%s %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n" % (os.path.basename(os.getcwd()), a, 
+        foutpower.write( "%s %f %f %f %f %f %f %f %f\n" % (os.path.basename(os.getcwd()), a, 
                                                                              eta[iofr(rx)], spar[iofr(rx)], 
                                                                              Fm[iofr(rx)], Fe[iofr(rx)], Fl[iofr(rx)]/dxdxp[3][3][:,0,0],
                                                                              pjke_mu2_avg[iofr(rj)], (pjke_mu1_avg-pjke_mu2_avg)[iofr(rj)]) )
