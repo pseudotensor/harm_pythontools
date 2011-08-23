@@ -3360,8 +3360,14 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     pjtotfinavgvsr30 = pjemfinavgvsr30 + pjmafinavgvsr30
     pjtotfinavgvsr40 = pjemfinavgvsr40 + pjmafinavgvsr40
 
-    pjke_mu1_avg = timeavg(pjke_mu1,ts,fti,ftf)
-    pjke_mu2_avg = timeavg(pjke_mu2,ts,fti,ftf)
+    if pjke_mu1 is not None:
+        pjke_mu1_avg = timeavg(pjke_mu1,ts,fti,ftf)
+    else:
+        pjke_mu1_avg = -1e11
+    if pjke_mu2 is not None:
+        pjke_mu2_avg = timeavg(pjke_mu2,ts,fti,ftf)
+    else:
+        pjke_mu2_avg = -1e11
 
     #radius of stagnation point (Pjmabsqorho5(rstag) = 0)
     indices=ti[:,0,0][pjmafinavgvsr5>0]
