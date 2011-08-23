@@ -4332,6 +4332,22 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         70])
         lfti = 7000.
         lftf = 20000.
+    elif np.abs(a - 0.9)<1e-4 and bn == "rtf_15r34.1_0_0_0":
+        print( "Using a = 0.9 (rtf_15r34.1_0_0_0) settings")
+        Dt = np.array([15800.-15685.1591357819,
+                       15600.-13413.903124605,
+                       13400.-11142.7284161051,
+                       11100.-8692.5709730908,
+                       8600.-8000.,
+                     -(8600.-8000.)])
+        Dno = np.array([158,
+                        156,
+                        134,
+                        111,
+                        86,
+                        80])
+        lfti = 8000.
+        lftf = 20000.
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_2xphi_0_0_0":
         print( "Using a = 0.9 (rtf2_15r34.1_2xphi_0_0_0) settings")
         Dt = np.array([11600-9999.2977584592,
