@@ -6217,6 +6217,8 @@ def oldstuff():
         #plotqtyvstime(qtymem,whichplot=-4)
 
 if __name__ == "__main__":
+    if True:
+        takeoutfloors(dotakeoutfloors=1,doplot=False)
     if False:
         readmytests1()
         plotpowers('powerlist.txt',format=0) #old format
