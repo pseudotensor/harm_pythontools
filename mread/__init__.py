@@ -4218,8 +4218,8 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         232,
                         228,
                         222])
-        lfti = 22167.6695855045
-        lftf = 28200.
+        lfti = 7000.
+        lftf = 1e5
     elif np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) > 1.5:
         #lo-res 0.99 settings
         print( "Using lores a = 0.99 settings")
