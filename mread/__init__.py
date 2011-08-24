@@ -4220,25 +4220,25 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         228,
                         222])
         lfti = 7000.
-        lftf = 1e5
+        lftf = 30500.
     elif np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) > 1.5:
         #lo-res 0.99 settings
         print( "Using lores a = 0.99 settings")
         dt = 100.
-        # Dt = np.array([13700-11887.3058391312,
-        #                11800.-11547.5107224568,
-        #                11500-9727.2561911212,
-        #                9700-8435.61370926043,
-        #                8400-8000,-(8400-8000)])
-        # Dno = np.array([137,
-        #                 118,
-        #                 115,
-        #                 97,
-        #                 84,80])
-        Dt = np.array([13700-11887.3058391312])
+        Dt = np.array([13700-11887.3058391312,
+                       11800.-11547.5107224568,
+                       11500-9727.2561911212,
+                       9700-8435.61370926043,
+                       8400-6593.28942686595])
+        Dno = np.array([137,
+                        118,
+                        115,
+                        97,
+                        84])
+        # Dt = np.array([13700-11887.3058391312])
         Dno = np.array([137])
-        lfti = 11887.3058391312
-        lftf = 13700.
+        lfti = 6000.
+        lftf = 1.e5
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_20r45.35_0_0_0":
         print( "Using a = 0.9 (rtf2_20r45.35_0_0_0) settings")
         Dt = np.array([15100.-13152.0607139353,
@@ -4847,6 +4847,9 @@ def plotpowers(fname,hor=0,format=2):
         powlist=gd1[12] #pow(2*rstag)
         psitotsqlist = gd1[5]
         psi30sqlist = gd1[7]
+        etalist = powEMKElist/mdotlist
+        etaEMlist = eoutEMtotlist/mdotlist
+        etawindlist = powwindEMKElist/mdotlist
     elif format == 1: #new avg2d format
         gd1 = np.loadtxt( fname, unpack = True, usecols = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27] )
         #gd=gd1.view().reshape((-1,nx,ny,nz), order='F')
@@ -4880,20 +4883,26 @@ def plotpowers(fname,hor=0,format=2):
         powlist3=gd1[i]; i+=1
         powwindlist3=gd1[i]; i+=1
         rlist3=gd1[i]; i+=1
+        etalist = powEMKElist/mdotlist
+        etaEMlist = eoutEMtotlist/mdotlist
+        etajetlist = (powwindlist-powlist)/mdotlist
+        etawindlist = powwindEMKElist/mdotlist
     elif format == 2:
-        gd1 = np.loadtxt( fname, unpack = True, usecols = [1,2,3,4,5,6,7,8,9,10] )
+        gd1 = np.loadtxt( fname, unpack = True, usecols = [1,2,3,4,5,6,7,8,9,10,11,12] )
         #gd=gd1.view().reshape((-1,nx,ny,nz), order='F')
-        alist, etalist, sparlist, Fmlist, Felist, Fllist, Femlist, powjetlist, powwindlist, ftotlist, ftotsqlist = gd1
+        alist, etalist, sparlist, Fmlist, Felist, Fllist, FEMrhorlist, FEM2list, powjetlist, powwindlist, ftotlist, ftotsqlist = gd1
+        fsqtotlist = ftotsqlist
+        mdotlist = Fmlist
         rhorlist = 1+(1-alist**2)**0.5
         omhlist = alist / 2 / rhorlist
-    etalist = powEMKElist/mdotlist
-    etaEMlist = eoutEMtotlist/mdotlist
-    etawindlist = powwindEMKElist/mdotlist
+        etaEMlist = -FEM2list/Fmlist
+        etajetlist=powjetlist/Fmlist
+        etawindlist = powwindlist/Fmlist
     gin = open( fname, "rt" )
     emptyline = gin.readline()
     for i in np.arange(alist.shape[0]):
         simname = gin.readline().split()[0]
-        print '%.2g & %.3g & %.3g & %.3g & %.3g & %% %s' % (alist[i], 100*etaEMlist[i], 100*etalist[i], 100*(etawindlist[i]-etalist[i]), 100*etawindlist[i], simname)
+        print '%.2g & %.3g & %.3g & %.3g & %.3g & %% %s' % (alist[i], 100*etaEMlist[i], 100*etalist[i], 100*etajetlist[i], 100*etawindlist[i], simname)
     gin.close()
     mya=np.arange(-1,1,0.001)
     rhor = 1+(1-mya**2)**0.5
@@ -4969,7 +4978,7 @@ def plotpowers(fname,hor=0,format=2):
         #plt.plot( mya, myeta )
         #plt.plot(mya,mya**2)
         #y = (psi30sqlist)**2/(2*mdotlist)
-        y = (f30sqlist/2./(2*np.pi))/(mdotlist)**0.5
+        #y = (f30sqlist/2./(2*np.pi))/(mdotlist)**0.5
         y1= (fsqtotlist/2./(2*np.pi))/(mdotlist)**0.5
         #plt.plot(alist,y,'bo')
         plt.plot(alist,y1,'ro')
@@ -5015,11 +5024,11 @@ def plotpowers(fname,hor=0,format=2):
     ax1r.set_ylim(ax1.get_ylim())
     #
     ax2 = plt.subplot(gs[1,:])
-    plt.plot(alist,100*etaEMlist,'o',label=r'$\eta_{\rm BH}$',mfc='r')
+    plt.plot(alist,100*etalist,'o',label=r'$\eta_{\rm BH}$',mfc='r')
     #plt.plot(alist,100*(etawindlist-etalist),'gv',label=r'$\eta_{\rm wind}$')
     #plt.plot(myspina6,0.9*100*fac*myeta6,'k',label=r'$0.9\eta_{\rm BZ6}(\phi_{\rm fit})$' )
     plt.plot(myspina6,100*fac*myeta6,'k-',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$' )
-    plt.ylim(0.0001,150)
+    plt.ylim(0.0001,160)
     plt.grid()
     plt.setp( ax2.get_xticklabels(), visible=False )
     plt.ylabel(r"$\eta_{\rm BH}\  [\%]$",fontsize='x-large',ha='center',labelpad=12)
@@ -5031,16 +5040,16 @@ def plotpowers(fname,hor=0,format=2):
     #second y-axis
     ax2r = ax2.twinx()
     ax2r.set_xlim(-1,1)
-    ax2r.set_ylim(0.0001,150)
+    ax2r.set_ylim(0.0001,160)
     #
     ax3 = plt.subplot(gs[-1,:])
     newy1 = 100*fac*myeta6
     newy2 = 0.8*100*fac*myeta6
     ax3.fill_between(myspina6,newy1,newy2,where=newy1>newy2,facecolor=(0.8,1,0.8,1),edgecolor=(0.8,1,0.8,1))
     #plt.plot(myspina6,myeta6,'r:',label=r'$\eta_{\rm BZ,6}$')
-    plt.plot(alist,100*etalist,'gs',label=r'$\eta_{\rm jet}$')
+    plt.plot(alist,100*etajetlist,'gs',label=r'$\eta_{\rm jet}$')
     #plt.plot(alist,100*etaEMlist,'rx',label=r'$\eta_{\rm jet}$')
-    plt.plot(alist,100*(etawindlist-etalist),'bv',label=r'$\eta_{\rm wind}$')
+    plt.plot(alist,100*etawindlist,'bv',label=r'$\eta_{\rm wind}$')
     plt.plot(myspina6,100*fac*myeta6,'k-',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$' )
     plt.plot(myspina6,0.9*100*fac*myeta6,'k--',label=r'$0.9\eta_{\rm BZ6}(\phi_{\rm fit})$' )
     plt.ylim(0.0001,150)
@@ -6247,6 +6256,10 @@ if __name__ == "__main__":
         #Figure 3
         readmytests1()
         plotpowers('powerlist2davg.txt',format=1) #new format; data from 2d average dumps
+    if True:
+        #Figure 3, updated diagnostics
+        readmytests1()
+        plotpowers('siminfo.txt',format=2) #new format; data from 2d average dumps
     if False:
         #2DAVG
         mk2davg()
