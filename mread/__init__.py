@@ -6258,7 +6258,7 @@ if __name__ == "__main__":
         #Figure 3
         readmytests1()
         plotpowers('powerlist2davg.txt',format=1) #new format; data from 2d average dumps
-    if True:
+    if False:
         #Figure 3, updated diagnostics
         readmytests1()
         plotpowers('siminfo.txt',format=2) #new format; data from 2d average dumps
