@@ -4236,7 +4236,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         97,
                         84])
         # Dt = np.array([13700-11887.3058391312])
-        Dno = np.array([137])
+        # Dno = np.array([137])
         lfti = 6000.
         lftf = 1.e5
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_20r45.35_0_0_0":
