@@ -4376,6 +4376,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                        8200.-8000.,
                      -(8200.-8000.)])
         Dno = np.array([142,
+                        118,
                         95,
                         82,
                         80])
