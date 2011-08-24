@@ -4537,9 +4537,10 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #foutpower.write( "#Name a Mdot   Pjet    Etajet  Psitot Psisqtot**0.5 Psijet Psisqjet**0.5 rstag Pjtotmax Pjtot1rstag Pjtot2rstag Pjtot4rstag Pjtot8rstag\n"  )
         rx = 5
         rj = 100
-        foutpower.write( "%s %f %f %f %f %f %f %f %f %f %f\n" % (os.path.basename(os.getcwd()), a, 
+        foutpower.write( "%s %f %f %f %f %f %f %f %f %f %f %f %f\n" % (os.path.basename(os.getcwd()), a, 
                                                            eta[iofr(rx)], spar[iofr(rx)], 
                                                            Fm[iofr(rx)], Fe[iofr(rx)], Fl[iofr(rx)]/dxdxp[3][3][0,0,0],
+                                                           FEM[iofr(rhor)], FEM[iofr(2)],
                                                            pjke_mu2_avg[iofr(rj)], 
                                                            (pjke_mu1_avg-pjke_mu2_avg)[iofr(rj)],
                                                             fstotfinavg, fstotsqfinavg ) )
@@ -4820,7 +4821,7 @@ def Risco(a):
     risco = 3 + Z2 - np.sign(a)* ( (3 - Z1)*(3 + Z1 + 2*Z2) )**0.5
     return(risco)
 
-def plotpowers(fname,hor=0,format=1):
+def plotpowers(fname,hor=0,format=2):
     if format == 0: #old format
         gd1 = np.loadtxt( fname, unpack = True, usecols = [1,2,3,4,5,6,7,8,9,10,11,12,13,14] )
         #gd=gd1.view().reshape((-1,nx,ny,nz), order='F')
@@ -4866,35 +4867,11 @@ def plotpowers(fname,hor=0,format=1):
         powwindlist3=gd1[i]; i+=1
         rlist3=gd1[i]; i+=1
     elif format == 2:
-        gd1 = np.loadtxt( fname, unpack = True, usecols = [1,2,3,4,5,6,7,8] )
+        gd1 = np.loadtxt( fname, unpack = True, usecols = [1,2,3,4,5,6,7,8,9,10] )
         #gd=gd1.view().reshape((-1,nx,ny,nz), order='F')
-        alist, etalist, sparlist, Fmlist, Felist, Fllis, powjetlist, powwindlist = gd1
+        alist, etalist, sparlist, Fmlist, Felist, Fllist, Femlist, powjetlist, powwindlist, ftotlist, ftotsqlist = gd1
         rhorlist = 1+(1-alist**2)**0.5
         omhlist = alist / 2 / rhorlist
-        ftotlist=gd1[6]
-        fsqtotlist=gd1[7]
-        pjetemtotlist=gd1[10]
-        eoutEMtotlist=gd1[11]
-        #etalist = gd1[3]
-        i = 12
-        #1
-        powEMKElist=gd1[i]; i+=1
-        powwindEMKElist=gd1[i]; i+=1
-        powlist=gd1[i]; i+=1
-        powwindlist=gd1[i]; i+=1
-        rlist=gd1[i]; i+=1
-        #2
-        powEMKElist2=gd1[i]; i+=1
-        powwindlEMKEist2=gd1[i]; i+=1
-        powlist2=gd1[i]; i+=1
-        powwindlist2=gd1[i]; i+=1
-        rlist2=gd1[i]; i+=1
-        #3
-        powEMKElist3=gd1[i]; i+=1
-        powwindEMKElist3=gd1[i]; i+=1
-        powlist3=gd1[i]; i+=1
-        powwindlist3=gd1[i]; i+=1
-        rlist3=gd1[i]; i+=1
     etalist = powEMKElist/mdotlist
     etaEMlist = eoutEMtotlist/mdotlist
     etawindlist = powwindEMKElist/mdotlist
