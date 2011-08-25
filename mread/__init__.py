@@ -706,6 +706,12 @@ def plot2davg(dosq=True,whichplot=-1):
         #plc(h-hjetwind1[:,None,None],levels=(0,),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
         #plc(h-hjetwind2[:,None,None],levels=(0,),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
      #
+    if whichplot==2:
+        #plot Mdot vs. r for region v^r < 0
+        plt.figure(1)
+        mdin_den = gdet[:,:,0:1]*avg_rhouu*_dx2*_dx3
+        mdin_den *= 1
+
     if whichplot==-1:
         #PLOT EVERYTHING
         ##################
