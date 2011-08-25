@@ -7,7 +7,7 @@
 # 2) use the script
 
 # order of models as to appear in final table
-dircollect='thickdisk7 thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.like8 thickdiskrr2 run.liker2butbeta40 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 thickdiskr2 run.liker1 run.liker2 thickdisk9 thickdiskr3  thickdisk17 thickdisk10 thickdisk15 thickdisk2 thickdisk3 runlocaldipole3dfiducial sasha99'
+dircollect='thickdisk7 thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.like8 thickdiskrr2 run.liker2butbeta40 run.liker2 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 thickdiskr2 run.liker1 thickdisk9 thickdiskr3  thickdisk17 thickdisk10 thickdisk15 thickdisk2 thickdisk3 runlocaldipole3dfiducial sasha99'
 
 # note that thickdisk1 is actually bad, so ignore it.
 # can choose so do runs in different order than collection.
@@ -405,7 +405,7 @@ then
         strfinal=$str1$str2$str3
         echo $strfinal >> $fname
         echo "\hline" >> $fname
-        egrep "Latex$numtbl:|Latex:" tables$moviedirname.tex | sed 's/\([0-9]\)%/\1\\%/g' | sed 's/[HV]Latex'$numtbl': //g' | sed 's/[HV]Latex: //g' | sed 's/\$\&/$ \&/g'   | sed 's/A-94BfN10 /\\\\\nA-94BfN10 /g' | sed 's/A-94BfN40 /\\\\\nA-94BfN40 /g' | sed 's/A-94BtN10 /\\\\\nA-94BtN10 /g'  | sed 's/MB09\\_D /\\\\\nMB09\\_D /g'  | sed 's/} \&/}$ \&/g' | sed 's/} \\/}$  \\/g' | sed 's/nan/0/g' | column  -t >> $fname
+        egrep "Latex$numtbl:|Latex:" tables$moviedirname.tex | sed 's/\([0-9]\)%/\1\\%/g' | sed 's/[HV]Latex'$numtbl': //g' | sed 's/[HV]Latex: //g' | sed 's/\$\&/$ \&/g'   | sed 's/A94BpN10 /\\\\\nA94BpN10 /g' | sed 's/A-94BfN10 /\\\\\nA-94BfN10 /g' | sed 's/A-94BtN10 /\\\\\nA-94BtN10 /g'  | sed 's/MB09\\_D /\\\\\nMB09\\_D /g'  | sed 's/} \&/}$ \&/g' | sed 's/} \\/}$  \\/g' | sed 's/nan/0/g' | column  -t >> $fname
         echo "\hline" >> $fname
         echo "\hline" >> $fname
         echo "\end{tabular}" >> $fname

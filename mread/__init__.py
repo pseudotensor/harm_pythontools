@@ -134,6 +134,7 @@ def roundto3foreta(x):
     #y=y.replace('e+02',00
     z=float(y)
     # don't resolve better than 1%, so zero-out such small values since overall not significant digits
+    #if np.fabs(z)<0.01:
     if np.fabs(z)<0.1:
         z=0
     return z
@@ -608,13 +609,16 @@ def getdefaulttimes():
     elif modelname=="thickdisk13":
         defaultfti=9000
         defaultftf=1e5
-    elif modelname=="run.liker2butbeta40":
+    elif modelname=="run.like8":
         defaultfti=8000
         defaultftf=1e5
     elif modelname=="thickdiskrr2":
         defaultfti=8000
         defaultftf=1e5
-    elif modelname=="run.like8":
+    elif modelname=="run.liker2butbeta40":
+        defaultfti=8000
+        defaultftf=1e5
+    elif modelname=="run.liker2":
         defaultfti=8000
         defaultftf=1e5
     elif modelname=="thickdisk16":
@@ -633,9 +637,6 @@ def getdefaulttimes():
         defaultfti=8000
         defaultftf=1e5
     elif modelname=="thickdiskr2":
-        defaultfti=8000
-        defaultftf=1e5
-    elif modelname=="run.liker2":
         defaultfti=8000
         defaultftf=1e5
     elif modelname=="thickdisk9":
@@ -5165,15 +5166,18 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     elif modelname=="thickdisk13":
         fieldtype="PoloidalFlip"
         truemodelname="A94BfN40\_C4"
-    elif modelname=="run.liker2butbeta40":
-        fieldtype="PoloidalFlip"
-        truemodelname="A-94BfN10\_C1"
-    elif modelname=="thickdiskrr2":
-        fieldtype="PoloidalFlip"
-        truemodelname="A-94BfN10"
     elif modelname=="run.like8":
         fieldtype="PoloidalFlip"
         truemodelname="A94BfN40\_C5"
+    elif modelname=="thickdiskrr2":
+        fieldtype="PoloidalFlip"
+        truemodelname="A-94BfN10"
+    elif modelname=="run.liker2butbeta40":
+        fieldtype="PoloidalFlip"
+        truemodelname="A-94BfN10\_C1a"
+    elif modelname=="run.liker2":
+        fieldtype="PoloidalFlip"
+        truemodelname="A-94BfN40\_C1b"
     elif modelname=="thickdisk16":
         fieldtype="PoloidalFlip"
         truemodelname="A-5BfN10"
@@ -5192,9 +5196,6 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     elif modelname=="thickdiskr2":
         fieldtype="PoloidalFlip"
         truemodelname="A94BfN10\_R1"
-    elif modelname=="run.liker2":
-        fieldtype="PoloidalFlip"
-        truemodelname="A-94BfN40"
     elif modelname=="thickdisk9":
         fieldtype="Poloidal"
         truemodelname="A94BpN10"
@@ -5567,6 +5568,16 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     feqtotextremaval=feqtotextrema[1]
     print("feqtotextrema at t=0: numextrema=%d" % (numextrema) )
     print(feqtotextrema)
+    #
+    # model overrides for smallish \Psi at larger radii in Sasha's model
+    if modelname=="runlocaldipole3dfiducial":
+        # 0 and real value
+        numextrema=2
+        #
+    elif modelname=="sasha99":
+        # 0 and real value
+        numextrema=2
+        #
     #
     # also get final extrema
     feqtotextremafinal=extrema(feqtot[-1,:],withendf=True)
