@@ -4269,25 +4269,39 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         lftf = 15695.
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_betax0.5_0_0_0":
         print( "Using a = 0.9 (rtf2_15r34.1_betax0.5_0_0_0) settings")
+        # Dt = np.array([24400.-22382.7667797495,
+        #                22300.-19989.7763978112,
+        #                19900.-19551.4693631323,
+        #                19500.-17262.4788610232,
+        #                17200.-14969.7954456044,
+        #                14900.-12645.0462217411,
+        #                12600.-10447.0306188678,
+        #                10400.-10000.,
+        #              -(10400.-10000.)])
+        # Dno = np.array([244,
+        #                 223,
+        #                 199,
+        #                 195,
+        #                 172,
+        #                 149,
+        #                 126,
+        #                 104,
+        #                 100])
+        # lfti = 10000.
+        # lftf = 50000.
         Dt = np.array([24400.-22382.7667797495,
                        22300.-19989.7763978112,
                        19900.-19551.4693631323,
                        19500.-17262.4788610232,
-                       17200.-14969.7954456044,
-                       14900.-12645.0462217411,
-                       12600.-10447.0306188678,
-                       10400.-10000.,
-                     -(10400.-10000.)])
+                       17200.-15000.,
+                     -(17200.-15000.)])
         Dno = np.array([244,
                         223,
                         199,
                         195,
                         172,
-                        149,
-                        126,
-                        104,
-                        100])
-        lfti = 10000.
+                        150])
+        lfti = 15000.
         lftf = 50000.
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_betax2_0_0_0":
         print( "Using a = 0.9 (rtf2_15r34.1_betax2_0_0_0) settings")
@@ -4996,6 +5010,16 @@ def plotpowers(fname,hor=0,format=2):
         # plt.plot(alist,1/(y/np.max(y)),'o')
         # plt.plot(mya,Risco(mya)**(1./2.)*0.9) 
         # plt.ylim(ymin=0)
+    if format == 2:
+        plt.figure(0)
+        plt.clf()
+        cond=sparlist<-1e10
+        plt.plot(alist,sparlist,'o')
+        plt.ylim(-10,10)
+        plt.grid()
+        plt.ylabel(r"$s = (F_L - 2 a F_E)/F_M$, spin-up function", fontsize=20)
+        plt.xlabel(r"$a$",fontsize=20)
+        print zip(alist,sparlist)
     #
     plt.figure(1, figsize=(6,5.8),dpi=200)
     plt.clf()
@@ -5052,7 +5076,7 @@ def plotpowers(fname,hor=0,format=2):
     plt.plot(alist,100*etawindlist,'bv',label=r'$\eta_{\rm wind}$')
     plt.plot(myspina6,100*fac*myeta6,'k-',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$' )
     plt.plot(myspina6,0.9*100*fac*myeta6,'k--',label=r'$0.9\eta_{\rm BZ6}(\phi_{\rm fit})$' )
-    plt.ylim(0.0001,150)
+    plt.ylim(0.0001,160)
     plt.grid()
     plt.legend(ncol=2,loc='upper center')
     plt.xlabel(r"$a$",fontsize='x-large')
