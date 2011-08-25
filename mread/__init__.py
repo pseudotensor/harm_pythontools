@@ -4638,14 +4638,15 @@ def computeeta(start_t=8000,end_t=1e5,numintervals=8,doreload=1):
     a_eta = np.zeros_like(a_t)
     a_Fm = np.zeros_like(a_t)
     a_Fe = np.zeros_like(a_t)
+    a_Fl = np.zeros_like(a_t)
     for (i,t_i) in enumerate(a_t):
         if i == 0: 
             doreload_local = doreload
         else: 
             doreload_local = 0
-        a_eta[i],a_Fm[i],a_Fe[i] = takeoutfloors(doreload=doreload_local,fti=t_i,ftf=t_i+t_step,isinteractive=0)
+        a_eta[i],a_Fm[i],a_Fe[i],a_Fl[i] = takeoutfloors(doreload=doreload_local,fti=t_i,ftf=t_i+t_step,isinteractive=0)
     print("Efficiencies:")    
-    print zip(a_eta,a_Fm,a_Fe)
+    print zip(a_eta,a_Fm,a_Fe,a_Fl)
     print( "Average efficiency = %g" % a_eta.mean() ) 
     print( "Stdev eta: %g" % a_eta.std() )
     
