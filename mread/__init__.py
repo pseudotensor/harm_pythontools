@@ -44,53 +44,54 @@ import re
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
 
-def extrema(x, max = True, min = True, strict = False, withend = False):
-	"""
-	This function will index the extrema of a given array x.
-	
-	Options:
-		max		If true, will index maxima
-		min		If true, will index minima
-		strict		If true, will not index changes to zero gradient
-		withend	If true, always include x[0] and x[-1]
-	
-	This function will return a tuple of extrema indexies and values
-	"""
-	
-	# This is the gradient
-	from numpy import zeros
-	dx = zeros(len(x))
-	from numpy import diff
-	dx[1:] = diff(x)
-	dx[0] = dx[1]
-	
-	# Clean up the gradient in order to pick out any change of sign
-	from numpy import sign
-	dx = sign(dx)
-	
-	# define the threshold for whether to pick out changes to zero gradient
-	threshold = 0
-	if strict:
-		threshold = 1
-		
-	# Second order diff to pick out the spikes
-	d2x = diff(dx)
-	
-	if max and min:
-		d2x = abs(d2x)
-	elif max:
-		d2x = -d2x
-	
-	# Take care of the two ends
-	if withend:
-		d2x[0] = 2
-		d2x[-1] = 2
-	
-	# Sift out the list of extremas
-	from numpy import nonzero
-	ind = nonzero(d2x > threshold)[0]
-	
-	return ind, x[ind]
+def extrema(x, max = True, min = True, strict = False, withendi = False, withendf = False):
+    """
+    This function will index the extrema of a given array x.
+    
+    Options:
+        max        If true, will index maxima
+        min        If true, will index minima
+        strict        If true, will not index changes to zero gradient
+        withend(i/f) If true, always include x[0] and x[-1]
+    
+    This function will return a tuple of extrema indexies and values
+    """
+    
+    # This is the gradient
+    from numpy import zeros
+    dx = zeros(len(x))
+    from numpy import diff
+    dx[1:] = diff(x)
+    dx[0] = dx[1]
+    
+    # Clean up the gradient in order to pick out any change of sign
+    from numpy import sign
+    dx = sign(dx)
+    
+    # define the threshold for whether to pick out changes to zero gradient
+    threshold = 0
+    if strict:
+        threshold = 1
+        
+    # Second order diff to pick out the spikes
+    d2x = diff(dx)
+    
+    if max and min:
+        d2x = abs(d2x)
+    elif max:
+        d2x = -d2x
+    
+    # Take care of the two ends
+    if withendi:
+        d2x[0] = 2
+    if withendf:
+        d2x[-1] = 2
+    
+    # Sift out the list of extremas
+    from numpy import nonzero
+    ind = nonzero(d2x > threshold)[0]
+    
+    return ind, x[ind]
 
 
 # sign function
@@ -116,6 +117,25 @@ def roundto3(x):
     y="%.*e" % (3-1, x)
     #y=y.replace('e+02',00
     z=float(y)
+    return z
+
+def roundto3forl(x):
+    y="%.*e" % (3-1, x)
+    #y=y.replace('e+02',00
+    z=float(y)
+    # don't resolve better than 1%, so zero-out such small values since overall not significant digits
+    if np.fabs(z)<0.01:
+        z=0
+    return z
+
+
+def roundto3foreta(x):
+    y="%.*e" % (3-1, x)
+    #y=y.replace('e+02',00
+    z=float(y)
+    # don't resolve better than 1%, so zero-out such small values since overall not significant digits
+    if np.fabs(z)<0.1:
+        z=0
     return z
 
 
@@ -567,6 +587,92 @@ def findroot1d( f, x, isleft=True, nbnd = 1, fallback = 0, fallbackval = 0 ):
     #    raise( ValueError("ans = %g out of bounds, (%g,%g)" % (ans,x[i0-dir],x[i0])) )
     return( ans )
 
+
+# get averaging times if know the model type
+def getdefaulttimes():
+    #
+    #defaultftf=1e5
+    # not sure how thickdisk5 went further than 13000
+    if modelname=="thickdisk7":
+        defaultfti=8000
+        defaultftf=1e5
+    elif modelname=="thickdisk8":
+        defaultfti=8000
+        defaultftf=11000
+    elif modelname=="thickdisk11":
+        defaultfti=8000
+        defaultftf=12000
+    elif modelname=="thickdisk12":
+        defaultfti=8000
+        defaultftf=1e5
+    elif modelname=="thickdisk13":
+        defaultfti=9000
+        defaultftf=1e5
+    elif modelname=="run.liker2butbeta40":
+        defaultfti=8000
+        defaultftf=1e5
+    elif modelname=="thickdiskrr2":
+        defaultfti=8000
+        defaultftf=1e5
+    elif modelname=="run.like8":
+        defaultfti=8000
+        defaultftf=1e5
+    elif modelname=="thickdisk16":
+        defaultfti=8000
+        defaultftf=1e5
+    elif modelname=="thickdisk5":
+        defaultfti=8000
+        defaultftf=13000
+    elif modelname=="thickdisk14":
+        defaultfti=8000
+        defaultftf=1e5
+    elif modelname=="thickdiskr1":
+        defaultfti=8000
+        defaultftf=1e5
+    elif modelname=="run.liker1":
+        defaultfti=8000
+        defaultftf=1e5
+    elif modelname=="thickdiskr2":
+        defaultfti=8000
+        defaultftf=1e5
+    elif modelname=="run.liker2":
+        defaultfti=8000
+        defaultftf=1e5
+    elif modelname=="thickdisk9":
+        defaultfti=8000
+        defaultftf=1e5
+    elif modelname=="thickdiskr3":
+        defaultfti=25000
+        defaultftf=1e5
+    elif modelname=="thickdisk17":
+        defaultfti=25000
+        defaultftf=1e5
+    elif modelname=="thickdisk10":
+        defaultfti=25000
+        defaultftf=1e5
+    elif modelname=="thickdisk15":
+        defaultfti=25000
+        defaultftf=1e5
+    elif modelname=="thickdisk2":
+        defaultfti=25000
+        defaultftf=1e5
+    elif modelname=="thickdisk3":
+        defaultfti=25000
+        defaultftf=1e5
+    elif modelname=="runlocaldipole3dfiducial":
+        defaultfti=1500
+        defaultftf=1e5
+    elif modelname=="sasha99":
+        defaultfti=8000
+        defaultftf=1e5
+    else:
+        defaultfti=1000
+        defaultftf=1e5
+    #
+    return defaultfti,defaultftf
+
+
+
 def plot2davg(dosq=True,whichplot=-1):
     global eout1, eout2, eout, avg_aphi,avg_aphi2,powjetwind,powjet,jminjet,jmaxjet,jminwind,jmaxwind,mymu,maxaphibh
     #use ratio of averages since more stable definition:
@@ -583,12 +689,7 @@ def plot2davg(dosq=True,whichplot=-1):
     rhor=1+(1-a**2)**0.5
     ihor=iofr(rhor)
     #
-    if modelname=="runlocaldipole3dfiducial":
-	    defaultfti=2000
-	    defaultftf=1e5
-    else:
-	    defaultfti=8000
-	    defaultftf=1e5
+    defaultfti,defaultftf=getdefaulttimes()
     #
     qtymem=getqtyvstime(ihor,0.2)
     if avg_ts[0] != 0:
@@ -1051,9 +1152,9 @@ def Qmri_simple(which=1,hoverrwhich=None,weak=None):
         #
     #
     if weak==1:
-	    denfactor=(rho)**(1.0)
+        denfactor=(rho)**(1.0)
     else:
-	    denfactor=(rho*bsq)**(0.5)
+        denfactor=(rho*bsq)**(0.5)
     #
     # also weight with rho**2 so divisor on va2sq doesn't drop out.
     # so weight is where both rho and vau2 are large
@@ -1062,7 +1163,7 @@ def Qmri_simple(which=1,hoverrwhich=None,weak=None):
     dn=(gdet*denfactor*which).sum(axis=1)
     dnmin=np.min(dn)
     if dnmin==0:
-	    print("Problem with dn for res")
+        print("Problem with dn for res")
     qmri2d= (up/(dn+tiny))**1.0
     norm3d=np.empty((nx,ny,nz),dtype=rho.dtype)
     qmri3d=np.empty((nx,ny,nz),dtype=rho.dtype)
@@ -1075,7 +1176,7 @@ def Qmri_simple(which=1,hoverrwhich=None,weak=None):
     dn=(gdet*denfactor*which).sum(axis=1)
     dnmin=np.min(dn)
     if dnmin==0:
-	    print("Problem with dn for ires2")
+        print("Problem with dn for ires2")
     iq2mri2d= (up/(dn+tiny))**1.0
 
     #sumiq2mri2d=np.sum(iq2mri2d)
@@ -1168,7 +1269,7 @@ def gridcalc(hoverr):
     #
     return((drnorm,dHnorm,dPnorm))
 
-#	mdin=intangle(gdet*rho*uu[1],inflowonly=1,maxbsqorho=30)
+#    mdin=intangle(gdet*rho*uu[1],inflowonly=1,maxbsqorho=30)
 
 
 def ravel_index(pos, shape):
@@ -3204,11 +3305,11 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
     Returns a tuple (ts,fs,mdot,pjetem,pjettot): lists of times, horizon fluxes, and Mdot
     """
     if modelname=="runlocaldipole3dfiducial":
-	    horval=0.2
+        horval=0.2
     elif modelname=="sasha99":
-	    horval=0.2
+        horval=0.2
     else:
-	    horval=0.6
+        horval=0.6
     #
     if whichn != None and (whichi < 0 or whichi > whichn):
         print( "whichi = %d shoudl be >= 0 and < whichn = %d" % (whichi, whichn) )
@@ -3326,13 +3427,13 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         # number of wavelengths per disk scale height
         iq2mridisk[findex]=iq2mri3ddisk.sum(2).sum(1)/(ny*nz)
         normmridisk[findex]=normmri3ddisk.sum(2).sum(1)/(ny*nz)
-	#
+    #
         qmri3ddiskweak,iq2mri3ddiskweak,normmri3ddiskweak=Qmri_simple(weak=1,which=diskeqcondition)
         qmridiskweak[findex]=qmri3ddiskweak.sum(2).sum(1)/(ny*nz)
         # number of wavelengths per disk scale height
         iq2mridiskweak[findex]=iq2mri3ddiskweak.sum(2).sum(1)/(ny*nz)
         normmridiskweak[findex]=normmri3ddiskweak.sum(2).sum(1)/(ny*nz)
-	#
+    #
         diskaltcondition=(bsq/rho<1.0)
         betamin[findex,0],betaavg[findex,0],betaratofavg[findex,0],betaratofmax[findex,0]=betascalc(which=diskaltcondition)
         #
@@ -3441,7 +3542,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         md10[findex]=intangle(-gdet*rho*uu[1],minbsqorho=10)
         md20[findex]=intangle(-gdet*rho*uu[1],minbsqorho=20)
         md30[findex]=intangle(-gdet*rho*uu[1],minbsqorho=30)
-	    # use 10 for jet and wind since at larger radii jet has lower bsqorho
+        # use 10 for jet and wind since at larger radii jet has lower bsqorho
         # don't include maxbeta=3 since outflows from disk can have larger beta
         windmaxbeta=1E30
         mdwind[findex]=intangle(gdet*rho*uu[1],mumax=1,maxbeta=windmaxbeta,maxbsqorho=10)
@@ -3592,173 +3693,173 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         #
         #Bob's 1D quantities
         if dobob==1:
-                dVF=_dx1*_dx2*_dx3
-                dVA=_dx2*_dx3
-                Dt=1
-                TT=0
-                RR=1
-                TH=2
-                PH=3
-        	qtymem[i+0,findex]=intangle(Dt*dVF*gdet*rho,**keywords2hor)
-        	qtymem[i+1,findex]=intangle(Dt*dVF*gdet*rho*rho,**keywords2hor)
-        	qtymem[i+2,findex]=intangle(Dt*dVF*gdet*rho*ug,**keywords2hor)
-        	qtymem[i+3,findex]=intangle(Dt*dVF*gdet*rho*bsq,**keywords2hor)
+            dVF=_dx1*_dx2*_dx3
+            dVA=_dx2*_dx3
+            Dt=1
+            TT=0
+            RR=1
+            TH=2
+            PH=3
+            qtymem[i+0,findex]=intangle(Dt*dVF*gdet*rho,**keywords2hor)
+            qtymem[i+1,findex]=intangle(Dt*dVF*gdet*rho*rho,**keywords2hor)
+            qtymem[i+2,findex]=intangle(Dt*dVF*gdet*rho*ug,**keywords2hor)
+            qtymem[i+3,findex]=intangle(Dt*dVF*gdet*rho*bsq,**keywords2hor)
         
-        	qtymem[i+4,findex]=intangle(Dt*dVF*gdet*rho*uu[1],**keywords2hor) #pr[2]
-        	qtymem[i+5,findex]=intangle(Dt*dVF*gdet*rho*uu[2],**keywords2hor) #pr[3]
-        	qtymem[i+6,findex]=intangle(Dt*dVF*gdet*rho*uu[3],**keywords2hor) #pr[4]
+            qtymem[i+4,findex]=intangle(Dt*dVF*gdet*rho*uu[1],**keywords2hor) #pr[2]
+            qtymem[i+5,findex]=intangle(Dt*dVF*gdet*rho*uu[2],**keywords2hor) #pr[3]
+            qtymem[i+6,findex]=intangle(Dt*dVF*gdet*rho*uu[3],**keywords2hor) #pr[4]
         
-        	qtymem[i+7,findex]=intangle(Dt*dVF*gdet*rho*B[1],**keywords2hor) #pr[5]
-        	qtymem[i+8,findex]=intangle(Dt*dVF*gdet*rho*B[2],**keywords2hor) #pr[6]
-        	qtymem[i+9,findex]=intangle(Dt*dVF*gdet*rho*B[3],**keywords2hor) #pr[7]
+            qtymem[i+7,findex]=intangle(Dt*dVF*gdet*rho*B[1],**keywords2hor) #pr[5]
+            qtymem[i+8,findex]=intangle(Dt*dVF*gdet*rho*B[2],**keywords2hor) #pr[6]
+            qtymem[i+9,findex]=intangle(Dt*dVF*gdet*rho*B[3],**keywords2hor) #pr[7]
         
-        	#rho * u * u
+            #rho * u * u
         
-        	qtymem[i+10,findex]=intangle(Dt*dVA*gdet*rho*(ud[TT])*(ud[TT]),**keywords2hor)
-        	qtymem[i+11,findex]=intangle(Dt*dVA*gdet*rho*(ud[TT])*(ud[RR]),**keywords2hor)
-        	qtymem[i+12,findex]=intangle(Dt*dVA*gdet*rho*(ud[TT])*(ud[TH]),**keywords2hor)
-        	qtymem[i+13,findex]=intangle(Dt*dVA*gdet*rho*(ud[TT])*(ud[PH]),**keywords2hor)
-        	qtymem[i+14,findex]=intangle(Dt*dVA*gdet*rho*(ud[RR])*(ud[RR]),**keywords2hor)
-        	qtymem[i+15,findex]=intangle(Dt*dVA*gdet*rho*(ud[RR])*(ud[TH]),**keywords2hor)
-        	qtymem[i+16,findex]=intangle(Dt*dVA*gdet*rho*(ud[RR])*(ud[PH]),**keywords2hor)
-        	qtymem[i+17,findex]=intangle(Dt*dVA*gdet*rho*(ud[TH])*(ud[TH]),**keywords2hor)
-        	qtymem[i+18,findex]=intangle(Dt*dVA*gdet*rho*(ud[TH])*(ud[PH]),**keywords2hor)
-        	qtymem[i+19,findex]=intangle(Dt*dVA*gdet*rho*(ud[PH])*(ud[PH]),**keywords2hor)
+            qtymem[i+10,findex]=intangle(Dt*dVA*gdet*rho*(ud[TT])*(ud[TT]),**keywords2hor)
+            qtymem[i+11,findex]=intangle(Dt*dVA*gdet*rho*(ud[TT])*(ud[RR]),**keywords2hor)
+            qtymem[i+12,findex]=intangle(Dt*dVA*gdet*rho*(ud[TT])*(ud[TH]),**keywords2hor)
+            qtymem[i+13,findex]=intangle(Dt*dVA*gdet*rho*(ud[TT])*(ud[PH]),**keywords2hor)
+            qtymem[i+14,findex]=intangle(Dt*dVA*gdet*rho*(ud[RR])*(ud[RR]),**keywords2hor)
+            qtymem[i+15,findex]=intangle(Dt*dVA*gdet*rho*(ud[RR])*(ud[TH]),**keywords2hor)
+            qtymem[i+16,findex]=intangle(Dt*dVA*gdet*rho*(ud[RR])*(ud[PH]),**keywords2hor)
+            qtymem[i+17,findex]=intangle(Dt*dVA*gdet*rho*(ud[TH])*(ud[TH]),**keywords2hor)
+            qtymem[i+18,findex]=intangle(Dt*dVA*gdet*rho*(ud[TH])*(ud[PH]),**keywords2hor)
+            qtymem[i+19,findex]=intangle(Dt*dVA*gdet*rho*(ud[PH])*(ud[PH]),**keywords2hor)
         
-        	qtymem[i+20,findex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(ud[TT]),**keywords2hor)
-        	qtymem[i+21,findex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(ud[RR]),**keywords2hor)
-        	qtymem[i+22,findex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(ud[TH]),**keywords2hor)
-        	qtymem[i+23,findex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(ud[PH]),**keywords2hor)
-        	qtymem[i+24,findex]=intangle(Dt*dVA*gdet*rho*(uu[RR])*(ud[RR]),**keywords2hor)
-        	qtymem[i+25,findex]=intangle(Dt*dVA*gdet*rho*(uu[RR])*(ud[TH]),**keywords2hor)
-        	qtymem[i+26,findex]=intangle(Dt*dVA*gdet*rho*(uu[RR])*(ud[PH]),**keywords2hor)
-        	qtymem[i+27,findex]=intangle(Dt*dVA*gdet*rho*(uu[TH])*(ud[TH]),**keywords2hor)
-        	qtymem[i+28,findex]=intangle(Dt*dVA*gdet*rho*(uu[TH])*(ud[PH]),**keywords2hor)
-        	qtymem[i+29,findex]=intangle(Dt*dVA*gdet*rho*(uu[PH])*(ud[PH]),**keywords2hor)
+            qtymem[i+20,findex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(ud[TT]),**keywords2hor)
+            qtymem[i+21,findex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(ud[RR]),**keywords2hor)
+            qtymem[i+22,findex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(ud[TH]),**keywords2hor)
+            qtymem[i+23,findex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(ud[PH]),**keywords2hor)
+            qtymem[i+24,findex]=intangle(Dt*dVA*gdet*rho*(uu[RR])*(ud[RR]),**keywords2hor)
+            qtymem[i+25,findex]=intangle(Dt*dVA*gdet*rho*(uu[RR])*(ud[TH]),**keywords2hor)
+            qtymem[i+26,findex]=intangle(Dt*dVA*gdet*rho*(uu[RR])*(ud[PH]),**keywords2hor)
+            qtymem[i+27,findex]=intangle(Dt*dVA*gdet*rho*(uu[TH])*(ud[TH]),**keywords2hor)
+            qtymem[i+28,findex]=intangle(Dt*dVA*gdet*rho*(uu[TH])*(ud[PH]),**keywords2hor)
+            qtymem[i+29,findex]=intangle(Dt*dVA*gdet*rho*(uu[PH])*(ud[PH]),**keywords2hor)
         
-        	qtymem[i+30,findex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(uu[TT]),**keywords2hor)
-        	qtymem[i+31,findex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(uu[RR]),**keywords2hor)
-        	qtymem[i+32,findex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(uu[TH]),**keywords2hor)
-        	qtymem[i+33,findex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(uu[PH]),**keywords2hor)
-        	qtymem[i+34,findex]=intangle(Dt*dVA*gdet*rho*(uu[RR])*(uu[RR]),**keywords2hor)
-        	qtymem[i+35,findex]=intangle(Dt*dVA*gdet*rho*(uu[RR])*(uu[TH]),**keywords2hor)
-        	qtymem[i+36,findex]=intangle(Dt*dVA*gdet*rho*(uu[RR])*(uu[PH]),**keywords2hor)
-        	qtymem[i+37,findex]=intangle(Dt*dVA*gdet*rho*(uu[TH])*(uu[TH]),**keywords2hor)
-        	qtymem[i+38,findex]=intangle(Dt*dVA*gdet*rho*(uu[TH])*(uu[PH]),**keywords2hor)
-        	qtymem[i+39,findex]=intangle(Dt*dVA*gdet*rho*(uu[PH])*(uu[PH]),**keywords2hor)
-        
-        
-        	#UU * u * u
-        
-        	qtymem[i+40,findex]=intangle(Dt*dVA*gdet*ug*(ud[TT])*(ud[TT]),**keywords2hor)
-        	qtymem[i+41,findex]=intangle(Dt*dVA*gdet*ug*(ud[TT])*(ud[RR]),**keywords2hor)
-        	qtymem[i+42,findex]=intangle(Dt*dVA*gdet*ug*(ud[TT])*(ud[TH]),**keywords2hor)
-        	qtymem[i+43,findex]=intangle(Dt*dVA*gdet*ug*(ud[TT])*(ud[PH]),**keywords2hor)
-        	qtymem[i+44,findex]=intangle(Dt*dVA*gdet*ug*(ud[RR])*(ud[RR]),**keywords2hor)
-        	qtymem[i+45,findex]=intangle(Dt*dVA*gdet*ug*(ud[RR])*(ud[TH]),**keywords2hor)
-        	qtymem[i+46,findex]=intangle(Dt*dVA*gdet*ug*(ud[RR])*(ud[PH]),**keywords2hor)
-        	qtymem[i+47,findex]=intangle(Dt*dVA*gdet*ug*(ud[TH])*(ud[TH]),**keywords2hor)
-        	qtymem[i+48,findex]=intangle(Dt*dVA*gdet*ug*(ud[TH])*(ud[PH]),**keywords2hor)
-        	qtymem[i+49,findex]=intangle(Dt*dVA*gdet*ug*(ud[PH])*(ud[PH]),**keywords2hor)
-        
-        	qtymem[i+50,findex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(ud[TT]),**keywords2hor)
-        	qtymem[i+51,findex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(ud[RR]),**keywords2hor)
-        	qtymem[i+52,findex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(ud[TH]),**keywords2hor)
-        	qtymem[i+53,findex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(ud[PH]),**keywords2hor)
-        	qtymem[i+54,findex]=intangle(Dt*dVA*gdet*ug*(uu[RR])*(ud[RR]),**keywords2hor)
-        	qtymem[i+55,findex]=intangle(Dt*dVA*gdet*ug*(uu[RR])*(ud[TH]),**keywords2hor)
-        	qtymem[i+56,findex]=intangle(Dt*dVA*gdet*ug*(uu[RR])*(ud[PH]),**keywords2hor)
-        	qtymem[i+57,findex]=intangle(Dt*dVA*gdet*ug*(uu[TH])*(ud[TH]),**keywords2hor)
-        	qtymem[i+58,findex]=intangle(Dt*dVA*gdet*ug*(uu[TH])*(ud[PH]),**keywords2hor)
-        	qtymem[i+59,findex]=intangle(Dt*dVA*gdet*ug*(uu[PH])*(ud[PH]),**keywords2hor)
-        
-        	qtymem[i+60,findex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(uu[TT]),**keywords2hor)
-        	qtymem[i+61,findex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(uu[RR]),**keywords2hor)
-        	qtymem[i+62,findex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(uu[TH]),**keywords2hor)
-        	qtymem[i+63,findex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(uu[PH]),**keywords2hor)
-        	qtymem[i+64,findex]=intangle(Dt*dVA*gdet*ug*(uu[RR])*(uu[RR]),**keywords2hor)
-        	qtymem[i+65,findex]=intangle(Dt*dVA*gdet*ug*(uu[RR])*(uu[TH]),**keywords2hor)
-        	qtymem[i+66,findex]=intangle(Dt*dVA*gdet*ug*(uu[RR])*(uu[PH]),**keywords2hor)
-        	qtymem[i+67,findex]=intangle(Dt*dVA*gdet*ug*(uu[TH])*(uu[TH]),**keywords2hor)
-        	qtymem[i+68,findex]=intangle(Dt*dVA*gdet*ug*(uu[TH])*(uu[PH]),**keywords2hor)
-        	qtymem[i+69,findex]=intangle(Dt*dVA*gdet*ug*(uu[PH])*(uu[PH]),**keywords2hor)
-        
-        	#bsq * u * u
-        
-        	qtymem[i+70,findex]=intangle(Dt*dVA*gdet*bsq*(ud[TT])*(ud[TT]),**keywords2hor)
-        	qtymem[i+71,findex]=intangle(Dt*dVA*gdet*bsq*(ud[TT])*(ud[RR]),**keywords2hor)
-        	qtymem[i+72,findex]=intangle(Dt*dVA*gdet*bsq*(ud[TT])*(ud[TH]),**keywords2hor)
-        	qtymem[i+73,findex]=intangle(Dt*dVA*gdet*bsq*(ud[TT])*(ud[PH]),**keywords2hor)
-        	qtymem[i+74,findex]=intangle(Dt*dVA*gdet*bsq*(ud[RR])*(ud[RR]),**keywords2hor)
-        	qtymem[i+75,findex]=intangle(Dt*dVA*gdet*bsq*(ud[RR])*(ud[TH]),**keywords2hor)
-        	qtymem[i+76,findex]=intangle(Dt*dVA*gdet*bsq*(ud[RR])*(ud[PH]),**keywords2hor)
-        	qtymem[i+77,findex]=intangle(Dt*dVA*gdet*bsq*(ud[TH])*(ud[TH]),**keywords2hor)
-        	qtymem[i+78,findex]=intangle(Dt*dVA*gdet*bsq*(ud[TH])*(ud[PH]),**keywords2hor)
-        	qtymem[i+79,findex]=intangle(Dt*dVA*gdet*bsq*(ud[PH])*(ud[PH]),**keywords2hor)
-        
-        	qtymem[i+80,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(ud[TT]),**keywords2hor)
-        	qtymem[i+81,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(ud[RR]),**keywords2hor)
-        	qtymem[i+82,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(ud[TH]),**keywords2hor)
-        	qtymem[i+83,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(ud[PH]),**keywords2hor)
-        	qtymem[i+84,findex]=intangle(Dt*dVA*gdet*bsq*(uu[RR])*(ud[RR]),**keywords2hor)
-        	qtymem[i+85,findex]=intangle(Dt*dVA*gdet*bsq*(uu[RR])*(ud[TH]),**keywords2hor)
-        	qtymem[i+86,findex]=intangle(Dt*dVA*gdet*bsq*(uu[RR])*(ud[PH]),**keywords2hor)
-        	qtymem[i+87,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TH])*(ud[TH]),**keywords2hor)
-        	qtymem[i+88,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TH])*(ud[PH]),**keywords2hor)
-        	qtymem[i+89,findex]=intangle(Dt*dVA*gdet*bsq*(uu[PH])*(ud[PH]),**keywords2hor)
-        
-        	qtymem[i+90,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(uu[TT]),**keywords2hor)
-        	qtymem[i+91,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(uu[RR]),**keywords2hor)
-        	qtymem[i+92,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(uu[TH]),**keywords2hor)
-        	qtymem[i+93,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(uu[PH]),**keywords2hor)
-        	qtymem[i+94,findex]=intangle(Dt*dVA*gdet*bsq*(uu[RR])*(uu[RR]),**keywords2hor)
-        	qtymem[i+95,findex]=intangle(Dt*dVA*gdet*bsq*(uu[RR])*(uu[TH]),**keywords2hor)
-        	qtymem[i+96,findex]=intangle(Dt*dVA*gdet*bsq*(uu[RR])*(uu[PH]),**keywords2hor)
-        	qtymem[i+97,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TH])*(uu[TH]),**keywords2hor)
-        	qtymem[i+98,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TH])*(uu[PH]),**keywords2hor)
-        	qtymem[i+99,findex]=intangle(Dt*dVA*gdet*bsq*(uu[PH])*(uu[PH]),**keywords2hor)
-        
-        	# b * b
-        
-        	qtymem[i+100,findex]=intangle(Dt*dVA*gdet*(bd[TT])*(bd[TT]),**keywords2hor)
-        	qtymem[i+101,findex]=intangle(Dt*dVA*gdet*(bd[TT])*(bd[RR]),**keywords2hor)
-        	qtymem[i+102,findex]=intangle(Dt*dVA*gdet*(bd[TT])*(bd[TH]),**keywords2hor)
-        	qtymem[i+103,findex]=intangle(Dt*dVA*gdet*(bd[TT])*(bd[PH]),**keywords2hor)
-        	qtymem[i+104,findex]=intangle(Dt*dVA*gdet*(bd[RR])*(bd[RR]),**keywords2hor)
-        	qtymem[i+105,findex]=intangle(Dt*dVA*gdet*(bd[RR])*(bd[TH]),**keywords2hor)
-        	qtymem[i+106,findex]=intangle(Dt*dVA*gdet*(bd[RR])*(bd[PH]),**keywords2hor)
-        	qtymem[i+107,findex]=intangle(Dt*dVA*gdet*(bd[TH])*(bd[TH]),**keywords2hor)
-        	qtymem[i+108,findex]=intangle(Dt*dVA*gdet*(bd[TH])*(bd[PH]),**keywords2hor)
-        	qtymem[i+109,findex]=intangle(Dt*dVA*gdet*(bd[PH])*(bd[PH]),**keywords2hor)
-        
-        	qtymem[i+110,findex]=intangle(Dt*dVA*gdet*(bu[TT])*(bd[TT]),**keywords2hor)
-        	qtymem[i+111,findex]=intangle(Dt*dVA*gdet*(bu[TT])*(bd[RR]),**keywords2hor)
-        	qtymem[i+112,findex]=intangle(Dt*dVA*gdet*(bu[TT])*(bd[TH]),**keywords2hor)
-        	qtymem[i+113,findex]=intangle(Dt*dVA*gdet*(bu[TT])*(bd[PH]),**keywords2hor)
-        	qtymem[i+114,findex]=intangle(Dt*dVA*gdet*(bu[RR])*(bd[RR]),**keywords2hor)
-        	qtymem[i+115,findex]=intangle(Dt*dVA*gdet*(bu[RR])*(bd[TH]),**keywords2hor)
-        	qtymem[i+116,findex]=intangle(Dt*dVA*gdet*(bu[RR])*(bd[PH]),**keywords2hor)
-        	qtymem[i+117,findex]=intangle(Dt*dVA*gdet*(bu[TH])*(bd[TH]),**keywords2hor)
-        	qtymem[i+118,findex]=intangle(Dt*dVA*gdet*(bu[TH])*(bd[PH]),**keywords2hor)
-        	qtymem[i+119,findex]=intangle(Dt*dVA*gdet*(bu[PH])*(bd[PH]),**keywords2hor)
-        
-        	qtymem[i+120,findex]=intangle(Dt*dVA*gdet*(bu[TT])*(bu[TT]),**keywords2hor)
-        	qtymem[i+121,findex]=intangle(Dt*dVA*gdet*(bu[TT])*(bu[RR]),**keywords2hor)
-        	qtymem[i+122,findex]=intangle(Dt*dVA*gdet*(bu[TT])*(bu[TH]),**keywords2hor)
-        	qtymem[i+123,findex]=intangle(Dt*dVA*gdet*(bu[TT])*(bu[PH]),**keywords2hor)
-        	qtymem[i+124,findex]=intangle(Dt*dVA*gdet*(bu[RR])*(bu[RR]),**keywords2hor)
-        	qtymem[i+125,findex]=intangle(Dt*dVA*gdet*(bu[RR])*(bu[TH]),**keywords2hor)
-        	qtymem[i+126,findex]=intangle(Dt*dVA*gdet*(bu[RR])*(bu[PH]),**keywords2hor)
-        	qtymem[i+127,findex]=intangle(Dt*dVA*gdet*(bu[TH])*(bu[TH]),**keywords2hor)
-        	qtymem[i+128,findex]=intangle(Dt*dVA*gdet*(bu[TH])*(bu[PH]),**keywords2hor)
-        	qtymem[i+129,findex]=intangle(Dt*dVA*gdet*(bu[PH])*(bu[PH]),**keywords2hor)
+            qtymem[i+30,findex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(uu[TT]),**keywords2hor)
+            qtymem[i+31,findex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(uu[RR]),**keywords2hor)
+            qtymem[i+32,findex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(uu[TH]),**keywords2hor)
+            qtymem[i+33,findex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(uu[PH]),**keywords2hor)
+            qtymem[i+34,findex]=intangle(Dt*dVA*gdet*rho*(uu[RR])*(uu[RR]),**keywords2hor)
+            qtymem[i+35,findex]=intangle(Dt*dVA*gdet*rho*(uu[RR])*(uu[TH]),**keywords2hor)
+            qtymem[i+36,findex]=intangle(Dt*dVA*gdet*rho*(uu[RR])*(uu[PH]),**keywords2hor)
+            qtymem[i+37,findex]=intangle(Dt*dVA*gdet*rho*(uu[TH])*(uu[TH]),**keywords2hor)
+            qtymem[i+38,findex]=intangle(Dt*dVA*gdet*rho*(uu[TH])*(uu[PH]),**keywords2hor)
+            qtymem[i+39,findex]=intangle(Dt*dVA*gdet*rho*(uu[PH])*(uu[PH]),**keywords2hor)
         
         
-        	#mass flux
-        	qtymem[i+130,findex]=intangle(Dt*dVA*gdet*rho*(uu[TT]),**keywords2hor)
-        	qtymem[i+131,findex]=intangle(Dt*dVA*gdet*rho*(uu[RR]),**keywords2hor)
-        	qtymem[i+132,findex]=intangle(Dt*dVA*gdet*rho*(uu[TH]),**keywords2hor)
-        	qtymem[i+133,findex]=intangle(Dt*dVA*gdet*rho*(uu[PH]),**keywords2hor)
+            #UU * u * u
+        
+            qtymem[i+40,findex]=intangle(Dt*dVA*gdet*ug*(ud[TT])*(ud[TT]),**keywords2hor)
+            qtymem[i+41,findex]=intangle(Dt*dVA*gdet*ug*(ud[TT])*(ud[RR]),**keywords2hor)
+            qtymem[i+42,findex]=intangle(Dt*dVA*gdet*ug*(ud[TT])*(ud[TH]),**keywords2hor)
+            qtymem[i+43,findex]=intangle(Dt*dVA*gdet*ug*(ud[TT])*(ud[PH]),**keywords2hor)
+            qtymem[i+44,findex]=intangle(Dt*dVA*gdet*ug*(ud[RR])*(ud[RR]),**keywords2hor)
+            qtymem[i+45,findex]=intangle(Dt*dVA*gdet*ug*(ud[RR])*(ud[TH]),**keywords2hor)
+            qtymem[i+46,findex]=intangle(Dt*dVA*gdet*ug*(ud[RR])*(ud[PH]),**keywords2hor)
+            qtymem[i+47,findex]=intangle(Dt*dVA*gdet*ug*(ud[TH])*(ud[TH]),**keywords2hor)
+            qtymem[i+48,findex]=intangle(Dt*dVA*gdet*ug*(ud[TH])*(ud[PH]),**keywords2hor)
+            qtymem[i+49,findex]=intangle(Dt*dVA*gdet*ug*(ud[PH])*(ud[PH]),**keywords2hor)
+        
+            qtymem[i+50,findex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(ud[TT]),**keywords2hor)
+            qtymem[i+51,findex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(ud[RR]),**keywords2hor)
+            qtymem[i+52,findex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(ud[TH]),**keywords2hor)
+            qtymem[i+53,findex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(ud[PH]),**keywords2hor)
+            qtymem[i+54,findex]=intangle(Dt*dVA*gdet*ug*(uu[RR])*(ud[RR]),**keywords2hor)
+            qtymem[i+55,findex]=intangle(Dt*dVA*gdet*ug*(uu[RR])*(ud[TH]),**keywords2hor)
+            qtymem[i+56,findex]=intangle(Dt*dVA*gdet*ug*(uu[RR])*(ud[PH]),**keywords2hor)
+            qtymem[i+57,findex]=intangle(Dt*dVA*gdet*ug*(uu[TH])*(ud[TH]),**keywords2hor)
+            qtymem[i+58,findex]=intangle(Dt*dVA*gdet*ug*(uu[TH])*(ud[PH]),**keywords2hor)
+            qtymem[i+59,findex]=intangle(Dt*dVA*gdet*ug*(uu[PH])*(ud[PH]),**keywords2hor)
+        
+            qtymem[i+60,findex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(uu[TT]),**keywords2hor)
+            qtymem[i+61,findex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(uu[RR]),**keywords2hor)
+            qtymem[i+62,findex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(uu[TH]),**keywords2hor)
+            qtymem[i+63,findex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(uu[PH]),**keywords2hor)
+            qtymem[i+64,findex]=intangle(Dt*dVA*gdet*ug*(uu[RR])*(uu[RR]),**keywords2hor)
+            qtymem[i+65,findex]=intangle(Dt*dVA*gdet*ug*(uu[RR])*(uu[TH]),**keywords2hor)
+            qtymem[i+66,findex]=intangle(Dt*dVA*gdet*ug*(uu[RR])*(uu[PH]),**keywords2hor)
+            qtymem[i+67,findex]=intangle(Dt*dVA*gdet*ug*(uu[TH])*(uu[TH]),**keywords2hor)
+            qtymem[i+68,findex]=intangle(Dt*dVA*gdet*ug*(uu[TH])*(uu[PH]),**keywords2hor)
+            qtymem[i+69,findex]=intangle(Dt*dVA*gdet*ug*(uu[PH])*(uu[PH]),**keywords2hor)
+        
+            #bsq * u * u
+        
+            qtymem[i+70,findex]=intangle(Dt*dVA*gdet*bsq*(ud[TT])*(ud[TT]),**keywords2hor)
+            qtymem[i+71,findex]=intangle(Dt*dVA*gdet*bsq*(ud[TT])*(ud[RR]),**keywords2hor)
+            qtymem[i+72,findex]=intangle(Dt*dVA*gdet*bsq*(ud[TT])*(ud[TH]),**keywords2hor)
+            qtymem[i+73,findex]=intangle(Dt*dVA*gdet*bsq*(ud[TT])*(ud[PH]),**keywords2hor)
+            qtymem[i+74,findex]=intangle(Dt*dVA*gdet*bsq*(ud[RR])*(ud[RR]),**keywords2hor)
+            qtymem[i+75,findex]=intangle(Dt*dVA*gdet*bsq*(ud[RR])*(ud[TH]),**keywords2hor)
+            qtymem[i+76,findex]=intangle(Dt*dVA*gdet*bsq*(ud[RR])*(ud[PH]),**keywords2hor)
+            qtymem[i+77,findex]=intangle(Dt*dVA*gdet*bsq*(ud[TH])*(ud[TH]),**keywords2hor)
+            qtymem[i+78,findex]=intangle(Dt*dVA*gdet*bsq*(ud[TH])*(ud[PH]),**keywords2hor)
+            qtymem[i+79,findex]=intangle(Dt*dVA*gdet*bsq*(ud[PH])*(ud[PH]),**keywords2hor)
+        
+            qtymem[i+80,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(ud[TT]),**keywords2hor)
+            qtymem[i+81,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(ud[RR]),**keywords2hor)
+            qtymem[i+82,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(ud[TH]),**keywords2hor)
+            qtymem[i+83,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(ud[PH]),**keywords2hor)
+            qtymem[i+84,findex]=intangle(Dt*dVA*gdet*bsq*(uu[RR])*(ud[RR]),**keywords2hor)
+            qtymem[i+85,findex]=intangle(Dt*dVA*gdet*bsq*(uu[RR])*(ud[TH]),**keywords2hor)
+            qtymem[i+86,findex]=intangle(Dt*dVA*gdet*bsq*(uu[RR])*(ud[PH]),**keywords2hor)
+            qtymem[i+87,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TH])*(ud[TH]),**keywords2hor)
+            qtymem[i+88,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TH])*(ud[PH]),**keywords2hor)
+            qtymem[i+89,findex]=intangle(Dt*dVA*gdet*bsq*(uu[PH])*(ud[PH]),**keywords2hor)
+        
+            qtymem[i+90,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(uu[TT]),**keywords2hor)
+            qtymem[i+91,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(uu[RR]),**keywords2hor)
+            qtymem[i+92,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(uu[TH]),**keywords2hor)
+            qtymem[i+93,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(uu[PH]),**keywords2hor)
+            qtymem[i+94,findex]=intangle(Dt*dVA*gdet*bsq*(uu[RR])*(uu[RR]),**keywords2hor)
+            qtymem[i+95,findex]=intangle(Dt*dVA*gdet*bsq*(uu[RR])*(uu[TH]),**keywords2hor)
+            qtymem[i+96,findex]=intangle(Dt*dVA*gdet*bsq*(uu[RR])*(uu[PH]),**keywords2hor)
+            qtymem[i+97,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TH])*(uu[TH]),**keywords2hor)
+            qtymem[i+98,findex]=intangle(Dt*dVA*gdet*bsq*(uu[TH])*(uu[PH]),**keywords2hor)
+            qtymem[i+99,findex]=intangle(Dt*dVA*gdet*bsq*(uu[PH])*(uu[PH]),**keywords2hor)
+        
+            # b * b
+        
+            qtymem[i+100,findex]=intangle(Dt*dVA*gdet*(bd[TT])*(bd[TT]),**keywords2hor)
+            qtymem[i+101,findex]=intangle(Dt*dVA*gdet*(bd[TT])*(bd[RR]),**keywords2hor)
+            qtymem[i+102,findex]=intangle(Dt*dVA*gdet*(bd[TT])*(bd[TH]),**keywords2hor)
+            qtymem[i+103,findex]=intangle(Dt*dVA*gdet*(bd[TT])*(bd[PH]),**keywords2hor)
+            qtymem[i+104,findex]=intangle(Dt*dVA*gdet*(bd[RR])*(bd[RR]),**keywords2hor)
+            qtymem[i+105,findex]=intangle(Dt*dVA*gdet*(bd[RR])*(bd[TH]),**keywords2hor)
+            qtymem[i+106,findex]=intangle(Dt*dVA*gdet*(bd[RR])*(bd[PH]),**keywords2hor)
+            qtymem[i+107,findex]=intangle(Dt*dVA*gdet*(bd[TH])*(bd[TH]),**keywords2hor)
+            qtymem[i+108,findex]=intangle(Dt*dVA*gdet*(bd[TH])*(bd[PH]),**keywords2hor)
+            qtymem[i+109,findex]=intangle(Dt*dVA*gdet*(bd[PH])*(bd[PH]),**keywords2hor)
+        
+            qtymem[i+110,findex]=intangle(Dt*dVA*gdet*(bu[TT])*(bd[TT]),**keywords2hor)
+            qtymem[i+111,findex]=intangle(Dt*dVA*gdet*(bu[TT])*(bd[RR]),**keywords2hor)
+            qtymem[i+112,findex]=intangle(Dt*dVA*gdet*(bu[TT])*(bd[TH]),**keywords2hor)
+            qtymem[i+113,findex]=intangle(Dt*dVA*gdet*(bu[TT])*(bd[PH]),**keywords2hor)
+            qtymem[i+114,findex]=intangle(Dt*dVA*gdet*(bu[RR])*(bd[RR]),**keywords2hor)
+            qtymem[i+115,findex]=intangle(Dt*dVA*gdet*(bu[RR])*(bd[TH]),**keywords2hor)
+            qtymem[i+116,findex]=intangle(Dt*dVA*gdet*(bu[RR])*(bd[PH]),**keywords2hor)
+            qtymem[i+117,findex]=intangle(Dt*dVA*gdet*(bu[TH])*(bd[TH]),**keywords2hor)
+            qtymem[i+118,findex]=intangle(Dt*dVA*gdet*(bu[TH])*(bd[PH]),**keywords2hor)
+            qtymem[i+119,findex]=intangle(Dt*dVA*gdet*(bu[PH])*(bd[PH]),**keywords2hor)
+        
+            qtymem[i+120,findex]=intangle(Dt*dVA*gdet*(bu[TT])*(bu[TT]),**keywords2hor)
+            qtymem[i+121,findex]=intangle(Dt*dVA*gdet*(bu[TT])*(bu[RR]),**keywords2hor)
+            qtymem[i+122,findex]=intangle(Dt*dVA*gdet*(bu[TT])*(bu[TH]),**keywords2hor)
+            qtymem[i+123,findex]=intangle(Dt*dVA*gdet*(bu[TT])*(bu[PH]),**keywords2hor)
+            qtymem[i+124,findex]=intangle(Dt*dVA*gdet*(bu[RR])*(bu[RR]),**keywords2hor)
+            qtymem[i+125,findex]=intangle(Dt*dVA*gdet*(bu[RR])*(bu[TH]),**keywords2hor)
+            qtymem[i+126,findex]=intangle(Dt*dVA*gdet*(bu[RR])*(bu[PH]),**keywords2hor)
+            qtymem[i+127,findex]=intangle(Dt*dVA*gdet*(bu[TH])*(bu[TH]),**keywords2hor)
+            qtymem[i+128,findex]=intangle(Dt*dVA*gdet*(bu[TH])*(bu[PH]),**keywords2hor)
+            qtymem[i+129,findex]=intangle(Dt*dVA*gdet*(bu[PH])*(bu[PH]),**keywords2hor)
+        
+        
+            #mass flux
+            qtymem[i+130,findex]=intangle(Dt*dVA*gdet*rho*(uu[TT]),**keywords2hor)
+            qtymem[i+131,findex]=intangle(Dt*dVA*gdet*rho*(uu[RR]),**keywords2hor)
+            qtymem[i+132,findex]=intangle(Dt*dVA*gdet*rho*(uu[TH]),**keywords2hor)
+            qtymem[i+133,findex]=intangle(Dt*dVA*gdet*rho*(uu[PH]),**keywords2hor)
         #END BOB's QUANTITIES
     #
     #if os.path.isfile("lrho%04d.png" % findex):
@@ -3926,7 +4027,7 @@ def jetpowcalc(which=2,minbsqorho=None,mumin=None,mumax=None,maxbeta=None,maxbsq
         #
         # avoid disk component that might be unbound and moving out as transient or as part of outer part of disk
         #beta=((gam-1)*ug)*divideavoidinf(bsq*0.5)
-	    beta=((gam-1)*ug)/(1E-30 + bsq*0.5)
+        beta=((gam-1)*ug)/(1E-30 + bsq*0.5)
         if maxbeta is None:
             donothing0000temp=1
         else:
@@ -4108,14 +4209,9 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         ftf = gd1[3]
     else:
         dotavg=1
-	#
-	if modelname=="runlocaldipole3dfiducial":
-		defaultfti=2000
-		defaultftf=1e5
-	else:
-		defaultfti=8000
-		defaultftf=1e5
-	#
+        #
+        defaultfti,defaultftf=getdefaulttimes()
+        #
         iti = 3000
         itf = 4000
         fti = defaultfti
@@ -4252,12 +4348,12 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     if 0 and indices.shape[0]>0:
         istag=indices[0]
         rstag=r[istag,0,0]
-	if rstag>20:
-		rstag=20
-	# issue with out of bounds in iofr, so keep rstag outside Rin
-	print("rstag=%g Rin=%g Rout=%g" % (rstag, Rin, Rout) )
-	rstag=np.max(rstag,Rin*1.05)
-	rstag=np.max(rstag,Rout*0.99)
+        if rstag>20:
+            rstag=20
+        # issue with out of bounds in iofr, so keep rstag outside Rin
+        print("rstag=%g Rin=%g Rout=%g" % (rstag, Rin, Rout) )
+        rstag=np.max(rstag,Rin*1.05)
+        rstag=np.max(rstag,Rout*0.99)
         i2stag=iofr(2*rstag)
         i4stag=iofr(4*rstag)
         i8stag=iofr(8*rstag)
@@ -4326,11 +4422,11 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #######################
     #
     if modelname=="runlocaldipole3dfiducial":
-	    windplotfactor=1.0
+        windplotfactor=1.0
     elif modelname=="sasha99":
-	    windplotfactor=1.0
+        windplotfactor=1.0
     else:
-	    #windplotfactor=0.1
+        #windplotfactor=0.1
         # with only showing magnetized wind, 1.0 factor best
         windplotfactor=1.0
     #
@@ -4654,13 +4750,13 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     hoverr100_t0 = hoverr100[0]
     #
     if modelname=="runlocaldipole3dfiducial":
-	    hoverr12=hoverr[:,iofr(12)]
-	    hoverratrmax_t0=hoverr12[0]
+        hoverr12=hoverr[:,iofr(12)]
+        hoverratrmax_t0=hoverr12[0]
     elif modelname=="sasha99":
-	    hoverr34=hoverr[:,iofr(34)]
-	    hoverratrmax_t0=hoverr34[0]
+        hoverr34=hoverr[:,iofr(34)]
+        hoverratrmax_t0=hoverr34[0]
     else:
-	    hoverratrmax_t0=hoverr100[0]
+        hoverratrmax_t0=hoverr100[0]
     #
     #
     hoverrcoronahor=hoverrcorona[:,ihor]
@@ -5034,100 +5130,100 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     # Jon's whichplot==4 Plot:
     if modelname=="runlocaldipole3dfiducial":
-	    windplotfactor=1.0
+        windplotfactor=1.0
     elif modelname=="sasha99":
-	    windplotfactor=1.0
+        windplotfactor=1.0
     else:
-	    windplotfactor=0.1
+        windplotfactor=0.1
     #
     #
     #
     global gridtype
     if modelname=="runlocaldipole3dfiducial":
-	    gridtype="ExpOld"
+        gridtype="ExpOld"
     elif modelname=="sasha99":
-	    gridtype="A0.99fc"
+        gridtype="A0.99fc"
     elif Rout==26000:
-	    gridtype="HypExp"
+        gridtype="HypExp"
     elif Rout==1000:
-	    gridtype="Exp"
+        gridtype="Exp"
     else:
-	    gridtype="UnknownModelGridType"
+        gridtype="UnknownModelGridType"
     #
     if modelname=="thickdisk7":
-	    fieldtype="PoloidalFlip"
-	    truemodelname="A94BfN40"
+        fieldtype="PoloidalFlip"
+        truemodelname="A94BfN40"
     elif modelname=="thickdisk8":
-	    fieldtype="PoloidalFlip"
-	    truemodelname="A94BfN40\_C1"
+        fieldtype="PoloidalFlip"
+        truemodelname="A94BfN40\_C1"
     elif modelname=="thickdisk11":
-	    fieldtype="PoloidalFlip"
-	    truemodelname="A94BfN40\_C2"
+        fieldtype="PoloidalFlip"
+        truemodelname="A94BfN40\_C2"
     elif modelname=="thickdisk12":
-	    fieldtype="PoloidalFlip"
-	    truemodelname="A94BfN40\_C3"
+        fieldtype="PoloidalFlip"
+        truemodelname="A94BfN40\_C3"
     elif modelname=="thickdisk13":
-	    fieldtype="PoloidalFlip"
-	    truemodelname="A94BfN40\_C4"
+        fieldtype="PoloidalFlip"
+        truemodelname="A94BfN40\_C4"
     elif modelname=="run.liker2butbeta40":
-	    fieldtype="PoloidalFlip"
-	    truemodelname="A94BfN40\_C5"
+        fieldtype="PoloidalFlip"
+        truemodelname="A-94BfN10\_C1"
     elif modelname=="thickdiskrr2":
-	    fieldtype="PoloidalFlip"
-	    truemodelname="A-94BfN10"
+        fieldtype="PoloidalFlip"
+        truemodelname="A-94BfN10"
     elif modelname=="run.like8":
-	    fieldtype="PoloidalFlip"
-	    truemodelname="A-94BfN10\_C1"
+        fieldtype="PoloidalFlip"
+        truemodelname="A94BfN40\_C5"
     elif modelname=="thickdisk16":
-	    fieldtype="PoloidalFlip"
-	    truemodelname="A-5BfN10"
+        fieldtype="PoloidalFlip"
+        truemodelname="A-5BfN10"
     elif modelname=="thickdisk5":
-	    fieldtype="PoloidalFlip"
-	    truemodelname="A0BfN10"
+        fieldtype="PoloidalFlip"
+        truemodelname="A0BfN10"
     elif modelname=="thickdisk14":
-	    fieldtype="PoloidalFlip"
-	    truemodelname="A5BfN10"
+        fieldtype="PoloidalFlip"
+        truemodelname="A5BfN10"
     elif modelname=="thickdiskr1":
-	    fieldtype="PoloidalFlip"
-	    truemodelname="A94BfN10"
+        fieldtype="PoloidalFlip"
+        truemodelname="A94BfN10"
     elif modelname=="run.liker1":
-	    fieldtype="PoloidalFlip"
-	    truemodelname="A94BfN10\_C1"
+        fieldtype="PoloidalFlip"
+        truemodelname="A94BfN10\_C1"
     elif modelname=="thickdiskr2":
-	    fieldtype="PoloidalFlip"
-	    truemodelname="A94BfN10\_R1"
+        fieldtype="PoloidalFlip"
+        truemodelname="A94BfN10\_R1"
     elif modelname=="run.liker2":
-	    fieldtype="PoloidalFlip"
-	    truemodelname="A-94BfN40"
+        fieldtype="PoloidalFlip"
+        truemodelname="A-94BfN40"
     elif modelname=="thickdisk9":
-	    fieldtype="Poloidal"
-	    truemodelname="A94BpN10"
+        fieldtype="Poloidal"
+        truemodelname="A94BpN10"
     elif modelname=="thickdiskr3":
-	    fieldtype="Toroidal"
-	    truemodelname="A-94BtN10"
+        fieldtype="Toroidal"
+        truemodelname="A-94BtN10"
     elif modelname=="thickdisk17":
-	    fieldtype="Toroidal"
-	    truemodelname="A-5BtN10"
+        fieldtype="Toroidal"
+        truemodelname="A-5BtN10"
     elif modelname=="thickdisk10":
-	    fieldtype="Toroidal"
-	    truemodelname="A0BtN10"
+        fieldtype="Toroidal"
+        truemodelname="A0BtN10"
     elif modelname=="thickdisk15":
-	    fieldtype="Toroidal"
-	    truemodelname="A5BtN10"
+        fieldtype="Toroidal"
+        truemodelname="A5BtN10"
     elif modelname=="thickdisk2":
-	    fieldtype="Toroidal"
-	    truemodelname="A94BtN10"
+        fieldtype="Toroidal"
+        truemodelname="A94BtN10"
     elif modelname=="thickdisk3":
-	    fieldtype="Toroidal"
-	    truemodelname="A94BtN10\_R1"
+        fieldtype="Toroidal"
+        truemodelname="A94BtN10\_R1"
     elif modelname=="runlocaldipole3dfiducial":
-	    fieldtype="PoloidalOld"
-	    truemodelname="MB09_D"
+        fieldtype="PoloidalOld"
+        truemodelname="MB09\_D"
     elif modelname=="sasha99":
-	    fieldtype="Poloidal2"
-	    truemodelname="A0.99fc"
+        fieldtype="Poloidal2"
+        truemodelname="A0.99fc"
     else:
-	    fieldtype="UnknownModelFieldType"
+        fieldtype="UnknownModelFieldType"
     #
     #
     nzreal=nz
@@ -5173,15 +5269,15 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     truetmax=np.max(ts)
     truetmin=np.min(ts)
     if truetmin<fti:
-	    truetmin=fti
+        truetmin=fti
     #
     if truetmax>ftf:
-	    truetmax=ftf
+        truetmax=ftf
     #
     if modelname=="runlocaldipole3dfiducial":
-	    gridtype="ExpOld"
+        gridtype="ExpOld"
     elif modelname=="sasha99":
-	    gridtype="A0.99fc"
+        gridtype="A0.99fc"
     #
     if whichplot == 4 and sashaplot4 == 0:
         if dotavg:
@@ -5312,9 +5408,13 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     etant=prefactor*(1.0-einf)
     lnt=-linf
     #
-    # 14:
-    print( "HLatex6: ModelName & $\\eta_{\\rm{}BH}$ & $\\eta^{\\rm{}EM}_{\\rm{}BH}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}BH}$ & $\\eta_{\\rm{}j+mw,o}$ & $\\eta_{\\rm{}j+w,o}$ & $\\eta_{\\rm{}j}$ & $\\eta^{\\rm{}EM}_j$ & $\\eta^{\\rm{}MAKE}_{\\rm{}j}$ & $\\eta_{\\rm{}mw,i}$ & $\\eta^{\\rm{}EM}_{\\rm{}mw,i}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}mw,i}$ & $\\eta_{\\rm{}mw,o}$ & $\\eta^{\\rm{}EM}_{\\rm{}mw,o}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}mw,o}$& $\\eta_{\\rm{}w,i}$ & $\\eta^{\\rm{}EM}_{\\rm{}w,i}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}w,i}$ & $\\eta_{\\rm{}w,o}$ & $\\eta^{\\rm{}EM}_{\\rm{}w,o}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}w,o}$ & $\\eta_{\\rm{}NT}$ \\\\" )
-    print( "VLatex6: %s         & %g%% & %g%% & %g%%    & %g%% & %g%%    & %g%% & %g%% & %g%%      & %g%% & %g%% & %g%%    & %g%% & %g%% & %g%%   & %g%% & %g%% & %g%%    & %g%% & %g%% & %g%%   & %g%% \\\\ %% %s" % (truemodelname, roundto3(etabh_avg), roundto3(etabhEM_avg), roundto3(etabhMAKE_avg), roundto3(etaj_avg + etamwout_avg), roundto3(etaj_avg + etawout_avg), roundto3(etaj_avg), roundto3(etajEM_avg), roundto3(etajMAKE_avg), roundto3(etamwin_avg), roundto3(etamwinEM_avg), roundto3(etamwinMAKE_avg), roundto3(etamwout_avg), roundto3(etamwoutEM_avg), roundto3(etamwoutMAKE_avg), roundto3(etawin_avg), roundto3(etawinEM_avg), roundto3(etawinMAKE_avg), roundto3(etawout_avg), roundto3(etawoutEM_avg), roundto3(etawoutMAKE_avg), roundto3(etant), modelname ) )
+    # 9:
+    print( "HLatex6: ModelName & $\\eta_{\\rm{}BH}$ & $\\eta^{\\rm{}EM}_{\\rm{}BH}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}BH}$ & $\\eta_{\\rm{}j+mw,o}$ & $\\eta_{\\rm{}j+w,o}$ & $\\eta_{\\rm{}j}$ & $\\eta^{\\rm{}EM}_j$ & $\\eta^{\\rm{}MAKE}_{\\rm{}j}$ & $\\eta_{\\rm{}NT}$ \\\\" )
+    print( "VLatex6: %s         & %g\\%% & %g\\%% & %g\\%%    & %g\\%% & %g\\%%    & %g\\%% & %g\\%% & %g\\%%     & %g\\%% \\\\ %% %s" % (truemodelname, roundto3foreta(etabh_avg), roundto3foreta(etabhEM_avg), roundto3foreta(etabhMAKE_avg), roundto3foreta(etaj_avg + etamwout_avg), roundto3foreta(etaj_avg + etawout_avg), roundto3foreta(etaj_avg), roundto3foreta(etajEM_avg), roundto3foreta(etajMAKE_avg), roundto3foreta(etant), modelname ) )
+    #
+    # 12:
+    print( "HLatex7: ModelName & $\\eta_{\\rm{}mw,i}$ & $\\eta^{\\rm{}EM}_{\\rm{}mw,i}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}mw,i}$ & $\\eta_{\\rm{}mw,o}$ & $\\eta^{\\rm{}EM}_{\\rm{}mw,o}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}mw,o}$ & $\\eta_{\\rm{}w,i}$ & $\\eta^{\\rm{}EM}_{\\rm{}w,i}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}w,i}$ & $\\eta_{\\rm{}w,o}$ & $\\eta^{\\rm{}EM}_{\\rm{}w,o}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}w,o}$ \\\\" )
+    print( "VLatex7: %s        & %g\\%% & %g\\%% & %g\\%%    & %g\\%% & %g\\%% & %g\\%%   & %g\\%% & %g\\%% & %g\\%%    & %g\\%% & %g\\%% & %g\\%%  \\\\ %% %s" % (truemodelname, roundto3foreta(etamwin_avg), roundto3foreta(etamwinEM_avg), roundto3foreta(etamwinMAKE_avg), roundto3foreta(etamwout_avg), roundto3foreta(etamwoutEM_avg), roundto3foreta(etamwoutMAKE_avg), roundto3foreta(etawin_avg), roundto3foreta(etawinEM_avg), roundto3foreta(etawinMAKE_avg), roundto3foreta(etawout_avg), roundto3foreta(etawoutEM_avg), roundto3foreta(etawoutMAKE_avg), modelname ) )
     #
     lbh_avg=letabh_avg/prefactor
     lbhEM_avg=letabhEM_avg/prefactor
@@ -5337,9 +5437,14 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     lwoutEM_avg=letawoutEM_avg/prefactor
     lwoutMAKE_avg=letawoutMAKE_avg/prefactor
     #
-    # 14:
-    print( "HLatex7: ModelName & $l_{\\rm{}BH}$ & $l^{\\rm{}EM}_{\\rm{}BH}$ & $l^{\\rm{}MAKE}_{\\rm{}BH}$    & $l_{\\rm{}j+mw,o}$& $l_{\\rm{}j+w,o}$   & $l_{\\rm{}j}$ & $l^{\\rm{}EM}_{\\rm{}j}$ & $l^{\\rm{}MAKE}_{\\rm{}j}$    & $l_{\\rm{}mw,i}$ & $l^{\\rm{}EM}_{\\rm{}mw,i}$ & $l^{\\rm{}MAKE}_{\\rm{}mw,i}$    & $l_{\\rm{}mw,o}$ & $l^{\\rm{}EM}_{\\rm{}mw,o}$ & $l^{\\rm{}MAKE}_{\\rm{}mw,o}$    & $l_{\\rm{}w,i}$ & $l^{\\rm{}EM}_{\\rm{}w,i}$ & $l^{\\rm{}MAKE}_{\\rm{}w,i}$    & $l_{\\rm{}w,o}$ & $l^{\\rm{}EM}_{\\rm{}w,o}$ & $l^{\\rm{}MAKE}_{\\rm{}w,o}$    & $l_{\\rm{}NT}$ \\\\" )
-    print( "VLatex7: %s         & %g & %g & %g    & %g & %g    & %g & %g & %g     & %g & %g & %g    & %g & %g & %g     & %g & %g & %g & %g & %g & %g      & %g \\\\ %% %s" % (truemodelname, roundto3(lbh_avg), roundto3(lbhEM_avg), roundto3(lbhMAKE_avg)  ,roundto3(ljmwout_avg), roundto3(ljwout_avg),   roundto3(lj_avg), roundto3(ljEM_avg), roundto3(ljMAKE_avg)    ,roundto3(lmwin_avg), roundto3(lmwinEM_avg), roundto3(lmwinMAKE_avg)   ,roundto3(lmwout_avg), roundto3(lmwoutEM_avg), roundto3(lmwoutMAKE_avg)   ,roundto3(lwin_avg), roundto3(lwinEM_avg), roundto3(lwinMAKE_avg)    ,roundto3(lwout_avg), roundto3(lwoutEM_avg), roundto3(lwoutMAKE_avg)    ,roundto3(lnt), modelname ) )
+    # 9:
+    print( "HLatex8: ModelName & $l_{\\rm{}BH}$ & $l^{\\rm{}EM}_{\\rm{}BH}$ & $l^{\\rm{}MAKE}_{\\rm{}BH}$ & $l_{\\rm{}j+mw,o}$ & $l_{\\rm{}j+w,o}$ & $l_{\\rm{}j}$ & $l^{\\rm{}EM}_j$ & $l^{\\rm{}MAKE}_{\\rm{}j}$ & $l_{\\rm{}NT}$ \\\\" )
+    print( "VLatex8: %s         & %g & %g & %g    & %g & %g    & %g & %g & %g     & %g \\\\ %% %s" % (truemodelname, roundto3forl(lbh_avg), roundto3forl(lbhEM_avg), roundto3forl(lbhMAKE_avg), roundto3forl(lj_avg + lmwout_avg), roundto3forl(lj_avg + lwout_avg), roundto3forl(lj_avg), roundto3forl(ljEM_avg), roundto3forl(ljMAKE_avg), roundto3forl(lnt), modelname ) )
+    #
+    # 12:
+    print( "HLatex9: ModelName & $l_{\\rm{}mw,i}$ & $l^{\\rm{}EM}_{\\rm{}mw,i}$ & $l^{\\rm{}MAKE}_{\\rm{}mw,i}$ & $l_{\\rm{}mw,o}$ & $l^{\\rm{}EM}_{\\rm{}mw,o}$ & $l^{\\rm{}MAKE}_{\\rm{}mw,o}$ & $l_{\\rm{}w,i}$ & $l^{\\rm{}EM}_{\\rm{}w,i}$ & $l^{\\rm{}MAKE}_{\\rm{}w,i}$ & $l_{\\rm{}w,o}$ & $l^{\\rm{}EM}_{\\rm{}w,o}$ & $l^{\\rm{}MAKE}_{\\rm{}w,o}$ \\\\" )
+    print( "VLatex9: %s        & %g & %g & %g    & %g & %g & %g   & %g & %g & %g    & %g & %g & %g  \\\\ %% %s" % (truemodelname, roundto3forl(lmwin_avg), roundto3forl(lmwinEM_avg), roundto3forl(lmwinMAKE_avg), roundto3forl(lmwout_avg), roundto3forl(lmwoutEM_avg), roundto3forl(lmwoutMAKE_avg), roundto3forl(lwin_avg), roundto3forl(lwinEM_avg), roundto3forl(lwinMAKE_avg), roundto3forl(lwout_avg), roundto3forl(lwoutEM_avg), roundto3forl(lwoutMAKE_avg), modelname ) )
+    #
     #
     djdtnormbh  = (-lbh_avg) - 2.0*a*(1.0-etabh_avg/prefactor)
     djdtnormj   = (-lj_avg)  - 2.0*a*(1.0-etaj_avg/prefactor)
@@ -5348,9 +5453,11 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     djdtnormwin   = (-lwin_avg)  - 2.0*a*(1.0-etawin_avg/prefactor)
     djdtnormwout   = (-lwout_avg)  - 2.0*a*(1.0-etawout_avg/prefactor)
     djdtnormnt  = linf       - 2.0*a*einf
-    # 5:
-    print( "s_{\\rm{}BH} & s_{\\rm{}j} & s_{\\rm{}mw,i} & s_{\\rm{}mw,o} & s_{\\rm{}w,i} & s_{\\rm{}w,o} & s_{\\rm{}NT} \\\\" )
-    print( "%g & %g   & %g & %g   & %g & %g   & %g \\\\ %% %s" % ( roundto2(djdtnormbh), roundto2(djdtnormj), roundto2(djdtnormmwin), roundto2(djdtnormmwout), roundto2(djdtnormwin), roundto2(djdtnormwout), roundto2(djdtnormnt), modelname ) )
+    #
+    # 7:
+    print( "HLatex10: ModelName  & $s_{\\rm{}BH}$ & $s_{\\rm{}j}$   & $s_{\\rm{}mw,i}$ & $s_{\\rm{}mw,o}$    & $s_{\\rm{}w,i}$ & $s_{\\rm{}w,o}$    & $s_{\\rm{}NT}$ \\\\" )
+    print( "VLatex10: %s         & %g & %g   & %g & %g    & %g & %g    & %g \\\\ %% %s" % (truemodelname, roundto2(djdtnormbh), roundto2(djdtnormj), roundto2(djdtnormmwin), roundto2(djdtnormmwout), roundto2(djdtnormwin), roundto2(djdtnormwout), roundto2(djdtnormnt), modelname ) )
+    #
     #
     #
     #        
@@ -5453,22 +5560,22 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     # get initial extrema
     # get equatorial flux extrema at t=0 to normalize new flux on hole
-    feqtotextrema=extrema(feqtot[0,:])
-    print("feqtotextrema at t=0")
-    print(feqtotextrema)
+    feqtotextrema=extrema(feqtot[0,:],withendf=True)
     feqtotextremai=feqtotextrema[0]
     numextrema=len(feqtotextremai)
     # first value is probably 0, so avoid it later below
     feqtotextremaval=feqtotextrema[1]
+    print("feqtotextrema at t=0: numextrema=%d" % (numextrema) )
+    print(feqtotextrema)
     #
     # also get final extrema
-    feqtotextremafinal=extrema(feqtot[-1,:])
-    print("feqtotextremafinal at t=tfinal")
-    print(feqtotextremafinal)
+    feqtotextremafinal=extrema(feqtot[-1,:],withendf=True)
     feqtotextremaifinal=feqtotextremafinal[0]
     numextremafinal=len(feqtotextremaifinal)
     # first value is probably 0, so avoid it later below
     feqtotextremavalfinal=feqtotextremafinal[1]
+    print("feqtotextremafinal at t=tfinal: numextremafinal=%d" % (numextremafinal) )
+    print(feqtotextremafinal)
     #
     # fstot is absolute flux, so for split-mono gives 2X potential near equator
     # positive fluxvsr means flux points towards \theta=\pi pole, so points in z-direction.
@@ -5486,47 +5593,47 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     sumextreme=0
     abssumextreme=0
     if numextrema>1:
-	    fstotnorm1=(-fstot[:,ihor]/2.0)/feqtotextremaval[1]
-	    print("rext0=%g" % (r[feqtotextremai[0],0,0]) )
-	    print("rext1=%g" % (r[feqtotextremai[1],0,0]) )
-	    sumextreme+=feqtotextremaval[1]
-	    abssumextreme+=np.fabs(feqtotextremaval[1])
+        fstotnorm1=(-fstot[:,ihor]/2.0)/feqtotextremaval[1]
+        print("rext0=%g" % (r[feqtotextremai[0],0,0]) )
+        print("rext1=%g" % (r[feqtotextremai[1],0,0]) )
+        sumextreme+=feqtotextremaval[1]
+        abssumextreme+=np.fabs(feqtotextremaval[1])
     if numextrema>2:
-	    fstotnorm2=(-fstot[:,ihor]/2.0)/feqtotextremaval[2]
-	    print("rext2=%g" % (r[feqtotextremai[2],0,0]) )
-	    sumextreme+=feqtotextremaval[2]
-	    abssumextreme+=np.fabs(feqtotextremaval[2])
+        fstotnorm2=(-fstot[:,ihor]/2.0)/feqtotextremaval[2]
+        print("rext2=%g" % (r[feqtotextremai[2],0,0]) )
+        sumextreme+=feqtotextremaval[2]
+        abssumextreme+=np.fabs(feqtotextremaval[2])
     if numextrema>3:
-	    fstotnorm3=(-fstot[:,ihor]/2.0)/feqtotextremaval[3]
-	    print("rext3=%g" % (r[feqtotextremai[3],0,0]) )
-	    sumextreme+=feqtotextremaval[3]
-	    abssumextreme+=np.fabs(feqtotextremaval[3])
+        fstotnorm3=(-fstot[:,ihor]/2.0)/feqtotextremaval[3]
+        print("rext3=%g" % (r[feqtotextremai[3],0,0]) )
+        sumextreme+=feqtotextremaval[3]
+        abssumextreme+=np.fabs(feqtotextremaval[3])
     if numextrema>4:
-	    fstotnorm4=(-fstot[:,ihor]/2.0)/feqtotextremaval[4]
-	    print("rext4=%g" % (r[feqtotextremai[4],0,0]) )
-	    sumextreme+=feqtotextremaval[4]
-	    abssumextreme+=np.fabs(feqtotextremaval[4])
+        fstotnorm4=(-fstot[:,ihor]/2.0)/feqtotextremaval[4]
+        print("rext4=%g" % (r[feqtotextremai[4],0,0]) )
+        sumextreme+=feqtotextremaval[4]
+        abssumextreme+=np.fabs(feqtotextremaval[4])
     if numextrema>5:
-	    fstotnorm5=(-fstot[:,ihor]/2.0)/feqtotextremaval[5]
-	    print("rext5=%g" % (r[feqtotextremai[5],0,0]) )
-	    sumextreme+=feqtotextremaval[5]
-	    abssumextreme+=np.fabs(feqtotextremaval[5])
+        fstotnorm5=(-fstot[:,ihor]/2.0)/feqtotextremaval[5]
+        print("rext5=%g" % (r[feqtotextremai[5],0,0]) )
+        sumextreme+=feqtotextremaval[5]
+        abssumextreme+=np.fabs(feqtotextremaval[5])
     #
     # below can be used to detect poloidal flips vs. poloidal (but not really vs. toroidal)
     fracdiffabs=np.fabs(np.fabs(sumextreme)-abssumextreme)/((np.fabs(sumextreme)+abssumextreme))
-    #						   
+    #                           
     #
     if dotavg:
-  	    if numextrema>1:
-		    fstotnorm1_avg = timeavg(fstotnorm1**2,ts,fti,ftf)**0.5
-  	    if numextrema>2:
-		    fstotnorm2_avg = timeavg(fstotnorm2**2,ts,fti,ftf)**0.5
-  	    if numextrema>3:
-		    fstotnorm3_avg = timeavg(fstotnorm3**2,ts,fti,ftf)**0.5
-  	    if numextrema>4:
-		    fstotnorm4_avg = timeavg(fstotnorm4**2,ts,fti,ftf)**0.5
-  	    if numextrema>5:
-		    fstotnorm5_avg = timeavg(fstotnorm5**2,ts,fti,ftf)**0.5
+        if numextrema>1:
+            fstotnorm1_avg = timeavg(fstotnorm1**2,ts,fti,ftf)**0.5
+        if numextrema>2:
+            fstotnorm2_avg = timeavg(fstotnorm2**2,ts,fti,ftf)**0.5
+        if numextrema>3:
+            fstotnorm3_avg = timeavg(fstotnorm3**2,ts,fti,ftf)**0.5
+        if numextrema>4:
+            fstotnorm4_avg = timeavg(fstotnorm4**2,ts,fti,ftf)**0.5
+        if numextrema>5:
+            fstotnorm5_avg = timeavg(fstotnorm5**2,ts,fti,ftf)**0.5
     #
     #
     #
@@ -5599,7 +5706,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         phijn_avg = timeavg(phijn**2,ts,fti,ftf)**0.5
         phijs_avg = timeavg(phijn**2,ts,fti,ftf)**0.5
         #
-	if(iti>fti):
+    if(iti>fti):
                 phibh2_avg = timeavg(phibh2**2,ts,iti,itf)**0.5
                 fstot2_avg = timeavg(fstot[:,ihor]**2,ts,iti,itf)**0.5
     #
@@ -5669,14 +5776,12 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     if iti > fti:
         print( "incomplete output: %g %g" % (iti, fti) )
     #
+    #roundto2(djdtnormbh), roundto2(djdtnormj), roundto2(djdtnormmwin), roundto2(djdtnormmwout), roundto2(djdtnormwin), roundto2(djdtnormwout), roundto2(djdtnormnt)
     #
+    # 13:
+    print( "HLatex11: ModelName & $\\Upsilon_{\\rm{}BH}$ & $\\Upsilon_{\\rm{}in,i}$ & $\\Upsilon_{\\rm{}in,o}$ & $\\Upsilon_{\\rm{}j}$   & $\\Upsilon_{\\rm{}mw,i}$ & $\\Upsilon_{\\rm{}mw,o}$ & $\\Upsilon_{\\rm{}w,i}$ & $\\Upsilon_{\\rm{}w,o}$    &  $\\frac{\\Phi}{\\Phi_1(t=0)}$ & $\\frac{\\Phi}{\\Phi_2(t=0)}$ & $\\frac{\\Phi}{\\Phi_3(t=0)}$ & $\\frac{\\Phi}{\\Phi_4(t=0)}$ & $\\frac{\\Phi}{\\Phi_5(t=0)}$ \\\\" )
+    print( "VLatex11: %s         & %g    & %g & %g       & %g      & %g & %g      & %g & %g   & %g & %g & %g & %g & %g  \\\\ %% %s" % (truemodelname, roundto2(phibh_avg), roundto2(phirjetin_avg), roundto2(phirjetout_avg), roundto2(phij_avg), roundto2(phimwin_avg), roundto2(phimwout_avg), roundto2(phiwin_avg), roundto2(phiwout_avg), roundto2(fstotnorm1_avg),roundto2(fstotnorm2_avg),roundto2(fstotnorm3_avg),roundto2(fstotnorm4_avg),roundto2(fstotnorm5_avg), modelname ) )
     #
-    # 9:
-    print( "HLatex8: ModelName & $\\Upsilon_{\\rm{}BH}$ & $\\Upsilon_{\\rm{}in,i}$ & $\\Upsilon_{\\rm{}in,o}$ & $\\Upsilon_{\\rm{}j}$   & $\\Upsilon_{\\rm{}mw,i}$ & $\\Upsilon_{\\rm{}mw,o}$& $\\Upsilon_{\\rm{}w,i}$ & $\\Upsilon_{\\rm{}w,o}$   & $s_{\\rm{}BH}$ & $s_{\\rm{}j}$   & $s_{\\rm{}mw,i}$ & $s_{\\rm{}mw,o}$ & $s_{\\rm{}w,i}$ & $s_{\\rm{}w,o}$    & $s_{\\rm{}NT}$ \\\\" )
-    print( "VLatex8: %s         & %g    & %g & %g       & %g    & %g & %g    & %g & %g     & %g & %g    & %g & %g    & %g & %g    & %g \\\\ %% %s" % (truemodelname, roundto2(phibh_avg), roundto2(phirjetin_avg), roundto2(phirjetout_avg), roundto2(phij_avg), roundto2(phimwin_avg), roundto2(phimwout_avg), roundto2(phiwin_avg), roundto2(phiwout_avg), roundto2(djdtnormbh), roundto2(djdtnormj), roundto2(djdtnormmwin), roundto2(djdtnormmwout), roundto2(djdtnormwin), roundto2(djdtnormwout), roundto2(djdtnormnt), modelname ) )
-    #
-    print( "HLatex9: ModelName & $\\frac{\\Phi}{\\Phi_1(t=0)}$ & $\\frac{\\Phi}{\\Phi_2(t=0)} & $\\frac{\\Phi}{\\Phi_3(t=0)} & $\\frac{\\Phi}{\\Phi_4(t=0)} & $\\frac{\\Phi}{\\Phi_5(t=0)} \\\\ ")
-    print( "VLatex9: %s         & %g & %g & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(fstotnorm1_avg),roundto2(fstotnorm2_avg),roundto2(fstotnorm3_avg),roundto2(fstotnorm4_avg),roundto2(fstotnorm5_avg), modelname ) )
     #
     if whichplot == -1:
         etajetavg = pjetfinavg/mdotfinavg
@@ -6338,12 +6443,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
 
 def computeeta(start_t=8000,end_t=1e5,numintervals=8,doreload=1):
     #
-    if modelname=="runlocaldipole3dfiducial":
-	    defaultfti=2000
-	    defaultftf=1e5
-    else:
-	    defaultfti=8000
-	    defaultftf=1e5
+    defaultfti,defaultftf=getdefaulttimes()
     #
     start_t=defaultfti
     end_t=defaultftf
@@ -7051,9 +7151,9 @@ def mkmovie(framesize=50, domakeavi=False):
     #cd ~/Research/runart; for f in *; do cd ~/Research/runart/$f; (python  ~/py/mread/__init__.py &> python.out &); done
     global modelname
     if len(sys.argv[1:])>0:
-	    modelname = sys.argv[1]
+        modelname = sys.argv[1]
     else:
-	    modelname = "Unknown Model"
+        modelname = "Unknown Model"
     #
     print("ModelName = %s" % (modelname) )
     if len(sys.argv[1:])==3 and sys.argv[2].isdigit() and (sys.argv[3].isdigit() or sys.argv[3][0]=="-") :
@@ -7100,9 +7200,12 @@ def mkmovie(framesize=50, domakeavi=False):
             #     #reread the fieldline dump
             #     rfd("../"+fname)
             cvel() #for calculating bsq
-            plotlen = plotleni+(plotlenf-plotleni)*(t-plotlenti)/(plotlentf-plotlenti)
-            plotlen = min(plotlen,plotleni)
-            plotlen = max(plotlen,plotlenf)
+            # could do time-dependent frame size
+            #plotlen = plotleni+(plotlenf-plotleni)*(t-plotlenti)/(plotlentf-plotlenti)
+            #plotlen = min(plotlen,plotleni)
+            #plotlen = max(plotlen,plotlenf)
+            plotlen = framesize
+            #
             plt.figure(0, figsize=(12,9), dpi=100)
             plt.clf()
             #SWITCH OFF SUPTITLE
@@ -7214,10 +7317,15 @@ def mkmovie(framesize=50, domakeavi=False):
                 vmaxforframe=1.5625
             #
             #
+            ###########################
+            # BIG BOX
+            ###########################
+            plotsize=framesize
+            #
             gs1 = GridSpec(1, 1)
             gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
             ax1 = plt.subplot(gs1[:, -1])
-            mkframe("lrho%04d_Rz%g" % (findex,plotlen),vmin=vminforframe,vmax=vmaxforframe,len=plotlen,ax=ax1,cb=False,pt=False)
+            mkframe("lrho%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax1,cb=False,pt=False)
             #
             plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
             plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=10,fontsize=16)
@@ -7227,10 +7335,10 @@ def mkmovie(framesize=50, domakeavi=False):
             ax2 = plt.subplot(gs2[:, -1])
             #
             if nz==1:
-                mkframe("lrho%04d_xy%g" % (findex,plotlen),vmin=vminforframe,vmax=vmaxforframe,len=plotlen,ax=ax2,cb=True,dostreamlines=True)
+                mkframe("lrho%04d_xy%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax2,cb=True,dostreamlines=True)
             else:
                 # If using 2D data, then for now, have to replace below with mkframe version above and replace ax1->ax2.  Some kind of qhull error.
-                mkframexy("lrho%04d_xy%g" % (findex,plotlen),vmin=vminforframe,vmax=vmaxforframe,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True)
+                mkframexy("lrho%04d_xy%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax2,cb=True,pt=False,dostreamlines=True)
             #
             #
             plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
@@ -7240,6 +7348,38 @@ def mkmovie(framesize=50, domakeavi=False):
             #print xxx
             plt.savefig( "lrho%04d_Rzxym1.png" % (findex)  )
             plt.savefig( "lrho%04d_Rzxym1.eps" % (findex)  )
+            #
+            ###########################
+            # SMALL BOX
+            ###########################
+            plotsize=framesize/5
+            #
+            gs1 = GridSpec(1, 1)
+            gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
+            ax1 = plt.subplot(gs1[:, -1])
+            mkframe("lrhosmall%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax1,cb=False,pt=False)
+            #
+            plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
+            plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=10,fontsize=16)
+            #
+            gs2 = GridSpec(1, 1)
+            gs2.update(left=0.5, right=1, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
+            ax2 = plt.subplot(gs2[:, -1])
+            #
+            if nz==1:
+                mkframe("lrhosmall%04d_xy%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax2,cb=True,dostreamlines=True)
+            else:
+                # If using 2D data, then for now, have to replace below with mkframe version above and replace ax1->ax2.  Some kind of qhull error.
+                mkframexy("lrhosmall%04d_xy%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax2,cb=True,pt=False,dostreamlines=True)
+            #
+            #
+            plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
+            plt.ylabel(r"$y\ [r_g]$",ha='left',labelpad=10,fontsize=16)
+            #
+            #
+            #print xxx
+            plt.savefig( "lrhosmall%04d_Rzxym1.png" % (findex)  )
+            plt.savefig( "lrhosmall%04d_Rzxym1.eps" % (findex)  )
             #print xxx
     print( "Done!" )
     sys.stdout.flush()
@@ -7258,16 +7398,16 @@ def mk2davg():
         #rd("dump0000.bin")
         #rfd("fieldline0000.bin")
         #rfdheaderfirstfile()
-	# gets structure of uu and other things
-	rfdfirstfile()
+    # gets structure of uu and other things
+    rfdfirstfile()
     flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
     numfiles=len(flist)
     #
     global modelname
     if len(sys.argv[1:])>0:
-	    modelname = sys.argv[1]
+        modelname = sys.argv[1]
     else:
-	    modelname = "Unknown Model"
+        modelname = "Unknown Model"
     #
     print("ModelName = %s" % (modelname) )
     itemspergroup = 20
@@ -7311,9 +7451,9 @@ def mkstreamlinefigure():
     #
     global modelname
     if len(sys.argv[1:])>0:
-	    modelname = sys.argv[1]
+        modelname = sys.argv[1]
     else:
-	    modelname = "Unknown Model"
+        modelname = "Unknown Model"
     #
     print("ModelName = %s" % (modelname) )
     #
@@ -7445,9 +7585,9 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
     #cd ~/Research/runart; for f in *; do cd ~/Research/runart/$f; (python  ~/py/mread/__init__.py &> python.out &); done
     global modelname
     if len(sys.argv[1:])>0:
-	    modelname = sys.argv[1]
+        modelname = sys.argv[1]
     else:
-	    modelname = "Unknown Model"
+        modelname = "Unknown Model"
     #
     print("ModelName = %s" % (modelname) )
     if len(sys.argv[1:])==3 and sys.argv[2].isdigit() and (sys.argv[3].isdigit() or sys.argv[3][0]=="-") :
@@ -7761,32 +7901,33 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
     sys.stdout.flush()
 
 def generate_time_series():
-        #cd ~/run; for f in rtf*; do cd ~/run/$f; (nice -n 10 python  ~/py/mread/__init__.py &> python.out); done
-        grid3d("gdump.bin",use2d=True)
-        #rd("dump0000.bin")
-        rfdheaderfirstfile()
-        #
-        rhor=1+(1-a**2)**0.5
-        ihor = np.floor(iofr(rhor)+0.5);
-        #diskflux=diskfluxcalc(ny/2)
-        #qtymem=None #clear to free mem
-	global modelname
-	if len(sys.argv[1:])>0:
-		modelname = sys.argv[1]
-	else:
-		modelname = "Unknown Model"
-	#
-	print("ModelName = %s" % (modelname) )
-        if len(sys.argv[1:])==3 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
-            whichi = int(sys.argv[2])
-            whichn = int(sys.argv[3])
-            if whichi >= whichn:
-                mergeqtyvstime(whichn)
-            else:
-                qtymem=getqtyvstime(ihor,0.2,whichi=whichi,whichn=whichn)
+    #cd ~/run; for f in rtf*; do cd ~/run/$f; (nice -n 10 python  ~/py/mread/__init__.py &> python.out); done
+    grid3d("gdump.bin",use2d=True)
+    #rd("dump0000.bin")
+    rfdheaderfirstfile()
+    #
+    rhor=1+(1-a**2)**0.5
+    ihor = np.floor(iofr(rhor)+0.5);
+    #diskflux=diskfluxcalc(ny/2)
+    #qtymem=None #clear to free mem
+    #
+    global modelname
+    if len(sys.argv[1:])>0:
+        modelname = sys.argv[1]
+    else:
+        modelname = "Unknown Model"
+    #
+    print("ModelName = %s" % (modelname) )
+    if len(sys.argv[1:])==3 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
+        whichi = int(sys.argv[2])
+        whichn = int(sys.argv[3])
+        if whichi >= whichn:
+            mergeqtyvstime(whichn)
         else:
-            qtymem=getqtyvstime(ihor,0.2)
-            plotqtyvstime(qtymem)
+            qtymem=getqtyvstime(ihor,0.2,whichi=whichi,whichn=whichn)
+    else:
+         qtymem=getqtyvstime(ihor,0.2)
+         plotqtyvstime(qtymem)
 
 def oldstuff():
     if False:
@@ -7906,11 +8047,11 @@ def oldstuff():
     if False:
         global modelname
         if len(sys.argv[1:])>0:
-		modelname = sys.argv[1]
-	else:
-		modelname = "UnknownModel"
+            modelname = sys.argv[1]
+        else:
+            modelname = "UnknownModel"
         #
-	print("ModelName = %s" % (modelname) )
+        print("ModelName = %s" % (modelname) )
         if len(sys.argv[1:])==3 and sys.argv[2].isdigit() and (sys.argv[3].isdigit() or sys.argv[3][0]=="-") :
             whichi = int(sys.argv[2])
             whichn = int(sys.argv[3])

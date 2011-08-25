@@ -7,7 +7,7 @@
 # 2) use the script
 
 # order of models as to appear in final table
-dircollect='thickdisk7 thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.liker2butbeta40 thickdiskrr2 run.like8 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 run.liker1 thickdiskr2 run.liker2 thickdisk9 thickdiskr3  thickdisk17 thickdisk10 thickdisk15 thickdisk2 thickdisk3 runlocaldipole3dfiducial sasha99'
+dircollect='thickdisk7 thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.like8 thickdiskrr2 run.liker2butbeta40 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 thickdiskr2 run.liker1 run.liker2 thickdisk9 thickdiskr3  thickdisk17 thickdisk10 thickdisk15 thickdisk2 thickdisk3 runlocaldipole3dfiducial sasha99'
 
 # note that thickdisk1 is actually bad, so ignore it.
 # can choose so do runs in different order than collection.
@@ -320,6 +320,7 @@ then
         if [ $iiter -eq 1 ]
         then
 		    cat /data2/jmckinne/${thedir}/$moviedirname/python.plot.out | grep "HLatex" >> tables$moviedirname.tex
+		    echo "HLatex: \hline" >> tables$moviedirname.tex
         fi
 		cat /data2/jmckinne/${thedir}/$moviedirname/python.plot.out | grep "VLatex" >> tables$moviedirname.tex
 
@@ -327,19 +328,110 @@ then
     done
 
 
+    # temporary fix to model names:
+    #cat tables$moviedirname.tex | sed 's/0_C/0\_C/g' | sed 's/A94BfN40\\_C5/A-94BfN10\\_Cx/g' | sed 's/A-94BfN10\\_C1/A94BfN40\\_C5/g' | sed 's/A-94BfN10\\_Cx/A-94BfN10\\_C1/g' | sed 's/MB09_D /MB09\\_D /g'  > tables$moviedirname.tex.tmp
+    #mv tables$moviedirname.tex.tmp tables$moviedirname.tex
+
     ##############################################
     #
-    # Normal tables:
-    grep "Latex1:" tables$moviedirname.tex | sed 's/[HV]Latex1: //g'  | column  -t > table1$moviedirname.tex
-    grep "Latex2:" tables$moviedirname.tex | sed 's/[HV]Latex2: //g'  | column  -t > table2$moviedirname.tex
-    grep "Latex3:" tables$moviedirname.tex | sed 's/[HV]Latex3: //g'  | column  -t > table3$moviedirname.tex
-    grep "Latex4:" tables$moviedirname.tex | sed 's/[HV]Latex4: //g'  | column  -t > table4$moviedirname.tex
-    grep "Latex5:" tables$moviedirname.tex | sed 's/[HV]Latex5: //g'  | column  -t > table5$moviedirname.tex
-    grep "Latex6:" tables$moviedirname.tex | sed 's/[HV]Latex6: //g'  | column  -t > table6$moviedirname.tex
-    grep "Latex7:" tables$moviedirname.tex | sed 's/[HV]Latex7: //g'  | column  -t > table7$moviedirname.tex
-    grep "Latex8:" tables$moviedirname.tex | sed 's/[HV]Latex8: //g'  | column  -t > table8$moviedirname.tex
-    grep "Latex9:" tables$moviedirname.tex | sed 's/[HV]Latex9: //g'  | column  -t > table9$moviedirname.tex
+    # Tables:
+
+    for numtbl in `seq 1 11`
+    do
+	    echo "Doing Table #: "$numtbl
+
+
+        ###############################
+        fname=table$numtbl$moviedirname.tex
+        rm -rf $fname
+        #
+        echo "\begin{table*}" >> $fname
+        if [ $numtbl -eq 1 ]
+        then
+            echo "\caption{Physical Model Parameters}" >> $fname
+        fi
+        if [ $numtbl -eq 2 ]
+        then
+            echo "\caption{Numerical Model Parameters}" >> $fname
+        fi
+        if [ $numtbl -eq 3 ]
+        then
+            echo "\caption{Thickness of Disk, Corona, and Jet at Various Radii}" >> $fname
+        fi
+        if [ $numtbl -eq 4 ]
+        then
+            echo "\caption{MRI Grid Cells per Wavelength and MRI Wavelengths per Disk Height}" >> $fname
+        fi
+        if [ $numtbl -eq 5 ]
+        then
+            echo "\caption{Rest-Mass Accretion and Ejection Rates}" >> $fname
+        fi
+        if [ $numtbl -eq 6 ]
+        then
+            echo "\caption{Energy Efficiency: BH, Jet+Outflows, Jet, and NT}" >> $fname
+        fi
+        if [ $numtbl -eq 7 ]
+        then
+            echo "\caption{Energy Efficiency: Magnetized Wind and Entire Outflow}" >> $fname
+        fi
+        if [ $numtbl -eq 8 ]
+        then
+            echo "\caption{Specific Angular Momentum: BH, Jet, Totals, and NT}" >> $fname
+        fi
+        if [ $numtbl -eq 9 ]
+        then
+            echo "\caption{Specific Angular Momentum: Magnetized Wind and Entire Outflow}" >> $fname
+        fi
+        if [ $numtbl -eq 10 ]
+        then
+            echo "\caption{Spin-Down Parameter}" >> $fname
+        fi
+        if [ $numtbl -eq 11 ]
+        then
+            echo "\caption{Absolute Magnetic Flux per Rest-Mass Flux and Initial Magnetic Fluxes}" >> $fname
+        fi
+        #
+        #
+        echo "\begin{center}" >> $fname
+        rawnumc=`grep "Latex$numtbl:" tables$moviedirname.tex | sed 's/[HV]Latex$numtbl: //g' | tail -1 | wc | awk '{print $2}'`
+        numc=$(( ($rawnumc - 2)/2 ))
+        str1="\begin{tabular}[h]{|"
+        str2=""
+        for striter in `seq 1 $numc`
+        do
+            str2=$str2"r|"
+        done
+        str3="}"
+        strfinal=$str1$str2$str3
+        echo $strfinal >> $fname
+        echo "\hline" >> $fname
+        egrep "Latex$numtbl:|Latex:" tables$moviedirname.tex | sed 's/\([0-9]\)%/\1\\%/g' | sed 's/[HV]Latex'$numtbl': //g' | sed 's/[HV]Latex: //g' | sed 's/\$\&/$ \&/g'   | sed 's/A-94BfN10 /\\\\\nA-94BfN10 /g' | sed 's/A-94BfN40 /\\\\\nA-94BfN40 /g' | sed 's/A-94BtN10 /\\\\\nA-94BtN10 /g'  | sed 's/MB09\\_D /\\\\\nMB09\\_D /g'  | sed 's/} \&/}$ \&/g' | sed 's/} \\/}$  \\/g' | sed 's/nan/0/g' | column  -t >> $fname
+        echo "\hline" >> $fname
+        echo "\hline" >> $fname
+        echo "\end{tabular}" >> $fname
+        echo "\end{center}" >> $fname
+        echo "\label{tbl$numtbl}" >> $fname
+        echo "\end{table*}" >> $fname
+        ###############################
+
+        # Copy over to final table file names
+
+        cp $fname table$numtbl.tex
+
+    done
+
+
+    echo "For paper, now do:   scp table[0-9].tex jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/ ; scp table[0-9][0-9].tex jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/"
+     
+    
+
+
+
+    ########################
     # Aux tables:
+
+	echo "Doing Aux Tables"
+
     grep "Latex95:" tables$moviedirname.tex | sed 's/[HV]Latex95: //g'  | column  -t > table95$moviedirname.tex
     grep "Latex96:" tables$moviedirname.tex | sed 's/[HV]Latex96: //g'  | column  -t > table96$moviedirname.tex
     grep "Latex97:" tables$moviedirname.tex | sed 's/[HV]Latex97: //g'  | column  -t > table97$moviedirname.tex
@@ -350,7 +442,6 @@ then
 fi
 
     
-
 
 
 echo "Done with all stages"

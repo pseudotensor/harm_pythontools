@@ -366,16 +366,21 @@ then
     if [ 1 -eq 0 ]
     then
         # high quality 1 minute long no matter what framerate (-t 60 doesn't work)
-	ffmpeg -y -fflags +genpts -i lrho%04d_Rzxym1.png -r 25 -sameq -qmax 5 -vcodec mjpeg lrho25.avi 
-
+	    ffmpeg -y -fflags +genpts -i lrho%04d_Rzxym1.png -r 25 -sameq -qmax 5 -vcodec mjpeg lrho25.avi 
         # now set frame rate (changes duration)
-	ffmpeg -y -i lrho25.avi -f image2pipe -vcodec copy - </dev/null | ffmpeg -r $fps -f image2pipe -vcodec mjpeg -i - -vcodec copy -an lrho.avi
+	    ffmpeg -y -i lrho25.avi -f image2pipe -vcodec copy - </dev/null | ffmpeg -r $fps -f image2pipe -vcodec mjpeg -i - -vcodec copy -an lrho.avi
+
+        # high quality 1 minute long no matter what framerate (-t 60 doesn't work)
+	    ffmpeg -y -fflags +genpts -i lrhosmall%04d_Rzxym1.png -r 25 -sameq -qmax 5 -vcodec mjpeg lrhosmall25.avi 
+        # now set frame rate (changes duration)
+	    ffmpeg -y -i lrhosmall25.avi -f image2pipe -vcodec copy - </dev/null | ffmpeg -r $fps -f image2pipe -vcodec mjpeg -i - -vcodec copy -an lrhosmall.avi
     else
         # Sasha's command:
-	ffmpeg -y -fflags +genpts -r $fps -i lrho%04d_Rzxym1.png -vcodec mpeg4 -sameq -qmax 5 lrho.avi
+	    ffmpeg -y -fflags +genpts -r $fps -i lrho%04d_Rzxym1.png -vcodec mpeg4 -sameq -qmax 5 lrho.avi
+	    ffmpeg -y -fflags +genpts -r $fps -i lrhosmall%04d_Rzxym1.png -vcodec mpeg4 -sameq -qmax 5 lrhosmall.avi
     fi
 
-    echo "Now do: mplayer -loop 0 lrho.avi"
+    echo "Now do: mplayer -loop 0 lrho.avi OR lrhosmall.avi"
 
 fi
 
