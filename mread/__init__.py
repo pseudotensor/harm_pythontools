@@ -4071,12 +4071,15 @@ def get_dUfloor( floordumpno, maxrinflowequilibrium = 20 ):
     rfloor( "failfloordudump%04d.bin" % floordumpno )
     #add back in rest-mass energy to conserved energy
     dUfloor[1] -= dUfloor[0]
-    condin = (avg_uu[1]<0)*(r[:,:,0:1]<maxrinflowequilibrium)
+    condin = np.ones_like(dUfloor)
+    condin[0] = (avg_uguu[1]<0)*(r[:,:,0:1]<maxrinflowequilibrium)
+    condin[1] = ((avg_rhouu+gam*avg_uguu)[1]<0)*(r[:,:,0:1]<maxrinflowequilibrium)
+    condin[2:]=condin[0:1]
     #uncomment this if don't want to use stagnation surface
     #condin = (r[:,:,0:1]<maxrinflowequilibrium)
     condout = 1 - condin
-    UfloorAout = (dUfloor*condout[None,:,:,:]).sum(1+PH).sum(1+TH).cumsum(1+RR)
-    UfloorAin = (dUfloor*condin[None,:,:,:]).sum(1+PH).sum(1+TH).cumsum(1+RR)
+    UfloorAout = (dUfloor*condout[:,:,:,:]).sum(1+PH).sum(1+TH).cumsum(1+RR)
+    UfloorAin = (dUfloor*condin[:,:,:,:]).sum(1+PH).sum(1+TH).cumsum(1+RR)
     UfloorA = (UfloorAin-UfloorAin[:,nx-1:nx]) + UfloorAout
     UfloorAsum = UfloorA*scaletofullwedge(1.)
     return( UfloorAsum )
