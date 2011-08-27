@@ -36,26 +36,32 @@ from matplotlib.patches import Ellipse
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
-def get2davg(usedefault=0,whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergroup=20):
+def get2davg(fname=None,usedefault=0,whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergroup=20):
     if whichgroup >= 0:
         whichgroups = whichgroup
         whichgroupe = whichgroup + 1
     elif whichgroupe < 0:
         whichgroupe = whichgroups + 1
     #check values for sanity
-    if usedefault == 0 and (whichgroups < 0 or whichgroupe < 0 or whichgroups >= whichgroupe or itemspergroup <= 0):
+    if fname is None and usedefault == 0 and (whichgroups < 0 or whichgroupe < 0 or whichgroups >= whichgroupe or itemspergroup <= 0):
         print( "whichgroups = %d, whichgroupe = %d, itemspergroup = %d not allowed" 
                % (whichgroups, whichgroupe, itemspergroup) )
         return None
     #
-    if usedefault:
-        fname = "avg2d.npy"
-    else:
-        fname = "avg2d%02d_%04d_%04d.npy" % (itemspergroup, whichgroups, whichgroupe)
+    if fname is None:
+        if usedefault:
+            fname = "avg2d.npy"
+        else:
+            fname = "avg2d%02d_%04d_%04d.npy" % (itemspergroup, whichgroups, whichgroupe)
     if os.path.isfile( fname ):
         print( "File %s exists, loading from file..." % fname )
+        sys.stdout.flush()
         avgtot=np.load( fname )
         return( avgtot )
+    else:
+        print( "File %s does not exist" % fname )
+        sys.stdout.flush()
+        return
     n2avg = 0
     nitems = 0
     myrange = np.arange(whichgroups,whichgroupe)
@@ -709,8 +715,15 @@ def plot2davg(dosq=True,whichplot=-1):
     if whichplot==2:
         #plot Mdot vs. r for region v^r < 0
         plt.figure(1)
-        mdin_den = gdet[:,:,0:1]*avg_rhouu*_dx2*_dx3
-        mdin_den *= 1
+        ax = plt.gca()
+        cond = (avg_uu<0)
+        mdot_den = gdet[:,:,0:1]*avg_rhouu
+        mdin = intangle( mdot_den, which=cond )
+        mdall = intangle( mdot_den )
+        plt.plot( r[:,0,0], mdin, ':' )
+        plt.plot( r[:,0,0], mdall, '-' )
+        ax.set_xscale('log')
+        plt.xlim(rhor,20)
 
     if whichplot==-1:
         #PLOT EVERYTHING
@@ -6280,6 +6293,71 @@ def oldstuff():
         #plotqtyvstime(qtymem,whichplot=-4)
 
 if __name__ == "__main__":
+    if True:
+        grid3d("gdump.bin",use2d=True)
+        #rfd("fieldline0000.bin")
+        flist = ["avg2d20_0000_0001.npy", "avg2d20_0000_0050.npy","avg2d20_0100_0150.npy","avg2d20_0150_0200.npy","avg2d20_0200_0250.npy"]
+        for (i,f) in enumerate(flist):
+            print "%s\n" % f
+            avgmem = get2davg(fname=f)
+            assignavg2dvars(avgmem)
+            #plot2davg(whichplot=2)
+            #plot Mdot vs. r for region v^r < 0
+            cond = (avg_rhouu[1]<0)
+            mdot_den = gdet[:,:,0:1]*avg_rhouu[1]
+            mdin = intangle( mdot_den*nz, which=cond )
+            mdall = intangle( mdot_den*nz )
+            #xxx
+            plt.figure(1)
+            ax = plt.gca()
+            #plt.plot( r[:,0,0], -mdin, ':' )
+            plt.plot( r[:,0,0], -mdall, '-' )
+            ax.set_xscale('log')
+            plt.xlim(rhor,100)
+            plt.ylim(0,20)
+            plt.xlabel(r"$r$",fontsize=16)
+            plt.ylabel(r"$\dot M$",fontsize=16)
+            plt.grid()
+            #radial 4-velocity
+            plt.figure(2)
+            #plt.clf()
+            ax = plt.gca()
+            up = (gdet[:,:,0:1]*avg_rhouu[1]*_dx2*_dx3).sum(-1).sum(-1)
+            dn = (gdet[:,:,0:1]*avg_rho*_dx2*_dx3).sum(-1).sum(-1)
+            ur1d = np.array(up/dn)
+            plt.grid()
+            #plt.plot(r[:,0,0], -ur1d)
+            plt.plot(r[:,0,0],-ur1d)
+            #print ur1d.shape
+            #plt.plot(r[:,0,0],0.1*(r[:,0,0]/10)**(-1.2))
+            plt.ylim(1e-4,0.5)
+            ax.set_xscale('log')
+            ax.set_yscale('log')
+            plt.xlim(rhor,100)
+            #plt.ylim(0,20)
+            plt.xlabel(r"$r$",fontsize=16)
+            plt.ylabel(r"$-u^r$",fontsize=16)
+            #xxx
+            #Sigma
+            plt.figure(3)
+            plt.grid()
+            #plt.clf()
+            ax = plt.gca()
+            sigval = (gdet[:,:,0:1]*avg_rhouu[0]*_dx2).sum(-1).sum(-1)
+            #xxxx
+            plt.plot( r[:,0,0], sigval )
+            ax.set_xscale('log')
+            ax.set_yscale('log')
+            plt.xlim(rhor,100000)
+            plt.xlabel(r"$r$",fontsize=16)
+            plt.ylabel(r"$\Sigma$",fontsize=16)
+        plt.figure(2)
+        plt.plot(r[:,0,0],0.1*(r[:,0,0]/10)**(-1.2))
+        plt.plot(r[:,0,0],0.1*(r[:,0,0]/10)**(-1.))
+        plt.figure(3)
+        plt.plot(r[:,0,0],5e7*(r[:,0,0]/1000)**(1))
+        plt.plot(r[:,0,0],0.1e7*(r[:,0,0]/1000)**(2))
+        
     if False:
         readmytests1()
         plotpowers('powerlist.txt',format=0) #old format
