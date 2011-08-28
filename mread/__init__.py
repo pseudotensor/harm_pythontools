@@ -4072,7 +4072,7 @@ def get_dUfloor( floordumpno, maxrinflowequilibrium = 20 ):
     #add back in rest-mass energy to conserved energy
     dUfloor[1] -= dUfloor[0]
     condin = np.ones_like(dUfloor)
-    condin[0] = (avg_uguu[1]<0)*(r[:,:,0:1]<maxrinflowequilibrium)
+    condin[0] = (avg_rhouu[1]<0)*(r[:,:,0:1]<maxrinflowequilibrium)
     condin[1] = ((avg_rhouu+gam*avg_uguu)[1]<0)*(r[:,:,0:1]<maxrinflowequilibrium)
     condin[2:]=condin[0:1]
     #uncomment this if don't want to use stagnation surface
