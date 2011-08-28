@@ -5598,6 +5598,11 @@ def mkstreamlinefigure(length=25,doenergy=True,frac=0.75):
         B[1:] = avg_Tud[1:,0]
         bsq = avg_bsq
         mkframe("myframe",len=mylen,ax=ax,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
+    if False:
+        #energy vectors
+        B[1:] = -avg_Tud[1:,0]
+        bsq = avg_bsq
+        mkframe("myframe",len=mylen,ax=ax,density=4,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=12,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='r',lw=2,startatmidplane=True,showjet=False,arrowsize=arrowsize)
     if True:
         istag, jstag, hstag, rstag = getstagparams(doplot=0)
         myRmax=4
@@ -5611,7 +5616,7 @@ def mkstreamlinefigure(length=25,doenergy=True,frac=0.75):
         hs=hstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)<0]
         ax.plot(rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
         ax.plot(-rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
-    if True:
+    if False:
         #field
         B[1] = avg_B[0]
         B[2] = avg_B[1]
@@ -6424,7 +6429,7 @@ if __name__ == "__main__":
         mkmovie(prefactor=100.,sigma=1500.,usegaussianunits=True,domakeframes=domakeframes)
     if False:
         #fig2 with grayscalestreamlines and red field lines
-        mkstreamlinefigure()
+        mkstreamlinefigure(doenergy=False)
         #mkstreamlinefigure(length=4,doenergy=False)
     if False:
         #FIGURE 1 LOTSOPANELS
