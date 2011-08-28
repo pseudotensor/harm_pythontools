@@ -5398,6 +5398,9 @@ def mkmovie(framesize=50, domakeavi=False,prefactor=1.,sigma=None,usegaussianuni
             ymax=2*(np.floor(np.floor(ymax+1.5)/2))
             ax31.set_yticks((ymax/2,ymax))
             ax31.grid(True)
+            ax31r = ax31.twinx()
+            ax31r.set_ylim(ax31.get_ylim())
+            ax31r.set_yticks((ymax/2,ymax))
             #pjet
             # ax32 = plt.subplot(gs3[-2,:])
             # plotqtyvstime(qtymem,ax=ax32,whichplot=2)
@@ -5439,6 +5442,9 @@ def mkmovie(framesize=50, domakeavi=False,prefactor=1.,sigma=None,usegaussianuni
             if ymax >= 10:
                 ax35.set_ylabel(r"$\phi_{\rm BH}$",size=16,ha='left',labelpad=25)
             ax35.grid(True)
+            ax35r = ax35.twinx()
+            ax35r.set_ylim(ax35.get_ylim())
+            ax35r.set_yticks(tck)
             #
             #pjet/<mdot>
             #
@@ -5464,6 +5470,9 @@ def mkmovie(framesize=50, domakeavi=False,prefactor=1.,sigma=None,usegaussianuni
             #reset lower limit to 0
             ax34.set_ylim((0,ax34.get_ylim()[1]))
             ax34.grid(True)
+            ax34r = ax34.twinx()
+            ax34r.set_ylim(ax34.get_ylim())
+            ax34r.set_yticks(tck)
             #Rz xy
             gs1 = GridSpec(1, 1)
             gs1.update(left=0.04, right=0.45, top=0.99, bottom=0.48, wspace=0.05)
@@ -6313,7 +6322,7 @@ def oldstuff():
         #plotqtyvstime(qtymem,whichplot=-4)
 
 if __name__ == "__main__":
-    if True:
+    if False:
         grid3d("gdump.bin",use2d=True)
         #rfd("fieldline0000.bin")
         flist = ["avg2d20_0000_0001.npy", "avg2d20_0000_0050.npy","avg2d20_0100_0150.npy","avg2d20_0150_0200.npy","avg2d20_0200_0250.npy"]
@@ -6402,16 +6411,16 @@ if __name__ == "__main__":
         #NEW FORMAT
         #Plot qtys vs. time
         generate_time_series(docompute=True)
-    if False:
+    if True:
         #make a movie
         fti=7000
         ftf=30500
-        doreload = 0
+        doreload = 1
         domakeframes=1
         epsFm, epsFke = takeoutfloors(doreload=doreload,fti=fti,ftf=ftf,returndf=1,isinteractive=0)
         #epsFm = 
         #epsFke = 
-        print epsFm, epsFke
+        #print epsFm, epsFke
         mkmovie(prefactor=100.,sigma=1500.,usegaussianunits=True,domakeframes=domakeframes)
     if False:
         #fig2 with grayscalestreamlines and red field lines
