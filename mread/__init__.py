@@ -5475,7 +5475,7 @@ def mkmovie(framesize=50, domakeavi=False,prefactor=1.,sigma=None,usegaussianuni
             ax34r.set_yticks(tck)
             #Rz xy
             gs1 = GridSpec(1, 1)
-            gs1.update(left=0.04, right=0.45, top=0.99, bottom=0.48, wspace=0.05)
+            gs1.update(left=0.04, right=0.45, top=0.995, bottom=0.48, wspace=0.05)
             #gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.45, wspace=0.05)
             ax1 = plt.subplot(gs1[:, -1])
             if domakeframes:
@@ -5483,7 +5483,7 @@ def mkmovie(framesize=50, domakeavi=False,prefactor=1.,sigma=None,usegaussianuni
             ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
             ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
             gs2 = GridSpec(1, 1)
-            gs2.update(left=0.5, right=1, top=0.99, bottom=0.48, wspace=0.05)
+            gs2.update(left=0.5, right=1, top=0.995, bottom=0.48, wspace=0.05)
             ax2 = plt.subplot(gs2[:, -1])
             if domakeframes:
                 mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True)
