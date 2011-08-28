@@ -6300,6 +6300,12 @@ if __name__ == "__main__":
         grid3d("gdump.bin",use2d=True)
         #rfd("fieldline0000.bin")
         flist = ["avg2d20_0000_0001.npy", "avg2d20_0000_0050.npy","avg2d20_0100_0150.npy","avg2d20_0150_0200.npy","avg2d20_0200_0250.npy"]
+        plt.figure(1)
+        plt.clf()
+        plt.figure(2)
+        plt.clf()
+        plt.figure(3)
+        plt.clf()
         for (i,f) in enumerate(flist):
             print "%s\n" % f
             avgmem = get2davg(fname=f)
@@ -6326,7 +6332,7 @@ if __name__ == "__main__":
             #plt.clf()
             ax = plt.gca()
             up = (gdet[:,:,0:1]*avg_rhouu[1]*_dx2*_dx3).sum(-1).sum(-1)
-            dn = (gdet[:,:,0:1]*avg_rho*_dx2*_dx3).sum(-1).sum(-1)
+            dn = (gdet[:,:,0:1]*avg_rhouu[0]*_dx2*_dx3).sum(-1).sum(-1)/dxdxp[1,1,:,0,0]
             ur1d = np.array(up/dn)
             plt.grid()
             #plt.plot(r[:,0,0], -ur1d)
@@ -6346,7 +6352,7 @@ if __name__ == "__main__":
             plt.grid()
             #plt.clf()
             ax = plt.gca()
-            sigval = (gdet[:,:,0:1]*avg_rhouu[0]*_dx2).sum(-1).sum(-1)
+            sigval = (gdet[:,:,0:1]*avg_rhouu[0]*_dx2*_dx3).sum(-1).sum(-1)/dxdxp[1,1,:,0,0]
             #xxxx
             plt.plot( r[:,0,0], sigval )
             ax.set_xscale('log')
@@ -6355,7 +6361,7 @@ if __name__ == "__main__":
             plt.xlabel(r"$r$",fontsize=16)
             plt.ylabel(r"$\Sigma$",fontsize=16)
         plt.figure(2)
-        plt.plot(r[:,0,0],0.1*(r[:,0,0]/10)**(-1.2))
+        plt.plot(r[:,0,0],0.1*(r[:,0,0]/10)**(-2))
         plt.plot(r[:,0,0],0.1*(r[:,0,0]/10)**(-1.))
         plt.figure(3)
         plt.plot(r[:,0,0],5e7*(r[:,0,0]/1000)**(1))
