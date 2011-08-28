@@ -5332,7 +5332,7 @@ def ploteta():
     ax34r.set_yticks(tck)
     gc.collect()
 
-def mkmovie(framesize=50, domakeavi=False):
+def mkmovie(framesize=50, domakeavi=False,prefactor=1.,sigma=None,usegaussianunits=False,domakeframes=True):
     #Rz and xy planes side by side
     plotlenf=10
     plotleni=framesize
@@ -5389,10 +5389,11 @@ def mkmovie(framesize=50, domakeavi=False):
             #mdot,pjet,pjet/mdot plots
             gs3 = GridSpec(3, 3)
             #gs3.update(left=0.055, right=0.97, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
-            gs3.update(left=0.055, right=0.95, top=0.42, bottom=0.03, wspace=0.01, hspace=0.04)
+            #gs3.update(left=0.055, right=0.95, top=0.42, bottom=0.03, wspace=0.01, hspace=0.04)
+            gs3.update(left=0.055, right=0.97, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
             #mdot
             ax31 = plt.subplot(gs3[-3,:])
-            plotqtyvstime(qtymem,ax=ax31,whichplot=1,findex=findex)
+            plotqtyvstime(qtymem,ax=ax31,whichplot=1,findex=findex,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma,usegaussianunits=True)
             ymax=ax31.get_ylim()[1]
             ymax=2*(np.floor(np.floor(ymax+1.5)/2))
             ax31.set_yticks((ymax/2,ymax))
@@ -5413,7 +5414,7 @@ def mkmovie(framesize=50, domakeavi=False):
             #\phi
             #
             ax35 = plt.subplot(gs3[-2,:])
-            plotqtyvstime(qtymem,ax=ax35,whichplot=5,findex=findex)
+            plotqtyvstime(qtymem,ax=ax35,whichplot=5,findex=findex,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma,usegaussianunits=True)
             ymax=ax35.get_ylim()[1]
             if 1 < ymax and ymax < 2: 
                 #ymax = 2
@@ -5427,42 +5428,58 @@ def mkmovie(framesize=50, domakeavi=False):
                 ax35.set_yticklabels(('','1'))
             else:
                 ymax=np.floor(ymax)+1
-                tck=np.arange(1,ymax)
+                if ymax >= 60:
+                    tck=np.arange(1,ymax/30.)*30.
+                elif ymax >= 10:
+                    tck=np.arange(1,ymax/5.)*5.
+                else:
+                    tck=np.arange(1,ymax)
                 ax35.set_yticks(tck)
+            ax35.grid(True)
+            if ymax >= 10:
+                ax35.set_ylabel(r"$\phi_{\rm BH}$",size=16,ha='left',labelpad=25)
             ax35.grid(True)
             #
             #pjet/<mdot>
             #
             ax34 = plt.subplot(gs3[-1,:])
-            plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findex)
+            plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findex,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma,usegaussianunits=True)
+            ax34.set_ylim((0,3.8*prefactor))
             ymax=ax34.get_ylim()[1]
-            if 100 < ymax and ymax < 200: 
+            if prefactor < ymax and ymax < 2*prefactor: 
                 #ymax = 2
-                tck=(100,)
+                tck=(prefactor,)
                 ax34.set_yticks(tck)
                 #ax34.set_yticklabels(('','100','200'))
-            elif ymax < 100: 
-                ymax = 100
-                tck=(50,100)
+            elif ymax < prefactor: 
+                ymax = prefactor
+                tck=(0.5*prefactor,prefactor)
                 ax34.set_yticks(tck)
-                ax34.set_yticklabels(('','100'))
+                ax34.set_yticklabels(('','%d' % prefactor))
             else:
-                ymax=np.floor(ymax/100.)+1
-                ymax*=100
-                tck=np.arange(1,ymax/100.)*100
+                ymax=np.floor(ymax/prefactor)+1
+                ymax*=prefactor
+                tck=np.arange(1,ymax/prefactor)*prefactor
                 ax34.set_yticks(tck)
             #reset lower limit to 0
             ax34.set_ylim((0,ax34.get_ylim()[1]))
             ax34.grid(True)
             #Rz xy
             gs1 = GridSpec(1, 1)
-            gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.45, wspace=0.05)
+            gs1.update(left=0.04, right=0.45, top=0.99, bottom=0.48, wspace=0.05)
+            #gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.45, wspace=0.05)
             ax1 = plt.subplot(gs1[:, -1])
-            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False)
+            if domakeframes:
+                mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False)
+            ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
+            ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
             gs2 = GridSpec(1, 1)
-            gs2.update(left=0.5, right=1, top=0.99, bottom=0.45, wspace=0.05)
+            gs2.update(left=0.5, right=1, top=0.99, bottom=0.48, wspace=0.05)
             ax2 = plt.subplot(gs2[:, -1])
-            mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True)
+            if domakeframes:
+                mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True)
+            ax2.set_ylabel(r'$y\ [r_g]$',fontsize=16,ha='center')
+            ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
             #print xxx
             plt.savefig( "lrho%04d_Rzxym1.png" % (findex)  )
             plt.savefig( "lrho%04d_Rzxym1.eps" % (findex)  )
@@ -6387,7 +6404,15 @@ if __name__ == "__main__":
         generate_time_series(docompute=True)
     if False:
         #make a movie
-        mkmovie()
+        fti=7000
+        ftf=30500
+        doreload = 0
+        domakeframes=1
+        epsFm, epsFke = takeoutfloors(doreload=doreload,fti=fti,ftf=ftf,returndf=1,isinteractive=0)
+        #epsFm = 
+        #epsFke = 
+        print epsFm, epsFke
+        mkmovie(prefactor=100.,sigma=1500.,usegaussianunits=True,domakeframes=domakeframes)
     if False:
         #fig2 with grayscalestreamlines and red field lines
         mkstreamlinefigure()
