@@ -36,26 +36,32 @@ from matplotlib.patches import Ellipse
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
-def get2davg(usedefault=0,whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergroup=20):
+def get2davg(fname=None,usedefault=0,whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergroup=20):
     if whichgroup >= 0:
         whichgroups = whichgroup
         whichgroupe = whichgroup + 1
     elif whichgroupe < 0:
         whichgroupe = whichgroups + 1
     #check values for sanity
-    if usedefault == 0 and (whichgroups < 0 or whichgroupe < 0 or whichgroups >= whichgroupe or itemspergroup <= 0):
+    if fname is None and usedefault == 0 and (whichgroups < 0 or whichgroupe < 0 or whichgroups >= whichgroupe or itemspergroup <= 0):
         print( "whichgroups = %d, whichgroupe = %d, itemspergroup = %d not allowed" 
                % (whichgroups, whichgroupe, itemspergroup) )
         return None
     #
-    if usedefault:
-        fname = "avg2d.npy"
-    else:
-        fname = "avg2d%02d_%04d_%04d.npy" % (itemspergroup, whichgroups, whichgroupe)
+    if fname is None:
+        if usedefault:
+            fname = "avg2d.npy"
+        else:
+            fname = "avg2d%02d_%04d_%04d.npy" % (itemspergroup, whichgroups, whichgroupe)
     if os.path.isfile( fname ):
         print( "File %s exists, loading from file..." % fname )
+        sys.stdout.flush()
         avgtot=np.load( fname )
         return( avgtot )
+    else:
+        print( "File %s does not exist" % fname )
+        sys.stdout.flush()
+        return
     n2avg = 0
     nitems = 0
     myrange = np.arange(whichgroups,whichgroupe)
@@ -706,6 +712,19 @@ def plot2davg(dosq=True,whichplot=-1):
         #plc(h-hjetwind1[:,None,None],levels=(0,),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
         #plc(h-hjetwind2[:,None,None],levels=(0,),colors='g',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
      #
+    if whichplot==2:
+        #plot Mdot vs. r for region v^r < 0
+        plt.figure(1)
+        ax = plt.gca()
+        cond = (avg_uu<0)
+        mdot_den = gdet[:,:,0:1]*avg_rhouu
+        mdin = intangle( mdot_den, which=cond )
+        mdall = intangle( mdot_den )
+        plt.plot( r[:,0,0], mdin, ':' )
+        plt.plot( r[:,0,0], mdall, '-' )
+        ax.set_xscale('log')
+        plt.xlim(rhor,20)
+
     if whichplot==-1:
         #PLOT EVERYTHING
         ##################
@@ -4052,12 +4071,15 @@ def get_dUfloor( floordumpno, maxrinflowequilibrium = 20 ):
     rfloor( "failfloordudump%04d.bin" % floordumpno )
     #add back in rest-mass energy to conserved energy
     dUfloor[1] -= dUfloor[0]
-    condin = (avg_uu[1]<0)*(r[:,:,0:1]<maxrinflowequilibrium)
+    condin = np.ones_like(dUfloor)
+    condin[0] = (avg_rhouu[1]<0)*(r[:,:,0:1]<maxrinflowequilibrium)
+    condin[1] = ((avg_rhouu+gam*avg_uguu)[1]<0)*(r[:,:,0:1]<maxrinflowequilibrium)
+    condin[2:]=condin[0:1]
     #uncomment this if don't want to use stagnation surface
     #condin = (r[:,:,0:1]<maxrinflowequilibrium)
     condout = 1 - condin
-    UfloorAout = (dUfloor*condout[None,:,:,:]).sum(1+PH).sum(1+TH).cumsum(1+RR)
-    UfloorAin = (dUfloor*condin[None,:,:,:]).sum(1+PH).sum(1+TH).cumsum(1+RR)
+    UfloorAout = (dUfloor*condout[:,:,:,:]).sum(1+PH).sum(1+TH).cumsum(1+RR)
+    UfloorAin = (dUfloor*condin[:,:,:,:]).sum(1+PH).sum(1+TH).cumsum(1+RR)
     UfloorA = (UfloorAin-UfloorAin[:,nx-1:nx]) + UfloorAout
     UfloorAsum = UfloorA*scaletofullwedge(1.)
     return( UfloorAsum )
@@ -5310,7 +5332,7 @@ def ploteta():
     ax34r.set_yticks(tck)
     gc.collect()
 
-def mkmovie(framesize=50, domakeavi=False):
+def mkmovie(framesize=50, domakeavi=False,prefactor=1.,sigma=None,usegaussianunits=False,domakeframes=True):
     #Rz and xy planes side by side
     plotlenf=10
     plotleni=framesize
@@ -5367,14 +5389,18 @@ def mkmovie(framesize=50, domakeavi=False):
             #mdot,pjet,pjet/mdot plots
             gs3 = GridSpec(3, 3)
             #gs3.update(left=0.055, right=0.97, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
-            gs3.update(left=0.055, right=0.95, top=0.42, bottom=0.03, wspace=0.01, hspace=0.04)
+            #gs3.update(left=0.055, right=0.95, top=0.42, bottom=0.03, wspace=0.01, hspace=0.04)
+            gs3.update(left=0.055, right=0.97, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
             #mdot
             ax31 = plt.subplot(gs3[-3,:])
-            plotqtyvstime(qtymem,ax=ax31,whichplot=1,findex=findex)
+            plotqtyvstime(qtymem,ax=ax31,whichplot=1,findex=findex,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma,usegaussianunits=True)
             ymax=ax31.get_ylim()[1]
             ymax=2*(np.floor(np.floor(ymax+1.5)/2))
             ax31.set_yticks((ymax/2,ymax))
             ax31.grid(True)
+            ax31r = ax31.twinx()
+            ax31r.set_ylim(ax31.get_ylim())
+            ax31r.set_yticks((ymax/2,ymax))
             #pjet
             # ax32 = plt.subplot(gs3[-2,:])
             # plotqtyvstime(qtymem,ax=ax32,whichplot=2)
@@ -5391,7 +5417,7 @@ def mkmovie(framesize=50, domakeavi=False):
             #\phi
             #
             ax35 = plt.subplot(gs3[-2,:])
-            plotqtyvstime(qtymem,ax=ax35,whichplot=5,findex=findex)
+            plotqtyvstime(qtymem,ax=ax35,whichplot=5,findex=findex,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma,usegaussianunits=True)
             ymax=ax35.get_ylim()[1]
             if 1 < ymax and ymax < 2: 
                 #ymax = 2
@@ -5405,42 +5431,64 @@ def mkmovie(framesize=50, domakeavi=False):
                 ax35.set_yticklabels(('','1'))
             else:
                 ymax=np.floor(ymax)+1
-                tck=np.arange(1,ymax)
+                if ymax >= 60:
+                    tck=np.arange(1,ymax/30.)*30.
+                elif ymax >= 10:
+                    tck=np.arange(1,ymax/5.)*5.
+                else:
+                    tck=np.arange(1,ymax)
                 ax35.set_yticks(tck)
             ax35.grid(True)
+            if ymax >= 10:
+                ax35.set_ylabel(r"$\phi_{\rm BH}$",size=16,ha='left',labelpad=25)
+            ax35.grid(True)
+            ax35r = ax35.twinx()
+            ax35r.set_ylim(ax35.get_ylim())
+            ax35r.set_yticks(tck)
             #
             #pjet/<mdot>
             #
             ax34 = plt.subplot(gs3[-1,:])
-            plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findex)
+            plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findex,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma,usegaussianunits=True)
+            ax34.set_ylim((0,3.8*prefactor))
             ymax=ax34.get_ylim()[1]
-            if 100 < ymax and ymax < 200: 
+            if prefactor < ymax and ymax < 2*prefactor: 
                 #ymax = 2
-                tck=(100,)
+                tck=(prefactor,)
                 ax34.set_yticks(tck)
                 #ax34.set_yticklabels(('','100','200'))
-            elif ymax < 100: 
-                ymax = 100
-                tck=(50,100)
+            elif ymax < prefactor: 
+                ymax = prefactor
+                tck=(0.5*prefactor,prefactor)
                 ax34.set_yticks(tck)
-                ax34.set_yticklabels(('','100'))
+                ax34.set_yticklabels(('','%d' % prefactor))
             else:
-                ymax=np.floor(ymax/100.)+1
-                ymax*=100
-                tck=np.arange(1,ymax/100.)*100
+                ymax=np.floor(ymax/prefactor)+1
+                ymax*=prefactor
+                tck=np.arange(1,ymax/prefactor)*prefactor
                 ax34.set_yticks(tck)
             #reset lower limit to 0
             ax34.set_ylim((0,ax34.get_ylim()[1]))
             ax34.grid(True)
+            ax34r = ax34.twinx()
+            ax34r.set_ylim(ax34.get_ylim())
+            ax34r.set_yticks(tck)
             #Rz xy
             gs1 = GridSpec(1, 1)
-            gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.45, wspace=0.05)
+            gs1.update(left=0.04, right=0.45, top=0.995, bottom=0.48, wspace=0.05)
+            #gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.45, wspace=0.05)
             ax1 = plt.subplot(gs1[:, -1])
-            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False)
+            if domakeframes:
+                mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False)
+            ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
+            ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
             gs2 = GridSpec(1, 1)
-            gs2.update(left=0.5, right=1, top=0.99, bottom=0.45, wspace=0.05)
+            gs2.update(left=0.5, right=1, top=0.995, bottom=0.48, wspace=0.05)
             ax2 = plt.subplot(gs2[:, -1])
-            mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True)
+            if domakeframes:
+                mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True)
+            ax2.set_ylabel(r'$y\ [r_g]$',fontsize=16,ha='center')
+            ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
             #print xxx
             plt.savefig( "lrho%04d_Rzxym1.png" % (findex)  )
             plt.savefig( "lrho%04d_Rzxym1.eps" % (findex)  )
@@ -5550,6 +5598,11 @@ def mkstreamlinefigure(length=25,doenergy=True,frac=0.75):
         B[1:] = avg_Tud[1:,0]
         bsq = avg_bsq
         mkframe("myframe",len=mylen,ax=ax,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
+    if False:
+        #energy vectors
+        B[1:] = -avg_Tud[1:,0]
+        bsq = avg_bsq
+        mkframe("myframe",len=mylen,ax=ax,density=4,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=12,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='r',lw=2,startatmidplane=True,showjet=False,arrowsize=arrowsize)
     if True:
         istag, jstag, hstag, rstag = getstagparams(doplot=0)
         myRmax=4
@@ -5563,7 +5616,7 @@ def mkstreamlinefigure(length=25,doenergy=True,frac=0.75):
         hs=hstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)<0]
         ax.plot(rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
         ax.plot(-rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
-    if True:
+    if False:
         #field
         B[1] = avg_B[0]
         B[2] = avg_B[1]
@@ -6277,6 +6330,77 @@ if __name__ == "__main__":
     if True:
         takeoutfloors(dotakeoutfloors=1,doplot=False)
     if False:
+        grid3d("gdump.bin",use2d=True)
+        #rfd("fieldline0000.bin")
+        flist = ["avg2d20_0000_0001.npy", "avg2d20_0000_0050.npy","avg2d20_0100_0150.npy","avg2d20_0150_0200.npy","avg2d20_0200_0250.npy"]
+        plt.figure(1)
+        plt.clf()
+        plt.figure(2)
+        plt.clf()
+        plt.figure(3)
+        plt.clf()
+        for (i,f) in enumerate(flist):
+            print "%s\n" % f
+            avgmem = get2davg(fname=f)
+            assignavg2dvars(avgmem)
+            #plot2davg(whichplot=2)
+            #plot Mdot vs. r for region v^r < 0
+            cond = (avg_rhouu[1]<0)
+            mdot_den = gdet[:,:,0:1]*avg_rhouu[1]
+            mdin = intangle( mdot_den*nz, which=cond )
+            mdall = intangle( mdot_den*nz )
+            #xxx
+            plt.figure(1)
+            ax = plt.gca()
+            #plt.plot( r[:,0,0], -mdin, ':' )
+            plt.plot( r[:,0,0], -mdall, '-' )
+            ax.set_xscale('log')
+            plt.xlim(rhor,100)
+            plt.ylim(0,20)
+            plt.xlabel(r"$r$",fontsize=16)
+            plt.ylabel(r"$\dot M$",fontsize=16)
+            plt.grid()
+            #radial 4-velocity
+            plt.figure(2)
+            #plt.clf()
+            ax = plt.gca()
+            up = (gdet[:,:,0:1]*avg_rhouu[1]*_dx2*_dx3).sum(-1).sum(-1)
+            dn = (gdet[:,:,0:1]*avg_rhouu[0]*_dx2*_dx3).sum(-1).sum(-1)/dxdxp[1,1,:,0,0]
+            ur1d = np.array(up/dn)
+            plt.grid()
+            #plt.plot(r[:,0,0], -ur1d)
+            plt.plot(r[:,0,0],-ur1d)
+            #print ur1d.shape
+            #plt.plot(r[:,0,0],0.1*(r[:,0,0]/10)**(-1.2))
+            plt.ylim(1e-4,0.5)
+            ax.set_xscale('log')
+            ax.set_yscale('log')
+            plt.xlim(rhor,100)
+            #plt.ylim(0,20)
+            plt.xlabel(r"$r$",fontsize=16)
+            plt.ylabel(r"$-u^r$",fontsize=16)
+            #xxx
+            #Sigma
+            plt.figure(3)
+            plt.grid()
+            #plt.clf()
+            ax = plt.gca()
+            sigval = (gdet[:,:,0:1]*avg_rhouu[0]*_dx2*_dx3).sum(-1).sum(-1)/dxdxp[1,1,:,0,0]
+            #xxxx
+            plt.plot( r[:,0,0], sigval )
+            ax.set_xscale('log')
+            ax.set_yscale('log')
+            plt.xlim(rhor,100000)
+            plt.xlabel(r"$r$",fontsize=16)
+            plt.ylabel(r"$\Sigma$",fontsize=16)
+        plt.figure(2)
+        plt.plot(r[:,0,0],0.1*(r[:,0,0]/10)**(-2))
+        plt.plot(r[:,0,0],0.1*(r[:,0,0]/10)**(-1.))
+        plt.figure(3)
+        plt.plot(r[:,0,0],5e7*(r[:,0,0]/1000)**(1))
+        plt.plot(r[:,0,0],0.1e7*(r[:,0,0]/1000)**(2))
+        
+    if False:
         readmytests1()
         plotpowers('powerlist.txt',format=0) #old format
     if False:
@@ -6294,12 +6418,20 @@ if __name__ == "__main__":
         #NEW FORMAT
         #Plot qtys vs. time
         generate_time_series(docompute=True)
-    if False:
+    if True:
         #make a movie
-        mkmovie()
+        fti=7000
+        ftf=30500
+        doreload = 1
+        domakeframes=1
+        epsFm, epsFke = takeoutfloors(doreload=doreload,fti=fti,ftf=ftf,returndf=1,isinteractive=0)
+        #epsFm = 
+        #epsFke = 
+        #print epsFm, epsFke
+        mkmovie(prefactor=100.,sigma=1500.,usegaussianunits=True,domakeframes=domakeframes)
     if False:
         #fig2 with grayscalestreamlines and red field lines
-        mkstreamlinefigure()
+        mkstreamlinefigure(doenergy=False)
         #mkstreamlinefigure(length=4,doenergy=False)
     if False:
         #FIGURE 1 LOTSOPANELS
