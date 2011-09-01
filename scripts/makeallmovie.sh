@@ -7,13 +7,13 @@
 # 2) use the script
 
 # order of models as to appear in final table
-dircollect='thickdisk7 thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.like8 thickdiskrr2 run.liker2butbeta40 run.liker2 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 thickdiskr2 run.liker1 thickdisk9 thickdiskr3  thickdisk17 thickdisk10 thickdisk15 thickdisk2 thickdisk3 runlocaldipole3dfiducial sasha99'
+dircollect='thickdisk7 thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.like8 thickdiskrr2 run.liker2butbeta40 run.liker2 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 thickdiskr2 run.liker1 thickdisk9 thickdiskr3  thickdisk17 thickdisk10 thickdisk15 thickdisk2 thickdisk3 runlocaldipole3dfiducial blandford3d_new sasham9 sasha2 sasha5 sasha9 sasha99'
 
 # note that thickdisk1 is actually bad, so ignore it.
 # can choose so do runs in different order than collection.
 #dirruns=$dircollect
 # do expensive thickdisk7 and sasha99 last so can test things
-dirruns='thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.liker2butbeta40 thickdiskrr2 run.like8 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 run.liker1 thickdiskr2 run.liker2 thickdisk9 thickdiskr3  thickdisk17 thickdisk10 thickdisk15 thickdisk2 thickdisk3 runlocaldipole3dfiducial thickdisk7 sasha99'
+dirruns='thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.liker2butbeta40 thickdiskrr2 run.like8 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 run.liker1 thickdiskr2 run.liker2 thickdisk9 thickdiskr3  thickdisk17 thickdisk10 thickdisk15 thickdisk2 thickdisk3 runlocaldipole3dfiducial blandford3d_new thickdisk7 sasham9 sasha2 sasha5 sasha9 sasha99'
 #dirruns='sasha99'
 
 
@@ -88,19 +88,32 @@ do
     firstfieldlinefile=`ls -v | grep "fieldline" | head -1`
     lastfieldlinefile=`ls -v | grep "fieldline" | tail -1`
     numfiles=`echo $fieldlinelist | wc | awk '{print $2}'`
+    #
     # set 1/2 to keep since average over roughly latter half in time of data
-    keepfilesstart=$(( (1 * $numfiles) / 2 ))
+    #
+    if [ "$thedir" == "sasha99" ]
+    then
+        factor=4
+        # it was a long run, but quasi-steady at t=8000 out of tf=32000
+    else
+        # most steady by 8000 but run till only 13000 for dipoley runs
+        # or for toroidal runs, ran for 2X when was steady.  So also good.
+        factor=2
+    fi
+    #
+    #
+    keepfilesstart=$(( (1 * $numfiles) / $factor ))
     keepfilesend=$(( $numfiles ))
     keepfilesdiff=$(( $keepfilesend - $keepfilesstart ))
     # if above 1/2 kills more than want to keep, then avoid kill of 1/2
     if [ $keepfilesdiff -lt $numkeep ]
 	then
-	keepfilesstart=0
-	keepfilesend=$numfiles
-	keepfilesdiff=$(( $keepfilesend - $keepfilesstart ))
+	    keepfilesstart=0
+	    keepfilesend=$numfiles
+	    keepfilesdiff=$(( $keepfilesend - $keepfilesstart ))
     else
         #keepfieldlinelist=`ls -v | grep "fieldline" | tail -$keepfilesstart | head -$keepfilesdiff`
-	rmfieldlinelist=`ls -v | grep "fieldline" | head -$keepfilesstart | tail -$keepfilesdiff`
+	    rmfieldlinelist=`ls -v | grep "fieldline" | head -$keepfilesstart | tail -$keepfilesdiff`
 	for fil in $rmfieldlinelist
 	do
 	    rm -rf /data2/jmckinne/${thedir}/$moviedirname/dumps/$fil
@@ -372,7 +385,7 @@ then
         fi
         if [ $numtbl -eq 7 ]
         then
-            echo "\caption{Energy Efficiency: Magnetized Wind and Entire Outflow}" >> $fname
+            echo "\caption{Energy Efficiency: Magnetized Wind and Entire Wind}" >> $fname
         fi
         if [ $numtbl -eq 8 ]
         then
@@ -380,7 +393,7 @@ then
         fi
         if [ $numtbl -eq 9 ]
         then
-            echo "\caption{Specific Angular Momentum: Magnetized Wind and Entire Outflow}" >> $fname
+            echo "\caption{Specific Angular Momentum: Magnetized Wind and Entire Wind}" >> $fname
         fi
         if [ $numtbl -eq 10 ]
         then
@@ -405,7 +418,7 @@ then
         strfinal=$str1$str2$str3
         echo $strfinal >> $fname
         echo "\hline" >> $fname
-        egrep "Latex$numtbl:|Latex:" tables$moviedirname.tex | sed 's/\([0-9]\)%/\1\\%/g' | sed 's/[HV]Latex'$numtbl': //g' | sed 's/[HV]Latex: //g' | sed 's/\$\&/$ \&/g'   | sed 's/A94BpN10 /\\\\\nA94BpN10 /g' | sed 's/A-94BfN10 /\\\\\nA-94BfN10 /g' | sed 's/A-94BtN10 /\\\\\nA-94BtN10 /g'  | sed 's/MB09\\_D /\\\\\nMB09\\_D /g'  | sed 's/} \&/}$ \&/g' | sed 's/} \\/}$  \\/g' | sed 's/nan/0/g' | column  -t >> $fname
+        egrep "Latex$numtbl:|Latex:" tables$moviedirname.tex | sed 's/\([0-9]\)%/\1\\%/g' | sed 's/[HV]Latex'$numtbl': //g' | sed 's/[HV]Latex: //g' | sed 's/\$\&/$ \&/g'   | sed 's/A94BpN10 /\\\\\nA94BpN10 /g' | sed 's/A-94BfN10 /\\\\\nA-94BfN10 /g' | sed 's/A-94BtN10 /\\\\\nA-94BtN10 /g'  | sed 's/MB09\\_D /\\\\\nMB09\\_D /g'| sed 's/A-0.9 /\\\\\nA-0.9 /g'  | sed 's/} \&/}$ \&/g' | sed 's/} \\/}$  \\/g' | sed 's/nan/0/g' | column  -t >> $fname
         echo "\hline" >> $fname
         echo "\hline" >> $fname
         echo "\end{tabular}" >> $fname

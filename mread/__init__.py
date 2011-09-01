@@ -663,6 +663,21 @@ def getdefaulttimes():
     elif modelname=="runlocaldipole3dfiducial":
         defaultfti=1500
         defaultftf=1e5
+    elif modelname=="blandford3d_new":
+        defaultfti=1500
+        defaultftf=1e5
+    elif modelname=="sasham9":
+        defaultfti=8000
+        defaultftf=1e5
+    elif modelname=="sasha2":
+        defaultfti=8000
+        defaultftf=1e5
+    elif modelname=="sasha5":
+        defaultfti=8000
+        defaultftf=1e5
+    elif modelname=="sasha9":
+        defaultfti=8000
+        defaultftf=1e5
     elif modelname=="sasha99":
         defaultfti=8000
         defaultftf=1e5
@@ -877,7 +892,11 @@ def plot2davg(dosq=True,whichplot=-1):
     foutpower = open( "pjet_2davg_%s.txt" %  os.path.basename(os.getcwd()), "w" )
     # radius of jet power measurement
     rjetin=10.
-    rjetout=100.
+    if modelname=="blandford3d_new":
+        rjetout=30.
+    else:
+        rjetout=100.
+    #
     rjet=rjetout
     #
     printjetwindpower(filehandle = foutpower, r = rjet, stage = 0, powjet = powjet, powwind = powwind, muminjet = muminjet, muminwind = muminwind, md=md, powjetEMKE=powjetEMKE, powjetwindEMKE=powjetwindEMKE, 
@@ -3305,9 +3324,9 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
     """
     Returns a tuple (ts,fs,mdot,pjetem,pjettot): lists of times, horizon fluxes, and Mdot
     """
-    if modelname=="runlocaldipole3dfiducial":
+    if modelname=="runlocaldipole3dfiducial" or modelname=="blandford3d_new":
         horval=0.2
-    elif modelname=="sasha99":
+    elif modelname=="sasham9" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9" or modelname=="sasha99":
         horval=0.2
     else:
         horval=0.6
@@ -4098,7 +4117,10 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
     #
     rjetin=10.
-    rjetout=100.
+    if modelname=="blandford3d_new":
+        rjetout=30.
+    else:
+        rjetout=100.
     # jon's Choice below
     showextra=True
     #
@@ -4422,9 +4444,9 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     #######################
     #
-    if modelname=="runlocaldipole3dfiducial":
+    if modelname=="runlocaldipole3dfiducial" or modelname=="blandford3d_new":
         windplotfactor=1.0
-    elif modelname=="sasha99":
+    elif modelname=="sasham9" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9" or modelname=="sasha99":
         windplotfactor=1.0
     else:
         #windplotfactor=0.1
@@ -4469,7 +4491,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
                     ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotjetiniavg,color=(fc,fc+0.5*(1-fc),fc))
                     ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotmwoutiniavg*windplotfactor,color=(fc,fc,1))
         #
-        ax.plot(ts,np.abs(mdtot[:,ihor]-md30[:,ihor]),clr,label=r'$\dot Mc^2$')
+        ax.plot(ts,np.abs(mdtot[:,ihor]-md30[:,ihor]),clr,label=r'$\dot M_{\rm BH}c^2$')
         if showextra:
             ax.plot(ts,np.abs(mdjet[:,iofr(rjetout)]),'g--',label=r'$\dot M_{\rm j}c^2$')
             if windplotfactor==1.0:
@@ -4741,7 +4763,11 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     hoverr5=hoverr[:,iofr(5)]
     hoverr10=hoverr[:,iofr(10)]
     hoverr20=hoverr[:,iofr(20)]
-    hoverr100=hoverr[:,iofr(100)]
+    if modelname=="blandford3d_new":
+        # so really at r=30 not 100
+        hoverr100=hoverr[:,iofr(30)]
+    else:
+        hoverr100=hoverr[:,iofr(100)]
     #
     hoverrhor_t0 = hoverrhor[0]
     hoverr2_t0 = hoverr2[0]
@@ -4750,10 +4776,10 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     hoverr20_t0 = hoverr20[0]
     hoverr100_t0 = hoverr100[0]
     #
-    if modelname=="runlocaldipole3dfiducial":
+    if modelname=="runlocaldipole3dfiducial" or modelname=="blandford3d_new":
         hoverr12=hoverr[:,iofr(12)]
         hoverratrmax_t0=hoverr12[0]
-    elif modelname=="sasha99":
+    elif modelname=="sasham9" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9" or modelname=="sasha99":
         hoverr34=hoverr[:,iofr(34)]
         hoverratrmax_t0=hoverr34[0]
     else:
@@ -4765,7 +4791,11 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     hoverrcorona5=hoverrcorona[:,iofr(5)]
     hoverrcorona10=hoverrcorona[:,iofr(10)]
     hoverrcorona20=hoverrcorona[:,iofr(20)]
-    hoverrcorona100=hoverrcorona[:,iofr(100)]
+    if modelname=="blandford3d_new":
+        # so really at r=30 not 100
+        hoverrcorona100=hoverrcorona[:,iofr(30)]
+    else:
+        hoverrcorona100=hoverrcorona[:,iofr(100)]
     #
     hoverrcoronahor_t0 = hoverrcoronahor[0]
     hoverrcorona2_t0 = hoverrcorona2[0]
@@ -4779,7 +4809,11 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     hoverrjet5=hoverrjet[:,iofr(5)]
     hoverrjet10=hoverrjet[:,iofr(10)]
     hoverrjet20=hoverrjet[:,iofr(20)]
-    hoverrjet100=hoverrjet[:,iofr(100)]
+    if modelname=="blandford3d_new":
+        # so really at r=30 not 100
+        hoverrjet100=hoverrjet[:,iofr(30)]
+    else:
+        hoverrjet100=hoverrjet[:,iofr(100)]
     #
     hoverrjethor_t0 = hoverrjethor[0]
     hoverrjet2_t0 = hoverrjet2[0]
@@ -4997,7 +5031,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         #drnormvsr,dHnormvsr,dPnormvsr=gridcalc(hoverr10[-1])
         # run.liker2butbeta40 has issues with hoverr10[-1]
         #drnormvsr,dHnormvsr,dPnormvsr=gridcalc(hoverr10_avg)
-        if modelname=="runlocaldipole3dfiducial":
+        if modelname=="runlocaldipole3dfiducial" or modelname=="blandford3d_new":
             hoverri=hoverr10_avg
             hoverro=hoverr20_avg
         else:
@@ -5014,9 +5048,15 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         drnormvsr20=drnormvsr[iofr(20)]
         dHnormvsr20=dHnormvsr[iofr(20)]
         dPnormvsr20=dPnormvsr[iofr(20)]
-        drnormvsr100=drnormvsr[iofr(100)]
-        dHnormvsr100=dHnormvsr[iofr(100)]
-        dPnormvsr100=dPnormvsr[iofr(100)]
+        if modelname=="blandford3d_new":
+            # so really at r=30 not 100
+            drnormvsr100=drnormvsr[iofr(30)]
+            dHnormvsr100=dHnormvsr[iofr(30)]
+            dPnormvsr100=dPnormvsr[iofr(30)]
+        else:
+            drnormvsr100=drnormvsr[iofr(100)]
+            dHnormvsr100=dHnormvsr[iofr(100)]
+            dPnormvsr100=dPnormvsr[iofr(100)]
         #
         hoverrcoronahor_avg = timeavg(hoverrcoronahor,ts,fti,ftf)
         hoverrcorona2_avg = timeavg(hoverrcorona2,ts,fti,ftf)
@@ -5130,9 +5170,9 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             #
     #
     # Jon's whichplot==4 Plot:
-    if modelname=="runlocaldipole3dfiducial":
+    if modelname=="runlocaldipole3dfiducial" or modelname=="blandford3d_new":
         windplotfactor=1.0
-    elif modelname=="sasha99":
+    elif modelname=="sasham9" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9" or modelname=="sasha99":
         windplotfactor=1.0
     else:
         windplotfactor=0.1
@@ -5140,10 +5180,10 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     #
     global gridtype
-    if modelname=="runlocaldipole3dfiducial":
+    if modelname=="runlocaldipole3dfiducial" or modelname=="blandford3d_new":
         gridtype="ExpOld"
-    elif modelname=="sasha99":
-        gridtype="A0.99fc"
+    elif modelname=="sasham9" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9" or modelname=="sasha99":
+        gridtype="TNM11"
     elif Rout==26000:
         gridtype="HypExp"
     elif Rout==1000:
@@ -5220,6 +5260,21 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     elif modelname=="runlocaldipole3dfiducial":
         fieldtype="PoloidalOld"
         truemodelname="MB09\_D"
+    elif modelname=="blandford3d_new":
+        fieldtype="LSQuad"
+        truemodelname="MB09\_Q"
+    elif modelname=="sasham9":
+        fieldtype="Poloidal2"
+        truemodelname="A-0.9"
+    elif modelname=="sasha2":
+        fieldtype="Poloidal2"
+        truemodelname="A0.2"
+    elif modelname=="sasha5":
+        fieldtype="Poloidal2"
+        truemodelname="A0.5"
+    elif modelname=="sasha9":
+        fieldtype="Poloidal2"
+        truemodelname="A0.9"
     elif modelname=="sasha99":
         fieldtype="Poloidal2"
         truemodelname="A0.99fc"
@@ -5229,7 +5284,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     nzreal=nz
     #
-    if modelname=="runlocaldipole3dfiducial":
+    if modelname=="runlocaldipole3dfiducial" or modelname=="blandford3d_new":
         drnormh=drnormvsrhor
         dHnormh=dHnormvsrhor
         dPnormh=dPnormvsrhor
@@ -5255,6 +5310,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         dHnormo=dHnormvsr100
         dPnormo=dPnormvsr100
         #
+        # only sasha99 model (at late times!) should do the below
         if modelname=="sasha99":
             dPnormh/=2
             dPnormi/=2
@@ -5274,11 +5330,6 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     if truetmax>ftf:
         truetmax=ftf
-    #
-    if modelname=="runlocaldipole3dfiducial":
-        gridtype="ExpOld"
-    elif modelname=="sasha99":
-        gridtype="A0.99fc"
     #
     if whichplot == 4 and sashaplot4 == 0:
         if dotavg:
@@ -5574,7 +5625,11 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         # 0 and real value
         numextrema=2
         #
-    elif modelname=="sasha99":
+    elif modelname=="blandford3d_new":
+        # real value
+        numextrema=1
+        #
+    elif modelname=="sasham9" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9" or modelname=="sasha99":
         # 0 and real value
         numextrema=2
         #
@@ -5603,47 +5658,73 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     sumextreme=0
     abssumextreme=0
-    if numextrema>1:
-        fstotnorm1=(-fstot[:,ihor]/2.0)/feqtotextremaval[1]
+    if modelname=="blandford3d_new":
+        starteval=0
+    else:
+        starteval=1
+    #
+    testnum=starteval
+    #
+    if numextrema>testnum:
+        fstotnorm1=(-fstot[:,ihor]/2.0)/(feqtotextremaval[starteval]+(-fstot[0,ihor]/2.0))
         print("rext0=%g" % (r[feqtotextremai[0],0,0]) )
-        print("rext1=%g" % (r[feqtotextremai[1],0,0]) )
-        sumextreme+=feqtotextremaval[1]
-        abssumextreme+=np.fabs(feqtotextremaval[1])
-    if numextrema>2:
-        fstotnorm2=(-fstot[:,ihor]/2.0)/feqtotextremaval[2]
-        print("rext2=%g" % (r[feqtotextremai[2],0,0]) )
-        sumextreme+=feqtotextremaval[2]
-        abssumextreme+=np.fabs(feqtotextremaval[2])
-    if numextrema>3:
-        fstotnorm3=(-fstot[:,ihor]/2.0)/feqtotextremaval[3]
-        print("rext3=%g" % (r[feqtotextremai[3],0,0]) )
-        sumextreme+=feqtotextremaval[3]
-        abssumextreme+=np.fabs(feqtotextremaval[3])
-    if numextrema>4:
-        fstotnorm4=(-fstot[:,ihor]/2.0)/feqtotextremaval[4]
-        print("rext4=%g" % (r[feqtotextremai[4],0,0]) )
-        sumextreme+=feqtotextremaval[4]
-        abssumextreme+=np.fabs(feqtotextremaval[4])
-    if numextrema>5:
-        fstotnorm5=(-fstot[:,ihor]/2.0)/feqtotextremaval[5]
-        print("rext5=%g" % (r[feqtotextremai[5],0,0]) )
-        sumextreme+=feqtotextremaval[5]
-        abssumextreme+=np.fabs(feqtotextremaval[5])
+        print("rext1=%g" % (r[feqtotextremai[starteval],0,0]) )
+        sumextreme+=feqtotextremaval[starteval]
+        abssumextreme+=np.fabs(feqtotextremaval[starteval])
+    #
+    testnum=testnum+1
+    print("it=%d %d" % (numextrema,starteval) )
+    #
+    if numextrema>testnum:
+        fstotnorm2=(-fstot[:,ihor]/2.0)/(feqtotextremaval[starteval]+(-fstot[0,ihor]/2.0))
+        print("rext2=%g : %d %d" % (r[feqtotextremai[starteval],0,0],numextrema,starteval) )
+        sumextreme+=feqtotextremaval[starteval]
+        abssumextreme+=np.fabs(feqtotextremaval[starteval])
+    #
+    testnum=testnum+1
+    #
+    if numextrema>testnum:
+        fstotnorm3=(-fstot[:,ihor]/2.0)/(feqtotextremaval[starteval]+(-fstot[0,ihor]/2.0))
+        print("rext3=%g" % (r[feqtotextremai[starteval],0,0]) )
+        sumextreme+=feqtotextremaval[starteval]
+        abssumextreme+=np.fabs(feqtotextremaval[starteval])
+    #
+    testnum=testnum+1
+    #
+    if numextrema>testnum:
+        fstotnorm4=(-fstot[:,ihor]/2.0)/(feqtotextremaval[starteval]+(-fstot[0,ihor]/2.0))
+        print("rext4=%g" % (r[feqtotextremai[starteval],0,0]) )
+        sumextreme+=feqtotextremaval[starteval]
+        abssumextreme+=np.fabs(feqtotextremaval[starteval])
+    #
+    testnum=testnum+1
+    #
+    if numextrema>testnum:
+        fstotnorm5=(-fstot[:,ihor]/2.0)/(feqtotextremaval[starteval]+(-fstot[0,ihor]/2.0))
+        print("rext5=%g" % (r[feqtotextremai[starteval],0,0]) )
+        sumextreme+=feqtotextremaval[starteval]
+        abssumextreme+=np.fabs(feqtotextremaval[starteval])
+    #
     #
     # below can be used to detect poloidal flips vs. poloidal (but not really vs. toroidal)
     fracdiffabs=np.fabs(np.fabs(sumextreme)-abssumextreme)/((np.fabs(sumextreme)+abssumextreme))
     #                           
     #
     if dotavg:
-        if numextrema>1:
+        testnum=starteval
+        if numextrema>testnum:
             fstotnorm1_avg = timeavg(fstotnorm1**2,ts,fti,ftf)**0.5
-        if numextrema>2:
+        testnum=testnum+1
+        if numextrema>testnum:
             fstotnorm2_avg = timeavg(fstotnorm2**2,ts,fti,ftf)**0.5
-        if numextrema>3:
+        testnum=testnum+1
+        if numextrema>testnum:
             fstotnorm3_avg = timeavg(fstotnorm3**2,ts,fti,ftf)**0.5
-        if numextrema>4:
+        testnum=testnum+1
+        if numextrema>testnum:
             fstotnorm4_avg = timeavg(fstotnorm4**2,ts,fti,ftf)**0.5
-        if numextrema>5:
+        testnum=testnum+1
+        if numextrema>testnum:
             fstotnorm5_avg = timeavg(fstotnorm5**2,ts,fti,ftf)**0.5
     #
     #
@@ -5790,7 +5871,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #roundto2(djdtnormbh), roundto2(djdtnormj), roundto2(djdtnormmwin), roundto2(djdtnormmwout), roundto2(djdtnormwin), roundto2(djdtnormwout), roundto2(djdtnormnt)
     #
     # 13:
-    print( "HLatex11: ModelName & $\\Upsilon_{\\rm{}BH}$ & $\\Upsilon_{\\rm{}in,i}$ & $\\Upsilon_{\\rm{}in,o}$ & $\\Upsilon_{\\rm{}j}$   & $\\Upsilon_{\\rm{}mw,i}$ & $\\Upsilon_{\\rm{}mw,o}$ & $\\Upsilon_{\\rm{}w,i}$ & $\\Upsilon_{\\rm{}w,o}$    &  $\\frac{\\Phi}{\\Phi_1(t=0)}$ & $\\frac{\\Phi}{\\Phi_2(t=0)}$ & $\\frac{\\Phi}{\\Phi_3(t=0)}$ & $\\frac{\\Phi}{\\Phi_4(t=0)}$ & $\\frac{\\Phi}{\\Phi_5(t=0)}$ \\\\" )
+    print( "HLatex11: ModelName & $\\Upsilon_{\\rm{}BH}$ & $\\Upsilon_{\\rm{}in,i}$ & $\\Upsilon_{\\rm{}in,o}$ & $\\Upsilon_{\\rm{}j}$   & $\\Upsilon_{\\rm{}mw,i}$ & $\\Upsilon_{\\rm{}mw,o}$ & $\\Upsilon_{\\rm{}w,i}$ & $\\Upsilon_{\\rm{}w,o}$    &  $\\frac{\\Phi_{\\rm{}BH}}{\\Phi_1(t=0)}$ & $\\frac{\\Phi_{\\rm{}BH}}{\\Phi_2(t=0)}$ & $\\frac{\\Phi_{\\rm{}BH}}{\\Phi_3(t=0)}$ & $\\frac{\\Phi_{\\rm{}BH}}{\\Phi_4(t=0)}$ & $\\frac{\\Phi_{\\rm{}BH}}{\\Phi_5(t=0)}$ \\\\" )
     print( "VLatex11: %s         & %g    & %g & %g       & %g      & %g & %g      & %g & %g   & %g & %g & %g & %g & %g  \\\\ %% %s" % (truemodelname, roundto2(phibh_avg), roundto2(phirjetin_avg), roundto2(phirjetout_avg), roundto2(phij_avg), roundto2(phimwin_avg), roundto2(phimwout_avg), roundto2(phiwin_avg), roundto2(phiwout_avg), roundto2(fstotnorm1_avg),roundto2(fstotnorm2_avg),roundto2(fstotnorm3_avg),roundto2(fstotnorm4_avg),roundto2(fstotnorm5_avg), modelname ) )
     #
     #
@@ -7315,11 +7396,11 @@ def mkmovie(framesize=50, domakeavi=False):
             #Rz xy
             #
             #
-            if modelname=="runlocaldipole3dfiducial":
+            if modelname=="runlocaldipole3dfiducial" or modelname=="blandford3d_new":
                 # for MB09 dipolar fiducial model
                 vminforframe=-4.0
                 vmaxforframe=0.5
-            elif modelname=="sasha99":
+            elif modelname=="sasham9" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9" or modelname=="sasha99":
                 vminforframe=-4.0
                 vmaxforframe=0.5
             else:
@@ -7468,11 +7549,11 @@ def mkstreamlinefigure():
     #
     print("ModelName = %s" % (modelname) )
     #
-    if modelname=="runlocaldipole3dfiducial":
+    if modelname=="runlocaldipole3dfiducial" or modelname=="blandford3d_new":
         # for MB09 dipolar fiducial model
         vminforframe=-4.0
         vmaxforframe=0.5
-    elif modelname=="sasha99":
+    elif modelname=="sasham9" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9" or modelname=="sasha99":
         vminforframe=-4.0
         vmaxforframe=0.5
     else:
