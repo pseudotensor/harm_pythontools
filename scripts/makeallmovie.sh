@@ -369,11 +369,11 @@ then
         fi
         if [ $numtbl -eq 3 ]
         then
-            echo "\caption{Thickness of Disk, Corona, and Jet at Various Radii}" >> $fname
+            echo "\caption{Thickness of Disk and Interfaces for Disk-Corona and Corona-Jet}" >> $fname
         fi
         if [ $numtbl -eq 4 ]
         then
-            echo "\caption{MRI Grid Cells per Wavelength and MRI Wavelengths per Disk Height}" >> $fname
+            echo "\caption{Grid Cells per MRI Wavelength and MRI Wavelengths per Disk Height}" >> $fname
         fi
         if [ $numtbl -eq 5 ]
         then

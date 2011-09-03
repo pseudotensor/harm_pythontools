@@ -3420,26 +3420,44 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         #
         ##################################
         #HoverR
-        # where disk is on average
+        #
+        v4asq=bsq/(rho+ug+(gam-1)*ug)
+        mum1fake=uu[0]*(1.0+v4asq)-1.0
         beta=((gam-1)*ug)/(1E-30 + bsq*0.5)
-        diskcondition=(beta>2.0)
-        diskcondition=diskcondition*(bsq/rho<1.0)
+        #
+        # disk mass density scale height
+        #diskcondition=(beta>2.0)
+        # was (bsq/rho<1.0)
+        #diskcondition=diskcondition*(mum1fake<1.0)
+        # just avoid floor mass
+        diskcondition=(bsq/rho<10)
+        # was denfactor=rho, but want uniform with corona and jet
         hoverr3d,thetamid3d=horcalc(which=diskcondition,denfactor=rho)
         hoverr[findex]=hoverr3d.sum(2).sum(1)/(ny*nz)
         thetamid[findex]=thetamid3d.sum(2).sum(1)/(ny*nz)
         #
-        # where corona is on average
+        # disk-corona boundary
         coronacondition=(beta<2.0)
-        coronacondition=coronacondition*(bsq/rho<1.0)
+        coronacondition=coronacondition*(beta>1.0/2.0)
+        # was (bsq/rho<1.0)
+        coronacondition=coronacondition*(mum1fake<1.0)
         hoverr3dcorona,thetamid3dcorona=horcalc(which=coronacondition,denfactor=bsq+rho+gam*ug)
         hoverrcorona[findex]=hoverr3dcorona.sum(2).sum(1)/(ny*nz)
         thetamidcorona[findex]=thetamid3dcorona.sum(2).sum(1)/(ny*nz)
         #
-        # where jet is on average
-        jetcondition=(bsq/rho>2.0)
+        # corona-jet boundary
+        # was jetcondition=(bsq/rho>2.0)
+        #jetcondition=(mum1fake>1.0)
+        jetcondition=(mum1fake<2.0)
+        jetcondition=jetcondition*(mum1fake>1.0/2.0)
         hoverr3djet,thetamid3djet=horcalc(which=jetcondition,denfactor=bsq+rho+gam*ug)
         hoverrjet[findex]=hoverr3djet.sum(2).sum(1)/(ny*nz)
         thetamidjet[findex]=thetamid3djet.sum(2).sum(1)/(ny*nz)
+        #
+        diskcondition=(bsq/rho<10)
+        diskcondition=diskcondition*(beta>2.0)
+        # was (bsq/rho<1.0)
+        diskcondition=diskcondition*(mum1fake<1.0)
         #
         diskeqcondition=diskcondition
         qmri3ddisk,iq2mri3ddisk,normmri3ddisk=Qmri_simple(which=diskeqcondition)
@@ -3447,13 +3465,13 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         # number of wavelengths per disk scale height
         iq2mridisk[findex]=iq2mri3ddisk.sum(2).sum(1)/(ny*nz)
         normmridisk[findex]=normmri3ddisk.sum(2).sum(1)/(ny*nz)
-    #
+        #
         qmri3ddiskweak,iq2mri3ddiskweak,normmri3ddiskweak=Qmri_simple(weak=1,which=diskeqcondition)
         qmridiskweak[findex]=qmri3ddiskweak.sum(2).sum(1)/(ny*nz)
         # number of wavelengths per disk scale height
         iq2mridiskweak[findex]=iq2mri3ddiskweak.sum(2).sum(1)/(ny*nz)
         normmridiskweak[findex]=normmri3ddiskweak.sum(2).sum(1)/(ny*nz)
-    #
+        #
         diskaltcondition=(bsq/rho<1.0)
         betamin[findex,0],betaavg[findex,0],betaratofavg[findex,0],betaratofmax[findex,0]=betascalc(which=diskaltcondition)
         #
@@ -5452,7 +5470,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     print( "HLatex96: ModelName & $Q_{1,\\rm{}MRI,10,w}$ & $Q_{1,\\rm{}MRI,20,w}$  & $Q_{1,\\rm{}MRI,100,w}$ & $Q_{2,\\rm{}MRI,10,w}$ & $Q_{2,\\rm{}MRI,20,w}$ & $Q_{2,\\rm{}MRI,100,w}$  \\\\" )
     print( "VLatex96: %s         & %g & %g & %g & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(qmridiskweak10_avg), roundto2(qmridiskweak20_avg), roundto2(qmridiskweak100_avg), roundto2(1.0/iq2mridiskweak10_avg), roundto2(1.0/iq2mridiskweak20_avg), roundto2(1.0/iq2mridiskweak100_avg), modelname ) )
     #
-    print( "HLatex3: ModelName & $\\left(\\frac{|h|}{r}\\right)^d_{\\rm{}BH}$  & $\\left(\\frac{|h|}{r}\\right)^d_{5}$ & $\\left(\\frac{|h|}{r}\\right)^d_{20}$ & $\\left(\\frac{|h|}{r}\\right)^d_{100}$ & $\\left(\\frac{|h|}{r}\\right)^c_{\\rm{}BH}$  & $\\left(\\frac{|h|}{r}\\right)^c_{5}$ & $\\left(\\frac{|h|}{r}\\right)^c_{20}$ & $\\left(\\frac{|h|}{r}\\right)^c_{100}$ & $\\left(\\frac{|h|}{r}\\right)^j_{\\rm{}BH}$  & $\\left(\\frac{|h|}{r}\\right)^j_{5}$ & $\\left(\\frac{|h|}{r}\\right)^j_{20}$ & $\\left(\\frac{|h|}{r}\\right)^j_{100}$ \\\\" )
+    print( "HLatex3: ModelName & $\\left(\\frac{|h|}{r}\\right)^d_{\\rm{}BH}$  & $\\left(\\frac{|h|}{r}\\right)^d_{5}$ & $\\left(\\frac{|h|}{r}\\right)^d_{20}$ & $\\left(\\frac{|h|}{r}\\right)^d_{100}$ & $\\left(\\frac{|h|}{r}\\right)^{dc}_{\\rm{}BH}$  & $\\left(\\frac{|h|}{r}\\right)^{dc}_{5}$ & $\\left(\\frac{|h|}{r}\\right)^{dc}_{20}$ & $\\left(\\frac{|h|}{r}\\right)^{dc}_{100}$ & $\\left(\\frac{|h|}{r}\\right)^{cj}_{\\rm{}BH}$  & $\\left(\\frac{|h|}{r}\\right)^{cj}_{5}$ & $\\left(\\frac{|h|}{r}\\right)^{cj}_{20}$ & $\\left(\\frac{|h|}{r}\\right)^{cj}_{100}$ \\\\" )
     print( "VLatex3: %s         & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g  \\\\ %% %s" % (truemodelname, roundto2(hoverrhor_avg), roundto2( hoverr5_avg), roundto2(hoverr20_avg), roundto2(hoverr100_avg), roundto2(hoverrcoronahor_avg), roundto2( hoverrcorona5_avg), roundto2(hoverrcorona20_avg), roundto2(hoverrcorona100_avg), roundto2(hoverrjethor_avg), roundto2( hoverrjet5_avg), roundto2(hoverrjet20_avg), roundto2(hoverrjet100_avg), modelname ) )
     #
     #
@@ -7599,15 +7617,27 @@ def mkstreamlinefigure():
             #bsqorho = bsq/rho
             #z>0
             print("%d %d %d" % (len(rstag),len(hstag),len(avg_bsqorho)))
-            rs=rstag[(bsqorhorstag>2)*np.cos(hstag)>0]
-            hs=hstag[(bsqorhohstag>2)*np.cos(hstag)>0]
-            ax.plot(rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
-            ax.plot(-rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
-            #z<0
-            rs=rstag[(bsqorhorstag>2)*np.cos(hstag)<0]
-            hs=hstag[(bsqorhohstag>2)*np.cos(hstag)<0]
-            ax.plot(rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
-            ax.plot(-rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
+            truemaxbsqorhorstag=np.max(bsqorhorstag)
+            print("truemaxbsqorhorstag=%g" % (truemaxbsqorhorstag) )
+            # modelname=blandford3d_new has no region with bsqorho>2
+            #maxbsqorhorstag=0.95*truemaxbsqorhorstag
+            if modelname=="blandford3d_new":
+                setnothing=1
+            else:
+                #if truemaxbsqorhorstag>2.0:
+                maxbsqorhorstag=2.0
+                #
+                rs=rstag[(bsqorhorstag>maxbsqorhorstag)*np.cos(hstag)>0]
+                hs=hstag[(bsqorhohstag>maxbsqorhorstag)*np.cos(hstag)>0]
+                ax.plot(rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
+                ax.plot(-rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
+                #z<0
+                rs=rstag[(bsqorhorstag>maxbsqorhorstag)*np.cos(hstag)<0]
+                hs=hstag[(bsqorhohstag>maxbsqorhorstag)*np.cos(hstag)<0]
+                ax.plot(rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
+                ax.plot(-rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
+            #
+        #
     #
     if True:
         #field
