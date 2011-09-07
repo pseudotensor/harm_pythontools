@@ -669,13 +669,31 @@ def getdefaulttimes():
     elif modelname=="sasham9":
         defaultfti=8000
         defaultftf=1e5
+    elif modelname=="sasham5":
+        defaultfti=8000
+        defaultftf=1e5
+    elif modelname=="sasha0":
+        defaultfti=8000
+        defaultftf=1e5
+    elif modelname=="sasha1":
+        defaultfti=8000
+        defaultftf=1e5
     elif modelname=="sasha2":
         defaultfti=8000
         defaultftf=1e5
     elif modelname=="sasha5":
         defaultfti=8000
         defaultftf=1e5
-    elif modelname=="sasha9":
+    elif modelname=="sasha9b25":
+        defaultfti=8000
+        defaultftf=1e5
+    elif modelname=="sasha9b50":
+        defaultfti=8000
+        defaultftf=1e5
+    elif modelname=="sasha9b100":
+        defaultfti=8000
+        defaultftf=1e5
+    elif modelname=="sasha9b200":
         defaultfti=8000
         defaultftf=1e5
     elif modelname=="sasha99":
@@ -3326,7 +3344,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
     """
     if modelname=="runlocaldipole3dfiducial" or modelname=="blandford3d_new":
         horval=0.2
-    elif modelname=="sasham9" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9" or modelname=="sasha99":
+    elif modelname=="sasham9" or modelname=="sasham5" or modelname=="sasha0" or modelname=="sasha1" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9b25" or modelname=="sasha9b50" or modelname=="sasha9b100" or modelname=="sasha9b200" or modelname=="sasha99":
         horval=0.2
     else:
         horval=0.6
@@ -3437,8 +3455,8 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         thetamid[findex]=thetamid3d.sum(2).sum(1)/(ny*nz)
         #
         # disk-corona boundary
-        coronacondition=(beta<2.0)
-        coronacondition=coronacondition*(beta>1.0/2.0)
+        coronacondition=(beta<1.5)
+        coronacondition=coronacondition*(beta>1.0)
         # was (bsq/rho<1.0)
         coronacondition=coronacondition*(mum1fake<1.0)
         hoverr3dcorona,thetamid3dcorona=horcalc(which=coronacondition,denfactor=bsq+rho+gam*ug)
@@ -3448,8 +3466,8 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         # corona-jet boundary
         # was jetcondition=(bsq/rho>2.0)
         #jetcondition=(mum1fake>1.0)
-        jetcondition=(mum1fake<2.0)
-        jetcondition=jetcondition*(mum1fake>1.0/2.0)
+        jetcondition=(mum1fake<1.5)
+        jetcondition=jetcondition*(mum1fake>1.0)
         hoverr3djet,thetamid3djet=horcalc(which=jetcondition,denfactor=bsq+rho+gam*ug)
         hoverrjet[findex]=hoverr3djet.sum(2).sum(1)/(ny*nz)
         thetamidjet[findex]=thetamid3djet.sum(2).sum(1)/(ny*nz)
@@ -4295,7 +4313,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     mdotiniavgvsr10 = timeavg(mdtot[:,:]-md10[:,:],ts,iti,itf)
     mdotiniavgvsr10itself = timeavg(md10[:,:],ts,iti,itf)
     #
-    mdotfinavgvsr40 = timeavg(mdtot[:,:]-md40[:,:],ts,fti,ftf)
+    mdotfinavgvsr40 = timeavg(mdtot[:,:]-md40[:,:],ts,fti,ftf)    
     #
     # Below 2 used as divisor to get efficiencies and normalized magnetic flux
     #mdotiniavg = np.float64(mdotiniavgvsr30)[r[:,0,0]<10].mean()
@@ -4378,6 +4396,30 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     ljkefinavgtot = timeavg(ljketot[:,ihor],ts,fti,ftf)
     ljkefinavgvsr = timeavg(ljketot,ts,fti,ftf)
     #
+    #################################
+    #
+    #radius of stagnation point near equator
+    #
+    #################################
+    # Get position of flow stagnation (excluding highly magnetized jet region)
+    # mdtot-md30 should be >0 (i.e. inflow) for all radii up to stagnation dominated by equatorial region
+    # something like (but not right): indices[:]=ti[:,0,0][mdtot[:,:]-md30[:,:]<0]
+    # for table, only need average stagnation surface:
+    # using full mdot (excluding jet) because corona might carry in some flux if going in.
+    # default is that istageq=nx and rstageq=Rout
+    istageq=nx-1
+    rstageq=Rout
+    # ok, use bsqorho<5 part of flow to exclude jet at large radii
+    indiceseq=ti[:,0,0][mdotfinavgvsr5<0]
+    if len(indiceseq)>0:
+        istageq=indiceseq[0]
+        if istageq>0 and istageq<nx:
+            rstageq=r[istageq,0,0]
+            print("istageq=%d rstageq=%g" % (istageq,rstageq) )
+        else:
+            print("istageq=%d len=%d PROBLEM1" % (istageq,len(indiceseq)) )
+    else:
+        print("indicieseq PROBLEM2")
     #
     #################################
     #
@@ -4389,6 +4431,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     if 0 and indices.shape[0]>0:
         istag=indices[0]
         rstag=r[istag,0,0]
+        print("istag=%d rstag=%g" % (istag,rstag) )
         if rstag>20:
             rstag=20
         # issue with out of bounds in iofr, so keep rstag outside Rin
@@ -4464,7 +4507,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     if modelname=="runlocaldipole3dfiducial" or modelname=="blandford3d_new":
         windplotfactor=1.0
-    elif modelname=="sasham9" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9" or modelname=="sasha99":
+    elif modelname=="sasham9" or modelname=="sasham5" or modelname=="sasha0" or modelname=="sasha1" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9b25" or modelname=="sasha9b50" or modelname=="sasha9b100" or modelname=="sasha9b200" or modelname=="sasha99":
         windplotfactor=1.0
     else:
         #windplotfactor=0.1
@@ -4797,7 +4840,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     if modelname=="runlocaldipole3dfiducial" or modelname=="blandford3d_new":
         hoverr12=hoverr[:,iofr(12)]
         hoverratrmax_t0=hoverr12[0]
-    elif modelname=="sasham9" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9" or modelname=="sasha99":
+    elif modelname=="sasham9" or modelname=="sasham5" or modelname=="sasha0" or modelname=="sasha1" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9b25" or modelname=="sasha9b50" or modelname=="sasha9b100" or modelname=="sasha9b200" or modelname=="sasha99":
         hoverr34=hoverr[:,iofr(34)]
         hoverratrmax_t0=hoverr34[0]
     else:
@@ -5190,7 +5233,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     # Jon's whichplot==4 Plot:
     if modelname=="runlocaldipole3dfiducial" or modelname=="blandford3d_new":
         windplotfactor=1.0
-    elif modelname=="sasham9" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9" or modelname=="sasha99":
+    elif modelname=="sasham9" or modelname=="sasham5" or modelname=="sasha0" or modelname=="sasha1" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9b25" or modelname=="sasha9b50" or modelname=="sasha9b100" or modelname=="sasha9b200" or modelname=="sasha99":
         windplotfactor=1.0
     else:
         windplotfactor=0.1
@@ -5200,7 +5243,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     global gridtype
     if modelname=="runlocaldipole3dfiducial" or modelname=="blandford3d_new":
         gridtype="ExpOld"
-    elif modelname=="sasham9" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9" or modelname=="sasha99":
+    elif modelname=="sasham9" or modelname=="sasham5" or modelname=="sasha0" or modelname=="sasha1" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9b25" or modelname=="sasha9b50" or modelname=="sasha9b100" or modelname=="sasha9b200" or modelname=="sasha99":
         gridtype="TNM11"
     elif Rout==26000:
         gridtype="HypExp"
@@ -5284,15 +5327,33 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     elif modelname=="sasham9":
         fieldtype="Poloidal2"
         truemodelname="A-0.9"
+    elif modelname=="sasham5":
+        fieldtype="Poloidal2"
+        truemodelname="A-0.5"
+    elif modelname=="sasha0":
+        fieldtype="Poloidal2"
+        truemodelname="A0.0"
+    elif modelname=="sasha1":
+        fieldtype="Poloidal2"
+        truemodelname="A0.1"
     elif modelname=="sasha2":
         fieldtype="Poloidal2"
         truemodelname="A0.2"
     elif modelname=="sasha5":
         fieldtype="Poloidal2"
         truemodelname="A0.5"
-    elif modelname=="sasha9":
+    elif modelname=="sasha9b25":
+        fieldtype="Poloidal2"
+        truemodelname="A0.9N25"
+    elif modelname=="sasha9b50":
+        fieldtype="Poloidal2"
+        truemodelname="A0.9N50"
+    elif modelname=="sasha9b100":
         fieldtype="Poloidal2"
         truemodelname="A0.9"
+    elif modelname=="sasha9b200":
+        fieldtype="Poloidal2"
+        truemodelname="A0.9N200"
     elif modelname=="sasha99":
         fieldtype="Poloidal2"
         truemodelname="A0.99fc"
@@ -5628,6 +5689,14 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #        
     sashaplot5 = 0
     #
+    # kinda odd use of average istageq inside time-dependent thing, but done for simplicity
+    feqstag=feqtot[:,istageq]
+    # need t=0 value since want full possible source of flux, not just average or current flux available
+    feqstagt0=feqtot[0,istageq]
+    feqstag_avg1 = timeavg(feqstag,ts,fti,ftf)
+    feqstag_avg2 = timeavg(feqstag**2,ts,fti,ftf)**0.5
+    print("feqstagt0=%g feqstag_avg1=%g feqstag_avg2=%g" % (feqstagt0, feqstag_avg1, feqstag_avg2) )
+    #
     # get initial extrema
     # get equatorial flux extrema at t=0 to normalize new flux on hole
     feqtotextrema=extrema(feqtot[0,:],withendf=True)
@@ -5647,9 +5716,10 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         # real value
         numextrema=1
         #
-    elif modelname=="sasham9" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9" or modelname=="sasha99":
+    elif modelname=="sasham9" or modelname=="sasham5" or modelname=="sasha0" or modelname=="sasha1" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9b25" or modelname=="sasha9b50" or modelname=="sasha9b100" or modelname=="sasha9b200" or modelname=="sasha99":
         # 0 and real value
-        numextrema=2
+        if numextrema>2:
+            numextrema=2
         #
     #
     # also get final extrema
@@ -5683,45 +5753,150 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     testnum=starteval
     #
+    firstlimited=starteval
+    everfirstlimited=0
+    #
     if numextrema>testnum:
-        fstotnorm1=(-fstot[:,ihor]/2.0)/(feqtotextremaval[starteval]+(-fstot[0,ihor]/2.0))
+        if feqtotextremai[testnum]>istageq:
+            trueieq=istageq
+            if everfirstlimited==0:
+                everfirstlimited=1
+                # not feqstag_avg2 or feqstag_avg1
+                if testnum>=1:
+                    if np.fabs(feqstagt0)>np.fabs(feqtotextremaval[testnum-1]):
+                        firstlimited=feqstagt0
+                    else:
+                        firstlimited=feqtotextremaval[testnum-1]
+                    #
+                else:
+                    firstlimited=feqstagt0
+                #
+            #
+            truefeq=firstlimited
+            #
+            print("limited trueieq=%d truefeq=%g" % (trueieq,truefeq) )
+        else:
+            trueieq=feqtotextremai[testnum]
+            truefeq=feqtotextremaval[testnum]
+            print("unlimited trueieq=%d truefeq=%g" % (trueieq,truefeq) )
+        #
+        fstotnorm1=(-fstot[:,ihor]/2.0)/(truefeq+(-fstot[0,ihor]/2.0))
         print("rext0=%g" % (r[feqtotextremai[0],0,0]) )
-        print("rext1=%g" % (r[feqtotextremai[starteval],0,0]) )
-        sumextreme+=feqtotextremaval[starteval]
-        abssumextreme+=np.fabs(feqtotextremaval[starteval])
+        print("rext1=%g" % (r[trueieq,0,0]) )
+        sumextreme+=feqtotextremaval[testnum]
+        abssumextreme+=np.fabs(feqtotextremaval[testnum])
     #
     testnum=testnum+1
-    print("it=%d %d" % (numextrema,starteval) )
+    print("it=%d %d %d" % (numextrema,testnum,istageq) )
     #
     if numextrema>testnum:
-        fstotnorm2=(-fstot[:,ihor]/2.0)/(feqtotextremaval[starteval]+(-fstot[0,ihor]/2.0))
-        print("rext2=%g : %d %d" % (r[feqtotextremai[starteval],0,0],numextrema,starteval) )
-        sumextreme+=feqtotextremaval[starteval]
-        abssumextreme+=np.fabs(feqtotextremaval[starteval])
+        if feqtotextremai[testnum]>istageq:
+            trueieq=istageq
+            if everfirstlimited==0:
+                everfirstlimited=1
+                # not feqstag_avg2 or feqstag_avg1
+                if np.fabs(feqstagt0)>np.fabs(feqtotextremaval[testnum-1]):
+                    firstlimited=feqstagt0
+                else:
+                    firstlimited=feqtotextremaval[testnum-1]
+                #
+            #
+            truefeq=firstlimited
+            #
+            print("limited trueieq=%d truefeq=%g" % (trueieq,truefeq) )
+        else:
+            trueieq=feqtotextremai[testnum]
+            truefeq=feqtotextremaval[testnum]
+            print("unlimited trueieq=%d truefeq=%g" % (trueieq,truefeq) )
+        #
+        fstotnorm2=(-fstot[:,ihor]/2.0)/(truefeq+(-fstot[0,ihor]/2.0))
+        print("rext2=%g : %d %d" % (r[trueieq,0,0],numextrema,trueieq) )
+        sumextreme+=feqtotextremaval[testnum]
+        abssumextreme+=np.fabs(feqtotextremaval[testnum])
     #
     testnum=testnum+1
     #
     if numextrema>testnum:
-        fstotnorm3=(-fstot[:,ihor]/2.0)/(feqtotextremaval[starteval]+(-fstot[0,ihor]/2.0))
-        print("rext3=%g" % (r[feqtotextremai[starteval],0,0]) )
-        sumextreme+=feqtotextremaval[starteval]
-        abssumextreme+=np.fabs(feqtotextremaval[starteval])
+        if feqtotextremai[testnum]>istageq:
+            trueieq=istageq
+            #
+            if everfirstlimited==0:
+                everfirstlimited=1
+                # not feqstag_avg2 or feqstag_avg1
+                if np.fabs(feqstagt0)>np.fabs(feqtotextremaval[testnum-1]):
+                    firstlimited=feqstagt0
+                else:
+                    firstlimited=feqtotextremaval[testnum-1]
+                #
+            #
+            truefeq=firstlimited
+            #
+            print("limited trueieq=%d truefeq=%g" % (trueieq,truefeq) )
+        else:
+            trueieq=feqtotextremai[testnum]
+            truefeq=feqtotextremaval[testnum]
+            print("unlimited trueieq=%d truefeq=%g" % (trueieq,truefeq) )
+        #
+        fstotnorm3=(-fstot[:,ihor]/2.0)/(truefeq+(-fstot[0,ihor]/2.0))
+        print("rext3=%g" % (r[trueieq,0,0]) )
+        sumextreme+=feqtotextremaval[testnum]
+        abssumextreme+=np.fabs(feqtotextremaval[testnum])
     #
     testnum=testnum+1
     #
     if numextrema>testnum:
-        fstotnorm4=(-fstot[:,ihor]/2.0)/(feqtotextremaval[starteval]+(-fstot[0,ihor]/2.0))
-        print("rext4=%g" % (r[feqtotextremai[starteval],0,0]) )
-        sumextreme+=feqtotextremaval[starteval]
-        abssumextreme+=np.fabs(feqtotextremaval[starteval])
+        if feqtotextremai[testnum]>istageq:
+            trueieq=istageq
+            #
+            if everfirstlimited==0:
+                everfirstlimited=1
+                # not feqstag_avg2 or feqstag_avg1
+                if np.fabs(feqstagt0)>np.fabs(feqtotextremaval[testnum-1]):
+                    firstlimited=feqstagt0
+                else:
+                    firstlimited=feqtotextremaval[testnum-1]
+                #
+            #
+            truefeq=firstlimited
+            #
+            print("limited trueieq=%d truefeq=%g" % (trueieq,truefeq) )
+        else:
+            trueieq=feqtotextremai[testnum]
+            truefeq=feqtotextremaval[testnum]
+            print("unlimited trueieq=%d truefeq=%g" % (trueieq,truefeq) )
+        #
+        fstotnorm4=(-fstot[:,ihor]/2.0)/(truefeq+(-fstot[0,ihor]/2.0))
+        print("rext4=%g" % (r[trueieq,0,0]) )
+        sumextreme+=feqtotextremaval[testnum]
+        abssumextreme+=np.fabs(feqtotextremaval[testnum])
     #
     testnum=testnum+1
     #
     if numextrema>testnum:
-        fstotnorm5=(-fstot[:,ihor]/2.0)/(feqtotextremaval[starteval]+(-fstot[0,ihor]/2.0))
-        print("rext5=%g" % (r[feqtotextremai[starteval],0,0]) )
-        sumextreme+=feqtotextremaval[starteval]
-        abssumextreme+=np.fabs(feqtotextremaval[starteval])
+        if feqtotextremai[testnum]>istageq:
+            trueieq=istageq
+            #
+            if everfirstlimited==0:
+                everfirstlimited=1
+                # not feqstag_avg2 or feqstag_avg1
+                if np.fabs(feqstagt0)>np.fabs(feqtotextremaval[testnum-1]):
+                    firstlimited=feqstagt0
+                else:
+                    firstlimited=feqtotextremaval[testnum-1]
+                #
+            #
+            truefeq=firstlimited
+            #
+            print("limited trueieq=%d truefeq=%g" % (trueieq,truefeq) )
+        else:
+            trueieq=feqtotextremai[testnum]
+            truefeq=feqtotextremaval[testnum]
+            print("unlimited trueieq=%d truefeq=%g" % (trueieq,truefeq) )
+        #
+        fstotnorm5=(-fstot[:,ihor]/2.0)/(truefeq+(-fstot[0,ihor]/2.0))
+        print("rext5=%g" % (r[trueieq,0,0]) )
+        sumextreme+=feqtotextremaval[testnum]
+        abssumextreme+=np.fabs(feqtotextremaval[testnum])
     #
     #
     # below can be used to detect poloidal flips vs. poloidal (but not really vs. toroidal)
@@ -7418,7 +7593,7 @@ def mkmovie(framesize=50, domakeavi=False):
                 # for MB09 dipolar fiducial model
                 vminforframe=-4.0
                 vmaxforframe=0.5
-            elif modelname=="sasham9" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9" or modelname=="sasha99":
+            elif modelname=="sasham9" or modelname=="sasham5" or modelname=="sasha0" or modelname=="sasha1" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9b25" or modelname=="sasha9b50" or modelname=="sasha9b100" or modelname=="sasha9b200" or modelname=="sasha99":
                 vminforframe=-4.0
                 vmaxforframe=0.5
             else:
@@ -7571,7 +7746,7 @@ def mkstreamlinefigure():
         # for MB09 dipolar fiducial model
         vminforframe=-4.0
         vmaxforframe=0.5
-    elif modelname=="sasham9" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9" or modelname=="sasha99":
+    elif modelname=="sasham9" or modelname=="sasham5" or modelname=="sasha0" or modelname=="sasha1" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9b25" or modelname=="sasha9b50" or modelname=="sasha9b100" or modelname=="sasha9b200" or modelname=="sasha99":
         vminforframe=-4.0
         vmaxforframe=0.5
     else:
