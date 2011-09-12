@@ -25,10 +25,14 @@ thedir=$1
 
 # 3) setup directory list
 
+echo "1"
 rm -rf dirs${thedir}.txt
-list=`ls  | grep ${thedir}`
+listO=`ls  | grep ${thedir}`
+list=`echo $listO | sed 's/'${thedir}'\///g' | sed 's/'${thedir}' //g'`
+echo $list
 for fil in $list ; do echo $fil >> dirs${thedir}.txt ; done
 
+echo "2"
 mkdir -p /data2/jmckinne/${thedir}/dumps/
 cd /data2/jmckinne/${thedir}/
 mv ../dirs${thedir}.txt .
@@ -37,9 +41,17 @@ mv ../dirs${thedir}.txt .
 
 # 5) create new full-sim dir and change to dumps dir
 
+echo "3"
 cd /data2/jmckinne/${thedir}/dumps/
+rm -rf fieldline*.bin
+rm -rf dump0000.bin
+rm -rf gdump.bin
+
+#exit
 
 # 6) make links
+echo "4"
+sleep 1
 for mydir in `cat ../dirs${thedir}.txt` ; do echo $mydir ; for fil in `ls ../../$mydir/dumps/fieldline*.bin` ; do echo $fil ; ln -sf $fil . ;  done ; done
 
 # 7) Also make links to gdump.bin and dump0000.bin
@@ -50,6 +62,9 @@ ln -s ../../$firstdir/dumps/gdump.bin .
 ln -s ../../$firstdir/dumps/dump0000.bin .
 
 cd ..
+
+echo " "
+echo $list
 
 #cp -a ../thickdisk9/movie1 .
 #cd movie1/

@@ -654,6 +654,9 @@ def getdefaulttimes():
     elif modelname=="thickdisk15":
         defaultfti=25000
         defaultftf=1e5
+    elif modelname=="thickdisk15r":
+        defaultfti=25000
+        defaultftf=1e5
     elif modelname=="thickdisk2":
         defaultfti=25000
         defaultftf=1e5
@@ -2764,12 +2767,48 @@ def horfluxcalc(ivalue=None,jvalue=None,takeabs=1,takecumsum=0,takeextreme=0,min
         #
     else:
         fabs = dfabs.cumsum(axis=1)
-        if ivalue == None and jplane == None:
-            return(fabs)
+        if ivalue == None and jvalue == None:
+            if takeextreme==1:
+                bigj=np.zeros(nx,dtype=int)
+                finalresult=np.zeros(nx,dtype=float)
+                for ii in np.arange(0,nx):
+                    condition=(np.fabs(fabs[ii,:])==np.max(np.fabs(fabs[ii,:])))
+                    condition=condition*(np.fabs(fabs[ii,:])>1E-15)
+                    tempresultO=np.where(condition==1)[0]
+                    tempresult=tempresultO.astype(np.integer)
+                    #
+                    # assume all values are zero if here, so just choose one of the zero values
+                    if len(tempresult)==0:
+                        tempresult=ny/2
+                    #
+                    if type(tempresult) is not int:
+                        tempresult=tempresult[0]
+                    #
+                    #print("tempresult")
+                    #print(tempresult)
+                    #print("ii=%d tempresult=%d fabs=%g" % (ii,tempresult,fabs[ii,tempresult]) )
+                    bigj[ii]=tempresult
+                    finalresult[ii]=fabs[ii,bigj[ii]]
+                #
+                #print("shape of bigj")
+                #print(bigj.shape)
+                #
+                #print("sizefinalresult")
+                #print(finalresult.shape)
+                #
+                return(finalresult)
+            else:
+                return(fabs)
         elif ivalue is not None:
-            return(fabs[ivalue,:])
-        elif jplane is not None:
-            return(fabs[:,jplane])
+            if takeextreme==1:
+                bigj=np.where(np.fabs(fabs[ivalue,:])==np.max(np.fabs(fabs[ivalue,:])))[0]
+                #print("bigj=%d" % (bigj) )
+                return(fabs[ivalue,bigj])
+            else:
+                return(fabs[ivalue,:])
+            #
+        elif jvalue is not None:
+            return(fabs[:,jvalue])
         else:
             return(fabs[ivalue,jvalue])
         #
@@ -2910,7 +2949,7 @@ def mergeqtyvstime(n):
 
 
 def getnonbobnqty():
-    value=1+6+10+14+14+14+17+9+15+12+2+36+36
+    value=1+6+10+14+14+14+17+10+15+12+2+36+36
     return(value)
 
 
@@ -3079,13 +3118,15 @@ def getqtymem(qtymem):
     Bs32hor=qtymem[i];i+=1
     global     Bas32hor
     Bas32hor=qtymem[i];i+=1
-    #Flux: 9
+    #Flux: 10
     global     fstot
     fstot=qtymem[i];i+=1
     global     fsin
     fsin=qtymem[i];i+=1
     global     feqtot
     feqtot=qtymem[i];i+=1
+    global     fsmaxtot
+    fsmaxtot=qtymem[i];i+=1
     global     fs2hor
     fs2hor=qtymem[i];i+=1
     global     fsj5
@@ -3581,12 +3622,16 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         # equatorial vertical cumulative flux as function of radius
         feqtot[findex]=eqfluxcalc(jvalue=ny/2,takeabs=0,takecumsum=1,minbsqorho=0)
         #
+        fsmaxtot[findex]=horfluxcalc(minbsqorho=0,takeextreme=1,takecumsum=1,takeabs=0)
+        #
+        #
         fs2hor[findex]==intangle(np.abs(gdetB[1]),**keywords2hor)
         fsj5[findex]=horfluxcalc(ivalue=ihor,minbsqorho=5)
         fsj10[findex]=horfluxcalc(ivalue=ihor,minbsqorho=10)
         fsj20[findex]=horfluxcalc(ivalue=ihor,minbsqorho=20)
         fsj30[findex]=horfluxcalc(ivalue=ihor,minbsqorho=30)
         fsj40[findex]=horfluxcalc(ivalue=ihor,minbsqorho=40)
+        #
         #Mdot
         enth=1+ug*gam/rho
         mdtot[findex]=mdotcalc()
@@ -4406,12 +4451,20 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     # something like (but not right): indices[:]=ti[:,0,0][mdtot[:,:]-md30[:,:]<0]
     # for table, only need average stagnation surface:
     # using full mdot (excluding jet) because corona might carry in some flux if going in.
-    # default is that istageq=nx and rstageq=Rout
+    # default is that istageq=nx-1 and rstageq=Rout
+    #
+    # get stag for average of simulation data
     istageq=nx-1
     rstageq=Rout
     # ok, use bsqorho<5 part of flow to exclude jet at large radii
+    # already have mdotfinavgvsr5 computed above
+    print("lenmdotfinavgvsr5=%d" % (len(mdotfinavgvsr5)))
     indiceseq=ti[:,0,0][mdotfinavgvsr5<0]
+    print("indiceseq")
+    print(indiceseq)
+    #
     if len(indiceseq)>0:
+        # if pick first such zero (using indiceseq[0] below), then if inner-region oscillates (as occurs for 2D MAD models), then picks out region that already filled-up with lots of flux long ago.
         istageq=indiceseq[0]
         if istageq>0 and istageq<nx:
             rstageq=r[istageq,0,0]
@@ -4420,6 +4473,62 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             print("istageq=%d len=%d PROBLEM1" % (istageq,len(indiceseq)) )
     else:
         print("indicieseq PROBLEM2")
+    #
+    # get stag for very near the end of the simulation data
+    istageqnearfin=nx-1
+    rstageqnearfin=Rout
+    # ok, use bsqorho<5 part of flow to exclude jet at large radii
+    print("fti=%g ftf=%g other=%g" % (fti,ftf,0.85*ftf) )
+    if ts[0]>fti:
+        truefti=ts[0]
+    else:
+        truefti=fti
+    if ts[-1]<ftf:
+        trueftf=ts[-1]
+    else:
+        trueftf=ftf
+    #
+    mdotnearfinavgvsr5 = timeavg(mdtot[:,:]-md5[:,:],ts,0.85*trueftf,trueftf)
+    print("lenmdotnearfinavgvsr5=%d" % (len(mdotnearfinavgvsr5)))
+    indiceseqnearfin=ti[:,0,0][mdotnearfinavgvsr5<0]
+    print("indiceseqnearfin")
+    print(indiceseqnearfin)
+    #
+    if len(indiceseqnearfin)>0:
+        # if pick first such zero (using indiceseq[0] below), then if inner-region oscillates (as occurs for 2D MAD models), then picks out region that already filled-up with lots of flux long ago.
+        istageqnearfin=indiceseqnearfin[0]
+        if istageqnearfin>0 and istageqnearfin<nx:
+            rstageqnearfin=r[istageqnearfin,0,0]
+            print("istageqnearfin=%d rstageqnearfin=%g" % (istageqnearfin,rstageqnearfin) )
+        else:
+            print("istageqnearfin=%d len=%d PROBLEM1" % (istageqnearfin,len(indiceseqnearfin)) )
+    else:
+        print("indicieseqnearfin PROBLEM2")
+    #
+    #
+    #
+    print("ts")
+    print(ts)
+    #
+    sizet=len(ts)
+    print("sizet=%d" % (sizet) )
+    blob=np.zeros(len(mdotfinavgvsr5),dtype=mdotfinavgvsr5.dtype)
+    indicesvst=np.zeros(sizet,dtype=ti.dtype)
+    for tic in ts:
+        tici=np.where(ts==tic)[0]
+        #print("tic=%g %d tici=%d" % (tic,len(tic==ts),tici) )
+        blob[:]=mdtot[tici,:]-md30[tici,:]
+        #print("lenblob=%d" % (len(blob)))
+        indices=ti[:,0,0][blob<0]
+        #print("indices")
+        #print(indices)
+        if len(indices)>0:
+            indicesvst[tici]=indices[0]
+        else:
+            indicesvst[tici]=nx-1
+    #
+    print("indicesvst")
+    print(indicesvst)
     #
     #################################
     #
@@ -4463,9 +4572,13 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
 
     fstotfinavg = timeavg(fstot[:,ihor],ts,fti,ftf)
     fstotsqfinavg = timeavg(fstot[:,ihor]**2,ts,fti,ftf)**0.5
+
     fsinfinavg = timeavg(fsin[:,ihor],ts,fti,ftf)
     fsinsqfinavg = timeavg(fsin[:,ihor]**2,ts,fti,ftf)**0.5
         
+    fsmaxtotfinavg = timeavg(fsmaxtot[:,ihor],ts,fti,ftf)
+    fsmaxtotsqfinavg = timeavg(fsmaxtot[:,ihor]**2,ts,fti,ftf)**0.5
+
     fsj30finavg = timeavg(fsj30[:,ihor],ts,fti,ftf)
     fsj30sqfinavg = timeavg(fsj30[:,ihor]**2,ts,fti,ftf)**0.5
     
@@ -5312,6 +5425,9 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     elif modelname=="thickdisk15":
         fieldtype="Toroidal"
         truemodelname="A5BtN10"
+    elif modelname=="thickdisk15r":
+        fieldtype="Toroidal"
+        truemodelname="A5BtN10"
     elif modelname=="thickdisk2":
         fieldtype="Toroidal"
         truemodelname="A94BtN10"
@@ -5689,37 +5805,179 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #        
     sashaplot5 = 0
     #
-    # kinda odd use of average istageq inside time-dependent thing, but done for simplicity
+    # true total flux (including BH+disk @ equator) vs. time and radius
+    feqtot[:,ti[:,0,0]<ihor]=0
+    ftruetot=np.copy(feqtot)
+    for tic in ts:
+        tici=np.where(ts==tic)[0]
+        ftruetot[tici,:]=ftruetot[tici,:] - (fstot[tici,ihor]/2)
+    #
+    blobf=np.zeros(len(mdotfinavgvsr5),dtype=mdotfinavgvsr5.dtype)
+    ifmaxvst=np.zeros(sizet,dtype=int)
+    fmaxvst=np.zeros(sizet,dtype=float)
+    for tic in ts:
+        tici=np.where(ts==tic)[0]
+        #print("tic=%g %d tici=%d" % (tic,len(tic==ts),tici) )
+        blobf[:]=ftruetot[tici,:]
+        #print("lenblobf=%d" % (len(blobf)))
+        #print("blobf")
+        #print(blobf)
+        condition=(ti[:,0,0]>ihor)
+        condition=condition*(np.sign(blobf)!=np.sign(blobf[ihor]))
+        fzeroO=ti[:,0,0][condition==1]
+        fzero=fzeroO.astype(np.integer)
+        #print("fzero")
+        #print(fzero)
+        izero=-1
+        # see if ever got zero
+        if len(fzero)==0:
+            izero=nx-1
+        else:
+            izero=fzero[0]
+            # back-up to first same-signed value
+            if izero!=ihor:
+                izero=izero-1
+            #
+        #
+        #print("ihor=%d izero=%d" % (ihor, izero) )
+        if izero!=-1:
+            #print("blobfihor=%g blobfizero=%g" % (blobf[ihor],blobf[izero]) )
+            condition=ti[:,0,0]>=ihor
+            condition=condition*(ti[:,0,0]<=izero)
+            # only do max over relevant range
+            newblobf=np.copy(blobf)
+            newblobf[ti[:,0,0]<ihor]=0
+            newblobf[ti[:,0,0]>izero]=0
+            condition=condition*(np.fabs(newblobf[:])==np.max(np.fabs(newblobf[:])))
+            #print("condition")
+            #print(condition)
+            imax=np.where(condition==1)[0]
+            #print("imax")
+            #print(imax)
+            #
+            if(len(imax)>1):
+                imax=imax[0]
+                #print("imax2")
+                #print(imax)
+            #
+            ifmax=ftruetot[tici,imax]
+            #print("ifmax")
+            #print(ifmax)
+            #print("imax=%d ifmax=%g" % (imax,ifmax) )
+            ifmaxvst[tici]=imax
+        else:
+            ifmaxvst[tici]=ihor
+        #
+        fmaxvst[tici]=ftruetot[tici,ifmaxvst[tici]]
+        #print("fmax=%g" % (fmaxvst[tici]) )
+    #
+    #
+    print("ifmaxvst")
+    print(ifmaxvst)
+    print("fmaxvst")
+    print(fmaxvst)
+    #
+    # time-averaged flux at the max flux relevant for the hole flux
+    # use this rather than t=0 max flux for hole ratio calculation because flux can degrade over time on domain.
+    # So want to know what the flux is on the hole relative to similar signed flux available to the hole at any time, not just predegraded value at t=0
+    ftruetot_avg = timeavg(fmaxvst,ts,fti,ftf)
+    print("ftruetot_avg=%g" % (ftruetot_avg) )
+    #
+    #
+    #
+    # kinda odd use of average whichistageq inside time-dependent thing, but done for simplicity
     feqstag=feqtot[:,istageq]
     # need t=0 value since want full possible source of flux, not just average or current flux available
     feqstagt0=feqtot[0,istageq]
     feqstag_avg1 = timeavg(feqstag,ts,fti,ftf)
     feqstag_avg2 = timeavg(feqstag**2,ts,fti,ftf)**0.5
-    print("feqstagt0=%g feqstag_avg1=%g feqstag_avg2=%g" % (feqstagt0, feqstag_avg1, feqstag_avg2) )
+    feqstagB_avg1 = timeavg(feqstag,ts,0,fti)
+    feqstagB_avg2 = timeavg(feqstag**2,ts,0,fti)**0.5
+    feqstagC_avg1 = timeavg(feqstag,ts,iti,itf)
+    feqstagC_avg2 = timeavg(feqstag**2,ts,iti,itf)**0.5
+    print("feqstagt0=%g" % (feqstagt0) )
+    print("feqstag_avg1=%g feqstag_avg2=%g" % (feqstag_avg1, feqstag_avg2) )
+    print("feqstagB_avg1=%g feqstagB_avg2=%g" % (feqstagB_avg1, feqstagB_avg2) )
+    print("feqstagC_avg1=%g feqstagC_avg2=%g" % (feqstagC_avg1, feqstagC_avg2) )
+    #
+    # kinda odd use of average istageq inside time-dependent thing, but done for simplicity
+    feqstagnearfin=feqtot[:,istageqnearfin]
+    # need t=0 value since want full possible source of flux, not just average or current flux available
+    feqstagnearfint0=feqtot[0,istageqnearfin]
+    feqstagnearfin_avg1 = timeavg(feqstagnearfin,ts,fti,ftf)
+    feqstagnearfin_avg2 = timeavg(feqstagnearfin**2,ts,fti,ftf)**0.5
+    feqstagnearfinB_avg1 = timeavg(feqstagnearfin,ts,0,fti)
+    feqstagnearfinB_avg2 = timeavg(feqstagnearfin**2,ts,0,fti)**0.5
+    feqstagnearfinC_avg1 = timeavg(feqstagnearfin,ts,iti,itf)
+    feqstagnearfinC_avg2 = timeavg(feqstagnearfin**2,ts,iti,itf)**0.5
+    print("feqstagnearfint0=%g" % (feqstagnearfint0) )
+    print("feqstagnearfin_avg1=%g feqstagnearfin_avg2=%g" % (feqstagnearfin_avg1, feqstagnearfin_avg2) )
+    print("feqstagnearfinB_avg1=%g feqstagnearfinB_avg2=%g" % (feqstagnearfinB_avg1, feqstagnearfinB_avg2) )
+    print("feqstagnearfinC_avg1=%g feqstagnearfinC_avg2=%g" % (feqstagnearfinC_avg1, feqstagnearfinC_avg2) )
+    #
+    # choose which istageq to use
+    #chosenfeqstag=feqstagt0
+    #chosenfeqstag=feqstagnearfint0
+    if np.fabs(feqstagnearfint0)>np.fabs(feqstagt0):
+        chosenfeqstag=feqstagnearfint0
+        istagequse=istageqnearfin
+    else:
+        chosenfeqstag=feqstagt0
+        istagequse=istageq
+    #
     #
     # get initial extrema
     # get equatorial flux extrema at t=0 to normalize new flux on hole
-    feqtotextrema=extrema(feqtot[0,:],withendf=True)
-    feqtotextremai=feqtotextrema[0]
-    numextrema=len(feqtotextremai)
+    feqtot0extrema=extrema(feqtot[0,:],withendf=True)
+    feqtot0extremai=feqtot0extrema[0]
+    numextrema0=len(feqtot0extremai)
     # first value is probably 0, so avoid it later below
-    feqtotextremaval=feqtotextrema[1]
+    feqtot0extremaval=feqtot0extrema[1]
+    print("feqtot0extrema at t=0: numextrema0=%d" % (numextrema0) )
+    print(feqtot0extrema)
+    #
+    #
+    # now replace with desired extrema (avoid values that are just close in value)
+    feqtotextremai=0*np.copy(feqtot0extremai)
+    feqtotextremaval=0*np.copy(feqtot0extremaval)
+    newtic=0
+    for tic in np.arange(0,numextrema0-1+1):
+        #print("tic=%d" % (tic) )
+        if(newtic==0) and np.fabs(feqtot0extremaval[tic])>1E-15:
+            feqtotextremai[newtic]=feqtot0extremai[tic]
+            feqtotextremaval[newtic]=feqtot0extremaval[tic]
+            newtic=newtic+1
+        #
+        if(newtic>0) and np.fabs(feqtot0extremaval[tic])>1E-15:
+            error=np.fabs(feqtotextremaval[newtic-1]-feqtot0extremaval[tic])/(np.fabs(feqtotextremaval[newtic-1])+np.fabs(feqtot0extremaval[tic]))
+            #print("prior new=%g current old=%g error=%g" % (feqtotextremaval[newtic-1],feqtot0extremaval[tic],error) )
+            if error>0.4:
+                feqtotextremai[newtic]=feqtot0extremai[tic]
+                feqtotextremaval[newtic]=feqtot0extremaval[tic]
+                newtic=newtic+1
+            # else add nothing
+        #
+    numextrema=newtic
     print("feqtotextrema at t=0: numextrema=%d" % (numextrema) )
-    print(feqtotextrema)
+    print(feqtotextremai)
+    print(feqtotextremaval)
+    #
     #
     # model overrides for smallish \Psi at larger radii in Sasha's model
     if modelname=="runlocaldipole3dfiducial":
-        # 0 and real value
-        numextrema=2
+        # real value
+        if numextrema>1:
+            numextrema=1
         #
     elif modelname=="blandford3d_new":
         # real value
-        numextrema=1
+        if numextrema>1:
+            numextrema=1
         #
     elif modelname=="sasham9" or modelname=="sasham5" or modelname=="sasha0" or modelname=="sasha1" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9b25" or modelname=="sasha9b50" or modelname=="sasha9b100" or modelname=="sasha9b200" or modelname=="sasha99":
-        # 0 and real value
-        if numextrema>2:
-            numextrema=2
+        # real value
+        if numextrema>1:
+            numextrema=1
         #
     #
     # also get final extrema
@@ -5737,39 +5995,47 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     # So  fluxvsh=-fluxvsr
     # once sign is fixed, and assuming j=0 is theta=0 is theta=0 pole:
     #
+    # A : measured relative to t=0 fluxes
+    # B : measured relative to flux at stagnation surface
+    # C : measured relative to flux (vs. t) on hole+equator that is available to hole of same-signed flux
     #
-    fstotnorm1_avg=0.0
-    fstotnorm2_avg=0.0
-    fstotnorm3_avg=0.0
-    fstotnorm4_avg=0.0
-    fstotnorm5_avg=0.0
     #
     sumextreme=0
     abssumextreme=0
     if modelname=="blandford3d_new":
         starteval=0
     else:
-        starteval=1
+        starteval=0
     #
     testnum=starteval
     #
     firstlimited=starteval
+    whichfirstlimited=-1
     everfirstlimited=0
     #
-    if numextrema>testnum:
-        if feqtotextremai[testnum]>istageq:
-            trueieq=istageq
+    # memory accesses at least index=2, even if just zero value
+    bigextrema=max(numextrema,3)
+    fstotnormA=np.zeros( ( bigextrema ,sizet ),dtype=float)
+    fstotnormB=np.zeros( ( bigextrema ,sizet ),dtype=float)
+    fstotnormA_avg=np.zeros( bigextrema ,dtype=float)
+    fstotnormB_avg=np.zeros( bigextrema ,dtype=float)
+    #
+    for testnum in np.arange(0,numextrema):
+      if numextrema>testnum:
+        if feqtotextremai[testnum]>istagequse:
+            trueieq=istagequse
             if everfirstlimited==0:
                 everfirstlimited=1
+                whichfirstlimited=testnum
                 # not feqstag_avg2 or feqstag_avg1
                 if testnum>=1:
-                    if np.fabs(feqstagt0)>np.fabs(feqtotextremaval[testnum-1]):
-                        firstlimited=feqstagt0
+                    if np.fabs(chosenfeqstag)>np.fabs(feqtotextremaval[testnum-1]):
+                        firstlimited=chosenfeqstag
                     else:
                         firstlimited=feqtotextremaval[testnum-1]
                     #
                 else:
-                    firstlimited=feqstagt0
+                    firstlimited=chosenfeqstag
                 #
             #
             truefeq=firstlimited
@@ -5780,147 +6046,62 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             truefeq=feqtotextremaval[testnum]
             print("unlimited trueieq=%d truefeq=%g" % (trueieq,truefeq) )
         #
-        fstotnorm1=(-fstot[:,ihor]/2.0)/(truefeq+(-fstot[0,ihor]/2.0))
-        print("rext0=%g" % (r[feqtotextremai[0],0,0]) )
-        print("rext1=%g" % (r[trueieq,0,0]) )
+        fstotnormA[testnum]=(-fstot[:,ihor]/2.0)/(feqtotextremaval[testnum]+(-fstot[0,ihor]/2.0))
+        fstotnormB[testnum]=(-fstot[:,ihor]/2.0)/(truefeq+(-fstot[:,ihor]/2.0))
+        print("rext%d=%g" % (testnum,r[trueieq,0,0]) )
+        print("rexttrue=%g" % (r[trueieq,0,0]) )
         sumextreme+=feqtotextremaval[testnum]
         abssumextreme+=np.fabs(feqtotextremaval[testnum])
-    #
-    testnum=testnum+1
-    print("it=%d %d %d" % (numextrema,testnum,istageq) )
-    #
-    if numextrema>testnum:
-        if feqtotextremai[testnum]>istageq:
-            trueieq=istageq
-            if everfirstlimited==0:
-                everfirstlimited=1
-                # not feqstag_avg2 or feqstag_avg1
-                if np.fabs(feqstagt0)>np.fabs(feqtotextremaval[testnum-1]):
-                    firstlimited=feqstagt0
-                else:
-                    firstlimited=feqtotextremaval[testnum-1]
-                #
-            #
-            truefeq=firstlimited
-            #
-            print("limited trueieq=%d truefeq=%g" % (trueieq,truefeq) )
-        else:
-            trueieq=feqtotextremai[testnum]
-            truefeq=feqtotextremaval[testnum]
-            print("unlimited trueieq=%d truefeq=%g" % (trueieq,truefeq) )
         #
-        fstotnorm2=(-fstot[:,ihor]/2.0)/(truefeq+(-fstot[0,ihor]/2.0))
-        print("rext2=%g : %d %d" % (r[trueieq,0,0],numextrema,trueieq) )
-        sumextreme+=feqtotextremaval[testnum]
-        abssumextreme+=np.fabs(feqtotextremaval[testnum])
-    #
-    testnum=testnum+1
-    #
-    if numextrema>testnum:
-        if feqtotextremai[testnum]>istageq:
-            trueieq=istageq
-            #
-            if everfirstlimited==0:
-                everfirstlimited=1
-                # not feqstag_avg2 or feqstag_avg1
-                if np.fabs(feqstagt0)>np.fabs(feqtotextremaval[testnum-1]):
-                    firstlimited=feqstagt0
-                else:
-                    firstlimited=feqtotextremaval[testnum-1]
-                #
-            #
-            truefeq=firstlimited
-            #
-            print("limited trueieq=%d truefeq=%g" % (trueieq,truefeq) )
-        else:
-            trueieq=feqtotextremai[testnum]
-            truefeq=feqtotextremaval[testnum]
-            print("unlimited trueieq=%d truefeq=%g" % (trueieq,truefeq) )
+        if dotavg:
+            fstotnormA_avg[testnum] = timeavg(fstotnormA[testnum]**2,ts,fti,ftf)**0.5
+            fstotnormB_avg[testnum] = timeavg(fstotnormB[testnum]**2,ts,fti,ftf)**0.5
         #
-        fstotnorm3=(-fstot[:,ihor]/2.0)/(truefeq+(-fstot[0,ihor]/2.0))
-        print("rext3=%g" % (r[trueieq,0,0]) )
-        sumextreme+=feqtotextremaval[testnum]
-        abssumextreme+=np.fabs(feqtotextremaval[testnum])
+      print("it=%d %d %d" % (numextrema,testnum,istagequse) )
     #
-    testnum=testnum+1
     #
-    if numextrema>testnum:
-        if feqtotextremai[testnum]>istageq:
-            trueieq=istageq
-            #
-            if everfirstlimited==0:
-                everfirstlimited=1
-                # not feqstag_avg2 or feqstag_avg1
-                if np.fabs(feqstagt0)>np.fabs(feqtotextremaval[testnum-1]):
-                    firstlimited=feqstagt0
-                else:
-                    firstlimited=feqtotextremaval[testnum-1]
-                #
-            #
-            truefeq=firstlimited
-            #
-            print("limited trueieq=%d truefeq=%g" % (trueieq,truefeq) )
-        else:
-            trueieq=feqtotextremai[testnum]
-            truefeq=feqtotextremaval[testnum]
-            print("unlimited trueieq=%d truefeq=%g" % (trueieq,truefeq) )
-        #
-        fstotnorm4=(-fstot[:,ihor]/2.0)/(truefeq+(-fstot[0,ihor]/2.0))
-        print("rext4=%g" % (r[trueieq,0,0]) )
-        sumextreme+=feqtotextremaval[testnum]
-        abssumextreme+=np.fabs(feqtotextremaval[testnum])
-    #
-    testnum=testnum+1
-    #
-    if numextrema>testnum:
-        if feqtotextremai[testnum]>istageq:
-            trueieq=istageq
-            #
-            if everfirstlimited==0:
-                everfirstlimited=1
-                # not feqstag_avg2 or feqstag_avg1
-                if np.fabs(feqstagt0)>np.fabs(feqtotextremaval[testnum-1]):
-                    firstlimited=feqstagt0
-                else:
-                    firstlimited=feqtotextremaval[testnum-1]
-                #
-            #
-            truefeq=firstlimited
-            #
-            print("limited trueieq=%d truefeq=%g" % (trueieq,truefeq) )
-        else:
-            trueieq=feqtotextremai[testnum]
-            truefeq=feqtotextremaval[testnum]
-            print("unlimited trueieq=%d truefeq=%g" % (trueieq,truefeq) )
-        #
-        fstotnorm5=(-fstot[:,ihor]/2.0)/(truefeq+(-fstot[0,ihor]/2.0))
-        print("rext5=%g" % (r[trueieq,0,0]) )
-        sumextreme+=feqtotextremaval[testnum]
-        abssumextreme+=np.fabs(feqtotextremaval[testnum])
+    if whichfirstlimited==-1 or everfirstlimited==0:
+        print("Never found limited: feqtotextremai[starteval]=%d numextrema=%d istagequse=%d" % (feqtotextremai[starteval],numextrema,istagequse) )
+        # just choose outermost extrema
+        whichfirstlimited=numextrema-1
+        testnum=numextrema-1
+        firstlimited=feqtotextremaval[numextrema-1]
+        truefeq=firstlimited
+        fstotnormB[testnum]=(-fstot[:,ihor]/2.0)/(truefeq+(-fstot[:,ihor]/2.0))
+        fstotnormB_avg[testnum]=timeavg(fstotnormB[testnum]**2,ts,fti,ftf)**0.5
+        print("self-chosen whichfirstlimited=%d firstlimited=%g" % (whichfirstlimited,firstlimited) )
     #
     #
     # below can be used to detect poloidal flips vs. poloidal (but not really vs. toroidal)
     fracdiffabs=np.fabs(np.fabs(sumextreme)-abssumextreme)/((np.fabs(sumextreme)+abssumextreme))
     #                           
     #
-    if dotavg:
-        testnum=starteval
-        if numextrema>testnum:
-            fstotnorm1_avg = timeavg(fstotnorm1**2,ts,fti,ftf)**0.5
-        testnum=testnum+1
-        if numextrema>testnum:
-            fstotnorm2_avg = timeavg(fstotnorm2**2,ts,fti,ftf)**0.5
-        testnum=testnum+1
-        if numextrema>testnum:
-            fstotnorm3_avg = timeavg(fstotnorm3**2,ts,fti,ftf)**0.5
-        testnum=testnum+1
-        if numextrema>testnum:
-            fstotnorm4_avg = timeavg(fstotnorm4**2,ts,fti,ftf)**0.5
-        testnum=testnum+1
-        if numextrema>testnum:
-            fstotnorm5_avg = timeavg(fstotnorm5**2,ts,fti,ftf)**0.5
+    # choose for B the first limited case
+    fstotnormgenB_avg = fstotnormB_avg[whichfirstlimited]
+    print("fstotnormgenB_avg=%g" % (fstotnormgenB_avg) )
     #
     #
+    #####################
+    # measure based upon flux currently available to the hole
+    fstotnormC=(-fstot[:,ihor]/2.0)/(ftruetot_avg)
+    fstotnormgenC_avg = timeavg(fstotnormC**2,ts,fti,ftf)**0.5
+    print("fstotnormgenC_avg=%g" % (fstotnormgenC_avg) )
+    #
+    # actual max absolute flux on horizon
+    fsmaxtot_avg1 = timeavg(fsmaxtot[:,ihor]**2,ts,fti,ftf)**0.5
+    print("fsmaxtot_avg1=%g" % (fsmaxtot_avg1) )
+    fsmaxtot_avg2 = timeavg(fsmaxtot[:,ihor],ts,fti,ftf)
+    print("fsmaxtot_avg2=%g" % (fsmaxtot_avg2) )
+    #fstotnormD=(-fstot[:,ihor]/2.0)/(fsmaxtot_avg)
+    # actually, since local, want direct ratio of values(t) since directly related to each other and want high accuracy
+    fstotnormD=(-fstot[:,ihor]/2.0)/(fsmaxtot[:,ihor])
+    fstotnormgenD_avg1 = timeavg(fstotnormD**2,ts,fti,ftf)**0.5
+    print("fstotnormgenD_avg1=%g" % (fstotnormgenD_avg1) )
+    fstotnormgenD_avg2 = timeavg(fstotnormD,ts,fti,ftf)
+    print("fstotnormgenD_avg2=%g" % (fstotnormgenD_avg2) )
+    # use sum of absolute value of ratio because if flux switches poles or otherwise varies, then sum can be small even if absolute flux on hole is large.
+    fstotnormgenD_avg = np.fabs(fstotnormgenD_avg1)
+    print("fstotnormgenD_avg=%g" % (fstotnormgenD_avg) )
     #
     # New conversion from phibh[HL] (old had 1/(2\pi) bug) to phibh[Gaussian] to Upsilon
     # (fstot/2) corresponds to half-flux on hole
@@ -5987,6 +6168,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         phiwin_avg = timeavg(phiwin**2,ts,fti,ftf)**0.5
         phiwout_avg = timeavg(phiwout**2,ts,fti,ftf)**0.5
         fstot_avg = timeavg(fstot[:,ihor]**2,ts,fti,ftf)**0.5
+        fsmaxtot_avg = timeavg(fsmaxtot[:,ihor]**2,ts,fti,ftf)**0.5
         #
         phijn_avg = timeavg(phijn**2,ts,fti,ftf)**0.5
         phijs_avg = timeavg(phijn**2,ts,fti,ftf)**0.5
@@ -5994,6 +6176,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     if(iti>fti):
                 phibh2_avg = timeavg(phibh2**2,ts,iti,itf)**0.5
                 fstot2_avg = timeavg(fstot[:,ihor]**2,ts,iti,itf)**0.5
+                fsmaxtot2_avg = timeavg(fsmaxtot[:,ihor]**2,ts,iti,itf)**0.5
     #
     # For whichplot==5 Plot:
     if whichplot == 5:
@@ -6055,7 +6238,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     # End of whichplot==5
     #
     # Begin print-out of Upsilon (phibh[G]/5) values:
-    print( "Upsilon_BH = %g, Upsilon_rjetin = %g , Upsilon_rjetout = %g, fstot = %g" % ( phibh_avg, phirjetin_avg, phirjetout_avg, fstot_avg ) )
+    print( "Upsilon_BH = %g, Upsilon_rjetin = %g , Upsilon_rjetout = %g, fstot = %g, fsmaxtot = %g" % ( phibh_avg, phirjetin_avg, phirjetout_avg, fstot_avg, fsmaxtot_avg ) )
     print( "Upsilon_jet = %g, Upsilon_mw,i = %g, Upsilon_mw,o = %g, Upsilon_w,i = %g, Upsilon_w,o = %g" % ( phij_avg , phimwin_avg , phimwout_avg, phiwin_avg , phiwout_avg ) )
     print( "Upsilon_jetn = %g, Upsilon_jets = %g" % ( phijn_avg , phijs_avg ) )
     if iti > fti:
@@ -6064,8 +6247,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #roundto2(djdtnormbh), roundto2(djdtnormj), roundto2(djdtnormmwin), roundto2(djdtnormmwout), roundto2(djdtnormwin), roundto2(djdtnormwout), roundto2(djdtnormnt)
     #
     # 13:
-    print( "HLatex11: ModelName & $\\Upsilon_{\\rm{}BH}$ & $\\Upsilon_{\\rm{}in,i}$ & $\\Upsilon_{\\rm{}in,o}$ & $\\Upsilon_{\\rm{}j}$   & $\\Upsilon_{\\rm{}mw,i}$ & $\\Upsilon_{\\rm{}mw,o}$ & $\\Upsilon_{\\rm{}w,i}$ & $\\Upsilon_{\\rm{}w,o}$    &  $\\frac{\\Phi_{\\rm{}BH}}{\\Phi_1(t=0)}$ & $\\frac{\\Phi_{\\rm{}BH}}{\\Phi_2(t=0)}$ & $\\frac{\\Phi_{\\rm{}BH}}{\\Phi_3(t=0)}$ & $\\frac{\\Phi_{\\rm{}BH}}{\\Phi_4(t=0)}$ & $\\frac{\\Phi_{\\rm{}BH}}{\\Phi_5(t=0)}$ \\\\" )
-    print( "VLatex11: %s         & %g    & %g & %g       & %g      & %g & %g      & %g & %g   & %g & %g & %g & %g & %g  \\\\ %% %s" % (truemodelname, roundto2(phibh_avg), roundto2(phirjetin_avg), roundto2(phirjetout_avg), roundto2(phij_avg), roundto2(phimwin_avg), roundto2(phimwout_avg), roundto2(phiwin_avg), roundto2(phiwout_avg), roundto2(fstotnorm1_avg),roundto2(fstotnorm2_avg),roundto2(fstotnorm3_avg),roundto2(fstotnorm4_avg),roundto2(fstotnorm5_avg), modelname ) )
+    print( "HLatex11: ModelName & $\\Upsilon_{\\rm{}BH}$ & $\\Upsilon_{\\rm{}in,i}$ & $\\Upsilon_{\\rm{}in,o}$ & $\\Upsilon_{\\rm{}j}$   & $\\Upsilon_{\\rm{}mw,i}$ & $\\Upsilon_{\\rm{}mw,o}$ & $\\Upsilon_{\\rm{}w,i}$ & $\\Upsilon_{\\rm{}w,o}$    &  $\\frac{\\Phi_{\\rm{}BH}}{\\Phi_1(t=0)}$ & $\\frac{\\Phi_{\\rm{}BH}}{\\Phi_2(t=0)}$ & $\\frac{\\Phi_{\\rm{}BH}}{\\Phi_3(t=0)}$ & $\\frac{\\Phi_{\\rm{}BH}}{\\Phi_a(t=0)}$ & $\\frac{\\Phi_{\\rm{}BH}}{\\Phi_s(t=0)}$ & $\\frac{\\Phi_{\\rm{}BH}}{\\Psi_{\\rm{}BH}}$ \\\\" )
+    print( "VLatex11: %s         & %g    & %g & %g       & %g      & %g & %g      & %g & %g   & %g & %g & %g & %g & %g & %g  \\\\ %% %s" % (truemodelname, roundto2(phibh_avg), roundto2(phirjetin_avg), roundto2(phirjetout_avg), roundto2(phij_avg), roundto2(phimwin_avg), roundto2(phimwout_avg), roundto2(phiwin_avg), roundto2(phiwout_avg), roundto2(fstotnormA_avg[0]),roundto2(fstotnormA_avg[1]),roundto2(fstotnormA_avg[2]),roundto2(fstotnormgenC_avg),roundto2(fstotnormgenB_avg),roundto2(fstotnormgenD_avg), modelname ) )
     #
     #
     if whichplot == -1:
