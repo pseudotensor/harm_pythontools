@@ -4872,7 +4872,11 @@ def Risco(a):
     risco = 3 + Z2 - np.sign(a)* ( (3 - Z1)*(3 + Z1 + 2*Z2) )**0.5
     return(risco)
 
-def plotpowers(fname,hor=0,format=2):
+def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20):
+    if usegaussianunits == True:
+        unitsfactor = (4*np.pi)**0.5*2*np.pi
+    else:
+        unitsfactor = 1.
     if format == 0: #old format
         gd1 = np.loadtxt( fname, unpack = True, usecols = [1,2,3,4,5,6,7,8,9,10,11,12,13,14] )
         #gd=gd1.view().reshape((-1,nx,ny,nz), order='F')
@@ -4947,9 +4951,12 @@ def plotpowers(fname,hor=0,format=2):
     #fitting function
     f0 = 2.9
     f1 = -0.6
-    f1n = 1.4
+    f1n = 1
     f2 = 0.
-    f = f0 * (1 + (f1*(1+np.sign(myomh))/2. + f1n*(1-np.sign(myomh))/2.) * myomh + f2 * myomh**2)
+    #f = f0 * (1 + (f1*(1+np.sign(myomh))/2. + f1n*(1-np.sign(myomh))/2.) * myomh + f2 * myomh**2)
+    fneg = f0 * (1 + f1*myomh + f2 * myomh**2)
+    fpos = 0.87*f0 * (1 + f1n*myomh)
+    f = amin(fneg,fpos)
     #gammie way -- too large amplitude
     #gammieparamopi = (8./3.*(3.-mya**2+3.*(1-mya**2)**0.5))**0.5
     #f = f0 * 0.25 * gammieparamopi
@@ -4969,15 +4976,18 @@ def plotpowers(fname,hor=0,format=2):
     #plt.plot(alist,etawindlist,'go',label=r'$\eta_{\rm jet}+\eta_{\rm wind}$')
     # plt.plot(mspina6[mhor6==hor],fac*6.94*mpow6[mhor6==hor],'r--',label=r'$P_{\rm BZ,6}$')
     # plt.plot(mspina6[mhor6==hor],fac*3.75*mpow6[mhor6==hor]*rhor6,'r',label=r'$P_{\rm BZ,6}\times\, r_h$' )
-    if False:
-        myomh6=np.concatenate((-momh6[mhor6==hor][::-1],momh6[mhor6==hor]))
-        myspina6=np.concatenate((-mspina6[mhor6==hor][::-1],mspina6[mhor6==hor]))
-        mypow6 = np.concatenate((mpow6[mhor6==hor][::-1],mpow6[mhor6==hor]))
+    if True:
+        myomh6=np.concatenate((-momh6[mhor6==hor][nmin::-1],momh6[mhor6==hor]))
+        myspina6=np.concatenate((-mspina6[mhor6==hor][nmin::-1],mspina6[mhor6==hor]))
+        mypow6 = np.concatenate((mpow6[mhor6==hor][nmin::-1],mpow6[mhor6==hor]))
     else:
         myomh6=momh6[mhor6==hor]
         myspina6=mspina6[mhor6==hor]
         mypow6 = mpow6[mhor6==hor]
-    mypsiosqrtmdot = f0*(1.+(f1*(1+np.sign(myomh6))/2. + f1n*(1-np.sign(myomh6))/2.)*myomh6)
+    #mypsiosqrtmdot = f0*(1.+(f1*(1+np.sign(myomh6))/2. + f1n*(1-np.sign(myomh6))/2.)*myomh6)
+    fneg6 = f0 * (1 + f1*myomh6 + f2 * myomh6**2)
+    fpos6 = 0.88*f0 * (1 + f1n*myomh6)
+    mypsiosqrtmdot = amin(fneg6,fpos6)
     myeta6 = (mypsiosqrtmdot)**2*mypow6
     # plt.figure(5)
     # plt.clf()
@@ -5034,13 +5044,14 @@ def plotpowers(fname,hor=0,format=2):
         # plt.plot(mya,Risco(mya)**(1./2.)*0.9) 
         # plt.ylim(ymin=0)
     if format == 2:
-        plt.figure(0)
+        plt.figure(0,figsize=(8,6),dpi=100)
         plt.clf()
         cond=sparlist<-1e10
         plt.plot(alist,sparlist,'o')
+        plt.plot(alist[:7],sparlist[:7],'b-',lw=2)
         plt.ylim(-10,10)
         plt.grid()
-        plt.ylabel(r"$s = (F_L - 2 a F_E)/F_M$, spin-up function", fontsize=20)
+        plt.ylabel(r"$s = (\dot L - 2 a \dot E)/\dot M_0$", fontsize=20)
         plt.xlabel(r"$a$",fontsize=20)
         print zip(alist,sparlist)
     #
@@ -5050,18 +5061,18 @@ def plotpowers(fname,hor=0,format=2):
     gs.update(left=0.12, right=0.94, top=0.95, bottom=0.1, wspace=0.01, hspace=0.04)
     #mdot
     ax1 = plt.subplot(gs[0,:])
-    plt.plot(alist,y1,'o',label=r'$\langle\phi_{\rm BH}^2\rangle^{1/2}$',mfc='r')
-    plt.plot(mya[mya>0],f[mya>0],'k-',label=r'$\phi_{\rm fit}=2.9(1-0.6 \Omega_{\rm H})$')
+    plt.plot(alist,y1*unitsfactor,'o',label=r'$\langle\phi^2\!\rangle^{1/2}$',mfc='r')
+    plt.plot(mya,f*unitsfactor,'k-',label=r'$\phi_{\rm fit}$') #=2.9(1-0.6 \Omega_{\rm H})
     # plt.plot(mya,(250+0*mya)*rhor) 
     # plt.plot(mya,250./((3./(mya**2 + 3*rhor**2))**2*2*rhor**2)) 
     #plt.plot(mya,((mya**2+3*rhor**2)/3)**2/(2/rhor)) 
     plt.ylim(ymin=0.0001)
-    plt.ylabel(r"$\phi_{\rm BH}$",fontsize='x-large',ha='center',labelpad=16)
+    plt.ylabel(r"$\phi$",fontsize='x-large',ha='center',labelpad=16)
     plt.grid()
     plt.setp( ax1.get_xticklabels(), visible=False )
-    plt.legend(ncol=1,loc='lower center')
+    plt.legend(ncol=2,loc='lower center')
     bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
-    plt.text(-0.9, 2.5, r"$(\mathrm{a})$", size=16, rotation=0.,
+    plt.text(-0.9, 0.8*plt.ylim()[1], r"$(\mathrm{a})$", size=16, rotation=0.,
              ha="center", va="center",
              color='k',weight='regular',bbox=bbox_props
              )
@@ -5071,14 +5082,14 @@ def plotpowers(fname,hor=0,format=2):
     ax1r.set_ylim(ax1.get_ylim())
     #
     ax2 = plt.subplot(gs[1,:])
-    plt.plot(alist,100*etalist,'o',label=r'$\eta_{\rm BH}$',mfc='r')
+    plt.plot(alist,100*etalist,'o',label=r'$\eta$',mfc='r')
     #plt.plot(alist,100*(etawindlist-etalist),'gv',label=r'$\eta_{\rm wind}$')
     #plt.plot(myspina6,0.9*100*fac*myeta6,'k',label=r'$0.9\eta_{\rm BZ6}(\phi_{\rm fit})$' )
     plt.plot(myspina6,100*fac*myeta6,'k-',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$' )
     plt.ylim(0.0001,160)
     plt.grid()
     plt.setp( ax2.get_xticklabels(), visible=False )
-    plt.ylabel(r"$\eta_{\rm BH}\  [\%]$",fontsize='x-large',ha='center',labelpad=12)
+    plt.ylabel(r"$\eta\  [\%]$",fontsize='x-large',ha='center',labelpad=12)
     plt.text(-0.9, 125, r"$(\mathrm{b})$", size=16, rotation=0.,
              ha="center", va="center",
              color='k',weight='regular',bbox=bbox_props
@@ -5097,8 +5108,8 @@ def plotpowers(fname,hor=0,format=2):
     plt.plot(alist,100*etajetlist,'gs',label=r'$\eta_{\rm jet}$')
     #plt.plot(alist,100*etaEMlist,'rx',label=r'$\eta_{\rm jet}$')
     plt.plot(alist,100*etawindlist,'bv',label=r'$\eta_{\rm wind}$')
-    plt.plot(myspina6,100*fac*myeta6,'k-',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$' )
-    plt.plot(myspina6,0.9*100*fac*myeta6,'k--',label=r'$0.9\eta_{\rm BZ6}(\phi_{\rm fit})$' )
+    plt.plot(myspina6,100*fac*myeta6,'k-') #,label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$' )
+    plt.plot(myspina6,0.9*100*fac*myeta6,'k--') #,label=r'$0.9\eta_{\rm BZ6}(\phi_{\rm fit})$' )
     plt.ylim(0.0001,160)
     plt.grid()
     plt.legend(ncol=2,loc='upper center')
@@ -6447,7 +6458,7 @@ if __name__ == "__main__":
         fno=0
         rfd("fieldline%04d.bin" % fno)
         plt.clf();
-        mkframe("lrho%04d" % 0, vmin=-8,vmax=0.2,dostreamlines=False,len=50)
+        mkframe("lrho%04d" % 0, vmin=-8,vmax=0.2,dostreamlines=True,len=50)
         plt.savefig("lrho%04d.pdf" % fno)
     if False:
         #Short tutorial. Some of the names will sound familiar :)
