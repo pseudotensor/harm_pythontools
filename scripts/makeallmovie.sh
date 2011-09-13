@@ -377,11 +377,11 @@ then
         fi
         if [ $numtbl -eq 6 ]
         then
-            echo "\caption{Energy Efficiency: BH, Jet+Outflows, Jet, and NT}" >> $fname
+            echo "\caption{Percent Energy Efficiency: BH, Jet+Outflows, Jet, and NT}" >> $fname
         fi
         if [ $numtbl -eq 7 ]
         then
-            echo "\caption{Energy Efficiency: Magnetized Wind and Entire Wind}" >> $fname
+            echo "\caption{Percent Energy Efficiency: Magnetized Wind and Entire Wind}" >> $fname
         fi
         if [ $numtbl -eq 8 ]
         then
@@ -414,7 +414,7 @@ then
         strfinal=$str1$str2$str3
         echo $strfinal >> $fname
         echo "\hline" >> $fname
-        egrep "Latex$numtbl:|Latex:" tables$moviedirname.tex | sed 's/\([0-9]\)%/\1\\%/g' | sed 's/[HV]Latex'$numtbl': //g' | sed 's/[HV]Latex: //g' | sed 's/\$\&/$ \&/g'   | sed 's/A94BpN10 /\\\\\nA94BpN10 /g' | sed 's/A-94BfN10 /\\\\\nA-94BfN10 /g' | sed 's/A-94BtN10 /\\\\\nA-94BtN10 /g'  | sed 's/MB09\\_D /\\\\\nMB09\\_D /g'| sed 's/A-0.9 /\\\\\nA-0.9 /g'  | sed 's/} \&/}$ \&/g' | sed 's/} \\/}$  \\/g' | sed 's/nan/0/g' | column  -t >> $fname
+        egrep "Latex$numtbl:|Latex:" tables$moviedirname.tex | sed 's/\([0-9]\)%/\1\\%/g' | sed 's/[HV]Latex'$numtbl': //g' | sed 's/[HV]Latex: //g' | sed 's/\$\&/$ \&/g'   | sed 's/A94BpN100 /\\\\\nA94BpN100 /g' | sed 's/A-94BfN30 /\\\\\nA-94BfN30 /g' | sed 's/A-94BtN10 /\\\\\nA-94BtN10 /g'  | sed 's/MB09D /\\\\\nMB09D /g'| sed 's/A-0.9N100 /\\\\\nA-0.9N100 /g'  | sed 's/} \&/}$ \&/g' | sed 's/} \\/}$  \\/g' | sed 's/nan/0/g' | sed 's/e+0/e/g' | sed 's/e-0/e-/g'  | column  -t >> $fname
         echo "\hline" >> $fname
         echo "\hline" >> $fname
         echo "\end{tabular}" >> $fname

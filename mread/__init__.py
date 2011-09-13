@@ -113,6 +113,39 @@ def roundto2(x):
     z=float(y)
     return z
 
+
+def roundto2forupsilon(x):
+    # only more significant digits for >=0.1
+    if x>=0.1:
+        y="%.*e" % (2-1, x)
+    else:
+        y="%.*e" % (1-1, x)
+    #y=y.replace('e+02',00
+    z=float(y)
+    return z
+
+def roundto2forphi(x):
+    # only more significant digits for <100.0
+    if x<100.0:
+        y="%.*e" % (2-1, x)
+    else:
+        y="%.*e" % (1-1, x)
+    #y=y.replace('e+02',00
+    z=float(y)
+    z=z*1.0+1E-10*z
+    return z
+
+def roundto2forphistring(x):
+    # only more significant digits for <100.0
+    if x<100.0:
+        y="%.*e" % (2-1, x)
+        z=float(y)
+        y="%g" % z
+    else:
+        y="%.*e" % (1-1, x)
+    #y=y.replace('e+02',00
+    return y
+
 def roundto3(x):
     y="%.*e" % (3-1, x)
     #y=y.replace('e+02',00
@@ -120,23 +153,35 @@ def roundto3(x):
     return z
 
 def roundto3forl(x):
-    y="%.*e" % (3-1, x)
-    #y=y.replace('e+02',00
-    z=float(y)
-    # don't resolve better than 1%, so zero-out such small values since overall not significant digits
-    if np.fabs(z)<0.01:
-        z=0
-    return z
-
-
-def roundto3foreta(x):
-    y="%.*e" % (3-1, x)
+    if np.fabs(x)<0.01:
+        y="%.*e" % (1-1, x)
+    elif np.fabs(x)<0.1:
+        y="%.*e" % (2-1, x)
+    else:
+        y="%.*e" % (3-1, x)
+    #
     #y=y.replace('e+02',00
     z=float(y)
     # don't resolve better than 1%, so zero-out such small values since overall not significant digits
     #if np.fabs(z)<0.01:
-    if np.fabs(z)<0.1:
-        z=0
+    #    z=0
+    return z
+
+
+def roundto3foreta(x):
+    if np.fabs(x)<0.01:
+        y="%.*e" % (1-1, x)
+    elif np.fabs(x)<0.1:
+        y="%.*e" % (2-1, x)
+    else:
+        y="%.*e" % (3-1, x)
+    #
+    #y=y.replace('e+02',00
+    z=float(y)
+    # don't resolve better than 1%, so zero-out such small values since overall not significant digits
+    #if np.fabs(z)<0.1:
+    #if np.fabs(z)<0.01:
+    #    z=0
     return z
 
 
@@ -5370,49 +5415,49 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         truemodelname="A94BfN40"
     elif modelname=="thickdisk8":
         fieldtype="PoloidalFlip"
-        truemodelname="A94BfN40\_C1"
+        truemodelname="A94BfN100C1"
     elif modelname=="thickdisk11":
         fieldtype="PoloidalFlip"
-        truemodelname="A94BfN40\_C2"
+        truemodelname="A94BfN100C2"
     elif modelname=="thickdisk12":
         fieldtype="PoloidalFlip"
-        truemodelname="A94BfN40\_C3"
+        truemodelname="A94BfN100C3"
     elif modelname=="thickdisk13":
         fieldtype="PoloidalFlip"
-        truemodelname="A94BfN40\_C4"
+        truemodelname="A94BfN100C4"
     elif modelname=="run.like8":
         fieldtype="PoloidalFlip"
-        truemodelname="A94BfN40\_C5"
+        truemodelname="A94BfN40C5"
     elif modelname=="thickdiskrr2":
         fieldtype="PoloidalFlip"
-        truemodelname="A-94BfN10"
+        truemodelname="A-94BfN30"
     elif modelname=="run.liker2butbeta40":
         fieldtype="PoloidalFlip"
-        truemodelname="A-94BfN10\_C1a"
+        truemodelname="A-94BfN40C1"
     elif modelname=="run.liker2":
         fieldtype="PoloidalFlip"
-        truemodelname="A-94BfN40\_C1b"
+        truemodelname="A-94BfN10C2"
     elif modelname=="thickdisk16":
         fieldtype="PoloidalFlip"
-        truemodelname="A-5BfN10"
+        truemodelname="A-5BfN30"
     elif modelname=="thickdisk5":
         fieldtype="PoloidalFlip"
         truemodelname="A0BfN10"
     elif modelname=="thickdisk14":
         fieldtype="PoloidalFlip"
-        truemodelname="A5BfN10"
+        truemodelname="A5BfN30"
     elif modelname=="thickdiskr1":
         fieldtype="PoloidalFlip"
-        truemodelname="A94BfN10"
-    elif modelname=="run.liker1":
-        fieldtype="PoloidalFlip"
-        truemodelname="A94BfN10\_C1"
+        truemodelname="A94BfN30"
     elif modelname=="thickdiskr2":
         fieldtype="PoloidalFlip"
-        truemodelname="A94BfN10\_R1"
+        truemodelname="A94BfN30R"
+    elif modelname=="run.liker1":
+        fieldtype="PoloidalFlip"
+        truemodelname="A94BfN10C"
     elif modelname=="thickdisk9":
         fieldtype="Poloidal"
-        truemodelname="A94BpN10"
+        truemodelname="A94BpN100"
     elif modelname=="thickdiskr3":
         fieldtype="Toroidal"
         truemodelname="A-94BtN10"
@@ -5424,7 +5469,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         truemodelname="A0BtN10"
     elif modelname=="thickdisk15":
         fieldtype="Toroidal"
-        truemodelname="A5BtN10"
+        truemodelname="A5BtN5300"
     elif modelname=="thickdisk15r":
         fieldtype="Toroidal"
         truemodelname="A5BtN10"
@@ -5433,31 +5478,31 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         truemodelname="A94BtN10"
     elif modelname=="thickdisk3":
         fieldtype="Toroidal"
-        truemodelname="A94BtN10\_R1"
+        truemodelname="A94BtN10R"
     elif modelname=="runlocaldipole3dfiducial":
         fieldtype="PoloidalOld"
-        truemodelname="MB09\_D"
+        truemodelname="MB09D"
     elif modelname=="blandford3d_new":
         fieldtype="LSQuad"
-        truemodelname="MB09\_Q"
+        truemodelname="MB09Q"
     elif modelname=="sasham9":
         fieldtype="Poloidal2"
-        truemodelname="A-0.9"
+        truemodelname="A-0.9N100"
     elif modelname=="sasham5":
         fieldtype="Poloidal2"
-        truemodelname="A-0.5"
+        truemodelname="A-0.5N100"
     elif modelname=="sasha0":
         fieldtype="Poloidal2"
-        truemodelname="A0.0"
+        truemodelname="A0.0N100"
     elif modelname=="sasha1":
         fieldtype="Poloidal2"
-        truemodelname="A0.1"
+        truemodelname="A0.1N100"
     elif modelname=="sasha2":
         fieldtype="Poloidal2"
-        truemodelname="A0.2"
+        truemodelname="A0.2N100"
     elif modelname=="sasha5":
         fieldtype="Poloidal2"
-        truemodelname="A0.5"
+        truemodelname="A0.5N100"
     elif modelname=="sasha9b25":
         fieldtype="Poloidal2"
         truemodelname="A0.9N25"
@@ -5466,13 +5511,13 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         truemodelname="A0.9N50"
     elif modelname=="sasha9b100":
         fieldtype="Poloidal2"
-        truemodelname="A0.9"
+        truemodelname="A0.9N100"
     elif modelname=="sasha9b200":
         fieldtype="Poloidal2"
         truemodelname="A0.9N200"
     elif modelname=="sasha99":
         fieldtype="Poloidal2"
-        truemodelname="A0.99fc"
+        truemodelname="A0.99fcN100"
     else:
         fieldtype="UnknownModelFieldType"
     #
@@ -5657,11 +5702,11 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     # 9:
     print( "HLatex6: ModelName & $\\eta_{\\rm{}BH}$ & $\\eta^{\\rm{}EM}_{\\rm{}BH}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}BH}$ & $\\eta_{\\rm{}j+mw,o}$ & $\\eta_{\\rm{}j+w,o}$ & $\\eta_{\\rm{}j}$ & $\\eta^{\\rm{}EM}_j$ & $\\eta^{\\rm{}MAKE}_{\\rm{}j}$ & $\\eta_{\\rm{}NT}$ \\\\" )
-    print( "VLatex6: %s         & %g\\%% & %g\\%% & %g\\%%    & %g\\%% & %g\\%%    & %g\\%% & %g\\%% & %g\\%%     & %g\\%% \\\\ %% %s" % (truemodelname, roundto3foreta(etabh_avg), roundto3foreta(etabhEM_avg), roundto3foreta(etabhMAKE_avg), roundto3foreta(etaj_avg + etamwout_avg), roundto3foreta(etaj_avg + etawout_avg), roundto3foreta(etaj_avg), roundto3foreta(etajEM_avg), roundto3foreta(etajMAKE_avg), roundto3foreta(etant), modelname ) )
+    print( "VLatex6: %s         & %g & %g & %g    & %g & %g    & %g & %g & %g     & %g \\\\ %% %s" % (truemodelname, roundto3foreta(etabh_avg), roundto3foreta(etabhEM_avg), roundto3foreta(etabhMAKE_avg), roundto3foreta(etaj_avg + etamwout_avg), roundto3foreta(etaj_avg + etawout_avg), roundto3foreta(etaj_avg), roundto3foreta(etajEM_avg), roundto3foreta(etajMAKE_avg), roundto3foreta(etant), modelname ) )
     #
     # 12:
     print( "HLatex7: ModelName & $\\eta_{\\rm{}mw,i}$ & $\\eta^{\\rm{}EM}_{\\rm{}mw,i}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}mw,i}$ & $\\eta_{\\rm{}mw,o}$ & $\\eta^{\\rm{}EM}_{\\rm{}mw,o}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}mw,o}$ & $\\eta_{\\rm{}w,i}$ & $\\eta^{\\rm{}EM}_{\\rm{}w,i}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}w,i}$ & $\\eta_{\\rm{}w,o}$ & $\\eta^{\\rm{}EM}_{\\rm{}w,o}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}w,o}$ \\\\" )
-    print( "VLatex7: %s        & %g\\%% & %g\\%% & %g\\%%    & %g\\%% & %g\\%% & %g\\%%   & %g\\%% & %g\\%% & %g\\%%    & %g\\%% & %g\\%% & %g\\%%  \\\\ %% %s" % (truemodelname, roundto3foreta(etamwin_avg), roundto3foreta(etamwinEM_avg), roundto3foreta(etamwinMAKE_avg), roundto3foreta(etamwout_avg), roundto3foreta(etamwoutEM_avg), roundto3foreta(etamwoutMAKE_avg), roundto3foreta(etawin_avg), roundto3foreta(etawinEM_avg), roundto3foreta(etawinMAKE_avg), roundto3foreta(etawout_avg), roundto3foreta(etawoutEM_avg), roundto3foreta(etawoutMAKE_avg), modelname ) )
+    print( "VLatex7: %s        & %g & %g & %g    & %g & %g & %g   & %g & %g & %g    & %g & %g & %g  \\\\ %% %s" % (truemodelname, roundto3foreta(etamwin_avg), roundto3foreta(etamwinEM_avg), roundto3foreta(etamwinMAKE_avg), roundto3foreta(etamwout_avg), roundto3foreta(etamwoutEM_avg), roundto3foreta(etamwoutMAKE_avg), roundto3foreta(etawin_avg), roundto3foreta(etawinEM_avg), roundto3foreta(etawinMAKE_avg), roundto3foreta(etawout_avg), roundto3foreta(etawoutEM_avg), roundto3foreta(etawoutMAKE_avg), modelname ) )
     #
     lbh_avg=letabh_avg/prefactor
     lbhEM_avg=letabhEM_avg/prefactor
@@ -6248,7 +6293,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     # 13:
     print( "HLatex11: ModelName & $\\Upsilon_{\\rm{}BH}$ & $\\Upsilon_{\\rm{}in,i}$ & $\\Upsilon_{\\rm{}in,o}$ & $\\Upsilon_{\\rm{}j}$   & $\\Upsilon_{\\rm{}mw,i}$ & $\\Upsilon_{\\rm{}mw,o}$ & $\\Upsilon_{\\rm{}w,i}$ & $\\Upsilon_{\\rm{}w,o}$    &  $\\frac{\\Phi_{\\rm{}BH}}{\\Phi_1(t=0)}$ & $\\frac{\\Phi_{\\rm{}BH}}{\\Phi_2(t=0)}$ & $\\frac{\\Phi_{\\rm{}BH}}{\\Phi_3(t=0)}$ & $\\frac{\\Phi_{\\rm{}BH}}{\\Phi_a(t=0)}$ & $\\frac{\\Phi_{\\rm{}BH}}{\\Phi_s(t=0)}$ & $\\frac{\\Phi_{\\rm{}BH}}{\\Psi_{\\rm{}BH}}$ \\\\" )
-    print( "VLatex11: %s         & %g    & %g & %g       & %g      & %g & %g      & %g & %g   & %g & %g & %g & %g & %g & %g  \\\\ %% %s" % (truemodelname, roundto2(phibh_avg), roundto2(phirjetin_avg), roundto2(phirjetout_avg), roundto2(phij_avg), roundto2(phimwin_avg), roundto2(phimwout_avg), roundto2(phiwin_avg), roundto2(phiwout_avg), roundto2(fstotnormA_avg[0]),roundto2(fstotnormA_avg[1]),roundto2(fstotnormA_avg[2]),roundto2(fstotnormgenC_avg),roundto2(fstotnormgenB_avg),roundto2(fstotnormgenD_avg), modelname ) )
+    print( "VLatex11: %s         & %g    & %g & %g       & %g      & %g & %g      & %g & %g   & %s & %s & %s & %g & %g & %g  \\\\ %% %s" % (truemodelname, roundto2forupsilon(phibh_avg), roundto2forupsilon(phirjetin_avg), roundto2forupsilon(phirjetout_avg), roundto2forupsilon(phij_avg), roundto2forupsilon(phimwin_avg), roundto2forupsilon(phimwout_avg), roundto2forupsilon(phiwin_avg), roundto2forupsilon(phiwout_avg), roundto2forphistring(fstotnormA_avg[0]),roundto2forphistring(fstotnormA_avg[1]),roundto2forphistring(fstotnormA_avg[2]),roundto2forphi(fstotnormgenC_avg),roundto2forphi(fstotnormgenB_avg),roundto2forphi(fstotnormgenD_avg), modelname ) )
     #
     #
     if whichplot == -1:
