@@ -1156,7 +1156,8 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
                 #lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
                 # if t < 1500:
                 lw *= ftr(iaphi,0.001,0.002)
-        t = fstreamplot(yi,xi,iBR,iBz,ua=iBaR,va=iBaz,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=detectLoops,dodiskfield=dodiskfield,dobhfield=dobhfield,startatmidplane=startatmidplane,a=a,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,dsval=dsval,color=color,doarrows=doarrows,dorandomcolor=dorandomcolor,skipblankint=skipblankint,minindent=minindent,minlengthdefault=minlengthdefault,arrowsize=arrowsize,startxabs=startxabs,startyabs=startyabs)
+        #pdb.set_trace()
+        traj = fstreamplot(yi,xi,iBR,iBz,ua=iBaR,va=iBaz,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=detectLoops,dodiskfield=dodiskfield,dobhfield=dobhfield,startatmidplane=startatmidplane,a=a,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,dsval=dsval,color=color,doarrows=doarrows,dorandomcolor=dorandomcolor,skipblankint=skipblankint,minindent=minindent,minlengthdefault=minlengthdefault,arrowsize=arrowsize,startxabs=startxabs,startyabs=startyabs)
         #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
     ax.set_xlim(extent[0],extent[1])
     ax.set_ylim(extent[2],extent[3])
@@ -1169,7 +1170,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         plt.title('log rho at t = %4.0f' % t)
     #if None != fname:
     #    plt.savefig( fname + '.png' )
-    return(t)
+    return(traj)
 
 def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,arrowsize=1):
     extent=(-len,len,-len,len)
@@ -5548,13 +5549,12 @@ def mk2davg():
 def mkonestreamline(u, x0, y0, mylen=30):
     """Despite scary-looking contents, this extracts and returns a single streamline starting at (x0, y0); mylen is the size of the square within which a field line is to be traced"""
     B[1:] = u[1:]
-    pdb.set_trace()
     t = mkframe("myframe",len=mylen,ax=None,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.1,dsval=0.005,color='k',doarrows=False,dorandomcolor=False,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False,startxabs=x0,startyabs=y0)
     return( t )
 
 def mkmanystreamlines():
     startxabs=20
-    a_startyabs=np.linspace(-6,6,num=20)
+    a_startyabs=np.linspace(-6,6,num=2)
     #DRAW FIGURE
     #fig=plt.figure(1,figsize=(12,9),dpi=300)
     fig=plt.figure(1)
@@ -5570,9 +5570,10 @@ def mkmanystreamlines():
     #energy
     #B[1:] = avg_Tud[1:,0]
     for startyabs in a_startyabs:
-        t = mkonestreamline( avg_uu, startxabs, startyabs, mylen = mylen )
-        if t is not None:
-            xtraj, ytraj = t
+        print( "x0 = %g, y0 = %g" % (startxabs, startyabs) )
+        traj = mkonestreamline( B, startxabs, startyabs, mylen = mylen )
+        if traj is not None:
+            xtraj, ytraj = traj
             #DRAW STREAMLINE
             ax.plot(xtraj,ytraj,'g-')
             plt.draw()
