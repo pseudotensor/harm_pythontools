@@ -5545,7 +5545,14 @@ def mk2davg():
     gc.collect()
 
 
-def mkonestreamline():
+def mkonestreamline(u, x0, y0, mylen=30):
+    """Despite scary-looking contents, this extracts and returns a single streamline starting at (x0, y0); mylen is the size of the square within which a field line is to be traced"""
+    B[1:] = u[1:]
+    pdb.set_trace()
+    t = mkframe("myframe",len=mylen,ax=None,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.1,dsval=0.005,color='k',doarrows=False,dorandomcolor=False,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False,startxabs=x0,startyabs=y0)
+    return( t )
+
+def mkmanystreamlines():
     startxabs=20
     a_startyabs=np.linspace(-6,6,num=20)
     #DRAW FIGURE
@@ -5562,10 +5569,8 @@ def mkonestreamline():
     assignavg2dvars(avgmem)
     #energy
     #B[1:] = avg_Tud[1:,0]
-    B[1:] = avg_uu[1:]
-    bsq = avg_bsq
     for startyabs in a_startyabs:
-        t = mkframe("myframe",len=mylen,ax=ax,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.1,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False,startxabs=startxabs,startyabs=startyabs)
+        t = mkonestreamline( avg_uu, startxabs, startyabs, mylen = mylen )
         if t is not None:
             xtraj, ytraj = t
             #DRAW STREAMLINE
@@ -6458,7 +6463,7 @@ if __name__ == "__main__":
         #NEW FORMAT
         #Plot qtys vs. time
         generate_time_series(docompute=True)
-    if True:
+    if False:
         #make a movie
         fti=7000
         ftf=30500
