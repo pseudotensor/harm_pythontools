@@ -6341,7 +6341,8 @@ if __name__ == "__main__":
     if False:
         grid3d("gdump.bin",use2d=True)
         #rfd("fieldline0000.bin")
-        flist = ["avg2d20_0000_0001.npy", "avg2d20_0000_0050.npy","avg2d20_0100_0150.npy","avg2d20_0150_0200.npy","avg2d20_0200_0250.npy"]
+        #flist = ["avg2d20_0000_0001.npy", "avg2d20_0000_0050.npy","avg2d20_0100_0150.npy","avg2d20_0150_0200.npy","avg2d20_0200_0250.npy"]
+        flist = ["avg2d20_0000_0001.npy", "avg2d20_0200_0250.npy"]
         plt.figure(1)
         plt.clf()
         plt.figure(2)
@@ -6359,6 +6360,11 @@ if __name__ == "__main__":
             mdin = intangle( mdot_den*nz, which=cond )
             mdall = intangle( mdot_den*nz )
             #xxx
+            #######################
+            #
+            #  FIGURE 1: Mdot
+            #
+            #######################
             plt.figure(1)
             ax = plt.gca()
             #plt.plot( r[:,0,0], -mdin, ':' )
@@ -6368,43 +6374,68 @@ if __name__ == "__main__":
             plt.ylim(0,20)
             plt.xlabel(r"$r$",fontsize=16)
             plt.ylabel(r"$\dot M$",fontsize=16)
-            plt.grid()
-            #radial 4-velocity
+            plt.grid(b=True)
+            #######################
+            #
+            #  FIGURE 2: u^r
+            #
+            #######################
             plt.figure(2)
             #plt.clf()
             ax = plt.gca()
             up = (gdet[:,:,0:1]*avg_rhouu[1]*_dx2*_dx3).sum(-1).sum(-1)
             dn = (gdet[:,:,0:1]*avg_rhouu[0]*_dx2*_dx3).sum(-1).sum(-1)/dxdxp[1,1,:,0,0]
             ur1d = np.array(up/dn)
-            plt.grid()
+            uurmid = 0.5*(avg_uu[1,:,ny/2,0]+avg_uu[1,:,ny/2-1,0])*dxdxp[1,1,:,0,0]
+            uutmid = 0.5*(avg_uu[0,:,ny/2,0]+avg_uu[0,:,ny/2-1,0])
+            vurmid = uurmid/uutmid
             #plt.plot(r[:,0,0], -ur1d)
-            plt.plot(r[:,0,0],-ur1d)
+            #plt.plot(r[:,0,0],-ur1d,'b:')
+            #plt.plot(r[:,0,0],-uurmid,'b--')
+            plt.plot(r[:,0,0],-vurmid,'b-')
             #print ur1d.shape
             #plt.plot(r[:,0,0],0.1*(r[:,0,0]/10)**(-1.2))
-            plt.ylim(1e-4,0.5)
+            plt.ylim(1e-4,1.5)
             ax.set_xscale('log')
             ax.set_yscale('log')
             plt.xlim(rhor,100)
             #plt.ylim(0,20)
             plt.xlabel(r"$r$",fontsize=16)
             plt.ylabel(r"$-u^r$",fontsize=16)
-            #xxx
-            #Sigma
+            plt.grid(b=True)
+            #######################
+            #
+            #  FIGURE 3: \Sigma
+            #
+            #######################
             plt.figure(3)
-            plt.grid()
             #plt.clf()
             ax = plt.gca()
             sigval = (gdet[:,:,0:1]*avg_rhouu[0]*_dx2*_dx3).sum(-1).sum(-1)/dxdxp[1,1,:,0,0]
-            #xxxx
             plt.plot( r[:,0,0], sigval )
             ax.set_xscale('log')
             ax.set_yscale('log')
             plt.xlim(rhor,100000)
             plt.xlabel(r"$r$",fontsize=16)
             plt.ylabel(r"$\Sigma$",fontsize=16)
+            plt.grid(b=True)
         plt.figure(2)
-        plt.plot(r[:,0,0],0.1*(r[:,0,0]/10)**(-2))
-        plt.plot(r[:,0,0],0.1*(r[:,0,0]/10)**(-1.))
+        plt.plot(r[:,0,0],0.01*(r[:,0,0]/10)**(-2),'b:')
+        plt.plot(r[:,0,0],0.01*(r[:,0,0]/10)**(-1.),'b:')
+        plt.plot(r[:,0,0],0.01*(r[:,0,0]/10)**(-1./2.),'b:')
+        uurfreefall = -gn3[0,1,:,ny/2,0]/(-gn3[0,0,:,ny/2,0])**0.5*dxdxp[1,1,:,0,0]
+        vurfreefall = gn3[0,1,:,ny/2,0]/gn3[0,0,:,ny/2,0]*dxdxp[1,1,:,0,0]
+        vff_nonrel = (2/r[:,0,0])**0.5
+        plt.plot(r[:,0,0],vff_nonrel,'y-')
+        plt.plot(r[:,0,0],0.15*vff,'y-')
+        #plot instantaneous v^r
+        if False:
+            plt.plot(r[:,0,0],-uu[1,:,ny/2,0]/uu[0,:,ny/2,0]*dxdxp[1,1,:,0,0],'r')
+        #plt.plot(r[:,0,0],-uurfreefall,'g-')
+        #plt.plot(r[:,0,0],-uurfreefall,'g--')
+        #plt.plot(r[:,0,0],-0.35*uurfreefall,'g--')
+        plt.plot(r[:,0,0],-vurfreefall,'g-')
+        plt.plot(r[:,0,0],-0.3*vurfreefall,'g-')
         plt.figure(3)
         plt.plot(r[:,0,0],5e7*(r[:,0,0]/1000)**(1))
         plt.plot(r[:,0,0],0.1e7*(r[:,0,0]/1000)**(2))
