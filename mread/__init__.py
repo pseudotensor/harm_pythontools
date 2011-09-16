@@ -5571,7 +5571,7 @@ def mkmanystreamlines():
     #B[1:] = avg_Tud[1:,0]
     for startyabs in a_startyabs:
         print( "x0 = %g, y0 = %g" % (startxabs, startyabs) )
-        traj = mkonestreamline( B, startxabs, startyabs, mylen = mylen )
+        traj = mkonestreamline( -avg_Tud[1:,0], startxabs, startyabs, mylen = mylen )
         if traj is not None:
             xtraj, ytraj = traj
             #DRAW STREAMLINE
