@@ -732,8 +732,8 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
         if (isinstance(xi,tuple) and len(xi) > 1) or (isinstance(yi,tuple) and len(yi) > 1):
             xi = numpy.array(xi)
             yi = numpy.array(yi)
-        xabs = xi * DX + XOFF
-        yabs = yi * DY + YOFF
+        xabs = xi * numpy.array(DX) + numpy.array(XOFF)
+        yabs = yi * numpy.array(DY) + numpy.array(YOFF)
         return xabs, yabs
 
     ## Now we build up the trajectory set. I've found it best to look
