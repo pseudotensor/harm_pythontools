@@ -6494,6 +6494,7 @@ if __name__ == "__main__":
         grid3d( "gdump.bin",use2d=True )
         fno=0
         rfd("fieldline%04d.bin" % fno)
+        cvel()
         plt.clf();
         mkframe("lrho%04d" % 0, vmin=-8,vmax=0.2,dostreamlines=True,len=50)
         plt.savefig("lrho%04d.pdf" % fno)
