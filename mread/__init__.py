@@ -16,7 +16,7 @@ from streamlines import fstreamplot
 import gc
 import numpy as np
 import array
-#import scipy as sc
+import scipy as sp
 from scipy.interpolate import griddata
 from scipy.interpolate import interp1d
 #from scipy.interpolate import Rbf
@@ -1287,22 +1287,38 @@ def Qmri_simple(which=1,hoverrwhich=None,weak=None):
     return(qmri3d,iq2mri3d,norm3d)
 
     
-def horcalc(which=1,denfactor=None):
+def horcalc(hortype=1,which1=1,which2=1,denfactor=None):
     """
     Compute root mean square deviation of disk body from equatorial plane
     """
     if denfactor is None:
         denfactor=rho
     #
+    # determine when have to revert to which2
+    which=which1
+    testit=which1.sum(axis=1)
+    for i in np.arange(0,nx):
+        for k in np.arange(0,nz):
+            if testit[i,k]==0:
+                which[i,:,k]=which2[i,:,k]
+    #
     tiny=np.finfo(rho.dtype).tiny
-    up=(gdet*denfactor*(h-np.pi/2)*which).sum(axis=1)
-    dn=(gdet*denfactor*which).sum(axis=1)
-    thetamid2d=up/(dn+tiny)+np.pi/2
-    thetamid3d=np.empty((nx,ny,nz),dtype=h.dtype)
-    for j in np.arange(0,ny):
-        thetamid3d[:,j] = thetamid2d
+    #
+    thetamid3d=np.zeros((nx,ny,nz),dtype=h.dtype)
+    if hortype==1:
+        up=(gdet*denfactor*(h-np.pi/2)*which).sum(axis=1)
+        dn=(gdet*denfactor*which).sum(axis=1)
+        thetamid2d=up/(dn+tiny)+np.pi/2.0
+        #print("thetamid2d")
+        #god=thetamid2d[iofr(100),:]
+        #print(god)
+        for j in np.arange(0,ny):
+            thetamid3d[:,j] = thetamid2d
+    else:
+        thetamid3d=0.5*np.pi+thetamid3d
     #
     up=(gdet*denfactor*(h-thetamid3d)**2*which).sum(axis=1)
+    #up=(gdet*denfactor*(h-1.57)**2*which).sum(axis=1)
     dn=(gdet*denfactor*which).sum(axis=1)
     hoverr2d= (up/(dn+tiny))**0.5
     hoverr3d=np.empty((nx,ny,nz),dtype=h.dtype)
@@ -1353,7 +1369,7 @@ def gridcalc(hoverr):
     #
     #print( "drnorm50=%g dHnorm50=%g dPnorm50=%g" % (drnorm[50],dHnorm[50],dPnorm[50]) )
     #
-    return((drnorm,dHnorm,dPnorm))
+    return((dr,dH,dP,drnorm,dHnorm,dPnorm))
 
 #    mdin=intangle(gdet*rho*uu[1],inflowonly=1,maxbsqorho=30)
 
@@ -1470,8 +1486,10 @@ def intangle(qty,hoverr=None,thetamid=np.pi/2,minbsqorho=None,maxbsqorho=None,in
         insideinflowonly = 1
     #
     #
-    v4asq=bsq/(rho+ug+(gam-1)*ug)
-    mum1fake=uu[0]*(1.0+v4asq)-1.0
+    #v4asq=bsq/(rho+ug+(gam-1)*ug)
+    #mum1fake=uu[0]*(1.0+v4asq)-1.0
+    # override (mum1fake or mu do poorly for marking boundary of jet)
+    mum1fake=bsq/rho
     # mumax for wind
     if mumax is None:
         insidemumax = 1
@@ -1501,6 +1519,86 @@ def intangle(qty,hoverr=None,thetamid=np.pi/2,minbsqorho=None,maxbsqorho=None,in
     integral=(integrand*insideinflowonly*insidehor*insideminbsqorho*insidemaxbsqorho*insidemumin*insidemumax*insidebeta*which).sum(axis=2).sum(axis=1)*_dx2*_dx3
     integral=scaletofullwedge(integral)
     return(integral)
+
+
+
+
+
+
+def intrpvsh(qty,minbsqorho=None,maxbsqorho=None,inflowonly=None,mumax=None,mumin=None,maxbeta=None,which=1):
+    #
+    integrand = qty
+    #
+    # minbsqorho to look at flow in high mag regions to approximate floor injection
+    if minbsqorho != None:
+        insideminbsqorho = bsq/rho>=minbsqorho
+    else:
+        insideminbsqorho = 1
+    #
+    # maxbsqorho for mdin
+    if maxbsqorho != None:
+        insidemaxbsqorho = bsq/rho<=maxbsqorho
+    else:
+        insidemaxbsqorho = 1
+    #
+    # inflowonly for mdin
+    if inflowonly != None:
+        insideinflowonly = uu[1]<0.0
+    else:
+        insideinflowonly = 1
+    #
+    #
+    #v4asq=bsq/(rho+ug+(gam-1)*ug)
+    #mum1fake=uu[0]*(1.0+v4asq)-1.0
+    # override (mum1fake or mu do poorly for marking boundary of jet)
+    mum1fake=bsq/rho
+    # mumax for wind
+    if mumax is None:
+        insidemumax = 1
+    else:
+        insidemumax = 1
+        insidemumax = insidemumax * (mum1fake<mumax)
+        insidemumax = insidemumax * (isunbound==1)
+        insidemumax = insidemumax * (uu[1]>0.0)
+    #
+    # mumin for jet
+    if mumin is None:
+        insidemumin = 1
+    else:
+        insidemumin = 1
+        insidemumin = insidemumin * (mum1fake>mumin)
+        insidemumin = insidemumin * (isunbound==1)
+        insidemumin = insidemumin * (uu[1]>0.0)
+    #
+    # beta for wind
+    #beta=((gam-1)*ug)*divideavoidinf(bsq*0.5)
+    beta=((gam-1)*ug)/(1E-30 + bsq*0.5)
+    if maxbeta is None:
+        insidebeta = 1
+    else:
+        insidebeta = (beta<maxbeta)
+    #
+    integral=(integrand*insideinflowonly*insideminbsqorho*insidemaxbsqorho*insidemumin*insidemumax*insidebeta*which).sum(axis=2).sum(axis=0)*_dx1*_dx3
+    # still apply scale of full wedge since still have \phi
+    integral=scaletofullwedge(integral)
+
+    # now interpolate from size ny to size nx
+    xold=tj[0,0,0]+(tj[0,:,0]-tj[0,0,0])/(tj[0,-1,0]-tj[0,0,0])
+    xnew=ti[0,0,0]+(ti[:,0,0]-ti[0,0,0])/(ti[-1,0,0]-ti[0,0,0])
+    fixedintegral=np.interp(xnew,xold,integral)
+
+    return(fixedintegral)
+
+
+
+
+
+
+
+
+
+
+
 
 # def inttheta(qty,dtheta=np.pi/2):
 #     integrand = qty
@@ -1837,6 +1935,372 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
     #if None != fname:
     #    plt.savefig( fname + '.png' )
 
+
+def setupframe(gs=3,loadq=0,which=1):
+    #
+    if loadq==1:
+        grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=True )
+        flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+        sort_nicely(flist)
+        firstfieldlinefile=flist[0]
+        rfdheaderonly(firstfieldlinefile)
+        #
+        qtymem=None #clear to free mem
+        rhor=1+(1+a**2)**0.5
+        ihor = np.floor(iofr(rhor)+0.5);
+        qtymem=getqtyvstime(ihor,0.2)
+    #
+    params = {'backend': 'ps',
+              'axes.labelsize': 14,
+              'text.fontsize': 14,
+              'legend.fontsize': 10,
+              'xtick.labelsize': 8,
+              'ytick.labelsize': 8,
+              #'axes.formatter.limits': (-2,2),
+              'text.usetex': True}
+#              'figure.figsize': fig_size}
+    plt.rcParams.update(params)
+    #plt.rcParams['axes.formatter.limits']=[0,0]
+    #plt.rcParams['axes.formatter.limits'] = (-1,1)
+    # Couldn't figure out how to get scientific notation -- seems bug since takes normal numbers and makes it like log plot for y-axis
+    #
+    #
+    if gs==1:
+        gs1 = GridSpec(1, 1)
+        gs1.update(left=0.15, right=0.95, top=0.99, bottom=0.10, wspace=0.01, hspace=0.05)
+        ax1 = plt.subplot(gs1[:, -1])
+    #
+    if gs==2:
+        gs1 = GridSpec(1, 1)
+        gs1.update(left=0.25, right=0.85, top=0.99, bottom=0.15, wspace=0.10, hspace=0.05)
+        ax1 = plt.subplot(gs1[:, -1])
+    #
+    if gs==3:
+        gs1 = GridSpec(1, 1)
+        gs1.update(left=0.25, right=0.9, top=0.95, bottom=0.08, wspace=0.10, hspace=0.05)
+        ax1 = plt.subplot(gs1[:, -1])
+    #
+    from matplotlib.ticker import MultipleLocator, FormatStrFormatter
+    #ax1.yaxis.set_major_formatter(FormatStrFormatter('%e'))
+    #
+
+
+def finishframe(cb=1,label=1,tight=1,useextent=1,uselim=1,testdpiinches=0,toplot=None,extent=None,vmin=None,vmax=None,which=1,mintoplot=-6,maxtoplot=1,filenum=None,fileletter=None,pllabel="",maxbsqorho=None,maxbsqou=None,radius=None):
+    #
+    palette=cm.jet
+    palette.set_bad('k', 1.0)
+    #palette.set_over('r', 1.0)
+    #palette.set_under('g', 1.0)
+    #
+    if useextent==1:
+        CS = plt.imshow(toplot, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=mintoplot,vmax=maxtoplot)
+    else:
+        CS = plt.imshow(toplot, vmin=mintoplot,vmax=maxtoplot)
+    #
+    if tight==1:
+        plt.axis('tight')
+    #
+    if which==1:
+        plt.xscale('log')
+    #
+    if uselim==1:
+        plt.xlim([extent[0],extent[1]])
+        plt.ylim([extent[2],extent[3]])
+    #
+    #
+    #
+    #
+    #ax1.ticklabel_format(style='sci', scilimits=(0,0), axis='y')
+    #ax2.ticklabel_format(style='sci', scilimits=(0,0), axis='y')      
+    #
+    if label==1:
+        if which==1:
+            #plt.xlabel(r"$\log_{10}(r/r_g)$",ha='center',labelpad=0,fontsize=14)
+            plt.xlabel(r"$r [r_g]$",ha='center',labelpad=0,fontsize=14)
+            plt.ylabel(r"$t [r_g]$",ha='left',labelpad=20,fontsize=14)
+        if which==2:
+            if maxbsqorho is not None and maxbsqou is not None:
+                plt.xlabel(r"$\theta$ $r=%dr_g$ mbr=%g mbu=%g" % (radius,maxbsqorho,maxbsqou) ,ha='center',labelpad=0,fontsize=14)
+            elif maxbsqorho is not None:
+                plt.xlabel(r"$\theta$ $r=%dr_g$ mbr=%g" % (radius,maxbsqorho) ,ha='center',labelpad=0,fontsize=14)
+            elif maxbsqou is not None:
+                plt.xlabel(r"$\theta$ $r=%dr_g$ mbu=%g" % (radius,maxbsqou) ,ha='center',labelpad=0,fontsize=14)
+            else:
+                plt.xlabel(r"$\theta$ $r=%dr_g$" % (radius) ,ha='center',labelpad=0,fontsize=14)
+            #
+            plt.ylabel(r"$t [r_g]$",ha='left',labelpad=20,fontsize=14)
+    #
+    #
+    #gs2 = GridSpec(1, 1)
+    #gs2.update(left=0.5, right=1, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
+    #ax2 = plt.subplot(gs2[:, -1])
+    #
+    if cb==1:
+        plt.colorbar(CS) # draw colorbar
+    #
+    #plt.subptitle(pllabel,fontsize=8)
+    plt.title(pllabel,fontsize=8)
+    print("pllabel=%s" % (pllabel))
+    #
+    F = pylab.gcf()
+    #
+    if testdpiinches==1:
+        # Now check everything with the defaults:
+        DPI = F.get_dpi()
+        print "DPI:", DPI
+        DefaultSize = F.get_size_inches()
+        print "Default size in Inches", DefaultSize
+        print "Which should result in a %i x %i Image"%(DPI*DefaultSize[0], DPI*DefaultSize[1])
+        F.set_size_inches( (DefaultSize[0]*2, DefaultSize[1]*2) )
+        Size = F.get_size_inches()
+        print "Size in Inches", Size
+    #
+    #
+    # need resolution to show all time resolution -- space is resolved normally
+    #
+    # total size in inches
+    xinches=3.0
+    yinches=6.0
+    # non-plotting part that takes up space
+    xnonplot=1.5
+    ynonplot=0.75
+    DPIy=len(ts)/(yinches-ynonplot)
+    DPIx=len(r[:,0,0])/(xinches-xnonplot)
+    maxresx=10000
+    maxresy=10000
+    maxDPIx=maxresx/xinches
+    maxDPIy=maxresy/yinches
+    DPIx=min(DPIx,maxDPIx)
+    DPIy=min(DPIy,maxDPIy)
+    DPI=max(DPIx,DPIy)
+    resx=DPI*xinches
+    resy=DPI*yinches
+    F.set_size_inches( (xinches, yinches) )
+    print("Resolution should be %i x %i pixels from DPI=%d (DPIxy=%d %d)" % (resx,resy,DPI,DPIx,DPIy))
+    #
+    #
+    if which==1:
+        plt.savefig( "plot%d%svstr.png" % (filenum,fileletter),dpi=DPI)
+        plt.savefig( "plot%d%svstr.eps" % (filenum,fileletter),dpi=DPI)
+    if which==2:
+        if maxbsqorho is not None and maxbsqou is not None:
+            plt.savefig( "plot%d%s%d%dvsth.png" % (filenum,fileletter,maxbsqorho,maxbsqou),dpi=DPI)
+            plt.savefig( "plot%d%s%d%dvsth.eps" % (filenum,fileletter,maxbsqorho,maxbsqou),dpi=DPI)
+        elif maxbsqorho is not None:
+            plt.savefig( "plot%d%sr%dvsth.png" % (filenum,fileletter,maxbsqorho),dpi=DPI)
+            plt.savefig( "plot%d%sr%dvsth.eps" % (filenum,fileletter,maxbsqorho),dpi=DPI)
+        elif maxbsqou is not None:
+            plt.savefig( "plot%d%su%dvsth.png" % (filenum,fileletter,maxbsqou),dpi=DPI)
+            plt.savefig( "plot%d%su%dvsth.eps" % (filenum,fileletter,maxbsqou),dpi=DPI)
+        else:
+            plt.savefig( "plot%d%svsth.png" % (filenum,fileletter),dpi=DPI)
+            plt.savefig( "plot%d%svsth.eps" % (filenum,fileletter),dpi=DPI)
+    #
+    print( "Done!" )
+    sys.stdout.flush()
+
+
+
+def setminmax4mk(fun0=None,which=1,myRout=None,logvalue=None,bsqorho=None,bsqou=None,maxbsqorho=None,maxbsqou=None):
+    #
+    
+    #
+    # ignore until t=100M over first time period
+    itstart=max(1,tofts(100.0))
+    #
+    if which==1:
+        # Also ignore inside horizon for setting min/max of colors for data to show
+        rhor=1+(1-a**2)**0.5
+        ihor=iofr(rhor)
+        istart=ihor
+        iend=min(nx-1,iofr(myRout))
+    #
+    if which==2:
+        istart=0
+        iend=nx-1
+    #
+    copyfun0=np.copy(fun0)
+    # modify fun0 based upon bsqorho or bsqou
+    if maxbsqorho is not None:
+        copyfun0[bsqorho>maxbsqorho]=np.nan
+    if maxbsqou is not None:
+        copyfun0[bsqou>maxbsqou]=np.nan
+    #
+    maxtoplot=np.nanmax(copyfun0[itstart:-1,istart:iend+1])
+    mintoplot=np.nanmin(copyfun0[itstart:-1,istart:iend+1])
+    #
+    #
+    print("pre min=%g max=%g" % (mintoplot,maxtoplot))
+    #
+    if logvalue==1:
+        #toplot = np.log10(qty+1E-30)
+        #somehow interpolation goes nuts and goes far beyond original values
+        #maxtoplot=np.max(toplot)
+        mintoplottoolow=maxtoplot-4
+        mintoplot=max(mintoplot,mintoplottoolow)
+    #
+    print("final min=%g max=%g itstart=%d" % (mintoplot,maxtoplot,itstart))
+    #
+    return(mintoplot,maxtoplot)
+
+
+
+
+def mktr(loadq=1,qty=None,filenum=1,fileletter="a",logvalue=1,pllabel="",bsqorho=None,bsqou=None,maxbsqorho=None,maxbsqou=None):
+    #
+    # now interpolate to uniform-in-log radial grid
+    #myRout=200
+    # focuson inner disk region -- don't need outer region
+    # go up to 30 because we use that radius for one of the t vs. \theta plots.
+    myRout=30
+    #myRin=Rin
+    # no need to show inside horizon
+    rhor=1+(1-a**2)**0.5
+    myRin=rhor
+    #
+    #
+    if logvalue==1:
+        fun0 = np.log10(np.fabs(qty)+1E-30)
+    else:
+        fun0 = np.copy(qty)
+    #
+    if maxbsqorho is not None or maxbsqou is not None:
+        (mintoplot,maxtoplot)=setminmax4mk(logvalue=logvalue,fun0=fun0,myRout=myRout,which=1,bsqorho=bsqorho,bsqou=bsqou,maxbsqorho=maxbsqorho,maxbsqou=maxbsqou)
+        #
+        # modify fun0 based upon bsqorho or bsqou
+        if maxbsqorho is not None:
+            fun0[bsqorho>maxbsqorho]=mintoplot
+        if maxbsqou is not None:
+            fun0[bsqou>maxbsqou]=mintoplot
+        #
+    #
+    (mintoplot,maxtoplot)=setminmax4mk(logvalue=logvalue,fun0=fun0,myRout=myRout,which=1)
+    # ignore nans in any case
+    fun0[np.isnan(fun0)==1]=mintoplot
+    #
+    #
+    #
+    #
+    #
+    r1dold=r[:,0,0]
+    sx11=np.log(myRin)
+    dx11=np.log(myRout/myRin)/len(ti[:,0,0])
+    x1d=sx11+ti[:,0,0]*dx11
+    r1d=np.exp(x1d)
+    t1d=ts
+    #
+    #fun = sp.interpolate.interp2d(r1dold, t1d, fun0)
+    #,kind='cubic')
+    # 2d interp above doesn't seem to work right, so do line-by-line 1d interp since only radius changes positions (same number of elements, though)
+    #funnew=fun(r1d,t1d)
+    sizet=len(ts)
+    funnew=np.zeros((sizet,nx),dtype=r.dtype)
+    fold=np.zeros(nx,dtype=r.dtype)
+    #
+    for tic in ts:
+        tici=np.where(ts==tic)[0]
+        xold=r[:,0,0]
+        xnew=r1d
+        fold=fun0[tici,:]
+        if len(fold)==1:
+            fold=fold[0]
+        #print("AS")
+        #print(xnew)
+        #print(xold)
+        #print(fold)
+        funnew[tici,:]=np.interp(xnew,xold,fold)
+    toplot=funnew
+    #extent=(np.log10(myRin),np.log10(myRout),ts[0],ts[-1])
+    # assume plot shows in log
+    extent=(myRin,myRout,ts[0],ts[-1])
+    #
+    #
+    #
+    print("mktr: num=%d let=%s" % (filenum,fileletter))
+    setupframe(which=1,gs=3)
+    finishframe(which=1,toplot=toplot,extent=extent,cb=1,tight=1,useextent=1,uselim=1,label=1,mintoplot=mintoplot,maxtoplot=maxtoplot,filenum=filenum,fileletter=fileletter,pllabel=pllabel,maxbsqorho=maxbsqorho,maxbsqou=maxbsqou)
+    #
+
+
+def mkthrad(loadq=1,qty=None,filenum=1,fileletter="a",logvalue=1,radius=4,pllabel="",bsqorho=None,bsqou=None,maxbsqorho=None,maxbsqou=None):
+    #
+    hin=0
+    hout=np.pi
+    #
+    #
+    if logvalue==1:
+        fun0 = np.log10(np.fabs(qty)+1E-30)
+    else:
+        fun0 = qty
+    #
+    if maxbsqorho is not None or maxbsqou is not None:
+        (mintoplot,maxtoplot)=setminmax4mk(logvalue=logvalue,fun0=fun0,which=2,bsqorho=bsqorho,bsqou=bsqou,maxbsqorho=maxbsqorho,maxbsqou=maxbsqou)
+        #
+        # modify fun0 based upon bsqorho or bsqou
+        if maxbsqorho is not None:
+            fun0[bsqorho>maxbsqorho]=mintoplot
+            print("mkthrad: maxbsqorho=%g" % (maxbsqorho))
+        if maxbsqou is not None:
+            fun0[bsqou>maxbsqou]=mintoplot
+            print("mkthrad: maxbsqou=%g" % (maxbsqou))
+        #
+    #
+    (mintoplot,maxtoplot)=setminmax4mk(logvalue=logvalue,fun0=fun0,which=2)
+    #
+    # ignore nans in any case
+    fun0[np.isnan(fun0)==1]=mintoplot
+    #
+    #
+    irad=iofr(radius)
+    # get nx-sized original h
+    xold=(tj[0,:,0]-tj[0,0,0])/(tj[0,-1,0]-tj[0,0,0])
+    xnew=(ti[:,0,0]-ti[0,0,0])/(ti[-1,0,0]-ti[0,0,0])
+    hnx=np.interp(xnew,xold,h[irad,:,0])
+    #
+    # now interpolate to uniform-in-log radial grid
+    #j1d=(tj[irad,:,0]-tj[irad,0,0])/(tj[irad,-1,0]-tj[irad,0,0])
+    j1dnx=xnew
+    h1d=hin+(hout-hin)*j1dnx
+    #print("h1d")
+    #print(h1d)
+    #print("hnx")
+    #print(hnx)
+    #
+    t1d=ts
+    #
+    # cubic is too aggressive at smoothing in radius if unresolved in time
+    #fun = sp.interpolate.interp2d(hnx, t1d, fun0) #,kind='cubic')
+    #funnew=fun(h1d,t1d)
+    #toplot=funnew
+    # 2d interp doesn't work, so do line-by-line
+    sizet=len(ts)
+    funnew=np.zeros((sizet,nx),dtype=r.dtype)
+    fold=np.zeros(nx,dtype=r.dtype)
+    #
+    for tic in ts:
+        tici=np.where(ts==tic)[0]
+        xold=hnx
+        xnew=h1d
+        fold=fun0[tici,:]
+        if len(fold)==1:
+            fold=fold[0]
+        #print("AS")
+        #print(xnew)
+        #print(xold)
+        #print(fold)
+        funnew[tici,:]=np.interp(xnew,xold,fold)
+    toplot=funnew
+    extent=(hin,hout,ts[0],ts[-1])
+    #
+    #
+    print("mkthrad (radius=%g): num=%d let=%s" % (radius,filenum,fileletter))
+    
+
+    setupframe(which=2,gs=3)
+    finishframe(which=2,toplot=toplot,extent=extent,cb=1,tight=1,useextent=1,uselim=1,label=1,mintoplot=mintoplot,maxtoplot=maxtoplot,filenum=filenum,fileletter=fileletter,pllabel=pllabel,maxbsqorho=maxbsqorho,maxbsqou=maxbsqou,radius=radius)
+    #
+
+
 def mainfunc(imgname):
     global xi,yi,zi,CS
     #grid3d("gdump")
@@ -2010,7 +2474,24 @@ def rfloor(dumpname):
     dUfloor = gd[:,:,:,:].view() 
     return
 
-def rrdump(dumpname,write2xphi=False):
+#
+#Thanks, I like your approach for its simplicity (avoiding A_i).  I checked your code and it seems to make sense.  I'm not sure why you were reading in primitives, computing the ZAMO stuff, and then not using them.  Maybe you can comment on that?
+#
+#Actually, one doesn't even have to run things over each dimension.  As you probably knew, that lowest order averaging only acts on each field independently in the divb=0 expression.  So one can change all 3 fields at the same time.  Every new position along some direction (e.g. B1 along 1-dir) is averaged, while every other direction (e.g. B1 along 2-dir) is simply copied in the even-odd way you already do.  So the only new step is to duplicate the last few lines in your code to act on the other 2 fields -- and of course one should change the new resolution as appropriate.
+#
+#I think the only restriction is that one must increase the grid by factors of 2^n in each dimension.
+#
+#I think you assumed (with is sufficient) that the non-field conserved quantities aren't used for the non-higher-order STAG method, right?  As we talked before as related to floor U diagnostics, the conserved quantities are constantly being reconstructed.  Even upon restarting, the advance step still avoids using the read-in ucum->ui and just uses the currently-computed Uitemp->ui for non-field quantities.  But field quantities do use ucum->ui.
+#
+#The only issue is that the Uitemp comes from primitives that include the centered fields.  So if you only copy over the centered fields, they won't be entirely consistent with what the interpolated stag->cent fields would have given.  But this is only a truncation level error and only occurs over 1 full step (4 substeps).  I think that's not worth fixing.
+#
+# just do (e.g.):
+# 1) put file in dumps/rdump-0.bin
+# 2) and file in dumps/fieldline*.bin (just 1 file needed -- any file number)
+# 3) ipython ~/py/mread/__init__.py
+# 4) rrdump('rdump-0.bin',writenew=1,newf1=2,newf2=2,newf3=2)
+#
+def rrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None):
     global nx,ny,nz,t,a,rho,ug,vu,vd,B,gd,gd1,numcols,gdetB
     #print( "Reading " + "dumps/" + dumpname + " ..." )
     gin = open( "dumps/" + dumpname, "rb" )
@@ -2052,12 +2533,17 @@ def rrdump(dumpname,write2xphi=False):
         ud = mdot(gv3,uu)
     else:
         print( 'Metric (gv3, gn3) not defined, I am skipping the computation of uu and ud' )
-    if write2xphi:
-        print( "Writing out 2xphi rdump...", )
+    if writenew:
+        print( "Writing out new rdump...", )
         #write out a dump with twice as many cells in phi-direction:
-        gout = open( "dumps/" + dumpname + "2xphi", "wb" )
+        gout = open( "dumps/" + dumpname + "%d.%d.%d" % (newf1,newf2,newf3), "wb")
         #double the number of phi-cells
-        header[2] = "%d" % (2*nz)
+        newnx=newf1*nx
+        newny=newf2*ny
+        newnz=newf3*nz
+        header[0] = "%d" % (newnx)
+        header[1] = "%d" % (newny)
+        header[2] = "%d" % (newnz)
         for headerel in header:
             s = "%s " % headerel
             gout.write( s )
@@ -2067,15 +2553,84 @@ def rrdump(dumpname,write2xphi=False):
         #reshape the rdump content
         gd1 = gdraw.view().reshape((nz,ny,nx,-1),order='C')
         #allocate memory for refined grid, nz' = 2*nz
-        gd2 = np.zeros((2*nz,ny,nx,numcols),order='C',dtype=np.float64)
-        #copy even k's
-        gd2[0::2,:,:,:] = gd1[:,:,:,:]
-        #copy odd k's
-        gd2[1::2,:,:,:] = gd1[:,:,:,:]
-        #in the new cells, adjust gdetB[3] to be averages of immediately adjacent cells (this ensures divb=0)
+        gd2 = np.zeros((newnz,newny,newnx,numcols),order='C',dtype=np.float64)
+        #
+        #################
+        # First, copy every old index -> new same 2*index and new 2*index+1
+        #
+        #copy kji both even and odds
+        for kst in np.arange(0,2):
+            for jst in np.arange(0,2):
+                for ist in np.arange(0,2):
+                    gd2[kst::2,jst::2,ist::2,:] = gd1[:,:,:,:]
+                #
+            #
+        #
+        ####################
+        # Second, in the new cells, adjust gdetB[1,2,3] along 1,2,3 direction to be averages of immediately adjacent cells (this ensures divb=0)
+        #
+        gdetB1index = numcols/2+5+0
+        for kst in np.arange(0,2):
+            for jst in np.arange(0,2):
+                gd2[kst::2,jst::2,1:-1:2,gdetB1index] = 0.5*(gd1[:,:,:-1,gdetB1index]+gd1[:,:,1:,gdetB1index])
+                # fake setting of last radial B1 value somehow since don't have enough data to average locally (would need ti+1 staggered value)
+                gd2[kst::2,jst::2,-1,gdetB1index] = 0.5*(gd1[:,:,-1,gdetB1index]+gd1[:,:,-1,gdetB1index])
+        #
+        gdetB2index = numcols/2+5+0
+        for kst in np.arange(0,2):
+            for ist in np.arange(0,2):
+                gd2[kst::2,1:-1:2,ist::2,gdetB2index] = 0.5*(gd1[:,:-1,:,gdetB2index]+gd1[:,1:,:,gdetB2index])
+                # use assumed reflective condition to set last value (i.e. B2[tj]=0)
+                gd2[kst::2,-1,ist::2,gdetB2index] = 0.0
+        #
         gdetB3index = numcols/2+5+2
-        gd2[1:-1:2,:,:,gdetB3index] = 0.5*(gd1[:-1,:,:,gdetB3index]+gd1[1:,:,:,gdetB3index])
-        gd2[-1,:,:,gdetB3index] = 0.5*(gd1[0,:,:,gdetB3index]+gd1[-1,:,:,gdetB3index])
+        for jst in np.arange(0,2):
+            for ist in np.arange(0,2):
+                gd2[1:-1:2,jst::2,ist::2,gdetB3index] = 0.5*(gd1[:-1,:,:,gdetB3index]+gd1[1:,:,:,gdetB3index])
+                # use assumed periodicity in \phi to set last value (i.e. B3[tk]=B3[0]).  gdet and metric are same since metric also periodic.
+                gd2[-1,jst::2,ist::2,gdetB3index] = 0.5*(gd1[0,:,:,gdetB3index]+gd1[-1,:,:,gdetB3index])
+        #
+        # check divbB=0 for old and new data, but need dx[1,2,3] for that, so get header from a fieldline file.
+        flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+        sort_nicely(flist)
+        if len(flist)>0:
+            firstfieldlinefile=flist[0]
+            rfdheaderonly(firstfieldlinefile)
+            # gdet needed to normalize divb
+            #grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=True )
+            #
+            # OLD:
+            divbcentold1=(gd1[1:nz,1:ny,1:nx,gdetB1index]-gd1[1:nz  ,1:ny  ,0:nx-1,gdetB1index])/_dx1
+            adivbcentold1=(np.fabs(gd1[1:nz,1:ny,1:nx,gdetB1index])+np.fabs(gd1[1:nz  ,1:ny  ,0:nx-1,gdetB1index]))/_dx1
+            divbcentold2=(gd1[1:nz,1:ny,1:nx,gdetB2index]-gd1[1:nz  ,0:ny-1,1:nx  ,gdetB2index])/_dx2
+            adivbcentold2=(np.fabs(gd1[1:nz,1:ny,1:nx,gdetB2index])+np.fabs(gd1[1:nz  ,0:ny-1,1:nx  ,gdetB2index]))/_dx2
+            divbcentold3=(gd1[1:nz,1:ny,1:nx,gdetB3index]-gd1[0:nz-1,1:ny  ,1:nx  ,gdetB3index])/_dx3
+            adivbcentold3=(np.fabs(gd1[1:nz,1:ny,1:nx,gdetB3index])+np.fabs(gd1[0:nz-1,1:ny  ,1:nx  ,gdetB3index]))/_dx3
+            divbcentold=divbcentold1+divbcentold2+divbcentold3
+            olddimens=(nx>1)+(ny>1)+(nz>1)
+            adivbcentold=(adivbcentold1+adivbcentold2+adivbcentold3)/olddimens
+            divbcentoldavg=np.average(np.fabs(divbcentold/adivbcentold))
+            divbcentoldmax=np.max(np.fabs(divbcentold/adivbcentold))
+            print("divbcentoldavg=%g divbcentoldmax=%g" % (divbcentoldavg,divbcentoldmax))
+            #
+            # NEW (old->new, gd1->gd2, n? -> newn?, _dx? -> (0.5*_dx?) )
+            divbcentnew1=(gd2[1:newnz,1:newny,1:newnx,gdetB1index]-gd2[1:newnz  ,1:newny  ,0:newnx-1,gdetB1index])/(0.5*_dx1)
+            adivbcentnew1=(np.fabs(gd2[1:newnz,1:newny,1:newnx,gdetB1index])+np.fabs(gd2[1:newnz  ,1:newny  ,0:newnx-1,gdetB1index]))/(0.5*_dx1)
+            divbcentnew2=(gd2[1:newnz,1:newny,1:newnx,gdetB2index]-gd2[1:newnz  ,0:newny-1,1:newnx  ,gdetB2index])/(0.5*_dx2)
+            adivbcentnew2=(np.fabs(gd2[1:newnz,1:newny,1:newnx,gdetB2index])+np.fabs(gd2[1:newnz  ,0:newny-1,1:newnx  ,gdetB2index]))/(0.5*_dx2)
+            divbcentnew3=(gd2[1:newnz,1:newny,1:newnx,gdetB3index]-gd2[0:newnz-1,1:newny  ,1:newnx  ,gdetB3index])/(0.5*_dx3)
+            adivbcentnew3=(np.fabs(gd2[1:newnz,1:newny,1:newnx,gdetB3index])+np.fabs(gd2[0:newnz-1,1:newny  ,1:newnx  ,gdetB3index]))/(0.5*_dx3)
+            divbcentnew=divbcentnew1+divbcentnew2+divbcentnew3
+            newdimens=(newnx>1)+(newny>1)+(newnz>1)
+            adivbcentnew=(adivbcentnew1+adivbcentnew2+adivbcentnew3)/newdimens
+            divbcentnewavg=np.average(np.fabs(divbcentnew/adivbcentnew))
+            divbcentnewmax=np.max(np.fabs(divbcentnew/adivbcentnew))
+            print("divbcentnewavg=%g divbcentnewmax=%g" % (divbcentnewavg,divbcentnewmax))
+            #
+        else:
+            print("No fieldline file to check divb=0")
+            #
+        #
         gd2.tofile(gout)
         gout.close()
         print( " done!" )
@@ -2994,7 +3549,7 @@ def mergeqtyvstime(n):
 
 
 def getnonbobnqty():
-    value=1+6+10+14+14+14+17+10+15+12+2+36+36
+    value=1+6+10+3+21+21+21+24+21+21+21+10+15+12+2+36+36
     return(value)
 
 
@@ -3041,7 +3596,14 @@ def getqtymem(qtymem):
     betaratofavg=qtymem[i];i+=1
     global     betaratofmax
     betaratofmax=qtymem[i];i+=1
-    #rhosq: 14
+    #alphamag: 3
+    global     alphamag1
+    alphamag1=qtymem[i];i+=1
+    global     alphamag2
+    alphamag2=qtymem[i];i+=1
+    global     alphamag3
+    alphamag3=qtymem[i];i+=1
+    #rhosq: 14+7=21
     global     rhosqs
     rhosqs=qtymem[i];i+=1
     global     rhosrhosq
@@ -3050,14 +3612,14 @@ def getqtymem(qtymem):
     ugsrhosq=qtymem[i];i+=1
     global     uu0rhosq
     uu0rhosq=qtymem[i];i+=1
-    global     uus1rhosq
-    uus1rhosq=qtymem[i];i+=1
-    global     uuas1rhosq
-    uuas1rhosq=qtymem[i];i+=1
-    global     uus3rhosq
-    uus3rhosq=qtymem[i];i+=1
-    global     uuas3rhosq
-    uuas3rhosq=qtymem[i];i+=1
+    global     vus1rhosq
+    vus1rhosq=qtymem[i];i+=1
+    global     vuas1rhosq
+    vuas1rhosq=qtymem[i];i+=1
+    global     vus3rhosq
+    vus3rhosq=qtymem[i];i+=1
+    global     vuas3rhosq
+    vuas3rhosq=qtymem[i];i+=1
     global     Bs1rhosq
     Bs1rhosq=qtymem[i];i+=1
     global     Bas1rhosq
@@ -3070,99 +3632,284 @@ def getqtymem(qtymem):
     Bs3rhosq=qtymem[i];i+=1
     global     Bas3rhosq
     Bas3rhosq=qtymem[i];i+=1
-    #2h: 14
-    global     gdetint2h
-    gdetint2h=qtymem[i];i+=1
-    global     rhos2h
-    rhos2h=qtymem[i];i+=1
-    global     ugs2h
-    ugs2h=qtymem[i];i+=1
-    global     uu02h
-    uu02h=qtymem[i];i+=1
-    global     uus12h
-    uus12h=qtymem[i];i+=1
-    global     uuas12h
-    uuas12h=qtymem[i];i+=1
-    global     uus32h
-    uus32h=qtymem[i];i+=1
-    global     uuas32h
-    uuas32h=qtymem[i];i+=1
-    global     Bs12h
-    Bs12h=qtymem[i];i+=1
-    global     Bas12h
-    Bas12h=qtymem[i];i+=1
-    global     Bs22h
-    Bs22h=qtymem[i];i+=1
-    global     Bas22h
-    Bas22h=qtymem[i];i+=1
-    global     Bs32h
-    Bs32h=qtymem[i];i+=1
-    global     Bas32h
-    Bas32h=qtymem[i];i+=1
-    #4h: 14
-    global     gdetint4h
-    gdetint4h=qtymem[i];i+=1
-    global     rhos4h
-    rhos4h=qtymem[i];i+=1
-    global     ugs4h
-    ugs4h=qtymem[i];i+=1
-    global     uu04h
-    uu04h=qtymem[i];i+=1
-    global     uus14h
-    uus14h=qtymem[i];i+=1
-    global     uuas14h
-    uuas14h=qtymem[i];i+=1
-    global     uus34h
-    uus34h=qtymem[i];i+=1
-    global     uuas34h
-    uuas34h=qtymem[i];i+=1
-    global     Bs14h
-    Bs14h=qtymem[i];i+=1
-    global     Bas14h
-    Bas14h=qtymem[i];i+=1
-    global     Bs24h
-    Bs24h=qtymem[i];i+=1
-    global     Bas24h
-    Bas24h=qtymem[i];i+=1
-    global     Bs34h
-    Bs34h=qtymem[i];i+=1
-    global     Bas34h
-    Bas34h=qtymem[i];i+=1
-    #2hor: 17
-    global     gdetint2hor
-    gdetint2hor=qtymem[i];i+=1
-    global     rhos2hor
-    rhos2hor=qtymem[i];i+=1
-    global     ugs2hor
-    ugs2hor=qtymem[i];i+=1
-    global     bsqs2hor
-    bsqs2hor=qtymem[i];i+=1
-    global     bsqorhos2hor
-    bsqorhos2hor=qtymem[i];i+=1
-    global     bsqougs2hor
-    bsqougs2hor=qtymem[i];i+=1
-    global     uu02hor
-    uu02hor=qtymem[i];i+=1
-    global     uus12hor
-    uus12hor=qtymem[i];i+=1
-    global     uuas12hor
-    uuas12hor=qtymem[i];i+=1
-    global     uus32hor
-    uus32hor=qtymem[i];i+=1
-    global     uuas32hor
-    uuas32hor=qtymem[i];i+=1
-    global     Bs12hor
-    Bs12hor=qtymem[i];i+=1
-    global     Bas12hor
-    Bas12hor=qtymem[i];i+=1
-    global     Bs22hor
-    Bs22hor=qtymem[i];i+=1
-    global     Bas22hor
-    Bas22hor=qtymem[i];i+=1
-    global     Bs32hor
-    Bs32hor=qtymem[i];i+=1
-    global     Bas32hor
-    Bas32hor=qtymem[i];i+=1
+    global     bs1rhosq
+    bs1rhosq=qtymem[i];i+=1
+    global     bas1rhosq
+    bas1rhosq=qtymem[i];i+=1
+    global     bs2rhosq
+    bs2rhosq=qtymem[i];i+=1
+    global     bas2rhosq
+    bas2rhosq=qtymem[i];i+=1
+    global     bs3rhosq
+    bs3rhosq=qtymem[i];i+=1
+    global     bas3rhosq
+    bas3rhosq=qtymem[i];i+=1
+    global     bsqrhosq
+    bsqrhosq=qtymem[i];i+=1
+    #rhosqeq: 14+7=21
+    global     rhosqeqs
+    rhosqeqs=qtymem[i];i+=1
+    global     rhosrhosqeq
+    rhosrhosqeq=qtymem[i];i+=1
+    global     ugsrhosqeq
+    ugsrhosqeq=qtymem[i];i+=1
+    global     uu0rhosqeq
+    uu0rhosqeq=qtymem[i];i+=1
+    global     vus1rhosqeq
+    vus1rhosqeq=qtymem[i];i+=1
+    global     vuas1rhosqeq
+    vuas1rhosqeq=qtymem[i];i+=1
+    global     vus3rhosqeq
+    vus3rhosqeq=qtymem[i];i+=1
+    global     vuas3rhosqeq
+    vuas3rhosqeq=qtymem[i];i+=1
+    global     Bs1rhosqeq
+    Bs1rhosqeq=qtymem[i];i+=1
+    global     Bas1rhosqeq
+    Bas1rhosqeq=qtymem[i];i+=1
+    global     Bs2rhosqeq
+    Bs2rhosqeq=qtymem[i];i+=1
+    global     Bas2rhosqeq
+    Bas2rhosqeq=qtymem[i];i+=1
+    global     Bs3rhosqeq
+    Bs3rhosqeq=qtymem[i];i+=1
+    global     Bas3rhosqeq
+    Bas3rhosqeq=qtymem[i];i+=1
+    global     bs1rhosqeq
+    bs1rhosqeq=qtymem[i];i+=1
+    global     bas1rhosqeq
+    bas1rhosqeq=qtymem[i];i+=1
+    global     bs2rhosqeq
+    bs2rhosqeq=qtymem[i];i+=1
+    global     bas2rhosqeq
+    bas2rhosqeq=qtymem[i];i+=1
+    global     bs3rhosqeq
+    bs3rhosqeq=qtymem[i];i+=1
+    global     bas3rhosqeq
+    bas3rhosqeq=qtymem[i];i+=1
+    global     bsqrhosqeq
+    bsqrhosqeq=qtymem[i];i+=1
+    #rhosqhorpick: 14+7=21
+    global     rhosqhorpicks
+    rhosqhorpicks=qtymem[i];i+=1
+    global     rhosrhosqhorpick
+    rhosrhosqhorpick=qtymem[i];i+=1
+    global     ugsrhosqhorpick
+    ugsrhosqhorpick=qtymem[i];i+=1
+    global     uu0rhosqhorpick
+    uu0rhosqhorpick=qtymem[i];i+=1
+    global     vus1rhosqhorpick
+    vus1rhosqhorpick=qtymem[i];i+=1
+    global     vuas1rhosqhorpick
+    vuas1rhosqhorpick=qtymem[i];i+=1
+    global     vus3rhosqhorpick
+    vus3rhosqhorpick=qtymem[i];i+=1
+    global     vuas3rhosqhorpick
+    vuas3rhosqhorpick=qtymem[i];i+=1
+    global     Bs1rhosqhorpick
+    Bs1rhosqhorpick=qtymem[i];i+=1
+    global     Bas1rhosqhorpick
+    Bas1rhosqhorpick=qtymem[i];i+=1
+    global     Bs2rhosqhorpick
+    Bs2rhosqhorpick=qtymem[i];i+=1
+    global     Bas2rhosqhorpick
+    Bas2rhosqhorpick=qtymem[i];i+=1
+    global     Bs3rhosqhorpick
+    Bs3rhosqhorpick=qtymem[i];i+=1
+    global     Bas3rhosqhorpick
+    Bas3rhosqhorpick=qtymem[i];i+=1
+    global     bs1rhosqhorpick
+    bs1rhosqhorpick=qtymem[i];i+=1
+    global     bas1rhosqhorpick
+    bas1rhosqhorpick=qtymem[i];i+=1
+    global     bs2rhosqhorpick
+    bs2rhosqhorpick=qtymem[i];i+=1
+    global     bas2rhosqhorpick
+    bas2rhosqhorpick=qtymem[i];i+=1
+    global     bs3rhosqhorpick
+    bs3rhosqhorpick=qtymem[i];i+=1
+    global     bas3rhosqhorpick
+    bas3rhosqhorpick=qtymem[i];i+=1
+    global     bsqrhosqhorpick
+    bsqrhosqhorpick=qtymem[i];i+=1
+    #2.0hor: 24
+    global     gdetinthor
+    gdetinthor=qtymem[i];i+=1
+    global     rhoshor
+    rhoshor=qtymem[i];i+=1
+    global     ugshor
+    ugshor=qtymem[i];i+=1
+    global     bsqshor
+    bsqshor=qtymem[i];i+=1
+    global     bsqorhoshor
+    bsqorhoshor=qtymem[i];i+=1
+    global     bsqougshor
+    bsqougshor=qtymem[i];i+=1
+    global     uu0hor
+    uu0hor=qtymem[i];i+=1
+    global     vus1hor
+    vus1hor=qtymem[i];i+=1
+    global     vuas1hor
+    vuas1hor=qtymem[i];i+=1
+    global     vus3hor
+    vus3hor=qtymem[i];i+=1
+    global     vuas3hor
+    vuas3hor=qtymem[i];i+=1
+    global     Bs1hor
+    Bs1hor=qtymem[i];i+=1
+    global     Bas1hor
+    Bas1hor=qtymem[i];i+=1
+    global     Bs2hor
+    Bs2hor=qtymem[i];i+=1
+    global     Bas2hor
+    Bas2hor=qtymem[i];i+=1
+    global     Bs3hor
+    Bs3hor=qtymem[i];i+=1
+    global     Bas3hor
+    Bas3hor=qtymem[i];i+=1
+    global     bs1hor
+    bs1hor=qtymem[i];i+=1
+    global     bas1hor
+    bas1hor=qtymem[i];i+=1
+    global     bs2hor
+    bs2hor=qtymem[i];i+=1
+    global     bas2hor
+    bas2hor=qtymem[i];i+=1
+    global     bs3hor
+    bs3hor=qtymem[i];i+=1
+    global     bas3hor
+    bas3hor=qtymem[i];i+=1
+    global     bsqhor
+    bsqhor=qtymem[i];i+=1
+    #rhosqrad4s: 14+7=21
+    global     rhosqrad4s
+    rhosqrad4s=qtymem[i];i+=1
+    global     rhosrhosqrad4
+    rhosrhosqrad4=qtymem[i];i+=1
+    global     ugsrhosqrad4
+    ugsrhosqrad4=qtymem[i];i+=1
+    global     uu0rhosqrad4
+    uu0rhosqrad4=qtymem[i];i+=1
+    global     vus1rhosqrad4
+    vus1rhosqrad4=qtymem[i];i+=1
+    global     vuas1rhosqrad4
+    vuas1rhosqrad4=qtymem[i];i+=1
+    global     vus3rhosqrad4
+    vus3rhosqrad4=qtymem[i];i+=1
+    global     vuas3rhosqrad4
+    vuas3rhosqrad4=qtymem[i];i+=1
+    global     Bs1rhosqrad4
+    Bs1rhosqrad4=qtymem[i];i+=1
+    global     Bas1rhosqrad4
+    Bas1rhosqrad4=qtymem[i];i+=1
+    global     Bs2rhosqrad4
+    Bs2rhosqrad4=qtymem[i];i+=1
+    global     Bas2rhosqrad4
+    Bas2rhosqrad4=qtymem[i];i+=1
+    global     Bs3rhosqrad4
+    Bs3rhosqrad4=qtymem[i];i+=1
+    global     Bas3rhosqrad4
+    Bas3rhosqrad4=qtymem[i];i+=1
+    global     bs1rhosqrad4
+    bs1rhosqrad4=qtymem[i];i+=1
+    global     bas1rhosqrad4
+    bas1rhosqrad4=qtymem[i];i+=1
+    global     bs2rhosqrad4
+    bs2rhosqrad4=qtymem[i];i+=1
+    global     bas2rhosqrad4
+    bas2rhosqrad4=qtymem[i];i+=1
+    global     bs3rhosqrad4
+    bs3rhosqrad4=qtymem[i];i+=1
+    global     bas3rhosqrad4
+    bas3rhosqrad4=qtymem[i];i+=1
+    global     bsqrhosqrad4
+    bsqrhosqrad4=qtymem[i];i+=1
+    #rhosqrad8s: 14+7=21
+    global     rhosqrad8s
+    rhosqrad8s=qtymem[i];i+=1
+    global     rhosrhosqrad8
+    rhosrhosqrad8=qtymem[i];i+=1
+    global     ugsrhosqrad8
+    ugsrhosqrad8=qtymem[i];i+=1
+    global     uu0rhosqrad8
+    uu0rhosqrad8=qtymem[i];i+=1
+    global     vus1rhosqrad8
+    vus1rhosqrad8=qtymem[i];i+=1
+    global     vuas1rhosqrad8
+    vuas1rhosqrad8=qtymem[i];i+=1
+    global     vus3rhosqrad8
+    vus3rhosqrad8=qtymem[i];i+=1
+    global     vuas3rhosqrad8
+    vuas3rhosqrad8=qtymem[i];i+=1
+    global     Bs1rhosqrad8
+    Bs1rhosqrad8=qtymem[i];i+=1
+    global     Bas1rhosqrad8
+    Bas1rhosqrad8=qtymem[i];i+=1
+    global     Bs2rhosqrad8
+    Bs2rhosqrad8=qtymem[i];i+=1
+    global     Bas2rhosqrad8
+    Bas2rhosqrad8=qtymem[i];i+=1
+    global     Bs3rhosqrad8
+    Bs3rhosqrad8=qtymem[i];i+=1
+    global     Bas3rhosqrad8
+    Bas3rhosqrad8=qtymem[i];i+=1
+    global     bs1rhosqrad8
+    bs1rhosqrad8=qtymem[i];i+=1
+    global     bas1rhosqrad8
+    bas1rhosqrad8=qtymem[i];i+=1
+    global     bs2rhosqrad8
+    bs2rhosqrad8=qtymem[i];i+=1
+    global     bas2rhosqrad8
+    bas2rhosqrad8=qtymem[i];i+=1
+    global     bs3rhosqrad8
+    bs3rhosqrad8=qtymem[i];i+=1
+    global     bas3rhosqrad8
+    bas3rhosqrad8=qtymem[i];i+=1
+    global     bsqrhosqrad8
+    bsqrhosqrad8=qtymem[i];i+=1
+    #rhosqrad30s: 14+7=21
+    global     rhosqrad30s
+    rhosqrad30s=qtymem[i];i+=1
+    global     rhosrhosqrad30
+    rhosrhosqrad30=qtymem[i];i+=1
+    global     ugsrhosqrad30
+    ugsrhosqrad30=qtymem[i];i+=1
+    global     uu0rhosqrad30
+    uu0rhosqrad30=qtymem[i];i+=1
+    global     vus1rhosqrad30
+    vus1rhosqrad30=qtymem[i];i+=1
+    global     vuas1rhosqrad30
+    vuas1rhosqrad30=qtymem[i];i+=1
+    global     vus3rhosqrad30
+    vus3rhosqrad30=qtymem[i];i+=1
+    global     vuas3rhosqrad30
+    vuas3rhosqrad30=qtymem[i];i+=1
+    global     Bs1rhosqrad30
+    Bs1rhosqrad30=qtymem[i];i+=1
+    global     Bas1rhosqrad30
+    Bas1rhosqrad30=qtymem[i];i+=1
+    global     Bs2rhosqrad30
+    Bs2rhosqrad30=qtymem[i];i+=1
+    global     Bas2rhosqrad30
+    Bas2rhosqrad30=qtymem[i];i+=1
+    global     Bs3rhosqrad30
+    Bs3rhosqrad30=qtymem[i];i+=1
+    global     Bas3rhosqrad30
+    Bas3rhosqrad30=qtymem[i];i+=1
+    global     bs1rhosqrad30
+    bs1rhosqrad30=qtymem[i];i+=1
+    global     bas1rhosqrad30
+    bas1rhosqrad30=qtymem[i];i+=1
+    global     bs2rhosqrad30
+    bs2rhosqrad30=qtymem[i];i+=1
+    global     bas2rhosqrad30
+    bas2rhosqrad30=qtymem[i];i+=1
+    global     bs3rhosqrad30
+    bs3rhosqrad30=qtymem[i];i+=1
+    global     bas3rhosqrad30
+    bas3rhosqrad30=qtymem[i];i+=1
+    global     bsqrhosqrad30
+    bsqrhosqrad30=qtymem[i];i+=1
     #Flux: 10
     global     fstot
     fstot=qtymem[i];i+=1
@@ -3525,8 +4272,12 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         ##################################
         #HoverR
         #
-        v4asq=bsq/(rho+ug+(gam-1)*ug)
-        mum1fake=uu[0]*(1.0+v4asq)-1.0
+        #v4asq=bsq/(rho+ug+(gam-1)*ug)
+        #mum1fake=uu[0]*(1.0+v4asq)-1.0
+        # mum1fake not good marker of where jet is for near the BH.
+        # mu>2 is also poor, since mu\propto sin\theta so mu turns small again near pole.
+        # bsq/rho>1 much better.
+        #
         beta=((gam-1)*ug)/(1E-30 + bsq*0.5)
         #
         # disk mass density scale height
@@ -3534,34 +4285,43 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         # was (bsq/rho<1.0)
         #diskcondition=diskcondition*(mum1fake<1.0)
         # just avoid floor mass
-        diskcondition=(bsq/rho<10)
+        diskcondition1=(bsq/rho<10)
+        diskcondition2=(bsq/rho<10)
         # was denfactor=rho, but want uniform with corona and jet
-        hoverr3d,thetamid3d=horcalc(which=diskcondition,denfactor=rho)
+        hoverr3d,thetamid3d=horcalc(hortype=1,which1=diskcondition1,which2=diskcondition2,denfactor=rho)
         hoverr[findex]=hoverr3d.sum(2).sum(1)/(ny*nz)
         thetamid[findex]=thetamid3d.sum(2).sum(1)/(ny*nz)
         #
         # disk-corona boundary
-        coronacondition=(beta<1.5)
-        coronacondition=coronacondition*(beta>1.0)
+        coronacondition1=(beta<1.0)
+        coronacondition1=coronacondition1*(beta>0.5)
+        coronacondition1=coronacondition1*(bsq/rho<10.0)
+        coronacondition2=(beta<1.0)
+        coronacondition2=coronacondition2*(beta>0.1)
+        coronacondition2=coronacondition2*(bsq/rho<10.0)
         # was (bsq/rho<1.0)
-        coronacondition=coronacondition*(mum1fake<1.0)
-        hoverr3dcorona,thetamid3dcorona=horcalc(which=coronacondition,denfactor=bsq+rho+gam*ug)
+        hoverr3dcorona,thetamid3dcorona=horcalc(hortype=2,which1=coronacondition1,which2=coronacondition2,denfactor=bsq+rho+gam*ug)
         hoverrcorona[findex]=hoverr3dcorona.sum(2).sum(1)/(ny*nz)
         thetamidcorona[findex]=thetamid3dcorona.sum(2).sum(1)/(ny*nz)
         #
         # corona-jet boundary
         # was jetcondition=(bsq/rho>2.0)
         #jetcondition=(mum1fake>1.0)
-        jetcondition=(mum1fake<1.5)
-        jetcondition=jetcondition*(mum1fake>1.0)
-        hoverr3djet,thetamid3djet=horcalc(which=jetcondition,denfactor=bsq+rho+gam*ug)
+        #jetcondition=(mum1fake<1.5)
+        #jetcondition=jetcondition*(mum1fake>1.0)
+        # can't use just bsq/rho<2.0 below, since too sparse and some radii have no such smallish range of bsq/rho
+        jetcondition1=(bsq/rho<2.0)
+        jetcondition1=jetcondition1*(bsq/rho>1.0)
+        jetcondition2=(bsq/rho<10.0)
+        jetcondition2=jetcondition2*(bsq/rho>1.0)
+        hoverr3djet,thetamid3djet=horcalc(hortype=2,which1=jetcondition1,which2=jetcondition2,denfactor=bsq+rho+gam*ug)
         hoverrjet[findex]=hoverr3djet.sum(2).sum(1)/(ny*nz)
         thetamidjet[findex]=thetamid3djet.sum(2).sum(1)/(ny*nz)
         #
         diskcondition=(bsq/rho<10)
-        diskcondition=diskcondition*(beta>2.0)
+        diskcondition=diskcondition*(beta>1.0)
         # was (bsq/rho<1.0)
-        diskcondition=diskcondition*(mum1fake<1.0)
+        #diskcondition=diskcondition*(mum1fake<1.0)
         #
         diskeqcondition=diskcondition
         qmri3ddisk,iq2mri3ddisk,normmri3ddisk=Qmri_simple(which=diskeqcondition)
@@ -3579,82 +4339,408 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         diskaltcondition=(bsq/rho<1.0)
         betamin[findex,0],betaavg[findex,0],betaratofavg[findex,0],betaratofmax[findex,0]=betascalc(which=diskaltcondition)
         #
-        #rhosq:
+        #
+        #
+        #################################
+        # alphamag
+        #################################
+        #
+        #
+        diskcondition=(bsq/rho<10)
+        denfactor=1.0 + rho*0.0
         keywordsrhosq={'which': diskcondition}
-        gdetint=intangle(gdet,**keywordsrhosq)
-        rhosqint=intangle(gdet*rho**2,**keywordsrhosq)+tiny
+        rhosqint=intangle(gdet*denfactor,**keywordsrhosq)+tiny
+        #
+        diskcondition=(bsq/rho<10)
+        keywordsrhosq={'which': diskcondition}
+        alphamag1[findex]=intangle(gdet*np.abs(bu[1]*np.sqrt(gv3[1,1])*bu[3]*np.sqrt(gv3[3,3]))/(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywordsrhosq)/rhosqint
+        #
+        diskcondition=(bsq/rho<1)
+        keywordsrhosq={'which': diskcondition}
+        alphamag2[findex]=intangle(gdet*np.abs(bu[1]*np.sqrt(gv3[1,1])*bu[3]*np.sqrt(gv3[3,3]))/(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywordsrhosq)/rhosqint
+        #
+        denfactor=rho**2
+        diskcondition=(bsq/rho<10)
+        keywordsrhosq={'which': diskcondition}
+        rhosqint=intangle(gdet*denfactor,**keywordsrhosq)+tiny
+        alphamag3[findex]=intangle(gdet*np.abs(bu[1]*np.sqrt(gv3[1,1])*bu[3]*np.sqrt(gv3[3,3]))/(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywordsrhosq)/rhosqint
+        #
+        #
+        #
+        #
+        #
+        #
+        #################################
+        # all primitives in various forms
+        #################################
+        #
+        #
+        # avoid nan inside r=2M
+        mygv300=-gv3[0,0]
+        mygv300[mygv300<0]=0
+        iuu0hat=1.0/(uu[0]*np.sqrt(mygv300))
+        iuu0hat[r<2.1]=0
+        #
+        #
+        #
+        #
+        #
+        #
+        #############
+        # over disk
+        #############
+        #rhosq:
+        # for most dense part of flow:
+        #denfactor=rho**2
+        # for entire flow:
+        denfactor=1.0 + rho*0.0
+        #
+        diskcondition=(bsq/rho<10)
+        keywordsrhosq={'which': diskcondition}
+        rhosqint=intangle(gdet*denfactor,**keywordsrhosq)+tiny
         rhosqs[findex]=rhosqint
-        maxrhosq2d=(rho**2*diskcondition).max(1)+tiny
+        maxrhosq2d=(denfactor*diskcondition).max(1)+tiny
         maxrhosq3d=np.empty_like(rho)
         for j in np.arange(0,ny):
             maxrhosq3d[:,j,:] = maxrhosq2d
-        rhosrhosq[findex]=intangle(gdet*rho**2*rho,**keywordsrhosq)/rhosqint
-        ugsrhosq[findex]=intangle(gdet*rho**2*ug,**keywordsrhosq)/rhosqint
-        uu0rhosq[findex]=intangle(gdet*rho**2*uu[0],**keywordsrhosq)/rhosqint
-        uus1rhosq[findex]=intangle(gdet*rho**2*uu[1],**keywordsrhosq)/rhosqint
-        uuas1rhosq[findex]=intangle(gdet*rho**2*np.abs(uu[1]),**keywordsrhosq)/rhosqint
-        uus3rhosq[findex]=intangle(gdet*rho**2*uu[3],**keywordsrhosq)/rhosqint
-        uuas3rhosq[findex]=intangle(gdet*rho**2*np.abs(uu[3]),**keywordsrhosq)/rhosqint
-        Bs1rhosq[findex]=intangle(gdetB[1]*rho**2,**keywordsrhosq)/rhosqint
-        Bas1rhosq[findex]=intangle(np.abs(gdetB[1])*rho**2,**keywordsrhosq)/rhosqint
-        Bs2rhosq[findex]=intangle(gdetB[2]*rho**2,**keywordsrhosq)/rhosqint
-        Bas2rhosq[findex]=intangle(np.abs(gdetB[2])*rho**2,**keywordsrhosq)/rhosqint
-        Bs3rhosq[findex]=intangle(gdetB[3]*rho**2,**keywordsrhosq)/rhosqint
-        Bas3rhosq[findex]=intangle(np.abs(gdetB[3])*rho**2,**keywordsrhosq)/rhosqint
-        #2h
+        rhosrhosq[findex]=intangle(gdet*denfactor*rho,**keywordsrhosq)/rhosqint
+        ugsrhosq[findex]=intangle(gdet*denfactor*ug,**keywordsrhosq)/rhosqint
+        # no restriction for velocity or field quantities! (as long as denfactor=1 this is good)
+        denfactor=1.0 + rho*0.0
+        # yes, over whole disk so include jet for vel/field
+        diskcondition=1 + (bsq/rho<10)*0.0
+        keywordsrhosq={'which': diskcondition}
+        rhosqint=intangle(gdet*denfactor,**keywordsrhosq)+tiny
+        uu0rhosq[findex]=intangle(gdet*denfactor*uu[0]*np.sqrt(mygv300),**keywordsrhosq)/rhosqint
+        vus1rhosq[findex]=intangle(gdet*denfactor*uu[1]*np.sqrt(gv3[1,1])*iuu0hat,**keywordsrhosq)/rhosqint
+        vuas1rhosq[findex]=intangle(gdet*denfactor*np.abs(uu[1]*np.sqrt(gv3[1,1])*iuu0hat),**keywordsrhosq)/rhosqint
+        vus3rhosq[findex]=intangle(gdet*denfactor*uu[3]*np.sqrt(gv3[3,3])*iuu0hat,**keywordsrhosq)/rhosqint
+        vuas3rhosq[findex]=intangle(gdet*denfactor*np.abs(uu[3]*np.sqrt(gv3[3,3])*iuu0hat),**keywordsrhosq)/rhosqint
+        Bs1rhosq[findex]=intangle(gdetB[1]*denfactor*np.sqrt(gv3[1,1]),**keywordsrhosq)/rhosqint
+        Bas1rhosq[findex]=intangle(np.abs(gdetB[1]*np.sqrt(gv3[1,1]))*denfactor,**keywordsrhosq)/rhosqint
+        Bs2rhosq[findex]=intangle(gdetB[2]*denfactor*np.sqrt(gv3[2,2]),**keywordsrhosq)/rhosqint
+        Bas2rhosq[findex]=intangle(np.abs(gdetB[2]*np.sqrt(gv3[2,2]))*denfactor,**keywordsrhosq)/rhosqint
+        Bs3rhosq[findex]=intangle(gdetB[3]*denfactor*np.sqrt(gv3[3,3]),**keywordsrhosq)/rhosqint
+        Bas3rhosq[findex]=intangle(np.abs(gdetB[3]*np.sqrt(gv3[3,3]))*denfactor,**keywordsrhosq)/rhosqint
+        bs1rhosq[findex]=intangle(gdet*bu[1]*denfactor*np.sqrt(gv3[1,1]),**keywordsrhosq)/rhosqint
+        bas1rhosq[findex]=intangle(np.abs(gdet*bu[1]*np.sqrt(gv3[1,1]))*denfactor,**keywordsrhosq)/rhosqint
+        bs2rhosq[findex]=intangle(gdet*bu[2]*denfactor*np.sqrt(gv3[2,2]),**keywordsrhosq)/rhosqint
+        bas2rhosq[findex]=intangle(np.abs(gdet*bu[2]*np.sqrt(gv3[2,2]))*denfactor,**keywordsrhosq)/rhosqint
+        bs3rhosq[findex]=intangle(gdet*bu[3]*denfactor*np.sqrt(gv3[3,3]),**keywordsrhosq)/rhosqint
+        bas3rhosq[findex]=intangle(np.abs(gdet*bu[3]*np.sqrt(gv3[3,3]))*denfactor,**keywordsrhosq)/rhosqint
+        bsqrhosq[findex]=intangle(gdet*bsq*denfactor,**keywordsrhosq)/rhosqint
+        #rhosq:
+        #
+        #############
+        # at equator and portion of \phi
+        #############
+        # for entire flow:
+        denfactor=1.0 + rho*0.0
+        # pick out equator (within 3 cells to smear out grid-scale noise) and a restricted portion of \phi in order to avoid averaging over warping disk
+        diskcondition0=(np.abs(tj-ny/2)<3)
+        if nz>1:
+            diskcondition0=diskcondition0*(ph>0.0)
+            diskcondition0=diskcondition0*(ph<np.pi/4.0)
+        #
+        diskcondition=diskcondition0*(bsq/rho<10)
+        keywordsrhosqeq={'which': diskcondition}
+        rhosqeqint=intangle(gdet*denfactor,**keywordsrhosqeq)+tiny
+        rhosqeqs[findex]=rhosqeqint
+        maxrhosqeq2d=(denfactor*diskcondition).max(1)+tiny
+        maxrhosqeq3d=np.empty_like(rho)
+        for j in np.arange(0,ny):
+            maxrhosqeq3d[:,j,:] = maxrhosqeq2d
+        rhosrhosqeq[findex]=intangle(gdet*denfactor*rho,**keywordsrhosqeq)/rhosqeqint
+        ugsrhosqeq[findex]=intangle(gdet*denfactor*ug,**keywordsrhosqeq)/rhosqeqint
+        # no restriction for velocity or field quantities! (as long as denfactor=1 this is good)
+        denfactor=1.0 + rho*0.0
+        # yes avoid restriction, at equator no matter if disk or jet
+        diskcondition=diskcondition0*(1 + (bsq/rho<10)*0.0)
+        keywordsrhosqeq={'which': diskcondition}
+        rhosqeqint=intangle(gdet*denfactor,**keywordsrhosqeq)+tiny
+        uu0rhosqeq[findex]=intangle(gdet*denfactor*uu[0]*np.sqrt(mygv300),**keywordsrhosqeq)/rhosqeqint
+        vus1rhosqeq[findex]=intangle(gdet*denfactor*uu[1]*np.sqrt(gv3[1,1])*iuu0hat,**keywordsrhosqeq)/rhosqeqint
+        vuas1rhosqeq[findex]=intangle(gdet*denfactor*np.abs(uu[1]*np.sqrt(gv3[1,1])*iuu0hat),**keywordsrhosqeq)/rhosqeqint
+        vus3rhosqeq[findex]=intangle(gdet*denfactor*uu[3]*np.sqrt(gv3[3,3])*iuu0hat,**keywordsrhosqeq)/rhosqeqint
+        vuas3rhosqeq[findex]=intangle(gdet*denfactor*np.abs(uu[3]*np.sqrt(gv3[3,3])*iuu0hat),**keywordsrhosqeq)/rhosqeqint
+        Bs1rhosqeq[findex]=intangle(gdetB[1]*denfactor*np.sqrt(gv3[1,1]),**keywordsrhosqeq)/rhosqeqint
+        Bas1rhosqeq[findex]=intangle(np.abs(gdetB[1]*np.sqrt(gv3[1,1]))*denfactor,**keywordsrhosqeq)/rhosqeqint
+        Bs2rhosqeq[findex]=intangle(gdetB[2]*denfactor*np.sqrt(gv3[2,2]),**keywordsrhosqeq)/rhosqeqint
+        Bas2rhosqeq[findex]=intangle(np.abs(gdetB[2]*np.sqrt(gv3[2,2]))*denfactor,**keywordsrhosqeq)/rhosqeqint
+        Bs3rhosqeq[findex]=intangle(gdetB[3]*denfactor*np.sqrt(gv3[3,3]),**keywordsrhosqeq)/rhosqeqint
+        Bas3rhosqeq[findex]=intangle(np.abs(gdetB[3]*np.sqrt(gv3[3,3]))*denfactor,**keywordsrhosqeq)/rhosqeqint
+        bs1rhosqeq[findex]=intangle(gdet*bu[1]*denfactor*np.sqrt(gv3[1,1]),**keywordsrhosqeq)/rhosqeqint
+        bas1rhosqeq[findex]=intangle(np.abs(gdet*bu[1]*np.sqrt(gv3[1,1]))*denfactor,**keywordsrhosqeq)/rhosqeqint
+        bs2rhosqeq[findex]=intangle(gdet*bu[2]*denfactor*np.sqrt(gv3[2,2]),**keywordsrhosqeq)/rhosqeqint
+        bas2rhosqeq[findex]=intangle(np.abs(gdet*bu[2]*np.sqrt(gv3[2,2]))*denfactor,**keywordsrhosqeq)/rhosqeqint
+        bs3rhosqeq[findex]=intangle(gdet*bu[3]*denfactor*np.sqrt(gv3[3,3]),**keywordsrhosqeq)/rhosqeqint
+        bas3rhosqeq[findex]=intangle(np.abs(gdet*bu[3]*np.sqrt(gv3[3,3]))*denfactor,**keywordsrhosqeq)/rhosqeqint
+        bsqrhosqeq[findex]=intangle(gdet*bsq*denfactor,**keywordsrhosqeq)/rhosqeqint
+        #
+        #############
+        # at 2.5H/R and portion of \phi
+        #############
+        # for entire flow:
+        denfactor=1.0 + rho*0.0
+        # pick out *at* horpickit*H/R
+        horpickit=2.5
+        diskcondition0=(np.abs(h-np.pi*0.5)<horpickit*hoverr3d)
+        diskcondition0=diskcondition0*(np.abs(h-np.pi*0.5)>0.5*horpickit*hoverr3d)
+        if nz>1:
+            diskcondition0=diskcondition0*(ph>0.0)
+            diskcondition0=diskcondition0*(ph<np.pi/4.0)
+        diskcondition=diskcondition0*(bsq/rho<10)
+        # and avoid averaging over warp by restricing phi range
+        keywordsrhosqhorpick={'which': diskcondition}
+        rhosqhorpickint=intangle(gdet*denfactor,**keywordsrhosqhorpick)+tiny
+        rhosqhorpicks[findex]=rhosqhorpickint
+        maxrhosqhorpick2d=(denfactor*diskcondition).max(1)+tiny
+        maxrhosqhorpick3d=np.empty_like(rho)
+        for j in np.arange(0,ny):
+            maxrhosqhorpick3d[:,j,:] = maxrhosqhorpick2d
+        rhosrhosqhorpick[findex]=intangle(gdet*denfactor*rho,**keywordsrhosqhorpick)/rhosqhorpickint
+        ugsrhosqhorpick[findex]=intangle(gdet*denfactor*ug,**keywordsrhosqhorpick)/rhosqhorpickint
+        # no restriction for velocity or field quantities! (as long as denfactor=1 this is good)
+        denfactor=1.0 + rho*0.0
+        # don't restrict since fixed point in space related to disk but not entirely.  The bsq/rho condition would also remove the disk at inner radii even for H/R within hoverr3d that is mass-density weighted.
+        diskcondition=diskcondition0*(1 + (bsq/rho<10)*0.0)
+        keywordsrhosqhorpick={'which': diskcondition}
+        rhosqhorpickint=intangle(gdet*denfactor,**keywordsrhosqhorpick)+tiny
+        uu0rhosqhorpick[findex]=intangle(gdet*denfactor*uu[0]*np.sqrt(mygv300),**keywordsrhosqhorpick)/rhosqhorpickint
+        vus1rhosqhorpick[findex]=intangle(gdet*denfactor*uu[1]*np.sqrt(gv3[1,1])*iuu0hat,**keywordsrhosqhorpick)/rhosqhorpickint
+        vuas1rhosqhorpick[findex]=intangle(gdet*denfactor*np.abs(uu[1]*np.sqrt(gv3[1,1])*iuu0hat),**keywordsrhosqhorpick)/rhosqhorpickint
+        vus3rhosqhorpick[findex]=intangle(gdet*denfactor*uu[3]*np.sqrt(gv3[3,3])*iuu0hat,**keywordsrhosqhorpick)/rhosqhorpickint
+        vuas3rhosqhorpick[findex]=intangle(gdet*denfactor*np.abs(uu[3]*np.sqrt(gv3[3,3])*iuu0hat),**keywordsrhosqhorpick)/rhosqhorpickint
+        Bs1rhosqhorpick[findex]=intangle(gdetB[1]*denfactor*np.sqrt(gv3[1,1]),**keywordsrhosqhorpick)/rhosqhorpickint
+        Bas1rhosqhorpick[findex]=intangle(np.abs(gdetB[1]*np.sqrt(gv3[1,1]))*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
+        Bs2rhosqhorpick[findex]=intangle(gdetB[2]*denfactor*np.sqrt(gv3[2,2]),**keywordsrhosqhorpick)/rhosqhorpickint
+        Bas2rhosqhorpick[findex]=intangle(np.abs(gdetB[2]*np.sqrt(gv3[2,2]))*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
+        Bs3rhosqhorpick[findex]=intangle(gdetB[3]*denfactor*np.sqrt(gv3[3,3]),**keywordsrhosqhorpick)/rhosqhorpickint
+        Bas3rhosqhorpick[findex]=intangle(np.abs(gdetB[3]*np.sqrt(gv3[3,3]))*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
+        bs1rhosqhorpick[findex]=intangle(gdet*bu[1]*denfactor*np.sqrt(gv3[1,1]),**keywordsrhosqhorpick)/rhosqhorpickint
+        bas1rhosqhorpick[findex]=intangle(np.abs(gdet*bu[1]*np.sqrt(gv3[1,1]))*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
+        bs2rhosqhorpick[findex]=intangle(gdet*bu[2]*denfactor*np.sqrt(gv3[2,2]),**keywordsrhosqhorpick)/rhosqhorpickint
+        bas2rhosqhorpick[findex]=intangle(np.abs(gdet*bu[2]*np.sqrt(gv3[2,2]))*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
+        bs3rhosqhorpick[findex]=intangle(gdet*bu[3]*denfactor*np.sqrt(gv3[3,3]),**keywordsrhosqhorpick)/rhosqhorpickint
+        bas3rhosqhorpick[findex]=intangle(np.abs(gdet*bu[3]*np.sqrt(gv3[3,3]))*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
+        bsqrhosqhorpick[findex]=intangle(gdet*bsq*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
+        #
+        ##2h
         keywords2h={'hoverr': 2*horval, 'which': diskcondition}
-        gdetint=intangle(gdet,**keywords2h)+tiny
-        gdetint2h[findex]=gdetint
-        rhos2h[findex]=intangle(gdet*rho,**keywords2h)/gdetint
-        ugs2h[findex]=intangle(gdet*ug,**keywords2h)/gdetint
-        uu02h[findex]=intangle(gdet*uu[0],**keywords2h)/gdetint
-        uus12h[findex]=intangle(gdet*uu[1],**keywords2h)/gdetint
-        uuas12h[findex]=intangle(gdet*np.abs(uu[1]),**keywords2h)/gdetint
-        uus32h[findex]=intangle(gdet*uu[3],**keywords2h)/gdetint
-        uuas32h[findex]=intangle(gdet*np.abs(uu[3]),**keywords2h)/gdetint
-        Bs12h[findex]=intangle(gdetB[1],**keywords2h)/gdetint
-        Bas12h[findex]=intangle(np.abs(gdetB[1]),**keywords2h)/gdetint
-        Bs22h[findex]=intangle(gdetB[2],**keywords2h)/gdetint
-        Bas22h[findex]=intangle(np.abs(gdetB[2]),**keywords2h)/gdetint
-        Bs32h[findex]=intangle(gdetB[3],**keywords2h)/gdetint
-        Bas32h[findex]=intangle(np.abs(gdetB[3]),**keywords2h)/gdetint
-        #4h
+        #gdetint=intangle(gdet,**keywords2h)+tiny
+        #gdetint2h[findex]=gdetint
+        #rhos2h[findex]=intangle(gdet*rho,**keywords2h)/gdetint
+        #ugs2h[findex]=intangle(gdet*ug,**keywords2h)/gdetint
+        #uu02h[findex]=intangle(gdet*uu[0]*np.sqrt(mygv300),**keywords2h)/gdetint
+        #vus12h[findex]=intangle(gdet*uu[1]*np.sqrt(gv3[1,1])*iuu0hat,**keywords2h)/gdetint
+        #vuas12h[findex]=intangle(gdet*np.abs(uu[1]*np.sqrt(gv3[1,1])*iuu0hat),**keywords2h)/gdetint
+        #vus32h[findex]=intangle(gdet*uu[3]*np.sqrt(gv3[3,3])*iuu0hat,**keywords2h)/gdetint
+        #vuas32h[findex]=intangle(gdet*np.abs(uu[3]*np.sqrt(gv3[3,3])*iuu0hat),**keywords2h)/gdetint
+        #Bs12h[findex]=intangle(gdetB[1]*np.sqrt(gv3[1,1]),**keywords2h)/gdetint
+        #Bas12h[findex]=intangle(np.abs(gdetB[1]*np.sqrt(gv3[1,1])),**keywords2h)/gdetint
+        #Bs22h[findex]=intangle(gdetB[2]*np.sqrt(gv3[2,2]),**keywords2h)/gdetint
+        #Bas22h[findex]=intangle(np.abs(gdetB[2]*np.sqrt(gv3[2,2])),**keywords2h)/gdetint
+        #Bs32h[findex]=intangle(gdetB[3]*np.sqrt(gv3[3,3]),**keywords2h)/gdetint
+        #Bas32h[findex]=intangle(np.abs(gdetB[3]*np.sqrt(gv3[3,3])),**keywords2h)/gdetint
+        ##4h
         keywords4h={'hoverr': 4*horval, 'which': diskcondition}
-        gdetint=intangle(gdet,**keywords4h)
-        gdetint4h[findex]=gdetint+tiny
-        rhos4h[findex]=intangle(gdet*rho,**keywords4h)/gdetint
-        ugs4h[findex]=intangle(gdet*ug,**keywords4h)/gdetint
-        uu04h[findex]=intangle(gdet*uu[0],**keywords4h)/gdetint
-        uus14h[findex]=intangle(gdet*uu[1],**keywords4h)/gdetint
-        uuas14h[findex]=intangle(gdet*np.abs(uu[1]),**keywords4h)/gdetint
-        uus34h[findex]=intangle(gdet*uu[3],**keywords4h)/gdetint
-        uuas34h[findex]=intangle(gdet*np.abs(uu[3]),**keywords4h)/gdetint
-        Bs14h[findex]=intangle(gdetB[1],**keywords4h)/gdetint
-        Bas14h[findex]=intangle(np.abs(gdetB[1]),**keywords4h)/gdetint
-        Bs24h[findex]=intangle(gdetB[2],**keywords4h)/gdetint
-        Bas24h[findex]=intangle(np.abs(gdetB[2]),**keywords4h)/gdetint
-        Bs34h[findex]=intangle(gdetB[3],**keywords4h)/gdetint
-        Bas34h[findex]=intangle(np.abs(gdetB[3]),**keywords4h)/gdetint
-        #2hor
-        keywords2hor={'hoverr': 2*hoverr3d, 'thetamid': thetamid3d, 'which': diskcondition}
-        gdetint=intangle(gdet,**keywords2hor)
-        gdetint2hor[findex]=gdetint+tiny
-        rhos2hor[findex]=intangle(gdet*rho,**keywords2hor)/gdetint
-        ugs2hor[findex]=intangle(gdet*ug,**keywords2hor)/gdetint
-        bsqs2hor[findex]=intangle(bsq,**keywords2hor)/gdetint
-        bsqorhos2hor[findex]=intangle(bsq/rho,**keywords2hor)/gdetint
-        bsqougs2hor[findex]=intangle(bsq/ug,**keywords2hor)/gdetint
-        uu02hor[findex]=intangle(gdet*uu[0],**keywords2hor)/gdetint
-        uus12hor[findex]=intangle(gdet*uu[1],**keywords2hor)/gdetint
-        uuas12hor[findex]=intangle(gdet*np.abs(uu[1]),**keywords2hor)/gdetint
-        uus32hor[findex]=intangle(gdet*uu[3],**keywords2hor)/gdetint
-        uuas32hor[findex]=intangle(gdet*np.abs(uu[3]),**keywords2hor)/gdetint
-        Bs12hor[findex]=intangle(gdetB[1],**keywords2hor)/gdetint
-        Bas12hor[findex]=intangle(np.abs(gdetB[1]),**keywords2hor)/gdetint
-        Bs22hor[findex]=intangle(gdetB[2],**keywords2hor)/gdetint
-        Bas22hor[findex]=intangle(np.abs(gdetB[2]),**keywords2hor)/gdetint
-        Bs32hor[findex]=intangle(gdetB[3],**keywords2hor)/gdetint
-        Bas32hor[findex]=intangle(np.abs(gdetB[3]),**keywords2hor)/gdetint
+        #gdetint=intangle(gdet,**keywords4h)+tiny
+        #gdetint4h[findex]=gdetint
+        #rhos4h[findex]=intangle(gdet*rho,**keywords4h)/gdetint
+        #ugs4h[findex]=intangle(gdet*ug,**keywords4h)/gdetint
+        #uu04h[findex]=intangle(gdet*uu[0]*np.sqrt(mygv300),**keywords4h)/gdetint
+        #vus14h[findex]=intangle(gdet*uu[1]*np.sqrt(gv3[1,1])*iuu0hat,**keywords4h)/gdetint
+        #vuas14h[findex]=intangle(gdet*np.abs(uu[1]*np.sqrt(gv3[1,1])*iuu0hat),**keywords4h)/gdetint
+        #vus34h[findex]=intangle(gdet*uu[3]*np.sqrt(gv3[3,3])*iuu0hat,**keywords4h)/gdetint
+        #vuas34h[findex]=intangle(gdet*np.abs(uu[3]*np.sqrt(gv3[3,3])*iuu0hat),**keywords4h)/gdetint
+        #Bs14h[findex]=intangle(gdetB[1]*np.sqrt(gv3[1,1]),**keywords4h)/gdetint
+        #Bas14h[findex]=intangle(np.abs(gdetB[1]*np.sqrt(gv3[1,1])),**keywords4h)/gdetint
+        #Bs24h[findex]=intangle(gdetB[2]*np.sqrt(gv3[2,2]),**keywords4h)/gdetint
+        #Bas24h[findex]=intangle(np.abs(gdetB[2]*np.sqrt(gv3[2,2])),**keywords4h)/gdetint
+        #Bs34h[findex]=intangle(gdetB[3]*np.sqrt(gv3[3,3]),**keywords4h)/gdetint
+        #Bas34h[findex]=intangle(np.abs(gdetB[3]*np.sqrt(gv3[3,3])),**keywords4h)/gdetint
+        ##
+        #############
+        # within 2.0H/R
+        #############
+        #2.0hor
+        diskcondition=(bsq/rho<10)
+        keywordshor={'hoverr': 2.0*hoverr3d, 'thetamid': thetamid3d, 'which': diskcondition}
+        gdetint=intangle(gdet,**keywordshor)
+        gdetinthor[findex]=gdetint+tiny
+        rhoshor[findex]=intangle(gdet*rho,**keywordshor)/gdetint
+        ugshor[findex]=intangle(gdet*ug,**keywordshor)/gdetint
+        # no restriction for velocity or field quantities!
+        #diskcondition=1 + (bsq/rho<10)*0.0
+        # no, should still restrict since this is choosing within 2H/R -- so focus is the disk!
+        diskcondition=(bsq/rho<10)
+        keywordshor={'hoverr': 2.0*hoverr3d, 'thetamid': thetamid3d, 'which': diskcondition}
+        gdetint=intangle(gdet,**keywordshor)
+        gdetinthor[findex]=gdetint+tiny
+        bsqshor[findex]=intangle(gdet*bsq,**keywordshor)/gdetint
+        bsqorhoshor[findex]=intangle(gdet*(bsq/rho),**keywordshor)/gdetint
+        bsqougshor[findex]=intangle(gdet*(bsq/ug),**keywordshor)/gdetint
+        uu0hor[findex]=intangle(gdet*uu[0]*np.sqrt(mygv300),**keywordshor)/gdetint
+        vus1hor[findex]=intangle(gdet*uu[1]*np.sqrt(gv3[1,1])*iuu0hat,**keywordshor)/gdetint
+        vuas1hor[findex]=intangle(gdet*np.abs(uu[1]*np.sqrt(gv3[1,1])*iuu0hat),**keywordshor)/gdetint
+        vus3hor[findex]=intangle(gdet*uu[3]*np.sqrt(gv3[3,3])*iuu0hat,**keywordshor)/gdetint
+        vuas3hor[findex]=intangle(gdet*np.abs(uu[3]*np.sqrt(gv3[3,3])*iuu0hat),**keywordshor)/gdetint
+        Bs1hor[findex]=intangle(gdetB[1]*np.sqrt(gv3[1,1]),**keywordshor)/gdetint
+        Bas1hor[findex]=intangle(np.abs(gdetB[1]*np.sqrt(gv3[1,1])),**keywordshor)/gdetint
+        Bs2hor[findex]=intangle(gdetB[2]*np.sqrt(gv3[2,2]),**keywordshor)/gdetint
+        Bas2hor[findex]=intangle(np.abs(gdetB[2]*np.sqrt(gv3[2,2])),**keywordshor)/gdetint
+        Bs3hor[findex]=intangle(gdetB[3]*np.sqrt(gv3[3,3]),**keywordshor)/gdetint
+        Bas3hor[findex]=intangle(np.abs(gdetB[3]*np.sqrt(gv3[3,3])),**keywordshor)/gdetint
+        bs1hor[findex]=intangle(gdet*bu[1]*np.sqrt(gv3[1,1]),**keywordshor)/gdetint
+        bas1hor[findex]=intangle(np.abs(gdet*bu[1]*np.sqrt(gv3[1,1])),**keywordshor)/gdetint
+        bs2hor[findex]=intangle(gdet*bu[2]*np.sqrt(gv3[2,2]),**keywordshor)/gdetint
+        bas2hor[findex]=intangle(np.abs(gdet*bu[2]*np.sqrt(gv3[2,2])),**keywordshor)/gdetint
+        bs3hor[findex]=intangle(gdet*bu[3]*np.sqrt(gv3[3,3]),**keywordshor)/gdetint
+        bas3hor[findex]=intangle(np.abs(gdet*bu[3]*np.sqrt(gv3[3,3])),**keywordshor)/gdetint
+        bsqhor[findex]=intangle(gdet*bsq,**keywordshor)/gdetint
+        #
+        #
+        #############
+        # Along theta, not r.  Only portion in \phi to avoid washing out warping
+        #############
+        #
+        #
+        # for entire flow:
+        denfactor=1.0 + rho*0.0
+        # pick out *at* r\sim 4M
+        diskcondition0=(np.abs(r-4)<0.5)
+        if nz>1:
+            diskcondition0=diskcondition0*(ph>0.0)
+            diskcondition0=diskcondition0*(ph<np.pi/4.0)
+        diskcondition=diskcondition0*(bsq/rho<10)
+        # and avoid averaging over warp by restricing phi range
+        keywordsrhosqrad4={'which': diskcondition}
+        rhosqrad4int=intrpvsh(gdet*denfactor,**keywordsrhosqrad4)+tiny
+        rhosqrad4s[findex]=rhosqrad4int
+        maxrhosqrad42d=(denfactor*diskcondition).max(1)+tiny
+        maxrhosqrad43d=np.empty_like(rho)
+        for j in np.arange(0,ny):
+            maxrhosqrad43d[:,j,:] = maxrhosqrad42d
+        rhosrhosqrad4[findex]=intrpvsh(gdet*denfactor*rho,**keywordsrhosqrad4)/rhosqrad4int
+        ugsrhosqrad4[findex]=intrpvsh(gdet*denfactor*ug,**keywordsrhosqrad4)/rhosqrad4int
+        # no restriction for velocity or field quantities! (as long as denfactor=1 this is good)
+        denfactor=1.0 + rho*0.0
+        diskcondition=diskcondition0*(1 + (bsq/rho<10)*0.0)
+        keywordsrhosqrad4={'which': diskcondition}
+        rhosqrad4int=intrpvsh(gdet*denfactor,**keywordsrhosqrad4)+tiny
+        uu0rhosqrad4[findex]=intrpvsh(gdet*denfactor*uu[0]*np.sqrt(mygv300),**keywordsrhosqrad4)/rhosqrad4int
+        #uu0rhosqrad4[findex]=intrpvsh(gdet*denfactor*uu[0],**keywordsrhosqrad4)/rhosqrad4int
+        vus1rhosqrad4[findex]=intrpvsh(gdet*denfactor*uu[1]*np.sqrt(gv3[1,1])*iuu0hat,**keywordsrhosqrad4)/rhosqrad4int
+        vuas1rhosqrad4[findex]=intrpvsh(gdet*denfactor*np.abs(uu[1]*np.sqrt(gv3[1,1])*iuu0hat),**keywordsrhosqrad4)/rhosqrad4int
+        vus3rhosqrad4[findex]=intrpvsh(gdet*denfactor*uu[3]*np.sqrt(gv3[3,3])*iuu0hat,**keywordsrhosqrad4)/rhosqrad4int
+        vuas3rhosqrad4[findex]=intrpvsh(gdet*denfactor*np.abs(uu[3]*np.sqrt(gv3[3,3])*iuu0hat),**keywordsrhosqrad4)/rhosqrad4int
+        Bs1rhosqrad4[findex]=intrpvsh(gdetB[1]*denfactor*np.sqrt(gv3[1,1]),**keywordsrhosqrad4)/rhosqrad4int
+        Bas1rhosqrad4[findex]=intrpvsh(np.abs(gdetB[1]*np.sqrt(gv3[1,1]))*denfactor,**keywordsrhosqrad4)/rhosqrad4int
+        Bs2rhosqrad4[findex]=intrpvsh(gdetB[2]*denfactor*np.sqrt(gv3[2,2]),**keywordsrhosqrad4)/rhosqrad4int
+        Bas2rhosqrad4[findex]=intrpvsh(np.abs(gdetB[2]*np.sqrt(gv3[2,2]))*denfactor,**keywordsrhosqrad4)/rhosqrad4int
+        Bs3rhosqrad4[findex]=intrpvsh(gdetB[3]*denfactor*np.sqrt(gv3[3,3]),**keywordsrhosqrad4)/rhosqrad4int
+        Bas3rhosqrad4[findex]=intrpvsh(np.abs(gdetB[3]*np.sqrt(gv3[3,3]))*denfactor,**keywordsrhosqrad4)/rhosqrad4int
+        bs1rhosqrad4[findex]=intrpvsh(gdet*bu[1]*denfactor*np.sqrt(gv3[1,1]),**keywordsrhosqrad4)/rhosqrad4int
+        bas1rhosqrad4[findex]=intrpvsh(np.abs(gdet*bu[1]*np.sqrt(gv3[1,1]))*denfactor,**keywordsrhosqrad4)/rhosqrad4int
+        bs2rhosqrad4[findex]=intrpvsh(gdet*bu[2]*denfactor*np.sqrt(gv3[2,2]),**keywordsrhosqrad4)/rhosqrad4int
+        bas2rhosqrad4[findex]=intrpvsh(np.abs(gdet*bu[2]*np.sqrt(gv3[2,2]))*denfactor,**keywordsrhosqrad4)/rhosqrad4int
+        bs3rhosqrad4[findex]=intrpvsh(gdet*bu[3]*denfactor*np.sqrt(gv3[3,3]),**keywordsrhosqrad4)/rhosqrad4int
+        bas3rhosqrad4[findex]=intrpvsh(np.abs(gdet*bu[3]*np.sqrt(gv3[3,3]))*denfactor,**keywordsrhosqrad4)/rhosqrad4int
+        bsqrhosqrad4[findex]=intrpvsh(gdet*bsq*denfactor,**keywordsrhosqrad4)/rhosqrad4int
+        #
+        #
+        # for entire flow:
+        denfactor=1.0 + rho*0.0
+        # pick out *at* r\sim 4M
+        diskcondition0=(np.abs(r-8)<1.0)
+        if nz>1:
+            diskcondition0=diskcondition0*(ph>0.0)
+            diskcondition0=diskcondition0*(ph<np.pi/4.0)
+        diskcondition=diskcondition0*(bsq/rho<10)
+        # and avoid averaging over warp by restricing phi range
+        keywordsrhosqrad8={'which': diskcondition}
+        rhosqrad8int=intrpvsh(gdet*denfactor,**keywordsrhosqrad8)+tiny
+        rhosqrad8s[findex]=rhosqrad8int
+        maxrhosqrad82d=(denfactor*diskcondition).max(1)+tiny
+        maxrhosqrad83d=np.empty_like(rho)
+        for j in np.arange(0,ny):
+            maxrhosqrad83d[:,j,:] = maxrhosqrad82d
+        rhosrhosqrad8[findex]=intrpvsh(gdet*denfactor*rho,**keywordsrhosqrad8)/rhosqrad8int
+        ugsrhosqrad8[findex]=intrpvsh(gdet*denfactor*ug,**keywordsrhosqrad8)/rhosqrad8int
+        # no restriction for velocity or field quantities! (as long as denfactor=1 this is good)
+        denfactor=1.0 + rho*0.0
+        diskcondition=diskcondition0*(1 + (bsq/rho<10)*0.0)
+        keywordsrhosqrad8={'which': diskcondition}
+        rhosqrad8int=intrpvsh(gdet*denfactor,**keywordsrhosqrad8)+tiny
+        uu0rhosqrad8[findex]=intrpvsh(gdet*denfactor*uu[0]*np.sqrt(mygv300),**keywordsrhosqrad8)/rhosqrad8int
+        #uu0rhosqrad8[findex]=intrpvsh(gdet*denfactor*uu[0],**keywordsrhosqrad8)/rhosqrad8int
+        vus1rhosqrad8[findex]=intrpvsh(gdet*denfactor*uu[1]*np.sqrt(gv3[1,1])*iuu0hat,**keywordsrhosqrad8)/rhosqrad8int
+        vuas1rhosqrad8[findex]=intrpvsh(gdet*denfactor*np.abs(uu[1]*np.sqrt(gv3[1,1])*iuu0hat),**keywordsrhosqrad8)/rhosqrad8int
+        vus3rhosqrad8[findex]=intrpvsh(gdet*denfactor*uu[3]*np.sqrt(gv3[3,3])*iuu0hat,**keywordsrhosqrad8)/rhosqrad8int
+        vuas3rhosqrad8[findex]=intrpvsh(gdet*denfactor*np.abs(uu[3]*np.sqrt(gv3[3,3])*iuu0hat),**keywordsrhosqrad8)/rhosqrad8int
+        Bs1rhosqrad8[findex]=intrpvsh(gdetB[1]*denfactor*np.sqrt(gv3[1,1]),**keywordsrhosqrad8)/rhosqrad8int
+        Bas1rhosqrad8[findex]=intrpvsh(np.abs(gdetB[1]*np.sqrt(gv3[1,1]))*denfactor,**keywordsrhosqrad8)/rhosqrad8int
+        Bs2rhosqrad8[findex]=intrpvsh(gdetB[2]*denfactor*np.sqrt(gv3[2,2]),**keywordsrhosqrad8)/rhosqrad8int
+        Bas2rhosqrad8[findex]=intrpvsh(np.abs(gdetB[2]*np.sqrt(gv3[2,2]))*denfactor,**keywordsrhosqrad8)/rhosqrad8int
+        Bs3rhosqrad8[findex]=intrpvsh(gdetB[3]*denfactor*np.sqrt(gv3[3,3]),**keywordsrhosqrad8)/rhosqrad8int
+        Bas3rhosqrad8[findex]=intrpvsh(np.abs(gdetB[3]*np.sqrt(gv3[3,3]))*denfactor,**keywordsrhosqrad8)/rhosqrad8int
+        bs1rhosqrad8[findex]=intrpvsh(gdet*bu[1]*denfactor*np.sqrt(gv3[1,1]),**keywordsrhosqrad8)/rhosqrad8int
+        bas1rhosqrad8[findex]=intrpvsh(np.abs(gdet*bu[1]*np.sqrt(gv3[1,1]))*denfactor,**keywordsrhosqrad8)/rhosqrad8int
+        bs2rhosqrad8[findex]=intrpvsh(gdet*bu[2]*denfactor*np.sqrt(gv3[2,2]),**keywordsrhosqrad8)/rhosqrad8int
+        bas2rhosqrad8[findex]=intrpvsh(np.abs(gdet*bu[2]*np.sqrt(gv3[2,2]))*denfactor,**keywordsrhosqrad8)/rhosqrad8int
+        bs3rhosqrad8[findex]=intrpvsh(gdet*bu[3]*denfactor*np.sqrt(gv3[3,3]),**keywordsrhosqrad8)/rhosqrad8int
+        bas3rhosqrad8[findex]=intrpvsh(np.abs(gdet*bu[3]*np.sqrt(gv3[3,3]))*denfactor,**keywordsrhosqrad8)/rhosqrad8int
+        bsqrhosqrad8[findex]=intrpvsh(gdet*bsq*denfactor,**keywordsrhosqrad8)/rhosqrad8int
+        #
+        # for entire flow:
+        denfactor=1.0 + rho*0.0
+        # pick out *at* r\sim 4M
+        diskcondition0=(np.abs(r-8)<1.0)
+        if nz>1:
+            diskcondition0=diskcondition0*(ph>0.0)
+            diskcondition0=diskcondition0*(ph<np.pi/4.0)
+        diskcondition=diskcondition0*(bsq/rho<10)
+        # and avoid averaging over warp by restricing phi range
+        keywordsrhosqrad30={'which': diskcondition}
+        rhosqrad30int=intrpvsh(gdet*denfactor,**keywordsrhosqrad30)+tiny
+        rhosqrad30s[findex]=rhosqrad30int
+        maxrhosqrad302d=(denfactor*diskcondition).max(1)+tiny
+        maxrhosqrad303d=np.empty_like(rho)
+        for j in np.arange(0,ny):
+            maxrhosqrad303d[:,j,:] = maxrhosqrad302d
+        rhosrhosqrad30[findex]=intrpvsh(gdet*denfactor*rho,**keywordsrhosqrad30)/rhosqrad30int
+        ugsrhosqrad30[findex]=intrpvsh(gdet*denfactor*ug,**keywordsrhosqrad30)/rhosqrad30int
+        # no restriction for velocity or field quantities! (as long as denfactor=1 this is good)
+        denfactor=1.0 + rho*0.0
+        diskcondition=diskcondition0*(1 + (bsq/rho<10)*0.0)
+        keywordsrhosqrad30={'which': diskcondition}
+        rhosqrad30int=intrpvsh(gdet*denfactor,**keywordsrhosqrad30)+tiny
+        uu0rhosqrad30[findex]=intrpvsh(gdet*denfactor*uu[0]*np.sqrt(mygv300),**keywordsrhosqrad30)/rhosqrad30int
+        #uu0rhosqrad30[findex]=intrpvsh(gdet*denfactor*uu[0],**keywordsrhosqrad30)/rhosqrad30int
+        vus1rhosqrad30[findex]=intrpvsh(gdet*denfactor*uu[1]*np.sqrt(gv3[1,1])*iuu0hat,**keywordsrhosqrad30)/rhosqrad30int
+        vuas1rhosqrad30[findex]=intrpvsh(gdet*denfactor*np.abs(uu[1]*np.sqrt(gv3[1,1])*iuu0hat),**keywordsrhosqrad30)/rhosqrad30int
+        vus3rhosqrad30[findex]=intrpvsh(gdet*denfactor*uu[3]*np.sqrt(gv3[3,3])*iuu0hat,**keywordsrhosqrad30)/rhosqrad30int
+        vuas3rhosqrad30[findex]=intrpvsh(gdet*denfactor*np.abs(uu[3]*np.sqrt(gv3[3,3])*iuu0hat),**keywordsrhosqrad30)/rhosqrad30int
+        Bs1rhosqrad30[findex]=intrpvsh(gdetB[1]*denfactor*np.sqrt(gv3[1,1]),**keywordsrhosqrad30)/rhosqrad30int
+        Bas1rhosqrad30[findex]=intrpvsh(np.abs(gdetB[1]*np.sqrt(gv3[1,1]))*denfactor,**keywordsrhosqrad30)/rhosqrad30int
+        Bs2rhosqrad30[findex]=intrpvsh(gdetB[2]*denfactor*np.sqrt(gv3[2,2]),**keywordsrhosqrad30)/rhosqrad30int
+        Bas2rhosqrad30[findex]=intrpvsh(np.abs(gdetB[2]*np.sqrt(gv3[2,2]))*denfactor,**keywordsrhosqrad30)/rhosqrad30int
+        Bs3rhosqrad30[findex]=intrpvsh(gdetB[3]*denfactor*np.sqrt(gv3[3,3]),**keywordsrhosqrad30)/rhosqrad30int
+        Bas3rhosqrad30[findex]=intrpvsh(np.abs(gdetB[3]*np.sqrt(gv3[3,3]))*denfactor,**keywordsrhosqrad30)/rhosqrad30int
+        bs1rhosqrad30[findex]=intrpvsh(gdet*bu[1]*denfactor*np.sqrt(gv3[1,1]),**keywordsrhosqrad30)/rhosqrad30int
+        bas1rhosqrad30[findex]=intrpvsh(np.abs(gdet*bu[1]*np.sqrt(gv3[1,1]))*denfactor,**keywordsrhosqrad30)/rhosqrad30int
+        bs2rhosqrad30[findex]=intrpvsh(gdet*bu[2]*denfactor*np.sqrt(gv3[2,2]),**keywordsrhosqrad30)/rhosqrad30int
+        bas2rhosqrad30[findex]=intrpvsh(np.abs(gdet*bu[2]*np.sqrt(gv3[2,2]))*denfactor,**keywordsrhosqrad30)/rhosqrad30int
+        bs3rhosqrad30[findex]=intrpvsh(gdet*bu[3]*denfactor*np.sqrt(gv3[3,3]),**keywordsrhosqrad30)/rhosqrad30int
+        bas3rhosqrad30[findex]=intrpvsh(np.abs(gdet*bu[3]*np.sqrt(gv3[3,3]))*denfactor,**keywordsrhosqrad30)/rhosqrad30int
+        bsqrhosqrad30[findex]=intrpvsh(gdet*bsq*denfactor,**keywordsrhosqrad30)/rhosqrad30int
+        #
+        #
+        #
+        #
+        diskcondition=(bsq/rho<10)
+        keywords2hor={'hoverr': 2.0*hoverr3d, 'thetamid': thetamid3d, 'which': diskcondition}
+        #
         #Flux
         # radial absolute flux as function of radius
         fstot[findex]=horfluxcalc(minbsqorho=0)
@@ -4164,8 +5250,10 @@ def jetpowcalc(which=2,minbsqorho=None,mumin=None,mumax=None,maxbeta=None,maxbsq
         # for u^r\to 0, \mu \to b^2 \gamma/\rho, but \mu numerically becomes sick, so look at 4-Alfven velocity instead
         # v4a=1 is same as bsq=rho when ug=pg=0
         # follow mu unless <0.1 since the mu is unreliable
-        v4asq=bsq/(rho+ug+(gam-1)*ug)
-        mum1fake=uu[0]*(1.0+v4asq)-1.0
+        #v4asq=bsq/(rho+ug+(gam-1)*ug)
+        #mum1fake=uu[0]*(1.0+v4asq)-1.0
+        # override (mum1fake or mu do poorly for marking boundary of jet)
+        mum1fake=bsq/rho
         if mumax is None:
             cond=(mum1fake<mumin)
         else:
@@ -4239,6 +5327,17 @@ def iofr(rval):
     res = interp1d(r[:,0,0], ti[:,0,0], kind='linear')
     return(np.floor(res(rval)+0.5))
 
+def tofts(tval):
+    res = interp1d(ts[:], np.arange(0,len(ts)), kind='linear')
+    return(np.floor(res(tval)+0.5))
+
+
+
+
+
+
+
+# everything done inside this function only needs a final call to plot, not generating npy files or merging them.
 def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None):
     global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
     #
@@ -4377,9 +5476,11 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     edemvsr = timeavg(edem,ts,fti,ftf)
     edmavsr = timeavg(edma-edma30,ts,fti,ftf)
     edmvsr = timeavg(edm-edm30,ts,fti,ftf)
+
     ldtotvsr = timeavg(ldtot,ts,fti,ftf)
-    ldmavsr = timeavg(ldma,ts,fti,ftf)
-    ldmvsr = timeavg(ldm,ts,fti,ftf)
+    ldemvsr = timeavg(ldem,ts,fti,ftf)
+    ldmavsr = timeavg(ldma-ldma30,ts,fti,ftf)
+    ldmvsr = timeavg(ldm-ldm30,ts,fti,ftf)
     #
     phiabsj_mu1vsr = timeavg(phiabsj_mu1[:,:],ts,fti,ftf)
     #
@@ -4503,6 +5604,40 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     rstageq=Rout
     # ok, use bsqorho<5 part of flow to exclude jet at large radii
     # already have mdotfinavgvsr5 computed above
+    #
+    sizet=len(ts)
+    #print("sizet")
+    #print(sizet)
+    mdot5vsr=np.zeros(nx,dtype=ldma.dtype)
+    reqstagvst=np.zeros(sizet,dtype=ldma.dtype)
+    istageqtemp1=np.zeros(nx,dtype=ldma.dtype)
+    for tic in ts:
+        tici=np.where(ts==tic)[0]
+        mdot5vsr[:]=mdtot[tici,:]-md5[tici,:]
+        #print("mdtot")
+        #print(mdtot)
+        #print("fuck: %d" % (tici) )
+        #print(len(mdot5vsr))
+        #print(mdot5vsr)
+        istageqtemp1=ti[:,0,0][mdot5vsr<0]
+        #print("istageqtemp1")
+        #print(istageqtemp1)
+        # first stagnation starting from inner radius
+        if len(istageqtemp1)>0:
+            istageqtemp=istageqtemp1[0]
+        else:
+            istageqtemp=nx-1
+        #
+        if istageqtemp<0:
+            istageqtemp=0
+        if istageqtemp>nx-1:
+            istageqtemp=nx-1
+        #
+        reqstagvst[tici]=r[istageqtemp,0,0]
+    #
+    #
+    #
+    #
     print("lenmdotfinavgvsr5=%d" % (len(mdotfinavgvsr5)))
     indiceseq=ti[:,0,0][mdotfinavgvsr5<0]
     print("indiceseq")
@@ -4533,7 +5668,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     else:
         trueftf=ftf
     #
-    mdotnearfinavgvsr5 = timeavg(mdtot[:,:]-md5[:,:],ts,0.85*trueftf,trueftf)
+    nearfinti=(trueftf-truefti)*0.85 + truefti
+    mdotnearfinavgvsr5 = timeavg(mdtot[:,:]-md5[:,:],ts,nearfinti,trueftf)
     print("lenmdotnearfinavgvsr5=%d" % (len(mdotnearfinavgvsr5)))
     indiceseqnearfin=ti[:,0,0][mdotnearfinavgvsr5<0]
     print("indiceseqnearfin")
@@ -5257,7 +6393,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             hoverri=hoverr20_avg
             hoverro=hoverr100_avg            
         #
-        drnormvsr,dHnormvsr,dPnormvsr=gridcalc(hoverro)
+        drvsr,dHvsr,dPvsr,drnormvsr,dHnormvsr,dPnormvsr=gridcalc(hoverro)
         drnormvsrhor=drnormvsr[ihor]
         dHnormvsrhor=dHnormvsr[ihor]
         dPnormvsrhor=dPnormvsr[ihor]
@@ -6295,6 +7431,448 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     print( "HLatex11: ModelName & $\\Upsilon_{\\rm{}BH}$ & $\\Upsilon_{\\rm{}in,i}$ & $\\Upsilon_{\\rm{}in,o}$ & $\\Upsilon_{\\rm{}j}$   & $\\Upsilon_{\\rm{}mw,i}$ & $\\Upsilon_{\\rm{}mw,o}$ & $\\Upsilon_{\\rm{}w,i}$ & $\\Upsilon_{\\rm{}w,o}$    &  $\\frac{\\Phi_{\\rm{}BH}}{\\Phi_1(t=0)}$ & $\\frac{\\Phi_{\\rm{}BH}}{\\Phi_2(t=0)}$ & $\\frac{\\Phi_{\\rm{}BH}}{\\Phi_3(t=0)}$ & $\\frac{\\Phi_{\\rm{}BH}}{\\Phi_a(t=0)}$ & $\\frac{\\Phi_{\\rm{}BH}}{\\Phi_s(t=0)}$ & $\\frac{\\Phi_{\\rm{}BH}}{\\Psi_{\\rm{}BH}}$ \\\\" )
     print( "VLatex11: %s         & %g    & %g & %g       & %g      & %g & %g      & %g & %g   & %s & %s & %s & %g & %g & %g  \\\\ %% %s" % (truemodelname, roundto2forupsilon(phibh_avg), roundto2forupsilon(phirjetin_avg), roundto2forupsilon(phirjetout_avg), roundto2forupsilon(phij_avg), roundto2forupsilon(phimwin_avg), roundto2forupsilon(phimwout_avg), roundto2forupsilon(phiwin_avg), roundto2forupsilon(phiwout_avg), roundto2forphistring(fstotnormA_avg[0]),roundto2forphistring(fstotnormA_avg[1]),roundto2forphistring(fstotnormA_avg[2]),roundto2forphi(fstotnormgenC_avg),roundto2forphi(fstotnormgenB_avg),roundto2forphi(fstotnormgenD_avg), modelname ) )
     #
+    # assume can convert merged .npy with *all* quants as vs. t,r(z) so can plot those of make figures.
+    # or make such 2D t vs. space figures in python!
+    #
+    favg1 = open('datavsr1.txt', 'w')
+    favg2 = open('datavsr2.txt', 'w')
+    favg3 = open('datavsr3.txt', 'w')
+    favg4 = open('datavsr4.txt', 'w')
+    favg5 = open('datavsr5.txt', 'w')
+    favg6 = open('datavsr6.txt', 'w')
+    #
+    favgrad4 = open('datavsh1.txt', 'w')
+    favgrad8 = open('datavsh2.txt', 'w')
+    favgrad30 = open('datavsh3.txt', 'w')
+    #
+    # now interpolate from size ny to size nx
+    #
+    # get \theta at r=4 in size of nx rather than ny
+    xold=tj[0,0,0]+(tj[0,:,0]-tj[0,0,0])/(tj[0,-1,0]-tj[0,0,0])
+    xnew=ti[0,0,0]+(ti[:,0,0]-ti[0,0,0])/(ti[-1,0,0]-ti[0,0,0])
+    hinnx=np.interp(xnew,xold,h[iofr(4),:,0])
+    #
+    for ii in np.arange(0,nx):
+        #
+        rhosrhosq_avg=timeavg(rhosrhosq[:,ii],ts,fti,ftf)
+        ugsrhosq_avg=timeavg(ugsrhosq[:,ii],ts,fti,ftf)
+        uu0rhosq_avg=timeavg(uu0rhosq[:,ii],ts,fti,ftf)
+        vus1rhosq_avg=timeavg(vus1rhosq[:,ii],ts,fti,ftf)
+        vuas1rhosq_avg=timeavg(vuas1rhosq[:,ii],ts,fti,ftf)
+        vus3rhosq_avg=timeavg(vus3rhosq[:,ii],ts,fti,ftf)
+        vuas3rhosq_avg=timeavg(vuas3rhosq[:,ii],ts,fti,ftf)
+        Bs1rhosq_avg=timeavg(Bs1rhosq[:,ii],ts,fti,ftf)
+        Bas1rhosq_avg=timeavg(Bas1rhosq[:,ii],ts,fti,ftf)
+        Bs2rhosq_avg=timeavg(Bs2rhosq[:,ii],ts,fti,ftf)
+        Bas2rhosq_avg=timeavg(Bas2rhosq[:,ii],ts,fti,ftf)
+        Bs3rhosq_avg=timeavg(Bs3rhosq[:,ii],ts,fti,ftf)
+        Bas3rhosq_avg=timeavg(Bas3rhosq[:,ii],ts,fti,ftf)
+        bs1rhosq_avg=timeavg(bs1rhosq[:,ii],ts,fti,ftf)
+        bas1rhosq_avg=timeavg(bas1rhosq[:,ii],ts,fti,ftf)
+        bs2rhosq_avg=timeavg(bs2rhosq[:,ii],ts,fti,ftf)
+        bas2rhosq_avg=timeavg(bas2rhosq[:,ii],ts,fti,ftf)
+        bs3rhosq_avg=timeavg(bs3rhosq[:,ii],ts,fti,ftf)
+        bas3rhosq_avg=timeavg(bas3rhosq[:,ii],ts,fti,ftf)
+        bsqrhosq_avg=timeavg(bsqrhosq[:,ii],ts,fti,ftf)
+        #
+        rhosrhosqeq_avg=timeavg(rhosrhosqeq[:,ii],ts,fti,ftf)
+        ugsrhosqeq_avg=timeavg(ugsrhosqeq[:,ii],ts,fti,ftf)
+        uu0rhosqeq_avg=timeavg(uu0rhosqeq[:,ii],ts,fti,ftf)
+        vus1rhosqeq_avg=timeavg(vus1rhosqeq[:,ii],ts,fti,ftf)
+        vuas1rhosqeq_avg=timeavg(vuas1rhosqeq[:,ii],ts,fti,ftf)
+        vus3rhosqeq_avg=timeavg(vus3rhosqeq[:,ii],ts,fti,ftf)
+        vuas3rhosqeq_avg=timeavg(vuas3rhosqeq[:,ii],ts,fti,ftf)
+        Bs1rhosqeq_avg=timeavg(Bs1rhosqeq[:,ii],ts,fti,ftf)
+        Bas1rhosqeq_avg=timeavg(Bas1rhosqeq[:,ii],ts,fti,ftf)
+        Bs2rhosqeq_avg=timeavg(Bs2rhosqeq[:,ii],ts,fti,ftf)
+        Bas2rhosqeq_avg=timeavg(Bas2rhosqeq[:,ii],ts,fti,ftf)
+        Bs3rhosqeq_avg=timeavg(Bs3rhosqeq[:,ii],ts,fti,ftf)
+        Bas3rhosqeq_avg=timeavg(Bas3rhosqeq[:,ii],ts,fti,ftf)
+        bs1rhosqeq_avg=timeavg(bs1rhosqeq[:,ii],ts,fti,ftf)
+        bas1rhosqeq_avg=timeavg(bas1rhosqeq[:,ii],ts,fti,ftf)
+        bs2rhosqeq_avg=timeavg(bs2rhosqeq[:,ii],ts,fti,ftf)
+        bas2rhosqeq_avg=timeavg(bas2rhosqeq[:,ii],ts,fti,ftf)
+        bs3rhosqeq_avg=timeavg(bs3rhosqeq[:,ii],ts,fti,ftf)
+        bas3rhosqeq_avg=timeavg(bas3rhosqeq[:,ii],ts,fti,ftf)
+        bsqrhosqeq_avg=timeavg(bsqrhosqeq[:,ii],ts,fti,ftf)
+        #
+        rhosrhosqhorpick_avg=timeavg(rhosrhosqhorpick[:,ii],ts,fti,ftf)
+        ugsrhosqhorpick_avg=timeavg(ugsrhosqhorpick[:,ii],ts,fti,ftf)
+        uu0rhosqhorpick_avg=timeavg(uu0rhosqhorpick[:,ii],ts,fti,ftf)
+        vus1rhosqhorpick_avg=timeavg(vus1rhosqhorpick[:,ii],ts,fti,ftf)
+        vuas1rhosqhorpick_avg=timeavg(vuas1rhosqhorpick[:,ii],ts,fti,ftf)
+        vus3rhosqhorpick_avg=timeavg(vus3rhosqhorpick[:,ii],ts,fti,ftf)
+        vuas3rhosqhorpick_avg=timeavg(vuas3rhosqhorpick[:,ii],ts,fti,ftf)
+        Bs1rhosqhorpick_avg=timeavg(Bs1rhosqhorpick[:,ii],ts,fti,ftf)
+        Bas1rhosqhorpick_avg=timeavg(Bas1rhosqhorpick[:,ii],ts,fti,ftf)
+        Bs2rhosqhorpick_avg=timeavg(Bs2rhosqhorpick[:,ii],ts,fti,ftf)
+        Bas2rhosqhorpick_avg=timeavg(Bas2rhosqhorpick[:,ii],ts,fti,ftf)
+        Bs3rhosqhorpick_avg=timeavg(Bs3rhosqhorpick[:,ii],ts,fti,ftf)
+        Bas3rhosqhorpick_avg=timeavg(Bas3rhosqhorpick[:,ii],ts,fti,ftf)
+        bs1rhosqhorpick_avg=timeavg(bs1rhosqhorpick[:,ii],ts,fti,ftf)
+        bas1rhosqhorpick_avg=timeavg(bas1rhosqhorpick[:,ii],ts,fti,ftf)
+        bs2rhosqhorpick_avg=timeavg(bs2rhosqhorpick[:,ii],ts,fti,ftf)
+        bas2rhosqhorpick_avg=timeavg(bas2rhosqhorpick[:,ii],ts,fti,ftf)
+        bs3rhosqhorpick_avg=timeavg(bs3rhosqhorpick[:,ii],ts,fti,ftf)
+        bas3rhosqhorpick_avg=timeavg(bas3rhosqhorpick[:,ii],ts,fti,ftf)
+        bsqrhosqhorpick_avg=timeavg(bsqrhosqhorpick[:,ii],ts,fti,ftf)
+        #
+        rhoshor_avg=timeavg(rhoshor[:,ii],ts,fti,ftf)
+        ugshor_avg=timeavg(ugshor[:,ii],ts,fti,ftf)
+        bsqshor_avg=timeavg(bsqshor[:,ii],ts,fti,ftf)
+        bsqorhoshor_avg=timeavg(bsqorhoshor[:,ii],ts,fti,ftf)
+        bsqougshor_avg=timeavg(bsqougshor[:,ii],ts,fti,ftf)
+        uu0hor_avg=timeavg(uu0hor[:,ii],ts,fti,ftf)
+        vus1hor_avg=timeavg(vus1hor[:,ii],ts,fti,ftf)
+        vuas1hor_avg=timeavg(vuas1hor[:,ii],ts,fti,ftf)
+        vus3hor_avg=timeavg(vus3hor[:,ii],ts,fti,ftf)
+        vuas3hor_avg=timeavg(vuas3hor[:,ii],ts,fti,ftf)
+        Bs1hor_avg=timeavg(Bs1hor[:,ii],ts,fti,ftf)
+        Bas1hor_avg=timeavg(Bas1hor[:,ii],ts,fti,ftf)
+        Bs2hor_avg=timeavg(Bs2hor[:,ii],ts,fti,ftf)
+        Bas2hor_avg=timeavg(Bas2hor[:,ii],ts,fti,ftf)
+        Bs3hor_avg=timeavg(Bs3hor[:,ii],ts,fti,ftf)
+        Bas3hor_avg=timeavg(Bas3hor[:,ii],ts,fti,ftf)
+        bs1hor_avg=timeavg(bs1hor[:,ii],ts,fti,ftf)
+        bas1hor_avg=timeavg(bas1hor[:,ii],ts,fti,ftf)
+        bs2hor_avg=timeavg(bs2hor[:,ii],ts,fti,ftf)
+        bas2hor_avg=timeavg(bas2hor[:,ii],ts,fti,ftf)
+        bs3hor_avg=timeavg(bs3hor[:,ii],ts,fti,ftf)
+        bas3hor_avg=timeavg(bas3hor[:,ii],ts,fti,ftf)
+        bsqhor_avg=timeavg(bsqhor[:,ii],ts,fti,ftf)
+        #
+        # really vs h
+        rhosrhosqrad4_avg=timeavg(rhosrhosqrad4[:,ii],ts,fti,ftf)
+        ugsrhosqrad4_avg=timeavg(ugsrhosqrad4[:,ii],ts,fti,ftf)
+        uu0rhosqrad4_avg=timeavg(uu0rhosqrad4[:,ii],ts,fti,ftf)
+        vus1rhosqrad4_avg=timeavg(vus1rhosqrad4[:,ii],ts,fti,ftf)
+        vuas1rhosqrad4_avg=timeavg(vuas1rhosqrad4[:,ii],ts,fti,ftf)
+        vus3rhosqrad4_avg=timeavg(vus3rhosqrad4[:,ii],ts,fti,ftf)
+        vuas3rhosqrad4_avg=timeavg(vuas3rhosqrad4[:,ii],ts,fti,ftf)
+        Bs1rhosqrad4_avg=timeavg(Bs1rhosqrad4[:,ii],ts,fti,ftf)
+        Bas1rhosqrad4_avg=timeavg(Bas1rhosqrad4[:,ii],ts,fti,ftf)
+        Bs2rhosqrad4_avg=timeavg(Bs2rhosqrad4[:,ii],ts,fti,ftf)
+        Bas2rhosqrad4_avg=timeavg(Bas2rhosqrad4[:,ii],ts,fti,ftf)
+        Bs3rhosqrad4_avg=timeavg(Bs3rhosqrad4[:,ii],ts,fti,ftf)
+        Bas3rhosqrad4_avg=timeavg(Bas3rhosqrad4[:,ii],ts,fti,ftf)
+        bs1rhosqrad4_avg=timeavg(bs1rhosqrad4[:,ii],ts,fti,ftf)
+        bas1rhosqrad4_avg=timeavg(bas1rhosqrad4[:,ii],ts,fti,ftf)
+        bs2rhosqrad4_avg=timeavg(bs2rhosqrad4[:,ii],ts,fti,ftf)
+        bas2rhosqrad4_avg=timeavg(bas2rhosqrad4[:,ii],ts,fti,ftf)
+        bs3rhosqrad4_avg=timeavg(bs3rhosqrad4[:,ii],ts,fti,ftf)
+        bas3rhosqrad4_avg=timeavg(bas3rhosqrad4[:,ii],ts,fti,ftf)
+        bsqrhosqrad4_avg=timeavg(bsqrhosqrad4[:,ii],ts,fti,ftf)
+        #
+        # really vs h
+        rhosrhosqrad8_avg=timeavg(rhosrhosqrad8[:,ii],ts,fti,ftf)
+        ugsrhosqrad8_avg=timeavg(ugsrhosqrad8[:,ii],ts,fti,ftf)
+        uu0rhosqrad8_avg=timeavg(uu0rhosqrad8[:,ii],ts,fti,ftf)
+        vus1rhosqrad8_avg=timeavg(vus1rhosqrad8[:,ii],ts,fti,ftf)
+        vuas1rhosqrad8_avg=timeavg(vuas1rhosqrad8[:,ii],ts,fti,ftf)
+        vus3rhosqrad8_avg=timeavg(vus3rhosqrad8[:,ii],ts,fti,ftf)
+        vuas3rhosqrad8_avg=timeavg(vuas3rhosqrad8[:,ii],ts,fti,ftf)
+        Bs1rhosqrad8_avg=timeavg(Bs1rhosqrad8[:,ii],ts,fti,ftf)
+        Bas1rhosqrad8_avg=timeavg(Bas1rhosqrad8[:,ii],ts,fti,ftf)
+        Bs2rhosqrad8_avg=timeavg(Bs2rhosqrad8[:,ii],ts,fti,ftf)
+        Bas2rhosqrad8_avg=timeavg(Bas2rhosqrad8[:,ii],ts,fti,ftf)
+        Bs3rhosqrad8_avg=timeavg(Bs3rhosqrad8[:,ii],ts,fti,ftf)
+        Bas3rhosqrad8_avg=timeavg(Bas3rhosqrad8[:,ii],ts,fti,ftf)
+        bs1rhosqrad8_avg=timeavg(bs1rhosqrad8[:,ii],ts,fti,ftf)
+        bas1rhosqrad8_avg=timeavg(bas1rhosqrad8[:,ii],ts,fti,ftf)
+        bs2rhosqrad8_avg=timeavg(bs2rhosqrad8[:,ii],ts,fti,ftf)
+        bas2rhosqrad8_avg=timeavg(bas2rhosqrad8[:,ii],ts,fti,ftf)
+        bs3rhosqrad8_avg=timeavg(bs3rhosqrad8[:,ii],ts,fti,ftf)
+        bas3rhosqrad8_avg=timeavg(bas3rhosqrad8[:,ii],ts,fti,ftf)
+        bsqrhosqrad8_avg=timeavg(bsqrhosqrad8[:,ii],ts,fti,ftf)
+        #
+        # really vs h
+        rhosrhosqrad30_avg=timeavg(rhosrhosqrad30[:,ii],ts,fti,ftf)
+        ugsrhosqrad30_avg=timeavg(ugsrhosqrad30[:,ii],ts,fti,ftf)
+        uu0rhosqrad30_avg=timeavg(uu0rhosqrad30[:,ii],ts,fti,ftf)
+        vus1rhosqrad30_avg=timeavg(vus1rhosqrad30[:,ii],ts,fti,ftf)
+        vuas1rhosqrad30_avg=timeavg(vuas1rhosqrad30[:,ii],ts,fti,ftf)
+        vus3rhosqrad30_avg=timeavg(vus3rhosqrad30[:,ii],ts,fti,ftf)
+        vuas3rhosqrad30_avg=timeavg(vuas3rhosqrad30[:,ii],ts,fti,ftf)
+        Bs1rhosqrad30_avg=timeavg(Bs1rhosqrad30[:,ii],ts,fti,ftf)
+        Bas1rhosqrad30_avg=timeavg(Bas1rhosqrad30[:,ii],ts,fti,ftf)
+        Bs2rhosqrad30_avg=timeavg(Bs2rhosqrad30[:,ii],ts,fti,ftf)
+        Bas2rhosqrad30_avg=timeavg(Bas2rhosqrad30[:,ii],ts,fti,ftf)
+        Bs3rhosqrad30_avg=timeavg(Bs3rhosqrad30[:,ii],ts,fti,ftf)
+        Bas3rhosqrad30_avg=timeavg(Bas3rhosqrad30[:,ii],ts,fti,ftf)
+        bs1rhosqrad30_avg=timeavg(bs1rhosqrad30[:,ii],ts,fti,ftf)
+        bas1rhosqrad30_avg=timeavg(bas1rhosqrad30[:,ii],ts,fti,ftf)
+        bs2rhosqrad30_avg=timeavg(bs2rhosqrad30[:,ii],ts,fti,ftf)
+        bas2rhosqrad30_avg=timeavg(bas2rhosqrad30[:,ii],ts,fti,ftf)
+        bs3rhosqrad30_avg=timeavg(bs3rhosqrad30[:,ii],ts,fti,ftf)
+        bas3rhosqrad30_avg=timeavg(bas3rhosqrad30[:,ii],ts,fti,ftf)
+        bsqrhosqrad30_avg=timeavg(bsqrhosqrad30[:,ii],ts,fti,ftf)
+        #
+        # 2+20
+        favg1.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],rhosrhosq_avg,ugsrhosq_avg,uu0rhosq_avg,vus1rhosq_avg,vuas1rhosq_avg,vus3rhosq_avg,vuas3rhosq_avg,Bs1rhosq_avg,Bas1rhosq_avg,Bs2rhosq_avg,Bas2rhosq_avg,Bs3rhosq_avg,Bas3rhosq_avg,bs1rhosq_avg,bas1rhosq_avg,bs2rhosq_avg,bas2rhosq_avg,bs3rhosq_avg,bas3rhosq_avg,bsqrhosq_avg ) )
+        #
+        # 2+20
+        favg2.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],rhosrhosqeq_avg,ugsrhosqeq_avg,uu0rhosqeq_avg,vus1rhosqeq_avg,vuas1rhosqeq_avg,vus3rhosqeq_avg,vuas3rhosqeq_avg,Bs1rhosqeq_avg,Bas1rhosqeq_avg,Bs2rhosqeq_avg,Bas2rhosqeq_avg,Bs3rhosqeq_avg,Bas3rhosqeq_avg,bs1rhosqeq_avg,bas1rhosqeq_avg,bs2rhosqeq_avg,bas2rhosqeq_avg,bs3rhosqeq_avg,bas3rhosqeq_avg,bsqrhosqeq_avg) )
+        #
+        # 2+20
+        favg3.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],rhosrhosqhorpick_avg,ugsrhosqhorpick_avg,uu0rhosqhorpick_avg,vus1rhosqhorpick_avg,vuas1rhosqhorpick_avg,vus3rhosqhorpick_avg,vuas3rhosqhorpick_avg,Bs1rhosqhorpick_avg,Bas1rhosqhorpick_avg,Bs2rhosqhorpick_avg,Bas2rhosqhorpick_avg,Bs3rhosqhorpick_avg,Bas3rhosqhorpick_avg,bs1rhosqhorpick_avg,bas1rhosqhorpick_avg,bs2rhosqhorpick_avg,bas2rhosqhorpick_avg,bs3rhosqhorpick_avg,bas3rhosqhorpick_avg,bsqrhosqhorpick_avg) )
+        #
+        # 2+23
+        favg4.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],rhoshor_avg,ugshor_avg,bsqshor_avg,bsqorhoshor_avg,bsqougshor_avg,uu0hor_avg,vus1hor_avg,vuas1hor_avg,vus3hor_avg,vuas3hor_avg,Bs1hor_avg,Bas1hor_avg,Bs2hor_avg,Bas2hor_avg,Bs3hor_avg,Bas3hor_avg,bs1hor_avg,bas1hor_avg,bs2hor_avg,bas2hor_avg,bs3hor_avg,bas3hor_avg,bsqhor_avg) )
+        #
+        # 2+15
+        favg5.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],mdotfinavgvsr[ii],mdotfinavgvsr5[ii],edemvsr[ii],edmavsr[ii],edmvsr[ii],ldemvsr[ii],ldmavsr[ii],ldmvsr[ii],phiabsj_mu1vsr[ii],pjemfinavgvsr[ii],pjmakefinavgvsr[ii],pjkefinavgvsr[ii],ljemfinavgvsr[ii],ljmakefinavgvsr[ii],ljkefinavgvsr[ii]) )
+        #
+        # 2+3
+        favg6.write("%d %g %g %g %g\n" % (ii,r[ii,0,0],drvsr[ii],dHvsr[ii],dPvsr[ii]) )
+        #
+        # really vs h
+        # 2+20
+        favgrad4.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,hinnx[ii],rhosrhosqrad4_avg,ugsrhosqrad4_avg,uu0rhosqrad4_avg,vus1rhosqrad4_avg,vuas1rhosqrad4_avg,vus3rhosqrad4_avg,vuas3rhosqrad4_avg,Bs1rhosqrad4_avg,Bas1rhosqrad4_avg,Bs2rhosqrad4_avg,Bas2rhosqrad4_avg,Bs3rhosqrad4_avg,Bas3rhosqrad4_avg,bs1rhosqrad4_avg,bas1rhosqrad4_avg,bs2rhosqrad4_avg,bas2rhosqrad4_avg,bs3rhosqrad4_avg,bas3rhosqrad4_avg,bsqrhosqrad4_avg) )
+        #
+        # 2+20
+        favgrad8.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,hinnx[ii],rhosrhosqrad8_avg,ugsrhosqrad8_avg,uu0rhosqrad8_avg,vus1rhosqrad8_avg,vuas1rhosqrad8_avg,vus3rhosqrad8_avg,vuas3rhosqrad8_avg,Bs1rhosqrad8_avg,Bas1rhosqrad8_avg,Bs2rhosqrad8_avg,Bas2rhosqrad8_avg,Bs3rhosqrad8_avg,Bas3rhosqrad8_avg,bs1rhosqrad8_avg,bas1rhosqrad8_avg,bs2rhosqrad8_avg,bas2rhosqrad8_avg,bs3rhosqrad8_avg,bas3rhosqrad8_avg,bsqrhosqrad8_avg) )
+        #
+        # 2+20
+        favgrad30.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,hinnx[ii],rhosrhosqrad30_avg,ugsrhosqrad30_avg,uu0rhosqrad30_avg,vus1rhosqrad30_avg,vuas1rhosqrad30_avg,vus3rhosqrad30_avg,vuas3rhosqrad30_avg,Bs1rhosqrad30_avg,Bas1rhosqrad30_avg,Bs2rhosqrad30_avg,Bas2rhosqrad30_avg,Bs3rhosqrad30_avg,Bas3rhosqrad30_avg,bs1rhosqrad30_avg,bas1rhosqrad30_avg,bs2rhosqrad30_avg,bas2rhosqrad30_avg,bs3rhosqrad30_avg,bas3rhosqrad30_avg,bsqrhosqrad30_avg) )
+        #
+        #
+    #
+    favg1.close()
+    favg2.close()
+    favg3.close()
+    favg4.close()
+    favg5.close()
+    favg6.close()
+    #
+    favgrad4.close()
+    favgrad8.close()
+    favgrad30.close()
+    #
+    favg1 = open('datavst1.txt', 'w')
+    favg2 = open('datavst2.txt', 'w')
+    favg3 = open('datavst3.txt', 'w')
+    favg4 = open('datavst4.txt', 'w')
+    favg5 = open('datavst5.txt', 'w')
+    favg6 = open('datavst6.txt', 'w')
+    favg7 = open('datavst7.txt', 'w')
+    #
+    sizet=len(ts)
+    for tic in ts:
+        tici=np.where(ts==tic)[0]
+        #
+        favg1.write("%d %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], mdtot[tici,ihor],md10[tici,ihor],md30[tici,ihor],mdin[tici,iofr(rjetin)],mdin[tici,iofr(rjetout)],mdjet[tici,iofr(rjetout)],mdmwind[tici,iofr(rjetin)],mdmwind[tici,iofr(rjetout)],mdwind[tici,iofr(rjetin)],mdwind[tici,iofr(rjetout)]  ) )
+        #
+        favg2.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], etabhEM[tici],etabhMAKE[tici],etabh[tici],etajEM[tici],etajMAKE[tici],etaj[tici],etamwinEM[tici],etamwinMAKE[tici],etamwin[tici],etamwoutEM[tici],etamwoutMAKE[tici],etamwout[tici],etawinEM[tici],etawinMAKE[tici],etawin[tici],etawoutEM[tici],etawoutMAKE[tici],etawout[tici]  ) )
+        #
+        favg3.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], letabhEM[tici],letabhMAKE[tici],letabh[tici],letajEM[tici],letajMAKE[tici],letaj[tici],letamwinEM[tici],letamwinMAKE[tici],letamwin[tici],letamwoutEM[tici],letamwoutMAKE[tici],letamwout[tici],letawinEM[tici],letawinMAKE[tici],letawin[tici],letawoutEM[tici],letawoutMAKE[tici],letawout[tici]  ) )
+        #
+        favg4.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], hoverrhor[tici],hoverr2[tici],hoverr5[tici],hoverr10[tici],hoverr20[tici],hoverr100[tici],hoverrcoronahor[tici],hoverrcorona2[tici],hoverrcorona5[tici],hoverrcorona10[tici],hoverrcorona20[tici],hoverrcorona100[tici],hoverrjethor[tici],hoverrjet2[tici],hoverrjet5[tici],hoverrjet10[tici],hoverrjet20[tici],hoverrjet100[tici]  ) )
+        #
+        favg5.write("%d %g %g %g %g %g\n" % (tici,ts[tici], betamin[tici,0],betaavg[tici,0],betaratofavg[tici,0],betaratofmax[tici,0]  ) )
+        #
+        favg6.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], qmridisk10[tici],qmridisk20[tici],qmridisk100[tici],iq2mridisk10[tici],iq2mridisk20[tici],iq2mridisk100[tici],qmridiskweak10[tici],qmridiskweak20[tici],qmridiskweak100[tici],iq2mridiskweak10[tici],iq2mridiskweak20[tici],iq2mridiskweak100[tici]   ) )
+        #
+        favg7.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], phibh[tici],phirjetin[tici],phirjetout[tici],phij[tici],phimwin[tici],phimwout[tici],phiwin[tici],phiwout[tici],phijn[tici],phijs[tici],fstot[tici,ihor],fsmaxtot[tici,ihor],fmaxvst[tici],r[ifmaxvst[tici],0,0],reqstagvst[tici],feqstag[tici],feqstagnearfin[tici],fstotnormA[0][tici],fstotnormA[1][tici],fstotnormA[2][tici],fstotnormC[tici],fstotnormB[whichfirstlimited][tici],fstotnormD[tici]   ) )
+        #
+    #
+    favg1.close()
+    favg2.close()
+    favg3.close()
+    favg4.close()
+    favg5.close()
+    favg6.close()
+    favg7.close()
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    ############################
+    # some space-time plots
+    #
+    ###########################
+    #
+    #
+    arrayvsra=[rhosrhosq,ugsrhosq,uu0rhosq,vus1rhosq,vuas1rhosq,vus3rhosq,vuas3rhosq,Bs1rhosq,Bas1rhosq,Bs2rhosq,Bas2rhosq,Bs3rhosq,Bas3rhosq,bs1rhosq,bas1rhosq,bs2rhosq,bas2rhosq,bs3rhosq,bas3rhosq,bsqrhosq]
+    bsqorhora=bsqrhosq/rhosrhosq
+    bsqoura=bsqrhosq/ugsrhosq
+    arrayvsraname=['rhosrhosq','ugsrhosq','uu0rhosq','vus1rhosq','vuas1rhosq','vus3rhosq','vuas3rhosq','Bs1rhosq','Bas1rhosq','Bs2rhosq','Bas2rhosq','Bs3rhosq','Bas3rhosq','bs1rhosq','bas1rhosq','bs2rhosq','bas2rhosq','bs3rhosq','bas3rhosq','bsqrhosq']
+    logvaluearrayvsra=[1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
+    #
+    arrayvsrb=[rhosrhosqeq,ugsrhosqeq,uu0rhosqeq,vus1rhosqeq,vuas1rhosqeq,vus3rhosqeq,vuas3rhosqeq,Bs1rhosqeq,Bas1rhosqeq,Bs2rhosqeq,Bas2rhosqeq,Bs3rhosqeq,Bas3rhosqeq,bs1rhosqeq,bas1rhosqeq,bs2rhosqeq,bas2rhosqeq,bs3rhosqeq,bas3rhosqeq,bsqrhosqeq]
+    bsqorhorb=bsqrhosqeq/rhosrhosqeq
+    bsqourb=bsqrhosqeq/ugsrhosqeq
+    arrayvsrbname=['rhosrhosqeq','ugsrhosqeq','uu0rhosqeq','vus1rhosqeq','vuas1rhosqeq','vus3rhosqeq','vuas3rhosqeq','Bs1rhosqeq','Bas1rhosqeq','Bs2rhosqeq','Bas2rhosqeq','Bs3rhosqeq','Bas3rhosqeq','bs1rhosqeq','bas1rhosqeq','bs2rhosqeq','bas2rhosqeq','bs3rhosqeq','bas3rhosqeq','bsqrhosqeq']
+    logvaluearrayvsrb=[1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
+    #
+    arrayvsrc=[rhosrhosqhorpick,ugsrhosqhorpick,uu0rhosqhorpick,vus1rhosqhorpick,vuas1rhosqhorpick,vus3rhosqhorpick,vuas3rhosqhorpick,Bs1rhosqhorpick,Bas1rhosqhorpick,Bs2rhosqhorpick,Bas2rhosqhorpick,Bs3rhosqhorpick,Bas3rhosqhorpick,bs1rhosqhorpick,bas1rhosqhorpick,bs2rhosqhorpick,bas2rhosqhorpick,bs3rhosqhorpick,bas3rhosqhorpick,bsqrhosqhorpick]
+    bsqorhorc=bsqrhosqhorpick/rhosrhosqhorpick
+    bsqourc=bsqrhosqhorpick/ugsrhosqhorpick
+    arrayvsrcname=['rhosrhosqhorpick','ugsrhosqhorpick','uu0rhosqhorpick','vus1rhosqhorpick','vuas1rhosqhorpick','vus3rhosqhorpick','vuas3rhosqhorpick','Bs1rhosqhorpick','Bas1rhosqhorpick','Bs2rhosqhorpick','Bas2rhosqhorpick','Bs3rhosqhorpick','Bas3rhosqhorpick','bs1rhosqhorpick','bas1rhosqhorpick','bs2rhosqhorpick','bas2rhosqhorpick','bs3rhosqhorpick','bas3rhosqhorpick','bsqrhosqhorpick']
+    logvaluearrayvsrc=[1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
+    #
+    arrayvsrd=[rhoshor,ugshor,bsqshor,bsqorhoshor,bsqougshor,uu0hor,vus1hor,vuas1hor,vus3hor,vuas3hor,Bs1hor,Bas1hor,Bs2hor,Bas2hor,Bs3hor,Bas3hor,bs1hor,bas1hor,bs2hor,bas2hor,bs3hor,bas3hor,bsqhor]
+    bsqorhord=bsqhor/rhoshor
+    bsqourd=bsqhor/ugshor
+    arrayvsrdname=['rhoshor','ugshor','bsqshor','bsqorhoshor','bsqougshor','uu0hor','vus1hor','vuas1hor','vus3hor','vuas3hor','Bs1hor','Bas1hor','Bs2hor','Bas2hor','Bs3hor','Bas3hor','bs1hor','bas1hor','bs2hor','bas2hor','bs3hor','bas3hor','bsqhor']
+    logvaluearrayvsrd=[1,1,1,1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
+    #
+    arrayvsha=[rhosrhosqrad4,ugsrhosqrad4,uu0rhosqrad4,vus1rhosqrad4,vuas1rhosqrad4,vus3rhosqrad4,vuas3rhosqrad4,Bs1rhosqrad4,Bas1rhosqrad4,Bs2rhosqrad4,Bas2rhosqrad4,Bs3rhosqrad4,Bas3rhosqrad4,bs1rhosqrad4,bas1rhosqrad4,bs2rhosqrad4,bas2rhosqrad4,bs3rhosqrad4,bas3rhosqrad4,bsqrhosqrad4]
+    bsqorhoha=bsqrhosqrad4/rhosrhosqrad4
+    bsqouha=bsqrhosqrad4/ugsrhosqrad4
+    arrayvshaname=['rhosrhosqrad4','ugsrhosqrad4','uu0rhosqrad4','vus1rhosqrad4','vuas1rhosqrad4','vus3rhosqrad4','vuas3rhosqrad4','Bs1rhosqrad4','Bas1rhosqrad4','Bs2rhosqrad4','Bas2rhosqrad4','Bs3rhosqrad4','Bas3rhosqrad4','bs1rhosqrad4','bas1rhosqrad4','bs2rhosqrad4','bas2rhosqrad4','bs3rhosqrad4','bas3rhosqrad4','bsqrhosqrad4']
+    logvaluearrayvsha=[1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
+    #
+    arrayvshb=[rhosrhosqrad8,ugsrhosqrad8,uu0rhosqrad8,vus1rhosqrad8,vuas1rhosqrad8,vus3rhosqrad8,vuas3rhosqrad8,Bs1rhosqrad8,Bas1rhosqrad8,Bs2rhosqrad8,Bas2rhosqrad8,Bs3rhosqrad8,Bas3rhosqrad8,bs1rhosqrad8,bas1rhosqrad8,bs2rhosqrad8,bas2rhosqrad8,bs3rhosqrad8,bas3rhosqrad8,bsqrhosqrad8]
+    bsqorhohb=bsqrhosqrad8/rhosrhosqrad8
+    bsqouhb=bsqrhosqrad8/ugsrhosqrad8
+    arrayvshbname=['rhosrhosqrad8','ugsrhosqrad8','uu0rhosqrad8','vus1rhosqrad8','vuas1rhosqrad8','vus3rhosqrad8','vuas3rhosqrad8','Bs1rhosqrad8','Bas1rhosqrad8','Bs2rhosqrad8','Bas2rhosqrad8','Bs3rhosqrad8','Bas3rhosqrad8','bs1rhosqrad8','bas1rhosqrad8','bs2rhosqrad8','bas2rhosqrad8','bs3rhosqrad8','bas3rhosqrad8','bsqrhosqrad8']
+    logvaluearrayvshb=[1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
+    #
+    arrayvshc=[rhosrhosqrad30,ugsrhosqrad30,uu0rhosqrad30,vus1rhosqrad30,vuas1rhosqrad30,vus3rhosqrad30,vuas3rhosqrad30,Bs1rhosqrad30,Bas1rhosqrad30,Bs2rhosqrad30,Bas2rhosqrad30,Bs3rhosqrad30,Bas3rhosqrad30,bs1rhosqrad30,bas1rhosqrad30,bs2rhosqrad30,bas2rhosqrad30,bs3rhosqrad30,bas3rhosqrad30,bsqrhosqrad30]
+    bsqorhohc=bsqrhosqrad30/rhosrhosqrad30
+    bsqouhc=bsqrhosqrad30/ugsrhosqrad30
+    arrayvshcname=['rhosrhosqrad30','ugsrhosqrad30','uu0rhosqrad30','vus1rhosqrad30','vuas1rhosqrad30','vus3rhosqrad30','vuas3rhosqrad30','Bs1rhosqrad30','Bas1rhosqrad30','Bs2rhosqrad30','Bas2rhosqrad30','Bs3rhosqrad30','Bas3rhosqrad30','bs1rhosqrad30','bas1rhosqrad30','bs2rhosqrad30','bas2rhosqrad30','bs3rhosqrad30','bas3rhosqrad30','bsqrhosqrad30']
+    logvaluearrayvshc=[1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
+    #
+    #
+    dospacetimetest=0
+    #
+    if dospacetimetest==1:
+        #
+        #mktr(loadq=0,qty=uu0rhosq,filenum=1,fileletter="q",logvalue=0)
+        #print("asdf")
+        #print(uu0rhosq)
+        #
+        #mktr(loadq=0,qty=rhosrhosqhorpick,filenum=1,fileletter="x",logvalue=0)
+        #print("asdf")
+        #print(rhosrhosqhorpick)
+        #
+        mktr(loadq=0,qty=vus1rhosq,filenum=1,fileletter="x",logvalue=0)
+        print("asdf")
+        print(vus1rhosq)
+        #
+        #mkthrad(loadq=0,qty=uu0rhosqrad4,filenum=1,fileletter="q",logvalue=0,radius=4)
+        #print("asdf2")
+        #print(uu0rhosqrad4)
+    #
+    #
+    dospacetime=1
+    #
+    if dospacetime==1:
+        ################################
+        # t vs. r
+        #
+        iter=1
+        for fil in arrayvsra:
+            mktr(loadq=0,qty=fil,pllabel=arrayvsraname[iter-1],filenum=iter,fileletter="a",logvalue=logvaluearrayvsra[iter-1],bsqorho=bsqorhora,bsqou=bsqoura,maxbsqorho=1E15,maxbsqou=1E15)
+            iter=iter+1
+        #
+        iter=1
+        for fil in arrayvsrb:
+            mktr(loadq=0,qty=fil,pllabel=arrayvsrbname[iter-1],filenum=iter,fileletter="b",logvalue=logvaluearrayvsrb[iter-1],bsqorho=bsqorhorb,bsqou=bsqourb,maxbsqorho=1E15,maxbsqou=1E15)
+            iter=iter+1
+        #
+        iter=1
+        for fil in arrayvsrc:
+            mktr(loadq=0,qty=fil,pllabel=arrayvsrcname[iter-1],filenum=iter,fileletter="c",logvalue=logvaluearrayvsrc[iter-1],bsqorho=bsqorhorc,bsqou=bsqourc,maxbsqorho=1E15,maxbsqou=1E15)
+            iter=iter+1
+        #
+        iter=1
+        for fil in arrayvsrd:
+            mktr(loadq=0,qty=fil,pllabel=arrayvsrdname[iter-1],filenum=iter,fileletter="d",logvalue=logvaluearrayvsrd[iter-1],bsqorho=bsqorhord,bsqou=bsqourd,maxbsqorho=1E15,maxbsqou=1E15)
+            iter=iter+1
+        #
+        ################################
+        # t vs. \theta no restriction
+        #
+        iter=1
+        for fil in arrayvsha:
+            mkthrad(loadq=0,qty=fil,pllabel=arrayvshaname[iter-1],filenum=iter,fileletter="a",logvalue=logvaluearrayvsha[iter-1],radius=4,bsqorho=bsqorhoha,bsqou=bsqouha)
+            iter=iter+1
+        #
+        iter=1
+        for fil in arrayvshb:
+            mkthrad(loadq=0,qty=fil,pllabel=arrayvshbname[iter-1],filenum=iter,fileletter="b",logvalue=logvaluearrayvshb[iter-1],radius=8,bsqorho=bsqorhohb,bsqou=bsqouhb)
+            iter=iter+1
+        #
+        iter=1
+        for fil in arrayvshc:
+            mkthrad(loadq=0,qty=fil,pllabel=arrayvshcname[iter-1],filenum=iter,fileletter="c",logvalue=logvaluearrayvshc[iter-1],radius=30,bsqorho=bsqorhohc,bsqou=bsqouhc)
+            iter=iter+1
+        #
+        ################################
+        # t vs. \theta  Restrict using bsq/rho.
+        iter=1
+        for fil in arrayvsha:
+            mkthrad(loadq=0,qty=fil,pllabel=arrayvshaname[iter-1],filenum=iter,fileletter="a",logvalue=logvaluearrayvsha[iter-1],radius=4,bsqorho=bsqorhoha,bsqou=bsqouha,maxbsqorho=1)
+            iter=iter+1
+        #
+        iter=1
+        for fil in arrayvshb:
+            mkthrad(loadq=0,qty=fil,pllabel=arrayvshbname[iter-1],filenum=iter,fileletter="b",logvalue=logvaluearrayvshb[iter-1],radius=8,bsqorho=bsqorhohb,bsqou=bsqouhb,maxbsqorho=1)
+            iter=iter+1
+        #
+        iter=1
+        for fil in arrayvshc:
+            mkthrad(loadq=0,qty=fil,pllabel=arrayvshcname[iter-1],filenum=iter,fileletter="c",logvalue=logvaluearrayvshc[iter-1],radius=30,bsqorho=bsqorhohc,bsqou=bsqouhc,maxbsqorho=1)
+            iter=iter+1
+        #
+        ################################
+        # t vs. \theta  Restrict using bsq/u.
+        #
+        iter=1
+        for fil in arrayvsha:
+            mkthrad(loadq=0,qty=fil,pllabel=arrayvshaname[iter-1],filenum=iter,fileletter="a",logvalue=logvaluearrayvsha[iter-1],radius=4,bsqorho=bsqorhoha,bsqou=bsqouha,maxbsqou=1)
+            iter=iter+1
+        #
+        iter=1
+        for fil in arrayvshb:
+            mkthrad(loadq=0,qty=fil,pllabel=arrayvshbname[iter-1],filenum=iter,fileletter="b",logvalue=logvaluearrayvshb[iter-1],radius=8,bsqorho=bsqorhohb,bsqou=bsqouhb,maxbsqou=1)
+            iter=iter+1
+        #
+        iter=1
+        for fil in arrayvshc:
+            mkthrad(loadq=0,qty=fil,pllabel=arrayvshcname[iter-1],filenum=iter,fileletter="c",logvalue=logvaluearrayvshc[iter-1],radius=30,bsqorho=bsqorhohc,bsqou=bsqouhc,maxbsqou=1)
+            iter=iter+1
+        #
+    #
+    #
+    #
+    # once these are generated, can quickly view all of them at once at lower resolution by doing:
+    # http://www.imagemagick.org/discourse-server/viewtopic.php?f=1&t=11113
+    #
+    # montage plot*.png output1.png ; display output1.png
+    #
+    # to get put in order outputted by time:
+    #
+    # files=`ls -rt plot*.png` ; montage $files output2.png ; display output2.png
+    #
+    # other programs don't seem as friendly:
+    # mogrify
+    # convert *.png -composite output.png
+    # convert *.png -append output.png
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
     #
     if whichplot == -1:
         etajetavg = pjetfinavg/mdotfinavg
@@ -6419,7 +7997,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             plotlist[1].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotfinavg,label=r'$\langle \dot M_{{\rm h,tot}, b^2/\rho<10}\rangle_{f}$')
         #plotlist[1].plot(ts,np.abs(md2h[:,ihor]),label=r'$\dot M_{\rm h,2h}$')
         #plotlist[1].plot(ts,np.abs(md4h[:,ihor]),label=r'$\dot M_{\rm h,4h}$')
-        #plotlist[1].plot(ts,np.abs(md2hor[:,ihor]),label=r'$\dot M_{\rm h,2hor}$')
+        #plotlist[1].plot(ts,np.abs(mdhor[:,ihor]),label=r'$\dot M_{\rm h,hor}$')
         #plotlist[1].plot(ts,np.abs(mdrhosq[:,ihor]),label=r'$\dot M_{\rm h,rhosq}$')
         #plotlist[1].plot(ts,np.abs(md5[:,ihor]),label=r'$\dot M_{\rm h,5}$')
         plotlist[1].plot(ts,np.abs(md10[:,ihor]),label=r'$\dot M_{\rm h,10}$')
@@ -6490,36 +8068,36 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         plotlist[0].grid(True)
         #
         #plotlist[1].subplot(212,sharex=True)
-        plotlist[1].plot(ts,(-uus12hor*dxdxp[1][1][:,0,0])[:,ihor],label=r'$-u^r_{\rm h}$')
-        plotlist[1].plot(ts,(-uus12hor*dxdxp[1][1][:,0,0])[:,iofr(2)],label=r'$-u^r_{\rm 2}$') ##### continue here
-        plotlist[1].plot(ts,(-uus12hor*dxdxp[1][1][:,0,0])[:,iofr(4)],label=r'$-u^r_{\rm 4}$')
-        plotlist[1].plot(ts,(-uus12hor*dxdxp[1][1][:,0,0])[:,iofr(8)],label=r'$-u^r_{\rm 8}$')
-        #plotlist[1].plot(ts,(-uus12hor*dxdxp[1][1][:,0,0])[:,iofr(10)],label=r'$-u^r_{\rm 10}$')
-        #plotlist[1].plot(ts,(-uus12hor*dxdxp[1][1][:,0,0])[:,iofr(12)],label=r'$-u^r_{\rm 12}$')
-        #plotlist[1].plot(ts,(-uus12hor*dxdxp[1][1][:,0,0])[:,iofr(15)],label=r'$-u^r_{\rm 15}$')
+        plotlist[1].plot(ts,(-vus1hor*dxdxp[1][1][:,0,0])[:,ihor],label=r'$-u^r_{\rm h}$')
+        plotlist[1].plot(ts,(-vus1hor*dxdxp[1][1][:,0,0])[:,iofr(2)],label=r'$-u^r_{\rm 2}$') ##### continue here
+        plotlist[1].plot(ts,(-vus1hor*dxdxp[1][1][:,0,0])[:,iofr(4)],label=r'$-u^r_{\rm 4}$')
+        plotlist[1].plot(ts,(-vus1hor*dxdxp[1][1][:,0,0])[:,iofr(8)],label=r'$-u^r_{\rm 8}$')
+        #plotlist[1].plot(ts,(-vus1hor*dxdxp[1][1][:,0,0])[:,iofr(10)],label=r'$-u^r_{\rm 10}$')
+        #plotlist[1].plot(ts,(-vus1hor*dxdxp[1][1][:,0,0])[:,iofr(12)],label=r'$-u^r_{\rm 12}$')
+        #plotlist[1].plot(ts,(-vus1hor*dxdxp[1][1][:,0,0])[:,iofr(15)],label=r'$-u^r_{\rm 15}$')
         plotlist[1].legend(loc='upper right')
         #plotlist[1].set_xlabel(r'$t\;(GM/c^3)$')
         plotlist[1].set_ylabel(r'$u^r$',fontsize=16)
         plt.setp( plotlist[1].get_xticklabels(), visible=False)
 
-        plotlist[2].plot(ts,rhos2hor[:,ihor],label=r'$\rho_{\rm h}$')
-        plotlist[2].plot(ts,rhos2hor[:,iofr(2)],label=r'$\rho_{\rm 2}$') ##### continue here
-        plotlist[2].plot(ts,rhos2hor[:,iofr(4)],label=r'$\rho_{\rm 4}$')
-        plotlist[2].plot(ts,rhos2hor[:,iofr(8)],label=r'$\rho_{\rm 8}$')
-        #plotlist[2].plot(ts,rhos2hor[:,iofr(10)],label=r'$\rho_{\rm 10}$')
-        #plotlist[2].plot(ts,rhos2hor[:,iofr(12)],label=r'$\rho_{\rm 12}$')
-        #plotlist[2].plot(ts,rhos2hor[:,iofr(15)],label=r'$\rho_{\rm 15}$')
+        plotlist[2].plot(ts,rhoshor[:,ihor],label=r'$\rho_{\rm h}$')
+        plotlist[2].plot(ts,rhoshor[:,iofr(2)],label=r'$\rho_{\rm 2}$') ##### continue here
+        plotlist[2].plot(ts,rhoshor[:,iofr(4)],label=r'$\rho_{\rm 4}$')
+        plotlist[2].plot(ts,rhoshor[:,iofr(8)],label=r'$\rho_{\rm 8}$')
+        #plotlist[2].plot(ts,rhoshor[:,iofr(10)],label=r'$\rho_{\rm 10}$')
+        #plotlist[2].plot(ts,rhoshor[:,iofr(12)],label=r'$\rho_{\rm 12}$')
+        #plotlist[2].plot(ts,rhoshor[:,iofr(15)],label=r'$\rho_{\rm 15}$')
         plotlist[2].legend(loc='upper left')
         #plotlist[2].set_xlabel(r'$t\;(GM/c^3)$')
         plotlist[2].set_ylabel(r'$\rho$',fontsize=16)
 
-        plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,ihor],label=r'$u^r_{\rm h}$')
-        plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(2)],label=r'$u^r_{\rm 2}$') ##### continue here
-        plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(4)],label=r'$u^r_{\rm 4}$')
-        plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(8)],label=r'$u^r_{\rm 8}$')
-        #plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(10)],label=r'$u^r_{\rm 10}$')
-        #plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(12)],label=r'$u^r_{\rm 12}$')
-        #plotlist[3].plot(ts,(ugs2hor/rhos2hor)[:,iofr(15)],label=r'$u^r_{\rm 15}$')
+        plotlist[3].plot(ts,(ugshor/rhoshor)[:,ihor],label=r'$u^r_{\rm h}$')
+        plotlist[3].plot(ts,(ugshor/rhoshor)[:,iofr(2)],label=r'$u^r_{\rm 2}$') ##### continue here
+        plotlist[3].plot(ts,(ugshor/rhoshor)[:,iofr(4)],label=r'$u^r_{\rm 4}$')
+        plotlist[3].plot(ts,(ugshor/rhoshor)[:,iofr(8)],label=r'$u^r_{\rm 8}$')
+        #plotlist[3].plot(ts,(ugshor/rhoshor)[:,iofr(10)],label=r'$u^r_{\rm 10}$')
+        #plotlist[3].plot(ts,(ugshor/rhoshor)[:,iofr(12)],label=r'$u^r_{\rm 12}$')
+        #plotlist[3].plot(ts,(ugshor/rhoshor)[:,iofr(15)],label=r'$u^r_{\rm 15}$')
         plotlist[3].legend(loc='upper left')
         plotlist[3].set_xlabel(r'$t\;(GM/c^3)$')
         plotlist[3].set_ylabel(r'$u_g/\rho$',fontsize=16)
@@ -8453,6 +10031,8 @@ def generate_time_series():
     else:
          qtymem=getqtyvstime(ihor,0.2)
          plotqtyvstime(qtymem)
+    #
+    #
 
 def oldstuff():
     if False:

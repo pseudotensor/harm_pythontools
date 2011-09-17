@@ -393,7 +393,7 @@ then
         fi
         if [ $numtbl -eq 10 ]
         then
-            echo "\caption{Spin-Down Parameter}" >> $fname
+            echo "\caption{Spin-Up Parameter}" >> $fname
         fi
         if [ $numtbl -eq 11 ]
         then
