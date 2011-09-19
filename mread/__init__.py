@@ -1407,7 +1407,7 @@ def rfloor(dumpname):
     dUfloor = gd[:,:,:,:].view() 
     return
 
-def rrdump(dumpname,write2xphi=False):
+def rrdump(dumpname,write2xphi=False, whichdir = 3):
     global nx,ny,nz,t,a,rho,ug,vu,vd,B,gd,gd1,numcols,gdetB
     #print( "Reading " + "dumps/" + dumpname + " ..." )
     gin = open( "dumps/" + dumpname, "rb" )
@@ -1449,12 +1449,22 @@ def rrdump(dumpname,write2xphi=False):
         ud = mdot(gv3,uu)
     else:
         print( 'Metric (gv3, gn3) not defined, I am skipping the computation of uu and ud' )
-    if write2xphi:
+    if write2xphi and whichdir is not None:
         print( "Writing out 2xphi rdump...", )
         #write out a dump with twice as many cells in phi-direction:
         gout = open( "dumps/" + dumpname + "2xphi", "wb" )
         #double the number of phi-cells
-        header[2] = "%d" % (2*nz)
+        newnx = nx
+        newny = ny
+        newnz = nz
+        if whichdir == 3:
+            #refine phi-dir
+            header[2] = "%d" % (2*nz)
+            newnz = 2*nz
+        elif whichdir == 2:
+            #refine theta-dir
+            header[1] = "%d" % (2*ny)
+            newny = 2*ny
         for headerel in header:
             s = "%s " % headerel
             gout.write( s )
@@ -1464,15 +1474,25 @@ def rrdump(dumpname,write2xphi=False):
         #reshape the rdump content
         gd1 = gdraw.view().reshape((nz,ny,nx,-1),order='C')
         #allocate memory for refined grid, nz' = 2*nz
-        gd2 = np.zeros((2*nz,ny,nx,numcols),order='C',dtype=np.float64)
-        #copy even k's
-        gd2[0::2,:,:,:] = gd1[:,:,:,:]
-        #copy odd k's
-        gd2[1::2,:,:,:] = gd1[:,:,:,:]
-        #in the new cells, adjust gdetB[3] to be averages of immediately adjacent cells (this ensures divb=0)
-        gdetB3index = numcols/2+5+2
-        gd2[1:-1:2,:,:,gdetB3index] = 0.5*(gd1[:-1,:,:,gdetB3index]+gd1[1:,:,:,gdetB3index])
-        gd2[-1,:,:,gdetB3index] = 0.5*(gd1[0,:,:,gdetB3index]+gd1[-1,:,:,gdetB3index])
+        gd2 = np.zeros((newnz,newny,newnx,numcols),order='C',dtype=np.float64)
+        if whichdir == 3:
+            #copy even k's
+            gd2[0::2,:,:,:] = gd1[:,:,:,:]
+            #copy odd k's
+            gd2[1::2,:,:,:] = gd1[:,:,:,:]
+            #in the new cells, adjust gdetB[3] to be averages of immediately adjacent cells (this ensures divb=0)
+            gdetB3index = numcols/2+5+2
+            gd2[1:-1:2,:,:,gdetB3index] = 0.5*(gd1[:-1,:,:,gdetB3index]+gd1[1:,:,:,gdetB3index])
+            gd2[-1,:,:,gdetB3index] = 0.5*(gd1[0,:,:,gdetB3index]+gd1[-1,:,:,gdetB3index])
+        elif whichdir == 2:
+            #copy even j's
+            gd2[:,0::2,:,:] = gd1[:,:,:,:]
+            #copy odd j's
+            gd2[:,1::2,:,:] = gd1[:,:,:,:]
+            #in the new cells, adjust gdetB[2] to be averages of immediately adjacent cells (this ensures divb=0)
+            gdetB2index = numcols/2+5+1
+            gd2[:,1:-1:2,:,gdetB2index] = 0.5*(gd1[:,:-1,:,gdetB2index]+gd1[:,1:,:,gdetB2index])
+            gd2[:,-1,:,gdetB2index] = 0.5*(0.0+gd1[:,-1,:,gdetB2index])
         gd2.tofile(gout)
         gout.close()
         print( " done!" )
