@@ -5553,10 +5553,12 @@ def mkonestreamline(u, x0, y0, mylen=30):
     return( t )
 
 def mkmanystreamlines():
-    startxabs=20
+    startxabs=2
     a_startyabs=np.linspace(-6,6,num=2)
     #DRAW FIGURE
     #fig=plt.figure(1,figsize=(12,9),dpi=300)
+    fig=plt.figure(2)
+    ax2 = fig.add_subplot(111)
     fig=plt.figure(1)
     fntsize=24
     ax = fig.add_subplot(111, aspect='equal')
@@ -5571,11 +5573,13 @@ def mkmanystreamlines():
     #B[1:] = avg_Tud[1:,0]
     for startyabs in a_startyabs:
         print( "x0 = %g, y0 = %g" % (startxabs, startyabs) )
-        traj = mkonestreamline( -avg_Tud[1:,0], startxabs, startyabs, mylen = mylen )
+        traj = mkonestreamline( -avg_Tud[:,0], startxabs, startyabs, mylen = mylen )
         if traj is not None:
             xtraj, ytraj = traj
             #DRAW STREAMLINE
             ax.plot(xtraj,ytraj,'g-')
+            # findroot2d(, vals, axis = 0 )
+            # ax2
             plt.draw()
         else:
             print("Got Null trajectory: (%f,%f)" % (startxabs, startyabs))
