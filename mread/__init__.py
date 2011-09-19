@@ -2491,6 +2491,7 @@ def rfloor(dumpname):
 # 3) ipython ~/py/mread/__init__.py
 # 4) rrdump('rdump-0.bin',writenew=1,newf1=2,newf2=2,newf3=2)
 #
+# only works for 1 or 2 for newf? for now
 def rrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None):
     global nx,ny,nz,t,a,rho,ug,vu,vd,B,gd,gd1,numcols,gdetB
     #print( "Reading " + "dumps/" + dumpname + " ..." )
@@ -2547,6 +2548,13 @@ def rrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None):
         for headerel in header:
             s = "%s " % headerel
             gout.write( s )
+        #
+        # assume DOGRIDSECTIONING==0 and don't care about DOLUMVSR==1 or DODISSVSR==1.  Need (newnx-nx)*(1+18) zeros.
+        NUMDISSVERSIONS=18
+        for tic in np.arange(0,(newnx-nx)*(1+NUMDISSVERSIONS)):
+            s = " 0 "
+            gout.write( s )
+        #
         gout.write( "\n" )
         gout.flush()
         os.fsync(gout.fileno())
@@ -2555,40 +2563,56 @@ def rrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None):
         #allocate memory for refined grid, nz' = 2*nz
         gd2 = np.zeros((newnz,newny,newnx,numcols),order='C',dtype=np.float64)
         #
+        gdetB1index = numcols/2+5+0
+        gdetB2index = numcols/2+5+1
+        gdetB3index = numcols/2+5+2
         #################
         # First, copy every old index -> new same 2*index and new 2*index+1
         #
         #copy kji both even and odds
-        for kst in np.arange(0,2):
-            for jst in np.arange(0,2):
-                for ist in np.arange(0,2):
-                    gd2[kst::2,jst::2,ist::2,:] = gd1[:,:,:,:]
+        for kst in np.arange(0,newf3):
+            for jst in np.arange(0,newf2):
+                for ist in np.arange(0,newf1):
+                    gd2[kst::newf3,jst::newf2,ist::newf1,:] = gd1[:,:,:,:]
                 #
             #
         #
         ####################
         # Second, in the new cells, adjust gdetB[1,2,3] along 1,2,3 direction to be averages of immediately adjacent cells (this ensures divb=0)
         #
-        gdetB1index = numcols/2+5+0
-        for kst in np.arange(0,2):
-            for jst in np.arange(0,2):
-                gd2[kst::2,jst::2,1:-1:2,gdetB1index] = 0.5*(gd1[:,:,:-1,gdetB1index]+gd1[:,:,1:,gdetB1index])
+        #
+        if 1==0:
+         for kst in np.arange(0,newf3):
+            for jst in np.arange(0,newf2):
+                gd2[kst::newf3,jst::newf2,1:-1:newf1,gdetB1index] = 0.5*(gd1[:,:,:-1,gdetB1index]+gd1[:,:,1:,gdetB1index])
                 # fake setting of last radial B1 value somehow since don't have enough data to average locally (would need ti+1 staggered value)
-                gd2[kst::2,jst::2,-1,gdetB1index] = 0.5*(gd1[:,:,-1,gdetB1index]+gd1[:,:,-1,gdetB1index])
-        #
-        gdetB2index = numcols/2+5+0
-        for kst in np.arange(0,2):
-            for ist in np.arange(0,2):
-                gd2[kst::2,1:-1:2,ist::2,gdetB2index] = 0.5*(gd1[:,:-1,:,gdetB2index]+gd1[:,1:,:,gdetB2index])
+                gd2[kst::newf3,jst::newf2,-1,gdetB1index] = 0.5*(gd1[:,:,-1,gdetB1index]+gd1[:,:,-1,gdetB1index])
+         #
+         for kst in np.arange(0,newf3):
+            for ist in np.arange(0,newf1):
+                gd2[kst::newf3,1:-1:newf2,ist::newf1,gdetB2index] = 0.5*(gd1[:,:-1,:,gdetB2index]+gd1[:,1:,:,gdetB2index])
                 # use assumed reflective condition to set last value (i.e. B2[tj]=0)
-                gd2[kst::2,-1,ist::2,gdetB2index] = 0.0
-        #
-        gdetB3index = numcols/2+5+2
-        for jst in np.arange(0,2):
-            for ist in np.arange(0,2):
-                gd2[1:-1:2,jst::2,ist::2,gdetB3index] = 0.5*(gd1[:-1,:,:,gdetB3index]+gd1[1:,:,:,gdetB3index])
+                gd2[kst::newf3,-1,ist::newf1,gdetB2index] = 0.0
+         #
+         for jst in np.arange(0,newf2):
+            for ist in np.arange(0,newf1):
+                gd2[1:-1:newf3,jst::newf2,ist::newf1,gdetB3index] = 0.5*(gd1[:-1,:,:,gdetB3index]+gd1[1:,:,:,gdetB3index])
                 # use assumed periodicity in \phi to set last value (i.e. B3[tk]=B3[0]).  gdet and metric are same since metric also periodic.
-                gd2[-1,jst::2,ist::2,gdetB3index] = 0.5*(gd1[0,:,:,gdetB3index]+gd1[-1,:,:,gdetB3index])
+                gd2[-1,jst::newf2,ist::newf1,gdetB3index] = 0.5*(gd1[0,:,:,gdetB3index]+gd1[-1,:,:,gdetB3index])
+        elif 1==1:
+            # better way -- use gd2 directly
+            gd2[:,:,1:newnx-2:newf1,gdetB1index] = 0.5*(gd2[:,:,0:newnx-3:newf1,gdetB1index]+gd2[:,:,2:newnx-1:newf1,gdetB1index])
+            # fake setting of last radial B1 value somehow since don't have enough data to average locally (would need ti+1 staggered value)
+            gd2[:,:,-1,gdetB1index] = gd2[:,:,-2,gdetB1index]
+            #
+            gd2[:,1:newny-2:newf2,:,gdetB2index] = 0.5*(gd2[:,0:newny-3:newf2,:,gdetB2index]+gd2[:,2:newny-1:newf2,:,gdetB2index])
+            # use assumed reflective condition to set last value (i.e. B2[tj]=0)
+            #gd2[:,0,:,gdetB2index] = 0.0
+            gd2[:,-1,:,gdetB2index] = 0.5*(gd2[:,-2,:,gdetB2index]+0.0)
+            #
+            gd2[1:newnz-2:newf3,:,:,gdetB3index] = 0.5*(gd2[0:newnz-3:newf3,:,:,gdetB3index]+gd2[2:newnz-1:newf3,:,:,gdetB3index])
+            # use assumed periodicity in \phi to set last value (i.e. B3[tk]=B3[0]).  gdet and metric are same since metric also periodic.
+            gd2[-1,:,:,gdetB3index] = 0.5*(gd2[0,:,:,gdetB3index]+gd2[-2,:,:,gdetB3index])
         #
         # check divbB=0 for old and new data, but need dx[1,2,3] for that, so get header from a fieldline file.
         flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
@@ -2600,29 +2624,39 @@ def rrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None):
             #grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=True )
             #
             # OLD:
-            divbcentold1=(gd1[1:nz,1:ny,1:nx,gdetB1index]-gd1[1:nz  ,1:ny  ,0:nx-1,gdetB1index])/_dx1
-            adivbcentold1=(np.fabs(gd1[1:nz,1:ny,1:nx,gdetB1index])+np.fabs(gd1[1:nz  ,1:ny  ,0:nx-1,gdetB1index]))/_dx1
-            divbcentold2=(gd1[1:nz,1:ny,1:nx,gdetB2index]-gd1[1:nz  ,0:ny-1,1:nx  ,gdetB2index])/_dx2
-            adivbcentold2=(np.fabs(gd1[1:nz,1:ny,1:nx,gdetB2index])+np.fabs(gd1[1:nz  ,0:ny-1,1:nx  ,gdetB2index]))/_dx2
-            divbcentold3=(gd1[1:nz,1:ny,1:nx,gdetB3index]-gd1[0:nz-1,1:ny  ,1:nx  ,gdetB3index])/_dx3
-            adivbcentold3=(np.fabs(gd1[1:nz,1:ny,1:nx,gdetB3index])+np.fabs(gd1[0:nz-1,1:ny  ,1:nx  ,gdetB3index]))/_dx3
+            divbcentold1=(gd1[0:nz-1,0:ny-1,1:nx  ,gdetB1index]-gd1[0:nz-1,0:ny-1,0:nx-1,gdetB1index])/_dx1
+            divbcentold2=(gd1[0:nz-1,1:ny  ,0:nx-1,gdetB2index]-gd1[0:nz-1,0:ny-1,0:nx-1,gdetB2index])/_dx2
+            divbcentold3=(gd1[1:nz  ,0:ny-1,0:nx-1,gdetB3index]-gd1[0:nz-1,0:ny-1,0:nx-1,gdetB3index])/_dx3
+            #
+            adivbcentold1=(np.fabs(gd1[0:nz-1,0:ny-1,1:nx  ,gdetB1index])+np.fabs(gd1[0:nz-1,0:ny-1,0:nx-1,gdetB1index]))/_dx1
+            adivbcentold2=(np.fabs(gd1[0:nz-1,1:ny  ,0:nx-1,gdetB2index])+np.fabs(gd1[0:nz-1,0:ny-1,0:nx-1,gdetB2index]))/_dx2
+            adivbcentold3=(np.fabs(gd1[1:nz  ,0:ny-1,0:nx-1,gdetB3index])+np.fabs(gd1[0:nz-1,0:ny-1,0:nx-1,gdetB3index]))/_dx3
+            #
             divbcentold=divbcentold1+divbcentold2+divbcentold3
             olddimens=(nx>1)+(ny>1)+(nz>1)
             adivbcentold=(adivbcentold1+adivbcentold2+adivbcentold3)/olddimens
             divbcentoldavg=np.average(np.fabs(divbcentold/adivbcentold))
             divbcentoldmax=np.max(np.fabs(divbcentold/adivbcentold))
             print("divbcentoldavg=%g divbcentoldmax=%g" % (divbcentoldavg,divbcentoldmax))
+            #badi=np.where(np.fabs(fabs[ivalue,:])==np.max(np.fabs(fabs[ivalue,:])))[0]
+            badijk=np.where(divbcentoldmax==np.fabs(divbcentold/adivbcentold))
+            print("badijk")
+            print(badijk)
+
             #
             # NEW (old->new, gd1->gd2, n? -> newn?, _dx? -> (0.5*_dx?) )
-            divbcentnew1=(gd2[1:newnz,1:newny,1:newnx,gdetB1index]-gd2[1:newnz  ,1:newny  ,0:newnx-1,gdetB1index])/(0.5*_dx1)
-            adivbcentnew1=(np.fabs(gd2[1:newnz,1:newny,1:newnx,gdetB1index])+np.fabs(gd2[1:newnz  ,1:newny  ,0:newnx-1,gdetB1index]))/(0.5*_dx1)
-            divbcentnew2=(gd2[1:newnz,1:newny,1:newnx,gdetB2index]-gd2[1:newnz  ,0:newny-1,1:newnx  ,gdetB2index])/(0.5*_dx2)
-            adivbcentnew2=(np.fabs(gd2[1:newnz,1:newny,1:newnx,gdetB2index])+np.fabs(gd2[1:newnz  ,0:newny-1,1:newnx  ,gdetB2index]))/(0.5*_dx2)
-            divbcentnew3=(gd2[1:newnz,1:newny,1:newnx,gdetB3index]-gd2[0:newnz-1,1:newny  ,1:newnx  ,gdetB3index])/(0.5*_dx3)
-            adivbcentnew3=(np.fabs(gd2[1:newnz,1:newny,1:newnx,gdetB3index])+np.fabs(gd2[0:newnz-1,1:newny  ,1:newnx  ,gdetB3index]))/(0.5*_dx3)
-            divbcentnew=divbcentnew1+divbcentnew2+divbcentnew3
+            divbcentnew1=(gd2[0:newnz-1,0:newny-1,1:newnx  ,gdetB1index]-gd2[0:newnz-1,0:newny-1,0:newnx-1,gdetB1index])/(0.5*_dx1)
+            divbcentnew2=(gd2[0:newnz-1,1:newny  ,0:newnx-1,gdetB2index]-gd2[0:newnz-1,0:newny-1,0:newnx-1,gdetB2index])/(0.5*_dx2)
+            divbcentnew3=(gd2[1:newnz  ,0:newny-1,0:newnx-1,gdetB3index]-gd2[0:newnz-1,0:newny-1,0:newnx-1,gdetB3index])/(0.5*_dx3)
+            #
+            adivbcentnew1=(np.fabs(gd2[0:newnz-1,0:newny-1,1:newnx  ,gdetB1index])+np.fabs(gd2[0:newnz-1,0:newny-1,0:newnx-1,gdetB1index]))/(0.5*_dx1)
+            adivbcentnew2=(np.fabs(gd2[0:newnz-1,1:newny  ,0:newnx-1,gdetB2index])+np.fabs(gd2[0:newnz-1,0:newny-1,0:newnx-1,gdetB2index]))/(0.5*_dx2)
+            adivbcentnew3=(np.fabs(gd2[1:newnz  ,0:newny-1,0:newnx-1,gdetB3index])+np.fabs(gd2[0:newnz-1,0:newny-1,0:newnx-1,gdetB3index]))/(0.5*_dx3)
+            #
             newdimens=(newnx>1)+(newny>1)+(newnz>1)
+            divbcentnew=divbcentnew1+divbcentnew2+divbcentnew3
             adivbcentnew=(adivbcentnew1+adivbcentnew2+adivbcentnew3)/newdimens
+            divbcentnew[:,:,newnx-2]=0
             divbcentnewavg=np.average(np.fabs(divbcentnew/adivbcentnew))
             divbcentnewmax=np.max(np.fabs(divbcentnew/adivbcentnew))
             print("divbcentnewavg=%g divbcentnewmax=%g" % (divbcentnewavg,divbcentnewmax))
