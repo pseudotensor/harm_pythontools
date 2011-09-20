@@ -769,7 +769,7 @@ def plot2davg(dosq=True,whichplot=-1):
     muminjet=2.0
     unbcutoff=0 #1./(1.-0.1**2)**0.5-1
     rhor=1+(1-a**2)**0.5
-    ihor=iofr(rhor)
+    ihor = np.floor(iofr(rhor)+0.5)
     #
     defaultfti,defaultftf=getdefaulttimes()
     #
@@ -961,7 +961,7 @@ def plot2davg(dosq=True,whichplot=-1):
     if modelname=="blandford3d_new":
         rjetout=30.
     else:
-        rjetout=100.
+        rjetout=50.
     #
     rjet=rjetout
     #
@@ -1733,7 +1733,7 @@ def mkframe(fname,ax=None,cb=True,useblank=True,vmin=None,vmax=None,len=20,ncell
     #palette.set_over('r', 1.0)
     #palette.set_under('g', 1.0)
     rhor=1+(1-a**2)**0.5
-    ihor = iofr(rhor)
+    ihor = np.floor(iofr(rhor)+0.5)
     ilrho = reinterp(np.log10(rho),extent,ncell,domask=1.0)
     if not dostreamlines:
         aphi = fieldcalc()
@@ -1947,7 +1947,7 @@ def setupframe(gs=3,loadq=0,which=1):
         #
         qtymem=None #clear to free mem
         rhor=1+(1+a**2)**0.5
-        ihor = np.floor(iofr(rhor)+0.5);
+        ihor = np.floor(iofr(rhor)+0.5)
         qtymem=getqtyvstime(ihor,0.2)
     #
     params = {'backend': 'ps',
@@ -2111,7 +2111,7 @@ def setminmax4mk(fun0=None,which=1,myRout=None,logvalue=None,bsqorho=None,bsqou=
     if which==1:
         # Also ignore inside horizon for setting min/max of colors for data to show
         rhor=1+(1-a**2)**0.5
-        ihor=iofr(rhor)
+        ihor = np.floor(iofr(rhor)+0.5)
         istart=ihor
         iend=min(nx-1,iofr(myRout))
     #
@@ -3605,8 +3605,8 @@ def getqtymem(qtymem):
     hoverrcorona=qtymem[i];i+=1
     global     thetamidcorona
     thetamidcorona=qtymem[i];i+=1
-    global     hoverrjet
-    hoverrjet=qtymem[i];i+=1
+    global     hoverr_jet
+    hoverr_jet=qtymem[i];i+=1
     global     thetamidjet
     thetamidjet=qtymem[i];i+=1
     # 10
@@ -4349,7 +4349,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         jetcondition2=(bsq/rho<10.0)
         jetcondition2=jetcondition2*(bsq/rho>1.0)
         hoverr3djet,thetamid3djet=horcalc(hortype=2,which1=jetcondition1,which2=jetcondition2,denfactor=bsq+rho+gam*ug)
-        hoverrjet[findex]=hoverr3djet.sum(2).sum(1)/(ny*nz)
+        hoverr_jet[findex]=hoverr3djet.sum(2).sum(1)/(ny*nz)
         thetamidjet[findex]=thetamid3djet.sum(2).sum(1)/(ny*nz)
         #
         diskcondition=(bsq/rho<10)
@@ -5358,7 +5358,14 @@ def plotit(ts,fs,md):
     fig.savefig('test.pdf')
 
 def iofr(rval):
+    return(iofrpole(rval))
+
+def iofrpole(rval):
     res = interp1d(r[:,0,0], ti[:,0,0], kind='linear')
+    return(np.floor(res(rval)+0.5))
+
+def iofreq(rval):
+    res = interp1d(r[:,ny/2,0], ti[:,ny/2,0], kind='linear')
     return(np.floor(res(rval)+0.5))
 
 def tofts(tval):
@@ -5372,14 +5379,18 @@ def tofts(tval):
 
 
 # everything done inside this function only needs a final call to plot, not generating npy files or merging them.
-def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None):
+def plotqtyvstime(qtymem,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None):
     global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
+    #
+    # need to compute this again
+    rhor=1+(1-a**2)**0.5
+    ihor = np.floor(iofr(rhor)+0.5)
     #
     rjetin=10.
     if modelname=="blandford3d_new":
         rjetout=30.
     else:
-        rjetout=100.
+        rjetout=50.
     # jon's Choice below
     showextra=True
     #
@@ -5500,6 +5511,21 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         ftf = defaultftf
         print( "Warning: titf.txt not found: using default numbers for averaging: %g %g %g %g" % (iti, itf, fti, ftf) )
     #
+    #######################
+    # find true range that used for averaging
+    #######################
+    truetmax=np.max(ts)
+    truetmin=np.min(ts)
+    if truetmin<fti:
+        truetmin=fti
+    #
+    if truetmax>ftf:
+        truetmax=ftf
+    #
+    #
+    #################################
+    # BEGIN PART1 some things vsr (nothing that depends upon rdiskin or rdiskout
+    #################################
     #mdotiniavg = timeavg(mdtot[:,ihor]-md10[:,ihor],ts,fti,ftf)
     #mdotfinavg = (mdtot[:,ihor]-md10[:,ihor])[(ts<ftf)*(ts>=fti)].sum()/(mdtot[:,ihor]-md10[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0]
     mdotiniavgvsr = timeavg(mdtot,ts,iti,itf)
@@ -5552,29 +5578,6 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     mdot10iniavg = np.float64(mdotiniavgvsr10itself)[ihor]
     mdot10finavg = np.float64(mdotfinavgvsr10itself)[ihor]
     #
-    #
-    mdotwininiavg = timeavg(np.abs(mdwind[:,iofr(rjetin)]),ts,iti,itf)
-    mdotwinfinavg = timeavg(np.abs(mdwind[:,iofr(rjetin)]),ts,fti,ftf)
-    mdotwoutiniavg = timeavg(np.abs(mdwind[:,iofr(rjetout)]),ts,iti,itf)
-    mdotwoutfinavg = timeavg(np.abs(mdwind[:,iofr(rjetout)]),ts,fti,ftf)
-    #
-    mdotmwininiavg = timeavg(np.abs(mdmwind[:,iofr(rjetin)]),ts,iti,itf)
-    mdotmwinfinavg = timeavg(np.abs(mdmwind[:,iofr(rjetin)]),ts,fti,ftf)
-    mdotmwoutiniavg = timeavg(np.abs(mdmwind[:,iofr(rjetout)]),ts,iti,itf)
-    mdotmwoutfinavg = timeavg(np.abs(mdmwind[:,iofr(rjetout)]),ts,fti,ftf)
-    #
-    # use md10 since at large radii don't reach bsq/rho>30 too easily and still approximately accurate for floor-dominated region
-    # don't use horizon values for jet or wind since very different mdot, etc. there
-    # handle md10 issue inside mdjet and mdwind calculation, so keep to consistent cells chosen instead of subtracting off contributions from different masked cells in integration
-    mdotjetiniavg = timeavg(np.abs(mdjet[:,iofr(rjetout)]),ts,iti,itf)
-    mdotjetfinavg = timeavg(np.abs(mdjet[:,iofr(rjetout)]),ts,fti,ftf)
-    #
-    # handle md10 issue inside computation for mdin (i.e. avoid including bsq/rho>30)
-    mdotinrjetininiavg = timeavg(np.abs(mdin[:,iofr(rjetin)]),ts,iti,itf)
-    mdotinrjetinfinavg = timeavg(np.abs(mdin[:,iofr(rjetin)]),ts,fti,ftf)
-    mdotinrjetoutiniavg = timeavg(np.abs(mdin[:,iofr(rjetout)]),ts,iti,itf)
-    mdotinrjetoutfinavg = timeavg(np.abs(mdin[:,iofr(rjetout)]),ts,fti,ftf)
-    #
     # below as pjem30, but removed that
     pjetiniavg = timeavg(pjem5[:,ihor],ts,iti,itf)
     pjetfinavg = timeavg(pjem5[:,ihor],ts,fti,ftf)
@@ -5621,11 +5624,27 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     ljkefinavgtot = timeavg(ljketot[:,ihor],ts,fti,ftf)
     ljkefinavgvsr = timeavg(ljketot,ts,fti,ftf)
     #
+    #
+    #
+    fstotfinavg = timeavg(fstot[:,ihor],ts,fti,ftf)
+    fstotsqfinavg = timeavg(fstot[:,ihor]**2,ts,fti,ftf)**0.5
+    #
+    fsinfinavg = timeavg(fsin[:,ihor],ts,fti,ftf)
+    fsinsqfinavg = timeavg(fsin[:,ihor]**2,ts,fti,ftf)**0.5
+    #
+    fsmaxtotfinavg = timeavg(fsmaxtot[:,ihor],ts,fti,ftf)
+    fsmaxtotsqfinavg = timeavg(fsmaxtot[:,ihor]**2,ts,fti,ftf)**0.5
+    #
+    fsj30finavg = timeavg(fsj30[:,ihor],ts,fti,ftf)
+    fsj30sqfinavg = timeavg(fsj30[:,ihor]**2,ts,fti,ftf)**0.5
+    #
+    #################################
+    # END PART1 some things vsr
     #################################
     #
-    #radius of stagnation point near equator
-    #
-    #################################
+    ######################################
+    # BEGIN equatorial stagnation calculation
+    ######################################
     # Get position of flow stagnation (excluding highly magnetized jet region)
     # mdtot-md30 should be >0 (i.e. inflow) for all radii up to stagnation dominated by equatorial region
     # something like (but not right): indices[:]=ti[:,0,0][mdtot[:,:]-md30[:,:]<0]
@@ -5781,372 +5800,140 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         pjtotfinavgvsr5r2stag = 0
         pjtotfinavgvsr5r4stag = 0
         pjtotfinavgvsr5r8stag = 0
-
-    
-    
-
-    fstotfinavg = timeavg(fstot[:,ihor],ts,fti,ftf)
-    fstotsqfinavg = timeavg(fstot[:,ihor]**2,ts,fti,ftf)**0.5
-
-    fsinfinavg = timeavg(fsin[:,ihor],ts,fti,ftf)
-    fsinsqfinavg = timeavg(fsin[:,ihor]**2,ts,fti,ftf)**0.5
-        
-    fsmaxtotfinavg = timeavg(fsmaxtot[:,ihor],ts,fti,ftf)
-    fsmaxtotsqfinavg = timeavg(fsmaxtot[:,ihor]**2,ts,fti,ftf)**0.5
-
-    fsj30finavg = timeavg(fsj30[:,ihor],ts,fti,ftf)
-    fsj30sqfinavg = timeavg(fsj30[:,ihor]**2,ts,fti,ftf)**0.5
-    
-    fc=0
-    if showextra:
-        ofc = 1
-        clr = 'r'
-    else:
-        ofc = 0
-        clr = 'k'
-
-    if epsFm is not None and epsFke is not None:
-        FMraw    = mdtot[:,ihor]
-        FM       = epsFm * mdtot[:,ihor]
-        FMavg    = epsFm * timeavg(mdtot,ts,fti,ftf)[ihor]
-        FMiniavg = epsFm * timeavg(mdtot,ts,iti,itf)[ihor] 
-        FEraw = -edtot[:,ihor]
-        FE= epsFke*(FMraw-FEraw)
-    else:
-        FMraw    = mdtot[:,ihor]
-        FM       = mdtot[:,ihor]
-        FMavg    = timeavg(mdtot,ts,fti,ftf)[ihor]
-        FMiniavg = timeavg(mdtot,ts,iti,itf)[ihor] 
-        FEraw = -edtot[:,ihor]
-        FE= (FMraw-FEraw)
-        #FMiniavg = mdotiniavg
-        #FMavg = mdotfinavg
-        #FM = mdtot[:,ihor]-md30[:,ihor]
-        #FE = pjemtot[:,ihor]
-    if showextra:
-        lst = 'solid'
-    else:
-        lst = 'dashed'
-    #######################
-    #
-    # Mdot ***
-    #
-    #######################
-    #
-    if modelname=="runlocaldipole3dfiducial" or modelname=="blandford3d_new":
-        windplotfactor=1.0
-    elif modelname=="sasham9" or modelname=="sasham5" or modelname=="sasha0" or modelname=="sasha1" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9b25" or modelname=="sasha9b50" or modelname=="sasha9b100" or modelname=="sasha9b200" or modelname=="sasha99":
-        windplotfactor=1.0
-    else:
-        #windplotfactor=0.1
-        # with only showing magnetized wind, 1.0 factor best
-        windplotfactor=1.0
-    #
-    sashaplot1=0
-    #
-    #####################################
-    # Sasha's version of Mdot plot
-    if whichplot == 1 and sashaplot1 == 1:
-        if dotavg:
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+FMavg,color=(ofc,fc,fc),linestyle=lst)
-            if(iti>fti):
-                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+mdotiniavg,color=(ofc,fc,fc))
-                
-        ax.plot(ts,np.abs(FM),clr,label=r'$\dot Mc^2$')
-        if findex != None:
-            if not isinstance(findex,tuple):
-                ax.plot(ts[findex],np.abs(FM)[findex],'o',mfc='r')
-            else:
-                for fi in findex:
-                    ax.plot(ts[fi],np.abs(FM)[fi],'o',mfc='r')#,label=r'$\dot M$')
-        #ax.legend(loc='upper left')
-        ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,labelpad=9)
-        plt.setp( ax.get_xticklabels(), visible=False)
-        ax.set_xlim(ts[0],ts[-1])
-        if showextra:
-            plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderaxespad=0,frameon=True,labelspacing=0)
-    #
-    #####################################
-    # Jon's version of Mdot plot
-    if whichplot == 1 and sashaplot1 == 0:
-        if dotavg:
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotfinavg,color=(ofc,fc,fc))
-            if showextra:
-                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotjetfinavg,'--',color=(fc,fc+0.5*(1-fc),fc))
-                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotmwoutfinavg*windplotfactor,'-.',color=(fc,fc,1))
-            if(iti>fti):
-                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+mdotiniavg,color=(ofc,fc,fc))
-                if showextra:
-                    ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotjetiniavg,color=(fc,fc+0.5*(1-fc),fc))
-                    ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotmwoutiniavg*windplotfactor,color=(fc,fc,1))
-        #
-        ax.plot(ts,np.abs(mdtot[:,ihor]-md30[:,ihor]),clr,label=r'$\dot M_{\rm BH}c^2$')
-        if showextra:
-            ax.plot(ts,np.abs(mdjet[:,iofr(rjetout)]),'g--',label=r'$\dot M_{\rm j}c^2$')
-            if windplotfactor==1.0:
-                ax.plot(ts,windplotfactor*np.abs(mdmwind[:,iofr(rjetout)]),'b-.',label=r'$\dot M_{\rm mw,o}c^2$')
-            elif windplotfactor==0.1:
-                ax.plot(ts,windplotfactor*np.abs(mdmwind[:,iofr(rjetout)]),'b-.',label=r'$0.1\dot M_{\rm mw,o}c^2$')
-        #
-        if findex != None:
-            if not isinstance(findex,tuple):
-                ax.plot(ts[findex],np.abs(mdtot[:,ihor]-md30[:,ihor])[findex],'o',mfc='r')
-                if showextra:
-                    ax.plot(ts[findex],np.abs(mdjet[:,iofr(rjetout)])[findex],'gs')
-                    ax.plot(ts[findex],windplotfactor*np.abs(mdmwind[:,iofr(rjetout)])[findex],'bv')
-            else:
-                for fi in findex:
-                    ax.plot(ts[fi],np.abs(mdtot[:,ihor]-md30[:,ihor])[fi],'o',mfc='r')#,label=r'$\dot M$')
-                    if showextra:
-                        ax.plot(ts[fi],np.abs(mdjet[:,iofr(rjetout)])[fi],'gs')
-                        ax.plot(ts[fi],windplotfactor*np.abs(mdmwind[:,iofr(rjetout)])[fi],'bv')
-        #
-        #ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,labelpad=9)
-        ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,ha='left',labelpad=20)
-        #
-        plt.setp( ax.get_xticklabels(), visible=False)
-        ax.set_xlim(ts[0],ts[-1])
-        if showextra:
-            # http://matplotlib.sourceforge.net/users/legend_guide.html
-            # http://matplotlib.sourceforge.net/examples/pylab_examples/legend_demo.html
-            plt.legend(loc='upper left',bbox_to_anchor=(0.02,0.98),ncol=1,borderaxespad=0,frameon=True,labelspacing=0)
-            #plt.legend(loc='upper left',ncol=1,borderaxespad=0,frameon=True,labelspacing=0)
-            # set some legend properties.  All the code below is optional.  The
-            # defaults are usually sensible but if you need more control, this
-            # shows you how
-            leg = plt.gca().get_legend()
-            ltext  = leg.get_texts()  # all the text.Text instance in the legend
-            llines = leg.get_lines()  # all the lines.Line2D instance in the legend
-            frame  = leg.get_frame()  # the patch.Rectangle instance surrounding the legend
-            # see text.Text, lines.Line2D, and patches.Rectangle for more info on
-            # the settable properties of lines, text, and rectangles
-            #frame.set_facecolor('0.80')      # set the frame face color to light gray
-            plt.setp(ltext, fontsize=12)    # the legend text fontsize
-            #plt.setp(llines, linewidth=1.5)      # the legend linewidth
-            #leg.draw_frame(False)           # don't draw the legend frame
-    #
-    #
-    #######################
-    #
-    # Pjet
-    #
-    #######################
-    if whichplot == 2:
-        ax.plot(ts,(pjem5[:,ihor]),label=r'P_{\rm j}$')
-        #ax.legend(loc='upper left')
-        if dotavg:
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg)#,label=r'$\langle P_{\rm j}\rangle$')
-        ax.set_ylabel(r'$P_{\rm j}$',fontsize=16)
-        plt.setp( ax.get_xticklabels(), visible=False)
-        ax.set_xlim(ts[0],ts[-1])
-    #######################
-    #
-    # eta instantaneous
-    #
-    #######################
-    if whichplot == 3:
-        ax.plot(ts,(pjem5[:,ihor]/(mdtot[:,ihor]-md30[:,ihor])))#,label=r'$P_{\rm j}/\dot M$')
-        #ax.legend(loc='upper left')
-        if dotavg:
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg/mdotfinavg)#,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
-        ax.set_ylim(0,4)
-        #ax.set_xlabel(r'$t\;(GM/c^3)$')
-        ax.set_ylabel(r'$P_{\rm j}/\dot M$',fontsize=16)
-        ax.set_xlim(ts[0],ts[-1])
-    #######################
-    #
-    # eta ***
-    #
-    #######################
-    #
-    sashaplot4=0
-    #
-    # Compute Sasha's version even if not plotting, so can output to file for comparison
-    # Sasha's whichplot==4 Calculation:
-    etabh = prefactor*FE/FMavg
-    etabh2 = prefactor*FE/FMiniavg
-    #etaj = prefactor*pjke_mu2[:,iofr(100)]/mdotfinavg
-    #etaw = prefactor*(pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotfinavg
-    #etaj2 = prefactor*pjke_mu2[:,iofr(100)]/mdotiniavg
-    #etaw2 = prefactor*(pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotiniavg
-    etajEM = prefactor*pjem_mu1[:,iofr(rjetout)]/mdotfinavg
-    etajMAKE = prefactor*pjmake_mu1[:,iofr(rjetout)]/mdotfinavg
-    etaj = etajEM + etajMAKE
-    etawinEM = prefactor*pjem_mumax1[:,iofr(rjetin)]/mdotfinavg
-    etawinMAKE = prefactor*pjmake_mumax1[:,iofr(rjetin)]/mdotfinavg
-    etawin = etawinEM + etawinMAKE
-    etawoutEM = prefactor*pjem_mumax1[:,iofr(rjetout)]/mdotfinavg
-    etawoutMAKE = prefactor*pjmake_mumax1[:,iofr(rjetout)]/mdotfinavg
-    etawout = etawoutEM + etawoutMAKE
-    #
-    etajEM2 = prefactor*pjem_mu1[:,iofr(rjetout)]/mdotiniavg
-    etajMAKE2 = prefactor*pjmake_mu1[:,iofr(rjetout)]/mdotiniavg
-    etaj2 = etajEM2 + etajMAKE2
-    etawinEM2 = prefactor*pjem_mumax1[:,iofr(rjetin)]/mdotiniavg
-    etawinMAKE2 = prefactor*pjmake_mumax1[:,iofr(rjetin)]/mdotiniavg
-    etawin2 = etawinEM2 + etawinMAKE2
-    etawoutEM2 = prefactor*pjem_mumax1[:,iofr(rjetout)]/mdotiniavg
-    etawoutMAKE2 = prefactor*pjmake_mumax1[:,iofr(rjetout)]/mdotiniavg
-    etawout2 = etawoutEM2 + etawoutMAKE2
-    #
-    if(1 and iti>fti):
-        #use mdot averaged over the same time interval for iti<t<=itf
-        icond=(ts>=iti)*(ts<itf)
-        etabh[icond]=etabh2[icond]
-        etaj[icond]=etaj2[icond]
-        etawin[icond]=etawin2[icond]
-        etawout[icond]=etawout2[icond]
-    if dotavg:
-        etaj_avg = timeavg(etaj,ts,fti,ftf)
-        etabh_avg = timeavg(etabh,ts,fti,ftf)
-        etawin_avg = timeavg(etawin,ts,fti,ftf)
-        etawout_avg = timeavg(etawout,ts,fti,ftf)
-        ptot_avg = timeavg(pjemtot[:,ihor],ts,fti,ftf)
-        if(iti>fti):
-            etaj2_avg = timeavg(etaj2,ts,iti,itf)
-            etabh2_avg = timeavg(etabh2,ts,iti,itf)
-            etawin2_avg = timeavg(etawin2,ts,iti,itf)
-            etawout2_avg = timeavg(etawout2,ts,iti,itf)
-            ptot2_avg = timeavg(pjemtot[:,ihor],ts,iti,itf)
-    #
-    # Sasha's whichplot==4 Plot:
-    if whichplot == 4 and sashaplot4 == 1:
-        if dotavg:
-            if showextra:
-                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaj_avg,'--',color=(fc,fc+0.5*(1-fc),fc)) 
-            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etabh_avg,color=(ofc,fc,fc),linestyle=lst) 
-            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
-            #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etawout_avg,'-.',color=(fc,fc+0.5*(1-fc),fc)) 
-            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
-            if(iti>fti):
-                if showextra:
-                    ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etaj2_avg,'--',color=(fc,fc+0.5*(1-fc),fc))
-                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etabh2_avg,color=(ofc,fc,fc))
-                #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etawout2_avg,'-.',color=(fc,fc+0.5*(1-fc),fc)) 
-        ax.plot(ts,etabh,clr,label=r'$\eta_{\rm BH}$')
-        if showextra:
-            ax.plot(ts,etaj,'g--',label=r'$\eta_{\rm j}$')
-            ax.plot(ts,etawout,'b-.',label=r'$\eta_{\rm w}$')
-        if findex != None:
-            if not isinstance(findex,tuple):
-                if showextra:
-                    ax.plot(ts[findex],etaj[findex],'gs')
-                ax.plot(ts[findex],etabh[findex],'o',mfc='r')
-                if showextra:
-                    ax.plot(ts[findex],etawout[findex],'bv')
-            else:
-                for fi in findex:
-                    if showextra:
-                        ax.plot(ts[fi],etawout[fi],'bv')#,label=r'$\dot M$')
-                        ax.plot(ts[fi],etaj[fi],'gs')#,label=r'$\dot M$')
-                    ax.plot(ts[fi],etabh[fi],'o',mfc='r')#,label=r'$\dot M$')
-        #ax.legend(loc='upper left')
-        #ax.set_ylim(0,2)
-        ax.set_xlabel(r'$t\;[r_g/c]$',fontsize=16)
-        if prefactor == 100:
-            ax.set_ylabel(r'$\eta\ [\%]$',fontsize=16,ha='left',labelpad=20)
-        else:
-            ax.set_ylabel(r'$\eta$',fontsize=16,labelpad=16)
-        ax.set_xlim(ts[0],ts[-1])
-        if showextra:
-            plt.legend(loc='upper left',bbox_to_anchor=(0.02,0.98),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
-    #
-    # Done with Sasha's whichplot==4
-    # Print Sasha's result
-    print( "Sasha's values: (if epsFm=epsFke=1, then FMavg=mdot30+mdot)" )
-    if epsFm is not None:
-        print( "epsFm  = %g, epsFke= %g" % (epsFm , epsFke) )
-    else:
-        print( "epsFm  = 1, epsFke= 1")
-    #
-    print( "eta_BH = %g, eta_j = %g, eta_w = %g, eta_jw = %g, FMavg=%g, mdot = %g, mdot30 = %g, ptot_BH = %g" % ( etabh_avg, etaj_avg, etawout_avg, etaj_avg + etawout_avg, FMavg, mdotfinavg, mdot30finavg, ptot_avg ) )
-    if iti > fti:
-        print( "eta_BH2 = %g, eta_j2 = %g, eta_w2 = %g, eta_jw2 = %g, FMiniavg=%g, mdot2 = %g, mdot230=%g, ptot2_BH = %g" % ( etabh2_avg, etaj2_avg, etawout2_avg, etaj2_avg + etawout2_avg, FMiniavg, mdotiniavg, mdot30iniavg, ptot2_avg ) )
-    #
     #
     ######################################
+    # END equatorial stagnation calculation
+    ######################################
     #
-    # Jon's whichplot==4 Calculation:
+    ######################################
+    # BEGIN PART1 of COMPUTE JON WHICHPLOT==5
+    ######################################
+    # true total flux (including BH+disk @ equator) vs. time and radius
+    feqtot[:,ti[:,0,0]<ihor]=0
+    ftruetot=np.copy(feqtot)
+    for tic in ts:
+        tici=np.where(ts==tic)[0]
+        ftruetot[tici,:]=ftruetot[tici,:] - (fstot[tici,ihor]/2)
     #
-    etabhEM = prefactor*pjemtot[:,ihor]/mdotfinavg
-    etabhMAKE = prefactor*pjmaketot[:,ihor]/mdotfinavg
-    etabh = etabhEM + etabhMAKE
-    etajEM = prefactor*pjem_mu1[:,iofr(rjetout)]/mdotfinavg
-    etajMAKE = prefactor*pjmake_mu1[:,iofr(rjetout)]/mdotfinavg
-    etaj = etajEM + etajMAKE
-    etamwinEM = prefactor*pjem_mumax1m[:,iofr(rjetin)]/mdotfinavg
-    etamwinMAKE = prefactor*pjmake_mumax1m[:,iofr(rjetin)]/mdotfinavg
-    etamwin = etamwinEM + etamwinMAKE
-    etamwoutEM = prefactor*pjem_mumax1m[:,iofr(rjetout)]/mdotfinavg
-    etamwoutMAKE = prefactor*pjmake_mumax1m[:,iofr(rjetout)]/mdotfinavg
-    etamwout = etamwoutEM + etamwoutMAKE
-    etawinEM = prefactor*pjem_mumax1[:,iofr(rjetin)]/mdotfinavg
-    etawinMAKE = prefactor*pjmake_mumax1[:,iofr(rjetin)]/mdotfinavg
-    etawin = etawinEM + etawinMAKE
-    etawoutEM = prefactor*pjem_mumax1[:,iofr(rjetout)]/mdotfinavg
-    etawoutMAKE = prefactor*pjmake_mumax1[:,iofr(rjetout)]/mdotfinavg
-    etawout = etawoutEM + etawoutMAKE
-    #
-    etabhEM2 = prefactor*pjemtot[:,ihor]/mdotiniavg
-    etabhMAKE2 = prefactor*pjmaketot[:,ihor]/mdotiniavg
-    etabh2 = etabhEM2 + etabhMAKE2
-    etajEM2 = prefactor*pjem_mu1[:,iofr(rjetout)]/mdotiniavg
-    etajMAKE2 = prefactor*pjmake_mu1[:,iofr(rjetout)]/mdotiniavg
-    etaj2 = etajEM2 + etajMAKE2
-    etamwinEM2 = prefactor*pjem_mumax1m[:,iofr(rjetin)]/mdotiniavg
-    etamwinMAKE2 = prefactor*pjmake_mumax1m[:,iofr(rjetin)]/mdotiniavg
-    etamwin2 = etamwinEM2 + etamwinMAKE2
-    etamwoutEM2 = prefactor*pjem_mumax1m[:,iofr(rjetout)]/mdotiniavg
-    etamwoutMAKE2 = prefactor*pjmake_mumax1m[:,iofr(rjetout)]/mdotiniavg
-    etamwout2 = etamwoutEM2 + etamwoutMAKE2
-    etawinEM2 = prefactor*pjem_mumax1[:,iofr(rjetin)]/mdotiniavg
-    etawinMAKE2 = prefactor*pjmake_mumax1[:,iofr(rjetin)]/mdotiniavg
-    etawin2 = etawinEM2 + etawinMAKE2
-    etawoutEM2 = prefactor*pjem_mumax1[:,iofr(rjetout)]/mdotiniavg
-    etawoutMAKE2 = prefactor*pjmake_mumax1[:,iofr(rjetout)]/mdotiniavg
-    etawout2 = etawoutEM2 + etawoutMAKE2
-    #
-    # lj = angular momentum flux
-    letabhEM = prefactor*ljemtot[:,ihor]/mdotfinavg
-    letabhMAKE = prefactor*ljmaketot[:,ihor]/mdotfinavg
-    letabh = letabhEM + letabhMAKE
-    letajEM = prefactor*ljem_mu1[:,iofr(rjetout)]/mdotfinavg
-    letajMAKE = prefactor*ljmake_mu1[:,iofr(rjetout)]/mdotfinavg
-    letaj = letajEM + letajMAKE
-    letamwinEM = prefactor*ljem_mumax1m[:,iofr(rjetin)]/mdotfinavg
-    letamwinMAKE = prefactor*ljmake_mumax1m[:,iofr(rjetin)]/mdotfinavg
-    letamwin = letamwinEM + letamwinMAKE
-    letamwoutEM = prefactor*ljem_mumax1m[:,iofr(rjetout)]/mdotfinavg
-    letamwoutMAKE = prefactor*ljmake_mumax1m[:,iofr(rjetout)]/mdotfinavg
-    letamwout = letamwoutEM + letamwoutMAKE
-    letawinEM = prefactor*ljem_mumax1[:,iofr(rjetin)]/mdotfinavg
-    letawinMAKE = prefactor*ljmake_mumax1[:,iofr(rjetin)]/mdotfinavg
-    letawin = letawinEM + letawinMAKE
-    letawoutEM = prefactor*ljem_mumax1[:,iofr(rjetout)]/mdotfinavg
-    letawoutMAKE = prefactor*ljmake_mumax1[:,iofr(rjetout)]/mdotfinavg
-    letawout = letawoutEM + letawoutMAKE
-    #
-    letabhEM2 = prefactor*ljemtot[:,ihor]/mdotiniavg
-    letabhMAKE2 = prefactor*ljmaketot[:,ihor]/mdotiniavg
-    letabh2 = letabhEM2 + letabhMAKE2
-    letajEM2 = prefactor*ljem_mu1[:,iofr(rjetout)]/mdotiniavg
-    letajMAKE2 = prefactor*ljmake_mu1[:,iofr(rjetout)]/mdotiniavg
-    letaj2 = letajEM2 + letajMAKE2
-    letamwinEM2 = prefactor*ljem_mumax1m[:,iofr(rjetin)]/mdotiniavg
-    letamwinMAKE2 = prefactor*ljmake_mumax1m[:,iofr(rjetin)]/mdotiniavg
-    letamwin2 = letamwinEM2 + letamwinMAKE2
-    letamwoutEM2 = prefactor*ljem_mumax1m[:,iofr(rjetout)]/mdotiniavg
-    letamwoutMAKE2 = prefactor*ljmake_mumax1m[:,iofr(rjetout)]/mdotiniavg
-    letamwout2 = letamwoutEM2 + letamwoutMAKE2
-    letawinEM2 = prefactor*ljem_mumax1[:,iofr(rjetin)]/mdotiniavg
-    letawinMAKE2 = prefactor*ljmake_mumax1[:,iofr(rjetin)]/mdotiniavg
-    letawin2 = letawinEM2 + letawinMAKE2
-    letawoutEM2 = prefactor*ljem_mumax1[:,iofr(rjetout)]/mdotiniavg
-    letawoutMAKE2 = prefactor*ljmake_mumax1[:,iofr(rjetout)]/mdotiniavg
-    letawout2 = letawoutEM2 + letawoutMAKE2
+    blobf=np.zeros(len(mdotfinavgvsr5),dtype=mdotfinavgvsr5.dtype)
+    ifmaxvst=np.zeros(sizet,dtype=int)
+    fmaxvst=np.zeros(sizet,dtype=float)
+    for tic in ts:
+        tici=np.where(ts==tic)[0]
+        #print("tic=%g %d tici=%d" % (tic,len(tic==ts),tici) )
+        blobf[:]=ftruetot[tici,:]
+        #print("lenblobf=%d" % (len(blobf)))
+        #print("blobf")
+        #print(blobf)
+        condition=(ti[:,0,0]>ihor)
+        condition=condition*(np.sign(blobf)!=np.sign(blobf[ihor]))
+        fzeroO=ti[:,0,0][condition==1]
+        fzero=fzeroO.astype(np.integer)
+        #print("fzero")
+        #print(fzero)
+        izero=-1
+        # see if ever got zero
+        if len(fzero)==0:
+            izero=nx-1
+        else:
+            izero=fzero[0]
+            # back-up to first same-signed value
+            if izero!=ihor:
+                izero=izero-1
+            #
+        #
+        #print("ihor=%d izero=%d" % (ihor, izero) )
+        if izero!=-1:
+            #print("blobfihor=%g blobfizero=%g" % (blobf[ihor],blobf[izero]) )
+            condition=ti[:,0,0]>=ihor
+            condition=condition*(ti[:,0,0]<=izero)
+            # only do max over relevant range
+            newblobf=np.copy(blobf)
+            newblobf[ti[:,0,0]<ihor]=0
+            newblobf[ti[:,0,0]>izero]=0
+            condition=condition*(np.fabs(newblobf[:])==np.max(np.fabs(newblobf[:])))
+            #print("condition")
+            #print(condition)
+            imax=np.where(condition==1)[0]
+            #print("imax")
+            #print(imax)
+            #
+            if(len(imax)>1):
+                imax=imax[0]
+                #print("imax2")
+                #print(imax)
+            #
+            ifmax=ftruetot[tici,imax]
+            #print("ifmax")
+            #print(ifmax)
+            #print("imax=%d ifmax=%g" % (imax,ifmax) )
+            ifmaxvst[tici]=imax
+        else:
+            ifmaxvst[tici]=ihor
+        #
+        fmaxvst[tici]=ftruetot[tici,ifmaxvst[tici]]
+        #print("fmax=%g" % (fmaxvst[tici]) )
     #
     #
+    print("ifmaxvst")
+    print(ifmaxvst)
+    print("fmaxvst")
+    print(fmaxvst)
+    #
+    # time-averaged flux at the max flux relevant for the hole flux
+    # use this rather than t=0 max flux for hole ratio calculation because flux can degrade over time on domain.
+    # So want to know what the flux is on the hole relative to similar signed flux available to the hole at any time, not just predegraded value at t=0
+    ftruetot_avg = timeavg(fmaxvst,ts,fti,ftf)
+    print("ftruetot_avg=%g" % (ftruetot_avg) )
+    #
+    #
+    #
+    # kinda odd use of average whichistageq inside time-dependent thing, but done for simplicity
+    feqstag=feqtot[:,istageq]
+    # need t=0 value since want full possible source of flux, not just average or current flux available
+    feqstagt0=feqtot[0,istageq]
+    feqstag_avg1 = timeavg(feqstag,ts,fti,ftf)
+    feqstag_avg2 = timeavg(feqstag**2,ts,fti,ftf)**0.5
+    feqstagB_avg1 = timeavg(feqstag,ts,0,fti)
+    feqstagB_avg2 = timeavg(feqstag**2,ts,0,fti)**0.5
+    feqstagC_avg1 = timeavg(feqstag,ts,iti,itf)
+    feqstagC_avg2 = timeavg(feqstag**2,ts,iti,itf)**0.5
+    print("feqstagt0=%g" % (feqstagt0) )
+    print("feqstag_avg1=%g feqstag_avg2=%g" % (feqstag_avg1, feqstag_avg2) )
+    print("feqstagB_avg1=%g feqstagB_avg2=%g" % (feqstagB_avg1, feqstagB_avg2) )
+    print("feqstagC_avg1=%g feqstagC_avg2=%g" % (feqstagC_avg1, feqstagC_avg2) )
+    #
+    # kinda odd use of average istageq inside time-dependent thing, but done for simplicity
+    feqstagnearfin=feqtot[:,istageqnearfin]
+    # need t=0 value since want full possible source of flux, not just average or current flux available
+    feqstagnearfint0=feqtot[0,istageqnearfin]
+    feqstagnearfin_avg1 = timeavg(feqstagnearfin,ts,fti,ftf)
+    feqstagnearfin_avg2 = timeavg(feqstagnearfin**2,ts,fti,ftf)**0.5
+    feqstagnearfinB_avg1 = timeavg(feqstagnearfin,ts,0,fti)
+    feqstagnearfinB_avg2 = timeavg(feqstagnearfin**2,ts,0,fti)**0.5
+    feqstagnearfinC_avg1 = timeavg(feqstagnearfin,ts,iti,itf)
+    feqstagnearfinC_avg2 = timeavg(feqstagnearfin**2,ts,iti,itf)**0.5
+    print("feqstagnearfint0=%g" % (feqstagnearfint0) )
+    print("feqstagnearfin_avg1=%g feqstagnearfin_avg2=%g" % (feqstagnearfin_avg1, feqstagnearfin_avg2) )
+    print("feqstagnearfinB_avg1=%g feqstagnearfinB_avg2=%g" % (feqstagnearfinB_avg1, feqstagnearfinB_avg2) )
+    print("feqstagnearfinC_avg1=%g feqstagnearfinC_avg2=%g" % (feqstagnearfinC_avg1, feqstagnearfinC_avg2) )
+    #
+    # choose which istageq to use
+    #chosenfeqstag=feqstagt0
+    #chosenfeqstag=feqstagnearfint0
+    if np.fabs(feqstagnearfint0)>np.fabs(feqstagt0):
+        chosenfeqstag=feqstagnearfint0
+        istagequse=istageqnearfin
+    else:
+        chosenfeqstag=feqstagt0
+        istagequse=istageq
+    ######################################
+    # END PART1 of COMPUTE JON WHICHPLOT==5
+    ######################################
+    #
+    #################################
+    # BEGIN compute h/r stuff (can't depend upon rdiskin or rdiskout -- although could make some of them depend if put some of them later)
+    #################################
     hoverrhor=hoverr[:,ihor]
     hoverr2=hoverr[:,iofr(2)]
     hoverr5=hoverr[:,iofr(5)]
@@ -6186,6 +5973,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     else:
         hoverrcorona100=hoverrcorona[:,iofr(100)]
     #
+    #
     hoverrcoronahor_t0 = hoverrcoronahor[0]
     hoverrcorona2_t0 = hoverrcorona2[0]
     hoverrcorona5_t0 = hoverrcorona5[0]
@@ -6193,23 +5981,24 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     hoverrcorona20_t0 = hoverrcorona20[0]
     hoverrcorona100_t0 = hoverrcorona100[0]
     #
-    hoverrjethor=hoverrjet[:,ihor]
-    hoverrjet2=hoverrjet[:,iofr(2)]
-    hoverrjet5=hoverrjet[:,iofr(5)]
-    hoverrjet10=hoverrjet[:,iofr(10)]
-    hoverrjet20=hoverrjet[:,iofr(20)]
+    #
+    hoverr_jethor=hoverr_jet[:,ihor]
+    hoverr_jet2=hoverr_jet[:,iofr(2)]
+    hoverr_jet5=hoverr_jet[:,iofr(5)]
+    hoverr_jet10=hoverr_jet[:,iofr(10)]
+    hoverr_jet20=hoverr_jet[:,iofr(20)]
     if modelname=="blandford3d_new":
         # so really at r=30 not 100
-        hoverrjet100=hoverrjet[:,iofr(30)]
+        hoverr_jet100=hoverr_jet[:,iofr(30)]
     else:
-        hoverrjet100=hoverrjet[:,iofr(100)]
+        hoverr_jet100=hoverr_jet[:,iofr(100)]
     #
-    hoverrjethor_t0 = hoverrjethor[0]
-    hoverrjet2_t0 = hoverrjet2[0]
-    hoverrjet5_t0 = hoverrjet5[0]
-    hoverrjet10_t0 = hoverrjet10[0]
-    hoverrjet20_t0 = hoverrjet20[0]
-    hoverrjet100_t0 = hoverrjet100[0]
+    hoverr_jethor_t0 = hoverr_jethor[0]
+    hoverr_jet2_t0 = hoverr_jet2[0]
+    hoverr_jet5_t0 = hoverr_jet5[0]
+    hoverr_jet10_t0 = hoverr_jet10[0]
+    hoverr_jet20_t0 = hoverr_jet20[0]
+    hoverr_jet100_t0 = hoverr_jet100[0]
     #
     betamin_t0=betamin[0,0]
     betaavg_t0=betaavg[0,0]
@@ -6217,9 +6006,73 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     betaratofmax_t0=betaratofmax[0,0]
     print("betamin_t0=%g ,betaavg_t0=%g , betaratofavg_t0=%g , betaratofmax_t0=%g" % (betamin_t0, betaavg_t0, betaratofavg_t0, betaratofmax_t0) )
     #
+    if dotavg:
+        hoverrhor_avg = timeavg(hoverrhor,ts,fti,ftf)
+        hoverr2_avg = timeavg(hoverr2,ts,fti,ftf)
+        hoverr5_avg = timeavg(hoverr5,ts,fti,ftf)
+        hoverr10_avg = timeavg(hoverr10,ts,fti,ftf)
+        hoverr20_avg = timeavg(hoverr20,ts,fti,ftf)
+        hoverr100_avg = timeavg(hoverr100,ts,fti,ftf)
+        #
+        # hoverr10 is function of time.  Unsure what time to choose.
+        # ts: carray of times of data
+        # fti: start avg time
+        # ftf: end avg time
+        # use end time by choosing -1 that wraps
+        #drnormvsr,dHnormvsr,dPnormvsr=gridcalc(hoverr10[-1])
+        # run.liker2butbeta40 has issues with hoverr10[-1]
+        #drnormvsr,dHnormvsr,dPnormvsr=gridcalc(hoverr10_avg)
+        if modelname=="runlocaldipole3dfiducial" or modelname=="blandford3d_new":
+            hoverri=hoverr10_avg
+            hoverro=hoverr20_avg
+        else:
+            hoverri=hoverr20_avg
+            hoverro=hoverr100_avg            
+        #
+        hoverrcoronahor_avg = timeavg(hoverrcoronahor,ts,fti,ftf)
+        hoverrcorona2_avg = timeavg(hoverrcorona2,ts,fti,ftf)
+        hoverrcorona5_avg = timeavg(hoverrcorona5,ts,fti,ftf)
+        hoverrcorona10_avg = timeavg(hoverrcorona10,ts,fti,ftf)
+        hoverrcorona20_avg = timeavg(hoverrcorona20,ts,fti,ftf)
+        hoverrcorona100_avg = timeavg(hoverrcorona100,ts,fti,ftf)
+        #
+        hoverr_jethor_avg = timeavg(hoverr_jethor,ts,fti,ftf)
+        hoverr_jet2_avg = timeavg(hoverr_jet2,ts,fti,ftf)
+        hoverr_jet5_avg = timeavg(hoverr_jet5,ts,fti,ftf)
+        hoverr_jet10_avg = timeavg(hoverr_jet10,ts,fti,ftf)
+        hoverr_jet20_avg = timeavg(hoverr_jet20,ts,fti,ftf)
+        hoverr_jet100_avg = timeavg(hoverr_jet100,ts,fti,ftf)
+        if(iti>fti):
+            #
+            hoverrhor2_avg = timeavg(hoverrhor,ts,iti,itf)
+            hoverr22_avg = timeavg(hoverr2,ts,iti,itf)
+            hoverr52_avg = timeavg(hoverr5,ts,iti,itf)
+            hoverr102_avg = timeavg(hoverr10,ts,iti,itf)
+            hoverr202_avg = timeavg(hoverr20,ts,iti,itf)
+            hoverr1002_avg = timeavg(hoverr100,ts,iti,itf)
+            #
+            hoverrcoronahor2_avg = timeavg(hoverrcoronahor,ts,iti,itf)
+            hoverrcorona22_avg = timeavg(hoverrcorona2,ts,iti,itf)
+            hoverrcorona52_avg = timeavg(hoverrcorona5,ts,iti,itf)
+            hoverrcorona102_avg = timeavg(hoverrcorona10,ts,iti,itf)
+            hoverrcorona202_avg = timeavg(hoverrcorona20,ts,iti,itf)
+            hoverrcorona1002_avg = timeavg(hoverrcorona100,ts,iti,itf)
+            #
+            hoverr_jethor2_avg = timeavg(hoverr_jethor,ts,iti,itf)
+            hoverr_jet22_avg = timeavg(hoverr_jet2,ts,iti,itf)
+            hoverr_jet52_avg = timeavg(hoverr_jet5,ts,iti,itf)
+            hoverr_jet102_avg = timeavg(hoverr_jet10,ts,iti,itf)
+            hoverr_jet202_avg = timeavg(hoverr_jet20,ts,iti,itf)
+            hoverr_jet1002_avg = timeavg(hoverr_jet100,ts,iti,itf)
+            #
+            #
+    #################################
+    # END compute h/r stuff
+    #################################
     #
-    #
-    #
+    #################################
+    # BEGIN compute qMRI stuff
+    #################################
     qrin=5
     qrout=15
     qcondition=(r[:,0,0]>qrin)
@@ -6322,6 +6175,332 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     print("iq2mridiskweak20_t0=%g iq2mridiskweak20_t0=%g" % (iq2mridiskweak20_t0,iq2mridiskweak20_t0) )
     print("iq2mridiskweak100_t0=%g iq2mridiskweak100_t0=%g" % (iq2mridiskweak100_t0,iq2mridiskweak100_t0) )
     #
+    if dotavg:
+        qmridisk10_avg = timeavg(qmridisk10,ts,fti,ftf)
+        qmridisk20_avg = timeavg(qmridisk20,ts,fti,ftf)
+        qmridisk100_avg = timeavg(qmridisk100,ts,fti,ftf)
+        #
+        iq2mridisk10_avg = timeavg(iq2mridisk10,ts,fti,ftf)/hoverr10_avg
+        iq2mridisk20_avg = timeavg(iq2mridisk20,ts,fti,ftf)/hoverr20_avg
+        iq2mridisk100_avg = timeavg(iq2mridisk100,ts,fti,ftf)/hoverr100_avg
+        #
+        qmridiskweak10_avg = timeavg(qmridiskweak10,ts,fti,ftf)
+        qmridiskweak20_avg = timeavg(qmridiskweak20,ts,fti,ftf)
+        qmridiskweak100_avg = timeavg(qmridiskweak100,ts,fti,ftf)
+        #
+        iq2mridiskweak10_avg = timeavg(iq2mridiskweak10,ts,fti,ftf)/hoverr10_avg
+        iq2mridiskweak20_avg = timeavg(iq2mridiskweak20,ts,fti,ftf)/hoverr20_avg
+        iq2mridiskweak100_avg = timeavg(iq2mridiskweak100,ts,fti,ftf)/hoverr100_avg
+        #
+        drvsr,dHvsr,dPvsr,drnormvsr,dHnormvsr,dPnormvsr=gridcalc(hoverro)
+        drnormvsrhor=drnormvsr[ihor]
+        dHnormvsrhor=dHnormvsr[ihor]
+        dPnormvsrhor=dPnormvsr[ihor]
+        drnormvsr10=drnormvsr[iofr(10)]
+        dHnormvsr10=dHnormvsr[iofr(10)]
+        dPnormvsr10=dPnormvsr[iofr(10)]
+        drnormvsr20=drnormvsr[iofr(20)]
+        dHnormvsr20=dHnormvsr[iofr(20)]
+        dPnormvsr20=dPnormvsr[iofr(20)]
+        if modelname=="blandford3d_new":
+            # so really at r=30 not 100
+            drnormvsr100=drnormvsr[iofr(30)]
+            dHnormvsr100=dHnormvsr[iofr(30)]
+            dPnormvsr100=dPnormvsr[iofr(30)]
+        else:
+            drnormvsr100=drnormvsr[iofr(100)]
+            dHnormvsr100=dHnormvsr[iofr(100)]
+            dPnormvsr100=dPnormvsr[iofr(100)]
+        #
+        if(iti>fti):
+            qmridisk102_avg = timeavg(qmridisk10,ts,iti,itf)
+            qmridisk202_avg = timeavg(qmridisk20,ts,iti,itf)
+            qmridisk1002_avg = timeavg(qmridisk100,ts,iti,itf)
+            #
+            iq2mridisk102_avg = timeavg(iq2mridisk10,ts,iti,itf)/hoverr10_avg
+            iq2mridisk202_avg = timeavg(iq2mridisk20,ts,iti,itf)/hoverr20_avg
+            iq2mridisk1002_avg = timeavg(iq2mridisk100,ts,iti,itf)/hoverr100_avg
+            #
+            qmridiskweak102_avg = timeavg(qmridiskweak10,ts,iti,itf)
+            qmridiskweak202_avg = timeavg(qmridiskweak20,ts,iti,itf)
+            qmridiskweak1002_avg = timeavg(qmridiskweak100,ts,iti,itf)
+            #
+            iq2mridiskweak102_avg = timeavg(iq2mridiskweak10,ts,iti,itf)/hoverr10_avg
+            iq2mridiskweak202_avg = timeavg(iq2mridiskweak20,ts,iti,itf)/hoverr20_avg
+            iq2mridiskweak1002_avg = timeavg(iq2mridiskweak100,ts,iti,itf)/hoverr100_avg
+        #
+    nzreal=nz
+    #
+    if modelname=="runlocaldipole3dfiducial" or modelname=="blandford3d_new":
+        drnormh=drnormvsrhor
+        dHnormh=dHnormvsrhor
+        dPnormh=dPnormvsrhor
+        drnormi=drnormvsr10
+        dHnormi=dHnormvsr10
+        dPnormi=dPnormvsr10
+        drnormo=drnormvsr20
+        dHnormo=dHnormvsr20
+        dPnormo=dPnormvsr20
+        #
+        qmriit0=qmridisk10_t0
+        qmriot0=qmridisk20_t0
+        iq2mriit0=iq2mridisk10_t0
+        iq2mriot0=iq2mridisk20_t0
+    else:
+        drnormh=drnormvsrhor
+        dHnormh=dHnormvsrhor
+        dPnormh=dPnormvsrhor
+        drnormi=drnormvsr20
+        dHnormi=dHnormvsr20
+        dPnormi=dPnormvsr20
+        drnormo=drnormvsr100
+        dHnormo=dHnormvsr100
+        dPnormo=dPnormvsr100
+        #
+        # only sasha99 model (at late times!) should do the below
+        if modelname=="sasha99":
+            dPnormh/=2
+            dPnormi/=2
+            dPnormo/=2
+            nzreal=nz*2
+        #
+        qmriit0=qmridisk20_t0
+        qmriot0=qmridisk100_t0
+        iq2mriit0=iq2mridisk20_t0
+        iq2mriot0=iq2mridisk100_t0
+    #################################
+    # END compute qMRI stuff
+    #################################
+    #
+    #################################
+    # BEGIN determine iin and iout
+    #################################
+    #
+    # r\sim risco is beyond ISCO in all models where GR doesn't matter much
+    rrangestart=10.0
+    risco=Risco(a)
+    iin=iofr(risco)
+    iinalt=iofr(rrangestart)
+    if iin<iinalt:
+        iin=iinalt
+    #
+    alphamag1_vsr=np.zeros(nx,dtype=r.dtype)
+    alphamag2_vsr=np.zeros(nx,dtype=r.dtype)
+    alphamag3_vsr=np.zeros(nx,dtype=r.dtype)
+    #
+    # determine iout through a bit of iteration
+    alphatest=0.05
+    for iiter in np.arange(0,5):
+        #
+        # back off 6 cells from stagnation surface
+        iout=istagequse-6
+        if iout<=iin:
+            iout=iofr(12.0)
+        #
+        # limit to inflow equilibrium region
+        hortest=hoverr100_avg
+        timetest=ts[-1]
+        rie=(alphatest*hortest**2.0*timetest)**(2.0/3.0)
+        if rie>0.95*Rout:
+            rie=0.95*Rout
+        iie=iofr(rie)
+        if iout>iie:
+            iout=iie
+        #
+        if iout>nx-1:
+            iout=nx-1
+        #
+        #
+        for ii in np.arange(0,nx):
+            alphamag1_vsr[ii]=timeavg(alphamag1[:,ii],ts,fti,ftf)
+            alphamag2_vsr[ii]=timeavg(alphamag2[:,ii],ts,fti,ftf)
+            alphamag3_vsr[ii]=timeavg(alphamag3[:,ii],ts,fti,ftf)
+        # get fit so can extract average value over interesting radial range
+        alphamag1_vsr_fit=np.polyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(alphamag1_vsr[iin:iout])),1)
+        alphamag2_vsr_fit=np.polyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(alphamag2_vsr[iin:iout])),1)
+        alphamag3_vsr_fit=np.polyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(alphamag3_vsr[iin:iout])),1)
+        #
+        alphatest=alphamag2_vsr_fit[1]
+        #
+        print("iiter=%d : iin=%d rie=%g iie=%d iout=%d alphatest=%g" % (iiter,iin,rie,iie,iout,alphatest))
+    #
+    # radius of iin and iout
+    rfitin=r[iin,0,0]
+    if np.fabs(rfitin-rrangestart)<1:
+        rfitin=rrangestart
+        iin=iofr(rfitin)
+    #
+    rfitout=r[iout,0,0]
+    #
+    # just set as fixed so scaling and comparisons more obvious.  rjetout=50 should be good enough as approximately viscous time
+    rdiskin=rjetin
+    rdiskout=rjetout
+    # set rdiskin to be either 10 or no smaller than where iin is set
+    #rdiskin=max(rrangestart,r[iin,0,0])
+    idiskin=iofr(rdiskin)
+    # set rdiskout to be either 100 or no larger than inflow equilibrium range
+    #rdiskout=min(rjetout,r[iout,0,0])
+    #rdiskout=r[iout,0,0]
+    idiskout=iofr(rdiskout)
+    print("idiskin=%d rdiskin=%g idiskout=%d rdiskout=%g" % (idiskin,rdiskin,idiskout,rdiskout))
+    #
+    #################################
+    # END determine iin and iout
+    #################################
+    #
+    #################################
+    # BEGIN PART2 of compute vsr (things that can depend upon rdiskin or rdiskout)
+    #################################
+    #
+    #
+    mdotwininiavg = timeavg(np.abs(mdwind[:,iofr(rdiskin)]),ts,iti,itf)
+    mdotwinfinavg = timeavg(np.abs(mdwind[:,iofr(rdiskin)]),ts,fti,ftf)
+    mdotwoutiniavg = timeavg(np.abs(mdwind[:,iofr(rdiskout)]),ts,iti,itf)
+    mdotwoutfinavg = timeavg(np.abs(mdwind[:,iofr(rdiskout)]),ts,fti,ftf)
+    #
+    mdotmwininiavg = timeavg(np.abs(mdmwind[:,iofr(rjetin)]),ts,iti,itf)
+    mdotmwinfinavg = timeavg(np.abs(mdmwind[:,iofr(rjetin)]),ts,fti,ftf)
+    mdotmwoutiniavg = timeavg(np.abs(mdmwind[:,iofr(rjetout)]),ts,iti,itf)
+    mdotmwoutfinavg = timeavg(np.abs(mdmwind[:,iofr(rjetout)]),ts,fti,ftf)
+    #
+    # use md10 since at large radii don't reach bsq/rho>30 too easily and still approximately accurate for floor-dominated region
+    # don't use horizon values for jet or wind since very different mdot, etc. there
+    # handle md10 issue inside mdjet and mdwind calculation, so keep to consistent cells chosen instead of subtracting off contributions from different masked cells in integration
+    mdotjetiniavg = timeavg(np.abs(mdjet[:,iofr(rjetout)]),ts,iti,itf)
+    mdotjetfinavg = timeavg(np.abs(mdjet[:,iofr(rjetout)]),ts,fti,ftf)
+    #
+    # handle md10 issue inside computation for mdin (i.e. avoid including bsq/rho>30)
+    mdotinrdiskininiavg = timeavg(np.abs(mdin[:,iofr(rdiskin)]),ts,iti,itf)
+    mdotinrdiskinfinavg = timeavg(np.abs(mdin[:,iofr(rdiskin)]),ts,fti,ftf)
+    mdotinrdiskoutiniavg = timeavg(np.abs(mdin[:,iofr(rdiskout)]),ts,iti,itf)
+    mdotinrdiskoutfinavg = timeavg(np.abs(mdin[:,iofr(rdiskout)]),ts,fti,ftf)
+    #
+    #
+    #
+    #################################
+    # END PART2 of compute vsr (things that can depend upon rdiskin or rdiskout)
+    #################################
+    #
+    #
+    fc=0
+    if showextra:
+        ofc = 1
+        clr = 'r'
+    else:
+        ofc = 0
+        clr = 'k'
+
+    if epsFm is not None and epsFke is not None:
+        FMraw    = mdtot[:,ihor]
+        FM       = epsFm * mdtot[:,ihor]
+        FMavg    = epsFm * timeavg(mdtot,ts,fti,ftf)[ihor]
+        FMiniavg = epsFm * timeavg(mdtot,ts,iti,itf)[ihor] 
+        FEraw = -edtot[:,ihor]
+        FE= epsFke*(FMraw-FEraw)
+    else:
+        FMraw    = mdtot[:,ihor]
+        FM       = mdtot[:,ihor]
+        FMavg    = timeavg(mdtot,ts,fti,ftf)[ihor]
+        FMiniavg = timeavg(mdtot,ts,iti,itf)[ihor] 
+        FEraw = -edtot[:,ihor]
+        FE= (FMraw-FEraw)
+        #FMiniavg = mdotiniavg
+        #FMavg = mdotfinavg
+        #FM = mdtot[:,ihor]-md30[:,ihor]
+        #FE = pjemtot[:,ihor]
+    if showextra:
+        lst = 'solid'
+    else:
+        lst = 'dashed'
+    #
+    #
+    #
+    ######################################
+    # BEGIN COMPUTE JON WHICHPLOT==4
+    ######################################
+    #
+    etabhEM = prefactor*pjemtot[:,ihor]/mdotfinavg
+    etabhMAKE = prefactor*pjmaketot[:,ihor]/mdotfinavg
+    etabh = etabhEM + etabhMAKE
+    etajEM = prefactor*pjem_mu1[:,iofr(rjetout)]/mdotfinavg
+    etajMAKE = prefactor*pjmake_mu1[:,iofr(rjetout)]/mdotfinavg
+    etaj = etajEM + etajMAKE
+    etamwinEM = prefactor*pjem_mumax1m[:,iofr(rjetin)]/mdotfinavg
+    etamwinMAKE = prefactor*pjmake_mumax1m[:,iofr(rjetin)]/mdotfinavg
+    etamwin = etamwinEM + etamwinMAKE
+    etamwoutEM = prefactor*pjem_mumax1m[:,iofr(rjetout)]/mdotfinavg
+    etamwoutMAKE = prefactor*pjmake_mumax1m[:,iofr(rjetout)]/mdotfinavg
+    etamwout = etamwoutEM + etamwoutMAKE
+    etawinEM = prefactor*pjem_mumax1[:,iofr(rdiskin)]/mdotfinavg
+    etawinMAKE = prefactor*pjmake_mumax1[:,iofr(rdiskin)]/mdotfinavg
+    etawin = etawinEM + etawinMAKE
+    etawoutEM = prefactor*pjem_mumax1[:,iofr(rdiskout)]/mdotfinavg
+    etawoutMAKE = prefactor*pjmake_mumax1[:,iofr(rdiskout)]/mdotfinavg
+    etawout = etawoutEM + etawoutMAKE
+    #
+    etabhEM2 = prefactor*pjemtot[:,ihor]/mdotiniavg
+    etabhMAKE2 = prefactor*pjmaketot[:,ihor]/mdotiniavg
+    etabh2 = etabhEM2 + etabhMAKE2
+    etajEM2 = prefactor*pjem_mu1[:,iofr(rjetout)]/mdotiniavg
+    etajMAKE2 = prefactor*pjmake_mu1[:,iofr(rjetout)]/mdotiniavg
+    etaj2 = etajEM2 + etajMAKE2
+    etamwinEM2 = prefactor*pjem_mumax1m[:,iofr(rjetin)]/mdotiniavg
+    etamwinMAKE2 = prefactor*pjmake_mumax1m[:,iofr(rjetin)]/mdotiniavg
+    etamwin2 = etamwinEM2 + etamwinMAKE2
+    etamwoutEM2 = prefactor*pjem_mumax1m[:,iofr(rjetout)]/mdotiniavg
+    etamwoutMAKE2 = prefactor*pjmake_mumax1m[:,iofr(rjetout)]/mdotiniavg
+    etamwout2 = etamwoutEM2 + etamwoutMAKE2
+    etawinEM2 = prefactor*pjem_mumax1[:,iofr(rdiskin)]/mdotiniavg
+    etawinMAKE2 = prefactor*pjmake_mumax1[:,iofr(rdiskin)]/mdotiniavg
+    etawin2 = etawinEM2 + etawinMAKE2
+    etawoutEM2 = prefactor*pjem_mumax1[:,iofr(rdiskout)]/mdotiniavg
+    etawoutMAKE2 = prefactor*pjmake_mumax1[:,iofr(rdiskout)]/mdotiniavg
+    etawout2 = etawoutEM2 + etawoutMAKE2
+    #
+    # lj = angular momentum flux
+    letabhEM = prefactor*ljemtot[:,ihor]/mdotfinavg
+    letabhMAKE = prefactor*ljmaketot[:,ihor]/mdotfinavg
+    letabh = letabhEM + letabhMAKE
+    letajEM = prefactor*ljem_mu1[:,iofr(rjetout)]/mdotfinavg
+    letajMAKE = prefactor*ljmake_mu1[:,iofr(rjetout)]/mdotfinavg
+    letaj = letajEM + letajMAKE
+    letamwinEM = prefactor*ljem_mumax1m[:,iofr(rjetin)]/mdotfinavg
+    letamwinMAKE = prefactor*ljmake_mumax1m[:,iofr(rjetin)]/mdotfinavg
+    letamwin = letamwinEM + letamwinMAKE
+    letamwoutEM = prefactor*ljem_mumax1m[:,iofr(rjetout)]/mdotfinavg
+    letamwoutMAKE = prefactor*ljmake_mumax1m[:,iofr(rjetout)]/mdotfinavg
+    letamwout = letamwoutEM + letamwoutMAKE
+    letawinEM = prefactor*ljem_mumax1[:,iofr(rdiskin)]/mdotfinavg
+    letawinMAKE = prefactor*ljmake_mumax1[:,iofr(rdiskin)]/mdotfinavg
+    letawin = letawinEM + letawinMAKE
+    letawoutEM = prefactor*ljem_mumax1[:,iofr(rdiskout)]/mdotfinavg
+    letawoutMAKE = prefactor*ljmake_mumax1[:,iofr(rdiskout)]/mdotfinavg
+    letawout = letawoutEM + letawoutMAKE
+    #
+    letabhEM2 = prefactor*ljemtot[:,ihor]/mdotiniavg
+    letabhMAKE2 = prefactor*ljmaketot[:,ihor]/mdotiniavg
+    letabh2 = letabhEM2 + letabhMAKE2
+    letajEM2 = prefactor*ljem_mu1[:,iofr(rjetout)]/mdotiniavg
+    letajMAKE2 = prefactor*ljmake_mu1[:,iofr(rjetout)]/mdotiniavg
+    letaj2 = letajEM2 + letajMAKE2
+    letamwinEM2 = prefactor*ljem_mumax1m[:,iofr(rjetin)]/mdotiniavg
+    letamwinMAKE2 = prefactor*ljmake_mumax1m[:,iofr(rjetin)]/mdotiniavg
+    letamwin2 = letamwinEM2 + letamwinMAKE2
+    letamwoutEM2 = prefactor*ljem_mumax1m[:,iofr(rjetout)]/mdotiniavg
+    letamwoutMAKE2 = prefactor*ljmake_mumax1m[:,iofr(rjetout)]/mdotiniavg
+    letamwout2 = letamwoutEM2 + letamwoutMAKE2
+    letawinEM2 = prefactor*ljem_mumax1[:,iofr(rdiskin)]/mdotiniavg
+    letawinMAKE2 = prefactor*ljmake_mumax1[:,iofr(rdiskin)]/mdotiniavg
+    letawin2 = letawinEM2 + letawinMAKE2
+    letawoutEM2 = prefactor*ljem_mumax1[:,iofr(rdiskout)]/mdotiniavg
+    letawoutMAKE2 = prefactor*ljmake_mumax1[:,iofr(rdiskout)]/mdotiniavg
+    letawout2 = letawoutEM2 + letawoutMAKE2
+    #
+    #
+    #
+    #
+    #
+    #
     if(1 and iti>fti):
         #use mdot averaged over the same time interval for iti<t<=itf
         icond=(ts>=iti)*(ts<itf)
@@ -6405,77 +6584,6 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         letawoutMAKE_avg = timeavg(letawoutMAKE,ts,fti,ftf)
         lemtot_avg = timeavg(ljemtot[:,ihor],ts,fti,ftf)
         #
-        hoverrhor_avg = timeavg(hoverrhor,ts,fti,ftf)
-        hoverr2_avg = timeavg(hoverr2,ts,fti,ftf)
-        hoverr5_avg = timeavg(hoverr5,ts,fti,ftf)
-        hoverr10_avg = timeavg(hoverr10,ts,fti,ftf)
-        hoverr20_avg = timeavg(hoverr20,ts,fti,ftf)
-        hoverr100_avg = timeavg(hoverr100,ts,fti,ftf)
-        #
-        # hoverr10 is function of time.  Unsure what time to choose.
-        # ts: carray of times of data
-        # fti: start avg time
-        # ftf: end avg time
-        # use end time by choosing -1 that wraps
-        #drnormvsr,dHnormvsr,dPnormvsr=gridcalc(hoverr10[-1])
-        # run.liker2butbeta40 has issues with hoverr10[-1]
-        #drnormvsr,dHnormvsr,dPnormvsr=gridcalc(hoverr10_avg)
-        if modelname=="runlocaldipole3dfiducial" or modelname=="blandford3d_new":
-            hoverri=hoverr10_avg
-            hoverro=hoverr20_avg
-        else:
-            hoverri=hoverr20_avg
-            hoverro=hoverr100_avg            
-        #
-        drvsr,dHvsr,dPvsr,drnormvsr,dHnormvsr,dPnormvsr=gridcalc(hoverro)
-        drnormvsrhor=drnormvsr[ihor]
-        dHnormvsrhor=dHnormvsr[ihor]
-        dPnormvsrhor=dPnormvsr[ihor]
-        drnormvsr10=drnormvsr[iofr(10)]
-        dHnormvsr10=dHnormvsr[iofr(10)]
-        dPnormvsr10=dPnormvsr[iofr(10)]
-        drnormvsr20=drnormvsr[iofr(20)]
-        dHnormvsr20=dHnormvsr[iofr(20)]
-        dPnormvsr20=dPnormvsr[iofr(20)]
-        if modelname=="blandford3d_new":
-            # so really at r=30 not 100
-            drnormvsr100=drnormvsr[iofr(30)]
-            dHnormvsr100=dHnormvsr[iofr(30)]
-            dPnormvsr100=dPnormvsr[iofr(30)]
-        else:
-            drnormvsr100=drnormvsr[iofr(100)]
-            dHnormvsr100=dHnormvsr[iofr(100)]
-            dPnormvsr100=dPnormvsr[iofr(100)]
-        #
-        hoverrcoronahor_avg = timeavg(hoverrcoronahor,ts,fti,ftf)
-        hoverrcorona2_avg = timeavg(hoverrcorona2,ts,fti,ftf)
-        hoverrcorona5_avg = timeavg(hoverrcorona5,ts,fti,ftf)
-        hoverrcorona10_avg = timeavg(hoverrcorona10,ts,fti,ftf)
-        hoverrcorona20_avg = timeavg(hoverrcorona20,ts,fti,ftf)
-        hoverrcorona100_avg = timeavg(hoverrcorona100,ts,fti,ftf)
-        #
-        hoverrjethor_avg = timeavg(hoverrjethor,ts,fti,ftf)
-        hoverrjet2_avg = timeavg(hoverrjet2,ts,fti,ftf)
-        hoverrjet5_avg = timeavg(hoverrjet5,ts,fti,ftf)
-        hoverrjet10_avg = timeavg(hoverrjet10,ts,fti,ftf)
-        hoverrjet20_avg = timeavg(hoverrjet20,ts,fti,ftf)
-        hoverrjet100_avg = timeavg(hoverrjet100,ts,fti,ftf)
-        #
-        qmridisk10_avg = timeavg(qmridisk10,ts,fti,ftf)
-        qmridisk20_avg = timeavg(qmridisk20,ts,fti,ftf)
-        qmridisk100_avg = timeavg(qmridisk100,ts,fti,ftf)
-        #
-        iq2mridisk10_avg = timeavg(iq2mridisk10,ts,fti,ftf)/hoverr10_avg
-        iq2mridisk20_avg = timeavg(iq2mridisk20,ts,fti,ftf)/hoverr20_avg
-        iq2mridisk100_avg = timeavg(iq2mridisk100,ts,fti,ftf)/hoverr100_avg
-        #
-        qmridiskweak10_avg = timeavg(qmridiskweak10,ts,fti,ftf)
-        qmridiskweak20_avg = timeavg(qmridiskweak20,ts,fti,ftf)
-        qmridiskweak100_avg = timeavg(qmridiskweak100,ts,fti,ftf)
-        #
-        iq2mridiskweak10_avg = timeavg(iq2mridiskweak10,ts,fti,ftf)/hoverr10_avg
-        iq2mridiskweak20_avg = timeavg(iq2mridiskweak20,ts,fti,ftf)/hoverr20_avg
-        iq2mridiskweak100_avg = timeavg(iq2mridiskweak100,ts,fti,ftf)/hoverr100_avg
         #
         #
         if(iti>fti):
@@ -6519,44 +6627,40 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             letawoutMAKE2_avg = timeavg(letawoutMAKE2,ts,iti,itf)
             lemtot2_avg = timeavg(ljemtot[:,ihor],ts,iti,itf)
             #
-            #
-            hoverrhor2_avg = timeavg(hoverrhor,ts,iti,itf)
-            hoverr22_avg = timeavg(hoverr2,ts,iti,itf)
-            hoverr52_avg = timeavg(hoverr5,ts,iti,itf)
-            hoverr102_avg = timeavg(hoverr10,ts,iti,itf)
-            hoverr202_avg = timeavg(hoverr20,ts,iti,itf)
-            hoverr1002_avg = timeavg(hoverr100,ts,iti,itf)
-            #
-            hoverrcoronahor2_avg = timeavg(hoverrcoronahor,ts,iti,itf)
-            hoverrcorona22_avg = timeavg(hoverrcorona2,ts,iti,itf)
-            hoverrcorona52_avg = timeavg(hoverrcorona5,ts,iti,itf)
-            hoverrcorona102_avg = timeavg(hoverrcorona10,ts,iti,itf)
-            hoverrcorona202_avg = timeavg(hoverrcorona20,ts,iti,itf)
-            hoverrcorona1002_avg = timeavg(hoverrcorona100,ts,iti,itf)
-            #
-            hoverrjethor2_avg = timeavg(hoverrjethor,ts,iti,itf)
-            hoverrjet22_avg = timeavg(hoverrjet2,ts,iti,itf)
-            hoverrjet52_avg = timeavg(hoverrjet5,ts,iti,itf)
-            hoverrjet102_avg = timeavg(hoverrjet10,ts,iti,itf)
-            hoverrjet202_avg = timeavg(hoverrjet20,ts,iti,itf)
-            hoverrjet1002_avg = timeavg(hoverrjet100,ts,iti,itf)
-            #
-            qmridisk102_avg = timeavg(qmridisk10,ts,iti,itf)
-            qmridisk202_avg = timeavg(qmridisk20,ts,iti,itf)
-            qmridisk1002_avg = timeavg(qmridisk100,ts,iti,itf)
-            #
-            iq2mridisk102_avg = timeavg(iq2mridisk10,ts,iti,itf)/hoverr10_avg
-            iq2mridisk202_avg = timeavg(iq2mridisk20,ts,iti,itf)/hoverr20_avg
-            iq2mridisk1002_avg = timeavg(iq2mridisk100,ts,iti,itf)/hoverr100_avg
-            #
-            qmridiskweak102_avg = timeavg(qmridiskweak10,ts,iti,itf)
-            qmridiskweak202_avg = timeavg(qmridiskweak20,ts,iti,itf)
-            qmridiskweak1002_avg = timeavg(qmridiskweak100,ts,iti,itf)
-            #
-            iq2mridiskweak102_avg = timeavg(iq2mridiskweak10,ts,iti,itf)/hoverr10_avg
-            iq2mridiskweak202_avg = timeavg(iq2mridiskweak20,ts,iti,itf)/hoverr20_avg
-            iq2mridiskweak1002_avg = timeavg(iq2mridiskweak100,ts,iti,itf)/hoverr100_avg
-            #
+        #
+    #
+    lbh_avg=letabh_avg/prefactor
+    lbhEM_avg=letabhEM_avg/prefactor
+    lbhMAKE_avg=letabhMAKE_avg/prefactor
+    ljmwout_avg=(letaj_avg + letamwout_avg)/prefactor
+    ljwout_avg=(letaj_avg + letawout_avg)/prefactor
+    lj_avg=letaj_avg/prefactor
+    ljEM_avg=letajEM_avg/prefactor
+    ljMAKE_avg=letajMAKE_avg/prefactor
+    lmwin_avg=letamwin_avg/prefactor
+    lmwinEM_avg=letamwinEM_avg/prefactor
+    lmwinMAKE_avg=letamwinMAKE_avg/prefactor
+    lmwout_avg=letamwout_avg/prefactor
+    lmwoutEM_avg=letamwoutEM_avg/prefactor
+    lmwoutMAKE_avg=letamwoutMAKE_avg/prefactor
+    lwin_avg=letawin_avg/prefactor
+    lwinEM_avg=letawinEM_avg/prefactor
+    lwinMAKE_avg=letawinMAKE_avg/prefactor
+    lwout_avg=letawout_avg/prefactor
+    lwoutEM_avg=letawoutEM_avg/prefactor
+    lwoutMAKE_avg=letawoutMAKE_avg/prefactor
+    #
+    djdtnormbh  = (-lbh_avg) - 2.0*a*(1.0-etabh_avg/prefactor)
+    djdtnormj   = (-lj_avg)  - 2.0*a*(1.0-etaj_avg/prefactor)
+    djdtnormmwin   = (-lmwin_avg)  - 2.0*a*(1.0-etamwin_avg/prefactor)
+    djdtnormmwout   = (-lmwout_avg)  - 2.0*a*(1.0-etamwout_avg/prefactor)
+    djdtnormwin   = (-lwin_avg)  - 2.0*a*(1.0-etawin_avg/prefactor)
+    djdtnormwout   = (-lwout_avg)  - 2.0*a*(1.0-etawout_avg/prefactor)
+    #
+    einf,linf=elinfcalc(a)
+    etant=prefactor*(1.0-einf)
+    lnt=-linf
+    djdtnormnt  = linf       - 2.0*a*einf
     #
     # Jon's whichplot==4 Plot:
     if modelname=="runlocaldipole3dfiducial" or modelname=="blandford3d_new":
@@ -6692,454 +6796,16 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         fieldtype="UnknownModelFieldType"
     #
     #
-    nzreal=nz
     #
-    if modelname=="runlocaldipole3dfiducial" or modelname=="blandford3d_new":
-        drnormh=drnormvsrhor
-        dHnormh=dHnormvsrhor
-        dPnormh=dPnormvsrhor
-        drnormi=drnormvsr10
-        dHnormi=dHnormvsr10
-        dPnormi=dPnormvsr10
-        drnormo=drnormvsr20
-        dHnormo=dHnormvsr20
-        dPnormo=dPnormvsr20
-        #
-        qmriit0=qmridisk10_t0
-        qmriot0=qmridisk20_t0
-        iq2mriit0=iq2mridisk10_t0
-        iq2mriot0=iq2mridisk20_t0
-    else:
-        drnormh=drnormvsrhor
-        dHnormh=dHnormvsrhor
-        dPnormh=dPnormvsrhor
-        drnormi=drnormvsr20
-        dHnormi=dHnormvsr20
-        dPnormi=dPnormvsr20
-        drnormo=drnormvsr100
-        dHnormo=dHnormvsr100
-        dPnormo=dPnormvsr100
-        #
-        # only sasha99 model (at late times!) should do the below
-        if modelname=="sasha99":
-            dPnormh/=2
-            dPnormi/=2
-            dPnormo/=2
-            nzreal=nz*2
-        #
-        qmriit0=qmridisk20_t0
-        qmriot0=qmridisk100_t0
-        iq2mriit0=iq2mridisk20_t0
-        iq2mriot0=iq2mridisk100_t0
-    #
-    # find true range that used for averaging
-    truetmax=np.max(ts)
-    truetmin=np.min(ts)
-    if truetmin<fti:
-        truetmin=fti
-    #
-    if truetmax>ftf:
-        truetmax=ftf
-    #
-    if whichplot == 4 and sashaplot4 == 0:
-        if dotavg:
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etabh_avg,color=(ofc,fc,fc)) 
-            if showextra:
-                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaj_avg,'--',color=(fc,fc+0.5*(1-fc),fc)) 
-                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etamwout_avg,'-.',color=(fc,fc,1)) 
-            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
-            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
-            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
-            if(iti>fti):
-                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etabh2_avg,color=(ofc,fc,fc))
-                if showextra:
-                    ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etaj2_avg,'--',color=(fc,fc+0.5*(1-fc),fc))
-                    ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etamwout2_avg,'-.',color=(fc,fc,1))
-        #
-        ax.plot(ts,etabh,clr,label=r'$\eta_{\rm BH}$')
-        if showextra:
-            ax.plot(ts,etaj,'g--',label=r'$\eta_{\rm j}$')
-            ax.plot(ts,etamwout,'b-.',label=r'$\eta_{\rm mw,o}$')
-        if findex != None:
-            if not isinstance(findex,tuple):
-                ax.plot(ts[findex],etabh[findex],'o',mfc='r')
-                if showextra:
-                    ax.plot(ts[findex],etaj[findex],'gs')
-                    ax.plot(ts[findex],etamwout[findex],'bv')
-            else:
-                for fi in findex:
-                    ax.plot(ts[fi],etabh[fi],'o',mfc='r')#,label=r'$\dot M$')
-                    if showextra:
-                        ax.plot(ts[fi],etamwout[fi],'bv')#,label=r'$\dot M$')
-                        ax.plot(ts[fi],etaj[fi],'gs')#,label=r'$\dot M$')
-        #ax.set_ylim(0,2)
-        ax.set_xlabel(r'$t\;[r_g/c]$',fontsize=16)
-        ax.set_ylabel(r'$\eta\ [\%]$',fontsize=16,ha='left',labelpad=20)
-        ax.set_xlim(ts[0],ts[-1])
-        if showextra:
-            plt.legend(loc='upper left',bbox_to_anchor=(0.02,0.98),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
-            # set some legend properties.  All the code below is optional.  The
-            # defaults are usually sensible but if you need more control, this
-            # shows you how
-            leg = plt.gca().get_legend()
-            ltext  = leg.get_texts()  # all the text.Text instance in the legend
-            llines = leg.get_lines()  # all the lines.Line2D instance in the legend
-            frame  = leg.get_frame()  # the patch.Rectangle instance surrounding the legend
-            # see text.Text, lines.Line2D, and patches.Rectangle for more info on
-            # the settable properties of lines, text, and rectangles
-            #frame.set_facecolor('0.80')      # set the frame face color to light gray
-            plt.setp(ltext, fontsize=12)    # the legend text fontsize
-            #plt.setp(llines, linewidth=1.5)      # the legend linewidth
-            #leg.draw_frame(False)           # don't draw the legend frame
-    #
-    # End Jon's whichplot==4 Plot
-    #
-    # Print's Jon's whichplot==4 Values:
-    #
-    print( "Jon's values: (recall mdotorig = mdot + mdot30 should be =FMavg)" )
-    #
-    #
-    print( "mdot = %g, mdot10 = %g, mdot30 = %g, mdotinin = %g, mdotinout=%g, mdotjet = %g, mdotmwin = %g, mdotmwout = %g, mdotwin = %g, mdotwout = %g" % ( mdotfinavg, mdot10finavg, mdot30finavg, mdotinrjetinfinavg, mdotinrjetoutfinavg, mdotjetfinavg, mdotmwinfinavg, mdotmwoutfinavg, mdotwinfinavg, mdotwoutfinavg) )
-    #
-    print( "hoverrhor_t0 = %g, hoverr2_t0 = %g, hoverr5_t0 = %g, hoverr10_t0 = %g, hoverr20_t0 = %g, hoverr100_t0 = %g" % ( hoverrhor_t0 ,  hoverr2_t0 , hoverr5_t0 , hoverr10_t0 ,  hoverr20_t0 ,  hoverr100_t0 ) )
-    print( "hoverrcoronahor_t0 = %g, hoverrcorona2_t0 = %g, hoverrcorona5_t0 = %g, hoverrcorona10_t0 = %g, hoverrcorona20_t0 = %g, hoverrcorona100_t0 = %g" % ( hoverrcoronahor_t0 ,  hoverrcorona2_t0 , hoverrcorona5_t0 , hoverrcorona10_t0 ,  hoverrcorona20_t0 ,  hoverrcorona100_t0 ) )
-    print( "hoverrjethor_t0 = %g, hoverrjet2_t0 = %g, hoverrjet5_t0 = %g, hoverrjet10_t0 = %g, hoverrjet20_t0 = %g, hoverrjet100_t0 = %g" % ( hoverrjethor_t0 ,  hoverrjet2_t0 , hoverrjet5_t0 , hoverrjet10_t0 ,  hoverrjet20_t0 ,  hoverrjet100_t0 ) )
-    #
-    print( "hoverrhor_avg = %g, hoverr2_avg = %g, hoverr5_avg = %g, hoverr10_avg = %g, hoverr20_avg = %g, hoverr100_avg = %g" % ( hoverrhor_avg ,  hoverr2_avg , hoverr5_avg , hoverr10_avg ,  hoverr20_avg ,  hoverr100_avg ) )
-    print( "hoverrcoronahor_avg = %g, hoverrcorona2_avg = %g, hoverrcorona5_avg = %g, hoverrcorona10_avg = %g, hoverrcorona20_avg = %g, hoverrcorona100_avg = %g" % ( hoverrcoronahor_avg ,  hoverrcorona2_avg , hoverrcorona5_avg , hoverrcorona10_avg ,  hoverrcorona20_avg ,  hoverrcorona100_avg ) )
-    print( "hoverrjethor_avg = %g, hoverrjet2_avg = %g, hoverrjet5_avg = %g, hoverrjet10_avg = %g, hoverrjet20_avg = %g, hoverrjet100_avg = %g" % ( hoverrjethor_avg ,  hoverrjet2_avg , hoverrjet5_avg , hoverrjet10_avg ,  hoverrjet20_avg ,  hoverrjet100_avg ) )
-    #
-    #
-    print( "qmridisk10_t0 = %g, qmridisk20_t0 = %g, qmridisk100_t0 = %g" % (  qmridisk10_t0 ,  qmridisk20_t0 ,  qmridisk100_t0 ) )
-    print( "q2mridisk10_t0 = %g, q2mridisk20_t0 = %g, q2mridisk100_t0 = %g" % (  1.0/iq2mridisk10_t0 ,  1.0/iq2mridisk20_t0 ,  1.0/iq2mridisk100_t0 ) )
-    print( "qmridisk10 = %g, qmridisk20 = %g, qmridisk100 = %g" % (  qmridisk10_avg ,  qmridisk20_avg ,  qmridisk100_avg ) )
-    print( "q2mridisk10 = %g, q2mridisk20 = %g, q2mridisk100 = %g" % (  1.0/iq2mridisk10_avg ,  1.0/iq2mridisk20_avg ,  1.0/iq2mridisk100_avg ) )
-    #
-    print( "qmridiskweak10_t0 = %g, qmridiskweak20_t0 = %g, qmridiskweak100_t0 = %g" % (  qmridiskweak10_t0 ,  qmridiskweak20_t0 ,  qmridiskweak100_t0 ) )
-    print( "q2mridiskweak10_t0 = %g, q2mridiskweak20_t0 = %g, q2mridiskweak100_t0 = %g" % (  1.0/iq2mridiskweak10_t0 ,  1.0/iq2mridiskweak20_t0 ,  1.0/iq2mridiskweak100_t0 ) )
-    print( "qmridiskweak10 = %g, qmridiskweak20 = %g, qmridiskweak100 = %g" % (  qmridiskweak10_avg ,  qmridiskweak20_avg ,  qmridiskweak100_avg ) )
-    print( "q2mridiskweak10 = %g, q2mridiskweak20 = %g, q2mridiskweak100 = %g" % (  1.0/iq2mridiskweak10_avg ,  1.0/iq2mridiskweak20_avg ,  1.0/iq2mridiskweak100_avg ) )
-    #
-    #
-    print( "asphor = %g:%g:%g, asp10 = %g:%g:%g, asp20 = %g:%g:%g, asp100 = %g:%g:%g" % ( drnormvsrhor, dHnormvsrhor, dPnormvsrhor, drnormvsr10, dHnormvsr10, dPnormvsr10, drnormvsr20, dHnormvsr20, dPnormvsr20, drnormvsr100, dHnormvsr100, dPnormvsr100 ) )
-    #
-    print( "eta_BH = %g, eta_BHEM = %g, eta_BHMAKE = %g, eta_jwout = %g, eta_j = %g, eta_jEM = %g, eta_jMAKE = %g, eta_mwin = %g, eta_mwinEM = %g, eta_mwinMAKE = %g, eta_mwout = %g, eta_mwoutEM = %g, eta_mwoutMAKE = %g, eta_win = %g, eta_winEM = %g, eta_winMAKE = %g, eta_wout = %g, eta_woutEM = %g, eta_woutMAKE = %g, pemtot_BH = %g" % ( etabh_avg, etabhEM_avg, etabhMAKE_avg, etaj_avg + etawout_avg, etaj_avg, etajEM_avg, etajMAKE_avg, etamwin_avg, etamwinEM_avg, etamwinMAKE_avg, etamwout_avg, etamwoutEM_avg, etamwoutMAKE_avg, etawin_avg, etawinEM_avg, etawinMAKE_avg, etawout_avg, etawoutEM_avg, etawoutMAKE_avg, pemtot_avg ) )
-    #
-    print( "leta_BH = %g, leta_BHEM = %g, leta_BHMAKE = %g, leta_jwout = %g, leta_j = %g, leta_jEM = %g, leta_jMAKE = %g, leta_mwin = %g, leta_mwinEM = %g, leta_mwinMAKE = %g, leta_mwout = %g, leta_mwoutEM = %g, leta_mwoutMAKE = %g, leta_win = %g, leta_winEM = %g, leta_winMAKE = %g, leta_wout = %g, leta_woutEM = %g, leta_woutMAKE = %g, lemtot_BH = %g" % ( letabh_avg, letabhEM_avg, letabhMAKE_avg, letaj_avg + letawout_avg, letaj_avg, letajEM_avg, letajMAKE_avg, letamwin_avg, letamwinEM_avg, letamwinMAKE_avg, letamwout_avg, letamwoutEM_avg, letamwoutMAKE_avg, letawin_avg, letawinEM_avg, letawinMAKE_avg, letawout_avg, letawoutEM_avg, letawoutMAKE_avg, lemtot_avg ) )
-    #
-    if iti > fti:
-        print( "incomplete output: %g %g" % (iti, fti) )
-    #
-    # 6:
-    print( "HLatex5: ModelName & $\\dot{M}_{\\rm{}BH}$  & $\\dot{M}_{\\rm{}in,i}$ & $\\dot{M}_{\\rm{}in,o}$     & $\\dot{M}_{\\rm{}j}$    & $\\dot{M}_{\\rm{}mw,i}$ & $\\dot{M}_{\\rm{}mw,o}$    & $\\dot{M}_{\\rm{}w,i}$ & $\\dot{M}_{\\rm{}w,o}$ \\\\" )
-    print( "VLatex5: %s         & %g & %g & %g    & %g    & %g & %g   & %g & %g \\\\ %% %s" % (truemodelname, roundto2(mdotfinavg), roundto2(mdotinrjetinfinavg), roundto2(mdotinrjetoutfinavg), roundto2(mdotjetfinavg),    roundto2(mdotmwinfinavg), roundto2(mdotmwoutfinavg),     roundto2(mdotwinfinavg), roundto2(mdotwoutfinavg),    modelname ) )
-    #
-    # 12:
-    print( "HLatex95: $\\delta r:r \\delta\\theta:r\\sin\\theta \\delta\\phi$" )
-    print( "HLatex95: ModelName & $r_+$ & $r_i$ & $r_o$ \\\\" )
-    print( "VLatex95: %s         & %g:%g:%g & %g:%g:%g & %g:%g:%g \\\\ %% %s" % (truemodelname, roundto2(drnormh), roundto2(dHnormh), roundto2(dPnormh), roundto2(drnormi), roundto2(dHnormi), roundto2(dPnormi), roundto2(drnormo), roundto2(dHnormo), roundto2(dPnormo), modelname ) )
-    #
-    # 8:
-    print("HLatex1: ModelName & $a$ & FieldType & $\\beta_{\\rm{}min}$ & $\\beta_{\\rm{}rat-of-avg} & $\\beta_{\\rm{}rat-of-max} & $\\left(\\frac{|h|}{r}\\right)_{r_{\\rm{}max}}$ & $Q_{1,t=0,\\rm{}MRI,i}$  & $Q_{1,t=0,\\rm{}MRI,o}$ & $Q_{2,t=0,\\rm{}MRI,i}$ & $Q_{2,t=0,\\rm{}MRI,o}$  \\\\")
-    print("VLatex1: %s         & %g  &  %s        & %g                  & %g                        & %g                        & %g                                             & %g                       & %g                       & %g                      & %g \\\\ %% %s" % (truemodelname,a,fieldtype,roundto2(betamin_t0),roundto2(betaratofavg_t0),roundto2(betaratofmax_t0),roundto2(hoverratrmax_t0),roundto2(qmriit0), roundto2(qmriot0), roundto2(1.0/iq2mriit0), roundto2(1.0/iq2mriot0), modelname ) )
-    #
-    # 16:
-    print("HLatex2: ModelName  & GridType & $N_r$ & $N_\\theta$ & $N_\\phi$ & $R_{\\rm{}in}$ & $R_{\\rm{}out}$  & $A_{r=r_+}$ & $A_{r_i}$ & $A_{r_o}$ & $T_i$--$T_f$  \\\\")
-    #
-    print("VLatex2: %s          & %s        &  %g   & %g          & %g        & %g            & %g              & %g:%g:%g    & %g:%g:%g       & %g:%g:%g    & %g--%g \\\\ %% %s" % (truemodelname,gridtype,nx,ny,nzreal,Rin,Rout,roundto2(drnormh), roundto2(dHnormh), roundto2(dPnormh), roundto2(drnormi), roundto2(dHnormi), roundto2(dPnormi), roundto2(drnormo), roundto2(dHnormo), roundto2(dPnormo),truetmin,truetmax, modelname ) )
-    #
-    # 8:
-    print( "HLatex99: ModelName & $Q_{1,t=0,\\rm{}MRI,10}$ & $Q_{1,t=0,\\rm{}MRI,20}$  & $Q_{1,t=0,\\rm{}MRI,100}$ & $Q_{2,t=0,\\rm{}MRI,10}$ & $Q_{2,t=0,\\rm{}MRI,20}$ & $Q_{2,t=0,\\rm{}MRI,100}$  \\\\" )
-    print( "VLatex99: %s         & %g & %g & %g & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(qmridisk10_t0), roundto2(qmridisk20_t0), roundto2(qmridisk100_t0), roundto2(1.0/iq2mridisk10_t0), roundto2(1.0/iq2mridisk20_t0), roundto2(1.0/iq2mridisk100_t0), modelname ) )
-    #
-    print( "HLatex4: ModelName & $Q_{1,\\rm{}MRI,10}$ & $Q_{1,\\rm{}MRI,20}$  & $Q_{1,\\rm{}MRI,100}$ & $Q_{2,\\rm{}MRI,10}$ & $Q_{2,\\rm{}MRI,20}$ & $Q_{2,\\rm{}MRI,100}$  \\\\" )
-    print( "VLatex4: %s         & %g & %g & %g & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(qmridisk10_avg), roundto2(qmridisk20_avg), roundto2(qmridisk100_avg), roundto2(1.0/iq2mridisk10_avg), roundto2(1.0/iq2mridisk20_avg), roundto2(1.0/iq2mridisk100_avg), modelname ) )
-    #
-    # 8:
-    print( "HLatex97: ModelName & $Q_{1,t=0,\\rm{}MRI,10,w}$ & $Q_{1,t=0,\\rm{}MRI,20,w}$  & $Q_{1,t=0,\\rm{}MRI,100,w}$ & $Q_{2,t=0,\\rm{}MRI,10,w}$ & $Q_{2,t=0,\\rm{}MRI,20,w}$ & $Q_{2,t=0,\\rm{}MRI,100,w}$  \\\\" )
-    print( "VLatex97: %s         & %g & %g & %g & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(qmridiskweak10_t0), roundto2(qmridiskweak20_t0), roundto2(qmridiskweak100_t0), roundto2(1.0/iq2mridiskweak10_t0), roundto2(1.0/iq2mridiskweak20_t0), roundto2(1.0/iq2mridiskweak100_t0), modelname ) )
-    #
-    print( "HLatex96: ModelName & $Q_{1,\\rm{}MRI,10,w}$ & $Q_{1,\\rm{}MRI,20,w}$  & $Q_{1,\\rm{}MRI,100,w}$ & $Q_{2,\\rm{}MRI,10,w}$ & $Q_{2,\\rm{}MRI,20,w}$ & $Q_{2,\\rm{}MRI,100,w}$  \\\\" )
-    print( "VLatex96: %s         & %g & %g & %g & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(qmridiskweak10_avg), roundto2(qmridiskweak20_avg), roundto2(qmridiskweak100_avg), roundto2(1.0/iq2mridiskweak10_avg), roundto2(1.0/iq2mridiskweak20_avg), roundto2(1.0/iq2mridiskweak100_avg), modelname ) )
-    #
-    print( "HLatex3: ModelName & $\\left(\\frac{|h|}{r}\\right)^d_{\\rm{}BH}$  & $\\left(\\frac{|h|}{r}\\right)^d_{5}$ & $\\left(\\frac{|h|}{r}\\right)^d_{20}$ & $\\left(\\frac{|h|}{r}\\right)^d_{100}$ & $\\left(\\frac{|h|}{r}\\right)^{dc}_{\\rm{}BH}$  & $\\left(\\frac{|h|}{r}\\right)^{dc}_{5}$ & $\\left(\\frac{|h|}{r}\\right)^{dc}_{20}$ & $\\left(\\frac{|h|}{r}\\right)^{dc}_{100}$ & $\\left(\\frac{|h|}{r}\\right)^{cj}_{\\rm{}BH}$  & $\\left(\\frac{|h|}{r}\\right)^{cj}_{5}$ & $\\left(\\frac{|h|}{r}\\right)^{cj}_{20}$ & $\\left(\\frac{|h|}{r}\\right)^{cj}_{100}$ \\\\" )
-    print( "VLatex3: %s         & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g  \\\\ %% %s" % (truemodelname, roundto2(hoverrhor_avg), roundto2( hoverr5_avg), roundto2(hoverr20_avg), roundto2(hoverr100_avg), roundto2(hoverrcoronahor_avg), roundto2( hoverrcorona5_avg), roundto2(hoverrcorona20_avg), roundto2(hoverrcorona100_avg), roundto2(hoverrjethor_avg), roundto2( hoverrjet5_avg), roundto2(hoverrjet20_avg), roundto2(hoverrjet100_avg), modelname ) )
-    #
-    #
-    einf,linf=elinfcalc(a)
-    etant=prefactor*(1.0-einf)
-    lnt=-linf
-    #
-    # 9:
-    print( "HLatex6: ModelName & $\\eta_{\\rm{}BH}$ & $\\eta^{\\rm{}EM}_{\\rm{}BH}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}BH}$ & $\\eta_{\\rm{}j+mw,o}$ & $\\eta_{\\rm{}j+w,o}$ & $\\eta_{\\rm{}j}$ & $\\eta^{\\rm{}EM}_j$ & $\\eta^{\\rm{}MAKE}_{\\rm{}j}$ & $\\eta_{\\rm{}NT}$ \\\\" )
-    print( "VLatex6: %s         & %g & %g & %g    & %g & %g    & %g & %g & %g     & %g \\\\ %% %s" % (truemodelname, roundto3foreta(etabh_avg), roundto3foreta(etabhEM_avg), roundto3foreta(etabhMAKE_avg), roundto3foreta(etaj_avg + etamwout_avg), roundto3foreta(etaj_avg + etawout_avg), roundto3foreta(etaj_avg), roundto3foreta(etajEM_avg), roundto3foreta(etajMAKE_avg), roundto3foreta(etant), modelname ) )
-    #
-    # 12:
-    print( "HLatex7: ModelName & $\\eta_{\\rm{}mw,i}$ & $\\eta^{\\rm{}EM}_{\\rm{}mw,i}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}mw,i}$ & $\\eta_{\\rm{}mw,o}$ & $\\eta^{\\rm{}EM}_{\\rm{}mw,o}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}mw,o}$ & $\\eta_{\\rm{}w,i}$ & $\\eta^{\\rm{}EM}_{\\rm{}w,i}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}w,i}$ & $\\eta_{\\rm{}w,o}$ & $\\eta^{\\rm{}EM}_{\\rm{}w,o}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}w,o}$ \\\\" )
-    print( "VLatex7: %s        & %g & %g & %g    & %g & %g & %g   & %g & %g & %g    & %g & %g & %g  \\\\ %% %s" % (truemodelname, roundto3foreta(etamwin_avg), roundto3foreta(etamwinEM_avg), roundto3foreta(etamwinMAKE_avg), roundto3foreta(etamwout_avg), roundto3foreta(etamwoutEM_avg), roundto3foreta(etamwoutMAKE_avg), roundto3foreta(etawin_avg), roundto3foreta(etawinEM_avg), roundto3foreta(etawinMAKE_avg), roundto3foreta(etawout_avg), roundto3foreta(etawoutEM_avg), roundto3foreta(etawoutMAKE_avg), modelname ) )
-    #
-    lbh_avg=letabh_avg/prefactor
-    lbhEM_avg=letabhEM_avg/prefactor
-    lbhMAKE_avg=letabhMAKE_avg/prefactor
-    ljmwout_avg=(letaj_avg + letamwout_avg)/prefactor
-    ljwout_avg=(letaj_avg + letawout_avg)/prefactor
-    lj_avg=letaj_avg/prefactor
-    ljEM_avg=letajEM_avg/prefactor
-    ljMAKE_avg=letajMAKE_avg/prefactor
-    lmwin_avg=letamwin_avg/prefactor
-    lmwinEM_avg=letamwinEM_avg/prefactor
-    lmwinMAKE_avg=letamwinMAKE_avg/prefactor
-    lmwout_avg=letamwout_avg/prefactor
-    lmwoutEM_avg=letamwoutEM_avg/prefactor
-    lmwoutMAKE_avg=letamwoutMAKE_avg/prefactor
-    lwin_avg=letawin_avg/prefactor
-    lwinEM_avg=letawinEM_avg/prefactor
-    lwinMAKE_avg=letawinMAKE_avg/prefactor
-    lwout_avg=letawout_avg/prefactor
-    lwoutEM_avg=letawoutEM_avg/prefactor
-    lwoutMAKE_avg=letawoutMAKE_avg/prefactor
-    #
-    # 9:
-    print( "HLatex8: ModelName & $l_{\\rm{}BH}$ & $l^{\\rm{}EM}_{\\rm{}BH}$ & $l^{\\rm{}MAKE}_{\\rm{}BH}$ & $l_{\\rm{}j+mw,o}$ & $l_{\\rm{}j+w,o}$ & $l_{\\rm{}j}$ & $l^{\\rm{}EM}_j$ & $l^{\\rm{}MAKE}_{\\rm{}j}$ & $l_{\\rm{}NT}$ \\\\" )
-    print( "VLatex8: %s         & %g & %g & %g    & %g & %g    & %g & %g & %g     & %g \\\\ %% %s" % (truemodelname, roundto3forl(lbh_avg), roundto3forl(lbhEM_avg), roundto3forl(lbhMAKE_avg), roundto3forl(lj_avg + lmwout_avg), roundto3forl(lj_avg + lwout_avg), roundto3forl(lj_avg), roundto3forl(ljEM_avg), roundto3forl(ljMAKE_avg), roundto3forl(lnt), modelname ) )
-    #
-    # 12:
-    print( "HLatex9: ModelName & $l_{\\rm{}mw,i}$ & $l^{\\rm{}EM}_{\\rm{}mw,i}$ & $l^{\\rm{}MAKE}_{\\rm{}mw,i}$ & $l_{\\rm{}mw,o}$ & $l^{\\rm{}EM}_{\\rm{}mw,o}$ & $l^{\\rm{}MAKE}_{\\rm{}mw,o}$ & $l_{\\rm{}w,i}$ & $l^{\\rm{}EM}_{\\rm{}w,i}$ & $l^{\\rm{}MAKE}_{\\rm{}w,i}$ & $l_{\\rm{}w,o}$ & $l^{\\rm{}EM}_{\\rm{}w,o}$ & $l^{\\rm{}MAKE}_{\\rm{}w,o}$ \\\\" )
-    print( "VLatex9: %s        & %g & %g & %g    & %g & %g & %g   & %g & %g & %g    & %g & %g & %g  \\\\ %% %s" % (truemodelname, roundto3forl(lmwin_avg), roundto3forl(lmwinEM_avg), roundto3forl(lmwinMAKE_avg), roundto3forl(lmwout_avg), roundto3forl(lmwoutEM_avg), roundto3forl(lmwoutMAKE_avg), roundto3forl(lwin_avg), roundto3forl(lwinEM_avg), roundto3forl(lwinMAKE_avg), roundto3forl(lwout_avg), roundto3forl(lwoutEM_avg), roundto3forl(lwoutMAKE_avg), modelname ) )
-    #
-    #
-    djdtnormbh  = (-lbh_avg) - 2.0*a*(1.0-etabh_avg/prefactor)
-    djdtnormj   = (-lj_avg)  - 2.0*a*(1.0-etaj_avg/prefactor)
-    djdtnormmwin   = (-lmwin_avg)  - 2.0*a*(1.0-etamwin_avg/prefactor)
-    djdtnormmwout   = (-lmwout_avg)  - 2.0*a*(1.0-etamwout_avg/prefactor)
-    djdtnormwin   = (-lwin_avg)  - 2.0*a*(1.0-etawin_avg/prefactor)
-    djdtnormwout   = (-lwout_avg)  - 2.0*a*(1.0-etawout_avg/prefactor)
-    djdtnormnt  = linf       - 2.0*a*einf
-    #
-    # 7:
-    print( "HLatex10: ModelName  & $s_{\\rm{}BH}$ & $s_{\\rm{}j}$   & $s_{\\rm{}mw,i}$ & $s_{\\rm{}mw,o}$    & $s_{\\rm{}w,i}$ & $s_{\\rm{}w,o}$    & $s_{\\rm{}NT}$ \\\\" )
-    print( "VLatex10: %s         & %g & %g   & %g & %g    & %g & %g    & %g \\\\ %% %s" % (truemodelname, roundto2(djdtnormbh), roundto2(djdtnormj), roundto2(djdtnormmwin), roundto2(djdtnormmwout), roundto2(djdtnormwin), roundto2(djdtnormwout), roundto2(djdtnormnt), modelname ) )
+    ######################################
+    # END COMPUTE JON WHICHPLOT==4
+    ######################################
     #
     #
     #
-    #        
-    #
-    #
-    #
-    #######################
-    #
-    # eta NEW ***
-    #
-    #######################
-    if whichplot == 6:
-        etabh = prefactor*pjemtot[:,ihor]/mdotfinavg
-        etaj = prefactor*pjke_mu1[:,iofr(rjetout)]/mdotfinavg
-        etaw = prefactor*pjke_mumax1[:,iofr(rjetout)]/mdotfinavg
-        #
-        etabh2 = prefactor*pjemtot[:,ihor]/mdotiniavg
-        etaj2 = prefactor*pjke_mu1[:,iofr(rjetout)]/mdotiniavg
-        etaw2 = prefactor*pjke_mumax1[:,iofr(rjetout)]/mdotiniavg
-        #
-        if(1 and iti>fti):
-            #use mdot averaged over the same time interval for iti<t<=itf
-            icond=(ts>=iti)*(ts<itf)
-            etabh[icond]=etabh2[icond]
-            etaj[icond]=etaj2[icond]
-            etaw[icond]=etaw2[icond]
-        if dotavg:
-            etaj_avg = timeavg(etaj,ts,fti,ftf)
-            etabh_avg = timeavg(etabh,ts,fti,ftf)
-            etaw_avg = timeavg(etaw,ts,fti,ftf)
-            ptot_avg = timeavg(pjemtot[:,ihor],ts,fti,ftf)
-            #
-            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etabh_avg,color=(ofc,fc,fc)) 
-            if showextra:
-                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaj_avg,'--',color=(fc,fc+0.5*(1-fc),fc)) 
-                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaw_avg,'-.',color=(fc,fc+0.5*(1-fc),fc)) 
-            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
-            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
-            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
-            if(iti>fti):
-                etaj2_avg = timeavg(etaj2,ts,iti,itf)
-                etabh2_avg = timeavg(etabh2,ts,iti,itf)
-                etaw2_avg = timeavg(etaw2,ts,iti,itf)
-                ptot2_avg = timeavg(pjemtot[:,ihor],ts,iti,itf)
-                #
-                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etabh2_avg,color=(ofc,fc,fc))
-                if showextra:
-                    ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etaj2_avg,'--',color=(fc,fc+0.5*(1-fc),fc))
-                    ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etaw2_avg,'-.',color=(fc,fc+0.5*(1-fc),fc))
-        #
-        ax.plot(ts,etabh,clr,label=r'$\eta_{\rm BH}$')
-        if showextra:
-            ax.plot(ts,etaj,'g--',label=r'$\eta_{\rm j}$')
-            ax.plot(ts,etaw,'b-.',label=r'$\eta_{\rm w,o}$')
-        if findex != None:
-            if not isinstance(findex,tuple):
-                ax.plot(ts[findex],etabh[findex],'o',mfc='r')
-                if showextra:
-                    ax.plot(ts[findex],etaj[findex],'gs')
-                    ax.plot(ts[findex],etaw[findex],'bv')
-            else:
-                for fi in findex:
-                    ax.plot(ts[fi],etabh[fi],'o',mfc='r')#,label=r'$\dot M$')
-                    if showextra:
-                        ax.plot(ts[fi],etaw[fi],'bv')#,label=r'$\dot M$')
-                        ax.plot(ts[fi],etaj[fi],'gs')#,label=r'$\dot M$')
-        #ax.set_ylim(0,2)
-        ax.set_xlabel(r'$t\;[r_g/c]$',fontsize=16)
-        ax.set_ylabel(r'$\eta\ [\%]$',fontsize=16,ha='left',labelpad=20)
-        ax.set_xlim(ts[0],ts[-1])
-        if showextra:
-            plt.legend(loc='upper left',bbox_to_anchor=(0.02,0.98),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
-            # set some legend properties.  All the code below is optional.  The
-            # defaults are usually sensible but if you need more control, this
-            # shows you how
-            leg = plt.gca().get_legend()
-            ltext  = leg.get_texts()  # all the text.Text instance in the legend
-            llines = leg.get_lines()  # all the lines.Line2D instance in the legend
-            frame  = leg.get_frame()  # the patch.Rectangle instance surrounding the legend
-            # see text.Text, lines.Line2D, and patches.Rectangle for more info on
-            # the settable properties of lines, text, and rectangles
-            #frame.set_facecolor('0.80')      # set the frame face color to light gray
-            plt.setp(ltext, fontsize=12)    # the legend text fontsize
-            #plt.setp(llines, linewidth=1.5)      # the legend linewidth
-            #leg.draw_frame(False)           # don't draw the legend frame
-
-        print( "whichplot==6 values" )
-        print( "eta_BH = %g, eta_j = %g, eta_w = %g, eta_jw = %g, mdot = %g, mdotwin=%g, mdotwout=%g, mdotjet=%g, ptot_BH = %g" % ( etabh_avg, etaj_avg, etaw_avg, etaj_avg + etaw_avg, mdotfinavg, mdotwinfinavg, mdotwoutfinavg, mdotjetfinavg, ptot_avg ) )
-        if iti > fti:
-            print( "eta_BH2 = %g, eta_j2 = %g, eta_w2 = %g, eta_jw2 = %g, mdot2 = %g, mdotwin2=%g, mdotwout2=%g , mdotjet2=%g, ptot2_BH = %g" % ( etabh2_avg, etaj2_avg, etaw2_avg, etaj2_avg + etaw2_avg, mdotiniavg, mdotwininiavg, mdotwoutiniavg, mdotjetiniavg, ptot2_avg ) )
-
-        #xxx
-    #######################
-    #
-    # \Phi ***
-    #
-    #######################
-    #        
-    sashaplot5 = 0
-    #
-    # true total flux (including BH+disk @ equator) vs. time and radius
-    feqtot[:,ti[:,0,0]<ihor]=0
-    ftruetot=np.copy(feqtot)
-    for tic in ts:
-        tici=np.where(ts==tic)[0]
-        ftruetot[tici,:]=ftruetot[tici,:] - (fstot[tici,ihor]/2)
-    #
-    blobf=np.zeros(len(mdotfinavgvsr5),dtype=mdotfinavgvsr5.dtype)
-    ifmaxvst=np.zeros(sizet,dtype=int)
-    fmaxvst=np.zeros(sizet,dtype=float)
-    for tic in ts:
-        tici=np.where(ts==tic)[0]
-        #print("tic=%g %d tici=%d" % (tic,len(tic==ts),tici) )
-        blobf[:]=ftruetot[tici,:]
-        #print("lenblobf=%d" % (len(blobf)))
-        #print("blobf")
-        #print(blobf)
-        condition=(ti[:,0,0]>ihor)
-        condition=condition*(np.sign(blobf)!=np.sign(blobf[ihor]))
-        fzeroO=ti[:,0,0][condition==1]
-        fzero=fzeroO.astype(np.integer)
-        #print("fzero")
-        #print(fzero)
-        izero=-1
-        # see if ever got zero
-        if len(fzero)==0:
-            izero=nx-1
-        else:
-            izero=fzero[0]
-            # back-up to first same-signed value
-            if izero!=ihor:
-                izero=izero-1
-            #
-        #
-        #print("ihor=%d izero=%d" % (ihor, izero) )
-        if izero!=-1:
-            #print("blobfihor=%g blobfizero=%g" % (blobf[ihor],blobf[izero]) )
-            condition=ti[:,0,0]>=ihor
-            condition=condition*(ti[:,0,0]<=izero)
-            # only do max over relevant range
-            newblobf=np.copy(blobf)
-            newblobf[ti[:,0,0]<ihor]=0
-            newblobf[ti[:,0,0]>izero]=0
-            condition=condition*(np.fabs(newblobf[:])==np.max(np.fabs(newblobf[:])))
-            #print("condition")
-            #print(condition)
-            imax=np.where(condition==1)[0]
-            #print("imax")
-            #print(imax)
-            #
-            if(len(imax)>1):
-                imax=imax[0]
-                #print("imax2")
-                #print(imax)
-            #
-            ifmax=ftruetot[tici,imax]
-            #print("ifmax")
-            #print(ifmax)
-            #print("imax=%d ifmax=%g" % (imax,ifmax) )
-            ifmaxvst[tici]=imax
-        else:
-            ifmaxvst[tici]=ihor
-        #
-        fmaxvst[tici]=ftruetot[tici,ifmaxvst[tici]]
-        #print("fmax=%g" % (fmaxvst[tici]) )
-    #
-    #
-    print("ifmaxvst")
-    print(ifmaxvst)
-    print("fmaxvst")
-    print(fmaxvst)
-    #
-    # time-averaged flux at the max flux relevant for the hole flux
-    # use this rather than t=0 max flux for hole ratio calculation because flux can degrade over time on domain.
-    # So want to know what the flux is on the hole relative to similar signed flux available to the hole at any time, not just predegraded value at t=0
-    ftruetot_avg = timeavg(fmaxvst,ts,fti,ftf)
-    print("ftruetot_avg=%g" % (ftruetot_avg) )
-    #
-    #
-    #
-    # kinda odd use of average whichistageq inside time-dependent thing, but done for simplicity
-    feqstag=feqtot[:,istageq]
-    # need t=0 value since want full possible source of flux, not just average or current flux available
-    feqstagt0=feqtot[0,istageq]
-    feqstag_avg1 = timeavg(feqstag,ts,fti,ftf)
-    feqstag_avg2 = timeavg(feqstag**2,ts,fti,ftf)**0.5
-    feqstagB_avg1 = timeavg(feqstag,ts,0,fti)
-    feqstagB_avg2 = timeavg(feqstag**2,ts,0,fti)**0.5
-    feqstagC_avg1 = timeavg(feqstag,ts,iti,itf)
-    feqstagC_avg2 = timeavg(feqstag**2,ts,iti,itf)**0.5
-    print("feqstagt0=%g" % (feqstagt0) )
-    print("feqstag_avg1=%g feqstag_avg2=%g" % (feqstag_avg1, feqstag_avg2) )
-    print("feqstagB_avg1=%g feqstagB_avg2=%g" % (feqstagB_avg1, feqstagB_avg2) )
-    print("feqstagC_avg1=%g feqstagC_avg2=%g" % (feqstagC_avg1, feqstagC_avg2) )
-    #
-    # kinda odd use of average istageq inside time-dependent thing, but done for simplicity
-    feqstagnearfin=feqtot[:,istageqnearfin]
-    # need t=0 value since want full possible source of flux, not just average or current flux available
-    feqstagnearfint0=feqtot[0,istageqnearfin]
-    feqstagnearfin_avg1 = timeavg(feqstagnearfin,ts,fti,ftf)
-    feqstagnearfin_avg2 = timeavg(feqstagnearfin**2,ts,fti,ftf)**0.5
-    feqstagnearfinB_avg1 = timeavg(feqstagnearfin,ts,0,fti)
-    feqstagnearfinB_avg2 = timeavg(feqstagnearfin**2,ts,0,fti)**0.5
-    feqstagnearfinC_avg1 = timeavg(feqstagnearfin,ts,iti,itf)
-    feqstagnearfinC_avg2 = timeavg(feqstagnearfin**2,ts,iti,itf)**0.5
-    print("feqstagnearfint0=%g" % (feqstagnearfint0) )
-    print("feqstagnearfin_avg1=%g feqstagnearfin_avg2=%g" % (feqstagnearfin_avg1, feqstagnearfin_avg2) )
-    print("feqstagnearfinB_avg1=%g feqstagnearfinB_avg2=%g" % (feqstagnearfinB_avg1, feqstagnearfinB_avg2) )
-    print("feqstagnearfinC_avg1=%g feqstagnearfinC_avg2=%g" % (feqstagnearfinC_avg1, feqstagnearfinC_avg2) )
-    #
-    # choose which istageq to use
-    #chosenfeqstag=feqstagt0
-    #chosenfeqstag=feqstagnearfint0
-    if np.fabs(feqstagnearfint0)>np.fabs(feqstagt0):
-        chosenfeqstag=feqstagnearfint0
-        istagequse=istageqnearfin
-    else:
-        chosenfeqstag=feqstagt0
-        istagequse=istageq
-    #
+    ######################################
+    # BEGIN PART2 of COMPUTE JON WHICHPLOT==5
+    ######################################
     #
     # get initial extrema
     # get equatorial flux extrema at t=0 to normalize new flux on hole
@@ -7330,8 +6996,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     # normalized to local Mdot
     phibh=(fstot[:,ihor]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotfinavg**0.5
     #
-    phirjetin=(fsin[:,iofr(rjetin)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotinrjetinfinavg**0.5
-    phirjetout=(fsin[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotinrjetoutfinavg**0.5
+    phirdiskin=(fsin[:,iofr(rdiskin)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotinrdiskinfinavg**0.5
+    phirdiskout=(fsin[:,iofr(rdiskout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotinrdiskoutfinavg**0.5
     #
     # normalized to BH Mdot (so kinda non-local, but magnetic flux in jet mostly conserved from hole to large radii)
     phij=(phiabsj_mu1[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotfinavg**0.5
@@ -7339,21 +7005,21 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     # normalize wind by its own Mdotout so always well-defined and co-spatial-local normalization
     phimwin=(phiabsj_mumax1m[:,iofr(rjetin)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotmwinfinavg**0.5    #mdotfinavg**0.5
     phimwout=(phiabsj_mumax1m[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotmwoutfinavg**0.5    #mdotfinavg**0.5
-    phiwin=(phiabsj_mumax1[:,iofr(rjetin)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotwinfinavg**0.5    #mdotfinavg**0.5
-    phiwout=(phiabsj_mumax1[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotwoutfinavg**0.5  #mdotfinavg**0.5
+    phiwin=(phiabsj_mumax1[:,iofr(rdiskin)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotwinfinavg**0.5    #mdotfinavg**0.5
+    phiwout=(phiabsj_mumax1[:,iofr(rdiskout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotwoutfinavg**0.5  #mdotfinavg**0.5
     #
     phijn=(phiabsj_n_mu1[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotfinavg**0.5
     phijs=(phiabsj_s_mu1[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotfinavg**0.5
     #
     phibh2=(fstot[:,ihor]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotiniavg**0.5
-    phirjetin2=(fsin[:,iofr(rjetin)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotinrjetininiavg**0.5
-    phirjetout2=(fsin[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotinrjetoutiniavg**0.5
+    phirdiskin2=(fsin[:,iofr(rdiskin)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotinrdiskininiavg**0.5
+    phirdiskout2=(fsin[:,iofr(rdiskout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotinrdiskoutiniavg**0.5
     #
     phij2=(phiabsj_mu1[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotiniavg**0.5
     phimwin2=(phiabsj_mumax1m[:,iofr(rjetin)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotmwininiavg**0.5    #mdotiniavg**0.5
     phimwout2=(phiabsj_mumax1m[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotmwoutiniavg**0.5 #mdotiniavg**0.5
-    phiwin2=(phiabsj_mumax1[:,iofr(rjetin)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotwininiavg**0.5    #mdotiniavg**0.5
-    phiwout2=(phiabsj_mumax1[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotwoutiniavg**0.5 #mdotiniavg**0.5
+    phiwin2=(phiabsj_mumax1[:,iofr(rdiskin)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotwininiavg**0.5    #mdotiniavg**0.5
+    phiwout2=(phiabsj_mumax1[:,iofr(rdiskout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotwoutiniavg**0.5 #mdotiniavg**0.5
     #
     #phijn2=(phiabsj_n_mu2[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotiniavg**0.5
     #phijs2=(phiabsj_s_mu2[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotiniavg**0.5
@@ -7364,8 +7030,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         #use phi averaged over the same time interval for iti<t<=itf
         icond=(ts>=iti)*(ts<itf)
         phibh[icond]=phibh2[icond]
-        phirjetin[icond]=phirjetin2[icond]
-        phirjetout[icond]=phirjetout2[icond]
+        phirdiskin[icond]=phirdiskin2[icond]
+        phirdiskout[icond]=phirdiskout2[icond]
         phij[icond]=phij2[icond]
         phijs[icond]=phijs2[icond]
         phijn[icond]=phijn2[icond]
@@ -7375,8 +7041,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         phiwout[icond]=phiwout2[icond]
     if dotavg:
         phibh_avg = timeavg(phibh**2,ts,fti,ftf)**0.5
-        phirjetin_avg = timeavg(phirjetin**2,ts,fti,ftf)**0.5
-        phirjetout_avg = timeavg(phirjetout**2,ts,fti,ftf)**0.5
+        phirdiskin_avg = timeavg(phirdiskin**2,ts,fti,ftf)**0.5
+        phirdiskout_avg = timeavg(phirdiskout**2,ts,fti,ftf)**0.5
         phij_avg = timeavg(phij**2,ts,fti,ftf)**0.5
         phimwin_avg = timeavg(phimwin**2,ts,fti,ftf)**0.5
         phimwout_avg = timeavg(phimwout**2,ts,fti,ftf)**0.5
@@ -7392,6 +7058,536 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
                 phibh2_avg = timeavg(phibh2**2,ts,iti,itf)**0.5
                 fstot2_avg = timeavg(fstot[:,ihor]**2,ts,iti,itf)**0.5
                 fsmaxtot2_avg = timeavg(fsmaxtot[:,ihor]**2,ts,iti,itf)**0.5
+    #
+    ######################################
+    # END PART2 of COMPUTE JON WHICHPLOT==5
+    ######################################
+    #
+    #
+    #
+    #
+    #######################################
+    # Begin some plots
+    #######################################
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #######################
+    #
+    # Mdot ***
+    #
+    #######################
+    #
+    if modelname=="runlocaldipole3dfiducial" or modelname=="blandford3d_new":
+        windplotfactor=1.0
+    elif modelname=="sasham9" or modelname=="sasham5" or modelname=="sasha0" or modelname=="sasha1" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9b25" or modelname=="sasha9b50" or modelname=="sasha9b100" or modelname=="sasha9b200" or modelname=="sasha99":
+        windplotfactor=1.0
+    else:
+        #windplotfactor=0.1
+        # with only showing magnetized wind, 1.0 factor best
+        windplotfactor=1.0
+    #
+    sashaplot1=0
+    #
+    #####################################
+    # Sasha's version of Mdot plot
+    if whichplot == 1 and sashaplot1 == 1:
+        if dotavg:
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+FMavg,color=(ofc,fc,fc),linestyle=lst)
+            if(iti>fti):
+                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+mdotiniavg,color=(ofc,fc,fc))
+                
+        ax.plot(ts,np.abs(FM),clr,label=r'$\dot Mc^2$')
+        if findex != None:
+            if not isinstance(findex,tuple):
+                ax.plot(ts[findex],np.abs(FM)[findex],'o',mfc='r')
+            else:
+                for fi in findex:
+                    ax.plot(ts[fi],np.abs(FM)[fi],'o',mfc='r')#,label=r'$\dot M$')
+        #ax.legend(loc='upper left')
+        ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,labelpad=9)
+        plt.setp( ax.get_xticklabels(), visible=False)
+        ax.set_xlim(ts[0],ts[-1])
+        if showextra:
+            plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderaxespad=0,frameon=True,labelspacing=0)
+    #
+    #####################################
+    # Jon's version of Mdot plot
+    if whichplot == 1 and sashaplot1 == 0:
+        if dotavg:
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotfinavg,color=(ofc,fc,fc))
+            if showextra:
+                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotjetfinavg,'--',color=(fc,fc+0.5*(1-fc),fc))
+                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotmwoutfinavg*windplotfactor,'-.',color=(fc,fc,1))
+            if(iti>fti):
+                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+mdotiniavg,color=(ofc,fc,fc))
+                if showextra:
+                    ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotjetiniavg,color=(fc,fc+0.5*(1-fc),fc))
+                    ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotmwoutiniavg*windplotfactor,color=(fc,fc,1))
+        #
+        ax.plot(ts,np.abs(mdtot[:,ihor]-md30[:,ihor]),clr,label=r'$\dot M_{\rm BH}c^2$')
+        if showextra:
+            ax.plot(ts,np.abs(mdjet[:,iofr(rjetout)]),'g--',label=r'$\dot M_{\rm j}c^2$')
+            if windplotfactor==1.0:
+                ax.plot(ts,windplotfactor*np.abs(mdmwind[:,iofr(rjetout)]),'b-.',label=r'$\dot M_{\rm mw,o}c^2$')
+            elif windplotfactor==0.1:
+                ax.plot(ts,windplotfactor*np.abs(mdmwind[:,iofr(rjetout)]),'b-.',label=r'$0.1\dot M_{\rm mw,o}c^2$')
+        #
+        if findex != None:
+            if not isinstance(findex,tuple):
+                ax.plot(ts[findex],np.abs(mdtot[:,ihor]-md30[:,ihor])[findex],'o',mfc='r')
+                if showextra:
+                    ax.plot(ts[findex],np.abs(mdjet[:,iofr(rjetout)])[findex],'gs')
+                    ax.plot(ts[findex],windplotfactor*np.abs(mdmwind[:,iofr(rjetout)])[findex],'bv')
+            else:
+                for fi in findex:
+                    ax.plot(ts[fi],np.abs(mdtot[:,ihor]-md30[:,ihor])[fi],'o',mfc='r')#,label=r'$\dot M$')
+                    if showextra:
+                        ax.plot(ts[fi],np.abs(mdjet[:,iofr(rjetout)])[fi],'gs')
+                        ax.plot(ts[fi],windplotfactor*np.abs(mdmwind[:,iofr(rjetout)])[fi],'bv')
+        #
+        #ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,labelpad=9)
+        ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,ha='left',labelpad=20)
+        #
+        plt.setp( ax.get_xticklabels(), visible=False)
+        ax.set_xlim(ts[0],ts[-1])
+        if showextra:
+            # http://matplotlib.sourceforge.net/users/legend_guide.html
+            # http://matplotlib.sourceforge.net/examples/pylab_examples/legend_demo.html
+            plt.legend(loc='upper left',bbox_to_anchor=(0.02,0.98),ncol=1,borderaxespad=0,frameon=True,labelspacing=0)
+            #plt.legend(loc='upper left',ncol=1,borderaxespad=0,frameon=True,labelspacing=0)
+            # set some legend properties.  All the code below is optional.  The
+            # defaults are usually sensible but if you need more control, this
+            # shows you how
+            leg = plt.gca().get_legend()
+            ltext  = leg.get_texts()  # all the text.Text instance in the legend
+            llines = leg.get_lines()  # all the lines.Line2D instance in the legend
+            frame  = leg.get_frame()  # the patch.Rectangle instance surrounding the legend
+            # see text.Text, lines.Line2D, and patches.Rectangle for more info on
+            # the settable properties of lines, text, and rectangles
+            #frame.set_facecolor('0.80')      # set the frame face color to light gray
+            plt.setp(ltext, fontsize=12)    # the legend text fontsize
+            #plt.setp(llines, linewidth=1.5)      # the legend linewidth
+            #leg.draw_frame(False)           # don't draw the legend frame
+    #
+    #
+    #######################
+    #
+    # Pjet
+    #
+    #######################
+    if whichplot == 2:
+        ax.plot(ts,(pjem5[:,ihor]),label=r'P_{\rm j}$')
+        #ax.legend(loc='upper left')
+        if dotavg:
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg)#,label=r'$\langle P_{\rm j}\rangle$')
+        ax.set_ylabel(r'$P_{\rm j}$',fontsize=16)
+        plt.setp( ax.get_xticklabels(), visible=False)
+        ax.set_xlim(ts[0],ts[-1])
+    #######################
+    #
+    # eta instantaneous
+    #
+    #######################
+    if whichplot == 3:
+        ax.plot(ts,(pjem5[:,ihor]/(mdtot[:,ihor]-md30[:,ihor])))#,label=r'$P_{\rm j}/\dot M$')
+        #ax.legend(loc='upper left')
+        if dotavg:
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg/mdotfinavg)#,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+        ax.set_ylim(0,4)
+        #ax.set_xlabel(r'$t\;(GM/c^3)$')
+        ax.set_ylabel(r'$P_{\rm j}/\dot M$',fontsize=16)
+        ax.set_xlim(ts[0],ts[-1])
+    #######################
+    #
+    # eta ***
+    #
+    #######################
+    #
+    sashaplot4=0
+    #
+    # Sasha's whichplot==4 Plot:
+    if whichplot == 4 and sashaplot4 == 1:
+        # Compute Sasha's version even if not plotting, so can output to file for comparison
+        # Sasha's whichplot==4 Calculation:
+        etabh = prefactor*FE/FMavg
+        etabh2 = prefactor*FE/FMiniavg
+        #etaj = prefactor*pjke_mu2[:,iofr(100)]/mdotfinavg
+        #etaw = prefactor*(pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotfinavg
+        #etaj2 = prefactor*pjke_mu2[:,iofr(100)]/mdotiniavg
+        #etaw2 = prefactor*(pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotiniavg
+        etajEM = prefactor*pjem_mu1[:,iofr(rjetout)]/mdotfinavg
+        etajMAKE = prefactor*pjmake_mu1[:,iofr(rjetout)]/mdotfinavg
+        etaj = etajEM + etajMAKE
+        etawinEM = prefactor*pjem_mumax1[:,iofr(rdiskin)]/mdotfinavg
+        etawinMAKE = prefactor*pjmake_mumax1[:,iofr(rdiskin)]/mdotfinavg
+        etawin = etawinEM + etawinMAKE
+        etawoutEM = prefactor*pjem_mumax1[:,iofr(rdiskout)]/mdotfinavg
+        etawoutMAKE = prefactor*pjmake_mumax1[:,iofr(rdiskout)]/mdotfinavg
+        etawout = etawoutEM + etawoutMAKE
+        #
+        etajEM2 = prefactor*pjem_mu1[:,iofr(rjetout)]/mdotiniavg
+        etajMAKE2 = prefactor*pjmake_mu1[:,iofr(rjetout)]/mdotiniavg
+        etaj2 = etajEM2 + etajMAKE2
+        etawinEM2 = prefactor*pjem_mumax1[:,iofr(rdiskin)]/mdotiniavg
+        etawinMAKE2 = prefactor*pjmake_mumax1[:,iofr(rdiskin)]/mdotiniavg
+        etawin2 = etawinEM2 + etawinMAKE2
+        etawoutEM2 = prefactor*pjem_mumax1[:,iofr(rdiskout)]/mdotiniavg
+        etawoutMAKE2 = prefactor*pjmake_mumax1[:,iofr(rdiskout)]/mdotiniavg
+        etawout2 = etawoutEM2 + etawoutMAKE2
+        #
+        if(1 and iti>fti):
+            #use mdot averaged over the same time interval for iti<t<=itf
+            icond=(ts>=iti)*(ts<itf)
+            etabh[icond]=etabh2[icond]
+            etaj[icond]=etaj2[icond]
+            etawin[icond]=etawin2[icond]
+            etawout[icond]=etawout2[icond]
+        if dotavg:
+            etaj_avg = timeavg(etaj,ts,fti,ftf)
+            etabh_avg = timeavg(etabh,ts,fti,ftf)
+            etawin_avg = timeavg(etawin,ts,fti,ftf)
+            etawout_avg = timeavg(etawout,ts,fti,ftf)
+            ptot_avg = timeavg(pjemtot[:,ihor],ts,fti,ftf)
+            if(iti>fti):
+                etaj2_avg = timeavg(etaj2,ts,iti,itf)
+                etabh2_avg = timeavg(etabh2,ts,iti,itf)
+                etawin2_avg = timeavg(etawin2,ts,iti,itf)
+                etawout2_avg = timeavg(etawout2,ts,iti,itf)
+                ptot2_avg = timeavg(pjemtot[:,ihor],ts,iti,itf)
+        #
+        #
+        if dotavg:
+            if showextra:
+                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaj_avg,'--',color=(fc,fc+0.5*(1-fc),fc)) 
+            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etabh_avg,color=(ofc,fc,fc),linestyle=lst) 
+            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+            #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etawout_avg,'-.',color=(fc,fc+0.5*(1-fc),fc)) 
+            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+            if(iti>fti):
+                if showextra:
+                    ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etaj2_avg,'--',color=(fc,fc+0.5*(1-fc),fc))
+                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etabh2_avg,color=(ofc,fc,fc))
+                #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etawout2_avg,'-.',color=(fc,fc+0.5*(1-fc),fc)) 
+        ax.plot(ts,etabh,clr,label=r'$\eta_{\rm BH}$')
+        if showextra:
+            ax.plot(ts,etaj,'g--',label=r'$\eta_{\rm j}$')
+            ax.plot(ts,etawout,'b-.',label=r'$\eta_{\rm w}$')
+        if findex != None:
+            if not isinstance(findex,tuple):
+                if showextra:
+                    ax.plot(ts[findex],etaj[findex],'gs')
+                ax.plot(ts[findex],etabh[findex],'o',mfc='r')
+                if showextra:
+                    ax.plot(ts[findex],etawout[findex],'bv')
+            else:
+                for fi in findex:
+                    if showextra:
+                        ax.plot(ts[fi],etawout[fi],'bv')#,label=r'$\dot M$')
+                        ax.plot(ts[fi],etaj[fi],'gs')#,label=r'$\dot M$')
+                    ax.plot(ts[fi],etabh[fi],'o',mfc='r')#,label=r'$\dot M$')
+        #ax.legend(loc='upper left')
+        #ax.set_ylim(0,2)
+        ax.set_xlabel(r'$t\;[r_g/c]$',fontsize=16)
+        if prefactor == 100:
+            ax.set_ylabel(r'$\eta\ [\%]$',fontsize=16,ha='left',labelpad=20)
+        else:
+            ax.set_ylabel(r'$\eta$',fontsize=16,labelpad=16)
+        ax.set_xlim(ts[0],ts[-1])
+        if showextra:
+            plt.legend(loc='upper left',bbox_to_anchor=(0.02,0.98),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
+    #
+    # Done with Sasha's whichplot==4
+    # Print Sasha's result
+    print( "Sasha's values: (if epsFm=epsFke=1, then FMavg=mdot30+mdot)" )
+    if epsFm is not None:
+        print( "epsFm  = %g, epsFke= %g" % (epsFm , epsFke) )
+    else:
+        print( "epsFm  = 1, epsFke= 1")
+    #
+    print( "eta_BH = %g, eta_j = %g, eta_w = %g, eta_jw = %g, FMavg=%g, mdot = %g, mdot30 = %g" % ( etabh_avg, etaj_avg, etawout_avg, etaj_avg + etawout_avg, FMavg, mdotfinavg, mdot30finavg ) )
+    if iti > fti:
+        print( "eta_BH2 = %g, eta_j2 = %g, eta_w2 = %g, eta_jw2 = %g, FMiniavg=%g, mdot2 = %g, mdot230=%g" % ( etabh2_avg, etaj2_avg, etawout2_avg, etaj2_avg + etawout2_avg, FMiniavg, mdotiniavg, mdot30iniavg) )
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    if whichplot == 4 and sashaplot4 == 0:
+        if dotavg:
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etabh_avg,color=(ofc,fc,fc)) 
+            if showextra:
+                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaj_avg,'--',color=(fc,fc+0.5*(1-fc),fc)) 
+                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etamwout_avg,'-.',color=(fc,fc,1)) 
+            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+            if(iti>fti):
+                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etabh2_avg,color=(ofc,fc,fc))
+                if showextra:
+                    ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etaj2_avg,'--',color=(fc,fc+0.5*(1-fc),fc))
+                    ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etamwout2_avg,'-.',color=(fc,fc,1))
+        #
+        ax.plot(ts,etabh,clr,label=r'$\eta_{\rm BH}$')
+        if showextra:
+            ax.plot(ts,etaj,'g--',label=r'$\eta_{\rm j}$')
+            ax.plot(ts,etamwout,'b-.',label=r'$\eta_{\rm mw,o}$')
+        if findex != None:
+            if not isinstance(findex,tuple):
+                ax.plot(ts[findex],etabh[findex],'o',mfc='r')
+                if showextra:
+                    ax.plot(ts[findex],etaj[findex],'gs')
+                    ax.plot(ts[findex],etamwout[findex],'bv')
+            else:
+                for fi in findex:
+                    ax.plot(ts[fi],etabh[fi],'o',mfc='r')#,label=r'$\dot M$')
+                    if showextra:
+                        ax.plot(ts[fi],etamwout[fi],'bv')#,label=r'$\dot M$')
+                        ax.plot(ts[fi],etaj[fi],'gs')#,label=r'$\dot M$')
+        #ax.set_ylim(0,2)
+        ax.set_xlabel(r'$t\;[r_g/c]$',fontsize=16)
+        ax.set_ylabel(r'$\eta\ [\%]$',fontsize=16,ha='left',labelpad=20)
+        ax.set_xlim(ts[0],ts[-1])
+        if showextra:
+            plt.legend(loc='upper left',bbox_to_anchor=(0.02,0.98),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
+            # set some legend properties.  All the code below is optional.  The
+            # defaults are usually sensible but if you need more control, this
+            # shows you how
+            leg = plt.gca().get_legend()
+            ltext  = leg.get_texts()  # all the text.Text instance in the legend
+            llines = leg.get_lines()  # all the lines.Line2D instance in the legend
+            frame  = leg.get_frame()  # the patch.Rectangle instance surrounding the legend
+            # see text.Text, lines.Line2D, and patches.Rectangle for more info on
+            # the settable properties of lines, text, and rectangles
+            #frame.set_facecolor('0.80')      # set the frame face color to light gray
+            plt.setp(ltext, fontsize=12)    # the legend text fontsize
+            #plt.setp(llines, linewidth=1.5)      # the legend linewidth
+            #leg.draw_frame(False)           # don't draw the legend frame
+    #
+    # End Jon's whichplot==4 Plot
+    #
+    # Print's Jon's whichplot==4 Values:
+    #
+    #
+    #
+    ######################################
+    # BEGIN PRINT JON WHICHPLOT==4
+    ######################################
+    #
+    print( "Jon's values: (recall mdotorig = mdot + mdot30 should be =FMavg)" )
+    #
+    print( "ihor = %d ihorpole = %d ihoreq = %d rhor = %g rjetin=%g rjetout=%g rdiskin=%g rdiskout=%g" % (ihor,iofrpole(rhor),iofreq(rhor),rhor,rjetin,rjetout,rdiskin,rdiskout))
+    #
+    print( "mdot = %g, mdot10 = %g, mdot30 = %g, mdotinin = %g, mdotinout=%g, mdotjet = %g, mdotmwin = %g, mdotmwout = %g, mdotwin = %g, mdotwout = %g" % ( mdotfinavg, mdot10finavg, mdot30finavg, mdotinrdiskinfinavg, mdotinrdiskoutfinavg, mdotjetfinavg, mdotmwinfinavg, mdotmwoutfinavg, mdotwinfinavg, mdotwoutfinavg) )
+    #
+    print( "hoverrhor_t0 = %g, hoverr2_t0 = %g, hoverr5_t0 = %g, hoverr10_t0 = %g, hoverr20_t0 = %g, hoverr100_t0 = %g" % ( hoverrhor_t0 ,  hoverr2_t0 , hoverr5_t0 , hoverr10_t0 ,  hoverr20_t0 ,  hoverr100_t0 ) )
+    print( "hoverrcoronahor_t0 = %g, hoverrcorona2_t0 = %g, hoverrcorona5_t0 = %g, hoverrcorona10_t0 = %g, hoverrcorona20_t0 = %g, hoverrcorona100_t0 = %g" % ( hoverrcoronahor_t0 ,  hoverrcorona2_t0 , hoverrcorona5_t0 , hoverrcorona10_t0 ,  hoverrcorona20_t0 ,  hoverrcorona100_t0 ) )
+    print( "hoverr_jethor_t0 = %g, hoverr_jet2_t0 = %g, hoverr_jet5_t0 = %g, hoverr_jet10_t0 = %g, hoverr_jet20_t0 = %g, hoverr_jet100_t0 = %g" % ( hoverr_jethor_t0 ,  hoverr_jet2_t0 , hoverr_jet5_t0 , hoverr_jet10_t0 ,  hoverr_jet20_t0 ,  hoverr_jet100_t0 ) )
+    #
+    print( "hoverrhor_avg = %g, hoverr2_avg = %g, hoverr5_avg = %g, hoverr10_avg = %g, hoverr20_avg = %g, hoverr100_avg = %g" % ( hoverrhor_avg ,  hoverr2_avg , hoverr5_avg , hoverr10_avg ,  hoverr20_avg ,  hoverr100_avg ) )
+    print( "hoverrcoronahor_avg = %g, hoverrcorona2_avg = %g, hoverrcorona5_avg = %g, hoverrcorona10_avg = %g, hoverrcorona20_avg = %g, hoverrcorona100_avg = %g" % ( hoverrcoronahor_avg ,  hoverrcorona2_avg , hoverrcorona5_avg , hoverrcorona10_avg ,  hoverrcorona20_avg ,  hoverrcorona100_avg ) )
+    print( "hoverr_jethor_avg = %g, hoverr_jet2_avg = %g, hoverr_jet5_avg = %g, hoverr_jet10_avg = %g, hoverr_jet20_avg = %g, hoverr_jet100_avg = %g" % ( hoverr_jethor_avg ,  hoverr_jet2_avg , hoverr_jet5_avg , hoverr_jet10_avg ,  hoverr_jet20_avg ,  hoverr_jet100_avg ) )
+    #
+    #
+    print( "qmridisk10_t0 = %g, qmridisk20_t0 = %g, qmridisk100_t0 = %g" % (  qmridisk10_t0 ,  qmridisk20_t0 ,  qmridisk100_t0 ) )
+    print( "q2mridisk10_t0 = %g, q2mridisk20_t0 = %g, q2mridisk100_t0 = %g" % (  1.0/iq2mridisk10_t0 ,  1.0/iq2mridisk20_t0 ,  1.0/iq2mridisk100_t0 ) )
+    print( "qmridisk10 = %g, qmridisk20 = %g, qmridisk100 = %g" % (  qmridisk10_avg ,  qmridisk20_avg ,  qmridisk100_avg ) )
+    print( "q2mridisk10 = %g, q2mridisk20 = %g, q2mridisk100 = %g" % (  1.0/iq2mridisk10_avg ,  1.0/iq2mridisk20_avg ,  1.0/iq2mridisk100_avg ) )
+    #
+    print( "qmridiskweak10_t0 = %g, qmridiskweak20_t0 = %g, qmridiskweak100_t0 = %g" % (  qmridiskweak10_t0 ,  qmridiskweak20_t0 ,  qmridiskweak100_t0 ) )
+    print( "q2mridiskweak10_t0 = %g, q2mridiskweak20_t0 = %g, q2mridiskweak100_t0 = %g" % (  1.0/iq2mridiskweak10_t0 ,  1.0/iq2mridiskweak20_t0 ,  1.0/iq2mridiskweak100_t0 ) )
+    print( "qmridiskweak10 = %g, qmridiskweak20 = %g, qmridiskweak100 = %g" % (  qmridiskweak10_avg ,  qmridiskweak20_avg ,  qmridiskweak100_avg ) )
+    print( "q2mridiskweak10 = %g, q2mridiskweak20 = %g, q2mridiskweak100 = %g" % (  1.0/iq2mridiskweak10_avg ,  1.0/iq2mridiskweak20_avg ,  1.0/iq2mridiskweak100_avg ) )
+    #
+    #
+    print( "asphor = %g:%g:%g, asp10 = %g:%g:%g, asp20 = %g:%g:%g, asp100 = %g:%g:%g" % ( drnormvsrhor, dHnormvsrhor, dPnormvsrhor, drnormvsr10, dHnormvsr10, dPnormvsr10, drnormvsr20, dHnormvsr20, dPnormvsr20, drnormvsr100, dHnormvsr100, dPnormvsr100 ) )
+    #
+    print( "eta_BH = %g, eta_BHEM = %g, eta_BHMAKE = %g, eta_jwout = %g, eta_j = %g, eta_jEM = %g, eta_jMAKE = %g, eta_mwin = %g, eta_mwinEM = %g, eta_mwinMAKE = %g, eta_mwout = %g, eta_mwoutEM = %g, eta_mwoutMAKE = %g, eta_win = %g, eta_winEM = %g, eta_winMAKE = %g, eta_wout = %g, eta_woutEM = %g, eta_woutMAKE = %g, pemtot_BH = %g" % ( etabh_avg, etabhEM_avg, etabhMAKE_avg, etaj_avg + etawout_avg, etaj_avg, etajEM_avg, etajMAKE_avg, etamwin_avg, etamwinEM_avg, etamwinMAKE_avg, etamwout_avg, etamwoutEM_avg, etamwoutMAKE_avg, etawin_avg, etawinEM_avg, etawinMAKE_avg, etawout_avg, etawoutEM_avg, etawoutMAKE_avg, pemtot_avg ) )
+    #
+    print( "leta_BH = %g, leta_BHEM = %g, leta_BHMAKE = %g, leta_jwout = %g, leta_j = %g, leta_jEM = %g, leta_jMAKE = %g, leta_mwin = %g, leta_mwinEM = %g, leta_mwinMAKE = %g, leta_mwout = %g, leta_mwoutEM = %g, leta_mwoutMAKE = %g, leta_win = %g, leta_winEM = %g, leta_winMAKE = %g, leta_wout = %g, leta_woutEM = %g, leta_woutMAKE = %g, lemtot_BH = %g" % ( letabh_avg, letabhEM_avg, letabhMAKE_avg, letaj_avg + letawout_avg, letaj_avg, letajEM_avg, letajMAKE_avg, letamwin_avg, letamwinEM_avg, letamwinMAKE_avg, letamwout_avg, letamwoutEM_avg, letamwoutMAKE_avg, letawin_avg, letawinEM_avg, letawinMAKE_avg, letawout_avg, letawoutEM_avg, letawoutMAKE_avg, lemtot_avg ) )
+    #
+    if iti > fti:
+        print( "incomplete output: %g %g" % (iti, fti) )
+    #
+    # 6:
+    print( "HLatex5: ModelName & $\\dot{M}_{\\rm{}BH}$  & $\\dot{M}_{\\rm{}in,i}$ & $\\dot{M}_{\\rm{}in,o}$     & $\\dot{M}_{\\rm{}j}$    & $\\dot{M}_{\\rm{}mw,i}$ & $\\dot{M}_{\\rm{}mw,o}$    & $\\dot{M}_{\\rm{}w,i}$ & $\\dot{M}_{\\rm{}w,o}$ \\\\" )
+    print( "VLatex5: %s         & %g & %g & %g    & %g    & %g & %g   & %g & %g \\\\ %% %s" % (truemodelname, roundto2(mdotfinavg), roundto2(mdotinrdiskinfinavg), roundto2(mdotinrdiskoutfinavg), roundto2(mdotjetfinavg),    roundto2(mdotmwinfinavg), roundto2(mdotmwoutfinavg),     roundto2(mdotwinfinavg), roundto2(mdotwoutfinavg),    modelname ) )
+    #
+    # 12:
+    print( "HLatex95: $\\delta r:r \\delta\\theta:r\\sin\\theta \\delta\\phi$" )
+    print( "HLatex95: ModelName & $r_+$ & $r_i$ & $r_o$ \\\\" )
+    print( "VLatex95: %s         & %g:%g:%g & %g:%g:%g & %g:%g:%g \\\\ %% %s" % (truemodelname, roundto2(drnormh), roundto2(dHnormh), roundto2(dPnormh), roundto2(drnormi), roundto2(dHnormi), roundto2(dPnormi), roundto2(drnormo), roundto2(dHnormo), roundto2(dPnormo), modelname ) )
+    #
+    # 8:
+    print("HLatex1: ModelName & $a$ & FieldType & $\\beta_{\\rm{}min}$ & $\\beta_{\\rm{}rat-of-avg} & $\\beta_{\\rm{}rat-of-max} & $\\theta^d_{r_{\\rm{}max}}$ & $Q_{1,t=0,\\rm{}MRI,i}$  & $Q_{1,t=0,\\rm{}MRI,o}$ & $Q_{2,t=0,\\rm{}MRI,i}$ & $Q_{2,t=0,\\rm{}MRI,o}$  \\\\")
+    print("VLatex1: %s         & %g  &  %s        & %g                  & %g                        & %g                        & %g                                             & %g                       & %g                       & %g                      & %g \\\\ %% %s" % (truemodelname,a,fieldtype,roundto2(betamin_t0),roundto2(betaratofavg_t0),roundto2(betaratofmax_t0),roundto2(hoverratrmax_t0),roundto2(qmriit0), roundto2(qmriot0), roundto2(1.0/iq2mriit0), roundto2(1.0/iq2mriot0), modelname ) )
+    #
+    # 16:
+    print("HLatex2: ModelName  & GridType & $N_r$ & $N_\\theta$ & $N_\\phi$ & $R_{\\rm{}in}$ & $R_{\\rm{}out}$  & $A_{r=r_+}$ & $A_{r_i}$ & $A_{r_o}$ & $T_i$--$T_f$  \\\\")
+    #
+    print("VLatex2: %s          & %s        &  %g   & %g          & %g        & %g            & %g              & %g:%g:%g    & %g:%g:%g       & %g:%g:%g    & %g--%g \\\\ %% %s" % (truemodelname,gridtype,nx,ny,nzreal,Rin,Rout,roundto2(drnormh), roundto2(dHnormh), roundto2(dPnormh), roundto2(drnormi), roundto2(dHnormi), roundto2(dPnormi), roundto2(drnormo), roundto2(dHnormo), roundto2(dPnormo),truetmin,truetmax, modelname ) )
+    #
+    # 8:
+    print( "HLatex99: ModelName & $Q_{1,t=0,\\rm{}MRI,10}$ & $Q_{1,t=0,\\rm{}MRI,20}$  & $Q_{1,t=0,\\rm{}MRI,100}$ & $Q_{2,t=0,\\rm{}MRI,10}$ & $Q_{2,t=0,\\rm{}MRI,20}$ & $Q_{2,t=0,\\rm{}MRI,100}$  \\\\" )
+    print( "VLatex99: %s         & %g & %g & %g & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(qmridisk10_t0), roundto2(qmridisk20_t0), roundto2(qmridisk100_t0), roundto2(1.0/iq2mridisk10_t0), roundto2(1.0/iq2mridisk20_t0), roundto2(1.0/iq2mridisk100_t0), modelname ) )
+    #
+    # alphamag?_vsr_fit[1] gives average value over fitted range
+    #
+    print( "HLatex4: ModelName & $\\alpha_a$ & $\\alpha_b$ & $\\alpha_c$ & $Q_{1,\\rm{}MRI,10}$ & $Q_{1,\\rm{}MRI,20}$  & $Q_{1,\\rm{}MRI,100}$ & $Q_{2,\\rm{}MRI,10}$ & $Q_{2,\\rm{}MRI,20}$ & $Q_{2,\\rm{}MRI,100}$  \\\\" )
+    print( "VLatex4: %s        & %g          & %g          & %g          & %g & %g & %g & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(alphamag1_vsr_fit[1]), roundto2(alphamag2_vsr_fit[1]), roundto2(alphamag3_vsr_fit[1]), roundto2(qmridisk10_avg), roundto2(qmridisk20_avg), roundto2(qmridisk100_avg), roundto2(1.0/iq2mridisk10_avg), roundto2(1.0/iq2mridisk20_avg), roundto2(1.0/iq2mridisk100_avg), modelname ) )
+    #
+    # 8:
+    print( "HLatex97: ModelName & $Q_{1,t=0,\\rm{}MRI,10,w}$ & $Q_{1,t=0,\\rm{}MRI,20,w}$  & $Q_{1,t=0,\\rm{}MRI,100,w}$ & $Q_{2,t=0,\\rm{}MRI,10,w}$ & $Q_{2,t=0,\\rm{}MRI,20,w}$ & $Q_{2,t=0,\\rm{}MRI,100,w}$  \\\\" )
+    print( "VLatex97: %s         & %g & %g & %g & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(qmridiskweak10_t0), roundto2(qmridiskweak20_t0), roundto2(qmridiskweak100_t0), roundto2(1.0/iq2mridiskweak10_t0), roundto2(1.0/iq2mridiskweak20_t0), roundto2(1.0/iq2mridiskweak100_t0), modelname ) )
+    #
+    print( "HLatex96: ModelName & $Q_{1,\\rm{}MRI,10,w}$ & $Q_{1,\\rm{}MRI,20,w}$  & $Q_{1,\\rm{}MRI,100,w}$ & $Q_{2,\\rm{}MRI,10,w}$ & $Q_{2,\\rm{}MRI,20,w}$ & $Q_{2,\\rm{}MRI,100,w}$  \\\\" )
+    print( "VLatex96: %s         & %g & %g & %g & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(qmridiskweak10_avg), roundto2(qmridiskweak20_avg), roundto2(qmridiskweak100_avg), roundto2(1.0/iq2mridiskweak10_avg), roundto2(1.0/iq2mridiskweak20_avg), roundto2(1.0/iq2mridiskweak100_avg), modelname ) )
+    #
+    print( "HLatex3: ModelName & $\\theta^d_{\\rm{}BH}$  & $\\theta^d_{5}$ & $\\theta^d_{20}$ & $\\theta^d_{100}$ & $\\theta^{dc}_{\\rm{}BH}$  & $\\theta^{dc}_{5}$ & $\\theta^{dc}_{20}$ & $\\theta^{dc}_{100}$ & $\\theta^{cj}_{\\rm{}BH}$  & $\\theta^{cj}_{5}$ & $\\theta^{cj}_{20}$ & $\\theta^{cj}_{100}$ \\\\" )
+    print( "VLatex3: %s         & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g  \\\\ %% %s" % (truemodelname, roundto2(hoverrhor_avg), roundto2( hoverr5_avg), roundto2(hoverr20_avg), roundto2(hoverr100_avg), roundto2(hoverrcoronahor_avg), roundto2( hoverrcorona5_avg), roundto2(hoverrcorona20_avg), roundto2(hoverrcorona100_avg), roundto2(hoverr_jethor_avg), roundto2( hoverr_jet5_avg), roundto2(hoverr_jet20_avg), roundto2(hoverr_jet100_avg), modelname ) )
+    #
+    #
+    #
+    # 9:
+    print( "HLatex6: ModelName & $\\eta_{\\rm{}BH}$ & $\\eta^{\\rm{}EM}_{\\rm{}BH}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}BH}$ & $\\eta_{\\rm{}j+mw,o}$ & $\\eta_{\\rm{}j+w,o}$ & $\\eta_{\\rm{}j}$ & $\\eta^{\\rm{}EM}_j$ & $\\eta^{\\rm{}MAKE}_{\\rm{}j}$ & $\\eta_{\\rm{}NT}$ \\\\" )
+    print( "VLatex6: %s         & %g & %g & %g    & %g & %g    & %g & %g & %g     & %g \\\\ %% %s" % (truemodelname, roundto3foreta(etabh_avg), roundto3foreta(etabhEM_avg), roundto3foreta(etabhMAKE_avg), roundto3foreta(etaj_avg + etamwout_avg), roundto3foreta(etaj_avg + etawout_avg), roundto3foreta(etaj_avg), roundto3foreta(etajEM_avg), roundto3foreta(etajMAKE_avg), roundto3foreta(etant), modelname ) )
+    #
+    # 12:
+    print( "HLatex7: ModelName & $\\eta_{\\rm{}mw,i}$ & $\\eta^{\\rm{}EM}_{\\rm{}mw,i}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}mw,i}$ & $\\eta_{\\rm{}mw,o}$ & $\\eta^{\\rm{}EM}_{\\rm{}mw,o}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}mw,o}$ & $\\eta_{\\rm{}w,i}$ & $\\eta^{\\rm{}EM}_{\\rm{}w,i}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}w,i}$ & $\\eta_{\\rm{}w,o}$ & $\\eta^{\\rm{}EM}_{\\rm{}w,o}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}w,o}$ \\\\" )
+    print( "VLatex7: %s        & %g & %g & %g    & %g & %g & %g   & %g & %g & %g    & %g & %g & %g  \\\\ %% %s" % (truemodelname, roundto3foreta(etamwin_avg), roundto3foreta(etamwinEM_avg), roundto3foreta(etamwinMAKE_avg), roundto3foreta(etamwout_avg), roundto3foreta(etamwoutEM_avg), roundto3foreta(etamwoutMAKE_avg), roundto3foreta(etawin_avg), roundto3foreta(etawinEM_avg), roundto3foreta(etawinMAKE_avg), roundto3foreta(etawout_avg), roundto3foreta(etawoutEM_avg), roundto3foreta(etawoutMAKE_avg), modelname ) )
+    #
+    # 9:
+    print( "HLatex8: ModelName & $l_{\\rm{}BH}$ & $l^{\\rm{}EM}_{\\rm{}BH}$ & $l^{\\rm{}MAKE}_{\\rm{}BH}$ & $l_{\\rm{}j+mw,o}$ & $l_{\\rm{}j+w,o}$ & $l_{\\rm{}j}$ & $l^{\\rm{}EM}_j$ & $l^{\\rm{}MAKE}_{\\rm{}j}$ & $l_{\\rm{}NT}$ \\\\" )
+    print( "VLatex8: %s         & %g & %g & %g    & %g & %g    & %g & %g & %g     & %g \\\\ %% %s" % (truemodelname, roundto3forl(lbh_avg), roundto3forl(lbhEM_avg), roundto3forl(lbhMAKE_avg), roundto3forl(lj_avg + lmwout_avg), roundto3forl(lj_avg + lwout_avg), roundto3forl(lj_avg), roundto3forl(ljEM_avg), roundto3forl(ljMAKE_avg), roundto3forl(lnt), modelname ) )
+    #
+    # 12:
+    print( "HLatex9: ModelName & $l_{\\rm{}mw,i}$ & $l^{\\rm{}EM}_{\\rm{}mw,i}$ & $l^{\\rm{}MAKE}_{\\rm{}mw,i}$ & $l_{\\rm{}mw,o}$ & $l^{\\rm{}EM}_{\\rm{}mw,o}$ & $l^{\\rm{}MAKE}_{\\rm{}mw,o}$ & $l_{\\rm{}w,i}$ & $l^{\\rm{}EM}_{\\rm{}w,i}$ & $l^{\\rm{}MAKE}_{\\rm{}w,i}$ & $l_{\\rm{}w,o}$ & $l^{\\rm{}EM}_{\\rm{}w,o}$ & $l^{\\rm{}MAKE}_{\\rm{}w,o}$ \\\\" )
+    print( "VLatex9: %s        & %g & %g & %g    & %g & %g & %g   & %g & %g & %g    & %g & %g & %g  \\\\ %% %s" % (truemodelname, roundto3forl(lmwin_avg), roundto3forl(lmwinEM_avg), roundto3forl(lmwinMAKE_avg), roundto3forl(lmwout_avg), roundto3forl(lmwoutEM_avg), roundto3forl(lmwoutMAKE_avg), roundto3forl(lwin_avg), roundto3forl(lwinEM_avg), roundto3forl(lwinMAKE_avg), roundto3forl(lwout_avg), roundto3forl(lwoutEM_avg), roundto3forl(lwoutMAKE_avg), modelname ) )
+    #
+    #
+    # 7:
+    print( "HLatex10: ModelName  & $s_{\\rm{}BH}$ & $s_{\\rm{}j}$   & $s_{\\rm{}mw,i}$ & $s_{\\rm{}mw,o}$    & $s_{\\rm{}w,i}$ & $s_{\\rm{}w,o}$    & $s_{\\rm{}NT}$ \\\\" )
+    print( "VLatex10: %s         & %g & %g   & %g & %g    & %g & %g    & %g \\\\ %% %s" % (truemodelname, roundto2(djdtnormbh), roundto2(djdtnormj), roundto2(djdtnormmwin), roundto2(djdtnormmwout), roundto2(djdtnormwin), roundto2(djdtnormwout), roundto2(djdtnormnt), modelname ) )
+    #
+    #
+    ######################################
+    # END PRINT JON WHICHPLOT==4
+    ######################################
+    #
+    #        
+    #
+    #
+    #
+    #######################
+    #
+    # eta NEW ***
+    #
+    #######################
+    if whichplot == 6:
+        etabh = prefactor*pjemtot[:,ihor]/mdotfinavg
+        etaj = prefactor*pjke_mu1[:,iofr(rjetout)]/mdotfinavg
+        etaw = prefactor*pjke_mumax1[:,iofr(rdiskout)]/mdotfinavg
+        #
+        etabh2 = prefactor*pjemtot[:,ihor]/mdotiniavg
+        etaj2 = prefactor*pjke_mu1[:,iofr(rjetout)]/mdotiniavg
+        etaw2 = prefactor*pjke_mumax1[:,iofr(rdiskout)]/mdotiniavg
+        #
+        if(1 and iti>fti):
+            #use mdot averaged over the same time interval for iti<t<=itf
+            icond=(ts>=iti)*(ts<itf)
+            etabh[icond]=etabh2[icond]
+            etaj[icond]=etaj2[icond]
+            etaw[icond]=etaw2[icond]
+        if dotavg:
+            etaj_avg = timeavg(etaj,ts,fti,ftf)
+            etabh_avg = timeavg(etabh,ts,fti,ftf)
+            etaw_avg = timeavg(etaw,ts,fti,ftf)
+            ptot_avg = timeavg(pjemtot[:,ihor],ts,fti,ftf)
+            #
+            ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etabh_avg,color=(ofc,fc,fc)) 
+            if showextra:
+                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaj_avg,'--',color=(fc,fc+0.5*(1-fc),fc)) 
+                ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaw_avg,'-.',color=(fc,fc+0.5*(1-fc),fc)) 
+            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+            #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
+            if(iti>fti):
+                etaj2_avg = timeavg(etaj2,ts,iti,itf)
+                etabh2_avg = timeavg(etabh2,ts,iti,itf)
+                etaw2_avg = timeavg(etaw2,ts,iti,itf)
+                ptot2_avg = timeavg(pjemtot[:,ihor],ts,iti,itf)
+                #
+                ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etabh2_avg,color=(ofc,fc,fc))
+                if showextra:
+                    ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etaj2_avg,'--',color=(fc,fc+0.5*(1-fc),fc))
+                    ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etaw2_avg,'-.',color=(fc,fc+0.5*(1-fc),fc))
+        #
+        ax.plot(ts,etabh,clr,label=r'$\eta_{\rm BH}$')
+        if showextra:
+            ax.plot(ts,etaj,'g--',label=r'$\eta_{\rm j}$')
+            ax.plot(ts,etaw,'b-.',label=r'$\eta_{\rm w,o}$')
+        if findex != None:
+            if not isinstance(findex,tuple):
+                ax.plot(ts[findex],etabh[findex],'o',mfc='r')
+                if showextra:
+                    ax.plot(ts[findex],etaj[findex],'gs')
+                    ax.plot(ts[findex],etaw[findex],'bv')
+            else:
+                for fi in findex:
+                    ax.plot(ts[fi],etabh[fi],'o',mfc='r')#,label=r'$\dot M$')
+                    if showextra:
+                        ax.plot(ts[fi],etaw[fi],'bv')#,label=r'$\dot M$')
+                        ax.plot(ts[fi],etaj[fi],'gs')#,label=r'$\dot M$')
+        #ax.set_ylim(0,2)
+        ax.set_xlabel(r'$t\;[r_g/c]$',fontsize=16)
+        ax.set_ylabel(r'$\eta\ [\%]$',fontsize=16,ha='left',labelpad=20)
+        ax.set_xlim(ts[0],ts[-1])
+        if showextra:
+            plt.legend(loc='upper left',bbox_to_anchor=(0.02,0.98),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
+            # set some legend properties.  All the code below is optional.  The
+            # defaults are usually sensible but if you need more control, this
+            # shows you how
+            leg = plt.gca().get_legend()
+            ltext  = leg.get_texts()  # all the text.Text instance in the legend
+            llines = leg.get_lines()  # all the lines.Line2D instance in the legend
+            frame  = leg.get_frame()  # the patch.Rectangle instance surrounding the legend
+            # see text.Text, lines.Line2D, and patches.Rectangle for more info on
+            # the settable properties of lines, text, and rectangles
+            #frame.set_facecolor('0.80')      # set the frame face color to light gray
+            plt.setp(ltext, fontsize=12)    # the legend text fontsize
+            #plt.setp(llines, linewidth=1.5)      # the legend linewidth
+            #leg.draw_frame(False)           # don't draw the legend frame
+
+        print( "whichplot==6 values" )
+        print( "eta_BH = %g, eta_j = %g, eta_w = %g, eta_jw = %g, mdot = %g, mdotwin=%g, mdotwout=%g, mdotjet=%g, ptot_BH = %g" % ( etabh_avg, etaj_avg, etaw_avg, etaj_avg + etaw_avg, mdotfinavg, mdotwinfinavg, mdotwoutfinavg, mdotjetfinavg, ptot_avg ) )
+        if iti > fti:
+            print( "eta_BH2 = %g, eta_j2 = %g, eta_w2 = %g, eta_jw2 = %g, mdot2 = %g, mdotwin2=%g, mdotwout2=%g , mdotjet2=%g, ptot2_BH = %g" % ( etabh2_avg, etaj2_avg, etaw2_avg, etaj2_avg + etaw2_avg, mdotiniavg, mdotwininiavg, mdotwoutiniavg, mdotjetiniavg, ptot2_avg ) )
+
+        #xxx
+    #######################
+    #
+    # \Phi ***
+    #
+    #######################
+    #        
+    sashaplot5 = 0
+    #
     #
     # For whichplot==5 Plot:
     if whichplot == 5:
@@ -7452,8 +7648,12 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     # End of whichplot==5
     #
+    ######################################
+    # BEGIN PRINT JON WHICHPLOT==5
+    ######################################
+    #
     # Begin print-out of Upsilon (phibh[G]/5) values:
-    print( "Upsilon_BH = %g, Upsilon_rjetin = %g , Upsilon_rjetout = %g, fstot = %g, fsmaxtot = %g" % ( phibh_avg, phirjetin_avg, phirjetout_avg, fstot_avg, fsmaxtot_avg ) )
+    print( "Upsilon_BH = %g, Upsilon_rdiskin = %g , Upsilon_rdiskout = %g, fstot = %g, fsmaxtot = %g" % ( phibh_avg, phirdiskin_avg, phirdiskout_avg, fstot_avg, fsmaxtot_avg ) )
     print( "Upsilon_jet = %g, Upsilon_mw,i = %g, Upsilon_mw,o = %g, Upsilon_w,i = %g, Upsilon_w,o = %g" % ( phij_avg , phimwin_avg , phimwout_avg, phiwin_avg , phiwout_avg ) )
     print( "Upsilon_jetn = %g, Upsilon_jets = %g" % ( phijn_avg , phijs_avg ) )
     if iti > fti:
@@ -7463,259 +7663,701 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     # 13:
     print( "HLatex11: ModelName & $\\Upsilon_{\\rm{}BH}$ & $\\Upsilon_{\\rm{}in,i}$ & $\\Upsilon_{\\rm{}in,o}$ & $\\Upsilon_{\\rm{}j}$   & $\\Upsilon_{\\rm{}mw,i}$ & $\\Upsilon_{\\rm{}mw,o}$ & $\\Upsilon_{\\rm{}w,i}$ & $\\Upsilon_{\\rm{}w,o}$    &  $\\frac{\\Phi_{\\rm{}BH}}{\\Phi_1(t=0)}$ & $\\frac{\\Phi_{\\rm{}BH}}{\\Phi_2(t=0)}$ & $\\frac{\\Phi_{\\rm{}BH}}{\\Phi_3(t=0)}$ & $\\frac{\\Phi_{\\rm{}BH}}{\\Phi_a(t=0)}$ & $\\frac{\\Phi_{\\rm{}BH}}{\\Phi_s(t=0)}$ & $\\frac{\\Phi_{\\rm{}BH}}{\\Psi_{\\rm{}BH}}$ \\\\" )
-    print( "VLatex11: %s         & %g    & %g & %g       & %g      & %g & %g      & %g & %g   & %s & %s & %s & %g & %g & %g  \\\\ %% %s" % (truemodelname, roundto2forupsilon(phibh_avg), roundto2forupsilon(phirjetin_avg), roundto2forupsilon(phirjetout_avg), roundto2forupsilon(phij_avg), roundto2forupsilon(phimwin_avg), roundto2forupsilon(phimwout_avg), roundto2forupsilon(phiwin_avg), roundto2forupsilon(phiwout_avg), roundto2forphistring(fstotnormA_avg[0]),roundto2forphistring(fstotnormA_avg[1]),roundto2forphistring(fstotnormA_avg[2]),roundto2forphi(fstotnormgenC_avg),roundto2forphi(fstotnormgenB_avg),roundto2forphi(fstotnormgenD_avg), modelname ) )
+    print( "VLatex11: %s         & %g    & %g & %g       & %g      & %g & %g      & %g & %g   & %s & %s & %s & %g & %g & %g  \\\\ %% %s" % (truemodelname, roundto2forupsilon(phibh_avg), roundto2forupsilon(phirdiskin_avg), roundto2forupsilon(phirdiskout_avg), roundto2forupsilon(phij_avg), roundto2forupsilon(phimwin_avg), roundto2forupsilon(phimwout_avg), roundto2forupsilon(phiwin_avg), roundto2forupsilon(phiwout_avg), roundto2forphistring(fstotnormA_avg[0]),roundto2forphistring(fstotnormA_avg[1]),roundto2forphistring(fstotnormA_avg[2]),roundto2forphi(fstotnormgenC_avg),roundto2forphi(fstotnormgenB_avg),roundto2forphi(fstotnormgenD_avg), modelname ) )
     #
-    # assume can convert merged .npy with *all* quants as vs. t,r(z) so can plot those of make figures.
-    # or make such 2D t vs. space figures in python!
+    ######################################
+    # END PRINT JON WHICHPLOT==5
+    ######################################
     #
-    favg1 = open('datavsr1.txt', 'w')
-    favg2 = open('datavsr2.txt', 'w')
-    favg3 = open('datavsr3.txt', 'w')
-    favg4 = open('datavsr4.txt', 'w')
-    favg5 = open('datavsr5.txt', 'w')
-    favg6 = open('datavsr6.txt', 'w')
     #
-    favgrad4 = open('datavsh1.txt', 'w')
-    favgrad8 = open('datavsh2.txt', 'w')
-    favgrad30 = open('datavsh3.txt', 'w')
     #
-    # now interpolate from size ny to size nx
     #
-    # get \theta at r=4 in size of nx rather than ny
-    xold=tj[0,0,0]+(tj[0,:,0]-tj[0,0,0])/(tj[0,-1,0]-tj[0,0,0])
-    xnew=ti[0,0,0]+(ti[:,0,0]-ti[0,0,0])/(ti[-1,0,0]-ti[0,0,0])
-    hinnx=np.interp(xnew,xold,h[iofr(4),:,0])
     #
-    for ii in np.arange(0,nx):
+    #
+    #
+    #
+    ######################################
+    # BEGIN data vs r and \theta and space-time plots
+    ######################################
+    #
+    dodatavsrh=1
+    dodatavst=1
+    dospacetimeplots=0
+    #
+    #
+    #
+    if dodatavsrh==1:
         #
-        rhosrhosq_avg=timeavg(rhosrhosq[:,ii],ts,fti,ftf)
-        ugsrhosq_avg=timeavg(ugsrhosq[:,ii],ts,fti,ftf)
-        uu0rhosq_avg=timeavg(uu0rhosq[:,ii],ts,fti,ftf)
-        vus1rhosq_avg=timeavg(vus1rhosq[:,ii],ts,fti,ftf)
-        vuas1rhosq_avg=timeavg(vuas1rhosq[:,ii],ts,fti,ftf)
-        vus3rhosq_avg=timeavg(vus3rhosq[:,ii],ts,fti,ftf)
-        vuas3rhosq_avg=timeavg(vuas3rhosq[:,ii],ts,fti,ftf)
-        Bs1rhosq_avg=timeavg(Bs1rhosq[:,ii],ts,fti,ftf)
-        Bas1rhosq_avg=timeavg(Bas1rhosq[:,ii],ts,fti,ftf)
-        Bs2rhosq_avg=timeavg(Bs2rhosq[:,ii],ts,fti,ftf)
-        Bas2rhosq_avg=timeavg(Bas2rhosq[:,ii],ts,fti,ftf)
-        Bs3rhosq_avg=timeavg(Bs3rhosq[:,ii],ts,fti,ftf)
-        Bas3rhosq_avg=timeavg(Bas3rhosq[:,ii],ts,fti,ftf)
-        bs1rhosq_avg=timeavg(bs1rhosq[:,ii],ts,fti,ftf)
-        bas1rhosq_avg=timeavg(bas1rhosq[:,ii],ts,fti,ftf)
-        bs2rhosq_avg=timeavg(bs2rhosq[:,ii],ts,fti,ftf)
-        bas2rhosq_avg=timeavg(bas2rhosq[:,ii],ts,fti,ftf)
-        bs3rhosq_avg=timeavg(bs3rhosq[:,ii],ts,fti,ftf)
-        bas3rhosq_avg=timeavg(bas3rhosq[:,ii],ts,fti,ftf)
-        bsqrhosq_avg=timeavg(bsqrhosq[:,ii],ts,fti,ftf)
         #
-        rhosrhosqeq_avg=timeavg(rhosrhosqeq[:,ii],ts,fti,ftf)
-        ugsrhosqeq_avg=timeavg(ugsrhosqeq[:,ii],ts,fti,ftf)
-        uu0rhosqeq_avg=timeavg(uu0rhosqeq[:,ii],ts,fti,ftf)
-        vus1rhosqeq_avg=timeavg(vus1rhosqeq[:,ii],ts,fti,ftf)
-        vuas1rhosqeq_avg=timeavg(vuas1rhosqeq[:,ii],ts,fti,ftf)
-        vus3rhosqeq_avg=timeavg(vus3rhosqeq[:,ii],ts,fti,ftf)
-        vuas3rhosqeq_avg=timeavg(vuas3rhosqeq[:,ii],ts,fti,ftf)
-        Bs1rhosqeq_avg=timeavg(Bs1rhosqeq[:,ii],ts,fti,ftf)
-        Bas1rhosqeq_avg=timeavg(Bas1rhosqeq[:,ii],ts,fti,ftf)
-        Bs2rhosqeq_avg=timeavg(Bs2rhosqeq[:,ii],ts,fti,ftf)
-        Bas2rhosqeq_avg=timeavg(Bas2rhosqeq[:,ii],ts,fti,ftf)
-        Bs3rhosqeq_avg=timeavg(Bs3rhosqeq[:,ii],ts,fti,ftf)
-        Bas3rhosqeq_avg=timeavg(Bas3rhosqeq[:,ii],ts,fti,ftf)
-        bs1rhosqeq_avg=timeavg(bs1rhosqeq[:,ii],ts,fti,ftf)
-        bas1rhosqeq_avg=timeavg(bas1rhosqeq[:,ii],ts,fti,ftf)
-        bs2rhosqeq_avg=timeavg(bs2rhosqeq[:,ii],ts,fti,ftf)
-        bas2rhosqeq_avg=timeavg(bas2rhosqeq[:,ii],ts,fti,ftf)
-        bs3rhosqeq_avg=timeavg(bs3rhosqeq[:,ii],ts,fti,ftf)
-        bas3rhosqeq_avg=timeavg(bas3rhosqeq[:,ii],ts,fti,ftf)
-        bsqrhosqeq_avg=timeavg(bsqrhosqeq[:,ii],ts,fti,ftf)
         #
-        rhosrhosqhorpick_avg=timeavg(rhosrhosqhorpick[:,ii],ts,fti,ftf)
-        ugsrhosqhorpick_avg=timeavg(ugsrhosqhorpick[:,ii],ts,fti,ftf)
-        uu0rhosqhorpick_avg=timeavg(uu0rhosqhorpick[:,ii],ts,fti,ftf)
-        vus1rhosqhorpick_avg=timeavg(vus1rhosqhorpick[:,ii],ts,fti,ftf)
-        vuas1rhosqhorpick_avg=timeavg(vuas1rhosqhorpick[:,ii],ts,fti,ftf)
-        vus3rhosqhorpick_avg=timeavg(vus3rhosqhorpick[:,ii],ts,fti,ftf)
-        vuas3rhosqhorpick_avg=timeavg(vuas3rhosqhorpick[:,ii],ts,fti,ftf)
-        Bs1rhosqhorpick_avg=timeavg(Bs1rhosqhorpick[:,ii],ts,fti,ftf)
-        Bas1rhosqhorpick_avg=timeavg(Bas1rhosqhorpick[:,ii],ts,fti,ftf)
-        Bs2rhosqhorpick_avg=timeavg(Bs2rhosqhorpick[:,ii],ts,fti,ftf)
-        Bas2rhosqhorpick_avg=timeavg(Bas2rhosqhorpick[:,ii],ts,fti,ftf)
-        Bs3rhosqhorpick_avg=timeavg(Bs3rhosqhorpick[:,ii],ts,fti,ftf)
-        Bas3rhosqhorpick_avg=timeavg(Bas3rhosqhorpick[:,ii],ts,fti,ftf)
-        bs1rhosqhorpick_avg=timeavg(bs1rhosqhorpick[:,ii],ts,fti,ftf)
-        bas1rhosqhorpick_avg=timeavg(bas1rhosqhorpick[:,ii],ts,fti,ftf)
-        bs2rhosqhorpick_avg=timeavg(bs2rhosqhorpick[:,ii],ts,fti,ftf)
-        bas2rhosqhorpick_avg=timeavg(bas2rhosqhorpick[:,ii],ts,fti,ftf)
-        bs3rhosqhorpick_avg=timeavg(bs3rhosqhorpick[:,ii],ts,fti,ftf)
-        bas3rhosqhorpick_avg=timeavg(bas3rhosqhorpick[:,ii],ts,fti,ftf)
-        bsqrhosqhorpick_avg=timeavg(bsqrhosqhorpick[:,ii],ts,fti,ftf)
         #
-        rhoshor_avg=timeavg(rhoshor[:,ii],ts,fti,ftf)
-        ugshor_avg=timeavg(ugshor[:,ii],ts,fti,ftf)
-        bsqshor_avg=timeavg(bsqshor[:,ii],ts,fti,ftf)
-        bsqorhoshor_avg=timeavg(bsqorhoshor[:,ii],ts,fti,ftf)
-        bsqougshor_avg=timeavg(bsqougshor[:,ii],ts,fti,ftf)
-        uu0hor_avg=timeavg(uu0hor[:,ii],ts,fti,ftf)
-        vus1hor_avg=timeavg(vus1hor[:,ii],ts,fti,ftf)
-        vuas1hor_avg=timeavg(vuas1hor[:,ii],ts,fti,ftf)
-        vus3hor_avg=timeavg(vus3hor[:,ii],ts,fti,ftf)
-        vuas3hor_avg=timeavg(vuas3hor[:,ii],ts,fti,ftf)
-        Bs1hor_avg=timeavg(Bs1hor[:,ii],ts,fti,ftf)
-        Bas1hor_avg=timeavg(Bas1hor[:,ii],ts,fti,ftf)
-        Bs2hor_avg=timeavg(Bs2hor[:,ii],ts,fti,ftf)
-        Bas2hor_avg=timeavg(Bas2hor[:,ii],ts,fti,ftf)
-        Bs3hor_avg=timeavg(Bs3hor[:,ii],ts,fti,ftf)
-        Bas3hor_avg=timeavg(Bas3hor[:,ii],ts,fti,ftf)
-        bs1hor_avg=timeavg(bs1hor[:,ii],ts,fti,ftf)
-        bas1hor_avg=timeavg(bas1hor[:,ii],ts,fti,ftf)
-        bs2hor_avg=timeavg(bs2hor[:,ii],ts,fti,ftf)
-        bas2hor_avg=timeavg(bas2hor[:,ii],ts,fti,ftf)
-        bs3hor_avg=timeavg(bs3hor[:,ii],ts,fti,ftf)
-        bas3hor_avg=timeavg(bas3hor[:,ii],ts,fti,ftf)
-        bsqhor_avg=timeavg(bsqhor[:,ii],ts,fti,ftf)
         #
-        # really vs h
-        rhosrhosqrad4_avg=timeavg(rhosrhosqrad4[:,ii],ts,fti,ftf)
-        ugsrhosqrad4_avg=timeavg(ugsrhosqrad4[:,ii],ts,fti,ftf)
-        uu0rhosqrad4_avg=timeavg(uu0rhosqrad4[:,ii],ts,fti,ftf)
-        vus1rhosqrad4_avg=timeavg(vus1rhosqrad4[:,ii],ts,fti,ftf)
-        vuas1rhosqrad4_avg=timeavg(vuas1rhosqrad4[:,ii],ts,fti,ftf)
-        vus3rhosqrad4_avg=timeavg(vus3rhosqrad4[:,ii],ts,fti,ftf)
-        vuas3rhosqrad4_avg=timeavg(vuas3rhosqrad4[:,ii],ts,fti,ftf)
-        Bs1rhosqrad4_avg=timeavg(Bs1rhosqrad4[:,ii],ts,fti,ftf)
-        Bas1rhosqrad4_avg=timeavg(Bas1rhosqrad4[:,ii],ts,fti,ftf)
-        Bs2rhosqrad4_avg=timeavg(Bs2rhosqrad4[:,ii],ts,fti,ftf)
-        Bas2rhosqrad4_avg=timeavg(Bas2rhosqrad4[:,ii],ts,fti,ftf)
-        Bs3rhosqrad4_avg=timeavg(Bs3rhosqrad4[:,ii],ts,fti,ftf)
-        Bas3rhosqrad4_avg=timeavg(Bas3rhosqrad4[:,ii],ts,fti,ftf)
-        bs1rhosqrad4_avg=timeavg(bs1rhosqrad4[:,ii],ts,fti,ftf)
-        bas1rhosqrad4_avg=timeavg(bas1rhosqrad4[:,ii],ts,fti,ftf)
-        bs2rhosqrad4_avg=timeavg(bs2rhosqrad4[:,ii],ts,fti,ftf)
-        bas2rhosqrad4_avg=timeavg(bas2rhosqrad4[:,ii],ts,fti,ftf)
-        bs3rhosqrad4_avg=timeavg(bs3rhosqrad4[:,ii],ts,fti,ftf)
-        bas3rhosqrad4_avg=timeavg(bas3rhosqrad4[:,ii],ts,fti,ftf)
-        bsqrhosqrad4_avg=timeavg(bsqrhosqrad4[:,ii],ts,fti,ftf)
         #
-        # really vs h
-        rhosrhosqrad8_avg=timeavg(rhosrhosqrad8[:,ii],ts,fti,ftf)
-        ugsrhosqrad8_avg=timeavg(ugsrhosqrad8[:,ii],ts,fti,ftf)
-        uu0rhosqrad8_avg=timeavg(uu0rhosqrad8[:,ii],ts,fti,ftf)
-        vus1rhosqrad8_avg=timeavg(vus1rhosqrad8[:,ii],ts,fti,ftf)
-        vuas1rhosqrad8_avg=timeavg(vuas1rhosqrad8[:,ii],ts,fti,ftf)
-        vus3rhosqrad8_avg=timeavg(vus3rhosqrad8[:,ii],ts,fti,ftf)
-        vuas3rhosqrad8_avg=timeavg(vuas3rhosqrad8[:,ii],ts,fti,ftf)
-        Bs1rhosqrad8_avg=timeavg(Bs1rhosqrad8[:,ii],ts,fti,ftf)
-        Bas1rhosqrad8_avg=timeavg(Bas1rhosqrad8[:,ii],ts,fti,ftf)
-        Bs2rhosqrad8_avg=timeavg(Bs2rhosqrad8[:,ii],ts,fti,ftf)
-        Bas2rhosqrad8_avg=timeavg(Bas2rhosqrad8[:,ii],ts,fti,ftf)
-        Bs3rhosqrad8_avg=timeavg(Bs3rhosqrad8[:,ii],ts,fti,ftf)
-        Bas3rhosqrad8_avg=timeavg(Bas3rhosqrad8[:,ii],ts,fti,ftf)
-        bs1rhosqrad8_avg=timeavg(bs1rhosqrad8[:,ii],ts,fti,ftf)
-        bas1rhosqrad8_avg=timeavg(bas1rhosqrad8[:,ii],ts,fti,ftf)
-        bs2rhosqrad8_avg=timeavg(bs2rhosqrad8[:,ii],ts,fti,ftf)
-        bas2rhosqrad8_avg=timeavg(bas2rhosqrad8[:,ii],ts,fti,ftf)
-        bs3rhosqrad8_avg=timeavg(bs3rhosqrad8[:,ii],ts,fti,ftf)
-        bas3rhosqrad8_avg=timeavg(bas3rhosqrad8[:,ii],ts,fti,ftf)
-        bsqrhosqrad8_avg=timeavg(bsqrhosqrad8[:,ii],ts,fti,ftf)
+        ###################
+        # r1
+        ###################
         #
-        # really vs h
-        rhosrhosqrad30_avg=timeavg(rhosrhosqrad30[:,ii],ts,fti,ftf)
-        ugsrhosqrad30_avg=timeavg(ugsrhosqrad30[:,ii],ts,fti,ftf)
-        uu0rhosqrad30_avg=timeavg(uu0rhosqrad30[:,ii],ts,fti,ftf)
-        vus1rhosqrad30_avg=timeavg(vus1rhosqrad30[:,ii],ts,fti,ftf)
-        vuas1rhosqrad30_avg=timeavg(vuas1rhosqrad30[:,ii],ts,fti,ftf)
-        vus3rhosqrad30_avg=timeavg(vus3rhosqrad30[:,ii],ts,fti,ftf)
-        vuas3rhosqrad30_avg=timeavg(vuas3rhosqrad30[:,ii],ts,fti,ftf)
-        Bs1rhosqrad30_avg=timeavg(Bs1rhosqrad30[:,ii],ts,fti,ftf)
-        Bas1rhosqrad30_avg=timeavg(Bas1rhosqrad30[:,ii],ts,fti,ftf)
-        Bs2rhosqrad30_avg=timeavg(Bs2rhosqrad30[:,ii],ts,fti,ftf)
-        Bas2rhosqrad30_avg=timeavg(Bas2rhosqrad30[:,ii],ts,fti,ftf)
-        Bs3rhosqrad30_avg=timeavg(Bs3rhosqrad30[:,ii],ts,fti,ftf)
-        Bas3rhosqrad30_avg=timeavg(Bas3rhosqrad30[:,ii],ts,fti,ftf)
-        bs1rhosqrad30_avg=timeavg(bs1rhosqrad30[:,ii],ts,fti,ftf)
-        bas1rhosqrad30_avg=timeavg(bas1rhosqrad30[:,ii],ts,fti,ftf)
-        bs2rhosqrad30_avg=timeavg(bs2rhosqrad30[:,ii],ts,fti,ftf)
-        bas2rhosqrad30_avg=timeavg(bas2rhosqrad30[:,ii],ts,fti,ftf)
-        bs3rhosqrad30_avg=timeavg(bs3rhosqrad30[:,ii],ts,fti,ftf)
-        bas3rhosqrad30_avg=timeavg(bas3rhosqrad30[:,ii],ts,fti,ftf)
-        bsqrhosqrad30_avg=timeavg(bsqrhosqrad30[:,ii],ts,fti,ftf)
+        rhosrhosq_vsr=np.zeros(nx,dtype=r.dtype)
+        ugsrhosq_vsr=np.zeros(nx,dtype=r.dtype)
+        uu0rhosq_vsr=np.zeros(nx,dtype=r.dtype)
+        vus1rhosq_vsr=np.zeros(nx,dtype=r.dtype)
+        vuas1rhosq_vsr=np.zeros(nx,dtype=r.dtype)
+        vus3rhosq_vsr=np.zeros(nx,dtype=r.dtype)
+        vuas3rhosq_vsr=np.zeros(nx,dtype=r.dtype)
+        Bs1rhosq_vsr=np.zeros(nx,dtype=r.dtype)
+        Bas1rhosq_vsr=np.zeros(nx,dtype=r.dtype)
+        Bs2rhosq_vsr=np.zeros(nx,dtype=r.dtype)
+        Bas2rhosq_vsr=np.zeros(nx,dtype=r.dtype)
+        Bs3rhosq_vsr=np.zeros(nx,dtype=r.dtype)
+        Bas3rhosq_vsr=np.zeros(nx,dtype=r.dtype)
+        bs1rhosq_vsr=np.zeros(nx,dtype=r.dtype)
+        bas1rhosq_vsr=np.zeros(nx,dtype=r.dtype)
+        bs2rhosq_vsr=np.zeros(nx,dtype=r.dtype)
+        bas2rhosq_vsr=np.zeros(nx,dtype=r.dtype)
+        bs3rhosq_vsr=np.zeros(nx,dtype=r.dtype)
+        bas3rhosq_vsr=np.zeros(nx,dtype=r.dtype)
+        bsqrhosq_vsr=np.zeros(nx,dtype=r.dtype)
         #
-        # 2+20
-        favg1.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],rhosrhosq_avg,ugsrhosq_avg,uu0rhosq_avg,vus1rhosq_avg,vuas1rhosq_avg,vus3rhosq_avg,vuas3rhosq_avg,Bs1rhosq_avg,Bas1rhosq_avg,Bs2rhosq_avg,Bas2rhosq_avg,Bs3rhosq_avg,Bas3rhosq_avg,bs1rhosq_avg,bas1rhosq_avg,bs2rhosq_avg,bas2rhosq_avg,bs3rhosq_avg,bas3rhosq_avg,bsqrhosq_avg ) )
+        favg1 = open('datavsr1.txt', 'w')
+        for ii in np.arange(0,nx):
+            #
+            # Q vs r
+            # 2+20
+            rhosrhosq_vsr[ii]=timeavg(rhosrhosq[:,ii],ts,fti,ftf)
+            ugsrhosq_vsr[ii]=timeavg(ugsrhosq[:,ii],ts,fti,ftf)
+            uu0rhosq_vsr[ii]=timeavg(uu0rhosq[:,ii],ts,fti,ftf)
+            vus1rhosq_vsr[ii]=timeavg(vus1rhosq[:,ii],ts,fti,ftf)
+            vuas1rhosq_vsr[ii]=timeavg(vuas1rhosq[:,ii],ts,fti,ftf)
+            vus3rhosq_vsr[ii]=timeavg(vus3rhosq[:,ii],ts,fti,ftf)
+            vuas3rhosq_vsr[ii]=timeavg(vuas3rhosq[:,ii],ts,fti,ftf)
+            Bs1rhosq_vsr[ii]=timeavg(Bs1rhosq[:,ii],ts,fti,ftf)
+            Bas1rhosq_vsr[ii]=timeavg(Bas1rhosq[:,ii],ts,fti,ftf)
+            Bs2rhosq_vsr[ii]=timeavg(Bs2rhosq[:,ii],ts,fti,ftf)
+            Bas2rhosq_vsr[ii]=timeavg(Bas2rhosq[:,ii],ts,fti,ftf)
+            Bs3rhosq_vsr[ii]=timeavg(Bs3rhosq[:,ii],ts,fti,ftf)
+            Bas3rhosq_vsr[ii]=timeavg(Bas3rhosq[:,ii],ts,fti,ftf)
+            bs1rhosq_vsr[ii]=timeavg(bs1rhosq[:,ii],ts,fti,ftf)
+            bas1rhosq_vsr[ii]=timeavg(bas1rhosq[:,ii],ts,fti,ftf)
+            bs2rhosq_vsr[ii]=timeavg(bs2rhosq[:,ii],ts,fti,ftf)
+            bas2rhosq_vsr[ii]=timeavg(bas2rhosq[:,ii],ts,fti,ftf)
+            bs3rhosq_vsr[ii]=timeavg(bs3rhosq[:,ii],ts,fti,ftf)
+            bas3rhosq_vsr[ii]=timeavg(bas3rhosq[:,ii],ts,fti,ftf)
+            bsqrhosq_vsr[ii]=timeavg(bsqrhosq[:,ii],ts,fti,ftf)
+            #
+            favg1.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],rhosrhosq_vsr[ii],ugsrhosq_vsr[ii],uu0rhosq_vsr[ii],vus1rhosq_vsr[ii],vuas1rhosq_vsr[ii],vus3rhosq_vsr[ii],vuas3rhosq_vsr[ii],Bs1rhosq_vsr[ii],Bas1rhosq_vsr[ii],Bs2rhosq_vsr[ii],Bas2rhosq_vsr[ii],Bs3rhosq_vsr[ii],Bas3rhosq_vsr[ii],bs1rhosq_vsr[ii],bas1rhosq_vsr[ii],bs2rhosq_vsr[ii],bas2rhosq_vsr[ii],bs3rhosq_vsr[ii],bas3rhosq_vsr[ii],bsqrhosq_vsr[ii] ) )
+            #
+        favg1.close()
         #
-        # 2+20
-        favg2.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],rhosrhosqeq_avg,ugsrhosqeq_avg,uu0rhosqeq_avg,vus1rhosqeq_avg,vuas1rhosqeq_avg,vus3rhosqeq_avg,vuas3rhosqeq_avg,Bs1rhosqeq_avg,Bas1rhosqeq_avg,Bs2rhosqeq_avg,Bas2rhosqeq_avg,Bs3rhosqeq_avg,Bas3rhosqeq_avg,bs1rhosqeq_avg,bas1rhosqeq_avg,bs2rhosqeq_avg,bas2rhosqeq_avg,bs3rhosqeq_avg,bas3rhosqeq_avg,bsqrhosqeq_avg) )
         #
-        # 2+20
-        favg3.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],rhosrhosqhorpick_avg,ugsrhosqhorpick_avg,uu0rhosqhorpick_avg,vus1rhosqhorpick_avg,vuas1rhosqhorpick_avg,vus3rhosqhorpick_avg,vuas3rhosqhorpick_avg,Bs1rhosqhorpick_avg,Bas1rhosqhorpick_avg,Bs2rhosqhorpick_avg,Bas2rhosqhorpick_avg,Bs3rhosqhorpick_avg,Bas3rhosqhorpick_avg,bs1rhosqhorpick_avg,bas1rhosqhorpick_avg,bs2rhosqhorpick_avg,bas2rhosqhorpick_avg,bs3rhosqhorpick_avg,bas3rhosqhorpick_avg,bsqrhosqhorpick_avg) )
+        #" *\(.*vsr\).*" -> "        \1_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(\1[iin:iout])),1))"
         #
-        # 2+23
-        favg4.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],rhoshor_avg,ugshor_avg,bsqshor_avg,bsqorhoshor_avg,bsqougshor_avg,uu0hor_avg,vus1hor_avg,vuas1hor_avg,vus3hor_avg,vuas3hor_avg,Bs1hor_avg,Bas1hor_avg,Bs2hor_avg,Bas2hor_avg,Bs3hor_avg,Bas3hor_avg,bs1hor_avg,bas1hor_avg,bs2hor_avg,bas2hor_avg,bs3hor_avg,bas3hor_avg,bsqhor_avg) )
+        # get fit
+        rhosrhosq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(rhosrhosq_vsr[iin:iout])),1)
+        ugsrhosq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(ugsrhosq_vsr[iin:iout])),1)
+        uu0rhosq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(uu0rhosq_vsr[iin:iout])),1)
+        vus1rhosq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(vus1rhosq_vsr[iin:iout])),1)
+        vuas1rhosq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(vuas1rhosq_vsr[iin:iout])),1)
+        vus3rhosq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(vus3rhosq_vsr[iin:iout])),1)
+        vuas3rhosq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(vuas3rhosq_vsr[iin:iout])),1)
+        Bs1rhosq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bs1rhosq_vsr[iin:iout])),1)
+        Bas1rhosq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bas1rhosq_vsr[iin:iout])),1)
+        Bs2rhosq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bs2rhosq_vsr[iin:iout])),1)
+        Bas2rhosq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bas2rhosq_vsr[iin:iout])),1)
+        Bs3rhosq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bs3rhosq_vsr[iin:iout])),1)
+        Bas3rhosq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bas3rhosq_vsr[iin:iout])),1)
+        bs1rhosq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bs1rhosq_vsr[iin:iout])),1)
+        bas1rhosq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bas1rhosq_vsr[iin:iout])),1)
+        bs2rhosq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bs2rhosq_vsr[iin:iout])),1)
+        bas2rhosq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bas2rhosq_vsr[iin:iout])),1)
+        bs3rhosq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bs3rhosq_vsr[iin:iout])),1)
+        bas3rhosq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bas3rhosq_vsr[iin:iout])),1)
+        bsqrhosq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bsqrhosq_vsr[iin:iout])),1)
+        brhosq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.sqrt(np.fabs(bsqrhosq_vsr[iin:iout]))),1)
         #
-        # 2+15
-        favg5.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],mdotfinavgvsr[ii],mdotfinavgvsr5[ii],edemvsr[ii],edmavsr[ii],edmvsr[ii],ldemvsr[ii],ldmavsr[ii],ldmvsr[ii],phiabsj_mu1vsr[ii],pjemfinavgvsr[ii],pjmakefinavgvsr[ii],pjkefinavgvsr[ii],ljemfinavgvsr[ii],ljmakefinavgvsr[ii],ljkefinavgvsr[ii]) )
+        ###################
+        # r2
+        ###################
+        rhosrhosqeq_vsr=np.zeros(nx,dtype=r.dtype)
+        ugsrhosqeq_vsr=np.zeros(nx,dtype=r.dtype)
+        uu0rhosqeq_vsr=np.zeros(nx,dtype=r.dtype)
+        vus1rhosqeq_vsr=np.zeros(nx,dtype=r.dtype)
+        vuas1rhosqeq_vsr=np.zeros(nx,dtype=r.dtype)
+        vus3rhosqeq_vsr=np.zeros(nx,dtype=r.dtype)
+        vuas3rhosqeq_vsr=np.zeros(nx,dtype=r.dtype)
+        Bs1rhosqeq_vsr=np.zeros(nx,dtype=r.dtype)
+        Bas1rhosqeq_vsr=np.zeros(nx,dtype=r.dtype)
+        Bs2rhosqeq_vsr=np.zeros(nx,dtype=r.dtype)
+        Bas2rhosqeq_vsr=np.zeros(nx,dtype=r.dtype)
+        Bs3rhosqeq_vsr=np.zeros(nx,dtype=r.dtype)
+        Bas3rhosqeq_vsr=np.zeros(nx,dtype=r.dtype)
+        bs1rhosqeq_vsr=np.zeros(nx,dtype=r.dtype)
+        bas1rhosqeq_vsr=np.zeros(nx,dtype=r.dtype)
+        bs2rhosqeq_vsr=np.zeros(nx,dtype=r.dtype)
+        bas2rhosqeq_vsr=np.zeros(nx,dtype=r.dtype)
+        bs3rhosqeq_vsr=np.zeros(nx,dtype=r.dtype)
+        bas3rhosqeq_vsr=np.zeros(nx,dtype=r.dtype)
+        bsqrhosqeq_vsr=np.zeros(nx,dtype=r.dtype)
         #
-        # 2+3
-        favg6.write("%d %g %g %g %g\n" % (ii,r[ii,0,0],drvsr[ii],dHvsr[ii],dPvsr[ii]) )
+        favg2 = open('datavsr2.txt', 'w')
+        for ii in np.arange(0,nx):
+            # Q vs. r
+            # 2+20
+            rhosrhosqeq_vsr[ii]=timeavg(rhosrhosqeq[:,ii],ts,fti,ftf)
+            ugsrhosqeq_vsr[ii]=timeavg(ugsrhosqeq[:,ii],ts,fti,ftf)
+            uu0rhosqeq_vsr[ii]=timeavg(uu0rhosqeq[:,ii],ts,fti,ftf)
+            vus1rhosqeq_vsr[ii]=timeavg(vus1rhosqeq[:,ii],ts,fti,ftf)
+            vuas1rhosqeq_vsr[ii]=timeavg(vuas1rhosqeq[:,ii],ts,fti,ftf)
+            vus3rhosqeq_vsr[ii]=timeavg(vus3rhosqeq[:,ii],ts,fti,ftf)
+            vuas3rhosqeq_vsr[ii]=timeavg(vuas3rhosqeq[:,ii],ts,fti,ftf)
+            Bs1rhosqeq_vsr[ii]=timeavg(Bs1rhosqeq[:,ii],ts,fti,ftf)
+            Bas1rhosqeq_vsr[ii]=timeavg(Bas1rhosqeq[:,ii],ts,fti,ftf)
+            Bs2rhosqeq_vsr[ii]=timeavg(Bs2rhosqeq[:,ii],ts,fti,ftf)
+            Bas2rhosqeq_vsr[ii]=timeavg(Bas2rhosqeq[:,ii],ts,fti,ftf)
+            Bs3rhosqeq_vsr[ii]=timeavg(Bs3rhosqeq[:,ii],ts,fti,ftf)
+            Bas3rhosqeq_vsr[ii]=timeavg(Bas3rhosqeq[:,ii],ts,fti,ftf)
+            bs1rhosqeq_vsr[ii]=timeavg(bs1rhosqeq[:,ii],ts,fti,ftf)
+            bas1rhosqeq_vsr[ii]=timeavg(bas1rhosqeq[:,ii],ts,fti,ftf)
+            bs2rhosqeq_vsr[ii]=timeavg(bs2rhosqeq[:,ii],ts,fti,ftf)
+            bas2rhosqeq_vsr[ii]=timeavg(bas2rhosqeq[:,ii],ts,fti,ftf)
+            bs3rhosqeq_vsr[ii]=timeavg(bs3rhosqeq[:,ii],ts,fti,ftf)
+            bas3rhosqeq_vsr[ii]=timeavg(bas3rhosqeq[:,ii],ts,fti,ftf)
+            bsqrhosqeq_vsr[ii]=timeavg(bsqrhosqeq[:,ii],ts,fti,ftf)
+            #
+            favg2.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],rhosrhosqeq_vsr[ii],ugsrhosqeq_vsr[ii],uu0rhosqeq_vsr[ii],vus1rhosqeq_vsr[ii],vuas1rhosqeq_vsr[ii],vus3rhosqeq_vsr[ii],vuas3rhosqeq_vsr[ii],Bs1rhosqeq_vsr[ii],Bas1rhosqeq_vsr[ii],Bs2rhosqeq_vsr[ii],Bas2rhosqeq_vsr[ii],Bs3rhosqeq_vsr[ii],Bas3rhosqeq_vsr[ii],bs1rhosqeq_vsr[ii],bas1rhosqeq_vsr[ii],bs2rhosqeq_vsr[ii],bas2rhosqeq_vsr[ii],bs3rhosqeq_vsr[ii],bas3rhosqeq_vsr[ii],bsqrhosqeq_vsr[ii]) )
+            #
+        favg2.close()
         #
-        # really vs h
-        # 2+20
-        favgrad4.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,hinnx[ii],rhosrhosqrad4_avg,ugsrhosqrad4_avg,uu0rhosqrad4_avg,vus1rhosqrad4_avg,vuas1rhosqrad4_avg,vus3rhosqrad4_avg,vuas3rhosqrad4_avg,Bs1rhosqrad4_avg,Bas1rhosqrad4_avg,Bs2rhosqrad4_avg,Bas2rhosqrad4_avg,Bs3rhosqrad4_avg,Bas3rhosqrad4_avg,bs1rhosqrad4_avg,bas1rhosqrad4_avg,bs2rhosqrad4_avg,bas2rhosqrad4_avg,bs3rhosqrad4_avg,bas3rhosqrad4_avg,bsqrhosqrad4_avg) )
+        # get fit
+        rhosrhosqeq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(rhosrhosqeq_vsr[iin:iout])),1)
+        ugsrhosqeq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(ugsrhosqeq_vsr[iin:iout])),1)
+        uu0rhosqeq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(uu0rhosqeq_vsr[iin:iout])),1)
+        vus1rhosqeq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(vus1rhosqeq_vsr[iin:iout])),1)
+        vuas1rhosqeq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(vuas1rhosqeq_vsr[iin:iout])),1)
+        vus3rhosqeq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(vus3rhosqeq_vsr[iin:iout])),1)
+        vuas3rhosqeq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(vuas3rhosqeq_vsr[iin:iout])),1)
+        Bs1rhosqeq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bs1rhosqeq_vsr[iin:iout])),1)
+        Bas1rhosqeq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bas1rhosqeq_vsr[iin:iout])),1)
+        Bs2rhosqeq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bs2rhosqeq_vsr[iin:iout])),1)
+        Bas2rhosqeq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bas2rhosqeq_vsr[iin:iout])),1)
+        Bs3rhosqeq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bs3rhosqeq_vsr[iin:iout])),1)
+        Bas3rhosqeq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bas3rhosqeq_vsr[iin:iout])),1)
+        bs1rhosqeq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bs1rhosqeq_vsr[iin:iout])),1)
+        bas1rhosqeq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bas1rhosqeq_vsr[iin:iout])),1)
+        bs2rhosqeq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bs2rhosqeq_vsr[iin:iout])),1)
+        bas2rhosqeq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bas2rhosqeq_vsr[iin:iout])),1)
+        bs3rhosqeq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bs3rhosqeq_vsr[iin:iout])),1)
+        bas3rhosqeq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bas3rhosqeq_vsr[iin:iout])),1)
+        bsqrhosqeq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bsqrhosqeq_vsr[iin:iout])),1)
+        brhosqeq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.sqrt(np.fabs(bsqrhosqeq_vsr[iin:iout]))),1)
         #
-        # 2+20
-        favgrad8.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,hinnx[ii],rhosrhosqrad8_avg,ugsrhosqrad8_avg,uu0rhosqrad8_avg,vus1rhosqrad8_avg,vuas1rhosqrad8_avg,vus3rhosqrad8_avg,vuas3rhosqrad8_avg,Bs1rhosqrad8_avg,Bas1rhosqrad8_avg,Bs2rhosqrad8_avg,Bas2rhosqrad8_avg,Bs3rhosqrad8_avg,Bas3rhosqrad8_avg,bs1rhosqrad8_avg,bas1rhosqrad8_avg,bs2rhosqrad8_avg,bas2rhosqrad8_avg,bs3rhosqrad8_avg,bas3rhosqrad8_avg,bsqrhosqrad8_avg) )
+        ###################
+        # r3
+        ###################
         #
-        # 2+20
-        favgrad30.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,hinnx[ii],rhosrhosqrad30_avg,ugsrhosqrad30_avg,uu0rhosqrad30_avg,vus1rhosqrad30_avg,vuas1rhosqrad30_avg,vus3rhosqrad30_avg,vuas3rhosqrad30_avg,Bs1rhosqrad30_avg,Bas1rhosqrad30_avg,Bs2rhosqrad30_avg,Bas2rhosqrad30_avg,Bs3rhosqrad30_avg,Bas3rhosqrad30_avg,bs1rhosqrad30_avg,bas1rhosqrad30_avg,bs2rhosqrad30_avg,bas2rhosqrad30_avg,bs3rhosqrad30_avg,bas3rhosqrad30_avg,bsqrhosqrad30_avg) )
+        rhosrhosqhorpick_vsr=np.zeros(nx,dtype=r.dtype)
+        ugsrhosqhorpick_vsr=np.zeros(nx,dtype=r.dtype)
+        uu0rhosqhorpick_vsr=np.zeros(nx,dtype=r.dtype)
+        vus1rhosqhorpick_vsr=np.zeros(nx,dtype=r.dtype)
+        vuas1rhosqhorpick_vsr=np.zeros(nx,dtype=r.dtype)
+        vus3rhosqhorpick_vsr=np.zeros(nx,dtype=r.dtype)
+        vuas3rhosqhorpick_vsr=np.zeros(nx,dtype=r.dtype)
+        Bs1rhosqhorpick_vsr=np.zeros(nx,dtype=r.dtype)
+        Bas1rhosqhorpick_vsr=np.zeros(nx,dtype=r.dtype)
+        Bs2rhosqhorpick_vsr=np.zeros(nx,dtype=r.dtype)
+        Bas2rhosqhorpick_vsr=np.zeros(nx,dtype=r.dtype)
+        Bs3rhosqhorpick_vsr=np.zeros(nx,dtype=r.dtype)
+        Bas3rhosqhorpick_vsr=np.zeros(nx,dtype=r.dtype)
+        bs1rhosqhorpick_vsr=np.zeros(nx,dtype=r.dtype)
+        bas1rhosqhorpick_vsr=np.zeros(nx,dtype=r.dtype)
+        bs2rhosqhorpick_vsr=np.zeros(nx,dtype=r.dtype)
+        bas2rhosqhorpick_vsr=np.zeros(nx,dtype=r.dtype)
+        bs3rhosqhorpick_vsr=np.zeros(nx,dtype=r.dtype)
+        bas3rhosqhorpick_vsr=np.zeros(nx,dtype=r.dtype)
+        bsqrhosqhorpick_vsr=np.zeros(nx,dtype=r.dtype)
         #
+        favg3 = open('datavsr3.txt', 'w')
+        for ii in np.arange(0,nx):
+            # Q vs. r
+            # 2+20
+            rhosrhosqhorpick_vsr[ii]=timeavg(rhosrhosqhorpick[:,ii],ts,fti,ftf)
+            ugsrhosqhorpick_vsr[ii]=timeavg(ugsrhosqhorpick[:,ii],ts,fti,ftf)
+            uu0rhosqhorpick_vsr[ii]=timeavg(uu0rhosqhorpick[:,ii],ts,fti,ftf)
+            vus1rhosqhorpick_vsr[ii]=timeavg(vus1rhosqhorpick[:,ii],ts,fti,ftf)
+            vuas1rhosqhorpick_vsr[ii]=timeavg(vuas1rhosqhorpick[:,ii],ts,fti,ftf)
+            vus3rhosqhorpick_vsr[ii]=timeavg(vus3rhosqhorpick[:,ii],ts,fti,ftf)
+            vuas3rhosqhorpick_vsr[ii]=timeavg(vuas3rhosqhorpick[:,ii],ts,fti,ftf)
+            Bs1rhosqhorpick_vsr[ii]=timeavg(Bs1rhosqhorpick[:,ii],ts,fti,ftf)
+            Bas1rhosqhorpick_vsr[ii]=timeavg(Bas1rhosqhorpick[:,ii],ts,fti,ftf)
+            Bs2rhosqhorpick_vsr[ii]=timeavg(Bs2rhosqhorpick[:,ii],ts,fti,ftf)
+            Bas2rhosqhorpick_vsr[ii]=timeavg(Bas2rhosqhorpick[:,ii],ts,fti,ftf)
+            Bs3rhosqhorpick_vsr[ii]=timeavg(Bs3rhosqhorpick[:,ii],ts,fti,ftf)
+            Bas3rhosqhorpick_vsr[ii]=timeavg(Bas3rhosqhorpick[:,ii],ts,fti,ftf)
+            bs1rhosqhorpick_vsr[ii]=timeavg(bs1rhosqhorpick[:,ii],ts,fti,ftf)
+            bas1rhosqhorpick_vsr[ii]=timeavg(bas1rhosqhorpick[:,ii],ts,fti,ftf)
+            bs2rhosqhorpick_vsr[ii]=timeavg(bs2rhosqhorpick[:,ii],ts,fti,ftf)
+            bas2rhosqhorpick_vsr[ii]=timeavg(bas2rhosqhorpick[:,ii],ts,fti,ftf)
+            bs3rhosqhorpick_vsr[ii]=timeavg(bs3rhosqhorpick[:,ii],ts,fti,ftf)
+            bas3rhosqhorpick_vsr[ii]=timeavg(bas3rhosqhorpick[:,ii],ts,fti,ftf)
+            bsqrhosqhorpick_vsr[ii]=timeavg(bsqrhosqhorpick[:,ii],ts,fti,ftf)
+            #
+            favg3.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],rhosrhosqhorpick_vsr[ii],ugsrhosqhorpick_vsr[ii],uu0rhosqhorpick_vsr[ii],vus1rhosqhorpick_vsr[ii],vuas1rhosqhorpick_vsr[ii],vus3rhosqhorpick_vsr[ii],vuas3rhosqhorpick_vsr[ii],Bs1rhosqhorpick_vsr[ii],Bas1rhosqhorpick_vsr[ii],Bs2rhosqhorpick_vsr[ii],Bas2rhosqhorpick_vsr[ii],Bs3rhosqhorpick_vsr[ii],Bas3rhosqhorpick_vsr[ii],bs1rhosqhorpick_vsr[ii],bas1rhosqhorpick_vsr[ii],bs2rhosqhorpick_vsr[ii],bas2rhosqhorpick_vsr[ii],bs3rhosqhorpick_vsr[ii],bas3rhosqhorpick_vsr[ii],bsqrhosqhorpick_vsr[ii]) )
+            #
+        favg3.close()
+        #
+        # get fit
+        rhosrhosqhorpick_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(rhosrhosqhorpick_vsr[iin:iout])),1)
+        ugsrhosqhorpick_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(ugsrhosqhorpick_vsr[iin:iout])),1)
+        uu0rhosqhorpick_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(uu0rhosqhorpick_vsr[iin:iout])),1)
+        vus1rhosqhorpick_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(vus1rhosqhorpick_vsr[iin:iout])),1)
+        vuas1rhosqhorpick_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(vuas1rhosqhorpick_vsr[iin:iout])),1)
+        vus3rhosqhorpick_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(vus3rhosqhorpick_vsr[iin:iout])),1)
+        vuas3rhosqhorpick_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(vuas3rhosqhorpick_vsr[iin:iout])),1)
+        Bs1rhosqhorpick_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bs1rhosqhorpick_vsr[iin:iout])),1)
+        Bas1rhosqhorpick_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bas1rhosqhorpick_vsr[iin:iout])),1)
+        Bs2rhosqhorpick_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bs2rhosqhorpick_vsr[iin:iout])),1)
+        Bas2rhosqhorpick_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bas2rhosqhorpick_vsr[iin:iout])),1)
+        Bs3rhosqhorpick_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bs3rhosqhorpick_vsr[iin:iout])),1)
+        Bas3rhosqhorpick_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bas3rhosqhorpick_vsr[iin:iout])),1)
+        bs1rhosqhorpick_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bs1rhosqhorpick_vsr[iin:iout])),1)
+        bas1rhosqhorpick_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bas1rhosqhorpick_vsr[iin:iout])),1)
+        bs2rhosqhorpick_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bs2rhosqhorpick_vsr[iin:iout])),1)
+        bas2rhosqhorpick_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bas2rhosqhorpick_vsr[iin:iout])),1)
+        bs3rhosqhorpick_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bs3rhosqhorpick_vsr[iin:iout])),1)
+        bas3rhosqhorpick_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bas3rhosqhorpick_vsr[iin:iout])),1)
+        bsqrhosqhorpick_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bsqrhosqhorpick_vsr[iin:iout])),1)
+        brhosqhorpick_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.sqrt(np.fabs(bsqrhosqhorpick_vsr[iin:iout]))),1)
+        #
+        ###################
+        # r4
+        ###################
+        rhoshor_vsr=np.zeros(nx,dtype=r.dtype)
+        ugshor_vsr=np.zeros(nx,dtype=r.dtype)
+        bsqshor_vsr=np.zeros(nx,dtype=r.dtype)
+        bsqorhoshor_vsr=np.zeros(nx,dtype=r.dtype)
+        bsqougshor_vsr=np.zeros(nx,dtype=r.dtype)
+        uu0hor_vsr=np.zeros(nx,dtype=r.dtype)
+        vus1hor_vsr=np.zeros(nx,dtype=r.dtype)
+        vuas1hor_vsr=np.zeros(nx,dtype=r.dtype)
+        vus3hor_vsr=np.zeros(nx,dtype=r.dtype)
+        vuas3hor_vsr=np.zeros(nx,dtype=r.dtype)
+        Bs1hor_vsr=np.zeros(nx,dtype=r.dtype)
+        Bas1hor_vsr=np.zeros(nx,dtype=r.dtype)
+        Bs2hor_vsr=np.zeros(nx,dtype=r.dtype)
+        Bas2hor_vsr=np.zeros(nx,dtype=r.dtype)
+        Bs3hor_vsr=np.zeros(nx,dtype=r.dtype)
+        Bas3hor_vsr=np.zeros(nx,dtype=r.dtype)
+        bs1hor_vsr=np.zeros(nx,dtype=r.dtype)
+        bas1hor_vsr=np.zeros(nx,dtype=r.dtype)
+        bs2hor_vsr=np.zeros(nx,dtype=r.dtype)
+        bas2hor_vsr=np.zeros(nx,dtype=r.dtype)
+        bs3hor_vsr=np.zeros(nx,dtype=r.dtype)
+        bas3hor_vsr=np.zeros(nx,dtype=r.dtype)
+        bsqhor_vsr=np.zeros(nx,dtype=r.dtype)
+        #
+        favg4 = open('datavsr4.txt', 'w')
+        for ii in np.arange(0,nx):
+            # Q vs. r
+            # 2+23
+            rhoshor_vsr[ii]=timeavg(rhoshor[:,ii],ts,fti,ftf)
+            ugshor_vsr[ii]=timeavg(ugshor[:,ii],ts,fti,ftf)
+            bsqshor_vsr[ii]=timeavg(bsqshor[:,ii],ts,fti,ftf)
+            bsqorhoshor_vsr[ii]=timeavg(bsqorhoshor[:,ii],ts,fti,ftf)
+            bsqougshor_vsr[ii]=timeavg(bsqougshor[:,ii],ts,fti,ftf)
+            uu0hor_vsr[ii]=timeavg(uu0hor[:,ii],ts,fti,ftf)
+            vus1hor_vsr[ii]=timeavg(vus1hor[:,ii],ts,fti,ftf)
+            vuas1hor_vsr[ii]=timeavg(vuas1hor[:,ii],ts,fti,ftf)
+            vus3hor_vsr[ii]=timeavg(vus3hor[:,ii],ts,fti,ftf)
+            vuas3hor_vsr[ii]=timeavg(vuas3hor[:,ii],ts,fti,ftf)
+            Bs1hor_vsr[ii]=timeavg(Bs1hor[:,ii],ts,fti,ftf)
+            Bas1hor_vsr[ii]=timeavg(Bas1hor[:,ii],ts,fti,ftf)
+            Bs2hor_vsr[ii]=timeavg(Bs2hor[:,ii],ts,fti,ftf)
+            Bas2hor_vsr[ii]=timeavg(Bas2hor[:,ii],ts,fti,ftf)
+            Bs3hor_vsr[ii]=timeavg(Bs3hor[:,ii],ts,fti,ftf)
+            Bas3hor_vsr[ii]=timeavg(Bas3hor[:,ii],ts,fti,ftf)
+            bs1hor_vsr[ii]=timeavg(bs1hor[:,ii],ts,fti,ftf)
+            bas1hor_vsr[ii]=timeavg(bas1hor[:,ii],ts,fti,ftf)
+            bs2hor_vsr[ii]=timeavg(bs2hor[:,ii],ts,fti,ftf)
+            bas2hor_vsr[ii]=timeavg(bas2hor[:,ii],ts,fti,ftf)
+            bs3hor_vsr[ii]=timeavg(bs3hor[:,ii],ts,fti,ftf)
+            bas3hor_vsr[ii]=timeavg(bas3hor[:,ii],ts,fti,ftf)
+            bsqhor_vsr[ii]=timeavg(bsqhor[:,ii],ts,fti,ftf)
+            #
+            favg4.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],rhoshor_vsr[ii],ugshor_vsr[ii],bsqshor_vsr[ii],bsqorhoshor_vsr[ii],bsqougshor_vsr[ii],uu0hor_vsr[ii],vus1hor_vsr[ii],vuas1hor_vsr[ii],vus3hor_vsr[ii],vuas3hor_vsr[ii],Bs1hor_vsr[ii],Bas1hor_vsr[ii],Bs2hor_vsr[ii],Bas2hor_vsr[ii],Bs3hor_vsr[ii],Bas3hor_vsr[ii],bs1hor_vsr[ii],bas1hor_vsr[ii],bs2hor_vsr[ii],bas2hor_vsr[ii],bs3hor_vsr[ii],bas3hor_vsr[ii],bsqhor_vsr[ii]) )
+            #
+        favg4.close()
+        #
+        # get fit
+        rhoshor_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(rhoshor_vsr[iin:iout])),1)
+        ugshor_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(ugshor_vsr[iin:iout])),1)
+        bsqshor_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bsqshor_vsr[iin:iout])),1)
+        bsqorhoshor_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bsqorhoshor_vsr[iin:iout])),1)
+        bsqougshor_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bsqougshor_vsr[iin:iout])),1)
+        uu0hor_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(uu0hor_vsr[iin:iout])),1)
+        vus1hor_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(vus1hor_vsr[iin:iout])),1)
+        vuas1hor_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(vuas1hor_vsr[iin:iout])),1)
+        vus3hor_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(vus3hor_vsr[iin:iout])),1)
+        vuas3hor_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(vuas3hor_vsr[iin:iout])),1)
+        Bs1hor_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bs1hor_vsr[iin:iout])),1)
+        Bas1hor_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bas1hor_vsr[iin:iout])),1)
+        Bs2hor_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bs2hor_vsr[iin:iout])),1)
+        Bas2hor_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bas2hor_vsr[iin:iout])),1)
+        Bs3hor_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bs3hor_vsr[iin:iout])),1)
+        Bas3hor_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bas3hor_vsr[iin:iout])),1)
+        bs1hor_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bs1hor_vsr[iin:iout])),1)
+        bas1hor_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bas1hor_vsr[iin:iout])),1)
+        bs2hor_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bs2hor_vsr[iin:iout])),1)
+        bas2hor_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bas2hor_vsr[iin:iout])),1)
+        bs3hor_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bs3hor_vsr[iin:iout])),1)
+        bas3hor_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bas3hor_vsr[iin:iout])),1)
+        bsqhor_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bsqhor_vsr[iin:iout])),1)
+        bhor_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.sqrt(np.fabs(bsqhor_vsr[iin:iout]))),1)
+        #
+        ###################
+        # r5
+        ###################
+        favg5 = open('datavsr5.txt', 'w')
+        #
+        mdin_vsr=np.zeros(nx,dtype=r.dtype)
+        mdjet_vsr=np.zeros(nx,dtype=r.dtype)
+        mdmwind_vsr=np.zeros(nx,dtype=r.dtype)
+        mdwind_vsr=np.zeros(nx,dtype=r.dtype)
+        alphamag1_vsr=np.zeros(nx,dtype=r.dtype)
+        alphamag2_vsr=np.zeros(nx,dtype=r.dtype)
+        alphamag3_vsr=np.zeros(nx,dtype=r.dtype)
+        #
+        fstot_vsr=np.zeros(nx,dtype=r.dtype)
+        fsin_vsr=np.zeros(nx,dtype=r.dtype)
+        feqtot_vsr=np.zeros(nx,dtype=r.dtype)
+        fsmaxtot_vsr=np.zeros(nx,dtype=r.dtype)
+        #
+        for ii in np.arange(0,nx):
+            # Q vs. r
+            # first 15 already computed as vs. r, so no need to re-timeavg()
+            mdin_vsr[ii]=timeavg(mdin[:,ii],ts,fti,ftf)
+            mdjet_vsr[ii]=timeavg(mdjet[:,ii],ts,fti,ftf)
+            mdmwind_vsr[ii]=timeavg(mdmwind[:,ii],ts,fti,ftf)
+            mdwind_vsr[ii]=timeavg(mdwind[:,ii],ts,fti,ftf)
+            alphamag1_vsr[ii]=timeavg(alphamag1[:,ii],ts,fti,ftf)
+            alphamag2_vsr[ii]=timeavg(alphamag2[:,ii],ts,fti,ftf)
+            alphamag3_vsr[ii]=timeavg(alphamag3[:,ii],ts,fti,ftf)
+            #
+            fstot_vsr[ii]=timeavg(fstot[:,ii],ts,fti,ftf)
+            fsin_vsr[ii]=timeavg(fsin[:,ii],ts,fti,ftf)
+            feqtot_vsr[ii]=timeavg(feqtot[:,ii],ts,fti,ftf)
+            fsmaxtot_vsr[ii]=timeavg(fsmaxtot[:,ii],ts,fti,ftf)
+            #
+            # 2+15+4+3+4=28
+            favg5.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g  %g %g %g %g  %g %g %g  %g %g %g %g\n" % (ii,r[ii,0,0],mdotfinavgvsr[ii],mdotfinavgvsr5[ii],edemvsr[ii],edmavsr[ii],edmvsr[ii],ldemvsr[ii],ldmavsr[ii],ldmvsr[ii],phiabsj_mu1vsr[ii],pjemfinavgvsr[ii],pjmakefinavgvsr[ii],pjkefinavgvsr[ii],ljemfinavgvsr[ii],ljmakefinavgvsr[ii],ljkefinavgvsr[ii],mdin_vsr[ii],mdjet_vsr[ii],mdmwind_vsr[ii],mdwind_vsr[ii],alphamag1_vsr[ii],alphamag2_vsr[ii],alphamag3_vsr[ii],fstot_vsr[ii],fsin_vsr[ii],feqtot_vsr[ii],fsmaxtot_vsr[ii]) )
+        #
+        favg5.close()
+        #
+        # get fit
+        mdotfinavgvsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(mdotfinavgvsr[iin:iout])),1)
+        mdotfinavgvsr5_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(mdotfinavgvsr5[iin:iout])),1) # odd ball name
+        edemvsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(edemvsr[iin:iout])),1)
+        edmavsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(edmavsr[iin:iout])),1)
+        edmvsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(edmvsr[iin:iout])),1)
+        ldemvsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(ldemvsr[iin:iout])),1)
+        ldmavsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(ldmavsr[iin:iout])),1)
+        ldmvsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(ldmvsr[iin:iout])),1)
+        phiabsj_mu1vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(phiabsj_mu1vsr[iin:iout])),1)
+        pjemfinavgvsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(pjemfinavgvsr[iin:iout])),1)
+        pjmakefinavgvsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(pjmakefinavgvsr[iin:iout])),1)
+        pjkefinavgvsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(pjkefinavgvsr[iin:iout])),1)
+        ljemfinavgvsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(ljemfinavgvsr[iin:iout])),1)
+        ljmakefinavgvsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(ljmakefinavgvsr[iin:iout])),1)
+        ljkefinavgvsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(ljkefinavgvsr[iin:iout])),1)
+        #
+        mdin_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(mdin_vsr[iin:iout])),1)
+        mdjet_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(mdjet_vsr[iin:iout])),1)
+        mdmwind_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(mdmwind_vsr[iin:iout])),1)
+        mdwind_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(mdwind_vsr[iin:iout])),1)
+        alphamag1_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(alphamag1_vsr[iin:iout])),1)
+        alphamag2_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(alphamag2_vsr[iin:iout])),1)
+        alphamag3_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(alphamag3_vsr[iin:iout])),1)
+        fstot_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(fstot_vsr[iin:iout])),1)
+        fsin_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(fsin_vsr[iin:iout])),1)
+        feqtot_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(feqtot_vsr[iin:iout])),1)
+        fsmaxtot_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(fsmaxtot_vsr[iin:iout])),1)
+        #
+        ###################
+        # r6
+        ###################
+        hoverr_vsr=np.zeros(nx,dtype=r.dtype)
+        hoverrcorona_vsr=np.zeros(nx,dtype=r.dtype)
+        hoverr_jet_vsr=np.zeros(nx,dtype=r.dtype)
+        qmridisk_vsr=np.zeros(nx,dtype=r.dtype)
+        iq2mridisk_vsr=np.zeros(nx,dtype=r.dtype)
+        qmridiskweak_vsr=np.zeros(nx,dtype=r.dtype)
+        iq2mridiskweak_vsr=np.zeros(nx,dtype=r.dtype)
+        #
+        favg6 = open('datavsr6.txt', 'w')
+        for ii in np.arange(0,nx):
+            # Q vs r
+            # 2+12
+            #
+            # 5 other things that are static in time so no timeavg() needed
+            hoverr_vsr[ii]=timeavg(hoverr[:,ii],ts,fti,ftf)
+            hoverrcorona_vsr[ii]=timeavg(hoverrcorona[:,ii],ts,fti,ftf)
+            hoverr_jet_vsr[ii]=timeavg(hoverr_jet[:,ii],ts,fti,ftf)
+            qmridisk_vsr[ii]=timeavg(qmridisk[:,ii],ts,fti,ftf)
+            iq2mridisk_vsr[ii]=timeavg(iq2mridisk[:,ii],ts,fti,ftf)
+            qmridiskweak_vsr[ii]=timeavg(qmridiskweak[:,ii],ts,fti,ftf)
+            iq2mridiskweak_vsr[ii]=timeavg(iq2mridiskweak[:,ii],ts,fti,ftf)
+            #
+            # cat datavsr6.txt | awk '{print $1" "$2" "$3" "$8" "$8/$3}' | column -t | less -S
+            #
+            favg6.write("%d %g %g %g %g %g %g  %g %g %g %g %g %g %g\n" % (ii,r[ii,ny/2,0],dxdxp[2][2][ii,ny/2,0]*_dx2,dxdxp[3][3][ii,ny/2,0]*_dx3,drvsr[ii],dHvsr[ii],dPvsr[ii],hoverr_vsr[ii],hoverrcorona_vsr[ii],hoverr_jet_vsr[ii],qmridisk_vsr[ii],iq2mridisk_vsr[ii],qmridiskweak_vsr[ii],iq2mridiskweak_vsr[ii]) )
+            #
+        favg6.close()
+        # get fit
+        hoverr_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(hoverr_vsr[iin:iout])),1)
+        hoverrcorona_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(hoverrcorona_vsr[iin:iout])),1)
+        hoverr_jet_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(hoverr_jet_vsr[iin:iout])),1)
+        qmridisk_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(qmridisk_vsr[iin:iout])),1)
+        iq2mridisk_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(iq2mridisk_vsr[iin:iout])),1)
+        qmridiskweak_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(qmridiskweak_vsr[iin:iout])),1)
+        iq2mridiskweak_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(iq2mridiskweak_vsr[iin:iout])),1)
+        #
+        #
+        # output fit power-law index for various quantities
+        print( "HLatex12: ModelName & $r_{\\rm{}i}$ & $r_{\\rm{}o}$ & $\\rho$ & $p_g$ & $v_r$ & $v_\\phi$ & $b_r$ & $b_\\theta$ & $b_\\phi$ & $|b|$ & $\\dot{M}_{\\rm{}in}$ & $\\dot{M}_{\\rm{}mw}$ & $\\dot{M}_{\\rm{}w}$   \\\\" )
+        print( "VLatex12: %s        & %g            & %g            & %g      & %g    & %g    & %g        & %g    & %g          & %g        & %g    & %g                    & %g                    & %g                     \\\\ %% %s" % (truemodelname, roundto2(rfitin),roundto2(rfitout),roundto2(rhosrhosq_vsr_fit[0]),roundto2(ugsrhosq_vsr_fit[0]),roundto2(vuas1rhosq_vsr_fit[0]),roundto2(vuas3rhosq_vsr_fit[0]),roundto2(bas1rhosq_vsr_fit[0]),roundto2(bas2rhosq_vsr_fit[0]),roundto2(bas3rhosq_vsr_fit[0]),roundto2(brhosq_vsr_fit[0]),roundto2(mdin_vsr_fit[0]),roundto2(mdmwind_vsr_fit[0]),roundto2(mdwind_vsr_fit[0]) , modelname ) )
+        #
+        print( "HLatex93: ModelName & $\\rho^{\\rm{}dc}$ & $p_g^{\\rm{}dc}$ & $v_r^{\\rm{}dc}$ & $v_\\phi^{\\rm{}dc}$ & $b_r^{\\rm{}dc}$ & $b_\\theta^{\\rm{}dc}$ & $b_\\phi^{\\rm{}dc}$ & $|b|^{\\rm{}dc}$ & $\\rho^{\\rm{}eq}$ & $p^{\\rm{}eq}_g$ & $v^{\\rm{}eq}_r$ & $v^{\\rm{}eq}_\\phi$ & $b^{\\rm{}eq}_r$ & $b^{\\rm{}eq}_\\theta$ & $b^{\\rm{}eq}_\\phi$ & $|b|^{\\rm{}eq}$ & $\\dot{M}_{\\rm{}in}$ & $\\dot{M}_{\\rm{}mw}$ & $\\dot{M}_{\\rm{}w}$   \\\\" )
+        print( "VLatex93: %s         & %g     & %g    & %g    & %g        & %g    & %g          & %g        & %g    & %g        & %g      & %g      & %g          & %g      & %g            & %g          & %g      & %g                    & %g                    & %g                     \\\\ %% %s" % (truemodelname, roundto2(rhosrhosq_vsr_fit[0]),roundto2(ugsrhosq_vsr_fit[0]),roundto2(vuas1rhosq_vsr_fit[0]),roundto2(vuas3rhosq_vsr_fit[0]),roundto2(bas1rhosq_vsr_fit[0]),roundto2(bas2rhosq_vsr_fit[0]),roundto2(bas3rhosq_vsr_fit[0]),roundto2(brhosq_vsr_fit[0]),roundto2(rhoshor_vsr_fit[0]),roundto2(ugshor_vsr_fit[0]),roundto2(vuas1hor_vsr_fit[0]),roundto2(vuas3hor_vsr_fit[0]),roundto2(bas1hor_vsr_fit[0]),roundto2(bas2hor_vsr_fit[0]),roundto2(bas3hor_vsr_fit[0]),roundto2(bhor_vsr_fit[0]),roundto2(mdin_vsr_fit[0]),roundto2(mdmwind_vsr_fit[0]),roundto2(mdwind_vsr_fit[0]) , modelname ) )
+        print( "HLatex94: ModelName & $\\rho^{\\rm{}dc}$ & $p_g^{\\rm{}dc}$ & $v_r^{\\rm{}dc}$ & $v_\\phi^{\\rm{}dc}$ & $b_r^{\\rm{}dc}$ & $b_\\theta^{\\rm{}dc}$ & $b_\\phi^{\\rm{}dc}$ & $|b|^{\\rm{}dc}$ & $\\rho^{\\rm{}eq}$ & $p^{\\rm{}eq}_g$ & $v^{\\rm{}eq}_r$ & $v^{\\rm{}eq}_\\phi$ & $b^{\\rm{}eq}_r$ & $b^{\\rm{}eq}_\\theta$ & $b^{\\rm{}eq}_\\phi$ & $|b|^{\\rm{}eq}$ & $\\dot{M}_{\\rm{}in}$ & $\\dot{M}_{\\rm{}mw}$ & $\\dot{M}_{\\rm{}w}$   \\\\" )
+        print( "VLatex94: %s         & %g     & %g    & %g    & %g        & %g    & %g          & %g        & %g    & %g        & %g      & %g      & %g          & %g      & %g            & %g          & %g      & %g                    & %g                    & %g                     \\\\ %% %s" % (truemodelname, roundto2(rhosrhosq_vsr_fit[0]),roundto2(ugsrhosq_vsr_fit[0]),roundto2(vuas1rhosq_vsr_fit[0]),roundto2(vuas3rhosq_vsr_fit[0]),roundto2(bas1rhosq_vsr_fit[0]),roundto2(bas2rhosq_vsr_fit[0]),roundto2(bas3rhosq_vsr_fit[0]),roundto2(brhosq_vsr_fit[0]),roundto2(rhosrhosqeq_vsr_fit[0]),roundto2(ugsrhosqeq_vsr_fit[0]),roundto2(vuas1rhosqeq_vsr_fit[0]),roundto2(vuas3rhosqeq_vsr_fit[0]),roundto2(bas1rhosqeq_vsr_fit[0]),roundto2(bas2rhosqeq_vsr_fit[0]),roundto2(bas3rhosqeq_vsr_fit[0]),roundto2(brhosqeq_vsr_fit[0]),roundto2(mdin_vsr_fit[0]),roundto2(mdmwind_vsr_fit[0]),roundto2(mdwind_vsr_fit[0]) , modelname ) )
+        #
+        #
+        #
+        #
+        #
+        ###################
+        # h1
+        ###################
+        rhosrhosqrad4_vsh=np.zeros(nx,dtype=r.dtype)
+        ugsrhosqrad4_vsh=np.zeros(nx,dtype=r.dtype)
+        uu0rhosqrad4_vsh=np.zeros(nx,dtype=r.dtype)
+        vus1rhosqrad4_vsh=np.zeros(nx,dtype=r.dtype)
+        vuas1rhosqrad4_vsh=np.zeros(nx,dtype=r.dtype)
+        vus3rhosqrad4_vsh=np.zeros(nx,dtype=r.dtype)
+        vuas3rhosqrad4_vsh=np.zeros(nx,dtype=r.dtype)
+        Bs1rhosqrad4_vsh=np.zeros(nx,dtype=r.dtype)
+        Bas1rhosqrad4_vsh=np.zeros(nx,dtype=r.dtype)
+        Bs2rhosqrad4_vsh=np.zeros(nx,dtype=r.dtype)
+        Bas2rhosqrad4_vsh=np.zeros(nx,dtype=r.dtype)
+        Bs3rhosqrad4_vsh=np.zeros(nx,dtype=r.dtype)
+        Bas3rhosqrad4_vsh=np.zeros(nx,dtype=r.dtype)
+        bs1rhosqrad4_vsh=np.zeros(nx,dtype=r.dtype)
+        bas1rhosqrad4_vsh=np.zeros(nx,dtype=r.dtype)
+        bs2rhosqrad4_vsh=np.zeros(nx,dtype=r.dtype)
+        bas2rhosqrad4_vsh=np.zeros(nx,dtype=r.dtype)
+        bs3rhosqrad4_vsh=np.zeros(nx,dtype=r.dtype)
+        bas3rhosqrad4_vsh=np.zeros(nx,dtype=r.dtype)
+        bsqrhosqrad4_vsh=np.zeros(nx,dtype=r.dtype)
+        #
+        # now interpolate from size ny to size nx
+        # get \theta at r=4 in size of nx rather than ny
+        xold=tj[0,0,0]+(tj[0,:,0]-tj[0,0,0])/(tj[0,-1,0]-tj[0,0,0])
+        xnew=ti[0,0,0]+(ti[:,0,0]-ti[0,0,0])/(ti[-1,0,0]-ti[0,0,0])
+        hinnx4=np.interp(xnew,xold,h[iofr(4),:,0])
+        #
+        favgrad4 = open('datavsh1.txt', 'w')
+        for ii in np.arange(0,nx):
+            # Q vs h
+            # 2+20
+            rhosrhosqrad4_vsh[ii]=timeavg(rhosrhosqrad4[:,ii],ts,fti,ftf)
+            ugsrhosqrad4_vsh[ii]=timeavg(ugsrhosqrad4[:,ii],ts,fti,ftf)
+            uu0rhosqrad4_vsh[ii]=timeavg(uu0rhosqrad4[:,ii],ts,fti,ftf)
+            vus1rhosqrad4_vsh[ii]=timeavg(vus1rhosqrad4[:,ii],ts,fti,ftf)
+            vuas1rhosqrad4_vsh[ii]=timeavg(vuas1rhosqrad4[:,ii],ts,fti,ftf)
+            vus3rhosqrad4_vsh[ii]=timeavg(vus3rhosqrad4[:,ii],ts,fti,ftf)
+            vuas3rhosqrad4_vsh[ii]=timeavg(vuas3rhosqrad4[:,ii],ts,fti,ftf)
+            Bs1rhosqrad4_vsh[ii]=timeavg(Bs1rhosqrad4[:,ii],ts,fti,ftf)
+            Bas1rhosqrad4_vsh[ii]=timeavg(Bas1rhosqrad4[:,ii],ts,fti,ftf)
+            Bs2rhosqrad4_vsh[ii]=timeavg(Bs2rhosqrad4[:,ii],ts,fti,ftf)
+            Bas2rhosqrad4_vsh[ii]=timeavg(Bas2rhosqrad4[:,ii],ts,fti,ftf)
+            Bs3rhosqrad4_vsh[ii]=timeavg(Bs3rhosqrad4[:,ii],ts,fti,ftf)
+            Bas3rhosqrad4_vsh[ii]=timeavg(Bas3rhosqrad4[:,ii],ts,fti,ftf)
+            bs1rhosqrad4_vsh[ii]=timeavg(bs1rhosqrad4[:,ii],ts,fti,ftf)
+            bas1rhosqrad4_vsh[ii]=timeavg(bas1rhosqrad4[:,ii],ts,fti,ftf)
+            bs2rhosqrad4_vsh[ii]=timeavg(bs2rhosqrad4[:,ii],ts,fti,ftf)
+            bas2rhosqrad4_vsh[ii]=timeavg(bas2rhosqrad4[:,ii],ts,fti,ftf)
+            bs3rhosqrad4_vsh[ii]=timeavg(bs3rhosqrad4[:,ii],ts,fti,ftf)
+            bas3rhosqrad4_vsh[ii]=timeavg(bas3rhosqrad4[:,ii],ts,fti,ftf)
+            bsqrhosqrad4_vsh[ii]=timeavg(bsqrhosqrad4[:,ii],ts,fti,ftf)
+            #
+            favgrad4.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,hinnx4[ii],rhosrhosqrad4_vsh[ii],ugsrhosqrad4_vsh[ii],uu0rhosqrad4_vsh[ii],vus1rhosqrad4_vsh[ii],vuas1rhosqrad4_vsh[ii],vus3rhosqrad4_vsh[ii],vuas3rhosqrad4_vsh[ii],Bs1rhosqrad4_vsh[ii],Bas1rhosqrad4_vsh[ii],Bs2rhosqrad4_vsh[ii],Bas2rhosqrad4_vsh[ii],Bs3rhosqrad4_vsh[ii],Bas3rhosqrad4_vsh[ii],bs1rhosqrad4_vsh[ii],bas1rhosqrad4_vsh[ii],bs2rhosqrad4_vsh[ii],bas2rhosqrad4_vsh[ii],bs3rhosqrad4_vsh[ii],bas3rhosqrad4_vsh[ii],bsqrhosqrad4_vsh[ii]) )
+            #
+        favgrad4.close()
+        ###################
+        # h2
+        ###################
+        # now interpolate from size ny to size nx
+        # get \theta at r=8 in size of nx rather than ny
+        xold=tj[0,0,0]+(tj[0,:,0]-tj[0,0,0])/(tj[0,-1,0]-tj[0,0,0])
+        xnew=ti[0,0,0]+(ti[:,0,0]-ti[0,0,0])/(ti[-1,0,0]-ti[0,0,0])
+        hinnx8=np.interp(xnew,xold,h[iofr(8),:,0])
+        #
+        rhosrhosqrad8_vsh=np.zeros(nx,dtype=r.dtype)
+        ugsrhosqrad8_vsh=np.zeros(nx,dtype=r.dtype)
+        uu0rhosqrad8_vsh=np.zeros(nx,dtype=r.dtype)
+        vus1rhosqrad8_vsh=np.zeros(nx,dtype=r.dtype)
+        vuas1rhosqrad8_vsh=np.zeros(nx,dtype=r.dtype)
+        vus3rhosqrad8_vsh=np.zeros(nx,dtype=r.dtype)
+        vuas3rhosqrad8_vsh=np.zeros(nx,dtype=r.dtype)
+        Bs1rhosqrad8_vsh=np.zeros(nx,dtype=r.dtype)
+        Bas1rhosqrad8_vsh=np.zeros(nx,dtype=r.dtype)
+        Bs2rhosqrad8_vsh=np.zeros(nx,dtype=r.dtype)
+        Bas2rhosqrad8_vsh=np.zeros(nx,dtype=r.dtype)
+        Bs3rhosqrad8_vsh=np.zeros(nx,dtype=r.dtype)
+        Bas3rhosqrad8_vsh=np.zeros(nx,dtype=r.dtype)
+        bs1rhosqrad8_vsh=np.zeros(nx,dtype=r.dtype)
+        bas1rhosqrad8_vsh=np.zeros(nx,dtype=r.dtype)
+        bs2rhosqrad8_vsh=np.zeros(nx,dtype=r.dtype)
+        bas2rhosqrad8_vsh=np.zeros(nx,dtype=r.dtype)
+        bs3rhosqrad8_vsh=np.zeros(nx,dtype=r.dtype)
+        bas3rhosqrad8_vsh=np.zeros(nx,dtype=r.dtype)
+        bsqrhosqrad8_vsh=np.zeros(nx,dtype=r.dtype)
+        #
+        favgrad8 = open('datavsh2.txt', 'w')
+        for ii in np.arange(0,nx):
+            # Q vs h
+            # 2+20
+            rhosrhosqrad8_vsh[ii]=timeavg(rhosrhosqrad8[:,ii],ts,fti,ftf)
+            ugsrhosqrad8_vsh[ii]=timeavg(ugsrhosqrad8[:,ii],ts,fti,ftf)
+            uu0rhosqrad8_vsh[ii]=timeavg(uu0rhosqrad8[:,ii],ts,fti,ftf)
+            vus1rhosqrad8_vsh[ii]=timeavg(vus1rhosqrad8[:,ii],ts,fti,ftf)
+            vuas1rhosqrad8_vsh[ii]=timeavg(vuas1rhosqrad8[:,ii],ts,fti,ftf)
+            vus3rhosqrad8_vsh[ii]=timeavg(vus3rhosqrad8[:,ii],ts,fti,ftf)
+            vuas3rhosqrad8_vsh[ii]=timeavg(vuas3rhosqrad8[:,ii],ts,fti,ftf)
+            Bs1rhosqrad8_vsh[ii]=timeavg(Bs1rhosqrad8[:,ii],ts,fti,ftf)
+            Bas1rhosqrad8_vsh[ii]=timeavg(Bas1rhosqrad8[:,ii],ts,fti,ftf)
+            Bs2rhosqrad8_vsh[ii]=timeavg(Bs2rhosqrad8[:,ii],ts,fti,ftf)
+            Bas2rhosqrad8_vsh[ii]=timeavg(Bas2rhosqrad8[:,ii],ts,fti,ftf)
+            Bs3rhosqrad8_vsh[ii]=timeavg(Bs3rhosqrad8[:,ii],ts,fti,ftf)
+            Bas3rhosqrad8_vsh[ii]=timeavg(Bas3rhosqrad8[:,ii],ts,fti,ftf)
+            bs1rhosqrad8_vsh[ii]=timeavg(bs1rhosqrad8[:,ii],ts,fti,ftf)
+            bas1rhosqrad8_vsh[ii]=timeavg(bas1rhosqrad8[:,ii],ts,fti,ftf)
+            bs2rhosqrad8_vsh[ii]=timeavg(bs2rhosqrad8[:,ii],ts,fti,ftf)
+            bas2rhosqrad8_vsh[ii]=timeavg(bas2rhosqrad8[:,ii],ts,fti,ftf)
+            bs3rhosqrad8_vsh[ii]=timeavg(bs3rhosqrad8[:,ii],ts,fti,ftf)
+            bas3rhosqrad8_vsh[ii]=timeavg(bas3rhosqrad8[:,ii],ts,fti,ftf)
+            bsqrhosqrad8_vsh[ii]=timeavg(bsqrhosqrad8[:,ii],ts,fti,ftf)
+            #
+            favgrad8.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,hinnx8[ii],rhosrhosqrad8_vsh[ii],ugsrhosqrad8_vsh[ii],uu0rhosqrad8_vsh[ii],vus1rhosqrad8_vsh[ii],vuas1rhosqrad8_vsh[ii],vus3rhosqrad8_vsh[ii],vuas3rhosqrad8_vsh[ii],Bs1rhosqrad8_vsh[ii],Bas1rhosqrad8_vsh[ii],Bs2rhosqrad8_vsh[ii],Bas2rhosqrad8_vsh[ii],Bs3rhosqrad8_vsh[ii],Bas3rhosqrad8_vsh[ii],bs1rhosqrad8_vsh[ii],bas1rhosqrad8_vsh[ii],bs2rhosqrad8_vsh[ii],bas2rhosqrad8_vsh[ii],bs3rhosqrad8_vsh[ii],bas3rhosqrad8_vsh[ii],bsqrhosqrad8_vsh[ii]) )
+            #
+        favgrad8.close()
+        ###################
+        # h3
+        ###################
+        # now interpolate from size ny to size nx
+        # get \theta at r=8 in size of nx rather than ny
+        xold=tj[0,0,0]+(tj[0,:,0]-tj[0,0,0])/(tj[0,-1,0]-tj[0,0,0])
+        xnew=ti[0,0,0]+(ti[:,0,0]-ti[0,0,0])/(ti[-1,0,0]-ti[0,0,0])
+        hinnx30=np.interp(xnew,xold,h[iofr(30),:,0])
+        #
+        rhosrhosqrad30_vsh=np.zeros(nx,dtype=r.dtype)
+        ugsrhosqrad30_vsh=np.zeros(nx,dtype=r.dtype)
+        uu0rhosqrad30_vsh=np.zeros(nx,dtype=r.dtype)
+        vus1rhosqrad30_vsh=np.zeros(nx,dtype=r.dtype)
+        vuas1rhosqrad30_vsh=np.zeros(nx,dtype=r.dtype)
+        vus3rhosqrad30_vsh=np.zeros(nx,dtype=r.dtype)
+        vuas3rhosqrad30_vsh=np.zeros(nx,dtype=r.dtype)
+        Bs1rhosqrad30_vsh=np.zeros(nx,dtype=r.dtype)
+        Bas1rhosqrad30_vsh=np.zeros(nx,dtype=r.dtype)
+        Bs2rhosqrad30_vsh=np.zeros(nx,dtype=r.dtype)
+        Bas2rhosqrad30_vsh=np.zeros(nx,dtype=r.dtype)
+        Bs3rhosqrad30_vsh=np.zeros(nx,dtype=r.dtype)
+        Bas3rhosqrad30_vsh=np.zeros(nx,dtype=r.dtype)
+        bs1rhosqrad30_vsh=np.zeros(nx,dtype=r.dtype)
+        bas1rhosqrad30_vsh=np.zeros(nx,dtype=r.dtype)
+        bs2rhosqrad30_vsh=np.zeros(nx,dtype=r.dtype)
+        bas2rhosqrad30_vsh=np.zeros(nx,dtype=r.dtype)
+        bs3rhosqrad30_vsh=np.zeros(nx,dtype=r.dtype)
+        bas3rhosqrad30_vsh=np.zeros(nx,dtype=r.dtype)
+        bsqrhosqrad30_vsh=np.zeros(nx,dtype=r.dtype)
+        #
+        favgrad30 = open('datavsh3.txt', 'w')
+        for ii in np.arange(0,nx):
+            # Q vs h
+            # 2+20
+            rhosrhosqrad30_vsh[ii]=timeavg(rhosrhosqrad30[:,ii],ts,fti,ftf)
+            ugsrhosqrad30_vsh[ii]=timeavg(ugsrhosqrad30[:,ii],ts,fti,ftf)
+            uu0rhosqrad30_vsh[ii]=timeavg(uu0rhosqrad30[:,ii],ts,fti,ftf)
+            vus1rhosqrad30_vsh[ii]=timeavg(vus1rhosqrad30[:,ii],ts,fti,ftf)
+            vuas1rhosqrad30_vsh[ii]=timeavg(vuas1rhosqrad30[:,ii],ts,fti,ftf)
+            vus3rhosqrad30_vsh[ii]=timeavg(vus3rhosqrad30[:,ii],ts,fti,ftf)
+            vuas3rhosqrad30_vsh[ii]=timeavg(vuas3rhosqrad30[:,ii],ts,fti,ftf)
+            Bs1rhosqrad30_vsh[ii]=timeavg(Bs1rhosqrad30[:,ii],ts,fti,ftf)
+            Bas1rhosqrad30_vsh[ii]=timeavg(Bas1rhosqrad30[:,ii],ts,fti,ftf)
+            Bs2rhosqrad30_vsh[ii]=timeavg(Bs2rhosqrad30[:,ii],ts,fti,ftf)
+            Bas2rhosqrad30_vsh[ii]=timeavg(Bas2rhosqrad30[:,ii],ts,fti,ftf)
+            Bs3rhosqrad30_vsh[ii]=timeavg(Bs3rhosqrad30[:,ii],ts,fti,ftf)
+            Bas3rhosqrad30_vsh[ii]=timeavg(Bas3rhosqrad30[:,ii],ts,fti,ftf)
+            bs1rhosqrad30_vsh[ii]=timeavg(bs1rhosqrad30[:,ii],ts,fti,ftf)
+            bas1rhosqrad30_vsh[ii]=timeavg(bas1rhosqrad30[:,ii],ts,fti,ftf)
+            bs2rhosqrad30_vsh[ii]=timeavg(bs2rhosqrad30[:,ii],ts,fti,ftf)
+            bas2rhosqrad30_vsh[ii]=timeavg(bas2rhosqrad30[:,ii],ts,fti,ftf)
+            bs3rhosqrad30_vsh[ii]=timeavg(bs3rhosqrad30[:,ii],ts,fti,ftf)
+            bas3rhosqrad30_vsh[ii]=timeavg(bas3rhosqrad30[:,ii],ts,fti,ftf)
+            bsqrhosqrad30_vsh[ii]=timeavg(bsqrhosqrad30[:,ii],ts,fti,ftf)
+            #
+            favgrad30.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,hinnx30[ii],rhosrhosqrad30_vsh[ii],ugsrhosqrad30_vsh[ii],uu0rhosqrad30_vsh[ii],vus1rhosqrad30_vsh[ii],vuas1rhosqrad30_vsh[ii],vus3rhosqrad30_vsh[ii],vuas3rhosqrad30_vsh[ii],Bs1rhosqrad30_vsh[ii],Bas1rhosqrad30_vsh[ii],Bs2rhosqrad30_vsh[ii],Bas2rhosqrad30_vsh[ii],Bs3rhosqrad30_vsh[ii],Bas3rhosqrad30_vsh[ii],bs1rhosqrad30_vsh[ii],bas1rhosqrad30_vsh[ii],bs2rhosqrad30_vsh[ii],bas2rhosqrad30_vsh[ii],bs3rhosqrad30_vsh[ii],bas3rhosqrad30_vsh[ii],bsqrhosqrad30_vsh[ii]) )
+            #
+            #
+        favgrad30.close()
         #
     #
-    favg1.close()
-    favg2.close()
-    favg3.close()
-    favg4.close()
-    favg5.close()
-    favg6.close()
     #
-    favgrad4.close()
-    favgrad8.close()
-    favgrad30.close()
     #
-    favg1 = open('datavst1.txt', 'w')
-    favg2 = open('datavst2.txt', 'w')
-    favg3 = open('datavst3.txt', 'w')
-    favg4 = open('datavst4.txt', 'w')
-    favg5 = open('datavst5.txt', 'w')
-    favg6 = open('datavst6.txt', 'w')
-    favg7 = open('datavst7.txt', 'w')
     #
-    sizet=len(ts)
-    for tic in ts:
-        tici=np.where(ts==tic)[0]
-        #
-        favg1.write("%d %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], mdtot[tici,ihor],md10[tici,ihor],md30[tici,ihor],mdin[tici,iofr(rjetin)],mdin[tici,iofr(rjetout)],mdjet[tici,iofr(rjetout)],mdmwind[tici,iofr(rjetin)],mdmwind[tici,iofr(rjetout)],mdwind[tici,iofr(rjetin)],mdwind[tici,iofr(rjetout)]  ) )
-        #
-        favg2.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], etabhEM[tici],etabhMAKE[tici],etabh[tici],etajEM[tici],etajMAKE[tici],etaj[tici],etamwinEM[tici],etamwinMAKE[tici],etamwin[tici],etamwoutEM[tici],etamwoutMAKE[tici],etamwout[tici],etawinEM[tici],etawinMAKE[tici],etawin[tici],etawoutEM[tici],etawoutMAKE[tici],etawout[tici]  ) )
-        #
-        favg3.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], letabhEM[tici],letabhMAKE[tici],letabh[tici],letajEM[tici],letajMAKE[tici],letaj[tici],letamwinEM[tici],letamwinMAKE[tici],letamwin[tici],letamwoutEM[tici],letamwoutMAKE[tici],letamwout[tici],letawinEM[tici],letawinMAKE[tici],letawin[tici],letawoutEM[tici],letawoutMAKE[tici],letawout[tici]  ) )
-        #
-        favg4.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], hoverrhor[tici],hoverr2[tici],hoverr5[tici],hoverr10[tici],hoverr20[tici],hoverr100[tici],hoverrcoronahor[tici],hoverrcorona2[tici],hoverrcorona5[tici],hoverrcorona10[tici],hoverrcorona20[tici],hoverrcorona100[tici],hoverrjethor[tici],hoverrjet2[tici],hoverrjet5[tici],hoverrjet10[tici],hoverrjet20[tici],hoverrjet100[tici]  ) )
-        #
-        favg5.write("%d %g %g %g %g %g\n" % (tici,ts[tici], betamin[tici,0],betaavg[tici,0],betaratofavg[tici,0],betaratofmax[tici,0]  ) )
-        #
-        favg6.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], qmridisk10[tici],qmridisk20[tici],qmridisk100[tici],iq2mridisk10[tici],iq2mridisk20[tici],iq2mridisk100[tici],qmridiskweak10[tici],qmridiskweak20[tici],qmridiskweak100[tici],iq2mridiskweak10[tici],iq2mridiskweak20[tici],iq2mridiskweak100[tici]   ) )
-        #
-        favg7.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], phibh[tici],phirjetin[tici],phirjetout[tici],phij[tici],phimwin[tici],phimwout[tici],phiwin[tici],phiwout[tici],phijn[tici],phijs[tici],fstot[tici,ihor],fsmaxtot[tici,ihor],fmaxvst[tici],r[ifmaxvst[tici],0,0],reqstagvst[tici],feqstag[tici],feqstagnearfin[tici],fstotnormA[0][tici],fstotnormA[1][tici],fstotnormA[2][tici],fstotnormC[tici],fstotnormB[whichfirstlimited][tici],fstotnormD[tici]   ) )
-        #
     #
-    favg1.close()
-    favg2.close()
-    favg3.close()
-    favg4.close()
-    favg5.close()
-    favg6.close()
-    favg7.close()
+    ####################################################
+    # Q vs. time
+    ####################################################
+    #
+    #
+    if dodatavst==1:
+        #
+        favg1 = open('datavst1.txt', 'w')
+        favg2 = open('datavst2.txt', 'w')
+        favg3 = open('datavst3.txt', 'w')
+        favg4 = open('datavst4.txt', 'w')
+        favg5 = open('datavst5.txt', 'w')
+        favg6 = open('datavst6.txt', 'w')
+        favg7 = open('datavst7.txt', 'w')
+        #
+        sizet=len(ts)
+        for tic in ts:
+            tici=np.where(ts==tic)[0]
+            #
+            favg1.write("%d %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], mdtot[tici,ihor],md10[tici,ihor],md30[tici,ihor],mdin[tici,iofr(rdiskin)],mdin[tici,iofr(rdiskout)],mdjet[tici,iofr(rjetout)],mdmwind[tici,iofr(rjetin)],mdmwind[tici,iofr(rjetout)],mdwind[tici,iofr(rdiskin)],mdwind[tici,iofr(rdiskout)]  ) )
+            #
+            favg2.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], etabhEM[tici],etabhMAKE[tici],etabh[tici],etajEM[tici],etajMAKE[tici],etaj[tici],etamwinEM[tici],etamwinMAKE[tici],etamwin[tici],etamwoutEM[tici],etamwoutMAKE[tici],etamwout[tici],etawinEM[tici],etawinMAKE[tici],etawin[tici],etawoutEM[tici],etawoutMAKE[tici],etawout[tici]  ) )
+            #
+            favg3.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], letabhEM[tici],letabhMAKE[tici],letabh[tici],letajEM[tici],letajMAKE[tici],letaj[tici],letamwinEM[tici],letamwinMAKE[tici],letamwin[tici],letamwoutEM[tici],letamwoutMAKE[tici],letamwout[tici],letawinEM[tici],letawinMAKE[tici],letawin[tici],letawoutEM[tici],letawoutMAKE[tici],letawout[tici]  ) )
+            #
+            favg4.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], hoverrhor[tici],hoverr2[tici],hoverr5[tici],hoverr10[tici],hoverr20[tici],hoverr100[tici],hoverrcoronahor[tici],hoverrcorona2[tici],hoverrcorona5[tici],hoverrcorona10[tici],hoverrcorona20[tici],hoverrcorona100[tici],hoverr_jethor[tici],hoverr_jet2[tici],hoverr_jet5[tici],hoverr_jet10[tici],hoverr_jet20[tici],hoverr_jet100[tici]  ) )
+            #
+            favg5.write("%d %g %g %g %g %g\n" % (tici,ts[tici], betamin[tici,0],betaavg[tici,0],betaratofavg[tici,0],betaratofmax[tici,0]  ) )
+            #
+            favg6.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], qmridisk10[tici],qmridisk20[tici],qmridisk100[tici],iq2mridisk10[tici],iq2mridisk20[tici],iq2mridisk100[tici],qmridiskweak10[tici],qmridiskweak20[tici],qmridiskweak100[tici],iq2mridiskweak10[tici],iq2mridiskweak20[tici],iq2mridiskweak100[tici]   ) )
+            #
+            favg7.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], phibh[tici],phirdiskin[tici],phirdiskout[tici],phij[tici],phimwin[tici],phimwout[tici],phiwin[tici],phiwout[tici],phijn[tici],phijs[tici],fstot[tici,ihor],fsmaxtot[tici,ihor],fmaxvst[tici],r[ifmaxvst[tici],0,0],reqstagvst[tici],feqstag[tici],feqstagnearfin[tici],fstotnormA[0][tici],fstotnormA[1][tici],fstotnormA[2][tici],fstotnormC[tici],fstotnormB[whichfirstlimited][tici],fstotnormD[tici]   ) )
+            #
+        #
+        favg1.close()
+        favg2.close()
+        favg3.close()
+        favg4.close()
+        favg5.close()
+        favg6.close()
+        favg7.close()
+    #
+    #
+    #
     #
     #
     #
@@ -7726,170 +8368,193 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
     #
     #
     ############################
+    #
     # some space-time plots
     #
     ###########################
     #
     #
-    arrayvsra=[rhosrhosq,ugsrhosq,uu0rhosq,vus1rhosq,vuas1rhosq,vus3rhosq,vuas3rhosq,Bs1rhosq,Bas1rhosq,Bs2rhosq,Bas2rhosq,Bs3rhosq,Bas3rhosq,bs1rhosq,bas1rhosq,bs2rhosq,bas2rhosq,bs3rhosq,bas3rhosq,bsqrhosq]
-    bsqorhora=bsqrhosq/rhosrhosq
-    bsqoura=bsqrhosq/ugsrhosq
-    arrayvsraname=['rhosrhosq','ugsrhosq','uu0rhosq','vus1rhosq','vuas1rhosq','vus3rhosq','vuas3rhosq','Bs1rhosq','Bas1rhosq','Bs2rhosq','Bas2rhosq','Bs3rhosq','Bas3rhosq','bs1rhosq','bas1rhosq','bs2rhosq','bas2rhosq','bs3rhosq','bas3rhosq','bsqrhosq']
-    logvaluearrayvsra=[1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
-    #
-    arrayvsrb=[rhosrhosqeq,ugsrhosqeq,uu0rhosqeq,vus1rhosqeq,vuas1rhosqeq,vus3rhosqeq,vuas3rhosqeq,Bs1rhosqeq,Bas1rhosqeq,Bs2rhosqeq,Bas2rhosqeq,Bs3rhosqeq,Bas3rhosqeq,bs1rhosqeq,bas1rhosqeq,bs2rhosqeq,bas2rhosqeq,bs3rhosqeq,bas3rhosqeq,bsqrhosqeq]
-    bsqorhorb=bsqrhosqeq/rhosrhosqeq
-    bsqourb=bsqrhosqeq/ugsrhosqeq
-    arrayvsrbname=['rhosrhosqeq','ugsrhosqeq','uu0rhosqeq','vus1rhosqeq','vuas1rhosqeq','vus3rhosqeq','vuas3rhosqeq','Bs1rhosqeq','Bas1rhosqeq','Bs2rhosqeq','Bas2rhosqeq','Bs3rhosqeq','Bas3rhosqeq','bs1rhosqeq','bas1rhosqeq','bs2rhosqeq','bas2rhosqeq','bs3rhosqeq','bas3rhosqeq','bsqrhosqeq']
-    logvaluearrayvsrb=[1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
-    #
-    arrayvsrc=[rhosrhosqhorpick,ugsrhosqhorpick,uu0rhosqhorpick,vus1rhosqhorpick,vuas1rhosqhorpick,vus3rhosqhorpick,vuas3rhosqhorpick,Bs1rhosqhorpick,Bas1rhosqhorpick,Bs2rhosqhorpick,Bas2rhosqhorpick,Bs3rhosqhorpick,Bas3rhosqhorpick,bs1rhosqhorpick,bas1rhosqhorpick,bs2rhosqhorpick,bas2rhosqhorpick,bs3rhosqhorpick,bas3rhosqhorpick,bsqrhosqhorpick]
-    bsqorhorc=bsqrhosqhorpick/rhosrhosqhorpick
-    bsqourc=bsqrhosqhorpick/ugsrhosqhorpick
-    arrayvsrcname=['rhosrhosqhorpick','ugsrhosqhorpick','uu0rhosqhorpick','vus1rhosqhorpick','vuas1rhosqhorpick','vus3rhosqhorpick','vuas3rhosqhorpick','Bs1rhosqhorpick','Bas1rhosqhorpick','Bs2rhosqhorpick','Bas2rhosqhorpick','Bs3rhosqhorpick','Bas3rhosqhorpick','bs1rhosqhorpick','bas1rhosqhorpick','bs2rhosqhorpick','bas2rhosqhorpick','bs3rhosqhorpick','bas3rhosqhorpick','bsqrhosqhorpick']
-    logvaluearrayvsrc=[1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
-    #
-    arrayvsrd=[rhoshor,ugshor,bsqshor,bsqorhoshor,bsqougshor,uu0hor,vus1hor,vuas1hor,vus3hor,vuas3hor,Bs1hor,Bas1hor,Bs2hor,Bas2hor,Bs3hor,Bas3hor,bs1hor,bas1hor,bs2hor,bas2hor,bs3hor,bas3hor,bsqhor]
-    bsqorhord=bsqhor/rhoshor
-    bsqourd=bsqhor/ugshor
-    arrayvsrdname=['rhoshor','ugshor','bsqshor','bsqorhoshor','bsqougshor','uu0hor','vus1hor','vuas1hor','vus3hor','vuas3hor','Bs1hor','Bas1hor','Bs2hor','Bas2hor','Bs3hor','Bas3hor','bs1hor','bas1hor','bs2hor','bas2hor','bs3hor','bas3hor','bsqhor']
-    logvaluearrayvsrd=[1,1,1,1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
-    #
-    arrayvsha=[rhosrhosqrad4,ugsrhosqrad4,uu0rhosqrad4,vus1rhosqrad4,vuas1rhosqrad4,vus3rhosqrad4,vuas3rhosqrad4,Bs1rhosqrad4,Bas1rhosqrad4,Bs2rhosqrad4,Bas2rhosqrad4,Bs3rhosqrad4,Bas3rhosqrad4,bs1rhosqrad4,bas1rhosqrad4,bs2rhosqrad4,bas2rhosqrad4,bs3rhosqrad4,bas3rhosqrad4,bsqrhosqrad4]
-    bsqorhoha=bsqrhosqrad4/rhosrhosqrad4
-    bsqouha=bsqrhosqrad4/ugsrhosqrad4
-    arrayvshaname=['rhosrhosqrad4','ugsrhosqrad4','uu0rhosqrad4','vus1rhosqrad4','vuas1rhosqrad4','vus3rhosqrad4','vuas3rhosqrad4','Bs1rhosqrad4','Bas1rhosqrad4','Bs2rhosqrad4','Bas2rhosqrad4','Bs3rhosqrad4','Bas3rhosqrad4','bs1rhosqrad4','bas1rhosqrad4','bs2rhosqrad4','bas2rhosqrad4','bs3rhosqrad4','bas3rhosqrad4','bsqrhosqrad4']
-    logvaluearrayvsha=[1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
-    #
-    arrayvshb=[rhosrhosqrad8,ugsrhosqrad8,uu0rhosqrad8,vus1rhosqrad8,vuas1rhosqrad8,vus3rhosqrad8,vuas3rhosqrad8,Bs1rhosqrad8,Bas1rhosqrad8,Bs2rhosqrad8,Bas2rhosqrad8,Bs3rhosqrad8,Bas3rhosqrad8,bs1rhosqrad8,bas1rhosqrad8,bs2rhosqrad8,bas2rhosqrad8,bs3rhosqrad8,bas3rhosqrad8,bsqrhosqrad8]
-    bsqorhohb=bsqrhosqrad8/rhosrhosqrad8
-    bsqouhb=bsqrhosqrad8/ugsrhosqrad8
-    arrayvshbname=['rhosrhosqrad8','ugsrhosqrad8','uu0rhosqrad8','vus1rhosqrad8','vuas1rhosqrad8','vus3rhosqrad8','vuas3rhosqrad8','Bs1rhosqrad8','Bas1rhosqrad8','Bs2rhosqrad8','Bas2rhosqrad8','Bs3rhosqrad8','Bas3rhosqrad8','bs1rhosqrad8','bas1rhosqrad8','bs2rhosqrad8','bas2rhosqrad8','bs3rhosqrad8','bas3rhosqrad8','bsqrhosqrad8']
-    logvaluearrayvshb=[1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
-    #
-    arrayvshc=[rhosrhosqrad30,ugsrhosqrad30,uu0rhosqrad30,vus1rhosqrad30,vuas1rhosqrad30,vus3rhosqrad30,vuas3rhosqrad30,Bs1rhosqrad30,Bas1rhosqrad30,Bs2rhosqrad30,Bas2rhosqrad30,Bs3rhosqrad30,Bas3rhosqrad30,bs1rhosqrad30,bas1rhosqrad30,bs2rhosqrad30,bas2rhosqrad30,bs3rhosqrad30,bas3rhosqrad30,bsqrhosqrad30]
-    bsqorhohc=bsqrhosqrad30/rhosrhosqrad30
-    bsqouhc=bsqrhosqrad30/ugsrhosqrad30
-    arrayvshcname=['rhosrhosqrad30','ugsrhosqrad30','uu0rhosqrad30','vus1rhosqrad30','vuas1rhosqrad30','vus3rhosqrad30','vuas3rhosqrad30','Bs1rhosqrad30','Bas1rhosqrad30','Bs2rhosqrad30','Bas2rhosqrad30','Bs3rhosqrad30','Bas3rhosqrad30','bs1rhosqrad30','bas1rhosqrad30','bs2rhosqrad30','bas2rhosqrad30','bs3rhosqrad30','bas3rhosqrad30','bsqrhosqrad30']
-    logvaluearrayvshc=[1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
-    #
-    #
-    dospacetimetest=0
-    #
-    if dospacetimetest==1:
-        #
-        #mktr(loadq=0,qty=uu0rhosq,filenum=1,fileletter="q",logvalue=0)
-        #print("asdf")
-        #print(uu0rhosq)
-        #
-        #mktr(loadq=0,qty=rhosrhosqhorpick,filenum=1,fileletter="x",logvalue=0)
-        #print("asdf")
-        #print(rhosrhosqhorpick)
-        #
-        mktr(loadq=0,qty=vus1rhosq,filenum=1,fileletter="x",logvalue=0)
-        print("asdf")
-        print(vus1rhosq)
-        #
-        #mkthrad(loadq=0,qty=uu0rhosqrad4,filenum=1,fileletter="q",logvalue=0,radius=4)
-        #print("asdf2")
-        #print(uu0rhosqrad4)
-    #
-    #
-    dospacetime=1
-    #
-    if dospacetime==1:
-        ################################
-        # t vs. r
-        #
-        iter=1
-        for fil in arrayvsra:
-            mktr(loadq=0,qty=fil,pllabel=arrayvsraname[iter-1],filenum=iter,fileletter="a",logvalue=logvaluearrayvsra[iter-1],bsqorho=bsqorhora,bsqou=bsqoura,maxbsqorho=1E15,maxbsqou=1E15)
-            iter=iter+1
-        #
-        iter=1
-        for fil in arrayvsrb:
-            mktr(loadq=0,qty=fil,pllabel=arrayvsrbname[iter-1],filenum=iter,fileletter="b",logvalue=logvaluearrayvsrb[iter-1],bsqorho=bsqorhorb,bsqou=bsqourb,maxbsqorho=1E15,maxbsqou=1E15)
-            iter=iter+1
-        #
-        iter=1
-        for fil in arrayvsrc:
-            mktr(loadq=0,qty=fil,pllabel=arrayvsrcname[iter-1],filenum=iter,fileletter="c",logvalue=logvaluearrayvsrc[iter-1],bsqorho=bsqorhorc,bsqou=bsqourc,maxbsqorho=1E15,maxbsqou=1E15)
-            iter=iter+1
-        #
-        iter=1
-        for fil in arrayvsrd:
-            mktr(loadq=0,qty=fil,pllabel=arrayvsrdname[iter-1],filenum=iter,fileletter="d",logvalue=logvaluearrayvsrd[iter-1],bsqorho=bsqorhord,bsqou=bsqourd,maxbsqorho=1E15,maxbsqou=1E15)
-            iter=iter+1
-        #
-        ################################
-        # t vs. \theta no restriction
-        #
-        iter=1
-        for fil in arrayvsha:
-            mkthrad(loadq=0,qty=fil,pllabel=arrayvshaname[iter-1],filenum=iter,fileletter="a",logvalue=logvaluearrayvsha[iter-1],radius=4,bsqorho=bsqorhoha,bsqou=bsqouha)
-            iter=iter+1
-        #
-        iter=1
-        for fil in arrayvshb:
-            mkthrad(loadq=0,qty=fil,pllabel=arrayvshbname[iter-1],filenum=iter,fileletter="b",logvalue=logvaluearrayvshb[iter-1],radius=8,bsqorho=bsqorhohb,bsqou=bsqouhb)
-            iter=iter+1
-        #
-        iter=1
-        for fil in arrayvshc:
-            mkthrad(loadq=0,qty=fil,pllabel=arrayvshcname[iter-1],filenum=iter,fileletter="c",logvalue=logvaluearrayvshc[iter-1],radius=30,bsqorho=bsqorhohc,bsqou=bsqouhc)
-            iter=iter+1
-        #
-        ################################
-        # t vs. \theta  Restrict using bsq/rho.
-        iter=1
-        for fil in arrayvsha:
-            mkthrad(loadq=0,qty=fil,pllabel=arrayvshaname[iter-1],filenum=iter,fileletter="a",logvalue=logvaluearrayvsha[iter-1],radius=4,bsqorho=bsqorhoha,bsqou=bsqouha,maxbsqorho=1)
-            iter=iter+1
-        #
-        iter=1
-        for fil in arrayvshb:
-            mkthrad(loadq=0,qty=fil,pllabel=arrayvshbname[iter-1],filenum=iter,fileletter="b",logvalue=logvaluearrayvshb[iter-1],radius=8,bsqorho=bsqorhohb,bsqou=bsqouhb,maxbsqorho=1)
-            iter=iter+1
-        #
-        iter=1
-        for fil in arrayvshc:
-            mkthrad(loadq=0,qty=fil,pllabel=arrayvshcname[iter-1],filenum=iter,fileletter="c",logvalue=logvaluearrayvshc[iter-1],radius=30,bsqorho=bsqorhohc,bsqou=bsqouhc,maxbsqorho=1)
-            iter=iter+1
-        #
-        ################################
-        # t vs. \theta  Restrict using bsq/u.
-        #
-        iter=1
-        for fil in arrayvsha:
-            mkthrad(loadq=0,qty=fil,pllabel=arrayvshaname[iter-1],filenum=iter,fileletter="a",logvalue=logvaluearrayvsha[iter-1],radius=4,bsqorho=bsqorhoha,bsqou=bsqouha,maxbsqou=1)
-            iter=iter+1
-        #
-        iter=1
-        for fil in arrayvshb:
-            mkthrad(loadq=0,qty=fil,pllabel=arrayvshbname[iter-1],filenum=iter,fileletter="b",logvalue=logvaluearrayvshb[iter-1],radius=8,bsqorho=bsqorhohb,bsqou=bsqouhb,maxbsqou=1)
-            iter=iter+1
-        #
-        iter=1
-        for fil in arrayvshc:
-            mkthrad(loadq=0,qty=fil,pllabel=arrayvshcname[iter-1],filenum=iter,fileletter="c",logvalue=logvaluearrayvshc[iter-1],radius=30,bsqorho=bsqorhohc,bsqou=bsqouhc,maxbsqou=1)
-            iter=iter+1
-        #
     #
     #
     #
-    # once these are generated, can quickly view all of them at once at lower resolution by doing:
-    # http://www.imagemagick.org/discourse-server/viewtopic.php?f=1&t=11113
+    if dospacetimeplots==1:
+        #
+        #
+        #
+        #
+        arrayvsra=[rhosrhosq,ugsrhosq,uu0rhosq,vus1rhosq,vuas1rhosq,vus3rhosq,vuas3rhosq,Bs1rhosq,Bas1rhosq,Bs2rhosq,Bas2rhosq,Bs3rhosq,Bas3rhosq,bs1rhosq,bas1rhosq,bs2rhosq,bas2rhosq,bs3rhosq,bas3rhosq,bsqrhosq]
+        bsqorhora=bsqrhosq/rhosrhosq
+        bsqoura=bsqrhosq/ugsrhosq
+        arrayvsraname=['rhosrhosq','ugsrhosq','uu0rhosq','vus1rhosq','vuas1rhosq','vus3rhosq','vuas3rhosq','Bs1rhosq','Bas1rhosq','Bs2rhosq','Bas2rhosq','Bs3rhosq','Bas3rhosq','bs1rhosq','bas1rhosq','bs2rhosq','bas2rhosq','bs3rhosq','bas3rhosq','bsqrhosq']
+        logvaluearrayvsra=[1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
+        #
+        arrayvsrb=[rhosrhosqeq,ugsrhosqeq,uu0rhosqeq,vus1rhosqeq,vuas1rhosqeq,vus3rhosqeq,vuas3rhosqeq,Bs1rhosqeq,Bas1rhosqeq,Bs2rhosqeq,Bas2rhosqeq,Bs3rhosqeq,Bas3rhosqeq,bs1rhosqeq,bas1rhosqeq,bs2rhosqeq,bas2rhosqeq,bs3rhosqeq,bas3rhosqeq,bsqrhosqeq]
+        bsqorhorb=bsqrhosqeq/rhosrhosqeq
+        bsqourb=bsqrhosqeq/ugsrhosqeq
+        arrayvsrbname=['rhosrhosqeq','ugsrhosqeq','uu0rhosqeq','vus1rhosqeq','vuas1rhosqeq','vus3rhosqeq','vuas3rhosqeq','Bs1rhosqeq','Bas1rhosqeq','Bs2rhosqeq','Bas2rhosqeq','Bs3rhosqeq','Bas3rhosqeq','bs1rhosqeq','bas1rhosqeq','bs2rhosqeq','bas2rhosqeq','bs3rhosqeq','bas3rhosqeq','bsqrhosqeq']
+        logvaluearrayvsrb=[1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
+        #
+        arrayvsrc=[rhosrhosqhorpick,ugsrhosqhorpick,uu0rhosqhorpick,vus1rhosqhorpick,vuas1rhosqhorpick,vus3rhosqhorpick,vuas3rhosqhorpick,Bs1rhosqhorpick,Bas1rhosqhorpick,Bs2rhosqhorpick,Bas2rhosqhorpick,Bs3rhosqhorpick,Bas3rhosqhorpick,bs1rhosqhorpick,bas1rhosqhorpick,bs2rhosqhorpick,bas2rhosqhorpick,bs3rhosqhorpick,bas3rhosqhorpick,bsqrhosqhorpick]
+        bsqorhorc=bsqrhosqhorpick/rhosrhosqhorpick
+        bsqourc=bsqrhosqhorpick/ugsrhosqhorpick
+        arrayvsrcname=['rhosrhosqhorpick','ugsrhosqhorpick','uu0rhosqhorpick','vus1rhosqhorpick','vuas1rhosqhorpick','vus3rhosqhorpick','vuas3rhosqhorpick','Bs1rhosqhorpick','Bas1rhosqhorpick','Bs2rhosqhorpick','Bas2rhosqhorpick','Bs3rhosqhorpick','Bas3rhosqhorpick','bs1rhosqhorpick','bas1rhosqhorpick','bs2rhosqhorpick','bas2rhosqhorpick','bs3rhosqhorpick','bas3rhosqhorpick','bsqrhosqhorpick']
+        logvaluearrayvsrc=[1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
+        #
+        arrayvsrd=[rhoshor,ugshor,bsqshor,bsqorhoshor,bsqougshor,uu0hor,vus1hor,vuas1hor,vus3hor,vuas3hor,Bs1hor,Bas1hor,Bs2hor,Bas2hor,Bs3hor,Bas3hor,bs1hor,bas1hor,bs2hor,bas2hor,bs3hor,bas3hor,bsqhor]
+        bsqorhord=bsqhor/rhoshor
+        bsqourd=bsqhor/ugshor
+        arrayvsrdname=['rhoshor','ugshor','bsqshor','bsqorhoshor','bsqougshor','uu0hor','vus1hor','vuas1hor','vus3hor','vuas3hor','Bs1hor','Bas1hor','Bs2hor','Bas2hor','Bs3hor','Bas3hor','bs1hor','bas1hor','bs2hor','bas2hor','bs3hor','bas3hor','bsqhor']
+        logvaluearrayvsrd=[1,1,1,1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
+        #
+        arrayvsha=[rhosrhosqrad4,ugsrhosqrad4,uu0rhosqrad4,vus1rhosqrad4,vuas1rhosqrad4,vus3rhosqrad4,vuas3rhosqrad4,Bs1rhosqrad4,Bas1rhosqrad4,Bs2rhosqrad4,Bas2rhosqrad4,Bs3rhosqrad4,Bas3rhosqrad4,bs1rhosqrad4,bas1rhosqrad4,bs2rhosqrad4,bas2rhosqrad4,bs3rhosqrad4,bas3rhosqrad4,bsqrhosqrad4]
+        bsqorhoha=bsqrhosqrad4/rhosrhosqrad4
+        bsqouha=bsqrhosqrad4/ugsrhosqrad4
+        arrayvshaname=['rhosrhosqrad4','ugsrhosqrad4','uu0rhosqrad4','vus1rhosqrad4','vuas1rhosqrad4','vus3rhosqrad4','vuas3rhosqrad4','Bs1rhosqrad4','Bas1rhosqrad4','Bs2rhosqrad4','Bas2rhosqrad4','Bs3rhosqrad4','Bas3rhosqrad4','bs1rhosqrad4','bas1rhosqrad4','bs2rhosqrad4','bas2rhosqrad4','bs3rhosqrad4','bas3rhosqrad4','bsqrhosqrad4']
+        logvaluearrayvsha=[1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
+        #
+        arrayvshb=[rhosrhosqrad8,ugsrhosqrad8,uu0rhosqrad8,vus1rhosqrad8,vuas1rhosqrad8,vus3rhosqrad8,vuas3rhosqrad8,Bs1rhosqrad8,Bas1rhosqrad8,Bs2rhosqrad8,Bas2rhosqrad8,Bs3rhosqrad8,Bas3rhosqrad8,bs1rhosqrad8,bas1rhosqrad8,bs2rhosqrad8,bas2rhosqrad8,bs3rhosqrad8,bas3rhosqrad8,bsqrhosqrad8]
+        bsqorhohb=bsqrhosqrad8/rhosrhosqrad8
+        bsqouhb=bsqrhosqrad8/ugsrhosqrad8
+        arrayvshbname=['rhosrhosqrad8','ugsrhosqrad8','uu0rhosqrad8','vus1rhosqrad8','vuas1rhosqrad8','vus3rhosqrad8','vuas3rhosqrad8','Bs1rhosqrad8','Bas1rhosqrad8','Bs2rhosqrad8','Bas2rhosqrad8','Bs3rhosqrad8','Bas3rhosqrad8','bs1rhosqrad8','bas1rhosqrad8','bs2rhosqrad8','bas2rhosqrad8','bs3rhosqrad8','bas3rhosqrad8','bsqrhosqrad8']
+        logvaluearrayvshb=[1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
+        #
+        arrayvshc=[rhosrhosqrad30,ugsrhosqrad30,uu0rhosqrad30,vus1rhosqrad30,vuas1rhosqrad30,vus3rhosqrad30,vuas3rhosqrad30,Bs1rhosqrad30,Bas1rhosqrad30,Bs2rhosqrad30,Bas2rhosqrad30,Bs3rhosqrad30,Bas3rhosqrad30,bs1rhosqrad30,bas1rhosqrad30,bs2rhosqrad30,bas2rhosqrad30,bs3rhosqrad30,bas3rhosqrad30,bsqrhosqrad30]
+        bsqorhohc=bsqrhosqrad30/rhosrhosqrad30
+        bsqouhc=bsqrhosqrad30/ugsrhosqrad30
+        arrayvshcname=['rhosrhosqrad30','ugsrhosqrad30','uu0rhosqrad30','vus1rhosqrad30','vuas1rhosqrad30','vus3rhosqrad30','vuas3rhosqrad30','Bs1rhosqrad30','Bas1rhosqrad30','Bs2rhosqrad30','Bas2rhosqrad30','Bs3rhosqrad30','Bas3rhosqrad30','bs1rhosqrad30','bas1rhosqrad30','bs2rhosqrad30','bas2rhosqrad30','bs3rhosqrad30','bas3rhosqrad30','bsqrhosqrad30']
+        logvaluearrayvshc=[1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
+        #
+        #
+        dospacetimetest=0
+        #
+        if dospacetimetest==1:
+            #
+            #mktr(loadq=0,qty=uu0rhosq,filenum=1,fileletter="q",logvalue=0)
+            #print("asdf")
+            #print(uu0rhosq)
+            #
+            #mktr(loadq=0,qty=rhosrhosqhorpick,filenum=1,fileletter="x",logvalue=0)
+            #print("asdf")
+            #print(rhosrhosqhorpick)
+            #
+            mktr(loadq=0,qty=vus1rhosq,filenum=1,fileletter="x",logvalue=0)
+            print("asdf")
+            print(vus1rhosq)
+            #
+            #mkthrad(loadq=0,qty=uu0rhosqrad4,filenum=1,fileletter="q",logvalue=0,radius=4)
+            #print("asdf2")
+            #print(uu0rhosqrad4)
+        #
+        #
+        dospacetime=1
+        #
+        if dospacetime==1:
+            ################################
+            # t vs. r
+            #
+            iter=1
+            for fil in arrayvsra:
+                mktr(loadq=0,qty=fil,pllabel=arrayvsraname[iter-1],filenum=iter,fileletter="a",logvalue=logvaluearrayvsra[iter-1],bsqorho=bsqorhora,bsqou=bsqoura,maxbsqorho=1E15,maxbsqou=1E15)
+                iter=iter+1
+            #
+            iter=1
+            for fil in arrayvsrb:
+                mktr(loadq=0,qty=fil,pllabel=arrayvsrbname[iter-1],filenum=iter,fileletter="b",logvalue=logvaluearrayvsrb[iter-1],bsqorho=bsqorhorb,bsqou=bsqourb,maxbsqorho=1E15,maxbsqou=1E15)
+                iter=iter+1
+            #
+            iter=1
+            for fil in arrayvsrc:
+                mktr(loadq=0,qty=fil,pllabel=arrayvsrcname[iter-1],filenum=iter,fileletter="c",logvalue=logvaluearrayvsrc[iter-1],bsqorho=bsqorhorc,bsqou=bsqourc,maxbsqorho=1E15,maxbsqou=1E15)
+                iter=iter+1
+            #
+            iter=1
+            for fil in arrayvsrd:
+                mktr(loadq=0,qty=fil,pllabel=arrayvsrdname[iter-1],filenum=iter,fileletter="d",logvalue=logvaluearrayvsrd[iter-1],bsqorho=bsqorhord,bsqou=bsqourd,maxbsqorho=1E15,maxbsqou=1E15)
+                iter=iter+1
+            #
+            ################################
+            # t vs. \theta no restriction
+            #
+            iter=1
+            for fil in arrayvsha:
+                mkthrad(loadq=0,qty=fil,pllabel=arrayvshaname[iter-1],filenum=iter,fileletter="a",logvalue=logvaluearrayvsha[iter-1],radius=4,bsqorho=bsqorhoha,bsqou=bsqouha)
+                iter=iter+1
+            #
+            iter=1
+            for fil in arrayvshb:
+                mkthrad(loadq=0,qty=fil,pllabel=arrayvshbname[iter-1],filenum=iter,fileletter="b",logvalue=logvaluearrayvshb[iter-1],radius=8,bsqorho=bsqorhohb,bsqou=bsqouhb)
+                iter=iter+1
+            #
+            iter=1
+            for fil in arrayvshc:
+                mkthrad(loadq=0,qty=fil,pllabel=arrayvshcname[iter-1],filenum=iter,fileletter="c",logvalue=logvaluearrayvshc[iter-1],radius=30,bsqorho=bsqorhohc,bsqou=bsqouhc)
+                iter=iter+1
+            #
+            ################################
+            # t vs. \theta  Restrict using bsq/rho.
+            iter=1
+            for fil in arrayvsha:
+                mkthrad(loadq=0,qty=fil,pllabel=arrayvshaname[iter-1],filenum=iter,fileletter="a",logvalue=logvaluearrayvsha[iter-1],radius=4,bsqorho=bsqorhoha,bsqou=bsqouha,maxbsqorho=1)
+                iter=iter+1
+            #
+            iter=1
+            for fil in arrayvshb:
+                mkthrad(loadq=0,qty=fil,pllabel=arrayvshbname[iter-1],filenum=iter,fileletter="b",logvalue=logvaluearrayvshb[iter-1],radius=8,bsqorho=bsqorhohb,bsqou=bsqouhb,maxbsqorho=1)
+                iter=iter+1
+            #
+            iter=1
+            for fil in arrayvshc:
+                mkthrad(loadq=0,qty=fil,pllabel=arrayvshcname[iter-1],filenum=iter,fileletter="c",logvalue=logvaluearrayvshc[iter-1],radius=30,bsqorho=bsqorhohc,bsqou=bsqouhc,maxbsqorho=1)
+                iter=iter+1
+            #
+            ################################
+            # t vs. \theta  Restrict using bsq/u.
+            #
+            iter=1
+            for fil in arrayvsha:
+                mkthrad(loadq=0,qty=fil,pllabel=arrayvshaname[iter-1],filenum=iter,fileletter="a",logvalue=logvaluearrayvsha[iter-1],radius=4,bsqorho=bsqorhoha,bsqou=bsqouha,maxbsqou=1)
+                iter=iter+1
+            #
+            iter=1
+            for fil in arrayvshb:
+                mkthrad(loadq=0,qty=fil,pllabel=arrayvshbname[iter-1],filenum=iter,fileletter="b",logvalue=logvaluearrayvshb[iter-1],radius=8,bsqorho=bsqorhohb,bsqou=bsqouhb,maxbsqou=1)
+                iter=iter+1
+            #
+            iter=1
+            for fil in arrayvshc:
+                mkthrad(loadq=0,qty=fil,pllabel=arrayvshcname[iter-1],filenum=iter,fileletter="c",logvalue=logvaluearrayvshc[iter-1],radius=30,bsqorho=bsqorhohc,bsqou=bsqouhc,maxbsqou=1)
+                iter=iter+1
+            #
+        #
+        #
+        #
+        # once these are generated, can quickly view all of them at once at lower resolution by doing:
+        # http://www.imagemagick.org/discourse-server/viewtopic.php?f=1&t=11113
+        #
+        # montage plot*.png output1.png ; display output1.png
+        #
+        # to get put in order outputted by time:
+        #
+        # files=`ls -rt plot*.png` ; montage $files output2.png ; display output2.png
+        #
+        # other programs don't seem as friendly:
+        # mogrify
+        # convert *.png -composite output.png
+        # convert *.png -append output.png
     #
-    # montage plot*.png output1.png ; display output1.png
     #
-    # to get put in order outputted by time:
     #
-    # files=`ls -rt plot*.png` ; montage $files output2.png ; display output2.png
     #
-    # other programs don't seem as friendly:
-    # mogrify
-    # convert *.png -composite output.png
-    # convert *.png -append output.png
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
     #
     #
     #
@@ -8190,6 +8855,28 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         plt.savefig('phi1_%s.pdf' % os.path.basename(os.getcwd()) )
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def timeavg( qty, ts, fti, ftf, step = 1 ):
     cond = (ts<ftf)*(ts>=fti)
     #use masked array to remove any stray NaN's
@@ -8430,7 +9117,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     if doreload:
         etad0 = -1/(-gn3[0,0])**0.5
         #!!!rhor = 1+(1-a**2)**0.5
-        ihor = iofr(rhor)
+        ihor = np.floor(iofr(rhor)+0.5)
         qtymem=getqtyvstime(ihor,0.2)
         #initialize with zeros
         DT = 0
@@ -8461,7 +9148,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     #edtotvsr = -(gdet[:,1:ny-1,0:1]*avg_Tud[1][0][:,1:ny-1,0:1]*_dx2*_dx3*nz).sum(-1).sum(-1)
     #!!!rhor = 1+(1-a**2)**0.5
     rh=rhor
-    ihor = iofr(rhor)
+    ihor = np.floor(iofr(rhor)+0.5)
     #FIGURE: mass
     if isinteractive:
         if ax is None:
@@ -9101,7 +9788,7 @@ def plotomegaf2hor():
     plt.clf(); 
     rhor = 1 + (1-a**2)**0.5
     omh = a / (2*rhor)
-    ihor = iofr(rhor)
+    ihor = np.floor(iofr(rhor)+0.5)
     rhoavg=(rho[ihor].sum(1)/nz)
     bsqorhoavg=(bsq/rho)[ihor].sum(1)/nz
     TudEM10avg = (-gdet*TudEM[1,0])[ihor].sum(1)/nz
@@ -9118,7 +9805,7 @@ def plotakshay():
     #rfd("fieldline4670.bin")
     #cvel()
     #rhor = 1+(1-a**2)**0.5
-    #ihor = iofr(rhor)
+    # ihor = np.floor(iofr(rhor)+0.5)
     iref = 0
     rref = r[iref,0,0]
     #far view
@@ -9222,7 +9909,7 @@ def ploteta():
     #grid3dlight("gdump")
     qtymem=None #clear to free mem
     rhor=1+(1+a**2)**0.5
-    ihor = np.floor(iofr(rhor)+0.5);
+    ihor = np.floor(iofr(rhor)+0.5)
     qtymem=getqtyvstime(ihor,0.2)
     fig=plt.figure(0, figsize=(12,6), dpi=100)
     plt.clf()
@@ -9306,7 +9993,7 @@ def mkmovie(framesize=50, domakeavi=False):
         #grid3dlight("gdump")
         qtymem=None #clear to free mem
         rhor=1+(1+a**2)**0.5
-        ihor = np.floor(iofr(rhor)+0.5);
+        ihor = np.floor(iofr(rhor)+0.5)
         qtymem=getqtyvstime(ihor,0.2)
     #
     for findex, fname in enumerate(flist):
@@ -9747,7 +10434,7 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
         #grid3dlight("gdump")
         qtymem=None #clear to free mem
         rhor=1+(1+a**2)**0.5
-        ihor = np.floor(iofr(rhor)+0.5);
+        ihor = np.floor(iofr(rhor)+0.5)
         qtymem=getqtyvstime(ihor,0.2)
         #flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
         flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
@@ -10044,7 +10731,7 @@ def generate_time_series():
     rfdheaderfirstfile()
     #
     rhor=1+(1-a**2)**0.5
-    ihor = np.floor(iofr(rhor)+0.5);
+    ihor = np.floor(iofr(rhor)+0.5)
     #diskflux=diskfluxcalc(ny/2)
     #qtymem=None #clear to free mem
     #
@@ -10146,7 +10833,7 @@ def oldstuff():
         grid3d("gdump.bin")
         rfdfirstfile()
         rhor=1+(1-a**2)**0.5
-        ihor = np.floor(iofr(rhor)+0.5);
+        ihor = np.floor(iofr(rhor)+0.5)
         #diskflux=diskfluxcalc(ny/2)
         qtymem=None #clear to free mem, doesn't seem to work
         qtymem=getqtyvstime(ihor,0.2,fmtver=1)
@@ -10175,7 +10862,7 @@ def oldstuff():
         grid3d("gdump.bin")
         rfdfirstfile()
         rhor=1+(1+a**2)**0.5
-        ihor = np.floor(iofr(rhor)+0.5);
+        ihor = np.floor(iofr(rhor)+0.5)
         hf=horfluxcalc(ivalue=ihor)
         df=diskfluxcalc(ny/2)
         print "Initial (t=%-8g): BHflux = %g, Diskflux = %g" % (t, hf, df)
@@ -10204,7 +10891,7 @@ def oldstuff():
             rd( "dump0000.bin" )
             qtymem=None #clear to free mem
             rhor=1+(1+a**2)**0.5
-            ihor = np.floor(iofr(rhor)+0.5);
+            ihor = np.floor(iofr(rhor)+0.5)
             qtymem=getqtyvstime(ihor,0.2)
             #flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
             flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
@@ -10418,7 +11105,7 @@ def oldstuff():
         #rd("dump0000.bin")
         #rfd("fieldline0000.bin")
         rhor=1+(1-a**2)**0.5
-        ihor = np.floor(iofr(rhor)+0.5);
+        ihor = np.floor(iofr(rhor)+0.5)
         #diskflux=diskfluxcalc(ny/2)
         #qtymem=None #clear to free mem
         #qtymem=getqtyvstime(ihor,0.2)

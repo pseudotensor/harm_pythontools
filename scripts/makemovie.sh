@@ -241,20 +241,23 @@ then
     # &> 
     ((nohup python $myinitfile3 $modelname 2>&1 1>&3 | tee python.plot.stderr.out) 3>&1 1>&2 | tee python.plot.out) > python.plot.full.out 2>&1
 
-
-    # create montage of t vs. r and t vs. h plots
-    files=`ls -rt plot*.png`
-    montage -geometry 300x600 $files montage.png
-    # use -density to control each image size
-    # e.g. default for montage is:
-    # montage -density 72 $files montage.png
-    # but can get each image as 300x300 (each tile) if do:
-    # montage -geometry 300x300 -density 300 $files montage.png
-    #
-    # to display, do:
-    # display montage.png
-    # if want to have smaller window and pan more do (e.g.):
-    # display -geometry 1800x1400 montage.png
+    makemontage=0
+    if [ $makemontage -eq 1 ]
+    then
+        # create montage of t vs. r and t vs. h plots
+        files=`ls -rt plot*.png`
+        montage -geometry 300x600 $files montage.png
+        # use -density to control each image size
+        # e.g. default for montage is:
+        # montage -density 72 $files montage.png
+        # but can get each image as 300x300 (each tile) if do:
+        # montage -geometry 300x300 -density 300 $files montage.png
+        #
+        # to display, do:
+        # display montage.png
+        # if want to have smaller window and pan more do (e.g.):
+        # display -geometry 1800x1400 montage.png
+    fi
 
 
     # remove created file

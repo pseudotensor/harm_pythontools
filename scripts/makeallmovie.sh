@@ -345,7 +345,7 @@ then
     #
     # Tables:
 
-    for numtbl in `seq 1 11`
+    for numtbl in `seq 1 12`
     do
 	    echo "Doing Table #: "$numtbl
 
@@ -369,7 +369,7 @@ then
         fi
         if [ $numtbl -eq 4 ]
         then
-            echo "\caption{Grid Cells per MRI Wavelength and MRI Wavelengths per Disk Height}" >> $fname
+            echo "\caption{Magnetic Stress, Grid Cells per MRI Wavelength, and MRI Wavelengths per Disk Height}" >> $fname
         fi
         if [ $numtbl -eq 5 ]
         then
@@ -398,6 +398,10 @@ then
         if [ $numtbl -eq 11 ]
         then
             echo "\caption{Absolute Magnetic Flux per Rest-Mass Flux and Initial Magnetic Fluxes}" >> $fname
+        fi
+        if [ $numtbl -eq 12 ]
+        then
+            echo "\caption{Least-Square Fits for Power-Law Indices}" >> $fname
         fi
         #
         #
@@ -441,6 +445,8 @@ then
 
 	echo "Doing Aux Tables"
 
+    grep "Latex93:" tables$moviedirname.tex | sed 's/[HV]Latex93: //g'  | column  -t > table93$moviedirname.tex
+    grep "Latex94:" tables$moviedirname.tex | sed 's/[HV]Latex94: //g'  | column  -t > table94$moviedirname.tex
     grep "Latex95:" tables$moviedirname.tex | sed 's/[HV]Latex95: //g'  | column  -t > table95$moviedirname.tex
     grep "Latex96:" tables$moviedirname.tex | sed 's/[HV]Latex96: //g'  | column  -t > table96$moviedirname.tex
     grep "Latex97:" tables$moviedirname.tex | sed 's/[HV]Latex97: //g'  | column  -t > table97$moviedirname.tex
