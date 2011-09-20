@@ -6294,8 +6294,6 @@ def plotqtyvstime(qtymem,whichplot=None,ax=None,findex=None,fti=None,ftf=None,sh
         #
         # back off 6 cells from stagnation surface
         iout=istagequse-6
-        if iout<=iin:
-            iout=iofr(12.0)
         #
         # limit to inflow equilibrium region
         hortest=hoverr100_avg
@@ -6303,6 +6301,9 @@ def plotqtyvstime(qtymem,whichplot=None,ax=None,findex=None,fti=None,ftf=None,sh
         rie=(alphatest*hortest**2.0*timetest)**(2.0/3.0)
         if rie>0.95*Rout:
             rie=0.95*Rout
+        if rie<max(risco,3):
+           rie=max(risco,3)
+        print("rie=%g" % (rie))
         iie=iofr(rie)
         if iout>iie:
             iout=iie
@@ -6310,6 +6311,8 @@ def plotqtyvstime(qtymem,whichplot=None,ax=None,findex=None,fti=None,ftf=None,sh
         if iout>nx-1:
             iout=nx-1
         #
+        if iout<=iin:
+            iout=iofr(12.0)
         #
         for ii in np.arange(0,nx):
             alphamag1_vsr[ii]=timeavg(alphamag1[:,ii],ts,fti,ftf)
