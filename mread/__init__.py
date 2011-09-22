@@ -5549,8 +5549,16 @@ def mk2davg():
 def mkonestreamline(u, x0, y0, mylen=30):
     """Despite scary-looking contents, this extracts and returns a single streamline starting at (x0, y0); mylen is the size of the square within which a field line is to be traced"""
     B[1:] = u[1:]
-    t = mkframe("myframe",len=mylen,ax=None,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.1,dsval=0.005,color='k',doarrows=False,dorandomcolor=False,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False,startxabs=x0,startyabs=y0)
-    return( t )
+    traj = mkframe("myframe",len=mylen,ax=None,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.1,dsval=0.005,color='k',doarrows=False,dorandomcolor=False,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False,startxabs=x0,startyabs=y0)
+    return( traj )
+
+def mkonestreamlinex1x2(ux, uy, xi, yi, x0, y0):
+    traj = fstreamplot(yi,xi,ux,uy,ua=None,va=None,ax=None,density=24,downsample=1,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.1,dsval=0.005,color='k',doarrows=False,dorandomcolor=False,skipblankint=True,detectLoops=False,minindent=5,minlengthdefault=0.2,startatmidplane=False,startxabs=x0,startyabs=y0)
+    #to plot:
+    #traj2 = mkonestreamlinex1x2( avg_B[1,:,:,0], avg_B[0,:,:,0], ti[:,0,0], tj[0,:,0], 119, 61 )
+    #xtraj2,ytraj2=traj2
+    #plt.plot(ytraj2,xtraj2)
+    return( traj )
 
 def mkmanystreamlines():
     startxabs=2
