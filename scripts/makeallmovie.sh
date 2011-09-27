@@ -365,7 +365,7 @@ then
         fi
         if [ $numtbl -eq 3 ]
         then
-            echo "\caption{Thickness of Disk and Interfaces for Disk-Corona and Corona-Jet}" >> $fname
+            echo "\caption{Grid Cells across Half-Thickness at Horizon, Half-Thickness of Disk, and Location for Interfaces for Disk-Corona and Corona-Jet}" >> $fname
         fi
         if [ $numtbl -eq 4 ]
         then
@@ -401,7 +401,7 @@ then
         fi
         if [ $numtbl -eq 12 ]
         then
-            echo "\caption{Least-Square Fits for Power-Law Indices}" >> $fname
+            echo "\caption{Inner and Outer Radii for Least-Square Fits, Disk+Corona Stagnation Radius, and Fitted Power-Law Indices}" >> $fname
         fi
         #
         #
@@ -412,7 +412,12 @@ then
         str2=""
         for striter in `seq 1 $numc`
         do
-            str2=$str2"r|"
+            if [ $striter -eq 1 ]
+            then
+                str2=$str2"l|"
+            else
+                str2=$str2"r|"
+            fi
         done
         str3="}"
         strfinal=$str1$str2$str3
