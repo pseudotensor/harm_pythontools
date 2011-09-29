@@ -5553,14 +5553,88 @@ def mkonestreamline(u, x0, y0, mylen=30):
     return( traj )
 
 def mkonestreamlinex1x2(ux, uy, xi, yi, x0, y0):
-    traj = fstreamplot(yi,xi,ux,uy,ua=None,va=None,ax=None,density=24,downsample=1,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.1,dsval=0.005,color='k',doarrows=False,dorandomcolor=False,skipblankint=True,detectLoops=False,minindent=5,minlengthdefault=0.2,startatmidplane=False,startxabs=x0,startyabs=y0)
-    #to plot:
-    #traj2 = mkonestreamlinex1x2( avg_B[1,:,:,0], avg_B[0,:,:,0], ti[:,0,0], tj[0,:,0], 119, 61 )
-    #xtraj2,ytraj2=traj2
-    #plt.plot(ytraj2,xtraj2)
-    return( traj )
+    """ compute a streamline in x1-x2 (internal) code coordinates
+        Example inputs:
+            ux = B[1,:,:,0]
+            uy = B[2,:,:,0]
+            xi = x1[:,:,0]
+            yi = x2[:,:,0]
+            starting point:
+            x0 = value of x1
+            y0 = value of x2
+        Output:
+            Tuple of (x1[:], x2[:])
+        Example:
+        #trace a field line starting at x1 = 1, x2 = 0
+        traj = mkonestreamlinex1x2( B[1,:,:,0], B[2,:,:,0], x1[:,0,0], x2[0,:,0], 1, 0 )
+        #alternatively, you could trace energy streamline
+        traj = mkonestreamlinex1x2( Tud[1,0,:,:,0], Tud[2,0,:,:,0], x1[:,0,0], x2[0,:,0], 1, 0 )
+        xtraj, ytraj = traj
+        #plot it
+        plt.figure()
+        plt.plot(xtraj,ytraj)
+        #evaluate streamline coordinates at radial grid nodes, x1[0:nx]:
+        x1traj = x1[:,0,0]
+        x2traj = interp1d(xtraj, ytraj, kind='linear',bounds_error=False)(x1traj)
+        #Evaluate, e.g., density along streamline:
+        #  Note: if trajectory has multiple values of x2 for a single value of x1, then 
+        #        isleft = True picks the solution for rho at the smallest value of x2 and 
+        #        isleft = False picks the solution for rho at the largest value of x2
+        #this evaluates rho where the 1st argument vanishes, i.e., x2[:,:,0]-ytrajvsti[:,None] == 0
+        rhotraj = findroot2d(x2[:,:,0]-ytrajvsti[:,None], rho[:,:,0], axis = 0, isleft = True )
+        #plot it
+        plt.figure()
+        plt.plot(np.log10(r[:,0,0]),np.log10(rhotraj))
+    """
+    traj = fstreamplot(yi,xi,uy,ux,ua=None,va=None,ax=None,density=24,downsample=1,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.1,dsval=0.005,color='k',doarrows=False,dorandomcolor=False,skipblankint=True,detectLoops=False,minindent=5,minlengthdefault=0.2,startatmidplane=False,startxabs=y0,startyabs=x0)
+    if traj is not None:
+        if traj[1][0] > x0:
+            #order such that x1 increases along streamline
+            return( traj[1][::-1], traj[0][::-1] )
+        return( traj[1], traj[0] )
+    else:
+        return( None )
 
-def mkmanystreamlines():
+def mkmanystreamlinesx1x2(): 
+    startxabs=2
+    a_startyabs=np.linspace(0.495,0.495,num=1)
+    #DRAW FIGURE
+    #fig=plt.figure(1,figsize=(12,9),dpi=300)
+    fig=plt.figure(1)
+    ax = fig.add_subplot(111)
+    #fig=plt.figure(1)
+    fntsize=24
+    # ax = fig.add_subplot(111, aspect='equal')
+    # ax.set_aspect('equal')   
+    #TRACE ENERGY STREAMLINE
+    mylen = 30
+    grid3d("gdump.bin",use2d=True)
+    rfd("fieldline0000.bin")
+    avgmem = get2davg(usedefault=1)
+    assignavg2dvars(avgmem)
+    avg_aphi = scaletofullwedge(nz*_dx3*fieldcalc(gdetB1=avg_gdetB[0]))
+    plco(avg_aphi,xcoord=x1[:,:,0],ycoord=x2[:,:,0])
+    #energy
+    #B[1:] = avg_Tud[1:,0]
+    for startyabs in a_startyabs:
+        print( "x0 = %g, y0 = %g" % (startxabs, startyabs) )
+        traj = mkonestreamlinex1x2( avg_B[0,:,:,0], avg_B[1,:,:,0], x1[:,0,0], x2[0,:,0], startxabs, startyabs )
+        if traj is not None:
+            xtraj, ytraj = traj
+            #DRAW STREAMLINE
+            plt.plot(xtraj,ytraj,'g-')
+            yfunc = interp1d(xtraj, ytraj, kind='linear',bounds_error=False)
+            #pdb.set_trace()
+            xtrajvsti = x1[:,0,0]
+            ytrajvsti = yfunc(xtrajvsti)
+            my_aphi = findroot2d(x2[:,:,0]-ytrajvsti[:,None], avg_aphi, axis = 0 )
+            plt.figure()
+            plt.plot(x1[:,0,0],my_aphi)
+            # findroot2d(, vals, axis = 0 )
+            # ax2
+            plt.draw()
+
+def mkmanystreamlinesxy():
     startxabs=2
     a_startyabs=np.linspace(-6,6,num=2)
     #DRAW FIGURE
