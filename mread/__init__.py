@@ -59,9 +59,9 @@ def get2davg(fname=None,usedefault=0,whichgroup=-1,whichgroups=-1,whichgroupe=-1
         avgtot=np.load( fname )
         return( avgtot )
     else:
-        print( "File %s does not exist" % fname )
+        print( "File %s does not exist, computing average from fieldline files" % fname )
         sys.stdout.flush()
-        return
+        #return
     n2avg = 0
     nitems = 0
     myrange = np.arange(whichgroups,whichgroupe)
@@ -5344,7 +5344,7 @@ def ploteta():
     ax34r.set_yticks(tck)
     gc.collect()
 
-def mkmovie(framesize=50, domakeavi=False,prefactor=1.,sigma=None,usegaussianunits=False,domakeframes=True):
+def mkmovie(framesize=50, domakeavi=False,prefactor=1.,sigma=None,usegaussianunits=False,domakeframes=True,epsFm=None,epsFke=None,fti=None,ftf=None):
     #Rz and xy planes side by side
     plotlenf=10
     plotleni=framesize
