@@ -1519,7 +1519,7 @@ def fieldcalcU(gdetB1=None):
     aphi[:,ny-1] *= 0.5
     #and in r
     aphi[0:nx-1] = 0.5*(aphi[0:nx-1]  +aphi[1:nx])
-    aphi/=(nz*_dx3)
+    #aphi/=(nz*_dx3)  #<--correction 09/29/2011: this should be left commented out
     return(aphi)
 
 def fieldcalcface(gdetB1=None):
@@ -3028,8 +3028,7 @@ def iofr(rval):
     res = interp1d(r[:,0,0], ti[:,0,0], kind='linear')
     return(np.floor(res(rval)+0.5))
 
-def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None,sigma=None,
-                  usegaussianunits=False):
+def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None,sigma=None, usegaussianunits=False, aphi_j_val=0):
     global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
     nqtyold=98
     nqty=98+32+1
@@ -3763,6 +3762,17 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         return( mdtotvsr, edtotvsr, edmavsr, ldtotvsr )
 
     if whichplot == -200:
+        #XXX compute edmavsr without polar regions with avg_aphi < avg_phi[iofr(rhor),aphi_j_val]
+        if aphi_j_val != 0:
+            avgmem = get2davg(usedefault=1)
+            assignavg2dvars(avgmem)
+            #sum in phi and theta
+            edtotEM = edtotvsr - edmavsr
+            eoutcumMA = scaletofullwedge(nz*(-gdet*avg_TudMA[1,0]*_dx2*_dx3).sum(axis=2)).cumsum(axis=1)
+            edtotMA = cutout_along_aphi(eoutcumMA,aphi_j_val=aphi_j_val)
+            edtotvsr = edtotEM + edtotMA
+            edmavsr = edtotMA
+
         return( mdtotvsr, edtotvsr, edmavsr, ldtotvsr,
                 mdotfinavgvsr5, mdotfinavgvsr10, mdotfinavgvsr20, mdotfinavgvsr30, mdotfinavgvsr40,
                 pjemfinavgvsr5, pjemfinavgvsr10, pjemfinavgvsr20, pjemfinavgvsr30, pjemfinavgvsr40,
@@ -4084,7 +4094,7 @@ def getstagparams(var=None,rmax=20,doplot=1,doreadgrid=1):
     else:
         return istag, jstag, hstag, rstag
 
-def get_dUfloor( floordumpno, maxrinflowequilibrium = 20 ):
+def get_dUfloor( floordumpno, maxrinflowequilibrium = 20, aphi_j_val=0 ):
     """ maxrsteady should be chosen to be on the outside of the inflow equilibrium region """
     RR=0
     TH=1
@@ -4099,13 +4109,30 @@ def get_dUfloor( floordumpno, maxrinflowequilibrium = 20 ):
     #uncomment this if don't want to use stagnation surface
     #condin = (r[:,:,0:1]<maxrinflowequilibrium)
     condout = 1 - condin
-    UfloorAout = (dUfloor*condout[:,:,:,:]).sum(1+PH).sum(1+TH).cumsum(1+RR)
-    UfloorAin = (dUfloor*condin[:,:,:,:]).sum(1+PH).sum(1+TH).cumsum(1+RR)
+    #XXX change below to account for limited range in theta
+    UfloorAout = (dUfloor*condout[:,:,:,:]*(tj!=0)*(tj!=ny-1)).sum(1+PH).cumsum(1+TH)
+    UfloorAin = (dUfloor*condin[:,:,:,:]*(tj!=0)*(tj!=ny-1)).sum(1+PH).cumsum(1+TH)
+    if aphi_j_val == 0:
+        #use unrestricted (full) sum
+        UfloorAout = UfloorAout[:,:,ny-1]
+        UfloorAin = UfloorAin[:,:,ny-1]
+    else:
+        eout = np.copy(UfloorAout[1])
+        ein = np.copy(UfloorAin[1])
+        UfloorAout = UfloorAout[:,:,ny-1]
+        UfloorAin = UfloorAin[:,:,ny-1]
+        #cut-out only for energy
+        UfloorAout[1] = cutout_along_aphi(eout,aphi_j_val=aphi_j_val)
+        UfloorAin[1]  = cutout_along_aphi(ein,aphi_j_val=aphi_j_val)
+    #Integrate in radius
+    UfloorAout = UfloorAout.cumsum(1+RR)
+    UfloorAin  = UfloorAin.cumsum(1+RR)
+    #
     UfloorA = (UfloorAin-UfloorAin[:,nx-1:nx]) + UfloorAout
     UfloorAsum = UfloorA*scaletofullwedge(1.)
     return( UfloorAsum )
 
-def plotfluxes(doreload=1):
+def plotfluxes(doreload=1,aphi_j_val=0):
     global DU,DU1,DU2,qtymem,qtymem1,qtymem2
     bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
     plt.figure(4)
@@ -4117,7 +4144,7 @@ def plotfluxes(doreload=1):
         DU=DU1
         qtymem=qtymem1
     takeoutfloors(fti=7000,ftf=1e5,
-        ax=ax1,dolegend=False,doreload=doreload,plotldtot=False,lw=2)
+        ax=ax1,dolegend=False,doreload=doreload,plotldtot=False,lw=2,aphi_j_val=aphi_j_val)
     if doreload:
         DU1=DU
         qtymem1=qtymem
@@ -4185,7 +4212,7 @@ def plotfluxes(doreload=1):
         label.set_fontsize(16)
     plt.savefig("fig4.eps",bbox_inches='tight',pad_inches=0.02)
 
-def get_dFfloor(Dt, Dno, dotakeoutfloors=True):
+def get_dFfloor(Dt, Dno, dotakeoutfloors=True,aphi_j_val=0):
     """ Returns the flux correction due to floor activations and fixups, 
     requires gdump to be loaded [grid3d("gdump.bin",use2d=True)], and arrays, Dt and Dno, 
     set up."""
@@ -4194,7 +4221,7 @@ def get_dFfloor(Dt, Dno, dotakeoutfloors=True):
     if dotakeoutfloors:
         for (i,iDT) in enumerate(Dt):
             gc.collect() #try to clean up memory if not used
-            iDU = get_dUfloor( Dno[i] )
+            iDU = get_dUfloor( Dno[i], aphi_j_val=aphi_j_val )
             if iDT > 0:
                 DT += iDT
             if i==0:
@@ -4207,7 +4234,7 @@ def get_dFfloor(Dt, Dno, dotakeoutfloors=True):
         DU = np.zeros((8,nx),dtype=np.float64)
     return( DU )
 
-def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=None,isinteractive=1,returndf=0,dolegend=True,plotldtot=True,lw=1,plotFem=False,writefile=True,doplot=True):
+def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=None,isinteractive=1,returndf=0,dolegend=True,plotldtot=True,lw=1,plotFem=False,writefile=True,doplot=True,aphi_j_val=0):
     global dUfloor, qtymem, DUfloorori, etad0, DU
     #Mdot, E, L
     grid3d("gdump.bin",use2d=True)
@@ -4497,19 +4524,21 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #!!!rhor = 1+(1-a**2)**0.5
         ihor = iofr(rhor)
         qtymem=getqtyvstime(ihor,0.2)
-        DU = get_dFfloor(Dt, Dno, dotakeoutfloors=dotakeoutfloors)
+        #XXX
+        DU = get_dFfloor(Dt, Dno, dotakeoutfloors=dotakeoutfloors,aphi_j_val=aphi_j_val)
     DUfloor0 = DU[0]
     DUfloor1 = DU[1]
     DUfloor4 = DU[4]
     #at this time we have the floor information, now get averages:
     #mdtotvsr, edtotvsr, edmavsr, ldtotvsr = plotqtyvstime( qtymem, whichplot = -2, fti=fti, ftf=ftf )
+    #XXX
     mdtotvsr, edtotvsr, edmavsr, ldtotvsr,\
                 mdotfinavgvsr5, mdotfinavgvsr10, mdotfinavgvsr20, mdotfinavgvsr30, mdotfinavgvsr40, \
                 pjemfinavgvsr5, pjemfinavgvsr10, pjemfinavgvsr20, pjemfinavgvsr30, pjemfinavgvsr40, \
                 pjmafinavgvsr5, pjmafinavgvsr10, pjmafinavgvsr20, pjmafinavgvsr30, pjmafinavgvsr40, \
                 fstotfinavg, fstotsqfinavg, \
                 pjke_mu2_avg, pjke_mu1_avg \
-                = plotqtyvstime( qtymem, whichplot = -200, fti=fti, ftf=ftf )
+                = plotqtyvstime( qtymem, whichplot = -200, fti=fti, ftf=ftf, aphi_j_val=aphi_j_val )
  
     FKE = -(edmavsr+mdtotvsr)
     FKE10 = -((edmavsr-pjmafinavgvsr10) + mdotfinavgvsr10)
@@ -5565,6 +5594,59 @@ def mk2davg():
     plot2davg(whichplot=1)
     gc.collect()
 
+def getFe2davg(aphi_j_val=0):
+    #sum(axis=2) is summation in phi (since 1 element in phi anyway, this just removes the phi-index)
+    eout1den   = scaletofullwedge(nz*(-gdet*avg_Tud[1,0]*_dx2*_dx3).sum(axis=2))
+    eout1denEM = scaletofullwedge(nz*(-gdet*avg_TudEM[1,0]*_dx2*_dx3).sum(axis=2))
+    eout1denMA = scaletofullwedge(nz*(-gdet*avg_TudMA[1,0]*_dx2*_dx3).sum(axis=2))
+    #subtract off rest-energy flux
+    eout1denKE = scaletofullwedge(nz*(gdet*(-avg_TudMA[1,0]-avg_rhouu[1])*_dx2*_dx3).sum(axis=2))
+    #
+    #need to shift these so 0 at axis
+    eoutEM1 = eout1denEM.cumsum(axis=1)
+    eoutMA1 = eout1denMA.cumsum(axis=1)
+    eoutKE1 = eout1denKE.cumsum(axis=1)
+    #shift
+    eout1 = eoutEM1+eoutMA1
+    eouttot = eout1den.sum(axis=-1)
+    #
+    #MA
+    #
+    powMAtot = cutout_along_aphi(eoutMA1,aphi_j_val=0)
+    plt.figure(5)
+    plt.plot(powMAtot)
+    plt.plot(eoutMA1[:,ny-1])
+    plt.figure(6)
+    plt.plot(eoutMA1[:,ny-1]-powMAtot)
+
+###
+### Fix near-BH solution for aphi_j_val = 1 or 2
+###
+def cutout_along_aphi(ecum,aphi_j_val=0):
+    #
+    ndim = ecum.ndim
+    if aphi_j_val == 0:
+        if ndim == 3:
+            return( ecum[:,:,ny-1] )
+        else:
+            return( ecum[:,ny-1] )
+    #get avg_aphi
+    avgmem = get2davg(usedefault=1)
+    assignavg2dvars(avgmem)
+    #face-centered aphi
+    avg_aphi_stag = fieldcalcface(gdetB1=avg_gdetB[0])
+    avg_aphi = np.zeros_like(avg_aphi_stag)
+    #shift by one cell to be consistent in x2-location with eout1's
+    avg_aphi[:,0:ny-1] = avg_aphi_stag[:,1:ny]
+    #make it cell centered in radius
+    avg_aphi[0:nx-1] = 0.5*(avg_aphi[0:nx-1]+avg_aphi[1:nx])
+    #
+    aphi_cut_val = avg_aphi[iofr(rhor),aphi_j_val,0]
+    ecumleft  = findroot2d( avg_aphi[:,:,0]-aphi_cut_val, ecum, isleft=True, fallback = 1, fallbackval = 0 )
+    ecumright = findroot2d( avg_aphi[:,:,0]-aphi_cut_val, ecum, isleft=False, fallback = 1, fallbackval = np.pi )
+    ecumtot = ecumright-ecumleft
+    return( ecumtot )
+    
 
 def mkonestreamline(u, x0, y0, mylen=30):
     """Despite scary-looking contents, this extracts and returns a single streamline starting at (x0, y0); mylen is the size of the square within which a field line is to be traced"""
