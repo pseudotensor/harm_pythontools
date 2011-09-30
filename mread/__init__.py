@@ -4110,8 +4110,8 @@ def get_dUfloor( floordumpno, maxrinflowequilibrium = 20, aphi_j_val=0 ):
     #condin = (r[:,:,0:1]<maxrinflowequilibrium)
     condout = 1 - condin
     #XXX change below to account for limited range in theta
-    UfloorAout = (dUfloor*condout[:,:,:,:]*(tj!=0)*(tj!=ny-1)).sum(1+PH).cumsum(1+TH)
-    UfloorAin = (dUfloor*condin[:,:,:,:]*(tj!=0)*(tj!=ny-1)).sum(1+PH).cumsum(1+TH)
+    UfloorAout = (dUfloor*condout[:,:,:,:]).sum(1+PH).cumsum(1+TH)  #*(tj!=0)*(tj!=ny-1)
+    UfloorAin = (dUfloor*condin[:,:,:,:]).sum(1+PH).cumsum(1+TH) #*(tj!=0)*(tj!=ny-1)
     if aphi_j_val == 0:
         #use unrestricted (full) sum
         UfloorAout = UfloorAout[:,:,ny-1]
