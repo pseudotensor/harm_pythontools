@@ -874,7 +874,7 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
     if dodiskfield:
         print("Doing dodiskfield")
         sys.stdout.flush()
-        num=8 # 8 on each side of BH
+        num=16 # 8 on each side of BH
         yabs = 0
         for Rabs in numpy.linspace(x.max(),0,num):
             if Rabs > rad:

@@ -19,13 +19,13 @@ dirruns='thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.like8 thickdiskrr2 r
 numkeep=300
 
 
-EXPECTED_ARGS=13
+EXPECTED_ARGS=16
 E_BADARGS=65
 
 if [ $# -ne $EXPECTED_ARGS ]
 then
-    echo "Usage: `basename $0` {moviedirname docleanexist dolinks dofiles make1d makemerge makeplot makeframes makemovie makeavg makeavgmerge makeavgplot collect}"
-    echo "e.g. sh makeallmovie.sh moviefinal1 1 1 1 1 1 1 1 1 1 1 1 1"
+    echo "Usage: `basename $0` {moviedirname docleanexist dolinks dofiles make1d makemerge makeplot makemontage makepowervsmplots makespacetimeplots makeframes makemovie makeavg makeavgmerge makeavgplot collect}"
+    echo "e.g. sh makeallmovie.sh moviefinal1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1"
     exit $E_BADARGS
 fi
 
@@ -38,12 +38,15 @@ dofiles=$4
 make1d=$5
 makemerge=$6
 makeplot=$7
-makeframes=$8
-makemovie=$9
-makeavg=${10}
-makeavgmerge=${11}
-makeavgplot=${12}
-collect=${13}
+makemontage=$8
+makepowervsmplots=$9
+makespacetimeplots=${10}
+makeframes=${11}
+makemovie=${12}
+makeavg=${13}
+makeavgmerge=${14}
+makeavgplot=${15}
+collect=${16}
 
 
 # On ki-jmck in /data2/jmckinne/
@@ -227,7 +230,7 @@ fi
 
 
 ##############################################
-make1d2dormovie=$(( $make1d + $makemerge + $makeplot + $makeframes + $makemovie + $makeavg + $makeavgmerge + $makeavgplot ))
+make1d2dormovie=$(( $make1d + $makemerge + $makeplot + $makemontage + $makepowervsmplots + $makespacetimeplots + $makeframes + $makemovie + $makeavg + $makeavgmerge + $makeavgplot ))
 if [ $make1d2dormovie -gt 0 ]
 then
 
@@ -262,7 +265,33 @@ then
             rm -rf /data2/jmckinne/${thedir}/$moviedirname/python.plot.stderr.out
             rm -rf /data2/jmckinne/${thedir}/$moviedirname/python.plot.full.out
             rm -rf /data2/jmckinne/${thedir}/$moviedirname/python.plot.out
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/aphi.png
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/aphi.pdf
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/aphi.eps
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/datavsr*.txt
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/datavsh*.txt
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/datavst*.txt
         fi
+        #
+        if [ $makemontage -eq 1 ]
+        then
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/montage*.png
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/montage*.eps
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/montage*.png
+        fi
+        if [ $makepowervsmplots -eq 1 ]
+        then
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/powervsm*.png
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/powervsm*.eps
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/powervsm*.png
+        fi
+        if [ $makespacetimeplots -eq 1 ]
+        then
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/plot*.png
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/plot*.eps
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/plot*.png
+        fi
+        #
         if [ $makeframes -eq 1 ]
         then
             rm -rf /data2/jmckinne/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.movieframes.stderr.out
@@ -301,7 +330,7 @@ then
     ###############
 
 	
-	sh makemovielocal.sh ${thedir} $make1d $makemerge $makeplot $makeframes $makemovie $makeavg $makeavgmerge $makeavgplot
+	sh makemovielocal.sh ${thedir} $make1d $makemerge $makeplot $makemontage $makepowervsmplots $makespacetimeplots $makeframes $makemovie $makeavg $makeavgmerge $makeavgplot
     done
 
     echo "Done with makemovie.sh stuff"

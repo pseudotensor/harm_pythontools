@@ -2,13 +2,13 @@
 # MUST RUN THIS WITH "bash" not "sh" since on some systems that calls "dash" that doesn't correctly handle $RANDOM or other things
 
 
-EXPECTED_ARGS=9
+EXPECTED_ARGS=12
 E_BADARGS=65
 
 if [ $# -ne $EXPECTED_ARGS ]
 then
-    echo "Usage: `basename $0` {modelname make1d makemerge makeplot makeframes makemovie makeavg makeavgmerge makeavgplot}"
-    echo "e.g. sh makemovie.sh thickdisk7 1 1 1 1 0 0 0 0"
+    echo "Usage: `basename $0` {modelname make1d makemerge makeplot makemontage makepowervsmplots makespacetimeplots makeframes makemovie makeavg makeavgmerge makeavgplot}"
+    echo "e.g. sh makemovie.sh thickdisk7 1 1 1 1 1 1 1 0 0 0 0"
     exit $E_BADARGS
 fi
 
@@ -17,11 +17,14 @@ modelname=$1
 make1d=$2
 makemerge=$3
 makeplot=$4
-makeframes=$5
-makemovie=$6
-makeavg=$7
-makeavgmerge=$8
-makeavgplot=$9
+makemontage=$5
+makepowervsmplots=$6
+makespacetimeplots=${7}
+makeframes=$8
+makemovie=$9
+makeavg=${10}
+makeavgmerge=${11}
+makeavgplot=${12}
 
 
 jobprefix=$modelname
@@ -472,10 +475,11 @@ then
 	then
 	    echo "((nohup python $myinitfile3 $modelname 2>&1 1>&3 | tee python.plot.stderr.out) 3>&1 1>&2 | tee python.plot.out) > python.plot.full.out 2>&1"
     else
-	    ((nohup python $myinitfile3 $modelname 2>&1 1>&3 | tee python.plot.stderr.out) 3>&1 1>&2 | tee python.plot.out) > python.plot.full.out 2>&1
+        # string "plot" tells script to do plot
+	    ((nohup python $myinitfile3 $modelname plot $makepowervsmplots $makespacetimeplots 2>&1 1>&3 | tee python.plot.stderr.out) 3>&1 1>&2 | tee python.plot.out) > python.plot.full.out 2>&1
     fi
 
-    makemontage=1
+    makemontage=$makemontage
     if [ $makemontage -eq 1 ]
     then
         # create montage of t vs. r and t vs. h plots

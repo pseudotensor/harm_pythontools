@@ -250,30 +250,41 @@ def get2davg(usedefault=0,whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergr
     return( avgtot )
     
 def assignavg2dvars(avgmem):
-    global avg_ts,avg_te,avg_nitems,avg_rho,avg_ug,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
+    global avg_ts,avg_te,avg_nitems,avg_rho,avg_ug,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_omegaf2b,avg_omegaf1,avg_omegaf1b,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
     global avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
+    global avg_TudPA, avg_TudIE
     global avg_gamma
     #avg defs
     i=0
+    # 1
+    # uses fake 2D space for some single numbers
     avg_ts=avgmem[i,0,:];
-    avg_te=avgmem[i,1,:]; 
+    avg_te=avgmem[i,1,:];
     avg_nitems=avgmem[i,2,:];i+=1
     #quantities
+    # 4
     avg_rho=avgmem[i,:,:,None];i+=1
     avg_ug=avgmem[i,:,:,None];i+=1
     avg_bsq=avgmem[i,:,:,None];i+=1
     avg_unb=avgmem[i,:,:,None];i+=1
+    # 4*4=16
     n=4
     avg_uu=avgmem[i:i+n,:,:,None];i+=n
     avg_bu=avgmem[i:i+n,:,:,None];i+=n
     avg_ud=avgmem[i:i+n,:,:,None];i+=n
     avg_bd=avgmem[i:i+n,:,:,None];i+=n
     #cell-centered magnetic field components
+    # 3*2=6
     n=3;
     avg_B=avgmem[i:i+n,:,:,None];i+=n
     avg_gdetB=avgmem[i:i+n,:,:,None];i+=n
+    # 4
     avg_omegaf2=avgmem[i,:,:,None];i+=1
+    avg_omegaf2b=avgmem[i,:,:,None];i+=1
+    avg_omegaf1=avgmem[i,:,:,None];i+=1
+    avg_omegaf1b=avgmem[i,:,:,None];i+=1
     #
+    # 6*4=24
     n=4
     avg_rhouu=avgmem[i:i+n,:,:,None];i+=n
     avg_rhobu=avgmem[i:i+n,:,:,None];i+=n
@@ -282,10 +293,12 @@ def assignavg2dvars(avgmem):
     avg_uguu=avgmem[i:i+n,:,:,None];i+=n
     avg_ugud=avgmem[i:i+n,:,:,None];i+=n
     #
+    # 2*16=32
     n=16
     #energy fluxes and faraday
     avg_Tud=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
     avg_fdd=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
+    # 5*16=80
     # part1: rho u^m u_l
     avg_rhouuud=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
     # part2: u u^m u_l
@@ -298,30 +311,39 @@ def assignavg2dvars(avgmem):
     #print( "i = %d, avgmem.shape[0] = %d " % (i, avgmem.shape[0]) )
     #sys.stdout.flush()
     avg_uuud=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
-    #new format, extra columns
-    if( avgmem.shape[0] > 164 ):
-        n=16
-        #EM/MA
-        avg_TudEM=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
-        avg_TudMA=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
-        #mu,sigma
-        n=1
-        avg_mu=avgmem[i,:,:,None];i+=n
-        avg_sigma=avgmem[i,:,:,None];i+=n
-        avg_bsqorho=avgmem[i,:,:,None];i+=n
-        n=3
-        avg_absB=avgmem[i:i+n,:,:,None];i+=n
-        avg_absgdetB=avgmem[i:i+n,:,:,None];i+=n
-        if( avgmem.shape[0] > 205 ):
-            n=1
-            avg_psisq=avgmem[i,:,:,None];i+=n
-        else:
-            n=1
-            print( "Old-ish format: missing avg_psisq, filling it in with zeros." )
-            avg_psisq=np.zeros_like(avg_mu);i+=n
-
-    else:
-        print( "Old format: missing avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, etc." )
+    # 2*16=32
+    n=16
+    #EM/MA
+    avg_TudEM=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
+    avg_TudMA=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
+    # 2*16=32
+    n=16
+    #P/IE
+    avg_TudPA=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
+    avg_TudIE=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
+    # 3
+    #mu,sigma
+    n=1
+    avg_mu=avgmem[i,:,:,None];i+=n
+    avg_sigma=avgmem[i,:,:,None];i+=n
+    avg_bsqorho=avgmem[i,:,:,None];i+=n
+    # 3*2=6
+    n=3
+    avg_absB=avgmem[i:i+n,:,:,None];i+=n
+    avg_absgdetB=avgmem[i:i+n,:,:,None];i+=n
+    # 1
+    n=1
+    avg_psisq=avgmem[i,:,:,None];i+=n
+    #
+    # number of full 2D quantities
+    nqtyavg=i
+    global navg
+    navg=getnqtyavg()
+    if nqtyavg!=navg:
+        print("nqtyavg=%d while navg=%d" % (nqtyavg,navg))
+    #
+    #
+    ##########################
     #derived quantities
     avg_gamma=avg_uu[0]/(-gn3[0,0])**0.5
 
@@ -350,15 +372,24 @@ def sort_nicely(l):
     l.sort(key=alphanum_key)
 
 
+def getnqtyavg():
+    # was 206 before with Sasha's code, but apparently should have been 207
+    value=1 + 4 + 16 + 6 + 4 + 24 + 32 + 80 + 32 + 32 + 3 + 6 + 1
+    return(value)
+
+
 def get2davgone(whichgroup=-1,itemspergroup=20):
     """
     """
-    global avg_ts,avg_te,avg_nitems,avg_rho,avg_ug,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
+    global avg_ts,avg_te,avg_nitems,avg_rho,avg_ug,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_omegaf2b,avg_omegaf1,avg_omegaf1b,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
     global avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
+    global avg_TudPA, avg_TudIE
     global firstfieldlinefile
+    #
     if whichgroup < 0 or itemspergroup <= 0:
         print( "whichgroup = %d, itemspergroup = %d not allowed" % (whichgroup, itemspergroup) )
         return None
+    #
     fname = "avg2d%02d_%02d.npy" % (itemspergroup, whichgroup)
     if os.path.isfile( fname ):
         print( "File %s exists, loading from file..." % fname )
@@ -372,7 +403,8 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     #
     #print "Number of time slices: %d" % flist.shape[0]
     #store 2D data
-    navg=206
+    global navg
+    navg=getnqtyavg()
     avgmem=np.zeros((navg,nx,ny),dtype=np.float32)
     assignavg2dvars(avgmem)
     ##
@@ -386,44 +418,58 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     #
     #
     #print "Total number of quantities: %d" % (i)
-    print "Doing %d-th group of %d items" % (whichgroup, itemspergroup)
-    sys.stdout.flush()
+    print "Doing %d-th group of %d items" % (whichgroup, itemspergroup) ; sys.stdout.flush()
     #end avg defs
     for fldindex, fldname in enumerate(flist):
         if( whichgroup >=0 and itemspergroup > 0 ):
             if( fldindex / itemspergroup != whichgroup ):
                 continue
+        #
         print( "Reading " + fldname + " ..." )
         sys.stdout.flush()
         rfd("../"+fldname)
+        #
         print( "Computing get2davgone:" + fldname + " ..." ) ;  sys.stdout.flush()
         cvel()
         Tcalcud()
         faraday()
+        ##########################
         #if first item in group
         if fldindex == itemspergroup * whichgroup:
             avg_ts[0]=t
         #if last item in group
         if fldindex == itemspergroup * whichgroup + (itemspergroup - 1):
             avg_te[0]=t
+        #
+        # 1
         avg_nitems[0]+=1
+        #
+        ###################
         #quantities
+        # 4
         avg_rho+=rho.sum(-1)[:,:,None]
         avg_ug+=ug.sum(-1)[:,:,None]
         avg_bsq+=bsq.sum(-1)[:,:,None]
         enth=1+ug*gam/rho
         avg_unb+=(enth*ud[0]).sum(-1)[:,:,None]
+        # 16
         avg_uu+=uu.sum(-1)[:,:,:,None]
         avg_bu+=bu.sum(-1)[:,:,:,None]
         avg_ud+=ud.sum(-1)[:,:,:,None]
         avg_bd+=bd.sum(-1)[:,:,:,None]
         #cell-centered magnetic field components
+        # 3+3=6
         n=3;
         avg_B+=B[1:4].sum(-1)[:,:,:,None]
         avg_gdetB+=gdetB[1:4].sum(-1)[:,:,:,None]
         #
+        # 4
         avg_omegaf2+=omegaf2.sum(-1)[:,:,None]
+        avg_omegaf2b+=omegaf2b.sum(-1)[:,:,None]
+        avg_omegaf1+=omegaf1.sum(-1)[:,:,None]
+        avg_omegaf1b+=omegaf1b.sum(-1)[:,:,None]
         #
+        # 6*4=24
         n=4
         avg_rhouu+=(rho*uu).sum(-1)[:,:,:,None]
         avg_rhobu+=(rho*bu).sum(-1)[:,:,:,None]
@@ -432,12 +478,16 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         avg_uguu+=(ug*uu).sum(-1)[:,:,:,None]
         avg_ugud+=(ug*ud).sum(-1)[:,:,:,None]
         #
+        # 16*2=32
         n=16
         #energy fluxes and faraday
         avg_Tud+=Tud.sum(-1)[:,:,:,:,None]
         avg_fdd+=fdd.sum(-1)[:,:,:,:,None]
         #
+        # 
         uuud=odot(uu,ud).sum(-1)[:,:,:,:,None]
+        #
+        # 16*5=80
         # part1: rho u^m u_l
         avg_rhouuud+=rho.sum(-1)[:,:,None]*uuud
         # part2: u u^m u_l
@@ -448,29 +498,51 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         avg_bubd+=odot(bu,bd)[:,:,:,:,None].sum(-1)
         # u^m u_l
         avg_uuud+=uuud
+        #
+        # 16*2=32
         #EM/MA
         avg_TudEM+=TudEM.sum(-1)[:,:,:,:,None]
         avg_TudMA+=TudMA.sum(-1)[:,:,:,:,None]
+        # 16*2=32
+        #PA/IE (EM is B) -- for gammie plot
+        avg_TudPA+=TudPA.sum(-1)[:,:,:,:,None]
+        avg_TudIE+=TudIE.sum(-1)[:,:,:,:,None]
+        #
+        # 3
         #mu,sigma
         avg_mu += (-Tud[1,0]/(rho*uu[1])).sum(-1)[:,:,None]
         avg_sigma += (-TudEM[1,0]/TudMA[1,0]).sum(-1)[:,:,None]
         avg_bsqorho += (bsq/rho).sum(-1)[:,:,None]
+        #
+        # 6
         n=3
         avg_absB += np.abs(B[1:4]).sum(-1)[:,:,:,None]
         avg_absgdetB += np.abs(gdetB[1:4]).sum(-1)[:,:,:,None]
+        #
+        # 1
         n=1
         aphi = fieldcalcface()
         avg_psisq += ((_dx3*aphi.sum(-1))**2)[:,:,None]
+        #
+    #
     if avg_nitems[0] == 0:
         print( "No files found" )
         return None
+    #
+    #
+    ######################
     #divide all lines but the header line [which holds (ts,te,nitems)]
     #by the number of elements to get time averages
     avgmem[1:]/=(np.float32(avg_nitems[0])*np.float32(nz))
+    #
     print( "Saving to file..." )
     np.save( fname, avgmem )
+    #
     print( "Done avgmem!" )
+    #
     return(avgmem)
+
+
 
 def extractlena():
     #along field lines 0.5,0.8,0.99
@@ -770,10 +842,39 @@ def getdefaulttimes():
     return defaultfti,defaultftf
 
 
+# get qty t,r(h,m) data and related calculations
+def getbasicqtystuff(whichplot=None):
+    rhor=1+(1-a**2)**0.5
+    ihor = np.floor(iofr(rhor)+0.5)
+    #
+    defaultfti,defaultftf=getdefaulttimes()
+    #
+    qtymem=getqtyvstime(ihor)
+    if avg_ts[0] != 0:
+        fti = avg_ts[0]
+    else:
+        fti = defaultfti
+    if avg_te[0] != 0:
+        ftf = avg_te[0]
+    else:
+        ftf = defaultftf
+    print( "getbasicqtystuff: Using: ti = %g, tf = %g" % (fti,ftf) )
+    if whichplot==-1:
+        md, ftot, fsqtot, f30, fsq30, pjemtot  = plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=whichplot,fti=fti,ftf=ftf)
+        return(md, ftot, fsqtot, f30, fsq30, pjemtot)
+    else:
+        hoverr_jet_vsr = plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=whichplot,fti=fti,ftf=ftf)
+        return(hoverr_jet_vsr)
+    #
+
+
+
 
 def plot2davg(dosq=True,whichplot=-1):
     global eout1, eout2, eout, avg_aphi,avg_aphi2,powjetwind,powjet,jminjet,jmaxjet,jminwind,jmaxwind,mymu,maxaphibh
     #use ratio of averages since more stable definition:
+    #
+    md, ftot, fsqtot, f30, fsq30, pjemtot = getbasicqtystuff(whichplot=-1)
     #
     etad = np.zeros_like(uu)
     etad[0] = -1/(-gn3[0,0])**0.5
@@ -784,22 +885,7 @@ def plot2davg(dosq=True,whichplot=-1):
     muminwind= 1. #1./(1.-0.1**2)**0.5
     muminjet=2.0
     unbcutoff=0 #1./(1.-0.1**2)**0.5-1
-    rhor=1+(1-a**2)**0.5
-    ihor = np.floor(iofr(rhor)+0.5)
     #
-    defaultfti,defaultftf=getdefaulttimes()
-    #
-    qtymem=getqtyvstime(ihor,0.2)
-    if avg_ts[0] != 0:
-        fti = avg_ts[0]
-    else:
-        fti = defaultfti
-    if avg_te[0] != 0:
-        ftf = avg_te[0]
-    else:
-        ftf = defaultftf
-    print( "Using: ti = %g, tf = %g" % (fti,ftf) )
-    md, ftot, fsqtot, f30, fsq30, pjemtot  = plotqtyvstime(qtymem,ihor=ihor,whichplot=-1,fti=fti,ftf=ftf)
     #
     avg_aphi = scaletofullwedge(nz*_dx3*fieldcalc(gdetB1=avg_gdetB[0]))
     avg_aphi2 = scaletofullwedge((nz*avg_psisq)**0.5)
@@ -1785,6 +1871,9 @@ def plco(myvar,xcoord=None,ycoord=None,ax=None,**kwargs):
     plc(myvar,xcoord,ycoord,ax,**kwargs)
 
 def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
+    #
+    #
+    #
     #xcoord = kwargs.pop('x1', None)
     #ycoord = kwargs.pop('x2', None)
     if(np.min(myvar)==np.max(myvar)):
@@ -1882,8 +1971,7 @@ def ftr(x,xb,xf):
 # http://scikits.appspot.com/vectorplot  (includes LIC)
 # http://wiki.chem.vu.nl/dirac/index.php/How_to_plot_vector_fields_calculated_with_DIRAC11_as_streamline_plots_using_PyNGL
 
-
-def mkframe(fname,ax=None,cb=True,useblank=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,domidfield=True,showjet=False,arrowsize=1):
+def mkframe(fname,ax=None,cb=True,useblank=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dovel=False,dostreamlines=True,doaphiavg=False,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,domidfield=True,showjet=False,arrowsize=1):
     extent=(-len,len,-len,len)
     palette=cm.jet
     palette.set_bad('k', 1.0)
@@ -1894,12 +1982,33 @@ def mkframe(fname,ax=None,cb=True,useblank=True,vmin=None,vmax=None,len=20,ncell
     ilrho = reinterp(np.log10(rho),extent,ncell,domask=1.0)
     if not dostreamlines:
         aphi = fieldcalc()
+        aphi = np.sqrt(aphi**2)
+        # force equatorial symmetry by averaging
+        aphitemp=np.copy(aphi)
+        for j in np.arange(0,ny):
+            aphi[:,j,:]=0.5*(aphitemp[:,j,:]+aphitemp[:,ny-1-j,:])
+        #
         iaphi = reinterp(aphi,extent,ncell,domask=0)
-        #maxabsiaphi=np.max(np.abs(iaphi))
-        maxabsiaphi = 100 #50
-        ncont = 100 #30
+        maxabsiaphi=np.max(np.abs(iaphi))
+        #maxabsiaphi = 100 #50
+        ncont = 50 #30
         levs=np.linspace(-maxabsiaphi,maxabsiaphi,ncont)
-    else:
+    #
+    if doaphiavg==1:
+        #aphi=np.sqrt(avg_psisq[0:iofr(30.0),:,0])
+        aphi=np.sqrt(avg_psisq)
+        # force equatorial symmetry by averaging
+        aphitemp=np.copy(aphi)
+        for j in np.arange(0,ny):
+            aphi[:,j,:]=0.5*(aphitemp[:,j,:]+aphitemp[:,ny-1-j,:])
+        #
+        iaphi = reinterp(aphi,extent,ncell,domask=0)    
+        maxabsiaphi=np.max(np.abs(iaphi))
+        #maxabsiaphi = 100 #50
+        ncont = 50 #30
+        levs=np.linspace(-maxabsiaphi,maxabsiaphi,ncont)
+    #
+    if dostreamlines==1:
         aphi = fieldcalc()
         iaphi = reinterp(aphi,extent,ncell,domask=0)
         #
@@ -1933,12 +2042,28 @@ def mkframe(fname,ax=None,cb=True,useblank=True,vmin=None,vmax=None,len=20,ncell
         #Bhnorm[:,ny-2,:]=0
         #Bhnorm[:,ny-3,:]=0
         #
+        #
         # equatorial symmetry check
         #for j in np.arange(0,ny):
         #for j in np.arange(ny-1,-1,-1):
         #    Brnorm[:,j,:]=Brnorm[:,ny-1-j,:]
         #    Bhnorm[:,j,:]=-Bhnorm[:,ny-1-j,:]
         #    Bpnorm[:,j,:]=Bpnorm[:,ny-1-j,:]
+        #
+        # force equatorial symmetry by averaging
+        Brnormtemp=np.copy(Brnorm)
+        Bhnormtemp=np.copy(Bhnorm)
+        Bpnormtemp=np.copy(Bpnorm)
+        for j in np.arange(0,ny):
+            if dovel==0:
+                Brnorm[:,j,:]=0.5*(Brnormtemp[:,j,:]-Brnormtemp[:,ny-1-j,:]) # assumes split-monopole or higher, not monopole
+                Bhnorm[:,j,:]=0.5*(Bhnormtemp[:,j,:] + Bhnormtemp[:,ny-1-j,:]) # assumes field vertically passes from lower to upper side
+                Bpnorm[:,j,:]=0.5*(Bpnormtemp[:,j,:]-Bpnormtemp[:,ny-1-j,:]) # assumes split-monopole or higher, not monopole
+            else:
+                Brnorm[:,j,:]=0.5*(Brnormtemp[:,j,:]+Brnormtemp[:,ny-1-j,:])
+                Bhnorm[:,j,:]=0.5*(Bhnormtemp[:,j,:]-Bhnormtemp[:,ny-1-j,:])
+                Bpnorm[:,j,:]=0.5*(Bpnormtemp[:,j,:]+Bpnormtemp[:,ny-1-j,:])
+            #
         #
         Bznorm=Brnorm*np.cos(h)-Bhnorm*np.sin(h)
         BRnorm=Brnorm*np.sin(h)+Bhnorm*np.cos(h)
@@ -2005,7 +2130,8 @@ def mkframe(fname,ax=None,cb=True,useblank=True,vmin=None,vmax=None,len=20,ncell
         ax.contour(imu,linewidths=0.5,colors='g', extent=extent,hold='on',origin='lower',levels=(2,))
         ax.contour(iaphi,linewidths=0.5,colors='b', extent=extent,hold='on',origin='lower',levels=(aphi[ihor,ny/2,0],))
     if not dostreamlines:
-        cset2 = ax.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
+        #cset2 = ax.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
+        cset2 = ax.contour(iaphi,linewidths=2.0,colors='r', extent=extent,hold='on',origin='lower',levels=levs)
     else:
         if dovarylw:
             lw = 0.5+1*ftr(np.log10(amax(ibsqo2rho,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
@@ -2993,12 +3119,20 @@ def rfdheaderfirstfile():
     #rfd("fieldline0000.bin")  #to definea
     rfdheaderonly(firstfieldlinefile)
 
+
 def rfdfirstfile():
     flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
     sort_nicely(flist)
     firstfieldlinefile=flist[0]
     basenamefirst=os.path.basename(firstfieldlinefile)
     rfd(basenamefirst)
+
+def rfdlastfile():
+    flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+    sort_nicely(flist)
+    lastfieldlinefile=flist[-1]
+    basenamelast=os.path.basename(lastfieldlinefile)
+    rfd(basenamelast)
 
 
 def rfd(fieldlinefilename,**kwargs):
@@ -4573,6 +4707,15 @@ def getqtymem(qtymem):
     ###################################
     return(i)
 
+
+def getbobnqty():
+    return(134)
+
+def getnqty(dobob=0):
+    nqtynonbob=getnonbobnqty()
+    nqty=getbobnqty()*(dobob==1) + nqtynonbob
+    return(nqty)
+
         
 def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
     """
@@ -4596,8 +4739,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
     #flist.sort()
     sort_nicely(flist)
     #
-    nqtynonbob=getnonbobnqty()
-    nqty=134*(dobob==1) + nqtynonbob
+    nqty=getnqty(dobob=dobob)
     #
     ####################################
     #store 1D data
@@ -4639,13 +4781,15 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
     # take qtymem and fill in variable names
     #
     totalnum=getqtymem(qtymem)
+    if totalnum!=nqty:
+        print("totalnum=%d does not equal nqty=%d" % (totalnum,nqty))
     #
     # get starting time so can compute time differences
     start_time=datetime.now()
     ##################################
     #
     if dobob == 1:
-        print "Total number of quantities: %d+134 = %d" % (totalnum, totalnum+134)
+        print "Total number of quantities: %d+%d = %d" % (totalnum, getbobnqty(), totalnum+getbobnqty())
     else:
         print "Total number of quantities: %d" % (totalnum)
     if( whichi >=0 and whichn > 0 ):
@@ -5789,22 +5933,27 @@ def amin(arg1,arg2):
     return(ret)
 
 def Tcalcud():
-    global Tud, TudEM, TudMA
+    global Tud, TudEM, TudMA, TudPA, TudIE
     global mu, sigma
     global enth
     global unb, isunbound
     pg = (gam-1)*ug
     w=rho+ug+pg
+    wnorho=ug+pg
     eta=w+bsq
     Tud = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
     TudMA = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
     TudEM = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
+    TudPA = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
+    TudIE = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
     for kapa in np.arange(4):
         for nu in np.arange(4):
             if(kapa==nu): delta = 1
             else: delta = 0
             TudEM[kapa,nu] = bsq*uu[kapa]*ud[nu] + 0.5*bsq*delta - bu[kapa]*bd[nu]
             TudMA[kapa,nu] = w*uu[kapa]*ud[nu]+pg*delta
+            TudPA[kapa,nu] = rho*uu[kapa]*ud[nu]
+            TudIE[kapa,nu] = wnorho*uu[kapa]*ud[nu]+pg*delta
             #Tud[kapa,nu] = eta*uu[kapa]*ud[nu]+(pg+0.5*bsq)*delta-bu[kapa]*bd[nu]
             Tud[kapa,nu] = TudEM[kapa,nu] + TudMA[kapa,nu]
     #mu = -Tud[1,0]/(rho*uu[1])
@@ -5817,7 +5966,7 @@ def Tcalcud():
     isunbound=(-unb>1.0)
 
 def faraday():
-    global fdd, fuu, omegaf1, omegaf2
+    global fdd, fuu, omegaf1, omegaf1b, omegaf2, omegaf2b
     # these are native values according to HARM
     fdd = np.zeros((4,4,nx,ny,nz),dtype=rho.dtype)
     #fdd[0,0]=0*gdet
@@ -5858,6 +6007,22 @@ def faraday():
     # these 2 are equal in degen electrodynamics when d/dt=d/dphi->0
     omegaf1=fdd[0,1]/fdd[1,3] # = ftr/frp
     omegaf2=fdd[0,2]/fdd[2,3] # = fth/fhp
+    #
+    aB1hat=np.fabs(B[1]*np.sqrt(gv3[1,1]))
+    aB2hat=np.fabs(B[2]*np.sqrt(gv3[2,2]))
+    omegaf1b=(omegaf1*aB1hat+omegaf2*aB2hat)/(aB1hat+aB2hat)
+    #E1hat=fdd[0,1]*np.sqrt(gn3[1,1])
+    #E2hat=fdd[0,2]*np.sqrt(gn3[2,2])
+    #Epabs=np.sqrt(E1hat**2+E2hat**2)
+    #Bpabs=np.sqrt(aB1hat**2+aB2hat**2)+1E-15
+    #omegaf2b=Epabs/Bpabs
+    vphi=uu[3]/uu[0]
+    av1hat=np.fabs(uu[1]*np.sqrt(gv3[1,1]))
+    av2hat=np.fabs(uu[2]*np.sqrt(gv3[2,2]))
+    vpol=np.sqrt(av1hat**2 + av2hat**2)
+    Bpol=np.sqrt(aB1hat**2 + aB2hat**2)
+    # assume field swept back so omegaf is always larger than vphi
+    omegaf2b=np.fabs(vphi) + (vpol/Bpol)*np.fabs(B[3])
     #
 
 
@@ -6012,7 +6177,7 @@ def kofph(phval):
 
 
 # everything done inside this function only needs a final call to plot, not generating npy files or merging them.
-def plotqtyvstime(qtymem,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None):
+def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None):
     global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
     #
     # need to compute this again
@@ -6035,6 +6200,8 @@ def plotqtyvstime(qtymem,whichplot=None,ax=None,findex=None,fti=None,ftf=None,sh
     # take qtymem and fill in variable names
     #
     totalnum=getqtymem(qtymem)
+    if totalnum!=nqty:
+        print("totalnum=%d does not equal nqty=%d" % (totalnum,nqty))
     #
     ##################################
     # get starting time so can compute time differences
@@ -7760,6 +7927,16 @@ def plotqtyvstime(qtymem,whichplot=None,ax=None,findex=None,fti=None,ftf=None,sh
     #
     #
     #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
     #######################################
     # Begin some plots
     #######################################
@@ -8375,9 +8552,328 @@ def plotqtyvstime(qtymem,whichplot=None,ax=None,findex=None,fti=None,ftf=None,sh
     ######################################
     #
     #
+    ######################################
+    # BEGIN RESIDUAL PLOTS
+    ######################################
+    print("residual" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
     #
     #
     #
+    #
+    if whichplot == -1:
+        etajetavg = pjetfinavg/mdotfinavg
+        foutpower = open( "pjet_power_%s.txt" %  os.path.basename(os.getcwd()), "w" )
+        #foutpower.write( "#Name a Mdot   Pjet    Etajet  Psitot Psisqtot**0.5 Psijet Psisqjet**0.5 rstag Pjtotmax Pjtot1rstag Pjtot2rstag Pjtot4rstag Pjtot8rstag\n"  )
+        foutpower.write( "%s %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n" % (os.path.basename(os.getcwd()), a, mdotfinavg, 
+                                                                       pjetfinavg, etajetavg, fstotfinavg, 
+                                                                       fstotsqfinavg, fsj30finavg, fsj30sqfinavg, 
+                                                                       rstag, pjtotfinavgvsr5max, pjtotfinavgvsr5rstag, 
+                                                                       pjtotfinavgvsr5r2stag, pjtotfinavgvsr5r4stag, pjtotfinavgvsr5r8stag) )
+        #flush to disk just in case to make sure all is written
+        foutpower.flush()
+        os.fsync(foutpower.fileno())
+        foutpower.close()
+        return( mdotfinavg, fstotfinavg, fstotsqfinavg, fsj30finavg, fsj30sqfinavg, pjemfinavgtot )
+
+    if whichplot == -2:
+        return( mdtotvsr, edtotvsr, edmavsr, ldtotvsr )
+
+    if whichplot == -300:
+        #BL metric g_rr
+        rh = 1+(1-a**2)**0.5
+        r1d = r[:,0,0]
+        Sigma = r**2+a**2*np.cos(h)**2
+        Delta = r**2-2*r+a**2
+        gdrr = Sigma/Delta
+        gdtt = -(1-2*r/Sigma)
+        #
+        uutKS = uu[0]
+        uurKS = dxdxp[1,1]*uu[1]
+        uuhKS = dxdxp[2,2]*uu[2] + dxdxp[2,1]*uu[1]
+        uupKS = dxdxp[3,3]*uu[3]
+        uurBL = uurKS
+        uutBL = uutKS - 2*(r/Delta)*uurKS - (a/Delta) * uupKS
+        vurBL = uurBL / uutBL
+        vrBL = gdrr**0.5*vurBL 
+        plt.figure(2)
+        plt.loglog( r1d, -vrBL[:,ny/2].mean(-1), 'r', label=r"$t=%g$" % t )
+        plt.xlim( rh, 100 )
+        plt.ylim( 1e-3, 2 )
+        plt.legend( loc = 'lower left' )
+       
+    if whichplot == -3:
+        #BL metric g_rr
+        rh = 1+(1-a**2)**0.5
+        r1d = r[:,0,0]
+        Sigma = r**2+a**2*np.cos(h)**2
+        Delta = r**2-2*r+a**2
+        gdrr = Sigma/Delta
+        gdtt = -(1-2*r/Sigma)
+        #
+        uutKS = uu02h
+        uurKS = dxdxp[1,1,None,:,ny/2,0]*uus12h
+        uupKS = dxdxp[3,3,None,:,ny/2,0]*uus32h
+        uurBL = uurKS
+        uutBL = uutKS - 2*(r/Delta)[None,:,ny/2,0]*uurKS - (a/Delta)[None,:,ny/2,0] * uupKS
+        vurBL = uurBL / uutBL
+        vrBL = gdrr[None,:,ny/2,0]**0.5*vurBL 
+        t1 = 0.5e4
+        t2 = 1e4
+        avg1_vr = timeavg(vrBL,ts,t1,t2) 
+        t1 = 1e4
+        t2 = 1.5e4
+        avg2_vr = timeavg(vrBL,ts,t1,t2) 
+        t1 = 1.5e4
+        t2 = 2e4
+        avg3_vr = timeavg(vrBL,ts,t1,t2) 
+        plt.figure(1)
+        plt.loglog( r1d, -avg1_vr, 'r', label=r"$5,000<t<10,000$" )
+        plt.loglog( r1d, -avg2_vr, 'g', label=r"$10,000<t<15,000$" )
+        plt.loglog( r1d, -avg3_vr, 'b', label=r"$15,000<t<20,000$" )
+        plt.xlim( rh, 200 )
+        plt.ylim( 1e-3, 2 )
+        plt.grid()
+        plt.ylabel( r"$v_{\hat r}$", fontsize = 20 )
+        plt.xlabel( r"$r$", fontsize = 20 )
+        plt.legend( loc = 'upper right' )
+
+    if whichplot == -4:
+        rh = 1+(1-a**2)**0.5
+        r1d = r[:,0,0]
+        plt.figure(1)
+        plt.loglog( r1d, timeavg(rhos2h,ts,5000,10000), 'r', label=r"$5,000<t<10,000$" )
+        plt.loglog( r1d, timeavg(rhos2h,ts,10000,15000), 'g', label=r"$10,000<t<15,000$" )
+        plt.loglog( r1d, timeavg(rhos2h,ts,15000,20000), 'b', label=r"$15,000<t<20,000$" )
+        plt.xlabel(r"$r$", fontsize = 15)
+        plt.ylabel(r"$\rho$", fontsize = 15)
+        plt.xlim( rh, 100 )
+        plt.ylim( 1e-2, 15 )
+        plt.grid()
+        plt.legend( loc = 'lower left' )
+
+    #if whichplot == -5:
+        
+    if whichplot == None:
+        fig,plotlist=plt.subplots(nrows=4,ncols=1,sharex=True,figsize=(12,16),num=1)
+        #plt.clf()
+        plottitle = "a = %g: %s" % ( a, os.path.basename(os.getcwd()) )
+        plt.suptitle( plottitle )
+        plt.subplots_adjust(hspace=0.1) #increase vertical spacing to avoid crowding
+        print fstot[:,ihor].shape
+        plotlist[0].plot(ts,fstot[:,ihor],label=r'$\Phi_{\rm h,tot}$')
+        #plotlist[0].plot(ts,fsj5[:,ihor],label=r'$\Phi_{\rm h,5}$')
+        plotlist[0].plot(ts,fsj30[:,ihor],label=r'$\Phi_{\rm h,30}$')
+        #plotlist[0].plot(ts,fs,'r+') #, label=r'$\Phi_{\rm h}/0.5\Phi_{\rm i}$: Data Points')
+        if dotavg:
+            plotlist[0].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+fstotsqfinavg,label=r'$\langle \Phi^2_{\rm h,tot}\rangle^{1/2}$')
+            plotlist[0].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+fsj30sqfinavg,label=r'$\langle \Phi^2_{\rm h,30}\rangle^{1/2}$')
+        plotlist[0].legend(loc='upper left')
+        #plt.xlabel(r'$t\;(GM/c^3)$')
+        plotlist[0].set_ylabel(r'$\Phi_{\rm h}$',fontsize=16)
+        plt.setp( plotlist[0].get_xticklabels(), visible=False)
+        plotlist[0].grid(True)
+        #
+        #plotlist[1].subplot(212,sharex=True)
+        #plotlist[1].plot(ts,np.abs(mdtot[:,ihor]),label=r'$\dot M_{\rm h,tot}$')
+        #plotlist[1].plot(ts,np.abs(mdtot[:,ihor]-md5[:,ihor]),label=r'$\dot M_{\rm h,tot,bsqorho<5}$')
+        plotlist[1].plot(ts,np.abs(mdtot[:,ihor]-md10[:,ihor]),label=r'$\dot M_{{\rm h,tot}, b^2/rho<10}$')
+        plotlist[1].plot(ts,np.abs(mdtot[:,ihor]-md30[:,ihor]),label=r'$\dot M_{{\rm h,tot}, b^2/rho<30}$')
+        if dotavg:
+            #plotlist[1].plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+mdotiniavg,label=r'$\langle \dot M_{{\rm h,tot}, b^2/\rho<10}\rangle_{i}$')
+            plotlist[1].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotfinavg,label=r'$\langle \dot M_{{\rm h,tot}, b^2/\rho<10}\rangle_{f}$')
+        #plotlist[1].plot(ts,np.abs(md2h[:,ihor]),label=r'$\dot M_{\rm h,2h}$')
+        #plotlist[1].plot(ts,np.abs(md4h[:,ihor]),label=r'$\dot M_{\rm h,4h}$')
+        #plotlist[1].plot(ts,np.abs(mdhor[:,ihor]),label=r'$\dot M_{\rm h,hor}$')
+        #plotlist[1].plot(ts,np.abs(mdrhosq[:,ihor]),label=r'$\dot M_{\rm h,rhosq}$')
+        #plotlist[1].plot(ts,np.abs(md5[:,ihor]),label=r'$\dot M_{\rm h,5}$')
+        plotlist[1].plot(ts,np.abs(md10[:,ihor]),label=r'$\dot M_{\rm h,10}$')
+        plotlist[1].plot(ts,np.abs(md30[:,ihor]),label=r'$\dot M_{\rm h,30}$')
+        #plotlist[1].plot(ts,np.abs(md[:,ihor]),'r+') #, label=r'$\dot M_{\rm h}$: Data Points')
+        plotlist[1].legend(loc='upper left')
+        #plotlist[1].set_xlabel(r'$t\;(GM/c^3)$')
+        plotlist[1].set_ylabel(r'$\dot M_{\rm h}$',fontsize=16)
+        plt.setp( plotlist[1].get_xticklabels(), visible=False)
+
+        #plotlist[2].plot(ts,(pjem10[:,ihor]),label=r'$P_{\rm j,em10}$')
+        #plotlist[2].plot(ts,(pjem30[:,ihor]),label=r'$P_{\rm j,em30}$')
+        if dotavg:
+            plotlist[2].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg,label=r'$\langle P_{{\rm j,em30}\rangle_{f}}$')
+        plotlist[2].legend(loc='upper left')
+        #plotlist[2].set_xlabel(r'$t\;(GM/c^3)$')
+        plotlist[2].set_ylabel(r'$P_{\rm j}$',fontsize=16)
+
+        #plotlist[3].plot(ts,(pjem10[:,ihor]/mdtot[:,ihor]),label=r'$P_{\rm j,em10}/\dot M_{\rm tot}$')
+        plotlist[3].plot(ts,(pjem5[:,ihor]/(mdtot[:,ihor]-md5[:,ihor])),label=r'$P_{\rm j,em5}/\dot M_{{\rm tot},b^2/\rho<5}$')
+        #plotlist[3].plot(ts,(pjem30[:,ihor]/mdotfinavg),label=r'$\dot \eta_{10}=P_{\rm j,em10}/\dot M_{{\rm tot},b^2/\rho<30}$')
+        if dotavg:
+            #plotlist[3].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg/mdotiniavg,label=r'$\langle P_j\rangle/\langle\dot M_i\rangle_{f}$')
+            plotlist[3].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg/mdotfinavg,'r',label=r'$\langle P_j\rangle/\langle\dot M_f\rangle_{f}$')
+        #plotlist[3].set_ylim(0,6)
+        plotlist[3].legend(loc='upper left')
+        plotlist[3].set_xlabel(r'$t\;(GM/c^3)$')
+        #plotlist[3].set_ylabel(r'$P_{\rm j}/\dot M_{\rm h}$',fontsize=16)
+        plotlist[3].set_ylabel(r'$\eta_{\rm j}$',fontsize=16)
+
+        #title("\TeX\ is Number $\displaystyle\sum_{n=1}^\infty\frac{-e^{i\pi}}{2^n}$!", 
+        #      fontsize=16, color='r')
+        plotlist[0].grid(True)
+        plotlist[1].grid(True)
+        plotlist[2].grid(True)
+        plotlist[3].grid(True)
+        fig.savefig('pjet1_%s.pdf' % os.path.basename(os.getcwd()) )
+
+        #density/velocity/hor figure
+        #!!!rhor=1+(1-a**2)**0.5
+        fig,plotlist=plt.subplots(nrows=4,ncols=1,sharex=True,figsize=(12,16),num=2)
+        #plt.clf()
+        plottitle = r"$\rho$,$u^r$,$h/r$: $a= $%g: %s" % ( a, os.path.basename(os.getcwd()) )
+        plt.suptitle( plottitle )
+        plt.subplots_adjust(hspace=0.1) #increase vertical spacing to avoid crowding
+        #print fstot[:,ihor].shape
+        plotlist[0].plot(ts,hoverr[:,ihor],label=r'$(h/r)_{\rm h}$')
+        plotlist[0].plot(ts,hoverr[:,iofr(2)],label=r'$(h/r)_{\rm 2}$') ##### continue here
+        plotlist[0].plot(ts,hoverr[:,iofr(4)],label=r'$(h/r)_{\rm 4}$')
+        plotlist[0].plot(ts,hoverr[:,iofr(8)],label=r'$(h/r)_{\rm 8}$')
+        #lotlist[0].plot(ts,hoverr[:,iofr(10)],label=r'$(h/r)_{\rm 10}$')
+        #plotlist[0].plot(ts,hoverr[:,iofr(12)],label=r'$(h/r)_{\rm 12}$')
+        #plotlist[0].plot(ts,hoverr[:,iofr(15)],label=r'$(h/r)_{\rm 15}$')
+        #thetamid
+        plotlist[0].plot(ts,(thetamid-np.pi/2)[:,ihor],'--',label=r'$\theta_{\rm h}$')
+        plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(2)],'--',label=r'$\theta_{\rm 2}$') ##### continue here
+        plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(4)],'--',label=r'$\theta_{\rm 4}$')
+        plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(8)],'--',label=r'$\theta_{\rm 8}$')
+        #plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(10)],'--',label=r'$\theta_{\rm 10}$')
+        #plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(12)],'--',label=r'$\theta_{\rm 12}$')
+        #plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(15)],'--',label=r'$\theta_{\rm 15}$')
+        #plotlist[0].plot(ts,fs,'r+') #, label=r'$\Phi_{\rm h}/0.5\Phi_{\rm i}$: Data Points')
+        #legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
+        plotlist[0].legend(loc='upper right',ncol=4)
+        #plt.xlabel(r'$t\;(GM/c^3)$')
+        plotlist[0].set_ylabel(r'$h/r$',fontsize=16)
+        plt.setp( plotlist[0].get_xticklabels(), visible=False)
+        plotlist[0].grid(True)
+        #
+        #plotlist[1].subplot(212,sharex=True)
+        plotlist[1].plot(ts,(-vus1hor*dxdxp[1][1][:,0,0])[:,ihor],label=r'$-u^r_{\rm h}$')
+        plotlist[1].plot(ts,(-vus1hor*dxdxp[1][1][:,0,0])[:,iofr(2)],label=r'$-u^r_{\rm 2}$') ##### continue here
+        plotlist[1].plot(ts,(-vus1hor*dxdxp[1][1][:,0,0])[:,iofr(4)],label=r'$-u^r_{\rm 4}$')
+        plotlist[1].plot(ts,(-vus1hor*dxdxp[1][1][:,0,0])[:,iofr(8)],label=r'$-u^r_{\rm 8}$')
+        #plotlist[1].plot(ts,(-vus1hor*dxdxp[1][1][:,0,0])[:,iofr(10)],label=r'$-u^r_{\rm 10}$')
+        #plotlist[1].plot(ts,(-vus1hor*dxdxp[1][1][:,0,0])[:,iofr(12)],label=r'$-u^r_{\rm 12}$')
+        #plotlist[1].plot(ts,(-vus1hor*dxdxp[1][1][:,0,0])[:,iofr(15)],label=r'$-u^r_{\rm 15}$')
+        plotlist[1].legend(loc='upper right')
+        #plotlist[1].set_xlabel(r'$t\;(GM/c^3)$')
+        plotlist[1].set_ylabel(r'$u^r$',fontsize=16)
+        plt.setp( plotlist[1].get_xticklabels(), visible=False)
+
+        plotlist[2].plot(ts,rhoshor[:,ihor],label=r'$\rho_{\rm h}$')
+        plotlist[2].plot(ts,rhoshor[:,iofr(2)],label=r'$\rho_{\rm 2}$') ##### continue here
+        plotlist[2].plot(ts,rhoshor[:,iofr(4)],label=r'$\rho_{\rm 4}$')
+        plotlist[2].plot(ts,rhoshor[:,iofr(8)],label=r'$\rho_{\rm 8}$')
+        #plotlist[2].plot(ts,rhoshor[:,iofr(10)],label=r'$\rho_{\rm 10}$')
+        #plotlist[2].plot(ts,rhoshor[:,iofr(12)],label=r'$\rho_{\rm 12}$')
+        #plotlist[2].plot(ts,rhoshor[:,iofr(15)],label=r'$\rho_{\rm 15}$')
+        plotlist[2].legend(loc='upper left')
+        #plotlist[2].set_xlabel(r'$t\;(GM/c^3)$')
+        plotlist[2].set_ylabel(r'$\rho$',fontsize=16)
+
+        plotlist[3].plot(ts,(ugshor/rhoshor)[:,ihor],label=r'$u^r_{\rm h}$')
+        plotlist[3].plot(ts,(ugshor/rhoshor)[:,iofr(2)],label=r'$u^r_{\rm 2}$') ##### continue here
+        plotlist[3].plot(ts,(ugshor/rhoshor)[:,iofr(4)],label=r'$u^r_{\rm 4}$')
+        plotlist[3].plot(ts,(ugshor/rhoshor)[:,iofr(8)],label=r'$u^r_{\rm 8}$')
+        #plotlist[3].plot(ts,(ugshor/rhoshor)[:,iofr(10)],label=r'$u^r_{\rm 10}$')
+        #plotlist[3].plot(ts,(ugshor/rhoshor)[:,iofr(12)],label=r'$u^r_{\rm 12}$')
+        #plotlist[3].plot(ts,(ugshor/rhoshor)[:,iofr(15)],label=r'$u^r_{\rm 15}$')
+        plotlist[3].legend(loc='upper left')
+        plotlist[3].set_xlabel(r'$t\;(GM/c^3)$')
+        plotlist[3].set_ylabel(r'$u_g/\rho$',fontsize=16)
+
+        #title("\TeX\ is Number $\displaystyle\sum_{n=1}^\infty\frac{-e^{i\pi}}{2^n}$!", 
+        #      fontsize=16, color='r')
+        plotlist[0].grid(True)
+        plotlist[1].grid(True)
+        plotlist[2].grid(True)
+        plotlist[3].grid(True)
+        fig.savefig('pjet2_%s.pdf' % os.path.basename(os.getcwd()) )
+    
+        plt.figure(3)
+        plt.clf()
+        plt.plot(r[:,0,0],mdotfinavgvsr,label=r'$\dot M_{\rm tot}$')
+        plt.plot(r[:,0,0],mdotfinavgvsr5,label=r'$\dot M_{b^2/\rho<5}$')
+        plt.plot(r[:,0,0],mdotfinavgvsr10,label=r'$\dot M_{b^2/\rho<10}$')
+        plt.plot(r[:,0,0],mdotfinavgvsr20,label=r'$\dot M_{b^2/\rho<20}$')
+        plt.plot(r[:,0,0],mdotfinavgvsr30,label=r'$\dot M_{b^2/\rho<30}$')
+        plt.plot(r[:,0,0],mdotfinavgvsr40,label=r'$\dot M_{b^2/\rho<40}$')
+        plt.xlim(1+(1-a**2)**0.5,20)
+        plt.ylim(0,np.max(mdotfinavgvsr[r[:,0,0]<20]))
+        plt.legend(loc='lower right')
+        plt.grid()
+        plt.savefig('pjet3_%s.pdf' % os.path.basename(os.getcwd()) )
+
+        plt.figure(4)
+        plt.clf()
+        rmax=50
+        plt.plot(r[:,0,0],pjemfinavgvsr,'b',label=r'$\dot Pem_{\rm tot}$')
+        plt.plot(r[:,0,0],pjemfinavgvsr5,'g',label=r'$\dot Pem_{b^2/\rho>5}$')
+        #plt.plot(r[:,0,0],pjemfinavgvsr10,'r',label=r'$\dot Pem_{b^2/\rho>10}$')
+        #plt.plot(r[:,0,0],pjemfinavgvsr20,'c',label=r'$\dot Pem_{b^2/\rho>20}$')
+        #plt.plot(r[:,0,0],pjemfinavgvsr30,'m',label=r'$\dot Pem_{b^2/\rho>30}$')
+        #plt.plot(r[:,0,0],pjemfinavgvsr40,'y',label=r'$\dot Pem_{b^2/\rho>40}$')
+        plt.plot(r[:,0,0],pjtotfinavgvsr,'b--',label=r'$\dot P_{\rm tot}$')
+        plt.plot(r[:,0,0],pjtotfinavgvsr5,'g--',label=r'$\dot P_{b^2/\rho>5}$')
+        #plt.plot(r[:,0,0],pjtotfinavgvsr10,'r--',label=r'$\dot P_{b^2/\rho>10}$')
+        #plt.plot(r[:,0,0],pjtotfinavgvsr20,'c--',label=r'$\dot P_{b^2/\rho>20}$')
+        #plt.plot(r[:,0,0],pjtotfinavgvsr30,'m--',label=r'$\dot P_{b^2/\rho>30}$')
+        #plt.plot(r[:,0,0],pjtotfinavgvsr40,'y--',label=r'$\dot P_{b^2/\rho>40}$')
+        plt.xlim(1+(1-a**2)**0.5,rmax)
+        plt.ylim(0,np.max(pjemfinavgvsr[r[:,0,0]<rmax]))
+        plt.legend(loc='lower right',ncol=2)
+        plt.grid()
+        plt.savefig('pjet4_%s.pdf' % os.path.basename(os.getcwd()) )
+
+        plt.figure(5)
+        plt.clf()
+        rmax=200
+        plt.plot(r[:,0,0],phiabsj_mu1vsr,'b',label=r'$\Phi_{\rm j}$')
+        plt.xlim(1+(1-a**2)**0.5,rmax)
+        plt.ylim(0,np.max(phiabsj_mu1vsr[r[:,0,0]<rmax]))
+        plt.legend(loc='lower right',ncol=2)
+        plt.grid()
+        plt.savefig('phi1_%s.pdf' % os.path.basename(os.getcwd()) )
+    #
+    #
+    print("done with residual" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #######################################
+    # Begin full results output
+    #######################################
+    if fullresultsoutput==0:
+        # GODMARK: maybe split calculation and prints/writes, so the below isn't a duplicate calculation
+        # used by some whichplot=None cases
+        hoverr_jet_vsr=np.zeros(nx,dtype=r.dtype)
+        for ii in np.arange(0,nx):
+            hoverr_jet_vsr[ii]=timeavg(hoverr_jet[:,ii],ts,fti,ftf)
+        return(hoverr_jet_vsr)
+    #
+    #
+    #######################################
     #
     #
     #
@@ -8387,8 +8883,8 @@ def plotqtyvstime(qtymem,whichplot=None,ax=None,findex=None,fti=None,ftf=None,sh
     #
     dodatavsrh=1
     dodatavst=1
-    dopowervsmplots=1
-    dospacetimeplots=1
+    dopowervsmplots=makepowervsmplots
+    dospacetimeplots=makespacetimeplots
     dofftplot=1
     dospecplot=1
     #
@@ -8806,7 +9302,7 @@ def plotqtyvstime(qtymem,whichplot=None,ax=None,findex=None,fti=None,ftf=None,sh
         iq2mridiskweak_vsr=np.zeros(nx,dtype=r.dtype)
         #
         favg6 = open('datavsr6.txt', 'w')
-        favg6.write("%s %s %s %s %s %s %s  %s %s %s %s %s %s %s\n" % ("ii","rnyO2","dtheta","dphi","drvsr","dHvsr","dPvsr","hoverr_vsr","hoverrcorona_vsr","hoverr_jet_vsr","qmridisk_vsr","iq2mridisk_vsr","qmridiskweak_vsr","iq2mridiskweak_vsr" ) )
+        favg6.write("%s %s %s %s %s %s %s   %s %s %s   %s   %s %s %s %s\n" % ("ii","rnyO2","dtheta","dphi","drvsr","dHvsr","dPvsr","hoverr_vsr","hoverrcorona_vsr","hoverr_jet_vsr","thetaalongfield","qmridisk_vsr","iq2mridisk_vsr","qmridiskweak_vsr","iq2mridiskweak_vsr" ) )
         #
         #
         for ii in np.arange(0,nx):
@@ -8825,35 +9321,49 @@ def plotqtyvstime(qtymem,whichplot=None,ax=None,findex=None,fti=None,ftf=None,sh
             dthetaeq_vsr=dxdxp[2][2][:,ny/2,0]*_dx2
             dphieq_vsr=dxdxp[3][3][:,ny/2,0]*_dx3
             #
-            # cat datavsr6.txt | awk '{print $1" "$2" "$3" "$8" "$8/$3}' | column -t | less -S
-            #
-            favg6.write("%d %g %g %g %g %g %g  %g %g %g %g %g %g %g\n" % (ii,r[ii,ny/2,0],dthetaeq_vsr[ii],dphieq_vsr[ii],drvsr[ii],dHvsr[ii],dPvsr[ii],hoverr_vsr[ii],hoverrcorona_vsr[ii],hoverr_jet_vsr[ii],qmridisk_vsr[ii],iq2mridisk_vsr[ii],qmridiskweak_vsr[ii],iq2mridiskweak_vsr[ii]) )
+        # get thetaalongfield
+        aphijetbase,thetaalongfield=compute_thetaalongfield(picki=ihor,thetaalongjet=hoverr_jet_vsr)
+        #
+        # cat datavsr6.txt | awk '{print $1" "$2" "$3" "$8" "$8/$3}' | column -t | less -S
+        for ii in np.arange(0,nx):
+            favg6.write("%d %g %g %g %g %g %g  %g %g %g  %g   %g %g %g %g\n" % (ii,r[ii,ny/2,0],dthetaeq_vsr[ii],dphieq_vsr[ii],drvsr[ii],dHvsr[ii],dPvsr[ii],hoverr_vsr[ii],hoverrcorona_vsr[ii],hoverr_jet_vsr[ii],thetaalongfield[ii],qmridisk_vsr[ii],iq2mridisk_vsr[ii],qmridiskweak_vsr[ii],iq2mridiskweak_vsr[ii]) )
             #
         favg6.close()
         # get fit
+        ijetout=iofr(rjetout)
         hoverr_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(hoverr_vsr[iin:iout])),1)
         hoverrcorona_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(hoverrcorona_vsr[iin:iout])),1)
-        hoverr_jet_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(hoverr_jet_vsr[iin:iout])),1)
+        hoverr_jet_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:ijetout,0,0])),np.log10(np.fabs(hoverr_jet_vsr[iin:ijetout])),1)
+        # below stalls python for some reason
+        #thetaalongfield_fit=np.polyfit(np.log10(np.fabs(r[iin:ijetout,0,0])),np.log10(np.fabs(thetaalongfield[iin:ijetout])),1)
+        print("wtf1") ; sys.stdout.flush()
         qmridisk_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(qmridisk_vsr[iin:iout])),1)
+        print("wtf2") ; sys.stdout.flush()
         iq2mridisk_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(iq2mridisk_vsr[iin:iout])),1)
+        print("wtf3") ; sys.stdout.flush()
         qmridiskweak_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(qmridiskweak_vsr[iin:iout])),1)
+        print("wtf4") ; sys.stdout.flush()
         iq2mridiskweak_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(iq2mridiskweak_vsr[iin:iout])),1)
         #
+        #print("hoverr_jet_vsr_fit=%g thetaalongfield_fit=%g" % (hoverr_jet_vsr_fit[0],thetaalongfield_fit[0]))
+        print("hoverr_jet_vsr_fit=%g" % (hoverr_jet_vsr_fit[0]))
         #
         # output fit power-law index for various quantities
-        print( "HLatex12: ModelName & $r^{\\rm{}dc}_{\\rm{}i}$ & $r^{\\rm{}dc}_{\\rm{}o}$ & $r^{\\rm{}dc}_{\\rm{}s}$ & $\\rho$ & $p_g$ & $v_r$ & $v_\\phi$ & $b_r$ & $b_\\theta$ & $b_\\phi$ & $|b|$ & $\\dot{M}_{\\rm{}in}$ & $\\dot{M}_{\\rm{}mw}$ & $\\dot{M}_{\\rm{}w}$   \\\\" )
+        print( "HLatex12: ModelName & $r^{\\rm{}dc}_{\\rm{}i}$ & $r^{\\rm{}dc}_{\\rm{}o}$ & $r^{\\rm{}dc}_{\\rm{}s}$ & $\\rho$ & $p_g$ & $|v_r|$ & $|v_\\phi|$ & $|b_r|$ & $|b_\\theta|$ & $|b_\\phi|$ & $|b|$ & $\\dot{M}_{\\rm{}in}$ & $\\dot{M}_{\\rm{}mw}$ & $\\dot{M}_{\\rm{}w}$   \\\\" )
         print( "VLatex12: %s        & %g            & %g            & %g              & %g      & %g    & %g    & %g        & %g    & %g          & %g        & %g    & %g                    & %g                    & %g                     \\\\ %% %s" % (truemodelname, roundto2(rfitin),roundto2(rfitout),roundto2(rstagequse),roundto2(rhosrhosq_vsr_fit[0]),roundto2(ugsrhosq_vsr_fit[0]),roundto2(vuas1rhosq_vsr_fit[0]),roundto2(vuas3rhosq_vsr_fit[0]),roundto2(bas1rhosq_vsr_fit[0]),roundto2(bas2rhosq_vsr_fit[0]),roundto2(bas3rhosq_vsr_fit[0]),roundto2(brhosq_vsr_fit[0]),roundto2(mdin_vsr_fit[0]),roundto2(mdmwind_vsr_fit[0]),roundto2(mdwind_vsr_fit[0]) , modelname ) )
         #
-        print( "HLatex93: ModelName & $\\rho^{\\rm{}dc}$ & $p_g^{\\rm{}dc}$ & $v_r^{\\rm{}dc}$ & $v_\\phi^{\\rm{}dc}$ & $b_r^{\\rm{}dc}$ & $b_\\theta^{\\rm{}dc}$ & $b_\\phi^{\\rm{}dc}$ & $|b|^{\\rm{}dc}$ & $\\rho^{\\rm{}eq}$ & $p^{\\rm{}eq}_g$ & $v^{\\rm{}eq}_r$ & $v^{\\rm{}eq}_\\phi$ & $b^{\\rm{}eq}_r$ & $b^{\\rm{}eq}_\\theta$ & $b^{\\rm{}eq}_\\phi$ & $|b|^{\\rm{}eq}$ & $\\dot{M}_{\\rm{}in}$ & $\\dot{M}_{\\rm{}mw}$ & $\\dot{M}_{\\rm{}w}$   \\\\" )
+        print( "HLatex93: ModelName & $\\rho^{\\rm{}dc}$ & $p_g^{\\rm{}dc}$ & $v_r^{\\rm{}dc}$ & $v_\\phi^{\\rm{}dc}$ & $b_r^{\\rm{}dc}$ & $b_\\theta^{\\rm{}dc}$ & $b_\\phi^{\\rm{}dc}$ & $|b|^{\\rm{}dc}$ & $\\rho^{\\rm{}hor}$ & $p^{\\rm{}hor}_g$ & $v^{\\rm{}hor}_r$ & $v^{\\rm{}hor}_\\phi$ & $b^{\\rm{}hor}_r$ & $b^{\\rm{}hor}_\\theta$ & $b^{\\rm{}hor}_\\phi$ & $|b|^{\\rm{}hor}$ & $\\dot{M}_{\\rm{}in}$ & $\\dot{M}_{\\rm{}mw}$ & $\\dot{M}_{\\rm{}w}$   \\\\" )
         print( "VLatex93: %s         & %g     & %g    & %g    & %g        & %g    & %g          & %g        & %g    & %g        & %g      & %g      & %g          & %g      & %g            & %g          & %g      & %g                    & %g                    & %g                     \\\\ %% %s" % (truemodelname, roundto2(rhosrhosq_vsr_fit[0]),roundto2(ugsrhosq_vsr_fit[0]),roundto2(vuas1rhosq_vsr_fit[0]),roundto2(vuas3rhosq_vsr_fit[0]),roundto2(bas1rhosq_vsr_fit[0]),roundto2(bas2rhosq_vsr_fit[0]),roundto2(bas3rhosq_vsr_fit[0]),roundto2(brhosq_vsr_fit[0]),roundto2(rhoshor_vsr_fit[0]),roundto2(ugshor_vsr_fit[0]),roundto2(vuas1hor_vsr_fit[0]),roundto2(vuas3hor_vsr_fit[0]),roundto2(bas1hor_vsr_fit[0]),roundto2(bas2hor_vsr_fit[0]),roundto2(bas3hor_vsr_fit[0]),roundto2(bhor_vsr_fit[0]),roundto2(mdin_vsr_fit[0]),roundto2(mdmwind_vsr_fit[0]),roundto2(mdwind_vsr_fit[0]) , modelname ) )
         print( "HLatex94: ModelName & $\\rho^{\\rm{}dc}$ & $p_g^{\\rm{}dc}$ & $v_r^{\\rm{}dc}$ & $v_\\phi^{\\rm{}dc}$ & $b_r^{\\rm{}dc}$ & $b_\\theta^{\\rm{}dc}$ & $b_\\phi^{\\rm{}dc}$ & $|b|^{\\rm{}dc}$ & $\\rho^{\\rm{}eq}$ & $p^{\\rm{}eq}_g$ & $v^{\\rm{}eq}_r$ & $v^{\\rm{}eq}_\\phi$ & $b^{\\rm{}eq}_r$ & $b^{\\rm{}eq}_\\theta$ & $b^{\\rm{}eq}_\\phi$ & $|b|^{\\rm{}eq}$ & $\\dot{M}_{\\rm{}in}$ & $\\dot{M}_{\\rm{}mw}$ & $\\dot{M}_{\\rm{}w}$   \\\\" )
         print( "VLatex94: %s         & %g     & %g    & %g    & %g        & %g    & %g          & %g        & %g    & %g        & %g      & %g      & %g          & %g      & %g            & %g          & %g      & %g                    & %g                    & %g                     \\\\ %% %s" % (truemodelname, roundto2(rhosrhosq_vsr_fit[0]),roundto2(ugsrhosq_vsr_fit[0]),roundto2(vuas1rhosq_vsr_fit[0]),roundto2(vuas3rhosq_vsr_fit[0]),roundto2(bas1rhosq_vsr_fit[0]),roundto2(bas2rhosq_vsr_fit[0]),roundto2(bas3rhosq_vsr_fit[0]),roundto2(brhosq_vsr_fit[0]),roundto2(rhosrhosqeq_vsr_fit[0]),roundto2(ugsrhosqeq_vsr_fit[0]),roundto2(vuas1rhosqeq_vsr_fit[0]),roundto2(vuas3rhosqeq_vsr_fit[0]),roundto2(bas1rhosqeq_vsr_fit[0]),roundto2(bas2rhosqeq_vsr_fit[0]),roundto2(bas3rhosqeq_vsr_fit[0]),roundto2(brhosqeq_vsr_fit[0]),roundto2(mdin_vsr_fit[0]),roundto2(mdmwind_vsr_fit[0]),roundto2(mdwind_vsr_fit[0]) , modelname ) )
         #
+        sys.stdout.flush()
         #
         #
     #
     if dodatavsrh==1 or dofftplot==1 or dospecplot==1:
     #
+        print("wtfa1") ; sys.stdout.flush()
         ###################
         # h1
         ###################
@@ -8916,6 +9426,7 @@ def plotqtyvstime(qtymem,whichplot=None,ax=None,findex=None,fti=None,ftf=None,sh
         ###################
         # h2
         ###################
+        print("wtfa2") ; sys.stdout.flush()
         # now interpolate from size ny to size nx
         # get \theta at r=8 in size of nx rather than ny
         xold=tj[0,0,0]+(tj[0,:,0]-tj[0,0,0])/(tj[0,-1,0]-tj[0,0,0])
@@ -9125,10 +9636,10 @@ def plotqtyvstime(qtymem,whichplot=None,ax=None,findex=None,fti=None,ftf=None,sh
         nfft=nz/2+1
         numm=min(nx,nfft)
         #
-        print("rhosrhosq_diskcorona_phipow_rad4") ; sys.stdout.flush()
-        print(rhosrhosq_diskcorona_phipow_rad4) ; sys.stdout.flush()
-        print("rhosrhosq_jet_phipow_rad4") ; sys.stdout.flush()
-        print(rhosrhosq_jet_phipow_rad4) ; sys.stdout.flush()
+        #print("rhosrhosq_diskcorona_phipow_rad4") ; sys.stdout.flush()
+        #print(rhosrhosq_diskcorona_phipow_rad4) ; sys.stdout.flush()
+        #print("rhosrhosq_jet_phipow_rad4") ; sys.stdout.flush()
+        #print(rhosrhosq_jet_phipow_rad4) ; sys.stdout.flush()
         ################################
         # Power vs. m for disk+corona
         ################################
@@ -9635,17 +10146,21 @@ def plotqtyvstime(qtymem,whichplot=None,ax=None,findex=None,fti=None,ftf=None,sh
         # Consider particular slices of the tvsr or tvsh plots for Fourier analysis to see if QPOs clearly present as apparant by eye.
         # http://linuxgazette.net/115/andreasen.html
         #
+        # condition for using data is that is within averaging time range
+        condt = (ts<ftf)*(ts>=fti)
+        # often include final data dump even if not part of periodically chosen set, so avoid for this Fourier measure to avoid contamination
+        condt = condt*(ts!=ts[-1])
         #
         #
-        # note goes from 1:len(ts) since usually want to avoid t=0 in case offset from rest of data
-        xvalue=ts[1:len(ts)]
+        xvalue=ts[condt]
         pickradius=4.0 # must be consistent with where yvalue was picked
         iradius=iofr(pickradius)
+        picktheta=np.pi*0.5 + 10.0*hoverr_vsr[iradius]
         #picktheta=np.pi*0.5 + 0.0*hoverr_vsr[iradius] # not visible
         #picktheta=np.pi*0.5 + 1.0*hoverr_vsr[iradius] # not as visible
         #picktheta=np.pi*0.5 + 2.0*hoverr_vsr[iradius] # not as visible
         #picktheta=np.pi*0.5 + 4.0*hoverr_vsr[iradius] # kinda visible
-        picktheta=np.pi*0.5 + 8.0*hoverr_vsr[iradius] # very visible
+        #picktheta=np.pi*0.5 + 8.0*hoverr_vsr[iradius] # very visible
         #picktheta=np.pi*0.5 + 10.0*hoverr_vsr[iradius] # very visible
         if picktheta>0.95*np.pi:
             picktheta=0.95*np.pi
@@ -9654,11 +10169,10 @@ def plotqtyvstime(qtymem,whichplot=None,ax=None,findex=None,fti=None,ftf=None,sh
         pickj=jofh(picktheta,iradius)
         testfft=0
         if testfft==0:
-            # note goes from 1:len(ts) since usually want to avoid t=0 in case offset from rest of data
-            #yvalue=bs3rhosqrad4[1:len(ts),pickj] # 8,10 very visible
-            #yvalue=bsqrhosqrad4[1:len(ts),pickj] # kinda visible at 8
-            yvalue=vus3rhosqrad4[1:len(ts),pickj] # very large spike for 8
-            #yvalue=Bs2rhosqrad4[1:len(ts),pickj] # kinda visible at 8
+            yvalue=bs3rhosqrad4[condt,pickj] # 8,10 very visible (more robust)
+            #yvalue=bsqrhosqrad4[condt,pickj] # kinda visible at 8
+            #yvalue=vus3rhosqrad4[condt,pickj] # very large spike for 8 (too noisy in general)
+            #yvalue=Bs2rhosqrad4[condt,pickj] # kinda visible at 8
         else:
             taupick=65.0
             yvalue=np.sin(2.0*np.pi*(xvalue/taupick))
@@ -9674,7 +10188,10 @@ def plotqtyvstime(qtymem,whichplot=None,ax=None,findex=None,fti=None,ftf=None,sh
         normpowerfft = np.absolute(Yfft[1:nfft])/np.sum(np.absolute(Yfft[0:nfft]))
         #print("normpowerfft")
         #print(normpowerfft)
-        nyquistfft=1.0/(2.0*(ts[-1]-ts[-2]))
+        DTavg=ts[condt][-1]-ts[condt][0]
+        dtavg=ts[condt][-1]-ts[condt][-2]
+        nyquistfft=1.0/(2.0*dtavg)
+        print("DTavg=%g dtavg=%g nyquistfft=%g" % (DTavg,dtavg,nyquistfft))
         freqfft=np.arange(nfft)/(1.0*nfft)*nyquistfft
         periodfft=1./freqfft
         #print(periodfft[1:len(periodfft)])
@@ -9694,16 +10211,40 @@ def plotqtyvstime(qtymem,whichplot=None,ax=None,findex=None,fti=None,ftf=None,sh
         xtoplot=periodfft[1:len(periodfft)]
         ytoplot=normpowerfft
         plt.plot(xtoplot,ytoplot)
-        #plt.axis('tight')
+        plt.axis('tight')
         plt.xscale('log')
         plt.yscale('log')
         #plt.xlim(np.log10(xtoplot[0]),np.log10(xtoplot[-1]))
         #plt.ylim(np.log10(ytoplot[0]),np.log10(ytoplot[-1]))
         plt.xlabel(r"Period [$\tau$]",ha='center',labelpad=6)
         plt.ylabel(r"Power Density",ha='center',labelpad=6)
-        plt.savefig("fft1.pdf")#,bbox_inches='tight',pad_inches=0.1)
-        plt.savefig("fft1.eps")#,bbox_inches='tight',pad_inches=0.1)
-        plt.savefig("fft1.png")#,bbox_inches='tight',pad_inches=0.1)
+        #
+        # need resolution to show all time resolution -- space is resolved normally
+        #
+        # total size in inches
+        xinches=6.0
+        yinches=6.0
+        # non-plotting part that takes up space
+        xnonplot=0.75
+        ynonplot=0.75
+        DPIy=len(ytoplot)/(yinches-ynonplot)
+        DPIx=len(xtoplot)/(xinches-xnonplot)
+        maxresx=10000
+        maxresy=10000
+        maxDPIx=maxresx/xinches
+        maxDPIy=maxresy/yinches
+        DPIx=min(DPIx,maxDPIx)
+        DPIy=min(DPIy,maxDPIy)
+        DPI=max(DPIx,DPIy)
+        resx=DPI*xinches
+        resy=DPI*yinches
+        F = pylab.gcf()
+        F.set_size_inches( (xinches, yinches) )
+        print("fft Resolution should be %i x %i pixels from DPI=%d (DPIxy=%d %d)" % (resx,resy,DPI,DPIx,DPIy))
+        #
+        plt.savefig("fft1.pdf",dpi=DPI)#,bbox_inches='tight',pad_inches=0.1)
+        plt.savefig("fft1.eps",dpi=DPI)#,bbox_inches='tight',pad_inches=0.1)
+        plt.savefig("fft1.png",dpi=DPI)#,bbox_inches='tight',pad_inches=0.1)
     #########################################################################################
     #
     #
@@ -9720,6 +10261,42 @@ def plotqtyvstime(qtymem,whichplot=None,ax=None,findex=None,fti=None,ftf=None,sh
         from scipy import fftpack
         #
         # xvalue,yvalue
+        dosameasfft=0
+        if dosameasfft==0:
+            # show all times, no need to restrict
+            condt = (ts>0)
+            #
+            #
+            xvalue=ts[condt]
+            pickradius=4.0 # must be consistent with where yvalue was picked
+            iradius=iofr(pickradius)
+            picktheta=np.pi*0.5 + 10.0*hoverr_vsr[iradius]
+            if picktheta>0.95*np.pi:
+                picktheta=0.95*np.pi
+            if picktheta<0.01:
+                picktheta=0.01
+            pickj=jofh(picktheta,iradius)
+            testfft=0
+            if testfft==0:
+                yvalue=bs3rhosqrad4[condt,pickj] # 8,10 very visible (more robust)
+                #yvalue=bsqrhosqrad4[condt,pickj] # kinda visible at 8
+                #yvalue=vus3rhosqrad4[condt,pickj] # very large spike for 8 (too noisy in general)
+                #yvalue=Bs2rhosqrad4[condt,pickj] # kinda visible at 8
+            else:
+                taupick=65.0
+                yvalue=np.sin(2.0*np.pi*(xvalue/taupick))
+            #
+            print("picktheta=%g pickj=%d" % (picktheta,pickj)); sys.stdout.flush()
+            Yfft=np.fft.rfft(yvalue)
+            nfft=len(Yfft)
+            print("nfft(ninput/2+1)=%d" % (nfft)); sys.stdout.flush()
+            normpowerfft = np.absolute(Yfft[1:nfft])/np.sum(np.absolute(Yfft[0:nfft]))
+            DTavg=ts[condt][-1]-ts[condt][0]
+            dtavg=ts[condt][-1]-ts[condt][-2]
+            nyquistfft=1.0/(2.0*dtavg)
+            print("DTavg=%g dtavg=%g nyquistfft=%g" % (DTavg,dtavg,nyquistfft))
+            freqfft=np.arange(nfft)/(1.0*nfft)*nyquistfft
+            periodfft=1./freqfft
         #
         #    spec=matplotlib.mlab.specgram(yvalue,NFFT=50,Fs=2.0*nyquistfft,noverlap=10)
         fig = plt.figure()
@@ -9730,8 +10307,10 @@ def plotqtyvstime(qtymem,whichplot=None,ax=None,findex=None,fti=None,ftf=None,sh
         ax = fig.add_subplot(111)
         #spec_img,freq,_ = matplotlib.mlab.specgram(yvalue,NFFT=16,noverlap=4,Fs=2.0*nyquistfft)
         # get equal resolution in frequency and time for this specgram
-        myNFFT=np.int_(np.rint(np.floor(np.sqrt(len(ts)))/2)*2)
-        noverlap=4
+        #myNFFT=np.int_(np.rint(np.floor(np.sqrt(len(ts)))/2)*2)
+        myNFFT=np.int_(np.rint(np.floor(np.sqrt(len(ts)))/2)*2)*2
+        #myNFFT=len(ts)/16
+        noverlap=0
         if myNFFT<noverlap-1:
             noverlap=myNFFT-1
         print("myNFFT=%d noverlap=%d" % (myNFFT,noverlap) ); sys.stdout.flush()
@@ -9745,22 +10324,31 @@ def plotqtyvstime(qtymem,whichplot=None,ax=None,findex=None,fti=None,ftf=None,sh
         print("spec_img"); sys.stdout.flush()
         print(spec_img)
         t = np.linspace(xvalue.min(), xvalue.max(), spec_img.shape[1])
-        spec_img = np.log10(spec_img)
+        dologz=1
+        if dologz==1:
+            spec_img = np.log10(spec_img)
+        #
         ax.set_yscale('log')
         # avoid period=inf or freq=0
         periodtoplot=period[1:len(period)]
-        spectoplot=spec_img[:,1:len(period)]
+        # note that even though pcolormesh takes t,period,spec, args of spec are period,t !!
+        spectoplot=spec_img[1:len(period),:]
+        ttoplot=t[:]
         if len(periodtoplot>2) and len(spectoplot)>2:
-            im = ax.pcolormesh(t, periodtoplot, spectoplot)
+            im = ax.pcolormesh(ttoplot, periodtoplot, spectoplot)
+            #im = ax.pcolormesh(t, period, spec_img)
             cax = make_legend_axes(ax)
-            cbar = fig.colorbar(im, cax=cax, format=r'$10^{%0.1f}$')
-            cbar.set_label('Power Density', rotation=-90)
+            if dologz==1:
+                cbar = fig.colorbar(im, cax=cax, format=r'$10^{%0.1f}$')
+                cbar.set_label('Power Density', rotation=-90)
+            else:
+                cbar = fig.colorbar(im, cax=cax, )
+                cbar.set_label('Power Density', rotation=-90)
             #ax.set_ylim([freq[1], freq.max()])
             # periodtoplot is backwards
             ax.set_ylim([periodtoplot[-1], periodtoplot[0]])
             # Hide x-axis tick labels
             #plt.setp(ax.get_xticklabels(), visible=False)
-
             #print("spec")
             #print(spec)
             #extent=(-spec[,len,-len,len)
@@ -9801,31 +10389,42 @@ def plotqtyvstime(qtymem,whichplot=None,ax=None,findex=None,fti=None,ftf=None,sh
             #
             # need resolution to show all time resolution -- space is resolved normally
             #
+            xtoplot=t
+            ytoplot=periodtoplot
+            #
             # total size in inches
-            if 0==1:
-                xinches=3.0
-                yinches=6.0
-                # non-plotting part that takes up space
-                xnonplot=1.5
-                ynonplot=0.75
-                DPIy=len(ts)/(yinches-ynonplot)
-                DPIx=len(r[:,0,0])/(xinches-xnonplot)
-                maxresx=10000
-                maxresy=10000
-                maxDPIx=maxresx/xinches
-                maxDPIy=maxresy/yinches
-                DPIx=min(DPIx,maxDPIx)
-                DPIy=min(DPIy,maxDPIy)
-                DPI=max(DPIx,DPIy)
+            xinches=6.0
+            yinches=6.0
+            # non-plotting part that takes up space
+            xnonplot=0.75
+            ynonplot=0.75
+            DPIy=len(ytoplot)/(yinches-ynonplot)
+            DPIx=len(xtoplot)/(xinches-xnonplot)
+            maxresx=10000
+            maxresy=10000
+            maxDPIx=maxresx/xinches
+            maxDPIy=maxresy/yinches
+            DPIx=min(DPIx,maxDPIx)
+            DPIy=min(DPIy,maxDPIy)
+            DPI=max(DPIx,DPIy)
+            resx=DPI*xinches
+            resy=DPI*yinches
+            minres=600
+            if resx<minres:
+                DPI=minres/xinches
                 resx=DPI*xinches
                 resy=DPI*yinches
-                F.set_size_inches( (xinches, yinches) )
-                print("Resolution should be %i x %i pixels from DPI=%d (DPIxy=%d %d)" % (resx,resy,DPI,DPIx,DPIy)); sys.stdout.flush()
+            if resy<minres:
+                DPI=minres/yinches
+                resx=DPI*xinches
+                resy=DPI*yinches
             #
+            F = pylab.gcf()
+            F.set_size_inches( (xinches, yinches) )
+            print("fft Resolution should be %i x %i pixels from DPI=%d (DPIxy=%d %d)" % (resx,resy,DPI,DPIx,DPIy))
             #
-            DPI=200
-            plt.savefig( "plotspec1.png" ,dpi=DPI)
-            plt.savefig( "plotspec1.eps" ,dpi=DPI)
+            plt.savefig( "spec1.png" ,dpi=DPI)
+            plt.savefig( "spec1.eps" ,dpi=DPI)
             #
             #sys.stdout.flush()
         else:
@@ -9840,356 +10439,151 @@ def plotqtyvstime(qtymem,whichplot=None,ax=None,findex=None,fti=None,ftf=None,sh
     #
     #
     #
-    #
-    #
-    print("residual" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    if whichplot == -1:
-        etajetavg = pjetfinavg/mdotfinavg
-        foutpower = open( "pjet_power_%s.txt" %  os.path.basename(os.getcwd()), "w" )
-        #foutpower.write( "#Name a Mdot   Pjet    Etajet  Psitot Psisqtot**0.5 Psijet Psisqjet**0.5 rstag Pjtotmax Pjtot1rstag Pjtot2rstag Pjtot4rstag Pjtot8rstag\n"  )
-        foutpower.write( "%s %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n" % (os.path.basename(os.getcwd()), a, mdotfinavg, 
-                                                                       pjetfinavg, etajetavg, fstotfinavg, 
-                                                                       fstotsqfinavg, fsj30finavg, fsj30sqfinavg, 
-                                                                       rstag, pjtotfinavgvsr5max, pjtotfinavgvsr5rstag, 
-                                                                       pjtotfinavgvsr5r2stag, pjtotfinavgvsr5r4stag, pjtotfinavgvsr5r8stag) )
-        #flush to disk just in case to make sure all is written
-        foutpower.flush()
-        os.fsync(foutpower.fileno())
-        foutpower.close()
-        return( mdotfinavg, fstotfinavg, fstotsqfinavg, fsj30finavg, fsj30sqfinavg, pjemfinavgtot )
 
-    if whichplot == -2:
-        return( mdtotvsr, edtotvsr, edmavsr, ldtotvsr )
 
-    if whichplot == -300:
-        #BL metric g_rr
-        rh = 1+(1-a**2)**0.5
-        r1d = r[:,0,0]
-        Sigma = r**2+a**2*np.cos(h)**2
-        Delta = r**2-2*r+a**2
-        gdrr = Sigma/Delta
-        gdtt = -(1-2*r/Sigma)
+
+
+
+
+
+
+# cat datavsr6.txt | awk '{print $1" "$2" "$10" "$11}' | column -t | less -S
+# cat datavsr6.txt | awk '{print $1" "$2" "1.57-$10" "$11}' | column -t > datavsrshare.txt
+def compute_thetaalongfield(aphi=None,picki=None,thetaalongjet=None,whichpole=0):
+    # need to compute this again
+    rhor=1+(1-a**2)**0.5
+    ihor = np.floor(iofr(rhor)+0.5)
+    #
+    if aphi is None:
+        # compute final-time aphi for now
+        rfdlastfile()
+        aphi = fieldcalcface()
+        #maxaphibh=np.max(aphi[ihor,:,0])
         #
-        uutKS = uu[0]
-        uurKS = dxdxp[1,1]*uu[1]
-        uuhKS = dxdxp[2,2]*uu[2] + dxdxp[2,1]*uu[1]
-        uupKS = dxdxp[3,3]*uu[3]
-        uurBL = uurKS
-        uutBL = uutKS - 2*(r/Delta)*uurKS - (a/Delta) * uupKS
-        vurBL = uurBL / uutBL
-        vrBL = gdrr**0.5*vurBL 
-        plt.figure(2)
-        plt.loglog( r1d, -vrBL[:,ny/2].mean(-1), 'r', label=r"$t=%g$" % t )
-        plt.xlim( rh, 100 )
-        plt.ylim( 1e-3, 2 )
-        plt.legend( loc = 'lower left' )
-       
-    if whichplot == -3:
-        #BL metric g_rr
-        rh = 1+(1-a**2)**0.5
-        r1d = r[:,0,0]
-        Sigma = r**2+a**2*np.cos(h)**2
-        Delta = r**2-2*r+a**2
-        gdrr = Sigma/Delta
-        gdtt = -(1-2*r/Sigma)
+        plt.figure(6)
+        myfun=aphi[0:iofr(30.0),:,0]
+        myxcoord=r[0:iofr(30.0),:,0]*np.sin(h[0:iofr(30.0),:,0])
+        myycoord=r[0:iofr(30.0),:,0]*np.cos(h[0:iofr(30.0),:,0])
+        plco(myfun,xcoord=myxcoord,ycoord=myycoord,colors='k',nc=30)
+        #plco(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),colors='k',nc=30)
+        #plc(daphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,),colors='r')
+        #d=500
+        #plt.xlim(0,d/2.); plt.ylim(-d,d)
+        #plc(aphi-maxaphibh,levels=(0,),colors='b',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        plt.savefig("aphi.pdf")
+        plt.savefig("aphi.eps")
+        plt.savefig("aphi.png")
         #
-        uutKS = uu02h
-        uurKS = dxdxp[1,1,None,:,ny/2,0]*uus12h
-        uupKS = dxdxp[3,3,None,:,ny/2,0]*uus32h
-        uurBL = uurKS
-        uutBL = uutKS - 2*(r/Delta)[None,:,ny/2,0]*uurKS - (a/Delta)[None,:,ny/2,0] * uupKS
-        vurBL = uurBL / uutBL
-        vrBL = gdrr[None,:,ny/2,0]**0.5*vurBL 
-        t1 = 0.5e4
-        t2 = 1e4
-        avg1_vr = timeavg(vrBL,ts,t1,t2) 
-        t1 = 1e4
-        t2 = 1.5e4
-        avg2_vr = timeavg(vrBL,ts,t1,t2) 
-        t1 = 1.5e4
-        t2 = 2e4
-        avg3_vr = timeavg(vrBL,ts,t1,t2) 
-        plt.figure(1)
-        plt.loglog( r1d, -avg1_vr, 'r', label=r"$5,000<t<10,000$" )
-        plt.loglog( r1d, -avg2_vr, 'g', label=r"$10,000<t<15,000$" )
-        plt.loglog( r1d, -avg3_vr, 'b', label=r"$15,000<t<20,000$" )
-        plt.xlim( rh, 200 )
-        plt.ylim( 1e-3, 2 )
-        plt.grid()
-        plt.ylabel( r"$v_{\hat r}$", fontsize = 20 )
-        plt.xlabel( r"$r$", fontsize = 20 )
-        plt.legend( loc = 'upper right' )
-
-    if whichplot == -4:
-        rh = 1+(1-a**2)**0.5
-        r1d = r[:,0,0]
-        plt.figure(1)
-        plt.loglog( r1d, timeavg(rhos2h,ts,5000,10000), 'r', label=r"$5,000<t<10,000$" )
-        plt.loglog( r1d, timeavg(rhos2h,ts,10000,15000), 'g', label=r"$10,000<t<15,000$" )
-        plt.loglog( r1d, timeavg(rhos2h,ts,15000,20000), 'b', label=r"$15,000<t<20,000$" )
-        plt.xlabel(r"$r$", fontsize = 15)
-        plt.ylabel(r"$\rho$", fontsize = 15)
-        plt.xlim( rh, 100 )
-        plt.ylim( 1e-2, 15 )
-        plt.grid()
-        plt.legend( loc = 'lower left' )
-
-    #if whichplot == -5:
-        
-    if whichplot == None:
-        fig,plotlist=plt.subplots(nrows=4,ncols=1,sharex=True,figsize=(12,16),num=1)
-        #plt.clf()
-        plottitle = "a = %g: %s" % ( a, os.path.basename(os.getcwd()) )
-        plt.suptitle( plottitle )
-        plt.subplots_adjust(hspace=0.1) #increase vertical spacing to avoid crowding
-        print fstot[:,ihor].shape
-        plotlist[0].plot(ts,fstot[:,ihor],label=r'$\Phi_{\rm h,tot}$')
-        #plotlist[0].plot(ts,fsj5[:,ihor],label=r'$\Phi_{\rm h,5}$')
-        plotlist[0].plot(ts,fsj30[:,ihor],label=r'$\Phi_{\rm h,30}$')
-        #plotlist[0].plot(ts,fs,'r+') #, label=r'$\Phi_{\rm h}/0.5\Phi_{\rm i}$: Data Points')
-        if dotavg:
-            plotlist[0].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+fstotsqfinavg,label=r'$\langle \Phi^2_{\rm h,tot}\rangle^{1/2}$')
-            plotlist[0].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+fsj30sqfinavg,label=r'$\langle \Phi^2_{\rm h,30}\rangle^{1/2}$')
-        plotlist[0].legend(loc='upper left')
-        #plt.xlabel(r'$t\;(GM/c^3)$')
-        plotlist[0].set_ylabel(r'$\Phi_{\rm h}$',fontsize=16)
-        plt.setp( plotlist[0].get_xticklabels(), visible=False)
-        plotlist[0].grid(True)
         #
-        #plotlist[1].subplot(212,sharex=True)
-        #plotlist[1].plot(ts,np.abs(mdtot[:,ihor]),label=r'$\dot M_{\rm h,tot}$')
-        #plotlist[1].plot(ts,np.abs(mdtot[:,ihor]-md5[:,ihor]),label=r'$\dot M_{\rm h,tot,bsqorho<5}$')
-        plotlist[1].plot(ts,np.abs(mdtot[:,ihor]-md10[:,ihor]),label=r'$\dot M_{{\rm h,tot}, b^2/rho<10}$')
-        plotlist[1].plot(ts,np.abs(mdtot[:,ihor]-md30[:,ihor]),label=r'$\dot M_{{\rm h,tot}, b^2/rho<30}$')
-        if dotavg:
-            #plotlist[1].plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+mdotiniavg,label=r'$\langle \dot M_{{\rm h,tot}, b^2/\rho<10}\rangle_{i}$')
-            plotlist[1].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotfinavg,label=r'$\langle \dot M_{{\rm h,tot}, b^2/\rho<10}\rangle_{f}$')
-        #plotlist[1].plot(ts,np.abs(md2h[:,ihor]),label=r'$\dot M_{\rm h,2h}$')
-        #plotlist[1].plot(ts,np.abs(md4h[:,ihor]),label=r'$\dot M_{\rm h,4h}$')
-        #plotlist[1].plot(ts,np.abs(mdhor[:,ihor]),label=r'$\dot M_{\rm h,hor}$')
-        #plotlist[1].plot(ts,np.abs(mdrhosq[:,ihor]),label=r'$\dot M_{\rm h,rhosq}$')
-        #plotlist[1].plot(ts,np.abs(md5[:,ihor]),label=r'$\dot M_{\rm h,5}$')
-        plotlist[1].plot(ts,np.abs(md10[:,ihor]),label=r'$\dot M_{\rm h,10}$')
-        plotlist[1].plot(ts,np.abs(md30[:,ihor]),label=r'$\dot M_{\rm h,30}$')
-        #plotlist[1].plot(ts,np.abs(md[:,ihor]),'r+') #, label=r'$\dot M_{\rm h}$: Data Points')
-        plotlist[1].legend(loc='upper left')
-        #plotlist[1].set_xlabel(r'$t\;(GM/c^3)$')
-        plotlist[1].set_ylabel(r'$\dot M_{\rm h}$',fontsize=16)
-        plt.setp( plotlist[1].get_xticklabels(), visible=False)
-
-        #plotlist[2].plot(ts,(pjem10[:,ihor]),label=r'$P_{\rm j,em10}$')
-        #plotlist[2].plot(ts,(pjem30[:,ihor]),label=r'$P_{\rm j,em30}$')
-        if dotavg:
-            plotlist[2].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg,label=r'$\langle P_{{\rm j,em30}\rangle_{f}}$')
-        plotlist[2].legend(loc='upper left')
-        #plotlist[2].set_xlabel(r'$t\;(GM/c^3)$')
-        plotlist[2].set_ylabel(r'$P_{\rm j}$',fontsize=16)
-
-        #plotlist[3].plot(ts,(pjem10[:,ihor]/mdtot[:,ihor]),label=r'$P_{\rm j,em10}/\dot M_{\rm tot}$')
-        plotlist[3].plot(ts,(pjem5[:,ihor]/(mdtot[:,ihor]-md5[:,ihor])),label=r'$P_{\rm j,em5}/\dot M_{{\rm tot},b^2/\rho<5}$')
-        #plotlist[3].plot(ts,(pjem30[:,ihor]/mdotfinavg),label=r'$\dot \eta_{10}=P_{\rm j,em10}/\dot M_{{\rm tot},b^2/\rho<30}$')
-        if dotavg:
-            #plotlist[3].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg/mdotiniavg,label=r'$\langle P_j\rangle/\langle\dot M_i\rangle_{f}$')
-            plotlist[3].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg/mdotfinavg,'r',label=r'$\langle P_j\rangle/\langle\dot M_f\rangle_{f}$')
-        #plotlist[3].set_ylim(0,6)
-        plotlist[3].legend(loc='upper left')
-        plotlist[3].set_xlabel(r'$t\;(GM/c^3)$')
-        #plotlist[3].set_ylabel(r'$P_{\rm j}/\dot M_{\rm h}$',fontsize=16)
-        plotlist[3].set_ylabel(r'$\eta_{\rm j}$',fontsize=16)
-
-        #title("\TeX\ is Number $\displaystyle\sum_{n=1}^\infty\frac{-e^{i\pi}}{2^n}$!", 
-        #      fontsize=16, color='r')
-        plotlist[0].grid(True)
-        plotlist[1].grid(True)
-        plotlist[2].grid(True)
-        plotlist[3].grid(True)
-        fig.savefig('pjet1_%s.pdf' % os.path.basename(os.getcwd()) )
-
-        #density/velocity/hor figure
-        #!!!rhor=1+(1-a**2)**0.5
-        fig,plotlist=plt.subplots(nrows=4,ncols=1,sharex=True,figsize=(12,16),num=2)
-        #plt.clf()
-        plottitle = r"\rho,u^r,h/r: a = %g: %s" % ( a, os.path.basename(os.getcwd()) )
-        plt.suptitle( plottitle )
-        plt.subplots_adjust(hspace=0.1) #increase vertical spacing to avoid crowding
-        #print fstot[:,ihor].shape
-        plotlist[0].plot(ts,hoverr[:,ihor],label=r'$(h/r)_{\rm h}$')
-        plotlist[0].plot(ts,hoverr[:,iofr(2)],label=r'$(h/r)_{\rm 2}$') ##### continue here
-        plotlist[0].plot(ts,hoverr[:,iofr(4)],label=r'$(h/r)_{\rm 4}$')
-        plotlist[0].plot(ts,hoverr[:,iofr(8)],label=r'$(h/r)_{\rm 8}$')
-        #lotlist[0].plot(ts,hoverr[:,iofr(10)],label=r'$(h/r)_{\rm 10}$')
-        #plotlist[0].plot(ts,hoverr[:,iofr(12)],label=r'$(h/r)_{\rm 12}$')
-        #plotlist[0].plot(ts,hoverr[:,iofr(15)],label=r'$(h/r)_{\rm 15}$')
-        #thetamid
-        plotlist[0].plot(ts,(thetamid-np.pi/2)[:,ihor],'--',label=r'$\theta_{\rm h}$')
-        plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(2)],'--',label=r'$\theta_{\rm 2}$') ##### continue here
-        plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(4)],'--',label=r'$\theta_{\rm 4}$')
-        plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(8)],'--',label=r'$\theta_{\rm 8}$')
-        #plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(10)],'--',label=r'$\theta_{\rm 10}$')
-        #plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(12)],'--',label=r'$\theta_{\rm 12}$')
-        #plotlist[0].plot(ts,(thetamid-np.pi/2)[:,iofr(15)],'--',label=r'$\theta_{\rm 15}$')
-        #plotlist[0].plot(ts,fs,'r+') #, label=r'$\Phi_{\rm h}/0.5\Phi_{\rm i}$: Data Points')
-        #legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
-        plotlist[0].legend(loc='upper right',ncol=4)
-        #plt.xlabel(r'$t\;(GM/c^3)$')
-        plotlist[0].set_ylabel(r'$h/r$',fontsize=16)
-        plt.setp( plotlist[0].get_xticklabels(), visible=False)
-        plotlist[0].grid(True)
+        print("aphi.shape()"); sys.stdout.flush()
+        print(aphi.shape); sys.stdout.flush()
+        # aphi is now 2D (r,\theta) averaged in \phi-direction
+        #aphi = fieldcalc()
+        #iaphi = reinterp(aphi,extent,ncell,domask=0)
+        #aphi = fieldcalc()
+        #iaphi = reinterp(aphi,extent,ncell,domask=0)
+    #
+    ###############
+    # find out aphi value where thetaalongjet[picki]
+    print("thetaalongjet[picki]=%g" % (thetaalongjet[picki]))
+    if whichpole==0:
+        signpole=-1
+    else:
+        signpole=+1
+    #
+    pickh=np.pi*0.5+signpole*thetaalongjet[picki]
+    #
+    print("pickh=%g" % (pickh))
+    pickj=jofh(pickh,picki)
+    # too close to jet and field bends back around potentially.  Also aphi can be very slightly non-monotonic and interp1d then can barf
+    # GODMARK: numjoffset has to be tuned for a given setup/model/etc.
+    # 10 works for runlocaldipole last snapshot, but not for averages (field bleeds into the wind and loops around)
+    numjoffset=16*(ny/128)
+    pickj=pickj+signpole*numjoffset
+    aphijetbase=aphi[picki,pickj,0]
+    print("aphijetbase"); sys.stdout.flush()
+    print(aphijetbase); sys.stdout.flush()
+    #
+    cs = plt.contour(r[:,:,0],h[:,:,0],aphi[:,:,0], [aphijetbase])
+    p = cs.collections[0].get_paths()[0]
+    v = p.vertices
+    x = v[:,0]
+    y = v[:,1]
+    #
+    # find parts that cross horizon since otherwise ambiguous
+    lastx=x[0]
+    maxnumcrosses=1000
+    whichiv=0
+    ivihorlist=np.zeros(maxnumcrosses,dtype=np.float32)
+    dirihorlist=np.zeros(maxnumcrosses,dtype=np.float32)
+    for iv in np.arange(1,len(x)):
+        if (x[iv-1]<rhor and x[iv]>rhor):
+            ivihorlist[whichiv]=iv
+            dirihorlist[whichiv]=+1
+            whichiv=whichiv+1
+        if (x[iv-1]>rhor and x[iv]<rhor):
+            ivihorlist[whichiv]=iv
+            dirihorlist[whichiv]=-1
+            whichiv=whichiv+1
         #
-        #plotlist[1].subplot(212,sharex=True)
-        plotlist[1].plot(ts,(-vus1hor*dxdxp[1][1][:,0,0])[:,ihor],label=r'$-u^r_{\rm h}$')
-        plotlist[1].plot(ts,(-vus1hor*dxdxp[1][1][:,0,0])[:,iofr(2)],label=r'$-u^r_{\rm 2}$') ##### continue here
-        plotlist[1].plot(ts,(-vus1hor*dxdxp[1][1][:,0,0])[:,iofr(4)],label=r'$-u^r_{\rm 4}$')
-        plotlist[1].plot(ts,(-vus1hor*dxdxp[1][1][:,0,0])[:,iofr(8)],label=r'$-u^r_{\rm 8}$')
-        #plotlist[1].plot(ts,(-vus1hor*dxdxp[1][1][:,0,0])[:,iofr(10)],label=r'$-u^r_{\rm 10}$')
-        #plotlist[1].plot(ts,(-vus1hor*dxdxp[1][1][:,0,0])[:,iofr(12)],label=r'$-u^r_{\rm 12}$')
-        #plotlist[1].plot(ts,(-vus1hor*dxdxp[1][1][:,0,0])[:,iofr(15)],label=r'$-u^r_{\rm 15}$')
-        plotlist[1].legend(loc='upper right')
-        #plotlist[1].set_xlabel(r'$t\;(GM/c^3)$')
-        plotlist[1].set_ylabel(r'$u^r$',fontsize=16)
-        plt.setp( plotlist[1].get_xticklabels(), visible=False)
-
-        plotlist[2].plot(ts,rhoshor[:,ihor],label=r'$\rho_{\rm h}$')
-        plotlist[2].plot(ts,rhoshor[:,iofr(2)],label=r'$\rho_{\rm 2}$') ##### continue here
-        plotlist[2].plot(ts,rhoshor[:,iofr(4)],label=r'$\rho_{\rm 4}$')
-        plotlist[2].plot(ts,rhoshor[:,iofr(8)],label=r'$\rho_{\rm 8}$')
-        #plotlist[2].plot(ts,rhoshor[:,iofr(10)],label=r'$\rho_{\rm 10}$')
-        #plotlist[2].plot(ts,rhoshor[:,iofr(12)],label=r'$\rho_{\rm 12}$')
-        #plotlist[2].plot(ts,rhoshor[:,iofr(15)],label=r'$\rho_{\rm 15}$')
-        plotlist[2].legend(loc='upper left')
-        #plotlist[2].set_xlabel(r'$t\;(GM/c^3)$')
-        plotlist[2].set_ylabel(r'$\rho$',fontsize=16)
-
-        plotlist[3].plot(ts,(ugshor/rhoshor)[:,ihor],label=r'$u^r_{\rm h}$')
-        plotlist[3].plot(ts,(ugshor/rhoshor)[:,iofr(2)],label=r'$u^r_{\rm 2}$') ##### continue here
-        plotlist[3].plot(ts,(ugshor/rhoshor)[:,iofr(4)],label=r'$u^r_{\rm 4}$')
-        plotlist[3].plot(ts,(ugshor/rhoshor)[:,iofr(8)],label=r'$u^r_{\rm 8}$')
-        #plotlist[3].plot(ts,(ugshor/rhoshor)[:,iofr(10)],label=r'$u^r_{\rm 10}$')
-        #plotlist[3].plot(ts,(ugshor/rhoshor)[:,iofr(12)],label=r'$u^r_{\rm 12}$')
-        #plotlist[3].plot(ts,(ugshor/rhoshor)[:,iofr(15)],label=r'$u^r_{\rm 15}$')
-        plotlist[3].legend(loc='upper left')
-        plotlist[3].set_xlabel(r'$t\;(GM/c^3)$')
-        plotlist[3].set_ylabel(r'$u_g/\rho$',fontsize=16)
-
-        #title("\TeX\ is Number $\displaystyle\sum_{n=1}^\infty\frac{-e^{i\pi}}{2^n}$!", 
-        #      fontsize=16, color='r')
-        plotlist[0].grid(True)
-        plotlist[1].grid(True)
-        plotlist[2].grid(True)
-        plotlist[3].grid(True)
-        fig.savefig('pjet2_%s.pdf' % os.path.basename(os.getcwd()) )
-    
-        plt.figure(3)
-        plt.clf()
-        plt.plot(r[:,0,0],mdotfinavgvsr,label=r'$\dot M_{\rm tot}$')
-        plt.plot(r[:,0,0],mdotfinavgvsr5,label=r'$\dot M_{b^2/\rho<5}$')
-        plt.plot(r[:,0,0],mdotfinavgvsr10,label=r'$\dot M_{b^2/\rho<10}$')
-        plt.plot(r[:,0,0],mdotfinavgvsr20,label=r'$\dot M_{b^2/\rho<20}$')
-        plt.plot(r[:,0,0],mdotfinavgvsr30,label=r'$\dot M_{b^2/\rho<30}$')
-        plt.plot(r[:,0,0],mdotfinavgvsr40,label=r'$\dot M_{b^2/\rho<40}$')
-        plt.xlim(1+(1-a**2)**0.5,20)
-        plt.ylim(0,np.max(mdotfinavgvsr[r[:,0,0]<20]))
-        plt.legend(loc='lower right')
-        plt.grid()
-        plt.savefig('pjet3_%s.pdf' % os.path.basename(os.getcwd()) )
-
-        plt.figure(4)
-        plt.clf()
-        rmax=50
-        plt.plot(r[:,0,0],pjemfinavgvsr,'b',label=r'$\dot Pem_{\rm tot}$')
-        plt.plot(r[:,0,0],pjemfinavgvsr5,'g',label=r'$\dot Pem_{b^2/\rho>5}$')
-        #plt.plot(r[:,0,0],pjemfinavgvsr10,'r',label=r'$\dot Pem_{b^2/\rho>10}$')
-        #plt.plot(r[:,0,0],pjemfinavgvsr20,'c',label=r'$\dot Pem_{b^2/\rho>20}$')
-        #plt.plot(r[:,0,0],pjemfinavgvsr30,'m',label=r'$\dot Pem_{b^2/\rho>30}$')
-        #plt.plot(r[:,0,0],pjemfinavgvsr40,'y',label=r'$\dot Pem_{b^2/\rho>40}$')
-        plt.plot(r[:,0,0],pjtotfinavgvsr,'b--',label=r'$\dot P_{\rm tot}$')
-        plt.plot(r[:,0,0],pjtotfinavgvsr5,'g--',label=r'$\dot P_{b^2/\rho>5}$')
-        #plt.plot(r[:,0,0],pjtotfinavgvsr10,'r--',label=r'$\dot P_{b^2/\rho>10}$')
-        #plt.plot(r[:,0,0],pjtotfinavgvsr20,'c--',label=r'$\dot P_{b^2/\rho>20}$')
-        #plt.plot(r[:,0,0],pjtotfinavgvsr30,'m--',label=r'$\dot P_{b^2/\rho>30}$')
-        #plt.plot(r[:,0,0],pjtotfinavgvsr40,'y--',label=r'$\dot P_{b^2/\rho>40}$')
-        plt.xlim(1+(1-a**2)**0.5,rmax)
-        plt.ylim(0,np.max(pjemfinavgvsr[r[:,0,0]<rmax]))
-        plt.legend(loc='lower right',ncol=2)
-        plt.grid()
-        plt.savefig('pjet4_%s.pdf' % os.path.basename(os.getcwd()) )
-
-        plt.figure(5)
-        plt.clf()
-        rmax=200
-        plt.plot(r[:,0,0],phiabsj_mu1vsr,'b',label=r'$\Phi_{\rm j}$')
-        plt.xlim(1+(1-a**2)**0.5,rmax)
-        plt.ylim(0,np.max(phiabsj_mu1vsr[r[:,0,0]<rmax]))
-        plt.legend(loc='lower right',ncol=2)
-        plt.grid()
-        plt.savefig('phi1_%s.pdf' % os.path.basename(os.getcwd()) )
+    #
+    print("original number of vertices=%d" % (len(x)))
+    print("number of crosses of horizon: %d" % (whichiv)); sys.stdout.flush()
+    print("ivihorlist"); sys.stdout.flush()
+    print(ivihorlist[0:whichiv+1]); sys.stdout.flush()
+    print("dirihorlist"); sys.stdout.flush()
+    print(dirihorlist[0:whichiv+1]); sys.stdout.flush()
     #
     #
-    print("done with residual" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-
-
-
-
-
-
-
-
-
-
+    #
+    # only use portion that is monotonically increasing in radius
+    if whichpole==0:
+        lastx=x[0]
+        lastiv=len(x)
+        for iv in np.arange(1,len(x)):
+            if x[iv]<lastx:
+                lastiv=iv
+                break
+            else:
+                lastx=x[iv]
+            #
+        print("lastiv=%d" % (lastiv))
+        xnew=x[0:lastiv] # avoids final decrease in x
+        ynew=y[0:lastiv] # avoids final decrease in x
+    #
+    # only use portion that is monotonically increasing in radius
+    if whichpole==1:
+        lastx=x[len(x)-1]
+        lastiv=0
+        for iv in np.arange(len(x)-2,-1,-1):
+            if x[iv]<lastx:
+                lastiv=iv
+                break
+            else:
+                lastx=x[iv]
+            #
+        print("lastiv=%d" % (lastiv))
+        xnew=x[len(x)-1:lastiv:-1] # avoids final decrease in x
+        ynew=y[len(x)-1:lastiv:-1] # avoids final decrease in x
+    #
+    #
+    #print("xnew")
+    #print(xnew)
+    #print("ynew")
+    #print(ynew)
+    #
+    # get x back to r[:,0,0] since r doesn't depend upon \theta most of the time
+    # have to fill since radii in xnew (or even x) less sampled than r[:,0,0]
+    yofx = interp1d(xnew[:], ynew[:], kind='linear',bounds_error=False,fill_value=ynew[-2])
+    thetaalongfield=yofx(r[:,0,0])
+    # the below model has issues with reflection at large radii
+    if modelname=="runlocaldipole3dfiducial":
+        rchop=900.0
+        ichop=iofr(rchop)
+        thetaalongfield[ti[:,0,0]>ichop]=thetaalongfield[ichop]
+    #
+    return(aphijetbase,thetaalongfield)
+    #
 
 
 
@@ -10525,7 +10919,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     DUfloor1 = DU[1]
     DUfloor4 = DU[4]
     #at this time we have the floor information, now get averages:
-    mdtotvsr, edtotvsr, edmavsr, ldtotvsr = plotqtyvstime( qtymem, whichplot = -2, fti=fti, ftf=ftf )
+    mdtotvsr, edtotvsr, edmavsr, ldtotvsr = plotqtyvstime( qtymem, fullresultsoutput=0,whichplot = -2, fti=fti, ftf=ftf )
     if dofeavg:
         FE=np.load("fe.npy")
     #edtotvsr-=FE
@@ -11303,7 +11697,7 @@ def ploteta():
     # eta = pjet/<mdot>
     #
     ax34 = plt.gca()
-    plotqtyvstime(qtymem,ax=ax34,whichplot=4,prefactor=1)
+    plotqtyvstime(qtymem,fullresultsoutput=0,ax=ax34,whichplot=4,prefactor=1)
     ymax=ax34.get_ylim()[1]
     #if 1 < ymax and ymax < 2: 
     #    #ymax = 2
@@ -11418,7 +11812,7 @@ def mkmovie(framesize=50, domakeavi=False):
             ##############
             #mdot
             ax31 = plt.subplot(gs3[-3,:])
-            plotqtyvstime(qtymem,ax=ax31,whichplot=1,findex=findex)
+            plotqtyvstime(qtymem,fullresultsoutput=0,ax=ax31,whichplot=1,findex=findex)
             ymax=ax31.get_ylim()[1]
             #ymax=2*(np.floor(np.floor(ymax+1.5)/2))
             ax31.set_yticks((ymax/2.0,ymax,ymax/2.0))
@@ -11426,13 +11820,13 @@ def mkmovie(framesize=50, domakeavi=False):
             #ax31.set_ylim((0,ymax))
             #pjet
             # ax32 = plt.subplot(gs3[-2,:])
-            # plotqtyvstime(qtymem,ax=ax32,whichplot=2)
+            # plotqtyvstime(qtymem,fullresultsoutput=0,ax=ax32,whichplot=2)
             # ymax=ax32.get_ylim()[1]
             # ax32.set_yticks((ymax/2.0,ymax))
             # ax32.grid(True)
             #pjet/mdot
             # ax33 = plt.subplot(gs3[-1,:])
-            # plotqtyvstime(qtymem,ax=ax33,whichplot=3)
+            # plotqtyvstime(qtymem,fullresultsoutput=0,ax=ax33,whichplot=3)
             # ymax=ax33.get_ylim()[1]
             # ax33.set_yticks((ymax/2.0,ymax))
             # ax33.grid(True)
@@ -11441,7 +11835,7 @@ def mkmovie(framesize=50, domakeavi=False):
             #\phi
             #
             ax35 = plt.subplot(gs3[-2,:])
-            plotqtyvstime(qtymem,ax=ax35,whichplot=5,findex=findex)
+            plotqtyvstime(qtymem,fullresultsoutput=0,ax=ax35,whichplot=5,findex=findex)
             ymax=ax35.get_ylim()[1]
             #if 1 < ymax and ymax < 2: 
             #    #ymax = 2
@@ -11472,7 +11866,7 @@ def mkmovie(framesize=50, domakeavi=False):
             # eta=pjet/<mdot>
             #
             ax34 = plt.subplot(gs3[-1,:])
-            plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findex)
+            plotqtyvstime(qtymem,fullresultsoutput=0,ax=ax34,whichplot=4,findex=findex)
             ymax=ax34.get_ylim()[1]
             #if 100 < ymax and ymax < 200: 
             #    #ymax = 2
@@ -11667,6 +12061,7 @@ def mkstreamlinefigure():
         vminforframe=-2.4
         vmaxforframe=1.5625
     #
+    #
     if True:
     #if False:
         #velocity
@@ -11679,7 +12074,9 @@ def mkstreamlinefigure():
         # density=24 is highest quality but 10X-30X slower than density=8
         # 8 looks fine.
         # 2 good for testing.
-        mkframe("myframe",len=mylen,ax=ax,density=8,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=vminforframe,vmax=vmaxforframe,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
+        mydensity=2
+        #
+        mkframe("myframe",dovel=True,len=mylen,ax=ax,density=mydensity,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=vminforframe,vmax=vmaxforframe,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
     #
     if True:
     #if False:
@@ -11731,19 +12128,21 @@ def mkstreamlinefigure():
         #field
         print("Doing field mkframe")
         sys.stdout.flush()
+        # use t-phi-averaged gdet B
         B[1] = avg_B[0]
         B[2] = avg_B[1]
         B[3] = avg_B[2]
-        bsq = avg_bsq
-        plt.figure(1)
         gdetB[1:] = avg_gdetB[0:]
+        bsq = avg_bsq
         mu = avg_mu
+        #
+        plt.figure(1)
         # Sasha says this may help avoid field edge effects
         #finallen=25./30.*mylen
         finallen=mylen
         #finallen=2.0*mylen
-        # usebland=True causes field lines to stop tracing when they get closer together at slightly larger distances.  
-        mkframe("myframe",useblank=False,len=finallen,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=vminforframe,vmax=vmaxforframe,dobhfield=8,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.01,color='r',lw=2,startatmidplane=True,domidfield=False,showjet=False,arrowsize=arrowsize)
+        # useblank=True causes field lines to stop tracing when they get closer together at slightly larger distances.  
+        mkframe("myframe",doaphiavg=False,dostreamlines=False,useblank=False,len=finallen,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=vminforframe,vmax=vmaxforframe,dobhfield=8,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.01,dsval=0.01,color='r',lw=2,startatmidplane=True,domidfield=False,showjet=False,arrowsize=arrowsize)
     #
     if False:
         x = (r*np.sin(h))[:,:,0]
@@ -11755,6 +12154,9 @@ def mkstreamlinefigure():
     #
     print("Writing File")
     sys.stdout.flush()
+    #
+    ##########################
+    # finish setup of plot
     ax.set_aspect('equal')   
     rhor=1+(1-a**2)**0.5
     el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
@@ -11772,8 +12174,120 @@ def mkstreamlinefigure():
     #plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02,dpi=300)
     # just convert png to eps or pdf after since otherwise too large
     plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02,dpi=300)
-    print("Done Writing File")
-    sys.stdout.flush()
+    print("Done Writing File") ; sys.stdout.flush()
+    #
+    ##########################
+    # compute aphi's for getting thetaalongfield and contour plots
+    myxcoord=r[0:iofr(30.0),:,0]*np.sin(h[0:iofr(30.0),:,0])
+    myycoord=r[0:iofr(30.0),:,0]*np.cos(h[0:iofr(30.0),:,0])
+    #
+    logmyxcoord=np.log10(1.0+np.fabs(r[:,:,0]*np.sin(h[:,:,0])))*np.sign(r[:,:,0]*np.sin(h[:,:,0]))
+    logmyycoord=np.log10(1.0+np.fabs(r[:,:,0]*np.cos(h[:,:,0])))*np.sign(r[:,:,0]*np.cos(h[:,:,0]))
+    #
+    myfun1zoom=np.sqrt(avg_psisq[0:iofr(30.0),:,0])
+    myfun1all=np.sqrt(avg_psisq[:,:,0])
+    #
+    aphifromavgfield=fieldcalc()
+    myfun2zoom=np.sqrt(aphifromavgfield[0:iofr(30.0),:,0]**2)
+    myfun2all=np.sqrt(aphifromavgfield[:,:,0]**2)
+    #
+    #
+    aphi1=np.sqrt(avg_psisq)
+    aphi2=np.sqrt(aphifromavgfield**2)
+    # compute final-time aphi for comparison
+    rfdlastfile()
+    aphisnapshot = fieldcalcface()
+    aphi3=aphisnapshot
+    #
+    #
+    ##############################
+    # get generate_time_series() type averages and calculations
+    hoverr_jet_vsr = getbasicqtystuff()
+    #
+    #
+    # get thetaalongfield
+    rhor=1+(1-a**2)**0.5
+    ihor = np.floor(iofr(rhor)+0.5)
+    #
+    #
+    print("thetaalongfield1"); sys.stdout.flush()
+    aphijetbase1,thetaalongfield1=compute_thetaalongfield(aphi=aphi1,picki=ihor,thetaalongjet=hoverr_jet_vsr,whichpole=1)
+    thetaalongfield1=np.pi - thetaalongfield1
+    print("thetaalongfield2"); sys.stdout.flush()
+    aphijetbase2,thetaalongfield2=compute_thetaalongfield(aphi=aphi2,picki=ihor,thetaalongjet=hoverr_jet_vsr,whichpole=1)
+    thetaalongfield2=np.pi - thetaalongfield2
+    print("thetaalongfield3"); sys.stdout.flush()
+    aphijetbase3,thetaalongfield3=compute_thetaalongfield(aphi=aphi3,picki=ihor,thetaalongjet=hoverr_jet_vsr,whichpole=0)
+    #
+    favg1 = open('datavsravg1.txt', 'w')
+    favg1.write("%s   %s %s %s  %s   %s %s %s\n" % ("#ii","r1","r2","r3","hoverr_jet_vsr","thetaalongfield1","thetaalongfield2","thetaalongfield3" ) )
+    #
+    for ii in np.arange(0,nx):
+        favg1.write("%d   %g %g %g   %g   %g %g %g\n" % (ii,r[ii,thetaalongfield1[ii],0],r[ii,thetaalongfield2[ii],0],r[ii,thetaalongfield3[ii],0],np.pi*0.5-hoverr_jet_vsr[ii],thetaalongfield1[ii],thetaalongfield2[ii],thetaalongfield3[ii]) )
+        #
+    #
+    favg1.close()
+    #
+    ################
+    # for Shep:
+    # cat datavsravg1.txt | awk '{print $1"   "$2" "$3" "$4"   "$5"   "$6" "$7" "$8}' | column -t > datavsrsharenew.txt
+    #
+    # avoid potential from averaged field that causes problems but medium (flips pole) and large radii (zeros out)
+    # cat datavsravg1.txt | awk '{print $1"   "$2"   "$5"   "$6" "$8}' | column -t > datavsrsharenew.txt
+    # cat datavsrsharenew.txt | column -t | less -S
+    #
+    ########################
+    # show averaged aphi for comparison with field from stream lines
+    plt.figure(1)
+    plco(myfun1zoom,xcoord=myxcoord,ycoord=myycoord,colors='k',nc=30)
+    plc(myfun1zoom,xcoord=myxcoord,ycoord=myycoord,colors='r',levels=(aphijetbase1,))
+    #plc(daphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,),colors='r')
+    #d=500
+    #plt.xlim(0,d/2.); plt.ylim(-d,d)
+    #plc(aphi-maxaphibh,levels=(0,),colors='b',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    plt.savefig("aphizoom_avg.pdf")
+    plt.savefig("aphizoom_avg.eps")
+    plt.savefig("aphizoom_avg.png")
+    #
+    ########################
+    # show averaged aphi for comparison with field from stream lines
+    plt.figure(1)
+    plco(myfun1all,xcoord=logmyxcoord,ycoord=logmyycoord,colors='k',nc=30)
+    plc(myfun1all,xcoord=logmyxcoord,ycoord=logmyycoord,colors='r',levels=(aphijetbase1,))
+    #plc(daphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,),colors='r')
+    #d=500
+    #plt.xlim(0,d/2.); plt.ylim(-d,d)
+    #plc(aphi-maxaphibh,levels=(0,),colors='b',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    plt.savefig("aphialllog_avg.pdf")
+    plt.savefig("aphialllog_avg.eps")
+    plt.savefig("aphialllog_avg.png")
+    #
+    #
+    ########################
+    # show aphi from averaged fields for comparison with field from stream lines
+    plt.figure(1)
+    plco(myfun2zoom,xcoord=myxcoord,ycoord=myycoord,colors='k',nc=30)
+    plc(myfun2zoom,xcoord=myxcoord,ycoord=myycoord,colors='r',levels=(aphijetbase2,))
+    #d=500
+    #plt.xlim(0,d/2.); plt.ylim(-d,d)
+    #plc(aphi-maxaphibh,levels=(0,),colors='b',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    plt.savefig("aphizoom_avgfield.pdf")
+    plt.savefig("aphizoom_avgfield.eps")
+    plt.savefig("aphizoom_avgfield.png")
+    #
+    ########################
+    # show averaged aphi for comparison with field from stream lines
+    plt.figure(1)
+    plco(myfun2all,xcoord=logmyxcoord,ycoord=logmyycoord,colors='k',nc=30)
+    plc(myfun2all,xcoord=logmyxcoord,ycoord=logmyycoord,colors='r',levels=(aphijetbase2,))
+    #plc(daphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,),colors='r')
+    #d=500
+    #plt.xlim(0,d/2.); plt.ylim(-d,d)
+    #plc(aphi-maxaphibh,levels=(0,),colors='b',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    plt.savefig("aphialllog_avgfield_avg.pdf")
+    plt.savefig("aphialllog_avgfield_avg.eps")
+    plt.savefig("aphialllog_avgfield_avg.png")
+    
 
 
 
@@ -11843,7 +12357,7 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
     gs3.update(left=0.055, right=0.97, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
     #mdot
     ax31 = plt.subplot(gs3[-3,:])
-    plotqtyvstime(qtymem,ax=ax31,whichplot=1,findex=findexlist,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor) #AT: need to specify index!
+    plotqtyvstime(qtymem,fullresultsoutput=0,ax=ax31,whichplot=1,findex=findexlist,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor) #AT: need to specify index!
     ymax=ax31.get_ylim()[1]
     ymax=2*(np.floor(np.floor(ymax+1.5)/2))
     ax31.set_yticks((0,ymax,ymax/2.0))
@@ -11858,13 +12372,13 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
     ax31r.set_yticks((0,ymax,ymax/2.0))
     #pjet
     # ax32 = plt.subplot(gs3[-2,:])
-    # plotqtyvstime(qtymem,ax=ax32,whichplot=2)
+    # plotqtyvstime(qtymem,fullresultsoutput=0,ax=ax32,whichplot=2)
     # ymax=ax32.get_ylim()[1]
     # ax32.set_yticks((ymax/2.0,ymax))
     # ax32.grid(True)
     #pjet/mdot
     # ax33 = plt.subplot(gs3[-1,:])
-    # plotqtyvstime(qtymem,ax=ax33,whichplot=3)
+    # plotqtyvstime(qtymem,fullresultsoutput=0,ax=ax33,whichplot=3)
     # ymax=ax33.get_ylim()[1]
     # ax33.set_yticks((ymax/2.0,ymax))
     # ax33.grid(True)
@@ -11880,7 +12394,7 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
     #                      )
     #          )
     ax35 = plt.subplot(gs3[-2,:])
-    plotqtyvstime(qtymem,ax=ax35,whichplot=5,findex=findexlist,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor)
+    plotqtyvstime(qtymem,fullresultsoutput=0,ax=ax35,whichplot=5,findex=findexlist,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor)
     ymax=ax35.get_ylim()[1]
     #if 1 < ymax and ymax < 2: 
     #    #ymax = 2
@@ -11912,7 +12426,7 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
     #pjet/<mdot>
     #
     ax34 = plt.subplot(gs3[-1,:])
-    plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findexlist,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor)
+    plotqtyvstime(qtymem,fullresultsoutput=0,ax=ax34,whichplot=4,findex=findexlist,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor)
     ax34.set_ylim((0,3.8))
     ymax=ax34.get_ylim()[1]
 # JON next 7 lines
@@ -12122,6 +12636,11 @@ def generate_time_series():
     #qtymem=None #clear to free mem
     #
     global modelname
+    global makepowervsmplots
+    makepowervsmplots=0
+    global makespacetimeplots
+    makespacetimeplots=0
+    #
     if len(sys.argv[1:])>0:
         modelname = sys.argv[1]
     else:
@@ -12136,8 +12655,15 @@ def generate_time_series():
         else:
             qtymem=getqtyvstime(ihor,0.2,whichi=whichi,whichn=whichn)
     else:
-         qtymem=getqtyvstime(ihor,0.2)
-         plotqtyvstime(qtymem)
+        # assume here if "plot" as second argument
+        if len(sys.argv[1:])==4 and sys.argv[3].isdigit() and sys.argv[4].isdigit():
+            makepowervsmplots = int(sys.argv[3])
+            makespacetimeplots = int(sys.argv[4])
+            print("Got plot args: %d %d" % (makepowervsmplots,makespacetimeplots))
+            #
+        qtymem=getqtyvstime(ihor,0.2)
+        plotqtyvstime(qtymem,fullresultsoutput=1)
+        #
     #
     #
 
@@ -12223,7 +12749,7 @@ def oldstuff():
         #diskflux=diskfluxcalc(ny/2)
         qtymem=None #clear to free mem, doesn't seem to work
         qtymem=getqtyvstime(ihor,0.2,fmtver=1)
-        plotqtyvstime(qtymem)
+        plotqtyvstime(qtymem,fullresultsoutput=0)
     if False:
         rfd("fieldline0320.bin")
         plt.figure(1)
@@ -12496,9 +13022,9 @@ def oldstuff():
         #qtymem=None #clear to free mem
         #qtymem=getqtyvstime(ihor,0.2)
         plt.figure(1)
-        plotqtyvstime(qtymem,whichplot=-3)
+        plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=-3)
         #plt.figure(2)
-        #plotqtyvstime(qtymem,whichplot=-4)
+        #plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=-4)
 
 
 
