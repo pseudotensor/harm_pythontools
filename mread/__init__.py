@@ -1409,7 +1409,7 @@ def rfloor(dumpname):
     return
 
 def rrdump(dumpname,write2xphi=False, whichdir = 3):
-    global nx,ny,nz,t,a,rho,ug,vu,vd,B,gd,gd1,numcols,gdetB
+    global nx,ny,nz,t,a,rho,ug,vu,vd,B,gd,gd1,numcols,gdetB,Ucons
     #print( "Reading " + "dumps/" + dumpname + " ..." )
     gin = open( "dumps/" + dumpname, "rb" )
     header = gin.readline().split()
@@ -1438,6 +1438,7 @@ def rrdump(dumpname,write2xphi=False, whichdir = 3):
     vu[1:4] = gd[2:5].view() #relative 4-velocity only has non-zero spatial components
     B[1:4] = gd[5:8].view()
     numcols = gd.shape[0]  #total number of columns is made up of (n prim vars) + (n cons vars) = numcols
+    Ucons=gd[numcols/2:numcols/2+5+3] #conserved quantities
     gdetB = np.zeros_like(B)
     gdetB[1:4] = gd[numcols/2+5:numcols/2+5+3]  #gdetB starts with 5th conserved variable
     if 'gv3' in globals() and 'gn3' in globals(): 
@@ -3763,13 +3764,58 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
 
     if whichplot == -200:
         #XXX compute edmavsr without polar regions with avg_aphi < avg_phi[iofr(rhor),aphi_j_val]
-        if aphi_j_val != 0:
+        if aphi_j_val >= 0 and os.path.isfile( "avg2d.npy" ):
             avgmem = get2davg(usedefault=1)
             assignavg2dvars(avgmem)
             #sum in phi and theta
             edtotEM = edtotvsr - edmavsr
             eoutcumMA = scaletofullwedge(nz*(-gdet*avg_TudMA[1,0]*_dx2*_dx3).sum(axis=2)).cumsum(axis=1)
-            edtotMA = cutout_along_aphi(eoutcumMA,aphi_j_val=aphi_j_val)
+            moutcum = scaletofullwedge(nz*(gdet*avg_rhouu[1]*_dx2*_dx3).sum(axis=2)).cumsum(axis=1)
+            if aphi_j_val > 0:
+                #flux in x2-direction integrated in x1-x3 plane
+                #MA energy
+                eperpMA = scaletofullwedge(nz*(-gdet*avg_TudMA[2,0]*_dx1*_dx3).sum(axis=2)).cumsum(axis=0)
+                #set correction to zero at outer radius (take r=20) where correction is negligible
+                iref = iofr(20)
+                eperpMA = eperpMA-eperpMA[iref:iref+1]
+                #move in x2 to the correct face-location
+                eperpMAdn = 0.5*(eperpMA[:,aphi_j_val]+eperpMA[:,aphi_j_val-1])
+                eperpMAup = 0.5*(eperpMA[:,ny-1-aphi_j_val]+eperpMA[:,ny-aphi_j_val])
+                #eperpMAdn comes with negative sign to account for energy flowing into domain there
+                eperpMA = eperpMAup - eperpMAdn
+                #shift to correct radial location by half cell right (so located at cell center instead of cell face)
+                eperpMA[1:] = 0.5*(eperpMA[:-1]+eperpMA[1:])
+                #EM energy
+                eperpEM = scaletofullwedge(nz*(-gdet*avg_TudEM[2,0]*_dx1*_dx3).sum(axis=2)).cumsum(axis=0)
+                #set correction to zero at outer radius (take r=20) where correction is negligible
+                iref = iofr(20)
+                eperpEM = eperpEM-eperpEM[iref:iref+1]
+                #move in x2 to the correct face-location
+                eperpEMdn = 0.5*(eperpEM[:,aphi_j_val]+eperpEM[:,aphi_j_val-1])
+                eperpEMup = 0.5*(eperpEM[:,ny-1-aphi_j_val]+eperpEM[:,ny-aphi_j_val])
+                #eperpEMdn comes with negative sign to account for energy flowing into domain there
+                eperpEM = eperpEMup - eperpEMdn
+                #shift to correct radial location by half cell right (so located at cell center instead of cell face)
+                eperpEM[1:] = 0.5*(eperpEM[:-1]+eperpEM[1:])
+                #mass
+                #Mdot
+                mperp = scaletofullwedge(nz*(gdet*avg_rhouu[2]*_dx1*_dx3).sum(axis=2)).cumsum(axis=0)
+                #set correction to zero at outer radius (take r=20) where correction is negligible
+                iref = iofr(20)
+                mperp = mperp-mperp[iref:iref+1]
+                #move in x2 to the correct face-location
+                mperpdn = 0.5*(mperp[:,aphi_j_val]+mperp[:,aphi_j_val-1])
+                mperpup = 0.5*(mperp[:,ny-1-aphi_j_val]+mperp[:,ny-aphi_j_val])
+                #mperpdn comes with negative sign to account for energy flowing into domain there
+                mperp = mperpup - mperpdn
+                #shift to correct radial location by half cell right (so located at cell center instead of cell face)
+                mperp[1:] = 0.5*(mperp[:-1]+mperp[1:])
+            else:
+                eperpMA = 0*edtotEM
+                eperpEM = 0*edtotEM
+                mperp = 0*edtotEM
+            edtotMA = cutout_along_aphi(eoutcumMA,aphi_j_val=aphi_j_val) - eperpMA
+            mdtotvsr = -(cutout_along_aphi(moutcum,aphi_j_val=aphi_j_val) - mperp)
             edtotvsr = edtotEM + edtotMA
             edmavsr = edtotMA
 
@@ -4103,8 +4149,11 @@ def get_dUfloor( floordumpno, maxrinflowequilibrium = 20, aphi_j_val=0 ):
     #add back in rest-mass energy to conserved energy
     dUfloor[1] -= dUfloor[0]
     condin = np.ones_like(dUfloor)
-    condin[0] = (avg_rhouu[1]<0)*(r[:,:,0:1]<maxrinflowequilibrium)
-    condin[1] = ((avg_rhouu+gam*avg_uguu)[1]<0)*(r[:,:,0:1]<maxrinflowequilibrium)
+    condin[0] = (avg_uu[1]<0)*(r[:,:,0:1]<maxrinflowequilibrium)
+    condin[1] = (avg_uu[1]<0)*(r[:,:,0:1]<maxrinflowequilibrium)
+    # condin[0] = (avg_rhouu[1]<0)*(r[:,:,0:1]<maxrinflowequilibrium)
+    # condin[1] = (-avg_TudMA[1,0]<0)*(r[:,:,0:1]<maxrinflowequilibrium)
+    #condin[1] = ((avg_rhouu+gam*avg_uguu)[1]<0)*(r[:,:,0:1]<maxrinflowequilibrium)
     condin[2:]=condin[0:1]
     #uncomment this if don't want to use stagnation surface
     #condin = (r[:,:,0:1]<maxrinflowequilibrium)
@@ -4117,19 +4166,34 @@ def get_dUfloor( floordumpno, maxrinflowequilibrium = 20, aphi_j_val=0 ):
         UfloorAout = UfloorAout[:,:,ny-1]
         UfloorAin = UfloorAin[:,:,ny-1]
     else:
-        eout = np.copy(UfloorAout[1])
-        ein = np.copy(UfloorAin[1])
-        UfloorAout = UfloorAout[:,:,ny-1]
-        UfloorAin = UfloorAin[:,:,ny-1]
+        # eout = np.copy(UfloorAout[1])
+        # ein = np.copy(UfloorAin[1])
+        # UfloorAout = UfloorAout[:,:,ny-1]
+        # UfloorAin = UfloorAin[:,:,ny-1]
+        # #cut-out only for energy
+        # UfloorAout[1] = cutout_along_aphi(eout,aphi_j_val=aphi_j_val)
+        # UfloorAin[1]  = cutout_along_aphi(ein,aphi_j_val=aphi_j_val)
         #cut-out only for energy
-        UfloorAout[1] = cutout_along_aphi(eout,aphi_j_val=aphi_j_val)
-        UfloorAin[1]  = cutout_along_aphi(ein,aphi_j_val=aphi_j_val)
+        UfloorAout = cutout_along_aphi(UfloorAout,aphi_j_val=aphi_j_val)
+        UfloorAin  = cutout_along_aphi(UfloorAin,aphi_j_val=aphi_j_val)
     #Integrate in radius
     UfloorAout = UfloorAout.cumsum(1+RR)
     UfloorAin  = UfloorAin.cumsum(1+RR)
     #
     UfloorA = (UfloorAin-UfloorAin[:,nx-1:nx]) + UfloorAout
+    #
+    #XXX: HACK!!
+    if False and floordumpno==263:
+        rrdump("rdump--0263.bin")
+        Ucons[1] -= Ucons[0]
+        UfloorA[0:8] -= Ucons[0:8].sum(-1).sum(-1)*_dx1*_dx2*_dx3
+        rrdump("rdump--0258.bin")
+        Ucons[1] -= Ucons[0]
+        UfloorA[0:8] += Ucons[0:8].sum(-1).sum(-1)*_dx1*_dx2*_dx3
+    #This needs to be moved half a cell to the right for correct centering
+    UfloorA[:,1:] = 0.5*(UfloorA[:,:-1]+UfloorA[:,1:])
     UfloorAsum = UfloorA*scaletofullwedge(1.)
+    
     return( UfloorAsum )
 
 def plotfluxes(doreload=1,aphi_j_val=0):
@@ -4143,7 +4207,7 @@ def plotfluxes(doreload=1,aphi_j_val=0):
     if not doreload:
         DU=DU1
         qtymem=qtymem1
-    takeoutfloors(fti=7000,ftf=1e5,
+    takeoutfloors(fti=7000,ftf=30500,#fti=22095,ftf=28195,
         ax=ax1,dolegend=False,doreload=doreload,plotldtot=False,lw=2,aphi_j_val=aphi_j_val)
     if doreload:
         DU1=DU
@@ -4265,32 +4329,52 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         # Dno = np.array([224.,223.])
         # fti = 14700.
         # ftf = 25000.
-        Dt = np.array([28200-28097.4708711805,
-                       28000-27406.4732593203,
-                       27400-26763.9946654502,
-                       26700-26330.0889135128,
-                       26300-25799.8775611997,
-                       25700-25124.6341346588,
-                       25100-24594.4658011928,
-                       24500-23951.5226133435,
-                       23900-23292.5857662206,
-                       23200-22890.8671337456,
-                       22800-22231.9647756934,
-                       22200-22167.6695855045])
-        Dno = np.array([282,
-                        280,
-                        274,
-                        267,
-                        263,
-                        257,
-                        251,
-                        245,
-                        239,
-                        232,
-                        228,
-                        222])
-        lfti = 7000.
-        lftf = 30500.
+        # Dt = np.array([28200-28097.4708711805,
+        #                28000-27406.4732593203,
+        #                27400-26763.9946654502,
+        #                26700-26330.0889135128,
+        #                26300-25799.8775611997,
+        #                25700-25124.6341346588,
+        #                25100-24594.4658011928,
+        #                24500-23951.5226133435,
+        #                23900-23292.5857662206,
+        #                23200-22890.8671337456,
+        #                22800-22231.9647756934,
+        #                22200-22167.6695855045])
+        # Dno = np.array([282,
+        #                 280,
+        #                 274,
+        #                 267,
+        #                 263,
+        #                 257,
+        #                 251,
+        #                 245,
+        #                 239,
+        #                 232,
+        #                 228,
+        #                 222])
+        # Dt = np.array([10800-10000,
+        #                -(10800-10000)])*0.5
+        # Dno = np.array([108,
+        #                 100])
+        # Dt = np.array([15100.-14674.9425787851])
+        # Dno = np.array([151])
+        # Dt = np.array([15800.-15167.5967825024])
+        # Dno = np.array([158])
+        Dt = np.array([20700.-20000.,
+                       -(20700.-20000.)])
+        Dno = np.array([207.,
+                        200.])
+        # Dt = np.array([26300-25799.8775611997])*0.5
+        # Dno = np.array([263])
+        # Dt = np.array([26300-25800,
+        #                -(26300-25800)])
+        # Dno = np.array([263,
+        #                 258])
+        # lfti = 25800.
+        # lftf = 26300.
+        lfti = 25800.
+        lftf = 26300.
     elif np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) > 1.5:
         #lo-res 0.99 settings
         print( "Using lores a = 0.99 settings")
@@ -5625,11 +5709,21 @@ def getFe2davg(aphi_j_val=0):
 def cutout_along_aphi(ecum,aphi_j_val=0):
     #
     ndim = ecum.ndim
-    if aphi_j_val == 0:
+    if aphi_j_val > 0:
+        if ndim == 3:
+            return( ecum[:,:,ny-1-aphi_j_val] - ecum[:,:,aphi_j_val-1] )
+        else:
+            return( ecum[:,ny-1-aphi_j_val] - ecum[:,aphi_j_val-1] )
+    elif aphi_j_val == 0:
         if ndim == 3:
             return( ecum[:,:,ny-1] )
         else:
             return( ecum[:,ny-1] )
+    else:
+        if ndim == 3:
+            return( ecum[:,:,ny-2] - ecum[:,:,0] )
+        else:
+            return( ecum[:,ny-2] - ecum[:,0] )
     #get avg_aphi
     avgmem = get2davg(usedefault=1)
     assignavg2dvars(avgmem)
