@@ -1047,7 +1047,7 @@ def reinterpxy(vartointerp,extent,ncell,domask=1):
 def ftr(x,xb,xf):
     return( amax(0.0*x,amin(1.0+0.0*x,1.0*(x-xb)/(xf-xb))) )
     
-def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None):
+def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2):
     extent=(-len,len,-len,len)
     palette=cm.jet
     palette.set_bad('k', 1.0)
@@ -1157,7 +1157,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
                 # if t < 1500:
                 lw *= ftr(iaphi,0.001,0.002)
         #pdb.set_trace()
-        traj = fstreamplot(yi,xi,iBR,iBz,ua=iBaR,va=iBaz,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=detectLoops,dodiskfield=dodiskfield,dobhfield=dobhfield,startatmidplane=startatmidplane,a=a,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,dsval=dsval,color=color,doarrows=doarrows,dorandomcolor=dorandomcolor,skipblankint=skipblankint,minindent=minindent,minlengthdefault=minlengthdefault,arrowsize=arrowsize,startxabs=startxabs,startyabs=startyabs)
+        traj = fstreamplot(yi,xi,iBR,iBz,ua=iBaR,va=iBaz,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=detectLoops,dodiskfield=dodiskfield,dobhfield=dobhfield,startatmidplane=startatmidplane,a=a,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,dsval=dsval,color=color,doarrows=doarrows,dorandomcolor=dorandomcolor,skipblankint=skipblankint,minindent=minindent,minlengthdefault=minlengthdefault,arrowsize=arrowsize,startxabs=startxabs,startyabs=startyabs,populatestreamlines=populatestreamlines,useblankdiskfield=useblankdiskfield,dnarrow=dnarrow)
         #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
     ax.set_xlim(extent[0],extent[1])
     ax.set_ylim(extent[2],extent[3])
@@ -5783,21 +5783,25 @@ def mkmanystreamlinesxy():
     # plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02)
     plt.savefig("fig2oneline.png",bbox_inches='tight',pad_inches=0.02,dpi=300)
 
-def mkstreamlinefigure(length=25,doenergy=True,frac=0.75):
+def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,showticks=True):
     mylen = length/frac
     arrowsize=4
     grid3d("gdump.bin",use2d=True)
     rfd("fieldline0000.bin")
     avgmem = get2davg(usedefault=1)
     assignavg2dvars(avgmem)
-    fig=plt.figure(1,figsize=(12,9),dpi=300)
+    fig=plt.figure(1,figsize=(12,9),dpi=300,frameon=frameon)
+    fig.patch.set_facecolor('#D8D8D8')
+    fig.patch.set_alpha(1.0)
     fntsize=24
-    ax = fig.add_subplot(111, aspect='equal')
+    ax = fig.add_subplot(111, aspect='equal', frameon=frameon)
+    ax.patch.set_facecolor('#D8D8D8')
+    ax.patch.set_alpha(1.0)
     if doenergy==False:
         #velocity
         B[1:] = avg_uu[1:]
         bsq = avg_bsq
-        mkframe("myframe",len=mylen,ax=ax,density=12,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
+        mkframe("myframe",len=mylen,ax=ax,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.0025,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
     if doenergy==True:
         #energy
         B[1:] = avg_Tud[1:,0]
@@ -5821,7 +5825,7 @@ def mkstreamlinefigure(length=25,doenergy=True,frac=0.75):
         hs=hstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)<0]
         ax.plot(rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
         ax.plot(-rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
-    if False:
+    if True:
         #field
         B[1] = avg_B[0]
         B[2] = avg_B[1]
@@ -5830,7 +5834,7 @@ def mkstreamlinefigure(length=25,doenergy=True,frac=0.75):
         plt.figure(1)
         gdetB[1:] = avg_gdetB[0:]
         mu = avg_mu
-        mkframe("myframe",len=frac*mylen,ax=ax,density=4,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=12,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.01,color='r',lw=2,startatmidplane=True,showjet=False,arrowsize=arrowsize)
+        mkframe("myframe",len=mylen,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=12,dodiskfield=8,minlenbhfield=0.1,minlendiskfield=0.1,dsval=0.001,color='r',lw=2,startatmidplane=True,showjet=False,arrowsize=arrowsize,skipblankint=True,populatestreamlines=False,useblankdiskfield=False,dnarrow=4)
     if False:
         x = (r*np.sin(h))[:,:,0]
         z = (r*np.cos(h))[:,:,0]
@@ -5846,13 +5850,29 @@ def mkstreamlinefigure(length=25,doenergy=True,frac=0.75):
     mylenshow = frac*mylen
     plt.xlim(-mylenshow,mylenshow)
     plt.ylim(-mylenshow,mylenshow)
-    plt.xlabel(r"$x\ [r_g]$",fontsize=fntsize,ha='center')
-    plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=15,fontsize=fntsize)
+    if False:
+        plt.xlabel(r"$x\ [r_g]$",fontsize=fntsize,ha='center')
+        plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=15,fontsize=fntsize)
+    else:
+        plt.setp( ax.get_xticklabels(), visible=False)
+        plt.setp( ax.get_yticklabels(), visible=False)
     for label in ax.get_xticklabels() + ax.get_yticklabels():
         label.set_fontsize(fntsize)
+    # run through all lines drawn for xticks and yticks
+    if showticks == False:
+        for i, line in enumerate(ax.get_xticklines() + ax.get_yticklines()):
+            #if i%2 == 1:   # odd indices
+            line.set_visible(False)     
     # plt.savefig("fig2.pdf",bbox_inches='tight',pad_inches=0.02)
     # plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02)
-    plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02,dpi=300)
+    fig.patch.set_facecolor('#D8D8D8')
+    fig.patch.set_alpha(0.5)
+    fig.patch.set_visible(True)
+    ax.patch.set_facecolor('#D8D8D8')
+    ax.patch.set_alpha(0.5)
+    ax.patch.set_visible(True)
+    plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02,dpi=dpi,facecolor=fig.get_facecolor(), edgecolor='#D8D8D8',transparent=False)
+    #fig.get_facecolor()
 
 def mklotsopanels(doreload=1,epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,prefactor=100,sigma=None,usegaussianunits=False,arrowsize=1):
     global qtymem
@@ -6665,7 +6685,7 @@ if __name__ == "__main__":
         mkmovie(prefactor=100.,sigma=1500.,usegaussianunits=True,domakeframes=domakeframes)
     if False:
         #fig2 with grayscalestreamlines and red field lines
-        mkstreamlinefigure(doenergy=False)
+        mkstreamlinefigure(length=50,doenergy=False,frameon=True,dpi=600,showticks=False)
         #mkstreamlinefigure(length=4,doenergy=False)
     if False:
         #FIGURE 1 LOTSOPANELS

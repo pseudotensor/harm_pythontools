@@ -385,7 +385,7 @@ def streamplot(x, y, u, v, density=1, linewidth=1,
 
 def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
                color='k', cmap=None, norm=None, vmax=None, vmin=None,
-               arrowsize=1, INTEGRATOR='RK4',dtx=10,ax=None,setxylim=False,useblank=True,detectLoops=True,dobhfield=False,dodiskfield=False,startatmidplane=False,a=0.0,downsample=1,minlendiskfield=0.2,minlenbhfield=0.2,dsval=0.01,doarrows=True,dorandomcolor=False,skipblankint=False,minindent=1,symmy=True,minlengthdefault=0.2,startxabs=None,startyabs=None):
+               arrowsize=1, INTEGRATOR='RK4',dtx=10,ax=None,setxylim=False,useblank=True,detectLoops=True,dobhfield=False,dodiskfield=False,startatmidplane=False,a=0.0,downsample=1,minlendiskfield=0.2,minlenbhfield=0.2,dsval=0.01,doarrows=True,dorandomcolor=False,skipblankint=False,minindent=1,symmy=True,minlengthdefault=0.2,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2):
     '''Draws streamlines of a vector flow.
 
     * x and y are 1d arrays defining an *evenly spaced* grid.
@@ -580,8 +580,8 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
                         by_changes.append(new_yb)
                         xb = new_xb
                         yb = new_yb
-                    elif useblank or numpy.abs(xyabsofxyi(xi,yi)[0]) > 10:
-                        #if using blank array or if outside the jet region (|R|<10)
+                    elif useblank: # or numpy.abs(xyabsofxyi(xi,yi)[0]) > 10:
+                        #if using blank array #don't do this anymore -- or if outside the jet region (|R|<10)
                         break
                 if stotal > 2: #AT: increase this to reach boundaries
                     break
@@ -781,7 +781,7 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
             rad /= 3.
 
     #if downsampling, only send in streamlines from boundaries
-    if downsample != 1:
+    if downsample != 1 and populatestreamlines:
         indent = minindent
         #for xi in range(max(NBX,NBY)-2*indent):
         for xi in range(downsample/2,max(NBX,NBY)-2*indent,downsample):
@@ -806,7 +806,7 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
             else:
                 traj(xi+indent, indent, checkalongx = True)  #lower y
                 traj(xi+indent, NBY-1-indent, checkalongx = True) #upper y
-    else:
+    elif populatestreamlines:
         for indent in range(minindent,(max(NBX,NBY))/2):
             for xi in range(max(NBX,NBY)-2*indent):
                 if symmy: 
@@ -833,14 +833,17 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
 
     #do at the end, use shorter minimal length
     if dodiskfield:
-        num=32
+        if dodiskfield > 1:
+            num = dodiskfield
+        else:
+            num = 32
         yabs = 0
         for Rabs in numpy.linspace(x.max(),0,num):
             if Rabs > rad:
                 xb, yb = xybofxyabs( Rabs, yabs )
-                traj(xb, yb, useblank = True, minlength = minlendiskfield)
+                traj(xb, yb, useblank = useblankdiskfield, minlength = minlendiskfield)
                 xb, yb = xybofxyabs( -Rabs, yabs )
-                traj(xb, yb, useblank = True, minlength = minlendiskfield)
+                traj(xb, yb, useblank = useblankdiskfield, minlength = minlendiskfield)
 
     ## PLOTTING HERE.
     #pylab.pcolormesh(numpy.linspace(x.min(), x.max(), NBX+1),
@@ -901,7 +904,7 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
             if type(color) == numpy.ndarray:            
                 arrowcolor = args['color'][n]
 
-            p = mpp.FancyArrowPatch((tx[n-1],ty[n-1]), (tx[n+1],ty[n+1]),
+            p = mpp.FancyArrowPatch((tx[n-dnarrow],ty[n-dnarrow]), (tx[n+dnarrow],ty[n+dnarrow]),
                                 arrowstyle='->', lw=arrowlinewidth,
                                 mutation_scale=20*arrowsize, color=arrowcolor)
             ptch=ax.add_patch(p)
