@@ -53,6 +53,78 @@ from scipy import fftpack
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
+
+def smooth(x,window_len=11,window='hanning'):
+    """smooth the data using a window with requested size.
+    
+    This method is based on the convolution of a scaled window with the signal.
+    The signal is prepared by introducing reflected copies of the signal 
+    (with the window size) in both ends so that transient parts are minimized
+    in the begining and end part of the output signal.
+    
+    input:
+        x: the input signal 
+        window_len: the dimension of the smoothing window; should be an odd integer
+        window: the type of window from 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'
+            flat window will produce a moving average smoothing.
+
+    output:
+        the smoothed signal
+        
+    example:
+
+    t=linspace(-2,2,0.1)
+    x=sin(t)+randn(len(t))*0.1
+    y=smooth(x)
+    
+    see also: 
+    
+    np.hanning, np.hamming, np.bartlett, np.blackman, np.convolve
+    scipy.signal.lfilter
+ 
+    TODO: the window parameter could be the window itself if an array instead of a string   
+    """
+
+    if x.ndim != 1:
+        raise ValueError, "smooth only accepts 1 dimension arrays."
+
+    if x.size < window_len:
+        raise ValueError, "Input vector needs to be bigger than window size."
+
+
+    if window_len<3:
+        return x
+
+
+    if not window in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
+        raise ValueError, "Window is on of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'"
+
+    s=x
+    spacer=np.zeros(window_len/2,dtype=x.dtype)
+    #leftbc=x[0]
+    #leftbc=leftbc+spacer*0
+    #rightbc=x[-1]
+    #rightbc=rightbc+spacer*0
+    ##s=np.r_[x[window_len/2-1:-1:-1],x,x[-1:-window_len/2:-1]]
+    #s=np.r_[leftbc,x,rightbc]
+    ##s=[spacer,x,spacer]
+    if window == 'flat': #moving average
+        w=np.ones(window_len,'d')
+    else:
+        w=eval('np.'+window+'(window_len)')
+
+    #y=np.convolve(w/w.sum(),s,mode='valid')
+    #y=np.convolve(w/w.sum(),s,mode='full')
+    y=np.convolve(w/w.sum(),s,mode='same')
+    print("smooth sizes: lenx=%d spacer=%d lens=%d lenw=%d leny=%d" % (len(x),len(spacer),len(s),len(w),len(y))) ; sys.stdout.flush()
+    return y
+
+
+
+
+
+
+
 def make_legend_axes(ax):
     divider = make_axes_locatable(ax)
     legend_ax = divider.append_axes('right', 0.4, pad=0.2)
@@ -1991,7 +2063,7 @@ def mkframe(fname,ax=None,cb=True,useblank=True,vmin=None,vmax=None,len=20,ncell
         iaphi = reinterp(aphi,extent,ncell,domask=0)
         maxabsiaphi=np.max(np.abs(iaphi))
         #maxabsiaphi = 100 #50
-        ncont = 50 #30
+        ncont = 30 #30
         levs=np.linspace(-maxabsiaphi,maxabsiaphi,ncont)
     #
     if doaphiavg==1:
@@ -2005,7 +2077,7 @@ def mkframe(fname,ax=None,cb=True,useblank=True,vmin=None,vmax=None,len=20,ncell
         iaphi = reinterp(aphi,extent,ncell,domask=0)    
         maxabsiaphi=np.max(np.abs(iaphi))
         #maxabsiaphi = 100 #50
-        ncont = 50 #30
+        ncont = 30 #30
         levs=np.linspace(-maxabsiaphi,maxabsiaphi,ncont)
     #
     if dostreamlines==1:
@@ -2300,18 +2372,18 @@ def finishframe(cb=1,label=1,tight=1,useextent=1,uselim=1,testdpiinches=0,toplot
         if which==1:
             #plt.xlabel(r"$\log_{10}(r/r_g)$",ha='center',labelpad=0,fontsize=14)
             plt.xlabel(r"$r [r_g]$",ha='center',labelpad=0,fontsize=14)
-            plt.ylabel(r"$t [r_g]$",ha='left',labelpad=20,fontsize=14)
+            plt.ylabel(r"$t [r_g/c]$",ha='left',labelpad=20,fontsize=14)
         if which==2:
             if maxbsqorho is not None and maxbsqou is not None:
-                plt.xlabel(r"$\theta$ $r=%dr_g$ mbr=%g mbu=%g" % (radius,maxbsqorho,maxbsqou) ,ha='center',labelpad=0,fontsize=14)
+                plt.xlabel(r"$\theta$ [$r=%dr_g$ mbr=%g mbu=%g]" % (radius,maxbsqorho,maxbsqou) ,ha='center',labelpad=2,fontsize=14)
             elif maxbsqorho is not None:
-                plt.xlabel(r"$\theta$ $r=%dr_g$ mbr=%g" % (radius,maxbsqorho) ,ha='center',labelpad=0,fontsize=14)
+                plt.xlabel(r"$\theta$ [$r=%dr_g$ mbr=%g]" % (radius,maxbsqorho) ,ha='center',labelpad=2,fontsize=14)
             elif maxbsqou is not None:
-                plt.xlabel(r"$\theta$ $r=%dr_g$ mbu=%g" % (radius,maxbsqou) ,ha='center',labelpad=0,fontsize=14)
+                plt.xlabel(r"$\theta$ [$r=%dr_g$ mbu=%g]" % (radius,maxbsqou) ,ha='center',labelpad=2,fontsize=14)
             else:
-                plt.xlabel(r"$\theta$ $r=%dr_g$" % (radius) ,ha='center',labelpad=0,fontsize=14)
+                plt.xlabel(r"$\theta$ [$r=%dr_g$]" % (radius) ,ha='center',labelpad=2,fontsize=14)
             #
-            plt.ylabel(r"$t [r_g]$",ha='left',labelpad=20,fontsize=14)
+            plt.ylabel(r"$t [r_g/c]$",ha='left',labelpad=20,fontsize=14)
     #
     #
     #gs2 = GridSpec(1, 1)
@@ -2321,9 +2393,14 @@ def finishframe(cb=1,label=1,tight=1,useextent=1,uselim=1,testdpiinches=0,toplot
     if cb==1:
         plt.colorbar(CS) # draw colorbar
     #
-    #plt.subptitle(pllabel,fontsize=8)
-    plt.title(pllabel,fontsize=8)
     print("pllabel=%s" % (pllabel))
+    if fileletter=="q":
+        plt.title(r"$b_\phi$",fontsize=8)
+    elif fileletter=="r":
+        plt.title(r"$b^2$",fontsize=8)
+    else:
+        #plt.subptitle(pllabel,fontsize=8)
+        plt.title(pllabel,fontsize=8)
     #
     F = pylab.gcf()
     #
@@ -6114,7 +6191,7 @@ def plotit(ts,fs,md):
     plotlist[0].plot(ts,fs,label=r'$\Phi_{\rm h}/\Phi_{\rm i}$: Normalized Horizon Magnetic Flux')
     plotlist[0].plot(ts,fs,'r+') #, label=r'$\Phi_{\rm h}/0.5\Phi_{\rm i}$: Data Points')
     plotlist[0].legend(loc='lower right')
-    #plt.xlabel(r'$t\;(GM/c^3)$')
+    #plt.xlabel(r'$t\;(r_g/c)$')
     plotlist[0].set_ylabel(r'$\Phi_{\rm h}$',fontsize=16)
     plt.setp( plotlist[0].get_xticklabels(), visible=False)
     plotlist[0].grid(True)
@@ -6123,7 +6200,7 @@ def plotit(ts,fs,md):
     plotlist[1].plot(ts,md,label=r'$\dot M_{\rm h}$: Horizon Accretion Rate')
     plotlist[1].plot(ts,md,'r+') #, label=r'$\dot M_{\rm h}$: Data Points')
     plotlist[1].legend(loc='upper right')
-    plotlist[1].set_xlabel(r'$t\;(GM/c^3)$')
+    plotlist[1].set_xlabel(r'$t\;(r_g/c)$')
     plotlist[1].set_ylabel(r'$\dot M_{\rm h}$',fontsize=16)
     
     #title("\TeX\ is Number $\displaystyle\sum_{n=1}^\infty\frac{-e^{i\pi}}{2^n}$!", 
@@ -8072,7 +8149,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         if dotavg:
             ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg/mdotfinavg)#,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
         ax.set_ylim(0,4)
-        #ax.set_xlabel(r'$t\;(GM/c^3)$')
+        #ax.set_xlabel(r'$t\;(r_g/c)$')
         ax.set_ylabel(r'$P_{\rm j}/\dot M$',fontsize=16)
         ax.set_xlim(ts[0],ts[-1])
     #######################
@@ -8668,7 +8745,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             plotlist[0].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+fstotsqfinavg,label=r'$\langle \Phi^2_{\rm h,tot}\rangle^{1/2}$')
             plotlist[0].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+fsj30sqfinavg,label=r'$\langle \Phi^2_{\rm h,30}\rangle^{1/2}$')
         plotlist[0].legend(loc='upper left')
-        #plt.xlabel(r'$t\;(GM/c^3)$')
+        #plt.xlabel(r'$t\;(r_g/c)$')
         plotlist[0].set_ylabel(r'$\Phi_{\rm h}$',fontsize=16)
         plt.setp( plotlist[0].get_xticklabels(), visible=False)
         plotlist[0].grid(True)
@@ -8690,7 +8767,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         plotlist[1].plot(ts,np.abs(md30[:,ihor]),label=r'$\dot M_{\rm h,30}$')
         #plotlist[1].plot(ts,np.abs(md[:,ihor]),'r+') #, label=r'$\dot M_{\rm h}$: Data Points')
         plotlist[1].legend(loc='upper left')
-        #plotlist[1].set_xlabel(r'$t\;(GM/c^3)$')
+        #plotlist[1].set_xlabel(r'$t\;(r_g/c)$')
         plotlist[1].set_ylabel(r'$\dot M_{\rm h}$',fontsize=16)
         plt.setp( plotlist[1].get_xticklabels(), visible=False)
 
@@ -8699,7 +8776,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         if dotavg:
             plotlist[2].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg,label=r'$\langle P_{{\rm j,em30}\rangle_{f}}$')
         plotlist[2].legend(loc='upper left')
-        #plotlist[2].set_xlabel(r'$t\;(GM/c^3)$')
+        #plotlist[2].set_xlabel(r'$t\;(r_g/c)$')
         plotlist[2].set_ylabel(r'$P_{\rm j}$',fontsize=16)
 
         #plotlist[3].plot(ts,(pjem10[:,ihor]/mdtot[:,ihor]),label=r'$P_{\rm j,em10}/\dot M_{\rm tot}$')
@@ -8710,7 +8787,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             plotlist[3].plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg/mdotfinavg,'r',label=r'$\langle P_j\rangle/\langle\dot M_f\rangle_{f}$')
         #plotlist[3].set_ylim(0,6)
         plotlist[3].legend(loc='upper left')
-        plotlist[3].set_xlabel(r'$t\;(GM/c^3)$')
+        plotlist[3].set_xlabel(r'$t\;(r_g/c)$')
         #plotlist[3].set_ylabel(r'$P_{\rm j}/\dot M_{\rm h}$',fontsize=16)
         plotlist[3].set_ylabel(r'$\eta_{\rm j}$',fontsize=16)
 
@@ -8748,7 +8825,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #plotlist[0].plot(ts,fs,'r+') #, label=r'$\Phi_{\rm h}/0.5\Phi_{\rm i}$: Data Points')
         #legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
         plotlist[0].legend(loc='upper right',ncol=4)
-        #plt.xlabel(r'$t\;(GM/c^3)$')
+        #plt.xlabel(r'$t\;(r_g/c)$')
         plotlist[0].set_ylabel(r'$h/r$',fontsize=16)
         plt.setp( plotlist[0].get_xticklabels(), visible=False)
         plotlist[0].grid(True)
@@ -8762,7 +8839,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #plotlist[1].plot(ts,(-vus1hor*dxdxp[1][1][:,0,0])[:,iofr(12)],label=r'$-u^r_{\rm 12}$')
         #plotlist[1].plot(ts,(-vus1hor*dxdxp[1][1][:,0,0])[:,iofr(15)],label=r'$-u^r_{\rm 15}$')
         plotlist[1].legend(loc='upper right')
-        #plotlist[1].set_xlabel(r'$t\;(GM/c^3)$')
+        #plotlist[1].set_xlabel(r'$t\;(r_g/c)$')
         plotlist[1].set_ylabel(r'$u^r$',fontsize=16)
         plt.setp( plotlist[1].get_xticklabels(), visible=False)
 
@@ -8774,7 +8851,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #plotlist[2].plot(ts,rhoshor[:,iofr(12)],label=r'$\rho_{\rm 12}$')
         #plotlist[2].plot(ts,rhoshor[:,iofr(15)],label=r'$\rho_{\rm 15}$')
         plotlist[2].legend(loc='upper left')
-        #plotlist[2].set_xlabel(r'$t\;(GM/c^3)$')
+        #plotlist[2].set_xlabel(r'$t\;(r_g/c)$')
         plotlist[2].set_ylabel(r'$\rho$',fontsize=16)
 
         plotlist[3].plot(ts,(ugshor/rhoshor)[:,ihor],label=r'$u^r_{\rm h}$')
@@ -8785,7 +8862,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #plotlist[3].plot(ts,(ugshor/rhoshor)[:,iofr(12)],label=r'$u^r_{\rm 12}$')
         #plotlist[3].plot(ts,(ugshor/rhoshor)[:,iofr(15)],label=r'$u^r_{\rm 15}$')
         plotlist[3].legend(loc='upper left')
-        plotlist[3].set_xlabel(r'$t\;(GM/c^3)$')
+        plotlist[3].set_xlabel(r'$t\;(r_g/c)$')
         plotlist[3].set_ylabel(r'$u_g/\rho$',fontsize=16)
 
         #title("\TeX\ is Number $\displaystyle\sum_{n=1}^\infty\frac{-e^{i\pi}}{2^n}$!", 
@@ -10138,307 +10215,486 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     #
     #
-    if dofftplot==1:
-        print("dofftplot==1" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-        #
-        #
-        #########################################################################################
-        # Consider particular slices of the tvsr or tvsh plots for Fourier analysis to see if QPOs clearly present as apparant by eye.
-        # http://linuxgazette.net/115/andreasen.html
-        #
-        # condition for using data is that is within averaging time range
-        condt = (ts<ftf)*(ts>=fti)
-        # often include final data dump even if not part of periodically chosen set, so avoid for this Fourier measure to avoid contamination
-        condt = condt*(ts!=ts[-1])
-        #
-        #
-        xvalue=ts[condt]
-        pickradius=4.0 # must be consistent with where yvalue was picked
-        iradius=iofr(pickradius)
-        picktheta=np.pi*0.5 + 10.0*hoverr_vsr[iradius]
-        #picktheta=np.pi*0.5 + 0.0*hoverr_vsr[iradius] # not visible
-        #picktheta=np.pi*0.5 + 1.0*hoverr_vsr[iradius] # not as visible
-        #picktheta=np.pi*0.5 + 2.0*hoverr_vsr[iradius] # not as visible
-        #picktheta=np.pi*0.5 + 4.0*hoverr_vsr[iradius] # kinda visible
-        #picktheta=np.pi*0.5 + 8.0*hoverr_vsr[iradius] # very visible
-        #picktheta=np.pi*0.5 + 10.0*hoverr_vsr[iradius] # very visible
-        if picktheta>0.95*np.pi:
-            picktheta=0.95*np.pi
-        if picktheta<0.01:
-            picktheta=0.01
-        pickj=jofh(picktheta,iradius)
-        testfft=0
-        if testfft==0:
-            yvalue=bs3rhosqrad4[condt,pickj] # 8,10 very visible (more robust)
-            #yvalue=bsqrhosqrad4[condt,pickj] # kinda visible at 8
-            #yvalue=vus3rhosqrad4[condt,pickj] # very large spike for 8 (too noisy in general)
-            #yvalue=Bs2rhosqrad4[condt,pickj] # kinda visible at 8
-        else:
-            taupick=65.0
-            yvalue=np.sin(2.0*np.pi*(xvalue/taupick))
-        #
-        print("picktheta=%g pickj=%d" % (picktheta,pickj)); sys.stdout.flush()
-        #Yfft=sp.fftpack.fft(yvalue)
-        # http://docs.scipy.org/doc/numpy/reference/routines.fft.html
-        # http://docs.scipy.org/doc/numpy/reference/generated/numpy.fft.rfft.html#numpy.fft.rfft
-        Yfft=np.fft.rfft(yvalue)
-        nfft=len(Yfft)
-        print("nfft(ninput/2+1)=%d" % (nfft)); sys.stdout.flush()
-        # normalized by total power including period=infinity mode (i.e. average)
-        normpowerfft = np.absolute(Yfft[1:nfft])/np.sum(np.absolute(Yfft[0:nfft]))
-        #print("normpowerfft")
-        #print(normpowerfft)
-        DTavg=ts[condt][-1]-ts[condt][0]
-        dtavg=ts[condt][-1]-ts[condt][-2]
-        nyquistfft=1.0/(2.0*dtavg)
-        print("DTavg=%g dtavg=%g nyquistfft=%g" % (DTavg,dtavg,nyquistfft))
-        freqfft=np.arange(nfft)/(1.0*nfft)*nyquistfft
-        periodfft=1./freqfft
-        #print(periodfft[1:len(periodfft)])
-        #
-        #plt.figure(1, figsize=(6,5.8),dpi=200)
-        plt.figure(1)
-        plt.clf()
-        plt.cla()
-        #plt.clf()
-        #gs = GridSpec(3, 3)
-        #gs.update(left=0.12, right=0.94, top=0.95, bottom=0.1, wspace=0.01, hspace=0.04)
-        #ax1 = plt.subplot(gs[0,:])
-        #plt.xlim(0,d/2.); plt.ylim(-d,d)
-        #plt.plot(periodfft[1:len(periodfft)],normpowerfft,'o',label=r'label',mfc='r')
-        #xtoplot=np.log10(periodfft[1:len(periodfft)])
-        #ytoplot=np.log10(normpowerfft)
-        xtoplot=periodfft[1:len(periodfft)]
-        ytoplot=normpowerfft
-        plt.plot(xtoplot,ytoplot)
-        plt.axis('tight')
-        plt.xscale('log')
-        plt.yscale('log')
-        #plt.xlim(np.log10(xtoplot[0]),np.log10(xtoplot[-1]))
-        #plt.ylim(np.log10(ytoplot[0]),np.log10(ytoplot[-1]))
-        plt.xlabel(r"Period [$\tau$]",ha='center',labelpad=6)
-        plt.ylabel(r"Power Density",ha='center',labelpad=6)
-        #
-        # need resolution to show all time resolution -- space is resolved normally
-        #
-        # total size in inches
-        xinches=6.0
-        yinches=6.0
-        # non-plotting part that takes up space
-        xnonplot=0.75
-        ynonplot=0.75
-        DPIy=len(ytoplot)/(yinches-ynonplot)
-        DPIx=len(xtoplot)/(xinches-xnonplot)
-        maxresx=10000
-        maxresy=10000
-        maxDPIx=maxresx/xinches
-        maxDPIy=maxresy/yinches
-        DPIx=min(DPIx,maxDPIx)
-        DPIy=min(DPIy,maxDPIy)
-        DPI=max(DPIx,DPIy)
-        resx=DPI*xinches
-        resy=DPI*yinches
-        F = pylab.gcf()
-        F.set_size_inches( (xinches, yinches) )
-        print("fft Resolution should be %i x %i pixels from DPI=%d (DPIxy=%d %d)" % (resx,resy,DPI,DPIx,DPIy))
-        #
-        plt.savefig("fft1.pdf",dpi=DPI)#,bbox_inches='tight',pad_inches=0.1)
-        plt.savefig("fft1.eps",dpi=DPI)#,bbox_inches='tight',pad_inches=0.1)
-        plt.savefig("fft1.png",dpi=DPI)#,bbox_inches='tight',pad_inches=0.1)
-    #########################################################################################
+    whichnorm=1
+    whichxaxis=1
+    numplots=3
+    #
+    for whichfftplot in np.arange(0,numplots):
     #
     #
-    #
-    #
-    #########################################################################################
-    # fft needed for specplot
-    if dospecplot==1 and dofftplot==1:
-        print("dospecplot==1" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-        # Create a spectogram using matplotlib.mlab.specgram()
-        # http://matplotlib.sourceforge.net/api/mlab_api.html#matplotlib.mlab.specgram
-        #http://stackoverflow.com/questions/3716528/multi-panel-time-series-of-lines-and-filled-contours-using-matplotlib
-        #
-        from scipy import fftpack
-        #
-        # xvalue,yvalue
-        dosameasfft=0
-        if dosameasfft==0:
-            # show all times, no need to restrict
-            condt = (ts>0)
+        if dofftplot==1 or dospecplot==1: # needed by dospecplot==1
+            print("dofftplot==1 whichfftplot==%d" % (whichfftplot) + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
+            #
+            ####################
+            # PLOT:
+            fig1 = plt.figure(1)
+            if whichfftplot==0:
+                fig1.clf()
+                plt.cla()
+            #plt.figure(1, figsize=(6,5.8),dpi=200)
+            #fig = plt.figure(1)
+            #ax1 = fig1.gca()
+            #fig1.clf()
+            #gs = GridSpec(3, 3)
+            #gs.update(left=0.12, right=0.94, top=0.95, bottom=0.1, wspace=0.01, hspace=0.04)
+            #ax = fig1.subplot(gs[0,:])
+            #
+            topf=0.97
+            bottomf=0.04
+            dropf=(topf-bottomf)/3.0
+            #
+            if whichfftplot==0:
+                #ax=plt.subplot(311)
+                gs1 = GridSpec(1, 1)
+                gs1.update(left=0.12, right=0.98, top=topf, bottom=topf-dropf, wspace=0.01, hspace=0.04)
+                ax = plt.subplot(gs1[:,-1])
+                ax.set_xticklabels([])
+            elif whichfftplot==1:
+                #ax=plt.subplot(312)
+                gs2 = GridSpec(1, 1)
+                gs2.update(left=0.12, right=0.98, top=topf-dropf, bottom=topf-2*dropf, wspace=0.01, hspace=0.04)
+                ax = plt.subplot(gs2[:,-1])
+                ax.set_xticklabels([])
+            elif whichfftplot==2:
+                #ax=plt.subplot(313)
+                gs3 = GridSpec(1, 1)
+                gs3.update(left=0.12, right=0.98, top=topf-2*dropf, bottom=topf-3*dropf, wspace=0.01, hspace=0.04)
+                ax = plt.subplot(gs3[:,-1])
+            #
+            #params = {'xtick.labelsize': 10,'ytick.labelsize': 12}
+            #plt.rcParams.update(params)
+            #########################################################################################
+            # Consider particular slices of the tvsr or tvsh plots for Fourier analysis to see if QPOs clearly present as apparant by eye.
+            # http://linuxgazette.net/115/andreasen.html
+            #
+            # condition for using data is that is within averaging time range
+            if modelname=="thickdisk7":
+                condt = (ts<ftf)*(ts>=fti)
+                condt = condt*(ts!=ts[-1])
+                condt = condt*(ts>12000.0)
+            else:
+                condt = (ts<ftf)*(ts>=fti)
+                # often include final data dump even if not part of periodically chosen set, so avoid for this Fourier measure to avoid contamination
+                condt = condt*(ts!=ts[-1])
+            #
+            condtfull = (ts>=0.0)
             #
             #
+            ####################
             xvalue=ts[condt]
+            xvaluefull=ts[condtfull]
+            #
+            #####################
+            # PICK:
             pickradius=4.0 # must be consistent with where yvalue was picked
             iradius=iofr(pickradius)
-            picktheta=np.pi*0.5 + 10.0*hoverr_vsr[iradius]
+            if whichfftplot==0:
+                picktheta=np.pi*0.5 + 0.0*hoverr_vsr[iradius]
+            elif whichfftplot==1 or whichfftplot==2:
+                picktheta=np.pi*0.5 + 10.0*hoverr_vsr[iradius] # most robust
+            #
             if picktheta>0.95*np.pi:
                 picktheta=0.95*np.pi
             if picktheta<0.01:
                 picktheta=0.01
             pickj=jofh(picktheta,iradius)
+            #
+            ############
+            # TEST or not:
             testfft=0
             if testfft==0:
-                yvalue=bs3rhosqrad4[condt,pickj] # 8,10 very visible (more robust)
-                #yvalue=bsqrhosqrad4[condt,pickj] # kinda visible at 8
-                #yvalue=vus3rhosqrad4[condt,pickj] # very large spike for 8 (too noisy in general)
-                #yvalue=Bs2rhosqrad4[condt,pickj] # kinda visible at 8
+                if whichfftplot==2:
+                    yvalue=bs3rhosqrad4[condt,pickj] # 10 very visible (most robust)
+                    yvaluefull2=bs3rhosqrad4[condtfull,pickj] # 10 very visible (most robust)
+                    plt.title(r"Power in $b_\phi^2$ at $r=4r_g$ in Jet",fontsize=10)
+                elif whichfftplot==1:
+                    yvalue=bsqrhosqrad4[condt,pickj] # kinda visible at 8
+                    yvaluefull1=bsqrhosqrad4[condtfull,pickj] # kinda visible at 8
+                    plt.title(r"Power in $b^2$ at $r=4r_g$ in Jet",fontsize=10)
+                elif whichfftplot==0:
+                    yvalue=bsqrhosqrad4[condt,pickj] # kinda visible at 8
+                    yvaluefull0=bsqrhosqrad4[condtfull,pickj] # kinda visible at 8
+                    plt.suptitle(r"Power in $b^2$ at $r=4r_g$ in Disk",fontsize=10)
+                #
             else:
                 taupick=65.0
                 yvalue=np.sin(2.0*np.pi*(xvalue/taupick))
+                yvaluefull0=np.sin(2.0*np.pi*(xvaluefull/taupick))
+                yvaluefull1=yvaluefull0
             #
             print("picktheta=%g pickj=%d" % (picktheta,pickj)); sys.stdout.flush()
+            #
+            #
+            #Yfft=sp.fftpack.fft(yvalue)
+            # http://docs.scipy.org/doc/numpy/reference/routines.fft.html
+            # http://docs.scipy.org/doc/numpy/reference/generated/numpy.fft.rfft.html#numpy.fft.rfft
             Yfft=np.fft.rfft(yvalue)
             nfft=len(Yfft)
             print("nfft(ninput/2+1)=%d" % (nfft)); sys.stdout.flush()
-            normpowerfft = np.absolute(Yfft[1:nfft])/np.sum(np.absolute(Yfft[0:nfft]))
+            #
+            Yfftfull=np.fft.rfft(yvaluefull0)
+            nfftfull=len(Yfftfull)
+            print("nfftfull(ninput/2+1)=%d" % (nfftfull)); sys.stdout.flush()
+            #
+            ####################
+            # X:
+            #print("normpowerfft")
+            #print(normpowerfft)
             DTavg=ts[condt][-1]-ts[condt][0]
             dtavg=ts[condt][-1]-ts[condt][-2]
+            DTavgfull=ts[condtfull][-1]-ts[condtfull][0]
+            dtavgfull=ts[condtfull][-1]-ts[condtfull][-2]
             nyquistfft=1.0/(2.0*dtavg)
+            nyquistfftfull=1.0/(2.0*dtavgfull)
             print("DTavg=%g dtavg=%g nyquistfft=%g" % (DTavg,dtavg,nyquistfft))
+            print("DTavgfull=%g dtavgfull=%g nyquistfftfull=%g" % (DTavgfull,dtavgfull,nyquistfftfull))
             freqfft=np.arange(nfft)/(1.0*nfft)*nyquistfft
+            freqfftfull=np.arange(nfftfull)/(1.0*nfftfull)*nyquistfftfull
             periodfft=1./freqfft
-        #
-        #    spec=matplotlib.mlab.specgram(yvalue,NFFT=50,Fs=2.0*nyquistfft,noverlap=10)
-        fig = plt.figure()
-        plt.clf()
-        plt.cla()
-        plt.xlabel(r"$t$ [$t_g$]",ha='center',labelpad=6)
-        plt.ylabel(r"$\tau$ [$t_g$]",ha='center',labelpad=6)
-        ax = fig.add_subplot(111)
-        #spec_img,freq,_ = matplotlib.mlab.specgram(yvalue,NFFT=16,noverlap=4,Fs=2.0*nyquistfft)
-        # get equal resolution in frequency and time for this specgram
-        #myNFFT=np.int_(np.rint(np.floor(np.sqrt(len(ts)))/2)*2)
-        myNFFT=np.int_(np.rint(np.floor(np.sqrt(len(ts)))/2)*2)*2
-        #myNFFT=len(ts)/16
-        noverlap=0
-        if myNFFT<noverlap-1:
-            noverlap=myNFFT-1
-        print("myNFFT=%d noverlap=%d" % (myNFFT,noverlap) ); sys.stdout.flush()
-        spec_img,freq,_ = matplotlib.mlab.specgram(yvalue,NFFT=myNFFT,noverlap=noverlap,Fs=2.0*nyquistfft)
-        spec_img=spec_img/np.sum(spec_img)
-        period=1/freq
-        #print("freq")
-        #print(freq)
-        print("period"); sys.stdout.flush()
-        print(period)
-        print("spec_img"); sys.stdout.flush()
-        print(spec_img)
-        t = np.linspace(xvalue.min(), xvalue.max(), spec_img.shape[1])
-        dologz=1
-        if dologz==1:
-            spec_img = np.log10(spec_img)
-        #
-        ax.set_yscale('log')
-        # avoid period=inf or freq=0
-        periodtoplot=period[1:len(period)]
-        # note that even though pcolormesh takes t,period,spec, args of spec are period,t !!
-        spectoplot=spec_img[1:len(period),:]
-        ttoplot=t[:]
-        if len(periodtoplot>2) and len(spectoplot)>2:
-            im = ax.pcolormesh(ttoplot, periodtoplot, spectoplot)
-            #im = ax.pcolormesh(t, period, spec_img)
-            cax = make_legend_axes(ax)
-            if dologz==1:
-                cbar = fig.colorbar(im, cax=cax, format=r'$10^{%0.1f}$')
-                cbar.set_label('Power Density', rotation=-90)
+            periodfftfull=1./freqfftfull
+            normperiodfft=periodfft[1:len(periodfft)]
+            normperiodfftfull=periodfftfull[1:len(periodfftfull)]
+            #
+            if whichxaxis==0:
+                xtoplot=normperiodfft
+                xtoplotfull=normperiodfftfull
+                plt.xscale('log')
+                plt.set_xticklabels([])
+                if whichfftplot==numplots-1:
+                    plt.xlabel(r"Period [$\tau$]",ha='center',labelpad=6)
             else:
-                cbar = fig.colorbar(im, cax=cax, )
-                cbar.set_label('Power Density', rotation=-90)
-            #ax.set_ylim([freq[1], freq.max()])
-            # periodtoplot is backwards
-            ax.set_ylim([periodtoplot[-1], periodtoplot[0]])
-            # Hide x-axis tick labels
-            #plt.setp(ax.get_xticklabels(), visible=False)
-            #print("spec")
-            #print(spec)
-            #extent=(-spec[,len,-len,len)
-            #
-            #palette=cm.jet
-            #palette.set_bad('k', 1.0)
-            #
-            #CS = plt.imshow(toplot, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=mintoplot,vmax=maxtoplot)
-            #CS = plt.imshow(spec[0], cmap = palette)
-            #plt.axis('tight')
-            #plt.xscale('log')
-            #plt.xlim([extent[0],extent[1]])
-            #plt.ylim([extent[2],extent[3]])
+                xtoplot=freqfft[1:len(freqfft)]
+                xtoplotfull=freqfftfull[1:len(freqfftfull)]
+                plt.xscale('log')
+                if whichfftplot==numplots-1:
+                    plt.xlabel(r"Frequency [$f$, $c/r_g$]",ha='center',labelpad=6)
+                #
             #
             #
+            ####################
+            # Y:
+            if whichnorm==0:
+                # normalized by total power including period=infinity mode (i.e. average)
+                normpowerfft = np.absolute(Yfft[1:nfft])/np.sum(np.absolute(Yfft[0:nfft]))
+                #normpowerfftfull = np.absolute(Yfftfull[1:nfftfull])/np.sum(np.absolute(Yfftfull[0:nfftfull]))
+                plt.ylabel(r"Power Density",ha='center',labelpad=6)
+            else:
+                yaverage=np.mean(yvalue)
+                yaveragefull=np.mean(yvaluefull0)
+                yrms=np.std(yvalue)
+                yrmsfull=np.std(yvaluefull0)
+                fftfactor=(yrms/yaverage)**2
+                fftfactorfull=(yrmsfull/yaveragefull)**2
+                # van der Klis 1997 and Leahy et al. (1983)
+                normpowerfft = 2.0*np.absolute(Yfft[1:nfft])**2/np.absolute(Yfft[0])**2*DTavg
+                normpowerfftfull = 2.0*np.absolute(Yfftfull[1:nfftfull])**2/np.absolute(Yfftfull[0])**2*DTavgfull
+                # so that \int normpowerfft d\nu = (rms/mean)^2 @ j for d\nu = j/T
+                #
+                # check this point
+                dnu=freqfft[1]-freqfft[0]
+                totalrmssq=np.sum(normpowerfft*dnu)
+                print("average=%g rms=%g rmsoaveragesq=%g result=%g" % (yaverage,yrms,(yrms/yaverage)**2,totalrmssq)) ; sys.stdout.flush()
+                #
+                dnufull=freqfftfull[1]-freqfftfull[0]
+                totalrmssqfull=np.sum(normpowerfftfull*dnufull)
+                print("averagefull=%g rmsfull=%g rmsoaveragesqfull=%g resultfull=%g" % (yaveragefull,yrmsfull,(yrmsfull/yaveragefull)**2,totalrmssqfull)) ; sys.stdout.flush()
+                #
+                plt.ylabel(r"Power Density [$({\rm rms}/{\rm mean})^2$ $F^{-1}$]",ha='center',labelpad=6)
+            #
+            ytoplot=normpowerfft
+            #
+            if whichfftplot==0:
+                ytoplot0=ytoplot
+            elif whichfftplot==1:
+                ytoplot1=ytoplot
+            elif whichfftplot==2:
+                ytoplot2=ytoplot
             #
             #
-            #ax1.ticklabel_format(style='sci', scilimits=(0,0), axis='y')
-            #ax2.ticklabel_format(style='sci', scilimits=(0,0), axis='y')      
+            # FOR PLOT:
+            #plt.xlim(0,d/2.); plt.ylim(-d,d)
+            #plt.plot(periodfft[1:len(periodfft)],normpowerfft,'o',label=r'label',mfc='r')
+            #xtoplot=np.log10(periodfft[1:len(periodfft)])
+            #ytoplot=np.log10(normpowerfft)
             #
-            #plt.xlabel(r"$r [r_g]$",ha='center',labelpad=0,fontsize=14)
-            #plt.ylabel(r"$t [r_g]$",ha='left',labelpad=20,fontsize=14)
+            plt.yscale('log')
             #
-            #gs2 = GridSpec(1, 1)
-            #gs2.update(left=0.5, right=1, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
-            #ax2 = plt.subplot(gs2[:, -1])
+            plt.plot(xtoplot,ytoplot,color='k')
             #
-            #if cb==1:
-            #    plt.colorbar(CS) # draw colorbar
-            #
-            #plt.subptitle(pllabel,fontsize=8)
-            #plt.title(pllabel,fontsize=8)
-            #print("pllabel=%s" % (pllabel))
-            #
-            #F = pylab.gcf()
+            ################
+            # show smothed version too
+            sytoplot=smooth(ytoplot,window_len=10,window='hanning')
+            plt.plot(xtoplot,sytoplot,color='r')
             #
             #
+            plt.axis('tight')
+            #plt.xlim(np.log10(xtoplot[0]),np.log10(xtoplot[-1]))
+            #plt.ylim(np.log10(ytoplot[0]),np.log10(ytoplot[-1]))
             #
-            # need resolution to show all time resolution -- space is resolved normally
             #
-            xtoplot=t
-            ytoplot=periodtoplot
-            #
-            # total size in inches
-            xinches=6.0
-            yinches=6.0
-            # non-plotting part that takes up space
-            xnonplot=0.75
-            ynonplot=0.75
-            DPIy=len(ytoplot)/(yinches-ynonplot)
-            DPIx=len(xtoplot)/(xinches-xnonplot)
-            maxresx=10000
-            maxresy=10000
-            maxDPIx=maxresx/xinches
-            maxDPIy=maxresy/yinches
-            DPIx=min(DPIx,maxDPIx)
-            DPIy=min(DPIy,maxDPIy)
-            DPI=max(DPIx,DPIy)
-            resx=DPI*xinches
-            resy=DPI*yinches
-            minres=600
-            if resx<minres:
-                DPI=minres/xinches
+            # only save after both plots are done
+            if whichfftplot==numplots-1:
+                ####################
+                # need resolution to show all time resolution -- space is resolved normally
+                # total size in inches
+                xinches=6.0
+                yinches=6.0*numplots
+                # non-plotting part that takes up space
+                xnonplot=0.75
+                ynonplot=0.75
+                DPIx=len(xtoplot)/(xinches-xnonplot)
+                DPIy=len(ytoplot*numplots)/(yinches-ynonplot*numplots)
+                maxresx=10000
+                maxresy=10000
+                maxDPIx=maxresx/xinches
+                maxDPIy=maxresy/yinches
+                DPIx=min(DPIx,maxDPIx)
+                DPIy=min(DPIy,maxDPIy)
+                DPI=max(DPIx,DPIy)
                 resx=DPI*xinches
                 resy=DPI*yinches
-            if resy<minres:
-                DPI=minres/yinches
-                resx=DPI*xinches
-                resy=DPI*yinches
-            #
-            F = pylab.gcf()
-            F.set_size_inches( (xinches, yinches) )
-            print("fft Resolution should be %i x %i pixels from DPI=%d (DPIxy=%d %d)" % (resx,resy,DPI,DPIx,DPIy))
-            #
-            plt.savefig( "spec1.png" ,dpi=DPI)
-            plt.savefig( "spec1.eps" ,dpi=DPI)
-            #
-            #sys.stdout.flush()
-        else:
-            print("Cannot do specplot")
+                F = pylab.gcf()
+                F.set_size_inches( (xinches, yinches) )
+                print("fft Resolution should be %i x %i pixels from DPI=%d (DPIxy=%d %d)" % (resx,resy,DPI,DPIx,DPIy))
+                #
+                ####################
+                plt.savefig("fft1.pdf",dpi=DPI)#,bbox_inches='tight',pad_inches=0.1)
+                plt.savefig("fft1.eps",dpi=DPI)#,bbox_inches='tight',pad_inches=0.1)
+                plt.savefig("fft1.png",dpi=DPI)#,bbox_inches='tight',pad_inches=0.1)
+                #
+                # FILE:
+                ffft1 = open('datafft1.txt', 'w')
+                for ii in np.arange(0,len(xtoplot)):
+                    ffft1.write("%d %g   %g %g %g\n" % (ii,xtoplot[ii],ytoplot0[ii],ytoplot1[ii],ytoplot2[ii]))
+                ffft1.close()
+                #
+                    
             #
         #
+        #########################################################################################
+        #
+        #
+    for whichfftplot in np.arange(0,numplots):
+        #
+        #########################################################################################
+        # fft needed for specplot
+        if dospecplot==1 and dofftplot==1:
+            print("dospecplot==1" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
+            # Create a spectogram using matplotlib.mlab.specgram()
+            # http://matplotlib.sourceforge.net/api/mlab_api.html#matplotlib.mlab.specgram
+            #http://stackoverflow.com/questions/3716528/multi-panel-time-series-of-lines-and-filled-contours-using-matplotlib
+            #
+            from scipy import fftpack
+            #
+            if whichfftplot==0:
+                yvaluespec=yvaluefull0
+            elif whichfftplot==1:
+                yvaluespec=yvaluefull1
+            elif whichfftplot==2:
+                yvaluespec=yvaluefull2
+            #
+            fig2 = plt.figure(2)
+            plt.clf()
+            plt.cla()
+            #ax2 = plt.subplot(111)
+            params = {'xtick.labelsize': 10,'ytick.labelsize': 12}
+            plt.rcParams.update(params)
+            gs1 = GridSpec(1, 1)
+            gs1.update(left=0.12, right=0.85, top=0.95, bottom=0.10, wspace=0.01, hspace=0.05)
+            ax2 = plt.subplot(gs1[:, -1])
+            #
+            #gs1 = GridSpec(1, 1)
+            #gs1.update(left=0.05, right=0.95, top=0.30, bottom=0.03, wspace=0.01, hspace=0.04)
+            # get equal resolution in frequency and time for this specgram
+            #myNFFT=np.int_(np.rint(np.floor(np.sqrt(len(xvaluefull)))/2)*2)
+            myNFFT=np.int_(np.rint(np.floor(np.sqrt(len(xvaluefull)))/2)*2)*2
+            #myNFFT=len(ts)/16
+            noverlap=0
+            if myNFFT<noverlap-1:
+                noverlap=myNFFT-1
+            print("myNFFT=%d noverlap=%d" % (myNFFT,noverlap) ); sys.stdout.flush()
+            spec_img,freq,_ = matplotlib.mlab.specgram(yvaluespec,NFFT=myNFFT,noverlap=noverlap,Fs=2.0*nyquistfft)
+            #
+            if whichnorm==0:
+                #plt.title("Normalized Power Density",fontsize=8)
+                spec_img=spec_img/np.sum(spec_img)
+            else:
+                #plt.title(r"Power Density [$({\rm rms}/{\rm mean})^2$ $F^{-1}$]",fontsize=8)
+                for iter in np.arange(0,len(spec_img[:,0])):
+                    spec_img[iter,:]=2.0*(spec_img[iter,:]**2/spec_img[0,:]**2)*(DTavgfull/len(spec_img[0,:]))
+                    #
+                #
+            #
+            period=1/freq
+            #print("freq")
+            #print(freq)
+            #print("period"); sys.stdout.flush()
+            #print(period)
+            #print("spec_img"); sys.stdout.flush()
+            #print(spec_img)
+            t = np.linspace(xvaluefull.min(), xvaluefull.max(), spec_img.shape[1])
+            #
+            dologz=1
+            if dologz==1:
+                spec_img = np.log10(spec_img)
+            #
+            # avoid period=inf or freq=0
+            skipit=2
+            periodtoplot=period[skipit:len(period)]
+            freqtoplot=freq[skipit:len(freq)]
+            # note that even though pcolormesh takes t,period,spec, args of spec are period,t !!
+            spectoplot=spec_img[skipit:-1,:]
+            if dologz==1:
+                # dynamic range of 8 allowed
+                spectoplot=np.ma.masked_array(spectoplot,mask=spectoplot<np.max(spectoplot)-8)
+            else:
+                spectoplot=np.ma.masked_array(spectoplot,mask=spectoplot<np.max(spectoplot)/1E8)
+            #
+            ttoplot=t[:]
+            #
+            if len(periodtoplot>2) and len(spectoplot)>2:
+                #
+                #
+                if whichxaxis==0:
+                    im = plt.pcolormesh(ttoplot, periodtoplot, spectoplot)
+                    #im = plt.pcolormesh(t, period, spec_img)
+                    # periodtoplot is backwards
+                    ax2.set_ylim([periodtoplot[-1], periodtoplot[0]])
+                    plt.xlabel(r"$t$ [$t_g$]",ha='center',labelpad=6)
+                    plt.ylabel(r"$\tau$ [$t_g$]",ha='center',labelpad=6)
+                else:
+                    im = plt.pcolormesh(ttoplot, freqtoplot, spectoplot)
+                    ax2.set_ylim([freqtoplot[0], freqtoplot[-1]])
+                    plt.xlabel(r"$t$ [$r_g/c$]",ha='center',labelpad=6)
+                    plt.ylabel(r"Frequency [$f$ , $c/r_g$]",ha='center',labelpad=6)
+                #
+                cax = make_legend_axes(ax2)
+                if dologz==1:
+                    #cbar = plt.colorbar(im, cax=cax, format=r'$10^{%0.1f}$')
+                    cbar = plt.colorbar(im, cax=cax, format=r'$10^{%d}$')
+                else:
+                    cbar = plt.colorbar(im, cax=cax, )
+                #
+                if whichnorm==0:
+                    cbar.set_label('Normalized Power Density', rotation=-90)
+                elif whichnorm==1:
+                    cbar.set_label(r"Power Density [$({\rm rms}/{\rm mean})^2$ $F^{-1}$]", rotation=-90)                    
+                #
+                ax2.set_yscale('log')
+                #
+                #ax2.set_ylim([freq[1], freq.max()])
+                # Hide x-axis tick labels
+                #plt.setp(plt.get_xticklabels(), visible=False)
+                #print("spec")
+                #print(spec)
+                #extent=(-spec[,len,-len,len)
+                #
+                #palette=cm.jet
+                #palette.set_bad('k', 1.0)
+                #
+                #CS = plt.imshow(toplot, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=mintoplot,vmax=maxtoplot)
+                #CS = plt.imshow(spec[0], cmap = palette)
+                #plt.axis('tight')
+                #plt.xscale('log')
+                #plt.xlim([extent[0],extent[1]])
+                #plt.ylim([extent[2],extent[3]])
+                #
+                #
+                #
+                #
+                #ax1.ticklabel_format(style='sci', scilimits=(0,0), axis='y')
+                #plt.ticklabel_format(style='sci', scilimits=(0,0), axis='y')      
+                #
+                #plt.xlabel(r"$r [r_g]$",ha='center',labelpad=0,fontsize=14)
+                #plt.ylabel(r"$t [r_g]$",ha='left',labelpad=20,fontsize=14)
+                #
+                #gs2 = GridSpec(1, 1)
+                #gs2.update(left=0.5, right=1, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
+                #ax2 = plt.subplot(gs2[:, -1])
+                #
+                #if cb==1:
+                #    plt.colorbar(CS) # draw colorbar
+                #
+                #plt.subptitle(pllabel,fontsize=8)
+                #plt.title(pllabel,fontsize=8)
+                #print("pllabel=%s" % (pllabel))
+                #
+                #F = pylab.gcf()
+                #
+                #
+                #
+                # need resolution to show all time resolution -- space is resolved normally
+                #
+                xtoplot=t
+                ytoplot=periodtoplot
+                #
+                # total size in inches
+                xinches=6.0
+                yinches=6.0
+                # non-plotting part that takes up space
+                xnonplot=0.75
+                ynonplot=0.75
+                DPIy=len(ytoplot)/(yinches-ynonplot)
+                DPIx=len(xtoplot)/(xinches-xnonplot)
+                maxresx=10000
+                maxresy=10000
+                maxDPIx=maxresx/xinches
+                maxDPIy=maxresy/yinches
+                DPIx=min(DPIx,maxDPIx)
+                DPIy=min(DPIy,maxDPIy)
+                DPI=max(DPIx,DPIy)
+                resx=DPI*xinches
+                resy=DPI*yinches
+                minres=600
+                if resx<minres:
+                    DPI=minres/xinches
+                    resx=DPI*xinches
+                    resy=DPI*yinches
+                if resy<minres:
+                    DPI=minres/yinches
+                    resx=DPI*xinches
+                    resy=DPI*yinches
+                #
+                F = pylab.gcf()
+                F.set_size_inches( (xinches, yinches) )
+                print("fft Resolution should be %i x %i pixels from DPI=%d (DPIxy=%d %d)" % (resx,resy,DPI,DPIx,DPIy))
+                #
+                if whichfftplot==0:
+                    plt.savefig( "spec0.png" ,dpi=DPI)
+                    plt.savefig( "spec0.eps" ,dpi=DPI)
+                elif whichfftplot==1:
+                    plt.savefig( "spec1.png" ,dpi=DPI)
+                    plt.savefig( "spec1.eps" ,dpi=DPI)
+                elif whichfftplot==2:
+                    plt.savefig( "spec2.png" ,dpi=DPI)
+                    plt.savefig( "spec2.eps" ,dpi=DPI)
+                #
+                #sys.stdout.flush()
+            else:
+                print("Cannot do specplot")
+                #
+        # end doing specplot
+    # end over whichfftplot
+    #
     #
     #########################################
     #
     #
+    # FINALPLOTS:
+    #
+    # the below changes defaults to rcparams, so leave for last
+    bsqorhoha=bsqrhosqrad4/rhosrhosqrad4
+    bsqouha=bsqrhosqrad4/ugsrhosqrad4
+    toplot=bs3rhosqrad4
+    mkthrad(loadq=0,qty=toplot,pllabel='',filenum=0,fileletter="q",logvalue=0,radius=4,bsqorho=bsqorhoha,bsqou=bsqouha)
     #
     #
     #
     #
+    # FINALPLOT:
+    # ssh jmckinne@orange.slac.stanford.edu
+    # cd /lustre/ki/orange/jmckinne/thickdisk7/movie1
+    # scp fft1.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/fft1_thickdisk7.eps ;scp spec2.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/spec2_thickdisk7.eps ; scp plot0qvsth_.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/plottvsr_bphi.eps ; scp plot0qvsth_.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/plottvsth_bphi.eps ; scp lrhosmall4300_Rzxym1.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/lrhosmall4300_Rzxym1.eps; scp lrhosmall4190_Rzxym1.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/lrhosmall4190_Rzxym1.eps
 
 
 
@@ -10498,6 +10754,7 @@ def compute_thetaalongfield(aphi=None,picki=None,thetaalongjet=None,whichpole=0)
     # too close to jet and field bends back around potentially.  Also aphi can be very slightly non-monotonic and interp1d then can barf
     # GODMARK: numjoffset has to be tuned for a given setup/model/etc.
     # 10 works for runlocaldipole last snapshot, but not for averages (field bleeds into the wind and loops around)
+    # GODMARK: need modelname=="" here?
     numjoffset=16*(ny/128)
     pickj=pickj+signpole*numjoffset
     aphijetbase=aphi[picki,pickj,0]
@@ -10574,13 +10831,22 @@ def compute_thetaalongfield(aphi=None,picki=None,thetaalongjet=None,whichpole=0)
     #
     # get x back to r[:,0,0] since r doesn't depend upon \theta most of the time
     # have to fill since radii in xnew (or even x) less sampled than r[:,0,0]
-    yofx = interp1d(xnew[:], ynew[:], kind='linear',bounds_error=False,fill_value=ynew[-2])
-    thetaalongfield=yofx(r[:,0,0])
-    # the below model has issues with reflection at large radii
-    if modelname=="runlocaldipole3dfiducial":
-        rchop=900.0
-        ichop=iofr(rchop)
-        thetaalongfield[ti[:,0,0]>ichop]=thetaalongfield[ichop]
+    if len(xnew)>2 and len(ynew)>2:
+        if modelname=="runlocaldipole3dfiducial":
+            yofx = interp1d(xnew[:], ynew[:], kind='linear',bounds_error=False,fill_value=ynew[-2])
+        else:
+            yofx = interp1d(xnew[:], ynew[:], kind='linear',bounds_error=False,fill_value=ynew[-1])
+        #
+        thetaalongfield=yofx(r[:,0,0])
+        # the below model has issues with reflection at large radii
+        if modelname=="runlocaldipole3dfiducial":
+            rchop=900.0
+            ichop=iofr(rchop)
+            thetaalongfield[ti[:,0,0]>ichop]=thetaalongfield[ichop]
+        #
+    else:
+        thetaalongfield=0*r[:,0,0]
+        print("Could not get thetaalongfield")
     #
     return(aphijetbase,thetaalongfield)
     #
@@ -11075,7 +11341,7 @@ def plotj(ts,fs,md,jem,jtot):
     plotlist[0].plot(ts,fs,label=r'$\Phi_{\rm h}/\Phi_{\rm i}$')
     #plotlist[0].plot(ts,fs,'r+') #, label=r'$\Phi_{\rm h}/0.5\Phi_{\rm i}$: Data Points')
     plotlist[0].legend(loc='lower right')
-    #plt.xlabel(r'$t\;(GM/c^3)$')
+    #plt.xlabel(r'$t\;(r_g/c)$')
     plotlist[0].set_ylabel(r'$\Phi_{\rm h}$',fontsize=16)
     plt.setp( plotlist[0].get_xticklabels(), visible=False)
     plotlist[0].grid(True)
@@ -11084,7 +11350,7 @@ def plotj(ts,fs,md,jem,jtot):
     plotlist[1].plot(ts,md,label=r'$\dot M_{\rm h}$')
     #plotlist[1].plot(ts,md,'r+') #, label=r'$\dot M_{\rm h}$: Data Points')
     plotlist[1].legend(loc='lower right')
-    #plotlist[1].set_xlabel(r'$t\;(GM/c^3)$')
+    #plotlist[1].set_xlabel(r'$t\;(r_g/c)$')
     plotlist[1].set_ylabel(r'$\dot M_{\rm h}$',fontsize=16)
     plt.setp( plotlist[1].get_xticklabels(), visible=False)
     
@@ -11094,7 +11360,7 @@ def plotj(ts,fs,md,jem,jtot):
     plotlist[2].plot(ts,jtot/md,label=r'$P_{\rm j,tot}/\dot M$')
     #plotlist[2].plot(ts,jtot/md,'r+') #, label=r'$\dot M_{\rm h}$: Data Points')
     plotlist[2].legend(loc='lower right')
-    plotlist[2].set_xlabel(r'$t\;(GM/c^3)$')
+    plotlist[2].set_xlabel(r'$t\;(r_g/c)$')
     plotlist[2].set_ylabel(r'$P_{\rm j}/\dot M_{\rm h}$',fontsize=16)
 
     #title("\TeX\ is Number $\displaystyle\sum_{n=1}^\infty\frac{-e^{i\pi}}{2^n}$!", 
@@ -11111,7 +11377,7 @@ def test():
     plt.plot(t,f,label='$\Phi$')
     plt.title(r"This is a title")
     plt.legend(loc='upper right')
-    plt.xlabel(r'$t (GM/c^3)$')
+    plt.xlabel(r'$t (r_g/c)$')
     plt.ylabel(r'$\Phi_{\rm h}$',fontsize=16)
     #plt.legend()
 
@@ -12029,6 +12295,9 @@ def mk2davg():
     #
     gc.collect()
 
+
+
+
 def mkstreamlinefigure():
     mylen = 30
     arrowsize=4
@@ -12062,232 +12331,253 @@ def mkstreamlinefigure():
         vmaxforframe=1.5625
     #
     #
-    if True:
-    #if False:
-        #velocity
-        print("Doing velocity mkframe")
-        sys.stdout.flush()
-        B[1:] = avg_uu[1:]
-        bsq = avg_bsq
-        rho = avg_rho
-        bsqorho = bsq/rho
-        # density=24 is highest quality but 10X-30X slower than density=8
-        # 8 looks fine.
-        # 2 good for testing.
-        mydensity=2
-        #
-        mkframe("myframe",dovel=True,len=mylen,ax=ax,density=mydensity,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=vminforframe,vmax=vmaxforframe,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
+    mkstreampart1=1
+    mkstreampart2=1
     #
-    if True:
-    #if False:
-        print("Doing stagnation surface")
-        sys.stdout.flush()
-        istag, jstag, hstag, rstag = getstagparams(doplot=0)
-        if 1==0:
-            myRmax=4
-            #z>0
-            rs=rstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)>0]
-            hs=hstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)>0]
-            ax.plot(rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
-            ax.plot(-rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
-            #z<0
-            rs=rstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)<0]
-            hs=hstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)<0]
-            ax.plot(rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
-            ax.plot(-rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
-        if 1==1:
-            bsqorhorstag,bsqorhohstag=getstagparams2(doplot=0)
-            #bsq = avg_bsq
-            #rho = avg_rho
-            #bsqorho = bsq/rho
-            #z>0
-            print("%d %d %d" % (len(rstag),len(hstag),len(avg_bsqorho)))
-            truemaxbsqorhorstag=np.max(bsqorhorstag)
-            print("truemaxbsqorhorstag=%g" % (truemaxbsqorhorstag) )
-            # modelname=blandford3d_new has no region with bsqorho>2
-            #maxbsqorhorstag=0.95*truemaxbsqorhorstag
-            if modelname=="blandford3d_new":
-                setnothing=1
-            else:
-                #if truemaxbsqorhorstag>2.0:
-                maxbsqorhorstag=2.0
-                #
-                rs=rstag[(bsqorhorstag>maxbsqorhorstag)*np.cos(hstag)>0]
-                hs=hstag[(bsqorhohstag>maxbsqorhorstag)*np.cos(hstag)>0]
+    #
+    #
+    #
+    #########################################
+    if mkstreampart1==1:
+        #
+        if True:
+        #if False:
+            #velocity
+            print("Doing velocity mkframe")
+            sys.stdout.flush()
+            B[1:] = avg_uu[1:]
+            bsq = avg_bsq
+            rho = avg_rho
+            bsqorho = bsq/rho
+            # density=24 is highest quality but 10X-30X slower than density=8
+            # 8 looks fine.
+            # 2 good for testing.
+            mydensity=8
+            #
+            mkframe("myframe",dovel=True,len=mylen,ax=ax,density=mydensity,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=vminforframe,vmax=vmaxforframe,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
+        #
+        if True:
+        #if False:
+            print("Doing stagnation surface")
+            sys.stdout.flush()
+            istag, jstag, hstag, rstag = getstagparams(doplot=0)
+            if 1==0:
+                myRmax=4
+                #z>0
+                rs=rstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)>0]
+                hs=hstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)>0]
                 ax.plot(rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
                 ax.plot(-rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
                 #z<0
-                rs=rstag[(bsqorhorstag>maxbsqorhorstag)*np.cos(hstag)<0]
-                hs=hstag[(bsqorhohstag>maxbsqorhorstag)*np.cos(hstag)<0]
+                rs=rstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)<0]
+                hs=hstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)<0]
                 ax.plot(rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
                 ax.plot(-rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
+            if 1==1:
+                bsqorhorstag,bsqorhohstag=getstagparams2(doplot=0)
+                #bsq = avg_bsq
+                #rho = avg_rho
+                #bsqorho = bsq/rho
+                #z>0
+                print("%d %d %d" % (len(rstag),len(hstag),len(avg_bsqorho)))
+                truemaxbsqorhorstag=np.max(bsqorhorstag)
+                print("truemaxbsqorhorstag=%g" % (truemaxbsqorhorstag) )
+                # modelname=blandford3d_new has no region with bsqorho>2
+                #maxbsqorhorstag=0.95*truemaxbsqorhorstag
+                if modelname=="blandford3d_new":
+                    setnothing=1
+                else:
+                    #if truemaxbsqorhorstag>2.0:
+                    maxbsqorhorstag=2.0
+                    #
+                    rs=rstag[(bsqorhorstag>maxbsqorhorstag)*np.cos(hstag)>0]
+                    hs=hstag[(bsqorhohstag>maxbsqorhorstag)*np.cos(hstag)>0]
+                    ax.plot(rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
+                    ax.plot(-rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
+                    #z<0
+                    rs=rstag[(bsqorhorstag>maxbsqorhorstag)*np.cos(hstag)<0]
+                    hs=hstag[(bsqorhohstag>maxbsqorhorstag)*np.cos(hstag)<0]
+                    ax.plot(rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
+                    ax.plot(-rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
+                #
             #
         #
-    #
-    if True:
-        #field
-        print("Doing field mkframe")
+        if True:
+            #field
+            print("Doing field mkframe")
+            sys.stdout.flush()
+            # use t-phi-averaged gdet B
+            B[1] = avg_B[0]
+            B[2] = avg_B[1]
+            B[3] = avg_B[2]
+            gdetB[1:] = avg_gdetB[0:]
+            bsq = avg_bsq
+            mu = avg_mu
+            #
+            plt.figure(1)
+            # Sasha says this may help avoid field edge effects
+            #finallen=25./30.*mylen
+            finallen=mylen
+            #finallen=2.0*mylen
+            # useblank=True causes field lines to stop tracing when they get closer together at slightly larger distances.  
+            mkframe("myframe",doaphiavg=False,dostreamlines=False,useblank=False,len=finallen,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=vminforframe,vmax=vmaxforframe,dobhfield=8,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.01,dsval=0.01,color='r',lw=2,startatmidplane=True,domidfield=False,showjet=False,arrowsize=arrowsize)
+        #
+        if False:
+            x = (r*np.sin(h))[:,:,0]
+            z = (r*np.cos(h))[:,:,0]
+            x = np.concatenate(-x,x)
+            z = np.concatenate(y,y)
+            mu = np.concatenate(avg_mu[:,:,0],avg_mu[:,:,0])
+            plt.contourf( x, z, mu )
+        #
+        print("Writing File")
         sys.stdout.flush()
-        # use t-phi-averaged gdet B
-        B[1] = avg_B[0]
-        B[2] = avg_B[1]
-        B[3] = avg_B[2]
-        gdetB[1:] = avg_gdetB[0:]
-        bsq = avg_bsq
-        mu = avg_mu
         #
+        ##########################
+        # finish setup of plot
+        ax.set_aspect('equal')   
+        rhor=1+(1-a**2)**0.5
+        el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
+        art=ax.add_artist(el)
+        art.set_zorder(20)
+        mylenshow = 25./30.*mylen
+        plt.xlim(-mylenshow,mylenshow)
+        plt.ylim(-mylenshow,mylenshow)
+        plt.xlabel(r"$x\ [r_g]$",fontsize=fntsize,ha='center')
+        plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=15,fontsize=fntsize)
+        for label in ax.get_xticklabels() + ax.get_yticklabels():
+            label.set_fontsize(fntsize)
+        #
+        #plt.savefig("fig2.pdf",bbox_inches='tight',pad_inches=0.02,dpi=300)
+        #plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02,dpi=300)
+        # just convert png to eps or pdf after since otherwise too large
+        plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02,dpi=300)
+        print("Done Writing File") ; sys.stdout.flush()
+        #
+    #
+    #
+    #
+    ##################################################
+    if mkstreampart2==1:
+        #
+        ######
+        # compute aphi's for getting thetaalongfield and contour plots
+        myxcoord=r[0:iofr(30.0),:,0]*np.sin(h[0:iofr(30.0),:,0])
+        myycoord=r[0:iofr(30.0),:,0]*np.cos(h[0:iofr(30.0),:,0])
+        #
+        logmyxcoord=np.log10(1.0+np.fabs(r[:,:,0]*np.sin(h[:,:,0])))*np.sign(r[:,:,0]*np.sin(h[:,:,0]))
+        logmyycoord=np.log10(1.0+np.fabs(r[:,:,0]*np.cos(h[:,:,0])))*np.sign(r[:,:,0]*np.cos(h[:,:,0]))
+        #
+        myfun1zoom=np.sqrt(avg_psisq[0:iofr(30.0),:,0])
+        myfun1all=np.sqrt(avg_psisq[:,:,0])
+        #
+        aphifromavgfield=fieldcalc()
+        myfun2zoom=np.sqrt(aphifromavgfield[0:iofr(30.0),:,0]**2)
+        myfun2all=np.sqrt(aphifromavgfield[:,:,0]**2)
+        #
+        #
+        aphi1=np.sqrt(avg_psisq)
+        aphi2=np.sqrt(aphifromavgfield**2)
+        # compute final-time aphi for comparison
+        rfdlastfile()
+        aphisnapshot = fieldcalcface()
+        aphi3=aphisnapshot
+        #
+        #
+        ##############################
+        # get generate_time_series() type averages and calculations
+        hoverr_jet_vsr = getbasicqtystuff()
+        #
+        #
+        # get thetaalongfield
+        rhor=1+(1-a**2)**0.5
+        ihor = np.floor(iofr(rhor)+0.5)
+        #
+        #
+        print("thetaalongfield1"); sys.stdout.flush()
+        aphijetbase1,thetaalongfield1=compute_thetaalongfield(aphi=aphi1,picki=ihor,thetaalongjet=hoverr_jet_vsr,whichpole=1)
+        thetaalongfield1=np.pi - thetaalongfield1
+        print("thetaalongfield2"); sys.stdout.flush()
+        aphijetbase2,thetaalongfield2=compute_thetaalongfield(aphi=aphi2,picki=ihor,thetaalongjet=hoverr_jet_vsr,whichpole=1)
+        thetaalongfield2=np.pi - thetaalongfield2
+        print("thetaalongfield3"); sys.stdout.flush()
+        aphijetbase3,thetaalongfield3=compute_thetaalongfield(aphi=aphi3,picki=ihor,thetaalongjet=hoverr_jet_vsr,whichpole=0)
+        #
+        favg1 = open('datavsravg1.txt', 'w')
+        favg1.write("%s   %s %s %s  %s   %s %s %s\n" % ("#ii","r1","r2","r3","hoverr_jet_vsr","thetaalongfield1","thetaalongfield2","thetaalongfield3" ) )
+        #
+        for ii in np.arange(0,nx):
+            favg1.write("%d   %g %g %g   %g   %g %g %g\n" % (ii,r[ii,thetaalongfield1[ii],0],r[ii,thetaalongfield2[ii],0],r[ii,thetaalongfield3[ii],0],np.pi*0.5-hoverr_jet_vsr[ii],thetaalongfield1[ii],thetaalongfield2[ii],thetaalongfield3[ii]) )
+            #
+        #
+        favg1.close()
+        #
+        ################
+        # for Shep:
+        # cat datavsravg1.txt | awk '{print $1"   "$2" "$3" "$4"   "$5"   "$6" "$7" "$8}' | column -t > datavsrsharenew.txt
+        #
+        # avoid potential from averaged field that causes problems but medium (flips pole) and large radii (zeros out)
+        # cat datavsravg1.txt | awk '{print $1"   "$2"   "$5"   "$6" "$8}' | column -t > datavsrsharenew.txt
+        # cat datavsrsharenew.txt | column -t | less -S
+        #
+        ########################
+        # show averaged aphi for comparison with field from stream lines
         plt.figure(1)
-        # Sasha says this may help avoid field edge effects
-        #finallen=25./30.*mylen
-        finallen=mylen
-        #finallen=2.0*mylen
-        # useblank=True causes field lines to stop tracing when they get closer together at slightly larger distances.  
-        mkframe("myframe",doaphiavg=False,dostreamlines=False,useblank=False,len=finallen,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=vminforframe,vmax=vmaxforframe,dobhfield=8,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.01,dsval=0.01,color='r',lw=2,startatmidplane=True,domidfield=False,showjet=False,arrowsize=arrowsize)
-    #
-    if False:
-        x = (r*np.sin(h))[:,:,0]
-        z = (r*np.cos(h))[:,:,0]
-        x = np.concatenate(-x,x)
-        z = np.concatenate(y,y)
-        mu = np.concatenate(avg_mu[:,:,0],avg_mu[:,:,0])
-        plt.contourf( x, z, mu )
-    #
-    print("Writing File")
-    sys.stdout.flush()
-    #
-    ##########################
-    # finish setup of plot
-    ax.set_aspect('equal')   
-    rhor=1+(1-a**2)**0.5
-    el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
-    art=ax.add_artist(el)
-    art.set_zorder(20)
-    mylenshow = 25./30.*mylen
-    plt.xlim(-mylenshow,mylenshow)
-    plt.ylim(-mylenshow,mylenshow)
-    plt.xlabel(r"$x\ [r_g]$",fontsize=fntsize,ha='center')
-    plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=15,fontsize=fntsize)
-    for label in ax.get_xticklabels() + ax.get_yticklabels():
-        label.set_fontsize(fntsize)
-    #
-    #plt.savefig("fig2.pdf",bbox_inches='tight',pad_inches=0.02,dpi=300)
-    #plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02,dpi=300)
-    # just convert png to eps or pdf after since otherwise too large
-    plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02,dpi=300)
-    print("Done Writing File") ; sys.stdout.flush()
-    #
-    ##########################
-    # compute aphi's for getting thetaalongfield and contour plots
-    myxcoord=r[0:iofr(30.0),:,0]*np.sin(h[0:iofr(30.0),:,0])
-    myycoord=r[0:iofr(30.0),:,0]*np.cos(h[0:iofr(30.0),:,0])
-    #
-    logmyxcoord=np.log10(1.0+np.fabs(r[:,:,0]*np.sin(h[:,:,0])))*np.sign(r[:,:,0]*np.sin(h[:,:,0]))
-    logmyycoord=np.log10(1.0+np.fabs(r[:,:,0]*np.cos(h[:,:,0])))*np.sign(r[:,:,0]*np.cos(h[:,:,0]))
-    #
-    myfun1zoom=np.sqrt(avg_psisq[0:iofr(30.0),:,0])
-    myfun1all=np.sqrt(avg_psisq[:,:,0])
-    #
-    aphifromavgfield=fieldcalc()
-    myfun2zoom=np.sqrt(aphifromavgfield[0:iofr(30.0),:,0]**2)
-    myfun2all=np.sqrt(aphifromavgfield[:,:,0]**2)
-    #
-    #
-    aphi1=np.sqrt(avg_psisq)
-    aphi2=np.sqrt(aphifromavgfield**2)
-    # compute final-time aphi for comparison
-    rfdlastfile()
-    aphisnapshot = fieldcalcface()
-    aphi3=aphisnapshot
-    #
-    #
-    ##############################
-    # get generate_time_series() type averages and calculations
-    hoverr_jet_vsr = getbasicqtystuff()
-    #
-    #
-    # get thetaalongfield
-    rhor=1+(1-a**2)**0.5
-    ihor = np.floor(iofr(rhor)+0.5)
-    #
-    #
-    print("thetaalongfield1"); sys.stdout.flush()
-    aphijetbase1,thetaalongfield1=compute_thetaalongfield(aphi=aphi1,picki=ihor,thetaalongjet=hoverr_jet_vsr,whichpole=1)
-    thetaalongfield1=np.pi - thetaalongfield1
-    print("thetaalongfield2"); sys.stdout.flush()
-    aphijetbase2,thetaalongfield2=compute_thetaalongfield(aphi=aphi2,picki=ihor,thetaalongjet=hoverr_jet_vsr,whichpole=1)
-    thetaalongfield2=np.pi - thetaalongfield2
-    print("thetaalongfield3"); sys.stdout.flush()
-    aphijetbase3,thetaalongfield3=compute_thetaalongfield(aphi=aphi3,picki=ihor,thetaalongjet=hoverr_jet_vsr,whichpole=0)
-    #
-    favg1 = open('datavsravg1.txt', 'w')
-    favg1.write("%s   %s %s %s  %s   %s %s %s\n" % ("#ii","r1","r2","r3","hoverr_jet_vsr","thetaalongfield1","thetaalongfield2","thetaalongfield3" ) )
-    #
-    for ii in np.arange(0,nx):
-        favg1.write("%d   %g %g %g   %g   %g %g %g\n" % (ii,r[ii,thetaalongfield1[ii],0],r[ii,thetaalongfield2[ii],0],r[ii,thetaalongfield3[ii],0],np.pi*0.5-hoverr_jet_vsr[ii],thetaalongfield1[ii],thetaalongfield2[ii],thetaalongfield3[ii]) )
+        plco(myfun1zoom,xcoord=myxcoord,ycoord=myycoord,colors='k',nc=30)
+        plc(myfun1zoom,xcoord=myxcoord,ycoord=myycoord,colors='r',levels=(aphijetbase1,))
+        #plc(daphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,),colors='r')
+        #d=500
+        #plt.xlim(0,d/2.); plt.ylim(-d,d)
+        #plc(aphi-maxaphibh,levels=(0,),colors='b',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        plt.savefig("aphizoom_avg.pdf")
+        plt.savefig("aphizoom_avg.eps")
+        plt.savefig("aphizoom_avg.png")
         #
+        ########################
+        # show averaged aphi for comparison with field from stream lines
+        plt.figure(1)
+        plco(myfun1all,xcoord=logmyxcoord,ycoord=logmyycoord,colors='k',nc=30)
+        plc(myfun1all,xcoord=logmyxcoord,ycoord=logmyycoord,colors='r',levels=(aphijetbase1,))
+        #plc(daphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,),colors='r')
+        #d=500
+        #plt.xlim(0,d/2.); plt.ylim(-d,d)
+        #plc(aphi-maxaphibh,levels=(0,),colors='b',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        plt.savefig("aphialllog_avg.pdf")
+        plt.savefig("aphialllog_avg.eps")
+        plt.savefig("aphialllog_avg.png")
+        #
+        #
+        ########################
+        # show aphi from averaged fields for comparison with field from stream lines
+        plt.figure(1)
+        plco(myfun2zoom,xcoord=myxcoord,ycoord=myycoord,colors='k',nc=30)
+        plc(myfun2zoom,xcoord=myxcoord,ycoord=myycoord,colors='r',levels=(aphijetbase2,))
+        #d=500
+        #plt.xlim(0,d/2.); plt.ylim(-d,d)
+        #plc(aphi-maxaphibh,levels=(0,),colors='b',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        plt.savefig("aphizoom_avgfield.pdf")
+        plt.savefig("aphizoom_avgfield.eps")
+        plt.savefig("aphizoom_avgfield.png")
+        #
+        ########################
+        # show averaged aphi for comparison with field from stream lines
+        plt.figure(1)
+        plco(myfun2all,xcoord=logmyxcoord,ycoord=logmyycoord,colors='k',nc=30)
+        plc(myfun2all,xcoord=logmyxcoord,ycoord=logmyycoord,colors='r',levels=(aphijetbase2,))
+        #plc(daphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,),colors='r')
+        #d=500
+        #plt.xlim(0,d/2.); plt.ylim(-d,d)
+        #plc(aphi-maxaphibh,levels=(0,),colors='b',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        plt.savefig("aphialllog_avgfield_avg.pdf")
+        plt.savefig("aphialllog_avgfield_avg.eps")
+        plt.savefig("aphialllog_avgfield_avg.png")
+        #
+    # FINALPLOT:
+    # ssh jmckinne@orange.slac.stanford.edu
+    # cd /lustre/ki/orange/jmckinne/thickdisk7/movie1
+    # 
+    # convert fig2.png fig2.eps ; scp fig2.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/figavgflowfield.eps
     #
-    favg1.close()
-    #
-    ################
-    # for Shep:
-    # cat datavsravg1.txt | awk '{print $1"   "$2" "$3" "$4"   "$5"   "$6" "$7" "$8}' | column -t > datavsrsharenew.txt
-    #
-    # avoid potential from averaged field that causes problems but medium (flips pole) and large radii (zeros out)
-    # cat datavsravg1.txt | awk '{print $1"   "$2"   "$5"   "$6" "$8}' | column -t > datavsrsharenew.txt
-    # cat datavsrsharenew.txt | column -t | less -S
-    #
-    ########################
-    # show averaged aphi for comparison with field from stream lines
-    plt.figure(1)
-    plco(myfun1zoom,xcoord=myxcoord,ycoord=myycoord,colors='k',nc=30)
-    plc(myfun1zoom,xcoord=myxcoord,ycoord=myycoord,colors='r',levels=(aphijetbase1,))
-    #plc(daphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,),colors='r')
-    #d=500
-    #plt.xlim(0,d/2.); plt.ylim(-d,d)
-    #plc(aphi-maxaphibh,levels=(0,),colors='b',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-    plt.savefig("aphizoom_avg.pdf")
-    plt.savefig("aphizoom_avg.eps")
-    plt.savefig("aphizoom_avg.png")
-    #
-    ########################
-    # show averaged aphi for comparison with field from stream lines
-    plt.figure(1)
-    plco(myfun1all,xcoord=logmyxcoord,ycoord=logmyycoord,colors='k',nc=30)
-    plc(myfun1all,xcoord=logmyxcoord,ycoord=logmyycoord,colors='r',levels=(aphijetbase1,))
-    #plc(daphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,),colors='r')
-    #d=500
-    #plt.xlim(0,d/2.); plt.ylim(-d,d)
-    #plc(aphi-maxaphibh,levels=(0,),colors='b',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-    plt.savefig("aphialllog_avg.pdf")
-    plt.savefig("aphialllog_avg.eps")
-    plt.savefig("aphialllog_avg.png")
-    #
-    #
-    ########################
-    # show aphi from averaged fields for comparison with field from stream lines
-    plt.figure(1)
-    plco(myfun2zoom,xcoord=myxcoord,ycoord=myycoord,colors='k',nc=30)
-    plc(myfun2zoom,xcoord=myxcoord,ycoord=myycoord,colors='r',levels=(aphijetbase2,))
-    #d=500
-    #plt.xlim(0,d/2.); plt.ylim(-d,d)
-    #plc(aphi-maxaphibh,levels=(0,),colors='b',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-    plt.savefig("aphizoom_avgfield.pdf")
-    plt.savefig("aphizoom_avgfield.eps")
-    plt.savefig("aphizoom_avgfield.png")
-    #
-    ########################
-    # show averaged aphi for comparison with field from stream lines
-    plt.figure(1)
-    plco(myfun2all,xcoord=logmyxcoord,ycoord=logmyycoord,colors='k',nc=30)
-    plc(myfun2all,xcoord=logmyxcoord,ycoord=logmyycoord,colors='r',levels=(aphijetbase2,))
-    #plc(daphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,),colors='r')
-    #d=500
-    #plt.xlim(0,d/2.); plt.ylim(-d,d)
-    #plc(aphi-maxaphibh,levels=(0,),colors='b',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-    plt.savefig("aphialllog_avgfield_avg.pdf")
-    plt.savefig("aphialllog_avgfield_avg.eps")
-    plt.savefig("aphialllog_avgfield_avg.png")
-    
 
 
 
@@ -13113,3 +13403,13 @@ if __name__ == "__main__":
         udphi = None
         aphi = None
         gc.collect()
+
+
+
+
+
+
+
+
+
+
