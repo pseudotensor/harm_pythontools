@@ -4081,7 +4081,7 @@ def mergeqtyvstime(n):
 
 
 def getnonbobnqty():
-    value=1+6+10+3+21+21+21+24 + 21*3 + 12*4+12*4 + 10+15+12+2+36+36
+    value=1+6+10+3 + 21+21+21+21+24 + 21*3 + 12*4+12*4 + 10+15+12+2+36+36
     return(value)
 
 
@@ -4135,6 +4135,7 @@ def getqtymem(qtymem):
     alphamag2=qtymem[i];i+=1
     global     alphamag3
     alphamag3=qtymem[i];i+=1
+    #
     #rhosq: 14+7=21
     global     rhosqs
     rhosqs=qtymem[i];i+=1
@@ -4178,6 +4179,49 @@ def getqtymem(qtymem):
     bas3rhosq=qtymem[i];i+=1
     global     bsqrhosq
     bsqrhosq=qtymem[i];i+=1
+    #rhosqdc: 14+7=21
+    global     rhosqdcs
+    rhosqdcs=qtymem[i];i+=1
+    global     rhosrhosqdc
+    rhosrhosqdc=qtymem[i];i+=1
+    global     ugsrhosqdc
+    ugsrhosqdc=qtymem[i];i+=1
+    global     uu0rhosqdc
+    uu0rhosqdc=qtymem[i];i+=1
+    global     vus1rhosqdc
+    vus1rhosqdc=qtymem[i];i+=1
+    global     vuas1rhosqdc
+    vuas1rhosqdc=qtymem[i];i+=1
+    global     vus3rhosqdc
+    vus3rhosqdc=qtymem[i];i+=1
+    global     vuas3rhosqdc
+    vuas3rhosqdc=qtymem[i];i+=1
+    global     Bs1rhosqdc
+    Bs1rhosqdc=qtymem[i];i+=1
+    global     Bas1rhosqdc
+    Bas1rhosqdc=qtymem[i];i+=1
+    global     Bs2rhosqdc
+    Bs2rhosqdc=qtymem[i];i+=1
+    global     Bas2rhosqdc
+    Bas2rhosqdc=qtymem[i];i+=1
+    global     Bs3rhosqdc
+    Bs3rhosqdc=qtymem[i];i+=1
+    global     Bas3rhosqdc
+    Bas3rhosqdc=qtymem[i];i+=1
+    global     bs1rhosqdc
+    bs1rhosqdc=qtymem[i];i+=1
+    global     bas1rhosqdc
+    bas1rhosqdc=qtymem[i];i+=1
+    global     bs2rhosqdc
+    bs2rhosqdc=qtymem[i];i+=1
+    global     bas2rhosqdc
+    bas2rhosqdc=qtymem[i];i+=1
+    global     bs3rhosqdc
+    bs3rhosqdc=qtymem[i];i+=1
+    global     bas3rhosqdc
+    bas3rhosqdc=qtymem[i];i+=1
+    global     bsqrhosqdc
+    bsqrhosqdc=qtymem[i];i+=1
     #rhosqeq: 14+7=21
     global     rhosqeqs
     rhosqeqs=qtymem[i];i+=1
@@ -5043,9 +5087,13 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         # was (bsq/rho<1.0)
         #diskcondition=diskcondition*(mum1fake<1.0)
         # just avoid floor mass
-        cond1=(bsq/rho<30)
-        cond2=(bsq/rho<10)
-        cond3=cond1*(r<9.0)+cond2*(r>=9.0)
+        #cond1=(bsq/rho<30)
+        #cond2=(bsq/rho<10)
+        #cond3=cond1*(r<9.0)+cond2*(r>=9.0)
+        rinterp=(r-9.0)*(1.0-0.0)/(0.0-9.0) # gives 0 for use near 9   gives 1 for use near 0
+        rinterp[rinterp>1.0]=1.0
+        rinterp[rinterp<0.0]=0.0
+        cond3=(bsq/rho < rinterp*30.0 + (1.0-rinterp)*10.0)
         diskcondition1=cond3
         diskcondition2=cond3
         # was denfactor=rho, but want uniform with corona and jet
@@ -5148,7 +5196,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         #
         #
         #############
-        print("over disk" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
+        print("over full flow" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         #############
         #rhosq:
         # for most dense part of flow:
@@ -5191,6 +5239,50 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         bas3rhosq[findex]=intangle(np.abs(gdet*bu[3]*np.sqrt(gv3[3,3]))*denfactor,**keywordsrhosq)/rhosqint
         bsqrhosq[findex]=intangle(gdet*bsq*denfactor,**keywordsrhosq)/rhosqint
         #rhosq:
+        #
+        #############
+        print("over disk+corona" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
+        #############
+        #rhosqdc:
+        # for most dense part of flow:
+        #denfactor=rho**2
+        # for entire flow:
+        denfactor=1.0 + rho*0.0
+        #
+        diskcondition=cond3*(bsq/rho<1.0) # non-jet
+        keywordsrhosqdc={'which': diskcondition}
+        rhosqdcint=intangle(gdet*denfactor,**keywordsrhosqdc)+tiny # gdet is 2d by default
+        rhosqdcs[findex]=rhosqdcint
+        maxrhosqdc2d=(denfactor*diskcondition).max(1)+tiny
+        maxrhosqdc3d=np.empty_like(rho)
+        for j in np.arange(0,ny):
+            maxrhosqdc3d[:,j,:] = maxrhosqdc2d
+        rhosrhosqdc[findex]=intangle(gdet*denfactor*rho,**keywordsrhosqdc)/rhosqdcint
+        ugsrhosqdc[findex]=intangle(gdet*denfactor*ug,**keywordsrhosqdc)/rhosqdcint
+        # no restriction for velocity or field quantities! (as long as denfactor=1 this is good)
+        denfactor=1.0 + rho*0.0
+        diskcondition=cond3*(bsq/rho<1.0) # non-jet
+        keywordsrhosqdc={'which': diskcondition}
+        rhosqdcint=intangle(gdet*denfactor,**keywordsrhosqdc)+tiny
+        uu0rhosqdc[findex]=intangle(gdet*denfactor*uu[0]*np.sqrt(mygv300),**keywordsrhosqdc)/rhosqdcint
+        vus1rhosqdc[findex]=intangle(gdet*denfactor*uu[1]*np.sqrt(gv3[1,1])*iuu0hat,**keywordsrhosqdc)/rhosqdcint
+        vuas1rhosqdc[findex]=intangle(gdet*denfactor*np.abs(uu[1]*np.sqrt(gv3[1,1])*iuu0hat),**keywordsrhosqdc)/rhosqdcint
+        vus3rhosqdc[findex]=intangle(gdet*denfactor*uu[3]*np.sqrt(gv3[3,3])*iuu0hat,**keywordsrhosqdc)/rhosqdcint
+        vuas3rhosqdc[findex]=intangle(gdet*denfactor*np.abs(uu[3]*np.sqrt(gv3[3,3])*iuu0hat),**keywordsrhosqdc)/rhosqdcint
+        Bs1rhosqdc[findex]=intangle(gdetB[1]*denfactor*np.sqrt(gv3[1,1]),**keywordsrhosqdc)/rhosqdcint
+        Bas1rhosqdc[findex]=intangle(np.abs(gdetB[1]*np.sqrt(gv3[1,1]))*denfactor,**keywordsrhosqdc)/rhosqdcint
+        Bs2rhosqdc[findex]=intangle(gdetB[2]*denfactor*np.sqrt(gv3[2,2]),**keywordsrhosqdc)/rhosqdcint
+        Bas2rhosqdc[findex]=intangle(np.abs(gdetB[2]*np.sqrt(gv3[2,2]))*denfactor,**keywordsrhosqdc)/rhosqdcint
+        Bs3rhosqdc[findex]=intangle(gdetB[3]*denfactor*np.sqrt(gv3[3,3]),**keywordsrhosqdc)/rhosqdcint
+        Bas3rhosqdc[findex]=intangle(np.abs(gdetB[3]*np.sqrt(gv3[3,3]))*denfactor,**keywordsrhosqdc)/rhosqdcint
+        bs1rhosqdc[findex]=intangle(gdet*bu[1]*denfactor*np.sqrt(gv3[1,1]),**keywordsrhosqdc)/rhosqdcint
+        bas1rhosqdc[findex]=intangle(np.abs(gdet*bu[1]*np.sqrt(gv3[1,1]))*denfactor,**keywordsrhosqdc)/rhosqdcint
+        bs2rhosqdc[findex]=intangle(gdet*bu[2]*denfactor*np.sqrt(gv3[2,2]),**keywordsrhosqdc)/rhosqdcint
+        bas2rhosqdc[findex]=intangle(np.abs(gdet*bu[2]*np.sqrt(gv3[2,2]))*denfactor,**keywordsrhosqdc)/rhosqdcint
+        bs3rhosqdc[findex]=intangle(gdet*bu[3]*denfactor*np.sqrt(gv3[3,3]),**keywordsrhosqdc)/rhosqdcint
+        bas3rhosqdc[findex]=intangle(np.abs(gdet*bu[3]*np.sqrt(gv3[3,3]))*denfactor,**keywordsrhosqdc)/rhosqdcint
+        bsqrhosqdc[findex]=intangle(gdet*bsq*denfactor,**keywordsrhosqdc)/rhosqdcint
+        #rhosqdc:
         #
         #############
         print("at equator and portion of \phi" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
@@ -9091,8 +9183,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     dodatavst=1
     dopowervsmplots=makepowervsmplots
     dospacetimeplots=makespacetimeplots
-    dofftplot=0 # GODMARK
-    dospecplot=0 # GODMARK
+    dofftplot=1 # GODMARK
+    dospecplot=1 # GODMARK
     #
     #
     #
@@ -9185,6 +9277,88 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         bas3rhosq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bas3rhosq_vsr[iin:iout])),1)
         bsqrhosq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bsqrhosq_vsr[iin:iout])),1)
         brhosq_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.sqrt(np.fabs(bsqrhosq_vsr[iin:iout]))),1)
+        #
+        ###################
+        # r1b (all over non-jet in strict sense of bsq/rho<1 only)
+        ###################
+        #
+        rhosrhosqdc_vsr=np.zeros(nx,dtype=r.dtype)
+        ugsrhosqdc_vsr=np.zeros(nx,dtype=r.dtype)
+        uu0rhosqdc_vsr=np.zeros(nx,dtype=r.dtype)
+        vus1rhosqdc_vsr=np.zeros(nx,dtype=r.dtype)
+        vuas1rhosqdc_vsr=np.zeros(nx,dtype=r.dtype)
+        vus3rhosqdc_vsr=np.zeros(nx,dtype=r.dtype)
+        vuas3rhosqdc_vsr=np.zeros(nx,dtype=r.dtype)
+        Bs1rhosqdc_vsr=np.zeros(nx,dtype=r.dtype)
+        Bas1rhosqdc_vsr=np.zeros(nx,dtype=r.dtype)
+        Bs2rhosqdc_vsr=np.zeros(nx,dtype=r.dtype)
+        Bas2rhosqdc_vsr=np.zeros(nx,dtype=r.dtype)
+        Bs3rhosqdc_vsr=np.zeros(nx,dtype=r.dtype)
+        Bas3rhosqdc_vsr=np.zeros(nx,dtype=r.dtype)
+        bs1rhosqdc_vsr=np.zeros(nx,dtype=r.dtype)
+        bas1rhosqdc_vsr=np.zeros(nx,dtype=r.dtype)
+        bs2rhosqdc_vsr=np.zeros(nx,dtype=r.dtype)
+        bas2rhosqdc_vsr=np.zeros(nx,dtype=r.dtype)
+        bs3rhosqdc_vsr=np.zeros(nx,dtype=r.dtype)
+        bas3rhosqdc_vsr=np.zeros(nx,dtype=r.dtype)
+        bsqrhosqdc_vsr=np.zeros(nx,dtype=r.dtype)
+        #
+        favg1b = open('datavsr1b.txt', 'w')
+        favg1b.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("ii","r","rhosrhosqdc_vsr","ugsrhosqdc_vsr","uu0rhosqdc_vsr","vus1rhosqdc_vsr","vuas1rhosqdc_vsr","vus3rhosqdc_vsr","vuas3rhosqdc_vsr","Bs1rhosqdc_vsr","Bas1rhosqdc_vsr","Bs2rhosqdc_vsr","Bas2rhosqdc_vsr","Bs3rhosqdc_vsr","Bas3rhosqdc_vsr","bs1rhosqdc_vsr","bas1rhosqdc_vsr","bs2rhosqdc_vsr","bas2rhosqdc_vsr","bs3rhosqdc_vsr","bas3rhosqdc_vsr","bsqrhosqdc_vsr" ) )
+        for ii in np.arange(0,nx):
+            #
+            # Q vs r
+            # 2+20
+            rhosrhosqdc_vsr[ii]=timeavg(rhosrhosqdc[:,ii],ts,fti,ftf)
+            ugsrhosqdc_vsr[ii]=timeavg(ugsrhosqdc[:,ii],ts,fti,ftf)
+            uu0rhosqdc_vsr[ii]=timeavg(uu0rhosqdc[:,ii],ts,fti,ftf)
+            vus1rhosqdc_vsr[ii]=timeavg(vus1rhosqdc[:,ii],ts,fti,ftf)
+            vuas1rhosqdc_vsr[ii]=timeavg(vuas1rhosqdc[:,ii],ts,fti,ftf)
+            vus3rhosqdc_vsr[ii]=timeavg(vus3rhosqdc[:,ii],ts,fti,ftf)
+            vuas3rhosqdc_vsr[ii]=timeavg(vuas3rhosqdc[:,ii],ts,fti,ftf)
+            Bs1rhosqdc_vsr[ii]=timeavg(Bs1rhosqdc[:,ii],ts,fti,ftf)
+            Bas1rhosqdc_vsr[ii]=timeavg(Bas1rhosqdc[:,ii],ts,fti,ftf)
+            Bs2rhosqdc_vsr[ii]=timeavg(Bs2rhosqdc[:,ii],ts,fti,ftf)
+            Bas2rhosqdc_vsr[ii]=timeavg(Bas2rhosqdc[:,ii],ts,fti,ftf)
+            Bs3rhosqdc_vsr[ii]=timeavg(Bs3rhosqdc[:,ii],ts,fti,ftf)
+            Bas3rhosqdc_vsr[ii]=timeavg(Bas3rhosqdc[:,ii],ts,fti,ftf)
+            bs1rhosqdc_vsr[ii]=timeavg(bs1rhosqdc[:,ii],ts,fti,ftf)
+            bas1rhosqdc_vsr[ii]=timeavg(bas1rhosqdc[:,ii],ts,fti,ftf)
+            bs2rhosqdc_vsr[ii]=timeavg(bs2rhosqdc[:,ii],ts,fti,ftf)
+            bas2rhosqdc_vsr[ii]=timeavg(bas2rhosqdc[:,ii],ts,fti,ftf)
+            bs3rhosqdc_vsr[ii]=timeavg(bs3rhosqdc[:,ii],ts,fti,ftf)
+            bas3rhosqdc_vsr[ii]=timeavg(bas3rhosqdc[:,ii],ts,fti,ftf)
+            bsqrhosqdc_vsr[ii]=timeavg(bsqrhosqdc[:,ii],ts,fti,ftf)
+            #
+            favg1b.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],rhosrhosqdc_vsr[ii],ugsrhosqdc_vsr[ii],uu0rhosqdc_vsr[ii],vus1rhosqdc_vsr[ii],vuas1rhosqdc_vsr[ii],vus3rhosqdc_vsr[ii],vuas3rhosqdc_vsr[ii],Bs1rhosqdc_vsr[ii],Bas1rhosqdc_vsr[ii],Bs2rhosqdc_vsr[ii],Bas2rhosqdc_vsr[ii],Bs3rhosqdc_vsr[ii],Bas3rhosqdc_vsr[ii],bs1rhosqdc_vsr[ii],bas1rhosqdc_vsr[ii],bs2rhosqdc_vsr[ii],bas2rhosqdc_vsr[ii],bs3rhosqdc_vsr[ii],bas3rhosqdc_vsr[ii],bsqrhosqdc_vsr[ii] ) )
+            #
+        favg1b.close()
+        #
+        #
+        #" *\(.*vsr\).*" -> "        \1_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(\1[iin:iout])),1))"
+        #
+        # get fit
+        rhosrhosqdc_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(rhosrhosqdc_vsr[iin:iout])),1)
+        ugsrhosqdc_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(ugsrhosqdc_vsr[iin:iout])),1)
+        uu0rhosqdc_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(uu0rhosqdc_vsr[iin:iout])),1)
+        vus1rhosqdc_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(vus1rhosqdc_vsr[iin:iout])),1)
+        vuas1rhosqdc_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(vuas1rhosqdc_vsr[iin:iout])),1)
+        vus3rhosqdc_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(vus3rhosqdc_vsr[iin:iout])),1)
+        vuas3rhosqdc_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(vuas3rhosqdc_vsr[iin:iout])),1)
+        Bs1rhosqdc_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bs1rhosqdc_vsr[iin:iout])),1)
+        Bas1rhosqdc_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bas1rhosqdc_vsr[iin:iout])),1)
+        Bs2rhosqdc_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bs2rhosqdc_vsr[iin:iout])),1)
+        Bas2rhosqdc_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bas2rhosqdc_vsr[iin:iout])),1)
+        Bs3rhosqdc_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bs3rhosqdc_vsr[iin:iout])),1)
+        Bas3rhosqdc_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bas3rhosqdc_vsr[iin:iout])),1)
+        bs1rhosqdc_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bs1rhosqdc_vsr[iin:iout])),1)
+        bas1rhosqdc_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bas1rhosqdc_vsr[iin:iout])),1)
+        bs2rhosqdc_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bs2rhosqdc_vsr[iin:iout])),1)
+        bas2rhosqdc_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bas2rhosqdc_vsr[iin:iout])),1)
+        bs3rhosqdc_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bs3rhosqdc_vsr[iin:iout])),1)
+        bas3rhosqdc_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bas3rhosqdc_vsr[iin:iout])),1)
+        bsqrhosqdc_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bsqrhosqdc_vsr[iin:iout])),1)
+        brhosqdc_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.sqrt(np.fabs(bsqrhosqdc_vsr[iin:iout]))),1)
         #
         ###################
         # r2
@@ -9558,12 +9732,12 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         # output fit power-law index for various quantities
         print( "HLatex12: ModelName & $r^{\\rm{}dc}_{\\rm{}i}$ & $r^{\\rm{}dc}_{\\rm{}o}$ & $r^{\\rm{}dc}_{\\rm{}s}$ & $\\rho$ & $p_g$ & $|v_r|$ & $|v_\\phi|$ & $|b_r|$ & $|b_\\theta|$ & $|b_\\phi|$ & $|b|$ & $\\dot{M}_{\\rm{}in}$ & $\\dot{M}_{\\rm{}mw}$ & $\\dot{M}_{\\rm{}w}$   \\\\" )
-        print( "VLatex12: %s        & %g            & %g            & %g              & %g      & %g    & %g    & %g        & %g    & %g          & %g        & %g    & %g                    & %g                    & %g                     \\\\ %% %s" % (truemodelname, roundto2(rfitin),roundto2(rfitout),roundto2(rstagequse),roundto2(rhosrhosq_vsr_fit[0]),roundto2(ugsrhosq_vsr_fit[0]),roundto2(vuas1rhosq_vsr_fit[0]),roundto2(vuas3rhosq_vsr_fit[0]),roundto2(bas1rhosq_vsr_fit[0]),roundto2(bas2rhosq_vsr_fit[0]),roundto2(bas3rhosq_vsr_fit[0]),roundto2(brhosq_vsr_fit[0]),roundto2(mdin_vsr_fit[0]),roundto2(mdmwind_vsr_fit[0]),roundto2(mdwind_vsr_fit[0]) , modelname ) )
+        print( "VLatex12: %s        & %g            & %g            & %g              & %g      & %g    & %g    & %g        & %g    & %g          & %g        & %g    & %g                    & %g                    & %g                     \\\\ %% %s" % (truemodelname, roundto2(rfitin),roundto2(rfitout),roundto2(rstagequse),roundto2(rhosrhosqdc_vsr_fit[0]),roundto2(ugsrhosqdc_vsr_fit[0]),roundto2(vuas1rhosqdc_vsr_fit[0]),roundto2(vuas3rhosqdc_vsr_fit[0]),roundto2(bas1rhosqdc_vsr_fit[0]),roundto2(bas2rhosqdc_vsr_fit[0]),roundto2(bas3rhosqdc_vsr_fit[0]),roundto2(brhosqdc_vsr_fit[0]),roundto2(mdin_vsr_fit[0]),roundto2(mdmwind_vsr_fit[0]),roundto2(mdwind_vsr_fit[0]) , modelname ) )
         #
         print( "HLatex93: ModelName & $\\rho^{\\rm{}dc}$ & $p_g^{\\rm{}dc}$ & $v_r^{\\rm{}dc}$ & $v_\\phi^{\\rm{}dc}$ & $b_r^{\\rm{}dc}$ & $b_\\theta^{\\rm{}dc}$ & $b_\\phi^{\\rm{}dc}$ & $|b|^{\\rm{}dc}$ & $\\rho^{\\rm{}hor}$ & $p^{\\rm{}hor}_g$ & $v^{\\rm{}hor}_r$ & $v^{\\rm{}hor}_\\phi$ & $b^{\\rm{}hor}_r$ & $b^{\\rm{}hor}_\\theta$ & $b^{\\rm{}hor}_\\phi$ & $|b|^{\\rm{}hor}$ & $\\dot{M}_{\\rm{}in}$ & $\\dot{M}_{\\rm{}mw}$ & $\\dot{M}_{\\rm{}w}$   \\\\" )
-        print( "VLatex93: %s         & %g     & %g    & %g    & %g        & %g    & %g          & %g        & %g    & %g        & %g      & %g      & %g          & %g      & %g            & %g          & %g      & %g                    & %g                    & %g                     \\\\ %% %s" % (truemodelname, roundto2(rhosrhosq_vsr_fit[0]),roundto2(ugsrhosq_vsr_fit[0]),roundto2(vuas1rhosq_vsr_fit[0]),roundto2(vuas3rhosq_vsr_fit[0]),roundto2(bas1rhosq_vsr_fit[0]),roundto2(bas2rhosq_vsr_fit[0]),roundto2(bas3rhosq_vsr_fit[0]),roundto2(brhosq_vsr_fit[0]),roundto2(rhoshor_vsr_fit[0]),roundto2(ugshor_vsr_fit[0]),roundto2(vuas1hor_vsr_fit[0]),roundto2(vuas3hor_vsr_fit[0]),roundto2(bas1hor_vsr_fit[0]),roundto2(bas2hor_vsr_fit[0]),roundto2(bas3hor_vsr_fit[0]),roundto2(bhor_vsr_fit[0]),roundto2(mdin_vsr_fit[0]),roundto2(mdmwind_vsr_fit[0]),roundto2(mdwind_vsr_fit[0]) , modelname ) )
+        print( "VLatex93: %s         & %g     & %g    & %g    & %g        & %g    & %g          & %g        & %g    & %g        & %g      & %g      & %g          & %g      & %g            & %g          & %g      & %g                    & %g                    & %g                     \\\\ %% %s" % (truemodelname, roundto2(rhosrhosqdc_vsr_fit[0]),roundto2(ugsrhosqdc_vsr_fit[0]),roundto2(vuas1rhosqdc_vsr_fit[0]),roundto2(vuas3rhosqdc_vsr_fit[0]),roundto2(bas1rhosqdc_vsr_fit[0]),roundto2(bas2rhosqdc_vsr_fit[0]),roundto2(bas3rhosqdc_vsr_fit[0]),roundto2(brhosqdc_vsr_fit[0]),roundto2(rhoshor_vsr_fit[0]),roundto2(ugshor_vsr_fit[0]),roundto2(vuas1hor_vsr_fit[0]),roundto2(vuas3hor_vsr_fit[0]),roundto2(bas1hor_vsr_fit[0]),roundto2(bas2hor_vsr_fit[0]),roundto2(bas3hor_vsr_fit[0]),roundto2(bhor_vsr_fit[0]),roundto2(mdin_vsr_fit[0]),roundto2(mdmwind_vsr_fit[0]),roundto2(mdwind_vsr_fit[0]) , modelname ) )
         print( "HLatex94: ModelName & $\\rho^{\\rm{}dc}$ & $p_g^{\\rm{}dc}$ & $v_r^{\\rm{}dc}$ & $v_\\phi^{\\rm{}dc}$ & $b_r^{\\rm{}dc}$ & $b_\\theta^{\\rm{}dc}$ & $b_\\phi^{\\rm{}dc}$ & $|b|^{\\rm{}dc}$ & $\\rho^{\\rm{}eq}$ & $p^{\\rm{}eq}_g$ & $v^{\\rm{}eq}_r$ & $v^{\\rm{}eq}_\\phi$ & $b^{\\rm{}eq}_r$ & $b^{\\rm{}eq}_\\theta$ & $b^{\\rm{}eq}_\\phi$ & $|b|^{\\rm{}eq}$ & $\\dot{M}_{\\rm{}in}$ & $\\dot{M}_{\\rm{}mw}$ & $\\dot{M}_{\\rm{}w}$   \\\\" )
-        print( "VLatex94: %s         & %g     & %g    & %g    & %g        & %g    & %g          & %g        & %g    & %g        & %g      & %g      & %g          & %g      & %g            & %g          & %g      & %g                    & %g                    & %g                     \\\\ %% %s" % (truemodelname, roundto2(rhosrhosq_vsr_fit[0]),roundto2(ugsrhosq_vsr_fit[0]),roundto2(vuas1rhosq_vsr_fit[0]),roundto2(vuas3rhosq_vsr_fit[0]),roundto2(bas1rhosq_vsr_fit[0]),roundto2(bas2rhosq_vsr_fit[0]),roundto2(bas3rhosq_vsr_fit[0]),roundto2(brhosq_vsr_fit[0]),roundto2(rhosrhosqeq_vsr_fit[0]),roundto2(ugsrhosqeq_vsr_fit[0]),roundto2(vuas1rhosqeq_vsr_fit[0]),roundto2(vuas3rhosqeq_vsr_fit[0]),roundto2(bas1rhosqeq_vsr_fit[0]),roundto2(bas2rhosqeq_vsr_fit[0]),roundto2(bas3rhosqeq_vsr_fit[0]),roundto2(brhosqeq_vsr_fit[0]),roundto2(mdin_vsr_fit[0]),roundto2(mdmwind_vsr_fit[0]),roundto2(mdwind_vsr_fit[0]) , modelname ) )
+        print( "VLatex94: %s         & %g     & %g    & %g    & %g        & %g    & %g          & %g        & %g    & %g        & %g      & %g      & %g          & %g      & %g            & %g          & %g      & %g                    & %g                    & %g                     \\\\ %% %s" % (truemodelname, roundto2(rhosrhosq_vsr_fit[0]),roundto2(ugsrhosqdc_vsr_fit[0]),roundto2(vuas1rhosqdc_vsr_fit[0]),roundto2(vuas3rhosqdc_vsr_fit[0]),roundto2(bas1rhosqdc_vsr_fit[0]),roundto2(bas2rhosqdc_vsr_fit[0]),roundto2(bas3rhosqdc_vsr_fit[0]),roundto2(brhosqdc_vsr_fit[0]),roundto2(rhosrhosqeq_vsr_fit[0]),roundto2(ugsrhosqeq_vsr_fit[0]),roundto2(vuas1rhosqeq_vsr_fit[0]),roundto2(vuas3rhosqeq_vsr_fit[0]),roundto2(bas1rhosqeq_vsr_fit[0]),roundto2(bas2rhosqeq_vsr_fit[0]),roundto2(bas3rhosqeq_vsr_fit[0]),roundto2(brhosqeq_vsr_fit[0]),roundto2(mdin_vsr_fit[0]),roundto2(mdmwind_vsr_fit[0]),roundto2(mdwind_vsr_fit[0]) , modelname ) )
         #
         sys.stdout.flush()
         #
@@ -10209,6 +10383,18 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             iter=1
             for fil in arrayvsra:
                 mktr(loadq=0,qty=fil,pllabel=arrayvsraname[iter-1],filenum=iter,fileletter="a",logvalue=logvaluearrayvsra[iter-1],bsqorho=bsqorhora,bsqou=bsqoura,maxbsqorho=1E15,maxbsqou=1E15)
+                iter=iter+1
+            #
+            ################################
+            arrayvsra=[rhosrhosqdc,ugsrhosqdc,uu0rhosqdc,vus1rhosqdc,vuas1rhosqdc,vus3rhosqdc,vuas3rhosqdc,Bs1rhosqdc,Bas1rhosqdc,Bs2rhosqdc,Bas2rhosqdc,Bs3rhosqdc,Bas3rhosqdc,bs1rhosqdc,bas1rhosqdc,bs2rhosqdc,bas2rhosqdc,bs3rhosqdc,bas3rhosqdc,bsqrhosqdc]
+            bsqorhora=bsqrhosqdc/rhosrhosqdc
+            bsqoura=bsqrhosqdc/ugsrhosqdc
+            arrayvsraname=['rhosrhosqdc','ugsrhosqdc','uu0rhosqdc','vus1rhosqdc','vuas1rhosqdc','vus3rhosqdc','vuas3rhosqdc','Bs1rhosqdc','Bas1rhosqdc','Bs2rhosqdc','Bas2rhosqdc','Bs3rhosqdc','Bas3rhosqdc','bs1rhosqdc','bas1rhosqdc','bs2rhosqdc','bas2rhosqdc','bs3rhosqdc','bas3rhosqdc','bsqrhosqdc']
+            logvaluearrayvsra=[1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
+            #
+            iter=1
+            for fil in arrayvsra:
+                mktr(loadq=0,qty=fil,pllabel=arrayvsraname[iter-1],filenum=iter,fileletter="ab",logvalue=logvaluearrayvsra[iter-1],bsqorho=bsqorhora,bsqou=bsqoura,maxbsqorho=1E15,maxbsqou=1E15)
                 iter=iter+1
             #
             ####################################
