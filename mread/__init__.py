@@ -1678,12 +1678,12 @@ def rfd(fieldlinefilename,**kwargs):
     B[1:4,:,:,:]=d[8:11,:,:,:]
     ii=11
     #if the input file contains additional data
-    if d.shape[0]==14 and d.shape[0]==23:
+    if d.shape[0]==14 or d.shape[0]==23:
         #new image format additionally contains gdet*B^i
         gdetB = np.zeros_like(B)
         #face-centered magnetic field components multiplied by gdet
         gdetB[1:4] = d[ii:ii+3,:,:,:]; ii=ii+3
-    if d.shape[0]==20 and d.shape[0]==23:
+    if d.shape[0]==20 or d.shape[0]==23:
         gdetF1=d[ii:ii+3]; ii=ii+3
         gdetF2=d[ii:ii+3]; ii=ii+3
         gdetF3=d[ii:ii+3]; ii=ii+3
