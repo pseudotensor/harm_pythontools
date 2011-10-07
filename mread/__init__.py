@@ -6656,7 +6656,7 @@ def oldstuff():
         #plotqtyvstime(qtymem,whichplot=-4)
 
 if __name__ == "__main__":
-    if True:
+    if False:
         takeoutfloors(dotakeoutfloors=1,doplot=False)
     if False:
         grid3d("gdump.bin",use2d=True)
