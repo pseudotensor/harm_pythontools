@@ -1686,7 +1686,7 @@ def rfd(fieldlinefilename,**kwargs):
         gdetB[1:4] = d[ii:ii+3,:,:,:]; ii=ii+3
     if d.shape[0]==20 or d.shape[0]==23:
         print("Loading flux data...")
-        gdetF=np.zeros_like((4,3,nx,ny,nz))
+        gdetF=np.zeros((4,3,nx,ny,nz))
         gdetF[1,0:3,:,:,:]=d[ii:ii+3,:,:,:]; ii=ii+3
         gdetF[2,0:3,:,:,:]=d[ii:ii+3,:,:,:]; ii=ii+3
         gdetF[3,0:3,:,:,:]=d[ii:ii+3,:,:,:]; ii=ii+3
