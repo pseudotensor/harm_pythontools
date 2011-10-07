@@ -1633,7 +1633,7 @@ def rfd(fieldlinefilename,**kwargs):
     #Velocity components: u1, u2, u3, 
     #Cell-centered magnetic field components: B1, B2, B3, 
     #Face-centered magnetic field components multiplied by metric determinant: gdetB1, gdetB2, gdetB3
-    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,rho,lrho,ug,uu,uut,uu,B,uux,gdetB,rhor,r,h,ph
+    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,rho,lrho,ug,uu,uut,uu,B,uux,gdetB,rhor,r,h,ph,gdetF
     #read image
     fin = open( "dumps/" + fieldlinefilename, "rb" )
     header = fin.readline().split()
@@ -1686,9 +1686,10 @@ def rfd(fieldlinefilename,**kwargs):
         gdetB[1:4] = d[ii:ii+3,:,:,:]; ii=ii+3
     if d.shape[0]==20 or d.shape[0]==23:
         print("Loading flux data...")
-        gdetF1=d[ii:ii+3]; ii=ii+3
-        gdetF2=d[ii:ii+3]; ii=ii+3
-        gdetF3=d[ii:ii+3]; ii=ii+3
+        gdetF=np.zeros_like((3,3,nx,ny,nz))
+        gdetF[1,0:3]=d[ii:ii+3]; ii=ii+3
+        gdetF[2,0:3]=d[ii:ii+3]; ii=ii+3
+        gdetF[3,0:3]=d[ii:ii+3]; ii=ii+3
     else:
         print("No data on gdetB, approximating it.")
         gdetB = np.zeros_like(B)
