@@ -5974,7 +5974,7 @@ def generate_time_series(docompute=False):
         #cd ~/run; for f in rtf*; do cd ~/run/$f; (nice -n 10 python  ~/py/mread/__init__.py &> python.out); done
         grid3d("gdump.bin",use2d=True)
         #rd("dump0000.bin")
-        rfd("fieldline0000.bin")
+        #rfd("fieldline0000.bin")
         rhor=1+(1-a**2)**0.5
         ihor = np.floor(iofr(rhor)+0.5);
         #diskflux=diskfluxcalc(ny/2)
@@ -6429,6 +6429,18 @@ if __name__ == "__main__":
         #epsFke = 
         #print epsFm, epsFke
         mkmovie(prefactor=100.,sigma=1500.,usegaussianunits=True,domakeframes=domakeframes)
+    if False:
+        #make a movie
+        #fti=7000
+        #ftf=30500
+        doreload = 1
+        domakeframes=1
+        epsFm, epsFke = takeoutfloors(doreload=doreload,returndf=1,isinteractive=0)
+        #epsFm = 
+        #epsFke = 
+        #print epsFm, epsFke
+        mkmovie(prefactor=100.,sigma=1500.,usegaussianunits=True,domakeframes=domakeframes)
+        #mkmovie(prefactor=100.,usegaussianunits=True,domakeframes=domakeframes)
     if False:
         #fig2 with grayscalestreamlines and red field lines
         mkstreamlinefigure(doenergy=False)
