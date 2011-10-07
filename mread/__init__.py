@@ -59,9 +59,9 @@ def get2davg(fname=None,usedefault=0,whichgroup=-1,whichgroups=-1,whichgroupe=-1
         avgtot=np.load( fname )
         return( avgtot )
     else:
-        print( "File %s does not exist" % fname )
+        print( "File %s does not exist, computing average from fieldline files" % fname )
         sys.stdout.flush()
-        return
+        #return
     n2avg = 0
     nitems = 0
     myrange = np.arange(whichgroups,whichgroupe)
@@ -1047,7 +1047,7 @@ def reinterpxy(vartointerp,extent,ncell,domask=1):
 def ftr(x,xb,xf):
     return( amax(0.0*x,amin(1.0+0.0*x,1.0*(x-xb)/(xf-xb))) )
     
-def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None):
+def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2):
     extent=(-len,len,-len,len)
     palette=cm.jet
     palette.set_bad('k', 1.0)
@@ -1156,7 +1156,8 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
                 #lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
                 # if t < 1500:
                 lw *= ftr(iaphi,0.001,0.002)
-        t = fstreamplot(yi,xi,iBR,iBz,ua=iBaR,va=iBaz,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=detectLoops,dodiskfield=dodiskfield,dobhfield=dobhfield,startatmidplane=startatmidplane,a=a,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,dsval=dsval,color=color,doarrows=doarrows,dorandomcolor=dorandomcolor,skipblankint=skipblankint,minindent=minindent,minlengthdefault=minlengthdefault,arrowsize=arrowsize,startxabs=startxabs,startyabs=startyabs)
+        #pdb.set_trace()
+        traj = fstreamplot(yi,xi,iBR,iBz,ua=iBaR,va=iBaz,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=detectLoops,dodiskfield=dodiskfield,dobhfield=dobhfield,startatmidplane=startatmidplane,a=a,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,dsval=dsval,color=color,doarrows=doarrows,dorandomcolor=dorandomcolor,skipblankint=skipblankint,minindent=minindent,minlengthdefault=minlengthdefault,arrowsize=arrowsize,startxabs=startxabs,startyabs=startyabs,populatestreamlines=populatestreamlines,useblankdiskfield=useblankdiskfield,dnarrow=dnarrow)
         #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
     ax.set_xlim(extent[0],extent[1])
     ax.set_ylim(extent[2],extent[3])
@@ -1169,7 +1170,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         plt.title('log rho at t = %4.0f' % t)
     #if None != fname:
     #    plt.savefig( fname + '.png' )
-    return(t)
+    return(traj)
 
 def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,arrowsize=1):
     extent=(-len,len,-len,len)
@@ -1407,8 +1408,8 @@ def rfloor(dumpname):
     dUfloor = gd[:,:,:,:].view() 
     return
 
-def rrdump(dumpname,write2xphi=False):
-    global nx,ny,nz,t,a,rho,ug,vu,vd,B,gd,gd1,numcols,gdetB
+def rrdump(dumpname,write2xphi=False, whichdir = 3):
+    global nx,ny,nz,t,a,rho,ug,vu,vd,B,gd,gd1,numcols,gdetB,Ucons
     #print( "Reading " + "dumps/" + dumpname + " ..." )
     gin = open( "dumps/" + dumpname, "rb" )
     header = gin.readline().split()
@@ -1437,6 +1438,7 @@ def rrdump(dumpname,write2xphi=False):
     vu[1:4] = gd[2:5].view() #relative 4-velocity only has non-zero spatial components
     B[1:4] = gd[5:8].view()
     numcols = gd.shape[0]  #total number of columns is made up of (n prim vars) + (n cons vars) = numcols
+    Ucons=gd[numcols/2:numcols/2+5+3] #conserved quantities
     gdetB = np.zeros_like(B)
     gdetB[1:4] = gd[numcols/2+5:numcols/2+5+3]  #gdetB starts with 5th conserved variable
     if 'gv3' in globals() and 'gn3' in globals(): 
@@ -1449,12 +1451,22 @@ def rrdump(dumpname,write2xphi=False):
         ud = mdot(gv3,uu)
     else:
         print( 'Metric (gv3, gn3) not defined, I am skipping the computation of uu and ud' )
-    if write2xphi:
+    if write2xphi and whichdir is not None:
         print( "Writing out 2xphi rdump...", )
         #write out a dump with twice as many cells in phi-direction:
         gout = open( "dumps/" + dumpname + "2xphi", "wb" )
         #double the number of phi-cells
-        header[2] = "%d" % (2*nz)
+        newnx = nx
+        newny = ny
+        newnz = nz
+        if whichdir == 3:
+            #refine phi-dir
+            header[2] = "%d" % (2*nz)
+            newnz = 2*nz
+        elif whichdir == 2:
+            #refine theta-dir
+            header[1] = "%d" % (2*ny)
+            newny = 2*ny
         for headerel in header:
             s = "%s " % headerel
             gout.write( s )
@@ -1464,15 +1476,25 @@ def rrdump(dumpname,write2xphi=False):
         #reshape the rdump content
         gd1 = gdraw.view().reshape((nz,ny,nx,-1),order='C')
         #allocate memory for refined grid, nz' = 2*nz
-        gd2 = np.zeros((2*nz,ny,nx,numcols),order='C',dtype=np.float64)
-        #copy even k's
-        gd2[0::2,:,:,:] = gd1[:,:,:,:]
-        #copy odd k's
-        gd2[1::2,:,:,:] = gd1[:,:,:,:]
-        #in the new cells, adjust gdetB[3] to be averages of immediately adjacent cells (this ensures divb=0)
-        gdetB3index = numcols/2+5+2
-        gd2[1:-1:2,:,:,gdetB3index] = 0.5*(gd1[:-1,:,:,gdetB3index]+gd1[1:,:,:,gdetB3index])
-        gd2[-1,:,:,gdetB3index] = 0.5*(gd1[0,:,:,gdetB3index]+gd1[-1,:,:,gdetB3index])
+        gd2 = np.zeros((newnz,newny,newnx,numcols),order='C',dtype=np.float64)
+        if whichdir == 3:
+            #copy even k's
+            gd2[0::2,:,:,:] = gd1[:,:,:,:]
+            #copy odd k's
+            gd2[1::2,:,:,:] = gd1[:,:,:,:]
+            #in the new cells, adjust gdetB[3] to be averages of immediately adjacent cells (this ensures divb=0)
+            gdetB3index = numcols/2+5+2
+            gd2[1:-1:2,:,:,gdetB3index] = 0.5*(gd1[:-1,:,:,gdetB3index]+gd1[1:,:,:,gdetB3index])
+            gd2[-1,:,:,gdetB3index] = 0.5*(gd1[0,:,:,gdetB3index]+gd1[-1,:,:,gdetB3index])
+        elif whichdir == 2:
+            #copy even j's
+            gd2[:,0::2,:,:] = gd1[:,:,:,:]
+            #copy odd j's
+            gd2[:,1::2,:,:] = gd1[:,:,:,:]
+            #in the new cells, adjust gdetB[2] to be averages of immediately adjacent cells (this ensures divb=0)
+            gdetB2index = numcols/2+5+1
+            gd2[:,1:-1:2,:,gdetB2index] = 0.5*(gd1[:,:-1,:,gdetB2index]+gd1[:,1:,:,gdetB2index])
+            gd2[:,-1,:,gdetB2index] = 0.5*(0.0+gd1[:,-1,:,gdetB2index])
         gd2.tofile(gout)
         gout.close()
         print( " done!" )
@@ -1498,7 +1520,7 @@ def fieldcalcU(gdetB1=None):
     aphi[:,ny-1] *= 0.5
     #and in r
     aphi[0:nx-1] = 0.5*(aphi[0:nx-1]  +aphi[1:nx])
-    aphi/=(nz*_dx3)
+    #aphi/=(nz*_dx3)  #<--correction 09/29/2011: this should be left commented out
     return(aphi)
 
 def fieldcalcface(gdetB1=None):
@@ -3007,8 +3029,7 @@ def iofr(rval):
     res = interp1d(r[:,0,0], ti[:,0,0], kind='linear')
     return(np.floor(res(rval)+0.5))
 
-def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None,sigma=None,
-                  usegaussianunits=False):
+def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None,sigma=None, usegaussianunits=False, aphi_j_val=0):
     global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
     nqtyold=98
     nqty=98+32+1
@@ -3742,6 +3763,65 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
         return( mdtotvsr, edtotvsr, edmavsr, ldtotvsr )
 
     if whichplot == -200:
+        #XXX compute edmavsr without polar regions with avg_aphi < avg_phi[iofr(rhor),aphi_j_val]
+        if aphi_j_val >= 0 and os.path.isfile( "avg2d.npy" ):
+            avgmem = get2davg(usedefault=1)
+            assignavg2dvars(avgmem)
+            #sum in phi and theta
+            edtotEM = edtotvsr - edmavsr
+            eoutcumMA = scaletofullwedge(nz*(-gdet*avg_TudMA[1,0]*_dx2*_dx3).sum(axis=2)).cumsum(axis=1)
+            eoutcumEM = scaletofullwedge(nz*(-gdet*avg_TudEM[1,0]*_dx2*_dx3).sum(axis=2)).cumsum(axis=1)
+            moutcum = scaletofullwedge(nz*(gdet*avg_rhouu[1]*_dx2*_dx3).sum(axis=2)).cumsum(axis=1)
+            if aphi_j_val > 0:
+                #flux in x2-direction integrated in x1-x3 plane
+                #MA energy
+                eperpMA = scaletofullwedge(nz*(-gdet*avg_TudMA[2,0]*_dx1*_dx3).sum(axis=2)).cumsum(axis=0)
+                #set correction to zero at outer radius (take r=20) where correction is negligible
+                iref = iofr(20)
+                eperpMA = eperpMA-eperpMA[iref:iref+1]
+                #move in x2 to the correct face-location
+                eperpMAdn = 0.5*(eperpMA[:,aphi_j_val]+eperpMA[:,aphi_j_val-1])
+                eperpMAup = 0.5*(eperpMA[:,ny-1-aphi_j_val]+eperpMA[:,ny-aphi_j_val])
+                #eperpMAdn comes with negative sign to account for energy flowing into domain there
+                eperpMA = eperpMAup - eperpMAdn
+                #shift to correct radial location by half cell right (so located at cell center instead of cell face)
+                eperpMA[1:] = 0.5*(eperpMA[:-1]+eperpMA[1:])
+                #EM energy
+                eperpEM = scaletofullwedge(nz*(-gdet*avg_TudEM[2,0]*_dx1*_dx3).sum(axis=2)).cumsum(axis=0)
+                #set correction to zero at outer radius (take r=20) where correction is negligible
+                iref = iofr(20)
+                eperpEM = eperpEM-eperpEM[iref:iref+1]
+                #move in x2 to the correct face-location
+                eperpEMdn = 0.5*(eperpEM[:,aphi_j_val]+eperpEM[:,aphi_j_val-1])
+                eperpEMup = 0.5*(eperpEM[:,ny-1-aphi_j_val]+eperpEM[:,ny-aphi_j_val])
+                #eperpEMdn comes with negative sign to account for energy flowing into domain there
+                eperpEM = eperpEMup - eperpEMdn
+                #shift to correct radial location by half cell right (so located at cell center instead of cell face)
+                eperpEM[1:] = 0.5*(eperpEM[:-1]+eperpEM[1:])
+                #mass
+                #Mdot
+                mperp = scaletofullwedge(nz*(gdet*avg_rhouu[2]*_dx1*_dx3).sum(axis=2)).cumsum(axis=0)
+                #set correction to zero at outer radius (take r=20) where correction is negligible
+                iref = iofr(20)
+                mperp = mperp-mperp[iref:iref+1]
+                #move in x2 to the correct face-location
+                mperpdn = 0.5*(mperp[:,aphi_j_val]+mperp[:,aphi_j_val-1])
+                mperpup = 0.5*(mperp[:,ny-1-aphi_j_val]+mperp[:,ny-aphi_j_val])
+                #mperpdn comes with negative sign to account for energy flowing into domain there
+                mperp = mperpup - mperpdn
+                #shift to correct radial location by half cell right (so located at cell center instead of cell face)
+                mperp[1:] = 0.5*(mperp[:-1]+mperp[1:])
+            else:
+                eperpMA = 0*edtotEM
+                eperpEM = 0*edtotEM
+                mperp = 0*edtotEM
+            edtotMA = cutout_along_aphi(eoutcumMA,aphi_j_val=aphi_j_val) - eperpMA
+            #comment next line out if don't want to cut out pieces of EM energy flux
+            #edtotEM = cutout_along_aphi(eoutcumEM,aphi_j_val=aphi_j_val) - eperpEM
+            mdtotvsr = -(cutout_along_aphi(moutcum,aphi_j_val=aphi_j_val) - mperp)
+            edtotvsr = edtotEM + edtotMA
+            edmavsr = edtotMA
+
         return( mdtotvsr, edtotvsr, edmavsr, ldtotvsr,
                 mdotfinavgvsr5, mdotfinavgvsr10, mdotfinavgvsr20, mdotfinavgvsr30, mdotfinavgvsr40,
                 pjemfinavgvsr5, pjemfinavgvsr10, pjemfinavgvsr20, pjemfinavgvsr30, pjemfinavgvsr40,
@@ -4063,7 +4143,7 @@ def getstagparams(var=None,rmax=20,doplot=1,doreadgrid=1):
     else:
         return istag, jstag, hstag, rstag
 
-def get_dUfloor( floordumpno, maxrinflowequilibrium = 20 ):
+def get_dUfloor( floordumpno, maxrinflowequilibrium = 20, aphi_j_val=0 ):
     """ maxrsteady should be chosen to be on the outside of the inflow equilibrium region """
     RR=0
     TH=1
@@ -4072,19 +4152,54 @@ def get_dUfloor( floordumpno, maxrinflowequilibrium = 20 ):
     #add back in rest-mass energy to conserved energy
     dUfloor[1] -= dUfloor[0]
     condin = np.ones_like(dUfloor)
-    condin[0] = (avg_rhouu[1]<0)*(r[:,:,0:1]<maxrinflowequilibrium)
-    condin[1] = ((avg_rhouu+gam*avg_uguu)[1]<0)*(r[:,:,0:1]<maxrinflowequilibrium)
+    condin[0] = (avg_uu[1]<0)*(r[:,:,0:1]<maxrinflowequilibrium)
+    condin[1] = (avg_uu[1]<0)*(r[:,:,0:1]<maxrinflowequilibrium)
+    # condin[0] = (avg_rhouu[1]<0)*(r[:,:,0:1]<maxrinflowequilibrium)
+    # condin[1] = (-avg_TudMA[1,0]<0)*(r[:,:,0:1]<maxrinflowequilibrium)
+    #condin[1] = ((avg_rhouu+gam*avg_uguu)[1]<0)*(r[:,:,0:1]<maxrinflowequilibrium)
     condin[2:]=condin[0:1]
     #uncomment this if don't want to use stagnation surface
     #condin = (r[:,:,0:1]<maxrinflowequilibrium)
     condout = 1 - condin
-    UfloorAout = (dUfloor*condout[:,:,:,:]).sum(1+PH).sum(1+TH).cumsum(1+RR)
-    UfloorAin = (dUfloor*condin[:,:,:,:]).sum(1+PH).sum(1+TH).cumsum(1+RR)
+    #XXX change below to account for limited range in theta
+    UfloorAout = (dUfloor*condout[:,:,:,:]).sum(1+PH).cumsum(1+TH)  #*(tj!=0)*(tj!=ny-1)
+    UfloorAin = (dUfloor*condin[:,:,:,:]).sum(1+PH).cumsum(1+TH) #*(tj!=0)*(tj!=ny-1)
+    if aphi_j_val == 0:
+        #use unrestricted (full) sum
+        UfloorAout = UfloorAout[:,:,ny-1]
+        UfloorAin = UfloorAin[:,:,ny-1]
+    else:
+        # eout = np.copy(UfloorAout[1])
+        # ein = np.copy(UfloorAin[1])
+        # UfloorAout = UfloorAout[:,:,ny-1]
+        # UfloorAin = UfloorAin[:,:,ny-1]
+        # #cut-out only for energy
+        # UfloorAout[1] = cutout_along_aphi(eout,aphi_j_val=aphi_j_val)
+        # UfloorAin[1]  = cutout_along_aphi(ein,aphi_j_val=aphi_j_val)
+        #cut-out only for energy
+        UfloorAout = cutout_along_aphi(UfloorAout,aphi_j_val=aphi_j_val)
+        UfloorAin  = cutout_along_aphi(UfloorAin,aphi_j_val=aphi_j_val)
+    #Integrate in radius
+    UfloorAout = UfloorAout.cumsum(1+RR)
+    UfloorAin  = UfloorAin.cumsum(1+RR)
+    #
     UfloorA = (UfloorAin-UfloorAin[:,nx-1:nx]) + UfloorAout
+    #
+    #XXX: HACK!!
+    if False and floordumpno==263:
+        rrdump("rdump--0263.bin")
+        Ucons[1] -= Ucons[0]
+        UfloorA[0:8] -= Ucons[0:8].sum(-1).sum(-1)*_dx1*_dx2*_dx3
+        rrdump("rdump--0258.bin")
+        Ucons[1] -= Ucons[0]
+        UfloorA[0:8] += Ucons[0:8].sum(-1).sum(-1)*_dx1*_dx2*_dx3
+    #This needs to be moved half a cell to the right for correct centering
+    UfloorA[:,1:] = 0.5*(UfloorA[:,:-1]+UfloorA[:,1:])
     UfloorAsum = UfloorA*scaletofullwedge(1.)
+    
     return( UfloorAsum )
 
-def plotfluxes(doreload=1):
+def plotfluxes(doreload=1,aphi_j_val=0):
     global DU,DU1,DU2,qtymem,qtymem1,qtymem2
     bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
     plt.figure(4)
@@ -4095,8 +4210,8 @@ def plotfluxes(doreload=1):
     if not doreload:
         DU=DU1
         qtymem=qtymem1
-    takeoutfloors(fti=7000,ftf=1e5,
-        ax=ax1,dolegend=False,doreload=doreload,plotldtot=False,lw=2)
+    takeoutfloors(fti=7000,ftf=30500,#fti=22095,ftf=28195,
+        ax=ax1,dolegend=False,doreload=doreload,plotldtot=False,lw=2,aphi_j_val=aphi_j_val)
     if doreload:
         DU1=DU
         qtymem1=qtymem
@@ -4164,7 +4279,7 @@ def plotfluxes(doreload=1):
         label.set_fontsize(16)
     plt.savefig("fig4.eps",bbox_inches='tight',pad_inches=0.02)
 
-def get_dFfloor(Dt, Dno, dotakeoutfloors=True):
+def get_dFfloor(Dt, Dno, dotakeoutfloors=True,aphi_j_val=0):
     """ Returns the flux correction due to floor activations and fixups, 
     requires gdump to be loaded [grid3d("gdump.bin",use2d=True)], and arrays, Dt and Dno, 
     set up."""
@@ -4173,7 +4288,7 @@ def get_dFfloor(Dt, Dno, dotakeoutfloors=True):
     if dotakeoutfloors:
         for (i,iDT) in enumerate(Dt):
             gc.collect() #try to clean up memory if not used
-            iDU = get_dUfloor( Dno[i] )
+            iDU = get_dUfloor( Dno[i], aphi_j_val=aphi_j_val )
             if iDT > 0:
                 DT += iDT
             if i==0:
@@ -4186,7 +4301,7 @@ def get_dFfloor(Dt, Dno, dotakeoutfloors=True):
         DU = np.zeros((8,nx),dtype=np.float64)
     return( DU )
 
-def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=None,isinteractive=1,returndf=0,dolegend=True,plotldtot=True,lw=1,plotFem=False,writefile=True,doplot=True):
+def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=None,isinteractive=1,returndf=0,dolegend=True,plotldtot=True,lw=1,plotFem=False,writefile=True,doplot=True,aphi_j_val=0):
     global dUfloor, qtymem, DUfloorori, etad0, DU
     #Mdot, E, L
     grid3d("gdump.bin",use2d=True)
@@ -4217,32 +4332,52 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         # Dno = np.array([224.,223.])
         # fti = 14700.
         # ftf = 25000.
-        Dt = np.array([28200-28097.4708711805,
-                       28000-27406.4732593203,
-                       27400-26763.9946654502,
-                       26700-26330.0889135128,
-                       26300-25799.8775611997,
-                       25700-25124.6341346588,
-                       25100-24594.4658011928,
-                       24500-23951.5226133435,
-                       23900-23292.5857662206,
-                       23200-22890.8671337456,
-                       22800-22231.9647756934,
-                       22200-22167.6695855045])
-        Dno = np.array([282,
-                        280,
-                        274,
-                        267,
-                        263,
-                        257,
-                        251,
-                        245,
-                        239,
-                        232,
-                        228,
-                        222])
-        lfti = 7000.
-        lftf = 30500.
+        # Dt = np.array([28200-28097.4708711805,
+        #                28000-27406.4732593203,
+        #                27400-26763.9946654502,
+        #                26700-26330.0889135128,
+        #                26300-25799.8775611997,
+        #                25700-25124.6341346588,
+        #                25100-24594.4658011928,
+        #                24500-23951.5226133435,
+        #                23900-23292.5857662206,
+        #                23200-22890.8671337456,
+        #                22800-22231.9647756934,
+        #                22200-22167.6695855045])
+        # Dno = np.array([282,
+        #                 280,
+        #                 274,
+        #                 267,
+        #                 263,
+        #                 257,
+        #                 251,
+        #                 245,
+        #                 239,
+        #                 232,
+        #                 228,
+        #                 222])
+        # Dt = np.array([10800-10000,
+        #                -(10800-10000)])
+        # Dno = np.array([108,
+        #                 100])
+        # Dt = np.array([15100.-14674.9425787851])
+        # Dno = np.array([151])
+        # Dt = np.array([15800.-15167.5967825024])
+        # Dno = np.array([158])
+        # Dt = np.array([20700.-20000.,
+        #                -(20700.-20000.)])
+        # Dno = np.array([207.,
+        #                 200.])
+        Dt = np.array([26300-25799.8775611997])
+        Dno = np.array([263])
+        # Dt = np.array([26300-25800,
+        #                -(26300-25800)])
+        # Dno = np.array([263,
+        #                 258])
+        # lfti = 25800.
+        # lftf = 26300.
+        lfti = 25800.
+        lftf = 26300.
     elif np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) > 1.5:
         #lo-res 0.99 settings
         print( "Using lores a = 0.99 settings")
@@ -4476,19 +4611,21 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #!!!rhor = 1+(1-a**2)**0.5
         ihor = iofr(rhor)
         qtymem=getqtyvstime(ihor,0.2)
-        DU = get_dFfloor(Dt, Dno, dotakeoutfloors=dotakeoutfloors)
+        #XXX
+        DU = get_dFfloor(Dt, Dno, dotakeoutfloors=dotakeoutfloors,aphi_j_val=aphi_j_val)
     DUfloor0 = DU[0]
     DUfloor1 = DU[1]
     DUfloor4 = DU[4]
     #at this time we have the floor information, now get averages:
     #mdtotvsr, edtotvsr, edmavsr, ldtotvsr = plotqtyvstime( qtymem, whichplot = -2, fti=fti, ftf=ftf )
+    #XXX
     mdtotvsr, edtotvsr, edmavsr, ldtotvsr,\
                 mdotfinavgvsr5, mdotfinavgvsr10, mdotfinavgvsr20, mdotfinavgvsr30, mdotfinavgvsr40, \
                 pjemfinavgvsr5, pjemfinavgvsr10, pjemfinavgvsr20, pjemfinavgvsr30, pjemfinavgvsr40, \
                 pjmafinavgvsr5, pjmafinavgvsr10, pjmafinavgvsr20, pjmafinavgvsr30, pjmafinavgvsr40, \
                 fstotfinavg, fstotsqfinavg, \
                 pjke_mu2_avg, pjke_mu1_avg \
-                = plotqtyvstime( qtymem, whichplot = -200, fti=fti, ftf=ftf )
+                = plotqtyvstime( qtymem, whichplot = -200, fti=fti, ftf=ftf, aphi_j_val=aphi_j_val )
  
     FKE = -(edmavsr+mdtotvsr)
     FKE10 = -((edmavsr-pjmafinavgvsr10) + mdotfinavgvsr10)
@@ -4872,7 +5009,11 @@ def Risco(a):
     risco = 3 + Z2 - np.sign(a)* ( (3 - Z1)*(3 + Z1 + 2*Z2) )**0.5
     return(risco)
 
-def plotpowers(fname,hor=0,format=2):
+def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20):
+    if usegaussianunits == True:
+        unitsfactor = (4*np.pi)**0.5*2*np.pi
+    else:
+        unitsfactor = 1.
     if format == 0: #old format
         gd1 = np.loadtxt( fname, unpack = True, usecols = [1,2,3,4,5,6,7,8,9,10,11,12,13,14] )
         #gd=gd1.view().reshape((-1,nx,ny,nz), order='F')
@@ -4947,9 +5088,12 @@ def plotpowers(fname,hor=0,format=2):
     #fitting function
     f0 = 2.9
     f1 = -0.6
-    f1n = 1.4
+    f1n = 1
     f2 = 0.
-    f = f0 * (1 + (f1*(1+np.sign(myomh))/2. + f1n*(1-np.sign(myomh))/2.) * myomh + f2 * myomh**2)
+    #f = f0 * (1 + (f1*(1+np.sign(myomh))/2. + f1n*(1-np.sign(myomh))/2.) * myomh + f2 * myomh**2)
+    fneg = f0 * (1 + f1*myomh + f2 * myomh**2)
+    fpos = 0.87*f0 * (1 + f1n*myomh)
+    f = amin(fneg,fpos)
     #gammie way -- too large amplitude
     #gammieparamopi = (8./3.*(3.-mya**2+3.*(1-mya**2)**0.5))**0.5
     #f = f0 * 0.25 * gammieparamopi
@@ -4969,15 +5113,18 @@ def plotpowers(fname,hor=0,format=2):
     #plt.plot(alist,etawindlist,'go',label=r'$\eta_{\rm jet}+\eta_{\rm wind}$')
     # plt.plot(mspina6[mhor6==hor],fac*6.94*mpow6[mhor6==hor],'r--',label=r'$P_{\rm BZ,6}$')
     # plt.plot(mspina6[mhor6==hor],fac*3.75*mpow6[mhor6==hor]*rhor6,'r',label=r'$P_{\rm BZ,6}\times\, r_h$' )
-    if False:
-        myomh6=np.concatenate((-momh6[mhor6==hor][::-1],momh6[mhor6==hor]))
-        myspina6=np.concatenate((-mspina6[mhor6==hor][::-1],mspina6[mhor6==hor]))
-        mypow6 = np.concatenate((mpow6[mhor6==hor][::-1],mpow6[mhor6==hor]))
+    if True:
+        myomh6=np.concatenate((-momh6[mhor6==hor][nmin::-1],momh6[mhor6==hor]))
+        myspina6=np.concatenate((-mspina6[mhor6==hor][nmin::-1],mspina6[mhor6==hor]))
+        mypow6 = np.concatenate((mpow6[mhor6==hor][nmin::-1],mpow6[mhor6==hor]))
     else:
         myomh6=momh6[mhor6==hor]
         myspina6=mspina6[mhor6==hor]
         mypow6 = mpow6[mhor6==hor]
-    mypsiosqrtmdot = f0*(1.+(f1*(1+np.sign(myomh6))/2. + f1n*(1-np.sign(myomh6))/2.)*myomh6)
+    #mypsiosqrtmdot = f0*(1.+(f1*(1+np.sign(myomh6))/2. + f1n*(1-np.sign(myomh6))/2.)*myomh6)
+    fneg6 = f0 * (1 + f1*myomh6 + f2 * myomh6**2)
+    fpos6 = 0.88*f0 * (1 + f1n*myomh6)
+    mypsiosqrtmdot = amin(fneg6,fpos6)
     myeta6 = (mypsiosqrtmdot)**2*mypow6
     # plt.figure(5)
     # plt.clf()
@@ -5034,13 +5181,14 @@ def plotpowers(fname,hor=0,format=2):
         # plt.plot(mya,Risco(mya)**(1./2.)*0.9) 
         # plt.ylim(ymin=0)
     if format == 2:
-        plt.figure(0)
+        plt.figure(0,figsize=(8,6),dpi=100)
         plt.clf()
         cond=sparlist<-1e10
         plt.plot(alist,sparlist,'o')
+        plt.plot(alist[:7],sparlist[:7],'b-',lw=2)
         plt.ylim(-10,10)
         plt.grid()
-        plt.ylabel(r"$s = (F_L - 2 a F_E)/F_M$, spin-up function", fontsize=20)
+        plt.ylabel(r"$s = (\dot L - 2 a \dot E)/\dot M_0$", fontsize=20)
         plt.xlabel(r"$a$",fontsize=20)
         print zip(alist,sparlist)
     #
@@ -5050,18 +5198,18 @@ def plotpowers(fname,hor=0,format=2):
     gs.update(left=0.12, right=0.94, top=0.95, bottom=0.1, wspace=0.01, hspace=0.04)
     #mdot
     ax1 = plt.subplot(gs[0,:])
-    plt.plot(alist,y1,'o',label=r'$\langle\phi_{\rm BH}^2\rangle^{1/2}$',mfc='r')
-    plt.plot(mya[mya>0],f[mya>0],'k-',label=r'$\phi_{\rm fit}=2.9(1-0.6 \Omega_{\rm H})$')
+    plt.plot(alist,y1*unitsfactor,'o',label=r'$\langle\phi^2\!\rangle^{1/2}$',mfc='r')
+    plt.plot(mya,f*unitsfactor,'k-',label=r'$\phi_{\rm fit}$') #=2.9(1-0.6 \Omega_{\rm H})
     # plt.plot(mya,(250+0*mya)*rhor) 
     # plt.plot(mya,250./((3./(mya**2 + 3*rhor**2))**2*2*rhor**2)) 
     #plt.plot(mya,((mya**2+3*rhor**2)/3)**2/(2/rhor)) 
     plt.ylim(ymin=0.0001)
-    plt.ylabel(r"$\phi_{\rm BH}$",fontsize='x-large',ha='center',labelpad=16)
+    plt.ylabel(r"$\phi$",fontsize='x-large',ha='center',labelpad=16)
     plt.grid()
     plt.setp( ax1.get_xticklabels(), visible=False )
-    plt.legend(ncol=1,loc='lower center')
+    plt.legend(ncol=2,loc='lower center')
     bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
-    plt.text(-0.9, 2.5, r"$(\mathrm{a})$", size=16, rotation=0.,
+    plt.text(-0.9, 0.8*plt.ylim()[1], r"$(\mathrm{a})$", size=16, rotation=0.,
              ha="center", va="center",
              color='k',weight='regular',bbox=bbox_props
              )
@@ -5071,14 +5219,14 @@ def plotpowers(fname,hor=0,format=2):
     ax1r.set_ylim(ax1.get_ylim())
     #
     ax2 = plt.subplot(gs[1,:])
-    plt.plot(alist,100*etalist,'o',label=r'$\eta_{\rm BH}$',mfc='r')
+    plt.plot(alist,100*etalist,'o',label=r'$\eta$',mfc='r')
     #plt.plot(alist,100*(etawindlist-etalist),'gv',label=r'$\eta_{\rm wind}$')
     #plt.plot(myspina6,0.9*100*fac*myeta6,'k',label=r'$0.9\eta_{\rm BZ6}(\phi_{\rm fit})$' )
     plt.plot(myspina6,100*fac*myeta6,'k-',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$' )
     plt.ylim(0.0001,160)
     plt.grid()
     plt.setp( ax2.get_xticklabels(), visible=False )
-    plt.ylabel(r"$\eta_{\rm BH}\  [\%]$",fontsize='x-large',ha='center',labelpad=12)
+    plt.ylabel(r"$\eta\  [\%]$",fontsize='x-large',ha='center',labelpad=12)
     plt.text(-0.9, 125, r"$(\mathrm{b})$", size=16, rotation=0.,
              ha="center", va="center",
              color='k',weight='regular',bbox=bbox_props
@@ -5097,8 +5245,8 @@ def plotpowers(fname,hor=0,format=2):
     plt.plot(alist,100*etajetlist,'gs',label=r'$\eta_{\rm jet}$')
     #plt.plot(alist,100*etaEMlist,'rx',label=r'$\eta_{\rm jet}$')
     plt.plot(alist,100*etawindlist,'bv',label=r'$\eta_{\rm wind}$')
-    plt.plot(myspina6,100*fac*myeta6,'k-',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$' )
-    plt.plot(myspina6,0.9*100*fac*myeta6,'k--',label=r'$0.9\eta_{\rm BZ6}(\phi_{\rm fit})$' )
+    plt.plot(myspina6,100*fac*myeta6,'k-') #,label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$' )
+    plt.plot(myspina6,0.9*100*fac*myeta6,'k--') #,label=r'$0.9\eta_{\rm BZ6}(\phi_{\rm fit})$' )
     plt.ylim(0.0001,160)
     plt.grid()
     plt.legend(ncol=2,loc='upper center')
@@ -5332,7 +5480,7 @@ def ploteta():
     ax34r.set_yticks(tck)
     gc.collect()
 
-def mkmovie(framesize=50, domakeavi=False,prefactor=1.,sigma=None,usegaussianunits=False,domakeframes=True):
+def mkmovie(framesize=50, domakeavi=False,prefactor=1.,sigma=None,usegaussianunits=False,domakeframes=True,epsFm=None,epsFke=None,fti=None,ftf=None):
     #Rz and xy planes side by side
     plotlenf=10
     plotleni=framesize
@@ -5533,12 +5681,165 @@ def mk2davg():
     plot2davg(whichplot=1)
     gc.collect()
 
+def getFe2davg(aphi_j_val=0):
+    #sum(axis=2) is summation in phi (since 1 element in phi anyway, this just removes the phi-index)
+    eout1den   = scaletofullwedge(nz*(-gdet*avg_Tud[1,0]*_dx2*_dx3).sum(axis=2))
+    eout1denEM = scaletofullwedge(nz*(-gdet*avg_TudEM[1,0]*_dx2*_dx3).sum(axis=2))
+    eout1denMA = scaletofullwedge(nz*(-gdet*avg_TudMA[1,0]*_dx2*_dx3).sum(axis=2))
+    #subtract off rest-energy flux
+    eout1denKE = scaletofullwedge(nz*(gdet*(-avg_TudMA[1,0]-avg_rhouu[1])*_dx2*_dx3).sum(axis=2))
+    #
+    #need to shift these so 0 at axis
+    eoutEM1 = eout1denEM.cumsum(axis=1)
+    eoutMA1 = eout1denMA.cumsum(axis=1)
+    eoutKE1 = eout1denKE.cumsum(axis=1)
+    #shift
+    eout1 = eoutEM1+eoutMA1
+    eouttot = eout1den.sum(axis=-1)
+    #
+    #MA
+    #
+    powMAtot = cutout_along_aphi(eoutMA1,aphi_j_val=0)
+    plt.figure(5)
+    plt.plot(powMAtot)
+    plt.plot(eoutMA1[:,ny-1])
+    plt.figure(6)
+    plt.plot(eoutMA1[:,ny-1]-powMAtot)
 
-def mkonestreamline():
-    startxabs=20
-    a_startyabs=np.linspace(-6,6,num=20)
+###
+### Fix near-BH solution for aphi_j_val = 1 or 2
+###
+def cutout_along_aphi(ecum,aphi_j_val=0):
+    #
+    ndim = ecum.ndim
+    if aphi_j_val > 0:
+        if ndim == 3:
+            return( ecum[:,:,ny-1-aphi_j_val] - ecum[:,:,aphi_j_val-1] )
+        else:
+            return( ecum[:,ny-1-aphi_j_val] - ecum[:,aphi_j_val-1] )
+    elif aphi_j_val == 0:
+        if ndim == 3:
+            return( ecum[:,:,ny-1] )
+        else:
+            return( ecum[:,ny-1] )
+    else:
+        if ndim == 3:
+            return( ecum[:,:,ny-2] - ecum[:,:,0] )
+        else:
+            return( ecum[:,ny-2] - ecum[:,0] )
+    #get avg_aphi
+    avgmem = get2davg(usedefault=1)
+    assignavg2dvars(avgmem)
+    #face-centered aphi
+    avg_aphi_stag = fieldcalcface(gdetB1=avg_gdetB[0])
+    avg_aphi = np.zeros_like(avg_aphi_stag)
+    #shift by one cell to be consistent in x2-location with eout1's
+    avg_aphi[:,0:ny-1] = avg_aphi_stag[:,1:ny]
+    #make it cell centered in radius
+    avg_aphi[0:nx-1] = 0.5*(avg_aphi[0:nx-1]+avg_aphi[1:nx])
+    #
+    aphi_cut_val = avg_aphi[iofr(rhor),aphi_j_val,0]
+    ecumleft  = findroot2d( avg_aphi[:,:,0]-aphi_cut_val, ecum, isleft=True, fallback = 1, fallbackval = 0 )
+    ecumright = findroot2d( avg_aphi[:,:,0]-aphi_cut_val, ecum, isleft=False, fallback = 1, fallbackval = np.pi )
+    ecumtot = ecumright-ecumleft
+    return( ecumtot )
+    
+
+def mkonestreamline(u, x0, y0, mylen=30):
+    """Despite scary-looking contents, this extracts and returns a single streamline starting at (x0, y0); mylen is the size of the square within which a field line is to be traced"""
+    B[1:] = u[1:]
+    traj = mkframe("myframe",len=mylen,ax=None,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.1,dsval=0.005,color='k',doarrows=False,dorandomcolor=False,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False,startxabs=x0,startyabs=y0)
+    return( traj )
+
+def mkonestreamlinex1x2(ux, uy, xi, yi, x0, y0):
+    """ compute a streamline in x1-x2 (internal) code coordinates
+        Example inputs:
+            ux = B[1,:,:,0]
+            uy = B[2,:,:,0]
+            xi = x1[:,:,0]
+            yi = x2[:,:,0]
+            starting point:
+            x0 = value of x1
+            y0 = value of x2
+        Output:
+            Tuple of (x1[:], x2[:])
+        Example:
+        #trace a field line starting at x1 = 1, x2 = 0
+        traj = mkonestreamlinex1x2( B[1,:,:,0], B[2,:,:,0], x1[:,0,0], x2[0,:,0], 1, 0 )
+        #alternatively, you could trace energy streamline
+        traj = mkonestreamlinex1x2( Tud[1,0,:,:,0], Tud[2,0,:,:,0], x1[:,0,0], x2[0,:,0], 1, 0 )
+        xtraj, ytraj = traj
+        #plot it
+        plt.figure()
+        plt.plot(xtraj,ytraj)
+        #evaluate streamline coordinates at radial grid nodes, x1[0:nx]:
+        x1traj = x1[:,0,0]
+        x2traj = interp1d(xtraj, ytraj, kind='linear',bounds_error=False)(x1traj)
+        #Evaluate, e.g., density along streamline:
+        #  Note: if trajectory has multiple values of x2 for a single value of x1, then 
+        #        isleft = True picks the solution for rho at the smallest value of x2 and 
+        #        isleft = False picks the solution for rho at the largest value of x2
+        #this evaluates rho where the 1st argument vanishes, i.e., x2[:,:,0]-ytrajvsti[:,None] == 0
+        rhotraj = findroot2d(x2[:,:,0]-ytrajvsti[:,None], rho[:,:,0], axis = 0, isleft = True )
+        #plot it
+        plt.figure()
+        plt.plot(np.log10(r[:,0,0]),np.log10(rhotraj))
+    """
+    traj = fstreamplot(yi,xi,uy,ux,ua=None,va=None,ax=None,density=24,downsample=1,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.1,dsval=0.005,color='k',doarrows=False,dorandomcolor=False,skipblankint=True,detectLoops=False,minindent=5,minlengthdefault=0.2,startatmidplane=False,startxabs=y0,startyabs=x0)
+    if traj is not None:
+        if traj[1][0] > x0:
+            #order such that x1 increases along streamline
+            return( traj[1][::-1], traj[0][::-1] )
+        return( traj[1], traj[0] )
+    else:
+        return( None )
+
+def mkmanystreamlinesx1x2(): 
+    startxabs=2
+    a_startyabs=np.linspace(0.495,0.495,num=1)
     #DRAW FIGURE
     #fig=plt.figure(1,figsize=(12,9),dpi=300)
+    fig=plt.figure(1)
+    ax = fig.add_subplot(111)
+    #fig=plt.figure(1)
+    fntsize=24
+    # ax = fig.add_subplot(111, aspect='equal')
+    # ax.set_aspect('equal')   
+    #TRACE ENERGY STREAMLINE
+    mylen = 30
+    grid3d("gdump.bin",use2d=True)
+    rfd("fieldline0000.bin")
+    avgmem = get2davg(usedefault=1)
+    assignavg2dvars(avgmem)
+    avg_aphi = scaletofullwedge(nz*_dx3*fieldcalc(gdetB1=avg_gdetB[0]))
+    plco(avg_aphi,xcoord=x1[:,:,0],ycoord=x2[:,:,0])
+    #energy
+    #B[1:] = avg_Tud[1:,0]
+    for startyabs in a_startyabs:
+        print( "x0 = %g, y0 = %g" % (startxabs, startyabs) )
+        traj = mkonestreamlinex1x2( avg_B[0,:,:,0], avg_B[1,:,:,0], x1[:,0,0], x2[0,:,0], startxabs, startyabs )
+        if traj is not None:
+            xtraj, ytraj = traj
+            #DRAW STREAMLINE
+            plt.plot(xtraj,ytraj,'g-')
+            yfunc = interp1d(xtraj, ytraj, kind='linear',bounds_error=False)
+            #pdb.set_trace()
+            xtrajvsti = x1[:,0,0]
+            ytrajvsti = yfunc(xtrajvsti)
+            my_aphi = findroot2d(x2[:,:,0]-ytrajvsti[:,None], avg_aphi, axis = 0 )
+            plt.figure()
+            plt.plot(x1[:,0,0],my_aphi)
+            # findroot2d(, vals, axis = 0 )
+            # ax2
+            plt.draw()
+
+def mkmanystreamlinesxy():
+    startxabs=2
+    a_startyabs=np.linspace(-6,6,num=2)
+    #DRAW FIGURE
+    #fig=plt.figure(1,figsize=(12,9),dpi=300)
+    fig=plt.figure(2)
+    ax2 = fig.add_subplot(111)
     fig=plt.figure(1)
     fntsize=24
     ax = fig.add_subplot(111, aspect='equal')
@@ -5551,14 +5852,15 @@ def mkonestreamline():
     assignavg2dvars(avgmem)
     #energy
     #B[1:] = avg_Tud[1:,0]
-    B[1:] = avg_uu[1:]
-    bsq = avg_bsq
     for startyabs in a_startyabs:
-        t = mkframe("myframe",len=mylen,ax=ax,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.1,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False,startxabs=startxabs,startyabs=startyabs)
-        if t is not None:
-            xtraj, ytraj = t
+        print( "x0 = %g, y0 = %g" % (startxabs, startyabs) )
+        traj = mkonestreamline( -avg_Tud[:,0], startxabs, startyabs, mylen = mylen )
+        if traj is not None:
+            xtraj, ytraj = traj
             #DRAW STREAMLINE
             ax.plot(xtraj,ytraj,'g-')
+            # findroot2d(, vals, axis = 0 )
+            # ax2
             plt.draw()
         else:
             print("Got Null trajectory: (%f,%f)" % (startxabs, startyabs))
@@ -5578,21 +5880,25 @@ def mkonestreamline():
     # plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02)
     plt.savefig("fig2oneline.png",bbox_inches='tight',pad_inches=0.02,dpi=300)
 
-def mkstreamlinefigure(length=25,doenergy=True,frac=0.75):
+def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,showticks=True):
     mylen = length/frac
     arrowsize=4
     grid3d("gdump.bin",use2d=True)
     rfd("fieldline0000.bin")
     avgmem = get2davg(usedefault=1)
     assignavg2dvars(avgmem)
-    fig=plt.figure(1,figsize=(12,9),dpi=300)
+    fig=plt.figure(1,figsize=(12,9),dpi=300,frameon=frameon)
+    fig.patch.set_facecolor('#D8D8D8')
+    fig.patch.set_alpha(1.0)
     fntsize=24
-    ax = fig.add_subplot(111, aspect='equal')
+    ax = fig.add_subplot(111, aspect='equal', frameon=frameon)
+    ax.patch.set_facecolor('#D8D8D8')
+    ax.patch.set_alpha(1.0)
     if doenergy==False:
         #velocity
         B[1:] = avg_uu[1:]
         bsq = avg_bsq
-        mkframe("myframe",len=mylen,ax=ax,density=12,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
+        mkframe("myframe",len=mylen,ax=ax,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.0025,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
     if doenergy==True:
         #energy
         B[1:] = avg_Tud[1:,0]
@@ -5616,7 +5922,7 @@ def mkstreamlinefigure(length=25,doenergy=True,frac=0.75):
         hs=hstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)<0]
         ax.plot(rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
         ax.plot(-rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
-    if False:
+    if True:
         #field
         B[1] = avg_B[0]
         B[2] = avg_B[1]
@@ -5625,7 +5931,7 @@ def mkstreamlinefigure(length=25,doenergy=True,frac=0.75):
         plt.figure(1)
         gdetB[1:] = avg_gdetB[0:]
         mu = avg_mu
-        mkframe("myframe",len=frac*mylen,ax=ax,density=4,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=12,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.01,color='r',lw=2,startatmidplane=True,showjet=False,arrowsize=arrowsize)
+        mkframe("myframe",len=mylen,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=12,dodiskfield=8,minlenbhfield=0.1,minlendiskfield=0.1,dsval=0.001,color='r',lw=2,startatmidplane=True,showjet=False,arrowsize=arrowsize,skipblankint=True,populatestreamlines=False,useblankdiskfield=False,dnarrow=4)
     if False:
         x = (r*np.sin(h))[:,:,0]
         z = (r*np.cos(h))[:,:,0]
@@ -5641,13 +5947,29 @@ def mkstreamlinefigure(length=25,doenergy=True,frac=0.75):
     mylenshow = frac*mylen
     plt.xlim(-mylenshow,mylenshow)
     plt.ylim(-mylenshow,mylenshow)
-    plt.xlabel(r"$x\ [r_g]$",fontsize=fntsize,ha='center')
-    plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=15,fontsize=fntsize)
+    if False:
+        plt.xlabel(r"$x\ [r_g]$",fontsize=fntsize,ha='center')
+        plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=15,fontsize=fntsize)
+    else:
+        plt.setp( ax.get_xticklabels(), visible=False)
+        plt.setp( ax.get_yticklabels(), visible=False)
     for label in ax.get_xticklabels() + ax.get_yticklabels():
         label.set_fontsize(fntsize)
+    # run through all lines drawn for xticks and yticks
+    if showticks == False:
+        for i, line in enumerate(ax.get_xticklines() + ax.get_yticklines()):
+            #if i%2 == 1:   # odd indices
+            line.set_visible(False)     
     # plt.savefig("fig2.pdf",bbox_inches='tight',pad_inches=0.02)
     # plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02)
-    plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02,dpi=300)
+    fig.patch.set_facecolor('#D8D8D8')
+    fig.patch.set_alpha(0.5)
+    fig.patch.set_visible(True)
+    ax.patch.set_facecolor('#D8D8D8')
+    ax.patch.set_alpha(0.5)
+    ax.patch.set_visible(True)
+    plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02,dpi=dpi,facecolor=fig.get_facecolor(), edgecolor='#D8D8D8',transparent=False)
+    #fig.get_facecolor()
 
 def mklotsopanels(doreload=1,epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,prefactor=100,sigma=None,usegaussianunits=False,arrowsize=1):
     global qtymem
@@ -6332,7 +6654,8 @@ if __name__ == "__main__":
     if False:
         grid3d("gdump.bin",use2d=True)
         #rfd("fieldline0000.bin")
-        flist = ["avg2d20_0000_0001.npy", "avg2d20_0000_0050.npy","avg2d20_0100_0150.npy","avg2d20_0150_0200.npy","avg2d20_0200_0250.npy"]
+        #flist = ["avg2d20_0000_0001.npy", "avg2d20_0000_0050.npy","avg2d20_0100_0150.npy","avg2d20_0150_0200.npy","avg2d20_0200_0250.npy"]
+        flist = ["avg2d20_0000_0001.npy", "avg2d20_0200_0250.npy"]
         plt.figure(1)
         plt.clf()
         plt.figure(2)
@@ -6350,6 +6673,11 @@ if __name__ == "__main__":
             mdin = intangle( mdot_den*nz, which=cond )
             mdall = intangle( mdot_den*nz )
             #xxx
+            #######################
+            #
+            #  FIGURE 1: Mdot
+            #
+            #######################
             plt.figure(1)
             ax = plt.gca()
             #plt.plot( r[:,0,0], -mdin, ':' )
@@ -6359,43 +6687,68 @@ if __name__ == "__main__":
             plt.ylim(0,20)
             plt.xlabel(r"$r$",fontsize=16)
             plt.ylabel(r"$\dot M$",fontsize=16)
-            plt.grid()
-            #radial 4-velocity
+            plt.grid(b=True)
+            #######################
+            #
+            #  FIGURE 2: u^r
+            #
+            #######################
             plt.figure(2)
             #plt.clf()
             ax = plt.gca()
             up = (gdet[:,:,0:1]*avg_rhouu[1]*_dx2*_dx3).sum(-1).sum(-1)
             dn = (gdet[:,:,0:1]*avg_rhouu[0]*_dx2*_dx3).sum(-1).sum(-1)/dxdxp[1,1,:,0,0]
             ur1d = np.array(up/dn)
-            plt.grid()
+            uurmid = 0.5*(avg_uu[1,:,ny/2,0]+avg_uu[1,:,ny/2-1,0])*dxdxp[1,1,:,0,0]
+            uutmid = 0.5*(avg_uu[0,:,ny/2,0]+avg_uu[0,:,ny/2-1,0])
+            vurmid = uurmid/uutmid
             #plt.plot(r[:,0,0], -ur1d)
-            plt.plot(r[:,0,0],-ur1d)
+            #plt.plot(r[:,0,0],-ur1d,'b:')
+            #plt.plot(r[:,0,0],-uurmid,'b--')
+            plt.plot(r[:,0,0],-vurmid,'b-')
             #print ur1d.shape
             #plt.plot(r[:,0,0],0.1*(r[:,0,0]/10)**(-1.2))
-            plt.ylim(1e-4,0.5)
+            plt.ylim(1e-4,1.5)
             ax.set_xscale('log')
             ax.set_yscale('log')
             plt.xlim(rhor,100)
             #plt.ylim(0,20)
             plt.xlabel(r"$r$",fontsize=16)
             plt.ylabel(r"$-u^r$",fontsize=16)
-            #xxx
-            #Sigma
+            plt.grid(b=True)
+            #######################
+            #
+            #  FIGURE 3: \Sigma
+            #
+            #######################
             plt.figure(3)
-            plt.grid()
             #plt.clf()
             ax = plt.gca()
             sigval = (gdet[:,:,0:1]*avg_rhouu[0]*_dx2*_dx3).sum(-1).sum(-1)/dxdxp[1,1,:,0,0]
-            #xxxx
             plt.plot( r[:,0,0], sigval )
             ax.set_xscale('log')
             ax.set_yscale('log')
             plt.xlim(rhor,100000)
             plt.xlabel(r"$r$",fontsize=16)
             plt.ylabel(r"$\Sigma$",fontsize=16)
+            plt.grid(b=True)
         plt.figure(2)
-        plt.plot(r[:,0,0],0.1*(r[:,0,0]/10)**(-2))
-        plt.plot(r[:,0,0],0.1*(r[:,0,0]/10)**(-1.))
+        plt.plot(r[:,0,0],0.01*(r[:,0,0]/10)**(-2),'b:')
+        plt.plot(r[:,0,0],0.01*(r[:,0,0]/10)**(-1.),'b:')
+        plt.plot(r[:,0,0],0.01*(r[:,0,0]/10)**(-1./2.),'b:')
+        uurfreefall = -gn3[0,1,:,ny/2,0]/(-gn3[0,0,:,ny/2,0])**0.5*dxdxp[1,1,:,0,0]
+        vurfreefall = gn3[0,1,:,ny/2,0]/gn3[0,0,:,ny/2,0]*dxdxp[1,1,:,0,0]
+        vff_nonrel = (2/r[:,0,0])**0.5
+        plt.plot(r[:,0,0],vff_nonrel,'y-')
+        plt.plot(r[:,0,0],0.15*vff,'y-')
+        #plot instantaneous v^r
+        if False:
+            plt.plot(r[:,0,0],-uu[1,:,ny/2,0]/uu[0,:,ny/2,0]*dxdxp[1,1,:,0,0],'r')
+        #plt.plot(r[:,0,0],-uurfreefall,'g-')
+        #plt.plot(r[:,0,0],-uurfreefall,'g--')
+        #plt.plot(r[:,0,0],-0.35*uurfreefall,'g--')
+        plt.plot(r[:,0,0],-vurfreefall,'g-')
+        plt.plot(r[:,0,0],-0.3*vurfreefall,'g-')
         plt.figure(3)
         plt.plot(r[:,0,0],5e7*(r[:,0,0]/1000)**(1))
         plt.plot(r[:,0,0],0.1e7*(r[:,0,0]/1000)**(2))
@@ -6418,7 +6771,7 @@ if __name__ == "__main__":
         #NEW FORMAT
         #Plot qtys vs. time
         generate_time_series(docompute=True)
-    if True:
+    if False:
         #make a movie
         fti=7000
         ftf=30500
@@ -6443,7 +6796,7 @@ if __name__ == "__main__":
         #mkmovie(prefactor=100.,usegaussianunits=True,domakeframes=domakeframes)
     if False:
         #fig2 with grayscalestreamlines and red field lines
-        mkstreamlinefigure(doenergy=False)
+        mkstreamlinefigure(length=50,doenergy=False,frameon=True,dpi=600,showticks=False)
         #mkstreamlinefigure(length=4,doenergy=False)
     if False:
         #FIGURE 1 LOTSOPANELS
@@ -6460,8 +6813,9 @@ if __name__ == "__main__":
         grid3d( "gdump.bin",use2d=True )
         fno=0
         rfd("fieldline%04d.bin" % fno)
+        cvel()
         plt.clf();
-        mkframe("lrho%04d" % 0, vmin=-8,vmax=0.2,dostreamlines=False,len=50)
+        mkframe("lrho%04d" % 0, vmin=-8,vmax=0.2,dostreamlines=True,len=50)
         plt.savefig("lrho%04d.pdf" % fno)
     if False:
         #Short tutorial. Some of the names will sound familiar :)
