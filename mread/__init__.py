@@ -3770,6 +3770,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             #sum in phi and theta
             edtotEM = edtotvsr - edmavsr
             eoutcumMA = scaletofullwedge(nz*(-gdet*avg_TudMA[1,0]*_dx2*_dx3).sum(axis=2)).cumsum(axis=1)
+            eoutcumEM = scaletofullwedge(nz*(-gdet*avg_TudEM[1,0]*_dx2*_dx3).sum(axis=2)).cumsum(axis=1)
             moutcum = scaletofullwedge(nz*(gdet*avg_rhouu[1]*_dx2*_dx3).sum(axis=2)).cumsum(axis=1)
             if aphi_j_val > 0:
                 #flux in x2-direction integrated in x1-x3 plane
@@ -3815,6 +3816,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
                 eperpEM = 0*edtotEM
                 mperp = 0*edtotEM
             edtotMA = cutout_along_aphi(eoutcumMA,aphi_j_val=aphi_j_val) - eperpMA
+            #comment next line out if don't want to cut out pieces of EM energy flux
+            #edtotEM = cutout_along_aphi(eoutcumEM,aphi_j_val=aphi_j_val) - eperpEM
             mdtotvsr = -(cutout_along_aphi(moutcum,aphi_j_val=aphi_j_val) - mperp)
             edtotvsr = edtotEM + edtotMA
             edmavsr = edtotMA
@@ -4354,19 +4357,19 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #                 228,
         #                 222])
         # Dt = np.array([10800-10000,
-        #                -(10800-10000)])*0.5
+        #                -(10800-10000)])
         # Dno = np.array([108,
         #                 100])
         # Dt = np.array([15100.-14674.9425787851])
         # Dno = np.array([151])
         # Dt = np.array([15800.-15167.5967825024])
         # Dno = np.array([158])
-        Dt = np.array([20700.-20000.,
-                       -(20700.-20000.)])
-        Dno = np.array([207.,
-                        200.])
-        # Dt = np.array([26300-25799.8775611997])*0.5
-        # Dno = np.array([263])
+        # Dt = np.array([20700.-20000.,
+        #                -(20700.-20000.)])
+        # Dno = np.array([207.,
+        #                 200.])
+        Dt = np.array([26300-25799.8775611997])
+        Dno = np.array([263])
         # Dt = np.array([26300-25800,
         #                -(26300-25800)])
         # Dno = np.array([263,
