@@ -42,7 +42,7 @@ useoverride=0
 ilistoverride=`seq 24 31`
 runnoverride=128
 
-jobsuffix="jx$system"
+jobsuffix="jy$system"
 
 # runn is number of runs (and in parallel, should be multiple of numcores)
 
@@ -51,8 +51,9 @@ if [ $system -eq 1 ]
 then
     # up to 768 cores (96*2*4)
     # but only 4GB/core.  Seems to work, but maybe much slower than would be if used 6 cores to allow 5.3G/core?
-    numcores=6
-    numnodes=22 # so 132 cores total
+    # ok, now need 5 cores
+    numcores=5
+    numnodes=36 # so 180 cores total
     thequeue="kipac-ibq"
     # first part of name gets truncated, so use suffix instead for reliability no matter how long the names are
 fi
@@ -168,7 +169,10 @@ echo "RANDOM=$myrand"
 
 localpath=`pwd`
 
+passpart1="a#"
+passpart2="hyq#ng9"
 
+echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
 
 
 ############################
@@ -419,6 +423,9 @@ then
 fi
 
 
+echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
+
+
 ###################################
 #
 # Merge npy files
@@ -453,6 +460,8 @@ then
 
 fi
 
+
+echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
 
 
 ###################################
@@ -510,6 +519,9 @@ then
 
 fi
 
+
+
+echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
 
 
 ###################################
@@ -748,6 +760,8 @@ then
     
 fi
 
+echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
+
 
 ###################################
 #
@@ -797,6 +811,7 @@ then
 fi
 
 
+echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
 
 
 ###################################
@@ -1027,6 +1042,8 @@ then
 
 fi
 
+echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
+
 
 ###################################
 #
@@ -1050,14 +1067,25 @@ then
     # <index of first avg file to use> <index of last avg file to use> <step=1>
     # must be step=1, or no merge occurs
     step=1
+    itemspergroup=$(( 20 ))
+    whichgroups=$(( 0 ))
+    numavg2dmerge=`ls -vrt | egrep "avg2d"${itemspergroup}"_[0-9]*\.npy"|wc|awk '{print $1}'`
+    #whichgroupe=$(( $itemspergroup * $runn ))
+    whichgroupe=$numavg2dmerge
+
+    groupsnum=`printf "%04d" "$whichgroups"`
+    groupenum=`printf "%04d" "$whichgroupe"`
+
+    echo "GROUPINFO: $step $itemspergroup $whichgroups $whichgroupe $groupsnum $groupenum"
+
     if [ $testrun -eq 1 ]
 	then
-	    echo "((nohup python $myinitfile6 $modelname 0 $runn $step 2>&1 1>&3 | tee python_${runn}_${runn}.avg.stderr.out) 3>&1 1>&2 | tee python_${runn}_${runn}.avg.out) > python_${runn}_${runn}.avg.full.out 2>&1"
+	    echo "((nohup python $myinitfile6 $modelname $whichgroups $whichgroupe $step 2>&1 1>&3 | tee python_${runn}_${runn}.avg.stderr.out) 3>&1 1>&2 | tee python_${runn}_${runn}.avg.out) > python_${runn}_${runn}.avg.full.out 2>&1"
     else
-	    ((nohup python $myinitfile6 $modelname 0 $runn $step 2>&1 1>&3 | tee python_${runn}_${runn}.avg.stderr.out) 3>&1 1>&2 | tee python_${runn}_${runn}.avg.out) > python_${runn}_${runn}.avg.full.out 2>&1
+	    ((nohup python $myinitfile6 $modelname $whichgroups $whichgroupe $step 2>&1 1>&3 | tee python_${runn}_${runn}.avg.stderr.out) 3>&1 1>&2 | tee python_${runn}_${runn}.avg.out) > python_${runn}_${runn}.avg.full.out 2>&1
 
         # copy resulting avg file to avg2d.npy
-	    avg2dmerge=`ls -vrt avg2d*_*_*.npy | head -1`    
+	    avg2dmerge=`ls -vrt avg2d${itemspergroup}_${groupsnum}_${groupenum}.npy | head -1`    
 	    cp $avg2dmerge avg2d.npy
 
     fi
@@ -1073,6 +1101,7 @@ then
 
 fi
 
+echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
 
 
 ###################################
@@ -1107,6 +1136,8 @@ then
 
 fi
 
+
+echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
 
 
 # to clean-up bad start, use:

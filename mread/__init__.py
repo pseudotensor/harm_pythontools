@@ -280,7 +280,7 @@ def get2davg(usedefault=0,whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergr
     #check values for sanity
     if usedefault == 0 and (whichgroups < 0 or whichgroupe < 0 or whichgroups >= whichgroupe or itemspergroup <= 0):
         print( "whichgroups = %d, whichgroupe = %d, itemspergroup = %d not allowed" 
-               % (whichgroups, whichgroupe, itemspergroup) )
+               % (whichgroups, whichgroupe, itemspergroup) );sys.stdout.flush()
         return None
     #
     if usedefault:
@@ -288,27 +288,59 @@ def get2davg(usedefault=0,whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergr
     else:
         fname = "avg2d%02d_%04d_%04d.npy" % (itemspergroup, whichgroups, whichgroupe)
     if os.path.isfile( fname ):
-        print( "File %s exists, loading from file..." % fname )
+        print( "File %s exists, loading from file..." % fname );sys.stdout.flush()
         avgtot=np.load( fname )
         return( avgtot )
+    #####################
+    defaultfti,defaultftf=getdefaulttimes()
+    avgfti = defaultfti
+    avgftf = defaultftf
+    ######################
+    print("whichgroups=%d whichgroupe=%d" % (whichgroups,whichgroupe))
+    ######################
     n2avg = 0
     nitems = 0
     myrange = np.arange(whichgroups,whichgroupe)
     numrange = myrange.shape[0]
+    firstavgone=1
+    firstavgoneused=1
     for (i,g) in enumerate(myrange):
+        print("i=%d g=%d" % (i,g))
         avgone=get2davgone( whichgroup = g, itemspergroup = itemspergroup )
+        tstry=avgone[0,0,0]
+        tftry=avgone[0,1,0]
+        if firstavgone==1:
+            avgtot = np.zeros_like(avgone)
+            firstavgone=0
         if avgone == None:
             continue
-        if 0==i:
-            avgtot = np.zeros_like(avgone)
-            ts=avgone[0,0,0]
-        tf=avgone[0,1,0]
-        avgtot += avgone
-        nitems += avgone[0,2,0]
-        n2avg += 1
+        # use avg data if either start or finish of time used for averaging is within average period
+        # tftry==0 case put in under assumption that broken avg_te[0] assignment code was used to generate avg*.npy files
+        if (tstry>avgfti and tstry<avgftf) or ((tftry>avgfti and tftry<avgftf) or tftry==0):
+            if firstavgoneused==1:
+                ts=avgone[0,0,0]
+                firstavgoneused=0
+            # override tf if buggy avg file
+            if tftry!=0:
+                tf=avgone[0,1,0]
+            else:
+                tf=tf=avgone[0,0,0]
+            #
+            avgtot += avgone
+            nitems += avgone[0,2,0]
+            n2avg += 1
+            print("USING: During merge: ts=%g tf=%g tstry=%g tftry=%g n2avg=%d" % (ts,tf,tstry,tftry,n2avg));sys.stdout.flush()
+            #
+        else:
+            print("NOTUSING: During merge: tstry=%g tftry=%g n2avg=%d" % (tstry,tftry,n2avg));sys.stdout.flush()
+        # end if within averaging period of time
+    # end for loop over whichgroups->whichgroupe
+    #
+    # set final avg file times and number of items
     avgtot[0,0,0] = ts
     avgtot[0,1,0] = tf
     avgtot[0,2,0] = nitems
+    print("Final avg_ts=%g avg_te=%g nitems=%d" % (avgtot[0,0,0],avgtot[0,1,0],avgtot[0,2,0]));sys.stdout.flush()
     #get the average
     if n2avg == 0:
         print( "0 total files, so no data generated." )
@@ -317,7 +349,7 @@ def get2davg(usedefault=0,whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergr
     avgtot[1:] /= n2avg
     #only save if more than 1 dump
     if n2avg > 1:
-        print( "Saving data to file..." )
+        print( "Saving data to file: n2avg=%d ..." % (n2avg) );sys.stdout.flush()
         np.save( fname, avgtot )
     return( avgtot )
     
@@ -332,6 +364,7 @@ def assignavg2dvars(avgmem):
     # uses fake 2D space for some single numbers
     avg_ts=avgmem[i,0,:];
     avg_te=avgmem[i,1,:];
+    print( "assignavg2dvars: avg_ts=%d avg_te=%d" % (avg_ts[0],avg_te[0]))
     avg_nitems=avgmem[i,2,:];i+=1
     #quantities
     # 4
@@ -510,8 +543,9 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         if fldindex == itemspergroup * whichgroup:
             avg_ts[0]=t
         #if last item in group
-        if fldindex == itemspergroup * whichgroup + (itemspergroup - 1):
-            avg_te[0]=t
+        # NO, number of files may not be evenly divisible by itemspergroup, so just always save te as when merging
+        #if fldindex == itemspergroup * whichgroup + (itemspergroup - 1):
+        avg_te[0]=t
         #
         # 1
         avg_nitems[0]+=1
@@ -914,6 +948,8 @@ def getdefaulttimes():
     return defaultfti,defaultftf
 
 
+
+
 # get qty t,r(h,m) data and related calculations
 def getbasicqtystuff(whichplot=None):
     rhor=1+(1-a**2)**0.5
@@ -922,15 +958,18 @@ def getbasicqtystuff(whichplot=None):
     defaultfti,defaultftf=getdefaulttimes()
     #
     qtymem=getqtyvstime(ihor)
-    if avg_ts[0] != 0:
-        fti = avg_ts[0]
-    else:
-        fti = defaultfti
-    if avg_te[0] != 0:
-        ftf = avg_te[0]
-    else:
-        ftf = defaultftf
-    print( "getbasicqtystuff: Using: ti = %g, tf = %g" % (fti,ftf) )
+    #
+    # assume original default's were used for average range, so plotqty computations should be computed using that same range, not some odd avg_ts/te markers
+    fti = defaultfti
+    ftf = defaultftf
+    if 1==0:
+        if avg_ts[0] != 0:
+            fti = avg_ts[0]
+        if avg_te[0] != 0:
+            ftf = avg_te[0]
+        #
+    #
+    print( "getbasicqtystuff: Using: ti = %g, tf = %g" % (fti,ftf) ) ; sys.stdout.flush()
     if whichplot==-1:
         md, ftot, fsqtot, f30, fsq30, pjemtot  = plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=whichplot,fti=fti,ftf=ftf)
         return(md, ftot, fsqtot, f30, fsq30, pjemtot)
@@ -1511,23 +1550,43 @@ def gridcalc(hoverr):
     Compute dr:r d\theta : r\sin\theta d\phi along equator vs. radius
     """
     #
+    print("h.shape") ; sys.stdout.flush()
+    print(h.shape) ; sys.stdout.flush()
+    #
+    print("hoverr.shape") ; sys.stdout.flush()
+    print(hoverr.shape) ; sys.stdout.flush()
+    print("hoverr=%g" % (hoverr))
+    #
     which=(np.fabs(h-np.pi*0.5)<=hoverr)
-    norm = (which.sum(axis=1)).sum(axis=1)
+    print("which.shape") ; sys.stdout.flush()
+    print(which.shape) ; sys.stdout.flush()
+    #
+    norm = (which.sum(axis=1))
+    if len(norm.shape)==2:
+        norm=norm.sum(axis=1)
     whichalt=(np.fabs(h-np.pi*0.5)<=np.pi*0.5)
-    normalt = (whichalt.sum(axis=1)).sum(axis=1)
+    normalt = (whichalt.sum(axis=1))
+    if len(normalt.shape)==2:
+        normalt=normalt.sum(axis=1)
     #
     norm[norm==0] = normalt[norm==0]
     #
     drup=np.empty((nx,nz),dtype=h.dtype)
-    drup = ((dxdxp[1][1]*_dx1*which).sum(axis=1)).sum(axis=1)
+    drup = ((dxdxp[1][1]*_dx1*which).sum(axis=1))
+    if len(drup.shape)==2:
+        drup=drup.sum(axis=1)
     dr = drup/norm
     #
     dHup=np.empty((nx,nz),dtype=h.dtype)
-    dHup = ((r*dxdxp[2][2]*_dx2*which).sum(axis=1)).sum(axis=1)
+    dHup = ((r*dxdxp[2][2]*_dx2*which).sum(axis=1))
+    if len(dHup.shape)==2:
+        dHup=dHup.sum(axis=1)
     dH = dHup/norm
     #
     dPup=np.empty((nx,nz),dtype=h.dtype)
-    dPup = ((r*np.sin(h)*dxdxp[3][3]*_dx3*which).sum(axis=1)).sum(axis=1)
+    dPup = ((r*np.sin(h)*dxdxp[3][3]*_dx3*which).sum(axis=1))
+    if len(dPup.shape)==2:
+        dPup=dPup.sum(axis=1)
     dP = dPup/norm
     #
     #print(norm)
@@ -1863,6 +1922,7 @@ def powervsm(doabs=0,rin=None,rout=None,qty=None,minbsqorho=None,maxbsqorho=None
         print("nfft=%d is not nz/2+1=%d",nfft,nz/2+1)
     #
     print("qtyvsphi: nfft(ninput/2+1)=%d" % (nfft)) ; sys.stdout.flush()
+    # power saved as |a_j|^2
     powerfft = np.absolute(Yfft[0:nfft])**2
     #
     #translate to nx size
@@ -2060,32 +2120,39 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
     ####################
     # get iqty
     print("dorho=%d dobsq=%d dobeta=%d doQ1=%d doQ2=%d : vmin=%g vmax=%g" % (dorho,dobsq,dobeta,doQ1,doQ2,vmin,vmax))
+    doqty=0
     dologz=0
     if dorho:
         lrho=np.log10(rho+1E-30)
         dologz=1
         qty=lrho
+        doqty=1
     elif dobsq:
         lbsq=np.log10(bsq*0.5+1E-30)
         dologz=1
         qty=lbsq
+        doqty=1
     elif dobeta:
         qty=betatoplot
         dologz=0
+        doqty=1
     elif doQ1:
         qty=np.fabs(Q1)
         dologz=0
+        doqty=1
     elif doQ2:
         qty=np.fabs(Q2toplot)
         dologz=0
+        doqty=1
     #
-    # limit values so really consistent with vmin&vmax and interpolation doesn't go nuts
-    qty[qty<vmin]=vmin
-    qty[qty>vmax]=vmax
-    qty[np.isinf(qty)]=vmax
-    qty[np.isnan(qty)]=vmax
-    #
-    iqty = reinterp(qty,extent,ncell,domask=1.0)
+    if doqty==1:
+        # limit values so really consistent with vmin&vmax and interpolation doesn't go nuts
+        qty[qty<vmin]=vmin
+        qty[qty>vmax]=vmax
+        qty[np.isinf(qty)]=vmax
+        qty[np.isnan(qty)]=vmax
+        #
+        iqty = reinterp(qty,extent,ncell,domask=1.0)
     #
     #
     ###########################################
@@ -2238,15 +2305,17 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
     #
     ###########################################
     # plot image
-    CS = ax.imshow(iqty, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
-    if True == cb:
-        if dologz==0:
-            cbar = plt.colorbar(CS,ax=ax,shrink=shrink) # draw colorbar
-        else:
-            cbar = plt.colorbar(CS,ax=ax,shrink=shrink,format=r'$10^{%0.1f}$')
-    if tight==True:
-        plt.axis('tight')
-    #CS = plt.contour(X, Y, Z)
+    if doqty==1:
+        CS = ax.imshow(iqty, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
+        if True == cb:
+            if dologz==0:
+                cbar = plt.colorbar(CS,ax=ax,shrink=shrink) # draw colorbar
+            else:
+                cbar = plt.colorbar(CS,ax=ax,shrink=shrink,format=r'$10^{%0.1f}$')
+        #
+        if tight==True:
+            plt.axis('tight')
+        #CS = plt.contour(X, Y, Z)
     #
     ###########################################
     # other stuff
@@ -2288,32 +2357,39 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
     ####################
     # get iqty
     print("dorho=%d dobsq=%d dobeta=%d doQ1=%d doQ2=%d : vmin=%g vmax=%g" % (dorho,dobsq,dobeta,doQ1,doQ2,vmin,vmax))
+    doqty=0
     dologz=0
     if dorho:
         lrho=np.log10(rho+1E-30)
         dologz=1
         qty=lrho
+        doqty=1
     elif dobsq:
-        lbsq=np.log10(bsq+1E-30)
+        lbsq=np.log10(bsq*0.5+1E-30)
         dologz=1
         qty=lbsq
+        doqty=1
     elif dobeta:
         qty=betatoplot
         dologz=0
+        doqty=1
     elif doQ1:
         qty=np.fabs(Q1)
         dologz=0
+        doqty=1
     elif doQ2:
         qty=np.fabs(Q2toplot)
         dologz=0
+        doqty=1
     #
-    # limit values so really consistent with vmin&vmax and interpolation doesn't go nuts
-    qty[qty<vmin]=vmin
-    qty[qty>vmax]=vmax
-    qty[np.isinf(qty)]=vmax
-    qty[np.isnan(qty)]=vmax
-    #
-    iqty = reinterpxy(qty,extent,ncell,domask=1.0)
+    if doqty==1:
+        # limit values so really consistent with vmin&vmax and interpolation doesn't go nuts
+        qty[qty<vmin]=vmin
+        qty[qty>vmax]=vmax
+        qty[np.isinf(qty)]=vmax
+        qty[np.isnan(qty)]=vmax
+        #
+        iqty = reinterp(qty,extent,ncell,domask=1.0)
     #
     ##########################
     # get field
@@ -2350,29 +2426,30 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
         yi = np.linspace(extent[2], extent[3], ncell)
     ##########################
     # do plot
-    if ax == None:
-        CS = plt.imshow(iqty, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
-        plt.xlim(extent[0],extent[1])
-        plt.ylim(extent[2],extent[3])
-    else:
-        CS = ax.imshow(iqty, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
-        if dostreamlines:
-            lw = 0.5+1*ftr(np.log10(amax(ibsqo2rho,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
-            lw += 1*ftr(np.log10(amax(iibeta,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
-            lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
-            # if t < 1500:
-            #     lw *= ftr(iqty,-2.,-1.9)
-            #lw *= ftr(iaphi,0.001,0.002)
-            fstreamplot(yi,xi,iBx,iBy,density=1,downsample=1,linewidth=lw,detectLoops=True,dodiskfield=False,dobhfield=False,startatmidplane=False,a=a,arrowsize=arrowsize)
-        ax.set_xlim(extent[0],extent[1])
-        ax.set_ylim(extent[2],extent[3])
-    #CS.cmap=cm.jet
-    #CS.set_axis_bgcolor("#bdb76b")
-    if True == cb:
-        if dologz==0:
-            cbar = plt.colorbar(CS,ax=ax,shrink=shrink) # draw colorbar
+    if doqty==1:
+        if ax == None:
+            CS = plt.imshow(iqty, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
+            plt.xlim(extent[0],extent[1])
+            plt.ylim(extent[2],extent[3])
         else:
-            cbar = plt.colorbar(CS,ax=ax,shrink=shrink,format=r'$10^{%0.1f}$')
+            CS = ax.imshow(iqty, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
+            if dostreamlines:
+                lw = 0.5+1*ftr(np.log10(amax(ibsqo2rho,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
+                lw += 1*ftr(np.log10(amax(iibeta,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
+                lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
+                # if t < 1500:
+                #     lw *= ftr(iqty,-2.,-1.9)
+                #lw *= ftr(iaphi,0.001,0.002)
+                fstreamplot(yi,xi,iBx,iBy,density=1,downsample=1,linewidth=lw,detectLoops=True,dodiskfield=False,dobhfield=False,startatmidplane=False,a=a,arrowsize=arrowsize)
+            ax.set_xlim(extent[0],extent[1])
+            ax.set_ylim(extent[2],extent[3])
+        #CS.cmap=cm.jet
+        #CS.set_axis_bgcolor("#bdb76b")
+        if True == cb:
+            if dologz==0:
+                cbar = plt.colorbar(CS,ax=ax,shrink=shrink) # draw colorbar
+            else:
+                cbar = plt.colorbar(CS,ax=ax,shrink=shrink,format=r'$10^{%0.1f}$')
     #plt.title(r'$\log_{10}\rho$ at $t = %4.0f$' % t)
     if True == pt:
         plt.title('log rho at t = %4.0f' % t)
@@ -7077,6 +7154,11 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     else:
         hoverr100=hoverr[:,iofr(100)]
     #
+    print("hoverr100") ; sys.stdout.flush()
+    print(hoverr100) ; sys.stdout.flush()
+    for ii in np.arange(0,len(hoverr100)):
+        print("ii=%d hoverr100=%g" % (ii,hoverr100[ii]))
+    #
     hoverrhor_t0 = hoverrhor[0]
     hoverr2_t0 = hoverr2[0]
     hoverr5_t0 = hoverr5[0]
@@ -7147,6 +7229,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         hoverr12_avg = timeavg(hoverr12,ts,fti,ftf)
         hoverr20_avg = timeavg(hoverr20,ts,fti,ftf)
         hoverr100_avg = timeavg(hoverr100,ts,fti,ftf)
+
+        print("hoverr100_avg=%g %d %d" % (hoverr100_avg,fti,ftf))
         #
         # hoverr10 is function of time.  Unsure what time to choose.
         # ts: carray of times of data
@@ -7327,6 +7411,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         iq2mridiskweak20_avg = timeavg(iq2mridiskweak20,ts,fti,ftf)/hoverr20_avg
         iq2mridiskweak100_avg = timeavg(iq2mridiskweak100,ts,fti,ftf)/hoverr100_avg
         #
+        # GODMARK: gridcalc() below uses 2D or 3D grid data not qty data
         drvsr,dHvsr,dPvsr,drnormvsr,dHnormvsr,dPnormvsr=gridcalc(hoverro)
         drnormvsrhor=drnormvsr[ihor]
         dHnormvsrhor=dHnormvsr[ihor]
@@ -11402,11 +11487,14 @@ def mkpowervsm(loadq=0,qty=None,pllabel="",filenum=0,fileletter="",logvalue=0,ra
         xtoplot[mm]=mm
     #
     # set ytoplot as Normalized power (normalized to total power!)
-    ytoplot=qty/np.sum(qty)
+    # power was originally saved as |a_j|^2, but want to see |a_j| since if (e.g.) a_1=a_0, then sin(\phi) generates deviations as large as average, such that if a_0=1, then a_1=1  means F_M goes up to 2 and down to 0 across in \phi, which is maximum possible deviation.  So normalize to a_0, not sum.
+    #ytoplot=qty/np.sum(qty)
+    ytoplot=np.sqrt(qty/qty[0])
     #
-    normpowersumnotm0=np.sum(qty[1:len(qty)])/np.sum(qty)
+    normpowersumnotm0a=np.sum(qty[1:len(qty)])/np.sum(qty)
+    normpowersumnotm0b=np.sum(np.sqrt(qty[1:len(qty)]))/np.sqrt(qty[0])
     #
-    print("mkpowervsm: %d %s %s : normpowersumnotm0=%g" % (filenum,fileletter,pllabel,normpowersumnotm0) )
+    print("mkpowervsm: %d %s %s : normpowersumnotm0a=%g normpowersumnotm0b=%g" % (filenum,fileletter,pllabel,normpowersumnotm0a,normpowersumnotm0b) )
     
     #
     print("mkpowervsm: len(xtoplot)=%d len(ytoplot)=%d" % (len(xtoplot),len(ytoplot))) ; sys.stdout.flush()
@@ -11417,8 +11505,8 @@ def mkpowervsm(loadq=0,qty=None,pllabel="",filenum=0,fileletter="",logvalue=0,ra
     #print("mkpowervsm: ytoplot") ; sys.stdout.flush()
     #print(ytoplot) ; sys.stdout.flush()
     #
-    plt.title("%s %g" % (pllabel,normpowersumnotm0) , fontsize=8)
-    print("pllabel=%s npnotm=%g" % (pllabel,normpowersumnotm0))
+    plt.title("%s %g" % (pllabel,normpowersumnotm0b) , fontsize=8)
+    print("pllabel=%s npnotm=%g" % (pllabel,normpowersumnotm0b))
     #
     plt.plot(xtoplot[1:numm],ytoplot[1:numm])
     #plt.axis('tight')
