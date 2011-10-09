@@ -1684,6 +1684,12 @@ def rfd(fieldlinefilename,**kwargs):
         gdetB = np.zeros_like(B)
         #face-centered magnetic field components multiplied by gdet
         gdetB[1:4] = d[ii:ii+3,:,:,:]; ii=ii+3
+    else:
+        print("No data on gdetB, approximating it.")
+        gdetB = np.zeros_like(B)
+        gdetB[1] = gdet * B[1]
+        gdetB[2] = gdet * B[2]
+        gdetB[3] = gdet * B[3]
     if d.shape[0]==20 or d.shape[0]==23:
         print("Loading flux data...")
         gdetF=np.zeros((4,3,nx,ny,nz))
@@ -1691,11 +1697,8 @@ def rfd(fieldlinefilename,**kwargs):
         gdetF[2,0:3,:,:,:]=d[ii:ii+3,:,:,:]; ii=ii+3
         gdetF[3,0:3,:,:,:]=d[ii:ii+3,:,:,:]; ii=ii+3
     else:
-        print("No data on gdetB, approximating it.")
-        gdetB = np.zeros_like(B)
-        gdetB[1] = gdet * B[1]
-        gdetB[2] = gdet * B[2]
-        gdetB[3] = gdet * B[3]
+        print("No data on gdetF, setting it to None.")
+        gdetF = None
     #     if 'gdet' in globals():
     #         #first set everything approximately (B's are at shifted locations by half-cell)
     #         B = gdetB/gdet  
@@ -2272,10 +2275,9 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None,docomp
     flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
     flist.sort()
     nqtyold=98+134*(dobob==1)
-    nqty=98+134*(dobob==1)+32+1
+    nqty=98+134*(dobob==1)+32+1+9
     #store 1D data
     numtimeslices=len(flist)
-    qtymem=np.zeros((nqty,numtimeslices,nx),dtype=np.float32)
     #np.seterr(invalid='raise',divide='raise')
     #
     print "Number of time slices: %d" % numtimeslices
@@ -2285,6 +2287,7 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None,docomp
         fname = "qty2.npy" 
     if fmtver == 2 and os.path.isfile( fname ):
         qtymem2=np.load( fname )
+        loadednqty=qtymem2.shape[0]
         numtimeslices2 = qtymem2.shape[1]
         #require same number of variables, don't allow format changes on the fly for safety
         print "Number of previously saved time slices: %d" % numtimeslices2 
@@ -2297,9 +2300,11 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None,docomp
             print "Read from %s" % fname
             return(qtymem2)
         else:
-            assert qtymem2.shape[0] == qtymem.shape[0]
+            qtymem=np.zeros((nqty,numtimeslices,nx),dtype=np.float32)
+            assert loadednqty == nqty or loadednqty+9 == nqty
             print "Number of previously saved time slices is < than of timeslices to be loaded, re-using previously saved time slices"
-            qtymem[:,0:numtimeslices2] = qtymem2[:,0:numtimeslices2]
+            qtymem[:loadednqty,0:numtimeslices2] = qtymem2[:,0:numtimeslices2]
+            del qtymem2
             qtymem2=None
     elif fmtver == 1 and os.path.isfile("qty.npy"):
         qtymem2=np.load( "qty.npy" )
@@ -2309,6 +2314,7 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None,docomp
         return(qtymem2)
     else:
         numtimeslices2 = 0
+        qtymem=np.zeros((nqty,numtimeslices,nx),dtype=np.float32)
     #qty defs
     i=0
     ts=qtymem[i,:,0];i+=1
@@ -2457,6 +2463,26 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None,docomp
             ldtot=qtymem[i];i+=1
         else:
             ldtot=None
+        if i < qtymem.shape[0]:
+            gdetF10=qtymem[i];i+=1
+            gdetF11=qtymem[i];i+=1
+            gdetF12=qtymem[i];i+=1
+            gdetF20=qtymem[i];i+=1
+            gdetF21=qtymem[i];i+=1
+            gdetF22=qtymem[i];i+=1
+            gdetF30=qtymem[i];i+=1
+            gdetF31=qtymem[i];i+=1
+            gdetF32=qtymem[i];i+=1
+        else:
+            gdetF10=None
+            gdetF11=None
+            gdetF12=None
+            gdetF20=None
+            gdetF21=None
+            gdetF22=None
+            gdetF30=None
+            gdetF31=None
+            gdetF32=None
     else:
         print( "Oldish format: missing north/south jet power and flux" )
         sys.stdout.flush()
@@ -2681,7 +2707,16 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None,docomp
             phiabsj_s_mu1[findex]=jetpowcalc(4,minmu=1,donorthsouth=-1)
             if ldtot is not None:
                 ldtot[findex]=intangle(gdet*Tud[1][3])
-
+            if gdetF10 is not None and gdetF is not None:
+                    gdetF10=intangle(gdetF[1][0])
+                    gdetF11=intangle(gdetF[1][1])
+                    gdetF12=intangle(gdetF[1][2])
+                    gdetF20=intangle(gdetF[2][0])
+                    gdetF21=intangle(gdetF[2][1])
+                    gdetF22=intangle(gdetF[2][2])
+                    gdetF30=intangle(gdetF[3][0])
+                    gdetF31=intangle(gdetF[3][1])
+                    gdetF32=intangle(gdetF[3][2])
         #Bob's 1D quantities
         if dobob==1:
                 dVF=_dx1*_dx2*_dx3
@@ -3288,6 +3323,27 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             pjke_mu1 = pjke_n_mu1 + pjke_s_mu1
             phiabsj_mu2 = phiabsj_n_mu2 + phiabsj_s_mu2
             phiabsj_mu1 = phiabsj_n_mu1 + phiabsj_s_mu1
+            if i < qtymem.shape[0]:
+                gdetF10=qtymem[i];i+=1
+                gdetF11=qtymem[i];i+=1
+                gdetF12=qtymem[i];i+=1
+                gdetF20=qtymem[i];i+=1
+                gdetF21=qtymem[i];i+=1
+                gdetF22=qtymem[i];i+=1
+                gdetF30=qtymem[i];i+=1
+                gdetF31=qtymem[i];i+=1
+                gdetF32=qtymem[i];i+=1
+            else:
+                print( "Oldish format: missing gdetF1,2,3" )
+                gdetF10=None
+                gdetF11=None
+                gdetF12=None
+                gdetF20=None
+                gdetF21=None
+                gdetF22=None
+                gdetF30=None
+                gdetF31=None
+                gdetF32=None
         else:
             print( "Oldish format: missing north/south jet power and flux" )
             sys.stdout.flush()
