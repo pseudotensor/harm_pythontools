@@ -5567,13 +5567,13 @@ def mkmovie(framesize=50, domakeavi=False,prefactor=1.,sigma=None,usegaussianuni
         dontloadfiles = False
         grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=True )
         #rd( "dump0000.bin" )
-        rfd("fieldline0000.bin")  #to definea
+        #rfd("fieldline0000.bin")  #to definea
         #grid3dlight("gdump")
         qtymem=None #clear to free mem
         rhor=1+(1+a**2)**0.5
         ihor = np.floor(iofr(rhor)+0.5);
         qtymem=getqtyvstime(ihor,0.2)
-        flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
+        flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
 
     for findex, fname in enumerate(flist):
         if findex % whichn != whichi:
