@@ -96,6 +96,7 @@ def assignavg2dvars(avgmem):
     global avg_ts,avg_te,avg_nitems,avg_rho,avg_ug,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
     global avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
     global avg_gamma
+    global avg_gdetF
     #avg defs
     i=0
     avg_ts=avgmem[i,0,:];
@@ -155,13 +156,17 @@ def assignavg2dvars(avgmem):
         n=3
         avg_absB=avgmem[i:i+n,:,:,None];i+=n
         avg_absgdetB=avgmem[i:i+n,:,:,None];i+=n
-        if( avgmem.shape[0] > 205 ):
+        if avgmem.shape[0] > 205:
             n=1
             avg_psisq=avgmem[i,:,:,None];i+=n
         else:
             n=1
             print( "Old-ish format: missing avg_psisq, filling it in with zeros." )
             avg_psisq=np.zeros_like(avg_mu);i+=n
+    if avgmem.shape[0] > 205+9:
+        n=9
+        #gdetF
+        avg_gdetF=avgmem[i:i+n,:,:,None].reshape((3,3,nx,ny,1));i+=n
 
     else:
         print( "Old format: missing avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, etc." )
@@ -174,6 +179,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     """
     global avg_ts,avg_te,avg_nitems,avg_rho,avg_ug,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
     global avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
+    global avg_gdetF
     if whichgroup < 0 or itemspergroup <= 0:
         print( "whichgroup = %d, itemspergroup = %d not allowed" % (whichgroup, itemspergroup) )
         return None
@@ -188,7 +194,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     #
     #print "Number of time slices: %d" % flist.shape[0]
     #store 2D data
-    navg=206
+    navg=206+9
     avgmem=np.zeros((navg,nx,ny),dtype=np.float32)
     assignavg2dvars(avgmem)
     ##
@@ -275,6 +281,9 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         n=1
         aphi = fieldcalcface()
         avg_psisq += ((_dx3*aphi.sum(-1))**2)[:,:,None]
+        n=9
+        if gdetF is not None:
+            avg_gdetF[:,:] += (gdetF[1:,:].sum(-1))[:,:,:,:,None]
     if avg_nitems[0] == 0:
         print( "No files found" )
         return None
