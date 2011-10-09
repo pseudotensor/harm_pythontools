@@ -6816,7 +6816,30 @@ if __name__ == "__main__":
         plt.figure(3)
         plt.plot(r[:,0,0],5e7*(r[:,0,0]/1000)**(1))
         plt.plot(r[:,0,0],0.1e7*(r[:,0,0]/1000)**(2))
-        
+    if False:
+        #make a movie
+        #fti=7000
+        #ftf=30500
+        doreload = 1
+        domakeframes=1
+        epsFm, epsFke = takeoutfloors(doreload=doreload,returndf=1,isinteractive=0)
+        #epsFm = 
+        #epsFke = 
+        #print epsFm, epsFke
+        mkmovie(prefactor=100.,sigma=1500.,usegaussianunits=True,domakeframes=domakeframes)
+        #mkmovie(prefactor=100.,usegaussianunits=True,domakeframes=domakeframes)
+    if False:
+        #make a movie
+        #fti=7000
+        #ftf=30500
+        doreload = 1
+        domakeframes=1
+        #epsFm, epsFke = takeoutfloors(doreload=doreload,returndf=1,isinteractive=0)
+        #epsFm = 
+        #epsFke = 
+        #print epsFm, epsFke
+        mkmovie(prefactor=100.,usegaussianunits=True,domakeframes=domakeframes)
+        #mkmovie(prefactor=100.,usegaussianunits=True,domakeframes=domakeframes)
     if False:
         readmytests1()
         plotpowers('powerlist.txt',format=0) #old format
