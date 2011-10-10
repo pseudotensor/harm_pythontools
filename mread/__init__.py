@@ -163,13 +163,14 @@ def assignavg2dvars(avgmem):
             n=1
             print( "Old-ish format: missing avg_psisq, filling it in with zeros." )
             avg_psisq=np.zeros_like(avg_mu);i+=n
+    else:
+        print( "Old format: missing avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, etc." )
     if avgmem.shape[0] > 205+9:
         n=9
         #gdetF
         avg_gdetF=avgmem[i:i+n,:,:,None].reshape((3,3,nx,ny,1));i+=n
-
     else:
-        print( "Old format: missing avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, etc." )
+        print( "Old-ish format: missing avg_gdetF etc." )
     #derived quantities
     avg_gamma=avg_uu[0]/(-gn3[0,0])**0.5
 
