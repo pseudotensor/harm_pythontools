@@ -536,8 +536,17 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         #
         print( "Computing get2davgone:" + fldname + " ..." ) ;  sys.stdout.flush()
         cvel()
-        Tcalcud()
+        # clean-out floor already because some of the below involves multiplication or division that cannot be removed after averaging
+        # also, since region where bsqorho<30 moves around, leakage occurs if only cutting based upon time-phi-averaged bsqorho
+        maxbsqorho=30
+        Tcalcud(maxbsqorho=maxbsqorho)
         faraday()
+        bsqo2rho = bsq/(2.0*rho) # uses original rho, which is as desired
+        rhoclean = np.copy(rho)
+        rhoclean[bsqorho>maxbsqorho]=1E-30
+        ugclean = np.copy(ug)
+        ugclean[bsqorho>maxbsqorho]=1E-30
+        #
         ##########################
         #if first item in group
         if fldindex == itemspergroup * whichgroup:
@@ -553,10 +562,10 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         ###################
         #quantities
         # 4
-        avg_rho+=rho.sum(-1)[:,:,None]
-        avg_ug+=ug.sum(-1)[:,:,None]
+        avg_rho+=rhoclean.sum(-1)[:,:,None]
+        avg_ug+=ugclean.sum(-1)[:,:,None]
         avg_bsq+=bsq.sum(-1)[:,:,None]
-        enth=1+ug*gam/rho
+        enth=1+ugclean*gam/rhoclean
         avg_unb+=(enth*ud[0]).sum(-1)[:,:,None]
         # 16
         avg_uu+=uu.sum(-1)[:,:,:,None]
@@ -570,6 +579,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         avg_gdetB+=gdetB[1:4].sum(-1)[:,:,:,None]
         #
         # 4
+        # omega has to be cleaned because of effects of floor near pole where effect on omegaf alot despite dynamically insignificance, but do it elsewhere
         avg_omegaf2+=omegaf2.sum(-1)[:,:,None]
         avg_omegaf2b+=omegaf2b.sum(-1)[:,:,None]
         avg_omegaf1+=omegaf1.sum(-1)[:,:,None]
@@ -577,12 +587,12 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         #
         # 6*4=24
         n=4
-        avg_rhouu+=(rho*uu).sum(-1)[:,:,:,None]
-        avg_rhobu+=(rho*bu).sum(-1)[:,:,:,None]
-        avg_rhoud+=(rho*ud).sum(-1)[:,:,:,None]
-        avg_rhobd+=(rho*bd).sum(-1)[:,:,:,None]
-        avg_uguu+=(ug*uu).sum(-1)[:,:,:,None]
-        avg_ugud+=(ug*ud).sum(-1)[:,:,:,None]
+        avg_rhouu+=(rhoclean*uu).sum(-1)[:,:,:,None]
+        avg_rhobu+=(rhoclean*bu).sum(-1)[:,:,:,None]
+        avg_rhoud+=(rhoclean*ud).sum(-1)[:,:,:,None]
+        avg_rhobd+=(rhoclean*bd).sum(-1)[:,:,:,None]
+        avg_uguu+=(ugclean*uu).sum(-1)[:,:,:,None]
+        avg_ugud+=(ugclean*ud).sum(-1)[:,:,:,None]
         #
         # 16*2=32
         n=16
@@ -595,9 +605,9 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         #
         # 16*5=80
         # part1: rho u^m u_l
-        avg_rhouuud+=rho.sum(-1)[:,:,None]*uuud
+        avg_rhouuud+=rhoclean.sum(-1)[:,:,None]*uuud
         # part2: u u^m u_l
-        avg_uguuud+=ug.sum(-1)[:,:,None]*uuud
+        avg_uguuud+=ugclean.sum(-1)[:,:,None]*uuud
         # part3: b^2 u^m u_l
         avg_bsquuud+=bsq.sum(-1)[:,:,None]*uuud
         # part6: b^m b_l
@@ -616,9 +626,9 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         #
         # 3
         #mu,sigma
-        avg_mu += (-Tud[1,0]/(rho*uu[1])).sum(-1)[:,:,None]
+        avg_mu += (-Tud[1,0]/(rhoclean*uu[1])).sum(-1)[:,:,None]
         avg_sigma += (-TudEM[1,0]/TudMA[1,0]).sum(-1)[:,:,None]
-        avg_bsqorho += (bsq/rho).sum(-1)[:,:,None]
+        avg_bsqorho += (bsq/rho).sum(-1)[:,:,None] # keep as unclean since want to know what bsqorho is
         #
         # 6
         n=3
@@ -2108,7 +2118,7 @@ def ftr(x,xb,xf):
 # http://scikits.appspot.com/vectorplot  (includes LIC)
 # http://wiki.chem.vu.nl/dirac/index.php/How_to_plot_vector_fields_calculated_with_DIRAC11_as_streamline_plots_using_PyNGL
 
-def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dovel=False,dostreamlines=True,doaphiavg=False,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dobsq=False,dobeta=False,doQ1=False,doQ2=False,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,domidfield=True,showjet=False,arrowsize=1):
+def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dovel=False,dostreamlines=True,doaphiavg=False,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dobsq=False,dobeta=False,doQ1=False,doQ2=False,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,domidfield=True,showjet=False,arrowsize=1,forceeqsym=0):
     extent=(-len,len,-len,len)
     palette=cm.jet
     palette.set_bad('k', 1.0)
@@ -2157,13 +2167,15 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
     #
     ###########################################
     # setup field stuff
+    #
     if not dostreamlines:
         aphi = fieldcalc()
         aphi = np.sqrt(aphi**2)
         # force equatorial symmetry by averaging
-        aphitemp=np.copy(aphi)
-        for j in np.arange(0,ny):
-            aphi[:,j,:]=0.5*(aphitemp[:,j,:]+aphitemp[:,ny-1-j,:])
+        if forceeqsym==1:
+            aphitemp=np.copy(aphi)
+            for j in np.arange(0,ny):
+                aphi[:,j,:]=0.5*(aphitemp[:,j,:]+aphitemp[:,ny-1-j,:])
         #
         iaphi = reinterp(aphi,extent,ncell,domask=0)
         maxabsiaphi=np.max(np.abs(iaphi))
@@ -2175,9 +2187,10 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         #aphi=np.sqrt(avg_psisq[0:iofr(30.0),:,0])
         aphi=np.sqrt(avg_psisq)
         # force equatorial symmetry by averaging
-        aphitemp=np.copy(aphi)
-        for j in np.arange(0,ny):
-            aphi[:,j,:]=0.5*(aphitemp[:,j,:]+aphitemp[:,ny-1-j,:])
+        if forceeqsym==1:
+            aphitemp=np.copy(aphi)
+            for j in np.arange(0,ny):
+                aphi[:,j,:]=0.5*(aphitemp[:,j,:]+aphitemp[:,ny-1-j,:])
         #
         iaphi = reinterp(aphi,extent,ncell,domask=0)    
         maxabsiaphi=np.max(np.abs(iaphi))
@@ -2189,6 +2202,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         aphi = fieldcalc()
         iaphi = reinterp(aphi,extent,ncell,domask=0)
         #
+        # note, below is not necessarily B, can be uu
         # convert from x^(i) to B^{r,h,ph}
         Br = dxdxp[1,1]*B[1]+dxdxp[1,2]*B[2]
         Bh = dxdxp[2,1]*B[1]+dxdxp[2,2]*B[2]
@@ -2228,20 +2242,21 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         #    Bpnorm[:,j,:]=Bpnorm[:,ny-1-j,:]
         #
         # force equatorial symmetry by averaging
-        Brnormtemp=np.copy(Brnorm)
-        Bhnormtemp=np.copy(Bhnorm)
-        Bpnormtemp=np.copy(Bpnorm)
-        for j in np.arange(0,ny):
-            if dovel==0:
-                Brnorm[:,j,:]=0.5*(Brnormtemp[:,j,:]-Brnormtemp[:,ny-1-j,:]) # assumes split-monopole or higher, not monopole
-                Bhnorm[:,j,:]=0.5*(Bhnormtemp[:,j,:] + Bhnormtemp[:,ny-1-j,:]) # assumes field vertically passes from lower to upper side
-                Bpnorm[:,j,:]=0.5*(Bpnormtemp[:,j,:]-Bpnormtemp[:,ny-1-j,:]) # assumes split-monopole or higher, not monopole
-            else:
-                Brnorm[:,j,:]=0.5*(Brnormtemp[:,j,:]+Brnormtemp[:,ny-1-j,:])
-                Bhnorm[:,j,:]=0.5*(Bhnormtemp[:,j,:]-Bhnormtemp[:,ny-1-j,:])
-                Bpnorm[:,j,:]=0.5*(Bpnormtemp[:,j,:]+Bpnormtemp[:,ny-1-j,:])
+        if forceeqsym==1:
+            Brnormtemp=np.copy(Brnorm)
+            Bhnormtemp=np.copy(Bhnorm)
+            Bpnormtemp=np.copy(Bpnorm)
+            for j in np.arange(0,ny):
+                if dovel==0:
+                    Brnorm[:,j,:]=0.5*(Brnormtemp[:,j,:]-Brnormtemp[:,ny-1-j,:]) # assumes split-monopole or higher, not monopole
+                    Bhnorm[:,j,:]=0.5*(Bhnormtemp[:,j,:] + Bhnormtemp[:,ny-1-j,:]) # assumes field vertically passes from lower to upper side
+                    Bpnorm[:,j,:]=0.5*(Bpnormtemp[:,j,:]-Bpnormtemp[:,ny-1-j,:]) # assumes split-monopole or higher, not monopole
+                else:
+                    Brnorm[:,j,:]=0.5*(Brnormtemp[:,j,:]+Brnormtemp[:,ny-1-j,:])
+                    Bhnorm[:,j,:]=0.5*(Bhnormtemp[:,j,:]-Bhnormtemp[:,ny-1-j,:])
+                    Bpnorm[:,j,:]=0.5*(Bpnormtemp[:,j,:]+Bpnormtemp[:,ny-1-j,:])
+                #
             #
-        #
         Bznorm=Brnorm*np.cos(h)-Bhnorm*np.sin(h)
         BRnorm=Brnorm*np.sin(h)+Bhnorm*np.cos(h)
         #
@@ -2250,6 +2265,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         iBR = reinterp(BRnorm,extent,ncell,isasymmetric=True,domask=0.8)
         #
         if dorandomcolor:
+            # note, below is not necessarily B, can be uu
             Ba=np.copy(B)
             cond = (B[1]<0)
             Ba[2,cond]*=-1
@@ -2262,6 +2278,22 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
             Barnorm=Bar
             Bahnorm=Bah*np.abs(r)
             Bapnorm=Bap*np.abs(r*np.sin(h))
+            #
+            # force equatorial symmetry by averaging
+            if forceeqsym==1:
+                Barnormtemp=np.copy(Barnorm)
+                Bahnormtemp=np.copy(Bahnorm)
+                Bapnormtemp=np.copy(Bapnorm)
+                for j in np.arange(0,ny):
+                    if dovel==0:
+                        Barnorm[:,j,:]=0.5*(Barnormtemp[:,j,:]-Barnormtemp[:,ny-1-j,:]) # assumes split-monopole or higher, not monopole
+                        Bahnorm[:,j,:]=0.5*(Bahnormtemp[:,j,:] + Bahnormtemp[:,ny-1-j,:]) # assumes field vertically passes from lower to upper side
+                        Bapnorm[:,j,:]=0.5*(Bapnormtemp[:,j,:]-Bapnormtemp[:,ny-1-j,:]) # assumes split-monopole or higher, not monopole
+                    else:
+                        Barnorm[:,j,:]=0.5*(Barnormtemp[:,j,:]+Barnormtemp[:,ny-1-j,:])
+                        Bahnorm[:,j,:]=0.5*(Bahnormtemp[:,j,:]-Bahnormtemp[:,ny-1-j,:])
+                        Bapnorm[:,j,:]=0.5*(Bapnormtemp[:,j,:]+Bapnormtemp[:,ny-1-j,:])
+                    #
             #
             Baznorm=Barnorm*np.cos(h)-Bahnorm*np.sin(h)
             BaRnorm=Barnorm*np.sin(h)+Bahnorm*np.cos(h)
@@ -4158,7 +4190,7 @@ def mergeqtyvstime(n):
 
 
 def getnonbobnqty():
-    value=1+6+10+3 + 21+21+21+21+24 + 21*3 + 12*4+12*4 + 10+15+12+2+36+36
+    value=1+6+10+3 + 21+21+21+21+21+24 + 21*3 + 12*4+12*4 + 10+15+12+2+36+36
     return(value)
 
 
@@ -4299,6 +4331,49 @@ def getqtymem(qtymem):
     bas3rhosqdc=qtymem[i];i+=1
     global     bsqrhosqdc
     bsqrhosqdc=qtymem[i];i+=1
+    #rhosqdcden: 14+7=21
+    global     rhosqdcdens
+    rhosqdcdens=qtymem[i];i+=1
+    global     rhosrhosqdcden
+    rhosrhosqdcden=qtymem[i];i+=1
+    global     ugsrhosqdcden
+    ugsrhosqdcden=qtymem[i];i+=1
+    global     uu0rhosqdcden
+    uu0rhosqdcden=qtymem[i];i+=1
+    global     vus1rhosqdcden
+    vus1rhosqdcden=qtymem[i];i+=1
+    global     vuas1rhosqdcden
+    vuas1rhosqdcden=qtymem[i];i+=1
+    global     vus3rhosqdcden
+    vus3rhosqdcden=qtymem[i];i+=1
+    global     vuas3rhosqdcden
+    vuas3rhosqdcden=qtymem[i];i+=1
+    global     Bs1rhosqdcden
+    Bs1rhosqdcden=qtymem[i];i+=1
+    global     Bas1rhosqdcden
+    Bas1rhosqdcden=qtymem[i];i+=1
+    global     Bs2rhosqdcden
+    Bs2rhosqdcden=qtymem[i];i+=1
+    global     Bas2rhosqdcden
+    Bas2rhosqdcden=qtymem[i];i+=1
+    global     Bs3rhosqdcden
+    Bs3rhosqdcden=qtymem[i];i+=1
+    global     Bas3rhosqdcden
+    Bas3rhosqdcden=qtymem[i];i+=1
+    global     bs1rhosqdcden
+    bs1rhosqdcden=qtymem[i];i+=1
+    global     bas1rhosqdcden
+    bas1rhosqdcden=qtymem[i];i+=1
+    global     bs2rhosqdcden
+    bs2rhosqdcden=qtymem[i];i+=1
+    global     bas2rhosqdcden
+    bas2rhosqdcden=qtymem[i];i+=1
+    global     bs3rhosqdcden
+    bs3rhosqdcden=qtymem[i];i+=1
+    global     bas3rhosqdcden
+    bas3rhosqdcden=qtymem[i];i+=1
+    global     bsqrhosqdcden
+    bsqrhosqdcden=qtymem[i];i+=1
     #rhosqeq: 14+7=21
     global     rhosqeqs
     rhosqeqs=qtymem[i];i+=1
@@ -5362,6 +5437,49 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         #rhosqdc:
         #
         #############
+        print("over dense part of disk+corona" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
+        #############
+        #rhosqdcden:
+        # for most dense part of flow:
+        #denfactor=rho**2
+        # for entire flow:
+        denfactor=rho
+        #
+        diskcondition=cond3 # full non-jet
+        keywordsrhosqdcden={'which': diskcondition}
+        rhosqdcdenint=intangle(gdet*denfactor,**keywordsrhosqdcden)+tiny # gdet is 2d by default
+        rhosqdcdens[findex]=rhosqdcdenint
+        maxrhosqdcden2d=(denfactor*diskcondition).max(1)+tiny
+        maxrhosqdcden3d=np.empty_like(rho)
+        for j in np.arange(0,ny):
+            maxrhosqdcden3d[:,j,:] = maxrhosqdcden2d
+        rhosrhosqdcden[findex]=intangle(gdet*denfactor*rho,**keywordsrhosqdcden)/rhosqdcdenint
+        ugsrhosqdcden[findex]=intangle(gdet*denfactor*ug,**keywordsrhosqdcden)/rhosqdcdenint
+        denfactor=rho
+        diskcondition=cond3 # full non-jet
+        keywordsrhosqdcden={'which': diskcondition}
+        rhosqdcdenint=intangle(gdet*denfactor,**keywordsrhosqdcden)+tiny
+        uu0rhosqdcden[findex]=intangle(gdet*denfactor*uu[0]*np.sqrt(mygv300),**keywordsrhosqdcden)/rhosqdcdenint
+        vus1rhosqdcden[findex]=intangle(gdet*denfactor*uu[1]*np.sqrt(gv3[1,1])*iuu0hat,**keywordsrhosqdcden)/rhosqdcdenint
+        vuas1rhosqdcden[findex]=intangle(gdet*denfactor*np.abs(uu[1]*np.sqrt(gv3[1,1])*iuu0hat),**keywordsrhosqdcden)/rhosqdcdenint
+        vus3rhosqdcden[findex]=intangle(gdet*denfactor*uu[3]*np.sqrt(gv3[3,3])*iuu0hat,**keywordsrhosqdcden)/rhosqdcdenint
+        vuas3rhosqdcden[findex]=intangle(gdet*denfactor*np.abs(uu[3]*np.sqrt(gv3[3,3])*iuu0hat),**keywordsrhosqdcden)/rhosqdcdenint
+        Bs1rhosqdcden[findex]=intangle(gdetB[1]*denfactor*np.sqrt(gv3[1,1]),**keywordsrhosqdcden)/rhosqdcdenint
+        Bas1rhosqdcden[findex]=intangle(np.abs(gdetB[1]*np.sqrt(gv3[1,1]))*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
+        Bs2rhosqdcden[findex]=intangle(gdetB[2]*denfactor*np.sqrt(gv3[2,2]),**keywordsrhosqdcden)/rhosqdcdenint
+        Bas2rhosqdcden[findex]=intangle(np.abs(gdetB[2]*np.sqrt(gv3[2,2]))*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
+        Bs3rhosqdcden[findex]=intangle(gdetB[3]*denfactor*np.sqrt(gv3[3,3]),**keywordsrhosqdcden)/rhosqdcdenint
+        Bas3rhosqdcden[findex]=intangle(np.abs(gdetB[3]*np.sqrt(gv3[3,3]))*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
+        bs1rhosqdcden[findex]=intangle(gdet*bu[1]*denfactor*np.sqrt(gv3[1,1]),**keywordsrhosqdcden)/rhosqdcdenint
+        bas1rhosqdcden[findex]=intangle(np.abs(gdet*bu[1]*np.sqrt(gv3[1,1]))*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
+        bs2rhosqdcden[findex]=intangle(gdet*bu[2]*denfactor*np.sqrt(gv3[2,2]),**keywordsrhosqdcden)/rhosqdcdenint
+        bas2rhosqdcden[findex]=intangle(np.abs(gdet*bu[2]*np.sqrt(gv3[2,2]))*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
+        bs3rhosqdcden[findex]=intangle(gdet*bu[3]*denfactor*np.sqrt(gv3[3,3]),**keywordsrhosqdcden)/rhosqdcdenint
+        bas3rhosqdcden[findex]=intangle(np.abs(gdet*bu[3]*np.sqrt(gv3[3,3]))*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
+        bsqrhosqdcden[findex]=intangle(gdet*bsq*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
+        #rhosqdcden:
+        #
+        #############
         print("at equator and portion of \phi" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         #############
         # for entire flow:
@@ -6307,14 +6425,22 @@ def amin(arg1,arg2):
     ret[arr2<arr1]=arr2[arr2<arr1]
     return(ret)
 
-def Tcalcud():
+# allow to remove rho and ug component to remove floor effects
+def Tcalcud(maxbsqorho=None):
     global Tud, TudEM, TudMA, TudPA, TudIE
     global mu, sigma
     global enth
     global unb, isunbound
-    pg = (gam-1)*ug
-    w=rho+ug+pg
-    wnorho=ug+pg
+    bsqo2rho = bsq/(2.0*rho) # uses original rho, which is as desired
+    rhoclean = np.copy(rho)
+    ugclean = np.copy(ug)
+    if maxbsqorho is not None:
+        rhoclean[bsqorho>maxbsqorho]=1E-30
+        ugclean[bsqorho>maxbsqorho]=1E-30
+    #
+    pg = (gam-1)*ugclean
+    w=rhoclean+ugclean+pg
+    wnorhoclean=ugclean+pg
     eta=w+bsq
     Tud = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
     TudMA = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
@@ -6327,15 +6453,14 @@ def Tcalcud():
             else: delta = 0
             TudEM[kapa,nu] = bsq*uu[kapa]*ud[nu] + 0.5*bsq*delta - bu[kapa]*bd[nu]
             TudMA[kapa,nu] = w*uu[kapa]*ud[nu]+pg*delta
-            TudPA[kapa,nu] = rho*uu[kapa]*ud[nu]
-            TudIE[kapa,nu] = wnorho*uu[kapa]*ud[nu]+pg*delta
+            TudPA[kapa,nu] = rhoclean*uu[kapa]*ud[nu]
+            TudIE[kapa,nu] = wnorhoclean*uu[kapa]*ud[nu]+pg*delta
             #Tud[kapa,nu] = eta*uu[kapa]*ud[nu]+(pg+0.5*bsq)*delta-bu[kapa]*bd[nu]
             Tud[kapa,nu] = TudEM[kapa,nu] + TudMA[kapa,nu]
-    #mu = -Tud[1,0]/(rho*uu[1])
-    mu = -Tud[1,0]*divideavoidinf(rho*uu[1])
-    bsqo2rho = bsq/(2.0*rho)
+    #mu = -Tud[1,0]/(rhoclean*uu[1])
+    mu = -Tud[1,0]*divideavoidinf(rhoclean*uu[1])
     sigma = TudEM[1,0]*divideavoidinf(TudMA[1,0])
-    enth=1+ug*gam/rho
+    enth=1+ugclean*gam/rhoclean
     unb=enth*ud[0]
     # unbound here means *thermally* rather than kinetically (-u_t>1) or fully thermo-magnetically (\mu>1) unbound.
     isunbound=(-unb>1.0)
@@ -6531,6 +6656,9 @@ def jofh(hval,i):
     return(np.floor(jofhfloat(hval,i)+0.5))
 
 def kofph(phval):
+    if nz==1:
+        return(0)
+    #
     faketk=np.zeros(nz,dtype=np.int)
     for kk in np.arange(0,nz):
         faketk[kk]=kk
@@ -9446,6 +9574,88 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         brhosqdc_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.sqrt(np.fabs(bsqrhosqdc_vsr[iin:iout]))),1)
         #
         ###################
+        # r1c (density weighted over full non-jet)
+        ###################
+        #
+        rhosrhosqdcden_vsr=np.zeros(nx,dtype=r.dtype)
+        ugsrhosqdcden_vsr=np.zeros(nx,dtype=r.dtype)
+        uu0rhosqdcden_vsr=np.zeros(nx,dtype=r.dtype)
+        vus1rhosqdcden_vsr=np.zeros(nx,dtype=r.dtype)
+        vuas1rhosqdcden_vsr=np.zeros(nx,dtype=r.dtype)
+        vus3rhosqdcden_vsr=np.zeros(nx,dtype=r.dtype)
+        vuas3rhosqdcden_vsr=np.zeros(nx,dtype=r.dtype)
+        Bs1rhosqdcden_vsr=np.zeros(nx,dtype=r.dtype)
+        Bas1rhosqdcden_vsr=np.zeros(nx,dtype=r.dtype)
+        Bs2rhosqdcden_vsr=np.zeros(nx,dtype=r.dtype)
+        Bas2rhosqdcden_vsr=np.zeros(nx,dtype=r.dtype)
+        Bs3rhosqdcden_vsr=np.zeros(nx,dtype=r.dtype)
+        Bas3rhosqdcden_vsr=np.zeros(nx,dtype=r.dtype)
+        bs1rhosqdcden_vsr=np.zeros(nx,dtype=r.dtype)
+        bas1rhosqdcden_vsr=np.zeros(nx,dtype=r.dtype)
+        bs2rhosqdcden_vsr=np.zeros(nx,dtype=r.dtype)
+        bas2rhosqdcden_vsr=np.zeros(nx,dtype=r.dtype)
+        bs3rhosqdcden_vsr=np.zeros(nx,dtype=r.dtype)
+        bas3rhosqdcden_vsr=np.zeros(nx,dtype=r.dtype)
+        bsqrhosqdcden_vsr=np.zeros(nx,dtype=r.dtype)
+        #
+        favg1c = open('datavsr1c.txt', 'w')
+        favg1c.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("ii","r","rhosrhosqdcden_vsr","ugsrhosqdcden_vsr","uu0rhosqdcden_vsr","vus1rhosqdcden_vsr","vuas1rhosqdcden_vsr","vus3rhosqdcden_vsr","vuas3rhosqdcden_vsr","Bs1rhosqdcden_vsr","Bas1rhosqdcden_vsr","Bs2rhosqdcden_vsr","Bas2rhosqdcden_vsr","Bs3rhosqdcden_vsr","Bas3rhosqdcden_vsr","bs1rhosqdcden_vsr","bas1rhosqdcden_vsr","bs2rhosqdcden_vsr","bas2rhosqdcden_vsr","bs3rhosqdcden_vsr","bas3rhosqdcden_vsr","bsqrhosqdcden_vsr" ) )
+        for ii in np.arange(0,nx):
+            #
+            # Q vs r
+            # 2+20
+            rhosrhosqdcden_vsr[ii]=timeavg(rhosrhosqdcden[:,ii],ts,fti,ftf)
+            ugsrhosqdcden_vsr[ii]=timeavg(ugsrhosqdcden[:,ii],ts,fti,ftf)
+            uu0rhosqdcden_vsr[ii]=timeavg(uu0rhosqdcden[:,ii],ts,fti,ftf)
+            vus1rhosqdcden_vsr[ii]=timeavg(vus1rhosqdcden[:,ii],ts,fti,ftf)
+            vuas1rhosqdcden_vsr[ii]=timeavg(vuas1rhosqdcden[:,ii],ts,fti,ftf)
+            vus3rhosqdcden_vsr[ii]=timeavg(vus3rhosqdcden[:,ii],ts,fti,ftf)
+            vuas3rhosqdcden_vsr[ii]=timeavg(vuas3rhosqdcden[:,ii],ts,fti,ftf)
+            Bs1rhosqdcden_vsr[ii]=timeavg(Bs1rhosqdcden[:,ii],ts,fti,ftf)
+            Bas1rhosqdcden_vsr[ii]=timeavg(Bas1rhosqdcden[:,ii],ts,fti,ftf)
+            Bs2rhosqdcden_vsr[ii]=timeavg(Bs2rhosqdcden[:,ii],ts,fti,ftf)
+            Bas2rhosqdcden_vsr[ii]=timeavg(Bas2rhosqdcden[:,ii],ts,fti,ftf)
+            Bs3rhosqdcden_vsr[ii]=timeavg(Bs3rhosqdcden[:,ii],ts,fti,ftf)
+            Bas3rhosqdcden_vsr[ii]=timeavg(Bas3rhosqdcden[:,ii],ts,fti,ftf)
+            bs1rhosqdcden_vsr[ii]=timeavg(bs1rhosqdcden[:,ii],ts,fti,ftf)
+            bas1rhosqdcden_vsr[ii]=timeavg(bas1rhosqdcden[:,ii],ts,fti,ftf)
+            bs2rhosqdcden_vsr[ii]=timeavg(bs2rhosqdcden[:,ii],ts,fti,ftf)
+            bas2rhosqdcden_vsr[ii]=timeavg(bas2rhosqdcden[:,ii],ts,fti,ftf)
+            bs3rhosqdcden_vsr[ii]=timeavg(bs3rhosqdcden[:,ii],ts,fti,ftf)
+            bas3rhosqdcden_vsr[ii]=timeavg(bas3rhosqdcden[:,ii],ts,fti,ftf)
+            bsqrhosqdcden_vsr[ii]=timeavg(bsqrhosqdcden[:,ii],ts,fti,ftf)
+            #
+            favg1c.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],rhosrhosqdcden_vsr[ii],ugsrhosqdcden_vsr[ii],uu0rhosqdcden_vsr[ii],vus1rhosqdcden_vsr[ii],vuas1rhosqdcden_vsr[ii],vus3rhosqdcden_vsr[ii],vuas3rhosqdcden_vsr[ii],Bs1rhosqdcden_vsr[ii],Bas1rhosqdcden_vsr[ii],Bs2rhosqdcden_vsr[ii],Bas2rhosqdcden_vsr[ii],Bs3rhosqdcden_vsr[ii],Bas3rhosqdcden_vsr[ii],bs1rhosqdcden_vsr[ii],bas1rhosqdcden_vsr[ii],bs2rhosqdcden_vsr[ii],bas2rhosqdcden_vsr[ii],bs3rhosqdcden_vsr[ii],bas3rhosqdcden_vsr[ii],bsqrhosqdcden_vsr[ii] ) )
+            #
+        favg1c.close()
+        #
+        #
+        #" *\(.*vsr\).*" -> "        \1_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(\1[iin:iout])),1))"
+        #
+        # get fit
+        rhosrhosqdcden_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(rhosrhosqdcden_vsr[iin:iout])),1)
+        ugsrhosqdcden_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(ugsrhosqdcden_vsr[iin:iout])),1)
+        uu0rhosqdcden_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(uu0rhosqdcden_vsr[iin:iout])),1)
+        vus1rhosqdcden_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(vus1rhosqdcden_vsr[iin:iout])),1)
+        vuas1rhosqdcden_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(vuas1rhosqdcden_vsr[iin:iout])),1)
+        vus3rhosqdcden_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(vus3rhosqdcden_vsr[iin:iout])),1)
+        vuas3rhosqdcden_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(vuas3rhosqdcden_vsr[iin:iout])),1)
+        Bs1rhosqdcden_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bs1rhosqdcden_vsr[iin:iout])),1)
+        Bas1rhosqdcden_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bas1rhosqdcden_vsr[iin:iout])),1)
+        Bs2rhosqdcden_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bs2rhosqdcden_vsr[iin:iout])),1)
+        Bas2rhosqdcden_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bas2rhosqdcden_vsr[iin:iout])),1)
+        Bs3rhosqdcden_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bs3rhosqdcden_vsr[iin:iout])),1)
+        Bas3rhosqdcden_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(Bas3rhosqdcden_vsr[iin:iout])),1)
+        bs1rhosqdcden_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bs1rhosqdcden_vsr[iin:iout])),1)
+        bas1rhosqdcden_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bas1rhosqdcden_vsr[iin:iout])),1)
+        bs2rhosqdcden_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bs2rhosqdcden_vsr[iin:iout])),1)
+        bas2rhosqdcden_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bas2rhosqdcden_vsr[iin:iout])),1)
+        bs3rhosqdcden_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bs3rhosqdcden_vsr[iin:iout])),1)
+        bas3rhosqdcden_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bas3rhosqdcden_vsr[iin:iout])),1)
+        bsqrhosqdcden_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.fabs(bsqrhosqdcden_vsr[iin:iout])),1)
+        brhosqdcden_vsr_fit=np.polyfit(np.log10(np.fabs(r[iin:iout,0,0])),np.log10(np.sqrt(np.fabs(bsqrhosqdcden_vsr[iin:iout]))),1)
+        #
+        ###################
         # r2
         ###################
         rhosrhosqeq_vsr=np.zeros(nx,dtype=r.dtype)
@@ -9817,7 +10027,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         # output fit power-law index for various quantities
         print( "HLatex12: ModelName & $r^{\\rm{}dc}_{\\rm{}i}$ & $r^{\\rm{}dc}_{\\rm{}o}$ & $r^{\\rm{}dc}_{\\rm{}s}$ & $\\rho$ & $p_g$ & $|v_r|$ & $|v_\\phi|$ & $|b_r|$ & $|b_\\theta|$ & $|b_\\phi|$ & $|b|$ & $\\dot{M}_{\\rm{}in}$ & $\\dot{M}_{\\rm{}mw}$ & $\\dot{M}_{\\rm{}w}$   \\\\" )
-        print( "VLatex12: %s        & %g            & %g            & %g              & %g      & %g    & %g    & %g        & %g    & %g          & %g        & %g    & %g                    & %g                    & %g                     \\\\ %% %s" % (truemodelname, roundto2(rfitin),roundto2(rfitout),roundto2(rstagequse),roundto2(rhosrhosqdc_vsr_fit[0]),roundto2(ugsrhosqdc_vsr_fit[0]),roundto2(vuas1rhosqdc_vsr_fit[0]),roundto2(vuas3rhosqdc_vsr_fit[0]),roundto2(bas1rhosqdc_vsr_fit[0]),roundto2(bas2rhosqdc_vsr_fit[0]),roundto2(bas3rhosqdc_vsr_fit[0]),roundto2(brhosqdc_vsr_fit[0]),roundto2(mdin_vsr_fit[0]),roundto2(mdmwind_vsr_fit[0]),roundto2(mdwind_vsr_fit[0]) , modelname ) )
+        print( "VLatex12: %s        & %g            & %g            & %g              & %g      & %g    & %g    & %g        & %g    & %g          & %g        & %g    & %g                    & %g                    & %g                     \\\\ %% %s" % (truemodelname, roundto2(rfitin),roundto2(rfitout),roundto2(rstagequse),roundto2(rhosrhosqdcden_vsr_fit[0]),roundto2(ugsrhosqdcden_vsr_fit[0]),roundto2(vuas1rhosqdcden_vsr_fit[0]),roundto2(vuas3rhosqdcden_vsr_fit[0]),roundto2(bas1rhosqdcden_vsr_fit[0]),roundto2(bas2rhosqdcden_vsr_fit[0]),roundto2(bas3rhosqdcden_vsr_fit[0]),roundto2(brhosqdcden_vsr_fit[0]),roundto2(mdin_vsr_fit[0]),roundto2(mdmwind_vsr_fit[0]),roundto2(mdwind_vsr_fit[0]) , modelname ) )
         #
         print( "HLatex93: ModelName & $\\rho^{\\rm{}dc}$ & $p_g^{\\rm{}dc}$ & $v_r^{\\rm{}dc}$ & $v_\\phi^{\\rm{}dc}$ & $b_r^{\\rm{}dc}$ & $b_\\theta^{\\rm{}dc}$ & $b_\\phi^{\\rm{}dc}$ & $|b|^{\\rm{}dc}$ & $\\rho^{\\rm{}hor}$ & $p^{\\rm{}hor}_g$ & $v^{\\rm{}hor}_r$ & $v^{\\rm{}hor}_\\phi$ & $b^{\\rm{}hor}_r$ & $b^{\\rm{}hor}_\\theta$ & $b^{\\rm{}hor}_\\phi$ & $|b|^{\\rm{}hor}$ & $\\dot{M}_{\\rm{}in}$ & $\\dot{M}_{\\rm{}mw}$ & $\\dot{M}_{\\rm{}w}$   \\\\" )
         print( "VLatex93: %s         & %g     & %g    & %g    & %g        & %g    & %g          & %g        & %g    & %g        & %g      & %g      & %g          & %g      & %g            & %g          & %g      & %g                    & %g                    & %g                     \\\\ %% %s" % (truemodelname, roundto2(rhosrhosqdc_vsr_fit[0]),roundto2(ugsrhosqdc_vsr_fit[0]),roundto2(vuas1rhosqdc_vsr_fit[0]),roundto2(vuas3rhosqdc_vsr_fit[0]),roundto2(bas1rhosqdc_vsr_fit[0]),roundto2(bas2rhosqdc_vsr_fit[0]),roundto2(bas3rhosqdc_vsr_fit[0]),roundto2(brhosqdc_vsr_fit[0]),roundto2(rhoshor_vsr_fit[0]),roundto2(ugshor_vsr_fit[0]),roundto2(vuas1hor_vsr_fit[0]),roundto2(vuas3hor_vsr_fit[0]),roundto2(bas1hor_vsr_fit[0]),roundto2(bas2hor_vsr_fit[0]),roundto2(bas3hor_vsr_fit[0]),roundto2(bhor_vsr_fit[0]),roundto2(mdin_vsr_fit[0]),roundto2(mdmwind_vsr_fit[0]),roundto2(mdwind_vsr_fit[0]) , modelname ) )
@@ -10125,17 +10335,17 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         FEMArhosq_diskcorona_phipow_radhor_vsm=np.zeros(numm,dtype=r.dtype)
         FEEMrhosq_diskcorona_phipow_radhor_vsm=np.zeros(numm,dtype=r.dtype)
         for ii in np.arange(0,numm):
-            rhosrhosq_diskcorona_phipow_radhor_vsm[ii]=timeavg(rhosrhosq_diskcorona_phipow_radhor[:,ii],ts,fti,ftf)
-            ugsrhosq_diskcorona_phipow_radhor_vsm[ii]=timeavg(ugsrhosq_diskcorona_phipow_radhor[:,ii],ts,fti,ftf)
-            uu0rhosq_diskcorona_phipow_radhor_vsm[ii]=timeavg(uu0rhosq_diskcorona_phipow_radhor[:,ii],ts,fti,ftf)
-            vuas3rhosq_diskcorona_phipow_radhor_vsm[ii]=timeavg(vuas3rhosq_diskcorona_phipow_radhor[:,ii],ts,fti,ftf)
-            bas1rhosq_diskcorona_phipow_radhor_vsm[ii]=timeavg(bas1rhosq_diskcorona_phipow_radhor[:,ii],ts,fti,ftf)
-            bas2rhosq_diskcorona_phipow_radhor_vsm[ii]=timeavg(bas2rhosq_diskcorona_phipow_radhor[:,ii],ts,fti,ftf)
-            bas3rhosq_diskcorona_phipow_radhor_vsm[ii]=timeavg(bas3rhosq_diskcorona_phipow_radhor[:,ii],ts,fti,ftf)
-            bsqrhosq_diskcorona_phipow_radhor_vsm[ii]=timeavg(bsqrhosq_diskcorona_phipow_radhor[:,ii],ts,fti,ftf)
-            FMrhosq_diskcorona_phipow_radhor_vsm[ii]=timeavg(FMrhosq_diskcorona_phipow_radhor[:,ii],ts,fti,ftf)
-            FEMArhosq_diskcorona_phipow_radhor_vsm[ii]=timeavg(FEMArhosq_diskcorona_phipow_radhor[:,ii],ts,fti,ftf)
-            FEEMrhosq_diskcorona_phipow_radhor_vsm[ii]=timeavg(FEEMrhosq_diskcorona_phipow_radhor[:,ii],ts,fti,ftf)
+            rhosrhosq_diskcorona_phipow_radhor_vsm[ii]=timeavg_sqrt(rhosrhosq_diskcorona_phipow_radhor[:,ii],ts,fti,ftf)
+            ugsrhosq_diskcorona_phipow_radhor_vsm[ii]=timeavg_sqrt(ugsrhosq_diskcorona_phipow_radhor[:,ii],ts,fti,ftf)
+            uu0rhosq_diskcorona_phipow_radhor_vsm[ii]=timeavg_sqrt(uu0rhosq_diskcorona_phipow_radhor[:,ii],ts,fti,ftf)
+            vuas3rhosq_diskcorona_phipow_radhor_vsm[ii]=timeavg_sqrt(vuas3rhosq_diskcorona_phipow_radhor[:,ii],ts,fti,ftf)
+            bas1rhosq_diskcorona_phipow_radhor_vsm[ii]=timeavg_sqrt(bas1rhosq_diskcorona_phipow_radhor[:,ii],ts,fti,ftf)
+            bas2rhosq_diskcorona_phipow_radhor_vsm[ii]=timeavg_sqrt(bas2rhosq_diskcorona_phipow_radhor[:,ii],ts,fti,ftf)
+            bas3rhosq_diskcorona_phipow_radhor_vsm[ii]=timeavg_sqrt(bas3rhosq_diskcorona_phipow_radhor[:,ii],ts,fti,ftf)
+            bsqrhosq_diskcorona_phipow_radhor_vsm[ii]=timeavg_sqrt(bsqrhosq_diskcorona_phipow_radhor[:,ii],ts,fti,ftf)
+            FMrhosq_diskcorona_phipow_radhor_vsm[ii]=timeavg_sqrt(FMrhosq_diskcorona_phipow_radhor[:,ii],ts,fti,ftf)
+            FEMArhosq_diskcorona_phipow_radhor_vsm[ii]=timeavg_sqrt(FEMArhosq_diskcorona_phipow_radhor[:,ii],ts,fti,ftf)
+            FEEMrhosq_diskcorona_phipow_radhor_vsm[ii]=timeavg_sqrt(FEEMrhosq_diskcorona_phipow_radhor[:,ii],ts,fti,ftf)
         #
         #  skip: uu0rhosq_diskcorona_phipow_radhor_vsm,vuas3rhosq_diskcorona_phipow_radhor_vsm,
         arrayvsmz=[rhosrhosq_diskcorona_phipow_radhor_vsm,ugsrhosq_diskcorona_phipow_radhor_vsm,bas1rhosq_diskcorona_phipow_radhor_vsm,bas2rhosq_diskcorona_phipow_radhor_vsm,bas3rhosq_diskcorona_phipow_radhor_vsm,bsqrhosq_diskcorona_phipow_radhor_vsm,FMrhosq_diskcorona_phipow_radhor_vsm,FEMArhosq_diskcorona_phipow_radhor_vsm,FEEMrhosq_diskcorona_phipow_radhor_vsm]
@@ -10161,17 +10371,17 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         FEMArhosq_diskcorona_phipow_rad4_vsm=np.zeros(numm,dtype=r.dtype)
         FEEMrhosq_diskcorona_phipow_rad4_vsm=np.zeros(numm,dtype=r.dtype)
         for ii in np.arange(0,numm):
-            rhosrhosq_diskcorona_phipow_rad4_vsm[ii]=timeavg(rhosrhosq_diskcorona_phipow_rad4[:,ii],ts,fti,ftf)
-            ugsrhosq_diskcorona_phipow_rad4_vsm[ii]=timeavg(ugsrhosq_diskcorona_phipow_rad4[:,ii],ts,fti,ftf)
-            uu0rhosq_diskcorona_phipow_rad4_vsm[ii]=timeavg(uu0rhosq_diskcorona_phipow_rad4[:,ii],ts,fti,ftf)
-            vuas3rhosq_diskcorona_phipow_rad4_vsm[ii]=timeavg(vuas3rhosq_diskcorona_phipow_rad4[:,ii],ts,fti,ftf)
-            bas1rhosq_diskcorona_phipow_rad4_vsm[ii]=timeavg(bas1rhosq_diskcorona_phipow_rad4[:,ii],ts,fti,ftf)
-            bas2rhosq_diskcorona_phipow_rad4_vsm[ii]=timeavg(bas2rhosq_diskcorona_phipow_rad4[:,ii],ts,fti,ftf)
-            bas3rhosq_diskcorona_phipow_rad4_vsm[ii]=timeavg(bas3rhosq_diskcorona_phipow_rad4[:,ii],ts,fti,ftf)
-            bsqrhosq_diskcorona_phipow_rad4_vsm[ii]=timeavg(bsqrhosq_diskcorona_phipow_rad4[:,ii],ts,fti,ftf)
-            FMrhosq_diskcorona_phipow_rad4_vsm[ii]=timeavg(FMrhosq_diskcorona_phipow_rad4[:,ii],ts,fti,ftf)
-            FEMArhosq_diskcorona_phipow_rad4_vsm[ii]=timeavg(FEMArhosq_diskcorona_phipow_rad4[:,ii],ts,fti,ftf)
-            FEEMrhosq_diskcorona_phipow_rad4_vsm[ii]=timeavg(FEEMrhosq_diskcorona_phipow_rad4[:,ii],ts,fti,ftf)
+            rhosrhosq_diskcorona_phipow_rad4_vsm[ii]=timeavg_sqrt(rhosrhosq_diskcorona_phipow_rad4[:,ii],ts,fti,ftf)
+            ugsrhosq_diskcorona_phipow_rad4_vsm[ii]=timeavg_sqrt(ugsrhosq_diskcorona_phipow_rad4[:,ii],ts,fti,ftf)
+            uu0rhosq_diskcorona_phipow_rad4_vsm[ii]=timeavg_sqrt(uu0rhosq_diskcorona_phipow_rad4[:,ii],ts,fti,ftf)
+            vuas3rhosq_diskcorona_phipow_rad4_vsm[ii]=timeavg_sqrt(vuas3rhosq_diskcorona_phipow_rad4[:,ii],ts,fti,ftf)
+            bas1rhosq_diskcorona_phipow_rad4_vsm[ii]=timeavg_sqrt(bas1rhosq_diskcorona_phipow_rad4[:,ii],ts,fti,ftf)
+            bas2rhosq_diskcorona_phipow_rad4_vsm[ii]=timeavg_sqrt(bas2rhosq_diskcorona_phipow_rad4[:,ii],ts,fti,ftf)
+            bas3rhosq_diskcorona_phipow_rad4_vsm[ii]=timeavg_sqrt(bas3rhosq_diskcorona_phipow_rad4[:,ii],ts,fti,ftf)
+            bsqrhosq_diskcorona_phipow_rad4_vsm[ii]=timeavg_sqrt(bsqrhosq_diskcorona_phipow_rad4[:,ii],ts,fti,ftf)
+            FMrhosq_diskcorona_phipow_rad4_vsm[ii]=timeavg_sqrt(FMrhosq_diskcorona_phipow_rad4[:,ii],ts,fti,ftf)
+            FEMArhosq_diskcorona_phipow_rad4_vsm[ii]=timeavg_sqrt(FEMArhosq_diskcorona_phipow_rad4[:,ii],ts,fti,ftf)
+            FEEMrhosq_diskcorona_phipow_rad4_vsm[ii]=timeavg_sqrt(FEEMrhosq_diskcorona_phipow_rad4[:,ii],ts,fti,ftf)
         #
         arrayvsma=[rhosrhosq_diskcorona_phipow_rad4_vsm,ugsrhosq_diskcorona_phipow_rad4_vsm,uu0rhosq_diskcorona_phipow_rad4_vsm,vuas3rhosq_diskcorona_phipow_rad4_vsm,bas1rhosq_diskcorona_phipow_rad4_vsm,bas2rhosq_diskcorona_phipow_rad4_vsm,bas3rhosq_diskcorona_phipow_rad4_vsm,bsqrhosq_diskcorona_phipow_rad4_vsm,FMrhosq_diskcorona_phipow_rad4_vsm,FEMArhosq_diskcorona_phipow_rad4_vsm,FEEMrhosq_diskcorona_phipow_rad4_vsm]
         bsqorhohvsma=bsqrhosq_diskcorona_phipow_rad4_vsm/rhosrhosq_diskcorona_phipow_rad4_vsm
@@ -10196,17 +10406,17 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         FEMArhosq_diskcorona_phipow_rad8_vsm=np.zeros(numm,dtype=r.dtype)
         FEEMrhosq_diskcorona_phipow_rad8_vsm=np.zeros(numm,dtype=r.dtype)
         for ii in np.arange(0,numm):
-            rhosrhosq_diskcorona_phipow_rad8_vsm[ii]=timeavg(rhosrhosq_diskcorona_phipow_rad8[:,ii],ts,fti,ftf)
-            ugsrhosq_diskcorona_phipow_rad8_vsm[ii]=timeavg(ugsrhosq_diskcorona_phipow_rad8[:,ii],ts,fti,ftf)
-            uu0rhosq_diskcorona_phipow_rad8_vsm[ii]=timeavg(uu0rhosq_diskcorona_phipow_rad8[:,ii],ts,fti,ftf)
-            vuas3rhosq_diskcorona_phipow_rad8_vsm[ii]=timeavg(vuas3rhosq_diskcorona_phipow_rad8[:,ii],ts,fti,ftf)
-            bas1rhosq_diskcorona_phipow_rad8_vsm[ii]=timeavg(bas1rhosq_diskcorona_phipow_rad8[:,ii],ts,fti,ftf)
-            bas2rhosq_diskcorona_phipow_rad8_vsm[ii]=timeavg(bas2rhosq_diskcorona_phipow_rad8[:,ii],ts,fti,ftf)
-            bas3rhosq_diskcorona_phipow_rad8_vsm[ii]=timeavg(bas3rhosq_diskcorona_phipow_rad8[:,ii],ts,fti,ftf)
-            bsqrhosq_diskcorona_phipow_rad8_vsm[ii]=timeavg(bsqrhosq_diskcorona_phipow_rad8[:,ii],ts,fti,ftf)
-            FMrhosq_diskcorona_phipow_rad8_vsm[ii]=timeavg(FMrhosq_diskcorona_phipow_rad8[:,ii],ts,fti,ftf)
-            FEMArhosq_diskcorona_phipow_rad8_vsm[ii]=timeavg(FEMArhosq_diskcorona_phipow_rad8[:,ii],ts,fti,ftf)
-            FEEMrhosq_diskcorona_phipow_rad8_vsm[ii]=timeavg(FEEMrhosq_diskcorona_phipow_rad8[:,ii],ts,fti,ftf)
+            rhosrhosq_diskcorona_phipow_rad8_vsm[ii]=timeavg_sqrt(rhosrhosq_diskcorona_phipow_rad8[:,ii],ts,fti,ftf)
+            ugsrhosq_diskcorona_phipow_rad8_vsm[ii]=timeavg_sqrt(ugsrhosq_diskcorona_phipow_rad8[:,ii],ts,fti,ftf)
+            uu0rhosq_diskcorona_phipow_rad8_vsm[ii]=timeavg_sqrt(uu0rhosq_diskcorona_phipow_rad8[:,ii],ts,fti,ftf)
+            vuas3rhosq_diskcorona_phipow_rad8_vsm[ii]=timeavg_sqrt(vuas3rhosq_diskcorona_phipow_rad8[:,ii],ts,fti,ftf)
+            bas1rhosq_diskcorona_phipow_rad8_vsm[ii]=timeavg_sqrt(bas1rhosq_diskcorona_phipow_rad8[:,ii],ts,fti,ftf)
+            bas2rhosq_diskcorona_phipow_rad8_vsm[ii]=timeavg_sqrt(bas2rhosq_diskcorona_phipow_rad8[:,ii],ts,fti,ftf)
+            bas3rhosq_diskcorona_phipow_rad8_vsm[ii]=timeavg_sqrt(bas3rhosq_diskcorona_phipow_rad8[:,ii],ts,fti,ftf)
+            bsqrhosq_diskcorona_phipow_rad8_vsm[ii]=timeavg_sqrt(bsqrhosq_diskcorona_phipow_rad8[:,ii],ts,fti,ftf)
+            FMrhosq_diskcorona_phipow_rad8_vsm[ii]=timeavg_sqrt(FMrhosq_diskcorona_phipow_rad8[:,ii],ts,fti,ftf)
+            FEMArhosq_diskcorona_phipow_rad8_vsm[ii]=timeavg_sqrt(FEMArhosq_diskcorona_phipow_rad8[:,ii],ts,fti,ftf)
+            FEEMrhosq_diskcorona_phipow_rad8_vsm[ii]=timeavg_sqrt(FEEMrhosq_diskcorona_phipow_rad8[:,ii],ts,fti,ftf)
         #
         arrayvsmb=[rhosrhosq_diskcorona_phipow_rad8_vsm,ugsrhosq_diskcorona_phipow_rad8_vsm,uu0rhosq_diskcorona_phipow_rad8_vsm,vuas3rhosq_diskcorona_phipow_rad8_vsm,bas1rhosq_diskcorona_phipow_rad8_vsm,bas2rhosq_diskcorona_phipow_rad8_vsm,bas3rhosq_diskcorona_phipow_rad8_vsm,bsqrhosq_diskcorona_phipow_rad8_vsm,FMrhosq_diskcorona_phipow_rad8_vsm,FEMArhosq_diskcorona_phipow_rad8_vsm,FEEMrhosq_diskcorona_phipow_rad8_vsm]
         bsqorhohvsmb=bsqrhosq_diskcorona_phipow_rad8_vsm/rhosrhosq_diskcorona_phipow_rad8_vsm
@@ -10232,17 +10442,17 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         FEMArhosq_diskcorona_phipow_rad30_vsm=np.zeros(numm,dtype=r.dtype)
         FEEMrhosq_diskcorona_phipow_rad30_vsm=np.zeros(numm,dtype=r.dtype)
         for ii in np.arange(0,numm):
-            rhosrhosq_diskcorona_phipow_rad30_vsm[ii]=timeavg(rhosrhosq_diskcorona_phipow_rad30[:,ii],ts,fti,ftf)
-            ugsrhosq_diskcorona_phipow_rad30_vsm[ii]=timeavg(ugsrhosq_diskcorona_phipow_rad30[:,ii],ts,fti,ftf)
-            uu0rhosq_diskcorona_phipow_rad30_vsm[ii]=timeavg(uu0rhosq_diskcorona_phipow_rad30[:,ii],ts,fti,ftf)
-            vuas3rhosq_diskcorona_phipow_rad30_vsm[ii]=timeavg(vuas3rhosq_diskcorona_phipow_rad30[:,ii],ts,fti,ftf)
-            bas1rhosq_diskcorona_phipow_rad30_vsm[ii]=timeavg(bas1rhosq_diskcorona_phipow_rad30[:,ii],ts,fti,ftf)
-            bas2rhosq_diskcorona_phipow_rad30_vsm[ii]=timeavg(bas2rhosq_diskcorona_phipow_rad30[:,ii],ts,fti,ftf)
-            bas3rhosq_diskcorona_phipow_rad30_vsm[ii]=timeavg(bas3rhosq_diskcorona_phipow_rad30[:,ii],ts,fti,ftf)
-            bsqrhosq_diskcorona_phipow_rad30_vsm[ii]=timeavg(bsqrhosq_diskcorona_phipow_rad30[:,ii],ts,fti,ftf)
-            FMrhosq_diskcorona_phipow_rad30_vsm[ii]=timeavg(FMrhosq_diskcorona_phipow_rad30[:,ii],ts,fti,ftf)
-            FEMArhosq_diskcorona_phipow_rad30_vsm[ii]=timeavg(FEMArhosq_diskcorona_phipow_rad30[:,ii],ts,fti,ftf)
-            FEEMrhosq_diskcorona_phipow_rad30_vsm[ii]=timeavg(FEEMrhosq_diskcorona_phipow_rad30[:,ii],ts,fti,ftf)
+            rhosrhosq_diskcorona_phipow_rad30_vsm[ii]=timeavg_sqrt(rhosrhosq_diskcorona_phipow_rad30[:,ii],ts,fti,ftf)
+            ugsrhosq_diskcorona_phipow_rad30_vsm[ii]=timeavg_sqrt(ugsrhosq_diskcorona_phipow_rad30[:,ii],ts,fti,ftf)
+            uu0rhosq_diskcorona_phipow_rad30_vsm[ii]=timeavg_sqrt(uu0rhosq_diskcorona_phipow_rad30[:,ii],ts,fti,ftf)
+            vuas3rhosq_diskcorona_phipow_rad30_vsm[ii]=timeavg_sqrt(vuas3rhosq_diskcorona_phipow_rad30[:,ii],ts,fti,ftf)
+            bas1rhosq_diskcorona_phipow_rad30_vsm[ii]=timeavg_sqrt(bas1rhosq_diskcorona_phipow_rad30[:,ii],ts,fti,ftf)
+            bas2rhosq_diskcorona_phipow_rad30_vsm[ii]=timeavg_sqrt(bas2rhosq_diskcorona_phipow_rad30[:,ii],ts,fti,ftf)
+            bas3rhosq_diskcorona_phipow_rad30_vsm[ii]=timeavg_sqrt(bas3rhosq_diskcorona_phipow_rad30[:,ii],ts,fti,ftf)
+            bsqrhosq_diskcorona_phipow_rad30_vsm[ii]=timeavg_sqrt(bsqrhosq_diskcorona_phipow_rad30[:,ii],ts,fti,ftf)
+            FMrhosq_diskcorona_phipow_rad30_vsm[ii]=timeavg_sqrt(FMrhosq_diskcorona_phipow_rad30[:,ii],ts,fti,ftf)
+            FEMArhosq_diskcorona_phipow_rad30_vsm[ii]=timeavg_sqrt(FEMArhosq_diskcorona_phipow_rad30[:,ii],ts,fti,ftf)
+            FEEMrhosq_diskcorona_phipow_rad30_vsm[ii]=timeavg_sqrt(FEEMrhosq_diskcorona_phipow_rad30[:,ii],ts,fti,ftf)
         #
         arrayvsmc=[rhosrhosq_diskcorona_phipow_rad30_vsm,ugsrhosq_diskcorona_phipow_rad30_vsm,uu0rhosq_diskcorona_phipow_rad30_vsm,vuas3rhosq_diskcorona_phipow_rad30_vsm,bas1rhosq_diskcorona_phipow_rad30_vsm,bas2rhosq_diskcorona_phipow_rad30_vsm,bas3rhosq_diskcorona_phipow_rad30_vsm,bsqrhosq_diskcorona_phipow_rad30_vsm,FMrhosq_diskcorona_phipow_rad30_vsm,FEMArhosq_diskcorona_phipow_rad30_vsm,FEEMrhosq_diskcorona_phipow_rad30_vsm]
         bsqorhohvsmc=bsqrhosq_diskcorona_phipow_rad30_vsm/rhosrhosq_diskcorona_phipow_rad30_vsm
@@ -10275,17 +10485,17 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         FEMArhosq_jet_phipow_radhor_vsm=np.zeros(numm,dtype=r.dtype)
         FEEMrhosq_jet_phipow_radhor_vsm=np.zeros(numm,dtype=r.dtype)
         for ii in np.arange(0,numm):
-            rhosrhosq_jet_phipow_radhor_vsm[ii]=timeavg(rhosrhosq_jet_phipow_radhor[:,ii],ts,fti,ftf)
-            ugsrhosq_jet_phipow_radhor_vsm[ii]=timeavg(ugsrhosq_jet_phipow_radhor[:,ii],ts,fti,ftf)
-            uu0rhosq_jet_phipow_radhor_vsm[ii]=timeavg(uu0rhosq_jet_phipow_radhor[:,ii],ts,fti,ftf)
-            vuas3rhosq_jet_phipow_radhor_vsm[ii]=timeavg(vuas3rhosq_jet_phipow_radhor[:,ii],ts,fti,ftf)
-            bas1rhosq_jet_phipow_radhor_vsm[ii]=timeavg(bas1rhosq_jet_phipow_radhor[:,ii],ts,fti,ftf)
-            bas2rhosq_jet_phipow_radhor_vsm[ii]=timeavg(bas2rhosq_jet_phipow_radhor[:,ii],ts,fti,ftf)
-            bas3rhosq_jet_phipow_radhor_vsm[ii]=timeavg(bas3rhosq_jet_phipow_radhor[:,ii],ts,fti,ftf)
-            bsqrhosq_jet_phipow_radhor_vsm[ii]=timeavg(bsqrhosq_jet_phipow_radhor[:,ii],ts,fti,ftf)
-            FMrhosq_jet_phipow_radhor_vsm[ii]=timeavg(FMrhosq_jet_phipow_radhor[:,ii],ts,fti,ftf)
-            FEMArhosq_jet_phipow_radhor_vsm[ii]=timeavg(FEMArhosq_jet_phipow_radhor[:,ii],ts,fti,ftf)
-            FEEMrhosq_jet_phipow_radhor_vsm[ii]=timeavg(FEEMrhosq_jet_phipow_radhor[:,ii],ts,fti,ftf)
+            rhosrhosq_jet_phipow_radhor_vsm[ii]=timeavg_sqrt(rhosrhosq_jet_phipow_radhor[:,ii],ts,fti,ftf)
+            ugsrhosq_jet_phipow_radhor_vsm[ii]=timeavg_sqrt(ugsrhosq_jet_phipow_radhor[:,ii],ts,fti,ftf)
+            uu0rhosq_jet_phipow_radhor_vsm[ii]=timeavg_sqrt(uu0rhosq_jet_phipow_radhor[:,ii],ts,fti,ftf)
+            vuas3rhosq_jet_phipow_radhor_vsm[ii]=timeavg_sqrt(vuas3rhosq_jet_phipow_radhor[:,ii],ts,fti,ftf)
+            bas1rhosq_jet_phipow_radhor_vsm[ii]=timeavg_sqrt(bas1rhosq_jet_phipow_radhor[:,ii],ts,fti,ftf)
+            bas2rhosq_jet_phipow_radhor_vsm[ii]=timeavg_sqrt(bas2rhosq_jet_phipow_radhor[:,ii],ts,fti,ftf)
+            bas3rhosq_jet_phipow_radhor_vsm[ii]=timeavg_sqrt(bas3rhosq_jet_phipow_radhor[:,ii],ts,fti,ftf)
+            bsqrhosq_jet_phipow_radhor_vsm[ii]=timeavg_sqrt(bsqrhosq_jet_phipow_radhor[:,ii],ts,fti,ftf)
+            FMrhosq_jet_phipow_radhor_vsm[ii]=timeavg_sqrt(FMrhosq_jet_phipow_radhor[:,ii],ts,fti,ftf)
+            FEMArhosq_jet_phipow_radhor_vsm[ii]=timeavg_sqrt(FEMArhosq_jet_phipow_radhor[:,ii],ts,fti,ftf)
+            FEEMrhosq_jet_phipow_radhor_vsm[ii]=timeavg_sqrt(FEEMrhosq_jet_phipow_radhor[:,ii],ts,fti,ftf)
         #
         #  skip: uu0rhosq_jet_phipow_radhor_vsm,vuas3rhosq_jet_phipow_radhor_vsm,
         arrayvsmz=[rhosrhosq_jet_phipow_radhor_vsm,ugsrhosq_jet_phipow_radhor_vsm,bas1rhosq_jet_phipow_radhor_vsm,bas2rhosq_jet_phipow_radhor_vsm,bas3rhosq_jet_phipow_radhor_vsm,bsqrhosq_jet_phipow_radhor_vsm,FMrhosq_jet_phipow_radhor_vsm,FEMArhosq_jet_phipow_radhor_vsm,FEEMrhosq_jet_phipow_radhor_vsm]
@@ -10311,17 +10521,17 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         FEMArhosq_jet_phipow_rad4_vsm=np.zeros(numm,dtype=r.dtype)
         FEEMrhosq_jet_phipow_rad4_vsm=np.zeros(numm,dtype=r.dtype)
         for ii in np.arange(0,numm):
-            rhosrhosq_jet_phipow_rad4_vsm[ii]=timeavg(rhosrhosq_jet_phipow_rad4[:,ii],ts,fti,ftf)
-            ugsrhosq_jet_phipow_rad4_vsm[ii]=timeavg(ugsrhosq_jet_phipow_rad4[:,ii],ts,fti,ftf)
-            uu0rhosq_jet_phipow_rad4_vsm[ii]=timeavg(uu0rhosq_jet_phipow_rad4[:,ii],ts,fti,ftf)
-            vuas3rhosq_jet_phipow_rad4_vsm[ii]=timeavg(vuas3rhosq_jet_phipow_rad4[:,ii],ts,fti,ftf)
-            bas1rhosq_jet_phipow_rad4_vsm[ii]=timeavg(bas1rhosq_jet_phipow_rad4[:,ii],ts,fti,ftf)
-            bas2rhosq_jet_phipow_rad4_vsm[ii]=timeavg(bas2rhosq_jet_phipow_rad4[:,ii],ts,fti,ftf)
-            bas3rhosq_jet_phipow_rad4_vsm[ii]=timeavg(bas3rhosq_jet_phipow_rad4[:,ii],ts,fti,ftf)
-            bsqrhosq_jet_phipow_rad4_vsm[ii]=timeavg(bsqrhosq_jet_phipow_rad4[:,ii],ts,fti,ftf)
-            FMrhosq_jet_phipow_rad4_vsm[ii]=timeavg(FMrhosq_jet_phipow_rad4[:,ii],ts,fti,ftf)
-            FEMArhosq_jet_phipow_rad4_vsm[ii]=timeavg(FEMArhosq_jet_phipow_rad4[:,ii],ts,fti,ftf)
-            FEEMrhosq_jet_phipow_rad4_vsm[ii]=timeavg(FEEMrhosq_jet_phipow_rad4[:,ii],ts,fti,ftf)
+            rhosrhosq_jet_phipow_rad4_vsm[ii]=timeavg_sqrt(rhosrhosq_jet_phipow_rad4[:,ii],ts,fti,ftf)
+            ugsrhosq_jet_phipow_rad4_vsm[ii]=timeavg_sqrt(ugsrhosq_jet_phipow_rad4[:,ii],ts,fti,ftf)
+            uu0rhosq_jet_phipow_rad4_vsm[ii]=timeavg_sqrt(uu0rhosq_jet_phipow_rad4[:,ii],ts,fti,ftf)
+            vuas3rhosq_jet_phipow_rad4_vsm[ii]=timeavg_sqrt(vuas3rhosq_jet_phipow_rad4[:,ii],ts,fti,ftf)
+            bas1rhosq_jet_phipow_rad4_vsm[ii]=timeavg_sqrt(bas1rhosq_jet_phipow_rad4[:,ii],ts,fti,ftf)
+            bas2rhosq_jet_phipow_rad4_vsm[ii]=timeavg_sqrt(bas2rhosq_jet_phipow_rad4[:,ii],ts,fti,ftf)
+            bas3rhosq_jet_phipow_rad4_vsm[ii]=timeavg_sqrt(bas3rhosq_jet_phipow_rad4[:,ii],ts,fti,ftf)
+            bsqrhosq_jet_phipow_rad4_vsm[ii]=timeavg_sqrt(bsqrhosq_jet_phipow_rad4[:,ii],ts,fti,ftf)
+            FMrhosq_jet_phipow_rad4_vsm[ii]=timeavg_sqrt(FMrhosq_jet_phipow_rad4[:,ii],ts,fti,ftf)
+            FEMArhosq_jet_phipow_rad4_vsm[ii]=timeavg_sqrt(FEMArhosq_jet_phipow_rad4[:,ii],ts,fti,ftf)
+            FEEMrhosq_jet_phipow_rad4_vsm[ii]=timeavg_sqrt(FEEMrhosq_jet_phipow_rad4[:,ii],ts,fti,ftf)
         #
         arrayvsma=[rhosrhosq_jet_phipow_rad4_vsm,ugsrhosq_jet_phipow_rad4_vsm,uu0rhosq_jet_phipow_rad4_vsm,vuas3rhosq_jet_phipow_rad4_vsm,bas1rhosq_jet_phipow_rad4_vsm,bas2rhosq_jet_phipow_rad4_vsm,bas3rhosq_jet_phipow_rad4_vsm,bsqrhosq_jet_phipow_rad4_vsm,FMrhosq_jet_phipow_rad4_vsm,FEMArhosq_jet_phipow_rad4_vsm,FEEMrhosq_jet_phipow_rad4_vsm]
         bsqorhohvsma=bsqrhosq_jet_phipow_rad4_vsm/rhosrhosq_jet_phipow_rad4_vsm
@@ -10346,17 +10556,17 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         FEMArhosq_jet_phipow_rad8_vsm=np.zeros(numm,dtype=r.dtype)
         FEEMrhosq_jet_phipow_rad8_vsm=np.zeros(numm,dtype=r.dtype)
         for ii in np.arange(0,numm):
-            rhosrhosq_jet_phipow_rad8_vsm[ii]=timeavg(rhosrhosq_jet_phipow_rad8[:,ii],ts,fti,ftf)
-            ugsrhosq_jet_phipow_rad8_vsm[ii]=timeavg(ugsrhosq_jet_phipow_rad8[:,ii],ts,fti,ftf)
-            uu0rhosq_jet_phipow_rad8_vsm[ii]=timeavg(uu0rhosq_jet_phipow_rad8[:,ii],ts,fti,ftf)
-            vuas3rhosq_jet_phipow_rad8_vsm[ii]=timeavg(vuas3rhosq_jet_phipow_rad8[:,ii],ts,fti,ftf)
-            bas1rhosq_jet_phipow_rad8_vsm[ii]=timeavg(bas1rhosq_jet_phipow_rad8[:,ii],ts,fti,ftf)
-            bas2rhosq_jet_phipow_rad8_vsm[ii]=timeavg(bas2rhosq_jet_phipow_rad8[:,ii],ts,fti,ftf)
-            bas3rhosq_jet_phipow_rad8_vsm[ii]=timeavg(bas3rhosq_jet_phipow_rad8[:,ii],ts,fti,ftf)
-            bsqrhosq_jet_phipow_rad8_vsm[ii]=timeavg(bsqrhosq_jet_phipow_rad8[:,ii],ts,fti,ftf)
-            FMrhosq_jet_phipow_rad8_vsm[ii]=timeavg(FMrhosq_jet_phipow_rad8[:,ii],ts,fti,ftf)
-            FEMArhosq_jet_phipow_rad8_vsm[ii]=timeavg(FEMArhosq_jet_phipow_rad8[:,ii],ts,fti,ftf)
-            FEEMrhosq_jet_phipow_rad8_vsm[ii]=timeavg(FEEMrhosq_jet_phipow_rad8[:,ii],ts,fti,ftf)
+            rhosrhosq_jet_phipow_rad8_vsm[ii]=timeavg_sqrt(rhosrhosq_jet_phipow_rad8[:,ii],ts,fti,ftf)
+            ugsrhosq_jet_phipow_rad8_vsm[ii]=timeavg_sqrt(ugsrhosq_jet_phipow_rad8[:,ii],ts,fti,ftf)
+            uu0rhosq_jet_phipow_rad8_vsm[ii]=timeavg_sqrt(uu0rhosq_jet_phipow_rad8[:,ii],ts,fti,ftf)
+            vuas3rhosq_jet_phipow_rad8_vsm[ii]=timeavg_sqrt(vuas3rhosq_jet_phipow_rad8[:,ii],ts,fti,ftf)
+            bas1rhosq_jet_phipow_rad8_vsm[ii]=timeavg_sqrt(bas1rhosq_jet_phipow_rad8[:,ii],ts,fti,ftf)
+            bas2rhosq_jet_phipow_rad8_vsm[ii]=timeavg_sqrt(bas2rhosq_jet_phipow_rad8[:,ii],ts,fti,ftf)
+            bas3rhosq_jet_phipow_rad8_vsm[ii]=timeavg_sqrt(bas3rhosq_jet_phipow_rad8[:,ii],ts,fti,ftf)
+            bsqrhosq_jet_phipow_rad8_vsm[ii]=timeavg_sqrt(bsqrhosq_jet_phipow_rad8[:,ii],ts,fti,ftf)
+            FMrhosq_jet_phipow_rad8_vsm[ii]=timeavg_sqrt(FMrhosq_jet_phipow_rad8[:,ii],ts,fti,ftf)
+            FEMArhosq_jet_phipow_rad8_vsm[ii]=timeavg_sqrt(FEMArhosq_jet_phipow_rad8[:,ii],ts,fti,ftf)
+            FEEMrhosq_jet_phipow_rad8_vsm[ii]=timeavg_sqrt(FEEMrhosq_jet_phipow_rad8[:,ii],ts,fti,ftf)
         #
         arrayvsmb=[rhosrhosq_jet_phipow_rad8_vsm,ugsrhosq_jet_phipow_rad8_vsm,uu0rhosq_jet_phipow_rad8_vsm,vuas3rhosq_jet_phipow_rad8_vsm,bas1rhosq_jet_phipow_rad8_vsm,bas2rhosq_jet_phipow_rad8_vsm,bas3rhosq_jet_phipow_rad8_vsm,bsqrhosq_jet_phipow_rad8_vsm,FMrhosq_jet_phipow_rad8_vsm,FEMArhosq_jet_phipow_rad8_vsm,FEEMrhosq_jet_phipow_rad8_vsm]
         bsqorhohvsmb=bsqrhosq_jet_phipow_rad8_vsm/rhosrhosq_jet_phipow_rad8_vsm
@@ -10382,17 +10592,17 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         FEMArhosq_jet_phipow_rad30_vsm=np.zeros(numm,dtype=r.dtype)
         FEEMrhosq_jet_phipow_rad30_vsm=np.zeros(numm,dtype=r.dtype)
         for ii in np.arange(0,numm):
-            rhosrhosq_jet_phipow_rad30_vsm[ii]=timeavg(rhosrhosq_jet_phipow_rad30[:,ii],ts,fti,ftf)
-            ugsrhosq_jet_phipow_rad30_vsm[ii]=timeavg(ugsrhosq_jet_phipow_rad30[:,ii],ts,fti,ftf)
-            uu0rhosq_jet_phipow_rad30_vsm[ii]=timeavg(uu0rhosq_jet_phipow_rad30[:,ii],ts,fti,ftf)
-            vuas3rhosq_jet_phipow_rad30_vsm[ii]=timeavg(vuas3rhosq_jet_phipow_rad30[:,ii],ts,fti,ftf)
-            bas1rhosq_jet_phipow_rad30_vsm[ii]=timeavg(bas1rhosq_jet_phipow_rad30[:,ii],ts,fti,ftf)
-            bas2rhosq_jet_phipow_rad30_vsm[ii]=timeavg(bas2rhosq_jet_phipow_rad30[:,ii],ts,fti,ftf)
-            bas3rhosq_jet_phipow_rad30_vsm[ii]=timeavg(bas3rhosq_jet_phipow_rad30[:,ii],ts,fti,ftf)
-            bsqrhosq_jet_phipow_rad30_vsm[ii]=timeavg(bsqrhosq_jet_phipow_rad30[:,ii],ts,fti,ftf)
-            FMrhosq_jet_phipow_rad30_vsm[ii]=timeavg(FMrhosq_jet_phipow_rad30[:,ii],ts,fti,ftf)
-            FEMArhosq_jet_phipow_rad30_vsm[ii]=timeavg(FEMArhosq_jet_phipow_rad30[:,ii],ts,fti,ftf)
-            FEEMrhosq_jet_phipow_rad30_vsm[ii]=timeavg(FEEMrhosq_jet_phipow_rad30[:,ii],ts,fti,ftf)
+            rhosrhosq_jet_phipow_rad30_vsm[ii]=timeavg_sqrt(rhosrhosq_jet_phipow_rad30[:,ii],ts,fti,ftf)
+            ugsrhosq_jet_phipow_rad30_vsm[ii]=timeavg_sqrt(ugsrhosq_jet_phipow_rad30[:,ii],ts,fti,ftf)
+            uu0rhosq_jet_phipow_rad30_vsm[ii]=timeavg_sqrt(uu0rhosq_jet_phipow_rad30[:,ii],ts,fti,ftf)
+            vuas3rhosq_jet_phipow_rad30_vsm[ii]=timeavg_sqrt(vuas3rhosq_jet_phipow_rad30[:,ii],ts,fti,ftf)
+            bas1rhosq_jet_phipow_rad30_vsm[ii]=timeavg_sqrt(bas1rhosq_jet_phipow_rad30[:,ii],ts,fti,ftf)
+            bas2rhosq_jet_phipow_rad30_vsm[ii]=timeavg_sqrt(bas2rhosq_jet_phipow_rad30[:,ii],ts,fti,ftf)
+            bas3rhosq_jet_phipow_rad30_vsm[ii]=timeavg_sqrt(bas3rhosq_jet_phipow_rad30[:,ii],ts,fti,ftf)
+            bsqrhosq_jet_phipow_rad30_vsm[ii]=timeavg_sqrt(bsqrhosq_jet_phipow_rad30[:,ii],ts,fti,ftf)
+            FMrhosq_jet_phipow_rad30_vsm[ii]=timeavg_sqrt(FMrhosq_jet_phipow_rad30[:,ii],ts,fti,ftf)
+            FEMArhosq_jet_phipow_rad30_vsm[ii]=timeavg_sqrt(FEMArhosq_jet_phipow_rad30[:,ii],ts,fti,ftf)
+            FEEMrhosq_jet_phipow_rad30_vsm[ii]=timeavg_sqrt(FEEMrhosq_jet_phipow_rad30[:,ii],ts,fti,ftf)
         #
         arrayvsmc=[rhosrhosq_jet_phipow_rad30_vsm,ugsrhosq_jet_phipow_rad30_vsm,uu0rhosq_jet_phipow_rad30_vsm,vuas3rhosq_jet_phipow_rad30_vsm,bas1rhosq_jet_phipow_rad30_vsm,bas2rhosq_jet_phipow_rad30_vsm,bas3rhosq_jet_phipow_rad30_vsm,bsqrhosq_jet_phipow_rad30_vsm,FMrhosq_jet_phipow_rad30_vsm,FEMArhosq_jet_phipow_rad30_vsm,FEEMrhosq_jet_phipow_rad30_vsm]
         bsqorhohvsmc=bsqrhosq_jet_phipow_rad30_vsm/rhosrhosq_jet_phipow_rad30_vsm
@@ -10480,6 +10690,18 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             iter=1
             for fil in arrayvsra:
                 mktr(loadq=0,qty=fil,pllabel=arrayvsraname[iter-1],filenum=iter,fileletter="ab",logvalue=logvaluearrayvsra[iter-1],bsqorho=bsqorhora,bsqou=bsqoura,maxbsqorho=1E15,maxbsqou=1E15)
+                iter=iter+1
+            #
+            ################################
+            arrayvsra=[rhosrhosqdcden,ugsrhosqdcden,uu0rhosqdcden,vus1rhosqdcden,vuas1rhosqdcden,vus3rhosqdcden,vuas3rhosqdcden,Bs1rhosqdcden,Bas1rhosqdcden,Bs2rhosqdcden,Bas2rhosqdcden,Bs3rhosqdcden,Bas3rhosqdcden,bs1rhosqdcden,bas1rhosqdcden,bs2rhosqdcden,bas2rhosqdcden,bs3rhosqdcden,bas3rhosqdcden,bsqrhosqdcden]
+            bsqorhora=bsqrhosqdcden/rhosrhosqdcden
+            bsqoura=bsqrhosqdcden/ugsrhosqdcden
+            arrayvsraname=['rhosrhosqdcden','ugsrhosqdcden','uu0rhosqdcden','vus1rhosqdcden','vuas1rhosqdcden','vus3rhosqdcden','vuas3rhosqdcden','Bs1rhosqdcden','Bas1rhosqdcden','Bs2rhosqdcden','Bas2rhosqdcden','Bs3rhosqdcden','Bas3rhosqdcden','bs1rhosqdcden','bas1rhosqdcden','bs2rhosqdcden','bas2rhosqdcden','bs3rhosqdcden','bas3rhosqdcden','bsqrhosqdcden']
+            logvaluearrayvsra=[1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
+            #
+            iter=1
+            for fil in arrayvsra:
+                mktr(loadq=0,qty=fil,pllabel=arrayvsraname[iter-1],filenum=iter,fileletter="ac",logvalue=logvaluearrayvsra[iter-1],bsqorho=bsqorhora,bsqou=bsqoura,maxbsqorho=1E15,maxbsqou=1E15)
                 iter=iter+1
             #
             ####################################
@@ -10806,10 +11028,13 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             ytoplot=normpowerfft
             #
             if whichfftplot==0:
+                yvalue0=np.copy(yvalue)
                 ytoplot0=ytoplot
             elif whichfftplot==1:
+                yvalue1=np.copy(yvalue)
                 ytoplot1=ytoplot
             elif whichfftplot==2:
+                yvalue2=np.copy(yvalue)
                 ytoplot2=ytoplot
             #
             #
@@ -10865,6 +11090,14 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                 plt.savefig("fft1.png",dpi=DPI)#,bbox_inches='tight',pad_inches=0.1)
                 #
                 # FILE:
+                ffft1 = open('dataprefft1.txt', 'w')
+                for ii in np.arange(0,len(xvalue)):
+                    ffft1.write("%d %g   %g %g %g\n" % (ii,xvalue[ii],yvalue0[ii],yvalue1[ii],yvalue2[ii]))
+                ffft1.close()
+                ffft1 = open('dataprefullfft1.txt', 'w')
+                for ii in np.arange(0,len(xvaluefull)):
+                    ffft1.write("%d %g   %g %g %g\n" % (ii,xvaluefull[ii],yvaluefull0[ii],yvaluefull1[ii],yvaluefull2[ii]))
+                ffft1.close()
                 ffft1 = open('datafft1.txt', 'w')
                 for ii in np.arange(0,len(xtoplot)):
                     ffft1.write("%d %g   %g %g %g\n" % (ii,xtoplot[ii],ytoplot0[ii],ytoplot1[ii],ytoplot2[ii]))
@@ -11489,10 +11722,10 @@ def mkpowervsm(loadq=0,qty=None,pllabel="",filenum=0,fileletter="",logvalue=0,ra
     # set ytoplot as Normalized power (normalized to total power!)
     # power was originally saved as |a_j|^2, but want to see |a_j| since if (e.g.) a_1=a_0, then sin(\phi) generates deviations as large as average, such that if a_0=1, then a_1=1  means F_M goes up to 2 and down to 0 across in \phi, which is maximum possible deviation.  So normalize to a_0, not sum.
     #ytoplot=qty/np.sum(qty)
-    ytoplot=np.sqrt(qty/qty[0])
+    ytoplot=np.fabs(qty/qty[0])
     #
-    normpowersumnotm0a=np.sum(qty[1:len(qty)])/np.sum(qty)
-    normpowersumnotm0b=np.sum(np.sqrt(qty[1:len(qty)]))/np.sqrt(qty[0])
+    normpowersumnotm0a=np.sum(qty[1:len(qty)]**2)/np.sum(qty**2)
+    normpowersumnotm0b=np.sum(np.fabs(qty[1:len(qty)]))/np.fabs(qty[0])
     #
     print("mkpowervsm: %d %s %s : normpowersumnotm0a=%g normpowersumnotm0b=%g" % (filenum,fileletter,pllabel,normpowersumnotm0a,normpowersumnotm0b) )
     
@@ -11519,7 +11752,19 @@ def mkpowervsm(loadq=0,qty=None,pllabel="",filenum=0,fileletter="",logvalue=0,ra
     plt.savefig("powervsm%d%s_%s.pdf" % (filenum,fileletter,pllabel) )#,bbox_inches='tight',pad_inches=0.1)
     plt.savefig("powervsm%d%s_%s.eps" % (filenum,fileletter,pllabel))#,bbox_inches='tight',pad_inches=0.1)
     plt.savefig("powervsm%d%s_%s.png" % (filenum,fileletter,pllabel))#,bbox_inches='tight',pad_inches=0.1)
-
+    #
+    # FILE:
+    file1 = open("powervsm%d%s_%s.txt" % (filenum,fileletter,pllabel) , 'w')
+    file1.write("#%g %g %g\n" % (_dx1,_dx2,_dx3))
+    file1.write("#%s %s   %s\n" % ("ii","xtoplot","ytoplot"))
+    # For fluxes (i.e. FM) last entry gives (e.g. Mdot) but will be off by 30% or so from true accretion rate because of how form spatial angular wedge where the average value of bsqorho>maxbsqorho so that mode decomposition makes sense.
+    file1.write("#%g %g   %g   %g\n" % (normpowersumnotm0a,normpowersumnotm0b,np.fabs(qty[0]),(1.0/_dx1)*np.fabs(qty[0])))
+    for ii in np.arange(0,len(xtoplot)):
+        file1.write("%d %g   %g\n" % (ii,xtoplot[ii],ytoplot[ii]))
+    file1.close()
+    #
+    #
+    #
 
 
 
@@ -11532,6 +11777,15 @@ def mkpowervsm(loadq=0,qty=None,pllabel="",filenum=0,fileletter="",logvalue=0,ra
 
 
 def timeavg( qty, ts, fti, ftf, step = 1 ):
+    cond = (ts<ftf)*(ts>=fti)
+    #use masked array to remove any stray NaN's
+    qtycond = np.ma.masked_array(qty[cond],np.isnan(qty[cond]))
+    qtycond = qtycond[::step]
+    qtyavg = qtycond.mean(axis=0,dtype=np.float64)
+    return( qtyavg )
+
+def timeavg_sqrt( qty0, ts, fti, ftf, step = 1 ):
+    qty=np.sqrt(qty0)
     cond = (ts<ftf)*(ts>=fti)
     #use masked array to remove any stray NaN's
     qtycond = np.ma.masked_array(qty[cond],np.isnan(qty[cond]))
@@ -12908,6 +13162,14 @@ def mk2davg():
 
 
 def mkstreamlinefigure():
+    global modelname
+    if len(sys.argv[1:])>0:
+        modelname = sys.argv[1]
+    else:
+        modelname = "Unknown Model"
+    #
+    print("ModelName = %s" % (modelname) )
+    #
     mylen = 30
     arrowsize=4
     grid3d("gdump.bin",use2d=True)
@@ -12919,13 +13181,6 @@ def mkstreamlinefigure():
     fntsize=24
     ax = fig.add_subplot(111, aspect='equal')
     #
-    global modelname
-    if len(sys.argv[1:])>0:
-        modelname = sys.argv[1]
-    else:
-        modelname = "Unknown Model"
-    #
-    print("ModelName = %s" % (modelname) )
     #
     if modelname=="runlocaldipole3dfiducial" or modelname=="blandford3d_new":
         # for MB09 dipolar fiducial model
@@ -12940,8 +13195,10 @@ def mkstreamlinefigure():
         vmaxforframe=1.5625
     #
     #
-    mkstreampart1=1
-    mkstreampart2=1
+    mkstreampart1=0 # GODMARK
+    mkstreampart2=0 # GODMARK # set to zero if don't want to read-in qty.npy stuff
+    mkstreampart3=1
+    forceeqsym=1
     #
     #
     #
@@ -12963,7 +13220,7 @@ def mkstreamlinefigure():
             # 2 good for testing.
             mydensity=8
             #
-            mkframe("myframe",dovel=True,len=mylen,ax=ax,density=mydensity,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=vminforframe,vmax=vmaxforframe,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
+            mkframe("myframe",dovel=True,len=mylen,ax=ax,density=mydensity,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=vminforframe,vmax=vmaxforframe,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False,forceeqsym=forceeqsym)
         #
         if True:
         #if False:
@@ -13029,7 +13286,7 @@ def mkstreamlinefigure():
             finallen=mylen
             #finallen=2.0*mylen
             # useblank=True causes field lines to stop tracing when they get closer together at slightly larger distances.  
-            mkframe("myframe",doaphiavg=False,dostreamlines=False,useblank=False,len=finallen,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=vminforframe,vmax=vmaxforframe,dobhfield=8,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.01,dsval=0.01,color='r',lw=2,startatmidplane=True,domidfield=False,showjet=False,arrowsize=arrowsize)
+            mkframe("myframe",doaphiavg=False,dostreamlines=False,useblank=False,len=finallen,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=vminforframe,vmax=vmaxforframe,dobhfield=8,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.01,dsval=0.01,color='r',lw=2,startatmidplane=True,domidfield=False,showjet=False,arrowsize=arrowsize,forceeqsym=forceeqsym)
         #
         if False:
             x = (r*np.sin(h))[:,:,0]
@@ -13181,12 +13438,146 @@ def mkstreamlinefigure():
         plt.savefig("aphialllog_avgfield_avg.eps")
         plt.savefig("aphialllog_avgfield_avg.png")
         #
+    #####################################
+    # plots of F_EM, F_MAKE, omegaf on horizon from averaged data
+    if mkstreampart3==1:
+        # 
+        # things have access to:
+        # avg_ts,avg_te,avg_nitems,avg_rho,avg_ug,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_omegaf2b,avg_omegaf1
+        # avg_omegaf1b,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
+        # avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
+        # avg_TudPA, avg_TudIE
+        # avg_gamma
+        #
+        # get horizon cut of everything and print out for SM plotting vs. theta
+        rhor=1+(1-a**2)**0.5
+        ihor = np.floor(iofr(rhor)+0.5)
+        # FILE:
+        print("shapes"); sys.stdout.flush()
+        print(h.shape); sys.stdout.flush()
+        print(avg_rho.shape); sys.stdout.flush()
+        print(avg_ug.shape); sys.stdout.flush()
+        print(avg_bsq.shape); sys.stdout.flush()
+        print(avg_unb.shape); sys.stdout.flush()
+        avg1 = open('dataavgvsh0.txt', 'w')
+        avg1.write("#%s %s %s   %s %s\n" % ("avg_ts","avg_te","avg_nitems","rhor","ihor"))
+        avg1.write("%g %g %d   %g %g %d  %g %g %g  %g  %d %d %d\n" % (avg_ts[0],avg_te[0],avg_nitems[0],a,rhor,ihor,_dx1,_dx2,_dx3,scaletofullwedge(1.0),nx,ny,nz))
+        avg1.close()
+        avg1 = open('dataavgvsh1.txt', 'w')
+        # below doesn't yet show columns for each component of vector or tensors
+        avg1.write("#avg_rho,avg_ug,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_omegaf2b,avg_omegaf1,avg_omegaf1b,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud,avg_TudEM, avg_TudMA, avg_TudPA, avg_TudIE, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq,avg_gamma")
+        avg1.write("#%g %g %d :  %g %d\n" % (avg_ts[0],avg_te[0],avg_nitems[0],rhor,ihor))
+        for jj in np.arange(0,len(h[0,:,0])):
+            # columns 1-6
+            avg1.write("%d %g %g %g %g %g " % (jj, h[ihor,jj,0], avg_rho[ihor,jj,0],avg_ug[ihor,jj,0],avg_bsq[ihor,jj,0],avg_unb[ihor,jj,0]))
+            # columns 7-10
+            for ll in np.arange(0,4):
+                avg1.write("%g " % (avg_uu[ll,ihor,jj,0]))
+            # columns 11-14
+            for ll in np.arange(0,4):
+                avg1.write("%g " % (avg_bu[ll,ihor,jj,0]))
+            # columns 15-18
+            for ll in np.arange(0,4):
+                avg1.write("%g " % (avg_ud[ll,ihor,jj,0]))
+            # columns 19-22
+            for ll in np.arange(0,4):
+                avg1.write("%g " % (avg_bd[ll,ihor,jj,0]))
+            # columns 23-25
+            for ll in np.arange(0,3):
+                avg1.write("%g " % (avg_B[ll,ihor,jj,0]))
+            # columns 26-28
+            for ll in np.arange(0,3):
+                avg1.write("%g " % (avg_gdetB[ll,ihor,jj,0]))
+            # columns 29-32
+            avg1.write("%g %g %g %g " % (avg_omegaf2[ihor,jj,0],avg_omegaf2b[ihor,jj,0],avg_omegaf1[ihor,jj,0],avg_omegaf1b[ihor,jj,0]))
+            # columns 33-36
+            for ll in np.arange(0,4):
+                avg1.write("%g " % (avg_rhouu[ll,ihor,jj,0]))
+            # columns 37-40
+            for ll in np.arange(0,4):
+                avg1.write("%g " % (avg_rhobu[ll,ihor,jj,0]))
+            # columns 41-44
+            for ll in np.arange(0,4):
+                avg1.write("%g " % (avg_rhoud[ll,ihor,jj,0]))
+            # columns 45-48
+            for ll in np.arange(0,4):
+                avg1.write("%g " % (avg_rhobd[ll,ihor,jj,0]))
+            # columns 49-52
+            for ll in np.arange(0,4):
+                avg1.write("%g " % (avg_uguu[ll,ihor,jj,0]))
+            # columns 53-56
+            for ll in np.arange(0,4):
+                avg1.write("%g " % (avg_ugud[ll,ihor,jj,0]))
+            # columns 57-72
+            for ll in np.arange(0,4):
+                for mm in np.arange(0,4):
+                    avg1.write("%g " % (avg_Tud[mm,ll,ihor,jj,0]))
+            # columns 73-88
+            for ll in np.arange(0,4):
+                for mm in np.arange(0,4):
+                    avg1.write("%g " % (avg_fdd[mm,ll,ihor,jj,0]))
+            # columns 89-104
+            for ll in np.arange(0,4):
+                for mm in np.arange(0,4):
+                    avg1.write("%g " % (avg_rhouuud[mm,ll,ihor,jj,0]))
+            # columns 105-120
+            for ll in np.arange(0,4):
+                for mm in np.arange(0,4):
+                    avg1.write("%g " % (avg_uguuud[mm,ll,ihor,jj,0]))
+            # columns 121-136
+            for ll in np.arange(0,4):
+                for mm in np.arange(0,4):
+                    avg1.write("%g " % (avg_bsquuud[mm,ll,ihor,jj,0]))
+            # columns 137-152
+            for ll in np.arange(0,4):
+                for mm in np.arange(0,4):
+                    avg1.write("%g " % (avg_bubd[mm,ll,ihor,jj,0]))
+            # columns 153-168
+            for ll in np.arange(0,4):
+                for mm in np.arange(0,4):
+                    avg1.write("%g " % (avg_uuud[mm,ll,ihor,jj,0]))
+            # columns 169-184
+            for ll in np.arange(0,4):
+                for mm in np.arange(0,4):
+                    avg1.write("%g " % (avg_TudEM[mm,ll,ihor,jj,0]))
+            # columns 185-200
+            for ll in np.arange(0,4):
+                for mm in np.arange(0,4):
+                    avg1.write("%g " % (avg_TudMA[mm,ll,ihor,jj,0]))
+            # columns 201-216
+            for ll in np.arange(0,4):
+                for mm in np.arange(0,4):
+                    avg1.write("%g " % (avg_TudPA[mm,ll,ihor,jj,0]))
+            # columns 217-232
+            for ll in np.arange(0,4):
+                for mm in np.arange(0,4):
+                    avg1.write("%g " % (avg_TudIE[mm,ll,ihor,jj,0]))
+            # columns 233-235
+            avg1.write("%g %g %g " % (avg_mu[ihor,jj,0], avg_sigma[ihor,jj,0], avg_bsqorho[ihor,jj,0]))
+            # columns 236-238
+            for ll in np.arange(0,3):
+                avg1.write("%g " % (avg_absB[ll,ihor,jj,0]))
+            # columns 239-241
+            for ll in np.arange(0,3):
+                avg1.write("%g " % (avg_absgdetB[ll,ihor,jj,0]))
+            # columns 242-243
+            avg1.write("%g %g " % (avg_psisq[ihor,jj,0],avg_gamma[ihor,jj,0]))
+            # other added stuff
+            # column 244 245
+            avg1.write("%g %g %g" % (gdet[ihor,jj,0],dxdxp[1,1][ihor,jj,0],dxdxp[2,2][ihor,jj,0]*_dx2))
+            avg1.write("\n")
+        #
+        avg1.close()
+    #####################
+    #
+    #
+    ########################################
     # FINALPLOT:
     # ssh jmckinne@orange.slac.stanford.edu
     # cd /lustre/ki/orange/jmckinne/thickdisk7/movie1
     # 
     # convert fig2.png fig2.eps ; scp fig2.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/figavgflowfield.eps
-    #
+    #scp dataavgvsh0.txt dataavgvsh1.txt jmckinne@ki-jmck:/data2/jmckinne/thickdisk7/fromorange/
 
 
 
