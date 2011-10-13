@@ -31,7 +31,7 @@ import pylab
 import sys
 import streamlines
 from matplotlib.patches import Ellipse
-
+#import pdb
 
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
@@ -2474,6 +2474,7 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None,docomp
         else:
             ldtot=None
         if i < qtymem.shape[0]:
+            print( "Getting memory ready for gdetF's" )
             gdetF10=qtymem[i];i+=1
             gdetF11=qtymem[i];i+=1
             gdetF12=qtymem[i];i+=1
@@ -2484,6 +2485,7 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None,docomp
             gdetF31=qtymem[i];i+=1
             gdetF32=qtymem[i];i+=1
         else:
+            print( "Setting gdetF's to None" )
             gdetF10=None
             gdetF11=None
             gdetF12=None
@@ -2718,15 +2720,16 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None,docomp
             if ldtot is not None:
                 ldtot[findex]=intangle(gdet*Tud[1][3])
             if gdetF10 is not None and gdetF is not None:
-                    gdetF10=intangle(gdetF[1][0])
-                    gdetF11=intangle(gdetF[1][1])
-                    gdetF12=intangle(gdetF[1][2])
-                    gdetF20=intangle(gdetF[2][0])
-                    gdetF21=intangle(gdetF[2][1])
-                    gdetF22=intangle(gdetF[2][2])
-                    gdetF30=intangle(gdetF[3][0])
-                    gdetF31=intangle(gdetF[3][1])
-                    gdetF32=intangle(gdetF[3][2])
+                print( "Assigning gdetF's in getqtyvstime()" )
+                gdetF10=intangle(gdetF[1][0])
+                gdetF11=intangle(gdetF[1][1])
+                gdetF12=intangle(gdetF[1][2])
+                gdetF20=intangle(gdetF[2][0])
+                gdetF21=intangle(gdetF[2][1])
+                gdetF22=intangle(gdetF[2][2])
+                gdetF30=intangle(gdetF[3][0])
+                gdetF31=intangle(gdetF[3][1])
+                gdetF32=intangle(gdetF[3][2])
         #Bob's 1D quantities
         if dobob==1:
                 dVF=_dx1*_dx2*_dx3
@@ -3334,6 +3337,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
             phiabsj_mu2 = phiabsj_n_mu2 + phiabsj_s_mu2
             phiabsj_mu1 = phiabsj_n_mu1 + phiabsj_s_mu1
             if i < qtymem.shape[0]:
+                print( "Assigning gdetF's in plotqtyvstime()" )
                 gdetF10=qtymem[i];i+=1
                 gdetF11=qtymem[i];i+=1
                 gdetF12=qtymem[i];i+=1
@@ -3838,7 +3842,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
 
     if whichplot == -200:
         #XXX compute edmavsr without polar regions with avg_aphi < avg_phi[iofr(rhor),aphi_j_val]
-        if aphi_j_val >= 0 and os.path.isfile( "avg2d.npy" ):
+        if aphi_j_val > 0 and os.path.isfile( "avg2d.npy" ):
             avgmem = get2davg(usedefault=1)
             assignavg2dvars(avgmem)
             #sum in phi and theta
@@ -3901,7 +3905,8 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
                 pjemfinavgvsr5, pjemfinavgvsr10, pjemfinavgvsr20, pjemfinavgvsr30, pjemfinavgvsr40,
                 pjmafinavgvsr5, pjmafinavgvsr10, pjmafinavgvsr20, pjmafinavgvsr30, pjmafinavgvsr40,
                 fstotfinavg, fstotsqfinavg,
-                pjke_mu2_avg, pjke_mu1_avg)
+                pjke_mu2_avg, pjke_mu1_avg,
+                timeavg(gdetF10,ts,iti,itf), timeavg(gdetF11,ts,iti,itf), timeavg(gdetF12,ts,iti,itf))
  
     if whichplot == -300:
         #BL metric g_rr
@@ -4742,14 +4747,36 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     #at this time we have the floor information, now get averages:
     #mdtotvsr, edtotvsr, edmavsr, ldtotvsr = plotqtyvstime( qtymem, whichplot = -2, fti=fti, ftf=ftf )
     #XXX
+
+    if np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) < 1.5:
+        #face vs. center correction
+        mdtotvsr, edtotvsr, edmavsr, ldtotvsr,\
+                    mdotfinavgvsr5, mdotfinavgvsr10, mdotfinavgvsr20, mdotfinavgvsr30, mdotfinavgvsr40, \
+                    pjemfinavgvsr5, pjemfinavgvsr10, pjemfinavgvsr20, pjemfinavgvsr30, pjemfinavgvsr40, \
+                    pjmafinavgvsr5, pjmafinavgvsr10, pjmafinavgvsr20, pjmafinavgvsr30, pjmafinavgvsr40, \
+                    fstotfinavg, fstotsqfinavg, \
+                    pjke_mu2_avg, pjke_mu1_avg, \
+                    gdetF10, gdetF11, gdetF12 \
+                    = plotqtyvstime( qtymem, whichplot = -200, fti=31568.8571637753, ftf=1e5, aphi_j_val=aphi_j_val )
+        F11 = -edtotvsr-mdtotvsr
+        energy_flux_correction_factor = gdetF11/F11
+        #pdb.set_trace()
+
     mdtotvsr, edtotvsr, edmavsr, ldtotvsr,\
                 mdotfinavgvsr5, mdotfinavgvsr10, mdotfinavgvsr20, mdotfinavgvsr30, mdotfinavgvsr40, \
                 pjemfinavgvsr5, pjemfinavgvsr10, pjemfinavgvsr20, pjemfinavgvsr30, pjemfinavgvsr40, \
                 pjmafinavgvsr5, pjmafinavgvsr10, pjmafinavgvsr20, pjmafinavgvsr30, pjmafinavgvsr40, \
                 fstotfinavg, fstotsqfinavg, \
-                pjke_mu2_avg, pjke_mu1_avg \
+                pjke_mu2_avg, pjke_mu1_avg, \
+                gdetF10, gdetF11, gdetF12 \
                 = plotqtyvstime( qtymem, whichplot = -200, fti=fti, ftf=ftf, aphi_j_val=aphi_j_val )
- 
+
+    if np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) < 1.5:
+        #correct energy flux for face vs. center
+        edtotvsr = (edtotvsr+mdtotvsr)*energy_flux_correction_factor - mdtotvsr
+
+    #pdb.set_trace()
+
     FKE = -(edmavsr+mdtotvsr)
     FKE10 = -((edmavsr-pjmafinavgvsr10) + mdotfinavgvsr10)
 
