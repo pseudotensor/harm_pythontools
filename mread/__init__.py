@@ -2721,15 +2721,15 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None,docomp
                 ldtot[findex]=intangle(gdet*Tud[1][3])
             if gdetF10 is not None and gdetF is not None:
                 print( "Assigning gdetF's in getqtyvstime()" )
-                gdetF10=intangle(gdetF[1][0])
-                gdetF11=intangle(gdetF[1][1])
-                gdetF12=intangle(gdetF[1][2])
-                gdetF20=intangle(gdetF[2][0])
-                gdetF21=intangle(gdetF[2][1])
-                gdetF22=intangle(gdetF[2][2])
-                gdetF30=intangle(gdetF[3][0])
-                gdetF31=intangle(gdetF[3][1])
-                gdetF32=intangle(gdetF[3][2])
+                gdetF10[findex]=intangle(gdetF[1][0])
+                gdetF11[findex]=intangle(gdetF[1][1])
+                gdetF12[findex]=intangle(gdetF[1][2])
+                gdetF20[findex]=intangle(gdetF[2][0])
+                gdetF21[findex]=intangle(gdetF[2][1])
+                gdetF22[findex]=intangle(gdetF[2][2])
+                gdetF30[findex]=intangle(gdetF[3][0])
+                gdetF31[findex]=intangle(gdetF[3][1])
+                gdetF32[findex]=intangle(gdetF[3][2])
         #Bob's 1D quantities
         if dobob==1:
                 dVF=_dx1*_dx2*_dx3
