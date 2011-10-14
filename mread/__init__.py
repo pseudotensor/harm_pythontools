@@ -2304,6 +2304,7 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None,docomp
         if( numtimeslices2 >= numtimeslices ):
             print "Number of previously saved time slices is >= than of timeslices to be loaded, re-using previously saved time slices"
             # qtymem2[:,1493]=0.5*(qtymem2[:,1492]+qtymem2[:,1494])
+            # qtymem2=qtymem2[:,:-1]
             # np.save("qty2_new.npy",qtymem2)  #kill bad frame
             return(qtymem2)
         elif docompute==False:
@@ -3906,7 +3907,7 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
                 pjmafinavgvsr5, pjmafinavgvsr10, pjmafinavgvsr20, pjmafinavgvsr30, pjmafinavgvsr40,
                 fstotfinavg, fstotsqfinavg,
                 pjke_mu2_avg, pjke_mu1_avg,
-                timeavg(gdetF10,ts,iti,itf), timeavg(gdetF11,ts,iti,itf), timeavg(gdetF12,ts,iti,itf))
+                timeavg(gdetF10,ts,fti,ftf), timeavg(gdetF11,ts,fti,ftf), timeavg(gdetF12,ts,fti,ftf))
  
     if whichplot == -300:
         #BL metric g_rr
