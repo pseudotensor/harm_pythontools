@@ -4412,30 +4412,30 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         # Dno = np.array([224.,223.])
         # fti = 14700.
         # ftf = 25000.
-        # Dt = np.array([28200-28097.4708711805,
-        #                28000-27406.4732593203,
-        #                27400-26763.9946654502,
-        #                26700-26330.0889135128,
-        #                26300-25799.8775611997,
-        #                25700-25124.6341346588,
-        #                25100-24594.4658011928,
-        #                24500-23951.5226133435,
-        #                23900-23292.5857662206,
-        #                23200-22890.8671337456,
-        #                22800-22231.9647756934,
-        #                22200-22167.6695855045])
-        # Dno = np.array([282,
-        #                 280,
-        #                 274,
-        #                 267,
-        #                 263,
-        #                 257,
-        #                 251,
-        #                 245,
-        #                 239,
-        #                 232,
-        #                 228,
-        #                 222])
+        Dt = np.array([28200-28097.4708711805,
+                       28000-27406.4732593203,
+                       27400-26763.9946654502,
+                       26700-26330.0889135128,
+                       26300-25799.8775611997,
+                       25700-25124.6341346588,
+                       25100-24594.4658011928,
+                       24500-23951.5226133435,
+                       23900-23292.5857662206,
+                       23200-22890.8671337456,
+                       22800-22231.9647756934,
+                       22200-22167.6695855045])
+        Dno = np.array([282,
+                        280,
+                        274,
+                        267,
+                        263,
+                        257,
+                        251,
+                        245,
+                        239,
+                        232,
+                        228,
+                        222])
         # Dt = np.array([10800-10000,
         #                -(10800-10000)])
         # Dno = np.array([108,
@@ -4448,16 +4448,16 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #                -(20700.-20000.)])
         # Dno = np.array([207.,
         #                 200.])
-        Dt = np.array([26300-25799.8775611997])
-        Dno = np.array([263])
+        # Dt = np.array([26300-25799.8775611997])
+        # Dno = np.array([263])
         # Dt = np.array([26300-25800,
         #                -(26300-25800)])
         # Dno = np.array([263,
         #                 258])
         # lfti = 25800.
         # lftf = 26300.
-        lfti = 25800.
-        lftf = 26300.
+        lfti = 7000.
+        lftf = 30500.
     elif np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) > 1.5:
         #lo-res 0.99 settings
         print( "Using lores a = 0.99 settings")
@@ -4759,8 +4759,12 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                     pjke_mu2_avg, pjke_mu1_avg, \
                     gdetF10, gdetF11, gdetF12 \
                     = plotqtyvstime( qtymem, whichplot = -200, fti=31568.8571637753, ftf=1e5, aphi_j_val=aphi_j_val )
+                    #= plotqtyvstime( qtymem, whichplot = -200, fti=32000, ftf=32500, aphi_j_val=aphi_j_val )
         F11 = -edtotvsr-mdtotvsr
-        energy_flux_correction_factor = gdetF11/F11
+        #properly center flux in a cell
+        gdetF11c=np.copy(gdetF11)
+        gdetF11c[:-1]=0.5*(gdetF11[:-1]+gdetF11[1:])
+        energy_flux_correction_factor = gdetF11c/F11
         #pdb.set_trace()
 
     mdtotvsr, edtotvsr, edmavsr, ldtotvsr,\
