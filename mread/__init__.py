@@ -3350,15 +3350,15 @@ def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf
                 gdetF32=qtymem[i];i+=1
             else:
                 print( "Oldish format: missing gdetF1,2,3" )
-                gdetF10=None
-                gdetF11=None
-                gdetF12=None
-                gdetF20=None
-                gdetF21=None
-                gdetF22=None
-                gdetF30=None
-                gdetF31=None
-                gdetF32=None
+                gdetF10=np.zeros_like(edtot)
+                gdetF11=gdetF10
+                gdetF12=gdetF10
+                gdetF20=gdetF10
+                gdetF21=gdetF10
+                gdetF22=gdetF10
+                gdetF30=gdetF10
+                gdetF31=gdetF10
+                gdetF32=gdetF10
         else:
             print( "Oldish format: missing north/south jet power and flux" )
             sys.stdout.flush()
