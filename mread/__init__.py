@@ -296,7 +296,7 @@ def get2davg(usedefault=0,whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergr
     avgfti = defaultfti
     avgftf = defaultftf
     ######################
-    print("whichgroups=%d whichgroupe=%d" % (whichgroups,whichgroupe))
+    print("whichgroups=%d whichgroupe=%d" % (whichgroups,whichgroupe)) ; sys.stdout.flush()
     ######################
     n2avg = 0
     nitems = 0
@@ -304,36 +304,49 @@ def get2davg(usedefault=0,whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergr
     numrange = myrange.shape[0]
     firstavgone=1
     firstavgoneused=1
+    # defaults for ts,tf
+    ts=0
+    tf=0
     for (i,g) in enumerate(myrange):
-        print("i=%d g=%d" % (i,g))
+        print("i=%d g=%d" % (i,g)) ; sys.stdout.flush()
         avgone=get2davgone( whichgroup = g, itemspergroup = itemspergroup )
-        tstry=avgone[0,0,0]
-        tftry=avgone[0,1,0]
+        if avgone == None:
+            continue
         if firstavgone==1:
             avgtot = np.zeros_like(avgone)
             firstavgone=0
-        if avgone == None:
-            continue
+        tstry=avgone[0,0,0]
+        tftry=avgone[0,1,0]
         # use avg data if either start or finish of time used for averaging is within average period
         # tftry==0 case put in under assumption that broken avg_te[0] assignment code was used to generate avg*.npy files
-        if (tstry>avgfti and tstry<avgftf) or ((tftry>avgfti and tftry<avgftf) or tftry==0):
-            if firstavgoneused==1:
-                ts=avgone[0,0,0]
-                firstavgoneused=0
-            # override tf if buggy avg file
-            if tftry!=0:
-                tf=avgone[0,1,0]
+        if numrange>1:
+            # then assume merging
+            if (tstry>avgfti and tstry<avgftf) or ((tftry>avgfti and tftry<avgftf) or tftry==0):
+                if firstavgoneused==1:
+                    ts=avgone[0,0,0]
+                    firstavgoneused=0
+                # override tf if buggy avg file
+                if tftry!=0:
+                    tf=avgone[0,1,0]
+                else:
+                    tf=tf=avgone[0,0,0]
+                #
+                avgtot += avgone
+                nitems += avgone[0,2,0]
+                n2avg += 1
+                print("USING: During merge: ts=%g tf=%g tstry=%g tftry=%g n2avg=%d" % (ts,tf,tstry,tftry,n2avg));sys.stdout.flush()
+                #
             else:
-                tf=tf=avgone[0,0,0]
-            #
+                print("NOTUSING: During merge: tstry=%g tftry=%g n2avg=%d" % (tstry,tftry,n2avg));sys.stdout.flush()
+            # end if within averaging period of time
+        else:
+            # then not merging, normal assignments no matter what the time
+            ts=avgone[0,0,0]
+            tf=avgone[0,1,0]
             avgtot += avgone
             nitems += avgone[0,2,0]
             n2avg += 1
-            print("USING: During merge: ts=%g tf=%g tstry=%g tftry=%g n2avg=%d" % (ts,tf,tstry,tftry,n2avg));sys.stdout.flush()
-            #
-        else:
-            print("NOTUSING: During merge: tstry=%g tftry=%g n2avg=%d" % (tstry,tftry,n2avg));sys.stdout.flush()
-        # end if within averaging period of time
+            print("During NONmerge: ts=%g tf=%g tstry=%g tftry=%g n2avg=%d" % (ts,tf,tstry,tftry,n2avg));sys.stdout.flush()
     # end for loop over whichgroups->whichgroupe
     #
     # set final avg file times and number of items
@@ -343,7 +356,7 @@ def get2davg(usedefault=0,whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergr
     print("Final avg_ts=%g avg_te=%g nitems=%d" % (avgtot[0,0,0],avgtot[0,1,0],avgtot[0,2,0]));sys.stdout.flush()
     #get the average
     if n2avg == 0:
-        print( "0 total files, so no data generated." )
+        print( "0 total files, so no data generated." ) ; sys.stdout.flush()
         return( None )
     #avoid renormalizing the header
     avgtot[1:] /= n2avg
@@ -542,6 +555,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         Tcalcud(maxbsqorho=maxbsqorho)
         faraday()
         bsqo2rho = bsq/(2.0*rho) # uses original rho, which is as desired
+        bsqorho = bsq/(rho) # uses original rho, which is as desired
         rhoclean = np.copy(rho)
         rhoclean[bsqorho>maxbsqorho]=1E-30
         ugclean = np.copy(ug)
@@ -2421,7 +2435,7 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
         qty[np.isinf(qty)]=vmax
         qty[np.isnan(qty)]=vmax
         #
-        iqty = reinterp(qty,extent,ncell,domask=1.0)
+        iqty = reinterpxy(qty,extent,ncell,domask=1.0)
     #
     ##########################
     # get field
@@ -5314,17 +5328,17 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         #
         diskcondition=cond3
         keywordsrhosq={'which': diskcondition}
-        alphamag1[findex]=intangle(gdet*np.abs(bu[1]*np.sqrt(gv3[1,1])*bu[3]*np.sqrt(gv3[3,3]))/(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywordsrhosq)/rhosqint
+        alphamag1[findex]=intangle(gdet*np.abs(bu[1]*np.sqrt(gv3[1,1])*bd[3]*np.sqrt(gn3[3,3]))/(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywordsrhosq)/rhosqint
         #
         diskcondition=(bsq/rho<1)
         keywordsrhosq={'which': diskcondition}
-        alphamag2[findex]=intangle(gdet*np.abs(bu[1]*np.sqrt(gv3[1,1])*bu[3]*np.sqrt(gv3[3,3]))/(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywordsrhosq)/rhosqint
+        alphamag2[findex]=intangle(gdet*np.abs(bu[1]*np.sqrt(gv3[1,1])*bd[3]*np.sqrt(gn3[3,3]))/(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywordsrhosq)/rhosqint
         #
         denfactor=rho**2
         diskcondition=cond3
         keywordsrhosq={'which': diskcondition}
         rhosqint=intangle(gdet*denfactor,**keywordsrhosq)+tiny
-        alphamag3[findex]=intangle(gdet*np.abs(bu[1]*np.sqrt(gv3[1,1])*bu[3]*np.sqrt(gv3[3,3]))/(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywordsrhosq)/rhosqint
+        alphamag3[findex]=intangle(gdet*np.abs(bu[1]*np.sqrt(gv3[1,1])*bd[3]*np.sqrt(gn3[3,3]))/(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywordsrhosq)/rhosqint
         #
         #
         #
@@ -6432,6 +6446,7 @@ def Tcalcud(maxbsqorho=None):
     global enth
     global unb, isunbound
     bsqo2rho = bsq/(2.0*rho) # uses original rho, which is as desired
+    bsqorho = bsq/(rho) # uses original rho, which is as desired
     rhoclean = np.copy(rho)
     ugclean = np.copy(ug)
     if maxbsqorho is not None:
@@ -6654,6 +6669,8 @@ def jofhfloat(hval,i):
 
 def jofh(hval,i):
     return(np.floor(jofhfloat(hval,i)+0.5))
+
+
 
 def kofph(phval):
     if nz==1:
@@ -10841,7 +10858,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     whichnorm=1
     whichxaxis=1
-    numplots=3
+    numplots=2
     #
     for whichfftplot in np.arange(0,numplots):
     #
@@ -10863,27 +10880,44 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             #gs.update(left=0.12, right=0.94, top=0.95, bottom=0.1, wspace=0.01, hspace=0.04)
             #ax = fig1.subplot(gs[0,:])
             #
-            topf=0.97
-            bottomf=0.04
-            dropf=(topf-bottomf)/numplots
             #
-            if whichfftplot==0:
-                #ax=plt.subplot(311)
-                gs1 = GridSpec(1, 1)
-                gs1.update(left=0.12, right=0.98, top=topf, bottom=topf-dropf, wspace=0.01, hspace=0.04)
-                ax = plt.subplot(gs1[:,-1])
-                ax.set_xticklabels([])
-            elif whichfftplot==1:
-                #ax=plt.subplot(312)
-                gs2 = GridSpec(1, 1)
-                gs2.update(left=0.12, right=0.98, top=topf-dropf, bottom=topf-2*dropf, wspace=0.01, hspace=0.04)
-                ax = plt.subplot(gs2[:,-1])
-                ax.set_xticklabels([])
-            elif whichfftplot==2:
-                #ax=plt.subplot(313)
-                gs3 = GridSpec(1, 1)
-                gs3.update(left=0.12, right=0.98, top=topf-2*dropf, bottom=topf-3*dropf, wspace=0.01, hspace=0.04)
-                ax = plt.subplot(gs3[:,-1])
+            if numplots==3:
+                topf=0.97
+                bottomf=0.04
+                dropf=(topf-bottomf)/numplots
+                if whichfftplot==0:
+                    #ax=plt.subplot(311)
+                    gs1 = GridSpec(1, 1)
+                    gs1.update(left=0.12, right=0.98, top=topf, bottom=topf-dropf, wspace=0.01, hspace=0.04)
+                    ax = plt.subplot(gs1[:,-1])
+                    ax.set_xticklabels([])
+                elif whichfftplot==1:
+                    #ax=plt.subplot(312)
+                    gs2 = GridSpec(1, 1)
+                    gs2.update(left=0.12, right=0.98, top=topf-dropf, bottom=topf-2*dropf, wspace=0.01, hspace=0.04)
+                    ax = plt.subplot(gs2[:,-1])
+                    ax.set_xticklabels([])
+                elif whichfftplot==2:
+                    #ax=plt.subplot(313)
+                    gs3 = GridSpec(1, 1)
+                    gs3.update(left=0.12, right=0.98, top=topf-2*dropf, bottom=topf-3*dropf, wspace=0.01, hspace=0.04)
+                    ax = plt.subplot(gs3[:,-1])
+            elif numplots==2:
+                topf=0.96
+                bottomf=0.06
+                dropf=(topf-bottomf)/numplots
+                if whichfftplot==0:
+                    #ax=plt.subplot(311)
+                    gs1 = GridSpec(1, 1)
+                    gs1.update(left=0.12, right=0.98, top=topf, bottom=topf-dropf, wspace=0.01, hspace=0.04)
+                    ax = plt.subplot(gs1[:,-1])
+                    ax.set_xticklabels([])
+                elif whichfftplot==1:
+                    #ax=plt.subplot(312)
+                    gs2 = GridSpec(1, 1)
+                    gs2.update(left=0.12, right=0.98, top=topf-dropf, bottom=topf-2*dropf, wspace=0.01, hspace=0.04)
+                    ax = plt.subplot(gs2[:,-1])
+                    ax.set_xticklabels([])
             #
             #params = {'xtick.labelsize': 10,'ytick.labelsize': 12}
             #plt.rcParams.update(params)
@@ -10913,7 +10947,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             pickradius=4.0 # must be consistent with where yvalue was picked
             iradius=iofr(pickradius)
             if whichfftplot==0:
-                picktheta=np.pi*0.5 + 0.0*hoverr_vsr[iradius]
+                picktheta=np.pi*0.5 + 1.0*hoverr_vsr[iradius]
             elif whichfftplot==1 or whichfftplot==2:
                 picktheta=np.pi*0.5 + 10.0*hoverr_vsr[iradius] # most robust
             #
@@ -10921,23 +10955,38 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                 picktheta=0.95*np.pi
             if picktheta<0.01:
                 picktheta=0.01
+            # pick original j value
             pickj=jofh(picktheta,iradius)
+            #
+            # get nx-sized original h
+            xold=(tj[0,:,0]-tj[0,0,0])/(tj[0,-1,0]-tj[0,0,0])
+            xnew=(ti[:,0,0]-ti[0,0,0])/(ti[-1,0,0]-ti[0,0,0])
+            hnx=np.interp(xnew,xold,h[iradius,:,0])
+            jnxofhnx=interp1d(hnx[:],ti[:,0,0],kind='linear')
+            pickjnx=jnxofhnx(picktheta)
+            pickjnx=np.floor(pickjnx+0.5)
+            #
             #
             ############
             # TEST or not:
             testfft=0
             if testfft==0:
                 if whichfftplot==2:
-                    yvalue=bs3rhosqrad4[condt,pickj] # 10 very visible (most robust)
-                    yvaluefull2=bs3rhosqrad4[condtfull,pickj] # 10 very visible (most robust)
+                    yvalue=bs3rhosqrad4[condt,pickjnx] # 10 very visible (most robust)
+                    print("test yvalue")
+                    print(yvalue)
+                    yvaluefull=bs3rhosqrad4[condtfull,pickjnx] # 10 very visible (most robust)
+                    yvaluefull2=yvaluefull
                     plt.title(r"Power in $b_\phi^2$ at $r=4r_g$ in Jet",fontsize=10)
                 elif whichfftplot==1:
-                    yvalue=bsqrhosqrad4[condt,pickj] # kinda visible at 8
-                    yvaluefull1=bsqrhosqrad4[condtfull,pickj] # kinda visible at 8
+                    yvalue=bsqrhosqrad4[condt,pickjnx] # kinda visible at 8
+                    yvaluefull=bsqrhosqrad4[condtfull,pickjnx] # kinda visible at 8
+                    yvaluefull1=yvaluefull
                     plt.title(r"Power in $b^2$ at $r=4r_g$ in Jet",fontsize=10)
                 elif whichfftplot==0:
-                    yvalue=bsqrhosqrad4[condt,pickj] # kinda visible at 8
-                    yvaluefull0=bsqrhosqrad4[condtfull,pickj] # kinda visible at 8
+                    yvalue=bsqrhosqrad4[condt,pickjnx] # kinda visible at 8
+                    yvaluefull=bsqrhosqrad4[condtfull,pickjnx] # kinda visible at 8
+                    yvaluefull0=yvaluefull
                     plt.suptitle(r"Power in $b^2$ at $r=4r_g$ in Disk",fontsize=10)
                 #
             else:
@@ -10945,8 +10994,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                 yvalue=np.sin(2.0*np.pi*(xvalue/taupick))
                 yvaluefull0=np.sin(2.0*np.pi*(xvaluefull/taupick))
                 yvaluefull1=yvaluefull0
+                yvaluefull2=yvaluefull0
             #
-            print("picktheta=%g pickj=%d" % (picktheta,pickj)); sys.stdout.flush()
+            print("picktheta=%g pickj=%d pickjnx=%d" % (picktheta,pickj,pickjnx)); sys.stdout.flush()
             #
             #
             #Yfft=sp.fftpack.fft(yvalue)
@@ -10956,7 +11006,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             nfft=len(Yfft)
             print("nfft(ninput/2+1)=%d" % (nfft)); sys.stdout.flush()
             #
-            Yfftfull=np.fft.rfft(yvaluefull0)
+            Yfftfull=np.fft.rfft(yvaluefull)
             nfftfull=len(Yfftfull)
             print("nfftfull(ninput/2+1)=%d" % (nfftfull)); sys.stdout.flush()
             #
@@ -11004,9 +11054,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                 plt.ylabel(r"Power Density",ha='center',labelpad=6)
             else:
                 yaverage=np.mean(yvalue)
-                yaveragefull=np.mean(yvaluefull0)
+                yaveragefull=np.mean(yvaluefull)
                 yrms=np.std(yvalue)
-                yrmsfull=np.std(yvaluefull0)
+                yrmsfull=np.std(yvaluefull)
                 fftfactor=(yrms/yaverage)**2
                 fftfactorfull=(yrmsfull/yaveragefull)**2
                 # van der Klis 1997 and Leahy et al. (1983)
@@ -11029,13 +11079,13 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             #
             if whichfftplot==0:
                 yvalue0=np.copy(yvalue)
-                ytoplot0=ytoplot
+                ytoplot0=np.copy(ytoplot)
             elif whichfftplot==1:
                 yvalue1=np.copy(yvalue)
-                ytoplot1=ytoplot
+                ytoplot1=np.copy(ytoplot)
             elif whichfftplot==2:
                 yvalue2=np.copy(yvalue)
-                ytoplot2=ytoplot
+                ytoplot2=np.copy(ytoplot)
             #
             #
             # FOR PLOT:
@@ -11090,18 +11140,32 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                 plt.savefig("fft1.png",dpi=DPI)#,bbox_inches='tight',pad_inches=0.1)
                 #
                 # FILE:
-                ffft1 = open('dataprefft1.txt', 'w')
-                for ii in np.arange(0,len(xvalue)):
-                    ffft1.write("%d %g   %g %g %g\n" % (ii,xvalue[ii],yvalue0[ii],yvalue1[ii],yvalue2[ii]))
-                ffft1.close()
-                ffft1 = open('dataprefullfft1.txt', 'w')
-                for ii in np.arange(0,len(xvaluefull)):
-                    ffft1.write("%d %g   %g %g %g\n" % (ii,xvaluefull[ii],yvaluefull0[ii],yvaluefull1[ii],yvaluefull2[ii]))
-                ffft1.close()
-                ffft1 = open('datafft1.txt', 'w')
-                for ii in np.arange(0,len(xtoplot)):
-                    ffft1.write("%d %g   %g %g %g\n" % (ii,xtoplot[ii],ytoplot0[ii],ytoplot1[ii],ytoplot2[ii]))
-                ffft1.close()
+                if numplots==3:
+                    ffft1 = open('dataprefft1.txt', 'w')
+                    for ii in np.arange(0,len(xvalue)):
+                        ffft1.write("%d %g   %g %g %g\n" % (ii,xvalue[ii],yvalue0[ii],yvalue1[ii],yvalue2[ii]))
+                    ffft1.close()
+                    ffft1 = open('dataprefullfft1.txt', 'w')
+                    for ii in np.arange(0,len(xvaluefull)):
+                        ffft1.write("%d %g   %g %g %g\n" % (ii,xvaluefull[ii],yvaluefull0[ii],yvaluefull1[ii],yvaluefull2[ii]))
+                    ffft1.close()
+                    ffft1 = open('datafft1.txt', 'w')
+                    for ii in np.arange(0,len(xtoplot)):
+                        ffft1.write("%d %g   %g %g %g\n" % (ii,xtoplot[ii],ytoplot0[ii],ytoplot1[ii],ytoplot2[ii]))
+                    ffft1.close()
+                elif numplots==2:
+                    ffft1 = open('dataprefft1.txt', 'w')
+                    for ii in np.arange(0,len(xvalue)):
+                        ffft1.write("%d %g   %g %g\n" % (ii,xvalue[ii],yvalue0[ii],yvalue1[ii]))
+                    ffft1.close()
+                    ffft1 = open('dataprefullfft1.txt', 'w')
+                    for ii in np.arange(0,len(xvaluefull)):
+                        ffft1.write("%d %g   %g %g\n" % (ii,xvaluefull[ii],yvaluefull0[ii],yvaluefull1[ii]))
+                    ffft1.close()
+                    ffft1 = open('datafft1.txt', 'w')
+                    for ii in np.arange(0,len(xtoplot)):
+                        ffft1.write("%d %g   %g %g\n" % (ii,xtoplot[ii],ytoplot0[ii],ytoplot1[ii]))
+                    ffft1.close()
                 #
                     
             #
@@ -11529,8 +11593,11 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     # FINALPLOT:
     # ssh jmckinne@orange.slac.stanford.edu
-    # cd /lustre/ki/orange/jmckinne/thickdisk7/movie1
-    # scp fft1.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/fft1_thickdisk7.eps ;scp spec2.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/spec2_thickdisk7.eps ; scp plot0qvsth_.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/plottvsr_bphi.eps ; scp plot0qvsth_.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/plottvsth_bphi.eps ; scp lrhosmall4300_Rzxym1.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/lrhosmall4300_Rzxym1.eps; scp lrhosmall4190_Rzxym1.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/lrhosmall4190_Rzxym1.eps ; scp init1.eps final1.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/
+    # cd /lustre/ki/orange/jmckinne/thickdisk7/movie3
+    #
+    # scp fft1.eps jon@ki-rh42:/data/jon/thickdisk/harm_qpo/fft1_thickdisk7.eps ;scp spec1.eps jon@ki-rh42:/data/jon/thickdisk/harm_qpo/spec1_thickdisk7.eps ; scp plot0qvsth_.eps jon@ki-rh42:/data/jon/thickdisk/harm_qpo/plottvsr_bphi.eps ; scp plot0qvsth_.eps jon@ki-rh42:/data/jon/thickdisk/harm_qpo/plottvsth_bphi.eps
+
+    # scp lrhosmall4300_Rzxym1.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/lrhosmall4300_Rzxym1.eps; scp lrhosmall4190_Rzxym1.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/lrhosmall4190_Rzxym1.eps ; scp init1.eps final1.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/
     #
     # copy over data vs. radius , data vs. time, data vs. angle for SM plots:
     # scp datavs*.txt jmckinne@ki-jmck:/data2/jmckinne/thickdisk7/fromorange
@@ -11763,7 +11830,9 @@ def mkpowervsm(loadq=0,qty=None,pllabel="",filenum=0,fileletter="",logvalue=0,ra
         file1.write("%d %g   %g\n" % (ii,xtoplot[ii],ytoplot[ii]))
     file1.close()
     #
+    # FINALPLOTS:
     #
+    # scp powervsm*.txt jmckinne@ki-jmck:/data2/jmckinne/thickdisk7/fromorange/
     #
 
 
@@ -12879,8 +12948,7 @@ def mkmovie(framesize=50, domakeavi=False):
     if len(sys.argv[1:])==3 and sys.argv[2].isdigit() and (sys.argv[3].isdigit() or sys.argv[3][0]=="-") :
         whichi = int(sys.argv[2])
         whichn = int(sys.argv[3])
-        print( "Doing every %d slice of total %d slices" % (whichi, whichn) )
-        sys.stdout.flush()
+        print( "Doing every %d slice of total %d slices" % (whichi, whichn) ) ;sys.stdout.flush()
     else:
         whichi = None
         whichn = None
@@ -12889,6 +12957,7 @@ def mkmovie(framesize=50, domakeavi=False):
         dontloadfiles = True
     else:
         dontloadfiles = False
+        print("Loading grid3d") ;sys.stdout.flush()
         grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=True )
         #rd( "dump0000.bin" )
         #flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
@@ -12896,12 +12965,14 @@ def mkmovie(framesize=50, domakeavi=False):
         sort_nicely(flist)
         firstfieldlinefile=flist[0]
         #rfd("fieldline0000.bin")  #to definea
+        print("Loading header of first file") ;sys.stdout.flush()
         rfdheaderonly(firstfieldlinefile)
         #
         #grid3dlight("gdump")
         qtymem=None #clear to free mem
         rhor=1+(1+a**2)**0.5
         ihor = np.floor(iofr(rhor)+0.5)
+        print("Loading qty file") ;sys.stdout.flush()
         qtymem=getqtyvstime(ihor,0.2)
     #
     for findex, fname in enumerate(flist):
@@ -13131,17 +13202,22 @@ def mk2davg():
         modelname = "Unknown Model"
     #
     print("ModelName = %s" % (modelname) )
-    itemspergroup = 20
-    if len(sys.argv[1:])==3 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
-        whichgroup = int(sys.argv[2])
+    #itemspergroup = 20
+    if len(sys.argv[1:])==4 and sys.argv[2].isdigit() and sys.argv[3].isdigit() and sys.argv[4].isdigit():
+        whichgroups = int(sys.argv[2])
         step = int(sys.argv[3])
-        for whichgroup in np.arange(whichgroup,int(np.ceil(1.0*numfiles/itemspergroup)),step):
+        itemspergroup = int(sys.argv[4])
+        whichgroupe=int(np.ceil(1.0*numfiles/itemspergroup))
+        print("NONMERGE: whichgroups=%d step=%d whichgroupe=%d itemspergroup=%d" % (whichgroups,step,whichgroupe,itemspergroup))
+        for whichgroup in np.arange(whichgroups,whichgroupe,step):
             avgmem = get2davg(whichgroup=whichgroup,itemspergroup=itemspergroup)
         #plot2davg(avgmem)
-    elif len(sys.argv[1:])==4 and sys.argv[2].isdigit() and sys.argv[3].isdigit() and sys.argv[4].isdigit():
+    elif len(sys.argv[1:])==5 and sys.argv[2].isdigit() and sys.argv[3].isdigit() and sys.argv[4].isdigit() and sys.argv[5].isdigit():
         whichgroups = int(sys.argv[2])
         whichgroupe = int(sys.argv[3])
         step = int(sys.argv[4])
+        itemspergroup = int(sys.argv[5])
+        print("MERGE: whichgroups=%d step=%d whichgroupe=%d itemspergroup=%d" % (whichgroups,step,whichgroupe,itemspergroup))
         if step == 0:
             avgmem = get2davg(usedefault=1)
         elif step == 1:
@@ -13195,8 +13271,8 @@ def mkstreamlinefigure():
         vmaxforframe=1.5625
     #
     #
-    mkstreampart1=0 # GODMARK
-    mkstreampart2=0 # GODMARK # set to zero if don't want to read-in qty.npy stuff
+    mkstreampart1=1 # GODMARK
+    mkstreampart2=1 # GODMARK # set to zero if don't want to read-in qty.npy stuff
     mkstreampart3=1
     forceeqsym=1
     #
@@ -13574,7 +13650,7 @@ def mkstreamlinefigure():
     ########################################
     # FINALPLOT:
     # ssh jmckinne@orange.slac.stanford.edu
-    # cd /lustre/ki/orange/jmckinne/thickdisk7/movie1
+    # cd /lustre/ki/orange/jmckinne/thickdisk7/movie3
     # 
     # convert fig2.png fig2.eps ; scp fig2.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/figavgflowfield.eps
     #scp dataavgvsh0.txt dataavgvsh1.txt jmckinne@ki-jmck:/data2/jmckinne/thickdisk7/fromorange/

@@ -286,6 +286,7 @@ then
 		            echo "itot=$itot" >> $thebatch
 		            echo "i=$i" >> $thebatch
 		            echo "runn=$runn" >> $thebatch
+		            echo "itemspergroup=$itemspergroup" >> $thebatch
 		            echo "numcores=$numcores" >> $thebatch
 	            fi
 	            
@@ -570,6 +571,8 @@ then
     # above two must be exactly divisible
     itot=$(( $runn/$numparts ))
     ie=$(( $itot -1 ))
+
+    resid=$(( $runn - $itot * $numparts ))
     
     echo "Running with $itot cores simultaneously"
     
@@ -625,6 +628,7 @@ then
 		            echo "itot=$itot" >> $thebatch
 		            echo "i=$i" >> $thebatch
 		            echo "runn=$runn" >> $thebatch
+		            echo "itemspergroup=$itemspergroup" >> $thebatch
 		            echo "numcores=$numcores" >> $thebatch
 	            fi
 	            
@@ -816,9 +820,13 @@ echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
 
 ###################################
 #
-# avg File (takes average of 20 fieldline files per avg file created)
+# avg File (takes average of $itemspergroup fieldline files per avg file created)
 #
 ####################################
+
+itemspergroup=$(( 20 ))
+
+
 if [ $makeavg -eq 1 ]
 then
 
@@ -904,6 +912,7 @@ then
 		            echo "itot=$itot" >> $thebatch
 		            echo "i=$i" >> $thebatch
 		            echo "runn=$runn" >> $thebatch
+		            echo "itemspergroup=$itemspergroup" >> $thebatch
 		            echo "numcores=$numcores" >> $thebatch
 	            fi
 	            
@@ -932,7 +941,7 @@ then
 		            echo "textrun=\"Avg Data vs. Time: Running i=\$i j=\$j giving runi=\$runi with runn=\$runn\"" >> $thebatch
 		            echo "echo \$textrun" >> $thebatch
 		            echo "sleep 1" >> $thebatch
-		            cmdraw="python $myinitfile5 $modelname "'$runi $runn'
+		            cmdraw="python $myinitfile5 $modelname "'$runi $runn $itemspergroup'
 		            cmdfull='((nohup $cmdraw 2>&1 1>&3 | tee python_${runi}_${cor}_${runn}.stderr.avg.out) 3>&1 1>&2 | tee python_${runi}_${cor}_${runn}.avg.out) > python_${runi}_${cor}_${runn}.full.avg.out 2>&1'
 		            echo "cmdraw=\"$cmdraw\"" >> $thebatch
 		            echo "cmdfull=\"$cmdfull\"" >> $thebatch
@@ -1067,7 +1076,6 @@ then
     # <index of first avg file to use> <index of last avg file to use> <step=1>
     # must be step=1, or no merge occurs
     step=1
-    itemspergroup=$(( 20 ))
     whichgroups=$(( 0 ))
     numavg2dmerge=`ls -vrt | egrep "avg2d"${itemspergroup}"_[0-9]*\.npy"|wc|awk '{print $1}'`
     #whichgroupe=$(( $itemspergroup * $runn ))
@@ -1082,7 +1090,7 @@ then
 	then
 	    echo "((nohup python $myinitfile6 $modelname $whichgroups $whichgroupe $step 2>&1 1>&3 | tee python_${runn}_${runn}.avg.stderr.out) 3>&1 1>&2 | tee python_${runn}_${runn}.avg.out) > python_${runn}_${runn}.avg.full.out 2>&1"
     else
-	    ((nohup python $myinitfile6 $modelname $whichgroups $whichgroupe $step 2>&1 1>&3 | tee python_${runn}_${runn}.avg.stderr.out) 3>&1 1>&2 | tee python_${runn}_${runn}.avg.out) > python_${runn}_${runn}.avg.full.out 2>&1
+	    ((nohup python $myinitfile6 $modelname $whichgroups $whichgroupe $step $itemspergroup 2>&1 1>&3 | tee python_${runn}_${runn}.avg.stderr.out) 3>&1 1>&2 | tee python_${runn}_${runn}.avg.out) > python_${runn}_${runn}.avg.full.out 2>&1
 
         # copy resulting avg file to avg2d.npy
 	    avg2dmerge=`ls -vrt avg2d${itemspergroup}_${groupsnum}_${groupenum}.npy | head -1`    
