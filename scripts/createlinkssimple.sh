@@ -27,10 +27,55 @@ thedir=$1
 
 echo "1"
 rm -rf dirs${thedir}.txt
-listO=`ls  | grep ${thedir}`
+alias ls='ls'
+alias lssdir='ls -ap | grep / | sed "s/\///"'
+listO=`lssdir  | grep ${thedir}`
 list=`echo $listO | sed 's/'${thedir}'\///g' | sed 's/'${thedir}' //g'`
+
+listOnum=`echo $listO | wc -w`
+listnum=`echo $list | wc -w`
+
+if [ $listOnum -eq $listnum ]
+then
+    echo "listOnum and listnum are same!  Didn't remove ${thedir}"
+    echo "begin echo of listO"
+    echo $listO
+    echo "begin echo of list"
+    echo $list
+    echo "${thedir}" >> /data2/jmckinne/badguys1.txt
+    exit
+fi
+
+#list=`echo $listO | sed 's/'${thedir}'\///g' | sed 's/'${thedir}' //g' | sed 's/' ${thedir}'//g'`
+#
+echo "begin echo of list"
 echo $list
+echo "end echo of list"
 for fil in $list ; do echo $fil >> dirs${thedir}.txt ; done
+
+#ls -alrt dirs${thedir}.txt
+
+if [ -e "dirs${thedir}.txt" ]
+then
+    echo "Got some subparts in dirs${thedir}.txt"
+else
+    echo "Got no subparts in dirs${thedir}.txt"
+    echo "${thedir}" >> /data2/jmckinne/badguys2.txt
+    exit
+fi
+
+# check that not killing original directory with actual dump data
+dirparts=`cat dirs${thedir}.txt`
+numdirparts=`echo $dirparts | wc -w`
+echo "Number of parts for ${thedir} is $numdirparts"
+
+if [ $numdirparts -lt 1 ]
+then
+    echo "No sub parts, assume mistake and has original dumps"
+    echo "${thedir}" >> /data2/jmckinne/badguys3.txt
+    exit
+fi
+
 
 echo "2"
 mkdir -p /data2/jmckinne/${thedir}/dumps/
@@ -38,6 +83,8 @@ cd /data2/jmckinne/${thedir}/
 mv ../dirs${thedir}.txt .
 
 # 4) Edit dir list and choose one's want
+
+
 
 # 5) create new full-sim dir and change to dumps dir
 
@@ -52,19 +99,40 @@ rm -rf gdump.bin
 # 6) make links
 echo "4"
 sleep 1
-for mydir in `cat ../dirs${thedir}.txt` ; do echo $mydir ; for fil in `ls ../../$mydir/dumps/fieldline*.bin` ; do echo $fil ; ln -sf $fil . ;  done ; done
 
-# 7) Also make links to gdump.bin and dump0000.bin
 
-firstdir=`head -1 ../dirs${thedir}.txt`
+for mydir in `cat ../dirs${thedir}.txt`
+do
 
-ln -s ../../$firstdir/dumps/gdump.bin .
-ln -s ../../$firstdir/dumps/dump0000.bin .
+    # avoid using directory itself in case didn't remove base directory
+    if [ "${mydir}" == "${thedir}" ]
+    then
+        continue
+    fi
+
+    echo $mydir
+    for fil in `ls ../../$mydir/dumps/fieldline*.bin` 
+    do
+        echo $fil 
+        ln -sf $fil .
+    done
+
+
+    # 7) Also make links to gdump.bin and dump0000.bin
+    #firstdir=`head -1 ../dirs${thedir}.txt`
+    if [ -e ../../$mydir/dumps/gdump.bin ]
+    then
+        ln -s ../../$mydir/dumps/gdump.bin .
+        ln -s ../../$mydir/dumps/dump0000.bin .
+    fi
+done
+
 
 cd ..
 
 echo " "
 echo $list
+echo "Number of parts for ${thedir} is $numdirparts"
 
 #cp -a ../thickdisk9/movie1 .
 #cd movie1/

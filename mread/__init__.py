@@ -917,13 +917,16 @@ def getdefaulttimes():
     elif modelname=="thickdisk15":
         defaultfti=25000
         defaultftf=1e5
-    elif modelname=="thickdisk15r":
+    elif modelname=="thickdiskr15":
         defaultfti=25000
         defaultftf=1e5
     elif modelname=="thickdisk2":
         defaultfti=25000
         defaultftf=1e5
     elif modelname=="thickdisk3":
+        defaultfti=25000
+        defaultftf=1e5
+    elif modelname=="thickdiskhr3":
         defaultfti=25000
         defaultftf=1e5
     elif modelname=="runlocaldipole3dfiducial":
@@ -1719,6 +1722,29 @@ def betascalc(which=1,rdown=0.0,rup=1.0E3):
     #
     #print("betascalc: %g %g %g" % (rhomax, pgmax, pbmax) )
     return betamin,betaavg,betaratofavg,betaratofmax
+
+
+# need integrate when nz=1 because just avg2d data.  Means averaged-out, so sum is recovered by multiplying by number of cells in \phi
+def intangle_foravg2d(qty,hoverr=None,thetamid=np.pi/2,minbsqorho=None,maxbsqorho=None,inflowonly=None,mumax=None,mumin=None,maxbeta=None,which=1):
+    #
+    # translate from avg to normal quantity
+    global bsq,rho,ug,uu,ud,rhoclean,ugclean,enth,unb,isunbound,tiny
+    bsq=avg_bsq
+    rho=avg_rho
+    ug=avg_ug
+    uu=avg_uu
+    ud=avg_ud
+    # averages already removed jet densities
+    rhoclean=rho
+    ugclean=ug
+    enth=1+ugclean*gam/rhoclean
+    unb=enth*ud[0]
+    # unbound here means *thermally* rather than kinetically (-u_t>1) or fully thermo-magnetically (\mu>1) unbound.
+    isunbound=(-unb>1.0)
+    tiny=np.finfo(rho.dtype).tiny
+    #
+    result=intangle(qty,hoverr=hoverr,thetamid=thetamid,minbsqorho=minbsqorho,maxbsqorho=maxbsqorho,inflowonly=inflowonly,mumax=mumax,mumin=mumin,maxbeta=maxbeta,which=which)
+    return(result*(nz))
 
 
 def intangle(qty,hoverr=None,thetamid=np.pi/2,minbsqorho=None,maxbsqorho=None,inflowonly=None,mumax=None,mumin=None,maxbeta=None,which=1):
@@ -2648,6 +2674,15 @@ def finishframe(cb=1,label=1,tight=1,useextent=1,uselim=1,testdpiinches=0,toplot
     DPI=max(DPIx,DPIy)
     resx=DPI*xinches
     resy=DPI*yinches
+    minres=600
+    if resx<minres:
+        DPI=minres/xinches
+        resx=DPI*xinches
+        resy=DPI*yinches
+    if resy<minres:
+        DPI=minres/yinches
+        resx=DPI*xinches
+        resy=DPI*yinches
     F.set_size_inches( (xinches, yinches) )
     print("Resolution should be %i x %i pixels from DPI=%d (DPIxy=%d %d)" % (resx,resy,DPI,DPIx,DPIy))
     #
@@ -3489,6 +3524,10 @@ def rfd(fieldlinefilename,**kwargs):
     else:
         print("No data on gdetB, approximating it.")
         gdetB = np.zeros((4,nx,ny,nz),dtype='float32',order='F')
+        print("shapes:")
+        print(gdet.shape)
+        print(B.shape)
+        print(gdetB.shape)
         gdetB[1:4] = gdet * B[1:4]
         #
 
@@ -8132,7 +8171,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     elif modelname=="thickdisk15":
         fieldtype="Toroidal"
         truemodelname="A5BtN5300"
-    elif modelname=="thickdisk15r":
+    elif modelname=="thickdiskr15":
         fieldtype="Toroidal"
         truemodelname="A5BtN10"
     elif modelname=="thickdisk2":
@@ -8141,6 +8180,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     elif modelname=="thickdisk3":
         fieldtype="Toroidal"
         truemodelname="A94BtN10R"
+    elif modelname=="thickdiskhr3":
+        fieldtype="Toroidal"
+        truemodelname="A94BtN10HR"
     elif modelname=="runlocaldipole3dfiducial":
         fieldtype="PoloidalOld"
         truemodelname="MB09D"
@@ -8762,6 +8804,23 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                         ax.plot(ts[fi],etamwout[fi],'bv')#,label=r'$\dot M$')
                         ax.plot(ts[fi],etaj[fi],'gs')#,label=r'$\dot M$')
         #ax.set_ylim(0,2)
+        yminbh=np.min(etabh)
+        yminj=np.min(etaj)
+        yminmw=np.min(etamwout)
+        ymin=min(yminbh,yminj)
+        ymin=min(ymin,yminmw)
+        # sasha99 at least drops-out at certain points to eta<<0  -- so force eta=0 as minimum
+        if modelname=="sasham9" or modelname=="sasham5" or modelname=="sasha0" or modelname=="sasha1" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9b25" or modelname=="sasha9b50" or modelname=="sasha9b100" or modelname=="sasha9b200" or modelname=="sasha99":
+            ymin=0
+        #
+        ymaxbh=np.max(etabh)
+        ymaxj=np.max(etaj)
+        ymaxmw=np.max(etamwout)
+        ymax=max(ymaxbh,ymaxj)
+        ymax=max(ymax,ymaxmw)
+        #
+        ax.set_ylim(ymin,ymax)
+        #
         ax.set_xlabel(r'$t\;[r_g/c]$',fontsize=16)
         ax.set_ylabel(r'$\eta\ [\%]$',fontsize=16,ha='left',labelpad=20)
         ax.set_xlim(ts[0],ts[-1])
@@ -11130,6 +11189,15 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                 DPI=max(DPIx,DPIy)
                 resx=DPI*xinches
                 resy=DPI*yinches
+                minres=600
+                if resx<minres:
+                    DPI=minres/xinches
+                    resx=DPI*xinches
+                    resy=DPI*yinches
+                if resy<minres:
+                    DPI=minres/yinches
+                    resx=DPI*xinches
+                    resy=DPI*yinches
                 F = pylab.gcf()
                 F.set_size_inches( (xinches, yinches) )
                 print("fft Resolution should be %i x %i pixels from DPI=%d (DPIxy=%d %d)" % (resx,resy,DPI,DPIx,DPIy))
@@ -11567,6 +11635,15 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                 DPI=max(DPIx,DPIy)
                 resx=DPI*xinches
                 resy=DPI*yinches
+                minres=600
+                if resx<minres:
+                    DPI=minres/xinches
+                    resx=DPI*xinches
+                    resy=DPI*yinches
+                if resy<minres:
+                    DPI=minres/yinches
+                    resx=DPI*xinches
+                    resy=DPI*yinches
                 F = pylab.gcf()
                 F.set_size_inches( (xinches, yinches) )
                 print("init Resolution should be %i x %i pixels from DPI=%d (DPIxy=%d %d)" % (resx,resy,DPI,DPIx,DPIy))
@@ -11786,16 +11863,31 @@ def mkpowervsm(loadq=0,qty=None,pllabel="",filenum=0,fileletter="",logvalue=0,ra
     for mm in np.arange(0,numm):
         xtoplot[mm]=mm
     #
-    # set ytoplot as Normalized power (normalized to total power!)
-    # power was originally saved as |a_j|^2, but want to see |a_j| since if (e.g.) a_1=a_0, then sin(\phi) generates deviations as large as average, such that if a_0=1, then a_1=1  means F_M goes up to 2 and down to 0 across in \phi, which is maximum possible deviation.  So normalize to a_0, not sum.
-    #ytoplot=qty/np.sum(qty)
-    ytoplot=np.fabs(qty/qty[0])
+    # see if can to plot at all
+    if qty[0]!=0.0:
+        #
+        #
+        # set ytoplot as Normalized power (normalized to total power!)
+        # power was originally saved as |a_j|^2, but want to see |a_j| since if (e.g.) a_1=a_0, then sin(\phi) generates deviations as large as average, such that if a_0=1, then a_1=1  means F_M goes up to 2 and down to 0 across in \phi, which is maximum possible deviation.  So normalize to a_0, not sum.
+        #ytoplot=qty/np.sum(qty)
+        ytoplot=np.fabs(qty/qty[0])
+        #
+        normpowersumnotm0a=np.sum(qty[1:len(qty)]**2)/np.sum(qty**2)
+        normpowersumnotm0b=np.sum(np.fabs(qty[1:len(qty)]))/np.fabs(qty[0])
+        print("mkpowervsm: %d %s %s : normpowersumnotm0a=%g normpowersumnotm0b=%g" % (filenum,fileletter,pllabel,normpowersumnotm0a,normpowersumnotm0b) )
+    else:
+        ytoplot=np.fabs(qty)
+        normpowersumnotm0a=np.sum(qty[1:len(qty)]**2)
+        normpowersumnotm0b=np.sum(np.fabs(qty[1:len(qty)]))
     #
-    normpowersumnotm0a=np.sum(qty[1:len(qty)]**2)/np.sum(qty**2)
-    normpowersumnotm0b=np.sum(np.fabs(qty[1:len(qty)]))/np.fabs(qty[0])
     #
-    print("mkpowervsm: %d %s %s : normpowersumnotm0a=%g normpowersumnotm0b=%g" % (filenum,fileletter,pllabel,normpowersumnotm0a,normpowersumnotm0b) )
-    
+    if np.sum(qty)==0.0:
+        print("Can't do log plot since all values are just zero")
+        dologplot=0
+    else:
+        dologplot=1
+    #
+    #
     #
     print("mkpowervsm: len(xtoplot)=%d len(ytoplot)=%d" % (len(xtoplot),len(ytoplot))) ; sys.stdout.flush()
     #
@@ -11810,10 +11902,12 @@ def mkpowervsm(loadq=0,qty=None,pllabel="",filenum=0,fileletter="",logvalue=0,ra
     #
     plt.plot(xtoplot[1:numm],ytoplot[1:numm])
     #plt.axis('tight')
-    plt.xscale('log')
-    plt.yscale('log')
-    #plt.xlim(np.log10(xtoplot[0]),np.log10(xtoplot[-1]))
-    #plt.ylim(np.log10(ytoplot[0]),np.log10(ytoplot[-1]))
+    if dologplot==1:
+        plt.xscale('log')
+        plt.yscale('log')
+        #plt.xlim(np.log10(xtoplot[0]),np.log10(xtoplot[-1]))
+        #plt.ylim(np.log10(ytoplot[0]),np.log10(ytoplot[-1]))
+    #
     plt.xlabel(r"$m$ mode",ha='center',labelpad=6)
     plt.ylabel(r"Normalized Power Density",ha='center',labelpad=6)
     plt.savefig("powervsm%d%s_%s.pdf" % (filenum,fileletter,pllabel) )#,bbox_inches='tight',pad_inches=0.1)
@@ -13640,7 +13734,217 @@ def mkstreamlinefigure():
             avg1.write("%g %g " % (avg_psisq[ihor,jj,0],avg_gamma[ihor,jj,0]))
             # other added stuff
             # column 244 245
-            avg1.write("%g %g %g" % (gdet[ihor,jj,0],dxdxp[1,1][ihor,jj,0],dxdxp[2,2][ihor,jj,0]*_dx2))
+            avg1.write("%g %g %g " % (gdet[ihor,jj,0],dxdxp[1,1][ihor,jj,0],dxdxp[2,2][ihor,jj,0]*_dx2))
+            avg1.write("\n")
+        #
+        avg1.close()
+        #####################
+        # average in theta centered on equatorial region, and output everything for Gammie plot in SM
+        rhor=1+(1-a**2)**0.5
+        ihor = np.floor(iofr(rhor)+0.5)
+        # FILE:
+        avg1 = open('dataavgvsr0.txt', 'w')
+        avg1.write("#%s %s %s   %s %s\n" % ("avg_ts","avg_te","avg_nitems","rhor","ihor"))
+        avg1.write("%g %g %d   %g %g %d  %g %g %g  %g  %d %d %d\n" % (avg_ts[0],avg_te[0],avg_nitems[0],a,rhor,ihor,_dx1,_dx2,_dx3,scaletofullwedge(1.0),nx,ny,nz))
+        avg1.close()
+        avg1 = open('dataavgvsr1.txt', 'w')
+        # below doesn't yet show columns for each component of vector or tensors
+        avg1.write("#avg_rho,avg_ug,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_omegaf2b,avg_omegaf1,avg_omegaf1b,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud,avg_TudEM, avg_TudMA, avg_TudPA, avg_TudIE, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq,avg_gamma")
+        avg1.write("#%g %g %d :  %g %d\n" % (avg_ts[0],avg_te[0],avg_nitems[0],rhor,ihor))
+        #
+        rinterp=(r-9.0)*(1.0-0.0)/(0.0-9.0) # gives 0 for use near 9   gives 1 for use near 0
+        rinterp[rinterp>1.0]=1.0
+        rinterp[rinterp<0.0]=0.0
+        # use avg_bsq/avg_rho since more stable than avg_bsqorho
+        cond3=(avg_bsq/avg_rho < rinterp*30.0 + (1.0-rinterp)*10.0)
+        diskcondition=cond3
+        # focus on non-jet for Gammie plot purposes
+        diskcondition=(diskcondition)*(1)
+        #denfactor=1.0 + avg_rho*0.0
+        denfactor=avg_rho # 1 weighting -- maybe squared would be better ala Penna, but then should change other weightings when weight by rho
+        keywordsrhosq={'which': diskcondition}
+        tiny=np.finfo(avg_rho.dtype).tiny
+        rhosqint=intangle_foravg2d(gdet*denfactor,**keywordsrhosq)+tiny
+        #
+        #avg_rho,avg_ug,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_omegaf2b,avg_omegaf1
+        # avg_omegaf1b,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
+        # avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
+        # avg_TudPA, avg_TudIE
+        # avg_gamma
+        # get averages (vs radius only in the end)
+        avgvsr_rho=intangle_foravg2d(gdet*denfactor*avg_rho,**keywordsrhosq)/rhosqint
+        avgvsr_ug=intangle_foravg2d(gdet*denfactor*avg_ug,**keywordsrhosq)/rhosqint
+        avgvsr_bsq=intangle_foravg2d(gdet*denfactor*avg_bsq,**keywordsrhosq)/rhosqint
+        avgvsr_unb=intangle_foravg2d(gdet*denfactor*avg_unb,**keywordsrhosq)/rhosqint
+        avgvsr_uu=np.zeros((4,nx),dtype=np.float32)
+        avgvsr_bu=np.zeros_like(avgvsr_uu)
+        avgvsr_ud=np.zeros_like(avgvsr_uu)
+        avgvsr_bd=np.zeros_like(avgvsr_uu)
+        for ll in np.arange(0,4):
+            avgvsr_uu[ll]=intangle_foravg2d(gdet*denfactor*avg_uu[ll],**keywordsrhosq)/rhosqint
+            avgvsr_bu[ll]=intangle_foravg2d(gdet*denfactor*avg_bu[ll],**keywordsrhosq)/rhosqint
+            avgvsr_ud[ll]=intangle_foravg2d(gdet*denfactor*avg_ud[ll],**keywordsrhosq)/rhosqint
+            avgvsr_bd[ll]=intangle_foravg2d(gdet*denfactor*avg_bd[ll],**keywordsrhosq)/rhosqint
+        avgvsr_B=np.zeros((3,nx),dtype=np.float32)
+        avgvsr_gdetB=np.zeros_like(avgvsr_B)
+        for ll in np.arange(0,3):
+            avgvsr_B[ll]=intangle_foravg2d(gdet*denfactor*avg_B[ll],**keywordsrhosq)/rhosqint
+            avgvsr_gdetB[ll]=intangle_foravg2d(gdet*denfactor*avg_gdetB[ll],**keywordsrhosq)/rhosqint
+        avgvsr_omegaf2=intangle_foravg2d(gdet*denfactor*avg_omegaf2,**keywordsrhosq)/rhosqint
+        avgvsr_omegaf2b=intangle_foravg2d(gdet*denfactor*avg_omegaf2b,**keywordsrhosq)/rhosqint
+        avgvsr_omegaf1=intangle_foravg2d(gdet*denfactor*avg_omegaf1,**keywordsrhosq)/rhosqint
+        avgvsr_omegaf1b=intangle_foravg2d(gdet*denfactor*avg_omegaf1b,**keywordsrhosq)/rhosqint
+        avgvsr_rhouu=np.zeros_like(avgvsr_uu)
+        avgvsr_rhobu=np.zeros_like(avgvsr_uu)
+        avgvsr_rhoud=np.zeros_like(avgvsr_uu)
+        avgvsr_rhobd=np.zeros_like(avgvsr_uu)
+        avgvsr_uguu=np.zeros_like(avgvsr_uu)
+        avgvsr_ugud=np.zeros_like(avgvsr_uu)
+        for ll in np.arange(0,4):
+            avgvsr_rhouu[ll]=intangle_foravg2d(gdet*denfactor*avg_rhouu[ll],**keywordsrhosq)/rhosqint
+            avgvsr_rhobu[ll]=intangle_foravg2d(gdet*denfactor*avg_rhobu[ll],**keywordsrhosq)/rhosqint
+            avgvsr_rhoud[ll]=intangle_foravg2d(gdet*denfactor*avg_rhoud[ll],**keywordsrhosq)/rhosqint
+            avgvsr_rhobd[ll]=intangle_foravg2d(gdet*denfactor*avg_rhobd[ll],**keywordsrhosq)/rhosqint
+            avgvsr_uguu[ll]=intangle_foravg2d(gdet*denfactor*avg_uguu[ll],**keywordsrhosq)/rhosqint
+            avgvsr_ugud[ll]=intangle_foravg2d(gdet*denfactor*avg_ugud[ll],**keywordsrhosq)/rhosqint
+        avgvsr_Tud=np.zeros((4,4,nx),dtype=np.float32)
+        avgvsr_fdd=np.zeros_like(avgvsr_Tud)
+        avgvsr_rhouuud=np.zeros_like(avgvsr_Tud)
+        avgvsr_uguuud=np.zeros_like(avgvsr_Tud)
+        avgvsr_bsquuud=np.zeros_like(avgvsr_Tud)
+        avgvsr_bubd=np.zeros_like(avgvsr_Tud)
+        avgvsr_uuud=np.zeros_like(avgvsr_Tud)
+        avgvsr_TudEM=np.zeros_like(avgvsr_Tud)
+        avgvsr_TudMA=np.zeros_like(avgvsr_Tud)
+        avgvsr_TudPA=np.zeros_like(avgvsr_Tud)
+        avgvsr_TudIE=np.zeros_like(avgvsr_Tud)
+        for ll in np.arange(0,4):
+            for mm in np.arange(0,4):
+                avgvsr_Tud[mm,ll]=intangle_foravg2d(gdet*denfactor*avg_Tud[mm,ll],**keywordsrhosq)/rhosqint
+                avgvsr_fdd[mm,ll]=intangle_foravg2d(gdet*denfactor*avg_fdd[mm,ll],**keywordsrhosq)/rhosqint
+                avgvsr_rhouuud[mm,ll]=intangle_foravg2d(gdet*denfactor*avg_rhouuud[mm,ll],**keywordsrhosq)/rhosqint
+                avgvsr_uguuud[mm,ll]=intangle_foravg2d(gdet*denfactor*avg_uguuud[mm,ll],**keywordsrhosq)/rhosqint
+                avgvsr_bsquuud[mm,ll]=intangle_foravg2d(gdet*denfactor*avg_bsquuud[mm,ll],**keywordsrhosq)/rhosqint
+                avgvsr_bubd[mm,ll]=intangle_foravg2d(gdet*denfactor*avg_bubd[mm,ll],**keywordsrhosq)/rhosqint
+                avgvsr_uuud[mm,ll]=intangle_foravg2d(gdet*denfactor*avg_uuud[mm,ll],**keywordsrhosq)/rhosqint
+                avgvsr_TudEM[mm,ll]=intangle_foravg2d(gdet*denfactor*avg_TudEM[mm,ll],**keywordsrhosq)/rhosqint
+                avgvsr_TudMA[mm,ll]=intangle_foravg2d(gdet*denfactor*avg_TudMA[mm,ll],**keywordsrhosq)/rhosqint
+                avgvsr_TudPA[mm,ll]=intangle_foravg2d(gdet*denfactor*avg_TudPA[mm,ll],**keywordsrhosq)/rhosqint
+                avgvsr_TudIE[mm,ll]=intangle_foravg2d(gdet*denfactor*avg_TudIE[mm,ll],**keywordsrhosq)/rhosqint
+        avgvsr_mu=intangle_foravg2d(gdet*denfactor*avg_mu,**keywordsrhosq)/rhosqint
+        avgvsr_sigma=intangle_foravg2d(gdet*denfactor*avg_sigma,**keywordsrhosq)/rhosqint
+        avgvsr_bsqorho=intangle_foravg2d(gdet*denfactor*avg_bsqorho,**keywordsrhosq)/rhosqint
+        avgvsr_absB=np.zeros_like(avgvsr_B)
+        avgvsr_absgdetB=np.zeros_like(avgvsr_B)
+        for ll in np.arange(0,3):
+            avgvsr_absB[ll]=intangle_foravg2d(gdet*denfactor*avg_absB[ll],**keywordsrhosq)/rhosqint
+            avgvsr_absgdetB[ll]=intangle_foravg2d(gdet*denfactor*avg_absgdetB[ll],**keywordsrhosq)/rhosqint
+        avgvsr_psisq=intangle_foravg2d(gdet*denfactor*avg_psisq,**keywordsrhosq)/rhosqint
+        avgvsr_gamma=intangle_foravg2d(gdet*denfactor*avg_gamma,**keywordsrhosq)/rhosqint
+        avgvsr_gdet=intangle_foravg2d(gdet*denfactor*gdet,**keywordsrhosq)/rhosqint
+        avgvsr_dxdxp11=intangle_foravg2d(gdet*denfactor*dxdxp[1,1],**keywordsrhosq)/rhosqint
+        avgvsr_dxdxp22=intangle_foravg2d(gdet*denfactor*dxdxp[2,2],**keywordsrhosq)/rhosqint
+        #
+        # In SM or wherever: To obtain flux rather than average, just multiply by rhosqint
+        for ii in np.arange(0,len(r[:,ny/2,0])):
+            # columns 1-6
+            avg1.write("%d %g   %g %g %g %g " % (ii, r[ii,ny/2,0], avgvsr_rho[ii],avgvsr_ug[ii],avgvsr_bsq[ii],avgvsr_unb[ii]))
+            # columns 7-10
+            for ll in np.arange(0,4):
+                avg1.write("%g " % (avgvsr_uu[ll,ii]))
+            # columns 11-14
+            for ll in np.arange(0,4):
+                avg1.write("%g " % (avgvsr_bu[ll,ii]))
+            # columns 15-18
+            for ll in np.arange(0,4):
+                avg1.write("%g " % (avgvsr_ud[ll,ii]))
+            # columns 19-22
+            for ll in np.arange(0,4):
+                avg1.write("%g " % (avgvsr_bd[ll,ii]))
+            # columns 23-25
+            for ll in np.arange(0,3):
+                avg1.write("%g " % (avgvsr_B[ll,ii]))
+            # columns 26-28
+            for ll in np.arange(0,3):
+                avg1.write("%g " % (avgvsr_gdetB[ll,ii]))
+            # columns 29-32
+            avg1.write("%g %g %g %g " % (avgvsr_omegaf2[ii],avgvsr_omegaf2b[ii],avgvsr_omegaf1[ii],avgvsr_omegaf1b[ii]))
+            # columns 33-36
+            for ll in np.arange(0,4):
+                avg1.write("%g " % (avgvsr_rhouu[ll,ii]))
+            # columns 37-40
+            for ll in np.arange(0,4):
+                avg1.write("%g " % (avgvsr_rhobu[ll,ii]))
+            # columns 41-44
+            for ll in np.arange(0,4):
+                avg1.write("%g " % (avgvsr_rhoud[ll,ii]))
+            # columns 45-48
+            for ll in np.arange(0,4):
+                avg1.write("%g " % (avgvsr_rhobd[ll,ii]))
+            # columns 49-52
+            for ll in np.arange(0,4):
+                avg1.write("%g " % (avgvsr_uguu[ll,ii]))
+            # columns 53-56
+            for ll in np.arange(0,4):
+                avg1.write("%g " % (avgvsr_ugud[ll,ii]))
+            # columns 57-72
+            for ll in np.arange(0,4):
+                for mm in np.arange(0,4):
+                    avg1.write("%g " % (avgvsr_Tud[mm,ll,ii]))
+            # columns 73-88
+            for ll in np.arange(0,4):
+                for mm in np.arange(0,4):
+                    avg1.write("%g " % (avgvsr_fdd[mm,ll,ii]))
+            # columns 89-104
+            for ll in np.arange(0,4):
+                for mm in np.arange(0,4):
+                    avg1.write("%g " % (avgvsr_rhouuud[mm,ll,ii]))
+            # columns 105-120
+            for ll in np.arange(0,4):
+                for mm in np.arange(0,4):
+                    avg1.write("%g " % (avgvsr_uguuud[mm,ll,ii]))
+            # columns 121-136
+            for ll in np.arange(0,4):
+                for mm in np.arange(0,4):
+                    avg1.write("%g " % (avgvsr_bsquuud[mm,ll,ii]))
+            # columns 137-152
+            for ll in np.arange(0,4):
+                for mm in np.arange(0,4):
+                    avg1.write("%g " % (avgvsr_bubd[mm,ll,ii]))
+            # columns 153-168
+            for ll in np.arange(0,4):
+                for mm in np.arange(0,4):
+                    avg1.write("%g " % (avgvsr_uuud[mm,ll,ii]))
+            # columns 169-184
+            for ll in np.arange(0,4):
+                for mm in np.arange(0,4):
+                    avg1.write("%g " % (avgvsr_TudEM[mm,ll,ii]))
+            # columns 185-200
+            for ll in np.arange(0,4):
+                for mm in np.arange(0,4):
+                    avg1.write("%g " % (avgvsr_TudMA[mm,ll,ii]))
+            # columns 201-216
+            for ll in np.arange(0,4):
+                for mm in np.arange(0,4):
+                    avg1.write("%g " % (avgvsr_TudPA[mm,ll,ii]))
+            # columns 217-232
+            for ll in np.arange(0,4):
+                for mm in np.arange(0,4):
+                    avg1.write("%g " % (avgvsr_TudIE[mm,ll,ii]))
+            # columns 233-235
+            avg1.write("%g %g %g " % (avgvsr_mu[ii], avgvsr_sigma[ii], avgvsr_bsqorho[ii]))
+            # columns 236-238
+            for ll in np.arange(0,3):
+                avg1.write("%g " % (avgvsr_absB[ll,ii]))
+            # columns 239-241
+            for ll in np.arange(0,3):
+                avg1.write("%g " % (avgvsr_absgdetB[ll,ii]))
+            # columns 242-243
+            avg1.write("%g %g " % (avgvsr_psisq[ii],avgvsr_gamma[ii]))
+            # other added stuff
+            # column 244 245
+            avg1.write("%g %g %g " % (avgvsr_gdet[ii],avgvsr_dxdxp11[ii],avgvsr_dxdxp22[ii]*_dx2))
+            avg1.write("%g " % (rhosqint[ii]))
             avg1.write("\n")
         #
         avg1.close()
