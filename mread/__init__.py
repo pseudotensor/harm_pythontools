@@ -4664,7 +4664,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         100])
         lfti = 10000.
         lftf = 20000.
-        pn="A-0.5"
+        pn="A-0.2"
     elif np.abs(a - (-0.9))<1e-4 and bn == "rtf2_15r37.1a-0.9_0_0_0_2xth":
         print( "Using a = -0.9 (rtf2_15r37.1a-0.9_0_0_0_2xth) settings")
         Dt = np.array([16500.-14770.1296385559,
