@@ -4409,6 +4409,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         istag, jstag, hstag, rstag = getstagparams(rmax=20,doplot=0,doreadgrid=0)
     #get base name of the current dir
     bn=os.path.basename(os.getcwd())
+    pn=bn
     if np.abs(a - 0.99)<1e-4 and bn=="rtf2_10r22.82_a0.99_n4_0_0_0":
         #lo-res 0.99 settings
         print( "Using a = 0.99 (rtf2_10r22.82_a0.99_n4_0_0_0) settings")
@@ -4423,6 +4424,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         70])
         lfti = 7000.
         lftf = 20000.
+        pn = "A0.99R10" 
     elif np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) < 1.5:
         #hi-res 0.99 settings
         print( "Using hires a = 0.99 settings")
@@ -4456,6 +4458,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         232,
                         228,
                         222])
+        pn="A0.99fc"
         # Dt = np.array([10800-10000,
         #                -(10800-10000)])
         # Dno = np.array([108,
@@ -4496,6 +4499,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         # Dno = np.array([137])
         lfti = 6000.
         lftf = 1.e5
+        pn="A0.99"
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_20r45.35_0_0_0":
         print( "Using a = 0.9 (rtf2_20r45.35_0_0_0) settings")
         Dt = np.array([15100.-13152.0607139353,
@@ -4508,6 +4512,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         99])
         lfti = 9900.
         lftf = 15695.
+        pn="A0.9R20"
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_pi_0_0_0":
         print( "Using a = 0.9 (rtf2_15r34.1_pi_0_0_0) settings")
         Dt = np.array([15600.-13898.007844829,
@@ -4524,6 +4529,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         80])
         lfti = 8000.
         lftf = 15695.
+        pn="A0.9f"
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_betax0.5_0_0_0":
         print( "Using a = 0.9 (rtf2_15r34.1_betax0.5_0_0_0) settings")
         # Dt = np.array([24400.-22382.7667797495,
@@ -4560,6 +4566,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         150])
         lfti = 15000.
         lftf = 50000.
+        pn="A0.9N200"
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_betax2_0_0_0":
         print( "Using a = 0.9 (rtf2_15r34.1_betax2_0_0_0) settings")
         Dt = np.array([14300.-12041.7226584439,
@@ -4574,6 +4581,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         60])
         lfti = 6000.
         lftf = 50000.
+        pn="A0.9N50"
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_betax4_0_0_0":
         print( "Using a = 0.9 (rtf2_15r34.1_betax4_0_0_0) settings")
         Dt = np.array([17300.-15195.9206754056,
@@ -4590,6 +4598,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         60])
         lfti = 6000.
         lftf = 50000.
+        pn="A0.9N25"
     # elif np.abs(a - (-0.9))<1e-4:
     #     print( "Using a = -0.9 settings")
     #     Dt = np.array([12300.-10106.5605346438,
@@ -4616,6 +4625,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         70])
         lfti = 7000.
         lftf = 20000.
+        pn="A-0.9"
     elif np.abs(a - (-0.9))<1e-4 and bn == "rtf2_15r37.1a-0.9_lr_0_0_0":
         print( "Using a = -0.9 (rtf2_15r37.1a-0.9_lr_0_0_0) settings")
         Dt = np.array([175,
@@ -4628,6 +4638,33 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         -(10200.-10000.)])
         lfti = 10000.
         lftf = 20000.
+        pn="A-0.9l$_\\theta$"
+    elif np.abs(a - (-0.5))<1e-4 and bn == "rtf2_15r36.21_a-0.5_0_0_0":
+        print( "Using a = -0.5 (rtf2_15r36.21_a-0.5_0_0_0) settings")
+        Dt = np.array([14200-13393.5929462345,
+                       13300-11452.1038814141,
+                       11400-8786.54757354983,
+                        8700-8000.,
+                      -(8700-8000.)])
+        Dno = np.array([142,
+                        133,
+                        114
+                        87,
+                        80])
+        lfti = 8000.
+        lftf = 20000.
+        pn="A-0.5"
+    elif np.abs(a - (-0.2))<1e-4 and bn == "rtf2_15r35.64_a-0.2_0_0_0":
+        print( "Using a = -0.5 (rtf2_15r35.64_a-0.2_0_0_0) settings")
+        Dt = np.array([15100-12221.0353104236,
+                       12200-10000.,
+                     -(12200-10000.)])
+        Dno = np.array([151,
+                        122,
+                        100])
+        lfti = 10000.
+        lftf = 20000.
+        pn="A-0.5"
     elif np.abs(a - (-0.9))<1e-4 and bn == "rtf2_15r37.1a-0.9_0_0_0_2xth":
         print( "Using a = -0.9 (rtf2_15r37.1a-0.9_0_0_0_2xth) settings")
         Dt = np.array([16500.-14770.1296385559,
@@ -4642,6 +4679,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         124])
         lfti = 12400.
         lftf = 20000.
+        pn="A-0.9h$_\\theta$"
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf_15r34.1_0_0_0":
         print( "Using a = 0.9 (rtf_15r34.1_0_0_0) settings")
         Dt = np.array([15800.-15685.1591357819,
@@ -4658,6 +4696,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         80])
         lfti = 8000.
         lftf = 20000.
+        pn="A0.9old"
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_2xphi_0_0_0":
         print( "Using a = 0.9 (rtf2_15r34.1_2xphi_0_0_0) settings")
         Dt = np.array([11600-9999.2977584592,
@@ -4666,6 +4705,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         99])
         lfti = 8000.
         lftf = 20000.
+        pn="A0.9h$_\\varphi$"
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_0_0_0":
         print( "Using a = 0.9 (rtf2_15r34.1_0_0_0) settings")
         Dt = np.array([14200.-11819.493630548,
@@ -4680,6 +4720,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         80])
         lfti = 8000.
         lftf = 20000.
+        pn="A0.9"
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_lr_0_0_0":
         print( "Using a = 0.9 (rtf2_15r34.1_lr_0_0_0) settings")
         Dt = np.array([13900.-11092.5104022445,
@@ -4690,6 +4731,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         100])
         lfti = 10000.
         lftf = 20000.
+        pn="A0.9l$_\\theta$"
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_0_0_0_2xth":
         print( "Using a = 0.9 (rtf2_15r34.1_0_0_0_2xth) settings")
         Dt = np.array([18400.-16641.8415831742,
@@ -4702,6 +4744,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         147])
         lfti = 14292.
         lftf = 20000.
+        pn="A0.9h$_\\theta$"
     elif np.abs(a - 0.5)<1e-4:
         print( "Using a = 0.5 settings")
         dt1 = 13000.-10279.
@@ -4716,6 +4759,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         Dno = np.array([133])
         lfti = 10366.5933313178
         lftf = 13300.
+        pn="A0.2"
     elif np.abs(a - 0.1)<1e-4:
         print( "Using a = 0.1 settings")
         Dt = np.array([20000.-18698.2882595555,
@@ -4730,6 +4774,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         100])
         lfti = 10000.
         lftf = 20000.
+        pn="A0.1"
     elif np.abs(a - 0.0)<1e-4:
         print( "Using a = 0.0 settings")
         Dt = np.array([18500.-15700.2418591157,
@@ -4742,11 +4787,13 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         100])
         lfti = 10000.
         lftf = 20000.
+        pn="A0.0"
     else:
         print( "Unknown case: a = %g, using defaults..." % a )
         lfti = 10000.
         lftf = 20000.
         dotakeoutfloors = 0
+        pn="Unknown"
     #os.path.basename(os.getcwd())
     if fti is None or ftf is None:
         fti = lfti
@@ -4760,6 +4807,10 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #!!!rhor = 1+(1-a**2)**0.5
         ihor = iofr(rhor)
         qtymem=getqtyvstime(ihor,0.2)
+        real_tf = qtymem[0,-1,0]+(qtymem[0,-1,0]-qtymem[0,-2,0])
+        if ftf > real_tf and qtymem[0,-1,0] > 0:
+            #last_t + dt:
+            ftf = real_tf
         #XXX
         DU = get_dFfloor(Dt, Dno, dotakeoutfloors=dotakeoutfloors,aphi_j_val=aphi_j_val)
     DUfloor0 = DU[0]
