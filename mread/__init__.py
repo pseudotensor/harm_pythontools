@@ -4946,12 +4946,31 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
             #plt.grid()
     #
     if writefile:
+        if True:
+            etamean2, etastd2, sparmean2, sparstd2 = \
+                computeeta(start_t=fti,end_t=ftf,numintervals=2,doreload=0,qtymem=qtymem)
+        if (ftf-fti)/4. > 1000.:
+            etamean4, etastd4, sparmean4, sparstd4 = \
+                computeeta(start_t=fti,end_t=ftf,numintervals=4,doreload=0,qtymem=qtymem)
+        else:
+            etastd4=0
+            sparstd4=0
+        if (ftf-fti)/6. > 1000.:
+            etamean6, etastd6, sparmean6, sparstd6 = \
+                computeeta(start_t=fti,end_t=ftf,numintervals=6,doreload=0,qtymem=qtymem)
+        else:
+            etastd6=0
+            sparstd6=0
+        etamean = eta[iofr(rx)]
+        etastd = max( etastd2, max(etastd4, etastd6) )
+        sparmean = spar[iofr(rx)]
+        sparstd = max( sparstd2, max(sparstd4, sparstd6) )
         foutpower = open( "siminfo_%s.txt" %  os.path.basename(os.getcwd()), "w" )
         #foutpower.write( "#Name a Mdot   Pjet    Etajet  Psitot Psisqtot**0.5 Psijet Psisqjet**0.5 rstag Pjtotmax Pjtot1rstag Pjtot2rstag Pjtot4rstag Pjtot8rstag\n"  )
         rx = 5
         rj = 100
-        foutpower.write( "%s %f %f %f %f %f %f %f %f %f %f %f %f\n" % (os.path.basename(os.getcwd()), a, 
-                                                           eta[iofr(rx)], spar[iofr(rx)], 
+        foutpower.write( "%s %s %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n" % (pn, os.path.basename(os.getcwd()), a, 
+                                                           etamean, etastd, sparmean, sparstd,
                                                            Fm[iofr(rx)], Fe[iofr(rx)], Fl[iofr(rx)]/dxdxp[3][3][0,0,0],
                                                            FEM[iofr(rhor)], FEM[iofr(2)],
                                                            pjke_mu2_avg[iofr(rj)], 
@@ -5010,16 +5029,17 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     # plt.plot(r[:,0,0],-edtot2davg,label="tot2davg")
     # gc.collect()
 
-def computeeta(start_t=8000,end_t=1e5,numintervals=8,doreload=1):
+def computeeta(start_t=8000,end_t=1e5,numintervals=8,doreload=1,qtymem=None):
     #getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
     grid3d("gdump.bin", use2d = True)
-    qtymem = getqtyvstime( iofr(rhor) )
+    if qtymem is None:
+        qtymem = getqtyvstime( iofr(rhor) )
     start_of_sim_t = qtymem[0,0,0]
     end_t1 = qtymem[0,-1,0]
     if end_t>end_t1:
         end_t = end_t1
     a_t,t_step = np.linspace(start_t,end_t,numintervals,retstep=True,endpoint=False)
-    print( "start_t = %g, end_t = %g, step_t = %g" % (start_t,end_t,t_step) )
+    print( "start_t = %g, end_t = %g, nint = %d, step_t = %g" % (start_t,end_t,numintervals,t_step) )
     a_eta = np.zeros_like(a_t)
     a_Fm = np.zeros_like(a_t)
     a_Fe = np.zeros_like(a_t)
@@ -5029,11 +5049,13 @@ def computeeta(start_t=8000,end_t=1e5,numintervals=8,doreload=1):
             doreload_local = doreload
         else: 
             doreload_local = 0
-        a_eta[i],a_Fm[i],a_Fe[i],a_Fl[i] = takeoutfloors(doreload=doreload_local,fti=t_i,ftf=t_i+t_step,isinteractive=0)
+        a_eta[i],a_Fm[i],a_Fe[i],a_Fl[i] = takeoutfloors(doreload=doreload_local,fti=t_i,ftf=t_i+t_step,isinteractive=0,writefile=False)
+    a_spar = (a_Fl/dxdxp[3,3,0,0,0]-2*a*a_Fe)/a_Fm
     print("Efficiencies:")    
     print zip(a_eta,a_Fm,a_Fe,a_Fl)
     print( "Average efficiency = %g" % a_eta.mean() ) 
     print( "Stdev eta: %g" % a_eta.std() )
+    return( a_eta.mean(), a_eta.std(), a_spar.mean(), a_spar.std() )
     
 
 def plotj(ts,fs,md,jem,jtot):
