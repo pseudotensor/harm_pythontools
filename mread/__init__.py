@@ -3104,8 +3104,10 @@ def iofr(rval):
     res = interp1d(r[:,0,0], ti[:,0,0], kind='linear')
     return(np.floor(res(rval)+0.5))
 
-def plotqtyvstime(qtymem,ihor=11,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None,sigma=None, usegaussianunits=False, aphi_j_val=0):
+def plotqtyvstime(qtymem,ihor=None,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None,sigma=None, usegaussianunits=False, aphi_j_val=0):
     global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
+    if ihor is None:
+        ihor = iofr(rhor)
     nqtyold=98
     nqty=98+32+1
     ###############################
