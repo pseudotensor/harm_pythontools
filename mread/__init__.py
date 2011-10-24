@@ -4742,6 +4742,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         165,
                         148,
                         147])
+        #lfti = 14215.
         lfti = 14292.
         lftf = 20000.
         pn="A0.9h$_\\theta$"
@@ -4949,26 +4950,26 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         if True:
             etamean2, etastd2, sparmean2, sparstd2 = \
                 computeeta(start_t=fti,end_t=ftf,numintervals=2,doreload=0,qtymem=qtymem)
-        if (ftf-fti)/4. > 1000.:
+        if (ftf-fti)/4. > 500.:
             etamean4, etastd4, sparmean4, sparstd4 = \
                 computeeta(start_t=fti,end_t=ftf,numintervals=4,doreload=0,qtymem=qtymem)
         else:
             etastd4=0
             sparstd4=0
-        if (ftf-fti)/6. > 1000.:
+        if (ftf-fti)/6. > 500.:
             etamean6, etastd6, sparmean6, sparstd6 = \
                 computeeta(start_t=fti,end_t=ftf,numintervals=6,doreload=0,qtymem=qtymem)
         else:
             etastd6=0
             sparstd6=0
+        rx = 5
+        rj = 100
         etamean = eta[iofr(rx)]
         etastd = max( etastd2, max(etastd4, etastd6) )
         sparmean = spar[iofr(rx)]
         sparstd = max( sparstd2, max(sparstd4, sparstd6) )
         foutpower = open( "siminfo_%s.txt" %  os.path.basename(os.getcwd()), "w" )
         #foutpower.write( "#Name a Mdot   Pjet    Etajet  Psitot Psisqtot**0.5 Psijet Psisqjet**0.5 rstag Pjtotmax Pjtot1rstag Pjtot2rstag Pjtot4rstag Pjtot8rstag\n"  )
-        rx = 5
-        rj = 100
         foutpower.write( "%s %s %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n" % (pn, os.path.basename(os.getcwd()), a, 
                                                            etamean, etastd, sparmean, sparstd,
                                                            Fm[iofr(rx)], Fe[iofr(rx)], Fl[iofr(rx)]/dxdxp[3][3][0,0,0],
