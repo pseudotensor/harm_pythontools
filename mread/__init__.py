@@ -97,6 +97,7 @@ def assignavg2dvars(avgmem):
     global avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
     global avg_gamma
     global avg_gdetF
+    global avg_bsquu
     #avg defs
     i=0
     avg_ts=avgmem[i,0,:];
@@ -171,16 +172,24 @@ def assignavg2dvars(avgmem):
         avg_gdetF=avgmem[i:i+n,:,:,None].reshape((3,3,nx,ny,1));i+=n
     else:
         print( "Old-ish format: missing avg_gdetF etc." )
+    if avgmem.shape[0] > 205+9+1:
+        n=1
+        avg_bsquu=avgmem[i,:,:,None];i+=n
+    else:
+        n=1
+        print( "Old-ish format: missing avg_bsquu, filling it in with zeros." )
+        avg_bsquu=np.zeros_like(avg_rhouu);i+=n
     #derived quantities
     avg_gamma=avg_uu[0]/(-gn3[0,0])**0.5
 
 
-def get2davgone(whichgroup=-1,itemspergroup=20):
+def get2davgone(whichgroup=-1,itemspergroup=20,removefloors=False):
     """
     """
     global avg_ts,avg_te,avg_nitems,avg_rho,avg_ug,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
     global avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
     global avg_gdetF
+    global avg_bsquu
     if whichgroup < 0 or itemspergroup <= 0:
         print( "whichgroup = %d, itemspergroup = %d not allowed" % (whichgroup, itemspergroup) )
         return None
@@ -195,7 +204,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     #
     #print "Number of time slices: %d" % flist.shape[0]
     #store 2D data
-    navg=206+9
+    navg=206+9+1
     avgmem=np.zeros((navg,nx,ny),dtype=np.float32)
     assignavg2dvars(avgmem)
     ##
@@ -216,9 +225,19 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         print( "Reading " + fldname + " ..." )
         sys.stdout.flush()
         rfd("../"+fldname)
-        print( "Computing " + fldname + " ..." )
         sys.stdout.flush()
-        cvel()
+        cvel()  #does not operate on rho and ug, so fine heree
+        if removefloors:
+            #from Jon
+            rinterp=(r-9.0)*(1.0-0.0)/(0.0-9.0) # gives 0 for use near 9   gives 1 for use near 0
+            rinterp[rinterp>1.0]=1.0
+            rinterp[rinterp<0.0]=0.0
+            cond3=(bsq/rho < (rinterp*30.0 + (1.0-rinterp)*10.0))
+            isfloor = 1-cond3
+            #zero out floor contribution
+            rho[isfloor] *= 0.0
+            ug[isfloor] *= 0.0
+        print( "Computing " + fldname + " ..." )
         Tcalcud()
         faraday()
         #if first item in group
@@ -285,6 +304,8 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         n=9
         if gdetF is not None:
             avg_gdetF[:,:] += (gdetF[1:,:].sum(-1))[:,:,:,:,None]
+        if avg_bsquu is not None:
+            avg_bsquu += (bsq*uu).sum(-1)[:,:,:,None]
     if avg_nitems[0] == 0:
         print( "No files found" )
         return None
