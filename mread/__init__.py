@@ -3424,6 +3424,16 @@ def plotqtyvstime(qtymem,ihor=None,whichplot=None,ax=None,findex=None,fti=None,f
             pjke_mu1=None
             phiabsj_mu2=None
             phiabsj_mu1=None
+            gdetF10=np.zeros_like(edtot)
+            gdetF11=gdetF10
+            gdetF12=gdetF10
+            gdetF20=gdetF10
+            gdetF21=gdetF10
+            gdetF22=gdetF10
+            gdetF30=gdetF10
+            gdetF31=gdetF10
+            gdetF32=gdetF10
+            ldtot=gdetF10
     #end qty defs
     ##############################
     #end copy
