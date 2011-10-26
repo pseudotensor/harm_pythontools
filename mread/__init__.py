@@ -235,8 +235,9 @@ def get2davgone(whichgroup=-1,itemspergroup=20,removefloors=False):
             cond3=(bsq/rho < (rinterp*30.0 + (1.0-rinterp)*10.0))
             isfloor = 1-cond3
             #zero out floor contribution
-            rho[isfloor] *= 0.0
-            ug[isfloor] *= 0.0
+            if isfloor.any():
+                rho[isfloor] = 0.0*rho[isfloor]
+                ug[isfloor] = 0.0*ug[isfloor]
         print( "Computing " + fldname + " ..." )
         Tcalcud()
         faraday()
