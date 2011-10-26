@@ -277,17 +277,33 @@ def get2davgone(whichgroup=-1,itemspergroup=20,removefloors=False):
         avg_Tud+=Tud.sum(-1)[:,:,:,:,None]
         avg_fdd+=fdd.sum(-1)[:,:,:,:,None]
         #
-        uuud=odot(uu,ud).sum(-1)[:,:,:,:,None]
-        # part1: rho u^m u_l
-        avg_rhouuud+=rho.sum(-1)[:,:,None]*uuud
-        # part2: u u^m u_l
-        avg_uguuud+=ug.sum(-1)[:,:,None]*uuud
-        # part3: b^2 u^m u_l
-        avg_bsquuud+=bsq.sum(-1)[:,:,None]*uuud
-        # part6: b^m b_l
-        avg_bubd+=odot(bu,bd)[:,:,:,:,None].sum(-1)
-        # u^m u_l
-        avg_uuud+=uuud
+        if False:
+            #incorrect since sum(-1) is noncommutative
+            uuud=odot(uu,ud).sum(-1)[:,:,:,:,None]
+            # part1: rho u^m u_l
+            avg_rhouuud+=rho.sum(-1)[:,:,None]*uuud
+            # part2: u u^m u_l
+            avg_uguuud+=ug.sum(-1)[:,:,None]*uuud
+            # part3: b^2 u^m u_l
+            avg_bsquuud+=bsq.sum(-1)[:,:,None]*uuud
+            # part6: b^m b_l
+            avg_bubd+=odot(bu,bd)[:,:,:,:,None].sum(-1)
+            # u^m u_l
+            avg_uuud+=uuud
+        else:
+            #properly compute average
+            uuud=odot(uu,ud)[:,:,:,:,None]
+            # part1: rho u^m u_l
+            avg_rhouuud+=(rho[:,:,None]*uuud).sum(-1)
+            # part2: u u^m u_l
+            avg_uguuud+=(ug[:,:,None]*uuud).sum(-1)
+            # part3: b^2 u^m u_l
+            avg_bsquuud+=(bsq[:,:,None]*uuud).sum(-1)
+            # part6: b^m b_l
+            avg_bubd+=odot(bu,bd)[:,:,:,:,None].sum(-1)
+            # u^m u_l
+            avg_uuud+=uuud.sum(-1)
+
         #EM/MA
         avg_TudEM+=TudEM.sum(-1)[:,:,:,:,None]
         avg_TudMA+=TudMA.sum(-1)[:,:,:,:,None]
