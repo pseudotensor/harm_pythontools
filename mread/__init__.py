@@ -7204,7 +7204,7 @@ if __name__ == "__main__":
             sys.stdout.flush()
             aphi=fieldcalc()
             if fldindex == 0:
-                maxaphi = 3 #aphi.max()
+                maxaphi = 3.2 #aphi.max()
             #fig=plt.figure(1,figsize=(10,10))
             #plt.clf()
             #ax = fig.add_subplot(111, aspect='equal')
@@ -7222,7 +7222,7 @@ if __name__ == "__main__":
             #
             #plt.draw()
             plt.savefig( 'frame%04d.png' % fldindex )
-            if fldindex >= 150:
+            if fldindex >= 500:
                 break
 
         
