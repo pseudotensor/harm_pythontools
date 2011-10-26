@@ -173,7 +173,7 @@ def assignavg2dvars(avgmem):
     else:
         print( "Old-ish format: missing avg_gdetF etc." )
     if avgmem.shape[0] >= 206+9+4:
-        n=1
+        n=4
         avg_bsquu=avgmem[i:i+n,:,:,None];i+=n
     else:
         n=4
