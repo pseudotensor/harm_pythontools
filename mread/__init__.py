@@ -7210,6 +7210,7 @@ if __name__ == "__main__":
             #ax = fig.add_subplot(111, aspect='equal')
             numc=15
             plco(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,numc)*maxaphi/np.float(numc))
+            plt.title("t=%3.3g" % t,    fontsize=16, color='k')
             #draw NS
             ax=plt.gca()
             ax.set_aspect('equal')   
