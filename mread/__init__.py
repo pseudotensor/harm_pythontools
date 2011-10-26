@@ -4658,6 +4658,17 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     #                     70])
     #     lfti = 7000.
     #     lftf = 20000.
+    elif np.abs(a - (-0.9))<1e-4 and bn == "rtf2_15r34.1_0_0_0_spinflip":
+        #rtf2_15r37.1a-0.9_0_0_0
+        #with less failfloordudumps:
+        print( "Using a = -0.9 (rtf2_15r34.1_0_0_0_spinflip) settings")
+        Dt = np.array([18700.0-16478.4789523558,
+                       16400.0-14207.0184709617])
+        Dno = np.array([187,
+                        164])
+        lfti = 14207.
+        lftf = 20000.
+        pn="A-0.9flip"
     elif np.abs(a - (-0.9))<1e-4 and bn == "rtf2_15r37.1a-0.9_0_0_0":
         #rtf2_15r37.1a-0.9_0_0_0
         #with less failfloordudumps:
@@ -4675,14 +4686,14 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         pn="A-0.9"
     elif np.abs(a - (-0.9))<1e-4 and bn == "rtf2_15r37.1a-0.9_lr_0_0_0":
         print( "Using a = -0.9 (rtf2_15r37.1a-0.9_lr_0_0_0) settings")
-        Dt = np.array([175,
-                       120,
-                       102,
-                       100])
-        Dno = np.array([17500.-15712.9370781614,
+        Dt = np.array([17500.-15712.9370781614,
                         12000.-10208.5400456126,
                         10200.-10000.,
                         -(10200.-10000.)])
+        Dno = np.array([175,
+                       120,
+                       102,
+                       100])
         lfti = 10000.
         lftf = 20000.
         pn="A-0.9l$_\\theta$"
