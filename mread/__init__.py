@@ -7193,7 +7193,7 @@ if __name__ == "__main__":
         udphi = None
         aphi = None
         gc.collect()
-    if True:
+    if False:
         grid3d("gdump.bin",use2d=True)
         flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
         flist.sort()
@@ -7222,8 +7222,8 @@ if __name__ == "__main__":
             #
             #plt.draw()
             plt.savefig( 'frame%04d.png' % fldindex )
-            if fldindex >= 500:
-                break
+            #if fldindex >= 500:
+            #    break
 
         
         
