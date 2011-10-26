@@ -7193,3 +7193,35 @@ if __name__ == "__main__":
         udphi = None
         aphi = None
         gc.collect()
+    if True:
+        grid3d("gdump.bin",use2d=True)
+        flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
+        flist.sort()
+        for fldindex, fldname in enumerate(flist):
+            print( "Reading " + fldname + " ..." )
+            sys.stdout.flush()
+            rfd("../"+fldname)
+            sys.stdout.flush()
+            aphi=fieldcalc()
+            if fldindex == 0:
+                maxaphi = aphi.max()
+            #fig=plt.figure(1,figsize=(10,10))
+            #plt.clf()
+            #ax = fig.add_subplot(111, aspect='equal')
+            numc=15
+            plco(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,numc)*maxaphi/np.float(numc))
+            #draw NS
+            ax=plt.gca()
+            ax.set_aspect('equal')   
+            el = Ellipse((0,0), 2, 2, facecolor='k', alpha=1)
+            art=ax.add_artist(el)
+            art.set_zorder(20)
+            plt.xlim(0,40)
+            plt.ylim(-20,20)
+            #
+            #plt.draw()
+            plt.savefig( 'frame%04d.png' % fldindex )
+
+
+        
+        
