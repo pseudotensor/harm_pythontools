@@ -198,7 +198,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20,removefloors=False):
         print( "File %s exists, loading from file..." % fname )
         avgmem=np.load( fname )
         return( avgmem )
-    tiny=np.finfo(rho.dtype).tiny
+    #tiny=np.finfo(rho.dtype).tiny
     flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
     flist.sort()
     #
@@ -230,9 +230,12 @@ def get2davgone(whichgroup=-1,itemspergroup=20,removefloors=False):
         cvel()  #does not operate on rho and ug, so fine heree
         if removefloors:
             #from Jon
-            rinterp=(r-9.0)*(1.0-0.0)/(0.0-9.0) # gives 0 for use near 9   gives 1 for use near 0
-            rinterp[rinterp>1.0]=1.0
-            rinterp[rinterp<0.0]=0.0
+            rinterp=(r-9.0)*(1.0-0.0)/(0.0-9.0)   # gives 0 for use near 9   gives 1 for use near 0
+            resetto1=(rinterp>1.0)
+            resetto0=(rinterp<0.0)
+            rinterp = rinterp*(1-resetto0)*(1-resetto1) + resetto1
+            #rinterp[rinterp>1.0]=1.0
+            #rinterp[rinterp<0.0]=0.0
             cond3=(bsq/rho < (rinterp*30.0 + (1.0-rinterp)*10.0))
             isfloor = 1-cond3
             #zero out floor contribution
