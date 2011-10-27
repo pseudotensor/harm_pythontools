@@ -1,6 +1,8 @@
 #!/bin/bash
 # MUST RUN THIS WITH "bash" not "sh" since on some systems that calls "dash" that doesn't correctly handle $RANDOM or other things
 
+# note that ubuntu defaults to dash after update.  Also causes \b to appear as ^H unlike bash.  Can't do \\b either -- still appears as ^H
+
 # Steps:
 #
 # 1) Ensure followed createlinks.sh for each directory.
