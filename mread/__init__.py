@@ -6919,23 +6919,33 @@ def faraday():
     omegaf1=fdd[0,1]/fdd[1,3] # = ftr/frp
     omegaf2=fdd[0,2]/fdd[2,3] # = fth/fhp
     #
-    aB1hat=np.fabs(B[1]*np.sqrt(gv3[1,1]))
-    aB2hat=np.fabs(B[2]*np.sqrt(gv3[2,2]))
-    omegaf1b=(omegaf1*aB1hat+omegaf2*aB2hat)/(aB1hat+aB2hat)
+    B1hat=B[1]*np.sqrt(gv3[1,1])
+    B2hat=B[2]*np.sqrt(gv3[2,2])
+    B3nonhat=B[3]
+    v1hat=uu[1]*np.sqrt(gv3[1,1])/uu[0]
+    v2hat=uu[2]*np.sqrt(gv3[2,2])/uu[0]
+    v3nonhat=uu[3]/uu[0]
+    #
+    aB1hat=np.fabs(B1hat)
+    aB2hat=np.fabs(B2hat)
+    av1hat=np.fabs(v1hat)
+    av2hat=np.fabs(v2hat)
+    #
+    vpol=np.sqrt(av1hat**2 + av2hat**2)
+    Bpol=np.sqrt(aB1hat**2 + aB2hat**2)
+    #
+    #omegaf1b=(omegaf1*aB1hat+omegaf2*aB2hat)/(aB1hat+aB2hat)
     #E1hat=fdd[0,1]*np.sqrt(gn3[1,1])
     #E2hat=fdd[0,2]*np.sqrt(gn3[2,2])
     #Epabs=np.sqrt(E1hat**2+E2hat**2)
     #Bpabs=np.sqrt(aB1hat**2+aB2hat**2)+1E-15
     #omegaf2b=Epabs/Bpabs
-    vphi=uu[3]/uu[0]
-    av1hat=np.fabs(uu[1]*np.sqrt(gv3[1,1]))
-    av2hat=np.fabs(uu[2]*np.sqrt(gv3[2,2]))
-    vpol=np.sqrt(av1hat**2 + av2hat**2)
-    Bpol=np.sqrt(aB1hat**2 + aB2hat**2)
-    # assume field swept back so omegaf is always larger than vphi
-    omegaf2b=np.fabs(vphi) + (vpol/Bpol)*np.fabs(B[3])
     #
-
+    # assume field swept back so omegaf is always larger than vphi (only true for outflow, so put in sign switch for inflow as relevant for disk near BH or even jet near BH)
+    omegaf2b=np.fabs(v3nonhat) + np.sign(uu[1])*(vpol/Bpol)*np.fabs(B3nonhat)
+    #
+    omegaf1b=v3nonhat - B3nonhat*(v1hat*B1hat+v2hat*B2hat)/(B1hat**2+B2hat**2)
+    #
 
 def jetpowcalc(which=2,minbsqorho=None,mumin=None,mumax=None,maxbeta=None,maxbsqorho=None,donorthsouth=0):
     if which==3:
