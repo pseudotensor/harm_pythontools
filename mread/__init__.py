@@ -190,6 +190,8 @@ def get2davgone(whichgroup=-1,itemspergroup=20,removefloors=False):
     global avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
     global avg_gdetF
     global avg_bsquu
+    global rho
+    global ug
     if whichgroup < 0 or itemspergroup <= 0:
         print( "whichgroup = %d, itemspergroup = %d not allowed" % (whichgroup, itemspergroup) )
         return None
@@ -198,7 +200,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20,removefloors=False):
         print( "File %s exists, loading from file..." % fname )
         avgmem=np.load( fname )
         return( avgmem )
-    #tiny=np.finfo(rho.dtype).tiny
+    tiny=np.finfo(rho.dtype).tiny
     flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
     flist.sort()
     #
@@ -1711,30 +1713,30 @@ def rfd(fieldlinefilename,**kwargs):
     #Face-centered magnetic field components multiplied by metric determinant: gdetB1, gdetB2, gdetB3
     global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,rho,lrho,ug,uu,uut,uu,B,uux,gdetB,rhor,r,h,ph,gdetF,fdbody
     #read image
-    # if 'rho' in globals():
-    #     del rho
-    # if 'lrho' in globals():
-    #     del lrho
-    # if 'ug' in globals():
-    #     del ug
-    # if 'uu' in globals():
-    #     del uu
-    # if 'uut' in globals():
-    #     del uut
-    # if 'uu' in globals():
-    #     del uu
-    # if 'B' in globals():
-    #     del B
-    # if 'uux' in globals():
-    #     del uux
-    # if 'gdetB' in globals():
-    #     del gdetB
-    # if 'rhor' in globals():
-    #     del rhor
-    # if 'gdetF' in globals():
-    #     del gdetF
-    # if 'fdbody' in globals():
-    #     del fdbody
+    if 'rho' in globals():
+        del rho
+    if 'lrho' in globals():
+        del lrho
+    if 'ug' in globals():
+        del ug
+    if 'uu' in globals():
+        del uu
+    if 'uut' in globals():
+        del uut
+    if 'uu' in globals():
+        del uu
+    if 'B' in globals():
+        del B
+    if 'uux' in globals():
+        del uux
+    if 'gdetB' in globals():
+        del gdetB
+    if 'rhor' in globals():
+        del rhor
+    if 'gdetF' in globals():
+        del gdetF
+    if 'fdbody' in globals():
+        del fdbody
     fin = open( "dumps/" + fieldlinefilename, "rb" )
     header = fin.readline().split()
     #time of the dump
