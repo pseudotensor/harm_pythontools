@@ -219,6 +219,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20,removefloors=False):
     sys.stdout.flush()
     #end avg defs
     for fldindex, fldname in enumerate(flist):
+        gc.collect()
         if( whichgroup >=0 and itemspergroup > 0 ):
             if( fldindex / itemspergroup != whichgroup ):
                 continue
@@ -236,8 +237,13 @@ def get2davgone(whichgroup=-1,itemspergroup=20,removefloors=False):
             isfloor = 1-cond3
             #zero out floor contribution
             if isfloor.any():
-                rho[isfloor] = 0.0*rho[isfloor]
-                ug[isfloor] = 0.0*ug[isfloor]
+                rho *= cond3
+                ug *= cond3
+            del cond3
+            del rinterp
+            del resetto1
+            del resetto0
+            del isfloor
         print( "Computing " + fldname + " ..." )
         Tcalcud()
         faraday()
@@ -1700,8 +1706,32 @@ def rfd(fieldlinefilename,**kwargs):
     #Velocity components: u1, u2, u3, 
     #Cell-centered magnetic field components: B1, B2, B3, 
     #Face-centered magnetic field components multiplied by metric determinant: gdetB1, gdetB2, gdetB3
-    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,rho,lrho,ug,uu,uut,uu,B,uux,gdetB,rhor,r,h,ph,gdetF
+    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,rho,lrho,ug,uu,uut,uu,B,uux,gdetB,rhor,r,h,ph,gdetF,fdbody
     #read image
+    # if 'rho' in globals():
+    #     del rho
+    # if 'lrho' in globals():
+    #     del lrho
+    # if 'ug' in globals():
+    #     del ug
+    # if 'uu' in globals():
+    #     del uu
+    # if 'uut' in globals():
+    #     del uut
+    # if 'uu' in globals():
+    #     del uu
+    # if 'B' in globals():
+    #     del B
+    # if 'uux' in globals():
+    #     del uux
+    # if 'gdetB' in globals():
+    #     del gdetB
+    # if 'rhor' in globals():
+    #     del rhor
+    # if 'gdetF' in globals():
+    #     del gdetF
+    # if 'fdbody' in globals():
+    #     del fdbody
     fin = open( "dumps/" + fieldlinefilename, "rb" )
     header = fin.readline().split()
     #time of the dump
@@ -1727,6 +1757,7 @@ def rfd(fieldlinefilename,**kwargs):
     #read grid dump per-cell data
     #
     body = np.fromfile(fin,dtype=np.float32,count=-1)
+    fdbody=body
     fin.close()
     d=body.view().reshape((-1,nx,ny,nz),order='F')
     #rho, u, -hu_t, -T^t_t/U0, u^t, v1,v2,v3,B1,B2,B3
@@ -1800,6 +1831,24 @@ def rfd(fieldlinefilename,**kwargs):
 
 def cvel():
     global ud,etad, etau, gamma, vu, vd, bu, bd, bsq
+    if 'ud' in globals():
+        del ud
+    if 'etad' in globals():
+        del etad 
+    if 'etau' in globals():
+        del etau 
+    if 'gamma' in globals():
+        del gamma 
+    if 'vu' in globals():
+        del vu 
+    if 'vd' in globals():
+        del vd 
+    if 'bu' in globals():
+        del bu 
+    if 'bd' in globals():
+        del bd 
+    if 'bsq' in globals():
+        del bsq
     ud = mdot(gv3,uu)                  #g_mn u^n
     etad = np.zeros_like(uu)
     etad[0] = -1/(-gn3[0,0])**0.5      #ZAMO frame velocity (definition)
@@ -1916,50 +1965,51 @@ def grid3d(dumpname,use2d=False,doface=False): #read grid dump file: header and 
     ck = gd[106:110].view().reshape((4,nx,ny,lnz), order='F')
     #grid mapping Jacobian
     dxdxp = gd[110:126].view().reshape((4,4,nx,ny,lnz), order='F').transpose(1,0,2,3,4)
-    #CELL VERTICES:
-    #RADIAL:
-    #add an extra dimension to rf container since one more faces than centers
-    rf = np.zeros((r.shape[0]+1,r.shape[1]+1,r.shape[2]+1))
-    #operate on log(r): average becomes geometric mean, etc
-    rf[1:nx,0:ny,0:lnz] = (r[1:nx]*r[0:nx-1])**0.5 #- 0.125*(dxdxp[1,1,1:nx]/r[1:nx]-dxdxp[1,1,0:nx-1]/r[0:nx-1])*_dx1
-    #extend in theta
-    rf[1:nx,ny,0:lnz] = rf[1:nx,ny-1,0:lnz]
-    #extend in phi
-    rf[1:nx,:,lnz]   = rf[1:nx,:,lnz-1]
-    #extend in r
-    rf[0] = 0*rf[0] + Rin
-    rf[nx] = 0*rf[nx] + Rout
-    #ANGULAR:
-    hf = np.zeros((h.shape[0]+1,h.shape[1]+1,h.shape[2]+1))
-    hf[0:nx,1:ny,0:lnz] = 0.5*(h[:,1:ny]+h[:,0:ny-1]) #- 0.125*(dxdxp[2,2,:,1:ny]-dxdxp[2,2,:,0:ny-1])*_dx2
-    hf[1:nx-1,1:ny,0:lnz] = 0.5*(hf[0:nx-2,1:ny,0:lnz]+hf[1:nx-1,1:ny,0:lnz])
-    #populate ghost cells in r
-    hf[nx,1:ny,0:lnz] = hf[nx-1,1:ny,0:lnz]
-    #populate ghost cells in phi
-    hf[:,1:ny,lnz] = hf[:,1:ny,lnz-1]
-    #populate ghost cells in theta (note: no need for this since already initialized everything to zero)
-    hf[:,0] = 0*hf[:,0] + 0
-    hf[:,ny] = 0*hf[:,ny] + np.pi
-    #TOROIDAL:
-    phf = np.zeros((ph.shape[0]+1,ph.shape[1]+1,ph.shape[2]+1))
-    phf[0:nx,0:ny,0:lnz] = ph[0:nx,0:ny,0:lnz] - dxdxp[3,3,0,0,0]*0.5*_dx3
-    #extend in phi
-    phf[0:nx,0:ny,lnz]   = ph[0:nx,0:ny,lnz-1] + dxdxp[3,3,0,0,0]*0.5*_dx3
-    #extend in r
-    phf[nx,0:ny,:]   =   phf[nx-1,0:ny,:]
-    #extend in theta
-    phf[:,ny,:]   =   phf[:,ny-1,:]
-    #indices
-    #tif=np.zeros(ti.shape[0]+1,ti.shape[1]+1,ti.shape[2]+1)
-    #tjf=np.zeros(tj.shape[0]+1,tj.shape[1]+1,tj.shape[2]+1)
-    #tkf=np.zeros(tk.shape[0]+1,tk.shape[1]+1,tk.shape[2]+1)
-    tif=np.arange(0,(nx+1)*(ny+1)*(lnz+1)).reshape((nx+1,ny+1,lnz+1),order='F')
-    tjf=np.arange(0,(nx+1)*(ny+1)*(lnz+1)).reshape((nx+1,ny+1,lnz+1),order='F')
-    tkf=np.arange(0,(nx+1)*(ny+1)*(lnz+1)).reshape((nx+1,ny+1,lnz+1),order='F')
-    tif %= (nx+1)
-    tjf /= (nx+1)
-    tjf %= (ny+1)
-    tkf /= (ny+1)*(lnz+1)
+    if doface:
+        #CELL VERTICES:
+        #RADIAL:
+        #add an extra dimension to rf container since one more faces than centers
+        rf = np.zeros((r.shape[0]+1,r.shape[1]+1,r.shape[2]+1))
+        #operate on log(r): average becomes geometric mean, etc
+        rf[1:nx,0:ny,0:lnz] = (r[1:nx]*r[0:nx-1])**0.5 #- 0.125*(dxdxp[1,1,1:nx]/r[1:nx]-dxdxp[1,1,0:nx-1]/r[0:nx-1])*_dx1
+        #extend in theta
+        rf[1:nx,ny,0:lnz] = rf[1:nx,ny-1,0:lnz]
+        #extend in phi
+        rf[1:nx,:,lnz]   = rf[1:nx,:,lnz-1]
+        #extend in r
+        rf[0] = 0*rf[0] + Rin
+        rf[nx] = 0*rf[nx] + Rout
+        #ANGULAR:
+        hf = np.zeros((h.shape[0]+1,h.shape[1]+1,h.shape[2]+1))
+        hf[0:nx,1:ny,0:lnz] = 0.5*(h[:,1:ny]+h[:,0:ny-1]) #- 0.125*(dxdxp[2,2,:,1:ny]-dxdxp[2,2,:,0:ny-1])*_dx2
+        hf[1:nx-1,1:ny,0:lnz] = 0.5*(hf[0:nx-2,1:ny,0:lnz]+hf[1:nx-1,1:ny,0:lnz])
+        #populate ghost cells in r
+        hf[nx,1:ny,0:lnz] = hf[nx-1,1:ny,0:lnz]
+        #populate ghost cells in phi
+        hf[:,1:ny,lnz] = hf[:,1:ny,lnz-1]
+        #populate ghost cells in theta (note: no need for this since already initialized everything to zero)
+        hf[:,0] = 0*hf[:,0] + 0
+        hf[:,ny] = 0*hf[:,ny] + np.pi
+        #TOROIDAL:
+        phf = np.zeros((ph.shape[0]+1,ph.shape[1]+1,ph.shape[2]+1))
+        phf[0:nx,0:ny,0:lnz] = ph[0:nx,0:ny,0:lnz] - dxdxp[3,3,0,0,0]*0.5*_dx3
+        #extend in phi
+        phf[0:nx,0:ny,lnz]   = ph[0:nx,0:ny,lnz-1] + dxdxp[3,3,0,0,0]*0.5*_dx3
+        #extend in r
+        phf[nx,0:ny,:]   =   phf[nx-1,0:ny,:]
+        #extend in theta
+        phf[:,ny,:]   =   phf[:,ny-1,:]
+        #indices
+        #tif=np.zeros(ti.shape[0]+1,ti.shape[1]+1,ti.shape[2]+1)
+        #tjf=np.zeros(tj.shape[0]+1,tj.shape[1]+1,tj.shape[2]+1)
+        #tkf=np.zeros(tk.shape[0]+1,tk.shape[1]+1,tk.shape[2]+1)
+        tif=np.arange(0,(nx+1)*(ny+1)*(lnz+1)).reshape((nx+1,ny+1,lnz+1),order='F')
+        tjf=np.arange(0,(nx+1)*(ny+1)*(lnz+1)).reshape((nx+1,ny+1,lnz+1),order='F')
+        tkf=np.arange(0,(nx+1)*(ny+1)*(lnz+1)).reshape((nx+1,ny+1,lnz+1),order='F')
+        tif %= (nx+1)
+        tjf /= (nx+1)
+        tjf %= (ny+1)
+        tkf /= (ny+1)*(lnz+1)
     gc.collect() #try to release unneeded memory
     print( "Done!" )
 
@@ -3013,6 +3063,20 @@ def Tcalcud():
     pg = (gam-1)*ug
     w=rho+ug+pg
     eta=w+bsq
+    if 'Tud' in globals():
+        del Tud
+    if 'TudMA' in globals():
+        del TudMA
+    if 'TudEM' in globals():
+        del TudEM
+    if 'mu' in globals():
+        del mu
+    if 'sigma' in globals():
+        del sigma
+    if 'unb' in globals():
+        del unb
+    if 'isunbound' in globals():
+        del isunbound
     Tud = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
     TudMA = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
     TudEM = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
@@ -3032,6 +3096,14 @@ def Tcalcud():
 
 def faraday():
     global fdd, fuu, omegaf1, omegaf2
+    if 'fdd' in globals():
+        del fdd
+    if 'fuu' in globals():
+        del fuu
+    if 'omegaf1' in globals():
+        del omegaf1
+    if 'omemaf2' in globals():
+        del omegaf2
     # these are native values according to HARM
     fdd = np.zeros((4,4,nx,ny,nz),dtype=rho.dtype)
     #fdd[0,0]=0*gdet
