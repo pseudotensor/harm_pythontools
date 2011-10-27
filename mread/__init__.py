@@ -49,8 +49,10 @@ def get2davg(fname=None,usedefault=0,whichgroup=-1,whichgroups=-1,whichgroupe=-1
         return None
     #
     if fname is None:
-        if usedefault:
+        if usedefault==1:
             fname = "avg2d.npy"
+        elif usedefault==2:
+            fname = "avg2dnf.npy"
         else:
             fname = "avg2d%02d_%04d_%04d.npy" % (itemspergroup, whichgroups, whichgroupe)
     if os.path.isfile( fname ):
@@ -1033,6 +1035,7 @@ def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
     cb = kwargs.pop('cb', False)
     nc = kwargs.pop('nc', 15)
     k = kwargs.pop('k',0)
+    isfilled = kwargs.pop('isfilled',False)
     if None != xcoord and None != ycoord:
         xcoord = xcoord[:,:,None] if xcoord.ndim == 2 else xcoord[:,:,k:k+1]
         ycoord = ycoord[:,:,None] if ycoord.ndim == 2 else ycoord[:,:,k:k+1]
@@ -1040,9 +1043,15 @@ def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
     if ax is None:
         ax = plt.gca()
     if( xcoord == None or ycoord == None ):
-        res = ax.contour(myvar[:,:,0].transpose(),nc,**kwargs)
+        if isfilled:
+            res = ax.contourf(myvar[:,:,0].transpose(),nc,**kwargs)
+        else:
+            res = ax.contour(myvar[:,:,0].transpose(),nc,**kwargs)
     else:
-        res = ax.contour(xcoord[:,:,0],ycoord[:,:,0],myvar[:,:,0],nc,**kwargs)
+        if isfilled:
+            res = ax.contourf(xcoord[:,:,0],ycoord[:,:,0],myvar[:,:,0],nc,**kwargs)
+        else:
+            res = ax.contour(xcoord[:,:,0],ycoord[:,:,0],myvar[:,:,0],nc,**kwargs)
     if( cb == True): #use color bar
         plt.colorbar(res,ax=ax)
 
@@ -1067,7 +1076,7 @@ def reinterp(vartointerp,extent,ncell,domask=1,isasymmetric=False):
     xi = np.linspace(extent[0], extent[1], ncell)
     yi = np.linspace(extent[2], extent[3], ncell)
     # grid the data.
-    zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method='cubic')
+    zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method='linear')
     #zi[interior] = np.ma.masked
     if domask!=0:
         interior = np.sqrt((xi[None,:]**2) + (yi[:,None]**2)) < (1+np.sqrt(1-a**2))*domask
@@ -1107,7 +1116,7 @@ def reinterpxy(vartointerp,extent,ncell,domask=1):
 def ftr(x,xb,xf):
     return( amax(0.0*x,amin(1.0+0.0*x,1.0*(x-xb)/(xf-xb))) )
     
-def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2):
+def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2,whichr=0.9):
     extent=(-len,len,-len,len)
     palette=cm.jet
     palette.set_bad('k', 1.0)
@@ -1217,7 +1226,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
                 # if t < 1500:
                 lw *= ftr(iaphi,0.001,0.002)
         #pdb.set_trace()
-        traj = fstreamplot(yi,xi,iBR,iBz,ua=iBaR,va=iBaz,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=detectLoops,dodiskfield=dodiskfield,dobhfield=dobhfield,startatmidplane=startatmidplane,a=a,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,dsval=dsval,color=color,doarrows=doarrows,dorandomcolor=dorandomcolor,skipblankint=skipblankint,minindent=minindent,minlengthdefault=minlengthdefault,arrowsize=arrowsize,startxabs=startxabs,startyabs=startyabs,populatestreamlines=populatestreamlines,useblankdiskfield=useblankdiskfield,dnarrow=dnarrow)
+        traj = fstreamplot(yi,xi,iBR,iBz,ua=iBaR,va=iBaz,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=detectLoops,dodiskfield=dodiskfield,dobhfield=dobhfield,startatmidplane=startatmidplane,a=a,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,dsval=dsval,color=color,doarrows=doarrows,dorandomcolor=dorandomcolor,skipblankint=skipblankint,minindent=minindent,minlengthdefault=minlengthdefault,arrowsize=arrowsize,startxabs=startxabs,startyabs=startyabs,populatestreamlines=populatestreamlines,useblankdiskfield=useblankdiskfield,dnarrow=dnarrow,whichr=whichr)
         #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
     ax.set_xlim(extent[0],extent[1])
     ax.set_ylim(extent[2],extent[3])
@@ -4335,10 +4344,10 @@ def timeavg( qty, ts, fti, ftf, step = 1, sigma = None ):
 
     return( qtyavg )
 
-def getstagparams(var=None,rmax=20,doplot=1,doreadgrid=1):
+def getstagparams(var=None,rmax=20,doplot=1,doreadgrid=1,usedefault=1,fixupnearaxis=False):
     if doreadgrid:
         grid3d("gdump.bin",use2d=True)
-    avgmem = get2davg(usedefault=1)
+    avgmem = get2davg(usedefault=usedefault)
     assignavg2dvars(avgmem)
     #a large enough distance that floors are not applied, yet close enough that reaches inflow equilibrium
     rnoflooradded=rmax
@@ -4348,10 +4357,11 @@ def getstagparams(var=None,rmax=20,doplot=1,doreadgrid=1):
     jstag = np.floor( findroot2d(sol, tj, axis = 1, isleft=True, fallback = 1, fallbackval = iofr(rnoflooradded)) + 0.5 )
     rstag = findroot2d( sol, r, axis = 1, isleft=True, fallback = 1, fallbackval = rnoflooradded )
     hstag = findroot2d( sol, h, axis = 1, isleft=True, fallback = 1, fallbackval = np.pi/2.)
-    for j in np.array([1,-2]):
-        rstag[j]=0.5*(rstag[j-1]+rstag[j+1])
-        istag[j]=iofr(rstag[j])
-        hstag[j]=h[istag[j],j,0]
+    if fixupnearaxis:
+        for j in np.array([1,-2]):
+            rstag[j]=0.5*(rstag[j-1]+rstag[j+1])
+            istag[j]=iofr(rstag[j])
+            hstag[j]=h[istag[j],j,0]
     if doplot:
         plt.figure(1)
         plt.clf()
@@ -6268,12 +6278,12 @@ def mkmanystreamlinesxy():
     # plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02)
     plt.savefig("fig2oneline.png",bbox_inches='tight',pad_inches=0.02,dpi=300)
 
-def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,showticks=True):
+def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,showticks=True,usedefault=2):
     mylen = length/frac
     arrowsize=4
     grid3d("gdump.bin",use2d=True)
     rfd("fieldline0000.bin")
-    avgmem = get2davg(usedefault=1)
+    avgmem = get2davg(usedefault=usedefault)
     assignavg2dvars(avgmem)
     fig=plt.figure(1,figsize=(12,9),dpi=300,frameon=frameon)
     fig.patch.set_facecolor('#D8D8D8')
@@ -6282,12 +6292,25 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
     ax = fig.add_subplot(111, aspect='equal', frameon=frameon)
     ax.patch.set_facecolor('#D8D8D8')
     ax.patch.set_alpha(1.0)
-    if doenergy==False:
+    if doenergy==False and False:
         #velocity
+        if True:
+            avg_uu[2,:,-1]*=0
+            avg_uu[2,:,-2]*=0
+            avg_uu[2,:,0]*=0
+            avg_uu[2,:,1]*=0
+        #avg_uu[1,:,-3:-1] = np.abs(avg_uu[1,:,-3:-1])
+        # avg_uu[1,:,-1]=avg_uu[1,:,-4]
+        # avg_uu[1,:,-2]=avg_uu[1,:,-4]
+        # avg_uu[1,:,-3]=avg_uu[1,:,-4]
+        #avg_uu[1,:,0:3] = np.abs(avg_uu[1,:,0:3])
+        # avg_uu[1,:,0]=avg_uu[1,:,3]
+        # avg_uu[1,:,1]=avg_uu[1,:,3]
+        # avg_uu[1,:,2]=avg_uu[1,:,3]
         B[1:] = avg_uu[1:]
         bsq = avg_bsq
-        mkframe("myframe",len=mylen,ax=ax,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.0025,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
-    if doenergy==True:
+        mkframe("myframe",len=mylen,ax=ax,density=4,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.0025,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
+    if doenergy==True and False:
         #energy
         B[1:] = avg_Tud[1:,0]
         bsq = avg_bsq
@@ -6298,7 +6321,16 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         bsq = avg_bsq
         mkframe("myframe",len=mylen,ax=ax,density=4,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=12,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='r',lw=2,startatmidplane=True,showjet=False,arrowsize=arrowsize)
     if True:
-        istag, jstag, hstag, rstag = getstagparams(doplot=0)
+        #KE+EM without floors
+        B[1:] = -avg_Tud[1:,0]-avg_rhouu[1:]
+        bsq = avg_bsq
+        plt.figure(1)
+        gdetB[1:] = avg_gdetB[0:]
+        mu = avg_mu
+        # mkframe("myframe",len=mylen,ax=ax,density=4,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.0025,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
+        mkframe("myframe",len=mylen,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=28,dodiskfield=0,minlenbhfield=0.1,minlendiskfield=0.1,dsval=0.001,color='r',lw=2,startatmidplane=True,showjet=False,arrowsize=arrowsize,skipblankint=True,populatestreamlines=False,useblankdiskfield=False,dnarrow=4,whichr=15)
+    if True:
+        istag, jstag, hstag, rstag = getstagparams(doplot=0,usedefault=usedefault)
         myRmax=4
         #z>0
         rs=rstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)>0]
@@ -7207,7 +7239,7 @@ if __name__ == "__main__":
         #mkmovie(prefactor=100.,usegaussianunits=True,domakeframes=domakeframes)
     if False:
         #fig2 with grayscalestreamlines and red field lines
-        mkstreamlinefigure(length=50,doenergy=False,frameon=True,dpi=600,showticks=False)
+        mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=False)
         #mkstreamlinefigure(length=4,doenergy=False)
     if False:
         #FIGURE 1 LOTSOPANELS
