@@ -6064,6 +6064,8 @@ def mk2davg():
                 avgmem = get2davg(whichgroup=whichgroup,itemspergroup=itemspergroup)
         print( "Assigning averages..." )
         assignavg2dvars(avgmem)
+    else:
+        return
     plot2davg(whichplot=1)
     gc.collect()
 
