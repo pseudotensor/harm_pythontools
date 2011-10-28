@@ -6279,7 +6279,9 @@ def mkmanystreamlinesxy():
     # plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02)
     plt.savefig("fig2oneline.png",bbox_inches='tight',pad_inches=0.02,dpi=300)
 
-def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,showticks=True,usedefault=2):
+def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,showticks=True,usedefault=2,fc='#D8D8D8',mc='none'):
+    #fc='#D8D8D8'
+    global bsq, ug, mu, B
     mylen = length/frac
     arrowsize=4
     grid3d("gdump.bin",use2d=True)
@@ -6287,13 +6289,11 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
     avgmem = get2davg(usedefault=usedefault)
     assignavg2dvars(avgmem)
     fig=plt.figure(1,figsize=(12,9),dpi=300,frameon=frameon)
-    fig.patch.set_facecolor('#D8D8D8')
+    fig.patch.set_facecolor(fc)
     fig.patch.set_alpha(1.0)
     fntsize=24
     ax = fig.add_subplot(111, aspect='equal', frameon=frameon)
-    ax.patch.set_facecolor('#D8D8D8')
-    ax.patch.set_alpha(1.0)
-    if doenergy==False:
+    if doenergy==False and True:
         #velocity
         if True:
             avg_uu[2,:,-1]*=0
@@ -6365,7 +6365,7 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         lev_exp=np.linspace(np.log10(minval),0,10)
         levs = np.power(10, lev_exp)
         #plco(z,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=True,nc=20,levels=levs,isfilled=True,norm=colors.LogNorm())
-        cts=plc(z,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=True,nc=20,levels=levs,isfilled=True,locator=ticker.LogLocator(),alpha=0.25,zorder=19)
+        cts=plc(z,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=True,nc=20,levels=levs,isfilled=True,locator=ticker.LogLocator(),alpha=0.5,zorder=2)
         #plt.xlim(-30,30); plt.ylim(-30,30)
     if True:
         istag, jstag, hstag, rstag = getstagparams(doplot=0,usedefault=usedefault)
@@ -6382,7 +6382,7 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         hs2=np.concatenate((hs,-hs[::-1]),axis=1)
         rs2=np.concatenate((rs,rs[::-1]),axis=1)
         ax.plot(rs2*np.sin(hs2),rs2*np.cos(hs2),'g',lw=3,zorder=21)
-    if False:
+    if True:
         #field
         B[1] = avg_B[0]
         B[2] = avg_B[1]
@@ -6391,7 +6391,7 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         plt.figure(1)
         gdetB[1:] = avg_gdetB[0:]
         mu = avg_mu
-        mkframe("myframe",len=mylen,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=12,dodiskfield=8,minlenbhfield=0.1,minlendiskfield=0.1,dsval=0.001,color='r',lw=2,startatmidplane=True,showjet=False,arrowsize=arrowsize,skipblankint=True,populatestreamlines=False,useblankdiskfield=False,dnarrow=4)
+        mkframe("myframe",len=mylen,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=True,vmin=-6,vmax=0.5,dobhfield=12,dodiskfield=8,minlenbhfield=0.1,minlendiskfield=0.1,dsval=0.001,color='r',lw=1.5,startatmidplane=True,showjet=False,arrowsize=arrowsize,skipblankint=True,populatestreamlines=False,useblankdiskfield=False,dnarrow=4)
     if False:
         x = (r*np.sin(h))[:,:,0]
         z = (r*np.cos(h))[:,:,0]
@@ -6422,13 +6422,14 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
             line.set_visible(False)     
     # plt.savefig("fig2.pdf",bbox_inches='tight',pad_inches=0.02)
     # plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02)
-    fig.patch.set_facecolor('#D8D8D8')
+    fig.patch.set_facecolor(mc)
     fig.patch.set_alpha(0.5)
     fig.patch.set_visible(True)
-    ax.patch.set_facecolor('#D8D8D8')
+    ax.patch.set_facecolor(fc)
     ax.patch.set_alpha(0.5)
-    ax.patch.set_visible(True)
-    plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02,dpi=dpi,facecolor=fig.get_facecolor(), edgecolor='#D8D8D8',transparent=False)
+    ax.patch.set_visible(False)
+    plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02,dpi=dpi,facecolor=fig.get_facecolor(), edgecolor='none',transparent=False)
+    #plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02,dpi=dpi,facecolor=fig.get_facecolor(),transparent=True)
     #fig.get_facecolor()
 
 def mklotsopanels(doreload=1,epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,prefactor=100,sigma=None,usegaussianunits=False,arrowsize=1):
