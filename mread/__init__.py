@@ -23,7 +23,7 @@ from scipy.interpolate import interp1d
 from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
 from matplotlib import mpl
-from matplotlib import cm
+from matplotlib import cm,ticker
 from numpy import ma
 import matplotlib.colors as colors
 import os,glob
@@ -31,7 +31,7 @@ import pylab
 import sys
 import streamlines
 from matplotlib.patches import Ellipse
-#import pdb
+import pdb
 
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
@@ -1024,7 +1024,7 @@ def Qmri():
 
 def plco(myvar,xcoord=None,ycoord=None,ax=None,**kwargs):
     plt.clf()
-    plc(myvar,xcoord,ycoord,ax,**kwargs)
+    return plc(myvar,xcoord,ycoord,ax,**kwargs)
 
 def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
     #xcoord = kwargs.pop('x1', None)
@@ -1054,6 +1054,7 @@ def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
             res = ax.contour(xcoord[:,:,0],ycoord[:,:,0],myvar[:,:,0],nc,**kwargs)
     if( cb == True): #use color bar
         plt.colorbar(res,ax=ax)
+    return res
 
 def reinterp(vartointerp,extent,ncell,domask=1,isasymmetric=False):
     global xi,yi,zi
@@ -6178,7 +6179,7 @@ def mkonestreamlinex1x2(ux, uy, xi, yi, x0, y0):
         #        isleft = True picks the solution for rho at the smallest value of x2 and 
         #        isleft = False picks the solution for rho at the largest value of x2
         #this evaluates rho where the 1st argument vanishes, i.e., x2[:,:,0]-ytrajvsti[:,None] == 0
-        rhotraj = findroot2d(x2[:,:,0]-ytrajvsti[:,None], rho[:,:,0], axis = 0, isleft = True )
+        rhotraj = findroot2d(x2[:,:,0]-x2traj[:,None], rho[:,:,0], axis = 0, isleft = True )
         #plot it
         plt.figure()
         plt.plot(np.log10(r[:,0,0]),np.log10(rhotraj))
@@ -6292,7 +6293,7 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
     ax = fig.add_subplot(111, aspect='equal', frameon=frameon)
     ax.patch.set_facecolor('#D8D8D8')
     ax.patch.set_alpha(1.0)
-    if doenergy==False and False:
+    if doenergy==False:
         #velocity
         if True:
             avg_uu[2,:,-1]*=0
@@ -6309,7 +6310,7 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         # avg_uu[1,:,2]=avg_uu[1,:,3]
         B[1:] = avg_uu[1:]
         bsq = avg_bsq
-        mkframe("myframe",len=mylen,ax=ax,density=4,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.0025,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
+        mkframe("myframe",len=mylen,ax=ax,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.0025,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
     if doenergy==True and False:
         #energy
         B[1:] = avg_Tud[1:,0]
@@ -6320,29 +6321,68 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         B[1:] = -avg_Tud[1:,0]
         bsq = avg_bsq
         mkframe("myframe",len=mylen,ax=ax,density=4,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=12,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='r',lw=2,startatmidplane=True,showjet=False,arrowsize=arrowsize)
-    if True:
+    if False:
         #KE+EM without floors
         B[1:] = -avg_Tud[1:,0]-avg_rhouu[1:]
         bsq = avg_bsq
-        plt.figure(1)
         gdetB[1:] = avg_gdetB[0:]
         mu = avg_mu
         # mkframe("myframe",len=mylen,ax=ax,density=4,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.0025,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
         mkframe("myframe",len=mylen,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=28,dodiskfield=0,minlenbhfield=0.1,minlendiskfield=0.1,dsval=0.001,color='r',lw=2,startatmidplane=True,showjet=False,arrowsize=arrowsize,skipblankint=True,populatestreamlines=False,useblankdiskfield=False,dnarrow=4,whichr=15)
+    if True:
+        #KE+EM without floors with contourf
+        #energy flow (no rest-mass) vs. radius and theta
+        en=(-gdet*avg_Tud[1,0]-gdet*avg_rhouu[1]).cumsum(1)*_dx2*_dx3
+        #mdot vs. radius
+        md=(-gdet*avg_rhouu[1]).sum(2).sum(1)*_dx2*_dx3
+        #pick out a scalar value at r = 5M
+        md=md[iofr(5)]
+        #equatorial trajectory: starts at r = rh, theta = pi/2
+        rhor=1+(1-a**2)**0.5
+        radval=10.
+        traj = mkonestreamlinex1x2( -avg_Tud[1,0,:,:,0]-avg_rhouu[1,:,:,0],
+                                    -avg_Tud[2,0,:,:,0]-avg_rhouu[2,:,:,0],
+                                    x1[:,0,0],x2[0,:,0],
+                                    x1[iofr(radval),ny/2,0],0.)
+        xtraj,ytraj=traj
+        x1traj=x1[:,0,0]
+        x2traj=interp1d(xtraj, ytraj, kind='linear',bounds_error=False)(x1traj)
+        entraj=findroot2d(x2[:,:,0]-x2traj[:,None], en[:,:,0], axis = 0, isleft = True )
+        #change zero to be at the equatorial field line
+        en=en-entraj[:,None,None]
+        r2=np.concatenate((r[:,::-1],r),axis=1)
+        h2=np.concatenate((-h[:,::-1],h),axis=1)
+        en2=np.concatenate((en[:,::-1],en),axis=1)
+        #adjust the last cell positions to ensure last contour is closed
+        h2[:,0]=h2[:,0]*0-np.pi*1.
+        h2[:,-1]=h2[:,-1]*0+np.pi*1.
+        #plc(en2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=True,nc=20,isfilled=True)
+        z = 2*np.abs(en2)/(np.nanmax(en2)-np.nanmin(en2))
+        minval=1e-3
+        z[z<minval]=z[z<minval]*0+minval
+        # lev_exp = np.arange(np.floor(np.log10(np.nanmin(z))-1),
+        #                      np.ceil(np.log10(np.nanmax(z))+1))
+        lev_exp=np.linspace(np.log10(minval),0,10)
+        levs = np.power(10, lev_exp)
+        #plco(z,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=True,nc=20,levels=levs,isfilled=True,norm=colors.LogNorm())
+        cts=plc(z,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=True,nc=20,levels=levs,isfilled=True,locator=ticker.LogLocator(),alpha=0.25,zorder=19)
+        #plt.xlim(-30,30); plt.ylim(-30,30)
     if True:
         istag, jstag, hstag, rstag = getstagparams(doplot=0,usedefault=usedefault)
         myRmax=4
         #z>0
         rs=rstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)>0]
         hs=hstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)>0]
-        ax.plot(rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
-        ax.plot(-rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
+        hs2=np.concatenate((-hs[::-1],hs),axis=1)
+        rs2=np.concatenate((rs[::-1],rs),axis=1)
+        ax.plot(rs2*np.sin(hs2),rs2*np.cos(hs2),'g',lw=3,zorder=21)
         #z<0
         rs=rstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)<0]
         hs=hstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)<0]
-        ax.plot(rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
-        ax.plot(-rs*np.sin(hs),rs*np.cos(hs),'g',lw=3)
-    if True:
+        hs2=np.concatenate((hs,-hs[::-1]),axis=1)
+        rs2=np.concatenate((rs,rs[::-1]),axis=1)
+        ax.plot(rs2*np.sin(hs2),rs2*np.cos(hs2),'g',lw=3,zorder=21)
+    if False:
         #field
         B[1] = avg_B[0]
         B[2] = avg_B[1]
@@ -6367,7 +6407,7 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
     mylenshow = frac*mylen
     plt.xlim(-mylenshow,mylenshow)
     plt.ylim(-mylenshow,mylenshow)
-    if False:
+    if showticks == True:
         plt.xlabel(r"$x\ [r_g]$",fontsize=fntsize,ha='center')
         plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=15,fontsize=fntsize)
     else:
@@ -7237,9 +7277,10 @@ if __name__ == "__main__":
         #print epsFm, epsFke
         mkmovie(prefactor=100.,sigma=1500.,usegaussianunits=True,domakeframes=domakeframes)
         #mkmovie(prefactor=100.,usegaussianunits=True,domakeframes=domakeframes)
-    if False:
+    if True:
         #fig2 with grayscalestreamlines and red field lines
-        mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=False)
+        #mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=False)
+        mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=True)
         #mkstreamlinefigure(length=4,doenergy=False)
     if False:
         #FIGURE 1 LOTSOPANELS
