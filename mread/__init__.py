@@ -1086,7 +1086,7 @@ def reinterp(vartointerp,extent,ncell,domask=1,isasymmetric=False):
         varinterpolated = zi
     return(varinterpolated)
 
-def reinterpxy(vartointerp,extent,ncell,domask=1):
+def reinterpxy(vartointerp,extent,ncell,domask=1,mirrorfactor=1):
     global xi,yi,zi
     #grid3d("gdump")
     #rfd("fieldline0250.bin")
@@ -1100,7 +1100,7 @@ def reinterpxy(vartointerp,extent,ncell,domask=1):
     if nz*_dx3*dxdxp[3,3,0,0,0] < 0.99 * 2 * np.pi:
         x=np.concatenate((-x,x))
         y=np.concatenate((-y,y))
-        var=np.concatenate((var,var))
+        var=np.concatenate((var*mirrorfactor,var))
     # define grid.
     xi = np.linspace(extent[0], extent[1], ncell)
     yi = np.linspace(extent[2], extent[3], ncell)
@@ -1273,8 +1273,8 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
         Bxnorm=BRnorm*np.cos(ph)-Bpnorm*np.sin(ph)
         Bynorm=BRnorm*np.sin(ph)+Bpnorm*np.cos(ph)
         #
-        iBx = reinterpxy(Bxnorm,extent,ncell,domask=1)
-        iBy = reinterpxy(Bynorm,extent,ncell,domask=1)
+        iBx = reinterpxy(Bxnorm,extent,ncell,domask=1,mirrorfactor=-1.)
+        iBy = reinterpxy(Bynorm,extent,ncell,domask=1,mirrorfactor=-1.)
         iibeta = reinterpxy(0.5*bsq/(gam-1)/ug,extent,ncell,domask=0)
         ibsqorho = reinterpxy(bsq/rho,extent,ncell,domask=0)
         ibsqo2rho = 0.5 * ibsqorho
