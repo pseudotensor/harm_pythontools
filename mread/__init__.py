@@ -6311,7 +6311,7 @@ def mkmanystreamlinesxy():
     # plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02)
     plt.savefig("fig2oneline.png",bbox_inches='tight',pad_inches=0.02,dpi=300)
 
-def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,showticks=True,usedefault=2,fc='#D8D8D8',mc='none'):
+def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,showticks=True,usedefault=2,fc='white',mc='white'):
     #fc='#D8D8D8'
     global bsq, ug, mu, B
     mylen = length/frac
@@ -6389,7 +6389,7 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         h2[:,0]=h2[:,0]*0-np.pi*1.
         h2[:,-1]=h2[:,-1]*0+np.pi*1.
         #plc(en2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=True,nc=20,isfilled=True)
-        z = 2*np.abs(en2)/(np.nanmax(en2)-np.nanmin(en2))
+        z = np.abs(en2)/np.nanmax(np.abs(en2))
         minval=1e-3
         z[z<minval]=z[z<minval]*0+minval
         # lev_exp = np.arange(np.floor(np.log10(np.nanmin(z))-1),
@@ -6397,7 +6397,8 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         lev_exp=np.linspace(np.log10(minval),0,10)
         levs = np.power(10, lev_exp)
         #plco(z,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=True,nc=20,levels=levs,isfilled=True,norm=colors.LogNorm())
-        cts=plc(z,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=True,nc=20,levels=levs,isfilled=True,locator=ticker.LogLocator(),alpha=0.5,zorder=2)
+        cts=plc(z,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=True,nc=20,levels=levs,isfilled=True,locator=ticker.LogLocator(),alpha=0.25,zorder=2,cmap=cm.hsv_r)
+        #pdb.set_trace()
         #plt.xlim(-30,30); plt.ylim(-30,30)
     if True:
         istag, jstag, hstag, rstag = getstagparams(doplot=0,usedefault=usedefault)
@@ -6414,6 +6415,12 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         hs2=np.concatenate((hs,-hs[::-1]),axis=1)
         rs2=np.concatenate((rs,rs[::-1]),axis=1)
         ax.plot(rs2*np.sin(hs2),rs2*np.cos(hs2),'g',lw=3,zorder=21)
+    if False:
+        avg_aphi = scaletofullwedge(nz*_dx3*fieldcalc(gdetB1=avg_gdetB[0]))
+        r2=np.concatenate((r[:,::-1],r),axis=1)
+        h2=np.concatenate((-h[:,::-1],h),axis=1)
+        avg_aphi2=np.concatenate((avg_aphi[:,::-1],avg_aphi),axis=1)
+        plc(avg_aphi2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),nc=20,colors='red')
     if True:
         #field
         B[1] = avg_B[0]
@@ -6423,7 +6430,7 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         plt.figure(1)
         gdetB[1:] = avg_gdetB[0:]
         mu = avg_mu
-        mkframe("myframe",len=mylen,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=True,vmin=-6,vmax=0.5,dobhfield=12,dodiskfield=8,minlenbhfield=0.1,minlendiskfield=0.1,dsval=0.001,color='r',lw=1.5,startatmidplane=True,showjet=False,arrowsize=arrowsize,skipblankint=True,populatestreamlines=False,useblankdiskfield=False,dnarrow=4)
+        mkframe("myframe",len=mylen,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=True,vmin=-6,vmax=0.5,dobhfield=12,dodiskfield=8,minlenbhfield=0.1,minlendiskfield=0.1,dsval=0.001,color='w',lw=1.5,startatmidplane=True,showjet=False,arrowsize=arrowsize,skipblankint=True,populatestreamlines=False,useblankdiskfield=False,dnarrow=4)
     if False:
         x = (r*np.sin(h))[:,:,0]
         z = (r*np.cos(h))[:,:,0]
