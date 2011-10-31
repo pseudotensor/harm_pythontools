@@ -5025,11 +5025,15 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     if np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) < 1.5:
         #correct energy flux for face vs. center
         edtotvsr = (edtotvsr+mdtotvsr)*energy_flux_correction_factor - mdtotvsr
+    elif False and (gdetF11!=0).any():
+        edtotvsr[:-1] = -0.5*(gdetF11[:-1]+gdetF11[1:])
+        mdtotvsr[:-1] = -0.5*(gdetF10[:-1]+gdetF10[1:])
+        edtotvsr -= mdtotvsr
+        
 
-    #pdb.set_trace()
-
+    FEMKE = -(edtotvsr+mdtotvsr)
     FKE = -(edmavsr+mdtotvsr)
-    FKE10 = -((edmavsr-pjmafinavgvsr10) + mdotfinavgvsr10)
+    FKE10 = -((edmavsr-pjmafinavgvsr5) + mdotfinavgvsr5)
 
     #electromagnetic flux
     FEM=-(edtotvsr-edmavsr)
@@ -5077,9 +5081,10 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
             if plotFem:
                 #plt.plot(r[:,0,0],-FEM,'r--',label=r"$-F_{EM}$",lw=2)
                 #plt.plot(r[:,0,0],Fm*0+Fm[iofr(5)]-Fe[iofr(5)],'r-.',label=r"$(F_{M}-F_{E})[r=5r_g]$",lw=2)
-                plt.plot(r[:,0,0],-FEM+Fe[iofr(5)]-Fm[iofr(5)],'c',label=r"$F_{KE}$",lw=2)
-                #plt.plot(r[:,0,0],FKE,'b',label=r"$(F_{M}-F_{E})[r=5r_g]$",lw=2)
-                plt.plot(r[:,0,0],FKE10,'g',label=r"$F_{KE,b^2/\rho<10}$",lw=2)
+                plt.plot(r[:,0,0],-FEM+Fe[iofr(5)]-Fm[iofr(5)],'c',label=r"-$F_{EM}+F_{EMKE}(5)$",lw=2)
+                plt.plot(r[:,0,0],FKE,'b',label=r"$F_{KE}$",lw=2)
+                plt.plot(r[:,0,0],FEMKE,'m',label=r"$F_{EMKE}$",lw=2)
+                plt.plot(r[:,0,0],FKE10,'g',label=r"$F_{KE,b^2/\rho<30}$",lw=2)
                 #plt.plot(r[:,0,0],Fm+edtotvsr,'g:',label=r"$F_{EM}$",lw=2)
         if dofeavg and isinteractive and doplot: 
             plt.plot(r[:,0,0],FE-DUfloor1,'k',label=r"$F_E$",lw=2)
@@ -5224,7 +5229,8 @@ def computeeta(start_t=8000,end_t=1e5,numintervals=8,doreload=1,qtymem=None):
             doreload_local = doreload
         else: 
             doreload_local = 0
-        a_eta[i],a_Fm[i],a_Fe[i],a_Fl[i] = takeoutfloors(doreload=doreload_local,fti=t_i,ftf=t_i+t_step,isinteractive=0,writefile=False)
+        res = takeoutfloors(doreload=doreload_local,fti=t_i,ftf=t_i+t_step,isinteractive=0,writefile=False)
+        a_eta[i],a_Fm[i],a_Fe[i],a_Fl[i] = res
     a_spar = (a_Fl/dxdxp[3,3,0,0,0]-2*a*a_Fe)/a_Fm
     print("Efficiencies:")    
     print zip(a_eta,a_Fm,a_Fe,a_Fl)
