@@ -4828,6 +4828,29 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         lfti = 12400.
         lftf = 20000.
         pn="A-0.9h$_\\theta$"
+    elif np.abs(a - (-0.9))<1e-4 and bn == "rtf2_15r34_2pi_a-0.9gg50rbr1e3_0_0_0_faildufix2":
+        print( "Using a = -0.9 (rtf2_15r34_2pi_a-0.9gg50rbr1e3_0_0_0_faildufix2) settings")
+        Dt = np.array([16500.-15364.1834020439,
+                       15300.-14177.7085736113,
+                       14100.-13223.7286827588,
+                       13200.-12200.2252164064,
+                       12200.-11035.9098660778,
+                       11000.-9895.29490728404,
+                       9800.-8778.69431599574,
+                       8700.-8000.,
+                       -(8700.-8000.)])
+        Dno = np.array([165,
+                        153,
+                        141,
+                        132,
+                        122,
+                        110,
+                        98,
+                        87,
+                        80])
+        lfti = 8000.
+        lftf = 20000.
+        pn="A-0.9f"
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf_15r34.1_0_0_0":
         print( "Using a = 0.9 (rtf_15r34.1_0_0_0) settings")
         Dt = np.array([15800.-15685.1591357819,
