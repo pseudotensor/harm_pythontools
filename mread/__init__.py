@@ -1035,6 +1035,7 @@ def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
     cb = kwargs.pop('cb', False)
     nc = kwargs.pop('nc', 15)
     k = kwargs.pop('k',0)
+    #cmap = kwargs.pop('cmap',cm.jet)
     isfilled = kwargs.pop('isfilled',False)
     if None != xcoord and None != ycoord:
         xcoord = xcoord[:,:,None] if xcoord.ndim == 2 else xcoord[:,:,k:k+1]
@@ -4545,8 +4546,9 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     if dotakeoutfloors:
         istag, jstag, hstag, rstag = getstagparams(rmax=20,doplot=0,doreadgrid=0)
     #get base name of the current dir
-    bn=os.path.basename(os.getcwd())
-    pn=bn
+    bn = os.path.basename(os.getcwd())
+    pn = bn
+    rbr = 200.
     if np.abs(a - 0.99)<1e-4 and bn=="rtf2_10r22.82_a0.99_n4_0_0_0":
         #lo-res 0.99 settings
         print( "Using a = 0.99 (rtf2_10r22.82_a0.99_n4_0_0_0) settings")
@@ -4562,6 +4564,10 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         lfti = 7000.
         lftf = 20000.
         pn = "A0.99R10" 
+        rin = 10
+        rmax = 22.82
+        simti = 0
+        simtf = lftf
     elif np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) < 1.5:
         #hi-res 0.99 settings
         print( "Using hires a = 0.99 settings")
@@ -4618,6 +4624,11 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         # lftf = 26300.
         lfti = 7000.
         lftf = 30500.
+        rbr = 1000.
+        rin = 15
+        rmax = 34
+        simti = 0
+        simtf = lftf
     elif np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) > 1.5:
         #lo-res 0.99 settings
         print( "Using lores a = 0.99 settings")
@@ -4637,6 +4648,10 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         lfti = 6000.
         lftf = 1.e5
         pn="A0.99"
+        rin = 15
+        rmax = 34
+        simti = 0
+        simtf = lftf
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_20r45.35_0_0_0":
         print( "Using a = 0.9 (rtf2_20r45.35_0_0_0) settings")
         Dt = np.array([15100.-13152.0607139353,
@@ -4650,6 +4665,10 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         lfti = 9900.
         lftf = 15695.
         pn="A0.9R20"
+        rin = 20
+        rmax = 45.35
+        simti = 0
+        simtf = lftf
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_pi_0_0_0":
         print( "Using a = 0.9 (rtf2_15r34.1_pi_0_0_0) settings")
         Dt = np.array([15600.-13898.007844829,
@@ -4667,6 +4686,10 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         lfti = 8000.
         lftf = 15695.
         pn="A0.9f"
+        rin = 15
+        rmax = 34.1
+        simti = 0
+        simtf = lftf
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_betax0.5_0_0_0":
         print( "Using a = 0.9 (rtf2_15r34.1_betax0.5_0_0_0) settings")
         # Dt = np.array([24400.-22382.7667797495,
@@ -4704,6 +4727,10 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         lfti = 15000.
         lftf = 50000.
         pn="A0.9N200"
+        rin = 15
+        rmax = 34.1
+        simti = 0
+        simtf = lftf
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_betax2_0_0_0":
         print( "Using a = 0.9 (rtf2_15r34.1_betax2_0_0_0) settings")
         Dt = np.array([14300.-12041.7226584439,
@@ -4719,6 +4746,10 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         lfti = 6000.
         lftf = 50000.
         pn="A0.9N50"
+        rin = 15
+        rmax = 34.1
+        simti = 0
+        simtf = lftf
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_betax4_0_0_0":
         print( "Using a = 0.9 (rtf2_15r34.1_betax4_0_0_0) settings")
         Dt = np.array([17300.-15195.9206754056,
@@ -4748,6 +4779,10 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     #                     70])
     #     lfti = 7000.
     #     lftf = 20000.
+        rin = 15
+        rmax = 34.1
+        simti = 0
+        simtf = lftf
     elif np.abs(a - (-0.9))<1e-4 and bn == "rtf2_15r34.1_0_0_0_spinflip":
         #rtf2_15r37.1a-0.9_0_0_0
         #with less failfloordudumps:
@@ -4759,6 +4794,10 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         lfti = 14207.
         lftf = 20000.
         pn="A-0.9flip"
+        rin = 15
+        rmax = 34.1
+        simti = lfti
+        simtf = lftf
     elif np.abs(a - (-0.9))<1e-4 and bn == "rtf2_15r37.1a-0.9_0_0_0":
         #rtf2_15r37.1a-0.9_0_0_0
         #with less failfloordudumps:
@@ -4774,6 +4813,10 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         lfti = 7000.
         lftf = 20000.
         pn="A-0.9"
+        rin = 15
+        rmax = 37.1
+        simti = 0
+        simtf = lftf
     elif np.abs(a - (-0.9))<1e-4 and bn == "rtf2_15r37.1a-0.9_lr_0_0_0":
         print( "Using a = -0.9 (rtf2_15r37.1a-0.9_lr_0_0_0) settings")
         Dt = np.array([17500.-15712.9370781614,
@@ -4786,7 +4829,11 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                        100])
         lfti = 10000.
         lftf = 20000.
-        pn="A-0.9l$_\\theta$"
+        pn="A-0.9l_\\theta"
+        rin = 15
+        rmax = 37.1
+        simti = 0
+        simtf = lftf
     elif np.abs(a - (-0.5))<1e-4 and bn == "rtf2_15r36.21_a-0.5_0_0_0":
         print( "Using a = -0.5 (rtf2_15r36.21_a-0.5_0_0_0) settings")
         Dt = np.array([14200-13393.5929462345,
@@ -4802,6 +4849,8 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         lfti = 8000.
         lftf = 20000.
         pn="A-0.5"
+        simti = 0
+        simtf = lftf
     elif np.abs(a - (-0.2))<1e-4 and bn == "rtf2_15r35.64_a-0.2_0_0_0":
         print( "Using a = -0.5 (rtf2_15r35.64_a-0.2_0_0_0) settings")
         Dt = np.array([15100-12221.0353104236,
@@ -4813,6 +4862,10 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         lfti = 10000.
         lftf = 20000.
         pn="A-0.2"
+        rin = 15
+        rmax = 35.64
+        simti = 0
+        simtf = lftf
     elif np.abs(a - (-0.9))<1e-4 and bn == "rtf2_15r37.1a-0.9_0_0_0_2xth":
         print( "Using a = -0.9 (rtf2_15r37.1a-0.9_0_0_0_2xth) settings")
         Dt = np.array([16500.-14770.1296385559,
@@ -4827,7 +4880,11 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         124])
         lfti = 12400.
         lftf = 20000.
-        pn="A-0.9h$_\\theta$"
+        pn="A-0.9h_\\theta"
+        rin = 15
+        rmax = 37.1
+        simti = 12328.
+        simtf = lftf
     elif np.abs(a - (-0.9))<1e-4 and bn == "rtf2_15r34_2pi_a-0.9gg50rbr1e3_0_0_0_faildufix2":
         print( "Using a = -0.9 (rtf2_15r34_2pi_a-0.9gg50rbr1e3_0_0_0_faildufix2) settings")
         Dt = np.array([16500.-15364.1834020439,
@@ -4851,6 +4908,11 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         lfti = 8000.
         lftf = 20000.
         pn="A-0.9f"
+        rbr = 1000.
+        rin = 15
+        rmax = 37.1
+        simti = 0
+        simtf = lftf
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf_15r34.1_0_0_0":
         print( "Using a = 0.9 (rtf_15r34.1_0_0_0) settings")
         Dt = np.array([15800.-15685.1591357819,
@@ -4868,6 +4930,10 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         lfti = 8000.
         lftf = 20000.
         pn="A0.9old"
+        rin = 15
+        rmax = 34.1
+        simti = 0
+        simtf = lftf
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_2xphi_0_0_0":
         print( "Using a = 0.9 (rtf2_15r34.1_2xphi_0_0_0) settings")
         Dt = np.array([11600-9999.2977584592,
@@ -4876,22 +4942,40 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         99])
         lfti = 8000.
         lftf = 20000.
-        pn="A0.9h$_\\varphi$"
+        pn="A0.9h_\\varphi"
+        rin = 15
+        rmax = 34.1
+        simti = 0
+        simtf = lftf
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_0_0_0":
         print( "Using a = 0.9 (rtf2_15r34.1_0_0_0) settings")
-        Dt = np.array([14200.-11819.493630548,
+        Dt = np.array([22200.-19991.2576631864,
+                       19900.-19520.2475545571,
+                       19500.-17174.3949708944,
+                       17100.-15198.3870293434,
+                       15100.-14207.0184709617,
+                       14200.-11819.493630548,
                        11800.-9525.17879311185,
                        9500.-8281.06561787569,
                        8200.-8000.,
                      -(8200.-8000.)])
-        Dno = np.array([142,
+        Dno = np.array([222,
+                        199,
+                        195,
+                        171,
+                        151,
+                        142,
                         118,
                         95,
                         82,
                         80])
         lfti = 8000.
-        lftf = 20000.
+        lftf = 1e5
         pn="A0.9"
+        rin = 15
+        rmax = 34.1
+        simti = 0
+        simtf = lftf
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_lr_0_0_0":
         print( "Using a = 0.9 (rtf2_15r34.1_lr_0_0_0) settings")
         Dt = np.array([13900.-11092.5104022445,
@@ -4901,8 +4985,12 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         110,
                         100])
         lfti = 10000.
-        lftf = 20000.
-        pn="A0.9l$_\\theta$"
+        lftf = 1e5
+        pn="A0.9l_\\theta"
+        rin = 15
+        rmax = 34.1
+        simti = 0
+        simtf = lftf
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_0_0_0_2xth":
         print( "Using a = 0.9 (rtf2_15r34.1_0_0_0_2xth) settings")
         Dt = np.array([18400.-16641.8415831742,
@@ -4916,7 +5004,11 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #lfti = 14215.
         lfti = 14292.
         lftf = 20000.
-        pn="A0.9h$_\\theta$"
+        pn="A0.9h_\\theta"
+        rin = 15
+        rmax = 34.1
+        simti = 14292.
+        simtf = lftf
     elif np.abs(a - 0.5)<1e-4:
         print( "Using a = 0.5 settings")
         dt1 = 13000.-10279.
@@ -4925,6 +5017,10 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         Dno = np.array([130,102,100])
         lfti = 10000.
         lftf = 13095.
+        rin = 15
+        rmax = 34.475
+        simti = 0
+        simtf = lftf
     elif np.abs(a - 0.2)<1e-4:
         print( "Using a = 0.2 settings")
         Dt = np.array([13300.-10366.5933313178])
@@ -4932,6 +5028,10 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         lfti = 10366.5933313178
         lftf = 13300.
         pn="A0.2"
+        rin = 15
+        rmax = 35
+        simti = 0
+        simtf = lftf
     elif np.abs(a - 0.1)<1e-4:
         print( "Using a = 0.1 settings")
         Dt = np.array([20000.-18698.2882595555,
@@ -4947,6 +5047,10 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         lfti = 10000.
         lftf = 20000.
         pn="A0.1"
+        rin = 15
+        rmax = 35
+        simti = 0
+        simtf = lftf
     elif np.abs(a - 0.0)<1e-4:
         print( "Using a = 0.0 settings")
         Dt = np.array([18500.-15700.2418591157,
@@ -4960,12 +5064,20 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         lfti = 10000.
         lftf = 20000.
         pn="A0.0"
+        rin = 15
+        rmax = 35
+        simti = 0
+        simtf = lftf
     else:
         print( "Unknown case: a = %g, using defaults..." % a )
         lfti = 10000.
         lftf = 20000.
         dotakeoutfloors = 0
         pn="Unknown"
+        rin = -1
+        rmax = -1
+        simti = -1
+        simtf = -1
     #os.path.basename(os.getcwd())
     if fti is None or ftf is None:
         fti = lfti
@@ -4983,6 +5095,9 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         if ftf > real_tf and qtymem[0,-1,0] > 0:
             #last_t + dt:
             ftf = real_tf
+        if simtf > real_tf and qtymem[0,-1,0] > 0:
+            #last_t + dt:
+            simtf = real_tf
         #XXX
         if dotakeoutfloors:
             DU = get_dFfloor(Dt, Dno, dotakeoutfloors=dotakeoutfloors,aphi_j_val=aphi_j_val)
@@ -5126,27 +5241,23 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
             #plt.grid()
     #
     if writefile:
-        if True:
-            etamean2, etastd2, sparmean2, sparstd2 = \
-                computeeta(start_t=fti,end_t=ftf,numintervals=2,doreload=0,qtymem=qtymem)
-        if (ftf-fti)/4. > 500.:
-            etamean4, etastd4, sparmean4, sparstd4 = \
-                computeeta(start_t=fti,end_t=ftf,numintervals=4,doreload=0,qtymem=qtymem)
-        else:
-            etastd4=0
-            sparstd4=0
-        if (ftf-fti)/6. > 500.:
-            etamean6, etastd6, sparmean6, sparstd6 = \
-                computeeta(start_t=fti,end_t=ftf,numintervals=6,doreload=0,qtymem=qtymem)
-        else:
-            etastd6=0
-            sparstd6=0
+        #assume that eta is cross-correlated on shorter time scales than this
+        dtavgmin = 500.
+        dtavg = min((ftf-fti)/3.,dtavgmin)
+        nmax = np.rint((ftf-fti)/dtavg)
         rx = 5
         rj = 100
         etamean = eta[iofr(rx)]
-        etastd = max( etastd2, max(etastd4, etastd6) )
         sparmean = spar[iofr(rx)]
-        sparstd = max( sparstd2, max(sparstd4, sparstd6) )
+        etastd, sparstd = 0, 0
+        for nint in np.arange(2,nmax+1):
+            etameann, etastdn, sparmeann, sparstdn = \
+                computeeta(start_t=fti,end_t=ftf,numintervals=nint,doreload=0,qtymem=qtymem)
+            etastd = max( etastd, etastdn )
+            sparstd = max( sparstd, sparstdn )
+        #
+        # OUTPUT for plotting
+        #
         foutpower = open( "siminfo_%s.txt" %  os.path.basename(os.getcwd()), "w" )
         #foutpower.write( "#Name a Mdot   Pjet    Etajet  Psitot Psisqtot**0.5 Psijet Psisqjet**0.5 rstag Pjtotmax Pjtot1rstag Pjtot2rstag Pjtot4rstag Pjtot8rstag\n"  )
         foutpower.write( "%s %s %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n" % (pn, os.path.basename(os.getcwd()), a, 
@@ -5156,6 +5267,25 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                                                            pjke_mu2_avg[iofr(rj)], 
                                                            (pjke_mu1_avg-pjke_mu2_avg)[iofr(rj)],
                                                             fstotfinavg, fstotsqfinavg ) )
+        #flush to disk just in case to make sure all is written
+        foutpower.flush()
+        os.fsync(foutpower.fileno())
+        foutpower.close()
+        #
+        # LATEX output for table
+        #
+        foutpower = open( "simtex_%s.txt" %  os.path.basename(os.getcwd()), "w" )
+        if scaletofullwedge(1.) > 1.5:
+            swedge = "\\pi"
+        else:
+            swedge = "2\\pi"
+        #foutpower.write( "#Name a Mdot   Pjet    Etajet  Psitot Psisqtot**0.5 Psijet Psisqjet**0.5 rstag Pjtotmax Pjtot1rstag Pjtot2rstag Pjtot4rstag Pjtot8rstag\n"  )
+        #                 Name Spin    Resolution          Phi-wedge  rbr    eta+-deta     etaj   etaw   flux      simname
+        #pdb.set_trace()
+        etajet = pjke_mu2_avg[iofr(rj)]/Fm[iofr(rx)]
+        etawind = (pjke_mu1_avg-pjke_mu2_avg)[iofr(rj)]/Fm[iofr(rx)]
+        foutpower.write( "%15s & $%g$ &\t $%d\\pm%d$ &\t $%d$ &\t $%d$ &\t $%d$ &\t $%s$ &\t $%d\\times%d\\times%d$ &\t $%d$ &\t $%g$ &\t $%d$ &\t $%d$ &\t $(%d; %d)$ &\t $(%d; %d)$ \\\\ %% %s\n" 
+                         % (pn, a, np.rint(etamean*100.), np.rint(etastd*100.), np.rint(etajet*100.), np.rint(100.*etawind), np.rint(fstotsqfinavg), swedge, nx, ny, nz, np.rint(rin),   np.rint(rmax),  0.2,   rbr, np.rint(simti), np.rint(simtf), np.rint(fti), np.rint(ftf), os.path.basename(os.getcwd())) )
         #flush to disk just in case to make sure all is written
         foutpower.flush()
         os.fsync(foutpower.fileno())
@@ -5235,8 +5365,8 @@ def computeeta(start_t=8000,end_t=1e5,numintervals=8,doreload=1,qtymem=None):
     print("Efficiencies:")    
     print zip(a_eta,a_Fm,a_Fe,a_Fl)
     print( "Average efficiency = %g" % a_eta.mean() ) 
-    print( "Stdev eta: %g" % a_eta.std() )
-    return( a_eta.mean(), a_eta.std(), a_spar.mean(), a_spar.std() )
+    print( "Stdev eta: %g; stdev <eta>: %g" % (a_eta.std(), a_eta.std()/np.sqrt(a_eta.shape[0])) )
+    return( a_eta.mean(), a_eta.std()/np.sqrt(a_eta.shape[0]), a_spar.mean(), a_spar.std()/np.sqrt(a_spar.shape[0]) )
     
 
 def plotj(ts,fs,md,jem,jtot):
@@ -5438,7 +5568,7 @@ def Risco(a):
     risco = 3 + Z2 - np.sign(a)* ( (3 - Z1)*(3 + Z1 + 2*Z2) )**0.5
     return(risco)
 
-def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20):
+def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=False):
     if usegaussianunits == True:
         unitsfactor = (4*np.pi)**0.5*2*np.pi
     else:
@@ -5495,9 +5625,9 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20):
         etajetlist = (powwindlist-powlist)/mdotlist
         etawindlist = powwindEMKElist/mdotlist
     elif format == 2:
-        gd1 = np.loadtxt( fname, unpack = True, usecols = [1,2,3,4,5,6,7,8,9,10,11,12] )
+        gd1 = np.loadtxt( fname, unpack = True, usecols = [2,3,4,5,6,7,8,9,10,11,12,13,14,15] )
         #gd=gd1.view().reshape((-1,nx,ny,nz), order='F')
-        alist, etalist, sparlist, Fmlist, Felist, Fllist, FEMrhorlist, FEM2list, powjetlist, powwindlist, ftotlist, ftotsqlist = gd1
+        alist, etalist, etastdlist, sparlist, sparstdlist, Fmlist, Felist, Fllist, FEMrhorlist, FEM2list, powjetlist, powwindlist, ftotlist, ftotsqlist = gd1
         fsqtotlist = ftotsqlist
         mdotlist = Fmlist
         rhorlist = 1+(1-alist**2)**0.5
@@ -5507,10 +5637,31 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20):
         etawindlist = powwindlist/Fmlist
     gin = open( fname, "rt" )
     emptyline = gin.readline()
+    simname=[]
+    simpath=[]
     for i in np.arange(alist.shape[0]):
-        simname = gin.readline().split()[0]
-        print '%.2g & %.3g & %.3g & %.3g & %.3g & %% %s' % (alist[i], 100*etaEMlist[i], 100*etalist[i], 100*etajetlist[i], 100*etawindlist[i], simname)
+        stringsplit=gin.readline().split()
+        simname.append(stringsplit[0])
+        simpath.append(stringsplit[1])
     gin.close()
+    if plotetas:
+        plt.figure(1)
+        plt.xlim(0,200)
+        plt.ylim(-2,alist.shape[0])
+        ilist = np.arange(alist.shape[0])
+        pylab.errorbar(etalist*100, ilist, xerr=2*etastdlist*100,marker='o',ls='None')
+        plt.xlabel(r"$\eta$")
+        ax=plt.gca()
+        ax.get_yaxis().set_visible(False)
+        for i in ilist:
+            t = ax.text((etalist[i]+etastdlist[i]*2)*100+5, i, r"$\mathrm{%s}$" % simname[i], withdash=False, va='center' )
+        etam9avg,etam9err,etam9std=wmom(etalist[alist<0],etastdlist[alist<0]**(-2),calcerr=True,sdev=True)
+        eta9avg,eta9err,eta9std=wmom(etalist[alist>0],etastdlist[alist>0]**(-2),calcerr=True,sdev=True)
+        print etam9avg, etam9std
+        print eta9avg, eta9std
+        pylab.errorbar(np.array([etam9avg,eta9avg])*100, np.array([-1.,-1.],dtype=np.float64),marker='o', xerr=2*np.array([etam9std,eta9std])*100,ls='None')
+        #def wmom(arrin, weights_in, inputmean=None, calcerr=False, sdev=False):
+        return
     mya=np.arange(-1,1,0.001)
     rhor = 1+(1-mya**2)**0.5
     myomh = mya / 2/ rhor
@@ -5619,6 +5770,7 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20):
         plt.grid()
         plt.ylabel(r"$s = (\dot L - 2 a \dot E)/\dot M_0$", fontsize=20)
         plt.xlabel(r"$a$",fontsize=20)
+        
         print zip(alist,sparlist)
     #
     plt.figure(1, figsize=(6,5.8),dpi=200)
@@ -5745,6 +5897,73 @@ def readmytests1():
     momh6, mhor6, mpsi6, mpow6, mBr6 = gd6[0:5]
     mtheta6 = np.pi/2-mhor6
     mspina6 = 4*momh6/(1+4*momh6**2)
+
+def wmom(arrin, weights_in, inputmean=None, calcerr=False, sdev=False):
+    """
+    NAME:
+      wmom()
+      
+    PURPOSE:
+      Calculate the weighted mean, error, and optionally standard deviation of
+      an input array.  By default error is calculated assuming the weights are
+      1/err^2, but if you send calcerr=True this assumption is dropped and the
+      error is determined from the weighted scatter.
+
+    CALLING SEQUENCE:
+     wmean,werr = wmom(arr, weights, inputmean=None, calcerr=False, sdev=False)
+    
+    INPUTS:
+      arr: A numpy array or a sequence that can be converted.
+      weights: A set of weights for each elements in array.
+    OPTIONAL INPUTS:
+      inputmean: 
+          An input mean value, around which them mean is calculated.
+      calcerr=False: 
+          Calculate the weighted error.  By default the error is calculated as
+          1/sqrt( weights.sum() ).  If calcerr=True it is calculated as sqrt(
+          (w**2 * (arr-mean)**2).sum() )/weights.sum()
+      sdev=False: 
+          If True, also return the weighted standard deviation as a third
+          element in the tuple.
+
+    OUTPUTS:
+      wmean, werr: A tuple of the weighted mean and error. If sdev=True the
+         tuple will also contain sdev: wmean,werr,wsdev
+
+    REVISION HISTORY:
+      Converted from IDL: 2006-10-23. Erin Sheldon, NYU
+
+   """
+    
+    # no copy made if they are already arrays
+    arr = np.array(arrin, ndmin=1, copy=False)
+    
+    # Weights is forced to be type double. All resulting calculations
+    # will also be double
+    weights = np.array(weights_in, ndmin=1, dtype='f8', copy=False)
+  
+    wtot = weights.sum()
+        
+    # user has input a mean value
+    if inputmean is None:
+        wmean = ( weights*arr ).sum()/wtot
+    else:
+        wmean=float(inputmean)
+
+    # how should error be calculated?
+    if calcerr:
+        werr2 = ( weights**2 * (arr-wmean)**2 ).sum()
+        werr = np.sqrt( werr2 )/wtot
+    else:
+        werr = 1.0/np.sqrt(wtot)
+
+    # should output include the weighted standard deviation?
+    if sdev:
+        wvar = ( weights*(arr-wmean)**2 ).sum()/wtot * (weights.shape[0]-1.)/weights.shape[0]
+        wsdev = np.sqrt(wvar)
+        return wmean,werr,wsdev
+    else:
+        return wmean,werr
 
 def plotomegaf2hor():
     #plot omegaf2/omegah on the horizon
