@@ -2375,6 +2375,7 @@ def mfjhorvstime(ihor):
     return((ts,fs,md,jem,jtot))
 
 def mergeqtyvstime(n):
+    nqty = getqtyvstime(0,getnqty=True)
     for i in np.arange(n):
         #load each file
         fname = "qty2_%d_%d.npy" % (i, n)
@@ -2383,7 +2384,7 @@ def mergeqtyvstime(n):
         qtymemtemp = np.load( fname )
         #per-element sum relevant parts of each file
         if i == 0:
-            qtymem = np.zeros_like(qtymemtemp)
+            qtymem = np.zeros((nqty,qtymemtemp[1],qtymemtemp[2]),dtype=np.float32)
         #1st index: whichqty
         #2nd index: whichdumpnumber
         qtymem[:,i::n] += qtymemtemp[:,i::n]
@@ -2394,10 +2395,14 @@ def mergeqtyvstime(n):
     print( "Done!" )
         
 
-def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None,docompute=False):
+def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None,docompute=False,getnqty=False):
     """
     Returns a tuple (ts,fs,mdot,pjetem,pjettot): lists of times, horizon fluxes, and Mdot
     """
+    nqtyold=98+134*(dobob==1)
+    nqty=98+134*(dobob==1)+32+1+9
+    if getnqty:
+        return(nqty)
     if whichn != None and (whichi < 0 or whichi > whichn):
         print( "whichi = %d shoudl be >= 0 and < whichn = %d" % (whichi, whichn) )
         return( -1 )
@@ -2407,8 +2412,6 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None,docomp
         tiny = np.finfo(np.float64).tiny
     flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
     flist.sort()
-    nqtyold=98+134*(dobob==1)
-    nqty=98+134*(dobob==1)+32+1+9
     #store 1D data
     numtimeslices=len(flist)
     #np.seterr(invalid='raise',divide='raise')
