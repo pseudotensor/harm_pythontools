@@ -2432,19 +2432,19 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None,docomp
             # qtymem2[:,1493]=0.5*(qtymem2[:,1492]+qtymem2[:,1494])
             # qtymem2=qtymem2[:,:-1]
             # np.save("qty2_new.npy",qtymem2)  #kill bad frame
-            if nqty != loadednqty:
-                qtymem=np.zeros((nqty,numtimeslices2,nx),dtype=np.float32)
-                qtymem[:loadednqty] = qtymem2[:]
-                del qtymem2
-                return(qtymem)
+            # if nqty != loadednqty:
+            #     qtymem=np.zeros((nqty,numtimeslices2,nx),dtype=np.float32)
+            #     qtymem[:loadednqty] = qtymem2[:]
+            #     del qtymem2
+            #     return(qtymem)
             return(qtymem2)
         elif docompute==False:
             print "Read from %s" % fname
-            if nqty != loadednqty:
-                qtymem=np.zeros((nqty,numtimeslices2,nx),dtype=np.float32)
-                qtymem[:loadednqty] = qtymem2[:]
-                del qtymem2
-                return(qtymem)
+            # if nqty != loadednqty:
+            #     qtymem=np.zeros((nqty,numtimeslices2,nx),dtype=np.float32)
+            #     qtymem[:loadednqty] = qtymem2[:]
+            #     del qtymem2
+            #     return(qtymem)
             return(qtymem2)
         else:
             qtymem=np.zeros((nqty,numtimeslices,nx),dtype=np.float32)
