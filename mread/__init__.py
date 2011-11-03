@@ -2384,10 +2384,10 @@ def mergeqtyvstime(n):
         qtymemtemp = np.load( fname )
         #per-element sum relevant parts of each file
         if i == 0:
-            qtymem = np.zeros((nqty,qtymemtemp[1],qtymemtemp[2]),dtype=np.float32)
+            qtymem = np.zeros((nqty,qtymemtemp.shape[1],qtymemtemp.shape[2]),dtype=np.float32)
         #1st index: whichqty
         #2nd index: whichdumpnumber
-        qtymem[:,i::n] += qtymemtemp[:,i::n]
+        qtymem[:qtymemtemp.shape[0],i::n] += qtymemtemp[:,i::n]
     fname = "qty2.npy"
     print( "Saving into " + fname + " ..." )
     sys.stdout.flush()
