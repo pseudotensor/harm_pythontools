@@ -4673,7 +4673,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         130,
                         108,
                         99])
-        lfti = 9900.
+        lfti = 8000.
         lftf = 15695.
         pn="A0.9R20"
         rin = 20
@@ -4763,19 +4763,25 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         simtf = lftf
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_betax4_0_0_0":
         print( "Using a = 0.9 (rtf2_15r34.1_betax4_0_0_0) settings")
+        # Dt = np.array([17300.-15195.9206754056,
+        #                15100.-12862.478404495,
+        #                12800.-10435.1795933295,
+        #                10400.-8164.22610799513,
+        #                8100.-6000.,
+        #              -(8100.-6000.)])
+        # Dno = np.array([173,
+        #                 151,
+        #                 128,
+        #                 104,
+        #                 81,
+        #                 60])
         Dt = np.array([17300.-15195.9206754056,
                        15100.-12862.478404495,
-                       12800.-10435.1795933295,
-                       10400.-8164.22610799513,
-                       8100.-6000.,
-                     -(8100.-6000.)])
+                       12800.-10435.1795933295])
         Dno = np.array([173,
                         151,
-                        128,
-                        104,
-                        81,
-                        60])
-        lfti = 6000.
+                        128])
+        lfti = 11000.
         lftf = 50000.
         pn="A0.9N25"
     # elif np.abs(a - (-0.9))<1e-4:
@@ -4951,7 +4957,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                        9900-8355.23482702302])
         Dno = np.array([116,
                         99])
-        lfti = 8000.
+        lfti = 6000.
         lftf = 20000.
         pn="A0.9h_\\varphi"
         rin = 15
@@ -5004,17 +5010,21 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         simtf = lftf
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_0_0_0_2xth":
         print( "Using a = 0.9 (rtf2_15r34.1_0_0_0_2xth) settings")
-        Dt = np.array([18400.-16641.8415831742,
+        Dt = np.array([#21000.-19516.4625795943,
+                       19500.-18404.7747547703,
+                       18400.-16641.8415831742,
                        16500.-14875.0849054248,
                        14800.-14701.7703617868,
                        14700.-14292.8766863536])
-        Dno = np.array([184,
+        Dno = np.array([#210,
+                        195,
+                        184,
                         165,
                         148,
                         147])
         #lfti = 14215.
         lfti = 14292.
-        lftf = 20000.
+        lftf = 1e5
         pn="A0.9h_\\theta"
         rin = 15
         rmax = 34.1
@@ -5079,6 +5089,123 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         rmax = 35
         simti = 0
         simtf = lftf
+    elif bn == "thickdisk7":
+        print( "Using a = %g (thickdisk7) settings" % a )
+        Dt = None
+        Dno = None
+        #lfti = 14215.
+        lfti = 8000.
+        lftf = 1e5
+        pn="A94BfN40"
+        rin = 10
+        rmax = 100
+        simti = 0.
+        simtf = lftf
+        dotakeoutfloors=0
+    elif bn == "thickdisk8":
+        print( "Using a = %g (thickdisk8) settings" % a )
+        Dt = None
+        Dno = None
+        #lfti = 14215.
+        lfti = 8000.
+        lftf = 1e5
+        pn="A94BfN100C1"
+        rin = 10
+        rmax = 100
+        simti = 0.
+        simtf = lftf
+        dotakeoutfloors=0
+    elif bn == "thickdisk11":
+        print( "Using a = %g (thickdisk11) settings" % a )
+        Dt = None
+        Dno = None
+        #lfti = 14215.
+        lfti = 6000.
+        lftf = 12000.
+        pn="A94BfN100C2"
+        rin = 10
+        rmax = 100
+        simti = 0.
+        simtf = lftf
+        dotakeoutfloors=0
+    elif bn == "thickdisk12":
+        print( "Using a = %g (thickdisk12) settings" % a )
+        Dt = None
+        Dno = None
+        #lfti = 14215.
+        lfti = 6000.
+        lftf = 1e5
+        pn="A94BfN100C3"
+        rin = 10
+        rmax = 100
+        simti = 0.
+        simtf = lftf
+        dotakeoutfloors=0
+    elif bn == "thickdisk13":
+        print( "Using a = %g (thickdisk13) settings" % a )
+        Dt = None
+        Dno = None
+        #lfti = 14215.
+        lfti = 8000.
+        lftf = 1e5
+        pn="A94BfN100C4"
+        rin = 10
+        rmax = 100
+        simti = 0.
+        simtf = lftf
+        dotakeoutfloors=0
+    elif bn == "thickdiskrr2":
+        print( "Using a = %g (thickdiskrr2) settings" % a )
+        Dt = None
+        Dno = None
+        #lfti = 14215.
+        lfti = 6000.
+        lftf = 1e5
+        pn="A-94BfN30"
+        rin = 10
+        rmax = 100
+        simti = 0.
+        simtf = lftf
+        dotakeoutfloors=0
+    elif bn == "thickdiskr1":
+        print( "Using a = %g (thickdiskr1) settings" % a )
+        Dt = None
+        Dno = None
+        #lfti = 14215.
+        lfti = 6000.
+        lftf = 1e5
+        pn="A94BfN30"
+        rin = 10
+        rmax = 100
+        simti = 0.
+        simtf = lftf
+        dotakeoutfloors=0
+    elif bn == "thickdiskr2":
+        print( "Using a = %g (thickdiskr2) settings" % a )
+        Dt = None
+        Dno = None
+        #lfti = 14215.
+        lfti = 6000.
+        lftf = 1e5
+        pn="A94BfN30R"
+        rin = 10
+        rmax = 100
+        simti = 0.
+        simtf = lftf
+        dotakeoutfloors=0
+    elif bn == "thickdisk9":
+        print( "Using a = %g (thickdisk9) settings" % a )
+        Dt = None
+        Dno = None
+        #lfti = 14215.
+        lfti = 8000.
+        lftf = 1e5
+        pn="A94BpN100"
+        rin = 10
+        rmax = 100
+        simti = 0.
+        simtf = lftf
+        dotakeoutfloors=0
     else:
         print( "Unknown case: a = %g, using defaults..." % a )
         lfti = 10000.
