@@ -4556,8 +4556,6 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     global dUfloor, qtymem, DUfloorori, etad0, DU
     #Mdot, E, L
     grid3d("gdump.bin",use2d=True)
-    if dotakeoutfloors:
-        istag, jstag, hstag, rstag = getstagparams(rmax=20,doplot=0,doreadgrid=0)
     #get base name of the current dir
     bn = os.path.basename(os.getcwd())
     pn = bn
@@ -5095,6 +5093,8 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     if fti is None or ftf is None:
         fti = lfti
         ftf = lftf
+    if dotakeoutfloors:
+        istag, jstag, hstag, rstag = getstagparams(rmax=20,doplot=0,doreadgrid=0)
     #dotakeoutfloors=1
     RR=0
     TH=1
