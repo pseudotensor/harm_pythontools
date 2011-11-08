@@ -133,7 +133,7 @@ echo "runnglobal=$runnglobal"
 
 # Options: B)
 #
-#  In order to run mkstreamlinefigure(), you need to have generated 2D
+#  In order to run mkavgfigs(), you need to have generated 2D
 # average dump files beforehand (search for 2DAVG), created a combined
 # average file (for which you run the script with 2DAVG section
 # enabled, generate 2D average files, and then run the same script
@@ -1123,7 +1123,7 @@ then
     myinitfile7=$localpath/__init__.py.7.$myrand
     echo "myinitfile7="${myinitfile7}
 
-    sed -n '1h;1!H;${;g;s/if False:[\n \t]*#fig2 with grayscalestreamlines and red field lines[\n \t]*mkstreamlinefigure()/if True:\n\t#fig2 with grayscalestreamlines and red field lines\n\tmkstreamlinefigure()/g;p;}'  $initfile > $myinitfile7
+    sed -n '1h;1!H;${;g;s/if False:[\n \t]*#fig2 with grayscalestreamlines and red field lines[\n \t]*mkavgfigs()/if True:\n\t#fig2 with grayscalestreamlines and red field lines\n\tmkavgfigs()/g;p;}'  $initfile > $myinitfile7
 
 
     echo "Generate the avg plots"
