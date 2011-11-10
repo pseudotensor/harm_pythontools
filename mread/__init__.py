@@ -5022,6 +5022,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         165,
                         148,
                         147])
+        #lfti = 17500.
         #lfti = 14215.
         lfti = 14292.
         lftf = 1e5
@@ -5785,8 +5786,8 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         simpath.append(stringsplit[1])
     gin.close()
     if plotetas:
-        plt.figure(1)
-        plt.xlim(0,200)
+        #plt.figure(1)
+        plt.xlim(0,800)
         plt.ylim(-2,alist.shape[0])
         ilist = np.arange(alist.shape[0])
         pylab.errorbar(etalist*100, ilist, xerr=2*etastdlist*100,marker='o',ls='None')
@@ -6083,7 +6084,6 @@ def wmom(arrin, weights_in, inputmean=None, calcerr=False, sdev=False):
     weights = np.array(weights_in, ndmin=1, dtype='f8', copy=False)
   
     wtot = weights.sum()
-        
     # user has input a mean value
     if inputmean is None:
         wmean = ( weights*arr ).sum()/wtot
@@ -6719,11 +6719,12 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         gdetB[1:] = avg_gdetB[0:]
         mu = avg_mu
         # mkframe("myframe",len=mylen,ax=ax,density=4,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.0025,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
-        mkframe("myframe",len=mylen,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=28,dodiskfield=0,minlenbhfield=0.1,minlendiskfield=0.1,dsval=0.001,color='r',lw=2,startatmidplane=True,showjet=False,arrowsize=arrowsize,skipblankint=True,populatestreamlines=False,useblankdiskfield=False,dnarrow=4,whichr=15)
+        mkframe("myframe",len=mylen,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=28,dodiskfield=0,minlenbhfield=0.1,minlendiskfield=0.1,dsval=0.001,color='r',lw=0.5,startatmidplane=True,showjet=False,arrowsize=arrowsize,skipblankint=True,populatestreamlines=False,useblankdiskfield=False,dnarrow=4,whichr=15)
     if True:
         #KE+EM without floors with contourf
         #energy flow (no rest-mass) vs. radius and theta
-        en=(-gdet*avg_Tud[1,0]-gdet*avg_rhouu[1]).cumsum(1)*_dx2*_dx3
+        enden=(-gdet*avg_Tud[1,0]-gdet*avg_rhouu[1])
+        en=(enden.cumsum(1)-0.5*enden)*_dx2*_dx3 #subtract half of current cell's density to get cell-centered quantity
         #mdot vs. radius
         md=(-gdet*avg_rhouu[1]).sum(2).sum(1)*_dx2*_dx3
         #pick out a scalar value at r = 5M
@@ -6750,13 +6751,20 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         #plc(en2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=True,nc=20,isfilled=True)
         z = np.abs(en2)/np.nanmax(np.abs(en2))
         minval=1e-3
-        z[z<minval]=z[z<minval]*0+minval
+        cutval=1*minval
+        z[z<cutval]=z[z<cutval]*0+cutval
         # lev_exp = np.arange(np.floor(np.log10(np.nanmin(z))-1),
         #                      np.ceil(np.log10(np.nanmax(z))+1))
         lev_exp=np.linspace(np.log10(minval),0,10)
         levs = np.power(10, lev_exp)
         #plco(z,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=True,nc=20,levels=levs,isfilled=True,norm=colors.LogNorm())
-        cts=plc(z,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=True,nc=20,levels=levs,isfilled=True,locator=ticker.LogLocator(),alpha=0.25,zorder=2,cmap=cm.hsv_r)
+        ctsf=plc(z,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=False,nc=20,levels=levs,isfilled=True,locator=ticker.LogLocator(),alpha=0.25,zorder=2,cmap=cm.hsv_r)
+        cts=plc(z,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=False,nc=20,levels=ctsf.levels[1::1],isfilled=False,locator=ticker.LogLocator(),alpha=0.25,zorder=2,linestyles='solid',linewidths=0.5,colors='r')
+        # Make a colorbar for the ContourSet returned by the contourf call.
+        cbar = plt.colorbar(ctsf)
+        #cbar.ax.set_ylabel('verbosity coefficient')
+        # Add the contour line levels to the colorbar
+        cbar.add_lines(cts)
         #pdb.set_trace()
         #plt.xlim(-30,30); plt.ylim(-30,30)
     if True:
@@ -6789,7 +6797,7 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         plt.figure(1)
         gdetB[1:] = avg_gdetB[0:]
         mu = avg_mu
-        mkframe("myframe",len=mylen,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=True,vmin=-6,vmax=0.5,dobhfield=12,dodiskfield=8,minlenbhfield=0.1,minlendiskfield=0.1,dsval=0.001,color='w',lw=1.5,startatmidplane=True,showjet=False,arrowsize=arrowsize,skipblankint=True,populatestreamlines=False,useblankdiskfield=False,dnarrow=4)
+        mkframe("myframe",len=mylen,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=True,vmin=-6,vmax=0.5,dobhfield=12,dodiskfield=8,minlenbhfield=0.1,minlendiskfield=0.1,dsval=0.001,color='b',lw=1.5,startatmidplane=True,showjet=False,arrowsize=arrowsize,skipblankint=True,populatestreamlines=False,useblankdiskfield=False,dnarrow=4)
     if False:
         x = (r*np.sin(h))[:,:,0]
         z = (r*np.cos(h))[:,:,0]
@@ -7676,7 +7684,7 @@ if __name__ == "__main__":
         #print epsFm, epsFke
         mkmovie(prefactor=100.,sigma=1500.,usegaussianunits=True,domakeframes=domakeframes)
         #mkmovie(prefactor=100.,usegaussianunits=True,domakeframes=domakeframes)
-    if True:
+    if False:
         #fig2 with grayscalestreamlines and red field lines
         #mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=False)
         mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=True)
@@ -7757,7 +7765,7 @@ if __name__ == "__main__":
             sys.stdout.flush()
             aphi=fieldcalc()
             if fldindex == 0:
-                maxaphi = 3.2 #aphi.max()
+                maxaphi = 3*3*3.2 #aphi.max()
             #fig=plt.figure(1,figsize=(10,10))
             #plt.clf()
             #ax = fig.add_subplot(111, aspect='equal')
@@ -7770,10 +7778,11 @@ if __name__ == "__main__":
             el = Ellipse((0,0), 2, 2, facecolor='k', alpha=1)
             art=ax.add_artist(el)
             art.set_zorder(20)
-            plt.xlim(0,40)
-            plt.ylim(-20,20)
+            rmax = 10
+            plt.xlim(0,rmax)
+            plt.ylim(-0.5*rmax,0.5*rmax)
             #
-            #plt.draw()
+            plt.draw()
             plt.savefig( 'frame%04d.png' % fldindex )
             #if fldindex >= 500:
             #    break
