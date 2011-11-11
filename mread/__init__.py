@@ -4394,7 +4394,7 @@ def getstagparams(var=None,rmax=20,doplot=1,doreadgrid=1,usedefault=1,fixupneara
     else:
         return istag, jstag, hstag, rstag
 
-def get_dUfloor( floordumpno, maxrinflowequilibrium = 20, aphi_j_val=0 ):
+def get_dUfloor( floordumpno, maxrinflowequilibrium = 20, aphi_j_val=0, ndim=1, is_output_cell_center = True ):
     """ maxrsteady should be chosen to be on the outside of the inflow equilibrium region """
     RR=0
     TH=1
@@ -4413,23 +4413,27 @@ def get_dUfloor( floordumpno, maxrinflowequilibrium = 20, aphi_j_val=0 ):
     #condin = (r[:,:,0:1]<maxrinflowequilibrium)
     condout = 1 - condin
     #XXX change below to account for limited range in theta
-    UfloorAout = (dUfloor*condout[:,:,:,:]).sum(1+PH).cumsum(1+TH)  #*(tj!=0)*(tj!=ny-1)
-    UfloorAin = (dUfloor*condin[:,:,:,:]).sum(1+PH).cumsum(1+TH) #*(tj!=0)*(tj!=ny-1)
-    if aphi_j_val == 0:
-        #use unrestricted (full) sum
-        UfloorAout = UfloorAout[:,:,ny-1]
-        UfloorAin = UfloorAin[:,:,ny-1]
-    else:
-        # eout = np.copy(UfloorAout[1])
-        # ein = np.copy(UfloorAin[1])
-        # UfloorAout = UfloorAout[:,:,ny-1]
-        # UfloorAin = UfloorAin[:,:,ny-1]
-        # #cut-out only for energy
-        # UfloorAout[1] = cutout_along_aphi(eout,aphi_j_val=aphi_j_val)
-        # UfloorAin[1]  = cutout_along_aphi(ein,aphi_j_val=aphi_j_val)
-        #cut-out only for energy
-        UfloorAout = cutout_along_aphi(UfloorAout,aphi_j_val=aphi_j_val)
-        UfloorAin  = cutout_along_aphi(UfloorAin,aphi_j_val=aphi_j_val)
+    if ndim == 1:
+        UfloorAout = (dUfloor*condout[:,:,:,:]).sum(1+PH).cumsum(1+TH)  #*(tj!=0)*(tj!=ny-1)
+        UfloorAin = (dUfloor*condin[:,:,:,:]).sum(1+PH).cumsum(1+TH) #*(tj!=0)*(tj!=ny-1)
+        if aphi_j_val == 0:
+            #use unrestricted (full) sum
+            UfloorAout = UfloorAout[:,:,ny-1]
+            UfloorAin = UfloorAin[:,:,ny-1]
+        else:
+            # eout = np.copy(UfloorAout[1])
+            # ein = np.copy(UfloorAin[1])
+            # UfloorAout = UfloorAout[:,:,ny-1]
+            # UfloorAin = UfloorAin[:,:,ny-1]
+            # #cut-out only for energy
+            # UfloorAout[1] = cutout_along_aphi(eout,aphi_j_val=aphi_j_val)
+            # UfloorAin[1]  = cutout_along_aphi(ein,aphi_j_val=aphi_j_val)
+            #cut-out only for energy
+            UfloorAout = cutout_along_aphi(UfloorAout,aphi_j_val=aphi_j_val)
+            UfloorAin  = cutout_along_aphi(UfloorAin,aphi_j_val=aphi_j_val)
+    elif ndim == 2:
+        UfloorAout = (dUfloor*condout[:,:,:,:]).sum(1+PH)  #*(tj!=0)*(tj!=ny-1)
+        UfloorAin = (dUfloor*condin[:,:,:,:]).sum(1+PH) #*(tj!=0)*(tj!=ny-1)
     #Integrate in radius
     UfloorAout = UfloorAout.cumsum(1+RR)
     UfloorAin  = UfloorAin.cumsum(1+RR)
@@ -4444,8 +4448,9 @@ def get_dUfloor( floordumpno, maxrinflowequilibrium = 20, aphi_j_val=0 ):
         rrdump("rdump--0258.bin")
         Ucons[1] -= Ucons[0]
         UfloorA[0:8] += Ucons[0:8].sum(-1).sum(-1)*_dx1*_dx2*_dx3
-    #This needs to be moved half a cell to the right for correct centering
-    UfloorA[:,1:] = 0.5*(UfloorA[:,:-1]+UfloorA[:,1:])
+    if is_output_cell_center:
+        #This needs to be moved half a cell to the right for correct centering
+        UfloorA[:,1:] = 0.5*(UfloorA[:,:-1]+UfloorA[:,1:])
     UfloorAsum = UfloorA*scaletofullwedge(1.)
     
     return( UfloorAsum )
@@ -4530,7 +4535,7 @@ def plotfluxes(doreload=1,aphi_j_val=0):
         label.set_fontsize(16)
     plt.savefig("fig4.eps",bbox_inches='tight',pad_inches=0.02)
 
-def get_dFfloor(Dt, Dno, dotakeoutfloors=True,aphi_j_val=0):
+def get_dFfloor(Dt, Dno, dotakeoutfloors=True,aphi_j_val=0, ndim=1, is_output_cell_center = True):
     """ Returns the flux correction due to floor activations and fixups, 
     requires gdump to be loaded [grid3d("gdump.bin",use2d=True)], and arrays, Dt and Dno, 
     set up."""
@@ -4539,7 +4544,7 @@ def get_dFfloor(Dt, Dno, dotakeoutfloors=True,aphi_j_val=0):
     if dotakeoutfloors:
         for (i,iDT) in enumerate(Dt):
             gc.collect() #try to clean up memory if not used
-            iDU = get_dUfloor( Dno[i], aphi_j_val=aphi_j_val )
+            iDU = get_dUfloor( Dno[i], aphi_j_val=aphi_j_val, ndim=ndim, is_output_cell_center = is_output_cell_center )
             if iDT > 0:
                 DT += iDT
             if i==0:
@@ -4549,10 +4554,15 @@ def get_dFfloor(Dt, Dno, dotakeoutfloors=True,aphi_j_val=0):
         #average in time
         DU /= DT
     else:
-        DU = np.zeros((8,nx),dtype=np.float64)
+        if ndim == 1:
+            DU = np.zeros((8,nx),dtype=np.float64)
+        elif ndim == 2:
+            DU = np.zeros((8,nx,ny),dtype=np.float64)
+        else:
+            DU = np.zeros((8,nx,ny,nz),dtype=np.float64)
     return( DU )
 
-def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=None,isinteractive=1,returndf=0,dolegend=True,plotldtot=True,lw=1,plotFem=False,writefile=True,doplot=True,aphi_j_val=0):
+def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=None,isinteractive=1,returndf=0,dolegend=True,plotldtot=True,lw=1,plotFem=False,writefile=True,doplot=True,aphi_j_val=0, ndim=1, is_output_cell_center = True):
     global dUfloor, qtymem, DUfloorori, etad0, DU
     #Mdot, E, L
     grid3d("gdump.bin",use2d=True)
@@ -4560,6 +4570,8 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     bn = os.path.basename(os.getcwd())
     pn = bn
     rbr = 200.
+    Dt = None
+    Dno = None
     if np.abs(a - 0.99)<1e-4 and bn=="rtf2_10r22.82_a0.99_n4_0_0_0":
         #lo-res 0.99 settings
         print( "Using a = 0.99 (rtf2_10r22.82_a0.99_n4_0_0_0) settings")
@@ -5239,14 +5251,14 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         if simtf > real_tf and qtymem[0,-1,0] > 0:
             #last_t + dt:
             simtf = real_tf
-        #XXX
-        if dotakeoutfloors:
-            DU = get_dFfloor(Dt, Dno, dotakeoutfloors=dotakeoutfloors,aphi_j_val=aphi_j_val)
-        else:
-            DU=np.zeros((8,nx))
-    DUfloor0 = DU[0]
-    DUfloor1 = DU[1]
-    DUfloor4 = DU[4]
+        #XXX this returns array of zeros if dotakeoutfloors == False or 0.
+        DF = get_dFfloor(Dt, Dno, dotakeoutfloors=dotakeoutfloors,aphi_j_val=aphi_j_val, ndim=ndim, is_output_cell_center = is_output_cell_center)
+    #RETURN: if requested 2D information
+    if ndim == 2:
+        return DF
+    DFfloor0 = DF[0]
+    DFfloor1 = DF[1]
+    DFfloor4 = DF[4]
     #at this time we have the floor information, now get averages:
     #mdtotvsr, edtotvsr, edmavsr, ldtotvsr = plotqtyvstime( qtymem, whichplot = -2, fti=fti, ftf=ftf )
     #XXX
@@ -5309,13 +5321,13 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
             plt.clf()
         if ax is None and doplot:
             plt.plot(r[:,0,0],mdtotvsr,'b--',label=r"$F_M$ (raw)",lw=2)
-    Fm=(mdtotvsr+DUfloor0)
-    Fe=-(edtotvsr+DUfloor1)
+    Fm=(mdtotvsr+DFfloor0)
+    Fe=-(edtotvsr+DFfloor1)
     if ldtotvsr is not None:
         #** definition of ldtot: \int(gdet*Tud[1][3]): 
         #   when u^r < 0 and u_\varphi > 0 (usual for prograde disk inflow), then ldtot < 0
         #defined as positive when ang. mom. flows *into* BH
-        Fl=-(ldtotvsr+DUfloor4)
+        Fl=-(ldtotvsr+DFfloor4)
         Flphi=Fl/dxdxp[3][3][:,0,0]  #convert L_x3 into L_\varphi
         #spin-up parameter
         #taken from Gammie, Shapiro, McKinney 2003
@@ -5343,9 +5355,9 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                 plt.plot(r[:,0,0],FKE10,'g',label=r"$F_{KE,b^2/\rho<30}$",lw=2)
                 #plt.plot(r[:,0,0],Fm+edtotvsr,'g:',label=r"$F_{EM}$",lw=2)
         if dofeavg and isinteractive and doplot: 
-            plt.plot(r[:,0,0],FE-DUfloor1,'k',label=r"$F_E$",lw=2)
+            plt.plot(r[:,0,0],FE-DFfloor1,'k',label=r"$F_E$",lw=2)
         if isinteractive and ax is None and doplot:
-            plt.plot(r[:,0,0],(DUfloor1),'r:',lw=2)
+            plt.plot(r[:,0,0],(DFfloor1),'r:',lw=2)
     if ldtotvsr is not None and plotldtot and doplot:
         if isinteractive and ax is None:
             plt.plot(r[:,0,0],-ldtotvsr/dxdxp[3][3][:,0,0]/10.,'g--',label=r"$F_L/10$ (raw)",lw=2)
@@ -5355,8 +5367,8 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     etap = (Fm-Fe)/Fe
     if isinteractive:
         print("Eff = %g, Eff' = %g" % ( eta[iofr(5)], etap[iofr(5)] ) )
-        #plt.plot(r[:,0,0],DUfloor0,label=r"$dU^t$")
-        #plt.plot(r[:,0,0],DUfloor*1e4,label=r"$dU^t\times10^4$")
+        #plt.plot(r[:,0,0],DFfloor0,label=r"$dU^t$")
+        #plt.plot(r[:,0,0],DFfloor*1e4,label=r"$dU^t\times10^4$")
         if doplot:
             if dolegend:
                 plt.legend(loc='lower right',bbox_to_anchor=(0.97,0.39),
@@ -5374,8 +5386,8 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                 plt.savefig("fig4.png",bbox_inches='tight',pad_inches=0.02)
             #FIGURE: energy
             #plt.figure(2)
-            #plt.plot(r[:,0,0],edtotvsr+DUfloor1,label=r"$\dot E+dU^1$")
-            #plt.plot(r[:,0,0],DUfloor1,label=r"$dU^1$")
+            #plt.plot(r[:,0,0],edtotvsr+DFfloor1,label=r"$\dot E+dU^1$")
+            #plt.plot(r[:,0,0],DFfloor1,label=r"$dU^1$")
             #plt.legend()
             #plt.xlim(rhor,12)
             #plt.ylim(-3,20)
@@ -5466,11 +5478,11 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     # plt.plot(r[:,0,0],-avg_tudug,label="myug")
     # plt.plot(r[:,0,0],edmavsr,label="ma")
     # plt.plot(r[:,0,0],edtotvsr-edmavsr,label="tot-ma")
-    # #plt.plot(r[:,0,0],DUfloor[1])
+    # #plt.plot(r[:,0,0],DFfloor[1])
     # plt.xlim(rh,20); plt.ylim(-20,20)
     # plt.legend()
     # if ldtotvsr is not None:
-    #     plt.plot(r[:,0,0],ldtotvsr+DUfloor4,label=r"$Lwoutfloor$")
+    #     plt.plot(r[:,0,0],ldtotvsr+DFfloor4,label=r"$Lwoutfloor$")
     #plt.xlim(rhor,12)
     #plt.ylim(-3,20)
     #xx
@@ -6670,7 +6682,7 @@ def mkmanystreamlinesxy():
     # plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02)
     plt.savefig("fig2oneline.png",bbox_inches='tight',pad_inches=0.02,dpi=300)
 
-def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,showticks=True,usedefault=2,fc='white',mc='white'):
+def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,showticks=True,usedefault=2,fc='white',mc='white',dotakeoutfloors=0):
     #fc='#D8D8D8'
     global bsq, ug, mu, B
     mylen = length/frac
@@ -6684,7 +6696,7 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
     fig.patch.set_alpha(1.0)
     fntsize=24
     ax = fig.add_subplot(111, aspect='equal', frameon=frameon)
-    if doenergy==False and True:
+    if doenergy==False and False:
         #velocity
         if True:
             avg_uu[2,:,-1]*=0
@@ -6723,17 +6735,54 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
     if True:
         #KE+EM without floors with contourf
         #energy flow (no rest-mass) vs. radius and theta
-        enden=(-gdet*avg_Tud[1,0]-gdet*avg_rhouu[1])
+        #FLR: here replace this with actual flux of energy: gdetF12 (if non-zero, which means if defined; account for face-location!)
+        #     provide interface through takeoutfloors to return "floor-corrected" 2D arrays of mass and energy flows
+        #     maybe just make a call to takeoutfloors() (or similar function) that would return energy and mass fluxes
+        if False and not avg_gdetF[0,0].any():
+            #saved face-centered fluxes exist
+            is_output_cell_center = True
+            enden1=(-gdet*avg_Tud[1,0]-gdet*avg_rhouu[1])
+            enden2=(-gdet*avg_Tud[2,0]-gdet*avg_rhouu[2])
+            enden=enden1
+            mdden=(-gdet*avg_rhouu[1])
+        else:
+            is_output_cell_center = False
+            #0,0 mass    r-dir
+            #1,0 energy  r-dir
+            #2,0 ang.m.  r-dir
+            enden1=(-avg_gdetF[1,0])
+            enden2=(-avg_gdetF[1,1])
+            enden=enden1
+            mdden =(-avg_gdetF[0,0])
+        if dotakeoutfloors:
+            DFfloor=takeoutfloors(ax=None,doreload=1,dotakeoutfloors=dotakeoutfloors,dofeavg=0,isinteractive=0,writefile=False,doplot=False,aphi_j_val=0, ndim=2, is_output_cell_center = False)
+            #subtract rest-mass from total energy flux and flip the sign to get correct direction
+            DFen = DFfloor[1]+DFfloor[0]
+            enden += DFen[:,:,None]
+            mdden += DFfloor[0][:,:,None]
         en=(enden.cumsum(1)-0.5*enden)*_dx2*_dx3 #subtract half of current cell's density to get cell-centered quantity
+        md=(mdden).sum(2).sum(1)*_dx2*_dx3
+        if is_output_cell_center == False:
+            en[:-1]=0.5*(en[:-1]+en[1:])
+            enden1[:-1]=0.5*(enden1[1:]+enden1[:-1])
+            enden2[:,:-1]=0.5*(enden2[:,1:]+enden2[:,:-1])
+            md[:-1]=0.5*(md[:-1]+md[1:])
         #mdot vs. radius
-        md=(-gdet*avg_rhouu[1]).sum(2).sum(1)*_dx2*_dx3
         #pick out a scalar value at r = 5M
         md=md[iofr(5)]
         #equatorial trajectory: starts at r = rh, theta = pi/2
         rhor=1+(1-a**2)**0.5
         radval=10.
-        traj = mkonestreamlinex1x2( -avg_Tud[1,0,:,:,0]-avg_rhouu[1,:,:,0],
+        if is_output_cell_center == True:
+            #internal fluxes not available
+            traj = mkonestreamlinex1x2( -avg_Tud[1,0,:,:,0]-avg_rhouu[1,:,:,0],
                                     -avg_Tud[2,0,:,:,0]-avg_rhouu[2,:,:,0],
+                                    x1[:,0,0],x2[0,:,0],
+                                    x1[iofr(radval),ny/2,0],0.)
+        else:
+            #internal fluxes available: use them (account for the fact that they are staggered!)
+            traj = mkonestreamlinex1x2( enden1[:,:,0],
+                                    enden2[:,:,0],
                                     x1[:,0,0],x2[0,:,0],
                                     x1[iofr(radval),ny/2,0],0.)
         xtraj,ytraj=traj
@@ -6767,6 +6816,10 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         cbar.add_lines(cts)
         #pdb.set_trace()
         #plt.xlim(-30,30); plt.ylim(-30,30)
+        mylenshow = frac*mylen
+        plt.xlim(-mylenshow,mylenshow)
+        plt.ylim(-mylenshow,mylenshow)
+        pdb.set_trace()
     if True:
         istag, jstag, hstag, rstag = getstagparams(doplot=0,usedefault=usedefault)
         myRmax=4
@@ -7684,10 +7737,11 @@ if __name__ == "__main__":
         #print epsFm, epsFke
         mkmovie(prefactor=100.,sigma=1500.,usegaussianunits=True,domakeframes=domakeframes)
         #mkmovie(prefactor=100.,usegaussianunits=True,domakeframes=domakeframes)
-    if False:
+    if True:
         #fig2 with grayscalestreamlines and red field lines
         #mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=False)
-        mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=True)
+        #mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=True,dotakeoutfloors=1)
+        mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=True,dotakeoutfloors=0)
         #mkstreamlinefigure(length=4,doenergy=False)
     if False:
         #FIGURE 1 LOTSOPANELS
