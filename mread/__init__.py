@@ -4456,7 +4456,7 @@ def get_dUfloor( floordumpno, maxrinflowequilibrium = 20, aphi_j_val=0, ndim=1, 
     return( UfloorAsum )
 
 def plotfluxes(doreload=1,aphi_j_val=0):
-    global DU,DU1,DU2,qtymem,qtymem1,qtymem2
+    global DF,DF1,DF2,qtymem,qtymem1,qtymem2
     bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
     plt.figure(4)
     gs = GridSpec(2, 2)
@@ -4464,12 +4464,12 @@ def plotfluxes(doreload=1,aphi_j_val=0):
     ax1 = plt.subplot(gs[-2,-1])
     os.chdir("/home/atchekho/run/rtf2_15r34_2pi_a0.99gg500rbr1e3_0_0_0") 
     if not doreload:
-        DU=DU1
+        DF=DF1
         qtymem=qtymem1
     takeoutfloors(fti=7000,ftf=30500,#fti=22095,ftf=28195,
         ax=ax1,dolegend=False,doreload=doreload,plotldtot=False,lw=2,aphi_j_val=aphi_j_val)
     if doreload:
-        DU1=DU
+        DF1=DF
         qtymem1=qtymem
     plt.text(ax1.get_xlim()[0]+(ax1.get_xlim()[1]-ax1.get_xlim()[0])/10., 
              0.85*ax1.get_ylim()[1], r"$(\mathrm{b})$", size=20, rotation=0.,
@@ -4501,11 +4501,11 @@ def plotfluxes(doreload=1,aphi_j_val=0):
     ax2 = plt.subplot(gs[-2,-2])
     os.chdir("/home/atchekho/run/rtf2_15r34.475_a0.5_0_0_0") 
     if not doreload:
-        DU=DU2
+        DF=DF2
         qtymem=qtymem2
     takeoutfloors(fti=10300,ftf=1e5,ax=ax2,dolegend=False,doreload=doreload,plotldtot=False,lw=2)
     if doreload:
-        DU2=DU
+        DF2=DF
         qtymem2=qtymem
     plt.text(ax2.get_xlim()[0]+(ax2.get_xlim()[1]-ax2.get_xlim()[0])/10., 
              0.85*ax2.get_ylim()[1], r"$(\mathrm{a})$", size=20, rotation=0.,
@@ -4563,7 +4563,7 @@ def get_dFfloor(Dt, Dno, dotakeoutfloors=True,aphi_j_val=0, ndim=1, is_output_ce
     return( DU )
 
 def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=None,isinteractive=1,returndf=0,dolegend=True,plotldtot=True,lw=1,plotFem=False,writefile=True,doplot=True,aphi_j_val=0, ndim=1, is_output_cell_center = True):
-    global dUfloor, qtymem, DUfloorori, etad0, DU
+    global dUfloor, qtymem, etad0, DF
     #Mdot, E, L
     grid3d("gdump.bin",use2d=True)
     #get base name of the current dir
@@ -5293,7 +5293,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     if np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) < 1.5:
         #correct energy flux for face vs. center
         edtotvsr = (edtotvsr+mdtotvsr)*energy_flux_correction_factor - mdtotvsr
-    elif False and (gdetF11!=0).any():
+    elif (gdetF11!=0).any():
         edtotvsr[:-1] = -0.5*(gdetF11[:-1]+gdetF11[1:])
         mdtotvsr[:-1] = -0.5*(gdetF10[:-1]+gdetF10[1:])
         edtotvsr -= mdtotvsr
@@ -5321,6 +5321,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
             plt.clf()
         if ax is None and doplot:
             plt.plot(r[:,0,0],mdtotvsr,'b--',label=r"$F_M$ (raw)",lw=2)
+    #pdb.set_trace()
     Fm=(mdtotvsr+DFfloor0)
     Fe=-(edtotvsr+DFfloor1)
     if ldtotvsr is not None:
@@ -6696,7 +6697,7 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
     fig.patch.set_alpha(1.0)
     fntsize=24
     ax = fig.add_subplot(111, aspect='equal', frameon=frameon)
-    if doenergy==False and False:
+    if doenergy==False and True:
         #velocity
         if True:
             avg_uu[2,:,-1]*=0
@@ -6738,7 +6739,7 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         #FLR: here replace this with actual flux of energy: gdetF12 (if non-zero, which means if defined; account for face-location!)
         #     provide interface through takeoutfloors to return "floor-corrected" 2D arrays of mass and energy flows
         #     maybe just make a call to takeoutfloors() (or similar function) that would return energy and mass fluxes
-        if False and not avg_gdetF[0,0].any():
+        if not avg_gdetF[0,0].any():
             #saved face-centered fluxes exist
             is_output_cell_center = True
             enden1=(-gdet*avg_Tud[1,0]-gdet*avg_rhouu[1])
@@ -6747,10 +6748,15 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
             mdden=(-gdet*avg_rhouu[1])
         else:
             is_output_cell_center = False
-            #0,0 mass    r-dir
-            #1,0 energy  r-dir
-            #2,0 ang.m.  r-dir
-            enden1=(-avg_gdetF[1,0])
+            #x1-fluxes of:
+            #0,0 mass   
+            #0,1 energy 
+            #0,2 ang.m. 
+            #x2-fluxes of:
+            #0,0 mass   
+            #0,1 energy 
+            #0,2 ang.m. 
+            enden1=(-avg_gdetF[0,1])
             enden2=(-avg_gdetF[1,1])
             enden=enden1
             mdden =(-avg_gdetF[0,0])
@@ -6758,8 +6764,9 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
             DFfloor=takeoutfloors(ax=None,doreload=1,dotakeoutfloors=dotakeoutfloors,dofeavg=0,isinteractive=0,writefile=False,doplot=False,aphi_j_val=0, ndim=2, is_output_cell_center = False)
             #subtract rest-mass from total energy flux and flip the sign to get correct direction
             DFen = DFfloor[1]+DFfloor[0]
-            enden += DFen[:,:,None]
-            mdden += DFfloor[0][:,:,None]
+            #pdb.set_trace()
+            enden += DFen[:,:,None]*nz
+            mdden += DFfloor[0][:,:,None]*nz
         en=(enden.cumsum(1)-0.5*enden)*_dx2*_dx3 #subtract half of current cell's density to get cell-centered quantity
         md=(mdden).sum(2).sum(1)*_dx2*_dx3
         if is_output_cell_center == False:
@@ -6807,7 +6814,7 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         lev_exp=np.linspace(np.log10(minval),0,10)
         levs = np.power(10, lev_exp)
         #plco(z,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=True,nc=20,levels=levs,isfilled=True,norm=colors.LogNorm())
-        ctsf=plc(z,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=False,nc=20,levels=levs,isfilled=True,locator=ticker.LogLocator(),alpha=0.25,zorder=2,cmap=cm.hsv_r)
+        ctsf=plc(z,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=False,nc=20,levels=levs,isfilled=True,locator=ticker.LogLocator(),alpha=0.25,zorder=2,cmap=cm.hot_r)
         cts=plc(z,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=False,nc=20,levels=ctsf.levels[1::1],isfilled=False,locator=ticker.LogLocator(),alpha=0.25,zorder=2,linestyles='solid',linewidths=0.5,colors='r')
         # Make a colorbar for the ContourSet returned by the contourf call.
         cbar = plt.colorbar(ctsf)
@@ -6819,7 +6826,7 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         mylenshow = frac*mylen
         plt.xlim(-mylenshow,mylenshow)
         plt.ylim(-mylenshow,mylenshow)
-        pdb.set_trace()
+        #pdb.set_trace()
     if True:
         istag, jstag, hstag, rstag = getstagparams(doplot=0,usedefault=usedefault)
         myRmax=4
@@ -7570,7 +7577,8 @@ def oldstuff():
 
 if __name__ == "__main__":
     if False:
-        takeoutfloors(dotakeoutfloors=1,doplot=False)
+        takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=False)
+        #takeoutfloors(dotakeoutfloors=1,doplot=False)
     if False:
         grid3d("gdump.bin",use2d=True)
         #rfd("fieldline0000.bin")
@@ -7740,8 +7748,8 @@ if __name__ == "__main__":
     if True:
         #fig2 with grayscalestreamlines and red field lines
         #mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=False)
-        #mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=True,dotakeoutfloors=1)
-        mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=True,dotakeoutfloors=0)
+        mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=True,dotakeoutfloors=1,usedefault=1)
+        #mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=True,dotakeoutfloors=0)
         #mkstreamlinefigure(length=4,doenergy=False)
     if False:
         #FIGURE 1 LOTSOPANELS
