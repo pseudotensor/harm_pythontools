@@ -5316,7 +5316,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     ihor = iofr(rhor)
     #FIGURE: mass
     if isinteractive:
-        if ax is None:
+        if ax is None and doplot:
             plt.figure(1)
             plt.clf()
         if ax is None and doplot:
@@ -6742,10 +6742,10 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         if not avg_gdetF[0,0].any():
             #saved face-centered fluxes exist
             is_output_cell_center = True
-            enden1=(-gdet*avg_Tud[1,0]-gdet*avg_rhouu[1])
-            enden2=(-gdet*avg_Tud[2,0]-gdet*avg_rhouu[2])
+            enden1=(-gdet*avg_Tud[1,0]-gdet*avg_rhouu[1])*nz
+            enden2=(-gdet*avg_Tud[2,0]-gdet*avg_rhouu[2])*nz
             enden=enden1
-            mdden=(-gdet*avg_rhouu[1])
+            mdden=(-gdet*avg_rhouu[1])*nz
         else:
             is_output_cell_center = False
             #x1-fluxes of:
@@ -6756,19 +6756,20 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
             #0,0 mass   
             #0,1 energy 
             #0,2 ang.m. 
-            enden1=(-avg_gdetF[0,1])
-            enden2=(-avg_gdetF[1,1])
+            enden1=(-avg_gdetF[0,1]*nz)
+            enden2=(-avg_gdetF[1,1]*nz)
             enden=enden1
-            mdden =(-avg_gdetF[0,0])
+            mdden =(-avg_gdetF[0,0]*nz)
         if dotakeoutfloors:
             DFfloor=takeoutfloors(ax=None,doreload=1,dotakeoutfloors=dotakeoutfloors,dofeavg=0,isinteractive=0,writefile=False,doplot=False,aphi_j_val=0, ndim=2, is_output_cell_center = False)
             #subtract rest-mass from total energy flux and flip the sign to get correct direction
             DFen = DFfloor[1]+DFfloor[0]
             #pdb.set_trace()
-            enden += DFen[:,:,None]*nz
-            mdden += DFfloor[0][:,:,None]*nz
+            enden += DFen[:,:,None]/(_dx2*_dx3)
+            mdden += DFfloor[0][:,:,None]/(_dx2*_dx3)
         en=(enden.cumsum(1)-0.5*enden)*_dx2*_dx3 #subtract half of current cell's density to get cell-centered quantity
         md=(mdden).sum(2).sum(1)*_dx2*_dx3
+        #pdb.set_trace()
         if is_output_cell_center == False:
             en[:-1]=0.5*(en[:-1]+en[1:])
             enden1[:-1]=0.5*(enden1[1:]+enden1[:-1])
@@ -7583,7 +7584,8 @@ if __name__ == "__main__":
         grid3d("gdump.bin",use2d=True)
         #rfd("fieldline0000.bin")
         #flist = ["avg2d20_0000_0001.npy", "avg2d20_0000_0050.npy","avg2d20_0100_0150.npy","avg2d20_0150_0200.npy","avg2d20_0200_0250.npy"]
-        flist = ["avg2d20_0000_0001.npy", "avg2d20_0200_0250.npy"]
+        #flist = ["avg2d20_0000_0001.npy", "avg2d20_0200_0250.npy"]
+        flist = ["avg2d20_0120_0157.npy"]
         plt.figure(1)
         plt.clf()
         plt.figure(2)
@@ -7668,7 +7670,7 @@ if __name__ == "__main__":
         vurfreefall = gn3[0,1,:,ny/2,0]/gn3[0,0,:,ny/2,0]*dxdxp[1,1,:,0,0]
         vff_nonrel = (2/r[:,0,0])**0.5
         plt.plot(r[:,0,0],vff_nonrel,'y-')
-        plt.plot(r[:,0,0],0.15*vff,'y-')
+        #plt.plot(r[:,0,0],0.15*vff_nonrel,'y-')
         #plot instantaneous v^r
         if False:
             plt.plot(r[:,0,0],-uu[1,:,ny/2,0]/uu[0,:,ny/2,0]*dxdxp[1,1,:,0,0],'r')
