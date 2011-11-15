@@ -5321,7 +5321,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     ihor = iofr(rhor)
     #FIGURE: mass
     if isinteractive:
-        if ax is None:
+        if ax is None and doplot:
             plt.figure(1)
             plt.clf()
         if ax is None and doplot:
@@ -6704,11 +6704,18 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
     ax = fig.add_subplot(111, aspect='equal', frameon=frameon)
     if doenergy==False and True:
         #velocity
+        qty=avg_uu
+        #
+        #mass flor
+        #qty=avg_rhouu
+        #
+        #angular momentum flow
+        #qty=avg_Tud[:,3]
         if True:
-            avg_uu[2,:,-1]*=0
-            avg_uu[2,:,-2]*=0
-            avg_uu[2,:,0]*=0
-            avg_uu[2,:,1]*=0
+            qty[2,:,-1]*=0
+            qty[2,:,-2]*=0
+            qty[2,:,0]*=0
+            qty[2,:,1]*=0
         #avg_uu[1,:,-3:-1] = np.abs(avg_uu[1,:,-3:-1])
         # avg_uu[1,:,-1]=avg_uu[1,:,-4]
         # avg_uu[1,:,-2]=avg_uu[1,:,-4]
@@ -6717,7 +6724,8 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         # avg_uu[1,:,0]=avg_uu[1,:,3]
         # avg_uu[1,:,1]=avg_uu[1,:,3]
         # avg_uu[1,:,2]=avg_uu[1,:,3]
-        B[1:] = avg_uu[1:]
+        #B[1:] = avg_uu[1:]
+        B[1:] = qty[1:]
         bsq = avg_bsq
         mkframe("myframe",len=mylen,ax=ax,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.0025,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
     if doenergy==True and False:
@@ -6747,10 +6755,10 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         if not avg_gdetF[0,0].any():
             #saved face-centered fluxes exist
             is_output_cell_center = True
-            enden1=(-gdet*avg_Tud[1,0]-gdet*avg_rhouu[1])
-            enden2=(-gdet*avg_Tud[2,0]-gdet*avg_rhouu[2])
+            enden1=(-gdet*avg_Tud[1,0]-gdet*avg_rhouu[1])*nz
+            enden2=(-gdet*avg_Tud[2,0]-gdet*avg_rhouu[2])*nz
             enden=enden1
-            mdden=(-gdet*avg_rhouu[1])
+            mdden=(-gdet*avg_rhouu[1])*nz
         else:
             is_output_cell_center = False
             #x1-fluxes of:
@@ -6761,19 +6769,20 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
             #0,0 mass   
             #0,1 energy 
             #0,2 ang.m. 
-            enden1=(-avg_gdetF[0,1])
-            enden2=(-avg_gdetF[1,1])
+            enden1=(-avg_gdetF[0,1]*nz)
+            enden2=(-avg_gdetF[1,1]*nz)
             enden=enden1
-            mdden =(-avg_gdetF[0,0])
+            mdden =(-avg_gdetF[0,0]*nz)
         if dotakeoutfloors:
             DFfloor=takeoutfloors(ax=None,doreload=1,dotakeoutfloors=dotakeoutfloors,dofeavg=0,isinteractive=0,writefile=False,doplot=False,aphi_j_val=0, ndim=2, is_output_cell_center = False)
             #subtract rest-mass from total energy flux and flip the sign to get correct direction
             DFen = DFfloor[1]+DFfloor[0]
             #pdb.set_trace()
-            enden += DFen[:,:,None]*nz
-            mdden += DFfloor[0][:,:,None]*nz
+            enden += DFen[:,:,None]/(_dx2*_dx3)
+            mdden += DFfloor[0][:,:,None]/(_dx2*_dx3)
         en=(enden.cumsum(1)-0.5*enden)*_dx2*_dx3 #subtract half of current cell's density to get cell-centered quantity
         md=(mdden).sum(2).sum(1)*_dx2*_dx3
+        #pdb.set_trace()
         if is_output_cell_center == False:
             en[:-1]=0.5*(en[:-1]+en[1:])
             enden1[:-1]=0.5*(enden1[1:]+enden1[:-1])
@@ -6797,6 +6806,89 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
                                     enden2[:,:,0],
                                     x1[:,0,0],x2[0,:,0],
                                     x1[iofr(radval),ny/2,0],0.)
+        xtraj,ytraj=traj
+        x1traj=x1[:,0,0]
+        x2traj=interp1d(xtraj, ytraj, kind='linear',bounds_error=False)(x1traj)
+        entraj=findroot2d(x2[:,:,0]-x2traj[:,None], en[:,:,0], axis = 0, isleft = True )
+        #change zero to be at the equatorial field line
+        en=en-entraj[:,None,None]
+        r2=np.concatenate((r[:,::-1],r),axis=1)
+        h2=np.concatenate((-h[:,::-1],h),axis=1)
+        en2=np.concatenate((en[:,::-1],en),axis=1)
+        #adjust the last cell positions to ensure last contour is closed
+        h2[:,0]=h2[:,0]*0-np.pi*1.
+        h2[:,-1]=h2[:,-1]*0+np.pi*1.
+        #plc(en2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=True,nc=20,isfilled=True)
+        z = np.abs(en2)/np.nanmax(np.abs(en2))
+        minval=1e-3
+        cutval=1*minval
+        z[z<cutval]=z[z<cutval]*0+cutval
+        # lev_exp = np.arange(np.floor(np.log10(np.nanmin(z))-1),
+        #                      np.ceil(np.log10(np.nanmax(z))+1))
+        lev_exp=np.linspace(np.log10(minval),0,10)
+        levs = np.power(10, lev_exp)
+        #plco(z,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=True,nc=20,levels=levs,isfilled=True,norm=colors.LogNorm())
+        ctsf=plc(z,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=False,nc=20,levels=levs,isfilled=True,locator=ticker.LogLocator(),alpha=0.25,zorder=2,cmap=cm.hot_r)
+        cts=plc(z,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=False,nc=20,levels=ctsf.levels[1::1],isfilled=False,locator=ticker.LogLocator(),alpha=0.25,zorder=2,linestyles='solid',linewidths=0.5,colors='r')
+        # Make a colorbar for the ContourSet returned by the contourf call.
+        cbar = plt.colorbar(ctsf)
+        #cbar.ax.set_ylabel('verbosity coefficient')
+        # Add the contour line levels to the colorbar
+        cbar.add_lines(cts)
+        #pdb.set_trace()
+        #plt.xlim(-30,30); plt.ylim(-30,30)
+        mylenshow = frac*mylen
+        plt.xlim(-mylenshow,mylenshow)
+        plt.ylim(-mylenshow,mylenshow)
+        #pdb.set_trace()
+    if False:
+        #Angular momentum flow plot
+        if not avg_gdetF[0,0].any():
+            #saved face-centered fluxes exist
+            is_output_cell_center = True
+            enden1=(-gdet*avg_Tud[1,3])*nz
+            enden2=(-gdet*avg_Tud[2,3])*nz
+            enden=enden1
+            mdden=(-gdet*avg_rhouu[1])*nz
+        else:
+            is_output_cell_center = False
+            #x1-fluxes of:
+            #0,0 mass   
+            #0,1 energy 
+            #0,2 ang.m. 
+            #x2-fluxes of:
+            #1,0 mass  
+            #1,1 energy 
+            #1,2 ang.m. 
+            enden1=(-avg_gdetF[0,2]*nz)
+            enden2=(-avg_gdetF[1,2]*nz)
+            enden=enden1
+            mdden =(-avg_gdetF[0,0]*nz)
+        if dotakeoutfloors:
+            DFfloor=takeoutfloors(ax=None,doreload=1,dotakeoutfloors=dotakeoutfloors,dofeavg=0,isinteractive=0,writefile=False,doplot=False,aphi_j_val=0, ndim=2, is_output_cell_center = False)
+            #subtract rest-mass from total energy flux and flip the sign to get correct direction
+            DFen = DFfloor[1]+DFfloor[0]
+            #pdb.set_trace()
+            enden += DFen[:,:,None]/(_dx2*_dx3)
+            mdden += DFfloor[0][:,:,None]/(_dx2*_dx3)
+        en=(enden.cumsum(1)-0.5*enden)*_dx2*_dx3 #subtract half of current cell's density to get cell-centered quantity
+        md=(mdden).sum(2).sum(1)*_dx2*_dx3
+        #pdb.set_trace()
+        if is_output_cell_center == False:
+            en[:-1]=0.5*(en[:-1]+en[1:])
+            enden1[:-1]=0.5*(enden1[1:]+enden1[:-1])
+            enden2[:,:-1]=0.5*(enden2[:,1:]+enden2[:,:-1])
+            md[:-1]=0.5*(md[:-1]+md[1:])
+        #mdot vs. radius
+        #pick out a scalar value at r = 5M
+        md=md[iofr(5)]
+        #equatorial trajectory: starts at r = rh, theta = pi/2
+        rhor=1+(1-a**2)**0.5
+        radval=10.
+        traj = mkonestreamlinex1x2( enden1[:,:,0],
+                                enden2[:,:,0],
+                                x1[:,0,0],x2[0,:,0],
+                                x1[iofr(radval),ny/2,0],0.)
         xtraj,ytraj=traj
         x1traj=x1[:,0,0]
         x2traj=interp1d(xtraj, ytraj, kind='linear',bounds_error=False)(x1traj)
