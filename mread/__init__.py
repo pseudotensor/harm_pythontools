@@ -6699,11 +6699,18 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
     ax = fig.add_subplot(111, aspect='equal', frameon=frameon)
     if doenergy==False and True:
         #velocity
+        qty=avg_uu
+        #
+        #mass flor
+        #qty=avg_rhouu
+        #
+        #angular momentum flow
+        #qty=avg_Tud[:,3]
         if True:
-            avg_uu[2,:,-1]*=0
-            avg_uu[2,:,-2]*=0
-            avg_uu[2,:,0]*=0
-            avg_uu[2,:,1]*=0
+            qty[2,:,-1]*=0
+            qty[2,:,-2]*=0
+            qty[2,:,0]*=0
+            qty[2,:,1]*=0
         #avg_uu[1,:,-3:-1] = np.abs(avg_uu[1,:,-3:-1])
         # avg_uu[1,:,-1]=avg_uu[1,:,-4]
         # avg_uu[1,:,-2]=avg_uu[1,:,-4]
@@ -6712,7 +6719,8 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         # avg_uu[1,:,0]=avg_uu[1,:,3]
         # avg_uu[1,:,1]=avg_uu[1,:,3]
         # avg_uu[1,:,2]=avg_uu[1,:,3]
-        B[1:] = avg_uu[1:]
+        #B[1:] = avg_uu[1:]
+        B[1:] = qty[1:]
         bsq = avg_bsq
         mkframe("myframe",len=mylen,ax=ax,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.0025,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
     if doenergy==True and False:
