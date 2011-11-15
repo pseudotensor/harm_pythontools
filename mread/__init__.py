@@ -95,7 +95,7 @@ def get2davg(fname=None,usedefault=0,whichgroup=-1,whichgroups=-1,whichgroupe=-1
     return( avgtot )
     
 def assignavg2dvars(avgmem):
-    global avg_ts,avg_te,avg_nitems,avg_rho,avg_ug,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
+    global avg_ts,avg_te,avg_te1,avg_nitems,avg_rho,avg_ug,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
     global avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
     global avg_gamma
     global avg_gdetF
@@ -103,8 +103,13 @@ def assignavg2dvars(avgmem):
     #avg defs
     i=0
     avg_ts=avgmem[i,0,:];
-    avg_te=avgmem[i,1,:]; 
+    avg_te1=avgmem[i,1,:]; 
     avg_nitems=avgmem[i,2,:];i+=1
+    avg_te=np.zeros_like(avg_te1)
+    if avg_nitems[0]>0:
+        avg_te[0]=avg_te1[0]+(avg_te1[0]-avg_ts[0])/(avg_nitems[0]-1)
+    else:
+        avg_te[0]=avg_te1[0]
     #quantities
     avg_rho=avgmem[i,:,:,None];i+=1
     avg_ug=avgmem[i,:,:,None];i+=1
@@ -7583,17 +7588,21 @@ if __name__ == "__main__":
         grid3d("gdump.bin",use2d=True)
         #rfd("fieldline0000.bin")
         #flist = ["avg2d20_0000_0001.npy", "avg2d20_0000_0050.npy","avg2d20_0100_0150.npy","avg2d20_0150_0200.npy","avg2d20_0200_0250.npy"]
-        flist = ["avg2d20_0000_0001.npy", "avg2d20_0200_0250.npy"]
+        #flist = ["avg2d20_00.npy", "avg2d20_0080_0100.npy", "avg2d20_0100_0120.npy", "avg2d20_0120_0140.npy", "avg2d20_0140_0156.npy","avg2d20_0080_0157.npy","avg2d20_0080_0157_nf.npy"]
+        #flist = ["avg2d20_0080_0157.npy","avg2d20_0080_0157_nf.npy"]
+        flist = ["avg2d.npy","avg2dnf.npy"]
         plt.figure(1)
         plt.clf()
         plt.figure(2)
         plt.clf()
         plt.figure(3)
         plt.clf()
+        firsttime=True
         for (i,f) in enumerate(flist):
             print "%s\n" % f
             avgmem = get2davg(fname=f)
             assignavg2dvars(avgmem)
+            lab = "(%g,%g)" % (avg_ts[0],avg_te[0])
             #plot2davg(whichplot=2)
             #plot Mdot vs. r for region v^r < 0
             cond = (avg_rhouu[1]<0)
@@ -7607,15 +7616,16 @@ if __name__ == "__main__":
             #
             #######################
             plt.figure(1)
-            ax = plt.gca()
+            if firsttime:
+                ax1 = plt.gca()
             #plt.plot( r[:,0,0], -mdin, ':' )
-            plt.plot( r[:,0,0], -mdall, '-' )
-            ax.set_xscale('log')
-            plt.xlim(rhor,100)
-            plt.ylim(0,20)
-            plt.xlabel(r"$r$",fontsize=16)
-            plt.ylabel(r"$\dot M$",fontsize=16)
-            plt.grid(b=True)
+            ax1.plot( r[:,0,0], -mdall, '-', label=lab )
+            ax1.set_xscale('log')
+            ax1.set_xlim(rhor,100)
+            ax1.set_ylim(0,20)
+            ax1.set_xlabel(r"$r$",fontsize=16)
+            ax1.set_ylabel(r"$\dot M$",fontsize=16)
+            ax1.grid(b=True)
             #######################
             #
             #  FIGURE 2: u^r
@@ -7623,27 +7633,32 @@ if __name__ == "__main__":
             #######################
             plt.figure(2)
             #plt.clf()
-            ax = plt.gca()
-            up = (gdet[:,:,0:1]*avg_rhouu[1]*_dx2*_dx3).sum(-1).sum(-1)
-            dn = (gdet[:,:,0:1]*avg_rhouu[0]*_dx2*_dx3).sum(-1).sum(-1)/dxdxp[1,1,:,0,0]
-            ur1d = np.array(up/dn)
+            if firsttime:
+                ax2 = plt.gca()
+            # #avg over all volume
+            # up = (gdet[:,:,0:1]*avg_rhouu[1]*_dx2*_dx3).sum(-1).sum(-1)
+            # dn = (gdet[:,:,0:1]*avg_rhouu[0]*_dx2*_dx3).sum(-1).sum(-1)/dxdxp[1,1,:,0,0]
+            #avg over midplane
+            up = (gdet[:,ny/2,0]*avg_rhouu[1][:,ny/2,0]*_dx2*_dx3)
+            dn = (gdet[:,ny/2,0]*avg_rhouu[0][:,ny/2,0]*_dx2*_dx3)/dxdxp[1,1,:,0,0]
+            vur1d = np.array(up/dn)
             uurmid = 0.5*(avg_uu[1,:,ny/2,0]+avg_uu[1,:,ny/2-1,0])*dxdxp[1,1,:,0,0]
             uutmid = 0.5*(avg_uu[0,:,ny/2,0]+avg_uu[0,:,ny/2-1,0])
             vurmid = uurmid/uutmid
-            #plt.plot(r[:,0,0], -ur1d)
-            #plt.plot(r[:,0,0],-ur1d,'b:')
-            #plt.plot(r[:,0,0],-uurmid,'b--')
-            plt.plot(r[:,0,0],-vurmid,'b-')
+            #ax2.plot(r[:,0,0], -ur1d)
+            #ax2.plot(r[:,0,0],-vur1d,'b:')
+            #ax2.plot(r[:,0,0],-uurmid,'b--')
+            ax2.plot(r[:,0,0],-vurmid,label=lab)
             #print ur1d.shape
-            #plt.plot(r[:,0,0],0.1*(r[:,0,0]/10)**(-1.2))
-            plt.ylim(1e-4,1.5)
-            ax.set_xscale('log')
-            ax.set_yscale('log')
-            plt.xlim(rhor,100)
-            #plt.ylim(0,20)
-            plt.xlabel(r"$r$",fontsize=16)
-            plt.ylabel(r"$-u^r$",fontsize=16)
-            plt.grid(b=True)
+            #ax2.plot(r[:,0,0],0.1*(r[:,0,0]/10)**(-1.2))
+            ax2.set_ylim(1e-4,1.5)
+            ax2.set_xscale('log')
+            ax2.set_yscale('log')
+            ax2.set_xlim(rhor,100)
+            #ax2.ylim(0,20)
+            ax2.set_xlabel(r"$r$",fontsize=16)
+            ax2.set_ylabel(r"$-u^r$",fontsize=16)
+            ax2.grid(b=True)
             #######################
             #
             #  FIGURE 3: \Sigma
@@ -7653,33 +7668,71 @@ if __name__ == "__main__":
             #plt.clf()
             ax = plt.gca()
             sigval = (gdet[:,:,0:1]*avg_rhouu[0]*_dx2*_dx3).sum(-1).sum(-1)/dxdxp[1,1,:,0,0]
-            plt.plot( r[:,0,0], sigval )
+            plt.plot( r[:,0,0], sigval, label=lab )
             ax.set_xscale('log')
             ax.set_yscale('log')
             plt.xlim(rhor,100000)
             plt.xlabel(r"$r$",fontsize=16)
             plt.ylabel(r"$\Sigma$",fontsize=16)
             plt.grid(b=True)
+            #######################
+            #
+            #  FIGURE 4: Ang. momentum
+            #
+            #######################
+            plt.figure(4)
+            if firsttime:
+                plt.clf()
+            ax = plt.gca()
+            jin_nmr = (avg_rhouu+avg_uguu+avg_bsquu/2.)[1]*avg_ud[3]
+            jin_dnm = (avg_rhouu)[1]
+            jinmid = (jin_nmr/jin_dnm)[:,ny/2,0]
+            jtot_nmr = avg_Tud[1,3]
+            jtot_dnm = (avg_rhouu)[1]
+            jtotmid = (jtot_nmr/jtot_dnm)[:,ny/2,0]
+            jinfull = (gdet*jin_nmr).sum(1)/(gdet*jin_dnm).sum(1)
+            isdisk=np.abs(h[:,:,0:1]-np.pi/2)<0.1
+            jtotfull = (gdet*jtot_nmr*isdisk).sum(-1).sum(-1)/(gdet*jtot_dnm*isdisk).sum(-1).sum(-1)
+            jinfull = (gdet*jin_nmr*isdisk).sum(-1).sum(-1)/(gdet*jin_dnm*isdisk).sum(-1).sum(-1)
+            plt.plot( r[:,0,0], jtotfull, label=lab )
+            plt.plot( r[:,0,0], avg_ud[3,:,ny/2,0], label=(r"$u_\phi$ at " + lab) )
+            ax.set_xscale('log')
+            #ax.set_yscale('log')
+            plt.xlim(rhor,100)
+            plt.xlabel(r"$r$",fontsize=16)
+            plt.ylabel(r"$\Sigma$",fontsize=16)
+            plt.grid(b=True)
+            plt.ylim(-5,20)
+            firsttime=False
+        handles, labels = ax1.get_legend_handles_labels()
+        ax1.legend(handles, labels,loc="lower left")
         plt.figure(2)
+        plt.plot(r[:,0,0],-vur1d,'b-.')
         plt.plot(r[:,0,0],0.01*(r[:,0,0]/10)**(-2),'b:')
         plt.plot(r[:,0,0],0.01*(r[:,0,0]/10)**(-1.),'b:')
         plt.plot(r[:,0,0],0.01*(r[:,0,0]/10)**(-1./2.),'b:')
+        plt.legend(loc="lower left")
         uurfreefall = -gn3[0,1,:,ny/2,0]/(-gn3[0,0,:,ny/2,0])**0.5*dxdxp[1,1,:,0,0]
         vurfreefall = gn3[0,1,:,ny/2,0]/gn3[0,0,:,ny/2,0]*dxdxp[1,1,:,0,0]
         vff_nonrel = (2/r[:,0,0])**0.5
         plt.plot(r[:,0,0],vff_nonrel,'y-')
-        plt.plot(r[:,0,0],0.15*vff,'y-')
+        plt.plot(r[:,0,0],0.15*vff_nonrel,'y:')
         #plot instantaneous v^r
-        if False:
-            plt.plot(r[:,0,0],-uu[1,:,ny/2,0]/uu[0,:,ny/2,0]*dxdxp[1,1,:,0,0],'r')
+        if True:
+            rfd("fieldline0000.bin")
+            plt.plot(r[:,0,0],-uu[1,:,ny/2,0]/uu[0,:,ny/2,0]*dxdxp[1,1,:,0,0],'r',lw=2)
         #plt.plot(r[:,0,0],-uurfreefall,'g-')
         #plt.plot(r[:,0,0],-uurfreefall,'g--')
         #plt.plot(r[:,0,0],-0.35*uurfreefall,'g--')
         plt.plot(r[:,0,0],-vurfreefall,'g-')
         plt.plot(r[:,0,0],-0.3*vurfreefall,'g-')
         plt.figure(3)
-        plt.plot(r[:,0,0],5e7*(r[:,0,0]/1000)**(1))
-        plt.plot(r[:,0,0],0.1e7*(r[:,0,0]/1000)**(2))
+        plt.legend(loc="lower center")
+        plt.plot(r[:,0,0],1e2*(r[:,0,0]/100)**(1))
+        plt.plot(r[:,0,0],1e2*(r[:,0,0]/100)**(2))
+        plt.ylim(ymax=1e3)
+        plt.figure(4)
+        plt.legend(loc="lower right")
     if False:
         #make a movie
         #fti=7000
