@@ -6841,8 +6841,8 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         if not avg_gdetF[0,0].any():
             #saved face-centered fluxes exist
             is_output_cell_center = True
-            enden1=(-gdet*avg_Tud[1,0]-gdet*avg_rhouu[1])*nz
-            enden2=(-gdet*avg_Tud[2,0]-gdet*avg_rhouu[2])*nz
+            enden1=(-gdet*avg_Tud[1,3])*nz
+            enden2=(-gdet*avg_Tud[2,3])*nz
             enden=enden1
             mdden=(-gdet*avg_rhouu[1])*nz
         else:
@@ -6852,11 +6852,11 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
             #0,1 energy 
             #0,2 ang.m. 
             #x2-fluxes of:
-            #0,0 mass   
-            #0,1 energy 
-            #0,2 ang.m. 
-            enden1=(-avg_gdetF[0,1]*nz)
-            enden2=(-avg_gdetF[1,1]*nz)
+            #1,0 mass  
+            #1,1 energy 
+            #1,2 ang.m. 
+            enden1=(-avg_gdetF[0,2]*nz)
+            enden2=(-avg_gdetF[1,2]*nz)
             enden=enden1
             mdden =(-avg_gdetF[0,0]*nz)
         if dotakeoutfloors:
@@ -6880,18 +6880,10 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         #equatorial trajectory: starts at r = rh, theta = pi/2
         rhor=1+(1-a**2)**0.5
         radval=10.
-        if is_output_cell_center == True:
-            #internal fluxes not available
-            traj = mkonestreamlinex1x2( -avg_Tud[1,0,:,:,0]-avg_rhouu[1,:,:,0],
-                                    -avg_Tud[2,0,:,:,0]-avg_rhouu[2,:,:,0],
-                                    x1[:,0,0],x2[0,:,0],
-                                    x1[iofr(radval),ny/2,0],0.)
-        else:
-            #internal fluxes available: use them (account for the fact that they are staggered!)
-            traj = mkonestreamlinex1x2( enden1[:,:,0],
-                                    enden2[:,:,0],
-                                    x1[:,0,0],x2[0,:,0],
-                                    x1[iofr(radval),ny/2,0],0.)
+        traj = mkonestreamlinex1x2( enden1[:,:,0],
+                                enden2[:,:,0],
+                                x1[:,0,0],x2[0,:,0],
+                                x1[iofr(radval),ny/2,0],0.)
         xtraj,ytraj=traj
         x1traj=x1[:,0,0]
         x2traj=interp1d(xtraj, ytraj, kind='linear',bounds_error=False)(x1traj)
