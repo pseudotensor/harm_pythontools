@@ -587,7 +587,7 @@ def getrhouclean(rho,ug,uu):
     rinterp[rinterp<0.0]=0.0
     #
     condmaxbsqorhorhs=rinterp*maxbsqorhonear + (1.0-rinterp)*maxbsqorhofar
-    condmaxbsqorho=(bsq/rho < condmaxbsqorhorhs)
+    condmaxbsqorho=(bsq/rho < condmaxbsqorhorhs) # used as spatial conditional to replace single value of maxbsqorho 
     #
     bsqorho=bsq/rho # want this to be using original rho
     #
@@ -1210,7 +1210,7 @@ def getdefaulttimes1():
     elif modelname=="thickdisk3":
         defaultfti=25000
         defaultftf=1e5
-    elif modelname=="thickdiskhr3":
+    elif modelname=="thickdiskhr3": # probably want to be same as for "thickdisk3"
         defaultfti=25000
         defaultftf=1e5
     elif modelname=="runlocaldipole3dfiducial":
@@ -3624,10 +3624,10 @@ def rfloor(dumpname):
 # 1) put file in dumps/rdump-0.bin
 # 2) and file in dumps/fieldline*.bin (just 1 file needed -- any file number)
 # 3) ipython ~/py/mread/__init__.py
-# 4) rrdump('rdump-0.bin',writenew=1,newf1=2,newf2=2,newf3=2)
+# 4) reresrdump('rdump-0.bin',writenew=1,newf1=2,newf2=2,newf3=2)
 #
 # only works for 1 or 2 for newf? for now
-def rrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None):
+def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None):
     global nx,ny,nz,t,a,rho,ug,vu,vd,B,gd,gd1,numcols,gdetB
     #print( "Reading " + "dumps/" + dumpname + " ..." )
     gin = open( "dumps/" + dumpname, "rb" )
@@ -3803,7 +3803,12 @@ def rrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None):
         gd2.tofile(gout)
         gout.close()
         print( " done!" ) ; sys.stdout.flush()
-        
+
+
+
+
+
+      
 
 def fieldcalctoth():
     """
@@ -4137,9 +4142,6 @@ def rfd(fieldlinefilename,**kwargs):
     #
     fin.close()
     #
-    # DEBUG:
-    print("checkstreamA: %g" % (B[1][30,ny/2,0]))
-    print("checkstreamB: %g" % (uu[1][30,ny/2,0]))
 
 # need bsq even if modify later ud or uu, but assume bsq not sensitive to those modifications so this is ok
 def getbsq_pre():
@@ -5765,8 +5767,10 @@ def getnqty(dobob=0):
     nqty=getbobnqty()*(dobob==1) + nqtynonbob
     return(nqty)
 
+
+
         
-def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
+def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altread=False):
     """
     Returns a tuple (ts,fs,mdot,pjetem,pjettot): lists of times, horizon fluxes, and Mdot
     """
@@ -6352,7 +6356,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         # for entire flow:
         denfactor=1.0 + rho*0.0
         pickr=4.0
-        spreadr=0.5
+        spreadr=0.1*pickr
         rin=pickr-spreadr
         rout=pickr+spreadr
         if nz>1:
@@ -6403,7 +6407,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         # for entire flow:
         denfactor=1.0 + rho*0.0
         pickr=8.0
-        spreadr=1.0
+        spreadr=0.1*pickr
         rin=pickr-spreadr
         rout=pickr+spreadr
         if nz>1:
@@ -6454,7 +6458,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         # for entire flow:
         denfactor=1.0 + rho*0.0
         pickr=30.0
-        spreadr=3.0
+        spreadr=0.1*pickr
         rin=pickr-spreadr
         rout=pickr+spreadr
         if nz>1:
@@ -6516,8 +6520,10 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         print("pick out *at* r\sim r+" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         denfactor=1.0 + rho*0.0
         pickr=rhor
-        rin=pickr
-        rout=pickr
+        spreadr=0.1*pickr
+        rin=max(pickr-spreadr,1.01*Rin)
+        rout=pickr+spreadr
+        print("rin=%g rout=%g Rin=%g rhor=%g r0=%g" % (rin,rout,Rin,rhor,r[0,0,0]))
         diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
         keywordsrhosq_diskcorona_phipow_radhor={'which': diskcondition}
         maxbsqorho=condmaxbsqorhorhs[iofr(pickr),0,0] # good for r=rhor
@@ -6538,7 +6544,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         print("pick out *at* r\sim 4M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         denfactor=1.0 + rho*0.0
         pickr=4.0
-        spreadr=0.5
+        spreadr=0.1*pickr
         rin=pickr-spreadr
         rout=pickr+spreadr
         diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
@@ -6561,7 +6567,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         print("pick out *at* r\sim 8M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         denfactor=1.0 + rho*0.0
         pickr=8.0
-        spreadr=1.0
+        spreadr=0.1*pickr
         rin=pickr-spreadr
         rout=pickr+spreadr
         diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
@@ -6583,7 +6589,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         print("pick out *at* r\sim 30M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         denfactor=1.0 + rho*0.0
         pickr=30.0
-        spreadr=3.0
+        spreadr=0.1*pickr
         rin=pickr-spreadr
         rout=pickr+spreadr
         diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
@@ -6615,8 +6621,9 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         print("pick out *at* r\sim 4M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         denfactor=1.0 + rho*0.0
         pickr=rhor
-        rin=pickr
-        rout=pickr
+        spreadr=0.1*pickr
+        rin=max(pickr-spreadr,1.01*Rin)
+        rout=pickr+spreadr
         diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
         keywordsrhosq_jet_phipow_radhor={'which': diskcondition}
         minbsqorho=condmaxbsqorhorhs[iofr(pickr),0,0] # good for r=rhor
@@ -6637,7 +6644,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         print("pick out *at* r\sim 4M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         denfactor=1.0 + rho*0.0
         pickr=4.0
-        spreadr=0.5
+        spreadr=0.1*pickr
         rin=pickr-spreadr
         rout=pickr+spreadr
         diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
@@ -6660,7 +6667,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         print("pick out *at* r\sim 8M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         denfactor=1.0 + rho*0.0
         pickr=8.0
-        spreadr=1.0
+        spreadr=0.1*pickr
         rin=pickr-spreadr
         rout=pickr+spreadr
         diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
@@ -6682,7 +6689,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         print("pick out *at* r\sim 30M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         denfactor=1.0 + rho*0.0
         pickr=30.0
-        spreadr=3.0
+        spreadr=0.1*pickr
         rin=pickr-spreadr
         rout=pickr+spreadr
         diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
@@ -6733,31 +6740,35 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         fsj40[findex]=horfluxcalc(ivalue=ihor,minbsqorho=40)
         #
         print("Mdot" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
+        avoidfloorcondition=condmaxbsqorho
+        keywordsavoidfloor={'which': avoidfloorcondition}
+        #
         enth=1+ug*gam/rho
-        mdtot[findex]=mdotcalc()
-        mdtotbound[findex]=mdotcalc(which=(-enth*ud[0]<=1))
+        mdtot[findex]=mdotcalc(which=avoidfloorcondition)
+        mdtotbound[findex]=mdotcalc(which=avoidfloorcondition*(-enth*ud[0]<=1))
         md2h[findex]=mdotcalc(**keywords2h)
         md4h[findex]=mdotcalc(**keywords4h)
         md2hor[findex]=mdotcalc(**keywords2hor)
         md5[findex]=intangle(-gdet*rho*uu[1],minbsqorho=5)
         md10[findex]=intangle(-gdet*rho*uu[1],minbsqorho=10)
         md20[findex]=intangle(-gdet*rho*uu[1],minbsqorho=20)
-        md30[findex]=intangle(-gdet*rho*uu[1],minbsqorho=30)
+        # md30 really is Mdot for floor
+        md30[findex]=intangle(-gdet*rho*uu[1],which=(avoidfloorcondition==0))
         # use 10 for jet and wind since at larger radii jet has lower bsqorho
         # don't include maxbeta=3 since outflows from disk can have larger beta
         windmaxbeta=1E30
-        mdwind[findex]=intangle(gdet*rho*uu[1],mumax=1,maxbeta=windmaxbeta,maxbsqorho=maxbsqorhofar)
+        mdwind[findex]=intangle(gdet*rho*uu[1],mumax=1,maxbeta=windmaxbeta,which=condmaxbsqorho)
         mwindmaxbeta=2
-        mdmwind[findex]=intangle(gdet*rho*uu[1],mumax=1,maxbeta=mwindmaxbeta,maxbsqorho=maxbsqorhofar)
+        mdmwind[findex]=intangle(gdet*rho*uu[1],mumax=1,maxbeta=mwindmaxbeta,which=condmaxbsqorho)
         #
-        mdjet[findex]=intangle(gdet*rho*uu[1],mumin=1,maxbsqorho=maxbsqorhofar)
+        mdjet[findex]=intangle(gdet*rho*uu[1],mumin=1,which=condmaxbsqorho)
         #
         md40[findex]=intangle(-gdet*rho*uu[1],minbsqorho=40)
         mdrhosq[findex]=scaletofullwedge(((-gdet*rho**2*rho*uu[1]*diskcondition).sum(1)/maxrhosq2d).sum(1)*_dx2*_dx3)
         #mdrhosq[findex]=(-gdet*rho**2*rho*uu[1]).sum(1).sum(1)/(-gdet*rho**2).sum(1).sum(1)*(-gdet).sum(1).sum(1)*_dx2*_dx3
         #
         # use same below maxbsqorho condition for fsin for proper division comparison
-        mdin[findex]=intangle(-gdet*rho*uu[1],inflowonly=1,maxbsqorho=maxbsqorhonear)
+        mdin[findex]=intangle(-gdet*rho*uu[1],inflowonly=1,which=condmaxbsqorho)
         #
         print("Edot" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         edtot[findex]=intangle(-gdet*Tud[1][0])
@@ -6783,6 +6794,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         #
         #
         # use md10-like restriction since in jet or wind at large radii bsq/rho doesn't reach ~30 but floors still fed in mass
+        # OLD style floor calculation kept, but not using _flr stuff anymore
         jetwind_minbsqorho=10.0
         #
         print("north hemisphere" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
@@ -6790,17 +6802,17 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         pjem_n_mumax1[findex]=jetpowcalc(0,mumax=1,maxbeta=windmaxbeta,donorthsouth=1)
         pjem_n_mumax1m[findex]=jetpowcalc(0,mumax=1,maxbeta=mwindmaxbeta,donorthsouth=1)
         #
-        pjrm_n_mu1[findex]=jetpowcalc(3,mumin=1,donorthsouth=1)
-        pjrm_n_mumax1[findex]=jetpowcalc(3,mumax=1,maxbeta=windmaxbeta,donorthsouth=1)
-        pjrm_n_mumax1m[findex]=jetpowcalc(3,mumax=1,maxbeta=mwindmaxbeta,donorthsouth=1)
+        pjrm_n_mu1[findex]=jetpowcalc(3,mumin=1,donorthsouth=1,conditional=condmaxbsqorho)
+        pjrm_n_mumax1[findex]=jetpowcalc(3,mumax=1,maxbeta=windmaxbeta,donorthsouth=1,conditional=condmaxbsqorho)
+        pjrm_n_mumax1m[findex]=jetpowcalc(3,mumax=1,maxbeta=mwindmaxbeta,donorthsouth=1,conditional=condmaxbsqorho)
         #
         pjrm_n_mu1_flr[findex]=jetpowcalc(3,mumin=1,minbsqorho=jetwind_minbsqorho,donorthsouth=1)
         pjrm_n_mumax1_flr[findex]=jetpowcalc(3,mumax=1,maxbeta=windmaxbeta,minbsqorho=jetwind_minbsqorho,donorthsouth=1)
         pjrm_n_mumax1m_flr[findex]=jetpowcalc(3,mumax=1,maxbeta=mwindmaxbeta,minbsqorho=jetwind_minbsqorho,donorthsouth=1)
         #
-        pjma_n_mu1[findex]=jetpowcalc(1,mumin=1,donorthsouth=1)
-        pjma_n_mumax1[findex]=jetpowcalc(1,mumax=1,maxbeta=windmaxbeta,donorthsouth=1)
-        pjma_n_mumax1m[findex]=jetpowcalc(1,mumax=1,maxbeta=mwindmaxbeta,donorthsouth=1)
+        pjma_n_mu1[findex]=jetpowcalc(1,mumin=1,donorthsouth=1,conditional=condmaxbsqorho)
+        pjma_n_mumax1[findex]=jetpowcalc(1,mumax=1,maxbeta=windmaxbeta,donorthsouth=1,conditional=condmaxbsqorho)
+        pjma_n_mumax1m[findex]=jetpowcalc(1,mumax=1,maxbeta=mwindmaxbeta,donorthsouth=1,conditional=condmaxbsqorho)
         #
         pjma_n_mu1_flr[findex]=jetpowcalc(1,mumin=1,minbsqorho=jetwind_minbsqorho,donorthsouth=1)
         pjma_n_mumax1_flr[findex]=jetpowcalc(1,mumax=1,maxbeta=windmaxbeta,minbsqorho=jetwind_minbsqorho,donorthsouth=1)
@@ -6815,17 +6827,17 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         pjem_s_mumax1[findex]=jetpowcalc(0,mumax=1,maxbeta=windmaxbeta,donorthsouth=-1)
         pjem_s_mumax1m[findex]=jetpowcalc(0,mumax=1,maxbeta=mwindmaxbeta,donorthsouth=-1)
         #
-        pjrm_s_mu1[findex]=jetpowcalc(3,mumin=1,donorthsouth=-1)
-        pjrm_s_mumax1[findex]=jetpowcalc(3,mumax=1,maxbeta=windmaxbeta,donorthsouth=-1)
-        pjrm_s_mumax1m[findex]=jetpowcalc(3,mumax=1,maxbeta=mwindmaxbeta,donorthsouth=-1)
+        pjrm_s_mu1[findex]=jetpowcalc(3,mumin=1,donorthsouth=-1,conditional=condmaxbsqorho)
+        pjrm_s_mumax1[findex]=jetpowcalc(3,mumax=1,maxbeta=windmaxbeta,donorthsouth=-1,conditional=condmaxbsqorho)
+        pjrm_s_mumax1m[findex]=jetpowcalc(3,mumax=1,maxbeta=mwindmaxbeta,donorthsouth=-1,conditional=condmaxbsqorho)
         #
         pjrm_s_mu1_flr[findex]=jetpowcalc(3,mumin=1,minbsqorho=jetwind_minbsqorho,donorthsouth=-1)
         pjrm_s_mumax1_flr[findex]=jetpowcalc(3,mumax=1,maxbeta=windmaxbeta,minbsqorho=jetwind_minbsqorho,donorthsouth=-1)
         pjrm_s_mumax1m_flr[findex]=jetpowcalc(3,mumax=1,maxbeta=mwindmaxbeta,minbsqorho=jetwind_minbsqorho,donorthsouth=-1)
         #
-        pjma_s_mu1[findex]=jetpowcalc(1,mumin=1,donorthsouth=-1)
-        pjma_s_mumax1[findex]=jetpowcalc(1,mumax=1,maxbeta=windmaxbeta,donorthsouth=-1)
-        pjma_s_mumax1m[findex]=jetpowcalc(1,mumax=1,maxbeta=mwindmaxbeta,donorthsouth=-1)
+        pjma_s_mu1[findex]=jetpowcalc(1,mumin=1,donorthsouth=-1,conditional=condmaxbsqorho)
+        pjma_s_mumax1[findex]=jetpowcalc(1,mumax=1,maxbeta=windmaxbeta,donorthsouth=-1,conditional=condmaxbsqorho)
+        pjma_s_mumax1m[findex]=jetpowcalc(1,mumax=1,maxbeta=mwindmaxbeta,donorthsouth=-1,conditional=condmaxbsqorho)
         #
         pjma_s_mu1_flr[findex]=jetpowcalc(1,mumin=1,minbsqorho=jetwind_minbsqorho,donorthsouth=-1)
         pjma_s_mumax1_flr[findex]=jetpowcalc(1,mumax=1,maxbeta=windmaxbeta,minbsqorho=jetwind_minbsqorho,donorthsouth=-1)
@@ -6851,17 +6863,17 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         ljem_n_mumax1[findex]=jetpowcalc(10,mumax=1,maxbeta=windmaxbeta,donorthsouth=1)
         ljem_n_mumax1m[findex]=jetpowcalc(10,mumax=1,maxbeta=mwindmaxbeta,donorthsouth=1)
         #
-        ljrm_n_mu1[findex]=jetpowcalc(13,mumin=1,donorthsouth=1)
-        ljrm_n_mumax1[findex]=jetpowcalc(13,mumax=1,maxbeta=windmaxbeta,donorthsouth=1)
-        ljrm_n_mumax1m[findex]=jetpowcalc(13,mumax=1,maxbeta=mwindmaxbeta,donorthsouth=1)
+        ljrm_n_mu1[findex]=jetpowcalc(13,mumin=1,donorthsouth=1,conditional=condmaxbsqorho)
+        ljrm_n_mumax1[findex]=jetpowcalc(13,mumax=1,maxbeta=windmaxbeta,donorthsouth=1,conditional=condmaxbsqorho)
+        ljrm_n_mumax1m[findex]=jetpowcalc(13,mumax=1,maxbeta=mwindmaxbeta,donorthsouth=1,conditional=condmaxbsqorho)
         #
         ljrm_n_mu1_flr[findex]=jetpowcalc(13,mumin=1,minbsqorho=jetwind_minbsqorho,donorthsouth=1)
         ljrm_n_mumax1_flr[findex]=jetpowcalc(13,mumax=1,maxbeta=windmaxbeta,minbsqorho=jetwind_minbsqorho,donorthsouth=1)
         ljrm_n_mumax1m_flr[findex]=jetpowcalc(13,mumax=1,maxbeta=mwindmaxbeta,minbsqorho=jetwind_minbsqorho,donorthsouth=1)
         #
-        ljma_n_mu1[findex]=jetpowcalc(11,mumin=1,donorthsouth=1)
-        ljma_n_mumax1[findex]=jetpowcalc(11,mumax=1,maxbeta=windmaxbeta,donorthsouth=1)
-        ljma_n_mumax1m[findex]=jetpowcalc(11,mumax=1,maxbeta=mwindmaxbeta,donorthsouth=1)
+        ljma_n_mu1[findex]=jetpowcalc(11,mumin=1,donorthsouth=1,conditional=condmaxbsqorho)
+        ljma_n_mumax1[findex]=jetpowcalc(11,mumax=1,maxbeta=windmaxbeta,donorthsouth=1,conditional=condmaxbsqorho)
+        ljma_n_mumax1m[findex]=jetpowcalc(11,mumax=1,maxbeta=mwindmaxbeta,donorthsouth=1,conditional=condmaxbsqorho)
         #
         ljma_n_mu1_flr[findex]=jetpowcalc(11,mumin=1,minbsqorho=jetwind_minbsqorho,donorthsouth=1)
         ljma_n_mumax1_flr[findex]=jetpowcalc(11,mumax=1,maxbeta=windmaxbeta,minbsqorho=jetwind_minbsqorho,donorthsouth=1)
@@ -6872,17 +6884,17 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None):
         ljem_s_mumax1[findex]=jetpowcalc(10,mumax=1,maxbeta=windmaxbeta,donorthsouth=-1)
         ljem_s_mumax1m[findex]=jetpowcalc(10,mumax=1,maxbeta=mwindmaxbeta,donorthsouth=-1)
         #
-        ljrm_s_mu1[findex]=jetpowcalc(13,mumin=1,donorthsouth=-1)
-        ljrm_s_mumax1[findex]=jetpowcalc(13,mumax=1,maxbeta=windmaxbeta,donorthsouth=-1)
-        ljrm_s_mumax1m[findex]=jetpowcalc(13,mumax=1,maxbeta=mwindmaxbeta,donorthsouth=-1)
+        ljrm_s_mu1[findex]=jetpowcalc(13,mumin=1,donorthsouth=-1,conditional=condmaxbsqorho)
+        ljrm_s_mumax1[findex]=jetpowcalc(13,mumax=1,maxbeta=windmaxbeta,donorthsouth=-1,conditional=condmaxbsqorho)
+        ljrm_s_mumax1m[findex]=jetpowcalc(13,mumax=1,maxbeta=mwindmaxbeta,donorthsouth=-1,conditional=condmaxbsqorho)
         #
         ljrm_s_mu1_flr[findex]=jetpowcalc(13,mumin=1,minbsqorho=jetwind_minbsqorho,donorthsouth=-1)
         ljrm_s_mumax1_flr[findex]=jetpowcalc(13,mumax=1,maxbeta=windmaxbeta,minbsqorho=jetwind_minbsqorho,donorthsouth=-1)
         ljrm_s_mumax1m_flr[findex]=jetpowcalc(13,mumax=1,maxbeta=mwindmaxbeta,minbsqorho=jetwind_minbsqorho,donorthsouth=-1)
         #
-        ljma_s_mu1[findex]=jetpowcalc(11,mumin=1,donorthsouth=-1)
-        ljma_s_mumax1[findex]=jetpowcalc(11,mumax=1,maxbeta=windmaxbeta,donorthsouth=-1)
-        ljma_s_mumax1m[findex]=jetpowcalc(11,mumax=1,maxbeta=mwindmaxbeta,donorthsouth=-1)
+        ljma_s_mu1[findex]=jetpowcalc(11,mumin=1,donorthsouth=-1,conditional=condmaxbsqorho)
+        ljma_s_mumax1[findex]=jetpowcalc(11,mumax=1,maxbeta=windmaxbeta,donorthsouth=-1,conditional=condmaxbsqorho)
+        ljma_s_mumax1m[findex]=jetpowcalc(11,mumax=1,maxbeta=mwindmaxbeta,donorthsouth=-1,conditional=condmaxbsqorho)
         #
         ljma_s_mu1_flr[findex]=jetpowcalc(11,mumin=1,minbsqorho=jetwind_minbsqorho,donorthsouth=-1)
         ljma_s_mumax1_flr[findex]=jetpowcalc(11,mumax=1,maxbeta=windmaxbeta,minbsqorho=jetwind_minbsqorho,donorthsouth=-1)
@@ -7227,7 +7239,7 @@ def faraday():
     omegaf1b=v3nonhat - B3nonhat*(v1hat*B1hat+v2hat*B2hat)/(B1hat**2+B2hat**2)
     #
 
-def jetpowcalc(which=2,minbsqorho=None,mumin=None,mumax=None,maxbeta=None,maxbsqorho=None,donorthsouth=0):
+def jetpowcalc(which=2,minbsqorho=None,mumin=None,mumax=None,maxbeta=None,maxbsqorho=None,donorthsouth=0,conditional=1):
     if which==3:
         #rest-mass flux
         jetpowden = gdet*rho*uu[1]
@@ -7303,7 +7315,7 @@ def jetpowcalc(which=2,minbsqorho=None,mumin=None,mumax=None,maxbeta=None,maxbsq
         #
         jetpowden[cond] = 0*jetpowden[cond]
     #
-    jetpowtot = scaletofullwedge(np.sum(np.sum(jetpowden,axis=2),axis=1)*_dx2*_dx3)
+    jetpowtot = scaletofullwedge(np.sum(np.sum(conditional*jetpowden,axis=2),axis=1)*_dx2*_dx3)
     #print "which = %d, minbsqorho = %g" % (which, minbsqorho)
     return(jetpowtot)
     
@@ -7336,12 +7348,22 @@ def iofr(rval):
     return(iofrpole(rval))
 
 def iofrpole(rval):
-    res = interp1d(r[:,0,0], ti[:,0,0], kind='linear')
-    return(np.floor(res(rval)+0.5))
+    if rval<=Rin or rval<=r[0,0,0]:
+        return(0)
+    elif rval>=Rout or rval>=r[-1,0,0]:
+        return(ti[-1,0,0])
+    else:
+        res = interp1d(r[:,0,0], ti[:,0,0], kind='linear')
+        return(np.floor(res(rval)+0.5))
 
 def iofreq(rval):
-    res = interp1d(r[:,ny/2,0], ti[:,ny/2,0], kind='linear')
-    return(np.floor(res(rval)+0.5))
+    if rval<=Rin or rval<=r[0,0,0]:
+        return(0)
+    elif rval>=Rout or rval>=r[-1,0,0]:
+        return(ti[-1,0,0])
+    else:
+        res = interp1d(r[:,ny/2,0], ti[:,ny/2,0], kind='linear')
+        return(np.floor(res(rval)+0.5))
 
 def tofts(tval):
     res = interp1d(ts[:], np.arange(0,len(ts)), kind='linear')
@@ -7401,6 +7423,74 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     nqtynonbob = getnonbobnqty()
     nqty=nqtynonbob
     #
+    ##################################
+    #
+    # in some cases want to read other data for other times and merge with current data
+    # Do this for thickdiskhr3 and use thickdisk3 data for earlier times before started thickdiskhr3 -- including t=0 values
+    if modelname=="thickdiskhr3":
+        print("Reading from thickdisk3 for some times and merging with thickdiskhr3 data")
+        #
+        # get low-res qty data (should make local link to this file)
+        qtymemalt=np.load( "qty2_thickdisk3.npy" )
+        # get size of low-res qty data
+        numtimeslicesalt = qtymemalt.shape[1]
+        numxalt = qtymemalt.shape[2]
+        tslr=qtymemalt[0,:,0]
+        tendlr=tslr[-1]
+        print("orig: numtimeslicesalt=%d numxalt=%d" % (numtimeslicesalt,numxalt)) ; sys.stdout.flush()
+        #
+        # get size of high-res qty data
+        numtimeslices = qtymem.shape[1]
+        numx = qtymem.shape[2]
+        tshr=qtymem[0,:,0]
+        tstarthr=tshr[0]
+        if tstarthr==0 or tstarthr<1E-4:
+            tstarthr=tshr[1]
+        print("numtimeslices=%d numx=%d" % (numtimeslices,numx)) ; sys.stdout.flush()
+        #
+        # remove part of low-res qty data that overlaps with high res data
+        tcondition=(tslr<tstarthr)
+        print("tslr[-1]=%g tstarthr=%g" % (tslr[-1],tstarthr)) ; sys.stdout.flush()
+        qtymemaltnew=qtymemalt[:,tcondition,:]
+        # reget information
+        numtimeslicesalt = qtymemaltnew.shape[1]
+        numxalt = qtymemaltnew.shape[2]
+        tslr=qtymemaltnew[0,:,0]
+        tendlr=tslr[-1]
+        print("numtimeslicesalt=%d numxalt=%d" % (numtimeslicesalt,numxalt)) ; sys.stdout.flush()
+        #
+        #
+        # interpolate low-res data to high-res
+        qtymemalthr=np.copy(qtymem)
+        xi = np.linspace(0,1.0,numtimeslicesalt)
+        yi = np.linspace(0.0,1.0,numxalt) # steps from 0 to 1 in steps based upon low-res data for radius part
+        # hr nx size (just sets overall scale for interpolation)
+        xxi = np.linspace(xi.min(),xi.max(),numtimeslicesalt) # same number of time slices
+        yyi = np.linspace(yi.min(),yi.max(),numx) # new size in x from hr data
+        # interpolate to thickdiskhr3 size
+        print("thickdisk3->thickdiskhr3 shapes") ; sys.stdout.flush()
+        print(xi.shape) ; sys.stdout.flush()
+        print(yi.shape) ; sys.stdout.flush()
+        print(qtymemaltnew.shape) ; sys.stdout.flush()
+        #
+        for qtyiter in np.arange(0,nqty):
+            qtymemhrfun = sp.interpolate.RectBivariateSpline(xi,yi,qtymemaltnew[qtyiter,:,:], kx=2,ky=2)
+            qtymemalthr[qtyiter] = qtymemhrfun(xxi,yyi)
+        #
+        # now merge qtymem (hr version, generally with latter times) with qtymemalthr (generally with earlier times)
+        # cat for times now that radii same
+        qtymemcat=np.concatenate((qtymemalthr,qtymem),axis=1)
+        #
+        # remove times that overlap (keeping high res -- latter -- times)
+        
+        #
+        # overwrite qtymem (overwrites any prior global assignment and creation of global memory)
+        qtymem=np.copy(qtymemcat)
+        numtimeslicesfinal = qtymem.shape[1]
+        numxfinal = qtymem.shape[2]
+        print("final: numtimeslicesfinal=%d numxfinal=%d" % (numtimeslicesfinal,numxfinal)) ; sys.stdout.flush()
+        #
+    #
     ###########################
     #
     # take qtymem and fill in variable names
@@ -7408,6 +7498,11 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     totalnum=getqtymem(qtymem)
     if totalnum!=nqty:
         print("totalnum=%d does not equal nqty=%d" % (totalnum,nqty)) ; sys.stdout.flush()
+    #
+    #
+    #
+    #
+    #
     #
     ##################################
     # get starting time so can compute time differences
@@ -7422,9 +7517,11 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     # jet
     phiabsj_mu1 = phiabsj_n_mu1 + phiabsj_s_mu1
     #
-    # Removing floors here from make
-    pjmake_n_mu1=(pjma_n_mu1-pjma_n_mu1_flr) - (pjrm_n_mu1-pjrm_n_mu1_flr)
-    pjmake_s_mu1=(pjma_s_mu1-pjma_s_mu1_flr) - (pjrm_s_mu1-pjrm_s_mu1_flr)
+    # Removing floors here from make (done *inside* ma calculation now)
+    #pjmake_n_mu1=(pjma_n_mu1-pjma_n_mu1_flr) - (pjrm_n_mu1-pjrm_n_mu1_flr)
+    #pjmake_s_mu1=(pjma_s_mu1-pjma_s_mu1_flr) - (pjrm_s_mu1-pjrm_s_mu1_flr)
+    pjmake_n_mu1=(pjma_n_mu1) - (pjrm_n_mu1)
+    pjmake_s_mu1=(pjma_s_mu1) - (pjrm_s_mu1)
     pjmake_mu1 = pjmake_n_mu1 + pjmake_s_mu1
     pjke_n_mu1 = pjem_n_mu1 + pjmake_n_mu1
     pjke_s_mu1 = pjem_s_mu1 + pjmake_s_mu1
@@ -7432,8 +7529,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     pjem_mu1 = pjem_n_mu1 + pjem_s_mu1
     #
     # Removing floors here from make
-    ljmake_n_mu1=(ljma_n_mu1-ljma_n_mu1_flr) - (ljrm_n_mu1-ljrm_n_mu1_flr)
-    ljmake_s_mu1=(ljma_s_mu1-ljma_s_mu1_flr) - (ljrm_s_mu1-ljrm_s_mu1_flr)
+    #ljmake_n_mu1=(ljma_n_mu1-ljma_n_mu1_flr) - (ljrm_n_mu1-ljrm_n_mu1_flr)
+    #ljmake_s_mu1=(ljma_s_mu1-ljma_s_mu1_flr) - (ljrm_s_mu1-ljrm_s_mu1_flr)
+    ljmake_n_mu1=(ljma_n_mu1) - (ljrm_n_mu1)
+    ljmake_s_mu1=(ljma_s_mu1) - (ljrm_s_mu1)
     ljmake_mu1 = ljmake_n_mu1 + ljmake_s_mu1
     ljke_n_mu1 = ljem_n_mu1 + ljmake_n_mu1
     ljke_s_mu1 = ljem_s_mu1 + ljmake_s_mu1
@@ -7445,8 +7544,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     phiabsj_mumax1m = phiabsj_n_mumax1m + phiabsj_s_mumax1m
     #
     # Removing floors here from make
-    pjmake_n_mumax1m=(pjma_n_mumax1m-pjma_n_mumax1m_flr) - (pjrm_n_mumax1m-pjrm_n_mumax1m_flr)
-    pjmake_s_mumax1m=(pjma_s_mumax1m-pjma_s_mumax1m_flr) - (pjrm_s_mumax1m-pjrm_s_mumax1m_flr)
+    #pjmake_n_mumax1m=(pjma_n_mumax1m-pjma_n_mumax1m_flr) - (pjrm_n_mumax1m-pjrm_n_mumax1m_flr)
+    #pjmake_s_mumax1m=(pjma_s_mumax1m-pjma_s_mumax1m_flr) - (pjrm_s_mumax1m-pjrm_s_mumax1m_flr)
+    pjmake_n_mumax1m=(pjma_n_mumax1m) - (pjrm_n_mumax1m)
+    pjmake_s_mumax1m=(pjma_s_mumax1m) - (pjrm_s_mumax1m)
     pjmake_mumax1m = pjmake_n_mumax1m + pjmake_s_mumax1m
     pjke_n_mumax1m = pjem_n_mumax1m + pjmake_n_mumax1m
     pjke_s_mumax1m = pjem_s_mumax1m + pjmake_s_mumax1m
@@ -7454,8 +7555,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     pjem_mumax1m = pjem_n_mumax1m + pjem_s_mumax1m
     #
     # Removing floors here from make
-    ljmake_n_mumax1m=(ljma_n_mumax1m-ljma_n_mumax1m_flr) - (ljrm_n_mumax1m-ljrm_n_mumax1m_flr)
-    ljmake_s_mumax1m=(ljma_s_mumax1m-ljma_s_mumax1m_flr) - (ljrm_s_mumax1m-ljrm_s_mumax1m_flr)
+    #ljmake_n_mumax1m=(ljma_n_mumax1m-ljma_n_mumax1m_flr) - (ljrm_n_mumax1m-ljrm_n_mumax1m_flr)
+    #ljmake_s_mumax1m=(ljma_s_mumax1m-ljma_s_mumax1m_flr) - (ljrm_s_mumax1m-ljrm_s_mumax1m_flr)
+    ljmake_n_mumax1m=(ljma_n_mumax1m) - (ljrm_n_mumax1m)
+    ljmake_s_mumax1m=(ljma_s_mumax1m) - (ljrm_s_mumax1m)
     ljmake_mumax1m = ljmake_n_mumax1m + ljmake_s_mumax1m
     ljke_n_mumax1m = ljem_n_mumax1m + ljmake_n_mumax1m
     ljke_s_mumax1m = ljem_s_mumax1m + ljmake_s_mumax1m
@@ -7467,8 +7570,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     phiabsj_mumax1 = phiabsj_n_mumax1 + phiabsj_s_mumax1
     #
     # Removing floors here from make
-    pjmake_n_mumax1=(pjma_n_mumax1-pjma_n_mumax1_flr) - (pjrm_n_mumax1-pjrm_n_mumax1_flr)
-    pjmake_s_mumax1=(pjma_s_mumax1-pjma_s_mumax1_flr) - (pjrm_s_mumax1-pjrm_s_mumax1_flr)
+    #pjmake_n_mumax1=(pjma_n_mumax1-pjma_n_mumax1_flr) - (pjrm_n_mumax1-pjrm_n_mumax1_flr)
+    #pjmake_s_mumax1=(pjma_s_mumax1-pjma_s_mumax1_flr) - (pjrm_s_mumax1-pjrm_s_mumax1_flr)
+    pjmake_n_mumax1=(pjma_n_mumax1) - (pjrm_n_mumax1)
+    pjmake_s_mumax1=(pjma_s_mumax1) - (pjrm_s_mumax1)
     pjmake_mumax1 = pjmake_n_mumax1 + pjmake_s_mumax1
     pjke_n_mumax1 = pjem_n_mumax1 + pjmake_n_mumax1
     pjke_s_mumax1 = pjem_s_mumax1 + pjmake_s_mumax1
@@ -7476,8 +7581,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     pjem_mumax1 = pjem_n_mumax1 + pjem_s_mumax1
     #
     # Removing floors here from make
-    ljmake_n_mumax1=(ljma_n_mumax1-ljma_n_mumax1_flr) - (ljrm_n_mumax1-ljrm_n_mumax1_flr)
-    ljmake_s_mumax1=(ljma_s_mumax1-ljma_s_mumax1_flr) - (ljrm_s_mumax1-ljrm_s_mumax1_flr)
+    #ljmake_n_mumax1=(ljma_n_mumax1-ljma_n_mumax1_flr) - (ljrm_n_mumax1-ljrm_n_mumax1_flr)
+    #ljmake_s_mumax1=(ljma_s_mumax1-ljma_s_mumax1_flr) - (ljrm_s_mumax1-ljrm_s_mumax1_flr)
+    ljmake_n_mumax1=(ljma_n_mumax1) - (ljrm_n_mumax1)
+    ljmake_s_mumax1=(ljma_s_mumax1) - (ljrm_s_mumax1)
     ljmake_mumax1 = ljmake_n_mumax1 + ljmake_s_mumax1
     ljke_n_mumax1 = ljem_n_mumax1 + ljmake_n_mumax1
     ljke_s_mumax1 = ljem_s_mumax1 + ljmake_s_mumax1
@@ -7560,20 +7667,23 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     phiabsj_mu1vsr = timeavg(phiabsj_mu1[:,:],ts,fti,ftf)
     #
-    #########
-    mdotfinavgvsr5 = timeavg(mdtot[:,:]-md5[:,:],ts,fti,ftf)
-    mdotfinavgvsr10 = timeavg(mdtot[:,:]-md10[:,:],ts,fti,ftf)
-    mdotfinavgvsr20 = timeavg(mdtot[:,:]-md20[:,:],ts,fti,ftf)
+    ######### full mdtot+md30=[total Mdot including floor] and then subtracting md5,md10,md20
+    mdotfinavgvsr5 = timeavg(mdtot[:,:]+md30[:,:]-md5[:,:],ts,fti,ftf)
+    mdotfinavgvsr10 = timeavg(mdtot[:,:]+md30[:,:]-md10[:,:],ts,fti,ftf)
+    mdotfinavgvsr20 = timeavg(mdtot[:,:]+md30[:,:]-md20[:,:],ts,fti,ftf)
     #
-    #mdotfinavgvsr30 = timeavg(mdtot[:,:]-md30[:,:],ts,fti,ftf)
+    #mdotfinavgvsr30 = timeavg(mdtot[:,:],ts,fti,ftf)
     #
     # Using md30 instead of md10 for horizon value since bsq/rho>>30 since disk-jet boundary clean and can get more accurate mdot.
     # Using md10 doesn't change much, however.
     # Instead, pick Mdot at horizon
-    mdotfinavgvsr30 = timeavg(mdtot[:,:]-md30[:,:],ts,fti,ftf)
     mdotfinavgvsr30itself = timeavg(md30[:,:],ts,fti,ftf)
-    mdotiniavgvsr30 = timeavg(mdtot[:,:]-md30[:,:],ts,iti,itf)
     mdotiniavgvsr30itself = timeavg(md30[:,:],ts,iti,itf)
+    #
+    # now mdtot includes floor correction already
+    # quasi-name for *normal* mdot (no longer about md30 exactly)
+    mdotfinavgvsr30 = timeavg(mdtot[:,:],ts,fti,ftf)
+    mdotiniavgvsr30 = timeavg(mdtot[:,:],ts,iti,itf)
     #
     mdotfinavgvsr10 = timeavg(mdtot[:,:]-md10[:,:],ts,fti,ftf)
     mdotfinavgvsr10itself = timeavg(md10[:,:],ts,fti,ftf)
@@ -7663,13 +7773,38 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     ######################################
     print("EqStag" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
     # Get position of flow stagnation (excluding highly magnetized jet region)
-    # mdtot-md30 should be >0 (i.e. inflow) for all radii up to stagnation dominated by equatorial region
-    # something like (but not right): indices[:]=ti[:,0,0][mdtot[:,:]-md30[:,:]<0]
+    # mdtot should be >0 (i.e. inflow) for all radii up to stagnation dominated by equatorial region
+    # something like (but not right): indices[:]=ti[:,0,0][mdtot[:,:]<0]
     # for table, only need average stagnation surface:
     # using full mdot (excluding jet) because corona might carry in some flux if going in.
     # default is that istageq=nx-1 and rstageq=Rout
     #
-    # get stag for average of simulation data
+    #####################################################
+    # get time-averaged v^{x^1} weighted by density
+    vus1rhosqdcden_vsr=np.zeros(nx,dtype=r.dtype)
+    for ii in np.arange(0,nx):
+        vus1rhosqdcden_vsr[ii]=timeavg(vus1rhosqdcden[:,ii],ts,fti,ftf)
+    #
+    # figure out where v^{x^1} passes through zero (if anywhere)
+    ioutlist=ti[:,0,0][vus1rhosqdcden_vsr>0]
+    iout=ioutlist[0]
+    istagfromvus1rhosqdcden=iout
+    rstagfromvus1rhosqdcden=r[iout,ny/2,0]
+    #
+    #####################################################
+    # get time-averaged v^{x^1} weighted by density
+    vus1rhosqdc_vsr=np.zeros(nx,dtype=r.dtype)
+    for ii in np.arange(0,nx):
+        vus1rhosqdc_vsr[ii]=timeavg(vus1rhosqdc[:,ii],ts,fti,ftf)
+    #
+    # figure out where v^{x^1} passes through zero (if anywhere)
+    ioutlist=ti[:,0,0][vus1rhosqdc_vsr>0]
+    iout=ioutlist[0]
+    istagfromvus1rhosqdc=iout
+    rstagfromvus1rhosqdc=r[iout,ny/2,0]
+    #
+    #####################################################
+    # get stag for average of simulation data using mdot over whole flow
     istageq=nx-1
     rstageq=Rout
     # ok, use bsqorho<5 part of flow to exclude jet at large radii
@@ -7776,7 +7911,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     for tic in ts:
         tici=np.where(ts==tic)[0]
         #print("tic=%g %d tici=%d" % (tic,len(tic==ts),tici) )
-        blob[:]=mdtot[tici,:]-md30[tici,:]
+        blob[:]=mdtot[tici,:]
         #print("lenblob=%d" % (len(blob)))
         indices=ti[:,0,0][blob<0]
         #print("indices")
@@ -7995,6 +8130,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     rstagequse=r[istagequse,0,0]
     print("rstagequse=%g istagequse=%d" % (rstagequse,istagequse)) ; sys.stdout.flush()
+    #
+    istagreport=min(istagequse,istagfromvus1rhosqdcden)
+    rstagreport=min(rstagequse,rstagfromvus1rhosqdcden)
     ######################################
     # END PART1 of COMPUTE JON WHICHPLOT==5
     ######################################
@@ -8357,94 +8495,222 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     # END compute qMRI stuff
     #################################
     #
+    #
+    #
     #################################
     # BEGIN determine iin and iout
     #################################
     print("determine iin iout" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
     #
-    # r\sim risco is beyond ISCO in all models where GR doesn't matter much
-    rrangestart=10.0
-    risco=Risco(a)
-    iin=iofr(risco)
-    iinalt=iofr(rrangestart)
-    if iin<iinalt:
-        iin=iinalt
-    #
     alphamag1_vsr=np.zeros(nx,dtype=r.dtype)
     alphamag2_vsr=np.zeros(nx,dtype=r.dtype)
     alphamag3_vsr=np.zeros(nx,dtype=r.dtype)
+    for ii in np.arange(0,nx):
+        alphamag1_vsr[ii]=timeavg(alphamag1[:,ii],ts,fti,ftf)
+        alphamag2_vsr[ii]=timeavg(alphamag2[:,ii],ts,fti,ftf)
+        alphamag3_vsr[ii]=timeavg(alphamag3[:,ii],ts,fti,ftf)
     #
-    # determine iout through a bit of iteration
-    alphatest=0.05
-    # back off 6 cells from stagnation surface (i.e. things are certainly not in eq at stag, and see (e.g. sasha99) that not power-law beyond 1-2 viscous radii
-    iout0=istagequse-6
-    iout=iout0
+    for rieiter in np.arange(0,2):
+        # r\sim risco is beyond ISCO in all models where GR doesn't matter much
+        rrangestart=10.0
+        risco=Risco(a)
+        iin=iofr(risco)
+        iinalt=iofr(rrangestart)
+        if iin<iinalt:
+            iin=iinalt
+        #
+        # determine iout0 through a bit of iteration
+        alphatest=0.05
+        # back off 6 cells from stagnation surface (i.e. things are certainly not in eq at stag, and see (e.g. sasha99) that not power-law beyond 1-2 viscous radii
+        iout0=istagreport-6
+        iout=iout0
+        #
+        for iiter in np.arange(0,5):
+            #
+            #
+            # limit to inflow equilibrium region
+            #hortest=hoverro
+            # use time-averaged H/R and averaged over iin:iout in radius
+            hortest=np.average(timeavg_vstvsr(hoverr[:,iin:iout],ts,fti,ftf))
+            print("iiter=%d hortest=%g" % (iiter,hortest))
+            # use final time
+            timetest=ts[-1]
+            #
+            if rieiter==0:
+                # for wind
+                timetest*=(1.0)
+            elif rieiter==1:
+                # for disk
+                timetest*=(0.5)
+            #
+            rie=(alphatest*hortest**2.0*timetest)**(2.0/3.0)
+            if rie>0.95*Rout:
+                rie=0.95*Rout
+            if rie<max(risco,3):
+               rie=max(risco,3)
+            print("rie=%g" % (rie)) ; sys.stdout.flush()
+            iie=iofr(rie)
+            # update iout
+            iout=iie
+            #
+            # not too close to stagnation
+            if iout>iout0:
+                print("inside loop: Changed iout=%d to iout0=%d" % (iout,iout0)) ; sys.stdout.flush()
+                iout=iout0
+            #
+            if iout>nx-1:
+                print("inside loop: Changed iout=%d to nx-1=%d" % (iout,nx-1)) ; sys.stdout.flush()
+                iout=nx-1
+            #
+            if iout<=iin:
+                # only happens with runlocaldipole3dfiducial
+                print("inside loop: Changed iin=%d to iofr(6.0)=%d" % (iin,iofr(6.0))) ; sys.stdout.flush()
+                print("inside loop: Changed iout=%d to iofr(12.0)=%d" % (iout,iofr(12.0))) ; sys.stdout.flush()
+                iin=iofr(6.0)
+                iout=iofr(12.0)
+            #
+            # get fit so can extract average value over interesting radial range
+            alphamag1_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(alphamag1_vsr[iin:iout])),1,dologx=0,dology=0)
+            alphamag2_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(alphamag2_vsr[iin:iout])),1,dologx=0,dology=0)
+            alphamag3_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(alphamag3_vsr[iin:iout])),1,dologx=0,dology=0)
+            #
+            alphatest=alphamag2_vsr_fit[1]
+            #
+            print("rieiter=%d iiter=%d : iin=%d rie=%g iie=%d iout=%d alphatest=%g" % (rieiter,iiter,iin,rie,iie,iout,alphatest)) ; sys.stdout.flush()
+        #
+        # radius of iin and iout
+        rfitin0=r[iin,0,0]
+        if np.fabs(rfitin0-rrangestart)<1:
+            rfitin0=rrangestart
+            iin=iofr(rfitin0)
+        #
+        # GODMARK: can't limit this model yet
+        if modelname!="runlocaldipole3dfiducial":
+            if iout>iout0:
+                print("Changed iout=%d to iout0=%d" % (iout,iout0)) ; sys.stdout.flush()
+                iout=iout0
+        #
+        rfitout0=r[iout,0,0]
+        #
+        if rieiter==0:
+            # wind
+            iin1=iin
+            iout1=iout
+            rfitin1=rfitin0
+            rfitout1=rfitout0
+        if rieiter==1:
+            # disk
+            iin2=iin
+            iout2=iout
+            rfitin2=rfitin0
+            rfitout2=rfitout0
+        print("rieiter=%d iin=%d rfitin=%g iout=%d rfitout=%g" % (rieiter,iin,rfitin0,iout,rfitout0)) ; sys.stdout.flush()
     #
-    for iiter in np.arange(0,5):
+    print("iin1=%d rfitin1=%g iout1=%d rfitout1=%g" % (iin1,rfitin1,iout1,rfitout1)) ; sys.stdout.flush()
+    print("iin2=%d rfitin2=%g iout2=%d rfitout2=%g" % (iin2,rfitin2,iout2,rfitout2)) ; sys.stdout.flush()
+    #
+    #################################
+    # BEGIN determine true iin and iout
+    #################################
+    print("determine true iin iout" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
+    #
+    # based upon integration of -v_r:
+    for rieiter in np.arange(0,2):
+        # r\sim risco is beyond ISCO in all models where GR doesn't matter much
+        rrangestart=10.0
+        risco=Risco(a)
+        iin=iofr(risco)
+        iinalt=iofr(rrangestart)
+        if iin<iinalt:
+            iin=iinalt
         #
+        # (maybe) step back a bit
+        iout=istagfromvus1rhosqdcden-0
+        print("starting stag version of iout=%d which is rout=%g" % (iout,rstagfromvus1rhosqdcden))
         #
-        # limit to inflow equilibrium region
-        hortest=hoverro
-        timetest=ts[-1]
-        rie=(alphatest*hortest**2.0*timetest)**(2.0/3.0)
-        if rie>0.95*Rout:
-            rie=0.95*Rout
-        if rie<max(risco,3):
-           rie=max(risco,3)
-        print("rie=%g" % (rie)) ; sys.stdout.flush()
-        iie=iofr(rie)
-        # update iout
-        iout=iie
-        #
-        # not too close to stagnation
-        if iout>iout0:
-            print("inside loop: Changed iout=%d to iout0=%d" % (iout,iout0)) ; sys.stdout.flush()
-            iout=iout0
-        #
-        if iout>nx-1:
-            print("inside loop: Changed iout=%d to nx-1=%d" % (iout,nx-1)) ; sys.stdout.flush()
-            iout=nx-1
-        #
-        if iout<=iin:
-            # only happens with runlocaldipole3dfiducial
-            print("inside loop: Changed iin=%d to iofr(6.0)=%d" % (iin,iofr(6.0))) ; sys.stdout.flush()
-            print("inside loop: Changed iout=%d to iofr(12.0)=%d" % (iout,iofr(12.0))) ; sys.stdout.flush()
+        # check if iout is good, or else force iin and iout result
+        if iout<iin:
             iin=iofr(6.0)
-            iout=iofr(12.0)
+            iout=iofr(10.0)
+        else:
+            # good iin and iout, so integrate out in 
+            drvsr=dxdxp[1,1][:,ny/2,0]*_dx1
+            print("shapes")
+            print(drvsr.shape)
+            print(vus1rhosqdcden_vsr.shape)
+            dtgrand=-drvsr[iin:iout]/vus1rhosqdcden_vsr[iin:iout]
+            Tcum = dtgrand.cumsum()
+            # number of inflow time scales to wait for at a given radius (as if velocity was numinflowtimes slower)
+            if rieiter==0:
+                # for wind and other things
+                numinflowtimes=1.0
+            else:
+                # for disk  part
+                numinflowtimes=2.0
+            #
+            iouttestlist=ti[iin:iout,0,0][Tcum*numinflowtimes-ts[-1]>0]
+            if len(iouttestlist)>0:
+                iout=iouttestlist[0]
+                print("new iout=%d" % (iout))
+            else:
+                print("Couldn't find new iout, using largest iout given by istag such that iout=%d" % (iout))
         #
-        for ii in np.arange(0,nx):
-            alphamag1_vsr[ii]=timeavg(alphamag1[:,ii],ts,fti,ftf)
-            alphamag2_vsr[ii]=timeavg(alphamag2[:,ii],ts,fti,ftf)
-            alphamag3_vsr[ii]=timeavg(alphamag3[:,ii],ts,fti,ftf)
-        # get fit so can extract average value over interesting radial range
-        alphamag1_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(alphamag1_vsr[iin:iout])),1,dologx=0,dology=0)
-        alphamag2_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(alphamag2_vsr[iin:iout])),1,dologx=0,dology=0)
-        alphamag3_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(alphamag3_vsr[iin:iout])),1,dologx=0,dology=0)
+        rfitin0=r[iin,0,0]
+        # fix-up grid-level error in starting position so table not complicated looking
+        if(np.fabs(rrangestart-rfitin0)<1.0):
+            rfitin0=rrangestart
         #
-        alphatest=alphamag2_vsr_fit[1]
+        rfitout0=r[iout,0,0]
         #
-        print("iiter=%d : iin=%d rie=%g iie=%d iout=%d alphatest=%g" % (iiter,iin,rie,iie,iout,alphatest)) ; sys.stdout.flush()
+        if rieiter==0:
+            iin1=iin
+            iout1=iout
+            rfitin1=rfitin0
+            rfitout1=rfitout0
+        if rieiter==1:
+            iin2=iin
+            iout2=iout
+            rfitin2=rfitin0
+            rfitout2=rfitout0
+        print("true rieiter=%d iin=%d rfitin=%g iout=%d rfitout=%g" % (rieiter,iin,rfitin0,iout,rfitout0)) ; sys.stdout.flush()
     #
-    # radius of iin and iout
-    rfitin=r[iin,0,0]
-    if np.fabs(rfitin-rrangestart)<1:
-        rfitin=rrangestart
-        iin=iofr(rfitin)
+    print("true iin1=%d rfitin1=%g iout1=%d rfitout1=%g" % (iin1,rfitin1,iout1,rfitout1)) ; sys.stdout.flush()
+    print("true iin2=%d rfitin2=%g iout2=%d rfitout2=%g" % (iin2,rfitin2,iout2,rfitout2)) ; sys.stdout.flush()
     #
-    # GODMARK: can't limit this model yet
-    if modelname!="runlocaldipole3dfiducial":
-        if iout>iout0:
-            print("Changed iout=%d to iout0=%d" % (iout,iout0)) ; sys.stdout.flush()
-            iout=iout0
+    # for Mdotin-MdotBH
+    rfitin3=50.0
+    iin3=iofr(rfitin3)
+    iout3=istagfromvus1rhosqdc-6
+    rfitout3=r[iout3,ny/2,0]
+    rfitout3=max(70.0,min(100.0,rfitout3))
+    iout3=iofr(rfitout3)
     #
-    rfitout=r[iout,0,0]
-    print("iin=%d rfitin=%g iout=%d rfitout=%g" % (iin,rfitin,iout,rfitout)) ; sys.stdout.flush()
+    # for Mdotmw
+    rfitin4=20.0
+    iin4=iofr(rfitin4)
+    iout4=istagfromvus1rhosqdc-6
+    rfitout4=r[iout4,ny/2,0]
+    rfitout4=max(40.0,min(100.0,rfitout4))
+    iout4=iofr(rfitout4)
+    #
+    # for Mdotw
+    rfitin5=20.0
+    iin5=iofr(rfitin5)
+    iout5=iout1 # try to use normal single inflow time
+    rfitout5=r[iout5,ny/2,0]
+    rfitout5=max(40.0,min(100.0,rfitout5))
+    iout5=iofr(rfitout5)
+    #
+    print("true iin3=%d rfitin3=%g iout3=%d rfitout3=%g" % (iin3,rfitin3,iout3,rfitout3)) ; sys.stdout.flush()
+    print("true iin4=%d rfitin4=%g iout4=%d rfitout4=%g" % (iin4,rfitin4,iout4,rfitout4)) ; sys.stdout.flush()
+    print("true iin5=%d rfitin5=%g iout5=%d rfitout5=%g" % (iin5,rfitin5,iout5,rfitout5)) ; sys.stdout.flush()
+    #
     #
     # just set as fixed so scaling and comparisons more obvious.  rjetout=50 should be good enough as approximately viscous time
     rdiskin=rjetin
     rdiskout=rjetout
-    # set rdiskin to be either 10 or no smaller than where iin is set
-    #rdiskin=max(rrangestart,r[iin,0,0])
+    # set rdiskin to be either 10 or no smaller than where iin1 is set
+    #rdiskin=max(rrangestart,r[iin1,0,0])
     idiskin=iofr(rdiskin)
     # set rdiskout to be either 100 or no larger than inflow equilibrium range
     #rdiskout=min(rjetout,r[iout,0,0])
@@ -8516,7 +8782,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         FE= (FMraw-FEraw)
         #FMiniavg = mdotiniavg
         #FMavg = mdotfinavg
-        #FM = mdtot[:,ihor]-md30[:,ihor]
+        #FM = mdtot[:,ihor]
         #FE = pjemtot[:,ihor]
     if showextra:
         lst = 'solid'
@@ -8812,16 +9078,16 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         truemodelname="A0.94BfN100C4"
     elif modelname=="run.like8":
         fieldtype="PoloidalFlip"
-        truemodelname="A0.94BfN40C5^*"
+        truemodelname="A0.94BfN40C5$^*$"
     elif modelname=="thickdiskrr2":
         fieldtype="PoloidalFlip"
         truemodelname="A-0.94BfN30"
     elif modelname=="run.liker2butbeta40":
         fieldtype="PoloidalFlip"
-        truemodelname="A-0.94BfN40C1^*"
+        truemodelname="A-0.94BfN40C1$^*$"
     elif modelname=="run.liker2":
         fieldtype="PoloidalFlip"
-        truemodelname="A-0.94BfN10C2^*"
+        truemodelname="A-0.94BfN10C2$^*$"
     elif modelname=="thickdisk16":
         fieldtype="PoloidalFlip"
         truemodelname="A-0.5BfN30"
@@ -8839,7 +9105,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         truemodelname="A0.94BfN30R"
     elif modelname=="run.liker1":
         fieldtype="PoloidalFlip"
-        truemodelname="A0.94BfN10C^*"
+        truemodelname="A0.94BfN10C$^*$"
     elif modelname=="thickdisk9":
         fieldtype="Poloidal"
         truemodelname="A0.94BpN100"
@@ -9020,8 +9286,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     for testnum in np.arange(0,numextrema):
       if numextrema>testnum:
-        if feqtotextremai[testnum]>istagequse:
-            trueieq=istagequse
+        if feqtotextremai[testnum]>istagreport:
+            trueieq=istagreport
             if everfirstlimited==0:
                 everfirstlimited=1
                 whichfirstlimited=testnum
@@ -9059,11 +9325,11 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             fstotnormA_avg[testnum] = timeavg(fstotnormA[testnum]**2,ts,fti,ftf)**0.5
             fstotnormB_avg[testnum] = timeavg(fstotnormB[testnum]**2,ts,fti,ftf)**0.5
         #
-      print("it=%d %d %d" % (numextrema,testnum,istagequse) ) ; sys.stdout.flush()
+      print("it=%d %d %d" % (numextrema,testnum,istagreport) ) ; sys.stdout.flush()
     #
     #
     if whichfirstlimited==-1 or everfirstlimited==0:
-        print("Never found limited: feqtotextremai[starteval]=%d numextrema=%d istagequse=%d" % (feqtotextremai[starteval],numextrema,istagequse) ) ; sys.stdout.flush()
+        print("Never found limited: feqtotextremai[starteval]=%d numextrema=%d istagreport=%d" % (feqtotextremai[starteval],numextrema,istagreport) ) ; sys.stdout.flush()
         # just choose outermost extrema
         whichfirstlimited=numextrema-1
         testnum=numextrema-1
@@ -9093,11 +9359,11 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #print("tic=%g %d tici=%d" % (tic,len(tic==ts),tici) )
         blobf[:]=ftruetot[tici,:]
         condition=ti[:,0,0]>=ihor
-        condition=condition*(ti[:,0,0]<=istagequse)
+        condition=condition*(ti[:,0,0]<=istagreport)
         # only do max over relevant range
         newblobf=np.copy(blobf)
         newblobf[ti[:,0,0]<ihor]=0
-        newblobf[ti[:,0,0]>istagequse]=0
+        newblobf[ti[:,0,0]>istagreport]=0
         condition=condition*(np.fabs(newblobf[:])==np.max(np.fabs(newblobf[:])))
         imax=np.where(condition==1)[0]
         #
@@ -9229,6 +9495,12 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         fstot2_avg = timeavg(fstot[:,ihor]**2,ts,iti,itf)**0.5
         fsmaxtot2_avg = timeavg(fsmaxtot[:,ihor]**2,ts,iti,itf)**0.5
     #
+    # use disk-type iin2:iout2
+    # get fit so can extract average value over interesting radial range
+    alphamag1_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(alphamag1_vsr[iin2:iout2])),1,dologx=0,dology=0)
+    alphamag2_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(alphamag2_vsr[iin2:iout2])),1,dologx=0,dology=0)
+    alphamag3_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(alphamag3_vsr[iin2:iout2])),1,dologx=0,dology=0)
+    #
     ######################################
     # END PART2 of COMPUTE JON WHICHPLOT==5
     ######################################
@@ -9311,7 +9583,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                     ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotjetiniavg,color=(fc,fc+0.5*(1-fc),fc))
                     ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+mdotmwoutiniavg*windplotfactor,color=(fc,fc,1))
         #
-        ax.plot(ts,np.abs(mdtot[:,ihor]-md30[:,ihor]),clr,label=r'$\dot M_{\rm BH}c^2$')
+        ax.plot(ts,np.abs(mdtot[:,ihor]),clr,label=r'$\dot M_{\rm BH}c^2$')
         if showextra:
             ax.plot(ts,np.abs(mdjet[:,iofr(rjetout)]),'g--',label=r'$\dot M_{\rm j}c^2$')
             if windplotfactor==1.0:
@@ -9321,13 +9593,13 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         if findex != None:
             if not isinstance(findex,tuple):
-                ax.plot(ts[findex],np.abs(mdtot[:,ihor]-md30[:,ihor])[findex],'o',mfc='r')
+                ax.plot(ts[findex],np.abs(mdtot[:,ihor])[findex],'o',mfc='r')
                 if showextra:
                     ax.plot(ts[findex],np.abs(mdjet[:,iofr(rjetout)])[findex],'gs')
                     ax.plot(ts[findex],windplotfactor*np.abs(mdmwind[:,iofr(rjetout)])[findex],'bv')
             else:
                 for fi in findex:
-                    ax.plot(ts[fi],np.abs(mdtot[:,ihor]-md30[:,ihor])[fi],'o',mfc='r')#,label=r'$\dot M$')
+                    ax.plot(ts[fi],np.abs(mdtot[:,ihor])[fi],'o',mfc='r')#,label=r'$\dot M$')
                     if showextra:
                         ax.plot(ts[fi],np.abs(mdjet[:,iofr(rjetout)])[fi],'gs')
                         ax.plot(ts[fi],windplotfactor*np.abs(mdmwind[:,iofr(rjetout)])[fi],'bv')
@@ -9376,7 +9648,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     #######################
     if whichplot == 3:
-        ax.plot(ts,(pjem5[:,ihor]/(mdtot[:,ihor]-md30[:,ihor])))#,label=r'$P_{\rm j}/\dot M$')
+        ax.plot(ts,(pjem5[:,ihor]/(mdtot[:,ihor])))#,label=r'$P_{\rm j}/\dot M$')
         #ax.legend(loc='upper left')
         if dotavg:
             ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+pjetfinavg/mdotfinavg)#,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
@@ -9632,7 +9904,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     # 12:
     print( "HLatex95: $\\delta r:r \\delta\\theta:r\\sin\\theta \\delta\\phi$" )
-    print( "HLatex95: ModelName & $r_+$ & $r_i$ & $r_o$ \\\\" )
+    print( "HLatex95: ModelName & $r_{\\rm{}H}$ & $r_i$ & $r_o$ \\\\" )
     print( "VLatex95: %s         & %g:%g:%g & %g:%g:%g & %g:%g:%g \\\\ %% %s" % (truemodelname, roundto2(drnormh), roundto2(dHnormh), roundto2(dPnormh), roundto2(drnormi), roundto2(dHnormi), roundto2(dPnormi), roundto2(drnormo), roundto2(dHnormo), roundto2(dPnormo), modelname ) )
     #
     # 8:
@@ -9641,7 +9913,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     print("VLatex1: %s        & %g  &  %s       & %g                   & %g                         & %g                         & %g                          & %g,  %g                         & %g     \\\\ %% %s" % (truemodelname,a,fieldtype,roundto2(betamin_t0),roundto2(betaratofavg_t0),roundto2(betaratofmax_t0),roundto2(hoverratrmax_t0), roundto2(1.0/iq2mriit0), roundto2(1.0/iq2mriot0), ts[-1], modelname ) )
     #
     # 16:
-    print("HLatex2: ModelName  & GridType & $N_r$ & $N_\\theta$ & $N_\\phi$ & $R_{\\rm{}in}$ & $R_{\\rm{}out}$  & $A_{r=r_+}$ & $A_{r_i}$ & $A_{r_o}$ & $Q_{1,t=0,\\rm{}MRI,\{i,  o\}}$  & $T^a_i$--$T^a_f$  \\\\")
+    print("HLatex2: ModelName  & GridType & $N_r$ & $N_\\theta$ & $N_\\phi$ & $R_{\\rm{}in}$ & $R_{\\rm{}out}$  & $A_{r=r_{\\rm{}H}}$ & $A_{r_i}$ & $A_{r_o}$ & $Q_{1,t=0,\\rm{}MRI,\{i,  o\}}$  & $T^a_i$--$T^a_f$  \\\\")
     #
     print("VLatex2: %s         & %s       &  %g   & %g          & %g        & %g             & %g               & %g:%g:%g    & %g:%g:%g  & %g:%g:%g  & %g,  %g                          & %g--%g            \\\\ %% %s" % (truemodelname,gridtype,nx,ny,nzreal,Rin,Rout,roundto2(drnormh), roundto2(dHnormh), roundto2(dPnormh), roundto2(drnormi), roundto2(dHnormi), roundto2(dPnormi), roundto2(drnormo), roundto2(dHnormo), roundto2(dPnormo),roundto2(qmriit0), roundto2(qmriot0),truetmin,truetmax, modelname ) )
     #
@@ -10216,8 +10488,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     dodatavst=1
     dopowervsmplots=makepowervsmplots
     dospacetimeplots=makespacetimeplots
-    dofftplot=1 # GODMARK
-    dospecplot=1 # GODMARK
+    dofftplot=makefftplot
+    dospecplot=makespecplot
+    doinitfinalplot=makeinitfinalplot
+    dothradfinalplot=makethradfinalplot
     #
     if 1==0:
         # for easy conversion of existing data to quasi-orthonormal basis
@@ -10306,30 +10580,30 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         favg1.close()
         #
         #
-        #" *\(.*vsr\).*" -> "        \1_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(\1[iin:iout])),1),dologx=1,dology=1,doabs=1)"
+        #" *\(.*vsr\).*" -> "        \1_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(\1[iin2:iout2])),1),dologx=1,dology=1,doabs=1)"
         #
         # get fit
-        rhosrhosq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(rhosrhosq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        ugsrhosq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(ugsrhosq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        uu0rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(uu0rhosq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        vus1rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(vus1rhosq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        vuas1rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(vuas1rhosq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        vus3rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(vus3rhosq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        vuas3rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(vuas3rhosq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bs1rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bs1rhosq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bas1rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bas1rhosq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bs2rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bs2rhosq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bas2rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bas2rhosq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bs3rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bs3rhosq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bas3rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bas3rhosq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bs1rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bs1rhosq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bas1rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bas1rhosq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bs2rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bs2rhosq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bas2rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bas2rhosq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bs3rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bs3rhosq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bas3rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bas3rhosq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bsqrhosq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bsqrhosq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        brhosq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.sqrt(np.fabs(bsqrhosq_vsr[iin:iout]))),1,dologx=1,dology=1,doabs=1)
+        rhosrhosq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(rhosrhosq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        ugsrhosq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(ugsrhosq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        uu0rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(uu0rhosq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        vus1rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(vus1rhosq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        vuas1rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(vuas1rhosq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        vus3rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(vus3rhosq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        vuas3rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(vuas3rhosq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bs1rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bs1rhosq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bas1rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bas1rhosq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bs2rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bs2rhosq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bas2rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bas2rhosq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bs3rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bs3rhosq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bas3rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bas3rhosq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bs1rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bs1rhosq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bas1rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bas1rhosq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bs2rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bs2rhosq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bas2rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bas2rhosq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bs3rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bs3rhosq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bas3rhosq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bas3rhosq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bsqrhosq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bsqrhosq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        brhosq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.sqrt(np.fabs(bsqrhosq_vsr[iin2:iout2]))),1,dologx=1,dology=1,doabs=1)
         #
         ###################
         # r1b (all over non-jet in strict sense of bsq/rho<1 only)
@@ -10388,34 +10662,35 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         favg1b.close()
         #
         #
-        #" *\(.*vsr\).*" -> "        \1_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(\1[iin:iout])),1),dologx=1,dology=1,doabs=1)"
+        #" *\(.*vsr\).*" -> "        \1_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(\1[iin2:iout2])),1),dologx=1,dology=1,doabs=1)"
         #
         # get fit
-        rhosrhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(rhosrhosqdc_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        ugsrhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(ugsrhosqdc_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        uu0rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(uu0rhosqdc_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        vus1rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(vus1rhosqdc_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        vuas1rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(vuas1rhosqdc_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        vus3rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(vus3rhosqdc_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        vuas3rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(vuas3rhosqdc_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bs1rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bs1rhosqdc_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bas1rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bas1rhosqdc_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bs2rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bs2rhosqdc_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bas2rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bas2rhosqdc_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bs3rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bs3rhosqdc_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bas3rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bas3rhosqdc_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bs1rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bs1rhosqdc_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bas1rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bas1rhosqdc_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bs2rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bs2rhosqdc_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bas2rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bas2rhosqdc_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bs3rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bs3rhosqdc_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bas3rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bas3rhosqdc_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bsqrhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bsqrhosqdc_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        brhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.sqrt(np.fabs(bsqrhosqdc_vsr[iin:iout]))),1,dologx=1,dology=1,doabs=1)
+        rhosrhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(rhosrhosqdc_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        ugsrhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(ugsrhosqdc_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        uu0rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(uu0rhosqdc_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        vus1rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(vus1rhosqdc_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        vuas1rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(vuas1rhosqdc_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        vus3rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(vus3rhosqdc_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        vuas3rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(vuas3rhosqdc_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bs1rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bs1rhosqdc_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bas1rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bas1rhosqdc_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bs2rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bs2rhosqdc_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bas2rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bas2rhosqdc_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bs3rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bs3rhosqdc_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bas3rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bas3rhosqdc_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bs1rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bs1rhosqdc_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bas1rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bas1rhosqdc_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bs2rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bs2rhosqdc_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bas2rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bas2rhosqdc_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bs3rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bs3rhosqdc_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bas3rhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bas3rhosqdc_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bsqrhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bsqrhosqdc_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        brhosqdc_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.sqrt(np.fabs(bsqrhosqdc_vsr[iin2:iout2]))),1,dologx=1,dology=1,doabs=1)
         #
         ###################
         # r1c (density weighted over full non-jet)
         ###################
+        #
         #
         rhosrhosqdcden_vsr=np.zeros(nx,dtype=r.dtype)
         ugsrhosqdcden_vsr=np.zeros(nx,dtype=r.dtype)
@@ -10470,30 +10745,30 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         favg1c.close()
         #
         #
-        #" *\(.*vsr\).*" -> "        \1_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(\1[iin:iout])),1),dologx=1,dology=1,doabs=1)"
+        #" *\(.*vsr\).*" -> "        \1_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(\1[iin2:iout2])),1),dologx=1,dology=1,doabs=1)"
         #
         # get fit
-        rhosrhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(rhosrhosqdcden_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        ugsrhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(ugsrhosqdcden_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        uu0rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(uu0rhosqdcden_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        vus1rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(vus1rhosqdcden_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        vuas1rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(vuas1rhosqdcden_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        vus3rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(vus3rhosqdcden_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        vuas3rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(vuas3rhosqdcden_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bs1rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bs1rhosqdcden_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bas1rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bas1rhosqdcden_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bs2rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bs2rhosqdcden_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bas2rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bas2rhosqdcden_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bs3rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bs3rhosqdcden_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bas3rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bas3rhosqdcden_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bs1rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bs1rhosqdcden_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bas1rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bas1rhosqdcden_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bs2rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bs2rhosqdcden_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bas2rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bas2rhosqdcden_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bs3rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bs3rhosqdcden_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bas3rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bas3rhosqdcden_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bsqrhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bsqrhosqdcden_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        brhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.sqrt(np.fabs(bsqrhosqdcden_vsr[iin:iout]))),1,dologx=1,dology=1,doabs=1)
+        rhosrhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(rhosrhosqdcden_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        ugsrhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(ugsrhosqdcden_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        uu0rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(uu0rhosqdcden_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        vus1rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(vus1rhosqdcden_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        vuas1rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(vuas1rhosqdcden_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        vus3rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(vus3rhosqdcden_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        vuas3rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(vuas3rhosqdcden_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bs1rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bs1rhosqdcden_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bas1rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bas1rhosqdcden_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bs2rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bs2rhosqdcden_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bas2rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bas2rhosqdcden_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bs3rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bs3rhosqdcden_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bas3rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bas3rhosqdcden_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bs1rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bs1rhosqdcden_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bas1rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bas1rhosqdcden_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bs2rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bs2rhosqdcden_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bas2rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bas2rhosqdcden_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bs3rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bs3rhosqdcden_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bas3rhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bas3rhosqdcden_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bsqrhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bsqrhosqdcden_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        brhosqdcden_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.sqrt(np.fabs(bsqrhosqdcden_vsr[iin2:iout2]))),1,dologx=1,dology=1,doabs=1)
         #
         ###################
         # r2
@@ -10550,27 +10825,27 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         favg2.close()
         #
         # get fit
-        rhosrhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(rhosrhosqeq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        ugsrhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(ugsrhosqeq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        uu0rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(uu0rhosqeq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        vus1rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(vus1rhosqeq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        vuas1rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(vuas1rhosqeq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        vus3rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(vus3rhosqeq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        vuas3rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(vuas3rhosqeq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bs1rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bs1rhosqeq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bas1rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bas1rhosqeq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bs2rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bs2rhosqeq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bas2rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bas2rhosqeq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bs3rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bs3rhosqeq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bas3rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bas3rhosqeq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bs1rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bs1rhosqeq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bas1rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bas1rhosqeq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bs2rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bs2rhosqeq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bas2rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bas2rhosqeq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bs3rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bs3rhosqeq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bas3rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bas3rhosqeq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bsqrhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bsqrhosqeq_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        brhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.sqrt(np.fabs(bsqrhosqeq_vsr[iin:iout]))),1,dologx=1,dology=1,doabs=1)
+        rhosrhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(rhosrhosqeq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        ugsrhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(ugsrhosqeq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        uu0rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(uu0rhosqeq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        vus1rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(vus1rhosqeq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        vuas1rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(vuas1rhosqeq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        vus3rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(vus3rhosqeq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        vuas3rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(vuas3rhosqeq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bs1rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bs1rhosqeq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bas1rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bas1rhosqeq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bs2rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bs2rhosqeq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bas2rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bas2rhosqeq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bs3rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bs3rhosqeq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bas3rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bas3rhosqeq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bs1rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bs1rhosqeq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bas1rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bas1rhosqeq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bs2rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bs2rhosqeq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bas2rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bas2rhosqeq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bs3rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bs3rhosqeq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bas3rhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bas3rhosqeq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bsqrhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bsqrhosqeq_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        brhosqeq_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.sqrt(np.fabs(bsqrhosqeq_vsr[iin2:iout2]))),1,dologx=1,dology=1,doabs=1)
         #
         ###################
         # r3
@@ -10628,27 +10903,27 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         favg3.close()
         #
         # get fit
-        rhosrhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(rhosrhosqhorpick_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        ugsrhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(ugsrhosqhorpick_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        uu0rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(uu0rhosqhorpick_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        vus1rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(vus1rhosqhorpick_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        vuas1rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(vuas1rhosqhorpick_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        vus3rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(vus3rhosqhorpick_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        vuas3rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(vuas3rhosqhorpick_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bs1rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bs1rhosqhorpick_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bas1rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bas1rhosqhorpick_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bs2rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bs2rhosqhorpick_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bas2rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bas2rhosqhorpick_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bs3rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bs3rhosqhorpick_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bas3rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bas3rhosqhorpick_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bs1rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bs1rhosqhorpick_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bas1rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bas1rhosqhorpick_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bs2rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bs2rhosqhorpick_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bas2rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bas2rhosqhorpick_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bs3rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bs3rhosqhorpick_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bas3rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bas3rhosqhorpick_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bsqrhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bsqrhosqhorpick_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        brhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.sqrt(np.fabs(bsqrhosqhorpick_vsr[iin:iout]))),1,dologx=1,dology=1,doabs=1)
+        rhosrhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(rhosrhosqhorpick_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        ugsrhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(ugsrhosqhorpick_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        uu0rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(uu0rhosqhorpick_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        vus1rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(vus1rhosqhorpick_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        vuas1rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(vuas1rhosqhorpick_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        vus3rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(vus3rhosqhorpick_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        vuas3rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(vuas3rhosqhorpick_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bs1rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bs1rhosqhorpick_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bas1rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bas1rhosqhorpick_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bs2rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bs2rhosqhorpick_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bas2rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bas2rhosqhorpick_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bs3rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bs3rhosqhorpick_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bas3rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bas3rhosqhorpick_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bs1rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bs1rhosqhorpick_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bas1rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bas1rhosqhorpick_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bs2rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bs2rhosqhorpick_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bas2rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bas2rhosqhorpick_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bs3rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bs3rhosqhorpick_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bas3rhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bas3rhosqhorpick_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bsqrhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bsqrhosqhorpick_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        brhosqhorpick_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.sqrt(np.fabs(bsqrhosqhorpick_vsr[iin2:iout2]))),1,dologx=1,dology=1,doabs=1)
         #
         ###################
         # r4
@@ -10711,30 +10986,30 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         favg4.close()
         #
         # get fit
-        rhoshor_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(rhoshor_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        ugshor_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(ugshor_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bsqshor_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bsqshor_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bsqorhoshor_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bsqorhoshor_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bsqougshor_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bsqougshor_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        uu0hor_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(uu0hor_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        vus1hor_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(vus1hor_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        vuas1hor_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(vuas1hor_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        vus3hor_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(vus3hor_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        vuas3hor_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(vuas3hor_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bs1hor_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bs1hor_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bas1hor_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bas1hor_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bs2hor_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bs2hor_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bas2hor_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bas2hor_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bs3hor_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bs3hor_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        Bas3hor_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(Bas3hor_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bs1hor_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bs1hor_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bas1hor_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bas1hor_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bs2hor_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bs2hor_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bas2hor_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bas2hor_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bs3hor_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bs3hor_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bas3hor_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bas3hor_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bsqhor_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(bsqhor_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        bhor_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.sqrt(np.fabs(bsqhor_vsr[iin:iout]))),1,dologx=1,dology=1,doabs=1)
+        rhoshor_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(rhoshor_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        ugshor_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(ugshor_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bsqshor_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bsqshor_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bsqorhoshor_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bsqorhoshor_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bsqougshor_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bsqougshor_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        uu0hor_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(uu0hor_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        vus1hor_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(vus1hor_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        vuas1hor_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(vuas1hor_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        vus3hor_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(vus3hor_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        vuas3hor_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(vuas3hor_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bs1hor_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bs1hor_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bas1hor_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bas1hor_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bs2hor_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bs2hor_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bas2hor_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bas2hor_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bs3hor_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bs3hor_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        Bas3hor_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(Bas3hor_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bs1hor_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bs1hor_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bas1hor_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bas1hor_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bs2hor_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bs2hor_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bas2hor_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bas2hor_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bs3hor_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bs3hor_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bas3hor_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bas3hor_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bsqhor_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(bsqhor_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        bhor_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.sqrt(np.fabs(bsqhor_vsr[iin2:iout2]))),1,dologx=1,dology=1,doabs=1)
         #
         ###################
         # r5
@@ -10779,38 +11054,38 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         favg5.close()
         #
         # get fit
-        mdotfinavgvsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(mdotfinavgvsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        mdotfinavgvsr5_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(mdotfinavgvsr5[iin:iout])),1,dologx=1,dology=1,doabs=1) # odd ball name
-        mdotfinavgvsr10_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(mdotfinavgvsr10[iin:iout])),1,dologx=1,dology=1,doabs=1) # odd ball name
-        mdotfinavgvsr30_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(mdotfinavgvsr30[iin:iout])),1,dologx=1,dology=1,doabs=1) # odd ball name
-        edemvsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(edemvsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        edmavsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(edmavsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        edmvsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(edmvsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        ldemvsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(ldemvsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        ldmavsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(ldmavsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        ldmvsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(ldmvsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        phiabsj_mu1vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(phiabsj_mu1vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        pjemfinavgvsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(pjemfinavgvsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        pjmakefinavgvsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(pjmakefinavgvsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        pjkefinavgvsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(pjkefinavgvsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        ljemfinavgvsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(ljemfinavgvsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        ljmakefinavgvsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(ljmakefinavgvsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        ljkefinavgvsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(ljkefinavgvsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
+        mdotfinavgvsr_fit=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(mdotfinavgvsr[iin1:iout1])),1,dologx=1,dology=1,doabs=1)
+        mdotfinavgvsr5_fit=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(mdotfinavgvsr5[iin1:iout1])),1,dologx=1,dology=1,doabs=1) # odd ball name
+        mdotfinavgvsr10_fit=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(mdotfinavgvsr10[iin1:iout1])),1,dologx=1,dology=1,doabs=1) # odd ball name
+        mdotfinavgvsr30_fit=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(mdotfinavgvsr30[iin1:iout1])),1,dologx=1,dology=1,doabs=1) # odd ball name
+        edemvsr_fit=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(edemvsr[iin1:iout1])),1,dologx=1,dology=1,doabs=1)
+        edmavsr_fit=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(edmavsr[iin1:iout1])),1,dologx=1,dology=1,doabs=1)
+        edmvsr_fit=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(edmvsr[iin1:iout1])),1,dologx=1,dology=1,doabs=1)
+        ldemvsr_fit=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(ldemvsr[iin1:iout1])),1,dologx=1,dology=1,doabs=1)
+        ldmavsr_fit=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(ldmavsr[iin1:iout1])),1,dologx=1,dology=1,doabs=1)
+        ldmvsr_fit=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(ldmvsr[iin1:iout1])),1,dologx=1,dology=1,doabs=1)
+        phiabsj_mu1vsr_fit=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(phiabsj_mu1vsr[iin1:iout1])),1,dologx=1,dology=1,doabs=1)
+        pjemfinavgvsr_fit=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(pjemfinavgvsr[iin1:iout1])),1,dologx=1,dology=1,doabs=1)
+        pjmakefinavgvsr_fit=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(pjmakefinavgvsr[iin1:iout1])),1,dologx=1,dology=1,doabs=1)
+        pjkefinavgvsr_fit=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(pjkefinavgvsr[iin1:iout1])),1,dologx=1,dology=1,doabs=1)
+        ljemfinavgvsr_fit=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(ljemfinavgvsr[iin1:iout1])),1,dologx=1,dology=1,doabs=1)
+        ljmakefinavgvsr_fit=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(ljmakefinavgvsr[iin1:iout1])),1,dologx=1,dology=1,doabs=1)
+        ljkefinavgvsr_fit=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(ljkefinavgvsr[iin1:iout1])),1,dologx=1,dology=1,doabs=1)
         #
         # thickdisk16 (full data) barfs on mdjet or something later, perhaps related to warning about division by zero in log10.  So maybe input is nan and that stalls polyfit.  Maybe set nan's to small number in wrapperto polyfit.
         # fit mdin-mdotbh with log instead of mdin that isn't loggy due to constant mdotbh
-        mdin_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(mdin_vsr[iin:iout])-np.fabs(mdin_vsr[ihor])),1,dologx=1,dology=1,doabs=1)
-        mdjet_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(mdjet_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        mdmwind_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(mdmwind_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        mdwind_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(mdwind_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        alphamag1_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(alphamag1_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        alphamag2_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(alphamag2_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        alphamag3_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(alphamag3_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        fstot_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(fstot_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        fsin_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(fsin_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        feqtot_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(feqtot_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        fsmaxtot_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(fsmaxtot_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        upsilon_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(upsilon_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
+        mdin_vsr_fit=jonpolyfit((np.fabs(r[iin3:iout3,0,0])),(np.fabs(mdin_vsr[iin3:iout3])-np.fabs(mdin_vsr[ihor])),1,dologx=1,dology=1,doabs=1)
+        mdjet_vsr_fit=jonpolyfit((np.fabs(r[iin4:iout4,0,0])),(np.fabs(mdjet_vsr[iin4:iout4])),1,dologx=1,dology=1,doabs=1)
+        mdmwind_vsr_fit=jonpolyfit((np.fabs(r[iin4:iout4,0,0])),(np.fabs(mdmwind_vsr[iin4:iout4])),1,dologx=1,dology=1,doabs=1)
+        mdwind_vsr_fit=jonpolyfit((np.fabs(r[iin5:iout5,0,0])),(np.fabs(mdwind_vsr[iin5:iout5])),1,dologx=1,dology=1,doabs=1)
+        alphamag1_vsr_fit=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(alphamag1_vsr[iin1:iout1])),1,dologx=1,dology=1,doabs=1)
+        alphamag2_vsr_fit=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(alphamag2_vsr[iin1:iout1])),1,dologx=1,dology=1,doabs=1)
+        alphamag3_vsr_fit=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(alphamag3_vsr[iin1:iout1])),1,dologx=1,dology=1,doabs=1)
+        fstot_vsr_fit=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(fstot_vsr[iin1:iout1])),1,dologx=1,dology=1,doabs=1)
+        fsin_vsr_fit=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(fsin_vsr[iin1:iout1])),1,dologx=1,dology=1,doabs=1)
+        feqtot_vsr_fit=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(feqtot_vsr[iin1:iout1])),1,dologx=1,dology=1,doabs=1)
+        fsmaxtot_vsr_fit=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(fsmaxtot_vsr[iin1:iout1])),1,dologx=1,dology=1,doabs=1)
+        upsilon_vsr_fit=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(upsilon_vsr[iin1:iout1])),1,dologx=1,dology=1,doabs=1)
         #
         ###################
         # r6
@@ -10853,26 +11128,28 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         favg6.close()
         # get fit
         ijetout=iofr(rjetout)
-        hoverr_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(hoverr_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
-        hoverrcorona_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(hoverrcorona_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
+        hoverr_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(hoverr_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
+        hoverrcorona_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(hoverrcorona_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
         hoverr_jet_vsr_fit=jonpolyfit((np.fabs(r[iin:ijetout,0,0])),(np.fabs(hoverr_jet_vsr[iin:ijetout])),1,dologx=1,dology=1,doabs=1)
         # below stalls python for some reason
         #thetaalongfield_fit=jonpolyfit((np.fabs(r[iin:ijetout,0,0])),(np.fabs(thetaalongfield[iin:ijetout])),1,dologx=1,dology=1,doabs=1)
         print("wtf1") ; sys.stdout.flush()
-        qmridisk_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(qmridisk_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
+        qmridisk_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(qmridisk_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
         print("wtf2") ; sys.stdout.flush()
-        iq2mridisk_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(iq2mridisk_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
+        iq2mridisk_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(iq2mridisk_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
         print("wtf3") ; sys.stdout.flush()
-        qmridiskweak_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(qmridiskweak_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
+        qmridiskweak_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(qmridiskweak_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
         print("wtf4") ; sys.stdout.flush()
-        iq2mridiskweak_vsr_fit=jonpolyfit((np.fabs(r[iin:iout,0,0])),(np.fabs(iq2mridiskweak_vsr[iin:iout])),1,dologx=1,dology=1,doabs=1)
+        iq2mridiskweak_vsr_fit=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(iq2mridiskweak_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1)
         #
         #print("hoverr_jet_vsr_fit=%g thetaalongfield_fit=%g" % (hoverr_jet_vsr_fit[0],thetaalongfield_fit[0]))
         print("hoverr_jet_vsr_fit=%g" % (hoverr_jet_vsr_fit[0]))
         #
+        # report rfitin1 and rfitout1 used for wind-parts
+        #
         # output fit power-law index for various quantities
         print( "HLatex12: ModelName & $r^{\\rm{}dc}_{\\rm{}i}$ & $r^{\\rm{}dc}_{\\rm{}o}$ & $r^{\\rm{}dc}_{\\rm{}s}$ & $\\rho$ & $p_g$ & $|v_r|$ & $|v_\phi|$ & $|b_r|$ & $|b_\\theta|$ & $|b_\\phi|$ & $|b|$ & $\\dot{M}_{\\rm{}in}-\\dot{M}_{\\rm{}BH}$ & $\\dot{M}_{\\rm{}mw}$ & $\\dot{M}_{\\rm{}w}$   \\\\" )
-        print( "VLatex12: %s        & %g            & %g            & %g              & %g      & %g    & %g    & %g        & %g    & %g          & %g        & %g    & %g                    & %g                    & %g                     \\\\ %% %s" % (truemodelname, roundto2(rfitin),roundto2(rfitout),roundto2(rstagequse),roundto2(rhosrhosqdcden_vsr_fit[0]),roundto2(ugsrhosqdcden_vsr_fit[0]),roundto2(vuas1rhosqdcden_vsr_fit[0]),roundto2(vuas3rhosqdcden_vsr_fit[0]),roundto2(bas1rhosqdcden_vsr_fit[0]),roundto2(bas2rhosqdcden_vsr_fit[0]),roundto2(bas3rhosqdcden_vsr_fit[0]),roundto2(brhosqdcden_vsr_fit[0]),roundto2(mdin_vsr_fit[0]),roundto2(mdmwind_vsr_fit[0]),roundto2(mdwind_vsr_fit[0]) , modelname ) )
+        print( "VLatex12: %s        & %g            & %g            & %g              & %g      & %g    & %g    & %g        & %g    & %g          & %g        & %g    & %g                    & %g                    & %g                     \\\\ %% %s" % (truemodelname, roundto2(rfitin1),roundto2(rfitout1),roundto2(rstagreport),roundto2(rhosrhosqdcden_vsr_fit[0]),roundto2(ugsrhosqdcden_vsr_fit[0]),roundto2(vuas1rhosqdcden_vsr_fit[0]),roundto2(vuas3rhosqdcden_vsr_fit[0]),roundto2(bas1rhosqdcden_vsr_fit[0]),roundto2(bas2rhosqdcden_vsr_fit[0]),roundto2(bas3rhosqdcden_vsr_fit[0]),roundto2(brhosqdcden_vsr_fit[0]),roundto2(mdin_vsr_fit[0]),roundto2(mdmwind_vsr_fit[0]),roundto2(mdwind_vsr_fit[0]) , modelname ) )
         #
         print( "HLatex93: ModelName & $\\rho^{\\rm{}dc}$ & $p_g^{\\rm{}dc}$ & $v_r^{\\rm{}dc}$ & $v_\\phi^{\\rm{}dc}$ & $b_r^{\\rm{}dc}$ & $b_\\theta^{\\rm{}dc}$ & $b_\\phi^{\\rm{}dc}$ & $|b|^{\\rm{}dc}$ & $\\rho^{\\rm{}hor}$ & $p^{\\rm{}hor}_g$ & $v^{\\rm{}hor}_r$ & $v^{\\rm{}hor}_\\phi$ & $b^{\\rm{}hor}_r$ & $b^{\\rm{}hor}_\\theta$ & $b^{\\rm{}hor}_\\phi$ & $|b|^{\\rm{}hor}$ & $\\dot{M}_{\\rm{}in}-\\dot{M}_{\\rm{}BH}$ & $\\dot{M}_{\\rm{}mw}$ & $\\dot{M}_{\\rm{}w}$   \\\\" )
         print( "VLatex93: %s         & %g     & %g    & %g    & %g        & %g    & %g          & %g        & %g    & %g        & %g      & %g      & %g          & %g      & %g            & %g          & %g      & %g                    & %g                    & %g                     \\\\ %% %s" % (truemodelname, roundto2(rhosrhosqdc_vsr_fit[0]),roundto2(ugsrhosqdc_vsr_fit[0]),roundto2(vuas1rhosqdc_vsr_fit[0]),roundto2(vuas3rhosqdc_vsr_fit[0]),roundto2(bas1rhosqdc_vsr_fit[0]),roundto2(bas2rhosqdc_vsr_fit[0]),roundto2(bas3rhosqdc_vsr_fit[0]),roundto2(brhosqdc_vsr_fit[0]),roundto2(rhoshor_vsr_fit[0]),roundto2(ugshor_vsr_fit[0]),roundto2(vuas1hor_vsr_fit[0]),roundto2(vuas3hor_vsr_fit[0]),roundto2(bas1hor_vsr_fit[0]),roundto2(bas2hor_vsr_fit[0]),roundto2(bas3hor_vsr_fit[0]),roundto2(bhor_vsr_fit[0]),roundto2(mdin_vsr_fit[0]),roundto2(mdmwind_vsr_fit[0]),roundto2(mdwind_vsr_fit[0]) , modelname ) )
@@ -11928,7 +12205,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             #
             ################
             # show smothed version too
-            sytoplot=smooth(ytoplot,window_len=10,window='hanning')
+            window_len=min(10,len(ytoplot))
+            sytoplot=smooth(ytoplot,window_len=window_len,window='hanning')
             plt.plot(xtoplot,sytoplot,color='r')
             #
             #
@@ -12219,7 +12497,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     # FINALPLOTS:
     #
-    if dofinalplots==1 and 1==1: # GODMARK
+    if dofinalplots==1 and dothradfinalplot==1: # GODMARK
         # the below changes defaults to rcparams, so leave for last
         bsqorhoha=bsqrhosqrad4/rhosrhosqrad4
         bsqouha=bsqrhosqrad4/ugsrhosqrad4
@@ -12230,9 +12508,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #########################
     # INIT PLOT
     #
-    if dofinalplots==1 and 1==1: # GODMARK
-        doinitfinalplot()
-        print("doinitfinalplot" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
+    if dofinalplots==1 and doinitfinalplot==1: # GODMARK
+        mkinitfinalplot()
+        print("mkinitfinalplot" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
     #
     #
     #
@@ -12240,7 +12518,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     #
     #################################################                    
-    # output density vs. \phi on r_+, 4M, 8M, 30M so can see mode structure in \phi
+    # output density vs. \phi on r_{\\rm{}H}, 4M, 8M, 30M so can see mode structure in \phi
     rhor=1+(1-a**2)**0.5
     ihor = np.floor(iofr(rhor)+0.5)
     i4 = np.floor(iofr(4)+0.5)
@@ -12266,7 +12544,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         datavsphi.write("%g %d %g  %g %g %g %g  %g %g %g %g  %g %g %g %g\n" % (t,ii,ph[0,ny/2,ii],rhosrhosqdcfull1[ihor,ii],rhosrhosqdcfull1[i4,ii],rhosrhosqdcfull1[i8,ii],rhosrhosqdcfull1[i30,ii],rhoclean[ihor,ny/2,ii],rhoclean[i4,ny/2,ii],rhoclean[i8,ny/2,ii],rhoclean[i30,ny/2,ii],rhounclean[ihor,ny/2,ii],rhounclean[i4,ny/2,ii],rhounclean[i8,ny/2,ii],rhounclean[i30,ny/2,ii]))
     datavsphi.close()
     #
-    # output density vs. \phi on r_+, 4M, 8M, 30M so can see mode structure in \phi
+    # output density vs. \phi on r_{\\rm{}H}, 4M, 8M, 30M so can see mode structure in \phi
     if modelname=="thickdisk7":
         # choose frame where there is interesting \phi structure
         rfd("fieldline4190.bin")
@@ -12285,7 +12563,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         datavsphi.write("%g %d %g  %g %g %g %g  %g %g %g %g  %g %g %g %g\n" % (t,ii,ph[0,ny/2,ii],rhosrhosqdcfull2[ihor,ii],rhosrhosqdcfull2[i4,ii],rhosrhosqdcfull2[i8,ii],rhosrhosqdcfull2[i30,ii],rhoclean[ihor,ny/2,ii],rhoclean[i4,ny/2,ii],rhoclean[i8,ny/2,ii],rhoclean[i30,ny/2,ii],rhounclean[ihor,ny/2,ii],rhounclean[i4,ny/2,ii],rhounclean[i8,ny/2,ii],rhounclean[i30,ny/2,ii]))
     datavsphi.close()
     #
-    # output density vs. \phi on r_+, 4M, 8M, 30M so can see mode structure in \phi
+    # output density vs. \phi on r_{\\rm{}H}, 4M, 8M, 30M so can see mode structure in \phi
     if modelname=="thickdisk7":
         # choose frame where there is interesting \phi structure
         rfd("fieldline4300.bin")
@@ -12332,7 +12610,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
 
 
 # get levels for aphi plot part of init/final plots
-def doinitfinalplotpre2(whichlevs=0):
+def mkinitfinalplotpre2(whichlevs=0):
     #
     if whichlevs==0:
         aphijetoutermax=np.max(aphi[:,:,:])
@@ -12353,7 +12631,7 @@ def doinitfinalplotpre2(whichlevs=0):
     #
 
 # compute things for init/final plots
-def doinitfinalplotpre1():
+def mkinitfinalplotpre1():
     print("init/final plot: cvel()") ; sys.stdout.flush()
     cvel()
     #
@@ -12380,7 +12658,7 @@ def doinitfinalplotpre1():
 
 
 #true init/final plot
-def doinitfinalplot():
+def mkinitfinalplot():
     #########################
     # INIT/FINAL type PLOT
     #
@@ -12430,13 +12708,13 @@ def doinitfinalplot():
             fnamestream="final1_stream"
         #      
         # compute
-        doinitfinalplotpre1()
+        mkinitfinalplotpre1()
         #
         # get information to setup levels if required
         if inputlevs==None:
-            aphijetouter=doinitfinalplotpre2(whichlevs=1)
+            aphijetouter=mkinitfinalplotpre2(whichlevs=1)
         #
-        returnlevsinitfinal=doinitfinalplotpost(fname=fname,plottype=firstlast,aphijetouter=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow)
+        returnlevsinitfinal=mkinitfinalplotpost(fname=fname,plottype=firstlast,aphijetouter=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow)
         #
         #
         if firstlast==1 or firstlast==2:
@@ -12450,7 +12728,7 @@ def doinitfinalplot():
 # do single initfinal type plot
 # fname: filename
 # plottype: 1=always same  0=different (used for true init plot that has different range for z-values (e.g. beta))
-def doinitfinalplotpost(fname=None,plottype=0,aphijetouter=None,inputlevs=None,numcontours=30,aphipow=1.0):
+def mkinitfinalplotpost(fname=None,plottype=0,aphijetouter=None,inputlevs=None,numcontours=30,aphipow=1.0):
     #
     maxnumpanels=5 # up to 5, but 5 too many for final figure and not necessary
     myplots=[0,1,2] # choose quantities
@@ -12716,9 +12994,6 @@ def mkstreamplotprepost(fname=None,veldensity=8,inputlevs=None,numcontours=30,ap
     mylenshowx=100
     mylenshowy=100
 
-    # FUCK
-    finallenx=100
-    finalleny=100
 
 
     #
@@ -13002,6 +13277,13 @@ def mkpowervsm(loadq=0,qty=None,pllabel="",filenum=0,fileletter="",logvalue=0,ra
 
 
 
+def timeavg_vstvsr( qty, ts, fti, ftf, step = 1 ):
+    cond = (ts<ftf)*(ts>=fti)
+    #use masked array to remove any stray NaN's
+    qtycond = np.ma.masked_array(qty[cond,:],np.isnan(qty[cond,:]))
+    qtycond = qtycond[::step,:]
+    qtyavg = qtycond.mean(axis=0,dtype=np.float64)
+    return( qtyavg )
 
 
 def timeavg( qty, ts, fti, ftf, step = 1 ):
@@ -13598,7 +13880,7 @@ def pf(dir=2):
     global bcent
     grid3d("gdump.bin")
     #rfd("fieldline0000.bin")
-    #rrdump("rdump--0000.bin")
+    #reresrdump("rdump--0000.bin")
     rd("dump0000.bin")
     face2centdonor(); 
     plt.clf(); 
@@ -14152,21 +14434,24 @@ def mkmovie(framesize=50, domakeavi=False):
     if modelname=="thickdisk7" and os.path.isfile("dumps/fieldline2500.bin"):
         rfd("fieldline2500.bin")
     else:
-        levelfieldlinefile=flist[-1]
+        lenflist=len(flist)
+        choseindex=lenflist/2
+        levelfieldlinefile=flist[choseindex]
+        levelfieldlinefile=re.sub("dumps/","",levelfieldlinefile)
         rfd(levelfieldlinefile)
     #
     #########
     inputlevs=None
     # compute
-    doinitfinalplotpre1()
+    mkinitfinalplotpre1()
     #
     # get information to setup levels if required
     if inputlevs==None:
-        aphijetouter=doinitfinalplotpre2(whichlevs=1)
+        aphijetouter=mkinitfinalplotpre2(whichlevs=1)
     #
     # outputs file, but just name fake file because just using it to get contours -- will repeat in loop below
     # plottype as firstlast=1 meaning no funny redefinitin of z-range for any plots
-    returnlevsinitfinal=doinitfinalplotpost(fname="fake",plottype=2,aphijetouter=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow)
+    returnlevsinitfinal=mkinitfinalplotpost(fname="fake",plottype=2,aphijetouter=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow)
     #
     # now have levels as inputlevs and aphijetouter for that contour line
     inputlevsinitfinal=returnlevsinitfinal
@@ -14241,12 +14526,12 @@ def mkmovie(framesize=50, domakeavi=False):
             # get init/final type frames
             #
             if cvelalready==0:
-                doinitfinalplotpre1()
+                mkinitfinalplotpre1()
                 cvelalready=1
             #
             #
             # use inputlevs and aphijetouter from defined frame before frame loop
-            returnlevsinitfinalnew=doinitfinalplotpost(fname="initfinal"+"%04d" % filenum,plottype=2,aphijetouter=aphijetouter,inputlevs=inputlevsinitfinal,numcontours=numcontours,aphipow=aphipow)
+            returnlevsinitfinalnew=mkinitfinalplotpost(fname="initfinal"+"%04d" % filenum,plottype=2,aphijetouter=aphijetouter,inputlevs=inputlevsinitfinal,numcontours=numcontours,aphipow=aphipow)
             #
             ####################################
         if skip3==1:
@@ -15892,6 +16177,14 @@ def generate_time_series():
     makepowervsmplots=0
     global makespacetimeplots
     makespacetimeplots=0
+    global makefftplot
+    makefftplot=0
+    global makespecplot
+    makespecplot=0
+    global makeinitfinalplot
+    makeinitfinalplot=0
+    global makethradfinalplot
+    makethradfinalplot=0
     #
     if len(sys.argv[1:])>0:
         modelname = sys.argv[1]
@@ -15908,10 +16201,14 @@ def generate_time_series():
             qtymem=getqtyvstime(ihor,0.2,whichi=whichi,whichn=whichn)
     else:
         # assume here if "plot" as second argument
-        if len(sys.argv[1:])==4 and sys.argv[3].isdigit() and sys.argv[4].isdigit():
+        if len(sys.argv[1:])==4+4 and sys.argv[3].isdigit() and sys.argv[4].isdigit() and sys.argv[5].isdigit() and sys.argv[6].isdigit() and sys.argv[7].isdigit() and sys.argv[8].isdigit():
             makepowervsmplots = int(sys.argv[3])
             makespacetimeplots = int(sys.argv[4])
-            print("Got plot args: %d %d" % (makepowervsmplots,makespacetimeplots))
+            makefftplot = int(sys.argv[5])
+            makespecplot = int(sys.argv[6])
+            makeinitfinalplot = int(sys.argv[7])
+            makethradfinalplot = int(sys.argv[8])
+            print("Got plot args: %d %d %d %d %d %d" % (makepowervsmplots,makespacetimeplots,makefftplot,makespecplot,makeinitfinalplot,makethradfinalplot))
             #
         qtymem=getqtyvstime(ihor,0.2)
         plotqtyvstime(qtymem,fullresultsoutput=1)
@@ -16106,7 +16403,7 @@ def oldstuff():
     if False:
         grid3d("gdump");
         rfdfirstfile()
-        rrdump("rdump--0000");
+        reresrdump("rdump--0000");
         plt.clf(); cvel(); plc(bsq,cb=True)
         plt.clf();plt.plot(x1[:,ny/2,0],(bsq/(2*(gam-1)*ug))[:,ny/2,0])
         plt.plot(x1[:,ny/2,0],(bsq/(2*(gam-1)*ug))[:,ny/2,0],'+')
@@ -16115,7 +16412,7 @@ def oldstuff():
         plt.clf();plco(lrho,r*np.sin(h),r*np.cos(h),cb=True,levels=np.arange(-12,0,0.5)); plt.xlim(0,40); plt.ylim(-20,20)
     if False:
         rd( os.path.basename(glob.glob(os.path.join("dumps/", "dump0000*"))[0]) )
-        #rrdump("rdump--0000")
+        #reresrdump("rdump--0000")
         aphi = fieldcalc()
         plt.clf(); plt.plot(x1[:,ny/2,0],aphi[:,ny/2,0])
     if False:

@@ -9,7 +9,16 @@
 # 2) use the script
 
 # order of models as to appear in final table
-dircollect='thickdisk7 thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.like8 thickdiskrr2 run.liker2butbeta40 run.liker2 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 thickdiskr2 run.liker1 thickdisk9 thickdiskr3  thickdisk17 thickdisk10 thickdisk15 thickdiskr15 thickdisk2 thickdisk3 thickdiskhr3 runlocaldipole3dfiducial blandford3d_new sasham9 sasham5 sasha0 sasha1 sasha2 sasha5 sasha9b25 sasha9b50 sasha9b100 sasha9b200 sasha99'
+# SKIP thickdisk15 thickdisk2 since not run long enough
+
+# POLOIDAL:
+#dircollect='thickdisk7 thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.like8 thickdiskrr2 run.liker2butbeta40 run.liker2 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 thickdiskr2 run.liker1 thickdisk9 runlocaldipole3dfiducial blandford3d_new sasham9 sasham5 sasha0 sasha1 sasha2 sasha5 sasha9b25 sasha9b50 sasha9b100 sasha9b200 sasha99'
+# TOROIDAL:
+#dircollecttoroidal='thickdiskr3 thickdisk17 thickdisk10 thickdiskr15 thickdisk3 thickdiskhr3'
+
+# ALL:
+dircollect='thickdisk7 thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.like8 thickdiskrr2 run.liker2butbeta40 run.liker2 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 thickdiskr2 run.liker1 thickdisk9 thickdiskr3 thickdisk17 thickdisk10 thickdiskr15 thickdisk3 thickdiskhr3 runlocaldipole3dfiducial blandford3d_new sasham9 sasham5 sasha0 sasha1 sasha2 sasha5 sasha9b25 sasha9b50 sasha9b100 sasha9b200 sasha99'
+
 
 # note that thickdisk1 is actually bad, so ignore it.
 # can choose so do runs in different order than collection.
@@ -35,13 +44,13 @@ dirruns='thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.like8 thickdiskrr2 r
 numkeep=300
 
 
-EXPECTED_ARGS=16
+EXPECTED_ARGS=20
 E_BADARGS=65
 
 if [ $# -ne $EXPECTED_ARGS ]
 then
-    echo "Usage: `basename $0` {moviedirname docleanexist dolinks dofiles make1d makemerge makeplot makemontage makepowervsmplots makespacetimeplots makeframes makemovie makeavg makeavgmerge makeavgplot collect}"
-    echo "e.g. sh makeallmovie.sh moviefinal1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1"
+    echo "Usage: `basename $0` {moviedirname docleanexist dolinks dofiles make1d makemerge makeplot makemontage makepowervsmplots makespacetimeplots makefftplot makespecplot makeinitfinalplot makethradfinalplot makeframes makemovie makeavg makeavgmerge makeavgplot collect}"
+    echo "e.g. sh makeallmovie.sh moviefinal1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1"
     exit $E_BADARGS
 fi
 
@@ -69,12 +78,16 @@ makeplot=$7
 makemontage=$8
 makepowervsmplots=$9
 makespacetimeplots=${10}
-makeframes=${11}
-makemovie=${12}
-makeavg=${13}
-makeavgmerge=${14}
-makeavgplot=${15}
-collect=${16}
+makefftplot=${11}
+makespecplot=${12}
+makeinitfinalplot=${13}
+makethradfinalplot=${14}
+makeframes=${15}
+makemovie=${16}
+makeavg=${17}
+makeavgmerge=${18}
+makeavgplot=${19}
+collect=${20}
 
 
 # On ki-jmck in /data2/jmckinne/
@@ -297,6 +310,12 @@ do
     rm -rf __init__.local.temp.py
 
 
+    if [ "$thedir" == "thickdiskhr3" ]
+	then
+        ln -s /data2/jmckinne/thickdisk3/$moviedirname/qty2.npy /data2/jmckinne/${thedir}/$moviedirname/qty2_thickdisk3.npy
+    fi
+
+
 done
 
     echo "Done with files"
@@ -308,7 +327,7 @@ fi
 
 
 ##############################################
-make1d2dormovie=$(( $make1d + $makemerge + $makeplot + $makemontage + $makepowervsmplots + $makespacetimeplots + $makeframes + $makemovie + $makeavg + $makeavgmerge + $makeavgplot ))
+make1d2dormovie=$(( $make1d + $makemerge + $makeplot + $makemontage + $makepowervsmplots + $makespacetimeplots + $makefftplot + $makespecplot + $makeinitfinalplot + $makethradfinalplot + $makeframes + $makemovie + $makeavg + $makeavgmerge + $makeavgplot ))
 if [ $make1d2dormovie -gt 0 ]
 then
 
@@ -369,6 +388,44 @@ then
             rm -rf /data2/jmckinne/${thedir}/$moviedirname/plot*.eps
             rm -rf /data2/jmckinne/${thedir}/$moviedirname/plot*.png
         fi
+        if [ $makefftplot -eq 1 ]
+        then
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/fft?.png
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/fft?.eps
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/fft?.png
+        fi
+        if [ $makespecplot -eq 1 ]
+        then
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/spec?.png
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/spec?.eps
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/spec?.png
+        fi
+        if [ $makeinitfinalplot -eq 1 ]
+        then
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/init1.png
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/init1.eps
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/init1.png
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/middle1.png
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/middle1.eps
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/middle1.png
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/final1.png
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/final1.eps
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/final1.png
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/init1_stream.png
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/init1_stream.eps
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/init1_stream.png
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/middle1_stream.png
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/middle1_stream.eps
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/middle1_stream.png
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/final1_stream.png
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/final1_stream.eps
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/final1_stream.png
+        fi
+        if [ $makethradfinalplot -eq 1 ]
+        then
+            rm -rf /data2/jmckinne/${thedir}/$moviedirname/plot0qvsth_.png
+        fi
+        #
         #
         if [ $makeframes -eq 1 ]
         then
@@ -408,7 +465,7 @@ then
     ###############
 
 	
-	sh makemovielocal.sh ${thedir} $make1d $makemerge $makeplot $makemontage $makepowervsmplots $makespacetimeplots $makeframes $makemovie $makeavg $makeavgmerge $makeavgplot
+	sh makemovielocal.sh ${thedir} $make1d $makemerge $makeplot $makemontage $makepowervsmplots $makespacetimeplots $makefftplot $makespecplot $makeinitfinalplot $makethradfinalplot $makeframes $makemovie $makeavg $makeavgmerge $makeavgplot
     done
 
     echo "Done with makemovie.sh stuff"
@@ -530,7 +587,8 @@ then
         strfinal=$str1$str2$str3
         echo $strfinal >> $fname
         echo "\hline" >> $fname
-        egrep "Latex$numtbl:|Latex:" tables$moviedirname.tex | sed 's/\([0-9]\)%/\1\\%/g' | sed 's/[HV]Latex'$numtbl': //g' | sed 's/[HV]Latex: //g' | sed 's/\$\&/$ \&/g'   | sed 's/A94BpN100 /\\\\\nA94BpN100 /g' | sed 's/A-94BfN30 /\\\\\nA-94BfN30 /g' | sed 's/A-94BtN10 /\\\\\nA-94BtN10 /g'  | sed 's/MB09D /\\\\\nMB09D /g'| sed 's/A-0.9N100 /\\\\\nA-0.9N100 /g'  | sed 's/} \&/}$ \&/g' | sed 's/} \\/}$  \\/g' | sed 's/nan/0/g' | sed 's/e+0/e/g' | sed 's/e-0/e-/g'  | column  -t >> $fname
+        # if change model names, probably have to change the below
+        egrep "Latex$numtbl:|Latex:" tables$moviedirname.tex | sed 's/\([0-9]\)%/\1\\%/g' | sed 's/[HV]Latex'$numtbl': //g' | sed 's/[HV]Latex: //g' | sed 's/\$\&/$ \&/g'   | sed 's/A0\.94BpN100 /\\\\\nA0\.94BpN100 /g' | sed 's/A-0\.94BfN30 /\\\\\nA-0\.94BfN30 /g' | sed 's/A-0\.94BtN10 /\\\\\nA-0\.94BtN10 /g'  | sed 's/MB09D /\\\\\nMB09D /g'| sed 's/A-0.9N100 /\\\\\nA-0.9N100 /g'  | sed 's/} \&/}$ \&/g' | sed 's/} \\/}$  \\/g' | sed 's/nan/0/g' | sed 's/e+0/e/g' | sed 's/e-0/e-/g'  | column  -t >> $fname
         echo "\hline" >> $fname
         echo "\hline" >> $fname
         echo "\end{tabular}" >> $fname

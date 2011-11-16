@@ -2,12 +2,12 @@
 # MUST RUN THIS WITH "bash" not "sh" since on some systems that calls "dash" that doesn't correctly handle $RANDOM or other things
 
 
-EXPECTED_ARGS=12
+EXPECTED_ARGS=16
 E_BADARGS=65
 
 if [ $# -ne $EXPECTED_ARGS ]
 then
-    echo "Usage: `basename $0` {modelname make1d makemerge makeplot makemontage makepowervsmplots makespacetimeplots makeframes makemovie makeavg makeavgmerge makeavgplot}"
+    echo "Usage: `basename $0` {modelname make1d makemerge makeplot makemontage makepowervsmplots makespacetimeplots makefftplot makespecplot makeinitfinalplot makethradfinalplot makeframes makemovie makeavg makeavgmerge makeavgplot}"
     echo "e.g. sh makemovie.sh thickdisk7 1 1 1 1 1 1 1 0 0 0 0"
     exit $E_BADARGS
 fi
@@ -20,11 +20,15 @@ makeplot=$4
 makemontage=$5
 makepowervsmplots=$6
 makespacetimeplots=${7}
-makeframes=$8
-makemovie=$9
-makeavg=${10}
-makeavgmerge=${11}
-makeavgplot=${12}
+makefftplot=${8}
+makespecplot=${9}
+makeinitfinalplot=${10}
+makethradfinalplot=${11}
+makeframes=${12}
+makemovie=${13}
+makeavg=${14}
+makeavgmerge=${15}
+makeavgplot=${16}
 
 
 jobprefix=$modelname
@@ -486,7 +490,7 @@ then
 	    echo "((nohup python $myinitfile3 $modelname 2>&1 1>&3 | tee python.plot.stderr.out) 3>&1 1>&2 | tee python.plot.out) > python.plot.full.out 2>&1"
     else
         # string "plot" tells script to do plot
-	    ((nohup python $myinitfile3 $modelname plot $makepowervsmplots $makespacetimeplots 2>&1 1>&3 | tee python.plot.stderr.out) 3>&1 1>&2 | tee python.plot.out) > python.plot.full.out 2>&1
+	    ((nohup python $myinitfile3 $modelname plot $makepowervsmplots $makespacetimeplots $makefftplot $makespecplot $makeinitfinalplot $makethradfinalplot 2>&1 1>&3 | tee python.plot.stderr.out) 3>&1 1>&2 | tee python.plot.out) > python.plot.full.out 2>&1
     fi
 
     makemontage=$makemontage
@@ -809,6 +813,12 @@ then
 	        ffmpeg -y -fflags +genpts -r $fps -i lrhosmall%04d_Rzxym1.png -sameq -qmax 5 lrhosmall.$modelname.mov
 	    fi
     fi
+
+
+#	        ffmpeg -y -fflags +genpts -r $fps -i initfinal%04d.png -vcodec mpeg4 -sameq -qmax 5 initfinal.$modelname.avi
+#	        ffmpeg -y -fflags +genpts -r $fps -i stream%04d.png -vcodec mpeg4 -sameq -qmax 5 stream.$modelname.avi
+
+
 
     echo "Now do: mplayer -loop 0 lrho.$modelname.avi OR lrhosmall.$modelname.avi"
 
