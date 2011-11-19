@@ -7511,7 +7511,8 @@ def provsretro():
             #ax2.plot(r[:,0,0], -ur1d)
             #ax2.plot(r[:,0,0],-vur1d,'b:')
             #ax2.plot(r[:,0,0],-uurmid,'b--')
-            ax2.plot(r[:,0,0],-uurmid,label=lab)
+            ax2.plot(r[:,0,0],-uur1d,'m-', label=(r"$\langle\rho u^r\rangle/\langle\rho\rangle$ at " + lab))
+            ax2.plot(r[:,0,0],-uurmid, label=(r"$\langle u^r\rangle$ at " + lab))
             #print ur1d.shape
             #ax2.plot(r[:,0,0],0.1*(r[:,0,0]/10)**(-1.2))
             ax2.set_ylim(1e-4,1.5)
@@ -7519,8 +7520,8 @@ def provsretro():
             ax2.set_yscale('log')
             ax2.set_xlim(rhor,100)
             #ax2.ylim(0,20)
-            ax2.set_xlabel(r"$r$",fontsize=16)
-            ax2.set_ylabel(r"$-u^r$",fontsize=16)
+            ax2.set_xlabel(r"$r$",fontsize=20)
+            ax2.set_ylabel(r"$-u^r$",fontsize=20)
             ax2.grid(b=True)
             #######################
             #
@@ -7550,60 +7551,69 @@ def provsretro():
             risco=Risco(a)
             udphianal[rad<risco]=lk(a,risco)
             ax = plt.gca()
-            jin_nmr = (avg_rhouu+avg_uguu+avg_bsquu/2.)[1]*avg_ud[3]/dxdxp[3,3,:,0,0]
+            jin_nmr = (avg_rhouu+avg_uguu+avg_bsquu/2.)[1]*avg_ud[3]/dxdxp[3,3,0,0,0]
             jin_dnm = (avg_rhouu)[1]
             jinmid = (jin_nmr/jin_dnm)[:,ny/2,0]
-            jtot_nmr = avg_Tud[1,3]/dxdxp[3,3,:,0,0]
+            jtot_nmr = avg_Tud[1,3]/dxdxp[3,3,0,0,0]
             jtot_dnm = (avg_rhouu)[1]
             jtotmid = (jtot_nmr/jtot_dnm)[:,ny/2,0]
             jinfull = (gdet*jin_nmr).sum(1)/(gdet*jin_dnm).sum(1)
             isdisk=np.abs(h[:,:,0:1]-np.pi/2)<0.1
-            jtotfull = (gdet*jtot_nmr*isdisk).sum(-1).sum(-1)/(gdet*jtot_dnm*isdisk).sum(-1).sum(-1)
-            jinfull = (gdet*jin_nmr*isdisk).sum(-1).sum(-1)/(gdet*jin_dnm*isdisk).sum(-1).sum(-1)
-            plt.plot( r[:,0,0], jinmid, label=(r"$l_{\rm in}$ at " + lab) )
-            plt.plot( r[:,0,0], jtotmid, label=(r"$l_{\rm tot}$ at " + lab) )
-            plt.plot( r[:,0,0], avg_ud[3,:,ny/2,0]/dxdxp[3,3,:,0,0], label=(r"$u_\phi$ at " + lab) )
-            plt.plot( r[:,0,0], udphianal, label=(r"$l_{\rm K}$ at " + lab) )
+            jtotfull = (gdet[:,:,0:1]*jtot_nmr*isdisk).sum(-1).sum(-1)/(gdet[:,:,0:1]*jtot_dnm*isdisk).sum(-1).sum(-1)
+            jinfull = (gdet[:,:,0:1]*jin_nmr*isdisk).sum(-1).sum(-1)/(gdet[:,:,0:1]*jin_dnm*isdisk).sum(-1).sum(-1)
+            # plt.figure(6)
+            # plt.plot( r[:,0,0], (gdet[:,:,0:1]*jtot_nmr*isdisk).sum(-1).sum(-1))
+            # plt.figure(4)
+            plt.plot( r[:,0,0], jinmid, label=(r"$l_{\rm in}$ for " + lab) )
+            plt.plot( r[:,0,0], jtotmid, label=(r"$l_{\rm tot}$ for " + lab) )
+            # plt.plot( r[:,0,0], jtotfull, label=(r"$l_{\rm tot,full}$ for " + lab) )
+            plt.plot( r[:,0,0], avg_ud[3,:,ny/2,0]/dxdxp[3,3,:,0,0], label=(r"$u_\phi$ for " + lab) )
+            plt.plot( r[:,0,0], udphianal, label=(r"$l_{\rm SS}$") )
             ax.set_xscale('log')
             #ax.set_yscale('log')
             plt.xlim(rhor,100)
-            plt.xlabel(r"$r$",fontsize=16)
-            plt.ylabel(r"$\Sigma$",fontsize=16)
+            plt.xlabel(r"$r$",fontsize=20)
+            plt.ylabel(r"$l$",fontsize=20)
             plt.grid(b=True)
-            plt.ylim(-5,10)
+            plt.ylim(-1,10)
             firsttime=False
         handles, labels = ax1.get_legend_handles_labels()
         ax1.legend(handles, labels,loc="upper left")
         plt.figure(2)
-        plt.plot(r[:,0,0],-uur1d,'b-.')
+        plt.title(r"Radial velocity for $a=%g$" % a,fontsize=20)
         #free-fall radial 4-velocity
-        plt.plot(r[:,0,0],0.01*(r[:,0,0]/10)**(-2),'b:')
-        plt.plot(r[:,0,0],0.01*(r[:,0,0]/10)**(-1.),'b:')
-        plt.plot(r[:,0,0],0.01*(r[:,0,0]/10)**(-1./2.),'b:')
-        plt.legend(loc="lower left")
-        uurfreefall = -gn3[0,1,:,ny/2,0]/(-gn3[0,0,:,ny/2,0])**0.5*dxdxp[1,1,:,0,0]
-        vurfreefall = gn3[0,1,:,ny/2,0]/gn3[0,0,:,ny/2,0]*dxdxp[1,1,:,0,0]
+        plt.plot(r[:,0,0],(r[:,0,0]/1)**(-1.),'c--',label=r"$1/r$")
+        # plt.plot(r[:,0,0],0.01*(r[:,0,0]/10)**(-2),'b:')
+        # plt.plot(r[:,0,0],0.01*(r[:,0,0]/10)**(-1./2.),'b:')
+        uurKSzamo = -gn3[0,1,:,ny/2,0]/(-gn3[0,0,:,ny/2,0])**0.5*dxdxp[1,1,:,0,0]
+        vurKSzamo = gn3[0,1,:,ny/2,0]/gn3[0,0,:,ny/2,0]*dxdxp[1,1,:,0,0]
         vff_nonrel = (2/r[:,0,0])**0.5
         uurff = 2**0.5 * (a**2+r[:,0,0]**2)**0.5 / r[:,0,0]**1.5
-        plt.plot(r[:,0,0],uurff,'r-')
-        plt.plot(r[:,0,0],vff_nonrel,'y-')
+        plt.plot(r[:,0,0],uurff,'r--', label=r"$u^r_{\rm ff}=[2(a^2+r^2)/r^3]^{1/2}$, $\mathrm{free-fall\ v}$")
+        #plt.plot(r[:,0,0],vff_nonrel,'y-')
         #plt.plot(r[:,0,0],0.15*vff_nonrel,'y:')
         #plot instantaneous v^r
-        if True:
+        if False:
             rfd("fieldline0000.bin")
             plt.plot(r[:,0,0],-uu[1,:,ny/2,0]*dxdxp[1,1,:,0,0],'r',lw=2)
         #plt.plot(r[:,0,0],-uurfreefall,'g-')
         #plt.plot(r[:,0,0],-uurfreefall,'g--')
         #plt.plot(r[:,0,0],-0.35*uurfreefall,'g--')
-        plt.plot(r[:,0,0],-uurfreefall,'g-')
-        plt.plot(r[:,0,0],-0.3*uurfreefall,'g-')
+        plt.plot(r[:,0,0],-uurKSzamo,'g-', label=r"$u^r_{\rm ZAMO,KS}=2/[r(r+2)]^{1/2}$")
+        plt.plot(r[:,0,0],-0.3*uurKSzamo,'g--', label=r"$0.3 u^r_{\rm ZAMO,KS}$")
+        plt.legend(loc="lower left")
+        plt.savefig("velocity%g.pdf" % a )
+        plt.savefig("velocity%g.eps" % a )
         plt.figure(3)
         plt.legend(loc="lower center")
         plt.plot(r[:,0,0],1e2*(r[:,0,0]/100)**(1))
         plt.plot(r[:,0,0],1e2*(r[:,0,0]/100)**(2))
         plt.ylim(ymax=1e3)
         plt.figure(4)
+        plt.title(r"Midplane angular momentum for $a=%g$" % a,fontsize=20)
         plt.legend(loc="upper left")
+        plt.savefig("angmom%g.pdf" % a)
+        plt.savefig("angmom%g.eps" % a)
 
 def lk(a,r):
     udphi = r**0.5*(r**2-2*a*r**0.5+a**2)/(r*(r**2-3*r+2*a*r**0.5)**0.5)
@@ -7967,7 +7977,7 @@ def oldstuff():
 
 if __name__ == "__main__":
     if False:
-        takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=False)
+        takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=False,aphi_j_val=0)
         #takeoutfloors(dotakeoutfloors=1,doplot=False)
     if True:
         provsretro()
