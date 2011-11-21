@@ -1976,7 +1976,7 @@ def grid3d(dumpname,use2d=False,doface=False): #read grid dump file: header and 
     gc.collect()
     ti,tj,tk,x1,x2,x3,r,h,ph = gd[0:9,:,:,:].view()
     #get the right order of indices by reversing the order of indices i,j(,k)
-    #conn=gd[9:73].view().reshape((4,4,4,nx,ny,lnz), order='F').transpose(2,1,0,3,4,5)
+    conn=gd[9:73].view().reshape((4,4,4,nx,ny,lnz), order='F').transpose(2,1,0,3,4,5)
     #contravariant metric components, g^{\mu\nu}
     gn3 = gd[73:89].view().reshape((4,4,nx,ny,lnz), order='F').transpose(1,0,2,3,4)
     #covariant metric components, g_{\mu\nu}
