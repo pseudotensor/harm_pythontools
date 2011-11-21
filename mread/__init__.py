@@ -7537,7 +7537,7 @@ def provsretro():
             plt.figure(3)
             #plt.clf()
             ax = plt.gca()
-            sigval = (gdet[:,:,0:1]*avg_rhouu[0]*_dx2*_dx3).sum(-1).sum(-1)/dxdxp[1,1,:,0,0]
+            sigval = (gdet[:,:,0:1]*avg_rhouu[0]*_dx2*_dx3*nz).sum(-1).sum(-1)/dxdxp[1,1,:,0,0]*scaletofullwedge(1.)/(2*np.pi*r[:,ny/2,0])
             plt.plot( r[:,0,0], sigval, label=lab )
             ax.set_xscale('log')
             ax.set_yscale('log')
