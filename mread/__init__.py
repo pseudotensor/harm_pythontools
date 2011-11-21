@@ -2220,6 +2220,12 @@ def mdot(a,b):
           for i in range(c.shape[0]):
                 for j in range(c.shape[1]):
                       c[i,j,:,:,:] = (a[i,:,:,:,:]*b[:,j,:,:,:]).sum(0)
+    elif a.ndim == 5 and b.ndim == 6:
+          c = np.empty((a.shape[0],b.shape[1],b.shape[2],max(a.shape[2],b.shape[3]),max(a.shape[3],b.shape[4]),max(a.shape[4],b.shape[5])),dtype=a.dtype)
+          for mu in range(c.shape[0]):
+              for k in range(c.shape[1]):
+                  for l in range(c.shape[2]):
+                      c[mu,k,l,:,:,:] = (a[mu,:,:,:,:]*b[:,k,l,:,:,:]).sum(0)
     else:
            raise Exception('mdot', 'wrong dimensions')
     return c
@@ -7570,12 +7576,92 @@ def provsretro():
             plt.plot( r[:,0,0], avg_ud[3,:,ny/2,0]/dxdxp[3,3,:,0,0], label=(r"$u_\phi$ for " + lab) )
             plt.plot( r[:,0,0], udphianal, label=(r"$l_{\rm SS}$") )
             ax.set_xscale('log')
-            #ax.set_yscale('log')
+            #ax.set_yscale('log')plt.ylim(-40,0)
+
             plt.xlim(rhor,100)
             plt.xlabel(r"$r$",fontsize=20)
             plt.ylabel(r"$l$",fontsize=20)
             plt.grid(b=True)
             plt.ylim(-1,10)
+            #######################
+            #
+            #  FIGURE 5: Radial force balance
+            #
+            #######################
+            plt.figure(5)
+            if firsttime:
+                plt.clf()
+            #x1
+            if True:
+                pressureMA=(gam-1)*avg_ug
+                inertiaMA=(avg_rho+gam*avg_ug)*avg_uu[1]*avg_ud[1]
+                pressureEM=avg_bsq/2.-avg_bu[1]*avg_bd[1]
+                inertiaEM=(avg_bsq)*avg_uu[1]*avg_ud[1]
+                fpEM=-dfdx1(pressureEM)[:,ny/2,0] #/dxdxp[1,1,0,0,0]
+                fiEM=-dfdx1(inertiaEM)[:,ny/2,0]
+                fpMA=-dfdx1(pressureMA)[:,ny/2,0] #/dxdxp[1,1,0,0,0]
+                fiMA=-dfdx1(inertiaMA)[:,ny/2,0]
+                #x2
+                pressure2MA=(gam-1)*avg_ug*0
+                inertia2MA=(avg_rho+gam*avg_ug)*avg_uu[2]*avg_ud[1]
+                pressure2EM=avg_bsq*0/2.-avg_bu[2]*avg_bd[1]
+                inertia2EM=(avg_bsq)*avg_uu[2]*avg_ud[1]
+                fp2EM=-dfdx2(pressure2EM)[:,ny/2,0] #/dxdxp[1,1,0,0,0]
+                fi2EM=-dfdx2(inertia2EM)[:,ny/2,0]
+                fp2MA=-dfdx2(pressure2MA)[:,ny/2,0] #/dxdxp[1,1,0,0,0]
+                fi2MA=-dfdx2(inertia2MA)[:,ny/2,0]
+            else:
+                pressureMA=(gam-1)*avg_ug
+                inertiaMA=(avg_rhouuud+gam*avg_uguuud)[1,1]
+                pressureEM=0.5*avg_bsq-avg_bubd[1,1]
+                inertiaEM=avg_bsquuud[1,1]
+                fpEM=-dfdx1(pressureEM)[:,ny/2,0] #/dxdxp[1,1,0,0,0]
+                fiEM=-dfdx1(inertiaEM)[:,ny/2,0]
+                fpMA=-dfdx1(pressureMA)[:,ny/2,0] #/dxdxp[1,1,0,0,0]
+                fiMA=-dfdx1(inertiaMA)[:,ny/2,0]
+                #x2
+                pressure2MA=(gam-1)*avg_ug*0
+                inertia2MA=(avg_rhouuud+gam*avg_uguuud)[2,1]
+                pressure2EM=avg_bsq*0/2.-avg_bubd[2,1]
+                inertia2EM=avg_bsquuud[2,1]
+                fp2EM=-dfdx2(pressure2EM)[:,ny/2,0] #/dxdxp[1,1,0,0,0]
+                fi2EM=-dfdx2(inertia2EM)[:,ny/2,0]
+                fp2MA=-dfdx2(pressure2MA)[:,ny/2,0] #/dxdxp[1,1,0,0,0]
+                fi2MA=-dfdx2(inertia2MA)[:,ny/2,0]
+            #fg=-(avg_rho/r**2)[:,ny/2,0]
+            connddd=mdot(gv3,conn)
+            avg_Tuu=mdot(avg_Tud,gn3)
+            avg_TuuMA=mdot(avg_TudMA,gn3)
+            avg_TuuEM=mdot(avg_TudEM,gn3)
+            fgMA=(avg_TuuMA[0,0]*connddd[0,1,0]+avg_TuuMA[0,1]*connddd[0,1,1]+avg_TuuMA[1,1]*connddd[1,1,1])[:,ny/2,0]
+            fcMA=(avg_TuuMA[0,3]*connddd[0,1,3]+avg_TuuMA[2,2]*connddd[2,1,2]+avg_TuuMA[3,0]*connddd[3,1,0]+avg_TuuMA[3,1]*connddd[3,1,1]+avg_TuuMA[3,3]*connddd[3,1,3])[:,ny/2,0]
+            fgEM=(avg_TuuEM[0,0]*connddd[0,1,0]+avg_TuuEM[0,1]*connddd[0,1,1]+avg_TuuEM[1,1]*connddd[1,1,1])[:,ny/2,0]
+            fcEM=(avg_TuuEM[0,3]*connddd[0,1,3]+avg_TuuEM[2,2]*connddd[2,1,2]+avg_TuuEM[3,0]*connddd[3,1,0]
+                  +avg_TuuEM[3,1]*connddd[3,1,1]+(avg_TuuEM[3,3]*connddd[3,1,3]))[:,ny/2,0]
+            norm=avg_rho[:,ny/2,0]
+            plt.plot(rad,-fgMA/norm,'--',lw=2,label=r"$-F_{g,MA}$")
+            plt.plot(rad,fcMA/norm,lw=2,label=r"$F_{c,MA}$")
+            plt.plot(rad,-fgEM/norm,'--',lw=2,label=r"$-F_{g,EM}$",color='brown')
+            plt.plot(rad,fcEM/norm,"-",lw=2,label=r"$F_{c,EM}$",color='orange')
+            plt.plot(rad,(fiMA)/norm,lw=2,label=r"$F_{i,MA}$")
+            plt.plot(rad,(-fiMA)/norm,'--',lw=2,label=r"$-F_{i,MA}$",color='b')
+            plt.plot(rad,(fpMA)/norm,lw=2,label=r"$F_{p,MA}$")
+            plt.plot(rad,(-fpMA)/norm,'--',lw=2,label=r"$-F_{p,MA}$",color='r')
+            plt.plot(rad,(-fiEM)/norm,'--',lw=2,label=r"$-F_{i,EM}$")
+            plt.plot(rad,(fpEM)/norm,lw=2,label=r"$F_{p,EM}$")
+            plt.plot(rad,(-fpEM)/norm,'--',lw=2,label=r"$-F_{p,EM}$",color='m')
+            #x2
+            plt.plot(rad,(fi2MA)/norm,':',lw=2,label=r"$F_{i2,MA}$")
+            plt.plot(rad,(fp2MA)/norm,':',lw=2,label=r"$F_{p2,MA}$")
+            plt.plot(rad,(fi2EM)/norm,':',lw=2,label=r"$F_{i2,EM}$")
+            plt.plot(rad,(fp2EM)/norm,':',lw=2,label=r"$F_{p2,EM}$")
+            plt.plot(rad,3.5*(rad/rhor)**(-7./2.),'k-',lw=2)
+            plt.plot(rad,(avg_bsq[:,ny/2,0]/(2*sigval)*r[:,ny/2,0]**3/1e3),'k-',lw=1,label=r"$b^2/\Sigma$")
+            #plt.plot(rad,(avg_bsq*avg_rho)[:,ny/2,0]/sigval**2/1000.,'k-',lw=1,label=r"$b^2/rho$")
+            plt.xlim(rhor,100)
+            plt.ylim(ymin=0.5e-3,ymax=60)
+            plt.xscale('log')
+            plt.yscale('log')
             firsttime=False
         handles, labels = ax1.get_legend_handles_labels()
         ax1.legend(handles, labels,loc="upper left")
@@ -7614,6 +7700,26 @@ def provsretro():
         plt.legend(loc="upper left")
         plt.savefig("angmom%g.pdf" % a)
         plt.savefig("angmom%g.eps" % a)
+        plt.figure(5)
+        plt.legend(loc="upper right",ncol=3)
+        plt.grid(b=True)
+        
+
+def dfdx1(f,dn=4):
+    """returns gdet**(-1)*(gdet*f),x1"""
+    #initialize dummy way
+    dgf=f/_dx1
+    gf=gdet*f
+    dgf[dn:-dn]=(gf[2*dn:]-gf[:-2*dn])/(2.*dn*_dx1*gdet[dn:-dn])
+    return(dgf)
+
+def dfdx2(f,dn=4):
+    """returns gdet**(-1)*(gdet*f),x2"""
+    #initialize dummy way
+    dgf=f/_dx2
+    gf=gdet*f
+    dgf[:,dn:-dn]=(gf[:,2*dn:]-gf[:,:-2*dn])/(2.*dn*_dx2*gdet[:,dn:-dn])
+    return(dgf)
 
 def lk(a,r):
     udphi = r**0.5*(r**2-2*a*r**0.5+a**2)/(r*(r**2-3*r+2*a*r**0.5)**0.5)
