@@ -6363,7 +6363,7 @@ def ploteta():
     ax34r.set_yticks(tck)
     gc.collect()
 
-def mkmovie(framesize=50, domakeavi=False,prefactor=1.,sigma=None,usegaussianunits=False,domakeframes=True,epsFm=None,epsFke=None,fti=None,ftf=None):
+def mkmovie(framesize=50, domakeavi=False,**kwargs):
     #Rz and xy planes side by side
     plotlenf=10
     plotleni=framesize
@@ -6402,128 +6402,12 @@ def mkmovie(framesize=50, domakeavi=False,prefactor=1.,sigma=None,usegaussianuni
         else:
             print( "Processing " + fname + " ..." )
             sys.stdout.flush()
-            # oldnz=nz
-            rfd("../"+fname)
-            # if oldnz < nz:
-            #     #resolution changed on the fly, get correct-size arrays for r, h, ph
-            #     rd("dump0147.bin")
-            #     #reread the fieldline dump
-            #     rfd("../"+fname)
-            cvel() #for calculating bsq
-            plotlen = plotleni+(plotlenf-plotleni)*(t-plotlenti)/(plotlentf-plotlenti)
-            plotlen = min(plotlen,plotleni)
-            plotlen = max(plotlen,plotlenf)
-            plt.figure(0, figsize=(12,9), dpi=100)
-            plt.clf()
-            #SWITCH OFF SUPTITLE
-            #plt.suptitle(r'$\log_{10}\rho$ at t = %4.0f' % t)
-            #mdot,pjet,pjet/mdot plots
-            gs3 = GridSpec(3, 3)
-            #gs3.update(left=0.055, right=0.97, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
-            #gs3.update(left=0.055, right=0.95, top=0.42, bottom=0.03, wspace=0.01, hspace=0.04)
-            gs3.update(left=0.055, right=0.97, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
-            #mdot
-            ax31 = plt.subplot(gs3[-3,:])
-            plotqtyvstime(qtymem,ax=ax31,whichplot=1,findex=findex,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma,usegaussianunits=True)
-            ymax=ax31.get_ylim()[1]
-            ymax=2*(np.floor(np.floor(ymax+1.5)/2))
-            ax31.set_yticks((ymax/2,ymax))
-            ax31.grid(True)
-            ax31r = ax31.twinx()
-            ax31r.set_ylim(ax31.get_ylim())
-            ax31r.set_yticks((ymax/2,ymax))
-            #pjet
-            # ax32 = plt.subplot(gs3[-2,:])
-            # plotqtyvstime(qtymem,ax=ax32,whichplot=2)
-            # ymax=ax32.get_ylim()[1]
-            # ax32.set_yticks((ymax/2,ymax))
-            # ax32.grid(True)
-            #pjet/mdot
-            # ax33 = plt.subplot(gs3[-1,:])
-            # plotqtyvstime(qtymem,ax=ax33,whichplot=3)
-            # ymax=ax33.get_ylim()[1]
-            # ax33.set_yticks((ymax/2,ymax))
-            # ax33.grid(True)
-            #
-            #\phi
-            #
-            ax35 = plt.subplot(gs3[-2,:])
-            plotqtyvstime(qtymem,ax=ax35,whichplot=5,findex=findex,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma,usegaussianunits=True)
-            ymax=ax35.get_ylim()[1]
-            if 1 < ymax and ymax < 2: 
-                #ymax = 2
-                tck=(1,)
-                ax35.set_yticks(tck)
-                #ax35.set_yticklabels(('','1','2'))
-            elif ymax < 1: 
-                ymax = 1
-                tck=(0.5,1)
-                ax35.set_yticks(tck)
-                ax35.set_yticklabels(('','1'))
-            else:
-                ymax=np.floor(ymax)+1
-                if ymax >= 60:
-                    tck=np.arange(1,ymax/30.)*30.
-                elif ymax >= 10:
-                    tck=np.arange(1,ymax/5.)*5.
-                else:
-                    tck=np.arange(1,ymax)
-                ax35.set_yticks(tck)
-            ax35.grid(True)
-            if ymax >= 10:
-                ax35.set_ylabel(r"$\phi_{\rm BH}$",size=16,ha='left',labelpad=25)
-            ax35.grid(True)
-            ax35r = ax35.twinx()
-            ax35r.set_ylim(ax35.get_ylim())
-            ax35r.set_yticks(tck)
-            #
-            #pjet/<mdot>
-            #
-            ax34 = plt.subplot(gs3[-1,:])
-            plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findex,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma,usegaussianunits=True)
-            ax34.set_ylim((0,3.8*prefactor))
-            ymax=ax34.get_ylim()[1]
-            if prefactor < ymax and ymax < 2*prefactor: 
-                #ymax = 2
-                tck=(prefactor,)
-                ax34.set_yticks(tck)
-                #ax34.set_yticklabels(('','100','200'))
-            elif ymax < prefactor: 
-                ymax = prefactor
-                tck=(0.5*prefactor,prefactor)
-                ax34.set_yticks(tck)
-                ax34.set_yticklabels(('','%d' % prefactor))
-            else:
-                ymax=np.floor(ymax/prefactor)+1
-                ymax*=prefactor
-                tck=np.arange(1,ymax/prefactor)*prefactor
-                ax34.set_yticks(tck)
-            #reset lower limit to 0
-            ax34.set_ylim((0,ax34.get_ylim()[1]))
-            ax34.grid(True)
-            ax34r = ax34.twinx()
-            ax34r.set_ylim(ax34.get_ylim())
-            ax34r.set_yticks(tck)
-            #Rz xy
-            gs1 = GridSpec(1, 1)
-            gs1.update(left=0.04, right=0.45, top=0.995, bottom=0.48, wspace=0.05)
-            #gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.45, wspace=0.05)
-            ax1 = plt.subplot(gs1[:, -1])
-            if domakeframes:
-                mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False)
-            ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
-            ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
-            gs2 = GridSpec(1, 1)
-            gs2.update(left=0.5, right=1, top=0.995, bottom=0.48, wspace=0.05)
-            ax2 = plt.subplot(gs2[:, -1])
-            if domakeframes:
-                mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True)
-            ax2.set_ylabel(r'$y\ [r_g]$',fontsize=16,ha='center')
-            ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
-            #print xxx
-            plt.savefig( "lrho%04d_Rzxym1.png" % (findex)  )
-            plt.savefig( "lrho%04d_Rzxym1.eps" % (findex)  )
-            #print xxx
+            kwargs['plotleni']=plotleni
+            kwargs['plotlenf']=plotlenf
+            kwargs['plotlenti']=plotlenti
+            kwargs['plotlentf']=plotlentf
+            kwargs['qtymem']=qtymem
+            mkmovieframe( findex, fname, **kwargs )
     print( "Done!" )
     sys.stdout.flush()
     if domakeavi:
@@ -6534,6 +6418,143 @@ def mkmovie(framesize=50, domakeavi=False,prefactor=1.,sigma=None,usegaussianuni
         os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 1 mov_%s_Rzxym1p1.avi" % (os.path.basename(os.getcwd())) )
         os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 2 mov_%s_Rzxym1.avi" % (os.path.basename(os.getcwd())) )
         #os.system("scp mov.avi 128.112.70.76:Research/movies/mov_`basename \`pwd\``.avi")
+
+def mkmovieframe( findex, fname, **kwargs ):
+    prefactor = kwargs.pop('prefactor',1.)
+    sigma = kwargs.pop('sigma',None)
+    usegaussianunits = kwargs.pop('usegaussianunits',False)
+    domakeframes = kwargs.pop('domakeframes',True)
+    epsFm = kwargs.pop('domakeframes',None)
+    epsFke = kwargs.pop('epsFke',None)
+    fti = kwargs.pop('fti',None)
+    ftf = kwargs.pop('ftf',None)
+    plotleni = kwargs.pop('plotleni',50)
+    plotlenf = kwargs.pop('plotlenf',50)
+    plotlenti = kwargs.pop('plotleni',1e6)
+    plotlentf = kwargs.pop('plotlenf',2e6)
+    qtymem = kwargs.pop('qtymem',2e6)
+    # oldnz=nz
+    rfd("../"+fname)
+    # if oldnz < nz:
+    #     #resolution changed on the fly, get correct-size arrays for r, h, ph
+    #     rd("dump0147.bin")
+    #     #reread the fieldline dump
+    #     rfd("../"+fname)
+    cvel() #for calculating bsq
+    plotlen = plotleni+(plotlenf-plotleni)*(t-plotlenti)/(plotlentf-plotlenti)
+    plotlen = min(plotlen,plotleni)
+    plotlen = max(plotlen,plotlenf)
+    plt.figure(0, figsize=(12,9), dpi=100)
+    plt.clf()
+    #SWITCH OFF SUPTITLE
+    #plt.suptitle(r'$\log_{10}\rho$ at t = %4.0f' % t)
+    #mdot,pjet,pjet/mdot plots
+    gs3 = GridSpec(3, 3)
+    #gs3.update(left=0.055, right=0.97, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
+    #gs3.update(left=0.055, right=0.95, top=0.42, bottom=0.03, wspace=0.01, hspace=0.04)
+    gs3.update(left=0.055, right=0.97, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
+    #mdot
+    ax31 = plt.subplot(gs3[-3,:])
+    plotqtyvstime(qtymem,ax=ax31,whichplot=1,findex=findex,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma,usegaussianunits=True)
+    ymax=ax31.get_ylim()[1]
+    ymax=2*(np.floor(np.floor(ymax+1.5)/2))
+    ax31.set_yticks((ymax/2,ymax))
+    ax31.grid(True)
+    ax31r = ax31.twinx()
+    ax31r.set_ylim(ax31.get_ylim())
+    ax31r.set_yticks((ymax/2,ymax))
+    #pjet
+    # ax32 = plt.subplot(gs3[-2,:])
+    # plotqtyvstime(qtymem,ax=ax32,whichplot=2)
+    # ymax=ax32.get_ylim()[1]
+    # ax32.set_yticks((ymax/2,ymax))
+    # ax32.grid(True)
+    #pjet/mdot
+    # ax33 = plt.subplot(gs3[-1,:])
+    # plotqtyvstime(qtymem,ax=ax33,whichplot=3)
+    # ymax=ax33.get_ylim()[1]
+    # ax33.set_yticks((ymax/2,ymax))
+    # ax33.grid(True)
+    #
+    #\phi
+    #
+    ax35 = plt.subplot(gs3[-2,:])
+    plotqtyvstime(qtymem,ax=ax35,whichplot=5,findex=findex,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma,usegaussianunits=True)
+    ymax=ax35.get_ylim()[1]
+    if 1 < ymax and ymax < 2: 
+        #ymax = 2
+        tck=(1,)
+        ax35.set_yticks(tck)
+        #ax35.set_yticklabels(('','1','2'))
+    elif ymax < 1: 
+        ymax = 1
+        tck=(0.5,1)
+        ax35.set_yticks(tck)
+        ax35.set_yticklabels(('','1'))
+    else:
+        ymax=np.floor(ymax)+1
+        if ymax >= 60:
+            tck=np.arange(1,ymax/30.)*30.
+        elif ymax >= 10:
+            tck=np.arange(1,ymax/5.)*5.
+        else:
+            tck=np.arange(1,ymax)
+        ax35.set_yticks(tck)
+    ax35.grid(True)
+    if ymax >= 10:
+        ax35.set_ylabel(r"$\phi_{\rm BH}$",size=16,ha='left',labelpad=25)
+    ax35.grid(True)
+    ax35r = ax35.twinx()
+    ax35r.set_ylim(ax35.get_ylim())
+    ax35r.set_yticks(tck)
+    #
+    #pjet/<mdot>
+    #
+    ax34 = plt.subplot(gs3[-1,:])
+    plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findex,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma,usegaussianunits=True)
+    ax34.set_ylim((0,3.8*prefactor))
+    ymax=ax34.get_ylim()[1]
+    if prefactor < ymax and ymax < 2*prefactor: 
+        #ymax = 2
+        tck=(prefactor,)
+        ax34.set_yticks(tck)
+        #ax34.set_yticklabels(('','100','200'))
+    elif ymax < prefactor: 
+        ymax = prefactor
+        tck=(0.5*prefactor,prefactor)
+        ax34.set_yticks(tck)
+        ax34.set_yticklabels(('','%d' % prefactor))
+    else:
+        ymax=np.floor(ymax/prefactor)+1
+        ymax*=prefactor
+        tck=np.arange(1,ymax/prefactor)*prefactor
+        ax34.set_yticks(tck)
+    #reset lower limit to 0
+    ax34.set_ylim((0,ax34.get_ylim()[1]))
+    ax34.grid(True)
+    ax34r = ax34.twinx()
+    ax34r.set_ylim(ax34.get_ylim())
+    ax34r.set_yticks(tck)
+    #Rz xy
+    gs1 = GridSpec(1, 1)
+    gs1.update(left=0.04, right=0.45, top=0.995, bottom=0.48, wspace=0.05)
+    #gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.45, wspace=0.05)
+    ax1 = plt.subplot(gs1[:, -1])
+    if domakeframes:
+        mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False)
+    ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
+    ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
+    gs2 = GridSpec(1, 1)
+    gs2.update(left=0.5, right=1, top=0.995, bottom=0.48, wspace=0.05)
+    ax2 = plt.subplot(gs2[:, -1])
+    if domakeframes:
+        mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True)
+    ax2.set_ylabel(r'$y\ [r_g]$',fontsize=16,ha='center')
+    ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
+    #print xxx
+    plt.savefig( "lrho%04d_Rzxym1.png" % (findex)  )
+    plt.savefig( "lrho%04d_Rzxym1.eps" % (findex)  )
+    #print xxx
 
 def mk2davg():
     if len(sys.argv[1:])!=0:
