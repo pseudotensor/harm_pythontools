@@ -8248,8 +8248,10 @@ if __name__ == "__main__":
             #fig=plt.figure(1,figsize=(10,10))
             #plt.clf()
             #ax = fig.add_subplot(111, aspect='equal')
-            numc=15
-            plco(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,numc)*maxaphi/np.float(numc))
+            numc=30
+            #plco(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,numc)*maxaphi/np.float(numc))
+            cvel()
+            plco(lrho,cb=True,levels=np.arange(1,10),xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,10);plt.ylim(-5,5)
             plt.title("t=%3.3g" % t,    fontsize=16, color='k')
             #draw NS
             ax=plt.gca()
