@@ -5085,9 +5085,12 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #                 147, # from dumps/ dir]
         #                 146, #[from dumps/fldbackup/ dir]
         #                 145])#[from dumps/ dir]
-        Dt = np.array([#18243.1710113689,
+        Dt = np.array([19400.-18976.9614912956,
+                       18900.-18881.6126574549,
+                       18800.-18418.9418783789
+                       #18243.1710113689,
                        #18200.-17725.310836# ,
-                       17700.-17179.8585982052 #,
+                       #17700.-17179.8585982052 #,
                        # #17113.1745686056,
                        # 17100.-16913.0491381982,
                        # 16900.-16712.9233648069,
@@ -5102,8 +5105,11 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                        # #14530.093538046,
                        # 14500.-14207.0184709617
                        ])
-        Dno = np.array([#181# , #[from dumps/ dir
-                         176 #, ...
+        Dno = np.array([193,
+                        188,
+                        187
+                #181# , #[from dumps/ dir
+                        # 176 #, ...
                         # 170, # ...
                         # 168, # ...
                         # 166, # ...
@@ -5116,14 +5122,18 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         # 146, #[from dumps/fldbackup/ dir]
                         # 145
                         ])#[from dumps/ dir]
-        nz=64
-        _dx3=0.5/64.
-        lfti = 14207.
+        #Dt*=1.5 #do this in order to roughly get flat curves for range of data 14207-18420  (using floor info 18420-19300); barely changes efficiency (Dt*=1: eta=90.3%; Dt*=1.5: eta=90.6%)
+        #nz=64
+        #_dx3=0.5/64.
+        #lfti=14207.
+        lfti=17000.
+        #lfti = 18420.
         lftf = 1e5
-        pn="A0.9h_\\theta h_\\varphi}"
+        pn="A0.9$h_\\theta h_\\varphi$"
         rin = 15
         rmax = 34.1
-        simti = 14207.
+        #simti = 14207.
+        simti = lfti
         simtf = lftf
     elif np.abs(a - 0.5)<1e-4:
         print( "Using a = 0.5 settings")
