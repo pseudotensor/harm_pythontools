@@ -5385,7 +5385,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     if np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) < 1.5:
         #correct energy flux for face vs. center
         edtotvsr = (edtotvsr+mdtotvsr)*energy_flux_correction_factor - mdtotvsr
-    elif (gdetF11!=0).any():
+    elif False and (gdetF11!=0).any():
         edtotvsr[:-1] = -0.5*(gdetF11[:-1]+gdetF11[1:])
         mdtotvsr[:-1] = -0.5*(gdetF10[:-1]+gdetF10[1:])
         edtotvsr -= mdtotvsr
