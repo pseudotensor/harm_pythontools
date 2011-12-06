@@ -1123,7 +1123,7 @@ def reinterpxy(vartointerp,extent,ncell,domask=1,mirrorfactor=1):
 def ftr(x,xb,xf):
     return( amax(0.0*x,amin(1.0+0.0*x,1.0*(x-xb)/(xf-xb))) )
     
-def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2,whichr=0.9):
+def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2,whichr=0.9,ncont=100):
     extent=(-len,len,-len,len)
     palette=cm.jet
     palette.set_bad('k', 1.0)
@@ -1137,7 +1137,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         iaphi = reinterp(aphi,extent,ncell,domask=0)
         #maxabsiaphi=np.max(np.abs(iaphi))
         maxabsiaphi = 100 #50
-        ncont = 100 #30
+        #ncont = 100 #30
         levs=np.linspace(-maxabsiaphi,maxabsiaphi,ncont)
     else:
         aphi = fieldcalc()
@@ -1215,6 +1215,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         ax.contour(iaphi,linewidths=0.5,colors='b', extent=extent,hold='on',origin='lower',levels=(aphi[ihor,ny/2,0],))
     if not dostreamlines:
         cset2 = ax.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
+        traj = None
     else:
         if dovarylw:
             if False:
@@ -6430,6 +6431,7 @@ def mkmovie(framesize=50, domakeavi=False,**kwargs):
         #os.system("scp mov.avi 128.112.70.76:Research/movies/mov_`basename \`pwd\``.avi")
 
 def mkmovieframe( findex, fname, **kwargs ):
+    dostreamlines = kwargs.pop('dostreamlines',True)
     frametype = kwargs.get('frametype','5panels')
     prefactor = kwargs.get('prefactor',1.)
     sigma = kwargs.get('sigma',None)
@@ -6568,7 +6570,7 @@ def mkmovieframe( findex, fname, **kwargs ):
         #gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.45, wspace=0.05)
         ax1 = plt.subplot(gs1[:, -1])
         if domakeframes:
-            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False)
+            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=dostreamlines,ncont=25)
         ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
         ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         # gs2 = GridSpec(1, 1)
@@ -6576,6 +6578,23 @@ def mkmovieframe( findex, fname, **kwargs ):
         # ax2 = plt.subplot(gs2[:, -1])
         # ax2.set_ylabel(r'$y\ [r_g]$',fontsize=16,ha='center')
         # ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
+    elif frametype=='Rzzypanels':
+        #Rz xy
+        gs1 = GridSpec(1, 1)
+        gs1.update(left=0.04, right=0.45, top=0.995, bottom=0.48, wspace=0.05)
+        #gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.45, wspace=0.05)
+        ax1 = plt.subplot(gs1[:, -1])
+        if domakeframes:
+            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False)
+        ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
+        ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
+        gs2 = GridSpec(1, 1)
+        gs2.update(left=0.5, right=1, top=0.995, bottom=0.48, wspace=0.05)
+        ax2 = plt.subplot(gs2[:, -1])
+        ax2.set_ylabel(r'$y\ [r_g]$',fontsize=16,ha='center')
+        ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
+        if domakeframes:
+            mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True)
     #print xxx
     plt.savefig( "lrho%04d_Rzxym1.png" % (findex)  )
     plt.savefig( "lrho%04d_Rzxym1.eps" % (findex)  )
@@ -8131,7 +8150,7 @@ if __name__ == "__main__":
     if False:
         takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
         #takeoutfloors(dotakeoutfloors=1,doplot=False)
-    if True:
+    if False:
         provsretro()
     if False:
         #make a movie
@@ -8145,7 +8164,7 @@ if __name__ == "__main__":
         #print epsFm, epsFke
         mkmovie(prefactor=100.,sigma=1500.,usegaussianunits=True,domakeframes=domakeframes)
         #mkmovie(prefactor=100.,usegaussianunits=True,domakeframes=domakeframes)
-    if False:
+    if True:
         #make a movie
         #fti=7000
         #ftf=30500
@@ -8155,7 +8174,7 @@ if __name__ == "__main__":
         #epsFm = 
         #epsFke = 
         #print epsFm, epsFke
-        mkmovie(prefactor=100.,usegaussianunits=True,domakeframes=domakeframes,frametype='Rzpanel')
+        mkmovie(prefactor=100.,usegaussianunits=True,domakeframes=domakeframes,frametype='Rzpanel',dostreamlines=False)
         #mkmovie(prefactor=100.,usegaussianunits=True,domakeframes=domakeframes)
     if False:
         readmytests1()
