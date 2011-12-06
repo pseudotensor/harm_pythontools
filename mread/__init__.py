@@ -6559,7 +6559,9 @@ def mkmovieframe( findex, fname, **kwargs ):
         gs2 = GridSpec(1, 1)
         gs2.update(left=0.5, right=1, top=0.995, bottom=0.48, wspace=0.05)
         ax2 = plt.subplot(gs2[:, -1])
-    elif 'Rzpanel':
+        if domakeframes:
+            mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True)
+    elif frametype=='Rzpanel':
         #Rz xy
         gs1 = GridSpec(1, 1)
         gs1.update(left=0.04, right=0.45, top=0.995, bottom=0.48, wspace=0.05)
@@ -6569,13 +6571,11 @@ def mkmovieframe( findex, fname, **kwargs ):
             mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False)
         ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
         ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
-        gs2 = GridSpec(1, 1)
-        gs2.update(left=0.5, right=1, top=0.995, bottom=0.48, wspace=0.05)
-        ax2 = plt.subplot(gs2[:, -1])
-        ax2.set_ylabel(r'$y\ [r_g]$',fontsize=16,ha='center')
-        ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
-    if domakeframes:
-        mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True)
+        # gs2 = GridSpec(1, 1)
+        # gs2.update(left=0.5, right=1, top=0.995, bottom=0.48, wspace=0.05)
+        # ax2 = plt.subplot(gs2[:, -1])
+        # ax2.set_ylabel(r'$y\ [r_g]$',fontsize=16,ha='center')
+        # ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
     #print xxx
     plt.savefig( "lrho%04d_Rzxym1.png" % (findex)  )
     plt.savefig( "lrho%04d_Rzxym1.eps" % (findex)  )
@@ -8155,7 +8155,7 @@ if __name__ == "__main__":
         #epsFm = 
         #epsFke = 
         #print epsFm, epsFke
-        mkmovie(prefactor=100.,usegaussianunits=True,domakeframes=domakeframes)
+        mkmovie(prefactor=100.,usegaussianunits=True,domakeframes=domakeframes,frametype='Rzpanel')
         #mkmovie(prefactor=100.,usegaussianunits=True,domakeframes=domakeframes)
     if False:
         readmytests1()
