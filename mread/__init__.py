@@ -5126,11 +5126,39 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #Dt*=1.5 #do this in order to roughly get flat curves for range of data 14207-18420  (using floor info 18420-19300); barely changes efficiency (Dt*=1: eta=90.3%; Dt*=1.5: eta=90.6%)
         #nz=64
         #_dx3=0.5/64.
-        #lfti=14207.
-        lfti=17000.
+        lfti=14207.
+        #lfti=17000.
         #lfti = 18420.
         lftf = 1e5
         pn="A0.9$h_\\theta h_\\varphi$"
+        rin = 15
+        rmax = 34.1
+        #simti = 14207.
+        simti = lfti
+        simtf = lftf
+    elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_betax0.5_0_0_0_2xphi_restart15000":
+        print( "Using a = 0.9 (rtf2_15r34.1_betax0.5_0_0_0_2xphi_restart15000) settings")
+        Dt = np.array([23200-21626.7045853424,
+                       21600-21180.2758247238,
+                       21100-19607.2567643133,
+                       19600-17970.484301684,
+                       17900-17332.6888281801,
+                       17300-16673.3266984864,
+                       16600-15000.0049914467
+                       ])
+        Dno = np.array([231,
+                        215,
+                        210,
+                        195,
+                        178,
+                        172,
+                        165
+                        ])#[from dumps/ dir]
+        #lfti=14207.
+        lfti=15000.
+        #lfti = 18420.
+        lftf = 1e5
+        pn="A0.9N200$h_\\varphi$"
         rin = 15
         rmax = 34.1
         #simti = 14207.
@@ -6570,7 +6598,7 @@ def mkmovieframe( findex, fname, **kwargs ):
         #gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.45, wspace=0.05)
         ax1 = plt.subplot(gs1[:, -1])
         if domakeframes:
-            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=dostreamlines,ncont=25)
+            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=dostreamlines,ncont=50)
         ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
         ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         # gs2 = GridSpec(1, 1)
@@ -8174,7 +8202,7 @@ if __name__ == "__main__":
         #epsFm = 
         #epsFke = 
         #print epsFm, epsFke
-        mkmovie(prefactor=100.,usegaussianunits=True,domakeframes=domakeframes,frametype='Rzpanel',dostreamlines=False)
+        mkmovie(prefactor=100.,usegaussianunits=True,domakeframes=domakeframes,frametype='Rzzypanels',dostreamlines=False)
         #mkmovie(prefactor=100.,usegaussianunits=True,domakeframes=domakeframes)
     if False:
         readmytests1()
