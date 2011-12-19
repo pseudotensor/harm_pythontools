@@ -5130,7 +5130,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #lfti=17000.
         #lfti = 18420.
         lftf = 1e5
-        pn="A0.9$h_\\theta h_\\varphi$"
+        pn="A0.9h_{\\theta}h_{\\varphi}"
         rin = 15
         rmax = 34.1
         #simti = 14207.
@@ -5158,7 +5158,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         lfti=15000.
         #lfti = 18420.
         lftf = 1e5
-        pn="A0.9N200$h_\\varphi$"
+        pn="A0.9N200h_\\varphi"
         rin = 15
         rmax = 34.1
         #simti = 14207.
@@ -5843,7 +5843,7 @@ def Risco(a):
     risco = 3 + Z2 - np.sign(a)* ( (3 - Z1)*(3 + Z1 + 2*Z2) )**0.5
     return(risco)
 
-def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=False):
+def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=False,nsigma=1):
     if usegaussianunits == True:
         unitsfactor = (4*np.pi)**0.5*2*np.pi
     else:
@@ -5921,10 +5921,10 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     gin.close()
     if plotetas:
         #plt.figure(1)
-        plt.xlim(0,800)
+        plt.xlim(0,200)
         plt.ylim(-2,alist.shape[0])
         ilist = np.arange(alist.shape[0])
-        pylab.errorbar(etalist*100, ilist, xerr=2*etastdlist*100,marker='o',ls='None')
+        pylab.errorbar(etalist*100, ilist, xerr=nsigma*etastdlist*100,marker='o',ls='None')
         plt.xlabel(r"$\eta$")
         ax=plt.gca()
         ax.get_yaxis().set_visible(False)
@@ -5934,7 +5934,7 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         eta9avg,eta9err,eta9std=wmom(etalist[alist>0],etastdlist[alist>0]**(-2),calcerr=True,sdev=True)
         print etam9avg, etam9std
         print eta9avg, eta9std
-        pylab.errorbar(np.array([etam9avg,eta9avg])*100, np.array([-1.,-1.],dtype=np.float64),marker='o', xerr=2*np.array([etam9std,eta9std])*100,ls='None')
+        pylab.errorbar(np.array([etam9avg,eta9avg])*100, np.array([-1.,-1.],dtype=np.float64),marker='o', xerr=nsigma*np.array([etam9std,eta9std])*100,ls='None')
         #def wmom(arrin, weights_in, inputmean=None, calcerr=False, sdev=False):
         return
     mya=np.arange(-1,1,0.001)
@@ -6228,14 +6228,17 @@ def wmom(arrin, weights_in, inputmean=None, calcerr=False, sdev=False):
     if calcerr:
         werr2 = ( weights**2 * (arr-wmean)**2 ).sum()
         werr = np.sqrt( werr2 )/wtot
+        wstaterr = 1.0/np.sqrt(wtot)
+        wtoterr = np.sqrt(werr**2+wstaterr**2)
     else:
         werr = 1.0/np.sqrt(wtot)
+        wtoterr=werr
 
     # should output include the weighted standard deviation?
     if sdev:
         wvar = ( weights*(arr-wmean)**2 ).sum()/wtot * (weights.shape[0]-1.)/weights.shape[0]
         wsdev = np.sqrt(wvar)
-        return wmean,werr,wsdev
+        return wmean,wtoterr,wsdev
     else:
         return wmean,werr
 
@@ -8176,7 +8179,8 @@ def oldstuff():
 
 if __name__ == "__main__":
     if False:
-        takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
+        #takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
+        takeoutfloors(dotakeoutfloors=1,doplot=False,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
         #takeoutfloors(dotakeoutfloors=1,doplot=False)
     if False:
         provsretro()
@@ -8192,7 +8196,7 @@ if __name__ == "__main__":
         #print epsFm, epsFke
         mkmovie(prefactor=100.,sigma=1500.,usegaussianunits=True,domakeframes=domakeframes)
         #mkmovie(prefactor=100.,usegaussianunits=True,domakeframes=domakeframes)
-    if True:
+    if False:
         #make a movie
         #fti=7000
         #ftf=30500
@@ -8212,7 +8216,11 @@ if __name__ == "__main__":
         readmytests1()
         plotpowers('powerlist2davg.txt',format=1) #new format; data from 2d average dumps
     if False:
-        #Figure 3, updated diagnostics
+        #Pro vs. retrograde spins, updated diagnostics
+        readmytests1()
+        plotpowers('siminfo.txt',plotetas=True,format=2) #new format; data from 2d average dumps
+    if False:
+        #Power vs. spin, updated diagnostics
         readmytests1()
         plotpowers('siminfo.txt',format=2) #new format; data from 2d average dumps
     if False:
