@@ -5936,6 +5936,7 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         print eta9avg, eta9std
         pylab.errorbar(np.array([etam9avg,eta9avg])*100, np.array([-1.,-1.],dtype=np.float64),marker='o', xerr=nsigma*np.array([etam9std,eta9std])*100,ls='None')
         #def wmom(arrin, weights_in, inputmean=None, calcerr=False, sdev=False):
+        plt.savefig( "fig1.eps",bbox_inches='tight',pad_inches=0.02  )
         return
     mya=np.arange(-1,1,0.001)
     rhor = 1+(1-mya**2)**0.5
@@ -7554,6 +7555,7 @@ def provsretro():
         flist = ["avg2d.npy"
                  #"avg2dnf.npy"
                  ]
+        #flist = ["avg0.npy", "avg2.npy"]
         plt.figure(1)
         plt.clf()
         plt.figure(2)
@@ -7561,6 +7563,12 @@ def provsretro():
         plt.figure(3)
         plt.clf()
         plt.figure(4)
+        plt.clf()
+        plt.figure(5)
+        plt.clf()
+        plt.figure(6)
+        plt.clf()
+        plt.figure(7)
         plt.clf()
         firsttime=True
         for (i,f) in enumerate(flist):
@@ -7758,6 +7766,45 @@ def provsretro():
             plt.ylim(ymin=0.5e-3,ymax=60)
             plt.xscale('log')
             plt.yscale('log')
+            #######################
+            #
+            #  FIGURE 6: Flux
+            #
+            #######################
+            plt.figure(6)
+            #plt.clf()
+            ax = plt.gca()
+            aphi=fieldcalc(gdetB1=avg_gdetB[0])
+            fluxval = aphi.max(axis=1)[:,0]
+            if firsttime:
+                fluxnorm = fluxval[iofr(rhor)]
+            fluxval = fluxval/fluxnorm
+            plt.plot( r[:,0,0], fluxval, label=lab )
+            ax.set_xscale('linear')
+            ax.set_yscale('linear')
+            plt.xlim(rhor,20)
+            plt.ylim(1,4)
+            plt.xlabel(r"$r$",fontsize=16)
+            plt.ylabel(r"$\Phi$",fontsize=16)
+            plt.grid(b=True)
+            plt.legend()
+            #######################
+            #
+            #  FIGURE 7: bsq/rho
+            #
+            #######################
+            plt.figure(7)
+            #plt.clf()
+            ax = plt.gca()
+            plt.plot( r[:,0,0], (avg_bsq/avg_rho)[:,ny/2,0], label=lab )
+            ax.set_xscale('log')
+            ax.set_yscale('log')
+            plt.xlim(rhor,1000)
+            plt.ylim(1e-5,4)
+            plt.xlabel(r"$r$",fontsize=16)
+            plt.ylabel(r"$b^2/rho$",fontsize=16)
+            plt.grid(b=True)
+            plt.legend()
             firsttime=False
         handles, labels = ax1.get_legend_handles_labels()
         ax1.legend(handles, labels,loc="upper left")
