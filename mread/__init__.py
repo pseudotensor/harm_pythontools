@@ -8233,7 +8233,7 @@ def placeletter(ax1,lab,size=16,fx=0.07,fy=0.12,ha="center",color='k',bbox=None)
         color=color,weight='regular',bbox=bbox )
 
 
-def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=75,ncont=100,doreload=True,aspect=2.0,vmin=-6.5,vmax=0.5):
+def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=85,ncont=100,doreload=True,aspect=2.0,vmin=-6.5,vmax=0.5):
     global bsq, rho, gdetB
     bbox = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.5)
     #Rz
@@ -8246,17 +8246,6 @@ def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=75,ncont=100,d
         #RETROGRADE
         os.chdir("/home/atchekho/run/rtf2_15r34_2pi_a-0.9gg50rbr1e3_0_0_0_faildufix2")
         grid3d("gdump.bin",use2d=True)
-        ax1 = plt.subplot(gs1[0, 0])
-        if doreload:
-            rfd("fieldline0000.bin")
-            cvel()
-        mkframe("topleft", vmin=vmin,vmax=vmax,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=dostreamlines,ncont=ncont,aspect=aspect,maxaphi=maxaphi)
-        plt.setp( ax1.get_xticklabels(), visible=False)
-        ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
-        placeletter( ax1,"$\mathrm{(a)}$",bbox=bbox)
-        placeletter( ax1,"$t=%g$" % t,fx=0.97,ha="right",bbox=bbox)
-        plt.title(r"${\rm Retrograde\ case,\ a = -0.9\ (model\ A-0.9f})$")
-        ax2 = plt.subplot(gs1[1, 0])
         if doreload:
             avgmem = get2davg(usedefault=1)
             assignavg2dvars(avgmem)
@@ -8266,24 +8255,32 @@ def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=75,ncont=100,d
             gdetB[1]=avg_gdetB[0]
             #rfd("fieldline3000.bin")
             #cvel()
+            aphi = fieldcalc()
+            aphibh=aphi[iofr(rhor),ny/2,0]
+        ax2 = plt.subplot(gs1[1, 0])
         mkframe("topleft", vmin=vmin,vmax=vmax,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=dostreamlines,ncont=ncont,aspect=aspect,maxaphi=maxaphi)
+        plc(aphi,levels=(aphibh,),xcoord=r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=3)
+        plc(aphi,levels=(aphibh,),xcoord=-r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=3)
         ax2.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
         ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         placeletter( ax2,"$\mathrm{(b)}$",bbox=bbox)
-        placeletter( ax2,"$t-,\\varphi-\mathrm{average}$",fx=0.97,ha="right",bbox=bbox)
-        #PROGRADE
-        os.chdir("/home/atchekho/run/rtf2_15r34.1_pi_0_0_0")
-        grid3d("gdump.bin",use2d=True)
-        ax1 = plt.subplot(gs1[0, 1])
+        placeletter( ax2,"$t-,\\varphi\mathrm{-average}$",fx=0.97,ha="right",bbox=bbox)
+        ax1 = plt.subplot(gs1[0, 0])
         if doreload:
             rfd("fieldline0000.bin")
             cvel()
+            aphi=fieldcalc()
         mkframe("topleft", vmin=vmin,vmax=vmax,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=dostreamlines,ncont=ncont,aspect=aspect,maxaphi=maxaphi)
+        plc(aphi,levels=(aphibh,),xcoord=r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=3)
+        plc(aphi,levels=(aphibh,),xcoord=-r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=3)
         plt.setp( ax1.get_xticklabels(), visible=False)
-        plt.setp( ax1.get_yticklabels(), visible=False)
-        plt.title(r"${\rm Prograde\ case,\ a = 0.9\ (model\ A0.9f)}$")
-        placeletter( ax1,"$\mathrm{(c)}$",bbox=bbox)
+        ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
+        placeletter( ax1,"$\mathrm{(a)}$",bbox=bbox)
         placeletter( ax1,"$t=%g$" % t,fx=0.97,ha="right",bbox=bbox)
+        plt.title(r"${\rm Retrograde\ BH,\ a = -0.9\ (model\ A-0.9f})$")
+        #PROGRADE
+        os.chdir("/home/atchekho/run/rtf2_15r34.1_pi_0_0_0")
+        grid3d("gdump.bin",use2d=True)
         ax2 = plt.subplot(gs1[1, 1])
         if doreload:
             avgmem = get2davg(usedefault=1)
@@ -8294,11 +8291,29 @@ def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=75,ncont=100,d
             gdetB[1]=avg_gdetB[0]
             # rfd("fieldline3000.bin")
             # cvel()
+            aphi=fieldcalc()
+            aphibh=aphi[iofr(rhor),ny/2,0]
         mkframe("topleft", vmin=vmin,vmax=vmax,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=dostreamlines,ncont=ncont,aspect=aspect,maxaphi=maxaphi)
+        plc(aphi,levels=(aphibh,),xcoord=r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=3)
+        plc(aphi,levels=(aphibh,),xcoord=-r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=3)
         plt.setp( ax2.get_yticklabels(), visible=False)
         ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         placeletter( ax2,"$\mathrm{(d)}$",bbox=bbox)
-        placeletter( ax2,"$t-,\\varphi-\mathrm{average}$",fx=0.97,ha="right",bbox=bbox)
+        placeletter( ax2,"$t-,\\varphi\mathrm{-average}$",fx=0.97,ha="right",bbox=bbox)
+        #
+        ax1 = plt.subplot(gs1[0, 1])
+        if doreload:
+            rfd("fieldline0000.bin")
+            cvel()
+            aphi=fieldcalc()
+        mkframe("topleft", vmin=vmin,vmax=vmax,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=dostreamlines,ncont=ncont,aspect=aspect,maxaphi=maxaphi)
+        plt.setp( ax1.get_xticklabels(), visible=False)
+        plt.setp( ax1.get_yticklabels(), visible=False)
+        plt.title(r"${\rm Prograde\ BH,\ a = 0.9\ (model\ A0.9f)}$")
+        placeletter( ax1,"$\mathrm{(c)}$",bbox=bbox)
+        placeletter( ax1,"$t=%g$" % t,fx=0.97,ha="right",bbox=bbox)
+        plc(aphi,levels=(aphibh,),xcoord=r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=3)
+        plc(aphi,levels=(aphibh,),xcoord=-r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=3)
         #
         ax1 = fig.add_axes([0.92, 0.12, 0.02, 0.83])
         #
