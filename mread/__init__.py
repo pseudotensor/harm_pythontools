@@ -8224,12 +8224,13 @@ def oldstuff():
         #plt.figure(2)
         #plotqtyvstime(qtymem,whichplot=-4)
 
-def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=200,ncont=50,doreload=True,aspect=2.0):
+def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=110,ncont=100,doreload=True,aspect=2.0):
+    global bsq, rho, gdetB
     #Rz
-    plt.figure(1, figsize=(10,5), dpi=100)
+    fig = plt.figure(1, figsize=(10,5), dpi=100)
     gs1 = GridSpec(2, 2)
-    gs1.update(left=0.1, right=0.96, top=0.95, bottom=0.1, wspace=0.05)
-    plt.subplots_adjust(hspace=0.03) #increase vertical spacing to avoid crowding
+    gs1.update(left=0.1, right=0.96, top=0.99, bottom=0.12, wspace=0.05)
+    plt.subplots_adjust(hspace=0.05) #increase vertical spacing to avoid crowding
     if domakeframes:
         #RETROGRADE
         os.chdir("/home/atchekho/run/rtf2_15r34_2pi_a-0.9gg50rbr1e3_0_0_0_faildufix2")
@@ -8243,9 +8244,16 @@ def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=200,ncont=50,d
         ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
         ax2 = plt.subplot(gs1[1, 0])
         if doreload:
-            rfd("fieldline3000.bin")
-            cvel()
+            avgmem = get2davg(usedefault=1)
+            assignavg2dvars(avgmem)
+            rho = avg_rho
+            bsq = avg_bsq
+            gdetB=np.zeros_like(uu)
+            gdetB[1]=avg_gdetB[0]
+            #rfd("fieldline3000.bin")
+            #cvel()
         mkframe("topleft", vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=dostreamlines,ncont=ncont,aspect=aspect,maxaphi=maxaphi)
+        ax2.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
         ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         #PROGRADE
         os.chdir("/home/atchekho/run/rtf2_15r34.1_pi_0_0_0")
@@ -8259,11 +8267,32 @@ def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=200,ncont=50,d
         plt.setp( ax1.get_yticklabels(), visible=False)
         ax2 = plt.subplot(gs1[1, 1])
         if doreload:
-            rfd("fieldline3000.bin")
-            cvel()
+            avgmem = get2davg(usedefault=1)
+            assignavg2dvars(avgmem)
+            rho = avg_rho
+            bsq = avg_bsq
+            gdetB=np.zeros_like(uu)
+            gdetB[1]=avg_gdetB[0]
+            # rfd("fieldline3000.bin")
+            # cvel()
         mkframe("topleft", vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=dostreamlines,ncont=ncont,aspect=aspect,maxaphi=maxaphi)
         plt.setp( ax2.get_yticklabels(), visible=False)
         ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
+        #
+        ax1 = fig.add_axes([0.94, 0.05, 0.02, 0.89])
+        #
+        # Set the colormap and norm to correspond to the data for which
+        # the colorbar will be used.
+        cmap = mpl.cm.jet
+        norm = mpl.colors.Normalize(vmin=-6, vmax=0.5625)
+        # ColorbarBase derives from ScalarMappable and puts a colorbar
+        # in a specified axes, so it has everything needed for a
+        # standalone colorbar.  There are many more kwargs, but the
+        # following gives a basic continuous colorbar with ticks
+        # and labels.
+        cb1 = mpl.colorbar.ColorbarBase(ax1, cmap=cmap,
+                                           norm=norm,
+                                           orientation='vertical')
     plt.savefig("figic.eps",bbox_inches='tight',pad_inches=0.02)
 
 
