@@ -1123,8 +1123,8 @@ def reinterpxy(vartointerp,extent,ncell,domask=1,mirrorfactor=1):
 def ftr(x,xb,xf):
     return( amax(0.0*x,amin(1.0+0.0*x,1.0*(x-xb)/(xf-xb))) )
     
-def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2,whichr=0.9,ncont=100):
-    extent=(-len,len,-len,len)
+def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2,whichr=0.9,ncont=100,maxaphi=100,aspect=1.0):
+    extent=(-len,len,-len/aspect,len/aspect)
     palette=cm.jet
     palette.set_bad('k', 1.0)
     #palette.set_over('r', 1.0)
@@ -1136,7 +1136,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         aphi = fieldcalc()
         iaphi = reinterp(aphi,extent,ncell,domask=0)
         #maxabsiaphi=np.max(np.abs(iaphi))
-        maxabsiaphi = 100 #50
+        maxabsiaphi = maxaphi #50
         #ncont = 100 #30
         levs=np.linspace(-maxabsiaphi,maxabsiaphi,ncont)
     else:
@@ -8223,6 +8223,49 @@ def oldstuff():
         plotqtyvstime(qtymem,whichplot=-3)
         #plt.figure(2)
         #plotqtyvstime(qtymem,whichplot=-4)
+
+def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=200,ncont=50,doreload=True,aspect=2.0):
+    #Rz
+    plt.figure(1, figsize=(10,5), dpi=100)
+    gs1 = GridSpec(2, 2)
+    gs1.update(left=0.1, right=0.96, top=0.95, bottom=0.1, wspace=0.05)
+    plt.subplots_adjust(hspace=0.03) #increase vertical spacing to avoid crowding
+    if domakeframes:
+        #RETROGRADE
+        os.chdir("/home/atchekho/run/rtf2_15r34_2pi_a-0.9gg50rbr1e3_0_0_0_faildufix2")
+        grid3d("gdump.bin",use2d=True)
+        ax1 = plt.subplot(gs1[0, 0])
+        if doreload:
+            rfd("fieldline0000.bin")
+            cvel()
+        mkframe("topleft", vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=dostreamlines,ncont=ncont,aspect=aspect,maxaphi=maxaphi)
+        plt.setp( ax1.get_xticklabels(), visible=False)
+        ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
+        ax2 = plt.subplot(gs1[1, 0])
+        if doreload:
+            rfd("fieldline3000.bin")
+            cvel()
+        mkframe("topleft", vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=dostreamlines,ncont=ncont,aspect=aspect,maxaphi=maxaphi)
+        ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
+        #PROGRADE
+        os.chdir("/home/atchekho/run/rtf2_15r34.1_pi_0_0_0")
+        grid3d("gdump.bin",use2d=True)
+        ax1 = plt.subplot(gs1[0, 1])
+        if doreload:
+            rfd("fieldline0000.bin")
+            cvel()
+        mkframe("topleft", vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=dostreamlines,ncont=ncont,aspect=aspect,maxaphi=maxaphi)
+        plt.setp( ax1.get_xticklabels(), visible=False)
+        plt.setp( ax1.get_yticklabels(), visible=False)
+        ax2 = plt.subplot(gs1[1, 1])
+        if doreload:
+            rfd("fieldline3000.bin")
+            cvel()
+        mkframe("topleft", vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=dostreamlines,ncont=ncont,aspect=aspect,maxaphi=maxaphi)
+        plt.setp( ax2.get_yticklabels(), visible=False)
+        ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
+    plt.savefig("figic.eps",bbox_inches='tight',pad_inches=0.02)
+
 
 if __name__ == "__main__":
     if False:
