@@ -8335,7 +8335,7 @@ def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=85,ncont=100,d
         cb1.set_ticklabels(labs)
         cb1.update_ticks()
         ax1.text(ax1.get_xlim()[0]+(ax1.get_xlim()[1]-ax1.get_xlim()[0])/1., 
-             1.*ax1.get_ylim()[1], r"$\ \rho$", size=14, rotation=0.,
+             1.*ax1.get_ylim()[1], r"$\ \rho c^2$", size=14, rotation=0.,
              ha="left", va="center",
              color='k',weight='regular'
              )
