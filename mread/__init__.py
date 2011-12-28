@@ -8224,13 +8224,24 @@ def oldstuff():
         #plt.figure(2)
         #plotqtyvstime(qtymem,whichplot=-4)
 
-def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=110,ncont=100,doreload=True,aspect=2.0):
+def placeletter(ax1,lab,size=16,fx=0.07,fy=0.12,ha="center",color='k',bbox=None):
+    plt.text(
+        ax1.get_xlim()[0]+(ax1.get_xlim()[1]-ax1.get_xlim()[0])*fx,
+        ax1.get_ylim()[0]+(ax1.get_ylim()[1]-ax1.get_ylim()[0])*(1-fy), 
+        r"%s" % lab, size=size,
+        rotation=0., ha=ha, va="center",
+        color=color,weight='regular',bbox=bbox )
+
+
+def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=75,ncont=100,doreload=True,aspect=2.0,vmin=-6.5,vmax=0.5):
     global bsq, rho, gdetB
+    bbox = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.5)
     #Rz
     fig = plt.figure(1, figsize=(10,5), dpi=100)
+    plt.clf()
     gs1 = GridSpec(2, 2)
-    gs1.update(left=0.1, right=0.96, top=0.99, bottom=0.12, wspace=0.05)
-    plt.subplots_adjust(hspace=0.05) #increase vertical spacing to avoid crowding
+    gs1.update(left=0.07, right=0.90, top=0.95, bottom=0.12, wspace=0.05)
+    plt.subplots_adjust(hspace=0.02) #increase vertical spacing to avoid crowding
     if domakeframes:
         #RETROGRADE
         os.chdir("/home/atchekho/run/rtf2_15r34_2pi_a-0.9gg50rbr1e3_0_0_0_faildufix2")
@@ -8239,9 +8250,12 @@ def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=110,ncont=100,
         if doreload:
             rfd("fieldline0000.bin")
             cvel()
-        mkframe("topleft", vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=dostreamlines,ncont=ncont,aspect=aspect,maxaphi=maxaphi)
+        mkframe("topleft", vmin=vmin,vmax=vmax,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=dostreamlines,ncont=ncont,aspect=aspect,maxaphi=maxaphi)
         plt.setp( ax1.get_xticklabels(), visible=False)
         ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
+        placeletter( ax1,"$\mathrm{(a)}$",bbox=bbox)
+        placeletter( ax1,"$t=%g$" % t,fx=0.97,ha="right",bbox=bbox)
+        plt.title(r"${\rm Retrograde\ case,\ a = -0.9\ (model\ A-0.9f})$")
         ax2 = plt.subplot(gs1[1, 0])
         if doreload:
             avgmem = get2davg(usedefault=1)
@@ -8252,9 +8266,11 @@ def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=110,ncont=100,
             gdetB[1]=avg_gdetB[0]
             #rfd("fieldline3000.bin")
             #cvel()
-        mkframe("topleft", vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=dostreamlines,ncont=ncont,aspect=aspect,maxaphi=maxaphi)
+        mkframe("topleft", vmin=vmin,vmax=vmax,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=dostreamlines,ncont=ncont,aspect=aspect,maxaphi=maxaphi)
         ax2.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
         ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
+        placeletter( ax2,"$\mathrm{(b)}$",bbox=bbox)
+        placeletter( ax2,"$t-,\\varphi-\mathrm{average}$",fx=0.97,ha="right",bbox=bbox)
         #PROGRADE
         os.chdir("/home/atchekho/run/rtf2_15r34.1_pi_0_0_0")
         grid3d("gdump.bin",use2d=True)
@@ -8262,9 +8278,12 @@ def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=110,ncont=100,
         if doreload:
             rfd("fieldline0000.bin")
             cvel()
-        mkframe("topleft", vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=dostreamlines,ncont=ncont,aspect=aspect,maxaphi=maxaphi)
+        mkframe("topleft", vmin=vmin,vmax=vmax,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=dostreamlines,ncont=ncont,aspect=aspect,maxaphi=maxaphi)
         plt.setp( ax1.get_xticklabels(), visible=False)
         plt.setp( ax1.get_yticklabels(), visible=False)
+        plt.title(r"${\rm Prograde\ case,\ a = 0.9\ (model\ A0.9f)}$")
+        placeletter( ax1,"$\mathrm{(c)}$",bbox=bbox)
+        placeletter( ax1,"$t=%g$" % t,fx=0.97,ha="right",bbox=bbox)
         ax2 = plt.subplot(gs1[1, 1])
         if doreload:
             avgmem = get2davg(usedefault=1)
@@ -8275,16 +8294,18 @@ def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=110,ncont=100,
             gdetB[1]=avg_gdetB[0]
             # rfd("fieldline3000.bin")
             # cvel()
-        mkframe("topleft", vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=dostreamlines,ncont=ncont,aspect=aspect,maxaphi=maxaphi)
+        mkframe("topleft", vmin=vmin,vmax=vmax,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=dostreamlines,ncont=ncont,aspect=aspect,maxaphi=maxaphi)
         plt.setp( ax2.get_yticklabels(), visible=False)
         ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
+        placeletter( ax2,"$\mathrm{(d)}$",bbox=bbox)
+        placeletter( ax2,"$t-,\\varphi-\mathrm{average}$",fx=0.97,ha="right",bbox=bbox)
         #
-        ax1 = fig.add_axes([0.94, 0.05, 0.02, 0.89])
+        ax1 = fig.add_axes([0.92, 0.12, 0.02, 0.83])
         #
         # Set the colormap and norm to correspond to the data for which
         # the colorbar will be used.
         cmap = mpl.cm.jet
-        norm = mpl.colors.Normalize(vmin=-6, vmax=0.5625)
+        norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
         # ColorbarBase derives from ScalarMappable and puts a colorbar
         # in a specified axes, so it has everything needed for a
         # standalone colorbar.  There are many more kwargs, but the
@@ -8293,7 +8314,19 @@ def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=110,ncont=100,
         cb1 = mpl.colorbar.ColorbarBase(ax1, cmap=cmap,
                                            norm=norm,
                                            orientation='vertical')
+        tcks=[x for x in range(int(vmin),int(vmax)+1)]
+        labs=[r'$10^{%d}$'%x for x in range(int(vmin),int(vmax)+1)]
+        cb1.set_ticks(tcks)
+        cb1.set_ticklabels(labs)
+        cb1.update_ticks()
+        ax1.text(ax1.get_xlim()[0]+(ax1.get_xlim()[1]-ax1.get_xlim()[0])/1., 
+             1.*ax1.get_ylim()[1], r"$\ \rho$", size=14, rotation=0.,
+             ha="left", va="center",
+             color='k',weight='regular'
+             )
+
     plt.savefig("figic.eps",bbox_inches='tight',pad_inches=0.02)
+    plt.savefig("figic.pdf",bbox_inches='tight',pad_inches=0.02)
 
 
 if __name__ == "__main__":
