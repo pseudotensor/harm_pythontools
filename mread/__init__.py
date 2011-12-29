@@ -7546,6 +7546,144 @@ def mklotsopanels(doreload=1,epsFm=None,epsFke=None,fti=None,ftf=None,domakefram
     print( "Done!" )
     sys.stdout.flush()
 
+
+def mkmdot(doreload=1,epsFm=None,epsFke=None,fti=None,ftf=None,prefactor=100,sigma=None,usegaussianunits=False,arrowsize=1):
+    global qtymem
+    findexlist=None
+    #Figure 1
+    #To make plot, run 
+    #run ~/py/mread/__init__.py 1 1
+    #To re-make plot without reloading the fiels, run
+    #run ~/py/mread/__init__.py 1 -1
+    doslines=True
+    plotlenf=10
+    plotleni=25
+    plen=plotleni
+    plotlenti=40000
+    plotlentf=45000
+    bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
+    #AT: plt.legend( loc = 'upper left', bbox_to_anchor = (0.5, 0.5) ) #0.5, 0.5 = center of plot
+    #To generate movies for all sub-folders of a folder:
+    #cd ~/Research/runart; for f in *; do cd ~/Research/runart/$f; (python  ~/py/mread/__init__.py &> python.out &); done
+    dontloadfiles = False
+    grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=True )
+    #rd( "dump0000.bin" )
+    #rfd("fieldline0000.bin")  #to definea
+    #grid3dlight("gdump")
+    if doreload == 1:
+        qtymem=getqtyvstime(None,0.2)
+    #make accretion rate plot, etc.
+    sys.stdout.flush()
+    plotlen = plotleni+(plotlenf-plotleni)*(t-plotlenti)/(plotlentf-plotlenti)
+    plotlen = min(plotlen,plotleni)
+    plotlen = max(plotlen,plotlenf)
+    fig=plt.figure(0, figsize=(12,9), dpi=100)
+    plt.clf()
+    gs3 = GridSpec(3, 3)
+    gs3.update(left=0.055, right=0.97, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
+    #mdot
+    ax31 = plt.subplot(gs3[-3,:])
+    plotqtyvstime(qtymem,ax=ax31,whichplot=1,findex=findexlist,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma) #AT: need to specify index!
+    ymax=ax31.get_ylim()[1]
+    ymax=2*(np.floor(np.floor(ymax+1.5)/2))
+    ax31.set_yticks((ymax/2,ymax))
+    #ax31.set_xlabel(r"$t\ [r_g/c]")
+    ax31.grid(True)
+    plt.text(ax31.get_xlim()[1]/40., 0.8*ax31.get_ylim()[1], "$(\mathrm{e})$", size=16, rotation=0.,
+             ha="center", va="center",
+             color='k',weight='regular',bbox=bbox_props
+             )
+    ax31r = ax31.twinx()
+    ax31r.set_ylim(ax31.get_ylim())
+    ax31r.set_yticks((ymax/2,ymax))
+    #pjet
+    # ax32 = plt.subplot(gs3[-2,:])
+    # plotqtyvstime(qtymem,ax=ax32,whichplot=2)
+    # ymax=ax32.get_ylim()[1]
+    # ax32.set_yticks((ymax/2,ymax))
+    # ax32.grid(True)
+    #pjet/mdot
+    # ax33 = plt.subplot(gs3[-1,:])
+    # plotqtyvstime(qtymem,ax=ax33,whichplot=3)
+    # ymax=ax33.get_ylim()[1]
+    # ax33.set_yticks((ymax/2,ymax))
+    # ax33.grid(True)
+    #
+    #\phi
+    #
+
+    # plt.text(250, 0.9*ymax, "i", size=10, rotation=0.,
+    #          ha="center", va="center",
+    #          bbox = dict(boxstyle="square",
+    #                      ec=(1., 0.5, 0.5),
+    #                      fc=(1., 0.8, 0.8),
+    #                      )
+    #          )
+    ax35 = plt.subplot(gs3[-2,:])
+    plotqtyvstime(qtymem,ax=ax35,whichplot=5,findex=findexlist,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma,usegaussianunits=True)
+    ymax=ax35.get_ylim()[1]
+    if 1 < ymax and ymax < 2: 
+        #ymax = 2
+        tck=(1,)
+        ax35.set_yticks(tck)
+        #ax35.set_yticklabels(('','1','2'))
+    elif ymax < 1: 
+        ymax = 1
+        tck=(0.5,1)
+        ax35.set_yticks(tck)
+        ax35.set_yticklabels(('','1'))
+    else:
+        ymax=np.floor(ymax)+1
+        if ymax >= 60:
+            tck=np.arange(1,ymax/30.)*30.
+        elif ymax >= 10:
+            tck=np.arange(1,ymax/5.)*5.
+        else:
+            tck=np.arange(1,ymax)
+        ax35.set_yticks(tck)
+    ax35.grid(True)
+    if ymax >= 10:
+        ax35.set_ylabel(r"$\phi_{\rm BH}$",size=16,ha='left',labelpad=25)
+    plt.text(ax35.get_xlim()[1]/40., 0.8*ax35.get_ylim()[1], r"$(\mathrm{f})$", size=16, rotation=0.,
+             ha="center", va="center",
+             color='k',weight='regular',bbox=bbox_props
+             )
+    ax35r = ax35.twinx()
+    ax35r.set_ylim(ax35.get_ylim())
+    ax35r.set_yticks(tck)
+    #
+    #pjet/<mdot>
+    #
+    ax34 = plt.subplot(gs3[-1,:])
+    plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findexlist,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma)
+    ax34.set_ylim((0,1.99*prefactor))
+    ymax=ax34.get_ylim()[1]
+    if prefactor < ymax and ymax < 2*prefactor: 
+        #ymax = 2
+        tck=(prefactor,)
+        ax34.set_yticks(tck)
+        #ax34.set_yticklabels(('','100','200'))
+    elif ymax < prefactor: 
+        ymax = prefactor
+        tck=(0.5*prefactor,prefactor)
+        ax34.set_yticks(tck)
+        ax34.set_yticklabels(('','%d' % prefactor))
+    else:
+        ymax=np.floor(ymax/prefactor)+1
+        ymax*=prefactor
+        tck=np.arange(1,ymax/prefactor)*prefactor
+        ax34.set_yticks(tck)
+    #reset lower limit to 0
+    ax34.set_ylim((0,ax34.get_ylim()[1]))
+    ax34.grid(True)
+    plt.text(ax34.get_xlim()[1]/40., 0.8*ax34.get_ylim()[1], r"$(\mathrm{g})$", size=16, rotation=0.,
+             ha="center", va="center",
+             color='k',weight='regular',bbox=bbox_props
+             )
+    ax34r = ax34.twinx()
+    ax34r.set_ylim(ax34.get_ylim())
+    ax34r.set_yticks(tck)
+
 def provsretro():
         grid3d("gdump.bin",use2d=True)
         #rfd("fieldline0000.bin")
@@ -8462,6 +8600,16 @@ if __name__ == "__main__":
         mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=True,dotakeoutfloors=1,usedefault=1)
         #mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=True,dotakeoutfloors=0)
         #mkstreamlinefigure(length=4,doenergy=False)
+    if True:
+        #FIGURE XX mdot, phibh, etabh
+        fti=8000
+        ftf=1e5
+        doreload = 1
+        epsFm, epsFke = takeoutfloors(doreload=doreload,fti=fti,ftf=ftf,returndf=1,isinteractive=0,writefile=False)
+        #epsFm = 
+        #epsFke = 
+        print epsFm, epsFke
+        mkmdot(doreload=doreload,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=100.,sigma=1500.,usegaussianunits=True,arrowsize=0.5)
     if False:
         #FIGURE 1 LOTSOPANELS
         fti=7000
