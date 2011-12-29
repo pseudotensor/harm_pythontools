@@ -1626,7 +1626,7 @@ def fieldcalcface(gdetB1=None):
     if gdetB1 == None:
         gdetB1 = gdetB[1]
     #average in phi and add up
-    daphi = (gdetB1).sum(-1)[:,:,None]/nz*_dx2
+    daphi = (gdetB1).mean(-1)[:,:,None]*_dx2
     aphi = np.zeros_like(daphi)
     aphi[:,1:ny/2+1]=(daphi.cumsum(axis=1))[:,0:ny/2]
     #sum up from the other pole
@@ -8342,6 +8342,30 @@ def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=85,ncont=100,d
 
     plt.savefig("figic.eps",bbox_inches='tight',pad_inches=0.02)
     plt.savefig("figic.pdf",bbox_inches='tight',pad_inches=0.02)
+
+def plotflux(doreload=True):
+    fig = plt.figure(1, figsize=(10,5), dpi=100)
+    dirlist=["/home/atchekho/run/rtf2_15r34_2pi_a-0.9gg50rbr1e3_0_0_0_faildufix2",
+             "/home/atchekho/run/rtf2_15r34.1_pi_0_0_0"]
+    for dirpath in dirlist:
+        os.chdir(dirpath)
+        grid3d("gdump.bin",use2d=True)
+        if doreload:
+            res = takeoutfloors(doreload=doreload,isinteractive=0,writefile=False)
+            a_eta,a_Fm,a_Fe,a_Fl = res
+            avgmem = get2davg(usedefault=1)
+            assignavg2dvars(avgmem)
+            rho = avg_rho
+            bsq = avg_bsq
+            aphi = fieldcalc(gdetB1=avg_gdetB[0])
+            aphibh=aphi[iofr(rhor),ny/2,0]
+            #old way:
+            #unitsfactor=(4*np.pi)**0.5*2*np.pi
+            #phibh=fstot[:,ihor]/4/np.pi/FMavg**0.5*unitsfactor
+            #where fstot = (gdetB1).sum(2).sum(1)*_dx2*_dx3 at horizon
+            phibh = (4*np.pi)**0.5*aphi/a_Fm**0.5
+            plt.plot(r[:,ny/2,0],phibh[:,ny/2,0])
+            plt.xlim(rhor,20)
 
 
 if __name__ == "__main__":
