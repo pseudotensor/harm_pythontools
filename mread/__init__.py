@@ -8484,7 +8484,7 @@ def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=85,ncont=100,d
         plc(aphi,levels=(aphibh,),xcoord=r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=3)
         plc(aphi,levels=(aphibh,),xcoord=-r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=3)
         #
-        ax1 = fig.add_axes([0.94, 0.12+0.42-0.05, 0.02, 0.85-0.42])
+        ax1 = fig.add_axes([0.94, 0.49, 0.02, 0.29])
         #
         # Set the colormap and norm to correspond to the data for which
         # the colorbar will be used.
@@ -8635,8 +8635,8 @@ if __name__ == "__main__":
         #FIGURE XX mdot, phibh, etabh
         fig=plt.figure(1, figsize=(12,9), dpi=100)
         gs2 = GridSpec(2, 2)
-        gs2.update(left=0.055, right=0.93, top=0.92, bottom=0.49, hspace=0.01, wspace=0.09)
-        icplot(gs=gs2,fig=fig,aspect=2.6)
+        gs2.update(left=0.055, right=0.93, top=0.78, bottom=0.49, hspace=0.01, wspace=0.09)
+        icplot(gs=gs2,fig=fig,aspect=3.9)
         #################
         #
         # mdot, phibh, etabh
