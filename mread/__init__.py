@@ -3620,6 +3620,11 @@ def plotqtyvstime(qtymem,ihor=None,whichplot=None,ax=None,findex=None,fti=None,f
 
     #mdotiniavg = timeavg(mdtot[:,ihor]-md10[:,ihor],ts,fti,ftf)
     #mdotfinavg = (mdtot[:,ihor]-md10[:,ihor])[(ts<ftf)*(ts>=fti)].sum()/(mdtot[:,ihor]-md10[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0]
+    if True and (gdetF11!=0).any():
+        edtot[:-1] = -0.5*(gdetF11[:-1]+gdetF11[1:])
+        mdtot[:-1] = -0.5*(gdetF10[:-1]+gdetF10[1:])
+        edtot -= mdtot
+
     mdotiniavgvsr = timeavg(mdtot,ts,iti,itf)
     mdotfinavgvsr = timeavg(mdtot,ts,fti,ftf)
     # full (disk + jet) accretion rate
@@ -5414,7 +5419,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     if np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) < 1.5:
         #correct energy flux for face vs. center
         edtotvsr = (edtotvsr+mdtotvsr)*energy_flux_correction_factor - mdtotvsr
-    elif False and (gdetF11!=0).any():
+    elif True and (gdetF11!=0).any():
         edtotvsr[:-1] = -0.5*(gdetF11[:-1]+gdetF11[1:])
         mdtotvsr[:-1] = -0.5*(gdetF10[:-1]+gdetF10[1:])
         edtotvsr -= mdtotvsr
