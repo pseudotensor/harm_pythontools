@@ -7552,7 +7552,7 @@ def mklotsopanels(doreload=1,epsFm=None,epsFke=None,fti=None,ftf=None,domakefram
     sys.stdout.flush()
 
 
-def mkmdot(doreload=1,epsFm=None,epsFke=None,fti=None,ftf=None,prefactor=100,sigma=None,usegaussianunits=False,arrowsize=1):
+def mkmdot(doreload=1,epsFm=None,epsFke=None,fti=None,ftf=None,prefactor=100,sigma=None,usegaussianunits=False,arrowsize=1,gs3=None,dotwinx=True,doylab=True,lab=None,title=None):
     global qtymem
     findexlist=None
     #Figure 1
@@ -7582,25 +7582,33 @@ def mkmdot(doreload=1,epsFm=None,epsFke=None,fti=None,ftf=None,prefactor=100,sig
     plotlen = plotleni+(plotlenf-plotleni)*(t-plotlenti)/(plotlentf-plotlenti)
     plotlen = min(plotlen,plotleni)
     plotlen = max(plotlen,plotlenf)
-    fig=plt.figure(0, figsize=(12,9), dpi=100)
-    plt.clf()
-    gs3 = GridSpec(3, 3)
-    gs3.update(left=0.055, right=0.97, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
+    if gs3 is None:
+        gs3 = GridSpec(3, 3)
+        gs3.update(left=0.055, right=0.97, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
+    if lab is None:
+        lab = ["a", "b", "c"]
     #mdot
     ax31 = plt.subplot(gs3[-3,:])
+    if title is not None:
+        plt.title(title)
     plotqtyvstime(qtymem,ax=ax31,whichplot=1,findex=findexlist,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma) #AT: need to specify index!
     ymax=ax31.get_ylim()[1]
     ymax=2*(np.floor(np.floor(ymax+1.5)/2))
+    #OVERRIDE
+    ymax=40
     ax31.set_yticks((ymax/2,ymax))
     #ax31.set_xlabel(r"$t\ [r_g/c]")
+    if doylab == False:
+        ax31.set_ylabel("")
     ax31.grid(True)
-    plt.text(ax31.get_xlim()[1]/40., 0.8*ax31.get_ylim()[1], "$(\mathrm{e})$", size=16, rotation=0.,
-             ha="center", va="center",
+    plt.text(ax31.get_xlim()[1]/40., 0.8*ax31.get_ylim()[1], "$(\mathrm{%s})$" % lab[0], size=16, rotation=0.,
+             ha="left", va="center",
              color='k',weight='regular',bbox=bbox_props
              )
-    ax31r = ax31.twinx()
-    ax31r.set_ylim(ax31.get_ylim())
-    ax31r.set_yticks((ymax/2,ymax))
+    if dotwinx:
+        ax31r = ax31.twinx()
+        ax31r.set_ylim(ax31.get_ylim())
+        ax31r.set_yticks((ymax/2,ymax))
     #pjet
     # ax32 = plt.subplot(gs3[-2,:])
     # plotqtyvstime(qtymem,ax=ax32,whichplot=2)
@@ -7626,6 +7634,8 @@ def mkmdot(doreload=1,epsFm=None,epsFke=None,fti=None,ftf=None,prefactor=100,sig
     #          )
     ax35 = plt.subplot(gs3[-2,:])
     plotqtyvstime(qtymem,ax=ax35,whichplot=5,findex=findexlist,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma,usegaussianunits=True)
+    #OVERRIDE
+    ax35.set_ylim((0,70))
     ymax=ax35.get_ylim()[1]
     if 1 < ymax and ymax < 2: 
         #ymax = 2
@@ -7641,6 +7651,8 @@ def mkmdot(doreload=1,epsFm=None,epsFke=None,fti=None,ftf=None,prefactor=100,sig
         ymax=np.floor(ymax)+1
         if ymax >= 60:
             tck=np.arange(1,ymax/30.)*30.
+        elif ymax >= 20:
+            tck=np.arange(1,ymax/10.)*10.
         elif ymax >= 10:
             tck=np.arange(1,ymax/5.)*5.
         else:
@@ -7649,23 +7661,31 @@ def mkmdot(doreload=1,epsFm=None,epsFke=None,fti=None,ftf=None,prefactor=100,sig
     ax35.grid(True)
     if ymax >= 10:
         ax35.set_ylabel(r"$\phi_{\rm BH}$",size=16,ha='left',labelpad=25)
-    plt.text(ax35.get_xlim()[1]/40., 0.8*ax35.get_ylim()[1], r"$(\mathrm{f})$", size=16, rotation=0.,
-             ha="center", va="center",
+    if doylab == False:
+        ax35.set_ylabel("")
+    plt.text(ax35.get_xlim()[1]/40., 0.8*ax35.get_ylim()[1], r"$(\mathrm{%s})$" % lab[1], size=16, rotation=0.,
+             ha="left", va="center",
              color='k',weight='regular',bbox=bbox_props
              )
-    ax35r = ax35.twinx()
-    ax35r.set_ylim(ax35.get_ylim())
-    ax35r.set_yticks(tck)
+    if dotwinx:
+        ax35r = ax35.twinx()
+        ax35r.set_ylim(ax35.get_ylim())
+        ax35r.set_yticks(tck)
     #
     #pjet/<mdot>
     #
     ax34 = plt.subplot(gs3[-1,:])
     plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findexlist,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma)
-    ax34.set_ylim((0,1.99*prefactor))
+    #OVERRIDE
+    ax34.set_ylim((-.5*prefactor,1.99*prefactor))
     ymax=ax34.get_ylim()[1]
+    ymin=ax34.get_ylim()[0]
     if prefactor < ymax and ymax < 2*prefactor: 
         #ymax = 2
-        tck=(prefactor,)
+        if ymin < 0:
+            tck=(0,prefactor)
+        else:
+            tck=(prefactor,)
         ax34.set_yticks(tck)
         #ax34.set_yticklabels(('','100','200'))
     elif ymax < prefactor: 
@@ -7679,15 +7699,18 @@ def mkmdot(doreload=1,epsFm=None,epsFke=None,fti=None,ftf=None,prefactor=100,sig
         tck=np.arange(1,ymax/prefactor)*prefactor
         ax34.set_yticks(tck)
     #reset lower limit to 0
-    ax34.set_ylim((0,ax34.get_ylim()[1]))
+    #ax34.set_ylim((0,ax34.get_ylim()[1]))
     ax34.grid(True)
-    plt.text(ax34.get_xlim()[1]/40., 0.8*ax34.get_ylim()[1], r"$(\mathrm{g})$", size=16, rotation=0.,
-             ha="center", va="center",
+    plt.text(ax34.get_xlim()[1]/40., 0.8*ax34.get_ylim()[1], r"$(\mathrm{%s})$" % lab[2], size=16, rotation=0.,
+             ha="left", va="center",
              color='k',weight='regular',bbox=bbox_props
              )
-    ax34r = ax34.twinx()
-    ax34r.set_ylim(ax34.get_ylim())
-    ax34r.set_yticks(tck)
+    if doylab == False:
+        ax34.set_ylabel("")
+    if dotwinx:
+        ax34r = ax34.twinx()
+        ax34r.set_ylim(ax34.get_ylim())
+        ax34r.set_yticks(tck)
 
 def provsretro():
         grid3d("gdump.bin",use2d=True)
@@ -8376,15 +8399,18 @@ def placeletter(ax1,lab,size=16,fx=0.07,fy=0.12,ha="center",color='k',bbox=None)
         color=color,weight='regular',bbox=bbox )
 
 
-def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=85,ncont=100,doreload=True,aspect=2.0,vmin=-6.5,vmax=0.5):
+def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=85,ncont=100,doreload=True,aspect=2.0,vmin=-6.5,vmax=0.5,gs=None,fig=None):
     global bsq, rho, gdetB
     bbox = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.5)
     #Rz
-    fig = plt.figure(1, figsize=(10,5), dpi=100)
-    plt.clf()
-    gs1 = GridSpec(2, 2)
-    gs1.update(left=0.07, right=0.90, top=0.95, bottom=0.12, wspace=0.05)
-    plt.subplots_adjust(hspace=0.02) #increase vertical spacing to avoid crowding
+    if gs is None or fig is None:
+        fig = plt.figure(1, figsize=(10,5), dpi=100)
+        plt.clf()
+        gs1 = GridSpec(2, 2)
+        gs1.update(left=0.07, right=0.90, top=0.95, bottom=0.12, wspace=0.05)
+    else:
+        gs1 = gs
+    #plt.subplots_adjust(hspace=0.02) #increase vertical spacing to avoid crowding
     if domakeframes:
         #RETROGRADE
         os.chdir("/home/atchekho/run/rtf2_15r34_2pi_a-0.9gg50rbr1e3_0_0_0_faildufix2")
@@ -8407,7 +8433,7 @@ def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=85,ncont=100,d
         ax2.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
         ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         placeletter( ax2,"$\mathrm{(b)}$",bbox=bbox)
-        placeletter( ax2,"$t-,\\varphi\mathrm{-average}$",fx=0.97,ha="right",bbox=bbox)
+        placeletter( ax2,"$t$-$,\\varphi$-$\mathrm{average}$",fx=0.97,ha="right",bbox=bbox)
         ax1 = plt.subplot(gs1[0, 0])
         if doreload:
             rfd("fieldline0000.bin")
@@ -8439,10 +8465,10 @@ def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=85,ncont=100,d
         mkframe("topleft", vmin=vmin,vmax=vmax,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=dostreamlines,ncont=ncont,aspect=aspect,maxaphi=maxaphi)
         plc(aphi,levels=(aphibh,),xcoord=r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=3)
         plc(aphi,levels=(aphibh,),xcoord=-r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=3)
-        plt.setp( ax2.get_yticklabels(), visible=False)
+        #plt.setp( ax2.get_yticklabels(), visible=False)
         ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         placeletter( ax2,"$\mathrm{(d)}$",bbox=bbox)
-        placeletter( ax2,"$t-,\\varphi\mathrm{-average}$",fx=0.97,ha="right",bbox=bbox)
+        placeletter( ax2,"$t$-$,\\varphi$-$\mathrm{average}$",fx=0.97,ha="right",bbox=bbox)
         #
         ax1 = plt.subplot(gs1[0, 1])
         if doreload:
@@ -8451,14 +8477,14 @@ def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=85,ncont=100,d
             aphi=fieldcalc()
         mkframe("topleft", vmin=vmin,vmax=vmax,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=dostreamlines,ncont=ncont,aspect=aspect,maxaphi=maxaphi)
         plt.setp( ax1.get_xticklabels(), visible=False)
-        plt.setp( ax1.get_yticklabels(), visible=False)
+        #plt.setp( ax1.get_yticklabels(), visible=False)
         plt.title(r"${\rm Prograde\ BH,\ a = 0.9\ (model\ A0.9f)}$")
         placeletter( ax1,"$\mathrm{(c)}$",bbox=bbox)
         placeletter( ax1,"$t=%g$" % t,fx=0.97,ha="right",bbox=bbox)
         plc(aphi,levels=(aphibh,),xcoord=r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=3)
         plc(aphi,levels=(aphibh,),xcoord=-r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=3)
         #
-        ax1 = fig.add_axes([0.92, 0.12, 0.02, 0.83])
+        ax1 = fig.add_axes([0.94, 0.12+0.42-0.05, 0.02, 0.85-0.42])
         #
         # Set the colormap and norm to correspond to the data for which
         # the colorbar will be used.
@@ -8607,14 +8633,36 @@ if __name__ == "__main__":
         #mkstreamlinefigure(length=4,doenergy=False)
     if True:
         #FIGURE XX mdot, phibh, etabh
+        fig=plt.figure(1, figsize=(12,9), dpi=100)
+        gs2 = GridSpec(2, 2)
+        gs2.update(left=0.055, right=0.93, top=0.92, bottom=0.49, hspace=0.01, wspace=0.09)
+        icplot(gs=gs2,fig=fig,aspect=2.6)
+        #################
+        #
+        # mdot, phibh, etabh
+        #
+        #################
         fti=8000
         ftf=1e5
+        sigma=None
         doreload = 1
+        #plt.clf()
+        gs3a = GridSpec(3, 3)
+        gs3a.update(left=0.055, right=0.47, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
+        title = r"${\rm Retrograde\ BH,\ a = -0.9\ (model\ A-0.9f})$"
+        os.chdir("/home/atchekho/run/rtf2_15r34_2pi_a-0.9gg50rbr1e3_0_0_0_faildufix2")
         epsFm, epsFke = takeoutfloors(doreload=doreload,fti=fti,ftf=ftf,returndf=1,isinteractive=0,writefile=False)
-        #epsFm = 
-        #epsFke = 
         print epsFm, epsFke
-        mkmdot(doreload=doreload,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=100.,sigma=1500.,usegaussianunits=True,arrowsize=0.5)
+        mkmdot(doreload=doreload,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=100.,sigma=sigma,usegaussianunits=True,arrowsize=0.5,gs3=gs3a,dotwinx=False,lab=["e","f","g"],title=None)
+        gs3b = GridSpec(3, 3)
+        gs3b.update(left=0.51, right=0.97, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
+        title=r"${\rm Prograde\ BH,\ a = 0.9\ (model\ A0.9f)}$"
+        os.chdir("/home/atchekho/run/rtf2_15r34.1_pi_0_0_0")
+        epsFm, epsFke = takeoutfloors(doreload=doreload,fti=fti,ftf=ftf,returndf=1,isinteractive=0,writefile=False)
+        print epsFm, epsFke
+        mkmdot(doreload=doreload,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=100.,sigma=sigma,usegaussianunits=True,arrowsize=0.5,gs3=gs3b,dotwinx=True,doylab=False,lab=["h", "i", "j"],title=None)
+        plt.savefig("plotmkmdot.eps",bbox_inches='tight',pad_inches=0.02)
+        plt.savefig("plotmkmdot.pdf",bbox_inches='tight',pad_inches=0.02)
     if False:
         #FIGURE 1 LOTSOPANELS
         fti=7000
