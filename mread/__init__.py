@@ -8345,9 +8345,14 @@ def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=85,ncont=100,d
 
 def plotflux(doreload=True):
     fig = plt.figure(1, figsize=(10,5), dpi=100)
+    plt.clf()
     dirlist=["/home/atchekho/run/rtf2_15r34_2pi_a-0.9gg50rbr1e3_0_0_0_faildufix2",
              "/home/atchekho/run/rtf2_15r34.1_pi_0_0_0"]
-    for dirpath in dirlist:
+    caplist=[r"$\mathrm{A-0.9f}$", r"$\mathrm{A0.9f}$"]
+    lslist=["--", "-"]
+    clrlist=["blue", "red"]
+    lwlist=[2,2]
+    for i,dirpath in enumerate(dirlist):
         os.chdir(dirpath)
         grid3d("gdump.bin",use2d=True)
         if doreload:
@@ -8364,8 +8369,15 @@ def plotflux(doreload=True):
             #phibh=fstot[:,ihor]/4/np.pi/FMavg**0.5*unitsfactor
             #where fstot = (gdetB1).sum(2).sum(1)*_dx2*_dx3 at horizon
             phibh = (4*np.pi)**0.5*aphi/a_Fm**0.5
-            plt.plot(r[:,ny/2,0],phibh[:,ny/2,0])
+            plt.plot(r[:,ny/2,0],phibh[:,ny/2,0],label=caplist[i],ls=lslist[i],color=clrlist[i],lw=lwlist[i])
             plt.xlim(rhor,20)
+            plt.ylim(0,100)
+            plt.xlabel(r'$x\ [r_g]$',fontsize=16)
+            plt.ylabel(r'$\phi_{\rm BH}$',fontsize=16)
+            plt.legend(loc="upper left",ncol=1)
+            plt.grid(b=True)
+            plt.savefig("plotflux.eps",bbox_inches='tight',pad_inches=0.02)
+            plt.savefig("plotflux.pdf",bbox_inches='tight',pad_inches=0.02)
 
 
 if __name__ == "__main__":
