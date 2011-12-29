@@ -8251,7 +8251,7 @@ def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=85,ncont=100,d
             assignavg2dvars(avgmem)
             rho = avg_rho
             bsq = avg_bsq
-            gdetB=np.zeros_like(uu)
+            gdetB=np.zeros_like(avg_uu)
             gdetB[1]=avg_gdetB[0]
             #rfd("fieldline3000.bin")
             #cvel()
