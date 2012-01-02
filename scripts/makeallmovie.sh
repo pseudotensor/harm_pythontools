@@ -138,6 +138,10 @@ do
     usefirst=1
     factor=2
     #
+    if [ "$thedir" == "thickdisk7" ]
+    then
+        factor=3
+    fi
     if [ "$thedir" == "sasha99" ]
     then
         factor=4
@@ -509,7 +513,7 @@ then
     #
     # Tables:
 
-    for numtbl in `seq 1 12`
+    for numtbl in `seq 1 13`
     do
 	    echo "Doing Table #: "$numtbl
 
@@ -565,7 +569,12 @@ then
         fi
         if [ $numtbl -eq 12 ]
         then
-            echo "\caption{Inner and Outer Radii for Least-Square Fits, Disk+Corona Stagnation Radius, and Fitted Power-Law Indices}" >> $fname
+            echo "\caption{Inner and Outer Radii for Least-Square Fits, Disk+Corona Stagnation Radius, and Fitted Power-Law Indices for Disk Flow}" >> $fname
+        fi
+        #
+        if [ $numtbl -eq 13 ]
+        then
+            echo "\caption{Inner and Outer Radii for Least-Square Fits, and Fitted Power-Law Indices for Wind Flow}" >> $fname
         fi
         #
         #
