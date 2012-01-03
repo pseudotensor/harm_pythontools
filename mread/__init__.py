@@ -8508,40 +8508,71 @@ def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=85,ncont=100,d
     plt.savefig("figic.pdf",bbox_inches='tight',pad_inches=0.02)
 
 def plotflux(doreload=True):
-    fig = plt.figure(1, figsize=(10,5), dpi=100)
+    global reslist, avgmemlist
+    fig = plt.figure(1, figsize=(8,6), dpi=100)
     plt.clf()
     dirlist=["/home/atchekho/run/rtf2_15r34_2pi_a-0.9gg50rbr1e3_0_0_0_faildufix2",
-             "/home/atchekho/run/rtf2_15r34.1_pi_0_0_0"]
-    caplist=[r"$\mathrm{A-0.9f}$", r"$\mathrm{A0.9f}$"]
-    lslist=["--", "-"]
-    clrlist=["blue", "red"]
-    lwlist=[2,2]
+             "/home/atchekho/run/rtf2_15r34.1_0_0_0_spinflip",
+             "/home/atchekho/run/rtf2_15r34.1_betax0.5_0_0_0_2xphi_restart15000",
+             "/home/atchekho/run/rtf2_15r34.1_pi_0_0_0",
+             "/home/atchekho/run/rtf2_15r34.1_betax2_0_0_0",
+             "/home/atchekho/run/rtf2_15r34.1_betax4_0_0_0"]
+    #caplist=[r"$\mathrm{A-0.9f}$", r"$\mathrm{A0.9f}$", r"$\mathrm{A0.9N50}$", r"$\mathrm{A0.9N25}$"]
+    caplist=[r"$\beta=100$", r"$\beta=100\ \mathrm{(spin\ flip)}$", r"$\beta=200$", r"$\beta=100$", r"$\beta=50$", r"$\beta=25$"]
+    lslist=["-","--","--","-","-.",":"]
+    clrlist=["blue", "cyan","pink", "red","orange","magenta"]
+    lwlist=[2,2,2,2,2,2]
+    crvlist1=[]
+    crvlist2=[]
+    lablist1=[]
+    lablist2=[]
+    if doreload:
+        reslist=[]
+        avgmemlist=[]
     for i,dirpath in enumerate(dirlist):
         os.chdir(dirpath)
         grid3d("gdump.bin",use2d=True)
         if doreload:
             res = takeoutfloors(doreload=doreload,isinteractive=0,writefile=False)
-            a_eta,a_Fm,a_Fe,a_Fl = res
             avgmem = get2davg(usedefault=1)
-            assignavg2dvars(avgmem)
-            rho = avg_rho
-            bsq = avg_bsq
-            aphi = fieldcalc(gdetB1=avg_gdetB[0])
-            aphibh=aphi[iofr(rhor),ny/2,0]
-            #old way:
-            #unitsfactor=(4*np.pi)**0.5*2*np.pi
-            #phibh=fstot[:,ihor]/4/np.pi/FMavg**0.5*unitsfactor
-            #where fstot = (gdetB1).sum(2).sum(1)*_dx2*_dx3 at horizon
-            phibh = (4*np.pi)**0.5*aphi/a_Fm**0.5
-            plt.plot(r[:,ny/2,0],phibh[:,ny/2,0],label=caplist[i],ls=lslist[i],color=clrlist[i],lw=lwlist[i])
-            plt.xlim(rhor,20)
-            plt.ylim(0,100)
-            plt.xlabel(r'$x\ [r_g]$',fontsize=16)
-            plt.ylabel(r'$\phi_{\rm BH}$',fontsize=16)
-            plt.legend(loc="upper left",ncol=1)
-            plt.grid(b=True)
-            plt.savefig("plotflux.eps",bbox_inches='tight',pad_inches=0.02)
-            plt.savefig("plotflux.pdf",bbox_inches='tight',pad_inches=0.02)
+            reslist.append(res)
+            avgmemlist.append(avgmem)
+        else:
+            res = reslist[i]
+            avgmem = avgmemlist[i]
+        a_eta,a_Fm,a_Fe,a_Fl = res
+        assignavg2dvars(avgmem)
+        rho = avg_rho
+        bsq = avg_bsq
+        aphi = fieldcalc(gdetB1=avg_gdetB[0])
+        aphibh=aphi[iofr(rhor),ny/2,0]
+        #old way:
+        #unitsfactor=(4*np.pi)**0.5*2*np.pi
+        #phibh=fstot[:,ihor]/4/np.pi/FMavg**0.5*unitsfactor
+        #where fstot = (gdetB1).sum(2).sum(1)*_dx2*_dx3 at horizon
+        phibh = (4*np.pi)**0.5*aphi/a_Fm**0.5
+        if dirpath == "/home/atchekho/run/rtf2_15r34.1_betax0.5_0_0_0_2xphi_restart15000":
+            iof10 = iofr(10)
+            crv=plt.plot(r[:iof10,ny/2,0],phibh[:iof10,ny/2,0],label=caplist[i],ls=lslist[i],color=clrlist[i],lw=lwlist[i])
+        else:
+            crv=plt.plot(r[:,ny/2,0],phibh[:,ny/2,0],label=caplist[i],ls=lslist[i],color=clrlist[i],lw=lwlist[i])
+        if a > 0:
+            crvlist1.append(crv)
+            lablist1.append(caplist[i])
+        else:
+            crvlist2.append(crv)
+            lablist2.append(caplist[i])
+    plt.xlim(rhor,20)
+    plt.ylim(0,100)
+    plt.xlabel(r'$R\ [r_g]$',fontsize=16)
+    plt.ylabel(r'$\phi$',fontsize=16)
+    #plt.legend(loc="upper left",ncol=1)
+    leg1=plt.legend(crvlist1,lablist1,loc="upper left",title="Prograde, $a=0.9$:",frameon=True,labelspacing=0.25)
+    leg2=plt.legend(crvlist2,lablist2,loc="lower right",title="Retrograde, $a=-0.9$:",frameon=True,labelspacing=0.25)
+    plt.gca().add_artist(leg1)
+    plt.grid(b=True)
+    plt.savefig("plotflux.eps",bbox_inches='tight',pad_inches=0.02,dpi=100)
+    plt.savefig("plotflux.pdf",bbox_inches='tight',pad_inches=0.02,dpi=100)
 
 
 if __name__ == "__main__":
