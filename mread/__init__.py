@@ -556,7 +556,7 @@ def roundto2_rq2mri1(x,rcutdn,rcutup):
     elif x>=0.999*r[iq21cutup,ny/2,0]:
         y="%.*e" % (2-1, rcutup)
         z=float(y)
-        y=">%d" % (z)
+        y="$>%d$" % (z)
         return y
     else:
         y="%.*e" % (2-1, x)
@@ -9690,14 +9690,17 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     # use full flow that includes jet : required to get r_m -- makes sense since jet is what pushes down on disk!
     # look at 1/\beta since more stable since b=0 is more common than ug=0
     #ibetarm1=(bsqrhosq/2.0)/(rhosrhosq*(vus1rhosq**2) + ugsrhosq*(gam-1.0))
-    ibetarm1=(bsqrhosq/2.0)/(rhosrhosq*(uu0rhosq*vus1rhosq)**2 + ugsrhosq*(gam-1.0))
+    pbrm1=(bsqrhosq/2.0)
+    pgrm1=ugsrhosq*(gam-1.0)
+    rhovsqrm1=(rhosrhosq+pgrm1+ugsrhosq)*(uu0rhosq*vus1rhosq)**2
+    ibetarm1=pbrm1/(rhovsqrm1 + pgrm1)
     ibetarm1_avg = timeavg_vstvsr(ibetarm1,ts,fti,ftf)
     print("ibetarm1_avg") ; sys.stdout.flush()
     print(ibetarm1_avg) ; sys.stdout.flush()
     print("r") ; sys.stdout.flush()
     print(r[:,ny/2,0]) ; sys.stdout.flush()
     #
-    if modelname=="sasha0":
+    if modelname=="sasha0" or modelname=="sasha1" or modelname=="sasha2":
         rm1cut=20.0
     else:
         rm1cut=4.0
@@ -9713,6 +9716,26 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     rm1=r[irm1,ny/2,0] # radius
     print("rm1") ; sys.stdout.flush()
     print(rm1) ; sys.stdout.flush()
+    #
+    ###############
+    # get rm1 vs. time
+    rm1cut=2.1
+    irm1cut=iofr(rm1cut)
+    rm1vst=ibetarm1[:,0]*0.0
+    for ttii in np.arange(0,len(ts)):
+        indicesirm1ttii=ti[irm1cut:nx,0,0][ibetarm1[ttii,irm1cut:nx]<=1.0] # 1/\betarm=1 is where \betarm=1
+        irm1ttii=indicesirm1ttii[0] # first instance vs. radius
+        rm1vst[ttii]=r[irm1ttii,ny/2,0] # radius
+    #
+    print("rm1vst") ; sys.stdout.flush()
+    print(rm1vst) ; sys.stdout.flush()
+    frm1 = open('datavsrrm1.txt', 'w')
+    frm1.write("#%s %s %s \n" % ("tici","ts","rm1" ) )
+    for ttii in np.arange(0,len(ts)):
+        frm1.write("%d %g %g\n" % (ttii,ts[ttii],rm1vst[ttii] ) )
+        #
+    frm1.close()
+    #
     #
     #####################
     ibetarm2=(bsqrhosqdc/2.0)/(rhosrhosqdc*(uu0rhosqdc*vus1rhosqdc)**2 + ugsrhosqdc*(gam-1.0))
@@ -11372,12 +11395,12 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         # no, sasha1 does have 1/betamod>1 out to large radii, just not much above 1.
         #fakerstagreport=1E30
     #
-    print( "HLatex4: ModelName & $\\alpha_a$ & $\\alpha_b$ & $\\alpha_c$ & $Q_{1,\\rm{}MRI,i}$ & $Q_{1,\\rm{}MRI,o}$  & $Q_{2,\\rm{}MRI,i}$ & $Q_{2,\\rm{}MRI,o}$ & $r_{Q_{2,\\rm{}MRI}=1/2}$ & $r_m$ \\\\" )
+    print( "HLatex4: ModelName & $\\alpha_a$ & $\\alpha_b$ & $\\alpha_c$ & $Q_{1,\\rm{}MRI,i}$ & $Q_{1,\\rm{}MRI,o}$  & $Q_{2,\\rm{}MRI,i}$ & $Q_{2,\\rm{}MRI,o}$ & $r_{Q_{2,\\rm{}MRI}=1/2}$ & $r_m/r_g$ \\\\" )
     print( "VLatex4: %s        & %g          & %g          & %g          & %g                  & %g                   & %g                  & %g                  & %s                        & %s                       \\\\ %% %s" % (truemodelname, roundto2(alphamag1_vsr_avg), roundto2(alphamag2_vsr_avg), roundto2(alphamag3_vsr_avg), roundto2(qmridiskrfitin2_avg), roundto2(qmridiskrfitout2_avg), roundto2(1.0/iq2mridiskrfitin2_avg), roundto2(1.0/iq2mridiskrfitout2_avg), roundto2_rq2mri1(rq2mri1,rq21cut,fakerstagreport), roundto2_rq2mri1(rm1,rm1cut,fakerstagreport), modelname ) )
     #
     # 8:
-    print( "HLatex97: ModelName & $Q_{1,t=0,\\rm{}MRI,i,w}$ & $Q_{1,t=0,\\rm{}MRI,o,w}$  & $Q_{1,t=0,\\rm{}MRI,fo,w}$ & $Q_{2,t=0,\\rm{}MRI,i,w}$ & $Q_{2,t=0,\\rm{}MRI,o,w}$ & $Q_{2,t=0,\\rm{}MRI,fo,w}$  \\\\" )
-    print( "VLatex97: %s         & %g & %g & %g & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(qmridiskweak20_t0), roundto2(qmridiskweak50_t0), roundto2(qmridiskweak100_t0), roundto2(1.0/iq2mridiskweak20_t0), roundto2(1.0/iq2mridiskweak50_t0), roundto2(1.0/iq2mridiskweak100_t0), modelname ) )
+    print( "HLatex97: ModelName & $Q_{1,t=0,\\rm{}MRI,i,w}$ & $Q_{1,t=0,\\rm{}MRI,o,w}$  & $Q_{1,t=0,\\rm{}MRI,fo,w}$ & $Q_{2,t=0,\\rm{}MRI,i,w}$ & $Q_{2,t=0,\\rm{}MRI,o,w}$ & $Q_{2,t=0,\\rm{}MRI,fo,w}$ & rm1 & rm2 & rm3  \\\\" )
+    print( "VLatex97: %s         & %g & %g & %g & %g & %g & %g & %s & %s & %s \\\\ %% %s" % (truemodelname, roundto2(qmridiskweak20_t0), roundto2(qmridiskweak50_t0), roundto2(qmridiskweak100_t0), roundto2(1.0/iq2mridiskweak20_t0), roundto2(1.0/iq2mridiskweak50_t0), roundto2(1.0/iq2mridiskweak100_t0), roundto2_rq2mri1(rm1,rm1cut,fakerstagreport), roundto2_rq2mri1(rm2,rm2cut,fakerstagreport), roundto2_rq2mri1(rm3,rm3cut,fakerstagreport), modelname ) )
     #
     print( "HLatex96: ModelName & $Q_{1,\\rm{}MRI,i,w}$ & $Q_{1,\\rm{}MRI,o,w}$  & $Q_{1,\\rm{}MRI,fo,w}$ & $Q_{2,\\rm{}MRI,i,w}$ & $Q_{2,\\rm{}MRI,o,w}$ & $Q_{2,\\rm{}MRI,fo,w}$  \\\\" )
     print( "VLatex96: %s         & %g & %g & %g & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(qmridiskweakrfitin2_avg), roundto2(qmridiskweakrfitout2_avg), roundto2(qmridiskweakrfitout6_avg), roundto2(1.0/iq2mridiskweakrfitin2_avg), roundto2(1.0/iq2mridiskweakrfitout2_avg), roundto2(1.0/iq2mridiskweakrfitout6_avg), modelname ) )
