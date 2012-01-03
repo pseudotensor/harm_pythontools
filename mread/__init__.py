@@ -7601,10 +7601,7 @@ def mkmdot(doreload=1,epsFm=None,epsFke=None,fti=None,ftf=None,prefactor=100,sig
     if doylab == False:
         ax31.set_ylabel("")
     ax31.grid(True)
-    plt.text(ax31.get_xlim()[1]/40., 0.8*ax31.get_ylim()[1], "$(\mathrm{%s})$" % lab[0], size=16, rotation=0.,
-             ha="left", va="center",
-             color='k',weight='regular',bbox=bbox_props
-             )
+    placeletter(ax31,"$(\mathrm{%s})$" % lab[0],bbox=bbox_props)
     if dotwinx:
         ax31r = ax31.twinx()
         ax31r.set_ylim(ax31.get_ylim())
@@ -7663,10 +7660,7 @@ def mkmdot(doreload=1,epsFm=None,epsFke=None,fti=None,ftf=None,prefactor=100,sig
         ax35.set_ylabel(r"$\phi_{\rm BH}$",size=16,ha='left',labelpad=25)
     if doylab == False:
         ax35.set_ylabel("")
-    plt.text(ax35.get_xlim()[1]/40., 0.8*ax35.get_ylim()[1], r"$(\mathrm{%s})$" % lab[1], size=16, rotation=0.,
-             ha="left", va="center",
-             color='k',weight='regular',bbox=bbox_props
-             )
+    placeletter(ax35,"$(\mathrm{%s})$" % lab[1],bbox=bbox_props)
     if dotwinx:
         ax35r = ax35.twinx()
         ax35r.set_ylim(ax35.get_ylim())
@@ -7701,10 +7695,7 @@ def mkmdot(doreload=1,epsFm=None,epsFke=None,fti=None,ftf=None,prefactor=100,sig
     #reset lower limit to 0
     #ax34.set_ylim((0,ax34.get_ylim()[1]))
     ax34.grid(True)
-    plt.text(ax34.get_xlim()[1]/40., 0.8*ax34.get_ylim()[1], r"$(\mathrm{%s})$" % lab[2], size=16, rotation=0.,
-             ha="left", va="center",
-             color='k',weight='regular',bbox=bbox_props
-             )
+    placeletter(ax34,"$(\mathrm{%s})$" % lab[2],bbox=bbox_props)
     if doylab == False:
         ax34.set_ylabel("")
     if dotwinx:
@@ -8390,16 +8381,16 @@ def oldstuff():
         #plt.figure(2)
         #plotqtyvstime(qtymem,whichplot=-4)
 
-def placeletter(ax1,lab,size=16,fx=0.07,fy=0.12,ha="center",color='k',bbox=None):
+def placeletter(ax1,lab,size=16,fx=0.07,fy=0.07,ha="center",color='k',bbox=None):
     plt.text(
         ax1.get_xlim()[0]+(ax1.get_xlim()[1]-ax1.get_xlim()[0])*fx,
         ax1.get_ylim()[0]+(ax1.get_ylim()[1]-ax1.get_ylim()[0])*(1-fy), 
         r"%s" % lab, size=size,
-        rotation=0., ha=ha, va="center",
+        rotation=0., ha=ha, va="top",
         color=color,weight='regular',bbox=bbox )
 
 
-def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=85,ncont=100,doreload=True,aspect=2.0,vmin=-6.5,vmax=0.5,gs=None,fig=None):
+def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=85,ncont=100,doreload=True,aspect=2.0,vmin=-6.5,vmax=0.5,gs=None,fig=None,lwbold=4):
     global bsq, rho, gdetB
     bbox = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.5)
     #Rz
@@ -8428,8 +8419,9 @@ def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=85,ncont=100,d
             aphibh=aphi[iofr(rhor),ny/2,0]
         ax2 = plt.subplot(gs1[1, 0])
         mkframe("topleft", vmin=vmin,vmax=vmax,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=dostreamlines,ncont=ncont,aspect=aspect,maxaphi=maxaphi)
-        plc(aphi,levels=(aphibh,),xcoord=r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=3)
-        plc(aphi,levels=(aphibh,),xcoord=-r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=3)
+        ax2.set_aspect('equal')   
+        plc(aphi,levels=(aphibh,),xcoord=r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=lwbold)
+        plc(aphi,levels=(aphibh,),xcoord=-r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=lwbold)
         ax2.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
         ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         placeletter( ax2,"$\mathrm{(b)}$",bbox=bbox)
@@ -8440,8 +8432,9 @@ def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=85,ncont=100,d
             cvel()
             aphi=fieldcalc()
         mkframe("topleft", vmin=vmin,vmax=vmax,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=dostreamlines,ncont=ncont,aspect=aspect,maxaphi=maxaphi)
-        plc(aphi,levels=(aphibh,),xcoord=r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=3)
-        plc(aphi,levels=(aphibh,),xcoord=-r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=3)
+        plc(aphi,levels=(aphibh,),xcoord=r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=lwbold)
+        plc(aphi,levels=(aphibh,),xcoord=-r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=lwbold)
+        ax1.set_aspect('equal')   
         plt.setp( ax1.get_xticklabels(), visible=False)
         ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
         placeletter( ax1,"$\mathrm{(a)}$",bbox=bbox)
@@ -8463,11 +8456,12 @@ def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=85,ncont=100,d
             aphi=fieldcalc()
             aphibh=aphi[iofr(rhor),ny/2,0]
         mkframe("topleft", vmin=vmin,vmax=vmax,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=dostreamlines,ncont=ncont,aspect=aspect,maxaphi=maxaphi)
-        plc(aphi,levels=(aphibh,),xcoord=r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=3)
-        plc(aphi,levels=(aphibh,),xcoord=-r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=3)
+        plc(aphi,levels=(aphibh,),xcoord=r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=lwbold)
+        plc(aphi,levels=(aphibh,),xcoord=-r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=lwbold)
+        ax2.set_aspect('equal')   
         #plt.setp( ax2.get_yticklabels(), visible=False)
         ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
-        placeletter( ax2,"$\mathrm{(d)}$",bbox=bbox)
+        placeletter( ax2,"$\mathrm{(g)}$",bbox=bbox)
         placeletter( ax2,"$t$-$,\\varphi$-$\mathrm{average}$",fx=0.97,ha="right",bbox=bbox)
         #
         ax1 = plt.subplot(gs1[0, 1])
@@ -8479,10 +8473,11 @@ def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=85,ncont=100,d
         plt.setp( ax1.get_xticklabels(), visible=False)
         #plt.setp( ax1.get_yticklabels(), visible=False)
         plt.title(r"${\rm Prograde\ BH,\ a = 0.9\ (model\ A0.9f)}$")
-        placeletter( ax1,"$\mathrm{(c)}$",bbox=bbox)
+        placeletter( ax1,"$\mathrm{(f)}$",bbox=bbox)
         placeletter( ax1,"$t=%g$" % t,fx=0.97,ha="right",bbox=bbox)
-        plc(aphi,levels=(aphibh,),xcoord=r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=3)
-        plc(aphi,levels=(aphibh,),xcoord=-r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=3)
+        plc(aphi,levels=(aphibh,),xcoord=r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=lwbold)
+        plc(aphi,levels=(aphibh,),xcoord=-r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=lwbold)
+        ax1.set_aspect('equal')   
         #
         ax1 = fig.add_axes([0.94, 0.49, 0.02, 0.29])
         #
@@ -8631,12 +8626,12 @@ if __name__ == "__main__":
         mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=True,dotakeoutfloors=1,usedefault=1)
         #mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=True,dotakeoutfloors=0)
         #mkstreamlinefigure(length=4,doenergy=False)
-    if True:
+    if False:
         #FIGURE XX mdot, phibh, etabh
         fig=plt.figure(1, figsize=(12,9), dpi=100)
         gs2 = GridSpec(2, 2)
-        gs2.update(left=0.055, right=0.93, top=0.78, bottom=0.49, hspace=0.01, wspace=0.09)
-        icplot(gs=gs2,fig=fig,aspect=3.9)
+        gs2.update(left=0.053, right=0.93, top=0.78, bottom=0.49, hspace=0.04, wspace=0.085)
+        icplot(gs=gs2,fig=fig,aspect=3.9,plotlen=90,lwbold=6)
         #################
         #
         # mdot, phibh, etabh
@@ -8648,14 +8643,14 @@ if __name__ == "__main__":
         doreload = 1
         #plt.clf()
         gs3a = GridSpec(3, 3)
-        gs3a.update(left=0.055, right=0.47, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
+        gs3a.update(left=0.055, right=0.4735, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
         title = r"${\rm Retrograde\ BH,\ a = -0.9\ (model\ A-0.9f})$"
         os.chdir("/home/atchekho/run/rtf2_15r34_2pi_a-0.9gg50rbr1e3_0_0_0_faildufix2")
         epsFm, epsFke = takeoutfloors(doreload=doreload,fti=fti,ftf=ftf,returndf=1,isinteractive=0,writefile=False)
         print epsFm, epsFke
-        mkmdot(doreload=doreload,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=100.,sigma=sigma,usegaussianunits=True,arrowsize=0.5,gs3=gs3a,dotwinx=False,lab=["e","f","g"],title=None)
+        mkmdot(doreload=doreload,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=100.,sigma=sigma,usegaussianunits=True,arrowsize=0.5,gs3=gs3a,dotwinx=False,lab=["c","d","e"],title=None)
         gs3b = GridSpec(3, 3)
-        gs3b.update(left=0.51, right=0.97, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
+        gs3b.update(left=0.5125, right=0.96, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
         title=r"${\rm Prograde\ BH,\ a = 0.9\ (model\ A0.9f)}$"
         os.chdir("/home/atchekho/run/rtf2_15r34.1_pi_0_0_0")
         epsFm, epsFke = takeoutfloors(doreload=doreload,fti=fti,ftf=ftf,returndf=1,isinteractive=0,writefile=False)
