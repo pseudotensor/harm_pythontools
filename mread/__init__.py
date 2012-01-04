@@ -5080,12 +5080,12 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         147])
         #lfti = 17500.
         #lfti = 14215.
-        lfti = 14292.
+        lfti = 14207.
         lftf = 1e5
         pn="A0.9h_\\theta"
         rin = 15
         rmax = 34.1
-        simti = 14292.
+        simti = 14207.
         simtf = lftf
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_0_0_0_2xth2xphi":
         print( "Using a = 0.9 (rtf2_15r34.1_0_0_0_2xth2xphi) settings")
@@ -5453,6 +5453,10 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
             simtf = real_tf
         #XXX this returns array of zeros if dotakeoutfloors == False or 0.
         DF = get_dFfloor(Dt, Dno, dotakeoutfloors=dotakeoutfloors,aphi_j_val=aphi_j_val, ndim=ndim, is_output_cell_center = is_output_cell_center)
+    #trust resolution from floor information
+    nxf=nx
+    nyf=ny
+    nzf=nz
     #RETURN: if requested 2D information
     if ndim == 2:
         return DF
@@ -5639,8 +5643,8 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #pdb.set_trace()
         etajet = pjke_mu2_avg[iofr(rj)]/Fm[iofr(rx)]
         etawind = (pjke_mu1_avg-pjke_mu2_avg)[iofr(rj)]/Fm[iofr(rx)]
-        foutpower.write( "%15s & $%g$ &\t $%d\\pm%d$ &\t $%d$ &\t $%d$ &\t $%d$ &\t $%s$ &\t $%d\\times%d\\times%d$ &\t $%d$ &\t $%g$ &\t $%d$ &\t $%d$ &\t $(%d; %d)$ &\t $(%d; %d)$ \\\\ %% %s\n" 
-                         % (pn, a, np.rint(etamean*100.), np.rint(etastd*100.), np.rint(etajet*100.), np.rint(100.*etawind), np.rint(fstotsqfinavg), swedge, nx, ny, nz, np.rint(rin),   np.rint(rmax),  0.2,   rbr, np.rint(simti), np.rint(simtf), np.rint(fti), np.rint(ftf), os.path.basename(os.getcwd())) )
+        foutpower.write( "%15s & $%g$ &\t $%d\\pm%d$ &\t $%d$ &\t $%d$ &\t $%d$ &\t $%s$ &\t $%d\\times%d\\times%d$ &\t $%d$ &\t $%g$ &\t $%g$ &\t $%d$ &\t $(%d; %d)$ &\t $(%d; %d)$ \\\\ %% %s\n" 
+                         % (pn, a, np.rint(etamean*100.), np.rint(etastd*100.), np.rint(etajet*100.), np.rint(100.*etawind), np.rint(fstotsqfinavg), swedge, nxf, nyf, nzf, np.rint(rin),   rmax,  0.2,   rbr, np.rint(simti), np.rint(simtf), np.rint(fti), np.rint(ftf), os.path.basename(os.getcwd())) )
         #flush to disk just in case to make sure all is written
         foutpower.flush()
         os.fsync(foutpower.fileno())
@@ -8740,7 +8744,7 @@ if __name__ == "__main__":
         fig=plt.figure(1, figsize=(12,9), dpi=100)
         gs2 = GridSpec(2, 2)
         gs2.update(left=0.053, right=0.93, top=0.78, bottom=0.49, hspace=0.04, wspace=0.085)
-        icplot(gs=gs2,fig=fig,aspect=3.9,plotlen=90,lwbold=3)
+        icplot(gs=gs2,fig=fig,aspect=3.9,plotlen=90,lwbold=2)
         #################
         #
         # mdot, phibh, etabh
