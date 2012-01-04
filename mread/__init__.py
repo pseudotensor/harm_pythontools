@@ -4712,13 +4712,29 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         simtf = lftf
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_pi_0_0_0":
         print( "Using a = 0.9 (rtf2_15r34.1_pi_0_0_0) settings")
-        Dt = np.array([15600.-13898.007844829,
+        Dt = np.array([
+                       19800.-18629.2371784244,
+                       18600.-18175.097618259,
+                       18100.-17627.2495379077,
+                       17600.-17047.4200574454,
+                       17000.-16797.2958418814,
+                       #16719.1587139405
+                       #16700.-16672.2798069042,
+                       16600.-15685.5761992012,
+                       15600.-13898.007844829,
                        13800.-12927.303703666,
                        12900.-11126.259907352,
                        11100.-9337.26983629822,
                        9300.-8000.,
                        -(9300.-8000.)])
-        Dno = np.array([156,
+        Dno = np.array([198,
+                        186,
+                        181,
+                        176,
+                        170,
+                        #167,
+                        166,
+                        156,
                         138,
                         129,
                         111,
@@ -4859,8 +4875,8 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         101,
                         80,
                         70])
-        lfti = 7000.
-        lftf = 20000.
+        lfti = 8000.
+        lftf = 1.e5
         pn="A-0.9"
         rin = 15
         rmax = 37.1
@@ -4877,7 +4893,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                        102,
                        100])
         lfti = 10000.
-        lftf = 20000.
+        lftf = 1.e5
         pn="A-0.9l_\\theta"
         rin = 15
         rmax = 37.1
@@ -4936,7 +4952,11 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         simtf = lftf
     elif np.abs(a - (-0.9))<1e-4 and bn == "rtf2_15r34_2pi_a-0.9gg50rbr1e3_0_0_0_faildufix2":
         print( "Using a = -0.9 (rtf2_15r34_2pi_a-0.9gg50rbr1e3_0_0_0_faildufix2) settings")
-        Dt = np.array([16500.-15364.1834020439,
+        Dt = np.array([20000.-18923.6303395794,
+                       18900.-17690.7770842922,
+                       #17600.-17526.7920937424,
+                       17500.-16525.8251918482,
+                       16500.-15364.1834020439,
                        15300.-14177.7085736113,
                        14100.-13223.7286827588,
                        13200.-12200.2252164064,
@@ -4945,7 +4965,11 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                        9800.-8778.69431599574,
                        8700.-8000.,
                        -(8700.-8000.)])
-        Dno = np.array([165,
+        Dno = np.array([200,
+                        189,
+                        #176,
+                        175,
+                        165,
                         153,
                         141,
                         132,
@@ -5139,6 +5163,53 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #lfti = 18420.
         lftf = 1e5
         pn="A0.9h_{\\theta}h_{\\varphi}"
+        rin = 15
+        rmax = 34.1
+        #simti = 14207.
+        simti = lfti
+        simtf = lftf
+    elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_0_0_0_2xphi_newdiagnau":
+        print( "Using a = 0.9 (rtf2_15r34.1_0_0_0_2xphi_newdiagnau) settings")
+        Dt = np.array([22500.-21392.5177548623,
+                       21300.-20902.3522686028,
+                       20900.-19774.6269601892,
+                       19700.-18620.2226337403,
+                       18600.-18434.8036279833,
+                       18400.-17388.3330474263,
+                       17300.-17106.484654906,
+                       17100.-16650.1119902541,
+                       #16623.2713347645
+                       16600.-16368.2447692806,
+                       #16234.0117336642
+                       #16207.1697816043
+                       #16193.7487169041
+                       #16140.058900599
+                       16100.-15334.5561626554,
+                       #15300.-15227.1533381102,
+                       15200.-14998.9547710076,
+                       #14972.1071483046
+                       #14945.2597480547
+                       #14918.4142929998
+                       #14891.5677858923
+                       14800.-14207.0184709617
+                       ])
+        Dno = np.array([225,
+                        213,
+                        209,
+                        197,
+                        186,
+                        184,
+                        173,
+                        171,
+                        166,
+                        161,
+                        #153,
+                        152,
+                        148
+                        ])#[from dumps/ dir]
+        lfti=14207.
+        lftf = 1e5
+        pn="A0.9h_{\\varphi}"
         rin = 15
         rmax = 34.1
         #simti = 14207.
