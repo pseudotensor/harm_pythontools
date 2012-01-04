@@ -8495,8 +8495,8 @@ def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=85,ncont=100,d
         ax2 = plt.subplot(gs1[1, 0])
         mkframe("topleft", vmin=vmin,vmax=vmax,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=dostreamlines,ncont=ncont,aspect=aspect,maxaphi=maxaphi)
         ax2.set_aspect('equal')   
-        plc(aphi,levels=(aphibh,),xcoord=r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=lwbold)
-        plc(aphi,levels=(aphibh,),xcoord=-r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=lwbold)
+        plc(aphi,levels=(aphibh,),xcoord=r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',linewidths=lwbold)
+        plc(aphi,levels=(aphibh,),xcoord=-r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',linewidths=lwbold)
         ax2.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
         ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         placeletter( ax2,"$\mathrm{(b)}$",bbox=bbox)
@@ -8507,8 +8507,8 @@ def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=85,ncont=100,d
             cvel()
             aphi=fieldcalc()
         mkframe("topleft", vmin=vmin,vmax=vmax,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=dostreamlines,ncont=ncont,aspect=aspect,maxaphi=maxaphi)
-        plc(aphi,levels=(aphibh,),xcoord=r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=lwbold)
-        plc(aphi,levels=(aphibh,),xcoord=-r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=lwbold)
+        plc(aphi,levels=(aphibh,),xcoord=r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',linewidths=lwbold)
+        plc(aphi,levels=(aphibh,),xcoord=-r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',linewidths=lwbold)
         ax1.set_aspect('equal')   
         plt.setp( ax1.get_xticklabels(), visible=False)
         ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
@@ -8531,8 +8531,8 @@ def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=85,ncont=100,d
             aphi=fieldcalc()
             aphibh=aphi[iofr(rhor),ny/2,0]
         mkframe("topleft", vmin=vmin,vmax=vmax,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=dostreamlines,ncont=ncont,aspect=aspect,maxaphi=maxaphi)
-        plc(aphi,levels=(aphibh,),xcoord=r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=lwbold)
-        plc(aphi,levels=(aphibh,),xcoord=-r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=lwbold)
+        plc(aphi,levels=(aphibh,),xcoord=r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',linewidths=lwbold)
+        plc(aphi,levels=(aphibh,),xcoord=-r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',linewidths=lwbold)
         ax2.set_aspect('equal')   
         #plt.setp( ax2.get_yticklabels(), visible=False)
         ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
@@ -8550,8 +8550,8 @@ def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=85,ncont=100,d
         plt.title(r"${\rm Prograde\ BH,\ a = 0.9\ (model\ A0.9f)}$")
         placeletter( ax1,"$\mathrm{(f)}$",bbox=bbox)
         placeletter( ax1,"$t=%g$" % t,fx=0.97,ha="right",bbox=bbox)
-        plc(aphi,levels=(aphibh,),xcoord=r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=lwbold)
-        plc(aphi,levels=(aphibh,),xcoord=-r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',lw=lwbold)
+        plc(aphi,levels=(aphibh,),xcoord=r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',linewidths=lwbold)
+        plc(aphi,levels=(aphibh,),xcoord=-r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',linewidths=lwbold)
         ax1.set_aspect('equal')   
         #
         ax1 = fig.add_axes([0.94, 0.49, 0.02, 0.29])
@@ -8651,9 +8651,10 @@ def plotflux(doreload=True):
 
 
 if __name__ == "__main__":
-    if False:
-        #takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
-        takeoutfloors(dotakeoutfloors=1,doplot=False,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
+    if True:
+        takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
+        #takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=False,aphi_j_val=0)
+        #takeoutfloors(dotakeoutfloors=1,doplot=False,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
         #takeoutfloors(dotakeoutfloors=1,doplot=False)
     if False:
         provsretro()
@@ -8737,7 +8738,7 @@ if __name__ == "__main__":
         fig=plt.figure(1, figsize=(12,9), dpi=100)
         gs2 = GridSpec(2, 2)
         gs2.update(left=0.053, right=0.93, top=0.78, bottom=0.49, hspace=0.04, wspace=0.085)
-        icplot(gs=gs2,fig=fig,aspect=3.9,plotlen=90,lwbold=6)
+        icplot(gs=gs2,fig=fig,aspect=3.9,plotlen=90,lwbold=3)
         #################
         #
         # mdot, phibh, etabh
