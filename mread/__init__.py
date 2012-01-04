@@ -4723,8 +4723,10 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         111,
                         93,
                         80])
+        # lfti = 8000.
+        # lftf = 15695.
         lfti = 8000.
-        lftf = 15695.
+        lftf = 1.e5
         pn="A0.9f"
         rin = 15
         rmax = 34.1
@@ -4952,7 +4954,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         87,
                         80])
         lfti = 8000.
-        lftf = 20000.
+        lftf = 1.e5
         pn="A-0.9f"
         rbr = 1000.
         rin = 15
