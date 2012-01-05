@@ -4594,6 +4594,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     rbr = 200.
     Dt = None
     Dno = None
+    betamin = 100
     if np.abs(a - 0.99)<1e-4 and bn=="rtf2_10r22.82_a0.99_n4_0_0_0":
         #lo-res 0.99 settings
         print( "Using a = 0.99 (rtf2_10r22.82_a0.99_n4_0_0_0) settings")
@@ -4794,6 +4795,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         rmax = 34.1
         simti = 0
         simtf = lftf
+        betamin = 200
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_betax2_0_0_0":
         print( "Using a = 0.9 (rtf2_15r34.1_betax2_0_0_0) settings")
         Dt = np.array([14300.-12041.7226584439,
@@ -4813,6 +4815,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         rmax = 34.1
         simti = 0
         simtf = lftf
+        betamin = 50
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_betax4_0_0_0":
         print( "Using a = 0.9 (rtf2_15r34.1_betax4_0_0_0) settings")
         Dt = np.array([17300.-15195.9206754056,
@@ -4852,6 +4855,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         rmax = 34.1
         simti = 0
         simtf = lftf
+        betamin = 25
     elif np.abs(a - (-0.9))<1e-4 and bn == "rtf2_15r34.1_0_0_0_spinflip":
         #rtf2_15r37.1a-0.9_0_0_0
         #with less failfloordudumps:
@@ -5647,8 +5651,8 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #pdb.set_trace()
         etajet = pjke_mu2_avg[iofr(rj)]/Fm[iofr(rx)]
         etawind = (pjke_mu1_avg-pjke_mu2_avg)[iofr(rj)]/Fm[iofr(rx)]
-        foutpower.write( "%15s & $%g$ &\t $%d\\pm%d$ &\t $%d$ &\t $%d$ &\t $%d$ &\t $%s$ &\t $%d\\times%d\\times%d$ &\t $%d$ &\t $%g$ &\t $%g$ &\t $%d$ &\t $(%d; %d)$ &\t $(%d; %d)$ \\\\ %% %s\n" 
-                         % (pn, a, np.rint(etamean*100.), np.rint(etastd*100.), np.rint(etajet*100.), np.rint(100.*etawind), np.rint(fstotsqfinavg), swedge, nxf, nyf, nzf, np.rint(rin),   rmax,  R0,   rbr, np.rint(simti), np.rint(simtf), np.rint(fti), np.rint(ftf), os.path.basename(os.getcwd())) )
+        foutpower.write( "%15s & $%g$ &\t $%d\\pm%d$ &\t $%d$ &\t $%s$ &\t $%d\\times%d\\times%d$ &\t $%d$ &\t $%g$ &\t $%g$ &\t $%g$ &\t $%g$ &\t $%d$ &\t $(%d; %d)$ &\t $(%d; %d)$ \\\\ %% %s\n" 
+                         % (pn, a, np.rint(etamean*100.), np.rint(etastd*100.), np.rint(betamin), swedge, nxf, nyf, nzf, np.rint(rin), rmax, Rin/rhor, Rout/rhor, R0/Rin, rbr, np.rint(simti), np.rint(simtf), np.rint(fti), np.rint(ftf), os.path.basename(os.getcwd())) )
         #flush to disk just in case to make sure all is written
         foutpower.flush()
         os.fsync(foutpower.fileno())
