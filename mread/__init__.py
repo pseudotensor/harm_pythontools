@@ -5644,7 +5644,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         etajet = pjke_mu2_avg[iofr(rj)]/Fm[iofr(rx)]
         etawind = (pjke_mu1_avg-pjke_mu2_avg)[iofr(rj)]/Fm[iofr(rx)]
         foutpower.write( "%15s & $%g$ &\t $%d\\pm%d$ &\t $%d$ &\t $%d$ &\t $%d$ &\t $%s$ &\t $%d\\times%d\\times%d$ &\t $%d$ &\t $%g$ &\t $%g$ &\t $%d$ &\t $(%d; %d)$ &\t $(%d; %d)$ \\\\ %% %s\n" 
-                         % (pn, a, np.rint(etamean*100.), np.rint(etastd*100.), np.rint(etajet*100.), np.rint(100.*etawind), np.rint(fstotsqfinavg), swedge, nxf, nyf, nzf, np.rint(rin),   rmax,  0.2,   rbr, np.rint(simti), np.rint(simtf), np.rint(fti), np.rint(ftf), os.path.basename(os.getcwd())) )
+                         % (pn, a, np.rint(etamean*100.), np.rint(etastd*100.), np.rint(etajet*100.), np.rint(100.*etawind), np.rint(fstotsqfinavg), swedge, nxf, nyf, nzf, np.rint(rin),   rmax,  R0,   rbr, np.rint(simti), np.rint(simtf), np.rint(fti), np.rint(ftf), os.path.basename(os.getcwd())) )
         #flush to disk just in case to make sure all is written
         foutpower.flush()
         os.fsync(foutpower.fileno())
