@@ -1928,7 +1928,7 @@ def grid3d(dumpname,use2d=False,doface=False): #read grid dump file: header and 
     #non-uniform coordinates, (r, h, ph), which correspond to radius (r), polar angle (theta), and toroidal angle (phi).
     #There are more variables, e.g., dxdxp, which is the Jacobian of (x1,x2,x3)->(r,h,ph) transformation, that I can
     #go over, if needed.
-    global nx,ny,nz,_startx1,_startx2,_startx3,_dx1,_dx2,_dx3,gam,a,Rin,Rout,ti,tj,tk,x1,x2,x3,r,h,ph,conn,gn3,gv3,ck,dxdxp,gdet
+    global nx,ny,nz,_startx1,_startx2,_startx3,_dx1,_dx2,_dx3,gam,a,R0,Rin,Rout,ti,tj,tk,x1,x2,x3,r,h,ph,conn,gn3,gv3,ck,dxdxp,gdet
     global tif,tjf,tkf,rf,hf,phf,rhor
     print( "Reading grid from " + "dumps/" + dumpname + " ..." )
     gin = open( "dumps/" + dumpname, "rb" )
@@ -1952,6 +1952,7 @@ def grid3d(dumpname,use2d=False,doface=False): #read grid dump file: header and 
     #black hole spin
     a=myfloat(float(header[12]))
     rhor = 1+(1-a**2)**0.5
+    R0=myfloat(float(header[13]))
     #Spherical polar radius of the innermost radial cell
     Rin=myfloat(float(header[14]))
     #Spherical polar radius of the outermost radial cell
