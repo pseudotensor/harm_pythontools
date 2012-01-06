@@ -4808,7 +4808,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         96,
                         73,
                         60])
-        lfti = 6000.
+        lfti = 8000.
         lftf = 50000.
         pn="A0.9N50"
         rin = 15
@@ -4836,7 +4836,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         # Dno = np.array([173,
         #                 151,
         #                 128])
-        lfti = 6000.
+        lfti = 8000.
         lftf = 50000.
         pn="A0.9N25"
     # elif np.abs(a - (-0.9))<1e-4:
@@ -4900,7 +4900,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                        120,
                        102,
                        100])
-        lfti = 10000.
+        lfti = 8000.
         lftf = 1.e5
         pn="A-0.9$l_\\theta$"
         rin = 15
@@ -4951,8 +4951,8 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         130,
                         128,
                         124])
-        lfti = 12400.
-        lftf = 20000.
+        lfti = 12328.
+        lftf = 1.e5
         pn="A-0.9$h_\\theta$"
         rin = 15
         rmax = 37.1
@@ -5021,7 +5021,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                        9900-8355.23482702302])
         Dno = np.array([116,
                         99])
-        lfti = 6000.
+        lfti = 8000.
         lftf = 20000.
         pn="A0.9V2$h_\\varphi$"
         rin = 15
@@ -5065,7 +5065,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         Dno = np.array([139,
                         110,
                         100])
-        lfti = 10000.
+        lfti = 8000.
         lftf = 1e5
         pn="A0.9$l_\\theta$"
         rin = 15
