@@ -4902,7 +4902,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                        100])
         lfti = 10000.
         lftf = 1.e5
-        pn="A-0.9l_\\theta"
+        pn="A-0.9$l_\\theta$"
         rin = 15
         rmax = 37.1
         simti = 0
@@ -4953,7 +4953,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         124])
         lfti = 12400.
         lftf = 20000.
-        pn="A-0.9h_\\theta"
+        pn="A-0.9$h_\\theta$"
         rin = 15
         rmax = 37.1
         simti = 12328.
@@ -5023,7 +5023,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         99])
         lfti = 6000.
         lftf = 20000.
-        pn="A0.9h_\\varphi"
+        pn="A0.9V2$h_\\varphi$"
         rin = 15
         rmax = 34.1
         simti = 0
@@ -5067,7 +5067,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         100])
         lfti = 10000.
         lftf = 1e5
-        pn="A0.9l_\\theta"
+        pn="A0.9$l_\\theta$"
         rin = 15
         rmax = 34.1
         simti = 0
@@ -5090,7 +5090,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #lfti = 14215.
         lfti = 14207.
         lftf = 1e5
-        pn="A0.9h_\\theta"
+        pn="A0.9$h_\\theta$"
         rin = 15
         rmax = 34.1
         simti = 14207.
@@ -5170,7 +5170,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #lfti=17000.
         #lfti = 18420.
         lftf = 1e5
-        pn="A0.9h_{\\theta}h_{\\varphi}"
+        pn="A0.9$h_{\\theta}h_{\\varphi}$"
         rin = 15
         rmax = 34.1
         #simti = 14207.
@@ -5217,7 +5217,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         ])#[from dumps/ dir]
         lfti=14207.
         lftf = 1e5
-        pn="A0.9h_{\\varphi}"
+        pn="A0.9V1$h_{\\varphi}$"
         rin = 15
         rmax = 34.1
         #simti = 14207.
@@ -5245,7 +5245,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         lfti=15000.
         #lfti = 18420.
         lftf = 1e5
-        pn="A0.9N200h_\\varphi"
+        pn="A0.9N200$h_\\varphi$"
         rin = 15
         rmax = 34.1
         #simti = 14207.
