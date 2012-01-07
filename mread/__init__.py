@@ -4788,7 +4788,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         195,
                         172,
                         150])
-        lfti = 15000.
+        lfti = 16000.
         lftf = 50000.
         pn="A0.9N200"
         rin = 15
@@ -5023,7 +5023,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         99])
         lfti = 8000.
         lftf = 20000.
-        pn="A0.9V2$h_\\varphi$"
+        pn="A0.9$h_\\varphi$"
         rin = 15
         rmax = 34.1
         simti = 0
@@ -5217,7 +5217,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         ])#[from dumps/ dir]
         lfti=14207.
         lftf = 1e5
-        pn="A0.9V1$h_{\\varphi}$"
+        pn="A0.9$h_{\\varphi}$"
         rin = 15
         rmax = 34.1
         #simti = 14207.
@@ -5242,7 +5242,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         165
                         ])#[from dumps/ dir]
         #lfti=14207.
-        lfti=15000.
+        lfti=16000.
         #lfti = 18420.
         lftf = 1e5
         pn="A0.9N200$h_\\varphi$"
@@ -5389,6 +5389,8 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         simti = 0.
         simtf = lftf
         dotakeoutfloors=0
+        betamin = 30
+        rbr = 500
     elif bn == "thickdiskr1":
         print( "Using a = %g (thickdiskr1) settings" % a )
         Dt = None
@@ -5402,6 +5404,8 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         simti = 0.
         simtf = lftf
         dotakeoutfloors=0
+        betamin = 30
+        rbr = 500
     elif bn == "thickdiskr2":
         print( "Using a = %g (thickdiskr2) settings" % a )
         Dt = None
@@ -5415,6 +5419,8 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         simti = 0.
         simtf = lftf
         dotakeoutfloors=0
+        betamin = 30
+        rbr = 500
     elif bn == "thickdisk9":
         print( "Using a = %g (thickdisk9) settings" % a )
         Dt = None
@@ -6969,7 +6975,7 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
     fig.patch.set_alpha(1.0)
     fntsize=24
     ax = fig.add_subplot(111, aspect='equal', frameon=frameon)
-    if doenergy==False and True:
+    if doenergy==False and False:
         #velocity
         qty=avg_uu
         #
@@ -7087,21 +7093,39 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         h2[:,-1]=h2[:,-1]*0+np.pi*1.
         #plc(en2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=True,nc=20,isfilled=True)
         z = np.abs(en2)/np.nanmax(np.abs(en2))
-        minval=1e-3
-        cutval=1*minval
+        minval=1e-2
+        maxval=1
+        lminval=np.log10(minval)
+        lmaxval=np.log10(maxval)
+        nc=4
+        cutval=0.1*minval
         z[z<cutval]=z[z<cutval]*0+cutval
         # lev_exp = np.arange(np.floor(np.log10(np.nanmin(z))-1),
         #                      np.ceil(np.log10(np.nanmax(z))+1))
-        lev_exp=np.linspace(np.log10(minval),0,10)
+        lev_exp=np.linspace(lminval,lmaxval,nc)
         levs = np.power(10, lev_exp)
         #plco(z,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=True,nc=20,levels=levs,isfilled=True,norm=colors.LogNorm())
-        ctsf=plc(z,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=False,nc=20,levels=levs,isfilled=True,locator=ticker.LogLocator(),alpha=0.25,zorder=2,cmap=cm.hot_r)
-        cts=plc(z,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=False,nc=20,levels=ctsf.levels[1::1],isfilled=False,locator=ticker.LogLocator(),alpha=0.25,zorder=2,linestyles='solid',linewidths=0.5,colors='r')
+        palette =  cm.autumn_r #mpl.colors.ListedColormap(['r', 'g', 'b'])
+        # palette.set_over('red',1.0)
+        # palette.set_under('green',1.0)
+        ctsf=plc(np.log10(z),xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=False,nc=20,levels=lev_exp,isfilled=True,alpha=0.25,zorder=2,cmap=palette,extend='min') 
+        cts=plc(np.log10(z),xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=False,nc=20,levels=ctsf.levels[0::1],isfilled=False,alpha=0.25,zorder=2,linestyles='solid',linewidths=0.5,colors='r')
         # Make a colorbar for the ContourSet returned by the contourf call.
+        #ctsf.cmap.set_under('green',-2)
+        #ctsf.cmap.set_under('red',1.0)
         cbar = plt.colorbar(ctsf)
         #cbar.ax.set_ylabel('verbosity coefficient')
         # Add the contour line levels to the colorbar
-        cbar.add_lines(cts)
+        #cbar.add_lines(cts)
+        print lev_exp
+        tcks=[x for x in lev_exp]
+        labs=['%d%%'%(x*100+0.5) for x in 10**lev_exp]
+        cbar.set_ticks(tcks)
+        cbar.set_ticklabels(labs)
+        cbar.update_ticks()
+        #set font size of colorbar tick labels
+        cl = plt.getp(cbar.ax, 'ymajorticklabels')
+        plt.setp(cl, fontsize=fntsize)
         #pdb.set_trace()
         #plt.xlim(-30,30); plt.ylim(-30,30)
         mylenshow = frac*mylen
@@ -7262,13 +7286,13 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         hs2=np.concatenate((hs,-hs[::-1]),axis=1)
         rs2=np.concatenate((rs,rs[::-1]),axis=1)
         ax.plot(rs2*np.sin(hs2),rs2*np.cos(hs2),'g',lw=3,zorder=21)
-    if False:
-        avg_aphi = scaletofullwedge(nz*_dx3*fieldcalc(gdetB1=avg_gdetB[0]))
+    if True:
+        avg_aphi = fieldcalc(gdetB1=avg_gdetB[0])
         r2=np.concatenate((r[:,::-1],r),axis=1)
         h2=np.concatenate((-h[:,::-1],h),axis=1)
         avg_aphi2=np.concatenate((avg_aphi[:,::-1],avg_aphi),axis=1)
-        plc(avg_aphi2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),nc=20,colors='red')
-    if True:
+        cb=plc(avg_aphi2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),nc=30,colors='blue',linewidths=1.5)
+    if False:
         #field
         B[1] = avg_B[0]
         B[2] = avg_B[1]
@@ -8044,6 +8068,7 @@ def provsretro():
             plt.plot( r[:,0,0], (avg_bsq/avg_rho)[:,ny/2,0], label=r"$b^2/\rho$ " + lab )
             plt.plot( r[:,0,0], (avg_bsq/avg_ug)[:,ny/2,0], label=r"$b^2/u_g$ " + lab )
             plt.plot( r[:,0,0], (0.5*avg_bsq/avg_ug/(gam-1))[:,ny/2,0], label=r"$p_m/p_g$ " + lab )
+            plt.plot( r[:,0,0], (avg_ug/avg_rho)[:,ny/2,0], label=r"$u_g/\rho$ " + lab )
             ax.set_xscale('log')
             ax.set_yscale('log')
             plt.xlim(rhor,1000)
@@ -8599,19 +8624,34 @@ def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=85,ncont=100,d
 
 def plotflux(doreload=True):
     global reslist, avgmemlist
-    fig = plt.figure(1, figsize=(8,6), dpi=100)
+    fig = plt.figure(1, figsize=(10,5), dpi=100)
     plt.clf()
     dirlist=["/home/atchekho/run/rtf2_15r34_2pi_a-0.9gg50rbr1e3_0_0_0_faildufix2",
-             "/home/atchekho/run/rtf2_15r34.1_0_0_0_spinflip",
-             "/home/atchekho/run/rtf2_15r34.1_betax0.5_0_0_0_2xphi_restart15000",
+             #"/home/atchekho/run/rtf2_15r34.1_0_0_0_spinflip",
+             #"/home/atchekho/run/rtf2_15r34.1_betax0.5_0_0_0_2xphi_restart15000",
+             "/home/atchekho/run/rtf2_15r34.1_betax0.5_0_0_0",
              "/home/atchekho/run/rtf2_15r34.1_pi_0_0_0",
              "/home/atchekho/run/rtf2_15r34.1_betax2_0_0_0",
              "/home/atchekho/run/rtf2_15r34.1_betax4_0_0_0"]
     #caplist=[r"$\mathrm{A-0.9f}$", r"$\mathrm{A0.9f}$", r"$\mathrm{A0.9N50}$", r"$\mathrm{A0.9N25}$"]
-    caplist=[r"$\beta=100$", r"$\beta=100\ \mathrm{(spin\ flip)}$", r"$\beta=200$", r"$\beta=100$", r"$\beta=50$", r"$\beta=25$"]
-    lslist=["-","--","--","-","-.",":"]
-    clrlist=["blue", "cyan","pink", "red","orange","magenta"]
-    lwlist=[2,2,2,2,2,2]
+    caplist=[r"$\beta_{\rm min}=100$ $\mathrm{(A-0.9f)}$", 
+             #r"$\beta_{\rm min}=100$ $\mathrm{(A-0.9flip)}$", 
+             #r"$\beta_{\rm min}=200$ $\mathrm{(A0.9N200h_\varphi)}$", 
+             r"$\beta_{\rm min}=200$ $\mathrm{(A0.9N200)}$", 
+             r"$\beta_{\rm min}=100$ $\mathrm{(A0.9f)}$", 
+             r"$\beta_{\rm min}=50$ $\mathrm{(A0.9N50)}$", 
+             r"$\beta_{\rm min}=25$ $\mathrm{(A0.9N25)}$"]
+    lslist=["-",#"--",#"--",
+            "--","-","-.",":"]
+    clrlist=["blue", #"cyan", #"orange", 
+             "pink", "red","magenta","brown"]
+    lwlist=[2,#2,#2,
+            2,2,2,2]
+    dirlist.reverse()
+    caplist.reverse()
+    lslist.reverse()
+    clrlist.reverse()
+    lwlist.reverse()
     crvlist1=[]
     crvlist2=[]
     lablist1=[]
@@ -8634,18 +8674,29 @@ def plotflux(doreload=True):
         assignavg2dvars(avgmem)
         rho = avg_rho
         bsq = avg_bsq
-        aphi = fieldcalc(gdetB1=avg_gdetB[0])
-        aphibh=aphi[iofr(rhor),ny/2,0]
+        if False:
+            aphi = fieldcalc(gdetB1=avg_gdetB[0])
+            aphibh=aphi[iofr(rhor),ny/2,0]
+        else:
+            aphi = np.zeros_like(avg_B[0])
+            aphi = (0.5*np.abs(avg_gdetB[0]).sum(1)*_dx2)[:,:,None]+aphi*0
+            aphibh = aphi[iofr(rhor),0,0]
+        #aphi = scaletofullwedge(nz*(avg_psisq)**0.5)
         #old way:
         #unitsfactor=(4*np.pi)**0.5*2*np.pi
         #phibh=fstot[:,ihor]/4/np.pi/FMavg**0.5*unitsfactor
         #where fstot = (gdetB1).sum(2).sum(1)*_dx2*_dx3 at horizon
         phibh = (4*np.pi)**0.5*aphi/a_Fm**0.5
-        if dirpath == "/home/atchekho/run/rtf2_15r34.1_betax0.5_0_0_0_2xphi_restart15000":
-            iof10 = iofr(10)
+        risco=Risco(a)
+        iisco=iofr(risco)
+        if dirpath == "/home/atchekho/run/rtf2_15r34.1_betax0.5_0_0_0_2xphi_restart15000" or \
+           dirpath == "/home/atchekho/run/rtf2_15r34.1_betax0.5_0_0_0":
+            iof10 = iofr(15)
             crv=plt.plot(r[:iof10,ny/2,0],phibh[:iof10,ny/2,0],label=caplist[i],ls=lslist[i],color=clrlist[i],lw=lwlist[i])
         else:
             crv=plt.plot(r[:,ny/2,0],phibh[:,ny/2,0],label=caplist[i],ls=lslist[i],color=clrlist[i],lw=lwlist[i])
+        print a, risco, iisco, r[iisco,ny/2,0], phibh[iisco,ny/2,0] 
+        plt.plot(r[iisco,ny/2,0],phibh[iisco,ny/2,0],'o',color=clrlist[i],lw=lwlist[i])
         if a > 0:
             crvlist1.append(crv)
             lablist1.append(caplist[i])
@@ -8653,14 +8704,20 @@ def plotflux(doreload=True):
             crvlist2.append(crv)
             lablist2.append(caplist[i])
     plt.xlim(rhor,20)
-    plt.ylim(0,100)
-    plt.xlabel(r'$R\ [r_g]$',fontsize=16)
-    plt.ylabel(r'$\phi$',fontsize=16)
+    plt.ylim(0,139.99)
+    plt.xlabel(r'$r\ [r_g]$',fontsize=20)
+    plt.ylabel(r'$\langle\phi\rangle$',fontsize=22,ha="center")
     #plt.legend(loc="upper left",ncol=1)
-    leg1=plt.legend(crvlist1,lablist1,loc="upper left",title="Prograde, $a=0.9$:",frameon=True,labelspacing=0.25)
-    leg2=plt.legend(crvlist2,lablist2,loc="lower right",title="Retrograde, $a=-0.9$:",frameon=True,labelspacing=0.25)
+    leg1=plt.legend(crvlist1,lablist1,loc="upper left",title=r"${\rm Prograde,}\ a=0.9$:",frameon=True,labelspacing=0.15,ncol=1)
+    leg2=plt.legend(crvlist2,lablist2,loc="lower right",title=r"${\rm Retrograde,}\ a=-0.9$:",frameon=True,labelspacing=0.15)
     plt.gca().add_artist(leg1)
+    for t in leg1.get_texts() + leg2.get_texts():
+        t.set_fontsize(20)    # the legend text fontsize
+    leg1.get_title().set_fontsize(20)
+    leg2.get_title().set_fontsize(20)
     plt.grid(b=True)
+    for label in plt.gca().get_xticklabels() + plt.gca().get_yticklabels():
+        label.set_fontsize(18)
     plt.savefig("plotflux.eps",bbox_inches='tight',pad_inches=0.02,dpi=100)
     plt.savefig("plotflux.pdf",bbox_inches='tight',pad_inches=0.02,dpi=100)
 
@@ -8668,8 +8725,9 @@ def plotflux(doreload=True):
 if __name__ == "__main__":
     if False:
         #takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
-        takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=False,aphi_j_val=0)
-        #takeoutfloors(dotakeoutfloors=1,doplot=False,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
+        #takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=False,aphi_j_val=0)
+        #use this in a shell script
+        takeoutfloors(dotakeoutfloors=1,doplot=False,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
         #takeoutfloors(dotakeoutfloors=1,doplot=False)
     if False:
         provsretro()
@@ -8742,10 +8800,13 @@ if __name__ == "__main__":
         #print epsFm, epsFke
         mkmovie(prefactor=100.,sigma=1500.,usegaussianunits=True,domakeframes=domakeframes)
         #mkmovie(prefactor=100.,usegaussianunits=True,domakeframes=domakeframes)
-    if False:
+    if True:
         #fig2 with grayscalestreamlines and red field lines
         #mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=False)
-        mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=True,dotakeoutfloors=1,usedefault=1)
+        if False: #remove floors
+            mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=True,dotakeoutfloors=1,usedefault=1)
+        else: #don't do anything about floors
+            mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=True,dotakeoutfloors=0,usedefault=1)
         #mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=True,dotakeoutfloors=0)
         #mkstreamlinefigure(length=4,doenergy=False)
     if False:
