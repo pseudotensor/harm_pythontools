@@ -6963,7 +6963,7 @@ def mkmanystreamlinesxy():
 
 def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,showticks=True,usedefault=2,fc='white',mc='white',dotakeoutfloors=0):
     #fc='#D8D8D8'
-    global bsq, ug, mu, B
+    global bsq, ug, mu, B, DF, qtymem
     mylen = length/frac
     arrowsize=4
     grid3d("gdump.bin",use2d=True)
@@ -7033,6 +7033,7 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
             enden=enden1
             mdden=(-gdet*avg_rhouu[1])*nz
         else:
+            print( "Using avg_gdetF" )
             is_output_cell_center = False
             #x1-fluxes of:
             #0,0 mass   
@@ -7105,18 +7106,19 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         lev_exp=np.linspace(lminval,lmaxval,nc)
         levs = np.power(10, lev_exp)
         #plco(z,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=True,nc=20,levels=levs,isfilled=True,norm=colors.LogNorm())
-        palette =  cm.autumn_r #mpl.colors.ListedColormap(['r', 'g', 'b'])
+        #palette =  cm.autumn_r #mpl.colors.ListedColormap(['r', 'g', 'b'])
+        palette =  mpl.colors.ListedColormap(['b', 'g', 'y', 'r'])
         # palette.set_over('red',1.0)
-        # palette.set_under('green',1.0)
+        #palette.set_under('blue')
         ctsf=plc(np.log10(z),xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=False,nc=20,levels=lev_exp,isfilled=True,alpha=0.25,zorder=2,cmap=palette,extend='min') 
         cts=plc(np.log10(z),xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=False,nc=20,levels=ctsf.levels[0::1],isfilled=False,alpha=0.25,zorder=2,linestyles='solid',linewidths=0.5,colors='r')
         # Make a colorbar for the ContourSet returned by the contourf call.
         #ctsf.cmap.set_under('green',-2)
         #ctsf.cmap.set_under('red',1.0)
         cbar = plt.colorbar(ctsf)
-        #cbar.ax.set_ylabel('verbosity coefficient')
+        cbar.ax.set_ylabel('Fraction of energy output',fontsize=fntsize,ha='center')
         # Add the contour line levels to the colorbar
-        #cbar.add_lines(cts)
+        cbar.add_lines(cts)
         print lev_exp
         tcks=[x for x in lev_exp]
         labs=['%d%%'%(x*100+0.5) for x in 10**lev_exp]
@@ -7288,10 +7290,27 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         ax.plot(rs2*np.sin(hs2),rs2*np.cos(hs2),'g',lw=3,zorder=21)
     if True:
         avg_aphi = fieldcalc(gdetB1=avg_gdetB[0])
+        if dotakeoutfloors:
+            #this normalizes avg_phi by Mdot to get dimensionless flux
+            res = takeoutfloors(doreload=True,isinteractive=0,writefile=False)
+            avgmem = get2davg(usedefault=1)
+            a_eta,a_Fm,a_Fe,a_Fl = res
+            assignavg2dvars(avgmem)
+            rho = avg_rho
+            bsq = avg_bsq
+            phibh = (4*np.pi)**0.5*avg_aphi/a_Fm**0.5
+            avg_aphi = phibh
+            step=10
+            levs=np.arange(step,100*step,step)
+        else:
+            levs=None
         r2=np.concatenate((r[:,::-1],r),axis=1)
         h2=np.concatenate((-h[:,::-1],h),axis=1)
         avg_aphi2=np.concatenate((avg_aphi[:,::-1],avg_aphi),axis=1)
-        cb=plc(avg_aphi2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),nc=30,colors='blue',linewidths=1.5)
+        if levs is not None:
+            cb=plc(avg_aphi2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),levels=levs,colors='blue',linewidths=1.5)
+        else:
+            cb=plc(avg_aphi2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),nc=30,colors='blue',linewidths=1.5)
     if False:
         #field
         B[1] = avg_B[0]
@@ -8803,7 +8822,7 @@ if __name__ == "__main__":
     if True:
         #fig2 with grayscalestreamlines and red field lines
         #mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=False)
-        if False: #remove floors
+        if True: #remove floors
             mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=True,dotakeoutfloors=1,usedefault=1)
         else: #don't do anything about floors
             mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=True,dotakeoutfloors=0,usedefault=1)
