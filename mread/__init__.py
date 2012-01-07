@@ -546,14 +546,16 @@ def roundto2fit(x,sigma,goodness):
 
 
 def roundto2_rq2mri1(x,rcutdn,rcutup):
-    rq21cutdn=rcutdn
-    iq21cutdn=iofr(rq21cutdn)
-    rq21cutup=rcutup
-    iq21cutup=iofr(rq21cutup)
-    if x<=1.001*r[iq21cutdn,ny/2,0]:
+    #rq21cutdn=rcutdn
+    #iq21cutdn=iofr(rq21cutdn)
+    #rq21cutup=rcutup
+    #iq21cutup=iofr(rq21cutup)
+    #if x<=1.001*r[iq21cutdn,ny/2,0]:
+    if x<=1.001*rcutdn:
         y="-"
         return(y)
-    elif x>=0.999*r[iq21cutup,ny/2,0]:
+    #elif x>=0.999*r[iq21cutup,ny/2,0]:
+    elif x>=0.999*rcutup:
         y="%.*e" % (2-1, rcutup)
         z=float(y)
         y="$>%d$" % (z)
@@ -2336,7 +2338,7 @@ def horcalc(hortype=1,which1=1,which2=1,denfactor=None):
     return((hoverr3d,thetamid3d))
 
 
-def gridcalc(hoverr):
+def gridcalc(hoverrconst=None,hoverr=None):
     """
     Compute dr:r d\theta : r\sin\theta d\phi along equator vs. radius
     """
@@ -2346,9 +2348,14 @@ def gridcalc(hoverr):
     #
     print("hoverr.shape") ; sys.stdout.flush()
     print(hoverr.shape) ; sys.stdout.flush()
-    print("hoverr=%g" % (hoverr))
     #
-    which=(np.fabs(h-np.pi*0.5)<=hoverr)
+    if hoverrconst!=None:
+        which=(np.fabs(h-np.pi*0.5)<=hoverrconst)
+        print("hoverrconst=%g" % (hoverrconst))
+    #
+    if hoverr!=None:
+        which=(np.fabs(h-np.pi*0.5)<=hoverr)
+    #
     print("which.shape") ; sys.stdout.flush()
     print(which.shape) ; sys.stdout.flush()
     #
@@ -3295,8 +3302,8 @@ def ftr(x,xb,xf):
 # http://www.scipy.org/Cookbook/LineIntegralConvolution
 
 
-
-def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,len=20,lenx=None,leny=None,ncell=800,pt=True,shrink=1,dovel=False,doaphi=False,dostreamlines=True,doaphiavg=False,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,doentropy=False,dobsq=False,dobeta=False,doQ1=False,doQ2=False,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,domidfield=True,showjet=False,arrowsize=1,forceeqsym=0,dojonwindplot=False,doaphicont=None,inputlevs=None,numcontours=30,signaphi=1,aphipow=1.0):
+# dobhfield=True : GODMARK: Set to False since already showing BH penetrating field because comes from large radii down to hole
+def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,len=20,lenx=None,leny=None,ncell=800,pt=True,shrink=1,dovel=False,doaphi=False,dostreamlines=True,doaphiavg=False,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,doentropy=False,dobsq=False,dobeta=False,doQ1=False,doQ2=False,dovarylw=True,dobhfield=False,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,domidfield=True,showjet=False,arrowsize=1,forceeqsym=0,dojonwindplot=False,doaphicont=None,inputlevs=None,numcontours=30,signaphi=1,aphipow=1.0,showuu1eq0=True):
     #
     levs=inputlevs
     #
@@ -3681,7 +3688,8 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         ax.contour(ibsqorho,linewidths=4,colors='blue', extent=extent,hold='on',origin='lower',levels=(1,))  # 29.5
         ax.contour(-iud0,linewidths=4,colors='black', extent=extent,hold='on',origin='lower',levels=(1,))
         #ax.contour(-iunb,linewidths=4,colors='red', extent=extent,hold='on',origin='lower',levels=(1,))
-        ax.contour(iuu1,linewidths=4,colors='green', extent=extent,hold='on',origin='lower',levels=(0,))
+        if showuu1eq0==True:
+            ax.contour(iuu1,linewidths=4,colors='green', extent=extent,hold='on',origin='lower',levels=(0,))
     #
     #
     ax.set_xlim(extent[0],extent[1])
@@ -9193,9 +9201,6 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         # fti: start avg time
         # ftf: end avg time
         # use end time by choosing -1 that wraps
-        #drnormvsr,dHnormvsr,dPnormvsr=gridcalc(hoverr10[-1])
-        # run.liker2butbeta40 has issues with hoverr10[-1]
-        #drnormvsr,dHnormvsr,dPnormvsr=gridcalc(hoverr10_avg)
         if modelname=="runlocaldipole3dfiducial" or modelname=="blandford3d_new":
             hoverri=hoverr10_avg
             hoverro=hoverr12_avg
@@ -9549,10 +9554,30 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #################################
     # BEGIN compute aspect ratio grid stuff
     #################################
+    #
+    #
     print("A stuff" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
     #
+    # get time-averaged hoverr vs. r so can use that for various calculations
+    hoverr_vsr=timeavg(hoverr,ts,fti,ftf)
+    hoverrvsr3d=np.zeros((nx,ny,nz),dtype=h.dtype)
+    for jj in np.arange(0,ny):
+        for kk in np.arange(0,nz):
+            hoverrvsr3d[:,jj,kk] = hoverr_vsr[:]
+    #
+    #drnormvsr,dHnormvsr,dPnormvsr=gridcalc(hoverr10[-1])
+    # run.liker2butbeta40 has issues with hoverr10[-1]
+    #drnormvsr,dHnormvsr,dPnormvsr=gridcalc(hoverr10_avg)
     # SUPERNOTEMARK: gridcalc() below uses 2D or 3D grid data not qty data
-    drvsr,dHvsr,dPvsr,drnormvsr,dHnormvsr,dPnormvsr=gridcalc(hoverro)
+    #drvsr,dHvsr,dPvsr,drnormvsr,dHnormvsr,dPnormvsr=gridcalc(hoverrconst=hoverro)
+    # makes no sense to use hoverro for all radii.  Use hoverr_vsr instead.
+    drvsr,dHvsr,dPvsr,drnormvsr,dHnormvsr,dPnormvsr=gridcalc(hoverr=hoverrvsr3d)
+    #
+    fgrid = open('datavsrgrid.txt', 'w')
+    for ii in np.arange(0,nx):
+        fgrid.write("%d %g  %g %g %g\n" % (ii,r[ii,ny/2,0],drnormvsr[ii],dHnormvsr[ii],dPnormvsr[ii]))
+    fgrid.close()
+    #
     drnormvsrhor=drnormvsr[ihor]
     dHnormvsrhor=dHnormvsr[ihor]
     dPnormvsrhor=dPnormvsr[ihor]
@@ -9628,6 +9653,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     for ttii in np.arange(0,len(ts)):
             vuas3rhosqdcdenkep[ttii,:] = vuas3rhosqdcdenkep_vsr[:]
     #
+    # GODMARK: Should really use (|b|\rho_0)^{1/2} weighting for qmridisk and iq2mridisk, but if anything more sub-Keplerian than dcden version so if anyting MRI suppressed over large radial range.
     if OMEGAFIX==1:
         omegafixrat=vuas3rhosqdcden/vuas3rhosqdcdenkep
     else:
@@ -9643,48 +9669,56 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     # now can use these as usually do ....
     #
     ##########################
-    hoverr_vsr=np.zeros(nx,dtype=r.dtype)
-    iq2mridisk_vsr=np.zeros(nx,dtype=r.dtype)
-    for ii in np.arange(0,nx):
-        hoverr_vsr[ii]=timeavg(hoverr[:,ii],ts,fti,ftf)
-        iq2mridisk_vsr[ii]=timeavg(iq2mridisk[:,ii],ts,fti,ftf)
-    #
-    if 1==1:
-        q2mridisk_avg=hoverr_vsr/iq2mridisk_vsr
-        print("FIRST: %g %g" % (hoverr_vsr[0],iq2mridisk_vsr[0])) ; sys.stdout.flush()
-    else:
-        #
-        if 1==1:
-            iq2mridisk_avg = timeavg_vstvsr(iq2mridisk,ts,fti,ftf)
-        else:
-            # weighted so particular time with low weight doesn't get overemphasized
-            iq2mridisk_avg1 = timeavg_vstvsr(iq2mridisk*normmridisk,ts,fti,ftf)
-            iq2mridisk_avg2 = timeavg_vstvsr(normmridisk,ts,fti,ftf)
-            iq2mridisk_avg = (iq2mridisk_avg1/iq2mridisk_avg2)
-        #
-        q2mridisk_avg=hoverr_avg/iq2mridisk_avg
-    #
+    iq2mridisk_vsr=timeavg(iq2mridisk,ts,fti,ftf)
+    q2mridisk_avg=hoverr_vsr/iq2mridisk_vsr
     print("q2mridisk_avg") ; sys.stdout.flush()
     print(q2mridisk_avg) ; sys.stdout.flush()
     print("r") ; sys.stdout.flush()
     print(r[:,ny/2,0]) ; sys.stdout.flush()
+    #
+    iq2mridiskweak_vsr=timeavg(iq2mridiskweak,ts,fti,ftf)
+    q2mridiskweak_avg=hoverr_vsr/iq2mridiskweak_vsr
+    print("q2mridiskweak_avg") ; sys.stdout.flush()
+    print(q2mridiskweak_avg) ; sys.stdout.flush()
+    print("r") ; sys.stdout.flush()
+    print(r[:,ny/2,0]) ; sys.stdout.flush()
     ####################
     #
-    #rq21cut=min(5.0,Risco(a)) # some allowance for smaller than isco, but doesn't help thickdiskrr2 that's still not hitting q2=1 near BH.
-    rq21cut=4.0
-    iq21cut=iofr(rq21cut)
-    print("iq21cut=%d" % (iq21cut)) ; sys.stdout.flush()
-    # skip i<iq21cut due to boundary condition influence modifying Q2 to be >1/2 just in a few cells
-    indicesiq2mridisk=ti[iq21cut:nx,0,0][q2mridisk_avg[iq21cut:nx]>=0.5] # use 0.5 because 1.0 too close to possibly allowing MRI
-    print("indicesiq2mridisk") ; sys.stdout.flush()
-    print(indicesiq2mridisk) ; sys.stdout.flush()
-    iq2mri1=indicesiq2mridisk[0] # first instance vs. radius
+    #rq2mri1cut=min(5.0,Risco(a)) # some allowance for smaller than isco, but doesn't help thickdiskrr2 that's still not hitting q2=1 near BH.
+    rq2mri1cut=4.0
+    iq2mri1cut=iofr(rq2mri1cut)
+    rq2mri1cut=r[iq2mri1cut,ny/2,0] # to get consistency for checks to work
+    print("iq2mri1cut=%d" % (iq2mri1cut)) ; sys.stdout.flush()
+    # skip i<iq2mri1cut due to boundary condition influence modifying Q2 to be >1/2 just in a few cells
+    indicesiq2mri1=ti[iq2mri1cut:nx,0,0][q2mridisk_avg[iq2mri1cut:nx]>=0.5] # use 0.5 because 1.0 too close to possibly allowing MRI
+    print("indicesiq2mri1") ; sys.stdout.flush()
+    print(indicesiq2mri1) ; sys.stdout.flush()
+    iq2mri1=indicesiq2mri1[0] # first instance vs. radius
     print("iq2mri1") ; sys.stdout.flush()
     print(iq2mri1) ; sys.stdout.flush()
     rq2mri1=r[iq2mri1,ny/2,0] # radius
     print("rq2mri1") ; sys.stdout.flush()
     print(rq2mri1) ; sys.stdout.flush()
     #
+    #rq2mri2cut=min(5.0,Risco(a)) # some allowance for smaller than isco, but doesn't help thickdiskrr2 that's still not hitting q2=1 near BH.
+    rq2mri2cut=4.0
+    iq2mri2cut=iofr(rq2mri2cut)
+    rq2mri2cut=r[iq2mri2cut,ny/2,0] # to get consistency for checks to work
+    print("iq2mri2cut=%d" % (iq2mri2cut)) ; sys.stdout.flush()
+    # skip i<iq2mri2cut due to boundary condition influence modifying Q2 to be >1/2 just in a few cells
+    indicesiq2mri2=ti[iq2mri2cut:nx,0,0][q2mridiskweak_avg[iq2mri2cut:nx]>=0.5] # use 0.5 because 1.0 too close to possibly allowing MRI
+    print("indicesiq2mri2") ; sys.stdout.flush()
+    print(indicesiq2mri2) ; sys.stdout.flush()
+    iq2mri2=indicesiq2mri2[0] # first instance vs. radius
+    print("iq2mri2") ; sys.stdout.flush()
+    print(iq2mri2) ; sys.stdout.flush()
+    rq2mri2=r[iq2mri2,ny/2,0] # radius
+    print("rq2mri2") ; sys.stdout.flush()
+    print(rq2mri2) ; sys.stdout.flush()
+    #
+    ##############################################
+    #
+    ##############################################
     # dc: over disk+corona but bsq/rho<1 only: Doesn't work -- no r_m present!
     # dcden:  over disk only (high density disk): Doesn't work -- no r_m present!
     # use full flow that includes jet : required to get r_m -- makes sense since jet is what pushes down on disk!
@@ -9706,6 +9740,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         rm1cut=4.0
     #
     irm1cut=iofr(rm1cut)
+    rm1cut=r[irm1cut,ny/2,0] # to get consistency for checks to work
     print("irm1cut=%d" % (irm1cut)) ; sys.stdout.flush()
     indicesirm1=ti[irm1cut:nx,0,0][ibetarm1_avg[irm1cut:nx]<=1.0] # 1/\betarm=1 is where \betarm=1
     print("indicesirm1") ; sys.stdout.flush()
@@ -9719,13 +9754,18 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     ###############
     # get rm1 vs. time
-    rm1cut=2.1
-    irm1cut=iofr(rm1cut)
+    rm1vstcut=2.1
+    irm1vstcut=iofr(rm1vstcut)
+    rm1vstcut=r[irm1vstcut,ny/2,0] # to get consistency for checks to work
     rm1vst=ibetarm1[:,0]*0.0
     for ttii in np.arange(0,len(ts)):
-        indicesirm1ttii=ti[irm1cut:nx,0,0][ibetarm1[ttii,irm1cut:nx]<=1.0] # 1/\betarm=1 is where \betarm=1
-        irm1ttii=indicesirm1ttii[0] # first instance vs. radius
-        rm1vst[ttii]=r[irm1ttii,ny/2,0] # radius
+        indicesirm1ttii=ti[irm1vstcut:nx,0,0][ibetarm1[ttii,irm1vstcut:nx]<=1.0] # 1/\betarm=1 is where \betarm=1
+        if len(indicesirm1ttii)>0:
+            irm1ttii=indicesirm1ttii[0] # first instance vs. radius
+            rm1vst[ttii]=r[irm1ttii,ny/2,0] # radius
+        else:
+            irm1ttii=nx-1 # never got small ibeta or large beta
+            rm1vst[ttii]=r[irm1ttii,ny/2,0] # radius
     #
     print("rm1vst") ; sys.stdout.flush()
     print(rm1vst) ; sys.stdout.flush()
@@ -10409,17 +10449,35 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     lwoutEM_avg=letawoutEM_avg/prefactor
     lwoutMAKE_avg=letawoutMAKE_avg/prefactor
     #
-    djdtnormbh  = (-lbh_avg) - 2.0*a*(1.0-etabh_avg/prefactor)
-    djdtnormj   = (-lj_avg)  - 2.0*a*(1.0-etaj_avg/prefactor)
-    djdtnormmwin   = (-lmwin_avg)  - 2.0*a*(1.0-etamwin_avg/prefactor)
-    djdtnormmwout   = (-lmwout_avg)  - 2.0*a*(1.0-etamwout_avg/prefactor)
-    djdtnormwin   = (-lwin_avg)  - 2.0*a*(1.0-etawin_avg/prefactor)
-    djdtnormwout   = (-lwout_avg)  - 2.0*a*(1.0-etawout_avg/prefactor)
+    sbh_avg  = (-lbh_avg) - 2.0*a*(1.0-etabh_avg/prefactor)
+    sbhEM_avg  = (-lbhEM_avg) - 2.0*a*(1.0-etabhEM_avg/prefactor)
+    sbhMAKE_avg  = (-lbhMAKE_avg) - 2.0*a*(1.0-etabhMAKE_avg/prefactor)
+    sj_avg   = (-lj_avg)  - 2.0*a*(1.0-etaj_avg/prefactor)
+    sjlocal_avg   = (-ljlocal_avg)  - 2.0*a*(1.0-etajlocal_avg/prefactor)
+    sjEM_avg   = (-ljEM_avg)  - 2.0*a*(1.0-etajEM_avg/prefactor)
+    sjMAKE_avg   = (-ljMAKE_avg)  - 2.0*a*(1.0-etajMAKE_avg/prefactor)
+    smwin_avg   = (-lmwin_avg)  - 2.0*a*(1.0-etamwin_avg/prefactor)
+    smwinlocal_avg   = (-lmwinlocal_avg)  - 2.0*a*(1.0-etamwinlocal_avg/prefactor)
+    smwinEM_avg   = (-lmwinEM_avg)  - 2.0*a*(1.0-etamwinEM_avg/prefactor)
+    smwinMAKE_avg   = (-lmwinMAKE_avg)  - 2.0*a*(1.0-etamwinMAKE_avg/prefactor)
+    smwout_avg   = (-lmwout_avg)  - 2.0*a*(1.0-etamwout_avg/prefactor)
+    smwoutlocal_avg   = (-lmwoutlocal_avg)  - 2.0*a*(1.0-etamwoutlocal_avg/prefactor)
+    smwoutEM_avg   = (-lmwoutEM_avg)  - 2.0*a*(1.0-etamwoutEM_avg/prefactor)
+    smwoutMAKE_avg   = (-lmwoutMAKE_avg)  - 2.0*a*(1.0-etamwoutMAKE_avg/prefactor)
+    swin_avg   = (-lwin_avg)  - 2.0*a*(1.0-etawin_avg/prefactor)
+    swinlocal_avg   = (-lwinlocal_avg)  - 2.0*a*(1.0-etawinlocal_avg/prefactor)
+    swinEM_avg   = (-lwinEM_avg)  - 2.0*a*(1.0-etawinEM_avg/prefactor)
+    swinMAKE_avg   = (-lwinMAKE_avg)  - 2.0*a*(1.0-etawinMAKE_avg/prefactor)
+    swout_avg   = (-lwout_avg)  - 2.0*a*(1.0-etawout_avg/prefactor)
+    swoutlocal_avg   = (-lwoutlocal_avg)  - 2.0*a*(1.0-etawoutlocal_avg/prefactor)
+    swoutEM_avg   = (-lwoutEM_avg)  - 2.0*a*(1.0-etawoutEM_avg/prefactor)
+    swoutMAKE_avg   = (-lwoutMAKE_avg)  - 2.0*a*(1.0-etawoutMAKE_avg/prefactor)
+    #
     #
     einf,linf=elinfcalc(a)
     etant=prefactor*(1.0-einf)
     lnt=-linf
-    djdtnormnt  = linf       - 2.0*a*einf
+    snt  = linf       - 2.0*a*einf
     #
     # Jon's whichplot==4 Plot:
     if modelname=="runlocaldipole3dfiducial" or modelname=="blandford3d_new":
@@ -11391,12 +11449,14 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         # 2D models can stagnate at small radii, but still want to know where rm is
         fakerstagreport=1E30
     else:
-        fakerstagreport=rstagreport
+        #fakerstagreport=rstagreport
+        fakerstagreport=rfitout6
         # no, sasha1 does have 1/betamod>1 out to large radii, just not much above 1.
         #fakerstagreport=1E30
+        #fakerstagreport
     #
-    print( "HLatex4: ModelName & $\\alpha_a$ & $\\alpha_b$ & $\\alpha_c$ & $Q_{1,\\rm{}MRI,i}$ & $Q_{1,\\rm{}MRI,o}$  & $Q_{2,\\rm{}MRI,i}$ & $Q_{2,\\rm{}MRI,o}$ & $r_{Q_{2,\\rm{}MRI}=1/2}$ & $r_m/r_g$ \\\\" )
-    print( "VLatex4: %s        & %g          & %g          & %g          & %g                  & %g                   & %g                  & %g                  & %s                        & %s                       \\\\ %% %s" % (truemodelname, roundto2(alphamag1_vsr_avg), roundto2(alphamag2_vsr_avg), roundto2(alphamag3_vsr_avg), roundto2(qmridiskrfitin2_avg), roundto2(qmridiskrfitout2_avg), roundto2(1.0/iq2mridiskrfitin2_avg), roundto2(1.0/iq2mridiskrfitout2_avg), roundto2_rq2mri1(rq2mri1,rq21cut,fakerstagreport), roundto2_rq2mri1(rm1,rm1cut,fakerstagreport), modelname ) )
+    print( "HLatex4: ModelName & $\\alpha_a$ & $\\alpha_b$ & $\\alpha_c$ & $Q_{1,\\rm{}MRI,i}$ & $Q_{1,\\rm{}MRI,o}$  & $Q_{2,\\rm{}MRI,i}$ & $Q_{2,\\rm{}MRI,o}$ & $r_{Q_{2,\\rm{}MRI}=1/2}$ & $r_{Q_{2\\rm{}weak,MRI}=1/2}$ & $r_m$ \\\\" )
+    print( "VLatex4: %s        & %g          & %g          & %g          & %g                  & %g                   & %g                  & %g                  & %s                        & %s                                 & %s                       \\\\ %% %s" % (truemodelname, roundto2(alphamag1_vsr_avg), roundto2(alphamag2_vsr_avg), roundto2(alphamag3_vsr_avg), roundto2(qmridiskrfitin2_avg), roundto2(qmridiskrfitout2_avg), roundto2(1.0/iq2mridiskrfitin2_avg), roundto2(1.0/iq2mridiskrfitout2_avg), roundto2_rq2mri1(rq2mri1,rq2mri1cut,fakerstagreport), roundto2_rq2mri1(rq2mri2,rq2mri2cut,fakerstagreport), roundto2_rq2mri1(rm1,rm1cut,fakerstagreport), modelname ) )
     #
     # 8:
     print( "HLatex97: ModelName & $Q_{1,t=0,\\rm{}MRI,i,w}$ & $Q_{1,t=0,\\rm{}MRI,o,w}$  & $Q_{1,t=0,\\rm{}MRI,fo,w}$ & $Q_{2,t=0,\\rm{}MRI,i,w}$ & $Q_{2,t=0,\\rm{}MRI,o,w}$ & $Q_{2,t=0,\\rm{}MRI,fo,w}$ & rm1 & rm2 & rm3  \\\\" )
@@ -11423,10 +11483,16 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     print( "HLatex7: ModelName & $\\eta_{\\rm{}mw,i}$ & $\\eta^{\\rm{}EM}_{\\rm{}mw,i}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}mw,i}$ & $\\eta_{\\rm{}mw,o}$ & $\\eta^{\\rm{}EM}_{\\rm{}mw,o}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}mw,o}$ & $\\eta_{\\rm{}w,i}$ & $\\eta^{\\rm{}EM}_{\\rm{}w,i}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}w,i}$ & $\\eta_{\\rm{}w,o}$ & $\\eta^{\\rm{}EM}_{\\rm{}w,o}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}w,o}$ \\\\" )
     print( "VLatex7: %s        & %g & %g & %g    & %g & %g & %g   & %g & %g & %g    & %g & %g & %g  \\\\ %% %s" % (truemodelname, roundto3foreta(etamwin_avg), roundto3foreta(etamwinEM_avg), roundto3foreta(etamwinMAKE_avg), roundto3foreta(etamwout_avg), roundto3foreta(etamwoutEM_avg), roundto3foreta(etamwoutMAKE_avg), roundto3foreta(etawin_avg), roundto3foreta(etawinEM_avg), roundto3foreta(etawinMAKE_avg), roundto3foreta(etawout_avg), roundto3foreta(etawoutEM_avg), roundto3foreta(etawoutMAKE_avg), modelname ) )
     #
+    #
+    #
     # 9:
     # 9:
     print( "HLatex8: ModelName & $l_{\\rm{}H}$ & $l^{\\rm{}EM}_{\\rm{}H}$ & $l^{\\rm{}MAKE}_{\\rm{}H}$ & $l_{\\rm{}j}$ & $l^{\\rm{}EM}_j$ & $l^{\\rm{}MAKE}_{\\rm{}j}$ & $l^{\\rm{}local}_{\\rm{}j,o}$ & $l_{\\rm{}j+mw,o}$ & $l^{\\rm{}local}_{\\rm{}j+mw,o}$ & $l_{\\rm{}j+w,o}$ & $l^{\\rm{}local}_{\\rm{}j+w,o}$ & $l_{\\rm{}NT}$ \\\\" )
     print( "VLatex8: %s         & %g               & %g                           & %g                             & %g                & %g                   & %g                             & %g                                & %g                     & %g                                   & %g &                  %g                                    & %g                 \\\\ %% %s" % (truemodelname, roundto3forl(lbh_avg), roundto3forl(lbhEM_avg), roundto3forl(lbhMAKE_avg), roundto3forl(lj_avg), roundto3forl(ljEM_avg), roundto3forl(ljMAKE_avg), roundto3forl(ljlocal_avg), roundto3forl(lj_avg + lmwout_avg), roundto3forl(ljlocal_avg + lmwoutlocal_avg), roundto3forl(lj_avg + lwout_avg), roundto3forl(ljlocal_avg + lwoutlocal_avg), roundto3forl(lnt), modelname ) )
+    #
+    # s-version of Latex8 gives this Latex15 version -- replaces need for Latex8 and Latex9
+    print( "HLatex15: ModelName & $s_{\\rm{}H}$ & $s^{\\rm{}EM}_{\\rm{}H}$ & $s^{\\rm{}MAKE}_{\\rm{}H}$ & $s_{\\rm{}j}$ & $s^{\\rm{}EM}_j$ & $s^{\\rm{}MAKE}_{\\rm{}j}$ & $s^{\\rm{}local}_{\\rm{}j,o}$ & $s_{\\rm{}j+mw,o}$ & $s^{\\rm{}local}_{\\rm{}j+mw,o}$ & $s_{\\rm{}j+w,o}$ & $s^{\\rm{}local}_{\\rm{}j+w,o}$ & $s_{\\rm{}NT}$ \\\\" )
+    print( "VLatex15: %s         & %g               & %g                           & %g                             & %g                & %g                   & %g                             & %g                                & %g                     & %g                                   & %g &                  %g                                    & %g                 \\\\ %% %s" % (truemodelname, roundto3forl(sbh_avg), roundto3forl(sbhEM_avg), roundto3forl(sbhMAKE_avg), roundto3forl(sj_avg), roundto3forl(sjEM_avg), roundto3forl(sjMAKE_avg), roundto3forl(sjlocal_avg), roundto3forl(sj_avg + smwout_avg), roundto3forl(sjlocal_avg + smwoutlocal_avg), roundto3forl(sj_avg + swout_avg), roundto3forl(sjlocal_avg + swoutlocal_avg), roundto3forl(snt), modelname ) )
     #
     #
     # 12:
@@ -11436,7 +11502,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     # 7:
     print( "HLatex10: ModelName  & $s_{\\rm{}H}$ & $s_{\\rm{}j}$   & $s_{\\rm{}mw,i}$ & $s_{\\rm{}mw,o}$    & $s_{\\rm{}w,i}$ & $s_{\\rm{}w,o}$    & $s_{\\rm{}NT}$ \\\\" )
-    print( "VLatex10: %s         & %g & %g   & %g & %g    & %g & %g    & %g \\\\ %% %s" % (truemodelname, roundto2(djdtnormbh), roundto2(djdtnormj), roundto2(djdtnormmwin), roundto2(djdtnormmwout), roundto2(djdtnormwin), roundto2(djdtnormwout), roundto2(djdtnormnt), modelname ) )
+    print( "VLatex10: %s         & %g & %g   & %g & %g    & %g & %g    & %g \\\\ %% %s" % (truemodelname, roundto2(sbh_avg), roundto2(sj_avg), roundto2(smwin_avg), roundto2(smwout_avg), roundto2(swin_avg), roundto2(swout_avg), roundto2(snt), modelname ) )
     sys.stdout.flush()
     #
     #
@@ -11616,7 +11682,6 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     if iti > fti:
         print( "incomplete output: %g %g" % (iti, fti) )
     #
-    #roundto2(djdtnormbh), roundto2(djdtnormj), roundto2(djdtnormmwin), roundto2(djdtnormmwout), roundto2(djdtnormwin), roundto2(djdtnormwout), roundto2(djdtnormnt)
     #
     # 13:
     print( "HLatex11: ModelName & $\\Upsilon_{\\rm{}H}$ & $\\Upsilon_{\\rm{}in,i}$ & $\\Upsilon_{\\rm{}in,o}$ & $\\Upsilon_{\\rm{}j}$   & $\\Upsilon_{\\rm{}mw,i}$ & $\\Upsilon_{\\rm{}mw,o}$ & $\\Upsilon_{\\rm{}w,i}$ & $\\Upsilon_{\\rm{}w,o}$    &  $\\left|\\frac{\\Psi_{\\rm{}H}}{\\Psi_1(t=0)}\\right|$ & $\\left|\\frac{\\Psi_{\\rm{}H}}{\\Psi_2(t=0)}\\right|$ & $\\left|\\frac{\\Psi_{\\rm{}H}}{\\Psi_3(t=0)}\\right|$ & $\\left|\\frac{\\Psi_{\\rm{}H}}{\\Psi_a}\\right|$ & $\\left|\\frac{\\Psi_{\\rm{}H}}{\\Psi_s}\\right|$ & $\\left|\\frac{\\Phi_{\\rm{}H}}{\\Psi_{\\rm{}fH}}\\right|$ \\\\" )
@@ -12666,6 +12731,13 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         else:
             print( "HLatex13: ModelName & $r^{\\rm{}w}_{\\rm{}i}$ & $r^{\\rm{}w}_{\\rm{}o}$ & $\\dot{M}_{\\rm{}in}-\\dot{M}_{\\rm{}H}$ & $\\dot{M}_{\\rm{}mw}$ & $\\dot{M}_{\\rm{}w}$ & $\\eta^{\\rm{}EM}_{\\rm{}mw}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}mw}$ & $\\eta_{\\rm{}w}$ & $l_{\\rm{}mw}$  & $l_{\\rm{}w}$   \\\\" )
             print( "VLatex13: %s        & %g                      & %g                      & %s                                        & %s                    & %s                   & %s                            & %s                              & %s                & %s              & %s              \\\\ %% %s" % (truemodelname, roundto2(rfitin3),roundto2(rfitout3),roundto2fit(mdin_vsr_fit[0],mdin_vsr_fitsigma[0],mdin_vsr_fitgoodness[0]),roundto2fit(mdmwind_vsr_fit[0],mdmwind_vsr_fitsigma[0],mdmwind_vsr_fitgoodness[0]),roundto2fit(mdwind_vsr_fit[0],mdwind_vsr_fitsigma[0],mdwind_vsr_fitgoodness[0]),roundto2fit(etamwEM_vsr_fit[0],etamwEM_vsr_fitsigma[0],etamwEM_vsr_fitgoodness[0]),roundto2fit(etamwMAKE_vsr_fit[0],etamwMAKE_vsr_fitsigma[0],etamwMAKE_vsr_fitgoodness[0]),roundto2fit(etaw_vsr_fit[0],etaw_vsr_fitsigma[0],etaw_vsr_fitgoodness[0]), roundto2fit(letamw_vsr_fit[0],letamw_vsr_fitsigma[0],letamw_vsr_fitgoodness[0]),roundto2fit(letaw_vsr_fit[0],letaw_vsr_fitsigma[0],letaw_vsr_fitgoodness[0]) , modelname ) )
+        #
+        ##################
+        # 14 is reduced version of original 12+13
+        # avoid fits for 2D models and MB09D model that have poor fits
+        if nz>1 and modelname!="runlocaldipole3dfiducial":
+            print( "HLatex14: ModelName & $r^{\\rm{}dc}_{\\rm{}i}$ & $r^{\\rm{}dc}_{\\rm{}o}$ & $r^{\\rm{}dc}_{\\rm{}f}$ & $r^{\\rm{}dc}_{\\rm{}s}$ & $\\rho$ & $p_g$ & $|b|$ & $r^{\\rm{}w}_{\\rm{}i}$ & $r^{\\rm{}w}_{\\rm{}o}$ & $\\dot{M}_{\\rm{}in-H}$ & $\\dot{M}_{\\rm{}mw}$ & $\\dot{M}_{\\rm{}w}$  \\\\" )
+            print( "VLatex14: %s        & %g                       & %g                       & %g                       & %s                       & %s      & %s    & %s      & %g                    & %g                      & %s                      & %s                    & %s                    \\\\ %% %s" % (truemodelname, roundto2(rfitin2),roundto2(rfitout2),roundto2(rfitout6),roundto2(rstagreport),roundto2fit(rhosrhosqdcden_vsr_fit[0],rhosrhosqdcden_vsr_fitsigma[0],rhosrhosqdcden_vsr_fitgoodness[0]),roundto2fit(ugsrhosqdcden_vsr_fit[0],ugsrhosqdcden_vsr_fitsigma[0],ugsrhosqdcden_vsr_fitgoodness[0]),roundto2fit(brhosqdcden_vsr_fit[0],brhosqdcden_vsr_fitsigma[0],brhosqdcden_vsr_fitgoodness[0]),roundto2(rfitin3),roundto2(rfitout3),roundto2fit(mdin_vsr_fit[0],mdin_vsr_fitsigma[0],mdin_vsr_fitgoodness[0]),roundto2fit(mdmwind_vsr_fit[0],mdmwind_vsr_fitsigma[0],mdmwind_vsr_fitgoodness[0]),roundto2fit(mdwind_vsr_fit[0],mdwind_vsr_fitsigma[0],mdwind_vsr_fitgoodness[0]) , modelname ) )
         #
         #
         #
@@ -14706,7 +14778,6 @@ def mkinitfinalplot():
     # INIT/FINAL type PLOT
     #
     #
-    numcontours=60
     aphipow=1.0
     #
     for firstlast in np.arange(2,-1,-1):
@@ -14733,6 +14804,8 @@ def mkinitfinalplot():
             #
             inputlevs=None
         #
+        # default
+        numcontours=60
         #
         if firstlast==0:
             print("Outputting init1"); sys.stdout.flush()
@@ -14764,7 +14837,13 @@ def mkinitfinalplot():
         if firstlast==1 or firstlast==2:
             # Only doing non-initstremaline.  init streamline dies with memory issue if density=8
             # inputlevs=None so independent contours from initplot
-            returnlevsstream=mkstreamplotprepost(fname=fnamestream,inputlevs=None,numcontours=numcontours,aphipow=aphipow)
+            # default
+            showuu1eq0=True
+            if firstlast==1:
+                numcontours=30 # less contours for field lines
+                showuu1eq0=False
+            #
+            returnlevsstream=mkstreamplotprepost(fname=fnamestream,inputlevs=None,numcontours=numcontours,aphipow=aphipow,showuu1eq0=showuu1eq0)
     # end over firstlast loop
 
 
@@ -15053,7 +15132,7 @@ def vminmax_entropy(qty=None):
 
 
 
-def mkstreamplotprepost(fname=None,veldensity=8,inputlevs=None,numcontours=30,aphipow=1.0):
+def mkstreamplotprepost(fname=None,veldensity=8,inputlevs=None,numcontours=30,aphipow=1.0,showuu1eq0=True):
     # stream plot
     forceeqsym=0
     #mylen = 30
@@ -15095,7 +15174,7 @@ def mkstreamplotprepost(fname=None,veldensity=8,inputlevs=None,numcontours=30,ap
     Btrue=np.copy(B)
     uutrue=uu
     #      
-    returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=bsq,rho=rho,uu=uu,lenx=finallenx,leny=finalleny,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname=fname,veldensity=veldensity,signaphi=signaphi,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,dojonwindplot=1)
+    returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=bsq,rho=rho,uu=uu,lenx=finallenx,leny=finalleny,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname=fname,veldensity=veldensity,signaphi=signaphi,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,dojonwindplot=1,showuu1eq0=showuu1eq0)
     #
     # since could have modified B, fix back
     B=np.copy(Btrue)
@@ -16538,26 +16617,33 @@ def mkmovie(framesize=50, domakeavi=False):
         levelfieldlinefile=re.sub("dumps/","",levelfieldlinefile)
         rfd(levelfieldlinefile)
     #
-    #########
-    inputlevs=None
-    # compute
-    mkinitfinalplotpre1()
+    # DEBUG: Avoid initfinal and stream unless specifically wanted
+    skip1gen=0
+    skip2gen=1
+    skip3gen=1
     #
-    # get information to setup levels if required
-    if inputlevs==None:
-        aphijetouter=mkinitfinalplotpre2(whichlevs=1)
+    if skip2gen==0: 
+        #########
+        inputlevs=None
+        # compute
+        mkinitfinalplotpre1()
+        #
+        # get information to setup levels if required
+        if inputlevs==None:
+            aphijetouter=mkinitfinalplotpre2(whichlevs=1)
+        #
+        # outputs file, but just name fake file because just using it to get contours -- will repeat in loop below
+        # plottype as firstlast=1 meaning no funny redefinitin of z-range for any plots
+        returnlevsinitfinal=mkinitfinalplotpost(fname="fake_%d_%d" % (whichi,whichn) ,plottype=2,aphijetouter=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow)
+        #
+        # now have levels as inputlevs and aphijetouter for that contour line
+        inputlevsinitfinal=returnlevsinitfinal
+        #
+        #
+        veldensity=2 # only applies to fakestream below -- so quick since don't care about the stream result.
+        returnlevsstream=mkstreamplotprepost(fname="fakestream_%d_%d" % (whichi,whichn),veldensity=veldensity,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow)
+        inputlevsstream=returnlevsstream
     #
-    # outputs file, but just name fake file because just using it to get contours -- will repeat in loop below
-    # plottype as firstlast=1 meaning no funny redefinitin of z-range for any plots
-    returnlevsinitfinal=mkinitfinalplotpost(fname="fake_%d_%d" % (whichi,whichn) ,plottype=2,aphijetouter=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow)
-    #
-    # now have levels as inputlevs and aphijetouter for that contour line
-    inputlevsinitfinal=returnlevsinitfinal
-    #
-    #
-    veldensity=2 # only applies to fakestream below -- so quick since don't care about the stream result.
-    returnlevsstream=mkstreamplotprepost(fname="fakestream_%d_%d" % (whichi,whichn),veldensity=veldensity,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow)
-    inputlevsstream=returnlevsstream
     #
     lenflist=len(flist)
     #
@@ -16596,13 +16682,20 @@ def mkmovie(framesize=50, domakeavi=False):
         skip2=(dontloadfiles == False and os.path.isfile("initfinal%04d.png" % (filenum)))
         skip3=(dontloadfiles == False and os.path.isfile("stream%04d.png" % (filenum)))
         #
+        # Avoid initfinal and stream unless specifically wanted
+        if skip1gen==1:
+            skip1=skip1gen
+        if skip2gen==1:
+            skip2=skip2gen
+        if skip3gen==1:
+            skip3=skip3gen
+        #
+        #
+        #
         if skip1 and skip2 and skip3:
             print("Fully skipped: %s",fname)
             continue
         #
-        # DEBUG: Avoid initfinal and stream unless specifically wanted
-        skip2=1
-        skip3=1
         #
         ############
         # load fieldline file
@@ -16952,7 +17045,7 @@ def mk2davg():
 
 
 
-def mkstreamplot1(Btrue=None,gdetB=None,bsq=None,rho=None,uu=None,len=30,lenx=None,leny=None,mylenshowx=None,mylenshowy=None,fntsize=24,arrowsize=4,vminforframe=-4,vmaxforframe=0.5,forceeqsym=0,fname=None,veldensity=8,signaphi=1,numcontours=30,inputlevs=None,aphipow=1.0,dojonwindplot=0):
+def mkstreamplot1(Btrue=None,gdetB=None,bsq=None,rho=None,uu=None,len=30,lenx=None,leny=None,mylenshowx=None,mylenshowy=None,fntsize=24,arrowsize=4,vminforframe=-4,vmaxforframe=0.5,forceeqsym=0,fname=None,veldensity=8,signaphi=1,numcontours=30,inputlevs=None,aphipow=1.0,dojonwindplot=0,showuu1eq0=True):
     #
     returnlevs=None
     global B # need to tell this function that B is global because assignment to B is taken as local otherwise
@@ -17001,7 +17094,7 @@ def mkstreamplot1(Btrue=None,gdetB=None,bsq=None,rho=None,uu=None,len=30,lenx=No
         # fix back
         B=np.copy(Btrue)
     #
-    if True:
+    if showuu1eq0==True:
     #if False:
         print("Doing stagnation surface mkstreamplot1") ; sys.stdout.flush()
         istag, jstag, hstag, rstag = getstagparams(bsqorho=bsqorho,uu=uu,doplot=0)
@@ -17070,7 +17163,7 @@ def mkstreamplot1(Btrue=None,gdetB=None,bsq=None,rho=None,uu=None,len=30,lenx=No
         finalleny=leny
         #finallen=2.0*mylen
         # useblank=True causes field lines to stop tracing when they get closer together at slightly larger distances.  
-        returnlevs=mkframe("myframe",doaphiavg=False,doaphi=True,dostreamlines=False,useblank=False,len=finallen,lenx=finallenx,leny=finalleny,ax=axnew,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=vminforframe,vmax=vmaxforframe,dobhfield=8,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.01,dsval=0.01,color='r',lw=2,startatmidplane=True,domidfield=False,showjet=False,arrowsize=arrowsize,forceeqsym=forceeqsym,signaphi=signaphi,numcontours=numcontours,inputlevs=inputlevs,aphipow=aphipow,dojonwindplot=dojonwindplot)
+        returnlevs=mkframe("myframe",doaphiavg=False,doaphi=True,dostreamlines=False,useblank=False,len=finallen,lenx=finallenx,leny=finalleny,ax=axnew,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=vminforframe,vmax=vmaxforframe,dobhfield=8,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.01,dsval=0.01,color='r',lw=2,startatmidplane=True,domidfield=False,showjet=False,arrowsize=arrowsize,forceeqsym=forceeqsym,signaphi=signaphi,numcontours=numcontours,inputlevs=inputlevs,aphipow=aphipow,dojonwindplot=dojonwindplot,showuu1eq0=showuu1eq0)
         #
         # fix back
         B=np.copy(Btrue)

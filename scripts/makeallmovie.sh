@@ -17,16 +17,19 @@
 #dircollecttoroidal='thickdiskr3 thickdisk17 thickdisk10 thickdiskr15 thickdisk3 thickdiskhr3'
 
 # ALL:
-dircollect='thickdisk7 thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.like8 thickdiskrr2 run.liker2butbeta40 run.liker2 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 thickdiskr2 run.liker1 thickdisk9 thickdiskr3 thickdisk17 thickdisk10 thickdiskr15 thickdisk3 thickdiskhr3 runlocaldipole3dfiducial blandford3d_new sasham9 sasham5 sasha0 sasha1 sasha2 sasha5 sasha9b25 sasha9b50 sasha9b100 sasha9b200 sasha99'
+#dircollect='thickdisk7 thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.like8 thickdiskrr2 run.liker2butbeta40 run.liker2 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 thickdiskr2 run.liker1 thickdisk9 thickdiskr3 thickdisk17 thickdisk10 thickdiskr15 thickdisk3 thickdiskhr3 runlocaldipole3dfiducial blandford3d_new sasham9 sasham5 sasha0 sasha1 sasha2 sasha5 sasha9b25 sasha9b50 sasha9b100 sasha9b200 sasha99'
+dircollect='thickdisk7 thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.like8 thickdiskrr2 run.liker2butbeta40 run.liker2 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 thickdiskr2 run.liker1 thickdisk9 thickdiskr3 thickdisk17 thickdisk10 thickdiskr15 thickdisk3 thickdiskhr3 runlocaldipole3dfiducial blandford3d_new sasham9full2pi sasham5 sasha0 sasha1 sasha2 sasha5 sasha9b25 sasha9b50 sasha9b100 sasha9b200 sasha99'
 
 
 # note that thickdisk1 is actually bad, so ignore it.
 # can choose so do runs in different order than collection.
 #dirruns=$dircollect
 # do expensive thickdisk7 and sasha99 last so can test things
-dirruns='thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.like8 thickdiskrr2 run.liker2butbeta40 run.liker2 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 thickdiskr2 run.liker1 thickdisk9 thickdiskr3  thickdisk17 thickdisk10 thickdisk15 thickdiskr15 thickdisk2 thickdisk3 thickdiskhr3 runlocaldipole3dfiducial blandford3d_new sasham9 sasham5 sasha0 sasha1 sasha2 sasha5 sasha9b25 sasha9b50 sasha9b100 sasha9b200 sasha99 thickdisk7'
+#dirruns='thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.like8 thickdiskrr2 run.liker2butbeta40 run.liker2 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 thickdiskr2 run.liker1 thickdisk9 thickdiskr3  thickdisk17 thickdisk10 thickdiskr15 thickdisk2 thickdisk3 thickdiskhr3 runlocaldipole3dfiducial blandford3d_new sasham9 sasham5 sasha0 sasha1 sasha2 sasha5 sasha9b25 sasha9b50 sasha9b100 sasha9b200 sasha99 thickdisk7'
 
-#dirruns='sasha99'
+dirruns='thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.like8 thickdiskrr2 run.liker2butbeta40 run.liker2 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 thickdiskr2 run.liker1 thickdisk9 thickdiskr3 thickdisk17 thickdisk10 thickdiskr15 thickdisk3 thickdiskhr3 runlocaldipole3dfiducial blandford3d_new sasham9full2pi sasham5 sasha0 sasha1 sasha2 sasha5 sasha9b25 sasha9b50 sasha9b100 sasha9b200 sasha99 thickdisk7'
+
+#dirruns='thickdisk8'
 
 #dirruns='thickdisk15 thickdiskr15 thickdisk2 thickdisk3 thickdiskhr3 runlocaldipole3dfiducial blandford3d_new sasham9 sasham5 sasha0 sasha1 sasha2 sasha5 sasha9b25 sasha9b50 sasha9b100 sasha9b200 sasha99 thickdisk7'
 
@@ -41,7 +44,7 @@ dirruns='thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.like8 thickdiskrr2 r
 #dirruns='sasha99'
 
 # number of files to keep
-numkeep=300
+numkeep=350
 
 
 EXPECTED_ARGS=20
@@ -145,6 +148,10 @@ do
     if [ "$thedir" == "sasha99" ]
     then
         factor=4
+    fi
+    if [ "$thedir" == "sasham9full2pi" ]
+    then
+        factor=3
     fi
     if [ "$thedir" == "sasham5" ]
     then
@@ -512,8 +519,9 @@ then
     ##############################################
     #
     # Tables:
+    numtbls=15
 
-    for numtbl in `seq 1 13`
+    for numtbl in `seq 1 $numtbls`
     do
 	    echo "Doing Table #: "$numtbl
 
@@ -537,7 +545,7 @@ then
         fi
         if [ $numtbl -eq 4 ]
         then
-            echo "\caption{Magnetic Stress, Grid Cells per MRI Wavelength, and MRI Wavelengths per Disk Height}" >> $fname
+            echo "\caption{Magnetic Stress, Grid Cells per MRI Wavelength, MRI Wavelengths per Disk Height, and Radii for MRI Suppression and Magnetosphere}" >> $fname
         fi
         if [ $numtbl -eq 5 ]
         then
@@ -563,6 +571,10 @@ then
         then
             echo "\caption{Spin-Up Parameter}" >> $fname
         fi
+        if [ $numtbl -eq 15 ]
+        then
+            echo "\caption{Spin-Up Parameter: BH, Jet, Totals, and NT}" >> $fname
+        fi
         if [ $numtbl -eq 11 ]
         then
             echo "\caption{Absolute Magnetic Flux per Rest-Mass Flux and Initial Magnetic Fluxes}" >> $fname
@@ -577,6 +589,10 @@ then
             echo "\caption{Inner and Outer Radii for Least-Square Fits, and Fitted Power-Law Indices for Wind Flow}" >> $fname
         fi
         #
+        if [ $numtbl -eq 14 ]
+        then
+            echo "\caption{Inner and Outer Radii for Least-Square Fits, Disk+Corona Stagnation Radius, and Fitted Power-Law Indices for Disk and Wind Flows}" >> $fname
+        fi
         #
         echo "\begin{center}" >> $fname
         rawnumc=`grep "Latex$numtbl:" tables$moviedirname.tex | sed 's/[HV]Latex$numtbl: //g' | tail -1 | wc | awk '{print $2}'`
@@ -597,7 +613,15 @@ then
         echo $strfinal >> $fname
         echo "\hline" >> $fname
         # if change model names, probably have to change the below
-        egrep "Latex$numtbl:|Latex:" tables$moviedirname.tex | sed 's/\([0-9]\)%/\1\\%/g' | sed 's/[HV]Latex'$numtbl': //g' | sed 's/[HV]Latex: //g' | sed 's/\$\&/$ \&/g'   | sed 's/A0\.94BpN100 /\\\\\nA0\.94BpN100 /g' | sed 's/A-0\.94BfN30 /\\\\\nA-0\.94BfN30 /g' | sed 's/A-0\.94BtN10 /\\\\\nA-0\.94BtN10 /g'  | sed 's/MB09D /\\\\\nMB09D /g'| sed 's/A-0.9N100 /\\\\\nA-0.9N100 /g'  | sed 's/} \&/}$ \&/g' | sed 's/} \\/}$  \\/g' | sed 's/nan/0/g' | sed 's/e+0/e/g' | sed 's/e-0/e-/g'  | column  -t >> $fname
+        #
+        if [ $numtbl -eq 14 ] # fits
+        then
+            # no 2D or MB09D models here
+            egrep "Latex$numtbl:|Latex:" tables$moviedirname.tex | sed 's/\([0-9]\)%/\1\\%/g' | sed 's/[HV]Latex'$numtbl': //g' | sed 's/[HV]Latex: //g' | sed 's/\$\&/$ \&/g'   | sed 's/A0\.94BpN100 /\\\\\nA0\.94BpN100 /g' | sed 's/A-0\.94BfN30 /\\\\\nA-0\.94BfN30 /g' | sed 's/A-0\.94BtN10 /\\\\\nA-0\.94BtN10 /g'  | sed 's/MB09Q /\\\\\nMB09Q /g'| sed 's/A-0.9N100 /\\\\\nA-0.9N100 /g'  | sed 's/} \&/}$ \&/g' | sed 's/} \\/}$  \\/g' | sed 's/nan/0/g' | sed 's/e+0/e/g' | sed 's/e-0/e-/g'  | column  -t >> $fname
+        else
+            egrep "Latex$numtbl:|Latex:" tables$moviedirname.tex | sed 's/\([0-9]\)%/\1\\%/g' | sed 's/[HV]Latex'$numtbl': //g' | sed 's/[HV]Latex: //g' | sed 's/\$\&/$ \&/g'   | sed 's/A0\.94BpN100 /\\\\\nA0\.94BpN100 /g' | sed 's/A-0\.94BfN30 /\\\\\nA-0\.94BfN30 /g' | sed 's/A-0\.94BtN10 /\\\\\nA-0\.94BtN10 /g'  | sed 's/MB09D /\\\\\nMB09D /g'| sed 's/A-0.9N100 /\\\\\nA-0.9N100 /g'  | sed 's/} \&/}$ \&/g' | sed 's/} \\/}$  \\/g' | sed 's/nan/0/g' | sed 's/e+0/e/g' | sed 's/e-0/e-/g'  | column  -t >> $fname
+        fi
+        #
         echo "\hline" >> $fname
         echo "\hline" >> $fname
         echo "\end{tabular}" >> $fname
