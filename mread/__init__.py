@@ -8953,15 +8953,18 @@ if __name__ == "__main__":
             sys.stdout.flush()
             aphi=fieldcalc()
             if fldindex == 0:
-                maxaphi = 3*3*3.2 #aphi.max()
+                maxaphi = (5*10)**0.5*3*3*3.2 #aphi.max()
             #fig=plt.figure(1,figsize=(10,10))
             #plt.clf()
             #ax = fig.add_subplot(111, aspect='equal')
             numc=30
-            #plco(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,numc)*maxaphi/np.float(numc))
             cvel()
-            plco(lrho,cb=True,levels=np.arange(1,10),xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,10);plt.ylim(-5,5)
-            plt.title("t=%3.3g" % t,    fontsize=16, color='k')
+            plco(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,numc)*maxaphi/np.float(numc),colors='k')
+            cts=plc(bsq/rho,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,5.5,0.5))
+            cbar=plt.colorbar(cts)
+            cbar.ax.set_ylabel(r'$b^2\!/\rho$',fontsize=16)
+            #plco(lrho,cb=True,levels=np.arange(1,10),xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,10);plt.ylim(-5,5)
+            plt.title(r"$b^2\!/\rho=5\times10^3$, t=%3.3g" % t,    fontsize=16, color='k')
             #draw NS
             ax=plt.gca()
             ax.set_aspect('equal')   
