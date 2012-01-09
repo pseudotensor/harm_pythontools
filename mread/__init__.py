@@ -8836,7 +8836,7 @@ if __name__ == "__main__":
         #print epsFm, epsFke
         mkmovie(prefactor=100.,sigma=1500.,usegaussianunits=True,domakeframes=domakeframes)
         #mkmovie(prefactor=100.,usegaussianunits=True,domakeframes=domakeframes)
-    if True:
+    if False:
         #fig2 with grayscalestreamlines and red field lines
         #mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=False)
         if True: #remove floors
