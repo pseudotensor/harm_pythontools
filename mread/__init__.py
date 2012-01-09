@@ -5942,6 +5942,14 @@ def Risco(a):
     risco = 3 + Z2 - np.sign(a)* ( (3 - Z1)*(3 + Z1 + 2*Z2) )**0.5
     return(risco)
 
+def Ebind(r,a):
+    Eb = 1 - (r**2-2*r+a*r**0.5)/(r*(r**2-3*r+2*a*r**0.5)**0.5)
+    return( Eb )
+
+def Ebindisco(a):
+    Eb = Ebind( Risco(a), a)
+    return( Eb )
+
 def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=False,nsigma=1):
     if usegaussianunits == True:
         unitsfactor = (4*np.pi)**0.5*2*np.pi
@@ -6975,7 +6983,19 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
     fig.patch.set_alpha(1.0)
     fntsize=24
     ax = fig.add_subplot(111, aspect='equal', frameon=frameon)
-    if doenergy==False and False:
+    if dotakeoutfloors:
+        #Do this first, which uses a lot of memory and do the rest after this memory is freed up
+        DFfloor=takeoutfloors(ax=None,doreload=1,dotakeoutfloors=dotakeoutfloors,dofeavg=0,isinteractive=0,writefile=False,doplot=False,aphi_j_val=0, ndim=2, is_output_cell_center = False)
+        #
+        #Find accretion rate
+        #
+        # res = takeoutfloors(doreload=True,isinteractive=0,writefile=False)
+        # a_eta,a_Fm,a_Fe,a_Fl = res
+        avgmem = get2davg(usedefault=1)
+        assignavg2dvars(avgmem)
+        rho = avg_rho
+        bsq = avg_bsq
+    if doenergy==False and True:
         #velocity
         qty=avg_uu
         #
@@ -7028,6 +7048,7 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         if not avg_gdetF[0,0].any():
             #saved face-centered fluxes exist
             is_output_cell_center = True
+            print( "Using gdet*avg_rhouu[1]" )
             enden1=(-gdet*avg_Tud[1,0]-gdet*avg_rhouu[1])*nz
             enden2=(-gdet*avg_Tud[2,0]-gdet*avg_rhouu[2])*nz
             enden=enden1
@@ -7047,13 +7068,6 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
             enden2=(-avg_gdetF[1,1]*nz)
             enden=enden1
             mdden =(-avg_gdetF[0,0]*nz)
-        if dotakeoutfloors:
-            DFfloor=takeoutfloors(ax=None,doreload=1,dotakeoutfloors=dotakeoutfloors,dofeavg=0,isinteractive=0,writefile=False,doplot=False,aphi_j_val=0, ndim=2, is_output_cell_center = False)
-            #subtract rest-mass from total energy flux and flip the sign to get correct direction
-            DFen = DFfloor[1]+DFfloor[0]
-            #pdb.set_trace()
-            enden += DFen[:,:,None]/(_dx2*_dx3)
-            mdden += DFfloor[0][:,:,None]/(_dx2*_dx3)
         en=(enden.cumsum(1)-0.5*enden)*_dx2*_dx3 #subtract half of current cell's density to get cell-centered quantity
         md=(mdden).sum(2).sum(1)*_dx2*_dx3
         #pdb.set_trace()
@@ -7065,6 +7079,7 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         #mdot vs. radius
         #pick out a scalar value at r = 5M
         md=md[iofr(5)]
+        a_Fm=md
         #equatorial trajectory: starts at r = rh, theta = pi/2
         rhor=1+(1-a**2)**0.5
         radval=10.
@@ -7093,35 +7108,43 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         h2[:,0]=h2[:,0]*0-np.pi*1.
         h2[:,-1]=h2[:,-1]*0+np.pi*1.
         #plc(en2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=True,nc=20,isfilled=True)
-        z = np.abs(en2)/np.nanmax(np.abs(en2))
-        minval=1e-2
-        maxval=1
-        lminval=np.log10(minval)
-        lmaxval=np.log10(maxval)
-        nc=4
-        cutval=0.1*minval
-        z[z<cutval]=z[z<cutval]*0+cutval
+        if False: 
+            #normalization by max energy flux so energy flux goes from 0 to 100%
+            z = np.abs(en2)/np.nanmax(np.abs(en2))
+        else:
+            #normalization by mass accretion rate; 2 to account for each hemisphere is half
+            z = 2*np.abs(en2)/a_Fm
+            print md, a_Fm
         # lev_exp = np.arange(np.floor(np.log10(np.nanmin(z))-1),
         #                      np.ceil(np.log10(np.nanmax(z))+1))
-        lev_exp=np.linspace(lminval,lmaxval,nc)
-        levs = np.power(10, lev_exp)
+        #lev_exp=np.linspace(lminval,lmaxval,nc)
+        # levs=[1e-3,1e-2,2e-2]
+        levs = np.array([0.01,1.*Ebindisco(a),2.*Ebindisco(a)])
+        minval=levs[0]
+        maxval=levs[-1]
+        lminval=np.log10(minval)
+        lmaxval=np.log10(maxval)
+        lev_exp = np.log10(levs)
+        cutval=0.1*minval
+        z[z<cutval]=z[z<cutval]*0+cutval
         #plco(z,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=True,nc=20,levels=levs,isfilled=True,norm=colors.LogNorm())
         #palette =  cm.autumn_r #mpl.colors.ListedColormap(['r', 'g', 'b'])
-        palette =  mpl.colors.ListedColormap(['b', 'g', 'y', 'r'])
-        # palette.set_over('red',1.0)
+        palette =  mpl.colors.ListedColormap([ 'blue', 'green', 'yellow','red'])
+        #palette.set_over('red')
         #palette.set_under('blue')
-        ctsf=plc(np.log10(z),xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=False,nc=20,levels=lev_exp,isfilled=True,alpha=0.25,zorder=2,cmap=palette,extend='min') 
-        cts=plc(np.log10(z),xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=False,nc=20,levels=ctsf.levels[0::1],isfilled=False,alpha=0.25,zorder=2,linestyles='solid',linewidths=0.5,colors='r')
+        alpha=0.125
+        ctsf=plc(z,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=False,levels=levs,isfilled=True,alpha=alpha,zorder=2,cmap=palette,extend='both') 
+        cts=plc(z,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=False,levels=ctsf.levels[0::1],isfilled=False,alpha=alpha,zorder=2,linestyles='solid',linewidths=0.5,colors='r')
         # Make a colorbar for the ContourSet returned by the contourf call.
         #ctsf.cmap.set_under('green',-2)
         #ctsf.cmap.set_under('red',1.0)
         cbar = plt.colorbar(ctsf)
-        cbar.ax.set_ylabel('Fraction of energy output',fontsize=fntsize,ha='center')
+        cbar.ax.set_ylabel('Energy outflow efficiency',fontsize=fntsize)
         # Add the contour line levels to the colorbar
         cbar.add_lines(cts)
         print lev_exp
-        tcks=[x for x in lev_exp]
-        labs=['%d%%'%(x*100+0.5) for x in 10**lev_exp]
+        tcks=[x for x in levs]
+        labs=['%d%%'%(x*100+0.5) for x in levs]
         cbar.set_ticks(tcks)
         cbar.set_ticklabels(labs)
         cbar.update_ticks()
@@ -7291,13 +7314,7 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
     if True:
         avg_aphi = fieldcalc(gdetB1=avg_gdetB[0])
         if dotakeoutfloors:
-            #this normalizes avg_phi by Mdot to get dimensionless flux
-            res = takeoutfloors(doreload=True,isinteractive=0,writefile=False)
-            avgmem = get2davg(usedefault=1)
-            a_eta,a_Fm,a_Fe,a_Fl = res
-            assignavg2dvars(avgmem)
-            rho = avg_rho
-            bsq = avg_bsq
+            #normalize avg_phi by Mdot to get dimensionless flux
             phibh = (4*np.pi)**0.5*avg_aphi/a_Fm**0.5
             avg_aphi = phibh
             step=10
@@ -8693,7 +8710,7 @@ def plotflux(doreload=True):
         assignavg2dvars(avgmem)
         rho = avg_rho
         bsq = avg_bsq
-        if False:
+        if True:
             aphi = fieldcalc(gdetB1=avg_gdetB[0])
             aphibh=aphi[iofr(rhor),ny/2,0]
         else:
@@ -8725,7 +8742,7 @@ def plotflux(doreload=True):
     plt.xlim(rhor,20)
     plt.ylim(0,139.99)
     plt.xlabel(r'$r\ [r_g]$',fontsize=20)
-    plt.ylabel(r'$\langle\phi\rangle$',fontsize=22,ha="center")
+    plt.ylabel(r'$\langle\phi(r,\theta=\pi/2)\rangle$        ',fontsize=22,ha="center")
     #plt.legend(loc="upper left",ncol=1)
     leg1=plt.legend(crvlist1,lablist1,loc="upper left",title=r"${\rm Prograde,}\ a=0.9$:",frameon=True,labelspacing=0.15,ncol=1)
     leg2=plt.legend(crvlist2,lablist2,loc="lower right",title=r"${\rm Retrograde,}\ a=-0.9$:",frameon=True,labelspacing=0.15)
