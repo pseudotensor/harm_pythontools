@@ -7045,7 +7045,7 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         #FLR: here replace this with actual flux of energy: gdetF12 (if non-zero, which means if defined; account for face-location!)
         #     provide interface through takeoutfloors to return "floor-corrected" 2D arrays of mass and energy flows
         #     maybe just make a call to takeoutfloors() (or similar function) that would return energy and mass fluxes
-        if not avg_gdetF[0,0].any():
+        if not avg_gdetF[0,0].any() or a >= 0.89: #hack! to avoid using this for a = 0.9 model
             #saved face-centered fluxes exist
             is_output_cell_center = True
             print( "Using gdet*avg_rhouu[1]" )
