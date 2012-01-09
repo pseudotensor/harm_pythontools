@@ -5658,8 +5658,8 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #pdb.set_trace()
         etajet = pjke_mu2_avg[iofr(rj)]/Fm[iofr(rx)]
         etawind = (pjke_mu1_avg-pjke_mu2_avg)[iofr(rj)]/Fm[iofr(rx)]
-        foutpower.write( "%15s & $%g$ &\t $%d\\pm%d$ &\t $%d$ &\t $%s$ &\t $%d\\times%d\\times%d$ &\t $%d$ &\t $%g$ &\t $%g$ &\t $%g$ &\t $%g$ &\t $%d$ &\t $(%d; %d)$ &\t $(%d; %d)$ \\\\ %% %s\n" 
-                         % (pn, a, np.rint(etamean*100.), np.rint(2*etastd*100.), np.rint(betamin), swedge, nxf, nyf, nzf, np.rint(rin), rmax, Rin/rhor, Rout, R0/Rin, rbr, np.rint(simti), np.rint(simtf), np.rint(fti), np.rint(ftf), os.path.basename(os.getcwd())) )
+        foutpower.write( "%15s & $%g$ &\t $%d\\pm%d$ &\t $%d$ &\t $%s$ &\t $%d\\times%d\\times%d$ &\t $%d$ &\t $%g$ &\t $%g$ &\t $%g$ &\t $%d$ &\t $(%d; %d)$ &\t $(%d; %d)$ \\\\ %% %s\n" 
+                         % (pn, a, np.rint(etamean*100.), np.rint(2*etastd*100.), np.rint(betamin), swedge, nxf, nyf, nzf, np.rint(rin), rmax, Rin/rhor, Rout, rbr, np.rint(simti), np.rint(simtf), np.rint(fti), np.rint(ftf), os.path.basename(os.getcwd())) )
         #flush to disk just in case to make sure all is written
         foutpower.flush()
         os.fsync(foutpower.fileno())
