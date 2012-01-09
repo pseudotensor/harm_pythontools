@@ -1509,7 +1509,7 @@ def getdefaulttimes():
 # default2fti and default2ftf: averaging for 
 def getdefaulttimes1():
     #
-    #defaultftf=1e5
+    #defaultftf=1e6
     # not sure how thickdisk5 went further than 13000
     if modelname=="thickdisk7":
         defaultfti=8000
@@ -1517,120 +1517,120 @@ def getdefaulttimes1():
     elif modelname=="thickdisk8":
         defaultfti=8000
         #defaultftf=11000
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="thickdisk11":
         defaultfti=8000
         defaultftf=12000
-        #defaultftf=1e5
+        #defaultftf=1e6
     elif modelname=="thickdisk12":
         defaultfti=8000
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="thickdisk13":
         defaultfti=9000
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="run.like8":
         defaultfti=8000
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="thickdiskrr2":
         defaultfti=8000
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="run.liker2butbeta40":
         defaultfti=8000
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="run.liker2":
         defaultfti=8000
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="thickdisk16":
         defaultfti=8000
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="thickdisk5":
         defaultfti=8000
         defaultftf=13000
     elif modelname=="thickdisk14":
         defaultfti=8000
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="thickdiskr1":
         defaultfti=8000
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="run.liker1":
         defaultfti=8000
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="thickdiskr2":
         defaultfti=8000
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="thickdisk9":
         defaultfti=8000
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="thickdiskr3":
         defaultfti=30000
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="thickdisk17":
-        defaultfti=30000
-        defaultftf=1e5
+        defaultfti=40000
+        defaultftf=1e6
     elif modelname=="thickdisk10":
         defaultfti=30000
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="thickdisk15":
         defaultfti=35000
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="thickdiskr15":
         defaultfti=80000
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="thickdisk2":
         defaultfti=35000 # not good enough, and avoiding this run
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="thickdisk3":
         defaultfti=35000
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="thickdiskhr3": # probably want to be same as for "thickdisk3"
         defaultfti=35000
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="runlocaldipole3dfiducial":
         # limited over range for disk turbulence to have not decayed much, but sufficiently long so see phibh/phia\sim 1
         defaultfti=2000
         defaultftf=3000
     elif modelname=="blandford3d_new":
         defaultfti=1500
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="sasham9":
         defaultfti=8000
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="sasham9full2pi":
         defaultfti=8000
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="sasham5":
         defaultfti=8000
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="sasha0":
         defaultfti=8000
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="sasha1":
         defaultfti=8000
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="sasha2":
         defaultfti=8000
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="sasha5":
         defaultfti=8000
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="sasha9b25":
         defaultfti=8000
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="sasha9b50":
         defaultfti=8000
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="sasha9b100":
         defaultfti=8000
-        defaultftf=1e5
+        defaultftf=1e6
     elif modelname=="sasha9b200":
-        defaultfti=8000
-        defaultftf=1e5
+        defaultfti=16000
+        defaultftf=1e6
     elif modelname=="sasha99":
         defaultfti=8000
-        defaultftf=1e5
+        defaultftf=1e6
     else:
         defaultfti=1000
-        defaultftf=1e5
+        defaultftf=1e6
     #
     return defaultfti,defaultftf
 
@@ -3870,7 +3870,151 @@ def setupframe(gs=3,loadq=0,which=1):
     #
 
 
+def maketsuniform(toplot=None):
+    # toplot[time,space] has assumed to have space dimension processed, but time needs to be processed to account for non-uniform fieldline sampling.
+    # plt.imshow doesn't interpolate.  Could interpolate to correct time, but same as just removing extra time data up to point where fieldline sampling is fixed.  So just remove those extra time data.
+    #
+    # detect late-time sampling rate
+    dtsample1 = ts[-3] - ts[-4]
+    dtsample2 = ts[-4] - ts[-5]
+    dtsample = 0.5*(dtsample1+dtsample2)
+    print("dtsample=%g" % (dtsample)) ; sys.stdout.flush()
+    #
+    ###################
+    # get number of subsamples
+    numsubtics=0
+    for tic in ts:
+        tici=np.where(ts==tic)[0]
+        #
+        if tici==0:
+            dog=1 # skip
+        elif tici==len(ts)-1:
+            dog=1 # skip
+        else:
+            dtsamplenow=ts[tici]-ts[tici-1]
+            if np.fabs(dtsamplenow-dtsample)>dtsample*0.5 and dtsamplenow>dtsample:
+                print("SUBSAMPLE: tici=%d ts[tici]=%g dtsample=%g dtsamplenow=%g" % (tici,ts[tici],dtsample,dtsamplenow)) ; sys.stdout.flush()
+                # thickdisk7 has sub samples:
+                #SUBSAMPLE: tici=1000 ts[tici]=2404 dtsample=3.99902 dtsamplenow=7.99902
+                #SUBSAMPLE: tici=2599 ts[tici]=8804 dtsample=3.99902 dtsamplenow=8.00098
+                #SUBSAMPLE: tici=2873 ts[tici]=9904 dtsample=3.99902 dtsamplenow=8.00098
+                numsubtics=numsubtics+1
+            #
+        #
+    #
+    print("lents=%d numsubtics=%d" % (len(ts),numsubtics))  ; sys.stdout.flush()
+    #
+    ############ fill-in missing places where subtics are
+    if numsubtics>0:
+        # setup new array space
+        newlentssub=len(ts)+numsubtics
+        toplotnewsub=np.zeros((newlentssub,nx),dtype=toplot.dtype)
+        tsnewsub=np.zeros(newlentssub,dtype=ts.dtype)
+        #
+        #
+        newtici=0
+        for tici in np.arange(0,len(ts)): # over old ts tici's
+            #
+            if tici==0:
+                toplotnewsub[newtici,:]=toplot[tici,:]
+                tsnewsub[newtici]=ts[tici]
+                newtici=newtici+1
+            elif tici==len(ts)-1:
+                toplotnewsub[newtici,:]=toplot[tici,:]
+                tsnewsub[newtici]=ts[tici]
+                newtici=newtici+1
+            else: # fill-in subsamples
+                dtsamplenow=ts[tici]-ts[tici-1]
+                if np.fabs(dtsamplenow-dtsample)>dtsample*0.5 and dtsamplenow>dtsample:
+                    print("FILLSUBSAMPLE: tici=%d ts[tici]=%g dtsample=%g dtsamplenow=%g" % (tici,ts[tici],dtsample,dtsamplenow)) ; sys.stdout.flush()
+                    toplotnewsub[newtici,:]=toplot[tici,:]
+                    tsnewsub[newtici]=ts[tici]-dtsample # iterate ts as required (already jumped to bad time, so just back a bit
+                    newtici=newtici+1
+                    toplotnewsub[newtici,:]=toplot[tici,:] # duplicate data
+                    tsnewsub[newtici]=ts[tici] # iterate ts as required
+                    newtici=newtici+1
+                else:
+                    toplotnewsub[newtici,:]=toplot[tici,:]
+                    tsnewsub[newtici]=ts[tici]
+                    newtici=newtici+1
+                #
+                #
+            #
+    else:
+        # just copy if no subtics
+        toplotnewsub=toplot
+        tsnewsub=ts
+        newlentssub=len(ts)
+    #
+    print("newlentssub=%d newtici=%d" % (newlentssub,newtici))  ; sys.stdout.flush()
+    #
+    #########################################
+    # get time up to which super-sampled (and just confirm no subtics)
+    numsubtics=0
+    supertici=-1
+    for tici in np.arange(0,newlentssub):
+        #
+        if tici==0:
+            dog=1 # skip
+        elif tici==newlentssub-1:
+            dog=1 # skip
+        else:
+            dtsamplenow=tsnewsub[tici]-tsnewsub[tici-1]
+            if np.fabs(dtsamplenow-dtsample)>dtsample*0.5 and dtsamplenow<dtsample: # if current dt and late-time dt are different by more than 1 time unit
+                # keep updating supertic until last tici
+                supertici=tici
+                print("SUPERSAMPLE: tici=%d tsnewsub[tici]=%g dtsample=%g dtsamplenow=%g" % (tici,tsnewsub[tici],dtsample,dtsamplenow)) ; sys.stdout.flush()
+            #
+            elif np.fabs(dtsamplenow-dtsample)>dtsample*0.5 and dtsamplenow>dtsample:
+                print("BADSUBSAMPLE: tici=%d tsnewsub[tici]=%g dtsample=%g dtsamplenow=%g" % (tici,tsnewsub[tici],dtsample,dtsamplenow)) ; sys.stdout.flush()
+                numsubtics=numsubtics+1
+            #
+        #
+    #
+    print("supertici=%d lents=%d BADnumsubtics=%d" % (supertici,len(ts),numsubtics))  ; sys.stdout.flush()
+    #
+    ##############################
+    # setup new array space (as if sub was original input)
+    newlents=newlentssub-supertici/2+1
+    toplotnew=np.zeros((newlents,nx),dtype=toplotnewsub.dtype)
+    tsnew=np.zeros(newlents,dtype=tsnewsub.dtype)
+    #
+    # add to new space
+    if supertici!=-1:
+        newtici=0
+        for tici in np.arange(0,newlentssub):
+            if tici==0:
+                tsnew[newtici]=tsnewsub[tici]
+                newtici=newtici+1 # iterate new tici
+            elif tici<=supertici:
+                if tici%2==1: # only include data if odd tici
+                    toplotnew[newtici,:]=toplotnewsub[tici,:]
+                    tsnew[newtici]=tsnewsub[tici]
+                    newtici=newtici+1
+            else:
+                # normal data at correct sampling period
+                toplotnew[newtici,:]=toplotnewsub[tici,:]
+                tsnew[newtici]=tsnewsub[tici]
+                newtici=newtici+1
+            #
+        #
+        # can end-up with 1 extra left over to do
+        print("newtici=%d newlents=%d" % (newtici,newlents)) ; sys.stdout.flush()
+        if newtici+1==newlents:
+            toplotnew[newtici,:]=toplotnew[newtici-1,:]
+            tsnew[newtici]=tsnewsub[newtici-1]+dtsample
+
+    #
+    return(tsnew,toplotnew)
+
+
+
 def finishframe(cb=1,label=1,tight=1,useextent=1,uselim=1,testdpiinches=0,toplot=None,extent=None,vmin=None,vmax=None,which=1,mintoplot=-6,maxtoplot=1,filenum=None,fileletter=None,pllabel="",maxbsqorho=None,maxbsqou=None,radius=None):
+    #
+    # make time uniformly stepping
+    tsnew,toplotnew=maketsuniform(toplot=toplot)
+    #
+    #
     #
     palette=cm.jet
     palette.set_bad('k', 1.0)
@@ -3878,9 +4022,9 @@ def finishframe(cb=1,label=1,tight=1,useextent=1,uselim=1,testdpiinches=0,toplot
     #palette.set_under('g', 1.0)
     #
     if useextent==1:
-        CS = plt.imshow(toplot, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=mintoplot,vmax=maxtoplot)
+        CS = plt.imshow(toplotnew, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=mintoplot,vmax=maxtoplot)
     else:
-        CS = plt.imshow(toplot, vmin=mintoplot,vmax=maxtoplot)
+        CS = plt.imshow(toplotnew, vmin=mintoplot,vmax=maxtoplot)
     #
     if tight==1:
         plt.axis('tight')
@@ -4166,6 +4310,9 @@ def mkthrad(loadq=1,qty=None,filenum=1,fileletter="a",logvalue=1,radius=4,pllabe
     #
     t1d=ts
     #
+    ###############
+    # interpolation from xold (using y-dimension) to xnew (using x-dimension) so that same plotting function can be used
+    #
     # cubic is too aggressive at smoothing in radius if unresolved in time
     #fun = sp.interpolate.interp2d(hnx, t1d, fun0) #,kind='cubic')
     #funnew=fun(h1d,t1d)
@@ -4192,8 +4339,8 @@ def mkthrad(loadq=1,qty=None,filenum=1,fileletter="a",logvalue=1,radius=4,pllabe
     #
     #
     print("mkthrad (radius=%g): num=%d let=%s" % (radius,filenum,fileletter)) ; sys.stdout.flush()
-    
-
+    #
+    #
     setupframe(which=2,gs=3)
     finishframe(which=2,toplot=toplot,extent=extent,cb=1,tight=1,useextent=1,uselim=1,label=1,mintoplot=mintoplot,maxtoplot=maxtoplot,filenum=filenum,fileletter=fileletter,pllabel=pllabel,maxbsqorho=maxbsqorho,maxbsqou=maxbsqou,radius=radius)
     #
@@ -12736,7 +12883,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         # 14 is reduced version of original 12+13
         # avoid fits for 2D models and MB09D model that have poor fits
         if nz>1 and modelname!="runlocaldipole3dfiducial":
-            print( "HLatex14: ModelName & $r^{\\rm{}dc}_{\\rm{}i}$ & $r^{\\rm{}dc}_{\\rm{}o}$ & $r^{\\rm{}dc}_{\\rm{}f}$ & $r^{\\rm{}dc}_{\\rm{}s}$ & $\\rho$ & $p_g$ & $|b|$ & $r^{\\rm{}w}_{\\rm{}i}$ & $r^{\\rm{}w}_{\\rm{}o}$ & $\\dot{M}_{\\rm{}in-H}$ & $\\dot{M}_{\\rm{}mw}$ & $\\dot{M}_{\\rm{}w}$  \\\\" )
+            print( "HLatex14: ModelName & $r^{\\rm{}dc}_{\\rm{}i}$ & $r^{\\rm{}dc}_{\\rm{}o}$ & $r^{\\rm{}dc}_{\\rm{}f}$ & $r^{\\rm{}dc}_{\\rm{}s}$ & $\\rho$ & $p_g$ & $|b|$ & $r^{\\rm{}w}_{\\rm{}i}$ & $r^{\\rm{}w}_{\\rm{}o}$ & $\\dot{M}_{\\rm{}in}-\\dot{M}_{\\rm{}H}$ & $\\dot{M}_{\\rm{}mw}$ & $\\dot{M}_{\\rm{}w}$  \\\\" )
             print( "VLatex14: %s        & %g                       & %g                       & %g                       & %s                       & %s      & %s    & %s      & %g                    & %g                      & %s                      & %s                    & %s                    \\\\ %% %s" % (truemodelname, roundto2(rfitin2),roundto2(rfitout2),roundto2(rfitout6),roundto2(rstagreport),roundto2fit(rhosrhosqdcden_vsr_fit[0],rhosrhosqdcden_vsr_fitsigma[0],rhosrhosqdcden_vsr_fitgoodness[0]),roundto2fit(ugsrhosqdcden_vsr_fit[0],ugsrhosqdcden_vsr_fitsigma[0],ugsrhosqdcden_vsr_fitgoodness[0]),roundto2fit(brhosqdcden_vsr_fit[0],brhosqdcden_vsr_fitsigma[0],brhosqdcden_vsr_fitgoodness[0]),roundto2(rfitin3),roundto2(rfitout3),roundto2fit(mdin_vsr_fit[0],mdin_vsr_fitsigma[0],mdin_vsr_fitgoodness[0]),roundto2fit(mdmwind_vsr_fit[0],mdmwind_vsr_fitsigma[0],mdmwind_vsr_fitgoodness[0]),roundto2fit(mdwind_vsr_fit[0],mdwind_vsr_fitsigma[0],mdwind_vsr_fitgoodness[0]) , modelname ) )
         #
         #
@@ -13558,6 +13705,13 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     whichxaxis=1
     numplots=3
     #
+    ######################################
+    # first ensure time sequence is uniform
+    tsnew,bsqrhosqrad4new=maketsuniform(toplot=bsqrhosqrad4)
+    tsnew,bs3rhosqrad4new=maketsuniform(toplot=bs3rhosqrad4)
+    # 
+    # 
+    #
     for whichfftplot in np.arange(0,numplots):
     #
     #
@@ -13625,20 +13779,20 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             #
             # condition for using data is that is within averaging time range
             if modelname=="thickdisk7":
-                condt = (ts<=ftf)*(ts>=fti)
-                condt = condt*(ts!=ts[-1])
-                condt = condt*(ts>12000.0)
+                condt = (tsnew<=ftf)*(tsnew>=fti)
+                condt = condt*(tsnew!=tsnew[-1])
+                condt = condt*(tsnew>12000.0)
             else:
-                condt = (ts<=ftf)*(ts>=fti)
+                condt = (tsnew<=ftf)*(tsnew>=fti)
                 # often include final data dump even if not part of periodically chosen set, so avoid for this Fourier measure to avoid contamination
-                condt = condt*(ts!=ts[-1])
+                condt = condt*(tsnew!=tsnew[-1])
             #
-            condtfull = (ts>=0.0)
+            condtfull = (tsnew>=0.0)
             #
             #
             ####################
-            xvalue=ts[condt]
-            xvaluefull=ts[condtfull]
+            xvalue=tsnew[condt]
+            xvaluefull=tsnew[condtfull]
             #
             #####################
             # PICK:
@@ -13672,30 +13826,30 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             testfft=0
             if testfft==0:
                 if whichfftplot==0:
-                    yvalue=bsqrhosqrad4[condt,pickjnx] # kinda visible at 8
-                    yvaluefull=bsqrhosqrad4[condtfull,pickjnx] # kinda visible at 8
+                    yvalue=bsqrhosqrad4new[condt,pickjnx] # kinda visible at 8
+                    yvaluefull=bsqrhosqrad4new[condtfull,pickjnx] # kinda visible at 8
                     yvaluefull0=yvaluefull
                     plt.title(r"Power in $b^2$ at $r=4r_g$ in Disk Plane",fontsize=16)
                 elif whichfftplot==1:
-                    yvalue=bsqrhosqrad4[condt,pickjnx] # kinda visible at 8
-                    yvaluefull=bsqrhosqrad4[condtfull,pickjnx] # kinda visible at 8
+                    yvalue=bsqrhosqrad4new[condt,pickjnx] # kinda visible at 8
+                    yvaluefull=bsqrhosqrad4new[condtfull,pickjnx] # kinda visible at 8
                     yvaluefull1=yvaluefull
                     plt.title(r"Power in $b^2$ at $r=4r_g$ at $|h/r|$",fontsize=16)
                 elif whichfftplot==2:
-                    yvalue=bsqrhosqrad4[condt,pickjnx] # kinda visible at 8
-                    yvaluefull=bsqrhosqrad4[condtfull,pickjnx] # kinda visible at 8
+                    yvalue=bsqrhosqrad4new[condt,pickjnx] # kinda visible at 8
+                    yvaluefull=bsqrhosqrad4new[condtfull,pickjnx] # kinda visible at 8
                     yvaluefull2=yvaluefull
                     plt.title(r"Power in $b^2$ at $r=4r_g$ in Jet",fontsize=16)
                 elif whichfftplot==3:
-                    yvalue=bsqrhosqrad4[condt,pickjnx] # kinda visible at 8
-                    yvaluefull=bsqrhosqrad4[condtfull,pickjnx] # kinda visible at 8
+                    yvalue=bsqrhosqrad4new[condt,pickjnx] # kinda visible at 8
+                    yvaluefull=bsqrhosqrad4new[condtfull,pickjnx] # kinda visible at 8
                     yvaluefull1=yvaluefull
                     plt.title(r"Power in $b^2$ at $r=4r_g$ in Jet",fontsize=16)
                 elif whichfftplot==4:
-                    yvalue=bs3rhosqrad4[condt,pickjnx] # 10 very visible (most robust)
+                    yvalue=bs3rhosqrad4new[condt,pickjnx] # 10 very visible (most robust)
                     print("test yvalue")
                     print(yvalue)
-                    yvaluefull=bs3rhosqrad4[condtfull,pickjnx] # 10 very visible (most robust)
+                    yvaluefull=bs3rhosqrad4new[condtfull,pickjnx] # 10 very visible (most robust)
                     yvaluefull2=yvaluefull
                     plt.title(r"Power in $b_\phi^2$ at $r=4r_g$ in Jet",fontsize=16)
                 #
@@ -13724,10 +13878,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             # X:
             #print("normpowerfft")
             #print(normpowerfft)
-            DTavg=ts[condt][-1]-ts[condt][0]
-            dtavg=ts[condt][-1]-ts[condt][-2]
-            DTavgfull=ts[condtfull][-1]-ts[condtfull][0]
-            dtavgfull=ts[condtfull][-1]-ts[condtfull][-2]
+            DTavg=tsnew[condt][-1]-tsnew[condt][0]
+            dtavg=tsnew[condt][-1]-tsnew[condt][-2]
+            DTavgfull=tsnew[condtfull][-1]-tsnew[condtfull][0]
+            dtavgfull=tsnew[condtfull][-1]-tsnew[condtfull][-2]
             nyquistfft=1.0/(2.0*dtavg)
             nyquistfftfull=1.0/(2.0*dtavgfull)
             print("DTavg=%g dtavg=%g nyquistfft=%g" % (DTavg,dtavg,nyquistfft))
@@ -13761,7 +13915,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                 # normalized by total power including period=infinity mode (i.e. average)
                 normpowerfft = np.absolute(Yfft[1:nfft])/np.sum(np.absolute(Yfft[0:nfft]))
                 #normpowerfftfull = np.absolute(Yfftfull[1:nfftfull])/np.sum(np.absolute(Yfftfull[0:nfftfull]))
-                plt.ylabel(r"Power Density",ha='center',labelpad=8,fontsize=16)
+                plt.ylabel(r"Power Density",ha='center',labelpad=10,fontsize=16)
             else:
                 yaverage=np.mean(yvalue)
                 yaveragefull=np.mean(yvaluefull)
@@ -13783,7 +13937,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                 totalrmssqfull=np.sum(normpowerfftfull*dnufull)
                 print("averagefull=%g rmsfull=%g rmsoaveragesqfull=%g resultfull=%g" % (yaveragefull,yrmsfull,(yrmsfull/yaveragefull)**2,totalrmssqfull)) ; sys.stdout.flush()
                 #
-                plt.ylabel(r"Power Density [$({\rm rms}/{\rm mean})^2$ $F^{-1}$]",ha='center',labelpad=8,fontsize=16)
+                plt.ylabel(r"Power Density [$({\rm rms}/{\rm mean})^2$ $F^{-1}$]",ha='center',labelpad=10,fontsize=16)
             #
             ytoplot=normpowerfft
             #
@@ -13928,7 +14082,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             # get equal resolution in frequency and time for this specgram
             #myNFFT=np.int_(np.rint(np.floor(np.sqrt(len(xvaluefull)))/2)*2)
             myNFFT=np.int_(np.rint(np.floor(np.sqrt(len(xvaluefull)))/2)*2)*2
-            #myNFFT=len(ts)/16
+            #myNFFT=len(tsnew)/16
             noverlap=0
             if myNFFT<noverlap-1:
                 noverlap=myNFFT-1
@@ -14100,6 +14254,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     # uses       betamin[findex,1:17]=luminosities()
     numplots=3 # thermal, non-thermal-ug, non-thermal-bsq
     #
+    # GODMARK: Need to resample luminosities
+    #
     for whichfftplot in np.arange(0,numplots):
     #
     #
@@ -14262,7 +14418,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                 # normalized by total power including period=infinity mode (i.e. average)
                 normpowerfft = np.absolute(Yfft[1:nfft])/np.sum(np.absolute(Yfft[0:nfft]))
                 #normpowerfftfull = np.absolute(Yfftfull[1:nfftfull])/np.sum(np.absolute(Yfftfull[0:nfftfull]))
-                plt.ylabel(r"Power Density",ha='center',labelpad=6)
+                plt.ylabel(r"Power Density",ha='center',labelpad=10)
             else:
                 yaverage=np.mean(yvalue)
                 yaveragefull=np.mean(yvaluefull)
@@ -14284,7 +14440,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                 totalrmssqfull=np.sum(normpowerfftfull*dnufull)
                 print("averagefull=%g rmsfull=%g rmsoaveragesqfull=%g resultfull=%g" % (yaveragefull,yrmsfull,(yrmsfull/yaveragefull)**2,totalrmssqfull)) ; sys.stdout.flush()
                 #
-                plt.ylabel(r"Power Density [$({\rm rms}/{\rm mean})^2$ $F^{-1}$]",ha='center',labelpad=6)
+                plt.ylabel(r"Power Density [$({\rm rms}/{\rm mean})^2$ $F^{-1}$]",ha='center',labelpad=10)
             #
             ytoplot=normpowerfft
             #
@@ -14605,6 +14761,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     # FINALPLOTS:
     #
     if dofinalplots==1 and dothradfinalplot==1:
+        # b_\phi vs. \theta and time (have to account for fact that fieldline files have dump period different at early times.)
         # the below changes defaults to rcparams, so leave for last
         bsqorhoha=bsqrhosqrad4/rhosrhosqrad4
         bsqouha=bsqrhosqrad4/ugsrhosqrad4
@@ -15549,7 +15706,7 @@ def plotfluxes(doreload=1):
     if not doreload:
         DU=DU1
         qtymem=qtymem1
-    takeoutfloors(fti=7000,ftf=1e5,
+    takeoutfloors(fti=7000,ftf=1e6,
         ax=ax1,dolegend=False,doreload=doreload,plotldtot=False,lw=2)
     if doreload:
         DU1=DU
@@ -15586,7 +15743,7 @@ def plotfluxes(doreload=1):
     if not doreload:
         DU=DU2
         qtymem=qtymem2
-    takeoutfloors(fti=10300,ftf=1e5,ax=ax2,dolegend=False,doreload=doreload,plotldtot=False,lw=2)
+    takeoutfloors(fti=10300,ftf=1e6,ax=ax2,dolegend=False,doreload=doreload,plotldtot=False,lw=2)
     if doreload:
         DU2=DU
         qtymem2=qtymem
@@ -15839,7 +15996,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     # plt.plot(r[:,0,0],-edtot2davg,label="tot2davg")
     # gc.collect()
 
-def computeeta(start_t=8000,end_t=1e5,numintervals=8,doreload=1):
+def computeeta(start_t=8000,end_t=1e6,numintervals=8,doreload=1):
     #
     defaultfti,defaultftf=getdefaulttimes()
     #
@@ -18873,7 +19030,7 @@ if __name__ == "__main__":
     if False:
         #FIGURE 1 LOTSOPANELS
         fti=7000
-        ftf=1e5
+        ftf=1e6
         epsFm, epsFke = takeoutfloors(doreload=1,fti=fti,ftf=ftf,returndf=1,isinteractive=0)
         #epsFm = 
         #epsFke = 
