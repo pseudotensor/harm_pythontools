@@ -5381,7 +5381,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         Dt = None
         Dno = None
         #lfti = 14215.
-        lfti = 6000.
+        lfti = 8000.
         lftf = 1e5
         pn="A-94BfN30"
         rin = 10
@@ -5396,7 +5396,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         Dt = None
         Dno = None
         #lfti = 14215.
-        lfti = 6000.
+        lfti = 8000.
         lftf = 1e5
         pn="A94BfN30"
         rin = 10
@@ -5411,7 +5411,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         Dt = None
         Dno = None
         #lfti = 14215.
-        lfti = 6000.
+        lfti = 8000.
         lftf = 1e5
         pn="A94BfN30R"
         rin = 10
