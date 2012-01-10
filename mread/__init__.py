@@ -5249,7 +5249,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         rin = 15
         rmax = 34.1
         #simti = 14207.
-        simti = lfti
+        simti = 15000
         simtf = lftf
         betamin=200
     elif np.abs(a - 0.5)<1e-4:
@@ -5383,7 +5383,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #lfti = 14215.
         lfti = 8000.
         lftf = 1e5
-        pn="A-94BfN30"
+        pn="A-0.94BfN30"
         rin = 10
         rmax = 100
         simti = 0.
@@ -5398,7 +5398,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #lfti = 14215.
         lfti = 8000.
         lftf = 1e5
-        pn="A94BfN30"
+        pn="A0.94BfN30"
         rin = 10
         rmax = 100
         simti = 0.
@@ -5413,7 +5413,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #lfti = 14215.
         lfti = 8000.
         lftf = 1e5
-        pn="A94BfN30R"
+        pn="A0.94BfN30r"
         rin = 10
         rmax = 100
         simti = 0.
