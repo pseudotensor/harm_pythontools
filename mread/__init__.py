@@ -76,7 +76,7 @@ def get2davg(fname=None,usedefault=0,whichgroup=-1,whichgroups=-1,whichgroupe=-1
             avgtot = np.zeros_like(avgone)
             ts=avgone[0,0,0]
         tf=avgone[0,1,0]
-        avgtot += avgone
+        avgtot += avgone[:avgtot.shape[0]]
         nitems += avgone[0,2,0]
         n2avg += 1
     avgtot[0,0,0] = ts
