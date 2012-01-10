@@ -8727,11 +8727,11 @@ def plotflux(doreload=True):
         iisco=iofr(risco)
         if dirpath == "/home/atchekho/run/rtf2_15r34.1_betax0.5_0_0_0_2xphi_restart15000" or \
            dirpath == "/home/atchekho/run/rtf2_15r34.1_betax0.5_0_0_0":
-            iof10 = iofr(15)
+            iof10 = iofr(10)
             crv=plt.plot(r[:iof10,ny/2,0],phibh[:iof10,ny/2,0],label=caplist[i],ls=lslist[i],color=clrlist[i],lw=lwlist[i])
         else:
             crv=plt.plot(r[:,ny/2,0],phibh[:,ny/2,0],label=caplist[i],ls=lslist[i],color=clrlist[i],lw=lwlist[i])
-        print a, risco, iisco, r[iisco,ny/2,0], phibh[iisco,ny/2,0] 
+        #print a, risco, iisco, r[iisco,ny/2,0], phibh[iisco,ny/2,0] 
         plt.plot(r[iisco,ny/2,0],phibh[iisco,ny/2,0],'o',color=clrlist[i],lw=lwlist[i])
         if a > 0:
             crvlist1.append(crv)
@@ -8739,7 +8739,7 @@ def plotflux(doreload=True):
         else:
             crvlist2.append(crv)
             lablist2.append(caplist[i])
-    plt.xlim(rhor,20)
+    plt.xlim(rhor,20.-1e-5)
     plt.ylim(0,139.99)
     plt.xlabel(r'$r\ [r_g]$',fontsize=20)
     plt.ylabel(r'$\langle\phi(r,\theta=\pi/2)\rangle$        ',fontsize=22,ha="center")
