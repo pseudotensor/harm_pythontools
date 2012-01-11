@@ -7851,309 +7851,320 @@ def mkmdot(doreload=1,epsFm=None,epsFke=None,fti=None,ftf=None,prefactor=100,sig
         ax34r.set_ylim(ax34.get_ylim())
         ax34r.set_yticks(tck)
 
-def provsretro():
-        grid3d("gdump.bin",use2d=True)
-        #rfd("fieldline0000.bin")
-        #flist = ["avg2d20_0000_0001.npy", "avg2d20_0000_0050.npy","avg2d20_0100_0150.npy","avg2d20_0150_0200.npy","avg2d20_0200_0250.npy"]
-        #flist = ["avg2d20_00.npy", "avg2d20_0080_0100.npy", "avg2d20_0100_0120.npy", "avg2d20_0120_0140.npy", "avg2d20_0140_0156.npy","avg2d20_0080_0157.npy","avg2d20_0080_0157_nf.npy"]
-        #flist = ["avg2d20_0080_0157.npy","avg2d20_0080_0157_nf.npy"]
-        flist = ["avg2d.npy"
-                 #"avg2dnf.npy"
-                 ]
-        #flist = ["avg0.npy", "avg2.npy"]
+def provsretro(dotakeoutfloors=True,doreload=True):
+    global reslist
+    grid3d("gdump.bin",use2d=True)
+    #rfd("fieldline0000.bin")
+    #flist = ["avg2d20_0000_0001.npy", "avg2d20_0000_0050.npy","avg2d20_0100_0150.npy","avg2d20_0150_0200.npy","avg2d20_0200_0250.npy"]
+    #flist = ["avg2d20_00.npy", "avg2d20_0080_0100.npy", "avg2d20_0100_0120.npy", "avg2d20_0120_0140.npy", "avg2d20_0140_0156.npy","avg2d20_0080_0157.npy","avg2d20_0080_0157_nf.npy"]
+    #flist = ["avg2d20_0080_0157.npy","avg2d20_0080_0157_nf.npy"]
+    flist = ["avg2d.npy"
+             #"avg2dnf.npy"
+             ]
+    #flist = ["avg0.npy", "avg2.npy"]
+    plt.figure(1)
+    plt.clf()
+    plt.figure(2)
+    plt.clf()
+    plt.figure(3)
+    plt.clf()
+    plt.figure(4)
+    plt.clf()
+    plt.figure(5)
+    plt.clf()
+    plt.figure(6)
+    plt.clf()
+    plt.figure(7)
+    plt.clf()
+    firsttime=True
+    reslist=[]
+    i=0
+    if dotakeoutfloors:
+        res = takeoutfloors(doreload=doreload,isinteractive=0,writefile=False)
+        reslist.append(res)
+    else:
+        res = reslist[i]
+    a_eta,a_Fm,a_Fe,a_Fl = res
+    for (i,f) in enumerate(flist):
+        print "%s\n" % f
+        avgmem = get2davg(fname=f)
+        assignavg2dvars(avgmem)
+        lab = "(%g,%g)" % (avg_ts[0],avg_te[0])
+        #plot2davg(whichplot=2)
+        #plot Mdot vs. r for region v^r < 0
+        cond = (avg_rhouu[1]<0)
+        mdot_den = gdet[:,:,0:1]*avg_rhouu[1]
+        mdin = intangle( mdot_den*nz, which=cond )
+        mdall = intangle( mdot_den*nz )
+        #xxx
+        #######################
+        #
+        #  FIGURE 1: Mdot
+        #
+        #######################
         plt.figure(1)
-        plt.clf()
+        if firsttime:
+            ax1 = plt.gca()
+        #plt.plot( r[:,0,0], -mdin, ':' )
+        ax1.plot( r[:,0,0], -mdall, '-', label=lab )
+        ax1.set_xscale('log')
+        ax1.set_xlim(rhor,100)
+        ax1.set_ylim(0,20)
+        ax1.set_xlabel(r"$r$",fontsize=16)
+        ax1.set_ylabel(r"$\dot M$",fontsize=16)
+        ax1.grid(b=True)
+        #######################
+        #
+        #  FIGURE 2: u^r
+        #
+        #######################
         plt.figure(2)
-        plt.clf()
+        #plt.clf()
+        if firsttime:
+            ax2 = plt.gca()
+        # #avg over all volume
+        # up = (gdet[:,:,0:1]*avg_rhouu[1]*_dx2*_dx3).sum(-1).sum(-1)
+        # dn = (gdet[:,:,0:1]*avg_rhouu[0]*_dx2*_dx3).sum(-1).sum(-1)/dxdxp[1,1,:,0,0]
+        #avg over midplane
+        up = (gdet[:,ny/2,0]*avg_rhouu[1][:,ny/2,0]*_dx2*_dx3)
+        dn = (gdet[:,ny/2,0]*avg_rho[:,ny/2,0]*_dx2*_dx3)/dxdxp[1,1,:,0,0]
+        uur1d = np.array(up/dn)
+        uurmid = 0.5*(avg_uu[1,:,ny/2,0]+avg_uu[1,:,ny/2-1,0])*dxdxp[1,1,:,0,0]
+        uutmid = 0.5*(avg_uu[0,:,ny/2,0]+avg_uu[0,:,ny/2-1,0])
+        #vurmid = uurmid/uutmid
+        #ax2.plot(r[:,0,0], -ur1d)
+        #ax2.plot(r[:,0,0],-vur1d,'b:')
+        #ax2.plot(r[:,0,0],-uurmid,'b--')
+        ax2.plot(r[:,0,0],-uur1d,'m-', label=(r"$\langle\rho u^r\rangle/\langle\rho\rangle$ at " + lab))
+        ax2.plot(r[:,0,0],-uurmid, label=(r"$\langle u^r\rangle$ at " + lab))
+        #print ur1d.shape
+        #ax2.plot(r[:,0,0],0.1*(r[:,0,0]/10)**(-1.2))
+        ax2.set_ylim(1e-4,1.5)
+        ax2.set_xscale('log')
+        ax2.set_yscale('log')
+        ax2.set_xlim(rhor,100)
+        #ax2.ylim(0,20)
+        ax2.set_xlabel(r"$r$",fontsize=20)
+        ax2.set_ylabel(r"$-u^r$",fontsize=20)
+        ax2.grid(b=True)
+        #######################
+        #
+        #  FIGURE 3: \Sigma
+        #
+        #######################
         plt.figure(3)
-        plt.clf()
-        plt.figure(4)
-        plt.clf()
-        plt.figure(5)
-        plt.clf()
-        plt.figure(6)
-        plt.clf()
-        plt.figure(7)
-        plt.clf()
-        firsttime=True
-        for (i,f) in enumerate(flist):
-            print "%s\n" % f
-            avgmem = get2davg(fname=f)
-            assignavg2dvars(avgmem)
-            lab = "(%g,%g)" % (avg_ts[0],avg_te[0])
-            #plot2davg(whichplot=2)
-            #plot Mdot vs. r for region v^r < 0
-            cond = (avg_rhouu[1]<0)
-            mdot_den = gdet[:,:,0:1]*avg_rhouu[1]
-            mdin = intangle( mdot_den*nz, which=cond )
-            mdall = intangle( mdot_den*nz )
-            #xxx
-            #######################
-            #
-            #  FIGURE 1: Mdot
-            #
-            #######################
-            plt.figure(1)
-            if firsttime:
-                ax1 = plt.gca()
-            #plt.plot( r[:,0,0], -mdin, ':' )
-            ax1.plot( r[:,0,0], -mdall, '-', label=lab )
-            ax1.set_xscale('log')
-            ax1.set_xlim(rhor,100)
-            ax1.set_ylim(0,20)
-            ax1.set_xlabel(r"$r$",fontsize=16)
-            ax1.set_ylabel(r"$\dot M$",fontsize=16)
-            ax1.grid(b=True)
-            #######################
-            #
-            #  FIGURE 2: u^r
-            #
-            #######################
-            plt.figure(2)
-            #plt.clf()
-            if firsttime:
-                ax2 = plt.gca()
-            # #avg over all volume
-            # up = (gdet[:,:,0:1]*avg_rhouu[1]*_dx2*_dx3).sum(-1).sum(-1)
-            # dn = (gdet[:,:,0:1]*avg_rhouu[0]*_dx2*_dx3).sum(-1).sum(-1)/dxdxp[1,1,:,0,0]
-            #avg over midplane
-            up = (gdet[:,ny/2,0]*avg_rhouu[1][:,ny/2,0]*_dx2*_dx3)
-            dn = (gdet[:,ny/2,0]*avg_rho[:,ny/2,0]*_dx2*_dx3)/dxdxp[1,1,:,0,0]
-            uur1d = np.array(up/dn)
-            uurmid = 0.5*(avg_uu[1,:,ny/2,0]+avg_uu[1,:,ny/2-1,0])*dxdxp[1,1,:,0,0]
-            uutmid = 0.5*(avg_uu[0,:,ny/2,0]+avg_uu[0,:,ny/2-1,0])
-            #vurmid = uurmid/uutmid
-            #ax2.plot(r[:,0,0], -ur1d)
-            #ax2.plot(r[:,0,0],-vur1d,'b:')
-            #ax2.plot(r[:,0,0],-uurmid,'b--')
-            ax2.plot(r[:,0,0],-uur1d,'m-', label=(r"$\langle\rho u^r\rangle/\langle\rho\rangle$ at " + lab))
-            ax2.plot(r[:,0,0],-uurmid, label=(r"$\langle u^r\rangle$ at " + lab))
-            #print ur1d.shape
-            #ax2.plot(r[:,0,0],0.1*(r[:,0,0]/10)**(-1.2))
-            ax2.set_ylim(1e-4,1.5)
-            ax2.set_xscale('log')
-            ax2.set_yscale('log')
-            ax2.set_xlim(rhor,100)
-            #ax2.ylim(0,20)
-            ax2.set_xlabel(r"$r$",fontsize=20)
-            ax2.set_ylabel(r"$-u^r$",fontsize=20)
-            ax2.grid(b=True)
-            #######################
-            #
-            #  FIGURE 3: \Sigma
-            #
-            #######################
-            plt.figure(3)
-            #plt.clf()
-            ax = plt.gca()
-            sigval = (gdet[:,:,0:1]*avg_rhouu[0]*_dx2*_dx3*nz).sum(-1).sum(-1)/dxdxp[1,1,:,0,0]*scaletofullwedge(1.)/(2*np.pi*r[:,ny/2,0])
-            plt.plot( r[:,0,0], sigval, label=lab )
-            ax.set_xscale('log')
-            ax.set_yscale('log')
-            plt.xlim(rhor,100000)
-            plt.xlabel(r"$r$",fontsize=16)
-            plt.ylabel(r"$\Sigma$",fontsize=16)
-            plt.grid(b=True)
-            #######################
-            #
-            #  FIGURE 4: Ang. momentum
-            #
-            #######################
-            plt.figure(4)
-            rad=r[:,0,0]
-            #From ST eq. (12.7.18)
-            udphianal = lk( a, rad )
-            risco=Risco(a)
-            udphianal[rad<risco]=lk(a,risco)
-            ax = plt.gca()
-            jin_nmr = (avg_rhouu+avg_uguu+avg_bsquu/2.)[1]*avg_ud[3]/dxdxp[3,3,0,0,0]
-            jin_dnm = (avg_rhouu)[1]
-            jinmid = (jin_nmr/jin_dnm)[:,ny/2,0]
-            jtot_nmr = avg_Tud[1,3]/dxdxp[3,3,0,0,0]
-            jtot_dnm = (avg_rhouu)[1]
-            jtotmid = (jtot_nmr/jtot_dnm)[:,ny/2,0]
-            jinfull = (gdet*jin_nmr).sum(1)/(gdet*jin_dnm).sum(1)
-            isdisk=np.abs(h[:,:,0:1]-np.pi/2)<0.1
-            jtotfull = (gdet[:,:,0:1]*jtot_nmr*isdisk).sum(-1).sum(-1)/(gdet[:,:,0:1]*jtot_dnm*isdisk).sum(-1).sum(-1)
-            jinfull = (gdet[:,:,0:1]*jin_nmr*isdisk).sum(-1).sum(-1)/(gdet[:,:,0:1]*jin_dnm*isdisk).sum(-1).sum(-1)
-            # plt.figure(6)
-            # plt.plot( r[:,0,0], (gdet[:,:,0:1]*jtot_nmr*isdisk).sum(-1).sum(-1))
-            # plt.figure(4)
-            plt.plot( r[:,0,0], jinmid, label=(r"$l_{\rm in}$ for " + lab) )
-            plt.plot( r[:,0,0], jtotmid, label=(r"$l_{\rm tot}$ for " + lab) )
-            # plt.plot( r[:,0,0], jtotfull, label=(r"$l_{\rm tot,full}$ for " + lab) )
-            plt.plot( r[:,0,0], avg_ud[3,:,ny/2,0]/dxdxp[3,3,:,0,0], label=(r"$u_\phi$ for " + lab) )
-            plt.plot( r[:,0,0], udphianal, label=(r"$l_{\rm SS}$") )
-            ax.set_xscale('log')
-            #ax.set_yscale('log')plt.ylim(-40,0)
-
-            plt.xlim(rhor,100)
-            plt.xlabel(r"$r$",fontsize=20)
-            plt.ylabel(r"$l$",fontsize=20)
-            plt.grid(b=True)
-            plt.ylim(-1,10)
-            #######################
-            #
-            #  FIGURE 5: Radial force balance
-            #
-            #######################
-            plt.figure(5)
-            if firsttime:
-                plt.clf()
-            #x1
-            if True:
-                pressureMA=(gam-1)*avg_ug
-                inertiaMA=(avg_rho+gam*avg_ug)*avg_uu[1]*avg_ud[1]
-                pressureEM=avg_bsq/2.-avg_bu[1]*avg_bd[1]
-                inertiaEM=(avg_bsq)*avg_uu[1]*avg_ud[1]
-                fpEM=-dfdx1(pressureEM)[:,ny/2,0] #/dxdxp[1,1,0,0,0]
-                fiEM=-dfdx1(inertiaEM)[:,ny/2,0]
-                fpMA=-dfdx1(pressureMA)[:,ny/2,0] #/dxdxp[1,1,0,0,0]
-                fiMA=-dfdx1(inertiaMA)[:,ny/2,0]
-                #x2
-                pressure2MA=(gam-1)*avg_ug*0
-                inertia2MA=(avg_rho+gam*avg_ug)*avg_uu[2]*avg_ud[1]
-                pressure2EM=avg_bsq*0/2.-avg_bu[2]*avg_bd[1]
-                inertia2EM=(avg_bsq)*avg_uu[2]*avg_ud[1]
-                fp2EM=-dfdx2(pressure2EM)[:,ny/2,0] #/dxdxp[1,1,0,0,0]
-                fi2EM=-dfdx2(inertia2EM)[:,ny/2,0]
-                fp2MA=-dfdx2(pressure2MA)[:,ny/2,0] #/dxdxp[1,1,0,0,0]
-                fi2MA=-dfdx2(inertia2MA)[:,ny/2,0]
-            else:
-                pressureMA=(gam-1)*avg_ug
-                inertiaMA=(avg_rhouuud+gam*avg_uguuud)[1,1]
-                pressureEM=0.5*avg_bsq-avg_bubd[1,1]
-                inertiaEM=avg_bsquuud[1,1]
-                fpEM=-dfdx1(pressureEM)[:,ny/2,0] #/dxdxp[1,1,0,0,0]
-                fiEM=-dfdx1(inertiaEM)[:,ny/2,0]
-                fpMA=-dfdx1(pressureMA)[:,ny/2,0] #/dxdxp[1,1,0,0,0]
-                fiMA=-dfdx1(inertiaMA)[:,ny/2,0]
-                #x2
-                pressure2MA=(gam-1)*avg_ug*0
-                inertia2MA=(avg_rhouuud+gam*avg_uguuud)[2,1]
-                pressure2EM=avg_bsq*0/2.-avg_bubd[2,1]
-                inertia2EM=avg_bsquuud[2,1]
-                fp2EM=-dfdx2(pressure2EM)[:,ny/2,0] #/dxdxp[1,1,0,0,0]
-                fi2EM=-dfdx2(inertia2EM)[:,ny/2,0]
-                fp2MA=-dfdx2(pressure2MA)[:,ny/2,0] #/dxdxp[1,1,0,0,0]
-                fi2MA=-dfdx2(inertia2MA)[:,ny/2,0]
-            #fg=-(avg_rho/r**2)[:,ny/2,0]
-            connddd=mdot(gv3,conn)
-            avg_Tuu=mdot(avg_Tud,gn3)
-            avg_TuuMA=mdot(avg_TudMA,gn3)
-            avg_TuuEM=mdot(avg_TudEM,gn3)
-            fgMA=(avg_TuuMA[0,0]*connddd[0,1,0]+avg_TuuMA[0,1]*connddd[0,1,1]+avg_TuuMA[1,1]*connddd[1,1,1])[:,ny/2,0]
-            fcMA=(avg_TuuMA[0,3]*connddd[0,1,3]+avg_TuuMA[2,2]*connddd[2,1,2]+avg_TuuMA[3,0]*connddd[3,1,0]+avg_TuuMA[3,1]*connddd[3,1,1]+avg_TuuMA[3,3]*connddd[3,1,3])[:,ny/2,0]
-            fgEM=(avg_TuuEM[0,0]*connddd[0,1,0]+avg_TuuEM[0,1]*connddd[0,1,1]+avg_TuuEM[1,1]*connddd[1,1,1])[:,ny/2,0]
-            fcEM=(avg_TuuEM[0,3]*connddd[0,1,3]+avg_TuuEM[2,2]*connddd[2,1,2]+avg_TuuEM[3,0]*connddd[3,1,0]
-                  +avg_TuuEM[3,1]*connddd[3,1,1]+(avg_TuuEM[3,3]*connddd[3,1,3]))[:,ny/2,0]
-            norm=avg_rho[:,ny/2,0]
-            plt.plot(rad,-fgMA/norm,'--',lw=2,label=r"$-F_{g,MA}$")
-            plt.plot(rad,fcMA/norm,lw=2,label=r"$F_{c,MA}$")
-            plt.plot(rad,-fgEM/norm,'--',lw=2,label=r"$-F_{g,EM}$",color='brown')
-            plt.plot(rad,fcEM/norm,"-",lw=2,label=r"$F_{c,EM}$",color='orange')
-            plt.plot(rad,(fiMA)/norm,lw=2,label=r"$F_{i,MA}$")
-            plt.plot(rad,(-fiMA)/norm,'--',lw=2,label=r"$-F_{i,MA}$",color='b')
-            plt.plot(rad,(fpMA)/norm,lw=2,label=r"$F_{p,MA}$")
-            plt.plot(rad,(-fpMA)/norm,'--',lw=2,label=r"$-F_{p,MA}$",color='r')
-            plt.plot(rad,(-fiEM)/norm,'--',lw=2,label=r"$-F_{i,EM}$")
-            plt.plot(rad,(fpEM)/norm,lw=2,label=r"$F_{p,EM}$")
-            plt.plot(rad,(-fpEM)/norm,'--',lw=2,label=r"$-F_{p,EM}$",color='m')
-            #x2
-            plt.plot(rad,(fi2MA)/norm,':',lw=2,label=r"$F_{i2,MA}$")
-            plt.plot(rad,(fp2MA)/norm,':',lw=2,label=r"$F_{p2,MA}$")
-            plt.plot(rad,(fi2EM)/norm,':',lw=2,label=r"$F_{i2,EM}$")
-            plt.plot(rad,(fp2EM)/norm,':',lw=2,label=r"$F_{p2,EM}$")
-            plt.plot(rad,3.5*(rad/rhor)**(-7./2.),'k-',lw=2)
-            plt.plot(rad,(avg_bsq[:,ny/2,0]/(2*sigval)*r[:,ny/2,0]**3/1e3),'k-',lw=1,label=r"$b^2/\Sigma$")
-            #plt.plot(rad,(avg_bsq*avg_rho)[:,ny/2,0]/sigval**2/1000.,'k-',lw=1,label=r"$b^2/rho$")
-            plt.xlim(rhor,100)
-            plt.ylim(ymin=0.5e-3,ymax=60)
-            plt.xscale('log')
-            plt.yscale('log')
-            #######################
-            #
-            #  FIGURE 6: Flux
-            #
-            #######################
-            plt.figure(6)
-            #plt.clf()
-            ax = plt.gca()
-            aphi=fieldcalc(gdetB1=avg_gdetB[0])
-            fluxval = aphi.max(axis=1)[:,0]
-            if firsttime:
-                fluxnorm = fluxval[iofr(rhor)]
-            fluxval = fluxval/fluxnorm
-            plt.plot( r[:,0,0], fluxval, label=lab )
-            ax.set_xscale('linear')
-            ax.set_yscale('linear')
-            plt.xlim(rhor,20)
-            plt.ylim(1,4)
-            plt.xlabel(r"$r$",fontsize=16)
-            plt.ylabel(r"$\Phi$",fontsize=16)
-            plt.grid(b=True)
-            plt.legend()
-            #######################
-            #
-            #  FIGURE 7: bsq/rho
-            #
-            #######################
-            plt.figure(7)
-            #plt.clf()
-            ax = plt.gca()
-            plt.plot( r[:,0,0], (avg_bsq/avg_rho)[:,ny/2,0], label=r"$b^2/\rho$ " + lab )
-            plt.plot( r[:,0,0], (avg_bsq/avg_ug)[:,ny/2,0], label=r"$b^2/u_g$ " + lab )
-            plt.plot( r[:,0,0], (0.5*avg_bsq/avg_ug/(gam-1))[:,ny/2,0], label=r"$p_m/p_g$ " + lab )
-            plt.plot( r[:,0,0], (avg_ug/avg_rho)[:,ny/2,0], label=r"$u_g/\rho$ " + lab )
-            ax.set_xscale('log')
-            ax.set_yscale('log')
-            plt.xlim(rhor,1000)
-            plt.ylim(1e-5,4)
-            plt.xlabel(r"$r$",fontsize=16)
-            plt.ylabel(r"$b^2/rho$",fontsize=16)
-            plt.grid(b=True)
-            plt.legend()
-            firsttime=False
-        handles, labels = ax1.get_legend_handles_labels()
-        ax1.legend(handles, labels,loc="upper left")
-        plt.figure(2)
-        plt.title(r"Radial velocity for $a=%g$" % a,fontsize=20)
-        #free-fall radial 4-velocity
-        plt.plot(r[:,0,0],(r[:,0,0]/1)**(-1.),'c--',label=r"$1/r$")
-        # plt.plot(r[:,0,0],0.01*(r[:,0,0]/10)**(-2),'b:')
-        # plt.plot(r[:,0,0],0.01*(r[:,0,0]/10)**(-1./2.),'b:')
-        uurKSzamo = -gn3[0,1,:,ny/2,0]/(-gn3[0,0,:,ny/2,0])**0.5*dxdxp[1,1,:,0,0]
-        vurKSzamo = gn3[0,1,:,ny/2,0]/gn3[0,0,:,ny/2,0]*dxdxp[1,1,:,0,0]
-        vff_nonrel = (2/r[:,0,0])**0.5
-        uurff = 2**0.5 * (a**2+r[:,0,0]**2)**0.5 / r[:,0,0]**1.5
-        plt.plot(r[:,0,0],uurff,'r--', label=r"$u^r_{\rm ff}=[2(a^2+r^2)/r^3]^{1/2}$, $\mathrm{free-fall\ v}$")
-        #plt.plot(r[:,0,0],vff_nonrel,'y-')
-        #plt.plot(r[:,0,0],0.15*vff_nonrel,'y:')
-        #plot instantaneous v^r
-        if False:
-            rfd("fieldline0000.bin")
-            plt.plot(r[:,0,0],-uu[1,:,ny/2,0]*dxdxp[1,1,:,0,0],'r',lw=2)
-        #plt.plot(r[:,0,0],-uurfreefall,'g-')
-        #plt.plot(r[:,0,0],-uurfreefall,'g--')
-        #plt.plot(r[:,0,0],-0.35*uurfreefall,'g--')
-        plt.plot(r[:,0,0],-uurKSzamo,'g-', label=r"$u^r_{\rm ZAMO,KS}=2/[r(r+2)]^{1/2}$")
-        plt.plot(r[:,0,0],-0.3*uurKSzamo,'g--', label=r"$0.3 u^r_{\rm ZAMO,KS}$")
-        plt.legend(loc="lower left")
-        plt.savefig("velocity%g.pdf" % a )
-        plt.savefig("velocity%g.eps" % a )
-        plt.figure(3)
-        plt.legend(loc="lower center")
-        plt.plot(r[:,0,0],1e2*(r[:,0,0]/100)**(1))
-        plt.plot(r[:,0,0],1e2*(r[:,0,0]/100)**(2))
-        plt.ylim(ymax=1e3)
-        plt.figure(4)
-        plt.title(r"Midplane angular momentum for $a=%g$" % a,fontsize=20)
-        plt.legend(loc="upper left")
-        plt.savefig("angmom%g.pdf" % a)
-        plt.savefig("angmom%g.eps" % a)
-        plt.figure(5)
-        plt.legend(loc="upper right",ncol=3)
+        #plt.clf()
+        ax = plt.gca()
+        sigval = (gdet[:,:,0:1]*avg_rhouu[0]*_dx2*_dx3*nz).sum(-1).sum(-1)/dxdxp[1,1,:,0,0]*scaletofullwedge(1.)/(2*np.pi*r[:,ny/2,0])
+        sigvalfm = a_Fm / (-4*np.pi*r[:,ny/2,0]*avg_uu[1,:,ny/2,0]/avg_uu[0,:,ny/2,0])
+        sigval=sigvalfm
+        plt.plot( r[:,0,0], sigval, label=lab )
+        ax.set_xscale('log')
+        ax.set_yscale('log')
+        plt.xlim(rhor,100000)
+        plt.xlabel(r"$r$",fontsize=16)
+        plt.ylabel(r"$\Sigma$",fontsize=16)
         plt.grid(b=True)
+        #######################
+        #
+        #  FIGURE 4: Ang. momentum
+        #
+        #######################
+        plt.figure(4)
+        rad=r[:,0,0]
+        #From ST eq. (12.7.18)
+        udphianal = lk( a, rad )
+        risco=Risco(a)
+        udphianal[rad<risco]=lk(a,risco)
+        ax = plt.gca()
+        jin_nmr = (avg_rhouu+avg_uguu+avg_bsquu/2.)[1]*avg_ud[3]/dxdxp[3,3,0,0,0]
+        jin_dnm = (avg_rhouu)[1]
+        jinmid = (jin_nmr/jin_dnm)[:,ny/2,0]
+        jtot_nmr = avg_Tud[1,3]/dxdxp[3,3,0,0,0]
+        jtot_dnm = (avg_rhouu)[1]
+        jtotmid = (jtot_nmr/jtot_dnm)[:,ny/2,0]
+        jinfull = (gdet*jin_nmr).sum(1)/(gdet*jin_dnm).sum(1)
+        isdisk=np.abs(h[:,:,0:1]-np.pi/2)<0.1
+        jtotfull = (gdet[:,:,0:1]*jtot_nmr*isdisk).sum(-1).sum(-1)/(gdet[:,:,0:1]*jtot_dnm*isdisk).sum(-1).sum(-1)
+        jinfull = (gdet[:,:,0:1]*jin_nmr*isdisk).sum(-1).sum(-1)/(gdet[:,:,0:1]*jin_dnm*isdisk).sum(-1).sum(-1)
+        # plt.figure(6)
+        # plt.plot( r[:,0,0], (gdet[:,:,0:1]*jtot_nmr*isdisk).sum(-1).sum(-1))
+        # plt.figure(4)
+        plt.plot( r[:,0,0], jinmid, label=(r"$l_{\rm in}$ for " + lab) )
+        plt.plot( r[:,0,0], jtotmid, label=(r"$l_{\rm tot}$ for " + lab) )
+        # plt.plot( r[:,0,0], jtotfull, label=(r"$l_{\rm tot,full}$ for " + lab) )
+        plt.plot( r[:,0,0], avg_ud[3,:,ny/2,0]/dxdxp[3,3,:,0,0], label=(r"$u_\phi$ for " + lab) )
+        plt.plot( r[:,0,0], udphianal, label=(r"$l_{\rm SS}$") )
+        ax.set_xscale('log')
+        #ax.set_yscale('log')plt.ylim(-40,0)
+
+        plt.xlim(rhor,100)
+        plt.xlabel(r"$r$",fontsize=20)
+        plt.ylabel(r"$l$",fontsize=20)
+        plt.grid(b=True)
+        plt.ylim(-1,10)
+        #######################
+        #
+        #  FIGURE 5: Radial force balance
+        #
+        #######################
+        plt.figure(5)
+        if firsttime:
+            plt.clf()
+        #x1
+        if True:
+            pressureMA=(gam-1)*avg_ug
+            inertiaMA=(avg_rho+gam*avg_ug)*avg_uu[1]*avg_ud[1]
+            pressureEM=avg_bsq/2.-avg_bu[1]*avg_bd[1]
+            inertiaEM=(avg_bsq)*avg_uu[1]*avg_ud[1]
+            fpEM=-dfdx1(pressureEM)[:,ny/2,0] #/dxdxp[1,1,0,0,0]
+            fiEM=-dfdx1(inertiaEM)[:,ny/2,0]
+            fpMA=-dfdx1(pressureMA)[:,ny/2,0] #/dxdxp[1,1,0,0,0]
+            fiMA=-dfdx1(inertiaMA)[:,ny/2,0]
+            #x2
+            pressure2MA=(gam-1)*avg_ug*0
+            inertia2MA=(avg_rho+gam*avg_ug)*avg_uu[2]*avg_ud[1]
+            pressure2EM=avg_bsq*0/2.-avg_bu[2]*avg_bd[1]
+            inertia2EM=(avg_bsq)*avg_uu[2]*avg_ud[1]
+            fp2EM=-dfdx2(pressure2EM)[:,ny/2,0] #/dxdxp[1,1,0,0,0]
+            fi2EM=-dfdx2(inertia2EM)[:,ny/2,0]
+            fp2MA=-dfdx2(pressure2MA)[:,ny/2,0] #/dxdxp[1,1,0,0,0]
+            fi2MA=-dfdx2(inertia2MA)[:,ny/2,0]
+        else:
+            pressureMA=(gam-1)*avg_ug
+            inertiaMA=(avg_rhouuud+gam*avg_uguuud)[1,1]
+            pressureEM=0.5*avg_bsq-avg_bubd[1,1]
+            inertiaEM=avg_bsquuud[1,1]
+            fpEM=-dfdx1(pressureEM)[:,ny/2,0] #/dxdxp[1,1,0,0,0]
+            fiEM=-dfdx1(inertiaEM)[:,ny/2,0]
+            fpMA=-dfdx1(pressureMA)[:,ny/2,0] #/dxdxp[1,1,0,0,0]
+            fiMA=-dfdx1(inertiaMA)[:,ny/2,0]
+            #x2
+            pressure2MA=(gam-1)*avg_ug*0
+            inertia2MA=(avg_rhouuud+gam*avg_uguuud)[2,1]
+            pressure2EM=avg_bsq*0/2.-avg_bubd[2,1]
+            inertia2EM=avg_bsquuud[2,1]
+            fp2EM=-dfdx2(pressure2EM)[:,ny/2,0] #/dxdxp[1,1,0,0,0]
+            fi2EM=-dfdx2(inertia2EM)[:,ny/2,0]
+            fp2MA=-dfdx2(pressure2MA)[:,ny/2,0] #/dxdxp[1,1,0,0,0]
+            fi2MA=-dfdx2(inertia2MA)[:,ny/2,0]
+        #fg=-(avg_rho/r**2)[:,ny/2,0]
+        connddd=mdot(gv3,conn)
+        avg_Tuu=mdot(avg_Tud,gn3)
+        avg_TuuMA=mdot(avg_TudMA,gn3)
+        avg_TuuEM=mdot(avg_TudEM,gn3)
+        fgMA=(avg_TuuMA[0,0]*connddd[0,1,0]+avg_TuuMA[0,1]*connddd[0,1,1]+avg_TuuMA[1,1]*connddd[1,1,1])[:,ny/2,0]
+        fcMA=(avg_TuuMA[0,3]*connddd[0,1,3]+avg_TuuMA[2,2]*connddd[2,1,2]+avg_TuuMA[3,0]*connddd[3,1,0]+avg_TuuMA[3,1]*connddd[3,1,1]+avg_TuuMA[3,3]*connddd[3,1,3])[:,ny/2,0]
+        fgEM=(avg_TuuEM[0,0]*connddd[0,1,0]+avg_TuuEM[0,1]*connddd[0,1,1]+avg_TuuEM[1,1]*connddd[1,1,1])[:,ny/2,0]
+        fcEM=(avg_TuuEM[0,3]*connddd[0,1,3]+avg_TuuEM[2,2]*connddd[2,1,2]+avg_TuuEM[3,0]*connddd[3,1,0]
+              +avg_TuuEM[3,1]*connddd[3,1,1]+(avg_TuuEM[3,3]*connddd[3,1,3]))[:,ny/2,0]
+        norm=avg_rho[:,ny/2,0]
+        plt.plot(rad,-fgMA/norm,'--',lw=2,label=r"$-F_{g,MA}$")
+        plt.plot(rad,fcMA/norm,lw=2,label=r"$F_{c,MA}$")
+        plt.plot(rad,-fgEM/norm,'--',lw=2,label=r"$-F_{g,EM}$",color='brown')
+        plt.plot(rad,fcEM/norm,"-",lw=2,label=r"$F_{c,EM}$",color='orange')
+        plt.plot(rad,(fiMA)/norm,lw=2,label=r"$F_{i,MA}$")
+        plt.plot(rad,(-fiMA)/norm,'--',lw=2,label=r"$-F_{i,MA}$",color='b')
+        plt.plot(rad,(fpMA)/norm,lw=2,label=r"$F_{p,MA}$")
+        plt.plot(rad,(-fpMA)/norm,'--',lw=2,label=r"$-F_{p,MA}$",color='r')
+        plt.plot(rad,(-fiEM)/norm,'--',lw=2,label=r"$-F_{i,EM}$")
+        plt.plot(rad,(fpEM)/norm,lw=2,label=r"$F_{p,EM}$")
+        plt.plot(rad,(-fpEM)/norm,'--',lw=2,label=r"$-F_{p,EM}$",color='m')
+        #x2
+        plt.plot(rad,(fi2MA)/norm,':',lw=2,label=r"$F_{i2,MA}$")
+        plt.plot(rad,(fp2MA)/norm,':',lw=2,label=r"$F_{p2,MA}$")
+        plt.plot(rad,(fi2EM)/norm,':',lw=2,label=r"$F_{i2,EM}$")
+        plt.plot(rad,(fp2EM)/norm,':',lw=2,label=r"$F_{p2,EM}$")
+        plt.plot(rad,3.5*(rad/rhor)**(-7./2.),'k-',lw=2)
+        plt.plot(rad,(avg_bsq[:,ny/2,0]/(2*sigval)*r[:,ny/2,0]**3/1e3),'k-',lw=1,label=r"$b^2/\Sigma$")
+        #plt.plot(rad,(avg_bsq*avg_rho)[:,ny/2,0]/sigval**2/1000.,'k-',lw=1,label=r"$b^2/rho$")
+        plt.xlim(rhor,100)
+        plt.ylim(ymin=0.5e-3,ymax=60)
+        plt.xscale('log')
+        plt.yscale('log')
+        #######################
+        #
+        #  FIGURE 6: Flux
+        #
+        #######################
+        plt.figure(6)
+        #plt.clf()
+        ax = plt.gca()
+        aphi=fieldcalc(gdetB1=avg_gdetB[0])
+        fluxval = aphi.max(axis=1)[:,0]
+        if firsttime:
+            fluxnorm = fluxval[iofr(rhor)]
+        fluxval = fluxval/fluxnorm
+        plt.plot( r[:,0,0], fluxval, label=lab )
+        ax.set_xscale('linear')
+        ax.set_yscale('linear')
+        plt.xlim(rhor,20)
+        plt.ylim(1,4)
+        plt.xlabel(r"$r$",fontsize=16)
+        plt.ylabel(r"$\Phi$",fontsize=16)
+        plt.grid(b=True)
+        plt.legend()
+        #######################
+        #
+        #  FIGURE 7: bsq/rho
+        #
+        #######################
+        plt.figure(7)
+        #plt.clf()
+        ax = plt.gca()
+        plt.plot( r[:,0,0], (avg_bsq/avg_rho)[:,ny/2,0], label=r"$b^2/\rho$ " + lab )
+        plt.plot( r[:,0,0], (avg_bsq/avg_ug)[:,ny/2,0], label=r"$b^2/u_g$ " + lab )
+        plt.plot( r[:,0,0], (0.5*avg_bsq/avg_ug/(gam-1))[:,ny/2,0], label=r"$p_m/p_g$ " + lab )
+        plt.plot( r[:,0,0], (avg_ug/avg_rho)[:,ny/2,0], label=r"$u_g/\rho$ " + lab )
+        ax.set_xscale('log')
+        ax.set_yscale('log')
+        plt.xlim(rhor,1000)
+        plt.ylim(1e-5,4)
+        plt.xlabel(r"$r$",fontsize=16)
+        plt.ylabel(r"$b^2/rho$",fontsize=16)
+        plt.grid(b=True)
+        plt.legend()
+        firsttime=False
+    handles, labels = ax1.get_legend_handles_labels()
+    ax1.legend(handles, labels,loc="upper left")
+    plt.figure(2)
+    plt.title(r"Radial velocity for $a=%g$" % a,fontsize=20)
+    #free-fall radial 4-velocity
+    plt.plot(r[:,0,0],(r[:,0,0]/1)**(-1.),'c--',label=r"$1/r$")
+    # plt.plot(r[:,0,0],0.01*(r[:,0,0]/10)**(-2),'b:')
+    # plt.plot(r[:,0,0],0.01*(r[:,0,0]/10)**(-1./2.),'b:')
+    uurKSzamo = -gn3[0,1,:,ny/2,0]/(-gn3[0,0,:,ny/2,0])**0.5*dxdxp[1,1,:,0,0]
+    vurKSzamo = gn3[0,1,:,ny/2,0]/gn3[0,0,:,ny/2,0]*dxdxp[1,1,:,0,0]
+    vff_nonrel = (2/r[:,0,0])**0.5
+    uurff = 2**0.5 * (a**2+r[:,0,0]**2)**0.5 / r[:,0,0]**1.5
+    plt.plot(r[:,0,0],uurff,'r--', label=r"$u^r_{\rm ff}=[2(a^2+r^2)/r^3]^{1/2}$, $\mathrm{free-fall\ v}$")
+    #plt.plot(r[:,0,0],vff_nonrel,'y-')
+    #plt.plot(r[:,0,0],0.15*vff_nonrel,'y:')
+    #plot instantaneous v^r
+    if False:
+        rfd("fieldline0000.bin")
+        plt.plot(r[:,0,0],-uu[1,:,ny/2,0]*dxdxp[1,1,:,0,0],'r',lw=2)
+    #plt.plot(r[:,0,0],-uurfreefall,'g-')
+    #plt.plot(r[:,0,0],-uurfreefall,'g--')
+    #plt.plot(r[:,0,0],-0.35*uurfreefall,'g--')
+    plt.plot(r[:,0,0],-uurKSzamo,'g-', label=r"$u^r_{\rm ZAMO,KS}=2/[r(r+2)]^{1/2}$")
+    plt.plot(r[:,0,0],-0.3*uurKSzamo,'g--', label=r"$0.3 u^r_{\rm ZAMO,KS}$")
+    plt.legend(loc="lower left")
+    plt.savefig("velocity%g.pdf" % a )
+    plt.savefig("velocity%g.eps" % a )
+    plt.figure(3)
+    plt.legend(loc="lower center")
+    plt.plot(r[:,0,0],1e2*(r[:,0,0]/100)**(1))
+    plt.plot(r[:,0,0],1e2*(r[:,0,0]/100)**(2))
+    plt.ylim(ymax=1e3)
+    plt.figure(4)
+    plt.title(r"Midplane angular momentum for $a=%g$" % a,fontsize=20)
+    plt.legend(loc="upper left")
+    plt.savefig("angmom%g.pdf" % a)
+    plt.savefig("angmom%g.eps" % a)
+    plt.figure(5)
+    plt.legend(loc="upper right",ncol=3)
+    plt.grid(b=True)
         
 
 def dfdx1(f,dn=4):
