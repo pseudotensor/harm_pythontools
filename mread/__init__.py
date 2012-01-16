@@ -8619,12 +8619,12 @@ def oldstuff():
         #plt.figure(2)
         #plotqtyvstime(qtymem,whichplot=-4)
 
-def placeletter(ax1,lab,size=16,fx=0.07,fy=0.07,ha="center",color='k',bbox=None):
+def placeletter(ax1,lab,size=16,fx=0.07,fy=0.07,ha="center",va="top",color='k',bbox=None):
     plt.text(
         ax1.get_xlim()[0]+(ax1.get_xlim()[1]-ax1.get_xlim()[0])*fx,
         ax1.get_ylim()[0]+(ax1.get_ylim()[1]-ax1.get_ylim()[0])*(1-fy), 
         r"%s" % lab, size=size,
-        rotation=0., ha=ha, va="top",
+        rotation=0., ha=ha, va=va,
         color=color,weight='regular',bbox=bbox )
 
 
