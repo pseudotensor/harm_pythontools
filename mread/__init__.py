@@ -7907,7 +7907,7 @@ def mkmdot(doreload=1,epsFm=None,epsFke=None,fti=None,ftf=None,prefactor=100,sig
         ax34r.set_ylim(ax34.get_ylim())
         ax34r.set_yticks(tck)
 
-def provsretro(dotakeoutfloors=True,doreload=True):
+def provsretro(dotakeoutfloors=False,doreload=True):
     global reslist
     grid3d("gdump.bin",use2d=True)
     #rfd("fieldline0000.bin")
@@ -7933,14 +7933,10 @@ def provsretro(dotakeoutfloors=True,doreload=True):
     plt.figure(7)
     plt.clf()
     firsttime=True
-    reslist=[]
-    i=0
-    if dotakeoutfloors:
-        res = takeoutfloors(doreload=doreload,isinteractive=0,writefile=False)
-        reslist.append(res)
-    else:
-        res = reslist[i]
-    a_eta,a_Fm,a_Fe,a_Fl = res
+    # if doreload:
+    #     res = takeoutfloors(doreload=True,isinteractive=0,writefile=False,dotakeoutfloors=dotakeoutfloors)
+    #     reslist=res
+    #a_eta,a_Fm,a_Fe,a_Fl = res
     for (i,f) in enumerate(flist):
         print "%s\n" % f
         avgmem = get2davg(fname=f)
@@ -8012,9 +8008,10 @@ def provsretro(dotakeoutfloors=True,doreload=True):
         #plt.clf()
         ax = plt.gca()
         sigval = (gdet[:,:,0:1]*avg_rhouu[0]*_dx2*_dx3*nz).sum(-1).sum(-1)/dxdxp[1,1,:,0,0]*scaletofullwedge(1.)/(2*np.pi*r[:,ny/2,0])
-        sigvalfm = a_Fm / (-4*np.pi*r[:,ny/2,0]*avg_uu[1,:,ny/2,0]/avg_uu[0,:,ny/2,0])
-        sigval=sigvalfm
-        plt.plot( r[:,0,0], sigval, label=lab )
+        #sigvalfm = a_Fm / (-4*np.pi*r[:,ny/2,0]*avg_uu[1,:,ny/2,0]*dxdxp[1,1,:,0,0]/avg_uu[0,:,ny/2,0])
+        plt.plot( r[:,0,0], sigval, 'k', label=lab )
+        #plt.plot( r[:,0,0], sigvalfm, 'r', label=lab )
+        #sigval=sigvalfm
         ax.set_xscale('log')
         ax.set_yscale('log')
         plt.xlim(rhor,100000)
@@ -8030,8 +8027,10 @@ def provsretro(dotakeoutfloors=True,doreload=True):
         rad=r[:,0,0]
         #From ST eq. (12.7.18)
         udphianal = lk( a, rad )
+        udtanal = -ek( a, rad )
         risco=Risco(a)
         udphianal[rad<risco]=lk(a,risco)
+        udtanal[rad<risco]=-ek(a,risco)
         ax = plt.gca()
         jin_nmr = (avg_rhouu+avg_uguu+avg_bsquu/2.)[1]*avg_ud[3]/dxdxp[3,3,0,0,0]
         jin_dnm = (avg_rhouu)[1]
@@ -8053,12 +8052,27 @@ def provsretro(dotakeoutfloors=True,doreload=True):
         plt.plot( r[:,0,0], udphianal, label=(r"$l_{\rm SS}$") )
         ax.set_xscale('log')
         #ax.set_yscale('log')plt.ylim(-40,0)
-
         plt.xlim(rhor,100)
         plt.xlabel(r"$r$",fontsize=20)
         plt.ylabel(r"$l$",fontsize=20)
         plt.grid(b=True)
         plt.ylim(-1,10)
+        plt.figure(10)
+        plt.clf()
+        plt.plot( r[:,0,0], 1+(avg_ud)[0,:,ny/2,0], 'g',label=(r"$1-u_t$ for " + lab) )
+        plt.plot( r[:,0,0], 1+udtanal, 'b', label=(r"$1-E_{SS}$") )
+        plt.plot( r[iofr(risco),0,0],1+avg_ud[0,iofr(risco),ny/2,0],'og')
+        plt.plot( r[iofr(risco),0,0],1+udtanal[iofr(risco)],'ob')
+        plt.legend()
+        ax.set_xscale('log')
+        #ax.set_yscale('log')plt.ylim(-40,0)
+        plt.xlim(rhor,10)
+        plt.xlabel(r"$r$",fontsize=20)
+        plt.ylabel(r"$e$",fontsize=20)
+        plt.grid(b=True)
+        plt.legend(loc='upper right')
+        plt.ylim(0,0.6)
+
         #######################
         #
         #  FIGURE 5: Radial force balance
@@ -8132,7 +8146,8 @@ def provsretro(dotakeoutfloors=True,doreload=True):
         plt.plot(rad,(fi2EM)/norm,':',lw=2,label=r"$F_{i2,EM}$")
         plt.plot(rad,(fp2EM)/norm,':',lw=2,label=r"$F_{p2,EM}$")
         plt.plot(rad,3.5*(rad/rhor)**(-7./2.),'k-',lw=2)
-        plt.plot(rad,(avg_bsq[:,ny/2,0]/(2*sigval)*r[:,ny/2,0]**3/1e3),'k-',lw=1,label=r"$b^2/\Sigma$")
+        plt.plot(rad,(avg_bsq[:,ny/2,0]/(2*sigval)*r[:,ny/2,0]**3/1e2),'k-',lw=1,label=r"$r^3b^2/(2\Sigma)$")
+        plt.plot(rad,(avg_bsq[:,ny/2,0]/(2*sigval)*r[:,ny/2,0]**2/1e2),'k--',lw=1,label=r"$r^2b^2/(2\Sigma)$")
         #plt.plot(rad,(avg_bsq*avg_rho)[:,ny/2,0]/sigval**2/1000.,'k-',lw=1,label=r"$b^2/rho$")
         plt.xlim(rhor,100)
         plt.ylim(ymin=0.5e-3,ymax=60)
@@ -8238,6 +8253,11 @@ def dfdx2(f,dn=4):
     gf=gdet*f
     dgf[:,dn:-dn]=(gf[:,2*dn:]-gf[:,:-2*dn])/(2.*dn*_dx2*gdet[:,dn:-dn])
     return(dgf)
+
+def ek(a,r):
+    ek = (r**2-2*r+a*r**0.5)/(r*(r**2-3*r+2*a*r**0.5)**0.5)
+    return(ek)
+    
 
 def lk(a,r):
     udphi = r**0.5*(r**2-2*a*r**0.5+a**2)/(r*(r**2-3*r+2*a*r**0.5)**0.5)
