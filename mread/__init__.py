@@ -5459,7 +5459,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #!!!rhor = 1+(1-a**2)**0.5
         ihor = iofr(rhor)
         qtymem=getqtyvstime(ihor,0.2)
-        real_tf = qtymem[0,-1,0]+(qtymem[0,-1,0]-qtymem[0,-2,0])
+        real_tf = qtymem[0,-1,0] #+(qtymem[0,-1,0]-qtymem[0,-2,0]) #fix simulation end time mismatch
         if ftf > real_tf and qtymem[0,-1,0] > 0:
             #last_t + dt:
             ftf = real_tf
