@@ -6997,10 +6997,10 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
     rfd("fieldline0000.bin")
     avgmem = get2davg(usedefault=usedefault)
     assignavg2dvars(avgmem)
-    fig=plt.figure(1,figsize=(12,9),dpi=300,frameon=frameon)
+    fig=plt.figure(1,figsize=(4,3),frameon=frameon)
     fig.patch.set_facecolor(fc)
     fig.patch.set_alpha(1.0)
-    fntsize=24
+    fntsize=8
     ax = fig.add_subplot(111, aspect='equal', frameon=frameon)
     if dotakeoutfloors:
         #Do this first, which uses a lot of memory and do the rest after this memory is freed up
@@ -7087,6 +7087,12 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
             enden2=(-avg_gdetF[1,1]*nz)
             enden=enden1
             mdden =(-avg_gdetF[0,0]*nz)
+        if dotakeoutfloors:
+            #subtract rest-mass from total energy flux and flip the sign to get correct direction
+            DFen = DFfloor[1]+DFfloor[0] 
+            #pdb.set_trace()
+            enden += DFen[:,:,None]/(_dx2*_dx3) 
+            mdden += DFfloor[0][:,:,None]/(_dx2*_dx3)
         en=(enden.cumsum(1)-0.5*enden)*_dx2*_dx3 #subtract half of current cell's density to get cell-centered quantity
         md=(mdden).sum(2).sum(1)*_dx2*_dx3
         #pdb.set_trace()
@@ -7099,6 +7105,9 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         #pick out a scalar value at r = 5M
         md=md[iofr(5)]
         a_Fm=md
+        a_FmminusFe=enden.sum(1)[iofr(5),0]*_dx2*_dx3
+        a_Fe1=md-a_FmminusFe
+        a_eta = a_FmminusFe/md
         #equatorial trajectory: starts at r = rh, theta = pi/2
         rhor=1+(1-a**2)**0.5
         radval=10.
@@ -7133,12 +7142,19 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         else:
             #normalization by mass accretion rate; 2 to account for each hemisphere is half
             z = 2*np.abs(en2)/a_Fm
-            print md, a_Fm
+            #print md, a_Fm, a_Fe1, a_Fe
         # lev_exp = np.arange(np.floor(np.log10(np.nanmin(z))-1),
         #                      np.ceil(np.log10(np.nanmax(z))+1))
         #lev_exp=np.linspace(lminval,lmaxval,nc)
         # levs=[1e-3,1e-2,2e-2]
-        levs = np.array([0.01,1.*Ebindisco(a),2.*Ebindisco(a)])
+        if np.abs(a-0.9)<1e-2:
+            #a=0.9
+            levs_label = np.array([0.125,0.25,0.5,1.])*0.16 #*Ebindisco(a)
+            levs = np.arange(0.125,1.125,0.125)*0.16 #*Ebindisco(a)
+        else:
+            #a=-0.9
+            levs_label = np.array([0.125,0.25,0.5,1.])*0.07 #Ebindisco(a)
+            levs = np.arange(0.125,1.125,0.125)*0.07 #Ebindisco(a)
         minval=levs[0]
         maxval=levs[-1]
         lminval=np.log10(minval)
@@ -7148,22 +7164,30 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         z[z<cutval]=z[z<cutval]*0+cutval
         #plco(z,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=True,nc=20,levels=levs,isfilled=True,norm=colors.LogNorm())
         #palette =  cm.autumn_r #mpl.colors.ListedColormap(['r', 'g', 'b'])
-        palette =  mpl.colors.ListedColormap([ 'blue', 'green', 'yellow','red'])
+        palette =  mpl.colors.ListedColormap([ 'purple', 'blue', 'green', 'green', 'yellow', 'yellow', 'yellow', 'yellow','red'])
         #palette.set_over('red')
         #palette.set_under('blue')
-        alpha=0.125
+        alpha=0.25
         ctsf=plc(z,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=False,levels=levs,isfilled=True,alpha=alpha,zorder=2,cmap=palette,extend='both') 
-        cts=plc(z,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=False,levels=ctsf.levels[0::1],isfilled=False,alpha=alpha,zorder=2,linestyles='solid',linewidths=0.5,colors='r')
+        #cts=plc(z,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),cb=False,levels=ctsf.levels[0::1],isfilled=False,alpha=alpha,zorder=2,linestyles='solid',linewidths=0.5,colors='r')
         # Make a colorbar for the ContourSet returned by the contourf call.
         #ctsf.cmap.set_under('green',-2)
         #ctsf.cmap.set_under('red',1.0)
         cbar = plt.colorbar(ctsf)
-        cbar.ax.set_ylabel('Energy outflow efficiency',fontsize=fntsize)
+        cbar.ax.set_ylabel('Enclosed energy outflow efficiency',fontsize=fntsize)
         # Add the contour line levels to the colorbar
-        cbar.add_lines(cts)
+        #cbar.add_lines(cts)
         print lev_exp
-        tcks=[x for x in levs]
-        labs=['%d%%'%(x*100+0.5) for x in levs]
+        tcks=[x for x in levs_label]
+        labs=['%d%%'%(x*100+0.5) for x in levs_label]
+        for (i,x) in enumerate(levs_label):
+            if x==np.rint(x):
+                labs[i] = '%d%%' % (np.rint(x*100.))
+            else:
+                #elif 10*x==np.rint(10*x):
+                labs[i] = '%g%%' % (np.rint(x*1000.)/10.)
+        #else:
+        #    labs[i] = '%g%%' % (np.rint(x*10000.)/100.)
         cbar.set_ticks(tcks)
         cbar.set_ticklabels(labs)
         cbar.update_ticks()
@@ -7317,19 +7341,20 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         #pdb.set_trace()
     if True:
         istag, jstag, hstag, rstag = getstagparams(doplot=0,usedefault=usedefault)
+        linewidth=1
         myRmax=4
         #z>0
         rs=rstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)>0]
         hs=hstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)>0]
         hs2=np.concatenate((-hs[::-1],hs),axis=1)
         rs2=np.concatenate((rs[::-1],rs),axis=1)
-        ax.plot(rs2*np.sin(hs2),rs2*np.cos(hs2),'g',lw=3,zorder=21)
+        ax.plot(rs2*np.sin(hs2),rs2*np.cos(hs2),'g',lw=linewidth,zorder=21)
         #z<0
         rs=rstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)<0]
         hs=hstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)<0]
         hs2=np.concatenate((hs,-hs[::-1]),axis=1)
         rs2=np.concatenate((rs,rs[::-1]),axis=1)
-        ax.plot(rs2*np.sin(hs2),rs2*np.cos(hs2),'g',lw=3,zorder=21)
+        ax.plot(rs2*np.sin(hs2),rs2*np.cos(hs2),'g',lw=linewidth,zorder=21)
     if True:
         avg_aphi = fieldcalc(gdetB1=avg_gdetB[0])
         if dotakeoutfloors:
@@ -7344,9 +7369,12 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         h2=np.concatenate((-h[:,::-1],h),axis=1)
         avg_aphi2=np.concatenate((avg_aphi[:,::-1],avg_aphi),axis=1)
         if levs is not None:
-            cb=plc(avg_aphi2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),levels=levs,colors='blue',linewidths=1.5)
+            plc(avg_aphi2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),levels=levs,colors='black',linewidths=0.5)
+            cnt=plc(avg_aphi2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),levels=levs,colors='white',linewidths=0.5,linestyles='dashed')
         else:
-            cb=plc(avg_aphi2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),nc=30,colors='blue',linewidths=1.5)
+            plc(avg_aphi2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),nc=30,colors='black',linewidths=0.5)
+            cnt=plc(avg_aphi2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),nc=30,colors='white',linewidths=0.5,linestyles='dashed')
+        #cnt.set_dashes([fntsize,fntsize])
     if False:
         #field
         B[1] = avg_B[0]
@@ -7374,7 +7402,7 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
     plt.ylim(-mylenshow,mylenshow)
     if showticks == True:
         plt.xlabel(r"$x\ [r_g]$",fontsize=fntsize,ha='center')
-        plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=15,fontsize=fntsize)
+        plt.ylabel(r"$z\ [r_g]$",ha='left',fontsize=fntsize) #labelpad=15,
     else:
         plt.setp( ax.get_xticklabels(), visible=False)
         plt.setp( ax.get_yticklabels(), visible=False)
@@ -7387,6 +7415,15 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
             line.set_visible(False)     
     # plt.savefig("fig2.pdf",bbox_inches='tight',pad_inches=0.02)
     # plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02)
+    bbox = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.5)
+    if a < 0:
+        plt.title(r"${\rm Retrograde\ BH,\ a = %g,\ \eta = %d\%%\ (model\ A-0.9f})$" % (a, np.rint(a_eta*100.)), fontsize=fntsize )
+        placeletter( plt.gca(),"$\mathrm{(a)}$",bbox=bbox,size=fntsize*1.5,ha='center',va='center')
+    else:
+        plt.title(r"${\rm Prograde\ BH,\ a = %g,\ \eta = %d\%%\ (model\ A0.9f})$" % (a, np.rint(a_eta*100.)), fontsize=fntsize )
+        placeletter( plt.gca(),"$\mathrm{(b)}$",bbox=bbox,size=fntsize*1.5,ha='center',va='center')
+    # haxes=pylab.axes()
+    # haxes.yaxis.LABELPAD=0
     fig.patch.set_facecolor(mc)
     fig.patch.set_alpha(0.5)
     fig.patch.set_visible(True)
