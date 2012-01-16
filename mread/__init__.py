@@ -8927,9 +8927,9 @@ if __name__ == "__main__":
         #fig2 with grayscalestreamlines and red field lines
         #mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=False)
         if True: #remove floors
-            mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=True,dotakeoutfloors=1,usedefault=1)
+            mkstreamlinefigure(length=29.99,doenergy=False,frameon=True,dpi=600,showticks=True,dotakeoutfloors=1,usedefault=1)
         else: #don't do anything about floors
-            mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=True,dotakeoutfloors=0,usedefault=1)
+            mkstreamlinefigure(length=29.99,doenergy=False,frameon=True,dpi=600,showticks=True,dotakeoutfloors=0,usedefault=1)
         #mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=True,dotakeoutfloors=0)
         #mkstreamlinefigure(length=4,doenergy=False)
     if False:
