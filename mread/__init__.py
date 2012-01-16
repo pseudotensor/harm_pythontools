@@ -5501,7 +5501,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     #mdtotvsr, edtotvsr, edmavsr, ldtotvsr = plotqtyvstime( qtymem, whichplot = -2, fti=fti, ftf=ftf )
     #XXX
 
-    if np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) < 1.5:
+    if np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) < 1.5 and bn == "rtf2_15r34_2pi_a0.99gg500rbr1e3_0_0_0":
         #face vs. center correction
         mdtotvsr, edtotvsr, edmavsr, ldtotvsr,\
                     mdotfinavgvsr5, mdotfinavgvsr10, mdotfinavgvsr20, mdotfinavgvsr30, mdotfinavgvsr40, \
@@ -5528,7 +5528,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                 gdetF10, gdetF11, gdetF12 \
                 = plotqtyvstime( qtymem, whichplot = -200, fti=fti, ftf=ftf, aphi_j_val=aphi_j_val )
     
-    if np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) < 1.5:
+    if np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) < 1.5 and bn == "rtf2_15r34_2pi_a0.99gg500rbr1e3_0_0_0":
         #correct energy flux for face vs. center
         edtotvsr = (edtotvsr+mdtotvsr)*energy_flux_correction_factor - mdtotvsr
     elif True and (gdetF11!=0).any() and timeavg(qtymem[132],qtymem[0,:,0],fti,fti+1.).any():
