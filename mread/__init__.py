@@ -5537,13 +5537,24 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         mdtotvsr[:-1] = -0.5*(gdetF10[:-1]+gdetF10[1:])
         edtotvsr -= mdtotvsr
         
-
     FEMKE = -(edtotvsr+mdtotvsr)
     FKE = -(edmavsr+mdtotvsr)
     FKE10 = -((edmavsr-pjmafinavgvsr5) + mdotfinavgvsr5)
 
     #electromagnetic flux
     FEM=-(edtotvsr-edmavsr)
+
+    if dotakeoutfloors == False:
+        #Jon's method for when there are no floors available:
+        #Remove matter contribution with b^2/rho < 20 and later evaluate fluxes at r = 5
+        #Mass accretion rate (only inside b^2 < 20)
+        mdtotvsr = mdotfinavgvsr20
+        #Outward EM energy flux
+        edemvsr = edtotvsr - edmavsr
+        #Add the EM part and the low-magnetized MA part (that has bsq/rho<=20)
+        #to get the *corrected* total energy flux
+        edtotvsr = edtotvsr - pjmafinavgvsr20
+
     if dofeavg:
         FE=np.load("fe.npy")
     #edtotvsr-=FE
