@@ -9044,14 +9044,18 @@ if __name__ == "__main__":
             #fig=plt.figure(1,figsize=(10,10))
             #plt.clf()
             #ax = fig.add_subplot(111, aspect='equal')
-            numc=30
+            numc=10
             cvel()
             plco(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,numc)*maxaphi/np.float(numc),colors='k')
-            cts=plc(bsq/rho,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,5.5,0.5))
-            cbar=plt.colorbar(cts)
-            cbar.ax.set_ylabel(r'$b^2\!/\rho$',fontsize=16)
+            plc(np.log10(bsq/rho),xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,levels=np.arange(0.,3.1,0.1));plt.xlim(0,10);plt.ylim(-5,5)
+            #plc(uu[2]*dxdxp[2][2],xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=False,levels=np.arange(-0.5,0.5,0.1));plt.xlim(0,10);plt.ylim(-5,5)            #plc(np.log10(ug),xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,levels=np.arange(-3,2,0.1));plt.xlim(0,10);plt.ylim(-5,5)
+            #plc(np.log10(ug/rho),xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,levels=np.arange(0,1,0.1));plt.xlim(0,10);plt.ylim(-5,5)
+            #plc(lrho,xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,levels=np.arange(-3,.8,0.1));plt.xlim(0,10);plt.ylim(-5,5)
+            #cts=plc(bsq/rho,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,5.5,0.5))
+            #cbar=plt.colorbar(cts)
+            #cbar.ax.set_ylabel(r'$b^2\!/\rho$',fontsize=16)
             #plco(lrho,cb=True,levels=np.arange(1,10),xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,10);plt.ylim(-5,5)
-            plt.title(r"$b^2\!/\rho=5\times10^3$, t=%3.3g" % t,    fontsize=16, color='k')
+            plt.title(r"$b^2\!/\rho=10^2$, t=%3.3g" % t,    fontsize=16, color='k')
             #draw NS
             ax=plt.gca()
             ax.set_aspect('equal')   
