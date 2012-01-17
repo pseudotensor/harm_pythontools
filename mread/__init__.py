@@ -5467,6 +5467,9 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     if fti is None or ftf is None:
         fti = lfti
         ftf = lftf
+
+    #dotakeoutfloors=False
+
     if dotakeoutfloors:
         istag, jstag, hstag, rstag = getstagparams(rmax=20,doplot=0,doreadgrid=0)
     #dotakeoutfloors=1
