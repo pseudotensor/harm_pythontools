@@ -17,7 +17,6 @@
 #dircollecttoroidal='thickdiskr3 thickdisk17 thickdisk10 thickdiskr15 thickdisk3 thickdiskhr3'
 
 # ALL:
-#dircollect='thickdisk7 thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.like8 thickdiskrr2 run.liker2butbeta40 run.liker2 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 thickdiskr2 run.liker1 thickdisk9 thickdiskr3 thickdisk17 thickdisk10 thickdiskr15 thickdisk3 thickdiskhr3 runlocaldipole3dfiducial blandford3d_new sasham9 sasham5 sasha0 sasha1 sasha2 sasha5 sasha9b25 sasha9b50 sasha9b100 sasha9b200 sasha99'
 dircollect='thickdisk7 thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.like8 thickdiskrr2 run.liker2butbeta40 run.liker2 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 thickdiskr2 run.liker1 thickdisk9 thickdiskr3 thickdisk17 thickdisk10 thickdiskr15 thickdisk3 thickdiskhr3 runlocaldipole3dfiducial blandford3d_new sasham9full2pi sasham5 sasha0 sasha1 sasha2 sasha5 sasha9b25 sasha9b50 sasha9b100 sasha9b200 sasha99'
 
 
@@ -25,9 +24,9 @@ dircollect='thickdisk7 thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.like8 
 # can choose so do runs in different order than collection.
 #dirruns=$dircollect
 # do expensive thickdisk7 and sasha99 last so can test things
-#dirruns='thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.like8 thickdiskrr2 run.liker2butbeta40 run.liker2 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 thickdiskr2 run.liker1 thickdisk9 thickdiskr3  thickdisk17 thickdisk10 thickdiskr15 thickdisk2 thickdisk3 thickdiskhr3 runlocaldipole3dfiducial blandford3d_new sasham9 sasham5 sasha0 sasha1 sasha2 sasha5 sasha9b25 sasha9b50 sasha9b100 sasha9b200 sasha99 thickdisk7'
-
 dirruns='thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.like8 thickdiskrr2 run.liker2butbeta40 run.liker2 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 thickdiskr2 run.liker1 thickdisk9 thickdiskr3 thickdisk17 thickdisk10 thickdiskr15 thickdisk3 thickdiskhr3 runlocaldipole3dfiducial blandford3d_new sasham9full2pi sasham5 sasha0 sasha1 sasha2 sasha5 sasha9b25 sasha9b50 sasha9b100 sasha9b200 sasha99 thickdisk7'
+
+
 
 #dirruns='thickdisk8'
 
@@ -166,6 +165,10 @@ do
         factor=3
     fi
     if [ "$thedir" == "sasha9b25" ]
+    then
+        factor=3
+    fi
+    if [ "$thedir" == "sasha9b100" ]
     then
         factor=3
     fi
@@ -519,7 +522,7 @@ then
     ##############################################
     #
     # Tables:
-    numtbls=15
+    numtbls=17
 
     for numtbl in `seq 1 $numtbls`
     do
@@ -541,7 +544,15 @@ then
         fi
         if [ $numtbl -eq 3 ]
         then
-            echo "\caption{Grid Cells across Half-Thickness at Horizon, Half-Thickness of Disk, and Location for Interfaces for Disk-Corona and Corona-Jet}" >> $fname
+            echo "\caption{Grid Cells across Half-Thickness at Horizon, Half-Thicknesses of Disk, and Location for Interfaces for Disk-Corona and Corona-Jet}" >> $fname
+        fi
+        if [ $numtbl -eq 16 ]
+        then
+            echo "\caption{Grid Cells across Half-Thickness at Horizon, Half-Thicknesses of Disk, and Location for Interfaces for Disk-Corona and Corona-Jet}" >> $fname
+        fi
+        if [ $numtbl -eq 17 ]
+        then
+            echo "\caption{Grid Cells across Half-Thickness at Horizon, Half-Thicknesses of Disk, and Location for Interfaces for Disk-Corona and Corona-Jet}" >> $fname
         fi
         if [ $numtbl -eq 4 ]
         then
@@ -632,12 +643,12 @@ then
 
         # Copy over to final table file names
 
-        cp $fname table$numtbl.tex
+        cp $fname tbl$numtbl.tex
 
     done
 
 
-    echo "For paper, now do:   scp table[0-9].tex jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/ ; scp table[0-9][0-9].tex jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/"
+    echo "For paper, now do:   scp tbl[0-9].tex jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/ ; scp tbl[0-9][0-9].tex jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/"
      
     
 

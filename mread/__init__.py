@@ -523,6 +523,17 @@ def roundto2fitold(x,goodness):
         y="-"
     return(y)
 
+def roundto2qmri(x,y):
+    if x>=1 or y>=1:
+        z1="%.*e" % (2-1, x)
+        z2="%.*e" % (2-1, y)
+        z1=float(z1)
+        z2=float(z2)
+        y="%g, %g" % (z1,z2)
+    else:
+        y="$<1$"
+    return(y)
+
 def roundto2fit(x,sigma,goodness):
     #
     if goodness==1:
@@ -1514,6 +1525,7 @@ def getdefaulttimes1():
     if modelname=="thickdisk7":
         defaultfti=8000
         defaultftf=17000 # because field flips later and becomes very different
+        #defaultftf=13000 # test to compare with other models
     elif modelname=="thickdisk8":
         defaultfti=8000
         #defaultftf=11000
@@ -2184,7 +2196,12 @@ def printjetwindpower(filehandle = None, r = None, stage = 0, powjet = 0, powwin
 # -> lambaaz \approx 2\pi vaz/\Omega0
 
 def compute_resires(hoverrwhich=None):
-    mydH = r*dxdxp[2][2]*_dx2
+    #
+    # Note:  Toroidal field case: A_\theta -> A_1 A_2 A_3 via idxdxp's and then B1,B2,B3 computed via differences of A_i.
+    # So even if only setting A_\theta implies B^\theta = 0, Btheta = dx^\theta/dxp^i B^i will give non-zero value due to truncation error.
+    #
+    mydH = r*dxdxp[2][2]*_dx2  # GODMARK: inaccurate a bit as \theta component because dxdxp[1][2] and dxdxp[2][1] are non-zero.  So say so in paper.
+    #mydH = r*(_dx1*dxdxp[2][1] + _dx2*dxdxp[2][2]) # GODMARK: Seems logical, but wrong.
     mydP = r*np.sin(h)*dxdxp[3][3]*_dx3
     #
     
@@ -2204,13 +2221,37 @@ def compute_resires(hoverrwhich=None):
         res=np.fabs(lambdamriu2/_dx2)
         res2=0
     #
+    # distinguish between b^2 and b^\theta since off of equator they are different than if b^\theta=0 want that to be captured in Qmri measures.
+    bu0ks=bu[0]*dxdxp[0][0]
+    bu1ks=bu[1]*dxdxp[1][1] + bu[2]*dxdxp[1][2]
+    bu2ks=bu[1]*dxdxp[2][1] + bu[2]*dxdxp[2][2]
+    bu3ks=bu[3]*dxdxp[3][3]
+    #
+    # inverse of dx^{ks}/dx^{mks}
+    idxdxp00=1/dxdxp[0][0]
+    idxdxp11=dxdxp[2][2]/(dxdxp[2][2]*dxdxp[1][1]-dxdxp[2][1]*dxdxp[1][2])
+    idxdxp12=dxdxp[1][2]/(dxdxp[2][1]*dxdxp[1][2]-dxdxp[2][2]*dxdxp[1][1])
+    idxdxp21=dxdxp[2][1]/(dxdxp[2][1]*dxdxp[1][2]-dxdxp[2][2]*dxdxp[1][1])
+    idxdxp22=dxdxp[1][1]/(dxdxp[2][2]*dxdxp[1][1]-dxdxp[2][1]*dxdxp[1][2])
+    idxdxp33=1/dxdxp[3][3]
+    #
+    bd0ks=bd[0]*idxdxp00
+    bd1ks=bd[1]*idxdxp11+bd[2]*idxdxp21
+    bd2ks=bd[1]*idxdxp12+bd[2]*idxdxp22
+    bd3ks=bd[3]*idxdxp33
+    #
+    #
     if 1==1:
-        va2sq = np.fabs(bu[2]*bd[2]/(rho+bsq+gam*ug))
+        #bsqvert=bu[2]*bd[2]
+        bsqvert=bu2ks*bd2ks
+        va2sq = np.fabs(bsqvert/(rho+bsq+gam*ug))
         lambda2 = 2.0*np.pi * np.sqrt(va2sq) / omega
         # vertical grid cells per MRI wavelength
         res=np.fabs(lambda2/mydH)
         #
-        va3sq = np.fabs(bu[3]*bd[3]/(rho+bsq+gam*ug))
+        #bsqphidir=bu[3]*bd[3]
+        bsqphidir=bu3ks*bd3ks
+        va3sq = np.fabs(bsqphidir/(rho+bsq+gam*ug))
         lambda3 = 2.0*np.pi * np.sqrt(va3sq) / omega
         # azimuthal grid cells per MRI wavelength
         res3=np.fabs(lambda3/mydP)
@@ -2838,7 +2879,7 @@ def luminosities(which=1,rdown=0.0,rup=1.0E3):
 
 
 # need integrate when nz=1 because just avg2d data.  Means averaged-out, so sum is recovered by multiplying by number of cells in \phi
-def intangle_foravg2d(qty,hoverr=None,thetamid=np.pi/2,minbsqorho=None,maxbsqorho=None,inflowonly=None,mumax=None,mumin=None,maxbeta=None,which=1,doabs=0):
+def intangle_foravg2d(qty,hoverr=None,thetamid=np.pi/2,minbsqorho=None,maxbsqorho=None,inflowonly=None,outflowonly=None,mumax=None,mumin=None,maxbeta=None,unboundonly=None,which=1,doabs=0):
     #
     if doabs==1:
         qtynew=np.fabs(qty)
@@ -2864,11 +2905,11 @@ def intangle_foravg2d(qty,hoverr=None,thetamid=np.pi/2,minbsqorho=None,maxbsqorh
     isunbound=(-unb>1.0)
     tiny=np.finfo(rho.dtype).tiny
     #
-    result=intangle(qtynew,hoverr=hoverr,thetamid=thetamid,minbsqorho=minbsqorho,maxbsqorho=maxbsqorho,inflowonly=inflowonly,mumax=mumax,mumin=mumin,maxbeta=maxbeta,which=which)
+    result=intangle(qtynew,hoverr=hoverr,thetamid=thetamid,minbsqorho=minbsqorho,maxbsqorho=maxbsqorho,inflowonly=inflowonly,outflowonly=outflowonly,mumax=mumax,mumin=mumin,maxbeta=maxbeta,unboundonly=unboundonly,which=which)
     return(result)
 
 
-def intangle(qty,hoverr=None,thetamid=np.pi/2,minbsqorho=None,maxbsqorho=None,inflowonly=None,mumax=None,mumin=None,maxbeta=None,which=1,doavgn3=1):
+def intangle(qty,hoverr=None,thetamid=np.pi/2,minbsqorho=None,maxbsqorho=None,inflowonly=None,outflowonly=None,mumax=None,mumin=None,maxbeta=None,unboundonly=None,which=1,doavgn3=1):
     integrand = qty
     #
     #somehow gives slightly different answer than when computed directly
@@ -2892,10 +2933,16 @@ def intangle(qty,hoverr=None,thetamid=np.pi/2,minbsqorho=None,maxbsqorho=None,in
         insidemaxbsqorho = 1
     #
     # inflowonly for mdin
+    # NOTEMARK: Not to be used for efficiency, but only Mdot(r) reporting
     if inflowonly != None:
         insideinflowonly = uu[1]<0.0
     else:
         insideinflowonly = 1
+    #
+    if outflowonly != None:
+        insideoutflowonly = uu[1]>0.0
+    else:
+        insideoutflowonly = 1
     #
     #
     #v4asq=bsq/(rho+ug+(gam-1)*ug)
@@ -2903,22 +2950,25 @@ def intangle(qty,hoverr=None,thetamid=np.pi/2,minbsqorho=None,maxbsqorho=None,in
     # override (mum1fake or mu do poorly for marking boundary of jet)
     mum1fake=bsq/rho
     # mumax for wind
+    # NOTEMARK: Not to be used for efficiency, but only Mdot(r) reporting
     if mumax is None:
         insidemumax = 1
     else:
         insidemumax = 1
         insidemumax = insidemumax * (mum1fake<mumax)
-        insidemumax = insidemumax * (isunbound==1)
-        insidemumax = insidemumax * (uu[1]>0.0)
     #
     # mumin for jet
+    # NOTEMARK: Not to be used for efficiency, but only Mdot(r) reporting
     if mumin is None:
         insidemumin = 1
     else:
         insidemumin = 1
-        insidemumin = insidemumin * (mum1fake>mumin)
-        insidemumin = insidemumin * (isunbound==1)
-        insidemumin = insidemumin * (uu[1]>0.0)
+        insidemumin = insidemumin * (mum1fake>=mumin)
+    #
+    if unboundonly is None:
+        insideunbound = 1
+    else:
+        insideunbound = (isunbound==1)
     #
     # beta for wind
     #beta=((gam-1)*ug)*divideavoidinf(bsq*0.5)
@@ -2928,7 +2978,8 @@ def intangle(qty,hoverr=None,thetamid=np.pi/2,minbsqorho=None,maxbsqorho=None,in
     else:
         insidebeta = (beta<maxbeta)
     #
-    superintegrand=(integrand*insideinflowonly*insidehor*insideminbsqorho*insidemaxbsqorho*insidemumin*insidemumax*insidebeta*which)
+    #
+    superintegrand=(integrand*insideinflowonly*insideoutflowonly*insidehor*insideminbsqorho*insidemaxbsqorho*insidemumin*insidemumax*insideunbound*insidebeta*which)
     #
     if doavgn3==1:
         # this will be function of r
@@ -2948,7 +2999,7 @@ def intangle(qty,hoverr=None,thetamid=np.pi/2,minbsqorho=None,maxbsqorho=None,in
 
 
 
-def intrpvsh(qty=None,rin=None,rout=None,phiin=None,phiout=None,minbsqorho=None,maxbsqorho=None,inflowonly=None,mumax=None,mumin=None,maxbeta=None,which=1):
+def intrpvsh(qty=None,rin=None,rout=None,phiin=None,phiout=None,minbsqorho=None,maxbsqorho=None,inflowonly=None,outflowonly=None,mumax=None,mumin=None,maxbeta=None,unboundonly=None,which=1):
     #
     # use direct avoidance of some cells (rather than just using which) in order to speed-up this otherwise slowish calculation
     iin=iofr(rin)
@@ -2982,6 +3033,11 @@ def intrpvsh(qty=None,rin=None,rout=None,phiin=None,phiout=None,minbsqorho=None,
     else:
         insideinflowonly = 1
     #
+    if outflowonly != None:
+        insideoutflowonly = uu[1]>0.0
+    else:
+        insideoutflowonly = 1
+    #
     #
     #v4asq=bsq/(rho+ug+(gam-1)*ug)
     #mum1fake=uu[0]*(1.0+v4asq)-1.0
@@ -2993,8 +3049,6 @@ def intrpvsh(qty=None,rin=None,rout=None,phiin=None,phiout=None,minbsqorho=None,
     else:
         insidemumax = 1
         insidemumax = insidemumax * (mum1fake<mumax)
-        insidemumax = insidemumax * (isunbound==1)
-        insidemumax = insidemumax * (uu[1]>0.0)
     #
     # mumin for jet
     if mumin is None:
@@ -3002,8 +3056,11 @@ def intrpvsh(qty=None,rin=None,rout=None,phiin=None,phiout=None,minbsqorho=None,
     else:
         insidemumin = 1
         insidemumin = insidemumin * (mum1fake>mumin)
-        insidemumin = insidemumin * (isunbound==1)
-        insidemumin = insidemumin * (uu[1]>0.0)
+    #
+    if unboundonly is None:
+        insideunbound = 1
+    else:
+        insideunbound = (isunbound==1)
     #
     # beta for wind
     #beta=((gam-1)*ug)*divideavoidinf(bsq*0.5)
@@ -3015,7 +3072,7 @@ def intrpvsh(qty=None,rin=None,rout=None,phiin=None,phiout=None,minbsqorho=None,
     #
     ####################
     # DO SUM
-    tosum=(integrand*insideinflowonly*insideminbsqorho*insidemaxbsqorho*insidemumin*insidemumax*insidebeta*which*_dx1*_dx3)
+    tosum=(integrand*insideinflowonly*insideoutflowonly*insideminbsqorho*insidemaxbsqorho*insidemumin*insidemumax*insideunbound*insidebeta*which*_dx1*_dx3)
     #
     integral=restrictrphi_sum_vstheta(tosum,iin=iin,iout=iout,kin=kin,kout=kout)
     #
@@ -5596,7 +5653,7 @@ def fieldcalc2U():
 
 
 
-def horfluxcalc(ivalue=None,jvalue=None,takeabs=1,takecumsum=0,takeextreme=0,minbsqorho=10,inflowonly=None,whichcondition=True,uphalf=None):
+def horfluxcalc(ivalue=None,jvalue=None,takeabs=1,takecumsum=0,takeextreme=0,minbsqorho=10,inflowonly=None,outflowonly=None,whichcondition=True,uphalf=None):
     """
     Computes the absolute flux through the sphere i = ivalue
     """
@@ -5611,6 +5668,11 @@ def horfluxcalc(ivalue=None,jvalue=None,takeabs=1,takecumsum=0,takeextreme=0,min
         tosum=tosum
     else:
         tosum=tosum*(uu[1]<0)
+    #
+    if outflowonly==None:
+        tosum=tosum
+    else:
+        tosum=tosum*(uu[1]>0)
     #
     if uphalf==None:
         tosum=tosum
@@ -5733,16 +5795,16 @@ def scaletofullwedge(val):
 #     else:
 #         return(mdottot[whichi])
 
-def mdotcalc(ihor=None,**kwargs):
+def mdotcalc(ivalue=None,**kwargs):
     """
-    Computes the absolute flux through the sphere i = ihor
+    Computes the absolute flux through the sphere i = ivalue
     """
     #1D function of theta only:
     md = intangle( -gdet*rho*uu[1], **kwargs)
-    if ihor==None:
+    if ivalue==None:
         return(md)
     else:
-        return(md[ihor])
+        return(md[ivalue])
 
 def diskfluxcalc(jmid,rmin=None,rmax=None):
     """
@@ -7722,6 +7784,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         fsj30[findex]=horfluxcalc(ivalue=ihor,minbsqorho=30)
         fsj40[findex]=horfluxcalc(ivalue=ihor,minbsqorho=40)
         #
+        ##################################
         print("Mdot" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         avoidfloorcondition=condmaxbsqorho
         keywordsavoidfloor={'which': avoidfloorcondition}
@@ -7737,21 +7800,25 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         md20[findex]=intangle(-gdet*rho*uu[1],minbsqorho=20)
         # md30 really is Mdot for floor
         md30[findex]=intangle(-gdet*rho*uu[1],which=(avoidfloorcondition==0))
+        md40[findex]=intangle(-gdet*rho*uu[1],minbsqorho=40)
         # use 10 for jet and wind since at larger radii jet has lower bsqorho
         # don't include maxbeta=3 since outflows from disk can have larger beta
-        windmaxbeta=1E30
-        mdwind[findex]=intangle(gdet*rho*uu[1],mumax=1,maxbeta=windmaxbeta,which=condmaxbsqorho)
+        windmaxbeta=1E30 # used so Mdot_j + Mdot_w = Mdot_{in} in steady-state
+        # want outflow only (NOT TO BE USED for efficiency, just Mdot{jet,mw,w}(r))
+        mdwind[findex]=intangle(gdet*rho*uu[1],mumax=1,maxbeta=windmaxbeta,which=condmaxbsqorho,outflowonly=1)
+        # only mw has unbound connection.  Want Mjet+Mdotwind = Mdotin in steady-state, so only flow direction changes
         mwindmaxbeta=2
-        mdmwind[findex]=intangle(gdet*rho*uu[1],mumax=1,maxbeta=mwindmaxbeta,which=condmaxbsqorho)
+        mdmwind[findex]=intangle(gdet*rho*uu[1],mumax=1,maxbeta=mwindmaxbeta,which=condmaxbsqorho,outflowonly=1,unboundonly=1)
         #
-        mdjet[findex]=intangle(gdet*rho*uu[1],mumin=1,which=condmaxbsqorho)
+        mdjet[findex]=intangle(gdet*rho*uu[1],mumin=1,which=condmaxbsqorho,outflowonly=1)
         #
-        md40[findex]=intangle(-gdet*rho*uu[1],minbsqorho=40)
         mdrhosq[findex]=scaletofullwedge(((-gdet*rho**2*rho*uu[1]*diskcondition).sum(1)/maxrhosq2d).sum(1)*_dx2*_dx3)
         #mdrhosq[findex]=(-gdet*rho**2*rho*uu[1]).sum(1).sum(1)/(-gdet*rho**2).sum(1).sum(1)*(-gdet).sum(1).sum(1)*_dx2*_dx3
         #
         # use same below maxbsqorho condition for fsin for proper division comparison
-        mdin[findex]=intangle(-gdet*rho*uu[1],inflowonly=1,which=condmaxbsqorho)
+        mdin[findex]=intangle(-gdet*rho*uu[1],which=condmaxbsqorho,inflowonly=1)
+        #
+        ##################################
         #
         print("Edot" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         edtot[findex]=intangle(-gdet*Tud[1][0])
@@ -7780,6 +7847,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         # OLD style floor calculation kept, but not using _flr stuff anymore
         jetwind_minbsqorho=10.0
         #
+        # these jetpowcalc's are for efficiencies that need *net* energy flux, not one-way energy flux (i.e. wind has to include inflow as well)
         print("north hemisphere" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         pjem_n_mu1[findex]=jetpowcalc(0,mumin=1,donorthsouth=1)
         pjem_n_mumax1[findex]=jetpowcalc(0,mumax=1,maxbeta=windmaxbeta,donorthsouth=1)
@@ -8222,7 +8290,7 @@ def faraday():
     omegaf1b=v3nonhat - B3nonhat*(v1hat*B1hat+v2hat*B2hat)/(B1hat**2+B2hat**2)
     #
 
-def jetpowcalc(which=2,minbsqorho=None,mumin=None,mumax=None,maxbeta=None,maxbsqorho=None,donorthsouth=0,conditional=1):
+def jetpowcalc(which=2,minbsqorho=None,mumin=None,mumax=None,maxbeta=None,maxbsqorho=None,inflowonly=None,outflowonly=None,unboundonly=None,donorthsouth=0,conditional=1):
     if which==3:
         #rest-mass flux
         jetpowden = gdet*rho*uu[1]
@@ -8244,6 +8312,17 @@ def jetpowcalc(which=2,minbsqorho=None,mumin=None,mumax=None,maxbeta=None,maxbsq
     if which==4:
         #phi (mag. flux)
         jetpowden = np.abs(gdetB[1])
+    # new one's:
+    if which==15:
+        jetpowden = -gdet*(TudPA[1,0]+rho*uu[1]) # go ahead and remove rest-mass term
+    if which==16:
+        jetpowden = -gdet*(TudIE[1,0])
+    if which==17:
+        jetpowden = -gdet*(TudPA[1,3])
+    if which==18:
+        jetpowden = -gdet*(TudIE[1,3])
+    #
+    ############################################
     #jetpowden[tj>=ny-2] = 0*jetpowden[tj>=ny-2]
     #jetpowden[tj<1] = 0*jetpowden[tj<1]
     if 1==1:
@@ -8281,10 +8360,19 @@ def jetpowcalc(which=2,minbsqorho=None,mumin=None,mumax=None,maxbeta=None,maxbsq
         else:
             cond+=(bsq/rho<minbsqorho)
         #
-        #zero out bound region
-        cond+=(1-isunbound)
-        #zero out infalling region
-        cond+=(uu[1]<=0.0)
+        # NOTEMARK: this gives Edot[wind,out,unbound], but really want Edot[wind,net] because that's required to compute efficiency.  Edotout never otherwise used even if "interesting"
+        if unboundonly==1:
+            #zero out bound region
+            cond+=(1-isunbound)
+        #
+        if inflowonly==1:
+            #zero out outflowing region
+            cond+=(uu[1]>=0.0)
+        #
+        if outflowonly==1:
+            #zero out infalling region
+            cond+=(uu[1]<=0.0)
+        #
         # 1 = north
         #-1 = south
         if donorthsouth==1:
@@ -8394,6 +8482,12 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     # need to compute this again
     rhor=1+(1-a**2)**0.5
     ihor = np.floor(iofr(rhor)+0.5)
+    #
+    # choose radius where to measure total fluxes.  If ihor!=iflux for horizon quantities, components will be renormalized by totals
+    #iflux = iofr(2.0)
+    # sasha says r=5 is best so that also his A-0.9N100 model gets agreement between our floor subtractions.
+    iflux = iofr(5.0)
+    ##########
     #
     rjetin=10.
     if modelname=="blandford3d_new":
@@ -8676,8 +8770,11 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #################################
     # BEGIN PART1 some things vsr (nothing that depends upon rdiskin or rdiskout)
     #################################
-    #mdotiniavg = timeavg(mdtot[:,ihor]-md10[:,ihor],ts,fti,ftf)
-    #mdotfinavg = (mdtot[:,ihor]-md10[:,ihor])[(ts<ftf)*(ts>=fti)].sum()/(mdtot[:,ihor]-md10[:,ihor])[(ts<ftf)*(ts>=fti)].shape[0]
+    #
+    ###########################################################################################
+    # some things vs. radius (that need no normalization)
+    ###########################################################################################
+    #
     mdotiniavgvsr = timeavg(mdtot,ts,iti,itf)
     mdotfinavgvsr = timeavg(mdtot,ts,fti,ftf)
     # full (disk + jet) accretion rate
@@ -8719,36 +8816,18 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     mdotfinavgvsr40 = timeavg(mdtot[:,:]-md40[:,:],ts,fti,ftf)    
     #
-    # Below 2 used as divisor to get efficiencies and normalized magnetic flux
-    #mdotiniavg = np.float64(mdotiniavgvsr30)[r[:,0,0]<10].mean()
-    #mdotfinavg = np.float64(mdotfinavgvsr30)[r[:,0,0]<10].mean()
-    mdotiniavg = np.float64(mdotiniavgvsr30)[ihor]
-    mdotfinavg = np.float64(mdotfinavgvsr30)[ihor]
-    #
-    mdot30iniavg = np.float64(mdotiniavgvsr30itself)[ihor]
-    mdot30finavg = np.float64(mdotfinavgvsr30itself)[ihor]
-    #
-    mdot10iniavg = np.float64(mdotiniavgvsr10itself)[ihor]
-    mdot10finavg = np.float64(mdotfinavgvsr10itself)[ihor]
-    #
-    # below as pjem30, but removed that
-    pjetiniavg = timeavg(pjem5[:,ihor],ts,iti,itf)
-    pjetfinavg = timeavg(pjem5[:,ihor],ts,fti,ftf)
     #
     # EM energy
     pjemtot = edem
-    pjemfinavgtot = timeavg(pjemtot[:,ihor],ts,fti,ftf)
     pjemfinavgvsr = timeavg(pjemtot,ts,fti,ftf)
     pjemfinavgvsr5 = timeavg(pjem5[:,:],ts,fti,ftf)
     #
     # MA free energy (but remove matter-energy flux created by floors (i.e. bsq/rho>30) near horizon)
     pjmaketot = (edma-edma30) - (edm-edm30)
-    pjmakefinavgtot = timeavg(pjmaketot[:,ihor],ts,fti,ftf)
     pjmakefinavgvsr = timeavg(pjmaketot,ts,fti,ftf)
     #
     # free energy (use em+make=ke so bsq/rho>30 correction can be made less number of times)
     pjketot = pjemtot + pjmaketot
-    pjkefinavgtot = pjemfinavgtot + pjmakefinavgtot
     pjkefinavgvsr = pjemfinavgvsr + pjmakefinavgvsr
     #
     #
@@ -8764,18 +8843,44 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     # rho u^r u_\phi + rho u^r -> rho u^r (u_\phi+1) (stupid) vs. rho u^r u_t + rho u^r -> rho u^r (u_t+1) (correct)
     # EM energy
     ljemtot = ldtot - ldma
-    ljemfinavgtot = timeavg(ljemtot[:,ihor],ts,fti,ftf)
     ljemfinavgvsr = timeavg(ljemtot,ts,fti,ftf)
     #
     # MA free energy
     ljmaketot = (ldma-ldma30) - (ldm-ldm30)
-    ljmakefinavgtot = timeavg(ljmaketot[:,ihor],ts,fti,ftf)
     ljmakefinavgvsr = timeavg(ljmaketot,ts,fti,ftf)
     #
     # free energy (use em+make=ke so bsq/rho>30 correction can be made less number of times)
     ljketot = ljemtot + ljmaketot
-    ljkefinavgtot = timeavg(ljketot[:,ihor],ts,fti,ftf)
     ljkefinavgvsr = timeavg(ljketot,ts,fti,ftf)
+    #
+    #
+    #
+    ###################################################################################
+    # quantities at horizon
+    ###################################################################################
+    #
+    # Below 2 used as divisor to get efficiencies and normalized magnetic flux
+    # mdotiniavg = np.float64(mdotiniavgvsr30)[r[:,0,0]<10].mean()
+    # mdotfinavg = np.float64(mdotfinavgvsr30)[r[:,0,0]<10].mean()
+    mdotiniavg = np.float64(mdotiniavgvsr30)[ihor]
+    mdotfinavg = np.float64(mdotfinavgvsr30)[ihor]
+    #
+    mdot30iniavg = np.float64(mdotiniavgvsr30itself)[ihor]
+    mdot30finavg = np.float64(mdotfinavgvsr30itself)[ihor]
+    #
+    mdot10iniavg = np.float64(mdotiniavgvsr10itself)[ihor]
+    mdot10finavg = np.float64(mdotfinavgvsr10itself)[ihor]
+    #
+    # below as pjem30, but removed that
+    pjetfinavg = pjemfinavgvsr5[ihor]
+    pjemfinavgtot = pjemfinavgvsr[ihor]
+    pjmakefinavgtot = pjmakefinavgvsr[ihor]
+    pjkefinavgtot = pjemfinavgtot + pjmakefinavgtot
+    #
+    ljemfinavgtot = ljemfinavgvsr[ihor]
+    ljmakefinavgtot = ljmakefinavgvsr[ihor]
+    ljkefinavgtot = ljkefinavgvsr[ihor]
+    ljkefinavgtot = ljemfinavgtot + ljmakefinavgtot
     #
     if 0==1:
         # TEMP FIX FUCKMARK
@@ -8805,6 +8910,48 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     fsj30finavg = timeavg(fsj30[:,ihor],ts,fti,ftf)
     fsj30sqfinavg = timeavg(fsj30[:,ihor]**2,ts,fti,ftf)**0.5
     #
+    ###################################################################################
+    # quantities at flux measure position (only those required)
+    ###################################################################################
+    #
+    # only corrects horizon values.  For example, eta^{EM}_{H}(new) = eta^{EM}_{H}(orig) * (eta^{tot}_H/eta^{tot}_{iflux})
+    #
+    # Below 2 used as divisor to get efficiencies and normalized magnetic flux
+    # mdotiniavgalt = np.float64(mdotiniavgvsr30)[r[:,0,0]<10].mean()
+    # mdotfinavgalt = np.float64(mdotfinavgvsr30)[r[:,0,0]<10].mean()
+    mdotiniavgalt = np.float64(mdotiniavgvsr30)[iflux]
+    mdotfinavgalt = np.float64(mdotfinavgvsr30)[iflux]
+    #
+    mdot30iniavgalt = np.float64(mdotiniavgvsr30itself)[iflux]
+    mdot30finavgalt = np.float64(mdotfinavgvsr30itself)[iflux]
+    #
+    mdot10iniavgalt = np.float64(mdotiniavgvsr10itself)[iflux]
+    mdot10finavgalt = np.float64(mdotfinavgvsr10itself)[iflux]
+    #
+    # below as pjem30, but removed that
+    pjetfinavgalt = pjemfinavgvsr5[iflux]
+    pjemfinavgtotalt = pjemfinavgvsr[iflux]
+    pjmakefinavgtotalt = pjmakefinavgvsr[iflux]
+    ljemfinavgtotalt = ljemfinavgvsr[iflux]
+    ljmakefinavgtotalt = ljmakefinavgvsr[iflux]
+    ljkefinavgtotalt = ljkefinavgvsr[iflux]
+    #
+    ####
+    # replace cases that can be universally assumed (i.e. total fluxes can be replaced since more accurate total at i=iflux)
+    #
+    mdotiniavg=mdotiniavgalt
+    mdotfinavg=mdotfinavgalt
+    #
+    mdot30iniavg=mdot30iniavgalt
+    mdot30finavg=mdot30finavgalt
+    #
+    mdot10iniavg=mdot10iniavgalt
+    mdot10finavg=mdot10finavgalt
+    #
+    #
+    ###########################################################################################
+    # other things vs. radius (now that have some horizon things, can normalize quantities created below)
+    ###########################################################################################
     #
     mdin_vsr=timeavg(mdin[:,:],ts,fti,ftf)
     mdjet_vsr=timeavg(mdjet[:,:],ts,fti,ftf)
@@ -9252,6 +9399,53 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     # BEGIN compute h/r stuff (can't depend upon rdiskin or rdiskout -- although could make some of them depend if put some of them later)
     #################################
     print("h/r stuff" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
+    #
+    #############################################
+    ug4alt=ugsrhosqdcden
+    pg4alt=(gam-1.0)*ug4alt
+    rho4alt=rhosrhosqdcden
+    cs24alt=gam*pg4alt/(rho4alt+ug4alt+pg4alt)
+    vphi4alt=vuas3rhosqdcden
+    #vk4alt=r/(a+r**(1.5))
+    R_vsr=r[:,ny/2,0]*np.sin(h[:,ny/2,0])
+    vk4alt_vsr=R_vsr/(a + R_vsr**(1.5))
+    #
+    # create kep v_\phi for every time
+    vk4alt=np.copy(vuas3rhosqdcden)*0.0
+    for ttii in np.arange(0,len(ts)):
+            vk4alt[ttii,:] = vk4alt_vsr[:]
+    #
+    horalt1=np.arctan(np.sqrt(cs24alt)/vphi4alt)
+    horalt2=np.arctan(np.sqrt(cs24alt)/vk4alt)
+    #
+    horalt1_avg=timeavg(horalt1,ts,fti,ftf)
+    horalt2_avg=timeavg(horalt2,ts,fti,ftf)
+    #
+    #############################################
+    #############################################
+    ug4alt=ugsrhosqdc
+    pg4alt=(gam-1.0)*ug4alt
+    rho4alt=rhosrhosqdc
+    cs24alt=gam*pg4alt/(rho4alt+ug4alt+pg4alt)
+    vphi4alt=vuas3rhosqdc
+    #vk4alt=r/(a+r**(1.5))
+    R_vsr=r[:,ny/2,0]*np.sin(h[:,ny/2,0])
+    vk4alt_vsr=R_vsr/(a + R_vsr**(1.5))
+    #
+    # create kep v_\phi for every time
+    vk4alt=np.copy(vuas3rhosqdc)*0.0
+    for ttii in np.arange(0,len(ts)):
+            vk4alt[ttii,:] = vk4alt_vsr[:]
+    #
+    horalt3=np.arctan(np.sqrt(cs24alt)/vphi4alt)
+    horalt4=np.arctan(np.sqrt(cs24alt)/vk4alt)
+    #
+    horalt3_avg=timeavg(horalt3,ts,fti,ftf)
+    horalt4_avg=timeavg(horalt4,ts,fti,ftf)
+    #
+    #############################################
+    ###################
+    #
     hoverrhor=hoverr[:,ihor]
     hoverr2=hoverr[:,iofr(2)]
     hoverr5=hoverr[:,iofr(5)]
@@ -9280,11 +9474,14 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     if modelname=="runlocaldipole3dfiducial" or modelname=="blandford3d_new":
         hoverr12=hoverr[:,iofr(12)]
         hoverratrmax_t0=hoverr12[0]
+        hoverraltatrmax_t0=horalt1[0,iofr(12)]
     elif modelname=="sasham9" or modelname=="sasham9full2pi" or modelname=="sasham5" or modelname=="sasha0" or modelname=="sasha1" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9b25" or modelname=="sasha9b50" or modelname=="sasha9b100" or modelname=="sasha9b200" or modelname=="sasha99":
-        hoverr34=hoverr[:,iofr(34)]
+        hoverr34=hoverr[:,iofr(34)] # some models may have rmax=37 instead
         hoverratrmax_t0=hoverr34[0]
+        hoverraltatrmax_t0=horalt1[0,iofr(34)]
     else:
         hoverratrmax_t0=hoverr100[0]
+        hoverraltatrmax_t0=horalt1[0,iofr(100.0)]
     #
     #
     hoverrcoronahor=hoverrcorona[:,ihor]
@@ -9325,6 +9522,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     hoverr_jet20_t0 = hoverr_jet20[0]
     hoverr_jet100_t0 = hoverr_jet100[0]
     #
+    #
+    #########################################
     #
     betamin_t0=betamin[0,0]
     betaavg_t0=betaavg[0,0]
@@ -10273,7 +10472,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     else:
         ofc = 0
         clr = 'k'
-
+    #
+    # GODMARK: not correcting for iflux vs. ihor floor-issue near horizon
     if epsFm is not None and epsFke is not None:
         FMraw    = mdtot[:,ihor]
         FM       = epsFm * mdtot[:,ihor]
@@ -10308,102 +10508,105 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     # mdotwinfinavg mdotwoutfinavg
     # mdotinrdiskfinniavg  mdotinrdiskoutfinavg
     #
-    etabhEM = prefactor*pjemtot[:,ihor]/mdotfinavg
-    etabhMAKE = prefactor*pjmaketot[:,ihor]/mdotfinavg
+    # no iflux correction for j, mw, w numerators. Only need correction for BH term that uses ihor.
+    # note that mdotfinavg already corrected since could correct total fluxes from before
+    #
+    etabhEM = prefactor*pjemtot[:,ihor]/mdotfinavg * ((pjemtot[:,iflux]+pjmaketot[:,iflux])/(pjemtot[:,ihor]+pjmaketot[:,ihor]))
+    etabhMAKE = prefactor*pjmaketot[:,ihor]/mdotfinavg * ((pjemtot[:,iflux]+pjmaketot[:,iflux])/(pjemtot[:,ihor]+pjmaketot[:,ihor]))
     etabh = etabhEM + etabhMAKE
     etajEM = prefactor*pjem_mu1[:,iofr(rjetout)]/mdotfinavg
     etajMAKE = prefactor*pjmake_mu1[:,iofr(rjetout)]/mdotfinavg
     etaj = etajEM + etajMAKE
-    etajlocal = etaj*(mdotfinavg/mdotinrdiskoutfinavg)
+    #etajlocal = etaj*(mdotfinavg/mdotinrdiskoutfinavg)
     etamwinEM = prefactor*pjem_mumax1m[:,iofr(rjetin)]/mdotfinavg
     etamwinMAKE = prefactor*pjmake_mumax1m[:,iofr(rjetin)]/mdotfinavg
     etamwin = etamwinEM + etamwinMAKE
-    etamwinlocal = etamwin*(mdotfinavg/mdotinrdiskinfinavg)
+    #etamwinlocal = etamwin*(mdotfinavg/mdotinrdiskinfinavg)
     etamwoutEM = prefactor*pjem_mumax1m[:,iofr(rjetout)]/mdotfinavg
     etamwoutMAKE = prefactor*pjmake_mumax1m[:,iofr(rjetout)]/mdotfinavg
     etamwout = etamwoutEM + etamwoutMAKE
-    etamwoutlocal = etamwout*(mdotfinavg/mdotinrdiskoutfinavg)
+    #etamwoutlocal = etamwout*(mdotfinavg/mdotinrdiskoutfinavg)
     etawinEM = prefactor*pjem_mumax1[:,iofr(rdiskin)]/mdotfinavg
     etawinMAKE = prefactor*pjmake_mumax1[:,iofr(rdiskin)]/mdotfinavg
     etawin = etawinEM + etawinMAKE
-    etawinlocal = etawin*(mdotfinavg/mdotinrdiskinfinavg)
+    #etawinlocal = etawin*(mdotfinavg/mdotinrdiskinfinavg)
     etawoutEM = prefactor*pjem_mumax1[:,iofr(rdiskout)]/mdotfinavg
     etawoutMAKE = prefactor*pjmake_mumax1[:,iofr(rdiskout)]/mdotfinavg
     etawout = etawoutEM + etawoutMAKE
-    etawoutlocal = etawout*(mdotfinavg/mdotinrdiskoutfinavg)
+    #etawoutlocal = etawout*(mdotfinavg/mdotinrdiskoutfinavg)
     #
-    etabhEM2 = prefactor*pjemtot[:,ihor]/mdotiniavg
-    etabhMAKE2 = prefactor*pjmaketot[:,ihor]/mdotiniavg
+    etabhEM2 = etabhEM * (mdotfinavg/mdotiniavg)
+    etabhMAKE2 = etabhMAKE * (mdotfinavg/mdotiniavg)
     etabh2 = etabhEM2 + etabhMAKE2
     etajEM2 = prefactor*pjem_mu1[:,iofr(rjetout)]/mdotiniavg
     etajMAKE2 = prefactor*pjmake_mu1[:,iofr(rjetout)]/mdotiniavg
     etaj2 = etajEM2 + etajMAKE2
-    etaj2local = etaj2*(mdotiniavg/mdotinrdiskoutiniavg)
+    #etaj2local = etaj2*(mdotiniavg/mdotinrdiskoutiniavg)
     etamwinEM2 = prefactor*pjem_mumax1m[:,iofr(rjetin)]/mdotiniavg
     etamwinMAKE2 = prefactor*pjmake_mumax1m[:,iofr(rjetin)]/mdotiniavg
     etamwin2 = etamwinEM2 + etamwinMAKE2
-    etamwin2local = etamwin2*(mdotiniavg/mdotinrdiskininiavg)
+    #etamwin2local = etamwin2*(mdotiniavg/mdotinrdiskininiavg)
     etamwoutEM2 = prefactor*pjem_mumax1m[:,iofr(rjetout)]/mdotiniavg
     etamwoutMAKE2 = prefactor*pjmake_mumax1m[:,iofr(rjetout)]/mdotiniavg
     etamwout2 = etamwoutEM2 + etamwoutMAKE2
-    etamwout2local = etamwout2*(mdotiniavg/mdotinrdiskoutiniavg)
+    #etamwout2local = etamwout2*(mdotiniavg/mdotinrdiskoutiniavg)
     etawinEM2 = prefactor*pjem_mumax1[:,iofr(rdiskin)]/mdotiniavg
     etawinMAKE2 = prefactor*pjmake_mumax1[:,iofr(rdiskin)]/mdotiniavg
     etawin2 = etawinEM2 + etawinMAKE2
-    etawin2local = etawin2*(mdotiniavg/mdotinrdiskininiavg)
+    #etawin2local = etawin2*(mdotiniavg/mdotinrdiskininiavg)
     etawoutEM2 = prefactor*pjem_mumax1[:,iofr(rdiskout)]/mdotiniavg
     etawoutMAKE2 = prefactor*pjmake_mumax1[:,iofr(rdiskout)]/mdotiniavg
     etawout2 = etawoutEM2 + etawoutMAKE2
-    etawout2local = etawout2*(mdotiniavg/mdotinrdiskoutiniavg)
+    #etawout2local = etawout2*(mdotiniavg/mdotinrdiskoutiniavg)
     #
     # lj = angular momentum flux
-    letabhEM = prefactor*ljemtot[:,ihor]/mdotfinavg
-    letabhMAKE = prefactor*ljmaketot[:,ihor]/mdotfinavg
+    letabhEM = prefactor*ljemtot[:,ihor]/mdotfinavg * ((ljemtot[:,iflux]+ljmaketot[:,iflux])/(ljemtot[:,ihor]+ljmaketot[:,ihor]))
+    letabhMAKE = prefactor*ljmaketot[:,ihor]/mdotfinavg * ((ljemtot[:,iflux]+ljmaketot[:,iflux])/(ljemtot[:,ihor]+ljmaketot[:,ihor]))
     letabh = letabhEM + letabhMAKE
     letajEM = prefactor*ljem_mu1[:,iofr(rjetout)]/mdotfinavg
     letajMAKE = prefactor*ljmake_mu1[:,iofr(rjetout)]/mdotfinavg
     letaj = letajEM + letajMAKE
-    letajlocal = letaj*(mdotfinavg/mdotinrdiskoutfinavg)
+    #letajlocal = letaj*(mdotfinavg/mdotinrdiskoutfinavg)
     letamwinEM = prefactor*ljem_mumax1m[:,iofr(rjetin)]/mdotfinavg
     letamwinMAKE = prefactor*ljmake_mumax1m[:,iofr(rjetin)]/mdotfinavg
     letamwin = letamwinEM + letamwinMAKE
-    letamwinlocal = letamwin*(mdotfinavg/mdotinrdiskinfinavg)
+    #letamwinlocal = letamwin*(mdotfinavg/mdotinrdiskinfinavg)
     letamwoutEM = prefactor*ljem_mumax1m[:,iofr(rjetout)]/mdotfinavg
     letamwoutMAKE = prefactor*ljmake_mumax1m[:,iofr(rjetout)]/mdotfinavg
     letamwout = letamwoutEM + letamwoutMAKE
-    letamwoutlocal = letamwout*(mdotfinavg/mdotinrdiskoutfinavg)
+    #letamwoutlocal = letamwout*(mdotfinavg/mdotinrdiskoutfinavg)
     letawinEM = prefactor*ljem_mumax1[:,iofr(rdiskin)]/mdotfinavg
     letawinMAKE = prefactor*ljmake_mumax1[:,iofr(rdiskin)]/mdotfinavg
     letawin = letawinEM + letawinMAKE
-    letawinlocal = letawin*(mdotfinavg/mdotinrdiskinfinavg)
+    #letawinlocal = letawin*(mdotfinavg/mdotinrdiskinfinavg)
     letawoutEM = prefactor*ljem_mumax1[:,iofr(rdiskout)]/mdotfinavg
     letawoutMAKE = prefactor*ljmake_mumax1[:,iofr(rdiskout)]/mdotfinavg
     letawout = letawoutEM + letawoutMAKE
-    letawoutlocal = letawout*(mdotfinavg/mdotinrdiskoutfinavg)
+    #letawoutlocal = letawout*(mdotfinavg/mdotinrdiskoutfinavg)
     #
-    letabhEM2 = prefactor*ljemtot[:,ihor]/mdotiniavg
-    letabhMAKE2 = prefactor*ljmaketot[:,ihor]/mdotiniavg
+    letabhEM2 = letabhEM * (mdotfinavg/mdotiniavg)
+    letabhMAKE2 = letabhMAKE * (mdotfinavg/mdotiniavg)
     letabh2 = letabhEM2 + letabhMAKE2
     letajEM2 = prefactor*ljem_mu1[:,iofr(rjetout)]/mdotiniavg
     letajMAKE2 = prefactor*ljmake_mu1[:,iofr(rjetout)]/mdotiniavg
     letaj2 = letajEM2 + letajMAKE2
-    letaj2local = letaj2*(mdotiniavg/mdotinrdiskoutiniavg)
+    #letaj2local = letaj2*(mdotiniavg/mdotinrdiskoutiniavg)
     letamwinEM2 = prefactor*ljem_mumax1m[:,iofr(rjetin)]/mdotiniavg
     letamwinMAKE2 = prefactor*ljmake_mumax1m[:,iofr(rjetin)]/mdotiniavg
     letamwin2 = letamwinEM2 + letamwinMAKE2
-    letamwin2local = letamwin2*(mdotiniavg/mdotinrdiskininiavg)
+    #letamwin2local = letamwin2*(mdotiniavg/mdotinrdiskininiavg)
     letamwoutEM2 = prefactor*ljem_mumax1m[:,iofr(rjetout)]/mdotiniavg
     letamwoutMAKE2 = prefactor*ljmake_mumax1m[:,iofr(rjetout)]/mdotiniavg
     letamwout2 = letamwoutEM2 + letamwoutMAKE2
-    letamwout2local = letamwout2*(mdotiniavg/mdotinrdiskoutiniavg)
+    #letamwout2local = letamwout2*(mdotiniavg/mdotinrdiskoutiniavg)
     letawinEM2 = prefactor*ljem_mumax1[:,iofr(rdiskin)]/mdotiniavg
     letawinMAKE2 = prefactor*ljmake_mumax1[:,iofr(rdiskin)]/mdotiniavg
     letawin2 = letawinEM2 + letawinMAKE2
-    letawin2local = letawin2*(mdotiniavg/mdotinrdiskininiavg)
+    #letawin2local = letawin2*(mdotiniavg/mdotinrdiskininiavg)
     letawoutEM2 = prefactor*ljem_mumax1[:,iofr(rdiskout)]/mdotiniavg
     letawoutMAKE2 = prefactor*ljmake_mumax1[:,iofr(rdiskout)]/mdotiniavg
     letawout2 = letawoutEM2 + letawoutMAKE2
-    letawout2local = letawout2*(mdotiniavg/mdotinrdiskoutiniavg)
+    #letawout2local = letawout2*(mdotiniavg/mdotinrdiskoutiniavg)
     #
     #
     #
@@ -10418,23 +10621,23 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         etabhEM[icond]=etabhEM2[icond]
         etabhMAKE[icond]=etabhMAKE2[icond]
         etaj[icond]=etaj2[icond]
-        etajlocal[icond]=etaj2local[icond]
+        #etajlocal[icond]=etaj2local[icond]
         etajEM[icond]=etajEM2[icond]
         etajMAKE[icond]=etajMAKE2[icond]
         etamwin[icond]=etamwin2[icond]
-        etamwinlocal[icond]=etamwin2local[icond]
+        #etamwinlocal[icond]=etamwin2local[icond]
         etamwinEM[icond]=etamwinEM2[icond]
         etamwinMAKE[icond]=etamwinMAKE2[icond]
         etamwout[icond]=etamwout2[icond]
-        etamwoutlocal[icond]=etamwout2local[icond]
+        #etamwoutlocal[icond]=etamwout2local[icond]
         etamwoutEM[icond]=etamwoutEM2[icond]
         etamwoutMAKE[icond]=etamwoutMAKE2[icond]
         etawin[icond]=etawin2[icond]
-        etawinlocal[icond]=etawin2local[icond]
+        #etawinlocal[icond]=etawin2local[icond]
         etawinEM[icond]=etawinEM2[icond]
         etawinMAKE[icond]=etawinMAKE2[icond]
         etawout[icond]=etawout2[icond]
-        etawoutlocal[icond]=etawout2local[icond]
+        #etawoutlocal[icond]=etawout2local[icond]
         etawoutEM[icond]=etawoutEM2[icond]
         etawoutMAKE[icond]=etawoutMAKE2[icond]
         #
@@ -10442,23 +10645,23 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         letabhEM[icond]=letabhEM2[icond]
         letabhMAKE[icond]=letabhMAKE2[icond]
         letaj[icond]=letaj2[icond]
-        letajlocal[icond]=letaj2local[icond]
+        #letajlocal[icond]=letaj2local[icond]
         letajEM[icond]=letajEM2[icond]
         letajMAKE[icond]=letajMAKE2[icond]
         letamwin[icond]=letamwin2[icond]
-        letamwinlocal[icond]=letamwin2local[icond]
+        #letamwinlocal[icond]=letamwin2local[icond]
         letamwinEM[icond]=letamwinEM2[icond]
         letamwinMAKE[icond]=letamwinMAKE2[icond]
         letamwout[icond]=letamwout2[icond]
-        letamwoutlocal[icond]=letamwout2local[icond]
+        #letamwoutlocal[icond]=letamwout2local[icond]
         letamwoutEM[icond]=letamwoutEM2[icond]
         letamwoutMAKE[icond]=letamwoutMAKE2[icond]
         letawin[icond]=letawin2[icond]
-        letawinlocal[icond]=letawin2local[icond]
+        #letawinlocal[icond]=letawin2local[icond]
         letawinEM[icond]=letawinEM2[icond]
         letawinMAKE[icond]=letawinMAKE2[icond]
         letawout[icond]=letawout2[icond]
-        letawoutlocal[icond]=letawout2local[icond]
+        #letawoutlocal[icond]=letawout2local[icond]
         letawoutEM[icond]=letawoutEM2[icond]
         letawoutMAKE[icond]=letawoutMAKE2[icond]
         #
@@ -10467,51 +10670,51 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         etabhEM_avg = timeavg(etabhEM,ts,fti,ftf)
         etabhMAKE_avg = timeavg(etabhMAKE,ts,fti,ftf)
         etaj_avg = timeavg(etaj,ts,fti,ftf)
-        etajlocal_avg = timeavg(etajlocal,ts,fti,ftf)
+        #etajlocal_avg = timeavg(etajlocal,ts,fti,ftf)
         etajEM_avg = timeavg(etajEM,ts,fti,ftf)
         etajMAKE_avg = timeavg(etajMAKE,ts,fti,ftf)
         etamwin_avg = timeavg(etamwin,ts,fti,ftf)
-        etamwinlocal_avg = timeavg(etamwinlocal,ts,fti,ftf)
+        #etamwinlocal_avg = timeavg(etamwinlocal,ts,fti,ftf)
         etamwinEM_avg = timeavg(etamwinEM,ts,fti,ftf)
         etamwinMAKE_avg = timeavg(etamwinMAKE,ts,fti,ftf)
         etamwout_avg = timeavg(etamwout,ts,fti,ftf)
-        etamwoutlocal_avg = timeavg(etamwoutlocal,ts,fti,ftf)
+        #etamwoutlocal_avg = timeavg(etamwoutlocal,ts,fti,ftf)
         etamwoutEM_avg = timeavg(etamwoutEM,ts,fti,ftf)
         etamwoutMAKE_avg = timeavg(etamwoutMAKE,ts,fti,ftf)
         etawin_avg = timeavg(etawin,ts,fti,ftf)
-        etawinlocal_avg = timeavg(etawinlocal,ts,fti,ftf)
+        #etawinlocal_avg = timeavg(etawinlocal,ts,fti,ftf)
         etawinEM_avg = timeavg(etawinEM,ts,fti,ftf)
         etawinMAKE_avg = timeavg(etawinMAKE,ts,fti,ftf)
         etawout_avg = timeavg(etawout,ts,fti,ftf)
-        etawoutlocal_avg = timeavg(etawoutlocal,ts,fti,ftf)
+        #etawoutlocal_avg = timeavg(etawoutlocal,ts,fti,ftf)
         etawoutEM_avg = timeavg(etawoutEM,ts,fti,ftf)
         etawoutMAKE_avg = timeavg(etawoutMAKE,ts,fti,ftf)
-        pemtot_avg = timeavg(pjemtot[:,ihor],ts,fti,ftf)
+        pemtot_avg = timeavg(pjemtot[:,ihor]*((pjemtot[:,iflux]+pjmaketot[:,iflux])/(pjemtot[:,ihor]+pjmaketot[:,ihor])),ts,fti,ftf)
         #
         letabh_avg = timeavg(letabh,ts,fti,ftf)
         letabhEM_avg = timeavg(letabhEM,ts,fti,ftf)
         letabhMAKE_avg = timeavg(letabhMAKE,ts,fti,ftf)
         letaj_avg = timeavg(letaj,ts,fti,ftf)
-        letajlocal_avg = timeavg(letajlocal,ts,fti,ftf)
+        #letajlocal_avg = timeavg(letajlocal,ts,fti,ftf)
         letajEM_avg = timeavg(letajEM,ts,fti,ftf)
         letajMAKE_avg = timeavg(letajMAKE,ts,fti,ftf)
         letamwin_avg = timeavg(letamwin,ts,fti,ftf)
-        letamwinlocal_avg = timeavg(letamwinlocal,ts,fti,ftf)
+        #letamwinlocal_avg = timeavg(letamwinlocal,ts,fti,ftf)
         letamwinEM_avg = timeavg(letamwinEM,ts,fti,ftf)
         letamwinMAKE_avg = timeavg(letamwinMAKE,ts,fti,ftf)
         letamwout_avg = timeavg(letamwout,ts,fti,ftf)
-        letamwoutlocal_avg = timeavg(letamwoutlocal,ts,fti,ftf)
+        #letamwoutlocal_avg = timeavg(letamwoutlocal,ts,fti,ftf)
         letamwoutEM_avg = timeavg(letamwoutEM,ts,fti,ftf)
         letamwoutMAKE_avg = timeavg(letamwoutMAKE,ts,fti,ftf)
         letawin_avg = timeavg(letawin,ts,fti,ftf)
-        letawinlocal_avg = timeavg(letawinlocal,ts,fti,ftf)
+        #letawinlocal_avg = timeavg(letawinlocal,ts,fti,ftf)
         letawinEM_avg = timeavg(letawinEM,ts,fti,ftf)
         letawinMAKE_avg = timeavg(letawinMAKE,ts,fti,ftf)
         letawout_avg = timeavg(letawout,ts,fti,ftf)
-        letawoutlocal_avg = timeavg(letawoutlocal,ts,fti,ftf)
+        #letawoutlocal_avg = timeavg(letawoutlocal,ts,fti,ftf)
         letawoutEM_avg = timeavg(letawoutEM,ts,fti,ftf)
         letawoutMAKE_avg = timeavg(letawoutMAKE,ts,fti,ftf)
-        lemtot_avg = timeavg(ljemtot[:,ihor],ts,fti,ftf)
+        lemtot_avg = timeavg(ljemtot[:,ihor]*((ljemtot[:,iflux]+ljmaketot[:,iflux])/(ljemtot[:,ihor]+ljmaketot[:,ihor])),ts,fti,ftf)
         #
         #
         #
@@ -10520,51 +10723,51 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             etabhEM2_avg = timeavg(etabhEM2,ts,iti,itf)
             etabhMAKE2_avg = timeavg(etabhMAKE2,ts,iti,itf)
             etaj2_avg = timeavg(etaj2,ts,iti,itf)
-            etaj2local_avg = timeavg(etaj2local,ts,iti,itf)
+            #etaj2local_avg = timeavg(etaj2local,ts,iti,itf)
             etajEM2_avg = timeavg(etajEM2,ts,iti,itf)
             etajMAKE2_avg = timeavg(etajMAKE2,ts,iti,itf)
             etamwin2_avg = timeavg(etamwin2,ts,iti,itf)
-            etamwin2local_avg = timeavg(etamwin2local,ts,iti,itf)
+            #etamwin2local_avg = timeavg(etamwin2local,ts,iti,itf)
             etamwinEM2_avg = timeavg(etamwinEM2,ts,iti,itf)
             etamwinMAKE2_avg = timeavg(etamwinMAKE2,ts,iti,itf)
             etamwout2_avg = timeavg(etamwout2,ts,iti,itf)
-            etamwout2local_avg = timeavg(etamwout2local,ts,iti,itf)
+            #etamwout2local_avg = timeavg(etamwout2local,ts,iti,itf)
             etamwoutEM2_avg = timeavg(etamwoutEM2,ts,iti,itf)
             etamwoutMAKE2_avg = timeavg(etamwoutMAKE2,ts,iti,itf)
             etawin2_avg = timeavg(etawin2,ts,iti,itf)
-            etawin2local_avg = timeavg(etawin2local,ts,iti,itf)
+            #etawin2local_avg = timeavg(etawin2local,ts,iti,itf)
             etawinEM2_avg = timeavg(etawinEM2,ts,iti,itf)
             etawinMAKE2_avg = timeavg(etawinMAKE2,ts,iti,itf)
             etawout2_avg = timeavg(etawout2,ts,iti,itf)
-            etawout2local_avg = timeavg(etawout2local,ts,iti,itf)
+            #etawout2local_avg = timeavg(etawout2local,ts,iti,itf)
             etawoutEM2_avg = timeavg(etawoutEM2,ts,iti,itf)
             etawoutMAKE2_avg = timeavg(etawoutMAKE2,ts,iti,itf)
-            pemtot2_avg = timeavg(pjemtot[:,ihor],ts,iti,itf)
+            pemtot2_avg = timeavg(pjemtot[:,ihor]*((pjemtot[:,iflux]+pjmaketot[:,iflux])/(pjemtot[:,ihor]+pjmaketot[:,ihor])),ts,iti,itf)
             #
             letabh2_avg = timeavg(letabh2,ts,iti,itf)
             letabhEM2_avg = timeavg(letabhEM2,ts,iti,itf)
             letabhMAKE2_avg = timeavg(letabhMAKE2,ts,iti,itf)
             letaj2_avg = timeavg(letaj2,ts,iti,itf)
-            letaj2local_avg = timeavg(letaj2local,ts,iti,itf)
+            #letaj2local_avg = timeavg(letaj2local,ts,iti,itf)
             letajEM2_avg = timeavg(letajEM2,ts,iti,itf)
             letajMAKE2_avg = timeavg(letajMAKE2,ts,iti,itf)
             letamwin2_avg = timeavg(letamwin2,ts,iti,itf)
-            letamwin2local_avg = timeavg(letamwin2local,ts,iti,itf)
+            #letamwin2local_avg = timeavg(letamwin2local,ts,iti,itf)
             letamwinEM2_avg = timeavg(letamwinEM2,ts,iti,itf)
             letamwinMAKE2_avg = timeavg(letamwinMAKE2,ts,iti,itf)
             letamwout2_avg = timeavg(letamwout2,ts,iti,itf)
-            letamwout2local_avg = timeavg(letamwout2local,ts,iti,itf)
+            #letamwout2local_avg = timeavg(letamwout2local,ts,iti,itf)
             letamwoutEM2_avg = timeavg(letamwoutEM2,ts,iti,itf)
             letamwoutMAKE2_avg = timeavg(letamwoutMAKE2,ts,iti,itf)
             letawin2_avg = timeavg(letawin2,ts,iti,itf)
-            letawin2local_avg = timeavg(letawin2local,ts,iti,itf)
+            #letawin2local_avg = timeavg(letawin2local,ts,iti,itf)
             letawinEM2_avg = timeavg(letawinEM2,ts,iti,itf)
             letawinMAKE2_avg = timeavg(letawinMAKE2,ts,iti,itf)
             letawout2_avg = timeavg(letawout2,ts,iti,itf)
-            letawout2local_avg = timeavg(letawout2local,ts,iti,itf)
+            #letawout2local_avg = timeavg(letawout2local,ts,iti,itf)
             letawoutEM2_avg = timeavg(letawoutEM2,ts,iti,itf)
             letawoutMAKE2_avg = timeavg(letawoutMAKE2,ts,iti,itf)
-            lemtot2_avg = timeavg(ljemtot[:,ihor],ts,iti,itf)
+            lemtot2_avg = timeavg(ljemtot[:,ihor]*((ljemtot[:,iflux]+ljmaketot[:,iflux])/(ljemtot[:,ihor]+ljmaketot[:,ihor])),ts,iti,itf)
             #
         #
     #
@@ -10572,27 +10775,27 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     lbhEM_avg=letabhEM_avg/prefactor
     lbhMAKE_avg=letabhMAKE_avg/prefactor
     ljmwout_avg=(letaj_avg + letamwout_avg)/prefactor
-    ljmwoutlocal_avg=(letaj_avg + letamwoutlocal_avg)/prefactor
+    #ljmwoutlocal_avg=(letaj_avg + letamwoutlocal_avg)/prefactor
     ljwout_avg=(letaj_avg + letawout_avg)/prefactor
-    ljwoutlocal_avg=(letaj_avg + letawoutlocal_avg)/prefactor
+    #ljwoutlocal_avg=(letaj_avg + letawoutlocal_avg)/prefactor
     lj_avg=letaj_avg/prefactor
-    ljlocal_avg=letajlocal_avg/prefactor
+    #ljlocal_avg=letajlocal_avg/prefactor
     ljEM_avg=letajEM_avg/prefactor
     ljMAKE_avg=letajMAKE_avg/prefactor
     lmwin_avg=letamwin_avg/prefactor
-    lmwinlocal_avg=letamwinlocal_avg/prefactor
+    #lmwinlocal_avg=letamwinlocal_avg/prefactor
     lmwinEM_avg=letamwinEM_avg/prefactor
     lmwinMAKE_avg=letamwinMAKE_avg/prefactor
     lmwout_avg=letamwout_avg/prefactor
-    lmwoutlocal_avg=letamwoutlocal_avg/prefactor
+    #lmwoutlocal_avg=letamwoutlocal_avg/prefactor
     lmwoutEM_avg=letamwoutEM_avg/prefactor
     lmwoutMAKE_avg=letamwoutMAKE_avg/prefactor
     lwin_avg=letawin_avg/prefactor
-    lwinlocal_avg=letawinlocal_avg/prefactor
+    #lwinlocal_avg=letawinlocal_avg/prefactor
     lwinEM_avg=letawinEM_avg/prefactor
     lwinMAKE_avg=letawinMAKE_avg/prefactor
     lwout_avg=letawout_avg/prefactor
-    lwoutlocal_avg=letawoutlocal_avg/prefactor
+    #lwoutlocal_avg=letawoutlocal_avg/prefactor
     lwoutEM_avg=letawoutEM_avg/prefactor
     lwoutMAKE_avg=letawoutMAKE_avg/prefactor
     #
@@ -10600,23 +10803,23 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     sbhEM_avg  = (-lbhEM_avg) - 2.0*a*(1.0-etabhEM_avg/prefactor)
     sbhMAKE_avg  = (-lbhMAKE_avg) - 2.0*a*(1.0-etabhMAKE_avg/prefactor)
     sj_avg   = (-lj_avg)  - 2.0*a*(1.0-etaj_avg/prefactor)
-    sjlocal_avg   = (-ljlocal_avg)  - 2.0*a*(1.0-etajlocal_avg/prefactor)
+    #sjlocal_avg   = (-ljlocal_avg)  - 2.0*a*(1.0-etajlocal_avg/prefactor)
     sjEM_avg   = (-ljEM_avg)  - 2.0*a*(1.0-etajEM_avg/prefactor)
     sjMAKE_avg   = (-ljMAKE_avg)  - 2.0*a*(1.0-etajMAKE_avg/prefactor)
     smwin_avg   = (-lmwin_avg)  - 2.0*a*(1.0-etamwin_avg/prefactor)
-    smwinlocal_avg   = (-lmwinlocal_avg)  - 2.0*a*(1.0-etamwinlocal_avg/prefactor)
+    #smwinlocal_avg   = (-lmwinlocal_avg)  - 2.0*a*(1.0-etamwinlocal_avg/prefactor)
     smwinEM_avg   = (-lmwinEM_avg)  - 2.0*a*(1.0-etamwinEM_avg/prefactor)
     smwinMAKE_avg   = (-lmwinMAKE_avg)  - 2.0*a*(1.0-etamwinMAKE_avg/prefactor)
     smwout_avg   = (-lmwout_avg)  - 2.0*a*(1.0-etamwout_avg/prefactor)
-    smwoutlocal_avg   = (-lmwoutlocal_avg)  - 2.0*a*(1.0-etamwoutlocal_avg/prefactor)
+    #smwoutlocal_avg   = (-lmwoutlocal_avg)  - 2.0*a*(1.0-etamwoutlocal_avg/prefactor)
     smwoutEM_avg   = (-lmwoutEM_avg)  - 2.0*a*(1.0-etamwoutEM_avg/prefactor)
     smwoutMAKE_avg   = (-lmwoutMAKE_avg)  - 2.0*a*(1.0-etamwoutMAKE_avg/prefactor)
     swin_avg   = (-lwin_avg)  - 2.0*a*(1.0-etawin_avg/prefactor)
-    swinlocal_avg   = (-lwinlocal_avg)  - 2.0*a*(1.0-etawinlocal_avg/prefactor)
+    #swinlocal_avg   = (-lwinlocal_avg)  - 2.0*a*(1.0-etawinlocal_avg/prefactor)
     swinEM_avg   = (-lwinEM_avg)  - 2.0*a*(1.0-etawinEM_avg/prefactor)
     swinMAKE_avg   = (-lwinMAKE_avg)  - 2.0*a*(1.0-etawinMAKE_avg/prefactor)
     swout_avg   = (-lwout_avg)  - 2.0*a*(1.0-etawout_avg/prefactor)
-    swoutlocal_avg   = (-lwoutlocal_avg)  - 2.0*a*(1.0-etawoutlocal_avg/prefactor)
+    #swoutlocal_avg   = (-lwoutlocal_avg)  - 2.0*a*(1.0-etawoutlocal_avg/prefactor)
     swoutEM_avg   = (-lwoutEM_avg)  - 2.0*a*(1.0-etawoutEM_avg/prefactor)
     swoutMAKE_avg   = (-lwoutMAKE_avg)  - 2.0*a*(1.0-etawoutMAKE_avg/prefactor)
     #
@@ -11223,7 +11426,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                     ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+mdotmwoutiniavg*windplotfactor,color=(fc,fc,1))
         #
         print("before ax.plot1") ; sys.stdout.flush()
-        ax.plot(ts,np.abs(mdtot[:,ihor]),clr,label=r'$\dot M_{\rm H}c^2$')
+        ax.plot(ts,np.abs(mdtot[:,iflux]),clr,label=r'$\dot M_{\rm H}c^2$')
         if showextra:
             print("before ax.plot2") ; sys.stdout.flush()
             ax.plot(ts,np.abs(mdjet[:,iofr(rjetout)]),'g--',label=r'$\dot M_{\rm j}c^2$')
@@ -11235,13 +11438,13 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         if findex != None:
             if not isinstance(findex,tuple):
-                ax.plot(ts[findex],np.abs(mdtot[:,ihor])[findex],'o',mfc='r')
+                ax.plot(ts[findex],np.abs(mdtot[:,iflux])[findex],'o',mfc='r')
                 if showextra:
                     ax.plot(ts[findex],np.abs(mdjet[:,iofr(rjetout)])[findex],'gs')
                     ax.plot(ts[findex],windplotfactor*np.abs(mdmwind[:,iofr(rjetout)])[findex],'bv')
             else:
                 for fi in findex:
-                    ax.plot(ts[fi],np.abs(mdtot[:,ihor])[fi],'o',mfc='r')#,label=r'$\dot M$')
+                    ax.plot(ts[fi],np.abs(mdtot[:,iflux])[fi],'o',mfc='r')#,label=r'$\dot M$')
                     if showextra:
                         ax.plot(ts[fi],np.abs(mdjet[:,iofr(rjetout)])[fi],'gs')
                         ax.plot(ts[fi],windplotfactor*np.abs(mdmwind[:,iofr(rjetout)])[fi],'bv')
@@ -11278,7 +11481,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     #######################
     #
-    # Pjet
+    # Pjet (no iflux correction)
     #
     #######################
     if whichplot == 2:
@@ -11291,7 +11494,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         ax.set_xlim(ts[0],ts[-1])
     #######################
     #
-    # eta instantaneous
+    # eta instantaneous (no iflux correction)
     #
     #######################
     if whichplot == 3:
@@ -11311,7 +11514,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     sashaplot4=0
     #
-    # Sasha's whichplot==4 Plot:
+    # Sasha's whichplot==4 Plot:  (no iflux correction)
     if whichplot == 4 and sashaplot4 == 1:
         # Compute Sasha's version even if not plotting, so can output to file for comparison
         # Sasha's whichplot==4 Calculation:
@@ -11560,11 +11763,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     # 8:
     # below use of ts[-1] for T_f assumes always add last file to file list, which currently do.
-    print("HLatex1: ModelName & $a/M$ & FieldType & $\\beta_{\\rm{}min}$ & $\\beta_{\\rm{}rat-of-avg} & $\\beta_{\\rm{}rat-of-max} & $\\theta^d_{r_{\\rm{}max}}$ & $Q_{2,t=0,\\rm{}MRI,\\{i,  o\\}}$ & $T_f$  \\\\")
-    print("VLatex1: %s        & %g  &  %s       & %g                   & %g                         & %g                         & %g                          & %g,  %g                         & %g     \\\\ %% %s" % (truemodelname,a,fieldtype,roundto2(betamin_t0),roundto2(betaratofavg_t0),roundto2(betaratofmax_t0),roundto2(hoverratrmax_t0), roundto2(1.0/iq2mridisk20_t0), roundto2(1.0/iq2mridisk50_t0), ts[-1], modelname ) )
+    print("HLatex1: ModelName & $a/M$ & FieldType & $\\beta_{\\rm{}min}$ & $\\beta_{\\rm{}rat-of-avg} & $\\beta_{\\rm{}rat-of-max} & $\\theta^d_{r_{\\rm{}max}}$ & $\\theta^t_{r_{\\rm{}max}}$ & $Q_{2,t=0,\\rm{}MRI,\\{i,  o\\}}$ & $T_f$  \\\\")
+    print("VLatex1: %s        & %g    &  %s       & %g                   & %g                         & %g                         & %g                          & %g                          & %g,  %g                           & %g     \\\\ %% %s" % (truemodelname,a,fieldtype,roundto2(betamin_t0),roundto2(betaratofavg_t0),roundto2(betaratofmax_t0),roundto2(hoverratrmax_t0),roundto2(hoverraltatrmax_t0), roundto2(1.0/iq2mridisk20_t0), roundto2(1.0/iq2mridisk50_t0), ts[-1], modelname ) )
     #
     # 16:
-    print("HLatex2: ModelName  & GridType & $N_r$ & $N_\\theta$ & $N_\\phi$ & $R_{\\rm{}in}$ & $R_{\\rm{}out}$  & $\\Delta\\phi$ & $A_{r=r_{\\rm{}H}}$ & $A_{r_i}$ & $A_{r_o}$ & $Q_{1,t=0,\\rm{}MRI,\{i,  o\}}$  & $T^a_i$--$T^a_f$  \\\\")
     #
     checkf=4.0
     if np.fabs(ph[0,0,-1]-2.0*np.pi)<checkf*ph[0,0,-1]/nz:
@@ -11582,7 +11784,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         stringdeltaphi="$2\\pi$"
     #
     #qmridisk20_t0 ,  qmridisk50_t0
-    print("VLatex2: %s         & %s       &  %g   & %g          & %g        & %g             & %g               & %s          & %g:%g:%g    & %g:%g:%g  & %g:%g:%g  & %g,  %g                          & %g--%g            \\\\ %% %s" % (truemodelname,gridtype,nx,ny,nzreal,roundto3(Rin),Rout,stringdeltaphi,roundto2(drnormh), roundto2(dHnormh), roundto2(dPnormh), roundto2(drnormi), roundto2(dHnormi), roundto2(dPnormi), roundto2(drnormo), roundto2(dHnormo), roundto2(dPnormo),roundto2(qmridisk20_t0), roundto2(qmridisk50_t0),truetmin,truetmax, modelname ) )
+    print("HLatex2: ModelName  & GridType & $N_r$ & $N_\\theta$ & $N_\\phi$ & $R_{\\rm{}in}/r_{\\rm{}H}$ & $R_{\\rm{}out}$  & $\\Delta\\phi$ & $A_{r=r_{\\rm{}H}}$ & $A_{r_i}$ & $A_{r_o}$ & $Q_{1,t=0,\\rm{}MRI,\{i,  o\}}$  & $T^a_i$--$T^a_f$  \\\\")
+    print("VLatex2: %s         & %s       &  %g   & %g          & %g        & %g             & %g               & %s          & %g:%g:%g    & %g:%g:%g  & %g:%g:%g  & %s                          & %g--%g            \\\\ %% %s" % (truemodelname,gridtype,nx,ny,nzreal,roundto3(Rin/rhor),Rout,stringdeltaphi,roundto2(drnormh), roundto2(dHnormh), roundto2(dPnormh), roundto2(drnormi), roundto2(dHnormi), roundto2(dPnormi), roundto2(drnormo), roundto2(dHnormo), roundto2(dPnormo),roundto2qmri(qmridisk20_t0,qmridisk50_t0),truetmin,truetmax, modelname ) )
     #
     # 8:
     print( "HLatex99: ModelName & $Q_{1,t=0,\\rm{}MRI,i}$ & $Q_{1,t=0,\\rm{}MRI,o}$  & $Q_{1,t=0,\\rm{}MRI,fo}$ & $Q_{2,t=0,\\rm{}MRI,i}$ & $Q_{2,t=0,\\rm{}MRI,o}$ & $Q_{2,t=0,\\rm{}MRI,fo}$  \\\\" )
@@ -11617,39 +11820,46 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #numcellsdiskihor=hoverrhor_avg/(dxdxp[2][2][ihor,ny/2,0]*_dx2)
     numcellsdiskihor=jofhfloat(np.pi*0.5+hoverrhor_avg,ihor) - ny*0.5
     # 
-    print( "HLatex3: ModelName & $N^d_{\\theta,{\\rm{}H}}$  & $\\theta^d_{\\rm{}H}$  & $\\theta^d_{5}$ & $\\theta^d_{20}$ & $\\theta^d_{100}$ & $\\theta^{dc}_{\\rm{}H}$  & $\\theta^{dc}_{5}$ & $\\theta^{dc}_{20}$ & $\\theta^{dc}_{100}$ & $\\theta^{cj}_{\\rm{}H}$  & $\\theta^{cj}_{5}$ & $\\theta^{cj}_{20}$ & $\\theta^{cj}_{100}$ \\\\" )
-    print( "VLatex3: %s         & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g  \\\\ %% %s" % (truemodelname, roundto2(numcellsdiskihor), roundto2(hoverrhor_avg), roundto2( hoverr5_avg), roundto2(hoverr20_avg), roundto2(hoverr100_avg), roundto2(hoverrcoronahor_avg), roundto2( hoverrcorona5_avg), roundto2(hoverrcorona20_avg), roundto2(hoverrcorona100_avg), roundto2(hoverr_jethor_avg), roundto2( hoverr_jet5_avg), roundto2(hoverr_jet20_avg), roundto2(hoverr_jet100_avg), modelname ) )
+    print( "HLatex3: ModelName & $N^d_{\\theta,{\\rm{}H}}$  & $\\theta^d_{\\rm{}H}$  & $\\theta^d_{5}$ & $\\theta^d_{20}$ & $\\theta^d_{100}$ & $\\theta^t_{\\rm{}20}$ & $\\theta^{dc}_{\\rm{}H}$  & $\\theta^{dc}_{5}$ & $\\theta^{dc}_{20}$ & $\\theta^{dc}_{100}$ & $\\theta^{cj}_{\\rm{}H}$  & $\\theta^{cj}_{5}$ & $\\theta^{cj}_{20}$ & $\\theta^{cj}_{100}$ \\\\" )
+    print( "VLatex3: %s         & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g  \\\\ %% %s" % (truemodelname, roundto2(numcellsdiskihor), roundto2(hoverrhor_avg), roundto2( hoverr5_avg), roundto2(hoverr20_avg), roundto2(hoverr100_avg), roundto2(horalt1_avg[iofr(20)]), roundto2(hoverrcoronahor_avg), roundto2( hoverrcorona5_avg), roundto2(hoverrcorona20_avg), roundto2(hoverrcorona100_avg), roundto2(hoverr_jethor_avg), roundto2( hoverr_jet5_avg), roundto2(hoverr_jet20_avg), roundto2(hoverr_jet100_avg), modelname ) )
+    #
+    #
+    print( "HLatex16: ModelName & $N^d_{\\theta,{\\rm{}H}}$  & $\\theta^d_{\\rm{}H}$  & $\\theta^d_{5}$ & $\\theta^d_{20}$ & $\\theta^d_{100}$ & $\\theta^t_{\\rm{}H}$ & $\\theta^t_{5}$ & $\\theta^t_{20}$ & $\\theta^t_{100}$ & $\\theta^{dc}_{\\rm{}H}$  & $\\theta^{dc}_{5}$ & $\\theta^{dc}_{20}$ & $\\theta^{dc}_{100}$ & $\\theta^{cj}_{\\rm{}H}$  & $\\theta^{cj}_{5}$ & $\\theta^{cj}_{20}$ & $\\theta^{cj}_{100}$ \\\\" )
+    print( "VLatex16: %s         & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g  \\\\ %% %s" % (truemodelname, roundto2(numcellsdiskihor), roundto2(hoverrhor_avg), roundto2( hoverr5_avg), roundto2(hoverr20_avg), roundto2(hoverr100_avg), roundto2(horalt1_avg[ihor]), roundto2(horalt1_avg[iofr(5)]), roundto2(horalt1_avg[iofr(20)]), roundto2(horalt1_avg[iofr(100)]), roundto2(hoverrcoronahor_avg), roundto2( hoverrcorona5_avg), roundto2(hoverrcorona20_avg), roundto2(hoverrcorona100_avg), roundto2(hoverr_jethor_avg), roundto2( hoverr_jet5_avg), roundto2(hoverr_jet20_avg), roundto2(hoverr_jet100_avg), modelname ) )
+    #
+    print( "HLatex17: ModelName & $N^d_{\\theta,{\\rm{}H}}$  & $\\theta^d_{\\rm{}H}$  & $\\theta^d_{5}$ & $\\theta^d_{20}$ & $\\theta^d_{100}$ & $\\theta^t_{\\rm{}H}$ & $\\theta^t_{5}$ & $\\theta^t_{20}$ & $\\theta^t_{100}$ & $\\theta^{dc}_{\\rm{}H}$  & $\\theta^{dc}_{5}$ & $\\theta^{dc}_{20}$ & $\\theta^{dc}_{100}$ & $\\theta^{cj}_{\\rm{}H}$  & $\\theta^{cj}_{5}$ & $\\theta^{cj}_{20}$ & $\\theta^{cj}_{100}$ \\\\" )
+    print( "VLatex17: %s         & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g  \\\\ %% %s" % (truemodelname, roundto2(numcellsdiskihor), roundto2(hoverrhor_avg), roundto2( hoverr5_avg), roundto2(hoverr20_avg), roundto2(hoverr100_avg), roundto2(horalt3_avg[ihor]), roundto2(horalt3_avg[iofr(5)]), roundto2(horalt3_avg[iofr(20)]), roundto2(horalt3_avg[iofr(100)]), roundto2(hoverrcoronahor_avg), roundto2( hoverrcorona5_avg), roundto2(hoverrcorona20_avg), roundto2(hoverrcorona100_avg), roundto2(hoverr_jethor_avg), roundto2( hoverr_jet5_avg), roundto2(hoverr_jet20_avg), roundto2(hoverr_jet100_avg), modelname ) )
     #
     #
     #
     # 9:
-    print( "HLatex6: ModelName & $\\eta_{\\rm{}H}$ & $\\eta^{\\rm{}EM}_{\\rm{}H}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}H}$ & $\\eta_{\\rm{}j}$ & $\\eta^{\\rm{}EM}_j$ & $\\eta^{\\rm{}MAKE}_{\\rm{}j}$ & $\\eta^{\\rm{}local}_{\\rm{}j,o}$ & $\\eta_{\\rm{}j+mw,o}$ & $\\eta^{\\rm{}local}_{\\rm{}j+mw,o}$ & $\\eta_{\\rm{}j+w,o}$ & $\\eta^{\\rm{}local}_{\\rm{}j+w,o}$ & $\\eta_{\\rm{}NT}$ \\\\" )
-    print( "VLatex6: %s         & %g               & %g                           & %g                             & %g                & %g                   & %g                             & %g                                & %g                     & %g                                   & %g &                  %g                                    & %g                 \\\\ %% %s" % (truemodelname, roundto3foreta(etabh_avg), roundto3foreta(etabhEM_avg), roundto3foreta(etabhMAKE_avg), roundto3foreta(etaj_avg), roundto3foreta(etajEM_avg), roundto3foreta(etajMAKE_avg), roundto3foreta(etajlocal_avg), roundto3foreta(etaj_avg + etamwout_avg), roundto3foreta(etajlocal_avg + etamwoutlocal_avg), roundto3foreta(etaj_avg + etawout_avg), roundto3foreta(etajlocal_avg + etawoutlocal_avg), roundto3foreta(etant), modelname ) )
+    print( "HLatex6: ModelName & $\\eta_{\\rm{}H}$ & $\\eta^{\\rm{}EM}_{\\rm{}H}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}H}$ & $\\eta_{\\rm{}j}$ & $\\eta^{\\rm{}EM}_j$ & $\\eta^{\\rm{}MAKE}_{\\rm{}j}$ & $\\eta_{\\rm{}mw,o}$ & $\\eta_{\\rm{}w,o}$ & $\\eta_{\\rm{}NT}$ \\\\" )
+    print( "VLatex6: %s         & %g               & %g                           & %g                             & %g                & %g                   & %g                             & %g                   & %g                  & %g                 \\\\ %% %s" % (truemodelname, roundto3foreta(etabh_avg), roundto3foreta(etabhEM_avg), roundto3foreta(etabhMAKE_avg), roundto3foreta(etaj_avg), roundto3foreta(etajEM_avg), roundto3foreta(etajMAKE_avg), roundto3foreta(etamwout_avg), roundto3foreta(etawout_avg), roundto3foreta(etant), modelname ) )
     #
     # 12:
     print( "HLatex7: ModelName & $\\eta_{\\rm{}mw,i}$ & $\\eta^{\\rm{}EM}_{\\rm{}mw,i}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}mw,i}$ & $\\eta_{\\rm{}mw,o}$ & $\\eta^{\\rm{}EM}_{\\rm{}mw,o}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}mw,o}$ & $\\eta_{\\rm{}w,i}$ & $\\eta^{\\rm{}EM}_{\\rm{}w,i}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}w,i}$ & $\\eta_{\\rm{}w,o}$ & $\\eta^{\\rm{}EM}_{\\rm{}w,o}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}w,o}$ \\\\" )
-    print( "VLatex7: %s        & %g & %g & %g    & %g & %g & %g   & %g & %g & %g    & %g & %g & %g  \\\\ %% %s" % (truemodelname, roundto3foreta(etamwin_avg), roundto3foreta(etamwinEM_avg), roundto3foreta(etamwinMAKE_avg), roundto3foreta(etamwout_avg), roundto3foreta(etamwoutEM_avg), roundto3foreta(etamwoutMAKE_avg), roundto3foreta(etawin_avg), roundto3foreta(etawinEM_avg), roundto3foreta(etawinMAKE_avg), roundto3foreta(etawout_avg), roundto3foreta(etawoutEM_avg), roundto3foreta(etawoutMAKE_avg), modelname ) )
+    print( "VLatex7: %s        & %g                   & %g                              & %g                                & %g                   & %g                              & %g                                & %g                  & %g                             & %g                               & %g                  & %g                             & %g                               \\\\ %% %s" % (truemodelname, roundto3foreta(etamwin_avg), roundto3foreta(etamwinEM_avg), roundto3foreta(etamwinMAKE_avg), roundto3foreta(etamwout_avg), roundto3foreta(etamwoutEM_avg), roundto3foreta(etamwoutMAKE_avg), roundto3foreta(etawin_avg), roundto3foreta(etawinEM_avg), roundto3foreta(etawinMAKE_avg), roundto3foreta(etawout_avg), roundto3foreta(etawoutEM_avg), roundto3foreta(etawoutMAKE_avg), modelname ) )
     #
     #
     #
     # 9:
     # 9:
-    print( "HLatex8: ModelName & $l_{\\rm{}H}$ & $l^{\\rm{}EM}_{\\rm{}H}$ & $l^{\\rm{}MAKE}_{\\rm{}H}$ & $l_{\\rm{}j}$ & $l^{\\rm{}EM}_j$ & $l^{\\rm{}MAKE}_{\\rm{}j}$ & $l^{\\rm{}local}_{\\rm{}j,o}$ & $l_{\\rm{}j+mw,o}$ & $l^{\\rm{}local}_{\\rm{}j+mw,o}$ & $l_{\\rm{}j+w,o}$ & $l^{\\rm{}local}_{\\rm{}j+w,o}$ & $l_{\\rm{}NT}$ \\\\" )
-    print( "VLatex8: %s         & %g               & %g                           & %g                             & %g                & %g                   & %g                             & %g                                & %g                     & %g                                   & %g &                  %g                                    & %g                 \\\\ %% %s" % (truemodelname, roundto3forl(lbh_avg), roundto3forl(lbhEM_avg), roundto3forl(lbhMAKE_avg), roundto3forl(lj_avg), roundto3forl(ljEM_avg), roundto3forl(ljMAKE_avg), roundto3forl(ljlocal_avg), roundto3forl(lj_avg + lmwout_avg), roundto3forl(ljlocal_avg + lmwoutlocal_avg), roundto3forl(lj_avg + lwout_avg), roundto3forl(ljlocal_avg + lwoutlocal_avg), roundto3forl(lnt), modelname ) )
+    print( "HLatex8: ModelName & $j_{\\rm{}H}$ & $j^{\\rm{}EM}_{\\rm{}H}$ & $j^{\\rm{}MAKE}_{\\rm{}H}$ & $j_{\\rm{}j}$ & $j^{\\rm{}EM}_j$ & $j^{\\rm{}MAKE}_{\\rm{}j}$ & $j_{\\rm{}j+mw,o}$ & $j_{\\rm{}j+w,o}$ & $j_{\\rm{}NT}$ \\\\" )
+    print( "VLatex8: %s        & %g            & %g                       & %g                         & %g            & %g               & %g                         & %g                 & %g                & %g             \\\\ %% %s" % (truemodelname, roundto3forl(lbh_avg), roundto3forl(lbhEM_avg), roundto3forl(lbhMAKE_avg), roundto3forl(lj_avg), roundto3forl(ljEM_avg), roundto3forl(ljMAKE_avg), roundto3forl(lmwout_avg), roundto3forl(lwout_avg), roundto3forl(lnt), modelname ) )
     #
     # s-version of Latex8 gives this Latex15 version -- replaces need for Latex8 and Latex9
-    print( "HLatex15: ModelName & $s_{\\rm{}H}$ & $s^{\\rm{}EM}_{\\rm{}H}$ & $s^{\\rm{}MAKE}_{\\rm{}H}$ & $s_{\\rm{}j}$ & $s^{\\rm{}EM}_j$ & $s^{\\rm{}MAKE}_{\\rm{}j}$ & $s^{\\rm{}local}_{\\rm{}j,o}$ & $s_{\\rm{}j+mw,o}$ & $s^{\\rm{}local}_{\\rm{}j+mw,o}$ & $s_{\\rm{}j+w,o}$ & $s^{\\rm{}local}_{\\rm{}j+w,o}$ & $s_{\\rm{}NT}$ \\\\" )
-    print( "VLatex15: %s         & %g               & %g                           & %g                             & %g                & %g                   & %g                             & %g                                & %g                     & %g                                   & %g &                  %g                                    & %g                 \\\\ %% %s" % (truemodelname, roundto3forl(sbh_avg), roundto3forl(sbhEM_avg), roundto3forl(sbhMAKE_avg), roundto3forl(sj_avg), roundto3forl(sjEM_avg), roundto3forl(sjMAKE_avg), roundto3forl(sjlocal_avg), roundto3forl(sj_avg + smwout_avg), roundto3forl(sjlocal_avg + smwoutlocal_avg), roundto3forl(sj_avg + swout_avg), roundto3forl(sjlocal_avg + swoutlocal_avg), roundto3forl(snt), modelname ) )
+    print( "HLatex15: ModelName & $s_{\\rm{}H}$ & $s^{\\rm{}EM}_{\\rm{}H}$ & $s^{\\rm{}MAKE}_{\\rm{}H}$ & $s_{\\rm{}j}$ & $s^{\\rm{}EM}_j$ & $s^{\\rm{}MAKE}_{\\rm{}j}$ & $s_{\\rm{}mw,o}$ & $s_{\\rm{}w,o}$ & $s_{\\rm{}NT}$ \\\\" )
+    print( "VLatex15: %s        & %g            & %g                       & %g                         & %g            & %g               & %g                         & %g               & %g              & %g             \\\\ %% %s" % (truemodelname, roundto3forl(sbh_avg), roundto3forl(sbhEM_avg), roundto3forl(sbhMAKE_avg), roundto3forl(sj_avg), roundto3forl(sjEM_avg), roundto3forl(sjMAKE_avg), roundto3forl(smwout_avg), roundto3forl(swout_avg), roundto3forl(snt), modelname ) )
     #
     #
     # 12:
-    print( "HLatex9: ModelName & $l_{\\rm{}mw,i}$ & $l^{\\rm{}EM}_{\\rm{}mw,i}$ & $l^{\\rm{}MAKE}_{\\rm{}mw,i}$ & $l_{\\rm{}mw,o}$ & $l^{\\rm{}EM}_{\\rm{}mw,o}$ & $l^{\\rm{}MAKE}_{\\rm{}mw,o}$ & $l_{\\rm{}w,i}$ & $l^{\\rm{}EM}_{\\rm{}w,i}$ & $l^{\\rm{}MAKE}_{\\rm{}w,i}$ & $l_{\\rm{}w,o}$ & $l^{\\rm{}EM}_{\\rm{}w,o}$ & $l^{\\rm{}MAKE}_{\\rm{}w,o}$ \\\\" )
-    print( "VLatex9: %s        & %g & %g & %g    & %g & %g & %g   & %g & %g & %g    & %g & %g & %g  \\\\ %% %s" % (truemodelname, roundto3forl(lmwin_avg), roundto3forl(lmwinEM_avg), roundto3forl(lmwinMAKE_avg), roundto3forl(lmwout_avg), roundto3forl(lmwoutEM_avg), roundto3forl(lmwoutMAKE_avg), roundto3forl(lwin_avg), roundto3forl(lwinEM_avg), roundto3forl(lwinMAKE_avg), roundto3forl(lwout_avg), roundto3forl(lwoutEM_avg), roundto3forl(lwoutMAKE_avg), modelname ) )
+    print( "HLatex9: ModelName & $j_{\\rm{}mw,i}$ & $j^{\\rm{}EM}_{\\rm{}mw,i}$ & $j^{\\rm{}MAKE}_{\\rm{}mw,i}$ & $j_{\\rm{}mw,o}$ & $j^{\\rm{}EM}_{\\rm{}mw,o}$ & $j^{\\rm{}MAKE}_{\\rm{}mw,o}$ & $j_{\\rm{}w,i}$ & $j^{\\rm{}EM}_{\\rm{}w,i}$ & $j^{\\rm{}MAKE}_{\\rm{}w,i}$ & $j_{\\rm{}w,o}$ & $j^{\\rm{}EM}_{\\rm{}w,o}$ & $j^{\\rm{}MAKE}_{\\rm{}w,o}$ \\\\" )
+    print( "VLatex9: %s        & %g               & %g                          & %g                            & %g               & %g                          & %g                            & %g              & %g                         & %g                           & %g              & %g                         & %g  \\\\ %% %s" % (truemodelname, roundto3forl(lmwin_avg), roundto3forl(lmwinEM_avg), roundto3forl(lmwinMAKE_avg), roundto3forl(lmwout_avg), roundto3forl(lmwoutEM_avg), roundto3forl(lmwoutMAKE_avg), roundto3forl(lwin_avg), roundto3forl(lwinEM_avg), roundto3forl(lwinMAKE_avg), roundto3forl(lwout_avg), roundto3forl(lwoutEM_avg), roundto3forl(lwoutMAKE_avg), modelname ) )
     #
     #
     # 7:
     print( "HLatex10: ModelName  & $s_{\\rm{}H}$ & $s_{\\rm{}j}$   & $s_{\\rm{}mw,i}$ & $s_{\\rm{}mw,o}$    & $s_{\\rm{}w,i}$ & $s_{\\rm{}w,o}$    & $s_{\\rm{}NT}$ \\\\" )
-    print( "VLatex10: %s         & %g & %g   & %g & %g    & %g & %g    & %g \\\\ %% %s" % (truemodelname, roundto2(sbh_avg), roundto2(sj_avg), roundto2(smwin_avg), roundto2(smwout_avg), roundto2(swin_avg), roundto2(swout_avg), roundto2(snt), modelname ) )
+    print( "VLatex10: %s         & %g            & %g              & %g               & %g                  & %g              & %g                 & %g             \\\\ %% %s" % (truemodelname, roundto2(sbh_avg), roundto2(sj_avg), roundto2(smwin_avg), roundto2(smwout_avg), roundto2(swin_avg), roundto2(swout_avg), roundto2(snt), modelname ) )
     sys.stdout.flush()
     #
     #
@@ -11664,10 +11874,12 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     #######################
     #
-    # eta NEW ***
+    # eta NEW ***   (no iflux correction)
     #
     #######################
     if whichplot == 6:
+        print("WHICHPLOT==6 PROCESSING") ; sys.stdout.flush()
+        #
         etabh = prefactor*pjemtot[:,ihor]/mdotfinavg
         etaj = prefactor*pjke_mu1[:,iofr(rjetout)]/mdotfinavg
         etaw = prefactor*pjke_mumax1[:,iofr(rdiskout)]/mdotfinavg
@@ -11941,7 +12153,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         plt.legend( loc = 'lower left' )
 
     #if whichplot == -5:
-        
+    #
+    #   (no iflux correction)
+    #
     if whichplot == None:
         fig,plotlist=plt.subplots(nrows=4,ncols=1,sharex=True,figsize=(12,16),num=1)
         #plt.clf()
@@ -12755,7 +12969,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         # thickdisk16 (full data) barfs on mdjet or something later, perhaps related to warning about division by zero in log10.  So maybe input is nan and that stalls polyfit.  Maybe set nan's to small number in wrapperto polyfit.
         # fit mdin-mdotbh with log instead of mdin that isn't loggy due to constant mdotbh
         print("mdin_vsr numfit=%d" % (numfit)) ; sys.stdout.flush()
-        (mdin_vsr_fit,mdin_vsr_fitsigma,mdin_vsr_fitgoodness)=jonpolyfit((np.fabs(r[iin3:iout3,0,0])),(np.fabs(mdin_vsr[iin3:iout3])-np.fabs(mdin_vsr[ihor])),1,dologx=1,dology=1,doabs=1,num=numfit) ; numfit+=1
+        (mdin_vsr_fit,mdin_vsr_fitsigma,mdin_vsr_fitgoodness)=jonpolyfit((np.fabs(r[iin3:iout3,0,0])),(np.fabs(mdin_vsr[iin3:iout3])-np.fabs(mdin_vsr[iflux])),1,dologx=1,dology=1,doabs=1,num=numfit) ; numfit+=1
         (mdjet_vsr_fit,mdjet_vsr_fitsigma,mdjet_vsr_fitgoodness)=jonpolyfit((np.fabs(r[iin4:iout4,0,0])),(np.fabs(mdjet_vsr[iin4:iout4])),1,dologx=1,dology=1,doabs=1,num=numfit) ; numfit+=1
         (mdmwind_vsr_fit,mdmwind_vsr_fitsigma,mdmwind_vsr_fitgoodness)=jonpolyfit((np.fabs(r[iin4:iout4,0,0])),(np.fabs(mdmwind_vsr[iin4:iout4])),1,dologx=1,dology=1,doabs=1,num=numfit) ; numfit+=1
         (mdwind_vsr_fit,mdwind_vsr_fitsigma,mdwind_vsr_fitgoodness)=jonpolyfit((np.fabs(r[iin5:iout5,0,0])),(np.fabs(mdwind_vsr[iin5:iout5])),1,dologx=1,dology=1,doabs=1,num=numfit) ; numfit+=1
@@ -12852,7 +13066,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         # output fit power-law index for various quantities
         #
         #roundto2fit(powerlaw,goodness)
-        # http://www.gnu.org/s/emacs/manual/html_node/elisp/Regexp-Special.html
+        # http://www.gnu.org/s/emacs/manual/htmj_node/elisp/Regexp-Special.html
         #roundto2(\([][A-Z_a-z0-9]*\))
         #roundto2(\([A-Z_a-z0-9]*\)\([][0-9]*\))
         #Query replace regexp: roundto2(\([A-Z_a-z0-9]*\)\([][0-9]*\)) -> roundto2fit(\1[0],\1goodness[0])
@@ -12862,28 +13076,28 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         # files=`ls -rt fitplot46.png fitplot47.png fitplot46.png fitplot50.png fitplot52.png fitplot60.png fitplot66.png    fitplot150.png fitplot152.png fitplot153.png   fitplot164.png fitplot165.png fitplot168.png fitplot173.png fitplot176.png` ; montage -geometry 300x300 $files montage_fitplotpaper.png ; display montage_fitplotpaper.png
         #
         if 1==0:
-            print( "HLatex12: ModelName & $r^{\\rm{}dc}_{\\rm{}i}$ & $r^{\\rm{}dc}_{\\rm{}o}$ & $r^{\\rm{}dc}_{\\rm{}s}$ & $\\rho$ & $p_g$ & $|v_r|$ & $|v_\phi|$ & $|b_r|$ & $|b_\\theta|$ & $|b_\\phi|$ & $|b|$    \\\\" )
+            print( "HLatex12: ModelName & $r^{\\rm{}dc}_{\\rm{}i}$ & $r^{\\rm{}dc}_{\\rm{}o}$ & $r^{\\rm{}dc}_{\\rm{}s}$ & $\\rho_0$ & $p_g$ & $|v_r|$ & $|v_\phi|$ & $|b_r|$ & $|b_\\theta|$ & $|b_\\phi|$ & $|b|$    \\\\" )
             print( "VLatex12: %s        & %g                       & %g                       & %g                       & %s      & %s    & %s      & %s         & %s      & %s            & %s          & %s       \\\\ %% %s" % (truemodelname, roundto2(rfitin2),roundto2(rfitout2),roundto2(rstagreport),roundto2fit(rhosrhosqdcden_vsr_fit[0],rhosrhosqdcden_vsr_fitsigma[0],rhosrhosqdcden_vsr_fitgoodness[0]),roundto2fit(ugsrhosqdcden_vsr_fit[0],ugsrhosqdcden_vsr_fitsigma[0],ugsrhosqdcden_vsr_fitgoodness[0]),roundto2fit(vuas1rhosqdcden_vsr_fit[0],vuas1rhosqdcden_vsr_fitsigma[0],vuas1rhosqdcden_vsr_fitgoodness[0]),roundto2fit(vuas3rhosqdcden_vsr_fit[0],vuas3rhosqdcden_vsr_fitsigma[0],vuas3rhosqdcden_vsr_fitgoodness[0]),roundto2fit(bas1rhosqdcden_vsr_fit[0],bas1rhosqdcden_vsr_fitsigma[0],bas1rhosqdcden_vsr_fitgoodness[0]),roundto2fit(bas2rhosqdcden_vsr_fit[0],bas2rhosqdcden_vsr_fitsigma[0],bas2rhosqdcden_vsr_fitgoodness[0]),roundto2fit(bas3rhosqdcden_vsr_fit[0],bas3rhosqdcden_vsr_fitsigma[0],bas3rhosqdcden_vsr_fitgoodness[0]),roundto2fit(brhosqdcden_vsr_fit[0],brhosqdcden_vsr_fitsigma[0],brhosqdcden_vsr_fitgoodness[0]) , modelname ) )
         else:
             # b_\theta varies too much and need to cut something.
             # also b_r\sim b_\phi or |b| good enough for b_\phi
-            print( "HLatex12: ModelName & $r^{\\rm{}dc}_{\\rm{}i}$ & $r^{\\rm{}dc}_{\\rm{}o}$ & $r^{\\rm{}dc}_{\\rm{}f}$ & $r^{\\rm{}dc}_{\\rm{}s}$ & $\\rho$ & $p_g$ & $|v_r|$ & $|v_\phi|$ & $|b_r|$ & $|b|$    \\\\" )
+            print( "HLatex12: ModelName & $r^{\\rm{}dc}_{\\rm{}i}$ & $r^{\\rm{}dc}_{\\rm{}o}$ & $r^{\\rm{}dc}_{\\rm{}f}$ & $r^{\\rm{}dc}_{\\rm{}s}$ & $\\rho_0$ & $p_g$ & $|v_r|$ & $|v_\phi|$ & $|b_r|$ & $|b|$    \\\\" )
             print( "VLatex12: %s        & %g                       & %g                       & %g                       & %s                       & %s      & %s    & %s      & %s         & %s      & %s       \\\\ %% %s" % (truemodelname, roundto2(rfitin2),roundto2(rfitout2),roundto2(rfitout6),roundto2(rstagreport),roundto2fit(rhosrhosqdcden_vsr_fit[0],rhosrhosqdcden_vsr_fitsigma[0],rhosrhosqdcden_vsr_fitgoodness[0]),roundto2fit(ugsrhosqdcden_vsr_fit[0],ugsrhosqdcden_vsr_fitsigma[0],ugsrhosqdcden_vsr_fitgoodness[0]),roundto2fit(vuas1rhosqdcden_vsr_fit[0],vuas1rhosqdcden_vsr_fitsigma[0],vuas1rhosqdcden_vsr_fitgoodness[0]),roundto2fit(vuas3rhosqdcden_vsr_fit[0],vuas3rhosqdcden_vsr_fitsigma[0],vuas3rhosqdcden_vsr_fitgoodness[0]),roundto2fit(bas1rhosqdcden_vsr_fit[0],bas1rhosqdcden_vsr_fitsigma[0],bas1rhosqdcden_vsr_fitgoodness[0]),roundto2fit(brhosqdcden_vsr_fit[0],brhosqdcden_vsr_fitsigma[0],brhosqdcden_vsr_fitgoodness[0]) , modelname ) )
         #
         #
         # 13 things
         if 1==0:
-            print( "HLatex13: ModelName & $r^{\\rm{}w}_{\\rm{}i}$ & $r^{\\rm{}w}_{\\rm{}o}$ & $\\dot{M}_{\\rm{}in}-\\dot{M}_{\\rm{}H}$ & $\\dot{M}_{\\rm{}mw}$ & $\\dot{M}_{\\rm{}w}$ & $\\eta^{\\rm{}EM}_{\\rm{}mw}$ & $\\eta^{\\rm{}EM}_{\\rm{}w}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}mw}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}w}$ & $l^{\\rm{}EM}_{\\rm{}mw}$ & $l^{\\rm{}EM}_{\\rm{}w}$ & $l^{\\rm{}MAKE}_{\\rm{}mw}$ & $l^{\\rm{}MAKE}_{\\rm{}w}$   \\\\" )
+            print( "HLatex13: ModelName & $r^{\\rm{}w}_{\\rm{}i}$ & $r^{\\rm{}w}_{\\rm{}o}$ & $\\dot{M}_{\\rm{}in}-\\dot{M}_{\\rm{}H}$ & $\\dot{M}_{\\rm{}mw}$ & $\\dot{M}_{\\rm{}w}$ & $\\eta^{\\rm{}EM}_{\\rm{}mw}$ & $\\eta^{\\rm{}EM}_{\\rm{}w}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}mw}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}w}$ & $j^{\\rm{}EM}_{\\rm{}mw}$ & $j^{\\rm{}EM}_{\\rm{}w}$ & $j^{\\rm{}MAKE}_{\\rm{}mw}$ & $j^{\\rm{}MAKE}_{\\rm{}w}$   \\\\" )
             print( "VLatex13: %s        & %g                      & %g                      & %s                                        & %s                    & %s                   & %s                            & %s                           & %s                              & %s                             & %s                        & %s                       & %s                          & %s                              \\\\ %% %s" % (truemodelname, roundto2(rfitin3),roundto2(rfitout3),roundto2fit(mdin_vsr_fit[0],mdin_vsr_fitsigma[0],mdin_vsr_fitgoodness[0]),roundto2fit(mdmwind_vsr_fit[0],mdmwind_vsr_fitsigma[0],mdmwind_vsr_fitgoodness[0]),roundto2fit(mdwind_vsr_fit[0],mdwind_vsr_fitsigma[0],mdwind_vsr_fitgoodness[0]),roundto2fit(etamwEM_vsr_fit[0],etamwEM_vsr_fitsigma[0],etamwEM_vsr_fitgoodness[0]),roundto2fit(etawEM_vsr_fit[0],etawEM_vsr_fitsigma[0],etawEM_vsr_fitgoodness[0]),roundto2fit(etamwMAKE_vsr_fit[0],etamwMAKE_vsr_fitsigma[0],etamwMAKE_vsr_fitgoodness[0]),roundto2fit(etawMAKE_vsr_fit[0],etawMAKE_vsr_fitsigma[0],etawMAKE_vsr_fitgoodness[0]), roundto2fit(letamwEM_vsr_fit[0],letamwEM_vsr_fitsigma[0],letamwEM_vsr_fitgoodness[0]),roundto2fit(letawEM_vsr_fit[0],letawEM_vsr_fitsigma[0],letawEM_vsr_fitgoodness[0]),roundto2fit(letamwMAKE_vsr_fit[0],letamwMAKE_vsr_fitsigma[0],letamwMAKE_vsr_fitgoodness[0]),roundto2fit(letawMAKE_vsr_fit[0],letawMAKE_vsr_fitsigma[0],letawMAKE_vsr_fitgoodness[0]) , modelname ) )
         else:
-            print( "HLatex13: ModelName & $r^{\\rm{}w}_{\\rm{}i}$ & $r^{\\rm{}w}_{\\rm{}o}$ & $\\dot{M}_{\\rm{}in}-\\dot{M}_{\\rm{}H}$ & $\\dot{M}_{\\rm{}mw}$ & $\\dot{M}_{\\rm{}w}$ & $\\eta^{\\rm{}EM}_{\\rm{}mw}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}mw}$ & $\\eta_{\\rm{}w}$ & $l_{\\rm{}mw}$  & $l_{\\rm{}w}$   \\\\" )
+            print( "HLatex13: ModelName & $r^{\\rm{}w}_{\\rm{}i}$ & $r^{\\rm{}w}_{\\rm{}o}$ & $\\dot{M}_{\\rm{}in}-\\dot{M}_{\\rm{}H}$ & $\\dot{M}_{\\rm{}mw}$ & $\\dot{M}_{\\rm{}w}$ & $\\eta^{\\rm{}EM}_{\\rm{}mw}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}mw}$ & $\\eta_{\\rm{}w}$ & $j_{\\rm{}mw}$  & $j_{\\rm{}w}$   \\\\" )
             print( "VLatex13: %s        & %g                      & %g                      & %s                                        & %s                    & %s                   & %s                            & %s                              & %s                & %s              & %s              \\\\ %% %s" % (truemodelname, roundto2(rfitin3),roundto2(rfitout3),roundto2fit(mdin_vsr_fit[0],mdin_vsr_fitsigma[0],mdin_vsr_fitgoodness[0]),roundto2fit(mdmwind_vsr_fit[0],mdmwind_vsr_fitsigma[0],mdmwind_vsr_fitgoodness[0]),roundto2fit(mdwind_vsr_fit[0],mdwind_vsr_fitsigma[0],mdwind_vsr_fitgoodness[0]),roundto2fit(etamwEM_vsr_fit[0],etamwEM_vsr_fitsigma[0],etamwEM_vsr_fitgoodness[0]),roundto2fit(etamwMAKE_vsr_fit[0],etamwMAKE_vsr_fitsigma[0],etamwMAKE_vsr_fitgoodness[0]),roundto2fit(etaw_vsr_fit[0],etaw_vsr_fitsigma[0],etaw_vsr_fitgoodness[0]), roundto2fit(letamw_vsr_fit[0],letamw_vsr_fitsigma[0],letamw_vsr_fitgoodness[0]),roundto2fit(letaw_vsr_fit[0],letaw_vsr_fitsigma[0],letaw_vsr_fitgoodness[0]) , modelname ) )
         #
         ##################
         # 14 is reduced version of original 12+13
         # avoid fits for 2D models and MB09D model that have poor fits
         if nz>1 and modelname!="runlocaldipole3dfiducial":
-            print( "HLatex14: ModelName & $r^{\\rm{}dc}_{\\rm{}i}$ & $r^{\\rm{}dc}_{\\rm{}o}$ & $r^{\\rm{}dc}_{\\rm{}f}$ & $r^{\\rm{}dc}_{\\rm{}s}$ & $\\rho$ & $p_g$ & $|b|$ & $r^{\\rm{}w}_{\\rm{}i}$ & $r^{\\rm{}w}_{\\rm{}o}$ & $\\dot{M}_{\\rm{}in}-\\dot{M}_{\\rm{}H}$ & $\\dot{M}_{\\rm{}mw}$ & $\\dot{M}_{\\rm{}w}$  \\\\" )
+            print( "HLatex14: ModelName & $r^{\\rm{}dc}_{\\rm{}i}$ & $r^{\\rm{}dc}_{\\rm{}o}$ & $r^{\\rm{}dc}_{\\rm{}f}$ & $r^{\\rm{}dc}_{\\rm{}s}$ & $\\rho_0$ & $p_g$ & $|b|$ & $r^{\\rm{}w}_{\\rm{}i}$ & $r^{\\rm{}w}_{\\rm{}o}$ & $\\dot{M}_{\\rm{}in}-\\dot{M}_{\\rm{}H}$ & $\\dot{M}_{\\rm{}mw}$ & $\\dot{M}_{\\rm{}w}$  \\\\" )
             print( "VLatex14: %s        & %g                       & %g                       & %g                       & %s                       & %s      & %s    & %s      & %g                    & %g                      & %s                      & %s                    & %s                    \\\\ %% %s" % (truemodelname, roundto2(rfitin2),roundto2(rfitout2),roundto2(rfitout6),roundto2(rstagreport),roundto2fit(rhosrhosqdcden_vsr_fit[0],rhosrhosqdcden_vsr_fitsigma[0],rhosrhosqdcden_vsr_fitgoodness[0]),roundto2fit(ugsrhosqdcden_vsr_fit[0],ugsrhosqdcden_vsr_fitsigma[0],ugsrhosqdcden_vsr_fitgoodness[0]),roundto2fit(brhosqdcden_vsr_fit[0],brhosqdcden_vsr_fitsigma[0],brhosqdcden_vsr_fitgoodness[0]),roundto2(rfitin3),roundto2(rfitout3),roundto2fit(mdin_vsr_fit[0],mdin_vsr_fitsigma[0],mdin_vsr_fitgoodness[0]),roundto2fit(mdmwind_vsr_fit[0],mdmwind_vsr_fitsigma[0],mdmwind_vsr_fitgoodness[0]),roundto2fit(mdwind_vsr_fit[0],mdwind_vsr_fitsigma[0],mdwind_vsr_fitgoodness[0]) , modelname ) )
         #
         #
@@ -13101,7 +13315,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         for tic in ts:
             tici=np.where(ts==tic)[0]
             #
-            favg1.write("%d %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], mdtot[tici,ihor],md10[tici,ihor],md30[tici,ihor],mdin[tici,iofr(rdiskin)],mdin[tici,iofr(rdiskout)],mdjet[tici,iofr(rjetout)],mdmwind[tici,iofr(rjetin)],mdmwind[tici,iofr(rjetout)],mdwind[tici,iofr(rdiskin)],mdwind[tici,iofr(rdiskout)]  ) )
+            favg1.write("%d %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], mdtot[tici,iflux],md10[tici,iflux],md30[tici,iflux],mdin[tici,iofr(rdiskin)],mdin[tici,iofr(rdiskout)],mdjet[tici,iofr(rjetout)],mdmwind[tici,iofr(rjetin)],mdmwind[tici,iofr(rjetout)],mdwind[tici,iofr(rdiskin)],mdwind[tici,iofr(rdiskout)]  ) )
             #
         favg1.close()
         #
@@ -14859,11 +15073,12 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     # ssh jmckinne@orange.slac.stanford.edu
     # cd /lustre/ki/orange/jmckinne/thickdisk7/movie8new2
     #
-    # scp fft1.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/fft1_thickdisk7.eps ;scp spec1.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/spec1_thickdisk7.eps ;scp spec2.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/spec2_thickdisk7.eps ; scp plot0qvsth_.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/plottvsr_bphi.eps ; scp plot0qvsth_.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/plottvsth_bphi.eps
+    # scp fft1.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/fft1_thickdisk7.eps ; scp fft1.png jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/fft1_thickdisk7.png ; scp spec1.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/spec1_thickdisk7.eps ; scp spec1.png jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/spec1_thickdisk7.png ; scp spec2.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/spec2_thickdisk7.eps ; scp spec2.png jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/spec2_thickdisk7.png ; scp plot0qvsth_.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/plottvsth_bphi.eps ;scp plot0qvsth_.png jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/plottvsth_bphi.png ; scp plot0qvsr_.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/plottvsr_bphi.eps ;scp plot0qvsr_.png jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/plottvsr_bphi.png ; 
 
-    # scp lrhosmall3215_Rzxym1.eps lrhosmall4190_Rzxym1.eps lrhosmall4300_Rzxym1.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/ ; scp init1.eps middle1.eps final1.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/
 
-    # convert final1_stream.png final1_stream.eps ; scp final1_stream.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/figfinalflowfield.eps ; convert middle1_stream.png middle1_stream.eps ; scp middle1_stream.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/figmiddleflowfield.eps
+    # scp lrhosmall3215_Rzxym1.eps lrhosmall4190_Rzxym1.eps lrhosmall4300_Rzxym1.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/ ; scp lrhosmall3215_Rzxym1.png lrhosmall4190_Rzxym1.png lrhosmall4300_Rzxym1.png jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/ ; scp init1.eps middle1.eps final1.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/  ; scp init1.png middle1.png final1.png jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/
+
+    # convert final1_stream.png final1_stream.eps ; scp final1_stream.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/figfinalflowfield.eps ;scp final1_stream.png jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/figfinalflowfield.png ; convert middle1_stream.png middle1_stream.eps ; scp middle1_stream.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/figmiddleflowfield.eps ; scp middle1_stream.png jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/figmiddleflowfield.png
 
 
     #
@@ -15038,7 +15253,7 @@ def mkinitfinalplotpost(fname=None,plottype=0,aphijetouter=None,inputlevs=None,n
             elif numpanels==3:
                 adjustprops = dict(left=0.1, bottom=0.03, right=0.97, top=0.99, wspace=0.0, hspace=0.0)
             else:
-                adjustprops = dict(left=0.1, bottom=0.03, right=0.97, top=0.99, wspace=0.0, hspace=0.0)
+                adjustprops = dict(left=0.1, bottom=0.09, right=0.97, top=0.99, wspace=0.0, hspace=0.0)
             #plt.cla()
             #fig = pylab.figure(**figprops)
             fig1.subplots_adjust(**adjustprops)
@@ -17566,7 +17781,8 @@ def mkavgfigs():
     #####################################
     # plots of F_EM, F_MAKE, omegaf on horizon from averaged data
     if mkstreampart3==1:
-        # 
+        #   (GODMARK: no iflux correction, but will modify slightly those things Edot are composed of and Mdot)
+        #
         # things have access to:
         # avg_ts,avg_te,avg_nitems,avg_rho,avg_ug,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_omegaf2b,avg_omegaf1
         # avg_omegaf1b,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
@@ -18231,8 +18447,15 @@ def mkavgfigs():
     # ssh jmckinne@orange.slac.stanford.edu
     # cd /lustre/ki/orange/jmckinne/thickdisk7/movie8new2
     # 
-    # convert fig2.png fig2.eps ; scp fig2.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/figavgflowfield.eps ; scp fig4_0.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/outflowzoom.eps; scp fig4_1.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/outflowlarge.eps
+    # convert fig2.png fig2.eps ; scp fig2.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/figavgflowfield.eps ; scp fig2.png jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/figavgflowfield.png ; scp fig4_0.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/outflowzoom.eps;scp fig4_0.png jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/outflowzoom.png ; scp fig4_1.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/outflowlarge.eps ;scp fig4_1.png jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/outflowlarge.png
+    #
+    # for sasha99 model:
+    #
+    # convert fig2.png fig2.eps ; scp fig2.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/figavgflowfieldsasha99.eps ; scp fig2.png jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/figavgflowfieldsasha99.png 
+    #
     # whichrun="thickdisk7" ; scp datavsravg1.txt dataavgvsr0.txt dataavgvsh1.txt dataavgvsh0.txt dataavgvsr1.txt dataavg0.txt dataavg1.txt jmckinne@ki-jmck:/data2/jmckinne/$whichrun/fromorange_movie8new2/
+    #
+    #
 
 def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,prefactor=100):
     global modelname
