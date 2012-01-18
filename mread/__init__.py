@@ -4595,7 +4595,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     #get base name of the current dir
     bn = os.path.basename(os.getcwd())
     pn = bn
-    rbr = 200.
+    rbr = 100.
     Dt = None
     Dno = None
     betamin = 100
