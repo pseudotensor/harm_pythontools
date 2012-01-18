@@ -6692,6 +6692,8 @@ def mkmovieframe( findex, fname, **kwargs ):
             ymax=np.floor(ymax)+1
             if ymax >= 60:
                 tck=np.arange(1,ymax/30.)*30.
+            elif ymax >= 20:
+                tck=np.arange(1,ymax/10.)*10.
             elif ymax >= 10:
                 tck=np.arange(1,ymax/5.)*5.
             else:
@@ -6709,25 +6711,53 @@ def mkmovieframe( findex, fname, **kwargs ):
         #
         ax34 = plt.subplot(gs3[-1,:])
         plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findex,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma,usegaussianunits=True)
-        ax34.set_ylim((0,3.8*prefactor))
+        #OVERRIDE
+        #ax34.set_ylim((-.5*prefactor,1.99*prefactor))
+        #ax34.set_ylim((0,3.8*prefactor))
         ymax=ax34.get_ylim()[1]
-        if prefactor < ymax and ymax < 2*prefactor: 
+        ymin=ax34.get_ylim()[0]
+        if ymin < -.25 * prefactor:
+            ymin = -.25 * prefactor
+            ax34.set_ylim((ymin,ymax))
+        if prefactor < ymax and ymax < 1.5*prefactor: 
             #ymax = 2
-            tck=(prefactor,)
+            tck=(0.5*prefactor,prefactor,)
+            if ymin < 0:
+                tck=(0,0.5*prefactor,prefactor,)
             ax34.set_yticks(tck)
             #ax34.set_yticklabels(('','100','200'))
-        elif ymax < prefactor: 
-            ymax = prefactor
-            tck=(0.5*prefactor,prefactor)
+        elif ymax <= prefactor: 
+            ymax=np.floor(ymax)+1
+            if ymin < 0:
+                minval = 0
+            else:
+                minval = 1
+            if ymax >= 50:
+                tck=np.arange(minval,ymax/50.)*50.
+            elif ymax >= 20:
+                tck=np.arange(minval,ymax/10.)*10.
+            elif ymax >= 10:
+                tck=np.arange(minval,ymax/5.)*5.
+            else:
+                tck=np.arange(minval,ymax)
             ax34.set_yticks(tck)
-            ax34.set_yticklabels(('','%d' % prefactor))
+            if False:
+                ymax = prefactor
+                tck=(0.5*prefactor,prefactor)
+                if ymin < 0:
+                    tck=(0,0.5*prefactor,prefactor)
+                ax34.set_yticks(tck)
+                if ymin >= 0:
+                    ax34.set_yticklabels(('','%d' % prefactor))
         else:
             ymax=np.floor(ymax/prefactor)+1
             ymax*=prefactor
             tck=np.arange(1,ymax/prefactor)*prefactor
+            if ymin < 0:
+                tck=np.arange(0,ymax/prefactor)*prefactor
             ax34.set_yticks(tck)
         #reset lower limit to 0
-        ax34.set_ylim((0,ax34.get_ylim()[1]))
+        #ax34.set_ylim((0,ax34.get_ylim()[1]))
         ax34.grid(True)
         ax34r = ax34.twinx()
         ax34r.set_ylim(ax34.get_ylim())
@@ -8902,6 +8932,18 @@ if __name__ == "__main__":
         #epsFke = 
         #print epsFm, epsFke
         mkmovie(prefactor=100.,usegaussianunits=True,domakeframes=domakeframes,frametype='Rzzypanels',dostreamlines=False)
+        #mkmovie(prefactor=100.,usegaussianunits=True,domakeframes=domakeframes)
+    if False:
+        #make a movie with floor removal
+        #fti=7000
+        #ftf=30500
+        doreload = 1
+        domakeframes=1
+        epsFm, epsFke = takeoutfloors(doreload=doreload,returndf=1,isinteractive=0,doplot=False,writefile=False)
+        #epsFm = 
+        #epsFke = 
+        #print epsFm, epsFke
+        mkmovie(prefactor=100.,epsFm=epsFm,epsFke=epsFke,usegaussianunits=True,domakeframes=domakeframes,frametype='5panels',dostreamlines=False)
         #mkmovie(prefactor=100.,usegaussianunits=True,domakeframes=domakeframes)
     if False:
         readmytests1()
