@@ -7194,9 +7194,11 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         if False: 
             #normalization by max energy flux so energy flux goes from 0 to 100%
             z = np.abs(en2)/np.nanmax(np.abs(en2))
+            zhalf = np.abs(en)/np.nanmax(np.abs(en))
         else:
             #normalization by mass accretion rate; 2 to account for each hemisphere is half
             z = 2*np.abs(en2)/a_Fm
+            zhalf =  2*np.abs(en)/a_Fm
             #print md, a_Fm, a_Fe1, a_Fe
         # lev_exp = np.arange(np.floor(np.log10(np.nanmin(z))-1),
         #                      np.ceil(np.log10(np.nanmax(z))+1))
@@ -7210,6 +7212,13 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
             #a=-0.9
             levs_label = np.array([0.125,0.25,0.5,1.])*0.07 #Ebindisco(a)
             levs = np.arange(0.125,1.125,0.125)*0.07 #Ebindisco(a)
+        hofz1=interp1d( zhalf[iofr(rhor),ny/2-5:0:-1,0], h[iofr(rhor),ny/2-5:0:-1,0], kind='linear' )
+        hofz2=interp1d( zhalf[iofr(rhor),ny/2+5:,0], h[iofr(rhor),ny/2+5:,0], kind='linear' )
+        print( "theta1 = %g, theta2 = %g\n" % (hofz1(levs[-1]), hofz2(levs[-1])) )
+        theta1 = 1.34995
+        theta2 = 1.82129
+        zofh=interp1d( h[iofr(rhor),:,0],zhalf[iofr(rhor),:,0], kind='linear' )
+        print( "z(h=%g) = %g, z(h=%g) = %g\n" % (theta1, zofh(theta1), theta2, zofh(theta2)) )
         minval=levs[0]
         maxval=levs[-1]
         lminval=np.log10(minval)
