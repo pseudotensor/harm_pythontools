@@ -5994,6 +5994,41 @@ def Ebindisco(a):
     Eb = Ebind( Risco(a), a)
     return( Eb )
 
+def getetaavg(fname,simnamelist):
+    gd1 = np.loadtxt( fname, unpack = True, usecols = [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21] )
+    #gd=gd1.view().reshape((-1,nx,ny,nz), order='F')
+    alist, etalist, etastdlist, sparlist, sparstdlist, Fmlist, Felist, Fllist, FEMrhorlist, FEM2list, powjetlist, powwindlist, ftotlist, ftotsqlist, hor5, hor10, hor20, hor25, hor30, hor100 = gd1
+    fsqtotlist = ftotsqlist
+    mdotlist = Fmlist
+    rhorlist = 1+(1-alist**2)**0.5
+    omhlist = alist / 2 / rhorlist
+    etaEMlist = -FEM2list/Fmlist
+    etajetlist=powjetlist/Fmlist
+    etawindlist = powwindlist/Fmlist
+    #
+    gin = open( fname, "rt" )
+    emptyline = gin.readline()
+    simname=[]
+    indexsim=dict()
+    etasim=dict()
+    etastdsim=dict()
+    simpath=[]
+    for i in np.arange(alist.shape[0]):
+        stringsplit=gin.readline().split()
+        simname.append(stringsplit[0])
+        simpath.append(stringsplit[1])
+        indexsim[stringsplit[0]]=i
+        etasim[stringsplit[0]]=etalist[i]
+        etastdsim[stringsplit[0]]=etastdlist[i]
+    gin.close()
+    etas=np.zeros(len(simnamelist),dtype=np.float64)
+    etas_std=np.zeros(len(simnamelist))
+    for i,simname in enumerate(simnamelist):
+        etas[i] = etasim[simname]
+        etas_std[i] = etastdsim[simname]
+    eta9avg,eta9err,eta9std=wmom(etas,etas_std**(-2),calcerr=True,sdev=True)
+    return eta9avg*100.,2*eta9err*100. #,2*eta9std
+
 def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=False,nsigma=1):
     if usegaussianunits == True:
         unitsfactor = (4*np.pi)**0.5*2*np.pi
