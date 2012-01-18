@@ -4033,6 +4033,10 @@ def plotqtyvstime(qtymem,ihor=None,whichplot=None,ax=None,findex=None,fti=None,f
     if whichplot == -2:
         return( mdtotvsr, edtotvsr, edmavsr, ldtotvsr )
 
+    if whichplot == -199:
+        horavg = timeavg(hoverr,ts,fti,ftf)
+        return( horavg )
+
     if whichplot == -200:
         #XXX compute edmavsr without polar regions with avg_aphi < avg_phi[iofr(rhor),aphi_j_val]
         if aphi_j_val > 0 and os.path.isfile( "avg2d.npy" ):
@@ -5530,6 +5534,8 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                 pjke_mu2_avg, pjke_mu1_avg, \
                 gdetF10, gdetF11, gdetF12 \
                 = plotqtyvstime( qtymem, whichplot = -200, fti=fti, ftf=ftf, aphi_j_val=aphi_j_val )
+
+    horavg = plotqtyvstime( qtymem, whichplot = -199, fti=fti, ftf=ftf, aphi_j_val=aphi_j_val )
     
     if np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) < 1.5 and bn == "rtf2_15r34_2pi_a0.99gg500rbr1e3_0_0_0":
         #correct energy flux for face vs. center
@@ -5667,13 +5673,16 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #
         foutpower = open( "siminfo_%s.txt" %  os.path.basename(os.getcwd()), "w" )
         #foutpower.write( "#Name a Mdot   Pjet    Etajet  Psitot Psisqtot**0.5 Psijet Psisqjet**0.5 rstag Pjtotmax Pjtot1rstag Pjtot2rstag Pjtot4rstag Pjtot8rstag\n"  )
-        foutpower.write( "%s %s %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n" % (pn, os.path.basename(os.getcwd()), a, 
+        foutpower.write( "%s %s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n" % (pn, 
+                                                           os.path.basename(os.getcwd()), a, 
                                                            etamean, etastd, sparmean, sparstd,
                                                            Fm[iofr(rx)], Fe[iofr(rx)], Fl[iofr(rx)]/dxdxp[3][3][0,0,0],
                                                            FEM[iofr(rhor)], FEM[iofr(2)],
                                                            pjke_mu2_avg[iofr(rj)], 
                                                            (pjke_mu1_avg-pjke_mu2_avg)[iofr(rj)],
-                                                            fstotfinavg, fstotsqfinavg ) )
+                                                           fstotfinavg, fstotsqfinavg,
+                                                           horavg[iofr(5)], horavg[iofr(10)], horavg[iofr(20)], 
+                                                           horavg[iofr(25)], horavg[iofr(30)], horavg[iofr(100)]) )
         #flush to disk just in case to make sure all is written
         foutpower.flush()
         os.fsync(foutpower.fileno())
