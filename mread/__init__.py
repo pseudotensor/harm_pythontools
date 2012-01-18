@@ -8021,7 +8021,7 @@ def provsretro(dotakeoutfloors=False,doreload=True):
         plt.figure(1)
         if firsttime:
             ax1 = plt.gca()
-        #plt.plot( r[:,0,0], -mdin, ':' )
+        plt.plot( r[:,0,0], -mdin, ':' )
         ax1.plot( r[:,0,0], -mdall, '-', label=lab )
         ax1.set_xscale('log')
         ax1.set_xlim(rhor,100)
