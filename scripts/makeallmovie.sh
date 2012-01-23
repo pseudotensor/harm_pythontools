@@ -556,7 +556,7 @@ then
         fi
         if [ $numtbl -eq 4 ]
         then
-            echo "\caption{Magnetic Stress, Grid Cells per MRI Wavelength, MRI Wavelengths per Disk Height, and Radii for MRI Suppression and Magnetosphere}" >> $fname
+            echo "\caption{Magnetic Stress, Grid Cells per MRI Wavelength, MRI Wavelengths per Disk Height, and Radii for MRI Suppression}" >> $fname
         fi
         if [ $numtbl -eq 5 ]
         then

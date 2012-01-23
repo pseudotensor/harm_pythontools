@@ -10510,6 +10510,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     # no iflux correction for j, mw, w numerators. Only need correction for BH term that uses ihor.
     # note that mdotfinavg already corrected since could correct total fluxes from before
+    # GODMARK: This causes slight problems when totals are near zero when plotting eta's vs time.
+    # so maybe multiply by time-averaged corrected ratio?  At least for averages?
     #
     etabhEM = prefactor*pjemtot[:,ihor]/mdotfinavg * ((pjemtot[:,iflux]+pjmaketot[:,iflux])/(pjemtot[:,ihor]+pjmaketot[:,ihor]))
     etabhMAKE = prefactor*pjmaketot[:,ihor]/mdotfinavg * ((pjemtot[:,iflux]+pjmaketot[:,iflux])/(pjemtot[:,ihor]+pjmaketot[:,ihor]))
@@ -11805,8 +11807,12 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #fakerstagreport=1E30
         #fakerstagreport
     #
-    print( "HLatex4: ModelName & $\\alpha_a$ & $\\alpha_b$ & $\\alpha_c$ & $Q_{1,\\rm{}MRI,i}$ & $Q_{1,\\rm{}MRI,o}$  & $Q_{2,\\rm{}MRI,i}$ & $Q_{2,\\rm{}MRI,o}$ & $r_{Q_{2,\\rm{}MRI}=1/2}$ & $r_{Q_{2\\rm{}weak,MRI}=1/2}$ & $r_m$ \\\\" )
-    print( "VLatex4: %s        & %g          & %g          & %g          & %g                  & %g                   & %g                  & %g                  & %s                        & %s                                 & %s                       \\\\ %% %s" % (truemodelname, roundto2(alphamag1_vsr_avg), roundto2(alphamag2_vsr_avg), roundto2(alphamag3_vsr_avg), roundto2(qmridiskrfitin2_avg), roundto2(qmridiskrfitout2_avg), roundto2(1.0/iq2mridiskrfitin2_avg), roundto2(1.0/iq2mridiskrfitout2_avg), roundto2_rq2mri1(rq2mri1,rq2mri1cut,fakerstagreport), roundto2_rq2mri1(rq2mri2,rq2mri2cut,fakerstagreport), roundto2_rq2mri1(rm1,rm1cut,fakerstagreport), modelname ) )
+    if 1==0:
+        print( "HLatex4: ModelName & $\\alpha_a$ & $\\alpha_b$ & $\\alpha_c$ & $Q_{1,\\rm{}MRI,i}$ & $Q_{1,\\rm{}MRI,o}$  & $Q_{2,\\rm{}MRI,i}$ & $Q_{2,\\rm{}MRI,o}$ & $r_{Q_{2,\\rm{}MRI}=1/2}$ & $r_{Q_{2\\rm{}weak,MRI}=1/2}$ & $r_m$ \\\\" )
+        print( "VLatex4: %s        & %g          & %g          & %g          & %g                  & %g                   & %g                  & %g                  & %s                        & %s                                 & %s                       \\\\ %% %s" % (truemodelname, roundto2(alphamag1_vsr_avg), roundto2(alphamag2_vsr_avg), roundto2(alphamag3_vsr_avg), roundto2(qmridiskrfitin2_avg), roundto2(qmridiskrfitout2_avg), roundto2(1.0/iq2mridiskrfitin2_avg), roundto2(1.0/iq2mridiskrfitout2_avg), roundto2_rq2mri1(rq2mri1,rq2mri1cut,fakerstagreport), roundto2_rq2mri1(rq2mri2,rq2mri2cut,fakerstagreport), roundto2_rq2mri1(rm1,rm1cut,fakerstagreport), modelname ) )
+    else:
+        print( "HLatex4: ModelName & $\\alpha_a$ & $\\alpha_b$ & $\\alpha_c$ & $Q_{1,\\rm{}MRI,i}$ & $Q_{1,\\rm{}MRI,o}$  & $Q_{2,\\rm{}MRI,i}$ & $Q_{2,\\rm{}MRI,o}$ & $r_{Q_{2,\\rm{}MRI}=1/2}$ & $r_{Q_{2\\rm{}weak,MRI}=1/2}$  \\\\" )
+        print( "VLatex4: %s        & %g          & %g          & %g          & %g                  & %g                   & %g                  & %g                  & %s                        & %s                             \\\\ %% %s" % (truemodelname, roundto2(alphamag1_vsr_avg), roundto2(alphamag2_vsr_avg), roundto2(alphamag3_vsr_avg), roundto2(qmridiskrfitin2_avg), roundto2(qmridiskrfitout2_avg), roundto2(1.0/iq2mridiskrfitin2_avg), roundto2(1.0/iq2mridiskrfitout2_avg), roundto2_rq2mri1(rq2mri1,rq2mri1cut,fakerstagreport), roundto2_rq2mri1(rq2mri2,rq2mri2cut,fakerstagreport), modelname ) )
     #
     # 8:
     print( "HLatex97: ModelName & $Q_{1,t=0,\\rm{}MRI,i,w}$ & $Q_{1,t=0,\\rm{}MRI,o,w}$  & $Q_{1,t=0,\\rm{}MRI,fo,w}$ & $Q_{2,t=0,\\rm{}MRI,i,w}$ & $Q_{2,t=0,\\rm{}MRI,o,w}$ & $Q_{2,t=0,\\rm{}MRI,fo,w}$ & rm1 & rm2 & rm3  \\\\" )
@@ -14048,7 +14054,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                     yvalue=bsqrhosqrad4new[condt,pickjnx] # kinda visible at 8
                     yvaluefull=bsqrhosqrad4new[condtfull,pickjnx] # kinda visible at 8
                     yvaluefull1=yvaluefull
-                    plt.title(r"Power in $b^2$ at $r=4r_g$ at $|h/r|$",fontsize=16)
+                    plt.title(r"Power in $b^2$ at $r=4r_g$ at $\theta^d$",fontsize=16)
                 elif whichfftplot==2:
                     yvalue=bsqrhosqrad4new[condt,pickjnx] # kinda visible at 8
                     yvaluefull=bsqrhosqrad4new[condtfull,pickjnx] # kinda visible at 8
@@ -15083,7 +15089,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
 
     #
     # copy over data vs. radius , data vs. time, data vs. angle for SM plots:
-    # whichrun="thickdisk7" ; scp datavs*.txt jmckinne@ki-jmck:/data2/jmckinne/$whichrun/fromorange_movie8new2/
+    # whichrun="thickdisk7" ; scp datavs*.txt jmckinne@ki-jmck:/data2/jmckinne/$whichrun/fromorange_movie8new3/
 
 
 #/data2/jmckinne/thickdisk7/fromorange_movie8new2
@@ -15800,7 +15806,7 @@ def mkpowervsm(loadq=0,qty=None,pllabel="",filenum=0,fileletter="",logvalue=0,ra
     #
     # FINALPLOTS:
     #
-    # whichrun="thickdisk7" ; scp powervsm*.txt jmckinne@ki-jmck:/data2/jmckinne/$whichrun/fromorange_movie8new2/
+    # whichrun="thickdisk7" ; scp powervsm*.txt jmckinne@ki-jmck:/data2/jmckinne/$whichrun/fromorange_movie8new3/
     #
 
 
