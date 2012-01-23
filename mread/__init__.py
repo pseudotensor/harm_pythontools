@@ -7276,6 +7276,7 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         #ctsf.cmap.set_under('red',1.0)
         cbar = plt.colorbar(ctsf)
         cbar.ax.set_ylabel('Enclosed energy outflow efficiency',fontsize=fntsize)
+        cbar.set_alpha(1.0)
         # Add the contour line levels to the colorbar
         #cbar.add_lines(cts)
         print lev_exp
