@@ -6811,6 +6811,8 @@ def mkmovieframe( findex, fname, **kwargs ):
         ax2 = plt.subplot(gs2[:, -1])
         if domakeframes:
             mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True)
+        ax2.set_ylabel(r'$y\ [r_g]$',fontsize=16,ha='center')
+        ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
     elif frametype=='Rzpanel':
         #Rz xy
         gs1 = GridSpec(1, 1)
