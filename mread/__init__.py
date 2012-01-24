@@ -764,7 +764,7 @@ def assignavg2dvars(avgmem):
     global avg_absrhouu,avg_absfdd
     global avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
     global avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
-    global avg_TudPA, avg_TudIE
+    global avg_TudPA, avg_TudEN
     global avg_gamma,avg_pg,avg_pb,avg_beta
     #avg defs
     i=0
@@ -857,7 +857,7 @@ def assignavg2dvars(avgmem):
     n=16
     #P/IE
     avg_TudPA=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
-    avg_TudIE=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
+    avg_TudEN=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
     # 3
     #mu,sigma
     n=1
@@ -1129,7 +1129,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     """
     global avg_ts,avg_te,avg_nitems,avg_rho,avg_ug,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_omegaf2b,avg_omegaf1,avg_omegaf1b,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
     global avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
-    global avg_TudPA, avg_TudIE
+    global avg_TudPA, avg_TudEN
     global avg_absuu,avg_absbu,avg_absud,avg_absbd
     global avg_absomegaf2,avg_absomegaf2b,avg_absomegaf1,avg_absomegaf1b
     global avg_absrhouu,avg_absfdd
@@ -1288,7 +1288,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         # 16*2=32
         #PA/IE (EM is B) -- for gammie plot
         avg_TudPA+=TudPA.sum(-1)[:,:,:,:,None]
-        avg_TudIE+=TudIE.sum(-1)[:,:,:,:,None]
+        avg_TudEN+=TudEN.sum(-1)[:,:,:,:,None]
         #
         # 3
         #mu,sigma
@@ -5876,7 +5876,7 @@ def mergeqtyvstime(n):
 
 
 def getnonbobnqty():
-    value=1+6+10+3 + 21+21+21+21+21+24 + 21*3 + 12*4+12*4 + 11+15+12+2+36+36
+    value=1+6+10+3 + 21+21+21+21+21+24 + 21*3 + 12*4+12*4 + 11+15+12+2 + (14+48) +  (8+48)
     return(value)
 
 
@@ -6587,7 +6587,7 @@ def getqtymem(qtymem):
     global     mdin
     mdin=qtymem[i];i+=1
 
-    #Edot: 12
+    #Edot: 12+2=14
     global     edtot
     edtot=qtymem[i];i+=1
     global     ed2h
@@ -6605,6 +6605,10 @@ def getqtymem(qtymem):
     edma=qtymem[i];i+=1
     global     edm
     edm=qtymem[i];i+=1
+    global     edpa
+    edpa=qtymem[i];i+=1
+    global     eden
+    eden=qtymem[i];i+=1
     #
     global     edma30
     edma30=qtymem[i];i+=1
@@ -6623,7 +6627,7 @@ def getqtymem(qtymem):
     pjma5=qtymem[i];i+=1
     #
 
-    # Pj and Phiabsj: 36
+    # Pj and Phiabsj: 36+12=48 (EM, RM*2, MA, MAFLOOR, PA, EN, PHI)*2 : 48
     global     pjem_n_mu1
     pjem_n_mu1=qtymem[i];i+=1
     global     pjem_n_mumax1
@@ -6658,6 +6662,20 @@ def getqtymem(qtymem):
     pjma_n_mumax1_flr=qtymem[i];i+=1
     global     pjma_n_mumax1m_flr
     pjma_n_mumax1m_flr=qtymem[i];i+=1
+    #
+    global     pjpa_n_mu1
+    pjpa_n_mu1=qtymem[i];i+=1
+    global     pjpa_n_mumax1
+    pjpa_n_mumax1=qtymem[i];i+=1
+    global     pjpa_n_mumax1m
+    pjpa_n_mumax1m=qtymem[i];i+=1
+    #
+    global     pjen_n_mu1
+    pjen_n_mu1=qtymem[i];i+=1
+    global     pjen_n_mumax1
+    pjen_n_mumax1=qtymem[i];i+=1
+    global     pjen_n_mumax1m
+    pjen_n_mumax1m=qtymem[i];i+=1
     #
     global     phiabsj_n_mu1
     phiabsj_n_mu1=qtymem[i];i+=1
@@ -6701,6 +6719,20 @@ def getqtymem(qtymem):
     global     pjma_s_mumax1m_flr
     pjma_s_mumax1m_flr=qtymem[i];i+=1
     #
+    global     pjpa_s_mu1
+    pjpa_s_mu1=qtymem[i];i+=1
+    global     pjpa_s_mumax1
+    pjpa_s_mumax1=qtymem[i];i+=1
+    global     pjpa_s_mumax1m
+    pjpa_s_mumax1m=qtymem[i];i+=1
+    #
+    global     pjen_s_mu1
+    pjen_s_mu1=qtymem[i];i+=1
+    global     pjen_s_mumax1
+    pjen_s_mumax1=qtymem[i];i+=1
+    global     pjen_s_mumax1m
+    pjen_s_mumax1m=qtymem[i];i+=1
+    #
     global     phiabsj_s_mu1
     phiabsj_s_mu1=qtymem[i];i+=1
     global     phiabsj_s_mumax1
@@ -6708,8 +6740,8 @@ def getqtymem(qtymem):
     global     phiabsj_s_mumax1m
     phiabsj_s_mumax1m=qtymem[i];i+=1
     #
-
-    # ldot stuff: 6+3*10=36
+    #
+    # ldot stuff: 8
     global     ldtot
     ldtot=qtymem[i];i+=1
     global     ldem
@@ -6718,12 +6750,17 @@ def getqtymem(qtymem):
     ldma=qtymem[i];i+=1
     global     ldm
     ldm=qtymem[i];i+=1
+    global     ldpa
+    ldpa=qtymem[i];i+=1
+    global     lden
+    lden=qtymem[i];i+=1
     #
     global     ldma30
     ldma30=qtymem[i];i+=1
     global     ldm30
     ldm30=qtymem[i];i+=1
     # 
+    # ldot stuff: 42
     global     ljem_n_mu1
     ljem_n_mu1=qtymem[i];i+=1
     global     ljem_n_mumax1
@@ -6759,6 +6796,20 @@ def getqtymem(qtymem):
     global     ljma_n_mumax1m_flr
     ljma_n_mumax1m_flr=qtymem[i];i+=1
     #
+    global     ljpa_n_mu1
+    ljpa_n_mu1=qtymem[i];i+=1
+    global     ljpa_n_mumax1
+    ljpa_n_mumax1=qtymem[i];i+=1
+    global     ljpa_n_mumax1m
+    ljpa_n_mumax1m=qtymem[i];i+=1
+    #
+    global     ljen_n_mu1
+    ljen_n_mu1=qtymem[i];i+=1
+    global     ljen_n_mumax1
+    ljen_n_mumax1=qtymem[i];i+=1
+    global     ljen_n_mumax1m
+    ljen_n_mumax1m=qtymem[i];i+=1
+    #
     global     ljem_s_mu1
     ljem_s_mu1=qtymem[i];i+=1
     global     ljem_s_mumax1
@@ -6793,6 +6844,20 @@ def getqtymem(qtymem):
     ljma_s_mumax1_flr=qtymem[i];i+=1
     global     ljma_s_mumax1m_flr
     ljma_s_mumax1m_flr=qtymem[i];i+=1
+    #
+    global     ljpa_s_mu1
+    ljpa_s_mu1=qtymem[i];i+=1
+    global     ljpa_s_mumax1
+    ljpa_s_mumax1=qtymem[i];i+=1
+    global     ljpa_s_mumax1m
+    ljpa_s_mumax1m=qtymem[i];i+=1
+    #
+    global     ljen_s_mu1
+    ljen_s_mu1=qtymem[i];i+=1
+    global     ljen_s_mumax1
+    ljen_s_mumax1=qtymem[i];i+=1
+    global     ljen_s_mumax1m
+    ljen_s_mumax1m=qtymem[i];i+=1
     #
     ###################################
     return(i)
@@ -7827,10 +7892,12 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         ed2hor[findex]=intangle(-gdet*Tud[1][0],hoverr=2*hoverr3d,thetamid=thetamid3d)
         edrhosq[findex]=scaletofullwedge(((-gdet*rho**2*Tud[1][0]).sum(1)/maxrhosq2d).sum(1)*_dx2*_dx3)
         #
-        #
+        # Tud's already using rhoclean and ugclean
         edem[findex]=intangle(-gdet*TudEM[1][0])
         edma[findex]=intangle(-gdet*TudMA[1][0])
-        edm[findex]=intangle(gdet*rho*uu[1])
+        edm[findex]=intangle(gdet*rho*uu[1]) # not using clean version
+        edpa[findex]=intangle(-gdet*TudPA[1][0])
+        eden[findex]=intangle(-gdet*TudEN[1][0])
         #
         edma30[findex]=intangle(-gdet*TudMA[1][0],which=(condmaxbsqorho==0))
         edm30[findex]=intangle(gdet*rho*uu[1],which=(condmaxbsqorho==0))
@@ -7869,6 +7936,14 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         pjma_n_mumax1_flr[findex]=jetpowcalc(1,mumax=1,maxbeta=windmaxbeta,minbsqorho=jetwind_minbsqorho,donorthsouth=1)
         pjma_n_mumax1m_flr[findex]=jetpowcalc(1,mumax=1,maxbeta=mwindmaxbeta,minbsqorho=jetwind_minbsqorho,donorthsouth=1)
         #
+        pjpa_n_mu1[findex]=jetpowcalc(15,mumin=1,donorthsouth=1,conditional=condmaxbsqorho)
+        pjpa_n_mumax1[findex]=jetpowcalc(15,mumax=1,maxbeta=windmaxbeta,donorthsouth=1,conditional=condmaxbsqorho)
+        pjpa_n_mumax1m[findex]=jetpowcalc(15,mumax=1,maxbeta=mwindmaxbeta,donorthsouth=1,conditional=condmaxbsqorho)
+        #
+        pjen_n_mu1[findex]=jetpowcalc(16,mumin=1,donorthsouth=1,conditional=condmaxbsqorho)
+        pjen_n_mumax1[findex]=jetpowcalc(16,mumax=1,maxbeta=windmaxbeta,donorthsouth=1,conditional=condmaxbsqorho)
+        pjen_n_mumax1m[findex]=jetpowcalc(16,mumax=1,maxbeta=mwindmaxbeta,donorthsouth=1,conditional=condmaxbsqorho)
+        #
         phiabsj_n_mu1[findex]=jetpowcalc(4,mumin=1,donorthsouth=1)
         phiabsj_n_mumax1[findex]=jetpowcalc(4,mumax=1,maxbeta=windmaxbeta,donorthsouth=1)
         phiabsj_n_mumax1m[findex]=jetpowcalc(4,mumax=1,maxbeta=mwindmaxbeta,donorthsouth=1)
@@ -7894,6 +7969,14 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         pjma_s_mumax1_flr[findex]=jetpowcalc(1,mumax=1,maxbeta=windmaxbeta,minbsqorho=jetwind_minbsqorho,donorthsouth=-1)
         pjma_s_mumax1m_flr[findex]=jetpowcalc(1,mumax=1,maxbeta=mwindmaxbeta,minbsqorho=jetwind_minbsqorho,donorthsouth=-1)
         #
+        pjpa_s_mu1[findex]=jetpowcalc(15,mumin=1,donorthsouth=-1,conditional=condmaxbsqorho)
+        pjpa_s_mumax1[findex]=jetpowcalc(15,mumax=1,maxbeta=windmaxbeta,donorthsouth=-1,conditional=condmaxbsqorho)
+        pjpa_s_mumax1m[findex]=jetpowcalc(15,mumax=1,maxbeta=mwindmaxbeta,donorthsouth=-1,conditional=condmaxbsqorho)
+        #
+        pjen_s_mu1[findex]=jetpowcalc(16,mumin=1,donorthsouth=-1,conditional=condmaxbsqorho)
+        pjen_s_mumax1[findex]=jetpowcalc(16,mumax=1,maxbeta=windmaxbeta,donorthsouth=-1,conditional=condmaxbsqorho)
+        pjen_s_mumax1m[findex]=jetpowcalc(16,mumax=1,maxbeta=mwindmaxbeta,donorthsouth=-1,conditional=condmaxbsqorho)
+        #
         phiabsj_s_mu1[findex]=jetpowcalc(4,mumin=1,donorthsouth=-1)
         phiabsj_s_mumax1[findex]=jetpowcalc(4,mumax=1,maxbeta=windmaxbeta,donorthsouth=-1)
         phiabsj_s_mumax1m[findex]=jetpowcalc(4,mumax=1,maxbeta=mwindmaxbeta,donorthsouth=-1)
@@ -7901,10 +7984,13 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         #
         #
         print("Ldot" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
+        # Tud's already using rhoclean and ugclean
         ldtot[findex]=intangle(gdet*Tud[1][3]/dxdxp[3,3])
         ldem[findex]=intangle(gdet*TudEM[1][3]/dxdxp[3,3])
         ldma[findex]=intangle(gdet*TudMA[1][3]/dxdxp[3,3])
         ldm[findex]=intangle(0.0*gdet*rho*uu[3]*dxdxp[3,3])
+        ldpa[findex]=intangle(gdet*TudPA[1][3]/dxdxp[3,3])
+        lden[findex]=intangle(gdet*TudEN[1][3]/dxdxp[3,3])
         #
         ldma30[findex]=intangle(gdet*TudMA[1][3]/dxdxp[3,3],which=(condmaxbsqorho==0))
         ldm30[findex]=intangle(0.0*gdet*rho*uu[3]*dxdxp[3,3],which=(condmaxbsqorho==0))
@@ -7930,6 +8016,14 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         ljma_n_mumax1_flr[findex]=jetpowcalc(11,mumax=1,maxbeta=windmaxbeta,minbsqorho=jetwind_minbsqorho,donorthsouth=1)
         ljma_n_mumax1m_flr[findex]=jetpowcalc(11,mumax=1,maxbeta=mwindmaxbeta,minbsqorho=jetwind_minbsqorho,donorthsouth=1)
         #
+        ljpa_n_mu1[findex]=jetpowcalc(17,mumin=1,donorthsouth=1,conditional=condmaxbsqorho)
+        ljpa_n_mumax1[findex]=jetpowcalc(17,mumax=1,maxbeta=windmaxbeta,donorthsouth=1,conditional=condmaxbsqorho)
+        ljpa_n_mumax1m[findex]=jetpowcalc(17,mumax=1,maxbeta=mwindmaxbeta,donorthsouth=1,conditional=condmaxbsqorho)
+        #
+        ljen_n_mu1[findex]=jetpowcalc(18,mumin=1,donorthsouth=1,conditional=condmaxbsqorho)
+        ljen_n_mumax1[findex]=jetpowcalc(18,mumax=1,maxbeta=windmaxbeta,donorthsouth=1,conditional=condmaxbsqorho)
+        ljen_n_mumax1m[findex]=jetpowcalc(18,mumax=1,maxbeta=mwindmaxbeta,donorthsouth=1,conditional=condmaxbsqorho)
+        #
         print("south hemisphere" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         ljem_s_mu1[findex]=jetpowcalc(10,mumin=1,donorthsouth=-1)
         ljem_s_mumax1[findex]=jetpowcalc(10,mumax=1,maxbeta=windmaxbeta,donorthsouth=-1)
@@ -7950,6 +8044,14 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         ljma_s_mu1_flr[findex]=jetpowcalc(11,mumin=1,minbsqorho=jetwind_minbsqorho,donorthsouth=-1)
         ljma_s_mumax1_flr[findex]=jetpowcalc(11,mumax=1,maxbeta=windmaxbeta,minbsqorho=jetwind_minbsqorho,donorthsouth=-1)
         ljma_s_mumax1m_flr[findex]=jetpowcalc(11,mumax=1,maxbeta=mwindmaxbeta,minbsqorho=jetwind_minbsqorho,donorthsouth=-1)
+        #
+        ljpa_s_mu1[findex]=jetpowcalc(17,mumin=1,donorthsouth=-1,conditional=condmaxbsqorho)
+        ljpa_s_mumax1[findex]=jetpowcalc(17,mumax=1,maxbeta=windmaxbeta,donorthsouth=-1,conditional=condmaxbsqorho)
+        ljpa_s_mumax1m[findex]=jetpowcalc(17,mumax=1,maxbeta=mwindmaxbeta,donorthsouth=-1,conditional=condmaxbsqorho)
+        #
+        ljen_s_mu1[findex]=jetpowcalc(18,mumin=1,donorthsouth=-1,conditional=condmaxbsqorho)
+        ljen_s_mumax1[findex]=jetpowcalc(18,mumax=1,maxbeta=windmaxbeta,donorthsouth=-1,conditional=condmaxbsqorho)
+        ljen_s_mumax1m[findex]=jetpowcalc(18,mumax=1,maxbeta=mwindmaxbeta,donorthsouth=-1,conditional=condmaxbsqorho)
         #
         #
         if dobob==1:
@@ -8178,7 +8280,7 @@ def amin(arg1,arg2):
 
 # allow to remove rho and ug component to remove floor effects
 def Tcalcud(maxbsqorho=None, which=None):
-    global Tud, TudEM, TudMA, TudPA, TudIE
+    global Tud, TudEM, TudMA, TudPA, TudEN
     global mu, sigma
     global enth
     global unb, isunbound
@@ -8200,7 +8302,7 @@ def Tcalcud(maxbsqorho=None, which=None):
     TudMA = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
     TudEM = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
     TudPA = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
-    TudIE = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
+    TudEN = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
     for kapa in np.arange(4):
         for nu in np.arange(4):
             if(kapa==nu): delta = 1
@@ -8208,7 +8310,7 @@ def Tcalcud(maxbsqorho=None, which=None):
             TudEM[kapa,nu] = bsq*uu[kapa]*ud[nu] + 0.5*bsq*delta - bu[kapa]*bd[nu]
             TudMA[kapa,nu] = w*uu[kapa]*ud[nu]+pg*delta
             TudPA[kapa,nu] = rhoclean*uu[kapa]*ud[nu]
-            TudIE[kapa,nu] = wnorhoclean*uu[kapa]*ud[nu]+pg*delta
+            TudEN[kapa,nu] = wnorhoclean*uu[kapa]*ud[nu]+pg*delta
             #Tud[kapa,nu] = eta*uu[kapa]*ud[nu]+(pg+0.5*bsq)*delta-bu[kapa]*bd[nu]
             Tud[kapa,nu] = TudEM[kapa,nu] + TudMA[kapa,nu]
     #mu = -Tud[1,0]/(rhoclean*uu[1])
@@ -8297,9 +8399,9 @@ def jetpowcalc(which=2,minbsqorho=None,mumin=None,mumax=None,maxbeta=None,maxbsq
     if which==0:
         jetpowden = -gdet*TudEM[1,0]
     if which==1:
-        jetpowden = -gdet*TudMA[1,0]
+        jetpowden = -gdet*TudMA[1,0] # still has rest-mass
     if which==2:
-        jetpowden = -gdet*Tud[1,0]
+        jetpowden = -gdet*Tud[1,0] # still has rest-mass
     if which==10:
         jetpowden = gdet*TudEM[1,3]/dxdxp[3,3]
     if which==11:
@@ -8314,13 +8416,13 @@ def jetpowcalc(which=2,minbsqorho=None,mumin=None,mumax=None,maxbeta=None,maxbsq
         jetpowden = np.abs(gdetB[1])
     # new one's:
     if which==15:
-        jetpowden = -gdet*(TudPA[1,0]+rho*uu[1]) # go ahead and remove rest-mass term
+        jetpowden = -gdet*(TudPA[1,0]) # still has rest-mass
     if which==16:
-        jetpowden = -gdet*(TudIE[1,0])
+        jetpowden = -gdet*(TudEN[1,0])
     if which==17:
-        jetpowden = -gdet*(TudPA[1,3])
+        jetpowden = gdet*(TudPA[1,3])/dxdxp[3,3]
     if which==18:
-        jetpowden = -gdet*(TudIE[1,3])
+        jetpowden = gdet*(TudEN[1,3])/dxdxp[3,3]
     #
     ############################################
     #jetpowden[tj>=ny-2] = 0*jetpowden[tj>=ny-2]
@@ -8648,6 +8750,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     pjke_s_mu1 = pjem_s_mu1 + pjmake_s_mu1
     pjke_mu1 = pjke_n_mu1 + pjke_s_mu1
     pjem_mu1 = pjem_n_mu1 + pjem_s_mu1
+    pjpake_n_mu1=(pjpa_n_mu1) - (pjrm_n_mu1)
+    pjpake_s_mu1=(pjpa_s_mu1) - (pjrm_s_mu1)
+    pjpake_mu1 = pjpake_n_mu1 + pjpake_s_mu1
+    pjen_mu1 = pjen_n_mu1 + pjen_s_mu1
     #
     # Removing floors here from make
     #ljmake_n_mu1=(ljma_n_mu1-ljma_n_mu1_flr) - (ljrm_n_mu1-ljrm_n_mu1_flr)
@@ -8659,6 +8765,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     ljke_s_mu1 = ljem_s_mu1 + ljmake_s_mu1
     ljke_mu1 = ljke_n_mu1 + ljke_s_mu1
     ljem_mu1 = ljem_n_mu1 + ljem_s_mu1
+    ljpake_n_mu1=(ljpa_n_mu1) - (ljrm_n_mu1)
+    ljpake_s_mu1=(ljpa_s_mu1) - (ljrm_s_mu1)
+    ljpake_mu1 = ljpake_n_mu1 + ljpake_s_mu1
+    ljen_mu1 = ljen_n_mu1 + ljen_s_mu1
     #
     ##############################
     # mwind
@@ -8674,6 +8784,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     pjke_s_mumax1m = pjem_s_mumax1m + pjmake_s_mumax1m
     pjke_mumax1m = pjke_n_mumax1m + pjke_s_mumax1m
     pjem_mumax1m = pjem_n_mumax1m + pjem_s_mumax1m
+    pjpake_n_mumax1m=(pjpa_n_mumax1m) - (pjrm_n_mumax1m)
+    pjpake_s_mumax1m=(pjpa_s_mumax1m) - (pjrm_s_mumax1m)
+    pjpake_mumax1m = pjpake_n_mumax1m + pjpake_s_mumax1m
+    pjen_mumax1m = pjen_n_mumax1m + pjen_s_mumax1m
     #
     # Removing floors here from make
     #ljmake_n_mumax1m=(ljma_n_mumax1m-ljma_n_mumax1m_flr) - (ljrm_n_mumax1m-ljrm_n_mumax1m_flr)
@@ -8685,6 +8799,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     ljke_s_mumax1m = ljem_s_mumax1m + ljmake_s_mumax1m
     ljke_mumax1m = ljke_n_mumax1m + ljke_s_mumax1m
     ljem_mumax1m = ljem_n_mumax1m + ljem_s_mumax1m
+    ljpake_n_mumax1m=(ljpa_n_mumax1m) - (ljrm_n_mumax1m)
+    ljpake_s_mumax1m=(ljpa_s_mumax1m) - (ljrm_s_mumax1m)
+    ljpake_mumax1m = ljpake_n_mumax1m + ljpake_s_mumax1m
+    ljen_mumax1m = ljen_n_mumax1m + ljen_s_mumax1m
     #
     ##############################
     # wind
@@ -8700,6 +8818,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     pjke_s_mumax1 = pjem_s_mumax1 + pjmake_s_mumax1
     pjke_mumax1 = pjke_n_mumax1 + pjke_s_mumax1
     pjem_mumax1 = pjem_n_mumax1 + pjem_s_mumax1
+    pjpake_n_mumax1=(pjpa_n_mumax1) - (pjrm_n_mumax1)
+    pjpake_s_mumax1=(pjpa_s_mumax1) - (pjrm_s_mumax1)
+    pjpake_mumax1 = pjpake_n_mumax1 + pjpake_s_mumax1
+    pjen_mumax1 = pjen_n_mumax1 + pjen_s_mumax1
     #
     # Removing floors here from make
     #ljmake_n_mumax1=(ljma_n_mumax1-ljma_n_mumax1_flr) - (ljrm_n_mumax1-ljrm_n_mumax1_flr)
@@ -8711,6 +8833,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     ljke_s_mumax1 = ljem_s_mumax1 + ljmake_s_mumax1
     ljke_mumax1 = ljke_n_mumax1 + ljke_s_mumax1
     ljem_mumax1 = ljem_n_mumax1 + ljem_s_mumax1
+    ljpake_n_mumax1=(ljpa_n_mumax1) - (ljrm_n_mumax1)
+    ljpake_s_mumax1=(ljpa_s_mumax1) - (ljrm_s_mumax1)
+    ljpake_mumax1 = ljpake_n_mumax1 + ljpake_s_mumax1
+    ljen_mumax1 = ljen_n_mumax1 + ljen_s_mumax1
     #
     #
     #end qty defs
@@ -8783,11 +8909,15 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     edemvsr = timeavg(edem,ts,fti,ftf)
     edmavsr = timeavg(edma-edma30,ts,fti,ftf)
     edmvsr = timeavg(edm-edm30,ts,fti,ftf)
-
+    edpavsr = timeavg(edpa-edm30,ts,fti,ftf)  # assume floor already taken out (really true for above as well, so don'tneed edm30 except for edmvsr)
+    edenvsr = timeavg(eden,ts,fti,ftf)
+    #
     ldtotvsr = timeavg(ldtot,ts,fti,ftf)
     ldemvsr = timeavg(ldem,ts,fti,ftf)
     ldmavsr = timeavg(ldma-ldma30,ts,fti,ftf)
     ldmvsr = timeavg(ldm-ldm30,ts,fti,ftf)
+    ldpavsr = timeavg(ldpa,ts,fti,ftf)  # assume floor already taken out (really true for above as well, so don'tneed ldm30 except for ldmvsr)
+    ldenvsr = timeavg(lden,ts,fti,ftf)
     #
     phiabsj_mu1vsr = timeavg(phiabsj_mu1[:,:],ts,fti,ftf)
     #
@@ -8826,6 +8956,14 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     pjmaketot = (edma-edma30) - (edm-edm30)
     pjmakefinavgvsr = timeavg(pjmaketot,ts,fti,ftf)
     #
+    # PA free (PAKE) energy
+    pjpaketot = (edpa-edma30) - (edm-edm30)
+    pjpakefinavgvsr = timeavg(pjpaketot,ts,fti,ftf)
+    #
+    # EN energy (assume floor already taken out)
+    pjentot = eden
+    pjenfinavgvsr = timeavg(pjentot,ts,fti,ftf)
+    #
     # free energy (use em+make=ke so bsq/rho>30 correction can be made less number of times)
     pjketot = pjemtot + pjmaketot
     pjkefinavgvsr = pjemfinavgvsr + pjmakefinavgvsr
@@ -8848,6 +8986,14 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     # MA free energy
     ljmaketot = (ldma-ldma30) - (ldm-ldm30)
     ljmakefinavgvsr = timeavg(ljmaketot,ts,fti,ftf)
+    #
+    # PA free (PAKE) energy (floor already accounted for, just remove rest-mass term)
+    ljpaketot = (ldpa-ldma30) - (ldm-ldm30)
+    ljpakefinavgvsr = timeavg(ljpaketot,ts,fti,ftf)
+    #
+    # EN energy (floor already accounted for, just remove rest-mass term)
+    ljentot = lden
+    ljenfinavgvsr = timeavg(ljentot,ts,fti,ftf)
     #
     # free energy (use em+make=ke so bsq/rho>30 correction can be made less number of times)
     ljketot = ljemtot + ljmaketot
@@ -8873,17 +9019,21 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     # below as pjem30, but removed that
     pjetfinavg = pjemfinavgvsr5[ihor]
+    #
     pjemfinavgtot = pjemfinavgvsr[ihor]
     pjmakefinavgtot = pjmakefinavgvsr[ihor]
+    pjpakefinavgtot = pjpakefinavgvsr[ihor]
+    pjenfinavgtot = pjenfinavgvsr[ihor]
     pjkefinavgtot = pjemfinavgtot + pjmakefinavgtot
     #
     ljemfinavgtot = ljemfinavgvsr[ihor]
     ljmakefinavgtot = ljmakefinavgvsr[ihor]
-    ljkefinavgtot = ljkefinavgvsr[ihor]
+    ljpakefinavgtot = ljpakefinavgvsr[ihor]
+    ljenfinavgtot = ljenfinavgvsr[ihor]
     ljkefinavgtot = ljemfinavgtot + ljmakefinavgtot
     #
     if 0==1:
-        # TEMP FIX FUCKMARK
+        # TEMP FIX GODMARK
         global fstot,fsin,fsmaxtot,fsj5,fsj10,fsj20,fsj30,fsj40
         fstot=fstot*2.0
         fsin=fsin*2.0
@@ -8928,15 +9078,21 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     mdot10iniavgalt = np.float64(mdotiniavgvsr10itself)[iflux]
     mdot10finavgalt = np.float64(mdotfinavgvsr10itself)[iflux]
     #
-    # below as pjem30, but removed that
     pjetfinavgalt = pjemfinavgvsr5[iflux]
+    #
     pjemfinavgtotalt = pjemfinavgvsr[iflux]
     pjmakefinavgtotalt = pjmakefinavgvsr[iflux]
+    pjpakefinavgtotalt = pjpakefinavgvsr[iflux]
+    pjenfinavgtotalt = pjenfinavgvsr[iflux]
+    pjkefinavgtotalt = pjkefinavgvsr[iflux]
+    #
     ljemfinavgtotalt = ljemfinavgvsr[iflux]
     ljmakefinavgtotalt = ljmakefinavgvsr[iflux]
+    ljpakefinavgtotalt = ljpakefinavgvsr[iflux]
+    ljenfinavgtotalt = ljenfinavgvsr[iflux]
     ljkefinavgtotalt = ljkefinavgvsr[iflux]
     #
-    ####
+    ################
     # replace cases that can be universally assumed (i.e. total fluxes can be replaced since more accurate total at i=iflux)
     #
     mdotiniavg=mdotiniavgalt
@@ -8971,20 +9127,32 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     etajEM_vsr = timeavg(prefactor*pjem_mu1[:,:]/mdotfinavg,ts,fti,ftf)
     etajMAKE_vsr = timeavg(prefactor*pjmake_mu1[:,:]/mdotfinavg,ts,fti,ftf)
+    etajPAKE_vsr = timeavg(prefactor*pjpake_mu1[:,:]/mdotfinavg,ts,fti,ftf)
+    etajEN_vsr = timeavg(prefactor*pjen_mu1[:,:]/mdotfinavg,ts,fti,ftf)
     etamwEM_vsr = timeavg(prefactor*pjem_mumax1m[:,:]/mdotfinavg,ts,fti,ftf)
     etamwMAKE_vsr = timeavg(prefactor*pjmake_mumax1m[:,:]/mdotfinavg,ts,fti,ftf)
+    etamwPAKE_vsr = timeavg(prefactor*pjpake_mumax1m[:,:]/mdotfinavg,ts,fti,ftf)
+    etamwEN_vsr = timeavg(prefactor*pjen_mumax1m[:,:]/mdotfinavg,ts,fti,ftf)
     etamw_vsr = etamwEM_vsr +  etamwMAKE_vsr
     etawEM_vsr = timeavg(prefactor*pjem_mumax1[:,:]/mdotfinavg,ts,fti,ftf)
     etawMAKE_vsr = timeavg(prefactor*pjmake_mumax1[:,:]/mdotfinavg,ts,fti,ftf)
+    etawPAKE_vsr = timeavg(prefactor*pjpake_mumax1[:,:]/mdotfinavg,ts,fti,ftf)
+    etawEN_vsr = timeavg(prefactor*pjen_mumax1[:,:]/mdotfinavg,ts,fti,ftf)
     etaw_vsr = etawEM_vsr +  etawMAKE_vsr
     #
     letajEM_vsr = timeavg(prefactor*ljem_mu1[:,:]/mdotfinavg,ts,fti,ftf)/prefactor
     letajMAKE_vsr = timeavg(prefactor*ljmake_mu1[:,:]/mdotfinavg,ts,fti,ftf)/prefactor
+    letajPAKE_vsr = timeavg(prefactor*ljpake_mu1[:,:]/mdotfinavg,ts,fti,ftf)/prefactor
+    letajEN_vsr = timeavg(prefactor*ljen_mu1[:,:]/mdotfinavg,ts,fti,ftf)/prefactor
     letamwEM_vsr = timeavg(prefactor*ljem_mumax1m[:,:]/mdotfinavg,ts,fti,ftf)/prefactor
     letamwMAKE_vsr = timeavg(prefactor*ljmake_mumax1m[:,:]/mdotfinavg,ts,fti,ftf)/prefactor
+    letamwPAKE_vsr = timeavg(prefactor*ljpake_mumax1m[:,:]/mdotfinavg,ts,fti,ftf)/prefactor
+    letamwEN_vsr = timeavg(prefactor*ljen_mumax1m[:,:]/mdotfinavg,ts,fti,ftf)/prefactor
     letamw_vsr = letamwEM_vsr +  letamwMAKE_vsr
     letawEM_vsr = timeavg(prefactor*ljem_mumax1[:,:]/mdotfinavg,ts,fti,ftf)/prefactor
     letawMAKE_vsr = timeavg(prefactor*ljmake_mumax1[:,:]/mdotfinavg,ts,fti,ftf)/prefactor
+    letawPAKE_vsr = timeavg(prefactor*ljpake_mumax1[:,:]/mdotfinavg,ts,fti,ftf)/prefactor
+    letawEN_vsr = timeavg(prefactor*ljen_mumax1[:,:]/mdotfinavg,ts,fti,ftf)/prefactor
     letaw_vsr = letawEM_vsr +  letawMAKE_vsr
     #
     #
@@ -10515,100 +10683,150 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     etabhEM = prefactor*pjemtot[:,ihor]/mdotfinavg * ((pjemtot[:,iflux]+pjmaketot[:,iflux])/(pjemtot[:,ihor]+pjmaketot[:,ihor]))
     etabhMAKE = prefactor*pjmaketot[:,ihor]/mdotfinavg * ((pjemtot[:,iflux]+pjmaketot[:,iflux])/(pjemtot[:,ihor]+pjmaketot[:,ihor]))
+    etabhPAKE = prefactor*pjpaketot[:,ihor]/mdotfinavg * ((pjemtot[:,iflux]+pjmaketot[:,iflux])/(pjemtot[:,ihor]+pjmaketot[:,ihor]))
+    etabhEN = prefactor*pjentot[:,ihor]/mdotfinavg * ((pjemtot[:,iflux]+pjmaketot[:,iflux])/(pjemtot[:,ihor]+pjmaketot[:,ihor]))
     etabh = etabhEM + etabhMAKE
     etajEM = prefactor*pjem_mu1[:,iofr(rjetout)]/mdotfinavg
     etajMAKE = prefactor*pjmake_mu1[:,iofr(rjetout)]/mdotfinavg
+    etajPAKE = prefactor*pjpake_mu1[:,iofr(rjetout)]/mdotfinavg
+    etajEN = prefactor*pjen_mu1[:,iofr(rjetout)]/mdotfinavg
     etaj = etajEM + etajMAKE
     #etajlocal = etaj*(mdotfinavg/mdotinrdiskoutfinavg)
     etamwinEM = prefactor*pjem_mumax1m[:,iofr(rjetin)]/mdotfinavg
     etamwinMAKE = prefactor*pjmake_mumax1m[:,iofr(rjetin)]/mdotfinavg
+    etamwinPAKE = prefactor*pjpake_mumax1m[:,iofr(rjetin)]/mdotfinavg
+    etamwinEN = prefactor*pjen_mumax1m[:,iofr(rjetin)]/mdotfinavg
     etamwin = etamwinEM + etamwinMAKE
     #etamwinlocal = etamwin*(mdotfinavg/mdotinrdiskinfinavg)
     etamwoutEM = prefactor*pjem_mumax1m[:,iofr(rjetout)]/mdotfinavg
     etamwoutMAKE = prefactor*pjmake_mumax1m[:,iofr(rjetout)]/mdotfinavg
+    etamwoutPAKE = prefactor*pjpake_mumax1m[:,iofr(rjetout)]/mdotfinavg
+    etamwoutEN = prefactor*pjen_mumax1m[:,iofr(rjetout)]/mdotfinavg
     etamwout = etamwoutEM + etamwoutMAKE
     #etamwoutlocal = etamwout*(mdotfinavg/mdotinrdiskoutfinavg)
     etawinEM = prefactor*pjem_mumax1[:,iofr(rdiskin)]/mdotfinavg
     etawinMAKE = prefactor*pjmake_mumax1[:,iofr(rdiskin)]/mdotfinavg
+    etawinPAKE = prefactor*pjpake_mumax1[:,iofr(rdiskin)]/mdotfinavg
+    etawinEN = prefactor*pjen_mumax1[:,iofr(rdiskin)]/mdotfinavg
     etawin = etawinEM + etawinMAKE
     #etawinlocal = etawin*(mdotfinavg/mdotinrdiskinfinavg)
     etawoutEM = prefactor*pjem_mumax1[:,iofr(rdiskout)]/mdotfinavg
     etawoutMAKE = prefactor*pjmake_mumax1[:,iofr(rdiskout)]/mdotfinavg
+    etawoutPAKE = prefactor*pjpake_mumax1[:,iofr(rdiskout)]/mdotfinavg
+    etawoutEN = prefactor*pjen_mumax1[:,iofr(rdiskout)]/mdotfinavg
     etawout = etawoutEM + etawoutMAKE
     #etawoutlocal = etawout*(mdotfinavg/mdotinrdiskoutfinavg)
     #
     etabhEM2 = etabhEM * (mdotfinavg/mdotiniavg)
     etabhMAKE2 = etabhMAKE * (mdotfinavg/mdotiniavg)
+    etabhPAKE2 = etabhPAKE * (mdotfinavg/mdotiniavg)
+    etabhEN2 = etabhEN * (mdotfinavg/mdotiniavg)
     etabh2 = etabhEM2 + etabhMAKE2
     etajEM2 = prefactor*pjem_mu1[:,iofr(rjetout)]/mdotiniavg
     etajMAKE2 = prefactor*pjmake_mu1[:,iofr(rjetout)]/mdotiniavg
+    etajPAKE2 = prefactor*pjpake_mu1[:,iofr(rjetout)]/mdotiniavg
+    etajEN2 = prefactor*pjen_mu1[:,iofr(rjetout)]/mdotiniavg
     etaj2 = etajEM2 + etajMAKE2
     #etaj2local = etaj2*(mdotiniavg/mdotinrdiskoutiniavg)
     etamwinEM2 = prefactor*pjem_mumax1m[:,iofr(rjetin)]/mdotiniavg
     etamwinMAKE2 = prefactor*pjmake_mumax1m[:,iofr(rjetin)]/mdotiniavg
+    etamwinPAKE2 = prefactor*pjpake_mumax1m[:,iofr(rjetin)]/mdotiniavg
+    etamwinEN2 = prefactor*pjen_mumax1m[:,iofr(rjetin)]/mdotiniavg
     etamwin2 = etamwinEM2 + etamwinMAKE2
     #etamwin2local = etamwin2*(mdotiniavg/mdotinrdiskininiavg)
     etamwoutEM2 = prefactor*pjem_mumax1m[:,iofr(rjetout)]/mdotiniavg
     etamwoutMAKE2 = prefactor*pjmake_mumax1m[:,iofr(rjetout)]/mdotiniavg
+    etamwoutPAKE2 = prefactor*pjpake_mumax1m[:,iofr(rjetout)]/mdotiniavg
+    etamwoutEN2 = prefactor*pjen_mumax1m[:,iofr(rjetout)]/mdotiniavg
     etamwout2 = etamwoutEM2 + etamwoutMAKE2
     #etamwout2local = etamwout2*(mdotiniavg/mdotinrdiskoutiniavg)
     etawinEM2 = prefactor*pjem_mumax1[:,iofr(rdiskin)]/mdotiniavg
     etawinMAKE2 = prefactor*pjmake_mumax1[:,iofr(rdiskin)]/mdotiniavg
+    etawinPAKE2 = prefactor*pjpake_mumax1[:,iofr(rdiskin)]/mdotiniavg
+    etawinEN2 = prefactor*pjen_mumax1[:,iofr(rdiskin)]/mdotiniavg
     etawin2 = etawinEM2 + etawinMAKE2
     #etawin2local = etawin2*(mdotiniavg/mdotinrdiskininiavg)
     etawoutEM2 = prefactor*pjem_mumax1[:,iofr(rdiskout)]/mdotiniavg
     etawoutMAKE2 = prefactor*pjmake_mumax1[:,iofr(rdiskout)]/mdotiniavg
+    etawoutPAKE2 = prefactor*pjpake_mumax1[:,iofr(rdiskout)]/mdotiniavg
+    etawoutEN2 = prefactor*pjen_mumax1[:,iofr(rdiskout)]/mdotiniavg
     etawout2 = etawoutEM2 + etawoutMAKE2
     #etawout2local = etawout2*(mdotiniavg/mdotinrdiskoutiniavg)
     #
     # lj = angular momentum flux
     letabhEM = prefactor*ljemtot[:,ihor]/mdotfinavg * ((ljemtot[:,iflux]+ljmaketot[:,iflux])/(ljemtot[:,ihor]+ljmaketot[:,ihor]))
     letabhMAKE = prefactor*ljmaketot[:,ihor]/mdotfinavg * ((ljemtot[:,iflux]+ljmaketot[:,iflux])/(ljemtot[:,ihor]+ljmaketot[:,ihor]))
+    letabhPAKE = prefactor*ljpaketot[:,ihor]/mdotfinavg * ((ljemtot[:,iflux]+ljmaketot[:,iflux])/(ljemtot[:,ihor]+ljmaketot[:,ihor]))
+    letabhEN = prefactor*ljentot[:,ihor]/mdotfinavg * ((ljemtot[:,iflux]+ljmaketot[:,iflux])/(ljemtot[:,ihor]+ljmaketot[:,ihor]))
     letabh = letabhEM + letabhMAKE
     letajEM = prefactor*ljem_mu1[:,iofr(rjetout)]/mdotfinavg
     letajMAKE = prefactor*ljmake_mu1[:,iofr(rjetout)]/mdotfinavg
+    letajPAKE = prefactor*ljpake_mu1[:,iofr(rjetout)]/mdotfinavg
+    letajEN = prefactor*ljen_mu1[:,iofr(rjetout)]/mdotfinavg
     letaj = letajEM + letajMAKE
     #letajlocal = letaj*(mdotfinavg/mdotinrdiskoutfinavg)
     letamwinEM = prefactor*ljem_mumax1m[:,iofr(rjetin)]/mdotfinavg
     letamwinMAKE = prefactor*ljmake_mumax1m[:,iofr(rjetin)]/mdotfinavg
+    letamwinPAKE = prefactor*ljpake_mumax1m[:,iofr(rjetin)]/mdotfinavg
+    letamwinEN = prefactor*ljen_mumax1m[:,iofr(rjetin)]/mdotfinavg
     letamwin = letamwinEM + letamwinMAKE
     #letamwinlocal = letamwin*(mdotfinavg/mdotinrdiskinfinavg)
     letamwoutEM = prefactor*ljem_mumax1m[:,iofr(rjetout)]/mdotfinavg
     letamwoutMAKE = prefactor*ljmake_mumax1m[:,iofr(rjetout)]/mdotfinavg
+    letamwoutPAKE = prefactor*ljpake_mumax1m[:,iofr(rjetout)]/mdotfinavg
+    letamwoutEN = prefactor*ljen_mumax1m[:,iofr(rjetout)]/mdotfinavg
     letamwout = letamwoutEM + letamwoutMAKE
     #letamwoutlocal = letamwout*(mdotfinavg/mdotinrdiskoutfinavg)
     letawinEM = prefactor*ljem_mumax1[:,iofr(rdiskin)]/mdotfinavg
     letawinMAKE = prefactor*ljmake_mumax1[:,iofr(rdiskin)]/mdotfinavg
+    letawinPAKE = prefactor*ljpake_mumax1[:,iofr(rdiskin)]/mdotfinavg
+    letawinEN = prefactor*ljen_mumax1[:,iofr(rdiskin)]/mdotfinavg
     letawin = letawinEM + letawinMAKE
     #letawinlocal = letawin*(mdotfinavg/mdotinrdiskinfinavg)
     letawoutEM = prefactor*ljem_mumax1[:,iofr(rdiskout)]/mdotfinavg
     letawoutMAKE = prefactor*ljmake_mumax1[:,iofr(rdiskout)]/mdotfinavg
+    letawoutPAKE = prefactor*ljpake_mumax1[:,iofr(rdiskout)]/mdotfinavg
+    letawoutEN = prefactor*ljen_mumax1[:,iofr(rdiskout)]/mdotfinavg
     letawout = letawoutEM + letawoutMAKE
     #letawoutlocal = letawout*(mdotfinavg/mdotinrdiskoutfinavg)
     #
     letabhEM2 = letabhEM * (mdotfinavg/mdotiniavg)
     letabhMAKE2 = letabhMAKE * (mdotfinavg/mdotiniavg)
+    letabhPAKE2 = letabhPAKE * (mdotfinavg/mdotiniavg)
+    letabhEN2 = letabhEN * (mdotfinavg/mdotiniavg)
     letabh2 = letabhEM2 + letabhMAKE2
     letajEM2 = prefactor*ljem_mu1[:,iofr(rjetout)]/mdotiniavg
     letajMAKE2 = prefactor*ljmake_mu1[:,iofr(rjetout)]/mdotiniavg
+    letajPAKE2 = prefactor*ljpake_mu1[:,iofr(rjetout)]/mdotiniavg
+    letajEN2 = prefactor*ljen_mu1[:,iofr(rjetout)]/mdotiniavg
     letaj2 = letajEM2 + letajMAKE2
     #letaj2local = letaj2*(mdotiniavg/mdotinrdiskoutiniavg)
     letamwinEM2 = prefactor*ljem_mumax1m[:,iofr(rjetin)]/mdotiniavg
     letamwinMAKE2 = prefactor*ljmake_mumax1m[:,iofr(rjetin)]/mdotiniavg
+    letamwinPAKE2 = prefactor*ljpake_mumax1m[:,iofr(rjetin)]/mdotiniavg
+    letamwinEN2 = prefactor*ljen_mumax1m[:,iofr(rjetin)]/mdotiniavg
     letamwin2 = letamwinEM2 + letamwinMAKE2
     #letamwin2local = letamwin2*(mdotiniavg/mdotinrdiskininiavg)
     letamwoutEM2 = prefactor*ljem_mumax1m[:,iofr(rjetout)]/mdotiniavg
     letamwoutMAKE2 = prefactor*ljmake_mumax1m[:,iofr(rjetout)]/mdotiniavg
+    letamwoutPAKE2 = prefactor*ljpake_mumax1m[:,iofr(rjetout)]/mdotiniavg
+    letamwoutEN2 = prefactor*ljen_mumax1m[:,iofr(rjetout)]/mdotiniavg
     letamwout2 = letamwoutEM2 + letamwoutMAKE2
     #letamwout2local = letamwout2*(mdotiniavg/mdotinrdiskoutiniavg)
     letawinEM2 = prefactor*ljem_mumax1[:,iofr(rdiskin)]/mdotiniavg
     letawinMAKE2 = prefactor*ljmake_mumax1[:,iofr(rdiskin)]/mdotiniavg
+    letawinPAKE2 = prefactor*ljpake_mumax1[:,iofr(rdiskin)]/mdotiniavg
+    letawinEN2 = prefactor*ljen_mumax1[:,iofr(rdiskin)]/mdotiniavg
     letawin2 = letawinEM2 + letawinMAKE2
     #letawin2local = letawin2*(mdotiniavg/mdotinrdiskininiavg)
     letawoutEM2 = prefactor*ljem_mumax1[:,iofr(rdiskout)]/mdotiniavg
     letawoutMAKE2 = prefactor*ljmake_mumax1[:,iofr(rdiskout)]/mdotiniavg
+    letawoutPAKE2 = prefactor*ljpake_mumax1[:,iofr(rdiskout)]/mdotiniavg
+    letawoutEN2 = prefactor*ljen_mumax1[:,iofr(rdiskout)]/mdotiniavg
     letawout2 = letawoutEM2 + letawoutMAKE2
     #letawout2local = letawout2*(mdotiniavg/mdotinrdiskoutiniavg)
+    ##
+    ###########################
     #
     #
     #
@@ -10622,101 +10840,151 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         etabh[icond]=etabh2[icond]
         etabhEM[icond]=etabhEM2[icond]
         etabhMAKE[icond]=etabhMAKE2[icond]
+        etabhPAKE[icond]=etabhPAKE2[icond]
+        etabhEN[icond]=etabhEN2[icond]
         etaj[icond]=etaj2[icond]
         #etajlocal[icond]=etaj2local[icond]
         etajEM[icond]=etajEM2[icond]
         etajMAKE[icond]=etajMAKE2[icond]
+        etajPAKE[icond]=etajPAKE2[icond]
+        etajEN[icond]=etajEN2[icond]
         etamwin[icond]=etamwin2[icond]
         #etamwinlocal[icond]=etamwin2local[icond]
         etamwinEM[icond]=etamwinEM2[icond]
         etamwinMAKE[icond]=etamwinMAKE2[icond]
+        etamwinPAKE[icond]=etamwinPAKE2[icond]
+        etamwinEN[icond]=etamwinEN2[icond]
         etamwout[icond]=etamwout2[icond]
         #etamwoutlocal[icond]=etamwout2local[icond]
         etamwoutEM[icond]=etamwoutEM2[icond]
         etamwoutMAKE[icond]=etamwoutMAKE2[icond]
+        etamwoutPAKE[icond]=etamwoutPAKE2[icond]
+        etamwoutEN[icond]=etamwoutEN2[icond]
         etawin[icond]=etawin2[icond]
         #etawinlocal[icond]=etawin2local[icond]
         etawinEM[icond]=etawinEM2[icond]
         etawinMAKE[icond]=etawinMAKE2[icond]
+        etawinPAKE[icond]=etawinPAKE2[icond]
+        etawinEN[icond]=etawinEN2[icond]
         etawout[icond]=etawout2[icond]
         #etawoutlocal[icond]=etawout2local[icond]
         etawoutEM[icond]=etawoutEM2[icond]
         etawoutMAKE[icond]=etawoutMAKE2[icond]
+        etawoutPAKE[icond]=etawoutPAKE2[icond]
+        etawoutEN[icond]=etawoutEN2[icond]
         #
         letabh[icond]=letabh2[icond]
         letabhEM[icond]=letabhEM2[icond]
         letabhMAKE[icond]=letabhMAKE2[icond]
+        letabhPAKE[icond]=letabhPAKE2[icond]
+        letabhEN[icond]=letabhEN2[icond]
         letaj[icond]=letaj2[icond]
         #letajlocal[icond]=letaj2local[icond]
         letajEM[icond]=letajEM2[icond]
         letajMAKE[icond]=letajMAKE2[icond]
+        letajPAKE[icond]=letajPAKE2[icond]
+        letajEN[icond]=letajEN2[icond]
         letamwin[icond]=letamwin2[icond]
         #letamwinlocal[icond]=letamwin2local[icond]
         letamwinEM[icond]=letamwinEM2[icond]
         letamwinMAKE[icond]=letamwinMAKE2[icond]
+        letamwinPAKE[icond]=letamwinPAKE2[icond]
+        letamwinEN[icond]=letamwinEN2[icond]
         letamwout[icond]=letamwout2[icond]
         #letamwoutlocal[icond]=letamwout2local[icond]
         letamwoutEM[icond]=letamwoutEM2[icond]
         letamwoutMAKE[icond]=letamwoutMAKE2[icond]
+        letamwoutPAKE[icond]=letamwoutPAKE2[icond]
+        letamwoutEN[icond]=letamwoutEN2[icond]
         letawin[icond]=letawin2[icond]
         #letawinlocal[icond]=letawin2local[icond]
         letawinEM[icond]=letawinEM2[icond]
         letawinMAKE[icond]=letawinMAKE2[icond]
+        letawinPAKE[icond]=letawinPAKE2[icond]
+        letawinEN[icond]=letawinEN2[icond]
         letawout[icond]=letawout2[icond]
         #letawoutlocal[icond]=letawout2local[icond]
         letawoutEM[icond]=letawoutEM2[icond]
         letawoutMAKE[icond]=letawoutMAKE2[icond]
+        letawoutPAKE[icond]=letawoutPAKE2[icond]
+        letawoutEN[icond]=letawoutEN2[icond]
+        #
         #
     if dotavg:
         etabh_avg = timeavg(etabh,ts,fti,ftf)
         etabhEM_avg = timeavg(etabhEM,ts,fti,ftf)
         etabhMAKE_avg = timeavg(etabhMAKE,ts,fti,ftf)
+        etabhPAKE_avg = timeavg(etabhPAKE,ts,fti,ftf)
+        etabhEN_avg = timeavg(etabhEN,ts,fti,ftf)
         etaj_avg = timeavg(etaj,ts,fti,ftf)
         #etajlocal_avg = timeavg(etajlocal,ts,fti,ftf)
         etajEM_avg = timeavg(etajEM,ts,fti,ftf)
         etajMAKE_avg = timeavg(etajMAKE,ts,fti,ftf)
+        etajPAKE_avg = timeavg(etajPAKE,ts,fti,ftf)
+        etajEN_avg = timeavg(etajEN,ts,fti,ftf)
         etamwin_avg = timeavg(etamwin,ts,fti,ftf)
         #etamwinlocal_avg = timeavg(etamwinlocal,ts,fti,ftf)
         etamwinEM_avg = timeavg(etamwinEM,ts,fti,ftf)
         etamwinMAKE_avg = timeavg(etamwinMAKE,ts,fti,ftf)
+        etamwinPAKE_avg = timeavg(etamwinPAKE,ts,fti,ftf)
+        etamwinEN_avg = timeavg(etamwinEN,ts,fti,ftf)
         etamwout_avg = timeavg(etamwout,ts,fti,ftf)
         #etamwoutlocal_avg = timeavg(etamwoutlocal,ts,fti,ftf)
         etamwoutEM_avg = timeavg(etamwoutEM,ts,fti,ftf)
         etamwoutMAKE_avg = timeavg(etamwoutMAKE,ts,fti,ftf)
+        etamwoutPAKE_avg = timeavg(etamwoutPAKE,ts,fti,ftf)
+        etamwoutEN_avg = timeavg(etamwoutEN,ts,fti,ftf)
         etawin_avg = timeavg(etawin,ts,fti,ftf)
         #etawinlocal_avg = timeavg(etawinlocal,ts,fti,ftf)
         etawinEM_avg = timeavg(etawinEM,ts,fti,ftf)
         etawinMAKE_avg = timeavg(etawinMAKE,ts,fti,ftf)
+        etawinPAKE_avg = timeavg(etawinPAKE,ts,fti,ftf)
+        etawinEN_avg = timeavg(etawinEN,ts,fti,ftf)
         etawout_avg = timeavg(etawout,ts,fti,ftf)
         #etawoutlocal_avg = timeavg(etawoutlocal,ts,fti,ftf)
         etawoutEM_avg = timeavg(etawoutEM,ts,fti,ftf)
         etawoutMAKE_avg = timeavg(etawoutMAKE,ts,fti,ftf)
+        etawoutPAKE_avg = timeavg(etawoutPAKE,ts,fti,ftf)
+        etawoutEN_avg = timeavg(etawoutEN,ts,fti,ftf)
         pemtot_avg = timeavg(pjemtot[:,ihor]*((pjemtot[:,iflux]+pjmaketot[:,iflux])/(pjemtot[:,ihor]+pjmaketot[:,ihor])),ts,fti,ftf)
         #
         letabh_avg = timeavg(letabh,ts,fti,ftf)
         letabhEM_avg = timeavg(letabhEM,ts,fti,ftf)
         letabhMAKE_avg = timeavg(letabhMAKE,ts,fti,ftf)
+        letabhPAKE_avg = timeavg(letabhPAKE,ts,fti,ftf)
+        letabhEN_avg = timeavg(letabhEN,ts,fti,ftf)
         letaj_avg = timeavg(letaj,ts,fti,ftf)
         #letajlocal_avg = timeavg(letajlocal,ts,fti,ftf)
         letajEM_avg = timeavg(letajEM,ts,fti,ftf)
         letajMAKE_avg = timeavg(letajMAKE,ts,fti,ftf)
+        letajPAKE_avg = timeavg(letajPAKE,ts,fti,ftf)
+        letajEN_avg = timeavg(letajEN,ts,fti,ftf)
         letamwin_avg = timeavg(letamwin,ts,fti,ftf)
         #letamwinlocal_avg = timeavg(letamwinlocal,ts,fti,ftf)
         letamwinEM_avg = timeavg(letamwinEM,ts,fti,ftf)
         letamwinMAKE_avg = timeavg(letamwinMAKE,ts,fti,ftf)
+        letamwinPAKE_avg = timeavg(letamwinPAKE,ts,fti,ftf)
+        letamwinEN_avg = timeavg(letamwinEN,ts,fti,ftf)
         letamwout_avg = timeavg(letamwout,ts,fti,ftf)
         #letamwoutlocal_avg = timeavg(letamwoutlocal,ts,fti,ftf)
         letamwoutEM_avg = timeavg(letamwoutEM,ts,fti,ftf)
         letamwoutMAKE_avg = timeavg(letamwoutMAKE,ts,fti,ftf)
+        letamwoutPAKE_avg = timeavg(letamwoutPAKE,ts,fti,ftf)
+        letamwoutEN_avg = timeavg(letamwoutEN,ts,fti,ftf)
         letawin_avg = timeavg(letawin,ts,fti,ftf)
         #letawinlocal_avg = timeavg(letawinlocal,ts,fti,ftf)
         letawinEM_avg = timeavg(letawinEM,ts,fti,ftf)
         letawinMAKE_avg = timeavg(letawinMAKE,ts,fti,ftf)
+        letawinPAKE_avg = timeavg(letawinPAKE,ts,fti,ftf)
+        letawinEN_avg = timeavg(letawinEN,ts,fti,ftf)
         letawout_avg = timeavg(letawout,ts,fti,ftf)
         #letawoutlocal_avg = timeavg(letawoutlocal,ts,fti,ftf)
         letawoutEM_avg = timeavg(letawoutEM,ts,fti,ftf)
         letawoutMAKE_avg = timeavg(letawoutMAKE,ts,fti,ftf)
+        letawoutPAKE_avg = timeavg(letawoutPAKE,ts,fti,ftf)
+        letawoutEN_avg = timeavg(letawoutEN,ts,fti,ftf)
         lemtot_avg = timeavg(ljemtot[:,ihor]*((ljemtot[:,iflux]+ljmaketot[:,iflux])/(ljemtot[:,ihor]+ljmaketot[:,ihor])),ts,fti,ftf)
+        #
         #
         #
         #
@@ -10724,58 +10992,85 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             etabh2_avg = timeavg(etabh2,ts,iti,itf)
             etabhEM2_avg = timeavg(etabhEM2,ts,iti,itf)
             etabhMAKE2_avg = timeavg(etabhMAKE2,ts,iti,itf)
+            etabhPAKE2_avg = timeavg(etabhPAKE2,ts,iti,itf)
+            etabhEN2_avg = timeavg(etabhEN2,ts,iti,itf)
             etaj2_avg = timeavg(etaj2,ts,iti,itf)
             #etaj2local_avg = timeavg(etaj2local,ts,iti,itf)
             etajEM2_avg = timeavg(etajEM2,ts,iti,itf)
             etajMAKE2_avg = timeavg(etajMAKE2,ts,iti,itf)
+            etajPAKE2_avg = timeavg(etajPAKE2,ts,iti,itf)
+            etajEN2_avg = timeavg(etajEN2,ts,iti,itf)
             etamwin2_avg = timeavg(etamwin2,ts,iti,itf)
             #etamwin2local_avg = timeavg(etamwin2local,ts,iti,itf)
             etamwinEM2_avg = timeavg(etamwinEM2,ts,iti,itf)
             etamwinMAKE2_avg = timeavg(etamwinMAKE2,ts,iti,itf)
+            etamwinPAKE2_avg = timeavg(etamwinPAKE2,ts,iti,itf)
+            etamwinEN2_avg = timeavg(etamwinEN2,ts,iti,itf)
             etamwout2_avg = timeavg(etamwout2,ts,iti,itf)
             #etamwout2local_avg = timeavg(etamwout2local,ts,iti,itf)
             etamwoutEM2_avg = timeavg(etamwoutEM2,ts,iti,itf)
             etamwoutMAKE2_avg = timeavg(etamwoutMAKE2,ts,iti,itf)
+            etamwoutPAKE2_avg = timeavg(etamwoutPAKE2,ts,iti,itf)
+            etamwoutEN2_avg = timeavg(etamwoutEN2,ts,iti,itf)
             etawin2_avg = timeavg(etawin2,ts,iti,itf)
             #etawin2local_avg = timeavg(etawin2local,ts,iti,itf)
             etawinEM2_avg = timeavg(etawinEM2,ts,iti,itf)
             etawinMAKE2_avg = timeavg(etawinMAKE2,ts,iti,itf)
+            etawinPAKE2_avg = timeavg(etawinPAKE2,ts,iti,itf)
+            etawinEN2_avg = timeavg(etawinEN2,ts,iti,itf)
             etawout2_avg = timeavg(etawout2,ts,iti,itf)
             #etawout2local_avg = timeavg(etawout2local,ts,iti,itf)
             etawoutEM2_avg = timeavg(etawoutEM2,ts,iti,itf)
             etawoutMAKE2_avg = timeavg(etawoutMAKE2,ts,iti,itf)
+            etawoutPAKE2_avg = timeavg(etawoutPAKE2,ts,iti,itf)
+            etawoutEN2_avg = timeavg(etawoutEN2,ts,iti,itf)
             pemtot2_avg = timeavg(pjemtot[:,ihor]*((pjemtot[:,iflux]+pjmaketot[:,iflux])/(pjemtot[:,ihor]+pjmaketot[:,ihor])),ts,iti,itf)
             #
             letabh2_avg = timeavg(letabh2,ts,iti,itf)
             letabhEM2_avg = timeavg(letabhEM2,ts,iti,itf)
             letabhMAKE2_avg = timeavg(letabhMAKE2,ts,iti,itf)
+            letabhPAKE2_avg = timeavg(letabhPAKE2,ts,iti,itf)
+            letabhEN2_avg = timeavg(letabhEN2,ts,iti,itf)
             letaj2_avg = timeavg(letaj2,ts,iti,itf)
             #letaj2local_avg = timeavg(letaj2local,ts,iti,itf)
             letajEM2_avg = timeavg(letajEM2,ts,iti,itf)
             letajMAKE2_avg = timeavg(letajMAKE2,ts,iti,itf)
+            letajPAKE2_avg = timeavg(letajPAKE2,ts,iti,itf)
+            letajEN2_avg = timeavg(letajEN2,ts,iti,itf)
             letamwin2_avg = timeavg(letamwin2,ts,iti,itf)
             #letamwin2local_avg = timeavg(letamwin2local,ts,iti,itf)
             letamwinEM2_avg = timeavg(letamwinEM2,ts,iti,itf)
             letamwinMAKE2_avg = timeavg(letamwinMAKE2,ts,iti,itf)
+            letamwinPAKE2_avg = timeavg(letamwinPAKE2,ts,iti,itf)
+            letamwinEN2_avg = timeavg(letamwinEN2,ts,iti,itf)
             letamwout2_avg = timeavg(letamwout2,ts,iti,itf)
             #letamwout2local_avg = timeavg(letamwout2local,ts,iti,itf)
             letamwoutEM2_avg = timeavg(letamwoutEM2,ts,iti,itf)
             letamwoutMAKE2_avg = timeavg(letamwoutMAKE2,ts,iti,itf)
+            letamwoutPAKE2_avg = timeavg(letamwoutPAKE2,ts,iti,itf)
+            letamwoutEN2_avg = timeavg(letamwoutEN2,ts,iti,itf)
             letawin2_avg = timeavg(letawin2,ts,iti,itf)
             #letawin2local_avg = timeavg(letawin2local,ts,iti,itf)
             letawinEM2_avg = timeavg(letawinEM2,ts,iti,itf)
             letawinMAKE2_avg = timeavg(letawinMAKE2,ts,iti,itf)
+            letawinPAKE2_avg = timeavg(letawinPAKE2,ts,iti,itf)
+            letawinEN2_avg = timeavg(letawinEN2,ts,iti,itf)
             letawout2_avg = timeavg(letawout2,ts,iti,itf)
             #letawout2local_avg = timeavg(letawout2local,ts,iti,itf)
             letawoutEM2_avg = timeavg(letawoutEM2,ts,iti,itf)
             letawoutMAKE2_avg = timeavg(letawoutMAKE2,ts,iti,itf)
+            letawoutPAKE2_avg = timeavg(letawoutPAKE2,ts,iti,itf)
+            letawoutEN2_avg = timeavg(letawoutEN2,ts,iti,itf)
             lemtot2_avg = timeavg(ljemtot[:,ihor]*((ljemtot[:,iflux]+ljmaketot[:,iflux])/(ljemtot[:,ihor]+ljmaketot[:,ihor])),ts,iti,itf)
+            #
             #
         #
     #
     lbh_avg=letabh_avg/prefactor
     lbhEM_avg=letabhEM_avg/prefactor
     lbhMAKE_avg=letabhMAKE_avg/prefactor
+    lbhPAKE_avg=letabhPAKE_avg/prefactor
+    lbhEN_avg=letabhEN_avg/prefactor
     ljmwout_avg=(letaj_avg + letamwout_avg)/prefactor
     #ljmwoutlocal_avg=(letaj_avg + letamwoutlocal_avg)/prefactor
     ljwout_avg=(letaj_avg + letawout_avg)/prefactor
@@ -10784,46 +11079,82 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #ljlocal_avg=letajlocal_avg/prefactor
     ljEM_avg=letajEM_avg/prefactor
     ljMAKE_avg=letajMAKE_avg/prefactor
+    ljPAKE_avg=letajPAKE_avg/prefactor
+    ljEN_avg=letajEN_avg/prefactor
     lmwin_avg=letamwin_avg/prefactor
     #lmwinlocal_avg=letamwinlocal_avg/prefactor
     lmwinEM_avg=letamwinEM_avg/prefactor
     lmwinMAKE_avg=letamwinMAKE_avg/prefactor
+    lmwinPAKE_avg=letamwinPAKE_avg/prefactor
+    lmwinEN_avg=letamwinEN_avg/prefactor
     lmwout_avg=letamwout_avg/prefactor
     #lmwoutlocal_avg=letamwoutlocal_avg/prefactor
     lmwoutEM_avg=letamwoutEM_avg/prefactor
     lmwoutMAKE_avg=letamwoutMAKE_avg/prefactor
+    lmwoutPAKE_avg=letamwoutPAKE_avg/prefactor
+    lmwoutEN_avg=letamwoutEN_avg/prefactor
     lwin_avg=letawin_avg/prefactor
     #lwinlocal_avg=letawinlocal_avg/prefactor
     lwinEM_avg=letawinEM_avg/prefactor
     lwinMAKE_avg=letawinMAKE_avg/prefactor
+    lwinPAKE_avg=letawinPAKE_avg/prefactor
+    lwinEN_avg=letawinEN_avg/prefactor
     lwout_avg=letawout_avg/prefactor
     #lwoutlocal_avg=letawoutlocal_avg/prefactor
     lwoutEM_avg=letawoutEM_avg/prefactor
     lwoutMAKE_avg=letawoutMAKE_avg/prefactor
+    lwoutPAKE_avg=letawoutPAKE_avg/prefactor
+    lwoutEN_avg=letawoutEN_avg/prefactor
     #
+    #unitys=1.0
+    unitys=0.0
     sbh_avg  = (-lbh_avg) - 2.0*a*(1.0-etabh_avg/prefactor)
-    sbhEM_avg  = (-lbhEM_avg) - 2.0*a*(1.0-etabhEM_avg/prefactor)
-    sbhMAKE_avg  = (-lbhMAKE_avg) - 2.0*a*(1.0-etabhMAKE_avg/prefactor)
+    sbhEM_avg  = (-lbhEM_avg) - 2.0*a*(unitys-etabhEM_avg/prefactor)
+    sbhMAKE_avg  = (-lbhMAKE_avg) - 2.0*a*(unitys-etabhMAKE_avg/prefactor)
+    sbhMA_avg  = (-lbhMAKE_avg) - 2.0*a*(1.0-etabhMAKE_avg/prefactor)
+    sbhPAKE_avg  = (-lbhPAKE_avg) - 2.0*a*(unitys-etabhPAKE_avg/prefactor)
+    sbhPA_avg  = (-lbhPAKE_avg) - 2.0*a*(1.0-etabhPAKE_avg/prefactor)
+    sbhEN_avg  = (-lbhEN_avg) - 2.0*a*(unitys-etabhEN_avg/prefactor)
     sj_avg   = (-lj_avg)  - 2.0*a*(1.0-etaj_avg/prefactor)
     #sjlocal_avg   = (-ljlocal_avg)  - 2.0*a*(1.0-etajlocal_avg/prefactor)
-    sjEM_avg   = (-ljEM_avg)  - 2.0*a*(1.0-etajEM_avg/prefactor)
-    sjMAKE_avg   = (-ljMAKE_avg)  - 2.0*a*(1.0-etajMAKE_avg/prefactor)
+    sjEM_avg   = (-ljEM_avg)  - 2.0*a*(unitys-etajEM_avg/prefactor)
+    sjMAKE_avg   = (-ljMAKE_avg)  - 2.0*a*(unitys-etajMAKE_avg/prefactor)
+    sjMA_avg   = (-ljMAKE_avg)  - 2.0*a*(1.0-etajMAKE_avg/prefactor)
+    sjPAKE_avg   = (-ljPAKE_avg)  - 2.0*a*(unitys-etajPAKE_avg/prefactor)
+    sjPA_avg   = (-ljPAKE_avg)  - 2.0*a*(1.0-etajPAKE_avg/prefactor)
+    sjEN_avg   = (-ljEN_avg)  - 2.0*a*(unitys-etajEN_avg/prefactor)
     smwin_avg   = (-lmwin_avg)  - 2.0*a*(1.0-etamwin_avg/prefactor)
     #smwinlocal_avg   = (-lmwinlocal_avg)  - 2.0*a*(1.0-etamwinlocal_avg/prefactor)
-    smwinEM_avg   = (-lmwinEM_avg)  - 2.0*a*(1.0-etamwinEM_avg/prefactor)
-    smwinMAKE_avg   = (-lmwinMAKE_avg)  - 2.0*a*(1.0-etamwinMAKE_avg/prefactor)
+    smwinEM_avg   = (-lmwinEM_avg)  - 2.0*a*(unitys-etamwinEM_avg/prefactor)
+    smwinMAKE_avg   = (-lmwinMAKE_avg)  - 2.0*a*(unitys-etamwinMAKE_avg/prefactor)
+    smwinMA_avg   = (-lmwinMAKE_avg)  - 2.0*a*(1.0-etamwinMAKE_avg/prefactor)
+    smwinPAKE_avg   = (-lmwinPAKE_avg)  - 2.0*a*(unitys-etamwinPAKE_avg/prefactor)
+    smwinPA_avg   = (-lmwinPAKE_avg)  - 2.0*a*(1.0-etamwinPAKE_avg/prefactor)
+    smwinEN_avg   = (-lmwinEN_avg)  - 2.0*a*(unitys-etamwinEN_avg/prefactor)
     smwout_avg   = (-lmwout_avg)  - 2.0*a*(1.0-etamwout_avg/prefactor)
     #smwoutlocal_avg   = (-lmwoutlocal_avg)  - 2.0*a*(1.0-etamwoutlocal_avg/prefactor)
-    smwoutEM_avg   = (-lmwoutEM_avg)  - 2.0*a*(1.0-etamwoutEM_avg/prefactor)
-    smwoutMAKE_avg   = (-lmwoutMAKE_avg)  - 2.0*a*(1.0-etamwoutMAKE_avg/prefactor)
+    smwoutEM_avg   = (-lmwoutEM_avg)  - 2.0*a*(unitys-etamwoutEM_avg/prefactor)
+    smwoutMAKE_avg   = (-lmwoutMAKE_avg)  - 2.0*a*(unitys-etamwoutMAKE_avg/prefactor)
+    smwoutMA_avg   = (-lmwoutMAKE_avg)  - 2.0*a*(1.0-etamwoutMAKE_avg/prefactor)
+    smwoutPAKE_avg   = (-lmwoutPAKE_avg)  - 2.0*a*(unitys-etamwoutPAKE_avg/prefactor)
+    smwoutPA_avg   = (-lmwoutPAKE_avg)  - 2.0*a*(1.0-etamwoutPAKE_avg/prefactor)
+    smwoutEN_avg   = (-lmwoutEN_avg)  - 2.0*a*(unitys-etamwoutEN_avg/prefactor)
     swin_avg   = (-lwin_avg)  - 2.0*a*(1.0-etawin_avg/prefactor)
     #swinlocal_avg   = (-lwinlocal_avg)  - 2.0*a*(1.0-etawinlocal_avg/prefactor)
-    swinEM_avg   = (-lwinEM_avg)  - 2.0*a*(1.0-etawinEM_avg/prefactor)
-    swinMAKE_avg   = (-lwinMAKE_avg)  - 2.0*a*(1.0-etawinMAKE_avg/prefactor)
+    swinEM_avg   = (-lwinEM_avg)  - 2.0*a*(unitys-etawinEM_avg/prefactor)
+    swinMAKE_avg   = (-lwinMAKE_avg)  - 2.0*a*(unitys-etawinMAKE_avg/prefactor)
+    swinMA_avg   = (-lwinMAKE_avg)  - 2.0*a*(1.0-etawinMAKE_avg/prefactor)
+    swinPAKE_avg   = (-lwinPAKE_avg)  - 2.0*a*(unitys-etawinPAKE_avg/prefactor)
+    swinPA_avg   = (-lwinPAKE_avg)  - 2.0*a*(1.0-etawinPAKE_avg/prefactor)
+    swinEN_avg   = (-lwinEN_avg)  - 2.0*a*(unitys-etawinEN_avg/prefactor)
     swout_avg   = (-lwout_avg)  - 2.0*a*(1.0-etawout_avg/prefactor)
     #swoutlocal_avg   = (-lwoutlocal_avg)  - 2.0*a*(1.0-etawoutlocal_avg/prefactor)
-    swoutEM_avg   = (-lwoutEM_avg)  - 2.0*a*(1.0-etawoutEM_avg/prefactor)
-    swoutMAKE_avg   = (-lwoutMAKE_avg)  - 2.0*a*(1.0-etawoutMAKE_avg/prefactor)
+    swoutEM_avg   = (-lwoutEM_avg)  - 2.0*a*(unitys-etawoutEM_avg/prefactor)
+    swoutMAKE_avg   = (-lwoutMAKE_avg)  - 2.0*a*(unitys-etawoutMAKE_avg/prefactor)
+    swoutMA_avg   = (-lwoutMAKE_avg)  - 2.0*a*(1.0-etawoutMAKE_avg/prefactor)
+    swoutPAKE_avg   = (-lwoutPAKE_avg)  - 2.0*a*(unitys-etawoutPAKE_avg/prefactor)
+    swoutPA_avg   = (-lwoutPAKE_avg)  - 2.0*a*(1.0-etawoutPAKE_avg/prefactor)
+    swoutEN_avg   = (-lwoutEN_avg)  - 2.0*a*(unitys-etawoutEN_avg/prefactor)
     #
     #
     einf,linf=elinfcalc(a)
@@ -11839,8 +12170,13 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     #
     # 9:
-    print( "HLatex6: ModelName & $\\eta_{\\rm{}H}$ & $\\eta^{\\rm{}EM}_{\\rm{}H}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}H}$ & $\\eta_{\\rm{}j}$ & $\\eta^{\\rm{}EM}_j$ & $\\eta^{\\rm{}MAKE}_{\\rm{}j}$ & $\\eta_{\\rm{}mw,o}$ & $\\eta_{\\rm{}w,o}$ & $\\eta_{\\rm{}NT}$ \\\\" )
-    print( "VLatex6: %s         & %g               & %g                           & %g                             & %g                & %g                   & %g                             & %g                   & %g                  & %g                 \\\\ %% %s" % (truemodelname, roundto3foreta(etabh_avg), roundto3foreta(etabhEM_avg), roundto3foreta(etabhMAKE_avg), roundto3foreta(etaj_avg), roundto3foreta(etajEM_avg), roundto3foreta(etajMAKE_avg), roundto3foreta(etamwout_avg), roundto3foreta(etawout_avg), roundto3foreta(etant), modelname ) )
+    if 1==0:
+        print( "HLatex6: ModelName & $\\eta_{\\rm{}H}$ & $\\eta^{\\rm{}EM}_{\\rm{}H}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}H}$ & $\\eta_{\\rm{}j}$ & $\\eta^{\\rm{}EM}_j$ & $\\eta^{\\rm{}MAKE}_{\\rm{}j}$ & $\\eta_{\\rm{}mw,o}$ & $\\eta_{\\rm{}w,o}$ & $\\eta_{\\rm{}NT}$ \\\\" )
+        print( "VLatex6: %s         & %g               & %g                           & %g                             & %g                & %g                   & %g                             & %g                   & %g                  & %g                 \\\\ %% %s" % (truemodelname, roundto3foreta(etabh_avg), roundto3foreta(etabhEM_avg), roundto3foreta(etabhMAKE_avg), roundto3foreta(etaj_avg), roundto3foreta(etajEM_avg), roundto3foreta(etajMAKE_avg), roundto3foreta(etamwout_avg), roundto3foreta(etawout_avg), roundto3foreta(etant), modelname ) )
+    else:
+        # added PAKE and EN to BH term only:
+        print( "HLatex6: ModelName & $\\eta_{\\rm{}H}$ & $\\eta^{\\rm{}EM}_{\\rm{}H}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}H}$ & $\\eta^{\\rm{}PAKE}_{\\rm{}H}$ & $\\eta^{\\rm{}EN}_{\\rm{}H}$ & $\\eta_{\\rm{}j}$ & $\\eta^{\\rm{}EM}_j$ & $\\eta^{\\rm{}MAKE}_{\\rm{}j}$ & $\\eta_{\\rm{}mw,o}$ & $\\eta_{\\rm{}w,o}$ & $\\eta_{\\rm{}NT}$ \\\\" )
+        print( "VLatex6: %s         & %g               & %g                           & %g                             & %g                             & %g                           & %g                & %g                   & %g                             & %g                   & %g                  & %g                 \\\\ %% %s" % (truemodelname, roundto3foreta(etabh_avg), roundto3foreta(etabhEM_avg), roundto3foreta(etabhMAKE_avg), roundto3foreta(etabhPAKE_avg), roundto3foreta(etabhEN_avg), roundto3foreta(etaj_avg), roundto3foreta(etajEM_avg), roundto3foreta(etajMAKE_avg), roundto3foreta(etamwout_avg), roundto3foreta(etawout_avg), roundto3foreta(etant), modelname ) )
     #
     # 12:
     print( "HLatex7: ModelName & $\\eta_{\\rm{}mw,i}$ & $\\eta^{\\rm{}EM}_{\\rm{}mw,i}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}mw,i}$ & $\\eta_{\\rm{}mw,o}$ & $\\eta^{\\rm{}EM}_{\\rm{}mw,o}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}mw,o}$ & $\\eta_{\\rm{}w,i}$ & $\\eta^{\\rm{}EM}_{\\rm{}w,i}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}w,i}$ & $\\eta_{\\rm{}w,o}$ & $\\eta^{\\rm{}EM}_{\\rm{}w,o}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}w,o}$ \\\\" )
@@ -11854,8 +12190,18 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     print( "VLatex8: %s        & %g            & %g                       & %g                         & %g            & %g               & %g                         & %g                 & %g                & %g             \\\\ %% %s" % (truemodelname, roundto3forl(lbh_avg), roundto3forl(lbhEM_avg), roundto3forl(lbhMAKE_avg), roundto3forl(lj_avg), roundto3forl(ljEM_avg), roundto3forl(ljMAKE_avg), roundto3forl(lmwout_avg), roundto3forl(lwout_avg), roundto3forl(lnt), modelname ) )
     #
     # s-version of Latex8 gives this Latex15 version -- replaces need for Latex8 and Latex9
-    print( "HLatex15: ModelName & $s_{\\rm{}H}$ & $s^{\\rm{}EM}_{\\rm{}H}$ & $s^{\\rm{}MAKE}_{\\rm{}H}$ & $s_{\\rm{}j}$ & $s^{\\rm{}EM}_j$ & $s^{\\rm{}MAKE}_{\\rm{}j}$ & $s_{\\rm{}mw,o}$ & $s_{\\rm{}w,o}$ & $s_{\\rm{}NT}$ \\\\" )
-    print( "VLatex15: %s        & %g            & %g                       & %g                         & %g            & %g               & %g                         & %g               & %g              & %g             \\\\ %% %s" % (truemodelname, roundto3forl(sbh_avg), roundto3forl(sbhEM_avg), roundto3forl(sbhMAKE_avg), roundto3forl(sj_avg), roundto3forl(sjEM_avg), roundto3forl(sjMAKE_avg), roundto3forl(smwout_avg), roundto3forl(swout_avg), roundto3forl(snt), modelname ) )
+    if 1==0:
+        print( "HLatex15: ModelName & $s_{\\rm{}H}$ & $s^{\\rm{}EM}_{\\rm{}H}$ & $s^{\\rm{}MAKE}_{\\rm{}H}$ & $s_{\\rm{}j}$ & $s^{\\rm{}EM}_j$ & $s^{\\rm{}MAKE}_{\\rm{}j}$ & $s_{\\rm{}mw,o}$ & $s_{\\rm{}w,o}$ & $s_{\\rm{}NT}$ \\\\" )
+        print( "VLatex15: %s        & %g            & %g                       & %g                         & %g            & %g               & %g                         & %g               & %g              & %g             \\\\ %% %s" % (truemodelname, roundto3forl(sbh_avg), roundto3forl(sbhEM_avg), roundto3forl(sbhMAKE_avg), roundto3forl(sj_avg), roundto3forl(sjEM_avg), roundto3forl(sjMAKE_avg), roundto3forl(smwout_avg), roundto3forl(swout_avg), roundto3forl(snt), modelname ) )
+    elif 1==0:
+        # added PAKE and EN terms for BH only
+        print( "HLatex15: ModelName & $s_{\\rm{}H}$ & $s^{\\rm{}EM}_{\\rm{}H}$ & $s^{\\rm{}MAKE}_{\\rm{}H}$ & $s^{\\rm{}PAKE}_{\\rm{}H}$ & $s^{\\rm{}EN}_{\\rm{}H}$ & $s_{\\rm{}j}$ & $s^{\\rm{}EM}_j$ & $s^{\\rm{}MAKE}_{\\rm{}j}$ & $s_{\\rm{}mw,o}$ & $s_{\\rm{}w,o}$ & $s_{\\rm{}NT}$ \\\\" )
+        print( "VLatex15: %s        & %g            & %g                       & %g                         & %g                         & %g                         & %g          & %g               & %g                         & %g               & %g              & %g             \\\\ %% %s" % (truemodelname, roundto3forl(sbh_avg), roundto3forl(sbhEM_avg), roundto3forl(sbhMAKE_avg), roundto3forl(sbhPAKE_avg), roundto3forl(sbhEN_avg), roundto3forl(sj_avg), roundto3forl(sjEM_avg), roundto3forl(sjMAKE_avg), roundto3forl(smwout_avg), roundto3forl(swout_avg), roundto3forl(snt), modelname ) )
+    #
+    else:
+        # added PA and EN terms for BH only and fixed how summed
+        print( "HLatex15: ModelName & $s_{\\rm{}H}$ & $s^{\\rm{}EM}_{\\rm{}H}$ & $s^{\\rm{}MA}_{\\rm{}H}$ & $s^{\\rm{}PA}_{\\rm{}H}$ & $s^{\\rm{}EN}_{\\rm{}H}$ & $s_{\\rm{}j}$ & $s^{\\rm{}EM}_j$ & $s^{\\rm{}MA}_{\\rm{}j}$ & $s_{\\rm{}mw,o}$ & $s_{\\rm{}w,o}$ & $s_{\\rm{}NT}$ \\\\" )
+        print( "VLatex15: %s        & %g            & %g                       & %g                         & %g                         & %g                         & %g          & %g               & %g                         & %g               & %g              & %g             \\\\ %% %s" % (truemodelname, roundto3forl(sbh_avg), roundto3forl(sbhEM_avg), roundto3forl(sbhMA_avg), roundto3forl(sbhPA_avg), roundto3forl(sbhEN_avg), roundto3forl(sj_avg), roundto3forl(sjEM_avg), roundto3forl(sjMA_avg), roundto3forl(smwout_avg), roundto3forl(swout_avg), roundto3forl(snt), modelname ) )
     #
     #
     # 12:
@@ -17793,7 +18139,7 @@ def mkavgfigs():
         # avg_ts,avg_te,avg_nitems,avg_rho,avg_ug,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_omegaf2b,avg_omegaf1
         # avg_omegaf1b,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
         # avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
-        # avg_TudPA, avg_TudIE
+        # avg_TudPA, avg_TudEN
         # avg_gamma
         #
         # get horizon cut of everything and print out for SM plotting vs. theta
@@ -17812,7 +18158,7 @@ def mkavgfigs():
         avg1.close()
         avg1 = open('dataavgvsh1.txt', 'w')
         # below doesn't yet show columns for each component of vector or tensors
-        avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudIE  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma gdet dxdxp11 dxdxp22dx2 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd\n")
+        avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudEN  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma gdet dxdxp11 dxdxp22dx2 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd\n")
         avg1.write("#%g %g %d :  %g %d\n" % (avg_ts[0],avg_te[0],avg_nitems[0],rhor,ihor))
         for jj in np.arange(0,len(h[0,:,0])):
             # columns 1-6
@@ -17898,7 +18244,7 @@ def mkavgfigs():
             # columns 217-232
             for ll in np.arange(0,4):
                 for mm in np.arange(0,4):
-                    avg1.write("%g " % (avg_TudIE[mm,ll,ihor,jj,0]))
+                    avg1.write("%g " % (avg_TudEN[mm,ll,ihor,jj,0]))
             # columns 233-235
             avg1.write("%g %g %g " % (avg_mu[ihor,jj,0], avg_sigma[ihor,jj,0], avg_bsqorho[ihor,jj,0]))
             # columns 236-238
@@ -17957,7 +18303,7 @@ def mkavgfigs():
         avg1.close()
         avg1 = open('dataavgvsr1.txt', 'w')
         # below doesn't yet show columns for each component of vector or tensors
-        avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudIE  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma avggdet dxdxp11 dxdxp22dx2 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd rhosqint rhosqint2\n")
+        avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudEN  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma avggdet dxdxp11 dxdxp22dx2 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd rhosqint rhosqint2\n")
         avg1.write("#%g %g %d :  %g %d\n" % (avg_ts[0],avg_te[0],avg_nitems[0],rhor,ihor))
         #
         bsq=avg_bsq
@@ -17993,7 +18339,7 @@ def mkavgfigs():
         #avg_rho,avg_ug,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_omegaf2b,avg_omegaf1
         # avg_omegaf1b,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
         # avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
-        # avg_TudPA, avg_TudIE
+        # avg_TudPA, avg_TudEN
         # avg_gamma
         # get averages (vs radius only in the end)
         avgvsr_rho=intangle_foravg2d(gdet*denfactor*avg_rho,**keywordsrhosq)/rhosqint
@@ -18058,7 +18404,7 @@ def mkavgfigs():
         avgvsr_TudEM=np.zeros_like(avgvsr_Tud)
         avgvsr_TudMA=np.zeros_like(avgvsr_Tud)
         avgvsr_TudPA=np.zeros_like(avgvsr_Tud)
-        avgvsr_TudIE=np.zeros_like(avgvsr_Tud)
+        avgvsr_TudEN=np.zeros_like(avgvsr_Tud)
         # doabs=0 for below since care about sign (e.g. flux in or out) and can't easily recover sign unless know more details
         # except fdd, which oscillates around 0 near equator.  Actually, only fdd has abs during averaging unlike all other doabs==1 quantities, so movement of sign of quantities (e.g. across equator) will cause bad averaging there for these other quantities.
         for ll in np.arange(0,4):
@@ -18074,7 +18420,7 @@ def mkavgfigs():
                 avgvsr_TudEM[mm,ll]=intangle_foravg2d(gdet*denfactor*avg_TudEM[mm,ll],doabs=0,**keywordsrhosq)/rhosqint
                 avgvsr_TudMA[mm,ll]=intangle_foravg2d(gdet*denfactor*avg_TudMA[mm,ll],doabs=0,**keywordsrhosq)/rhosqint
                 avgvsr_TudPA[mm,ll]=intangle_foravg2d(gdet*denfactor*avg_TudPA[mm,ll],doabs=0,**keywordsrhosq)/rhosqint
-                avgvsr_TudIE[mm,ll]=intangle_foravg2d(gdet*denfactor*avg_TudIE[mm,ll],doabs=0,**keywordsrhosq)/rhosqint
+                avgvsr_TudEN[mm,ll]=intangle_foravg2d(gdet*denfactor*avg_TudEN[mm,ll],doabs=0,**keywordsrhosq)/rhosqint
         avgvsr_mu=intangle_foravg2d(gdet*denfactor*avg_mu,**keywordsrhosq)/rhosqint
         avgvsr_sigma=intangle_foravg2d(gdet*denfactor*avg_sigma,**keywordsrhosq)/rhosqint
         avgvsr_bsqorho=intangle_foravg2d(gdet*denfactor*avg_bsqorho,**keywordsrhosq)/rhosqint
@@ -18193,7 +18539,7 @@ def mkavgfigs():
             # columns 217-232
             for ll in np.arange(0,4):
                 for mm in np.arange(0,4):
-                    avg1.write("%g " % (avgvsr_TudIE[mm,ll,ii]))
+                    avg1.write("%g " % (avgvsr_TudEN[mm,ll,ii]))
             # columns 233-235
             avg1.write("%g %g %g " % (avgvsr_mu[ii], avgvsr_sigma[ii], avgvsr_bsqorho[ii]))
             # columns 236-238
@@ -18243,7 +18589,7 @@ def mkavgfigs():
         avg1.close()
         avg1 = open('dataavg1.txt', 'w')
         # below doesn't yet show columns for each component of vector or tensors
-        avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudIE  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma gdet dxdxp11 dxdxp22 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd\n")
+        avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudEN  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma gdet dxdxp11 dxdxp22 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd\n")
         avg1.write("#%g %g %d :  %g %d\n" % (avg_ts[0],avg_te[0],avg_nitems[0],rhor,ihor))
         for jj in np.arange(0,len(h[0,:,0])):
             for ii in np.arange(0,len(r[:,0,0])):
@@ -18330,7 +18676,7 @@ def mkavgfigs():
                 # columns 217-232
                 for ll in np.arange(0,4):
                     for mm in np.arange(0,4):
-                        avg1.write("%g " % (avg_TudIE[mm,ll,ii,jj,0]))
+                        avg1.write("%g " % (avg_TudEN[mm,ll,ii,jj,0]))
                 # columns 233-235
                 avg1.write("%g %g %g " % (avg_mu[ii,jj,0], avg_sigma[ii,jj,0], avg_bsqorho[ii,jj,0]))
                 # columns 236-238
@@ -18374,7 +18720,7 @@ def mkavgfigs():
     #########################################
     if mkstreampart4==1:
         #
-        #avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudIE  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma gdet dxdxp11 dxdxp22 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd")
+        #avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudEN  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma gdet dxdxp11 dxdxp22 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd")
         print("Doing field mkframe")
         sys.stdout.flush()
         global rho,ug,B,gdetB,bsq,mu,ud,uu,beta
