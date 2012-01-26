@@ -7090,6 +7090,52 @@ def mkmanystreamlinesxy():
     # plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02)
     plt.savefig("fig2oneline.png",bbox_inches='tight',pad_inches=0.02,dpi=300)
 
+def removefloorsavg2d(usestaggeredfluxes=False,DFfloor=None):
+    """ Removes floors and returns a tuple, (Fm, FmMinusFe), from which floors were removed.
+        When removing the floors assumes that the flow is aligned with the radial grid lines (x2=const).
+        In reality, this is not exactly correct, however, most of the floor addition happens 
+        close to the BH, where the grid is very much radial, so this approximation works quite well.
+    """
+    if DFfloor is None:
+        DFfloor=takeoutfloors(ax=None,doreload=1,dotakeoutfloors=dotakeoutfloors,dofeavg=0,isinteractive=0,writefile=False,doplot=False,aphi_j_val=0, ndim=2, is_output_cell_center = False)
+    if not avg_gdetF[0,0].any() or \
+            usestaggeredfluxes == False:
+        is_output_cell_center = True
+        print( "Using gdet*avg_rhouu[1]" )
+        enden1=(-gdet*avg_Tud[1,0]-gdet*avg_rhouu[1])*nz
+        enden2=(-gdet*avg_Tud[2,0]-gdet*avg_rhouu[2])*nz
+        mdden=(-gdet*avg_rhouu[1])*nz
+    else:
+        print( "Using avg_gdetF" )
+        is_output_cell_center = False
+        #x1-fluxes of:
+        #0,0 mass   
+        #0,1 energy 
+        #0,2 ang.m. 
+        #x2-fluxes of:
+        #0,0 mass   
+        #0,1 energy 
+        #0,2 ang.m. 
+        enden1=(-avg_gdetF[0,1]*nz)
+        enden2=(-avg_gdetF[1,1]*nz)
+        mdden =(-avg_gdetF[0,0]*nz)
+    dotakeoutfloors=True
+    if dotakeoutfloors:
+        #subtract rest-mass from total energy flux and flip the sign to get correct direction
+        DFen = DFfloor[1]+DFfloor[0] 
+        #pdb.set_trace()
+        enden1 += DFen[:,:,None]/(_dx2*_dx3) 
+        mdden += DFfloor[0][:,:,None]/(_dx2*_dx3)
+    if is_output_cell_center == False:
+        #en[:-1]=0.5*(en[:-1]+en[1:])
+        enden1[:-1]=0.5*(enden1[1:]+enden1[:-1])
+        enden2[:,:-1]=0.5*(enden2[:,1:]+enden2[:,:-1])
+        mdden[:-1]=0.5*(mdden[:-1]+mdden[1:])
+    Fm_floorremoved = mdden
+    FmMinusFe_floorremoved1 = enden1
+    FmMinusFe_floorremoved2 = enden2
+    return( Fm_floorremoved, FmMinusFe_floorremoved1, FmMinusFe_floorremoved2 )
+
 def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,showticks=True,usedefault=2,fc='white',mc='white',dotakeoutfloors=0):
     #fc='#D8D8D8'
     global bsq, ug, mu, B, DF, qtymem
@@ -7166,43 +7212,29 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         #FLR: here replace this with actual flux of energy: gdetF12 (if non-zero, which means if defined; account for face-location!)
         #     provide interface through takeoutfloors to return "floor-corrected" 2D arrays of mass and energy flows
         #     maybe just make a call to takeoutfloors() (or similar function) that would return energy and mass fluxes
-        if not avg_gdetF[0,0].any() or a >= 0.89: #hack! to avoid using this for a = 0.9 model
-            #saved face-centered fluxes exist
-            is_output_cell_center = True
-            print( "Using gdet*avg_rhouu[1]" )
-            enden1=(-gdet*avg_Tud[1,0]-gdet*avg_rhouu[1])*nz
-            enden2=(-gdet*avg_Tud[2,0]-gdet*avg_rhouu[2])*nz
-            enden=enden1
-            mdden=(-gdet*avg_rhouu[1])*nz
-        else:
-            print( "Using avg_gdetF" )
+        if os.path.basename(os.getcwd()) == "rtf2_15r34_2pi_a-0.9gg50rbr1e3_0_0_0_faildufix2":
+            #^^^ hack ^^^ to avoid using this for all models except a = -0.9 model (for now)
+            #this is because some of the models were restarted half-way with this diagnostic added,
+            #and so their averages will not be correct (since the missing data is filled with zeros)
+            #---> saved face-centered fluxes exist
+            usestaggeredfluxes = True
             is_output_cell_center = False
-            #x1-fluxes of:
-            #0,0 mass   
-            #0,1 energy 
-            #0,2 ang.m. 
-            #x2-fluxes of:
-            #0,0 mass   
-            #0,1 energy 
-            #0,2 ang.m. 
-            enden1=(-avg_gdetF[0,1]*nz)
-            enden2=(-avg_gdetF[1,1]*nz)
-            enden=enden1
-            mdden =(-avg_gdetF[0,0]*nz)
-        if dotakeoutfloors:
-            #subtract rest-mass from total energy flux and flip the sign to get correct direction
-            DFen = DFfloor[1]+DFfloor[0] 
-            #pdb.set_trace()
-            enden += DFen[:,:,None]/(_dx2*_dx3) 
-            mdden += DFfloor[0][:,:,None]/(_dx2*_dx3)
+        else:
+            is_output_cell_center = True
+            usestaggeredfluxes = False
+        #######################
+        #
+        # REMOVE FLOORS
+        #
+        #######################
+        Fm_floorremoved, FmMinusFe_floorremoved1, FmMinusFe_floorremoved2  = removefloorsavg2d(usestaggeredfluxes=usestaggeredfluxes,DFfloor=DFfloor)
+        enden1 = FmMinusFe_floorremoved1
+        enden = enden1
+        enden2 = FmMinusFe_floorremoved2
+        mdden = Fm_floorremoved
         en=(enden.cumsum(1)-0.5*enden)*_dx2*_dx3 #subtract half of current cell's density to get cell-centered quantity
         md=(mdden).sum(2).sum(1)*_dx2*_dx3
         #pdb.set_trace()
-        if is_output_cell_center == False:
-            en[:-1]=0.5*(en[:-1]+en[1:])
-            enden1[:-1]=0.5*(enden1[1:]+enden1[:-1])
-            enden2[:,:-1]=0.5*(enden2[:,1:]+enden2[:,:-1])
-            md[:-1]=0.5*(md[:-1]+md[1:])
         #mdot vs. radius
         #pick out a scalar value at r = 5M
         md=md[iofr(5)]
