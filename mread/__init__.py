@@ -7245,14 +7245,14 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         #equatorial trajectory: starts at r = rh, theta = pi/2
         rhor=1+(1-a**2)**0.5
         radval=10.
-        if is_output_cell_center == True:
+        if False and is_output_cell_center == True:
             #internal fluxes not available
             traj = mkonestreamlinex1x2( -avg_Tud[1,0,:,:,0]-avg_rhouu[1,:,:,0],
                                     -avg_Tud[2,0,:,:,0]-avg_rhouu[2,:,:,0],
                                     x1[:,0,0],x2[0,:,0],
                                     x1[iofr(radval),ny/2,0],0.)
         else:
-            #internal fluxes available: use them (account for the fact that they are staggered!)
+            #internal fluxes available: use them (they have already been reinterpolated to cell centers)
             traj = mkonestreamlinex1x2( enden1[:,:,0],
                                     enden2[:,:,0],
                                     x1[:,0,0],x2[0,:,0],
