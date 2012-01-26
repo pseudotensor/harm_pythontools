@@ -6100,10 +6100,12 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     emptyline = gin.readline()
     simname=[]
     simpath=[]
+    print( "##: %20s: %9s %9s %9s\n" % ("Name", "Mdot", "FEMrh", "Ftotsq") )
     for i in np.arange(alist.shape[0]):
         stringsplit=gin.readline().split()
         simname.append(stringsplit[0])
         simpath.append(stringsplit[1])
+        print( "%2d: %20.20s: %9g %9g %9g" % ( i, simname[i], Fmlist[i], FEMrhorlist[i], ftotsqlist[i] ) ) 
     gin.close()
     if plotetas:
         #plt.figure(1)
