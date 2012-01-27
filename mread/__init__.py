@@ -12116,8 +12116,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     if nz==1:
         stringdeltaphi="$2\\pi$"
     #
+    # $Q_{1,t=0,\\rm{}MRI,\{i,  o\}}$
     #qmridisk20_t0 ,  qmridisk50_t0
-    print("HLatex2: ModelName  & GridType & $N_r$ & $N_\\theta$ & $N_\\phi$ & $R_{\\rm{}in}/r_{\\rm{}H}$ & $R_{\\rm{}out}$  & $\\Delta\\phi$ & $A_{r=r_{\\rm{}H}}$ & $A_{r_i}$ & $A_{r_o}$ & $Q_{1,t=0,\\rm{}MRI,\{i,  o\}}$  & $T^a_i$--$T^a_f$  \\\\")
+    # \bfrac is special fraction without bar so can fit this table across the page
+    print("HLatex2: ModelName  & GridType & $N_r$ & $N_\\theta$ & $N_\\phi$ & $R_{\\rm{}in}/r_{\\rm{}H}$ & $R_{\\rm{}out}$  & $\\Delta\\phi$ & $A_{r=r_{\\rm{}H}}$ & $A_{r_i}$ & $A_{r_o}$ & $\\bfrac{Q_{1,\\rm{}MRI}}{\\rm{}t=0,\{i,  o\}}$  & $T^a_i$--$T^a_f$  \\\\")
     print("VLatex2: %s         & %s       &  %g   & %g          & %g        & %g             & %g               & %s          & %g:%g:%g    & %g:%g:%g  & %g:%g:%g  & %s                          & %g--%g            \\\\ %% %s" % (truemodelname,gridtype,nx,ny,nzreal,roundto3(Rin/rhor),Rout,stringdeltaphi,roundto2(drnormh), roundto2(dHnormh), roundto2(dPnormh), roundto2(drnormi), roundto2(dHnormi), roundto2(dPnormi), roundto2(drnormo), roundto2(dHnormo), roundto2(dPnormo),roundto2qmri(qmridisk20_t0,qmridisk50_t0),truetmin,truetmax, modelname ) )
     #
     # 8:
