@@ -7137,14 +7137,15 @@ def mkmanystreamlinesxy():
     plt.savefig("fig2oneline.png",bbox_inches='tight',pad_inches=0.02,dpi=300)
 
 def removefloorsavg2d(usestaggeredfluxes=False,DFfloor=None):
-    """ Removes floors and returns a tuple, (Fm, FmMinusFe), from which floors were removed.
+    """ Removes floors and returns a tuple, (Fm, FmMinusFe1, FmMinusFe2), from which floors were removed.
+        Does not multiply the result by _dx2*_dx3 -- you should do so yourself if you wish.
         When removing the floors assumes that the flow is aligned with the radial grid lines (x2=const).
         In reality, this is not exactly correct, however, most of the floor addition happens 
         close to the BH, where the grid is very much radial, so this approximation works quite well.
     """
     if DFfloor is None:
-        DFfloor=takeoutfloors(ax=None,doreload=1,dotakeoutfloors=dotakeoutfloors,dofeavg=0,isinteractive=0,writefile=False,doplot=False,aphi_j_val=0, ndim=2, is_output_cell_center = False)
-    if not avg_gdetF[0,0].any() or \
+        DFfloor=takeoutfloors(ax=None,doreload=1,dotakeoutfloors=True,dofeavg=0,isinteractive=0,writefile=False,doplot=False,aphi_j_val=0, ndim=2, is_output_cell_center = False)
+    if 'avg_gdetF' in globals() and not avg_gdetF[0,0].any() or \
             usestaggeredfluxes == False:
         is_output_cell_center = True
         print( "Using gdet*avg_rhouu[1]" )
@@ -9034,6 +9035,79 @@ def plotflux(doreload=True):
     plt.savefig("plotflux.eps",bbox_inches='tight',pad_inches=0.02,dpi=100)
     plt.savefig("plotflux.pdf",bbox_inches='tight',pad_inches=0.02,dpi=100)
 
+def mkpulsarmovie():
+    grid3d("gdump.bin",use2d=True)
+    flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
+    flist.sort()
+    for fldindex, fldname in enumerate(flist):
+        print( "Reading " + fldname + " ..." )
+        sys.stdout.flush()
+        rfd("../"+fldname)
+        sys.stdout.flush()
+        aphi=fieldcalc()
+        if fldindex == 0:
+            maxaphi = (5*10)**0.5*3*3*3.2 #aphi.max()
+        #fig=plt.figure(1,figsize=(10,10))
+        #plt.clf()
+        #ax = fig.add_subplot(111, aspect='equal')
+        numc=10
+        cvel()
+        plco(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,numc)*maxaphi/np.float(numc),colors='k')
+        plc(np.log10(bsq/rho),xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,levels=np.arange(0.,3.1,0.1));plt.xlim(0,10);plt.ylim(-5,5)
+        #plc(uu[2]*dxdxp[2][2],xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=False,levels=np.arange(-0.5,0.5,0.1));plt.xlim(0,10);plt.ylim(-5,5)            #plc(np.log10(ug),xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,levels=np.arange(-3,2,0.1));plt.xlim(0,10);plt.ylim(-5,5)
+        #plc(np.log10(ug/rho),xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,levels=np.arange(0,1,0.1));plt.xlim(0,10);plt.ylim(-5,5)
+        #plc(lrho,xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,levels=np.arange(-3,.8,0.1));plt.xlim(0,10);plt.ylim(-5,5)
+        #cts=plc(bsq/rho,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,5.5,0.5))
+        #cbar=plt.colorbar(cts)
+        #cbar.ax.set_ylabel(r'$b^2\!/\rho$',fontsize=16)
+        #plco(lrho,cb=True,levels=np.arange(1,10),xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,10);plt.ylim(-5,5)
+        plt.title(r"$b^2\!/\rho=10^2$, t=%3.3g" % t,    fontsize=16, color='k')
+        #draw NS
+        ax=plt.gca()
+        ax.set_aspect('equal')   
+        el = Ellipse((0,0), 2, 2, facecolor='k', alpha=1)
+        art=ax.add_artist(el)
+        art.set_zorder(20)
+        rmax = 10
+        plt.xlim(0,rmax)
+        plt.ylim(-0.5*rmax,0.5*rmax)
+        #
+        plt.draw()
+        plt.savefig( 'frame%04d.png' % fldindex )
+        #if fldindex >= 500:
+        #    break
+
+def mkjetretrofig1():
+        fig=plt.figure(1, figsize=(12,9), dpi=100)
+        gs2 = GridSpec(2, 2)
+        gs2.update(left=0.053, right=0.93, top=0.78, bottom=0.49, hspace=0.04, wspace=0.085)
+        icplot(gs=gs2,fig=fig,aspect=3.9,plotlen=90,lwbold=2)
+        #################
+        #
+        # mdot, phibh, etabh
+        #
+        #################
+        fti=8000
+        ftf=1e5
+        sigma=None
+        doreload = 1
+        #plt.clf()
+        gs3a = GridSpec(3, 3)
+        gs3a.update(left=0.055, right=0.4735, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
+        title = r"${\rm Retrograde\ BH,\ a = -0.9\ (model\ A-0.9f})$"
+        os.chdir("/home/atchekho/run/rtf2_15r34_2pi_a-0.9gg50rbr1e3_0_0_0_faildufix2")
+        epsFm, epsFke = takeoutfloors(doreload=doreload,fti=fti,ftf=ftf,returndf=1,isinteractive=0,writefile=False)
+        print epsFm, epsFke
+        mkmdot(doreload=doreload,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=100.,sigma=sigma,usegaussianunits=True,arrowsize=0.5,gs3=gs3a,dotwinx=False,lab=["c","d","e"],title=None)
+        gs3b = GridSpec(3, 3)
+        gs3b.update(left=0.5125, right=0.96, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
+        title=r"${\rm Prograde\ BH,\ a = 0.9\ (model\ A0.9f)}$"
+        os.chdir("/home/atchekho/run/rtf2_15r34.1_pi_0_0_0")
+        epsFm, epsFke = takeoutfloors(doreload=doreload,fti=fti,ftf=ftf,returndf=1,isinteractive=0,writefile=False)
+        print epsFm, epsFke
+        mkmdot(doreload=doreload,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=100.,sigma=sigma,usegaussianunits=True,arrowsize=0.5,gs3=gs3b,dotwinx=True,doylab=False,lab=["h", "i", "j"],title=None)
+        plt.savefig("plotmkmdot.eps",bbox_inches='tight',pad_inches=0.02)
+        plt.savefig("plotmkmdot.pdf",bbox_inches='tight',pad_inches=0.02)
 
 if __name__ == "__main__":
     if False:
@@ -9135,37 +9209,8 @@ if __name__ == "__main__":
         #mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=True,dotakeoutfloors=0)
         #mkstreamlinefigure(length=4,doenergy=False)
     if False:
-        #FIGURE XX mdot, phibh, etabh
-        fig=plt.figure(1, figsize=(12,9), dpi=100)
-        gs2 = GridSpec(2, 2)
-        gs2.update(left=0.053, right=0.93, top=0.78, bottom=0.49, hspace=0.04, wspace=0.085)
-        icplot(gs=gs2,fig=fig,aspect=3.9,plotlen=90,lwbold=2)
-        #################
-        #
-        # mdot, phibh, etabh
-        #
-        #################
-        fti=8000
-        ftf=1e5
-        sigma=None
-        doreload = 1
-        #plt.clf()
-        gs3a = GridSpec(3, 3)
-        gs3a.update(left=0.055, right=0.4735, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
-        title = r"${\rm Retrograde\ BH,\ a = -0.9\ (model\ A-0.9f})$"
-        os.chdir("/home/atchekho/run/rtf2_15r34_2pi_a-0.9gg50rbr1e3_0_0_0_faildufix2")
-        epsFm, epsFke = takeoutfloors(doreload=doreload,fti=fti,ftf=ftf,returndf=1,isinteractive=0,writefile=False)
-        print epsFm, epsFke
-        mkmdot(doreload=doreload,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=100.,sigma=sigma,usegaussianunits=True,arrowsize=0.5,gs3=gs3a,dotwinx=False,lab=["c","d","e"],title=None)
-        gs3b = GridSpec(3, 3)
-        gs3b.update(left=0.5125, right=0.96, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
-        title=r"${\rm Prograde\ BH,\ a = 0.9\ (model\ A0.9f)}$"
-        os.chdir("/home/atchekho/run/rtf2_15r34.1_pi_0_0_0")
-        epsFm, epsFke = takeoutfloors(doreload=doreload,fti=fti,ftf=ftf,returndf=1,isinteractive=0,writefile=False)
-        print epsFm, epsFke
-        mkmdot(doreload=doreload,epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,prefactor=100.,sigma=sigma,usegaussianunits=True,arrowsize=0.5,gs3=gs3b,dotwinx=True,doylab=False,lab=["h", "i", "j"],title=None)
-        plt.savefig("plotmkmdot.eps",bbox_inches='tight',pad_inches=0.02)
-        plt.savefig("plotmkmdot.pdf",bbox_inches='tight',pad_inches=0.02)
+        #FIGURE 1 from jetretro w/ mdot, phibh, etabh
+        mkjetretrofig1()
     if False:
         #FIGURE 1 LOTSOPANELS
         fti=7000
@@ -9186,7 +9231,9 @@ if __name__ == "__main__":
         mkframe("lrho%04d" % 0, vmin=-8,vmax=0.2,dostreamlines=True,len=50)
         plt.savefig("lrho%04d.pdf" % fno)
     if False:
-        #Short tutorial. Some of the names will sound familiar :)
+        mkpulsarmovie()
+    if False:
+        #Short tutorial.
         print( "Running a short tutorial: read in grid, 0th dump, plot and compute some things." )
         #1 read in gdump (specifying "use2d=True" reads in just one r-theta slice to save memory)
         grid3d("gdump.bin", use2d = True)
@@ -9231,47 +9278,45 @@ if __name__ == "__main__":
         udphi = None
         aphi = None
         gc.collect()
-    if False:
+    if True:
+        #######################
+        #
+        #  Example: compute b^2/rho/Sigma
+        #
+        #######################
+        #load metric
+        #[here, use2d=True instructs the routines to make use of axisymmetry of the metric, which saves memory]
         grid3d("gdump.bin",use2d=True)
-        flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
-        flist.sort()
-        for fldindex, fldname in enumerate(flist):
-            print( "Reading " + fldname + " ..." )
-            sys.stdout.flush()
-            rfd("../"+fldname)
-            sys.stdout.flush()
-            aphi=fieldcalc()
-            if fldindex == 0:
-                maxaphi = (5*10)**0.5*3*3*3.2 #aphi.max()
-            #fig=plt.figure(1,figsize=(10,10))
-            #plt.clf()
-            #ax = fig.add_subplot(111, aspect='equal')
-            numc=10
-            cvel()
-            plco(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,numc)*maxaphi/np.float(numc),colors='k')
-            plc(np.log10(bsq/rho),xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,levels=np.arange(0.,3.1,0.1));plt.xlim(0,10);plt.ylim(-5,5)
-            #plc(uu[2]*dxdxp[2][2],xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=False,levels=np.arange(-0.5,0.5,0.1));plt.xlim(0,10);plt.ylim(-5,5)            #plc(np.log10(ug),xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,levels=np.arange(-3,2,0.1));plt.xlim(0,10);plt.ylim(-5,5)
-            #plc(np.log10(ug/rho),xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,levels=np.arange(0,1,0.1));plt.xlim(0,10);plt.ylim(-5,5)
-            #plc(lrho,xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,levels=np.arange(-3,.8,0.1));plt.xlim(0,10);plt.ylim(-5,5)
-            #cts=plc(bsq/rho,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,5.5,0.5))
-            #cbar=plt.colorbar(cts)
-            #cbar.ax.set_ylabel(r'$b^2\!/\rho$',fontsize=16)
-            #plco(lrho,cb=True,levels=np.arange(1,10),xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,10);plt.ylim(-5,5)
-            plt.title(r"$b^2\!/\rho=10^2$, t=%3.3g" % t,    fontsize=16, color='k')
-            #draw NS
-            ax=plt.gca()
-            ax.set_aspect('equal')   
-            el = Ellipse((0,0), 2, 2, facecolor='k', alpha=1)
-            art=ax.add_artist(el)
-            art.set_zorder(20)
-            rmax = 10
-            plt.xlim(0,rmax)
-            plt.ylim(-0.5*rmax,0.5*rmax)
-            #
-            plt.draw()
-            plt.savefig( 'frame%04d.png' % fldindex )
-            #if fldindex >= 500:
-            #    break
-
+        #load time-averages
+        avgmem=rdavg2d()
+        if os.path.basename(os.getcwd()) == "rtf2_15r34_2pi_a-0.9gg50rbr1e3_0_0_0_faildufix2":
+            #^^^ hack ^^^ to avoid using this for all models except the a = -0.9 model (for now)
+            #this is because some of the models were restarted half-way with this diagnostic added,
+            #and so their averages will not be correct (since the missing data is filled with zeros)
+            #---> saved face-centered fluxes exist
+            usestaggeredfluxes = True
+        else:
+            usestaggeredfluxes = False
+        #remove floors from mass (Fm) and extractable energy (Fm-Fe) fluxes
+        Fm_floorremoved, FmMinusFe_floorremoved1, FmMinusFe_floorremoved2 \
+            = removefloorsavg2d(usestaggeredfluxes=usestaggeredfluxes)
+        lab = "(%g,%g)" % (avg_ts[0],avg_te[0])
+        plt.figure(1)
+        plt.clf()
+        ax = plt.gca()
+        a_Fm = (Fm_floorremoved[:,:,0:1]*_dx2*_dx3).sum(-1).sum(-1)
+        sigval = a_Fm / (-4*np.pi*r[:,ny/2,0]*avg_uu[1,:,ny/2,0]*dxdxp[1,1,:,0,0]/avg_uu[0,:,ny/2,0])
+        #sigval = (Fm_floorremoved[:,:,0:1]*_dx2*_dx3).sum(-1).sum(-1)/dxdxp[1,1,:,0,0]/(2*np.pi*r[:,ny/2,0])
+        #sigvalfm = a_Fm / (-4*np.pi*r[:,ny/2,0]*avg_uu[1,:,ny/2,0]*dxdxp[1,1,:,0,0]/avg_uu[0,:,ny/2,0])
+        plt.plot( r[:,0,0], sigval, 'k', label=r"$\Sigma\ "+lab+"$" )
+        #plt.plot( r[:,0,0], sigvalfm, 'r', label=lab )
+        #sigval=sigvalfm
+        ax.set_xscale('log')
+        ax.set_yscale('log')
+        plt.xlim(rhor,100000)
+        plt.xlabel(r"$r$",fontsize=16)
+        plt.ylabel(r"$\Sigma$",fontsize=16)
+        plt.grid(b=True)
+        plt.legend(loc='best')
         
         
