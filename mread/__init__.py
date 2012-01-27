@@ -1939,9 +1939,18 @@ def grid3d(dumpname,use2d=False,doface=False): #read grid dump file: header and 
     global nx,ny,nz,_startx1,_startx2,_startx3,_dx1,_dx2,_dx3,gam,a,R0,Rin,Rout,ti,tj,tk,x1,x2,x3,r,h,ph,conn,gn3,gv3,ck,dxdxp,gdet
     global tif,tjf,tkf,rf,hf,phf,rhor
     print( "Reading grid from " + "dumps/" + dumpname + " ..." )
+    usinggdump2d = False
+    if dumpname.endswith(".bin"):
+        dumpnamenoext = os.path.splitext(dumpname)[0]
+        dumpname2d = dumpnamenoext + "2d.bin"
+        if use2d and os.path.isfile("dumps/"+dumpname2d):
+            #switch to using 2d gdump if exists
+            dumpname = dumpname2d
+            usinggdump2d = True
     gin = open( "dumps/" + dumpname, "rb" )
     #First line of grid dump file is a text line that contains general grid information:
-    header = gin.readline().split()
+    headerline = gin.readline()
+    header = headerline.split()
     #dimensions of the grid
     nx = int(header[1])
     ny = int(header[2])
@@ -1976,6 +1985,23 @@ def grid3d(dumpname,use2d=False,doface=False): #read grid dump file: header and 
         body = np.fromfile(gin,dtype=np.float64,count=ncols*nx*ny*lnz) 
         gd = body.view().reshape((-1,nx,ny,lnz),order='F')
         gin.close()
+        if use2d and not usinggdump2d:
+            #2d cache file does not exist, create it for future speedup
+            dumpname2d = dumpnamenoext + "2d.bin"
+            sys.stdout.write( 
+                "Saving a 2d slice of %s as %s for future caching..." 
+                % (dumpname, dumpname2d) )
+            dumpnamenoext = os.path.splitext(dumpname)[0]
+            gout = open( "dumps/" + dumpname2d, "wb" )
+            gout.write( headerline )
+            gout.write( "\n" )
+            gout.flush()
+            os.fsync(gout.fileno())
+            #reshape the rdump content
+            gd1 = body.view().reshape((lnz,ny,nx,-1),order='C')
+            gd1.tofile(gout)
+            gout.close()
+            print( " done!" )
     else:
         gin.close()
         gd = np.loadtxt( "dumps/" + dumpname, 
