@@ -4453,11 +4453,18 @@ def getstagparams(var=None,rmax=20,doplot=1,doreadgrid=1,usedefault=1,fixupneara
     else:
         return istag, jstag, hstag, rstag
 
-def get_dUfloor( floordumpno, maxrinflowequilibrium = 20, aphi_j_val=0, ndim=1, is_output_cell_center = True ):
+def get_dUfloor( floordumpno, maxrinflowequilibrium = 20, aphi_j_val=0, is_output_cell_center = True ):
     """ maxrsteady should be chosen to be on the outside of the inflow equilibrium region """
     RR=0
     TH=1
     PH=2
+    cachefname = "dumps/failfloordudump%04d.npy" % floordumpno
+    if os.path.isfile(cachefname):
+        #if already pre-computed floor info, reuse it
+        print("Reading %s..." % os.path.basename(cachefname))
+        UfloorAsum = np.load(cachefname)
+        return( UfloorAsum )
+    #if no precomputed info
     rfloor( "failfloordudump%04d.bin" % floordumpno )
     #add back in rest-mass energy to conserved energy
     dUfloor[1] -= dUfloor[0]
@@ -4472,28 +4479,9 @@ def get_dUfloor( floordumpno, maxrinflowequilibrium = 20, aphi_j_val=0, ndim=1, 
     #condin = (r[:,:,0:1]<maxrinflowequilibrium)
     condout = 1 - condin
     #XXX change below to account for limited range in theta
-    if ndim == 1:
-        UfloorAout = (dUfloor*condout[:,:,:,:]).sum(1+PH).cumsum(1+TH)  #*(tj!=0)*(tj!=ny-1)
-        UfloorAin = (dUfloor*condin[:,:,:,:]).sum(1+PH).cumsum(1+TH) #*(tj!=0)*(tj!=ny-1)
-        if aphi_j_val == 0:
-            #use unrestricted (full) sum
-            UfloorAout = UfloorAout[:,:,ny-1]
-            UfloorAin = UfloorAin[:,:,ny-1]
-        else:
-            # eout = np.copy(UfloorAout[1])
-            # ein = np.copy(UfloorAin[1])
-            # UfloorAout = UfloorAout[:,:,ny-1]
-            # UfloorAin = UfloorAin[:,:,ny-1]
-            # #cut-out only for energy
-            # UfloorAout[1] = cutout_along_aphi(eout,aphi_j_val=aphi_j_val)
-            # UfloorAin[1]  = cutout_along_aphi(ein,aphi_j_val=aphi_j_val)
-            #cut-out only for energy
-            UfloorAout = cutout_along_aphi(UfloorAout,aphi_j_val=aphi_j_val)
-            UfloorAin  = cutout_along_aphi(UfloorAin,aphi_j_val=aphi_j_val)
-    elif ndim == 2:
-        UfloorAout = (dUfloor*condout[:,:,:,:]).sum(1+PH)  #*(tj!=0)*(tj!=ny-1)
-        UfloorAin = (dUfloor*condin[:,:,:,:]).sum(1+PH) #*(tj!=0)*(tj!=ny-1)
     #Integrate in radius
+    UfloorAout = (dUfloor*condout[:,:,:,:]).sum(1+PH)  #*(tj!=0)*(tj!=ny-1)
+    UfloorAin = (dUfloor*condin[:,:,:,:]).sum(1+PH) #*(tj!=0)*(tj!=ny-1)
     UfloorAout = UfloorAout.cumsum(1+RR)
     UfloorAin  = UfloorAin.cumsum(1+RR)
     #
@@ -4511,7 +4499,8 @@ def get_dUfloor( floordumpno, maxrinflowequilibrium = 20, aphi_j_val=0, ndim=1, 
         #This needs to be moved half a cell to the right for correct centering
         UfloorA[:,1:] = 0.5*(UfloorA[:,:-1]+UfloorA[:,1:])
     UfloorAsum = UfloorA*scaletofullwedge(1.)
-    
+    if not os.path.isfile(cachefname):
+        np.save(cachefname, UfloorAsum)
     return( UfloorAsum )
 
 def plotfluxes(doreload=1,aphi_j_val=0):
@@ -4599,19 +4588,51 @@ def get_dFfloor(Dt, Dno, dotakeoutfloors=True,aphi_j_val=0, ndim=1, is_output_ce
     requires gdump to be loaded [grid3d("gdump.bin",use2d=True)], and arrays, Dt and Dno, 
     set up."""
     #initialize with zeros
+    cachefname = "dumps/floorinfo.npz"
+    #r-,th-, and phi- indices
+    RR=0
+    TH=1
+    PH=2
     DT = 0
     if dotakeoutfloors:
-        for (i,iDT) in enumerate(Dt):
-            gc.collect() #try to clean up memory if not used
-            iDU = get_dUfloor( Dno[i], aphi_j_val=aphi_j_val, ndim=ndim, is_output_cell_center = is_output_cell_center )
-            if iDT > 0:
-                DT += iDT
-            if i==0:
-                DU = iDU
+        if os.path.isfile(cachefname):
+            #if previously cached floor info, reuse it
+            print("Reading %s..." % os.path.basename(cachefname))
+            npzfile = np.load(cachefname)
+            npzfile_Dt = npzfile['Dt']
+            npzfile_Dno = npzfile['Dno']
+            npzfile_DU = npzfile['DU']
+            if( Dt.shape == npzfile_Dt.shape and (Dt == npzfile_Dt).all() and
+                Dno.shape == npzfile_Dno.shape and (Dno == npzfile_Dno).all() ):
+                DU = np.copy( npzfile_DU )
+                del npzfile_Dt
+                del npzfile_Dno
+                del npzfile_DU
+                del npzfile
+                #gc.collect()
             else:
-                DU += iDU * np.sign(iDT)
-        #average in time
-        DU /= DT
+                print( "Floor information (Dt or Dno) has changed since last time, skipping cache file (%s)\n" % cachefilename )
+        else:
+            for (i,iDT) in enumerate(Dt):
+                gc.collect() #try to clean up memory if not used
+                iDU = get_dUfloor( Dno[i], aphi_j_val=aphi_j_val, is_output_cell_center = is_output_cell_center )
+                if iDT > 0:
+                    DT += iDT
+                if i==0:
+                    DU = iDU
+                else:
+                    DU += iDU * np.sign(iDT)
+            #average in time
+            DU /= DT
+            #save the floor info as cache file
+            np.savez(cachefname, Dt=Dt, Dno=Dno, DU=DU)
+        if ndim == 1:
+            DU = DU.cumsum(1+TH)  #*(tj!=0)*(tj!=ny-1)
+            if aphi_j_val == 0:
+                #use unrestricted (full) sum
+                DU = DU[:,:,ny-1]
+            else:
+                DU = cutout_along_aphi(DU,aphi_j_val=aphi_j_val)
     else:
         if ndim == 1:
             DU = np.zeros((8,nx),dtype=np.float64)
