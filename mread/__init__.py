@@ -4654,6 +4654,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     bn = os.path.basename(os.getcwd())
     pn = bn
     rbr = 100.
+    rin=15
     Dt = None
     Dno = None
     betamin = 100
@@ -4986,6 +4987,8 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         pn="A-0.5"
         simti = 0
         simtf = lftf
+        rin=15
+        rmax=36.21
     elif np.abs(a - (-0.2))<1e-4 and bn == "rtf2_15r35.64_a-0.2_0_0_0":
         print( "Using a = -0.5 (rtf2_15r35.64_a-0.2_0_0_0) settings")
         Dt = np.array([15100-12221.0353104236,
@@ -6292,7 +6295,7 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         plt.clf()
         cond=sparlist<-1e10
         plt.plot(alist,sparlist,'o')
-        plt.plot(alist[:7],sparlist[:7],'b-',lw=2)
+        plt.plot(alist[:9],sparlist[:9],'b-',lw=2)
         plt.ylim(-10,10)
         plt.grid()
         plt.ylabel(r"$s = (\dot L - 2 a \dot E)/\dot M_0$", fontsize=20)
@@ -9154,7 +9157,7 @@ def plotallbz():
     leg2.get_title().set_fontsize(16)
 
     #plt.legend(loc='upper left', frameon=True, fancybox=True)
-    plt.ylabel(r"${\rm Jet\ power},\ P_{\rm jet}/P_{\rm BZ}(a=1)$",fontsize=20)
+    plt.ylabel(r"${\rm Jet\ power},\ P_{\rm jet}(a)/P_{\rm BZ}(a=1)$",fontsize=20)
     plt.xlabel(r"${\rm Black\ hole\ angular\ frequency},\ \Omega_{\rm H}(a)/\Omega_{\rm H}(a=1)$",fontsize=20)
     plt.xlim(0,1)
     plt.ylim(ymin=1e-5,ymax=5-1e-5)
@@ -9234,6 +9237,13 @@ if __name__ == "__main__":
         readmytests1()
         plotpowers('siminfo.txt',plotetas=True,format=2) #new format; data from 2d average dumps
     if False:
+        #Jet efficiency vs. spin, update diagnostics
+        readmytests1()
+        plotpowers('siminfo.txt',plotetas=False,format=2) #new format; data from 2d average dumps
+    if False:
+        #Plot all BZs
+        plotallbz()
+    if True:
         #Power vs. spin, updated diagnostics
         readmytests1()
         plotpowers('siminfo.txt',format=2) #new format; data from 2d average dumps
@@ -9346,7 +9356,7 @@ if __name__ == "__main__":
         udphi = None
         aphi = None
         gc.collect()
-    if True:
+    if False:
         #######################
         #
         #  Example: compute b^2/rho/Sigma
