@@ -37,6 +37,10 @@ import pdb
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
 def get2davg(fname=None,usedefault=0,whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergroup=20):
+    """Choose usedefault=1 to use average file with raw data.  
+       Choose usedefault=2 to use file with floor effects removed
+              by applying a floor cutoff (b^2/rho>20 is thrown out) 
+              prior to averaging."""
     if whichgroup >= 0:
         whichgroups = whichgroup
         whichgroupe = whichgroup + 1
@@ -94,9 +98,9 @@ def get2davg(fname=None,usedefault=0,whichgroup=-1,whichgroups=-1,whichgroupe=-1
         np.save( fname, avgtot )
     return( avgtot )
     
-def rdavg2d(fname=None):
+def rdavg2d(fname=None,usedefault=1):
     if fname is None:
-        avgmem = get2davg(usedefault=1)
+        avgmem = get2davg(usedefault=usedefault)
     else:
         avgmem = get2davg(fname=fname)
     assignavg2dvars(avgmem)
@@ -9288,7 +9292,7 @@ if __name__ == "__main__":
         #[here, use2d=True instructs the routines to make use of axisymmetry of the metric, which saves memory]
         grid3d("gdump.bin",use2d=True)
         #load time-averages
-        avgmem=rdavg2d()
+        avgmem=rdavg2d(usedefault=1)
         if os.path.basename(os.getcwd()) == "rtf2_15r34_2pi_a-0.9gg50rbr1e3_0_0_0_faildufix2":
             #^^^ hack ^^^ to avoid using this for all models except the a = -0.9 model (for now)
             #this is because some of the models were restarted half-way with this diagnostic added,
