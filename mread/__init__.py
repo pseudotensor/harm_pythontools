@@ -6404,7 +6404,7 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     
 
 def readmytests1():
-    global momh2, mhor2, mpsi2, mpow2, mBr2, mtheta2, mspina2, mpow2a
+    global momh2, mhor2, mpsi2, mpow2, mBr2, mtheta2, mspina2, mpow2a, mpow2abz
     global momh4, mhor4, mpsi4, mpow4, mBr4, mtheta4, mspina4
     global momh6, mhor6, mpsi6, mpow6, mBr6, mtheta6, mspina6
     #
@@ -6414,6 +6414,8 @@ def readmytests1():
     mspina2 = 4*momh2/(1+4*momh2**2)
     psi = (1-np.cos(np.pi/2-mhor2))
     mpow2a = 2.0000 * 1.*1.0472*momh2**2 * 1.5*(psi**2-psi**3/3)  #for two jets? 1.0472=pi/3
+    momh2bz = mspina2/4.
+    mpow2abz = 2.0000 * 1.*1.0472*momh2bz**2 * 1.5*(psi**2-psi**3/3)  #for two jets? 1.0472=pi/3
     #
     gd4 = np.loadtxt( "mytest4", unpack = True )
     momh4, mhor4, mpsi4, mpow4, mBr4 = gd4[0:5]
