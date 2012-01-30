@@ -5534,12 +5534,28 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
 
     #dotakeoutfloors=False
 
-    if dotakeoutfloors:
-        istag, jstag, hstag, rstag = getstagparams(rmax=20,doplot=0,doreadgrid=0)
+    # if dotakeoutfloors:
+    #     istag, jstag, hstag, rstag = getstagparams(rmax=20,doplot=0,doreadgrid=0)
     #dotakeoutfloors=1
     RR=0
     TH=1
     PH=2
+    if doreload:
+        #XXX this returns array of zeros if dotakeoutfloors == False or 0.
+        DF = get_dFfloor(Dt, Dno, dotakeoutfloors=dotakeoutfloors,aphi_j_val=aphi_j_val, ndim=ndim, is_output_cell_center = is_output_cell_center)
+    #trust resolution from floor information
+    nxf=nx
+    nyf=ny
+    nzf=nz
+
+    #RETURN: if requested 2D information
+    if ndim == 2:
+        return DF
+
+    DFfloor0 = DF[0]
+    DFfloor1 = DF[1]
+    DFfloor4 = DF[4]
+
     if doreload:
         etad0 = -1/(-gn3[0,0])**0.5
         #!!!rhor = 1+(1-a**2)**0.5
@@ -5552,18 +5568,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         if simtf > real_tf and qtymem[0,-1,0] > 0:
             #last_t + dt:
             simtf = real_tf
-        #XXX this returns array of zeros if dotakeoutfloors == False or 0.
-        DF = get_dFfloor(Dt, Dno, dotakeoutfloors=dotakeoutfloors,aphi_j_val=aphi_j_val, ndim=ndim, is_output_cell_center = is_output_cell_center)
-    #trust resolution from floor information
-    nxf=nx
-    nyf=ny
-    nzf=nz
-    #RETURN: if requested 2D information
-    if ndim == 2:
-        return DF
-    DFfloor0 = DF[0]
-    DFfloor1 = DF[1]
-    DFfloor4 = DF[4]
+
     #at this time we have the floor information, now get averages:
     #mdtotvsr, edtotvsr, edmavsr, ldtotvsr = plotqtyvstime( qtymem, whichplot = -2, fti=fti, ftf=ftf )
     #XXX
@@ -9113,11 +9118,68 @@ def mkjetretrofig1():
         plt.savefig("plotmkmdot.eps",bbox_inches='tight',pad_inches=0.02)
         plt.savefig("plotmkmdot.pdf",bbox_inches='tight',pad_inches=0.02)
 
+def plotallbz():    
+    readmytests1()
+    plt.figure(1)
+    plt.clf()
+    factor_to_convert_to_cgs = (4*np.pi)**(-1)*(2*np.pi)**(-2)
+    y_value_to_norm_by = (mpow2abz[mhor6==0]*factor_to_convert_to_cgs)[-1]
+    x_value_to_norm_by = 0.5
+    #plt.plot(momh2[mhor2==0]/x_value_to_norm_by,0.0534*momh2[mhor2==0]**2*(4*np.pi,lw=2)**(-1,lw=2)/y_value_to_norm_by,'x',lw=2)
+    l3,=plt.plot(momh6[mhor6==0]/x_value_to_norm_by,mpow6[mhor6==0]*factor_to_convert_to_cgs/y_value_to_norm_by,lw=2,label=r"${\rm BZ6,\ P_{\rm jet}\propto \Omega_{\rm H}^2[1+\alpha (\Omega_{\rm H}r_g/c)^2\!+\beta (\Omega_{\rm H}r_g/c)^{4}]\ (TNM10)}$",color='r')
+    l1,=plt.plot(momh2[mhor2==0]/x_value_to_norm_by,mpow2a[mhor2==0]*factor_to_convert_to_cgs/y_value_to_norm_by,lw=2,ls='--',label=r"${\rm BZ2,\ P_{\rm jet}\propto \Omega_{\rm H}^2 \ \ \ \ \ \ \ \ \ (TNM10)}$",color='b')
+    l2,=plt.plot(momh2[mhor2==0]/x_value_to_norm_by,mpow2abz[mhor2==0]*factor_to_convert_to_cgs/y_value_to_norm_by,lw=2,ls='-.',label=r"${\rm BZ,\ P_{\rm jet}\propto a^2 \ \ \ \ \ \ \ \ \ \ \ \ (BZ77)}$",color='g')
+    l1.set_dashes([10,5])
+    l2.set_dashes([10,3,2,3])
+    if False:
+        plt.xscale('log')
+        plt.yscale('log')
+    else:
+        plt.xscale('linear')
+        plt.yscale('linear')
+    plt.grid()
+    leg1=plt.legend(loc="upper left",title=r"${\rm BHs\ with\ razor-thin\ disks}\ (H/R=0)$:",frameon=True, fancybox=True) #,labelspacing=0.15,ncol=1)
+    lab4=r"${\rm BZ6},\ P_{\rm jet}\propto\Omega_{\rm H}^4\ {\rm \ \ \ \ \ \ \ \ (TNM10)} \quad$"
+    l4,=plt.plot(momh6[mhor6==1]/x_value_to_norm_by,mpow6[mhor6==1]*factor_to_convert_to_cgs/y_value_to_norm_by,lw=2,ls=':',label=lab4,color='k')
+    l4.set_dashes([20,5])
+    leg2=plt.legend([l4],[lab4],loc="center left",title=r"${\rm BHs\ with\ thick\ disks}\ (H/R=1)$:",frameon=True, fancybox=True) #,labelspacing=0.15)
+    plt.gca().add_artist(leg1)
+    #for t in leg1.get_texts() + leg2.get_texts():
+    #    #t.set_fontsize(16)    # the legend text fontsize
+    #    t.set_horizontalalignment("left")    # doesn't work
+    leg1.get_title().set_horizontalalignment("left")
+    leg1.get_title().set_fontsize(16)
+    leg2.get_title().set_fontsize(16)
+
+    #plt.legend(loc='upper left', frameon=True, fancybox=True)
+    plt.ylabel(r"${\rm Jet\ power},\ P_{\rm jet}/P_{\rm BZ}(a=1)$",fontsize=20)
+    plt.xlabel(r"${\rm Black\ hole\ angular\ frequency},\ \Omega_{\rm H}(a)/\Omega_{\rm H}(a=1)$",fontsize=20)
+    plt.xlim(0,1)
+    plt.ylim(ymin=1e-5,ymax=5-1e-5)
+    ax1=plt.gca()
+    # tck_val = ax1.get_xticks()
+    # tck_lab=["%g"%np.rint(x) for x in tck_val]
+    # ax1.set_xticks(tck_val)
+    # ax1.set_xticklabels(tck_lab)
+    ax2 = ax1.twinx()
+    ax2.set_yticks(ax1.get_yticks())
+    ax2.set_ylim(ax1.get_ylim())
+    ax2 = ax1.twiny()
+    tck_lab=[0,0.2,0.4,0.6,0.8,0.9,0.95,0.98,0.998,1]
+    tck_val=[a/2./(1+(1-a**2)**0.5)/x_value_to_norm_by for a in tck_lab]
+    ax2.set_xticks(tck_val)
+    ax2.set_xticklabels(tck_lab)
+    plt.xlabel(r"${\rm Black\ hole\ spin},\ a$",fontsize=20)
+    plt.savefig("figbz.eps",bbox_inches='tight',pad_inches=0.02)
+    plt.savefig("figbz.pdf",bbox_inches='tight',pad_inches=0.02)
+
 if __name__ == "__main__":
     if False:
         #takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
         #takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=False,aphi_j_val=0)
         #use this in a shell script
+        grid3d( "gdump.bin",use2d=True )
+        avgmem=rdavg2d(usedefault=1)
         takeoutfloors(dotakeoutfloors=1,doplot=False,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
         #takeoutfloors(dotakeoutfloors=1,doplot=False)
     if False:
