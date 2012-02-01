@@ -6067,6 +6067,21 @@ def Ebindisco(a):
     Eb = Ebind( Risco(a), a)
     return( Eb )
 
+def ek(a,r):
+    ek = (r**2-2*r+a*r**0.5)/(r*(r**2-3*r+2*a*r**0.5)**0.5)
+    return(ek)
+
+def lk(a,r):
+    udphi = r**0.5*(r**2-2*a*r**0.5+a**2)/(r*(r**2-3*r+2*a*r**0.5)**0.5)
+    return( udphi )
+
+def sparthin(a):
+    risco=Risco(a)
+    l = lk(a,risco)
+    e = ek(a,risco)
+    s = l-2*a*e 
+    return(s)
+
 def getetaavg(fname,simnamelist):
     gd1 = np.loadtxt( fname, unpack = True, usecols = [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21] )
     #gd=gd1.view().reshape((-1,nx,ny,nz), order='F')
@@ -6204,12 +6219,13 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     myomh = mya / 2/ rhor
     #fitting function
     f0 = 2.9
+    f0n = 0.9*f0*0.98
     f1 = -0.6
-    f1n = 1
+    f1n = 1.1/0.98
     f2 = 0.
     #f = f0 * (1 + (f1*(1+np.sign(myomh))/2. + f1n*(1-np.sign(myomh))/2.) * myomh + f2 * myomh**2)
     fneg = f0 * (1 + f1*myomh + f2 * myomh**2)
-    fpos = 0.87*f0 * (1 + f1n*myomh)
+    fpos = f0n* (1 + f1n*myomh)
     f = amin(fneg,fpos)
     #gammie way -- too large amplitude
     #gammieparamopi = (8./3.*(3.-mya**2+3.*(1-mya**2)**0.5))**0.5
@@ -6240,7 +6256,7 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         mypow6 = mpow6[mhor6==hor]
     #mypsiosqrtmdot = f0*(1.+(f1*(1+np.sign(myomh6))/2. + f1n*(1-np.sign(myomh6))/2.)*myomh6)
     fneg6 = f0 * (1 + f1*myomh6 + f2 * myomh6**2)
-    fpos6 = 0.88*f0 * (1 + f1n*myomh6)
+    fpos6 = f0n* (1 + f1n*myomh6)
     mypsiosqrtmdot = amin(fneg6,fpos6)
     myeta6 = (mypsiosqrtmdot)**2*mypow6
     # plt.figure(5)
@@ -6307,70 +6323,94 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         plt.grid()
         plt.ylabel(r"$s = (\dot L - 2 a \dot E)/\dot M_0$", fontsize=20)
         plt.xlabel(r"$a$",fontsize=20)
-        
         print zip(alist,sparlist)
     #
-    plt.figure(1, figsize=(6,5.8),dpi=200)
+    plt.figure(1, figsize=(8,4),dpi=100)
     plt.clf()
-    gs = GridSpec(3, 3)
-    gs.update(left=0.12, right=0.94, top=0.95, bottom=0.1, wspace=0.01, hspace=0.04)
-    #mdot
-    ax1 = plt.subplot(gs[0,:])
+    gs = GridSpec(2, 2)
+    gs.update(left=0.09, right=0.94, top=0.95, bottom=0.1, wspace=0.25, hspace=0.04)
+    #############
+    #
+    # phi
+    #
+    #############
+    ax1 = plt.subplot(gs[0,0])
+    newy1 = 1.05*f*unitsfactor
+    newy2 = 0.95*f*unitsfactor
+    col= ( 0.52941176,  0.80784314,  0.98039216, 0.5) #(0.5,0.5,1,0.75) #(0.8,1,0.8,1)
+    ax1.fill_between(mya,newy1,newy2,where=newy1>newy2,facecolor=col,edgecolor=col)
+    plt.plot(mya,f*unitsfactor,'k-',label=r'$\phi_{\rm fit}$',lw=2) #=2.9(1-0.6 \Omega_{\rm H})
     plt.plot(alist,y1*unitsfactor,'o',label=r'$\langle\phi^2\!\rangle^{1/2}$',mfc='r')
-    plt.plot(mya,f*unitsfactor,'k-',label=r'$\phi_{\rm fit}$') #=2.9(1-0.6 \Omega_{\rm H})
     # plt.plot(mya,(250+0*mya)*rhor) 
     # plt.plot(mya,250./((3./(mya**2 + 3*rhor**2))**2*2*rhor**2)) 
     #plt.plot(mya,((mya**2+3*rhor**2)/3)**2/(2/rhor)) 
     plt.ylim(ymin=0.0001)
-    plt.ylabel(r"$\phi$",fontsize='x-large',ha='center',labelpad=16)
+    plt.ylabel(r"$\phi_{\rm BH}$",fontsize='x-large',ha='center',labelpad=16)
     plt.grid()
     plt.setp( ax1.get_xticklabels(), visible=False )
-    plt.legend(ncol=2,loc='lower center')
+    plt.legend(ncol=1,loc='lower center',frameon=True,labelspacing=0.0,borderpad=0.2) #,scatterpoints=1,numpoints=1)
     bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
-    plt.text(-0.9, 0.8*plt.ylim()[1], r"$(\mathrm{a})$", size=16, rotation=0.,
+    plt.text(-0.85, 0.9*plt.ylim()[1], r"$(\mathrm{a})$", size=16, rotation=0.,
              ha="center", va="center",
              color='k',weight='regular',bbox=bbox_props
              )
     #second y-axis
-    ax1r = ax1.twinx()
-    ax1r.set_xlim(-1,1)
-    ax1r.set_ylim(ax1.get_ylim())
+    if False:
+        ax1r = ax1.twinx()
+        ax1r.set_xlim(-1,1)
+        ax1r.set_ylim(ax1.get_ylim())
     #
-    ax2 = plt.subplot(gs[1,:])
-    plt.plot(alist,100*etalist,'o',label=r'$\eta$',mfc='r')
+    #############
+    #
+    # eta
+    #
+    #############
+    ax2 = plt.subplot(gs[1,0])
+    newy1 = 1.1*100*fac*myeta6
+    newy2 = 0.9*100*fac*myeta6
+    ax2.fill_between(myspina6,newy1,newy2,where=newy1>newy2,facecolor=col,edgecolor=col)
     #plt.plot(alist,100*(etawindlist-etalist),'gv',label=r'$\eta_{\rm wind}$')
     #plt.plot(myspina6,0.9*100*fac*myeta6,'k',label=r'$0.9\eta_{\rm BZ6}(\phi_{\rm fit})$' )
-    plt.plot(myspina6,100*fac*myeta6,'k-',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$' )
-    plt.ylim(0.0001,160)
+    plt.plot(myspina6,100*fac*myeta6,'k-',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$',lw=2)
+    plt.plot(alist,100*etalist,'o',label=r'$\eta$',mfc='r',lw=2)
+    plt.ylim(0.0001,160-1e-5)
     plt.grid()
-    plt.setp( ax2.get_xticklabels(), visible=False )
+    # plt.setp( ax2.get_xticklabels(), visible=False )
     plt.ylabel(r"$\eta\  [\%]$",fontsize='x-large',ha='center',labelpad=12)
-    plt.text(-0.9, 125, r"$(\mathrm{b})$", size=16, rotation=0.,
+    plt.xlabel(r"$a$",fontsize='x-large')
+    plt.text(-0.85,  0.9*plt.ylim()[1], r"$(\mathrm{b})$", size=16, rotation=0.,
              ha="center", va="center",
              color='k',weight='regular',bbox=bbox_props
              )
-    plt.legend(ncol=2,loc='upper center')
+    plt.legend(ncol=1,loc='upper center',frameon=True,labelspacing=0.0,borderpad=0.2)
     #second y-axis
-    ax2r = ax2.twinx()
-    ax2r.set_xlim(-1,1)
-    ax2r.set_ylim(0.0001,160)
+    # ax2r = ax2.twinx()
+    # ax2r.set_xlim(-1,1)
+    # ax2r.set_ylim(0.0001,160)
     #
-    ax3 = plt.subplot(gs[-1,:])
-    newy1 = 100*fac*myeta6
-    newy2 = 0.8*100*fac*myeta6
-    ax3.fill_between(myspina6,newy1,newy2,where=newy1>newy2,facecolor=(0.8,1,0.8,1),edgecolor=(0.8,1,0.8,1))
+    #############
+    #
+    # eta_j, eta_w
+    #
+    #############
+    ax3 = plt.subplot(gs[1,1])
+    newy1 = 1.1*0.85*100*fac*myeta6
+    newy2 = 0.9*0.85*100*fac*myeta6
+    #col=(0.93333333,  0.60980392,  0.93333333,0.75) #(0.8,0.52,0.25,0.4)
+    ax3.fill_between(myspina6,newy1,newy2,where=newy1>newy2,facecolor=col,edgecolor=col)  #(0.8,1,0.8,1)
+    l,=plt.plot(myspina6,0.85*100*fac*myeta6,'k--',lw=2,label=r'$0.85\eta_{\rm BZ6}(\phi_{\rm fit})$' )
+    l.set_dashes([10,5])
     #plt.plot(myspina6,myeta6,'r:',label=r'$\eta_{\rm BZ,6}$')
-    plt.plot(alist,100*etajetlist,'gs',label=r'$\eta_{\rm jet}$')
+    plt.plot(alist,100*etajetlist,'gs',label=r'$\eta_{\rm jet}$',lw=2)
     #plt.plot(alist,100*etaEMlist,'rx',label=r'$\eta_{\rm jet}$')
     plt.plot(alist,100*etawindlist,'bv',label=r'$\eta_{\rm wind}$')
-    plt.plot(myspina6,100*fac*myeta6,'k-') #,label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$' )
-    plt.plot(myspina6,0.9*100*fac*myeta6,'k--') #,label=r'$0.9\eta_{\rm BZ6}(\phi_{\rm fit})$' )
-    plt.ylim(0.0001,160)
+    #plt.plot(myspina6,100*fac*myeta6,'k-',lw=2) #,label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$' )
+    plt.ylim(0.0001,160-1e-5)
     plt.grid()
-    plt.legend(ncol=2,loc='upper center')
+    plt.legend(ncol=1,loc='upper center',frameon=True,labelspacing=0.0,borderpad=0.2)
     plt.xlabel(r"$a$",fontsize='x-large')
     plt.ylabel(r"$\eta_{\rm jet},\ \eta_{\rm wind}\  [\%]$",fontsize='x-large',ha='center',labelpad=12)
-    plt.text(-0.9, 125, r"$(\mathrm{c})$", size=16, rotation=0.,
+    plt.text(-0.85,  0.9*plt.ylim()[1], r"$(\mathrm{c})$", size=16, rotation=0.,
              ha="center", va="center",
              color='k',weight='regular',bbox=bbox_props
              )
@@ -6379,11 +6419,37 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     ax3r.set_xlim(-1,1)
     ax3r.set_ylim(ax3.get_ylim())
     #
+    #############
+    #
+    # s (spin-up parameter)
+    #
+    #############
+    ax4 = plt.subplot(gs[0,1])
+    x=(0.07,0.07)
+    y=(-10,10)
+    plt.plot(x,y,color='red',lw=4,alpha=0.3)
+    l,=plt.plot(mya,sparthin(mya),'g-.',lw=2,label=r"$s_{\rm NT}$")
+    l.set_dashes([10,3,2,3])
+    plt.plot(alist,sparlist,'ro',mec='r')
+    plt.plot(alist[:9],sparlist[:9],'r-',lw=2,label=r"$s_{\rm MAD}$")
+    plt.text(x[0]+0.02,7,r"$a_{\rm eq}^{\rm Sim}\!\approx0.07$",va="center",ha="left",fontsize=16,color="red",alpha=1)
+    plt.ylim(-10,10)
+    plt.grid()
+    plt.ylabel(r"$s$", fontsize='x-large',ha='center',labelpad=9) # = (\dot F_L/M - 2 a \dot F_E)/\dot F_M
+    #plt.xlabel(r"$a$",fontsize='x-large')
+    plt.legend(ncol=1,loc='lower left',frameon=True,labelspacing=0.0,borderpad=0.2) #,scatterpoints=1,numpoints=1)
+    plt.setp( ax4.get_xticklabels(), visible=False )
+    plt.text(-0.85,  0.9*(plt.ylim()[1]-plt.ylim()[0])+plt.ylim()[0], r"$(\mathrm{d})$", size=16, rotation=0.,
+             ha="center", va="center",
+             color='k',weight='regular' #,bbox=bbox_props
+             )
+    ax4r = ax4.twinx()
+    ax4r.set_ylim(ax4.get_ylim())
     #plt.savefig("jetwindeta.pdf",bbox_inches='tight',pad_inches=0)
     #plt.savefig("jetwindeta.eps",bbox_inches='tight',pad_inches=0)
     plt.savefig("jetwindeta.pdf",bbox_inches='tight',pad_inches=0.02)
-    plt.savefig("jetwindeta.eps",bbox_inches='tight',pad_inches=0.02)
-    plt.savefig("jetwindeta.png",bbox_inches='tight',pad_inches=0.02)
+    # plt.savefig("jetwindeta.eps",bbox_inches='tight',pad_inches=0.02)
+    # plt.savefig("jetwindeta.png",bbox_inches='tight',pad_inches=0.02)
     #plt.plot(mspina2[mhor2==hor],5*mpow2a[mhor2==hor])
     #
     #
@@ -8466,14 +8532,6 @@ def dfdx2(f,dn=4):
     dgf[:,dn:-dn]=(gf[:,2*dn:]-gf[:,:-2*dn])/(2.*dn*_dx2*gdet[:,dn:-dn])
     return(dgf)
 
-def ek(a,r):
-    ek = (r**2-2*r+a*r**0.5)/(r*(r**2-3*r+2*a*r**0.5)**0.5)
-    return(ek)
-    
-
-def lk(a,r):
-    udphi = r**0.5*(r**2-2*a*r**0.5+a**2)/(r*(r**2-3*r+2*a*r**0.5)**0.5)
-    return( udphi )
 
 def generate_time_series(docompute=False):
         #cd ~/run; for f in rtf*; do cd ~/run/$f; (nice -n 10 python  ~/py/mread/__init__.py &> python.out); done
