@@ -4984,7 +4984,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         114,
                         87,
                         80])
-        lfti = 8000.
+        lfti = 10000.
         lftf = 20000.
         pn="A-0.5"
         simti = 0
