@@ -6800,6 +6800,7 @@ def mkmovieframe( findex, fname, **kwargs ):
     domakeframes = kwargs.get('domakeframes',True)
     epsFm = kwargs.get('epsFm',None)
     epsFke = kwargs.get('epsFke',None)
+    epsetaj = kwargs.get('epsetaj',None)
     fti = kwargs.get('fti',None)
     ftf = kwargs.get('ftf',None)
     plotleni = kwargs.get('plotleni',50)
