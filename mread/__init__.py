@@ -1039,6 +1039,21 @@ def Qmri():
     res=lambdamriu2/_dx2
     return(res)
 
+def Qmriavg():
+    """
+    APPROXIMATELY Computes number of theta cells resolving one MRI wavelength
+    """
+    global avg_bu,avg_rho,avg_uu,_dx2
+    #corrected this expression to include both 2pi and dxdxp[3][3]
+    #also corrected defition of va^2 to contain bsq+gam*ug term
+    #need to figure out how to properly measure this in fluid frame
+    vau2 = np.abs(avg_bu[2])/np.sqrt(avg_rho+avg_bsq+gam*avg_ug)
+    omega = dxdxp[3][3]*np.abs(avg_uu[3])/avg_uu[0]+1e-15
+    lambdamriu2 = 2*np.pi * vau2 / omega
+    res=lambdamriu2/_dx2
+    return(res)
+
+
 def plco(myvar,xcoord=None,ycoord=None,ax=None,**kwargs):
     plt.clf()
     return plc(myvar,xcoord,ycoord,ax,**kwargs)
@@ -3294,7 +3309,7 @@ def iofr(rval):
     res = interp1d(r[:,0,0], ti[:,0,0], kind='linear')
     return(np.floor(res(rval)+0.5))
 
-def plotqtyvstime(qtymem,ihor=None,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None,epsetaj=None,sigma=None, usegaussianunits=False, aphi_j_val=0,showextraeta=False):
+def plotqtyvstime(qtymem,ihor=None,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None,epsetaj=None,sigma=None, usegaussianunits=False, aphi_j_val=0,showextraeta=True):
     global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
     if ihor is None:
         ihor = iofr(rhor)
@@ -3763,6 +3778,7 @@ def plotqtyvstime(qtymem,ihor=None,whichplot=None,ax=None,findex=None,fti=None,f
     if epsFm is not None and epsFke is not None:
         FMraw    = mdtot[:,ihor]
         FM       = epsFm * mdtot[:,ihor]
+        mdotfinavg = timeavg(FM,ts,fti,ftf)
         FMavg    = epsFm * timeavg(mdtot[:,ihor],ts,fti,ftf,sigma=sigma)
         FMiniavg = epsFm * timeavg(mdtot[:,ihor],ts,iti,itf) 
         FEraw = -edtot[:,ihor]
@@ -3839,10 +3855,11 @@ def plotqtyvstime(qtymem,ihor=None,whichplot=None,ax=None,findex=None,fti=None,f
     if whichplot == 4:
         etabh = prefactor*FE/FMavg
         etabh_nosigma = prefactor*FE/mdotfinavg
-        etaj = prefactor*pjke_mu2[:,iofr(100)]/mdotfinavg
+        etaj = prefactor*pjke_mu2[:,iofr(100)]/FMavg
         if epsetaj is not None:
             etaj *= epsetaj
-        etaw = prefactor*(pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotfinavg
+            print( "epsetaj = %g" % epsetaj )
+        etaw = prefactor*(pjke_mu1-pjke_mu2)[:,iofr(100)]/FMavg
         etabh2 = prefactor*FE/FMiniavg
         etaj2 = prefactor*pjke_mu2[:,iofr(100)]/mdotiniavg
         etaw2 = prefactor*(pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotiniavg
@@ -3858,7 +3875,7 @@ def plotqtyvstime(qtymem,ihor=None,whichplot=None,ax=None,findex=None,fti=None,f
             etabh_avg_nosigma = timeavg(etabh_nosigma,ts,fti,ftf)
             etaw_avg = timeavg(etaw,ts,fti,ftf)
             ptot_avg = timeavg(pjemtot[:,ihor],ts,fti,ftf)
-            if showextra or showextraeta:
+            if showextra:
                 ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaj_avg,'--',color=(fc,fc+0.5*(1-fc),fc)) 
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
             #if len(etabh_avg.shape)==0:
@@ -3877,10 +3894,16 @@ def plotqtyvstime(qtymem,ihor=None,whichplot=None,ax=None,findex=None,fti=None,f
                     ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etaj2_avg,'--',color=(fc,fc+0.5*(1-fc),fc))
                 ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etabh2_avg,color=(ofc,fc,fc))
                 #ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaw2_avg,'-.',color=(fc,fc+0.5*(1-fc),fc)) 
-        ax.plot(ts,etabh,clr,label=r'$\eta_{\rm BH}$')
-        if showextra:
-            ax.plot(ts,etaj,'g--',label=r'$\eta_{\rm jet}$')
-            ax.plot(ts,etaw,'b-.',label=r'$\eta_{\rm wind}$')
+        if showextraeta:
+            ax.plot(ts,etabh,'r',label=r'$\eta$')
+        else:
+            ax.plot(ts,etabh,clr,label=r'$\eta$')
+
+        if showextra or showextraeta:
+            l1,=ax.plot(ts,etaj,'g--',label=r'$\eta_{\rm jet}$')
+            l2,=ax.plot(ts,etaw,'b-.',label=r'$\eta_{\rm wind}$')
+            l1.set_dashes([10,5])
+            l2.set_dashes([10,3,2,3])
         if findex != None:
             if not isinstance(findex,tuple):
                 if showextra or showextraeta:
@@ -3903,11 +3926,12 @@ def plotqtyvstime(qtymem,ihor=None,whichplot=None,ax=None,findex=None,fti=None,f
             ax.set_ylabel(r'$\eta$',fontsize=16,labelpad=16)
         ax.set_xlim(ts[0],tmax)
         if showextra or showextraeta:
-            plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=3,borderpad = 0,borderaxespad=0,frameon=False,labelspacing=0)
-
-
+            leg=plt.legend(loc='upper right',bbox_to_anchor=(0.95,0.97),ncol=3,borderpad = 0,borderaxespad=0,frameon=False,labelspacing=0)
+            for t in leg.get_texts():
+                t.set_fontsize(16)    # the legend text fontsize
+  
         if len(etabh_avg_nosigma.shape)==0:
-            print( "eta_BH = %g, eta_j = %g, eta_w = %g, eta_jw = %g, mdot = %g, ptot_BH = %g" % ( etabh_avg_nosigma, etaj_avg, etaw_avg, etaj_avg + etaw_avg, mdotfinavg, ptot_avg ) )
+            print( "eta_BH = %g, eta_j = %g, eta_w = %g, eta_jw = %g, mdot = %g, ptot_BH = %g, ti = %g, tf = %g" % ( etabh_avg_nosigma, etaj_avg, etaw_avg, etaj_avg + etaw_avg, mdotfinavg, ptot_avg, fti, ftf ) )
         if iti > fti:
             print( "eta_BH2 = %g, eta_j2 = %g, eta_w2 = %g, eta_jw2 = %g, mdot2 = %g, ptot2_BH = %g" % ( etabh2_avg, etaj2_avg, etaw2_avg, etaj2_avg + etaw2_avg, mdotiniavg, ptot2_avg ) )
 
@@ -4648,7 +4672,7 @@ def get_dFfloor(Dt, Dno, dotakeoutfloors=True,aphi_j_val=0, ndim=1, is_output_ce
             DU = np.zeros((8,nx,ny,nz),dtype=np.float64)
     return( DU )
 
-def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=None,isinteractive=1,returndf=0,dolegend=True,plotldtot=True,lw=1,plotFem=False,writefile=True,doplot=True,aphi_j_val=0, ndim=1, is_output_cell_center = True):
+def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=None,isinteractive=1,returndf=0,dolegend=True,plotldtot=True,lw=1,plotFem=False,writefile=True,doplot=True,aphi_j_val=0, ndim=1, is_output_cell_center = True, correct99 = False):
     global dUfloor, qtymem, etad0, DF
     #Mdot, E, L
     grid3d("gdump.bin",use2d=True)
@@ -5346,6 +5370,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         dt2 = 10200.-10000.
         Dt = np.array([dt1,dt2,-dt2])
         Dno = np.array([130,102,100])
+        pn="A0.5"
         lfti = 10000.
         lftf = 13095.
         rin = 15
@@ -5578,7 +5603,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     #mdtotvsr, edtotvsr, edmavsr, ldtotvsr = plotqtyvstime( qtymem, whichplot = -2, fti=fti, ftf=ftf )
     #XXX
 
-    if np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) < 1.5 and bn == "rtf2_15r34_2pi_a0.99gg500rbr1e3_0_0_0":
+    if np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) < 1.5 and bn == "rtf2_15r34_2pi_a0.99gg500rbr1e3_0_0_0" and correct99:
         #face vs. center correction
         mdtotvsr, edtotvsr, edmavsr, ldtotvsr,\
                     mdotfinavgvsr5, mdotfinavgvsr10, mdotfinavgvsr20, mdotfinavgvsr30, mdotfinavgvsr40, \
@@ -5594,7 +5619,6 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         gdetF11c=np.copy(gdetF11)
         gdetF11c[:-1]=0.5*(gdetF11[:-1]+gdetF11[1:])
         energy_flux_correction_factor = gdetF11c/F11
-        #pdb.set_trace()
 
     mdtotvsr, edtotvsr, edmavsr, ldtotvsr,\
                 mdotfinavgvsr5, mdotfinavgvsr10, mdotfinavgvsr20, mdotfinavgvsr30, mdotfinavgvsr40, \
@@ -5607,7 +5631,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
 
     horavg = plotqtyvstime( qtymem, whichplot = -199, fti=fti, ftf=ftf, aphi_j_val=aphi_j_val )
     
-    if np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) < 1.5 and bn == "rtf2_15r34_2pi_a0.99gg500rbr1e3_0_0_0":
+    if np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) < 1.5 and bn == "rtf2_15r34_2pi_a0.99gg500rbr1e3_0_0_0" and correct99:
         #correct energy flux for face vs. center
         edtotvsr = (edtotvsr+mdtotvsr)*energy_flux_correction_factor - mdtotvsr
     elif True and (gdetF11!=0).any() and timeavg(qtymem[132],qtymem[0,:,0],fti,fti+1.).any():
@@ -5726,6 +5750,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
             #plt.grid()
     #
     corrfac = ((Fm-Fe)/(Fmuncorr-Feuncorr))[iofr(10)]
+    corrabs =  ((Fm-Fe)-(Fmuncorr-Feuncorr))[iofr(10)]
     if writefile:
         #assume that eta is cross-correlated on shorter time scales than this
         dtavgmin = 500.
@@ -5741,6 +5766,11 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                 computeeta(start_t=fti,end_t=ftf,numintervals=nint,doreload=0,qtymem=qtymem)
             etastd = max( etastd, etastdn )
             sparstd = max( sparstd, sparstdn )
+        pj_uncorr = pjke_mu2_avg[iofr(rj)]
+        pw_uncorr = (pjke_mu1_avg-pjke_mu2_avg)[iofr(rj)]
+        #Assume all correction goes into jet per
+        pj = pj_uncorr + corrabs
+        pw = pw_uncorr
         #
         # OUTPUT for plotting
         #
@@ -5751,8 +5781,8 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                                                            etamean, etastd, sparmean, sparstd,
                                                            Fm[iofr(rx)], Fe[iofr(rx)], Fl[iofr(rx)]/dxdxp[3][3][0,0,0],
                                                            FEM[iofr(rhor)], FEM[iofr(2)],
-                                                           pjke_mu2_avg[iofr(rj)]*corrfac, 
-                                                           (pjke_mu1_avg-pjke_mu2_avg)[iofr(rj)],
+                                                           pj, 
+                                                           pw,
                                                            fstotfinavg, fstotsqfinavg,
                                                            horavg[iofr(5)], horavg[iofr(10)], horavg[iofr(20)], 
                                                            horavg[iofr(25)], horavg[iofr(30)], horavg[iofr(100)]) )
@@ -5772,8 +5802,8 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #                 Name Spin    Resolution          Phi-wedge  rbr    eta+-deta     etaj   etaw   flux      simname
         #pdb.set_trace()
         #corrfac corrects jet power for floor effects (assumes that all floor effects go into jet and not into wind)
-        etajet = corrfac*pjke_mu2_avg[iofr(rj)]/Fm[iofr(rx)]
-        etawind = (pjke_mu1_avg-pjke_mu2_avg)[iofr(rj)]/Fm[iofr(rx)]
+        etajet = pj/Fm[iofr(rx)]
+        etawind = pw/Fm[iofr(rx)]
         foutpower.write( "%15s & $%g$ &\t $%d\\pm%d$ &\t $%d$ &\t $%s$ &\t $%d\\times%d\\times%d$ &\t $%d$ &\t $%g$ &\t $%g$ &\t $%g$ &\t $%d$ &\t $(%d; %d)$ &\t $(%d; %d)$ \\\\ %% %s\n" 
                          % (pn, a, np.rint(etamean*100.), np.rint(2*etastd*100.), np.rint(betamin), swedge, nxf, nyf, nzf, np.rint(rin), rmax, Rin/rhor, Rout, rbr, np.rint(simti), np.rint(simtf), np.rint(fti), np.rint(ftf), os.path.basename(os.getcwd())) )
         #flush to disk just in case to make sure all is written
@@ -6188,12 +6218,12 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     emptyline = gin.readline()
     simname=[]
     simpath=[]
-    print( "##: %20s: %9s %9s %9s\n" % ("Name", "Mdot", "FEMrh", "Ftotsq") )
+    print( "##: %20s: %9s %9s %9s %9s %9s %9s %9s %9s\n" % ("Name", "Mdot", "FEMrh", "Ftotsq", "etaEM", "eta", "etajw", "etaj", "etaw") )
     for i in np.arange(alist.shape[0]):
         stringsplit=gin.readline().split()
         simname.append(stringsplit[0])
         simpath.append(stringsplit[1])
-        print( "%2d: %20.20s: %9g %9g %9g" % ( i, simname[i], Fmlist[i], FEMrhorlist[i], ftotsqlist[i] ) ) 
+        print( "%2d: %20.20s: %9.5g %9.5g %9.5g %9.5g %9.5g %9.5g %9.5g %9.5g" % ( i, simname[i], Fmlist[i], FEMrhorlist[i], ftotsqlist[i], etaEMlist[i]*100, etalist[i]*100, etajetlist[i]*100+etawindlist[i]*100, etajetlist[i]*100, etawindlist[i]*100 ) ) 
     gin.close()
     if plotetas:
         #plt.figure(1)
@@ -6836,6 +6866,8 @@ def mkmovieframe( findex, fname, **kwargs ):
         ymax=2*(np.floor(np.floor(ymax+1.5)/2))
         ax31.set_yticks((ymax/2,ymax))
         ax31.grid(True)
+        bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
+        placeletter(ax31,"$(\mathrm{c})$",fx=0.02,bbox=bbox_props)
         ax31r = ax31.twinx()
         ax31r.set_ylim(ax31.get_ylim())
         ax31r.set_yticks((ymax/2,ymax))
@@ -6879,6 +6911,7 @@ def mkmovieframe( findex, fname, **kwargs ):
                 tck=np.arange(1,ymax)
             ax35.set_yticks(tck)
         ax35.grid(True)
+        placeletter(ax35,"$(\mathrm{d})$",fx=0.02,bbox=bbox_props)
         if ymax >= 10:
             ax35.set_ylabel(r"$\phi_{\rm BH}$",size=16,ha='left',labelpad=25)
         ax35.grid(True)
@@ -6892,7 +6925,8 @@ def mkmovieframe( findex, fname, **kwargs ):
         plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findex,epsFm=epsFm,epsFke=epsFke,epsetaj=epsetaj,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma,usegaussianunits=True)
         #OVERRIDE
         #ax34.set_ylim((-.5*prefactor,1.99*prefactor))
-        #ax34.set_ylim((0,3.8*prefactor))
+        ax34.set_ylim((0,3.8*prefactor))
+        placeletter(ax34,"$(\mathrm{e})$",fx=0.02,bbox=bbox_props)
         ymax=ax34.get_ylim()[1]
         ymin=ax34.get_ylim()[0]
         if ymin < -.25 * prefactor:
@@ -6950,6 +6984,7 @@ def mkmovieframe( findex, fname, **kwargs ):
             mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False)
         ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
         ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
+        placeletter(ax1,"$(\mathrm{a})$",va="center",bbox=bbox_props)
         gs2 = GridSpec(1, 1)
         gs2.update(left=0.5, right=1, top=0.995, bottom=0.48, wspace=0.05)
         ax2 = plt.subplot(gs2[:, -1])
@@ -6957,6 +6992,7 @@ def mkmovieframe( findex, fname, **kwargs ):
             mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True)
         ax2.set_ylabel(r'$y\ [r_g]$',fontsize=16,ha='center')
         ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
+        placeletter(ax2,"$(\mathrm{b})$",va="center",bbox=bbox_props)
     elif frametype=='Rzpanel':
         #Rz xy
         gs1 = GridSpec(1, 1)
@@ -6992,6 +7028,7 @@ def mkmovieframe( findex, fname, **kwargs ):
     #print xxx
     plt.savefig( "lrho%04d_Rzxym1.png" % (findex),bbox_inches='tight',pad_inches=0.02  )
     plt.savefig( "lrho%04d_Rzxym1.eps" % (findex),bbox_inches='tight',pad_inches=0.02  )
+    plt.savefig( "lrho%04d_Rzxym1.pdf" % (findex),bbox_inches='tight',pad_inches=0.02  )
     #print xxx
 
 def mk2davg():
@@ -9189,6 +9226,50 @@ def mkjetretrofig1():
         plt.savefig("plotmkmdot.eps",bbox_inches='tight',pad_inches=0.02)
         plt.savefig("plotmkmdot.pdf",bbox_inches='tight',pad_inches=0.02)
 
+def plotBavg():
+    Br = dxdxp[1,1]*avg_B[0]+dxdxp[1,2]*avg_B[1]
+    Bh = dxdxp[2,1]*avg_B[0]+dxdxp[2,2]*avg_B[1]
+    Bp = avg_B[2]*dxdxp[3,3]
+    #
+    Brnorm=Br
+    Bhnorm=Bh*np.abs(r)
+    Bpnorm=Bp*np.abs(r*np.sin(h))
+    #
+    Bznorm=Brnorm*np.cos(h)-Bhnorm*np.sin(h)
+    BRnorm=Brnorm*np.sin(h)+Bhnorm*np.cos(h)
+    #B_z
+    plt.plot(r[:,ny/2,0],Bznorm[:,ny/2,0],label=r"$B_z$",color="blue")
+    #B_{\hat,phi}
+    plt.plot(r[:,ny/2,0],Bpnorm[:,ny/2,0],label=r"$B_{\hat \varphi}$",color="red")
+    plt.plot(r[:,ny/2,0],-Bpnorm[:,ny/2,0],ls=":",color="red")  #,label=r"$-B_{\hat \varphi}$"
+    plt.plot(r[:,ny/2,0],(Bpnorm/Bznorm)[:,ny/2,0],label=r"$B_{\hat \varphi}/B_z$",color="green")
+    plt.plot(r[:,ny/2,0],(-Bpnorm/Bznorm)[:,ny/2,0],color="green",ls=":") #,label=r"$-B_{\hat \varphi}/B_z$"
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlim(rhor,100)
+    plt.ylim(1e-4,10)
+    plt.legend(loc="lower left")
+    
+def plotQmriavg(hor=None):
+    global Q2mri
+    res=Qmriavg()
+    plt.clf()
+    plt.plot(r[:,ny/2,0],res[:,ny/2,0],color="red",label="Q1mri")
+    plt.xlim(rhor,30)
+    if hor is not None:
+        print( "Plotting Q2mri...")
+        lambdamri = res*_dx2*dxdxp[2,2]
+        Q2mri = 2*hor[:,None,None]/lambdamri
+        #pdb.set_trace()
+        plt.plot(r[:,ny/2,0],Q2mri[:,ny/2,0]*100,color="green",label="Q2mri [%]")
+    plt.ylim(0,150)
+    plt.xlabel(r"$r\ [r_g]$",fontsize=16)
+    plt.ylabel("Q#mri",fontsize=16)
+    plt.grid()
+    plt.legend()
+    #plt.xscale("log")
+
+
 def plotallbz():    
     readmytests1()
     plt.figure(1)
@@ -9244,7 +9325,84 @@ def plotallbz():
     plt.savefig("figbz.eps",bbox_inches='tight',pad_inches=0.02)
     plt.savefig("figbz.pdf",bbox_inches='tight',pad_inches=0.02)
 
+
+def plotbsqorhosigma():    
+        #load metric
+        #[here, use2d=True instructs the routines to make use of axisymmetry of the metric, which saves memory]
+        grid3d("gdump.bin",use2d=True)
+        #load time-averages
+        avgmem=rdavg2d(usedefault=1)
+        if os.path.basename(os.getcwd()) == "rtf2_15r34_2pi_a-0.9gg50rbr1e3_0_0_0_faildufix2":
+            #^^^ hack ^^^ to avoid using this for all models except the a = -0.9 model (for now)
+            #this is because some of the models were restarted half-way with this diagnostic added,
+            #and so their averages will not be correct (since the missing data is filled with zeros)
+            #---> saved face-centered fluxes exist
+            usestaggeredfluxes = True
+        else:
+            usestaggeredfluxes = False
+        #remove floors from mass (Fm) and extractable energy (Fm-Fe) fluxes
+        Fm_floorremoved, FmMinusFe_floorremoved1, FmMinusFe_floorremoved2 \
+            = removefloorsavg2d(usestaggeredfluxes=usestaggeredfluxes)
+        lab = "(%g,%g)" % (np.rint(avg_ts[0]),np.rint(avg_te[0]))
+        plt.figure(1)
+        plt.clf()
+        ax = plt.gca()
+        a_Fm = (Fm_floorremoved[:,:,0:1]*_dx2*_dx3).sum(-1).sum(-1)
+        a_Fm_raw = (-gdet[:,:,0:1]*avg_rhouu[1]*_dx2*_dx3*nz).sum(-1).sum(-1)
+        sigvalfm = a_Fm / (-4*np.pi*r[:,ny/2,0]*avg_uu[1,:,ny/2,0]*dxdxp[1,1,:,0,0]/avg_uu[0,:,ny/2,0])
+        corrfactor=Fm_floorremoved/(-gdet[:,:,0:1]*avg_rhouu[1]*nz)
+        corrfactor[avg_uu[1]>0]=corrfactor[avg_uu[1]>0]*0+1
+        sigvalcorr = (gdet[:,:,0:1]*avg_rhouu[0]*corrfactor*_dx2*_dx3*nz).sum(-1).sum(-1)/dxdxp[1,1,:,0,0]*scaletofullwedge(1.)/(2*np.pi*r[:,ny/2,0])
+        sigval = (gdet[:,:,0:1]*avg_rhouu[0]*_dx2*_dx3*nz).sum(-1).sum(-1)/dxdxp[1,1,:,0,0]*scaletofullwedge(1.)/(2*np.pi*r[:,ny/2,0])
+        plt.plot( r[:,0,0], sigval, 'k', label=r"$\Sigma\ "+lab+"$" )
+        plt.plot( r[:,0,0], sigvalcorr, 'g', label=r"$\Sigma_{\rm corr}\ "+lab+"$" )
+        plt.plot( r[:,0,0], sigvalfm, 'r', label=r"$\Sigma_{\rm fm}\ "+lab+"$" )
+        ax.set_xscale('log')
+        ax.set_yscale('log')
+        plt.xlim(rhor,100)
+        plt.ylim(0.1,15)
+        plt.xlabel(r"$r$",fontsize=16)
+        plt.ylabel(r"$\Sigma$",fontsize=16)
+        plt.grid(b=True)
+        plt.legend(loc='best')
+        plt.figure(2)
+        plt.clf()
+        plt.plot(r[:,0,0],a_Fm_raw)
+        plt.plot(r[:,0,0],a_Fm)
+        plt.xlim(rhor,20)
+        plt.ylim(0,20)
+        plt.grid()
+        plt.figure(3)
+        plt.clf()
+        ax = plt.gca()
+        plt.plot(r[:,0,0],avg_bsq[:,ny/2,0]/(sigvalcorr/r[:,ny/2,0]**2)*(r[:,ny/2,0]/rhor)**1)
+        ax.set_xscale('log')
+        ax.set_yscale('log')
+        plt.xlim(rhor,100)
+        plt.ylim(0.1,10)
+        plt.grid()
+        plt.figure(4)
+        plt.clf()
+        ax = plt.gca()
+        plt.plot(r[:,0,0],gam*avg_ug[:,ny/2,0]/avg_rho[:,ny/2,0]**gam*(r[:,ny/2,0]/rhor)**0)
+        ax.set_xscale('log')
+        ax.set_yscale('log')
+        plt.xlim(rhor,1e4)
+        plt.ylim(0.001,10)
+        plt.grid()
+
 if __name__ == "__main__":
+    if True:
+        grid3d("gdump.bin",use2d=True)
+        #load time-averages
+        avgmem=rdavg2d(usedefault=1)  #usedefault=1 reads in from "avg2d.npy"
+        #avgmem=rdavg2d(fname="avg2d20_0190_0199.npy") #alternatively, you can specify a file name
+        if 'qtymem' not in globals():
+            qtymem = getqtyvstime( iofr(rhor) )
+        ts=qtymem[0,:,0]
+        hoverr=qtymem[1]
+        hoverravg=timeavg(hoverr,ts,avg_ts[0],avg_te[0])
+        plotQmriavg(hor=hoverravg)
     if False:
         #takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
         #takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=False,aphi_j_val=0)
@@ -9281,15 +9439,17 @@ if __name__ == "__main__":
         #mkmovie(prefactor=100.,usegaussianunits=True,domakeframes=domakeframes)
     if False:
         #make a movie with floor removal
-        #fti=7000
-        #ftf=30500
+        fti=7000
+        ftf=30500
+        grid3d( "gdump.bin",use2d=True )
+        avgmem=rdavg2d(usedefault=1)
         doreload = 1
         domakeframes=1
         epsFm, epsFke, epsetaj = takeoutfloors(doreload=doreload,returndf=1,isinteractive=0,doplot=False,writefile=False)
         #epsFm = 
         #epsFke = 
         #print epsFm, epsFke
-        mkmovie(prefactor=100.,epsFm=epsFm,epsFke=epsFke,epsetaj=epsetaj,usegaussianunits=True,domakeframes=domakeframes,frametype='5panels',dostreamlines=False)
+        mkmovie(prefactor=100.,epsFm=epsFm,epsFke=epsFke,epsetaj=epsetaj,usegaussianunits=True,domakeframes=domakeframes,frametype='5panels',dostreamlines=True,sigma=1500)
         #mkmovie(prefactor=100.,usegaussianunits=True,domakeframes=domakeframes)
     if False:
         readmytests1()
@@ -9309,7 +9469,7 @@ if __name__ == "__main__":
     if False:
         #Plot all BZs
         plotallbz()
-    if True:
+    if False:
         #Power vs. spin, updated diagnostics
         readmytests1()
         plotpowers('siminfo.txt',format=2) #new format; data from 2d average dumps
@@ -9428,68 +9588,5 @@ if __name__ == "__main__":
         #  Example: compute b^2/rho/Sigma
         #
         #######################
-        #load metric
-        #[here, use2d=True instructs the routines to make use of axisymmetry of the metric, which saves memory]
-        grid3d("gdump.bin",use2d=True)
-        #load time-averages
-        avgmem=rdavg2d(usedefault=1)
-        if os.path.basename(os.getcwd()) == "rtf2_15r34_2pi_a-0.9gg50rbr1e3_0_0_0_faildufix2":
-            #^^^ hack ^^^ to avoid using this for all models except the a = -0.9 model (for now)
-            #this is because some of the models were restarted half-way with this diagnostic added,
-            #and so their averages will not be correct (since the missing data is filled with zeros)
-            #---> saved face-centered fluxes exist
-            usestaggeredfluxes = True
-        else:
-            usestaggeredfluxes = False
-        #remove floors from mass (Fm) and extractable energy (Fm-Fe) fluxes
-        Fm_floorremoved, FmMinusFe_floorremoved1, FmMinusFe_floorremoved2 \
-            = removefloorsavg2d(usestaggeredfluxes=usestaggeredfluxes)
-        lab = "(%g,%g)" % (np.rint(avg_ts[0]),np.rint(avg_te[0]))
-        plt.figure(1)
-        plt.clf()
-        ax = plt.gca()
-        a_Fm = (Fm_floorremoved[:,:,0:1]*_dx2*_dx3).sum(-1).sum(-1)
-        a_Fm_raw = (-gdet[:,:,0:1]*avg_rhouu[1]*_dx2*_dx3*nz).sum(-1).sum(-1)
-        sigvalfm = a_Fm / (-4*np.pi*r[:,ny/2,0]*avg_uu[1,:,ny/2,0]*dxdxp[1,1,:,0,0]/avg_uu[0,:,ny/2,0])
-        corrfactor=Fm_floorremoved/(-gdet[:,:,0:1]*avg_rhouu[1]*nz)
-        corrfactor[avg_uu[1]>0]=corrfactor[avg_uu[1]>0]*0+1
-        sigvalcorr = (gdet[:,:,0:1]*avg_rhouu[0]*corrfactor*_dx2*_dx3*nz).sum(-1).sum(-1)/dxdxp[1,1,:,0,0]*scaletofullwedge(1.)/(2*np.pi*r[:,ny/2,0])
-        sigval = (gdet[:,:,0:1]*avg_rhouu[0]*_dx2*_dx3*nz).sum(-1).sum(-1)/dxdxp[1,1,:,0,0]*scaletofullwedge(1.)/(2*np.pi*r[:,ny/2,0])
-        plt.plot( r[:,0,0], sigval, 'k', label=r"$\Sigma\ "+lab+"$" )
-        plt.plot( r[:,0,0], sigvalcorr, 'g', label=r"$\Sigma_{\rm corr}\ "+lab+"$" )
-        plt.plot( r[:,0,0], sigvalfm, 'r', label=r"$\Sigma_{\rm fm}\ "+lab+"$" )
-        ax.set_xscale('log')
-        ax.set_yscale('log')
-        plt.xlim(rhor,100)
-        plt.ylim(0.1,15)
-        plt.xlabel(r"$r$",fontsize=16)
-        plt.ylabel(r"$\Sigma$",fontsize=16)
-        plt.grid(b=True)
-        plt.legend(loc='best')
-        plt.figure(2)
-        plt.clf()
-        plt.plot(r[:,0,0],a_Fm_raw)
-        plt.plot(r[:,0,0],a_Fm)
-        plt.xlim(rhor,20)
-        plt.ylim(0,20)
-        plt.grid()
-        plt.figure(3)
-        plt.clf()
-        ax = plt.gca()
-        plt.plot(r[:,0,0],avg_bsq[:,ny/2,0]/(sigvalcorr/r[:,ny/2,0]**2)*(r[:,ny/2,0]/rhor)**1)
-        ax.set_xscale('log')
-        ax.set_yscale('log')
-        plt.xlim(rhor,100)
-        plt.ylim(0.1,10)
-        plt.grid()
-        plt.figure(4)
-        plt.clf()
-        ax = plt.gca()
-        plt.plot(r[:,0,0],gam*avg_ug[:,ny/2,0]/avg_rho[:,ny/2,0]**gam*(r[:,ny/2,0]/rhor)**0)
-        ax.set_xscale('log')
-        ax.set_yscale('log')
-        plt.xlim(rhor,1e4)
-        plt.ylim(0.001,10)
-        plt.grid()
-        
+        plotbsqorhosigma()
         
