@@ -9395,8 +9395,11 @@ if __name__ == "__main__":
     if True:
         grid3d("gdump.bin",use2d=True)
         #load time-averages
-        avgmem=rdavg2d(usedefault=1)  #usedefault=1 reads in from "avg2d.npy"
-        #avgmem=rdavg2d(fname="avg2d20_0190_0199.npy") #alternatively, you can specify a file name
+        if os.path.isfile("avg2d20_0264_0314.npy"):
+            #use late-time average for a = 0.99 simulation
+            avgmem=rdavg2d(fname="avg2d20_0264_0314.npy")  #specify a file name
+        else:
+            avgmem=rdavg2d(usedefault=1)  #usedefault=1 reads in from "avg2d.npy"
         if 'qtymem' not in globals():
             qtymem = getqtyvstime( iofr(rhor) )
         ts=qtymem[0,:,0]
