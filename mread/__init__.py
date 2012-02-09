@@ -9474,7 +9474,7 @@ def plotbsqorhosigma():
         plt.grid()
 
 if __name__ == "__main__":
-    if True:
+    if False:
         grid3d("gdump.bin",use2d=True)
         #load time-averages
         if os.path.isfile("avg2d20_0264_0314.npy"):
@@ -9562,7 +9562,7 @@ if __name__ == "__main__":
         #Power vs. spin, updated diagnostics
         readmytests1()
         plotpowers('siminfo.txt',format=2) #new format; data from 2d average dumps
-    if False:
+    if True:
         #2DAVG
         mk2davg()
     if False:
