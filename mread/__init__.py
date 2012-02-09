@@ -112,6 +112,7 @@ def assignavg2dvars(avgmem):
     global avg_gamma
     global avg_gdetF
     global avg_bsquu
+    global avg_absbu, avg_absbd, avg_absuu, avg_absud, avg_absomegaf2
     #avg defs
     i=0
     avg_ts=avgmem[i,0,:];
@@ -183,6 +184,16 @@ def assignavg2dvars(avgmem):
             n=1
             print( "Old-ish format: missing avg_psisq, filling it in with zeros." )
             avg_psisq=np.zeros_like(avg_mu);i+=n
+        if avgmem.shape[0] >= 223:
+            n=4
+            avg_absbu=avgmem[i:i+n,:,:,None];i+=n
+            avg_absbd=avgmem[i:i+n,:,:,None];i+=n
+            avg_absuu=avgmem[i:i+n,:,:,None];i+=n
+            avg_absud=avgmem[i:i+n,:,:,None];i+=n
+            n=1
+            avg_absomegaf2=avgmem[i,:,:,None];i+=n
+        else:
+            print( "Old-ish format: missing avg_absbu, avg_absbd, avg_absuu, avg_absud, avg_absomegaf2" )
     else:
         print( "Old format: missing avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, etc." )
     if avgmem.shape[0] >= 206+9:
@@ -209,6 +220,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20,removefloors=False):
     global avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
     global avg_gdetF
     global avg_bsquu
+    global avg_absbu, avg_absbd, avg_absuu, avg_absud, avg_absomegaf2
     global rho
     global ug
     if whichgroup < 0 or itemspergroup <= 0:
@@ -354,6 +366,14 @@ def get2davgone(whichgroup=-1,itemspergroup=20,removefloors=False):
         n=4
         if avg_bsquu is not None:
             avg_bsquu += (bsq*uu).sum(-1)[:,:,:,None]
+        #absolute values
+        n=17
+        if avg_absbu is not None:
+            avg_absbu+=np.abs(bu).sum(-1)[:,:,:,None]
+            avg_absbd+=np.abs(bd).sum(-1)[:,:,:,None]
+            avg_absuu+=np.abs(uu).sum(-1)[:,:,:,None]
+            avg_absud+=np.abs(ud).sum(-1)[:,:,:,None]
+            avg_absomegaf2+=np.abs(omegaf2).sum(-1)[:,:,None]
     if avg_nitems[0] == 0:
         print( "No files found" )
         return None
