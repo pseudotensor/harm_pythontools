@@ -1059,7 +1059,7 @@ def Qmri():
     res=lambdamriu2/_dx2
     return(res)
 
-def Qmriavg():
+def Qmriavg(dir=2):
     """
     APPROXIMATELY Computes number of theta cells resolving one MRI wavelength
     """
@@ -1067,10 +1067,20 @@ def Qmriavg():
     #corrected this expression to include both 2pi and dxdxp[3][3]
     #also corrected defition of va^2 to contain bsq+gam*ug term
     #need to figure out how to properly measure this in fluid frame
-    vau2 = np.abs(avg_bu[2])/np.sqrt(avg_rho+avg_bsq+gam*avg_ug)
-    omega = dxdxp[3][3]*np.abs(avg_uu[3])/avg_uu[0]+1e-15
-    lambdamriu2 = 2*np.pi * vau2 / omega
-    res=lambdamriu2/_dx2
+    if dir == 2:
+        #vau2 = np.abs(avg_bu[2])/np.sqrt(avg_rho+avg_bsq+gam*avg_ug)
+        vau2 = np.abs(avg_absB[1])/np.sqrt(avg_rho+avg_bsq+gam*avg_ug)
+        omega = dxdxp[3][3]*np.abs(avg_uu[3])/avg_uu[0]+1e-15
+        lambdamriu2 = 2*np.pi * vau2 / omega
+        res=lambdamriu2/_dx2
+    elif dir == 3:
+        #vau3 = np.abs(avg_bu[3])/np.sqrt(avg_rho+avg_bsq+gam*avg_ug)
+        vau3 = np.abs(avg_absB[2])/np.sqrt(avg_rho+avg_bsq+gam*avg_ug)
+        omega = dxdxp[3][3]*np.abs(avg_uu[3])/avg_uu[0]+1e-15
+        lambdamriu3 = 2*np.pi * vau3 / omega
+        res=lambdamriu3/_dx3
+    else:
+        pdb.set_trace()
     return(res)
 
 
