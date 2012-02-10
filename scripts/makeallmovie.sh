@@ -564,7 +564,7 @@ then
         fi
         if [ $numtbl -eq 6 ]
         then
-            echo "\caption{Percent Energy Efficiency: BH, Jet+Outflows, Jet, and NT}" >> $fname
+            echo "\caption{Percent Energy Efficiency: BH, Jet, Winds, and NT}" >> $fname
         fi
         if [ $numtbl -eq 7 ]
         then
