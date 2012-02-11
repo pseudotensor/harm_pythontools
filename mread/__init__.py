@@ -1068,14 +1068,14 @@ def Qmriavg(dir=2):
     #also corrected defition of va^2 to contain bsq+gam*ug term
     #need to figure out how to properly measure this in fluid frame
     if dir == 2:
-        #vau2 = np.abs(avg_bu[2])/np.sqrt(avg_rho+avg_bsq+gam*avg_ug)
-        vau2 = np.abs(avg_absB[1])/np.sqrt(avg_rho+avg_bsq+gam*avg_ug)
+        vau2 = np.abs(avg_bu[2])/np.sqrt(avg_rho+avg_bsq+gam*avg_ug)
+        #vau2 = np.abs(avg_B[1])/np.sqrt(avg_rho+avg_bsq+gam*avg_ug)
         omega = dxdxp[3][3]*np.abs(avg_uu[3])/avg_uu[0]+1e-15
         lambdamriu2 = 2*np.pi * vau2 / omega
         res=lambdamriu2/_dx2
     elif dir == 3:
-        #vau3 = np.abs(avg_bu[3])/np.sqrt(avg_rho+avg_bsq+gam*avg_ug)
-        vau3 = np.abs(avg_absB[2])/np.sqrt(avg_rho+avg_bsq+gam*avg_ug)
+        vau3 = np.abs(avg_bu[3])/np.sqrt(avg_rho+avg_bsq+gam*avg_ug)
+        #vau3 = np.abs(avg_B[2])/np.sqrt(avg_rho+avg_bsq+gam*avg_ug)
         omega = dxdxp[3][3]*np.abs(avg_uu[3])/avg_uu[0]+1e-15
         lambdamriu3 = 2*np.pi * vau3 / omega
         res=lambdamriu3/_dx3
@@ -4660,6 +4660,7 @@ def get_dFfloor(Dt, Dno, dotakeoutfloors=True,aphi_j_val=0, ndim=1, is_output_ce
     TH=1
     PH=2
     DT = 0
+    DU = None
     if dotakeoutfloors:
         if os.path.isfile(cachefname):
             #if previously cached floor info, reuse it
@@ -4677,8 +4678,8 @@ def get_dFfloor(Dt, Dno, dotakeoutfloors=True,aphi_j_val=0, ndim=1, is_output_ce
                 del npzfile
                 #gc.collect()
             else:
-                print( "Floor information (Dt or Dno) has changed since last time, skipping cache file (%s)\n" % cachefilename )
-        else:
+                print( "Floor information (Dt or Dno) has changed since last time, skipping cache file (%s)\n" % cachefname )
+        if DU is None:
             for (i,iDT) in enumerate(Dt):
                 gc.collect() #try to clean up memory if not used
                 iDU = get_dUfloor( Dno[i], aphi_j_val=aphi_j_val, is_output_cell_center = is_output_cell_center )
@@ -4875,6 +4876,35 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         lfti = 8000.
         lftf = 1.e5
         pn="A0.9f"
+        rin = 15
+        rmax = 34.1
+        simti = 0
+        simtf = lftf
+    elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_0_0_0_2xr_newdiagkra":
+        print( "Using a = 0.9 (rtf2_15r34.1_0_0_0_2xr_newdiagkra) settings")
+        Dt = np.array([#14800-13491.2552634378,
+                       13400-12179.7086440425,
+                       12100-10828.5870873105,
+                       10800-9707.41586935387,
+                       9700-9485.91473253505,
+                       9400-8113.52370529932,
+                       8110-8000.,
+                      -(8110-8000.)
+                       ])
+        Dno = np.array([#148,
+                        134,
+                        121,
+                        108,
+                        97,
+                        94,
+                        81,
+                        80
+                        ])
+        # lfti = 8000.
+        # lftf = 15695.
+        lfti = 8000.
+        lftf = 1.e5
+        pn="A0.9$h_r$"
         rin = 15
         rmax = 34.1
         simti = 0
@@ -9498,7 +9528,8 @@ if __name__ == "__main__":
         #use this in a shell script
         grid3d( "gdump.bin",use2d=True )
         avgmem=rdavg2d(usedefault=1)
-        takeoutfloors(dotakeoutfloors=1,doplot=False,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
+        #takeoutfloors(dotakeoutfloors=1,doplot=False,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
+        takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=False,aphi_j_val=0)
         #takeoutfloors(dotakeoutfloors=1,doplot=False)
     if False:
         provsretro()
@@ -9562,7 +9593,7 @@ if __name__ == "__main__":
         #Power vs. spin, updated diagnostics
         readmytests1()
         plotpowers('siminfo.txt',format=2) #new format; data from 2d average dumps
-    if True:
+    if False:
         #2DAVG
         mk2davg()
     if False:
