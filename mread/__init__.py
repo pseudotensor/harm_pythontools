@@ -116,13 +116,13 @@ def assignavg2dvars(avgmem):
     #avg defs
     i=0
     avg_ts=avgmem[i,0,:];
-    avg_te1=avgmem[i,1,:]; 
+    avg_te=avgmem[i,1,:]; 
     avg_nitems=avgmem[i,2,:];i+=1
-    avg_te=np.zeros_like(avg_te1)
+    avg_te1=np.zeros_like(avg_te)
     if avg_nitems[0]>0:
-        avg_te[0]=avg_te1[0]+(avg_te1[0]-avg_ts[0])/(avg_nitems[0]-1)
+        avg_te1[0]=avg_te[0]+(avg_te[0]-avg_ts[0])/(avg_nitems[0]-1)
     else:
-        avg_te[0]=avg_te1[0]
+        avg_te1[0]=avg_te[0]
     #quantities
     avg_rho=avgmem[i,:,:,None];i+=1
     avg_ug=avgmem[i,:,:,None];i+=1
@@ -184,16 +184,6 @@ def assignavg2dvars(avgmem):
             n=1
             print( "Old-ish format: missing avg_psisq, filling it in with zeros." )
             avg_psisq=np.zeros_like(avg_mu);i+=n
-        if avgmem.shape[0] >= 223:
-            n=4
-            avg_absbu=avgmem[i:i+n,:,:,None];i+=n
-            avg_absbd=avgmem[i:i+n,:,:,None];i+=n
-            avg_absuu=avgmem[i:i+n,:,:,None];i+=n
-            avg_absud=avgmem[i:i+n,:,:,None];i+=n
-            n=1
-            avg_absomegaf2=avgmem[i,:,:,None];i+=n
-        else:
-            print( "Old-ish format: missing avg_absbu, avg_absbd, avg_absuu, avg_absud, avg_absomegaf2" )
     else:
         print( "Old format: missing avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, etc." )
     if avgmem.shape[0] >= 206+9:
@@ -209,6 +199,16 @@ def assignavg2dvars(avgmem):
         n=4
         print( "Old-ish format: missing avg_bsquu, filling it in with zeros." )
         avg_bsquu=np.zeros_like(avg_rhouu);i+=n
+    if avgmem.shape[0] >= 206+9+4+17:
+        n=4
+        avg_absbu=avgmem[i:i+n,:,:,None];i+=n
+        avg_absbd=avgmem[i:i+n,:,:,None];i+=n
+        avg_absuu=avgmem[i:i+n,:,:,None];i+=n
+        avg_absud=avgmem[i:i+n,:,:,None];i+=n
+        n=1
+        avg_absomegaf2=avgmem[i,:,:,None];i+=n
+    else:
+        print( "Old-ish format: missing avg_absbu, avg_absbd, avg_absuu, avg_absud, avg_absomegaf2" )
     #derived quantities
     avg_gamma=avg_uu[0]/(-gn3[0,0])**0.5
 
@@ -231,13 +231,15 @@ def get2davgone(whichgroup=-1,itemspergroup=20,removefloors=False):
         print( "File %s exists, loading from file..." % fname )
         avgmem=np.load( fname )
         return( avgmem )
+    else:
+        print( "File %s does not exist, generating it..." % fname )
     tiny=np.finfo(rho.dtype).tiny
     flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
     flist.sort()
     #
     #print "Number of time slices: %d" % flist.shape[0]
     #store 2D data
-    navg=206+9+4
+    navg=206+9+4+17 #206+9+4+17
     avgmem=np.zeros((navg,nx,ny),dtype=np.float32)
     assignavg2dvars(avgmem)
     ##
@@ -582,8 +584,8 @@ def plot2davg(dosq=True,whichplot=-1):
         fti = avg_ts[0]
     else:
         fti = 8000
-    if avg_te[0] != 0:
-        ftf = avg_te[0]
+    if avg_te1[0] != 0:
+        ftf = avg_te1[0]
     else:
         ftf = 1e5
     print( "Using: ti = %g, tf = %g" % (fti,ftf) )
@@ -991,7 +993,7 @@ def printjetwindpower(filehandle = None, r = None, stage = 0, powjet = 0, powwin
     i = iofr(r)
     if stage == 0:
         #initial stage
-        filehandle.write( "%s %f %f %f %f %f %f %f %f %f %f %f %f" % (os.path.basename(os.getcwd()), a, avg_ts[0], avg_te[0], muminjet, muminwind, md, ftot, fsqtot, f30, fsq30, pjemtot, eoutEMtot) )
+        filehandle.write( "%s %f %f %f %f %f %f %f %f %f %f %f %f" % (os.path.basename(os.getcwd()), a, avg_ts[0], avg_te1[0], muminjet, muminwind, md, ftot, fsqtot, f30, fsq30, pjemtot, eoutEMtot) )
     if stage == 0 or stage == 1:
         #intermediate stage
         filehandle.write( " %f %f %f %f %f" % (powjetEMKE[i], powjetwindEMKE[i], powjet[i], powwind[i], r) )
@@ -4709,8 +4711,8 @@ def get_dFfloor(Dt, Dno, dotakeoutfloors=True,aphi_j_val=0, ndim=1, is_output_ce
             DU = np.zeros((8,nx,ny,nz),dtype=np.float64)
     return( DU )
 
-def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=None,isinteractive=1,returndf=0,dolegend=True,plotldtot=True,lw=1,plotFem=False,writefile=True,doplot=True,aphi_j_val=0, ndim=1, is_output_cell_center = True, correct99 = False):
-    global dUfloor, qtymem, etad0, DF
+def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=None,isinteractive=1,returndf=0,dolegend=True,plotldtot=True,lw=1,plotFem=False,writefile=True,doplot=True,aphi_j_val=0, ndim=1, is_output_cell_center = True, correct99 = False,**kwargs):
+    global dUfloor, etad0, DF
     #Mdot, E, L
     grid3d("gdump.bin",use2d=True)
     #get base name of the current dir
@@ -4721,6 +4723,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     Dt = None
     Dno = None
     betamin = 100
+    qtymemloc = kwargs.pop('qtymem', None)
     if np.abs(a - 0.99)<1e-4 and bn=="rtf2_10r22.82_a0.99_n4_0_0_0":
         #lo-res 0.99 settings
         print( "Using a = 0.99 (rtf2_10r22.82_a0.99_n4_0_0_0) settings")
@@ -5045,6 +5048,24 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         rmax = 37.1
         simti = 0
         simtf = lftf
+    elif np.abs(a - (-0.9))<1e-4 and bn == "rtf2_15r37.1a-0.9_2xphi_0_0_0":
+        #with less failfloordudumps:
+        print( "Using a = -0.9 (rtf2_15r37.1a-0.9_2xphi_0_0_0) settings")
+        Dt = np.array([14700.-13022.9649275961,
+                       13000.-11322.912779019,
+                       11300.-9622.93054762303,
+                       9600.-8000.00574860238])
+        Dno = np.array([146,
+                        129,
+                        112,
+                        95])
+        lfti = 8000.
+        lftf = 1.e5
+        pn="A-0.9_$h_\varphi$"
+        rin = 15
+        rmax = 37.1
+        simti = 0
+        simtf = lftf
     elif np.abs(a - (-0.9))<1e-4 and bn == "rtf2_15r37.1a-0.9_lr_0_0_0":
         print( "Using a = -0.9 (rtf2_15r37.1a-0.9_lr_0_0_0) settings")
         Dt = np.array([17500.-15712.9370781614,
@@ -5181,6 +5202,27 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         lfti = 8000.
         lftf = 20000.
         pn="A0.9$h_\\varphi$"
+        rin = 15
+        rmax = 34.1
+        simti = 0
+        simtf = lftf
+    elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_4xphi_0_0_0":
+        print( "Using a = 0.9 (rtf2_15r34.1_4xphi_0_0_0) settings")
+        Dt = np.array([14600-13552.905360015,
+                       13500-12470.3849071082,
+                       12400-11764.8381755944,
+                       11700-10691.9735460019,
+                       10600-9590.1113948539,
+                       9500-8500.00310181627])
+        Dno = np.array([145,
+                        134,
+                        123,
+                        116,
+                        105,
+                        94])
+        lfti = 8500.
+        lftf = 100000.
+        pn="A0.9$h^2_\\varphi$"
         rin = 15
         rmax = 34.1
         simti = 0
@@ -5656,7 +5698,10 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         etad0 = -1/(-gn3[0,0])**0.5
         #!!!rhor = 1+(1-a**2)**0.5
         ihor = iofr(rhor)
-        qtymem=getqtyvstime(ihor,0.2)
+        if qtymemloc is None:
+            qtymem=getqtyvstime(ihor,0.2)
+        else:
+            qtymem = qtymemloc
         real_tf = qtymem[0,-1,0] #+(qtymem[0,-1,0]-qtymem[0,-2,0]) #fix simulation end time mismatch
         if ftf > real_tf and qtymem[0,-1,0] > 0:
             #last_t + dt:
@@ -5664,6 +5709,8 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         if simtf > real_tf and qtymem[0,-1,0] > 0:
             #last_t + dt:
             simtf = real_tf
+    else:
+        qtymem = qtymemloc
 
     #at this time we have the floor information, now get averages:
     #mdtotvsr, edtotvsr, edmavsr, ldtotvsr = plotqtyvstime( qtymem, whichplot = -2, fti=fti, ftf=ftf )
@@ -5826,12 +5873,25 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         rj = 100
         etamean = eta[iofr(rx)]
         sparmean = spar[iofr(rx)]
-        etastd, sparstd = 0, 0
+        ####################
+        #
+        #   phi
+        #
+        unitsfactor=(4*np.pi)**0.5*2*np.pi
+        #phibh=fstot[:,ihor]/4/np.pi/FMavg**0.5*unitsfactor
+        #where fstot = (gdetB1).sum(2).sum(1)*_dx2*_dx3 at horizon
+        phimean = fstotsqfinavg/4/np.pi/Fm[iofr(rx)]**0.5*unitsfactor
+        #
+        #############
+        etastd, sparstd, phistd, pjstd, pwstd = 0, 0, 0, 0, 0
         for nint in np.arange(2,nmax+1):
-            etameann, etastdn, sparmeann, sparstdn = \
-                computeeta(start_t=fti,end_t=ftf,numintervals=nint,doreload=0,qtymem=qtymem)
+            etameann, etastdn, sparmeann, sparstdn, phimeann, phistdn, pjmeann, pjstdn, pwmeann, pwstdn = \
+                computeeta(start_t=fti,end_t=ftf,numintervals=nint,doreload=0,qtymem=qtymem,rj=rj)
             etastd = max( etastd, etastdn )
             sparstd = max( sparstd, sparstdn )
+            phistd = max( phistd, phistdn )
+            pjstd = max( pjstd, pjstdn )
+            pwstd = max( pwstd, pwstdn )
         pj_uncorr = pjke_mu2_avg[iofr(rj)]
         pw_uncorr = (pjke_mu1_avg-pjke_mu2_avg)[iofr(rj)]
         #Assume all correction goes into jet per
@@ -5842,13 +5902,13 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #
         foutpower = open( "siminfo_%s.txt" %  os.path.basename(os.getcwd()), "w" )
         #foutpower.write( "#Name a Mdot   Pjet    Etajet  Psitot Psisqtot**0.5 Psijet Psisqjet**0.5 rstag Pjtotmax Pjtot1rstag Pjtot2rstag Pjtot4rstag Pjtot8rstag\n"  )
-        foutpower.write( "%s %s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n" % (pn, 
-                                                           os.path.basename(os.getcwd()), a, 
-                                                           etamean, etastd, sparmean, sparstd,
+        foutpower.write( "%s %s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n" % (
+                                                           pn, os.path.basename(os.getcwd()), a, 
+                                                           etamean, etastd, sparmean, sparstd, phimean, phistd,
                                                            Fm[iofr(rx)], Fe[iofr(rx)], Fl[iofr(rx)]/dxdxp[3][3][0,0,0],
                                                            FEM[iofr(rhor)], FEM[iofr(2)],
-                                                           pj, 
-                                                           pw,
+                                                           pj, pjstd, 
+                                                           pw, pwstd,
                                                            fstotfinavg, fstotsqfinavg,
                                                            horavg[iofr(5)], horavg[iofr(10)], horavg[iofr(20)], 
                                                            horavg[iofr(25)], horavg[iofr(30)], horavg[iofr(100)]) )
@@ -5928,7 +5988,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     # plt.plot(r[:,0,0],-edtot2davg,label="tot2davg")
     # gc.collect()
 
-def computeeta(start_t=8000,end_t=1e5,numintervals=8,doreload=1,qtymem=None):
+def computeeta(start_t=8000,end_t=1e5,numintervals=8,doreload=1,qtymem=None,rj=100):
     #getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
     grid3d("gdump.bin", use2d = True)
     if qtymem is None:
@@ -5943,19 +6003,36 @@ def computeeta(start_t=8000,end_t=1e5,numintervals=8,doreload=1,qtymem=None):
     a_Fm = np.zeros_like(a_t)
     a_Fe = np.zeros_like(a_t)
     a_Fl = np.zeros_like(a_t)
+    a_phi = np.zeros_like(a_t)
+    a_pj = np.zeros_like(a_t)
+    a_pw = np.zeros_like(a_t)
     for (i,t_i) in enumerate(a_t):
         if i == 0: 
             doreload_local = doreload
         else: 
             doreload_local = 0
-        res = takeoutfloors(doreload=doreload_local,fti=t_i,ftf=t_i+t_step,isinteractive=0,writefile=False)
+        res = takeoutfloors(doreload=doreload_local,fti=t_i,ftf=t_i+t_step,isinteractive=0,writefile=False,qtymem=qtymem)
         a_eta[i],a_Fm[i],a_Fe[i],a_Fl[i] = res
+        mdtotvsr, edtotvsr, edmavsr, ldtotvsr,\
+                    mdotfinavgvsr5, mdotfinavgvsr10, mdotfinavgvsr20, mdotfinavgvsr30, mdotfinavgvsr40, \
+                    pjemfinavgvsr5, pjemfinavgvsr10, pjemfinavgvsr20, pjemfinavgvsr30, pjemfinavgvsr40, \
+                    pjmafinavgvsr5, pjmafinavgvsr10, pjmafinavgvsr20, pjmafinavgvsr30, pjmafinavgvsr40, \
+                    fstotfinavg, fstotsqfinavg, \
+                    pjke_mu2_avg, pjke_mu1_avg, \
+                    gdetF10, gdetF11, gdetF12 \
+                    = plotqtyvstime( qtymem, whichplot = -200, fti=t_i,ftf=t_i+t_step, aphi_j_val=0 )
+        unitsfactor=(4*np.pi)**0.5*2*np.pi
+        #phibh=fstot[:,ihor]/4/np.pi/FMavg**0.5*unitsfactor
+        #where fstot = (gdetB1).sum(2).sum(1)*_dx2*_dx3 at horizon
+        a_phi[i] = fstotsqfinavg/4/np.pi/a_Fm[i]**0.5*unitsfactor
+        a_pj[i] = pjke_mu2_avg[iofr(rj)]
+        a_pw[i] = (pjke_mu1_avg-pjke_mu2_avg)[iofr(rj)]
     a_spar = (a_Fl/dxdxp[3,3,0,0,0]-2*a*a_Fe)/a_Fm
     print("Efficiencies:")    
     print zip(a_eta,a_Fm,a_Fe,a_Fl)
     print( "Average efficiency = %g" % a_eta.mean() ) 
     print( "Stdev eta: %g; stdev <eta>: %g" % (a_eta.std(), a_eta.std()/np.sqrt(a_eta.shape[0])) )
-    return( a_eta.mean(), a_eta.std()/np.sqrt(a_eta.shape[0]), a_spar.mean(), a_spar.std()/np.sqrt(a_spar.shape[0]) )
+    return( a_eta.mean(), a_eta.std()/np.sqrt(a_eta.shape[0]), a_spar.mean(), a_spar.std()/np.sqrt(a_spar.shape[0]), a_phi.mean(), a_phi.std()/np.sqrt(a_phi.shape[0]), a_pj.mean(), a_pj.std()/np.sqrt(a_pj.shape[0]), a_pw.mean(), a_pw.std()/np.sqrt(a_pw.shape[0]) )
     
 
 def plotj(ts,fs,md,jem,jtot):
@@ -6272,9 +6349,23 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         etajetlist = (powwindlist-powlist)/mdotlist
         etawindlist = powwindEMKElist/mdotlist
     elif format == 2:
-        gd1 = np.loadtxt( fname, unpack = True, usecols = [2,3,4,5,6,7,8,9,10,11,12,13,14,15] )
+        # foutpower.write( "%s %s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n" % (
+        #                                                    pn, os.path.basename(os.getcwd()), a, 
+        #                                                    etamean, etastd, sparmean, sparstd, phimean, phistd,
+        #                                                    Fm[iofr(rx)], Fe[iofr(rx)], Fl[iofr(rx)]/dxdxp[3][3][0,0,0],
+        #                                                    FEM[iofr(rhor)], FEM[iofr(2)],
+        #                                                    pj, 
+        #                                                    pw,
+        #                                                    fstotfinavg, fstotsqfinavg,
+        #                                                    horavg[iofr(5)], horavg[iofr(10)], horavg[iofr(20)], 
+        #                                                    horavg[iofr(25)], horavg[iofr(30)], horavg[iofr(100)]) )
+        gd1 = np.loadtxt( fname, unpack = True, usecols = [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25] )
         #gd=gd1.view().reshape((-1,nx,ny,nz), order='F')
-        alist, etalist, etastdlist, sparlist, sparstdlist, Fmlist, Felist, Fllist, FEMrhorlist, FEM2list, powjetlist, powwindlist, ftotlist, ftotsqlist = gd1
+        alist, etalist, etastdlist, sparlist, sparstdlist, philist, phistdlist, \
+            Fmlist, Felist, Fllist, FEMrhorlist, FEM2list, \
+            powjetlist, powjetstd, powwindlist, powwindstd, \
+            ftotlist, ftotsqlist, \
+            hor5, hor10, hor20, hor25, hor30, hor100 = gd1
         fsqtotlist = ftotsqlist
         mdotlist = Fmlist
         rhorlist = 1+(1-alist**2)**0.5
@@ -8326,7 +8417,7 @@ def provsretro(dotakeoutfloors=False,doreload=True):
         print "%s\n" % f
         avgmem = get2davg(fname=f)
         assignavg2dvars(avgmem)
-        lab = "(%g,%g)" % (avg_ts[0],avg_te[0])
+        lab = "(%g,%g)" % (avg_ts[0],avg_te1[0])
         #plot2davg(whichplot=2)
         #plot Mdot vs. r for region v^r < 0
         cond = (avg_rhouu[1]<0)
@@ -9384,17 +9475,27 @@ def plotQmriavg(hor=None):
 
 def plotallbz():    
     readmytests1()
-    plt.figure(1)
+    plt.figure(1,figsize=(12,8))
     plt.clf()
     factor_to_convert_to_cgs = (4*np.pi)**(-1)*(2*np.pi)**(-2)
     y_value_to_norm_by = (mpow2abz[mhor6==0]*factor_to_convert_to_cgs)[-1]
     x_value_to_norm_by = 0.5
+    mya = mspina2[mhor6==0]
+    myrhor = 1+(1-mya**2)**0.5
+    h = mya/myrhor
+    #angular integration prefactor
+    fh = ((1+h**2)/h**2)*((h+1/h)*np.arctan(h)-1)*3./2.
+    #magnetic field
+    bh = (4/(myrhor**2+mya**2))
+    plee = mpow2abz[mhor6==0]*bh**2*fh
     #plt.plot(momh2[mhor2==0]/x_value_to_norm_by,0.0534*momh2[mhor2==0]**2*(4*np.pi,lw=2)**(-1,lw=2)/y_value_to_norm_by,'x',lw=2)
     l3,=plt.plot(momh6[mhor6==0]/x_value_to_norm_by,mpow6[mhor6==0]*factor_to_convert_to_cgs/y_value_to_norm_by,lw=2,label=r"${\rm BZ6,\ P_{\rm jet}\propto \Omega_{\rm H}^2[1+\alpha (\Omega_{\rm H}r_g/c)^2\!+\beta (\Omega_{\rm H}r_g/c)^{4}]\ (TNM10)}$",color='r')
     l1,=plt.plot(momh2[mhor2==0]/x_value_to_norm_by,mpow2a[mhor2==0]*factor_to_convert_to_cgs/y_value_to_norm_by,lw=2,ls='--',label=r"${\rm BZ2,\ P_{\rm jet}\propto \Omega_{\rm H}^2 \ \ \ \ \ \ \ \ \ (TNM10)}$",color='b')
     l2,=plt.plot(momh2[mhor2==0]/x_value_to_norm_by,mpow2abz[mhor2==0]*factor_to_convert_to_cgs/y_value_to_norm_by,lw=2,ls='-.',label=r"${\rm BZ,\ P_{\rm jet}\propto a^2 \ \ \ \ \ \ \ \ \ \ \ \ (BZ77)}$",color='g')
+    l4,=plt.plot(momh2[mhor2==0]/x_value_to_norm_by,plee*factor_to_convert_to_cgs/y_value_to_norm_by,lw=2,ls=':',label=r"${\rm LWB00,\ P_{\rm jet}\propto a^2f(h)/r_{\rm H}^4\ \ \ \ \ \ \ \ \ (LWB00)}$",color='cyan')
     l1.set_dashes([10,5])
     l2.set_dashes([10,3,2,3])
+    l4.set_dashes([10,5,5,5])
     if False:
         plt.xscale('log')
         plt.yscale('log')
@@ -9455,7 +9556,7 @@ def plotbsqorhosigma():
         #remove floors from mass (Fm) and extractable energy (Fm-Fe) fluxes
         Fm_floorremoved, FmMinusFe_floorremoved1, FmMinusFe_floorremoved2 \
             = removefloorsavg2d(usestaggeredfluxes=usestaggeredfluxes)
-        lab = "(%g,%g)" % (np.rint(avg_ts[0]),np.rint(avg_te[0]))
+        lab = "(%g,%g)" % (np.rint(avg_ts[0]),np.rint(avg_te1[0]))
         plt.figure(1)
         plt.clf()
         ax = plt.gca()
@@ -9516,7 +9617,7 @@ if __name__ == "__main__":
             qtymem = getqtyvstime( iofr(rhor) )
         ts=qtymem[0,:,0]
         hoverr=qtymem[1]
-        hoverravg=timeavg(hoverr,ts,avg_ts[0],avg_te[0])
+        hoverravg=timeavg(hoverr,ts,avg_ts[0],avg_te1[0])
         plt.figure(1)
         plotQmriavg(hor=hoverravg)
         plt.figure(2)
@@ -9528,8 +9629,8 @@ if __name__ == "__main__":
         #use this in a shell script
         grid3d( "gdump.bin",use2d=True )
         avgmem=rdavg2d(usedefault=1)
-        #takeoutfloors(dotakeoutfloors=1,doplot=False,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
-        takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=False,aphi_j_val=0)
+        takeoutfloors(dotakeoutfloors=1,doplot=False,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
+        #takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=False,aphi_j_val=0)
         #takeoutfloors(dotakeoutfloors=1,doplot=False)
     if False:
         provsretro()
