@@ -584,6 +584,14 @@ def roundto2(x):
     z=float(y)
     return z
 
+# both only gives 2 significant digits and also only rounded to integer
+def roundto2intfloat(x):
+    y="%.*e" % (2-1, x)
+    z=float(y)
+    y=int(round(z,0))
+    z=float(y)
+    return z
+
 
 def roundto2forupsilon(x):
     # only more significant digits for >=0.1
@@ -3170,10 +3178,29 @@ def powervsm(doabs=0,rin=None,rout=None,qty=None,minbsqorho=None,maxbsqorho=None
     # power saved as |a_j|^2
     powerfft = np.absolute(Yfft[0:nfft])**2
     #
-    #translate to nx size
-    numm=min(nx,nfft)
+    # determine minimum true $m$ value due to $\phi$ box size
+    deltam=int(round(scaletofullwedge(1.0),0))
+    if deltam<1:
+        print("deltam cannot be less than 1: %d" % deltam) ; sys.stdout.flush()
+    else:
+        print("deltam=%d" % deltam) ; sys.stdout.flush()        
+    #
+    #
+    #translate to nx size so can plot easier later and can store in nx stuff even if nfft>nx
+    # (GODMARK: causes issue with stacking, however!, when nz changes like for sasha99)
+    #if modelname=="sasha99":
+    #    if(t<=14670.0027726323):
+    #        # then will eventually by twice the nz resolution but also twice the size.
+    #
+    # this does not interpolate m-mode spectrum onto nx-sized data.  It just truncates m-modes if more than nx.
+    # So if nz changes leading to change in nfft.....
+    numm=min(nx,deltam*(nfft-1)+1) # i.e. as if full 2pi and deltam*nz zones
+    # initialize with all zeroes
     for mm in np.arange(0,numm):
-        powervsmresult[mm]=powerfft[mm]
+        powervsmresult[mm]=0
+    # deal non-zero modes
+    for mm in np.arange(0,numm,deltam):
+        powervsmresult[mm]=powerfft[mm/deltam]
     #
     ##################
     # very slow way
@@ -3363,7 +3390,7 @@ def ftr(x,xb,xf):
 
 
 # dobhfield=True : GODMARK: Set to False since already showing BH penetrating field because comes from large radii down to hole
-def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,len=20,lenx=None,leny=None,ncell=800,pt=True,shrink=1,dovel=False,doaphi=False,dostreamlines=True,doaphiavg=False,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,doentropy=False,dobsq=False,dobeta=False,doQ1=False,doQ2=False,dovarylw=True,dobhfield=False,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,domidfield=True,showjet=False,arrowsize=1,forceeqsym=0,dojonwindplot=False,doaphicont=None,inputlevs=None,numcontours=30,signaphi=1,aphipow=1.0,showuu1eq0=True):
+def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,len=20,lenx=None,leny=None,ncell=800,pt=True,shrink=1,dovel=False,doaphi=False,dostreamlines=True,doaphiavg=False,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,doentropy=False,dobsq=False,dobeta=False,doQ1=False,doQ2=False,dovarylw=True,dobhfield=False,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,domidfield=True,showjet=False,arrowsize=1,forceeqsym=0,dojonwindplot=False,doaphicont=None,inputlevs=None,numcontours=30,signaphi=1,aphipow=1.0,showuu1eq0=True,inputcoloraphi=None):
     #
     levs=inputlevs
     #
@@ -3725,9 +3752,16 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
     # plot field stuff
     if doaphi==1 or doaphiavg==1:
         #cset2 = ax.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
-        cset2 = ax.contour(iaphi,linewidths=2.0,colors='r', extent=extent,hold='on',origin='lower',levels=levs)
+        #cset2 = ax.contour(iaphi,linewidths=2.0,colors='r', extent=extent,hold='on',origin='lower',levels=levs)
+        # can't see red on red density
+        if inputcoloraphi==None:
+            inputcoloraphi='red'
+        #
+        cset2 = ax.contour(iaphi,linewidths=2.0,colors=inputcoloraphi, extent=extent,hold='on',origin='lower',levels=levs)
         if doaphicont is not None:
-            cset3 = ax.contour(iaphi,linewidths=3.0,colors='black', extent=extent,hold='on',origin='lower',levels=(doaphicont,))
+            #cset3 = ax.contour(iaphi,linewidths=4.0,colors='#00aa00', extent=extent,hold='on',origin='lower',levels=(doaphicont,))
+            # just have as really thick so obvious
+            cset3 = ax.contour(iaphi,linewidths=4.0,colors=inputcoloraphi, extent=extent,hold='on',origin='lower',levels=(doaphicont,))
     #
     if dostreamlines==1:
         if dovarylw:
@@ -5796,7 +5830,8 @@ def eqfluxcalc(ivalue=None,jvalue=None,takeabs=1,takecumsum=0,minbsqorho=10):
 
 
 def scaletofullwedge(val):
-    return(val * 2*np.pi/(dxdxp[3,3,0,0,0]*nz*_dx3))
+    return(val * 2.0*np.pi/(dxdxp[3,3,0,0,0]*float(nz)*_dx3))
+
 
 # def mdotcalc(whichi=None,minbsqorho=None):
 #     mdotden = -gdet*rho*uu[1]
@@ -12229,7 +12264,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     # 8:
     # below use of ts[-1] for T_f assumes always add last file to file list, which currently do.
-    print("HLatex1: ModelName & $a/M$ & FieldType & $\\beta_{\\rm{}min}$ & $\\beta_{\\rm{}rat-of-avg} & $\\beta_{\\rm{}rat-of-max} & $\\theta^d_{r_{\\rm{}max}}$ & $\\theta^t_{r_{\\rm{}max}}$ & $Q_{d,t=0,\\rm{}MRI,\\{i,  o\\}}$ & $T_f$  \\\\")
+    print("HLatex1: ModelName & $a/M$ & FieldType & $\\beta_{\\rm{}min}$ & $\\beta_{\\rm{}rat-of-avg} & $\\beta_{\\rm{}rat-of-max} & $\\theta^d_{r_{\\rm{}max}}$ & $\\theta^t_{r_{\\rm{}max}}$ & $S_{d,t=0,\\rm{}MRI,\\{i,  o\\}}$ & $T_f$  \\\\")
     print("VLatex1: %s        & %g    &  %s       & %g                   & %g                         & %g                         & %g                          & %g                          & %g,  %g                           & %g     \\\\ %% %s" % (truemodelname,a,fieldtype,roundto2(betamin_t0),roundto2(betaratofavg_t0),roundto2(betaratofmax_t0),roundto2(hoverratrmax_t0),roundto2(hoverraltatrmax_t0), roundto2(1.0/iq2mridisk20_t0), roundto2(1.0/iq2mridisk50_t0), ts[-1], modelname ) )
     #
     # 16:
@@ -12257,7 +12292,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     print("VLatex2: %s         & %s       &  %g   & %g          & %g        & %g             & %g               & %s          & %g:%g:%g    & %g:%g:%g  & %g:%g:%g  & %s                          & %g--%g            \\\\ %% %s" % (truemodelname,gridtype,nx,ny,nzreal,roundto3(Rin/rhor),Rout,stringdeltaphi,roundto2(drnormh), roundto2(dHnormh), roundto2(dPnormh), roundto2(drnormi), roundto2(dHnormi), roundto2(dPnormi), roundto2(drnormo), roundto2(dHnormo), roundto2(dPnormo),roundto2qmri(qmridisk20_t0,qmridisk50_t0),truetmin,truetmax, modelname ) )
     #
     # 8:
-    print( "HLatex99: ModelName & $Q_{\\theta,t=0,\\rm{}MRI,i}$ & $Q_{\\theta,t=0,\\rm{}MRI,o}$  & $Q_{\\theta,t=0,\\rm{}MRI,fo}$ & $Q_{\\rm{}d,t=0,\\rm{}MRI,i}$ & $Q_{\\rm{}d,t=0,\\rm{}MRI,o}$ & $Q_{\\rm{}d,t=0,\\rm{}MRI,fo}$  \\\\" )
+    print( "HLatex99: ModelName & $Q_{\\theta,t=0,\\rm{}MRI,i}$ & $Q_{\\theta,t=0,\\rm{}MRI,o}$  & $Q_{\\theta,t=0,\\rm{}MRI,fo}$ & $S_{\\rm{}d,t=0,\\rm{}MRI,i}$ & $S_{\\rm{}d,t=0,\\rm{}MRI,o}$ & $S_{\\rm{}d,t=0,\\rm{}MRI,fo}$  \\\\" )
     print( "VLatex99: %s         & %g & %g & %g & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(qmridisk20_t0), roundto2(qmridisk50_t0), roundto2(qmridisk100_t0), roundto2(1.0/iq2mridisk20_t0), roundto2(1.0/iq2mridisk50_t0), roundto2(1.0/iq2mridisk100_t0), modelname ) )
     #
     # alphamag?_vsr_fit[1] gives average value over fitted range
@@ -12275,17 +12310,19 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #fakerstagreport
     #
     if 1==0:
-        print( "HLatex4: ModelName & $\\alpha_a$ & $\\alpha_b$ & $\\alpha_c$ & $Q_{\\theta,\\rm{}MRI,i}$ & $Q_{\\theta,\\rm{}MRI,o}$  & $Q_{\\rm{}d,\\rm{}MRI,i}$ & $Q_{\\rm{}d,\\rm{}MRI,o}$ & $r_{Q_{\\rm{}d,\\rm{}MRI}=1/2}$ & $r_{Q_{\\rm{}d\\rm{}weak,MRI}=1/2}$ & $r_m$ \\\\" )
-        print( "VLatex4: %s        & %g          & %g          & %g          & %g                  & %g                   & %g                  & %g                  & %s                        & %s                                 & %s                       \\\\ %% %s" % (truemodelname, roundto2(alphamag1_vsr_avg), roundto2(alphamag2_vsr_avg), roundto2(alphamag3_vsr_avg), roundto2(qmridiskrfitin2_avg), roundto2(qmridiskrfitout2_avg), roundto2(1.0/iq2mridiskrfitin2_avg), roundto2(1.0/iq2mridiskrfitout2_avg), roundto2_rq2mri1(rq2mri1,rq2mri1cut,fakerstagreport), roundto2_rq2mri1(rq2mri2,rq2mri2cut,fakerstagreport), roundto2_rq2mri1(rm1,rm1cut,fakerstagreport), modelname ) )
+        print( "HLatex41: ModelName & $\\alpha_a$ & $\\alpha_b$ & $\\alpha_c$ & $Q_{\\theta,\\rm{}MRI,i}$ & $Q_{\\theta,\\rm{}MRI,o}$  & $S_{\\rm{}d,\\rm{}MRI,i}$ & $S_{\\rm{}d,\\rm{}MRI,o}$ & $r_{S_{\\rm{}d,\\rm{}MRI}=1/2}$ & $r_{S_{\\rm{}d,\\rm{}weak,MRI}=1/2}$ & $r_m$ \\\\" )
+        print( "VLatex41: %s        & %g          & %g          & %g          & %g                  & %g                   & %g                  & %g                  & %s                        & %s                                 & %s                       \\\\ %% %s" % (truemodelname, roundto2(alphamag1_vsr_avg), roundto2(alphamag2_vsr_avg), roundto2(alphamag3_vsr_avg), roundto2(qmridiskrfitin2_avg), roundto2(qmridiskrfitout2_avg), roundto2(1.0/iq2mridiskrfitin2_avg), roundto2(1.0/iq2mridiskrfitout2_avg), roundto2_rq2mri1(rq2mri1,rq2mri1cut,fakerstagreport), roundto2_rq2mri1(rq2mri2,rq2mri2cut,fakerstagreport), roundto2_rq2mri1(rm1,rm1cut,fakerstagreport), modelname ) )
     else:
-        print( "HLatex4: ModelName & $\\alpha_a$ & $\\alpha_b$ & $\\alpha_c$ & $\\alpha_{c,\\rm{}mag}$ & $Q_{\\theta,\\rm{}MRI,\\{i,  o\\}}$ & $Q_{\\phi,\\rm{}MRI,\\{i,  o\\}}$ & $Q_{\\rm{}d,\\rm{}MRI,\\{i,  o\\}}$ & $r_{Q_{\\rm{}d,\\rm{}MRI}=1/2}$ & $r_{Q_{\\rm{}d\\rm{}weak,MRI}=1/2}$   \\\\" )
-        print( "VLatex4: %s        & %g          & %g          & %g          & %g                      & %g, %g                      & %g, %g                    & %g, %g                      & %s                              & %s                            \\\\ %% %s" % (truemodelname, roundto2(alphamag1_vsr_avg), roundto2(alphamag2_vsr_avg), roundto2(alphamag3_vsr_avg), roundto2(alphamag4_vsr_avg), roundto2(qmridiskrfitin2_avg), roundto2(qmridiskrfitout2_avg), roundto2(q3mridiskrfitin2_avg), roundto2(q3mridiskrfitout2_avg), roundto2(1.0/iq2mridiskrfitin2_avg), roundto2(1.0/iq2mridiskrfitout2_avg), roundto2_rq2mri1(rq2mri1,rq2mri1cut,fakerstagreport), roundto2_rq2mri1(rq2mri2,rq2mri2cut,fakerstagreport), modelname ) )
+        print( "HLatex41: ModelName & $\\alpha_a$ & $\\alpha_b$ & $\\alpha_c$ & $\\alpha_{c,\\rm{}mag}$ & $Q_{\\theta,\\rm{}MRI,\\{i,  o\\}}$ & $Q_{\\phi,\\rm{}MRI,\\{i,  o\\}}$ & $S_{\\rm{}d,\\rm{}MRI,\\{i,  o\\}}$ & $r_{\\{S_{\\rm{}d},S_{\\rm{}d,\\rm{}weak}\\},\\rm{}MRI=1/2}$   \\\\" )
+        print( "VLatex41: %s        & %g          & %g          & %g          & %g                      & %g, %g                              & %g, %g                            & %g, %g                              & %s, %s                                                         \\\\ %% %s" % (truemodelname, roundto2(alphamag1_vsr_avg), roundto2(alphamag2_vsr_avg), roundto2(alphamag3_vsr_avg), roundto2(alphamag4_vsr_avg), roundto2(qmridiskrfitin2_avg), roundto2(qmridiskrfitout2_avg), roundto2(q3mridiskrfitin2_avg), roundto2(q3mridiskrfitout2_avg), roundto2(1.0/iq2mridiskrfitin2_avg), roundto2(1.0/iq2mridiskrfitout2_avg), roundto2_rq2mri1(rq2mri1,rq2mri1cut,fakerstagreport), roundto2_rq2mri1(rq2mri2,rq2mri2cut,fakerstagreport), modelname ) )
+        print( "HLatex42: ModelName & $\\alpha_a$ & $\\alpha_b$ & $\\alpha_c$ & $\\alpha_{c,\\rm{}mag}$ & $Q_{\\theta,\\rm{}MRI,\\{i,  o\\}}$ & $Q_{\\theta,\\rm{}weak,\\rm{}MRI,\\{i,  o\\}}$ & $Q_{\\phi,\\rm{}MRI,\\{i,  o\\}}$ & $Q_{\\phi,\\rm{}weak,\\rm{}MRI,\\{i,  o\\}}$ & $S_{\\rm{}d,\\rm{}MRI,\\{i,  o\\}}$ & $S_{\\rm{}d,\\rm{}weak,\\rm{}MRI,\\{i,  o\\}}$ & $r_{\\{S_{\\rm{}d},S_{\\rm{}d,\\rm{}weak}\\},\\rm{}MRI=1/2}$ \\\\" )
+        print( "VLatex42: %s        & %g          & %g          & %g          & %g                      & %g, %g                              & %g, %g                                         & %g, %g                            & %g, %g                                       & %g, %g                              & %g, %g                                         & %s, %s                                                      \\\\ %% %s" % (truemodelname, roundto2(alphamag1_vsr_avg), roundto2(alphamag2_vsr_avg), roundto2(alphamag3_vsr_avg), roundto2(alphamag4_vsr_avg), roundto2(qmridiskrfitin2_avg), roundto2(qmridiskweakrfitout2_avg), roundto2(qmridiskweakrfitin2_avg), roundto2(qmridiskweakrfitout2_avg), roundto2(q3mridiskrfitin2_avg), roundto2(q3mridiskrfitout2_avg), roundto2(q3mridiskweakrfitin2_avg), roundto2(q3mridiskweakrfitout2_avg), roundto2(1.0/iq2mridiskrfitin2_avg), roundto2(1.0/iq2mridiskrfitout2_avg), roundto2(1.0/iq2mridiskweakrfitin2_avg), roundto2(1.0/iq2mridiskweakrfitout2_avg), roundto2_rq2mri1(rq2mri1,rq2mri1cut,fakerstagreport), roundto2_rq2mri1(rq2mri2,rq2mri2cut,fakerstagreport), modelname ) )
     #
     # 8:
-    print( "HLatex97: ModelName & $Q_{\\theta,t=0,\\rm{}MRI,iofo,w}$ & $Q_{\\phi,t=0,\\rm{}MRI,iofo,w}$  & $Q_{\\rm{}d,t=0,\\rm{}MRI,iofo,w}$ & rm1 & rm2 & rm3  \\\\" )
+    print( "HLatex97: ModelName & $Q_{\\theta,t=0,\\rm{}MRI,iofo,w}$ & $Q_{\\phi,t=0,\\rm{}MRI,iofo,w}$  & $S_{\\rm{}d,t=0,\\rm{}MRI,iofo,w}$ & rm1 & rm2 & rm3  \\\\" )
     print( "VLatex97: %s        & %g, %g, %g                         & %g, %g, %g                        & %g, %g, %g                         & %s  & %s  & %s   \\\\ %% %s" % (truemodelname, roundto2(qmridiskweak20_t0), roundto2(qmridiskweak50_t0),roundto2(qmridiskweak100_t0), roundto2(q3mridiskweak20_t0), roundto2(q3mridiskweak50_t0),roundto2(q3mridiskweak100_t0), roundto2(1.0/iq2mridiskweak20_t0), roundto2(1.0/iq2mridiskweak50_t0), roundto2(1.0/iq2mridiskweak100_t0), roundto2_rq2mri1(rm1,rm1cut,fakerstagreport), roundto2_rq2mri1(rm2,rm2cut,fakerstagreport), roundto2_rq2mri1(rm3,rm3cut,fakerstagreport), modelname ) )
     #
-    print( "HLatex96: ModelName & $Q_{\\theta,\\rm{}MRI,i,w}$ & $Q_{\\theta,\\rm{}MRI,o,w}$  & $Q_{\\theta,\\rm{}MRI,fo,w}$ & $Q_{\\rm{}d,\\rm{}MRI,i,w}$ & $Q_{\\rm{}d,\\rm{}MRI,o,w}$ & $Q_{\\rm{}d,\\rm{}MRI,fo,w}$  \\\\" )
+    print( "HLatex96: ModelName & $Q_{\\theta,\\rm{}MRI,i,w}$ & $Q_{\\theta,\\rm{}MRI,o,w}$  & $Q_{\\theta,\\rm{}MRI,fo,w}$ & $S_{\\rm{}d,\\rm{}MRI,i,w}$ & $S_{\\rm{}d,\\rm{}MRI,o,w}$ & $S_{\\rm{}d,\\rm{}MRI,fo,w}$  \\\\" )
     print( "VLatex96: %s         & %g & %g & %g & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(qmridiskweakrfitin2_avg), roundto2(qmridiskweakrfitout2_avg), roundto2(qmridiskweakrfitout6_avg), roundto2(1.0/iq2mridiskweakrfitin2_avg), roundto2(1.0/iq2mridiskweakrfitout2_avg), roundto2(1.0/iq2mridiskweakrfitout6_avg), modelname ) )
     #
     # for ratio of disk thickness to grid cell thickness at horizon, account for actual thickness and count number of cells, rather than just using equatorial value
@@ -13593,7 +13630,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         # avoid fits for 2D models and MB09D model that have poor fits
         if nz>1 and modelname!="runlocaldipole3dfiducial":
             print( "HLatex14: ModelName & $r^{\\rm{}dc}_{\\rm{}i}$ & $r^{\\rm{}dc}_{\\rm{}o}$ & $r^{\\rm{}dc}_{\\rm{}f}$ & $r^{\\rm{}dc}_{\\rm{}s}$ & $\\rho_0$ & $p_g$ & $|b|$ & $r^{\\rm{}w}_{\\rm{}i}$ & $r^{\\rm{}w}_{\\rm{}o}$ & $\\dot{M}_{\\rm{}in}-\\dot{M}_{\\rm{}H}$ & $\\dot{M}_{\\rm{}mw}$ & $\\dot{M}_{\\rm{}w}$  \\\\" )
-            print( "VLatex14: %s        & %g                       & %g                       & %g                       & %s                       & %s      & %s    & %s      & %g                    & %g                      & %s                      & %s                    & %s                    \\\\ %% %s" % (truemodelname, roundto2(rfitin2),roundto2(rfitout2),roundto2(rfitout6),roundto2(rstagreport),roundto2fit(rhosrhosqdcden_vsr_fit[0],rhosrhosqdcden_vsr_fitsigma[0],rhosrhosqdcden_vsr_fitgoodness[0]),roundto2fit(ugsrhosqdcden_vsr_fit[0],ugsrhosqdcden_vsr_fitsigma[0],ugsrhosqdcden_vsr_fitgoodness[0]),roundto2fit(brhosqdcden_vsr_fit[0],brhosqdcden_vsr_fitsigma[0],brhosqdcden_vsr_fitgoodness[0]),roundto2(rfitin3),roundto2(rfitout3),roundto2fit(mdin_vsr_fit[0],mdin_vsr_fitsigma[0],mdin_vsr_fitgoodness[0]),roundto2fit(mdmwind_vsr_fit[0],mdmwind_vsr_fitsigma[0],mdmwind_vsr_fitgoodness[0]),roundto2fit(mdwind_vsr_fit[0],mdwind_vsr_fitsigma[0],mdwind_vsr_fitgoodness[0]) , modelname ) )
+            print( "VLatex14: %s        & %g                       & %g                       & %g                       & %g                       & %s      & %s    & %s      & %g                      & %g                      & %s                                       & %s                    & %s                    \\\\ %% %s" % (truemodelname, roundto2(rfitin2),roundto2(rfitout2),roundto2(rfitout6),roundto2(rstagreport),roundto2fit(rhosrhosqdcden_vsr_fit[0],rhosrhosqdcden_vsr_fitsigma[0],rhosrhosqdcden_vsr_fitgoodness[0]),roundto2fit(ugsrhosqdcden_vsr_fit[0],ugsrhosqdcden_vsr_fitsigma[0],ugsrhosqdcden_vsr_fitgoodness[0]),roundto2fit(brhosqdcden_vsr_fit[0],brhosqdcden_vsr_fitsigma[0],brhosqdcden_vsr_fitgoodness[0]),roundto2(rfitin3),roundto2(rfitout3),roundto2fit(mdin_vsr_fit[0],mdin_vsr_fitsigma[0],mdin_vsr_fitgoodness[0]),roundto2fit(mdmwind_vsr_fit[0],mdmwind_vsr_fitsigma[0],mdmwind_vsr_fitgoodness[0]),roundto2fit(mdwind_vsr_fit[0],mdwind_vsr_fitsigma[0],mdwind_vsr_fitgoodness[0]) , modelname ) )
         #
         #
         #
@@ -13882,7 +13919,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         print("dopowervsmplots==1" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         #
         nfft=nz/2+1
-        numm=min(nx,nfft)
+        # determine minimum true $m$ value due to $\phi$ box size
+        deltam=int(round(scaletofullwedge(1.0),0))
+        numm=min(nx,deltam*(nfft-1)+1) # i.e. as if full 2pi and deltam*nz zones
         #
         #print("rhosrhosq_diskcorona_phipow_rad4") ; sys.stdout.flush()
         #print(rhosrhosq_diskcorona_phipow_rad4) ; sys.stdout.flush()
@@ -13917,6 +13956,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             FMrhosq_diskcorona_phipow_radhor_vsm[ii]=timeavg_sqrt(FMrhosq_diskcorona_phipow_radhor[:,ii],ts,fti,ftf)
             FEMArhosq_diskcorona_phipow_radhor_vsm[ii]=timeavg_sqrt(FEMArhosq_diskcorona_phipow_radhor[:,ii],ts,fti,ftf)
             FEEMrhosq_diskcorona_phipow_radhor_vsm[ii]=timeavg_sqrt(FEEMrhosq_diskcorona_phipow_radhor[:,ii],ts,fti,ftf)
+        #
+        #
         #
         #  skip: uu0rhosq_diskcorona_phipow_radhor_vsm,vuas3rhosq_diskcorona_phipow_radhor_vsm,
         arrayvsmz=[rhosrhosq_diskcorona_phipow_radhor_vsm,ugsrhosq_diskcorona_phipow_radhor_vsm,bas1rhosq_diskcorona_phipow_radhor_vsm,bas2rhosq_diskcorona_phipow_radhor_vsm,bas3rhosq_diskcorona_phipow_radhor_vsm,bsqrhosq_diskcorona_phipow_radhor_vsm,FMrhosq_diskcorona_phipow_radhor_vsm,FEMArhosq_diskcorona_phipow_radhor_vsm,FEEMrhosq_diskcorona_phipow_radhor_vsm]
@@ -13962,7 +14003,13 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         iter=1
         for fil in arrayvsma:
-            mkpowervsm(loadq=0,qty=fil,pllabel=arrayvsmaname[iter-1],filenum=iter,fileletter="vsma",logvalue=logvaluearrayvsma[iter-1],radius=4,bsqorho=bsqorhohvsma,bsqou=bsqouhvsma)
+            mcortemp=mkpowervsm(loadq=0,qty=fil,pllabel=arrayvsmaname[iter-1],filenum=iter,fileletter="vsma",logvalue=logvaluearrayvsma[iter-1],radius=4,bsqorho=bsqorhohvsma,bsqou=bsqouhvsma)
+            #
+            if arrayvsmaname[iter-1]=="rhosrhosq_diskcorona_phipow_rad4_vsm":
+                mcorrad4dcrho0=mcortemp
+            if arrayvsmaname[iter-1]=="bsqrhosq_diskcorona_phipow_rad4_vsm":
+                mcorrad4dcbsq=mcortemp
+            #
             iter=iter+1
         ####################################
         rhosrhosq_diskcorona_phipow_rad8_vsm=np.zeros(numm,dtype=r.dtype)
@@ -14192,7 +14239,21 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     # to see big norms do:
     # grep normpowersumnotm0 python.plot.full.out | sed 's/=/ /' | sort -g -k7
+    # number of \phi zones as if doing full 2\pi
+    # Correct for box size (input nz so get back effective resolution for small-scales)
+    # as long as mcor true $m$ value, no need to correct for changes in nz resolution here (i.e. sasha99 change from nz to nzreal is accounted for when getting powervsm and in mkpowervsm to get true mcor.)
+    nzeffective=scaletofullwedge(float(nz))
+    if modelname=="sasha99":
+        nzeffective=nzreal # force to be as when at late time when grid changes at fixed 2\pi box size.  Original nzeffective would be 64.
+        # not using nz*2 in case realoaded another file later that changes nz.
     #
+    print("nzeffective=%g" % (nzeffective)) ; sys.stdout.flush()
+    #
+    print("%g : %g %g : %g %g" % (nzeffective,mcorrad4dcrho0,nzeffective/mcorrad4dcrho0,mcorrad4dcbsq,nzeffective/mcorrad4dcbsq)) ; sys.stdout.flush()
+    #
+    # now can do full Latex4 table:
+    print( "HLatex4: ModelName & $\\alpha_a$ & $\\alpha_b$ & $\\alpha_c$ & $\\alpha_{c,\\rm{}mag}$ & $Q_{m,\\rm{}cor,\\{\\rho_0,b^2\\}}$ & $Q_{\\theta,\\rm{}MRI,\\{i,  o\\}}$ & $Q_{\\phi,\\rm{}MRI,\\{i,  o\\}}$ & $S_{\\rm{}d,\\rm{}MRI,\\{i,  o\\}}$ & $r_{\\{S_{\\rm{}d},S_{\\rm{}d,\\rm{}weak}\\},\\rm{}MRI=1/2}$   \\\\" )
+    print( "VLatex4: %s        & %g          & %g          & %g          & %g                      & %d, %d                                    & %g, %g                              & %g, %g                            & %g, %g                              & %s, %s                                                         \\\\ %% %s" % (truemodelname, roundto2(alphamag1_vsr_avg), roundto2(alphamag2_vsr_avg), roundto2(alphamag3_vsr_avg), roundto2(alphamag4_vsr_avg), roundto2intfloat(nzeffective/mcorrad4dcrho0),roundto2intfloat(nzeffective/mcorrad4dcbsq), roundto2intfloat(qmridiskrfitin2_avg), roundto2intfloat(qmridiskrfitout2_avg), roundto2intfloat(q3mridiskrfitin2_avg), roundto2intfloat(q3mridiskrfitout2_avg), roundto2(1.0/iq2mridiskrfitin2_avg), roundto2(1.0/iq2mridiskrfitout2_avg), roundto2_rq2mri1(rq2mri1,rq2mri1cut,fakerstagreport), roundto2_rq2mri1(rq2mri2,rq2mri2cut,fakerstagreport), modelname ) )
     #
     ############################
     #
@@ -15849,7 +15910,7 @@ def mkinitfinalplotpost(fname=None,plottype=0,aphijetouter=None,inputlevs=None,n
                 elif plottype==2:
                     (vminforframe,vmaxforframe)=vminmax_entropy(qty=entropy)
                 #
-                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=True,tight=True,pt=False,dorho=False,doentropy=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow)
+                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=True,tight=True,pt=False,dorho=False,doentropy=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
             elif whichplot==1:
                 if plottype==0 or plottype==1:
                     vmaxforframe=np.max(np.log10(bsq[0:iofr(framesize),:,:]))
@@ -15857,7 +15918,7 @@ def mkinitfinalplotpost(fname=None,plottype=0,aphijetouter=None,inputlevs=None,n
                 else:
                     (vminforframe,vmaxforframe)=vminmax_bsq(qty=bsq)
                 #
-                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=True,tight=True,pt=False,dorho=False,dobsq=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow)
+                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=True,tight=True,pt=False,dorho=False,dobsq=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
             elif whichplot==2:
                 if plottype==0 or plottype==1:
                     vminforframe=np.log10(1.0/np.max(1.0/beta[0:iofr(framesize),:,:]))
@@ -15867,17 +15928,17 @@ def mkinitfinalplotpost(fname=None,plottype=0,aphijetouter=None,inputlevs=None,n
                     #vmaxforframe=min(50.0,np.max(beta[0:iofr(framesize),:,:]))
                     vminforframe=-3.0
                     vmaxforframe=3.0
-                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=True,tight=True,pt=False,dorho=False,dobeta=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow)
+                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=True,tight=True,pt=False,dorho=False,dobeta=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
             elif whichplot==3:
                 vminforframe=0
                 vmaxforframe=np.max(Q1[0:iofr(framesize),:,:])
                 #
-                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=True,tight=True,pt=False,dorho=False,doQ1=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow)
+                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=True,tight=True,pt=False,dorho=False,doQ1=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
             elif whichplot==4:
                 vminforframe=np.min(Q2[0:iofr(framesize),:,:])
                 vmaxforframe=min(10.0,np.max(Q2[0:iofr(framesize),:,:]))
                 #
-                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=True,tight=True,pt=False,dorho=False,doQ2=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow)
+                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=True,tight=True,pt=False,dorho=False,doQ2=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
             #
         if 1==1:
             plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=10,fontsize=16)
@@ -16225,9 +16286,13 @@ def mkpowervsm(loadq=0,qty=None,pllabel="",filenum=0,fileletter="",logvalue=0,ra
     #
     # Set xtoplot as m
     #
-    #translate to nx size
+    #qty is assumed to be truncated if larger than nx sized (related to storing data in place where usually have data vs. radius vs time), so keep consistent with that.  Data *not* stretched, just truncated (with appropriate m set for different box sizes).
     nfft=nz/2+1
-    numm=min(nx,nfft)
+    # determine minimum true $m$ value due to $\phi$ box size
+    deltam=int(round(scaletofullwedge(1.0),0))
+    numm=min(nx,deltam*(nfft-1)+1) # i.e. as if full 2pi and deltam*nz zones
+    #
+    # set m
     xtoplot=np.zeros(numm,dtype=np.float32)
     for mm in np.arange(0,numm):
         xtoplot[mm]=mm
@@ -16256,6 +16321,71 @@ def mkpowervsm(loadq=0,qty=None,pllabel="",filenum=0,fileletter="",logvalue=0,ra
     else:
         dologplot=1
     #
+    print("len(xtoplot)=%d len(ytoplot)=%d" % (len(xtoplot),len(ytoplot))) ; sys.stdout.flush()
+    #############################
+    # Guan & Gammie (2009,2010) and http://adsabs.harvard.edu/abs/2012ApJ...744..187S
+    #
+    # Find correlation length or m using time-r-theta averaged spectrum
+    # Rbar=F^{-1}(a_{m>0}^2)
+    # then where: Rbar(ph)/Rbar(0) = (1/e)
+    #
+    ytoplotsq=ytoplot**2.0  # term-by-term square
+    ytoplotsq[0]=0 # autocorrelation is of fluctuation that has no average term (note that if not full 2\pi for \phi-box, then other m=1,2,3 may be zero as well already)
+    if nz>1:
+        Rbar=np.fft.irfft(ytoplotsq) # inverse Fourier Transform
+        doRbar=(np.fabs(Rbar[0])>1E-30) # to check if no power at all (e.g. for EM flux if no jet)
+        nifft=len(Rbar) # should be nz 
+    else:
+        # 2D catch
+        Rbar=0
+        doRbar=0
+        nifft=nz
+    #
+    #myph=ph[0,0,:] # get phi
+    # can't use ph[] because if box size isn't full 2\pi, then had to insert a_{some m}=0 to correctly portray a_m in general.  So inverse Fourier will give back equal or more phi cells
+    dmyph=(2.0*np.pi)/float(len(Rbar)) # Fourier series in ytoplot was as if had full 2\pi domain!
+    myph=0.5*dmyph + dmyph*np.arange(0,len(Rbar)) # so first phi is at cell center for constency, so to find \phi_{\rm cor} have to subtract off myphi[0]
+    #
+    myiofphi=np.arange(0,len(myph)) # for counting or getting indices
+    #
+    if modelname=="sasha99":
+        if(len(myph)!=128):
+            print("Problem with sasha99: len(myph)=%d, so m resolution will be truncated.  Ok for now, GODMARK, but if want to look at higher m-modes, have to adjust this" % len(myph))
+    #
+    print("nifft"); sys.stdout.flush()
+    print(nifft); sys.stdout.flush()
+    print("len(myph)=%d len(Rbar)=%d" % (len(myph),len(Rbar))) ; sys.stdout.flush()
+    print("Rbar"); sys.stdout.flush()
+    print(Rbar); sys.stdout.flush()
+    #
+    #res = interp1d(r[:,0,0], ti[:,0,0], kind='linear')
+    #return(np.floor(res(rval)+0.5))
+    #
+    # get m_corr
+    if doRbar==1:
+        Rbarnorm=Rbar[:]/Rbar[0]
+        dropRbar=myph[Rbarnorm<=np.exp(-1.0)]
+        dropiofphi=myiofphi[Rbarnorm<=np.exp(-1.0)]
+        # first instance of Rbar/Rbar[0]<1/e giving  Deltaph/deltaph there.
+        # true m as if box was full 2\pi, because myphi uses actual \phi
+        #
+        if len(dropRbar)>0:
+            # try to get accurate \phi where Rbarnorm is really exp(-1).  Just linearly interpolate
+            highiofphi=dropiofphi[0]
+            lowiofphi=highiofphi-1 # should always be there, since Rbarnorm[0]=1 always
+            varRbarnorm=np.exp(-1.0)
+            truephi=myph[lowiofphi] + (myph[highiofphi]-myph[lowiofphi])/(Rbarnorm[highiofphi]-Rbarnorm[lowiofphi])*(varRbarnorm - Rbarnorm[lowiofphi])
+            mcororig=(2.0*np.pi)/(dropRbar[0]-myph[0])
+            mcor=(2.0*np.pi)/(truephi-myph[0])
+            print("mcororig=%g mcor=%g" % (mcororig,mcor))
+        #
+        else:
+            mcor=(2.0*np.pi)/dropRbar
+    else:
+        Rbarnorm=Rbar
+        mcor=nz # so reports back 1 grid cell per m mode
+    #
+    print("mcor=%g" % (mcor)); sys.stdout.flush()
     #
     #
     print("mkpowervsm: len(xtoplot)=%d len(ytoplot)=%d" % (len(xtoplot),len(ytoplot))) ; sys.stdout.flush()
@@ -16266,32 +16396,64 @@ def mkpowervsm(loadq=0,qty=None,pllabel="",filenum=0,fileletter="",logvalue=0,ra
     #print("mkpowervsm: ytoplot") ; sys.stdout.flush()
     #print(ytoplot) ; sys.stdout.flush()
     #
-    plt.title("%s %g" % (pllabel,normpowersumnotm0b) , fontsize=8)
-    print("pllabel=%s npnotm=%g" % (pllabel,normpowersumnotm0b))
+    if nz>1:
+        plt.title("%s %g" % (pllabel,normpowersumnotm0b) , fontsize=8)
+        print("pllabel=%s npnotm=%g" % (pllabel,normpowersumnotm0b))
+        #
+        plt.plot(xtoplot[1:numm],ytoplot[1:numm])
+        #plt.axis('tight')
+        if dologplot==1:
+            plt.xscale('log')
+            plt.yscale('log')
+            #plt.xlim(np.log10(xtoplot[0]),np.log10(xtoplot[-1]))
+            #plt.ylim(np.log10(ytoplot[0]),np.log10(ytoplot[-1]))
+        #
+        plt.xlabel(r"$m$ mode",ha='center',labelpad=6)
+        plt.ylabel(r"Normalized Power Density",ha='center',labelpad=6)
+        plt.savefig("powervsm%d%s_%s.pdf" % (filenum,fileletter,pllabel) )#,bbox_inches='tight',pad_inches=0.1)
+        plt.savefig("powervsm%d%s_%s.eps" % (filenum,fileletter,pllabel))#,bbox_inches='tight',pad_inches=0.1)
+        plt.savefig("powervsm%d%s_%s.png" % (filenum,fileletter,pllabel))#,bbox_inches='tight',pad_inches=0.1)
+        #
+        # FILE:
+        file1 = open("powervsm%d%s_%s.txt" % (filenum,fileletter,pllabel) , 'w')
+        file1.write("#%g %g %g\n" % (_dx1,_dx2,_dx3))
+        file1.write("#%s %s   %s\n" % ("ii","xtoplot","ytoplot"))
+        # For fluxes (i.e. FM) last entry gives (e.g. Mdot) but will be off by 30% or so from true accretion rate because of how form spatial angular wedge where the average value of bsqorho>maxbsqorho so that mode decomposition makes sense.
+        # use same sum-region as when invoking powervsm() at horizon, so can remove number of cells and _dx1 to check that really fluxes are same at least on horizon
+        # from when call powervsm():
+        pickr=rhor
+        spreadr=0.1*pickr
+        rin=max(pickr-spreadr,1.01*Rin)
+        rout=pickr+spreadr
+        # from top of powervsm() itself:
+        iin=iofr(rin)
+        iout=iofr(rout)
+        if iout<iin:
+            iout=iin
+        #
+        # number of zones used for summation
+        numspread=iout-iin+1
+        #
+        file1.write("#%g %g   %g   %g  %g\n" % (normpowersumnotm0a,normpowersumnotm0b,np.fabs(qty[0]),(1.0/(_dx1*numspread))*np.fabs(qty[0]),mcor))
+        for ii in np.arange(0,len(xtoplot)):
+            file1.write("%d %g   %g\n" % (ii,xtoplot[ii],ytoplot[ii]))
+        file1.close()
+        #
+        # FILE:
+        file1 = open("rbarnormvsphi%d%s_%s.txt" % (filenum,fileletter,pllabel) , 'w')
+        file1.write("#%g %g %g\n" % (_dx1,_dx2,_dx3))
+        file1.write("#%s %s   %s\n" % ("ii","myph","Rbarnorm"))
+        file1.write("#%g\n" % (mcor))
+        file1.write("#Recall that ii and myph here are not true grid, but from inverse Fourier of (possibly) low-m-filled-with-zero Fourier transform, so myph always goes from 0 to 2pi.  Better than duplicating original \phi cells since anyways\n")
+        for ii in np.arange(0,len(myph)):
+            file1.write("%d %g   %g\n" % (ii,myph[ii],Rbarnorm[ii]))
+        file1.close()
     #
-    plt.plot(xtoplot[1:numm],ytoplot[1:numm])
-    #plt.axis('tight')
-    if dologplot==1:
-        plt.xscale('log')
-        plt.yscale('log')
-        #plt.xlim(np.log10(xtoplot[0]),np.log10(xtoplot[-1]))
-        #plt.ylim(np.log10(ytoplot[0]),np.log10(ytoplot[-1]))
     #
-    plt.xlabel(r"$m$ mode",ha='center',labelpad=6)
-    plt.ylabel(r"Normalized Power Density",ha='center',labelpad=6)
-    plt.savefig("powervsm%d%s_%s.pdf" % (filenum,fileletter,pllabel) )#,bbox_inches='tight',pad_inches=0.1)
-    plt.savefig("powervsm%d%s_%s.eps" % (filenum,fileletter,pllabel))#,bbox_inches='tight',pad_inches=0.1)
-    plt.savefig("powervsm%d%s_%s.png" % (filenum,fileletter,pllabel))#,bbox_inches='tight',pad_inches=0.1)
     #
-    # FILE:
-    file1 = open("powervsm%d%s_%s.txt" % (filenum,fileletter,pllabel) , 'w')
-    file1.write("#%g %g %g\n" % (_dx1,_dx2,_dx3))
-    file1.write("#%s %s   %s\n" % ("ii","xtoplot","ytoplot"))
-    # For fluxes (i.e. FM) last entry gives (e.g. Mdot) but will be off by 30% or so from true accretion rate because of how form spatial angular wedge where the average value of bsqorho>maxbsqorho so that mode decomposition makes sense.
-    file1.write("#%g %g   %g   %g\n" % (normpowersumnotm0a,normpowersumnotm0b,np.fabs(qty[0]),(1.0/_dx1)*np.fabs(qty[0])))
-    for ii in np.arange(0,len(xtoplot)):
-        file1.write("%d %g   %g\n" % (ii,xtoplot[ii],ytoplot[ii]))
-    file1.close()
+    #
+    #
+    return(mcor)
     #
     # FINALPLOTS:
     #

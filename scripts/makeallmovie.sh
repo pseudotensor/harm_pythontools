@@ -556,7 +556,7 @@ then
         fi
         if [ $numtbl -eq 4 ]
         then
-            echo "\caption{Magnetic Stress, Grid Cells per MRI Wavelength, MRI Wavelengths per Disk Height, and Radii for MRI Suppression}" >> $fname
+            echo "\caption{Viscosities, Grid Cells per Correlation length and MRI Wavelengths, MRI Wavelengths per full Disk Height, and Radii for MRI Suppression}" >> $fname
         fi
         if [ $numtbl -eq 5 ]
         then
@@ -572,7 +572,7 @@ then
         fi
         if [ $numtbl -eq 8 ]
         then
-            echo "\caption{Specific Angular Momentum: BH, Jet, Totals, and NT}" >> $fname
+            echo "\caption{Specific Angular Momentum: BH, Jet, Winds, and NT}" >> $fname
         fi
         if [ $numtbl -eq 9 ]
         then
@@ -584,7 +584,7 @@ then
         fi
         if [ $numtbl -eq 15 ]
         then
-            echo "\caption{Spin-Up Parameter: BH, Jet, Totals, and NT}" >> $fname
+            echo "\caption{Spin-Up Parameter: BH, Jet, Winds, and NT}" >> $fname
         fi
         if [ $numtbl -eq 11 ]
         then
@@ -659,6 +659,7 @@ then
 
 	echo "Doing Aux Tables"
 
+    grep "Latex42:" tables$moviedirname.tex | sed 's/[HV]Latex42: //g'  | column  -t > table42$moviedirname.tex
     grep "Latex93:" tables$moviedirname.tex | sed 's/[HV]Latex93: //g'  | column  -t > table93$moviedirname.tex
     grep "Latex94:" tables$moviedirname.tex | sed 's/[HV]Latex94: //g'  | column  -t > table94$moviedirname.tex
     grep "Latex95:" tables$moviedirname.tex | sed 's/[HV]Latex95: //g'  | column  -t > table95$moviedirname.tex
