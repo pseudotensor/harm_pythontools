@@ -106,7 +106,7 @@ def rdavg2d(fname=None,usedefault=1):
     assignavg2dvars(avgmem)
     return(avgmem)
 
-def assignavg2dvars(avgmem):
+def assignavg2dvars(avgmem,DTf=5):
     global avg_ts,avg_te,avg_te1,avg_nitems,avg_rho,avg_ug,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
     global avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
     global avg_gamma
@@ -120,8 +120,15 @@ def assignavg2dvars(avgmem):
     avg_nitems=avgmem[i,2,:];i+=1
     avg_te1=np.zeros_like(avg_te)
     if avg_nitems[0]>0:
-        avg_te1[0]=avg_te[0]+(avg_te[0]-avg_ts[0])/(avg_nitems[0]-1)
+        if avg_ts[0] > 0 and avg_te[0] == 0: #fix the end time if not saved
+            avg_te[0] = avg_ts[0] + (avg_nitems[0]-1) * DTf
+            avg_te1[0] = avg_te[0]+ DTf
+            print( "Final time not set; guessing DTf = %g and obtaining tf = %g, tf1 = %g" % (DTf, avg_te[0], avg_te1[0]) )
+        else:
+            avg_te1[0]=avg_te[0]+(avg_te[0]-avg_ts[0])/(avg_nitems[0]-1)
+            print( "Extrapolating final time: %g from %g" % (avg_te1[0], avg_te[0]) )
     else:
+        print( "Number of elements = 1, so using default final time: %g" % (avg_te[0]) )
         avg_te1[0]=avg_te[0]
     #quantities
     avg_rho=avgmem[i,:,:,None];i+=1
@@ -4523,14 +4530,19 @@ def getstagparams(var=None,rmax=20,doplot=1,doreadgrid=1,usedefault=1,fixupneara
 
 def get_dUfloor( floordumpno, maxrinflowequilibrium = 20, aphi_j_val=0, is_output_cell_center = True ):
     """ maxrsteady should be chosen to be on the outside of the inflow equilibrium region """
+    global nx, ny, nz
     RR=0
     TH=1
     PH=2
-    cachefname = "dumps/failfloordudump%04d.npy" % floordumpno
+    cachefname = "dumps/failfloordudump%04d.npz" % floordumpno
     if os.path.isfile(cachefname):
         #if already pre-computed floor info, reuse it
         print("Reading %s..." % os.path.basename(cachefname))
-        UfloorAsum = np.load(cachefname)
+        npzfile = np.load(cachefname)
+        UfloorAsum = npzfile['Ufloor']
+        nx = npzfile['nx']
+        ny = npzfile['ny']
+        nz = npzfile['nz']
         return( UfloorAsum )
     #if no precomputed info
     rfloor( "failfloordudump%04d.bin" % floordumpno )
@@ -4568,7 +4580,7 @@ def get_dUfloor( floordumpno, maxrinflowequilibrium = 20, aphi_j_val=0, is_outpu
         UfloorA[:,1:] = 0.5*(UfloorA[:,:-1]+UfloorA[:,1:])
     UfloorAsum = UfloorA*scaletofullwedge(1.)
     if not os.path.isfile(cachefname):
-        np.save(cachefname, UfloorAsum)
+        np.savez(cachefname, Ufloor=UfloorAsum, nx=nx, ny=ny, nz=nz)
     return( UfloorAsum )
 
 def plotfluxes(doreload=1,aphi_j_val=0):
@@ -4656,6 +4668,7 @@ def get_dFfloor(Dt, Dno, dotakeoutfloors=True,aphi_j_val=0, ndim=1, is_output_ce
     requires gdump to be loaded [grid3d("gdump.bin",use2d=True)], and arrays, Dt and Dno, 
     set up."""
     #initialize with zeros
+    global nx, ny, nz
     cachefname = "dumps/floorinfo.npz"
     #r-,th-, and phi- indices
     RR=0
@@ -4671,6 +4684,9 @@ def get_dFfloor(Dt, Dno, dotakeoutfloors=True,aphi_j_val=0, ndim=1, is_output_ce
             npzfile_Dt = npzfile['Dt']
             npzfile_Dno = npzfile['Dno']
             npzfile_DU = npzfile['DU']
+            nx = npzfile['nx']
+            ny = npzfile['ny']
+            nz = npzfile['nz']
             if( Dt.shape == npzfile_Dt.shape and (Dt == npzfile_Dt).all() and
                 Dno.shape == npzfile_Dno.shape and (Dno == npzfile_Dno).all() ):
                 DU = np.copy( npzfile_DU )
@@ -4694,7 +4710,7 @@ def get_dFfloor(Dt, Dno, dotakeoutfloors=True,aphi_j_val=0, ndim=1, is_output_ce
             #average in time
             DU /= DT
             #save the floor info as cache file
-            np.savez(cachefname, Dt=Dt, Dno=Dno, DU=DU)
+            np.savez(cachefname, Dt=Dt, Dno=Dno, DU=DU, nx=nx, ny=ny, nz=nz)
         if ndim == 1:
             DU = DU.cumsum(1+TH)  #*(tj!=0)*(tj!=ny-1)
             if aphi_j_val == 0:
@@ -4885,7 +4901,8 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         simtf = lftf
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_0_0_0_2xr_newdiagkra":
         print( "Using a = 0.9 (rtf2_15r34.1_0_0_0_2xr_newdiagkra) settings")
-        Dt = np.array([#14800-13491.2552634378,
+        Dt = np.array([16200-14876.761363014,
+                       14800-13491.2552634378,
                        13400-12179.7086440425,
                        12100-10828.5870873105,
                        10800-9707.41586935387,
@@ -4894,7 +4911,8 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                        8110-8000.,
                       -(8110-8000.)
                        ])
-        Dno = np.array([#148,
+        Dno = np.array([162,
+                        148,
                         134,
                         121,
                         108,
@@ -5061,10 +5079,10 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                         95])
         lfti = 8000.
         lftf = 1.e5
-        pn="A-0.9_$h_\varphi$"
+        pn="A-0.9$h_\\varphi$"
         rin = 15
         rmax = 37.1
-        simti = 0
+        simti = 8000.
         simtf = lftf
     elif np.abs(a - (-0.9))<1e-4 and bn == "rtf2_15r37.1a-0.9_lr_0_0_0":
         print( "Using a = -0.9 (rtf2_15r37.1a-0.9_lr_0_0_0) settings")
@@ -5115,6 +5133,23 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         pn="A-0.2"
         rin = 15
         rmax = 35.64
+        simti = 0
+        simtf = lftf
+    elif np.abs(a + 0.9)<1e-4 and bn == "rtf2_15r37.1a-0.9_0_0_0_0.5xr_newdiagkra":
+        print( "Using a = -0.9 (rtf2_15r37.1a-0.9_0_0_0_0.5xr_newdiagkra) settings")
+        Dt = np.array([18700-13805.9605171409,
+                       13800-8901.06032520801,
+                       8900-8000.,
+                     -(8900-8000.)])
+        Dno = np.array([187,
+                        138,
+                        89,
+                        80])
+        lfti = 8000.
+        lftf = 1.e5
+        pn="A-0.9$l_r$"
+        rin = 15
+        rmax = 37.1
         simti = 0
         simtf = lftf
     elif np.abs(a - (-0.9))<1e-4 and bn == "rtf2_15r37.1a-0.9_0_0_0_2xth":
@@ -5225,7 +5260,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         pn="A0.9$h^2_\\varphi$"
         rin = 15
         rmax = 34.1
-        simti = 0
+        simti = 8500
         simtf = lftf
     elif np.abs(a - 0.9)<1e-4 and bn == "rtf2_15r34.1_0_0_0_0.5xr_newdiagkra":
         print( "Using a = 0.9 (rtf2_15r34.1_0_0_0_0.5xr_newdiagkra) settings")
@@ -7468,7 +7503,7 @@ def removefloorsavg2d(usestaggeredfluxes=False,DFfloor=None):
     FmMinusFe_floorremoved2 = enden2
     return( Fm_floorremoved, FmMinusFe_floorremoved1, FmMinusFe_floorremoved2 )
 
-def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,showticks=True,usedefault=2,fc='white',mc='white',dotakeoutfloors=0):
+def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,showticks=True,usedefault=2,fc='white',mc='white',dotakeoutfloors=0,showtitle=False):
     #fc='#D8D8D8'
     global bsq, ug, mu, B, DF, qtymem
     mylen = length/frac
@@ -7619,6 +7654,10 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
             #a=0.9
             levs_label = np.array([0.125,0.25,0.5,1.])*0.16 #*Ebindisco(a)
             levs = np.arange(0.125,1.125,0.125)*0.16 #*Ebindisco(a)
+        elif np.abs(a-0.99)<1e-2:
+            #a=0.9
+            levs_label = np.array([0.125,0.25,0.5,1.])*0.18 #*Ebindisco(a)
+            levs = np.arange(0.125,1.125,0.125)*0.18 #*Ebindisco(a)
         else:
             #a=-0.9
             levs_label = np.array([0.125,0.25,0.5,1.])*0.07 #Ebindisco(a)
@@ -7839,6 +7878,9 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
             avg_aphi = phibh
             step=10
             levs=np.arange(step,100*step,step)
+            #for a = 0.99 increase the nuumber of contours by 2x so see more detail
+            if np.abs(a-0.99)<0.01:
+                levs = levs/2.
         else:
             levs=None
         r2=np.concatenate((r[:,::-1],r),axis=1)
@@ -7892,12 +7934,13 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
     # plt.savefig("fig2.pdf",bbox_inches='tight',pad_inches=0.02)
     # plt.savefig("fig2.eps",bbox_inches='tight',pad_inches=0.02)
     bbox = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.5)
-    if a < 0:
-        plt.title(r"${\rm Retrograde\ BH,\ a = %g,\ \eta = %d\%%\ (model\ A-0.9f})$" % (a, np.rint(a_eta*100.)), fontsize=fntsize )
-        placeletter( plt.gca(),"$\mathrm{(a)}$",bbox=bbox,size=fntsize*1.5,ha='center',va='center')
-    else:
-        plt.title(r"${\rm Prograde\ BH,\ a = %g,\ \eta = %d\%%\ (model\ A0.9f})$" % (a, np.rint(a_eta*100.)), fontsize=fntsize )
-        placeletter( plt.gca(),"$\mathrm{(b)}$",bbox=bbox,size=fntsize*1.5,ha='center',va='center')
+    if showtitle:
+        if a < 0:
+            plt.title(r"${\rm Retrograde\ BH,\ a = %g,\ \eta = %d\%%\ (model\ A-0.9f})$" % (a, np.rint(a_eta*100.)), fontsize=fntsize )
+            placeletter( plt.gca(),"$\mathrm{(a)}$",bbox=bbox,size=fntsize*1.5,ha='center',va='center')
+        else:
+            plt.title(r"${\rm Prograde\ BH,\ a = %g,\ \eta = %d\%%\ (model\ A0.9f})$" % (a, np.rint(a_eta*100.)), fontsize=fntsize )
+            placeletter( plt.gca(),"$\mathrm{(b)}$",bbox=bbox,size=fntsize*1.5,ha='center',va='center')
     # haxes=pylab.axes()
     # haxes.yaxis.LABELPAD=0
     fig.patch.set_facecolor(mc)
