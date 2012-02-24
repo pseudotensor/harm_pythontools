@@ -17949,12 +17949,12 @@ def mkpowervsnlm(mode=None,truenfft=None,loadq=0,qty=None,pllabel="",filenum=0,f
             lowiofpos=highiofpos-1 # should always be there, since Rbarnorm[0]=1 always
             varRbarnorm=np.exp(-1.0)
             truepos=mypos[lowiofpos] + (mypos[highiofpos]-mypos[lowiofpos])/(Rbarnorm[highiofpos]-Rbarnorm[lowiofpos])*(varRbarnorm - Rbarnorm[lowiofpos])
-            nlmcororig=(2.0*np.pi)/(dropRbar[0]-mypos[0])
-            nlmcor=(2.0*np.pi)/(truepos-mypos[0])
+            nlmcororig=rangepos/(dropRbar[0]-mypos[0])
+            nlmcor=rangepos/(truepos-mypos[0])
             print("nlmcororig=%g nlmcor=%g" % (nlmcororig,nlmcor))
         #
         else:
-            nlmcor=(2.0*np.pi)/dropRbar
+            nlmcor=rangepos/dropRbar
     else:
         Rbarnorm=Rbar
         nlmcor=np.max((truenfft-1)*2,1) # so reports back 1 grid cell per nlm mode
