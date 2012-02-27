@@ -6412,8 +6412,10 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         rhorlist = 1+(1-alist**2)**0.5
         omhlist = alist / 2 / rhorlist
         etaEMlist = -FEM2list/Fmlist
-        etajetlist=powjetlist/Fmlist
-        etawindlist = powwindlist/Fmlist
+        etajetlist=powjetlist
+        etawindlist = powwindlist
+        etajetstdlist = powjetstd
+        etawindstdlist = powwindstd
     gin = open( fname, "rt" )
     emptyline = gin.readline()
     simname=[]
@@ -6571,7 +6573,7 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     ax1.fill_between(mya,newy1,newy2,where=newy1>newy2,facecolor=col,edgecolor=col)
     ax1.plot(mya,f*unitsfactor,'k-',label=r'$\phi_{\rm fit}$',lw=2) #=2.9(1-0.6 \Omega_{\rm H})
     #ax1.plot(alist,y1*unitsfactor,'o',label=r'$\langle\phi^2\!\rangle^{1/2}$',mfc='r')
-    ax1.errorbar(alist,philist,yerr=2*phistdlist,label=r'$\langle\phi^2\!\rangle^{1/2}$',mfc='r',ecolor='r',fmt='o')
+    ax1.errorbar(alist,philist,yerr=2*phistdlist,label=r'$\langle\phi^2\!\rangle^{1/2}$',mfc='r',ecolor='r',fmt='o',lw=2,elinewidth=1,mew=1)
     # plt.plot(mya,(250+0*mya)*rhor) 
     # plt.plot(mya,250./((3./(mya**2 + 3*rhor**2))**2*2*rhor**2)) 
     #plt.plot(mya,((mya**2+3*rhor**2)/3)**2/(2/rhor)) 
@@ -6599,12 +6601,12 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     ax2 = plt.subplot(gs[1,0])
     newy1 = 1.1*100*fac*myeta6
     newy2 = 0.9*100*fac*myeta6
-    ax2.fill_between(myspina6,newy1,newy2,where=newy1>newy2,facecolor=col,edgecolor=col)
+    ax2.fill_between(myspina6,newy1,newy2,where=newy1>newy2,facecolor=col,edgecolor=col,lw=2)
     #plt.plot(alist,100*(etawindlist-etalist),'gv',label=r'$\eta_{\rm wind}$')
     #plt.plot(myspina6,0.9*100*fac*myeta6,'k',label=r'$0.9\eta_{\rm BZ6}(\phi_{\rm fit})$' )
     plt.plot(myspina6,100*fac*myeta6,'k-',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$',lw=2)
     plt.plot(alist,100*etalist,'o',label=r'$\eta$',mfc='r',lw=2)
-    ax2.errorbar(alist,100*etalist,yerr=2*100*etastdlist,label=r'$\eta$',mfc='r',ecolor='r',fmt='o')
+    ax2.errorbar(alist,100*etalist,yerr=2*100*etastdlist,label=r'$\eta$',mfc='r',ecolor='r',fmt='o',lw=2,elinewidth=1,mew=1)
     plt.ylim(0.0001,160-1e-5)
     plt.grid()
     # plt.setp( ax2.get_xticklabels(), visible=False )
@@ -6634,9 +6636,10 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     l.set_dashes([10,5])
     #plt.plot(myspina6,myeta6,'r:',label=r'$\eta_{\rm BZ,6}$')
     #plt.plot(alist,100*etajetlist,'gs',label=r'$\eta_{\rm jet}$',lw=2)
-    ax3.errorbar(alist,100*etajlist,yerr=2*100*etajstdlist,label=r'$\eta_{\rm jet}$',mfc='g',ecolor='g',fmt='s')
+    ax3.errorbar(alist,100*etajetlist,yerr=2*100*etajetstdlist,label=r'$\eta_{\rm jet}$',mfc='g',ecolor='g',fmt='s',lw=2,elinewidth=1,mew=1)
     #plt.plot(alist,100*etaEMlist,'rx',label=r'$\eta_{\rm jet}$')
-    plt.plot(alist,100*etawindlist,'bv',label=r'$\eta_{\rm wind}$')
+    #plt.plot(alist,100*etawindlist,'bv',label=r'$\eta_{\rm wind}$')
+    ax3.errorbar(alist,100*etawindlist,yerr=2*100*etawindstdlist,label=r'$\eta_{\rm wind}$',mfc='b',ecolor='b',fmt='v',lw=2,elinewidth=1,mew=1)
     #plt.plot(myspina6,100*fac*myeta6,'k-',lw=2) #,label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$' )
     plt.ylim(0.0001,160-1e-5)
     plt.grid()
@@ -6663,8 +6666,9 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     plt.plot(x,y,color='red',lw=4,alpha=0.3)
     l,=plt.plot(mya,sparthin(mya),'g-.',lw=2,label=r"$s_{\rm NT}$")
     l.set_dashes([10,3,2,3])
-    plt.plot(alist,sparlist,'ro',mec='r')
-    plt.plot(alist[:9],sparlist[:9],'r-',lw=2,label=r"$s_{\rm MAD}$")
+    #plt.plot(alist,sparlist,'ro',mec='r')
+    ax4.errorbar(alist[:9],sparlist[:9],yerr=2*sparstdlist[:9],label=r"$s_{\rm MAD}$",mfc='r',ecolor='r',fmt='o-',color='r',lw=2,elinewidth=1,mew=1)
+    #plt.plot(alist[:9],sparlist[:9],'ro-',lw=2,label=r"$s_{\rm MAD}$")
     plt.text(x[0]+0.02,7,r"$a_{\rm eq}^{\rm Sim}\!\approx0.07$",va="center",ha="left",fontsize=16,color="red",alpha=1)
     plt.ylim(-10,10)
     plt.grid()
@@ -9763,7 +9767,7 @@ if __name__ == "__main__":
         #Pro vs. retrograde spins, updated diagnostics
         readmytests1()
         plotpowers('siminfo.txt',plotetas=True,format=2) #new format; data from 2d average dumps
-    if False:
+    if True:
         #Jet efficiency vs. spin, update diagnostics
         readmytests1()
         plotpowers('siminfo.txt',plotetas=False,format=2) #new format; data from 2d average dumps
