@@ -6067,7 +6067,7 @@ def computeeta(start_t=8000,end_t=1e5,numintervals=8,doreload=1,qtymem=None,rj=1
     print zip(a_eta,a_Fm,a_Fe,a_Fl)
     print( "Average efficiency = %g" % a_eta.mean() ) 
     print( "Stdev eta: %g; stdev <eta>: %g" % (a_eta.std(), a_eta.std()/np.sqrt(a_eta.shape[0])) )
-    return( a_eta.mean(), a_eta.std()/np.sqrt(a_eta.shape[0]), a_spar.mean(), a_spar.std()/np.sqrt(a_spar.shape[0]), a_phi.mean(), a_phi.std()/np.sqrt(a_phi.shape[0]), a_pj.mean(), a_pj.std()/np.sqrt(a_pj.shape[0]), a_pw.mean(), a_pw.std()/np.sqrt(a_pw.shape[0]) )
+    return( a_eta.mean(), a_eta.std()/np.sqrt(a_eta.shape[0]), a_spar.mean(), a_spar.std()/np.sqrt(a_spar.shape[0]), a_phi.mean(), a_phi.std()/np.sqrt(a_phi.shape[0]), a_pj.mean()*a_Fm.mean(), a_pj.std()/np.sqrt(a_pj.shape[0])*a_Fm.mean(), a_pw.mean()*a_Fm.mean(), a_pw.std()/np.sqrt(a_pw.shape[0])*a_Fm.mean() )
     
 
 def plotj(ts,fs,md,jem,jtot):
@@ -6412,10 +6412,11 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         rhorlist = 1+(1-alist**2)**0.5
         omhlist = alist / 2 / rhorlist
         etaEMlist = -FEM2list/Fmlist
-        etajetlist=powjetlist
-        etawindlist = powwindlist
-        etajetstdlist = powjetstd
-        etawindstdlist = powwindstd
+        #divide by Fm to get efficiency
+        etajetlist=powjetlist/Fmlist
+        etawindlist = powwindlist/Fmlist
+        etajetstdlist = powjetstd/Fmlist
+        etawindstdlist = powwindstd/Fmlist
     gin = open( fname, "rt" )
     emptyline = gin.readline()
     simname=[]
