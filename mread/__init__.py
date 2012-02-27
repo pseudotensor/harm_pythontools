@@ -9587,6 +9587,31 @@ def plotallbz():
     plt.savefig("figbz.eps",bbox_inches='tight',pad_inches=0.02)
     plt.savefig("figbz.pdf",bbox_inches='tight',pad_inches=0.02)
 
+def plotbetajet():
+    #load metric
+    #[here, use2d=True instructs the routines to make use of axisymmetry of the metric, which saves memory]
+    grid3d("gdump.bin",use2d=True)
+    #load time-averages
+    #avgmem=rdavg2d(fname="avg2d20_0200_0314.npy") #,usedefault=1
+    #avgmem=rdavg2d(fname="avg2d20_0070_0305.npy") #,usedefault=1
+    avgmem=rdavg2d(usedefault=1)
+    usestaggeredfluxes = False
+    #remove floors from mass (Fm) and extractable energy (Fm-Fe) fluxes
+    Fm_floorremoved, FmMinusFe_floorremoved1, FmMinusFe_floorremoved2 \
+        = removefloorsavg2d(usestaggeredfluxes=usestaggeredfluxes)
+    pg = (gam-1)*avg_ug
+    pm = avg_bsq/2.
+    beta = pg/pm
+    #num = (beta*FmMinusFe_floorremoved1*_dx2*_dx3).sum(-1).mean(-1)
+    num = (avg_bsq/avg_rho*FmMinusFe_floorremoved1*_dx2*_dx3).sum(-1).mean(-1)
+    den = (FmMinusFe_floorremoved1*_dx2*_dx3).sum(-1).mean(-1)
+    ans = num/den
+    plt.plot(r[:,0,0],ans)
+    plt.xlim(rhor,1e5)
+    plt.ylim(1e-3,1e3)
+    plt.xscale('log')
+    plt.yscale('log')
+    return(ans)
 
 def plotbsqorhosigma():    
         #load metric
@@ -9654,6 +9679,9 @@ def plotbsqorhosigma():
         plt.grid()
 
 if __name__ == "__main__":
+    if False:
+        #compute energy flux weighted pg/pm
+        plotbetajet()
     if False:
         grid3d("gdump.bin",use2d=True)
         #load time-averages
