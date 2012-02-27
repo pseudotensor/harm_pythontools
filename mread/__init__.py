@@ -6293,9 +6293,13 @@ def sparthin(a):
     return(s)
 
 def getetaavg(fname,simnamelist):
-    gd1 = np.loadtxt( fname, unpack = True, usecols = [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21] )
+    gd1 = np.loadtxt( fname, unpack = True, usecols = [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25] )
     #gd=gd1.view().reshape((-1,nx,ny,nz), order='F')
-    alist, etalist, etastdlist, sparlist, sparstdlist, Fmlist, Felist, Fllist, FEMrhorlist, FEM2list, powjetlist, powwindlist, ftotlist, ftotsqlist, hor5, hor10, hor20, hor25, hor30, hor100 = gd1
+    alist, etalist, etastdlist, sparlist, sparstdlist, philist, phistdlist, \
+        Fmlist, Felist, Fllist, FEMrhorlist, FEM2list, \
+        powjetlist, powjetstd, powwindlist, powwindstd, \
+        ftotlist, ftotsqlist, \
+        hor5, hor10, hor20, hor25, hor30, hor100 = gd1
     fsqtotlist = ftotsqlist
     mdotlist = Fmlist
     rhorlist = 1+(1-alist**2)**0.5
@@ -6558,6 +6562,28 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         plt.xlabel(r"$a$",fontsize=20)
         print zip(alist,sparlist)
     #
+    # Compute averages and std's if there are several sims at one value
+    #
+    u_alist = np.unique(alist)
+    u_philist = np.zeros_like(u_alist)
+    u_phistdlist = np.zeros_like(u_alist)
+    u_etalist = np.zeros_like(u_alist)
+    u_etastdlist = np.zeros_like(u_alist)
+    u_etajetlist = np.zeros_like(u_alist)
+    u_etajetstdlist = np.zeros_like(u_alist)
+    u_etawindlist = np.zeros_like(u_alist)
+    u_etawindstdlist = np.zeros_like(u_alist)
+    u_sparlist = np.zeros_like(u_alist)
+    u_sparstdlist = np.zeros_like(u_alist)
+    for i,aval in enumerate(u_alist):
+        u_philist[i],u_phistdlist[i] = getavgstd( philist[alist==aval], phistdlist[alist==aval])
+        u_etalist[i],u_etastdlist[i] = getavgstd( etalist[alist==aval], etastdlist[alist==aval])
+        u_etajetlist[i],u_etajetstdlist[i] = getavgstd( etajetlist[alist==aval], etajetstdlist[alist==aval])
+        u_etawindlist[i],u_etawindstdlist[i] = getavgstd( etawindlist[alist==aval], etawindstdlist[alist==aval])
+        u_sparlist[i],u_sparstdlist[i] = getavgstd( sparlist[alist==aval], sparstdlist[alist==aval])
+        print( "%2d: %9.5g %9.5g %9.5g %9.5g %9.5g" % (
+                i, aval, u_philist[i], 2*u_phistdlist[i], 100*u_etalist[i], 2*100*u_etastdlist[i] ) )
+    #
     plt.figure(1, figsize=(8,4),dpi=100)
     plt.clf()
     gs = GridSpec(2, 2)
@@ -6574,7 +6600,7 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     ax1.fill_between(mya,newy1,newy2,where=newy1>newy2,facecolor=col,edgecolor=col)
     ax1.plot(mya,f*unitsfactor,'k-',label=r'$\phi_{\rm fit}$',lw=2) #=2.9(1-0.6 \Omega_{\rm H})
     #ax1.plot(alist,y1*unitsfactor,'o',label=r'$\langle\phi^2\!\rangle^{1/2}$',mfc='r')
-    ax1.errorbar(alist,philist,yerr=2*phistdlist,label=r'$\langle\phi^2\!\rangle^{1/2}$',mfc='r',ecolor='r',fmt='o',lw=2,elinewidth=1,mew=1)
+    ax1.errorbar(u_alist,u_philist,yerr=2*u_phistdlist,label=r'$\langle\phi^2\!\rangle^{1/2}$',mfc='r',ecolor='r',fmt='o',lw=2,elinewidth=1,mew=1)
     # plt.plot(mya,(250+0*mya)*rhor) 
     # plt.plot(mya,250./((3./(mya**2 + 3*rhor**2))**2*2*rhor**2)) 
     #plt.plot(mya,((mya**2+3*rhor**2)/3)**2/(2/rhor)) 
@@ -6606,8 +6632,8 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     #plt.plot(alist,100*(etawindlist-etalist),'gv',label=r'$\eta_{\rm wind}$')
     #plt.plot(myspina6,0.9*100*fac*myeta6,'k',label=r'$0.9\eta_{\rm BZ6}(\phi_{\rm fit})$' )
     plt.plot(myspina6,100*fac*myeta6,'k-',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$',lw=2)
-    plt.plot(alist,100*etalist,'o',label=r'$\eta$',mfc='r',lw=2)
-    ax2.errorbar(alist,100*etalist,yerr=2*100*etastdlist,label=r'$\eta$',mfc='r',ecolor='r',fmt='o',lw=2,elinewidth=1,mew=1)
+    #plt.plot(u_alist,100*u_etalist,'o',label=r'$\eta$',mfc='r',lw=2)
+    ax2.errorbar(u_alist,100*u_etalist,yerr=2*100*u_etastdlist,label=r'$\eta$',mfc='r',ecolor='r',fmt='o',lw=2,elinewidth=1,mew=1)
     plt.ylim(0.0001,160-1e-5)
     plt.grid()
     # plt.setp( ax2.get_xticklabels(), visible=False )
@@ -6637,10 +6663,10 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     l.set_dashes([10,5])
     #plt.plot(myspina6,myeta6,'r:',label=r'$\eta_{\rm BZ,6}$')
     #plt.plot(alist,100*etajetlist,'gs',label=r'$\eta_{\rm jet}$',lw=2)
-    ax3.errorbar(alist,100*etajetlist,yerr=2*100*etajetstdlist,label=r'$\eta_{\rm jet}$',mfc='g',ecolor='g',fmt='s',lw=2,elinewidth=1,mew=1)
+    ax3.errorbar(u_alist,100*u_etajetlist,yerr=2*100*u_etajetstdlist,label=r'$\eta_{\rm jet}$',mfc='g',ecolor='g',fmt='s',lw=2,elinewidth=1,mew=1)
     #plt.plot(alist,100*etaEMlist,'rx',label=r'$\eta_{\rm jet}$')
     #plt.plot(alist,100*etawindlist,'bv',label=r'$\eta_{\rm wind}$')
-    ax3.errorbar(alist,100*etawindlist,yerr=2*100*etawindstdlist,label=r'$\eta_{\rm wind}$',mfc='b',ecolor='b',fmt='v',lw=2,elinewidth=1,mew=1)
+    ax3.errorbar(u_alist,100*u_etawindlist,yerr=2*100*u_etawindstdlist,label=r'$\eta_{\rm wind}$',mfc='b',ecolor='b',fmt='v',lw=2,elinewidth=1,mew=1)
     #plt.plot(myspina6,100*fac*myeta6,'k-',lw=2) #,label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$' )
     plt.ylim(0.0001,160-1e-5)
     plt.grid()
@@ -6668,7 +6694,7 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     l,=plt.plot(mya,sparthin(mya),'g-.',lw=2,label=r"$s_{\rm NT}$")
     l.set_dashes([10,3,2,3])
     #plt.plot(alist,sparlist,'ro',mec='r')
-    ax4.errorbar(alist[:9],sparlist[:9],yerr=2*sparstdlist[:9],label=r"$s_{\rm MAD}$",mfc='r',ecolor='r',fmt='o-',color='r',lw=2,elinewidth=1,mew=1)
+    ax4.errorbar(u_alist,u_sparlist,yerr=2*u_sparstdlist,label=r"$s_{\rm MAD}$",mfc='r',ecolor='r',fmt='o-',color='r',lw=2,elinewidth=1,mew=1)
     #plt.plot(alist[:9],sparlist[:9],'ro-',lw=2,label=r"$s_{\rm MAD}$")
     plt.text(x[0]+0.02,7,r"$a_{\rm eq}^{\rm Sim}\!\approx0.07$",va="center",ha="left",fontsize=16,color="red",alpha=1)
     plt.ylim(-10,10)
@@ -6741,6 +6767,10 @@ def readmytests1():
     mtheta6 = np.pi/2-mhor6
     mspina6 = 4*momh6/(1+4*momh6**2)
 
+def getavgstd( vals, vals_std ):
+    res = wmom(vals,vals_std**(-2),calcerr=True,sdev=True)
+    return res[0], res[1]
+ 
 def wmom(arrin, weights_in, inputmean=None, calcerr=False, sdev=False):
     """
     NAME:
