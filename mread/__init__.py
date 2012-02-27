@@ -6327,6 +6327,12 @@ def getetaavg(fname,simnamelist):
     eta9avg,eta9err,eta9std=wmom(etas,etas_std**(-2),calcerr=True,sdev=True)
     return eta9avg*100.,2*eta9err*100. #,2*eta9std
 
+def computeavgs():
+    print( "a = 0.9:")
+    getetaavg('siminfo.txt',('A0.9f','A0.9','A0.9$l_r$','A0.9$h_r$','A0.9$l_\\theta$','A0.9$h_\\theta$','A0.9$h_{\\theta}h_{\\varphi}$','A0.9$h_\\varphi$','A0.9$h^2_\\varphi$'))
+    print( "a = -0.9:")
+    getetaavg('siminfo.txt',('A-0.9f','A-0.9','A-0.9$l_r$','A-0.9$l_\\theta$','A-0.9$h_\\theta$','A-0.9$h_\\varphi$',))
+
 def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=False,nsigma=1):
     if usegaussianunits == True:
         unitsfactor = (4*np.pi)**0.5*2*np.pi
