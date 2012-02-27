@@ -9188,7 +9188,7 @@ def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=85,ncont=100,d
         ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
         placeletter( ax1,"$\mathrm{(a)}$",bbox=bbox)
         placeletter( ax1,"$t=%g$" % t,fx=0.97,ha="right",bbox=bbox)
-        plt.title(r"${\rm Retrograde\ BH,\ a = -0.9\ (model\ A-0.9f})$")
+        plt.title(r"${\rm Retrograde\ BH,\ a = -0.9,\ \eta = 34\%\ (model\ A-0.9f})$")
         #PROGRADE
         os.chdir("/home/atchekho/run/rtf2_15r34.1_pi_0_0_0")
         grid3d("gdump.bin",use2d=True)
@@ -9221,7 +9221,7 @@ def icplot(dostreamlines=False,maxaphi=500,domakeframes=1,plotlen=85,ncont=100,d
         mkframe("topleft", vmin=vmin,vmax=vmax,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=dostreamlines,ncont=ncont,aspect=aspect,maxaphi=maxaphi)
         plt.setp( ax1.get_xticklabels(), visible=False)
         #plt.setp( ax1.get_yticklabels(), visible=False)
-        plt.title(r"${\rm Prograde\ BH,\ a = 0.9\ (model\ A0.9f)}$")
+        plt.title(r"${\rm Prograde\ BH,\ a = 0.9,\ \eta=102\%\ (model\ A0.9f)}$")
         placeletter( ax1,"$\mathrm{(f)}$",bbox=bbox)
         placeletter( ax1,"$t=%g$" % t,fx=0.97,ha="right",bbox=bbox)
         plc(aphi,levels=(aphibh,),xcoord=r*np.sin(h),ycoord=r*np.cos(h),linestyles="solid",colors='k',linewidths=lwbold)
@@ -9414,14 +9414,14 @@ def mkjetretrofig1():
         #plt.clf()
         gs3a = GridSpec(3, 3)
         gs3a.update(left=0.055, right=0.4735, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
-        title = r"${\rm Retrograde\ BH,\ a = -0.9\ (model\ A-0.9f})$"
+        title = r"${\rm Retrograde\ BH,\ a = -0.9,\ \eta = 34\%\ (model\ A-0.9f})$"
         os.chdir("/home/atchekho/run/rtf2_15r34_2pi_a-0.9gg50rbr1e3_0_0_0_faildufix2")
         epsFm, epsFke, epsetaj, epsFm30 = takeoutfloors(doreload=doreload,fti=fti,ftf=ftf,returndf=1,isinteractive=0,writefile=False)
         print epsFm, epsFke, epsetaj, epsFm30
         mkmdot(doreload=doreload,epsFm=epsFm,epsFke=epsFke,epsetaj=epsetaj,epsFm30=epsFm30,fti=fti,ftf=ftf,prefactor=100.,sigma=sigma,usegaussianunits=True,arrowsize=0.5,gs3=gs3a,dotwinx=False,lab=["c","d","e"],title=None,plotFM30=False)
         gs3b = GridSpec(3, 3)
         gs3b.update(left=0.5125, right=0.96, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
-        title=r"${\rm Prograde\ BH,\ a = 0.9\ (model\ A0.9f)}$"
+        title=r"${\rm Prograde\ BH,\ a = 0.9,\ \eta = 102\%\ (model\ A0.9f)}$"
         os.chdir("/home/atchekho/run/rtf2_15r34.1_pi_0_0_0")
         epsFm, epsFke, epsetaj, epsFm30 = takeoutfloors(doreload=doreload,fti=fti,ftf=ftf,returndf=1,isinteractive=0,writefile=False)
         print epsFm, epsFke, epsetaj, epsFm30
