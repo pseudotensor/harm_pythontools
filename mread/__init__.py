@@ -6060,8 +6060,8 @@ def computeeta(start_t=8000,end_t=1e5,numintervals=8,doreload=1,qtymem=None,rj=1
         #phibh=fstot[:,ihor]/4/np.pi/FMavg**0.5*unitsfactor
         #where fstot = (gdetB1).sum(2).sum(1)*_dx2*_dx3 at horizon
         a_phi[i] = fstotsqfinavg/4/np.pi/a_Fm[i]**0.5*unitsfactor
-        a_pj[i] = pjke_mu2_avg[iofr(rj)]
-        a_pw[i] = (pjke_mu1_avg-pjke_mu2_avg)[iofr(rj)]
+        a_pj[i] = pjke_mu2_avg[iofr(rj)]/a_Fm[i]
+        a_pw[i] = (pjke_mu1_avg-pjke_mu2_avg)[iofr(rj)]/a_Fm[i]
     a_spar = (a_Fl/dxdxp[3,3,0,0,0]-2*a*a_Fe)/a_Fm
     print("Efficiencies:")    
     print zip(a_eta,a_Fm,a_Fe,a_Fl)
@@ -6569,8 +6569,9 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     newy2 = 0.95*f*unitsfactor
     col= ( 0.52941176,  0.80784314,  0.98039216, 0.5) #(0.5,0.5,1,0.75) #(0.8,1,0.8,1)
     ax1.fill_between(mya,newy1,newy2,where=newy1>newy2,facecolor=col,edgecolor=col)
-    plt.plot(mya,f*unitsfactor,'k-',label=r'$\phi_{\rm fit}$',lw=2) #=2.9(1-0.6 \Omega_{\rm H})
-    plt.plot(alist,y1*unitsfactor,'o',label=r'$\langle\phi^2\!\rangle^{1/2}$',mfc='r')
+    ax1.plot(mya,f*unitsfactor,'k-',label=r'$\phi_{\rm fit}$',lw=2) #=2.9(1-0.6 \Omega_{\rm H})
+    #ax1.plot(alist,y1*unitsfactor,'o',label=r'$\langle\phi^2\!\rangle^{1/2}$',mfc='r')
+    ax1.errorbar(alist,philist,yerr=2*phistdlist,label=r'$\langle\phi^2\!\rangle^{1/2}$',mfc='r',ecolor='r',fmt='o')
     # plt.plot(mya,(250+0*mya)*rhor) 
     # plt.plot(mya,250./((3./(mya**2 + 3*rhor**2))**2*2*rhor**2)) 
     #plt.plot(mya,((mya**2+3*rhor**2)/3)**2/(2/rhor)) 
@@ -6603,6 +6604,7 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     #plt.plot(myspina6,0.9*100*fac*myeta6,'k',label=r'$0.9\eta_{\rm BZ6}(\phi_{\rm fit})$' )
     plt.plot(myspina6,100*fac*myeta6,'k-',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$',lw=2)
     plt.plot(alist,100*etalist,'o',label=r'$\eta$',mfc='r',lw=2)
+    ax2.errorbar(alist,100*etalist,yerr=2*100*etastdlist,label=r'$\eta$',mfc='r',ecolor='r',fmt='o')
     plt.ylim(0.0001,160-1e-5)
     plt.grid()
     # plt.setp( ax2.get_xticklabels(), visible=False )
@@ -6631,7 +6633,8 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     l,=plt.plot(myspina6,0.85*100*fac*myeta6,'k--',lw=2,label=r'$0.85\eta_{\rm BZ6}(\phi_{\rm fit})$' )
     l.set_dashes([10,5])
     #plt.plot(myspina6,myeta6,'r:',label=r'$\eta_{\rm BZ,6}$')
-    plt.plot(alist,100*etajetlist,'gs',label=r'$\eta_{\rm jet}$',lw=2)
+    #plt.plot(alist,100*etajetlist,'gs',label=r'$\eta_{\rm jet}$',lw=2)
+    ax3.errorbar(alist,100*etajlist,yerr=2*100*etajstdlist,label=r'$\eta_{\rm jet}$',mfc='g',ecolor='g',fmt='s')
     #plt.plot(alist,100*etaEMlist,'rx',label=r'$\eta_{\rm jet}$')
     plt.plot(alist,100*etawindlist,'bv',label=r'$\eta_{\rm wind}$')
     #plt.plot(myspina6,100*fac*myeta6,'k-',lw=2) #,label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$' )
