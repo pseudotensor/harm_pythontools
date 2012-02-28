@@ -6337,7 +6337,7 @@ def computeavgs():
     print( "a = -0.9:")
     getetaavg('siminfo.txt',('A-0.9f','A-0.9','A-0.9$l_r$','A-0.9$l_\\theta$','A-0.9$h_\\theta$','A-0.9$h_\\varphi$',))
 
-def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=False,nsigma=1):
+def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=False,nsigma=1,eps=1e-5):
     if usegaussianunits == True:
         unitsfactor = (4*np.pi)**0.5*2*np.pi
     else:
@@ -6575,14 +6575,19 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     u_etawindstdlist = np.zeros_like(u_alist)
     u_sparlist = np.zeros_like(u_alist)
     u_sparstdlist = np.zeros_like(u_alist)
+    u_numsims =  np.zeros_like(u_alist)
     for i,aval in enumerate(u_alist):
-        u_philist[i],u_phistdlist[i] = getavgstd( philist[alist==aval], phistdlist[alist==aval])
-        u_etalist[i],u_etastdlist[i] = getavgstd( etalist[alist==aval], etastdlist[alist==aval])
-        u_etajetlist[i],u_etajetstdlist[i] = getavgstd( etajetlist[alist==aval], etajetstdlist[alist==aval])
-        u_etawindlist[i],u_etawindstdlist[i] = getavgstd( etawindlist[alist==aval], etawindstdlist[alist==aval])
-        u_sparlist[i],u_sparstdlist[i] = getavgstd( sparlist[alist==aval], sparstdlist[alist==aval])
-        print( "%2d: %9.5g %9.5g %9.5g %9.5g %9.5g" % (
-                i, aval, u_philist[i], 2*u_phistdlist[i], 100*u_etalist[i], 2*100*u_etastdlist[i] ) )
+        #make comparison in omegah space where closely spaced values of a are 
+        #not spread out form each other
+        cond = (np.abs(omegah_compute(alist)-omegah_compute(aval))<eps)
+        u_philist[i],u_phistdlist[i] = getavgstd( philist[cond], phistdlist[cond])
+        u_etalist[i],u_etastdlist[i] = getavgstd( etalist[cond], etastdlist[cond])
+        u_etajetlist[i],u_etajetstdlist[i] = getavgstd( etajetlist[cond], etajetstdlist[cond])
+        u_etawindlist[i],u_etawindstdlist[i] = getavgstd( etawindlist[cond], etawindstdlist[cond])
+        u_sparlist[i],u_sparstdlist[i] = getavgstd( sparlist[cond], sparstdlist[cond])
+        u_numsims[i] = cond.sum()
+        print( "%2d: %9.5g %9.5g %9.5g %9.5g %9.5g %3g" % (
+                i, aval, u_philist[i], 2*u_phistdlist[i], 100*u_etalist[i], 2*100*u_etastdlist[i], u_numsims[i]) )
     #
     plt.figure(1, figsize=(8,4),dpi=100)
     plt.clf()
@@ -6663,7 +6668,7 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     l.set_dashes([10,5])
     #plt.plot(myspina6,myeta6,'r:',label=r'$\eta_{\rm BZ,6}$')
     #plt.plot(alist,100*etajetlist,'gs',label=r'$\eta_{\rm jet}$',lw=2)
-    ax3.errorbar(u_alist,100*u_etajetlist,yerr=2*100*u_etajetstdlist,label=r'$\eta_{\rm jet}$',mfc='g',ecolor='g',fmt='s',lw=2,elinewidth=1,mew=1)
+    ax3.errorbar(u_alist,100*u_etajetlist,yerr=2*100*u_etajetstdlist,label=r'$\eta_{\rm jet}$',mfc='g',ecolor='g',fmt='^',lw=2,elinewidth=1,mew=1)
     #plt.plot(alist,100*etaEMlist,'rx',label=r'$\eta_{\rm jet}$')
     #plt.plot(alist,100*etawindlist,'bv',label=r'$\eta_{\rm wind}$')
     ax3.errorbar(u_alist,100*u_etawindlist,yerr=2*100*u_etawindstdlist,label=r'$\eta_{\rm wind}$',mfc='b',ecolor='b',fmt='v',lw=2,elinewidth=1,mew=1)
@@ -6915,6 +6920,11 @@ def div( vec ):
     res = np.zeros_like(vec[1])
     res[0:-1]  = (vec[1][1:]-vec[1][:-1])
     return( res )
+
+def omegah_compute(a):
+    rh = 1+(1-a**2)**0.5
+    omegah = 0.5 * a / rh
+    return( omegah )
 
 def plotdiv():    
     global madded, eadded
@@ -7466,7 +7476,7 @@ def mkmanystreamlinesx1x2():
             # ax2
             plt.draw()
 
-def finddiskjetbnds(r0=10,upperx2=True,maxiter=100,eps=1e-14):
+def finddiskjetbnds(r0=5,upperx2=True,maxiter=100,eps=1e-14,doplot=True):
     """upperx2 = False means look for low-x2 boundary; dir = True means look for high-x2 boundary"""
     #starting point
     x0 = x1[iofr(r0),0,0]
@@ -7498,9 +7508,10 @@ def finddiskjetbnds(r0=10,upperx2=True,maxiter=100,eps=1e-14):
             trajdisk = mkvelsline(x0,ydisk)
         if trajpole is None:
             trajpole = mkvelsline(x0,ypole)
-        #plot current trajectory
-        plt.plot(traj[0],traj[1],'g')
-        plt.draw()
+        if doplot:
+            #plot current trajectory
+            plt.plot(traj[0],traj[1],'g')
+            plt.draw()
         #break if reached accuracy
         if np.abs(ypole-ydisk)<eps*ymax:
             print( "Reached given accuracy, %g" % eps )
@@ -9782,6 +9793,22 @@ def plotbsqorhosigma():
         plt.ylim(0.001,10)
         plt.grid()
 
+def extract_trajjet(trajdisk, trajpole,di=1):
+    #obtain the closest approach
+    x1min = trajpole[0].min()
+    imin = trajpole[0].argmin()
+    print imin
+    x2min = trajpole[1][imin]
+    x2mid = 0.5*(x2.max()+x2.min())
+    #orient array in increasing coordinate order
+    if (x2min > x2mid and (trajpole[1][imin-di] > trajpole[1][imin+di])) or \
+       (x2min < x2mid and (trajpole[1][imin-di] < trajpole[1][imin+di])):
+        trajpole = trajpole[0][::-1], trajpole[1][::-1]
+        imin = trajpole[0].argmin()
+    traj1jet = trajdisk[0][trajdisk[0]<x1min], trajdisk[1][trajdisk[0]<x1min]
+    traj2jet = trajpole[0][imin+1:], trajpole[1][imin+1:]
+    return np.concatenate((traj1jet[0],traj2jet[0])), np.concatenate((traj1jet[1],traj2jet[1]))
+    
 if __name__ == "__main__":
     if False:
         #compute energy flux weighted pg/pm
@@ -9805,10 +9832,21 @@ if __name__ == "__main__":
         plt.clf()
         plotBavg()
     if False:
-        grid3d("gdump.bin",use2d=True)
-        avgmem=rdavg2d(usedefault=1)  #usedefault=1 reads in from "avg2d.npy"
-        trajdisk,trajpole = finddiskjetbnds(r0=10,upperx2=True)
-        trajdisk,trajpole = finddiskjetbnds(r0=10,upperx2=False)
+        if False:
+            grid3d("gdump.bin",use2d=True)
+            avgmem=rdavg2d(usedefault=1)  #usedefault=1 reads in from "avg2d.npy"
+            trajdisk_up,trajpole_up = finddiskjetbnds(r0=10,upperx2=True)
+            trajdisk_dn,trajpole_dn = finddiskjetbnds(r0=10,upperx2=False)
+        plt.clf()
+        plt.plot(trajdisk_up[0],trajdisk_up[1],'b',lw=2)
+        plt.plot(trajdisk_dn[0],trajdisk_dn[1],'b',lw=2)
+        plt.plot(trajpole_up[0],trajpole_up[1],'r',lw=2)
+        plt.plot(trajpole_dn[0],trajpole_dn[1],'r',lw=2)
+        trajjet_up = extract_trajjet(trajdisk_up,trajpole_up)
+        trajjet_dn = extract_trajjet(trajdisk_dn,trajpole_dn)
+        plt.plot(trajjet_up[0],trajjet_up[1],'y--',lw=2)
+        plt.plot(trajjet_dn[0],trajjet_dn[1],'y--',lw=2)
+        plt.draw()
     if False:
         #takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
         #takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=False,aphi_j_val=0)
