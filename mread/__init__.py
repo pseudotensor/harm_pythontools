@@ -7405,6 +7405,14 @@ def mkonestreamlinex1x2(ux, uy, xi, yi, x0, y0):
         plt.figure()
         plt.plot(np.log10(r[:,0,0]),np.log10(rhotraj))
     """
+    if ux.ndim==3:
+        ux=ux[:,:,0]
+    if uy.ndim==3:
+        uy=uy[:,:,0]
+    if xi.ndim==3:
+        xi=xi[:,:,0]
+    if yi.ndim==3:
+        yi=yi[:,:,0]
     traj = fstreamplot(yi,xi,uy,ux,ua=None,va=None,ax=None,density=24,downsample=1,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.1,dsval=0.005,color='k',doarrows=False,dorandomcolor=False,skipblankint=True,detectLoops=False,minindent=5,minlengthdefault=0.2,startatmidplane=False,startxabs=y0,startyabs=x0)
     if traj is not None:
         if traj[1][0] > x0:
@@ -7444,6 +7452,7 @@ def mkmanystreamlinesx1x2():
             plt.plot(xtraj,ytraj,'g-')
             yfunc = interp1d(xtraj, ytraj, kind='linear',bounds_error=False)
             #pdb.set_trace()
+            #check how well the field line is extracted
             xtrajvsti = x1[:,0,0]
             ytrajvsti = yfunc(xtrajvsti)
             my_aphi = findroot2d(x2[:,:,0]-ytrajvsti[:,None], avg_aphi, axis = 0 )
@@ -7453,6 +7462,16 @@ def mkmanystreamlinesx1x2():
             # ax2
             plt.draw()
 
+def mkvelsline(x0,y0):
+    """Makes one streamline passing through (x0,y0), returns the min value of x
+       along the streamline
+    """
+    global avg_uu,x1, x2
+    traj = mkonestreamlinex1x2( avg_uu[1], avg_uu[2], x1, x2, x0, y0 )
+    x1traj,x2traj = traj
+    return( x1traj.min() )
+    
+    
 def mkmanystreamlinesxy():
     startxabs=2
     a_startyabs=np.linspace(-6,6,num=2)
