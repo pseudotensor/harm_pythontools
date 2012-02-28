@@ -7410,9 +7410,13 @@ def mkonestreamlinex1x2(ux, uy, xi, yi, x0, y0):
     if uy.ndim==3:
         uy=uy[:,:,0]
     if xi.ndim==3:
-        xi=xi[:,:,0]
+        xi=xi[:,0,0]
     if yi.ndim==3:
-        yi=yi[:,:,0]
+        yi=yi[0,:,0]
+    if xi.ndim==2:
+        xi=xi[:,0]
+    if yi.ndim==2:
+        yi=yi[0,:]
     traj = fstreamplot(yi,xi,uy,ux,ua=None,va=None,ax=None,density=24,downsample=1,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.1,dsval=0.005,color='k',doarrows=False,dorandomcolor=False,skipblankint=True,detectLoops=False,minindent=5,minlengthdefault=0.2,startatmidplane=False,startxabs=y0,startyabs=x0)
     if traj is not None:
         if traj[1][0] > x0:
@@ -7462,14 +7466,57 @@ def mkmanystreamlinesx1x2():
             # ax2
             plt.draw()
 
+def finddiskjetbnds(r0=10,upperx2=True,maxiter=100,eps=1e-14):
+    """upperx2 = False means look for low-x2 boundary; dir = True means look for high-x2 boundary"""
+    #starting point
+    x0 = x1[iofr(r0),0,0]
+    y0 = 0.5*(x2.min() + x2.max())
+    ymax = max(abs(x2.min()),abs(x2.max()))
+    if upperx2:
+        ypole = x2.max()
+        ydisk = y0
+    else:
+        ypole = x2.min()
+        ydisk = y0
+    trajold = None
+    traj = None
+    xh = x1[iofr(rhor),ny/2,0]
+    trajdisk = None
+    trajpole = None
+    for i in xrange(maxiter):
+        y = 0.5*(ydisk+ypole)
+        #save old traj
+        trajold = traj
+        traj = mkvelsline(x0,y)
+        if traj[0].min() < xh:
+            ydisk = y
+            trajdisk = traj
+        else:
+            ypole = y
+            trajpole = traj
+        if trajdisk is None:
+            trajdisk = mkvelsline(x0,ydisk)
+        if trajpole is None:
+            trajpole = mkvelsline(x0,ypole)
+        #plot current trajectory
+        plt.plot(traj[0],traj[1],'g')
+        plt.draw()
+        #break if reached accuracy
+        if np.abs(ypole-ydisk)<eps*ymax:
+            print( "Reached given accuracy, %g" % eps )
+            break
+        if i == maxiter-2:
+            print( "Reached max iter number, %d" % maxiter )
+    return( trajdisk, trajpole)
+        
+
 def mkvelsline(x0,y0):
     """Makes one streamline passing through (x0,y0), returns the min value of x
        along the streamline
     """
-    global avg_uu,x1, x2
-    traj = mkonestreamlinex1x2( avg_uu[1], avg_uu[2], x1, x2, x0, y0 )
-    x1traj,x2traj = traj
-    return( x1traj.min() )
+    global avg_uu, x1, x2
+    traj = mkonestreamlinex1x2( avg_uu[1,:,:,0], avg_uu[2,:,:,0], x1[:,0,0], x2[0,:,0], x0, y0 )
+    return( traj )
     
     
 def mkmanystreamlinesxy():
@@ -9758,6 +9805,11 @@ if __name__ == "__main__":
         plt.clf()
         plotBavg()
     if False:
+        grid3d("gdump.bin",use2d=True)
+        avgmem=rdavg2d(usedefault=1)  #usedefault=1 reads in from "avg2d.npy"
+        trajdisk,trajpole = finddiskjetbnds(r0=10,upperx2=True)
+        trajdisk,trajpole = finddiskjetbnds(r0=10,upperx2=False)
+    if False:
         #takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
         #takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=False,aphi_j_val=0)
         #use this in a shell script
@@ -9817,7 +9869,7 @@ if __name__ == "__main__":
         #Pro vs. retrograde spins, updated diagnostics
         readmytests1()
         plotpowers('siminfo.txt',plotetas=True,format=2) #new format; data from 2d average dumps
-    if True:
+    if False:
         #Jet efficiency vs. spin, update diagnostics
         readmytests1()
         plotpowers('siminfo.txt',plotetas=False,format=2) #new format; data from 2d average dumps
