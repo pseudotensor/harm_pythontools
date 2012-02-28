@@ -7424,7 +7424,7 @@ def mkonestreamlinex1x2(ux, uy, xi, yi, x0, y0):
 
 def mkmanystreamlinesx1x2(): 
     startxabs=2
-    a_startyabs=np.linspace(0.495,0.495,num=1)
+    a_startyabs=np.linspace(0.583,0.583,num=1)
     #DRAW FIGURE
     #fig=plt.figure(1,figsize=(12,9),dpi=300)
     fig=plt.figure(1)
