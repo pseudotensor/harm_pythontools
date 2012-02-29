@@ -9848,7 +9848,7 @@ def extract_trajjet(trajdisk, trajpole,di=1):
     print imin
     x2min = trajpole[1][imin]
     x2mid = 0.5*(x2.max()+x2.min())
-    #orient array in increasing coordinate order
+    #orient array in increasing coordinate order and update the index
     if (x2min > x2mid and (trajpole[1][imin-di] > trajpole[1][imin+di])) or \
        (x2min < x2mid and (trajpole[1][imin-di] < trajpole[1][imin+di])):
         trajpole = trajpole[0][::-1], trajpole[1][::-1]
@@ -9883,8 +9883,8 @@ if __name__ == "__main__":
         if False:
             grid3d("gdump.bin",use2d=True)
             avgmem=rdavg2d(usedefault=1)  #usedefault=1 reads in from "avg2d.npy"
-            trajdisk_up,trajpole_up = finddiskjetbnds(r0=10,upperx2=True)
-            trajdisk_dn,trajpole_dn = finddiskjetbnds(r0=10,upperx2=False)
+            trajdisk_up,trajpole_up = finddiskjetbnds(r0=10,upperx2=True,doplot=True)
+            trajdisk_dn,trajpole_dn = finddiskjetbnds(r0=10,upperx2=False,doplot=True)
         plt.clf()
         plt.plot(trajdisk_up[0],trajdisk_up[1],'b',lw=2)
         plt.plot(trajdisk_dn[0],trajdisk_dn[1],'b',lw=2)
