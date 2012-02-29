@@ -7647,15 +7647,7 @@ def removefloorsavg2d(usestaggeredfluxes=False,DFfloor=None):
     return( Fm_floorremoved, FmMinusFe_floorremoved1, FmMinusFe_floorremoved2 )
 
 
-def removefloorsavg2djetwind(usestaggeredfluxes=False,DFfloor=None, x2jet_up=None, x2jet_dn=None):
-    """ Removes floors and returns a tuple, (Fm, FmMinusFe1, FmMinusFe2), from which floors were removed.
-        Does not multiply the result by _dx2*_dx3 -- you should do so yourself if you wish.
-        When removing the floors assumes that the flow is aligned with the radial grid lines (x2=const).
-        In reality, this is not exactly correct, however, most of the floor addition happens 
-        close to the BH, where the grid is very much radial, so this approximation works quite well.
-    """
-    if DFfloor is None:
-        DFfloor=takeoutfloors(ax=None,doreload=1,dotakeoutfloors=True,dofeavg=0,isinteractive=0,writefile=False,doplot=False,aphi_j_val=0, ndim=2, is_output_cell_center = False)
+def get_fluxes(usestaggeredfluxes=False):
     if 'avg_gdetF' in globals() and not avg_gdetF[0,0].any() or \
             usestaggeredfluxes == False:
         is_output_cell_center = True
@@ -7677,22 +7669,111 @@ def removefloorsavg2djetwind(usestaggeredfluxes=False,DFfloor=None, x2jet_up=Non
         enden1=(-avg_gdetF[0,1]*nz)
         enden2=(-avg_gdetF[1,1]*nz)
         mdden =(-avg_gdetF[0,0]*nz)
-    dotakeoutfloors=True
-    if dotakeoutfloors:
-        #subtract rest-mass from total energy flux and flip the sign to get correct direction
-        DFen = DFfloor[1]+DFfloor[0] 
-        #pdb.set_trace()
-        enden1 += DFen[:,:,None]/(_dx2*_dx3) 
-        mdden += DFfloor[0][:,:,None]/(_dx2*_dx3)
-    if is_output_cell_center == False:
-        #en[:-1]=0.5*(en[:-1]+en[1:])
         enden1[:-1]=0.5*(enden1[1:]+enden1[:-1])
         enden2[:,:-1]=0.5*(enden2[:,1:]+enden2[:,:-1])
         mdden[:-1]=0.5*(mdden[:-1]+mdden[1:])
-    Fm_floorremoved = mdden
-    FmMinusFe_floorremoved1 = enden1
-    FmMinusFe_floorremoved2 = enden2
-    return( Fm_floorremoved, FmMinusFe_floorremoved1, FmMinusFe_floorremoved2 )
+    #Fm, (Fm-Fe)x1, (Fm-Fe)x2
+    return mdden, enden1, enden2
+
+def extract_along_x2vsi(x2vsi,var,isleft=True,fallback=1,fallbackval = np.pi/2,shiftx2=0.5*_dx2):
+    #shiftx2 is used to account for center to face difference in locations (half a cell = 0.5*_dx2)
+    res = findroot2d( x2[:,:,0] - x2vsi[:,None] + shiftx2, var, isleft=isleft, fallback = fallback, fallbackval = fallbackval )
+    return(res)
+
+
+def removefloorsavg2djetwind(usestaggeredfluxes=False,DFfloor=None, jetangle=None, jet1x2=None, jet2x2=None):
+    """ Removes floors and returns a tuple, (Fm, FmMinusFe1, FmMinusFe2), from which floors were removed.
+        Does not multiply the result by _dx2*_dx3 -- you should do so yourself if you wish.
+        When removing the floors assumes that the flow is aligned with the radial grid lines (x2=const).
+        In reality, this is not exactly correct, however, most of the floor addition happens 
+        close to the BH, where the grid is very much radial, so this approximation works quite well.
+    """
+    RR=0
+    TH=1
+    PH=2
+    #x2 = -1 at h = 0
+    #x2 =  1 at h = pi
+    #get fluxes
+    mdden, enden1, enden2 = get_fluxes(usestaggeredfluxes=usestaggeredfluxes)
+    ######################
+    #
+    #  Fluxes
+    #
+    ######################
+    if DFfloor is None:
+        DFfloor=takeoutfloors(ax=None,doreload=1,dotakeoutfloors=True,dofeavg=0,isinteractive=0,writefile=False,doplot=False,aphi_j_val=0, ndim=-2, is_output_cell_center = False)
+    #process floors
+    DUin, DUout = DFfloor
+    #subtract back (by adding) the rest-mass floor from energy, so get floor on Fm-Fe
+    DUin[1] += DUin[0]
+    DUout[1] += DUout[0]
+    #integrate DUin/DUout in theta
+    DUin = DUin.cumsum(1+TH)
+    DUout = DUout.cumsum(1+TH)
+    #Make it into a tuple
+    DUin  = DUin[0],  DUin[1]
+    DUout = DUout[0], DUout[1]
+    ######################
+    #
+    #  Fluxes
+    #
+    ######################
+    Fmcum = mdden.cumsum(TH)*_dx2*_dx3
+    Fxcum = enden1.cumsum(TH)*_dx2*_dx3  #Fx = FmMinusFe
+    #make it into a tuple
+    Fcum = Fmcum, Fxcum
+    #INSERT ANGLE FILTERING HERE
+    #
+    #JET1
+    #
+    DUin_jet1=np.array(extract_along_x2vsi(DUin,jet1x2))
+    DUout_jet1=np.array(extract_along_x2vsi(DUout,jet1x2))
+    F_jet1=np.array(extract_along_x2vsi(Fcum,jet1x2))
+    #
+    #JET2
+    #
+    DUin_jet2cum=np.array(extract_along_x2vsi(DUin,jet2x2,isleft=False))
+    DUout_jet2cum=np.array(extract_along_x2vsi(DUout,jet2x2,isleft=False))
+    F_jet2cum=np.array(extract_along_x2vsi(Fcum,jet2x2,isleft=False))
+    #subtract from other axis
+    DUin_jet2=DUin[:,ny-1:ny]-DUin_jet2cum
+    DUout_jet2=DUout[:,ny-1:ny]-DUout_jet2cum
+    F_jet2 = Fcum[:,ny-1:ny]-F_jet2cum
+    #
+    #WIND
+    #
+    DUin_wind=DUin_jet2cum-DUin_jet1
+    DUout_wind=DUout_jet2cum-DUout_jet1
+    F_wind=F_jet2cum-F_jet1
+    #
+    #now combine into 1D floor corrections for jet1, wind, and jet2
+    #
+    #JET1
+    #
+    DFin_jet1  = DUin_jet1.cumsum(1+RR)
+    DFout_jet1 = DUout_jet1.cumsum(1+RR)
+    DF_jet1 = (DFin_jet1-DFin_jet1[:,nx-1:nx]) + DFout_jet1
+    #
+    #JET2
+    #
+    DFin_jet2  = DUin_jet2.cumsum(1+RR)
+    DFout_jet2 = DUout_jet2.cumsum(1+RR)
+    DF_jet2 = (DFin_jet2-DFin_jet2[:,nx-1:nx]) + DFout_jet2
+    #
+    #WIND
+    #
+    DFin_wind  = DUin_wind.cumsum(1+RR)
+    DFout_wind = DUout_wind.cumsum(1+RR)
+    DF_wind = (DFin_wind-DFin_wind[:,nx-1:nx]) + DFout_wind
+
+    if dotakeoutfloors:
+        #subtract rest-mass from total energy flux and flip the sign to get correct direction
+        #DFen = DF[1]+DF[0] 
+        F_jet1 += DFjet1[0:2]
+        F_jet2 += DFjet2[0:2]
+        F_wind += DFwind[0:2]
+
+    return( F_jet1, F_jet2, F_wind )
 
 def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,showticks=True,usedefault=2,fc='white',mc='white',dotakeoutfloors=0,showtitle=False):
     #fc='#D8D8D8'
