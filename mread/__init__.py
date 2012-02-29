@@ -4528,18 +4528,19 @@ def getstagparams(var=None,rmax=20,doplot=1,doreadgrid=1,usedefault=1,fixupneara
     else:
         return istag, jstag, hstag, rstag
 
-def get_dUfloor( floordumpno, maxrinflowequilibrium = 20, aphi_j_val=0, is_output_cell_center = True ):
+def get_dUfloor( floordumpno, maxrinflowequilibrium = 20, aphi_j_val=0 ):
     """ maxrsteady should be chosen to be on the outside of the inflow equilibrium region """
     global nx, ny, nz
     RR=0
     TH=1
     PH=2
-    cachefname = "dumps/failfloordudump%04d.npz" % floordumpno
+    cachefname = "dumps/failfloorv2dudump%04d.npz" % floordumpno
     if os.path.isfile(cachefname):
         #if already pre-computed floor info, reuse it
         print("Reading %s..." % os.path.basename(cachefname))
         npzfile = np.load(cachefname)
-        UfloorAsum = npzfile['Ufloor']
+        UfloorAin = npzfile['UfloorAin']
+        UfloorAout = npzfile['UfloorAout']
         nx = npzfile['nx']
         ny = npzfile['ny']
         nz = npzfile['nz']
@@ -4562,26 +4563,9 @@ def get_dUfloor( floordumpno, maxrinflowequilibrium = 20, aphi_j_val=0, is_outpu
     #Integrate in radius
     UfloorAout = (dUfloor*condout[:,:,:,:]).sum(1+PH)  #*(tj!=0)*(tj!=ny-1)
     UfloorAin = (dUfloor*condin[:,:,:,:]).sum(1+PH) #*(tj!=0)*(tj!=ny-1)
-    UfloorAout = UfloorAout.cumsum(1+RR)
-    UfloorAin  = UfloorAin.cumsum(1+RR)
-    #
-    UfloorA = (UfloorAin-UfloorAin[:,nx-1:nx]) + UfloorAout
-    #
-    #XXX: HACK!!
-    if False and floordumpno==263:
-        rrdump("rdump--0263.bin")
-        Ucons[1] -= Ucons[0]
-        UfloorA[0:8] -= Ucons[0:8].sum(-1).sum(-1)*_dx1*_dx2*_dx3
-        rrdump("rdump--0258.bin")
-        Ucons[1] -= Ucons[0]
-        UfloorA[0:8] += Ucons[0:8].sum(-1).sum(-1)*_dx1*_dx2*_dx3
-    if is_output_cell_center:
-        #This needs to be moved half a cell to the right for correct centering
-        UfloorA[:,1:] = 0.5*(UfloorA[:,:-1]+UfloorA[:,1:])
-    UfloorAsum = UfloorA*scaletofullwedge(1.)
     if not os.path.isfile(cachefname):
-        np.savez(cachefname, Ufloor=UfloorAsum, nx=nx, ny=ny, nz=nz)
-    return( UfloorAsum )
+        np.savez(cachefname, UfloorAin=UfloorAin, UfloorAout=UfloorAout, nx=nx, ny=ny, nz=nz)
+    return( UfloorAin, UfloorAout )
 
 def plotfluxes(doreload=1,aphi_j_val=0):
     global DF,DF1,DF2,qtymem,qtymem1,qtymem2
@@ -4669,13 +4653,13 @@ def get_dFfloor(Dt, Dno, dotakeoutfloors=True,aphi_j_val=0, ndim=1, is_output_ce
     set up."""
     #initialize with zeros
     global nx, ny, nz
-    cachefname = "dumps/floorinfo.npz"
+    cachefname = "dumps/floorv2info.npz"
     #r-,th-, and phi- indices
     RR=0
     TH=1
     PH=2
     DT = 0
-    DU = None
+    DF = None
     if dotakeoutfloors:
         if os.path.isfile(cachefname):
             #if previously cached floor info, reuse it
@@ -4683,49 +4667,71 @@ def get_dFfloor(Dt, Dno, dotakeoutfloors=True,aphi_j_val=0, ndim=1, is_output_ce
             npzfile = np.load(cachefname)
             npzfile_Dt = npzfile['Dt']
             npzfile_Dno = npzfile['Dno']
-            npzfile_DU = npzfile['DU']
+            npzfile_DUin = npzfile['DUin']
+            npzfile_DUout = npzfile['DUout']
             nx = npzfile['nx']
             ny = npzfile['ny']
             nz = npzfile['nz']
             if( Dt.shape == npzfile_Dt.shape and (Dt == npzfile_Dt).all() and
                 Dno.shape == npzfile_Dno.shape and (Dno == npzfile_Dno).all() ):
-                DU = np.copy( npzfile_DU )
+                DUin = np.copy( npzfile_DUin )
+                DUout = np.copy( npzfile_DUout )
+                DF = DUin, DUout
                 del npzfile_Dt
                 del npzfile_Dno
-                del npzfile_DU
+                del npzfile_DUin
+                del npzfile_DUout
                 del npzfile
                 #gc.collect()
             else:
                 print( "Floor information (Dt or Dno) has changed since last time, skipping cache file (%s)\n" % cachefname )
-        if DU is None:
+        if DF is None:
             for (i,iDT) in enumerate(Dt):
                 gc.collect() #try to clean up memory if not used
-                iDU = get_dUfloor( Dno[i], aphi_j_val=aphi_j_val, is_output_cell_center = is_output_cell_center )
+                iDUin, iDUout = get_dUfloor( Dno[i], aphi_j_val=aphi_j_val )
+                #
                 if iDT > 0:
                     DT += iDT
                 if i==0:
-                    DU = iDU
+                    DUin = iDUin
+                    DUout = iDUout
                 else:
-                    DU += iDU * np.sign(iDT)
+                    DUin += iDUin * np.sign(iDT)
+                    DUout += iDUout * np.sign(iDT)
             #average in time
-            DU /= DT
+            DUin /= DT
+            DUout /= DT
+            DUin *= scaletofullwedge(1.)
+            DUout *= scaletofullwedge(1.)
             #save the floor info as cache file
-            np.savez(cachefname, Dt=Dt, Dno=Dno, DU=DU, nx=nx, ny=ny, nz=nz)
+            np.savez(cachefname, Dt=Dt, Dno=Dno, DUin=DUin, DUout=DUout, nx=nx, ny=ny, nz=nz)
+            #at this point, don't know DF, so place two components of correction instead
+            DF = DUin, DUout
         if ndim == 1:
-            DU = DU.cumsum(1+TH)  #*(tj!=0)*(tj!=ny-1)
+            #convert DUin/DUout into DF
+            DFout = DUout.cumsum(1+RR)
+            DFin  = DUin.cumsum(1+RR)
+            #
+            DF = (DFin-DFin[:,nx-1:nx]) + DFout
+            #
+            if is_output_cell_center:
+                #This needs to be moved half a cell to the right for correct centering
+                DF[:,1:] = 0.5*(DF[:,:-1]+DF[:,1:])
+            DF = DF.cumsum(1+TH)  #*(tj!=0)*(tj!=ny-1)
             if aphi_j_val == 0:
                 #use unrestricted (full) sum
-                DU = DU[:,:,ny-1]
+                DF = DF[:,:,ny-1]
             else:
-                DU = cutout_along_aphi(DU,aphi_j_val=aphi_j_val)
+                DF = cutout_along_aphi(DF,aphi_j_val=aphi_j_val)
     else:
         if ndim == 1:
-            DU = np.zeros((8,nx),dtype=np.float64)
+            DF = np.zeros((8,nx),dtype=np.float64)
         elif ndim == 2:
-            DU = np.zeros((8,nx,ny),dtype=np.float64)
+            DF = np.zeros((8,nx,ny),dtype=np.float64)
         else:
-            DU = np.zeros((8,nx,ny,nz),dtype=np.float64)
-    return( DU )
+            DF = np.zeros((8,nx,ny,nz),dtype=np.float64)
+    return( DF )
+
 
 def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=None,isinteractive=1,returndf=0,dolegend=True,plotldtot=True,lw=1,plotFem=False,writefile=True,doplot=True,aphi_j_val=0, ndim=1, is_output_cell_center = True, correct99 = False,**kwargs):
     global dUfloor, etad0, DF
@@ -5723,6 +5729,22 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
 
     #RETURN: if requested 2D information
     if ndim == 2:
+        DUin, DUout = DFfloor
+        #convert DUin/DUout into DF
+        DUin = DUin.cumsum(1+TH)  #*(tj!=0)*(tj!=ny-1)
+        DUout = DUout.cumsum(1+TH)  #*(tj!=0)*(tj!=ny-1)
+        DFin  = DUin.cumsum(1+RR)
+        DFout = DUout.cumsum(1+RR)
+        #
+        DF = (DFin-DFin[:,nx-1:nx]) + DFout
+        #
+        if is_output_cell_center:
+            #This needs to be moved half a cell to the right for correct centering
+            DF[:,1:] = 0.5*(DF[:,:-1]+DF[:,1:])
+        return DF
+
+    #RETURN: if requested raw 2D information
+    if ndim == -2:
         return DF
 
     DFfloor0 = DF[0]
