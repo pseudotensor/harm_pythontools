@@ -7624,6 +7624,54 @@ def removefloorsavg2d(usestaggeredfluxes=False,DFfloor=None):
     FmMinusFe_floorremoved2 = enden2
     return( Fm_floorremoved, FmMinusFe_floorremoved1, FmMinusFe_floorremoved2 )
 
+
+def removefloorsavg2djetwind(usestaggeredfluxes=False,DFfloor=None, x2jet_up=None, x2jet_dn=None):
+    """ Removes floors and returns a tuple, (Fm, FmMinusFe1, FmMinusFe2), from which floors were removed.
+        Does not multiply the result by _dx2*_dx3 -- you should do so yourself if you wish.
+        When removing the floors assumes that the flow is aligned with the radial grid lines (x2=const).
+        In reality, this is not exactly correct, however, most of the floor addition happens 
+        close to the BH, where the grid is very much radial, so this approximation works quite well.
+    """
+    if DFfloor is None:
+        DFfloor=takeoutfloors(ax=None,doreload=1,dotakeoutfloors=True,dofeavg=0,isinteractive=0,writefile=False,doplot=False,aphi_j_val=0, ndim=2, is_output_cell_center = False)
+    if 'avg_gdetF' in globals() and not avg_gdetF[0,0].any() or \
+            usestaggeredfluxes == False:
+        is_output_cell_center = True
+        print( "Using gdet*avg_rhouu[1]" )
+        enden1=(-gdet*avg_Tud[1,0]-gdet*avg_rhouu[1])*nz
+        enden2=(-gdet*avg_Tud[2,0]-gdet*avg_rhouu[2])*nz
+        mdden=(-gdet*avg_rhouu[1])*nz
+    else:
+        print( "Using avg_gdetF" )
+        is_output_cell_center = False
+        #x1-fluxes of:
+        #0,0 mass   
+        #0,1 energy 
+        #0,2 ang.m. 
+        #x2-fluxes of:
+        #0,0 mass   
+        #0,1 energy 
+        #0,2 ang.m. 
+        enden1=(-avg_gdetF[0,1]*nz)
+        enden2=(-avg_gdetF[1,1]*nz)
+        mdden =(-avg_gdetF[0,0]*nz)
+    dotakeoutfloors=True
+    if dotakeoutfloors:
+        #subtract rest-mass from total energy flux and flip the sign to get correct direction
+        DFen = DFfloor[1]+DFfloor[0] 
+        #pdb.set_trace()
+        enden1 += DFen[:,:,None]/(_dx2*_dx3) 
+        mdden += DFfloor[0][:,:,None]/(_dx2*_dx3)
+    if is_output_cell_center == False:
+        #en[:-1]=0.5*(en[:-1]+en[1:])
+        enden1[:-1]=0.5*(enden1[1:]+enden1[:-1])
+        enden2[:,:-1]=0.5*(enden2[:,1:]+enden2[:,:-1])
+        mdden[:-1]=0.5*(mdden[:-1]+mdden[1:])
+    Fm_floorremoved = mdden
+    FmMinusFe_floorremoved1 = enden1
+    FmMinusFe_floorremoved2 = enden2
+    return( Fm_floorremoved, FmMinusFe_floorremoved1, FmMinusFe_floorremoved2 )
+
 def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,showticks=True,usedefault=2,fc='white',mc='white',dotakeoutfloors=0,showtitle=False):
     #fc='#D8D8D8'
     global bsq, ug, mu, B, DF, qtymem
