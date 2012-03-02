@@ -4648,7 +4648,7 @@ def plotfluxes(doreload=1,aphi_j_val=0):
     plt.savefig("fig4.eps",bbox_inches='tight',pad_inches=0.02)
 
 def get_dFfloor(Dt, Dno, dotakeoutfloors=True,aphi_j_val=0, ndim=1, is_output_cell_center = True):
-    """ Returns the flux correction due to floor activations and fixups, 
+    """ Returns the (scaled to full wedge) flux correction due to floor activations and fixups, 
     requires gdump to be loaded [grid3d("gdump.bin",use2d=True)], and arrays, Dt and Dno, 
     set up."""
     #initialize with zeros
@@ -7672,6 +7672,12 @@ def get_fluxes(usestaggeredfluxes=False):
         enden1[:-1]=0.5*(enden1[1:]+enden1[:-1])
         enden2[:,:-1]=0.5*(enden2[:,1:]+enden2[:,:-1])
         mdden[:-1]=0.5*(mdden[:-1]+mdden[1:])
+    #factor to rescale all fluxes to full 2pi wedge
+    wedge_scale_factor = scaletofullwedge(1.)
+    #scale flux densities to full wedge
+    enden1 *= wedge_scale_factor
+    enden2 *= wedge_scale_factor
+    mdden *= wedge_scale_factor
     #Fm, (Fm-Fe)x1, (Fm-Fe)x2
     return mdden, enden1, enden2
 
@@ -7683,7 +7689,7 @@ def extract_along_x2vsi(var,x2vsi,isleft=True,fallback=1,fallbackval = np.pi/2,s
     return(res)
 
 
-def removefloorsavg2djetwind(usestaggeredfluxes=False,DFfloor=None, jet1x2=None, jet2x2=None, dotakeoutfloors = False):
+def removefloorsavg2djetwind(usestaggeredfluxes=False,DFfloor=None, jet1x2=None, jet2x2=None, dotakeoutfloors = True):
     """ Removes floors and returns a tuple, (Fm, FmMinusFe1, FmMinusFe2), from which floors were removed.
         Does not multiply the result by _dx2*_dx3 -- you should do so yourself if you wish.
         When removing the floors assumes that the flow is aligned with the radial grid lines (x2=const).
@@ -7717,8 +7723,8 @@ def removefloorsavg2djetwind(usestaggeredfluxes=False,DFfloor=None, jet1x2=None,
     #  Fluxes
     #
     ######################
-    Fmcum = mdden.cumsum(TH).mean(PH)*_dx2*_dx3
-    Fxcum = enden1.cumsum(TH).mean(PH)*_dx2*_dx3  #Fx = FmMinusFe
+    Fmcum = mdden.cumsum(TH).sum(PH)*_dx2*_dx3
+    Fxcum = enden1.cumsum(TH).sum(PH)*_dx2*_dx3  #Fx = FmMinusFe
     #Convert to tuples
     DUin  = DUin[0],  DUin[1]
     DUout = DUout[0], DUout[1]
