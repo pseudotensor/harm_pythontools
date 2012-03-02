@@ -2,6 +2,7 @@
 # MUST RUN THIS WITH "bash" not "sh" since on some systems that calls "dash" that doesn't correctly handle $RANDOM or other things
 
 
+origpwd=`pwd`
 
 EXPECTED_ARGS=1
 E_BADARGS=65
@@ -29,24 +30,29 @@ echo "1"
 rm -rf dirs${thedir}.txt
 alias ls='ls'
 alias lssdir='ls -ap | grep / | sed "s/\///"'
-listO=`lssdir  | grep ${thedir}`
-list=`echo $listO | sed 's/'${thedir}'\///g' | sed 's/'${thedir}' //g'`
+list0=`lssdir  | grep ${thedir} | grep -v nextnextnextnext | grep -v nextnextnext | grep -v nextnext | grep -v next`
+list1=`lssdir  | grep ${thedir} | grep next | grep -v nextnextnextnext | grep -v nextnextnext | grep -v nextnext`
+list2=`lssdir  | grep ${thedir} | grep nextnext | grep -v nextnextnextnext | grep -v nextnextnext`
+list3=`lssdir  | grep ${thedir} | grep nextnextnext | grep -v nextnextnextnext`
+list4=`lssdir  | grep ${thedir} | grep nextnextnextnext`
+listfinal=`echo $list0 $list1 $list2 $list3 $list4`
+list=`echo $listfinal | sed 's/'${thedir}'\///g' | sed 's/'${thedir}' //g'`
 
-listOnum=`echo $listO | wc -w`
+listfinalnum=`echo $listfinal | wc -w`
 listnum=`echo $list | wc -w`
 
-if [ $listOnum -eq $listnum ]
+if [ $listfinalnum -eq $listnum ]
 then
-    echo "listOnum and listnum are same!  Didn't remove ${thedir}"
-    echo "begin echo of listO"
-    echo $listO
+    echo "listfinalnum and listnum are same!  Didn't remove ${thedir}"
+    echo "begin echo of listfinal"
+    echo $listfinal
     echo "begin echo of list"
     echo $list
     echo "${thedir}" >> /data2/jmckinne/badguys1.txt
     exit
 fi
 
-#list=`echo $listO | sed 's/'${thedir}'\///g' | sed 's/'${thedir}' //g' | sed 's/' ${thedir}'//g'`
+#list=`echo $listfinal | sed 's/'${thedir}'\///g' | sed 's/'${thedir}' //g' | sed 's/' ${thedir}'//g'`
 #
 echo "begin echo of list"
 echo $list
@@ -133,6 +139,28 @@ cd ..
 echo " "
 echo $list
 echo "Number of parts for ${thedir} is $numdirparts"
+
+
+
+cd $origpwd
+
+
+echo "Checking if file sizes indicate each file is valid"
+allfiles=`ls -alRS ${thedir}* | grep fieldline | grep -v "\->" | sort -nrk 5`
+topsize=`echo "$allfiles" | head -1 | awk '{print $5}'`
+
+echo "topsize=$topsize"
+# just look at top 20 files:
+# first sed gets rid of deadfile and \\* required to grab *
+filestocheck=`echo "$allfiles" | egrep 'fieldline[0-9]+\.bin' | tail -20 | awk '{print $8}' | sed -e 's/deadfieldline[0-9]\+\.bin\\*//g' | sed -e 's/\*//g' | sed -e 's/deadfieldline[0-9]\+\.bin//g'`
+
+for fil in $filestocheck ; do echo $fil ; newfil=`ls -alrt ${thedir}/dumps/$fil | awk '{print $10}' | sed -e 's/\.\.\/\.\.\///g'` ; ls -alrt $newfil ; done
+
+echo "topsize=$topsize"
+lastmydir=`cat ${thedir}/dirs${thedir}.txt | tail -1`
+echo "lastmydir=$lastmydir"
+
+
 
 #cp -a ../thickdisk9/movie1 .
 #cd movie1/

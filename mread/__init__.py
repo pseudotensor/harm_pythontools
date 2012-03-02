@@ -529,7 +529,7 @@ def roundto2fitold(x,goodness):
     return(y)
 
 def roundto2alpha(x,xtot):
-    if np.fabs(x)>0.2*np.fabs(xtot):
+    if np.fabs(x)>0.1*np.fabs(xtot):
         y="%.*e" % (2-1, x)
         z=float(y)
         y="%g" % (z)
@@ -1656,7 +1656,7 @@ def getdefaulttimes1():
         defaultftf=1e6
     elif modelname=="thickdisk5":
         defaultfti=8000
-        defaultftf=13000
+        defaultftf=1e6
     elif modelname=="thickdisk14":
         defaultfti=8000
         defaultftf=1e6
@@ -2323,8 +2323,10 @@ def compute_resires(hoverrwhich=None):
     # much of thick disk remains sub-Keplerian, so for estimate of Q must force consistency with assumptions of the Qmri measure
     # BELOW FOR OMEGAFIX==1
     # GODMARK: Leaving as OMEGAFIX==1 because want to average omega and vau2 separately (avoids stupid limit where omaga=0 could be true randomly and kill result's meaning)
-    R = r*np.sin(h)
-    omega = 1.0/(a + R**(3.0/2.0))
+    #R = r*np.sin(h)
+    #omega = 1.0/(a + R**(3.0/2.0))
+    #
+    omega=1.0 + r*0.0 # now no longer using OMEGAFIX (i.e. OMEGAFIX=1 should be set)
     #
     #####################################
     #
@@ -2416,8 +2418,8 @@ def Qmri_simple(which=1,hoverrwhich=None,weak=None):
     norm3d=np.empty((nx,ny,nz),dtype=rho.dtype)
     qmri3d=np.empty((nx,ny,nz),dtype=rho.dtype)
     for j in np.arange(0,ny):
-        qmri3d[:,j] = qmri2d
-        norm3d[:,j] = dn
+        qmri3d[:,j,:] = qmri2d
+        norm3d[:,j,:] = dn
     #
     # res3
     # also weight with rho**2 so divisor on va2sq doesn't drop out.
@@ -2432,10 +2434,11 @@ def Qmri_simple(which=1,hoverrwhich=None,weak=None):
     norm33d=np.empty((nx,ny,nz),dtype=rho.dtype)
     q3mri3d=np.empty((nx,ny,nz),dtype=rho.dtype)
     for j in np.arange(0,ny):
-        q3mri3d[:,j] = q3mri2d
-        norm33d[:,j] = dn
+        q3mri3d[:,j,:] = q3mri2d
+        norm33d[:,j,:] = dn
     #
     # ires2
+    # 
     tiny=np.finfo(rho.dtype).tiny
     up=(gdet*denfactor*ires*which).sum(axis=1)
     dn=(gdet*denfactor*which).sum(axis=1)
@@ -2445,10 +2448,86 @@ def Qmri_simple(which=1,hoverrwhich=None,weak=None):
     iq2mri2d= (up/(dn+tiny))**1.0
     iq2mri3d=np.empty((nx,ny,nz),dtype=rho.dtype)
     for j in np.arange(0,ny):
-        iq2mri3d[:,j] = iq2mri2d
+        iq2mri3d[:,j,:] = iq2mri2d
     #
     #
-    return(qmri3d,norm3d,q3mri3d,norm33d,iq2mri3d)
+    # \Omega_{\rm rot}
+    #
+    (vrot,omegarot)=vomegarot()
+    # 
+    tiny=np.finfo(rho.dtype).tiny
+    up=(gdet*denfactor*omegarot*which).sum(axis=1)
+    dn=(gdet*denfactor*which).sum(axis=1)
+    dnmin=np.min(dn)
+    if dnmin==0:
+        print("Problem with dn for omegarot") ; sys.stdout.flush()
+    omegarot2d= (up/(dn+tiny))**1.0
+    omegarot3d=np.empty((nx,ny,nz),dtype=rho.dtype)
+    for j in np.arange(0,ny):
+        omegarot3d[:,j,:] = omegarot2d
+    #
+    #
+    # The norms for qmri and q3mri allow for vanishing which at each r,\phi so that eventually sum over all \phi has \sum_\phi qmri*norm / \sum_\phi norm  so that less chance that after over all \theta,\phi that no place where which=0 . Just proper way to handle averaging.
+    # But don't do for iq2mri or omegarot since not worried about which vanishing, so kinda inconsistent.
+    # BUT, with application of norm3d on q, should kill any case when omegarot3d=0 as well.  But won't work if omegarot\sim 0 at some \phi, so still not very stable.  But still want correlated ratio?
+    # NO, ok to sum in \phi first before taking ratio.  Not worried about qmri's correlations between the field and omega along \phi
+    #
+    ####################
+    # now put in \Omega that has less noise than local ratio, but still accounts for \Omega(r,\phi) so proper for tilted disk
+    #
+    omegaavginphi=(omegarot3d).sum(axis=2)/float(nz)
+    #
+    # divide-out Omega(r) for final qmri's.  Note that \theta direction here is really duplicated single value.  So really just ratio of angular averages in the end.
+    qmri3dfinal=np.copy(qmri3d)
+    q3mri3dfinal=np.copy(q3mri3d)
+    iq2mri3dfinal=np.copy(iq2mri3d)
+    for k in np.arange(0,nz):
+        qmri3dfinal[:,:,k]=qmri3d[:,:,k]/omegaavginphi[:,:]
+        q3mri3dfinal[:,:,k]=q3mri3d[:,:,k]/omegaavginphi[:,:]
+        iq2mri3dfinal[:,:,k]=iq2mri3d[:,:,k]/omegaavginphi[:,:]
+    #
+    #
+    #
+    #
+    # eventually take \sum_k of this \theta-averaged ratio,
+    # #1: which gives (1/nz)\sum_k <R>
+    # #2: different than taking \sum_k w dR / \sum_k w
+    # #1 makes more sense if disk is (e.g.) tilted or not very axially symmetric, so good!
+    #
+    return(qmri3dfinal,norm3d,q3mri3dfinal,norm33d,iq2mri3dfinal)
+
+
+
+
+
+# v_{\rm rot} and \Omega_{\rm rot}
+def vomegarot():
+    #
+    sigmaks=r**2+(a*np.cos(h))**2
+    deltaks=r**2-2*r+a**2
+    Aks=(r**2+a**2)**2-a**2*deltaks*(np.sin(h))**2
+    #
+    gvks00=-(1.0-2.0*r/sigmaks)
+    gvks11=(1.0+2.0*r/sigmaks)
+    gvks22=sigmaks
+    gvks33=(np.sin(h))**2*(sigmaks + a**2*(1.0 + 2.0*r/sigmaks)*(np.sin(h))**2)
+    #
+    myuu0=uu[0]*dxdxp[0,0]
+    myuu1=(uu[1]*dxdxp[1,1] + uu[2]*dxdxp[1,2])*np.sqrt(gvks11)/myuu0
+    myuu2=(uu[1]*dxdxp[2,1] + uu[2]*dxdxp[2,2])*np.sqrt(gvks22)/myuu0
+    myuu3=(uu[3]*dxdxp[3,3])*np.sqrt(gvks33)/myuu0
+    #
+    vrot = np.sqrt(myuu2**2 + myuu3**2)
+    #
+    # rotational velocity around local axis
+    omegarot = (1.0/r)*vrot
+    #
+    # Keplerian version:
+    #R = r*np.sin(h)
+    #omegakep = 1.0/(a + R**(3.0/2.0))
+    #
+    return(vrot,omegarot)
+    #
 
     
 def horcalc(hortype=1,which1=1,which2=1,denfactor=None):
@@ -2469,15 +2548,17 @@ def horcalc(hortype=1,which1=1,which2=1,denfactor=None):
     tiny=np.finfo(rho.dtype).tiny
     #
     thetamid3d=np.zeros((nx,ny,nz),dtype=h.dtype)
+    # sum over \theta
     if hortype==1:
         up=(gdet*denfactor*(h-np.pi/2)*which).sum(axis=1)
         dn=(gdet*denfactor*which).sum(axis=1)
+        # so average over \theta
         thetamid2d=up/(dn+tiny)+np.pi/2.0
         #print("thetamid2d")
         #god=thetamid2d[iofr(100),:]
         #print(god)
         for j in np.arange(0,ny):
-            thetamid3d[:,j] = thetamid2d
+            thetamid3d[:,j,:] = thetamid2d  # thetamid2d depends upon r and \phi
     else:
         thetamid3d=0.5*np.pi+thetamid3d
     #
@@ -2487,7 +2568,7 @@ def horcalc(hortype=1,which1=1,which2=1,denfactor=None):
     hoverr2d= (up/(dn+tiny))**0.5
     hoverr3d=np.empty((nx,ny,nz),dtype=h.dtype)
     for j in np.arange(0,ny):
-        hoverr3d[:,j] = hoverr2d
+        hoverr3d[:,j,:] = hoverr2d
     #
     #
     return((hoverr3d,thetamid3d))
@@ -6456,7 +6537,7 @@ def mergeqtyvstime(n):
 
 
 def getnonbobnqty():
-    value=1 + 6 + 14 + 4 + 21+21+21+21+21+24 + 21*3 + (12*4+12*4) + 11+15+12+2 + (14+48) +  (8+48) + (6) + (12*4+12*4) + (12*4+12*4)
+    value=1 + 6 + 14 + 4 + 22*5 + 25 + 22*3 + (13*4+13*4) + 11+15+12+2 + (14+48) +  (8+48) + (6) + (13*4+13*4) + (13*4+13*4)
     return(value)
 
 
@@ -6523,7 +6604,7 @@ def getqtymem(qtymem):
     global     alphamag4
     alphamag4=qtymem[i];i+=1
     #
-    #rhosq: 14+7=21
+    #rhosq: 15+7=22
     global     rhosqs
     rhosqs=qtymem[i];i+=1
     global     rhosrhosq
@@ -6540,6 +6621,8 @@ def getqtymem(qtymem):
     vus3rhosq=qtymem[i];i+=1
     global     vuas3rhosq
     vuas3rhosq=qtymem[i];i+=1
+    global     vuasrotrhosq
+    vuasrotrhosq=qtymem[i];i+=1
     global     Bs1rhosq
     Bs1rhosq=qtymem[i];i+=1
     global     Bas1rhosq
@@ -6566,7 +6649,7 @@ def getqtymem(qtymem):
     bas3rhosq=qtymem[i];i+=1
     global     bsqrhosq
     bsqrhosq=qtymem[i];i+=1
-    #rhosqdc: 14+7=21
+    #rhosqdc: 15+7=22
     global     rhosqdcs
     rhosqdcs=qtymem[i];i+=1
     global     rhosrhosqdc
@@ -6583,6 +6666,8 @@ def getqtymem(qtymem):
     vus3rhosqdc=qtymem[i];i+=1
     global     vuas3rhosqdc
     vuas3rhosqdc=qtymem[i];i+=1
+    global     vuasrotrhosqdc
+    vuasrotrhosqdc=qtymem[i];i+=1
     global     Bs1rhosqdc
     Bs1rhosqdc=qtymem[i];i+=1
     global     Bas1rhosqdc
@@ -6609,7 +6694,7 @@ def getqtymem(qtymem):
     bas3rhosqdc=qtymem[i];i+=1
     global     bsqrhosqdc
     bsqrhosqdc=qtymem[i];i+=1
-    #rhosqdcden: 14+7=21
+    #rhosqdcden: 15+7=22
     global     rhosqdcdens
     rhosqdcdens=qtymem[i];i+=1
     global     rhosrhosqdcden
@@ -6626,6 +6711,8 @@ def getqtymem(qtymem):
     vus3rhosqdcden=qtymem[i];i+=1
     global     vuas3rhosqdcden
     vuas3rhosqdcden=qtymem[i];i+=1
+    global     vuasrotrhosqdcden
+    vuasrotrhosqdcden=qtymem[i];i+=1
     global     Bs1rhosqdcden
     Bs1rhosqdcden=qtymem[i];i+=1
     global     Bas1rhosqdcden
@@ -6652,7 +6739,7 @@ def getqtymem(qtymem):
     bas3rhosqdcden=qtymem[i];i+=1
     global     bsqrhosqdcden
     bsqrhosqdcden=qtymem[i];i+=1
-    #rhosqeq: 14+7=21
+    #rhosqeq: 15+7=22
     global     rhosqeqs
     rhosqeqs=qtymem[i];i+=1
     global     rhosrhosqeq
@@ -6669,6 +6756,8 @@ def getqtymem(qtymem):
     vus3rhosqeq=qtymem[i];i+=1
     global     vuas3rhosqeq
     vuas3rhosqeq=qtymem[i];i+=1
+    global     vuasrotrhosqeq
+    vuasrotrhosqeq=qtymem[i];i+=1
     global     Bs1rhosqeq
     Bs1rhosqeq=qtymem[i];i+=1
     global     Bas1rhosqeq
@@ -6695,7 +6784,7 @@ def getqtymem(qtymem):
     bas3rhosqeq=qtymem[i];i+=1
     global     bsqrhosqeq
     bsqrhosqeq=qtymem[i];i+=1
-    #rhosqhorpick: 14+7=21
+    #rhosqhorpick: 15+7=22
     global     rhosqhorpicks
     rhosqhorpicks=qtymem[i];i+=1
     global     rhosrhosqhorpick
@@ -6712,6 +6801,8 @@ def getqtymem(qtymem):
     vus3rhosqhorpick=qtymem[i];i+=1
     global     vuas3rhosqhorpick
     vuas3rhosqhorpick=qtymem[i];i+=1
+    global     vuasrotrhosqhorpick
+    vuasrotrhosqhorpick=qtymem[i];i+=1
     global     Bs1rhosqhorpick
     Bs1rhosqhorpick=qtymem[i];i+=1
     global     Bas1rhosqhorpick
@@ -6738,7 +6829,7 @@ def getqtymem(qtymem):
     bas3rhosqhorpick=qtymem[i];i+=1
     global     bsqrhosqhorpick
     bsqrhosqhorpick=qtymem[i];i+=1
-    #2.0hor: 24
+    #2.0hor: 25
     global     gdetinthor
     gdetinthor=qtymem[i];i+=1
     global     rhoshor
@@ -6761,6 +6852,8 @@ def getqtymem(qtymem):
     vus3hor=qtymem[i];i+=1
     global     vuas3hor
     vuas3hor=qtymem[i];i+=1
+    global     vuasrothor
+    vuasrothor=qtymem[i];i+=1
     global     Bs1hor
     Bs1hor=qtymem[i];i+=1
     global     Bas1hor
@@ -6787,7 +6880,7 @@ def getqtymem(qtymem):
     bas3hor=qtymem[i];i+=1
     global     bsqhor
     bsqhor=qtymem[i];i+=1
-    #rhosqrad4: 14+7=21
+    #rhosqrad4: 15+7=22
     global     rhosqrad4
     rhosqrad4=qtymem[i];i+=1
     global     rhosrhosqrad4
@@ -6804,6 +6897,8 @@ def getqtymem(qtymem):
     vus3rhosqrad4=qtymem[i];i+=1
     global     vuas3rhosqrad4
     vuas3rhosqrad4=qtymem[i];i+=1
+    global     vuasrotrhosqrad4
+    vuasrotrhosqrad4=qtymem[i];i+=1
     global     Bs1rhosqrad4
     Bs1rhosqrad4=qtymem[i];i+=1
     global     Bas1rhosqrad4
@@ -6830,7 +6925,7 @@ def getqtymem(qtymem):
     bas3rhosqrad4=qtymem[i];i+=1
     global     bsqrhosqrad4
     bsqrhosqrad4=qtymem[i];i+=1
-    #rhosqrad8: 14+7=21
+    #rhosqrad8: 15+7=22
     global     rhosqrad8
     rhosqrad8=qtymem[i];i+=1
     global     rhosrhosqrad8
@@ -6847,6 +6942,8 @@ def getqtymem(qtymem):
     vus3rhosqrad8=qtymem[i];i+=1
     global     vuas3rhosqrad8
     vuas3rhosqrad8=qtymem[i];i+=1
+    global     vuasrotrhosqrad8
+    vuasrotrhosqrad8=qtymem[i];i+=1
     global     Bs1rhosqrad8
     Bs1rhosqrad8=qtymem[i];i+=1
     global     Bas1rhosqrad8
@@ -6873,7 +6970,7 @@ def getqtymem(qtymem):
     bas3rhosqrad8=qtymem[i];i+=1
     global     bsqrhosqrad8
     bsqrhosqrad8=qtymem[i];i+=1
-    #rhosqrad30: 14+7=21
+    #rhosqrad30: 15+7=22
     global     rhosqrad30
     rhosqrad30=qtymem[i];i+=1
     global     rhosrhosqrad30
@@ -6890,6 +6987,8 @@ def getqtymem(qtymem):
     vus3rhosqrad30=qtymem[i];i+=1
     global     vuas3rhosqrad30
     vuas3rhosqrad30=qtymem[i];i+=1
+    global     vuasrotrhosqrad30
+    vuasrotrhosqrad30=qtymem[i];i+=1
     global     Bs1rhosqrad30
     Bs1rhosqrad30=qtymem[i];i+=1
     global     Bas1rhosqrad30
@@ -6918,7 +7017,7 @@ def getqtymem(qtymem):
     bsqrhosqrad30=qtymem[i];i+=1
 
 
-    #rhosq_diskcorona_phipow_radhor: 12
+    #rhosq_diskcorona_phipow_radhor: 13
     global     rhosq_diskcorona_phipow_radhor
     rhosq_diskcorona_phipow_radhor=qtymem[i];i+=1
     global     rhosrhosq_diskcorona_phipow_radhor
@@ -6929,6 +7028,8 @@ def getqtymem(qtymem):
     uu0rhosq_diskcorona_phipow_radhor=qtymem[i];i+=1
     global     vuas3rhosq_diskcorona_phipow_radhor
     vuas3rhosq_diskcorona_phipow_radhor=qtymem[i];i+=1
+    global     vuasrotrhosq_diskcorona_phipow_radhor
+    vuasrotrhosq_diskcorona_phipow_radhor=qtymem[i];i+=1
     global     bas1rhosq_diskcorona_phipow_radhor
     bas1rhosq_diskcorona_phipow_radhor=qtymem[i];i+=1
     global     bas2rhosq_diskcorona_phipow_radhor
@@ -6944,7 +7045,7 @@ def getqtymem(qtymem):
     FEMArhosq_diskcorona_phipow_radhor=qtymem[i];i+=1
     global     FEEMrhosq_diskcorona_phipow_radhor
     FEEMrhosq_diskcorona_phipow_radhor=qtymem[i];i+=1
-    #rhosq_diskcorona_phipow_rad4: 12
+    #rhosq_diskcorona_phipow_rad4: 13
     global     rhosq_diskcorona_phipow_rad4
     rhosq_diskcorona_phipow_rad4=qtymem[i];i+=1
     global     rhosrhosq_diskcorona_phipow_rad4
@@ -6955,6 +7056,8 @@ def getqtymem(qtymem):
     uu0rhosq_diskcorona_phipow_rad4=qtymem[i];i+=1
     global     vuas3rhosq_diskcorona_phipow_rad4
     vuas3rhosq_diskcorona_phipow_rad4=qtymem[i];i+=1
+    global     vuasrotrhosq_diskcorona_phipow_rad4
+    vuasrotrhosq_diskcorona_phipow_rad4=qtymem[i];i+=1
     global     bas1rhosq_diskcorona_phipow_rad4
     bas1rhosq_diskcorona_phipow_rad4=qtymem[i];i+=1
     global     bas2rhosq_diskcorona_phipow_rad4
@@ -6969,7 +7072,7 @@ def getqtymem(qtymem):
     FEMArhosq_diskcorona_phipow_rad4=qtymem[i];i+=1
     global     FEEMrhosq_diskcorona_phipow_rad4
     FEEMrhosq_diskcorona_phipow_rad4=qtymem[i];i+=1
-    #rhosq_diskcorona_phipow_rad8: 12
+    #rhosq_diskcorona_phipow_rad8: 13
     global     rhosq_diskcorona_phipow_rad8
     rhosq_diskcorona_phipow_rad8=qtymem[i];i+=1
     global     rhosrhosq_diskcorona_phipow_rad8
@@ -6980,6 +7083,8 @@ def getqtymem(qtymem):
     uu0rhosq_diskcorona_phipow_rad8=qtymem[i];i+=1
     global     vuas3rhosq_diskcorona_phipow_rad8
     vuas3rhosq_diskcorona_phipow_rad8=qtymem[i];i+=1
+    global     vuasrotrhosq_diskcorona_phipow_rad8
+    vuasrotrhosq_diskcorona_phipow_rad8=qtymem[i];i+=1
     global     bas1rhosq_diskcorona_phipow_rad8
     bas1rhosq_diskcorona_phipow_rad8=qtymem[i];i+=1
     global     bas2rhosq_diskcorona_phipow_rad8
@@ -6994,7 +7099,7 @@ def getqtymem(qtymem):
     FEMArhosq_diskcorona_phipow_rad8=qtymem[i];i+=1
     global     FEEMrhosq_diskcorona_phipow_rad8
     FEEMrhosq_diskcorona_phipow_rad8=qtymem[i];i+=1
-    #rhosq_diskcorona_phipow_rad30: 12
+    #rhosq_diskcorona_phipow_rad30: 13
     global     rhosq_diskcorona_phipow_rad30
     rhosq_diskcorona_phipow_rad30=qtymem[i];i+=1
     global     rhosrhosq_diskcorona_phipow_rad30
@@ -7005,6 +7110,8 @@ def getqtymem(qtymem):
     uu0rhosq_diskcorona_phipow_rad30=qtymem[i];i+=1
     global     vuas3rhosq_diskcorona_phipow_rad30
     vuas3rhosq_diskcorona_phipow_rad30=qtymem[i];i+=1
+    global     vuasrotrhosq_diskcorona_phipow_rad30
+    vuasrotrhosq_diskcorona_phipow_rad30=qtymem[i];i+=1
     global     bas1rhosq_diskcorona_phipow_rad30
     bas1rhosq_diskcorona_phipow_rad30=qtymem[i];i+=1
     global     bas2rhosq_diskcorona_phipow_rad30
@@ -7021,7 +7128,7 @@ def getqtymem(qtymem):
     FEEMrhosq_diskcorona_phipow_rad30=qtymem[i];i+=1
 
 
-    #rhosq_jet_phipow_radhor: 12
+    #rhosq_jet_phipow_radhor: 13
     global     rhosq_jet_phipow_radhor
     rhosq_jet_phipow_radhor=qtymem[i];i+=1
     global     rhosrhosq_jet_phipow_radhor
@@ -7032,6 +7139,8 @@ def getqtymem(qtymem):
     uu0rhosq_jet_phipow_radhor=qtymem[i];i+=1
     global     vuas3rhosq_jet_phipow_radhor
     vuas3rhosq_jet_phipow_radhor=qtymem[i];i+=1
+    global     vuasrotrhosq_jet_phipow_radhor
+    vuasrotrhosq_jet_phipow_radhor=qtymem[i];i+=1
     global     bas1rhosq_jet_phipow_radhor
     bas1rhosq_jet_phipow_radhor=qtymem[i];i+=1
     global     bas2rhosq_jet_phipow_radhor
@@ -7046,7 +7155,7 @@ def getqtymem(qtymem):
     FEMArhosq_jet_phipow_radhor=qtymem[i];i+=1
     global     FEEMrhosq_jet_phipow_radhor
     FEEMrhosq_jet_phipow_radhor=qtymem[i];i+=1
-    #rhosq_jet_phipow_rad4: 12
+    #rhosq_jet_phipow_rad4: 13
     global     rhosq_jet_phipow_rad4
     rhosq_jet_phipow_rad4=qtymem[i];i+=1
     global     rhosrhosq_jet_phipow_rad4
@@ -7057,6 +7166,8 @@ def getqtymem(qtymem):
     uu0rhosq_jet_phipow_rad4=qtymem[i];i+=1
     global     vuas3rhosq_jet_phipow_rad4
     vuas3rhosq_jet_phipow_rad4=qtymem[i];i+=1
+    global     vuasrotrhosq_jet_phipow_rad4
+    vuasrotrhosq_jet_phipow_rad4=qtymem[i];i+=1
     global     bas1rhosq_jet_phipow_rad4
     bas1rhosq_jet_phipow_rad4=qtymem[i];i+=1
     global     bas2rhosq_jet_phipow_rad4
@@ -7071,7 +7182,7 @@ def getqtymem(qtymem):
     FEMArhosq_jet_phipow_rad4=qtymem[i];i+=1
     global     FEEMrhosq_jet_phipow_rad4
     FEEMrhosq_jet_phipow_rad4=qtymem[i];i+=1
-    #rhosq_jet_phipow_rad8: 12
+    #rhosq_jet_phipow_rad8: 13
     global     rhosq_jet_phipow_rad8
     rhosq_jet_phipow_rad8=qtymem[i];i+=1
     global     rhosrhosq_jet_phipow_rad8
@@ -7082,6 +7193,8 @@ def getqtymem(qtymem):
     uu0rhosq_jet_phipow_rad8=qtymem[i];i+=1
     global     vuas3rhosq_jet_phipow_rad8
     vuas3rhosq_jet_phipow_rad8=qtymem[i];i+=1
+    global     vuasrotrhosq_jet_phipow_rad8
+    vuasrotrhosq_jet_phipow_rad8=qtymem[i];i+=1
     global     bas1rhosq_jet_phipow_rad8
     bas1rhosq_jet_phipow_rad8=qtymem[i];i+=1
     global     bas2rhosq_jet_phipow_rad8
@@ -7096,7 +7209,7 @@ def getqtymem(qtymem):
     FEMArhosq_jet_phipow_rad8=qtymem[i];i+=1
     global     FEEMrhosq_jet_phipow_rad8
     FEEMrhosq_jet_phipow_rad8=qtymem[i];i+=1
-    #rhosq_jet_phipow_rad30: 12
+    #rhosq_jet_phipow_rad30: 13
     global     rhosq_jet_phipow_rad30
     rhosq_jet_phipow_rad30=qtymem[i];i+=1
     global     rhosrhosq_jet_phipow_rad30
@@ -7107,6 +7220,8 @@ def getqtymem(qtymem):
     uu0rhosq_jet_phipow_rad30=qtymem[i];i+=1
     global     vuas3rhosq_jet_phipow_rad30
     vuas3rhosq_jet_phipow_rad30=qtymem[i];i+=1
+    global     vuasrotrhosq_jet_phipow_rad30
+    vuasrotrhosq_jet_phipow_rad30=qtymem[i];i+=1
     global     bas1rhosq_jet_phipow_rad30
     bas1rhosq_jet_phipow_rad30=qtymem[i];i+=1
     global     bas2rhosq_jet_phipow_rad30
@@ -7470,7 +7585,7 @@ def getqtymem(qtymem):
     alphareynoldsc3=qtymem[i];i+=1
     #
     ###################################
-    #rhosq_diskcorona_thetapow_radhor: 12
+    #rhosq_diskcorona_thetapow_radhor: 13
     global     rhosq_diskcorona_thetapow_radhor
     rhosq_diskcorona_thetapow_radhor=qtymem[i];i+=1
     global     rhosrhosq_diskcorona_thetapow_radhor
@@ -7481,6 +7596,8 @@ def getqtymem(qtymem):
     uu0rhosq_diskcorona_thetapow_radhor=qtymem[i];i+=1
     global     vuas3rhosq_diskcorona_thetapow_radhor
     vuas3rhosq_diskcorona_thetapow_radhor=qtymem[i];i+=1
+    global     vuasrotrhosq_diskcorona_thetapow_radhor
+    vuasrotrhosq_diskcorona_thetapow_radhor=qtymem[i];i+=1
     global     bas1rhosq_diskcorona_thetapow_radhor
     bas1rhosq_diskcorona_thetapow_radhor=qtymem[i];i+=1
     global     bas2rhosq_diskcorona_thetapow_radhor
@@ -7496,7 +7613,7 @@ def getqtymem(qtymem):
     FEMArhosq_diskcorona_thetapow_radhor=qtymem[i];i+=1
     global     FEEMrhosq_diskcorona_thetapow_radhor
     FEEMrhosq_diskcorona_thetapow_radhor=qtymem[i];i+=1
-    #rhosq_diskcorona_thetapow_rad4: 12
+    #rhosq_diskcorona_thetapow_rad4: 13
     global     rhosq_diskcorona_thetapow_rad4
     rhosq_diskcorona_thetapow_rad4=qtymem[i];i+=1
     global     rhosrhosq_diskcorona_thetapow_rad4
@@ -7507,6 +7624,8 @@ def getqtymem(qtymem):
     uu0rhosq_diskcorona_thetapow_rad4=qtymem[i];i+=1
     global     vuas3rhosq_diskcorona_thetapow_rad4
     vuas3rhosq_diskcorona_thetapow_rad4=qtymem[i];i+=1
+    global     vuasrotrhosq_diskcorona_thetapow_rad4
+    vuasrotrhosq_diskcorona_thetapow_rad4=qtymem[i];i+=1
     global     bas1rhosq_diskcorona_thetapow_rad4
     bas1rhosq_diskcorona_thetapow_rad4=qtymem[i];i+=1
     global     bas2rhosq_diskcorona_thetapow_rad4
@@ -7521,7 +7640,7 @@ def getqtymem(qtymem):
     FEMArhosq_diskcorona_thetapow_rad4=qtymem[i];i+=1
     global     FEEMrhosq_diskcorona_thetapow_rad4
     FEEMrhosq_diskcorona_thetapow_rad4=qtymem[i];i+=1
-    #rhosq_diskcorona_thetapow_rad8: 12
+    #rhosq_diskcorona_thetapow_rad8: 13
     global     rhosq_diskcorona_thetapow_rad8
     rhosq_diskcorona_thetapow_rad8=qtymem[i];i+=1
     global     rhosrhosq_diskcorona_thetapow_rad8
@@ -7532,6 +7651,8 @@ def getqtymem(qtymem):
     uu0rhosq_diskcorona_thetapow_rad8=qtymem[i];i+=1
     global     vuas3rhosq_diskcorona_thetapow_rad8
     vuas3rhosq_diskcorona_thetapow_rad8=qtymem[i];i+=1
+    global     vuasrotrhosq_diskcorona_thetapow_rad8
+    vuasrotrhosq_diskcorona_thetapow_rad8=qtymem[i];i+=1
     global     bas1rhosq_diskcorona_thetapow_rad8
     bas1rhosq_diskcorona_thetapow_rad8=qtymem[i];i+=1
     global     bas2rhosq_diskcorona_thetapow_rad8
@@ -7546,7 +7667,7 @@ def getqtymem(qtymem):
     FEMArhosq_diskcorona_thetapow_rad8=qtymem[i];i+=1
     global     FEEMrhosq_diskcorona_thetapow_rad8
     FEEMrhosq_diskcorona_thetapow_rad8=qtymem[i];i+=1
-    #rhosq_diskcorona_thetapow_rad30: 12
+    #rhosq_diskcorona_thetapow_rad30: 13
     global     rhosq_diskcorona_thetapow_rad30
     rhosq_diskcorona_thetapow_rad30=qtymem[i];i+=1
     global     rhosrhosq_diskcorona_thetapow_rad30
@@ -7557,6 +7678,8 @@ def getqtymem(qtymem):
     uu0rhosq_diskcorona_thetapow_rad30=qtymem[i];i+=1
     global     vuas3rhosq_diskcorona_thetapow_rad30
     vuas3rhosq_diskcorona_thetapow_rad30=qtymem[i];i+=1
+    global     vuasrotrhosq_diskcorona_thetapow_rad30
+    vuasrotrhosq_diskcorona_thetapow_rad30=qtymem[i];i+=1
     global     bas1rhosq_diskcorona_thetapow_rad30
     bas1rhosq_diskcorona_thetapow_rad30=qtymem[i];i+=1
     global     bas2rhosq_diskcorona_thetapow_rad30
@@ -7573,7 +7696,7 @@ def getqtymem(qtymem):
     FEEMrhosq_diskcorona_thetapow_rad30=qtymem[i];i+=1
 
 
-    #rhosq_jet_thetapow_radhor: 12
+    #rhosq_jet_thetapow_radhor: 13
     global     rhosq_jet_thetapow_radhor
     rhosq_jet_thetapow_radhor=qtymem[i];i+=1
     global     rhosrhosq_jet_thetapow_radhor
@@ -7584,6 +7707,8 @@ def getqtymem(qtymem):
     uu0rhosq_jet_thetapow_radhor=qtymem[i];i+=1
     global     vuas3rhosq_jet_thetapow_radhor
     vuas3rhosq_jet_thetapow_radhor=qtymem[i];i+=1
+    global     vuasrotrhosq_jet_thetapow_radhor
+    vuasrotrhosq_jet_thetapow_radhor=qtymem[i];i+=1
     global     bas1rhosq_jet_thetapow_radhor
     bas1rhosq_jet_thetapow_radhor=qtymem[i];i+=1
     global     bas2rhosq_jet_thetapow_radhor
@@ -7598,7 +7723,7 @@ def getqtymem(qtymem):
     FEMArhosq_jet_thetapow_radhor=qtymem[i];i+=1
     global     FEEMrhosq_jet_thetapow_radhor
     FEEMrhosq_jet_thetapow_radhor=qtymem[i];i+=1
-    #rhosq_jet_thetapow_rad4: 12
+    #rhosq_jet_thetapow_rad4: 13
     global     rhosq_jet_thetapow_rad4
     rhosq_jet_thetapow_rad4=qtymem[i];i+=1
     global     rhosrhosq_jet_thetapow_rad4
@@ -7609,6 +7734,8 @@ def getqtymem(qtymem):
     uu0rhosq_jet_thetapow_rad4=qtymem[i];i+=1
     global     vuas3rhosq_jet_thetapow_rad4
     vuas3rhosq_jet_thetapow_rad4=qtymem[i];i+=1
+    global     vuasrotrhosq_jet_thetapow_rad4
+    vuasrotrhosq_jet_thetapow_rad4=qtymem[i];i+=1
     global     bas1rhosq_jet_thetapow_rad4
     bas1rhosq_jet_thetapow_rad4=qtymem[i];i+=1
     global     bas2rhosq_jet_thetapow_rad4
@@ -7623,7 +7750,7 @@ def getqtymem(qtymem):
     FEMArhosq_jet_thetapow_rad4=qtymem[i];i+=1
     global     FEEMrhosq_jet_thetapow_rad4
     FEEMrhosq_jet_thetapow_rad4=qtymem[i];i+=1
-    #rhosq_jet_thetapow_rad8: 12
+    #rhosq_jet_thetapow_rad8: 13
     global     rhosq_jet_thetapow_rad8
     rhosq_jet_thetapow_rad8=qtymem[i];i+=1
     global     rhosrhosq_jet_thetapow_rad8
@@ -7634,6 +7761,8 @@ def getqtymem(qtymem):
     uu0rhosq_jet_thetapow_rad8=qtymem[i];i+=1
     global     vuas3rhosq_jet_thetapow_rad8
     vuas3rhosq_jet_thetapow_rad8=qtymem[i];i+=1
+    global     vuasrotrhosq_jet_thetapow_rad8
+    vuasrotrhosq_jet_thetapow_rad8=qtymem[i];i+=1
     global     bas1rhosq_jet_thetapow_rad8
     bas1rhosq_jet_thetapow_rad8=qtymem[i];i+=1
     global     bas2rhosq_jet_thetapow_rad8
@@ -7648,7 +7777,7 @@ def getqtymem(qtymem):
     FEMArhosq_jet_thetapow_rad8=qtymem[i];i+=1
     global     FEEMrhosq_jet_thetapow_rad8
     FEEMrhosq_jet_thetapow_rad8=qtymem[i];i+=1
-    #rhosq_jet_thetapow_rad30: 12
+    #rhosq_jet_thetapow_rad30: 13
     global     rhosq_jet_thetapow_rad30
     rhosq_jet_thetapow_rad30=qtymem[i];i+=1
     global     rhosrhosq_jet_thetapow_rad30
@@ -7659,6 +7788,8 @@ def getqtymem(qtymem):
     uu0rhosq_jet_thetapow_rad30=qtymem[i];i+=1
     global     vuas3rhosq_jet_thetapow_rad30
     vuas3rhosq_jet_thetapow_rad30=qtymem[i];i+=1
+    global     vuasrotrhosq_jet_thetapow_rad30
+    vuasrotrhosq_jet_thetapow_rad30=qtymem[i];i+=1
     global     bas1rhosq_jet_thetapow_rad30
     bas1rhosq_jet_thetapow_rad30=qtymem[i];i+=1
     global     bas2rhosq_jet_thetapow_rad30
@@ -7678,7 +7809,7 @@ def getqtymem(qtymem):
     #
     #
     ###################################
-    #rhosq_diskcorona_radiuspow_radhor: 12
+    #rhosq_diskcorona_radiuspow_radhor: 13
     global     rhosq_diskcorona_radiuspow_radhor
     rhosq_diskcorona_radiuspow_radhor=qtymem[i];i+=1
     global     rhosrhosq_diskcorona_radiuspow_radhor
@@ -7689,6 +7820,8 @@ def getqtymem(qtymem):
     uu0rhosq_diskcorona_radiuspow_radhor=qtymem[i];i+=1
     global     vuas3rhosq_diskcorona_radiuspow_radhor
     vuas3rhosq_diskcorona_radiuspow_radhor=qtymem[i];i+=1
+    global     vuasrotrhosq_diskcorona_radiuspow_radhor
+    vuasrotrhosq_diskcorona_radiuspow_radhor=qtymem[i];i+=1
     global     bas1rhosq_diskcorona_radiuspow_radhor
     bas1rhosq_diskcorona_radiuspow_radhor=qtymem[i];i+=1
     global     bas2rhosq_diskcorona_radiuspow_radhor
@@ -7704,7 +7837,7 @@ def getqtymem(qtymem):
     FEMArhosq_diskcorona_radiuspow_radhor=qtymem[i];i+=1
     global     FEEMrhosq_diskcorona_radiuspow_radhor
     FEEMrhosq_diskcorona_radiuspow_radhor=qtymem[i];i+=1
-    #rhosq_diskcorona_radiuspow_rad4: 12
+    #rhosq_diskcorona_radiuspow_rad4: 13
     global     rhosq_diskcorona_radiuspow_rad4
     rhosq_diskcorona_radiuspow_rad4=qtymem[i];i+=1
     global     rhosrhosq_diskcorona_radiuspow_rad4
@@ -7715,6 +7848,8 @@ def getqtymem(qtymem):
     uu0rhosq_diskcorona_radiuspow_rad4=qtymem[i];i+=1
     global     vuas3rhosq_diskcorona_radiuspow_rad4
     vuas3rhosq_diskcorona_radiuspow_rad4=qtymem[i];i+=1
+    global     vuasrotrhosq_diskcorona_radiuspow_rad4
+    vuasrotrhosq_diskcorona_radiuspow_rad4=qtymem[i];i+=1
     global     bas1rhosq_diskcorona_radiuspow_rad4
     bas1rhosq_diskcorona_radiuspow_rad4=qtymem[i];i+=1
     global     bas2rhosq_diskcorona_radiuspow_rad4
@@ -7729,7 +7864,7 @@ def getqtymem(qtymem):
     FEMArhosq_diskcorona_radiuspow_rad4=qtymem[i];i+=1
     global     FEEMrhosq_diskcorona_radiuspow_rad4
     FEEMrhosq_diskcorona_radiuspow_rad4=qtymem[i];i+=1
-    #rhosq_diskcorona_radiuspow_rad8: 12
+    #rhosq_diskcorona_radiuspow_rad8: 13
     global     rhosq_diskcorona_radiuspow_rad8
     rhosq_diskcorona_radiuspow_rad8=qtymem[i];i+=1
     global     rhosrhosq_diskcorona_radiuspow_rad8
@@ -7740,6 +7875,8 @@ def getqtymem(qtymem):
     uu0rhosq_diskcorona_radiuspow_rad8=qtymem[i];i+=1
     global     vuas3rhosq_diskcorona_radiuspow_rad8
     vuas3rhosq_diskcorona_radiuspow_rad8=qtymem[i];i+=1
+    global     vuasrotrhosq_diskcorona_radiuspow_rad8
+    vuasrotrhosq_diskcorona_radiuspow_rad8=qtymem[i];i+=1
     global     bas1rhosq_diskcorona_radiuspow_rad8
     bas1rhosq_diskcorona_radiuspow_rad8=qtymem[i];i+=1
     global     bas2rhosq_diskcorona_radiuspow_rad8
@@ -7754,7 +7891,7 @@ def getqtymem(qtymem):
     FEMArhosq_diskcorona_radiuspow_rad8=qtymem[i];i+=1
     global     FEEMrhosq_diskcorona_radiuspow_rad8
     FEEMrhosq_diskcorona_radiuspow_rad8=qtymem[i];i+=1
-    #rhosq_diskcorona_radiuspow_rad30: 12
+    #rhosq_diskcorona_radiuspow_rad30: 13
     global     rhosq_diskcorona_radiuspow_rad30
     rhosq_diskcorona_radiuspow_rad30=qtymem[i];i+=1
     global     rhosrhosq_diskcorona_radiuspow_rad30
@@ -7765,6 +7902,8 @@ def getqtymem(qtymem):
     uu0rhosq_diskcorona_radiuspow_rad30=qtymem[i];i+=1
     global     vuas3rhosq_diskcorona_radiuspow_rad30
     vuas3rhosq_diskcorona_radiuspow_rad30=qtymem[i];i+=1
+    global     vuasrotrhosq_diskcorona_radiuspow_rad30
+    vuasrotrhosq_diskcorona_radiuspow_rad30=qtymem[i];i+=1
     global     bas1rhosq_diskcorona_radiuspow_rad30
     bas1rhosq_diskcorona_radiuspow_rad30=qtymem[i];i+=1
     global     bas2rhosq_diskcorona_radiuspow_rad30
@@ -7781,7 +7920,7 @@ def getqtymem(qtymem):
     FEEMrhosq_diskcorona_radiuspow_rad30=qtymem[i];i+=1
 
 
-    #rhosq_jet_radiuspow_radhor: 12
+    #rhosq_jet_radiuspow_radhor: 13
     global     rhosq_jet_radiuspow_radhor
     rhosq_jet_radiuspow_radhor=qtymem[i];i+=1
     global     rhosrhosq_jet_radiuspow_radhor
@@ -7792,6 +7931,8 @@ def getqtymem(qtymem):
     uu0rhosq_jet_radiuspow_radhor=qtymem[i];i+=1
     global     vuas3rhosq_jet_radiuspow_radhor
     vuas3rhosq_jet_radiuspow_radhor=qtymem[i];i+=1
+    global     vuasrotrhosq_jet_radiuspow_radhor
+    vuasrotrhosq_jet_radiuspow_radhor=qtymem[i];i+=1
     global     bas1rhosq_jet_radiuspow_radhor
     bas1rhosq_jet_radiuspow_radhor=qtymem[i];i+=1
     global     bas2rhosq_jet_radiuspow_radhor
@@ -7806,7 +7947,7 @@ def getqtymem(qtymem):
     FEMArhosq_jet_radiuspow_radhor=qtymem[i];i+=1
     global     FEEMrhosq_jet_radiuspow_radhor
     FEEMrhosq_jet_radiuspow_radhor=qtymem[i];i+=1
-    #rhosq_jet_radiuspow_rad4: 12
+    #rhosq_jet_radiuspow_rad4: 13
     global     rhosq_jet_radiuspow_rad4
     rhosq_jet_radiuspow_rad4=qtymem[i];i+=1
     global     rhosrhosq_jet_radiuspow_rad4
@@ -7817,6 +7958,8 @@ def getqtymem(qtymem):
     uu0rhosq_jet_radiuspow_rad4=qtymem[i];i+=1
     global     vuas3rhosq_jet_radiuspow_rad4
     vuas3rhosq_jet_radiuspow_rad4=qtymem[i];i+=1
+    global     vuasrotrhosq_jet_radiuspow_rad4
+    vuasrotrhosq_jet_radiuspow_rad4=qtymem[i];i+=1
     global     bas1rhosq_jet_radiuspow_rad4
     bas1rhosq_jet_radiuspow_rad4=qtymem[i];i+=1
     global     bas2rhosq_jet_radiuspow_rad4
@@ -7831,7 +7974,7 @@ def getqtymem(qtymem):
     FEMArhosq_jet_radiuspow_rad4=qtymem[i];i+=1
     global     FEEMrhosq_jet_radiuspow_rad4
     FEEMrhosq_jet_radiuspow_rad4=qtymem[i];i+=1
-    #rhosq_jet_radiuspow_rad8: 12
+    #rhosq_jet_radiuspow_rad8: 13
     global     rhosq_jet_radiuspow_rad8
     rhosq_jet_radiuspow_rad8=qtymem[i];i+=1
     global     rhosrhosq_jet_radiuspow_rad8
@@ -7842,6 +7985,8 @@ def getqtymem(qtymem):
     uu0rhosq_jet_radiuspow_rad8=qtymem[i];i+=1
     global     vuas3rhosq_jet_radiuspow_rad8
     vuas3rhosq_jet_radiuspow_rad8=qtymem[i];i+=1
+    global     vuasrotrhosq_jet_radiuspow_rad8
+    vuasrotrhosq_jet_radiuspow_rad8=qtymem[i];i+=1
     global     bas1rhosq_jet_radiuspow_rad8
     bas1rhosq_jet_radiuspow_rad8=qtymem[i];i+=1
     global     bas2rhosq_jet_radiuspow_rad8
@@ -7856,7 +8001,7 @@ def getqtymem(qtymem):
     FEMArhosq_jet_radiuspow_rad8=qtymem[i];i+=1
     global     FEEMrhosq_jet_radiuspow_rad8
     FEEMrhosq_jet_radiuspow_rad8=qtymem[i];i+=1
-    #rhosq_jet_radiuspow_rad30: 12
+    #rhosq_jet_radiuspow_rad30: 13
     global     rhosq_jet_radiuspow_rad30
     rhosq_jet_radiuspow_rad30=qtymem[i];i+=1
     global     rhosrhosq_jet_radiuspow_rad30
@@ -7867,6 +8012,8 @@ def getqtymem(qtymem):
     uu0rhosq_jet_radiuspow_rad30=qtymem[i];i+=1
     global     vuas3rhosq_jet_radiuspow_rad30
     vuas3rhosq_jet_radiuspow_rad30=qtymem[i];i+=1
+    global     vuasrotrhosq_jet_radiuspow_rad30
+    vuasrotrhosq_jet_radiuspow_rad30=qtymem[i];i+=1
     global     bas1rhosq_jet_radiuspow_rad30
     bas1rhosq_jet_radiuspow_rad30=qtymem[i];i+=1
     global     bas2rhosq_jet_radiuspow_rad30
@@ -8308,6 +8455,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             myuu1=uu[1]*np.sqrt(gv3[1,1])*iuu0hat
             myuu2=uu[2]*np.sqrt(gv3[2,2])*iuu0hat
             myuu3=uu[3]*np.sqrt(gv3[3,3])*iuu0hat
+            myuurot=np.sqrt(myuu2**2+myuu3**2)
             myB1=B[1]*np.sqrt(gv3[1,1])
             myB2=B[2]*np.sqrt(gv3[2,2])
             myB3=B[3]*np.sqrt(gv3[3,3])
@@ -8323,6 +8471,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
                 avg_myuu1=avg_uu[1]*np.sqrt(gv3[1,1])*avg_iuu0hat
                 avg_myuu2=avg_uu[2]*np.sqrt(gv3[2,2])*avg_iuu0hat
                 avg_myuu3=avg_uu[3]*np.sqrt(gv3[3,3])*avg_iuu0hat
+                avg_myuurot=np.sqrt(avg_myuu2**2+avg_myuu3**2)
                 avg_myB1=avg_B[1-1]*np.sqrt(gv3[1,1])
                 avg_myB2=avg_B[2-1]*np.sqrt(gv3[2,2])
                 avg_myB3=avg_B[3-1]*np.sqrt(gv3[3,3])
@@ -8335,6 +8484,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
                 avg_myauu1=avg_absuu[1]*np.sqrt(gv3[1,1])*avg_iauu0hat
                 avg_myauu2=avg_absuu[2]*np.sqrt(gv3[2,2])*avg_iauu0hat
                 avg_myauu3=avg_absuu[3]*np.sqrt(gv3[3,3])*avg_iauu0hat
+                avg_myauurot=np.sqrt(avg_myauu2**2+avg_myauu3**2)
                 avg_myaB1=avg_absB[1-1]*np.sqrt(gv3[1,1])
                 avg_myaB2=avg_absB[2-1]*np.sqrt(gv3[2,2])
                 avg_myaB3=avg_absB[3-1]*np.sqrt(gv3[3,3])
@@ -8358,6 +8508,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             myuu1=(uu[1]*dxdxp[1,1] + uu[2]*dxdxp[1,2])*np.sqrt(gvks11)/myuu0
             myuu2=(uu[1]*dxdxp[2,1] + uu[2]*dxdxp[2,2])*np.sqrt(gvks22)/myuu0
             myuu3=(uu[3]*dxdxp[3,3])*np.sqrt(gvks33)/myuu0
+            myuurot=np.sqrt(myuu2**2+myuu3**2)
             myB1=(B[1]*dxdxp[1,1] + B[2]*dxdxp[1,2])*np.sqrt(gvks11)
             myB2=(B[1]*dxdxp[2,1] + B[2]*dxdxp[2,2])*np.sqrt(gvks22)
             myB3=(B[3]*dxdxp[3,3])*np.sqrt(gvks33)
@@ -8371,6 +8522,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
                 avg_myuu1=(avg_uu[1]*dxdxp[1,1] + avg_uu[2]*dxdxp[1,2])*np.sqrt(gvks11)/avg_myuu0
                 avg_myuu2=(avg_uu[1]*dxdxp[2,1] + avg_uu[2]*dxdxp[2,2])*np.sqrt(gvks22)/avg_myuu0
                 avg_myuu3=(avg_uu[3]*dxdxp[3,3])*np.sqrt(gvks33)/avg_myuu0
+                avg_myuurot=np.sqrt(avg_myuu2**2+avg_myuu3**2)
                 avg_myB1=(avg_B[1-1]*dxdxp[1,1] + avg_B[2-1]*dxdxp[1,2])*np.sqrt(gvks11)
                 avg_myB2=(avg_B[1-1]*dxdxp[2,1] + avg_B[2-1]*dxdxp[2,2])*np.sqrt(gvks22)
                 avg_myB3=(avg_B[3-1]*dxdxp[3,3])*np.sqrt(gvks33)
@@ -8382,6 +8534,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
                 avg_myauu1=(avg_absuu[1]*dxdxp[1,1] + avg_absuu[2]*dxdxp[1,2])*np.sqrt(gvks11)/avg_myauu0
                 avg_myauu2=(avg_absuu[1]*dxdxp[2,1] + avg_absuu[2]*dxdxp[2,2])*np.sqrt(gvks22)/avg_myauu0
                 avg_myauu3=(avg_absuu[3]*dxdxp[3,3])*np.sqrt(gvks33)/avg_myauu0
+                avg_myauurot=np.sqrt(avg_myauu2**2+avg_myauu3**2)
                 avg_myaB1=(avg_absB[1-1]*dxdxp[1,1] + avg_absB[2-1]*dxdxp[1,2])*np.sqrt(gvks11)
                 avg_myaB2=(avg_absB[1-1]*dxdxp[2,1] + avg_absB[2-1]*dxdxp[2,2])*np.sqrt(gvks22)
                 avg_myaB3=(avg_absB[3-1]*dxdxp[3,3])*np.sqrt(gvks33)
@@ -8398,6 +8551,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         myauu1=np.abs(myuu1)
         myauu2=np.abs(myuu2)
         myauu3=np.abs(myuu3)
+        myauurot=np.abs(myuurot)
         myaB1=np.abs(myB1)
         myaB2=np.abs(myB2)
         myaB3=np.abs(myB3)
@@ -8441,6 +8595,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         vuas1rhosq[findex]=intangle(gdet*denfactor*np.abs(myuu1),**keywordsrhosq)/rhosqint
         vus3rhosq[findex]=intangle(gdet*denfactor*myuu3,**keywordsrhosq)/rhosqint
         vuas3rhosq[findex]=intangle(gdet*denfactor*np.abs(myuu3),**keywordsrhosq)/rhosqint
+        vuasrotrhosq[findex]=intangle(gdet*denfactor*np.abs(myuurot),**keywordsrhosq)/rhosqint
         Bs1rhosq[findex]=intangle(gdet*myB1*denfactor,**keywordsrhosq)/rhosqint
         Bas1rhosq[findex]=intangle(gdet*np.fabs(myB1)*denfactor,**keywordsrhosq)/rhosqint
         Bs2rhosq[findex]=intangle(gdet*myB2*denfactor,**keywordsrhosq)/rhosqint
@@ -8485,6 +8640,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         vuas1rhosqdc[findex]=intangle(gdet*np.fabs(myuu1)*denfactor,**keywordsrhosqdc)/rhosqdcint
         vus3rhosqdc[findex]=intangle(gdet*myuu3*denfactor,**keywordsrhosqdc)/rhosqdcint
         vuas3rhosqdc[findex]=intangle(gdet*np.fabs(myuu3)*denfactor,**keywordsrhosqdc)/rhosqdcint
+        vuasrotrhosqdc[findex]=intangle(gdet*np.fabs(myuurot)*denfactor,**keywordsrhosqdc)/rhosqdcint
         Bs1rhosqdc[findex]=intangle(gdet*myB1*denfactor,**keywordsrhosqdc)/rhosqdcint
         Bas1rhosqdc[findex]=intangle(gdet*np.fabs(myB1)*denfactor,**keywordsrhosqdc)/rhosqdcint
         Bs2rhosqdc[findex]=intangle(gdet*myB2*denfactor,**keywordsrhosqdc)/rhosqdcint
@@ -8528,6 +8684,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         vuas1rhosqdcden[findex]=intangle(gdet*np.fabs(myuu1)*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
         vus3rhosqdcden[findex]=intangle(gdet*myuu3*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
         vuas3rhosqdcden[findex]=intangle(gdet*np.fabs(myuu3)*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
+        vuasrotrhosqdcden[findex]=intangle(gdet*np.fabs(myuurot)*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
         Bs1rhosqdcden[findex]=intangle(gdet*myB1*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
         Bas1rhosqdcden[findex]=intangle(gdet*np.fabs(myB1)*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
         Bs2rhosqdcden[findex]=intangle(gdet*myB2*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
@@ -8575,6 +8732,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         vuas1rhosqeq[findex]=intangle(gdet*np.fabs(myuu1)*denfactor,**keywordsrhosqeq)/rhosqeqint
         vus3rhosqeq[findex]=intangle(gdet*myuu3*denfactor,**keywordsrhosqeq)/rhosqeqint
         vuas3rhosqeq[findex]=intangle(gdet*np.fabs(myuu3)*denfactor,**keywordsrhosqeq)/rhosqeqint
+        vuasrotrhosqeq[findex]=intangle(gdet*np.fabs(myuurot)*denfactor,**keywordsrhosqeq)/rhosqeqint
         Bs1rhosqeq[findex]=intangle(gdet*myB1*denfactor,**keywordsrhosqeq)/rhosqeqint
         Bas1rhosqeq[findex]=intangle(gdet*np.fabs(myB1)*denfactor,**keywordsrhosqeq)/rhosqeqint
         Bs2rhosqeq[findex]=intangle(gdet*myB2*denfactor,**keywordsrhosqeq)/rhosqeqint
@@ -8623,6 +8781,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         vuas1rhosqhorpick[findex]=intangle(gdet*np.fabs(myuu1)*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
         vus3rhosqhorpick[findex]=intangle(gdet*myuu3*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
         vuas3rhosqhorpick[findex]=intangle(gdet*np.fabs(myuu3)*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
+        vuasrotrhosqhorpick[findex]=intangle(gdet*np.fabs(myuurot)*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
         Bs1rhosqhorpick[findex]=intangle(gdet*myB1*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
         Bas1rhosqhorpick[findex]=intangle(gdet*np.fabs(myB1)*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
         Bs2rhosqhorpick[findex]=intangle(gdet*myB2*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
@@ -8649,6 +8808,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         #vuas12h[findex]=intangle(gdet*np.fabs(myuu1),**keywords2h)/gdetint
         #vus32h[findex]=intangle(gdet*myuu3,**keywords2h)/gdetint
         #vuas32h[findex]=intangle(gdet*np.fabs(myuu3),**keywords2h)/gdetint
+        #vuasrot2h[findex]=intangle(gdet*np.fabs(myuurot),**keywords2h)/gdetint
         #Bs12h[findex]=intangle(gdet*myB1,**keywords2h)/gdetint
         #Bas12h[findex]=intangle(np.abs(gdet*myB1),**keywords2h)/gdetint
         #Bs22h[findex]=intangle(gdet*myB2,**keywords2h)/gdetint
@@ -8667,6 +8827,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         #vuas14h[findex]=intangle(gdet*np.fabs(myuu1),**keywords4h)/gdetint
         #vus34h[findex]=intangle(gdet*myuu3,**keywords4h)/gdetint
         #vuas34h[findex]=intangle(gdet*np.fabs(myuu3),**keywords4h)/gdetint
+        #vuasrot4h[findex]=intangle(gdet*np.fabs(myuurot),**keywords4h)/gdetint
         #Bs14h[findex]=intangle(gdet*myB1,**keywords4h)/gdetint
         #Bas14h[findex]=intangle(np.abs(gdet*myB1),**keywords4h)/gdetint
         #Bs24h[findex]=intangle(gdet*myB2,**keywords4h)/gdetint
@@ -8700,6 +8861,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         vuas1hor[findex]=intangle(gdet*np.fabs(myuu1),**keywordshor)/gdetint
         vus3hor[findex]=intangle(gdet*myuu3,**keywordshor)/gdetint
         vuas3hor[findex]=intangle(gdet*np.fabs(myuu3),**keywordshor)/gdetint
+        vuasrothor[findex]=intangle(gdet*np.fabs(myuurot),**keywordshor)/gdetint
         Bs1hor[findex]=intangle(gdet*myB1,**keywordshor)/gdetint
         Bas1hor[findex]=intangle(np.abs(gdet*myB1),**keywordshor)/gdetint
         Bs2hor[findex]=intangle(gdet*myB2,**keywordshor)/gdetint
@@ -8760,6 +8922,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         vuas1rhosqrad4[findex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myuu1)*denfactor,**keywordsrhosqrad4)/rhosqrad4int
         vus3rhosqrad4[findex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myuu3*denfactor,**keywordsrhosqrad4)/rhosqrad4int
         vuas3rhosqrad4[findex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myuu3)*denfactor,**keywordsrhosqrad4)/rhosqrad4int
+        vuasrotrhosqrad4[findex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myuurot)*denfactor,**keywordsrhosqrad4)/rhosqrad4int
         Bs1rhosqrad4[findex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myB1*denfactor,**keywordsrhosqrad4)/rhosqrad4int
         Bas1rhosqrad4[findex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myB1)*denfactor,**keywordsrhosqrad4)/rhosqrad4int
         Bs2rhosqrad4[findex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myB2*denfactor,**keywordsrhosqrad4)/rhosqrad4int
@@ -8811,6 +8974,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         vuas1rhosqrad8[findex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myuu1)*denfactor,**keywordsrhosqrad8)/rhosqrad8int
         vus3rhosqrad8[findex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myuu3*denfactor,**keywordsrhosqrad8)/rhosqrad8int
         vuas3rhosqrad8[findex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myuu3)*denfactor,**keywordsrhosqrad8)/rhosqrad8int
+        vuasrotrhosqrad8[findex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myuurot)*denfactor,**keywordsrhosqrad8)/rhosqrad8int
         Bs1rhosqrad8[findex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myB1*denfactor,**keywordsrhosqrad8)/rhosqrad8int
         Bas1rhosqrad8[findex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myB1)*denfactor,**keywordsrhosqrad8)/rhosqrad8int
         Bs2rhosqrad8[findex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myB2*denfactor,**keywordsrhosqrad8)/rhosqrad8int
@@ -8862,6 +9026,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         vuas1rhosqrad30[findex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myuu1)*denfactor,**keywordsrhosqrad30)/rhosqrad30int
         vus3rhosqrad30[findex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myuu3*denfactor,**keywordsrhosqrad30)/rhosqrad30int
         vuas3rhosqrad30[findex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myuu3)*denfactor,**keywordsrhosqrad30)/rhosqrad30int
+        vuasrotrhosqrad30[findex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myuurot)*denfactor,**keywordsrhosqrad30)/rhosqrad30int
         Bs1rhosqrad30[findex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myB1*denfactor,**keywordsrhosqrad30)/rhosqrad30int
         Bas1rhosqrad30[findex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myB1)*denfactor,**keywordsrhosqrad30)/rhosqrad30int
         Bs2rhosqrad30[findex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myB2*denfactor,**keywordsrhosqrad30)/rhosqrad30int
@@ -8889,6 +9054,8 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             denomduu0=avg_myauu0
             duu3=(myauu3-avg_myauu3)
             denomduu3=avg_myauu3
+            duurot=(myauurot-avg_myauurot)
+            denomduurot=avg_myauurot
             db1=(myabu1-avg_myabu1)
             denomdb1=avg_myabu1
             db2=(myabu2-avg_myabu2)
@@ -8931,6 +9098,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             ugsrhosq_diskcorona_phipow_radhor[findex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*ug,**keywordsrhosq_diskcorona_phipow_radhor)
             uu0rhosq_diskcorona_phipow_radhor[findex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuu0*denfactor,**keywordsrhosq_diskcorona_phipow_radhor)
             vuas3rhosq_diskcorona_phipow_radhor[findex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuu3*denfactor,**keywordsrhosq_diskcorona_phipow_radhor)
+            vuasrotrhosq_diskcorona_phipow_radhor[findex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuurot*denfactor,**keywordsrhosq_diskcorona_phipow_radhor)
             bas1rhosq_diskcorona_phipow_radhor[findex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu1*denfactor,**keywordsrhosq_diskcorona_phipow_radhor)
             bas2rhosq_diskcorona_phipow_radhor[findex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu2*denfactor,**keywordsrhosq_diskcorona_phipow_radhor)
             bas3rhosq_diskcorona_phipow_radhor[findex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu3*denfactor,**keywordsrhosq_diskcorona_phipow_radhor)
@@ -8954,6 +9122,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             ugsrhosq_diskcorona_phipow_rad4[findex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*ug,**keywordsrhosq_diskcorona_phipow_rad4)
             uu0rhosq_diskcorona_phipow_rad4[findex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuu0*denfactor,**keywordsrhosq_diskcorona_phipow_rad4)
             vuas3rhosq_diskcorona_phipow_rad4[findex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuu3*denfactor,**keywordsrhosq_diskcorona_phipow_rad4)
+            vuasrotrhosq_diskcorona_phipow_rad4[findex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuurot*denfactor,**keywordsrhosq_diskcorona_phipow_rad4)
             bas1rhosq_diskcorona_phipow_rad4[findex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu1*denfactor,**keywordsrhosq_diskcorona_phipow_rad4)
             bas2rhosq_diskcorona_phipow_rad4[findex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu2*denfactor,**keywordsrhosq_diskcorona_phipow_rad4)
             bas3rhosq_diskcorona_phipow_rad4[findex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu3*denfactor,**keywordsrhosq_diskcorona_phipow_rad4)
@@ -8977,6 +9146,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             ugsrhosq_diskcorona_phipow_rad8[findex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*ug,**keywordsrhosq_diskcorona_phipow_rad8)
             uu0rhosq_diskcorona_phipow_rad8[findex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuu0*denfactor,**keywordsrhosq_diskcorona_phipow_rad8)
             vuas3rhosq_diskcorona_phipow_rad8[findex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuu3*denfactor,**keywordsrhosq_diskcorona_phipow_rad8)
+            vuasrotrhosq_diskcorona_phipow_rad8[findex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuurot*denfactor,**keywordsrhosq_diskcorona_phipow_rad8)
             bas1rhosq_diskcorona_phipow_rad8[findex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu1*denfactor,**keywordsrhosq_diskcorona_phipow_rad8)
             bas2rhosq_diskcorona_phipow_rad8[findex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu2*denfactor,**keywordsrhosq_diskcorona_phipow_rad8)
             bas3rhosq_diskcorona_phipow_rad8[findex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu3*denfactor,**keywordsrhosq_diskcorona_phipow_rad8)
@@ -8999,6 +9169,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             ugsrhosq_diskcorona_phipow_rad30[findex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*ug,**keywordsrhosq_diskcorona_phipow_rad30)
             uu0rhosq_diskcorona_phipow_rad30[findex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuu0*denfactor,**keywordsrhosq_diskcorona_phipow_rad30)
             vuas3rhosq_diskcorona_phipow_rad30[findex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuu3*denfactor,**keywordsrhosq_diskcorona_phipow_rad30)
+            vuasrotrhosq_diskcorona_phipow_rad30[findex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuurot*denfactor,**keywordsrhosq_diskcorona_phipow_rad30)
             bas1rhosq_diskcorona_phipow_rad30[findex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu1*denfactor,**keywordsrhosq_diskcorona_phipow_rad30)
             bas2rhosq_diskcorona_phipow_rad30[findex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu2*denfactor,**keywordsrhosq_diskcorona_phipow_rad30)
             bas3rhosq_diskcorona_phipow_rad30[findex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu3*denfactor,**keywordsrhosq_diskcorona_phipow_rad30)
@@ -9031,6 +9202,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             ugsrhosq_jet_phipow_radhor[findex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*ug,**keywordsrhosq_jet_phipow_radhor)
             uu0rhosq_jet_phipow_radhor[findex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuu0*denfactor,**keywordsrhosq_jet_phipow_radhor)
             vuas3rhosq_jet_phipow_radhor[findex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuu3*denfactor,**keywordsrhosq_jet_phipow_radhor)
+            vuasrotrhosq_jet_phipow_radhor[findex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuurot*denfactor,**keywordsrhosq_jet_phipow_radhor)
             bas1rhosq_jet_phipow_radhor[findex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu1*denfactor,**keywordsrhosq_jet_phipow_radhor)
             bas2rhosq_jet_phipow_radhor[findex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu2*denfactor,**keywordsrhosq_jet_phipow_radhor)
             bas3rhosq_jet_phipow_radhor[findex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu3*denfactor,**keywordsrhosq_jet_phipow_radhor)
@@ -9054,6 +9226,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             ugsrhosq_jet_phipow_rad4[findex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*ug,**keywordsrhosq_jet_phipow_rad4)
             uu0rhosq_jet_phipow_rad4[findex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuu0*denfactor,**keywordsrhosq_jet_phipow_rad4)
             vuas3rhosq_jet_phipow_rad4[findex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuu3*denfactor,**keywordsrhosq_jet_phipow_rad4)
+            vuasrotrhosq_jet_phipow_rad4[findex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuurot*denfactor,**keywordsrhosq_jet_phipow_rad4)
             bas1rhosq_jet_phipow_rad4[findex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu1*denfactor,**keywordsrhosq_jet_phipow_rad4)
             bas2rhosq_jet_phipow_rad4[findex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu2*denfactor,**keywordsrhosq_jet_phipow_rad4)
             bas3rhosq_jet_phipow_rad4[findex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu3*denfactor,**keywordsrhosq_jet_phipow_rad4)
@@ -9077,6 +9250,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             ugsrhosq_jet_phipow_rad8[findex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*ug,**keywordsrhosq_jet_phipow_rad8)
             uu0rhosq_jet_phipow_rad8[findex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuu0*denfactor,**keywordsrhosq_jet_phipow_rad8)
             vuas3rhosq_jet_phipow_rad8[findex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuu3*denfactor,**keywordsrhosq_jet_phipow_rad8)
+            vuasrotrhosq_jet_phipow_rad8[findex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuurot*denfactor,**keywordsrhosq_jet_phipow_rad8)
             bas1rhosq_jet_phipow_rad8[findex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu1*denfactor,**keywordsrhosq_jet_phipow_rad8)
             bas2rhosq_jet_phipow_rad8[findex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu2*denfactor,**keywordsrhosq_jet_phipow_rad8)
             bas3rhosq_jet_phipow_rad8[findex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu3*denfactor,**keywordsrhosq_jet_phipow_rad8)
@@ -9099,6 +9273,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             ugsrhosq_jet_phipow_rad30[findex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*ug,**keywordsrhosq_jet_phipow_rad30)
             uu0rhosq_jet_phipow_rad30[findex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuu0*denfactor,**keywordsrhosq_jet_phipow_rad30)
             vuas3rhosq_jet_phipow_rad30[findex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuu3*denfactor,**keywordsrhosq_jet_phipow_rad30)
+            vuasrotrhosq_jet_phipow_rad30[findex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuurot*denfactor,**keywordsrhosq_jet_phipow_rad30)
             bas1rhosq_jet_phipow_rad30[findex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu1*denfactor,**keywordsrhosq_jet_phipow_rad30)
             bas2rhosq_jet_phipow_rad30[findex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu2*denfactor,**keywordsrhosq_jet_phipow_rad30)
             bas3rhosq_jet_phipow_rad30[findex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu3*denfactor,**keywordsrhosq_jet_phipow_rad30)
@@ -9141,6 +9316,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             ugsrhosq_diskcorona_thetapow_radhor[findex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dug,denom=denomdug,**keywordsrhosq_diskcorona_thetapow_radhor)
             uu0rhosq_diskcorona_thetapow_radhor[findex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu0,denom=denomduu0,**keywordsrhosq_diskcorona_thetapow_radhor)
             vuas3rhosq_diskcorona_thetapow_radhor[findex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu3,denom=denomduu3,**keywordsrhosq_diskcorona_thetapow_radhor)
+            vuasrotrhosq_diskcorona_thetapow_radhor[findex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duurot,denom=denomduurot,**keywordsrhosq_diskcorona_thetapow_radhor)
             bas1rhosq_diskcorona_thetapow_radhor[findex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db1,denom=denomdb1,**keywordsrhosq_diskcorona_thetapow_radhor)
             bas2rhosq_diskcorona_thetapow_radhor[findex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db2,denom=denomdb2,**keywordsrhosq_diskcorona_thetapow_radhor)
             bas3rhosq_diskcorona_thetapow_radhor[findex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db3,denom=denomdb3,**keywordsrhosq_diskcorona_thetapow_radhor)
@@ -9164,6 +9340,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             ugsrhosq_diskcorona_thetapow_rad4[findex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dug,denom=denomdug,**keywordsrhosq_diskcorona_thetapow_rad4)
             uu0rhosq_diskcorona_thetapow_rad4[findex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu0,denom=denomduu0,**keywordsrhosq_diskcorona_thetapow_rad4)
             vuas3rhosq_diskcorona_thetapow_rad4[findex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu3,denom=denomduu3,**keywordsrhosq_diskcorona_thetapow_rad4)
+            vuasrotrhosq_diskcorona_thetapow_rad4[findex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duurot,denom=denomduurot,**keywordsrhosq_diskcorona_thetapow_rad4)
             bas1rhosq_diskcorona_thetapow_rad4[findex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db1,denom=denomdb1,**keywordsrhosq_diskcorona_thetapow_rad4)
             bas2rhosq_diskcorona_thetapow_rad4[findex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db2,denom=denomdb2,**keywordsrhosq_diskcorona_thetapow_rad4)
             bas3rhosq_diskcorona_thetapow_rad4[findex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db3,denom=denomdb3,**keywordsrhosq_diskcorona_thetapow_rad4)
@@ -9187,6 +9364,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             ugsrhosq_diskcorona_thetapow_rad8[findex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dug,denom=denomdug,**keywordsrhosq_diskcorona_thetapow_rad8)
             uu0rhosq_diskcorona_thetapow_rad8[findex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu0,denom=denomduu0,**keywordsrhosq_diskcorona_thetapow_rad8)
             vuas3rhosq_diskcorona_thetapow_rad8[findex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu3,denom=denomduu3,**keywordsrhosq_diskcorona_thetapow_rad8)
+            vuasrotrhosq_diskcorona_thetapow_rad8[findex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duurot,denom=denomduurot,**keywordsrhosq_diskcorona_thetapow_rad8)
             bas1rhosq_diskcorona_thetapow_rad8[findex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db1,denom=denomdb1,**keywordsrhosq_diskcorona_thetapow_rad8)
             bas2rhosq_diskcorona_thetapow_rad8[findex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db2,denom=denomdb2,**keywordsrhosq_diskcorona_thetapow_rad8)
             bas3rhosq_diskcorona_thetapow_rad8[findex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db3,denom=denomdb3,**keywordsrhosq_diskcorona_thetapow_rad8)
@@ -9209,6 +9387,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             ugsrhosq_diskcorona_thetapow_rad30[findex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dug,denom=denomdug,**keywordsrhosq_diskcorona_thetapow_rad30)
             uu0rhosq_diskcorona_thetapow_rad30[findex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu0,denom=denomduu0,**keywordsrhosq_diskcorona_thetapow_rad30)
             vuas3rhosq_diskcorona_thetapow_rad30[findex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu3,denom=denomduu3,**keywordsrhosq_diskcorona_thetapow_rad30)
+            vuasrotrhosq_diskcorona_thetapow_rad30[findex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duurot,denom=denomduurot,**keywordsrhosq_diskcorona_thetapow_rad30)
             bas1rhosq_diskcorona_thetapow_rad30[findex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db1,denom=denomdb1,**keywordsrhosq_diskcorona_thetapow_rad30)
             bas2rhosq_diskcorona_thetapow_rad30[findex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db2,denom=denomdb2,**keywordsrhosq_diskcorona_thetapow_rad30)
             bas3rhosq_diskcorona_thetapow_rad30[findex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db3,denom=denomdb3,**keywordsrhosq_diskcorona_thetapow_rad30)
@@ -9241,6 +9420,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             ugsrhosq_jet_thetapow_radhor[findex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dug,denom=denomdug,**keywordsrhosq_jet_thetapow_radhor)
             uu0rhosq_jet_thetapow_radhor[findex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu0,denom=denomduu0,**keywordsrhosq_jet_thetapow_radhor)
             vuas3rhosq_jet_thetapow_radhor[findex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu3,denom=denomduu3,**keywordsrhosq_jet_thetapow_radhor)
+            vuasrotrhosq_jet_thetapow_radhor[findex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duurot,denom=denomduurot,**keywordsrhosq_jet_thetapow_radhor)
             bas1rhosq_jet_thetapow_radhor[findex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db1,denom=denomdb1,**keywordsrhosq_jet_thetapow_radhor)
             bas2rhosq_jet_thetapow_radhor[findex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db2,denom=denomdb2,**keywordsrhosq_jet_thetapow_radhor)
             bas3rhosq_jet_thetapow_radhor[findex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db3,denom=denomdb3,**keywordsrhosq_jet_thetapow_radhor)
@@ -9264,6 +9444,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             ugsrhosq_jet_thetapow_rad4[findex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dug,denom=denomdug,**keywordsrhosq_jet_thetapow_rad4)
             uu0rhosq_jet_thetapow_rad4[findex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu0,denom=denomduu0,**keywordsrhosq_jet_thetapow_rad4)
             vuas3rhosq_jet_thetapow_rad4[findex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu3,denom=denomduu3,**keywordsrhosq_jet_thetapow_rad4)
+            vuasrotrhosq_jet_thetapow_rad4[findex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duurot,denom=denomduurot,**keywordsrhosq_jet_thetapow_rad4)
             bas1rhosq_jet_thetapow_rad4[findex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db1,denom=denomdb1,**keywordsrhosq_jet_thetapow_rad4)
             bas2rhosq_jet_thetapow_rad4[findex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db2,denom=denomdb2,**keywordsrhosq_jet_thetapow_rad4)
             bas3rhosq_jet_thetapow_rad4[findex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db3,denom=denomdb3,**keywordsrhosq_jet_thetapow_rad4)
@@ -9287,6 +9468,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             ugsrhosq_jet_thetapow_rad8[findex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dug,denom=denomdug,**keywordsrhosq_jet_thetapow_rad8)
             uu0rhosq_jet_thetapow_rad8[findex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu0,denom=denomduu0,**keywordsrhosq_jet_thetapow_rad8)
             vuas3rhosq_jet_thetapow_rad8[findex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu3,denom=denomduu3,**keywordsrhosq_jet_thetapow_rad8)
+            vuasrotrhosq_jet_thetapow_rad8[findex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duurot,denom=denomduurot,**keywordsrhosq_jet_thetapow_rad8)
             bas1rhosq_jet_thetapow_rad8[findex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db1,denom=denomdb1,**keywordsrhosq_jet_thetapow_rad8)
             bas2rhosq_jet_thetapow_rad8[findex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db2,denom=denomdb2,**keywordsrhosq_jet_thetapow_rad8)
             bas3rhosq_jet_thetapow_rad8[findex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db3,denom=denomdb3,**keywordsrhosq_jet_thetapow_rad8)
@@ -9309,6 +9491,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             ugsrhosq_jet_thetapow_rad30[findex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dug,denom=denomdug,**keywordsrhosq_jet_thetapow_rad30)
             uu0rhosq_jet_thetapow_rad30[findex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu0,denom=denomduu0,**keywordsrhosq_jet_thetapow_rad30)
             vuas3rhosq_jet_thetapow_rad30[findex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu3,denom=denomduu3,**keywordsrhosq_jet_thetapow_rad30)
+            vuasrotrhosq_jet_thetapow_rad30[findex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duurot,denom=denomduurot,**keywordsrhosq_jet_thetapow_rad30)
             bas1rhosq_jet_thetapow_rad30[findex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db1,denom=denomdb1,**keywordsrhosq_jet_thetapow_rad30)
             bas2rhosq_jet_thetapow_rad30[findex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db2,denom=denomdb2,**keywordsrhosq_jet_thetapow_rad30)
             bas3rhosq_jet_thetapow_rad30[findex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db3,denom=denomdb3,**keywordsrhosq_jet_thetapow_rad30)
@@ -9362,6 +9545,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             ugsrhosq_diskcorona_radiuspow_radhor[findex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dug,denom=denomdug,**keywordsrhosq_diskcorona_radiuspow_radhor)
             uu0rhosq_diskcorona_radiuspow_radhor[findex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu0,denom=denomduu0,**keywordsrhosq_diskcorona_radiuspow_radhor)
             vuas3rhosq_diskcorona_radiuspow_radhor[findex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu3,denom=denomduu3,**keywordsrhosq_diskcorona_radiuspow_radhor)
+            vuasrotrhosq_diskcorona_radiuspow_radhor[findex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duurot,denom=denomduurot,**keywordsrhosq_diskcorona_radiuspow_radhor)
             bas1rhosq_diskcorona_radiuspow_radhor[findex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db1,denom=denomdb1,**keywordsrhosq_diskcorona_radiuspow_radhor)
             bas2rhosq_diskcorona_radiuspow_radhor[findex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db2,denom=denomdb2,**keywordsrhosq_diskcorona_radiuspow_radhor)
             bas3rhosq_diskcorona_radiuspow_radhor[findex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db3,denom=denomdb3,**keywordsrhosq_diskcorona_radiuspow_radhor)
@@ -9385,6 +9569,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             ugsrhosq_diskcorona_radiuspow_rad4[findex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dug,denom=denomdug,**keywordsrhosq_diskcorona_radiuspow_rad4)
             uu0rhosq_diskcorona_radiuspow_rad4[findex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu0,denom=denomduu0,**keywordsrhosq_diskcorona_radiuspow_rad4)
             vuas3rhosq_diskcorona_radiuspow_rad4[findex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu3,denom=denomduu3,**keywordsrhosq_diskcorona_radiuspow_rad4)
+            vuasrotrhosq_diskcorona_radiuspow_rad4[findex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duurot,denom=denomduurot,**keywordsrhosq_diskcorona_radiuspow_rad4)
             bas1rhosq_diskcorona_radiuspow_rad4[findex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db1,denom=denomdb1,**keywordsrhosq_diskcorona_radiuspow_rad4)
             bas2rhosq_diskcorona_radiuspow_rad4[findex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db2,denom=denomdb2,**keywordsrhosq_diskcorona_radiuspow_rad4)
             bas3rhosq_diskcorona_radiuspow_rad4[findex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db3,denom=denomdb3,**keywordsrhosq_diskcorona_radiuspow_rad4)
@@ -9408,6 +9593,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             ugsrhosq_diskcorona_radiuspow_rad8[findex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dug,denom=denomdug,**keywordsrhosq_diskcorona_radiuspow_rad8)
             uu0rhosq_diskcorona_radiuspow_rad8[findex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu0,denom=denomduu0,**keywordsrhosq_diskcorona_radiuspow_rad8)
             vuas3rhosq_diskcorona_radiuspow_rad8[findex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu3,denom=denomduu3,**keywordsrhosq_diskcorona_radiuspow_rad8)
+            vuasrotrhosq_diskcorona_radiuspow_rad8[findex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duurot,denom=denomduurot,**keywordsrhosq_diskcorona_radiuspow_rad8)
             bas1rhosq_diskcorona_radiuspow_rad8[findex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db1,denom=denomdb1,**keywordsrhosq_diskcorona_radiuspow_rad8)
             bas2rhosq_diskcorona_radiuspow_rad8[findex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db2,denom=denomdb2,**keywordsrhosq_diskcorona_radiuspow_rad8)
             bas3rhosq_diskcorona_radiuspow_rad8[findex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db3,denom=denomdb3,**keywordsrhosq_diskcorona_radiuspow_rad8)
@@ -9430,6 +9616,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             ugsrhosq_diskcorona_radiuspow_rad30[findex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dug,denom=denomdug,**keywordsrhosq_diskcorona_radiuspow_rad30)
             uu0rhosq_diskcorona_radiuspow_rad30[findex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu0,denom=denomduu0,**keywordsrhosq_diskcorona_radiuspow_rad30)
             vuas3rhosq_diskcorona_radiuspow_rad30[findex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu3,denom=denomduu3,**keywordsrhosq_diskcorona_radiuspow_rad30)
+            vuasrotrhosq_diskcorona_radiuspow_rad30[findex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duurot,denom=denomduurot,**keywordsrhosq_diskcorona_radiuspow_rad30)
             bas1rhosq_diskcorona_radiuspow_rad30[findex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db1,denom=denomdb1,**keywordsrhosq_diskcorona_radiuspow_rad30)
             bas2rhosq_diskcorona_radiuspow_rad30[findex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db2,denom=denomdb2,**keywordsrhosq_diskcorona_radiuspow_rad30)
             bas3rhosq_diskcorona_radiuspow_rad30[findex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db3,denom=denomdb3,**keywordsrhosq_diskcorona_radiuspow_rad30)
@@ -9462,6 +9649,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             ugsrhosq_jet_radiuspow_radhor[findex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dug,denom=denomdug,**keywordsrhosq_jet_radiuspow_radhor)
             uu0rhosq_jet_radiuspow_radhor[findex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu0,denom=denomduu0,**keywordsrhosq_jet_radiuspow_radhor)
             vuas3rhosq_jet_radiuspow_radhor[findex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu3,denom=denomduu3,**keywordsrhosq_jet_radiuspow_radhor)
+            vuasrotrhosq_jet_radiuspow_radhor[findex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duurot,denom=denomduurot,**keywordsrhosq_jet_radiuspow_radhor)
             bas1rhosq_jet_radiuspow_radhor[findex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db1,denom=denomdb1,**keywordsrhosq_jet_radiuspow_radhor)
             bas2rhosq_jet_radiuspow_radhor[findex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db2,denom=denomdb2,**keywordsrhosq_jet_radiuspow_radhor)
             bas3rhosq_jet_radiuspow_radhor[findex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db3,denom=denomdb3,**keywordsrhosq_jet_radiuspow_radhor)
@@ -9485,6 +9673,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             ugsrhosq_jet_radiuspow_rad4[findex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dug,denom=denomdug,**keywordsrhosq_jet_radiuspow_rad4)
             uu0rhosq_jet_radiuspow_rad4[findex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu0,denom=denomduu0,**keywordsrhosq_jet_radiuspow_rad4)
             vuas3rhosq_jet_radiuspow_rad4[findex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu3,denom=denomduu3,**keywordsrhosq_jet_radiuspow_rad4)
+            vuasrotrhosq_jet_radiuspow_rad4[findex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duurot,denom=denomduurot,**keywordsrhosq_jet_radiuspow_rad4)
             bas1rhosq_jet_radiuspow_rad4[findex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db1,denom=denomdb1,**keywordsrhosq_jet_radiuspow_rad4)
             bas2rhosq_jet_radiuspow_rad4[findex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db2,denom=denomdb2,**keywordsrhosq_jet_radiuspow_rad4)
             bas3rhosq_jet_radiuspow_rad4[findex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db3,denom=denomdb3,**keywordsrhosq_jet_radiuspow_rad4)
@@ -9508,6 +9697,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             ugsrhosq_jet_radiuspow_rad8[findex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dug,denom=denomdug,**keywordsrhosq_jet_radiuspow_rad8)
             uu0rhosq_jet_radiuspow_rad8[findex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu0,denom=denomduu0,**keywordsrhosq_jet_radiuspow_rad8)
             vuas3rhosq_jet_radiuspow_rad8[findex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu3,denom=denomduu3,**keywordsrhosq_jet_radiuspow_rad8)
+            vuasrotrhosq_jet_radiuspow_rad8[findex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duurot,denom=denomduurot,**keywordsrhosq_jet_radiuspow_rad8)
             bas1rhosq_jet_radiuspow_rad8[findex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db1,denom=denomdb1,**keywordsrhosq_jet_radiuspow_rad8)
             bas2rhosq_jet_radiuspow_rad8[findex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db2,denom=denomdb2,**keywordsrhosq_jet_radiuspow_rad8)
             bas3rhosq_jet_radiuspow_rad8[findex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db3,denom=denomdb3,**keywordsrhosq_jet_radiuspow_rad8)
@@ -9530,6 +9720,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             ugsrhosq_jet_radiuspow_rad30[findex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dug,denom=denomdug,**keywordsrhosq_jet_radiuspow_rad30)
             uu0rhosq_jet_radiuspow_rad30[findex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu0,denom=denomduu0,**keywordsrhosq_jet_radiuspow_rad30)
             vuas3rhosq_jet_radiuspow_rad30[findex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu3,denom=denomduu3,**keywordsrhosq_jet_radiuspow_rad30)
+            vuasrotrhosq_jet_radiuspow_rad30[findex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duurot,denom=denomduurot,**keywordsrhosq_jet_radiuspow_rad30)
             bas1rhosq_jet_radiuspow_rad30[findex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db1,denom=denomdb1,**keywordsrhosq_jet_radiuspow_rad30)
             bas2rhosq_jet_radiuspow_rad30[findex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db2,denom=denomdb2,**keywordsrhosq_jet_radiuspow_rad30)
             bas3rhosq_jet_radiuspow_rad30[findex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db3,denom=denomdb3,**keywordsrhosq_jet_radiuspow_rad30)
@@ -10110,6 +10301,7 @@ def faraday():
     #omegaf2b=Epabs/Bpabs
     #
     # assume field swept back so omegaf is always larger than vphi (only true for outflow, so put in sign switch for inflow as relevant for disk near BH or even jet near BH)
+    # GODMARK: These assume rotation about z-axis
     omegaf2b=np.fabs(v3nonhat) + np.sign(uu[1])*(vpol/Bpol)*np.fabs(B3nonhat)
     #
     omegaf1b=v3nonhat - B3nonhat*(v1hat*B1hat+v2hat*B2hat)/(B1hat**2+B2hat**2)
@@ -11362,6 +11554,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     rho4alt=rhosrhosqdcden
     cs24alt=gam*pg4alt/(rho4alt+ug4alt+pg4alt)
     vphi4alt=vuas3rhosqdcden
+    vrot4alt=vuasrotrhosqdcden
     #vk4alt=r/(a+r**(1.5))
     R_vsr=r[:,ny/2,0]*np.sin(h[:,ny/2,0])
     vk4alt_vsr=R_vsr/(a + R_vsr**(1.5))
@@ -11371,7 +11564,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     for ttii in np.arange(0,len(ts)):
             vk4alt[ttii,:] = vk4alt_vsr[:]
     #
-    horalt1=np.arctan(np.sqrt(cs24alt)/vphi4alt)
+    horalt1=np.arctan(np.sqrt(cs24alt)/vrot4alt)
     horalt2=np.arctan(np.sqrt(cs24alt)/vk4alt)
     #
     horalt1_avg=timeavg(horalt1,ts,fti,ftf)
@@ -11384,6 +11577,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     rho4alt=rhosrhosqdc
     cs24alt=gam*pg4alt/(rho4alt+ug4alt+pg4alt)
     vphi4alt=vuas3rhosqdc
+    vrot4alt=vuasrotrhosqdc
     #vk4alt=r/(a+r**(1.5))
     R_vsr=r[:,ny/2,0]*np.sin(h[:,ny/2,0])
     vk4alt_vsr=R_vsr/(a + R_vsr**(1.5))
@@ -11393,7 +11587,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     for ttii in np.arange(0,len(ts)):
             vk4alt[ttii,:] = vk4alt_vsr[:]
     #
-    horalt3=np.arctan(np.sqrt(cs24alt)/vphi4alt)
+    horalt3=np.arctan(np.sqrt(cs24alt)/vrot4alt)
     horalt4=np.arctan(np.sqrt(cs24alt)/vk4alt)
     #
     horalt3_avg=timeavg(horalt3,ts,fti,ftf)
@@ -11951,7 +12145,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     # original Q1,Q2 calculations used Omega_{Keplerian} while should be Omega, so fix the vs. radius quantities at least (so only have to re-"plot", not recompute everything)
     # Q1\propto lambdamri\propto 1/Omega
     # Q2\propto 1/lambdamri and lambdamri\propto 1/\Omega so Q2\propto Omega
-    OMEGAFIX=1
+    OMEGAFIX=0 # no longer using this, have \Omega directly during Q2,Q3,iQ2 computations
     #
     R_vsr=r[:,ny/2,0]*np.sin(h[:,ny/2,0])
     vuas3rhosqdcdenkep_vsr=R_vsr/(a + R_vsr**(1.5))
@@ -16068,11 +16262,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         print("dopowervslplots==1" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         #
-        NHU = np.pi/(dxdxp[2][2][iofr(rhor),ny/2,0]*_dx2) # NOTEMARK: must be same as in powervsl()
-        nfft=NHU/2+1
-        # determine minimum true $m$ value due to $\phi$ box size
-        deltal=1
-        numl=min(nx,deltal*(nfft-1)+1) # i.e. as if full pi and deltal*NHU zones
+        numl=nx # just go over empty regions, don't care.  Keeps code simpler.
         #
         #print("rhosrhosq_diskcorona_thetapow_rad4") ; sys.stdout.flush()
         #print(rhosrhosq_diskcorona_thetapow_rad4) ; sys.stdout.flush()
@@ -16885,8 +17075,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     # removed M1 since didn't ever contribute to total \alpha.
     # removed EN since never dominates contribution to total \alpha, and just explain value in paper's text.
-    print( "HLatex4: ModelName & $\\alpha_{b,\\rm{}eff}$ & $\\alpha_b$ & $\\alpha_{b,\\rm{}PA}$ & $\\alpha_{b,\\rm{}M2}$ & $\\alpha_{b,\\rm{}mag}$ & $\\bfrac{Q_{m,\\rm{}cor,}}{{}_{\\{\\rho_0,b^2\\}}}$ & $\\bfrac{Q_{l,\\rm{}cor,}}{{}_{\\{\\rho_0,b^2\\}}}$ & $Q_{\\theta,\\rm{}MRI,\\{i,  o\\}}$ & $Q_{\\phi,\\rm{}MRI,\\{i,  o\\}}$ & $S_{\\rm{}d,\\rm{}MRI,\\{i,  o\\}}$ & $\\bfrac{r_{\\{S_{\\rm{}d},S_{\\rm{}d,\\rm{}weak}\\}}}{{\ }_{\\rm{}MRI=1/2}}$   \\\\" )
-    print( "VLatex4: %s        & %g                      & %g          & %s                     & %s                     & %g                      & %d, %d                              & %d, %d                              & %g, %g                              & %g, %g                            & %g, %g                              & %s, %s                                                         \\\\ %% %s" % (truemodelname, roundto2(alphaeff_vsr_avg), roundto2(alphatot3),roundto2alpha(alphareynoldsa3_vsr_avg,alphatot3), roundto2alpha(alphamag3_vsr_avg,alphatot3), roundto2(alphamag4_vsr_avg), roundto2intfloat(Qmcorrad8dcrho0),roundto2intfloat(Qmcorrad8dcbsq), roundto2intfloat(Qlcorrad8dcrho0),roundto2intfloat(Qlcorrad8dcbsq), roundto2intfloat(qmridiskrfitin2_avg), roundto2intfloat(qmridiskrfitout2_avg), roundto2intfloat(q3mridiskrfitin2_avg), roundto2intfloat(q3mridiskrfitout2_avg), roundto2(1.0/iq2mridiskrfitin2_avg), roundto2(1.0/iq2mridiskrfitout2_avg), roundto2_rq2mri1(rq2mri1,rq2mri1cut,fakerstagreport), roundto2_rq2mri1(rq2mri2,rq2mri2cut,fakerstagreport), modelname ) )
+    # removed PA and just explain in paper when dominates, so can fit Qn and Ql
+    print( "HLatex4: ModelName & $\\alpha_{b,\\rm{}eff}$ & $\\alpha_b$ & $\\alpha_{b,\\rm{}M2}$ & $\\alpha_{b,\\rm{}mag}$ & $\\bfrac{Q_{n,\\rm{}cor,}}{{}_{\\{\\rho_0,b^2\\}}}$ & $\\bfrac{Q_{l,\\rm{}cor,}}{{}_{\\{\\rho_0,b^2\\}}}$ & $\\bfrac{Q_{m,\\rm{}cor,}}{{}_{\\{\\rho_0,b^2\\}}}$ & $Q_{\\theta,\\rm{}MRI,\\{i,  o\\}}$ & $Q_{\\phi,\\rm{}MRI,\\{i,  o\\}}$ & $S_{\\rm{}d,\\rm{}MRI,\\{i,  o\\}}$ & $\\bfrac{r_{\\{S_{\\rm{}d},S_{\\rm{}d,\\rm{}weak}\\}}}{{\ }_{\\rm{}MRI=1/2}}$   \\\\" )
+    print( "VLatex4: %s        & %g                      & %g          & %s                     & %g                      & %d, %d                                              & %d, %d                                              & %d, %d                                              & %g, %g                              & %g, %g                            & %g, %g                              & %s, %s                                                         \\\\ %% %s" % (truemodelname, roundto2(alphaeff_vsr_avg), roundto2(alphatot3), roundto2alpha(alphamag3_vsr_avg,alphatot3), roundto2(alphamag4_vsr_avg), roundto2intfloat(Qncorrad8dcrho0),roundto2intfloat(Qncorrad8dcbsq), roundto2intfloat(Qlcorrad8dcrho0),roundto2intfloat(Qlcorrad8dcbsq), roundto2intfloat(Qmcorrad8dcrho0),roundto2intfloat(Qmcorrad8dcbsq), roundto2intfloat(qmridiskrfitin2_avg), roundto2intfloat(qmridiskrfitout2_avg), roundto2intfloat(q3mridiskrfitin2_avg), roundto2intfloat(q3mridiskrfitout2_avg), roundto2(1.0/iq2mridiskrfitin2_avg), roundto2(1.0/iq2mridiskrfitout2_avg), roundto2_rq2mri1(rq2mri1,rq2mri1cut,fakerstagreport), roundto2_rq2mri1(rq2mri2,rq2mri2cut,fakerstagreport), modelname ) )
     #
     ############################
     #
