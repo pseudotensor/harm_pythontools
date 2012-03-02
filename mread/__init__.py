@@ -7675,13 +7675,15 @@ def get_fluxes(usestaggeredfluxes=False):
     #Fm, (Fm-Fe)x1, (Fm-Fe)x2
     return mdden, enden1, enden2
 
-def extract_along_x2vsi(x2vsi,var,isleft=True,fallback=1,fallbackval = np.pi/2,shiftx2=0.5*_dx2):
+def extract_along_x2vsi(var,x2vsi,isleft=True,fallback=1,fallbackval = np.pi/2,shiftx2=None):
+    if shiftx2 is None:
+        shiftx2 = 0.5*_dx2
     #shiftx2 is used to account for center to face difference in locations (half a cell = 0.5*_dx2)
     res = findroot2d( x2[:,:,0] - x2vsi[:,None] + shiftx2, var, isleft=isleft, fallback = fallback, fallbackval = fallbackval )
     return(res)
 
 
-def removefloorsavg2djetwind(usestaggeredfluxes=False,DFfloor=None, jetangle=None, jet1x2=None, jet2x2=None):
+def removefloorsavg2djetwind(usestaggeredfluxes=False,DFfloor=None, jet1x2=None, jet2x2=None, dotakeoutfloors = False):
     """ Removes floors and returns a tuple, (Fm, FmMinusFe1, FmMinusFe2), from which floors were removed.
         Does not multiply the result by _dx2*_dx3 -- you should do so yourself if you wish.
         When removing the floors assumes that the flow is aligned with the radial grid lines (x2=const).
@@ -7710,17 +7712,16 @@ def removefloorsavg2djetwind(usestaggeredfluxes=False,DFfloor=None, jetangle=Non
     #integrate DUin/DUout in theta
     DUin = DUin.cumsum(1+TH)
     DUout = DUout.cumsum(1+TH)
-    #Make it into a tuple
-    DUin  = DUin[0],  DUin[1]
-    DUout = DUout[0], DUout[1]
     ######################
     #
     #  Fluxes
     #
     ######################
-    Fmcum = mdden.cumsum(TH)*_dx2*_dx3
-    Fxcum = enden1.cumsum(TH)*_dx2*_dx3  #Fx = FmMinusFe
-    #make it into a tuple
+    Fmcum = mdden.cumsum(TH).mean(PH)*_dx2*_dx3
+    Fxcum = enden1.cumsum(TH).mean(PH)*_dx2*_dx3  #Fx = FmMinusFe
+    #Convert to tuples
+    DUin  = DUin[0],  DUin[1]
+    DUout = DUout[0], DUout[1]
     Fcum = Fmcum, Fxcum
     #INSERT ANGLE FILTERING HERE
     #
@@ -7735,10 +7736,14 @@ def removefloorsavg2djetwind(usestaggeredfluxes=False,DFfloor=None, jetangle=Non
     DUin_jet2cum=np.array(extract_along_x2vsi(DUin,jet2x2,isleft=False))
     DUout_jet2cum=np.array(extract_along_x2vsi(DUout,jet2x2,isleft=False))
     F_jet2cum=np.array(extract_along_x2vsi(Fcum,jet2x2,isleft=False))
+    #convert to arrays
+    DUin = np.array(DUin)
+    DUout = np.array(DUout)
+    Fcum = np.array(Fcum)
     #subtract from other axis
-    DUin_jet2=DUin[:,ny-1:ny]-DUin_jet2cum
-    DUout_jet2=DUout[:,ny-1:ny]-DUout_jet2cum
-    F_jet2 = Fcum[:,ny-1:ny]-F_jet2cum
+    DUin_jet2=DUin[:,:,ny-1]-DUin_jet2cum
+    DUout_jet2=DUout[:,:,ny-1]-DUout_jet2cum
+    F_jet2 = Fcum[:,:,ny-1]-F_jet2cum
     #
     #WIND
     #
@@ -7769,9 +7774,9 @@ def removefloorsavg2djetwind(usestaggeredfluxes=False,DFfloor=None, jetangle=Non
     if dotakeoutfloors:
         #subtract rest-mass from total energy flux and flip the sign to get correct direction
         #DFen = DF[1]+DF[0] 
-        F_jet1 += DFjet1[0:2]
-        F_jet2 += DFjet2[0:2]
-        F_wind += DFwind[0:2]
+        F_jet1 += DF_jet1[0:2]
+        F_jet2 += DF_jet2[0:2]
+        F_wind += DF_wind[0:2]
 
     return( F_jet1, F_jet2, F_wind )
 
@@ -9644,28 +9649,34 @@ def mkpulsarmovie():
         #ax = fig.add_subplot(111, aspect='equal')
         numc=10
         cvel()
-        plco(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,numc)*maxaphi/np.float(numc),colors='k')
-        plc(np.log10(bsq/rho),xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,levels=np.arange(0.,3.1,0.1));plt.xlim(0,10);plt.ylim(-5,5)
-        #plc(uu[2]*dxdxp[2][2],xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=False,levels=np.arange(-0.5,0.5,0.1));plt.xlim(0,10);plt.ylim(-5,5)            #plc(np.log10(ug),xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,levels=np.arange(-3,2,0.1));plt.xlim(0,10);plt.ylim(-5,5)
-        #plc(np.log10(ug/rho),xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,levels=np.arange(0,1,0.1));plt.xlim(0,10);plt.ylim(-5,5)
-        #plc(lrho,xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,levels=np.arange(-3,.8,0.1));plt.xlim(0,10);plt.ylim(-5,5)
-        #cts=plc(bsq/rho,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,5.5,0.5))
-        #cbar=plt.colorbar(cts)
-        #cbar.ax.set_ylabel(r'$b^2\!/\rho$',fontsize=16)
-        #plco(lrho,cb=True,levels=np.arange(1,10),xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,10);plt.ylim(-5,5)
+        if True:
+            plco(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,numc)*maxaphi/np.float(numc),colors='k')
+            plc(np.log10(bsq/rho),xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,levels=np.arange(0.,2,0.1));plt.xlim(0,10);plt.ylim(-5,5)
+            #plc(uu[2]*dxdxp[2][2],xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=False,levels=np.arange(-0.5,0.5,0.1));plt.xlim(0,10);plt.ylim(-5,5)            #plc(np.log10(ug),xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,levels=np.arange(-3,2,0.1));plt.xlim(0,10);plt.ylim(-5,5)
+            #plc(np.log10(ug/rho),xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,levels=np.arange(0,1,0.1));plt.xlim(0,10);plt.ylim(-5,5)
+            #plc(lrho,xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,levels=np.arange(-3,.8,0.1));plt.xlim(0,10);plt.ylim(-5,5)
+            #cts=plc(bsq/rho,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,5.5,0.5))
+            #cbar=plt.colorbar(cts)
+            #cbar.ax.set_ylabel(r'$b^2\!/\rho$',fontsize=16)
+            #plco(lrho,cb=True,levels=np.arange(1,10),xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,10);plt.ylim(-5,5)
+            #draw NS
+            ax=plt.gca()
+            ax.set_aspect('equal')   
+            el = Ellipse((0,0), 2, 2, facecolor='k', alpha=1)
+            art=ax.add_artist(el)
+            art.set_zorder(20)
+            rmax = 10
+            plt.xlim(0,rmax)
+            plt.ylim(-0.5*rmax,0.5*rmax)
+        else:
+            plt.clf()
+            plt.plot(r[:,0,0],ug[:,0.75*ny,0],'g');plt.xlim(Rin,10);plt.ylim(0,50)
+            plt.plot(r[:,0,0],rho[:,0.75*ny,0],'r');plt.xlim(Rin,10);plt.ylim(0,50)
+            plt.plot(r[:,0,0],(bsq/rho)[:,0.75*ny,0],'b');plt.xlim(Rin,10);plt.ylim(0,50)
         plt.title(r"$b^2\!/\rho=10^2$, t=%3.3g" % t,    fontsize=16, color='k')
-        #draw NS
-        ax=plt.gca()
-        ax.set_aspect('equal')   
-        el = Ellipse((0,0), 2, 2, facecolor='k', alpha=1)
-        art=ax.add_artist(el)
-        art.set_zorder(20)
-        rmax = 10
-        plt.xlim(0,rmax)
-        plt.ylim(-0.5*rmax,0.5*rmax)
+        plt.savefig( 'frame%04d.png' % fldindex )
         #
         plt.draw()
-        plt.savefig( 'frame%04d.png' % fldindex )
         #if fldindex >= 500:
         #    break
 
@@ -9988,15 +9999,19 @@ if __name__ == "__main__":
             avgmem=rdavg2d(usedefault=1)  #usedefault=1 reads in from "avg2d.npy"
             trajdisk_up,trajpole_up = finddiskjetbnds(r0=10,upperx2=True,doplot=True)
             trajdisk_dn,trajpole_dn = finddiskjetbnds(r0=10,upperx2=False,doplot=True)
-        plt.clf()
-        plt.plot(trajdisk_up[0],trajdisk_up[1],'b',lw=2)
-        plt.plot(trajdisk_dn[0],trajdisk_dn[1],'b',lw=2)
-        plt.plot(trajpole_up[0],trajpole_up[1],'r',lw=2)
-        plt.plot(trajpole_dn[0],trajpole_dn[1],'r',lw=2)
+        #plt.clf()
+        #plt.plot(trajdisk_up[0],trajdisk_up[1],'b',lw=2)
+        #plt.plot(trajdisk_dn[0],trajdisk_dn[1],'b',lw=2)
+        #plt.plot(trajpole_up[0],trajpole_up[1],'r',lw=2)
+        #plt.plot(trajpole_dn[0],trajpole_dn[1],'r',lw=2)
         trajjet_up = extract_trajjet(trajdisk_up,trajpole_up)
         trajjet_dn = extract_trajjet(trajdisk_dn,trajpole_dn)
-        plt.plot(trajjet_up[0],trajjet_up[1],'y--',lw=2)
-        plt.plot(trajjet_dn[0],trajjet_dn[1],'y--',lw=2)
+        #plt.plot(trajjet_up[0],trajjet_up[1],'y--',lw=2)
+        #plt.plot(trajjet_dn[0],trajjet_dn[1],'y--',lw=2)
+        #interpolate to our grid (x1,x2) -> x2(ti)
+        jet1x2 = interp1d(trajjet_dn[0],trajjet_dn[1], kind = 'linear', bounds_error=False)(x1[:,0,0])
+        jet2x2 = interp1d(trajjet_up[0],trajjet_up[1], kind = 'linear', bounds_error=False)(x1[:,0,0])
+        F_jet1, F_jet2, F_wind = removefloorsavg2djetwind(usestaggeredfluxes=False,DFfloor=None, jet1x2=jet1x2, jet2x2=jet2x2)
         plt.draw()
     if False:
         #takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
@@ -10004,8 +10019,8 @@ if __name__ == "__main__":
         #use this in a shell script
         grid3d( "gdump.bin",use2d=True )
         avgmem=rdavg2d(usedefault=1)
-        takeoutfloors(dotakeoutfloors=1,doplot=False,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
-        #takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=False,aphi_j_val=0)
+        #takeoutfloors(dotakeoutfloors=1,doplot=False,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
+        takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=False,aphi_j_val=0)
         #takeoutfloors(dotakeoutfloors=1,doplot=False)
     if False:
         provsretro()
