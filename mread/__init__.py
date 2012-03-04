@@ -5733,10 +5733,10 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
 
     #RETURN: if requested 2D information
     if ndim == 2:
-        DUin, DUout = DFfloor
+        DUin, DUout = DF
         #convert DUin/DUout into DF
-        DUin = DUin.cumsum(1+TH)  #*(tj!=0)*(tj!=ny-1)
-        DUout = DUout.cumsum(1+TH)  #*(tj!=0)*(tj!=ny-1)
+        #DUin = DUin.cumsum(1+TH)  #*(tj!=0)*(tj!=ny-1)
+        #DUout = DUout.cumsum(1+TH)  #*(tj!=0)*(tj!=ny-1)
         DFin  = DUin.cumsum(1+RR)
         DFout = DUout.cumsum(1+RR)
         #
