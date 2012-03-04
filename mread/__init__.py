@@ -482,6 +482,10 @@ def findroot2d( fin, xin, isleft=True, nbnd = 1, axis = 0, fallback = 0, fallbac
         xtuple = (xin,)
     else:
         xtuple = xin
+    if np.array(fallbackval,ndmin=1).shape[0]==0:
+        fallbackvalarr = np.zeros(n)+np.array(fallbackval)[0:1]
+    else:
+        fallbackvalarr = fallbackval
     xout = ()
     for (j, x) in enumerate(xtuple):
         if x.ndim == 3:
@@ -495,7 +499,7 @@ def findroot2d( fin, xin, isleft=True, nbnd = 1, axis = 0, fallback = 0, fallbac
             raise( ValueError( "f and x have different shapes" ) )
         xsol = np.empty((n),dtype=f.dtype)
         for i in np.arange(0,n):
-            xsol[i] = findroot1d( f[i], x[i], isleft, nbnd, fallback, fallbackval )
+            xsol[i] = findroot1d( f[i], x[i], isleft, nbnd, fallback, fallbackvalarr )
         xout += (xsol,)
     if len(xout) == 1:
         return( xout[0] )
