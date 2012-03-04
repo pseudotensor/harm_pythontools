@@ -7715,6 +7715,8 @@ def removefloorsavg2djetwind(usestaggeredfluxes=False,DFfloor=None, jet1x2=None,
     #subtract back (by adding) the rest-mass floor from energy, so get floor on Fm-Fe
     DUin[1] += DUin[0]
     DUout[1] += DUout[0]
+    DUinden=DUin
+    DUoutden=DUout
     #integrate DUin/DUout in theta
     DUin = DUin.cumsum(1+TH)
     DUout = DUout.cumsum(1+TH)
@@ -7733,15 +7735,16 @@ def removefloorsavg2djetwind(usestaggeredfluxes=False,DFfloor=None, jet1x2=None,
     #
     #JET1
     #
-    DUin_jet1=np.array(extract_along_x2vsi(DUin,jet1x2))
-    DUout_jet1=np.array(extract_along_x2vsi(DUout,jet1x2))
-    F_jet1=np.array(extract_along_x2vsi(Fcum,jet1x2))
+    DUin_jet1=np.array(extract_along_x2vsi(DUin,jet1x2,fallbackval=0))
+    DUout_jet1=np.array(extract_along_x2vsi(DUout,jet1x2,fallbackval=0))
+    F_jet1=np.array(extract_along_x2vsi(Fcum,jet1x2,fallbackval=0))
+    #pdb.set_trace()
     #
     #JET2
     #
-    DUin_jet2cum=np.array(extract_along_x2vsi(DUin,jet2x2,isleft=False))
-    DUout_jet2cum=np.array(extract_along_x2vsi(DUout,jet2x2,isleft=False))
-    F_jet2cum=np.array(extract_along_x2vsi(Fcum,jet2x2,isleft=False))
+    DUin_jet2cum=np.array(extract_along_x2vsi(DUin,jet2x2,isleft=False,fallbackval=0))
+    DUout_jet2cum=np.array(extract_along_x2vsi(DUout,jet2x2,isleft=False,fallbackval=0))
+    F_jet2cum=np.array(extract_along_x2vsi(Fcum,jet2x2,isleft=False,fallbackval=0))
     #convert to arrays
     DUin = np.array(DUin)
     DUout = np.array(DUout)
@@ -7758,24 +7761,26 @@ def removefloorsavg2djetwind(usestaggeredfluxes=False,DFfloor=None, jet1x2=None,
     F_wind=F_jet2cum-F_jet1
     #
     #now combine into 1D floor corrections for jet1, wind, and jet2
+    #pick out something that's not too far
+    fnx = iofr(100)
     #
     #JET1
     #
     DFin_jet1  = DUin_jet1.cumsum(1+RR)
     DFout_jet1 = DUout_jet1.cumsum(1+RR)
-    DF_jet1 = (DFin_jet1-DFin_jet1[:,nx-1:nx]) + DFout_jet1
+    DF_jet1 = (DFin_jet1-DFin_jet1[:,fnx-1:fnx]) + DFout_jet1
     #
     #JET2
     #
     DFin_jet2  = DUin_jet2.cumsum(1+RR)
     DFout_jet2 = DUout_jet2.cumsum(1+RR)
-    DF_jet2 = (DFin_jet2-DFin_jet2[:,nx-1:nx]) + DFout_jet2
+    DF_jet2 = (DFin_jet2-DFin_jet2[:,fnx-1:fnx]) + DFout_jet2
     #
     #WIND
     #
     DFin_wind  = DUin_wind.cumsum(1+RR)
     DFout_wind = DUout_wind.cumsum(1+RR)
-    DF_wind = (DFin_wind-DFin_wind[:,nx-1:nx]) + DFout_wind
+    DF_wind = (DFin_wind-DFin_wind[:,fnx-1:fnx]) + DFout_wind
 
     if dotakeoutfloors:
         #subtract rest-mass from total energy flux and flip the sign to get correct direction
