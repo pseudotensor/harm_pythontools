@@ -6724,8 +6724,14 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     plt.plot(x,y,color='red',lw=4,alpha=0.3)
     l,=plt.plot(mya,sparthin(mya),'g-.',lw=2,label=r"$s_{\rm NT}$")
     l.set_dashes([10,3,2,3])
+    if False:
+        #to show "analytic" rought approximation of Ramesh
+        plt.plot(mya,sparthin(0)*(1-mya),'k-',lw=1)
     #plt.plot(alist,sparlist,'ro',mec='r')
     ax4.errorbar(u_alist,u_sparlist,yerr=2*u_sparstdlist,label=r"$s_{\rm MAD}$",mfc='r',ecolor='r',fmt='o-',color='r',lw=2,elinewidth=1,mew=1)
+    if False:
+        #to show "analytic" rought approximation of Ramesh
+        plt.plot(mya,-8*mya,'k-',lw=1)
     #plt.plot(alist[:9],sparlist[:9],'ro-',lw=2,label=r"$s_{\rm MAD}$")
     plt.text(x[0]+0.02,7,r"$a_{\rm eq}^{\rm Sim}\!\approx0.07$",va="center",ha="left",fontsize=16,color="red",alpha=1)
     plt.ylim(-10,10)
@@ -10102,7 +10108,7 @@ if __name__ == "__main__":
     if False:
         #Power vs. spin, updated diagnostics
         readmytests1()
-        plotpowers('siminfo.txt',format=2) #new format; data from 2d average dumps
+        plotpowers('siminfo.txt',plotetas=False,format=2) #new format; data from 2d average dumps
     if False:
         #2DAVG
         mk2davg()
