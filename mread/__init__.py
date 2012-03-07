@@ -4548,7 +4548,7 @@ def get_dUfloor( floordumpno, maxrinflowequilibrium = 20, aphi_j_val=0 ):
         nx = npzfile['nx']
         ny = npzfile['ny']
         nz = npzfile['nz']
-        return( UfloorAsum )
+        return( UfloorAin, UfloorAout )
     #if no precomputed info
     rfloor( "failfloordudump%04d.bin" % floordumpno )
     #add back in rest-mass energy to conserved energy
