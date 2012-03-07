@@ -7700,6 +7700,10 @@ def removefloorsavg2djetwind(usestaggeredfluxes=False,DFfloor=None, jet1x2=None,
         In reality, this is not exactly correct, however, most of the floor addition happens 
         close to the BH, where the grid is very much radial, so this approximation works quite well.
     """
+    avg_enth=1+avg_ug*gam/avg_rho
+    avg_unb1=avg_enth*avg_ud[0]
+    avg_isunbound=(-avg_unb1>1.0)
+    #
     RR=0
     TH=1
     PH=2
