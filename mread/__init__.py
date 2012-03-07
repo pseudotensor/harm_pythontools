@@ -5521,21 +5521,44 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         print( "Using a = 0.5 settings")
         dt1 = 13000.-10279.
         dt2 = 10200.-10000.
-        Dt = np.array([dt1,dt2,-dt2])
-        Dno = np.array([130,102,100])
+        Dt = np.array([
+                19500-17592.5204772097,
+                17500-16952.0863127404,
+                16900-15010.5538754437,
+                15000-13069.8145093629,
+                dt1,
+                dt2,
+                -dt2])
+        Dno = np.array([
+                195,
+                175,
+                169,
+                150,
+                130,
+                102,
+                100])
         pn="A0.5"
         lfti = 10000.
-        lftf = 13095.
+        lftf = 1e5
         rin = 15
         rmax = 34.475
         simti = 0
         simtf = lftf
     elif np.abs(a - 0.2)<1e-4:
         print( "Using a = 0.2 settings")
-        Dt = np.array([13300.-10366.5933313178])
-        Dno = np.array([133])
-        lfti = 10366.5933313178
-        lftf = 13300.
+        Dt = np.array([19300-18061.8964506732,
+                       18000-17406.5234843135,
+                       17400-15396.4283777091,
+                       15300-13364.19837589,
+                       13300.-10366.5933313178])
+        Dno = np.array([
+                193,
+                180,
+                174,
+                153,
+                133])
+        lfti = 10000.
+        lftf = 1e5
         pn="A0.2"
         rin = 15
         rmax = 35
