@@ -1600,7 +1600,7 @@ def isthickdiskmodel(modelname):
 
 
 def issashamodel(modelname):
-    if modelname=="sasham9" or modelname=="sasham9full2pi" or modelname=="sasham5" or modelname=="sasha0" or modelname=="sasha1" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9b25" or modelname=="sasha9b50" or modelname=="sasha9b100" or modelname=="sasha9b200" or modelname=="sasha99":
+    if modelname=="sasham9" or modelname=="sasham9full2pi" or modelname=="sasham5" or modelname=="sasham2" or modelname=="sasha0" or modelname=="sasha1" or modelname=="sasha2" or modelname=="sasha5" or modelname=="sasha9b25" or modelname=="sasha9b50" or modelname=="sasha9b100" or modelname=="sasha9b200" or modelname=="sasha99":
         return(1)
     else:
         return(0)
@@ -1708,6 +1708,9 @@ def getdefaulttimes1():
     elif modelname=="blandford3d_new":
         defaultfti=1500
         defaultftf=1e6
+    elif modelname=="a0hr07":
+        defaultfti=12500
+        defaultftf=1e6
     elif modelname=="sasham9":
         defaultfti=8000
         defaultftf=1e6
@@ -1715,6 +1718,9 @@ def getdefaulttimes1():
         defaultfti=8000
         defaultftf=1e6
     elif modelname=="sasham5":
+        defaultfti=8000
+        defaultftf=1e6
+    elif modelname=="sasham2":
         defaultfti=8000
         defaultftf=1e6
     elif modelname=="sasha0":
@@ -2055,6 +2061,8 @@ def plot2davg(dosq=True,whichplot=-1):
     # radius of jet power measurement
     rjetin=10.
     if modelname=="blandford3d_new":
+        rjetout=30.
+    elif modelname=="a0hr07":
         rjetout=30.
     else:
         rjetout=50.
@@ -2476,15 +2484,17 @@ def Qmri_simple(which=1,hoverrwhich=None,weak=None):
     # now put in \Omega that has less noise than local ratio, but still accounts for \Omega(r,\phi) so proper for tilted disk
     #
     omegaavginphi=(omegarot3d).sum(axis=2)/float(nz)
+    overomegaavginphi=1.0/omegaavginphi
+    overomegaavginphi[np.fabs(omegaavginphi)<1E-20]=0.0 # if omega=0, assume don't care about that point (happens at t=0 when density=0 outside field region or density region).  later in code, norm3d will take care of removing such regions explicitly so they don't matter (i.e. not part of average even if zero).
     #
     # divide-out Omega(r) for final qmri's.  Note that \theta direction here is really duplicated single value.  So really just ratio of angular averages in the end.
     qmri3dfinal=np.copy(qmri3d)
     q3mri3dfinal=np.copy(q3mri3d)
     iq2mri3dfinal=np.copy(iq2mri3d)
     for k in np.arange(0,nz):
-        qmri3dfinal[:,:,k]=qmri3d[:,:,k]/omegaavginphi[:,:]
-        q3mri3dfinal[:,:,k]=q3mri3d[:,:,k]/omegaavginphi[:,:]
-        iq2mri3dfinal[:,:,k]=iq2mri3d[:,:,k]/omegaavginphi[:,:]
+        qmri3dfinal[:,:,k]=qmri3d[:,:,k]*overomegaavginphi[:,:]
+        q3mri3dfinal[:,:,k]=q3mri3d[:,:,k]*overomegaavginphi[:,:]
+        iq2mri3dfinal[:,:,k]=iq2mri3d[:,:,k]*overomegaavginphi[:,:]
     #
     #
     #
@@ -3301,7 +3311,7 @@ def restrictrphi_sum_vstheta(qty=None,iin=None,iout=None,kin=None,kout=None):
 # can't just truncate for spatial dependence because would then trigger on zeros.
 # note that \phi assumed to be periodic.  We correct for limited \phi-boxes here.
 # For fluctuations and getting auto-correlation or azimuthal correlation length: note that [a_m - a_0]_t / [a_0]_t = ([a_m]_t - [a_0]_t)/[a_0]_t = [a_m]_t/ [a_0]_t - 1  . So can subtracting off average at each time is same as subtracing the average over time from the time-averaged a_m.
-# assumes no systematic gradients in \phi that want to see deviations from.  Metric and MHD are \phi ignorable, so should be no systematic gradients in \phi (GODMARK: for tilted disk, have to be more careful about what is meant by \phi)
+# assumes no systematic gradients in \phi that want to see deviations from.  Metric and MHD are \phi ignorable, so should be no systematic gradients in \phi (GODMARK: for tilted disk, have to be more careful about what is meant by \phi.  E.g. can't use axisymmetric cut-out -- have to use some weighted version that depends upon \phi as with horcalc(), and use \phi as oriented with whatever structure want to orient with.)
 def powervsm(doabs=0,rin=None,rout=None,qty=None,minbsqorho=None,maxbsqorho=None,which=1):
     #
     # Assumptions:
@@ -6536,8 +6546,12 @@ def mergeqtyvstime(n):
     print( "Done mergeqtyvstime!" ) ; sys.stdout.flush()
 
 
+
 def getnonbobnqty():
-    value=1 + 6 + 14 + 4 + 22*5 + 25 + 22*3 + (13*4+13*4) + 11+15+12+2 + (14+48) +  (8+48) + (6) + (13*4+13*4) + (13*4+13*4)
+    value=1 + 6 + 14 + 4 + 22*5 + 25 + 22*3 + (13*4+13*4) + 11+15 + (14+2+48) +  (8+42) + (6) + (13*4+13*4) + (13*4+13*4)
+
+    value=702 # fake temp over what's needed   GODMARK
+
     return(value)
 
 
@@ -6547,10 +6561,10 @@ def getqtymem(qtymem):
     ###########################
     #qty defs
     i=0
-    # 1
+    # NQTY=1
     global ts
     ts=qtymem[i,:,0];i+=1
-    #HoverR: 6
+    #HoverR: NQTY=6
     global     hoverr
     hoverr=qtymem[i];i+=1
     global     thetamid
@@ -6563,7 +6577,7 @@ def getqtymem(qtymem):
     hoverr_jet=qtymem[i];i+=1
     global     thetamidjet
     thetamidjet=qtymem[i];i+=1
-    # 14
+    # NQTY=14
     global     qmridisk
     qmridisk=qtymem[i];i+=1
     global     q3mridisk
@@ -6594,7 +6608,7 @@ def getqtymem(qtymem):
     betaratofavg=qtymem[i];i+=1
     global     betaratofmax
     betaratofmax=qtymem[i];i+=1
-    #alphamag: 4
+    #alphamag: NQTY=4
     global     alphamag1
     alphamag1=qtymem[i];i+=1
     global     alphamag2
@@ -6604,7 +6618,7 @@ def getqtymem(qtymem):
     global     alphamag4
     alphamag4=qtymem[i];i+=1
     #
-    #rhosq: 15+7=22
+    #rhosq: NQTY=15+7=22
     global     rhosqs
     rhosqs=qtymem[i];i+=1
     global     rhosrhosq
@@ -6649,7 +6663,7 @@ def getqtymem(qtymem):
     bas3rhosq=qtymem[i];i+=1
     global     bsqrhosq
     bsqrhosq=qtymem[i];i+=1
-    #rhosqdc: 15+7=22
+    #rhosqdc: NQTY=15+7=22
     global     rhosqdcs
     rhosqdcs=qtymem[i];i+=1
     global     rhosrhosqdc
@@ -6694,7 +6708,7 @@ def getqtymem(qtymem):
     bas3rhosqdc=qtymem[i];i+=1
     global     bsqrhosqdc
     bsqrhosqdc=qtymem[i];i+=1
-    #rhosqdcden: 15+7=22
+    #rhosqdcden: NQTY=15+7=22
     global     rhosqdcdens
     rhosqdcdens=qtymem[i];i+=1
     global     rhosrhosqdcden
@@ -6739,7 +6753,7 @@ def getqtymem(qtymem):
     bas3rhosqdcden=qtymem[i];i+=1
     global     bsqrhosqdcden
     bsqrhosqdcden=qtymem[i];i+=1
-    #rhosqeq: 15+7=22
+    #rhosqeq: NQTY=15+7=22
     global     rhosqeqs
     rhosqeqs=qtymem[i];i+=1
     global     rhosrhosqeq
@@ -6784,7 +6798,7 @@ def getqtymem(qtymem):
     bas3rhosqeq=qtymem[i];i+=1
     global     bsqrhosqeq
     bsqrhosqeq=qtymem[i];i+=1
-    #rhosqhorpick: 15+7=22
+    #rhosqhorpick: NQTY=15+7=22
     global     rhosqhorpicks
     rhosqhorpicks=qtymem[i];i+=1
     global     rhosrhosqhorpick
@@ -6829,7 +6843,7 @@ def getqtymem(qtymem):
     bas3rhosqhorpick=qtymem[i];i+=1
     global     bsqrhosqhorpick
     bsqrhosqhorpick=qtymem[i];i+=1
-    #2.0hor: 25
+    #2.0hor: NQTY=25
     global     gdetinthor
     gdetinthor=qtymem[i];i+=1
     global     rhoshor
@@ -6880,7 +6894,7 @@ def getqtymem(qtymem):
     bas3hor=qtymem[i];i+=1
     global     bsqhor
     bsqhor=qtymem[i];i+=1
-    #rhosqrad4: 15+7=22
+    #rhosqrad4: NQTY=15+7=22
     global     rhosqrad4
     rhosqrad4=qtymem[i];i+=1
     global     rhosrhosqrad4
@@ -6925,7 +6939,7 @@ def getqtymem(qtymem):
     bas3rhosqrad4=qtymem[i];i+=1
     global     bsqrhosqrad4
     bsqrhosqrad4=qtymem[i];i+=1
-    #rhosqrad8: 15+7=22
+    #rhosqrad8: NQTY=15+7=22
     global     rhosqrad8
     rhosqrad8=qtymem[i];i+=1
     global     rhosrhosqrad8
@@ -6970,7 +6984,7 @@ def getqtymem(qtymem):
     bas3rhosqrad8=qtymem[i];i+=1
     global     bsqrhosqrad8
     bsqrhosqrad8=qtymem[i];i+=1
-    #rhosqrad30: 15+7=22
+    #rhosqrad30: NQTY=15+7=22
     global     rhosqrad30
     rhosqrad30=qtymem[i];i+=1
     global     rhosrhosqrad30
@@ -7017,7 +7031,7 @@ def getqtymem(qtymem):
     bsqrhosqrad30=qtymem[i];i+=1
 
 
-    #rhosq_diskcorona_phipow_radhor: 13
+    #rhosq_diskcorona_phipow_radhor: NQTY=13
     global     rhosq_diskcorona_phipow_radhor
     rhosq_diskcorona_phipow_radhor=qtymem[i];i+=1
     global     rhosrhosq_diskcorona_phipow_radhor
@@ -7045,7 +7059,7 @@ def getqtymem(qtymem):
     FEMArhosq_diskcorona_phipow_radhor=qtymem[i];i+=1
     global     FEEMrhosq_diskcorona_phipow_radhor
     FEEMrhosq_diskcorona_phipow_radhor=qtymem[i];i+=1
-    #rhosq_diskcorona_phipow_rad4: 13
+    #rhosq_diskcorona_phipow_rad4: NQTY=13
     global     rhosq_diskcorona_phipow_rad4
     rhosq_diskcorona_phipow_rad4=qtymem[i];i+=1
     global     rhosrhosq_diskcorona_phipow_rad4
@@ -7072,7 +7086,7 @@ def getqtymem(qtymem):
     FEMArhosq_diskcorona_phipow_rad4=qtymem[i];i+=1
     global     FEEMrhosq_diskcorona_phipow_rad4
     FEEMrhosq_diskcorona_phipow_rad4=qtymem[i];i+=1
-    #rhosq_diskcorona_phipow_rad8: 13
+    #rhosq_diskcorona_phipow_rad8: NQTY=13
     global     rhosq_diskcorona_phipow_rad8
     rhosq_diskcorona_phipow_rad8=qtymem[i];i+=1
     global     rhosrhosq_diskcorona_phipow_rad8
@@ -7099,7 +7113,7 @@ def getqtymem(qtymem):
     FEMArhosq_diskcorona_phipow_rad8=qtymem[i];i+=1
     global     FEEMrhosq_diskcorona_phipow_rad8
     FEEMrhosq_diskcorona_phipow_rad8=qtymem[i];i+=1
-    #rhosq_diskcorona_phipow_rad30: 13
+    #rhosq_diskcorona_phipow_rad30: NQTY=13
     global     rhosq_diskcorona_phipow_rad30
     rhosq_diskcorona_phipow_rad30=qtymem[i];i+=1
     global     rhosrhosq_diskcorona_phipow_rad30
@@ -7128,7 +7142,7 @@ def getqtymem(qtymem):
     FEEMrhosq_diskcorona_phipow_rad30=qtymem[i];i+=1
 
 
-    #rhosq_jet_phipow_radhor: 13
+    #rhosq_jet_phipow_radhor: NQTY=13
     global     rhosq_jet_phipow_radhor
     rhosq_jet_phipow_radhor=qtymem[i];i+=1
     global     rhosrhosq_jet_phipow_radhor
@@ -7155,7 +7169,7 @@ def getqtymem(qtymem):
     FEMArhosq_jet_phipow_radhor=qtymem[i];i+=1
     global     FEEMrhosq_jet_phipow_radhor
     FEEMrhosq_jet_phipow_radhor=qtymem[i];i+=1
-    #rhosq_jet_phipow_rad4: 13
+    #rhosq_jet_phipow_rad4: NQTY=13
     global     rhosq_jet_phipow_rad4
     rhosq_jet_phipow_rad4=qtymem[i];i+=1
     global     rhosrhosq_jet_phipow_rad4
@@ -7182,7 +7196,7 @@ def getqtymem(qtymem):
     FEMArhosq_jet_phipow_rad4=qtymem[i];i+=1
     global     FEEMrhosq_jet_phipow_rad4
     FEEMrhosq_jet_phipow_rad4=qtymem[i];i+=1
-    #rhosq_jet_phipow_rad8: 13
+    #rhosq_jet_phipow_rad8: NQTY=13
     global     rhosq_jet_phipow_rad8
     rhosq_jet_phipow_rad8=qtymem[i];i+=1
     global     rhosrhosq_jet_phipow_rad8
@@ -7209,7 +7223,7 @@ def getqtymem(qtymem):
     FEMArhosq_jet_phipow_rad8=qtymem[i];i+=1
     global     FEEMrhosq_jet_phipow_rad8
     FEEMrhosq_jet_phipow_rad8=qtymem[i];i+=1
-    #rhosq_jet_phipow_rad30: 13
+    #rhosq_jet_phipow_rad30: NQTY=13
     global     rhosq_jet_phipow_rad30
     rhosq_jet_phipow_rad30=qtymem[i];i+=1
     global     rhosrhosq_jet_phipow_rad30
@@ -7239,7 +7253,7 @@ def getqtymem(qtymem):
 
 
 
-    #Flux: 11
+    #Flux: NQTY=11
     global     fstot
     fstot=qtymem[i];i+=1
     global     fsin
@@ -7263,7 +7277,7 @@ def getqtymem(qtymem):
     global     fsj40
     fsj40=qtymem[i];i+=1
 
-    #Mdot: 15
+    #Mdot: NQTY=15
     global     mdtot
     mdtot=qtymem[i];i+=1
     global     md2h
@@ -7295,7 +7309,7 @@ def getqtymem(qtymem):
     global     mdin
     mdin=qtymem[i];i+=1
 
-    #Edot: 12+2=14
+    #Edot: NQTY=12+2=14
     global     edtot
     edtot=qtymem[i];i+=1
     global     ed2h
@@ -7328,14 +7342,14 @@ def getqtymem(qtymem):
     global     edmabound
     edmabound=qtymem[i];i+=1
     #
-    #Pjet : 2
+    #Pjet : NQTY=2
     global     pjem5
     pjem5=qtymem[i];i+=1
     global     pjma5
     pjma5=qtymem[i];i+=1
     #
 
-    # Pj and Phiabsj: 36+12=48 (EM, RM*2, MA, MAFLOOR, PA, EN, PHI)*2 : 48
+    # Pj and Phiabsj: 36+12=48 (EM, RM*2, MA, MAFLOOR, PA, EN, PHI)*2 : NQTY=48
     global     pjem_n_mu1
     pjem_n_mu1=qtymem[i];i+=1
     global     pjem_n_mumax1
@@ -7449,7 +7463,7 @@ def getqtymem(qtymem):
     phiabsj_s_mumax1m=qtymem[i];i+=1
     #
     #
-    # ldot stuff: 8
+    # ldot stuff: NQTY=8
     global     ldtot
     ldtot=qtymem[i];i+=1
     global     ldem
@@ -7468,7 +7482,7 @@ def getqtymem(qtymem):
     global     ldm30
     ldm30=qtymem[i];i+=1
     # 
-    # ldot stuff: 42
+    # ldot stuff: NQTY=42
     global     ljem_n_mu1
     ljem_n_mu1=qtymem[i];i+=1
     global     ljem_n_mumax1
@@ -7570,7 +7584,7 @@ def getqtymem(qtymem):
     #
     #####################################################
     # Fluctuation terms that use deviations from average
-    #alphareynolds: 6
+    #alphareynolds: NQTY=6
     global     alphareynoldsa2
     alphareynoldsa2=qtymem[i];i+=1
     global     alphareynoldsb2
@@ -7585,7 +7599,7 @@ def getqtymem(qtymem):
     alphareynoldsc3=qtymem[i];i+=1
     #
     ###################################
-    #rhosq_diskcorona_thetapow_radhor: 13
+    #rhosq_diskcorona_thetapow_radhor: NQTY=13
     global     rhosq_diskcorona_thetapow_radhor
     rhosq_diskcorona_thetapow_radhor=qtymem[i];i+=1
     global     rhosrhosq_diskcorona_thetapow_radhor
@@ -7613,7 +7627,7 @@ def getqtymem(qtymem):
     FEMArhosq_diskcorona_thetapow_radhor=qtymem[i];i+=1
     global     FEEMrhosq_diskcorona_thetapow_radhor
     FEEMrhosq_diskcorona_thetapow_radhor=qtymem[i];i+=1
-    #rhosq_diskcorona_thetapow_rad4: 13
+    #rhosq_diskcorona_thetapow_rad4: NQTY=13
     global     rhosq_diskcorona_thetapow_rad4
     rhosq_diskcorona_thetapow_rad4=qtymem[i];i+=1
     global     rhosrhosq_diskcorona_thetapow_rad4
@@ -7640,7 +7654,7 @@ def getqtymem(qtymem):
     FEMArhosq_diskcorona_thetapow_rad4=qtymem[i];i+=1
     global     FEEMrhosq_diskcorona_thetapow_rad4
     FEEMrhosq_diskcorona_thetapow_rad4=qtymem[i];i+=1
-    #rhosq_diskcorona_thetapow_rad8: 13
+    #rhosq_diskcorona_thetapow_rad8: NQTY=13
     global     rhosq_diskcorona_thetapow_rad8
     rhosq_diskcorona_thetapow_rad8=qtymem[i];i+=1
     global     rhosrhosq_diskcorona_thetapow_rad8
@@ -7667,7 +7681,7 @@ def getqtymem(qtymem):
     FEMArhosq_diskcorona_thetapow_rad8=qtymem[i];i+=1
     global     FEEMrhosq_diskcorona_thetapow_rad8
     FEEMrhosq_diskcorona_thetapow_rad8=qtymem[i];i+=1
-    #rhosq_diskcorona_thetapow_rad30: 13
+    #rhosq_diskcorona_thetapow_rad30: NQTY=13
     global     rhosq_diskcorona_thetapow_rad30
     rhosq_diskcorona_thetapow_rad30=qtymem[i];i+=1
     global     rhosrhosq_diskcorona_thetapow_rad30
@@ -7696,7 +7710,7 @@ def getqtymem(qtymem):
     FEEMrhosq_diskcorona_thetapow_rad30=qtymem[i];i+=1
 
 
-    #rhosq_jet_thetapow_radhor: 13
+    #rhosq_jet_thetapow_radhor: NQTY=13
     global     rhosq_jet_thetapow_radhor
     rhosq_jet_thetapow_radhor=qtymem[i];i+=1
     global     rhosrhosq_jet_thetapow_radhor
@@ -7723,7 +7737,7 @@ def getqtymem(qtymem):
     FEMArhosq_jet_thetapow_radhor=qtymem[i];i+=1
     global     FEEMrhosq_jet_thetapow_radhor
     FEEMrhosq_jet_thetapow_radhor=qtymem[i];i+=1
-    #rhosq_jet_thetapow_rad4: 13
+    #rhosq_jet_thetapow_rad4: NQTY=13
     global     rhosq_jet_thetapow_rad4
     rhosq_jet_thetapow_rad4=qtymem[i];i+=1
     global     rhosrhosq_jet_thetapow_rad4
@@ -7750,7 +7764,7 @@ def getqtymem(qtymem):
     FEMArhosq_jet_thetapow_rad4=qtymem[i];i+=1
     global     FEEMrhosq_jet_thetapow_rad4
     FEEMrhosq_jet_thetapow_rad4=qtymem[i];i+=1
-    #rhosq_jet_thetapow_rad8: 13
+    #rhosq_jet_thetapow_rad8: NQTY=13
     global     rhosq_jet_thetapow_rad8
     rhosq_jet_thetapow_rad8=qtymem[i];i+=1
     global     rhosrhosq_jet_thetapow_rad8
@@ -7777,7 +7791,7 @@ def getqtymem(qtymem):
     FEMArhosq_jet_thetapow_rad8=qtymem[i];i+=1
     global     FEEMrhosq_jet_thetapow_rad8
     FEEMrhosq_jet_thetapow_rad8=qtymem[i];i+=1
-    #rhosq_jet_thetapow_rad30: 13
+    #rhosq_jet_thetapow_rad30: NQTY=13
     global     rhosq_jet_thetapow_rad30
     rhosq_jet_thetapow_rad30=qtymem[i];i+=1
     global     rhosrhosq_jet_thetapow_rad30
@@ -7809,7 +7823,7 @@ def getqtymem(qtymem):
     #
     #
     ###################################
-    #rhosq_diskcorona_radiuspow_radhor: 13
+    #rhosq_diskcorona_radiuspow_radhor: NQTY=13
     global     rhosq_diskcorona_radiuspow_radhor
     rhosq_diskcorona_radiuspow_radhor=qtymem[i];i+=1
     global     rhosrhosq_diskcorona_radiuspow_radhor
@@ -7837,7 +7851,7 @@ def getqtymem(qtymem):
     FEMArhosq_diskcorona_radiuspow_radhor=qtymem[i];i+=1
     global     FEEMrhosq_diskcorona_radiuspow_radhor
     FEEMrhosq_diskcorona_radiuspow_radhor=qtymem[i];i+=1
-    #rhosq_diskcorona_radiuspow_rad4: 13
+    #rhosq_diskcorona_radiuspow_rad4: NQTY=13
     global     rhosq_diskcorona_radiuspow_rad4
     rhosq_diskcorona_radiuspow_rad4=qtymem[i];i+=1
     global     rhosrhosq_diskcorona_radiuspow_rad4
@@ -7864,7 +7878,7 @@ def getqtymem(qtymem):
     FEMArhosq_diskcorona_radiuspow_rad4=qtymem[i];i+=1
     global     FEEMrhosq_diskcorona_radiuspow_rad4
     FEEMrhosq_diskcorona_radiuspow_rad4=qtymem[i];i+=1
-    #rhosq_diskcorona_radiuspow_rad8: 13
+    #rhosq_diskcorona_radiuspow_rad8: NQTY=13
     global     rhosq_diskcorona_radiuspow_rad8
     rhosq_diskcorona_radiuspow_rad8=qtymem[i];i+=1
     global     rhosrhosq_diskcorona_radiuspow_rad8
@@ -7891,7 +7905,7 @@ def getqtymem(qtymem):
     FEMArhosq_diskcorona_radiuspow_rad8=qtymem[i];i+=1
     global     FEEMrhosq_diskcorona_radiuspow_rad8
     FEEMrhosq_diskcorona_radiuspow_rad8=qtymem[i];i+=1
-    #rhosq_diskcorona_radiuspow_rad30: 13
+    #rhosq_diskcorona_radiuspow_rad30: NQTY=13
     global     rhosq_diskcorona_radiuspow_rad30
     rhosq_diskcorona_radiuspow_rad30=qtymem[i];i+=1
     global     rhosrhosq_diskcorona_radiuspow_rad30
@@ -7920,7 +7934,7 @@ def getqtymem(qtymem):
     FEEMrhosq_diskcorona_radiuspow_rad30=qtymem[i];i+=1
 
 
-    #rhosq_jet_radiuspow_radhor: 13
+    #rhosq_jet_radiuspow_radhor: NQTY=13
     global     rhosq_jet_radiuspow_radhor
     rhosq_jet_radiuspow_radhor=qtymem[i];i+=1
     global     rhosrhosq_jet_radiuspow_radhor
@@ -7947,7 +7961,7 @@ def getqtymem(qtymem):
     FEMArhosq_jet_radiuspow_radhor=qtymem[i];i+=1
     global     FEEMrhosq_jet_radiuspow_radhor
     FEEMrhosq_jet_radiuspow_radhor=qtymem[i];i+=1
-    #rhosq_jet_radiuspow_rad4: 13
+    #rhosq_jet_radiuspow_rad4: NQTY=13
     global     rhosq_jet_radiuspow_rad4
     rhosq_jet_radiuspow_rad4=qtymem[i];i+=1
     global     rhosrhosq_jet_radiuspow_rad4
@@ -7974,7 +7988,7 @@ def getqtymem(qtymem):
     FEMArhosq_jet_radiuspow_rad4=qtymem[i];i+=1
     global     FEEMrhosq_jet_radiuspow_rad4
     FEEMrhosq_jet_radiuspow_rad4=qtymem[i];i+=1
-    #rhosq_jet_radiuspow_rad8: 13
+    #rhosq_jet_radiuspow_rad8: NQTY=13
     global     rhosq_jet_radiuspow_rad8
     rhosq_jet_radiuspow_rad8=qtymem[i];i+=1
     global     rhosrhosq_jet_radiuspow_rad8
@@ -8001,7 +8015,7 @@ def getqtymem(qtymem):
     FEMArhosq_jet_radiuspow_rad8=qtymem[i];i+=1
     global     FEEMrhosq_jet_radiuspow_rad8
     FEEMrhosq_jet_radiuspow_rad8=qtymem[i];i+=1
-    #rhosq_jet_radiuspow_rad30: 13
+    #rhosq_jet_radiuspow_rad30: NQTY=13
     global     rhosq_jet_radiuspow_rad30
     rhosq_jet_radiuspow_rad30=qtymem[i];i+=1
     global     rhosrhosq_jet_radiuspow_rad30
@@ -8471,7 +8485,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
                 avg_myuu1=avg_uu[1]*np.sqrt(gv3[1,1])*avg_iuu0hat
                 avg_myuu2=avg_uu[2]*np.sqrt(gv3[2,2])*avg_iuu0hat
                 avg_myuu3=avg_uu[3]*np.sqrt(gv3[3,3])*avg_iuu0hat
-                avg_myuurot=np.sqrt(avg_myuu2**2+avg_myuu3**2)
+                avg_myuurot=np.sqrt(avg_myuu2**2+avg_myuu3**2)  # GODMARK: should have rot version directly averaged so \theta,\phi correlations accounted for
                 avg_myB1=avg_B[1-1]*np.sqrt(gv3[1,1])
                 avg_myB2=avg_B[2-1]*np.sqrt(gv3[2,2])
                 avg_myB3=avg_B[3-1]*np.sqrt(gv3[3,3])
@@ -8522,7 +8536,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
                 avg_myuu1=(avg_uu[1]*dxdxp[1,1] + avg_uu[2]*dxdxp[1,2])*np.sqrt(gvks11)/avg_myuu0
                 avg_myuu2=(avg_uu[1]*dxdxp[2,1] + avg_uu[2]*dxdxp[2,2])*np.sqrt(gvks22)/avg_myuu0
                 avg_myuu3=(avg_uu[3]*dxdxp[3,3])*np.sqrt(gvks33)/avg_myuu0
-                avg_myuurot=np.sqrt(avg_myuu2**2+avg_myuu3**2)
+                avg_myuurot=np.sqrt(avg_myuu2**2+avg_myuu3**2)    # GODMARK: should have rot version directly averaged so \theta,\phi correlations accounted for
                 avg_myB1=(avg_B[1-1]*dxdxp[1,1] + avg_B[2-1]*dxdxp[1,2])*np.sqrt(gvks11)
                 avg_myB2=(avg_B[1-1]*dxdxp[2,1] + avg_B[2-1]*dxdxp[2,2])*np.sqrt(gvks22)
                 avg_myB3=(avg_B[3-1]*dxdxp[3,3])*np.sqrt(gvks33)
@@ -8535,6 +8549,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
                 avg_myauu2=(avg_absuu[1]*dxdxp[2,1] + avg_absuu[2]*dxdxp[2,2])*np.sqrt(gvks22)/avg_myauu0
                 avg_myauu3=(avg_absuu[3]*dxdxp[3,3])*np.sqrt(gvks33)/avg_myauu0
                 avg_myauurot=np.sqrt(avg_myauu2**2+avg_myauu3**2)
+                #avg_myauurot=np.sqrt(avg_myauu2**2+avg_myauu3**2) # GODMARK
                 avg_myaB1=(avg_absB[1-1]*dxdxp[1,1] + avg_absB[2-1]*dxdxp[1,2])*np.sqrt(gvks11)
                 avg_myaB2=(avg_absB[1-1]*dxdxp[2,1] + avg_absB[2-1]*dxdxp[2,2])*np.sqrt(gvks22)
                 avg_myaB3=(avg_absB[3-1]*dxdxp[3,3])*np.sqrt(gvks33)
@@ -10565,6 +10580,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     rjetin=10.
     if modelname=="blandford3d_new":
         rjetout=30.
+    elif modelname=="a0hr07":
+        rjetout=30.
     else:
         rjetout=50.
     # jon's Choice below
@@ -10618,6 +10635,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         ##############################################
         # remove all data below tstarthr from high res data
+        # specifically gets rid of t=0,Dt,etc. small t data that might be there as created by user.
         tconditionhr=(tshr>=tstarthr)
         qtymemhrnew=qtymem[:,tconditionhr,:]
         numtimeslices = qtymemhrnew.shape[1]
@@ -10626,6 +10644,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         ##############################################
         # remove part of low-res qty data that overlaps with high res data
+        # if low-res data fieldline files are optimally selected for time-averaging range, might  only get t=0 data here
         tcondition=(tslr<tstarthr)
         print("tslr[-1]=%g tstarthr=%g" % (tslr[-1],tstarthr)) ; sys.stdout.flush()
         # qtymemalt is low-res data.  
@@ -10655,18 +10674,24 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         print(qtymemaltnew.shape) ; sys.stdout.flush()
         #
         for qtyiter in np.arange(0,nqty):
-            if 1==1:
-                # below creates oscillations and changes how some of code handles t=0 data
-                qtymemhrfun = sp.interpolate.RectBivariateSpline(xi,yi,qtymemaltnew[qtyiter,:,:], kx=2,ky=2)
-                # below returns array of size [?;2] ?
-                #qtymemhrfun = sp.interpolate.RectBivariateSpline(xi,yi,qtymemaltnew[qtyiter,:,:], kx=1,ky=1)
+            print("BEGIN: qtyiter=%d" % qtyiter) ; sys.stdout.flush()
+            if numtimeslicesalt==1:
+                qtymemhrfun = sp.interpolate.interp1d(yi,qtymemaltnew[qtyiter,0,:],kind='linear')
+                qtymemalthr[qtyiter,0,:] = qtymemhrfun(yyi)
             else:
-                # below is more conservative and sufficient
-                # something is wrong with below -- stalls
-                qtymemhrfun = sp.interpolate.interp2d(xi,yi,qtymemaltnew[qtyiter,:,:],kind='linear')
-            #
-            print("qtyiter=%d" % qtyiter)
-            qtymemalthr[qtyiter] = qtymemhrfun(xxi,yyi)
+                # not sure why using 2D interpolation if only x changes
+                if 1==1:
+                    # below creates oscillations and changes how some of code handles t=0 data
+                    qtymemhrfun = sp.interpolate.RectBivariateSpline(xi,yi,qtymemaltnew[qtyiter,:,:], kx=2,ky=2)
+                    # below returns array of size [?;2] ?
+                    #qtymemhrfun = sp.interpolate.RectBivariateSpline(xi,yi,qtymemaltnew[qtyiter,:,:], kx=1,ky=1)
+                else:
+                    # below is more conservative and sufficient
+                    # something is wrong with below -- stalls
+                    qtymemhrfun = sp.interpolate.interp2d(xi,yi,qtymemaltnew[qtyiter,:,:],kind='linear')
+                #
+                qtymemalthr[qtyiter] = qtymemhrfun(xxi,yyi)
+            print("END: qtyiter=%d" % qtyiter) ; sys.stdout.flush()
         #
         #
         # now merge qtymem (hr version, generally with latter times) with qtymemalthr (generally with earlier times)
@@ -11605,6 +11630,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     if modelname=="blandford3d_new":
         # so really at r=30 not 100
         hoverr100=hoverr[:,iofr(30)]
+    elif modelname=="a0hr07":
+        hoverr100=hoverr[:,iofr(30.0)]
     else:
         hoverr100=hoverr[:,iofr(100)]
     #
@@ -11625,6 +11652,11 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         hoverr12=hoverr[:,iofr(12)]
         hoverratrmax_t0=hoverr12[0]
         hoverraltatrmax_t0=horalt1[0,iofr(12)]
+    elif modelname=="a0hr07":
+        # Rmax=35, despite Rout=50
+        hoverr35=hoverr[:,iofr(35.0)]
+        hoverratrmax_t0=hoverr35[0]
+        hoverraltatrmax_t0=horalt1[0,iofr(35.0)]
     elif issashamodel(modelname):
         hoverr34=hoverr[:,iofr(34)] # some models may have rmax=37 instead
         hoverratrmax_t0=hoverr34[0]
@@ -11646,6 +11678,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     if modelname=="blandford3d_new":
         # so really at r=30 not 100
         hoverrcorona100=hoverrcorona[:,iofr(30)]
+    elif modelname=="a0hr07":
+        hoverrcorona100=hoverrcorona[:,iofr(30.0)]
     else:
         hoverrcorona100=hoverrcorona[:,iofr(100)]
     #
@@ -11666,6 +11700,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     if modelname=="blandford3d_new":
         # so really at r=30 not 100
         hoverr_jet100=hoverr_jet[:,iofr(30)]
+    elif modelname=="a0hr07":
+        hoverr_jet100=hoverr_jet[:,iofr(30.0)]
     else:
         hoverr_jet100=hoverr_jet[:,iofr(100)]
     #
@@ -11704,6 +11740,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         if ismb09model(modelname):
             hoverri=hoverr10_avg
             hoverro=hoverr12_avg
+        elif modelname=="a0hr07":
+            hoverri=hoverr5_avg
+            hoverro=hoverr10_avg
         else:
             # default
             hoverri=hoverr20_avg
@@ -12008,7 +12047,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     rfitout3=max(40.0,min(100.0,rfitout3))
     iout3=iofr(rfitout3)
     #
-    if ismb09model(modelname):
+    if ismb09model(modelname) or modelname=="a0hr07":
         rfitin3=6.0
         iin3=iofr(rfitin3)
         iout3=iout7 # try to use normal single inflow time at *start* of averaging period
@@ -12094,6 +12133,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         drnormvsr100=drnormvsr[iofr(30)]
         dHnormvsr100=dHnormvsr[iofr(30)]
         dPnormvsr100=dPnormvsr[iofr(30)]
+    elif modelname=="a0hr07":
+        drnormvsr100=drnormvsr[iofr(30.0)]
+        dHnormvsr100=dHnormvsr[iofr(30.0)]
+        dPnormvsr100=dPnormvsr[iofr(30.0)]
     else:
         drnormvsr100=drnormvsr[iofr(100)]
         dHnormvsr100=dHnormvsr[iofr(100)]
@@ -12102,7 +12145,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     nzreal=nz
     #
-    if ismb09model(modelname):
+    if ismb09model(modelname) or modelname=="a0hr07":
         drnormh=drnormvsrhor
         dHnormh=dHnormvsrhor
         dPnormh=dPnormvsrhor
@@ -12156,6 +12199,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             vuas3rhosqdcdenkep[ttii,:] = vuas3rhosqdcdenkep_vsr[:]
     #
     # GODMARK: Should really use (b^2\rho_0)^{1/2} weighting for qmridisk and iq2mridisk, but if anything more sub-Keplerian than dcden version so if anyting MRI suppressed over large radial range.
+    # NOT USING THIS ANYMORE!
     if OMEGAFIX==1:
         omegafixrat=vuas3rhosqdcden/vuas3rhosqdcdenkep
     else:
@@ -12197,7 +12241,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     indicesiq2mri1=ti[iq2mri1cut:nx,0,0][q2mridisk_avg[iq2mri1cut:nx]>=0.5] # use 0.5 because 1.0 too close to possibly allowing MRI
     print("indicesiq2mri1") ; sys.stdout.flush()
     print(indicesiq2mri1) ; sys.stdout.flush()
-    iq2mri1=indicesiq2mri1[0] # first instance vs. radius
+    if len(indicesiq2mri1)==0:
+        iq2mri1=nx-1
+    else:
+        iq2mri1=indicesiq2mri1[0] # first instance vs. radius
     print("iq2mri1") ; sys.stdout.flush()
     print(iq2mri1) ; sys.stdout.flush()
     rq2mri1=r[iq2mri1,ny/2,0] # radius
@@ -12213,7 +12260,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     indicesiq2mri2=ti[iq2mri2cut:nx,0,0][q2mridiskweak_avg[iq2mri2cut:nx]>=0.5] # use 0.5 because 1.0 too close to possibly allowing MRI
     print("indicesiq2mri2") ; sys.stdout.flush()
     print(indicesiq2mri2) ; sys.stdout.flush()
-    iq2mri2=indicesiq2mri2[0] # first instance vs. radius
+    if len(indicesiq2mri2)==0:
+        iq2mri2=nx-1
+    else:
+        iq2mri2=indicesiq2mri2[0] # first instance vs. radius
     print("iq2mri2") ; sys.stdout.flush()
     print(iq2mri2) ; sys.stdout.flush()
     rq2mri2=r[iq2mri2,ny/2,0] # radius
@@ -12327,12 +12377,17 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     # 
     ############################################### t=0 qmri's
     #
+    # qmrir? are only used for t=0 values, not time-averaged values
     if ismb09model(modelname):
         qmrir1=10.0
         qmrir2=15.0
         qmrir3=20.0
+    elif modelname=="a0hr07":
+        qmrir1=30.0 # rin=20 and rmax=35
+        qmrir2=40.0
+        qmrir3=45.0
     else:
-        qmrir1=20.0
+        qmrir1=30.0
         qmrir2=50.0
         qmrir3=100.0
     #
@@ -12498,6 +12553,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     ################################ time-average qmri's
     #
+    spreadrat=0.2 # use smaller spread for time-average since should be smooth function and don't have to use large spread as done for t=0
     qrin=rfitin2*(1.0-spreadrat)
     qrout=rfitin2*(1.0+spreadrat)
     iqrinrfitin2=iofr(qrin)
@@ -13259,6 +13315,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     global gridtype
     if ismb09model(modelname):
         gridtype="ExpOld"
+    elif modelname=="a0hr07":
+        gridtype="ExpThin"
     elif issashamodel(modelname):
         gridtype="TNM11"
     elif Rout==26000 and isthickdiskmodel(modelname):
@@ -13346,6 +13404,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     elif modelname=="blandford3d_new":
         fieldtype="LSQuad"
         truemodelname="MB09Q"
+    elif modelname=="a0hr07":
+        fieldtype="4Loop"
+        truemodelname="A0HR07"
     elif modelname=="sasham9":
         fieldtype="Poloidal2"
         truemodelname="A-0.9N100halfpi"
@@ -13355,6 +13416,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     elif modelname=="sasham5":
         fieldtype="Poloidal2"
         truemodelname="A-0.5N100"
+    elif modelname=="sasham2":
+        fieldtype="Poloidal2"
+        truemodelname="A-0.2N100"
     elif modelname=="sasha0":
         fieldtype="Poloidal2"
         truemodelname="A0.0N100"
@@ -13748,6 +13812,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     if ismb09model(modelname):
         iinalt=iofr(10.0)
         ioutalt=iofr(12.0)
+    elif modelname=="a0hr07":
+        iinalt=iofr(8.0)
+        ioutalt=iofr(9.0)
     else:
         iinalt=iofr(12.0)
         ioutalt=iofr(20.0)
@@ -15878,9 +15945,26 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     #
     ################ Power vs. m plots
+    #test
+    #
+    if 1==0:
+        loadavg()
+        #
+        for ii in np.arange(0,nx):
+            for jj in np.arange(0,ny):
+                print("goditer: %d %d : %g" % (ii,jj,avg_bsq[ii,jj,0]))
+            #
+        #
+        sys.stdout.flush()
+        #
+        for iter in np.arange(0,len(bsqrhosq_diskcorona_thetapow_rad8)):
+            print("iter=%d bsqrhosq_diskcorona_thetapow_rad8[iter,1]=%g\n" % (iter,bsqrhosq_diskcorona_thetapow_rad8[iter,1]))
+        #
+        sys.stdout.flush()
     #
     if dopowervsmplots==1: # assumes computephipow==1 when called generate_time_series(), else a waste, but doesn't hurt anything
         print("dopowervsmplots==1" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
+        #
         #
         nfft=nz/2+1
         # determine minimum true $m$ value due to $\phi$ box size
@@ -17021,6 +17105,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     ######################################################################################
     # Get full GR vr so can obtain effective alpha (below replaced by 1.0 so can recover)
+    # NOTEMARK: sign of v_\phi can be negative for high enough negative a/M and thick disks.
     alphahorsqvel=(1.0 * hoverr_vsr**2 * vuas3rhosqdcden_vsr)
     #
     # Page & Thorne (1974) eq14,15
@@ -17059,7 +17144,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     # Effective \alpha assuming NT thin disk theory works
     # for below, might want to try other thickness types
-    alphaeff_vsr = vuas1rhosqdcden_vsr/(vus1rhosqdcdenvsrffGR_vsr)
+    #alphaeff_vsr = vuas1rhosqdcden_vsr/(vus1rhosqdcdenvsrffGR_vsr)
+    # GODMARK: Have to use non-abs version, else exaggerate non-directional velocity.  This also makes sense since related to \dot{M}[net] with the density weighting.  Also, A0HR07 has \alpha_b\sim \alpha_{b,\rm eff} only with the non-abs version.
+    alphaeff_vsr = -vus1rhosqdcden_vsr/(vus1rhosqdcdenvsrffGR_vsr)
     #
     alphaeff_vsr_avg=np.average(jabs(alphaeff_vsr[iinalt:ioutalt])) # same averaging as for other alphas
     #
@@ -19261,7 +19348,7 @@ def mkpowervsnlm(mode=None,truenfft=None,loadq=0,qty=None,pllabel="",filenum=0,f
             truepos=mypos[lowiofpos] + (mypos[highiofpos]-mypos[lowiofpos])/(Rbarnorm[highiofpos]-Rbarnorm[lowiofpos])*(varRbarnorm - Rbarnorm[lowiofpos])
             nlmcororig=rangepos/(dropRbar[0]-mypos[0])
             nlmcor=rangepos/(truepos-mypos[0])
-            print("nlmcororig=%g nlmcor=%g" % (nlmcororig,nlmcor))
+            print("mode=%s nlmcororig=%g nlmcor=%g" % (mode,nlmcororig,nlmcor))
         #
         else:
             nlmcor=rangepos/dropRbar
