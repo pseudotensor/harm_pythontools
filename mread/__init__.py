@@ -6386,7 +6386,7 @@ def computeavgs():
     print( "a = -0.9:")
     getetaavg('siminfo.txt',('A-0.9f','A-0.9','A-0.9$l_r$','A-0.9$l_\\theta$','A-0.9$h_\\theta$','A-0.9$h_\\varphi$',))
 
-def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=False,nsigma=1,eps=1e-5):
+def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=False,nsigma=1,eps=1e-5,dofill=False,doanalytic=False):
     if usegaussianunits == True:
         unitsfactor = (4*np.pi)**0.5*2*np.pi
     else:
@@ -6504,10 +6504,11 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     rhor = 1+(1-mya**2)**0.5
     myomh = mya / 2/ rhor
     #fitting function
-    f0 = 2.9
-    f0n = 0.9*f0*0.98
-    f1 = -0.6
-    f1n = 1.1/0.98
+    ff=1.08
+    f0 = 2.9*ff
+    f0n = 0.9*f0*0.98/ff
+    f1 = -0.8/ff
+    f1n = 1.2
     f2 = 0.
     #f = f0 * (1 + (f1*(1+np.sign(myomh))/2. + f1n*(1-np.sign(myomh))/2.) * myomh + f2 * myomh**2)
     fneg = f0 * (1 + f1*myomh + f2 * myomh**2)
@@ -6584,8 +6585,8 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         #y = (f30sqlist/2./(2*np.pi))/(mdotlist)**0.5
         y1= (fsqtotlist/2./(2*np.pi))/(mdotlist)**0.5
         #plt.plot(alist,y,'bo')
-        plt.plot(alist,y1,'ro')
-        plt.plot(mya,f,'g')
+        plt.plot(omegah_compute(alist)/omegah_compute(1),y1,'rx')
+        plt.plot(omegah_compute(mya)/omegah_compute(1),f,'g')
         # plt.plot(mya,(250+0*mya)*rhor) 
         # plt.plot(mya,250./((3./(mya**2 + 3*rhor**2))**2*2*rhor**2)) 
         #plt.plot(mya,((mya**2+3*rhor**2)/3)**2/(2/rhor)) 
@@ -6638,6 +6639,10 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         print( "%2d: %9.5g %9.5g %9.5g %9.5g %9.5g %3g" % (
                 i, aval, u_philist[i], 2*u_phistdlist[i], 100*u_etalist[i], 2*100*u_etastdlist[i], u_numsims[i]) )
     #
+    plt.figure(2)
+    plt.errorbar(omegah_compute(u_alist)/omegah_compute(1),u_philist/unitsfactor,yerr=2*u_phistdlist/unitsfactor,label=r'$\langle\phi^2\!\rangle^{1/2}$',mfc='b',ecolor='b',lw=2,fmt='+',elinewidth=1,mew=1)
+
+    #
     plt.figure(1, figsize=(8,4),dpi=100)
     plt.clf()
     gs = GridSpec(2, 2)
@@ -6651,7 +6656,8 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     newy1 = 1.05*f*unitsfactor
     newy2 = 0.95*f*unitsfactor
     col= ( 0.52941176,  0.80784314,  0.98039216, 0.5) #(0.5,0.5,1,0.75) #(0.8,1,0.8,1)
-    ax1.fill_between(mya,newy1,newy2,where=newy1>newy2,facecolor=col,edgecolor=col)
+    if dofill:
+        ax1.fill_between(mya,newy1,newy2,where=newy1>newy2,facecolor=col,edgecolor=col)
     ax1.plot(mya,f*unitsfactor,'k-',label=r'$\phi_{\rm fit}$',lw=2) #=2.9(1-0.6 \Omega_{\rm H})
     #ax1.plot(alist,y1*unitsfactor,'o',label=r'$\langle\phi^2\!\rangle^{1/2}$',mfc='r')
     ax1.errorbar(u_alist,u_philist,yerr=2*u_phistdlist,label=r'$\langle\phi^2\!\rangle^{1/2}$',mfc='r',ecolor='r',fmt='o',lw=2,elinewidth=1,mew=1)
@@ -6682,7 +6688,8 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     ax2 = plt.subplot(gs[1,0])
     newy1 = 1.1*100*fac*myeta6
     newy2 = 0.9*100*fac*myeta6
-    ax2.fill_between(myspina6,newy1,newy2,where=newy1>newy2,facecolor=col,edgecolor=col,lw=2)
+    if dofill:
+        ax2.fill_between(myspina6,newy1,newy2,where=newy1>newy2,facecolor=col,edgecolor=col,lw=2)
     #plt.plot(alist,100*(etawindlist-etalist),'gv',label=r'$\eta_{\rm wind}$')
     #plt.plot(myspina6,0.9*100*fac*myeta6,'k',label=r'$0.9\eta_{\rm BZ6}(\phi_{\rm fit})$' )
     plt.plot(myspina6,100*fac*myeta6,'k-',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$',lw=2)
@@ -6712,7 +6719,8 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     newy1 = 1.1*0.85*100*fac*myeta6
     newy2 = 0.9*0.85*100*fac*myeta6
     #col=(0.93333333,  0.60980392,  0.93333333,0.75) #(0.8,0.52,0.25,0.4)
-    ax3.fill_between(myspina6,newy1,newy2,where=newy1>newy2,facecolor=col,edgecolor=col)  #(0.8,1,0.8,1)
+    if dofill:
+        ax3.fill_between(myspina6,newy1,newy2,where=newy1>newy2,facecolor=col,edgecolor=col)  #(0.8,1,0.8,1)
     l,=plt.plot(myspina6,0.85*100*fac*myeta6,'k--',lw=2,label=r'$0.85\eta_{\rm BZ6}(\phi_{\rm fit})$' )
     l.set_dashes([10,5])
     #plt.plot(myspina6,myeta6,'r:',label=r'$\eta_{\rm BZ,6}$')
@@ -6747,12 +6755,12 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     plt.plot(x,y,color='red',lw=4,alpha=0.3)
     l,=plt.plot(mya,sparthin(mya),'g-.',lw=2,label=r"$s_{\rm NT}$")
     l.set_dashes([10,3,2,3])
-    if False:
+    if doanalytic:
         #to show "analytic" rought approximation of Ramesh
         plt.plot(mya,sparthin(0)*(1-mya),'k-',lw=1)
     #plt.plot(alist,sparlist,'ro',mec='r')
     ax4.errorbar(u_alist,u_sparlist,yerr=2*u_sparstdlist,label=r"$s_{\rm MAD}$",mfc='r',ecolor='r',fmt='o-',color='r',lw=2,elinewidth=1,mew=1)
-    if False:
+    if doanalytic:
         #to show "analytic" rought approximation of Ramesh
         plt.plot(mya,-8*mya,'k-',lw=1)
     #plt.plot(alist[:9],sparlist[:9],'ro-',lw=2,label=r"$s_{\rm MAD}$")
