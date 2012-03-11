@@ -275,7 +275,7 @@ def jonpolyfit(x,y,degree,dologx=1,dology=1,doabs=1,badfit=0,num=0):
         if modelname=="runlocaldipole3dfiducial":
             numsigma=3.0
         else:
-            numsigma=3.0 # only by sigma=4 does it appear I would say both power-law and reasonable looking fit
+            numsigma=5.0 # only by sigma=4 does it appear I would say both power-law and reasonable looking fit
         #
         for degiter in np.arange(0,degree+1):
             sigma[degiter]=numsigma*np.sqrt(np.fabs(pcov[degiter,degiter]))
@@ -1670,15 +1670,15 @@ def getdefaulttimes1():
         defaultfti=8000
         defaultftf=1e6
     elif modelname=="thickdisk9":
-        defaultfti=8000
+        defaultfti=14000
         defaultftf=1e6
     elif modelname=="thickdiskr3":
         #defaultfti=30000
         defaultfti=58000  # make same as thickdiskhr3
         defaultftf=1e6
     elif modelname=="thickdisk17":
-        #defaultfti=40000
-        defaultfti=58000  # make same as thickdiskhr3
+        defaultfti=40000
+        #defaultfti=58000  # make same as thickdiskhr3
         defaultftf=1e6
     elif modelname=="thickdisk10":
         #defaultfti=30000
@@ -1712,37 +1712,37 @@ def getdefaulttimes1():
         defaultfti=12500
         defaultftf=1e6
     elif modelname=="sasham9":
-        defaultfti=8000
+        defaultfti=11000
         defaultftf=1e6
     elif modelname=="sasham9full2pi":
-        defaultfti=8000
+        defaultfti=11000
         defaultftf=1e6
     elif modelname=="sasham5":
-        defaultfti=8000
+        defaultfti=11000
         defaultftf=1e6
     elif modelname=="sasham2":
-        defaultfti=8000
+        defaultfti=11000
         defaultftf=1e6
     elif modelname=="sasha0":
-        defaultfti=8000
+        defaultfti=11000
         defaultftf=1e6
     elif modelname=="sasha1":
-        defaultfti=8000
+        defaultfti=11000
         defaultftf=1e6
     elif modelname=="sasha2":
-        defaultfti=8000
+        defaultfti=11000
         defaultftf=1e6
     elif modelname=="sasha5":
-        defaultfti=8000
+        defaultfti=11000
         defaultftf=1e6
     elif modelname=="sasha9b25":
-        defaultfti=8000
+        defaultfti=11000
         defaultftf=1e6
     elif modelname=="sasha9b50":
-        defaultfti=8000
+        defaultfti=11000
         defaultftf=1e6
     elif modelname=="sasha9b100":
-        defaultfti=8000
+        defaultfti=11000
         defaultftf=1e6
     elif modelname=="sasha9b200":
         defaultfti=16000
@@ -4720,7 +4720,12 @@ def maketsuniform(toplot=None):
         if newtici+1==newlents:
             toplotnew[newtici,:]=toplotnew[newtici-1,:]
             tsnew[newtici]=tsnewsub[newtici-1]+dtsample
-
+    else:
+        # nothing to do
+        toplotnew=toplotnewsub
+        tsnew=ts
+        #
+    #
     #
     return(tsnew,toplotnew)
 
@@ -11992,6 +11997,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             # limit fit to out to 100 (where pressure maximum is in thickdisk models and always begins to contaminate fits)
             # even beyond 30 things oscillate for some models (e.g. thickdisk3 and thickdiskhr3)
             rfitout0=min(30.0,rfitout0)
+            #if issashamodel(modelname)==1:
+                # sasha models have limited flux in disk, and don't want fit to pass through that transition
+                #rfitout0=min(20.0,rfitout0) # ah, not much different.
             iout=iofr(rfitout0)
         #
         # avoid i->r rounding error
@@ -17470,6 +17478,11 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             #
             condtfull = (tsnew>=0.0)
             #
+            #print("tsnew"); sys.stdout.flush()
+            #print(tsnew); sys.stdout.flush()
+            print("ftf=%g fti=%g" % (ftf,fti)) ; sys.stdout.flush()
+            print("sumcondt=%d" % (np.sum(condt))) ; sys.stdout.flush()
+            print("sumcondtfull=%d" % (np.sum(condtfull))) ; sys.stdout.flush()
             #
             ####################
             xvalue=tsnew[condt]
@@ -17543,6 +17556,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             #
             print("picktheta=%g pickj=%d pickjnx=%d" % (picktheta,pickj,pickjnx)); sys.stdout.flush()
             #
+            print("len(yvalue)=%d" % (len(yvalue))) ; sys.stdout.flush()
             #
             #Yfft=sp.fftpack.fft(yvalue)
             # http://docs.scipy.org/doc/numpy/reference/routines.fft.html
