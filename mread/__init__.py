@@ -19,6 +19,8 @@ import array
 #import scipy as sc
 from scipy.interpolate import griddata
 from scipy.interpolate import interp1d
+from scipy.integrate import quad
+from scipy.integrate import odeint
 #from scipy.interpolate import Rbf
 from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
@@ -6693,6 +6695,19 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     #plt.plot(alist,100*(etawindlist-etalist),'gv',label=r'$\eta_{\rm wind}$')
     #plt.plot(myspina6,0.9*100*fac*myeta6,'k',label=r'$0.9\eta_{\rm BZ6}(\phi_{\rm fit})$' )
     plt.plot(myspina6,100*fac*myeta6,'k-',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$',lw=2)
+    #plt.plot(myspina6,(100-4.4305)*fac*myeta6+4.4305,'k:',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$',lw=2)
+    #u_etalist[0]*=0.8
+    #z=np.polyfit(omegah_compute(u_alist),100*u_etalist,6)
+    z=np.polyfit(u_alist,100*u_etalist,3)#,w=1/(2*100*u_etastdlist)**2)
+    z[-1]=4.4
+    z[-2]=0
+    print z
+    eta_func=np.poly1d(z)    
+    # eta_func2=poly1dt(z)    
+    plt.plot(mya,eta_func(mya),'k:',lw=2)
+    # plt.plot(myspina6,4.4305+20*(myomh6/omegah_compute(0.9))**1+100*(myomh6/omegah_compute(0.9))**2+10*(myomh6/omegah_compute(0.9))**3-30*(myomh6/omegah_compute(0.9))**4,'k--',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$',lw=2)
+    # plt.plot(myspina6,4.4305+130*(myomh6/omegah_compute(0.9))**2-30*(myomh6/omegah_compute(0.9))**4,'k--',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$',lw=2)
+    # plt.plot(myspina6,95*(np.abs(omegah_compute(myspina6))/omegah_compute(0.9))**2+5,'k:',label=r'$100(a/0.9)^2$',lw=2)
     #plt.plot(u_alist,100*u_etalist,'o',label=r'$\eta$',mfc='r',lw=2)
     ax2.errorbar(u_alist,100*u_etalist,yerr=2*100*u_etastdlist,label=r'$\eta$',mfc='r',ecolor='r',fmt='o',lw=2,elinewidth=1,mew=1)
     plt.ylim(0.0001,160-1e-5)
@@ -6759,7 +6774,14 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         #to show "analytic" rought approximation of Ramesh
         plt.plot(mya,sparthin(0)*(1-mya),'k-',lw=1)
     #plt.plot(alist,sparlist,'ro',mec='r')
-    ax4.errorbar(u_alist,u_sparlist,yerr=2*u_sparstdlist,label=r"$s_{\rm MAD}$",mfc='r',ecolor='r',fmt='o-',color='r',lw=2,elinewidth=1,mew=1)
+    newa=np.concatenate((u_alist[0:1],u_alist[1:]))
+    news=np.concatenate((u_sparlist[0:1],u_sparlist[1:]))
+    spar_polyfit=np.polyfit(newa,news,4)#,w=1/(2*100*u_etastdlist)**2)
+    spar_func=np.poly1d(spar_polyfit)
+    # spar_func2=poly1dt(spar_polyfit)
+    plt.plot(mya,spar_func(mya),'k:',lw=2)
+    print spar_polyfit
+    ax4.errorbar(u_alist,u_sparlist,yerr=2*u_sparstdlist,label=r"$s_{\rm MAD}$",mfc='r',ecolor='r',fmt='o',color='r',lw=2,elinewidth=1,mew=1)
     if doanalytic:
         #to show "analytic" rought approximation of Ramesh
         plt.plot(mya,-8*mya,'k-',lw=1)
@@ -6809,7 +6831,28 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     # plt.clf()
     # plt.plot(mya,myomh)
     # plt.plot(mspina2[mhor2==hor],momh2[mhor2==hor])
-    
+    plt.figure(4)
+    plt.clf()
+    t=np.linspace(0,1,num=10000)
+    #initial value
+    a0 = 1
+    a_of_t = odeint(lambda a,t: spar_func(a),a0,t)[:,0]
+    a_of_t_func=interp1d(t,a_of_t,bounds_error=False)
+    plt.plot(t,a_of_t_func(t))
+    #initial value
+    lnM0 = 0
+    lnM_of_t = odeint(lambda lnM,t: 1-0.01*eta_func(a_of_t_func(t)),lnM0,t)[:,0]
+    M_of_t=exp(lnM_of_t)
+    Mirr_of_t = M_of_t*(0.5*rhor_compute(a_of_t))**0.5
+    plt.plot(t,M_of_t)
+    plt.plot(t,Mirr_of_t)
+    #plt.plot(t,rhor_compute(a_of_t))
+    plt.grid(visible=True)
+    plt.xlim(0,0.5)
+    plt.ylim(0,2)
+
+def poly1dt(poly_coef):
+    return lambda x,t: sum(poly_coef[::-1]*x**np.arange(len(poly_coef)))
 
 def readmytests1():
     global momh2, mhor2, mpsi2, mpow2, mBr2, mtheta2, mspina2, mpow2a, mpow2abz
@@ -6985,9 +7028,12 @@ def div( vec ):
     return( res )
 
 def omegah_compute(a):
-    rh = 1+(1-a**2)**0.5
+    rh = rhor_compute(a)
     omegah = 0.5 * a / rh
     return( omegah )
+
+def rhor_compute(a):
+    return( 1+(1-a**2)**0.5 )
 
 def plotdiv():    
     global madded, eadded
@@ -10136,7 +10182,7 @@ if __name__ == "__main__":
     if False:
         #Plot all BZs
         plotallbz()
-    if False:
+    if True:
         #Power vs. spin, updated diagnostics
         readmytests1()
         plotpowers('siminfo.txt',plotetas=False,format=2) #new format; data from 2d average dumps
