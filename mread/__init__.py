@@ -21,6 +21,7 @@ from scipy.interpolate import griddata
 from scipy.interpolate import interp1d
 from scipy.integrate import quad
 from scipy.integrate import odeint
+from scipy.optimize import brentq
 #from scipy.interpolate import Rbf
 from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
@@ -6388,7 +6389,7 @@ def computeavgs():
     print( "a = -0.9:")
     getetaavg('siminfo.txt',('A-0.9f','A-0.9','A-0.9$l_r$','A-0.9$l_\\theta$','A-0.9$h_\\theta$','A-0.9$h_\\varphi$',))
 
-def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=False,nsigma=1,eps=1e-5,dofill=False,doanalytic=False):
+def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=False,nsigma=1,eps=1e-5,dofill=False,doanalytic=False,fntsize=25):
     if usegaussianunits == True:
         unitsfactor = (4*np.pi)**0.5*2*np.pi
     else:
@@ -6741,6 +6742,12 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     #plt.plot(myspina6,myeta6,'r:',label=r'$\eta_{\rm BZ,6}$')
     #plt.plot(alist,100*etajetlist,'gs',label=r'$\eta_{\rm jet}$',lw=2)
     ax3.errorbar(u_alist,100*u_etajetlist,yerr=2*100*u_etajetstdlist,label=r'$\eta_{\rm jet}$',mfc='g',ecolor='g',fmt='^',lw=2,elinewidth=1,mew=1)
+    etajet_polycoef=np.polyfit(u_alist,100*u_etajetlist,3)#,w=1/(2*100*u_etastdlist)**2)
+    print etajet_polycoef
+    etajet_polycoef[-1]=0
+    etajet_poly=np.poly1d(etajet_polycoef)
+    print etajet_poly(0)
+    plt.plot(mya,etajet_poly(mya),"k:")
     #plt.plot(alist,100*etaEMlist,'rx',label=r'$\eta_{\rm jet}$')
     #plt.plot(alist,100*etawindlist,'bv',label=r'$\eta_{\rm wind}$')
     ax3.errorbar(u_alist,100*u_etawindlist,yerr=2*100*u_etawindstdlist,label=r'$\eta_{\rm wind}$',mfc='b',ecolor='b',fmt='v',lw=2,elinewidth=1,mew=1)
@@ -6774,8 +6781,8 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         #to show "analytic" rought approximation of Ramesh
         plt.plot(mya,sparthin(0)*(1-mya),'k-',lw=1)
     #plt.plot(alist,sparlist,'ro',mec='r')
-    newa=np.concatenate((u_alist[0:1],u_alist[1:]))
-    news=np.concatenate((u_sparlist[0:1],u_sparlist[1:]))
+    newa=np.concatenate((u_alist[0:-4],u_alist[-3:]))
+    news=np.concatenate((u_sparlist[0:-4],u_sparlist[-3:]))
     spar_polyfit=np.polyfit(newa,news,4)#,w=1/(2*100*u_etastdlist)**2)
     spar_func=np.poly1d(spar_polyfit)
     # spar_func2=poly1dt(spar_polyfit)
@@ -6831,25 +6838,87 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     # plt.clf()
     # plt.plot(mya,myomh)
     # plt.plot(mspina2[mhor2==hor],momh2[mhor2==hor])
-    plt.figure(4)
+    #
+    plt.figure(4,figsize=(8,8))
     plt.clf()
-    t=np.linspace(0,1,num=10000)
-    #initial value
+    a0 = -1
+    plot_spindown(a0,spar_func=spar_func,eta_func=eta_func,fntsize=fntsize)
+    plt.savefig("retrospindown.pdf")
+    #
+    plt.figure(5,figsize=(8,8))
+    plt.clf()
     a0 = 1
+    plot_spindown(a0,spar_func=spar_func,eta_func=eta_func,fntsize=fntsize)
+    plt.savefig("prospindown.pdf")
+
+def plot_spindown(a0,spar_func=None,eta_func=None,fntsize=20):
+    if spar_func is None or eta_func is None:
+        print( "Need spar_func() and eta_func() for plotting")
+        return
+    t=np.linspace(0,1,num=10000)
+    #plotting
+    gs = GridSpec(3, 3)
+    gs.update(left=0.12, right=0.98, top=0.95, bottom=0.1, wspace=0.25, hspace=0.04)
+    ax1=plt.subplot(gs[0,:])
+    ax2=plt.subplot(gs[1,:])
+    ax3=plt.subplot(gs[2,:])
+    aeq = brentq(spar_func,-1,1)
+    print("Equilibrium spin: %g" % aeq)
+    #initial value
+    if a0 > 0:
+        ax1.set_title(r"Spin-down of PROGRADE black holes",fontsize=0.8*fntsize)
+    else:
+        ax1.set_title(r"Spin-down of RETROGRADE black holes",fontsize=0.8*fntsize)
     a_of_t = odeint(lambda a,t: spar_func(a),a0,t)[:,0]
     a_of_t_func=interp1d(t,a_of_t,bounds_error=False)
-    plt.plot(t,a_of_t_func(t))
+    ax1.plot(t,a_of_t_func(t),"k-",lw=2)
+    ax1.plot(t,t*0+aeq,"k:",lw=2)
+    if a0 > 0:
+        ax1.set_ylabel(r"$a$",ha="right",labelpad=3,fontsize=fntsize)
+        ax1.set_ylim(-0.2,1.+1e-5)
+    else:
+        ax1.set_ylabel(r"$a$",ha="right",labelpad=3,fontsize=fntsize)
+        ax1.set_ylim(-1.,0.2+1e-5)
+    ax1.text(0.07, 0.5*aeq, r"$a=a_{\rm eq}$", size=fntsize, rotation=0.,
+         ha="center", va="top",
+         color='k',weight='regular'
+         )
     #initial value
     lnM0 = 0
     lnM_of_t = odeint(lambda lnM,t: 1-0.01*eta_func(a_of_t_func(t)),lnM0,t)[:,0]
     M_of_t=exp(lnM_of_t)
     Mirr_of_t = M_of_t*(0.5*rhor_compute(a_of_t))**0.5
-    plt.plot(t,M_of_t)
-    plt.plot(t,Mirr_of_t)
+    ax2.plot(t,M_of_t,"k-",lw=2,label=r"$\mathrm{BH\ mass},\ M$")
+    l1,=ax2.plot(t,Mirr_of_t,"b--",lw=2,label=r"$\mathrm{Irreducible\ BH\ mass},\ M_{\rm ir}$")
+    l1.set_dashes([10,5])
+    leg=ax2.legend(loc="lower right")
+    for txts in leg.get_texts():
+        txts.set_fontsize(0.7*fntsize)    # the legend text fontsize
+    ax2.set_ylabel(r"$M,\ M_{\rm ir}$",ha="right",fontsize=fntsize)
+    ax2.set_ylim(0.5,1.7)
+    ax3.plot(t,eta_func(a_of_t_func(t)),"k-",lw=2)
+    ax3.set_ylabel(r"$\eta$",ha="right",fontsize=fntsize)
+    ax3.set_xlabel(r"$t/\tau$",fontsize=fntsize)
+    if a0 > 0:
+        ax3.set_yticks(np.arange(50,200,50))
+        ax3.set_ylim(1e-5,150)
+    else:
+        ax3.set_yticks(np.arange(10,60,10))
+        ax3.set_ylim(1e-5,50)
     #plt.plot(t,rhor_compute(a_of_t))
-    plt.grid(visible=True)
-    plt.xlim(0,0.5)
-    plt.ylim(0,2)
+    ax1.grid(visible=True)
+    ax2.grid(visible=True)
+    ax3.grid(visible=True)
+    for ax in [ax1, ax2, ax3]:
+        ax.set_xlim(0,0.5-1e-5)
+        for label in ax.get_xticklabels() + ax.get_yticklabels():
+            label.set_fontsize(0.6*fntsize)
+    for ax in [ax1, ax2]:
+        plt.setp( ax.get_xticklabels(), visible=False)
+    # tck=(0.5,1)
+    # ax34.set_yticks(tck)
+    # ax34.set_yticklabels(('','1'))
+
 
 def poly1dt(poly_coef):
     return lambda x,t: sum(poly_coef[::-1]*x**np.arange(len(poly_coef)))
