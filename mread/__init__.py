@@ -10245,10 +10245,12 @@ if __name__ == "__main__":
         if True:
             plt.figure(2)
             plt.plot(r[:,0,0],F_jet1[1]+F_jet2[1]+F_wind[1])
+            plt.plot(r[:,0,0],F_jet1[0]+F_jet2[0]+F_wind[0],'k--')
             plt.plot(r[:,0,0],F_jet1[1]+F_jet2[1])
             plt.plot(r[:,0,0],F_wind[1])
             plt.plot(r[:,0,0],F_wind1[1]+F_wind2[1])
             plt.xlim(rhor,100)
+            plt.ylim(0,20)
             plt.draw()
     if False:
         #takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
