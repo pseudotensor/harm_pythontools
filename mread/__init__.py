@@ -10203,12 +10203,14 @@ def extract_trajjet(trajdisk, trajpole,di=1):
     traj2jet = trajpole[0][imin+1:], trajpole[1][imin+1:]
     return np.concatenate((traj1jet[0],traj2jet[0])), np.concatenate((traj1jet[1],traj2jet[1]))
 
-def extract_jetwind_power(doreload=True,r0=10,doplot=False):
+def extract_jetwind_power(doreload=True,r0=10,doplot=False,dorecompute=True):
+    global trajdisk_up,trajpole_up
     if doreload:
         grid3d("gdump.bin",use2d=True)
         avgmem=rdavg2d(usedefault=1)  #usedefault=1 reads in from "avg2d.npy"
-    trajdisk_up,trajpole_up = finddiskjetbnds(r0=r0,upperx2=True,doplot=False)
-    trajdisk_dn,trajpole_dn = finddiskjetbnds(r0=r0,upperx2=False,doplot=False)
+    if dorecompute:
+        trajdisk_up,trajpole_up = finddiskjetbnds(r0=r0,upperx2=True,doplot=False)
+        trajdisk_dn,trajpole_dn = finddiskjetbnds(r0=r0,upperx2=False,doplot=False)
     #plt.clf()
     #plt.plot(trajdisk_up[0],trajdisk_up[1],'b',lw=2)
     #plt.plot(trajdisk_dn[0],trajdisk_dn[1],'b',lw=2)
