@@ -7938,6 +7938,16 @@ def removefloorsavg2djetwind(usestaggeredfluxes=False,DFfloor=None, jet1x2=None,
     DUin_jet2cum=np.array(extract_along_x2vsi(DUin,jet2x2,isleft=False,fallbackval=0))
     DUout_jet2cum=np.array(extract_along_x2vsi(DUout,jet2x2,isleft=False,fallbackval=0))
     F_jet2cum=np.array(extract_along_x2vsi(Fcum,jet2x2,isleft=False,fallbackval=0))
+    #UNB WIND1,2
+    wind1x2 = findroot2d( (-avg_unb1[:,:,0]-1.0), x2, isleft=True, fallback = 1, fallbackval = 0 )
+    wind2x2 = findroot2d( (-avg_unb1[:,:,0]-1.0), x2, isleft=False, fallback = 1, fallbackval = 0 )
+    DUin_wind1cum = extract_along_x2vsi( DUin, wind1x2, isleft=True, fallback = 1, fallbackval = 0 )
+    DUout_wind1cum = extract_along_x2vsi( DUout, wind1x2, isleft=True, fallback = 1, fallbackval = 0 )
+    DUin_wind2cum = extract_along_x2vsi( DUin, wind2x2, isleft=False, fallback = 1, fallbackval = 0 )
+    DUout_wind2cum = extract_along_x2vsi( DUout, wind2x2, isleft=False, fallback = 1, fallbackval = 0 )
+    F_wind1end=np.array(extract_along_x2vsi(Fcum,wind1x2,fallbackval=0))
+    F_wind2end=np.array(extract_along_x2vsi(Fcum,wind2x2,isleft=False,fallbackval=0))
+    #
     #convert to arrays
     DUin = np.array(DUin)
     DUout = np.array(DUout)
@@ -7951,7 +7961,13 @@ def removefloorsavg2djetwind(usestaggeredfluxes=False,DFfloor=None, jet1x2=None,
     #
     DUin_wind=DUin_jet2cum-DUin_jet1
     DUout_wind=DUout_jet2cum-DUout_jet1
+    DUin_wind1 = DUin_wind1cum-DUin_jet1
+    DUout_wind1 = DUout_wind1cum-DUout_jet1
+    DUin_wind2 = DUin_wind2cum-DUin_jet1
+    DUout_wind2 = DUout_wind2cum-DUout_jet1
     F_wind=F_jet2cum-F_jet1
+    F_wind1=F_wind1end-F_jet1
+    F_wind2=F_jet2cum-F_wind2end
     #
     #now combine into 1D floor corrections for jet1, wind, and jet2
     #pick out something that's not too far
@@ -7973,16 +7989,24 @@ def removefloorsavg2djetwind(usestaggeredfluxes=False,DFfloor=None, jet1x2=None,
     #
     DFin_wind  = DUin_wind.cumsum(1+RR)
     DFout_wind = DUout_wind.cumsum(1+RR)
+    DFin_wind1  = DUin_wind1.cumsum(1+RR)
+    DFout_wind1 = DUout_wind1.cumsum(1+RR)
+    DFin_wind2  = DUin_wind2.cumsum(1+RR)
+    DFout_wind2 = DUout_wind2.cumsum(1+RR)
     DF_wind = (DFin_wind-DFin_wind[:,fnx-1:fnx]) + DFout_wind
-
+    DF_wind1 = (DFin_wind1-DFin_wind1[:,fnx-1:fnx]) + DFout_wind1
+    DF_wind2 = (DFin_wind2-DFin_wind2[:,fnx-1:fnx]) + DFout_wind2
+    #
     if dotakeoutfloors:
         #subtract rest-mass from total energy flux and flip the sign to get correct direction
         #DFen = DF[1]+DF[0] 
         F_jet1 += DF_jet1[0:2]
         F_jet2 += DF_jet2[0:2]
         F_wind += DF_wind[0:2]
-
-    return( F_jet1, F_jet2, F_wind )
+        F_wind1 += DF_wind1[0:2]
+        F_wind2 += DF_wind2[0:2]
+    #
+    return( F_jet1, F_jet2, F_wind, F_wind1, F_wind2 )
 
 def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,showticks=True,usedefault=2,fc='white',mc='white',dotakeoutfloors=0,showtitle=False):
     #fc='#D8D8D8'
@@ -10197,7 +10221,8 @@ if __name__ == "__main__":
         plt.figure(2)
         plt.clf()
         plotBavg()
-    if False:
+    if True:
+        plt.figure(1)
         if False:
             grid3d("gdump.bin",use2d=True)
             avgmem=rdavg2d(usedefault=1)  #usedefault=1 reads in from "avg2d.npy"
@@ -10213,10 +10238,18 @@ if __name__ == "__main__":
         #plt.plot(trajjet_up[0],trajjet_up[1],'y--',lw=2)
         #plt.plot(trajjet_dn[0],trajjet_dn[1],'y--',lw=2)
         #interpolate to our grid (x1,x2) -> x2(ti)
+        plt.draw()
         jet1x2 = interp1d(trajjet_dn[0],trajjet_dn[1], kind = 'linear', bounds_error=False)(x1[:,0,0])
         jet2x2 = interp1d(trajjet_up[0],trajjet_up[1], kind = 'linear', bounds_error=False)(x1[:,0,0])
-        F_jet1, F_jet2, F_wind = removefloorsavg2djetwind(usestaggeredfluxes=False,DFfloor=None, jet1x2=jet1x2, jet2x2=jet2x2)
-        plt.draw()
+        F_jet1, F_jet2, F_wind, F_wind1, F_wind2 = removefloorsavg2djetwind(usestaggeredfluxes=False,DFfloor=None, jet1x2=jet1x2, jet2x2=jet2x2)
+        if True:
+            plt.figure(2)
+            plt.plot(r[:,0,0],F_jet1[1]+F_jet2[1]+F_wind[1])
+            plt.plot(r[:,0,0],F_jet1[1]+F_jet2[1])
+            plt.plot(r[:,0,0],F_wind[1])
+            plt.plot(r[:,0,0],F_wind1[1]+F_wind2[1])
+            plt.xlim(rhor,100)
+            plt.draw()
     if False:
         #takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
         #takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=False,aphi_j_val=0)
@@ -10284,7 +10317,7 @@ if __name__ == "__main__":
     if False:
         #Plot all BZs
         plotallbz()
-    if True:
+    if False:
         #Power vs. spin, updated diagnostics
         readmytests1()
         plotpowers('siminfo.txt',plotetas=False,format=2) #new format; data from 2d average dumps
