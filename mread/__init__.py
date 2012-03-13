@@ -5954,6 +5954,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     corrabs =  ((Fm-Fe)-(Fmuncorr-Feuncorr))[iofr(10)]
     if writefile:
         #assume that eta is cross-correlated on shorter time scales than this
+        #
         dtavgmin = 500.
         dtavg = min((ftf-fti)/3.,dtavgmin)
         nmax = np.rint((ftf-fti)/dtavg)
@@ -5961,6 +5962,9 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         rj = 100
         etamean = eta[iofr(rx)]
         sparmean = spar[iofr(rx)]
+        #
+        F_jet1, F_jet2, F_wind, F_wind1, F_wind2 = extract_jetwind_power()
+        etasjet = F_jet1[1]+F_jet2[1]
         ####################
         #
         #   phi
@@ -10198,7 +10202,30 @@ def extract_trajjet(trajdisk, trajpole,di=1):
     traj1jet = trajdisk[0][trajdisk[0]<x1min], trajdisk[1][trajdisk[0]<x1min]
     traj2jet = trajpole[0][imin+1:], trajpole[1][imin+1:]
     return np.concatenate((traj1jet[0],traj2jet[0])), np.concatenate((traj1jet[1],traj2jet[1]))
-    
+
+def extract_jetwind_power(doreload=True,r0=10,doplot=False):
+    if doreload:
+        grid3d("gdump.bin",use2d=True)
+        avgmem=rdavg2d(usedefault=1)  #usedefault=1 reads in from "avg2d.npy"
+    trajdisk_up,trajpole_up = finddiskjetbnds(r0=r0,upperx2=True,doplot=False)
+    trajdisk_dn,trajpole_dn = finddiskjetbnds(r0=r0,upperx2=False,doplot=False)
+    #plt.clf()
+    #plt.plot(trajdisk_up[0],trajdisk_up[1],'b',lw=2)
+    #plt.plot(trajdisk_dn[0],trajdisk_dn[1],'b',lw=2)
+    #plt.plot(trajpole_up[0],trajpole_up[1],'r',lw=2)
+    #plt.plot(trajpole_dn[0],trajpole_dn[1],'r',lw=2)
+    trajjet_up = extract_trajjet(trajdisk_up,trajpole_up)
+    trajjet_dn = extract_trajjet(trajdisk_dn,trajpole_dn)
+    #plt.plot(trajjet_up[0],trajjet_up[1],'y--',lw=2)
+    #plt.plot(trajjet_dn[0],trajjet_dn[1],'y--',lw=2)
+    #interpolate to our grid (x1,x2) -> x2(ti)
+    if doplot:
+        plt.draw()
+    jet1x2 = interp1d(trajjet_dn[0],trajjet_dn[1], kind = 'linear', bounds_error=False)(x1[:,0,0])
+    jet2x2 = interp1d(trajjet_up[0],trajjet_up[1], kind = 'linear', bounds_error=False)(x1[:,0,0])
+    F_jet1, F_jet2, F_wind, F_wind1, F_wind2 = removefloorsavg2djetwind(usestaggeredfluxes=False,DFfloor=None, jet1x2=jet1x2, jet2x2=jet2x2)
+    return F_jet1, F_jet2, F_wind, F_wind1, F_wind2
+
 if __name__ == "__main__":
     if False:
         #compute energy flux weighted pg/pm
@@ -10223,25 +10250,7 @@ if __name__ == "__main__":
         plotBavg()
     if True:
         plt.figure(1)
-        if False:
-            grid3d("gdump.bin",use2d=True)
-            avgmem=rdavg2d(usedefault=1)  #usedefault=1 reads in from "avg2d.npy"
-            trajdisk_up,trajpole_up = finddiskjetbnds(r0=10,upperx2=True,doplot=True)
-            trajdisk_dn,trajpole_dn = finddiskjetbnds(r0=10,upperx2=False,doplot=True)
-        #plt.clf()
-        #plt.plot(trajdisk_up[0],trajdisk_up[1],'b',lw=2)
-        #plt.plot(trajdisk_dn[0],trajdisk_dn[1],'b',lw=2)
-        #plt.plot(trajpole_up[0],trajpole_up[1],'r',lw=2)
-        #plt.plot(trajpole_dn[0],trajpole_dn[1],'r',lw=2)
-        trajjet_up = extract_trajjet(trajdisk_up,trajpole_up)
-        trajjet_dn = extract_trajjet(trajdisk_dn,trajpole_dn)
-        #plt.plot(trajjet_up[0],trajjet_up[1],'y--',lw=2)
-        #plt.plot(trajjet_dn[0],trajjet_dn[1],'y--',lw=2)
-        #interpolate to our grid (x1,x2) -> x2(ti)
-        plt.draw()
-        jet1x2 = interp1d(trajjet_dn[0],trajjet_dn[1], kind = 'linear', bounds_error=False)(x1[:,0,0])
-        jet2x2 = interp1d(trajjet_up[0],trajjet_up[1], kind = 'linear', bounds_error=False)(x1[:,0,0])
-        F_jet1, F_jet2, F_wind, F_wind1, F_wind2 = removefloorsavg2djetwind(usestaggeredfluxes=False,DFfloor=None, jet1x2=jet1x2, jet2x2=jet2x2)
+        extract_jetwind_power()
         if True:
             plt.figure(2)
             plt.plot(r[:,0,0],F_jet1[1]+F_jet2[1]+F_wind[1])
