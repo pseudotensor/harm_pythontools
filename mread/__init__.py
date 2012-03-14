@@ -4742,7 +4742,7 @@ def get_dFfloor(Dt, Dno, dotakeoutfloors=True,aphi_j_val=0, ndim=1, is_output_ce
 
 
 def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=None,isinteractive=1,returndf=0,dolegend=True,plotldtot=True,lw=1,plotFem=False,writefile=True,doplot=True,aphi_j_val=0, ndim=1, is_output_cell_center = True, correct99 = False,**kwargs):
-    global dUfloor, etad0, DF
+    global dUfloor, etad0, DFglobal
     #Mdot, E, L
     grid3d("gdump.bin",use2d=True)
     #get base name of the current dir
@@ -5778,6 +5778,10 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     if ndim == -2:
         return DF
 
+    if doreload:
+        DFglobal=DF #save in a global variable
+    else:
+        DF=DFglobal
     DFfloor0 = DF[0]
     DFfloor1 = DF[1]
     DFfloor4 = DF[4]
@@ -5960,11 +5964,21 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         nmax = np.rint((ftf-fti)/dtavg)
         rx = 5
         rj = 100
-        etamean = eta[iofr(rx)]
-        sparmean = spar[iofr(rx)]
+        ix=iofr(rx)
+        ij=iofr(rj)
+        etamean = eta[ix]
+        sparmean = spar[ix]
+        #
+        # jet/wind fluxes
         #
         F_jet1, F_jet2, F_wind, F_wind1, F_wind2 = extract_jetwind_power()
-        etasjet = F_jet1[1]+F_jet2[1]
+        F_tot = F_jet1 + F_jet2 + F_wind
+        Mdotx = F_tot[0,ix]
+        #
+        eta_s_jet = (F_jet1+F_jet2)[1,ij]/Mdotx
+        eta_s_wind = F_wind[1,ij]/Mdotx
+        eta_s_wind_unb = (F_wind1+F_wind2)[1,ij]/Mdotx
+        #
         ####################
         #
         #   phi
@@ -5994,7 +6008,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #
         foutpower = open( "siminfo_%s.txt" %  os.path.basename(os.getcwd()), "w" )
         #foutpower.write( "#Name a Mdot   Pjet    Etajet  Psitot Psisqtot**0.5 Psijet Psisqjet**0.5 rstag Pjtotmax Pjtot1rstag Pjtot2rstag Pjtot4rstag Pjtot8rstag\n"  )
-        foutpower.write( "%s %s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n" % (
+        foutpower.write( "%s %s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n" % (
                                                            pn, os.path.basename(os.getcwd()), a, 
                                                            etamean, etastd, sparmean, sparstd, phimean, phistd,
                                                            Fm[iofr(rx)], Fe[iofr(rx)], Fl[iofr(rx)]/dxdxp[3][3][0,0,0],
@@ -6003,7 +6017,8 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                                                            pw, pwstd,
                                                            fstotfinavg, fstotsqfinavg,
                                                            horavg[iofr(5)], horavg[iofr(10)], horavg[iofr(20)], 
-                                                           horavg[iofr(25)], horavg[iofr(30)], horavg[iofr(100)]) )
+                                                           horavg[iofr(25)], horavg[iofr(30)], horavg[iofr(100)],
+                                                           eta_s_jet, eta_s_wind, eta_s_wind_unb))
         #flush to disk just in case to make sure all is written
         foutpower.flush()
         os.fsync(foutpower.fileno())
@@ -6350,13 +6365,14 @@ def sparthin(a):
     return(s)
 
 def getetaavg(fname,simnamelist):
-    gd1 = np.loadtxt( fname, unpack = True, usecols = [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25] )
+    gd1 = np.loadtxt( fname, unpack = True, usecols = [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28] )
     #gd=gd1.view().reshape((-1,nx,ny,nz), order='F')
     alist, etalist, etastdlist, sparlist, sparstdlist, philist, phistdlist, \
         Fmlist, Felist, Fllist, FEMrhorlist, FEM2list, \
         powjetlist, powjetstd, powwindlist, powwindstd, \
         ftotlist, ftotsqlist, \
-        hor5, hor10, hor20, hor25, hor30, hor100 = gd1
+        hor5, hor10, hor20, hor25, hor30, hor100, \
+        eta_s_jet, eta_s_wind, eta_s_wind_unb = gd1
     fsqtotlist = ftotsqlist
     mdotlist = Fmlist
     rhorlist = 1+(1-alist**2)**0.5
@@ -6461,13 +6477,14 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         #                                                    fstotfinavg, fstotsqfinavg,
         #                                                    horavg[iofr(5)], horavg[iofr(10)], horavg[iofr(20)], 
         #                                                    horavg[iofr(25)], horavg[iofr(30)], horavg[iofr(100)]) )
-        gd1 = np.loadtxt( fname, unpack = True, usecols = [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25] )
+        gd1 = np.loadtxt( fname, unpack = True, usecols = [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28] )
         #gd=gd1.view().reshape((-1,nx,ny,nz), order='F')
         alist, etalist, etastdlist, sparlist, sparstdlist, philist, phistdlist, \
             Fmlist, Felist, Fllist, FEMrhorlist, FEM2list, \
             powjetlist, powjetstd, powwindlist, powwindstd, \
             ftotlist, ftotsqlist, \
-            hor5, hor10, hor20, hor25, hor30, hor100 = gd1
+            hor5, hor10, hor20, hor25, hor30, hor100, \
+            eta_s_jet, eta_s_wind, eta_s_wind_unb = gd1
         fsqtotlist = ftotsqlist
         mdotlist = Fmlist
         rhorlist = 1+(1-alist**2)**0.5
@@ -6634,6 +6651,12 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     u_sparlist = np.zeros_like(u_alist)
     u_sparstdlist = np.zeros_like(u_alist)
     u_numsims =  np.zeros_like(u_alist)
+    u_eta_s_jet_list = np.zeros_like(u_alist)
+    u_eta_s_wind_list = np.zeros_like(u_alist)
+    u_eta_s_wind_unb_list = np.zeros_like(u_alist)
+    u_eta_s_jet_stdlist = np.zeros_like(u_alist)
+    u_eta_s_wind_stdlist = np.zeros_like(u_alist)
+    u_eta_s_wind_unb_stdlist = np.zeros_like(u_alist)
     for i,aval in enumerate(u_alist):
         #make comparison in omegah space where closely spaced values of a are 
         #not spread out form each other
@@ -6642,6 +6665,11 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         u_etalist[i],u_etastdlist[i] = getavgstd( etalist[cond], etastdlist[cond])
         u_etajetlist[i],u_etajetstdlist[i] = getavgstd( etajetlist[cond], etajetstdlist[cond])
         u_etawindlist[i],u_etawindstdlist[i] = getavgstd( etawindlist[cond], etawindstdlist[cond])
+        #use the std from total efficiency
+        u_eta_s_jet_list[i],u_eta_s_jet_stdlist[i] = getavgstd( eta_s_jet[cond], etastdlist[cond]*eta_s_jet[cond]/etalist[cond])
+        u_eta_s_wind_list[i],u_eta_s_wind_stdlist[i] = getavgstd( eta_s_wind[cond], etastdlist[cond]*eta_s_wind[cond]/etalist[cond])
+        u_eta_s_wind_unb_list[i],u_eta_s_wind_unb_stdlist[i] = getavgstd( eta_s_wind_unb[cond], etastdlist[cond]*eta_s_wind_unb[cond]/etalist[cond])
+        #
         u_sparlist[i],u_sparstdlist[i] = getavgstd( sparlist[cond], sparstdlist[cond])
         u_numsims[i] = cond.sum()
         print( "%2d: %9.5g %9.5g %9.5g %9.5g %9.5g %3g" % (
@@ -6709,10 +6737,10 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     z[-2]=0
     print z
     eta_popt,eta_pconv = curve_fit(lambda x,a4,a3,a2,a1,a0: poly1d([a4,a3,a2,a1,a0])(x),u_alist,100*u_etalist,sigma=100*u_etastdlist)
-    print "eta_popt:"
-    print eta_popt
     #eta_func=np.poly1d(z)    
     eta_func=np.poly1d(eta_popt)    
+    print "eta_popt:"
+    print eta_popt
     # eta_func2=poly1dt(z)    
     ltot,=plt.plot(mya,eta_func(mya),'k:',lw=2)
     ltot.set_dashes([2,3,2,3])
@@ -6754,8 +6782,9 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     ax3.errorbar(u_alist,100*u_etajetlist,yerr=2*100*u_etajetstdlist,label=r'$\eta_{\rm jet}$',mfc='g',ecolor='g',fmt='^',lw=2,elinewidth=1,mew=1,zorder=20)
     sigma=100*u_etajetstdlist
     sigma[2]*=10
-    etajet_polycoef,etajet_pconv = curve_fit(lambda x,a4,a3,a2,a1,a0: poly1d([a4,a3,a2,a1,a0])(x),u_alist,100*u_etajetlist,sigma=sigma)
+    etajet_polycoef,etajet_pconv = curve_fit(lambda x,a4,a3,a2: poly1d([a4,a3,a2,0,0])(x),u_alist,100*u_etajetlist,sigma=sigma)
     etawind_polycoef,etawind_pconv = curve_fit(lambda x,a3,a2,a1,a0: poly1d([a3,a2,a1,a0])(x),u_alist,100*u_etawindlist,sigma=100*u_etawindstdlist)
+    etajet_polycoef=np.concatenate((etajet_polycoef,[0],[0]))
     #etajet_polycoef=np.polyfit(u_alist,100*u_etajetlist,3)
     #etawind_polycoef=np.polyfit(u_alist,100*u_etawindlist,3)
     print( "etajet coefs", etajet_polycoef)
@@ -7651,17 +7680,9 @@ def mkonestreamlinex1x2(ux, uy, xi, yi, x0, y0):
     else:
         return( None )
 
-def mkmanystreamlinesx1x2(): 
+def mkmanystreamlinesx1x2(doplot=True): 
     startxabs=2
     a_startyabs=np.linspace(0.583,0.583,num=1)
-    #DRAW FIGURE
-    #fig=plt.figure(1,figsize=(12,9),dpi=300)
-    fig=plt.figure(1)
-    ax = fig.add_subplot(111)
-    #fig=plt.figure(1)
-    fntsize=24
-    # ax = fig.add_subplot(111, aspect='equal')
-    # ax.set_aspect('equal')   
     #TRACE ENERGY STREAMLINE
     mylen = 30
     grid3d("gdump.bin",use2d=True)
@@ -7669,7 +7690,16 @@ def mkmanystreamlinesx1x2():
     avgmem = get2davg(usedefault=1)
     assignavg2dvars(avgmem)
     avg_aphi = scaletofullwedge(nz*_dx3*fieldcalc(gdetB1=avg_gdetB[0]))
-    plco(avg_aphi,xcoord=x1[:,:,0],ycoord=x2[:,:,0])
+    #DRAW FIGURE
+    #fig=plt.figure(1,figsize=(12,9),dpi=300)
+    if doplot:
+        fig=plt.figure(1)
+        ax = fig.add_subplot(111)
+        #fig=plt.figure(1)
+        fntsize=24
+        # ax = fig.add_subplot(111, aspect='equal')
+        # ax.set_aspect('equal')   
+        plco(avg_aphi,xcoord=x1[:,:,0],ycoord=x2[:,:,0])
     #energy
     #B[1:] = avg_Tud[1:,0]
     for startyabs in a_startyabs:
@@ -7691,7 +7721,7 @@ def mkmanystreamlinesx1x2():
             # ax2
             plt.draw()
 
-def finddiskjetbnds(r0=5,upperx2=True,maxiter=100,eps=1e-14,doplot=True):
+def finddiskjetbnds(r0=5,upperx2=True,maxiter=100,eps=1e-14,doplot=False):
     """upperx2 = False means look for low-x2 boundary; dir = True means look for high-x2 boundary"""
     #starting point
     x0 = x1[iofr(r0),0,0]
@@ -10250,7 +10280,7 @@ if __name__ == "__main__":
         plt.figure(2)
         plt.clf()
         plotBavg()
-    if True:
+    if False:
         plt.figure(1)
         extract_jetwind_power()
         if True:
