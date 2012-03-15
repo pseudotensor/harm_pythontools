@@ -30,6 +30,7 @@
 #
 
 import pylab as P
+import numpy as np
 
 #=========================================================
 def pchip(x, y, xnew):
@@ -126,7 +127,9 @@ def pchip_eval(x, y, m, xvec):
    # Find the indices "k" such that x[k] < xvec < x[k+1]
 
     # Create "copies" of "x" as rows in a mxn 2-dimensional vector
-    xx = P.resize(x,(mm,n)).transpose()
+    x1 = np.copy(x)
+    x1[-1] = xvec[-1]+(xvec[-1]-xvec[-2])
+    xx = P.resize(x1,(mm,n)).transpose()
     xxx = xx > xvec
 
     # Compute column by column differences
