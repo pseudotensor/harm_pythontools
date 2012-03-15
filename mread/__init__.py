@@ -3,6 +3,7 @@ matplotlib.use('Agg')
 from matplotlib import rc
 from streamlines import streamplot
 from streamlines import fstreamplot
+from pychip import pchip_init, pchip_eval
 #rc('verbose', level='debug')
 #rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 ## for Palatino and other serif fonts use:
@@ -6808,12 +6809,19 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     #etajet_polycoef[-2]=0
     #etajet_func=lambda a:np.poly1d(etajet_polycoef)(a)
     #etajet_func=interp1d(u_alist,100*etajs,bounds_error=False,kind='slinear')
-    etajet_func=InterpolatedUnivariateSpline(u_alist,100*etajs,k=3)
+    #etajet_func=InterpolatedUnivariateSpline(u_alist,100*etajs,k=3)
+    #create the pchip slopes slopes
+    slopes = pchip_init(u_alist,100*etajs)
+    #interpolate
+    etajet_func = lambda xvec: pchip_eval(u_alist, 100*etajs, slopes, xvec) 
+    #etajet_func = lambda xvec: do_herm_interp(u_alist,100*etajs, xvec) 
+    print u_alist
     if True:
         etawind_func=np.poly1d(etawind_polycoef)
     else:
         etawind_func = lambda a: eta_func(a)-etajet_func(a)
     #etajet_func=lambda a: eta_func(a) - etawind_func(a)
+    #pdb.set_trace()
     lj,=plt.plot(mya,etajet_func(mya),"g:",lw=2,zorder=0)
     lj.set_dashes([2,3,2,3])
     lw,=plt.plot(mya,etawind_func(mya),"b:",lw=2)
@@ -10284,6 +10292,59 @@ def extract_jetwind_power(doreload=True,r0=30,doplot=False,dorecompute=True):
     F_jet1, F_jet2, F_wind, F_wind1, F_wind2 = removefloorsavg2djetwind(usestaggeredfluxes=False,DFfloor=None, jet1x2=jet1x2, jet2x2=jet2x2)
     return F_jet1, F_jet2, F_wind, F_wind1, F_wind2
 
+
+def do_herm_interp(x,y,xvals):
+    delta = np.zeros_like(x)
+    m = np.zeros_like(x)
+    alpha =  np.zeros_like(x)
+    beta =  np.zeros_like(x)
+    delta[:-1] = (y[1:]-y[:-1])/(x[1:]-x[:-1])
+    m[1:-1] = 0.5*(delta[:-2]+delta[1:-1])
+    m[0] = delta[0]
+    m[-1] = delta[-2]
+    skipnext = False
+    for k in xrange(len(x)-1):
+        if skipnext:
+            skepnext = False
+            continue
+        if y[k]==y[k+1]:
+            m[k] = 0
+            m[k+1] = 0
+            skipnext = True
+            continue
+        alpha[k] = m[k]/delta[k]
+        beta[k] = m[k+1]/delta[k]
+        if alpha[k] <= 0 or beta[k] <= 0:
+            m[k] = 0
+            m[k+1]=0
+            skipnext = True
+            continue
+        rsq = alpha[k]**2+beta[k]**2
+        if rsq > 9:
+            tau = 3/rsq**0.5
+            m[k] = tau*alpha[k]*delta[k]
+            m[k+1] = tau*beta[k]*delta[k]
+    for k in xrange(len(x)-1):
+        if k == 0:
+            cond = xvals <= x[k+1]
+        elif k == len(x)-1:
+            cond = xvals > x[k]
+        else:
+            cond = (xvals > x[k])*(xvals <= x[k+1])
+        xvec = xvals[cond]
+        yvec = pfunc(k,x,y,m,xvec)
+    return(yvec)
+
+def pfunc(k,xi,yi,m,x):
+    h00 = lambda t: 2*t**3-3*t**2+1
+    h10 = lambda t: t**3-2*t**2+t
+    h01 = lambda t: -2*t**3+3*t**2
+    h11 = lambda t: t**3-t**2
+    t = (x-xi[k])/(xi[k+1]-xi[k])
+    res = h00(t)*yi[k]+h10(t)*(yi[k+1]-yi[k])*m[k]+h01(t)*yi[k+1]+h11(t)*(yi[k+1]-yi[k])*m[k+1]
+    return( res )
+    
+
 if __name__ == "__main__":
     if False:
         #compute energy flux weighted pg/pm
@@ -10331,7 +10392,7 @@ if __name__ == "__main__":
         takeoutfloors(dotakeoutfloors=1,doplot=False,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
         #takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=False,aphi_j_val=0)
         #takeoutfloors(dotakeoutfloors=1,doplot=False)
-    if True:
+    if False:
         provsretro()
     if False:
         #make a movie
