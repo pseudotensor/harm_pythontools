@@ -23,7 +23,7 @@ from scipy.integrate import quad
 from scipy.integrate import odeint
 from scipy.optimize import brentq
 from scipy.optimize import curve_fit
-#from scipy.interpolate import Rbf
+from scipy.interpolate import InterpolatedUnivariateSpline
 from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
 from matplotlib import mpl
@@ -6794,19 +6794,21 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     #sigma[4]*=100
     #sigma[5]*=100
     #a0 = 100*etajs[3]
-    etajet_polycoef,etajet_pconv = curve_fit(lambda x,a4,a3,a2,a1,a0: exp(poly1d([a4,a3,a2,a1,a0])(x)),u_alist,100*etajs,sigma=100*sigma)
+    #etajet_polycoef,etajet_pconv = curve_fit(lambda x,a4,a3,a2,a1,a0: poly1d([a4,a3,a2,a1,a0])(x),u_alist,100*etajs,sigma=100*sigma)
     etawind_polycoef,etawind_pconv = curve_fit(lambda x,a3,a2,a1,a0: poly1d([a3,a2,a1,a0])(x),u_alist,100*etaws,sigma=100*etasigma)
     #etawind_polycoef=np.concatenate((etawind_polycoef,[a0]))
     #etajet_polycoef=np.concatenate((etajet_polycoef[:3],[0],[a0]))
     #etajet_polycoef=etajet_polycoef
     #etajet_polycoef=np.polyfit(u_alist,100*u_etajetlist,3)
     #etawind_polycoef=np.polyfit(u_alist,100*u_etawindlist,3)
-    print( "etajet coefs", etajet_polycoef)
+    #print( "etajet coefs", etajet_polycoef)
     #etajet_polycoef[-1]=1e-4
     print( "etawind_coefs", etawind_polycoef)
     #etawind_polycoef[-1]=2.9
     #etajet_polycoef[-2]=0
-    etajet_func=lambda a: exp(np.poly1d(etajet_polycoef)(a))
+    #etajet_func=lambda a:np.poly1d(etajet_polycoef)(a)
+    #etajet_func=interp1d(u_alist,100*etajs,bounds_error=False,kind='slinear')
+    etajet_func=InterpolatedUnivariateSpline(u_alist,100*etajs,k=3)
     if True:
         etawind_func=np.poly1d(etawind_polycoef)
     else:
@@ -6989,7 +6991,7 @@ def plot_spindown(a0,spar_func=None,eta_func=None,etajet_func=None,etawind_func=
         ax3.set_yticks(np.arange(0,60,10))
         ax3.set_ylim(0,50)
     ax3.set_yscale('log')
-    ax3.set_ylim(0.1,150)
+    ax3.set_ylim(0.001,150)
     #plt.plot(t,rhor_compute(a_of_t))
     ax1.grid(visible=True)
     ax2.grid(visible=True)
@@ -8993,7 +8995,7 @@ def provsretro(dotakeoutfloors=False,doreload=True):
     #flist = ["avg2d20_0000_0001.npy", "avg2d20_0000_0050.npy","avg2d20_0100_0150.npy","avg2d20_0150_0200.npy","avg2d20_0200_0250.npy"]
     #flist = ["avg2d20_00.npy", "avg2d20_0080_0100.npy", "avg2d20_0100_0120.npy", "avg2d20_0120_0140.npy", "avg2d20_0140_0156.npy","avg2d20_0080_0157.npy","avg2d20_0080_0157_nf.npy"]
     #flist = ["avg2d20_0080_0157.npy","avg2d20_0080_0157_nf.npy"]
-    flist = ["avg2d.npy"
+    flist = ["avg2d20_0000_0001.npy","avg2d20_0100_0150.npy","avg2d20_0150_0200.npy","avg2d20_0200_0250.npy","avg2d.npy"
              #"avg2dnf.npy"
              ]
     #flist = ["avg0.npy", "avg2.npy"]
@@ -9087,8 +9089,11 @@ def provsretro(dotakeoutfloors=False,doreload=True):
         #plt.clf()
         ax = plt.gca()
         sigval = (gdet[:,:,0:1]*avg_rhouu[0]*_dx2*_dx3*nz).sum(-1).sum(-1)/dxdxp[1,1,:,0,0]*scaletofullwedge(1.)/(2*np.pi*r[:,ny/2,0])
+        #
+        sigval = (gdet[:,:,0:1]*avg_rho*_dx1*_dx2*_dx3*nz).sum(-1).sum(-1)/(gdet[:,ny/2,0]*_dx1*_dx3*nz)
         #sigvalfm = a_Fm / (-4*np.pi*r[:,ny/2,0]*avg_uu[1,:,ny/2,0]*dxdxp[1,1,:,0,0]/avg_uu[0,:,ny/2,0])
-        plt.plot( r[:,0,0], sigval, 'k', label=lab )
+        plt.plot( r[:,0,0], avg_rho[:,ny/2,0],  'k')
+        plt.plot( r[:,0,0], sigval,  label=lab )
         #plt.plot( r[:,0,0], sigvalfm, 'r', label=lab )
         #sigval=sigvalfm
         ax.set_xscale('log')
@@ -10326,7 +10331,7 @@ if __name__ == "__main__":
         takeoutfloors(dotakeoutfloors=1,doplot=False,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
         #takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=False,aphi_j_val=0)
         #takeoutfloors(dotakeoutfloors=1,doplot=False)
-    if False:
+    if True:
         provsretro()
     if False:
         #make a movie
@@ -10384,7 +10389,7 @@ if __name__ == "__main__":
     if False:
         #Plot all BZs
         plotallbz()
-    if True:
+    if False:
         #Power vs. spin, updated diagnostics
         readmytests1()
         plotpowers('siminfo.txt',plotetas=False,format=2) #new format; data from 2d average dumps
