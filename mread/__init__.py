@@ -6732,16 +6732,17 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     plt.plot(myspina6,100*fac*myeta6,'k-',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$',lw=2)
     #plt.plot(myspina6,(100-4.4305)*fac*myeta6+4.4305,'k:',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$',lw=2)
     #u_etalist[0]*=0.8
-    #z=np.polyfit(omegah_compute(u_alist),100*u_etalist,6)
-    z=np.polyfit(u_alist,100*u_etalist,3)#,w=1/(2*100*u_etastdlist)**2)
-    z[-1]=4.4
-    z[-2]=0
-    print z
-    eta_popt,eta_pconv = curve_fit(lambda x,a4,a3,a2,a1,a0: poly1d([a4,a3,a2,a1,a0])(x),u_alist,100*u_etalist,sigma=100*u_etastdlist)
+    #eta_func_coef=np.polyfit(u_alist,100*u_etalist,3)#,w=1/(2*100*u_etastdlist)**2)
+    #eta_func_coef[-1]=4.4
+    #eta_func_coef[-2]=0
+    #print eta_func_coef
+    #eta_popt,eta_pconv = curve_fit(lambda x,a4,a3,a2,a1,a0: poly1d([a4,a3,a2,a1,a0])(x),u_alist,100*u_etalist,sigma=100*u_etastdlist)
+    # print "eta_popt:"
+    # print eta_popt
+    #eta_func=np.poly1d(eta_popt)    
+    slopes_etafunc = pchip_init(u_alist,100*u_etalist)
+    eta_func = lambda xvec: pchip_eval(u_alist, 100*u_etalist, slopes_etafunc, xvec) 
     #eta_func=np.poly1d(z)    
-    eta_func=np.poly1d(eta_popt)    
-    print "eta_popt:"
-    print eta_popt
     # eta_func2=poly1dt(z)    
     ltot,=plt.plot(mya,eta_func(mya),'k:',lw=2)
     ltot.set_dashes([2,3,2,3])
@@ -6974,7 +6975,8 @@ def plot_spindown(a0,spar_func=None,eta_func=None,etajet_func=None,etawind_func=
          )
     #initial value
     lnM0 = 0
-    lnM_of_t = odeint(lambda lnM,t: 1-0.01*eta_func(a_of_t_func(t)),lnM0,t)[:,0]
+    eta_func_interp = interp1d(t,eta_func(a_of_t_func(t)),kind='linear',bounds_error=False)
+    lnM_of_t = odeint(lambda lnM,t: 1-0.01*eta_func_interp(t),lnM0,t)[:,0]
     M_of_t=exp(lnM_of_t)
     Mirr_of_t = M_of_t*(0.5*rhor_compute(a_of_t))**0.5
     ax2.plot(t,M_of_t,"k-",lw=2,label=r"$M$")
@@ -10446,7 +10448,7 @@ if __name__ == "__main__":
         #Pro vs. retrograde spins, updated diagnostics
         readmytests1()
         plotpowers('siminfo.txt',plotetas=True,format=2) #new format; data from 2d average dumps
-    if False:
+    if True:
         #Jet efficiency vs. spin, update diagnostics
         readmytests1()
         plotpowers('siminfo.txt',plotetas=False,format=2) #new format; data from 2d average dumps
