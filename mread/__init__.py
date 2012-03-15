@@ -6779,12 +6779,26 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     l.set_dashes([10,5])
     #plt.plot(myspina6,myeta6,'r:',label=r'$\eta_{\rm BZ,6}$')
     #plt.plot(alist,100*etajetlist,'gs',label=r'$\eta_{\rm jet}$',lw=2)
-    ax3.errorbar(u_alist,100*u_etajetlist,yerr=2*100*u_etajetstdlist,label=r'$\eta_{\rm jet}$',mfc='g',ecolor='g',fmt='^',lw=2,elinewidth=1,mew=1,zorder=20)
-    sigma=100*u_etajetstdlist
-    sigma[2]*=10
-    etajet_polycoef,etajet_pconv = curve_fit(lambda x,a4,a3,a2: poly1d([a4,a3,a2,0,0])(x),u_alist,100*u_etajetlist,sigma=sigma)
-    etawind_polycoef,etawind_pconv = curve_fit(lambda x,a3,a2,a1,a0: poly1d([a3,a2,a1,a0])(x),u_alist,100*u_etawindlist,sigma=100*u_etawindstdlist)
-    etajet_polycoef=np.concatenate((etajet_polycoef,[0],[0]))
+    if False:
+        etajs = u_etajetlist
+        etaws = u_etawindlist
+        sigma=u_etajetstdlist
+        etasigma = u_etawindstdlist
+    else:
+        etajs = u_eta_s_jet_list
+        sigma = u_eta_s_jet_stdlist
+        etaws = u_eta_s_wind_list
+        etasigma = u_eta_s_wind_stdlist
+    ax3.errorbar(u_alist,100*etajs,yerr=2*100*sigma,label=r'$\eta_{\rm jet}$',mfc='g',ecolor='g',fmt='^',lw=2,elinewidth=1,mew=1,zorder=20)
+    #sigma[2]*=100
+    #sigma[4]*=100
+    #sigma[5]*=100
+    #a0 = 100*etajs[3]
+    etajet_polycoef,etajet_pconv = curve_fit(lambda x,a4,a3,a2,a1,a0: exp(poly1d([a4,a3,a2,a1,a0])(x)),u_alist,100*etajs,sigma=100*sigma)
+    etawind_polycoef,etawind_pconv = curve_fit(lambda x,a3,a2,a1,a0: poly1d([a3,a2,a1,a0])(x),u_alist,100*etaws,sigma=100*etasigma)
+    #etawind_polycoef=np.concatenate((etawind_polycoef,[a0]))
+    #etajet_polycoef=np.concatenate((etajet_polycoef[:3],[0],[a0]))
+    #etajet_polycoef=etajet_polycoef
     #etajet_polycoef=np.polyfit(u_alist,100*u_etajetlist,3)
     #etawind_polycoef=np.polyfit(u_alist,100*u_etawindlist,3)
     print( "etajet coefs", etajet_polycoef)
@@ -6792,17 +6806,22 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     print( "etawind_coefs", etawind_polycoef)
     #etawind_polycoef[-1]=2.9
     #etajet_polycoef[-2]=0
-    etajet_func=np.poly1d(etajet_polycoef)
-    etawind_func=np.poly1d(etawind_polycoef)
+    etajet_func=lambda a: exp(np.poly1d(etajet_polycoef)(a))
+    if True:
+        etawind_func=np.poly1d(etawind_polycoef)
+    else:
+        etawind_func = lambda a: eta_func(a)-etajet_func(a)
+    #etajet_func=lambda a: eta_func(a) - etawind_func(a)
     lj,=plt.plot(mya,etajet_func(mya),"g:",lw=2,zorder=0)
     lj.set_dashes([2,3,2,3])
     lw,=plt.plot(mya,etawind_func(mya),"b:",lw=2)
     lw.set_dashes([2,3,2,8,2,3,2,6])
     #plt.plot(alist,100*etaEMlist,'rx',label=r'$\eta_{\rm jet}$')
     #plt.plot(alist,100*etawindlist,'bv',label=r'$\eta_{\rm wind}$')
-    ax3.errorbar(u_alist,100*u_etawindlist,yerr=2*100*u_etawindstdlist,label=r'$\eta_{\rm wind}$',mfc='b',ecolor='b',fmt='v',lw=2,elinewidth=1,mew=1)
+    ax3.errorbar(u_alist,100*etaws,yerr=2*100*etasigma,label=r'$\eta_{\rm wind}$',mfc='b',ecolor='b',fmt='v',lw=2,elinewidth=1,mew=1)
     #plt.plot(myspina6,100*fac*myeta6,'k-',lw=2) #,label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$' )
     plt.ylim(0.0001,160-1e-5)
+    #plt.yscale('log')
     plt.grid()
     plt.legend(ncol=1,loc='upper center',frameon=True,labelspacing=0.0,borderpad=0.2)
     plt.xlabel(r"$a$",fontsize='x-large')
@@ -6960,7 +6979,7 @@ def plot_spindown(a0,spar_func=None,eta_func=None,etajet_func=None,etawind_func=
     lw.set_dashes([2,3,2,8,2,3,2,6])
     #lw.set_dashes([10,3,2,3])
     ax3.set_xlabel(r"$t/\tau$",fontsize=fntsize,va="bottom",labelpad=15)
-    leg2=ax3.legend(loc="upper right",frameon=True,labelspacing=0.15,ncol=1,borderpad = 0.1,borderaxespad=0.4,handlelength=2.2)
+    leg2=ax3.legend(loc="upper right",frameon=True,labelspacing=0.15,ncol=3,borderpad = 0.1,borderaxespad=0.4,handlelength=2.2,columnspacing=0.15)
     if a0 > 0:
         ax3.set_ylabel(r"$\eta$",ha="right",fontsize=fntsize)
         ax3.set_yticks(np.arange(0,200,50))
@@ -6969,6 +6988,8 @@ def plot_spindown(a0,spar_func=None,eta_func=None,etajet_func=None,etawind_func=
         ax3.set_ylabel(r"$\eta$",ha="right",labelpad=12,fontsize=fntsize)
         ax3.set_yticks(np.arange(0,60,10))
         ax3.set_ylim(0,50)
+    ax3.set_yscale('log')
+    ax3.set_ylim(0.1,150)
     #plt.plot(t,rhor_compute(a_of_t))
     ax1.grid(visible=True)
     ax2.grid(visible=True)
@@ -7721,7 +7742,7 @@ def mkmanystreamlinesx1x2(doplot=True):
             # ax2
             plt.draw()
 
-def finddiskjetbnds(r0=5,upperx2=True,maxiter=100,eps=1e-14,doplot=False):
+def finddiskjetbnds(r0=30,upperx2=True,maxiter=100,eps=1e-16,doplot=False):
     """upperx2 = False means look for low-x2 boundary; dir = True means look for high-x2 boundary"""
     #starting point
     x0 = x1[iofr(r0),0,0]
@@ -10233,14 +10254,14 @@ def extract_trajjet(trajdisk, trajpole,di=1):
     traj2jet = trajpole[0][imin+1:], trajpole[1][imin+1:]
     return np.concatenate((traj1jet[0],traj2jet[0])), np.concatenate((traj1jet[1],traj2jet[1]))
 
-def extract_jetwind_power(doreload=True,r0=10,doplot=False,dorecompute=True):
+def extract_jetwind_power(doreload=True,r0=30,doplot=False,dorecompute=True):
     global trajdisk_up,trajpole_up
     if doreload:
         grid3d("gdump.bin",use2d=True)
         avgmem=rdavg2d(usedefault=1)  #usedefault=1 reads in from "avg2d.npy"
     if dorecompute:
-        trajdisk_up,trajpole_up = finddiskjetbnds(r0=r0,upperx2=True,doplot=False)
-        trajdisk_dn,trajpole_dn = finddiskjetbnds(r0=r0,upperx2=False,doplot=False)
+        trajdisk_up,trajpole_up = finddiskjetbnds(r0=r0,upperx2=True,doplot=doplot)
+        trajdisk_dn,trajpole_dn = finddiskjetbnds(r0=r0,upperx2=False,doplot=doplot)
     #plt.clf()
     #plt.plot(trajdisk_up[0],trajdisk_up[1],'b',lw=2)
     #plt.plot(trajdisk_dn[0],trajdisk_dn[1],'b',lw=2)
@@ -10282,16 +10303,19 @@ if __name__ == "__main__":
         plotBavg()
     if False:
         plt.figure(1)
-        extract_jetwind_power()
+        plt.clf()
+        F_jet1, F_jet2, F_wind, F_wind1, F_wind2 = extract_jetwind_power(doplot=True)
         if True:
             plt.figure(2)
-            plt.plot(r[:,0,0],F_jet1[1]+F_jet2[1]+F_wind[1])
-            plt.plot(r[:,0,0],F_jet1[0]+F_jet2[0]+F_wind[0],'k--')
-            plt.plot(r[:,0,0],F_jet1[1]+F_jet2[1])
-            plt.plot(r[:,0,0],F_wind[1])
-            plt.plot(r[:,0,0],F_wind1[1]+F_wind2[1])
+            plt.clf()
+            plt.plot(r[:,0,0],F_jet1[1]+F_jet2[1]+F_wind[1],label="full eta")
+            plt.plot(r[:,0,0],F_jet1[0]+F_jet2[0]+F_wind[0],'k--',label="full Mdot")
+            plt.plot(r[:,0,0],F_jet1[1]+F_jet2[1],label="both jets")
+            plt.plot(r[:,0,0],F_wind[1],label="wind")
+            plt.plot(r[:,0,0],F_wind1[1]+F_wind2[1],label="unbound wind")
             plt.xlim(rhor,100)
             plt.ylim(0,20)
+            plt.legend(loc="upper right")
             plt.draw()
     if False:
         #takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
@@ -10360,7 +10384,7 @@ if __name__ == "__main__":
     if False:
         #Plot all BZs
         plotallbz()
-    if False:
+    if True:
         #Power vs. spin, updated diagnostics
         readmytests1()
         plotpowers('siminfo.txt',plotetas=False,format=2) #new format; data from 2d average dumps
