@@ -6977,7 +6977,7 @@ def plot_spindown(a0,spar_func=None,eta_func=None,etajet_func=None,etawind_func=
     ax2.plot(t,M_of_t,"k-",lw=2,label=r"$M$")
     l1,=ax2.plot(t,Mirr_of_t,"b--",lw=2,label=r"$M_{\rm ir}$")   #,label=r"$\mathrm{Irreducible\ BH\ mass},\ M_{\rm ir}$"
     l1.set_dashes([10,5])
-    leg1=ax2.legend(loc="lower right",frameon=True,labelspacing=0.15,ncol=1,borderpad = 0.3,borderaxespad=0.4,handlelength=2.2)
+    leg1=ax2.legend(loc="lower right",frameon=True,labelspacing=0.15,ncol=1,borderpad = 0.3,borderaxespad=0.4,handlelength=2.2,handletextpad=0.1,fancybox=True)
     ax2.set_ylabel(r"$M,\ M_{\rm ir}$",ha="right",fontsize=fntsize)
     ax2.set_ylim(0.5,1.7)
     ax3.plot(t,eta_func(a_of_t_func(t)),"k-",lw=2,label=r"$\eta$")  #,label=r"${\rm Total\ (jet+wind)\ efficiency,}\ \eta$"
@@ -6989,7 +6989,7 @@ def plot_spindown(a0,spar_func=None,eta_func=None,etajet_func=None,etawind_func=
     lw.set_dashes([2,3,2,8,2,3,2,6])
     #lw.set_dashes([10,3,2,3])
     ax3.set_xlabel(r"$t/\tau$",fontsize=fntsize,va="bottom",labelpad=15)
-    leg2=ax3.legend(loc="upper right",frameon=True,labelspacing=0.15,ncol=3,borderpad = 0.1,borderaxespad=0.4,handlelength=2.2,columnspacing=0.15)
+    leg2=ax3.legend(loc="lower left",frameon=True,labelspacing=0.15,ncol=1,borderpad = 0.1,borderaxespad=0.4,handlelength=2.2,columnspacing=0.15,handletextpad=0.1,fancybox=True)
     if a0 > 0:
         ax3.set_ylabel(r"$\eta$",ha="right",fontsize=fntsize)
         ax3.set_yticks(np.arange(0,200,50))
