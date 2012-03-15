@@ -6749,7 +6749,7 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     # plt.plot(myspina6,4.4305+130*(myomh6/omegah_compute(0.9))**2-30*(myomh6/omegah_compute(0.9))**4,'k--',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$',lw=2)
     # plt.plot(myspina6,95*(np.abs(omegah_compute(myspina6))/omegah_compute(0.9))**2+5,'k:',label=r'$100(a/0.9)^2$',lw=2)
     #plt.plot(u_alist,100*u_etalist,'o',label=r'$\eta$',mfc='r',lw=2)
-    ax2.errorbar(u_alist,100*u_etalist,yerr=2*100*u_etastdlist,label=r'$\eta$',mfc='r',ecolor='r',fmt='o',lw=2,elinewidth=1,mew=1)
+    ax2.errorbar(u_alist,100*u_etalist,yerr=2*100*u_etastdlist,label=r'$\eta$',mec='r',mfc='none',ecolor='r',fmt='o',lw=2,elinewidth=1,mew=1)
     plt.ylim(0.0001,160-1e-5)
     plt.grid()
     # plt.setp( ax2.get_xticklabels(), visible=False )
@@ -6776,7 +6776,7 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     #col=(0.93333333,  0.60980392,  0.93333333,0.75) #(0.8,0.52,0.25,0.4)
     if dofill:
         ax3.fill_between(myspina6,newy1,newy2,where=newy1>newy2,facecolor=col,edgecolor=col)  #(0.8,1,0.8,1)
-    l,=plt.plot(myspina6,0.85*100*fac*myeta6,'k--',lw=2,label=r'$0.85\eta_{\rm BZ6}(\phi_{\rm fit})$' )
+    l,=ax3.plot(myspina6,0.85*100*fac*myeta6,'k--',lw=2,label=r'$0.85\eta_{\rm BZ6}(\phi_{\rm fit})$' )
     l.set_dashes([10,5])
     #plt.plot(myspina6,myeta6,'r:',label=r'$\eta_{\rm BZ,6}$')
     #plt.plot(alist,100*etajetlist,'gs',label=r'$\eta_{\rm jet}$',lw=2)
@@ -6790,13 +6790,12 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         sigma = u_eta_s_jet_stdlist
         etaws = u_eta_s_wind_list
         etasigma = u_eta_s_wind_stdlist
-    ax3.errorbar(u_alist,100*etajs,yerr=2*100*sigma,label=r'$\eta_{\rm jet}$',mfc='g',ecolor='g',fmt='^',lw=2,elinewidth=1,mew=1,zorder=20)
+    ax2.errorbar(u_alist,100*etajs,yerr=2*100*sigma,label=r'$\eta_{\rm jet}$',mec='g',mfc='none',ecolor='g',fmt='s',lw=2,elinewidth=1,mew=1,zorder=20)
     #sigma[2]*=100
     #sigma[4]*=100
     #sigma[5]*=100
     #a0 = 100*etajs[3]
     #etajet_polycoef,etajet_pconv = curve_fit(lambda x,a4,a3,a2,a1,a0: poly1d([a4,a3,a2,a1,a0])(x),u_alist,100*etajs,sigma=100*sigma)
-    etawind_polycoef,etawind_pconv = curve_fit(lambda x,a3,a2,a1,a0: poly1d([a3,a2,a1,a0])(x),u_alist,100*etaws,sigma=100*etasigma)
     #etawind_polycoef=np.concatenate((etawind_polycoef,[a0]))
     #etajet_polycoef=np.concatenate((etajet_polycoef[:3],[0],[a0]))
     #etajet_polycoef=etajet_polycoef
@@ -6804,31 +6803,35 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     #etawind_polycoef=np.polyfit(u_alist,100*u_etawindlist,3)
     #print( "etajet coefs", etajet_polycoef)
     #etajet_polycoef[-1]=1e-4
-    print( "etawind_coefs", etawind_polycoef)
     #etawind_polycoef[-1]=2.9
     #etajet_polycoef[-2]=0
     #etajet_func=lambda a:np.poly1d(etajet_polycoef)(a)
     #etajet_func=interp1d(u_alist,100*etajs,bounds_error=False,kind='slinear')
     #etajet_func=InterpolatedUnivariateSpline(u_alist,100*etajs,k=3)
-    #create the pchip slopes slopes
-    slopes = pchip_init(u_alist,100*etajs)
-    #interpolate
-    etajet_func = lambda xvec: pchip_eval(u_alist, 100*etajs, slopes, xvec) 
+    #create the pchip slopes slopes and interpolate
+    slopes_jetfunc = pchip_init(u_alist,100*etajs)
+    etajet_func = lambda xvec: pchip_eval(u_alist, 100*etajs, slopes_jetfunc, xvec) 
     #etajet_func = lambda xvec: do_herm_interp(u_alist,100*etajs, xvec) 
     print u_alist
-    if True:
+    if False:
+        etawind_polycoef,etawind_pconv = curve_fit(lambda x,a3,a2,a1,a0: poly1d([a3,a2,a1,a0])(x),u_alist,100*etaws,sigma=100*etasigma)
+        print( "etawind_coefs", etawind_polycoef)
         etawind_func=np.poly1d(etawind_polycoef)
-    else:
+    elif False:
         etawind_func = lambda a: eta_func(a)-etajet_func(a)
+    else:
+        slopes_windfunc = pchip_init(u_alist,100*etaws)
+        etawind_func = lambda xvec: pchip_eval(u_alist, 100*etaws, slopes_windfunc, xvec) 
     #etajet_func=lambda a: eta_func(a) - etawind_func(a)
     #pdb.set_trace()
-    lj,=plt.plot(mya,etajet_func(mya),"g:",lw=2,zorder=0)
-    lj.set_dashes([2,3,2,3])
-    lw,=plt.plot(mya,etawind_func(mya),"b:",lw=2)
+    lj,=ax2.plot(mya,etajet_func(mya),"g:",lw=2,zorder=0)
+    #lj.set_dashes([2,3,2,3])
+    lj.set_dashes([10,5])
+    lw,=ax2.plot(mya,etawind_func(mya),"b:",lw=2)
     lw.set_dashes([2,3,2,8,2,3,2,6])
     #plt.plot(alist,100*etaEMlist,'rx',label=r'$\eta_{\rm jet}$')
     #plt.plot(alist,100*etawindlist,'bv',label=r'$\eta_{\rm wind}$')
-    ax3.errorbar(u_alist,100*etaws,yerr=2*100*etasigma,label=r'$\eta_{\rm wind}$',mfc='b',ecolor='b',fmt='v',lw=2,elinewidth=1,mew=1)
+    ax2.errorbar(u_alist,100*etaws,yerr=2*100*etasigma,label=r'$\eta_{\rm wind}$',mfc='b',ecolor='b',color='b',fmt='.',lw=2,elinewidth=1,mew=1)
     #plt.plot(myspina6,100*fac*myeta6,'k-',lw=2) #,label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$' )
     plt.ylim(0.0001,160-1e-5)
     #plt.yscale('log')
