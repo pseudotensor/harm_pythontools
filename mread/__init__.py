@@ -6695,7 +6695,8 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     col= ( 0.52941176,  0.80784314,  0.98039216, 0.5) #(0.5,0.5,1,0.75) #(0.8,1,0.8,1)
     if dofill:
         ax1.fill_between(mya,newy1,newy2,where=newy1>newy2,facecolor=col,edgecolor=col)
-    ax1.plot(mya,f*unitsfactor,'k-',label=r'$\phi_{\rm fit}$',lw=2) #=2.9(1-0.6 \Omega_{\rm H})
+    lphi,=ax1.plot(mya,f*unitsfactor,'k:',label=r'$\phi_{\rm fit}$',lw=2) #=2.9(1-0.6 \Omega_{\rm H})
+    lphi.set_dashes([2,3,2,3])
     #ax1.plot(alist,y1*unitsfactor,'o',label=r'$\langle\phi^2\!\rangle^{1/2}$',mfc='r')
     ax1.errorbar(u_alist,u_philist,yerr=2*u_phistdlist,label=r'$\langle\phi^2\!\rangle^{1/2}$',mfc='r',ecolor='r',fmt='o',lw=2,elinewidth=1,mew=1)
     # plt.plot(mya,(250+0*mya)*rhor) 
@@ -6729,7 +6730,8 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         ax2.fill_between(myspina6,newy1,newy2,where=newy1>newy2,facecolor=col,edgecolor=col,lw=2)
     #plt.plot(alist,100*(etawindlist-etalist),'gv',label=r'$\eta_{\rm wind}$')
     #plt.plot(myspina6,0.9*100*fac*myeta6,'k',label=r'$0.9\eta_{\rm BZ6}(\phi_{\rm fit})$' )
-    plt.plot(myspina6,100*fac*myeta6,'k-',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$',lw=2)
+    leta6,=plt.plot(myspina6,100*fac*myeta6,'k:',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$',lw=2)
+    leta6.set_dashes([2,3,2,3])
     #plt.plot(myspina6,(100-4.4305)*fac*myeta6+4.4305,'k:',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$',lw=2)
     #u_etalist[0]*=0.8
     #eta_func_coef=np.polyfit(u_alist,100*u_etalist,3)#,w=1/(2*100*u_etastdlist)**2)
@@ -6744,14 +6746,14 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     eta_func = lambda xvec: pchip_eval(u_alist, 100*u_etalist, slopes_etafunc, xvec) 
     #eta_func=np.poly1d(z)    
     # eta_func2=poly1dt(z)    
-    ltot,=plt.plot(mya,eta_func(mya),'k:',lw=2)
-    ltot.set_dashes([2,3,2,3])
+    ltot,=plt.plot(mya,eta_func(mya),'r-',lw=2)
+    #ltot.set_dashes([2,3,2,3])
     # plt.plot(myspina6,4.4305+20*(myomh6/omegah_compute(0.9))**1+100*(myomh6/omegah_compute(0.9))**2+10*(myomh6/omegah_compute(0.9))**3-30*(myomh6/omegah_compute(0.9))**4,'k--',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$',lw=2)
     # plt.plot(myspina6,4.4305+130*(myomh6/omegah_compute(0.9))**2-30*(myomh6/omegah_compute(0.9))**4,'k--',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$',lw=2)
     # plt.plot(myspina6,95*(np.abs(omegah_compute(myspina6))/omegah_compute(0.9))**2+5,'k:',label=r'$100(a/0.9)^2$',lw=2)
     #plt.plot(u_alist,100*u_etalist,'o',label=r'$\eta$',mfc='r',lw=2)
     ax2.errorbar(u_alist,100*u_etalist,yerr=2*100*u_etastdlist,label=r'$\eta$',mec='r',mfc='none',ecolor='r',fmt='o',lw=2,elinewidth=1,mew=1)
-    plt.ylim(0.0001,160-1e-5)
+    plt.ylim(-10,160-1e-5)
     plt.grid()
     # plt.setp( ax2.get_xticklabels(), visible=False )
     plt.ylabel(r"$\eta\  [\%]$",fontsize='x-large',ha='center',labelpad=12)
@@ -6791,7 +6793,7 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         sigma = u_eta_s_jet_stdlist
         etaws = u_eta_s_wind_list
         etasigma = u_eta_s_wind_stdlist
-    ax2.errorbar(u_alist,100*etajs,yerr=2*100*sigma,label=r'$\eta_{\rm jet}$',mec='g',mfc='none',ecolor='g',fmt='s',lw=2,elinewidth=1,mew=1,zorder=20)
+    ax3.errorbar(u_alist,100*etajs,yerr=2*100*sigma,label=r'$\eta_{\rm jet}$',mec='g',mfc='none',ecolor='g',fmt='s',lw=2,elinewidth=1,mew=1,zorder=20)
     #sigma[2]*=100
     #sigma[4]*=100
     #sigma[5]*=100
@@ -6825,14 +6827,14 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         etawind_func = lambda xvec: pchip_eval(u_alist, 100*etaws, slopes_windfunc, xvec) 
     #etajet_func=lambda a: eta_func(a) - etawind_func(a)
     #pdb.set_trace()
-    lj,=ax2.plot(mya,etajet_func(mya),"g:",lw=2,zorder=0)
+    lj,=ax3.plot(mya,etajet_func(mya),"g:",lw=2,zorder=0)
     #lj.set_dashes([2,3,2,3])
     lj.set_dashes([10,5])
-    lw,=ax2.plot(mya,etawind_func(mya),"b:",lw=2)
+    lw,=ax3.plot(mya,etawind_func(mya),"b:",lw=2)
     lw.set_dashes([2,3,2,8,2,3,2,6])
     #plt.plot(alist,100*etaEMlist,'rx',label=r'$\eta_{\rm jet}$')
     #plt.plot(alist,100*etawindlist,'bv',label=r'$\eta_{\rm wind}$')
-    ax2.errorbar(u_alist,100*etaws,yerr=2*100*etasigma,label=r'$\eta_{\rm wind}$',mfc='b',ecolor='b',color='b',fmt='.',lw=2,elinewidth=1,mew=1)
+    ax3.errorbar(u_alist,100*etaws,yerr=2*100*etasigma,label=r'$\eta_{\rm wind}$',mfc='b',ecolor='b',color='b',fmt='.',lw=2,elinewidth=1,mew=1)
     #plt.plot(myspina6,100*fac*myeta6,'k-',lw=2) #,label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$' )
     plt.ylim(0.0001,160-1e-5)
     #plt.yscale('log')
@@ -6985,10 +6987,10 @@ def plot_spindown(a0,spar_func=None,eta_func=None,etajet_func=None,etawind_func=
     leg1=ax2.legend(loc="lower right",frameon=True,labelspacing=0.15,ncol=1,borderpad = 0.3,borderaxespad=0.4,handlelength=2.2,handletextpad=0.1,fancybox=True)
     ax2.set_ylabel(r"$M,\ M_{\rm ir}$",ha="right",fontsize=fntsize)
     ax2.set_ylim(0.5,1.7)
-    ax3.plot(t,eta_func(a_of_t_func(t)),"k-",lw=2,label=r"$\eta$")  #,label=r"${\rm Total\ (jet+wind)\ efficiency,}\ \eta$"
-    lj,=ax3.plot(t,etajet_func(a_of_t_func(t)),"g:",lw=2,label=r"$\eta_{\rm jet}$")  #,label=r"${\rm Jet\ efficiency,}\ \eta_{\rm jet}$"
-    lj.set_dashes([2,3,2,3])
-    #lj.set_dashes([10,5])
+    ax3.plot(t,eta_func(a_of_t_func(t)),"r-",lw=2,label=r"$\eta$")  #,label=r"${\rm Total\ (jet+wind)\ efficiency,}\ \eta$"
+    lj,=ax3.plot(t,etajet_func(a_of_t_func(t)),"g--",lw=2,label=r"$\eta_{\rm jet}$")  #,label=r"${\rm Jet\ efficiency,}\ \eta_{\rm jet}$"
+    #lj.set_dashes([2,3,2,3])
+    lj.set_dashes([10,5])
     #lj.set_dashes([10,3,2,3])
     lw,=ax3.plot(t,etawind_func(a_of_t_func(t)),"b:",lw=2,label=r"$\eta_{\rm wind}$")   #,label=r"${\rm Wind\ efficiency,}\ \eta_{\rm wind}$"
     lw.set_dashes([2,3,2,8,2,3,2,6])
