@@ -215,8 +215,9 @@ def pchip_init(x,y):
         m[ii+1] = tau[ii] * beta[ii]  * delta[ii]
 
     for ii in xrange(n-1):
-        if alpha[ii] < 0 or beta[ii] < 0:
+        if alpha[ii] <= 0:
             m[ii] = 0
+        if beta[ii] <= 0:
             m[ii+1] = 0
 
     return m
@@ -325,6 +326,7 @@ def main():
     x = P.arange(7.0) - 3.0
     x[3] -= 0.5
     y = P.array([-1.0, -1,-1,0,1,1,1])
+    y[2] -= 1
 
     # Interpolate using monotonic piecewise Hermite cubic spline
     xvec = P.arange(599.)/100. - 3.0

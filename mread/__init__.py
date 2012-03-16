@@ -6836,7 +6836,7 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     #plt.plot(alist,100*etawindlist,'bv',label=r'$\eta_{\rm wind}$')
     ax3.errorbar(u_alist,100*etaws,yerr=2*100*etasigma,label=r'$\eta_{\rm wind}$',mfc='b',ecolor='b',color='b',fmt='.',lw=2,elinewidth=1,mew=1)
     #plt.plot(myspina6,100*fac*myeta6,'k-',lw=2) #,label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$' )
-    plt.ylim(0.0001,160-1e-5)
+    plt.ylim(-10,160-1e-5)
     #plt.yscale('log')
     plt.grid()
     plt.legend(ncol=1,loc='upper center',frameon=True,labelspacing=0.0,borderpad=0.2)
