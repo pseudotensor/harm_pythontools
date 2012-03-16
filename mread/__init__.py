@@ -6813,6 +6813,7 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     #etajet_func=InterpolatedUnivariateSpline(u_alist,100*etajs,k=3)
     #create the pchip slopes slopes and interpolate
     slopes_jetfunc = pchip_init(u_alist,100*etajs)
+    print slopes_jetfunc
     etajet_func = lambda xvec: pchip_eval(u_alist, 100*etajs, slopes_jetfunc, xvec) 
     #etajet_func = lambda xvec: do_herm_interp(u_alist,100*etajs, xvec) 
     print u_alist
@@ -9103,9 +9104,10 @@ def provsretro(dotakeoutfloors=False,doreload=True):
         plt.figure(3)
         #plt.clf()
         ax = plt.gca()
-        sigval = (gdet[:,:,0:1]*avg_rhouu[0]*_dx2*_dx3*nz).sum(-1).sum(-1)/dxdxp[1,1,:,0,0]*scaletofullwedge(1.)/(2*np.pi*r[:,ny/2,0])
+        #sigval = (gdet[:,:,0:1]*avg_rhouu[0]*_dx2*_dx3*nz).sum(-1).sum(-1)/dxdxp[1,1,:,0,0]*scaletofullwedge(1.)/(2*np.pi*r[:,ny/2,0])
         #
-        sigval = (gdet[:,:,0:1]*avg_rho*_dx1*_dx2*_dx3*nz).sum(-1).sum(-1)/(gdet[:,ny/2,0]*_dx1*_dx3*nz)
+        #sigval = (gdet[:,:,0:1]*avg_rho*_dx1*_dx2*_dx3*nz).sum(-1).sum(-1)/(gdet[:,ny/2,0]*_dx1*_dx3*nz)
+        sigval = (gdet[:,:,0:1]*avg_rho*_dx2*_dx3*nz).sum(-1).sum(-1)/(2*np.pi*r[:,0,0])/dxdxp[1,1,:,0,0]
         #sigvalfm = a_Fm / (-4*np.pi*r[:,ny/2,0]*avg_uu[1,:,ny/2,0]*dxdxp[1,1,:,0,0]/avg_uu[0,:,ny/2,0])
         plt.plot( r[:,0,0], avg_rho[:,ny/2,0],  'k')
         plt.plot( r[:,0,0], sigval,  label=lab )
@@ -10450,14 +10452,14 @@ if __name__ == "__main__":
         #Pro vs. retrograde spins, updated diagnostics
         readmytests1()
         plotpowers('siminfo.txt',plotetas=True,format=2) #new format; data from 2d average dumps
-    if True:
+    if False:
         #Jet efficiency vs. spin, update diagnostics
         readmytests1()
         plotpowers('siminfo.txt',plotetas=False,format=2) #new format; data from 2d average dumps
     if False:
         #Plot all BZs
         plotallbz()
-    if False:
+    if True:
         #Power vs. spin, updated diagnostics
         readmytests1()
         plotpowers('siminfo.txt',plotetas=False,format=2) #new format; data from 2d average dumps

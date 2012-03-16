@@ -215,7 +215,7 @@ def pchip_init(x,y):
         m[ii+1] = tau[ii] * beta[ii]  * delta[ii]
 
     for ii in xrange(n-1):
-        if alpha[ii] <= 0:
+        if alpha[ii] <= 0: 
             m[ii] = 0
         if beta[ii] <= 0:
             m[ii+1] = 0
@@ -319,14 +319,17 @@ def main():
     #########################################################################
 
     P.figure(2)
+    plt.clf()
     P.title("pchip() step function test")
 
     # Create a step function (will demonstrate monotonicity)
     #x = P.arange(7.0) - 3.0
     x = P.arange(7.0) - 3.0
-    x[3] -= 0.5
+    x[3] += 0.5
     y = P.array([-1.0, -1,-1,0,1,1,1])
     y[2] -= 1
+    y[3] = -2.1
+    y[4] = -2.0
 
     # Interpolate using monotonic piecewise Hermite cubic spline
     xvec = P.arange(599.)/100. - 3.0
@@ -360,7 +363,7 @@ def main():
     legends = ["Data", "pypchip()", "interp1d","CHS"]
     P.legend(legends, loc="upper left")
 
-    P.show()
+    #P.show()
 
 ###################################################################
 if __name__ == '__main__':
