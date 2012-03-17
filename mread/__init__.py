@@ -6680,16 +6680,16 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     plt.errorbar(omegah_compute(u_alist)/omegah_compute(1),u_philist/unitsfactor,yerr=2*u_phistdlist/unitsfactor,label=r'$\langle\phi^2\!\rangle^{1/2}$',mfc='b',ecolor='b',lw=2,fmt='+',elinewidth=1,mew=1)
 
     #
-    plt.figure(1, figsize=(8,6),dpi=100)
+    plt.figure(1, figsize=(10,6),dpi=100)
     plt.clf()
-    gs = GridSpec(2, 2)
-    gs.update(left=0.09, right=0.94, top=0.95, bottom=0.1, wspace=0.25, hspace=0.04)
+    gs = GridSpec(10, 10)
+    gs.update(left=0.09, right=0.94, top=0.95, bottom=0.08, wspace=0.25*100, hspace=0.04*5)
     #############
     #
     # phi
     #
     #############
-    ax1 = plt.subplot(gs[0,0])
+    ax1 = plt.subplot(gs[0:4,0:5])
     newy1 = 1.05*f*unitsfactor
     newy2 = 0.95*f*unitsfactor
     col= ( 0.52941176,  0.80784314,  0.98039216, 0.5) #(0.5,0.5,1,0.75) #(0.8,1,0.8,1)
@@ -6723,7 +6723,7 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     # eta
     #
     #############
-    ax2 = plt.subplot(gs[1,0])
+    ax2 = plt.subplot(gs[4:10,0:5])
     newy1 = 1.1*100*fac*myeta6
     newy2 = 0.9*100*fac*myeta6
     if dofill:
@@ -6773,7 +6773,7 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     # eta_j, eta_w
     #
     #############
-    ax3 = plt.subplot(gs[1,1])
+    ax3 = plt.subplot(gs[4:10,5:10])
     newy1 = 1.1*0.85*100*fac*myeta6
     newy2 = 0.9*0.85*100*fac*myeta6
     #col=(0.93333333,  0.60980392,  0.93333333,0.75) #(0.8,0.52,0.25,0.4)
@@ -6855,7 +6855,7 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     # s (spin-up parameter)
     #
     #############
-    ax4 = plt.subplot(gs[0,1])
+    ax4 = plt.subplot(gs[0:4,5:10])
     x=(0.07,0.07)
     y=(-10,10)
     plt.plot(x,y,color='red',lw=4,alpha=0.3)
@@ -6958,7 +6958,6 @@ def plot_spindown(a0,spar_func=None,eta_func=None,etajet_func=None,etawind_func=
     ax2=plt.subplot(gs[1,:])
     ax3=plt.subplot(gs[2,:])
     aeq = brentq(spar_func,-1,1)
-    pdb.set_trace()
     print("Equilibrium spin: %g" % aeq)
     #initial value
     if a0 > 0:
