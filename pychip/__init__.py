@@ -211,8 +211,10 @@ def pchip_init(x,y):
 #    print "overshoot indices to fix... = ", indices_to_fix
 
     for ii in indices_to_fix:
-        m[ii]   = tau[ii] * alpha[ii] * delta[ii]
-        m[ii+1] = tau[ii] * beta[ii]  * delta[ii]
+        # m[ii]   = tau[ii] * alpha[ii] * delta[ii]
+        # m[ii+1] = tau[ii] * beta[ii]  * delta[ii]
+        m[ii]   *= tau[ii]
+        m[ii+1] *= tau[ii]
 
     for ii in xrange(n-1):
         if alpha[ii] <= 0: 

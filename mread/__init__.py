@@ -6680,7 +6680,7 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     plt.errorbar(omegah_compute(u_alist)/omegah_compute(1),u_philist/unitsfactor,yerr=2*u_phistdlist/unitsfactor,label=r'$\langle\phi^2\!\rangle^{1/2}$',mfc='b',ecolor='b',lw=2,fmt='+',elinewidth=1,mew=1)
 
     #
-    plt.figure(1, figsize=(8,4),dpi=100)
+    plt.figure(1, figsize=(8,6),dpi=100)
     plt.clf()
     gs = GridSpec(2, 2)
     gs.update(left=0.09, right=0.94, top=0.95, bottom=0.1, wspace=0.25, hspace=0.04)
@@ -6813,10 +6813,8 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     #etajet_func=InterpolatedUnivariateSpline(u_alist,100*etajs,k=3)
     #create the pchip slopes slopes and interpolate
     slopes_jetfunc = pchip_init(u_alist,100*etajs)
-    print slopes_jetfunc
     etajet_func = lambda xvec: pchip_eval(u_alist, 100*etajs, slopes_jetfunc, xvec) 
     #etajet_func = lambda xvec: do_herm_interp(u_alist,100*etajs, xvec) 
-    print u_alist
     if False:
         etawind_polycoef,etawind_pconv = curve_fit(lambda x,a3,a2,a1,a0: poly1d([a3,a2,a1,a0])(x),u_alist,100*etaws,sigma=100*etasigma)
         print( "etawind_coefs", etawind_polycoef)
@@ -6867,16 +6865,21 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         #to show "analytic" rought approximation of Ramesh
         plt.plot(mya,sparthin(0)*(1-mya),'k-',lw=1)
     #plt.plot(alist,sparlist,'ro',mec='r')
-    newa=np.concatenate((u_alist[0:-4],u_alist[-4:]))
-    news=np.concatenate((u_sparlist[0:-4],u_sparlist[-4:]))
-    newsstd=np.concatenate((u_sparstdlist[0:-4],u_sparstdlist[-4:]))
-    spar_polyfit,spar_pconv = curve_fit(lambda x,a4,a3,a2,a1,a0: poly1d([a4,a3,a2,a1,a0])(x),newa,news,sigma=newsstd)
-    #spar_polyfit=np.polyfit(newa,news,4)#,w=1/(2*100*u_etastdlist)**2)
-    spar_func=np.poly1d(spar_polyfit)
+    if False:
+        newa=np.concatenate((u_alist[0:-4],u_alist[-4:]))
+        news=np.concatenate((u_sparlist[0:-4],u_sparlist[-4:]))
+        newsstd=np.concatenate((u_sparstdlist[0:-4],u_sparstdlist[-4:]))
+        spar_polyfit,spar_pconv = curve_fit(lambda x,a4,a3,a2,a1,a0: poly1d([a4,a3,a2,a1,a0])(x),newa,news,sigma=newsstd)
+        #spar_polyfit=np.polyfit(newa,news,4)#,w=1/(2*100*u_etastdlist)**2)
+        spar_func=np.poly1d(spar_polyfit)
+        print spar_polyfit
+    else:
+        mya1 = np.arange(-1,1+0.001,0.001)
+        slopes_sparfunc = pchip_init(u_alist,u_sparlist)
+        spar_func = interp1d(mya1,pchip_eval(u_alist, u_sparlist, slopes_sparfunc, mya1),bounds_error=False)
     # spar_func2=poly1dt(spar_polyfit)
     lspar,=plt.plot(mya,spar_func(mya),'k:',lw=2)
     lspar.set_dashes([2,3,2,3])
-    print spar_polyfit
     ax4.errorbar(u_alist,u_sparlist,yerr=2*u_sparstdlist,label=r"$s_{\rm MAD}$",mfc='r',ecolor='r',fmt='o',color='r',lw=2,elinewidth=1,mew=1)
     if doanalytic:
         #to show "analytic" rought approximation of Ramesh
@@ -6955,6 +6958,7 @@ def plot_spindown(a0,spar_func=None,eta_func=None,etajet_func=None,etawind_func=
     ax2=plt.subplot(gs[1,:])
     ax3=plt.subplot(gs[2,:])
     aeq = brentq(spar_func,-1,1)
+    pdb.set_trace()
     print("Equilibrium spin: %g" % aeq)
     #initial value
     if a0 > 0:
