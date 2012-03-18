@@ -6560,9 +6560,9 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     # plt.plot(mspina6[mhor6==hor],fac*6.94*mpow6[mhor6==hor],'r--',label=r'$P_{\rm BZ,6}$')
     # plt.plot(mspina6[mhor6==hor],fac*3.75*mpow6[mhor6==hor]*rhor6,'r',label=r'$P_{\rm BZ,6}\times\, r_h$' )
     if True:
-        myomh6=np.concatenate((-momh6[mhor6==hor][nmin::-1],momh6[mhor6==hor]))
-        myspina6=np.concatenate((-mspina6[mhor6==hor][nmin::-1],mspina6[mhor6==hor]))
-        mypow6 = np.concatenate((mpow6[mhor6==hor][nmin::-1],mpow6[mhor6==hor]))
+        myomh6=np.concatenate((-momh6[mhor6==hor][nmin::-1],[0],momh6[mhor6==hor]))
+        myspina6=np.concatenate((-mspina6[mhor6==hor][nmin::-1],[0],mspina6[mhor6==hor]))
+        mypow6 = np.concatenate((mpow6[mhor6==hor][nmin::-1],[0],mpow6[mhor6==hor]))
     else:
         myomh6=momh6[mhor6==hor]
         myspina6=mspina6[mhor6==hor]
