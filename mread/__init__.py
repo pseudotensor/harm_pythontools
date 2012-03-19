@@ -133,7 +133,7 @@ def assignavg2dvars(avgmem,DTf=5):
             avg_te1[0]=avg_te[0]+(avg_te[0]-avg_ts[0])/(avg_nitems[0]-1)
             print( "Extrapolating final time: %g from %g" % (avg_te1[0], avg_te[0]) )
     else:
-        print( "Number of elements = 1, so using default final time: %g" % (avg_te[0]) )
+        print( "Number of elements = 0, so using default final time: %g" % (avg_te[0]) )
         avg_te1[0]=avg_te[0]
     #quantities
     avg_rho=avgmem[i,:,:,None];i+=1
@@ -5976,6 +5976,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         F_tot = F_jet1 + F_jet2 + F_wind
         Mdotx = F_tot[0,ix]
         #
+        eta_s_tot = F_tot[1,ix]/Mdotx
         eta_s_jet = (F_jet1+F_jet2)[1,ij]/Mdotx
         eta_s_wind = F_wind[1,ij]/Mdotx
         eta_s_wind_unb = (F_wind1+F_wind2)[1,ij]/Mdotx
@@ -6009,7 +6010,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         #
         foutpower = open( "siminfo_%s.txt" %  os.path.basename(os.getcwd()), "w" )
         #foutpower.write( "#Name a Mdot   Pjet    Etajet  Psitot Psisqtot**0.5 Psijet Psisqjet**0.5 rstag Pjtotmax Pjtot1rstag Pjtot2rstag Pjtot4rstag Pjtot8rstag\n"  )
-        foutpower.write( "%s %s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n" % (
+        foutpower.write( "%s %s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n" % (
                                                            pn, os.path.basename(os.getcwd()), a, 
                                                            etamean, etastd, sparmean, sparstd, phimean, phistd,
                                                            Fm[iofr(rx)], Fe[iofr(rx)], Fl[iofr(rx)]/dxdxp[3][3][0,0,0],
@@ -6019,7 +6020,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
                                                            fstotfinavg, fstotsqfinavg,
                                                            horavg[iofr(5)], horavg[iofr(10)], horavg[iofr(20)], 
                                                            horavg[iofr(25)], horavg[iofr(30)], horavg[iofr(100)],
-                                                           eta_s_jet, eta_s_wind, eta_s_wind_unb))
+                                                           eta_s_tot, eta_s_jet, eta_s_wind, eta_s_wind_unb))
         #flush to disk just in case to make sure all is written
         foutpower.flush()
         os.fsync(foutpower.fileno())
@@ -6366,14 +6367,14 @@ def sparthin(a):
     return(s)
 
 def getetaavg(fname,simnamelist):
-    gd1 = np.loadtxt( fname, unpack = True, usecols = [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28] )
+    gd1 = np.loadtxt( fname, unpack = True, usecols = [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29] )
     #gd=gd1.view().reshape((-1,nx,ny,nz), order='F')
     alist, etalist, etastdlist, sparlist, sparstdlist, philist, phistdlist, \
         Fmlist, Felist, Fllist, FEMrhorlist, FEM2list, \
         powjetlist, powjetstd, powwindlist, powwindstd, \
         ftotlist, ftotsqlist, \
         hor5, hor10, hor20, hor25, hor30, hor100, \
-        eta_s_jet, eta_s_wind, eta_s_wind_unb = gd1
+        eta_s_tot, eta_s_jet, eta_s_wind, eta_s_wind_unb = gd1
     fsqtotlist = ftotsqlist
     mdotlist = Fmlist
     rhorlist = 1+(1-alist**2)**0.5
@@ -6478,14 +6479,14 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         #                                                    fstotfinavg, fstotsqfinavg,
         #                                                    horavg[iofr(5)], horavg[iofr(10)], horavg[iofr(20)], 
         #                                                    horavg[iofr(25)], horavg[iofr(30)], horavg[iofr(100)]) )
-        gd1 = np.loadtxt( fname, unpack = True, usecols = [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28] )
+        gd1 = np.loadtxt( fname, unpack = True, usecols = [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29] )
         #gd=gd1.view().reshape((-1,nx,ny,nz), order='F')
         alist, etalist, etastdlist, sparlist, sparstdlist, philist, phistdlist, \
             Fmlist, Felist, Fllist, FEMrhorlist, FEM2list, \
             powjetlist, powjetstd, powwindlist, powwindstd, \
             ftotlist, ftotsqlist, \
             hor5, hor10, hor20, hor25, hor30, hor100, \
-            eta_s_jet, eta_s_wind, eta_s_wind_unb = gd1
+            eta_s_tot, eta_s_jet, eta_s_wind, eta_s_wind_unb = gd1
         fsqtotlist = ftotsqlist
         mdotlist = Fmlist
         rhorlist = 1+(1-alist**2)**0.5
@@ -6500,12 +6501,12 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     emptyline = gin.readline()
     simname=[]
     simpath=[]
-    print( "##: %20s: %9s %9s %9s %9s %9s %9s %9s %9s\n" % ("Name", "Mdot", "FEMrh", "Ftotsq", "etaEM", "eta", "etajw", "etaj", "etaw") )
+    print( "##: %20s: %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s\n" % ("Name", "Mdot", "FEMrh", "Ftotsq", "etaEM", "eta", "etajw", "etaj", "etaw", "etastot", "etasj", "etasw", "etasjw") )
     for i in np.arange(alist.shape[0]):
         stringsplit=gin.readline().split()
         simname.append(stringsplit[0])
         simpath.append(stringsplit[1])
-        print( "%2d: %20.20s: %9.5g %9.5g %9.5g %9.5g %9.5g %9.5g %9.5g %9.5g" % ( i, simname[i], Fmlist[i], FEMrhorlist[i], ftotsqlist[i], etaEMlist[i]*100, etalist[i]*100, etajetlist[i]*100+etawindlist[i]*100, etajetlist[i]*100, etawindlist[i]*100 ) ) 
+        print( "%2d: %20.20s: %9.5g %9.5g %9.5g %9.5g %9.5g %9.5g %9.5g %9.5g %9.5g %9.5g %9.5g %9.5g" % ( i, simname[i], Fmlist[i], FEMrhorlist[i], ftotsqlist[i], etaEMlist[i]*100, etalist[i]*100, etajetlist[i]*100+etawindlist[i]*100, etajetlist[i]*100, etawindlist[i]*100, eta_s_tot[i]*100, eta_s_jet[i]*100, eta_s_wind[i]*100, (eta_s_jet[i]+eta_s_wind[i])*100 ) ) 
     gin.close()
     if plotetas:
         #plt.figure(1)
@@ -6527,6 +6528,7 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         plt.savefig( "fig1.eps",bbox_inches='tight',pad_inches=0.02  )
         return
     mya=np.arange(-1,1,0.001)
+    mya1 = np.arange(-1,1+0.001,0.001)
     rhor = 1+(1-mya**2)**0.5
     myomh = mya / 2/ rhor
     #fitting function
@@ -6698,7 +6700,7 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     lphi,=ax1.plot(mya,f*unitsfactor,'k:',label=r'$\phi_{\rm fit}$',lw=2) #=2.9(1-0.6 \Omega_{\rm H})
     lphi.set_dashes([2,3,2,3])
     #ax1.plot(alist,y1*unitsfactor,'o',label=r'$\langle\phi^2\!\rangle^{1/2}$',mfc='r')
-    ax1.errorbar(u_alist,u_philist,yerr=2*u_phistdlist,label=r'$\langle\phi^2\!\rangle^{1/2}$',mfc='r',ecolor='r',fmt='o',lw=2,elinewidth=1,mew=1)
+    ax1.errorbar(u_alist,u_philist,yerr=2*u_phistdlist,label=r'$\langle\phi^2\!\rangle^{1/2}$',mec='r',mfc='none',ecolor='r',fmt='o',lw=2,elinewidth=2,mew=1)  #,mfc='none',ecolor='r',fmt='o',lw=2,elinewidth=1,mew=1)
     # plt.plot(mya,(250+0*mya)*rhor) 
     # plt.plot(mya,250./((3./(mya**2 + 3*rhor**2))**2*2*rhor**2)) 
     #plt.plot(mya,((mya**2+3*rhor**2)/3)**2/(2/rhor)) 
@@ -6743,7 +6745,8 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     # print eta_popt
     #eta_func=np.poly1d(eta_popt)    
     slopes_etafunc = pchip_init(u_alist,100*u_etalist)
-    eta_func = lambda xvec: pchip_eval(u_alist, 100*u_etalist, slopes_etafunc, xvec) 
+    #eta_func = lambda xvec: pchip_eval(u_alist, 100*u_etalist, slopes_etafunc, xvec) 
+    eta_func = interp1d(mya1,pchip_eval(u_alist, 100*u_etalist, slopes_etafunc, mya1),bounds_error=False)
     #eta_func=np.poly1d(z)    
     # eta_func2=poly1dt(z)    
     ltot,=plt.plot(mya,eta_func(mya),'r-',lw=2)
@@ -6752,8 +6755,11 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     # plt.plot(myspina6,4.4305+130*(myomh6/omegah_compute(0.9))**2-30*(myomh6/omegah_compute(0.9))**4,'k--',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$',lw=2)
     # plt.plot(myspina6,95*(np.abs(omegah_compute(myspina6))/omegah_compute(0.9))**2+5,'k:',label=r'$100(a/0.9)^2$',lw=2)
     #plt.plot(u_alist,100*u_etalist,'o',label=r'$\eta$',mfc='r',lw=2)
-    ax2.errorbar(u_alist,100*u_etalist,yerr=2*100*u_etastdlist,label=r'$\eta$',mec='r',mfc='none',ecolor='r',fmt='o',lw=2,elinewidth=1,mew=1)
+    ax2.errorbar(u_alist,100*u_etalist,yerr=2*100*u_etastdlist,mec='r',mfc='none',ecolor='r',fmt='o',lw=2,elinewidth=2,mew=1,color='r')
+    #fake plot call: move it out of plot bounds but use it to populate legend info
+    ax2.errorbar(u_alist-10,100*u_etalist,yerr=2*100*u_etastdlist,label=r'$\eta$',mec='r',mfc='none',ecolor='r',fmt='o',lw=2,elinewidth=2,mew=1,color='r',ls='-')
     plt.ylim(-10,160-1e-5)
+    plt.xlim(-1,1)
     plt.grid()
     # plt.setp( ax2.get_xticklabels(), visible=False )
     plt.ylabel(r"$\eta\  [\%]$",fontsize='x-large',ha='center',labelpad=12)
@@ -6779,8 +6785,8 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     #col=(0.93333333,  0.60980392,  0.93333333,0.75) #(0.8,0.52,0.25,0.4)
     if dofill:
         ax3.fill_between(myspina6,newy1,newy2,where=newy1>newy2,facecolor=col,edgecolor=col)  #(0.8,1,0.8,1)
-    l,=ax3.plot(myspina6,0.85*100*fac*myeta6,'k--',lw=2,label=r'$0.85\eta_{\rm BZ6}(\phi_{\rm fit})$' )
-    l.set_dashes([10,5])
+    l,=ax3.plot(myspina6,0.85*100*fac*myeta6,'k:',lw=2,label=r'$0.85\eta_{\rm BZ6}(\phi_{\rm fit})$' )
+    #l.set_dashes([2,3,2,3]) #set_dashes([2,3,2,8,2,3,2,6]) #set_dashes([10,5])
     #plt.plot(myspina6,myeta6,'r:',label=r'$\eta_{\rm BZ,6}$')
     #plt.plot(alist,100*etajetlist,'gs',label=r'$\eta_{\rm jet}$',lw=2)
     if False:
@@ -6793,7 +6799,10 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         sigma = u_eta_s_jet_stdlist
         etaws = u_eta_s_wind_list
         etasigma = u_eta_s_wind_stdlist
-    ax3.errorbar(u_alist,100*etajs,yerr=2*100*sigma,label=r'$\eta_{\rm jet}$',mec='g',mfc='none',ecolor='g',fmt='s',lw=2,elinewidth=1,mew=1,zorder=20)
+    ax3.errorbar(u_alist,100*etajs,yerr=2*100*sigma,mec='g',mfc='none',ecolor='g',fmt='s',lw=2,elinewidth=2,mew=1,zorder=20)
+    #fake plot call: move it out of plot bounds but use it to populate legend info
+    ljfake=ax3.errorbar(u_alist-10,100*etajs,yerr=2*100*sigma,label=r'$\eta_{\rm jet}$',mec='g',mfc='none',ecolor='g',fmt='s',lw=2,elinewidth=2,mew=1,zorder=20,ls='-')
+    ljfake[0].set_dashes([10,5])
     #sigma[2]*=100
     #sigma[4]*=100
     #sigma[5]*=100
@@ -6813,7 +6822,8 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     #etajet_func=InterpolatedUnivariateSpline(u_alist,100*etajs,k=3)
     #create the pchip slopes slopes and interpolate
     slopes_jetfunc = pchip_init(u_alist,100*etajs)
-    etajet_func = lambda xvec: pchip_eval(u_alist, 100*etajs, slopes_jetfunc, xvec) 
+    #etajet_func = lambda xvec: pchip_eval(u_alist, 100*etajs, slopes_jetfunc, xvec) 
+    etajet_func = interp1d(mya1,pchip_eval(u_alist, 100*etajs, slopes_jetfunc, mya1),bounds_error=False)
     #etajet_func = lambda xvec: do_herm_interp(u_alist,100*etajs, xvec) 
     if False:
         etawind_polycoef,etawind_pconv = curve_fit(lambda x,a3,a2,a1,a0: poly1d([a3,a2,a1,a0])(x),u_alist,100*etaws,sigma=100*etasigma)
@@ -6823,20 +6833,25 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         etawind_func = lambda a: eta_func(a)-etajet_func(a)
     else:
         slopes_windfunc = pchip_init(u_alist,100*etaws)
-        etawind_func = lambda xvec: pchip_eval(u_alist, 100*etaws, slopes_windfunc, xvec) 
+        #etawind_func = lambda xvec: pchip_eval(u_alist, 100*etaws, slopes_windfunc, xvec) 
+        etawind_func = interp1d(mya1,pchip_eval(u_alist, 100*etaws, slopes_windfunc, mya1),bounds_error=False)
     #etajet_func=lambda a: eta_func(a) - etawind_func(a)
     #pdb.set_trace()
-    lj,=ax3.plot(mya,etajet_func(mya),"g:",lw=2,zorder=0)
+    lj,=ax3.plot(mya1,etajet_func(mya1),"g:",lw=2,zorder=20)
     #lj.set_dashes([2,3,2,3])
     lj.set_dashes([10,5])
-    lw,=ax3.plot(mya,etawind_func(mya),"b:",lw=2)
-    lw.set_dashes([2,3,2,8,2,3,2,6])
+    lw,=ax3.plot(mya1,etawind_func(mya1),"b:",lw=2)
+    lw.set_dashes([10,3,2,3])
+    # lw.set_dashes([2,3,2,8,2,3,2,6])
     #plt.plot(alist,100*etaEMlist,'rx',label=r'$\eta_{\rm jet}$')
     #plt.plot(alist,100*etawindlist,'bv',label=r'$\eta_{\rm wind}$')
-    ax3.errorbar(u_alist,100*etaws,yerr=2*100*etasigma,label=r'$\eta_{\rm wind}$',mfc='b',ecolor='b',color='b',fmt='.',lw=2,elinewidth=1,mew=1)
+    ax3.errorbar(u_alist,100*etaws,yerr=2*100*etasigma,mfc='b',ecolor='b',color='b',fmt='.',lw=2,elinewidth=2,mew=1)
+    #fake plot call: move it out of plot bounds but use it to populate legend info
+    lwfake=ax3.errorbar(u_alist-10,100*etaws,yerr=2*100*etasigma,label=r'$\eta_{\rm wind}$',mfc='b',ecolor='b',color='b',fmt='.',lw=2,elinewidth=2,mew=1,ls=':')
+    lwfake[0].set_dashes([10,3,2,3])
     #plt.plot(myspina6,100*fac*myeta6,'k-',lw=2) #,label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$' )
+    plt.xlim(-1,1)
     plt.ylim(-10,160-1e-5)
-    #plt.yscale('log')
     plt.grid()
     plt.legend(ncol=1,loc='upper center',frameon=True,labelspacing=0.0,borderpad=0.2)
     plt.xlabel(r"$a$",fontsize='x-large')
@@ -6859,8 +6874,8 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     x=(0.07,0.07)
     y=(-10,10)
     plt.plot(x,y,color='red',lw=4,alpha=0.3)
-    l,=plt.plot(mya,sparthin(mya),'g-.',lw=2,label=r"$s_{\rm NT}$")
-    l.set_dashes([10,3,2,3])
+    l,=plt.plot(mya,sparthin(mya),'c-.',lw=2,label=r"$s_{\rm NT}$")
+    l.set_dashes([10,3,2,3,2,3])
     if doanalytic:
         #to show "analytic" rought approximation of Ramesh
         plt.plot(mya,sparthin(0)*(1-mya),'k-',lw=1)
@@ -6874,18 +6889,20 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         spar_func=np.poly1d(spar_polyfit)
         print spar_polyfit
     else:
-        mya1 = np.arange(-1,1+0.001,0.001)
         slopes_sparfunc = pchip_init(u_alist,u_sparlist)
         spar_func = interp1d(mya1,pchip_eval(u_alist, u_sparlist, slopes_sparfunc, mya1),bounds_error=False)
     # spar_func2=poly1dt(spar_polyfit)
-    lspar,=plt.plot(mya,spar_func(mya),'k:',lw=2)
-    lspar.set_dashes([2,3,2,3])
-    ax4.errorbar(u_alist,u_sparlist,yerr=2*u_sparstdlist,label=r"$s_{\rm MAD}$",mfc='r',ecolor='r',fmt='o',color='r',lw=2,elinewidth=1,mew=1)
+    lspar,=plt.plot(mya,spar_func(mya),'r-',lw=2)
+    # lspar.set_dashes([2,3,2,3])
+    ax4.errorbar(u_alist,u_sparlist,yerr=2*u_sparstdlist,mec='r',mfc='none',ecolor='r',fmt='o',color='r',lw=2,elinewidth=2,mew=1)
+    #fake plot call: move it out of plot bounds but use it to populate legend info
+    ax4.errorbar(u_alist-100,u_sparlist-100,yerr=2*u_sparstdlist,label=r"$s_{\rm MAD}$",mec='r',mfc='none',ecolor='r',fmt='o',color='r',ls='-',lw=2,elinewidth=2,mew=1)
     if doanalytic:
         #to show "analytic" rought approximation of Ramesh
         plt.plot(mya,-8*mya,'k-',lw=1)
     #plt.plot(alist[:9],sparlist[:9],'ro-',lw=2,label=r"$s_{\rm MAD}$")
     plt.text(x[0]+0.02,7,r"$a_{\rm eq}^{\rm Sim}\!\approx0.07$",va="center",ha="left",fontsize=16,color="red",alpha=1)
+    plt.xlim(-1,1)
     plt.ylim(-10,10)
     plt.grid()
     plt.ylabel(r"$s$", fontsize='x-large',ha='center',labelpad=9) # = (\dot F_L/M - 2 a \dot F_E)/\dot F_M
@@ -6931,13 +6948,13 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     # plt.plot(mya,myomh)
     # plt.plot(mspina2[mhor2==hor],momh2[mhor2==hor])
     #
-    plt.figure(4,figsize=(4,5),dpi=100)
+    plt.figure(4,figsize=(4,5*4./3.),dpi=100)
     plt.clf()
     a0 = -1
     plot_spindown(a0,spar_func=spar_func,eta_func=eta_func,etajet_func=etajet_func,etawind_func=etawind_func,fntsize=16)
     plt.savefig("retrospindown.pdf")
     #
-    plt.figure(5,figsize=(4,5),dpi=100)
+    plt.figure(5,figsize=(4,5*4./3.),dpi=100)
     plt.clf()
     a0 = 1
     plot_spindown(a0,spar_func=spar_func,eta_func=eta_func,etajet_func=etajet_func,etawind_func=etawind_func,fntsize=16)
@@ -6952,11 +6969,11 @@ def plot_spindown(a0,spar_func=None,eta_func=None,etajet_func=None,etawind_func=
         return
     t=np.linspace(0,1,num=10000)
     #plotting
-    gs = GridSpec(3, 3)
-    gs.update(left=0.15, right=0.98, top=0.95, bottom=0.1, wspace=0.25, hspace=0.08)
+    gs = GridSpec(4, 4)
+    gs.update(left=0.17, right=0.99, top=0.95, bottom=0.06, wspace=0.25, hspace=0.08)
     ax1=plt.subplot(gs[0,:])
     ax2=plt.subplot(gs[1,:])
-    ax3=plt.subplot(gs[2,:])
+    ax3=plt.subplot(gs[2:4,:])
     aeq = brentq(spar_func,-1,1)
     print("Equilibrium spin: %g" % aeq)
     #initial value
@@ -6997,20 +7014,21 @@ def plot_spindown(a0,spar_func=None,eta_func=None,etajet_func=None,etawind_func=
     lj.set_dashes([10,5])
     #lj.set_dashes([10,3,2,3])
     lw,=ax3.plot(t,etawind_func(a_of_t_func(t)),"b:",lw=2,label=r"$\eta_{\rm wind}$")   #,label=r"${\rm Wind\ efficiency,}\ \eta_{\rm wind}$"
-    lw.set_dashes([2,3,2,8,2,3,2,6])
+    lw.set_dashes([10,3,2,3])
+    #lw.set_dashes([2,3,2,8,2,3,2,6])
     #lw.set_dashes([10,3,2,3])
     ax3.set_xlabel(r"$t/\tau$",fontsize=fntsize,va="bottom",labelpad=15)
     leg2=ax3.legend(loc="lower left",frameon=True,labelspacing=0.15,ncol=1,borderpad = 0.1,borderaxespad=0.4,handlelength=2.2,columnspacing=0.15,handletextpad=0.1,fancybox=True)
     if a0 > 0:
-        ax3.set_ylabel(r"$\eta$",ha="right",fontsize=fntsize)
+        ax3.set_ylabel(r"$\eta\ [\%]$",ha="right",labelpad=0,fontsize=fntsize)
         ax3.set_yticks(np.arange(0,200,50))
         ax3.set_ylim(0,150)
     else:
-        ax3.set_ylabel(r"$\eta$",ha="right",labelpad=12,fontsize=fntsize)
+        ax3.set_ylabel(r"$\eta\ [\%]$",ha="right",labelpad=0,fontsize=fntsize)
         ax3.set_yticks(np.arange(0,60,10))
         ax3.set_ylim(0,50)
     ax3.set_yscale('log')
-    ax3.set_ylim(0.001,150)
+    ax3.set_ylim(0.001,200)
     #plt.plot(t,rhor_compute(a_of_t))
     ax1.grid(visible=True)
     ax2.grid(visible=True)
