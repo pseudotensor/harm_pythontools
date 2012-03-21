@@ -2745,6 +2745,74 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None,docomp
             gdetF30=None
             gdetF31=None
             gdetF32=None
+        if i < qtymem.shape[0]:
+            print( "Allocating memory for magnetically unbound outflow" )
+            pjem_n_all_mu10=qtymem[i];i+=1
+            pjem_n_all_mu5=qtymem[i];i+=1
+            pjem_n_all_mu2=qtymem[i];i+=1
+            pjem_n_all_mu1=qtymem[i];i+=1
+            pjrm_n_all_mu10=qtymem[i];i+=1
+            pjrm_n_all_mu5=qtymem[i];i+=1
+            pjrm_n_all_mu2=qtymem[i];i+=1
+            pjrm_n_all_mu1=qtymem[i];i+=1
+            pjma_n_all_mu10=qtymem[i];i+=1
+            pjma_n_all_mu5=qtymem[i];i+=1
+            pjma_n_all_mu2=qtymem[i];i+=1
+            pjma_n_all_mu1=qtymem[i];i+=1
+            phiabsj_n_all_mu10=qtymem[i];i+=1
+            phiabsj_n_all_mu5=qtymem[i];i+=1
+            phiabsj_n_all_mu2=qtymem[i];i+=1
+            phiabsj_n_all_mu1=qtymem[i];i+=1
+            pjem_s_all_mu10=qtymem[i];i+=1
+            pjem_s_all_mu5=qtymem[i];i+=1
+            pjem_s_all_mu2=qtymem[i];i+=1
+            pjem_s_all_mu1=qtymem[i];i+=1
+            pjrm_s_all_mu10=qtymem[i];i+=1
+            pjrm_s_all_mu5=qtymem[i];i+=1
+            pjrm_s_all_mu2=qtymem[i];i+=1
+            pjrm_s_all_mu1=qtymem[i];i+=1
+            pjma_s_all_mu10=qtymem[i];i+=1
+            pjma_s_all_mu5=qtymem[i];i+=1
+            pjma_s_all_mu2=qtymem[i];i+=1
+            pjma_s_all_mu1=qtymem[i];i+=1
+            phiabsj_s_all_mu10=qtymem[i];i+=1
+            phiabsj_s_all_mu5=qtymem[i];i+=1
+            phiabsj_s_all_mu2=qtymem[i];i+=1
+            phiabsj_s_all_mu1=qtymem[i];i+=1
+        else:
+            print( "Oldish format: no magnetically unbound outflow info" )
+            pjem_n_all_mu10=None
+            pjem_n_all_mu5=None
+            pjem_n_all_mu2=None
+            pjem_n_all_mu1=None
+            pjrm_n_all_mu10=None
+            pjrm_n_all_mu5=None
+            pjrm_n_all_mu2=None
+            pjrm_n_all_mu1=None
+            pjma_n_all_mu10=None
+            pjma_n_all_mu5=None
+            pjma_n_all_mu2=None
+            pjma_n_all_mu1=None
+            phiabsj_n_all_mu10=None
+            phiabsj_n_all_mu5=None
+            phiabsj_n_all_mu2=None
+            phiabsj_n_all_mu1=None
+            pjem_s_all_mu10=None
+            pjem_s_all_mu5=None
+            pjem_s_all_mu2=None
+            pjem_s_all_mu1=None
+            pjrm_s_all_mu10=None
+            pjrm_s_all_mu5=None
+            pjrm_s_all_mu2=None
+            pjrm_s_all_mu1=None
+            pjma_s_all_mu10=None
+            pjma_s_all_mu5=None
+            pjma_s_all_mu2=None
+            pjma_s_all_mu1=None
+            phiabsj_s_all_mu10=None
+            phiabsj_s_all_mu5=None
+            phiabsj_s_all_mu2=None
+            phiabsj_s_all_mu1=None
     else:
         print( "Oldish format: missing north/south jet power and flux" )
         sys.stdout.flush()
@@ -2781,6 +2849,38 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None,docomp
         phiabsj_s_mu2=None
         phiabsj_s_mu1=None
         ldtot=None
+        pjem_n_all_mu10=None
+        pjem_n_all_mu5=None
+        pjem_n_all_mu2=None
+        pjem_n_all_mu1=None
+        pjrm_n_all_mu10=None
+        pjrm_n_all_mu5=None
+        pjrm_n_all_mu2=None
+        pjrm_n_all_mu1=None
+        pjma_n_all_mu10=None
+        pjma_n_all_mu5=None
+        pjma_n_all_mu2=None
+        pjma_n_all_mu1=None
+        phiabsj_n_all_mu10=None
+        phiabsj_n_all_mu5=None
+        phiabsj_n_all_mu2=None
+        phiabsj_n_all_mu1=None
+        pjem_s_all_mu10=None
+        pjem_s_all_mu5=None
+        pjem_s_all_mu2=None
+        pjem_s_all_mu1=None
+        pjrm_s_all_mu10=None
+        pjrm_s_all_mu5=None
+        pjrm_s_all_mu2=None
+        pjrm_s_all_mu1=None
+        pjma_s_all_mu10=None
+        pjma_s_all_mu5=None
+        pjma_s_all_mu2=None
+        pjma_s_all_mu1=None
+        phiabsj_s_all_mu10=None
+        phiabsj_s_all_mu5=None
+        phiabsj_s_all_mu2=None
+        phiabsj_s_all_mu1=None
     if dobob == 1:
         print "Total number of quantities: %d+134 = %d" % (i, i+134)
     else:
@@ -2980,6 +3080,40 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None,docomp
                 gdetF30[findex]=intangle(gdetF[3][0])
                 gdetF31[findex]=intangle(gdetF[3][1])
                 gdetF32[findex]=intangle(gdetF[3][2])
+            if pjem_n_all_mu10 is not None:
+                pjem_n_all_mu10[findex]=jetpowcalc(0,minmu=10,donorthsouth=1,excludebound=False)
+                pjem_n_all_mu5[findex]=jetpowcalc(0,minmu=5,donorthsouth=1,excludebound=False)
+                pjem_n_all_mu2[findex]=jetpowcalc(0,minmu=2,donorthsouth=1,excludebound=False)
+                pjem_n_all_mu1[findex]=jetpowcalc(0,minmu=1,donorthsouth=1,excludebound=False)
+                pjrm_n_all_mu10[findex]=jetpowcalc(3,minmu=10,donorthsouth=1,excludebound=False)
+                pjrm_n_all_mu5[findex]=jetpowcalc(3,minmu=5,donorthsouth=1,excludebound=False)
+                pjrm_n_all_mu2[findex]=jetpowcalc(3,minmu=2,donorthsouth=1,excludebound=False)
+                pjrm_n_all_mu1[findex]=jetpowcalc(3,minmu=1,donorthsouth=1,excludebound=False)
+                pjma_n_all_mu10[findex]=jetpowcalc(1,minmu=10,donorthsouth=1,excludebound=False)
+                pjma_n_all_mu5[findex]=jetpowcalc(1,minmu=5,donorthsouth=1,excludebound=False)
+                pjma_n_all_mu2[findex]=jetpowcalc(1,minmu=2,donorthsouth=1,excludebound=False)
+                pjma_n_all_mu1[findex]=jetpowcalc(1,minmu=1,donorthsouth=1,excludebound=False)
+                phiabsj_n_all_mu10[findex]=jetpowcalc(4,minmu=10,donorthsouth=1,excludebound=False)
+                phiabsj_n_all_mu5[findex]=jetpowcalc(4,minmu=5,donorthsouth=1,excludebound=False)
+                phiabsj_n_all_mu2[findex]=jetpowcalc(4,minmu=2,donorthsouth=1,excludebound=False)
+                phiabsj_n_all_mu1[findex]=jetpowcalc(4,minmu=1,donorthsouth=1,excludebound=False)
+                #south hemisphere
+                pjem_s_all_mu10[findex]=jetpowcalc(0,minmu=10,donorthsouth=-1,excludebound=False)
+                pjem_s_all_mu5[findex]=jetpowcalc(0,minmu=5,donorthsouth=-1,excludebound=False)
+                pjem_s_all_mu2[findex]=jetpowcalc(0,minmu=2,donorthsouth=-1,excludebound=False)
+                pjem_s_all_mu1[findex]=jetpowcalc(0,minmu=1,donorthsouth=-1,excludebound=False)
+                pjrm_s_all_mu10[findex]=jetpowcalc(3,minmu=10,donorthsouth=-1,excludebound=False)
+                pjrm_s_all_mu5[findex]=jetpowcalc(3,minmu=5,donorthsouth=-1,excludebound=False)
+                pjrm_s_all_mu2[findex]=jetpowcalc(3,minmu=2,donorthsouth=-1,excludebound=False)
+                pjrm_s_all_mu1[findex]=jetpowcalc(3,minmu=1,donorthsouth=-1,excludebound=False)
+                pjma_s_all_mu10[findex]=jetpowcalc(1,minmu=10,donorthsouth=-1,excludebound=False)
+                pjma_s_all_mu5[findex]=jetpowcalc(1,minmu=5,donorthsouth=-1,excludebound=False)
+                pjma_s_all_mu2[findex]=jetpowcalc(1,minmu=2,donorthsouth=-1,excludebound=False)
+                pjma_s_all_mu1[findex]=jetpowcalc(1,minmu=1,donorthsouth=-1,excludebound=False)
+                phiabsj_s_all_mu10[findex]=jetpowcalc(4,minmu=10,donorthsouth=-1,excludebound=False)
+                phiabsj_s_all_mu5[findex]=jetpowcalc(4,minmu=5,donorthsouth=-1,excludebound=False)
+                phiabsj_s_all_mu2[findex]=jetpowcalc(4,minmu=2,donorthsouth=-1,excludebound=False)
+                phiabsj_s_all_mu1[findex]=jetpowcalc(4,minmu=1,donorthsouth=-1,excludebound=False)
         #Bob's 1D quantities
         if dobob==1:
                 dVF=_dx1*_dx2*_dx3
@@ -3289,7 +3423,7 @@ def faraday():
     #
 
 
-def jetpowcalc(which=2,minbsqorho=10,minmu=None,donorthsouth=0):
+def jetpowcalc(which=2,minbsqorho=10,minmu=None,donorthsouth=0,excludebound=True):
     if which==0:
         jetpowden = -gdet*TudEM[1,0]
     if which==1:
@@ -3310,7 +3444,8 @@ def jetpowcalc(which=2,minbsqorho=10,minmu=None,donorthsouth=0):
         #zero out outside jet (cut out low magnetization region)
         cond=(mu<minmu)
         #zero out bound region
-        cond+=(1-isunbound)
+        if excludebound:
+            cond+=(1-isunbound)
         #zero out infalling region
         cond+=(uu[1]<=0.0)
         # 1 = north
@@ -3601,15 +3736,6 @@ def plotqtyvstime(qtymem,ihor=None,whichplot=None,ax=None,findex=None,fti=None,f
             else:
                 print( "Oldish format: missing ldtot" )
                 ldtot=None
-            #derived
-            pjke_n_mu2 = pjem_n_mu2 + pjma_n_mu2 - pjrm_n_mu2
-            pjke_s_mu2 = pjem_s_mu2 + pjma_s_mu2 - pjrm_s_mu2
-            pjke_mu2 = pjke_n_mu2 + pjke_s_mu2
-            pjke_n_mu1 = pjem_n_mu1 + pjma_n_mu1 - pjrm_n_mu1
-            pjke_s_mu1 = pjem_s_mu1 + pjma_s_mu1 - pjrm_s_mu1
-            pjke_mu1 = pjke_n_mu1 + pjke_s_mu1
-            phiabsj_mu2 = phiabsj_n_mu2 + phiabsj_s_mu2
-            phiabsj_mu1 = phiabsj_n_mu1 + phiabsj_s_mu1
             if i < qtymem.shape[0]:
                 print( "Assigning gdetF's in plotqtyvstime()" )
                 gdetF10=qtymem[i];i+=1
@@ -3632,6 +3758,102 @@ def plotqtyvstime(qtymem,ihor=None,whichplot=None,ax=None,findex=None,fti=None,f
                 gdetF30=gdetF10
                 gdetF31=gdetF10
                 gdetF32=gdetF10
+            if i < qtymem.shape[0]:
+                pjem_n_all_mu10=qtymem[i];i+=1
+                pjem_n_all_mu5=qtymem[i];i+=1
+                pjem_n_all_mu2=qtymem[i];i+=1
+                pjem_n_all_mu1=qtymem[i];i+=1
+                pjrm_n_all_mu10=qtymem[i];i+=1
+                pjrm_n_all_mu5=qtymem[i];i+=1
+                pjrm_n_all_mu2=qtymem[i];i+=1
+                pjrm_n_all_mu1=qtymem[i];i+=1
+                pjma_n_all_mu10=qtymem[i];i+=1
+                pjma_n_all_mu5=qtymem[i];i+=1
+                pjma_n_all_mu2=qtymem[i];i+=1
+                pjma_n_all_mu1=qtymem[i];i+=1
+                phiabsj_n_all_mu10=qtymem[i];i+=1
+                phiabsj_n_all_mu5=qtymem[i];i+=1
+                phiabsj_n_all_mu2=qtymem[i];i+=1
+                phiabsj_n_all_mu1=qtymem[i];i+=1
+                #south hemisphere
+                pjem_s_all_mu10=qtymem[i];i+=1
+                pjem_s_all_mu5=qtymem[i];i+=1
+                pjem_s_all_mu2=qtymem[i];i+=1
+                pjem_s_all_mu1=qtymem[i];i+=1
+                pjrm_s_all_mu10=qtymem[i];i+=1
+                pjrm_s_all_mu5=qtymem[i];i+=1
+                pjrm_s_all_mu2=qtymem[i];i+=1
+                pjrm_s_all_mu1=qtymem[i];i+=1
+                pjma_s_all_mu10=qtymem[i];i+=1
+                pjma_s_all_mu5=qtymem[i];i+=1
+                pjma_s_all_mu2=qtymem[i];i+=1
+                pjma_s_all_mu1=qtymem[i];i+=1
+                phiabsj_s_all_mu10=qtymem[i];i+=1
+                phiabsj_s_all_mu5=qtymem[i];i+=1
+                phiabsj_s_all_mu2=qtymem[i];i+=1
+                phiabsj_s_all_mu1=qtymem[i];i+=1
+            else:
+                pjem_n_all_mu10=None
+                pjem_n_all_mu5=None
+                pjem_n_all_mu2=None
+                pjem_n_all_mu1=None
+                pjrm_n_all_mu10=None
+                pjrm_n_all_mu5=None
+                pjrm_n_all_mu2=None
+                pjrm_n_all_mu1=None
+                pjma_n_all_mu10=None
+                pjma_n_all_mu5=None
+                pjma_n_all_mu2=None
+                pjma_n_all_mu1=None
+                phiabsj_n_all_mu10=None
+                phiabsj_n_all_mu5=None
+                phiabsj_n_all_mu2=None
+                phiabsj_n_all_mu1=None
+                #south hemisphere
+                pjem_s_all_mu10=None
+                pjem_s_all_mu5=None
+                pjem_s_all_mu2=None
+                pjem_s_all_mu1=None
+                pjrm_s_all_mu10=None
+                pjrm_s_all_mu5=None
+                pjrm_s_all_mu2=None
+                pjrm_s_all_mu1=None
+                pjma_s_all_mu10=None
+                pjma_s_all_mu5=None
+                pjma_s_all_mu2=None
+                pjma_s_all_mu1=None
+                phiabsj_s_all_mu10=None
+                phiabsj_s_all_mu5=None
+                phiabsj_s_all_mu2=None
+                phiabsj_s_all_mu1=None
+            #derived
+            pjke_n_mu2 = pjem_n_mu2 + pjma_n_mu2 - pjrm_n_mu2
+            pjke_s_mu2 = pjem_s_mu2 + pjma_s_mu2 - pjrm_s_mu2
+            pjke_mu2 = pjke_n_mu2 + pjke_s_mu2
+            pjke_n_mu1 = pjem_n_mu1 + pjma_n_mu1 - pjrm_n_mu1
+            pjke_s_mu1 = pjem_s_mu1 + pjma_s_mu1 - pjrm_s_mu1
+            pjke_mu1 = pjke_n_mu1 + pjke_s_mu1
+            phiabsj_mu2 = phiabsj_n_mu2 + phiabsj_s_mu2
+            phiabsj_mu1 = phiabsj_n_mu1 + phiabsj_s_mu1
+            #magnetically unbound
+            if pjem_n_all_mu10 is not None:
+                pjke_n_all_mu2 = pjem_n_all_mu2 + pjma_n_all_mu2 - pjrm_n_all_mu2
+                pjke_s_all_mu2 = pjem_s_all_mu2 + pjma_s_all_mu2 - pjrm_s_all_mu2
+                pjke_all_mu2 = pjke_n_all_mu2 + pjke_s_all_mu2
+                pjke_n_all_mu1 = pjem_n_all_mu1 + pjma_n_all_mu1 - pjrm_n_all_mu1
+                pjke_s_all_mu1 = pjem_s_all_mu1 + pjma_s_all_mu1 - pjrm_s_all_mu1
+                pjke_all_mu1 = pjke_n_all_mu1 + pjke_s_all_mu1
+                phiabsj_all_mu2 = phiabsj_n_all_mu2 + phiabsj_s_all_mu2
+                phiabsj_all_mu1 = phiabsj_n_all_mu1 + phiabsj_s_all_mu1
+            else:
+                pjke_n_all_mu2 = None
+                pjke_s_all_mu2 = None
+                pjke_all_mu2 = None
+                pjke_n_all_mu1 = None
+                pjke_s_all_mu1 = None
+                pjke_all_mu1 = None
+                phiabsj_all_mu2 = None
+                phiabsj_all_mu1 = None
         else:
             print( "Oldish format: missing north/south jet power and flux" )
             sys.stdout.flush()
