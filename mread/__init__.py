@@ -7015,7 +7015,7 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     #l.set_dashes([2,3,2,3]) #set_dashes([2,3,2,8,2,3,2,6]) #set_dashes([10,5])
     #plt.plot(myspina6,myeta6,'r:',label=r'$\eta_{\rm BZ,6}$')
     #plt.plot(alist,100*etajetlist,'gs',label=r'$\eta_{\rm jet}$',lw=2)
-    if False:
+    if True:
         etajs = u_etajetlist
         etaws = u_etawindlist
         sigma=u_etajetstdlist
@@ -7023,7 +7023,7 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     else:
         etajs = u_eta_s_jet_list
         sigma = u_eta_s_jet_stdlist
-        etaws = u_eta_s_wind_list
+        etaws = u_eta_s_wind_unb_list #u_eta_s_wind_list
         etasigma = u_eta_s_wind_stdlist
     ax3.errorbar(u_alist,100*etajs,yerr=2*100*sigma,mec='g',mfc='none',ecolor='g',fmt='s',lw=2,elinewidth=2,mew=1,zorder=20)
     #fake plot call: move it out of plot bounds but use it to populate legend info
@@ -7076,6 +7076,9 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     lwfake=ax3.errorbar(u_alist-10,100*etaws,yerr=2*100*etasigma,label=r'$\eta_{\rm wind}$',mfc='b',ecolor='b',color='b',fmt='.',lw=2,elinewidth=2,mew=1,ls=':')
     lwfake[0].set_dashes([10,3,2,3])
     #plt.plot(myspina6,100*fac*myeta6,'k-',lw=2) #,label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$' )
+    if True:
+        myapos = np.arange(0,0.99+0.001,0.001)
+        ax3.plot(myapos,100*0.002/(1-np.abs(myapos)),'r',label=r"$\eta_{\rm HK06}$")
     plt.xlim(-1,1)
     plt.ylim(-10,160-1e-5)
     plt.grid()
@@ -7123,6 +7126,9 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     ax4.errorbar(u_alist,u_sparlist,yerr=2*u_sparstdlist,mec='r',mfc='none',ecolor='r',fmt='o',color='r',lw=2,elinewidth=2,mew=1)
     #fake plot call: move it out of plot bounds but use it to populate legend info
     ax4.errorbar(u_alist-100,u_sparlist-100,yerr=2*u_sparstdlist,label=r"$s_{\rm MAD}$",mec='r',mfc='none',ecolor='r',fmt='o',color='r',ls='-',lw=2,elinewidth=2,mew=1)
+    #rough analytic solution
+    aeq = brentq(spar_func,-1,1)
+    plt.plot(mya,-12*(mya-aeq),'k:',lw=2,label=r"$s_{\rm approx}$")
     if doanalytic:
         #to show "analytic" rought approximation of Ramesh
         plt.plot(mya,-8*mya,'k-',lw=1)
@@ -7210,6 +7216,11 @@ def plot_spindown(a0,spar_func=None,eta_func=None,etajet_func=None,etawind_func=
     a_of_t = odeint(lambda a,t: spar_func(a),a0,t)[:,0]
     a_of_t_func=interp1d(t,a_of_t,bounds_error=False)
     ax1.plot(t,a_of_t_func(t),"k-",lw=2)
+    #ax1.plot(t,np.abs(a0*exp(-9*t)),"k:",lw=2)
+    ax1.plot(t,np.abs((a0-aeq)*exp(-12*t)+aeq),"k:",lw=2)
+    # ax1.plot(t,np.abs(a0*exp(-12*t)),"k:",lw=2)
+    la,=ax1.plot(t,-a_of_t_func(t),"k--",lw=2)
+    la.set_dashes([10,5])
     lspar,=ax1.plot(t,t*0+aeq,"k:",lw=2)
     lspar.set_dashes([2,3,2,3])
     if a0 > 0:
@@ -7218,10 +7229,12 @@ def plot_spindown(a0,spar_func=None,eta_func=None,etajet_func=None,etawind_func=
     else:
         ax1.set_ylabel(r"$a$",ha="right",labelpad=0,fontsize=fntsize)
         ax1.set_ylim(-1.,0.2+1e-5)
-    ax1.text(0.07, 0.5*aeq, r"$a=a_{\rm eq}$", size=fntsize, rotation=0.,
+    ax1.text(0.07, 0.7*aeq, r"$a=a_{\rm eq}$", size=fntsize, rotation=0.,
          ha="center", va="top",
          color='k',weight='regular'
          )
+    ax1.set_ylim(0.01,1)
+    ax1.set_yscale('log')
     #initial value
     lnM0 = 0
     eta_func_interp = interp1d(t,eta_func(a_of_t_func(t)),kind='linear',bounds_error=False)
@@ -7254,7 +7267,7 @@ def plot_spindown(a0,spar_func=None,eta_func=None,etajet_func=None,etawind_func=
         ax3.set_yticks(np.arange(0,60,10))
         ax3.set_ylim(0,50)
     ax3.set_yscale('log')
-    ax3.set_ylim(0.001,200)
+    ax3.set_ylim(0.01,200)
     #plt.plot(t,rhor_compute(a_of_t))
     ax1.grid(visible=True)
     ax2.grid(visible=True)
@@ -10304,36 +10317,50 @@ def plotQmriavg(hor=None):
     resphi=Qmriavg(dir=3)
     plt.clf()
     #
-    gs3 = GridSpec(3, 3)
+    gs3 = GridSpec(4, 4)
     #gs3.update(left=0.05, right=0.95, top=0.30, bottom=0.03, wspace=0.01, hspace=0.04)
     #mdot
-    ax31 = plt.subplot(gs3[-3,:])
-    plt.plot(r[:,ny/2,0],res[:,ny/2,0],color="red",label=r"$\mathrm{Q1mri}_\theta$")
-    plt.plot(r[:,ny/2,0],10*(resphi*(np.abs(h-np.pi/2)<hor[:,None,None]))[:,:,0].mean(-1),color="blue",label=r"$10\!\times\mathrm{Q1mri}_\varphi$")
+    ax31 = plt.subplot(gs3[-4,:])
+    if False:
+        plt.plot(r[:,ny/2,0],res[:,ny/2,0]/100.,color="red",label=r"$\mathrm{Q1mri}_\theta/100$")
+    #plt.plot(r[:,ny/2,0],10*(resphi*(np.abs(h-np.pi/2)<hor[:,None,None]))[:,:,0].mean(-1),color="blue",label=r"$10\!\times\mathrm{Q1mri}_\varphi$")
     plt.xlim(rhor,30)
     if hor is not None:
         print( "Plotting Q2mri...")
         lambdamri = res*_dx2*dxdxp[2,2]
         Q2mri = 2*hor[:,None,None]/lambdamri
         #pdb.set_trace()
-        plt.plot(r[:,ny/2,0],Q2mri[:,ny/2,0]*100,color="green",label=r"$\mathrm{Q2mri\ [\%]}$")
-    plt.ylim(0,150)
+        plt.plot(r[:,ny/2,0],Q2mri[:,ny/2,0],color="green",label=r"$\lambda_{\rm MRI}/2h$")
+    plt.ylim(0,150./1e2)
     #plt.xlabel(r"$r\ [r_g]$",fontsize=16)
-    plt.ylabel("Q#mri",fontsize=16)
+    plt.ylabel(r"$\lambda_{\rm MRI}/2h$",fontsize=16)
     plt.grid()
     plt.legend(ncol=3,borderpad = 0.3,borderaxespad=0.2,frameon=False,labelspacing=0)
-    ax32 = plt.subplot(gs3[-2,:])
+    ax32 = plt.subplot(gs3[-3,:])
     vatheta = np.abs(avg_bu[2])/np.sqrt(avg_rho+avg_bsq+gam*avg_ug)*dxdxp[2,2]
-    plt.plot(r[:,ny/2,0],10*vatheta[:,ny/2,0],color="red",label=r"$10\!\times v_{\rm A}^{\theta}$")
+    omegak = 1/(a+r[:,0,0]**1.5)
+    #plt.plot(r[:,ny/2,0],10*vatheta[:,ny/2,0]/omegak,color="red",label=r"$10\!\times v_{\rm A}^{\theta}$")
     omega = (dxdxp[3][3]*np.abs(avg_uu[3])/avg_uu[0])
-    plt.plot(r[:,ny/2,0],omega[:,ny/2,0],color="green",label=r"$\Omega$")
+    plt.plot(r[:,ny/2,0],omega[:,ny/2,0]/omegak,color="green",label=r"$\Omega/\Omega_{\rm K}$")
     plt.xlim(rhor,30)
-    plt.ylim(1e-3,1)
-    plt.yscale("log")
+    plt.ylim(0.,1)
+    #plt.yscale("log")
     #plt.xlabel(r"$r\ [r_g]$",fontsize=16)
-    plt.ylabel(r"$v_{\rm A}^\theta, \Omega$",fontsize=16)
+    plt.ylabel(r"$\Omega/\Omega_{\rm K}$",fontsize=16)
     plt.grid()
-    plt.legend(ncol=2,borderpad = 0.1,borderaxespad=0.2,frameon=True,labelspacing=0)
+    plt.legend(loc="lower right", ncol=2,borderpad = 0.1,borderaxespad=0.2,frameon=True,labelspacing=0)
+    ax33 = plt.subplot(gs3[-2,:])
+    plt.plot(r[:,ny/2,0],((0.5*avg_bsq)/((gam-1)*avg_ug))[:,ny/2,0],color="blue",label=r"$p_{\rm mag}/p_{\rm gas}$")
+    plt.plot(r[:,ny/2,0],((0.5*avg_bsq)/(avg_rho))[:,ny/2,0],color="green",label=r"$p_{\rm mag}/\rho c^2$")
+    sigval = (gdet[:,:,0:1]*avg_rho*_dx2*_dx3*nz).sum(-1).sum(-1)/(2*np.pi*r[:,0,0])/dxdxp[1,1,:,0,0]
+    #plt.plot(r[:,ny/2,0],0.5*avg_bsq[:,ny/2,0]/(avg_rho[:,ny/2,0]*hor/r[:,0,0]),color="red",label=r"$p_{\rm mag}/(\rho h r^2)$")
+    plt.plot(r[:,ny/2,0],0.5*avg_bsq[:,ny/2,0]/(sigval/r[:,0,0]**2),color="red",label=r"$p_{\rm mag}r^2/\Sigma$")
+    plt.ylabel(r"$p_{\rm mag}/p$",fontsize=16)
+    plt.grid()
+    plt.xlim(rhor,30)
+    plt.ylim(0.001,20)
+    plt.yscale("log")
+    plt.legend(loc="upper right", ncol=3,borderpad = 0.1,borderaxespad=0.2,frameon=False,labelspacing=0)
     ax34 = plt.subplot(gs3[-1,:])
     plt.plot(r[:,ny/2,0],hor,color="red",label=r"$h/r$")
     plt.xlim(rhor,30)
@@ -10618,8 +10645,9 @@ if __name__ == "__main__":
         ts=qtymem[0,:,0]
         hoverr=qtymem[1]
         hoverravg=timeavg(hoverr,ts,avg_ts[0],avg_te1[0])
-        plt.figure(1)
+        plt.figure(1,figsize=(8,8))
         plotQmriavg(hor=hoverravg)
+        plt.savefig("mri.pdf")
         plt.figure(2)
         plt.clf()
         plotBavg()
@@ -10645,8 +10673,8 @@ if __name__ == "__main__":
         #use this in a shell script
         grid3d( "gdump.bin",use2d=True )
         avgmem=rdavg2d(usedefault=1)
-        takeoutfloors(dotakeoutfloors=1,doplot=False,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
-        #takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=False,aphi_j_val=0)
+        #takeoutfloors(dotakeoutfloors=1,doplot=False,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
+        takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=False,aphi_j_val=0)
         #takeoutfloors(dotakeoutfloors=1,doplot=False)
     if False:
         provsretro()
