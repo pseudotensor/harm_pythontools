@@ -5344,12 +5344,12 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
         simtf = lftf
     elif np.abs(a - (-0.5))<1e-4 and bn == "rtf2_15r36.21_a-0.5_0_0_0":
         print( "Using a = -0.5 (rtf2_15r36.21_a-0.5_0_0_0) settings")
-        Dt = np.array([14200-13393.5929462345,
+        Dt = np.array([16300-13393.5929462345,
                        13300-11452.1038814141,
                        11400-8786.54757354983,
                         8700-8000.,
                       -(8700-8000.)])
-        Dno = np.array([142,
+        Dno = np.array([163,
                         133,
                         114,
                         87,
