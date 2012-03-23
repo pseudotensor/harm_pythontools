@@ -26,7 +26,20 @@ dircollect='thickdisk7 thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.like8 
 # do expensive thickdisk7 and sasha99 last so can test things
 dirruns='run.like8 thickdisk8 thickdisk11 thickdisk12 thickdisk13 thickdiskrr2 run.liker2butbeta40 run.liker2 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 thickdiskr2 run.liker1 thickdisk9 thickdiskr3 thickdisk17 thickdisk10 thickdiskr15 thickdisk3 thickdiskhr3 runlocaldipole3dfiducial blandford3d_new sasham9full2pi sasham5 sasham2 sasha0 sasha1 sasha2 sasha5 sasha9b25 sasha9b50 sasha9b100 sasha9b200 sasha99 thickdisk7'
 
-#dirruns='thickdiskhr3 runlocaldipole3dfiducial blandford3d_new sasham9full2pi sasham5 sasham2 sasha0 sasha1 sasha2 sasha5 sasha9b25 sasha9b50 sasha9b100 sasha9b200 sasha99 thickdisk7'
+#dirruns='thickdisk17'
+
+#dirruns='thickdisk9 thickdiskr3 thickdisk17 thickdisk10 thickdiskr15 thickdisk3'
+
+#dirruns='blandford3d_new'
+#dirruns='thickdisk8'
+
+
+#dirruns='sasham9full2pi sasham5 sasham2 sasha0 sasha1 sasha2 sasha5 sasha9b25 sasha9b50 sasha9b100 sasha9b200 sasha99'
+
+#dirruns='sasha9b25'
+#dirruns='sasha9b100'
+
+#dirruns='thickdisk8'
 
 #dirruns='run.like8'
 
@@ -135,7 +148,7 @@ then
         fi
 
     # FUCKMARK
-        ln -s /data2/jmckinne/${thedir}/fulllatest11/avg*.npy .
+        #ln -s /data2/jmckinne/${thedir}/fulllatest11/avg*.npy .
 
         echo "Linking base files"
         alias cp='cp'
@@ -234,7 +247,7 @@ then
         fi
         if [ "$thedir" == "thickdisk17" ]
         then
-            keepfilesstart=$(( 1+25400 )) # tstart=58000
+            keepfilesstart=$(( 1+30930 )) # tstart=80000
             keepfilesend=$(( $numfiles ))
         fi
         if [ "$thedir" == "thickdisk10" ]
@@ -680,7 +693,7 @@ then
         fi
         if [ $numtbl -eq 11 ]
         then
-            echo "\caption{Absolute Magnetic Flux per Rest-Mass Flux and Initial Magnetic Fluxes}" >> $fname
+            echo "\caption{Absolute Magnetic Flux per unit: Rest-Mass Fluxes, Initial Magnetic Fluxes, Available Magnetic Fluxes, and BH Magnetic Flux}" >> $fname
         fi
         if [ $numtbl -eq 12 ]
         then
