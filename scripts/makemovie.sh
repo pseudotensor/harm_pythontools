@@ -5,10 +5,11 @@
 EXPECTED_ARGS=16
 E_BADARGS=65
 
-if [ $# -ne $EXPECTED_ARGS ]
+#if [ $# -ne $EXPECTED_ARGS ]
+if [ $# -lt $(($EXPECTED_ARGS)) ]
 then
-    echo "Usage: `basename $0` {modelname make1d makemerge makeplot makemontage makepowervsmplots makespacetimeplots makefftplot makespecplot makeinitfinalplot makethradfinalplot makeframes makemovie makeavg makeavgmerge makeavgplot}"
-    echo "e.g. sh makemovie.sh thickdisk7 1 1 1 1 1 1 1 0 0 0 0"
+    echo "Usage: `basename $0` {modelname make1d makemerge makeplot makemontage makepowervsmplots makespacetimeplots makefftplot makespecplot makeinitfinalplot makethradfinalplot makeframes makemovie makeavg makeavgmerge makeavgplot} <dirname>"
+    echo "e.g. sh makemovie.sh thickdisk7 1 1 1 1 1 1 1 0 0 0 0 /data1/jmckinne/thickdisk7/fulllatest14/"
     exit $E_BADARGS
 fi
 
@@ -31,6 +32,23 @@ makeavgmerge=${15}
 makeavgplot=${16}
 
 
+# get optional dirname
+if [ $# -eq $(($EXPECTED_ARGS+1))  ]
+then
+    dirname=${17}
+else
+    # assume just local directory if not given
+    dirname=`pwd`
+fi
+
+
+
+###########################################
+#
+# parameters one can set
+#
+###########################################
+
 jobprefix=$modelname
 parallel=0
 testrun=0
@@ -39,6 +57,7 @@ rminitfiles=0
 # 1 = orange
 # 2 = orange-gpu
 # 3 = ki-jmck
+# 4 = Nautilus
 system=3
 
 # can run just certain runi values
@@ -50,18 +69,24 @@ jobsuffix="jy$system"
 
 # runn is number of runs (and in parallel, should be multiple of numcores)
 
+
+##############################################
 # orange
 if [ $system -eq 1 ]
 then
-    # up to 768 cores (96*2*4)
+    # up to 768 cores (96*2*4).  That is, 8cores/node
     # but only 4GB/core.  Seems to work, but maybe much slower than would be if used 6 cores to allow 5.3G/core?
     # ok, now need 5 cores
-    numcores=5
-    numnodes=36 # so 180 cores total
+    # ok, now 3 required for thickdisk7
+    # need 2 for thickdisk3 where final qty file is 12GB right now
+    numcores=3
+    #
+    numnodes=$((180/$numcores)) # so 180 cores total
     thequeue="kipac-ibq"
     # first part of name gets truncated, so use suffix instead for reliability no matter how long the names are
 fi
 
+##############################################
 # orange-gpu
 if [ $system -eq 2 ]
 then
@@ -72,7 +97,7 @@ then
     thequeue="kipac-gpuq"
 fi
 
-
+#############################################
 # ki-jmck
 if [ $system -eq 3 ]
 then
@@ -81,6 +106,37 @@ then
     numnodes=1
     thequeue="none"
 fi
+
+
+#############################################
+# Nautilus
+if [ $system -eq 4 ]
+then
+    # go to directory where "dumps" directory is
+    # required for Nautilus, else will change to home directory when job starts
+    #
+    numcores=256
+    #numnodes=$((180/$numcores))
+    numnodes=1
+    # thickdisk7 needs 6GB/core, so request 8.  This will increase the number of cores when qsub called, but numcores is really how many tasks.
+    timetot="24:00:00"
+    memtot=$((16 + $numcores * 8))
+    thequeue="analysis"
+    #
+    # for makeplot part or makeplotavg part
+    numcoresplot=1
+    numnodesplot=1
+    timetotplot="4:00:00"
+    memtotplot=32
+    # interactive use for <1hour:
+    # ipython -pylab -colors=LightBG
+    #
+    # long normal interactive job:
+    # qsub -I -A TG-PHY120005 -q analysis -l ncpus=8,walltime=24:00:00,mem=32GB
+    # Note that this gives you a node for <=24 hours, so you can run 8 processes in parallel.  If you want to open a few xterm's from that window with (xterm &), in that terminal you will have to set the DISPLAY variable to whatever it was in the login node of nautilus (or else, the display variable is empty, and the new xterm windows refuse to spawn).
+fi
+
+
 
 
 if [ $useoverride -eq 0 ]
@@ -315,6 +371,7 @@ then
 	            
 	            if [ $dowrite -eq 1 ]
 		        then
+                    echo "cd $dirname" >> $thebatch
 		            echo "runi=$myruni" >> $thebatch
 		            echo "textrun=\"Data vs. Time: Running i=\$i j=\$j giving runi=\$runi with runn=\$runn\"" >> $thebatch
 		            echo "echo \$textrun" >> $thebatch
@@ -360,8 +417,15 @@ then
 		                jobname=$jobprefix.${i}.$jobsuffix
 		                outputfile=$jobname.out
 		                errorfile=$jobname.err
-              # probably specifying ptile below is not necessary
-		                bsubcommand="bsub -n 1 -x -R span[ptile=$numcores] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
+                        #
+                        if [ $system -eq 4 ]
+                        then
+		                    bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l mem=${memtot}GB,walltime=$timetot,ncpus=$numcores -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
+                        else
+                            # probably specifying ptile below is not necessary
+		                    bsubcommand="bsub -n 1 -x -R span[ptile=$numcores] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
+                        fi
+                        #
 		                if [ $testrun -eq 1 ]
 			            then
 			                echo $bsubcommand
@@ -389,8 +453,14 @@ then
 		        firsttimejobscheck=1
 		        while [ $totaljobs -gt 0 ]
 		        do
-		            pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobsuffix | grep jmckinn | grep PEND | wc -l`
-		            runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobsuffix | grep jmckinn | grep RUN | wc -l`
+                    if [ $system -eq 4 ]
+                    then
+		                pendjobs=`qstat -e $thequeue 2>&1 | grep $jobsuffix | grep jmckinn | grep " Q " | wc -l`
+		                runjobs=`qstat -e $thequeue 2>&1 | grep $jobsuffix | grep jmckinn | grep " R " | wc -l`
+                    else
+		                pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobsuffix | grep jmckinn | grep PEND | wc -l`
+		                runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobsuffix | grep jmckinn | grep RUN | wc -l`
+                    fi
 		            totaljobs=$(($pendjobs+$runjobs))
 		            
 		            if [ $totaljobs -gt 0 ]
@@ -484,15 +554,107 @@ then
 
 
     echo "Generate the plots"
-    # &> 
-    if [ $testrun -eq 1 ]
-	then
-	    echo "((nohup python $myinitfile3 $modelname 2>&1 1>&3 | tee python.plot.stderr.out) 3>&1 1>&2 | tee python.plot.out) > python.plot.full.out 2>&1"
-    else
-        # string "plot" tells script to do plot
-	    ((nohup python $myinitfile3 $modelname plot $makepowervsmplots $makespacetimeplots $makefftplot $makespecplot $makeinitfinalplot $makethradfinalplot 2>&1 1>&3 | tee python.plot.stderr.out) 3>&1 1>&2 | tee python.plot.out) > python.plot.full.out 2>&1
-    fi
 
+
+    ##########################################################################
+    # string "plot" tells script to do plot
+	thebatch="sh1_pythonplot_${numcoresplot}.sh"
+	rm -rf $thebatch
+    echo "cd $dirname" >> $thebatch
+	echo "((nohup python $myinitfile3 $modelname plot $makepowervsmplots $makespacetimeplots $makefftplot $makespecplot $makeinitfinalplot $makethradfinalplot 2>&1 1>&3 | tee python.plot.stderr.out) 3>&1 1>&2 | tee python.plot.out) > python.plot.full.out 2>&1" >> $thebatch
+	echo "wait" >> $thebatch
+	chmod a+x $thebatch
+
+	dowrite=1
+    #
+	if [ $parallel -eq 0 ]
+	then
+		if [ $dowrite -eq 1 ]
+		then
+ 		    if [ $testrun -eq 1 ]
+		    then
+		        echo $thebatch
+		    else
+		        sh ./$thebatch
+		    fi
+        fi
+	else
+		if [ $dowrite -eq 1 ]
+		then
+    	              # run bsub on batch file
+		    jobname=$jobprefix.pl.$jobsuffix
+		    outputfile=$jobname.pl.out
+		    errorfile=$jobname.pl.err
+                        #
+            if [ $system -eq 4 ]
+            then
+		        bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l mem=${memtotplot}GB,walltime=$timetotplot,ncpus=$numcoresplot -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
+            else
+                    # probably specifying ptile below is not necessary
+		        bsubcommand="bsub -n 1 -x -R span[ptile=$numcoresplot] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
+            fi
+                #
+		    if [ $testrun -eq 1 ]
+			then
+			    echo $bsubcommand
+		    else
+			    echo $bsubcommand
+			    echo "$bsubcommand" > bsubshtorun_pl_$thebatch
+			    chmod a+x bsubshtorun_pl_$thebatch
+			    sh bsubshtorun_pl_$thebatch
+		    fi
+		fi
+	fi
+
+
+
+    ##########################################################################
+    # waiting game
+	if [ $parallel -eq 0 ]
+	then
+		wait
+	else
+                # Wait to move on until all jobs done
+		totaljobs=1
+		firsttimejobscheck=1
+		while [ $totaljobs -gt 0 ]
+		do
+            if [ $system -eq 4 ]
+            then
+		        pendjobs=`qstat -e $thequeue 2>&1 | grep $jobsuffix | grep jmckinn | grep " Q " | wc -l`
+		        runjobs=`qstat -e $thequeue 2>&1 | grep $jobsuffix | grep jmckinn | grep " R " | wc -l`
+            else
+		        pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobsuffix | grep jmckinn | grep PEND | wc -l`
+		        runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobsuffix | grep jmckinn | grep RUN | wc -l`
+            fi
+		    totaljobs=$(($pendjobs+$runjobs))
+		    
+		    if [ $totaljobs -gt 0 ]
+		    then
+		        echo "PEND=$pendjobs RUN=$runjobs TOTAL=$totaljobs ... waiting ..."
+		        sleep 10
+                firsttimejobscheck=0
+		    else
+		        if [ $firsttimejobscheck -eq 1 ]
+			    then
+			        totaljobs=1
+			        echo "waiting for jobs to get started..."
+			        sleep 10
+		        else
+			        echo "DONE!"		      
+		        fi
+		    fi
+		done
+        
+	fi
+    
+    wait
+    ##########################################################################
+
+
+
+    
+    #########################################################
     makemontage=$makemontage
     if [ $makemontage -eq 1 ]
     then
@@ -657,6 +819,7 @@ then
 	            
 	            if [ $dowrite -eq 1 ]
 		        then
+                    echo "cd $dirname" >> $thebatch
 		            echo "runi=$myruni" >> $thebatch
 		            echo "textrun=\"Movie Frames vs. Time: Running i=\$i j=\$j giving runi=\$runi with runn=\$runn\"" >> $thebatch
 		            echo "echo \$textrun" >> $thebatch
@@ -703,8 +866,15 @@ then
 		                jobname=$jobprefix.${i}.$jobsuffix
 		                outputfile=$jobname.out
 		                errorfile=$jobname.err
-              # probably specifying ptile below is not necessary
-		                bsubcommand="bsub -n 1 -x -R span[ptile=$numcores] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
+                        #
+                        if [ $system -eq 4 ]
+                        then
+		                    bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l mem=${memtot}GB,walltime=$timetot,ncpus=$numcores -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
+                        else
+                            # probably specifying ptile below is not necessary
+		                    bsubcommand="bsub -n 1 -x -R span[ptile=$numcores] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
+                        fi
+                        #
 		                if [ $testrun -eq 1 ]
 			            then
 			                echo $bsubcommand
@@ -732,8 +902,14 @@ then
 		        firsttimejobscheck=1
 		        while [ $totaljobs -gt 0 ]
 		        do
-		            pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobsuffix | grep jmckinn | grep PEND | wc -l`
-		            runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobsuffix | grep jmckinn | grep RUN | wc -l`
+                    if [ $system -eq 4 ]
+                    then
+		                pendjobs=`qstat -e $thequeue 2>&1 | grep $jobsuffix | grep jmckinn | grep " Q " | wc -l`
+		                runjobs=`qstat -e $thequeue 2>&1 | grep $jobsuffix | grep jmckinn | grep " R " | wc -l`
+                    else
+		                pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobsuffix | grep jmckinn | grep PEND | wc -l`
+		                runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobsuffix | grep jmckinn | grep RUN | wc -l`
+                    fi
 		            totaljobs=$(($pendjobs+$runjobs))
 		            
 		            if [ $totaljobs -gt 0 ]
@@ -947,6 +1123,7 @@ then
 	            
 	            if [ $dowrite -eq 1 ]
 		        then
+                    echo "cd $dirname" >> $thebatch
 		            echo "runi=$myruni" >> $thebatch
 		            echo "textrun=\"Avg Data vs. Time: Running i=\$i j=\$j giving runi=\$runi with runn=\$runn\"" >> $thebatch
 		            echo "echo \$textrun" >> $thebatch
@@ -993,8 +1170,15 @@ then
 		                jobname=$jobprefix.${i}.$jobsuffix
 		                outputfile=$jobname.out
 		                errorfile=$jobname.err
-              # probably specifying ptile below is not necessary
-		                bsubcommand="bsub -n 1 -x -R span[ptile=$numcores] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
+                        #
+                        if [ $system -eq 4 ]
+                        then
+		                    bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l mem=${memtot}GB,walltime=$timetot,ncpus=$numcores -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
+                        else
+                            # probably specifying ptile below is not necessary
+		                    bsubcommand="bsub -n 1 -x -R span[ptile=$numcores] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
+                        fi
+                        #
 		                if [ $testrun -eq 1 ]
 			            then
 			                echo $bsubcommand
@@ -1024,8 +1208,15 @@ then
 		        firsttimejobscheck=1
 		        while [ $totaljobs -gt 0 ]
 		        do
-		            pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobsuffix | grep jmckinn | grep PEND | wc -l`
-		            runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobsuffix | grep jmckinn | grep RUN | wc -l`
+                    if [ $system -eq 4 ]
+                    then
+		                pendjobs=`qstat -e $thequeue 2>&1 | grep $jobsuffix | grep jmckinn | grep " Q " | wc -l`
+		                runjobs=`qstat -e $thequeue 2>&1 | grep $jobsuffix | grep jmckinn | grep " R " | wc -l`
+                    else
+		                pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobsuffix | grep jmckinn | grep PEND | wc -l`
+		                runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobsuffix | grep jmckinn | grep RUN | wc -l`
+                    fi
+                    #
 		            totaljobs=$(($pendjobs+$runjobs))
 		            
 		            if [ $totaljobs -gt 0 ]
@@ -1137,15 +1328,110 @@ then
 
 
     echo "Generate the avg plots"
-    # &> 
-    if [ $testrun -eq 1 ]
-	then
-	    echo "((nohup python $myinitfile7 $modelname 2>&1 1>&3 | tee python.plot.avg.stderr.out) 3>&1 1>&2 | tee python.plot.avg.out) > python.plot.avg.full.out 2>&1"
-    else
-	    ((nohup python $myinitfile7 $modelname 2>&1 1>&3 | tee python.plot.avg.stderr.out) 3>&1 1>&2 | tee python.plot.avg.out) > python.plot.avg.full.out 2>&1
-    fi
 
+
+
+	
+
+
+
+
+    # string "plot" tells script to do plot
+	thebatch="sh1_pythonplot.avg_${numcoresplot}.sh"
+	rm -rf $thebatch
+    echo "cd $dirname" >> $thebatch
+	echo "((nohup python $myinitfile7 $modelname 2>&1 1>&3 | tee python.plot.avg.stderr.out) 3>&1 1>&2 | tee python.plot.avg.out) > python.plot.avg.full.out 2>&1" >> $thebatch
+	echo "wait" >> $thebatch
+	chmod a+x $thebatch
+
+
+	dowrite=1
+    #
+	if [ $parallel -eq 0 ]
+	then
+		if [ $dowrite -eq 1 ]
+		then
+ 		    if [ $testrun -eq 1 ]
+		    then
+		        echo $thebatch
+		    else
+		        sh ./$thebatch
+		    fi
+        fi
+	else
+		if [ $dowrite -eq 1 ]
+		then
+    	              # run bsub on batch file
+		    jobname=$jobprefix.pla.$jobsuffix
+		    outputfile=$jobname.pla.out
+		    errorfile=$jobname.pla.err
+                        #
+            if [ $system -eq 4 ]
+            then
+		        bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l mem=${memtotplot}GB,walltime=$timetotplot,ncpus=$numcoresplot -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
+            else
+                    # probably specifying ptile below is not necessary
+		        bsubcommand="bsub -n 1 -x -R span[ptile=$numcoresplot] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
+            fi
+                #
+		    if [ $testrun -eq 1 ]
+			then
+			    echo $bsubcommand
+		    else
+			    echo $bsubcommand
+			    echo "$bsubcommand" > bsubshtorun_pl.avg_$thebatch
+			    chmod a+x bsubshtorun_pl.avg_$thebatch
+			    sh bsubshtorun_pl.avg_$thebatch
+		    fi
+		fi
+	fi
     
+
+    ##########################################################################
+    # waiting game
+	if [ $parallel -eq 0 ]
+	then
+		wait
+	else
+                # Wait to move on until all jobs done
+		totaljobs=1
+		firsttimejobscheck=1
+		while [ $totaljobs -gt 0 ]
+		do
+            if [ $system -eq 4 ]
+            then
+		        pendjobs=`qstat -e $thequeue 2>&1 | grep $jobsuffix | grep jmckinn | grep " Q " | wc -l`
+		        runjobs=`qstat -e $thequeue 2>&1 | grep $jobsuffix | grep jmckinn | grep " R " | wc -l`
+            else
+		        pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobsuffix | grep jmckinn | grep PEND | wc -l`
+		        runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobsuffix | grep jmckinn | grep RUN | wc -l`
+            fi
+		    totaljobs=$(($pendjobs+$runjobs))
+		    
+		    if [ $totaljobs -gt 0 ]
+		    then
+		        echo "PEND=$pendjobs RUN=$runjobs TOTAL=$totaljobs ... waiting ..."
+		        sleep 10
+                firsttimejobscheck=0
+		    else
+		        if [ $firsttimejobscheck -eq 1 ]
+			    then
+			        totaljobs=1
+			        echo "waiting for jobs to get started..."
+			        sleep 10
+		        else
+			        echo "DONE!"		      
+		        fi
+		    fi
+		done
+        
+	fi
+    
+    wait
+    ##########################################################################
+    
+
+
     if [ $rminitfiles -eq 1 ]
 	then
         # remove created file

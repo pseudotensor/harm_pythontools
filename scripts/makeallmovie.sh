@@ -8,6 +8,12 @@
 # 1) Ensure followed createlinks.sh for each directory.
 # 2) use the script
 
+# thickdisk7 on Nautilus:
+#
+# sh makeallmovie.sh fulllatest14 1 1 1 1 1 1 0 1 0 0 0 0 0 0 0 0 0 0 0 /lustre/medusa/jmckinne/data1/jmckinne/jmckinne/
+
+
+
 # order of models as to appear in final table
 # SKIP thickdisk15 thickdisk2 since not run long enough
 
@@ -68,16 +74,17 @@ numkeep=450
 EXPECTED_ARGS=20
 E_BADARGS=65
 
-if [ $# -ne $EXPECTED_ARGS ]
+if [ $# -lt $EXPECTED_ARGS ]
 then
-    echo "Usage: `basename $0` {moviedirname docleanexist dolinks dofiles make1d makemerge makeplot makemontage makepowervsmplots makespacetimeplots makefftplot makespecplot makeinitfinalplot makethradfinalplot makeframes makemovie makeavg makeavgmerge makeavgplot collect}"
-    echo "e.g. sh makeallmovie.sh moviefinal1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1"
+    echo "Usage: `basename $0` {moviedirname docleanexist dolinks dofiles make1d makemerge makeplot makemontage makepowervsmplots makespacetimeplots makefftplot makespecplot makeinitfinalplot makethradfinalplot makeframes makemovie makeavg makeavgmerge makeavgplot collect} <dirname>"
+    echo "e.g. sh makeallmovie.sh moviefinal1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 /data2/jmckinne/"
     exit $E_BADARGS
 fi
 
 
 
-# /lustre/ki/orange/jmckinne/thickdisk7/movie6
+
+# /Luste/ki/orange/jmckinne/thickdisk7/movie6
 # sh makemovie.sh thickdisk7 1 1 1 0 1 1 0 0 0 0 0 
 # jobstokill=`bjobs -u jmckinne -q kipac-ibq | awk '{print $1}'`
 # for fil in $jobstokill ; do bkill -r $fil ; done 
@@ -111,9 +118,18 @@ makeavgplot=${19}
 collect=${20}
 
 
-# On ki-jmck in /data2/jmckinne/
-cd /data2/jmckinne/
+if [ $# -eq $(($EXPECTED_ARGS+1)) ]
+then
+    dirname=${21}
+else
+    # On ki-jmck in /data2/jmckinne/
+    # assume run from /data2/jmckinne or wherever full list of links/dirs are.
+    dirname=`pwd`
+fi
 
+
+# change to directory where processing occurs
+cd $dirname
 
 
 
@@ -130,8 +146,8 @@ then
 
 
     # make movie directory
-        mkdir -p /data2/jmckinne/${thedir}/$moviedirname/dumps/
-        cd /data2/jmckinne/${thedir}/$moviedirname
+        mkdir -p $dirname/${thedir}/$moviedirname/dumps/
+        cd $dirname/${thedir}/$moviedirname
 
 
         echo "create new links (old links are removed) for: "$thedir
@@ -140,23 +156,23 @@ then
     # remove old links
         if [ $docleanexist -eq 1 ]
         then
-            if [ $moviedirname -ne "" ] &&
-                [ $moviedirname -ne "/" ]
+            if [ "$moviedirname" != "" ] &&
+                [ "$moviedirname" != "/" ]
             then
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/fieldline*.bin
+                rm -rf $dirname/${thedir}/$moviedirname/fieldline*.bin
             fi
         fi
 
     # FUCKMARK
-        #ln -s /data2/jmckinne/${thedir}/fulllatest11/avg*.npy .
+        #ln -s $dirname/${thedir}/fulllatest11/avg*.npy .
 
         echo "Linking base files"
         alias cp='cp'
         cp ~/py/scripts/createlinksaltquiet.sh .
-        sh createlinksaltquiet.sh 1 /data2/jmckinne/${thedir} ./
+        sh createlinksaltquiet.sh 1 $dirname/${thedir} ./
 
         echo "now remove some fraction of links (only keep about 50 for averaging period, first one, and last one): "$thedir
-        cd /data2/jmckinne/${thedir}/$moviedirname/dumps/
+        cd $dirname/${thedir}/$moviedirname/dumps/
     # avoid @ symbol on soft links
         alias ls='ls'
     # get list of files in natural human order
@@ -306,14 +322,14 @@ then
 	        rmfieldlinelist1=`ls -v | grep "fieldline" | head -$keepfilesstart`
 	        for fil in $rmfieldlinelist1
 	        do
-                #echo "removing /data2/jmckinne/${thedir}/$moviedirname/dumps/$fil"   #DEBUG
-	            rm -rf /data2/jmckinne/${thedir}/$moviedirname/dumps/$fil
+                #echo "removing $dirname/${thedir}/$moviedirname/dumps/$fil"   #DEBUG
+	            rm -rf $dirname/${thedir}/$moviedirname/dumps/$fil
 	        done
 	        rmfieldlinelist2=`ls -v | grep "fieldline" | tail -$lastfilesdiff`
 	        for fil in $rmfieldlinelist2
 	        do
-                #echo "removing /data2/jmckinne/${thedir}/$moviedirname/dumps/$fil"   #DEBUG
-	            rm -rf /data2/jmckinne/${thedir}/$moviedirname/dumps/$fil
+                #echo "removing $dirname/${thedir}/$moviedirname/dumps/$fil"   #DEBUG
+	            rm -rf $dirname/${thedir}/$moviedirname/dumps/$fil
 	        done
         fi
     #
@@ -340,7 +356,7 @@ then
                 #echo "fil=$fil mymod=$mymod iter=$iiter"#DEBUG
 	            if [ $mymod -ne 0 ]
 	            then
-		            rm -rf /data2/jmckinne/${thedir}/$moviedirname/dumps/$fil
+		            rm -rf $dirname/${thedir}/$moviedirname/dumps/$fil
 	            fi
 	            iiter=$(( $iiter + 1 ))
 	        done
@@ -348,14 +364,14 @@ then
     #
         #############
         echo "Ensure fieldline0000.bin and last fieldline files exist: "$thedir
-        cd /data2/jmckinne/${thedir}/$moviedirname/dumps/
+        cd $dirname/${thedir}/$moviedirname/dumps/
         if [ $usefirst -eq 1 ]
         then
-            ln -s /data2/jmckinne/${thedir}/dumps/$firstfieldlinefile .
+            ln -s $dirname/${thedir}/dumps/$firstfieldlinefile .
         fi
         if [ $useend -eq 1 ]
         then
-            ln -s /data2/jmckinne/${thedir}/dumps/$lastfieldlinefile .
+            ln -s $dirname/${thedir}/dumps/$lastfieldlinefile .
         fi
 
 
@@ -380,7 +396,7 @@ then
 
 
         echo "cp makemovie.sh: "$thedir
-        cd /data2/jmckinne/${thedir}/$moviedirname/
+        cd $dirname/${thedir}/$moviedirname/
         cp ~/py/scripts/makemovie.sh .
 
         echo "edit makemovie.sh: "$thedir
@@ -399,8 +415,9 @@ then
 	        sed -e 's/export runn=[0-9]*/export runn=12/g' makemovie.sh > makemovielocal.temp.sh
         fi
 
-    # force use of local __init__.py file:
-        sed 's/export initfile=\$MREADPATH\/__init__.py/export initfile=\/data2\/jmckinne\/'${thedir}'\/'${moviedirname}'\/__init__.local.py/g' makemovielocal.temp.sh > makemovielocal.sh
+        # force use of local __init__.py file (GODMARK: doesn't actually do anything due to export vs. no export part of bash line in makemovie.sh)
+        #sed 's/export initfile=\$MREADPATH\/__init__.py/export initfile=\/data2\/jmckinne\/'${thedir}'\/'${moviedirname}'\/__init__.local.py/g' makemovielocal.temp.sh > makemovielocal.sh
+        cat makemovielocal.temp.sh > makemovielocal.sh
         rm -rf makemovielocal.temp.sh
 
         echo "cp  __init__.py to __init__.local.py: "$thedir
@@ -431,7 +448,7 @@ then
 
         if [ "$thedir" == "thickdiskhr3" ]
 	    then
-            ln -s /data2/jmckinne/thickdisk3/$moviedirname/qty2.npy /data2/jmckinne/${thedir}/$moviedirname/qty2_thickdisk3.npy
+            ln -s $dirname/thickdisk3/$moviedirname/qty2.npy $dirname/${thedir}/$moviedirname/qty2_thickdisk3.npy
         fi
 
 
@@ -456,7 +473,7 @@ then
     do
 	    echo "Doing makemovielocal for: "$thedir
 
-	    cd /data2/jmckinne/${thedir}/$moviedirname
+	    cd $dirname/${thedir}/$moviedirname
 
     #################
         if [ $docleanexist -eq 1 ]
@@ -466,119 +483,119 @@ then
         # only clean what one is redoing and isn't fully overwritten
             if [ $make1d -eq 1 ]
             then
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/qty2_[0-9]*_[0-9]*.npy
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.stderr.out
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.full.out
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.out
+                rm -rf $dirname/${thedir}/$moviedirname/qty2_[0-9]*_[0-9]*.npy
+                rm -rf $dirname/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.stderr.out
+                rm -rf $dirname/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.full.out
+                rm -rf $dirname/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.out
             fi
             if [ $makemerge -eq 1 ]
             then
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/qty2.npy
+                rm -rf $dirname/${thedir}/$moviedirname/qty2.npy
             fi
             if [ $makeplot -eq 1 ]
             then
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/*.pdf
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/python.plot.stderr.out
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/python.plot.full.out
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/python.plot.out
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/aphi.png
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/aphi.pdf
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/aphi.eps
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/datavsr*.txt
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/datavsh*.txt
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/datavst*.txt
+                rm -rf $dirname/${thedir}/$moviedirname/*.pdf
+                rm -rf $dirname/${thedir}/$moviedirname/python.plot.stderr.out
+                rm -rf $dirname/${thedir}/$moviedirname/python.plot.full.out
+                rm -rf $dirname/${thedir}/$moviedirname/python.plot.out
+                rm -rf $dirname/${thedir}/$moviedirname/aphi.png
+                rm -rf $dirname/${thedir}/$moviedirname/aphi.pdf
+                rm -rf $dirname/${thedir}/$moviedirname/aphi.eps
+                rm -rf $dirname/${thedir}/$moviedirname/datavsr*.txt
+                rm -rf $dirname/${thedir}/$moviedirname/datavsh*.txt
+                rm -rf $dirname/${thedir}/$moviedirname/datavst*.txt
             fi
         #
             if [ $makemontage -eq 1 ]
             then
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/montage*.png
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/montage*.eps
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/montage*.png
+                rm -rf $dirname/${thedir}/$moviedirname/montage*.png
+                rm -rf $dirname/${thedir}/$moviedirname/montage*.eps
+                rm -rf $dirname/${thedir}/$moviedirname/montage*.png
             fi
             if [ $makepowervsmplots -eq 1 ]
             then
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/powervsm*.png
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/powervsm*.eps
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/powervsm*.png
+                rm -rf $dirname/${thedir}/$moviedirname/powervsm*.png
+                rm -rf $dirname/${thedir}/$moviedirname/powervsm*.eps
+                rm -rf $dirname/${thedir}/$moviedirname/powervsm*.png
             fi
             if [ $makespacetimeplots -eq 1 ]
             then
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/plot*.png
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/plot*.eps
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/plot*.png
+                rm -rf $dirname/${thedir}/$moviedirname/plot*.png
+                rm -rf $dirname/${thedir}/$moviedirname/plot*.eps
+                rm -rf $dirname/${thedir}/$moviedirname/plot*.png
             fi
             if [ $makefftplot -eq 1 ]
             then
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/fft?.png
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/fft?.eps
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/fft?.png
+                rm -rf $dirname/${thedir}/$moviedirname/fft?.png
+                rm -rf $dirname/${thedir}/$moviedirname/fft?.eps
+                rm -rf $dirname/${thedir}/$moviedirname/fft?.png
             fi
             if [ $makespecplot -eq 1 ]
             then
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/spec?.png
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/spec?.eps
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/spec?.png
+                rm -rf $dirname/${thedir}/$moviedirname/spec?.png
+                rm -rf $dirname/${thedir}/$moviedirname/spec?.eps
+                rm -rf $dirname/${thedir}/$moviedirname/spec?.png
             fi
             if [ $makeinitfinalplot -eq 1 ]
             then
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/init1.png
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/init1.eps
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/init1.png
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/middle1.png
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/middle1.eps
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/middle1.png
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/final1.png
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/final1.eps
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/final1.png
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/init1_stream.png
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/init1_stream.eps
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/init1_stream.png
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/middle1_stream.png
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/middle1_stream.eps
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/middle1_stream.png
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/final1_stream.png
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/final1_stream.eps
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/final1_stream.png
+                rm -rf $dirname/${thedir}/$moviedirname/init1.png
+                rm -rf $dirname/${thedir}/$moviedirname/init1.eps
+                rm -rf $dirname/${thedir}/$moviedirname/init1.png
+                rm -rf $dirname/${thedir}/$moviedirname/middle1.png
+                rm -rf $dirname/${thedir}/$moviedirname/middle1.eps
+                rm -rf $dirname/${thedir}/$moviedirname/middle1.png
+                rm -rf $dirname/${thedir}/$moviedirname/final1.png
+                rm -rf $dirname/${thedir}/$moviedirname/final1.eps
+                rm -rf $dirname/${thedir}/$moviedirname/final1.png
+                rm -rf $dirname/${thedir}/$moviedirname/init1_stream.png
+                rm -rf $dirname/${thedir}/$moviedirname/init1_stream.eps
+                rm -rf $dirname/${thedir}/$moviedirname/init1_stream.png
+                rm -rf $dirname/${thedir}/$moviedirname/middle1_stream.png
+                rm -rf $dirname/${thedir}/$moviedirname/middle1_stream.eps
+                rm -rf $dirname/${thedir}/$moviedirname/middle1_stream.png
+                rm -rf $dirname/${thedir}/$moviedirname/final1_stream.png
+                rm -rf $dirname/${thedir}/$moviedirname/final1_stream.eps
+                rm -rf $dirname/${thedir}/$moviedirname/final1_stream.png
             fi
             if [ $makethradfinalplot -eq 1 ]
             then
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/plot0qvsth_.png
+                rm -rf $dirname/${thedir}/$moviedirname/plot0qvsth_.png
             fi
         #
         #
             if [ $makeframes -eq 1 ]
             then
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.movieframes.stderr.out
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.movieframes.full.out
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.movieframes.out
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/*.png
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/*.eps
+                rm -rf $dirname/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.movieframes.stderr.out
+                rm -rf $dirname/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.movieframes.full.out
+                rm -rf $dirname/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.movieframes.out
+                rm -rf $dirname/${thedir}/$moviedirname/*.png
+                rm -rf $dirname/${thedir}/$moviedirname/*.eps
             fi
             if [ $makemovie -eq 1 ]
             then
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/*.avi
+                rm -rf $dirname/${thedir}/$moviedirname/*.avi
             fi
             if [ $makeavg -eq 1 ]
             then
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.avg.stderr.out
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.avg.full.out
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.avg.out
+                rm -rf $dirname/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.avg.stderr.out
+                rm -rf $dirname/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.avg.full.out
+                rm -rf $dirname/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.avg.out
             fi
             if [ $makeavg -eq 1 ]
             then
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/avg2d[0-9]*_[0-9]*.npy
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.avg.stderr.out
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.avg.full.out
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.avg.out
+                rm -rf $dirname/${thedir}/$moviedirname/avg2d[0-9]*_[0-9]*.npy
+                rm -rf $dirname/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.avg.stderr.out
+                rm -rf $dirname/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.avg.full.out
+                rm -rf $dirname/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.avg.out
             fi
             if [ $makeavgmerge -eq 1 ]
             then
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/avg2d[0-9]*_[0-9]*_[0-9]*.npy
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/avg2d.npy
+                rm -rf $dirname/${thedir}/$moviedirname/avg2d[0-9]*_[0-9]*_[0-9]*.npy
+                rm -rf $dirname/${thedir}/$moviedirname/avg2d.npy
             fi
             if [ $makeavgplot -eq 1 ]
             then
-                rm -rf /data2/jmckinne/${thedir}/$moviedirname/fig2.png
+                rm -rf $dirname/${thedir}/$moviedirname/fig2.png
             fi
         fi
     ###############
@@ -598,7 +615,7 @@ echo "Now collect Latex results"
 if [ $collect -eq 1 ]
 then
 
-    cd /data2/jmckinne/
+    cd $dirname/
 
     echo "Doing collection"
 
@@ -611,10 +628,10 @@ then
 	    echo "Doing collection for: "$thedir
         if [ $iiter -eq 1 ]
         then
-		    cat /data2/jmckinne/${thedir}/$moviedirname/python.plot.out | grep "HLatex" >> tables$moviedirname.tex
+		    cat $dirname/${thedir}/$moviedirname/python.plot.out | grep "HLatex" >> tables$moviedirname.tex
 		    echo "HLatex: \hline" >> tables$moviedirname.tex
         fi
-		cat /data2/jmckinne/${thedir}/$moviedirname/python.plot.out | grep "VLatex" >> tables$moviedirname.tex
+		cat $dirname/${thedir}/$moviedirname/python.plot.out | grep "VLatex" >> tables$moviedirname.tex
 
         iiter=$(( $iiter+1))
     done

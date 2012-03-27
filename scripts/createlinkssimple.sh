@@ -48,7 +48,7 @@ then
     echo $listfinal
     echo "begin echo of list"
     echo $list
-    echo "${thedir}" >> /data2/jmckinne/badguys1.txt
+    echo "${thedir}" >> badguys1_${thedir}.txt
     exit
 fi
 
@@ -66,7 +66,7 @@ then
     echo "Got some subparts in dirs${thedir}.txt"
 else
     echo "Got no subparts in dirs${thedir}.txt"
-    echo "${thedir}" >> /data2/jmckinne/badguys2.txt
+    echo "${thedir}" >> badguys2_${thedir}.txt
     exit
 fi
 
@@ -78,15 +78,24 @@ echo "Number of parts for ${thedir} is $numdirparts"
 if [ $numdirparts -lt 1 ]
 then
     echo "No sub parts, assume mistake and has original dumps"
-    echo "${thedir}" >> /data2/jmckinne/badguys3.txt
+    echo "${thedir}" >> badguys3_${thedir}.txt
     exit
 fi
 
 
 echo "2"
-mkdir -p /data2/jmckinne/${thedir}/dumps/
-cd /data2/jmckinne/${thedir}/
-mv ../dirs${thedir}.txt .
+if [ "thickdisk7" == "${thedir}" ]
+then
+    mkdir -p dumps/
+    basedir=`pwd`
+    dumpsdir=$basedir/dumps/
+else
+    mkdir -p ${thedir}/dumps/
+    cd ${thedir}/
+    basedir=`pwd`
+    dumpsdir=$basedir/dumps/
+    mv ../dirs${thedir}.txt .
+fi
 
 # 4) Edit dir list and choose one's want
 
@@ -95,10 +104,10 @@ mv ../dirs${thedir}.txt .
 # 5) create new full-sim dir and change to dumps dir
 
 echo "3"
-cd /data2/jmckinne/${thedir}/dumps/
-rm -rf fieldline*.bin
-rm -rf dump0000.bin
-rm -rf gdump.bin
+cd $dumpsdir
+#rm -rf fieldline*.bin
+#rm -rf dump0000.bin
+#rm -rf gdump.bin
 
 #exit
 
@@ -117,7 +126,7 @@ do
     fi
 
     echo $mydir
-    for fil in `ls ../../$mydir/dumps/fieldline*.bin` 
+    for fil in `ls $basedir/$mydir/dumps/fieldline*.bin` 
     do
         echo $fil 
         ln -sf $fil .
@@ -126,10 +135,10 @@ do
 
     # 7) Also make links to gdump.bin and dump0000.bin
     #firstdir=`head -1 ../dirs${thedir}.txt`
-    if [ -e ../../$mydir/dumps/gdump.bin ]
+    if [ -e $basedir/$mydir/dumps/gdump.bin ]
     then
-        ln -s ../../$mydir/dumps/gdump.bin .
-        ln -s ../../$mydir/dumps/dump0000.bin .
+        ln -s $basedir/$mydir/dumps/gdump.bin .
+        ln -s $basedir/$mydir/dumps/dump0000.bin .
     fi
 done
 
@@ -154,10 +163,10 @@ echo "topsize=$topsize"
 # first sed gets rid of deadfile and \\* required to grab *
 filestocheck=`echo "$allfiles" | egrep 'fieldline[0-9]+\.bin' | tail -20 | awk '{print $8}' | sed -e 's/deadfieldline[0-9]\+\.bin\\*//g' | sed -e 's/\*//g' | sed -e 's/deadfieldline[0-9]\+\.bin//g'`
 
-for fil in $filestocheck ; do echo $fil ; newfil=`ls -alrt ${thedir}/dumps/$fil | awk '{print $10}' | sed -e 's/\.\.\/\.\.\///g'` ; ls -alrt $newfil ; done
+for fil in $filestocheck ; do echo $fil ; newfil=`ls -alrt $dumpsdir/$fil | awk '{print $10}' | sed -e 's/\.\.\/\.\.\///g'` ; ls -alrt $newfil ; done
 
 echo "topsize=$topsize"
-lastmydir=`cat ${thedir}/dirs${thedir}.txt | tail -1`
+lastmydir=`cat $basedir/dirs${thedir}.txt | tail -1`
 echo "lastmydir=$lastmydir"
 
 

@@ -57,8 +57,81 @@ from scipy.special import sph_harm,lpmn,gammaln
 #from numpy import *
 #from mpl_toolkits.axisartist import *
 
-#global rho, ug, vu, uu, B, CS
-#global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
+import resource
+
+
+
+# On Linux (from python cookbook http://code.activestate.com/recipes/286222/:
+_proc_status = '/proc/%d/status' % os.getpid()
+
+_scale = {'kB': 1024.0, 'mB': 1024.0*1024.0,
+          'KB': 1024.0, 'MB': 1024.0*1024.0}
+
+def _VmB(VmKey):
+    '''Private.
+    '''
+    global _proc_status, _scale
+     # get pseudo file  /proc/<pid>/status
+    try:
+        t = open(_proc_status)
+        v = t.read()
+        t.close()
+    except:
+        return 0.0  # non-Linux?
+     # get VmKey line e.g. 'VmRSS:  9999  kB\n ...'
+    i = v.index(VmKey)
+    v = v[i:].split(None, 3)  # whitespace
+    if len(v) < 3:
+        return 0.0  # invalid format?
+     # convert Vm value to bytes
+    return float(v[1]) * _scale[v[2]]
+
+
+def memory(since=0.0):
+    '''Return memory usage in bytes.
+    '''
+    return _VmB('VmSize:') - since
+
+
+def resident(since=0.0):
+    '''Return resident memory usage in bytes.
+    '''
+    return _VmB('VmRSS:') - since
+
+
+def stacksize(since=0.0):
+    '''Return stack size in bytes.
+    '''
+    return _VmB('VmStk:') - since
+
+
+
+#windows only:
+#def memory():
+#    import os
+#    from wmi import WMI
+#    w = WMI('.')
+#    result = w.query("SELECT WorkingSet FROM Win32_PerfRawData_PerfProc_Process WHERE IDProcess=%d" % os.getpid())
+#    return int(result[0]['WorkingSet'])
+
+
+
+
+# http://docs.python.org/library/resource.html
+# http://stackoverflow.com/questions/938733/python-total-memory-used
+# ru_maxrss is kilobytes of total memory usage
+def printusage():
+    usage=resource.getrusage(resource.RUSAGE_SELF)
+    print(usage)
+    #resource.struct_rusage(ru_utime=0.028000999999999998, ru_stime=0.020000999999999998, ru_maxrss=8280, ru_ixrss=0, ru_idrss=0, ru_isrss=0, ru_minflt=1601, ru_majflt=0, ru_nswap=0, ru_inblock=32, ru_oublock=0, ru_msgsnd=0, ru_msgrcv=0, ru_nsignals=0, ru_nvcsw=191, ru_nivcsw=6)
+    #
+    # below for unix
+    memoryusage=memory()
+    print(memoryusage)
+    #
+    
+
+
 
 # http://www.scipy.org/scipy_Example_List
 # http://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.leastsq.html
@@ -791,6 +864,7 @@ def get2davg(usedefault=0,whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergr
 
 
 def assignavg2dvars(avgmem):
+    # MEMMARK: currently 281 2D vars, so not much memory.
     global avg_ts,avg_te,avg_nitems
     global avg_rho,avg_ug,avg_bsq,avg_unb
     global avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_omegaf2b,avg_omegaf1,avg_omegaf1b,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd
@@ -5914,6 +5988,7 @@ def rfdlastfile():
 
 
 def rfd(fieldlinefilename,**kwargs):
+    # MEMMARK: 5+4+1+4+4+4+1+16=39 full 3D vars
     #read information from "fieldline" file: 
     #Densities: rho, u, 
     #Velocity components: u1, u2, u3, 
@@ -6063,6 +6138,7 @@ def getbsq_pre():
 
 
 def cvel():
+    # MEMMARK: (4+4+4+1+4+4+4+4+6)=35 full 3D vars
     global ud,etad, etau, gamma, vu, vd, bu, bd, bsq,beta,betatoplot,Q1,Q2,Q2toplot
     #
     #
@@ -6741,6 +6817,52 @@ def mfjhorvstime(ihor):
     return((ts,fs,md,jem,jtot))
 
 def mergeqtyvstime(n):
+    #
+    if OLDQTYMEMMEM==1:
+        mergeqtyvstime_old(n)
+    else:
+        mergeqtyvstime_new(n)
+    #
+
+
+# merge qty*.npy files
+# assume each i-th file only has part of data
+def mergeqtyvstime_new(n):
+    #
+    flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+    #flist.sort()
+    sort_nicely(flist)
+    #
+    nqty=getnqty(dobob=dobob)
+    #
+    ####################################
+    # total number of time slices over all files as should be once merged
+    numtimeslices=len(flist)
+    #
+    for i in np.arange(n):
+        #load each file
+        fname = "qty2_%d_%d.npy" % (i, n)
+        print( "Loading " + fname + " ..." ) ; sys.stdout.flush()
+        qtymemtemp = np.load( fname )
+        #per-element sum relevant parts of each file
+        if i == 0:
+            nqtylocal=qtymemtemp.shape[0]
+            numtimesliceslocal=qtymemtemp.shape[1]
+            nxlocal=qtymemtemp.shape[2]
+            qtymem=np.zeros((nqtylocal,numtimeslices,nxlocal),dtype=np.float32)
+            #qtymem = np.zeros_like(qtymemtemp)
+        #1st index: whichqty
+        #2nd index: whichdumpnumber
+        qtymem[:,i::n] += qtymemtemp[:,:] # assumes file only had portion of data
+    fname = "qty2.npy"
+    print( "Saving into " + fname + " ..." ) ; sys.stdout.flush()
+    np.save( fname , qtymem )
+    print( "Done mergeqtyvstime!" ) ; sys.stdout.flush()
+
+
+# OLD: merge qty*.npy files
+# assumes wrote full-sized npy file even if only processed part of data
+def mergeqtyvstime_old(n):
     for i in np.arange(n):
         #load each file
         fname = "qty2_%d_%d.npy" % (i, n)
@@ -8277,7 +8399,10 @@ def getnqty(dobob=0):
 
 
 
-        
+# MEMMARK: currently about 700 numtimeslices,nx quantities
+# so per timeslice included per core: 700*nx*4
+# (so now relatively small if use many cores, but still big for making movie.)
+# otherwise, if (e.g.) there were 35000 files (e.g. thickdisk3) then 700*128*35000=6GB by itself!
 def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altread=False):
     """
     Returns a tuple (ts,fs,mdot,pjetem,pjettot): lists of times, horizon fluxes, and Mdot
@@ -8305,26 +8430,53 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
     nqty=getnqty(dobob=dobob)
     #
     ####################################
-    #store 1D data
+    # total number of time slices over all files
     numtimeslices=len(flist)
-    global qtymem
-    qtymem=np.zeros((nqty,numtimeslices,nx),dtype=np.float32)
-    #np.seterr(invalid='raise',divide='raise')
     #
+    #
+    # determine how many time slices for *this* core
+    numtimesliceslocal=0
+    for findex, fname in enumerate(flist):
+        if( whichi >=0 and whichn > 0 ):
+            if( findex % whichn != whichi ):
+                continue
+        #
+        numtimesliceslocal=numtimesliceslocal+1
+    #
+    print("numtimeslices=%d numtimesliceslocal=%d" % (numtimeslices,numtimesliceslocal)) ; sys.stdout.flush()
+    #
+    #############################################
+    #
+    havefull=0
     print "Number of time slices: %d" % numtimeslices ; sys.stdout.flush()
     if whichi >=0 and whichi < whichn:
         fname = "qty2_%d_%d.npy" % (whichi, whichn)
+        havefull=0
     else:
         fname = "qty2.npy" 
+        havefull=1
     #
+    #############################################
+    global qtymem
+    if OLDQTYMEMMEM==1 or havefull==1:
+        qtymem=np.zeros((nqty,numtimeslices,nx),dtype=np.float32)
+    else:
+        # only need to process slices currently dealing with
+        # this can be coincidentally the same as above when whichn=1
+        qtymem=np.zeros((nqty,numtimesliceslocal,nx),dtype=np.float32)
+    #
+    #np.seterr(invalid='raise',divide='raise')
+    #
+    #############################################
     print("File trying to load or see if exist: %s" % fname) ; sys.stdout.flush()
     #
+    qtymemready=0
     if fmtver == 2 and os.path.isfile( fname ):
         qtymem2=np.load( fname )
         numtimeslices2 = qtymem2.shape[1]
         #require same number of variables, don't allow format changes on the fly for safety
         print "Number of previously saved time slices: %d" % numtimeslices2  ; sys.stdout.flush()
-        if( numtimeslices2 >= numtimeslices ):
+        if( (numtimeslices2 >= numtimeslices and (OLDQTYMEMMEM==1 or havefull==1)) or (numtimeslices2 >= numtimesliceslocal and OLDQTYMEMMEM==0) )  :
             print "Number of previously saved time slices is >= than of timeslices to be loaded, re-using previously saved time slices" ; sys.stdout.flush()
             #np.save("qty2.npy",qtymem2[:,:-1])  #kill last time slice
             return(qtymem2)
@@ -8333,6 +8485,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             print "Number of previously saved time slices is < than of timeslices to be loaded, re-using previously saved time slices" ; sys.stdout.flush()
             qtymem[:,0:numtimeslices2] = qtymem2[:,0:numtimeslices2]
             qtymem2=None
+            qtymemready=1
     elif fmtver == 1 and os.path.isfile("qty.npy"):
         qtymem2=np.load( "qty.npy" )
         numtimeslices2 = qtymem2.shape[1]
@@ -8344,7 +8497,8 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
     #
     ###########################
     #
-    # take qtymem and fill in variable names
+    # take qtymem (if read partial data) and fill in variable names
+    # ok to do this even if qtymem not read-in as long as memory for it is set
     #
     totalnum=getqtymem(qtymem)
     if totalnum!=nqty:
@@ -8377,6 +8531,10 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         loadavg()
         loadedavg=1
     #
+    #
+    #
+    #
+    #
     ##############################################
     for findex, fname in enumerate(flist):
         if( whichi >=0 and whichn > 0 ):
@@ -8390,11 +8548,20 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         print( "Reading " + fname + " ..." ) ; sys.stdout.flush()
         sys.stdout.flush()
         rfd("../"+fname)
+        #
+        printusage()
+        #
         print("Computing getqtyvstime:" + fname + " ..." + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         print("computing cvel()" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         cvel()
+        #
+        printusage()
+        #
         print("computing Tcalcud()" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         Tcalcud()
+        #
+        #
+        printusage()
         #
         print("Setting ts" + " time elapsed: %d" % (datetime.now()-start_time).seconds ); sys.stdout.flush()
         ts[findex]=t
@@ -8662,6 +8829,9 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             #
         #
         #
+        #
+        #
+        printusage()
         #
         #
         #
@@ -9107,6 +9277,9 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         #
         #
         #
+        printusage()
+        #
+        #
         #
         #############
         print("Along theta, not r.  Only portion in \phi to avoid washing out warping" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
@@ -9511,6 +9684,9 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         #
         #
         #
+        printusage()
+        #
+        #
         #
         ###########################################################################################################################################################
         #############
@@ -9732,6 +9908,9 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         #
         ##############################################################################################################################################################
         #
+        #
+        #
+        printusage()
         #
         #
         #
@@ -9957,6 +10136,9 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             FEEMrhosq_jet_radiuspow_rad30[findex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM,denom=denomdTudEM,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad30)
         #
         #
+        #
+        #
+        printusage()
         #
         #
         ##############################################################################################################################################################
@@ -10375,6 +10557,11 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
     #    plt.figure(0)
     #    plt.clf()
     #    mkframe("lrho%04d" % findex, vmin=-8,vmax=0.2)
+    #
+    #
+    printusage()
+    #
+    ########################################################################
     print("Saving to file..."  + " time elapsed: %d" % (datetime.now()-start_time).seconds  ) ; sys.stdout.flush()
     if( whichi >=0 and whichn > 0 ):
         np.save( "qty2_%d_%d.npy" % (whichi, whichn), qtymem )
@@ -10421,6 +10608,7 @@ def amin(arg1,arg2):
 
 # allow to remove rho and ug component to remove floor effects
 def Tcalcud(maxbsqorho=None, which=None):
+    # MEMMARK: 16*5+5=85 full 3D vars.
     global Tud, TudEM, TudMA, TudPA, TudEN
     global mu, sigma
     global enth
@@ -10463,6 +10651,7 @@ def Tcalcud(maxbsqorho=None, which=None):
     isunbound=(-unb>1.0)
 
 def faraday():
+    # MEMMARK: 32+4=36 full 3D vars
     global fdd, fuu, omegaf1, omegaf1b, omegaf2, omegaf2b
     # these are native values according to HARM
     fdd = np.zeros((4,4,nx,ny,nz),dtype=rho.dtype)
@@ -11076,8 +11265,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         defaultfti,defaultftf=getdefaulttimes()
         #
-        iti = min(3000,ts[-1])
-        itf = max(4000,ts[0])
+        #iti = min(3000,ts[-1])
+        #itf = max(4000,ts[0])
+        iti = defaultfti
+        itf = defaultftf
         fti = defaultfti
         ftf = defaultftf
         print( "Warning: titf.txt not found: using default numbers for averaging: %g %g %g %g" % (iti, itf, fti, ftf) ) ; sys.stdout.flush()
@@ -11108,6 +11299,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     ###########################################################################################
     # some things vs. radius (that need no normalization)
     ###########################################################################################
+    #
+    print("ts") ; sys.stdout.flush()
+    print(ts) ; sys.stdout.flush()
+    print("iti=%g itf=%g fti=%g ftf=%g"% (iti,itf,fti,ftf)) ; sys.stdout.flush()
     #
     mdotiniavgvsr = timeavg(mdtot,ts,iti,itf)
     mdotfinavgvsr = timeavg(mdtot,ts,fti,ftf)
@@ -22808,10 +23003,15 @@ def generate_time_series():
         whichi = int(sys.argv[2])
         whichn = int(sys.argv[3])
         if whichi >= whichn:
+            # DOING MERGE OF NPY FILES (generates full qtymem)
             mergeqtyvstime(whichn)
         else:
+            # DOING CREATION OF NPY FILES (is only required part of qtymem to save on memory and file sizes)
             qtymem=getqtyvstime(ihor,0.2,whichi=whichi,whichn=whichn)
+            # don't to plotqtyvstime() here because not yet all of data
     else:
+        # DOING PLOTS USING NPY FILES (should use full qtymem)
+        #
         # assume here if "plot" as second argument
         if len(sys.argv[1:])==4+4 and sys.argv[3].isdigit() and sys.argv[4].isdigit() and sys.argv[5].isdigit() and sys.argv[6].isdigit() and sys.argv[7].isdigit() and sys.argv[8].isdigit():
             makepowervsmplots = int(sys.argv[3])
@@ -23195,6 +23395,8 @@ if __name__ == "__main__":
     # defaults:
     global avoidplotsglobal
     avoidplotsglobal=1
+    global OLDQTYMEMMEM
+    OLDQTYMEMMEM=0
     #
     #
     if False:
