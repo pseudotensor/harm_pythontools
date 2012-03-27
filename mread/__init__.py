@@ -7078,7 +7078,7 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     #plt.plot(myspina6,100*fac*myeta6,'k-',lw=2) #,label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$' )
     if True:
         myapos = np.arange(0,0.99+0.001,0.001)
-        ax3.plot(myapos,100*0.002/(1-np.abs(myapos)),'r',label=r"$\eta_{\rm HK06}$")
+        ax3.plot(myapos,100*0.002/(1-np.abs(myapos)),'gray',lw=2,label=r"$\eta_{\rm HK06}$",zorder=2)
     plt.xlim(-1,1)
     plt.ylim(-10,160-1e-5)
     plt.grid()
@@ -10673,8 +10673,8 @@ if __name__ == "__main__":
         #use this in a shell script
         grid3d( "gdump.bin",use2d=True )
         avgmem=rdavg2d(usedefault=1)
-        #takeoutfloors(dotakeoutfloors=1,doplot=False,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
-        takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=False,aphi_j_val=0)
+        takeoutfloors(dotakeoutfloors=1,doplot=False,doreload=1,isinteractive=1,writefile=True,aphi_j_val=0)
+        #takeoutfloors(dotakeoutfloors=1,doplot=True,doreload=1,isinteractive=1,writefile=False,aphi_j_val=0)
         #takeoutfloors(dotakeoutfloors=1,doplot=False)
     if False:
         provsretro()
