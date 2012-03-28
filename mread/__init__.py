@@ -10667,6 +10667,16 @@ if __name__ == "__main__":
         el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
         art=ax.add_artist(el)
     if False:
+        #to plot the grid
+        plt.figure()
+        plco(ti)
+        plc(tj)
+        plt.draw()
+        plt.figure()
+        plco(ti,xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,100);plt.ylim(-50,50)
+        plc(tj,xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,100);plt.ylim(-50,50)
+        plt.draw()
+    if False:
         plt.figure(1)
         plt.clf()
         F_jet1, F_jet2, F_wind, F_wind1, F_wind2 = extract_jetwind_power(doplot=True)
