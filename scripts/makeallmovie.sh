@@ -1,6 +1,11 @@
 #!/bin/bash
 # MUST RUN THIS WITH "bash" not "sh" since on some systems that calls "dash" that doesn't correctly handle $RANDOM or other things
 
+# if run on ki-jmck, need to wait before next run
+parallel=0
+# on clusters, can submit job and get output to files when job is checking if done and going to next step
+#parallel=1
+
 # note that ubuntu defaults to dash after update.  Also causes \b to appear as ^H unlike bash.  Can't do \\b either -- still appears as ^H
 
 # Steps:
@@ -600,8 +605,17 @@ then
         fi
     ###############
 
-	    
-	    sh makemovielocal.sh ${thedir} $make1d $makemerge $makeplot $makemontage $makepowervsmplots $makespacetimeplots $makefftplot $makespecplot $makeinitfinalplot $makethradfinalplot $makeframes $makemovie $makeavg $makeavgmerge $makeavgplot
+	    if [ $parallel -eq 0 ]
+        then
+	        sh makemovielocal.sh ${thedir} $make1d $makemerge $makeplot $makemontage $makepowervsmplots $makespacetimeplots $makefftplot $makespecplot $makeinitfinalplot $makethradfinalplot $makeframes $makemovie $makeavg $makeavgmerge $makeavgplot
+        else
+            cmdraw="sh makemovielocal.sh ${thedir} $make1d $makemerge $makeplot $makemontage $makepowervsmplots $makespacetimeplots $makefftplot $makespecplot $makeinitfinalplot $makethradfinalplot $makeframes $makemovie $makeavg $makeavgmerge $makeavgplot"
+            echo "((nohup $cmdraw 2>&1 1>&3 | tee makemovielocal_${thedir}.stderr.out) 3>&1 1>&2 | tee makemovielocal_${thedir}.out) > makemovielocal_${thedir}.full.out 2>&1" > batch_makemovielocal_${thedir}.sh
+            chmod a+x ./batch_makemovielocal_${thedir}.sh
+            nohup ./batch_makemovielocal_${thedir}.sh &
+            #(nohup $cmdraw &> makemovielocal_${thedir}.full.out &)
+        fi
+
     done
 
     echo "Done with makemovie.sh stuff"

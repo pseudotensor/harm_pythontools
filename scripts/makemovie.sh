@@ -65,7 +65,136 @@ useoverride=0
 ilistoverride=`seq 24 31`
 runnoverride=128
 
-jobsuffix="jy$system"
+
+#########################################################################
+# define unique suffix so know which thing is running in batch system
+# below list obtained from __init__.py and then processed for bash
+if [ $modelname == "thickdisk7" ]
+then
+    jobsuffix="jy$system"       
+elif [ $modelname == "thickdisk8" ]
+then
+    jobsuffix="jb$system"       
+elif [ $modelname == "thickdisk11" ]
+then
+    jobsuffix="jc$system"       
+elif [ $modelname == "thickdisk12" ]
+then
+    jobsuffix="jd$system"       
+elif [ $modelname == "thickdisk13" ]
+then
+    jobsuffix="je$system"       
+elif [ $modelname == "run.like8" ]
+then
+    jobsuffix="jf$system"       
+elif [ $modelname == "thickdiskrr2" ]
+then
+    jobsuffix="jg$system"       
+elif [ $modelname == "run.liker2butbeta40" ]
+then
+    jobsuffix="jh$system"       
+elif [ $modelname == "run.liker2" ]
+then
+    jobsuffix="ji$system"       
+elif [ $modelname == "thickdisk16" ]
+then
+    jobsuffix="jj$system"       
+elif [ $modelname == "thickdisk5" ]
+then
+    jobsuffix="jk$system"       
+elif [ $modelname == "thickdisk14" ]
+then
+    jobsuffix="jl$system"       
+elif [ $modelname == "thickdiskr1" ]
+then
+    jobsuffix="jm$system"       
+elif [ $modelname == "run.liker1" ]
+then
+    jobsuffix="jn$system"       
+elif [ $modelname == "thickdiskr2" ]
+then
+    jobsuffix="jo$system"       
+elif [ $modelname == "thickdisk9" ]
+then
+    jobsuffix="jp$system"       
+elif [ $modelname == "thickdiskr3" ]
+then
+    jobsuffix="jq$system"       
+elif [ $modelname == "thickdisk17" ]
+then
+    jobsuffix="jr$system"       
+elif [ $modelname == "thickdisk10" ]
+then
+    jobsuffix="js$system"       
+elif [ $modelname == "thickdisk15" ]
+then
+    jobsuffix="jt$system"       
+elif [ $modelname == "thickdiskr15" ]
+then
+    jobsuffix="ju$system"       
+elif [ $modelname == "thickdisk2" ]
+then
+    jobsuffix="jv$system"       
+elif [ $modelname == "thickdisk3" ]
+then
+    jobsuffix="jw$system"       
+elif [ $modelname == "thickdiskhr3" ]
+then
+    jobsuffix="jx$system"       
+elif [ $modelname == "runlocaldipole3dfiducial" ]
+then
+    jobsuffix="ja$system"       
+elif [ $modelname == "blandford3d_new" ]
+then
+    jobsuffix="ka$system"       
+elif [ $modelname == "a0hr07" ]
+then
+    jobsuffix="kb$system"       
+elif [ $modelname == "sasham9" ]
+then
+    jobsuffix="kc$system"       
+elif [ $modelname == "sasham9full2pi" ]
+then
+    jobsuffix="kd$system"       
+elif [ $modelname == "sasham5" ]
+then
+    jobsuffix="ke$system"       
+elif [ $modelname == "sasham2" ]
+then
+    jobsuffix="kf$system"       
+elif [ $modelname == "sasha0" ]
+then
+    jobsuffix="kg$system"       
+elif [ $modelname == "sasha1" ]
+then
+    jobsuffix="kh$system"       
+elif [ $modelname == "sasha2" ]
+then
+    jobsuffix="ki$system"       
+elif [ $modelname == "sasha5" ]
+then
+    jobsuffix="kj$system"       
+elif [ $modelname == "sasha9b25" ]
+then
+    jobsuffix="kk$system"       
+elif [ $modelname == "sasha9b50" ]
+then
+    jobsuffix="kl$system"       
+elif [ $modelname == "sasha9b100" ]
+then
+    jobsuffix="km$system"       
+elif [ $modelname == "sasha9b200" ]
+then
+    jobsuffix="kn$system"       
+elif [ $modelname == "sasha99" ]
+then
+    jobsuffix="jz$system"       
+else
+    jobsuffix="unk$system"        
+fi
+
+
+
 
 # runn is number of runs (and in parallel, should be multiple of numcores)
 
@@ -114,19 +243,55 @@ if [ $system -eq 4 ]
 then
     # go to directory where "dumps" directory is
     # required for Nautilus, else will change to home directory when job starts
-    #
-    numcores=256
-    #numnodes=$((180/$numcores))
     numnodes=1
-    # thickdisk7 needs 6GB/core, so request 8.  This will increase the number of cores when qsub called, but numcores is really how many tasks.
-    timetot="24:00:00"
-    memtot=$((16 + $numcores * 8))
     thequeue="analysis"
+    #
+    if [ "$modelname" == "thickdisk7" ] ||
+        [ "$modelname" == "thickdiskhr3" ] ||
+        [ "$modelname" == "sasha99" ]
+    then
+        # 24 hours is good enough for these if using 450 files (taking 18 hours for thickdisk7), but not much more.
+        timetot="24:00:00"
+        numcores=80
+        # thickdisk7 needs at least 11GB/core according to memory usage print outs, so request 12.
+        # This will increase the number of cores when qsub called, but numcores is really how many tasks.
+        memtot=$((16 + $numcores * 12)) # so real number of cores charged will be >3X numcores.
+    elif [ "$thedir" == "sasham9full2pi" ] ||
+        [ "$thedir" == "sasha9b100" ]
+    then
+        timetot="24:00:00"
+        numcores=80
+        memtot=$((8 + $numcores * 8))
+    elif [ "$thedir" == "sasham9" ] ||
+        [ "$thedir" == "sasham5" ] ||
+        [ "$thedir" == "sasham2" ] ||
+        [ "$thedir" == "sasha0" ] ||
+        [ "$thedir" == "sasha1" ] ||
+        [ "$thedir" == "sasha2" ] ||
+        [ "$thedir" == "sasha5" ] ||
+        [ "$thedir" == "sasha9b25" ] ||
+        [ "$thedir" == "sasha9b50" ] ||
+        [ "$thedir" == "sasha9b200" ] ||
+        [ "$thedir" == "runlocaldipole3dfiducial" ] ||
+        [ "$thedir" == "blandford3d_new" ] ||
+        [ "$thedir" == "a0hr07" ]
+    then
+        timetot="24:00:00"
+        numcores=80
+        memtot=$((4 + $numcores * 4))
+    else
+        # default for lower res thick disk poloidal and toroidal runs
+        timetot="24:00:00"
+        numcores=80
+        memtot=$((4 + $numcores * 4))
+    fi
     #
     # for makeplot part or makeplotavg part
     numcoresplot=1
     numnodesplot=1
-    timetotplot="4:00:00"
+    # new analysis can take a long time.
+    timetotplot="8:00:00"
+    # don't always need so much memory.
     memtotplot=32
     # interactive use for <1hour:
     # ipython -pylab -colors=LightBG

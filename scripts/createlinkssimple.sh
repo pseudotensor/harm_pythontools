@@ -26,7 +26,7 @@ thedir=$1
 
 # 3) setup directory list
 
-echo "1"
+echo "compute1"
 rm -rf dirs${thedir}.txt
 alias ls='ls'
 alias lssdir='ls -ap | grep / | sed "s/\///"'
@@ -72,6 +72,7 @@ fi
 
 # check that not killing original directory with actual dump data
 dirparts=`cat dirs${thedir}.txt`
+echo $dirparts
 numdirparts=`echo $dirparts | wc -w`
 echo "Number of parts for ${thedir} is $numdirparts"
 
@@ -83,16 +84,18 @@ then
 fi
 
 
-echo "2"
+echo "compute2"
 if [ "thickdisk7" == "${thedir}" ]
 then
-    mkdir -p dumps/
+    manydir=`pwd`
     basedir=`pwd`
+    mkdir -p dumps/
     dumpsdir=$basedir/dumps/
 else
-    mkdir -p ${thedir}/dumps/
+    manydir=`pwd`
     cd ${thedir}/
     basedir=`pwd`
+    mkdir -p dumps/
     dumpsdir=$basedir/dumps/
     mv ../dirs${thedir}.txt .
 fi
@@ -103,7 +106,7 @@ fi
 
 # 5) create new full-sim dir and change to dumps dir
 
-echo "3"
+echo "compute3"
 cd $dumpsdir
 #rm -rf fieldline*.bin
 #rm -rf dump0000.bin
@@ -112,7 +115,7 @@ cd $dumpsdir
 #exit
 
 # 6) make links
-echo "4"
+echo "compute4"
 sleep 1
 
 
@@ -126,19 +129,19 @@ do
     fi
 
     echo $mydir
-    for fil in `ls $basedir/$mydir/dumps/fieldline*.bin` 
+    for fil in `ls $manydir/$mydir/dumps/fieldline*.bin` 
     do
-        echo $fil 
+        #echo $fil 
         ln -sf $fil .
     done
 
 
     # 7) Also make links to gdump.bin and dump0000.bin
     #firstdir=`head -1 ../dirs${thedir}.txt`
-    if [ -e $basedir/$mydir/dumps/gdump.bin ]
+    if [ -e $manydir/$mydir/dumps/gdump.bin ]
     then
-        ln -s $basedir/$mydir/dumps/gdump.bin .
-        ln -s $basedir/$mydir/dumps/dump0000.bin .
+        ln -s $manydir/$mydir/dumps/gdump.bin .
+        ln -s $manydir/$mydir/dumps/dump0000.bin .
     fi
 done
 
