@@ -10635,11 +10635,7 @@ if __name__ == "__main__":
     if False:
         grid3d("gdump.bin",use2d=True)
         #load time-averages
-        if os.path.isfile("avg2d20_0264_0314.npy"):
-            #use late-time average for a = 0.99 simulation
-            avgmem=rdavg2d(fname="avg2d20_0264_0314.npy")  #specify a file name
-        else:
-            avgmem=rdavg2d(usedefault=1)  #usedefault=1 reads in from "avg2d.npy"
+        avgmem=rdavg2d(usedefault=1)  #usedefault=1 reads in from "avg2d.npy"
         if 'qtymem' not in globals():
             qtymem = getqtyvstime( iofr(rhor) )
         ts=qtymem[0,:,0]
@@ -10651,6 +10647,18 @@ if __name__ == "__main__":
         plt.figure(2)
         plt.clf()
         plotBavg()
+        plt.figure(3)        
+        aphi = fieldcalc(gdetB1=avg_gdetB[0])
+        plco(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),nc=100)
+        #draw "jet boundary field line"
+        plc(aphi,xcoord=r*np.sin(h),colors='k',ycoord=r*np.cos(h),levels=(aphi[iofr(rhor),ny/2,0],),lw=2)
+        #disk boundary
+        plc(h[:,:,0]-(np.pi/2-hoverravg[:,None]),xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,),lw=2,colors='r')
+        plc(h[:,:,0]-(np.pi/2+hoverravg[:,None]),xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,),lw=2,colors='r')
+        plt.xlim(0,10);plt.ylim(-5,5)
+        ax=plt.gca()
+        el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
+        art=ax.add_artist(el)
     if False:
         plt.figure(1)
         plt.clf()
@@ -10734,7 +10742,7 @@ if __name__ == "__main__":
     if False:
         #Plot all BZs
         plotallbz()
-    if True:
+    if False:
         #Power vs. spin, updated diagnostics
         readmytests1()
         plotpowers('siminfo.txt',plotetas=False,format=2) #new format; data from 2d average dumps
