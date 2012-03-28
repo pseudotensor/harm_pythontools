@@ -10651,10 +10651,17 @@ if __name__ == "__main__":
         aphi = fieldcalc(gdetB1=avg_gdetB[0])
         plco(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),nc=100)
         #draw "jet boundary field line"
-        plc(aphi,xcoord=r*np.sin(h),colors='k',ycoord=r*np.cos(h),levels=(aphi[iofr(rhor),ny/2,0],),lw=2)
+        plc(aphi,
+            xcoord=r*np.sin(h),ycoord=r*np.cos(h),
+            levels=(aphi[iofr(rhor),ny/2,0],),
+            lw=2,colors='k')
         #disk boundary
-        plc(h[:,:,0]-(np.pi/2-hoverravg[:,None]),xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,),lw=2,colors='r')
-        plc(h[:,:,0]-(np.pi/2+hoverravg[:,None]),xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,),lw=2,colors='r')
+        plc(h[:,:,0]-(np.pi/2-hoverravg[:,None]),
+            xcoord=r*np.sin(h),ycoord=r*np.cos(h),
+            levels=(0,),lw=2,colors='r')
+        plc(h[:,:,0]-(np.pi/2+hoverravg[:,None]),
+            xcoord=r*np.sin(h),ycoord=r*np.cos(h),
+            levels=(0,),lw=2,colors='r')
         plt.xlim(0,10);plt.ylim(-5,5)
         ax=plt.gca()
         el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
