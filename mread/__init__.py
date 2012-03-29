@@ -10667,14 +10667,18 @@ if __name__ == "__main__":
         el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
         art=ax.add_artist(el)
     if False:
-        #to plot the grid
+        #to plot the grid in internal coordinates
         plt.figure()
         plco(ti)
         plc(tj)
         plt.draw()
+        #to plot the grid in R-z coordinates
         plt.figure()
         plco(ti,xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,100);plt.ylim(-50,50)
         plc(tj,xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,100);plt.ylim(-50,50)
+        #to plot jet boundary
+        ihor=iofr(rhor)
+        plc(aphi,levels=(aphi[ihor,ny/2,0],),colors='k',linewidths=2,xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,100);plt.ylim(-50,50)
         plt.draw()
     if False:
         plt.figure(1)
