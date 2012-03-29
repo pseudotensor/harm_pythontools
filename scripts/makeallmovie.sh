@@ -1,10 +1,7 @@
 #!/bin/bash
 # MUST RUN THIS WITH "bash" not "sh" since on some systems that calls "dash" that doesn't correctly handle $RANDOM or other things
 
-# if run on ki-jmck, need to wait before next run
-parallel=0
-# on clusters, can submit job and get output to files when job is checking if done and going to next step
-#parallel=1
+
 
 # note that ubuntu defaults to dash after update.  Also causes \b to appear as ^H unlike bash.  Can't do \\b either -- still appears as ^H
 
@@ -131,6 +128,53 @@ else
     # assume run from /data2/jmckinne or wherever full list of links/dirs are.
     dirname=`pwd`
 fi
+
+
+
+#based upon head node name
+isorange=`echo $HOSTNAME | grep "orange" | wc -l`
+isorangegpu=`echo $HOSTNAME | grep "orange-gpu" | wc -l`
+isjmck=`echo $HOSTNAME | grep "ki-jmck" | wc -l`
+isnautilus=`echo $HOSTNAME | grep "conseil" | wc -l`
+iskraken=`echo $HOSTNAME | grep "kraken" | wc -l`
+
+# parallel=1 sets to use batch sysem if long job *and* if multiple jobs then submit all of them to batch system
+# 1 = orange
+# 2 = orange-gpu
+# 3 = ki-jmck
+# 4 = Nautilus
+# 5 = Kraken
+if [ $isorange -eq 1  ]
+then
+    system=1
+    parallel=1
+elif [ $isorangegpu -eq 1  ]
+then
+    system=2
+    parallel=1
+elif [ $isjmck -eq 1 ]
+then
+    system=3
+    parallel=0
+elif [ $isnautilus -eq 1  ]
+then
+    system=4
+    parallel=1
+elif [ $iskraken -eq 1 ]
+then
+    system=5
+    parallel=1
+    echo "NOT SETUP YET"
+    exit
+else
+    # choose
+    system=3
+    parallel=0
+fi
+
+
+echo "system=$system parallel=$parallel"
+
 
 
 # change to directory where processing occurs
@@ -604,12 +648,15 @@ then
             fi
         fi
     ###############
+        # shouldn't need ${thedir} at end of command
+        cmdraw="sh makemovielocal.sh ${thedir} $make1d $makemerge $makeplot $makemontage $makepowervsmplots $makespacetimeplots $makefftplot $makespecplot $makeinitfinalplot $makethradfinalplot $makeframes $makemovie $makeavg $makeavgmerge $makeavgplot ${system} ${parallel}"
+
+        echo "cmdraw = $cmdraw"
 
 	    if [ $parallel -eq 0 ]
         then
-	        sh makemovielocal.sh ${thedir} $make1d $makemerge $makeplot $makemontage $makepowervsmplots $makespacetimeplots $makefftplot $makespecplot $makeinitfinalplot $makethradfinalplot $makeframes $makemovie $makeavg $makeavgmerge $makeavgplot
+	        $cmdraw
         else
-            cmdraw="sh makemovielocal.sh ${thedir} $make1d $makemerge $makeplot $makemontage $makepowervsmplots $makespacetimeplots $makefftplot $makespecplot $makeinitfinalplot $makethradfinalplot $makeframes $makemovie $makeavg $makeavgmerge $makeavgplot"
             echo "((nohup $cmdraw 2>&1 1>&3 | tee makemovielocal_${thedir}.stderr.out) 3>&1 1>&2 | tee makemovielocal_${thedir}.out) > makemovielocal_${thedir}.full.out 2>&1" > batch_makemovielocal_${thedir}.sh
             chmod a+x ./batch_makemovielocal_${thedir}.sh
             nohup ./batch_makemovielocal_${thedir}.sh &

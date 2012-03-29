@@ -2,14 +2,15 @@
 # MUST RUN THIS WITH "bash" not "sh" since on some systems that calls "dash" that doesn't correctly handle $RANDOM or other things
 
 
-EXPECTED_ARGS=16
+EXPECTED_ARGS=18
 E_BADARGS=65
 
 #if [ $# -ne $EXPECTED_ARGS ]
 if [ $# -lt $(($EXPECTED_ARGS)) ]
 then
-    echo "Usage: `basename $0` {modelname make1d makemerge makeplot makemontage makepowervsmplots makespacetimeplots makefftplot makespecplot makeinitfinalplot makethradfinalplot makeframes makemovie makeavg makeavgmerge makeavgplot} <dirname>"
-    echo "e.g. sh makemovie.sh thickdisk7 1 1 1 1 1 1 1 0 0 0 0 /data1/jmckinne/thickdisk7/fulllatest14/"
+    echo "Usage: `basename $0` {modelname make1d makemerge makeplot makemontage makepowervsmplots makespacetimeplots makefftplot makespecplot makeinitfinalplot makethradfinalplot makeframes makemovie makeavg makeavgmerge makeavgplot} <system> <parallel> <dirname>"
+    echo "only dirname is optional"
+    echo "e.g. sh makemovie.sh thickdisk7 1 1 1 1 1 1 1 0 0 0 0    3 0 /data1/jmckinne/thickdisk7/fulllatest14/"
     exit $E_BADARGS
 fi
 
@@ -31,11 +32,13 @@ makeavg=${14}
 makeavgmerge=${15}
 makeavgplot=${16}
 
+system=${17}
+parallel=${18}
 
 # get optional dirname
 if [ $# -eq $(($EXPECTED_ARGS+1))  ]
 then
-    dirname=${17}
+    dirname=${19}
 else
     # assume just local directory if not given
     dirname=`pwd`
@@ -50,15 +53,9 @@ fi
 ###########################################
 
 jobprefix=$modelname
-parallel=0
 testrun=0
 rminitfiles=0
 
-# 1 = orange
-# 2 = orange-gpu
-# 3 = ki-jmck
-# 4 = Nautilus
-system=3
 
 # can run just certain runi values
 useoverride=0

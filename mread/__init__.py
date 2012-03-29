@@ -6856,16 +6856,16 @@ def mergeqtyvstime_new(n):
             exit
         #
         #
-        if nqtyfull!=qtymem.shape[0]:
-            print("in mergeqtyvstime_new: nqtyfull=%d qtymem.shape[0]=%d" % (nqtyfull,qtymem.shape[0])) ; sys.stdout.flush()
-            print("Can't change number of quantities in each qty file to be merged") ; sys.stdout.flush()
-            exit
-        #
         numtimesliceslocal=qtymemtemp.shape[1] # can change each file
         nxfull=qtymemtemp.shape[2]
         if i == 0:
             qtymem=np.zeros((nqtyfull,numtimeslices,nxfull),dtype=np.float32)
             #qtymem = np.zeros_like(qtymemtemp)
+        if nqtyfull!=qtymem.shape[0]:
+            print("in mergeqtyvstime_new: nqtyfull=%d qtymem.shape[0]=%d" % (nqtyfull,qtymem.shape[0])) ; sys.stdout.flush()
+            print("Can't change number of quantities in each qty file to be merged") ; sys.stdout.flush()
+            exit
+        #
         #1st index: which qty
         #2nd index: which file number
         for qindex in np.arange(0,numtimesliceslocal):
@@ -8563,7 +8563,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
     #
     ##############################################
     # findex refers to true file list, while qindex refers to how put into qtymem.  Also put in stacked way when saving memory.
-    qindex=0
+    qindex=-1 # start with -1 since need below qindex to start at 0 and prefer to not place the qindex iteration at bottom
     for findex, fname in enumerate(flist):
         if( whichi >=0 and whichn > 0 ):
             if( findex % whichn != whichi ):
