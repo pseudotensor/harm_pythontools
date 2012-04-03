@@ -1,3 +1,149 @@
+def setpythonpath():
+    # PYTHONPATH from os environment might include arbitrary paths, including those not accessible on supercomputer by a compute node, so set manually
+    # Assumes if user needs local "py" that copied to local directory, then force use of that version.
+    # Can't allow module to not exist or else would search outside local directory and could find (e.g.) home that Kraken doesn't allow.
+    import os,sys,inspect
+    #
+    global pythonpath
+    if os.path.exists("py")==1:
+        print("Original PYTHONPATH=%s" % (os.environ['PYTHONPATH']))
+        pythonpath=os.path.abspath("py")
+        # cmd_folder = os.path.abspath(os.path.split(inspect.getfile( inspect.currentframe() ))[0])
+        os.environ['PYTHONPATH']=pythonpath
+        #sys.path.append(pythonpath)
+        sys.path.insert(0, pythonpath)
+        print("New PYTHONPATH=%s" % (os.environ['PYTHONPATH']))
+        print("New sys.path=%s" % (sys.path))
+        # now if import, will look in local "py" path first
+        sys.stdout.flush()
+    else:
+        print("No pythonpath found, assuming PYTHONPATH=%s will work." % (os.environ['PYTHONPATH']))
+        sys.stdout.flush()
+        pythonpath=""
+    #
+
+
+def getpythonpath():
+    import os
+    localpythonpath=os.environ['PYTHONPATH'].split(os.pathsep)
+
+
+def setmplconfigpath(uniquenum=None):
+    # also need to set MPLCONFIGDIR to something unique, otherwise (e.g.) Kraken can complain that "File exists" when matplotlib calls mkdir(name,mode).
+    import os,sys
+    try:
+        # below also removes trailing /
+        origmplconfigdir=os.path.abspath(os.environ['MPLCONFIGDIR'])
+        print("Original MPLCONFIGDIR=%s" % (origmplconfigdir)) ; sys.stdout.flush()
+        mycwd=origmplconfigdir + "%d" % (uniquenum)
+    except KeyError:
+        print("No original MPLCONFIGDIR") ; sys.stdout.flush()
+        # below always has no trailing /
+        mycwd=os.getcwd() + "/maplotlibdir" + "%s" % (uniquenum)
+    #
+    os.environ['MPLCONFIGDIR'] = mycwd
+    # now MPLCONFIGDIR is unique, so remove this dir and let matplotlib create it -- else Kraken complains.
+    if os.path.isdir(mycwd)==1:
+        import shutil
+        shutil.rmtree(mycwd)
+    #
+
+
+# redirect stderr and stdout to unique files per runnumber if relevant
+def redirectstderrout(uniquenum=None,uppernum=None):
+    import os,sys
+    mystderrname=os.getcwd() + "/python_u_%d_%d.stderr.out" % (uniquenum,uppernum)
+    mystdoutname=os.getcwd() + "/python_u_%d_%d.stdout.out" % (uniquenum,uppernum)
+    #
+    if os.path.exists(mystderrname)==1:
+        os.remove(mystderrname)
+    #
+    if os.path.exists(mystdoutname)==1:
+        os.remove(mystdoutname)
+    #
+    global oldstderr,oldstdout,newstderr,newstdout
+    #newstderr = os.open(mystderrname,os.O_RDWR|os.O_CREAT)
+    #newstdout = os.open(mystdoutname,os.O_RDWR|os.O_CREAT)
+    newstderr = open(mystderrname,'w')
+    newstdout = open(mystdoutname,'w')
+    oldstderr = sys.stderr
+    oldstdout = sys.stdout
+    sys.stderr = newstderr
+    sys.stdout = newstdout
+
+
+
+#############################
+#
+# things to run when script loaded
+#
+##############################
+def runglobalsetup(argv=None):
+    import os,sys
+    if argv is None:
+        argv = sys.argv
+    #
+    #
+    #
+    # force python path to be set before loading rest of file, including modules.
+    setpythonpath()
+    #
+    global runtype
+    if len(sys.argv[1:])>0:
+        runtype=int(sys.argv[1])
+    else:
+        print("No run type specified") ; sys.stdout.flush()
+        runtype=-1
+    #
+    global modelname
+    if len(sys.argv[2:])>0:
+        modelname = sys.argv[2]
+    else:
+        modelname = "UnknownModel"
+    #
+    print("ModelName = %s" % (modelname) ) ; sys.stdout.flush()
+    #
+    #
+    # below should agree with jon_makemovie_programstart.c.  But below used more generally.
+    if(runtype==2 or runtype==3 or runtype==4):
+        if len(sys.argv[4:])>0:
+            runnumber=int(argv[3])
+            uppernum=int(argv[4])
+            print("runtype=%d has runnumber=%d uppernum=%d" % (runtype,runnumber,uppernum)) ; sys.stdout.flush()
+            # force unique path or else mkdir in matplotlib will barf on some systems.
+            setmplconfigpath(uniquenum=runnumber)
+            redirectstderrout(uniquenum=runnumber,uppernum=uppernum)
+        else:
+            print("runtype=%d should have runnumber and uppernum but doesn't!" % (runtype)) ; sys.stdout.flush()
+            sys.stdout.flush()
+            exit
+    #
+    #
+
+
+
+#######################################
+#
+# run things when script ran
+#
+#######################################
+runglobalsetup()
+
+
+###################################
+#
+# GLOBAL IMPORTS
+#
+###################################
+
+# import modules necessary for this file
+#def localimports():
+# basic imports for things that appear as global vars (like just below) or as arguments to functions (e.g. np.pi/2)
+#import os
+#import numpy as np
+
+import shutil
+
 import matplotlib
 matplotlib.use('Agg')
 from matplotlib import rc
@@ -58,6 +204,8 @@ from scipy.special import sph_harm,lpmn,gammaln
 #from mpl_toolkits.axisartist import *
 
 import resource
+
+
 
 
 
@@ -1288,7 +1436,8 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
                 continue
         #
         print( "Reading " + fldname + " ..." ) ; sys.stdout.flush()
-        rfdheader("../"+fldname)
+        #rfdheaderonly("../"+fldname)
+        rfdheaderonly(fldname)
         #
         if itert==0:
             # create array with 1 element
@@ -6861,6 +7010,7 @@ def mergeqtyvstime_new(n):
         if i == 0:
             qtymem=np.zeros((nqtyfull,numtimeslices,nxfull),dtype=np.float32)
             #qtymem = np.zeros_like(qtymemtemp)
+        #
         if nqtyfull!=qtymem.shape[0]:
             print("in mergeqtyvstime_new: nqtyfull=%d qtymem.shape[0]=%d" % (nqtyfull,qtymem.shape[0])) ; sys.stdout.flush()
             print("Can't change number of quantities in each qty file to be merged") ; sys.stdout.flush()
@@ -21161,17 +21311,10 @@ def mkmovie(framesize=50, domakeavi=False):
     plotlentf=2e6
     #To generate movies for all sub-folders of a folder:
     #cd ~/Research/runart; for f in *; do cd ~/Research/runart/$f; (python  ~/py/mread/__init__.py &> python.out &); done
-    global modelname
-    if len(sys.argv[1:])>0:
-        modelname = sys.argv[1]
-    else:
-        modelname = "Unknown Model"
     #
-    print("ModelName = %s" % (modelname) )
-    #
-    if len(sys.argv[1:])==3 and sys.argv[2].isdigit() and (sys.argv[3].isdigit() or sys.argv[3][0]=="-") :
-        whichi = int(sys.argv[2])
-        whichn = int(sys.argv[3])
+    if len(sys.argv[2:])==3 and sys.argv[3].isdigit() and (sys.argv[4].isdigit() or sys.argv[4][0]=="-") :
+        whichi = int(sys.argv[3])
+        whichn = int(sys.argv[4])
         print( "Doing every %d slice of total %d slices" % (whichi, whichn) ) ;sys.stdout.flush()
     else:
         whichi = None
@@ -21598,18 +21741,11 @@ def mkmovieframe(findex=None,filenum=None,framesize=None):
 
 def mk2davg():
     #
-    global modelname
-    if len(sys.argv[1:])>0:
-        modelname = sys.argv[1]
-    else:
-        modelname = "Unknown Model"
-    #
-    print("ModelName = %s" % (modelname) ) ; sys.stdout.flush()
     ####################################
     global avoidplotsglobal
     avoidplotsglobal=1
     #
-    if len(sys.argv[1:])>1:
+    if len(sys.argv[2:])>1:
         grid3d("gdump.bin",use2d=True)
         #rd("dump0000.bin")
         #rfd("fieldline0000.bin")
@@ -21625,20 +21761,20 @@ def mk2davg():
     numfiles=len(flist)
     ####################################
     #itemspergroup = 20
-    if len(sys.argv[1:])==4 and sys.argv[2].isdigit() and sys.argv[3].isdigit() and sys.argv[4].isdigit():
-        whichgroups = int(sys.argv[2])
-        step = int(sys.argv[3])
-        itemspergroup = int(sys.argv[4])
+    if len(sys.argv[2:])==4 and sys.argv[3].isdigit() and sys.argv[4].isdigit() and sys.argv[5].isdigit():
+        whichgroups = int(sys.argv[3])
+        step = int(sys.argv[4])
+        itemspergroup = int(sys.argv[5])
         whichgroupe=int(np.ceil(1.0*numfiles/itemspergroup))
         print("NONMERGE: whichgroups=%d step=%d whichgroupe=%d itemspergroup=%d" % (whichgroups,step,whichgroupe,itemspergroup)) ; sys.stdout.flush()
         for whichgroup in np.arange(whichgroups,whichgroupe,step):
             avgmem = get2davg(whichgroup=whichgroup,itemspergroup=itemspergroup)
         #plot2davg(avgmem)
-    elif len(sys.argv[1:])==5 and sys.argv[2].isdigit() and sys.argv[3].isdigit() and sys.argv[4].isdigit() and sys.argv[5].isdigit():
-        whichgroups = int(sys.argv[2])
-        whichgroupe = int(sys.argv[3])
-        step = int(sys.argv[4])
-        itemspergroup = int(sys.argv[5])
+    elif len(sys.argv[2:])==5 and sys.argv[3].isdigit() and sys.argv[4].isdigit() and sys.argv[5].isdigit() and sys.argv[6].isdigit():
+        whichgroups = int(sys.argv[3])
+        whichgroupe = int(sys.argv[4])
+        step = int(sys.argv[5])
+        itemspergroup = int(sys.argv[6])
         print("MERGE: whichgroups=%d step=%d whichgroupe=%d itemspergroup=%d" % (whichgroups,step,whichgroupe,itemspergroup)) ; sys.stdout.flush()
         if step == 0:
             avgmem = get2davg(usedefault=1)
@@ -21837,15 +21973,6 @@ def loadavg():
 
 
 def mkavgfigs():
-    ###########################################
-    global modelname
-    if len(sys.argv[1:])>0:
-        modelname = sys.argv[1]
-    else:
-        modelname = "Unknown Model"
-    #
-    print("ModelName = %s" % (modelname) )
-    #
     ###########################################
     grid3d("gdump.bin",use2d=True)
     #
@@ -22726,12 +22853,6 @@ def mkavgfigs():
     #
 
 def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,prefactor=100):
-    global modelname
-    if len(sys.argv[1:])>0:
-        modelname = sys.argv[1]
-    else:
-        modelname = "Unknown Model"
-    #
     #############################################
     #Figure 1
     #To make plot, run 
@@ -22750,9 +22871,9 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
     #cd ~/Research/runart; for f in *; do cd ~/Research/runart/$f; (python  ~/py/mread/__init__.py &> python.out &); done
     #############################################
     print("ModelName = %s" % (modelname) )
-    if len(sys.argv[1:])==3 and sys.argv[2].isdigit() and (sys.argv[3].isdigit() or sys.argv[3][0]=="-") :
-        whichi = int(sys.argv[2])
-        whichn = int(sys.argv[3])
+    if len(sys.argv[2:])==3 and sys.argv[3].isdigit() and (sys.argv[4].isdigit() or sys.argv[4][0]=="-") :
+        whichi = int(sys.argv[3])
+        whichn = int(sys.argv[4])
         print( "Doing every %d slice of total %d slices" % (whichi, whichn) )
         sys.stdout.flush()
     else:
@@ -23066,7 +23187,6 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
 
 def generate_time_series():
     #
-    global modelname
     global makepowervsmplots
     makepowervsmplots=0
     global makespacetimeplots
@@ -23079,13 +23199,6 @@ def generate_time_series():
     makeinitfinalplot=0
     global makethradfinalplot
     makethradfinalplot=0
-    #
-    if len(sys.argv[1:])>0:
-        modelname = sys.argv[1]
-    else:
-        modelname = "Unknown Model"
-    #
-    print("ModelName = %s" % (modelname) ) ; sys.stdout.flush()
     #
     ###################################
     global avoidplotsglobal
@@ -23105,9 +23218,9 @@ def generate_time_series():
     #qtymem=None #clear to free mem
     #
     ###################################
-    if len(sys.argv[1:])==3 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
-        whichi = int(sys.argv[2])
-        whichn = int(sys.argv[3])
+    if len(sys.argv[2:])==3 and sys.argv[3].isdigit() and sys.argv[4].isdigit():
+        whichi = int(sys.argv[3])
+        whichn = int(sys.argv[4])
         if whichi >= whichn:
             # DOING MERGE OF NPY FILES (generates full qtymem)
             mergeqtyvstime(whichn)
@@ -23119,13 +23232,13 @@ def generate_time_series():
         # DOING PLOTS USING NPY FILES (should use full qtymem)
         #
         # assume here if "plot" as second argument
-        if len(sys.argv[1:])==4+4 and sys.argv[3].isdigit() and sys.argv[4].isdigit() and sys.argv[5].isdigit() and sys.argv[6].isdigit() and sys.argv[7].isdigit() and sys.argv[8].isdigit():
-            makepowervsmplots = int(sys.argv[3])
-            makespacetimeplots = int(sys.argv[4])
-            makefftplot = int(sys.argv[5])
-            makespecplot = int(sys.argv[6])
-            makeinitfinalplot = int(sys.argv[7])
-            makethradfinalplot = int(sys.argv[8])
+        if len(sys.argv[2:])==4+4 and sys.argv[4].isdigit() and sys.argv[5].isdigit() and sys.argv[6].isdigit() and sys.argv[7].isdigit() and sys.argv[8].isdigit() and sys.argv[9].isdigit():
+            makepowervsmplots = int(sys.argv[4])
+            makespacetimeplots = int(sys.argv[5])
+            makefftplot = int(sys.argv[6])
+            makespecplot = int(sys.argv[7])
+            makeinitfinalplot = int(sys.argv[8])
+            makethradfinalplot = int(sys.argv[9])
             print("Got plot args: %d %d %d %d %d %d" % (makepowervsmplots,makespacetimeplots,makefftplot,makespecplot,makeinitfinalplot,makethradfinalplot))
             #
         qtymem=getqtyvstime(ihor,0.2)
@@ -23250,16 +23363,9 @@ def oldstuff():
         df=diskfluxcalc(ny/2,rmin=rhor)
         print "Final   (t=%-8g): BHflux = %g, Diskflux = %g" % (t, hf, df)
     if False:
-        global modelname
-        if len(sys.argv[1:])>0:
-            modelname = sys.argv[1]
-        else:
-            modelname = "UnknownModel"
-        #
-        print("ModelName = %s" % (modelname) )
-        if len(sys.argv[1:])==3 and sys.argv[2].isdigit() and (sys.argv[3].isdigit() or sys.argv[3][0]=="-") :
-            whichi = int(sys.argv[2])
-            whichn = int(sys.argv[3])
+        if len(sys.argv[2:])==3 and sys.argv[3].isdigit() and (sys.argv[4].isdigit() or sys.argv[4][0]=="-") :
+            whichi = int(sys.argv[3])
+            whichn = int(sys.argv[4])
             sys.stdout.flush()
         if whichn < 0 and whichn is not None:
             whichn = -whichn
@@ -23496,8 +23602,12 @@ def oldstuff():
 
 
 
-
-if __name__ == "__main__":
+# so main can be called from the command line
+def main(argv=None):
+    #
+    # some things in case file itself not executed.  Repeats things if file already executed, but no harm done.
+    runglobalsetup(argv=argv)
+    #
     # defaults:
     global avoidplotsglobal
     avoidplotsglobal=1
@@ -23505,27 +23615,32 @@ if __name__ == "__main__":
     OLDQTYMEMMEM=0
     #
     #
-    if False:
+    #
+    #
+    #
+    # runtype==-1 just skip and do nothing
+    #
+    if runtype==0:
         readmytests1()
         plotpowers('powerlist.txt',format=0) #old format
-    if False:
+    if runtype==1:
         #Figure 3
         readmytests1()
         plotpowers('powerlist2davg.txt',format=1) #new format; data from 2d average dumps
-    if False:
+    if runtype==2:
         #2DAVG
         mk2davg()
-    if False:
+    if runtype==3:
         #NEW FORMAT
         #Plot qtys vs. time
         generate_time_series()
-    if False:
+    if runtype==4:
         #make a movie
         mkmovie()
-    if False:
+    if runtype==5:
         #fig2 with grayscalestreamlines and red field lines
         mkavgfigs()
-    if False:
+    if runtype==6:
         #FIGURE 1 LOTSOPANELS
         fti=7000
         ftf=1e6
@@ -23534,14 +23649,14 @@ if __name__ == "__main__":
         #epsFke = 
         print epsFm, epsFke
         mklotsopanels(epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,domakeframes=True,prefactor=1)
-    if False:
+    if runtype==7:
         grid3d( "gdump.bin",use2d=True )
         fno=0
         rfd("fieldline%04d.bin" % fno)
         plt.clf();
         mkframe("lrho%04d" % 0, vmin=-8,vmax=0.2,dostreamlines=False,len=50,doaphi=True)
         plt.savefig("lrho%04d.pdf" % fno)
-    if False:
+    if runtype==8:
         #Short tutorial. Some of the names will sound familiar :)
         print( "Running a short tutorial: read in grid, 0th dump, plot and compute some things." )
         #1 read in gdump (specifying "use2d=True" reads in just one r-theta slice to save memory)
@@ -23590,10 +23705,10 @@ if __name__ == "__main__":
 
 
 
-
-
-
-
+if __name__ == "__main__":
+    # no, can't use sys.exit since want C code that calls this to continue after done
+    #    sys.exit(main())
+    main()
 
 
 

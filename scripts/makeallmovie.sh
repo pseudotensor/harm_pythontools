@@ -78,7 +78,7 @@ E_BADARGS=65
 
 if [ $# -lt $EXPECTED_ARGS ]
 then
-    echo "Usage: `basename $0` {moviedirname docleanexist dolinks dofiles make1d makemerge makeplot makemontage makepowervsmplots makespacetimeplots makefftplot makespecplot makeinitfinalplot makethradfinalplot makeframes makemovie makeavg makeavgmerge makeavgplot collect} <dirname>"
+    echo "Usage: `basename $0` {moviedirname docleanexist dolinks dofiles make1d makemerge makeplot makemontage makepowervsmplots makespacetimeplots makefftplot makespecplot makeinitfinalplot makethradfinalplot makeframes makemovie makeavg makeavgmerge makeavgplot collect} <full path dirname>"
     echo "e.g. sh makeallmovie.sh moviefinal1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 /data2/jmckinne/"
     exit $E_BADARGS
 fi
@@ -135,10 +135,10 @@ fi
 isorange=`echo $HOSTNAME | grep "orange" | wc -l`
 isorangegpu=`echo $HOSTNAME | grep "orange-gpu" | wc -l`
 isjmck=`echo $HOSTNAME | grep "ki-jmck" | wc -l`
-isnautilus=`echo $HOSTNAME | grep "conseil" | wc -l`
+isnautilus=`echo $HOSTNAME | egrep 'conseil|arronax' | wc -l`
 iskraken=`echo $HOSTNAME | grep "kraken" | wc -l`
 
-# parallel=1 sets to use batch sysem if long job *and* if multiple jobs then submit all of them to batch system
+# parallel>=1 sets to use batch sysem if long job *and* if multiple jobs then submit all of them to batch system
 # 1 = orange
 # 2 = orange-gpu
 # 3 = ki-jmck
@@ -163,11 +163,10 @@ then
 elif [ $iskraken -eq 1 ]
 then
     system=5
-    parallel=1
-    echo "NOT SETUP YET"
-    exit
+    #parallel=1
+    parallel=2 # so uses makemoviec instead of python with appropriate arg changes
 else
-    # choose
+    # CHOOSE
     system=3
     parallel=0
 fi
@@ -673,7 +672,35 @@ fi
 ##############################################
 #
 echo "Now collect Latex results"
-if [ $collect -eq 1 ]
+
+if [ $collect -eq 1 ] &&
+    [ $system -ne 3 ]
+then
+    # then copy over results
+    for thedir in $dircollect
+    do
+	    echo "Doing remote collection for: "$thedir
+        #
+        if [ $system -eq 4 ]
+        then
+            # use -s 2 in case same file size
+            ssh pseudotensor@cli.globusonline.org scp -D -r -s 2 xsede#nautilus:$dirname/${thedir}/$moviedirname pseudotensor#ki-jmck:/data2/jmckinne/${thedir}/
+        elif [ $system -eq 5 ]
+        then
+            ssh pseudotensor@cli.globusonline.org scp -D -r -s 2 xsede#kraken:$dirname/${thedir}/$moviedirname pseudotensor#ki-jmck:/data2/jmckinne/${thedir}/
+        else
+            #scp $dirname/${thedir}/$moviedirname/qty*.npy $dirname/${thedir}/$moviedirname/*.txt $dirname/${thedir}/$moviedirname/*.png $dirname/${thedir}/$moviedirname/*.eps $dirname/${thedir}/$moviedirname/python.plot.*.out jmckinne@ki-jmck.slac.stanford.edu:/data2/jmckinne/${thedir}/$moviedirname/
+            scp -rp $dirname/${thedir}/$moviedirname jmckinne@ki-jmck.slac.stanford.edu:/data2/jmckinne/${thedir}/
+        fi
+
+    done
+fi
+
+
+
+
+if [ $collect -eq 1 ] &&
+    [ $system -eq 3 ]
 then
 
     cd $dirname/
