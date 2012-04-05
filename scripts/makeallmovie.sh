@@ -656,6 +656,9 @@ then
         then
 	        $cmdraw
         else
+            rm -rf makemovielocal_${thedir}.stderr.out
+            rm -rf makemovielocal_${thedir}.out
+            rm -rf makemovielocal_${thedir}.full.out
             echo "((nohup $cmdraw 2>&1 1>&3 | tee makemovielocal_${thedir}.stderr.out) 3>&1 1>&2 | tee makemovielocal_${thedir}.out) > makemovielocal_${thedir}.full.out 2>&1" > batch_makemovielocal_${thedir}.sh
             chmod a+x ./batch_makemovielocal_${thedir}.sh
             nohup ./batch_makemovielocal_${thedir}.sh &

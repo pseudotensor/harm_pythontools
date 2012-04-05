@@ -106,16 +106,17 @@ def runglobalsetup(argv=None):
     #
     # below should agree with jon_makemovie_programstart.c.  But below used more generally.
     if(runtype==2 or runtype==3 or runtype==4):
-        if len(sys.argv[4:])>0:
+        if len(sys.argv[4:])>0 and argv[3]!="plot":
             runnumber=int(argv[3])
             uppernum=int(argv[4])
             print("runtype=%d has runnumber=%d uppernum=%d" % (runtype,runnumber,uppernum)) ; sys.stdout.flush()
             # force unique path or else mkdir in matplotlib will barf on some systems.
             setmplconfigpath(uniquenum=runnumber)
             redirectstderrout(uniquenum=runnumber,uppernum=uppernum)
+        elif argv[3]=="plot":
+            print("Doing plot type of run") ; sys.stdout.flush()
         else:
             print("runtype=%d should have runnumber and uppernum but doesn't!" % (runtype)) ; sys.stdout.flush()
-            sys.stdout.flush()
             exit
     #
     #
@@ -20173,15 +20174,24 @@ def timeavg_vstvsr( qty, ts, fti, ftf, step = 1 ):
     qtycond = qtycond[::step,:]
     tscond=ts[cond]
     tscond=tscond[::step]
-    dtcond=np.gradient(tscond)
-    qtygen=np.transpose(np.transpose(qtycond)*dtcond)
-    #qtygen=np.copy(qtycond)
-    #for ii in np.arange(0,len(dtcond)):
-    #    qtygen[ii,:]=qtycond[ii,:]*dtcond[ii]
+    if len(tscond)>1:
+        dtcond=np.gradient(tscond)
+        qtygen=np.transpose(np.transpose(qtycond)*dtcond)
+        #qtygen=np.copy(qtycond)
+        #for ii in np.arange(0,len(dtcond)):
+        #    qtygen[ii,:]=qtycond[ii,:]*dtcond[ii]
+        #
+        qtyavgnumer = (qtygen).sum(axis=0,dtype=np.float64)
+        qtyavgdenom = (dtcond).sum(axis=0,dtype=np.float64)
+        qtyavg = qtyavgnumer/qtyavgdenom
+    elif len(tscond)==1:
+        # then only 1 value to report
+        qtyavg = qtycond[0];
+    else:
+        # then no value to report, so set to zero and report problem
+        qtyavg = 0
+        print("timeavg has no values within temporal range") ;sys.stdout.flush()
     #
-    qtyavgnumer = (qtygen).sum(axis=0,dtype=np.float64)
-    qtyavgdenom = (dtcond).sum(axis=0,dtype=np.float64)
-    qtyavg = qtyavgnumer/qtyavgdenom
     return( qtyavg )
 
 
@@ -20192,16 +20202,25 @@ def timeavg( qty, ts, fti, ftf, step = 1 ):
     qtycond = qtycond[::step]
     tscond=ts[cond]
     tscond=tscond[::step]
-    dtcond=np.gradient(tscond)
-    qtygen=np.transpose(np.transpose(qtycond)*dtcond)
-    #qtygen=np.copy(qtycond)
-    #for ii in np.arange(0,len(dtcond)):
-    #    qtygen[ii,:]=qtycond[ii,:]*dtcond[ii]
-    ##
-    qtyavgnumer = (qtygen).sum(axis=0,dtype=np.float64)
-    qtyavgdenom = (dtcond).sum(axis=0,dtype=np.float64)
-    qtyavg = qtyavgnumer/qtyavgdenom
-    #qtyavg = qtycond.mean(axis=0,dtype=np.float64)
+    if len(tscond)>1:
+        dtcond=np.gradient(tscond)
+        qtygen=np.transpose(np.transpose(qtycond)*dtcond)
+        #qtygen=np.copy(qtycond)
+        #for ii in np.arange(0,len(dtcond)):
+        #    qtygen[ii,:]=qtycond[ii,:]*dtcond[ii]
+        ##
+        qtyavgnumer = (qtygen).sum(axis=0,dtype=np.float64)
+        qtyavgdenom = (dtcond).sum(axis=0,dtype=np.float64)
+        qtyavg = qtyavgnumer/qtyavgdenom
+        #qtyavg = qtycond.mean(axis=0,dtype=np.float64)
+    elif len(tscond)==1:
+        # then only 1 value to report
+        qtyavg = qtycond[0];
+    else:
+        # then no value to report, so set to zero and report problem
+        qtyavg = 0
+        print("timeavg has no values within temporal range") ;sys.stdout.flush()
+    #
     return( qtyavg )
 
 def timeavg_sqrt( qty0, ts, fti, ftf, step = 1 ):
@@ -20212,16 +20231,25 @@ def timeavg_sqrt( qty0, ts, fti, ftf, step = 1 ):
     qtycond = qtycond[::step]
     tscond=ts[cond]
     tscond=tscond[::step]
-    dtcond=np.gradient(tscond)
-    qtygen=np.transpose(np.transpose(qtycond)*dtcond)
-    #qtygen=np.copy(qtycond)
-    #for ii in np.arange(0,len(dtcond)):
-    #    qtygen[ii,:]=qtycond[ii,:]*dtcond[ii]
-    ##
-    qtyavgnumer = (qtygen).sum(axis=0,dtype=np.float64)
-    qtyavgdenom = (dtcond).sum(axis=0,dtype=np.float64)
-    qtyavg = qtyavgnumer/qtyavgdenom
-    #qtyavg = qtycond.mean(axis=0,dtype=np.float64)
+    if len(tscond)>1:
+        dtcond=np.gradient(tscond)
+        qtygen=np.transpose(np.transpose(qtycond)*dtcond)
+        #qtygen=np.copy(qtycond)
+        #for ii in np.arange(0,len(dtcond)):
+        #    qtygen[ii,:]=qtycond[ii,:]*dtcond[ii]
+        ##
+        qtyavgnumer = (qtygen).sum(axis=0,dtype=np.float64)
+        qtyavgdenom = (dtcond).sum(axis=0,dtype=np.float64)
+        qtyavg = qtyavgnumer/qtyavgdenom
+        #qtyavg = qtycond.mean(axis=0,dtype=np.float64)
+    elif len(tscond)==1:
+        # then only 1 value to report
+        qtyavg = qtycond[0];
+    else:
+        # then no value to report, so set to zero and report problem
+        qtyavg = 0
+        print("timeavg has no values within temporal range") ;sys.stdout.flush()
+    #
     return( qtyavg )
 
 def getstagparams2(bsqorho=None,uu=None,var=None,rmax=20,doplot=1,doreadgrid=1):
@@ -23231,7 +23259,7 @@ def generate_time_series():
     else:
         # DOING PLOTS USING NPY FILES (should use full qtymem)
         #
-        # assume here if "plot" as second argument
+        # assume here if "plot" as second argument (i.e. not a digit)
         if len(sys.argv[2:])==4+4 and sys.argv[4].isdigit() and sys.argv[5].isdigit() and sys.argv[6].isdigit() and sys.argv[7].isdigit() and sys.argv[8].isdigit() and sys.argv[9].isdigit():
             makepowervsmplots = int(sys.argv[4])
             makespacetimeplots = int(sys.argv[5])

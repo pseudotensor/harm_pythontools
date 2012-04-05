@@ -202,6 +202,12 @@ else
 fi
 
 
+# defaults
+chunklisttypeplot=0
+numtasksplot=1
+chunklistplot=\"`seq -s " " 1 $numtasksplot`\"
+runnplot=1
+
 
 
 # runn is number of runs (and in parallel, should be multiple of numcorespernode)
@@ -417,6 +423,7 @@ then
         thequeue="large"
     fi
 
+    # GODMARK: 458 thickdisk7 files only took 1:45 on Kraken
     timetot="24:00:00" # probably don't need all this is 1 task per fieldline file
 
     echo "PART1: $numcorespernode $numcorespersocket $numnodes $numtotalcores $thequeue $timetot"
@@ -441,7 +448,9 @@ then
     numtotalcoresplot=$numcorespernodeplot
     thequeueplot="small"
     apcmdplot="aprun -n $numtasksplot"
+    # only took 6 minutes for thickdisk7 doing 458 files inside qty2.npy!  Up to death at point when tried to resample in time.
     timetotplot="8:00:00"
+
 
     echo "PART1P: $numcorespernodeplot $numnodesplot $numtotalcoresplot $thequeueplot $timetotplot"
     echo "PART2P: $apcmdplot"
@@ -777,6 +786,8 @@ then
 		                jobname=$jobprefix.${i}.${jobcheck}
 		                outputfile=$jobname.out
 		                errorfile=$jobname.err
+                        rm -rf $outputfile
+                        rm -rf $errorfile
                         #
                         if [ $system -eq 4 ]
                         then
@@ -800,6 +811,8 @@ then
                             fi
                             localerrorfile=python_${fakeruni}_${runn}.stderr.out
                             localoutputfile=python_${fakeruni}_${runn}.out
+                            rm -rf $localerrorfile
+                            rm -rf $localoutputfile
 		                    bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l walltime=$timetot,size=$numtotalcores -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M jmckinne@stanford.edu -m be ./$superbatch"
                         else
                             # probably specifying ptile below is not necessary
@@ -972,7 +985,9 @@ then
 		    jobname=$jobprefix.${jobcheck}
 		    outputfile=$jobname.pl.out
 		    errorfile=$jobname.pl.err
-                        #
+            rm -rf $outputfile
+            rm -rf $errorfile
+            #
             if [ $system -eq 4 ]
             then
 		        bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l mem=${memtotplot}GB,walltime=$timetotplot,ncpus=$numcorespernodeplot -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -989,13 +1004,15 @@ then
                 then
                     echo "$apcmdplot ./$thebatch" >> $superbatch
                 else
-		            cmdraw="$makemoviecfullfile $chunklisttype $chunklist $runn $DATADIR $jobcheck $myinitfile3 $runtype $modelname plot $makepowervsmplots $makespacetimeplots $makefftplot $makespecplot $makeinitfinalplot $makethradfinalplot"
+		            cmdraw="$makemoviecfullfile $chunklisttypeplot $chunklistplot $runnplot $DATADIR $jobcheck $myinitfile3 $runtype $modelname plot $makepowervsmplots $makespacetimeplots $makefftplot $makespecplot $makeinitfinalplot $makethradfinalplot"
                     echo "$apcmdplot $cmdraw" >> $superbatch
                 fi
                 localerrorfile=python.plot.stderr.out
                 localoutputfile=python.plot.out
+                rm -rf $localerrorfile
+                rm -rf $localoutputfile
                 #
-		        bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l walltime=$timetot,size=$numtotalcoresplot -q $thequeueplot -N $jobname -o $localoutputfile -e $localerrorfile -M jmckinne@stanford.edu -m be ./$superbatch"
+		        bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l walltime=$timetotplot,size=$numtotalcoresplot -q $thequeueplot -N $jobname -o $localoutputfile -e $localerrorfile -M jmckinne@stanford.edu -m be ./$superbatch"
             else
                 # probably specifying ptile below is not necessary
 		        bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernodeplot] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -1277,6 +1294,8 @@ then
 		                jobname=$jobprefix.${i}.${jobcheck}
 		                outputfile=$jobname.out
 		                errorfile=$jobname.err
+                        rm -rf $outputfile
+                        rm -rf $errorfile
                         #
                         if [ $system -eq 4 ]
                         then
@@ -1300,6 +1319,8 @@ then
                             fi
 		                    localerrorfile=python_${fakeruni}_${runn}.stderr.movieframes.out
                             localoutputfile=python_${fakeruni}_${runn}.movieframes.out
+                            rm -rf $localerrorfile
+                            rm -rf $localoutputfile
                             #
 		                    bsubcommand="qsub  -S /bin/bash -A TG-PHY120005 -l walltime=$timetot,size=$numtotalcores -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M jmckinne@stanford.edu -m be ./$superbatch"
                         else
@@ -1607,6 +1628,8 @@ then
 		                jobname=$jobprefix.${i}.${jobcheck}
 		                outputfile=$jobname.out
 		                errorfile=$jobname.err
+                        rm -rf $outputfile
+                        rm -rf $errorfile
                         #
                         if [ $system -eq 4 ]
                         then
@@ -1630,6 +1653,8 @@ then
                             fi
 		                    localerrorfile=python_${fakeruni}_${runn}.stderr.avg.out
                             localoutputfile=python_${fakeruni}_${runn}.avg.out
+                            rm -rf $localerrorfile
+                            rm -rf $localoutputfile
                             #
 		                    bsubcommand="qsub  -S /bin/bash -A TG-PHY120005 -l walltime=$timetot,size=$numtotalcores -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M jmckinne@stanford.edu -m be ./$superbatch"
                         else
@@ -1829,7 +1854,9 @@ then
 		    jobname=$jobprefix.${jobcheck}
 		    outputfile=$jobname.pa.out
 		    errorfile=$jobname.pa.err
-                        #
+            rm -rf $outputfile
+            rm -rf $errorfile
+            #
             if [ $system -eq 4 ]
             then
 		        bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l mem=${memtotplot}GB,walltime=$timetotplot,ncpus=$numcorespernodeplot -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -1846,13 +1873,15 @@ then
                 then
                     echo "$apcmdplot ./$thebatch" >> $superbatch
                 else
-		            cmdraw="$makemoviecfullfile $chunklisttype $chunklist $runn $DATADIR $jobcheck $myinitfile7 $runtype $modelname"
+		            cmdraw="$makemoviecfullfile $chunklisttypeplot $chunklistplot $runnplot $DATADIR $jobcheck $myinitfile7 $runtype $modelname"
                     echo "$apcmdplot $cmdraw" >> $superbatch
                 fi
                 localerrorfile=python.plot.avg.stderr.out
                 localoutputfile=python.plot.avg.out
+                rm -rf $localerrorfile
+                rm -rf $localoutputfile
                 #
-		        bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l walltime=$timetot,size=$numtotalcoresplot -q $thequeueplot -N $jobname -o $localoutputfile -e $localerrorfile -M jmckinne@stanford.edu -m be ./$superbatch"
+		        bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l walltime=$timetotplot,size=$numtotalcoresplot -q $thequeueplot -N $jobname -o $localoutputfile -e $localerrorfile -M jmckinne@stanford.edu -m be ./$superbatch"
             else
                     # probably specifying ptile below is not necessary
 		        bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernodeplot] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
