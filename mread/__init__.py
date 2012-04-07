@@ -6966,9 +6966,10 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     #eta_func_coef[-1]=4.4
     #eta_func_coef[-2]=0
     #print eta_func_coef
-    #eta_popt,eta_pconv = curve_fit(lambda x,a4,a3,a2,a1,a0: poly1d([a4,a3,a2,a1,a0])(x),u_alist,100*u_etalist,sigma=100*u_etastdlist)
-    # print "eta_popt:"
-    # print eta_popt
+    if False:
+        eta_popt,eta_pconv = curve_fit(lambda x,a4,a3,a2,a1,a0: poly1d([a4,a3,a2,a1,a0])(x),u_alist,100*u_etalist,sigma=100*u_etastdlist)
+        print "eta_popt:"
+        print eta_popt
     #eta_func=np.poly1d(eta_popt)    
     slopes_etafunc = pchip_init(u_alist,100*u_etalist)
     #eta_func = lambda xvec: pchip_eval(u_alist, 100*u_etalist, slopes_etafunc, xvec) 
@@ -7023,7 +7024,8 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     else:
         etajs = u_eta_s_jet_list
         sigma = u_eta_s_jet_stdlist
-        etaws = u_eta_s_wind_unb_list #u_eta_s_wind_list
+        #etaws = u_eta_s_wind_unb_list #u_eta_s_wind_list
+        etaws = u_eta_s_wind_list
         etasigma = u_eta_s_wind_stdlist
     ax3.errorbar(u_alist,100*etajs,yerr=2*100*sigma,mec='g',mfc='none',ecolor='g',fmt='s',lw=2,elinewidth=2,mew=1,zorder=20)
     #fake plot call: move it out of plot bounds but use it to populate legend info
@@ -7215,19 +7217,20 @@ def plot_spindown(a0,spar_func=None,eta_func=None,etajet_func=None,etawind_func=
         ax1.set_title(r"${\rm Spin-down\ of\ RETROGRADE\ black\ holes}$",fontsize=0.8*fntsize)
     a_of_t = odeint(lambda a,t: spar_func(a),a0,t)[:,0]
     a_of_t_func=interp1d(t,a_of_t,bounds_error=False)
-    ax1.plot(t,a_of_t_func(t),"k-",lw=2)
+    ax1.plot(t,np.abs(a_of_t_func(t)),"k-",lw=2)
     #ax1.plot(t,np.abs(a0*exp(-9*t)),"k:",lw=2)
     ax1.plot(t,np.abs((a0-aeq)*exp(-12*t)+aeq),"k:",lw=2)
     # ax1.plot(t,np.abs(a0*exp(-12*t)),"k:",lw=2)
-    la,=ax1.plot(t,-a_of_t_func(t),"k--",lw=2)
-    la.set_dashes([10,5])
+    if False:
+        la,=ax1.plot(t,-a_of_t_func(t),"k--",lw=2)
+        la.set_dashes([10,5])
     lspar,=ax1.plot(t,t*0+aeq,"k:",lw=2)
     lspar.set_dashes([2,3,2,3])
     if a0 > 0:
-        ax1.set_ylabel(r"$a$",ha="right",labelpad=0,fontsize=fntsize)
+        ax1.set_ylabel(r"$a$",ha="right",labelpad=5,fontsize=fntsize)
         ax1.set_ylim(-0.2,1.+1e-5)
     else:
-        ax1.set_ylabel(r"$a$",ha="right",labelpad=0,fontsize=fntsize)
+        ax1.set_ylabel(r"$|a|$",ha="right",labelpad=0,fontsize=fntsize)
         ax1.set_ylim(-1.,0.2+1e-5)
     ax1.text(0.07, 0.7*aeq, r"$a=a_{\rm eq}$", size=fntsize, rotation=0.,
          ha="center", va="top",
