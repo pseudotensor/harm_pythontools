@@ -7210,6 +7210,9 @@ def plot_spindown(a0,spar_func=None,eta_func=None,etajet_func=None,etawind_func=
     ax3=plt.subplot(gs[2:4,:])
     aeq = brentq(spar_func,-1,1)
     print("Equilibrium spin: %g" % aeq)
+    #
+    # SPIN
+    #
     #initial value
     if a0 > 0:
         ax1.set_title(r"${\rm Spin-down\ of\ PROGRADE\ black\ holes}$",fontsize=0.8*fntsize)
@@ -7238,6 +7241,10 @@ def plot_spindown(a0,spar_func=None,eta_func=None,etajet_func=None,etawind_func=
          )
     ax1.set_ylim(0.01,1)
     ax1.set_yscale('log')
+    placeletter(ax1,"$(\mathrm{a})$",size=16,fx=0.04,fy=0.8,ha="center",va="center",color='k',bbox=None)
+    #
+    # MASS
+    #
     #initial value
     lnM0 = 0
     eta_func_interp = interp1d(t,eta_func(a_of_t_func(t)),kind='linear',bounds_error=False)
@@ -7250,6 +7257,10 @@ def plot_spindown(a0,spar_func=None,eta_func=None,etajet_func=None,etawind_func=
     leg1=ax2.legend(loc="lower right",frameon=True,labelspacing=0.15,ncol=1,borderpad = 0.3,borderaxespad=0.4,handlelength=2.2,handletextpad=0.1,fancybox=True)
     ax2.set_ylabel(r"$M,\ M_{\rm ir}$",ha="right",fontsize=fntsize)
     ax2.set_ylim(0.5,1.7)
+    placeletter(ax2,"$(\mathrm{b})$",size=16,fx=0.04,fy=0.3,ha="center",va="center",color='k',bbox=None)
+    #
+    # ETA_JET, ETA_WIND
+    #
     ax3.plot(t,eta_func(a_of_t_func(t)),"r-",lw=2,label=r"$\eta$")  #,label=r"${\rm Total\ (jet+wind)\ efficiency,}\ \eta$"
     lj,=ax3.plot(t,etajet_func(a_of_t_func(t)),"g--",lw=2,label=r"$\eta_{\rm jet}$")  #,label=r"${\rm Jet\ efficiency,}\ \eta_{\rm jet}$"
     #lj.set_dashes([2,3,2,3])
@@ -7271,6 +7282,7 @@ def plot_spindown(a0,spar_func=None,eta_func=None,etajet_func=None,etawind_func=
         ax3.set_ylim(0,50)
     ax3.set_yscale('log')
     ax3.set_ylim(0.01,200)
+    placeletter(ax3,"$(\mathrm{c})$",size=16,fx=0.04,fy=0.99,ha="center",va="center",color='k',bbox=None)
     #plt.plot(t,rhor_compute(a_of_t))
     ax1.grid(visible=True)
     ax2.grid(visible=True)
@@ -9976,7 +9988,7 @@ def oldstuff():
         #plotqtyvstime(qtymem,whichplot=-4)
 
 def placeletter(ax1,lab,size=16,fx=0.07,fy=0.07,ha="center",va="top",color='k',bbox=None):
-    plt.text(
+    ax1.text(
         ax1.get_xlim()[0]+(ax1.get_xlim()[1]-ax1.get_xlim()[0])*fx,
         ax1.get_ylim()[0]+(ax1.get_ylim()[1]-ax1.get_ylim()[0])*(1-fy), 
         r"%s" % lab, size=size,
@@ -10333,10 +10345,10 @@ def plotQmriavg(hor=None):
         lambdamri = res*_dx2*dxdxp[2,2]
         Q2mri = 2*hor[:,None,None]/lambdamri
         #pdb.set_trace()
-        plt.plot(r[:,ny/2,0],Q2mri[:,ny/2,0],color="green",label=r"$\lambda_{\rm MRI}/2h$")
+        plt.plot(r[:,ny/2,0],Q2mri[:,ny/2,0],color="green",label=r"$2h/\lambda_{\rm MRI}$")
     plt.ylim(0,150./1e2)
     #plt.xlabel(r"$r\ [r_g]$",fontsize=16)
-    plt.ylabel(r"$\lambda_{\rm MRI}/2h$",fontsize=16)
+    plt.ylabel(r"$2h/\lambda_{\rm MRI}$",fontsize=16)
     plt.grid()
     plt.legend(ncol=3,borderpad = 0.3,borderaxespad=0.2,frameon=False,labelspacing=0)
     ax32 = plt.subplot(gs3[-3,:])
@@ -10345,6 +10357,7 @@ def plotQmriavg(hor=None):
     #plt.plot(r[:,ny/2,0],10*vatheta[:,ny/2,0]/omegak,color="red",label=r"$10\!\times v_{\rm A}^{\theta}$")
     omega = (dxdxp[3][3]*np.abs(avg_uu[3])/avg_uu[0])
     plt.plot(r[:,ny/2,0],omega[:,ny/2,0]/omegak,color="green",label=r"$\Omega/\Omega_{\rm K}$")
+    plt.plot(r[:,ny/2,0],omega[:,ny/2,0],color="yellow",label=r"$\Omega$")
     plt.xlim(rhor,30)
     plt.ylim(0.,1)
     #plt.yscale("log")
