@@ -117,7 +117,9 @@ def assignavg2dvars(avgmem,DTf=5):
     global avg_gamma
     global avg_gdetF
     global avg_bsquu
-    global avg_absbu, avg_absbd, avg_absuu, avg_absud, avg_absomegaf2
+    global avg_absbu, avg_absbd, avg_absuu, avg_absud, avg_absomegaf2, 
+    global avg_omegaf1, avg_absomegaf1, avg_omegaf1b, avg_absomegaf1b, avg_omegaf2b, avg_absomegaf2b
+
     #avg defs
     i=0
     avg_ts=avgmem[i,0,:];
@@ -221,6 +223,17 @@ def assignavg2dvars(avgmem,DTf=5):
         avg_absomegaf2=avgmem[i,:,:,None];i+=n
     else:
         print( "Old-ish format: missing avg_absbu, avg_absbd, avg_absuu, avg_absud, avg_absomegaf2" )
+    if avgmem.shape[0] >=  206+9+4+17+6:
+        n=1
+        avg_omegaf1=avgmem[i,:,:,None];i+=n
+        avg=avgmem[i,:,:,None];i+=n
+        avg_omegaf1b=avgmem[i,:,:,None];i+=n
+        avg_absomegaf1b=avgmem[i,:,:,None];i+=n
+        avg_omegaf2b=avgmem[i,:,:,None];i+=n
+        avg_absomegaf2b=avgmem[i,:,:,None];i+=n
+    else:
+        print( "Old-ish format: missing avg_omegaf1, avg_absomegaf1, avg_omegaf1b, avg_absomegaf1b, avg_omegaf2b, avg_absomegaf2b" )
+        
     #derived quantities
     avg_gamma=avg_uu[0]/(-gn3[0,0])**0.5
 
@@ -233,6 +246,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20,removefloors=False):
     global avg_gdetF
     global avg_bsquu
     global avg_absbu, avg_absbd, avg_absuu, avg_absud, avg_absomegaf2
+    global avg_omegaf1, avg_absomegaf1, avg_omegaf1b, avg_absomegaf1b, avg_omegaf2b, avg_absomegaf2b
     global rho
     global ug
     if whichgroup < 0 or itemspergroup <= 0:
@@ -251,7 +265,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20,removefloors=False):
     #
     #print "Number of time slices: %d" % flist.shape[0]
     #store 2D data
-    navg=206+9+4+17 #206+9+4+17
+    navg=206+9+4+17+6 #206+9+4+17
     avgmem=np.zeros((navg,nx,ny),dtype=np.float32)
     assignavg2dvars(avgmem)
     ##
@@ -388,6 +402,15 @@ def get2davgone(whichgroup=-1,itemspergroup=20,removefloors=False):
             avg_absuu+=np.abs(uu).sum(-1)[:,:,:,None]
             avg_absud+=np.abs(ud).sum(-1)[:,:,:,None]
             avg_absomegaf2+=np.abs(omegaf2).sum(-1)[:,:,None]
+        n=6
+        if avg_omegaf1 is not None:
+            #added on 04/10/2012
+            avg_omegaf1+=omegaf1.sum(-1)[:,:,None]
+            avg_absomegaf1+=np.abs(omegaf1).sum(-1)[:,:,None]
+            avg_omegaf1b+=omegaf1b.sum(-1)[:,:,None]
+            avg_absomegaf1b+=np.abs(omegaf1b).sum(-1)[:,:,None]
+            avg_omegaf2b+=omegaf2b.sum(-1)[:,:,None]
+            avg_absomegaf2b+=np.abs(omegaf2b).sum(-1)[:,:,None]
     if avg_nitems[0] == 0:
         print( "No files found" )
         return None
@@ -3371,7 +3394,7 @@ def Tcalcud():
     isunbound=(-unb>1.0)
 
 def faraday():
-    global fdd, fuu, omegaf1, omegaf2
+    global fdd, fuu, omegaf1, omegaf2, omegaf1b, omegaf2b
     if 'fdd' in globals():
         del fdd
     if 'fuu' in globals():
@@ -3421,6 +3444,35 @@ def faraday():
     omegaf1=fdd[0,1]/fdd[1,3] # = ftr/frp
     omegaf2=fdd[0,2]/fdd[2,3] # = fth/fhp
     #
+    # from jon branch, 04/10/2012
+    #
+    B1hat=B[1]*np.sqrt(gv3[1,1])
+    B2hat=B[2]*np.sqrt(gv3[2,2])
+    B3nonhat=B[3]
+    v1hat=uu[1]*np.sqrt(gv3[1,1])/uu[0]
+    v2hat=uu[2]*np.sqrt(gv3[2,2])/uu[0]
+    v3nonhat=uu[3]/uu[0]
+    #
+    aB1hat=np.fabs(B1hat)
+    aB2hat=np.fabs(B2hat)
+    av1hat=np.fabs(v1hat)
+    av2hat=np.fabs(v2hat)
+    #
+    vpol=np.sqrt(av1hat**2 + av2hat**2)
+    Bpol=np.sqrt(aB1hat**2 + aB2hat**2)
+    #
+    #omegaf1b=(omegaf1*aB1hat+omegaf2*aB2hat)/(aB1hat+aB2hat)
+    #E1hat=fdd[0,1]*np.sqrt(gn3[1,1])
+    #E2hat=fdd[0,2]*np.sqrt(gn3[2,2])
+    #Epabs=np.sqrt(E1hat**2+E2hat**2)
+    #Bpabs=np.sqrt(aB1hat**2+aB2hat**2)+1E-15
+    #omegaf2b=Epabs/Bpabs
+    #
+    # assume field swept back so omegaf is always larger than vphi (only true for outflow, so put in sign switch for inflow as relevant for disk near BH or even jet near BH)
+    # GODMARK: These assume rotation about z-axis
+    omegaf2b=np.fabs(v3nonhat) + np.sign(uu[1])*(vpol/Bpol)*np.fabs(B3nonhat)
+    #
+    omegaf1b=v3nonhat - B3nonhat*(v1hat*B1hat+v2hat*B2hat)/(B1hat**2+B2hat**2)
 
 
 def jetpowcalc(which=2,minbsqorho=10,minmu=None,donorthsouth=0,excludebound=True):
