@@ -117,7 +117,7 @@ def assignavg2dvars(avgmem,DTf=5):
     global avg_gamma
     global avg_gdetF
     global avg_bsquu
-    global avg_absbu, avg_absbd, avg_absuu, avg_absud, avg_absomegaf2, 
+    global avg_absbu, avg_absbd, avg_absuu, avg_absud, avg_absomegaf2
     global avg_omegaf1, avg_absomegaf1, avg_omegaf1b, avg_absomegaf1b, avg_omegaf2b, avg_absomegaf2b
 
     #avg defs
