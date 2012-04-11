@@ -10358,6 +10358,7 @@ def plotQmriavg(hor=None):
     omega = (dxdxp[3][3]*np.abs(avg_uu[3])/avg_uu[0])
     plt.plot(r[:,ny/2,0],omega[:,ny/2,0]/omegak,color="green",label=r"$\Omega/\Omega_{\rm K}$")
     plt.plot(r[:,ny/2,0],omega[:,ny/2,0],color="yellow",label=r"$\Omega$")
+    plt.plot(r[:,ny/2,0],avg_absomegaf2[:,ny/2-9:ny/2+10,0].mean(-1)*dxdxp[3,3,0,0,0],color="blue",label=r"$\Omega_{\rm F}$")
     plt.xlim(rhor,30)
     plt.ylim(0.,1)
     #plt.yscale("log")
