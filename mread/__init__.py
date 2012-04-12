@@ -117,7 +117,7 @@ def assignavg2dvars(avgmem,DTf=5):
     global avg_gamma
     global avg_gdetF
     global avg_bsquu
-    global avg_absbu, avg_absbd, avg_absuu, avg_absud, avg_absomegaf2, 
+    global avg_absbu, avg_absbd, avg_absuu, avg_absud, avg_absomegaf2
     global avg_omegaf1, avg_absomegaf1, avg_omegaf1b, avg_absomegaf1b, avg_omegaf2b, avg_absomegaf2b
 
     #avg defs
@@ -226,7 +226,7 @@ def assignavg2dvars(avgmem,DTf=5):
     if avgmem.shape[0] >=  206+9+4+17+6:
         n=1
         avg_omegaf1=avgmem[i,:,:,None];i+=n
-        avg=avgmem[i,:,:,None];i+=n
+        avg_absomegaf1=avgmem[i,:,:,None];i+=n
         avg_omegaf1b=avgmem[i,:,:,None];i+=n
         avg_absomegaf1b=avgmem[i,:,:,None];i+=n
         avg_omegaf2b=avgmem[i,:,:,None];i+=n
