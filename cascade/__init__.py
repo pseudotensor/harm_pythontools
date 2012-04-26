@@ -76,13 +76,13 @@ def K( Enew, Eold, seed ):
     K = 4*fg(2*Enew,Eold,seed)*(2*Enew>=seed.Egmin)+fg(Eold-Enew,Eold,seed)
     return( K )
 
-def flnew( Evec, flold, seed ):
+def flnew( Evec, flold, seed, nskip = 1 ):
     """Expect E and flold defined on a regular log grid"""
     dx = np.log(Evec[1]/Evec[0])
     x = np.log(Evec)
     flnew = np.empty_like(flold)
-    for i,E in enumerate(Evec):
-        flnew[i] = simps( K(E,Evec,seed)*flold*Evec, dx=dx ) 
+    for i in xrange(0,int(nskip)):
+        flnew[i::nskip] = simps( K(Evec[i::nskip,None],Evec[None,:],seed)*(flold*Evec)[None,:], dx=dx,axis=-1 )         
     return( flnew )
 
 if __name__ == "__main__":
@@ -111,9 +111,10 @@ if __name__ == "__main__":
     dN[ii]  = 1/dE
     dNold = dN
     dNnew = np.copy(dN)
+    nskip = 100
     for gen in xrange(0,Ngenmax):
         dNold = np.copy(dNnew)
-        dNnew = flnew( Evec, dNold, seed )
+        dNnew = flnew( Evec, dNold, seed, nskip = nskip )
         #pdb.set_trace()
         plt.plot(Evec, dNnew)
         plt.xscale("log")
