@@ -81,8 +81,8 @@ def flnew( Evec, flold, seed, nskip = 1 ):
     dx = np.log(Evec[1]/Evec[0])
     x = np.log(Evec)
     flnew = np.empty_like(flold)
-    for i in xrange(0,int(nskip)):
-        flnew[i::nskip] = simps( K(Evec[i::nskip,None],Evec[None,:],seed)*(flold*Evec)[None,:], dx=dx,axis=-1 )         
+    for i in xrange(0,int(len(Evec)/nskip)):
+        flnew[i*nskip:(i+1)*nskip] = simps( K(Evec[i*nskip:(i+1)*nskip,None],Evec[None,:],seed)*(flold*Evec)[None,:], dx=dx,axis=-1 )         
     return( flnew )
 
 if __name__ == "__main__":
@@ -111,7 +111,7 @@ if __name__ == "__main__":
     dN[ii]  = 1/dE
     dNold = dN
     dNnew = np.copy(dN)
-    nskip = 100
+    nskip = 1000
     for gen in xrange(0,Ngenmax):
         dNold = np.copy(dNnew)
         dNnew = flnew( Evec, dNold, seed, nskip = nskip )
