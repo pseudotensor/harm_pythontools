@@ -70,6 +70,9 @@ def fg( Eg, Ee, seed):
     fEseed = seed.f(fmagic(Eseed))
     fgval = fEseed / (2*(fmagic(Ee-Eg))**2)
     fgval *= (Ee-Eg>0)*(Eseed>0)
+    # del Eseed
+    # del fEseed
+    # gc.collect()
     return( fgval )
 
 def K( Enew, Eold, seed ):
@@ -112,7 +115,10 @@ if __name__ == "__main__":
     dNold = dN
     dNnew = np.copy(dN)
     nskip = 1000
+    plt.plot(Evec, dNold)
     for gen in xrange(0,Ngenmax):
+        Ntot = simps( dNnew*Evec, dx=dx,axis=-1 )
+        print( gen, Ntot )
         dNold = np.copy(dNnew)
         dNnew = flnew( Evec, dNold, seed, nskip = nskip )
         #pdb.set_trace()
@@ -120,5 +126,5 @@ if __name__ == "__main__":
         plt.xscale("log")
         plt.yscale("log")
         plt.ylim(1e-15,1e-4)
-        plt.xlim(1e4,1e9)
+        plt.xlim(1e4,Emax)
         plt.draw()
