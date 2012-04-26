@@ -53,7 +53,7 @@ class SeedPhoton:
         self.s = s
         #minimum energy gamma-ray to be able to pair produce
         self.Egmin = 2/Emax
-        self.Nprefactor = (1-s)/(Emin**(1-s)-Emax**(1-s))
+        self.Nprefactor = (1-s)/(Emax**(1-s)-Emin**(1-s))
 
     def canPairProduce(self,E):
         return( E > self.Egmin )
@@ -70,7 +70,6 @@ def fg( Eg, Ee, seed):
     fEseed = seed.f(fmagic(Eseed))
     fgval = fEseed / (2*(fmagic(Ee-Eg))**2)
     fgval *= (Ee-Eg>0)*(Eseed>0)
-    pdb.set_trace()
     return( fgval )
 
 def K( Enew, Eold, seed ):
@@ -83,14 +82,14 @@ def flnew( Evec, flold, seed ):
     x = np.log(Evec)
     flnew = np.empty_like(flold)
     for i,E in enumerate(Evec):
-        flnew[i] = simps( K(E,Evec,seed)*Evec, dx=dx ) 
+        flnew[i] = simps( K(E,Evec,seed)*flold*Evec, dx=dx ) 
     return( flnew )
 
 if __name__ == "__main__":
     #energy grid, Lorentz factor of initial electron
     warnings.simplefilter("error")
     Emax = 1e9
-    Ngrid = 1e1
+    Ngrid = 1e4
     Evec = exp(np.linspace(0,np.log(Emax),Ngrid))
     ivec = np.arange(len(Evec))
     #1 eV in units of m_e c^2
@@ -105,7 +104,7 @@ if __name__ == "__main__":
     Ngenmax = 10
     #
     E0 = 1e8
-    ii = int(np.log(E0)/np.log(Emax)*Ngrid)
+    ii = np.round(np.log(E0)/np.log(Emax)*Ngrid)
     dx = np.log(Evec[1]/Evec[0])
     dE = Evec[ii] * dx
     dN = np.zeros_like(Evec)
@@ -114,9 +113,11 @@ if __name__ == "__main__":
     dNnew = np.copy(dN)
     for gen in xrange(0,Ngenmax):
         dNold = np.copy(dNnew)
-        dNnew = -flnew( Evec, dNold, seed )
+        dNnew = flnew( Evec, dNold, seed )
         #pdb.set_trace()
         plt.plot(Evec, dNnew)
         plt.xscale("log")
         plt.yscale("log")
+        plt.ylim(1e-15,1e-4)
+        plt.xlim(1e4,1e9)
         plt.draw()

@@ -10701,7 +10701,7 @@ if __name__ == "__main__":
     if False:
         #compute energy flux weighted pg/pm
         plotbetajet()
-    if False:
+    if True:
         grid3d("gdump.bin",use2d=True)
         #load time-averages
         avgmem=rdavg2d(usedefault=1)  #usedefault=1 reads in from "avg2d.npy"
@@ -10724,6 +10724,11 @@ if __name__ == "__main__":
             xcoord=r*np.sin(h),ycoord=r*np.cos(h),
             levels=(aphi[iofr(rhor),ny/2,0],),
             lw=2,colors='k')
+        alpha = 1.25
+        emiss = (avg_bsq*0+avg_rho)*(avg_bsq)**((1+alpha)/2.)*avg_gamma**(3+alpha)
+        emiss[r<rhor]=emiss[r<rhor]*float('nan')
+        emiss *= (avg_uu[1]>0)
+        plc(emiss*r**0.5,xcoord=r*np.sin(h),ycoord=r*np.cos(h),nc=100,cb=True)
         #disk boundary
         plc(h[:,:,0]-(np.pi/2-hoverravg[:,None]),
             xcoord=r*np.sin(h),ycoord=r*np.cos(h),
