@@ -41,7 +41,7 @@ cdef double K( double Enew, double Eold, SeedPhoton seed ):
 def flnew( Evec not None, flold not None, seed not None ):
     return flnew_c( Evec, flold, seed )
 
-@cython.boundscheck(False) # turn of bounds-checking for entire function
+@cython.boundscheck(False) # turn off bounds-checking for entire function
 cdef public np.ndarray[double, ndim=1] flnew_c( np.ndarray[double, ndim=1] Evec, np.ndarray[double, ndim=1] flold, SeedPhoton seed ):
     """Expect E and flold defined on a regular log grid, Evec"""
     cdef double dx = log(Evec[1]/Evec[0])
