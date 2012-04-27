@@ -4,15 +4,6 @@ cimport numpy as np
 cimport cython
 from libc.math cimport log
 
-# cdef extern from "numpy/arrayobject.h":
-#     ctypedef int intp
-#     ctypedef extern class numpy.ndarray [object PyArrayObject]:
-#         cdef char *data
-#         cdef int nd
-#         cdef intp *dimensions
-#         cdef intp *strides
-#         cdef int flags
-
 DTYPE = np.float
 ctypedef np.float_t DTYPE_t
 
@@ -47,7 +38,6 @@ cdef double K( double Enew, double Eold, SeedPhoton seed ):
     cdef double K = ( (4*fg(2*Enew,Eold,seed)) if (2*Enew>=seed.Egmin) else (0) ) + fg(Eold-Enew,Eold,seed)
     return( K )
 
-
 def flnew( Evec not None, flold not None, seed not None ):
     return flnew_c( Evec, flold, seed )
 
@@ -62,9 +52,6 @@ cdef public np.ndarray[double, ndim=1] flnew_c( np.ndarray[double, ndim=1] Evec,
     cdef double *Evec_data = <double *>Evec.data
     cdef double *flold_data = <double *>flold.data
     cdef int dim = flnew.shape[0]
-
-    # for i in xrange(0,int(len(Evec)/nskip)):
-    #     flnew[i*nskip:(i+1)*nskip] = integr( K(Evec[i*nskip:(i+1)*nskip,None],Evec[None,:],seed)*(flold*Evec)[None,:], dx=dx,axis=-1 )  
     for i from 0 <= i < dim:
         #flnew_data[i] = 0
         for j from 0 <= j < dim:

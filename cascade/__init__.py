@@ -57,7 +57,7 @@ def main():
     Esmax = 2 * eV
     seed = SeedPhoton( Esmin, Esmax, s )
     #
-    Ngenmax = 10
+    Ngenmax = 100
     #
     E0 = 1e8
     ii = np.round(np.log(E0)/np.log(Emax)*Ngrid)
@@ -75,11 +75,11 @@ def main():
         dNold = dNnew
         dNnew = flnew( Evec, dNold, seed )
         #pdb.set_trace()
-        # plt.plot(Evec, dNnew)
-        # plt.xscale("log")
-        # plt.yscale("log")
-        # plt.ylim(1e-15,1e-4)
-        # plt.xlim(1e4,Emax)
+        plt.plot(Evec, dNnew)
+        plt.xscale("log")
+        plt.yscale("log")
+        plt.ylim(1e-15,1e-4)
+        plt.xlim(1e4,Emax)
         # plt.draw()
 
 
