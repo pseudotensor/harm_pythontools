@@ -85,19 +85,22 @@ def flnew( Evec, flold, seed, nskip = 1 ):
     x = np.log(Evec)
     flnew = np.empty_like(flold)
     for i in xrange(0,int(len(Evec)/nskip)):
-        flnew[i*nskip:(i+1)*nskip] = simps( K(Evec[i*nskip:(i+1)*nskip,None],Evec[None,:],seed)*(flold*Evec)[None,:], dx=dx,axis=-1 )         
+        flnew[i*nskip:(i+1)*nskip] = integr( K(Evec[i*nskip:(i+1)*nskip,None],Evec[None,:],seed)*(flold*Evec)[None,:], dx=dx,axis=-1 )         
         # gc.collect()
     return( flnew )
+
+def integr( f, dx=1, axis=-1 ):
+    return dx*f.sum(axis=axis)
 
 if __name__ == "__main__":
     #energy grid, Lorentz factor of initial electron
     warnings.simplefilter("error")
-    Emax = 1e14
-    Ngrid = 1e3
-    Evec = exp(np.linspace(0,np.log(Emax),Ngrid))
+    Emax = 1e10
+    Ngrid = 1e4
+    Evec = exp(np.linspace(-5,np.log(Emax),Ngrid))
     ivec = np.arange(len(Evec))
     #1 eV in units of m_e c^2
-    eV = 1/(512.e3)
+    eV = 1/(511.e3)
     #spectral index
     s = 2
     #lower cutoff
@@ -107,7 +110,7 @@ if __name__ == "__main__":
     #
     Ngenmax = 10
     #
-    E0 = 1e13
+    E0 = 1e8
     ii = np.round(np.log(E0)/np.log(Emax)*Ngrid)
     dx = np.log(Evec[1]/Evec[0])
     dE = Evec[ii] * dx
