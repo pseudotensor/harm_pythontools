@@ -29,6 +29,18 @@ cdef public class SeedPhoton [object CSeedPhoton, type TSeedPhoton ]:
     cpdef double f(self, double E):
         return( self.Nprefactor*E**(-self.s) if (E >= self.Emin and E <= self.Emax) else 0 )
 
+def fg_p( Eg not None, Ee not None, SeedPhoton seed not None):
+    return fgvec( Eg, Ee, seed )
+
+@cython.boundscheck(False) # turn off bounds-checking for entire function
+cdef np.ndarray[double, ndim=1] fgvec( np.ndarray[double, ndim=1] Eg, np.ndarray[double, ndim=1] Ee, SeedPhoton seed):
+    cdef int i
+    cdef int dim = Ee.shape[0]
+    cdef np.ndarray[DTYPE_t, ndim=1] Eg1 = np.zeros_like(Ee)
+    for i from 0 <= i < dim:
+        Eg1[i] = fg( Eg[i], Ee[i], seed )
+    return( Eg1 )
+
 cdef double fg( double Eg, double Ee, SeedPhoton seed):
     cdef double Ep = Ee-Eg
     cdef double fgval = ( (seed.f(Eg/(2*Ee*Ep))/(2*Ep**2)) if (Ep>0 and Ee>0 and Eg>0) else (0) )

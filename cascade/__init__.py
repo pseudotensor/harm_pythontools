@@ -41,7 +41,34 @@ import pdb
 
 from casc import *
 
+def test_fg( Eold, Enew, seed ):
+    Egmin = 2*seed.Emin*Enew**2 / (1.-2*seed.Emin*Enew)
+    Egmax = 2*seed.Emax*Enew**2 / (1.-2*seed.Emax*Enew)
+    plt.plot(Eold-Enew, fg_p(Eold-Enew, Eold, seed))
+    plt.xscale("log")
+    plt.yscale("log")
+    plt.xlim(0.5*Egmin,2*Egmax)
+    
+
 def main():
+    plt.plot(Evec, dNold)
+    for gen in xrange(0,Ngenmax):
+        Ntot = simps( dNnew*Evec, dx=dx,axis=-1 )
+        print( gen, Ntot )
+        dNold = dNnew
+        dNnew = flnew( Evec, dNold, seed )
+        #pdb.set_trace()
+        plt.plot(Evec, dNnew)
+        plt.xscale("log")
+        plt.yscale("log")
+        plt.ylim(1e-15,1e-4)
+        plt.xlim(1e4,Emax)
+        # plt.draw()
+
+
+if __name__ == "__main__":
+    #main()
+    print ("Hello")
     #energy grid, Lorentz factor of initial electron
     warnings.simplefilter("error")
     Emax = 1e10
@@ -68,21 +95,3 @@ def main():
     dNold = dN
     dNnew = np.copy(dN)
     nskip = 1
-    plt.plot(Evec, dNold)
-    for gen in xrange(0,Ngenmax):
-        Ntot = simps( dNnew*Evec, dx=dx,axis=-1 )
-        print( gen, Ntot )
-        dNold = dNnew
-        dNnew = flnew( Evec, dNold, seed )
-        #pdb.set_trace()
-        plt.plot(Evec, dNnew)
-        plt.xscale("log")
-        plt.yscale("log")
-        plt.ylim(1e-15,1e-4)
-        plt.xlim(1e4,Emax)
-        # plt.draw()
-
-
-if __name__ == "__main__":
-    #main()
-    print ("Hello")
