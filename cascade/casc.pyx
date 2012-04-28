@@ -3,6 +3,8 @@ import numpy as np
 cimport numpy as np
 cimport cython
 from libc.math cimport log
+from libc.math cimport exp
+
 
 DTYPE = np.float
 ctypedef np.float_t DTYPE_t
@@ -29,6 +31,30 @@ cdef public class SeedPhoton [object CSeedPhoton, type TSeedPhoton ]:
     cpdef double f(self, double E):
         return( self.Nprefactor*E**(-self.s) if (E >= self.Emin and E <= self.Emax) else 0 )
 
+
+cdef public class Grid [object CGrid, type TGrid ]:
+    """grid class"""
+    cdef public double Emin
+    cdef public double Emax
+    cdef public double E0
+    cdef public double xmin
+    cdef public double xmax
+    cdef public double Ngrid
+    cdef public Egrid
+    cdef public xgrid
+    cdef public dxdEgrid
+
+    def __init__(self, double Emin, double Emax, double E0, int Ngrid):
+        self.Emin = Emin
+        self.Emax = Emax
+        self.E0 = E0
+        self.Ngrid = Ngrid
+        self.xmax = log(self.Emax-self.E0)
+        self.xmin = log(self.Emin-self.E0)
+        self.xgrid = np.linspace(self.xmin,self.xmax,self.Ngrid)
+        self.Egrid = self.E0 + np.exp(self.xgrid)
+        self.dxdEgrid = 1./(self.Egrid-self.E0)
+
 def fg_p( Eg not None, Ee not None, SeedPhoton seed not None):
     return fgvec( Eg, Ee, seed )
 
@@ -46,8 +72,12 @@ cdef double fg( double Eg, double Ee, SeedPhoton seed):
     cdef double fgval = ( (seed.f(Eg/(2*Ee*Ep))/(2*Ep**2)) if (Ep>0 and Ee>0 and Eg>0) else (0) )
     return( fgval )
 
-cdef double K( double Enew, double Eold, SeedPhoton seed ):
-    cdef double K = ( (4*fg(2*Enew,Eold,seed)) if (2*Enew>=seed.Egmin) else (0) ) + fg(Eold-Enew,Eold,seed)
+cdef double K1( double Enew, double Eold, SeedPhoton seed ):
+    cdef double K = (4*fg(2*Enew,Eold,seed)) if (2*Enew>=seed.Egmin) else (0)
+    return( K )
+
+cdef double K2( double Enew, double Eold, SeedPhoton seed ):
+    cdef double K = fg(Eold-Enew,Eold,seed)
     return( K )
 
 def flnew( Evec not None, flold not None, seed not None ):
@@ -67,6 +97,7 @@ cdef public np.ndarray[double, ndim=1] flnew_c( np.ndarray[double, ndim=1] Evec,
     for i from 0 <= i < dim:
         #flnew_data[i] = 0
         for j from 0 <= j < dim:
-            flnew_data[i] += K(Evec_data[i],Evec_data[j],seed)*(flold_data[j]*Evec_data[j])
+            flnew_data[i] += K1(Evec_data[i],Evec_data[j],seed)*(flold_data[j]*Evec_data[j])
+            flnew_data[i] += K2(Evec_data[i],Evec_data[j],seed)*(flold_data[j]*Evec_data[j])
         flnew_data[i] *= dx
     return( flnew )

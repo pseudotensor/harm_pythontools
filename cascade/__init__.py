@@ -51,6 +51,18 @@ def test_fg( Eold, Enew, seed ):
     
 
 def main():
+    #
+    Ngenmax = 10
+    #
+    E0 = 1e8
+    ii = np.round(np.log(E0)/np.log(Emax)*Ngrid)
+    dx = np.log(Evec[1]/Evec[0])
+    dE = Evec[ii] * dx
+    dN = np.zeros_like(Evec)
+    dN[ii]  = 1/dE
+    dNold = dN
+    dNnew = np.copy(dN)
+    nskip = 1
     plt.plot(Evec, dNold)
     for gen in xrange(0,Ngenmax):
         Ntot = simps( dNnew*Evec, dx=dx,axis=-1 )
@@ -71,9 +83,13 @@ if __name__ == "__main__":
     print ("Hello")
     #energy grid, Lorentz factor of initial electron
     warnings.simplefilter("error")
+    Emin = 1e-5
     Emax = 1e10
     Ngrid = 1e4
-    Evec = exp(np.linspace(-5,np.log(Emax),Ngrid))
+    # Evec = exp(np.linspace(-5,np.log(Emax),Ngrid))
+    E0grid = 0
+    grid = Grid(Emin, Emax, E0grid, Ngrid)
+    Evec = grid.Egrid
     ivec = np.arange(len(Evec))
     #1 eV in units of m_e c^2
     eV = 1/(511.e3)
@@ -83,15 +99,3 @@ if __name__ == "__main__":
     Esmin = 0.5e-3 * eV
     Esmax = 2 * eV
     seed = SeedPhoton( Esmin, Esmax, s )
-    #
-    Ngenmax = 100
-    #
-    E0 = 1e8
-    ii = np.round(np.log(E0)/np.log(Emax)*Ngrid)
-    dx = np.log(Evec[1]/Evec[0])
-    dE = Evec[ii] * dx
-    dN = np.zeros_like(Evec)
-    dN[ii]  = 1/dE
-    dNold = dN
-    dNnew = np.copy(dN)
-    nskip = 1
