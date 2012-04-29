@@ -84,8 +84,9 @@ def flnew( Evec not None, flold not None, seed not None ):
     return flnew_c( Evec, flold, seed )
 
 @cython.boundscheck(False) # turn off bounds-checking for entire function
-cdef public np.ndarray[double, ndim=1] flnew_c( np.ndarray[double, ndim=1] Evec, np.ndarray[double, ndim=1] flold, SeedPhoton seed ):
+cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, ndim=1] flold, SeedPhoton seed ):
     """Expect E and flold defined on a regular log grid, Evec"""
+    cdef np.ndarray[DTYPE_t, ndim=1] Evec = grid.Egrid
     cdef double dx = log(Evec[1]/Evec[0])
     cdef np.ndarray[DTYPE_t, ndim=1] flnew = np.zeros_like(flold)
     cdef int i

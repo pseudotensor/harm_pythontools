@@ -39,7 +39,8 @@ import streamlines
 from matplotlib.patches import Ellipse
 import pdb
 
-from casc import *
+import casc as casc
+reload(casc)
 
 def test_fg( Eold, Enew, seed ):
     Egmin = 2*seed.Emin*Enew**2 / (1.-2*seed.Emin*Enew)
@@ -68,7 +69,7 @@ def main():
         Ntot = simps( dNnew*Evec, dx=dx,axis=-1 )
         print( gen, Ntot )
         dNold = dNnew
-        dNnew = flnew( Evec, dNold, seed )
+        dNnew = casc.flnew( grid, dNold, seed )
         #pdb.set_trace()
         plt.plot(Evec, dNnew)
         plt.xscale("log")
@@ -88,7 +89,7 @@ if __name__ == "__main__":
     Ngrid = 1e4
     # Evec = exp(np.linspace(-5,np.log(Emax),Ngrid))
     E0grid = 0
-    grid = Grid(Emin, Emax, E0grid, Ngrid)
+    grid = casc.Grid(Emin, Emax, E0grid, Ngrid)
     Evec = grid.Egrid
     ivec = np.arange(len(Evec))
     #1 eV in units of m_e c^2
@@ -98,4 +99,4 @@ if __name__ == "__main__":
     #lower cutoff
     Esmin = 0.5e-3 * eV
     Esmax = 2 * eV
-    seed = SeedPhoton( Esmin, Esmax, s )
+    seed = casc.SeedPhoton( Esmin, Esmax, s )
