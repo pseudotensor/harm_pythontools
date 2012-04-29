@@ -68,6 +68,7 @@ def main():
     for gen in xrange(0,Ngenmax):
         Ntot = simps( dNnew*Evec, dx=dx,axis=-1 )
         print( gen, Ntot )
+        sys.stdout.flush()
         dNold = dNnew
         dNnew = casc.flnew( grid, dNold, seed )
         #pdb.set_trace()
