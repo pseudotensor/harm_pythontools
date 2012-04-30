@@ -66,16 +66,15 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
         minEg = seed.minEg(Eenew,grid.Emin)
         maxEg = seed.maxEg(Eenew,grid.Emax)
         if maxEg < grid.Emin or minEg > grid.Emax:
-            continue
-        grid2.set_grid(0.5*minEg,2*maxEg,0.25*minEg)
+           continue
+        #grid2.set_grid(0.5*minEg,2*maxEg,0.25*minEg)
         #print i, grid2.Emin, grid2.Emax, grid2.E0
         #print i, grid2.Emin, grid2.Emax, grid2.E0
         Evec2_data = grid2.Egrid_data
         for j from 0 <= j < dim:
             #integration on old grid
             flnew_data[i] += K1(Eenew,Evec_data[j],seed)*(flold_data[j]*Evec_data[j])*grid.dx
-            flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*Evec_data[j])*grid.dx
-            if 0:
+            if True:
                 #integration on new grid
                 a = K2(Eenew,Evec2_data[j],seed)
                 b = flold_func.fofE(Evec2_data[j])
@@ -84,6 +83,8 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
                 delta = a*b*c*d
                 flnew_data[i] += delta
                 #if delta != 0: print "***", i, j, a, b, delta
+            else:
+                flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*Evec_data[j])*grid.dx
     return( flnew )
 
 
@@ -263,9 +264,9 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
             return self.func_vec_data[0]
         if i >= self.Ngrid-1:
             return self.func_vec_data[self.Ngrid-1]
-        logx  = log(Eval+eps)
-        logxl = log(self.Egrid[i]+eps)
-        logxr = log(self.Egrid[i+1]+eps)
+        logx  = log(Eval)
+        logxl = log(self.Egrid[i])
+        logxr = log(self.Egrid[i+1])
         logfl = log(self.func_vec_data[i]+eps)
         logfr = log(self.func_vec_data[i+1]+eps)
         logf  = (logfr * (logxl - logx) + logfl * (logx - logxr)) / (logxl - logxr)
