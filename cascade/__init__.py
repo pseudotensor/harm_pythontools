@@ -45,15 +45,26 @@ reload(casc)
 def test_fg( Eold, Enew, seed ):
     Egmin = 2*seed.Emin*Enew**2 / (1.-2*seed.Emin*Enew)
     Egmax = 2*seed.Emax*Enew**2 / (1.-2*seed.Emax*Enew)
-    plt.plot(Eold-Enew, fg_p(Eold-Enew, Eold, seed))
+    if np.float(Egmax) < 0:
+        Egmax = Eold[-1]
+    plt.plot(Eold, casc.fg_p(Eold-Enew, Eold, seed))
     plt.xscale("log")
     plt.yscale("log")
-    plt.xlim(0.5*Egmin,2*Egmax)
-    
+    plt.xlim(0.5*np.float(Egmin),2*np.float(Egmax))
+
+#res  = test_fg1(Evec,1e6+0*Evec,seed)
+def test_fg1( Eold, Enew, seed ):
+    res = 4*casc.fg_p(2*Enew, Eold, seed)*(2*Enew-seed.Egmin>=0)
+    #pdb.set_trace()
+    plt.plot(Eold, res)
+    plt.xscale("log")
+    plt.yscale("log")
+    return res
+    #plt.plot(Evec,(casc.fg_p(2*Evec,1e8+0*Evec,seed)*(2*Evec>=seed.Egmin)))
 
 def main():
     #
-    Ngenmax = 10
+    Ngenmax = 2
     #
     E0 = 1e8
     ii = np.round(np.log(E0)/np.log(Emax)*Ngrid)
@@ -87,7 +98,7 @@ if __name__ == "__main__":
     warnings.simplefilter("error")
     Emin = 1e-5
     Emax = 1e10
-    Ngrid = 1e3
+    Ngrid = 1e4
     # Evec = exp(np.linspace(-5,np.log(Emax),Ngrid))
     E0grid = 0
     grid = casc.Grid(Emin, Emax, E0grid, Ngrid)

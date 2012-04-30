@@ -56,9 +56,9 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
     cdef int dim1 = flnew.shape[0]
     cdef double minEg, maxEg
     #use old grid as a start
-    cdef int dim2 = dim1
-    #cdef Grid grid2 = Grid.empty(dim2)
-    cdef Grid grid2 = grid #Grid.fromGrid(grid)
+    cdef int dim2 = 100
+    cdef Grid grid2 = Grid.empty(dim2)
+    #cdef Grid grid2 = Grid.fromGrid(grid)
     cdef Func flold_func = Func.fromGrid(grid)
     flold_func.set_func_c(flold_data)
 
@@ -69,18 +69,19 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
         maxEg = seed.maxEg(Eenew,grid.Emax)
         if maxEg < grid.Emin or minEg > grid.Emax:
            continue
-        #grid2.set_grid(0.5*minEg,2*maxEg,0.25*minEg)
+        grid2.set_grid(0.5*minEg,2*maxEg,0.*minEg)
         #print i, grid2.Emin, grid2.Emax, grid2.E0
         #print i, grid2.Emin, grid2.Emax, grid2.E0
         Evec2_data = grid2.Egrid_data
-        for j from 0 <= j < dim2:
+        for j from 0 <= j < dim1:
             #integration on old grid
             flnew_data[i] += K1(Eenew,Evec_data[j],seed)*(flold_data[j]*Evec_data[j])*grid.dx
-            if False:
+        for j from 0 <= j < dim2:
+            if True:
                 #integration on new grid
                 a = K2(Eenew,Evec2_data[j],seed)
                 b = flold_func.fofE(Evec2_data[j])
-                c = grid2.dEdxgrid_data[i]
+                c = grid2.dEdxgrid_data[j]
                 d = grid2.dx
                 delta = a*b*c*d
                 flnew_data[i] += delta
@@ -122,7 +123,15 @@ cdef public class SeedPhoton [object CSeedPhoton, type TSeedPhoton ]:
     cpdef int canPairProduce(self, double E):
         return( E > self.Egmin )
 
-    cpdef double f(self, double E):
+    @cython.boundscheck(False) # turn off bounds-checking for entire function
+    cpdef np.ndarray[double, ndim=1] f_vec(self, np.ndarray[double, ndim=1] E):
+        cdef int i
+        cdef np.ndarray[double, ndim=1] f_out = np.zeros_like(E)
+        for i from 0 <= i < E.shape[0]:
+            f_out[i] = self.f(E[i])
+        return f_out
+
+    cdef double f(self, double E):
         return( self.Nprefactor*E**(-self.s) if (E >= self.Emin and E <= self.Emax) else 0 )
 
     cpdef double minEg(self, double Eenew, double grid_Emin):
@@ -257,6 +266,17 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
         return cls( 0, 1, 0.5, Ngrid )
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
+    cpdef np.ndarray[double, ndim=1] fofE_vec(self, np.ndarray[double, ndim=1] Eval):
+        cdef double *Eval_data = get_data(Eval)
+        cdef Einterp = np.zeros_like(Eval)
+        cdef double *Einterp_data = get_data(Einterp)
+        cdef int len = Eval.shape[0]
+        cdef int i
+        for i from 0 <= i < len:
+            Einterp_data[i] = self.fofE(Eval_data[i])
+        return Einterp
+
+    @cython.boundscheck(False) # turn off bounds-checking for entire function
     cpdef double fofE(self, double Eval):
         """ Linearly interpolates f(E) in log-log """
         cdef int i = Grid.iofE( self, Eval )
@@ -266,13 +286,16 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
             return self.func_vec_data[0]
         if i >= self.Ngrid-1:
             return self.func_vec_data[self.Ngrid-1]
-        logx  = log(Eval)
-        logxl = log(self.Egrid[i])
-        logxr = log(self.Egrid[i+1])
-        logfl = log(self.func_vec_data[i]+eps)
-        logfr = log(self.func_vec_data[i+1]+eps)
-        logf  = (logfr * (logxl - logx) + logfl * (logx - logxr)) / (logxl - logxr)
-        f = exp(logf)-eps
+        if True:
+            logx  = log(Eval)
+            logxl = log(self.Egrid[i])
+            logxr = log(self.Egrid[i+1])
+            logfl = log(self.func_vec_data[i]+eps)
+            logfr = log(self.func_vec_data[i+1]+eps)
+            logf  = (logfr * (logxl - logx) + logfl * (logx - logxr)) / (logxl - logxr)
+            f = exp(logf)-eps
+        else:
+            f = self.func_vec_data[i]
         return( f )
         
     def set_func(self, func_vec):
