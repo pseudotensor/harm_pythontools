@@ -47,6 +47,7 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
     """Expect E and flold defined on a regular log grid, Evec"""
     cdef int i
     cdef int j
+    cdef double a, b, c, d, delta
     cdef np.ndarray[double, ndim=1] flnew = np.zeros_like(flold)
     cdef double *flnew_data = get_data(flnew)
     cdef double *Evec_data = get_data(grid.Egrid)
@@ -62,15 +63,25 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
     for i from 0 <= i < dim:
         Eenew = Evec_data[i]
         #new grid defined by Eenew
-        minEg = seed.minEg(Eenew)
-        maxEg = seed.maxEg(Eenew)
+        minEg = seed.minEg(Eenew,grid.Emin)
+        maxEg = seed.maxEg(Eenew,grid.Emax)
+        if maxEg < grid.Emin or minEg > grid.Emax:
+            continue
         grid2.set_grid(0.5*minEg,2*maxEg,0.25*minEg)
+        #print i, grid2.Emin, grid2.Emax, grid2.E0
+        #print i, grid2.Emin, grid2.Emax, grid2.E0
         Evec2_data = grid2.Egrid_data
         for j from 0 <= j < dim:
             #integration on old grid
             flnew_data[i] += K1(Eenew,Evec_data[j],seed)*(flold_data[j]*Evec_data[j])*grid.dx
             #integration on new grid
-            flnew_data[i] += K2(Eenew,Evec2_data[j],seed)*flold_func.fofE(Evec2_data[j])*grid2.dEdxgrid_data[i]*grid2.dx
+            a = K2(Eenew,Evec2_data[j],seed)
+            b = flold_func.fofE(Evec2_data[j])
+            c = grid2.dEdxgrid_data[i]
+            d = grid2.dx
+            delta = a*b*c*d
+            flnew_data[i] += delta
+            #if delta != 0: print "***", i, j, a, b, delta
     return( flnew )
 
 
@@ -109,13 +120,25 @@ cdef public class SeedPhoton [object CSeedPhoton, type TSeedPhoton ]:
     cpdef double f(self, double E):
         return( self.Nprefactor*E**(-self.s) if (E >= self.Emin and E <= self.Emax) else 0 )
 
-    cpdef double minEg(self, double Eenew):
+    cpdef double minEg(self, double Eenew, double grid_Emin):
         """ Returns minimum gamma-ray energy """
-        return 2*self.Emin*Eenew**2/(1-2*self.Emin*Eenew)
+        cdef double bottom = 1-2*self.Emax*Eenew
+        cdef minEg_val
+        if bottom > 0:
+            minEg_val = 2*self.Emin*Eenew**2/bottom
+            return minEg_val if minEg_val > grid_Emin else grid_Emin
+        else:
+            return grid_Emin
 
-    cpdef double maxEg(self, double Eenew):
+    cpdef double maxEg(self, double Eenew, double grid_Emax):
         """ Returns minimum gamma-ray energy """
-        return 2*self.Emax*Eenew**2/(1-2*self.Emax*Eenew)
+        cdef double bottom = 1-2*self.Emax*Eenew
+        cdef maxEg_val
+        if bottom > 0:
+            maxEg_val = 2*self.Emax*Eenew**2/bottom
+            return maxEg_val if maxEg_val < grid_Emax else grid_Emax
+        else:
+            return grid_Emax
 
 ###############################
 #
@@ -233,17 +256,18 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
         """ Linearly interpolates f(E) in log-log """
         cdef int i = Grid.iofE( self, Eval )
         cdef double logfl, logfr, logxl, logxr, logf, f
+        cdef eps = 1e-300
         if i < 0:
             return self.func_vec_data[0]
         if i >= self.Ngrid-1:
             return self.func_vec_data[self.Ngrid-1]
-        logx  = log(Eval)
-        logxl = log(self.Egrid[i])
-        logxr = log(self.Egrid[i+1])
-        logfl = log(self.func_vec_data[i])
-        logfr = log(self.func_vec_data[i+1])
+        logx  = log(Eval+eps)
+        logxl = log(self.Egrid[i]+eps)
+        logxr = log(self.Egrid[i+1]+eps)
+        logfl = log(self.func_vec_data[i]+eps)
+        logfr = log(self.func_vec_data[i+1]+eps)
         logf  = (logfr * (logxl - logx) + logfl * (logx - logxr)) / (logxl - logxr)
-        f = exp(logf)
+        f = exp(logf)-eps
         return( f )
         
     def set_func(self, func_vec):
