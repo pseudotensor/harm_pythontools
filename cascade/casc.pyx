@@ -50,17 +50,27 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
     cdef np.ndarray[double, ndim=1] flnew = np.zeros_like(flold)
     cdef double *flnew_data = get_data(flnew)
     cdef double *Evec_data = get_data(grid.Egrid)
+    cdef double *Evec2_data
     cdef double *flold_data = get_data(flold)
     cdef int dim = flnew.shape[0]
-    cdef Grid newgrid = Grid.empty(dim)
-    cdef Func newfunc = Func.fromGrid(newgrid)
-    
+    cdef double minEg, maxEg
+    #use old grid as a start
+    cdef Grid grid2 = Grid.fromGrid(grid)
+    cdef Func flold_func = Func.fromGrid(grid)
+    flold_func.set_func_c(flold_data)
+
     for i from 0 <= i < dim:
-        #flnew_data[i] = 0
+        Eenew = Evec_data[i]
+        #new grid defined by Eenew
+        minEg = seed.minEg(Eenew)
+        maxEg = seed.maxEg(Eenew)
+        grid2.set_grid(0.5*minEg,2*maxEg,0.25*minEg)
+        Evec2_data = grid2.Egrid_data
         for j from 0 <= j < dim:
-            flnew_data[i] += K1(Evec_data[i],Evec_data[j],seed)*(flold_data[j]*Evec_data[j])
-            flnew_data[i] += K2(Evec_data[i],Evec_data[j],seed)*(flold_data[j]*Evec_data[j])
-        flnew_data[i] *= grid.dx
+            #integration on old grid
+            flnew_data[i] += K1(Eenew,Evec_data[j],seed)*(flold_data[j]*Evec_data[j])*grid.dx
+            #integration on new grid
+            flnew_data[i] += K2(Eenew,Evec2_data[j],seed)*flold_func.fofE(Evec2_data[j])*grid2.dEdxgrid_data[i]*grid2.dx
     return( flnew )
 
 
@@ -99,6 +109,13 @@ cdef public class SeedPhoton [object CSeedPhoton, type TSeedPhoton ]:
     cpdef double f(self, double E):
         return( self.Nprefactor*E**(-self.s) if (E >= self.Emin and E <= self.Emax) else 0 )
 
+    cpdef double minEg(self, double Eenew):
+        """ Returns minimum gamma-ray energy """
+        return 2*self.Emin*Eenew**2/(1-2*self.Emin*Eenew)
+
+    cpdef double maxEg(self, double Eenew):
+        """ Returns minimum gamma-ray energy """
+        return 2*self.Emax*Eenew**2/(1-2*self.Emax*Eenew)
 
 ###############################
 #
@@ -129,6 +146,7 @@ cdef public class Grid [object CGrid, type TGrid ]:
         self.Egrid = np.zeros((self.Ngrid),dtype=DTYPE)
         self.dEdxgrid = np.zeros((self.Ngrid),dtype=DTYPE)
         self.set_grid( Emin, Emax, E0 )
+        print( "Ngrid = %d\n" % self.Ngrid )
 
     @classmethod
     def fromGrid(cls, Grid grid):
@@ -162,7 +180,7 @@ cdef public class Grid [object CGrid, type TGrid ]:
     cpdef int iofx(self, double xval):
         """ Returns the index of the cell containing xval """
         cdef int ival
-        ival = int( (self.xval-self.xmin)/self.dx )
+        ival = int( (xval-self.xmin)/self.dx )
         return ival
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
@@ -218,11 +236,11 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
         cdef double logfl, logfr, logxl, logxr, logf, f
         if i < 0:
             return self.func_vec_data[0]
-        if i >= Grid.Ngrid-1:
-            return self.func_vec_data[Grid.Ngrid-1]
+        if i >= self.Ngrid-1:
+            return self.func_vec_data[self.Ngrid-1]
         logx  = log(Eval)
-        logxl = log(self.Evec[i])
-        logxr = log(self.Evec[i+1])
+        logxl = log(self.Egrid[i])
+        logxr = log(self.Egrid[i+1])
         logfl = log(self.func_vec_data[i])
         logfr = log(self.func_vec_data[i+1])
         logf  = (logfr * (logx - logxl) + logfl * (logx - logxr)) / (logxr - logxl)
@@ -235,7 +253,7 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
     @cython.boundscheck(False) # turn off bounds-checking for entire function
     cdef set_func_c(self, double *func_vec_data):
         cdef int i
-        for i from 0 <= i < Grid.Ngrid:
+        for i from 0 <= i < self.Ngrid:
             self.func_vec_data[i] = func_vec_data[i]
 
 
