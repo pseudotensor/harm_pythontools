@@ -39,48 +39,139 @@ cdef public class Grid [object CGrid, type TGrid ]:
     cdef public double E0
     cdef public double xmin
     cdef public double xmax
-    cdef public double Ngrid
+    cdef public int Ngrid
+    cdef public double dx
     cdef public Egrid
     cdef public xgrid
     cdef public dEdxgrid
+    cdef double *xgrid_data
+    cdef double *Egrid_data
+    cdef double *dEdxgrid_data
 
     def __init__(self, double Emin, double Emax, double E0, int Ngrid):
-        self.xgrid = np.empty((self.Ngrid),dtype=DTYPE)
-        self.Egrid = np.empty((self.Ngrid),dtype=DTYPE)
-        self.dxdEgrid = np.empty((self.Ngrid),dtype=DTYPE)
-        modify_c( self, Emin, Emax, E0)
+        """ Full constructor: allocates memory and generates the grid """
+        self.Ngrid = Ngrid
+        self.xgrid = np.zeros((self.Ngrid),dtype=DTYPE)
+        self.Egrid = np.zeros((self.Ngrid),dtype=DTYPE)
+        self.dEdxgrid = np.zeros((self.Ngrid),dtype=DTYPE)
+        self.set_grid( Emin, Emax, E0 )
 
-    def __init__(self, int Ngrid):
-        self.xgrid = np.empty((self.Ngrid),dtype=DTYPE)
-        self.Egrid = np.empty((self.Ngrid),dtype=DTYPE)
-        self.dxdEgrid = np.empty((self.Ngrid),dtype=DTYPE)
+    @classmethod
+    def fromGrid(cls,Grid grid):
+        return cls( grid.Emin, grid.Emax, grid.E0, grid.Ngrid )
 
-    def modify(self, double Emin not None, double Emax not None, double E0 not None):
-        """ Same as Grid() but without reallocation of memory """
-        modify_c( self, double Emin, double Emax, double E0 )
+    @classmethod
+    def empty(cls, int Ngrid):
+        return cls( 0, 1, 0.5, Ngrid )
+
+    # def __init__(self, Grid grid):
+    #     """ Full constructor: allocates memory and generates the grid """
+    #     self.xgrid = np.copy(grid.xgrid)
+    #     self.Egrid = np.zeros(grid.Egrid)
+    #     self.dxdEgrid = np.zeros(grid.dEdxgrid)
+    #     self.set_grid( grid.Emin, grid.Emax, grid.E0 )
+
+    # def __init__(self, int Ngrid):
+    #     """ Partial constructor: only memory allocation """
+    #     self.xgrid = np.zeros((self.Ngrid),dtype=DTYPE)
+    #     self.Egrid = np.zeros((self.Ngrid),dtype=DTYPE)
+    #     self.dxdEgrid = np.zeros((self.Ngrid),dtype=DTYPE)
+
+    # def set_grid(self, double Emin, double Emax, double E0):
+    #     """ Same as Grid() but without reallocation of memory """
+    #     self.set_grid_c( Emin, Emax, E0 )
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
-    cdef modify_c(self, double Emin, double Emax, double E0 ):
+    cpdef set_grid(self, double Emin, double Emax, double E0 ):
         """ Same as Grid() but without reallocation of memory """
-        cdef double *xgrid_data = <double *>self.xgrid.data
-        cdef double *Egrid_data = <double *>self.Egrid.data
-        cdef double *dEdxgrid_data = <double *>self.dEdxgrid.data
         cdef int i
-        cdef int dim = self.Ndata
-        cdef double dx
+        cdef int dim = self.Ngrid
         self.Emin = Emin
         self.Emax = Emax
         self.E0 = E0
         self.xmax = log(self.Emax-self.E0)
         self.xmin = log(self.Emin-self.E0)
-        dx = (self.xmax - self.xmin) / (Ngrid-1)
+        self.dx = (self.xmax - self.xmin) / (dim-1)
+        #get direct C pointers to numpy arrays' data fields
+        self.xgrid_data = get_data(self.xgrid)
+        self.Egrid_data = get_data(self.Egrid)
+        self.dEdxgrid_data = get_data(self.dEdxgrid)
         for i from 0 <= i < dim:
-            xgrid_data[i] = self.xmin + dx*i
-            Egrid_data[i] = self.E0 + exp(xgrid_data[i])
-            dEdxgrid_data[i] = Egrid_data[i] - self.E0
+            self.xgrid_data[i] = self.xmin + self.dx*i
+            self.Egrid_data[i] = self.E0 + exp(self.xgrid_data[i])
+            self.dEdxgrid_data[i] = self.Egrid_data[i] - self.E0
 
-    def dx(self):
-        return(self.xgrid[1]-self.xgrid[0])
+    @cython.boundscheck(False) # turn off bounds-checking for entire function
+    cpdef int iofx(self, double xval):
+        """ Returns the index of the cell containing xval """
+        cdef int ival
+        ival = int( (self.xval-self.xmin)/self.dx )
+        return ival
+
+    @cython.boundscheck(False) # turn off bounds-checking for entire function
+    cpdef double xofE(self, double Eval):
+        """ Returns the value of x corresponding to Eval """
+        cdef double xval
+        xval = log(Eval - self.E0)
+        return xval
+
+    @cython.boundscheck(False) # turn off bounds-checking for entire function
+    cpdef int iofE(self, double Eval):
+        """ Returns the index of the cell containing Eval """
+        return self.iofx( self.xofE(Eval) )
+
+
+cdef public class Func(Grid)  [object CFunc, type TFunc ]:
+    """ Function class derived from Grid class """
+    
+    cdef public func_vec
+    cdef double *func_vec_data
+
+    def __init__(self, double Emin, double Emax, double E0, int Ngrid, func_vec = None):
+        Grid.__init__(self, Emin, Emax, E0, Ngrid)
+        if func_vec is None:
+            self.func_vec = np.zeros((self.Ngrid),dtype=DTYPE)
+            self.func_vec_data = get_data(self.func_vec)
+        else:
+            self.func_vec = np.copy(func_vec)
+            self.func_vec_data = get_data(self.func_vec)
+
+    # def __init__(self,Grid grid, func_vec not None):
+    #     Grid.__init__(self,grid)
+    #     self.func_vec = np.copy(func_vec)
+    #     self.func_vec_data = get_data(self.func_vec)
+        
+    cpdef set_grid(self, double Emin, double Emax, double E0):
+        """ Same as Grid() but without reallocation of memory """
+        Grid.set_grid( self, Emin, Emax, E0 )
+
+    @cython.boundscheck(False) # turn off bounds-checking for entire function
+    cpdef double fofE(self, double Eval):
+        """ Linearly interpolates f(E) in log-log """
+        cdef int i = Grid.iofE( self, Eval )
+        cdef double logfl, logfr, logxl, logxr, logf, f
+        if i < 0:
+            return self.func_vec_data[0]
+        if i >= Grid.Ngrid-1:
+            return self.func_vec_data[Grid.Ngrid-1]
+        logx  = log(Eval)
+        logxl = log(self.Evec[i])
+        logxr = log(self.Evec[i+1])
+        logfl = log(self.func_vec_data[i])
+        logfr = log(self.func_vec_data[i+1])
+        logf  = (logfr * (logx - logxl) + logfl * (logx - logxr)) / (logxr - logxl)
+        f = exp(logf)
+        return( f )
+        
+    def set_func(self, func_vec):
+        self.set_func_c( get_data(func_vec) )
+
+    @cython.boundscheck(False) # turn off bounds-checking for entire function
+    cdef set_func_c(self, double *func_vec_data):
+        cdef int i
+        for i from 0 <= i < Grid.Ngrid:
+            self.func_vec_data[i] = func_vec_data[i]
+            
 
 def fg_p( Eg not None, Ee not None, SeedPhoton seed not None):
     return fgvec( Eg, Ee, seed )
@@ -111,30 +202,37 @@ def flnew( Evec not None, flold not None, seed not None ):
     return flnew_c( Evec, flold, seed )
 
 @cython.boundscheck(False) # turn off bounds-checking for entire function
+cdef public double* get_data( np.ndarray[double, ndim=1] nparray ):
+    return <double *>nparray.data
+
+@cython.boundscheck(False) # turn off bounds-checking for entire function
 cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, ndim=1] flold, SeedPhoton seed ):
     """Expect E and flold defined on a regular log grid, Evec"""
-    cdef np.ndarray[DTYPE_t, ndim=1] Evec = grid.Egrid
-    cdef double dx = grid.dx()
-    cdef np.ndarray[DTYPE_t, ndim=1] flnew = np.zeros_like(flold)
     cdef int i
     cdef int j
-    cdef double *flnew_data = <double *>flnew.data
-    cdef double *Evec_data = <double *>Evec.data
-    cdef double *flold_data = <double *>flold.data
+    cdef np.ndarray[double, ndim=1] flnew = np.zeros_like(flold)
+    cdef double *flnew_data = get_data(flnew)
+    cdef double *Evec_data = get_data(grid.Egrid)
+    cdef double *flold_data = get_data(flold)
     cdef int dim = flnew.shape[0]
-    cdef Grid newgrid = Grid()
+    cdef Grid newgrid = Grid.empty(dim)
+    cdef Func newfunc = Func.fromGrid(newgrid)
     
     for i from 0 <= i < dim:
         #flnew_data[i] = 0
         for j from 0 <= j < dim:
             flnew_data[i] += K1(Evec_data[i],Evec_data[j],seed)*(flold_data[j]*Evec_data[j])
             flnew_data[i] += K2(Evec_data[i],Evec_data[j],seed)*(flold_data[j]*Evec_data[j])
-        flnew_data[i] *= dx
+        flnew_data[i] *= grid.dx
     return( flnew )
 
 @cython.boundscheck(False) # turn off bounds-checking for entire function
-cdef public np.ndarray[double, ndim=1] reinterp( Grid oldgrid, np.ndarray[double, ndim=1] oldfunc ):
-    cdef np.ndarray[DTYPE_t, ndim=1] newfunc = np.zeros_like(oldfunc)
-    cdef double *oldgrid_data = <double *>oldgrid.data
-    cdef double *newgrid_data = <double *>newgrid.data
+cdef public np.ndarray[double, ndim=1] reinterp( Grid oldgrid, np.ndarray[double, ndim=1] oldfunc, 
+                                                 Grid newgrid, np.ndarray[double, ndim=1] newfunc ):
+    cdef double *oldgrid_data = get_data(oldgrid.Egrid)
+    cdef double *newgrid_data = get_data(newgrid.Egrid)
+    cdef int i
+    # for i from 0 <= i < newgrid.Ngrid:
+        
     
+
