@@ -56,9 +56,9 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
     cdef int dim1 = flnew.shape[0]
     cdef double minEg, maxEg
     #use old grid as a start
-    #cdef dim2 = 0.1*dim1
+    cdef int dim2 = dim1
     #cdef Grid grid2 = Grid.empty(dim2)
-    cdef Grid grid2 = Grid.fromGrid(grid)
+    cdef Grid grid2 = grid #Grid.fromGrid(grid)
     cdef Func flold_func = Func.fromGrid(grid)
     flold_func.set_func_c(flold_data)
 
@@ -73,10 +73,10 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
         #print i, grid2.Emin, grid2.Emax, grid2.E0
         #print i, grid2.Emin, grid2.Emax, grid2.E0
         Evec2_data = grid2.Egrid_data
-        for j from 0 <= j < dim:
+        for j from 0 <= j < dim2:
             #integration on old grid
             flnew_data[i] += K1(Eenew,Evec_data[j],seed)*(flold_data[j]*Evec_data[j])*grid.dx
-            if True:
+            if False:
                 #integration on new grid
                 a = K2(Eenew,Evec2_data[j],seed)
                 b = flold_func.fofE(Evec2_data[j])

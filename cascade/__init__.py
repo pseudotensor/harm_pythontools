@@ -87,7 +87,7 @@ if __name__ == "__main__":
     warnings.simplefilter("error")
     Emin = 1e-5
     Emax = 1e10
-    Ngrid = 1e4
+    Ngrid = 1e3
     # Evec = exp(np.linspace(-5,np.log(Emax),Ngrid))
     E0grid = 0
     grid = casc.Grid(Emin, Emax, E0grid, Ngrid)
