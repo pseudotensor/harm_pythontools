@@ -53,14 +53,16 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
     cdef double *Evec_data = get_data(grid.Egrid)
     cdef double *Evec2_data
     cdef double *flold_data = get_data(flold)
-    cdef int dim = flnew.shape[0]
+    cdef int dim1 = flnew.shape[0]
     cdef double minEg, maxEg
     #use old grid as a start
+    #cdef dim2 = 0.1*dim1
+    #cdef Grid grid2 = Grid.empty(dim2)
     cdef Grid grid2 = Grid.fromGrid(grid)
     cdef Func flold_func = Func.fromGrid(grid)
     flold_func.set_func_c(flold_data)
 
-    for i from 0 <= i < dim:
+    for i from 0 <= i < dim1:
         Eenew = Evec_data[i]
         #new grid defined by Eenew
         minEg = seed.minEg(Eenew,grid.Emin)
