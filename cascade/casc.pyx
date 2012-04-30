@@ -146,7 +146,6 @@ cdef public class Grid [object CGrid, type TGrid ]:
         self.Egrid = np.zeros((self.Ngrid),dtype=DTYPE)
         self.dEdxgrid = np.zeros((self.Ngrid),dtype=DTYPE)
         self.set_grid( Emin, Emax, E0 )
-        print( "Ngrid = %d\n" % self.Ngrid )
 
     @classmethod
     def fromGrid(cls, Grid grid):
@@ -243,7 +242,7 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
         logxr = log(self.Egrid[i+1])
         logfl = log(self.func_vec_data[i])
         logfr = log(self.func_vec_data[i+1])
-        logf  = (logfr * (logx - logxl) + logfl * (logx - logxr)) / (logxr - logxl)
+        logf  = (logfr * (logxl - logx) + logfl * (logx - logxr)) / (logxl - logxr)
         f = exp(logf)
         return( f )
         
