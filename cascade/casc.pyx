@@ -131,7 +131,7 @@ cdef public class Grid [object CGrid, type TGrid ]:
         self.set_grid( Emin, Emax, E0 )
 
     @classmethod
-    def fromGrid(cls,Grid grid):
+    def fromGrid(cls, Grid grid):
         return cls( grid.Emin, grid.Emax, grid.E0, grid.Ngrid )
 
     @classmethod
@@ -202,6 +202,14 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
     cpdef set_grid(self, double Emin, double Emax, double E0):
         """ Same as Grid() but without reallocation of memory """
         Grid.set_grid( self, Emin, Emax, E0 )
+
+    @classmethod
+    def fromGrid(cls, Grid grid):
+        return cls( grid.Emin, grid.Emax, grid.E0, grid.Ngrid )
+
+    @classmethod
+    def empty(cls, int Ngrid):
+        return cls( 0, 1, 0.5, Ngrid )
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
     cpdef double fofE(self, double Eval):
