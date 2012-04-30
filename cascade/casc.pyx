@@ -9,6 +9,74 @@ from libc.math cimport exp
 DTYPE = np.float
 ctypedef np.float_t DTYPE_t
 
+
+def fg_p( Eg not None, Ee not None, SeedPhoton seed not None):
+    return fgvec( Eg, Ee, seed )
+
+@cython.boundscheck(False) # turn off bounds-checking for entire function
+cdef np.ndarray[double, ndim=1] fgvec( np.ndarray[double, ndim=1] Eg, np.ndarray[double, ndim=1] Ee, SeedPhoton seed):
+    cdef int i
+    cdef int dim = Ee.shape[0]
+    cdef np.ndarray[DTYPE_t, ndim=1] Eg1 = np.zeros_like(Ee)
+    for i from 0 <= i < dim:
+        Eg1[i] = fg( Eg[i], Ee[i], seed )
+    return( Eg1 )
+
+cdef double fg( double Eg, double Ee, SeedPhoton seed):
+    cdef double Ep = Ee-Eg
+    cdef double fgval = ( (seed.f(Eg/(2*Ee*Ep))/(2*Ep**2)) if (Ep>0 and Ee>0 and Eg>0) else (0) )
+    return( fgval )
+
+cdef double K1( double Enew, double Eold, SeedPhoton seed ):
+    cdef double K = (4*fg(2*Enew,Eold,seed)) if (2*Enew>=seed.Egmin) else (0)
+    return( K )
+
+cdef double K2( double Enew, double Eold, SeedPhoton seed ):
+    cdef double K = fg(Eold-Enew,Eold,seed)
+    return( K )
+
+@cython.boundscheck(False) # turn off bounds-checking for entire function
+cdef public double* get_data( np.ndarray[double, ndim=1] nparray ):
+    return <double *>nparray.data
+
+def flnew( Evec not None, flold not None, seed not None ):
+    return flnew_c( Evec, flold, seed )
+
+@cython.boundscheck(False) # turn off bounds-checking for entire function
+cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, ndim=1] flold, SeedPhoton seed ):
+    """Expect E and flold defined on a regular log grid, Evec"""
+    cdef int i
+    cdef int j
+    cdef np.ndarray[double, ndim=1] flnew = np.zeros_like(flold)
+    cdef double *flnew_data = get_data(flnew)
+    cdef double *Evec_data = get_data(grid.Egrid)
+    cdef double *flold_data = get_data(flold)
+    cdef int dim = flnew.shape[0]
+    cdef Grid newgrid = Grid.empty(dim)
+    cdef Func newfunc = Func.fromGrid(newgrid)
+    
+    for i from 0 <= i < dim:
+        #flnew_data[i] = 0
+        for j from 0 <= j < dim:
+            flnew_data[i] += K1(Evec_data[i],Evec_data[j],seed)*(flold_data[j]*Evec_data[j])
+            flnew_data[i] += K2(Evec_data[i],Evec_data[j],seed)*(flold_data[j]*Evec_data[j])
+        flnew_data[i] *= grid.dx
+    return( flnew )
+
+
+###############################
+#
+#  CLASSES
+#
+###############################        
+    
+
+###############################
+#
+#  SEED PHOTON
+#
+###############################        
+
 cdef public class SeedPhoton [object CSeedPhoton, type TSeedPhoton ]:
     """our seed photon class"""
     cdef public double Emin
@@ -31,6 +99,12 @@ cdef public class SeedPhoton [object CSeedPhoton, type TSeedPhoton ]:
     cpdef double f(self, double E):
         return( self.Nprefactor*E**(-self.s) if (E >= self.Emin and E <= self.Emax) else 0 )
 
+
+###############################
+#
+#  GRID
+#
+###############################        
 
 cdef public class Grid [object CGrid, type TGrid ]:
     """grid class"""
@@ -63,23 +137,6 @@ cdef public class Grid [object CGrid, type TGrid ]:
     @classmethod
     def empty(cls, int Ngrid):
         return cls( 0, 1, 0.5, Ngrid )
-
-    # def __init__(self, Grid grid):
-    #     """ Full constructor: allocates memory and generates the grid """
-    #     self.xgrid = np.copy(grid.xgrid)
-    #     self.Egrid = np.zeros(grid.Egrid)
-    #     self.dxdEgrid = np.zeros(grid.dEdxgrid)
-    #     self.set_grid( grid.Emin, grid.Emax, grid.E0 )
-
-    # def __init__(self, int Ngrid):
-    #     """ Partial constructor: only memory allocation """
-    #     self.xgrid = np.zeros((self.Ngrid),dtype=DTYPE)
-    #     self.Egrid = np.zeros((self.Ngrid),dtype=DTYPE)
-    #     self.dxdEgrid = np.zeros((self.Ngrid),dtype=DTYPE)
-
-    # def set_grid(self, double Emin, double Emax, double E0):
-    #     """ Same as Grid() but without reallocation of memory """
-    #     self.set_grid_c( Emin, Emax, E0 )
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
     cpdef set_grid(self, double Emin, double Emax, double E0 ):
@@ -121,6 +178,12 @@ cdef public class Grid [object CGrid, type TGrid ]:
         return self.iofx( self.xofE(Eval) )
 
 
+###############################
+#
+#  FUNCTION
+#
+###############################        
+
 cdef public class Func(Grid)  [object CFunc, type TFunc ]:
     """ Function class derived from Grid class """
     
@@ -136,11 +199,6 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
             self.func_vec = np.copy(func_vec)
             self.func_vec_data = get_data(self.func_vec)
 
-    # def __init__(self,Grid grid, func_vec not None):
-    #     Grid.__init__(self,grid)
-    #     self.func_vec = np.copy(func_vec)
-    #     self.func_vec_data = get_data(self.func_vec)
-        
     cpdef set_grid(self, double Emin, double Emax, double E0):
         """ Same as Grid() but without reallocation of memory """
         Grid.set_grid( self, Emin, Emax, E0 )
@@ -171,68 +229,5 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
         cdef int i
         for i from 0 <= i < Grid.Ngrid:
             self.func_vec_data[i] = func_vec_data[i]
-            
 
-def fg_p( Eg not None, Ee not None, SeedPhoton seed not None):
-    return fgvec( Eg, Ee, seed )
-
-@cython.boundscheck(False) # turn off bounds-checking for entire function
-cdef np.ndarray[double, ndim=1] fgvec( np.ndarray[double, ndim=1] Eg, np.ndarray[double, ndim=1] Ee, SeedPhoton seed):
-    cdef int i
-    cdef int dim = Ee.shape[0]
-    cdef np.ndarray[DTYPE_t, ndim=1] Eg1 = np.zeros_like(Ee)
-    for i from 0 <= i < dim:
-        Eg1[i] = fg( Eg[i], Ee[i], seed )
-    return( Eg1 )
-
-cdef double fg( double Eg, double Ee, SeedPhoton seed):
-    cdef double Ep = Ee-Eg
-    cdef double fgval = ( (seed.f(Eg/(2*Ee*Ep))/(2*Ep**2)) if (Ep>0 and Ee>0 and Eg>0) else (0) )
-    return( fgval )
-
-cdef double K1( double Enew, double Eold, SeedPhoton seed ):
-    cdef double K = (4*fg(2*Enew,Eold,seed)) if (2*Enew>=seed.Egmin) else (0)
-    return( K )
-
-cdef double K2( double Enew, double Eold, SeedPhoton seed ):
-    cdef double K = fg(Eold-Enew,Eold,seed)
-    return( K )
-
-def flnew( Evec not None, flold not None, seed not None ):
-    return flnew_c( Evec, flold, seed )
-
-@cython.boundscheck(False) # turn off bounds-checking for entire function
-cdef public double* get_data( np.ndarray[double, ndim=1] nparray ):
-    return <double *>nparray.data
-
-@cython.boundscheck(False) # turn off bounds-checking for entire function
-cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, ndim=1] flold, SeedPhoton seed ):
-    """Expect E and flold defined on a regular log grid, Evec"""
-    cdef int i
-    cdef int j
-    cdef np.ndarray[double, ndim=1] flnew = np.zeros_like(flold)
-    cdef double *flnew_data = get_data(flnew)
-    cdef double *Evec_data = get_data(grid.Egrid)
-    cdef double *flold_data = get_data(flold)
-    cdef int dim = flnew.shape[0]
-    cdef Grid newgrid = Grid.empty(dim)
-    cdef Func newfunc = Func.fromGrid(newgrid)
-    
-    for i from 0 <= i < dim:
-        #flnew_data[i] = 0
-        for j from 0 <= j < dim:
-            flnew_data[i] += K1(Evec_data[i],Evec_data[j],seed)*(flold_data[j]*Evec_data[j])
-            flnew_data[i] += K2(Evec_data[i],Evec_data[j],seed)*(flold_data[j]*Evec_data[j])
-        flnew_data[i] *= grid.dx
-    return( flnew )
-
-@cython.boundscheck(False) # turn off bounds-checking for entire function
-cdef public np.ndarray[double, ndim=1] reinterp( Grid oldgrid, np.ndarray[double, ndim=1] oldfunc, 
-                                                 Grid newgrid, np.ndarray[double, ndim=1] newfunc ):
-    cdef double *oldgrid_data = get_data(oldgrid.Egrid)
-    cdef double *newgrid_data = get_data(newgrid.Egrid)
-    cdef int i
-    # for i from 0 <= i < newgrid.Ngrid:
-        
-    
 
