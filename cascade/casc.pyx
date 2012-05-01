@@ -57,8 +57,9 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
     cdef double minEg, maxEg
     #use old grid as a start
     cdef int dim2 = 10000
-    #cdef Grid grid2 = Grid.empty(dim2)
-    cdef Grid grid2 = Grid.fromGrid(grid)
+    cdef Grid grid2 = Grid.empty(dim2)
+    #cdef Grid grid2 = Grid.fromGrid(grid)
+    #cdef Grid grid2 = grid
     cdef Func flold_func = Func.fromGrid(grid)
     flold_func.set_func_c(flold_data)
 
@@ -88,8 +89,10 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
                 #if delta != 0: print "***", i, j, a, b, delta
             elif False:
                 flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*Evec_data[j])*grid.dx
+            elif False:
+                flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_func.fofE(Evec2_data[j])*grid.dEdxgrid_data[j])*grid.dx
             else:
-                flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(grid2.dEdxgrid_data[j]*grid2.dEdxgrid_data[j])*grid2.dx
+                flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
     return( flnew )
 
 
