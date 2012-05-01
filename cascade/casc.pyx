@@ -70,7 +70,7 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
         maxEg = seed.maxEg(Eenew,grid.Emax)
         if maxEg < grid.Emin or minEg > grid.Emax:
            continue
-        grid2.set_grid(minEg,2*maxEg,0.9*minEg)
+        grid2.set_grid(minEg,2*maxEg,0.*minEg)
         #print i, grid2.Emin, grid2.Emax, grid2.E0
         #print i, grid2.Emin, grid2.Emax, grid2.E0
         Evec2_data = grid2.Egrid_data
@@ -89,8 +89,8 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
                 #if delta != 0: print "***", i, j, a, b, delta
             elif False:
                 flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*Evec_data[j])*grid.dx
-            elif False:
-                flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_func.fofE(Evec2_data[j])*grid.dEdxgrid_data[j])*grid.dx
+            elif True:
+                flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_func.fofE(Evec_data[j])*grid.dEdxgrid_data[j])*grid.dx
             else:
                 flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
     return( flnew )
