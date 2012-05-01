@@ -56,9 +56,9 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
     cdef int dim1 = flnew.shape[0]
     cdef double minEg, maxEg
     #use old grid as a start
-    cdef int dim2 = 100
-    cdef Grid grid2 = Grid.empty(dim2)
-    #cdef Grid grid2 = Grid.fromGrid(grid)
+    cdef int dim2 = 10000
+    #cdef Grid grid2 = Grid.empty(dim2)
+    cdef Grid grid2 = Grid.fromGrid(grid)
     cdef Func flold_func = Func.fromGrid(grid)
     flold_func.set_func_c(flold_data)
 
@@ -69,13 +69,13 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
         maxEg = seed.maxEg(Eenew,grid.Emax)
         if maxEg < grid.Emin or minEg > grid.Emax:
            continue
-        grid2.set_grid(0.5*minEg,2*maxEg,0.*minEg)
+        grid2.set_grid(minEg,2*maxEg,0.9*minEg)
         #print i, grid2.Emin, grid2.Emax, grid2.E0
         #print i, grid2.Emin, grid2.Emax, grid2.E0
         Evec2_data = grid2.Egrid_data
         for j from 0 <= j < dim1:
             #integration on old grid
-            flnew_data[i] += K1(Eenew,Evec_data[j],seed)*(flold_data[j]*Evec_data[j])*grid.dx
+            flnew_data[i] += K1(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
         for j from 0 <= j < dim2:
             if True:
                 #integration on new grid
@@ -202,13 +202,13 @@ cdef public class Grid [object CGrid, type TGrid ]:
         self.E0 = E0
         self.xmax = log(self.Emax-self.E0)
         self.xmin = log(self.Emin-self.E0)
-        self.dx = (self.xmax - self.xmin) / (dim-1)
+        self.dx = (self.xmax - self.xmin) * 1.0 / dim
         #get direct C pointers to numpy arrays' data fields
         self.xgrid_data = get_data(self.xgrid)
         self.Egrid_data = get_data(self.Egrid)
         self.dEdxgrid_data = get_data(self.dEdxgrid)
         for i from 0 <= i < dim:
-            self.xgrid_data[i] = self.xmin + self.dx*i
+            self.xgrid_data[i] = self.xmin + self.dx*(i+0.5)
             self.Egrid_data[i] = self.E0 + exp(self.xgrid_data[i])
             self.dEdxgrid_data[i] = self.Egrid_data[i] - self.E0
 
@@ -216,7 +216,7 @@ cdef public class Grid [object CGrid, type TGrid ]:
     cpdef int iofx(self, double xval):
         """ Returns the index of the cell containing xval """
         cdef int ival
-        ival = int( (xval-self.xmin)/self.dx )
+        ival = int( (xval-self.xmin)/self.dx - 0.5 )
         return ival
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
