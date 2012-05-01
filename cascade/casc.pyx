@@ -77,7 +77,7 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
             #integration on old grid
             flnew_data[i] += K1(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
         for j from 0 <= j < dim2:
-            if True:
+            if False:
                 #integration on new grid
                 a = K2(Eenew,Evec2_data[j],seed)
                 b = flold_func.fofE(Evec2_data[j])
@@ -86,8 +86,10 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
                 delta = a*b*c*d
                 flnew_data[i] += delta
                 #if delta != 0: print "***", i, j, a, b, delta
-            else:
+            elif False:
                 flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*Evec_data[j])*grid.dx
+            else:
+                flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(grid2.dEdxgrid_data[j]*grid2.dEdxgrid_data[j])*grid2.dx
     return( flnew )
 
 
