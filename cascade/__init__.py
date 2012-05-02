@@ -96,8 +96,8 @@ if __name__ == "__main__":
     print ("Hello")
     #energy grid, Lorentz factor of initial electron
     warnings.simplefilter("error")
-    Emin = 1e-5
-    Emax = 1e10
+    Emin = 1e-4
+    Emax = 1e11
     Ngrid = 1e4
     # Evec = exp(np.linspace(-5,np.log(Emax),Ngrid))
     E0grid = 0
