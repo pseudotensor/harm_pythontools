@@ -551,6 +551,8 @@ echo "runnglobal=$runnglobal"
 #
 ###################
 # copy over python script path since supercomputers (e.g. Kraken) can't access home directory while running.
+#rm -rf $dirname/py/
+echo "dirname=$dirname"
 cp -a $HOME/py $dirname/
 # setup py path
 MYPYTHONPATH=$dirname/py/

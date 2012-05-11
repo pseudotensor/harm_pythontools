@@ -27,6 +27,7 @@ import numpy
 import pylab
 import matplotlib
 import matplotlib.patches as mpp
+import sys
 
 def streamplot(x, y, u, v, density=1, linewidth=1,
                color='k', cmap=None, norm=None, vmax=None, vmin=None,
@@ -385,7 +386,7 @@ def streamplot(x, y, u, v, density=1, linewidth=1,
 
 def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
                color='k', cmap=None, norm=None, vmax=None, vmin=None,
-               arrowsize=1, INTEGRATOR='RK4',dtx=10,ax=None,setxylim=False,useblank=True,detectLoops=True,dobhfield=False,dodiskfield=False,startatmidplane=False,a=0.0,downsample=1,minlendiskfield=0.2,minlenbhfield=0.2,dsval=0.01,doarrows=True,dorandomcolor=False,skipblankint=False,minindent=1,symmy=True,minlengthdefault=0.2):
+               arrowsize=1, INTEGRATOR='RK4',dtx=10,ax=None,setxylim=False,useblank=True,detectLoops=True,dobhfield=False,dodiskfield=False,startatmidplane=False,domidfield=True,a=0.0,downsample=1,minlendiskfield=0.2,minlenbhfield=0.2,dsval=0.01,doarrows=True,dorandomcolor=False,skipblankint=False,minindent=1,symmy=True,minlengthdefault=0.2):
     '''Draws streamlines of a vector flow.
 
     * x and y are 1d arrays defining an *evenly spaced* grid.
@@ -414,6 +415,7 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
     ## Set up some constants - size of the grid used.
     NGX = len(x)
     NGY = len(y)
+    #print("NGX=%g NGY=%d" % (NGX,NGY) )
     ## Constants used to convert between grid index coords and user coords.
     DX = x[1]-x[0]
     DY = y[1]-y[0]
@@ -421,9 +423,17 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
     YOFF = y[0]
 
     ## Now rescale velocity onto axes-coordinates
+    #print("x[0]=%g x[-1]=%g" % (x[0],x[-1]) )
+    #print("y[0]=%g y[-1]=%g" % (y[0],y[-1]) )
     u = u / (x[-1]-x[0])
     v = v / (y[-1]-y[0])
-    speed = numpy.sqrt(u*u+v*v)
+    VSMALL=1E-30
+    u[numpy.isfinite(u)==0]=VSMALL
+    v[numpy.isfinite(v)==0]=VSMALL
+    lensq=u*u+v*v
+    lensq[lensq<VSMALL]=VSMALL
+    lensq[numpy.isfinite(lensq)==0]=VSMALL
+    speed = numpy.maximum(numpy.sqrt(lensq),VSMALL)
     ## s (path length) will now be in axes-coordinates, but we must
     ## rescale u for integrations.
     u *= NGX
@@ -434,7 +444,12 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
         ## Now rescale velocity onto axes-coordinates
         ua = ua / (x[-1]-x[0])
         va = va / (y[-1]-y[0])
-        speed = numpy.sqrt(ua*ua+va*va)
+        ua[numpy.isfinite(ua)==0]=VSMALL
+        va[numpy.isfinite(va)==0]=VSMALL
+        lensq=ua*ua+va*va
+        lensq[lensq<VSMALL]=VSMALL
+        lensq[numpy.isfinite(lensq)==0]=VSMALL
+        speed = numpy.maximum(numpy.sqrt(lensq),VSMALL)
         ## s (path length) will now be in axes-coordinates, but we must
         ## rescale ua for integrations.
         ua *= NGX
@@ -496,6 +511,8 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
         yt = yi - y
         a0 = a00*(1-xt) + a01*xt
         a1 = a10*(1-xt) + a11*xt
+        #print("vat: x=%d y=%d : %g %g %g %g %g %g %g %g" % (x,y,a00,a01,a10,a11,xt,yt,a0,a1))
+        #sys.stdout.flush()
         return a0*(1-yt) + a1*yt
 
     def detectLoop(xi,yi,xVals, yVals, ds):
@@ -513,13 +530,29 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
             minlength = minlengthdefault
         
         def f(xi, yi):
-            dt_ds = 1./value_at(speed, xi, yi)
+            speedi=value_at(speed, xi, yi)
+            #if speedi==0 or speedi!=speedi:
+            #    print("Aspeedi=%g" % (speedi) )
+            #    sys.stdout.flush()
+            #print("A2speedi=%g at xi=%g yi=%g" % (speedi,xi,yi) )
+            #sys.stdout.flush()
+            dt_ds = 1./speedi
+            #sys.stderr.flush()
+            #
             ui = value_at(u, xi, yi)
             vi = value_at(v, xi, yi)
             return ui*dt_ds, vi*dt_ds
 
         def g(xi, yi):
-            dt_ds = 1./value_at(speed, xi, yi)
+            speedi=value_at(speed, xi, yi)
+            #if speedi==0 or speedi!=speedi:
+            #    print("Bspeedi=%g" % (speedi) )
+            #    sys.stdout.flush()
+            #print("B2speedi=%g at xi=%g yi=%g" % (speedi,xi,yi) )
+            #sys.stdout.flush()
+            dt_ds = 1./speedi
+            #sys.stderr.flush()
+            #dt_ds = 1./value_at(speed, xi, yi)
             ui = value_at(u, xi, yi)
             vi = value_at(v, xi, yi)
             return -ui*dt_ds, -vi*dt_ds
@@ -551,15 +584,23 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
                     k4x, k4y = f(xi + ds*k3x, yi + ds*k3y)
                 except IndexError:
                     # Out of the domain on one of the intermediate steps
+                    print("OD: %g %g" % (x0,y0))
+                    sys.stdout.flush()
                     break
                 except OverflowError:
                     # Overflow -- break (AT)
+                    print("Overflow: %g %g" % (x0,y0))
+                    sys.stdout.flush()
                     break
                 except numpy.ma.MaskError:
                     # Attribute -- break (AT)
+                    print("Att: %g %g" % (x0,y0))
+                    sys.stdout.flush()
                     break
                 except ValueError:
                     # ValueError -- break (AT)
+                    print("VE: %g %g" % (x0,y0))
+                    sys.stdout.flush()
                     break
                 xi += ds*(k1x+2*k2x+2*k3x+k4x) / 6.
                 yi += ds*(k1y+2*k2y+2*k3y+k4y) / 6.
@@ -571,22 +612,24 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
                     #keep nstep within reasonable bounds
                     nstep -= 3000
                 # Next, if s gets to thres, check blank.
-                new_xb, new_yb = blank_pos(xi, yi)
-                if new_xb != xb or new_yb != yb:
-                    # New square, so check and colour. Quit if required.
-                    if blank[new_yb,new_xb] == 0 or skipblankint:
-                        blank[new_yb,new_xb] = 1
-                        bx_changes.append(new_xb)
-                        by_changes.append(new_yb)
-                        xb = new_xb
-                        yb = new_yb
-                    elif useblank or numpy.abs(xyabsofxyi(xi,yi)[0]) > 10:
-                        #if using blank array or if outside the jet region (|R|<10)
-                        break
+                if useblank:
+                    new_xb, new_yb = blank_pos(xi, yi)
+                    if new_xb != xb or new_yb != yb:
+                        # New square, so check and colour. Quit if required.
+                        if blank[new_yb,new_xb] == 0 or skipblankint:
+                            blank[new_yb,new_xb] = 1
+                            bx_changes.append(new_xb)
+                            by_changes.append(new_yb)
+                            xb = new_xb
+                            yb = new_yb
+                        elif useblank or numpy.abs(xyabsofxyi(xi,yi)[0]) > 10:
+                            #if using blank array or if outside the jet region (|R|<10)
+                            break
                 if stotal > 2: #AT: increase this to reach boundaries
                     break
                 if detectLoops and nstep % 3 == 0 and detectLoop(xi, yi, xf_traj, yf_traj, ds): #AT: avoid loops
                     break
+                #print("stotal=%g" % (stotal) )
             return stotal, xf_traj, yf_traj
         
         ## Alternative Integrator function
@@ -642,18 +685,20 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
                     # Final position might be out of the domain
                     if not check(xi, yi): break
                     stotal += ds
-                    # Next, if s gets to thres, check blank.
-                    new_xb, new_yb = blank_pos(xi, yi)
-                    if new_xb != xb or new_yb != yb:
-                        # New square, so check and colour. Quit if required.
-                        if blank[new_yb,new_xb] == 0:
-                            blank[new_yb,new_xb] = 1
-                            bx_changes.append(new_xb)
-                            by_changes.append(new_yb)
-                            xb = new_xb
-                            yb = new_yb
-                        else:
-                            break
+                    if useblank:
+                        # Next, if s gets to thres, check blank.
+                        new_xb, new_yb = blank_pos(xi, yi)
+                        if new_xb != xb or new_yb != yb:
+                            # New square, so check and colour. Quit if required.
+                            if blank[new_yb,new_xb] == 0:
+                                blank[new_yb,new_xb] = 1
+                                bx_changes.append(new_xb)
+                                by_changes.append(new_yb)
+                                xb = new_xb
+                                yb = new_yb
+                            else:
+                                break
+                    #
                     if stotal > 2:
                         break
                 # Modify ds for the next iteration.
@@ -698,12 +743,15 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
 
     def traj(xb, yb, useblank = True, doreport = False, checkalongx = False, minlength = 0.2):
         if xb < 0 or xb >= NBX or yb < 0 or yb >= NBY:
-            return
-        if checkalongx and downsample != 1:
+           return
+        if useblank==1 and checkalongx and downsample != 1:
            if blank[yb+0.5,max(0,xb+0.5-downsample+1):min(NBX-1,xb+0.5+downsample)].any():
                return
         if not useblank or blank[yb+0.5, xb+0.5] == 0:
+        #if 1==1:
             t = rk4_integrate(xb*bx_spacing, yb*by_spacing, useblank, checkalongx, minlength)
+            #print("t @ xb=%g yb=%g" % (xb,yb))
+            #print(t)
             if t != None:
                 trajectories.append(t)
             elif doreport:
@@ -734,7 +782,11 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
 
     rh = 1+(1-a**2)**0.5
     rad = 0.9*rh
+    #
     if dobhfield:
+    #if 1==0:
+        print("doing dobhfield")
+        sys.stdout.flush()
         if (ua is not None) and (va is not None):
             ubackup = u
             vbackup = v
@@ -762,66 +814,75 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
             rad /= 3.
 
     #if downsampling, only send in streamlines from boundaries
-    if downsample != 1:
+    if downsample != 1 and domidfield==1:
+        print("Doing domidfield=%d" % (domidfield))
+        sys.stdout.flush()
+        #print("useblank=%d minindent=%d startatmidplane=%d" % (useblank,minindent,startatmidplane))
+        #
         indent = minindent
         #for xi in range(max(NBX,NBY)-2*indent):
         for xi in range(downsample/2,max(NBX,NBY)-2*indent,downsample):
+        #for xi in range(downsample/2,downsample/2,1):# GOD
             if startatmidplane and indent == minindent:
                 #for trajectories that start at left or right wall,
                 #send them in symmetrically away from midplane
                 if xi+indent < NBY/2:
-                    traj(indent, NBY/2+xi+indent)  #lower x
-                    traj(indent, NBY/2-xi-indent-1)  #lower x
-                    traj(NBX-1-indent, NBY/2+xi+indent) #upper x
-                    traj(NBX-1-indent, NBY/2-xi-indent-1) #upper x
+                    traj(indent, NBY/2+xi+indent,useblank=useblank)  #lower x
+                    traj(indent, NBY/2-xi-indent-1,useblank=useblank)  #lower x
+                    traj(NBX-1-indent, NBY/2+xi+indent,useblank=useblank) #upper x
+                    traj(NBX-1-indent, NBY/2-xi-indent-1,useblank=useblank) #upper x
             else:
-                traj(indent, xi+indent)  #lower x
-                traj(NBX-1-indent, xi+indent) #upper x
+                traj(indent, xi+indent,useblank=useblank)  #lower x
+                traj(NBX-1-indent, xi+indent,useblank=useblank) #upper x
             if symmy: 
                 if xi+indent < NBX/2:
                     #symmetrize y
-                    traj(xi+indent, indent, checkalongx = True)  #lower y
-                    traj(NBX-1-(xi+indent), indent, checkalongx = True)  #lower y
-                    traj(xi+indent, NBY-1-indent, checkalongx = True) #upper y
-                    traj(NBX-1-(xi+indent), NBY-1-indent, checkalongx = True) #upper y
+                    traj(xi+indent, indent, checkalongx = False,useblank=useblank)  #lower y
+                    traj(NBX-1-(xi+indent), indent, checkalongx = False,useblank=useblank)  #lower y
+                    traj(xi+indent, NBY-1-indent, checkalongx = False,useblank=useblank) #upper y
+                    traj(NBX-1-(xi+indent), NBY-1-indent, checkalongx = False,useblank=useblank) #upper y
             else:
-                traj(xi+indent, indent, checkalongx = True)  #lower y
-                traj(xi+indent, NBY-1-indent, checkalongx = True) #upper y
-    else:
+                traj(xi+indent, indent, checkalongx = False,useblank=useblank)  #lower y
+                traj(xi+indent, NBY-1-indent, checkalongx = False,useblank=useblank) #upper y
+    #
+    if downsample == 1 and domidfield==1:
         for indent in range(minindent,(max(NBX,NBY))/2):
             for xi in range(max(NBX,NBY)-2*indent):
                 if symmy: 
                     if xi+indent < NBX/2:
                         #symmetrize y
-                        traj(xi+indent, indent)  #lower y
-                        traj(NBX-1-(xi+indent), indent)  #lower y
-                        traj(xi+indent, NBY-1-indent) #upper y
-                        traj(NBX-1-(xi+indent), NBY-1-indent) #upper y
+                        traj(xi+indent, indent,useblank=useblank)  #lower y
+                        traj(NBX-1-(xi+indent), indent,useblank=useblank)  #lower y
+                        traj(xi+indent, NBY-1-indent,useblank=useblank) #upper y
+                        traj(NBX-1-(xi+indent), NBY-1-indent,useblank=useblank) #upper y
                 else:
-                    traj(xi+indent, indent)  #lower y
-                    traj(xi+indent, NBY-1-indent) #upper y
+                    traj(xi+indent, indent,useblank=useblank)  #lower y
+                    traj(xi+indent, NBY-1-indent,useblank=useblank) #upper y
                 if startatmidplane and indent == 0:
                     #for trajectories that start at left or right wall,
                     #send them in symmetrically away from midplane
                     if xi+indent < NBY/2:
-                        traj(indent, NBY/2+xi+indent)  #lower x
-                        traj(indent, NBY/2-xi-indent-1)  #lower x
-                        traj(NBX-1-indent, NBY/2+xi+indent) #upper x
-                        traj(NBX-1-indent, NBY/2-xi-indent-1) #upper x
+                        traj(indent, NBY/2+xi+indent,useblank=useblank)  #lower x
+                        traj(indent, NBY/2-xi-indent-1,useblank=useblank)  #lower x
+                        traj(NBX-1-indent, NBY/2+xi+indent,useblank=useblank) #upper x
+                        traj(NBX-1-indent, NBY/2-xi-indent-1,useblank=useblank) #upper x
                 else:
-                    traj(indent, xi+indent)  #lower x
-                    traj(NBX-1-indent, xi+indent) #upper x
+                    traj(indent, xi+indent,useblank=useblank)  #lower x
+                    traj(NBX-1-indent, xi+indent,useblank=useblank) #upper x
 
     #do at the end, use shorter minimal length
     if dodiskfield:
-        num=32
+        print("Doing dodiskfield")
+        sys.stdout.flush()
+        num=16 # 8 on each side of BH
         yabs = 0
         for Rabs in numpy.linspace(x.max(),0,num):
             if Rabs > rad:
                 xb, yb = xybofxyabs( Rabs, yabs )
-                traj(xb, yb, useblank = True, minlength = minlendiskfield)
+                traj(xb, yb, useblank = useblank, minlength = minlendiskfield)
                 xb, yb = xybofxyabs( -Rabs, yabs )
-                traj(xb, yb, useblank = True, minlength = minlendiskfield)
+                traj(xb, yb, useblank = useblank, minlength = minlendiskfield)
+
 
     ## PLOTTING HERE.
     #pylab.pcolormesh(numpy.linspace(x.min(), x.max(), NBX+1),
