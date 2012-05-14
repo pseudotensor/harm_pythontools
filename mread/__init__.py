@@ -10289,27 +10289,43 @@ def plotflux(doreload=True):
     plt.savefig("plotflux.eps",bbox_inches='tight',pad_inches=0.02,dpi=100)
     plt.savefig("plotflux.pdf",bbox_inches='tight',pad_inches=0.02,dpi=100)
 
-def mkpulsarmovie():
+def mkpulsarmovie(startn=0):
     grid3d("gdump.bin",use2d=True)
     flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
     flist.sort()
     for fldindex, fldname in enumerate(flist):
+        if fldindex < startn:
+            continue
         print( "Reading " + fldname + " ..." )
         sys.stdout.flush()
         rfd("../"+fldname)
         sys.stdout.flush()
         aphi=fieldcalc()
-        if fldindex == 0:
+        if fldindex == startn:
             maxaphi = (5*10)**0.5*3*3*3.2 #aphi.max()
         #fig=plt.figure(1,figsize=(10,10))
         #plt.clf()
         #ax = fig.add_subplot(111, aspect='equal')
-        numc=10
+        numc=40
         cvel()
         if True:
-            plco(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,numc)*maxaphi/np.float(numc),colors='k')
-            plc(np.log10(bsq/rho),xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,levels=np.arange(0.,2,0.1));plt.xlim(0,10);plt.ylim(-5,5)
-            #plc(uu[2]*dxdxp[2][2],xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=False,levels=np.arange(-0.5,0.5,0.1));plt.xlim(0,10);plt.ylim(-5,5)            #plc(np.log10(ug),xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,levels=np.arange(-3,2,0.1));plt.xlim(0,10);plt.ylim(-5,5)
+            levs=10**np.arange(0.,np.log10(500.),0.1)
+            #Logarithmic color bar
+            cts=plco(bsq/(rho+ug),xcoord=r*np.sin(h),ycoord=r*np.cos(h),
+                     levels=levs,
+                     locator=ticker.LogLocator(),
+                     norm=mpl.colors.LogNorm(vmin=levs[0],vmax=levs[-1]));
+            plt.xlim(0,10);plt.ylim(-5,5)
+            cbar=plt.colorbar(cts)
+            cbar.set_ticks(levs)
+            cbar.ax.set_ylabel(r'$b^2\!/4\pi\rho$',fontsize=18,labelpad=-5)
+            x=[5,5]
+            y=[-5,5]
+            #plt.grid(b=True)
+            plc(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,numc)*maxaphi/np.float(numc),colors='k')
+            plt.plot(x,y,lw=3,color='r',alpha=0.5)
+            #plc(uu[2]*dxdxp[2][2],xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=False,levels=np.arange(-0.5,0.5,0.1));plt.xlim(0,10);plt.ylim(-5,5)            
+            #plc(np.log10(ug),xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,levels=np.arange(-3,2,0.1));plt.xlim(0,10);plt.ylim(-5,5)
             #plc(np.log10(ug/rho),xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,levels=np.arange(0,1,0.1));plt.xlim(0,10);plt.ylim(-5,5)
             #plc(lrho,xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,levels=np.arange(-3,.8,0.1));plt.xlim(0,10);plt.ylim(-5,5)
             #cts=plc(bsq/rho,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,5.5,0.5))
@@ -10330,7 +10346,7 @@ def mkpulsarmovie():
             plt.plot(r[:,0,0],ug[:,0.75*ny,0],'g');plt.xlim(Rin,10);plt.ylim(0,50)
             plt.plot(r[:,0,0],rho[:,0.75*ny,0],'r');plt.xlim(Rin,10);plt.ylim(0,50)
             plt.plot(r[:,0,0],(bsq/rho)[:,0.75*ny,0],'b');plt.xlim(Rin,10);plt.ylim(0,50)
-        plt.title(r"$b^2\!/\rho=10^2$, t=%3.3g" % t,    fontsize=16, color='k')
+        plt.title(r"${\rm max}[b^2\!/4\pi\rho]=50$, $t=%3.3g$" % t,    fontsize=16, color='k')
         plt.savefig( 'frame%04d.png' % fldindex )
         #
         plt.draw()
