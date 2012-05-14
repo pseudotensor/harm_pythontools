@@ -1160,20 +1160,24 @@ def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
         plt.colorbar(res,ax=ax)
     return res
 
-def reinterp(vartointerp,extent,ncell,domask=1,isasymmetric=False):
+def reinterp(vartointerp,extent,ncell,domask=1,isasymmetric=False,rhor=None,kval=0):
     global xi,yi,zi
     #grid3d("gdump")
     #rfd("fieldline0250.bin")
+    if rhor is None:
+        rhor = (1+np.sqrt(1-a**2))
+    if kval >= vartointerp.shape[2]:
+        kval = 0
     xraw=r*np.sin(h)
     yraw=r*np.cos(h)
-    x=xraw[:,:,0].view().reshape(-1)
-    y=yraw[:,:,0].view().reshape(-1)
-    var=vartointerp[:,:,0].view().reshape(-1)
+    x=xraw[:,:,kval].view().reshape(-1)
+    y=yraw[:,:,kval].view().reshape(-1)
+    var=vartointerp[:,:,kval].view().reshape(-1)
     #mirror
     x=np.concatenate((-x,x))
     y=np.concatenate((y,y))
-    kval=min(vartointerp.shape[2]-1,nz/2)
-    varmirror = vartointerp[:,:,kval].view().reshape(-1)
+    kvalmirror=min(vartointerp.shape[2]-1,kval+nz/2)
+    varmirror = vartointerp[:,:,kvalmirror].view().reshape(-1)
     if isasymmetric:
         varmirror *= -1.
     var=np.concatenate((varmirror,var))
