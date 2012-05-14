@@ -1188,16 +1188,18 @@ def reinterp(vartointerp,extent,ncell,domask=1,isasymmetric=False,rhor=None,kval
     zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method='linear')
     #zi[interior] = np.ma.masked
     if domask!=0:
-        interior = np.sqrt((xi[None,:]**2) + (yi[:,None]**2)) < (1+np.sqrt(1-a**2))*domask
+        interior = np.sqrt((xi[None,:]**2) + (yi[:,None]**2)) < rhor*domask
         varinterpolated = ma.masked_where(interior, zi)
     else:
         varinterpolated = zi
     return(varinterpolated)
 
-def reinterpxy(vartointerp,extent,ncell,domask=1,mirrorfactor=1):
+def reinterpxy(vartointerp,extent,ncell,domask=1,mirrorfactor=1,rhor=None):
     global xi,yi,zi
     #grid3d("gdump")
     #rfd("fieldline0250.bin")
+    if rhor is None:
+        rhor = (1+np.sqrt(1-a**2))
     xraw=r*np.sin(h)*np.cos(ph)
     yraw=r*np.sin(h)*np.sin(ph)
     #2 cells below the midplane
@@ -1216,7 +1218,7 @@ def reinterpxy(vartointerp,extent,ncell,domask=1,mirrorfactor=1):
     zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method='cubic')
     #zi[interior] = np.ma.masked
     if domask!=0:
-        interior = np.sqrt((xi[None,:]**2) + (yi[:,None]**2)) < (1+np.sqrt(1-a**2))*domask
+        interior = np.sqrt((xi[None,:]**2) + (yi[:,None]**2)) < rhor*domask
         varinterpolated = ma.masked_where(interior, zi)
     else:
         varinterpolated = zi
@@ -1225,25 +1227,30 @@ def reinterpxy(vartointerp,extent,ncell,domask=1,mirrorfactor=1):
 def ftr(x,xb,xf):
     return( amax(0.0*x,amin(1.0+0.0*x,1.0*(x-xb)/(xf-xb))) )
     
-def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2,whichr=0.9,ncont=100,maxaphi=100,aspect=1.0):
+def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2,whichr=0.9,ncont=100,maxaphi=100,aspect=1.0,isnstar=False,kval=0,doBphi=False):
     extent=(-len,len,-len/aspect,len/aspect)
     palette=cm.jet
     palette.set_bad('k', 1.0)
     #palette.set_over('r', 1.0)
     #palette.set_under('g', 1.0)
-    rhor=1+(1-a**2)**0.5
-    ihor = iofr(rhor)
-    ilrho = reinterp(np.log10(rho),extent,ncell,domask=1.0)
+    if isnstar:
+        rhor=1
+        ihor = 0
+        a=1
+    else:
+        rhor=1+(1-a**2)**0.5
+        ihor = iofr(rhor)
+    ilrho = reinterp(np.log10(rho),extent,ncell,domask=1.0,rhor=rhor,kval=kval)
     if not dostreamlines:
         aphi = fieldcalc()
-        iaphi = reinterp(aphi,extent,ncell,domask=0)
+        iaphi = reinterp(aphi,extent,ncell,domask=0,rhor=rhor,kval=kval)
         #maxabsiaphi=np.max(np.abs(iaphi))
         maxabsiaphi = maxaphi #50
         #ncont = 100 #30
         levs=np.linspace(-maxabsiaphi,maxabsiaphi,ncont)
     else:
         aphi = fieldcalc()
-        iaphi = reinterp(aphi,extent,ncell,domask=0)
+        iaphi = reinterp(aphi,extent,ncell,domask=0,rhor=rhor,kval=kval)
         Br = dxdxp[1,1]*B[1]+dxdxp[1,2]*B[2]
         Bh = dxdxp[2,1]*B[1]+dxdxp[2,2]*B[2]
         Bp = B[3]*dxdxp[3,3]
@@ -1255,9 +1262,9 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         Bznorm=Brnorm*np.cos(h)-Bhnorm*np.sin(h)
         BRnorm=Brnorm*np.sin(h)+Bhnorm*np.cos(h)
         #
-        iBz = reinterp(Bznorm,extent,ncell,domask=0.8)
-        iBR = reinterp(BRnorm,extent,ncell,isasymmetric=True,domask=0.8) #isasymmetric = True tells to flip the sign across polar axis
-        #
+        iBz = reinterp(Bznorm,extent,ncell,domask=0.8,rhor=rhor,kval=kval)
+        iBR = reinterp(BRnorm,extent,ncell,isasymmetric=True,domask=0.8,rhor=rhor,kval=kval) #isasymmetric = True tells to flip the sign across polar axis
+        iBp = reinterp(Bpnorm,extent,ncell,isasymmetric=True,domask=0.8,rhor=rhor,kval=kval) #isasymmetric = True tells to flip the sign         #
         if dorandomcolor:
             Ba=np.copy(B)
             cond = (B[1]<0)
@@ -1275,17 +1282,17 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
             Baznorm=Barnorm*np.cos(h)-Bahnorm*np.sin(h)
             BaRnorm=Barnorm*np.sin(h)+Bahnorm*np.cos(h)
             #
-            iBaz = reinterp(Baznorm,extent,ncell,domask=0.8)
-            iBaR = reinterp(BaRnorm,extent,ncell,isasymmetric=True,domask=0.8) #isasymmetric = True tells to flip the sign across polar axis
+            iBaz = reinterp(Baznorm,extent,ncell,domask=0.8,rhor=rhor,kval=kval)
+            iBaR = reinterp(BaRnorm,extent,ncell,isasymmetric=True,domask=0.8,rhor=rhor,kval=kval) #isasymmetric = True tells to flip the sign across polar axis
         else:
             iBaz = None
             iBaR = None
         if showjet:
-            imu = reinterp(mu,extent,ncell,domask=0.8)
+            imu = reinterp(mu,extent,ncell,domask=0.8,rhor=rhor,kval=kval)
         #
         if dovarylw:
-            iibeta = reinterp(0.5*bsq/(gam-1)/ug,extent,ncell,domask=0)
-            ibsqorho = reinterp(bsq/rho,extent,ncell,domask=0)
+            iibeta = reinterp(0.5*bsq/(gam-1)/ug,extent,ncell,domask=0,rhor=rhor,kval=kval)
+            ibsqorho = reinterp(bsq/rho,extent,ncell,domask=0,rhor=rhor,kval=kval)
             ibsqo2rho = 0.5 * ibsqorho
         xi = np.linspace(extent[0], extent[1], ncell)
         yi = np.linspace(extent[2], extent[3], ncell)
@@ -1312,13 +1319,17 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         # plt.ylim(extent[2],extent[3])
     if dorho:
         CS = ax.imshow(ilrho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
+    if doBphi:
+        siBp = np.sqrt(np.abs(iBp))
+        maxsiBp = np.max(siBp)
+        CS = ax.imshow(np.sign(iBp)*siBp, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower', vmin=-0.3*maxsiBp,vmax=0.3*maxsiBp)
     if showjet:
         ax.contour(imu,linewidths=0.5,colors='g', extent=extent,hold='on',origin='lower',levels=(2,))
         ax.contour(iaphi,linewidths=0.5,colors='b', extent=extent,hold='on',origin='lower',levels=(aphi[ihor,ny/2,0],))
     if not dostreamlines:
         cset2 = ax.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
         traj = None
-    else:
+    elif dostreamlines == 1:
         if dovarylw:
             if False:
                 #old way
@@ -1349,17 +1360,24 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         plt.title('log rho at t = %4.0f' % t)
     #if None != fname:
     #    plt.savefig( fname + '.png' )
-    return(traj)
+    if streamlines == 1:
+        return(traj)
 
-def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,arrowsize=1):
+def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,arrowsize=1,isnstar=False,dobhfield=False):
     extent=(-len,len,-len,len)
     palette=cm.jet
+    if isnstar:
+        rhor=1
+        ihor = 0
+    else:
+        rhor=1+(1-a**2)**0.5
+        ihor = iofr(rhor)
     palette.set_bad('k', 1.0)
     #palette.set_over('r', 1.0)
     #palette.set_under('g', 1.0)
-    ilrho = reinterpxy(np.log10(rho),extent,ncell,domask=1.0)
+    ilrho = reinterpxy(np.log10(rho),extent,ncell,domask=1.0,rhor=rhor)
     aphi = fieldcalc()+rho*0
-    iaphi = reinterpxy(aphi,extent,ncell)
+    iaphi = reinterpxy(aphi,extent,ncell,rhor=rhor)
     #maxabsiaphi=np.max(np.abs(iaphi))
     #maxabsiaphi = 100 #50
     #ncont = 100 #30
@@ -1382,10 +1400,10 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
         Bxnorm=BRnorm*np.cos(ph)-Bpnorm*np.sin(ph)
         Bynorm=BRnorm*np.sin(ph)+Bpnorm*np.cos(ph)
         #
-        iBx = reinterpxy(Bxnorm,extent,ncell,domask=1,mirrorfactor=-1.)
-        iBy = reinterpxy(Bynorm,extent,ncell,domask=1,mirrorfactor=-1.)
-        iibeta = reinterpxy(0.5*bsq/(gam-1)/ug,extent,ncell,domask=0)
-        ibsqorho = reinterpxy(bsq/rho,extent,ncell,domask=0)
+        iBx = reinterpxy(Bxnorm,extent,ncell,domask=1,mirrorfactor=-1.,rhor=rhor)
+        iBy = reinterpxy(Bynorm,extent,ncell,domask=1,mirrorfactor=-1.,rhor=rhor)
+        iibeta = reinterpxy(0.5*bsq/(gam-1)/ug,extent,ncell,domask=0,rhor=rhor)
+        ibsqorho = reinterpxy(bsq/rho,extent,ncell,domask=0,rhor=rhor)
         ibsqo2rho = 0.5 * ibsqorho
         xi = np.linspace(extent[0], extent[1], ncell)
         yi = np.linspace(extent[2], extent[3], ncell)
@@ -1402,7 +1420,7 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
             # if t < 1500:
             #     lw *= ftr(ilrho,-2.,-1.9)
             lw *= ftr(iaphi,0.001,0.002)
-            fstreamplot(yi,xi,iBx,iBy,density=1,downsample=1,linewidth=lw,detectLoops=True,dodiskfield=False,dobhfield=False,startatmidplane=False,a=a,arrowsize=arrowsize)
+            fstreamplot(yi,xi,iBx,iBy,density=1,downsample=1,linewidth=lw,detectLoops=True,dodiskfield=False,dobhfield=True,startatmidplane=False,a=a,arrowsize=arrowsize)
         ax.set_xlim(extent[0],extent[1])
         ax.set_ylim(extent[2],extent[3])
     #CS.cmap=cm.jet
@@ -7627,7 +7645,7 @@ def ploteta():
     ax34r.set_yticks(tck)
     gc.collect()
 
-def mkmovie(framesize=50, domakeavi=False,**kwargs):
+def mkmovie(framesize=50, whichi=0, whichn=1,domakeavi=False,**kwargs):
     #Rz and xy planes side by side
     plotlenf=10
     plotleni=framesize
@@ -7640,9 +7658,9 @@ def mkmovie(framesize=50, domakeavi=False,**kwargs):
         whichn = int(sys.argv[2])
         print( "Doing every %d slice of total %d slices" % (whichi, whichn) )
         sys.stdout.flush()
-    else:
-        whichi = None
-        whichn = None
+    # else:
+    #     whichi = None
+    #     whichn = None
     if whichn < 0 and whichn is not None:
         whichn = -whichn
         dontloadfiles = True
@@ -7685,22 +7703,24 @@ def mkmovie(framesize=50, domakeavi=False,**kwargs):
 
 def mkmovieframe( findex, fname, **kwargs ):
     dostreamlines = kwargs.pop('dostreamlines',True)
-    frametype = kwargs.get('frametype','5panels')
-    prefactor = kwargs.get('prefactor',1.)
-    sigma = kwargs.get('sigma',None)
-    usegaussianunits = kwargs.get('usegaussianunits',False)
-    domakeframes = kwargs.get('domakeframes',True)
-    epsFm = kwargs.get('epsFm',None)
-    epsFm30 = kwargs.get('epsFm30',None)
-    epsFke = kwargs.get('epsFke',None)
-    epsetaj = kwargs.get('epsetaj',None)
-    fti = kwargs.get('fti',None)
-    ftf = kwargs.get('ftf',None)
-    plotleni = kwargs.get('plotleni',50)
-    plotlenf = kwargs.get('plotlenf',50)
-    plotlenti = kwargs.get('plotlenti',1e6)
-    plotlentf = kwargs.get('plotlentf',2e6)
-    qtymem = kwargs.get('qtymem',2e6)
+    frametype = kwargs.pop('frametype','5panels')
+    prefactor = kwargs.pop('prefactor',1.)
+    sigma = kwargs.pop('sigma',None)
+    usegaussianunits = kwargs.pop('usegaussianunits',False)
+    domakeframes = kwargs.pop('domakeframes',True)
+    epsFm = kwargs.pop('epsFm',None)
+    epsFm30 = kwargs.pop('epsFm30',None)
+    epsFke = kwargs.pop('epsFke',None)
+    epsetaj = kwargs.pop('epsetaj',None)
+    fti = kwargs.pop('fti',None)
+    ftf = kwargs.pop('ftf',None)
+    plotlen = kwargs.pop('plotlen',None)
+    plotleni = kwargs.pop('plotleni',50)
+    plotlenf = kwargs.pop('plotlenf',50)
+    plotlenti = kwargs.pop('plotlenti',1e6)
+    plotlentf = kwargs.pop('plotlentf',2e6)
+    qtymem = kwargs.pop('qtymem',2e6)
+    kval = kwargs.pop('kval',0)
     # oldnz=nz
     rfd("../"+fname)
     # if oldnz < nz:
@@ -7709,9 +7729,10 @@ def mkmovieframe( findex, fname, **kwargs ):
     #     #reread the fieldline dump
     #     rfd("../"+fname)
     cvel() #for calculating bsq
-    plotlen = plotleni+(plotlenf-plotleni)*(t-plotlenti)/(plotlentf-plotlenti)
-    plotlen = min(plotlen,plotleni)
-    plotlen = max(plotlen,plotlenf)
+    if plotlen is None:
+        plotlen = plotleni+(plotlenf-plotleni)*(t-plotlenti)/(plotlentf-plotlenti)
+        plotlen = min(plotlen,plotleni)
+        plotlen = max(plotlen,plotlenf)
     plt.figure(0, figsize=(12,9), dpi=100)
     plt.clf()
     if frametype=='5panels':
@@ -7863,7 +7884,7 @@ def mkmovieframe( findex, fname, **kwargs ):
         #gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.45, wspace=0.05)
         ax1 = plt.subplot(gs1[:, -1])
         if domakeframes:
-            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=dostreamlines,ncont=50)
+            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=dostreamlines,ncont=50,kval=kval,**kwargs)
         ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
         ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         # gs2 = GridSpec(1, 1)
@@ -7878,7 +7899,7 @@ def mkmovieframe( findex, fname, **kwargs ):
         #gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.45, wspace=0.05)
         ax1 = plt.subplot(gs1[:, -1])
         if domakeframes:
-            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False)
+            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,**kwargs)
         ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
         ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         gs2 = GridSpec(1, 1)
@@ -7887,7 +7908,7 @@ def mkmovieframe( findex, fname, **kwargs ):
         ax2.set_ylabel(r'$y\ [r_g]$',fontsize=16,ha='center')
         ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         if domakeframes:
-            mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True)
+            mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True,**kwargs)
     #print xxx
     plt.savefig( "lrho%04d_Rzxym1.png" % (findex),bbox_inches='tight',pad_inches=0.02  )
     plt.savefig( "lrho%04d_Rzxym1.eps" % (findex),bbox_inches='tight',pad_inches=0.02  )
