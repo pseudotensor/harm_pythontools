@@ -1348,6 +1348,8 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
                 lw *= ftr(iaphi,0.001,0.002)
         #pdb.set_trace()
         traj = fstreamplot(yi,xi,iBR,iBz,ua=iBaR,va=iBaz,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=detectLoops,dodiskfield=dodiskfield,dobhfield=dobhfield,startatmidplane=startatmidplane,a=a,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,dsval=dsval,color=color,doarrows=doarrows,dorandomcolor=dorandomcolor,skipblankint=skipblankint,minindent=minindent,minlengthdefault=minlengthdefault,arrowsize=arrowsize,startxabs=startxabs,startyabs=startyabs,populatestreamlines=populatestreamlines,useblankdiskfield=useblankdiskfield,dnarrow=dnarrow,whichr=whichr)
+    elif dostreamlines == 2:
+        quiver(yi, xi, iBR, iBz)
         #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
     ax.set_xlim(extent[0],extent[1])
     ax.set_ylim(extent[2],extent[3])
