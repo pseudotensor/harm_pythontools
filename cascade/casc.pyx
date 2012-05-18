@@ -77,32 +77,36 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
         #print i, grid2.Emin, grid2.Emax, grid2.E0
         #print i, grid2.Emin, grid2.Emax, grid2.E0
         Evec2_data = grid2.Egrid_data
-        # for j from 0 <= j < dim1:
-        #     #integration on old grid
-        #     #flnew_data[i] += K1(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
-        #     flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
-        if i == 920:
-            flout.set_grid(grid2.Emin,grid2.Emax,grid2.E0)
-        for j from 0 <= j < dim2:
-            if True:
-                #integration on new grid
-                a = K2(Eenew,Evec2_data[j],seed)
-                b = flold_func.fofE(Evec2_data[j])
-                c = grid2.dEdxgrid_data[j]
-                d = grid2.dx
-                delta = a*b*c*d
-                flnew_data[i] += delta
-                if i == 920:
-                    flout.func_vec_data[j] = a
-                #if delta != 0: print "***", i, j, a, b, delta
-            elif False:
-                flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*Evec_data[j])*grid.dx
-            elif False:
-                flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
-            elif False:
-                flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_func.fofE(Evec_data[j])*grid.dEdxgrid_data[j])*grid.dx
-            elif False:
-                flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
+        for j from 0 <= j < dim1:
+            #integration on old grid
+            a = K1(Eenew,Evec_data[j],seed)
+            b = (flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
+            flnew_data[i] += a*b
+            #flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
+            if i == 920:
+                flout.func_vec_data[j] = a
+        # if i == 920:
+        #     flout.set_grid(grid2.Emin,grid2.Emax,grid2.E0)
+        # for j from 0 <= j < dim2:
+        #     if True:
+        #         #integration on new grid
+        #         a = K2(Eenew,Evec2_data[j],seed)
+        #         b = flold_func.fofE(Evec2_data[j])
+        #         c = grid2.dEdxgrid_data[j]
+        #         d = grid2.dx
+        #         delta = a*b*c*d
+        #         flnew_data[i] += delta
+        #         if i == 920:
+        #             flout.func_vec_data[j] = a
+        #         #if delta != 0: print "***", i, j, a, b, delta
+        #     elif False:
+        #         flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*Evec_data[j])*grid.dx
+        #     elif False:
+        #         flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
+        #     elif False:
+        #         flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_func.fofE(Evec_data[j])*grid.dEdxgrid_data[j])*grid.dx
+        #     elif False:
+        #         flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
     return( flnew )
 
 
