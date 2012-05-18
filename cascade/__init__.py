@@ -62,7 +62,8 @@ def test_fg1( Eold, Enew, seed ):
     return res
     #plt.plot(Evec,(casc.fg_p(2*Evec,1e8+0*Evec,seed)*(2*Evec>=seed.Egmin)))
 
-def main():
+def main(dim2=100):
+    global dNold, dNnew
     #
     Ngenmax = 2
     #
@@ -81,9 +82,10 @@ def main():
         print( gen, Ntot )
         sys.stdout.flush()
         dNold = dNnew
-        dNnew = casc.flnew( grid, dNold, seed )
+        dNnew = casc.flnew( grid, dNold, seed, dim2=dim2 )
         #pdb.set_trace()
-        plt.plot(Evec, dNnew)
+        plt.plot(Evec, dNnew, '-x')
+        #plt.plot(Evec, dNnew, 'x')
         plt.xscale("log")
         plt.yscale("log")
         plt.ylim(1e-15,1e-4)
@@ -97,8 +99,8 @@ if __name__ == "__main__":
     #energy grid, Lorentz factor of initial electron
     warnings.simplefilter("error")
     Emin = 1e-4
-    Emax = 1e11
-    Ngrid = 1e4
+    Emax = 1e9
+    Ngrid = 1e2
     # Evec = exp(np.linspace(-5,np.log(Emax),Ngrid))
     E0grid = 0
     grid = casc.Grid(Emin, Emax, E0grid, Ngrid)

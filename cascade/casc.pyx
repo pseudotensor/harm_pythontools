@@ -39,11 +39,11 @@ cdef double K2( double Enew, double Eold, SeedPhoton seed ):
 cdef public double* get_data( np.ndarray[double, ndim=1] nparray ):
     return <double *>nparray.data
 
-def flnew( Evec not None, flold not None, seed not None ):
-    return flnew_c( Evec, flold, seed )
+def flnew( Evec not None, flold not None, seed not None, dim2 = 100 ):
+    return flnew_c( Evec, flold, seed, dim2 )
 
 @cython.boundscheck(False) # turn off bounds-checking for entire function
-cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, ndim=1] flold, SeedPhoton seed ):
+cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, ndim=1] flold, SeedPhoton seed, int dim2 ):
     """Expect E and flold defined on a regular log grid, Evec"""
     cdef int i
     cdef int j
@@ -56,7 +56,7 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
     cdef int dim1 = flnew.shape[0]
     cdef double minEg, maxEg
     #use old grid as a start
-    cdef int dim2 = 10000
+    #cdef int dim2 = 100
     cdef Grid grid2 = Grid.empty(dim2)
     #cdef Grid grid2 = Grid.fromGrid(grid)
     #cdef Grid grid2 = grid
@@ -70,16 +70,19 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
         maxEg = seed.maxEg(Eenew,grid.Emax)
         if maxEg < grid.Emin or minEg > grid.Emax:
            continue
-        #grid2.set_grid(minEg,2*maxEg,0.*minEg)
-        grid2.set_grid(grid.Emin,grid.Emax,0.*minEg)
+        if True:
+            grid2.set_grid(0.5*minEg,2*maxEg,0.*minEg)
+        else:
+            grid2.set_grid(grid.Emin,grid.Emax,0.*minEg)
         #print i, grid2.Emin, grid2.Emax, grid2.E0
         #print i, grid2.Emin, grid2.Emax, grid2.E0
         Evec2_data = grid2.Egrid_data
         for j from 0 <= j < dim1:
             #integration on old grid
-            flnew_data[i] += K1(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
+            flnew_data[i] += 0* K1(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
+            #flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
         for j from 0 <= j < dim2:
-            if False:
+            if True:
                 #integration on new grid
                 a = K2(Eenew,Evec2_data[j],seed)
                 b = flold_func.fofE(Evec2_data[j])
@@ -88,8 +91,10 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
                 delta = a*b*c*d
                 flnew_data[i] += delta
                 #if delta != 0: print "***", i, j, a, b, delta
-            elif True:
+            elif False:
                 flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*Evec_data[j])*grid.dx
+            elif False:
+                flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
             elif False:
                 flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_func.fofE(Evec_data[j])*grid.dEdxgrid_data[j])*grid.dx
             else:
