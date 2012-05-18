@@ -71,7 +71,7 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
         if maxEg < grid.Emin or minEg > grid.Emax:
            continue
         if True:
-            grid2.set_grid(0.9*minEg,1.1*maxEg,0*minEg)
+            grid2.set_grid(minEg,maxEg,0*minEg)
         else:
             grid2.set_grid(grid.Emin,grid.Emax,0.*minEg)
         #print i, grid2.Emin, grid2.Emax, grid2.E0
