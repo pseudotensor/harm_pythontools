@@ -39,11 +39,11 @@ cdef double K2( double Enew, double Eold, SeedPhoton seed ):
 cdef public double* get_data( np.ndarray[double, ndim=1] nparray ):
     return <double *>nparray.data
 
-def flnew( Evec not None, flold not None, seed not None, dim2 = 100 ):
-    return flnew_c( Evec, flold, seed, dim2 )
+def flnew( Evec not None, flold not None, seed not None, flout, dim2 = 100 ):
+    return flnew_c( Evec, flold, seed, dim2, flout )
 
 @cython.boundscheck(False) # turn off bounds-checking for entire function
-cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, ndim=1] flold, SeedPhoton seed, int dim2 ):
+cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, ndim=1] flold, SeedPhoton seed, int dim2, Func flout ):
     """Expect E and flold defined on a regular log grid, Evec"""
     cdef int i
     cdef int j
@@ -66,21 +66,23 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
     for i from 0 <= i < dim1:
         Eenew = Evec_data[i]
         #new grid defined by Eenew
-        minEg = seed.minEg(Eenew,grid.Emin)
-        maxEg = seed.maxEg(Eenew,grid.Emax)
+        minEg = seed.minEg2(Eenew,grid.Emin)
+        maxEg = seed.maxEg2(Eenew,grid.Emax)
         if maxEg < grid.Emin or minEg > grid.Emax:
            continue
         if True:
-            grid2.set_grid(0.5*minEg,2*maxEg,0.*minEg)
+            grid2.set_grid(0.9*minEg,1.1*maxEg,0*minEg)
         else:
             grid2.set_grid(grid.Emin,grid.Emax,0.*minEg)
         #print i, grid2.Emin, grid2.Emax, grid2.E0
         #print i, grid2.Emin, grid2.Emax, grid2.E0
         Evec2_data = grid2.Egrid_data
-        for j from 0 <= j < dim1:
-            #integration on old grid
-            flnew_data[i] += 0* K1(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
-            #flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
+        # for j from 0 <= j < dim1:
+        #     #integration on old grid
+        #     #flnew_data[i] += K1(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
+        #     flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
+        if i == 920:
+            flout.set_grid(grid2.Emin,grid2.Emax,grid2.E0)
         for j from 0 <= j < dim2:
             if True:
                 #integration on new grid
@@ -90,6 +92,8 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
                 d = grid2.dx
                 delta = a*b*c*d
                 flnew_data[i] += delta
+                if i == 920:
+                    flout.func_vec_data[j] = a
                 #if delta != 0: print "***", i, j, a, b, delta
             elif False:
                 flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*Evec_data[j])*grid.dx
@@ -97,7 +101,7 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
                 flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
             elif False:
                 flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_func.fofE(Evec_data[j])*grid.dEdxgrid_data[j])*grid.dx
-            else:
+            elif False:
                 flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
     return( flnew )
 
@@ -161,6 +165,26 @@ cdef public class SeedPhoton [object CSeedPhoton, type TSeedPhoton ]:
         cdef maxEg_val
         if bottom > 0:
             maxEg_val = 2*self.Emax*Eenew**2/bottom
+            return maxEg_val if maxEg_val < grid_Emax else grid_Emax
+        else:
+            return grid_Emax
+
+    cpdef double minEg2(self, double Eenew, double grid_Emin):
+        """ Returns minimum gamma-ray energy """
+        cdef double bottom = 1-2*self.Emin*Eenew
+        cdef minEg_val
+        if bottom > 0:
+            minEg_val = Eenew/bottom
+            return minEg_val if minEg_val > grid_Emin else grid_Emin
+        else:
+            return grid_Emin
+
+    cpdef double maxEg2(self, double Eenew, double grid_Emax):
+        """ Returns minimum gamma-ray energy """
+        cdef double bottom = 1-2*self.Emax*Eenew
+        cdef maxEg_val
+        if bottom > 0:
+            maxEg_val = Eenew/bottom
             return maxEg_val if maxEg_val < grid_Emax else grid_Emax
         else:
             return grid_Emax
@@ -274,7 +298,7 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
 
     @classmethod
     def empty(cls, int Ngrid):
-        return cls( 0, 1, 0.5, Ngrid )
+        return cls( 1, 2, 0.5, Ngrid )
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
     cpdef np.ndarray[double, ndim=1] fofE_vec(self, np.ndarray[double, ndim=1] Eval):
@@ -297,7 +321,8 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
             return self.func_vec_data[0]
         if i >= self.Ngrid-1:
             return self.func_vec_data[self.Ngrid-1]
-        if True:
+        if False:
+            #log-log
             logx  = log(Eval)
             logxl = log(self.Egrid[i])
             logxr = log(self.Egrid[i+1])
@@ -305,6 +330,15 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
             logfr = log(self.func_vec_data[i+1]+eps)
             logf  = (logfr * (logxl - logx) + logfl * (logx - logxr)) / (logxl - logxr)
             f = exp(logf)-eps
+        elif True:
+            #linear-log
+            logx  = log(Eval)
+            logxl = log(self.Egrid[i])
+            logxr = log(self.Egrid[i+1])
+            logfl = (self.func_vec_data[i])
+            logfr = (self.func_vec_data[i+1])
+            logf  = (logfr * (logxl - logx) + logfl * (logx - logxr)) / (logxl - logxr)
+            f = logf
         else:
             f = self.func_vec_data[i]
         return( f )

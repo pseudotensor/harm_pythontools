@@ -63,26 +63,32 @@ def test_fg1( Eold, Enew, seed ):
     #plt.plot(Evec,(casc.fg_p(2*Evec,1e8+0*Evec,seed)*(2*Evec>=seed.Egmin)))
 
 def main(dim2=100):
-    global dNold, dNnew
+    global dNold, dNnew,fout
     #
-    Ngenmax = 2
+    Ngenmax = 1
     #
     E0 = 1e8
     ii = np.round(np.log(E0)/np.log(Emax)*Ngrid)
-    dx = np.log(Evec[1]/Evec[0])
-    dE = Evec[ii] * dx
-    dN = np.zeros_like(Evec)
-    dN[ii]  = 1/dE
+    dx = grid.dx
+    if False:
+        dE = Evec[ii] * dx
+        dN = np.zeros_like(Evec)
+        dN[ii]  = 1/dE
+    else:
+        sigmaE = 5*grid.dx*E0
+        dN = (2*np.pi)**(-0.5)*exp(-0.5*((Evec-E0)/sigmaE)**2)/sigmaE
     dNold = dN
     dNnew = np.copy(dN)
     nskip = 1
-    plt.plot(Evec, dNold)
+    plt.plot(Evec, dNold,'-x')
+    fout = casc.Func.empty(dim2)
     for gen in xrange(0,Ngenmax):
         Ntot = simps( dNnew*Evec, dx=dx,axis=-1 )
         print( gen, Ntot )
         sys.stdout.flush()
         dNold = dNnew
-        dNnew = casc.flnew( grid, dNold, seed, dim2=dim2 )
+        #pdb.set_trace()
+        dNnew = casc.flnew( grid, dNold, seed, fout, dim2=dim2 )
         #pdb.set_trace()
         plt.plot(Evec, dNnew, '-x')
         #plt.plot(Evec, dNnew, 'x')
@@ -100,7 +106,7 @@ if __name__ == "__main__":
     warnings.simplefilter("error")
     Emin = 1e-4
     Emax = 1e9
-    Ngrid = 1e2
+    Ngrid = 1e3
     # Evec = exp(np.linspace(-5,np.log(Emax),Ngrid))
     E0grid = 0
     grid = casc.Grid(Emin, Emax, E0grid, Ngrid)
