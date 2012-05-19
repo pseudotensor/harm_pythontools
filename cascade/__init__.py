@@ -65,7 +65,7 @@ def test_fg1( Eold, Enew, seed ):
 def main(dim2=100):
     global dNold, dNnew,fout
     #
-    Ngenmax = 1
+    Ngenmax = 100
     #
     E0 = 1e8
     ii = np.round(np.log(E0)/np.log(Emax)*Ngrid)
@@ -75,28 +75,30 @@ def main(dim2=100):
         dN = np.zeros_like(Evec)
         dN[ii]  = 1/dE
     else:
-        sigmaE = E0/50 #1*grid.dx*E0
+        sigmaE = E0/10 #1*grid.dx*E0
         dN = (2*np.pi)**(-0.5)*exp(-0.5*((Evec-E0)/sigmaE)**2)/sigmaE
     dNold = dN
     dNnew = np.copy(dN)
     nskip = 1
-    plt.plot(Evec, dNold,'-x')
+    plt.plot(Evec, Evec*dNold,'-x')
+    plt.draw()
     fout = casc.Func.empty(dim2)
     for gen in xrange(0,Ngenmax):
-        Ntot = simps( dNnew*Evec, dx=dx,axis=-1 )
+        Ntot = np.sum( dNnew*Evec*dx,axis=-1 )
         print( gen, Ntot )
         sys.stdout.flush()
         dNold = dNnew
         #pdb.set_trace()
         dNnew = casc.flnew( grid, dNold, seed, fout, dim2=dim2 )
         #pdb.set_trace()
-        plt.plot(Evec, dNnew, '-x')
+        plt.plot(Evec, Evec*dNnew, '-')
         #plt.plot(Evec, dNnew, 'x')
         plt.xscale("log")
         plt.yscale("log")
-        plt.ylim(1e-15,1e-4)
+        # plt.ylim(1e-15,1e-4)
+        plt.ylim(1e-8,1e2)
         plt.xlim(1e4,Emax)
-        # plt.draw()
+        plt.draw()
 
 
 if __name__ == "__main__":
@@ -104,8 +106,8 @@ if __name__ == "__main__":
     print ("Hello")
     #energy grid, Lorentz factor of initial electron
     warnings.simplefilter("error")
-    Emin = 1e-4
-    Emax = 1e9
+    Emin = 1e4
+    Emax = 5e8
     Ngrid = 1e4
     # Evec = exp(np.linspace(-5,np.log(Emax),Ngrid))
     E0grid = 0

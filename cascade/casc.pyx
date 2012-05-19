@@ -76,7 +76,7 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
         if maxEg1 > grid.Emin and minEg1 < grid.Emax:
             Evec1_data = grid1.Egrid_data
             if True:
-                grid1.set_grid(minEg1,maxEg1,0*minEg1)
+                grid1.set_grid(minEg1,maxEg1,2*maxEg1)
             else:
                 grid1.set_grid(grid.Emin,grid.Emax,0.*minEg)
             if i == 8386:
@@ -98,7 +98,7 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
                     flout.func_vec_data[j] = a
         minEg2 = seed.minEg2(Eenew,grid.Emin)
         maxEg2 = seed.maxEg2(Eenew,grid.Emax)
-        if False and maxEg2 > grid.Emin and minEg2 < grid.Emax:
+        if maxEg2 > grid.Emin and minEg2 < grid.Emax:
             # if i == 920:
             #     flout.set_grid(grid2.Emin,grid2.Emax,grid2.E0)
             Evec2_data = grid2.Egrid_data
@@ -315,9 +315,16 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
     
     cdef public func_vec
     cdef double *func_vec_data
+    cdef double lastEgridi, lastEgridip1
+    cdef int firsttime
+    cdef long lasti
+    cdef double logxl, logxr, logfl, logfr, invldiff
 
     def __init__(self, double Emin, double Emax, double E0, int Ngrid, func_vec = None):
         Grid.__init__(self, Emin, Emax, E0, Ngrid)
+        lastEgridi = 0
+        lastEgridip1 = 0
+        firsttime = 1
         if func_vec is None:
             self.func_vec = np.zeros((self.Ngrid),dtype=DTYPE)
             self.func_vec_data = get_data(self.func_vec)
@@ -351,33 +358,62 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
     @cython.boundscheck(False) # turn off bounds-checking for entire function
     cpdef double fofE(self, double Eval):
         """ Linearly interpolates f(E) in log-log """
-        cdef int i = Grid.iofE( self, Eval )
-        cdef double logfl, logfr, logxl, logxr, logf, f
-        cdef eps = 1e-300
+        cdef long i
+        cdef double logfl, logfr, logxl, logxr, logf, f, invldiff
+        cdef double eps = 1e-300
+        cdef int recovered
+        if self.lastEgridi <= Eval and Eval <= self.lastEgridip1 and 0 == self.firsttime:
+            i = self.lasti
+            recovered = 1
+        else:
+            recovered = 0
+            self.firsttime = 0
+            i = Grid.iofE( self, Eval )
+            self.lasti = i
+            if i >= 0:
+                self.lastEgridi = self.Egrid_data[i]
+            else:
+                self.lastEgridi = -1e300
+            if i < self.Ngrid-1:
+                self.lastEgridip1 = self.Egrid_data[i+1]
+            else:
+                self.lastEgridip1 = 1e300
         if i < 0:
             return self.func_vec_data[0]
         if i >= self.Ngrid-1:
             return self.func_vec_data[self.Ngrid-1]
-        if True:
-            #log-log
-            logx  = log(Eval)
-            logxl = log(self.Egrid[i])
-            logxr = log(self.Egrid[i+1])
+        #log-log
+        logx  = log(Eval)
+        if recovered:
+            logxl = self.logxl
+            logxr = self.logxr
+            logfl = self.logfl
+            logfr = self.logfr
+            invldiff = self.invldiff
+        else:
+            logxl = log(self.Egrid_data[i])
+            logxr = log(self.Egrid_data[i+1])
             logfl = log(self.func_vec_data[i]+eps)
             logfr = log(self.func_vec_data[i+1]+eps)
-            logf  = (logfr * (logxl - logx) + logfl * (logx - logxr)) / (logxl - logxr)
-            f = exp(logf)-eps
-        elif True:
-            #linear-log
-            logx  = log(Eval)
-            logxl = log(self.Egrid[i])
-            logxr = log(self.Egrid[i+1])
-            logfl = (self.func_vec_data[i])
-            logfr = (self.func_vec_data[i+1])
-            logf  = (logfr * (logxl - logx) + logfl * (logx - logxr)) / (logxl - logxr)
-            f = logf
-        else:
-            f = self.func_vec_data[i]
+            invldiff = 1.0/(logxl - logxr)
+            self.logxl = logxl
+            self.logxr = logxr
+            self.logfl = logfl
+            self.logfr = logfr
+            self.invldiff = invldiff
+        logf  = (logfr * (logxl - logx) + logfl * (logx - logxr)) * invldiff
+        f = exp(logf)-eps
+        # elif True:
+        #     #linear-log
+        #     logx  = log(Eval)
+        #     logxl = log(self.Egrid[i])
+        #     logxr = log(self.Egrid[i+1])
+        #     logfl = (self.func_vec_data[i])
+        #     logfr = (self.func_vec_data[i+1])
+        #     logf  = (logfr * (logxl - logx) + logfl * (logx - logxr)) / (logxl - logxr)
+        #     f = logf
+        # else:
+        #     f = self.func_vec_data[i]
         return( f )
         
     def set_func(self, func_vec):
