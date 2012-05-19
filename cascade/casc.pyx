@@ -4,6 +4,7 @@ cimport numpy as np
 cimport cython
 from libc.math cimport log
 from libc.math cimport exp
+from libc.math cimport sqrt
 
 
 DTYPE = np.float
@@ -54,9 +55,11 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
     cdef double *Evec2_data
     cdef double *flold_data = get_data(flold)
     cdef int dim1 = flnew.shape[0]
-    cdef double minEg, maxEg
+    cdef double minEg1, maxEg1
+    cdef double minEg2, maxEg2
     #use old grid as a start
     #cdef int dim2 = 100
+    cdef Grid grid1 = Grid.empty(dim2)
     cdef Grid grid2 = Grid.empty(dim2)
     #cdef Grid grid2 = Grid.fromGrid(grid)
     #cdef Grid grid2 = grid
@@ -66,47 +69,63 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
     for i from 0 <= i < dim1:
         Eenew = Evec_data[i]
         #new grid defined by Eenew
-        minEg = seed.minEg2(Eenew,grid.Emin)
-        maxEg = seed.maxEg2(Eenew,grid.Emax)
-        if maxEg < grid.Emin or minEg > grid.Emax:
-           continue
-        if True:
-            grid2.set_grid(minEg,maxEg,0*minEg)
-        else:
-            grid2.set_grid(grid.Emin,grid.Emax,0.*minEg)
+        minEg1 = seed.minEg1(Eenew,grid.Emin)
+        maxEg1 = seed.maxEg1(Eenew,grid.Emax)
         #print i, grid2.Emin, grid2.Emax, grid2.E0
         #print i, grid2.Emin, grid2.Emax, grid2.E0
-        Evec2_data = grid2.Egrid_data
-        for j from 0 <= j < dim1:
-            #integration on old grid
-            a = K1(Eenew,Evec_data[j],seed)
-            b = (flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
-            flnew_data[i] += a*b
-            #flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
-            if i == 920:
-                flout.func_vec_data[j] = a
-        # if i == 920:
-        #     flout.set_grid(grid2.Emin,grid2.Emax,grid2.E0)
-        # for j from 0 <= j < dim2:
-        #     if True:
-        #         #integration on new grid
-        #         a = K2(Eenew,Evec2_data[j],seed)
-        #         b = flold_func.fofE(Evec2_data[j])
-        #         c = grid2.dEdxgrid_data[j]
-        #         d = grid2.dx
-        #         delta = a*b*c*d
-        #         flnew_data[i] += delta
-        #         if i == 920:
-        #             flout.func_vec_data[j] = a
-        #         #if delta != 0: print "***", i, j, a, b, delta
-        #     elif False:
-        #         flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*Evec_data[j])*grid.dx
-        #     elif False:
-        #         flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
-        #     elif False:
-        #         flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_func.fofE(Evec_data[j])*grid.dEdxgrid_data[j])*grid.dx
-        #     elif False:
-        #         flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
+        if maxEg1 > grid.Emin and minEg1 < grid.Emax:
+            Evec1_data = grid1.Egrid_data
+            if True:
+                grid1.set_grid(minEg1,maxEg1,0*minEg1)
+            else:
+                grid1.set_grid(grid.Emin,grid.Emax,0.*minEg)
+            if i == 8386:
+                flout.set_grid(grid1.Emin,grid1.Emax,grid1.E0)
+            for j from 0 <= j < dim2:
+                if False:
+                    #integration on old grid
+                    a = K1(Eenew,Evec_data[j],seed)
+                    b = (flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
+                    flnew_data[i] += a*b
+                    #flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
+                else:
+                    #integration on new grid
+                    a = K1(Eenew,Evec1_data[j],seed)
+                    b = (flold_func.fofE(Evec1_data[j])*grid1.dEdxgrid_data[j])*grid1.dx
+                    flnew_data[i] += a*b
+                    #flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
+                if i == 8386:
+                    flout.func_vec_data[j] = a
+        minEg2 = seed.minEg2(Eenew,grid.Emin)
+        maxEg2 = seed.maxEg2(Eenew,grid.Emax)
+        if False and maxEg2 > grid.Emin and minEg2 < grid.Emax:
+            # if i == 920:
+            #     flout.set_grid(grid2.Emin,grid2.Emax,grid2.E0)
+            Evec2_data = grid2.Egrid_data
+            if True:
+                grid2.set_grid(minEg2,maxEg2,0*minEg2)
+            else:
+                grid2.set_grid(grid.Emin,grid.Emax,0.*minEg)
+            for j from 0 <= j < dim2:
+                if True:
+                    #integration on new grid
+                    a = K2(Eenew,Evec2_data[j],seed)
+                    b = flold_func.fofE(Evec2_data[j])
+                    c = grid2.dEdxgrid_data[j]
+                    d = grid2.dx
+                    delta = a*b*c*d
+                    flnew_data[i] += delta
+                    # if i == 920:
+                    #     flout.func_vec_data[j] = a
+                    #if delta != 0: print "***", i, j, a, b, delta
+                elif False:
+                    flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*Evec_data[j])*grid.dx
+                elif False:
+                    flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
+                elif False:
+                    flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_func.fofE(Evec_data[j])*grid.dEdxgrid_data[j])*grid.dx
+                elif False:
+                    flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
     return( flnew )
 
 
@@ -173,8 +192,21 @@ cdef public class SeedPhoton [object CSeedPhoton, type TSeedPhoton ]:
         else:
             return grid_Emax
 
+
+    cpdef double minEg1(self, double Eenew, double grid_Emin):
+        """ Returns minimum energy electron contributing to Eenew"""
+        cdef minEg_val
+        minEg_val = Eenew*(1+sqrt(1+1/(self.Emax*Eenew)))
+        return minEg_val if minEg_val > grid_Emin else grid_Emin
+
+    cpdef double maxEg1(self, double Eenew, double grid_Emax):
+        """ Returns maximum energy electron contributing to Eenew"""
+        cdef maxEg_val
+        maxEg_val = Eenew*(1+sqrt(1+1/(self.Emin*Eenew)))
+        return maxEg_val if maxEg_val < grid_Emax else grid_Emax
+
     cpdef double minEg2(self, double Eenew, double grid_Emin):
-        """ Returns minimum gamma-ray energy """
+        """ Returns minimum energy electron contributing to Eenew"""
         cdef double bottom = 1-2*self.Emin*Eenew
         cdef minEg_val
         if bottom > 0:
@@ -184,7 +216,7 @@ cdef public class SeedPhoton [object CSeedPhoton, type TSeedPhoton ]:
             return grid_Emin
 
     cpdef double maxEg2(self, double Eenew, double grid_Emax):
-        """ Returns minimum gamma-ray energy """
+        """ Returns maximum energy electron contributing to Eenew"""
         cdef double bottom = 1-2*self.Emax*Eenew
         cdef maxEg_val
         if bottom > 0:
@@ -236,11 +268,12 @@ cdef public class Grid [object CGrid, type TGrid ]:
         """ Same as Grid() but without reallocation of memory """
         cdef int i
         cdef int dim = self.Ngrid
+        cdef double sgn = 1 if Emin - E0 >= 0 else -1
         self.Emin = Emin
         self.Emax = Emax
         self.E0 = E0
-        self.xmax = log(self.Emax-self.E0)
-        self.xmin = log(self.Emin-self.E0)
+        self.xmax = sgn * log( sgn*(self.Emax-self.E0) )
+        self.xmin = sgn * log( sgn*(self.Emin-self.E0) )
         self.dx = (self.xmax - self.xmin) * 1.0 / dim
         #get direct C pointers to numpy arrays' data fields
         self.xgrid_data = get_data(self.xgrid)
@@ -248,8 +281,8 @@ cdef public class Grid [object CGrid, type TGrid ]:
         self.dEdxgrid_data = get_data(self.dEdxgrid)
         for i from 0 <= i < dim:
             self.xgrid_data[i] = self.xmin + self.dx*(i+0.5)
-            self.Egrid_data[i] = self.E0 + exp(self.xgrid_data[i])
-            self.dEdxgrid_data[i] = self.Egrid_data[i] - self.E0
+            self.Egrid_data[i] = self.E0 + sgn * exp( sgn*self.xgrid_data[i] )
+            self.dEdxgrid_data[i] = sgn*(self.Egrid_data[i] - self.E0)
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
     cpdef int iofx(self, double xval):
@@ -325,7 +358,7 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
             return self.func_vec_data[0]
         if i >= self.Ngrid-1:
             return self.func_vec_data[self.Ngrid-1]
-        if False:
+        if True:
             #log-log
             logx  = log(Eval)
             logxl = log(self.Egrid[i])
