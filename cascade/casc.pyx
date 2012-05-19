@@ -5,6 +5,8 @@ cimport cython
 from libc.math cimport log
 from libc.math cimport exp
 from libc.math cimport sqrt
+from libc.math cimport pow
+
 
 
 DTYPE = np.float
@@ -25,7 +27,7 @@ cdef np.ndarray[double, ndim=1] fgvec( np.ndarray[double, ndim=1] Eg, np.ndarray
 
 cdef double fg( double Eg, double Ee, SeedPhoton seed):
     cdef double Ep = Ee-Eg
-    cdef double fgval = ( (seed.f(Eg/(2*Ee*Ep))/(2*Ep**2)) if (Ep>0 and Ee>0 and Eg>0) else (0) )
+    cdef double fgval = ( (seed.f(Eg/(2*Ee*Ep))/(2*Ep*Ep)) if (Ep>0 and Ee>0 and Eg>0) else (0) )
     return( fgval )
 
 cdef double K1( double Enew, double Eold, SeedPhoton seed ):
@@ -33,66 +35,35 @@ cdef double K1( double Enew, double Eold, SeedPhoton seed ):
     return( K )
 
 cdef double K2( double Enew, double Eold, SeedPhoton seed ):
-    cdef double K = fg(Eold-Enew,Eold,seed)
+    cdef double K = fg(Eold-Enew,Eold,seed) if Eold > Enew else 0
     return( K )
 
 @cython.boundscheck(False) # turn off bounds-checking for entire function
 cdef public double* get_data( np.ndarray[double, ndim=1] nparray ):
     return <double *>nparray.data
 
-def flnew( Evec not None, flold not None, seed not None, flout, dim2 = 100 ):
-    return flnew_c( Evec, flold, seed, dim2, flout )
+def flnew( flold not None, flnew not None, seed not None ):
+    return flnew_c( flold, flnew, seed )
 
-@cython.boundscheck(False) # turn off bounds-checking for entire function
-cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, ndim=1] flold, SeedPhoton seed, int dim2, Func flout ):
+#@cython.boundscheck(False) # turn off bounds-checking for entire function
+cdef int flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed ):
     """Expect E and flold defined on a regular log grid, Evec"""
     cdef int i
     cdef int j
     cdef double a, b, c, d, delta
-    cdef np.ndarray[double, ndim=1] flnew = np.zeros_like(flold)
-    cdef double *flnew_data = get_data(flnew)
-    cdef double *Evec_data = get_data(grid.Egrid)
-    cdef double *Evec2_data
-    cdef double *flold_data = get_data(flold)
-    cdef int dim1 = flnew.shape[0]
-    cdef double minEg1, maxEg1
-    cdef double minEg2, maxEg2
-    #use old grid as a start
-    #cdef int dim2 = 100
-    #cdef Grid grid2 = Grid.fromGrid(grid)
-    #cdef Grid grid2 = grid
-    cdef Func flold_func = Func.fromGrid(grid)
-    flold_func.set_func_c(flold_data)
+    cdef Grid grid = flold_func
+    cdef double *Evec_data = grid.Egrid_data
+    cdef double *flnew_data = flnew_func.func_vec_data
+    cdef double *flold_data = flold_func.func_vec_data
+    cdef int dim1 = flold_func.Ngrid
 
     for i from 0 <= i < dim1:
         Eenew = Evec_data[i]
-        if i == 3043:
-            flout.set_grid(grid.Emin,grid.Emax,grid.E0)
+        flnew_data[i] = 0
         for j from 0 <= j < dim1:
-            if True:
-                #integration on new grid
-                a = K1(Eenew,Evec_data[j],seed)
-                b = (flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
-                flnew_data[i] += a*b
-                #flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
-                if i == 3043:
-                    flout.func_vec_data[j] = a
-
-                # if i == 920:
-                #     flout.set_grid(grid2.Emin,grid2.Emax,grid2.E0)
-            if True:
-                #integration on new grid
-                a = K2(Eenew,Eenew+Evec_data[j],seed)
-                b = flold_func.fofE(Eenew+Evec_data[j])
-                c = grid.dEdxgrid_data[j]
-                d = grid.dx
-                delta = a*b*c*d
-                flnew_data[i] += delta
-                # if i == 920:
-                #     flout.func_vec_data[j] = a
-                #if delta != 0: print "***", i, j, a, b, delta
-    return( flnew )
-
+                #flnew_data[i] += K1(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
+                flnew_data[i] += K2(Eenew,Eenew+Evec_data[j],seed)*flold_func.fofE(Eenew+Evec_data[j])*grid.dEdxgrid_data[j]*grid.dx
+    return(0)
 
 ###############################
 #
@@ -121,7 +92,7 @@ cdef public class SeedPhoton [object CSeedPhoton, type TSeedPhoton ]:
         self.s = s
         #minimum energy gamma-ray to be able to pair produce
         self.Egmin = 2./Emax
-        self.Nprefactor = (1.-s)/(Emax**(1.-s)-Emin**(1.-s))
+        self.Nprefactor = (1.-s)/(pow(Emax,1-s)-pow(Emin,1-s))
 
     cpdef int canPairProduce(self, double E):
         return( E > self.Egmin )
@@ -140,7 +111,7 @@ cdef public class SeedPhoton [object CSeedPhoton, type TSeedPhoton ]:
     cpdef double minEg(self, double Eenew, double grid_Emin):
         """ Returns minimum gamma-ray energy """
         cdef double bottom = 1-2*self.Emax*Eenew
-        cdef minEg_val
+        cdef double minEg_val
         if bottom > 0:
             minEg_val = 2*self.Emin*Eenew**2/bottom
             return minEg_val if minEg_val > grid_Emin else grid_Emin
@@ -150,7 +121,7 @@ cdef public class SeedPhoton [object CSeedPhoton, type TSeedPhoton ]:
     cpdef double maxEg(self, double Eenew, double grid_Emax):
         """ Returns minimum gamma-ray energy """
         cdef double bottom = 1-2*self.Emax*Eenew
-        cdef maxEg_val
+        cdef double maxEg_val
         if bottom > 0:
             maxEg_val = 2*self.Emax*Eenew**2/bottom
             return maxEg_val if maxEg_val < grid_Emax else grid_Emax
@@ -160,20 +131,20 @@ cdef public class SeedPhoton [object CSeedPhoton, type TSeedPhoton ]:
 
     cpdef double minEg1(self, double Eenew, double grid_Emin):
         """ Returns minimum energy electron contributing to Eenew"""
-        cdef minEg_val
+        cdef double minEg_val
         minEg_val = Eenew*(1+sqrt(1+1/(self.Emax*Eenew)))
         return minEg_val if minEg_val > grid_Emin else grid_Emin
 
     cpdef double maxEg1(self, double Eenew, double grid_Emax):
         """ Returns maximum energy electron contributing to Eenew"""
-        cdef maxEg_val
+        cdef double maxEg_val
         maxEg_val = Eenew*(1+sqrt(1+1/(self.Emin*Eenew)))
         return maxEg_val if maxEg_val < grid_Emax else grid_Emax
 
     cpdef double minEg2(self, double Eenew, double grid_Emin):
         """ Returns minimum energy electron contributing to Eenew"""
         cdef double bottom = 1-2*self.Emin*Eenew
-        cdef minEg_val
+        cdef double minEg_val
         if bottom > 0:
             minEg_val = Eenew/bottom
             return minEg_val if minEg_val > grid_Emin else grid_Emin
@@ -183,7 +154,7 @@ cdef public class SeedPhoton [object CSeedPhoton, type TSeedPhoton ]:
     cpdef double maxEg2(self, double Eenew, double grid_Emax):
         """ Returns maximum energy electron contributing to Eenew"""
         cdef double bottom = 1-2*self.Emax*Eenew
-        cdef maxEg_val
+        cdef double maxEg_val
         if bottom > 0:
             maxEg_val = Eenew/bottom
             return maxEg_val if maxEg_val < grid_Emax else grid_Emax
@@ -250,21 +221,21 @@ cdef public class Grid [object CGrid, type TGrid ]:
             self.dEdxgrid_data[i] = sgn*(self.Egrid_data[i] - self.E0)
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
-    cpdef int iofx(self, double xval):
+    cdef int iofx(self, double xval):
         """ Returns the index of the cell containing xval """
         cdef int ival
         ival = int( (xval-self.xmin)/self.dx - 0.5 )
         return ival
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
-    cpdef double xofE(self, double Eval):
+    cdef double xofE(self, double Eval):
         """ Returns the value of x corresponding to Eval """
         cdef double xval
         xval = log(Eval - self.E0)
         return xval
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
-    cpdef int iofE(self, double Eval):
+    cdef int iofE(self, double Eval):
         """ Returns the index of the cell containing Eval """
         return self.iofx( self.xofE(Eval) )
 
@@ -321,7 +292,7 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
         return Einterp
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
-    cpdef double fofE(self, double Eval):
+    cdef double fofE(self, double Eval):
         """ Linearly interpolates f(E) in log-log """
         cdef long i
         cdef double logfl, logfr, logxl, logxr, logf, f, invldiff
@@ -385,9 +356,10 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
         self.set_func_c( get_data(func_vec) )
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
-    cdef set_func_c(self, double *func_vec_data):
+    cdef int set_func_c(self, double *func_vec_data):
         cdef int i
         for i from 0 <= i < self.Ngrid:
             self.func_vec_data[i] = func_vec_data[i]
+        return 0
 
 
