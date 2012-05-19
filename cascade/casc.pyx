@@ -76,10 +76,10 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
         if maxEg1 > grid.Emin and minEg1 < grid.Emax:
             Evec1_data = grid1.Egrid_data
             if True:
-                grid1.set_grid(minEg1,maxEg1,2*maxEg1)
+                grid1.set_grid(minEg1,maxEg1,0.9*minEg1)
             else:
                 grid1.set_grid(grid.Emin,grid.Emax,0.*minEg)
-            if i == 8386:
+            if i == 3043:
                 flout.set_grid(grid1.Emin,grid1.Emax,grid1.E0)
             for j from 0 <= j < dim2:
                 if False:
@@ -94,7 +94,7 @@ cdef public np.ndarray[double, ndim=1] flnew_c( Grid grid, np.ndarray[double, nd
                     b = (flold_func.fofE(Evec1_data[j])*grid1.dEdxgrid_data[j])*grid1.dx
                     flnew_data[i] += a*b
                     #flnew_data[i] += K2(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
-                if i == 8386:
+                if i == 3043:
                     flout.func_vec_data[j] = a
         minEg2 = seed.minEg2(Eenew,grid.Emin)
         maxEg2 = seed.maxEg2(Eenew,grid.Emax)

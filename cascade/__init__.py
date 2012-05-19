@@ -65,7 +65,7 @@ def test_fg1( Eold, Enew, seed ):
 def main(dim2=100):
     global dNold, dNnew,fout
     #
-    Ngenmax = 100
+    Ngenmax = 15
     #
     E0 = 1e8
     ii = np.round(np.log(E0)/np.log(Emax)*Ngrid)
