@@ -250,7 +250,7 @@ cdef public class Grid [object CGrid, type TGrid ]:
         return xval
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
-    cdef int iofE(self, double Eval):
+    cdef inline int iofE(self, double Eval):
         """ Returns the index of the cell containing Eval """
         return int( (log(Eval-self.E0)-self.xmin)/self.dx - 0.5 )
 
@@ -314,6 +314,7 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
         if Eval < self.Egrid_data[0] or Eval > self.Egrid_data[self.Ngrid-1]:
             return 0
         i = int( (log(Eval-self.E0)-self.xmin)/self.dx - 0.5 )
+        #i = self.iofE(Eval)
         #i = Grid.iofE( self, Eval )
         if i < 0 or i >= self.Ngrid-1:
             return 0
