@@ -1,3 +1,8 @@
+#!python
+#cython: boundscheck=False
+#cython: cdivision=True
+#cython: wraparound=False
+#cython: cdivision_warnings=False
 from __future__ import division
 import numpy as np
 cimport numpy as np
@@ -26,16 +31,16 @@ cdef np.ndarray[double, ndim=1] fgvec( np.ndarray[double, ndim=1] Eg, np.ndarray
         Eg1[i] = fg( Eg[i], Ee[i], seed )
     return( Eg1 )
 
-cdef double fg( double Eg, double Ee, SeedPhoton seed):
+cdef inline double fg( double Eg, double Ee, SeedPhoton seed):
     cdef double Ep = Ee-Eg
     cdef double fgval = ( (seed.f(Eg/(2*Ee*Ep))/(2*Ep*Ep)) if (Ep>0 and Ee>0 and Eg>0) else (0) )
     return( fgval )
 
-cdef double K1( double Enew, double Eold, SeedPhoton seed ):
+cdef inline double K1( double Enew, double Eold, SeedPhoton seed ):
     cdef double K = (4*fg(2*Enew,Eold,seed)) if (2*Enew>=seed.Egmin) else (0)
     return( K )
 
-cdef double K2( double Enew, double Eold, SeedPhoton seed ):
+cdef inline double K2( double Enew, double Eold, SeedPhoton seed ):
     cdef double K = fg(Eold-Enew,Eold,seed) if Eold > Enew else 0
     return( K )
 
@@ -64,8 +69,9 @@ cdef int flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed ):
         Eenew = Evec_data[i]
         temp = 0
         for j from 0 <= j < dim1:
-                #temp += K1(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
-                temp += K2(Eenew,Eenew+Evec_data[j],seed)*flold_func.fofE(Eenew+Evec_data[j])*grid.dEdxgrid_data[j]*grid.dx
+            temp += K1(Eenew,Evec_data[j],seed)*flold_data[j]*grid.dEdxgrid_data[j]
+            temp += K2(Eenew,Eenew+Evec_data[j],seed)*flold_func.fofE(Eenew+Evec_data[j])*grid.dEdxgrid_data[j]
+        temp *= grid.dx
         flnew_func.set_funci_c(i,temp)
     return(0)
 
