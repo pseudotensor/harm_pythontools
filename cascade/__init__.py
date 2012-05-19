@@ -62,33 +62,8 @@ def test_fg1( Eold, Enew, seed ):
     return res
     #plt.plot(Evec,(casc.fg_p(2*Evec,1e8+0*Evec,seed)*(2*Evec>=seed.Egmin)))
 
-def main(dim2=100):
+def main():
     global dNold, dNnew,fout
-    #
-    Ngenmax = 300
-    #
-    E0 = 1e8
-    ii = np.round(np.log(E0)/np.log(Emax)*Ngrid)
-    dx = grid.dx
-    if False:
-        dE = Evec[ii] * dx
-        dN = np.zeros_like(Evec)
-        dN[ii]  = 1/dE
-    elif False:
-        sigmaE = E0/100 #1*grid.dx*E0
-        dN = (2*np.pi)**(-0.5)*exp(-0.5*((Evec-E0)/sigmaE)**2)/sigmaE
-    else: #Avery's method
-        fEw = 0.01 #1*grid.dx*E0
-        dN = np.exp(-0.5*((np.log10(Evec)-np.log10(E0))/fEw)**2)
-        dN /= (dN.sum()*Evec*dx)
-    dNold = casc.Func.fromGrid(grid)
-    dNold.set_func(dN)
-    dNnew = casc.Func.fromGrid(grid)
-    dNnew.set_func(dN)
-    nskip = 1
-    plt.plot(Evec, Evec*dNold.func_vec,'-x')
-    plt.draw()
-    fout = casc.Func.empty(dim2)
     for gen in xrange(0,Ngenmax):
         Ntot = np.sum( dNnew.func_vec*Evec*dx,axis=-1 )
         print( gen, Ntot )
@@ -97,14 +72,14 @@ def main(dim2=100):
         #pdb.set_trace()
         casc.flnew( dNold, dNnew, seed )
         #pdb.set_trace()
-        plt.plot(Evec, Evec*dNnew.func_vec, '-')
-        #plt.plot(Evec, dNnew, 'x')
-        plt.xscale("log")
-        plt.yscale("log")
-        # plt.ylim(1e-15,1e-4)
-        plt.ylim(1e-8,1e2)
-        plt.xlim(1e4,Emax)
-        plt.draw()
+        # plt.plot(Evec, Evec*dNnew.func_vec, '-')
+        # #plt.plot(Evec, dNnew, 'x')
+        # plt.xscale("log")
+        # plt.yscale("log")
+        # # plt.ylim(1e-15,1e-4)
+        # plt.ylim(1e-8,1e2)
+        # plt.xlim(1e4,Emax)
+        # plt.draw()
 
 
 if __name__ == "__main__":
@@ -128,3 +103,28 @@ if __name__ == "__main__":
     Esmin = 0.5e-3 * eV
     Esmax = 2 * eV
     seed = casc.SeedPhoton( Esmin, Esmax, s )
+    #
+    Ngenmax = 10
+    #
+    E0 = 1e8
+    ii = np.round(np.log(E0)/np.log(Emax)*Ngrid)
+    dx = grid.get_dx()
+    if False:
+        dE = Evec[ii] * dx
+        dN = np.zeros_like(Evec)
+        dN[ii]  = 1/dE
+    elif False:
+        sigmaE = E0/100 #1*grid.dx*E0
+        dN = (2*np.pi)**(-0.5)*exp(-0.5*((Evec-E0)/sigmaE)**2)/sigmaE
+    else: #Avery's method
+        fEw = 0.01 #1*grid.dx*E0
+        dN = np.exp(-0.5*((np.log10(Evec)-np.log10(E0))/fEw)**2)
+        dN /= (dN.sum()*Evec*dx)
+    dNold = casc.Func.fromGrid(grid)
+    dNold.set_func(dN)
+    dNnew = casc.Func.fromGrid(grid)
+    dNnew.set_func(dN)
+    #pdb.set_trace()
+    nskip = 1
+    plt.plot(Evec, Evec*dNold.func_vec,'-x')
+    plt.draw()

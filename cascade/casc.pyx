@@ -9,9 +9,10 @@ from libc.math cimport pow
 
 
 
-DTYPE = np.float
+DTYPE = np.float64
 ctypedef np.float_t DTYPE_t
 
+cdef double tiny = 1e-300
 
 def fg_p( Eg not None, Ee not None, SeedPhoton seed not None):
     return fgvec( Eg, Ee, seed )
@@ -54,15 +55,18 @@ cdef int flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed ):
     cdef Grid grid = flold_func
     cdef double *Evec_data = grid.Egrid_data
     cdef double *flnew_data = flnew_func.func_vec_data
+    cdef double *lflnew_data = flnew_func.lfunc_vec_data
     cdef double *flold_data = flold_func.func_vec_data
     cdef int dim1 = flold_func.Ngrid
+    cdef double temp
 
     for i from 0 <= i < dim1:
         Eenew = Evec_data[i]
-        flnew_data[i] = 0
+        temp = 0
         for j from 0 <= j < dim1:
-                #flnew_data[i] += K1(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
-                flnew_data[i] += K2(Eenew,Eenew+Evec_data[j],seed)*flold_func.fofE(Eenew+Evec_data[j])*grid.dEdxgrid_data[j]*grid.dx
+                #temp += K1(Eenew,Evec_data[j],seed)*(flold_data[j]*grid.dEdxgrid_data[j])*grid.dx
+                temp += K2(Eenew,Eenew+Evec_data[j],seed)*flold_func.fofE(Eenew+Evec_data[j])*grid.dEdxgrid_data[j]*grid.dx
+        flnew_func.set_funci_c(i,temp)
     return(0)
 
 ###############################
@@ -169,13 +173,13 @@ cdef public class SeedPhoton [object CSeedPhoton, type TSeedPhoton ]:
 
 cdef public class Grid [object CGrid, type TGrid ]:
     """grid class"""
-    cdef public double Emin
-    cdef public double Emax
-    cdef public double E0
-    cdef public double xmin
-    cdef public double xmax
-    cdef public int Ngrid
-    cdef public double dx
+    cdef  double Emin
+    cdef  double Emax
+    cdef  double E0
+    cdef  double xmin
+    cdef  double xmax
+    cdef  int Ngrid
+    cdef  double dx
     cdef public Egrid
     cdef public xgrid
     cdef public dEdxgrid
@@ -204,12 +208,11 @@ cdef public class Grid [object CGrid, type TGrid ]:
         """ Same as Grid() but without reallocation of memory """
         cdef int i
         cdef int dim = self.Ngrid
-        cdef double sgn = 1 if Emin - E0 >= 0 else -1
         self.Emin = Emin
         self.Emax = Emax
         self.E0 = E0
-        self.xmax = sgn * log( sgn*(self.Emax-self.E0) )
-        self.xmin = sgn * log( sgn*(self.Emin-self.E0) )
+        self.xmax = log( self.Emax-self.E0 )
+        self.xmin = log( self.Emin-self.E0 )
         self.dx = (self.xmax - self.xmin) * 1.0 / dim
         #get direct C pointers to numpy arrays' data fields
         self.xgrid_data = get_data(self.xgrid)
@@ -217,8 +220,14 @@ cdef public class Grid [object CGrid, type TGrid ]:
         self.dEdxgrid_data = get_data(self.dEdxgrid)
         for i from 0 <= i < dim:
             self.xgrid_data[i] = self.xmin + self.dx*(i+0.5)
-            self.Egrid_data[i] = self.E0 + sgn * exp( sgn*self.xgrid_data[i] )
-            self.dEdxgrid_data[i] = sgn*(self.Egrid_data[i] - self.E0)
+            self.Egrid_data[i] = self.E0 + exp( self.xgrid_data[i] )
+            self.dEdxgrid_data[i] = self.Egrid_data[i] - self.E0
+
+    @cython.boundscheck(False) # turn off bounds-checking for entire function
+    cpdef double get_dx(self):
+        return self.dx
+
+
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
     cdef int iofx(self, double xval):
@@ -237,7 +246,7 @@ cdef public class Grid [object CGrid, type TGrid ]:
     @cython.boundscheck(False) # turn off bounds-checking for entire function
     cdef int iofE(self, double Eval):
         """ Returns the index of the cell containing Eval """
-        return self.iofx( self.xofE(Eval) )
+        return int( (log(Eval-self.E0)-self.xmin)/self.dx - 0.5 )
 
 
 ###############################
@@ -251,22 +260,21 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
     
     cdef public func_vec
     cdef double *func_vec_data
-    cdef double lastEgridi, lastEgridip1
-    cdef int firsttime
-    cdef long lasti
-    cdef double logxl, logxr, logfl, logfr, invldiff
+    cdef public lfunc_vec
+    cdef double *lfunc_vec_data
 
     def __init__(self, double Emin, double Emax, double E0, int Ngrid, func_vec = None):
         Grid.__init__(self, Emin, Emax, E0, Ngrid)
-        lastEgridi = 0
-        lastEgridip1 = 0
-        firsttime = 1
         if func_vec is None:
-            self.func_vec = np.zeros((self.Ngrid),dtype=DTYPE)
+            self.func_vec = np.zeros((self.Ngrid),dtype=DTYPE)+tiny
             self.func_vec_data = get_data(self.func_vec)
+            self.lfunc_vec = np.log(self.func_vec)
+            self.lfunc_vec_data = get_data(self.lfunc_vec)
         else:
             self.func_vec = np.copy(func_vec)
             self.func_vec_data = get_data(self.func_vec)
+            self.lfunc_vec = np.log(self.func_vec)
+            self.lfunc_vec_data = get_data(self.lfunc_vec)
 
     cpdef set_grid(self, double Emin, double Emax, double E0):
         """ Same as Grid() but without reallocation of memory """
@@ -294,72 +302,37 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
     @cython.boundscheck(False) # turn off bounds-checking for entire function
     cdef double fofE(self, double Eval):
         """ Linearly interpolates f(E) in log-log """
-        cdef long i
-        cdef double logfl, logfr, logxl, logxr, logf, f, invldiff
-        cdef double eps = 1e-300
-        cdef int recovered
-        if self.lastEgridi <= Eval and Eval <= self.lastEgridip1 and 0 == self.firsttime:
-            i = self.lasti
-            recovered = 1
-        else:
-            recovered = 0
-            self.firsttime = 0
-            i = Grid.iofE( self, Eval )
-            self.lasti = i
-            if i >= 0:
-                self.lastEgridi = self.Egrid_data[i]
-            else:
-                self.lastEgridi = -1e300
-            if i < self.Ngrid-1:
-                self.lastEgridip1 = self.Egrid_data[i+1]
-            else:
-                self.lastEgridip1 = 1e300
-        if i < 0:
-            return self.func_vec_data[0]
-        if i >= self.Ngrid-1:
-            return self.func_vec_data[self.Ngrid-1]
+        cdef int i
+        cdef double logfl, logfr, logf, f, invldiff
+        cdef double x, dx
+        if Eval < self.Egrid_data[0] or Eval > self.Egrid_data[self.Ngrid-1]:
+            return 0
+        i = int( (log(Eval-self.E0)-self.xmin)/self.dx - 0.5 )
+        #i = Grid.iofE( self, Eval )
+        if i < 0 or i >= self.Ngrid-1:
+            return 0
         #log-log
-        logx  = log(Eval)
-        if recovered:
-            logxl = self.logxl
-            logxr = self.logxr
-            logfl = self.logfl
-            logfr = self.logfr
-            invldiff = self.invldiff
-        else:
-            logxl = log(self.Egrid_data[i])
-            logxr = log(self.Egrid_data[i+1])
-            logfl = log(self.func_vec_data[i]+eps)
-            logfr = log(self.func_vec_data[i+1]+eps)
-            invldiff = 1.0/(logxl - logxr)
-            self.logxl = logxl
-            self.logxr = logxr
-            self.logfl = logfl
-            self.logfr = logfr
-            self.invldiff = invldiff
-        logf  = (logfr * (logxl - logx) + logfl * (logx - logxr)) * invldiff
-        f = exp(logf)-eps
-        # elif True:
-        #     #linear-log
-        #     logx  = log(Eval)
-        #     logxl = log(self.Egrid[i])
-        #     logxr = log(self.Egrid[i+1])
-        #     logfl = (self.func_vec_data[i])
-        #     logfr = (self.func_vec_data[i+1])
-        #     logf  = (logfr * (logxl - logx) + logfl * (logx - logxr)) / (logxl - logxr)
-        #     f = logf
-        # else:
-        #     f = self.func_vec_data[i]
-        return( f )
+        x  = log(Eval-self.E0)
+        dx = (x-self.xgrid_data[i])/self.dx
+        logfl = self.lfunc_vec_data[i]
+        logfr = self.lfunc_vec_data[i+1]
+        return exp(logfr * dx + logfl * (1-dx))
         
     def set_func(self, func_vec):
-        self.set_func_c( get_data(func_vec) )
+        return self.set_func_c( get_data(func_vec) )
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
-    cdef int set_func_c(self, double *func_vec_data):
+    cdef double set_func_c(self, double *func_vec_data):
         cdef int i
         for i from 0 <= i < self.Ngrid:
-            self.func_vec_data[i] = func_vec_data[i]
+            self.func_vec_data[i] = func_vec_data[i] #if func_vec_data[i] > tiny else tiny
+            self.lfunc_vec_data[i] = log(func_vec_data[i]+tiny)
+        return tiny
+
+    @cython.boundscheck(False) # turn off bounds-checking for entire function
+    cdef int set_funci_c(self, int i, double f):
+        self.func_vec_data[i] = max(f,tiny)
+        self.lfunc_vec_data[i] = log(self.func_vec_data[i])
         return 0
 
 
