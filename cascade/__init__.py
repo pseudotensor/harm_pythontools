@@ -65,7 +65,7 @@ def test_fg1( Eold, Enew, seed ):
 def main(dim2=100):
     global dNold, dNnew,fout
     #
-    Ngenmax = 15
+    Ngenmax = 300
     #
     E0 = 1e8
     ii = np.round(np.log(E0)/np.log(Emax)*Ngrid)
@@ -75,7 +75,7 @@ def main(dim2=100):
         dN = np.zeros_like(Evec)
         dN[ii]  = 1/dE
     else:
-        sigmaE = E0/10 #1*grid.dx*E0
+        sigmaE = E0/100 #1*grid.dx*E0
         dN = (2*np.pi)**(-0.5)*exp(-0.5*((Evec-E0)/sigmaE)**2)/sigmaE
     dNold = dN
     dNnew = np.copy(dN)
@@ -106,8 +106,8 @@ if __name__ == "__main__":
     print ("Hello")
     #energy grid, Lorentz factor of initial electron
     warnings.simplefilter("error")
-    Emin = 1e4
-    Emax = 5e8
+    Emin = 1e-4
+    Emax = 1e10
     Ngrid = 1e4
     # Evec = exp(np.linspace(-5,np.log(Emax),Ngrid))
     E0grid = 0
