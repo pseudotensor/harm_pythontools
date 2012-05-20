@@ -85,7 +85,9 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid alt
             temp2 += K2(Eenew,Eenew+Evec_data[j],seed)*flold_func.fofE(Eenew+Evec_data[j])*grid.dEdxgrid_data[j]*grid.dx
         temp1sum += temp1*grid.dEdxgrid_data[i]*grid.dx
         N1 += temp2*grid.dEdxgrid_data[i]*grid.dx
-        flnew_func.set_funci_c(i,temp1+temp2)
+        flnew_data[i] = temp1+temp2
+    for i from 0 <= i < dim1:
+        flnew_func.set_funci_c(i,flnew_data[i])
     free(flnew_data)
     return(N1)
 
