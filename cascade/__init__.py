@@ -91,19 +91,24 @@ def main(Ngen = 10,startN=1):
     plt.ylim(1e-8,1e2)
     plt.xlim(1e4,Emax)
     plt.draw()
+    #generation number
+    gen = 0
+    #error in evolution of electron number
+    deltaN = 0
     if startN == 1:
         Ntot = np.sum( dNnew.func_vec*Evec*dx,axis=-1 )
-        print( 0, Ntot )
+        print( gen, Ntot, deltaN )
     for gen in xrange(startN,Ngen+1):
         sys.stdout.flush()
         dNold.set_func( dNnew.func_vec )
         #pdb.set_trace()
-        casc.flnew( dNold, dNnew, seed )
+        Nreordered = casc.flnew( dNold, dNnew, seed )
+        deltaN += (Nreordered - Ntot)
         #pdb.set_trace()
         plt.plot(Evec, Evec*dNnew.func_vec, '-')
         # #plt.plot(Evec, dNnew, 'x')
         Ntot = np.sum( dNnew.func_vec*Evec*dx,axis=-1 )
-        print( gen, Ntot )
+        print( gen, Ntot, deltaN )
         plt.draw()
 
 
