@@ -52,7 +52,7 @@ def flnew( flold not None, flnew not None, seed not None ):
     return flnew_c( flold, flnew, seed )
 
 #@cython.boundscheck(False) # turn off bounds-checking for entire function
-cdef int flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed ):
+cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed ):
     """Expect E and flold defined on a regular log grid, Evec"""
     cdef int i
     cdef int j
@@ -63,17 +63,21 @@ cdef int flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed ):
     cdef double *lflnew_data = flnew_func.lfunc_vec_data
     cdef double *flold_data = flold_func.func_vec_data
     cdef int dim1 = flold_func.Ngrid
-    cdef double temp
+    cdef double temp1, temp2, temp1sum, temp2sum
 
+    temp1sum = 0
+    temp2sum = 0
     for i from 0 <= i < dim1:
         Eenew = Evec_data[i]
-        temp = 0
+        temp1 = 0
+        temp2 = 0
         for j from 0 <= j < dim1:
-            temp += K1(Eenew,Evec_data[j],seed)*flold_data[j]*grid.dEdxgrid_data[j]
-            temp += K2(Eenew,Eenew+Evec_data[j],seed)*flold_func.fofE(Eenew+Evec_data[j])*grid.dEdxgrid_data[j]
-        temp *= grid.dx
-        flnew_func.set_funci_c(i,temp)
-    return(0)
+            temp1 += K1(Eenew,Evec_data[j],seed)*flold_data[j]*grid.dEdxgrid_data[j]*grid.dx
+            temp2 += K2(Eenew,Eenew+Evec_data[j],seed)*flold_func.fofE(Eenew+Evec_data[j])*grid.dEdxgrid_data[j]*grid.dx
+        temp1sum += temp1*grid.dEdxgrid_data[i]*grid.dx
+        temp2sum += temp2*grid.dEdxgrid_data[i]*grid.dx
+        flnew_func.set_funci_c(i,temp1+temp2)
+    return(temp2sum)
 
 ###############################
 #
