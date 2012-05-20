@@ -59,7 +59,7 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed ):
     cdef int j
     cdef double a, b, c, d, delta
     cdef Grid grid = flold_func
-    cdef Grid gridb = Grid.fromGrid(grid)
+    cdef Grid gridb = Grid(grid.Emin, grid.Emax, grid.E0, grid.Ngrid*2, di = grid.di)
     cdef Func flnew_func_alt = Func.fromFunc(flnew_func)
     cdef double *Evec_data = grid.Egrid_data
     cdef double *Evecb_data
@@ -67,15 +67,16 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed ):
     cdef double *lflnew_data = flnew_func.lfunc_vec_data
     cdef double *flold_data = flold_func.func_vec_data
     cdef int dim1 = flold_func.Ngrid
+    cdef int dim2b = gridb.Ngrid
     cdef double temp1, temp2, temp1sum, temp2sum
     cdef double N1, N2, Nold, dN1, dN2
     cdef double w1, w2, wnorm
 
     #Plan B grid with di = 0 (Avery-type grid)
-    gridb.set_di(0.5)
+    #gridb.set_di(0.5)
     Evecb_data = gridb.Egrid_data
 
-    print grid.get_di(), gridb.get_di()
+    print grid.Ngrid, grid.dx, gridb.Ngrid, gridb.dx
 
     #old number of electrons
     Nold = flold_func.norm()
@@ -91,10 +92,11 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed ):
         for j from 0 <= j < dim1:
             temp1 += K1(Eenew,Evec_data[j],seed)*flold_data[j]*grid.dEdxgrid_data[j]*grid.dx
             temp2 += K2(Eenew,Eenew+Evec_data[j],seed)*flold_func.fofE(Eenew+Evec_data[j])*grid.dEdxgrid_data[j]*grid.dx
+        for j from 0 <= j < dim2b:
             temp2b += K2(Eenew,Eenew+Evecb_data[j],seed)*flold_func.fofE(Eenew+Evecb_data[j])*gridb.dEdxgrid_data[j]*gridb.dx
         temp1sum += temp1*grid.dEdxgrid_data[i]*grid.dx
         N1 += temp2*grid.dEdxgrid_data[i]*grid.dx
-        N2 += temp2b*gridb.dEdxgrid_data[i]*gridb.dx
+        N2 += temp2b*grid.dEdxgrid_data[i]*grid.dx
         flnew_func.set_funci_c(i,temp1+temp2)
         flnew_func_alt.set_funci_c(i,temp1+temp2b)
     dN1 = N1 - Nold
