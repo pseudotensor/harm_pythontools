@@ -196,31 +196,33 @@ cdef public class Grid [object CGrid, type TGrid ]:
     cdef double *xgrid_data
     cdef double *Egrid_data
     cdef double *dEdxgrid_data
+    cdef double di
 
-    def __init__(self, double Emin, double Emax, double E0, int Ngrid):
+    def __init__(self, double Emin, double Emax, double E0, int Ngrid, double di):
         """ Full constructor: allocates memory and generates the grid """
         self.Ngrid = Ngrid
         self.xgrid = np.zeros((self.Ngrid),dtype=DTYPE)
         self.Egrid = np.zeros((self.Ngrid),dtype=DTYPE)
         self.dEdxgrid = np.zeros((self.Ngrid),dtype=DTYPE)
-        self.set_grid( Emin, Emax, E0 )
+        self.set_grid( Emin, Emax, E0, di )
 
     @classmethod
     def fromGrid(cls, Grid grid):
-        return cls( grid.Emin, grid.Emax, grid.E0, grid.Ngrid )
+        return cls( grid.Emin, grid.Emax, grid.E0, grid.Ngrid, grid.di )
 
     @classmethod
     def empty(cls, int Ngrid):
-        return cls( 0, 1, 0.5, Ngrid )
+        return cls( 1, 2, 0.5, Ngrid, 0.5 )
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
-    cpdef set_grid(self, double Emin, double Emax, double E0 ):
+    cpdef set_grid(self, double Emin, double Emax, double E0, double di ):
         """ Same as Grid() but without reallocation of memory """
         cdef int i
         cdef int dim = self.Ngrid
         self.Emin = Emin
         self.Emax = Emax
         self.E0 = E0
+        self.di = di
         self.xmax = log( self.Emax-self.E0 )
         self.xmin = log( self.Emin-self.E0 )
         self.dx = (self.xmax - self.xmin) * 1.0 / dim
@@ -229,7 +231,7 @@ cdef public class Grid [object CGrid, type TGrid ]:
         self.Egrid_data = get_data(self.Egrid)
         self.dEdxgrid_data = get_data(self.dEdxgrid)
         for i from 0 <= i < dim:
-            self.xgrid_data[i] = self.xmin + self.dx*(i+0.5)
+            self.xgrid_data[i] = self.xmin + self.dx*(i+self.di)
             self.Egrid_data[i] = self.E0 + exp( self.xgrid_data[i] )
             self.dEdxgrid_data[i] = self.Egrid_data[i] - self.E0
 
@@ -243,7 +245,7 @@ cdef public class Grid [object CGrid, type TGrid ]:
     cdef int iofx(self, double xval):
         """ Returns the index of the cell containing xval """
         cdef int ival
-        ival = int( (xval-self.xmin)/self.dx - 0.5 )
+        ival = int( (xval-self.xmin)/self.dx - self.di )
         return ival
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
@@ -256,7 +258,7 @@ cdef public class Grid [object CGrid, type TGrid ]:
     @cython.boundscheck(False) # turn off bounds-checking for entire function
     cdef inline int iofE(self, double Eval):
         """ Returns the index of the cell containing Eval """
-        return int( (log(Eval-self.E0)-self.xmin)/self.dx - 0.5 )
+        return int( (log(Eval-self.E0)-self.xmin)/self.dx - self.di )
 
 
 ###############################
@@ -286,17 +288,17 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
             self.lfunc_vec = np.log(self.func_vec)
             self.lfunc_vec_data = get_data(self.lfunc_vec)
 
-    cpdef set_grid(self, double Emin, double Emax, double E0):
+    cpdef set_grid(self, double Emin, double Emax, double E0, double di):
         """ Same as Grid() but without reallocation of memory """
-        Grid.set_grid( self, Emin, Emax, E0 )
+        Grid.set_grid( self, Emin, Emax, E0, di )
 
     @classmethod
     def fromGrid(cls, Grid grid):
-        return cls( grid.Emin, grid.Emax, grid.E0, grid.Ngrid )
+        return cls( grid.Emin, grid.Emax, grid.E0, grid.Ngrid, grid.di )
 
     @classmethod
     def empty(cls, int Ngrid):
-        return cls( 1, 2, 0.5, Ngrid )
+        return cls( 1, 2, 0.5, Ngrid, 0.5 )
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
     cpdef np.ndarray[double, ndim=1] fofE_vec(self, np.ndarray[double, ndim=1] Eval):
@@ -317,7 +319,7 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
         cdef double x, dx
         if Eval < self.Egrid_data[0] or Eval > self.Egrid_data[self.Ngrid-1]:
             return 0
-        i = int( (log(Eval-self.E0)-self.xmin)/self.dx - 0.5 )
+        i = int( (log(Eval-self.E0)-self.xmin)/self.dx - self.di )
         #i = self.iofE(Eval)
         #i = Grid.iofE( self, Eval )
         if i < 0 or i >= self.Ngrid-1:
