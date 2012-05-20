@@ -365,7 +365,7 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
         cdef int i
         cdef double norm = 0
         for i from 0 <= i < self.Ngrid:
-            norm += self.func_vec[i]*self.dEdxgrid[i]
+            norm += self.func_vec_data[i]*self.dEdxgrid_data[i]
         norm *= self.dx
         return norm
 
