@@ -76,7 +76,7 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed ):
     #gridb.set_di(0.5)
     Evecb_data = gridb.Egrid_data
 
-    print grid.Ngrid, grid.dx, gridb.Ngrid, gridb.dx
+    #print grid.Ngrid, grid.dx, gridb.Ngrid, gridb.dx
 
     #old number of electrons
     Nold = flold_func.norm()
@@ -102,11 +102,11 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed ):
     dN1 = N1 - Nold
     dN2 = N2 - Nold
     print dN1, dN2
-    #if opposite signs
-    if dN1 < 0 and dN2 > 0 or dN1 > 0 and dN2 < 0:
-        wnorm = fabs(dN1) + fabs(dN2)
-        w1 = fabs(dN2) / wnorm
-        w2 = fabs(dN1) / wnorm
+    #if opposite signs or very different errors
+    if dN1 < 0 and dN2 > 0 or dN1 > 0 and dN2 < 0 or fabs(dN1) > 2*fabs(dN2) or fabs(dN2) > 2*fabs(dN1):
+        wnorm = dN2 - dN1
+        w1 =  dN2 / wnorm
+        w2 = -dN1 / wnorm
     elif fabs(dN1) < fabs(dN2):
         w1 = 1
         w2 = 0
