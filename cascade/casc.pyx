@@ -239,6 +239,17 @@ cdef public class Grid [object CGrid, type TGrid ]:
     cpdef double get_dx(self):
         return self.dx
 
+    cpdef double get_di(self):
+        return self.di
+
+    cpdef double get_Emin(self):
+        return self.Emin
+
+    cpdef double get_Emax(self):
+        return self.Emax
+
+    cpdef double get_E0(self):
+        return self.E0
 
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
