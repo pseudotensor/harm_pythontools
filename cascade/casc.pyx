@@ -83,13 +83,32 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid alt
         for j from 0 <= j < dim1:
             temp1 += K1(Eenew,Evec_data[j],seed)*flold_data[j]*grid.dEdxgrid_data[j]*grid.dx
             temp2 += K2(Eenew,Eenew+Evec_data[j],seed)*flold_func.fofE(Eenew+Evec_data[j])*grid.dEdxgrid_data[j]*grid.dx
+        # for j from 0 <= j < dim2b:
+        #     temp2b += K2(Eenew,Eenew+Evecb_data[j],seed)*flold_func.fofE(Eenew+Evecb_data[j])*altgrid.dEdxgrid_data[j]*altgrid.dx
         temp1sum += temp1*grid.dEdxgrid_data[i]*grid.dx
         N1 += temp2*grid.dEdxgrid_data[i]*grid.dx
+        N2 += temp2b*grid.dEdxgrid_data[i]*grid.dx
         flnew_data[i] = temp1+temp2
+        flnew_alt_data[i] = temp1+temp2b
+    dN1 = N1 - Nold
+    dN2 = N2 - Nold
+    #print dN1, dN2
+    #if opposite signs or very different errors
+    if dN1 < 0 and dN2 > 0 or dN1 > 0 and dN2 < 0 or fabs(dN1) > 2*fabs(dN2) or fabs(dN2) > 2*fabs(dN1):
+        wnorm = dN2 - dN1
+        w1 =  dN2 / wnorm
+        w2 = -dN1 / wnorm
+    elif fabs(dN1) < fabs(dN2):
+        w1 = 1
+        w2 = 0
+    else:
+        w1 = 0
+        w2 = 1
     for i from 0 <= i < dim1:
-        flnew_func.set_funci_c(i,flnew_data[i])
+        flnew_func.set_funci_c(i,w1 * flnew_data[i] + w2 * flnew_alt_data[i])
+    free(flnew_alt_data)
     free(flnew_data)
-    return(N1)
+    return(w1*N1+w2*N2)
 
 ###############################
 #
