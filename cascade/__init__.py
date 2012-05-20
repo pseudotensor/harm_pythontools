@@ -122,7 +122,7 @@ if __name__ == "__main__":
     Ngrid = 1e4
     # Evec = exp(np.linspace(-5,np.log(Emax),Ngrid))
     E0grid = 0
-    grid = casc.Grid(Emin, Emax, E0grid, Ngrid)
+    grid = casc.Grid(Emin, Emax, E0grid, Ngrid, di = 0.0)
     Evec = grid.Egrid
     ivec = np.arange(len(Evec))
     #1 eV in units of m_e c^2

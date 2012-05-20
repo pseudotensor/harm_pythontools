@@ -11,6 +11,7 @@ from libc.math cimport log
 from libc.math cimport exp
 from libc.math cimport sqrt
 from libc.math cimport pow
+from libc.math cimport fabs
 
 
 
@@ -58,26 +59,61 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed ):
     cdef int j
     cdef double a, b, c, d, delta
     cdef Grid grid = flold_func
+    cdef Grid gridb = Grid.fromGrid(grid)
+    cdef Func flnew_func_alt = Func.fromFunc(flnew_func)
     cdef double *Evec_data = grid.Egrid_data
+    cdef double *Evecb_data
     cdef double *flnew_data = flnew_func.func_vec_data
     cdef double *lflnew_data = flnew_func.lfunc_vec_data
     cdef double *flold_data = flold_func.func_vec_data
     cdef int dim1 = flold_func.Ngrid
     cdef double temp1, temp2, temp1sum, temp2sum
+    cdef double N1, N2, Nold, dN1, dN2
+    cdef double w1, w2, wnorm
+
+    #Plan B grid with di = 0 (Avery-type grid)
+    gridb.set_di(0.5)
+    Evecb_data = gridb.Egrid_data
+
+    print grid.get_di(), gridb.get_di()
+
+    #old number of electrons
+    Nold = flold_func.norm()
 
     temp1sum = 0
-    temp2sum = 0
+    N1 = 0
+    N2 = 0
     for i from 0 <= i < dim1:
         Eenew = Evec_data[i]
         temp1 = 0
         temp2 = 0
+        temp2b = 0
         for j from 0 <= j < dim1:
             temp1 += K1(Eenew,Evec_data[j],seed)*flold_data[j]*grid.dEdxgrid_data[j]*grid.dx
             temp2 += K2(Eenew,Eenew+Evec_data[j],seed)*flold_func.fofE(Eenew+Evec_data[j])*grid.dEdxgrid_data[j]*grid.dx
+            temp2b += K2(Eenew,Eenew+Evecb_data[j],seed)*flold_func.fofE(Eenew+Evecb_data[j])*gridb.dEdxgrid_data[j]*gridb.dx
         temp1sum += temp1*grid.dEdxgrid_data[i]*grid.dx
-        temp2sum += temp2*grid.dEdxgrid_data[i]*grid.dx
+        N1 += temp2*grid.dEdxgrid_data[i]*grid.dx
+        N2 += temp2b*gridb.dEdxgrid_data[i]*gridb.dx
         flnew_func.set_funci_c(i,temp1+temp2)
-    return(temp2sum)
+        flnew_func_alt.set_funci_c(i,temp1+temp2b)
+    dN1 = N1 - Nold
+    dN2 = N2 - Nold
+    print dN1, dN2
+    #if opposite signs
+    if dN1 < 0 and dN2 > 0 or dN1 > 0 and dN2 < 0:
+        wnorm = fabs(dN1) + fabs(dN2)
+        w1 = fabs(dN2) / wnorm
+        w2 = fabs(dN1) / wnorm
+    elif fabs(dN1) < fabs(dN2):
+        w1 = 1
+        w2 = 0
+    else:
+        w1 = 0
+        w2 = 1
+    for i from 0 <= i < dim1:
+        flnew_func.set_funci_c(i,w1 * flnew_func.func_vec_data[i] + w2 * flnew_func_alt.func_vec_data[i])
+    return(w1*N1+w2*N2)
 
 ###############################
 #
@@ -198,7 +234,7 @@ cdef public class Grid [object CGrid, type TGrid ]:
     cdef double *dEdxgrid_data
     cdef double di
 
-    def __init__(self, double Emin, double Emax, double E0, int Ngrid, double di):
+    def __init__(self, double Emin, double Emax, double E0, int Ngrid, double di = 0.5):
         """ Full constructor: allocates memory and generates the grid """
         self.Ngrid = Ngrid
         self.xgrid = np.zeros((self.Ngrid),dtype=DTYPE)
@@ -250,6 +286,10 @@ cdef public class Grid [object CGrid, type TGrid ]:
     cpdef double get_E0(self):
         return self.E0
 
+    cpdef double set_di(self, double di):
+        cdef double olddi = self.di
+        self.set_grid( self.Emin, self.Emax, self.E0, di )
+        return olddi
 
     cdef int iofx(self, double xval):
         """ Returns the index of the cell containing xval """
@@ -282,8 +322,8 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
     cdef public lfunc_vec
     cdef double *lfunc_vec_data
 
-    def __init__(self, double Emin, double Emax, double E0, int Ngrid, func_vec = None):
-        Grid.__init__(self, Emin, Emax, E0, Ngrid)
+    def __init__(self, double Emin, double Emax, double E0, int Ngrid, double di = 0.5, func_vec = None):
+        Grid.__init__(self, Emin, Emax, E0, Ngrid, di)
         if func_vec is None:
             self.func_vec = np.zeros((self.Ngrid),dtype=DTYPE)+tiny
             self.func_vec_data = get_data(self.func_vec)
@@ -301,7 +341,11 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
 
     @classmethod
     def fromGrid(cls, Grid grid):
-        return cls( grid.Emin, grid.Emax, grid.E0, grid.Ngrid, grid.di )
+        return cls( grid.Emin, grid.Emax, grid.E0, grid.Ngrid, di = grid.di )
+
+    @classmethod
+    def fromFunc(cls, Func f):
+        return cls( f.Emin, f.Emax, f.E0, f.Ngrid, di = f.di, func_vec = f.func_vec )
 
     @classmethod
     def empty(cls, int Ngrid):
@@ -317,6 +361,15 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
         for i from 0 <= i < len:
             Einterp_data[i] = self.fofE(Eval_data[i])
         return Einterp
+
+    @cython.boundscheck(False) # turn off bounds-checking for entire function
+    cdef double norm(self):
+        cdef int i
+        cdef double norm = 0
+        for i from 0 <= i < self.Ngrid:
+            norm += self.func_vec[i]*self.dEdxgrid[i]
+        norm *= self.dx
+        return norm
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
     cdef double fofE(self, double Eval):
