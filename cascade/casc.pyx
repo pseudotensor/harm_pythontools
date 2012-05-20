@@ -7,12 +7,8 @@ from __future__ import division
 import numpy as np
 cimport numpy as np
 cimport cython
-from libc.math cimport log
-from libc.math cimport exp
-from libc.math cimport sqrt
-from libc.math cimport pow
-from libc.math cimport fabs
-
+from libc.math cimport log, exp, sqrt, pow, fabs
+from libc.stdlib cimport malloc, free
 
 
 DTYPE = np.float64
@@ -49,34 +45,29 @@ cdef inline double K2( double Enew, double Eold, SeedPhoton seed ):
 cdef public double* get_data( np.ndarray[double, ndim=1] nparray ):
     return <double *>nparray.data
 
-def flnew( flold not None, flnew not None, seed not None ):
-    return flnew_c( flold, flnew, seed )
+def flnew( flold not None, flnew not None, seed not None, altgrid not None ):
+    return flnew_c( flold, flnew, seed, altgrid )
 
 #@cython.boundscheck(False) # turn off bounds-checking for entire function
-cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed ):
+cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid altgrid ):
     """Expect E and flold defined on a regular log grid, Evec"""
     cdef int i
     cdef int j
     cdef double a, b, c, d, delta
     cdef Grid grid = flold_func
-    cdef Grid gridb = Grid(grid.Emin, grid.Emax, grid.E0, grid.Ngrid*2, di = grid.di)
-    cdef Func flnew_func_alt = Func.fromFunc(flnew_func)
+    #cdef Grid altgrid = Grid(grid.Emin, grid.Emax, grid.E0, grid.Ngrid*2, di = grid.di)
     cdef double *Evec_data = grid.Egrid_data
-    cdef double *Evecb_data
-    cdef double *flnew_data = flnew_func.func_vec_data
-    cdef double *lflnew_data = flnew_func.lfunc_vec_data
+    cdef double *Evecb_data = altgrid.Egrid_data
+    # cdef double *flnew_data = flnew_func.func_vec_data
+    # cdef double *lflnew_data = flnew_func.lfunc_vec_data
     cdef double *flold_data = flold_func.func_vec_data
     cdef int dim1 = flold_func.Ngrid
-    cdef int dim2b = gridb.Ngrid
-    cdef double temp1, temp2, temp1sum, temp2sum
+    cdef int dim2b = altgrid.Ngrid
+    cdef double temp1, temp2, temp2b, temp1sum, temp2sum
     cdef double N1, N2, Nold, dN1, dN2
     cdef double w1, w2, wnorm
-
-    #Plan B grid with di = 0 (Avery-type grid)
-    #gridb.set_di(0.5)
-    Evecb_data = gridb.Egrid_data
-
-    #print grid.Ngrid, grid.dx, gridb.Ngrid, gridb.dx
+    cdef double *flnew_data =  <double *>malloc(dim1 * sizeof(double))
+    cdef double *flnew_alt_data =  <double *>malloc(dim1 * sizeof(double))
 
     #old number of electrons
     Nold = flold_func.norm()
@@ -93,15 +84,15 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed ):
             temp1 += K1(Eenew,Evec_data[j],seed)*flold_data[j]*grid.dEdxgrid_data[j]*grid.dx
             temp2 += K2(Eenew,Eenew+Evec_data[j],seed)*flold_func.fofE(Eenew+Evec_data[j])*grid.dEdxgrid_data[j]*grid.dx
         for j from 0 <= j < dim2b:
-            temp2b += K2(Eenew,Eenew+Evecb_data[j],seed)*flold_func.fofE(Eenew+Evecb_data[j])*gridb.dEdxgrid_data[j]*gridb.dx
+            temp2b += K2(Eenew,Eenew+Evecb_data[j],seed)*flold_func.fofE(Eenew+Evecb_data[j])*altgrid.dEdxgrid_data[j]*altgrid.dx
         temp1sum += temp1*grid.dEdxgrid_data[i]*grid.dx
         N1 += temp2*grid.dEdxgrid_data[i]*grid.dx
         N2 += temp2b*grid.dEdxgrid_data[i]*grid.dx
-        flnew_func.set_funci_c(i,temp1+temp2)
-        flnew_func_alt.set_funci_c(i,temp1+temp2b)
+        flnew_data[i] = temp1+temp2
+        flnew_alt_data[i] = temp1+temp2b
     dN1 = N1 - Nold
     dN2 = N2 - Nold
-    print dN1, dN2
+    #print dN1, dN2
     #if opposite signs or very different errors
     if dN1 < 0 and dN2 > 0 or dN1 > 0 and dN2 < 0 or fabs(dN1) > 2*fabs(dN2) or fabs(dN2) > 2*fabs(dN1):
         wnorm = dN2 - dN1
@@ -114,7 +105,9 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed ):
         w1 = 0
         w2 = 1
     for i from 0 <= i < dim1:
-        flnew_func.set_funci_c(i,w1 * flnew_func.func_vec_data[i] + w2 * flnew_func_alt.func_vec_data[i])
+        flnew_func.set_funci_c(i,w1 * flnew_data[i] + w2 * flnew_alt_data[i])
+    free(flnew_alt_data)
+    free(flnew_data)
     return(w1*N1+w2*N2)
 
 ###############################
@@ -287,6 +280,9 @@ cdef public class Grid [object CGrid, type TGrid ]:
 
     cpdef double get_E0(self):
         return self.E0
+
+    cpdef double get_Ngrid(self):
+        return self.Ngrid
 
     cpdef double set_di(self, double di):
         cdef double olddi = self.di

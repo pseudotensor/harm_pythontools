@@ -38,6 +38,7 @@ import sys
 import streamlines
 from matplotlib.patches import Ellipse
 import pdb
+import warnings
 
 import casc as casc
 reload(casc)
@@ -68,6 +69,7 @@ def main(Ngen = 10,startN=1):
     E0 = 1e8
     ii = np.round(np.log(E0)/np.log(Emax)*Ngrid)
     dx = grid.get_dx()
+    altgrid = casc.Grid(grid.get_Emin(), grid.get_Emax(), grid.get_E0(), grid.get_Ngrid()*2, di = grid.get_di())
     if False:
         dE = Evec[ii] * dx
         dN = np.zeros_like(Evec)
@@ -95,14 +97,16 @@ def main(Ngen = 10,startN=1):
     gen = 0
     #error in evolution of electron number
     deltaN = 0
+    warnings.simplefilter("error")
     if startN == 1:
         Ntot = np.sum( dNnew.func_vec*Evec*dx,axis=-1 )
         print( gen, Ntot, deltaN )
+    np.seterr(divide='raise')
     for gen in xrange(startN,Ngen+1):
         sys.stdout.flush()
         dNold.set_func( dNnew.func_vec )
         #pdb.set_trace()
-        Nreordered = casc.flnew( dNold, dNnew, seed )
+        Nreordered = casc.flnew( dNold, dNnew, seed, altgrid )
         deltaN += (Nreordered - Ntot)
         #pdb.set_trace()
         plt.plot(Evec, Evec*dNnew.func_vec, '-')
