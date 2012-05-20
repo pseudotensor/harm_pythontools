@@ -183,6 +183,9 @@ cdef public class SeedPhoton [object CSeedPhoton, type TSeedPhoton ]:
 
 cdef public class Grid [object CGrid, type TGrid ]:
     """grid class"""
+    cdef public Egrid
+    cdef public xgrid
+    cdef public dEdxgrid
     cdef  double Emin
     cdef  double Emax
     cdef  double E0
@@ -190,9 +193,6 @@ cdef public class Grid [object CGrid, type TGrid ]:
     cdef  double xmax
     cdef  int Ngrid
     cdef  double dx
-    cdef public Egrid
-    cdef public xgrid
-    cdef public dEdxgrid
     cdef double *xgrid_data
     cdef double *Egrid_data
     cdef double *dEdxgrid_data
