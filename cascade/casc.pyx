@@ -235,7 +235,6 @@ cdef public class Grid [object CGrid, type TGrid ]:
             self.Egrid_data[i] = self.E0 + exp( self.xgrid_data[i] )
             self.dEdxgrid_data[i] = self.Egrid_data[i] - self.E0
 
-    @cython.boundscheck(False) # turn off bounds-checking for entire function
     cpdef double get_dx(self):
         return self.dx
 
@@ -252,21 +251,18 @@ cdef public class Grid [object CGrid, type TGrid ]:
         return self.E0
 
 
-    @cython.boundscheck(False) # turn off bounds-checking for entire function
     cdef int iofx(self, double xval):
         """ Returns the index of the cell containing xval """
         cdef int ival
         ival = int( (xval-self.xmin)/self.dx - self.di )
         return ival
 
-    @cython.boundscheck(False) # turn off bounds-checking for entire function
     cdef double xofE(self, double Eval):
         """ Returns the value of x corresponding to Eval """
         cdef double xval
         xval = log(Eval - self.E0)
         return xval
 
-    @cython.boundscheck(False) # turn off bounds-checking for entire function
     cdef inline int iofE(self, double Eval):
         """ Returns the index of the cell containing Eval """
         return int( (log(Eval-self.E0)-self.xmin)/self.dx - self.di )
