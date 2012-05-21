@@ -72,7 +72,7 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid alt
     #old number of electrons
     Nold = flold_func.norm()
 
-    temp1sum = 0
+    # temp1sum = 0
     N1 = 0
     N2 = 0
     for i from 0 <= i < dim1:
@@ -83,16 +83,18 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid alt
         for j from 0 <= j < dim1:
             temp1 += K1(Eenew,Evec_data[j],seed)*flold_data[j]*grid.dEdxgrid_data[j]*grid.dx
             temp2 += K2(Eenew,Eenew+Evec_data[j],seed)*flold_func.fofE(Eenew+Evec_data[j])*grid.dEdxgrid_data[j]*grid.dx
-        for j from 0 <= j < dim2b:
+            #for j from 0 <= j < dim2b:
             temp2b += K2(Eenew,Eenew+Evecb_data[j],seed)*flold_func.fofE(Eenew+Evecb_data[j])*altgrid.dEdxgrid_data[j]*altgrid.dx
-        temp1sum += temp1*grid.dEdxgrid_data[i]*grid.dx
+        # temp1sum += temp1*grid.dEdxgrid_data[i]*grid.dx
+        #combine the two integrals into one more accurate integral (with twice res)
+        temp2b = 0.5 * (temp2+temp2b)
         N1 += temp2*grid.dEdxgrid_data[i]*grid.dx
         N2 += temp2b*grid.dEdxgrid_data[i]*grid.dx
         flnew_data[i] = temp1+temp2
         flnew_alt_data[i] = temp1+temp2b
     dN1 = N1 - Nold
     dN2 = N2 - Nold
-    #print dN1, dN2
+    print dN1, dN2
     #if opposite signs or very different errors
     if dN1 < 0 and dN2 > 0 or dN1 > 0 and dN2 < 0 or fabs(dN1) > 2*fabs(dN2) or fabs(dN2) > 2*fabs(dN1):
         wnorm = dN2 - dN1

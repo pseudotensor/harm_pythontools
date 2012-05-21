@@ -63,13 +63,13 @@ def test_fg1( Eold, Enew, seed ):
     return res
     #plt.plot(Evec,(casc.fg_p(2*Evec,1e8+0*Evec,seed)*(2*Evec>=seed.Egmin)))
 
-def main(Ngen = 10,startN=1):
+def main(Ngen = 10,startN=1,rf=1):
     global dNold, dNnew,fout
     #
-    E0 = 1e8
+    E0 = 5*1e8
     ii = np.round(np.log(E0)/np.log(Emax)*Ngrid)
     dx = grid.get_dx()
-    altgrid = casc.Grid(grid.get_Emin(), grid.get_Emax(), grid.get_E0(), grid.get_Ngrid()*2, di = grid.get_di())
+    altgrid = casc.Grid(grid.get_Emin(), grid.get_Emax(), grid.get_E0(), grid.get_Ngrid()*rf, di = 0.5)
     if False:
         dE = Evec[ii] * dx
         dN = np.zeros_like(Evec)
@@ -115,6 +115,34 @@ def main(Ngen = 10,startN=1):
         print( gen, Ntot, deltaN )
         plt.draw()
 
+def plot_convergence():
+    s1Gen, s1N = np.loadtxt("casc_sasha_E0_1e8_di0.5.txt", dtype = np.float64, usecols = (0, 1), skiprows = 1, unpack = True)
+    s0Gen, s0N = np.loadtxt("casc_sasha_E0_1e8_di0.txt", dtype = np.float64, usecols = (0, 1), skiprows = 1, unpack = True)
+    aGen, aN = np.loadtxt("casc_avery_E0_1e8.txt", dtype = np.float64, usecols = (0, 1), skiprows = 1, unpack = True)
+    shGen, shN = np.loadtxt("casc_sasha_E0_1e8_hybrid.txt", dtype = np.float64, usecols = (0, 1), skiprows = 1, unpack = True)
+    shx2Gen, shx2N = np.loadtxt("casc_sasha_E0_1e8_hybrid_N2e4.txt", dtype = np.float64, usecols = (0, 1), skiprows = 1, unpack = True)
+    sh5e8Gen, sh5e8N = np.loadtxt("casc_sasha_E0_5e8_hybrid.txt", dtype = np.float64, usecols = (0, 1), skiprows = 1, unpack = True)
+    plt.clf()
+    l6, = plt.plot(1+sh5e8Gen, sh5e8N, 'r:', label=r"${\rm Sasha},\ loc=0,\ E_0 = 5\times 10^8,\ n = 10^4$", lw = 2)
+    l5, = plt.plot(1+s0Gen, s0N, 'm:', label=r"${\rm Sasha},\ loc=0,\ E_0 = 10^8,\ n = 10^4$", lw = 2)
+    l2, = plt.plot(1+aGen, aN, 'g-.', label=r"${\rm Avery},\ loc=0,\ E_0 = 10^8,\ n = 10^4$", lw = 2)
+    l3, = plt.plot(1+shGen, shN, 'c',label=r"${\rm Sasha},\ {\rm hybrid},\ E_0 = 10^8,\ n = 10^4$", lw = 2)
+    l4, = plt.plot(1+shx2Gen, shx2N, 'r', label=r"${\rm Sasha},\ {\rm hybrid},\ E_0 = 10^8,\ n = 2\times10^4$", lw = 2)
+    l1, = plt.plot(1+s1Gen, s1N, 'b--', label=r"${\rm Sasha},\ loc=0.5,\ E_0 = 10^8,\ n = 10^4$", lw = 2)
+    l1.set_dashes([10,5])
+    l2.set_dashes([10,5,5,5])
+    l6.set_dashes([10,3,3,3,3,3,3,3])
+    plt.text(30, 100, r"$E_0\!= 10^8$", size = 18)
+    plt.text(15, 300, r"$E_0\!= 5\times 10^8$", size = 18, ha="right")
+    plt.xscale("log")
+    plt.yscale("log")
+    plt.ylim(1, 1000)
+    plt.xlabel(r"${\rm Generation}$", fontsize=18)
+    plt.ylabel(r"$N_{\rm leptons}$", fontsize=18)
+    plt.grid()
+    plt.legend(loc="lower right",handlelength=3)
+    plt.savefig("cascade.pdf", bbox_inches='tight', pad_inches=0.02)
+    # pdb.set_trace()
 
 if __name__ == "__main__":
     #main()
