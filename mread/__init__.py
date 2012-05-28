@@ -8908,14 +8908,18 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
     #plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02,dpi=dpi,facecolor=fig.get_facecolor(),transparent=True)
     #fig.get_facecolor()
 
-def mklotsopanels(doreload=1,epsFm=None,epsFke=None,epsetaj=None,epsFm30=None,fti=None,ftf=None,domakeframes=True,prefactor=100,sigma=None,usegaussianunits=False,arrowsize=1):
+def mklotsopanels(doreload=1,epsFm=None,epsFke=None,epsetaj=None,epsFm30=None,fti=None,ftf=None,domakeframes=True,prefactor=100,sigma=None,usegaussianunits=False,arrowsize=1,onlyeta=False,bignumbers=False,showcolorbar=True,doslines=True):
     global qtymem
     #Figure 1
     #To make plot, run 
     #run ~/py/mread/__init__.py 1 1
     #To re-make plot without reloading the fiels, run
     #run ~/py/mread/__init__.py 1 -1
-    doslines=True
+    if bignumbers:
+        fntsize = 20
+        fntsize2 = 17
+    else:
+        fntsize = 16
     plotlenf=10
     plotleni=25
     plen=plotleni
@@ -8965,83 +8969,96 @@ def mklotsopanels(doreload=1,epsFm=None,epsFke=None,epsetaj=None,epsFm30=None,ft
     #mdot,pjet,pjet/mdot plots
     findex = 0
     gs3 = GridSpec(3, 3)
-    gs3.update(left=0.055, right=0.97, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
-    #mdot
-    ax31 = plt.subplot(gs3[-3,:])
-    plotqtyvstime(qtymem,ax=ax31,whichplot=1,findex=findexlist,epsFm=epsFm,epsFke=epsFke,epsetaj=epsetaj,epsFm30=epsFm30,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma) #AT: need to specify index!
-    ymax=ax31.get_ylim()[1]
-    ymax=2*(np.floor(np.floor(ymax+1.5)/2))
-    ax31.set_yticks((ymax/2,ymax))
-    #ax31.set_xlabel(r"$t\ [r_g/c]")
-    ax31.grid(True)
-    plt.text(ax31.get_xlim()[1]/40., 0.8*ax31.get_ylim()[1], "$(\mathrm{e})$", size=16, rotation=0.,
-             ha="center", va="center",
-             color='k',weight='regular',bbox=bbox_props
-             )
-    ax31r = ax31.twinx()
-    ax31r.set_ylim(ax31.get_ylim())
-    ax31r.set_yticks((ymax/2,ymax))
-    #pjet
-    # ax32 = plt.subplot(gs3[-2,:])
-    # plotqtyvstime(qtymem,ax=ax32,whichplot=2)
-    # ymax=ax32.get_ylim()[1]
-    # ax32.set_yticks((ymax/2,ymax))
-    # ax32.grid(True)
-    #pjet/mdot
-    # ax33 = plt.subplot(gs3[-1,:])
-    # plotqtyvstime(qtymem,ax=ax33,whichplot=3)
-    # ymax=ax33.get_ylim()[1]
-    # ax33.set_yticks((ymax/2,ymax))
-    # ax33.grid(True)
-    #
-    #\phi
-    #
-
-    # plt.text(250, 0.9*ymax, "i", size=10, rotation=0.,
-    #          ha="center", va="center",
-    #          bbox = dict(boxstyle="square",
-    #                      ec=(1., 0.5, 0.5),
-    #                      fc=(1., 0.8, 0.8),
-    #                      )
-    #          )
-    ax35 = plt.subplot(gs3[-2,:])
-    plotqtyvstime(qtymem,ax=ax35,whichplot=5,findex=findexlist,epsFm=epsFm,epsFke=epsFke,epsetaj=epsetaj,epsFm30=epsFm30,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma,usegaussianunits=True)
-    ymax=ax35.get_ylim()[1]
-    if 1 < ymax and ymax < 2: 
-        #ymax = 2
-        tck=(1,)
-        ax35.set_yticks(tck)
-        #ax35.set_yticklabels(('','1','2'))
-    elif ymax < 1: 
-        ymax = 1
-        tck=(0.5,1)
-        ax35.set_yticks(tck)
-        ax35.set_yticklabels(('','1'))
+    if bignumbers:
+        gs3.update(left=0.0695, right=0.865, top=0.40, bottom=0.04, wspace=0.01, hspace=0.04)
     else:
-        ymax=np.floor(ymax)+1
-        if ymax >= 60:
-            tck=np.arange(1,ymax/30.)*30.
-        elif ymax >= 10:
-            tck=np.arange(1,ymax/5.)*5.
+        gs3.update(left=0.055, right=0.97, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
+    if not onlyeta:
+        #mdot
+        ax31 = plt.subplot(gs3[-3,:])
+        plotqtyvstime(qtymem,ax=ax31,whichplot=1,findex=findexlist,epsFm=epsFm,epsFke=epsFke,epsetaj=epsetaj,epsFm30=epsFm30,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma) #AT: need to specify index!
+        ymax=ax31.get_ylim()[1]
+        ymax=2*(np.floor(np.floor(ymax+1.5)/2))
+        ax31.set_yticks((ymax/2,ymax))
+        #ax31.set_xlabel(r"$t\ [r_g/c]")
+        ax31.grid(True)
+        plt.text(ax31.get_xlim()[1]/40., 0.8*ax31.get_ylim()[1], "$(\mathrm{e})$", size=16, rotation=0.,
+                 ha="center", va="center",
+                 color='k',weight='regular',bbox=bbox_props
+                 )
+        ax31r = ax31.twinx()
+        ax31r.set_ylim(ax31.get_ylim())
+        ax31r.set_yticks((ymax/2,ymax))
+        #pjet
+        # ax32 = plt.subplot(gs3[-2,:])
+        # plotqtyvstime(qtymem,ax=ax32,whichplot=2)
+        # ymax=ax32.get_ylim()[1]
+        # ax32.set_yticks((ymax/2,ymax))
+        # ax32.grid(True)
+        #pjet/mdot
+        # ax33 = plt.subplot(gs3[-1,:])
+        # plotqtyvstime(qtymem,ax=ax33,whichplot=3)
+        # ymax=ax33.get_ylim()[1]
+        # ax33.set_yticks((ymax/2,ymax))
+        # ax33.grid(True)
+        #
+        #\phi
+        #
+
+        # plt.text(250, 0.9*ymax, "i", size=10, rotation=0.,
+        #          ha="center", va="center",
+        #          bbox = dict(boxstyle="square",
+        #                      ec=(1., 0.5, 0.5),
+        #                      fc=(1., 0.8, 0.8),
+        #                      )
+        #          )
+        ax35 = plt.subplot(gs3[-2,:])
+        plotqtyvstime(qtymem,ax=ax35,whichplot=5,findex=findexlist,epsFm=epsFm,epsFke=epsFke,epsetaj=epsetaj,epsFm30=epsFm30,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma,usegaussianunits=True)
+        ymax=ax35.get_ylim()[1]
+        if 1 < ymax and ymax < 2: 
+            #ymax = 2
+            tck=(1,)
+            ax35.set_yticks(tck)
+            #ax35.set_yticklabels(('','1','2'))
+        elif ymax < 1: 
+            ymax = 1
+            tck=(0.5,1)
+            ax35.set_yticks(tck)
+            ax35.set_yticklabels(('','1'))
         else:
-            tck=np.arange(1,ymax)
-        ax35.set_yticks(tck)
-    ax35.grid(True)
-    if ymax >= 10:
-        ax35.set_ylabel(r"$\phi_{\rm BH}$",size=16,ha='left',labelpad=25)
-    plt.text(ax35.get_xlim()[1]/40., 0.8*ax35.get_ylim()[1], r"$(\mathrm{f})$", size=16, rotation=0.,
-             ha="center", va="center",
-             color='k',weight='regular',bbox=bbox_props
-             )
-    ax35r = ax35.twinx()
-    ax35r.set_ylim(ax35.get_ylim())
-    ax35r.set_yticks(tck)
+            ymax=np.floor(ymax)+1
+            if ymax >= 60:
+                tck=np.arange(1,ymax/30.)*30.
+            elif ymax >= 10:
+                tck=np.arange(1,ymax/5.)*5.
+            else:
+                tck=np.arange(1,ymax)
+            ax35.set_yticks(tck)
+        ax35.grid(True)
+        if ymax >= 10:
+            ax35.set_ylabel(r"$\phi_{\rm BH}$",size=16,ha='left',labelpad=25)
+        plt.text(ax35.get_xlim()[1]/40., 0.8*ax35.get_ylim()[1], r"$(\mathrm{f})$", size=16, rotation=0.,
+                 ha="center", va="center",
+                 color='k',weight='regular',bbox=bbox_props
+                 )
+        ax35r = ax35.twinx()
+        ax35r.set_ylim(ax35.get_ylim())
+        ax35r.set_yticks(tck)
     #
     #pjet/<mdot>
     #
-    ax34 = plt.subplot(gs3[-1,:])
+    if onlyeta:
+        ax34 = plt.subplot(gs3[-3,:])
+        prefactor = 1
+    else:
+        ax34 = plt.subplot(gs3[-1,:])
     plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findexlist,epsFm=epsFm,epsFke=epsFke,epsetaj=epsetaj,epsFm30=epsFm30,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma)
     ax34.set_ylim((0,3.8*prefactor))
+    if onlyeta:
+        ax34.set_ylabel(r'$P_{\rm jet}$',fontsize=fntsize*1.3,ha='left',labelpad=40)
+        ax34.set_xlabel(r'$t\ [r_g/c]$',fontsize=fntsize*1.3,ha='left',labelpad=0)
+        if bignumbers:
+            for label in ax34.get_xticklabels() + ax34.get_yticklabels(): label.set_fontsize(fntsize2)
     ymax=ax34.get_ylim()[1]
     if prefactor < ymax and ymax < 2*prefactor: 
         #ymax = 2
@@ -9061,13 +9078,19 @@ def mklotsopanels(doreload=1,epsFm=None,epsFke=None,epsetaj=None,epsFm30=None,ft
     #reset lower limit to 0
     ax34.set_ylim((0,ax34.get_ylim()[1]))
     ax34.grid(True)
-    plt.text(ax34.get_xlim()[1]/40., 0.8*ax34.get_ylim()[1], r"$(\mathrm{g})$", size=16, rotation=0.,
+    if onlyeta:
+        char = "e"
+    else:
+        char = "g"
+    plt.text(ax34.get_xlim()[1]/40., 0.8*ax34.get_ylim()[1], r"$(\mathrm{%s})$" % char, size=fntsize, rotation=0.,
              ha="center", va="center",
              color='k',weight='regular',bbox=bbox_props
              )
     ax34r = ax34.twinx()
     ax34r.set_ylim(ax34.get_ylim())
     ax34r.set_yticks(tck)
+    if bignumbers:
+        for label in ax34r.get_xticklabels() + ax34r.get_yticklabels(): label.set_fontsize(fntsize2)
     #
     if domakeframes:
         #
@@ -9087,32 +9110,38 @@ def mklotsopanels(doreload=1,epsFm=None,epsFke=None,epsetaj=None,epsFm30=None,ft
         cvel() #for calculating bsq
         #xz
         gs1 = GridSpec(4, 4)
-        gs1.update(left=0.04, right=0.94, top=0.995, bottom=0.48, wspace=0.05)
+        if bignumbers:
+            gs1.update(left=0.06, right=0.87, top=0.995, bottom=0.48, wspace=0.01)
+        else:
+            gs1.update(left=0.04, right=0.94, top=0.995, bottom=0.48, wspace=0.05)
         #
         ax1 = plt.subplot(gs1[2:4, 0])
-        # plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{a})$", size=16, rotation=0.,
+        # plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{a})$", size=fntsize, rotation=0.,
         #          ha="center", va="center",
         #          color='k',weight='regular',bbox=bbox_props
         #          )
         mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=False,arrowsize=arrowsize)
-        ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
-        ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
+        ax1.set_ylabel(r'$z\ [r_g]$',fontsize=fntsize,ha='center')
+        ax1.set_xlabel(r'$x\ [r_g]$',fontsize=fntsize)
         if dogrid: plt.grid()
         #xy
         ax2 = plt.subplot(gs1[0:2, 0])
         mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=False)
         plt.setp( ax2.get_xticklabels(), visible=False)
-        plt.text(-0.75*plen, 0.8*plen, r"$(\mathrm{a})$", size=16, rotation=0.,
+        plt.text(-0.75*plen, 0.8*plen, r"$(\mathrm{a})$", size=fntsize, rotation=0.,
                  ha="center", va="center",
                  color='w',weight='regular' #,bbox=bbox_props
                  )
-        plt.text(0.9*plen, 0.8*plen, r"$t=%g$" % np.floor(t), size=16, rotation=0.,
+        plt.text(0.9*plen, 0.8*plen, r"$t=%g$" % np.floor(t), size=fntsize, rotation=0.,
                  ha="right", va="center",
                  color='w',weight='regular' #,bbox=bbox_props
                  )
-        ax2.set_ylabel(r'$y\ [r_g]$',fontsize=16,ha='center')
+        ax2.set_ylabel(r'$y\ [r_g]$',fontsize=fntsize,ha='center')
         if dogrid: plt.grid()
         plt.subplots_adjust(hspace=0.03) #increase vertical spacing to avoid crowding
+        if bignumbers:
+            for label in ax1.get_xticklabels() + ax1.get_yticklabels(): label.set_fontsize(fntsize2)
+            for label in ax2.get_xticklabels() + ax2.get_yticklabels(): label.set_fontsize(fntsize2)
         #
         # PLOT 2
         #
@@ -9123,29 +9152,33 @@ def mklotsopanels(doreload=1,epsFm=None,epsFke=None,epsetaj=None,epsFm30=None,ft
         #gs1 = GridSpec(4, 4)
         #
         ax1 = plt.subplot(gs1[2:4, 1])
-        # plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{c})$", size=16, rotation=0.,
+        # plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{c})$", size=fntsize, rotation=0.,
         #          ha="center", va="center",
         #          color='k',weight='regular',bbox=bbox_props
         #          )
         mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,
                 ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,
                 density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,arrowsize=arrowsize)
-        ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
+        ax1.set_xlabel(r'$x\ [r_g]$',fontsize=fntsize)
         if dogrid: plt.grid()
         #xy
         ax2 = plt.subplot(gs1[0:2, 1])
-        plt.text(-0.75*plen, 0.8*plen, r"$(\mathrm{b})$", size=16, rotation=0.,
+        plt.text(-0.75*plen, 0.8*plen, r"$(\mathrm{b})$", size=fntsize, rotation=0.,
                  ha="center", va="center",
                  color='w',weight='regular' #,bbox=bbox_props
                  )
         mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=False)
         plt.setp( ax2.get_xticklabels(), visible=False)
-        plt.text(0.9*plen, 0.8*plen, r"$t=%g$" % np.floor(t), size=16, rotation=0.,
+        plt.text(0.9*plen, 0.8*plen, r"$t=%g$" % np.floor(t), size=fntsize, rotation=0.,
                  ha="right", va="center",
                  color='w',weight='regular' #,bbox=bbox_props
                  )
         if dogrid: plt.grid()
         plt.subplots_adjust(hspace=0.03) #increase vertical spacing to avoid crowding
+        if bignumbers:
+            plt.setp( ax1.get_yticklabels(), visible=False)
+            plt.setp( ax2.get_yticklabels(), visible=False)
+            for label in ax1.get_xticklabels() + ax1.get_yticklabels(): label.set_fontsize(fntsize2)
         #
         # PLOT 3
         #
@@ -9154,20 +9187,20 @@ def mklotsopanels(doreload=1,epsFm=None,epsFke=None,epsetaj=None,epsFm30=None,ft
         cvel() #for calculating bsq
         #Rz
         ax1 = plt.subplot(gs1[2:4, 2])
-        # plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{e})$", size=16, rotation=0.,
+        # plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{e})$", size=fntsize, rotation=0.,
         #          ha="center", va="center",
         #          color='k',weight='regular',bbox=bbox_props
         #          )
         mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,arrowsize=arrowsize)
-        ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
+        ax1.set_xlabel(r'$x\ [r_g]$',fontsize=fntsize)
         if dogrid: plt.grid()
         #xy
         ax2 = plt.subplot(gs1[0:2, 2])
-        plt.text(-0.75*plen, 0.8*plen, r"$(\mathrm{c})$", size=16, rotation=0.,
+        plt.text(-0.75*plen, 0.8*plen, r"$(\mathrm{c})$", size=fntsize, rotation=0.,
                  ha="center", va="center",
                  color='w',weight='regular' #,bbox=bbox_props
                  )
-        plt.text(0.9*plen, 0.8*plen, r"$t=%g$" % np.floor(t), size=16, rotation=0.,
+        plt.text(0.9*plen, 0.8*plen, r"$t=%g$" % np.floor(t), size=fntsize, rotation=0.,
                  ha="right", va="center",
                  color='w',weight='regular' #,bbox=bbox_props
                  )
@@ -9175,6 +9208,10 @@ def mklotsopanels(doreload=1,epsFm=None,epsFke=None,epsetaj=None,epsFm30=None,ft
         plt.setp( ax2.get_xticklabels(), visible=False)
         if dogrid: plt.grid()
         plt.subplots_adjust(hspace=0.03) #increase vertical spacing to avoid crowding
+        if bignumbers:
+            plt.setp( ax1.get_yticklabels(), visible=False)
+            plt.setp( ax2.get_yticklabels(), visible=False)
+            for label in ax1.get_xticklabels() + ax1.get_yticklabels(): label.set_fontsize(fntsize2)
         #
         # PLOT 4
         #
@@ -9183,48 +9220,54 @@ def mklotsopanels(doreload=1,epsFm=None,epsFke=None,epsetaj=None,epsFm30=None,ft
         cvel() #for calculating bsq
         #Rz
         ax1 = plt.subplot(gs1[2:4, 3])
-        # plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{g})$", size=16, rotation=0.,
+        # plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{g})$", size=fntsize, rotation=0.,
         #          ha="center", va="center",
         #          color='k',weight='regular',bbox=bbox_props
         #          )
         mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,arrowsize=arrowsize)
-        ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
+        ax1.set_xlabel(r'$x\ [r_g]$',fontsize=fntsize)
         if dogrid: plt.grid()
         #xy
         ax2 = plt.subplot(gs1[0:2, 3])
-        plt.text(-0.75*plen, 0.8*plen, r"$(\mathrm{d})$", size=16, rotation=0.,
+        plt.text(-0.75*plen, 0.8*plen, r"$(\mathrm{d})$", size=fntsize, rotation=0.,
                  ha="center", va="center",
                  color='w',weight='regular' #,bbox=bbox_props
                  )
-        plt.text(0.9*plen, 0.8*plen, r"$t=%g$" % np.floor(t), size=16, rotation=0.,
+        plt.text(0.9*plen, 0.8*plen, r"$t=%g$" % np.floor(t), size=fntsize, rotation=0.,
                  ha="right", va="center",
                  color='w',weight='regular' #,bbox=bbox_props
                  )
         mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=False)
         plt.setp( ax2.get_xticklabels(), visible=False)
+        if bignumbers:
+            plt.setp( ax1.get_yticklabels(), visible=False)
+            plt.setp( ax2.get_yticklabels(), visible=False)
+            for label in ax1.get_xticklabels() + ax1.get_yticklabels(): label.set_fontsize(fntsize2)
         if dogrid: plt.grid()
         #
         plt.subplots_adjust(hspace=0.03) #increase vertical spacing to avoid crowding
         #
         #(left=0.02, right=0.94, top=0.99, bottom=0.45, wspace=0.05)
-        ax1 = fig.add_axes([0.94, 0.48, 0.02, 0.515])
-        #
-        # Set the colormap and norm to correspond to the data for which
-        # the colorbar will be used.
-        cmap = mpl.cm.jet
-        norm = mpl.colors.Normalize(vmin=-6, vmax=0.5625)
-        # ColorbarBase derives from ScalarMappable and puts a colorbar
-        # in a specified axes, so it has everything needed for a
-        # standalone colorbar.  There are many more kwargs, but the
-        # following gives a basic continuous colorbar with ticks
-        # and labels.
-        cb1 = mpl.colorbar.ColorbarBase(ax1, cmap=cmap,
-                                           norm=norm,
-                                           orientation='vertical')
+        if showcolorbar:
+            ax1 = fig.add_axes([0.94, 0.48, 0.02, 0.515])
+            #
+            # Set the colormap and norm to correspond to the data for which
+            # the colorbar will be used.
+            cmap = mpl.cm.jet
+            norm = mpl.colors.Normalize(vmin=-6, vmax=0.5625)
+            # ColorbarBase derives from ScalarMappable and puts a colorbar
+            # in a specified axes, so it has everything needed for a
+            # standalone colorbar.  There are many more kwargs, but the
+            # following gives a basic continuous colorbar with ticks
+            # and labels.
+            cb1 = mpl.colorbar.ColorbarBase(ax1, cmap=cmap,
+                                               norm=norm,
+                                               orientation='vertical')
     #end if domakeframes
+    #pdb.set_trace()
     #
-    plt.savefig( "fig1.png" )
-    plt.savefig( "fig1.eps" )
+    plt.savefig( "fig1.png",bbox_inches='tight',pad_inches=0.02 )
+    plt.savefig( "fig1.eps",bbox_inches='tight',pad_inches=0.02 )
     #
     print( "Done!" )
     sys.stdout.flush()
@@ -10955,11 +10998,16 @@ if __name__ == "__main__":
         ftf=30500
         doreload = 1
         domakeframes=1
-        epsFm, epsFke, epsetaj, epsFm30 = takeoutfloors(doreload=doreload,fti=fti,ftf=ftf,returndf=1,isinteractive=0)
+        epsFm, epsFke, epsetaj, epsFm30 = takeoutfloors(doreload=doreload,fti=fti,ftf=ftf,returndf=1,isinteractive=0,writefile=False)
         #epsFm = 
         #epsFke = 
         print epsFm, epsFke, epsFm30
-        mklotsopanels(doreload=doreload,epsFm=epsFm,epsFke=epsFke,epsetaj=epsetaj,epsFm30=epsFm30,fti=fti,ftf=ftf,domakeframes=domakeframes,prefactor=100.,sigma=1500.,usegaussianunits=True,arrowsize=0.5)
+        if(False):
+            #compactified version for proposals
+            mklotsopanels(doreload=doreload,epsFm=epsFm,epsFke=epsFke,epsetaj=epsetaj,epsFm30=epsFm30,fti=fti,ftf=ftf,domakeframes=domakeframes,prefactor=100.,sigma=1500.,usegaussianunits=True,arrowsize=0.5,onlyeta=True,bignumbers=True,showcolorbar=False,doslines=True)
+        else:
+            #paper version
+            mklotsopanels(doreload=doreload,epsFm=epsFm,epsFke=epsFke,epsetaj=epsetaj,epsFm30=epsFm30,fti=fti,ftf=ftf,domakeframes=domakeframes,prefactor=100.,sigma=1500.,usegaussianunits=True,arrowsize=0.5)
     if False:
         grid3d( "gdump.bin",use2d=True )
         fno=0
