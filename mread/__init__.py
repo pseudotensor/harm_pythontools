@@ -1043,6 +1043,21 @@ def printjetwindpower(filehandle = None, r = None, stage = 0, powjet = 0, powwin
     filehandle.flush()
     os.fsync(filehandle.fileno())
     
+def horsimple():
+    hor = ((gdet*rho*(h-np.pi/2)**2).sum(-1).sum(-1)/(gdet*rho).sum(-1).sum(-1))**0.5
+    return(hor)
+
+def plothor():
+    grid3d("gdump.bin", use2d=True)
+    rfd("fieldline0000.bin")
+    hor0=horsimple()
+    rfd("fieldline0900.bin")
+    hor1=horsimple()
+    plt.plot(r[:,0,0],hor0)
+    plt.plot(r[:,0,0],hor1)
+    plt.ylim(0,0.5)
+    plt.xlim(rhor,50)
+    #plco(np.log10(bsq/2/(gam-1)/ug),cb=True,levels=np.arange(-2,2,0.1),xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,50);plt.ylim(-25,25)
     
 def horcalc(which=1):
     """
