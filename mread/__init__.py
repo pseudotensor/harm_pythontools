@@ -1200,7 +1200,7 @@ def reinterp(vartointerp,extent,ncell,domask=1,isasymmetric=False,rhor=None,kval
     xi = np.linspace(extent[0], extent[1], ncell)
     yi = np.linspace(extent[2], extent[3], ncell)
     # grid the data.
-    zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method='linear')
+    zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method='cubic')
     #zi[interior] = np.ma.masked
     if domask!=0:
         interior = np.sqrt((xi[None,:]**2) + (yi[:,None]**2)) < rhor*domask
