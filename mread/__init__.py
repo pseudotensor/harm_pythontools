@@ -7662,7 +7662,7 @@ def ploteta():
     ax34r.set_yticks(tck)
     gc.collect()
 
-def mkmovie(framesize=50, whichi=0, whichn=1,domakeavi=False,**kwargs):
+def mkmovie(framesize=50, whichi=0, whichn=1,doqtymem=True,domakeavi=False,**kwargs):
     #Rz and xy planes side by side
     plotlenf=10
     plotleni=framesize
@@ -7690,7 +7690,8 @@ def mkmovie(framesize=50, whichi=0, whichn=1,domakeavi=False,**kwargs):
         qtymem=None #clear to free mem
         rhor=1+(1+a**2)**0.5
         ihor = np.floor(iofr(rhor)+0.5);
-        qtymem=getqtyvstime(ihor,0.2)
+        if doqtymem:
+            qtymem=getqtyvstime(ihor,0.2)
         flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
 
     for findex, fname in enumerate(flist):
@@ -7707,6 +7708,7 @@ def mkmovie(framesize=50, whichi=0, whichn=1,domakeavi=False,**kwargs):
             kwargs['plotlentf']=plotlentf
             kwargs['qtymem']=qtymem
             mkmovieframe( findex, fname, **kwargs )
+            plt.draw()
     print( "Done!" )
     sys.stdout.flush()
     if domakeavi:
@@ -7926,7 +7928,8 @@ def mkmovieframe( findex, fname, **kwargs ):
         ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         if domakeframes:
             mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True,**kwargs)
-    #print xxx
+    print("Saving fig = %04d" % findex)
+    sys.stdout.flush()
     plt.savefig( "lrho%04d_Rzxym1.png" % (findex),bbox_inches='tight',pad_inches=0.02  )
     plt.savefig( "lrho%04d_Rzxym1.eps" % (findex),bbox_inches='tight',pad_inches=0.02  )
     plt.savefig( "lrho%04d_Rzxym1.pdf" % (findex),bbox_inches='tight',pad_inches=0.02  )
