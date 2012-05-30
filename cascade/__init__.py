@@ -66,7 +66,7 @@ def test_fg1( Eold, Enew, seed ):
 def main(Ngen = 10,startN=1,rf=1):
     global dNold, dNnew,fout
     #
-    E0 = 0.1*1e8
+    E0 = 0.01*1e8
     ii = np.round(np.log(E0)/np.log(Emax)*Ngrid)
     dx = grid.get_dx()
     altgrid = casc.Grid(grid.get_Emin(), grid.get_Emax(), grid.get_E0(), grid.get_Ngrid()*rf, di = 0.5)
@@ -167,7 +167,7 @@ def plot_convergence(wf = 0):
         plt.xlim(0.5e8,2e10)
         plt.xlabel(r"$E_0$", fontsize=18)
         plt.ylabel(r"$N_{\rm leptons,\infty}$", fontsize=18)
-        plt.grid(b=False)
+        plt.grid(b=True)
         plt.legend(loc="lower right")
         plt.savefig("NvsE0.pdf", bbox_inches='tight', pad_inches=0.02)
 
@@ -179,8 +179,8 @@ if __name__ == "__main__":
     print ("Hello")
     #energy grid, Lorentz factor of initial electron
     warnings.simplefilter("error")
-    Emin = 1e-5
-    Emax = 1e8
+    Emin = 1e-6
+    Emax = 1e7
     Ngrid = 1e4
     # Evec = exp(np.linspace(-5,np.log(Emax),Ngrid))
     E0grid = 0
