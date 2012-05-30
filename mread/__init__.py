@@ -1242,7 +1242,7 @@ def reinterpxy(vartointerp,extent,ncell,domask=1,mirrorfactor=1,rhor=None):
 def ftr(x,xb,xf):
     return( amax(0.0*x,amin(1.0+0.0*x,1.0*(x-xb)/(xf-xb))) )
     
-def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2,whichr=0.9,ncont=100,maxaphi=100,aspect=1.0,isnstar=False,kval=0,doBphi=False,onlyeta=True):
+def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2,whichr=0.9,ncont=100,maxaphi=100,aspect=1.0,isnstar=False,kval=0,doBphi=False,onlyeta=True,maxsBphi=None):
     extent=(-len,len,-len/aspect,len/aspect)
     palette=cm.jet
     palette.set_bad('k', 1.0)
@@ -1336,7 +1336,11 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         CS = ax.imshow(ilrho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
     if doBphi:
         siBp = np.sqrt(np.abs(iBp))
-        maxsiBp = np.max(siBp)
+        if maxsBphi is None:
+            maxsiBp = np.max(siBp)
+        else:
+            maxsiBp = maxsBphi
+        print( "Max(Sqrt(Bout)) = %g" % maxsiBp )
         CS = ax.imshow(np.sign(iBp)*siBp, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower', vmin=-0.3*maxsiBp,vmax=0.3*maxsiBp)
     if showjet:
         ax.contour(imu,linewidths=0.5,colors='g', extent=extent,hold='on',origin='lower',levels=(2,))
@@ -7740,6 +7744,8 @@ def mkmovieframe( findex, fname, **kwargs ):
     plotlentf = kwargs.pop('plotlentf',2e6)
     qtymem = kwargs.pop('qtymem',2e6)
     kval = kwargs.pop('kval',0)
+    maxsBphi = kwargs.pop('maxsBphi',None)
+    plottime = kwargs.pop('plottime',False)
     # oldnz=nz
     rfd("../"+fname)
     # if oldnz < nz:
@@ -7884,7 +7890,7 @@ def mkmovieframe( findex, fname, **kwargs ):
         #gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.45, wspace=0.05)
         ax1 = plt.subplot(gs1[:, -1])
         if domakeframes:
-            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False)
+            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,maxsBphi=maxsBphi)
         ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
         ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         placeletter(ax1,"$(\mathrm{a})$",va="center",bbox=bbox_props)
@@ -7906,6 +7912,9 @@ def mkmovieframe( findex, fname, **kwargs ):
             mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=dostreamlines,ncont=50,kval=kval,**kwargs)
         ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
         ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
+        bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
+        f = t/(2*np.pi/a)
+        placeletter(ax1,"t=%3d.%02d" % (int(f), np.round(100*(f-np.floor(f)))), color="k",fx = 0.8, bbox=bbox_props )
         # gs2 = GridSpec(1, 1)
         # gs2.update(left=0.5, right=1, top=0.995, bottom=0.48, wspace=0.05)
         # ax2 = plt.subplot(gs2[:, -1])
@@ -7931,8 +7940,8 @@ def mkmovieframe( findex, fname, **kwargs ):
     print("Saving fig = %04d" % findex)
     sys.stdout.flush()
     plt.savefig( "lrho%04d_Rzxym1.png" % (findex),bbox_inches='tight',pad_inches=0.02  )
-    plt.savefig( "lrho%04d_Rzxym1.eps" % (findex),bbox_inches='tight',pad_inches=0.02  )
-    plt.savefig( "lrho%04d_Rzxym1.pdf" % (findex),bbox_inches='tight',pad_inches=0.02  )
+    #plt.savefig( "lrho%04d_Rzxym1.eps" % (findex),bbox_inches='tight',pad_inches=0.02  )
+    #plt.savefig( "lrho%04d_Rzxym1.pdf" % (findex),bbox_inches='tight',pad_inches=0.02  )
     #print xxx
 
 def mk2davg():
@@ -11016,7 +11025,7 @@ if __name__ == "__main__":
         plt.clf();
         mkframe("lrho%04d" % 0, vmin=-8,vmax=0.2,dostreamlines=True,len=50)
         plt.savefig("lrho%04d.pdf" % fno)
-    if True:
+    if False:
         mkpulsarmovie()
     if False:
         #Short tutorial.
