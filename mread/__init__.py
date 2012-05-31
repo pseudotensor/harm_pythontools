@@ -41,6 +41,24 @@ import pdb
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
+def plotnsp():
+    grid3d("gdump.bin",use2d=True)
+    rfd("fieldline0031.bin")
+    rlc = 1/a
+    cvel()
+    Tcalcud()
+    sp1 = -gdetF[1,1].sum(2).sum(1)*_dx2*_dx3
+    sp = -(gdet*Tud)[1,0].sum(2).sum(1)*_dx2*_dx3
+    plt.plot(r[:,0,0]/5,sp1,'r')
+    plt.plot(r[:,0,0]/5,sp,'b')
+    plt.xlim(Rin/rlc,2.5)
+    plt.ylim(0,100)
+    plt.xlabel(r"$r/r_{\rm LC}$",fontsize=18)
+    plt.ylabel(r"$S$",fontsize=18)
+    plt.grid(b=True)
+    plt.savefig("ns_spindown.pdf",bbox_inches='tight',pad_inches=0.02)
+
+
 def get2davg(fname=None,usedefault=0,whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergroup=20):
     """Choose usedefault=1 to use average file with raw data.  
        Choose usedefault=2 to use file with floor effects removed
