@@ -10404,7 +10404,7 @@ def plotflux(doreload=True):
     plt.savefig("plotflux.eps",bbox_inches='tight',pad_inches=0.02,dpi=100)
     plt.savefig("plotflux.pdf",bbox_inches='tight',pad_inches=0.02,dpi=100)
 
-def mkpulsarmovie(startn=0):
+def mkpulsarmovie(startn=0,len=10):
     grid3d("gdump.bin",use2d=True)
     flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
     flist.sort()
@@ -10453,7 +10453,8 @@ def mkpulsarmovie(startn=0):
             el = Ellipse((0,0), 2, 2, facecolor='k', alpha=1)
             art=ax.add_artist(el)
             art.set_zorder(20)
-            rmax = 10
+            plc(uu[1],xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,),colors='r',lw=2)
+            rmax = len
             plt.xlim(0,rmax)
             plt.ylim(-0.5*rmax,0.5*rmax)
         else:
