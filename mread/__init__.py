@@ -1887,7 +1887,7 @@ def rfd(fieldlinefilename,**kwargs):
     #Velocity components: u1, u2, u3, 
     #Cell-centered magnetic field components: B1, B2, B3, 
     #Face-centered magnetic field components multiplied by metric determinant: gdetB1, gdetB2, gdetB3
-    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,rho,lrho,ug,uu,uut,uu,B,uux,gdetB,rhor,r,h,ph,gdetF,fdbody
+    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,rho,lrho,ug,uu,uut,uu,B,uux,gdetB,rhor,r,h,ph,gdetF,fdbody,OmegaNS,AlphaNS
     #read image
     if 'rho' in globals():
         del rho
@@ -1913,6 +1913,16 @@ def rfd(fieldlinefilename,**kwargs):
         del gdetF
     if 'fdbody' in globals():
         del fdbody
+    if os.path.isfile("coordparms.dat"):
+        coordparams = np.loadtxt( "coordparms.dat", 
+                      dtype=np.float64, 
+                      skiprows=0, 
+                      unpack = False )
+        OmegaNS = coordparams[13]
+        AlphaNS = coordparams[14]
+    else:
+        OmegaNS = 0
+        AlphaNS = 0
     fin = open( "dumps/" + fieldlinefilename, "rb" )
     header = fin.readline().split()
     #time of the dump
@@ -2087,8 +2097,18 @@ def grid3d(dumpname,use2d=False,doface=False): #read grid dump file: header and 
     #non-uniform coordinates, (r, h, ph), which correspond to radius (r), polar angle (theta), and toroidal angle (phi).
     #There are more variables, e.g., dxdxp, which is the Jacobian of (x1,x2,x3)->(r,h,ph) transformation, that I can
     #go over, if needed.
-    global nx,ny,nz,_startx1,_startx2,_startx3,_dx1,_dx2,_dx3,gam,a,R0,Rin,Rout,ti,tj,tk,x1,x2,x3,r,h,ph,conn,gn3,gv3,ck,dxdxp,gdet
+    global nx,ny,nz,_startx1,_startx2,_startx3,_dx1,_dx2,_dx3,gam,a,R0,Rin,Rout,ti,tj,tk,x1,x2,x3,r,h,ph,conn,gn3,gv3,ck,dxdxp,gdet,OmegaNS,AlphaNS
     global tif,tjf,tkf,rf,hf,phf,rhor
+    if os.path.isfile("coordparms.dat"):
+        coordparams = np.loadtxt( "coordparms.dat", 
+                      dtype=np.float64, 
+                      skiprows=0, 
+                      unpack = False )
+        OmegaNS = coordparams[13]
+        AlphaNS = coordparams[14]
+    else:
+        OmegaNS = 0
+        AlphaNS = 0
     usinggdump2d = False
     if dumpname.endswith(".bin"):
         dumpnamenoext = os.path.splitext(dumpname)[0]
@@ -7931,7 +7951,7 @@ def mkmovieframe( findex, fname, **kwargs ):
         ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
         ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
-        f = t/(2*np.pi/a)
+        f = t/(2*np.pi/OmegaNS)
         placeletter(ax1,"t=%3d.%02d" % (int(f), np.round(100*(f-np.floor(f)))), color="k",fx = 0.8, bbox=bbox_props )
         # gs2 = GridSpec(1, 1)
         # gs2.update(left=0.5, right=1, top=0.995, bottom=0.48, wspace=0.05)
@@ -10384,7 +10404,7 @@ def plotflux(doreload=True):
     plt.savefig("plotflux.eps",bbox_inches='tight',pad_inches=0.02,dpi=100)
     plt.savefig("plotflux.pdf",bbox_inches='tight',pad_inches=0.02,dpi=100)
 
-def mkpulsarmovie(startn=0):
+def mkpulsarmovie(startn=0,len=10):
     grid3d("gdump.bin",use2d=True)
     flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
     flist.sort()
@@ -10433,7 +10453,8 @@ def mkpulsarmovie(startn=0):
             el = Ellipse((0,0), 2, 2, facecolor='k', alpha=1)
             art=ax.add_artist(el)
             art.set_zorder(20)
-            rmax = 10
+            plc(uu[1],xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,),colors='r',lw=2)
+            rmax = len
             plt.xlim(0,rmax)
             plt.ylim(-0.5*rmax,0.5*rmax)
         else:
