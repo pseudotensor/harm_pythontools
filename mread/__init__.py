@@ -1918,8 +1918,12 @@ def rfd(fieldlinefilename,**kwargs):
                       dtype=np.float64, 
                       skiprows=0, 
                       unpack = False )
-        OmegaNS = coordparams[13]
-        AlphaNS = coordparams[14]
+        if len(coordparams)>=14:
+            OmegaNS = coordparams[13]
+            AlphaNS = coordparams[14]
+        else:
+            OmegaNS = 0
+            AlphaNS = 0
     else:
         OmegaNS = 0
         AlphaNS = 0
@@ -2104,8 +2108,12 @@ def grid3d(dumpname,use2d=False,doface=False): #read grid dump file: header and 
                       dtype=np.float64, 
                       skiprows=0, 
                       unpack = False )
-        OmegaNS = coordparams[13]
-        AlphaNS = coordparams[14]
+        if len(coordparams)>=14:
+            OmegaNS = coordparams[13]
+            AlphaNS = coordparams[14]
+        else:
+            OmegaNS = 0
+            AlphaNS = 0
     else:
         OmegaNS = 0
         AlphaNS = 0
