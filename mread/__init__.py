@@ -59,6 +59,37 @@ def plotnsp(no=30):
     plt.grid(b=True)
     plt.savefig("ns_spindown.pdf",bbox_inches='tight',pad_inches=0.02)
 
+def avgvar(func, n1 = 0, n2 = 0, rad = 7.5):
+    num = n2 - n1
+    avgval = 0
+    for i in xrange(n1,n2):
+        fname = "fieldline%04d.bin" % i
+        print( "Reading %s..." % fname )
+        rfd(fname)
+        avgval += rotatevar( func(), rad=rad )
+    avgval /= num
+    return avgval
+
+def plotvar(var):
+    plco(var,cb=True,xcoord=ph[0]/np.pi,ycoord=h[0])
+
+
+def rotatevar(var,rad=7.5):
+    myi = iofr(rad)
+    #plco((uu[1]*dxdxp[1,1])[myi],cb=True,xcoord=ph[myi]/np.pi,ycoord=h[myi])
+    plt.xlabel("phase",fontsize=18)
+    plt.ylabel(r"$\theta$",fontsize=18)
+    ncell=nz
+    nperiods = np.floor(OmegaNS*t/(2*np.pi))
+    ph1 = np.concatenate((ph[myi,:,:],2*np.pi+ph[myi,:,:]),axis=-1).reshape(-1)
+    ph1 -= OmegaNS*t-nperiods*2*np.pi
+    th1 = np.concatenate((h[myi,:,:],h[myi,:,:]),axis=-1).reshape(-1)
+    var1 = np.concatenate((var[myi,:,:],var[myi,:,:]),axis=-1).reshape(-1)
+    # grid the data.
+    #pdb.set_trace()
+    zi = griddata((ph1, th1), var1, ((ph[myi,0,:])[None,:], (h[myi,:,0])[:,None]), method='linear')
+    return zi
+
 
 def get2davg(fname=None,usedefault=0,whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergroup=20):
     """Choose usedefault=1 to use average file with raw data.  
