@@ -47,10 +47,11 @@ def plotnsp():
     rlc = 1/OmegaNS
     cvel()
     Tcalcud()
-    sp1 = -gdetF[1,1].sum(2).sum(1)*_dx2*_dx3
+    #total energy flux minus rest-mass
+    sp1 = (-gdetF[1,1]-gdetF[1,0]).sum(2).sum(1)*_dx2*_dx3
     sp = -(gdet*TudEM)[1,0].sum(2).sum(1)*_dx2*_dx3
-    plt.plot(r[:,0,0]/5,sp1,'r')
-    plt.plot(r[:,0,0]/5,sp,'b')
+    plt.plot(r[:,0,0]/rlc,sp1,'r')
+    plt.plot(r[:,0,0]/rlc,sp,'b')
     plt.xlim(Rin/rlc,2.5)
     plt.ylim(0,100)
     plt.xlabel(r"$r/r_{\rm LC}$",fontsize=18)
