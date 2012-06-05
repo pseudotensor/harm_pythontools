@@ -70,8 +70,15 @@ def avgvar(func, n1 = 0, n2 = 0, rad = 7.5):
     avgval /= num
     return avgval
 
-def plotvar(var):
-    plco(var,cb=True,xcoord=ph[0]/np.pi,ycoord=h[0])
+def plotvar(var,fname="uur.pdf",label=None):
+    p = plco(var,xcoord=ph[0]/np.pi,ycoord=h[0])
+    cb = plt.colorbar(p)
+    if label is not None:
+        cb.set_label(label,fontsize=22)
+    plc(var,levels=(0,),colors='k',xcoord=ph[0]/np.pi,ycoord=h[0])
+    plt.xlabel("phase",fontsize=18)
+    plt.ylabel(r"$\theta$",fontsize=22)
+    plt.savefig(fname,bbox_inches='tight',pad_inches=0.02)
 
 
 def rotatevar(var,rad=7.5):
