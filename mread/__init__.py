@@ -41,9 +41,9 @@ import pdb
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
-def plotnsp():
+def plotnsp(no=30):
     grid3d("gdump.bin",use2d=True)
-    rfd("fieldline0031.bin")
+    rfd("fieldline%04d.bin" % no)
     rlc = 1/OmegaNS
     cvel()
     Tcalcud()
