@@ -44,7 +44,7 @@ import pdb
 def plotnsp():
     grid3d("gdump.bin",use2d=True)
     rfd("fieldline0031.bin")
-    rlc = 1/a
+    rlc = 1/OmegaNS
     cvel()
     Tcalcud()
     sp1 = -gdetF[1,1].sum(2).sum(1)*_dx2*_dx3
