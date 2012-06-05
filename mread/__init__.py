@@ -1725,7 +1725,7 @@ def rrdump(dumpname,write2xphi=False, whichdir = 3, flipspin = False, resetdefco
         gout.close()
         print( " done!" )
 
-    if resetdefcoord:
+    if addep3:
         ep3index = 9
         #write out a dump with ep3 inserted:
         gout = open( "dumps/" + dumpname + "ep3", "wb" )
