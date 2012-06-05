@@ -1644,7 +1644,7 @@ def rfloor(dumpname):
     dUfloor = gd[:,:,:,:].view() 
     return
 
-def rrdump(dumpname,write2xphi=False, whichdir = 3, flipspin = False):
+def rrdump(dumpname,write2xphi=False, whichdir = 3, flipspin = False, resetdefcoord=False):
     global nx,ny,nz,t,a,rho,ug,vu,vd,B,gd,gd1,numcols,gdetB,Ucons
     #print( "Reading " + "dumps/" + dumpname + " ..." )
     gin = open( "dumps/" + dumpname, "rb" )
@@ -1693,6 +1693,25 @@ def rrdump(dumpname,write2xphi=False, whichdir = 3, flipspin = False):
         #write out a dump with flipped spin:
         gout = open( "dumps/" + dumpname + "spinflip", "wb" )
         header[6] = "%21.15g" % (-a)
+        for headerel in header:
+            s = "%s " % headerel
+            gout.write( s )
+        gout.write( "\n" )
+        gout.flush()
+        os.fsync(gout.fileno())
+        #reshape the rdump content
+        gd1 = gdraw.view().reshape((nz,ny,nx,-1),order='C')
+        gd1.tofile(gout)
+        gout.close()
+        print( " done!" )
+
+    if resetdefcoord:
+        newdefcoord = 3010
+        print( "Current defcoord = %s" % header[23] )
+        print( "New defcoord = %g" % newdefcoord )
+        #write out a dump with flipped spin:
+        gout = open( "dumps/" + dumpname + "newdefcoord", "wb" )
+        header[23] = "3010"
         for headerel in header:
             s = "%s " % headerel
             gout.write( s )
