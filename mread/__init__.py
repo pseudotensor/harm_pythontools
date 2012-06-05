@@ -1707,7 +1707,7 @@ def rrdump(dumpname,write2xphi=False, whichdir = 3, flipspin = False, resetdefco
 
     if resetdefcoord:
         newdefcoord = 3010
-        defcoordindex = 22
+        defcoordindex = 21
         print( "Current defcoord = %s" % header[defcoordindex] )
         print( "New defcoord = %g" % newdefcoord )
         #write out a dump with flipped spin:
