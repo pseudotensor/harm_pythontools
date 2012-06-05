@@ -72,10 +72,11 @@ def avgvar(func, n1 = 0, n2 = 0, rad = 7.5):
     return avgval
 
 def plotvar(var,fname="uur.pdf",label=None,**kwargs):
-    p = plco(var,xcoord=ph[0]/np.pi,ycoord=h[0])
+    p = plco(var,xcoord=ph[0]/np.pi,ycoord=h[0],**kwargs)
     cb = plt.colorbar(p)
     if label is not None:
         cb.set_label(label,fontsize=22)
+    levs = kwargs.pop("levels",None)
     plc(var,levels=(0,),colors='k',xcoord=ph[0]/np.pi,ycoord=h[0]/2/np.pi,**kwargs)
     plt.xlabel("phase/$\pi$",fontsize=18)
     plt.ylabel(r"$\theta/2\pi$",fontsize=22)
