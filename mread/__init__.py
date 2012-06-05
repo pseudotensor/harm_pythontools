@@ -1644,7 +1644,7 @@ def rfloor(dumpname):
     dUfloor = gd[:,:,:,:].view() 
     return
 
-def rrdump(dumpname,write2xphi=False, whichdir = 3, flipspin = False, resetdefcoord=False):
+def rrdump(dumpname,write2xphi=False, whichdir = 3, flipspin = False, resetdefcoord=False, addep3=False):
     global nx,ny,nz,t,a,rho,ug,vu,vd,B,gd,gd1,numcols,gdetB,Ucons
     #print( "Reading " + "dumps/" + dumpname + " ..." )
     gin = open( "dumps/" + dumpname, "rb" )
@@ -1724,6 +1724,27 @@ def rrdump(dumpname,write2xphi=False, whichdir = 3, flipspin = False, resetdefco
         gd1.tofile(gout)
         gout.close()
         print( " done!" )
+
+    if resetdefcoord:
+        ep3index = 9
+        #write out a dump with ep3 inserted:
+        gout = open( "dumps/" + dumpname + "ep3", "wb" )
+        index = 0
+        for headerel in header:
+            if index == ep3index:
+                gout.write( "0 " )
+            s = "%s " % headerel
+            gout.write( s )
+            index+=1
+        gout.write( "\n" )
+        gout.flush()
+        os.fsync(gout.fileno())
+        #reshape the rdump content
+        gd1 = gdraw.view().reshape((nz,ny,nx,-1),order='C')
+        gd1.tofile(gout)
+        gout.close()
+        print( " done!" )
+
 
     if write2xphi and whichdir is not None:
         print( "Writing out 2xphi rdump...", )
