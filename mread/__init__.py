@@ -48,7 +48,7 @@ def plotnsp():
     cvel()
     Tcalcud()
     sp1 = -gdetF[1,1].sum(2).sum(1)*_dx2*_dx3
-    sp = -(gdet*Tud)[1,0].sum(2).sum(1)*_dx2*_dx3
+    sp = -(gdet*TudEM)[1,0].sum(2).sum(1)*_dx2*_dx3
     plt.plot(r[:,0,0]/5,sp1,'r')
     plt.plot(r[:,0,0]/5,sp,'b')
     plt.xlim(Rin/rlc,2.5)
@@ -1707,11 +1707,12 @@ def rrdump(dumpname,write2xphi=False, whichdir = 3, flipspin = False, resetdefco
 
     if resetdefcoord:
         newdefcoord = 3010
-        print( "Current defcoord = %s" % header[23] )
+        defcoordindex = 22
+        print( "Current defcoord = %s" % header[defcoordindex] )
         print( "New defcoord = %g" % newdefcoord )
         #write out a dump with flipped spin:
         gout = open( "dumps/" + dumpname + "newdefcoord", "wb" )
-        header[23] = "3010"
+        header[defcoordindex] = "3010"
         for headerel in header:
             s = "%s " % headerel
             gout.write( s )
