@@ -44,7 +44,7 @@ import operator as op
 
 def computevars(n1=31, n2 = 53):
     grid3d("gdump.bin", use2d = True)
-    [avgbsqorho, avgbsqow, avguut, avguur] = avgvar(
+    [avgbsqow, avgbsqorho, avguut, avguur] = avgvar(
         [lambda: bsq/(rho+gam*ug), 
          lambda: bsq/rho, 
          lambda: uu[0], 
