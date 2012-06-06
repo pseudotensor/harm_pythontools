@@ -43,6 +43,7 @@ import operator as op
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
 def computevars(n1=31, n2 = 53):
+    global avgbsqow, avgbsqorho, avguut, avguur
     grid3d("gdump.bin", use2d = True)
     [avgbsqow, avgbsqorho, avguut, avguur] = avgvar(
         [lambda: bsq/(rho+gam*ug), 
@@ -51,7 +52,13 @@ def computevars(n1=31, n2 = 53):
          lambda: uu[1]*dxdxp[1,1]], 
         n1 = n1, n2 = n2)
 
-# def plotvars():
+def plotvars():
+    plt.figure();plotvar(avgbsqow[iofr(5.5)],label=r"$b^2\!/(\rho+\Gamma u)(1.1R_{\rm LC})$",fname="bsqow_1.1Rlc.pdf")
+    plt.figure();plotvar(avgbsqow[iofr(7.5)],label=r"$b^2\!/(\rho+\Gamma u)(1.5R_{\rm LC})$",fname="bsqow_1.5Rlc.pdf")
+    plt.figure();plotvar(avgbsqorho[iofr(5.5)],label=r"$b^2\!/\rho(1.1R_{\rm LC})$",fname="bsqorho_1.1Rlc.pdf")
+    plt.figure();plotvar(avgbsqorho[iofr(7.5)],label=r"$b^2\!/\rho(1.5R_{\rm LC})$",fname="bsqorho_1.5Rlc.pdf")
+    plt.figure();plotvar(avguut[iofr(5.5)],label=r"$\gamma(1.1R_{\rm LC})$",fname="gamma_1.1Rlc.pdf")
+    plt.figure();plotvar(avguut[iofr(7.5)],label=r"$\gamma(1.5R_{\rm LC})$",fname="gamma_1.5Rlc.pdf")
     
 
 def plotnsp(no=30):
