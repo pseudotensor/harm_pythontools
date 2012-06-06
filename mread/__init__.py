@@ -59,6 +59,8 @@ def plotvars(suff=""):
     plt.figure();plotvar(avgbsqorho[iofr(7.5)],label=r"$b^2\!/\rho(1.5R_{\rm LC})$",fname="bsqorho_15Rlc%s.pdf"%suff)
     plt.figure();plotvar(avguut[iofr(5.5)],label=r"$\gamma(1.1R_{\rm LC})$",fname="gamma_11Rlc%s.pdf"%suff)
     plt.figure();plotvar(avguut[iofr(7.5)],label=r"$\gamma(1.5R_{\rm LC})$",fname="gamma_15Rlc%s.pdf"%suff)
+    plt.figure();plotvar(avguur[iofr(5.5)],label=r"$u^r(1.1R_{\rm LC})$",fname="uur_11Rlc%s.pdf"%suff)
+    plt.figure();plotvar(avguur[iofr(7.5)],label=r"$u^r(1.5R_{\rm LC})$",fname="uur_15Rlc%s.pdf"%suff)
     
 
 def plotnsp(no=30):
