@@ -64,9 +64,9 @@ def avgvar(func, n1 = 0, n2 = 0, rad = 7.5):
     avgval = 0
     for i in xrange(n1,n2):
         fname = "fieldline%04d.bin" % i
-        cvel()
         print( "Reading %s..." % fname )
         rfd(fname)
+        cvel()
         avgval += rotatevar( func(), rad=rad )
     avgval /= num
     return avgval
@@ -79,9 +79,9 @@ def plotvar(var,fname="uur.pdf",label=None,**kwargs):
     cb = plt.colorbar(p,shrink=0.5,ax=ax)
     if label is not None:
         cb.set_label(label,fontsize=22)
-    plc(var,levels=(0,),colors='k',xcoord=ph[0]/np.pi,ycoord=h[0]/2/np.pi,**kwargs)
+    plc(var,levels=(0,),colors='k',xcoord=ph[0]/np.pi,ycoord=h[0]/np.pi,**kwargs)
     plt.xlabel("phase/$\pi$",fontsize=18)
-    plt.ylabel(r"$\theta/2\pi$",fontsize=22)
+    plt.ylabel(r"$\theta/\pi$",fontsize=22)
     plt.savefig(fname,bbox_inches='tight',pad_inches=0.02)
 
 
