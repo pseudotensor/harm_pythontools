@@ -37,9 +37,22 @@ import sys
 import streamlines
 from matplotlib.patches import Ellipse
 import pdb
+import operator as op
 
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
+
+def computevars(n1=31, n2 = 53):
+    grid3d("gdump.bin", use2d = True)
+    [avgbsqorho, avgbsqow, avguut, avguur] = avgvar(
+        [lambda: bsq/(rho+gam*ug), 
+         lambda: bsq/rho, 
+         lambda: uu[0], 
+         lambda: uu[1]*dxdxp[1,1]], 
+        n1 = n1, n2 = n2)
+
+# def plotvars():
+    
 
 def plotnsp(no=30):
     grid3d("gdump.bin",use2d=True)
@@ -59,16 +72,23 @@ def plotnsp(no=30):
     plt.grid(b=True)
     plt.savefig("ns_spindown.pdf",bbox_inches='tight',pad_inches=0.02)
 
-def avgvar(func, n1 = 0, n2 = 0, rad = 7.5):
+def avgvar(funclist, n1 = 0, n2 = 0 ):
+    if not isinstance(funclist,list):
+        funclist = [funclist,]
     num = n2 - n1
-    avgval = 0
     for i in xrange(n1,n2):
         fname = "fieldline%04d.bin" % i
         print( "Reading %s..." % fname )
         rfd(fname)
         cvel()
-        avgval += rotatevar( func(), rad=rad )
-    avgval /= num
+        if n1 == i:
+            avgval = rotatevar( funclist )
+        else:
+            avgvalnew = rotatevar( funclist )
+            for j in xrange(len(avgval)):
+                avgval[j] += avgvalnew[j]
+    for j in xrange(len(avgval)):
+        avgval[j] /= num
     return avgval
 
 def plotvar(var,fname="uur.pdf",label=None,**kwargs):
@@ -85,21 +105,25 @@ def plotvar(var,fname="uur.pdf",label=None,**kwargs):
     plt.savefig(fname,bbox_inches='tight',pad_inches=0.02)
 
 
-def rotatevar(var,rad=7.5):
-    myi = iofr(rad)
-    #plco((uu[1]*dxdxp[1,1])[myi],cb=True,xcoord=ph[myi]/np.pi,ycoord=h[myi])
-    # plt.xlabel("phase",fontsize=18)
-    # plt.ylabel(r"$\theta$",fontsize=18)
+def rotatevar(funclist):
     ncell=nz
     nperiods = np.floor(OmegaNS*t/(2*np.pi))
-    ph1 = np.concatenate((ph[myi,:,:],2*np.pi+ph[myi,:,:]),axis=-1).reshape(-1)
-    ph1 -= OmegaNS*t-nperiods*2*np.pi
-    th1 = np.concatenate((h[myi,:,:],h[myi,:,:]),axis=-1).reshape(-1)
-    var1 = np.concatenate((var[myi,:,:],var[myi,:,:]),axis=-1).reshape(-1)
-    # grid the data.
-    #pdb.set_trace()
-    zi = griddata((ph1, th1), var1, ((ph[myi,0,:])[None,:], (h[myi,:,0])[:,None]), method='linear')
-    return zi
+    ph1 = np.copy(ph)
+    Dphi = (OmegaNS*t-nperiods*2*np.pi)
+    dphi = dxdxp[3,3,0,0,0]*_dx3
+    #integer and fractional part
+    dkcells, kcells = np.modf(Dphi / dphi)
+    #print kcells, dkcells
+    #sys.stdout.flush()
+    outlist = []
+    for var in funclist:
+        if op.isCallable(var):
+            var = var()
+        outlist.append( 
+            np.concatenate((var[:,:,kcells:],  var[:,:,:kcells]),  axis=-1)*(1.-dkcells)+
+            np.concatenate((var[:,:,kcells+1:],var[:,:,:kcells+1]),axis=-1)*dkcells 
+            )
+    return outlist
 
 
 def get2davg(fname=None,usedefault=0,whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergroup=20):
