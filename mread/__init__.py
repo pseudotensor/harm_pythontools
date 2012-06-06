@@ -1362,7 +1362,8 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         iaphi = reinterp(aphi,extent,ncell,domask=0,rhor=rhor,kval=kval)
         Br = dxdxp[1,1]*B[1]+dxdxp[1,2]*B[2]
         Bh = dxdxp[2,1]*B[1]+dxdxp[2,2]*B[2]
-        Bp = B[3]*dxdxp[3,3]
+        #note toroidal field located at faces
+        Bp = gdetB[3]/gdet*dxdxp[3,3]
         #
         Brnorm=Br
         Bhnorm=Bh*np.abs(r)
