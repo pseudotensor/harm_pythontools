@@ -7922,9 +7922,9 @@ def mkmovieframe( findex, fname, **kwargs ):
         plotlen = plotleni+(plotlenf-plotleni)*(t-plotlenti)/(plotlentf-plotlenti)
         plotlen = min(plotlen,plotleni)
         plotlen = max(plotlen,plotlenf)
-    plt.figure(0, figsize=(12,9), dpi=100)
-    plt.clf()
     if frametype=='5panels':
+        plt.figure(0, figsize=(12,9), dpi=100)
+        plt.clf()
         #SWITCH OFF SUPTITLE
         #plt.suptitle(r'$\log_{10}\rho$ at t = %4.0f' % t)
         #mdot,pjet,pjet/mdot plots
@@ -8067,6 +8067,8 @@ def mkmovieframe( findex, fname, **kwargs ):
         ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         placeletter(ax2,"$(\mathrm{b})$",va="center",bbox=bbox_props)
     elif frametype=='Rzpanel':
+        plt.figure(0, figsize=(6,5), dpi=100)
+        plt.clf()
         #Rz xy
         gs1 = GridSpec(1, 1)
         gs1.update(left=0.04, right=0.45, top=0.995, bottom=0.48, wspace=0.05)
@@ -8085,6 +8087,8 @@ def mkmovieframe( findex, fname, **kwargs ):
         # ax2.set_ylabel(r'$y\ [r_g]$',fontsize=16,ha='center')
         # ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
     elif frametype=='Rzzypanels':
+        plt.figure(0, figsize=(6,5), dpi=100)
+        plt.clf()
         #Rz xy
         gs1 = GridSpec(1, 1)
         gs1.update(left=0.04, right=0.45, top=0.995, bottom=0.48, wspace=0.05)
