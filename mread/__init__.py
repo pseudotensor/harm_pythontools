@@ -8067,11 +8067,11 @@ def mkmovieframe( findex, fname, **kwargs ):
         ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         placeletter(ax2,"$(\mathrm{b})$",va="center",bbox=bbox_props)
     elif frametype=='Rzpanel':
-        plt.figure(0, figsize=(6,5), dpi=100)
+        plt.figure(0, figsize=(6,6), dpi=100)
         plt.clf()
         #Rz xy
         gs1 = GridSpec(1, 1)
-        gs1.update(left=0.08, right=0.9, top=0.995, bottom=0.05, wspace=0.05)
+        gs1.update(left=0.08, right=0.9, top=0.995, bottom=0.1, wspace=0.05)
         #gs1.update(left=0.04, right=0.45, top=0.995, bottom=0.48, wspace=0.05)
         #gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.45, wspace=0.05)
         ax1 = plt.subplot(gs1[:, -1])
