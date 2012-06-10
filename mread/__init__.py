@@ -8071,7 +8071,7 @@ def mkmovieframe( findex, fname, **kwargs ):
         plt.clf()
         #Rz xy
         gs1 = GridSpec(1, 1)
-        gs1.update(left=0.08, right=0.9, top=0.995, bottom=0.1, wspace=0.05)
+        gs1.update(left=0.1, right=0.9, top=0.995, bottom=0.08, wspace=0.05)
         #gs1.update(left=0.04, right=0.45, top=0.995, bottom=0.48, wspace=0.05)
         #gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.45, wspace=0.05)
         ax1 = plt.subplot(gs1[:, -1])
