@@ -10553,17 +10553,19 @@ def mkpulsarmovie(startn=0,len=10):
         #ax = fig.add_subplot(111, aspect='equal')
         numc=40
         cvel()
+        plt.clf()
         if True:
-            levs=10**np.arange(0.,np.log10(500.),0.1)
-            #Logarithmic color bar
-            cts=plco(bsq/(rho+ug),xcoord=r*np.sin(h),ycoord=r*np.cos(h),
-                     levels=levs,
-                     locator=ticker.LogLocator(),
-                     norm=mpl.colors.LogNorm(vmin=levs[0],vmax=levs[-1]));
-            plt.xlim(0,10);plt.ylim(-5,5)
-            cbar=plt.colorbar(cts)
-            cbar.set_ticks(levs)
-            cbar.ax.set_ylabel(r'$b^2\!/4\pi\rho$',fontsize=18,labelpad=-5)
+            if rho[0,0,0]!=0:
+                levs=10**np.arange(0.,np.log10(500.),0.1)
+                #Logarithmic color bar
+                cts=plc(bsq/(rho+ug),xcoord=r*np.sin(h),ycoord=r*np.cos(h),
+                         levels=levs,
+                         locator=ticker.LogLocator(),
+                         norm=mpl.colors.LogNorm(vmin=levs[0],vmax=levs[-1]));
+                plt.xlim(0,10);plt.ylim(-5,5)
+                cbar=plt.colorbar(cts)
+                cbar.set_ticks(levs)
+                cbar.ax.set_ylabel(r'$b^2\!/4\pi\rho$',fontsize=18,labelpad=-5)
             x=[5,5]
             y=[-5,5]
             #plt.grid(b=True)
