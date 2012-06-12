@@ -70,10 +70,20 @@ def plotnsp(no=30):
     cvel()
     Tcalcud()
     #total energy flux minus rest-mass
-    sp1 = (-gdetF[1,1]-gdetF[1,0]).sum(2).sum(1)*_dx2*_dx3
-    sp = -(gdet*TudEM)[1,0].sum(2).sum(1)*_dx2*_dx3
-    plt.plot(r[:,0,0]/rlc,sp1,'r')
-    plt.plot(r[:,0,0]/rlc,sp,'b')
+    sTot_noRM = -(gdetF[1,1]).sum(2).sum(1)*_dx2*_dx3
+    sTot_noRM2= -(gdet*Tud[1,0]+gdet*rho*uu[1]).sum(2).sum(1)*_dx2*_dx3
+    sEMTH= -(gdet*TudEM[1,0]+gdet*rho*uu[1]*(1+ud[0])).sum(2).sum(1)*_dx2*_dx3
+    sEM = -(gdet*TudEM)[1,0].sum(2).sum(1)*_dx2*_dx3
+    sKE = -(gdet*(rho*uu[1]+TudMA[1,0])).sum(2).sum(1)*_dx2*_dx3
+    smass = (gdetF[1,0]).sum(2).sum(1)*_dx2*_dx3
+    smass2 = (gdet*rho*uu[1]).sum(2).sum(1)*_dx2*_dx3
+    plt.plot(r[:,0,0]/rlc,sTot_noRM,'r')
+    plt.plot(r[:,0,0]/rlc,sTot_noRM2,'k')
+    plt.plot(r[:,0,0]/rlc,sEM,'b')
+    plt.plot(r[:,0,0]/rlc,smass,'g')
+    plt.plot(r[:,0,0]/rlc,smass2,'m')
+    plt.plot(r[:,0,0]/rlc,sEMTH,'c')
+    # plt.plot(r[:,0,0]/rlc,spmass1,'r')
     plt.xlim(Rin/rlc,2.5)
     plt.ylim(0,100)
     plt.xlabel(r"$r/r_{\rm LC}$",fontsize=18)
@@ -10560,7 +10570,7 @@ def mkpulsarmovie(startn=0,len=10):
             if rho[0,0,0]!=0:
                 levs=10**np.arange(0.,np.log10(500.),0.1)
                 #Logarithmic color bar
-                cts=plc(bsq/(rho+ug),xcoord=r*np.sin(h),ycoord=r*np.cos(h),
+                cts=plc(bsq/(rho+gam*ug),xcoord=r*np.sin(h),ycoord=r*np.cos(h),
                          levels=levs,
                          locator=ticker.LogLocator(),
                          norm=mpl.colors.LogNorm(vmin=levs[0],vmax=levs[-1]));
@@ -10587,7 +10597,7 @@ def mkpulsarmovie(startn=0,len=10):
             el = Ellipse((0,0), 2, 2, facecolor='k', alpha=1)
             art=ax.add_artist(el)
             art.set_zorder(20)
-            plc(uu[1],xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0,),colors='r',lw=2)
+            plc(uu[1]*dxdxp[1,1],xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0.5,),colors='b',lw=2)
             rmax = len
             plt.xlim(0,rmax)
             plt.ylim(-0.5*rmax,0.5*rmax)
