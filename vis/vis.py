@@ -36,7 +36,11 @@ def writedata(fnameformat="fieldline%04d.vtk",no=0):
             ("X",3,1,np.array([ti,tj,tk]).transpose(3,2,1,0).ravel()),
             ("V",3,1,np.array([r,h,ph]).transpose(3,2,1,0).ravel()),
             ("xyz",3,1,np.array([x,y,z]).transpose(3,2,1,0).ravel()),
-            ("rho",1,1,rho.transpose(2,1,0).ravel()))
+            ("rho",1,1,rho.transpose(2,1,0).ravel()),
+            ("ug",1,1,rho.transpose(2,1,0).ravel()),
+            ("Ucart",3,1,u[1:3].transpose(3,2,1,0).ravel()),
+            ("Bcart",3,1,B[1:3].transpose(3,2,1,0).ravel()),
+)
             
 
 if __name__ == "__main__":
