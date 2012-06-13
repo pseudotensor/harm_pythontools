@@ -10999,8 +10999,7 @@ def pfunc(k,xi,yi,m,x):
     res = h00(t)*yi[k]+h10(t)*(yi[k+1]-yi[k])*m[k]+h01(t)*yi[k+1]+h11(t)*(yi[k+1]-yi[k])*m[k+1]
     return( res )
 
-def getxyz():
-    global r, h, ph
+def getxyz(r,h,ph):
     x = r*np.sin(h)*cos(ph)
     y = r*np.sin(h)*sin(ph)
     z = r*np.cos(h)
@@ -11028,27 +11027,28 @@ def writevtk(fnameformat="fieldline%04d.vtk",no=0):
     fname = fnameformat % no
     Bcart = prime2cart(B)
     ucart = prime2cart(uu)
-    x, y, z = getxyz()
-    pts = list(np.array([x,y,z],dtype=float64).transpose(3,2,1,0).ravel())
-    vars = (("ijk"  ,3,1, list(np.array([ti,tj,tk],dtype=float64).transpose(3,2,1,0).ravel())),
-            ("X"    ,3,1, list(np.array([ti,tj,tk],dtype=float64).transpose(3,2,1,0).ravel())),
-            ("V"    ,3,1, list(np.array([r,h,ph],dtype=float64).transpose(3,2,1,0).ravel())),
-            ("xvec" ,3,1, pts),
-            ("x"    ,1,1, list(float64(x.transpose(2,1,0).ravel()))),
-            ("y"    ,1,1, list(float64(y.transpose(2,1,0).ravel()))),
-            ("z"    ,1,1, list(float64(z.transpose(2,1,0).ravel()))),
-            ("rho"  ,1,1, list(float64(rho.transpose(2,1,0).ravel()))),
-            ("ug"   ,1,1, list(float64(ug.transpose(2,1,0).ravel()))),
-            ("gamma",1,1, list(float64(uu[0].transpose(2,1,0).ravel()))),
-            ("v"    ,3,1, list(float64(ucart[1:4]/uu[0]).transpose(3,2,1,0).ravel())),
-            ("vx"   ,1,1, list(float64(ucart[1]/uu[0]).transpose(2,1,0).ravel())),
-            ("vy"   ,1,1, list(float64(ucart[2]/uu[0]).transpose(2,1,0).ravel())),
-            ("vz"   ,1,1, list(float64(ucart[3]/uu[0]).transpose(2,1,0).ravel())),
-            ("B"    ,3,1, list(float64(Bcart[1:4].transpose(3,2,1,0).ravel()))),
-            ("Bx"   ,1,1, list(float64(Bcart[1].transpose(2,1,0).ravel()))),
-            ("By"   ,1,1, list(float64(Bcart[2].transpose(2,1,0).ravel()))),
-            ("Bz"   ,1,1, list(float64(Bcart[3].transpose(2,1,0).ravel()))))
-    dims = (nx, ny, nz)
+    xf, yf, zf = getxyz(rf,hf,phf)
+    x, y, z = getxyz(r,h,ph)
+    pts = list(np.array([xf,yf,zf],dtype=float64).transpose(3,2,1,0).ravel())
+    vars = (("ijk"  ,3,0, list(np.array([ti,tj,tk],dtype=float64).transpose(3,2,1,0).ravel())),
+            ("X"    ,3,0, list(np.array([ti,tj,tk],dtype=float64).transpose(3,2,1,0).ravel())),
+            ("V"    ,3,0, list(np.array([r,h,ph],dtype=float64).transpose(3,2,1,0).ravel())),
+            ("xvec" ,3,0, list(np.array([x,y,z],dtype=float64).transpose(3,2,1,0).ravel())),
+            ("x"    ,1,0, list(float64(x.transpose(2,1,0).ravel()))),
+            ("y"    ,1,0, list(float64(y.transpose(2,1,0).ravel()))),
+            ("z"    ,1,0, list(float64(z.transpose(2,1,0).ravel()))),
+            ("rho"  ,1,0, list(float64(rho.transpose(2,1,0).ravel()))),
+            ("ug"   ,1,0, list(float64(ug.transpose(2,1,0).ravel()))),
+            ("gamma",1,0, list(float64(uu[0].transpose(2,1,0).ravel()))),
+            ("v"    ,3,0, list(float64(ucart[1:4]/uu[0]).transpose(3,2,1,0).ravel())),
+            ("vx"   ,1,0, list(float64(ucart[1]/uu[0]).transpose(2,1,0).ravel())),
+            ("vy"   ,1,0, list(float64(ucart[2]/uu[0]).transpose(2,1,0).ravel())),
+            ("vz"   ,1,0, list(float64(ucart[3]/uu[0]).transpose(2,1,0).ravel())),
+            ("B"    ,3,0, list(float64(Bcart[1:4].transpose(3,2,1,0).ravel()))),
+            ("Bx"   ,1,0, list(float64(Bcart[1].transpose(2,1,0).ravel()))),
+            ("By"   ,1,0, list(float64(Bcart[2].transpose(2,1,0).ravel()))),
+            ("Bz"   ,1,0, list(float64(Bcart[3].transpose(2,1,0).ravel()))))
+    dims = (nx+1, ny+1, nz+1)
     visit_writer.WriteCurvilinearMesh(fname, 
                                               1, #use binary
                                               dims, 
@@ -11057,7 +11057,7 @@ def writevtk(fnameformat="fieldline%04d.vtk",no=0):
     return 0
     
 def makevtk():
-    grid3d("gdump.bin") #,use2d=True)
+    grid3d("gdump.bin",doface=True) #,use2d=True)
     rfd("fieldline0000.bin")
     writevtk(no=52)
 
