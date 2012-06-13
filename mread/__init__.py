@@ -11056,10 +11056,10 @@ def writevtk(fnameformat="fieldline%04d.vtk",no=0):
                                               vars)
     return 0
     
-def makevtk():
+def makevtk(no=52):
     grid3d("gdump.bin",doface=True) #,use2d=True)
-    rfd("fieldline0000.bin")
-    writevtk(no=52)
+    rfd("fieldline%04d.bin" % no)
+    writevtk(no=no)
 
 if __name__ == "__main__":
     if False:
