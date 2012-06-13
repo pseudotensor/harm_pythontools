@@ -38,6 +38,8 @@ import streamlines
 from matplotlib.patches import Ellipse
 import pdb
 import operator as op
+#import vis
+import visit_writer
 
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
@@ -10996,7 +10998,68 @@ def pfunc(k,xi,yi,m,x):
     t = (x-xi[k])/(xi[k+1]-xi[k])
     res = h00(t)*yi[k]+h10(t)*(yi[k+1]-yi[k])*m[k]+h01(t)*yi[k+1]+h11(t)*(yi[k+1]-yi[k])*m[k+1]
     return( res )
+
+def getxyz():
+    global r, h, ph
+    x = r*np.sin(h)*cos(ph)
+    y = r*np.sin(h)*sin(ph)
+    z = r*np.cos(h)
+    return x,y,z
+
+def prime2cart(V):
+    global dxdxp
+    Vr = dxdxp[1,1]*V[1]+dxdxp[1,2]*V[2]
+    Vh = dxdxp[2,1]*V[1]+dxdxp[2,2]*V[2]
+    Vp = V[3]*dxdxp[3,3]
+    #
+    Vrnorm=Vr
+    Vhnorm=Vh*np.abs(r)
+    Vpnorm=Vp*np.abs(r*np.sin(h))
+    #
+    Vznorm=Vrnorm*np.cos(h)-Vhnorm*np.sin(h)
+    VRnorm=Vrnorm*np.sin(h)+Vhnorm*np.cos(h)
+    Vxnorm=VRnorm*np.cos(ph)-Vpnorm*np.sin(ph)
+    Vynorm=VRnorm*np.sin(ph)+Vpnorm*np.cos(ph)
+    return(np.array([0*Vxnorm,Vxnorm,Vynorm,Vznorm]))
+
+
+def writevtk(fnameformat="fieldline%04d.vtk",no=0):
+    global ti, tj, tk, r, h, ph, rho, uu, B
+    fname = fnameformat % no
+    Bcart = prime2cart(B)
+    ucart = prime2cart(uu)
+    x, y, z = getxyz()
+    pts = list(np.array([x,y,z],dtype=float64).transpose(3,2,1,0).ravel())
+    vars = (("ijk"  ,3,1, list(np.array([ti,tj,tk],dtype=float64).transpose(3,2,1,0).ravel())),
+            ("X"    ,3,1, list(np.array([ti,tj,tk],dtype=float64).transpose(3,2,1,0).ravel())),
+            ("V"    ,3,1, list(np.array([r,h,ph],dtype=float64).transpose(3,2,1,0).ravel())),
+            ("xvec" ,3,1, pts),
+            ("x"    ,1,1, list(float64(x.transpose(2,1,0).ravel()))),
+            ("y"    ,1,1, list(float64(y.transpose(2,1,0).ravel()))),
+            ("z"    ,1,1, list(float64(z.transpose(2,1,0).ravel()))),
+            ("rho"  ,1,1, list(float64(rho.transpose(2,1,0).ravel()))),
+            ("ug"   ,1,1, list(float64(ug.transpose(2,1,0).ravel()))),
+            ("gamma",1,1, list(float64(uu[0].transpose(2,1,0).ravel()))),
+            ("v"    ,3,1, list(float64(ucart[1:4]/uu[0]).transpose(3,2,1,0).ravel())),
+            ("vx"   ,1,1, list(float64(ucart[1]/uu[0]).transpose(2,1,0).ravel())),
+            ("vy"   ,1,1, list(float64(ucart[2]/uu[0]).transpose(2,1,0).ravel())),
+            ("vz"   ,1,1, list(float64(ucart[3]/uu[0]).transpose(2,1,0).ravel())),
+            ("B"    ,3,1, list(float64(Bcart[1:4].transpose(3,2,1,0).ravel()))),
+            ("Bx"   ,1,1, list(float64(Bcart[1].transpose(2,1,0).ravel()))),
+            ("By"   ,1,1, list(float64(Bcart[2].transpose(2,1,0).ravel()))),
+            ("Bz"   ,1,1, list(float64(Bcart[3].transpose(2,1,0).ravel()))))
+    dims = (nx, ny, nz)
+    visit_writer.WriteCurvilinearMesh(fname, 
+                                              1, #use binary
+                                              dims, 
+                                              pts, 
+                                              vars)
+    return 0
     
+def makevtk():
+    grid3d("gdump.bin") #,use2d=True)
+    rfd("fieldline0000.bin")
+    writevtk(no=52)
 
 if __name__ == "__main__":
     if False:

@@ -26,22 +26,30 @@ def prime2cart(V):
     return([0,Vxnorm,Vynorm,Vznorm])
 
 
-def writedata(fnameformat="fieldline%04d.vtk",no=0):
+def writevtk(fnameformat="fieldline%04d.vtk",no=0):
     global Bcart, uucart
     fname = fnameformat % no
     Bcart = prime2cart(B)
     uucart = prime2cart(uu)
     x, y, z = getxyz()
-    vars = (("ijk",3,1,np.array([ti,tj,tk]).transpose(3,2,1,0).ravel()),
-            ("X",3,1,np.array([ti,tj,tk]).transpose(3,2,1,0).ravel()),
-            ("V",3,1,np.array([r,h,ph]).transpose(3,2,1,0).ravel()),
-            ("xyz",3,1,np.array([x,y,z]).transpose(3,2,1,0).ravel()),
-            ("rho",1,1,rho.transpose(2,1,0).ravel()),
-            ("ug",1,1,rho.transpose(2,1,0).ravel()),
-            ("Ucart",3,1,u[1:3].transpose(3,2,1,0).ravel()),
-            ("Bcart",3,1,B[1:3].transpose(3,2,1,0).ravel()),
-)
-            
+    pts = np.array([x,y,z]).transpose(3,2,1,0).ravel()
+    vars = (("ijk"  ,3,1, np.array([ti,tj,tk]).transpose(3,2,1,0).ravel()),
+            ("X"    ,3,1, np.array([ti,tj,tk]).transpose(3,2,1,0).ravel()),
+            ("V"    ,3,1, np.array([r,h,ph]).transpose(3,2,1,0).ravel()),
+            ("xvec" ,3,1, pts),
+            ("rho"  ,1,1, rho.transpose(2,1,0).ravel()),
+            ("ug"   ,1,1, rho.transpose(2,1,0).ravel()),
+            ("gamma",1,1, uu[0].transpose(2,1,0).ravel()),
+            ("v"    ,3,1, (ucart[1:3]/uu[0]).transpose(3,2,1,0).ravel()),
+            ("B"    ,3,1, Bcart[1:3].transpose(3,2,1,0).ravel()))
+    dims = (nx, ny, nz)
+    visit_writer.WriteCurvilinearMesh(fname, 
+                                              1, #use binary
+                                              dims, 
+                                              pts, 
+                                              vars)
+    return 0
 
 if __name__ == "__main__":
-    return
+    global t
+    x = 5+3
