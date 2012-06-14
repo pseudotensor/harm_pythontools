@@ -11030,7 +11030,7 @@ def writevtk(fnameformat="fieldline%04d.vtk",no=0):
     xf, yf, zf = getxyz(rf,hf,phf)
     x, y, z = getxyz(r,h,ph)
     pts = list(np.array([xf,yf,zf],dtype=float64).transpose(3,2,1,0).ravel())
-    vars = (("TIME" ,1,0, list(float64(0*x+t).transpose(2,1,0).ravel()))), #include time also
+    vars = (("TIME" ,1,0, list(float64(0*x+t).transpose(2,1,0).ravel()))),
             ("ijk"  ,3,0, list(np.array([ti,tj,tk],dtype=float64).transpose(3,2,1,0).ravel())),
             ("X"    ,3,0, list(np.array([ti,tj,tk],dtype=float64).transpose(3,2,1,0).ravel())),
             ("V"    ,3,0, list(np.array([r,h,ph],dtype=float64).transpose(3,2,1,0).ravel())),
