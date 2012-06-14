@@ -307,11 +307,12 @@ static char writeCurvilinearMeshDoc[] =
 static PyObject *writeCurvilinearMesh( PyObject *self, PyObject *args ) {
 
     int useBinary, npts, ncells, nvars, *vardim, *centering, dims[3];
+    float time;
     char *fileName, **varnames;
     float **vars = NULL, *pts;
     PyObject *xyzdims_py, *pts_py, *nameDimAndVarList;
 
-    if( !PyArg_ParseTuple( args, "siOOO", &fileName, &useBinary, &xyzdims_py, &pts_py, &nameDimAndVarList ) ) return( NULL );
+    if( !PyArg_ParseTuple( args, "sfiOOO", &fileName, &time, &useBinary, &xyzdims_py, &pts_py, &nameDimAndVarList ) ) return( NULL );
 
     if( ( npts = convertDims( xyzdims_py, dims ) ) < 0 ) return( NULL );
     ncells = ( dims[0] - 1 ) * ( dims[1] - 1 ) * ( dims[2] - 1 );
@@ -322,7 +323,7 @@ static PyObject *writeCurvilinearMesh( PyObject *self, PyObject *args ) {
         free( pts );
         return( NULL );
     }
-    write_curvilinear_mesh( fileName, useBinary, dims, pts, nvars, vardim, centering, (const char * const *) varnames, vars );
+    write_curvilinear_mesh( fileName, time, useBinary, dims, pts, nvars, vardim, centering, (const char * const *) varnames, vars );
 
     free( pts );
     if (nvars > 0)

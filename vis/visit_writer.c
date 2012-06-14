@@ -953,7 +953,7 @@ void write_regular_mesh(const char *filename, int ub, int *dims,
 //
 // ***************************************************************************/
 
-void write_curvilinear_mesh(const char *filename, int ub, int *dims,float *pts,
+void write_curvilinear_mesh(const char *filename, float time, int ub, int *dims,float *pts,
                             int nvars, int *vardim, int *centering,
                             const char * const *varnames, float **vars)
 {
@@ -970,6 +970,14 @@ void write_curvilinear_mesh(const char *filename, int ub, int *dims,float *pts,
     write_header();
 
     write_string("DATASET STRUCTURED_GRID\n");
+    //test start
+    sprintf(str, "FIELD FieldData 1\n");
+    write_string(str);
+    sprintf(str, "TIME 1 1 float\n");
+    write_string(str);
+    write_float(time);
+    write_string("\n");
+    //test end
     sprintf(str, "DIMENSIONS %d %d %d\n", dims[0], dims[1], dims[2]);
     write_string(str);
     sprintf(str, "POINTS %d float\n", npts);

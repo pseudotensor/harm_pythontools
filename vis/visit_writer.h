@@ -284,6 +284,7 @@ void write_rectilinear_mesh(const char *filename, int useBinary,
 //  Arguments:
 //      filename   The name of the file to write.  If the extension ".vtk" is
 //                 not present, it will be added.
+//      time       The time of snapshot
 //      useBinary  '0' to write ASCII, !0 to write binary
 //      dims       An array of size 3 = { nI, nJ, nK }, where nI is the
 //                 number of points in the logical I dimension, etc.
@@ -307,7 +308,7 @@ void write_rectilinear_mesh(const char *filename, int useBinary,
 //
 // ***************************************************************************/
 
-void write_curvilinear_mesh(const char *filename, int useBinary, 
+void write_curvilinear_mesh(const char *filename, float time, int useBinary, 
                             int *dims, float *pts,
                             int nvars, int *vardim, int *centering, 
                             const char * const *varnames, float **vars);
