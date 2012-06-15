@@ -970,14 +970,15 @@ void write_curvilinear_mesh(const char *filename, float time, int ub, int *dims,
     write_header();
 
     write_string("DATASET STRUCTURED_GRID\n");
-    //test start
-    sprintf(str, "FIELD FieldData 1\n");
-    write_string(str);
-    sprintf(str, "TIME 1 1 float\n");
-    write_string(str);
-    write_float(time);
-    write_string("\n");
-    //test end
+    //If time is nonzero, print it out
+    if( time != 0 ) {
+      sprintf(str, "FIELD FieldData 1\n");
+      write_string(str);
+      sprintf(str, "TIME 1 1 float\n");
+      write_string(str);
+      write_float(time);
+      write_string("\n");
+    }
     sprintf(str, "DIMENSIONS %d %d %d\n", dims[0], dims[1], dims[2]);
     write_string(str);
     sprintf(str, "POINTS %d float\n", npts);
