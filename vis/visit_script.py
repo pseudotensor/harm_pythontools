@@ -101,7 +101,7 @@ def compute_footpoints(r0 = 1.5, Rlc=5,npts=10,whichpole="up", alpha_y=0, alpha_
     return rotate_around_y_z(r, th, ph,alpha_y=alpha_y, alpha_z=alpha_z)
 
 def zip2visit(xyz):
-    return np.ravel(zip(*xyz))
+    return list(np.ravel(zip(*xyz)))
 
 def get_visit_footpoints(r0 = 1.5, Rlc=5, npts=10, whichpole="up", alpha_y=0, alpha_z=0):
     zip2visit(compute_footpoints(r0=r0, Rlc=Rlc, npys=npts, whichpole=whichpole, alpha_y=alpha_y, alpha_z=alpha_z))
