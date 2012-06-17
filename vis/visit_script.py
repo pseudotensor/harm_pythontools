@@ -62,10 +62,13 @@ def VisitScript():
     #SetActivePlot(0)
     #see http://visitusers.org/index.php?title=Using_pick_to_create_curves
     #ZonePick((2,0,0),("TIME"))
-    SuppressQueryOutputOn()
+
+def get_visit_time()
+    SuppressQueryOutputOn() 
     Query("Time")
     t = GetQueryOutputValue()
     SuppressQueryOutputOff()
+    return t
 
 def rotate_around_y(r, th, ph, alpha=0):
     """Returns x, y, z of the rotated vector"""
