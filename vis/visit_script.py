@@ -39,17 +39,21 @@ def VisitScript():
     #ChangeActivePlotsVar("Rvar")
     #
     #
-    DrawPlots()
+    # DrawPlots()
     #
     AddPlot("Streamline","B")
     #Or:
     #SetActivePlot(0)
     #p=GetPlotOptions()
+    vt = get_visit_time()
+    omega = 0.2
+    phi0 = 0
+    fp = compute_footpoints(r0 = 1.5, Rlc=1/omega, npts=10, whichpole="up", alpha_y=np.pi*60./180., alpha_z=phi0 + omega*vt)
     p=StreamlineAttributes()
     p.SetSourceType(1) #SpecifiedPointList
     p.SetShowSeeds(1)
     #concatenate points in a tuple (3 numbers per point)
-    p.SetPointList((2,0,0,3,0,0,4,0,0))
+    p.SetPointList(fp)
     p.SetTermDistance(100)
     #0/1 - backward/forward
     #2   - both directions
