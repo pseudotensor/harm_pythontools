@@ -1,8 +1,10 @@
+import numpy as np
 def VisitScript():
     # You can run this by:
     #     Saving the script below to "script.py"
     #     Running "visit -cli -s script.py" 
-    OpenDatabase("/Users/atchekho/run2/fixdt_x2_60/fieldline0073.vtk")
+    #OpenDatabase("/Users/atchekho/run/fixdt_x2_60/fieldline0073.vtk")
+    OpenDatabase("/Users/atchekho/run/test3d_1cpu_16x16x8/fieldline0000.vtk")
     DefineScalarExpression("Rsq", "x*x+y*y")
     AddPlot("Contour","Rsq")
     p=ContourAttributes()
@@ -28,7 +30,7 @@ def VisitScript():
     #p.contourValue=1.04
     p.singleColor=(0,255,0,128)  #red, 50% transparent
     p.SetColorType(0)
-    p.SetMin(1.04)
+    p.SetMin(1.1)
     #p.SetMax(5.1)
     p.SetMinFlag(1)
     #p.SetMaxFlag(1)
@@ -38,7 +40,7 @@ def VisitScript():
     #
     #
     DrawPlots()
-
+    #
     AddPlot("Streamline","B")
     #Or:
     #SetActivePlot(0)
@@ -65,8 +67,24 @@ def VisitScript():
     t = GetQueryOutputValue()
     SuppressQueryOutputOff()
 
-def rotate_around_y(r, theta, phi, angle=0):
+def rotate_around_y(r, th, ph, alpha=0):
     """Returns x, y, z of the rotated vector"""
+    xp = r*(-np.cos(th)*np.sin(alpha)+np.sin(th)*np.cos(ph)*np.cos(alpha))
+    yp = r*np.sin(th)*np.cos(ph)
+    zp = r*(np.cos(th)*np.cos(alpha)+np.sin(th)*np.cos(ph)*np.sin(alpha))
+    return xp, yz, zp
+
+def rotate_around_z(x, y, z, alpha=0):
+    x = xp * np.cos(alpha) - yp * np.sin(alpha)
+    y = xp * np.sin(alpha) + yp * np.cos(alpha)
+    z = zp
+    return x, y, z
+
+def rotate_around_y_z(r, th, ph, alpha_y=0, alpha_z=0):
+    xp, yp, zp = rotate_around_y(r,th,ph,alpha=alpha_y)
+    x, y, z = rotate_around_y(x,y,z,alpha=alpha_z)
+    return x, y, z    
+
 
 if __name__ == "__main__":
     testvariable = 3
