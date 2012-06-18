@@ -11057,7 +11057,7 @@ def writevtk(fnameformat="fieldline%04d.vtk",no=0):
     return 0
     
 def makevtk(no=52):
-    grid3d("gdump.bin",doface=True) #,use2d=True)
+    #grid3d("gdump.bin",doface=True) #,use2d=True)
     rfd("fieldline%04d.bin" % no)
     writevtk(no=no)
 
