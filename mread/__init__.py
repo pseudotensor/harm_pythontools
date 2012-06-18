@@ -11023,7 +11023,7 @@ def prime2cart(V):
 
 def writevtk(fnameformat="fieldline%04d.vtk",no=0):
     global ti, tj, tk, r, h, ph, rho, uu, B
-    fname = fnameformat % no
+    fname = fnameformat % int(no)
     Bcart = prime2cart(B)
     ucart = prime2cart(uu)
     xf, yf, zf = getxyz(rf,hf,phf)
