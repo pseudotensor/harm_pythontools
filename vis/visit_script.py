@@ -1,13 +1,13 @@
 import numpy as np
 import pdb as pdb
 
-def VisitScript():
+def VisitScript(no=0):
     # You can run this by:
     #     Saving the script below to "script.py"
     #     Running "visit -cli -s script.py" 
     r0 = 1.5
     #OpenDatabase("/Users/atchekho/run2/fixdt_x2_60/fieldline0000.vtk")
-    OpenDatabase("/home/atchekho/run2/fixdt_x2_60/fieldline0073.vtk")
+    OpenDatabase("/home/atchekho/run2/fixdt_x2_60/fieldline%04d.vtk")
     #OpenDatabase("/Users/atchekho/run/test3d_1cpu_16x16x8/fieldline0000.vtk")
     DefineScalarExpression("Rsq", "x*x+y*y")
     AddPlot("Contour","Rsq")
@@ -65,12 +65,18 @@ def VisitScript():
     p.SetStreamlineDirection(2)
     p.SetShowSeeds(0)
     SetPlotOptions(p)
-    # For moviemaking, you'll need to save off the image
-    # SaveWindow()
     DrawPlots()
     #SetActivePlot(0)
     #see http://visitusers.org/index.php?title=Using_pick_to_create_curves
     #ZonePick((2,0,0),("TIME"))
+    # For moviemaking, you'll need to save off the image
+    # Set the save window attributes.
+    s = SaveWindowAttributes()
+    s.format = s.PNG
+    s.fileName = "frame%04.png" % no
+    SetSaveWindowAttributes(s)
+    name = SaveWindow()
+    print( "Saved image name = %s" % name )
 
 def get_visit_time():
     SuppressQueryOutputOn() 
