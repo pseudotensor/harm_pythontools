@@ -7,7 +7,7 @@ def VisitScript():
     #     Running "visit -cli -s script.py" 
     r0 = 1.5
     #OpenDatabase("/Users/atchekho/run2/fixdt_x2_60/fieldline0000.vtk")
-    OpenDatabase("/Users/atchekho/run2/fixdt_x2_60/fieldline0073.vtk")
+    OpenDatabase("/home/atchekho/run2/fixdt_x2_60/fieldline0073.vtk")
     #OpenDatabase("/Users/atchekho/run/test3d_1cpu_16x16x8/fieldline0000.vtk")
     DefineScalarExpression("Rsq", "x*x+y*y")
     AddPlot("Contour","Rsq")
