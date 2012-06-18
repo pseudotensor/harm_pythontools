@@ -107,9 +107,8 @@ def compute_footpoints(r0 = 1.5, Rlc=5,npts=10,whichpole="both", alpha_y=0, alph
     if whichpole=="dn" or whichpole=="both":
         xyz += zip2visit(rotate_around_y_z(r, th, ph,alpha_y=alpha_y, alpha_z=alpha_z))
     if whichpole=="up" or whichpole=="both":
-        xyz += zip2visit(rotate_around_y_z(r, th, ph,alpha_y=alpha_y, alpha_z=alpha_z))
-    
-    return zip2visit(xyz)
+        xyz += zip2visit(rotate_around_y_z(r, np.pi-th, ph,alpha_y=alpha_y, alpha_z=alpha_z))
+    return xyz
 
 def zip2visit(xyz):
     return list(np.ravel(zip(*xyz)))
