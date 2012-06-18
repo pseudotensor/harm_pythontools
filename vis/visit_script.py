@@ -5,9 +5,10 @@ def VisitScript():
     # You can run this by:
     #     Saving the script below to "script.py"
     #     Running "visit -cli -s script.py" 
-    #OpenDatabase("/Users/atchekho/run/fixdt_x2_60/fieldline0073.vtk")
     r0 = 1.5
-    OpenDatabase("/Users/atchekho/run/test3d_1cpu_16x16x8/fieldline0000.vtk")
+    #OpenDatabase("/Users/atchekho/run2/fixdt_x2_60/fieldline0000.vtk")
+    OpenDatabase("/Users/atchekho/run2/fixdt_x2_60/fieldline0073.vtk")
+    #OpenDatabase("/Users/atchekho/run/test3d_1cpu_16x16x8/fieldline0000.vtk")
     DefineScalarExpression("Rsq", "x*x+y*y")
     AddPlot("Contour","Rsq")
     p=ContourAttributes()
@@ -51,7 +52,7 @@ def VisitScript():
     #p=GetPlotOptions()
     omega = 0.2
     phi0 = 0
-    fp = compute_footpoints(r0 = r0, Rlc=1/omega, npts=40, whichpole="up", alpha_y=np.pi*0./180., alpha_z=phi0 + omega*vt)
+    fp = compute_footpoints(r0 = r0, Rlc=1/omega, npts=40, whichpole="both", alpha_y=np.pi*60./180., alpha_z=phi0 + omega*vt)
     print fp
     p=StreamlineAttributes()
     p.SetSourceType(1) #SpecifiedPointList
@@ -97,12 +98,17 @@ def rotate_around_y_z(r, th, ph, alpha_y=0, alpha_z=0):
     x, y, z = rotate_around_z(xp,yp,zp,alpha=alpha_z)
     return x, y, z 
 
-def compute_footpoints(r0 = 1.5, Rlc=5,npts=10,whichpole="up", alpha_y=0, alpha_z=0):
+def compute_footpoints(r0 = 1.5, Rlc=5,npts=10,whichpole="both", alpha_y=0, alpha_z=0):
     thp = (r0/Rlc)**0.5
     ph = 2*np.pi*np.arange(0,1,1./npts)
     r = r0 + np.zeros_like(ph)
     th = thp + np.zeros_like(ph)
-    xyz = rotate_around_y_z(r, th, ph,alpha_y=alpha_y, alpha_z=alpha_z)
+    xyz=[]
+    if whichpole=="dn" or whichpole=="both":
+        xyz += zip2visit(rotate_around_y_z(r, th, ph,alpha_y=alpha_y, alpha_z=alpha_z))
+    if whichpole=="up" or whichpole=="both":
+        xyz += zip2visit(rotate_around_y_z(r, th, ph,alpha_y=alpha_y, alpha_z=alpha_z))
+    
     return zip2visit(xyz)
 
 def zip2visit(xyz):
