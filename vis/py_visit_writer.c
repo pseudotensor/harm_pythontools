@@ -356,12 +356,12 @@ static int convertDims( PyObject *dims_py, int dims[3] ) {
             break;
         }
         npts *= dims[i];
-        Py_DECREF( item );
+        Py_CLEAR( item );
     }
-    Py_DECREF( item );
+    Py_CLEAR( item );
     if( i != 3 ) {
         npts = -1;
-        Py_DECREF( item );
+        Py_CLEAR( item );
     }
     return( npts );
 }
@@ -423,7 +423,7 @@ static int convertVarData( int npts, int ncells, PyObject *nameDimAndVarList, ch
     {
         item = PySequence_GetItem(nameDimAndVarList, i);
         status = convertVarDatum( npts, ncells, n, item, *varnames, *vardim, *centering, *vars );
-        Py_DECREF( item );
+        Py_CLEAR( item );
         if( !status ) break;
         n++;
     }
@@ -458,7 +458,7 @@ static int convertVarDatum( int npts, int ncells, int n, PyObject *nameDimVar, c
     }
     if( status ) {
         varnames[n] = PyString_AS_STRING( item );
-        Py_DECREF( item );
+        Py_CLEAR( item );
 
         item = PySequence_GetItem(nameDimVar, count++);
         if( !PyInt_Check( item ) ) {
@@ -467,7 +467,7 @@ static int convertVarDatum( int npts, int ncells, int n, PyObject *nameDimVar, c
         }
         if( status ) {
             vardim[n] = PyInt_AS_LONG( item );
-            Py_DECREF( item );
+            Py_CLEAR( item );
 
             item = PySequence_GetItem(nameDimVar, count++);
             if( ( centering[n] = getIntegerToken( item, centeringToken ) ) < 0 ) {
@@ -475,7 +475,7 @@ static int convertVarDatum( int npts, int ncells, int n, PyObject *nameDimVar, c
                 status = 0;
             }
             if( status ) {
-                Py_DECREF( item );
+                Py_CLEAR( item );
 
                 if( centering[n] ) nptsOrncells = npts;
                 item = PySequence_GetItem(nameDimVar, count++);
@@ -495,7 +495,7 @@ static int convertVarDatum( int npts, int ncells, int n, PyObject *nameDimVar, c
             }
         }
     }
-    Py_DECREF( item );
+    Py_CLEAR( item );
     if( np < 0 ) {
         nvars = 0;
         if( vars[n] ) free( vars[n] );
@@ -523,7 +523,7 @@ static int convertCells( PyObject *cellTypeConnections, int **cellTypes, int **c
     {
         item = PySequence_GetItem(cellTypeConnections, i);
         status = convertCell( nCellsDone, item, *cellTypes, &nConnDone, &connLen, connectivity );
-        Py_DECREF( item );
+        Py_CLEAR( item );
         if( status <= 0 ) break;
         nCellsDone++;
     }
@@ -555,7 +555,7 @@ static int convertCell( int nCellsDone, PyObject *cellItem, int *cellTypes, int 
     cellTypes[nCellsDone] = getIntegerToken( item, cellTypeToken );
     for( i = 0; i < nconnTypes; i++ ) if( connectionTypes[i][0] == cellTypes[nCellsDone] ) break;
     if( i == nconnTypes ) status = setErrorAndReturnInt( 0, "invalid cell type at index %d of cellTypeConnection", nCellsDone );
-    Py_DECREF( item );
+    Py_CLEAR( item );
     if( status ) status = addCellConnectivity( nCellsDone, len, cellItem, connectionTypes[i], nConnDone, connLen, connectivity );
     return( status );
 }
@@ -588,7 +588,7 @@ static int addCellConnectivity( int index, int len, PyObject *cellItem, int conn
         else {
             status = setErrorAndReturnInt( 0, "cell at index %d of cellTypeConnection contains a non integer connectivity element", index );
         }
-        Py_DECREF( item );
+        Py_CLEAR( item );
         if( !status ) return( 0 );
         (*nConnDone)++;
     }
@@ -626,7 +626,7 @@ static int getArrayOfNumbers( int npts, PyObject *list, float *pts, char *name )
     {
         item = PySequence_GetItem(list, i);
         status = getFloat( item, &(pts[n]) );
-        Py_DECREF( item );
+        Py_CLEAR( item );
         if( !status ) break;
         n++;
     }
