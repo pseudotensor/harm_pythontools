@@ -11022,10 +11022,11 @@ def prime2cart(V):
     return(np.array([0*Vxnorm,Vxnorm,Vynorm,Vznorm]))
 
 def writevtk(fnameformat="fieldline%04d.vtk",no=0):
-    global ti, tj, tk, r, h, ph, rho, uu, B
+    global ti, tj, tk, r, h, ph, rho, uu, B, bsq
     fname = fnameformat % int(no)
     Bcart = prime2cart(B)
     ucart = prime2cart(uu)
+    cvel() #for bsq
     xf, yf, zf = getxyz(rf,hf,phf)
     x, y, z = getxyz(r,h,ph)
     pts = list(np.array([xf,yf,zf],dtype=float64).transpose(3,2,1,0).ravel())
@@ -11046,7 +11047,8 @@ def writevtk(fnameformat="fieldline%04d.vtk",no=0):
             ("B"    ,3,0, list(float64(Bcart[1:4].transpose(3,2,1,0).ravel()))),
             ("Bx"   ,1,0, list(float64(Bcart[1].transpose(2,1,0).ravel()))),
             ("By"   ,1,0, list(float64(Bcart[2].transpose(2,1,0).ravel()))),
-            ("Bz"   ,1,0, list(float64(Bcart[3].transpose(2,1,0).ravel()))))
+            ("Bz"   ,1,0, list(float64(Bcart[3].transpose(2,1,0).ravel()))),
+            ("bsq"  ,1,0, list(float64(bsq.transpose(2,1,0).ravel()))))
     dims = (nx+1, ny+1, nz+1)
     visit_writer.WriteCurvilinearMesh(fname,  
                                               t, #time
