@@ -5,12 +5,13 @@ def mkvmov():
     for no in xrange(0,74):
         VisitScript(no=no,r0=1.05)
 
-def VisitScript(no=0,r0=1.05):
+def VisitScript(no=0,r0=1.05,cdb=True):
     # You can run this by:
     #     Saving the script below to "script.py"
     #     Running "visit -cli -s script.py" 
     #OpenDatabase("/Users/atchekho/run2/fixdt_x2_60/fieldline0000.vtk")
-    dbname = "/home/atchekho/run2/fixdt_x2_60/fieldline%04d.vtk" % no
+    #dbname = "/home/atchekho/run2/fixdt_x2_60/fieldline%04d.vtk" % no
+    dbname = "/home/atchekho/run2/fixdt_60/fieldline%04d.vtk" % no
     OpenDatabase(dbname)
     #OpenDatabase("/Users/atchekho/run/test3d_1cpu_16x16x8/fieldline0000.vtk")
     DefineScalarExpression("Rsq", "x*x+y*y")
@@ -112,9 +113,10 @@ def VisitScript(no=0,r0=1.05):
     SetSaveWindowAttributes(s)
     name = SaveWindow()
     print( "Saved image name = %s" % name )
-    SetActivePlots((0, 1, 2))
-    DeleteActivePlots()
-    CloseDatabase(dbname)
+    if cdb:
+        SetActivePlots((0, 1, 2))
+        DeleteActivePlots()
+        CloseDatabase(dbname)
 
 def set_fieldline_attribs(StreamlineAtts):
     StreamlineAtts.pointSource = (0, 0, 0)
