@@ -10569,7 +10569,7 @@ def mkpulsarmovie(startn=0,len=10):
         cvel()
         plt.clf()
         if True:
-            if rho[0,0,0]!=0:
+            if False and rho[0,0,0]!=0:
                 levs=10**np.arange(0.,np.log10(500.),0.1)
                 #Logarithmic color bar
                 cts=plc(bsq/(rho+gam*ug),xcoord=r*np.sin(h),ycoord=r*np.cos(h),
@@ -10599,7 +10599,7 @@ def mkpulsarmovie(startn=0,len=10):
             el = Ellipse((0,0), 2, 2, facecolor='k', alpha=1)
             art=ax.add_artist(el)
             art.set_zorder(20)
-            plc(uu[1]*dxdxp[1,1],xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0.5,),colors='b',lw=2)
+            plc(uu[1]*dxdxp[1,1],xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(0,1,0.1),lw=2,cb=True)
             rmax = len
             plt.xlim(0,rmax)
             plt.ylim(-0.5*rmax,0.5*rmax)
