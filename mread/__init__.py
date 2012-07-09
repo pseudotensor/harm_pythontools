@@ -11062,9 +11062,12 @@ def prime2cart(V):
 # B
 # bsq
 
-def writevtk(fnameformat="fieldline%04d.vtk",no=0,rhoval=None,ugval=None,uuval=None,Bval=None,bsqval=None):
+def writevtk(fnameformat="fieldline%04d.vtk",no=None,rhoval=None,ugval=None,uuval=None,Bval=None,bsqval=None):
     global ti, tj, tk, r, h, ph, rho, ug, uu, B, bsq
-    fname = fnameformat % int(no)
+    if no is not None:
+        fname = fnameformat % int(no)
+    else:
+        fname = fnameformat
     cvel() #for bsq
     if rhoval is None:
         rhoval = rho
