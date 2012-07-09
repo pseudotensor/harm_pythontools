@@ -161,10 +161,16 @@ def rotatevar(funclist):
     for var in funclist:
         if op.isCallable(var):
             var = var()
-        outlist.append( 
-            np.concatenate((var[:,:,kcells:],  var[:,:,:kcells]),  axis=-1)*(1.-dkcells)+
-            np.concatenate((var[:,:,kcells+1:],var[:,:,:kcells+1]),axis=-1)*dkcells 
-            )
+        if var.ndim==3:
+            outlist.append( 
+                np.concatenate((var[:,:,kcells:],  var[:,:,:kcells]),  axis=-1)*(1.-dkcells)+
+                np.concatenate((var[:,:,kcells+1:],var[:,:,:kcells+1]),axis=-1)*dkcells 
+                )
+        else:
+            outlist.append( 
+                np.concatenate((var[:,:,:,kcells:],  var[:,:,:,:kcells]),  axis=-1)*(1.-dkcells)+
+                np.concatenate((var[:,:,:,kcells+1:],var[:,:,:,:kcells+1]),axis=-1)*dkcells 
+                )
     return outlist
 
 
