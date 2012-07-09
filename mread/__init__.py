@@ -1282,7 +1282,13 @@ def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
     k = kwargs.pop('k',0)
     #cmap = kwargs.pop('cmap',cm.jet)
     isfilled = kwargs.pop('isfilled',False)
-    if None != xcoord and None != ycoord:
+    xy = kwargs.pop('xy',0)
+    xmax = kwargs.pop('xmax',10)
+    ymax = kwargs.pop('ymax',5)
+    if xy:
+        xcoord = r * np.sin(h)
+        ycoord = r * np.cos(h)
+    if (None != xcoord and None != ycoord):
         xcoord = xcoord[:,:,None] if xcoord.ndim == 2 else xcoord[:,:,k:k+1]
         ycoord = ycoord[:,:,None] if ycoord.ndim == 2 else ycoord[:,:,k:k+1]
     myvar = myvar[:,:,None] if myvar.ndim == 2 else myvar[:,:,k:k+1]
@@ -1300,6 +1306,9 @@ def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
             res = ax.contour(xcoord[:,:,0],ycoord[:,:,0],myvar[:,:,0],nc,**kwargs)
     if( cb == True): #use color bar
         plt.colorbar(res,ax=ax)
+    if xy:
+        plt.xlim(0,xmax)
+        plt.ylim(-ymax,ymax)
     return res
 
 def reinterp(vartointerp,extent,ncell,domask=1,isasymmetric=False,rhor=None,kval=0):
