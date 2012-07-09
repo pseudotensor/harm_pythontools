@@ -62,7 +62,7 @@ def computevars(n1=31, n2 = 53):
 # bsq
 def avgvtkvars(n1=31, n2 = 53):
     global avgrho, avgug, avguu, avgB, avgbsq
-    grid3d("gdump.bin", use2d = True)
+    grid3d("gdump.bin", doface = True)
     [avgrho, avgug, avguu, avgB, avgbsq] = avgvar(
         [lambda: rho, 
          lambda: ug, 
