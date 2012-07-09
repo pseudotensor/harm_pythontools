@@ -54,6 +54,25 @@ def computevars(n1=31, n2 = 53):
          lambda: uu[1]*dxdxp[1,1]], 
         n1 = n1, n2 = n2)
 
+# rho
+# ug
+# gamma
+# v
+# B
+# bsq
+def avgvtkvars(n1=31, n2 = 53):
+    global avgrho, avgug, avguu, avgB, avgbsq
+    grid3d("gdump.bin", use2d = True)
+    [avgrho, avgug, avguu, avgB, avgbsq] = avgvar(
+        [lambda: rho, 
+         lambda: ug, 
+         lambda: uu,
+         lambda: B,
+         lambda: bsq], 
+        n1 = n1, n2 = n2)
+
+
+
 def plotvars(suff=""):
     plt.figure();plotvar(avgbsqow[iofr(5.5)],label=r"$b^2\!/(\rho+\Gamma u)(1.1R_{\rm LC})$",fname="bsqow_11Rlc%s.pdf"%suff)
     plt.figure();plotvar(avgbsqow[iofr(7.5)],label=r"$b^2\!/(\rho+\Gamma u)(1.5R_{\rm LC})$",fname="bsqow_15Rlc%s.pdf"%suff)
@@ -11021,12 +11040,30 @@ def prime2cart(V):
     Vynorm=VRnorm*np.sin(ph)+Vpnorm*np.cos(ph)
     return(np.array([0*Vxnorm,Vxnorm,Vynorm,Vznorm]))
 
-def writevtk(fnameformat="fieldline%04d.vtk",no=0):
-    global ti, tj, tk, r, h, ph, rho, uu, B, bsq
+#list of variables:
+# rho
+# ug
+# gamma
+# v
+# B
+# bsq
+
+def writevtk(fnameformat="fieldline%04d.vtk",no=0,rhoval=None,ugval=None,uuval=None,Bval=None,bsqval=None):
+    global ti, tj, tk, r, h, ph, rho, ug, uu, B, bsq
     fname = fnameformat % int(no)
-    Bcart = prime2cart(B)
-    ucart = prime2cart(uu)
     cvel() #for bsq
+    if rhoval is None:
+        rhoval = rho
+    if ugval is None:
+        ugval = ug
+    if uuval is None:
+        uuval = uu
+    if Bval is None:
+        Bval = B
+    if bsqval is None:
+        bsqval = bsq
+    Bcart = prime2cart(Bval)
+    ucart = prime2cart(uuval)
     xf, yf, zf = getxyz(rf,hf,phf)
     x, y, z = getxyz(r,h,ph)
     pts = list(np.array([xf,yf,zf],dtype=float64).transpose(3,2,1,0).ravel())
@@ -11037,18 +11074,18 @@ def writevtk(fnameformat="fieldline%04d.vtk",no=0):
             ("x"    ,1,0, list(float64(x.transpose(2,1,0).ravel()))),
             ("y"    ,1,0, list(float64(y.transpose(2,1,0).ravel()))),
             ("z"    ,1,0, list(float64(z.transpose(2,1,0).ravel()))),
-            ("rho"  ,1,0, list(float64(rho.transpose(2,1,0).ravel()))),
-            ("ug"   ,1,0, list(float64(ug.transpose(2,1,0).ravel()))),
-            ("gamma",1,0, list(float64(uu[0].transpose(2,1,0).ravel()))),
-            ("v"    ,3,0, list(float64(ucart[1:4]/uu[0]).transpose(3,2,1,0).ravel())),
-            ("vx"   ,1,0, list(float64(ucart[1]/uu[0]).transpose(2,1,0).ravel())),
-            ("vy"   ,1,0, list(float64(ucart[2]/uu[0]).transpose(2,1,0).ravel())),
-            ("vz"   ,1,0, list(float64(ucart[3]/uu[0]).transpose(2,1,0).ravel())),
+            ("rho"  ,1,0, list(float64(rhoval.transpose(2,1,0).ravel()))),
+            ("ug"   ,1,0, list(float64(ugval.transpose(2,1,0).ravel()))),
+            ("gamma",1,0, list(float64(uuval[0].transpose(2,1,0).ravel()))),
+            ("v"    ,3,0, list(float64(ucart[1:4]/uuval[0]).transpose(3,2,1,0).ravel())),
+            ("vx"   ,1,0, list(float64(ucart[1]/uuval[0]).transpose(2,1,0).ravel())),
+            ("vy"   ,1,0, list(float64(ucart[2]/uuval[0]).transpose(2,1,0).ravel())),
+            ("vz"   ,1,0, list(float64(ucart[3]/uuval[0]).transpose(2,1,0).ravel())),
             ("B"    ,3,0, list(float64(Bcart[1:4].transpose(3,2,1,0).ravel()))),
             ("Bx"   ,1,0, list(float64(Bcart[1].transpose(2,1,0).ravel()))),
             ("By"   ,1,0, list(float64(Bcart[2].transpose(2,1,0).ravel()))),
             ("Bz"   ,1,0, list(float64(Bcart[3].transpose(2,1,0).ravel()))),
-            ("bsq"  ,1,0, list(float64(bsq.transpose(2,1,0).ravel()))))
+            ("bsq"  ,1,0, list(float64(bsqval.transpose(2,1,0).ravel()))))
     dims = (nx+1, ny+1, nz+1)
     visit_writer.WriteCurvilinearMesh(fname,  
                                               t, #time
