@@ -72,8 +72,9 @@ def avgvtkvars(n1=31, n2 = 53):
         n1 = n1, n2 = n2)
 
 def mkavgvtk(n1=31,n2=53):
+    global avgrho, avgug, avguu, avgB, avgbsq
     avgvtkvars(n1=n1,n2=n2)
-    writevtk(fnameformat="avg_%d_%d.vtk" % (n1, n2),rhoval=None,ugval=None,uuval=None,Bval=None,bsqval=None)
+    writevtk(fnameformat="avg_%d_%d.vtk" % (n1, n2),rhoval=avgrho,ugval=avgug,uuval=avguu,Bval=avgB,bsqval=avgbsq)
 
 def plotvars(suff=""):
     plt.figure();plotvar(avgbsqow[iofr(5.5)],label=r"$b^2\!/(\rho+\Gamma u)(1.1R_{\rm LC})$",fname="bsqow_11Rlc%s.pdf"%suff)
