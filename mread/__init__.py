@@ -44,6 +44,19 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
+def getrandxyz(sz=100):
+    rcut=r[(r>5)*(r<15)*(avgbsq/(avgrho+gam*avgug)<4)]
+    hcut=h[(r>5)*(r<15)*(avgbsq/(avgrho+gam*avgug)<4)]
+    pcut=ph[(r>5)*(r<15)*(avgbsq/(avgrho+gam*avgug)<4)]
+    xcut = rcut*np.sin(hcut)*np.cos(pcut)
+    ycut = rcut*np.sin(hcut)*np.sin(pcut)
+    zcut = rcut*np.cos(hcut)
+    rnd=np.random.randint(rcut.shape[0],size=sz)
+    return zip(xcut[rnd],ycut[rnd],zcut[rnd])
+
+def mksz(sz=100):
+    np.savetxt("cs.txt",getrandxyz(sz=sz))
+
 def computevars(n1=31, n2 = 53):
     global avgbsqow, avgbsqorho, avguut, avguur
     grid3d("gdump.bin", use2d = True)
@@ -53,6 +66,28 @@ def computevars(n1=31, n2 = 53):
          lambda: uu[0], 
          lambda: uu[1]*dxdxp[1,1]], 
         n1 = n1, n2 = n2)
+
+# rho
+# ug
+# gamma
+# v
+# B
+# bsq
+def avgvtkvars(n1=31, n2 = 53):
+    global avgrho, avgug, avguu, avgB, avgbsq
+    grid3d("gdump.bin", doface = True)
+    [avgrho, avgug, avguu, avgB, avgbsq] = avgvar(
+        [lambda: rho, 
+         lambda: ug, 
+         lambda: uu,
+         lambda: B,
+         lambda: bsq], 
+        n1 = n1, n2 = n2)
+
+def mkavgvtk(n1=31,n2=53):
+    global avgrho, avgug, avguu, avgB, avgbsq
+    avgvtkvars(n1=n1,n2=n2)
+    writevtk(fnameformat="avg_%d_%d.vtk" % (n1, n2),rhoval=avgrho,ugval=avgug,uuval=avguu,Bval=avgB,bsqval=avgbsq)
 
 def plotvars(suff=""):
     plt.figure();plotvar(avgbsqow[iofr(5.5)],label=r"$b^2\!/(\rho+\Gamma u)(1.1R_{\rm LC})$",fname="bsqow_11Rlc%s.pdf"%suff)
@@ -140,10 +175,16 @@ def rotatevar(funclist):
     for var in funclist:
         if op.isCallable(var):
             var = var()
-        outlist.append( 
-            np.concatenate((var[:,:,kcells:],  var[:,:,:kcells]),  axis=-1)*(1.-dkcells)+
-            np.concatenate((var[:,:,kcells+1:],var[:,:,:kcells+1]),axis=-1)*dkcells 
-            )
+        if var.ndim==3:
+            outlist.append( 
+                np.concatenate((var[:,:,kcells:],  var[:,:,:kcells]),  axis=-1)*(1.-dkcells)+
+                np.concatenate((var[:,:,kcells+1:],var[:,:,:kcells+1]),axis=-1)*dkcells 
+                )
+        else:
+            outlist.append( 
+                np.concatenate((var[:,:,:,kcells:],  var[:,:,:,:kcells]),  axis=-1)*(1.-dkcells)+
+                np.concatenate((var[:,:,:,kcells+1:],var[:,:,:,:kcells+1]),axis=-1)*dkcells 
+                )
     return outlist
 
 
@@ -1261,7 +1302,13 @@ def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
     k = kwargs.pop('k',0)
     #cmap = kwargs.pop('cmap',cm.jet)
     isfilled = kwargs.pop('isfilled',False)
-    if None != xcoord and None != ycoord:
+    xy = kwargs.pop('xy',0)
+    xmax = kwargs.pop('xmax',10)
+    ymax = kwargs.pop('ymax',5)
+    if xy:
+        xcoord = r * np.sin(h)
+        ycoord = r * np.cos(h)
+    if (None != xcoord and None != ycoord):
         xcoord = xcoord[:,:,None] if xcoord.ndim == 2 else xcoord[:,:,k:k+1]
         ycoord = ycoord[:,:,None] if ycoord.ndim == 2 else ycoord[:,:,k:k+1]
     myvar = myvar[:,:,None] if myvar.ndim == 2 else myvar[:,:,k:k+1]
@@ -1279,6 +1326,9 @@ def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
             res = ax.contour(xcoord[:,:,0],ycoord[:,:,0],myvar[:,:,0],nc,**kwargs)
     if( cb == True): #use color bar
         plt.colorbar(res,ax=ax)
+    if xy:
+        plt.xlim(0,xmax)
+        plt.ylim(-ymax,ymax)
     return res
 
 def reinterp(vartointerp,extent,ncell,domask=1,isasymmetric=False,rhor=None,kval=0):
@@ -7893,7 +7943,7 @@ def mkmovie(framesize=50, whichi=0, whichn=1,doqtymem=True,domakeavi=False,**kwa
     sys.stdout.flush()
     if domakeavi:
         #print( "Now you can make a movie by running:" )
-        #print( "ffmpeg -fflags +genpts -r 10 -i lrho%04d.png -vcodec mpeg4 -qmax 5 mov.avi" )
+        #print( "ffmpeg -fflags +genpts -r 10 -i frame%04d.png -vcodec mpeg4 -qmax 5 mov.avi" )
         os.system("mv mov_%s_Rzxym1.avi mov_%s_Rzxym1.bak.avi" % ( os.path.basename(os.getcwd()), os.path.basename(os.getcwd())) )
         #os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 mov_%s_Rzxym1.avi" % (os.path.basename(os.getcwd())) )
         os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 1 mov_%s_Rzxym1p1.avi" % (os.path.basename(os.getcwd())) )
@@ -10548,13 +10598,15 @@ def plotflux(doreload=True):
     plt.savefig("plotflux.eps",bbox_inches='tight',pad_inches=0.02,dpi=100)
     plt.savefig("plotflux.pdf",bbox_inches='tight',pad_inches=0.02,dpi=100)
 
-def mkpulsarmovie(startn=0,len=10):
+def mkpulsarmovie(startn=0,endn=-1,len=10):
     grid3d("gdump.bin",use2d=True)
     flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
     flist.sort()
     for fldindex, fldname in enumerate(flist):
         if fldindex < startn:
             continue
+        if endn>=0 and fldindex >= endn:
+            break
         print( "Reading " + fldname + " ..." )
         sys.stdout.flush()
         rfd("../"+fldname)
@@ -10584,6 +10636,7 @@ def mkpulsarmovie(startn=0,len=10):
             y=[-5,5]
             #plt.grid(b=True)
             plc(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,numc)*maxaphi/np.float(numc),colors='k')
+            plc(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(15*maxaphi/np.float(numc),),linewidths=3,colors='k')
             plt.plot(x,y,lw=3,color='r',alpha=0.5)
             #plc(uu[2]*dxdxp[2][2],xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=False,levels=np.arange(-0.5,0.5,0.1));plt.xlim(0,10);plt.ylim(-5,5)            
             #plc(np.log10(ug),xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,levels=np.arange(-3,2,0.1));plt.xlim(0,10);plt.ylim(-5,5)
@@ -10599,7 +10652,9 @@ def mkpulsarmovie(startn=0,len=10):
             el = Ellipse((0,0), 2, 2, facecolor='k', alpha=1)
             art=ax.add_artist(el)
             art.set_zorder(20)
-            plc(uu[1]*dxdxp[1,1],xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(0,1,0.1),lw=2,cb=True)
+            #plc(uu[1]*dxdxp[1,1],xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(0,1,0.1),lw=2,cb=True)
+            #plc(uu[1]*dxdxp[1,1],cb=True,levels=np.arange(0,10,1),xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,10);plt.ylim(-5,5)
+            plc(uu[0],cb=True,levels=np.arange(0,10,1),xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,10);plt.ylim(-5,5)
             rmax = len
             plt.xlim(0,rmax)
             plt.ylim(-0.5*rmax,0.5*rmax)
@@ -11021,12 +11076,33 @@ def prime2cart(V):
     Vynorm=VRnorm*np.sin(ph)+Vpnorm*np.cos(ph)
     return(np.array([0*Vxnorm,Vxnorm,Vynorm,Vznorm]))
 
-def writevtk(fnameformat="fieldline%04d.vtk",no=0):
-    global ti, tj, tk, r, h, ph, rho, uu, B, bsq
-    fname = fnameformat % int(no)
-    Bcart = prime2cart(B)
-    ucart = prime2cart(uu)
+#list of variables:
+# rho
+# ug
+# gamma
+# v
+# B
+# bsq
+
+def writevtk(fnameformat="fieldline%04d.vtk",t=0,no=None,rhoval=None,ugval=None,uuval=None,Bval=None,bsqval=None):
+    global ti, tj, tk, r, h, ph, rho, ug, uu, B, bsq
+    if no is not None:
+        fname = fnameformat % int(no)
+    else:
+        fname = fnameformat
     cvel() #for bsq
+    if rhoval is None:
+        rhoval = rho
+    if ugval is None:
+        ugval = ug
+    if uuval is None:
+        uuval = uu
+    if Bval is None:
+        Bval = B
+    if bsqval is None:
+        bsqval = bsq
+    Bcart = prime2cart(Bval)
+    ucart = prime2cart(uuval)
     xf, yf, zf = getxyz(rf,hf,phf)
     x, y, z = getxyz(r,h,ph)
     pts = list(np.array([xf,yf,zf],dtype=float64).transpose(3,2,1,0).ravel())
@@ -11037,18 +11113,18 @@ def writevtk(fnameformat="fieldline%04d.vtk",no=0):
             ("x"    ,1,0, list(float64(x.transpose(2,1,0).ravel()))),
             ("y"    ,1,0, list(float64(y.transpose(2,1,0).ravel()))),
             ("z"    ,1,0, list(float64(z.transpose(2,1,0).ravel()))),
-            ("rho"  ,1,0, list(float64(rho.transpose(2,1,0).ravel()))),
-            ("ug"   ,1,0, list(float64(ug.transpose(2,1,0).ravel()))),
-            ("gamma",1,0, list(float64(uu[0].transpose(2,1,0).ravel()))),
-            ("v"    ,3,0, list(float64(ucart[1:4]/uu[0]).transpose(3,2,1,0).ravel())),
-            ("vx"   ,1,0, list(float64(ucart[1]/uu[0]).transpose(2,1,0).ravel())),
-            ("vy"   ,1,0, list(float64(ucart[2]/uu[0]).transpose(2,1,0).ravel())),
-            ("vz"   ,1,0, list(float64(ucart[3]/uu[0]).transpose(2,1,0).ravel())),
+            ("rho"  ,1,0, list(float64(rhoval.transpose(2,1,0).ravel()))),
+            ("ug"   ,1,0, list(float64(ugval.transpose(2,1,0).ravel()))),
+            ("gamma",1,0, list(float64(uuval[0].transpose(2,1,0).ravel()))),
+            ("v"    ,3,0, list(float64(ucart[1:4]/uuval[0]).transpose(3,2,1,0).ravel())),
+            ("vx"   ,1,0, list(float64(ucart[1]/uuval[0]).transpose(2,1,0).ravel())),
+            ("vy"   ,1,0, list(float64(ucart[2]/uuval[0]).transpose(2,1,0).ravel())),
+            ("vz"   ,1,0, list(float64(ucart[3]/uuval[0]).transpose(2,1,0).ravel())),
             ("B"    ,3,0, list(float64(Bcart[1:4].transpose(3,2,1,0).ravel()))),
             ("Bx"   ,1,0, list(float64(Bcart[1].transpose(2,1,0).ravel()))),
             ("By"   ,1,0, list(float64(Bcart[2].transpose(2,1,0).ravel()))),
             ("Bz"   ,1,0, list(float64(Bcart[3].transpose(2,1,0).ravel()))),
-            ("bsq"  ,1,0, list(float64(bsq.transpose(2,1,0).ravel()))))
+            ("bsq"  ,1,0, list(float64(bsqval.transpose(2,1,0).ravel()))))
     dims = (nx+1, ny+1, nz+1)
     visit_writer.WriteCurvilinearMesh(fname,  
                                               t, #time
@@ -11061,7 +11137,7 @@ def writevtk(fnameformat="fieldline%04d.vtk",no=0):
 def makevtk(no=52):
     #grid3d("gdump.bin",doface=True) #,use2d=True)
     rfd("fieldline%04d.bin" % no)
-    writevtk(no=no)
+    writevtk(no=no,t=t)
 
 if __name__ == "__main__":
     if False:
