@@ -44,6 +44,19 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
+def getrandxyz(sz=100):
+    rcut=r[(r>5)*(r<15)*(avgbsq/(avgrho+gam*avgug)<4)]
+    hcut=h[(r>5)*(r<15)*(avgbsq/(avgrho+gam*avgug)<4)]
+    pcut=ph[(r>5)*(r<15)*(avgbsq/(avgrho+gam*avgug)<4)]
+    xcut = rcut*np.sin(hcut)*np.cos(pcut)
+    ycut = rcut*np.sin(hcut)*np.sin(pcut)
+    zcut = rcut*np.cos(hcut)
+    rnd=np.random.randint(rcut.shape[0],size=sz)
+    return zip(xcut[rnd],ycut[rnd],zcut[rnd])
+
+def mksz(sz=100):
+    np.savetxt("cs.txt",getrandxyz(sz=sz))
+
 def computevars(n1=31, n2 = 53):
     global avgbsqow, avgbsqorho, avguut, avguur
     grid3d("gdump.bin", use2d = True)
@@ -7930,7 +7943,7 @@ def mkmovie(framesize=50, whichi=0, whichn=1,doqtymem=True,domakeavi=False,**kwa
     sys.stdout.flush()
     if domakeavi:
         #print( "Now you can make a movie by running:" )
-        #print( "ffmpeg -fflags +genpts -r 10 -i lrho%04d.png -vcodec mpeg4 -qmax 5 mov.avi" )
+        #print( "ffmpeg -fflags +genpts -r 10 -i frame%04d.png -vcodec mpeg4 -qmax 5 mov.avi" )
         os.system("mv mov_%s_Rzxym1.avi mov_%s_Rzxym1.bak.avi" % ( os.path.basename(os.getcwd()), os.path.basename(os.getcwd())) )
         #os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 mov_%s_Rzxym1.avi" % (os.path.basename(os.getcwd())) )
         os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 1 mov_%s_Rzxym1p1.avi" % (os.path.basename(os.getcwd())) )
@@ -10623,6 +10636,7 @@ def mkpulsarmovie(startn=0,endn=-1,len=10):
             y=[-5,5]
             #plt.grid(b=True)
             plc(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,numc)*maxaphi/np.float(numc),colors='k')
+            plc(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(15*maxaphi/np.float(numc),),linewidths=3,colors='k')
             plt.plot(x,y,lw=3,color='r',alpha=0.5)
             #plc(uu[2]*dxdxp[2][2],xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=False,levels=np.arange(-0.5,0.5,0.1));plt.xlim(0,10);plt.ylim(-5,5)            
             #plc(np.log10(ug),xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,levels=np.arange(-3,2,0.1));plt.xlim(0,10);plt.ylim(-5,5)
@@ -10639,7 +10653,8 @@ def mkpulsarmovie(startn=0,endn=-1,len=10):
             art=ax.add_artist(el)
             art.set_zorder(20)
             #plc(uu[1]*dxdxp[1,1],xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(0,1,0.1),lw=2,cb=True)
-            plc(uu[1]*dxdxp[1,1],cb=True,levels=np.arange(0,10,1),xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,10);plt.ylim(-5,5)
+            #plc(uu[1]*dxdxp[1,1],cb=True,levels=np.arange(0,10,1),xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,10);plt.ylim(-5,5)
+            plc(uu[0],cb=True,levels=np.arange(0,10,1),xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,10);plt.ylim(-5,5)
             rmax = len
             plt.xlim(0,rmax)
             plt.ylim(-0.5*rmax,0.5*rmax)
@@ -11069,7 +11084,7 @@ def prime2cart(V):
 # B
 # bsq
 
-def writevtk(fnameformat="fieldline%04d.vtk",no=None,rhoval=None,ugval=None,uuval=None,Bval=None,bsqval=None):
+def writevtk(fnameformat="fieldline%04d.vtk",t=0,no=None,rhoval=None,ugval=None,uuval=None,Bval=None,bsqval=None):
     global ti, tj, tk, r, h, ph, rho, ug, uu, B, bsq
     if no is not None:
         fname = fnameformat % int(no)
@@ -11122,7 +11137,7 @@ def writevtk(fnameformat="fieldline%04d.vtk",no=None,rhoval=None,ugval=None,uuva
 def makevtk(no=52):
     #grid3d("gdump.bin",doface=True) #,use2d=True)
     rfd("fieldline%04d.bin" % no)
-    writevtk(no=no)
+    writevtk(no=no,t=t)
 
 if __name__ == "__main__":
     if False:
