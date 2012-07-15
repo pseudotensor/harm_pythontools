@@ -5,14 +5,15 @@ def mkvmov():
     for no in xrange(0,74):
         VisitScript(no=no,r0=1.05)
 
-def VisitScript(no=73,r0=1.05,cdb=True,pf=1):
+def VisitScript(no=73,r0=1.05,cdb=True,pf=1,i=60.):
     # You can run this by:
     #     Saving the script below to "script.py"
     #     Running "visit -cli -s script.py" 
     #OpenDatabase("/Users/atchekho/run2/fixdt_x2_60/fieldline0000.vtk")
     #dbname = "/home/atchekho/run/fixdt_x2_60/fieldline%04d.vtk" % no
     # dbname = "/home/atchekho/run2/fixdt_60/fieldline%04d.vtk" % no
-    dbname = "/home/atchekho/run2/fixdt_x2_60/avg_31_73.vtk"
+    # dbname = "/home/atchekho/run2/fixdt_x2_60/avg_31_73.vtk"
+    dbname = "/home/atchekho/run2/fixdt_90/avg_61_120.vtk"
     OpenDatabase(dbname)
     #OpenDatabase("/Users/atchekho/run/test3d_1cpu_16x16x8/fieldline0000.vtk")
     DefineScalarExpression("Rsq", "x*x+y*y")
@@ -60,7 +61,7 @@ def VisitScript(no=73,r0=1.05,cdb=True,pf=1):
     #p=GetPlotOptions()
     omega = 0.2
     phi0 = 0
-    fp = compute_footpoints(r0 = r0, Rlc=1/omega, npts=40, whichpole="up", alpha_y=np.pi*60./180., alpha_z=phi0 + omega*vt,pf=pf)
+    fp = compute_footpoints(r0 = r0, Rlc=1/omega, npts=40, whichpole="up", alpha_y=np.pi*i/180., alpha_z=phi0 + omega*vt,pf=pf)
     #print fp
     p=StreamlineAttributes()
     p.sourceType = p.SpecifiedPointList  # SpecifiedPoint, SpecifiedPointList, SpecifiedLine, SpecifiedCircle, SpecifiedPlane, SpecifiedSphere, SpecifiedBox, Selection
@@ -90,7 +91,7 @@ def VisitScript(no=73,r0=1.05,cdb=True,pf=1):
     #p=GetPlotOptions()
     omega = 0.2
     phi0 = 0
-    fp = compute_footpoints(r0 = r0, Rlc=1/omega, npts=40, whichpole="dn", alpha_y=np.pi*60./180., alpha_z=phi0 + omega*vt, pf=pf)
+    fp = compute_footpoints(r0 = r0, Rlc=1/omega, npts=40, whichpole="dn", alpha_y=np.pi*i/180., alpha_z=phi0 + omega*vt, pf=pf)
     #print fp
     p=StreamlineAttributes()
     p.sourceType = p.SpecifiedPointList  # SpecifiedPoint, SpecifiedPointList, SpecifiedLine, SpecifiedCircle, SpecifiedPlane, SpecifiedSphere, SpecifiedBox, Selection
@@ -220,7 +221,8 @@ def PlotVelocityInCurrentSheet():
     StreamlineAtts.sampleDensity2 = 2
     StreamlineAtts.coloringMethod = StreamlineAtts.Solid  # Solid, ColorBySpeed, ColorByVorticity, ColorByLength, ColorByTime, ColorBySeedPointID, ColorByVariable, ColorByCorrelationDistance
     StreamlineAtts.colorTableName = "PuOr"
-    StreamlineAtts.singleColor = (255, 153, 0, 255)    StreamlineAtts.legendFlag = 1
+    StreamlineAtts.singleColor = (255, 153, 0, 255)
+    StreamlineAtts.legendFlag = 1
     StreamlineAtts.lightingFlag = 1
     StreamlineAtts.streamlineDirection = StreamlineAtts.Forward  # Forward, Backward, Both
     StreamlineAtts.maxSteps = 1000
