@@ -44,6 +44,13 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
+
+def plotomegahor():
+    ihor = iofr(rhor)
+    omegah=a/(2*rhor)
+    plt.plot(h[ihor,:,0],avg_omegaf1b[ihor,:,0]*dxdxp[3,3,0,0,0]/omegah)
+    plt.xlim(0,np.pi);plt.ylim(0,0.5)
+
 def getrandxyz(sz=100):
     rcut=r[(r>5)*(r<15)*(avgbsq/(avgrho+gam*avgug)<4)]
     hcut=h[(r>5)*(r<15)*(avgbsq/(avgrho+gam*avgug)<4)]
