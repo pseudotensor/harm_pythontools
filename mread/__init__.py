@@ -2470,10 +2470,10 @@ def grid3dlight(dumpname): #read gdump: header and body
 
 def rdebug(debugfname):
     global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a
-    global fail0,floor0,limitgamma0,inflow0,failrho0,failu0,failrhou0,precgam0,precu0,toentropy0,tocold0,eosfail0
-    global fail1,floor1,limitgamma1,inflow1,failrho1,failu1,failrhou1,precgam1,precu1,toentropy1,tocold1,eosfail1
-    global fail2,floor2,limitgamma2,inflow2,failrho2,failu2,failrhou2,precgam2,precu2,toentropy2,tocold2,eosfail2
-    global fail3,floor3,limitgamma3,inflow3,failrho3,failu3,failrhou3,precgam3,precu3,toentropy3,tocold3,eosfail3
+    global fail0,floor0,limitgamma0,inflow0,failrho0,failu0,failrhou0,precgam0,precu0,toentropy0,tocold0,eosfail0,bndone0,bndtwo0,onestep0
+    global fail1,floor1,limitgamma1,inflow1,failrho1,failu1,failrhou1,precgam1,precu1,toentropy1,tocold1,eosfail1,bndone1,bndtwo1,onestep1
+    global fail2,floor2,limitgamma2,inflow2,failrho2,failu2,failrhou2,precgam2,precu2,toentropy2,tocold2,eosfail2,bndone2,bndtwo2,onestep2
+    global fail3,floor3,limitgamma3,inflow3,failrho3,failu3,failrhou3,precgam3,precu3,toentropy3,tocold3,eosfail3,bndone3,bndtwo3,onestep3
     global dtot0, dtot1, dtot2, dtot3
     global lgdtot0, lgdtot1, lgdtot2, lgdtot3
     global failtot0, failtot1, failtot2, failtot3 
@@ -2502,11 +2502,11 @@ def rdebug(debugfname):
                       unpack = True ).view().reshape((-1,nx,ny,nz), order='F')
     gd=myfloat(gd)
     (
-       fail0,floor0,limitgamma0,inflow0,failrho0,failu0,failrhou0,precgam0,precu0,toentropy0,tocold0,eosfail0,
-       fail1,floor1,limitgamma1,inflow1,failrho1,failu1,failrhou1,precgam1,precu1,toentropy1,tocold1,eosfail1,
-       fail2,floor2,limitgamma2,inflow2,failrho2,failu2,failrhou2,precgam2,precu2,toentropy2,tocold2,eosfail2,
-       fail3,floor3,limitgamma3,inflow3,failrho3,failu3,failrhou3,precgam3,precu3,toentropy3,tocold3,eosfail3
-    ) = gd[0:48,:,:,:].view() 
+       fail0,floor0,limitgamma0,inflow0,failrho0,failu0,failrhou0,precgam0,precu0,toentropy0,tocold0,eosfail0,bndone0,bndtwo0,onestep0,
+       fail1,floor1,limitgamma1,inflow1,failrho1,failu1,failrhou1,precgam1,precu1,toentropy1,tocold1,eosfail1,bndone1,bndtwo1,onestep1,
+       fail2,floor2,limitgamma2,inflow2,failrho2,failu2,failrhou2,precgam2,precu2,toentropy2,tocold2,eosfail2,bndone2,bndtwo2,onestep2,
+       fail3,floor3,limitgamma3,inflow3,failrho3,failu3,failrhou3,precgam3,precu3,toentropy3,tocold3,eosfail3,bndone3,bndtwo3,onestep3
+    ) = gd[0:60,:,:,:].view() 
  
     # shows where *ever* failed or not
     lg1fail=np.log10(fail0+1)
