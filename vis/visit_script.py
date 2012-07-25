@@ -116,7 +116,10 @@ def VisitScript(no=73,r0=1.05,cdb=True,pf=1,i=60.):
     SetPlotOptions(p)
     #
     # visualize current sheet
-    PlotCurrentSheet()
+    if(0):
+        PlotCurrentSheet()
+    elif(1):
+        PlotChargeInCurrentSheet()
     #
     # visualize velocity in current sheet
     PlotVelocityInCurrentSheet()
@@ -157,6 +160,96 @@ def VisitScript(no=73,r0=1.05,cdb=True,pf=1,i=60.):
         SetActivePlots((0, 1, 2))
         DeleteActivePlots()
         CloseDatabase(dbname)
+
+def PlotChargeInCurrentSheet():
+    #Plot charge times the square of spherical polar radius (this makes charge visible throughout)
+    DefineScalarExpression("rhocrsq","rhoc*rsphsq")
+    AddPlot("Pseudocolor", "rhocrsq", 1, 0)
+    AddOperator("Threshold", 0)
+    SetActivePlots(4)
+    SetActivePlots(4)
+    ThresholdAtts = ThresholdAttributes()
+    ThresholdAtts.outputMeshType = 0
+    ThresholdAtts.listedVarNames = ("bsqow")
+    ThresholdAtts.zonePortions = (0)
+    ThresholdAtts.lowerBounds = (0)
+    ThresholdAtts.upperBounds = (2)
+    ThresholdAtts.defaultVarName = "rhocrsq"
+    ThresholdAtts.defaultVarIsScalar = 1
+    SetOperatorOptions(ThresholdAtts, 0)
+    AddOperator("Clip", 0)
+    DemoteOperator(1, 0)
+    ClipAtts = ClipAttributes()
+    ClipAtts.quality = ClipAtts.Fast  # Fast, Accurate
+    ClipAtts.funcType = ClipAtts.Sphere  # Plane, Sphere
+    ClipAtts.plane1Status = 1
+    ClipAtts.plane2Status = 0
+    ClipAtts.plane3Status = 0
+    ClipAtts.plane1Origin = (0, 0, 0)
+    ClipAtts.plane2Origin = (0, 0, 0)
+    ClipAtts.plane3Origin = (0, 0, 0)
+    ClipAtts.plane1Normal = (1, 0, 0)
+    ClipAtts.plane2Normal = (0, 1, 0)
+    ClipAtts.plane3Normal = (0, 0, 1)
+    ClipAtts.planeInverse = 0
+    ClipAtts.planeToolControlledClipPlane = ClipAtts.Plane1  # None, Plane1, Plane2, Plane3
+    ClipAtts.center = (0, 0, 0)
+    ClipAtts.radius = 15
+    ClipAtts.sphereInverse = 1
+    SetOperatorOptions(ClipAtts, 0)
+    DrawPlots()
+    # MAINTENANCE ISSUE: SetSuppressMessagesRPC is not handled in Logging.C. Please contact a VisIt developer.
+    SaveSession("/Users/atchekho/.visit/crash_recovery.session")
+    # MAINTENANCE ISSUE: SetSuppressMessagesRPC is not handled in Logging.C. Please contact a VisIt developer.
+    PseudocolorAtts = PseudocolorAttributes()
+    PseudocolorAtts.legendFlag = 1
+    PseudocolorAtts.lightingFlag = 1
+    PseudocolorAtts.minFlag = 0
+    PseudocolorAtts.maxFlag = 0
+    PseudocolorAtts.centering = PseudocolorAtts.Natural  # Natural, Nodal, Zonal
+    PseudocolorAtts.scaling = PseudocolorAtts.Linear  # Linear, Log, Skew
+    PseudocolorAtts.limitsMode = PseudocolorAtts.OriginalData  # OriginalData, CurrentPlot
+    PseudocolorAtts.min = 0
+    PseudocolorAtts.max = 1
+    PseudocolorAtts.pointSize = 0.05
+    PseudocolorAtts.pointType = PseudocolorAtts.Point  # Box, Axis, Icosahedron, Point, Sphere
+    PseudocolorAtts.skewFactor = 1
+    PseudocolorAtts.opacity = 1
+    PseudocolorAtts.colorTableName = "hot_and_cold"
+    PseudocolorAtts.invertColorTable = 0
+    PseudocolorAtts.smoothingLevel = 0
+    PseudocolorAtts.pointSizeVarEnabled = 0
+    PseudocolorAtts.pointSizeVar = "default"
+    PseudocolorAtts.pointSizePixels = 2
+    PseudocolorAtts.lineStyle = PseudocolorAtts.SOLID  # SOLID, DASH, DOT, DOTDASH
+    PseudocolorAtts.lineWidth = 0
+    PseudocolorAtts.opacityType = PseudocolorAtts.Explicit  # Explicit, ColorTable
+    SetPlotOptions(PseudocolorAtts)
+    PseudocolorAtts = PseudocolorAttributes()
+    PseudocolorAtts.legendFlag = 1
+    PseudocolorAtts.lightingFlag = 1
+    PseudocolorAtts.minFlag = 1
+    PseudocolorAtts.maxFlag = 1
+    PseudocolorAtts.centering = PseudocolorAtts.Natural  # Natural, Nodal, Zonal
+    PseudocolorAtts.scaling = PseudocolorAtts.Linear  # Linear, Log, Skew
+    PseudocolorAtts.limitsMode = PseudocolorAtts.OriginalData  # OriginalData, CurrentPlot
+    PseudocolorAtts.min = -15
+    PseudocolorAtts.max = 15
+    PseudocolorAtts.pointSize = 0.05
+    PseudocolorAtts.pointType = PseudocolorAtts.Point  # Box, Axis, Icosahedron, Point, Sphere
+    PseudocolorAtts.skewFactor = 1
+    PseudocolorAtts.opacity = 1
+    PseudocolorAtts.colorTableName = "hot_and_cold"
+    PseudocolorAtts.invertColorTable = 0
+    PseudocolorAtts.smoothingLevel = 0
+    PseudocolorAtts.pointSizeVarEnabled = 0
+    PseudocolorAtts.pointSizeVar = "default"
+    PseudocolorAtts.pointSizePixels = 2
+    PseudocolorAtts.lineStyle = PseudocolorAtts.SOLID  # SOLID, DASH, DOT, DOTDASH
+    PseudocolorAtts.lineWidth = 0
+    PseudocolorAtts.opacityType = PseudocolorAtts.Explicit  # Explicit, ColorTable
+    SetPlotOptions(PseudocolorAtts)
+
 
 def PlotVelocityInCurrentSheet():
     AddPlot("Streamline", "v", 1, 0)
