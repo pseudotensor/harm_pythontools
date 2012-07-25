@@ -23,7 +23,8 @@ def VisitScript(no=73,r0=1.05,cdb=True,pf=1,i=60.):
     #p.contourMethod="Value"
     #print p
     #p.contourValue=1.04
-    p.singleColor=(255,0,0,128)  #red, 50% transparent
+    #p.singleColor=(255,0,0,128)  #red, 50% transparent
+    p.singleColor = (192, 192, 192, 128) #grey, 50% transparent
     p.SetColorType(0)
     p.SetMin(25)
     #p.SetMax(5.1)
