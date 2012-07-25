@@ -81,20 +81,21 @@ def computevars(n1=31, n2 = 53):
 # B
 # bsq
 def avgvtkvars(n1=31, n2 = 53):
-    global avgrho, avgug, avguu, avgB, avgbsq
+    global avgrho, avgug, avguu, avgB, avgbsq, avgrhoc
     grid3d("gdump.bin", doface = True)
-    [avgrho, avgug, avguu, avgB, avgbsq] = avgvar(
+    [avgrho, avgug, avguu, avgB, avgbsq, avgrhoc] = avgvar(
         [lambda: rho, 
          lambda: ug, 
          lambda: uu,
          lambda: B,
-         lambda: bsq], 
+         lambda: bsq,
+         lambda: rhoc], 
         n1 = n1, n2 = n2)
 
 def mkavgvtk(n1=31,n2=53):
-    global avgrho, avgug, avguu, avgB, avgbsq
+    global avgrho, avgug, avguu, avgB, avgbsq, avgrhoc
     avgvtkvars(n1=n1,n2=n2)
-    writevtk(fnameformat="avg_%d_%d.vtk" % (n1, n2),rhoval=avgrho,ugval=avgug,uuval=avguu,Bval=avgB,bsqval=avgbsq)
+    writevtk(fnameformat="avg_%d_%d.vtk" % (n1, n2),rhoval=avgrho,ugval=avgug,uuval=avguu,Bval=avgB,bsqval=avgbsq,rhocval=avgrhoc)
 
 def plotvars(suff=""):
     plt.figure();plotvar(avgbsqow[iofr(5.5)],label=r"$b^2\!/(\rho+\Gamma u)(1.1R_{\rm LC})$",fname="bsqow_11Rlc%s.pdf"%suff)
@@ -11111,8 +11112,8 @@ def prime2cart(V):
 # B
 # bsq
 
-def writevtk(fnameformat="fieldline%04d.vtk",t=0,no=None,rhoval=None,ugval=None,uuval=None,Bval=None,bsqval=None):
-    global ti, tj, tk, r, h, ph, rho, ug, uu, B, bsq
+def writevtk(fnameformat="fieldline%04d.vtk",t=0,no=None,rhoval=None,ugval=None,uuval=None,Bval=None,bsqval=None,rhocval=None):
+    global ti, tj, tk, r, h, ph, rho, ug, uu, B, bsq, rhoc
     if no is not None:
         fname = fnameformat % int(no)
     else:
@@ -11128,6 +11129,8 @@ def writevtk(fnameformat="fieldline%04d.vtk",t=0,no=None,rhoval=None,ugval=None,
         Bval = B
     if bsqval is None:
         bsqval = bsq
+    if avgrhoc is None:
+        rhocval = rhoc
     Bcart = prime2cart(Bval)
     ucart = prime2cart(uuval)
     xf, yf, zf = getxyz(rf,hf,phf)
@@ -11151,7 +11154,8 @@ def writevtk(fnameformat="fieldline%04d.vtk",t=0,no=None,rhoval=None,ugval=None,
             ("Bx"   ,1,0, list(float64(Bcart[1].transpose(2,1,0).ravel()))),
             ("By"   ,1,0, list(float64(Bcart[2].transpose(2,1,0).ravel()))),
             ("Bz"   ,1,0, list(float64(Bcart[3].transpose(2,1,0).ravel()))),
-            ("bsq"  ,1,0, list(float64(bsqval.transpose(2,1,0).ravel()))))
+            ("bsq"  ,1,0, list(float64(bsqval.transpose(2,1,0).ravel()))),
+            ("rhoc", 1,0, list(float64(rhocval.transpose(2,1,0).ravel()))))
     dims = (nx+1, ny+1, nz+1)
     visit_writer.WriteCurvilinearMesh(fname,  
                                               t, #time
