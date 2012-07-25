@@ -3670,7 +3670,7 @@ def Tcalcud():
     isunbound=(-unb>1.0)
 
 def faraday():
-    global fdd, fuu, omegaf1, omegaf2, omegaf1b, omegaf2b
+    global fdd, fuu, omegaf1, omegaf2, omegaf1b, omegaf2b, rhoc
     if 'fdd' in globals():
         del fdd
     if 'fuu' in globals():
@@ -3749,7 +3749,23 @@ def faraday():
     omegaf2b=np.fabs(v3nonhat) + np.sign(uu[1])*(vpol/Bpol)*np.fabs(B3nonhat)
     #
     omegaf1b=v3nonhat - B3nonhat*(v1hat*B1hat+v2hat*B2hat)/(B1hat**2+B2hat**2)
-
+    #
+    # charge
+    #
+    rhoc = np.zeros_like(rho)
+    if nx>=2:
+        rhoc[1:-1] += ((gdet*fuu[0,1])[2:]-(gdet*fuu[0,1])[:-2])/(2*_dx1)
+    if ny>2:
+        rhoc[:,1:-1] += ((gdet*fuu[0,2])[:,2:]-(gdet*fuu[0,2])[:,:-2])/(2*_dx2)
+    if ny>=2:
+        rhoc[:,0,:nz/2] += ((gdet*fuu[0,2])[:,1,:nz/2]+(gdet*fuu[0,2])[:,0,nz/2:])/(2*_dx2)
+        rhoc[:,0,nz/2:] += ((gdet*fuu[0,2])[:,1,nz/2:]+(gdet*fuu[0,2])[:,0,:nz/2])/(2*_dx2)
+    if nz>2:
+        rhoc[:,:,1:-1] += ((gdet*fuu[0,3])[:,:,2:]-(gdet*fuu[0,3])[:,:,:-2])/(2*_dx3)
+    if nz>=2:
+        rhoc[:,:,0] += ((gdet*fuu[0,3])[:,:,1]-(gdet*fuu[0,3])[:,:,-1])/(2*_dx3)
+        rhoc[:,:,-1] += ((gdet*fuu[0,3])[:,:,0]-(gdet*fuu[0,3])[:,:,-2])/(2*_dx3)
+    rhoc /= gdet
 
 def jetpowcalc(which=2,minbsqorho=10,minmu=None,donorthsouth=0,excludebound=True):
     if which==0:
