@@ -595,4 +595,4 @@ def get_visit_footpoints(r0 = 1.5, Rlc=5, npts=10, whichpole="up", alpha_y=0, al
 
 
 if __name__ == "__main__":
-    testvariable = 3
+    VisitScript(cdb=False)
