@@ -12,8 +12,8 @@ def VisitScript(no=73,r0=1.05,cdb=True,pf=1,i=60.):
     #OpenDatabase("/Users/atchekho/run2/fixdt_x2_60/fieldline0000.vtk")
     #dbname = "/home/atchekho/run/fixdt_x2_60/fieldline%04d.vtk" % no
     # dbname = "/home/atchekho/run2/fixdt_60/fieldline%04d.vtk" % no
-    # dbname = "/home/atchekho/run2/fixdt_x2_60/avg_31_73.vtk"
-    dbname = "/home/atchekho/run2/fixdt_90/avg_61_120.vtk"
+    dbname = "/home/atchekho/run2/fixdt_x2_60/avg_31_73.vtk"
+    #dbname = "/home/atchekho/run2/fixdt_90/avg_61_120.vtk"
     OpenDatabase(dbname)
     #OpenDatabase("/Users/atchekho/run/test3d_1cpu_16x16x8/fieldline0000.vtk")
     DefineScalarExpression("Rsq", "x*x+y*y")
