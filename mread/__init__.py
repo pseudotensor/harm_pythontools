@@ -145,6 +145,7 @@ def avgvar(funclist, n1 = 0, n2 = 0 ):
         print( "Reading %s..." % fname )
         rfd(fname)
         cvel()
+        faraday()
         if n1 == i:
             avgval = rotatevar( funclist )
         else:
