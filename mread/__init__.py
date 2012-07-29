@@ -1295,10 +1295,12 @@ def Qmriavg(dir=2):
 
 
 def plco(myvar,xcoord=None,ycoord=None,ax=None,**kwargs):
+    global r,h,ph
     plt.clf()
     return plc(myvar,xcoord,ycoord,ax,**kwargs)
 
 def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
+    global r,h,ph
     #xcoord = kwargs.pop('x1', None)
     #ycoord = kwargs.pop('x2', None)
     if(np.min(myvar)==np.max(myvar)):
