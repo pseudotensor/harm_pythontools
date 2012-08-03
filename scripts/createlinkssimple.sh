@@ -16,6 +16,7 @@ fi
 
 thedir=$1
 
+mkdir -p $thedir
 
 # On ki-jmck:
 
@@ -142,6 +143,10 @@ do
     then
         ln -s $manydir/$mydir/dumps/gdump.bin .
         ln -s $manydir/$mydir/dumps/dump0000.bin .
+    fi
+    if [ -e $manydir/$mydir/dumps/gdump.THETAROT0.bin ]
+    then
+        ln -s $manydir/$mydir/dumps/gdump.THETAROT0.bin .
     fi
 done
 
