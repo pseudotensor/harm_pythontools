@@ -81,20 +81,21 @@ def computevars(n1=31, n2 = 53):
 # B
 # bsq
 def avgvtkvars(n1=31, n2 = 53):
-    global avgrho, avgug, avguu, avgB, avgbsq
+    global avgrho, avgug, avguu, avgB, avgbsq, avgrhoc
     grid3d("gdump.bin", doface = True)
-    [avgrho, avgug, avguu, avgB, avgbsq] = avgvar(
+    [avgrho, avgug, avguu, avgB, avgbsq, avgrhoc] = avgvar(
         [lambda: rho, 
          lambda: ug, 
          lambda: uu,
          lambda: B,
-         lambda: bsq], 
+         lambda: bsq,
+         lambda: rhoc], 
         n1 = n1, n2 = n2)
 
 def mkavgvtk(n1=31,n2=53):
-    global avgrho, avgug, avguu, avgB, avgbsq
+    global avgrho, avgug, avguu, avgB, avgbsq, avgrhoc
     avgvtkvars(n1=n1,n2=n2)
-    writevtk(fnameformat="avg_%d_%d.vtk" % (n1, n2),rhoval=avgrho,ugval=avgug,uuval=avguu,Bval=avgB,bsqval=avgbsq)
+    writevtk(fnameformat="avg_%d_%d.vtk" % (n1, n2),rhoval=avgrho,ugval=avgug,uuval=avguu,Bval=avgB,bsqval=avgbsq,rhocval=avgrhoc)
 
 def plotvars(suff=""):
     plt.figure();plotvar(avgbsqow[iofr(5.5)],label=r"$b^2\!/(\rho+\Gamma u)(1.1R_{\rm LC})$",fname="bsqow_11Rlc%s.pdf"%suff)
@@ -144,6 +145,7 @@ def avgvar(funclist, n1 = 0, n2 = 0 ):
         print( "Reading %s..." % fname )
         rfd(fname)
         cvel()
+        faraday()
         if n1 == i:
             avgval = rotatevar( funclist )
         else:
@@ -3672,7 +3674,7 @@ def Tcalcud():
     isunbound=(-unb>1.0)
 
 def faraday():
-    global fdd, fuu, omegaf1, omegaf2, omegaf1b, omegaf2b
+    global fdd, fuu, omegaf1, omegaf2, omegaf1b, omegaf2b, rhoc
     if 'fdd' in globals():
         del fdd
     if 'fuu' in globals():
@@ -3751,7 +3753,23 @@ def faraday():
     omegaf2b=np.fabs(v3nonhat) + np.sign(uu[1])*(vpol/Bpol)*np.fabs(B3nonhat)
     #
     omegaf1b=v3nonhat - B3nonhat*(v1hat*B1hat+v2hat*B2hat)/(B1hat**2+B2hat**2)
-
+    #
+    # charge
+    #
+    rhoc = np.zeros_like(rho)
+    if nx>=2:
+        rhoc[1:-1] += ((gdet*fuu[0,1])[2:]-(gdet*fuu[0,1])[:-2])/(2*_dx1)
+    if ny>2:
+        rhoc[:,1:-1] += ((gdet*fuu[0,2])[:,2:]-(gdet*fuu[0,2])[:,:-2])/(2*_dx2)
+    if ny>=2:
+        rhoc[:,0,:nz/2] += ((gdet*fuu[0,2])[:,1,:nz/2]+(gdet*fuu[0,2])[:,0,nz/2:])/(2*_dx2)
+        rhoc[:,0,nz/2:] += ((gdet*fuu[0,2])[:,1,nz/2:]+(gdet*fuu[0,2])[:,0,:nz/2])/(2*_dx2)
+    if nz>2:
+        rhoc[:,:,1:-1] += ((gdet*fuu[0,3])[:,:,2:]-(gdet*fuu[0,3])[:,:,:-2])/(2*_dx3)
+    if nz>=2:
+        rhoc[:,:,0] += ((gdet*fuu[0,3])[:,:,1]-(gdet*fuu[0,3])[:,:,-1])/(2*_dx3)
+        rhoc[:,:,-1] += ((gdet*fuu[0,3])[:,:,0]-(gdet*fuu[0,3])[:,:,-2])/(2*_dx3)
+    rhoc /= gdet
 
 def jetpowcalc(which=2,minbsqorho=10,minmu=None,donorthsouth=0,excludebound=True):
     if which==0:
@@ -10607,7 +10625,7 @@ def plotflux(doreload=True):
     plt.savefig("plotflux.eps",bbox_inches='tight',pad_inches=0.02,dpi=100)
     plt.savefig("plotflux.pdf",bbox_inches='tight',pad_inches=0.02,dpi=100)
 
-def mkpulsarmovie(startn=0,endn=-1,len=10):
+def mkpulsarmovie(startn=0,endn=-1,len=10,op=1):
     grid3d("gdump.bin",use2d=True)
     flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
     flist.sort()
@@ -10664,10 +10682,11 @@ def mkpulsarmovie(startn=0,endn=-1,len=10):
             el = Ellipse((0,0), 7, 7, edgecolor="r", facecolor='none', alpha=1)
             art=ax.add_artist(el)
             art.set_zorder(20)
-            #plc(uu[1]*dxdxp[1,1],xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(0,1,0.1),lw=2,cb=True)
-            #plc(ug,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(0,0.01,0.001),lw=2,cb=True)
-            plc(uu[1]*dxdxp[1,1],cb=True,levels=np.arange(0,10,1),xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,10);plt.ylim(-5,5)
-            #plc(uu[0],cb=True,levels=np.arange(0,10,1),xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,10);plt.ylim(-5,5)
+            if op:
+                #plc(uu[1]*dxdxp[1,1],xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(0,1,0.1),lw=2,cb=True)
+                #plc(ug,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(0,0.01,0.001),lw=2,cb=True)
+                #plc(uu[1]*dxdxp[1,1],cb=True,levels=np.arange(0,10,1),xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,10);plt.ylim(-5,5)
+                plc(uu[0],cb=True,levels=np.arange(0,10,1),xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,10);plt.ylim(-5,5)
             rmax = len
             plt.xlim(0,rmax)
             plt.ylim(-0.5*rmax,0.5*rmax)
@@ -11097,8 +11116,8 @@ def prime2cart(V):
 # B
 # bsq
 
-def writevtk(fnameformat="fieldline%04d.vtk",t=0,no=None,rhoval=None,ugval=None,uuval=None,Bval=None,bsqval=None):
-    global ti, tj, tk, r, h, ph, rho, ug, uu, B, bsq
+def writevtk(fnameformat="fieldline%04d.vtk",t=0,no=None,rhoval=None,ugval=None,uuval=None,Bval=None,bsqval=None,rhocval=None):
+    global ti, tj, tk, r, h, ph, rho, ug, uu, B, bsq, rhoc
     if no is not None:
         fname = fnameformat % int(no)
     else:
@@ -11114,6 +11133,8 @@ def writevtk(fnameformat="fieldline%04d.vtk",t=0,no=None,rhoval=None,ugval=None,
         Bval = B
     if bsqval is None:
         bsqval = bsq
+    if avgrhoc is None:
+        rhocval = rhoc
     Bcart = prime2cart(Bval)
     ucart = prime2cart(uuval)
     xf, yf, zf = getxyz(rf,hf,phf)
@@ -11137,7 +11158,8 @@ def writevtk(fnameformat="fieldline%04d.vtk",t=0,no=None,rhoval=None,ugval=None,
             ("Bx"   ,1,0, list(float64(Bcart[1].transpose(2,1,0).ravel()))),
             ("By"   ,1,0, list(float64(Bcart[2].transpose(2,1,0).ravel()))),
             ("Bz"   ,1,0, list(float64(Bcart[3].transpose(2,1,0).ravel()))),
-            ("bsq"  ,1,0, list(float64(bsqval.transpose(2,1,0).ravel()))))
+            ("bsq"  ,1,0, list(float64(bsqval.transpose(2,1,0).ravel()))),
+            ("rhoc", 1,0, list(float64(rhocval.transpose(2,1,0).ravel()))))
     dims = (nx+1, ny+1, nz+1)
     visit_writer.WriteCurvilinearMesh(fname,  
                                               t, #time
