@@ -10779,9 +10779,9 @@ def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,bare=0,fc='k',lbl=None,bor=200):
             if lbl is None:
                 lbl = r"${\rm max}[b^2\!/4\pi\rho]=%g$, $t=%3.3g$" % (bor, OmegaNS*t)
             plt.title(lbl,    fontsize=16, color='k')
-        plt.savefig( 'frame%04d.png' % fldindex )
         #
         plt.draw()
+        plt.savefig( 'frame%04d.png' % fldindex )
         #if fldindex >= 500:
         #    break
 
