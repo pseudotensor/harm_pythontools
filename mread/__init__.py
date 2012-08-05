@@ -11260,7 +11260,7 @@ if __name__ == "__main__":
         grid3d("gdump.bin",use2d=1)
         rfd("fieldline0200.bin")
         cvel()
-        mklicplot(den=1)
+        mklicplot(den=6)
         mkpulsarmovie(startn=200,endn=201,bare=1,op=0,fc='b')
         plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02,dpi=100)
     if False:
