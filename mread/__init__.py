@@ -10704,7 +10704,7 @@ def plotflux(doreload=True):
     plt.savefig("plotflux.eps",bbox_inches='tight',pad_inches=0.02,dpi=100)
     plt.savefig("plotflux.pdf",bbox_inches='tight',pad_inches=0.02,dpi=100)
 
-def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,doonlylastfieldline=0,fc='k'):
+def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,bare=0,fc='k'):
     grid3d("gdump.bin",use2d=True)
     flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
     flist.sort()
@@ -10725,7 +10725,8 @@ def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,doonlylastfieldline=0,fc='k'):
         #ax = fig.add_subplot(111, aspect='equal')
         numc=40
         cvel()
-        plt.clf()
+        if not bare:
+            plt.clf()
         if True:
             if False and rho[0,0,0]!=0:
                 levs=10**np.arange(0.,np.log10(500.),0.1)
@@ -10741,8 +10742,7 @@ def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,doonlylastfieldline=0,fc='k'):
             x=[5,5]
             y=[-5,5]
             #plt.grid(b=True)
-            if not doonlylastfieldline:
-                plc(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,numc)*maxaphi/np.float(numc),colors=fc)
+            plc(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,numc)*maxaphi/np.float(numc),colors=fc)
             plc(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(15*maxaphi/np.float(numc),),linewidths=3,colors=fc)
             plt.plot(x,y,lw=3,color='r',alpha=0.5)
             #plc(uu[2]*dxdxp[2][2],xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=False,levels=np.arange(-0.5,0.5,0.1));plt.xlim(0,10);plt.ylim(-5,5)            
@@ -10762,7 +10762,7 @@ def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,doonlylastfieldline=0,fc='k'):
             el = Ellipse((0,0), 7, 7, edgecolor="r", facecolor='none', alpha=1)
             art=ax.add_artist(el)
             art.set_zorder(20)
-            if op and not doonlylastfieldline:
+            if op:
                 #plc(uu[1]*dxdxp[1,1],xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(0,1,0.1),lw=2,cb=True)
                 #plc(ug,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(0,0.01,0.001),lw=2,cb=True)
                 #plc(uu[1]*dxdxp[1,1],cb=True,levels=np.arange(0,10,1),xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,10);plt.ylim(-5,5)
@@ -10775,7 +10775,8 @@ def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,doonlylastfieldline=0,fc='k'):
             plt.plot(r[:,0,0],ug[:,0.75*ny,0],'g');plt.xlim(Rin,10);plt.ylim(0,50)
             plt.plot(r[:,0,0],rho[:,0.75*ny,0],'r');plt.xlim(Rin,10);plt.ylim(0,50)
             plt.plot(r[:,0,0],(bsq/rho)[:,0.75*ny,0],'b');plt.xlim(Rin,10);plt.ylim(0,50)
-        plt.title(r"${\rm max}[b^2\!/4\pi\rho]=50$, $t=%3.3g$" % t,    fontsize=16, color='k')
+        if not bare:
+            plt.title(r"${\rm max}[b^2\!/4\pi\rho]=50$, $t=%3.3g$" % t,    fontsize=16, color='k')
         plt.savefig( 'frame%04d.png' % fldindex )
         #
         plt.draw()
@@ -11255,12 +11256,12 @@ def makevtk(no=52):
     writevtk(no=no,t=t)
 
 if __name__ == "__main__":
-    if False:
+    if True:
         grid3d("gdump.bin",use2d=1)
         rfd("fieldline0200.bin")
         cvel()
-        mklicplot(den=6)
-        mkpulsarmovie(startn=200,endn=201,doonlylastfieldline=0,op=0,fc='b')
+        mklicplot(den=1)
+        mkpulsarmovie(startn=200,endn=201,bare=1,op=0,fc='b')
         plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02,dpi=100)
     if False:
         #compute energy flux weighted pg/pm
