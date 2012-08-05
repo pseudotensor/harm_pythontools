@@ -10704,7 +10704,7 @@ def plotflux(doreload=True):
     plt.savefig("plotflux.eps",bbox_inches='tight',pad_inches=0.02,dpi=100)
     plt.savefig("plotflux.pdf",bbox_inches='tight',pad_inches=0.02,dpi=100)
 
-def mkpulsarmovie(startn=0,endn=-1,len=10,op=1):
+def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,doonlylastfieldline=0):
     grid3d("gdump.bin",use2d=True)
     flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
     flist.sort()
@@ -10741,7 +10741,8 @@ def mkpulsarmovie(startn=0,endn=-1,len=10,op=1):
             x=[5,5]
             y=[-5,5]
             #plt.grid(b=True)
-            plc(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,numc)*maxaphi/np.float(numc),colors='k')
+            if not doonlylastfieldline:
+                plc(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,numc)*maxaphi/np.float(numc),colors='k')
             plc(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(15*maxaphi/np.float(numc),),linewidths=3,colors='k')
             plt.plot(x,y,lw=3,color='r',alpha=0.5)
             #plc(uu[2]*dxdxp[2][2],xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=False,levels=np.arange(-0.5,0.5,0.1));plt.xlim(0,10);plt.ylim(-5,5)            
@@ -10761,7 +10762,7 @@ def mkpulsarmovie(startn=0,endn=-1,len=10,op=1):
             el = Ellipse((0,0), 7, 7, edgecolor="r", facecolor='none', alpha=1)
             art=ax.add_artist(el)
             art.set_zorder(20)
-            if op:
+            if op and not doonlylastfieldline:
                 #plc(uu[1]*dxdxp[1,1],xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(0,1,0.1),lw=2,cb=True)
                 #plc(ug,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(0,0.01,0.001),lw=2,cb=True)
                 #plc(uu[1]*dxdxp[1,1],cb=True,levels=np.arange(0,10,1),xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,10);plt.ylim(-5,5)
