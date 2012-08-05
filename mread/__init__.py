@@ -122,7 +122,6 @@ def mklicplot(mylen=10,ax=None,den=24):
     #B[1:] = avg_uu[1:]
     B[1:] = qty[1:]
     mkframe("myframe",len=mylen,ax=ax,density=den,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.0025,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
-    plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02,dpi=100)
 
 
 def plotomegahor():
@@ -10705,7 +10704,7 @@ def plotflux(doreload=True):
     plt.savefig("plotflux.eps",bbox_inches='tight',pad_inches=0.02,dpi=100)
     plt.savefig("plotflux.pdf",bbox_inches='tight',pad_inches=0.02,dpi=100)
 
-def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,doonlylastfieldline=0):
+def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,doonlylastfieldline=0,fc='k'):
     grid3d("gdump.bin",use2d=True)
     flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
     flist.sort()
@@ -10743,8 +10742,8 @@ def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,doonlylastfieldline=0):
             y=[-5,5]
             #plt.grid(b=True)
             if not doonlylastfieldline:
-                plc(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,numc)*maxaphi/np.float(numc),colors='k')
-            plc(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(15*maxaphi/np.float(numc),),linewidths=3,colors='k')
+                plc(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,numc)*maxaphi/np.float(numc),colors=fc)
+            plc(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(15*maxaphi/np.float(numc),),linewidths=3,colors=fc)
             plt.plot(x,y,lw=3,color='r',alpha=0.5)
             #plc(uu[2]*dxdxp[2][2],xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=False,levels=np.arange(-0.5,0.5,0.1));plt.xlim(0,10);plt.ylim(-5,5)            
             #plc(np.log10(ug),xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,levels=np.arange(-3,2,0.1));plt.xlim(0,10);plt.ylim(-5,5)
@@ -11261,7 +11260,8 @@ if __name__ == "__main__":
         rfd("fieldline0200.bin")
         cvel()
         mklicplot(den=6)
-        mkpulsarmovie(startn=200,endn=201,doonlylastfieldline=1)
+        mkpulsarmovie(startn=200,endn=201,doonlylastfieldline=0,op=0,fc='b')
+        plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02,dpi=100)
     if False:
         #compute energy flux weighted pg/pm
         plotbetajet()
