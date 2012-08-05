@@ -11256,7 +11256,7 @@ def makevtk(no=52):
     writevtk(no=no,t=t)
 
 if __name__ == "__main__":
-    if True:
+    if False:
         grid3d("gdump.bin",use2d=1)
         rfd("fieldline0200.bin")
         cvel()
