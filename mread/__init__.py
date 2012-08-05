@@ -45,6 +45,84 @@ import visit_writer
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
 
+def plotcs(r0orlc=2):
+    flist=["rwvpx_novpar_07rlc_bsqorho200_rbr1e2",
+           "rwvpx_novpar_07rlc_bsqorho400_rbr1e2_x05",
+           "rwvpx_novpar_07rlc_bsqorho400_rbr1e2",
+           "rwvpx_novpar_07rlc_bsqorho400_rbr1e2_x2",
+           "rwvpx_novpar_07rlc_bsqorho800_rbr1e2",
+           "rwvpx_novpar_10rlc_bsqorho400_rbr1e2",
+           "rwvpx_novpar_07rlc_bsqorho400_rbr1e2_x8",
+           "pm_mc"]
+    clist=['r','g','b','y','c','m',"orange",'k']
+    plt.clf()
+    for i,f in enumerate(flist):
+        c = clist[i]
+        os.chdir("/nics/b/home/atchekho/nrun/%s" % f)  
+        grid3d("gdump.bin", use2d=1)
+        if f == "rwvpx_novpar_07rlc_bsqorho400_rbr1e2_x8":
+            fld = "fieldline0050.bin"
+        else:
+            fld = "fieldline0196.bin"
+        rfd(fld)
+        cvel()
+        r0 = r0orlc/OmegaNS
+        i0 = iofr(r0)
+        if 0:
+            plt.plot(h[i0,:,0]/np.pi,uu[0][i0,:,0],label=f)
+        if 0:
+            plt.plot(h[i0,:,0]/np.pi,(bsq/rho)[i0,:,0],label=f);plt.yscale("log")
+        if 0:
+            plt.plot(h[i0,:,0]/np.pi,((gam-1)*ug)[i0,:,0],color=c,ls='--');plt.yscale("log")
+            plt.plot(h[i0,:,0]/np.pi,(bsq/2)[i0,:,0],color=c,ls='-.');plt.yscale("log")
+            plt.plot(h[i0,:,0]/np.pi,(rho)[i0,:,0],color=c,ls=':');plt.yscale("log")
+            plt.plot(h[i0,:,0]/np.pi,(bsq/2+(gam-1)*ug)[i0,:,0],label=f,color=c,ls='-');plt.yscale("log")
+        if 1:
+            Tcalcud()
+            #total energy flux minus rest-mass
+            sTot_noRM = -(gdetF[1,1]).sum(2).sum(1)*_dx2*_dx3
+            #sTot_noRM2= -(gdet*Tud[1,0]+gdet*rho*uu[1]).sum(2).sum(1)*_dx2*_dx3
+            #sEMTH= -(gdet*TudEM[1,0]+gdet*rho*uu[1]*(1+ud[0])).sum(2).sum(1)*_dx2*_dx3
+            sEM = -(gdet*TudEM)[1,0].sum(2).sum(1)*_dx2*_dx3
+            #sKE = -(gdet*(rho*uu[1]+TudMA[1,0])).sum(2).sum(1)*_dx2*_dx3
+            plt.plot(r[:,ny/2,0]*OmegaNS,sTot_noRM[:],label=f,color=c,ls='-')
+            plt.plot(r[:,ny/2,0]*OmegaNS,sEM[:],color=c,ls='-.')
+            plt.xlim(Rin*OmegaNS,4)
+            plt.ylim(0,100)
+        plt.ylabel(r"$\gamma$",fontsize=18)
+        plt.xlabel(r"$\theta\ [\pi]$",fontsize=18)
+        plt.grid(b=1)
+        plt.legend(loc="lower right")
+
+def mklicplot(mylen=10,ax=None,den=24):
+    if ax is None:
+        ax = plt.gca()
+    #velocity
+    qty=uu
+    #
+    #mass flow
+    #qty=avg_rhouu
+    #
+    #angular momentum flow
+    #qty=avg_Tud[:,3]
+    # if True:
+    #     qty[2,:,-1]*=0
+    #     qty[2,:,-2]*=0
+    #     qty[2,:,0]*=0
+    #     qty[2,:,1]*=0
+    #avg_uu[1,:,-3:-1] = np.abs(avg_uu[1,:,-3:-1])
+    # avg_uu[1,:,-1]=avg_uu[1,:,-4]
+    # avg_uu[1,:,-2]=avg_uu[1,:,-4]
+    # avg_uu[1,:,-3]=avg_uu[1,:,-4]
+    #avg_uu[1,:,0:3] = np.abs(avg_uu[1,:,0:3])
+    # avg_uu[1,:,0]=avg_uu[1,:,3]
+    # avg_uu[1,:,1]=avg_uu[1,:,3]
+    # avg_uu[1,:,2]=avg_uu[1,:,3]
+    #B[1:] = avg_uu[1:]
+    B[1:] = qty[1:]
+    mkframe("myframe",len=mylen,ax=ax,density=den,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.0025,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
+
+
 def plotomegahor():
     ihor = iofr(rhor)
     omegah=a/(2*rhor)
