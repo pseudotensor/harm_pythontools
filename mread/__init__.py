@@ -10704,7 +10704,7 @@ def plotflux(doreload=True):
     plt.savefig("plotflux.eps",bbox_inches='tight',pad_inches=0.02,dpi=100)
     plt.savefig("plotflux.pdf",bbox_inches='tight',pad_inches=0.02,dpi=100)
 
-def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,bare=0,fc='k'):
+def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,bare=0,fc='k',lbl=None,bor=200):
     grid3d("gdump.bin",use2d=True)
     flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
     flist.sort()
@@ -10776,7 +10776,9 @@ def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,bare=0,fc='k'):
             plt.plot(r[:,0,0],rho[:,0.75*ny,0],'r');plt.xlim(Rin,10);plt.ylim(0,50)
             plt.plot(r[:,0,0],(bsq/rho)[:,0.75*ny,0],'b');plt.xlim(Rin,10);plt.ylim(0,50)
         if not bare:
-            plt.title(r"${\rm max}[b^2\!/4\pi\rho]=50$, $t=%3.3g$" % t,    fontsize=16, color='k')
+            if lbl is None:
+                lbl = r"${\rm max}[b^2\!/4\pi\rho]=%g$, $t=%3.3g$" % (OmegaNs*t, bor)
+            plt.title(lbl,    fontsize=16, color='k')
         plt.savefig( 'frame%04d.png' % fldindex )
         #
         plt.draw()
