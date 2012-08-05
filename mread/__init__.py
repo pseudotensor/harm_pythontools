@@ -11260,6 +11260,7 @@ if __name__ == "__main__":
         rfd("fieldline0200.bin")
         cvel()
         mklicplot(den=6)
+        mkpulsarmovie(startn=200,endn=201,doonlylastfieldline=1)
     if False:
         #compute energy flux weighted pg/pm
         plotbetajet()
