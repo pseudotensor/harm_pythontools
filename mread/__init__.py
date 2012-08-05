@@ -1527,7 +1527,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         iBz = reinterp(Bznorm,extent,ncell,domask=0.8,rhor=rhor,kval=kval)
         iBR = reinterp(BRnorm,extent,ncell,isasymmetric=True,domask=0.8,rhor=rhor,kval=kval) #isasymmetric = True tells to flip the sign across polar axis
         iBp = reinterp(Bpnorm,extent,ncell,isasymmetric=True,domask=0.8,rhor=rhor,kval=kval) #isasymmetric = True tells to flip the sign         #
-        if dorandomcolor:
+        if 0 and dorandomcolor:
             Ba=np.copy(B)
             cond = (B[1]<0)
             Ba[2,cond]*=-1
