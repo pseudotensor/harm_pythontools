@@ -10777,7 +10777,7 @@ def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,bare=0,fc='k',lbl=None,bor=200):
             plt.plot(r[:,0,0],(bsq/rho)[:,0.75*ny,0],'b');plt.xlim(Rin,10);plt.ylim(0,50)
         if not bare:
             if lbl is None:
-                lbl = r"${\rm max}[b^2\!/4\pi\rho]=%g$, $t=%3.3g$" % (OmegaNs*t, bor)
+                lbl = r"${\rm max}[b^2\!/4\pi\rho]=%g$, $t=%3.3g$" % (OmegaNS*t, bor)
             plt.title(lbl,    fontsize=16, color='k')
         plt.savefig( 'frame%04d.png' % fldindex )
         #
