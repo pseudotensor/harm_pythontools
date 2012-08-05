@@ -11255,6 +11255,11 @@ def makevtk(no=52):
 
 if __name__ == "__main__":
     if False:
+        grid3d("gdump.bin",use2d=1)
+        rfd("fieldline0200.bin")
+        cvel()
+        mklicplot(den=6)
+    if False:
         #compute energy flux weighted pg/pm
         plotbetajet()
     if False:
