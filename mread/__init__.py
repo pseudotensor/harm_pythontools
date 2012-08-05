@@ -1439,7 +1439,7 @@ def reinterp(vartointerp,extent,ncell,domask=1,isasymmetric=False,rhor=None,kval
     x=np.concatenate((-x,x))
     y=np.concatenate((y,y))
     kvalmirror=min(vartointerp.shape[2]-1,kval+nz/2)
-    varmirror = vartointerp[:,:,kvalmirror].view().reshape(-1)
+    varmirror = np.copy(vartointerp[:,:,kvalmirror].view().reshape(-1))
     if isasymmetric:
         varmirror *= -1.
     var=np.concatenate((varmirror,var))
