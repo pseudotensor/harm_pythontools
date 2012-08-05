@@ -95,6 +95,7 @@ def plotcs(r0orlc=2):
         plt.legend(loc="lower right")
 
 def mklicplot(mylen=10,ax=None,den=24):
+    global B
     if ax is None:
         ax = plt.gca()
     #velocity
