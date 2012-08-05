@@ -121,6 +121,7 @@ def mklicplot(mylen=10,ax=None,den=24):
     #B[1:] = avg_uu[1:]
     B[1:] = qty[1:]
     mkframe("myframe",len=mylen,ax=ax,density=den,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.0025,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
+    plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02,dpi=100)
 
 
 def plotomegahor():
