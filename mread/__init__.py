@@ -68,7 +68,7 @@ def plotcs(r0orlc=2):
         cvel()
         r0 = r0orlc/OmegaNS
         i0 = iofr(r0)
-        if 0:
+        if 1:
             plt.plot(h[i0,:,0]/np.pi,uu[0][i0,:,0],label=f)
         if 0:
             plt.plot(h[i0,:,0]/np.pi,(bsq/rho)[i0,:,0],label=f);plt.yscale("log")
@@ -77,7 +77,7 @@ def plotcs(r0orlc=2):
             plt.plot(h[i0,:,0]/np.pi,(bsq/2)[i0,:,0],color=c,ls='-.');plt.yscale("log")
             plt.plot(h[i0,:,0]/np.pi,(rho)[i0,:,0],color=c,ls=':');plt.yscale("log")
             plt.plot(h[i0,:,0]/np.pi,(bsq/2+(gam-1)*ug)[i0,:,0],label=f,color=c,ls='-');plt.yscale("log")
-        if 1:
+        if 0:
             Tcalcud()
             #total energy flux minus rest-mass
             sTot_noRM = -(gdetF[1,1]).sum(2).sum(1)*_dx2*_dx3
