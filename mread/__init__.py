@@ -61,7 +61,7 @@ def plotcs(r0orlc=2):
         os.chdir("/nics/b/home/atchekho/nrun/%s" % f)  
         grid3d("gdump.bin", use2d=1)
         if f == "rwvpx_novpar_07rlc_bsqorho400_rbr1e2_x8":
-            fld = "fieldline0050.bin"
+            fld = "fieldline0073.bin"
         else:
             fld = "fieldline0196.bin"
         rfd(fld)
