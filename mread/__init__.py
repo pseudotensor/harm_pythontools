@@ -1421,7 +1421,7 @@ def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
         plt.ylim(-ymax,ymax)
     return res
 
-def reinterp(vartointerp,extent,ncell,domask=1,isasymmetric=False,rhor=None,kval=0):
+def reinterp(vartointerp,extent,ncell,domask=1,isasymmetric=False,rhor=None,kval=0,domirror=True,dolimitr=True):
     global xi,yi,zi
     #grid3d("gdump")
     #rfd("fieldline0250.bin")
@@ -1429,24 +1429,34 @@ def reinterp(vartointerp,extent,ncell,domask=1,isasymmetric=False,rhor=None,kval
         rhor = (1+np.sqrt(1-a**2))
     if kval >= vartointerp.shape[2]:
         kval = 0
+    maxr = 2*np.max(np.abs(np.array(extent)))
     xraw=r*np.sin(h)
     yraw=r*np.cos(h)
     x=xraw[:,:,kval].view().reshape(-1)
     y=yraw[:,:,kval].view().reshape(-1)
     var=vartointerp[:,:,kval].view().reshape(-1)
+    if dolimitr:
+        myr=r[:,:,kval].view().reshape(-1)
+        x = x[myr<maxr]
+        y = y[myr<maxr]
+        var = var[myr<maxr]
     #mirror
-    x=np.concatenate((-x,x))
-    y=np.concatenate((y,y))
-    kvalmirror=min(vartointerp.shape[2]-1,kval+nz/2)
-    varmirror = np.copy(vartointerp[:,:,kvalmirror].view().reshape(-1))
-    if isasymmetric:
-        varmirror *= -1.
-    var=np.concatenate((varmirror,var))
+    if domirror:
+        x=np.concatenate((-x,x))
+        y=np.concatenate((y,y))
+        kvalmirror=min(vartointerp.shape[2]-1,kval+nz/2)
+        varmirror = np.copy(vartointerp[:,:,kvalmirror].view().reshape(-1))
+        if dolimitr:
+            varmirror = varmirror[myr<maxr]
+        if isasymmetric==True:
+            varmirror *= -1.
+        var=np.concatenate((varmirror,var))
+    #else do not do asymmetric part
     # define grid.
     xi = np.linspace(extent[0], extent[1], ncell)
     yi = np.linspace(extent[2], extent[3], ncell)
     # grid the data.
-    zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method='cubic')
+    zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method='linear')
     #zi[interior] = np.ma.masked
     if domask!=0:
         interior = np.sqrt((xi[None,:]**2) + (yi[:,None]**2)) < rhor*domask
@@ -1488,7 +1498,7 @@ def reinterpxy(vartointerp,extent,ncell,domask=1,mirrorfactor=1,rhor=None):
 def ftr(x,xb,xf):
     return( amax(0.0*x,amin(1.0+0.0*x,1.0*(x-xb)/(xf-xb))) )
     
-def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2,whichr=0.9,ncont=100,maxaphi=100,aspect=1.0,isnstar=False,kval=0,doBphi=False,onlyeta=True,maxsBphi=None):
+def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2,whichr=0.9,ncont=100,maxaphi=100,aspect=1.0,isnstar=False,kval=0,doBphi=False,onlyeta=True,maxsBphi=None,domirror=True,nanout=True):
     extent=(-len,len,-len/aspect,len/aspect)
     palette=cm.jet
     palette.set_bad('k', 1.0)
@@ -1515,7 +1525,10 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         Br = dxdxp[1,1]*B[1]+dxdxp[1,2]*B[2]
         Bh = dxdxp[2,1]*B[1]+dxdxp[2,2]*B[2]
         #note toroidal field located at faces
-        Bp = gdetB[3]/gdet*dxdxp[3,3]
+        #Bp = gdetB[3]/gdet*dxdxp[3,3]
+        Bp = Bstag[3]*dxdxp[3,3]
+        #Bp[(h<0)+(h>np.pi)] *= -1
+        #Bp = Bstag[2]
         #
         Brnorm=Br
         Bhnorm=Bh*np.abs(r)
@@ -1523,10 +1536,26 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         #
         Bznorm=Brnorm*np.cos(h)-Bhnorm*np.sin(h)
         BRnorm=Brnorm*np.sin(h)+Bhnorm*np.cos(h)
+        if nanout:
+            if not domirror:
+                Bznorm[:,-1]*=NaN
+                Bznorm[:,0]*=NaN
+                BRnorm[:,-1]*=NaN
+                BRnorm[:,0]*=NaN
+                Bpnorm[:,-1]*=NaN
+                Bpnorm[:,0]*=NaN
+            else:
+                NBND=4
+                Bznorm[:,:NBND]*=NaN
+                Bznorm[:,-NBND+1:]*=NaN
+                BRnorm[:,:NBND]*=NaN
+                BRnorm[:,-NBND+1:]*=NaN
+                Bpnorm[:,:NBND]*=NaN
+                Bpnorm[:,-NBND+1:]*=NaN
         #
-        iBz = reinterp(Bznorm,extent,ncell,domask=0.8,rhor=rhor,kval=kval)
-        iBR = reinterp(BRnorm,extent,ncell,isasymmetric=True,domask=0.8,rhor=rhor,kval=kval) #isasymmetric = True tells to flip the sign across polar axis
-        iBp = reinterp(Bpnorm,extent,ncell,isasymmetric=True,domask=0.8,rhor=rhor,kval=kval) #isasymmetric = True tells to flip the sign         #
+        iBz = reinterp(Bznorm,extent,ncell,isasymmetric=False,domask=0.8,rhor=rhor,kval=kval,domirror=domirror)
+        iBR = reinterp(BRnorm,extent,ncell,isasymmetric=True,domask=0.8,rhor=rhor,kval=kval,domirror=domirror) #isasymmetric = True tells to flip the sign across polar axis
+        iBp = reinterp(Bpnorm,extent,ncell,isasymmetric=True,domask=0.8,rhor=rhor,kval=kval,domirror=domirror) #isasymmetric = True tells to flip the sign         #
         if 0 and dorandomcolor:
             Ba=np.copy(B)
             cond = (B[1]<0)
@@ -2157,7 +2186,7 @@ def rfd(fieldlinefilename,**kwargs):
     #Velocity components: u1, u2, u3, 
     #Cell-centered magnetic field components: B1, B2, B3, 
     #Face-centered magnetic field components multiplied by metric determinant: gdetB1, gdetB2, gdetB3
-    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,rho,lrho,ug,uu,uut,uu,B,uux,gdetB,rhor,r,h,ph,gdetF,fdbody,OmegaNS,AlphaNS
+    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,rho,lrho,ug,uu,uut,uu,B,uux,gdetB,rhor,r,h,ph,gdetF,fdbody,OmegaNS,AlphaNS,Bstag
     #read image
     if 'rho' in globals():
         del rho
