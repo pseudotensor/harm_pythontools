@@ -69,7 +69,7 @@ def plotcs(r0orlc=2):
         r0 = r0orlc/OmegaNS
         i0 = iofr(r0)
         if 1:
-            plt.plot(h[i0,:,0]/np.pi,uu[0][i0,:,0],label=f)
+            plt.plot(h[i0,:,0]/np.pi,uu[0][i0,:,0],label=f,color=c)
         if 0:
             plt.plot(h[i0,:,0]/np.pi,(bsq/rho)[i0,:,0],label=f);plt.yscale("log")
         if 0:
