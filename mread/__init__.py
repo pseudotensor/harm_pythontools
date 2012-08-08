@@ -8116,6 +8116,7 @@ def mkmovieframe( findex, fname, **kwargs ):
     maxsBphi = kwargs.pop('maxsBphi',None)
     plottime = kwargs.pop('plottime',False)
     domirror = kwargs.pop('domirror',True)
+    nanout =  kwargs.pop('nanout',False)
     # oldnz=nz
     rfd("../"+fname)
     # if oldnz < nz:
@@ -8282,7 +8283,7 @@ def mkmovieframe( findex, fname, **kwargs ):
         #gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.45, wspace=0.05)
         ax1 = plt.subplot(gs1[:, -1])
         if domakeframes:
-            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=dostreamlines,ncont=50,kval=kval,maxsBphi=maxsBphi,domirror=domirror,**kwargs)
+            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=dostreamlines,ncont=50,kval=kval,maxsBphi=maxsBphi,domirror=domirror,nanout=nanout,**kwargs)
         ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
         ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
