@@ -8034,7 +8034,7 @@ def ploteta():
     ax34r.set_yticks(tck)
     gc.collect()
 
-def mkmovie(framesize=50, whichi=0, whichn=1,doqtymem=True,domakeavi=False,**kwargs):
+def mkmovie(framesize=50, whichi=0, whichn=1,doqtymem=True,domakeavi=False,use2d=True,**kwargs):
     #Rz and xy planes side by side
     plotlenf=10
     plotleni=framesize
@@ -8055,7 +8055,7 @@ def mkmovie(framesize=50, whichi=0, whichn=1,doqtymem=True,domakeavi=False,**kwa
         dontloadfiles = True
     else:
         dontloadfiles = False
-        grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=True )
+        grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=use2d )
         #rd( "dump0000.bin" )
         #rfd("fieldline0000.bin")  #to definea
         #grid3dlight("gdump")
@@ -8093,6 +8093,7 @@ def mkmovie(framesize=50, whichi=0, whichn=1,doqtymem=True,domakeavi=False,**kwa
         #os.system("scp mov.avi 128.112.70.76:Research/movies/mov_`basename \`pwd\``.avi")
 
 def mkmovieframe( findex, fname, **kwargs ):
+    global OmegaNS
     dostreamlines = kwargs.pop('dostreamlines',True)
     frametype = kwargs.pop('frametype','5panels')
     prefactor = kwargs.pop('prefactor',1.)
@@ -8114,6 +8115,7 @@ def mkmovieframe( findex, fname, **kwargs ):
     kval = kwargs.pop('kval',0)
     maxsBphi = kwargs.pop('maxsBphi',None)
     plottime = kwargs.pop('plottime',False)
+    domirror = kwargs.pop('domirror',True)
     # oldnz=nz
     rfd("../"+fname)
     # if oldnz < nz:
@@ -8280,10 +8282,14 @@ def mkmovieframe( findex, fname, **kwargs ):
         #gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.45, wspace=0.05)
         ax1 = plt.subplot(gs1[:, -1])
         if domakeframes:
-            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=dostreamlines,ncont=50,kval=kval,maxsBphi=maxsBphi,**kwargs)
+            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=dostreamlines,ncont=50,kval=kval,maxsBphi=maxsBphi,domirror=domirror,**kwargs)
         ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
         ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
+        if 'OmegaNS' not in globals():
+            OmegaNS = a/(2*rhor)
+        if OmegaNS == 0:
+            OmegaNS = 1
         f = t/(2*np.pi/OmegaNS)
         placeletter(ax1,"t=%3d.%02d" % (int(f), np.round(100*(f-np.floor(f)))), color="k",fx = 0.8, bbox=bbox_props )
         # gs2 = GridSpec(1, 1)
