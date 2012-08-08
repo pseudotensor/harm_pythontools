@@ -2270,7 +2270,7 @@ def rfd(fieldlinefilename,**kwargs):
     B[1:4,:,:,:]=d[8:11,:,:,:]
     ii=11
     #if the input file contains additional data
-    if d.shape[0]==14 or d.shape[0]==23:
+    if d.shape[0]==14 or d.shape[0]==23 or d.shape[0]==26:
         print("Loading gdetB data...")
         #new image format additionally contains gdet*B^i
         gdetB = np.zeros_like(B)
@@ -2282,7 +2282,7 @@ def rfd(fieldlinefilename,**kwargs):
         gdetB[1] = gdet * B[1]
         gdetB[2] = gdet * B[2]
         gdetB[3] = gdet * B[3]
-    if d.shape[0]==20 or d.shape[0]==23:
+    if d.shape[0]==20 or d.shape[0]==23 or d.shape[0]==26:
         print("Loading flux data...")
         gdetF=np.zeros((4,3,nx,ny,nz))
         gdetF[1,0:3,:,:,:]=d[ii:ii+3,:,:,:]; ii=ii+3
@@ -2291,6 +2291,13 @@ def rfd(fieldlinefilename,**kwargs):
     else:
         print("No data on gdetF, setting it to None.")
         gdetF = None
+    #if includes Bstag in addition to all of the above
+    if d.shape[0]==26:
+        Bstag = np.zeros_like(B)
+        Bstag[1:] =  d[ii:ii+3,:,:,:]; ii=ii+3
+    else:
+        print("No data on Bstag, setting it to B.")
+        Bstag = B
     #     if 'gdet' in globals():
     #         #first set everything approximately (B's are at shifted locations by half-cell)
     #         B = gdetB/gdet  
