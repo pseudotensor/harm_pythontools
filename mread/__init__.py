@@ -1444,7 +1444,7 @@ def reinterp(vartointerp,extent,ncell,domask=1,isasymmetric=False,rhor=None,kval
     if domirror:
         x=np.concatenate((-x,x))
         y=np.concatenate((y,y))
-        kvalmirror=min(vartointerp.shape[2]-1,kval+nz/2)
+        kvalmirror=(kval+nz/2) % (vartointerp.shape[2])
         varmirror = np.copy(vartointerp[:,:,kvalmirror].view().reshape(-1))
         if dolimitr:
             varmirror = varmirror[myr<maxr]
