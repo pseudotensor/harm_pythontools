@@ -1526,7 +1526,11 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         Bh = dxdxp[2,1]*B[1]+dxdxp[2,2]*B[2]
         #note toroidal field located at faces
         #Bp = gdetB[3]/gdet*dxdxp[3,3]
-        Bp = Bstag[3]*dxdxp[3,3]
+        if Bstag is B:
+            print("Bstag is same as B, so will use gdetB/gdet to show perpendicular field component")
+            Bp = gdetB[3]/gdet*dxdxp[3,3]
+        else:
+            Bp = Bstag[3]*dxdxp[3,3]
         #Bp[(h<0)+(h>np.pi)] *= -1
         #Bp = Bstag[2]
         #
