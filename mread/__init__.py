@@ -8073,7 +8073,9 @@ def mkmovie(framesize=50, whichi=0, whichn=1,doqtymem=True,domakeavi=False,use2d
     for findex, fname in enumerate(flist):
         if whichn !=0 and findex % whichn != whichi:
             continue
-        if whichn != 0 and dontloadfiles == False and os.path.isfile("lrho%04d_Rzxym1.png" % (findex)):
+        if whichn ==0 and findex != whichi:
+            continue
+        if dontloadfiles == False and os.path.isfile("lrho%04d_Rzxym1.png" % (findex)):
             print( "Skipping " + fname + " as lrho%04d_Rzxym1.png exists" % (findex) );
         else:
             print( "Processing " + fname + " ..." )
