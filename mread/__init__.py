@@ -8071,9 +8071,9 @@ def mkmovie(framesize=50, whichi=0, whichn=1,doqtymem=True,domakeavi=False,use2d
         flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
 
     for findex, fname in enumerate(flist):
-        if findex % whichn != whichi:
+        if whichn !=0 and findex % whichn != whichi:
             continue
-        if dontloadfiles == False and os.path.isfile("lrho%04d_Rzxym1.png" % (findex)):
+        if whichn != 0 and dontloadfiles == False and os.path.isfile("lrho%04d_Rzxym1.png" % (findex)):
             print( "Skipping " + fname + " as lrho%04d_Rzxym1.png exists" % (findex) );
         else:
             print( "Processing " + fname + " ..." )
@@ -8085,6 +8085,8 @@ def mkmovie(framesize=50, whichi=0, whichn=1,doqtymem=True,domakeavi=False,use2d
             kwargs['qtymem']=qtymem
             mkmovieframe( findex, fname, **kwargs )
             plt.draw()
+        if whichn == 0:
+            break
     print( "Done!" )
     sys.stdout.flush()
     if domakeavi:
