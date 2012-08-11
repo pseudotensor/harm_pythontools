@@ -75,7 +75,7 @@ def psrspindown():
         #"mean" because getting vector potential (which does not require integration in phi), not flux
         Max_vpot_code = 0.5 * np.abs(gdetB[1,0]).mean(-1).sum(-1)*_dx2
         #mudip = Max_vpot_code * Rin
-        mudip = 1.5*3.162277660168379332*2*3*3*0.5
+        mudip = 1.5*3.162277660168379332*2*3*3*0.5*(4*np.pi)**0.5
         #Normalized Edot such that aligned dipole should be unity
         Edot = Edot_code / (mudip**2 * OmegaNS**4)
         print("Alpha = %g, FE = %g, Edot = %g" % (AlphaNS*180./np.pi, Edot_code, Edot) )
