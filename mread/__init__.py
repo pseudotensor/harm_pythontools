@@ -47,9 +47,11 @@ import visit_writer
 
 def psrspindown():
     flist = [
+        "rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8",
         "fixdt_15",
         "fixdt_30",
         "fixdt_45",
+        "tp60deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm",
         "fixdt_60",
         "fixdt_75",
         "fixdt_90" ]
