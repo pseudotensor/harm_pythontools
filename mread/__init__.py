@@ -77,7 +77,7 @@ def psrspindown():
         mudip = Max_vpot_code * Rin
         #Normalized Edot such that aligned dipole should be unity
         Edot = Edot_code / (mudip**2 * OmegaNS**4)
-        print("Alpha = %g, Edot = %g" % (AlphaNS*180./np.pi, Edot) )
+        print("Alpha = %g, FE = %g, Edot = %g" % (AlphaNS*180./np.pi, FE, Edot) )
         plt.plot( AlphaNS*180./np.pi, Edot )
 
 def plotcs(r0orlc=2):
