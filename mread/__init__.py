@@ -55,7 +55,8 @@ def psrspindown():
         "fixdt_60",
         "fixdt_x2_60",
         "fixdt_75",
-        "fixdt_90" ]
+        "fixdt_90",
+        "tp90deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat"]
     for i,f in enumerate(flist):
         print( "%s :" % f )
         p = os.path.join("/home/atchekho/run2",f)
@@ -63,6 +64,8 @@ def psrspindown():
         grid3d("gdump.bin",use2d=1)
         #pick last fieldline dump
         rfd( os.path.basename(glob.glob(os.path.join("dumps/", "fieldline*"))[-1]) )
+        if( f == "tp90deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat" ):
+            rfd("fieldline0060.bin")
         #cvel()
         #Tcalcud()
         FE = -(gdetF[1,1]).sum(2).sum(1)*_dx2*_dx3
