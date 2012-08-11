@@ -903,12 +903,13 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
 
             if type(color) == numpy.ndarray:            
                 arrowcolor = args['color'][n]
-
-            p = mpp.FancyArrowPatch((tx[n-dnarrow+1],ty[n-dnarrow+1]), (tx[n+dnarrow],ty[n+dnarrow]),
+            
+            if dnarrow < n: #avoid making arrows when field line too short
+                p = mpp.FancyArrowPatch((tx[n-dnarrow+1],ty[n-dnarrow+1]), (tx[n+dnarrow],ty[n+dnarrow]),
                                 arrowstyle='->', lw=arrowlinewidth,
                                 mutation_scale=20*arrowsize, color=arrowcolor)
-            ptch=ax.add_patch(p)
-            ptch.set_zorder(2) #same as line
+                ptch=ax.add_patch(p)
+                ptch.set_zorder(2) #same as line
     if setxylim:
         ax.set_xlim(x.min(), x.max())
         ax.set_ylim(y.min(), y.max())    
