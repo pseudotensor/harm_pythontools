@@ -53,6 +53,7 @@ def psrspindown():
         "fixdt_45",
         "tp60deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm",
         "fixdt_60",
+        "fixdt_x2_60",
         "fixdt_75",
         "fixdt_90" ]
     for i,f in enumerate(flist):
