@@ -64,7 +64,7 @@ def psrspindown():
         #Tcalcud()
         FE = -(gdetF[1,1]).sum(2).sum(1)*_dx2*_dx3
         #LC radius
-        if OmegaNS == 0 or OmegaNS is None: OmegaNS = 0.2
+        #if OmegaNS == 0 or OmegaNS is None: OmegaNS = 0.2
         Rlc = 1. / OmegaNS
         #evaluate at 2Rlc
         reval = 2 * Rlc
