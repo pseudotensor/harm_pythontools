@@ -45,6 +45,41 @@ import visit_writer
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
 
+def psrspindown():
+    flist = [
+        "fixdt_15",
+        "fixdt_30",
+        "fixdt_45",
+        "fixdt_60",
+        "fixdt_75",
+        "fixdt_90" ]
+    for i,f in enumerate(flist):
+        print( "%s :" % f )
+        p = os.path.join("/home/atchekho/run2",f)
+        os.chdir(p)
+        grid3d("gdump.bin",use2d=1)
+        #pick last fieldline dump
+        rfd( os.path.basename(glob.glob(os.path.join("dumps/", "fieldline*"))[-1]) )
+        #cvel()
+        #Tcalcud()
+        FE = -(gdetF[1,1]).sum(2).sum(1)*_dx2*_dx3
+        #LC radius
+        if OmegaNS == 0 or OmegaNS is None: OmegaNS = 0.2
+        Rlc = 1. / OmegaNS
+        #evaluate at 2Rlc
+        reval = 2 * Rlc
+        ieval = iofr(reval)
+        #Spindown energy losses
+        Edot_code = FE[ieval]
+        #magnetic flux at star; 0.5 accts for two hemispheres
+        #"mean" because getting vector potential (which does not require integration in phi), not flux
+        Max_vpot_code = 0.5 * np.abs(gdetB[1,0]).mean(-1).sum(-1)*_dx2
+        mudip = Max_vpot_code * Rin
+        #Normalized Edot such that aligned dipole should be unity
+        Edot = Edot_code / (mudip**2 * OmegaNS**4)
+        print("Alpha = %g, Edot = %g" % (AlphaNS*180./np.pi, Edot) )
+        plt.plot( AlphaNS*180./np.pi, Edot )
+
 def plotcs(r0orlc=2):
     flist=["rwvpx_novpar_07rlc_bsqorho200_rbr1e2",
            "rwvpx_novpar_07rlc_bsqorho400_rbr1e2_x05",
