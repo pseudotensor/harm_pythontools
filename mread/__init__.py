@@ -51,12 +51,16 @@ def psrspindown(r=1):
         "rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8",
         "tp15deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat",
         "tp30deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat",
-        "hf_60_r10h05",
+        #"hf_60_r10h05",
+        "hf_60_r10h05_cyl",
+        "hf_60_r10h05o005_cyl",
+        #"tp60deg_b400_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat",
         # "tp60deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm",
         # "tp60deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat_16x32x32",
         "tp75deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat",
-        "tp90deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat",
-        "tp90deg_b400_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat"]
+        #"tp90deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat",
+        #"tp90deg_b400_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat",
+        "hf_90_r10h05_cyl"]
         # "fixdt_15",
         # "fixdt_30",
         # "fixdt_45",
@@ -78,6 +82,8 @@ def psrspindown(r=1):
             if( f == "tp90deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat" or 
                 f == "tp90deg_b400_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat" ):
                 rfd("fieldline0060.bin")
+            if( f == "hf_90_r10h05_cyl"):
+                rfd("fieldline0045.bin")
             #cvel()
             #Tcalcud()
             FE = -(gdetF[1,1]).sum(2).sum(1)*_dx2*_dx3
