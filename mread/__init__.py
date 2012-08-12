@@ -51,6 +51,7 @@ def psrspindown():
         "tp15deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat",
         "tp30deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat",
         "tp60deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm",
+        "tp60deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat_16x32x32",
         "tp75deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat",
         "tp90deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat"]
         # "fixdt_15",
