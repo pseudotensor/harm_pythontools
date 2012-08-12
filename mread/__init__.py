@@ -61,6 +61,9 @@ def psrspindown():
         # "fixdt_x2_60",
         # "fixdt_75",
         # "fixdt_90",
+    alpha_list = []
+    edot_list = []
+    name_list = []
     for i,f in enumerate(flist):
         print( "%s :" % f )
         p = os.path.join("/home/atchekho/run2",f)
@@ -92,7 +95,12 @@ def psrspindown():
         #Normalized Edot such that aligned dipole should be unity
         Edot = Edot_code / (mudip**2 * OmegaNS**4)
         print("Alpha = %g, FE = %g, Edot = %g" % (AlphaNS*180./np.pi, Edot_code, Edot) )
-        plt.plot( AlphaNS*180./np.pi, Edot )
+        #plt.plot( AlphaNS*180./np.pi, Edot )
+        edot_list += Edot
+        alpha_list += AlphaNS
+        name_list += f
+    plt.clf()
+    plt.plot(np.array(alpha_list)*180./np.pi, edot_list)
 
 def plotcs(r0orlc=2):
     flist=["rwvpx_novpar_07rlc_bsqorho200_rbr1e2",
