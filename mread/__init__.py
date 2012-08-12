@@ -45,13 +45,15 @@ import visit_writer
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
 
-def psrspindown():
+def psrspindown(r=1):
+    global alpha_list, edot_list, name_list
     flist = [
         "rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8",
         "tp15deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat",
         "tp30deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat",
-        "tp60deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm",
-        "tp60deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat_16x32x32",
+        "hf_60_r10h05",
+        # "tp60deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm",
+        # "tp60deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat_16x32x32",
         "tp75deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat",
         "tp90deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat"]
         # "fixdt_15",
@@ -61,46 +63,50 @@ def psrspindown():
         # "fixdt_x2_60",
         # "fixdt_75",
         # "fixdt_90",
-    alpha_list = []
-    edot_list = []
-    name_list = []
-    for i,f in enumerate(flist):
-        print( "%s :" % f )
-        p = os.path.join("/home/atchekho/run2",f)
-        os.chdir(p)
-        grid3d("gdump.bin",use2d=1)
-        #pick last fieldline dump
-        rfd( os.path.basename(glob.glob(os.path.join("dumps/", "fieldline*"))[-1]) )
-        if( f == "tp90deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat" ):
-            rfd("fieldline0060.bin")
-        #cvel()
-        #Tcalcud()
-        FE = -(gdetF[1,1]).sum(2).sum(1)*_dx2*_dx3
-        #LC radius
-        #if OmegaNS == 0 or OmegaNS is None: OmegaNS = 0.2
-        Rlc = 1. / OmegaNS
-        #evaluate at 2Rlc
-        reval = 2 * Rlc
-        ieval = iofr(reval)
-        #Spindown energy losses
-        Edot_code = FE[ieval]
-        #magnetic flux at star; 0.5 accts for two hemispheres
-        #"mean" because getting vector potential (which does not require integration in phi), not flux
-        Max_flux_code = 0.5 * np.abs(gdetB[1,0]).sum(-1).sum(-1)*_dx2*_dx3
-        #conversion prefactors
-        #1/(2*np.pi) -- to convert from A_\phi to Psi (flux)
-        #(4*np.pi)**0.5 -- to convert from Lorentz-Heaviside to Gaussian
-        mudip = Max_flux_code * Rin / (2*np.pi) * (4*np.pi)**0.5
-        #mudip = 1.5*3.162277660168379332*2*3*3*0.5*(4*np.pi)**0.5
-        #Normalized Edot such that aligned dipole should be unity
-        Edot = Edot_code / (mudip**2 * OmegaNS**4)
-        print("Alpha = %g, FE = %g, Edot = %g" % (AlphaNS*180./np.pi, Edot_code, Edot) )
-        #plt.plot( AlphaNS*180./np.pi, Edot )
-        edot_list.append( Edot )
-        alpha_list.append( AlphaNS )
-        name_list.append( f )
+    if r:
+        alpha_list = []
+        edot_list = []
+        name_list = []
+        for i,f in enumerate(flist):
+            print( "%s :" % f )
+            p = os.path.join("/home/atchekho/run2",f)
+            os.chdir(p)
+            grid3d("gdump.bin",use2d=1)
+            #pick last fieldline dump
+            rfd( os.path.basename(glob.glob(os.path.join("dumps/", "fieldline*"))[-1]) )
+            if( f == "tp90deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat" ):
+                rfd("fieldline0060.bin")
+            #cvel()
+            #Tcalcud()
+            FE = -(gdetF[1,1]).sum(2).sum(1)*_dx2*_dx3
+            #LC radius
+            #if OmegaNS == 0 or OmegaNS is None: OmegaNS = 0.2
+            Rlc = 1. / OmegaNS
+            #evaluate at 2Rlc
+            reval = 2 * Rlc
+            ieval = iofr(reval)
+            #Spindown energy losses
+            Edot_code = FE[ieval]
+            #magnetic flux at star; 0.5 accts for two hemispheres
+            #"mean" because getting vector potential (which does not require integration in phi), not flux
+            Max_flux_code = 0.5 * np.abs(gdetB[1,0]).sum(-1).sum(-1)*_dx2*_dx3
+            #conversion prefactors
+            #1/(2*np.pi) -- to convert from A_\phi to Psi (flux)
+            #(4*np.pi)**0.5 -- to convert from Lorentz-Heaviside to Gaussian
+            mudip = Max_flux_code * Rin / (2*np.pi) * (4*np.pi)**0.5
+            #mudip = 1.5*3.162277660168379332*2*3*3*0.5*(4*np.pi)**0.5
+            #Normalized Edot such that aligned dipole should be unity
+            Edot = Edot_code / (mudip**2 * OmegaNS**4)
+            print("Alpha = %g, FE = %g, Edot = %g" % (AlphaNS*180./np.pi, Edot_code, Edot) )
+            #plt.plot( AlphaNS*180./np.pi, Edot )
+            edot_list.append( Edot )
+            alpha_list.append( AlphaNS )
+            name_list.append( f )
     plt.clf()
-    plt.plot(np.array(alpha_list)*180./np.pi, edot_list)
+    plt.ylim(0,2.5)
+    a = np.linspace(0,np.pi/2.,1000)
+    plt.plot(np.array(alpha_list)*180/np.pi, edot_list, "s")
+    plt.plot(a*180/np.pi,1+np.sin(a)**2)
 
 def plotcs(r0orlc=2):
     flist=["rwvpx_novpar_07rlc_bsqorho200_rbr1e2",
@@ -259,11 +265,11 @@ def plotnsp(no=30):
     smass = (gdetF[1,0]).sum(2).sum(1)*_dx2*_dx3
     smass2 = (gdet*rho*uu[1]).sum(2).sum(1)*_dx2*_dx3
     plt.plot(r[:,0,0]/rlc,sTot_noRM,'r')
-    plt.plot(r[:,0,0]/rlc,sTot_noRM2,'k')
+    #plt.plot(r[:,0,0]/rlc,sTot_noRM2,'k')
     plt.plot(r[:,0,0]/rlc,sEM,'b')
-    plt.plot(r[:,0,0]/rlc,smass,'g')
-    plt.plot(r[:,0,0]/rlc,smass2,'m')
-    plt.plot(r[:,0,0]/rlc,sEMTH,'c')
+    #plt.plot(r[:,0,0]/rlc,smass,'g')
+    #plt.plot(r[:,0,0]/rlc,smass2,'m')
+    #plt.plot(r[:,0,0]/rlc,sEMTH,'c')
     # plt.plot(r[:,0,0]/rlc,spmass1,'r')
     plt.xlim(Rin/rlc,2.5)
     plt.ylim(0,100)
