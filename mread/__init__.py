@@ -55,7 +55,8 @@ def psrspindown(r=1):
         # "tp60deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm",
         # "tp60deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat_16x32x32",
         "tp75deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat",
-        "tp90deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat"]
+        "tp90deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat",
+        "tp90deg_b400_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat"]
         # "fixdt_15",
         # "fixdt_30",
         # "fixdt_45",
@@ -74,7 +75,8 @@ def psrspindown(r=1):
             grid3d("gdump.bin",use2d=1)
             #pick last fieldline dump
             rfd( os.path.basename(glob.glob(os.path.join("dumps/", "fieldline*"))[-1]) )
-            if( f == "tp90deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat" ):
+            if( f == "tp90deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat" or 
+                f == "tp90deg_b400_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat" ):
                 rfd("fieldline0060.bin")
             #cvel()
             #Tcalcud()
