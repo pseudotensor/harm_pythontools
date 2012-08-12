@@ -48,15 +48,18 @@ import visit_writer
 def psrspindown():
     flist = [
         "rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8",
-        "fixdt_15",
-        "fixdt_30",
-        "fixdt_45",
+        "tp15deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat",
+        "tp30deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat",
         "tp60deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm",
-        "fixdt_60",
-        "fixdt_x2_60",
-        "fixdt_75",
-        "fixdt_90",
+        "tp75deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat",
         "tp90deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat"]
+        # "fixdt_15",
+        # "fixdt_30",
+        # "fixdt_45",
+        # "fixdt_60",
+        # "fixdt_x2_60",
+        # "fixdt_75",
+        # "fixdt_90",
     for i,f in enumerate(flist):
         print( "%s :" % f )
         p = os.path.join("/home/atchekho/run2",f)
