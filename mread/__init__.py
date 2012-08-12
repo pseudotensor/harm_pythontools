@@ -96,9 +96,9 @@ def psrspindown():
         Edot = Edot_code / (mudip**2 * OmegaNS**4)
         print("Alpha = %g, FE = %g, Edot = %g" % (AlphaNS*180./np.pi, Edot_code, Edot) )
         #plt.plot( AlphaNS*180./np.pi, Edot )
-        edot_list += Edot
-        alpha_list += AlphaNS
-        name_list += f
+        edot_list.append( Edot )
+        alpha_list.append( AlphaNS )
+        name_list.append( f )
     plt.clf()
     plt.plot(np.array(alpha_list)*180./np.pi, edot_list)
 
