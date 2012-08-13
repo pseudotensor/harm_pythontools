@@ -899,7 +899,7 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
         ## Add arrows every dtx along each trajectory.
         #for n in numpy.arange(max((len(tx)%dtx)/2+dtx/2,1),len(tx)-2,dtx):
         if doarrows:
-            n = len(tx)/2+1
+            n = len(tx)/2
             if type(linewidth) == numpy.ndarray:
                 arrowlinewidth = args['linewidth'][n]
 
