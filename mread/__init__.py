@@ -8502,8 +8502,8 @@ def mkmovieframe( findex, fname, **kwargs ):
     print("Saving fig = %04d" % findex)
     sys.stdout.flush()
     plt.savefig( "lrho%04d_Rzxym1.png" % (findex),bbox_inches='tight',pad_inches=0.02  )
-    # plt.savefig( "lrho%04d_Rzxym1.eps" % (findex),bbox_inches='tight',pad_inches=0.02  )
-    #plt.savefig( "lrho%04d_Rzxym1.pdf" % (findex),bbox_inches='tight',pad_inches=0.02  )
+    plt.savefig( "lrho%04d_Rzxym1.eps" % (findex),bbox_inches='tight',pad_inches=0.02  )
+    plt.savefig( "lrho%04d_Rzxym1.pdf" % (findex),bbox_inches='tight',pad_inches=0.02  )
     #print xxx
 
 def mk2davg():
