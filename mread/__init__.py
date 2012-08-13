@@ -74,9 +74,10 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
             "hf_45_r10h05_mydt_cyl",
             "hf_60_r10h05_mydt_cyl",
             #"hf_60_r10h05_cyl",
-            #"hf_60_r10h05_mydt_cyl_x2",
             "hf_75_r10h05_mydt_cyl",
-            "hf_90_r10h05_mydt_cyl"
+            "hf_90_r10h05_mydt_cyl",
+            "hf_60_r10h05_mydt_cyl_x2",
+            "hf_60_r08h05_mydt_cyl_x2"
             ]
     else:
         flist = [
@@ -212,6 +213,8 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
         leg = plt.legend(loc="lower right",ncol=2)
         for t in leg.get_texts():
             t.set_fontsize(20)    # the legend text fontsize
+        plt.savefig("fig_poynt.eps",bbox_inches='tight',pad_inches=0.02)
+        plt.savefig("fig_poynt.pdf",bbox_inches='tight',pad_inches=0.02)
 
 def plotcs(r0orlc=2):
     flist=["rwvpx_novpar_07rlc_bsqorho200_rbr1e2",
@@ -364,9 +367,9 @@ def plotnsp(no=30):
     #total energy flux minus rest-mass
     sTot_noRM = -(gdetF[1,1]).sum(2).sum(1)*_dx2*_dx3
     sTot_noRM2= -(gdet*Tud[1,0]+gdet*rho*uu[1]).sum(2).sum(1)*_dx2*_dx3
-    sEMTH= -(gdet*TudEM[1,0]+gdet*rho*uu[1]*(1+ud[0])).sum(2).sum(1)*_dx2*_dx3
+    sEMKE= -(gdet*TudEM[1,0]+gdet*rho*uu[1]*(1+ud[0])).sum(2).sum(1)*_dx2*_dx3
     sEM = -(gdet*TudEM)[1,0].sum(2).sum(1)*_dx2*_dx3
-    sKE = -(gdet*(rho*uu[1]+TudMA[1,0])).sum(2).sum(1)*_dx2*_dx3
+    sKETH = -(gdet*(rho*uu[1]+TudMA[1,0])).sum(2).sum(1)*_dx2*_dx3
     smass = (gdetF[1,0]).sum(2).sum(1)*_dx2*_dx3
     smass2 = (gdet*rho*uu[1]).sum(2).sum(1)*_dx2*_dx3
     plt.plot(r[:,0,0]/rlc,sTot_noRM,'r')
@@ -374,7 +377,7 @@ def plotnsp(no=30):
     plt.plot(r[:,0,0]/rlc,sEM,'b')
     plt.plot(r[:,0,0]/rlc,smass,'g')
     plt.plot(r[:,0,0]/rlc,smass2,'m')
-    #plt.plot(r[:,0,0]/rlc,sEMTH,'c')
+    plt.plot(r[:,0,0]/rlc,sEMKE,'c')
     # plt.plot(r[:,0,0]/rlc,spmass1,'r')
     plt.xlim(Rin/rlc,2.5)
     plt.ylim(0,100)
