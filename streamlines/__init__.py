@@ -696,7 +696,9 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
     def trajd(xb, yb, useblank = True, doreport = False):
         return traj(xb*downsample, yb*downsample, useblank, doreport)
 
-    def traj(xb, yb, useblank = True, doreport = False, checkalongx = False, minlength = 0.2):
+    def traj(xb, yb, useblank = True, doreport = False, checkalongx = False, minlength = None):
+        if minlength is None:
+            minlength = minlengthdefault
         if xb < 0 or xb >= NBX or yb < 0 or yb >= NBY:
             return
         if checkalongx and downsample != 1:
@@ -897,7 +899,7 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
         ## Add arrows every dtx along each trajectory.
         #for n in numpy.arange(max((len(tx)%dtx)/2+dtx/2,1),len(tx)-2,dtx):
         if doarrows:
-            n = len(tx)/2
+            n = len(tx)/2+1
             if type(linewidth) == numpy.ndarray:
                 arrowlinewidth = args['linewidth'][n]
 
@@ -905,7 +907,9 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
                 arrowcolor = args['color'][n]
             
             if dnarrow < n: #avoid making arrows when field line too short
-                p = mpp.FancyArrowPatch((tx[n-dnarrow+1],ty[n-dnarrow+1]), (tx[n+dnarrow],ty[n+dnarrow]),
+                if dnarrow == 0: delt = 1 
+                else: delt = 0
+                p = mpp.FancyArrowPatch((tx[n-dnarrow],ty[n-dnarrow]), (tx[n+dnarrow+delt],ty[n+dnarrow+delt]),
                                 arrowstyle='->', lw=arrowlinewidth,
                                 mutation_scale=20*arrowsize, color=arrowcolor)
                 ptch=ax.add_patch(p)
