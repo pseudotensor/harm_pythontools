@@ -47,15 +47,18 @@ import visit_writer
 
 def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
     global alpha_list, edot_list, name_list
-    global edotvec_list, rvec_list, rlc_list
+    global edotvec_list, poyntvec_list, rvec_list, rlc_list
 
     if newlist:
         flist = [
-            "rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8",
+            #"rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8",
+            "hf_0_r10h05_mydt_cyl",
             "hf_15_r10h05_mydt_cyl",
             "hf_30_r10h05_mydt_cyl",
             "hf_45_r10h05_mydt_cyl",
             "hf_60_r10h05_mydt_cyl",
+            #"hf_60_r10h05_cyl",
+            #"hf_60_r10h05_mydt_cyl_x2",
             "hf_75_r10h05_mydt_cyl",
             "hf_90_r10h05_mydt_cyl"
             ]
@@ -94,6 +97,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
         edotvec_list = []
         rvec_list = []
         rlc_list = []
+        poyntvec_list = []
         for i,f in enumerate(flist):
             print( "%s :" % f )
             p = os.path.join("/home/atchekho/run2",f)
@@ -108,9 +112,10 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
                 rfd("fieldline0045.bin")
             if( f == "hf_90_r10h05_mydt_cyl" ):
                 rfd("fieldline0045.bin")
-            #cvel()
-            #Tcalcud()
-            FE = -(gdetF[1,1]).sum(2).sum(1)*_dx2*_dx3
+            cvel()
+            Tcalcud()
+            FE  = -(gdetF[1,1]).sum(2).sum(1)*_dx2*_dx3
+            FEM = -(gdet*TudEM)[1,0].sum(2).sum(1)*_dx2*_dx3
             #LC radius
             #if OmegaNS == 0 or OmegaNS is None: OmegaNS = 0.2
             Rlc = 1. / OmegaNS
@@ -119,6 +124,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
             ieval = iofr(reval)
             #Spindown energy losses
             Edot_code = FE
+            Poynt_code = FEM
             #magnetic flux at star; 0.5 accts for two hemispheres
             #"mean" because getting vector potential (which does not require integration in phi), not flux
             Max_flux_code = 0.5 * np.abs(gdetB[1,0]).sum(-1).sum(-1)*_dx2*_dx3
@@ -130,15 +136,18 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
             #Normalized Edot such that aligned dipole should be unity
             norm = mudip**2 * OmegaNS**4
             Edot_vec = Edot_code / norm
+            Poynt_vec = Poynt_code / norm
             Edot = Edot_vec[iofr(reval)]
             print("Alpha = %g, FE = %g, Edot = %g" % (AlphaNS*180./np.pi, Edot_code[ieval], Edot) )
             #plt.plot( AlphaNS*180./np.pi, Edot )
             edot_list.append( Edot )
             edotvec_list.append( Edot_vec )
+            poyntvec_list.append( Poynt_vec )
             rvec_list.append( r[:,0,0] )
             rlc_list.append( Rlc )
             alpha_list.append( AlphaNS )
             name_list.append( f )
+    plt.figure(1)
     plt.clf()
     a = np.linspace(0,np.pi/2.,1000)
     plt.plot(np.array(alpha_list)*180/np.pi, edot_list, "s",ms=10)
@@ -158,7 +167,35 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
         t.set_fontsize(20)    # the legend text fontsize
     plt.savefig("fig_edot.eps",bbox_inches='tight',pad_inches=0.02)
     plt.savefig("fig_edot.pdf",bbox_inches='tight',pad_inches=0.02)
-    
+    clrs=["r","g","b","c","k"]
+    if plotpoynt:
+        plt.figure(2)
+        plt.clf()
+        a = np.linspace(0,np.pi/2.,1000)
+        clrindex = 0
+        for i,f in enumerate(flist):
+            if i%2==1: continue
+            plt.plot(rvec_list[i]/rlc_list[i], edotvec_list[i],
+                     c=clrs[clrindex],
+                     ls="-",lw=2,
+                     label=r"$\alpha=%g^\circ$" % (alpha_list[i]*180/np.pi))
+            plt.plot(rvec_list[i]/rlc_list[i], 
+                     poyntvec_list[i],c=clrs[clrindex],
+                     ls='--',lw=2)
+            clrindex+=1
+        plt.xlim(0.2,5)
+        plt.ylim(0,2.5)
+        plt.grid(b=1)
+        ax2 = plt.gca()
+        for label in ax2.get_xticklabels() + ax2.get_yticklabels():
+            label.set_fontsize(20)
+        plt.xlabel(r"$r/R_{\rm LC}$",fontsize=20)
+        plt.ylabel(r"$L/L_{\rm aligned}$",fontsize=20)
+        plt.ylim(0,2.5)
+        plt.xlim(0.21,5)
+        leg = plt.legend(loc="lower right",ncol=2)
+        for t in leg.get_texts():
+            t.set_fontsize(20)    # the legend text fontsize
 
 def plotcs(r0orlc=2):
     flist=["rwvpx_novpar_07rlc_bsqorho200_rbr1e2",
