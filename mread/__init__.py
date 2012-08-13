@@ -45,7 +45,7 @@ import visit_writer
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
 def mklargescalepulsarplot():
-    global r
+    #FAR
     os.chdir("/home/atchekho/run2/tp60deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm")
     rfd("fieldline0000.bin")
     mkmovie(whichi=330,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=20,plotlen=21./OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=0,doBphi=True,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=1,ncell=3200,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5)    
@@ -62,6 +62,31 @@ def mklargescalepulsarplot():
     ax1.set_yticklabels(s_tck)
     plt.xlabel(r"$x/R_{\rm LC}$",fontsize=20)
     plt.ylabel(r"$y/R_{\rm LC}$",fontsize=20)
+    plt.savefig("fig_large.eps",bbox_inches='tight',pad_inches=0.02)
+    plt.savefig("fig_large.pdf",bbox_inches='tight',pad_inches=0.02)
+
+def mksmallscalepulsarplot():
+    #NEAR
+    os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_cyl_x2")
+    rfd("fieldline0000.bin")
+    mkmovie(whichi=45,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=20,plotlen=2.5/OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=nz/2,doBphi=True,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=1,ncell=3200,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5)    
+    #mkmovie(whichi=50,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=40,plotlen=15,isnstar=True,minlenbhfield=0.0,density=2,whichr=1.3,minlengthdefault=0.05,kval=0,doBphi=True,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5)
+
+    plt.xlim(-2.5/OmegaNS,2.5/OmegaNS)
+    plt.ylim(-2.5/OmegaNS,2.5/OmegaNS)
+    ax1 = plt.gca()
+    for label in ax1.get_xticklabels() + ax1.get_yticklabels():
+        label.set_fontsize(20)
+    tck = np.linspace(-2.,2.,5)
+    s_tck = [(r'$%d$' % t) for t in tck]
+    ax1.set_xticks(tck/OmegaNS)    
+    ax1.set_yticks(tck/OmegaNS)    
+    ax1.set_xticklabels(s_tck)
+    ax1.set_yticklabels(s_tck)
+    plt.xlabel(r"$x/R_{\rm LC}$",fontsize=20)
+    plt.ylabel(r"$y/R_{\rm LC}$",fontsize=20)
+    plt.savefig("fig_small.eps",bbox_inches='tight',pad_inches=0.02)
+    plt.savefig("fig_small.pdf",bbox_inches='tight',pad_inches=0.02)
 
 def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
     global alpha_list, edot_list, name_list
