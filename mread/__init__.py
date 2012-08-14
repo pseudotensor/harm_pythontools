@@ -32,7 +32,7 @@ def setmplconfigpath(uniquenum=None):
     #
     # SUPERNOEMARK: below inapplicable to Nautilus for some reason.  Makes Nautilus fail to find some packages if MPLCONFIGDIR not unset.
     #
-    ISNAUTILUS=0
+    ISNAUTILUS=1
     #
     if ISNAUTILUS==1:
         return
@@ -323,22 +323,19 @@ def tan(x):
     return(np.tan(x))
 
 def cot(x):
-    if(np.fabs(np.mod(x,np.pi))<1E-14):
-        return(0)
-    else:
-        return(1.0/np.tan(x))
+    y=1.0/np.tan(x)
+    y[np.fabs(np.mod(x,np.pi))<1E-14]=0.0
+    return(y)
 
 def csc(x):
-    if(np.fabs(np.mod(x,np.pi))<1E-14):
-        return(0)
-    else:
-        return(1.0/np.sin(x))
+    y=1.0/np.sin(x)
+    y[np.fabs(np.mod(x,np.pi))<1E-14]=0.0
+    return(y)
 
 def sec(x):
-    if(np.fabs(np.mod(x,0.5*np.pi))<1E-14):
-        return(0)
-    else:
-        return(1.0/np.cos(x))
+    y=1.0/np.cos(x)
+    y[np.fabs(np.mod(x,0.5*np.pi))<1E-14]=0.0
+    return(y)
 
 #arctan2 is identical to the atan2 function of the underlying C library. 
 def atan2(x,y):
@@ -350,51 +347,62 @@ def arctanmath(x,y):
 
 
 
-
-def set_transV2Vmetric():
+# trans requires input of full 3d Vmetric (not just use2d gdump version)
+def set_transV2Vmetric(Vmetric=None):
+    #
+    # r,h,ph are Vmetric[] for both trans matrices.
+    # these are full 3D r,h,ph
+    r=Vmetric[1]
+    h=Vmetric[2]
+    ph=Vmetric[3]
+    #
     #
     b0=THETAROT;
     #
-    transV2Vmetric=np.copy(gv3)
-    #
+    transV2Vmetric=np.zeros((4,4,nx,ny,nz),dtype=r.dtype)
     # r,h,ph are Vmetric[]
     # transV2Vmetric^\mu[Vmetric]_\nu[V] u^\nu[V] : So first index is Vmetric-type.  Second index is V-type.  Operates on contravariant V-type.
-    transV2Vmetric[0,0]=1. + gv3*0.0
-    transV2Vmetric[0,1]=0. + gv3*0.0
-    transV2Vmetric[0,2]=0. + gv3*0.0
-    transV2Vmetric[0,3]=0. + gv3*0.0
-    transV2Vmetric[1,0]=0. + gv3*0.0
-    transV2Vmetric[1,1]=1. + gv3*0.0
-    transV2Vmetric[1,2]=0. + gv3*0.0
-    transV2Vmetric[1,3]=0. + gv3*0.0
-    transV2Vmetric[2,0]=0. + gv3*0.0
-    transV2Vmetric[2,1]=0. + gv3*0.0
+    transV2Vmetric[0,0]=1. + gv3[0,0]*0.0
+    transV2Vmetric[0,1]=0. + gv3[0,0]*0.0
+    transV2Vmetric[0,2]=0. + gv3[0,0]*0.0
+    transV2Vmetric[0,3]=0. + gv3[0,0]*0.0
+    transV2Vmetric[1,0]=0. + gv3[0,0]*0.0
+    transV2Vmetric[1,1]=1. + gv3[0,0]*0.0
+    transV2Vmetric[1,2]=0. + gv3[0,0]*0.0
+    transV2Vmetric[1,3]=0. + gv3[0,0]*0.0
+    transV2Vmetric[2,0]=0. + gv3[0,0]*0.0
+    transV2Vmetric[2,1]=0. + gv3[0,0]*0.0
     transV2Vmetric[2,2]=pow (pow (cos (h)*sin (b0) - 1.*cos (b0)*cos (ph)*sin (h),2.) + pow (sin (h),2.)*pow (sin (ph),2.),-0.5)*(-1.*cos (h)*cos (ph)*sin (b0) + cos (b0)*sin (h))
     transV2Vmetric[2,3]=pow (pow (cos (h)*sin (b0) - 1.*cos (b0)*cos (ph)*sin (h),2.) + pow (sin (h),2.)*pow (sin (ph),2.),-0.5)*sin (b0)*sin (h)*sin (ph)
-    transV2Vmetric[3,0]=0. + gv3*0.0
-    transV2Vmetric[3,1]=0. + gv3*0.0
+    transV2Vmetric[3,0]=0. + gv3[0,0]*0.0
+    transV2Vmetric[3,1]=0. + gv3[0,0]*0.0
     transV2Vmetric[3,2]=-1.*pow (pow (cos (h)*sin (b0) - 1.*cos (b0)*cos (ph)*sin (h),2.) + pow (sin (h),2.)*pow (sin (ph),2.),-1.)*sin (b0)*sin (ph)
     transV2Vmetric[3,3]=pow (pow (cos (h)*sin (b0) - 1.*cos (b0)*cos (ph)*sin (h),2.) + pow (sin (h),2.)*pow (sin (ph),2.),-1.)*sin (h)*(-1.*cos (h)*cos (ph)*sin (b0) + cos (b0)*sin (h))
 
+    if 0==1: # don't need, so don't waste memory
+        transVmetric2V=np.zeros((4,4,nx,ny,nz),dtype=r.dtype)
+        # r,h,ph are Vmetric[]
+        # transVmetric2V^\mu[V]_\nu[Vmetric] u^\nu[Vmetric] : So first index is V-type.  Second index is Vmetric-type.  Operates on contravariant Vmetric-type.
+        transVmetric2V[0,0]=1. + gv3[0,0]*0.0
+        transVmetric2V[0,1]=0. + gv3[0,0]*0.0
+        transVmetric2V[0,2]=0. + gv3[0,0]*0.0
+        transVmetric2V[0,3]=0. + gv3[0,0]*0.0
+        transVmetric2V[1,0]=0. + gv3[0,0]*0.0
+        transVmetric2V[1,1]=1. + gv3[0,0]*0.0
+        transVmetric2V[1,2]=0. + gv3[0,0]*0.0
+        transVmetric2V[1,3]=0. + gv3[0,0]*0.0
+        transVmetric2V[2,0]=0. + gv3[0,0]*0.0
+        transVmetric2V[2,1]=0. + gv3[0,0]*0.0
+        transVmetric2V[2,2]=pow (pow (cos (h)*cos (ph)*sin (b0) - 1.*cos (b0)*sin (h),2.) + pow (sin (b0),2.)*pow (sin (ph),2.),-1.)*pow (pow (cos (h)*sin (b0) - 1.*cos (b0)*cos (ph)*sin (h),2.) + pow (sin (h),2.)*pow (sin (ph),2.),0.5)*(-1.*cos (h)*cos (ph)*sin (b0) + cos (b0)*sin (h))
+        transVmetric2V[2,3]=-1.*sin (b0)*sin (ph)
+        transVmetric2V[3,0]=0. + gv3[0,0]*0.0
+        transVmetric2V[3,1]=0. + gv3[0,0]*0.0
+        transVmetric2V[3,2]=csc (h)*pow (pow (cos (h)*cos (ph)*sin (b0) - 1.*cos (b0)*sin (h),2.) + pow (sin (b0),2.)*pow (sin (ph),2.),-1.)*pow (pow (cos (h)*sin (b0) - 1.*cos (b0)*cos (ph)*sin (h),2.) + pow (sin (h),2.)*pow (sin (ph),2.),0.5)*sin (b0)*sin (ph)
+        transVmetric2V[3,3]=cos (b0) - 1.*cos (ph)*cot (h)*sin (b0)
+        #
+    #return(transV2Vmetric,transVmetric2V)
+    return(transV2Vmetric)
 
-    # r,h,ph are Vmetric[]
-    # transVmetric2V^\mu[V]_\nu[Vmetric] u^\nu[Vmetric] : So first index is V-type.  Second index is Vmetric-type.  Operates on contravariant Vmetric-type.
-    transVmetric2V[0,0]=1. + gv3*0.0
-    transVmetric2V[0,1]=0. + gv3*0.0
-    transVmetric2V[0,2]=0. + gv3*0.0
-    transVmetric2V[0,3]=0. + gv3*0.0
-    transVmetric2V[1,0]=0. + gv3*0.0
-    transVmetric2V[1,1]=1. + gv3*0.0
-    transVmetric2V[1,2]=0. + gv3*0.0
-    transVmetric2V[1,3]=0. + gv3*0.0
-    transVmetric2V[2,0]=0. + gv3*0.0
-    transVmetric2V[2,1]=0. + gv3*0.0
-    transVmetric2V[2,2]=pow (pow (cos (h)*cos (ph)*sin (b0) - 1.*cos (b0)*sin (h),2.) + pow (sin (b0),2.)*pow (sin (ph),2.),-1.)*pow (pow (cos (h)*sin (b0) - 1.*cos (b0)*cos (ph)*sin (h),2.) + pow (sin (h),2.)*pow (sin (ph),2.),0.5)*(-1.*cos (h)*cos (ph)*sin (b0) + cos (b0)*sin (h))
-    transVmetric2V[2,3]=-1.*sin (b0)*sin (ph)
-    transVmetric2V[3,0]=0. + gv3*0.0
-    transVmetric2V[3,1]=0. + gv3*0.0
-    transVmetric2V[3,2]=csc (h)*pow (pow (cos (h)*cos (ph)*sin (b0) - 1.*cos (b0)*sin (h),2.) + pow (sin (b0),2.)*pow (sin (ph),2.),-1.)*pow (pow (cos (h)*sin (b0) - 1.*cos (b0)*cos (ph)*sin (h),2.) + pow (sin (h),2.)*pow (sin (ph),2.),0.5)*sin (b0)*sin (ph)
-    transVmetric2V[3,3]=cos (b0) - 1.*cos (ph)*cot (h)*sin (b0)
 
 
 def rotate_VtoVmetric(V,Vmetric):
@@ -417,17 +425,8 @@ def rotate_VtoVmetric(V,Vmetric):
 
     M_PI=np.pi
 
-    # keep \theta between 0 and \pi
-    if(hold<0.0):
-        hold+=M_PI
-    if(hold>M_PI):
-        hold-=M_PI
-
-    # keep \phi between 0 and 2\pi
-    if(phold<0.0):
-        phold+=2.0*M_PI
-    if(phold>2.0*M_PI):
-        phold-=2.0*M_PI
+    # constrain th,ph to Cartesian-correct locations within limited \theta,\phi span.
+    (hold,phold)=fix_hp(hold,phold)
 
     ###################
     Vmetric=np.copy(V)
@@ -436,8 +435,11 @@ def rotate_VtoVmetric(V,Vmetric):
     Vmetric[1]=rold
     Vmetric[2]=hold
     Vmetric[3]=phold
+    #
+    return(Vmetric)
 
 
+# rotate requires input of full 3D Vmetric
 def rotate_Vmetric2V(Vmetric,V):
     #
     t=Vmetric[0]
@@ -468,17 +470,8 @@ def rotate_Vmetric2V(Vmetric,V):
 
     M_PI=np.pi
 
-    # keep \theta between 0 and \pi
-    if(hnew<0.0):
-        hnew+=M_PI
-    if(hnew>M_PI):
-        hnew-=M_PI
-
-    # keep \phi between 0 and 2\pi
-    if(phnew<0.0):
-        phnew+=2.0*M_PI
-    if(phnew>2.0*M_PI):
-        phnew-=2.0*M_PI
+    # constrain th,ph to Cartesian-correct locations within limited \theta,\phi span.
+    (hnew,phnew)=fix_hp(hnew,phnew)
 
 
     ###################
@@ -489,32 +482,260 @@ def rotate_Vmetric2V(Vmetric,V):
     V[2]=hnew
     V[3]=phnew
 
+    return(V)
 
-def get_Vorig(Vorig,Vmetric):
-    #
-    # get Vmetric(V)
-    # Note that ti,tj,tk,x1,x2,x3,r,h,ph,dxdxp don't change -- we simply identify them with Vmetric instead of V, so that V no longer is relevant except as required to interpolate grid data to Vmetric positions from V positions and to transform vectors/tensors as required.  But we still need the stored value of Vorig on the grid, which means we need Vorig=V(Vmetric).
-    #
-    # assume ti,tj,tk,x1,x2,x3,r,h,ph,dxdxp already rotated, and now Vmetric already.
-    # then just get original V
-    Vmetric[0]=Vmetric[0]*0.0
-    Vmetric[1]=r
-    Vmetric[2]=h
-    Vmetric[3]=ph
-    rotate_Vmetric2V(Vmetric,Vorig) # no time-component operations
-    #
 
 
 # 3D interp from Vorig to V (Vmetric usually)
-def reinterp3dspc(Vorig,V,vartointerp):
+# Requires input of full 3D Vorig and Vmetric
+# TOO SLOW!
+def reinterp3dspc(Vorig,Vmetric,vartointerp):
     #
     # grid the data.
     # first position args are original locations
     # second position args are new locations
-    varinterpolated = griddata((Vorig[1], Vorig[2], Vorig[3]), vartointerp, (V[1,:,None,None], V[2,None,:,None], V[3,None,None,:]), method='linear') # no cubic for 3D data.  Could do each slice cubiclaly.
+    print("reinterp3dspc shapes:",Vorig[1].shape, Vorig[2].shape, Vorig[3].shape, vartointerp.shape, Vmetric[1,].shape, Vmetric[2].shape, Vmetric[3].shape) ; sys.stdout.flush()
+    #varinterpolated = griddata((Vorig[1], Vorig[2], Vorig[3]), vartointerp, (Vmetric[1], Vmetric[2], Vmetric[3]), method='linear') # no cubic for 3D data.  Could do each slice cubiclaly.
+    #
+    if 1==0:
+        pts = np.array((Vorig[1].ravel(),Vorig[2].ravel(),Vorig[3].ravel())).T
+        varinterpolatedfun = sp.interpolate.LinearNDInterpolator(pts, vartointerp.ravel(), fill_value=0.0)
+        ptsnew = np.array((Vmetric[1].ravel(),Vmetric[2].ravel(),Vmetric[3].ravel())).T
+        varinterpolated=varinterpolatedfun(ptsnew)  #((Vmetric[1], Vmetric[2], Vmetric[3]))
+    else:
+        pts = np.array((Vorig[1].ravel(),Vorig[2].ravel(),Vorig[3].ravel())).T
+        ptsnew = np.array((Vmetric[1,20,15,20].ravel(),Vmetric[2,20,15,20].ravel(),Vmetric[3,20,15,20].ravel())).T
+        print("ptsnew") ; sys.stdout.flush()
+        print(ptsnew) ; sys.stdout.flush()
+        varinterpolatedfun1 = sp.interpolate.LinearNDInterpolator(pts, Vorig[1].ravel(), fill_value=0.0)
+        print("duck1") ; sys.stdout.flush()
+        result1=varinterpolatedfun1(ptsnew)  #((Vmetric[1], Vmetric[2], Vmetric[3]))
+        print("results: Vmetric: %g %g %g  :: Vorig1: %g\n" % (Vmetric[1,20,15,20],Vmetric[2,20,15,20],Vmetric[3,20,15,20],result1))
+        varinterpolatedfun2 = sp.interpolate.LinearNDInterpolator(pts, Vorig[2].ravel(), fill_value=0.0)
+        print("duck2") ; sys.stdout.flush()
+        result2=varinterpolatedfun2(ptsnew)  #((Vmetric[1], Vmetric[2], Vmetric[3]))
+        print("results: Vmetric: %g %g %g  :: Vorig2: %g\n" % (Vmetric[1,20,15,20],Vmetric[2,20,15,20],Vmetric[3,20,15,20],result2))
+        varinterpolatedfun3 = sp.interpolate.LinearNDInterpolator(pts, Vorig[3].ravel(), fill_value=0.0)
+        print("duck3") ; sys.stdout.flush()
+        result3=varinterpolatedfun3(ptsnew)  #((Vmetric[1], Vmetric[2], Vmetric[3]))
+        print("results: Vmetric: %g %g %g  :: Vorig3: %g\n" % (Vmetric[1,20,15,20],Vmetric[2,20,15,20],Vmetric[3,20,15,20],result3))
+        sys.stdout.flush()
+    #
+    exit
+    #
     return(varinterpolated)
 
 
+def fix_hp(th,ph):
+    for kk in np.arange(0,nz):
+        for jj in np.arange(0,ny):
+            for ii in np.arange(0,nx):
+                #print("DUCK %d %d %d" % (ii,jj,kk)) ; sys.stdout.flush()
+                (th[ii,jj,kk],ph[ii,jj,kk])=fix_hp_perpoint(th[ii,jj,kk],ph[ii,jj,kk])
+    return(th,ph)
+
+# based upon fix_hp() in metric.c in HARM
+def fix_hp_perpoint(th,ph):
+    #
+    M_PI = np.pi
+    # keep \phi between 0 and 2\pi.  Can always do that full rotation.
+    # assume never more out of phase that 1 full rotation
+    if(ph<0.0):
+        ph=ph+2.0*M_PI
+    if(ph>2.0*M_PI):
+        ph=ph-2.0*M_PI
+    #
+    # keep \theta between 0 and \pi and \phi between 0 and 2\pi
+    # but need to be at same physical SPC location, not arbitrary rotation
+    if(th>=0.0 and th<=M_PI):
+        # do nothing
+        pass
+    elif(th<0.0):
+        th=th*(-1.0)
+        if(ph<=M_PI):
+            ph=ph+M_PI
+        elif(ph>M_PI):
+            ph=ph-M_PI
+        else:
+            print("Shouldn't be here1 with th=%g ph=%g" % (th,ph))
+    elif(th>M_PI):
+        th=M_PI-th
+        if(ph<=M_PI):
+            ph=ph+M_PI
+        elif(ph>M_PI):
+            ph=ph-M_PI
+        else:
+            print("Shouldn't be here2 with th=%g ph=%g" % (th,ph))
+    else:
+        print("Shouldn't be here3 with th=%g ph=%g" % (th,ph))
+    #
+    return(th,ph)
+    #
+
+# general 1D interpolations
+def iofrfloat(pickti,pickr,rval):
+    #
+    if nx==1:
+        return(0.0*rval)
+    #
+    #rval[rval<=Rin or rval<pickr[0]] = pickr[0]
+    #rval[rval>=Rout or rval>pickr[-1]] = pickr[-1]
+    rval[rval<=Rin] = Rin
+    rval[rval>=Rout] = Rout
+    #
+    res = interp1d(pickr[:], pickti[:], kind='linear')
+    resextrap = extrap1d(res)
+    # return  of float result
+    ival=resextrap(rval)
+    return(ival)
+
+def jofhfloat(picktj,pickh,hval):
+    #
+    if ny==1:
+        return(0.0*hval)
+    #
+    #print("pickh picktj")
+    #print(pickh)
+    #print(picktj)
+    res = interp1d(pickh[:], picktj[:], kind='linear')
+    resextrap = extrap1d(res)
+    # return  of float result
+    jval=resextrap(hval)
+    return(jval)
+
+def kofphfloat(picktk,pickph,phval):
+    #
+    if nz==1:
+        return(0.0*phval)
+    #
+    phval[phval<0.0] = phval[phval<0.0] + 2.0*np.pi
+    phval[phval>2.0*np.pi] = phval[phval>2.0*np.pi] - 2.0*np.pi
+    #
+    res = interp1d(pickph[:], picktk[:], kind='linear') #,bounds_error=False,fill_value=-1)
+    resextrap = extrap1d(res)
+    kval=resextrap(phval) #  of floats return
+    return(kval)
+
+
+
+
+# this interpolates all things at once that one wants to interpolate.
+# this also optimally uses fact that grid is just SPC (not competely general crazy grid) *and* that only performed rigid rotation *and* that dxdxp3[012]=0 *and* dxdxp12=0 (i.e. dr/dx2=0)
+def reinterp3dspc_opt_all(Vorig,Vmetric,rho,ug,uu,B,gdetB=None):
+    #
+    rhoi=np.copy(rho)
+    ugi=np.copy(ug)
+    uui=np.copy(uu)
+    Bi=np.copy(B)
+    if gdetB!=None:
+        gdetBi=np.copy(gdetB)
+    #
+    # tk is only axisymmetric information, so create fake nz-long tk called faketk
+    faketk=np.zeros(nz,dtype=np.int)
+    for kk in np.arange(0,nz):
+        faketk[kk]=kk
+    #
+    # tj
+    faketj=np.zeros(ny,dtype=np.int)
+    for jj in np.arange(0,ny):
+        faketj[jj]=jj
+    #
+    # ti
+    faketi=np.zeros(nx,dtype=np.int)
+    for ii in np.arange(0,nx):
+        faketi[ii]=ii
+    #
+    # first determine which ph = Vmetric[\phi[x3[tk]]] = Vorig[kk]
+    # Vorig already setup to be in Vmetric span of \theta,\phi
+    # do for all ii,jj,kk at once
+    # can do this outside loop because ph(x3) only for now
+    # flatten Vorig[3] before passing to kofphfloat that takes 1D array
+    # reshape result back into 3D array
+    tkorigarray=kofphfloat(faketk,Vmetric[3,0,0,:],Vorig[3].view().reshape(-1)).reshape((nx,ny,nz))
+    # integerize
+    inttkorigarray=tkorigarray.astype(int)
+    #
+    # can do this outside loop because r(x1) only for now
+    if 0==1:
+        tiorigarray=iofrfloat(faketi,Vmetric[1,:,0,0],Vorig[1])
+        inttiorigarray=tiorigarray.astype(int)
+    else:
+        pass
+        # infact, r doesn't change in rotation, so just assign
+        #... just use tifake below
+        #... just use ii directly below
+    #
+    for kk in np.arange(0,nz):
+        for jj in np.arange(0,ny):
+            for ii in np.arange(0,nx):
+                #
+                # first determine which ph = Vmetric[\phi[x3[tk]]] = Vorig[kk]
+                # Vorig already setup to be in Vmetric span of \theta,\phi
+                if 0==1:
+                    tkorig=kofphfloat(faketk,Vmetric[3,ii,jj,:],Vorig[3,ii,jj,kk])
+                    inttkorig=tkorig.astype(int)
+                else:
+                    inttkorig=inttkorigarray[ii,jj,kk]
+                # tkorig is tk we want to grab data from and stick into ii,jj,kk position -- if no interpolation
+                #
+                # now get radius, which is also independent of tj,tk.
+                if 0==1:
+                    tiorig=iofrfloat(faketi,Vmetric[1,:,jj,inttkorig],Vorig[1,ii,jj,kk])
+                    inttiorig=tiorig.astype(int)
+                else:
+                    # just rotation, so ii same
+                    #inttiorig=inttiorigarray[ii,jj,kk]
+                    inttiorig=ii
+                #
+                # now get theta. theta(x1,x2) generally, so have to do this after getting tiorig.
+                if 0==1:
+                    tjorig=jofhfloat(faketj,Vmetric[2,inttiorig,:,inttkorig],Vorig[2,ii,jj,kk])
+                    inttjorig=tjorig.astype(int)
+                else:
+                    # have to be inside loop to use correct r
+                    #tjorig=jofhfloat(faketj,Vmetric[2,inttiorig,:,inttkorig],Vorig[2,ii,jj,kk])
+                    # assume r(x1) too so avoid inttiorig[ii,jj,kk] by using fake[ii] or just ii directly
+                    # still have to be inside loop to have correct inttkorig -- k does change on rotation and that will choose different \theta?
+                    # No, same k too -- i.e. Vmetric[2,ii,kk] = Vmetric[2,inttiorig,inttkorig]
+                    # Rotational dependence in \phi comes in via which k used for final primitive, not Vmetric[2]
+                    #tjorig=jofhfloat(faketj,Vmetric[2,ii,:,inttkorig],Vorig[2,ii,jj,kk])
+                    #
+                    Vorig2array=np.array([Vorig[2,ii,jj,kk]])
+                    tjorig=jofhfloat(faketj,Vmetric[2,inttiorig,:,inttkorig],Vorig2array)
+                    inttjorig=tjorig.astype(int)
+                #
+                print("REPORT: %d %d %d -> %d %d %d\n" % (ii,jj,kk, inttiorig,inttjorig,inttkorig))
+                print("Vorig123: %g %g %g\n" % (Vorig[1,ii,jj,kk],Vorig[2,ii,jj,kk],Vorig[3,ii,jj,kk]))
+                print("Vmetric123: %g %g %g\n" % (Vmetric[1,ii,jj,kk],Vmetric[2,ii,jj,kk],Vmetric[3,ii,jj,kk]))
+                print("Vmetric123orig: %g %g %g\n" % (Vmetric[1,inttiorig,inttjorig,inttkorig],Vmetric[2,inttiorig,inttjorig,inttkorig],Vmetric[3,inttiorig,inttjorig,inttkorig]))
+                #
+                # now tiorig,tjorig,tkorig (and associated integer locations) provide location for interpolation of primitives.
+                # However, no point to feed in entrire arrays for every ii,jj,kk -- wasteful.  So just do interpolation myself
+                # for now, try nearest neighbor, to get things going
+                rhoi[ii,jj,kk]=rho[inttiorig,inttjorig,inttkorig]
+                ug[ii,jj,kk]=ug[inttiorig,inttjorig,inttkorig]
+                uui[0,ii,jj,kk]=uu[0,inttiorig,inttjorig,inttkorig]
+                uui[1,ii,jj,kk]=uu[1,inttiorig,inttjorig,inttkorig]
+                uui[2,ii,jj,kk]=uu[2,inttiorig,inttjorig,inttkorig]
+                uui[3,ii,jj,kk]=uu[3,inttiorig,inttjorig,inttkorig]
+                #Bi[0,ii,jj,kk]=B[0,inttiorig,inttjorig,inttkorig] # should still be zero
+                Bi[1,ii,jj,kk]=B[1,inttiorig,inttjorig,inttkorig]
+                Bi[2,ii,jj,kk]=B[2,inttiorig,inttjorig,inttkorig]
+                Bi[3,ii,jj,kk]=B[3,inttiorig,inttjorig,inttkorig]
+                if gdetB!=None:
+                    #gdetBi[0,ii,jj,kk]=gdetB[0,inttiorig,inttjorig,inttkorig] # should still be zero
+                    gdetBi[1,ii,jj,kk]=gdetB[1,inttiorig,inttjorig,inttkorig]
+                    gdetBi[2,ii,jj,kk]=gdetB[2,inttiorig,inttjorig,inttkorig]
+                    gdetBi[3,ii,jj,kk]=gdetB[3,inttiorig,inttjorig,inttkorig]
+                #
+            #
+        #
+    #
+    if(gdetB==None):
+        return(rhoi,ugi,uui[0],uui[1],uui[2],uui[3],Bi[1],Bi[2],Bi[3])
+    else:
+        return(rhoi,ugi,uui[0],uui[1],uui[2],uui[3],Bi[1],Bi[2],Bi[3],gdetBi[1],gdetBi[2],gdetBi[3])
+    #
 
 
 
@@ -2097,7 +2318,7 @@ def isthickdiskmodel(modelname):
     elif modelname=="thickdiskhr3":
         return(1)
     # tilted models:
-    elif modelname=="thickdiskfull3d7" or modelname=="thickdiskfull3d7tilt0.7" modelname=="thickdiskfull3d7tilt1.5708" or modelname=="thickdiskhr3tilt0.35":
+    elif modelname=="thickdiskfull3d7" or modelname=="thickdiskfull3d7tilt0.7" or modelname=="thickdiskfull3d7tilt1.5708" or modelname=="thickdiskhr3tilt0.35":
         return(2)
     else:
         return(0)
@@ -2277,14 +2498,17 @@ def getdefaulttimes1():
     # set tilted models
     if isthickdiskmodel(modelname)==2:
         defaultfti=10000 # real start at ~8000
-        defaultftf=17000 # real end a bit after 17000
+        #defaultftf=17000 # real end a bit after 17000
+        defaultftf=20000 # but let go past if did run past
     elif issashamodel(modelname)==2:
         defaultfti=12000 # real start is ~10000
-        defaultftf=20000 # real end a bit after 20000
+        #defaultftf=20000 # real end a bit after 20000
+        defaultftf=25000 # but let go past if did run past
     elif issashamodel(modelname)==3:
         defaultfti=17000 # real start is ~15000
-        defaultftf=25000 # real end a bit after 25000
-    #
+        #defaultftf=25000 # real end a bit after 25000
+        defaultftf=30000 # but let go past if did run past
+        #
     #
     return defaultfti,defaultftf
 
@@ -4327,6 +4551,7 @@ def remap2unih(halfsize=None,iin=None,iout=None,result0=None):
 # http://stackoverflow.com/questions/2745329/how-to-make-scipy-interpolate-give-a-an-extrapolated-result-beyond-the-input-ran
 #from scipy.interpolate import interp1d
 #from scipy import arange, array, exp
+# use of extrap1d must be with np.array type (not just single value)
 def extrap1d(interpolator):
     xs = interpolator.x
     ys = interpolator.y
@@ -6377,11 +6602,12 @@ def rgfd(fieldlinefilename,**kwargs):
 
 def rfdheader():
     global t,nx,ny,nz,startx1,startx2,startx3,_dx1,_dx2,_dx3,nstep,gam,a,R0,Rin,Rout,hslope,rundt,defcoord
-    global MBH,QBH,EP3,THETAROT,is,ie,js,je,ks,ke,whichdump,whichdumpversion,numcolumns
+    global MBH,QBH,EP3,THETAROT,_is,_ie,_js,_je,_ks,_ke,whichdump,whichdumpversion,numcolumns
+    global rhor
     #
     header = fin.readline().split()
     #
-    numheaderitems=header.shape[0]
+    numheaderitems=len(header) #.shape[0]
     #
     #
     #time of the dump
@@ -6419,20 +6645,55 @@ def rfdheader():
     defcoord=int(header[18])
     #
     if numheaderitems==32:
+        print("Found 32 header items, reading them in\n")  ; sys.stdout.flush()
         MBH=myfloat(float(header[19]))
         QBH=myfloat(float(header[20]))
         EP3=myfloat(float(header[21]))
         THETAROT=myfloat(float(header[22]))
         #
-        is=int(header[23])
-        ie=int(header[24])
-        js=int(header[25])
-        je=int(header[26])
-        ks=int(header[27])
-        ke=int(header[28])
+        _is=int(header[23])
+        _ie=int(header[24])
+        _js=int(header[25])
+        _je=int(header[26])
+        _ks=int(header[27])
+        _ke=int(header[28])
         whichdump=int(header[29])
         whichdumpversion=int(header[30])
         numcolumns=int(header[31])
+    #
+    if numheaderitems==31:
+        print("Found 31 header items, reading them in and setting THETAROT=0.0\n")  ; sys.stdout.flush()
+        MBH=myfloat(float(header[19]))
+        QBH=myfloat(float(header[20]))
+        EP3=myfloat(float(header[21]))
+        THETAROT=0.0
+        #
+        _is=int(header[22])
+        _ie=int(header[23])
+        _js=int(header[24])
+        _je=int(header[25])
+        _ks=int(header[26])
+        _ke=int(header[27])
+        whichdump=int(header[28])
+        whichdumpversion=int(header[29])
+        numcolumns=int(header[30])
+    #
+    if numheaderitems==30:
+        print("Found 30 header items, reading them in and setting EP3=THETAROT=0.0\n")  ; sys.stdout.flush()
+        MBH=myfloat(float(header[19]))
+        QBH=myfloat(float(header[20]))
+        EP3=0.0
+        THETAROT=0.0
+        #
+        _is=int(header[21])
+        _ie=int(header[22])
+        _js=int(header[23])
+        _je=int(header[24])
+        _ks=int(header[25])
+        _ke=int(header[26])
+        whichdump=int(header[27])
+        whichdumpversion=int(header[28])
+        numcolumns=int(header[29])
 
 def rfdheaderonly(fullfieldlinefilename="dumps/fieldline0000.bin"):
     global fin
@@ -6453,6 +6714,7 @@ def rfdfirstfile():
     sort_nicely(flist)
     firstfieldlinefile=flist[0]
     basenamefirst=os.path.basename(firstfieldlinefile)
+    print("rfdfirstfile using %s" % (basenamefirst)) ; sys.stdout.flush()
     rfd(basenamefirst)
 
 def rfdlastfile():
@@ -6531,89 +6793,178 @@ def rfd(fieldlinefilename,**kwargs):
         gotgdetB=1
     #
     # see if THETAROT non-zero so need to rotate and transform data
-    if np.fabs(THETAROT-0.0)>1E-13:
+    global nzgdump
+    #
+    # whether to always do transformation (for testing)
+    DEBUGTHETAROT=1
+    #
+    if DEBUGTHETAROT or np.fabs(THETAROT-0.0)>1E-13:
+        print("THETAROT=%21.15g for rfdtransform" % (THETAROT)) ; sys.stdout.flush()
         # transform uu,B into coordinates where spin is pointing in zhat.
         rfdtransform(gotgdetB=1)
     #
     # compute extra things
+    ######################
     rfdprocess(gotgdetB=1)
     #
     #
 
 
+
+# NOT USING -- too expensive and redundant interpolation.
+
+
+# cd /lustre/medusa/jmckinne/data3/jmckinne/jmckinne/sashaa99t0.6/test1
+# rm -rf python*.out ; rm -rf gmon.out ; rm -rf torun*.sh ; rm -rf sh*.sh __init*.py* py nohup.out ; killall -s 9 python
+# sh makemovie.sh sashaa99t0.6 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 0
+#
+# qsub -I -A TG-PHY120005  -q analysis -l ncpus=1,mem=8GB,walltime=3:00:00
+#
+
 # handle THETAROT!=0
 def rfdtransform(gotgdetB=0):
     #
-    if nzgdump!=nz:
-        # first deal with ti,tj,tk,x1,x2,x3,r,h,ph that are gdump data size, while need true ph at least on same sized-grid as rfd() data is on.
-        ti1d=ti[:,None,None]
-        tj1d=tj[None,:,None]
-        tk1d=tk[None,None,:]
-        tk1dnew=0.5 + float(np.arange(0,nz-1)) # cell centered tk using rfd's nz
-        x11d=x1[:,None,None]
-        x21d=x2[None,:,None]
-        x31d=x3[None,None,:]
-        endx3=startx3 + _dx3*nz
-        x31dnew=startx3 + tk1dnew*(endx3-startx3)/(nz-0.0)
-        # r and h are not constant along x1,x2 grid lines.  Only ph is constant for constant tk,x3.
-        #tk1dnew = griddata(tk1d, vartointerp, (V[1,:,None,None], V[2,None,:,None], V[3,None,None,:]), method='linear')
-        ph1d=ph[None,None,:]
-        ph1dnew=2.0*np.pi*x31dnew  # i.e. x3=0 is phi=0 and x3=1 is phi=2pi
-        #griddata(tk1d, x31d, tk1dnew, method='cubic')
-        rnew = griddata((x1, x2, x3), r, (x11d, x21d, x31dnew), method='linear')
-        r=rnew # overwrite
-        hnew = griddata((x1, x2, x3), h, (x11d, x21d, x31dnew), method='linear')
-        h=hnew # overwrite
-        # below phnew works if ph(x3) only and not ph(x1,x2).  This is currently true.  Using np.tile is more accurate than using griddata that would extrapolate near boundaries.
-        #http://stackoverflow.com/questions/5559851/numpy-constructing-a-3d-array-from-a-1d-array
-        phnew = np.tile(ph1dnew,nx*ny).reshape((nx,ny,nz))
-        ph=phnew # overwrite
-        #
-        # set nzgdump since updated 3d things.  Now won't have to do this again unless read-in gdump again.
-        nzgdump=nz
+    # modified globals
+    global nzgdump
+    global r,h,ph
+    global rho,ug,uu,B,gdetB
     #
+    print("wtf: %d\n",nz) ; sys.stdout.flush()
+    print("wtf2: %d\n",nzgdump) ; sys.stdout.flush()
+    #
+    # first deal with ti,tj,tk,x1,x2,x3,r,h,ph that are gdump data size, while need true ph at least on same sized-grid as rfd() data is on.
+    ti1d=ti[:,0,0].view().reshape(-1)
+    tj1d=tj[0,:,0].view().reshape(-1)
+    tk1d=tk[0,0,:].view().reshape(-1)
+    tk1dnew=0.5 + np.float32(np.arange(0,nz)) # cell centered tk using rfd's nz
+    x11d=x1[:,0,0].view().reshape(-1)
+    x21d=x2[0,:,0].view().reshape(-1)
+    x31d=x3[0,0,:].view().reshape(-1)
+    endx3=startx3 + _dx3*nz
+    x31dnew=startx3 + tk1dnew*(endx3-startx3)/(nz-0.0)
+    # r and h are not constant along x1,x2 grid lines.  Only ph is constant for constant tk,x3.
+    #tk1dnew = griddata(tk1d, vartointerp, (V[1,:,0,0], V[2,0,:,0], V[3,0,0,:]), method='linear')
+    #    zi = griddata((x, y), lrho, (xi[None,:], yi[:,None]), method='cubic')
+    ph1d=ph[0,0,:].view().reshape(-1)
+    ph1dnew=2.0*np.pi*x31dnew  # i.e. x3=0 is phi=0 and x3=1 is phi=2pi
+
+    print("ph1dnew")
+    print(ph1dnew) ; sys.stdout.flush()
+    #griddata(tk1d, x31d, tk1dnew, method='cubic')
+    #print("shapes: ",x1.shape,x2.shape,x3.shape,r.shape,x11d.shape,x11d[:,None,None].shape,x21d.shape,x21d[None,:,None].shape,x31dnew.shape,x31dnew[None,None,:].shape) ; sys.stdout.flush()
+    #
+    #http://mail.scipy.org/pipermail/astropy/2011-April/001255.html
+    # .view().reshape(-1)
+    r2d=r[:,:,0].view().reshape((nx,ny))
+    h2d=h[:,:,0].view().reshape((nx,ny))
+    #print("r2d")
+    #print(r2d)
+    #print("h2d")
+    #print(h2d)
+    #r3d = np.tile(r2d,nz).view().reshape((nx,ny,nz))
+    #h3d = np.tile(h2d,nz).view().reshape((nx,ny,nz))
+    #r3d = np.tile(r2d,(nz,1,1))
+    r3d = np.transpose(np.tile(r2d,(nz,1,1)),(1,2,0))
+    #h3d = np.tile(h2d,(nz,1,1))
+    h3d = np.transpose(np.tile(h2d,(nz,1,1)),(1,2,0))
+    #print("r3d")
+    #print(r3d[:,0,0])
+    #print("h3d")
+    #print(h3d[0,:,0])
+    #rnew = griddata((x1, x2, x3), r, (x11d[:,None,None], x21d[None,:,None], x31dnew[None,None,:]), method='linear')
+    #r=rnew # overwrite
+    #hnew = griddata((x1, x2, x3), h, (x11d, x21d, x31dnew), method='linear')
+    #h=hnew # overwrite
+    # below phnew works if ph(x3) only and not ph(x1,x2).  This is currently true.  Using np.tile is more accurate than using griddata that would extrapolate near boundaries.
+    #http://stackoverflow.com/questions/5559851/numpy-constructing-a-3d-array-from-a-1d-array
+    #ph3d = np.tile(ph1dnew,nx*ny).reshape((nx,ny,nz))
+    ph3d = np.tile(ph1dnew,(nx,ny,1))
+    #
+    print("gods: %g %g %g : %g %g %g\n" % (r[20,15,0],h[20,15,0],ph[20,15,0],r3d[20,15,20],h3d[20,15,20],ph3d[20,15,20]))
+    #
+    # set nzgdump since updated 3d things.  Now won't have to do this again unless read-in gdump again.
+    #    nzgdump=nz
+    #
+    Vmetric=np.zeros((4,nx,ny,nz),dtype='float32')
+    Vmetric[0]=Vmetric[0]*0.0
+    Vmetric[1]=r3d
+    Vmetric[2]=h3d
+    Vmetric[3]=ph3d
+    #
+    print("shapes")
+    print(Vmetric[1].shape)
+    print(Vmetric[2].shape)
+    print(Vmetric[3].shape)
+    sys.stdout.flush()
     #
     # get Vorig if different than Vmetric
-    Vorig=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
-    Vmetric=np.copy(Vorig)
-    get_VorigVmetric(Vorig,Vmetric)
+    # This assumes original grid use same exact r,\theta,\phi grid on same x1,x2,x3 and same ti,tj,tk.
+    Vorig=np.copy(Vmetric)
+    # no time-component operations
+    # get Vmetric(V)
+    # Note that ti,tj,tk,x1,x2,x3,r,h,ph,dxdxp don't change -- we simply identify them with Vmetric instead of V, so that V no longer is relevant except as required to interpolate grid data to Vmetric positions from V positions and to transform vectors/tensors as required.  But we still need the stored value of Vorig on the grid, which means we need Vorig=V(Vmetric).
+    # assume ti,tj,tk,x1,x2,x3,r,h,ph,dxdxp already rotated, and now Vmetric already.
+    # then just get original V
+    #Vorig=rotate_Vmetric2V(Vmetric,Vorig)
+    # NO: use Vmetric for fieldline data's V as required, so that get out de-rotated version of r,th,ph as required
+    # takes (e.g.) zhat and moves it -15deg around y-axis, so that below the reinterp3dspc() assumes Vmetric offset with +15deg around y-axis meant original data's zaxis that's is not offset and so shows up at +15deg.
+    Vorig=rotate_VtoVmetric(Vmetric,Vorig)
     #
-    # 3D interpolate from Vorig positions on grid to Vmetric positions
-    rhoi=reinterp3dspc(Vorig,Vmetric,rho)
-    ugi=reinterp3dspc(Vorig,Vmetric,ug)
-    uu0i=reinterp3dspc(Vorig,Vmetric,uu[0])
-    uu1i=reinterp3dspc(Vorig,Vmetric,uu[1])
-    uu2i=reinterp3dspc(Vorig,Vmetric,uu[2])
-    uu3i=reinterp3dspc(Vorig,Vmetric,uu[3])
-    B1i=reinterp3dspc(Vorig,Vmetric,B[1])
-    B2i=reinterp3dspc(Vorig,Vmetric,B[2])
-    B3i=reinterp3dspc(Vorig,Vmetric,B[3])
-    if gotgdetB==1:
-        gdetB1i=reinterp3dspc(Vorig,Vmetric,gdetB[1])
-        gdetB2i=reinterp3dspc(Vorig,Vmetric,gdetB[2])
-        gdetB3i=reinterp3dspc(Vorig,Vmetric,gdetB[3])
+    #print("Vmetricalongj")
+    #print(Vmetric[2,0,:,0])
+    #sys.stdout.flush()
     #
-    # overwrite non-interpolated versions
-    rho=rhoi
-    ug=ugi
-    uu[0]=uu0i
-    uu[1]=uu1i
-    uu[2]=uu2i
-    uu[3]=uu3i
-    #B[0] is still zero
-    B[1]=B1i
-    B[2]=B2i
-    B[3]=B3i
-    if gotgdetB==1:
-        #gdetB[0] is still zero
-        gdetB[1]=gdetB1i
-        gdetB[2]=gdetB2i
-        gdetB[3]=gdetB3i
+    #print("Vorigalongj")
+    #print(Vorig[2,0,:,0])
+    #sys.stdout.flush()
+    #
+    #
+    if 0==1:
+        # 3D interpolate from Vorig positions on grid to Vmetric positions
+        # in this context, Vorig is de-rotated r,th,ph, while Vmetric is new grid with BH spin axis pointing along zhat.
+        rhoi=reinterp3dspc(Vorig,Vmetric,rho)
+        ugi=reinterp3dspc(Vorig,Vmetric,ug)
+        uu0i=reinterp3dspc(Vorig,Vmetric,uu[0])
+        uu1i=reinterp3dspc(Vorig,Vmetric,uu[1])
+        uu2i=reinterp3dspc(Vorig,Vmetric,uu[2])
+        uu3i=reinterp3dspc(Vorig,Vmetric,uu[3])
+        B1i=reinterp3dspc(Vorig,Vmetric,B[1])
+        B2i=reinterp3dspc(Vorig,Vmetric,B[2])
+        B3i=reinterp3dspc(Vorig,Vmetric,B[3])
+        if gotgdetB==1:
+            gdetB1i=reinterp3dspc(Vorig,Vmetric,gdetB[1])
+            gdetB2i=reinterp3dspc(Vorig,Vmetric,gdetB[2])
+            gdetB3i=reinterp3dspc(Vorig,Vmetric,gdetB[3])
+        #
+        rho=rhoi
+        ug=ugi
+        uu[0]=uu0i
+        uu[1]=uu1i
+        uu[2]=uu2i
+        uu[3]=uu3i
+        #B[0] is still zero
+        B[1]=B1i
+        B[2]=B2i
+        B[3]=B3i
+        if gotgdetB==1:
+            #gdetB[0] is still zero
+            gdetB[1]=gdetB1i
+            gdetB[2]=gdetB2i
+            gdetB[3]=gdetB3i
+    else:
+        # Jon's SPC-optimized version of inteprolation
+        # and overwrite non-interpolated versions
+        if gotgdetB==1:
+            (rho,ug,uu[0],uu[1],uu[2],uu[3],B[1],B[2],B[3],gdetB[1],gdetB[2],gdetB[3])=reinterp3dspc_opt_all(Vorig,Vmetric,rho,ug,uu,B,gdetB=gdetB)
+        else:
+            (rho,ug,uu[0],uu[1],uu[2],uu[3],B[1],B[2],B[3])=reinterp3dspc_opt_all(Vorig,Vmetric,rho,ug,uu,B)
+    #
     #
     # Get transformation matrices that actually only depend upon Vmetric=r,h,ph
     # transV2Vmetric^\mu[Vmetric]_\nu[V] u^\nu[V] : So first index is Vmetric-type.  Second index is V-type.  Operates on contravariant V-type.
     # transVmetric2V^\mu[V]_\nu[Vmetric] u^\nu[Vmetric] : So first index is V-type.  Second index is Vmetric-type.  Operates on contravariant Vmetric-type.
-    set_transV2Vmetric()
+    (transV2Vmetric)=set_transV2Vmetric(Vmetric=Vmetric)
+    gc.collect() #try to release unneeded memory
     # transform tensors (gv3=gv3_{\mu[V]\nu[V]} and dxdxp=dx^\mu[V]/dxp^\nu[V], but dxdxp just dV/dX that we understand now is just dVmetric/dXmetric that is already new grid by assumed rotation)
     # So only have to transform gv3 (everything remains correct/consistent as long as all vector components are interpolated in same spatial way and transformed in correct/consistent way)
     # using transV just does a local rotation, not global.  Global relocation done by interpolation already.
@@ -6627,17 +6978,24 @@ def rfdtransform(gotgdetB=0):
     # Note that dxdxp=dV^\mu/dX^\nu=\Lambda^\mu[V]_\nu[X] at Vorig on original grid is same value as dVmetric^\mu/dXmetric^\nu on Vmetric on new grid. But, transV2Vmetric has to operate on V, not X.
     #
     # this gives inverse without transposition, so gives (dX^\nu/dV^\mu)^T = \Lambda_\mu[V]^\nu[X] and \Lambda_\mu[Vmetric]^\nu[Xmetric]
-    idxdxp=np.linalg.inv(dxdxp)
+    idxdxp=np.copy(dxdxp)
+    for ii in np.arange(0,nx):
+        for jj in np.arange(0,ny):
+            idxdxp[:,:,ii,jj,0]=np.linalg.inv(dxdxp[:,:,ii,jj,0])
     #
-    uunew1=np.tensordot(uu,dxdxp,axes=([3+0],[3+1])) # now u^\mu[V]
-    uunew2=np.tensordot(uunew1,transV2Vmetric,axes=([3+0],[3+1])) # now u^\nu[Vmetric]
-    uunew3=np.tensordot(uunew2,idxdxp,axes=([3+0],[3+0])) # now u^\nu[Xmetric]
+    print("About to do uunew1");sys.stdout.flush()
+    printusage()
+    #
+    uunew1=tensordot01(uu,dxdxp) #,axes=([0],[1])) # now u^\mu[V]
+    printusage()
+    uunew2=tensordot01(uunew1,transV2Vmetric) #,axes=([0],[1])) # now u^\nu[Vmetric]
+    uunew3=tensordot00(uunew2,idxdxp) #,axes=([0],[0])) # now u^\nu[Xmetric]
     uu=np.copy(uunew3) # overwrite
     #
     # assumes no transformation on time component, which is true for the spatial rotation involving THETAROT
-    Bnew1=np.tensordot(B,dxdxp,axes=([3+0],[3+1])) # now u^\mu[V]
-    Bnew2=np.tensordot(Bnew1,transV2Vmetric,axes=([3+0],[3+1])) # now u^\nu[Vmetric]
-    Bnew3=np.tensordot(Bnew2,idxdxp,axes=([3+0],[3+0])) # now u^\nu[Xmetric]
+    Bnew1=tensordot01(B,dxdxp) #,axes=([0],[1])) # now u^\mu[V]
+    Bnew2=tensordot01(Bnew1,transV2Vmetric) #,axes=([0],[1])) # now u^\nu[Vmetric]
+    Bnew3=tensordot00(Bnew2,idxdxp) #,axes=([0],[0])) # now u^\nu[Xmetric]
     B=np.copy(Bnew3) # overwrite
     #
     if gotgdetB==1:
@@ -6645,21 +7003,82 @@ def rfdtransform(gotgdetB=0):
         # assume for gdetB that gdet changes little for Vorig and Vmetric.  Inaccurate near BH, but only use gdetB in special cases.  Even very near BH, gdet doesn't change too much with THETAROT changes.
         # To get accurate, would have to divide out gdet[Vorig] and multiply by gdet[V].
         # But, then divB=0 won't be very accurate still.  To have that, would have to form A_i and recompute face values of gdetB.
-        gdetBnew1=np.tensordot(gdetB,dxdxp,axes=([3+0],[3+1])) # now u^\mu[V]
-        gdetBnew2=np.tensordot(gdetBnew1,transV2Vmetric,axes=([3+0],[3+1])) # now u^\nu[Vmetric]
-        gdetBnew3=np.tensordot(gdetBnew2,idxdxp,axes=([3+0],[3+0])) # now u^\nu[Xmetric]
+        gdetBnew1=tensordot01(gdetB,dxdxp) #,axes=([0],[1])) # now u^\mu[V]
+        gdetBnew2=tensordot01(gdetBnew1,transV2Vmetric) #,axes=([0],[1])) # now u^\nu[Vmetric]
+        gdetBnew3=tensordot00(gdetBnew2,idxdxp) #,axes=([0],[0])) # now u^\nu[Xmetric]
         gdetB=np.copy(gdetBnew3) # overwrite
     #
+    printusage()
     #
     #
 
+# do np.tensordot with full 3D first arg and axisym (nz=1 like) second arg
+# so don't have to allocate extra memory for dxdxp
+# tendordot stupid for per-point operations, and wasteful
+#http://stackoverflow.com/questions/5344843/a-loopless-3d-matrix-operation-in-python
+# these tensordot01 and tensor00 handle dxdxp[trans] with any nz=1 or normal full size, so can be used with dxdxp or transV2Vmetric
+def tensordot01(uu,dxdxp):
+    #
+    result=(uu[:,None,None,None] * dxdxp[:,:,None,None,None]).sum(axis=1).reshape(4,nx,ny,nz)
+    #
+    return(result)
+
+def tensordot00(uu,dxdxp):
+    #
+    dxdxptrans=np.transpose(dxdxp,(1,0,2,3,4))
+    result = (uu[:,None,None,None] * dxdxptrans[:,:,None,None,None]).sum(axis=1).reshape(4,nx,ny,nz)
+    return(result)
+
+
+# above tensordot01 and tensordot00 were tested using the below
+def tensordottest():
+    nx=5
+    ny=8
+    nz=3
+    a = np.arange(nx*ny*nz*4).reshape(4, nx,ny,nz)
+    b = np.arange(nx*ny*1*4*4).reshape(4, 4, nx,ny,1)
+    ctrue=a*0.0
+    for ii in np.arange(0,nx):
+        for jj in np.arange(0,ny):
+            for kk in np.arange(0,nz):
+               ctrue[:,ii,jj,kk] = np.tensordot(a[:,ii,jj,kk],b[:,:,ii,jj,0],axes=[0,1])
+
+
+    #c = np.tensordot(a, b, axes=[1, 0]).diagonal(axis1=1, axis2=3)
+    #c2 = (a[:,:,None] * b).sum(axis=1)
+    c2 = (a[:,None,None,None] * b[:,:,None,None,None]).sum(axis=1).reshape(4,nx,ny,nz)
+    #
+    np.sum(ctrue-c2)
+
+
+    ###
+    nx=5
+    ny=8
+    nz=3
+    a = np.arange(nx*ny*nz*4).reshape(4, nx,ny,nz)
+    b = np.arange(nx*ny*1*4*4).reshape(4, 4, nx,ny,1)
+    ctrue2=a*0.0
+    for ii in np.arange(0,nx):
+        for jj in np.arange(0,ny):
+            for kk in np.arange(0,nz):
+               ctrue2[:,ii,jj,kk] = np.tensordot(a[:,ii,jj,kk],b[:,:,ii,jj,0],axes=[0,0])
+
+
+    btrans=np.transpose(b,(1,0,2,3,4))
+    c22 = (a[:,None,None,None] * btrans[:,:,None,None,None]).sum(axis=1).reshape(4,nx,ny,nz)
+
+    np.sum(ctrue2-c22)
+
+
 def rfdprocess(gotgdetB=0):
     #
-    ######################
+    # external globals
+    global rho,ug,uu,B,gdetB
     # derived quantities
     global lrho,rholab,lrholab,ug,uut,uu,uux,rhor,r,h,ph,rhoclean,rholabclean,rhounclean,rholabunclean,ugclean,ugunclean,uuclean,entropy
     global gdetB # tells either exists before or will be created here
     global maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp
+    #
     #
     lrho=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
     lrho = np.log10(rho)
@@ -6856,9 +7275,8 @@ def myfloat(f,acc=1):
 def grid3d_thetarot_notusing(dumpname,use2d=False,doface=False): #read grid dump file: header and body
     #
     #load full 3d
-    grid3d_load(dumpname,use2d=False,doface,loadsimple=1)
+    grid3d_load(dumpname=dumpname,use2d=False,doface=doface,loadsimple=1)
     #
-    # TODO THETAROT
     #
     # get Vmetric(V)
     # Note that ti,tj,tk,x1,x2,x3,r,h,ph,dxdxp don't change -- we simply identify them with Vmetric instead of V, so that V no longer is relevant except as required to interpolate grid data to Vmetric positions from V positions and to transform vectors/tensors as required.  But we still need the stored value of Vorig on the grid, which means we need Vorig=V(Vmetric).
@@ -6871,13 +7289,13 @@ def grid3d_thetarot_notusing(dumpname,use2d=False,doface=False): #read grid dump
     Vmetric[1]=r
     Vmetric[2]=h
     Vmetric[3]=ph
-    rotate_Vmetric2V(Vmetric,Vorig) # no time-component operations
+    Vorig=rotate_Vmetric2V(Vmetric,Vorig) # no time-component operations
     #
     # interpolate gv3 from Vorig positions on grid to Vmetric positions
     gv3i=reinterp3dspc(Vorig,Vmetric,gv3)
     #
     # load 2D grid (could slice each thing wanted, but just re-load for now)
-    grid3d_load(dumpname,use2d=True,doface)
+    grid3d_load(dumpname=dumpname,use2d=True,doface=doface,loadsimple=0)
     #
     # 3D->2D slice for interpolated things (just gv3new -> gv3 and so overwrite gv3).  Just pick \phi=Vmetric[3]=tk=0
     gv3 = gv3i[:,:,:,:,0]
@@ -6885,7 +7303,10 @@ def grid3d_thetarot_notusing(dumpname,use2d=False,doface=False): #read grid dump
     # Get transformation matrices that actually only depend upon Vmetric=r,h,ph
     # transV2Vmetric^\mu[Vmetric]_\nu[V] u^\nu[V] : So first index is Vmetric-type.  Second index is V-type.  Operates on contravariant V-type.
     # transVmetric2V^\mu[V]_\nu[Vmetric] u^\nu[Vmetric] : So first index is V-type.  Second index is Vmetric-type.  Operates on contravariant Vmetric-type.
-    set_transV2Vmetric()
+    #
+    # NOT SETUP:
+    ##########(transVmetric2V)=set_transV2Vmetric(Vmetric=Vmetric)
+    #
     # transform tensors (gv3=gv3_{\mu[V]\nu[V]} and dxdxp=dx^\mu[V]/dxp^\nu[V], but dxdxp just dV/dX that we understand now is just dVmetric/dXmetric that is already new grid by assumed rotation)
     # So only have to transform gv3 (everything remains correct/consistent as long as all vector components are interpolated in same spatial way and transformed in correct/consistent way)
     # using transV just does a local rotation, not global.  Global relocation done by interpolation already.
@@ -6908,6 +7329,12 @@ def grid3d_thetarot_notusing(dumpname,use2d=False,doface=False): #read grid dump
 
 def grid3d(dumpname,use2d=False,doface=False): #read grid dump file: header and body
     #
+    # only need header of true gdump.bin to get true THETAROT
+    rfdheaderonly(fullfieldlinefilename="dumps/gdump.bin")
+    # for rfd() to use to see if different nz size
+    global nzgdumptrue
+    nzgdumptrue=nz
+    #
     # for THETAROT!=0, assume gdump.THETAROT0.bin exists corresponding to the non-rotated THETAROT=0 version.
     # Using this vastly speeds-up read-in and doesn't use excessive (too much!) memory required for full 3D interpolation of (a minimum) gv3 while reading in all other things because binary and using np.fromfile().
     if np.fabs(THETAROT-0.0)>1E-13:
@@ -6918,7 +7345,8 @@ def grid3d(dumpname,use2d=False,doface=False): #read grid dump file: header and 
     #
     #
     # load axisymmetric metric-grid data
-    grid3d_load(realdumpname,loadsimple=False)
+    # this sets THETAROT=0 if THETAROT true is non-zero.  rfd() is responsible for setting THETAROT for each fieldline file so data inputted is transformed/interpolated correctly.
+    grid3d_load(dumpname=realdumpname,use2d=use2d,doface=doface,loadsimple=False)
     #
     # get other things
     gridcellverts()
@@ -6927,7 +7355,7 @@ def grid3d(dumpname,use2d=False,doface=False): #read grid dump file: header and 
     print( "Done grid3d!" ) ; sys.stdout.flush()
 
 
-def grid3d_load(dumpname,use2d=False,doface=False,loadsimple=False): #read grid dump file: header and body
+def grid3d_load(dumpname=None,use2d=False,doface=False,loadsimple=False): #read grid dump file: header and body
     #The internal cell indices along the three axes: (ti, tj, tk)
     #The internal uniform coordinates, (x1, x2, x3), are mapped into the physical
     #non-uniform coordinates, (r, h, ph), which correspond to radius (r), polar angle (theta), and toroidal angle (phi).
@@ -7012,7 +7440,7 @@ def grid3d_load(dumpname,use2d=False,doface=False,loadsimple=False): #read grid 
 def gridcellverts():
     ##################################
     #CELL VERTICES:
-    global tif,tjf,tkf,rf,hf,phf,rhor
+    global tif,tjf,tkf,rf,hf,phf
     #RADIAL:
     #add an extra dimension to rf container since one more faces than centers
     rf = np.zeros((r.shape[0]+1,r.shape[1]+1,r.shape[2]+1))
@@ -11689,19 +12117,23 @@ def tofts(tval):
     return(np.floor(res(tval)+0.5))
 
 
-def jofhfloat(hval,i):
+def jofhfloatsimple(hval,i):
     res = interp1d(h[i,:,0], tj[i,:,0], kind='linear')
     # return float result
     return(res(hval))
 
 def jofh(hval,i):
-    return(np.floor(jofhfloat(hval,i)+0.5))
+    return(np.floor(jofhfloatsimple(hval,i)+0.5))
 
 
 
 def kofph(phval):
     if nz==1:
         return(0)
+    if phval<0.0:
+        phval=phval+2.0*np.pi
+    if phval>2.0*np.pi:
+        phval=phval-2.0*np.pi
     #
     faketk=np.zeros(nz,dtype=np.int)
     for kk in np.arange(0,nz):
@@ -14763,6 +15195,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     print("feqtot0extrema at t=0: numextrema0=%d" % (numextrema0) ) ; sys.stdout.flush()
     print(feqtot0extrema) ; sys.stdout.flush()
     #
+    maxrho=np.max(rho)
+    print("maxrho=%g" % (maxrho))
     #
     # now replace with desired extrema (avoid values that are just close in value)
     feqtotextremai=0*np.copy(feqtot0extremai)
@@ -15625,7 +16059,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     # for ratio of disk thickness to grid cell thickness at horizon, account for actual thickness and count number of cells, rather than just using equatorial value
     #dthetaihor=dxdxp[2][2][ihor,:,0]*_dx2
     #numcellsdiskihor=hoverrhor_avg/(dxdxp[2][2][ihor,ny/2,0]*_dx2)
-    numcellsdiskihor=jofhfloat(np.pi*0.5+hoverrhor_avg,ihor) - ny*0.5
+    numcellsdiskihor=jofhfloatsimple(np.pi*0.5+hoverrhor_avg,ihor) - ny*0.5
     # 
     print( "HLatex3: ModelName & $N^d_{\\theta,{\\rm{}H}}$  & $\\theta^d_{\\rm{}H}$  & $\\theta^d_{5}$ & $\\theta^d_{20}$ & $\\theta^d_{100}$ & $\\theta^t_{\\rm{}20}$ & $\\theta^{dc}_{\\rm{}H}$  & $\\theta^{dc}_{5}$ & $\\theta^{dc}_{20}$ & $\\theta^{dc}_{100}$ & $\\theta^{cj}_{\\rm{}H}$  & $\\theta^{cj}_{5}$ & $\\theta^{cj}_{20}$ & $\\theta^{cj}_{100}$ \\\\" )
     print( "VLatex3: %s         & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g  \\\\ %% %s" % (truemodelname, roundto2(numcellsdiskihor), roundto2(hoverrhor_avg), roundto2( hoverr5_avg), roundto2(hoverr20_avg), roundto2(hoverr100_avg), roundto2(horalt1_avg[iofr(20)]), roundto2(hoverrcoronahor_avg), roundto2( hoverrcorona5_avg), roundto2(hoverrcorona20_avg), roundto2(hoverrcorona100_avg), roundto2(hoverr_jethor_avg), roundto2( hoverr_jet5_avg), roundto2(hoverr_jet20_avg), roundto2(hoverr_jet100_avg), modelname ) )
@@ -18023,17 +18457,17 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         # as long as lcor true $l$ value, no need to correct for changes in NHU resolution here
         #nyeffective=float(NHU)
         # assume tabulated or outputs are disk quantities, and that structure is around equatorial plane. So if \delta\theta around equator, see how many cells *cover* that structure rather than just using d\theta at \theta=\pi/2
-        Qlcorradhordcrho0=(jofhfloat(np.pi*0.5+np.pi/lcorradhordcrho0,iofr(4.0)) - ny*0.5)
-        Qlcorradhordcbsq=(jofhfloat(np.pi*0.5+np.pi/lcorradhordcbsq,iofr(4.0)) - ny*0.5)
+        Qlcorradhordcrho0=(jofhfloatsimple(np.pi*0.5+np.pi/lcorradhordcrho0,iofr(4.0)) - ny*0.5)
+        Qlcorradhordcbsq=(jofhfloatsimple(np.pi*0.5+np.pi/lcorradhordcbsq,iofr(4.0)) - ny*0.5)
         #
-        Qlcorrad4dcrho0=(jofhfloat(np.pi*0.5+np.pi/lcorrad4dcrho0,iofr(4.0)) - ny*0.5)
-        Qlcorrad4dcbsq=(jofhfloat(np.pi*0.5+np.pi/lcorrad4dcbsq,iofr(4.0)) - ny*0.5)
+        Qlcorrad4dcrho0=(jofhfloatsimple(np.pi*0.5+np.pi/lcorrad4dcrho0,iofr(4.0)) - ny*0.5)
+        Qlcorrad4dcbsq=(jofhfloatsimple(np.pi*0.5+np.pi/lcorrad4dcbsq,iofr(4.0)) - ny*0.5)
         #
-        Qlcorrad8dcrho0=(jofhfloat(np.pi*0.5+np.pi/lcorrad8dcrho0,iofr(4.0)) - ny*0.5)
-        Qlcorrad8dcbsq=(jofhfloat(np.pi*0.5+np.pi/lcorrad8dcbsq,iofr(4.0)) - ny*0.5)
+        Qlcorrad8dcrho0=(jofhfloatsimple(np.pi*0.5+np.pi/lcorrad8dcrho0,iofr(4.0)) - ny*0.5)
+        Qlcorrad8dcbsq=(jofhfloatsimple(np.pi*0.5+np.pi/lcorrad8dcbsq,iofr(4.0)) - ny*0.5)
         #
-        Qlcorrad30dcrho0=(jofhfloat(np.pi*0.5+np.pi/lcorrad30dcrho0,iofr(4.0)) - ny*0.5)
-        Qlcorrad30dcbsq=(jofhfloat(np.pi*0.5+np.pi/lcorrad30dcbsq,iofr(4.0)) - ny*0.5)
+        Qlcorrad30dcrho0=(jofhfloatsimple(np.pi*0.5+np.pi/lcorrad30dcrho0,iofr(4.0)) - ny*0.5)
+        Qlcorrad30dcbsq=(jofhfloatsimple(np.pi*0.5+np.pi/lcorrad30dcbsq,iofr(4.0)) - ny*0.5)
         #
         #
         # GODMARK: Need to ask how many zones *cover* mode since not uniform grid really and don't really have NHU resolution
@@ -21994,10 +22428,10 @@ def mkmovie(framesize=50, domakeavi=False):
         rfdheaderonly(firstfieldlinefile)
         #
         ########################
-        rfdfirstfile()
-        global maxrho
-        maxrho=np.max(rho)
-        print("maxrho=%g" % (maxrho))
+        #rfdfirstfile()
+        #global maxrho
+        #maxrho=np.max(rho)
+        #print("maxrho=%g" % (maxrho))
         #
         global qtymem
         qtymem=None #clear to free mem
@@ -22427,10 +22861,10 @@ def mk2davg():
         #rfd("fieldline0000.bin")
         #rfdheaderfirstfile()
     # gets structure of uu and other things
-    rfdfirstfile()
-    global maxrho
-    maxrho=np.max(rho)
-    print("maxrho=%g" % (maxrho))
+    #rfdfirstfile()
+    #global maxrho
+    #maxrho=np.max(rho)
+    #print("maxrho=%g" % (maxrho))
     #
     #
     flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
@@ -22653,10 +23087,10 @@ def mkavgfigs():
     ###########################################
     grid3d("gdump.bin",use2d=True)
     #
-    rfdfirstfile()
-    global maxrho
-    maxrho=np.max(rho)
-    print("maxrho=%g" % (maxrho))
+    #rfdfirstfile()
+    #global maxrho
+    #maxrho=np.max(rho)
+    #print("maxrho=%g" % (maxrho))
     #
     # load avg file
     loadavg()
@@ -23564,10 +23998,10 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
         grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=True )
         #rd( "dump0000.bin" )
         rfdheaderfirstfile()
-        rfdfirstfile()
-        global maxrho
-        maxrho=np.max(rho)
-        print("maxrho=%g" % (maxrho))
+        #rfdfirstfile()
+        #global maxrho
+        #maxrho=np.max(rho)
+        #print("maxrho=%g" % (maxrho))
         #
         #grid3dlight("gdump")
         qtymem=None #clear to free mem
@@ -23883,10 +24317,10 @@ def generate_time_series():
     #cd ~/run; for f in rtf*; do cd ~/run/$f; (nice -n 10 python  ~/py/mread/__init__.py &> python.out); done
     grid3d("gdump.bin",use2d=True)
     #rd("dump0000.bin")
-    rfdfirstfile()
-    global maxrho
-    maxrho=np.max(rho)
-    print("maxrho=%g" % (maxrho))
+    #rfdfirstfile()
+    #global maxrho
+    #maxrho=np.max(rho)
+    #print("maxrho=%g" % (maxrho))
     #
     #
     rhor=1+(1-a**2)**0.5

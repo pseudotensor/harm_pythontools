@@ -360,6 +360,26 @@ then
             keepfilesend=$(( 1+1502 )) #tend=3000
         fi
     #
+       # THETAROT simulations (keep all files for now)
+        if [ "$thedir" == "sashaam9full2pit0.15" ] ||
+            [ "$thedir" == "sashaa9b100t0.15" ] ||
+            [ "$thedir" == "sashaa99t0.15" ] ||
+            [ "$thedir" == "sashaam9full2pit0.3" ] ||
+            [ "$thedir" == "sashaa9b100t0.3" ] ||
+            [ "$thedir" == "sashaa99t0.3" ] ||
+            [ "$thedir" == "sashaam9full2pit0.6" ] ||
+            [ "$thedir" == "sashaa9b100t0.6" ] ||
+            [ "$thedir" == "sashaa99t0.6" ] ||
+            [ "$thedir" == "sashaam9full2pit1.5708" ] ||
+            [ "$thedir" == "sashaa9b100t1.5708" ] ||
+            [ "$thedir" == "sashaa99t1.5708" ] ||
+            [ "$thedir" == "thickdiskfull3d7" ] ||
+            [ "$thedir" == "thickdiskfull3d7tilt0.7" ] ||
+            [ "$thedir" == "thickdiskfull3d7tilt1.5708" ]
+        then
+            keepfilesstart=$(( 1 ))
+            keepfilesend=$(( $numfiles ))
+        fi
     #
     #
         keepfilesdiff=$(( $keepfilesend - $keepfilesstart ))
@@ -461,12 +481,29 @@ then
     # for run.like8 run.liker1 run.liker2 runn=12
     # for runlocaldipole3dfiducial runn=12
     # more like runn=4 for thickdisk7 for avg creation.
-        if [ "$thedir" == "thickdisk7" ]
+        if [ "$thedir" == "thickdisk7" ] ||
+            [ "$thedir" == "thickdiskfull3d7" ] ||
+            [ "$thedir" == "thickdiskfull3d7tilt0.7" ] ||
+            [ "$thedir" == "thickdiskfull3d7tilt1.5708" ]
 	    then
 	        sed -e 's/export runn=[0-9]*/export runn=4/g' makemovie.sh > makemovielocal.temp.sh
         elif [ "$thedir" == "sasha99" ]
 	    then
 	        sed -e 's/export runn=[0-9]*/export runn=8/g' makemovie.sh > makemovielocal.temp.sh
+        elif [ "$thedir" == "sashaam9full2pit0.15" ] ||
+            [ "$thedir" == "sashaa9b100t0.15" ] ||
+            [ "$thedir" == "sashaa99t0.15" ] ||
+            [ "$thedir" == "sashaam9full2pit0.3" ] ||
+            [ "$thedir" == "sashaa9b100t0.3" ] ||
+            [ "$thedir" == "sashaa99t0.3" ] ||
+            [ "$thedir" == "sashaam9full2pit0.6" ] ||
+            [ "$thedir" == "sashaa9b100t0.6" ] ||
+            [ "$thedir" == "sashaa99t0.6" ] ||
+            [ "$thedir" == "sashaam9full2pit1.5708" ] ||
+            [ "$thedir" == "sashaa9b100t1.5708" ] ||
+            [ "$thedir" == "sashaa99t1.5708" ]
+        then
+	        sed -e 's/export runn=[0-9]*/export runn=4/g' makemovie.sh > makemovielocal.temp.sh
         else
 	        sed -e 's/export runn=[0-9]*/export runn=12/g' makemovie.sh > makemovielocal.temp.sh
         fi

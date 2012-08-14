@@ -200,6 +200,51 @@ then
 elif [ $modelname == "thickdiskr7" ]
 then
     jobsuffix="ko$system"
+elif [ $modelname == "sashaa99t0.15" ]
+then
+    jobsuffix="aa$system"
+elif [ $modelname == "sashaa99t0.3" ]
+then
+    jobsuffix="ab$system"
+elif [ $modelname == "sashaa99t0.6" ]
+then
+    jobsuffix="ac$system"
+elif [ $modelname == "sashaa99t1.5708" ]
+then
+    jobsuffix="ad$system"
+elif [ $modelname == "sashaa9b100t0.15" ]
+then
+    jobsuffix="ba$system"
+elif [ $modelname == "sashaa9b100t0.3" ]
+then
+    jobsuffix="bb$system"
+elif [ $modelname == "sashaa9b100t0.6" ]
+then
+    jobsuffix="bc$system"
+elif [ $modelname == "sashaa9b100t1.5708" ]
+then
+    jobsuffix="bd$system"
+elif [ $modelname == "sashaam9full2pi0.15" ]
+then
+    jobsuffix="ca$system"
+elif [ $modelname == "sashaam9full2pi0.3" ]
+then
+    jobsuffix="cb$system"
+elif [ $modelname == "sashaam9full2pi0.6" ]
+then
+    jobsuffix="cc$system"
+elif [ $modelname == "sashaam9full2pi1.5708" ]
+then
+    jobsuffix="cd$system"
+elif [ $modelname == "thickdiskfull3d7" ]
+then
+    jobsuffix="da$system"
+elif [ $modelname == "thickdiskfull3d7tilt0.7" ]
+then
+    jobsuffix="db$system"
+elif [ $modelname == "thickdiskfull3d7tilt1.5708" ]
+then
+    jobsuffix="dc$system"
 else
     jobsuffix="unk$system"        
 fi
