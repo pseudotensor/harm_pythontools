@@ -373,6 +373,13 @@ def varstotxt(f="file.txt",rad=6):
         arrsave[i] = (arrsave[i])[ii].ravel()
     np.savetxt(f, np.array(arrsave).T, 
                fmt="%3d %3d %3d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g" )
+
+# varstotxt(f="file55.txt",rad=5.5)
+# varstotxt(f="file60.txt",rad=6)
+# varstotxt(f="file65.txt",rad=6.5)
+# varstotxt(f="file70.txt",rad=7)
+# varstotxt(f="file75.txt",rad=7.5)
+
 # rho
 # ug
 # gamma
