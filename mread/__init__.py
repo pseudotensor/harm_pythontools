@@ -418,10 +418,23 @@ def rotate_VtoVmetric(V,Vmetric):
 
     b0=THETAROT
 
-    hold=arctanmath (cos (b0)*cos (hnew) - 1.*cos (phnew)*sin (b0)*sin (hnew),pow (pow (cos (hnew)*sin (b0) + cos (b0)*cos (phnew)*sin (hnew),2) + pow (sin (hnew),2)*pow (sin (phnew),2),0.5))
+    cb0=cos(b0)
+    sb0=sin(b0)
+    sh=sin(hnew)
+    shsq=sh**2.0
+    ch=cos(hnew)
+    sph=sin(phnew)
+    sphsq=sph**2.0
+    cph=cos(phnew)
 
-    phold=arctanmath (cos (hnew)*sin (b0) + cos (b0)*cos (phnew)*sin (hnew),sin (hnew)*sin (phnew))
+    arg1=sqrt((ch*sb0 + cb0*cph*sh)**2.0 + shsq*sphsq)
 
+    hold=arctanmath (cb0*ch - cph*sb0*sh , arg1)
+
+    phold=arctanmath (ch*sb0 + cb0*cph*sh,sh*sph)
+
+    # hold=arctanmath (cos (b0)*cos (hnew) - 1.*cos (phnew)*sin (b0)*sin (hnew),pow (pow (cos (hnew)*sin (b0) + cos (b0)*cos (phnew)*sin (hnew),2) + pow (sin (hnew),2)*pow (sin (phnew),2),0.5))
+    # phold=arctanmath (cos (hnew)*sin (b0) + cos (b0)*cos (phnew)*sin (hnew),sin (hnew)*sin (phnew))
 
     M_PI=np.pi
 
@@ -526,7 +539,33 @@ def reinterp3dspc(Vorig,Vmetric,vartointerp):
     return(varinterpolated)
 
 
+
+# new vectorized
+# http://www.johnny-lin.com/cdat_tips/tips_array/boolean.html
 def fix_hp(th,ph):
+    #
+    M_PI = np.pi
+    # keep \phi between 0 and 2\pi.  Can always do that full rotation.
+    # assume never more out of phase that 1 full rotation
+    ph[ph<0.0]=ph[ph<0.0]             + 2.0*M_PI
+    ph[ph>=2.0*M_PI]=ph[ph>=2.0*M_PI] - 2.0*M_PI
+    #
+    # keep \theta between 0 and \pi and \phi between 0 and 2\pi
+    # but need to be at same physical SPC location, not arbitrary rotation
+
+    # have to change ph first since depends upon th
+    ph[np.logical_and(np.logical_or(th<0.0,th>=M_PI),ph<=M_PI)]=ph[np.logical_and(np.logical_or(th<0.0,th>=M_PI),ph<=M_PI)] + M_PI
+    ph[np.logical_and(np.logical_or(th<0.0,th>=M_PI),ph> M_PI)]=ph[np.logical_and(np.logical_or(th<0.0,th>=M_PI),ph> M_PI)] - M_PI
+
+    # now can change th that doesn't depend upon ph
+    th[th<0.0]=th[th<0.0]*(-1.0)
+    th[th>=M_PI]=M_PI-th[th>=M_PI]
+
+    #
+    return(th,ph)
+
+# old non-vectorized
+def fix_hp_old(th,ph):
     for kk in np.arange(0,nz):
         for jj in np.arange(0,ny):
             for ii in np.arange(0,nx):
@@ -547,7 +586,7 @@ def fix_hp_perpoint(th,ph):
     #
     # keep \theta between 0 and \pi and \phi between 0 and 2\pi
     # but need to be at same physical SPC location, not arbitrary rotation
-    if(th>=0.0 and th<=M_PI):
+    if(th>=0.0 and th<M_PI):
         # do nothing
         pass
     elif(th<0.0):
@@ -558,7 +597,7 @@ def fix_hp_perpoint(th,ph):
             ph=ph-M_PI
         else:
             print("Shouldn't be here1 with th=%g ph=%g" % (th,ph))
-    elif(th>M_PI):
+    elif(th>=M_PI):
         th=M_PI-th
         if(ph<=M_PI):
             ph=ph+M_PI
@@ -587,6 +626,8 @@ def iofrfloat(pickti,pickr,rval):
     resextrap = extrap1d(res)
     # return  of float result
     ival=resextrap(rval)
+    ival[ival<0.0]=1E-10
+    ival[ival>=nx]=(1.0-1E-10)*nx
     return(ival)
 
 def jofhfloat(picktj,pickh,hval):
@@ -601,6 +642,9 @@ def jofhfloat(picktj,pickh,hval):
     resextrap = extrap1d(res)
     # return  of float result
     jval=resextrap(hval)
+    # ensure within limits (given how setup theta,phi, should always be good, but might be at very edge (e.g. tj=128) due to extrapolation.
+    jval[np.logical_and(jval<0.0,hval>=0.0)]=1E-10
+    jval[np.logical_and(jval>=ny,hval<np.pi)]=(1.0-1E-10)*ny
     return(jval)
 
 def kofphfloat(picktk,pickph,phval):
@@ -614,6 +658,8 @@ def kofphfloat(picktk,pickph,phval):
     res = interp1d(pickph[:], picktk[:], kind='linear') #,bounds_error=False,fill_value=-1)
     resextrap = extrap1d(res)
     kval=resextrap(phval) #  of floats return
+    kval[np.logical_and(kval<0.0,phval>=0.0)]=1E-10
+    kval[np.logical_and(kval>=nz,phval<2.0*np.pi)]=(1.0-1E-10)*nz
     return(kval)
 
 
@@ -704,7 +750,7 @@ def reinterp3dspc_opt_all(Vorig,Vmetric,rho,ug,uu,B,gdetB=None):
                     tjorig=jofhfloat(faketj,Vmetric[2,inttiorig,:,inttkorig],Vorig2array)
                     inttjorig=tjorig.astype(int)
                 #
-                print("REPORT: %d %d %d -> %d %d %d\n" % (ii,jj,kk, inttiorig,inttjorig,inttkorig))
+                print("REPORT: %d %d %d -> %d %d %d : jfloat=%g\n" % (ii,jj,kk, inttiorig,inttjorig,inttkorig,tjorig))
                 print("Vorig123: %g %g %g\n" % (Vorig[1,ii,jj,kk],Vorig[2,ii,jj,kk],Vorig[3,ii,jj,kk]))
                 print("Vmetric123: %g %g %g\n" % (Vmetric[1,ii,jj,kk],Vmetric[2,ii,jj,kk],Vmetric[3,ii,jj,kk]))
                 print("Vmetric123orig: %g %g %g\n" % (Vmetric[1,inttiorig,inttjorig,inttkorig],Vmetric[2,inttiorig,inttjorig,inttkorig],Vmetric[3,inttiorig,inttjorig,inttkorig]))
@@ -6738,7 +6784,8 @@ def rfd(fieldlinefilename,**kwargs):
     global fin
     #
     #
-    fin = open( "dumps/" + fieldlinefilename, "rb" )
+    fname= "dumps/" + fieldlinefilename
+    fin = open(fname, "rb" )
     rfdheader()
     #
     #read grid dump per-cell data
@@ -6796,16 +6843,38 @@ def rfd(fieldlinefilename,**kwargs):
     global nzgdump
     #
     # whether to always do transformation (for testing)
-    DEBUGTHETAROT=1
+    DEBUGTHETAROT=0
     #
     if DEBUGTHETAROT or np.fabs(THETAROT-0.0)>1E-13:
-        print("THETAROT=%21.15g for rfdtransform" % (THETAROT)) ; sys.stdout.flush()
-        # transform uu,B into coordinates where spin is pointing in zhat.
-        rfdtransform(gotgdetB=1)
+        #
+        # save result so can use it if repeat
+        fname =  "dumps/" + fieldlinefilename + ".npz"
+        print("THETAROT=%21.15g for fname=%s" % (THETAROT,fname)) ; sys.stdout.flush()
+        #
+        # but see: http://stackoverflow.com/questions/82831/how-do-i-check-if-a-file-exists-using-python
+        if os.path.exists(fname):
+            print("THETAROT=%21.15g for loadz" % (THETAROT)) ; sys.stdout.flush()
+            #
+            if gotgdetB==1:
+                np.loadz(fname,rho,ug,uu,B,gdetB)
+            else:
+                np.loadz(fname,rho,ug,uu,B)
+        else:
+            print("THETAROT=%21.15g for rfdtransform" % (THETAROT)) ; sys.stdout.flush()
+            # then need to get transformed quantities
+            # transform uu,B into coordinates where spin is pointing in zhat.
+            rfdtransform(gotgdetB=gotgdetB)
+            #
+            # need to save since doesn't exist yet
+            if gotgdetB==1:
+                np.savez(fname,rho,ug,uu,B,gdetB)
+            else:
+                np.savez(fname,rho,ug,uu,B)
+        #
     #
     # compute extra things
     ######################
-    rfdprocess(gotgdetB=1)
+    rfdprocess(gotgdetB=gotgdetB)
     #
     #
 
@@ -6869,8 +6938,8 @@ def rfdtransform(gotgdetB=0):
     h3d = np.transpose(np.tile(h2d,(nz,1,1)),(1,2,0))
     #print("r3d")
     #print(r3d[:,0,0])
-    #print("h3d")
-    #print(h3d[0,:,0])
+    print("h3d")
+    print(h3d[0,:,0])
     #rnew = griddata((x1, x2, x3), r, (x11d[:,None,None], x21d[None,:,None], x31dnew[None,None,:]), method='linear')
     #r=rnew # overwrite
     #hnew = griddata((x1, x2, x3), h, (x11d, x21d, x31dnew), method='linear')
