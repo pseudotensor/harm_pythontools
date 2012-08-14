@@ -342,10 +342,13 @@ def mksz(sz=100):
     np.savetxt("cs.txt",getrandxyz(sz=sz))
 
 def computevars(n1=31, n2 = 53):
-    global avgbsqow, avgbsqorho, avgBr, avgBth, avgBph, avguut, avguur, avguuth, avguuph
+    global avgbsq, avgrho, avgug, avgbsqow, avgbsqorho, avgBr, avgBth, avgBph, avguut, avguur, avguuth, avguuph
     grid3d("gdump.bin", use2d = True)
-    [avgbsqow, avgbsqorho, avgBr, avgBth, avgBph, avguut, avguur, avguuth, avguuph] = avgvar(
-        [lambda: bsq/(rho+gam*ug), 
+    [avgbsq, avgrho, avgug, avgbsqow, avgbsqorho, avgBr, avgBth, avgBph, avguut, avguur, avguuth, avguuph] = avgvar(
+        [lambda: bsq,
+         lambda: rho,
+         lambda: ug,
+         lambda: bsq/(rho+gam*ug), 
          lambda: bsq/rho, 
          lambda: B[1]*dxdxp[1,1], 
          lambda: B[2]*dxdxp[2,2], 
@@ -357,7 +360,18 @@ def computevars(n1=31, n2 = 53):
         n1 = n1, n2 = n2)
 
 def varstotxt(f="file.txt",rad=6):
-    np.savetxt(f, 
+    ii=iofr(rad)
+    arrsave = [ti+r*0, tj+r*0, tk+r*0,  #adding r*0 to ensure ti, tj, tk has same shape as r 
+                r,  h, ph,
+                avgbsq, avgrho, avgug, 
+                avgbsqow, avgbsqorho, 
+                avgBr, r*avgBth, r*np.sin(h)*avgBph, 
+                avguut, 
+                avguur, r*avguuth, r*np.sin(h)*avguuph,
+               ]
+    for i in xrange(len(arrsave)):
+        arrsave[i] = (arrsave[i])[ii].ravel()
+    np.savetxt(f, np.array(arrsave).T)
 # rho
 # ug
 # gamma
