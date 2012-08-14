@@ -342,15 +342,22 @@ def mksz(sz=100):
     np.savetxt("cs.txt",getrandxyz(sz=sz))
 
 def computevars(n1=31, n2 = 53):
-    global avgbsqow, avgbsqorho, avguut, avguur
+    global avgbsqow, avgbsqorho, avgBr, avgBth, avgBph, avguut, avguur, avguuth, avguuph
     grid3d("gdump.bin", use2d = True)
-    [avgbsqow, avgbsqorho, avguut, avguur] = avgvar(
+    [avgbsqow, avgbsqorho, avgBr, avgBth, avgBph, avguut, avguur, avguuth, avguuph] = avgvar(
         [lambda: bsq/(rho+gam*ug), 
          lambda: bsq/rho, 
+         lambda: B[1]*dxdxp[1,1], 
+         lambda: B[2]*dxdxp[2,2], 
+         lambda: B[3]*dxdxp[3,3], 
          lambda: uu[0], 
-         lambda: uu[1]*dxdxp[1,1]], 
+         lambda: uu[1]*dxdxp[1,1], 
+         lambda: uu[2]*dxdxp[2,2], 
+         lambda: uu[3]*dxdxp[3,3]], 
         n1 = n1, n2 = n2)
 
+def varstotxt(f="file.txt",rad=6):
+    np.savetxt(f, 
 # rho
 # ug
 # gamma
