@@ -348,7 +348,7 @@ def arctanmath(x,y):
 
 
 # trans requires input of full 3d Vmetric (not just use2d gdump version)
-def set_transV2Vmetric(Vmetric=None):
+def set_transV2Vmetric(Vmetric=None,b0=0.0):
     #
     # r,h,ph are Vmetric[] for both trans matrices.
     # these are full 3D r,h,ph
@@ -357,7 +357,7 @@ def set_transV2Vmetric(Vmetric=None):
     ph=Vmetric[3]
     #
     #
-    b0=THETAROT;
+    #b0=THETAROT
     #
     transV2Vmetric=np.zeros((4,4,nx,ny,nz),dtype=r.dtype)
     # r,h,ph are Vmetric[]
@@ -405,7 +405,7 @@ def set_transV2Vmetric(Vmetric=None):
 
 
 
-def rotate_VtoVmetric(V,Vmetric):
+def rotate_VtoVmetric(V,Vmetric,b0=0.0):
     # V is tnew,rnew,hnew,phnew (i.e. actual r,h,ph in original gdump)
     tnew=V[0]
     rnew=V[1]
@@ -416,7 +416,7 @@ def rotate_VtoVmetric(V,Vmetric):
     told=tnew
     rold=rnew
 
-    b0=THETAROT
+    #b0=THETAROT
 
     cb0=cos(b0)
     sb0=sin(b0)
@@ -453,7 +453,7 @@ def rotate_VtoVmetric(V,Vmetric):
 
 
 # rotate requires input of full 3D Vmetric
-def rotate_Vmetric2V(Vmetric,V):
+def rotate_Vmetric2V(Vmetric,V,b0=0.0):
     #
     t=Vmetric[0]
     r=Vmetric[1]
@@ -468,9 +468,9 @@ def rotate_Vmetric2V(Vmetric,V):
 
     # rotation around y-axis using right-hand rule
     #FTYPE xcnew,ycnew,zcnew,Rnew
-    xcnew=xc*mycos(THETAROT)-zc*mysin(THETAROT)
+    xcnew=xc*mycos(b0)-zc*mysin(b0)
     ycnew=yc
-    zcnew=zc*mycos(THETAROT)+xc*mysin(THETAROT)
+    zcnew=zc*mycos(b0)+xc*mysin(b0)
     Rnew=sqrt(xcnew*xcnew + ycnew*ycnew)
 
     # Below uses atan2 so gets back correct quadrant
@@ -627,7 +627,7 @@ def iofrfloat(pickti,pickr,rval):
     # return  of float result
     ival=resextrap(rval)
     ival[ival<0.0]=1E-10
-    ival[ival>=nx]=(1.0-1E-10)*nx
+    ival[ival>=nx-1.0]=(1.0-1E-10)*(nx-1.0)
     return(ival)
 
 def jofhfloat(picktj,pickh,hval):
@@ -644,7 +644,7 @@ def jofhfloat(picktj,pickh,hval):
     jval=resextrap(hval)
     # ensure within limits (given how setup theta,phi, should always be good, but might be at very edge (e.g. tj=128) due to extrapolation.
     jval[np.logical_and(jval<0.0,hval>=0.0)]=1E-10
-    jval[np.logical_and(jval>=ny,hval<np.pi)]=(1.0-1E-10)*ny
+    jval[np.logical_and(jval>=ny-1,hval<np.pi)]=(1.0-1E-10)*(ny-1.0)
     return(jval)
 
 def kofphfloat(picktk,pickph,phval):
@@ -659,7 +659,7 @@ def kofphfloat(picktk,pickph,phval):
     resextrap = extrap1d(res)
     kval=resextrap(phval) #  of floats return
     kval[np.logical_and(kval<0.0,phval>=0.0)]=1E-10
-    kval[np.logical_and(kval>=nz,phval<2.0*np.pi)]=(1.0-1E-10)*nz
+    kval[np.logical_and(kval>=nz-1.0,phval<2.0*np.pi)]=(1.0-1E-10)*(nz-1.0)
     return(kval)
 
 
@@ -748,7 +748,9 @@ def reinterp3dspc_opt_all(Vorig,Vmetric,rho,ug,uu,B,gdetB=None):
                     #
                     Vorig2array=np.array([Vorig[2,ii,jj,kk]])
                     tjorig=jofhfloat(faketj,Vmetric[2,inttiorig,:,inttkorig],Vorig2array)
-                    inttjorig=tjorig.astype(int)
+                    #inttjorig=tjorig.astype(int)
+                    # use round to be more consistent/accurate with nearest neighbors
+                    inttjorig=np.round(tjorig).astype(int)
                 #
                 print("REPORT: %d %d %d -> %d %d %d : jfloat=%g\n" % (ii,jj,kk, inttiorig,inttjorig,inttkorig,tjorig))
                 print("Vorig123: %g %g %g\n" % (Vorig[1,ii,jj,kk],Vorig[2,ii,jj,kk],Vorig[3,ii,jj,kk]))
@@ -5562,6 +5564,7 @@ def maketsuniform(toplot=None):
     # plt.imshow doesn't interpolate.  Could interpolate to correct time, but same as just removing extra time data up to point where fieldline sampling is fixed.  So just remove those extra time data.
     #
     # detect late-time sampling rate
+    # GODMARK: Only makes sense if at least 6 dump times
     dtsample1 = ts[-3] - ts[-4]
     dtsample2 = ts[-4] - ts[-5]
     dtsample = 0.5*(dtsample1+dtsample2)
@@ -6848,17 +6851,32 @@ def rfd(fieldlinefilename,**kwargs):
     if DEBUGTHETAROT or np.fabs(THETAROT-0.0)>1E-13:
         #
         # save result so can use it if repeat
-        fname =  "dumps/" + fieldlinefilename + ".npz"
-        print("THETAROT=%21.15g for fname=%s" % (THETAROT,fname)) ; sys.stdout.flush()
+        fnamenpz =  "dumps/" + fieldlinefilename + ".npz"
+        print("THETAROT=%21.15g for fnamenpz=%s" % (THETAROT,fnamenpz)) ; sys.stdout.flush()
         #
         # but see: http://stackoverflow.com/questions/82831/how-do-i-check-if-a-file-exists-using-python
-        if os.path.exists(fname):
+        if os.path.exists(fnamenpz):
             print("THETAROT=%21.15g for loadz" % (THETAROT)) ; sys.stdout.flush()
             #
+            #http://docs.scipy.org/doc/numpy/reference/generated/numpy.load.html#numpy.load
+            #data=np.load(fnamenpz,mmap_mode='r')
+            data=np.load(fnamenpz)
+            # no idea why default is reversed order of array put into npz
+            #datanameslist=data.files.reverse()
+            #rho=data[datanameslist[0]]
+            #ug=data[datanameslist[1]]
+            #uu=data[datanameslist[2]]
+            #B=data[datanameslist[3]]
+            #if gotgdetB==1:
+            #    gdetB=data[datanameslist[4]]
+            rho=data['rho']
+            ug=data['ug']
+            uu=data['uu']
+            B=data['B']
             if gotgdetB==1:
-                np.loadz(fname,rho,ug,uu,B,gdetB)
-            else:
-                np.loadz(fname,rho,ug,uu,B)
+                gdetB=data['gdetB']
+            #
+            data.close()
         else:
             print("THETAROT=%21.15g for rfdtransform" % (THETAROT)) ; sys.stdout.flush()
             # then need to get transformed quantities
@@ -6867,9 +6885,9 @@ def rfd(fieldlinefilename,**kwargs):
             #
             # need to save since doesn't exist yet
             if gotgdetB==1:
-                np.savez(fname,rho,ug,uu,B,gdetB)
+                np.savez(fnamenpz,rho=rho,ug=ug,uu=uu,B=B,gdetB=gdetB)
             else:
-                np.savez(fname,rho,ug,uu,B)
+                np.savez(fnamenpz,rho=rho,ug=ug,uu=uu,B=B)
         #
     #
     # compute extra things
@@ -6974,10 +6992,10 @@ def rfdtransform(gotgdetB=0):
     # Note that ti,tj,tk,x1,x2,x3,r,h,ph,dxdxp don't change -- we simply identify them with Vmetric instead of V, so that V no longer is relevant except as required to interpolate grid data to Vmetric positions from V positions and to transform vectors/tensors as required.  But we still need the stored value of Vorig on the grid, which means we need Vorig=V(Vmetric).
     # assume ti,tj,tk,x1,x2,x3,r,h,ph,dxdxp already rotated, and now Vmetric already.
     # then just get original V
-    #Vorig=rotate_Vmetric2V(Vmetric,Vorig)
+    #Vorig=rotate_Vmetric2V(Vmetric,Vorig,b0=-THETAROT)
     # NO: use Vmetric for fieldline data's V as required, so that get out de-rotated version of r,th,ph as required
     # takes (e.g.) zhat and moves it -15deg around y-axis, so that below the reinterp3dspc() assumes Vmetric offset with +15deg around y-axis meant original data's zaxis that's is not offset and so shows up at +15deg.
-    Vorig=rotate_VtoVmetric(Vmetric,Vorig)
+    Vorig=rotate_VtoVmetric(Vmetric,Vorig,b0=-THETAROT)
     #
     #print("Vmetricalongj")
     #print(Vmetric[2,0,:,0])
@@ -7032,7 +7050,7 @@ def rfdtransform(gotgdetB=0):
     # Get transformation matrices that actually only depend upon Vmetric=r,h,ph
     # transV2Vmetric^\mu[Vmetric]_\nu[V] u^\nu[V] : So first index is Vmetric-type.  Second index is V-type.  Operates on contravariant V-type.
     # transVmetric2V^\mu[V]_\nu[Vmetric] u^\nu[Vmetric] : So first index is V-type.  Second index is Vmetric-type.  Operates on contravariant Vmetric-type.
-    (transV2Vmetric)=set_transV2Vmetric(Vmetric=Vmetric)
+    (transV2Vmetric)=set_transV2Vmetric(Vmetric=Vmetric,b0=-THETAROT)
     gc.collect() #try to release unneeded memory
     # transform tensors (gv3=gv3_{\mu[V]\nu[V]} and dxdxp=dx^\mu[V]/dxp^\nu[V], but dxdxp just dV/dX that we understand now is just dVmetric/dXmetric that is already new grid by assumed rotation)
     # So only have to transform gv3 (everything remains correct/consistent as long as all vector components are interpolated in same spatial way and transformed in correct/consistent way)
@@ -7358,7 +7376,7 @@ def grid3d_thetarot_notusing(dumpname,use2d=False,doface=False): #read grid dump
     Vmetric[1]=r
     Vmetric[2]=h
     Vmetric[3]=ph
-    Vorig=rotate_Vmetric2V(Vmetric,Vorig) # no time-component operations
+    Vorig=rotate_Vmetric2V(Vmetric,Vorig,b0=-THETAROT) # no time-component operations
     #
     # interpolate gv3 from Vorig positions on grid to Vmetric positions
     gv3i=reinterp3dspc(Vorig,Vmetric,gv3)
@@ -7374,7 +7392,7 @@ def grid3d_thetarot_notusing(dumpname,use2d=False,doface=False): #read grid dump
     # transVmetric2V^\mu[V]_\nu[Vmetric] u^\nu[Vmetric] : So first index is V-type.  Second index is Vmetric-type.  Operates on contravariant Vmetric-type.
     #
     # NOT SETUP:
-    ##########(transVmetric2V)=set_transV2Vmetric(Vmetric=Vmetric)
+    ##########(transVmetric2V)=set_transV2Vmetric(Vmetric=Vmetric,b0=-THETAROT)
     #
     # transform tensors (gv3=gv3_{\mu[V]\nu[V]} and dxdxp=dx^\mu[V]/dxp^\nu[V], but dxdxp just dV/dX that we understand now is just dVmetric/dXmetric that is already new grid by assumed rotation)
     # So only have to transform gv3 (everything remains correct/consistent as long as all vector components are interpolated in same spatial way and transformed in correct/consistent way)
@@ -15264,7 +15282,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     print("feqtot0extrema at t=0: numextrema0=%d" % (numextrema0) ) ; sys.stdout.flush()
     print(feqtot0extrema) ; sys.stdout.flush()
     #
-    maxrho=np.max(rho)
+    #maxrho=np.max(rho)
+    maxrho=1.0 # estimate so don't have to load-in data (otherwise GODMARK should write maxrho elsewhere)
     print("maxrho=%g" % (maxrho))
     #
     # now replace with desired extrema (avoid values that are just close in value)
