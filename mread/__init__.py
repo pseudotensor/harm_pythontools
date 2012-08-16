@@ -6898,7 +6898,6 @@ def rfd(fieldlinefilename,**kwargs):
 
 
 
-# NOT USING -- too expensive and redundant interpolation.
 
 
 # cd /lustre/medusa/jmckinne/data3/jmckinne/jmckinne/sashaa99t0.6/test1
