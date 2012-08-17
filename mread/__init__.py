@@ -6969,9 +6969,18 @@ def rfd(fieldlinefilename,**kwargs):
 # cd /lustre/medusa/jmckinne/data3/jmckinne/jmckinne/sashaa99t0.6/test1
 # rm -rf python*.out ; rm -rf gmon.out ; rm -rf torun*.sh ; rm -rf sh*.sh __init*.py* py nohup.out ; killall -s 9 python
 # edit makemovie.sh and for system=4 make numnodes=1 and numcorespernode=1 and plot stuff so memtot=8 and numcores=1
+# qsub -I -A TG-PHY120005  -q analysis -l ncpus=1,mem=8GB,walltime=3:00:00
 # sh makemovie.sh sashaa99t0.6 1 1 1 0 0 0 0 0 0 0 1 0 0 0 0 4 0
 #
-# qsub -I -A TG-PHY120005  -q analysis -l ncpus=1,mem=8GB,walltime=3:00:00
+# for parallel run:
+# start from py/scripts/makemovie.sh
+# set numnodes=4
+# set numcorespernode=80
+# ensure enough memtot
+# then can do 5194 files over 6 separate runs using 80 cores each (136 charged for memory), because (5194 images)/(80cores/node)/(6nodes/core)*(2hours/image) ~ (21 hours/core) .  So each run will go for <24 hours as required.
+# Reall longest is generation of npz's, which apparently only takes 49 minutes.  Then other stuff like merging takes nothing.  Making frames takes about 30 minutes, but separate qsub call!  But using 6 is ok -- get done in 12 hours per job.
+# 
+# sh makemovie.sh sashaa99t0.6 1 1 1 0 0 0 0 0 0 0 1 0 0 0 0 4 1
 #
 
 # handle THETAROT!=0
