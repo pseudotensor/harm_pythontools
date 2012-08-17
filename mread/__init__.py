@@ -71,10 +71,10 @@ def setmplconfigpath(uniquenum=None):
 
 
 # redirect stderr and stdout to unique files per runnumber if relevant
-def redirectstderrout(uniquenum=None,uppernum=None):
+def redirectstderrout(runtype=None,uniquenum=None,uppernum=None):
     import os,sys
-    mystderrname=os.getcwd() + "/python_u_%d_%d.stderr.out" % (uniquenum,uppernum)
-    mystdoutname=os.getcwd() + "/python_u_%d_%d.stdout.out" % (uniquenum,uppernum)
+    mystderrname=os.getcwd() + "/python_u_%d_%d_%d.stderr.out" % (runtype,uniquenum,uppernum)
+    mystdoutname=os.getcwd() + "/python_u_%d_%d_%d.stdout.out" % (runtype,uniquenum,uppernum)
     #
     if os.path.exists(mystderrname)==1:
         os.remove(mystderrname)
@@ -133,7 +133,7 @@ def runglobalsetup(argv=None):
             print("runtype=%d has runnumber=%d uppernum=%d" % (runtype,runnumber,uppernum)) ; sys.stdout.flush()
             # force unique path or else mkdir in matplotlib will barf on some systems.
             setmplconfigpath(uniquenum=runnumber)
-            redirectstderrout(uniquenum=runnumber,uppernum=uppernum)
+            redirectstderrout(runtype=runtype,uniquenum=runnumber,uppernum=uppernum)
         elif argv[3]=="plot":
             print("Doing plot type of run") ; sys.stdout.flush()
         else:
@@ -669,6 +669,10 @@ def kofphfloat(picktk,pickph,phval):
 # this also optimally uses fact that grid is just SPC (not competely general crazy grid) *and* that only performed rigid rotation *and* that dxdxp3[012]=0 *and* dxdxp12=0 (i.e. dr/dx2=0)
 def reinterp3dspc_opt_all(Vorig,Vmetric,rho,ug,uu,B,gdetB=None):
     #
+    # get starting time so can compute time differences
+    start_time=datetime.now()
+    print("reinterp3dspc_opt_all(start) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
+    #
     rhoi=np.copy(rho)
     ugi=np.copy(ug)
     uui=np.copy(uu)
@@ -699,7 +703,8 @@ def reinterp3dspc_opt_all(Vorig,Vmetric,rho,ug,uu,B,gdetB=None):
     # reshape result back into 3D array
     tkorigarray=kofphfloat(faketk,Vmetric[3,0,0,:],Vorig[3].view().reshape(-1)).reshape((nx,ny,nz))
     # integerize
-    inttkorigarray=tkorigarray.astype(int)
+    #inttkorigarray=tkorigarray.astype(int)
+    inttkorigarray=np.round(tkorigarray).astype(int)
     #
     # can do this outside loop because r(x1) only for now
     if 0==1:
@@ -711,74 +716,128 @@ def reinterp3dspc_opt_all(Vorig,Vmetric,rho,ug,uu,B,gdetB=None):
         #... just use tifake below
         #... just use ii directly below
     #
-    for kk in np.arange(0,nz):
-        for jj in np.arange(0,ny):
-            for ii in np.arange(0,nx):
-                #
-                # first determine which ph = Vmetric[\phi[x3[tk]]] = Vorig[kk]
-                # Vorig already setup to be in Vmetric span of \theta,\phi
-                if 0==1:
-                    tkorig=kofphfloat(faketk,Vmetric[3,ii,jj,:],Vorig[3,ii,jj,kk])
-                    inttkorig=tkorig.astype(int)
-                else:
-                    inttkorig=inttkorigarray[ii,jj,kk]
-                # tkorig is tk we want to grab data from and stick into ii,jj,kk position -- if no interpolation
-                #
-                # now get radius, which is also independent of tj,tk.
-                if 0==1:
-                    tiorig=iofrfloat(faketi,Vmetric[1,:,jj,inttkorig],Vorig[1,ii,jj,kk])
-                    inttiorig=tiorig.astype(int)
-                else:
-                    # just rotation, so ii same
-                    #inttiorig=inttiorigarray[ii,jj,kk]
-                    inttiorig=ii
-                #
-                # now get theta. theta(x1,x2) generally, so have to do this after getting tiorig.
-                if 0==1:
-                    tjorig=jofhfloat(faketj,Vmetric[2,inttiorig,:,inttkorig],Vorig[2,ii,jj,kk])
-                    inttjorig=tjorig.astype(int)
-                else:
-                    # have to be inside loop to use correct r
-                    #tjorig=jofhfloat(faketj,Vmetric[2,inttiorig,:,inttkorig],Vorig[2,ii,jj,kk])
-                    # assume r(x1) too so avoid inttiorig[ii,jj,kk] by using fake[ii] or just ii directly
-                    # still have to be inside loop to have correct inttkorig -- k does change on rotation and that will choose different \theta?
-                    # No, same k too -- i.e. Vmetric[2,ii,kk] = Vmetric[2,inttiorig,inttkorig]
-                    # Rotational dependence in \phi comes in via which k used for final primitive, not Vmetric[2]
-                    #tjorig=jofhfloat(faketj,Vmetric[2,ii,:,inttkorig],Vorig[2,ii,jj,kk])
-                    #
+    print("reinterp3dspc_opt_all(done with tk) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
+    #
+    # explore fast way:
+    if 1==1:
+        tjorigarray=np.copy(tkorigarray)
+        for kk in np.arange(0,nz):
+            for jj in np.arange(0,ny):
+                for ii in np.arange(0,nx):
                     Vorig2array=np.array([Vorig[2,ii,jj,kk]])
-                    tjorig=jofhfloat(faketj,Vmetric[2,inttiorig,:,inttkorig],Vorig2array)
-                    #inttjorig=tjorig.astype(int)
-                    # use round to be more consistent/accurate with nearest neighbors
-                    inttjorig=np.round(tjorig).astype(int)
-                #
-                print("REPORT: %d %d %d -> %d %d %d : jfloat=%g\n" % (ii,jj,kk, inttiorig,inttjorig,inttkorig,tjorig))
-                print("Vorig123: %g %g %g\n" % (Vorig[1,ii,jj,kk],Vorig[2,ii,jj,kk],Vorig[3,ii,jj,kk]))
-                print("Vmetric123: %g %g %g\n" % (Vmetric[1,ii,jj,kk],Vmetric[2,ii,jj,kk],Vmetric[3,ii,jj,kk]))
-                print("Vmetric123orig: %g %g %g\n" % (Vmetric[1,inttiorig,inttjorig,inttkorig],Vmetric[2,inttiorig,inttjorig,inttkorig],Vmetric[3,inttiorig,inttjorig,inttkorig]))
-                #
-                # now tiorig,tjorig,tkorig (and associated integer locations) provide location for interpolation of primitives.
-                # However, no point to feed in entrire arrays for every ii,jj,kk -- wasteful.  So just do interpolation myself
-                # for now, try nearest neighbor, to get things going
-                rhoi[ii,jj,kk]=rho[inttiorig,inttjorig,inttkorig]
-                ug[ii,jj,kk]=ug[inttiorig,inttjorig,inttkorig]
-                uui[0,ii,jj,kk]=uu[0,inttiorig,inttjorig,inttkorig]
-                uui[1,ii,jj,kk]=uu[1,inttiorig,inttjorig,inttkorig]
-                uui[2,ii,jj,kk]=uu[2,inttiorig,inttjorig,inttkorig]
-                uui[3,ii,jj,kk]=uu[3,inttiorig,inttjorig,inttkorig]
-                #Bi[0,ii,jj,kk]=B[0,inttiorig,inttjorig,inttkorig] # should still be zero
-                Bi[1,ii,jj,kk]=B[1,inttiorig,inttjorig,inttkorig]
-                Bi[2,ii,jj,kk]=B[2,inttiorig,inttjorig,inttkorig]
-                Bi[3,ii,jj,kk]=B[3,inttiorig,inttjorig,inttkorig]
-                if gdetB!=None:
-                    #gdetBi[0,ii,jj,kk]=gdetB[0,inttiorig,inttjorig,inttkorig] # should still be zero
-                    gdetBi[1,ii,jj,kk]=gdetB[1,inttiorig,inttjorig,inttkorig]
-                    gdetBi[2,ii,jj,kk]=gdetB[2,inttiorig,inttjorig,inttkorig]
-                    gdetBi[3,ii,jj,kk]=gdetB[3,inttiorig,inttjorig,inttkorig]
+                    # note that Vmetric[2] is function of r(ii) and jj and through inttkorigarray is function of kk, so can't feed in an array of V2orig2array.  Can only do 1 value at a time since list of theta changes for each ii,jj,kk
+                    tjorigarray[ii,jj,kk]=jofhfloat(faketj[:],Vmetric[2,ii,:,inttkorigarray[ii,jj,kk]],Vorig2array)
+        #
+        #inttjorigarray=tjorigarray.astype(int)
+        inttjorigarray=np.round(tjorigarray).astype(int)
+        #
+        print("reinterp3dspc_opt_all(done with tjorigarray) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
+        #
+        rhoi[:,:,:]=rho[faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
+        ug[:,:,:]=ug[faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
+        #
+        print("reinterp3dspc_opt_all(done with rho,ug) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
+        #
+        uui[0,:,:,:]=uu[0,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
+        uui[1,:,:,:]=uu[1,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
+        uui[2,:,:,:]=uu[2,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
+        uui[3,:,:,:]=uu[3,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
+        #
+        print("reinterp3dspc_opt_all(done with uu[0-4]) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
+        #
+        #Bi[0,:,:,:]=B[0,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]] # should still be zero
+        Bi[1,:,:,:]=B[1,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
+        Bi[2,:,:,:]=B[2,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
+        Bi[3,:,:,:]=B[3,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
+        #
+        print("reinterp3dspc_opt_all(done with B[1-4]) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
+        #
+        if gdetB!=None:
+            #gdetBi[0,:,:,:]=gdetB[0,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]] # should still be zero
+            gdetBi[1,:,:,:]=gdetB[1,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
+            gdetBi[2,:,:,:]=gdetB[2,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
+            gdetBi[3,:,:,:]=gdetB[3,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
+            #
+            print("reinterp3dspc_opt_all(done with gdetB[1-4]) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
+            #
+            #
+    #
+    # faster than generic interpolation, but still kinda slow
+    if 1==0:
+        #
+        print("reinterp3dspc_opt_all(start fast but slower interp) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
+        #
+        for kk in np.arange(0,nz):
+            for jj in np.arange(0,ny):
+                for ii in np.arange(0,nx):
+                    #
+                    # first determine which ph = Vmetric[\phi[x3[tk]]] = Vorig[kk]
+                    # Vorig already setup to be in Vmetric span of \theta,\phi
+                    if 0==1:
+                        tkorig=kofphfloat(faketk,Vmetric[3,ii,jj,:],Vorig[3,ii,jj,kk])
+                        inttkorig=tkorig.astype(int)
+                    else:
+                        inttkorig=inttkorigarray[ii,jj,kk]
+                    # tkorig is tk we want to grab data from and stick into ii,jj,kk position -- if no interpolation
+                    #
+                    # now get radius, which is also independent of tj,tk.
+                    if 0==1:
+                        tiorig=iofrfloat(faketi,Vmetric[1,:,jj,inttkorig],Vorig[1,ii,jj,kk])
+                        inttiorig=tiorig.astype(int)
+                    else:
+                        # just rotation, so ii same
+                        #inttiorig=inttiorigarray[ii,jj,kk]
+                        inttiorig=ii
+                    #
+                    # now get theta. theta(x1,x2) generally, so have to do this after getting tiorig.
+                    if 0==1:
+                        tjorig=jofhfloat(faketj,Vmetric[2,inttiorig,:,inttkorig],Vorig[2,ii,jj,kk])
+                        inttjorig=tjorig.astype(int)
+                    else:
+                        # have to be inside loop to use correct r
+                        #tjorig=jofhfloat(faketj,Vmetric[2,inttiorig,:,inttkorig],Vorig[2,ii,jj,kk])
+                        # assume r(x1) too so avoid inttiorig[ii,jj,kk] by using fake[ii] or just ii directly
+                        # still have to be inside loop to have correct inttkorig -- k does change on rotation and that will choose different \theta?
+                        # No, same k too -- i.e. Vmetric[2,ii,kk] = Vmetric[2,inttiorig,inttkorig]
+                        # Rotational dependence in \phi comes in via which k used for final primitive, not Vmetric[2]
+                        #tjorig=jofhfloat(faketj,Vmetric[2,ii,:,inttkorig],Vorig[2,ii,jj,kk])
+                        #
+                        Vorig2array=np.array([Vorig[2,ii,jj,kk]])
+                        tjorig=jofhfloat(faketj,Vmetric[2,inttiorig,:,inttkorig],Vorig2array)
+                        #inttjorig=tjorig.astype(int)
+                        # use round to be more consistent/accurate with nearest neighbors
+                        inttjorig=np.round(tjorig).astype(int)
+                    #
+                    # DEBUG:
+                    #print("REPORT: %d %d %d -> %d %d %d : jfloat=%g\n" % (ii,jj,kk, inttiorig,inttjorig,inttkorig,tjorig))
+                    #print("Vorig123: %g %g %g\n" % (Vorig[1,ii,jj,kk],Vorig[2,ii,jj,kk],Vorig[3,ii,jj,kk]))
+                    #print("Vmetric123: %g %g %g\n" % (Vmetric[1,ii,jj,kk],Vmetric[2,ii,jj,kk],Vmetric[3,ii,jj,kk]))
+                    #print("Vmetric123orig: %g %g %g\n" % (Vmetric[1,inttiorig,inttjorig,inttkorig],Vmetric[2,inttiorig,inttjorig,inttkorig],Vmetric[3,inttiorig,inttjorig,inttkorig]))
+                    #
+                    # now tiorig,tjorig,tkorig (and associated integer locations) provide location for interpolation of primitives.
+                    # However, no point to feed in entrire arrays for every ii,jj,kk -- wasteful.  So just do interpolation myself
+                    # for now, try nearest neighbor, to get things going
+                    rhoi[ii,jj,kk]=rho[inttiorig,inttjorig,inttkorig]
+                    ug[ii,jj,kk]=ug[inttiorig,inttjorig,inttkorig]
+                    uui[0,ii,jj,kk]=uu[0,inttiorig,inttjorig,inttkorig]
+                    uui[1,ii,jj,kk]=uu[1,inttiorig,inttjorig,inttkorig]
+                    uui[2,ii,jj,kk]=uu[2,inttiorig,inttjorig,inttkorig]
+                    uui[3,ii,jj,kk]=uu[3,inttiorig,inttjorig,inttkorig]
+                    #Bi[0,ii,jj,kk]=B[0,inttiorig,inttjorig,inttkorig] # should still be zero
+                    Bi[1,ii,jj,kk]=B[1,inttiorig,inttjorig,inttkorig]
+                    Bi[2,ii,jj,kk]=B[2,inttiorig,inttjorig,inttkorig]
+                    Bi[3,ii,jj,kk]=B[3,inttiorig,inttjorig,inttkorig]
+                    if gdetB!=None:
+                        #gdetBi[0,ii,jj,kk]=gdetB[0,inttiorig,inttjorig,inttkorig] # should still be zero
+                        gdetBi[1,ii,jj,kk]=gdetB[1,inttiorig,inttjorig,inttkorig]
+                        gdetBi[2,ii,jj,kk]=gdetB[2,inttiorig,inttjorig,inttkorig]
+                        gdetBi[3,ii,jj,kk]=gdetB[3,inttiorig,inttjorig,inttkorig]
+                    #
                 #
             #
         #
-    #
+        print("reinterp3dspc_opt_all(end fast but slower interp) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
+        #
     if(gdetB==None):
         return(rhoi,ugi,uui[0],uui[1],uui[2],uui[3],Bi[1],Bi[2],Bi[3])
     else:
@@ -1767,12 +1826,13 @@ def getrhouclean(rho,ug,uu):
             for kk in np.arange(0,nz):
                 newdxdxp33[:,:,kk]=dxdxp[3,3][:,:,0]
         #
-        print("shapes") ; sys.stdout.flush()
-        print(rho.shape) ; sys.stdout.flush()
-        print(bsq.shape) ; sys.stdout.flush()
-        print(bsqorho.shape) ; sys.stdout.flush()
-        print(uu.shape) ; sys.stdout.flush()
-        print(newdxdxp33.shape) ; sys.stdout.flush()
+        # DEBUG:
+        #print("shapes") ; sys.stdout.flush()
+        #print(rho.shape) ; sys.stdout.flush()
+        #print(bsq.shape) ; sys.stdout.flush()
+        #print(bsqorho.shape) ; sys.stdout.flush()
+        #print(uu.shape) ; sys.stdout.flush()
+        #print(newdxdxp33.shape) ; sys.stdout.flush()
         #
         # setup parabolic \Omega_F
         # Interpolate to parabola form so closer to what real solution would allow so less likely to go outside light cone (Check that somehow)
@@ -6786,6 +6846,9 @@ def rfd(fieldlinefilename,**kwargs):
     #read image
     global fin
     #
+    # get starting time so can compute time differences
+    start_time=datetime.now()
+    #
     #
     fname= "dumps/" + fieldlinefilename
     fin = open(fname, "rb" )
@@ -6845,6 +6908,7 @@ def rfd(fieldlinefilename,**kwargs):
     # see if THETAROT non-zero so need to rotate and transform data
     global nzgdump
     #
+    print("rfd(before rfdtransform) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
     # whether to always do transformation (for testing)
     DEBUGTHETAROT=0
     #
@@ -6890,25 +6954,32 @@ def rfd(fieldlinefilename,**kwargs):
                 np.savez(fnamenpz,rho=rho,ug=ug,uu=uu,B=B)
         #
     #
+    print("rfd(after rfdtransform) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
     # compute extra things
     ######################
     rfdprocess(gotgdetB=gotgdetB)
     #
+    print("rfd(after rfdprocess) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
     #
 
 
 
 
-
+# testing
 # cd /lustre/medusa/jmckinne/data3/jmckinne/jmckinne/sashaa99t0.6/test1
 # rm -rf python*.out ; rm -rf gmon.out ; rm -rf torun*.sh ; rm -rf sh*.sh __init*.py* py nohup.out ; killall -s 9 python
-# sh makemovie.sh sashaa99t0.6 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 0
+# edit makemovie.sh and for system=4 make numnodes=1 and numcorespernode=1 and plot stuff so memtot=8 and numcores=1
+# sh makemovie.sh sashaa99t0.6 1 1 1 0 0 0 0 0 0 0 1 0 0 0 0 4 0
 #
 # qsub -I -A TG-PHY120005  -q analysis -l ncpus=1,mem=8GB,walltime=3:00:00
 #
 
 # handle THETAROT!=0
 def rfdtransform(gotgdetB=0):
+    #
+    # get starting time so can compute time differences
+    start_time=datetime.now()
+    print("rfdtransform(start) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
     #
     # modified globals
     global nzgdump
@@ -6966,7 +7037,8 @@ def rfdtransform(gotgdetB=0):
     #ph3d = np.tile(ph1dnew,nx*ny).reshape((nx,ny,nz))
     ph3d = np.tile(ph1dnew,(nx,ny,1))
     #
-    print("gods: %g %g %g : %g %g %g\n" % (r[20,15,0],h[20,15,0],ph[20,15,0],r3d[20,15,20],h3d[20,15,20],ph3d[20,15,20]))
+    # DEBUG:
+    #print("gods: %g %g %g : %g %g %g\n" % (r[20,15,0],h[20,15,0],ph[20,15,0],r3d[20,15,20],h3d[20,15,20],ph3d[20,15,20]))
     #
     # set nzgdump since updated 3d things.  Now won't have to do this again unless read-in gdump again.
     #    nzgdump=nz
@@ -6977,12 +7049,15 @@ def rfdtransform(gotgdetB=0):
     Vmetric[2]=h3d
     Vmetric[3]=ph3d
     #
-    print("shapes")
-    print(Vmetric[1].shape)
-    print(Vmetric[2].shape)
-    print(Vmetric[3].shape)
-    sys.stdout.flush()
+    print("rfdtransform(done assign Vmetric) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
+    # DEBUG:
+    #print("shapes")
+    #print(Vmetric[1].shape)
+    #print(Vmetric[2].shape)
+    #print(Vmetric[3].shape)
+    #sys.stdout.flush()
     #
+    print("rotate_VtoVmetric BEGIN\n");sys.stdout.flush()
     # get Vorig if different than Vmetric
     # This assumes original grid use same exact r,\theta,\phi grid on same x1,x2,x3 and same ti,tj,tk.
     Vorig=np.copy(Vmetric)
@@ -7004,6 +7079,10 @@ def rfdtransform(gotgdetB=0):
     #print(Vorig[2,0,:,0])
     #sys.stdout.flush()
     #
+    print("rotate_VtoVmetric END\n");sys.stdout.flush()
+    print("rfdtransform(done assign Vorig) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
+    #
+    print("reinterp3dspc BEGIN\n");sys.stdout.flush()
     #
     if 0==1:
         # 3D interpolate from Vorig positions on grid to Vmetric positions
@@ -7045,12 +7124,19 @@ def rfdtransform(gotgdetB=0):
         else:
             (rho,ug,uu[0],uu[1],uu[2],uu[3],B[1],B[2],B[3])=reinterp3dspc_opt_all(Vorig,Vmetric,rho,ug,uu,B)
     #
+    print("reinterp3dspc END\n");sys.stdout.flush()
+    print("rfdtransform(done assign interpolated prims) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
     #
     # Get transformation matrices that actually only depend upon Vmetric=r,h,ph
     # transV2Vmetric^\mu[Vmetric]_\nu[V] u^\nu[V] : So first index is Vmetric-type.  Second index is V-type.  Operates on contravariant V-type.
     # transVmetric2V^\mu[V]_\nu[Vmetric] u^\nu[Vmetric] : So first index is V-type.  Second index is Vmetric-type.  Operates on contravariant Vmetric-type.
+    print("set_transV2Vmetric BEGIN\n");sys.stdout.flush()
+    #
     (transV2Vmetric)=set_transV2Vmetric(Vmetric=Vmetric,b0=-THETAROT)
     gc.collect() #try to release unneeded memory
+    #
+    print("set_transV2Vmetric END\n");sys.stdout.flush()
+    print("rfdtransform(done get transV2Vmetric) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
     # transform tensors (gv3=gv3_{\mu[V]\nu[V]} and dxdxp=dx^\mu[V]/dxp^\nu[V], but dxdxp just dV/dX that we understand now is just dVmetric/dXmetric that is already new grid by assumed rotation)
     # So only have to transform gv3 (everything remains correct/consistent as long as all vector components are interpolated in same spatial way and transformed in correct/consistent way)
     # using transV just does a local rotation, not global.  Global relocation done by interpolation already.
@@ -7062,6 +7148,7 @@ def rfdtransform(gotgdetB=0):
     # dx^{\mu'''[Xmetric]} = dx^{\mu[X]} \Lambda^{\mu'[V]}_{\mu[X]} \Lambda^{\mu''[Vmetric]}_{\mu'[V]} \Lambda^{\mu'''[Xmetric]}_{\mu''[Vmetric]} <--- this one is what we do here.
     #
     # Note that dxdxp=dV^\mu/dX^\nu=\Lambda^\mu[V]_\nu[X] at Vorig on original grid is same value as dVmetric^\mu/dXmetric^\nu on Vmetric on new grid. But, transV2Vmetric has to operate on V, not X.
+    print("tensordots BEGIN\n");sys.stdout.flush()
     #
     # this gives inverse without transposition, so gives (dX^\nu/dV^\mu)^T = \Lambda_\mu[V]^\nu[X] and \Lambda_\mu[Vmetric]^\nu[Xmetric]
     idxdxp=np.copy(dxdxp)
@@ -7095,6 +7182,9 @@ def rfdtransform(gotgdetB=0):
         gdetB=np.copy(gdetBnew3) # overwrite
     #
     printusage()
+    print("tensordots END\n");sys.stdout.flush()
+    print("rfdtransform(done tensordots) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
+    #
     #
     #
 
