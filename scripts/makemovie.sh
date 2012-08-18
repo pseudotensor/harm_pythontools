@@ -236,7 +236,7 @@ then
 elif [ $modelname == "sashaam9full2pi1.5708" ]
 then
     jobsuffix="cd$system"
-elif [ $modelname == "thickdiskfull3d7" ]
+elif [ $modelname == "thickdiskfull3d7tilt0.35" ]
 then
     jobsuffix="da$system"
 elif [ $modelname == "thickdiskfull3d7tilt0.7" ]
@@ -352,6 +352,32 @@ then
         timetot="24:00:00"
         numcorespernode=80
         memtot=$((4 + $numcorespernode * 4))
+    elif [ "$thedir" == "sashaam9full2pit0.15" ] ||
+        [ "$thedir" == "sashaa9b100t0.15" ] ||
+        [ "$thedir" == "sashaa99t0.15" ] ||
+        [ "$thedir" == "sashaam9full2pit0.3" ] ||
+        [ "$thedir" == "sashaa9b100t0.3" ] ||
+        [ "$thedir" == "sashaa99t0.3" ] ||
+        [ "$thedir" == "sashaam9full2pit0.6" ] ||
+        [ "$thedir" == "sashaa9b100t0.6" ] ||
+        [ "$thedir" == "sashaa99t0.6" ] ||
+        [ "$thedir" == "sashaam9full2pit1.5708" ] ||
+        [ "$thedir" == "sashaa9b100t1.5708" ] ||
+        [ "$thedir" == "sashaa99t1.5708" ]
+    then
+        numnodes=6 # overwrite numnodes to 6
+        timetot="24:00:00" # if use numnodes=6, only need ~12 hours actually for 5194 images
+        numcorespernode=80
+        # for new script with reinterp3dspc, uses up to 10GB per core, so give 11GB per core
+        memtot=$((11 + $numcorespernode * 11))
+    elif [ "$thedir" == "thickdiskfull3d7tilt0.35" ] ||
+        [ "$thedir" == "thickdiskfull3d7tilt0.7" ] ||
+        [ "$thedir" == "thickdiskfull3d7tilt1.5708" ]
+    then
+        timetot="24:00:00"
+        numcorespernode=80
+        # give an extra 2GB/core for these models compared to without reinterp3dspc
+        memtot=$((18 + $numcorespernode * 16))
     else
         # default for lower res thick disk poloidal and toroidal runs
         timetot="24:00:00"

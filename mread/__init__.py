@@ -2426,7 +2426,7 @@ def isthickdiskmodel(modelname):
     elif modelname=="thickdiskhr3":
         return(1)
     # tilted models:
-    elif modelname=="thickdiskfull3d7" or modelname=="thickdiskfull3d7tilt0.7" or modelname=="thickdiskfull3d7tilt1.5708" or modelname=="thickdiskhr3tilt0.35":
+    elif modelname=="thickdiskfull3d7tilt0.35" or modelname=="thickdiskfull3d7tilt0.7" or modelname=="thickdiskfull3d7tilt1.5708" or modelname=="thickdiskhr3tilt0.35":
         return(2)
     else:
         return(0)
@@ -6967,7 +6967,8 @@ def rfd(fieldlinefilename,**kwargs):
 
 # testing
 # cd /lustre/medusa/jmckinne/data3/jmckinne/jmckinne/sashaa99t0.6/test1
-# rm -rf python*.out ; rm -rf gmon.out ; rm -rf torun*.sh ; rm -rf sh*.sh __init*.py* py nohup.out ; killall -s 9 python
+# rm -rf python*.out ; rm -rf gmon.out ; rm -rf torun*.sh ; rm -rf sh*.sh __init*.py* py nohup.out ; killall -s 9 python ; bsub*.sh sasha*.err sasha*.out out.txt outnew.txt
+
 # edit makemovie.sh and for system=4 make numnodes=1 and numcorespernode=1 and plot stuff so memtot=8 and numcores=1
 # qsub -I -A TG-PHY120005  -q analysis -l ncpus=1,mem=8GB,walltime=3:00:00
 # sh makemovie.sh sashaa99t0.6 1 1 1 0 0 0 0 0 0 0 1 0 0 0 0 4 0
@@ -15302,7 +15303,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         truemodelname="{\\bf A0.99N100}"
     ##########################################
     # tilted models
-    elif modelname=="thickdiskfull3d7":
+    elif modelname=="thickdiskfull3d7tilt0.35":
         fieldtype="PoloidalFlip"
         truemodelname="{\\bf A0.94BfN40t0.35}"
     elif modelname=="thickdiskfull3d7tilt0.7":
@@ -24909,7 +24910,9 @@ def main(argv=None):
     global avoidplotsglobal
     avoidplotsglobal=1
     global OLDQTYMEMMEM
-    OLDQTYMEMMEM=1
+    # only need =1 if reading in older type data
+    #OLDQTYMEMMEM=1
+    OLDQTYMEMMEM=0
     #
     #
     #

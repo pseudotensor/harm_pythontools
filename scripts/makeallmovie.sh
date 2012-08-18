@@ -25,7 +25,13 @@
 #dircollecttoroidal='thickdiskr3 thickdisk17 thickdisk10 thickdiskr15 thickdisk3 thickdiskhr3'
 
 # ALL:
-dircollect='thickdisk7 thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.like8 thickdiskr7 thickdiskrr2 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 thickdiskr2 thickdisk9 thickdiskr3 thickdisk17 thickdisk10 thickdiskr15 thickdisk3 thickdiskhr3 runlocaldipole3dfiducial blandford3d_new sasham9full2pi sasham5 sasham2 sasha0 sasha1 sasha2 sasha5 sasha9b25 sasha9b50 sasha9b100 sasha9b200 sasha99'
+dircollectnontilt='thickdisk7 thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.like8 thickdiskr7 thickdiskrr2 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 thickdiskr2 thickdisk9 thickdiskr3 thickdisk17 thickdisk10 thickdiskr15 thickdisk3 thickdiskhr3 runlocaldipole3dfiducial blandford3d_new sasham9full2pi sasham5 sasham2 sasha0 sasha1 sasha2 sasha5 sasha9b25 sasha9b50 sasha9b100 sasha9b200 sasha99'
+
+dircollecttilt="sashaam9full2pit0.15 sashaa9b100t0.15 sashaa99t0.15 sashaam9full2pit0.3 sashaa9b100t0.3 sashaa99t0.3 sashaam9full2pit0.6 sashaa9b100t0.6 sashaa99t0.6 sashaam9full2pit1.5708 sashaa9b100t1.5708 sashaa99t1.5708 thickdiskfull3d7tilt0.35 thickdiskfull3d7tilt0.7 thickdiskfull3d7tilt1.5708"
+
+#################
+# choose:
+dircollect=$dircollecttilt
 
 
 # note that thickdisk1 is actually bad, so ignore it.
@@ -34,7 +40,14 @@ dircollect='thickdisk7 thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.like8 
 # do expensive thickdisk7 and sasha99 last so can test things
 #dirruns='run.like8 thickdisk8 thickdisk11 thickdisk12 thickdisk13 thickdiskr7 thickdiskrr2 run.liker2butbeta40 run.liker2 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 thickdiskr2 run.liker1 thickdisk9 thickdiskr3 thickdisk17 thickdisk10 thickdiskr15 thickdisk3 thickdiskhr3 runlocaldipole3dfiducial blandford3d_new sasham9full2pi sasham5 sasham2 sasha0 sasha1 sasha2 sasha5 sasha9b25 sasha9b50 sasha9b100 sasha9b200 sasha99 thickdisk7'
 
-dirruns='thickdisk7 run.like8 thickdisk8 thickdisk11 thickdisk12 thickdisk13 thickdiskr7 thickdiskrr2 run.liker2butbeta40 run.liker2 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 thickdiskr2 run.liker1 thickdisk9 thickdiskr3 thickdisk17 thickdisk10 thickdiskr15 thickdisk3 thickdiskhr3 runlocaldipole3dfiducial blandford3d_new sasham9full2pi sasham5 sasham2 sasha0 sasha1 sasha2 sasha5 sasha9b25 sasha9b50 sasha9b100 sasha9b200 sasha99'
+dirrunsnontilt='thickdisk7 run.like8 thickdisk8 thickdisk11 thickdisk12 thickdisk13 thickdiskr7 thickdiskrr2 run.liker2butbeta40 run.liker2 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 thickdiskr2 run.liker1 thickdisk9 thickdiskr3 thickdisk17 thickdisk10 thickdiskr15 thickdisk3 thickdiskhr3 runlocaldipole3dfiducial blandford3d_new sasham9full2pi sasham5 sasham2 sasha0 sasha1 sasha2 sasha5 sasha9b25 sasha9b50 sasha9b100 sasha9b200 sasha99'
+
+dirrunstilt="sashaam9full2pit0.15 sashaa9b100t0.15 sashaa99t0.15 sashaam9full2pit0.3 sashaa9b100t0.3 sashaa99t0.3 sashaam9full2pit0.6 sashaa9b100t0.6 sashaa99t0.6 sashaam9full2pit1.5708 sashaa9b100t1.5708 sashaa99t1.5708 thickdiskfull3d7tilt0.35 thickdiskfull3d7tilt0.7 thickdiskfull3d7tilt1.5708"
+
+###################
+# choose
+dirruns=$dirrunstilt
+
 
 #dirruns='thickdisk17'
 
@@ -373,7 +386,7 @@ then
             [ "$thedir" == "sashaam9full2pit1.5708" ] ||
             [ "$thedir" == "sashaa9b100t1.5708" ] ||
             [ "$thedir" == "sashaa99t1.5708" ] ||
-            [ "$thedir" == "thickdiskfull3d7" ] ||
+            [ "$thedir" == "thickdiskfull3d7tilt0.35" ] ||
             [ "$thedir" == "thickdiskfull3d7tilt0.7" ] ||
             [ "$thedir" == "thickdiskfull3d7tilt1.5708" ]
         then
@@ -476,13 +489,18 @@ then
         cp ~/py/scripts/makemovie.sh .
 
         echo "edit makemovie.sh: "$thedir
+
+        ##################
+        #
+        # NO LONGER using "export runn" in makemovie.sh:
+        #
     #in makemovie.sh:
     # for thickdisk7 runn=5
     # for run.like8 run.liker1 run.liker2 runn=12
     # for runlocaldipole3dfiducial runn=12
     # more like runn=4 for thickdisk7 for avg creation.
         if [ "$thedir" == "thickdisk7" ] ||
-            [ "$thedir" == "thickdiskfull3d7" ] ||
+            [ "$thedir" == "thickdiskfull3d7tilt0.35" ] ||
             [ "$thedir" == "thickdiskfull3d7tilt0.7" ] ||
             [ "$thedir" == "thickdiskfull3d7tilt1.5708" ]
 	    then
