@@ -37,7 +37,7 @@ do
 
     
     sh createlinkssimple.sh $run
-    # have to manually remove bad files!
+    # GDOMARK: have to manually remove bad files!  DO that first, then run full script
 
     # change to dumps dir
     cd $run/dumps/
@@ -96,6 +96,9 @@ do
     linenumberlastgood=`grep -n $lastrealfile listfieldline.txt | sed 's/:/ /g' | awk '{print $1}'`
     linenumberfirstbad=$(( linenumberlastgood + 1 ))
     tail -n +$linenumberfirstbad listfieldline.txt > listfieldlinetoremove.txt
+    echo "About to remove files for $run"
+    echo "First file is:"
+    head -1 listfieldlinetoremove.txt
     for fil in `cat listfieldlinetoremove.txt`
     do
         rm -rf $fil

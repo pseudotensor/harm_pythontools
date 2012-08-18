@@ -7526,6 +7526,7 @@ def grid3d(dumpname,use2d=False,doface=False): #read grid dump file: header and 
     if np.fabs(THETAROT-0.0)>1E-13:
         realdumpname="gdump.THETAROT0.bin"
         # NOTEMARK: older sasha runs that weren't tilted had 32-64 phi-zones, whereas new has 128 phi-zones.  But once read-in, only use one-phi zone for this file and that's all that's needed.  The actual nz and full 3D things (ti,tj,tk,x1,x2,x3,r,h,ph) will be overwritten or corrected when rfd() is called
+        # Note:  So for tilted runs, *only* need non-tilted gdump and that only has to be axisymmetric for BH solutions!
     else:
         realdumpname=dumpname
     #
@@ -15309,7 +15310,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     elif modelname=="thickdiskfull3d7tilt0.7":
         fieldtype="PoloidalFlip"
         truemodelname="{\\bf A0.94BfN40t0.7}"
-    elif modelname=="thickdiskfull3d7tilt1.5708":
+    elif modelname=="thickdiskfull3d7emacs scrtilt1.5708":
         fieldtype="PoloidalFlip"
         truemodelname="{\\bf A0.94BfN40t1.5708}"
     elif modelname=="thickdiskhr3tilt0.35":
