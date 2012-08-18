@@ -6963,8 +6963,6 @@ def rfd(fieldlinefilename,**kwargs):
     #
 
 
-
-
 # testing
 # cd /lustre/medusa/jmckinne/data3/jmckinne/jmckinne/sashaa99t0.6/test1
 # rm -rf python*.out ; rm -rf gmon.out ; rm -rf torun*.sh ; rm -rf sh*.sh __init*.py* py nohup.out ; killall -s 9 python ; bsub*.sh sasha*.err sasha*.out out.txt outnew.txt
@@ -6988,7 +6986,23 @@ def rfd(fieldlinefilename,**kwargs):
 #
 # first edit makeallmovie.sh so uses correct makemovie?.sh and keeps correct files wanted.
 # then edit makemovie.sh so numnodes, numcorespernode, etc. are correct for the system and file set computing.
-# sh makeallmovie.sh twoframesonly1 1 1 1 1 1 1 0 0 0 0 0 0 0 1 0 0 0 0 1
+# sh makeallmovie.sh twoframesonly1 1 1 1 1 1 1 0 0 0 0 0 0 0 1 0 0 0 0 0
+# or repeat after without re-creating files:
+# sh makeallmovie.sh twoframesonly1 0 0 1 1 1 1 0 0 0 0 0 0 0 1 0 0 0 0 0
+# collect at end if required.  Copies to ki-jmck using globusonline.
+
+
+# if problem and need to restart, then need to kill all scripts, then all jobs (e.g.):
+# ps -auxwf
+# ps -auxwf | awk '{print $2}' > list.txt
+# emacs list.txt
+# for job in `cat list.txt` ; do kill -s 9 $job ; done
+# qstat
+# qdel 94041.nemo 94042.nemo 94043.nemo 94044.nemo 94045.nemo 94046.nemo 94047.nemo 94049.nemo 94051.nemo 94048.nemo 94050.nemo 94052.nemo 94053.nemo 94054.nemo 94055.nemo
+
+
+
+
 
 # handle THETAROT!=0
 def rfdtransform(gotgdetB=0):

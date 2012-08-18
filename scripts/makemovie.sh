@@ -224,16 +224,16 @@ then
 elif [ $modelname == "sashaa9b100t1.5708" ]
 then
     jobsuffix="bd$system"
-elif [ $modelname == "sashaam9full2pi0.15" ]
+elif [ $modelname == "sashaam9full2pit0.15" ]
 then
     jobsuffix="ca$system"
-elif [ $modelname == "sashaam9full2pi0.3" ]
+elif [ $modelname == "sashaam9full2pit0.3" ]
 then
     jobsuffix="cb$system"
-elif [ $modelname == "sashaam9full2pi0.6" ]
+elif [ $modelname == "sashaam9full2pit0.6" ]
 then
     jobsuffix="cc$system"
-elif [ $modelname == "sashaam9full2pi1.5708" ]
+elif [ $modelname == "sashaam9full2pit1.5708" ]
 then
     jobsuffix="cd$system"
 elif [ $modelname == "thickdiskfull3d7tilt0.35" ]
