@@ -329,50 +329,50 @@ then
         timetot="24:00:00"
         numcorespernode=80
         memtot=$((8 + $numcorespernode * 8))
-    elif [ "$thedir" == "sasham9full2pi" ] ||
-        [ "$thedir" == "sasha9b100" ]
+    elif [ "$modelname" == "sasham9full2pi" ] ||
+        [ "$modelname" == "sasha9b100" ]
     then
         timetot="24:00:00"
         numcorespernode=80
         memtot=$((8 + $numcorespernode * 6))
-    elif [ "$thedir" == "sasham9" ] ||
-        [ "$thedir" == "sasham5" ] ||
-        [ "$thedir" == "sasham2" ] ||
-        [ "$thedir" == "sasha0" ] ||
-        [ "$thedir" == "sasha1" ] ||
-        [ "$thedir" == "sasha2" ] ||
-        [ "$thedir" == "sasha5" ] ||
-        [ "$thedir" == "sasha9b25" ] ||
-        [ "$thedir" == "sasha9b50" ] ||
-        [ "$thedir" == "sasha9b200" ] ||
-        [ "$thedir" == "runlocaldipole3dfiducial" ] ||
-        [ "$thedir" == "blandford3d_new" ] ||
-        [ "$thedir" == "a0hr07" ]
+    elif [ "$modelname" == "sasham9" ] ||
+        [ "$modelname" == "sasham5" ] ||
+        [ "$modelname" == "sasham2" ] ||
+        [ "$modelname" == "sasha0" ] ||
+        [ "$modelname" == "sasha1" ] ||
+        [ "$modelname" == "sasha2" ] ||
+        [ "$modelname" == "sasha5" ] ||
+        [ "$modelname" == "sasha9b25" ] ||
+        [ "$modelname" == "sasha9b50" ] ||
+        [ "$modelname" == "sasha9b200" ] ||
+        [ "$modelname" == "runlocaldipole3dfiducial" ] ||
+        [ "$modelname" == "blandford3d_new" ] ||
+        [ "$modelname" == "a0hr07" ]
     then
         timetot="24:00:00"
         numcorespernode=80
         memtot=$((4 + $numcorespernode * 4))
-    elif [ "$thedir" == "sashaam9full2pit0.15" ] ||
-        [ "$thedir" == "sashaa9b100t0.15" ] ||
-        [ "$thedir" == "sashaa99t0.15" ] ||
-        [ "$thedir" == "sashaam9full2pit0.3" ] ||
-        [ "$thedir" == "sashaa9b100t0.3" ] ||
-        [ "$thedir" == "sashaa99t0.3" ] ||
-        [ "$thedir" == "sashaam9full2pit0.6" ] ||
-        [ "$thedir" == "sashaa9b100t0.6" ] ||
-        [ "$thedir" == "sashaa99t0.6" ] ||
-        [ "$thedir" == "sashaam9full2pit1.5708" ] ||
-        [ "$thedir" == "sashaa9b100t1.5708" ] ||
-        [ "$thedir" == "sashaa99t1.5708" ]
+    elif [ "$modelname" == "sashaam9full2pit0.15" ] ||
+        [ "$modelname" == "sashaa9b100t0.15" ] ||
+        [ "$modelname" == "sashaa99t0.15" ] ||
+        [ "$modelname" == "sashaam9full2pit0.3" ] ||
+        [ "$modelname" == "sashaa9b100t0.3" ] ||
+        [ "$modelname" == "sashaa99t0.3" ] ||
+        [ "$modelname" == "sashaam9full2pit0.6" ] ||
+        [ "$modelname" == "sashaa9b100t0.6" ] ||
+        [ "$modelname" == "sashaa99t0.6" ] ||
+        [ "$modelname" == "sashaam9full2pit1.5708" ] ||
+        [ "$modelname" == "sashaa9b100t1.5708" ] ||
+        [ "$modelname" == "sashaa99t1.5708" ]
     then
         numnodes=6 # overwrite numnodes to 6
         timetot="24:00:00" # if use numnodes=6, only need ~12 hours actually for 5194 images
         numcorespernode=80
         # for new script with reinterp3dspc, uses up to 10GB per core, so give 11GB per core
         memtot=$((11 + $numcorespernode * 11))
-    elif [ "$thedir" == "thickdiskfull3d7tilt0.35" ] ||
-        [ "$thedir" == "thickdiskfull3d7tilt0.7" ] ||
-        [ "$thedir" == "thickdiskfull3d7tilt1.5708" ]
+    elif [ "$modelname" == "thickdiskfull3d7tilt0.35" ] ||
+        [ "$modelname" == "thickdiskfull3d7tilt0.7" ] ||
+        [ "$modelname" == "thickdiskfull3d7tilt1.5708" ]
     then
         timetot="24:00:00"
         numcorespernode=80
@@ -380,6 +380,7 @@ then
         memtot=$((18 + $numcorespernode * 16))
     else
         # default for lower res thick disk poloidal and toroidal runs
+        echo "Ended up in default for timetot, numcorespernode, and memtot in makemovie.sh"
         timetot="24:00:00"
         numcorespernode=80
         memtot=$((4 + $numcorespernode * 4))
