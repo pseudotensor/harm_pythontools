@@ -58,7 +58,7 @@ done
 
 echo "Skipped so that went from $numfiles files to $jjj files"
 
-ln -sf $oldfullpath/dumps/gdump.bin .
+ln -sf $oldfullpath/dumps/gdump*bin .
 ln -sf $oldfullpath/dumps/dump0000.bin .
 
 

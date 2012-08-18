@@ -6984,6 +6984,12 @@ def rfd(fieldlinefilename,**kwargs):
 # sh makemovie.sh sashaa99t0.6 1 1 1 0 0 0 0 0 0 0 1 0 0 0 0 4 1
 #
 
+# For 2 frames over all tilted models:
+#
+# first edit makeallmovie.sh so uses correct makemovie?.sh and keeps correct files wanted.
+# then edit makemovie.sh so numnodes, numcorespernode, etc. are correct for the system and file set computing.
+# sh makeallmovie.sh twoframesonly1 1 1 1 1 1 1 0 0 0 0 0 0 0 1 0 0 0 0 1
+
 # handle THETAROT!=0
 def rfdtransform(gotgdetB=0):
     #

@@ -373,7 +373,7 @@ then
             keepfilesend=$(( 1+1502 )) #tend=3000
         fi
     #
-       # THETAROT simulations (keep all files for now)
+       # THETAROT simulations
         if [ "$thedir" == "sashaam9full2pit0.15" ] ||
             [ "$thedir" == "sashaa9b100t0.15" ] ||
             [ "$thedir" == "sashaa99t0.15" ] ||
@@ -390,67 +390,83 @@ then
             [ "$thedir" == "thickdiskfull3d7tilt0.7" ] ||
             [ "$thedir" == "thickdiskfull3d7tilt1.5708" ]
         then
+            # keep all files
+            #keepfilesstart=$(( 1 ))
+            #keepfilesend=$(( $numfiles ))
+            #
+            # if only want to get first and last file images, then just do below that avoids keeping anything.  But then later first and last file force to be kept separately.
             keepfilesstart=$(( 1 ))
-            keepfilesend=$(( $numfiles ))
+            keepfilesend=$(( -1 ))
         fi
     #
     #
-        keepfilesdiff=$(( $keepfilesend - $keepfilesstart ))
-        lastfilesdiff=$(( $numfiles - $keepfilesend ))
+        if [ $keepfilesstart -le $keepfilesend ]
+        then
+
+            keepfilesdiff=$(( $keepfilesend - $keepfilesstart ))
+            lastfilesdiff=$(( $numfiles - $keepfilesend ))
     #
-        echo "keepfilesstart=$keepfilesstart keepfilesend=$keepfilesend keepfilesdiff=$keepfilesdiff"
+            echo "keepfilesstart=$keepfilesstart keepfilesend=$keepfilesend keepfilesdiff=$keepfilesdiff"
     # if above 1/2 kills more than want to keep, then avoid kill of 1/2
-        if [ $keepfilesdiff -lt $numkeep ]
-	    then
-	        keepfilesstart=0
-	        keepfilesend=$numfiles
-	        keepfilesdiff=$(( $keepfilesend - $keepfilesstart ))
-            echo "keepfilesdiff=$keepfilesdiff -lt numkeep=$numkeep"
-        else
+            if [ $keepfilesdiff -lt $numkeep ]
+	        then
+	            keepfilesstart=0
+	            keepfilesend=$numfiles
+	            keepfilesdiff=$(( $keepfilesend - $keepfilesstart ))
+                echo "keepfilesdiff=$keepfilesdiff -lt numkeep=$numkeep"
+            else
             #keepfieldlinelist=`ls -v | grep "fieldline" | tail -$keepfilesstart | head -$keepfilesdiff`
-	        rmfieldlinelist1=`ls -v | grep "fieldline" | head -$keepfilesstart`
-	        for fil in $rmfieldlinelist1
-	        do
+	            rmfieldlinelist1=`ls -v | grep "fieldline" | head -$keepfilesstart`
+	            for fil in $rmfieldlinelist1
+	            do
                 #echo "removing $dirname/${thedir}/$moviedirname/dumps/$fil"   #DEBUG
-	            rm -rf $dirname/${thedir}/$moviedirname/dumps/$fil
-	        done
-	        rmfieldlinelist2=`ls -v | grep "fieldline" | tail -$lastfilesdiff`
-	        for fil in $rmfieldlinelist2
-	        do
+	                rm -rf $dirname/${thedir}/$moviedirname/dumps/$fil
+	            done
+	            rmfieldlinelist2=`ls -v | grep "fieldline" | tail -$lastfilesdiff`
+	            for fil in $rmfieldlinelist2
+	            do
                 #echo "removing $dirname/${thedir}/$moviedirname/dumps/$fil"   #DEBUG
-	            rm -rf $dirname/${thedir}/$moviedirname/dumps/$fil
-	        done
-        fi
+	                rm -rf $dirname/${thedir}/$moviedirname/dumps/$fil
+	            done
+            fi
     #
         ###############
-        echo "now trim every so a file so only about numkeep+2 files in the end: "$thedir
-        fieldlinelist=`ls -v | grep "fieldline"`
-        numfiles=`echo $fieldlinelist | wc | awk '{print $2}'`
+            echo "now trim every so a file so only about numkeep+2 files in the end: "$thedir
+            fieldlinelist=`ls -v | grep "fieldline"`
+            numfiles=`echo $fieldlinelist | wc | awk '{print $2}'`
     #
-        skipfactor=$(( $numfiles / $numkeep ))
-        echo "skipfactor=$skipfactor"
+            skipfactor=$(( $numfiles / $numkeep ))
+            echo "skipfactor=$skipfactor"
     #
-        if [ $skipfactor -eq 0 ]
-        then
-	        resid=$(( $numfiles - $numkeep ))
-	        echo "keeping bit extra: "$resid
+            if [ $skipfactor -eq 0 ]
+            then
+	            resid=$(( $numfiles - $numkeep ))
+	            echo "keeping bit extra: "$resid
+            fi
+        #
+            if [ $skipfactor -gt 0 ]
+            then
+	            iiter=0
+	            for fil in $fieldlinelist
+	            do
+	                mymod=$(( $iiter % $skipfactor ))
+                #echo "fil=$fil mymod=$mymod iter=$iiter"#DEBUG
+	                if [ $mymod -ne 0 ]
+	                then
+		                rm -rf $dirname/${thedir}/$moviedirname/dumps/$fil
+	                fi
+	                iiter=$(( $iiter + 1 ))
+	            done
+            fi
+
+        else
+            # remove all fieldline files
+		    rm -rf $dirname/${thedir}/$moviedirname/dumps/fieldline*.bin
         fi
         #
-        if [ $skipfactor -gt 0 ]
-        then
-	        iiter=0
-	        for fil in $fieldlinelist
-	        do
-	            mymod=$(( $iiter % $skipfactor ))
-                #echo "fil=$fil mymod=$mymod iter=$iiter"#DEBUG
-	            if [ $mymod -ne 0 ]
-	            then
-		            rm -rf $dirname/${thedir}/$moviedirname/dumps/$fil
-	            fi
-	            iiter=$(( $iiter + 1 ))
-	        done
-        fi
-    #
+
+
+
         #############
         echo "Ensure fieldline0000.bin and last fieldline files exist: "$thedir
         cd $dirname/${thedir}/$moviedirname/dumps/
