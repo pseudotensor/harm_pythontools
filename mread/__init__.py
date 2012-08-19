@@ -48,7 +48,7 @@ def mklargescalepulsarplot():
     #FAR
     os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_sph_ps2_cyl_256x128x128")
     rfd("fieldline0000.bin")
-    mkmovie(whichi=256,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=20,plotlen=21./OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=0,doBphi=True,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=1,ncell=3200,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=1)    
+    mkmovie(whichi=256,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=20,plotlen=21./OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.04,kval=0,doBphi=True,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=1,ncell=3200,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=1)    
     plt.xlim(-100,100)
     plt.ylim(-100,100)
     ax1 = plt.gca()
