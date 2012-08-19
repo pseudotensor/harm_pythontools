@@ -11544,7 +11544,7 @@ if __name__ == "__main__":
     if False:
         #compute energy flux weighted pg/pm
         plotbetajet()
-    if True:
+    if False:
         grid3d("gdump.bin",use2d=True)
         #load time-averages
         avgmem=rdavg2d(usedefault=1)  #usedefault=1 reads in from "avg2d.npy"
