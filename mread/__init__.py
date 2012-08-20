@@ -6804,9 +6804,9 @@ def rfdheader():
         whichdumpversion=int(header[28])
         numcolumns=int(header[29])
 
-def rfdheaderonly(fullfieldlinefilename="dumps/fieldline0000.bin"):
+def rfdheaderonly(filename="dumps/fieldline0000.bin"):
     global fin
-    fin = open(fullfieldlinefilename, "rb" )
+    fin = open(filename, "rb" )
     rfdheader()
     fin.close()
 
@@ -7006,6 +7006,9 @@ def rfd(fieldlinefilename,**kwargs):
 # emacs list.txt
 # for job in `cat list.txt` ; do kill -s 9 $job ; done
 # qstat
+# qstat | grep jmckinne | awk '{print $1}'
+# list=`qstat | grep jmckinne | awk '{print $1}'`
+# for job in $list ; do qdel $job ; done
 # qdel 94041.nemo 94042.nemo 94043.nemo 94044.nemo 94045.nemo 94046.nemo 94047.nemo 94049.nemo 94051.nemo 94048.nemo 94050.nemo 94052.nemo 94053.nemo 94054.nemo 94055.nemo
 
 
@@ -7546,7 +7549,7 @@ def grid3d(dumpname,use2d=False,doface=False): #read grid dump file: header and 
     fullfieldlinefilename="dumps/gdump.bin"
     if os.path.isfile(fullfieldlinefilename):
         # only need header of true gdump.bin to get true THETAROT
-        rfdheaderonly(fullfieldlinefilename=fullfieldlinefilename)
+        rfdheaderonly(fullfieldlinefilename)
     else:
         # if no gdump, use last fieldline file that is assumed to be consistent with gdump that didn't exist.
         # allows non-creation of gdump if restarting with tilt from non-tilt run.  So then enver have to have gdump.bin with THETAROT tilt.
@@ -12450,7 +12453,7 @@ def fix_defaulttimes(ts,fti,ftf):
     if truetmax>ftf:
         truetmax=ftf
     #
-    return(truetmin,truemax)
+    return(truetmin,truetmax)
 
 # shift averaging range to at least include some existing data
 def fix_defaulttimes2(ts,fti,ftf):
@@ -12909,7 +12912,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     # quantities at horizon
     ###################################################################################
     #
-    print("ihor=%d" % (hor)) ; sys.stdout.flush()
+    print("ihor=%d" % (ihor)) ; sys.stdout.flush()
     #
     # Below 2 used as divisor to get efficiencies and normalized magnetic flux
     # mdotiniavg = np.float64(mdotiniavgvsr30)[r[:,0,0]<10].mean()

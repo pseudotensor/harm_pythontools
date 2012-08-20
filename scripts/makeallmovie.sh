@@ -223,6 +223,7 @@ then
                 [ "$moviedirname" != "/" ]
             then
                 rm -rf $dirname/${thedir}/$moviedirname/fieldline*.bin
+                # this won't remove .npz's -- which is correct.
             fi
         fi
 
@@ -232,6 +233,7 @@ then
         echo "Linking base files"
         alias cp='cp'
         cp ~/py/scripts/createlinksaltquiet.sh .
+        echo "sh createlinksaltquiet.sh 1 $dirname/${thedir} ./"
         sh createlinksaltquiet.sh 1 $dirname/${thedir} ./
 
         echo "now remove some fraction of links (only keep about 50 for averaging period, first one, and last one): "$thedir
@@ -239,9 +241,9 @@ then
     # avoid @ symbol on soft links
         alias ls='ls'
     # get list of files in natural human order
-        fieldlinelist=`ls -v | grep "fieldline"`
-        firstfieldlinefile=`ls -v | grep "fieldline" | head -1`
-        lastfieldlinefile=`ls -v | grep "fieldline" | tail -1`
+        fieldlinelist=`ls -v | egrep 'fieldline[0-9]+\.bin' | grep -v "npz"`
+        firstfieldlinefile=`ls -v | egrep 'fieldline[0-9]+\.bin' | grep -v "npz" | head -1`
+        lastfieldlinefile=`ls -v | egrep 'fieldline[0-9]+\.bin' | grep -v "npz" | tail -1`
         numfiles=`echo $fieldlinelist | wc | awk '{print $2}'`
     #
     # set 1/2 to keep since average over roughly latter half in time of data
@@ -416,13 +418,13 @@ then
                 echo "keepfilesdiff=$keepfilesdiff -lt numkeep=$numkeep"
             else
             #keepfieldlinelist=`ls -v | grep "fieldline" | tail -$keepfilesstart | head -$keepfilesdiff`
-	            rmfieldlinelist1=`ls -v | grep "fieldline" | head -$keepfilesstart`
+	            rmfieldlinelist1=`ls -v | egrep 'fieldline[0-9]+\.bin' | grep -v "npz" | head -$keepfilesstart`
 	            for fil in $rmfieldlinelist1
 	            do
                 #echo "removing $dirname/${thedir}/$moviedirname/dumps/$fil"   #DEBUG
 	                rm -rf $dirname/${thedir}/$moviedirname/dumps/$fil
 	            done
-	            rmfieldlinelist2=`ls -v | grep "fieldline" | tail -$lastfilesdiff`
+	            rmfieldlinelist2=`ls -v | egrep 'fieldline[0-9]+\.bin' | grep -v "npz" | tail -$lastfilesdiff`
 	            for fil in $rmfieldlinelist2
 	            do
                 #echo "removing $dirname/${thedir}/$moviedirname/dumps/$fil"   #DEBUG
@@ -432,7 +434,7 @@ then
     #
         ###############
             echo "now trim every so a file so only about numkeep+2 files in the end: "$thedir
-            fieldlinelist=`ls -v | grep "fieldline"`
+            fieldlinelist=`ls -v | egrep 'fieldline[0-9]+\.bin' | grep -v "npz"`
             numfiles=`echo $fieldlinelist | wc | awk '{print $2}'`
     #
             skipfactor=$(( $numfiles / $numkeep ))
@@ -462,6 +464,7 @@ then
         else
             # remove all fieldline files
 		    rm -rf $dirname/${thedir}/$moviedirname/dumps/fieldline*.bin
+            # this won't remove .npz's -- which is correct.
         fi
         #
 
@@ -472,10 +475,12 @@ then
         cd $dirname/${thedir}/$moviedirname/dumps/
         if [ $usefirst -eq 1 ]
         then
+            echo "usefirst: $dirname/${thedir}/dumps/$firstfieldlinefile"
             ln -s $dirname/${thedir}/dumps/$firstfieldlinefile .
         fi
         if [ $useend -eq 1 ]
         then
+            echo "useend: $dirname/${thedir}/dumps/$lastfieldlinefile"
             ln -s $dirname/${thedir}/dumps/$lastfieldlinefile .
         fi
 
@@ -614,6 +619,12 @@ then
                 rm -rf $dirname/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.stderr.out
                 rm -rf $dirname/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.full.out
                 rm -rf $dirname/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.out
+                rm -rf $dirname/${thedir}/$moviedirname/python_u_[0-9]*_[0-9]*_[0-9]*.stderr.out
+                rm -rf $dirname/${thedir}/$moviedirname/python_u_[0-9]*_[0-9]*_[0-9]*.full.out
+                rm -rf $dirname/${thedir}/$moviedirname/python_u_[0-9]*_[0-9]*_[0-9]*.out
+                rm -rf $dirname/${thedir}/$moviedirname/python_[0-9]*_[0-9]*_[0-9]*.stderr.out
+                rm -rf $dirname/${thedir}/$moviedirname/python_[0-9]*_[0-9]*_[0-9]*.full.out
+                rm -rf $dirname/${thedir}/$moviedirname/python_[0-9]*_[0-9]*_[0-9]*.out
             fi
             if [ $makemerge -eq 1 ]
             then
