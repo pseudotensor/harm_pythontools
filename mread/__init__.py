@@ -2609,7 +2609,7 @@ def getdefaulttimes1():
         #defaultftf=17000 # real end a bit after 17000
         defaultftf=20000 # but let go past if did run past
     elif issashamodel(modelname)==2:
-        defaultfti=12000 # real start is ~10000
+        defaultfti=10000 # real start is ~8000
         #defaultftf=20000 # real end a bit after 20000
         defaultftf=25000 # but let go past if did run past
     elif issashamodel(modelname)==3:
@@ -6817,6 +6817,13 @@ def rfdheaderfirstfile():
     #rfd("fieldline0000.bin")  #to definea
     rfdheaderonly(firstfieldlinefile)
 
+def rfdheaderlastfile():
+    flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+    sort_nicely(flist)
+    lastfieldlinefile=flist[-1]
+    #rfd("fieldline0000.bin")  #to definea
+    rfdheaderonly(lastfieldlinefile)
+
 
 def rfdfirstfile():
     flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
@@ -6984,6 +6991,7 @@ def rfd(fieldlinefilename,**kwargs):
 
 # For 2 frames over all tilted models:
 #
+# cd /lustre/medusa/jmckinne/data3/jmckinne/jmckinne/
 # first edit makeallmovie.sh so uses correct makemovie?.sh and keeps correct files wanted.
 # then edit makemovie.sh so numnodes, numcorespernode, etc. are correct for the system and file set computing.
 # sh makeallmovie.sh twoframesonly1 1 1 1 1 1 1 0 0 0 0 0 0 0 1 0 0 0 0 0
@@ -7535,11 +7543,21 @@ def grid3d_thetarot_notusing(dumpname,use2d=False,doface=False): #read grid dump
 
 def grid3d(dumpname,use2d=False,doface=False): #read grid dump file: header and body
     #
-    # only need header of true gdump.bin to get true THETAROT
-    rfdheaderonly(fullfieldlinefilename="dumps/gdump.bin")
+    fullfieldlinefilename="dumps/gdump.bin"
+    if os.path.isfile(fullfieldlinefilename):
+        # only need header of true gdump.bin to get true THETAROT
+        rfdheaderonly(fullfieldlinefilename=fullfieldlinefilename)
+    else:
+        # if no gdump, use last fieldline file that is assumed to be consistent with gdump that didn't exist.
+        # allows non-creation of gdump if restarting with tilt from non-tilt run.  So then enver have to have gdump.bin with THETAROT tilt.
+        rfdheaderlastfile()
+    #
     # for rfd() to use to see if different nz size
     global nzgdumptrue
     nzgdumptrue=nz
+    #
+    
+    #
     #
     # for THETAROT!=0, assume gdump.THETAROT0.bin exists corresponding to the non-rotated THETAROT=0 version.
     # Using this vastly speeds-up read-in and doesn't use excessive (too much!) memory required for full 3D interpolation of (a minimum) gv3 while reading in all other things because binary and using np.fromfile().
@@ -12413,6 +12431,46 @@ def get_Qn(ncor,deltar,rinner,router):
     return(Qn)
 
 
+
+def fix_defaulttimes(ts,fti,ftf):
+    #######################
+    # find true range that used for averaging
+    #######################
+    # exclude ts[0] that is probably t=0, so truetmin corresponds to true averaging period
+    if ts[0]==0.0:
+        truetmax=np.max(ts[1:len(ts)])
+        truetmin=np.min(ts[1:len(ts)])
+    else:
+        truetmax=np.max(ts)
+        truetmin=np.min(ts)
+    #
+    if truetmin<fti:
+        truetmin=fti
+    #
+    if truetmax>ftf:
+        truetmax=ftf
+    #
+    return(truetmin,truemax)
+
+# shift averaging range to at least include some existing data
+def fix_defaulttimes2(ts,fti,ftf):
+    # exclude ts[0] that is probably t=0, so truetmin corresponds to true averaging period
+    if ts[0]==0.0:
+        truetmax=np.max(ts[1:len(ts)])
+        truetmin=np.min(ts[1:len(ts)])
+    else:
+        truetmax=np.max(ts)
+        truetmin=np.min(ts)
+    #
+    if truetmin>fti:
+        fti=truetmin
+    #
+    if truetmax<ftf:
+        ftf=truetmax
+    #
+    return(fti,ftf)
+
+
 # everything done inside this function only needs a final call to plot, not generating npy files or merging them.
 def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None):
     global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
@@ -12420,6 +12478,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     # need to compute this again
     rhor=1+(1-a**2)**0.5
     ihor = np.floor(iofr(rhor)+0.5)
+    #
+    print("rhor=%g ihor=%d" % (rhor,hor)) ; sys.stdout.flush()
     #
     # choose radius where to measure total fluxes.  If ihor!=iflux for horizon quantities, components will be renormalized by totals
     #ifluxacc = iofr(2.0)
@@ -12719,6 +12779,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         defaultfti,defaultftf=getdefaulttimes()
         #
+        (defaultfti,defaultftf) = fix_defaulttimes2(ts,defaultfti,defaultftf)
+        #
         #iti = min(3000,ts[-1])
         #itf = max(4000,ts[0])
         iti = defaultfti
@@ -12727,22 +12789,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         ftf = defaultftf
         print( "Warning: titf.txt not found: using default numbers for averaging: %g %g %g %g" % (iti, itf, fti, ftf) ) ; sys.stdout.flush()
     #
-    #######################
-    # find true range that used for averaging
-    #######################
-    # exclude ts[0] that is probably t=0, so truetmin corresponds to true averaging period
-    if ts[0]==0.0:
-        truetmax=np.max(ts[1:len(ts)])
-        truetmin=np.min(ts[1:len(ts)])
-    else:
-        truetmax=np.max(ts)
-        truetmin=np.min(ts)
-    #
-    if truetmin<fti:
-        truetmin=fti
-    #
-    if truetmax>ftf:
-        truetmax=ftf
+    (truetmin,truetmax)=fix_defaulttimes(ts,fti,ftf)
     #
     print("Part1" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
     #
@@ -12861,6 +12908,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     ###################################################################################
     # quantities at horizon
     ###################################################################################
+    #
+    print("ihor=%d" % (hor)) ; sys.stdout.flush()
     #
     # Below 2 used as divisor to get efficiencies and normalized magnetic flux
     # mdotiniavg = np.float64(mdotiniavgvsr30)[r[:,0,0]<10].mean()

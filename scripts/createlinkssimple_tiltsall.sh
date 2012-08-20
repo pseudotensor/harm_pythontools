@@ -29,6 +29,22 @@ then
     mv thickdiskfull3d7t thickdiskfull3d7tilt0.35t
 fi
 
+
+# remove files, but be careful by doing this outside createlinkssimple.sh script that uses `pwd` that might be anything if script breaks
+if [ 1 -eq 1 ]
+then
+    for run in $dirrunstilt
+    do
+        # avoid removing npz files
+        rm -rf /lustre/medusa/jmckinne/data3/jmckinne/jmckinne/$run/dumps/fieldline[0-9][0-9][0-9][0-9].bin
+        rm -rf /lustre/medusa/jmckinne/data3/jmckinne/jmckinne/$run/dumps/fieldline[0-9][0-9][0-9][0-9][0-9].bin
+        rm -rf /lustre/medusa/jmckinne/data3/jmckinne/jmckinne/$run/dumps/gdump*.bin
+        rm -rf /lustre/medusa/jmckinne/data3/jmckinne/jmckinne/$run/dumps/dump*.bin
+        
+    done
+fi
+
+
 ############
 for run in $dirrunstilt
 do

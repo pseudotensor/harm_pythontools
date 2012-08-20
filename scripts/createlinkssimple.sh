@@ -90,14 +90,20 @@ if [ "thickdisk7" == "${thedir}" ]
 then
     manydir=`pwd`
     basedir=`pwd`
-    mkdir -p dumps/
     dumpsdir=$basedir/dumps/
+    mkdir -p dumps/
+    #rm -rf $dumpsdir/fieldline*.bin
+    #rm -rf $dumpsdir/gdump*.bin
+    #rm -rf $dumpsdir/dump*.bin
 else
     manydir=`pwd`
     cd ${thedir}/
     basedir=`pwd`
-    mkdir -p dumps/
     dumpsdir=$basedir/dumps/
+    mkdir -p dumps/
+    #rm -rf $dumpsdir/fieldline*.bin
+    #rm -rf $dumpsdir/gdump*.bin
+    #rm -rf $dumpsdir/dump*.bin
     mv ../dirs${thedir}.txt .
 fi
 
