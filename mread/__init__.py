@@ -12479,7 +12479,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     rhor=1+(1-a**2)**0.5
     ihor = np.floor(iofr(rhor)+0.5)
     #
-    print("rhor=%g ihor=%d" % (rhor,hor)) ; sys.stdout.flush()
+    print("rhor=%g ihor=%d" % (rhor,ihor)) ; sys.stdout.flush()
     #
     # choose radius where to measure total fluxes.  If ihor!=iflux for horizon quantities, components will be renormalized by totals
     #ifluxacc = iofr(2.0)
