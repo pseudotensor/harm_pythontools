@@ -66,11 +66,14 @@ def mklargescalepulsarplot(ii=256):
     plt.savefig("fig_large.eps",bbox_inches='tight',pad_inches=0.02)
     plt.savefig("fig_large.pdf",bbox_inches='tight',pad_inches=0.02)
 
-def mksmallscalepulsarplot(ii=65,whichvar='Bphi'):
+def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None):
     #NEAR
     #os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_cyl_x2")
+    plt.figure(0,size=(10,8))
     os.chdir("/home/atchekho/run2/hf_60_r07h05_mydt_sph_ps2_256x128x128")
     rfd("fieldline0000.bin")
+    if n1 is not None and n2 is not None:
+        computevars(n1=n1,n2=n2)
     if whichvar == 'Bphi':
         mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=20,plotlen=2.5/OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=(ii%32)/32.*nz,doBphi=True,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=1,ncell=3200,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5)    
     elif whichvar == 'bsqow':
