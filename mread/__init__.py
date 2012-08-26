@@ -66,12 +66,20 @@ def mklargescalepulsarplot(ii=256):
     plt.savefig("fig_large.eps",bbox_inches='tight',pad_inches=0.02)
     plt.savefig("fig_large.pdf",bbox_inches='tight',pad_inches=0.02)
 
-def mksmallscalepulsarplot(ii=65):
+def mksmallscalepulsarplot(ii=65,whichvar='Bphi'):
     #NEAR
     #os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_cyl_x2")
     os.chdir("/home/atchekho/run2/hf_60_r07h05_mydt_sph_ps2_256x128x128")
     rfd("fieldline0000.bin")
-    mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=20,plotlen=2.5/OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=(ii%32)/32.*nz,doBphi=True,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=1,ncell=3200,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5)    
+    if whichvar == 'Bphi':
+        mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=20,plotlen=2.5/OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=(ii%32)/32.*nz,doBphi=True,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=1,ncell=3200,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5)    
+    elif whichvar == 'bsqow':
+        if 'avgbsq' in globals():
+            print "Using time-averages"
+            mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=20,plotlen=2.5/OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=(ii%32)/32.*nz,doBphi=True,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=1,ncell=3200,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5,whichvar=2,avgbsqorho=amin(radavg(avgbsq/(avgrho+gam*avgug)),80+0*avgbsqow),cb=1))
+        else:
+            print "No time-averages computed, so using instantaneous values"
+            mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=20,plotlen=2.5/OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=(ii%32)/32.*nz,doBphi=True,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=1,ncell=3200,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5,whichvar=2,avgbsqorho=amin(radavg(bsq/(rho+gam*ug)),80+0*bsq),cb=1))
     #mkmovie(whichi=50,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=40,plotlen=15,isnstar=True,minlenbhfield=0.0,density=2,whichr=1.3,minlengthdefault=0.05,kval=0,doBphi=True,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5)
 
     plt.xlim(-2.5/OmegaNS,2.5/OmegaNS)
