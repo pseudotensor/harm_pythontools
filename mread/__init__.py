@@ -69,7 +69,7 @@ def mklargescalepulsarplot(ii=256):
 def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None):
     #NEAR
     #os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_cyl_x2")
-    plt.figure(0,size=(10,8))
+    plt.figure(0,figsize=(10,8))
     os.chdir("/home/atchekho/run2/hf_60_r07h05_mydt_sph_ps2_256x128x128")
     rfd("fieldline0000.bin")
     if n1 is not None and n2 is not None:
