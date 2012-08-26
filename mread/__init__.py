@@ -44,17 +44,18 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
-def mklargescalepulsarplot():
+def mklargescalepulsarplot(ii=256):
     #FAR
     os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_sph_ps2_cyl_256x128x128")
     rfd("fieldline0000.bin")
-    mkmovie(whichi=256,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=20,plotlen=21./OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=0,doBphi=True,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=1,ncell=3200,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=1)    
-    plt.xlim(-100,100)
-    plt.ylim(-100,100)
+    mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=20,plotlen=21./OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=(ii%32)/32.*nz,doBphi=True,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=1,ncell=3200,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5)    
+    sz=100
+    plt.xlim(-sz,sz)
+    plt.ylim(-sz,sz)
     ax1 = plt.gca()
     for label in ax1.get_xticklabels() + ax1.get_yticklabels():
         label.set_fontsize(20)
-    tck = np.linspace(-20,20,9)
+    tck = np.linspace(-15,15,7)
     s_tck = [(r'$%d$' % t) for t in tck]
     ax1.set_xticks(tck/OmegaNS)    
     ax1.set_yticks(tck/OmegaNS)    
@@ -65,11 +66,12 @@ def mklargescalepulsarplot():
     plt.savefig("fig_large.eps",bbox_inches='tight',pad_inches=0.02)
     plt.savefig("fig_large.pdf",bbox_inches='tight',pad_inches=0.02)
 
-def mksmallscalepulsarplot():
+def mksmallscalepulsarplot(ii=65):
     #NEAR
-    os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_cyl_x2")
+    #os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_cyl_x2")
+    os.chdir("/home/atchekho/run2/hf_60_r07h05_mydt_sph_ps2_256x128x128")
     rfd("fieldline0000.bin")
-    mkmovie(whichi=45,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=20,plotlen=2.5/OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=nz/2,doBphi=True,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=1,ncell=3200,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5)    
+    mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=20,plotlen=2.5/OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=(ii%32)/32.*nz,doBphi=True,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=1,ncell=3200,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5)    
     #mkmovie(whichi=50,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=40,plotlen=15,isnstar=True,minlenbhfield=0.0,density=2,whichr=1.3,minlengthdefault=0.05,kval=0,doBphi=True,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5)
 
     plt.xlim(-2.5/OmegaNS,2.5/OmegaNS)
@@ -91,30 +93,54 @@ def mksmallscalepulsarplot():
 def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
     global alpha_list, edot_list, name_list
     global edotvec_list, poyntvec_list, rvec_list, rlc_list
+    global t
 
     if newlist:
         flist = [
             #"rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8",
+            #"hf_0_r10h05_mydt_cyl",
+            #"hf_30_r10h05_mydt_sph_ps2_128x128x128",
+            #"hf_0_r07h05_mydt_sph_nocosthp_256x128x1",
+            "hf_0_r0710h05_mydt_sph_nocosthp_256x128x1",
+            #"hf_15_r07h05_mydt_sph_ps2_256x128x128",
+            #"hf_30_r07h05_mydt_sph_ps2_256x128x128",
+            #"hf_0_r07h05_mydt_sph_256x128x1",
+            #"hf_30_r10h05_mydt_sph_x2",
+            #"hf_30_r08h05_mydt_sph_128x128x128",
+            #"hf_15_r10h05_mydt_cyl",
+            #"hf_30_r10h05_mydt_cyl",
+            #"hf_45_r10h05_mydt_cyl",
+            #"hf_60_r10h05_mydt_cyl",
+            #"hf_60_r10h05_cyl",
+            #"hf_75_r10h05_mydt_cyl",
+            #"hf_90_r10h05_mydt_cyl",
+            #"hf_60_r10h05_mydt_cyl_x2",
+            #"hf_60_r08h05_mydt_cyl_x2"
+            #"hf_60_r10h05_mydt_sph_ps1_128x128x128", #-- bad
+            #"hf_60_r10h05_mydt_sph_x2",
+            "hf_60_r07h05_mydt_sph_ps2_256x128x128",
+            #"hf_60_r10h05_mydt_sph_ps2_128x128x128",
+            #"hf_90_r07h05_mydt_sph_ps2_256x128x128"
+            "hf_90_r07h05_mydt_sph_256x128x128"
+            ]
+    else:
+        flist = [
             "hf_0_r10h05_mydt_cyl",
             "hf_15_r10h05_mydt_cyl",
             "hf_30_r10h05_mydt_cyl",
             "hf_45_r10h05_mydt_cyl",
             "hf_60_r10h05_mydt_cyl",
-            #"hf_60_r10h05_cyl",
             "hf_75_r10h05_mydt_cyl",
             "hf_90_r10h05_mydt_cyl",
-            "hf_60_r10h05_mydt_cyl_x2",
-            "hf_60_r08h05_mydt_cyl_x2"
             ]
-    else:
-        flist = [
-            "rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8",
-            "tp15deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat",
-            "tp30deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat",
-            "tp60deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm",
-            "tp90deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat"
-            ]
-        #"rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8",
+        # flist = [
+        #     "rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8",
+        #     "tp15deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat",
+        #     "tp30deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat",
+        #     "tp60deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm",
+        #     "tp90deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat"
+        #     ]
+        # #"rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8",
         #"tp15deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat",
         #"tp30deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat",
         #"hf_60_r10h05",
@@ -148,7 +174,10 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
             os.chdir(p)
             grid3d("gdump.bin",use2d=1)
             #pick last fieldline dump
-            rfd( os.path.basename(glob.glob(os.path.join("dumps/", "fieldline*"))[-1]) )
+            fname = os.path.basename(glob.glob(os.path.join("dumps/", "fieldline*"))[-1])
+            print( "Loading from %s" % fname )
+            rfd( fname )
+            print( "Time = %g" % t )
             if( f == "tp90deg_b200_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat" or 
                 f == "tp90deg_b400_r10_nob3u3flip_stepoverneg_cib1_plm_nrcompat" ):
                 rfd("fieldline0060.bin")
@@ -211,14 +240,14 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
         t.set_fontsize(20)    # the legend text fontsize
     plt.savefig("fig_edot.eps",bbox_inches='tight',pad_inches=0.02)
     plt.savefig("fig_edot.pdf",bbox_inches='tight',pad_inches=0.02)
-    clrs=["r","g","b","c","k"]
+    clrs=["r","g","b","c","k","m","y"]
     if plotpoynt:
         plt.figure(2)
         plt.clf()
         a = np.linspace(0,np.pi/2.,1000)
         clrindex = 0
         for i,f in enumerate(flist):
-            if i%2==1: continue
+            #if i%2==1: continue
             plt.plot(rvec_list[i]/rlc_list[i], edotvec_list[i],
                      c=clrs[clrindex],
                      ls="-",lw=2,
@@ -1725,12 +1754,14 @@ def reinterpxy(vartointerp,extent,ncell,domask=1,mirrorfactor=1,rhor=None):
 def ftr(x,xb,xf):
     return( amax(0.0*x,amin(1.0+0.0*x,1.0*(x-xb)/(xf-xb))) )
     
-def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2,whichr=0.9,ncont=100,maxaphi=100,aspect=1.0,isnstar=False,kval=0,doBphi=False,onlyeta=True,maxsBphi=None,domirror=True,nanout=True):
+def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2,whichr=0.9,ncont=100,maxaphi=100,aspect=1.0,isnstar=False,kval=0,doBphi=False,onlyeta=True,maxsBphi=None,domirror=True,nanout=True,whichvar=0,avgbsqorho=None):
     extent=(-len,len,-len/aspect,len/aspect)
     palette=cm.jet
     palette.set_bad('k', 1.0)
     #palette.set_over('r', 1.0)
     #palette.set_under('g', 1.0)
+    if avgbsqorho is None:
+        avgbsqorho = rho
     if not isnstar:
         rhor=1+(1-a**2)**0.5
         ihor = iofr(rhor)
@@ -1787,6 +1818,12 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         iBz = reinterp(Bznorm,extent,ncell,isasymmetric=False,domask=0.8,rhor=rhor,kval=kval,domirror=domirror)
         iBR = reinterp(BRnorm,extent,ncell,isasymmetric=True,domask=0.8,rhor=rhor,kval=kval,domirror=domirror) #isasymmetric = True tells to flip the sign across polar axis
         iBp = reinterp(Bpnorm,extent,ncell,isasymmetric=True,domask=0.8,rhor=rhor,kval=kval,domirror=domirror) #isasymmetric = True tells to flip the sign         #
+        if whichvar > 0:
+            cvel()
+            irho = reinterp(rho,extent,ncell,isasymmetric=False,domask=0.8,rhor=rhor,kval=kval,domirror=domirror)
+            iug  = reinterp(ug,extent,ncell,isasymmetric=False,domask=0.8,rhor=rhor,kval=kval,domirror=domirror)
+            ibsq = reinterp(bsq,extent,ncell,isasymmetric=False,domask=0.8,rhor=rhor,kval=kval,domirror=domirror)
+            iavgbsqorho = reinterp(avgbsqorho,extent,ncell,isasymmetric=False,domask=0.8,rhor=rhor,kval=kval,domirror=domirror)
         if 0 and dorandomcolor:
             Ba=np.copy(B)
             cond = (B[1]<0)
@@ -1849,6 +1886,12 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
             maxsiBp = maxsBphi
         print( "Max(Sqrt(Bout)) = %g" % maxsiBp )
         CS = ax.imshow(np.sign(iBp)*siBp, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower', vmin=-0.3*maxsiBp,vmax=0.3*maxsiBp)
+    if whichvar == 1:
+        CS = ax.imshow(ibsq/irho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower', vmin=0,vmax=100)
+    if whichvar == 2:
+        CS = ax.imshow(iavgbsqorho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower', vmin=0,vmax=100)
+    if whichvar == 3:
+        CS = ax.imshow(irho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower')
     if showjet:
         ax.contour(imu,linewidths=0.5,colors='g', extent=extent,hold='on',origin='lower',levels=(2,))
         ax.contour(iaphi,linewidths=0.5,colors='b', extent=extent,hold='on',origin='lower',levels=(aphi[ihor,ny/2,0],))
@@ -8518,7 +8561,7 @@ def mkmovieframe( findex, fname, **kwargs ):
         #gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.45, wspace=0.05)
         ax1 = plt.subplot(gs1[:, -1])
         if domakeframes:
-            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=dostreamlines,ncont=50,kval=kval,maxsBphi=maxsBphi,domirror=domirror,nanout=nanout,**kwargs)
+            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,pt=False,dostreamlines=dostreamlines,ncont=50,kval=kval,maxsBphi=maxsBphi,domirror=domirror,nanout=nanout,**kwargs)
         ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
         ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
