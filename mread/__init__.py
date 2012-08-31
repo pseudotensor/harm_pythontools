@@ -66,25 +66,29 @@ def mklargescalepulsarplot(ii=256):
     plt.savefig("fig_large.eps",bbox_inches='tight',pad_inches=0.02)
     plt.savefig("fig_large.pdf",bbox_inches='tight',pad_inches=0.02)
 
-def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None):
+def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,cb=1):
     #NEAR
     #os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_cyl_x2")
-    plt.figure(0,figsize=(10,8))
-    os.chdir("/home/atchekho/run2/hf_60_r07h05_mydt_sph_ps2_256x128x128")
+    plt.figure(0,figsize=(14,8))
+    #os.chdir("/home/atchekho/run2/hf_60_r07h05_mydt_sph_ps2_256x128x128")
     rfd("fieldline0000.bin")
+    if os.path.basename(os.getcwd()) == "hf_60_r0710h05_mydt_sph_ps2_256x128x128":
+        #shifted by one somehow (due to restart?)
+        ii1 = ii+1
+    else:
+        ii1 = ii
     if n1 is not None and n2 is not None:
         computevars(n1=n1,n2=n2)
     if whichvar == 'Bphi':
-        mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=20,plotlen=2.5/OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=(ii%32)/32.*nz,doBphi=True,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=1,ncell=3200,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5)    
+        mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=20,plotlen=2.5/OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=(ii1%32)/32.*nz,doBphi=True,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=1,ncell=1600,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5,dosavefig=0,cb=cb,fntsize=20)
     elif whichvar == 'bsqow':
         if 'avgbsq' in globals():
             print "Using time-averages"
-            mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=20,plotlen=2.5/OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=(ii%32)/32.*nz,doBphi=True,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=1,ncell=3200,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5,whichvar=2,avgbsqorho=amin(radavg(avgbsq/(avgrho+gam*avgug)),80+0*avgbsqow),cb=1)
+            mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=20,plotlen=2.5/OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=(ii1%32)/32.*nz,doBphi=True,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=1,ncell=1600,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5,whichvar=2,avgbsqorho=amin(radavg(avgbsq/(avgrho+gam*avgug)),80+0*avgbsqow),cb=cb,fntsize=20,dosavefig=0)
         else:
             print "No time-averages computed, so using instantaneous values"
-            mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=20,plotlen=2.5/OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=(ii%32)/32.*nz,doBphi=True,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=1,ncell=3200,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5,whichvar=2,avgbsqorho=amin(radavg(bsq/(rho+gam*ug)),80+0*bsq),cb=1)
+            mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=20,plotlen=2.5/OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=(ii1%32)/32.*nz,doBphi=True,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=1,ncell=1600,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5,whichvar=2,avgbsqorho=amin(radavg(bsq/(rho+gam*ug)),80+0*bsq),cb=cb,dosavefig=0,fntsize=20)
     #mkmovie(whichi=50,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=40,plotlen=15,isnstar=True,minlenbhfield=0.0,density=2,whichr=1.3,minlengthdefault=0.05,kval=0,doBphi=True,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5)
-
     plt.xlim(-2.5/OmegaNS,2.5/OmegaNS)
     plt.ylim(-2.5/OmegaNS,2.5/OmegaNS)
     ax1 = plt.gca()
@@ -98,21 +102,36 @@ def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None):
     ax1.set_yticklabels(s_tck)
     plt.xlabel(r"$x/R_{\rm LC}$",fontsize=20)
     plt.ylabel(r"$y/R_{\rm LC}$",fontsize=20)
-    plt.savefig("fig_small.eps",bbox_inches='tight',pad_inches=0.02)
-    plt.savefig("fig_small.pdf",bbox_inches='tight',pad_inches=0.02)
+    plt.draw()
+    if dosavefig:
+        plt.savefig("fig_small_%s.eps" % whichvar,bbox_inches='tight',pad_inches=0.02)
+        plt.savefig("fig_small_%s.pdf" % whichvar,bbox_inches='tight',pad_inches=0.02)
 
 def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
     global alpha_list, edot_list, name_list
     global edotvec_list, poyntvec_list, rvec_list, rlc_list
     global t
 
-    if newlist:
+    flistedot = []
+    if newlist == 1:
         flist = [
+            "hf_0_r0710h05_mydt_sph_nocosthp_256x128x1",
+            #"rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8",
+            "hf_0_r0710h05_mydt_sph_ps0_frac01_256x128x1_64x64x1",
+            "hf_0_r0710h05_mydt_sph_ps0_frac02_256x128x1_64x64x1",
+            "hf_0_r0710h05_mydt_sph_ps0_frac04_256x128x1_64x64x1",
+            "hf_0_r0710h05_mydt_sph_ps0_frac1_256x128x1_64x64x1",
+            "hf_15_r0710h05_mydt_sph_ps2_256x128x128",
+            #"hf_15_r10h05_mydt_cyl",
+            "hf_30_r0710h05_mydt_sph_ps2_256x128x128_512",
+            "hf_30_r10h05_mydt_sph_x2",
+            "hf_60_r0710h05_mydt_sph_ps2_256x128x128",
+            "hf_60_r10h05_mydt_sph_ps2_128x128x128",
+            "hf_90_r0710h05_mydt_sph_ps0_256x128x128_512"
             #"rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8",
             #"hf_0_r10h05_mydt_cyl",
             #"hf_30_r10h05_mydt_sph_ps2_128x128x128",
             #"hf_0_r07h05_mydt_sph_nocosthp_256x128x1",
-            "hf_0_r0710h05_mydt_sph_nocosthp_256x128x1",
             #"hf_15_r07h05_mydt_sph_ps2_256x128x128",
             #"hf_30_r07h05_mydt_sph_ps2_256x128x128",
             #"hf_0_r07h05_mydt_sph_256x128x1",
@@ -129,9 +148,43 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
             #"hf_60_r08h05_mydt_cyl_x2"
             #"hf_60_r10h05_mydt_sph_ps1_128x128x128", #-- bad
             #"hf_60_r10h05_mydt_sph_x2",
-            "hf_60_r07h05_mydt_sph_ps2_256x128x128",
+            #"hf_60_r07h05_mydt_sph_ps2_256x128x128",
             #"hf_60_r10h05_mydt_sph_ps2_128x128x128",
             #"hf_90_r07h05_mydt_sph_ps2_256x128x128"
+            #"hf_90_r07h05_mydt_sph_256x128x128"
+            ]
+        flistedot = [
+            "hf_0_r0710h05_mydt_sph_nocosthp_256x128x1",
+            "rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8",
+            "hf_0_r0710h05_mydt_sph_ps0_frac04_256x128x1_64x64x1",
+            "hf_0_r0710h05_mydt_sph_ps0_frac02_256x128x1_64x64x1",
+            "hf_0_r0710h05_mydt_sph_ps0_frac01_256x128x1_64x64x1",
+            "hf_0_r0710h05_mydt_sph_ps0_frac1_256x128x1_64x64x1",
+            #"hf_15_r0710h05_mydt_sph_ps2_256x128x128",
+            #"hf_15_r10h05_mydt_cyl",
+            "hf_30_r0710h05_mydt_sph_ps2_256x128x128_512",
+            #"hf_30_r10h05_mydt_sph_x2",
+            "hf_60_r0710h05_mydt_sph_ps2_256x128x128",
+            "hf_60_r10h05_mydt_sph_ps2_128x128x128",
+            "hf_90_r0710h05_mydt_sph_ps0_256x128x128_512"
+            ]
+    elif newlist == 2:
+        flist = [
+            "hf_0_r07h05_mydt_sph_256x128x1",
+            "rwvpx_novpar_07rlc_bsqorho400_rbr1e2_x8",
+            "rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8",
+            "hf_15_r07h05_mydt_sph_ps2_256x128x128",
+            "hf_30_r07h05_mydt_sph_ps2_256x128x128",
+            "hf_60_r07h05_mydt_sph_ps2_256x128x128",
+            "hf_75_r07h05_mydt_sph_ps2_256x128x128",
+            "hf_90_r07h05_mydt_sph_256x128x128"
+            ]
+        flistedot = [
+            "hf_0_r07h05_mydt_sph_256x128x1",
+            "rwvpx_novpar_07rlc_bsqorho400_rbr1e2_x8",
+            "rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8",
+            "hf_30_r07h05_mydt_sph_ps2_256x128x128",
+            "hf_60_r07h05_mydt_sph_ps2_256x128x128",
             "hf_90_r07h05_mydt_sph_256x128x128"
             ]
     else:
@@ -231,6 +284,8 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
             rlc_list.append( Rlc )
             alpha_list.append( AlphaNS )
             name_list.append( f )
+    #change dir for figure saving
+    os.chdir("/home/atchekho/run2")
     plt.figure(1)
     plt.clf()
     a = np.linspace(0,np.pi/2.,1000)
@@ -251,7 +306,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
         t.set_fontsize(20)    # the legend text fontsize
     plt.savefig("fig_edot.eps",bbox_inches='tight',pad_inches=0.02)
     plt.savefig("fig_edot.pdf",bbox_inches='tight',pad_inches=0.02)
-    clrs=["r","g","b","c","k","m","y"]
+    clrs=["r","g","b","c","k","m","y","pink","brown","orange"]
     if plotpoynt:
         plt.figure(2)
         plt.clf()
@@ -259,6 +314,8 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
         clrindex = 0
         for i,f in enumerate(flist):
             #if i%2==1: continue
+            if f not in flistedot:
+                continue
             plt.plot(rvec_list[i]/rlc_list[i], edotvec_list[i],
                      c=clrs[clrindex],
                      ls="-",lw=2,
@@ -1765,7 +1822,7 @@ def reinterpxy(vartointerp,extent,ncell,domask=1,mirrorfactor=1,rhor=None):
 def ftr(x,xb,xf):
     return( amax(0.0*x,amin(1.0+0.0*x,1.0*(x-xb)/(xf-xb))) )
     
-def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2,whichr=0.9,ncont=100,maxaphi=100,aspect=1.0,isnstar=False,kval=0,doBphi=False,onlyeta=True,maxsBphi=None,domirror=True,nanout=True,whichvar=0,avgbsqorho=None):
+def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2,whichr=0.9,ncont=100,maxaphi=100,aspect=1.0,isnstar=False,kval=0,doBphi=False,onlyeta=True,maxsBphi=None,domirror=True,nanout=True,whichvar=0,avgbsqorho=None,fntsize=None):
     extent=(-len,len,-len/aspect,len/aspect)
     palette=cm.jet
     palette.set_bad('k', 1.0)
@@ -1936,7 +1993,11 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
     #CS.cmap=cm.jet
     #CS.set_axis_bgcolor("#bdb76b")
     if True == cb:
-        plt.colorbar(CS,ax=ax,shrink=shrink) # draw colorbar
+        cbar=plt.colorbar(CS,ax=ax,shrink=shrink) # draw colorbar
+        if fntsize is not None:
+            #set font size of colorbar tick labels
+            cl = plt.getp(cbar.ax, 'ymajorticklabels')
+            plt.setp(cl, fontsize=fntsize)
     #plt.title(r'$\log_{10}\rho$ at $t = %4.0f$' % t)
     if True == pt:
         plt.title('log rho at t = %4.0f' % t)
@@ -8406,6 +8467,7 @@ def mkmovieframe( findex, fname, **kwargs ):
     plottime = kwargs.pop('plottime',False)
     domirror = kwargs.pop('domirror',True)
     nanout =  kwargs.pop('nanout',False)
+    dosavefig =  kwargs.pop('dosavefig',True)
     # oldnz=nz
     rfd("../"+fname)
     # if oldnz < nz:
@@ -8609,9 +8671,10 @@ def mkmovieframe( findex, fname, **kwargs ):
             mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True,**kwargs)
     print("Saving fig = %04d" % findex)
     sys.stdout.flush()
-    plt.savefig( "lrho%04d_Rzxym1.png" % (findex),bbox_inches='tight',pad_inches=0.02  )
-    plt.savefig( "lrho%04d_Rzxym1.eps" % (findex),bbox_inches='tight',pad_inches=0.02  )
-    plt.savefig( "lrho%04d_Rzxym1.pdf" % (findex),bbox_inches='tight',pad_inches=0.02  )
+    if dosavefig:
+        plt.savefig( "lrho%04d_Rzxym1.png" % (findex),bbox_inches='tight',pad_inches=0.02  )
+        plt.savefig( "lrho%04d_Rzxym1.eps" % (findex),bbox_inches='tight',pad_inches=0.02  )
+        plt.savefig( "lrho%04d_Rzxym1.pdf" % (findex),bbox_inches='tight',pad_inches=0.02  )
     #print xxx
 
 def mk2davg():
