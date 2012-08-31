@@ -113,20 +113,25 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
     global t
 
     flistedot = []
+    flistonlyb = []
     if newlist == 1:
         flist = [
             "hf_0_r0710h05_mydt_sph_nocosthp_256x128x1",
+            "hf_0_r0710h05_mydt_sph_ps0_512x256x1_64x64x1",
+            "hf_0_r0710h05_mydt_sph_ps0_1024x512x1_64x64x1",
+            "hf_0_r0710h05_mydt_sph_ps0_2048x1024x1_128x64x1",
             #"rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8",
-            "hf_0_r0710h05_mydt_sph_ps0_frac01_256x128x1_64x64x1",
-            "hf_0_r0710h05_mydt_sph_ps0_frac02_256x128x1_64x64x1",
-            "hf_0_r0710h05_mydt_sph_ps0_frac04_256x128x1_64x64x1",
-            "hf_0_r0710h05_mydt_sph_ps0_frac1_256x128x1_64x64x1",
+            # "hf_0_r0710h05_mydt_sph_ps0_frac01_256x128x1_64x64x1",
+            # "hf_0_r0710h05_mydt_sph_ps0_frac02_256x128x1_64x64x1",
+            # "hf_0_r0710h05_mydt_sph_ps0_frac04_256x128x1_64x64x1",
+            # "hf_0_r0710h05_mydt_sph_ps0_frac1_256x128x1_64x64x1",
             "hf_15_r0710h05_mydt_sph_ps2_256x128x128",
             #"hf_15_r10h05_mydt_cyl",
             "hf_30_r0710h05_mydt_sph_ps2_256x128x128_512",
             "hf_30_r10h05_mydt_sph_x2",
             "hf_60_r0710h05_mydt_sph_ps2_256x128x128",
             "hf_60_r10h05_mydt_sph_ps2_128x128x128",
+            "hf_75_r0710h05_mydt_sph_ps2_256x128x128_512",
             "hf_90_r0710h05_mydt_sph_ps0_256x128x128_512"
             #"rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8",
             #"hf_0_r10h05_mydt_cyl",
@@ -155,19 +160,25 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
             ]
         flistedot = [
             "hf_0_r0710h05_mydt_sph_nocosthp_256x128x1",
-            "rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8",
-            "hf_0_r0710h05_mydt_sph_ps0_frac04_256x128x1_64x64x1",
-            "hf_0_r0710h05_mydt_sph_ps0_frac02_256x128x1_64x64x1",
-            "hf_0_r0710h05_mydt_sph_ps0_frac01_256x128x1_64x64x1",
-            "hf_0_r0710h05_mydt_sph_ps0_frac1_256x128x1_64x64x1",
+            #"rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8",
+            # "hf_0_r0710h05_mydt_sph_ps0_frac04_256x128x1_64x64x1",
+            # "hf_0_r0710h05_mydt_sph_ps0_frac02_256x128x1_64x64x1",
+            # "hf_0_r0710h05_mydt_sph_ps0_frac01_256x128x1_64x64x1",
+            # "hf_0_r0710h05_mydt_sph_ps0_frac1_256x128x1_64x64x1",
             #"hf_15_r0710h05_mydt_sph_ps2_256x128x128",
             #"hf_15_r10h05_mydt_cyl",
             "hf_30_r0710h05_mydt_sph_ps2_256x128x128_512",
             #"hf_30_r10h05_mydt_sph_x2",
             "hf_60_r0710h05_mydt_sph_ps2_256x128x128",
-            "hf_60_r10h05_mydt_sph_ps2_128x128x128",
+            #"hf_60_r10h05_mydt_sph_ps2_128x128x128",
             "hf_90_r0710h05_mydt_sph_ps0_256x128x128_512"
             ]
+        flistonlyb = [
+            "hf_0_r0710h05_mydt_sph_ps0_512x256x1_64x64x1",
+            "hf_0_r0710h05_mydt_sph_ps0_1024x512x1_64x64x1",
+            "hf_0_r0710h05_mydt_sph_ps0_2048x1024x1_128x64x1"
+            ]
+        ltypelistonlyb = [ [2,2], [4,2], [4,4] ] 
     elif newlist == 2:
         flist = [
             "hf_0_r07h05_mydt_sph_256x128x1",
@@ -314,16 +325,18 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
         clrindex = 0
         for i,f in enumerate(flist):
             #if i%2==1: continue
-            if f not in flistedot:
-                continue
-            plt.plot(rvec_list[i]/rlc_list[i], edotvec_list[i],
-                     c=clrs[clrindex],
-                     ls="-",lw=2,
-                     label=r"$\alpha=%g^\circ$" % (alpha_list[i]*180/np.pi))
-            plt.plot(rvec_list[i]/rlc_list[i], 
-                     poyntvec_list[i],c=clrs[clrindex],
-                     ls='--',lw=2)
-            clrindex+=1
+            mydashes = None
+            if f in flistonlyb:
+                mydashes = ltypelistonlyb[flistonlyb.index(f)]
+            elif f in flistedot:
+                plt.plot(rvec_list[i]/rlc_list[i], edotvec_list[i],
+                         c=clrs[clrindex],
+                         ls="-",lw=2,
+                         label=r"$\alpha=%g^\circ$" % (alpha_list[i]*180/np.pi))
+                plt.plot(rvec_list[i]/rlc_list[i], 
+                         poyntvec_list[i],c=clrs[clrindex],
+                         ls='--',lw=2)
+                clrindex+=1
         plt.xlim(0.2,5)
         plt.ylim(0,2.5)
         plt.grid(b=1)
