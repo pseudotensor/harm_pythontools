@@ -44,6 +44,32 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
+def mkfig1(dosavefig=1):
+    os.chdir("/home/atchekho/hf_0_r10h05_mydt_sph_ps0_oldfixup_1024x512x1_64x64x1")
+    grid3d("gdump.bin",use2d=True)
+    rfd("fieldline0593.bin")
+    mkfig1gen(dosavefig=dosavefig,letter="a",whichvar='Bphi',label=r"$B_\otimes$",dostreamlines=0)
+    mkfig1gen(dosavefig=dosavefig,letter="b",whichvar='wobsqkomi',label=r"$\log_{10}(w/b^2)$",dostreamlines=0)
+    
+def mkfig2(dosavefig=1):
+    os.chdir("/home/atchekho/run2/hf_60_r0710h05_mydt_sph_ps2_256x128x128")
+    grid3d("gdump.bin",use2d=True)
+    rfd("fieldline0095.bin")
+    mkfig1gen(ii=95,dosavefig=dosavefig,letter="a",whichvar='Bphi',label=r"$B_\otimes$",dostreamlines=1)
+    mkfig1gen(ii=95,dosavefig=dosavefig,letter="b",whichvar='wobsqkomi',label=r"$\log_{10}(w/b^2)$",dostreamlines=1)
+    
+
+def mkfig1gen(dosavefig=1,letter="a",whichvar='wobsqkomi',label = None,ii=64,dostreamlines=1):
+    aphi=fieldcalc(); aphilc=aphi[iofr(1./OmegaNS),ny/2,0]; maxaphi = 2*aphilc; ncont = 2*20+1;
+    mksmallscalepulsarplot(ii=ii,whichvar=whichvar,dosavefig=0,cb=1,vmin=-4,vmax=1,dostreamlines=dostreamlines,maxaphi=maxaphi,ncont=ncont,aphiaccent=aphilc,showtime=0,dontloadfiles=1)
+    bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
+    plt.text(-2.23/OmegaNS,2.23/OmegaNS,r"$(\mathrm{%s})$" % letter,fontsize=20,color='k',va='top',ha='left',bbox=bbox_props)
+    if label is not None:
+        plt.text(2.23/OmegaNS,2.23/OmegaNS,label,fontsize=20,color='k',va='top',ha='right',bbox=bbox_props)
+    if dosavefig:
+        plt.savefig("fig1_%s.eps" % whichvar,bbox_inches='tight',pad_inches=0.02)
+        plt.savefig("fig1_%s.pdf" % whichvar,bbox_inches='tight',pad_inches=0.02)
+
 def mklargescalepulsarplot(ii=256):
     #FAR
     os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_sph_ps2_cyl_256x128x128")
@@ -66,12 +92,12 @@ def mklargescalepulsarplot(ii=256):
     plt.savefig("fig_large.eps",bbox_inches='tight',pad_inches=0.02)
     plt.savefig("fig_large.pdf",bbox_inches='tight',pad_inches=0.02)
 
-def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,cb=1,vmin=0,vmax=100):
+def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,cb=1,vmin=0,vmax=100,**kwargs):
     #NEAR
     #os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_cyl_x2")
-    plt.figure(0,figsize=(14,8))
+    plt.figure(0,figsize=(7,4))
     #os.chdir("/home/atchekho/run2/hf_60_r07h05_mydt_sph_ps2_256x128x128")
-    rfd("fieldline0000.bin")
+    #rfd("fieldline0000.bin")
     if os.path.basename(os.getcwd()) == "hf_60_r0710h05_mydt_sph_ps2_256x128x128":
         #shifted by one somehow (due to restart?)
         ii1 = ii+1
@@ -80,7 +106,7 @@ def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,
     if n1 is not None and n2 is not None:
         computevars(n1=n1,n2=n2)
     if whichvar == 'Bphi':
-        mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=20,plotlen=2.5/OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=(ii1%32)/32.*nz,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=1,ncell=1600,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5,dosavefig=0,cb=cb,fntsize=20,vmin=vmin,vmax=vmax)
+        mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=20,plotlen=2.5/OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=(ii1%32)/32.*nz,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=1,ncell=800,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5,dosavefig=0,cb=cb,fntsize=20,vmin=vmin,vmax=vmax,whichvar=whichvar,**kwargs)
     else:
         if whichvar == 'bsqow':
             if 'avgbsq' in globals():
@@ -92,10 +118,10 @@ def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,
         elif whichvar == 'wobsqkomi':
             if 'avgbsq' in globals():
                 print "Using time-averages"
-                fnc = lambda: np.log10(4*np.pi*amin(radavg(avgbsq/(avgrho+gam*avgug)),80+0*avgbsqow))
+                fnc = lambda: -np.log10(4*np.pi*amin(radavg(avgbsq/(avgrho+gam*avgug)),800+0*avgbsqow))
             else:
                 print "No time-averages computed, so using instantaneous values"
-                fnc = lambda: np.log10(4*np.pi*amin(radavg(bsq/(rho+gam*ug)),80+0*bsq))
+                fnc = lambda: -np.log10(4*np.pi*amin(radavg(bsq/(rho+gam*ug)),800+0*bsq))
         mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',
                 dobhfield=20,plotlen=2.5/OmegaNS,isnstar=True,
                 minlenbhfield=0.0,density=1.2,whichr=1.3,
@@ -107,7 +133,7 @@ def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,
                 whichvar='avgbsqorho',
                 avgbsqorho=fnc,
                 cb=cb,fntsize=20,dosavefig=0,
-                vmin=vmin,vmax=vmax)
+                vmin=vmin,vmax=vmax,**kwargs)
 
     #mkmovie(whichi=50,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=40,plotlen=15,isnstar=True,minlenbhfield=0.0,density=2,whichr=1.3,minlengthdefault=0.05,kval=0,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5)
     plt.xlim(-2.5/OmegaNS,2.5/OmegaNS)
@@ -1961,12 +1987,14 @@ def reinterpxy(vartointerp,extent,ncell,domask=1,mirrorfactor=1,rhor=None):
 def ftr(x,xb,xf):
     return( amax(0.0*x,amin(1.0+0.0*x,1.0*(x-xb)/(xf-xb))) )
     
-def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2,whichr=0.9,ncont=100,maxaphi=100,aspect=1.0,isnstar=False,kval=0,onlyeta=True,maxsBphi=None,domirror=True,nanout=True,whichvar=None,avgbsqorho=None,fntsize=None):
+def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2,whichr=0.9,ncont=100,maxaphi=100,aspect=1.0,isnstar=False,kval=0,onlyeta=True,maxsBphi=None,domirror=True,nanout=True,whichvar=None,avgbsqorho=None,fntsize=None,aphiaccent=None):
     extent=(-len,len,-len/aspect,len/aspect)
     palette=cm.jet
     palette.set_bad('k', 1.0)
     #palette.set_over('r', 1.0)
     #palette.set_under('g', 1.0)
+    if isnstar:
+        domask = Rin
     if avgbsqorho is None:
         avgbsqorho = lambda: rho
     if not isnstar:
@@ -1977,16 +2005,13 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         ihor = 0
         #a=1
     ilrho = reinterp(np.log10(rho),extent,ncell,domask=1.0,rhor=rhor,kval=kval)
-    if not dostreamlines:
+    if True:
         aphi = fieldcalc()
         iaphi = reinterp(aphi,extent,ncell,domask=0,rhor=rhor,kval=kval)
         #maxabsiaphi=np.max(np.abs(iaphi))
         maxabsiaphi = maxaphi #50
         #ncont = 100 #30
         levs=np.linspace(-maxabsiaphi,maxabsiaphi,ncont)
-    else:
-        aphi = fieldcalc()
-        iaphi = reinterp(aphi,extent,ncell,domask=0,rhor=rhor,kval=kval)
         Br = dxdxp[1,1]*B[1]+dxdxp[1,2]*B[2]
         Bh = dxdxp[2,1]*B[1]+dxdxp[2,2]*B[2]
         #note toroidal field located at faces
@@ -2022,15 +2047,15 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
                 Bpnorm[:,:NBND]*=NaN
                 Bpnorm[:,-NBND+1:]*=NaN
         #
-        iBz = reinterp(Bznorm,extent,ncell,isasymmetric=False,domask=0.8,rhor=rhor,kval=kval,domirror=domirror)
-        iBR = reinterp(BRnorm,extent,ncell,isasymmetric=True,domask=0.8,rhor=rhor,kval=kval,domirror=domirror) #isasymmetric = True tells to flip the sign across polar axis
-        iBp = reinterp(Bpnorm,extent,ncell,isasymmetric=True,domask=0.8,rhor=rhor,kval=kval,domirror=domirror) #isasymmetric = True tells to flip the sign         #
+        iBz = reinterp(Bznorm,extent,ncell,isasymmetric=False,domask=domask,rhor=rhor,kval=kval,domirror=domirror)
+        iBR = reinterp(BRnorm,extent,ncell,isasymmetric=True,domask=domask,rhor=rhor,kval=kval,domirror=domirror) #isasymmetric = True tells to flip the sign across polar axis
+        iBp = reinterp(Bpnorm,extent,ncell,isasymmetric=True,domask=domask,rhor=rhor,kval=kval,domirror=domirror) #isasymmetric = True tells to flip the sign         #
         if whichvar is not None:
             cvel()
-            irho = reinterp(rho,extent,ncell,isasymmetric=False,domask=0.8,rhor=rhor,kval=kval,domirror=domirror)
-            iug  = reinterp(ug,extent,ncell,isasymmetric=False,domask=0.8,rhor=rhor,kval=kval,domirror=domirror)
-            ibsq = reinterp(bsq,extent,ncell,isasymmetric=False,domask=0.8,rhor=rhor,kval=kval,domirror=domirror)
-            iavgbsqorho = reinterp(avgbsqorho(),extent,ncell,isasymmetric=False,domask=0.8,rhor=rhor,kval=kval,domirror=domirror)
+            irho = reinterp(rho,extent,ncell,isasymmetric=False,domask=domask,rhor=rhor,kval=kval,domirror=domirror)
+            iug  = reinterp(ug,extent,ncell,isasymmetric=False,domask=domask,rhor=rhor,kval=kval,domirror=domirror)
+            ibsq = reinterp(bsq,extent,ncell,isasymmetric=False,domask=domask,rhor=rhor,kval=kval,domirror=domirror)
+            iavgbsqorho = reinterp(avgbsqorho(),extent,ncell,isasymmetric=False,domask=domask,rhor=rhor,kval=kval,domirror=domirror)
         if 0 and dorandomcolor:
             Ba=np.copy(B)
             cond = (B[1]<0)
@@ -2104,6 +2129,8 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         ax.contour(iaphi,linewidths=0.5,colors='b', extent=extent,hold='on',origin='lower',levels=(aphi[ihor,ny/2,0],))
     if not dostreamlines:
         cset2 = ax.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
+        if aphiaccent is not None:
+            ax.contour(iaphi,linewidths=2,colors='k', extent=extent,hold='on',origin='lower',levels=(aphiaccent,))
         traj = None
     elif dostreamlines == 1:
         if dovarylw:
@@ -8525,6 +8552,7 @@ def mkmovie(framesize=50, whichi=0, whichn=1,doqtymem=True,domakeavi=False,use2d
     plotleni=framesize
     plotlenti=1e6 #so high that never gets used
     plotlentf=2e6
+    dontloadfiles=kwargs.pop("dontloadfiles",False)
     #To generate movies for all sub-folders of a folder:
     #cd ~/Research/runart; for f in *; do cd ~/Research/runart/$f; (python  ~/py/mread/__init__.py &> python.out &); done
     if len(sys.argv[1:])==2 and sys.argv[1].isdigit() and (sys.argv[2].isdigit() or sys.argv[2][0]=="-") :
@@ -8535,9 +8563,11 @@ def mkmovie(framesize=50, whichi=0, whichn=1,doqtymem=True,domakeavi=False,use2d
     # else:
     #     whichi = None
     #     whichn = None
-    if whichn < 0 and whichn is not None:
+    if dontloadfiles or (whichn < 0 and whichn is not None):
         whichn = -whichn
         dontloadfiles = True
+        qtymem=None
+        flist=[""]
     else:
         dontloadfiles = False
         grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=use2d )
@@ -8552,9 +8582,9 @@ def mkmovie(framesize=50, whichi=0, whichn=1,doqtymem=True,domakeavi=False,use2d
         flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
 
     for findex, fname in enumerate(flist):
-        if whichn != 0 and findex % whichn != whichi:
+        if dontloadfiles == 0 and whichn != 0 and findex % whichn != whichi:
             continue
-        if whichn == 0 and findex != whichi:
+        if dontloadfiles == 0 and whichn == 0 and findex != whichi:
             continue
         if whichn != 0 and dontloadfiles == False and os.path.isfile("lrho%04d_Rzxym1.png" % (findex)):
             print( "Skipping " + fname + " as lrho%04d_Rzxym1.png exists" % (findex) );
@@ -8566,9 +8596,10 @@ def mkmovie(framesize=50, whichi=0, whichn=1,doqtymem=True,domakeavi=False,use2d
             kwargs['plotlenti']=plotlenti
             kwargs['plotlentf']=plotlentf
             kwargs['qtymem']=qtymem
+            kwargs['dontloadfiles']=dontloadfiles
             mkmovieframe( findex, fname, **kwargs )
             plt.draw()
-        if whichn == 0:
+        if whichn == 0 or dontloadfiles:
             break
     print( "Done!" )
     sys.stdout.flush()
@@ -8609,8 +8640,11 @@ def mkmovieframe( findex, fname, **kwargs ):
     dosavefig =  kwargs.pop('dosavefig',True)
     vmin = kwargs.pop('vmin',-6)
     vmax = kwargs.pop('vmax',0.5625)
+    showtime = kwargs.pop('showtime',1)
+    dontloadfiles = kwargs.pop('dontloadfiles',0)
     # oldnz=nz
-    rfd("../"+fname)
+    if dontloadfiles==False:
+        rfd("../"+fname)
     # if oldnz < nz:
     #     #resolution changed on the fly, get correct-size arrays for r, h, ph
     #     rd("dump0147.bin")
@@ -8775,7 +8809,7 @@ def mkmovieframe( findex, fname, **kwargs ):
         #gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.45, wspace=0.05)
         ax1 = plt.subplot(gs1[:, -1])
         if domakeframes:
-            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=vmin,vmax=vmax,len=plotlen,ax=ax1,pt=False,dostreamlines=dostreamlines,ncont=50,kval=kval,maxsBphi=maxsBphi,domirror=domirror,nanout=nanout,**kwargs)
+            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=vmin,vmax=vmax,len=plotlen,ax=ax1,pt=False,dostreamlines=dostreamlines,kval=kval,maxsBphi=maxsBphi,domirror=domirror,nanout=nanout,**kwargs)
         ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
         ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
@@ -8784,7 +8818,8 @@ def mkmovieframe( findex, fname, **kwargs ):
         if OmegaNS == 0:
             OmegaNS = 1
         f = t/(2*np.pi/OmegaNS)
-        placeletter(ax1,"t=%3d.%02d" % (int(f), np.round(100*(f-np.floor(f)))), color="k",fx = 0.8, bbox=bbox_props )
+        if showtime:
+            placeletter(ax1,"t=%3d.%02d" % (int(f), np.round(100*(f-np.floor(f)))), color="k",fx = 0.8, bbox=bbox_props )
         # gs2 = GridSpec(1, 1)
         # gs2.update(left=0.5, right=1, top=0.995, bottom=0.48, wspace=0.05)
         # ax2 = plt.subplot(gs2[:, -1])
@@ -8810,9 +8845,9 @@ def mkmovieframe( findex, fname, **kwargs ):
         ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         if domakeframes:
             mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True,**kwargs)
-    print("Saving fig = %04d" % findex)
-    sys.stdout.flush()
     if dosavefig:
+        print("Saving fig = %04d" % findex)
+        sys.stdout.flush()
         plt.savefig( "lrho%04d_Rzxym1.png" % (findex),bbox_inches='tight',pad_inches=0.02  )
         plt.savefig( "lrho%04d_Rzxym1.eps" % (findex),bbox_inches='tight',pad_inches=0.02  )
         plt.savefig( "lrho%04d_Rzxym1.pdf" % (findex),bbox_inches='tight',pad_inches=0.02  )
