@@ -131,9 +131,10 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
             #"hf_30_r10h05_mydt_sph_x2",
             "hf_30_r0710h05_mydt_sph_ps2_256x128x128_512",
             "hf_15_r0710h05_mydt_sph_ps2_256x128x128",
-            "hf_0_r10h05_mydt_sph_ps0_256x128x1_64x64x1",
-            "hf_0_r10h05_mydt_sph_ps0_512x256x1_64x64x1",
-            "hf_0_r10h05_mydt_sph_ps0_1024x512x1_64x64x1",
+            "hf_0_r10h05_mydt_sph_ps0_oldfixup_256x128x1_64x64x1",
+            "hf_0_r10h05_mydt_sph_ps0_oldfixup_512x256x1_64x64x1",
+            "hf_0_r10h05_mydt_sph_ps0_oldfixup_1024x512x1_64x64x1",
+            #"hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1",
             "rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8"
             #"hf_15_r10h05_mydt_cyl",
             # "hf_0_r0710h05_mydt_sph_nocosthp_256x128x1",
@@ -168,7 +169,8 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
             #"hf_90_r07h05_mydt_sph_256x128x128"
             ]
         flistpoynt = [
-            "hf_0_r10h05_mydt_sph_ps0_256x128x1_64x64x1",
+            "hf_0_r10h05_mydt_sph_ps0_oldfixup_256x128x1_64x64x1",
+            #"hf_0_r10h05_mydt_sph_ps0_256x128x1_64x64x1",
             #"rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8",
             # "hf_0_r0710h05_mydt_sph_ps0_frac04_256x128x1_64x64x1",
             # "hf_0_r0710h05_mydt_sph_ps0_frac02_256x128x1_64x64x1",
@@ -181,12 +183,13 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
             "hf_60_r0710h05_mydt_sph_ps2_256x128x128",
             #"hf_60_r10h05_mydt_sph_ps2_128x128x128",
             "hf_90_r0710h05_mydt_sph_ps0_256x128x128_512",
-            "hf_90_r10h05_mydt_sph_x2",
+            #"hf_90_r10h05_mydt_sph_x2",
             ]
         flistonlyb = [
-            "hf_0_r10h05_mydt_sph_ps0_256x128x1_64x64x1",
-            "hf_0_r10h05_mydt_sph_ps0_512x256x1_64x64x1",
-            "hf_0_r10h05_mydt_sph_ps0_1024x512x1_64x64x1",
+            "hf_0_r10h05_mydt_sph_ps0_oldfixup_256x128x1_64x64x1",
+            "hf_0_r10h05_mydt_sph_ps0_oldfixup_512x256x1_64x64x1",
+            "hf_0_r10h05_mydt_sph_ps0_oldfixup_1024x512x1_64x64x1",
+            #"hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1",
             "rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8"
             # "hf_0_r0710h05_mydt_sph_nocosthp_256x128x1",
             # "hf_0_r0710h05_mydt_sph_ps0_512x256x1_64x64x1",
@@ -234,7 +237,10 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
     elif newlist == 3:
         flist = ["hf_0_r10h05_mydt_cyl",
                  "hf_0_r10h05_mydt_sph_ps0_256x128x1_64x64x1",
-                 "hf_0_r10h05_mydt_sph"]
+                 "hf_0_r10h05_mydt_sph",
+                 "hf_0_r10h05_mydt_sph_ps0_oldfixup_256x128x1_64x64x1",
+                 "hf_0_r10h05_mydt_sph_ps0_256x128x1_64x64x1_rerun",
+                 "hf_0_r10h05_mydt_sph_ps0_oldfixup_512x256x1_64x64x1"]
         flistedot = flist
         flistpoynt = flist
         flistonlyb = []
@@ -346,11 +352,15 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
     plt.figure(1)
     plt.clf()
     edot_list_toplot = []
+    poynt_list_toplot = []
     for i,f in enumerate(flist):
+        poynt_list_toplot.append(poyntvec_list[i])
         if f in flistedot:
             edot_list_toplot.append(edot_list[i])
         else:
             edot_list_toplot.append(NaN)
+        if f == "rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8":
+            poynt_list_toplot[i][rvec_list[i]<0.7*rlc_list[i]] *= NaN
     a = np.linspace(0,np.pi/2.,1000)
     plt.plot(np.array(alpha_list)*180/np.pi, edot_list_toplot, "s",ms=10)
     plt.plot(a*180/np.pi,1+1.2*np.sin(a)**2,label=r"$1+1.2\sin^2\alpha$",lw=2)
@@ -359,7 +369,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
         label.set_fontsize(20)
     plt.xlabel(r"$\alpha\ {\rm [^\circ]}$",fontsize=20)
     plt.ylabel(r"$L/L_{\rm aligned}$",fontsize=20)
-    plt.ylim(0,2.5)
+    plt.ylim(0,3)
     plt.xlim(0,90)
     tck = np.linspace(0,90,7)
     ax1.set_xticks(tck)
@@ -388,7 +398,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
                          label=r"$\alpha=%g^\circ$" % (alpha_list[i]*180/np.pi))
                 if f not in flistonlyb:
                     l,= plt.plot(rvec_list[i]/rlc_list[i], 
-                                 poyntvec_list[i],c=clrs[clrindex],
+                                 poynt_list_toplot[i],c=clrs[clrindex],
                                  ls='--',lw=2)
                     l.set_dashes(defaultdashes)
             if f in flistonlyb:
@@ -396,27 +406,39 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
                 mylegtext = lablistonlyb[flistonlyb.index(f)]
                 mylw = lwlistonlyb[flistonlyb.index(f)]
                 crv = plt.plot(rvec_list[i]/rlc_list[i], 
-                         poyntvec_list[i],c=clrs[clrindex],
+                         poynt_list_toplot[i],c=clrs[clrindex],
                          ls='--',lw=mylw)
                 l, = crv
                 l.set_dashes(mydashes)
                 crvlist.append(crv)
                 leglist.append(r"$%s$" % mylegtext)
         plt.xlim(0.2,5)
-        plt.ylim(0,2.5)
+        plt.ylim(0,3)
         plt.grid(b=1)
         ax2 = plt.gca()
         for label in ax2.get_xticklabels() + ax2.get_yticklabels():
             label.set_fontsize(20)
         plt.xlabel(r"$r/R_{\rm LC}$",fontsize=20)
         plt.ylabel(r"$L/L_{\rm aligned}$",fontsize=20)
-        plt.ylim(0,2.5)
+        plt.ylim(0,3.)
         plt.xlim(0.21,5)
-        leg1 = plt.legend(loc="lower right",ncol=1,frameon=True, fancybox=True,borderpad = 0.1,borderaxespad=0.4,handlelength=2.2,columnspacing=0.3,handletextpad=0.1) #,labelspacing=0.15) #,title=r"${\rm Inclination}\ (N_r=256)\!\!:$"
-        leg2=plt.legend(crvlist,leglist,loc="lower left",title=r"${\rm Dissipation\ study}\ (\alpha=0^\circ)\!\!:$",ncol=2,frameon=True, fancybox=True,borderpad = 0.1,borderaxespad=0.4,handlelength=4.,columnspacing=0.15,handletextpad=0.1) #,labelspacing=0.15)
+        ltot = plt.plot(rvec_list[i]/rlc_list[i], 
+                     100+rvec_list[i],c='k',
+                     ls='-',lw=2)
+        lpoynt = plt.plot(rvec_list[i]/rlc_list[i], 
+                     100+rvec_list[i],c='k',
+                     ls='--',lw=2)
+        crvlist0 = [ltot,lpoynt]
+        leglist0 = [r"${\rm Total}$", r"${\rm Poynting}$"]
+        lpoynt[0].set_dashes(defaultdashes)
+        leg0 = plt.legend(crvlist0,leglist0,loc="upper right",title=r"${\rm Energy\ losses\!\!:}$",ncol=1,frameon=True, fancybox=True,borderpad = 0.3,borderaxespad=0.4,handlelength=2.2,columnspacing=0.3,handletextpad=0.1)
+        leg1 = plt.legend(loc="upper left",title=r"${\rm Inclination\ study}\!\!:$",ncol=2,frameon=True, fancybox=True,borderpad = 0.3,borderaxespad=0.4,handlelength=2.2,columnspacing=0.3,handletextpad=0.1) #,labelspacing=0.15) #,title=r"${\rm Inclination}\ (N_r=256)\!\!:$"
+        leg2=plt.legend(crvlist,leglist,loc="lower right",title=r"${\rm Dissipation\ study}\ (\alpha=0^\circ)\!\!:$",ncol=2,frameon=True, fancybox=True,borderpad = 0.3,borderaxespad=0.4,handlelength=4.,columnspacing=0.15,handletextpad=0.1) #,labelspacing=0.15)
+        plt.gca().add_artist(leg0)
         plt.gca().add_artist(leg1)
-        for t in leg1.get_texts()+leg2.get_texts():
+        for t in leg0.get_texts()+leg1.get_texts()+leg2.get_texts():
             t.set_fontsize(20)    # the legend text fontsize
+        leg0.get_title().set_fontsize(20)
         leg1.get_title().set_fontsize(20)
         leg2.get_title().set_fontsize(20)
         plt.savefig("fig_poynt.eps",bbox_inches='tight',pad_inches=0.02)
