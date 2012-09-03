@@ -48,7 +48,7 @@ def mklargescalepulsarplot(ii=256):
     #FAR
     os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_sph_ps2_cyl_256x128x128")
     rfd("fieldline0000.bin")
-    mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=20,plotlen=21./OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=(ii%32)/32.*nz,doBphi=True,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=1,ncell=3200,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5)    
+    mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=20,plotlen=21./OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=(ii%32)/32.*nz,whichvar="Bphi",dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=1,ncell=3200,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5)    
     sz=100
     plt.xlim(-sz,sz)
     plt.ylim(-sz,sz)
@@ -66,7 +66,7 @@ def mklargescalepulsarplot(ii=256):
     plt.savefig("fig_large.eps",bbox_inches='tight',pad_inches=0.02)
     plt.savefig("fig_large.pdf",bbox_inches='tight',pad_inches=0.02)
 
-def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,cb=1):
+def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,cb=1,vmin=0,vmax=100):
     #NEAR
     #os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_cyl_x2")
     plt.figure(0,figsize=(14,8))
@@ -80,15 +80,36 @@ def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,
     if n1 is not None and n2 is not None:
         computevars(n1=n1,n2=n2)
     if whichvar == 'Bphi':
-        mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=20,plotlen=2.5/OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=(ii1%32)/32.*nz,doBphi=True,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=1,ncell=1600,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5,dosavefig=0,cb=cb,fntsize=20)
-    elif whichvar == 'bsqow':
-        if 'avgbsq' in globals():
-            print "Using time-averages"
-            mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=20,plotlen=2.5/OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=(ii1%32)/32.*nz,doBphi=True,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=1,ncell=1600,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5,whichvar=2,avgbsqorho=amin(radavg(avgbsq/(avgrho+gam*avgug)),80+0*avgbsqow),cb=cb,fntsize=20,dosavefig=0)
-        else:
-            print "No time-averages computed, so using instantaneous values"
-            mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=20,plotlen=2.5/OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=(ii1%32)/32.*nz,doBphi=True,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=1,ncell=1600,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5,whichvar=2,avgbsqorho=amin(radavg(bsq/(rho+gam*ug)),80+0*bsq),cb=cb,dosavefig=0,fntsize=20)
-    #mkmovie(whichi=50,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=40,plotlen=15,isnstar=True,minlenbhfield=0.0,density=2,whichr=1.3,minlengthdefault=0.05,kval=0,doBphi=True,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5)
+        mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=20,plotlen=2.5/OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=(ii1%32)/32.*nz,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=1,ncell=1600,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5,dosavefig=0,cb=cb,fntsize=20,vmin=vmin,vmax=vmax)
+    else:
+        if whichvar == 'bsqow':
+            if 'avgbsq' in globals():
+                print "Using time-averages"
+                fnc = lambda: amin(radavg(avgbsq/(avgrho+gam*avgug)),80+0*avgbsqow)
+            else:
+                print "No time-averages computed, so using instantaneous values"
+                fnc = lambda: amin(radavg(bsq/(rho+gam*ug)),80+0*bsq)
+        elif whichvar == 'wobsqkomi':
+            if 'avgbsq' in globals():
+                print "Using time-averages"
+                fnc = lambda: np.log10(4*np.pi*amin(radavg(avgbsq/(avgrho+gam*avgug)),80+0*avgbsqow))
+            else:
+                print "No time-averages computed, so using instantaneous values"
+                fnc = lambda: np.log10(4*np.pi*amin(radavg(bsq/(rho+gam*ug)),80+0*bsq))
+        mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',
+                dobhfield=20,plotlen=2.5/OmegaNS,isnstar=True,
+                minlenbhfield=0.0,density=1.2,whichr=1.3,
+                minlengthdefault=0.03,kval=(ii1%32)/32.*nz,
+                dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,
+                populatestreamlines=1,downsample=1,
+                ncell=1600,dsval=0.001,dnarrow=1,
+                detectLoops=1,arrowsize=0.5,
+                whichvar='avgbsqorho',
+                avgbsqorho=fnc,
+                cb=cb,fntsize=20,dosavefig=0,
+                vmin=vmin,vmax=vmax)
+
+    #mkmovie(whichi=50,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=40,plotlen=15,isnstar=True,minlenbhfield=0.0,density=2,whichr=1.3,minlengthdefault=0.05,kval=0,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5)
     plt.xlim(-2.5/OmegaNS,2.5/OmegaNS)
     plt.ylim(-2.5/OmegaNS,2.5/OmegaNS)
     ax1 = plt.gca()
@@ -534,7 +555,7 @@ def mklicplot(mylen=10,ax=None,den=24):
     # avg_uu[1,:,2]=avg_uu[1,:,3]
     #B[1:] = avg_uu[1:]
     B[1:] = qty[1:]
-    mkframe("myframe",len=mylen,ax=ax,density=den,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.0025,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
+    mkframe("myframe",len=mylen,ax=ax,density=den,downsample=1,cb=False,pt=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.0025,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
 
 
 def plotomegahor():
@@ -1940,14 +1961,14 @@ def reinterpxy(vartointerp,extent,ncell,domask=1,mirrorfactor=1,rhor=None):
 def ftr(x,xb,xf):
     return( amax(0.0*x,amin(1.0+0.0*x,1.0*(x-xb)/(xf-xb))) )
     
-def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2,whichr=0.9,ncont=100,maxaphi=100,aspect=1.0,isnstar=False,kval=0,doBphi=False,onlyeta=True,maxsBphi=None,domirror=True,nanout=True,whichvar=0,avgbsqorho=None,fntsize=None):
+def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2,whichr=0.9,ncont=100,maxaphi=100,aspect=1.0,isnstar=False,kval=0,onlyeta=True,maxsBphi=None,domirror=True,nanout=True,whichvar=None,avgbsqorho=None,fntsize=None):
     extent=(-len,len,-len/aspect,len/aspect)
     palette=cm.jet
     palette.set_bad('k', 1.0)
     #palette.set_over('r', 1.0)
     #palette.set_under('g', 1.0)
     if avgbsqorho is None:
-        avgbsqorho = rho
+        avgbsqorho = lambda: rho
     if not isnstar:
         rhor=1+(1-a**2)**0.5
         ihor = iofr(rhor)
@@ -2004,12 +2025,12 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         iBz = reinterp(Bznorm,extent,ncell,isasymmetric=False,domask=0.8,rhor=rhor,kval=kval,domirror=domirror)
         iBR = reinterp(BRnorm,extent,ncell,isasymmetric=True,domask=0.8,rhor=rhor,kval=kval,domirror=domirror) #isasymmetric = True tells to flip the sign across polar axis
         iBp = reinterp(Bpnorm,extent,ncell,isasymmetric=True,domask=0.8,rhor=rhor,kval=kval,domirror=domirror) #isasymmetric = True tells to flip the sign         #
-        if whichvar > 0:
+        if whichvar is not None:
             cvel()
             irho = reinterp(rho,extent,ncell,isasymmetric=False,domask=0.8,rhor=rhor,kval=kval,domirror=domirror)
             iug  = reinterp(ug,extent,ncell,isasymmetric=False,domask=0.8,rhor=rhor,kval=kval,domirror=domirror)
             ibsq = reinterp(bsq,extent,ncell,isasymmetric=False,domask=0.8,rhor=rhor,kval=kval,domirror=domirror)
-            iavgbsqorho = reinterp(avgbsqorho,extent,ncell,isasymmetric=False,domask=0.8,rhor=rhor,kval=kval,domirror=domirror)
+            iavgbsqorho = reinterp(avgbsqorho(),extent,ncell,isasymmetric=False,domask=0.8,rhor=rhor,kval=kval,domirror=domirror)
         if 0 and dorandomcolor:
             Ba=np.copy(B)
             cond = (B[1]<0)
@@ -2062,9 +2083,9 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         #     #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
         # plt.xlim(extent[0],extent[1])
         # plt.ylim(extent[2],extent[3])
-    if dorho:
+    if whichvar == "lrho":
         CS = ax.imshow(ilrho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
-    if doBphi:
+    if whichvar == "Bphi":
         siBp = np.sqrt(np.abs(iBp))
         if maxsBphi is None:
             maxsiBp = np.max(siBp)
@@ -2072,11 +2093,11 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
             maxsiBp = maxsBphi
         print( "Max(Sqrt(Bout)) = %g" % maxsiBp )
         CS = ax.imshow(np.sign(iBp)*siBp, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower', vmin=-0.3*maxsiBp,vmax=0.3*maxsiBp)
-    if whichvar == 1:
+    if whichvar == 'bsqorho':
         CS = ax.imshow(ibsq/irho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower', vmin=0,vmax=100)
-    if whichvar == 2:
-        CS = ax.imshow(iavgbsqorho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower', vmin=0,vmax=100)
-    if whichvar == 3:
+    if whichvar == 'avgbsqorho':
+        CS = ax.imshow(iavgbsqorho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower', vmin=vmin,vmax=vmax)
+    if whichvar == 'rho':
         CS = ax.imshow(irho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower')
     if showjet:
         ax.contour(imu,linewidths=0.5,colors='g', extent=extent,hold='on',origin='lower',levels=(2,))
@@ -8586,6 +8607,8 @@ def mkmovieframe( findex, fname, **kwargs ):
     domirror = kwargs.pop('domirror',True)
     nanout =  kwargs.pop('nanout',False)
     dosavefig =  kwargs.pop('dosavefig',True)
+    vmin = kwargs.pop('vmin',-6)
+    vmax = kwargs.pop('vmax',0.5625)
     # oldnz=nz
     rfd("../"+fname)
     # if oldnz < nz:
@@ -8752,7 +8775,7 @@ def mkmovieframe( findex, fname, **kwargs ):
         #gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.45, wspace=0.05)
         ax1 = plt.subplot(gs1[:, -1])
         if domakeframes:
-            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,pt=False,dostreamlines=dostreamlines,ncont=50,kval=kval,maxsBphi=maxsBphi,domirror=domirror,nanout=nanout,**kwargs)
+            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=vmin,vmax=vmax,len=plotlen,ax=ax1,pt=False,dostreamlines=dostreamlines,ncont=50,kval=kval,maxsBphi=maxsBphi,domirror=domirror,nanout=nanout,**kwargs)
         ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
         ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
@@ -8893,7 +8916,7 @@ def cutout_along_aphi(ecum,aphi_j_val=0):
 def mkonestreamline(u, x0, y0, mylen=30):
     """Despite scary-looking contents, this extracts and returns a single streamline starting at (x0, y0); mylen is the size of the square within which a field line is to be traced"""
     B[1:] = u[1:]
-    traj = mkframe("myframe",len=mylen,ax=None,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.1,dsval=0.005,color='k',doarrows=False,dorandomcolor=False,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False,startxabs=x0,startyabs=y0)
+    traj = mkframe("myframe",len=mylen,ax=None,density=24,downsample=1,cb=False,pt=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.1,dsval=0.005,color='k',doarrows=False,dorandomcolor=False,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False,startxabs=x0,startyabs=y0)
     return( traj )
 
 def mkonestreamlinex1x2(ux, uy, xi, yi, x0, y0):
@@ -9364,25 +9387,25 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         #B[1:] = avg_uu[1:]
         B[1:] = qty[1:]
         bsq = avg_bsq
-        mkframe("myframe",len=mylen,ax=ax,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.0025,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
+        mkframe("myframe",len=mylen,ax=ax,density=24,downsample=1,cb=False,pt=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.0025,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
     if doenergy==True and False:
         #energy
         B[1:] = avg_Tud[1:,0]
         bsq = avg_bsq
-        mkframe("myframe",len=mylen,ax=ax,density=24,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
+        mkframe("myframe",len=mylen,ax=ax,density=24,downsample=1,cb=False,pt=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
     if False:
         #energy vectors
         B[1:] = -avg_Tud[1:,0]
         bsq = avg_bsq
-        mkframe("myframe",len=mylen,ax=ax,density=4,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=12,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='r',lw=2,startatmidplane=True,showjet=False,arrowsize=arrowsize)
+        mkframe("myframe",len=mylen,ax=ax,density=4,downsample=4,cb=False,pt=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=12,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='r',lw=2,startatmidplane=True,showjet=False,arrowsize=arrowsize)
     if False:
         #KE+EM without floors
         B[1:] = -avg_Tud[1:,0]-avg_rhouu[1:]
         bsq = avg_bsq
         gdetB[1:] = avg_gdetB[0:]
         mu = avg_mu
-        # mkframe("myframe",len=mylen,ax=ax,density=4,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.0025,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
-        mkframe("myframe",len=mylen,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=28,dodiskfield=0,minlenbhfield=0.1,minlendiskfield=0.1,dsval=0.001,color='r',lw=0.5,startatmidplane=True,showjet=False,arrowsize=arrowsize,skipblankint=True,populatestreamlines=False,useblankdiskfield=False,dnarrow=4,whichr=15)
+        # mkframe("myframe",len=mylen,ax=ax,density=4,downsample=1,cb=False,pt=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.0025,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False)
+        mkframe("myframe",len=mylen,ax=ax,density=1,downsample=4,cb=False,pt=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=28,dodiskfield=0,minlenbhfield=0.1,minlendiskfield=0.1,dsval=0.001,color='r',lw=0.5,startatmidplane=True,showjet=False,arrowsize=arrowsize,skipblankint=True,populatestreamlines=False,useblankdiskfield=False,dnarrow=4,whichr=15)
     if True:
         #KE+EM without floors with contourf
         #energy flow (no rest-mass) vs. radius and theta
@@ -9717,7 +9740,7 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         plt.figure(1)
         gdetB[1:] = avg_gdetB[0:]
         mu = avg_mu
-        mkframe("myframe",len=mylen,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=True,vmin=-6,vmax=0.5,dobhfield=12,dodiskfield=8,minlenbhfield=0.1,minlendiskfield=0.1,dsval=0.001,color='b',lw=1.5,startatmidplane=True,showjet=False,arrowsize=arrowsize,skipblankint=True,populatestreamlines=False,useblankdiskfield=False,dnarrow=1)
+        mkframe("myframe",len=mylen,ax=ax,density=1,downsample=4,cb=False,pt=False,dovarylw=True,vmin=-6,vmax=0.5,dobhfield=12,dodiskfield=8,minlenbhfield=0.1,minlendiskfield=0.1,dsval=0.001,color='b',lw=1.5,startatmidplane=True,showjet=False,arrowsize=arrowsize,skipblankint=True,populatestreamlines=False,useblankdiskfield=False,dnarrow=1)
     if False:
         x = (r*np.sin(h))[:,:,0]
         z = (r*np.cos(h))[:,:,0]
