@@ -129,6 +129,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
             "hf_60_r0710h05_mydt_sph_ps2_256x128x128",
             #"hf_60_r10h05_mydt_sph_ps2_128x128x128",
             #"hf_30_r10h05_mydt_sph_x2",
+            "hf_45_r0710h05_mydt_sph_ps2_256x128x128_512",
             "hf_30_r0710h05_mydt_sph_ps2_256x128x128_512",
             "hf_15_r0710h05_mydt_sph_ps2_256x128x128",
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_256x128x1_64x64x1",
@@ -201,16 +202,17 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
         lablistonlyb = ["N_r=256","N_r=512", "N_r=1024", "N_r=2048"]
         lwlistonlyb = [ 2, 1, 1, 1 ]
         flistedot = [
-                    "hf_90_r0710h05_mydt_sph_ps0_256x128x128_512",
-                    "hf_75_r0710h05_mydt_sph_ps2_256x128x128_512",
-                    "hf_60_r0710h05_mydt_sph_ps2_256x128x128",
-                    #"hf_60_r10h05_mydt_sph_ps2_128x128x128",
-                    #"hf_30_r10h05_mydt_sph_x2",
-                    "hf_30_r0710h05_mydt_sph_ps2_256x128x128_512",
-                    "hf_15_r0710h05_mydt_sph_ps2_256x128x128",
-                    #"hf_15_r10h05_mydt_cyl",
-                    "hf_0_r0710h05_mydt_sph_nocosthp_256x128x1",
-                    ]
+            "hf_90_r0710h05_mydt_sph_ps0_256x128x128_512",
+            "hf_75_r0710h05_mydt_sph_ps2_256x128x128_512",
+            "hf_60_r0710h05_mydt_sph_ps2_256x128x128",
+            #"hf_60_r10h05_mydt_sph_ps2_128x128x128",
+            #"hf_30_r10h05_mydt_sph_x2",
+            "hf_45_r0710h05_mydt_sph_ps2_256x128x128_512",
+            "hf_30_r0710h05_mydt_sph_ps2_256x128x128_512",
+            "hf_15_r0710h05_mydt_sph_ps2_256x128x128",
+            #"hf_15_r10h05_mydt_cyl",
+            "hf_0_r10h05_mydt_sph_ps0_oldfixup_256x128x1_64x64x1",
+            ]
     elif newlist == 2:
         flist = [
             "hf_0_r07h05_mydt_sph_256x128x1",
@@ -379,7 +381,13 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
         t.set_fontsize(20)    # the legend text fontsize
     plt.savefig("fig_edot.eps",bbox_inches='tight',pad_inches=0.02)
     plt.savefig("fig_edot.pdf",bbox_inches='tight',pad_inches=0.02)
-    clrs=["c","b","g","r","m","k","y","pink","brown","orange"]
+    clrs=["m","b","g","r","c","k","y","pink","brown","orange"]
+    lablist = [r"$\alpha=90^\circ$", 
+               r"$\alpha=60^\circ$", 
+               r"$\alpha=30^\circ$",
+               r"$\alpha=0^\circ$"]
+    labxlist = [2, 0.4, 2, 0.4]
+    labylist = [2.35, 1.78, 1.5, 0.875]
     if plotpoynt:
         plt.figure(2)
         plt.clf()
@@ -396,6 +404,11 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
                          c=clrs[clrindex],
                          ls="-",lw=2,
                          label=r"$\alpha=%g^\circ$" % (alpha_list[i]*180/np.pi))
+                plt.text(labxlist[clrindex], 
+                         labylist[clrindex], lablist[clrindex], size=20, rotation=0.,
+                         ha="left", va="center",
+                         color=clrs[clrindex],weight='regular' #,bbox=bbox_props
+                         )
                 if f not in flistonlyb:
                     l,= plt.plot(rvec_list[i]/rlc_list[i], 
                                  poynt_list_toplot[i],c=clrs[clrindex],
@@ -432,7 +445,8 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
         leglist0 = [r"${\rm Total}$", r"${\rm Poynting}$"]
         lpoynt[0].set_dashes(defaultdashes)
         leg0 = plt.legend(crvlist0,leglist0,loc="upper right",title=r"${\rm Energy\ losses\!\!:}$",ncol=1,frameon=True, fancybox=True,borderpad = 0.3,borderaxespad=0.4,handlelength=2.2,columnspacing=0.3,handletextpad=0.1)
-        leg1 = plt.legend(loc="upper left",title=r"${\rm Inclination\ study}\!\!:$",ncol=2,frameon=True, fancybox=True,borderpad = 0.3,borderaxespad=0.4,handlelength=2.2,columnspacing=0.3,handletextpad=0.1) #,labelspacing=0.15) #,title=r"${\rm Inclination}\ (N_r=256)\!\!:$"
+        # leg1 = plt.legend(loc="upper left",title=r"${\rm Inclination\ study}\!\!:$",ncol=2,frameon=True, fancybox=True,borderpad = 0.3,borderaxespad=0.4,handlelength=2.2,columnspacing=0.3,handletextpad=0.1) #,labelspacing=0.15) #,title=r"${\rm Inclination}\ (N_r=256)\!\!:$"
+        leg1 = leg0
         leg2=plt.legend(crvlist,leglist,loc="lower right",title=r"${\rm Dissipation\ study}\ (\alpha=0^\circ)\!\!:$",ncol=2,frameon=True, fancybox=True,borderpad = 0.3,borderaxespad=0.4,handlelength=4.,columnspacing=0.15,handletextpad=0.1) #,labelspacing=0.15)
         plt.gca().add_artist(leg0)
         plt.gca().add_artist(leg1)
