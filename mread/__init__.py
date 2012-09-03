@@ -44,31 +44,31 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
-def mkfig1(dosavefig=1):
-    os.chdir("/home/atchekho/hf_0_r10h05_mydt_sph_ps0_oldfixup_1024x512x1_64x64x1")
+def mkfig1(dosavefig=1,figno=1):
+    os.chdir("/home/atchekho/run2/hf_0_r10h05_mydt_sph_ps0_oldfixup_1024x512x1_64x64x1")
     grid3d("gdump.bin",use2d=True)
     rfd("fieldline0593.bin")
     mkfig1gen(dosavefig=dosavefig,letter="a",whichvar='Bphi',label=r"$B_\otimes$",dostreamlines=0)
     mkfig1gen(dosavefig=dosavefig,letter="b",whichvar='wobsqkomi',label=r"$\log_{10}(w/b^2)$",dostreamlines=0)
     
-def mkfig2(dosavefig=1):
+def mkfig2(dosavefig=1,ii=95,n1=None,n2=None,figno=2):
     os.chdir("/home/atchekho/run2/hf_60_r0710h05_mydt_sph_ps2_256x128x128")
     grid3d("gdump.bin",use2d=True)
-    rfd("fieldline0095.bin")
-    mkfig1gen(ii=95,dosavefig=dosavefig,letter="a",whichvar='Bphi',label=r"$B_\otimes$",dostreamlines=1)
-    mkfig1gen(ii=95,dosavefig=dosavefig,letter="b",whichvar='wobsqkomi',label=r"$\log_{10}(w/b^2)$",dostreamlines=1)
+    rfd("fieldline%04d.bin" % ii)
+    mkfig1gen(ii=ii,dosavefig=dosavefig,letter="a",whichvar='Bphi',label=r"$B_\otimes$",dostreamlines=1)
+    #mkfig1gen(ii=ii,dosavefig=dosavefig,letter="b",whichvar='wobsqkomi',label=r"$\log_{10}(w/b^2)$",dostreamlines=1,n1=n1,n2=n2)
     
 
-def mkfig1gen(dosavefig=1,letter="a",whichvar='wobsqkomi',label = None,ii=64,dostreamlines=1):
+def mkfig1gen(dosavefig=1,letter="a",whichvar='wobsqkomi',label = None,ii=64,dostreamlines=1, n1=None,n2=None,figno=1):
     aphi=fieldcalc(); aphilc=aphi[iofr(1./OmegaNS),ny/2,0]; maxaphi = 2*aphilc; ncont = 2*20+1;
-    mksmallscalepulsarplot(ii=ii,whichvar=whichvar,dosavefig=0,cb=1,vmin=-4,vmax=1,dostreamlines=dostreamlines,maxaphi=maxaphi,ncont=ncont,aphiaccent=aphilc,showtime=0,dontloadfiles=1)
+    mksmallscalepulsarplot(ii=ii,whichvar=whichvar,dosavefig=0,cb=1,vmin=-4,vmax=1,dostreamlines=dostreamlines,maxaphi=maxaphi,ncont=ncont,aphiaccent=aphilc,showtime=0,dontloadfiles=1,n1=n1,n2=n2)
     bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
     plt.text(-2.23/OmegaNS,2.23/OmegaNS,r"$(\mathrm{%s})$" % letter,fontsize=20,color='k',va='top',ha='left',bbox=bbox_props)
     if label is not None:
         plt.text(2.23/OmegaNS,2.23/OmegaNS,label,fontsize=20,color='k',va='top',ha='right',bbox=bbox_props)
     if dosavefig:
-        plt.savefig("fig1_%s.eps" % whichvar,bbox_inches='tight',pad_inches=0.02)
-        plt.savefig("fig1_%s.pdf" % whichvar,bbox_inches='tight',pad_inches=0.02)
+        plt.savefig("fig%d_%s.eps" % (figno,whichvar),bbox_inches='tight',pad_inches=0.02)
+        plt.savefig("fig%d_%s.pdf" % (figno,whichvar),bbox_inches='tight',pad_inches=0.02)
 
 def mklargescalepulsarplot(ii=256):
     #FAR
@@ -106,7 +106,7 @@ def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,
     if n1 is not None and n2 is not None:
         computevars(n1=n1,n2=n2)
     if whichvar == 'Bphi':
-        mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=20,plotlen=2.5/OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=(ii1%32)/32.*nz,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=1,ncell=800,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5,dosavefig=0,cb=cb,fntsize=20,vmin=vmin,vmax=vmax,whichvar=whichvar,**kwargs)
+        mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=40,plotlen=2.5/OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=(ii1%32)/32.*nz,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=2,ncell=1600,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5,dosavefig=0,cb=cb,fntsize=20,vmin=vmin,vmax=vmax,whichvar=whichvar,**kwargs)
     else:
         if whichvar == 'bsqow':
             if 'avgbsq' in globals():
@@ -123,11 +123,11 @@ def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,
                 print "No time-averages computed, so using instantaneous values"
                 fnc = lambda: -np.log10(4*np.pi*amin(radavg(bsq/(rho+gam*ug)),800+0*bsq))
         mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',
-                dobhfield=20,plotlen=2.5/OmegaNS,isnstar=True,
+                dobhfield=40,plotlen=2.5/OmegaNS,isnstar=True,
                 minlenbhfield=0.0,density=1.2,whichr=1.3,
-                minlengthdefault=0.03,kval=(ii1%32)/32.*nz,
+                minlengthdefault=0.05,kval=(ii1%32)/32.*nz,
                 dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,
-                populatestreamlines=1,downsample=1,
+                populatestreamlines=1,downsample=2,
                 ncell=1600,dsval=0.001,dnarrow=1,
                 detectLoops=1,arrowsize=0.5,
                 whichvar='avgbsqorho',
