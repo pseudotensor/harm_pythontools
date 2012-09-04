@@ -63,6 +63,7 @@ def mkfig2(dosavefig=1,ii=95,n1=None,n2=None,figno=2):
 
 def mkfig1gen(dosavefig=1,letter="a",whichvar='wobsqkomi',label = None,ii=64,dostreamlines=1, n1=None,n2=None,figno=1):
     ftrans = lambda x: max(min(1,0.5+(x-0.5)*1.25),0)
+    #"squeezed" cm.jet colormap (so that the darkest red and blue are squeezed out)
     cdict = {'blue': (
                       (0.0, 1, 1),
                       (0.3, 1, 1),
