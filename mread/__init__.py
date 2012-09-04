@@ -51,12 +51,14 @@ def mkfig1(dosavefig=1,figno=1):
     mkfig1gen(dosavefig=dosavefig,letter="a",whichvar='Bphi',label=r"$B_\otimes$",dostreamlines=0)
     mkfig1gen(dosavefig=dosavefig,letter="b",whichvar='wobsqkomi',label=r"$\log_{10}(w/b^2)$",dostreamlines=0)
     
+#mkfig2(ii=95,n1=64,n2=97) #1st run
+#mkfig2(ii=95) #subsequent runs
 def mkfig2(dosavefig=1,ii=95,n1=None,n2=None,figno=2):
     os.chdir("/home/atchekho/run2/hf_60_r0710h05_mydt_sph_ps2_256x128x128")
     grid3d("gdump.bin",use2d=True)
     rfd("fieldline%04d.bin" % ii)
-    mkfig1gen(ii=ii,dosavefig=dosavefig,letter="a",whichvar='Bphi',label=r"$B_\otimes$",dostreamlines=1)
-    mkfig1gen(ii=ii,dosavefig=dosavefig,letter="b",whichvar='wobsqkomi',label=r"$\log_{10}(w/b^2)$",dostreamlines=1,n1=n1,n2=n2)
+    mkfig1gen(ii=ii,dosavefig=dosavefig,letter="a",whichvar='Bphi',label=r"$B_\otimes$",dostreamlines=1,figno=figno)
+    mkfig1gen(ii=ii,dosavefig=dosavefig,letter="b",whichvar='wobsqkomi',label=r"$\log_{10}(w/b^2)$",dostreamlines=1,n1=n1,n2=n2,figno=figno)
     
 
 def mkfig1gen(dosavefig=1,letter="a",whichvar='wobsqkomi',label = None,ii=64,dostreamlines=1, n1=None,n2=None,figno=1):
@@ -76,7 +78,7 @@ def mkfig1gen(dosavefig=1,letter="a",whichvar='wobsqkomi',label = None,ii=64,dos
                      (1, 1, 1))}
     sjetmap = colors.LinearSegmentedColormap('sjet', cdict)
     aphi=fieldcalc(); aphilc=aphi[iofr(1./OmegaNS),ny/2,0]; maxaphi = 2*aphilc; ncont = 2*20+1;
-    mksmallscalepulsarplot(ii=ii,whichvar=whichvar,dosavefig=0,cb=1,vmin=-3,vmax=0.5,dostreamlines=dostreamlines,maxaphi=maxaphi,ncont=ncont,aphiaccent=aphilc,showtime=0,dontloadfiles=1,n1=n1,n2=n2,cmap=sjetmap)
+    mksmallscalepulsarplot(ii=ii,whichvar=whichvar,dosavefig=0,cb=1,vmin=-3,vmax=1,dostreamlines=dostreamlines,maxaphi=maxaphi,ncont=ncont,aphiaccent=aphilc,showtime=0,dontloadfiles=1,n1=n1,n2=n2,cmap=sjetmap)
     bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
     plt.text(-2.23/OmegaNS,2.23/OmegaNS,r"$(\mathrm{%s})$" % letter,fontsize=20,color='k',va='top',ha='left',bbox=bbox_props)
     if label is not None:
