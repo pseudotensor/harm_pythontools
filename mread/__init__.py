@@ -56,12 +56,27 @@ def mkfig2(dosavefig=1,ii=95,n1=None,n2=None,figno=2):
     grid3d("gdump.bin",use2d=True)
     rfd("fieldline%04d.bin" % ii)
     mkfig1gen(ii=ii,dosavefig=dosavefig,letter="a",whichvar='Bphi',label=r"$B_\otimes$",dostreamlines=1)
-    #mkfig1gen(ii=ii,dosavefig=dosavefig,letter="b",whichvar='wobsqkomi',label=r"$\log_{10}(w/b^2)$",dostreamlines=1,n1=n1,n2=n2)
+    mkfig1gen(ii=ii,dosavefig=dosavefig,letter="b",whichvar='wobsqkomi',label=r"$\log_{10}(w/b^2)$",dostreamlines=1,n1=n1,n2=n2)
     
 
 def mkfig1gen(dosavefig=1,letter="a",whichvar='wobsqkomi',label = None,ii=64,dostreamlines=1, n1=None,n2=None,figno=1):
+    ftrans = lambda x: max(min(1,0.5+(x-0.5)*1.25),0)
+    cdict = {'blue': (
+                      (0.0, 1, 1),
+                      (0.3, 1, 1),
+                      (0.6875, 0, 0),
+                      (1, 0, 0)),
+             'green': ((0.0, 0, 0),
+                       (0.34375, 1, 1),
+                       (0.675, 1, 1),
+                       (1, 0, 0)),
+             'red': ((0.0, 0, 0),
+                     (0.3125, 0, 0),
+                     (0.7, 1, 1),
+                     (1, 1, 1))}
+    sjetmap = colors.LinearSegmentedColormap('sjet', cdict)
     aphi=fieldcalc(); aphilc=aphi[iofr(1./OmegaNS),ny/2,0]; maxaphi = 2*aphilc; ncont = 2*20+1;
-    mksmallscalepulsarplot(ii=ii,whichvar=whichvar,dosavefig=0,cb=1,vmin=-4,vmax=1,dostreamlines=dostreamlines,maxaphi=maxaphi,ncont=ncont,aphiaccent=aphilc,showtime=0,dontloadfiles=1,n1=n1,n2=n2)
+    mksmallscalepulsarplot(ii=ii,whichvar=whichvar,dosavefig=0,cb=1,vmin=-3,vmax=0.5,dostreamlines=dostreamlines,maxaphi=maxaphi,ncont=ncont,aphiaccent=aphilc,showtime=0,dontloadfiles=1,n1=n1,n2=n2,cmap=sjetmap)
     bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
     plt.text(-2.23/OmegaNS,2.23/OmegaNS,r"$(\mathrm{%s})$" % letter,fontsize=20,color='k',va='top',ha='left',bbox=bbox_props)
     if label is not None:
@@ -182,8 +197,8 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_256x128x1_64x64x1",
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_512x256x1_64x64x1",
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_1024x512x1_64x64x1",
-            #"hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1",
-            "rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8"
+            "hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1",
+            #"rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8"
             #"hf_15_r10h05_mydt_cyl",
             # "hf_0_r0710h05_mydt_sph_nocosthp_256x128x1",
             # "hf_0_r0710h05_mydt_sph_ps0_512x256x1_64x64x1",
@@ -237,8 +252,8 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2):
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_256x128x1_64x64x1",
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_512x256x1_64x64x1",
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_1024x512x1_64x64x1",
-            #"hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1",
-            "rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8"
+            "hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1",
+            #"rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8"
             # "hf_0_r0710h05_mydt_sph_nocosthp_256x128x1",
             # "hf_0_r0710h05_mydt_sph_ps0_512x256x1_64x64x1",
             # "hf_0_r0710h05_mydt_sph_ps0_1024x512x1_64x64x1",
@@ -1987,9 +2002,12 @@ def reinterpxy(vartointerp,extent,ncell,domask=1,mirrorfactor=1,rhor=None):
 def ftr(x,xb,xf):
     return( amax(0.0*x,amin(1.0+0.0*x,1.0*(x-xb)/(xf-xb))) )
     
-def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2,whichr=0.9,ncont=100,maxaphi=100,aspect=1.0,isnstar=False,kval=0,onlyeta=True,maxsBphi=None,domirror=True,nanout=True,whichvar=None,avgbsqorho=None,fntsize=None,aphiaccent=None):
+def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2,whichr=0.9,ncont=100,maxaphi=100,aspect=1.0,isnstar=False,kval=0,onlyeta=True,maxsBphi=None,domirror=True,nanout=True,whichvar=None,avgbsqorho=None,fntsize=None,aphiaccent=None,cmap=None):
     extent=(-len,len,-len/aspect,len/aspect)
-    palette=cm.jet
+    if cmap is None:
+        palette=cm.jet
+    else:
+        palette=cmap
     palette.set_bad('k', 1.0)
     #palette.set_over('r', 1.0)
     #palette.set_under('g', 1.0)
