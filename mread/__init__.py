@@ -175,6 +175,7 @@ def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,
 def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetable=1):
     global alpha_list, edot_list, name_list
     global edotvec_list, poyntvec_list, rvec_list, rlc_list
+    global name_list, dims_list, tf_list
     global t
 
     defaultdashes = [10,5]
@@ -190,20 +191,20 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
             # "hf_0_r0710h05_mydt_sph_ps0_frac04_256x128x1_64x64x1",
             # "hf_0_r0710h05_mydt_sph_ps0_frac1_256x128x1_64x64x1",
             # "hf_90_r10h05_mydt_sph_x2",
-            "hf_90_r0710h05_mydt_sph_ps0_256x128x128_512",
-            "hf_75_r0710h05_mydt_sph_ps2_256x128x128_512",
-            "hf_60_r0710h05_mydt_sph_ps2_256x128x128",
             #"hf_60_r10h05_mydt_sph_ps2_128x128x128",
             #"hf_30_r10h05_mydt_sph_x2",
-            "hf_45_r0710h05_mydt_sph_ps2_256x128x128_512",
-            "hf_30_r0710h05_mydt_sph_ps2_256x128x128_512",
-            "hf_15_r0710h05_mydt_sph_ps2_256x128x128",
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_64x32x1_64x64x1",
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_128x64x1_64x64x1",
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_256x128x1_64x64x1",
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_512x256x1_64x64x1",
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_1024x512x1_64x64x1",
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1",
+            "hf_15_r0710h05_mydt_sph_ps2_256x128x128",
+            "hf_30_r0710h05_mydt_sph_ps2_256x128x128_512",
+            "hf_45_r0710h05_mydt_sph_ps2_256x128x128_512",
+            "hf_60_r0710h05_mydt_sph_ps2_256x128x128",
+            "hf_75_r0710h05_mydt_sph_ps2_256x128x128_512",
+            "hf_90_r0710h05_mydt_sph_ps0_256x128x128_512"
             #"rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8"
             #"hf_15_r10h05_mydt_cyl",
             # "hf_0_r0710h05_mydt_sph_nocosthp_256x128x1",
@@ -452,32 +453,35 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
         else:
             edot_list_toplot.append(NaN)
         if f == "rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8":
-            poynt_list_toplot[i][rvec_list[i]<0.7*rlc_list[i]] *= NaN
+            poynt_list_toplot[i][rvec_list[ile]<0.7*rlc_list[i]] *= NaN
     a = np.linspace(0,np.pi/2.,1000)
-    plt.plot(np.array(alpha_list)*180/np.pi, edot_list_toplot, "s",ms=10)
-    plt.plot(a*180/np.pi,1+1.2*np.sin(a)**2,label=r"$1+1.2\sin^2\alpha$",lw=2)
+    plt.plot(a*180/np.pi,1+1.2*np.sin(a)**2,'g-',lw=2) #,label=r"$1+1.2\sin^2\alpha$"
+    plt.text(46, 1.1, r"$\displaystyle\frac{L}{L_{\rm aligned}} = 1+1.2\sin^2\alpha$", fontsize = 20)
+    plt.plot(np.array(alpha_list)*180/np.pi, edot_list_toplot, "rs",ms=15)
     ax1 = plt.gca()
     for label in ax1.get_xticklabels() + ax1.get_yticklabels():
         label.set_fontsize(20)
     plt.xlabel(r"$\alpha\ {\rm [^\circ]}$",fontsize=20)
     plt.ylabel(r"$L/L_{\rm aligned}$",fontsize=20)
-    plt.ylim(0,3)
+    plt.ylim(0,2.999)
     plt.xlim(0,90)
     tck = np.linspace(0,90,7)
     ax1.set_xticks(tck)
     plt.grid(b=1)
-    leg = plt.legend(loc="lower right")
-    for t in leg.get_texts():
-        t.set_fontsize(20)    # the legend text fontsize
+    #leg = plt.legend(loc="lower right")
+    #for t in leg.get_texts():
+    #    t.set_fontsize(20)    # the legend text fontsize
     plt.savefig("fig_edot.eps",bbox_inches='tight',pad_inches=0.02)
     plt.savefig("fig_edot.pdf",bbox_inches='tight',pad_inches=0.02)
-    clrs=["m","b","g","r","c","k","y","pink","brown","orange"]
-    lablist = [r"$\alpha=90^\circ$", 
-               r"$\alpha=60^\circ$", 
-               r"$\alpha=30^\circ$",
-               r"$\alpha=0^\circ$"]
-    labxlist = [2, 0.4, 2, 0.4]
-    labylist = [2.35, 1.78, 1.5, 0.875]
+    clrs=["r","g","b","m","c","k","y","pink","brown","orange"]
+    lablist = [
+        r"$\alpha=0^\circ$",
+        r"$\alpha=30^\circ$",
+        r"$\alpha=60^\circ$", 
+        r"$\alpha=90^\circ$", 
+        ]
+    labxlist = [ 0.4, 2,  0.4, 2]
+    labylist = [ 0.875,  1.5, 1.78, 2.35 ]
     if plotpoynt:
         plt.figure(2)
         plt.clf()
@@ -524,7 +528,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
             label.set_fontsize(20)
         plt.xlabel(r"$r/R_{\rm LC}$",fontsize=20)
         plt.ylabel(r"$L/L_{\rm aligned}$",fontsize=20)
-        plt.ylim(0,3.)
+        plt.ylim(0,2.999)
         plt.xlim(0.21,5)
         ltot = plt.plot(rvec_list[i]/rlc_list[i], 
                      100+rvec_list[i],c='k',
@@ -562,9 +566,10 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
                 myi = np.arange(len(rvec_list[i]))
                 myival = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(5.)+0.5)
                 reldiss_list.append((edotvec_list[i]-poyntvec_list[i])[myival]/edot_list[i])
-        plt.plot(res_list,reldiss_list,'rs')
         #plt.plot(res,0.11*(1-np.log10(res/1000.)),'b-')
-        plt.plot(res,0.11/(res/1024.)**(1./3.),'g-')
+        plt.plot(res,0.11/(res/1024.)**(1./3.),'g-',lw=2)
+        plt.text(350, 0.18, r"$\epsilon_{\rm diss} \propto N_r^{-1/3}$", fontsize = 20)
+        plt.plot(res_list,reldiss_list,'rs',ms=10)
         plt.xlim(50,3000)
         plt.ylim(0.05,0.5)
         plt.xscale('log')
@@ -592,8 +597,9 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
         for i,f in enumerate(flist):
             #compute dissipated fraction
             myi = np.arange(len(rvec_list[i]))
-            myival = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(5.)+0.5)
-            reldiss_list.append((edotvec_list[i]-poyntvec_list[i])[myival]/edot_list[i])
+            myival1 = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(.5)+0.5)
+            myival2 = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(5.)+0.5)
+            reldiss_list.append((edotvec_list[i][myival1]-poyntvec_list[i][myival2])/edot_list[i])
             #contruct simulation name
             if dims_list[i][0] != 256:
                 suff = "R%d" % dims_list[i][0]
@@ -604,9 +610,10 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
             #
             # LATEX output for table
             #
-            fout.write( "%8s & $%d$ $ $%d\\times%d\\times%d$ & $%3.2g$ & $%3.3g$ \\\\ %% %s\n" 
+            fout.write( "%8s & $%d$ & $%d\\times%d\\times%d$ & $%3.2g$ & $%3.3g$ & $%3.2g$ \\\\ %% %s\n" 
                              % ( simname, int(alpha_list[i]*180./np.pi+0.5), 
                                  dims_list[i][0], dims_list[i][1], dims_list[i][2], 
+                                 tf_list[i]/(2*np.pi*rlc_list[i]),
                                  edot_list[i], reldiss_list[i], 
                                  flist[i] )
                         )
