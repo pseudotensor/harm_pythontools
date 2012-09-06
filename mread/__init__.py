@@ -11443,6 +11443,7 @@ def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,bare=0,fc='k',bor=200):
         aphi=fieldcalc()
         if fldindex == startn:
             maxaphi = 2*68.471001
+            #maxaphi = 380
             #maxaphi = (5*10)**0.5*3*3*3.2 #aphi.max()
         #fig=plt.figure(1,figsize=(10,10))
         #plt.clf()
