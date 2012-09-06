@@ -203,6 +203,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
             "hf_30_r0710h05_mydt_sph_ps2_256x128x128_512",
             "hf_45_r0710h05_mydt_sph_ps2_256x128x128_512",
             "hf_60_r0710h05_mydt_sph_ps2_256x128x128",
+            "hf_60_r10h05",
             "hf_75_r0710h05_mydt_sph_ps2_256x128x128_512",
             "hf_90_r0710h05_mydt_sph_ps0_256x128x128_512"
             #"rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8"
