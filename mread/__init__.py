@@ -321,14 +321,16 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
         lablistonlyb = ["N_r=256","N_r=512", "N_r=1024", "N_r=2048"]
         lwlistonlyb = [ 2, 1, 1, 1 ]
     elif newlist == 3:
-        flist = ["hf_0_r10h05_mydt_cyl",
+        flist = [#"hf_0_r10h05_mydt_cyl",
                  #"hf_0_r10h05_mydt_sph_ps0_256x128x1_64x64x1",
                  #"hf_0_r10h05_mydt_sph",
                  "hf_0_r10h05_mydt_sph_ps0_oldfixup_256x128x1_64x64x1",
-                 "hf_0_r10h05_mydt_sph_ps0_256x128x1_64x64x1_rerun",
-                 "hf_0_r10h05_mydt_sph_ps0_oldfixup_512x256x1_64x64x1",
+                 #"hf_0_r10h05_mydt_sph_ps0_256x128x1_64x64x1_rerun",
+                 #"hf_0_r10h05_mydt_sph_ps0_oldfixup_512x256x1_64x64x1",
                  "hf_0_r10h05_mydt_sph_ps0_vparthetaprime_256x128x1_64x64x1",
-                 "hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1"]
+                 #"hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1",
+                 "hf_0_r10h05_mydt_sph_ps0_vparthetaprime_512x256x1_64x64x1",
+                 "hf_0_r10h05_mydt_sph_ps0_vparthetaprime_1024x512x1_64x64x1"]
         flistedot = flist
         flistpoynt = flist
         flistonlyb = []
