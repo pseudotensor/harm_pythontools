@@ -820,6 +820,17 @@ def plotnsp(no=30):
     rlc = 1/OmegaNS
     cvel()
     Tcalcud()
+    #magnetic flux at star; 0.5 accts for two hemispheres
+    #"mean" because getting vector potential (which does not require integration in phi), not flux
+    Max_flux_code = 0.5 * np.abs(gdetB[1,0]).sum(-1).sum(-1)*_dx2*_dx3
+    #conversion prefactors
+    #1/(2*np.pi) -- to convert from A_\phi to Psi (flux)
+    #(4*np.pi)**0.5 -- to convert from Lorentz-Heaviside to Gaussian
+    mudip = Max_flux_code * Rin / (2*np.pi) * (4*np.pi)**0.5
+    #mudip = 1.5*3.162277660168379332*2*3*3*0.5*(4*np.pi)**0.5
+    #Normalized Edot such that aligned dipole should be unity
+    norm = mudip**2 * OmegaNS**4
+    #
     #total energy flux minus rest-mass
     sTot_noRM = -(gdetF[1,1]).sum(2).sum(1)*_dx2*_dx3
     sTot_noRM2= -(gdet*Tud[1,0]+gdet*rho*uu[1]).sum(2).sum(1)*_dx2*_dx3
@@ -828,15 +839,15 @@ def plotnsp(no=30):
     sKETH = -(gdet*(rho*uu[1]+TudMA[1,0])).sum(2).sum(1)*_dx2*_dx3
     smass = (gdetF[1,0]).sum(2).sum(1)*_dx2*_dx3
     smass2 = (gdet*rho*uu[1]).sum(2).sum(1)*_dx2*_dx3
-    plt.plot(r[:,0,0]/rlc,sTot_noRM,'r')
-    #plt.plot(r[:,0,0]/rlc,sTot_noRM2,'k')
-    plt.plot(r[:,0,0]/rlc,sEM,'b')
-    plt.plot(r[:,0,0]/rlc,smass,'g')
-    plt.plot(r[:,0,0]/rlc,smass2,'m')
-    plt.plot(r[:,0,0]/rlc,sEMKE,'c')
-    # plt.plot(r[:,0,0]/rlc,spmass1,'r')
+    plt.plot(r[:,0,0]/rlc,sTot_noRM/norm,'r')
+    #plt.plot(r[:,0,0]/rlc,sTot_noRM2/norm,'k')
+    plt.plot(r[:,0,0]/rlc,sEM/norm,'b')
+    plt.plot(r[:,0,0]/rlc,smass/norm,'g')
+    plt.plot(r[:,0,0]/rlc,smass2/norm,'m')
+    plt.plot(r[:,0,0]/rlc,sEMKE/norm,'c')
+    # plt.plot(r[:,0,0]/rlc,spmass1/norm,'r')
     plt.xlim(Rin/rlc,2.5)
-    plt.ylim(0,100)
+    plt.ylim(0,3)
     plt.xlabel(r"$r/r_{\rm LC}$",fontsize=18)
     plt.ylabel(r"$S$",fontsize=18)
     plt.grid(b=True)
