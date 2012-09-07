@@ -573,16 +573,20 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
         res = 10**np.linspace(0,4,100)
         res_list = []
         reldiss_list = []
+        reldiss1_list = []
         for i,f in enumerate(flist):
             if f in flistdissconv:
                 res_list.append(len(rvec_list[i]))
                 myi = np.arange(len(rvec_list[i]))
                 myival = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(5.)+0.5)
+                myival1 = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(1.5)+0.5)
                 reldiss_list.append(100*(edotvec_list[i]-poyntvec_list[i])[myival]/edot_list[i])
+                reldiss1_list.append(100*(edotvec_list[i]-poyntvec_list[i])[myival1]/edot_list[i])
         #plt.plot(res,0.11*(1-np.log10(res/1000.)),'b-')
         plt.plot(res,100*0.11/(res/1024.)**(1./3.),'g-',lw=2)
-        plt.text(350, 0.18*100, r"$\epsilon_{\rm diss,5} \propto N_r^{-1/3}$", fontsize = 20)
+        plt.text(350, 0.18*100, r"$\epsilon_{\rm 5} \propto N_r^{-1/3}$", fontsize = 20)
         plt.plot(res_list,reldiss_list,'rs',ms=10)
+        #plt.plot(res_list,reldiss1_list,'bs',ms=10)
         plt.xlim(50,3000)
         plt.ylim(0.05*100,0.5*100)
         plt.xscale('log')
@@ -590,7 +594,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
         plt.grid(b=True)
         ax3 = plt.gca()
         plt.xlabel(r"$N_r$",fontsize=20,va='center')
-        plt.ylabel(r"$\epsilon_{\rm diss}\ [\%]$",fontsize=25,ha='left')
+        plt.ylabel(r"$\epsilon_{\rm 5}\ [\%]$",fontsize=25,ha='right')
         ax4 = ax3.twiny()
         ax4.set_xlim(ax3.get_xlim()[0]/2/np.pi,ax3.get_xlim()[1]/2/np.pi)
         ax4.set_xscale('log')
@@ -606,13 +610,15 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
         plt.savefig("fig_dissconv.pdf",bbox_inches='tight',pad_inches=0.02)
     if writetable:
         reldiss_list = []
+        reldiss1_list = []
         fout = open( "simtex%d.txt" % newlist, "w" )
         for i,f in enumerate(flist):
             #compute dissipated fraction
             myi = np.arange(len(rvec_list[i]))
-            myival1 = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(.5)+0.5)
-            myival2 = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(5.)+0.5)
-            reldiss_list.append(100*(edotvec_list[i][myival1]-poyntvec_list[i][myival2])/edot_list[i])
+            myival = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(5.)+0.5)
+            myival1 = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(1.5)+0.5)
+            reldiss_list.append(100*(edotvec_list[i][myival1]-poyntvec_list[i][myival])/edot_list[i])
+            reldiss1_list.append(100*(edotvec_list[i][myival1]-poyntvec_list[i][myival1])/edot_list[i])
             #contruct simulation name
             if dims_list[i][0] != 256:
                 suff = "R%d" % dims_list[i][0]
@@ -623,11 +629,11 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
             #
             # LATEX output for table
             #
-            fout.write( "%8s & $%d$ & $%d\\times%d\\times%d$ & $%3.2g$ & $%3.3g$ & $%3.2g$ \\\\ %% %s\n" 
+            fout.write( "%8s & $%d$ & $%d\\times%d\\times%d$ & $%3.2g$ & $%3.3g$ & $%3.3g$  & $%3.2g$ \\\\ %% %s\n" 
                              % ( simname, int(alpha_list[i]*180./np.pi+0.5), 
                                  dims_list[i][0], dims_list[i][1], dims_list[i][2], 
                                  tf_list[i]/(2*np.pi*rlc_list[i]),
-                                 edot_list[i], reldiss_list[i], 
+                                 edot_list[i], reldiss1_list[i], reldiss_list[i], 
                                  flist[i] )
                         )
         #flush to disk just in case to make sure all is written
