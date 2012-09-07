@@ -200,12 +200,16 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_1024x512x1_64x64x1",
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1",
             "hf_15_r0710h05_mydt_sph_ps2_256x128x128",
-            "hf_30_r0710h05_mydt_sph_ps2_256x128x128_512",
+            "hf_30_r10h05_mydt_sph_x2",
+            #"hf_30_r0710h05_mydt_sph_ps2_256x128x128_512",
             "hf_45_r0710h05_mydt_sph_ps2_256x128x128_512",
-            "hf_60_r0710h05_mydt_sph_ps2_256x128x128",
+            #"hf_60_r0710h05_mydt_sph_ps2_256x128x128",
             "hf_60_r10h05",
+            "hf_60_r10h05_mydt_sph_ps2_256x128x128",
             "hf_75_r0710h05_mydt_sph_ps2_256x128x128_512",
-            "hf_90_r0710h05_mydt_sph_ps0_256x128x128_512"
+            #"hf_90_r0710h05_mydt_sph_ps0_256x128x128_512",
+            "hf_90_r10h05",
+            "hf_90_r10h05_mydt_sph_x2",
             #"rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8"
             #"hf_15_r10h05_mydt_cyl",
             # "hf_0_r0710h05_mydt_sph_nocosthp_256x128x1",
@@ -237,7 +241,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
             #"hf_60_r07h05_mydt_sph_ps2_256x128x128",
             #"hf_60_r10h05_mydt_sph_ps2_128x128x128",
             #"hf_90_r07h05_mydt_sph_ps2_256x128x128"
-            #"hf_90_r07h05_mydt_sph_256x128x128"
+            "hf_90_r07h05_mydt_sph_256x128x128"
             ]
         flistpoynt = [
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_256x128x1_64x64x1",
@@ -255,6 +259,9 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
             #"hf_60_r10h05_mydt_sph_ps2_128x128x128",
             "hf_90_r0710h05_mydt_sph_ps0_256x128x128_512",
             #"hf_90_r10h05_mydt_sph_x2",
+            "hf_30_r10h05_mydt_sph_x2",
+            "hf_60_r10h05_mydt_sph_ps2_256x128x128",
+            "hf_90_r10h05_mydt_sph_x2"
             ]
         flistonlyb = [
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_256x128x1_64x64x1",
@@ -286,13 +293,16 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
         lablistonlyb = ["N_r=256","N_r=512", "N_r=1024", "N_r=2048"]
         lwlistonlyb = [ 2, 1, 1, 1 ]
         flistedot = [
-            "hf_90_r0710h05_mydt_sph_ps0_256x128x128_512",
+            "hf_90_r10h05_mydt_sph_x2",
+            #"hf_90_r0710h05_mydt_sph_ps0_256x128x128_512",
             "hf_75_r0710h05_mydt_sph_ps2_256x128x128_512",
-            "hf_60_r0710h05_mydt_sph_ps2_256x128x128",
+            "hf_60_r10h05_mydt_sph_ps2_256x128x128",
+            #"hf_60_r0710h05_mydt_sph_ps2_256x128x128",
             #"hf_60_r10h05_mydt_sph_ps2_128x128x128",
             #"hf_30_r10h05_mydt_sph_x2",
             "hf_45_r0710h05_mydt_sph_ps2_256x128x128_512",
-            "hf_30_r0710h05_mydt_sph_ps2_256x128x128_512",
+            "hf_30_r10h05_mydt_sph_x2",
+            #"hf_30_r0710h05_mydt_sph_ps2_256x128x128_512",
             "hf_15_r0710h05_mydt_sph_ps2_256x128x128",
             #"hf_15_r10h05_mydt_cyl",
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_256x128x1_64x64x1",
@@ -725,9 +735,9 @@ def getrandxyz(sz=100):
 def mksz(sz=100):
     np.savetxt("cs.txt",getrandxyz(sz=sz))
 
-def computevars(n1=31, n2 = 53):
+def computevars(n1=31, n2 = 53,use2d=True):
     global avgbsq, avgrho, avgug, avgbsqow, avgbsqorho, avgBr, avgBth, avgBph, avguut, avguur, avguuth, avguuph
-    grid3d("gdump.bin", use2d = True)
+    grid3d("gdump.bin", use2d = use2d)
     [avgbsq, avgrho, avgug, avgbsqow, avgbsqorho, avgBr, avgBth, avgBph, avguut, avguur, avguuth, avguuph] = avgvar(
         [lambda: bsq,
          lambda: rho,
