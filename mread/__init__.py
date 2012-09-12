@@ -183,16 +183,10 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
     flistpoynt = []
     flistonlyb = []
     flistdissconv = []
+    flistdissconvff = []
     if newlist == 1:
         flist = [
             #"rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8",
-            # "hf_0_r0710h05_mydt_sph_ps0_frac01_256x128x1_64x64x1",
-            # "hf_0_r0710h05_mydt_sph_ps0_frac02_256x128x1_64x64x1",
-            # "hf_0_r0710h05_mydt_sph_ps0_frac04_256x128x1_64x64x1",
-            # "hf_0_r0710h05_mydt_sph_ps0_frac1_256x128x1_64x64x1",
-            # "hf_90_r10h05_mydt_sph_x2",
-            #"hf_60_r10h05_mydt_sph_ps2_128x128x128",
-            #"hf_30_r10h05_mydt_sph_x2",
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_64x32x1_64x64x1",
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_128x64x1_64x64x1",
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_256x128x1_64x64x1",
@@ -204,44 +198,21 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
             #"hf_30_r0710h05_mydt_sph_ps2_256x128x128_512",
             "hf_45_r0710h05_mydt_sph_ps2_256x128x128_512",
             #"hf_60_r0710h05_mydt_sph_ps2_256x128x128",
-            "hf_60_r10h05",
+            #"hf_60_r10h05",
+            "hf_60_r10h05_mydt_sph_ps2_128x64x64",
             "hf_60_r10h05_mydt_sph_ps2_256x128x128",
-            "hf_75_r0710h05_mydt_sph_ps2_256x128x128_512",
+            #"hf_75_r0710h05_mydt_sph_ps2_256x128x128_512",
+            "hf_75_r10h05_mydt_sph_ps2_256x128x128_512",
             #"hf_90_r0710h05_mydt_sph_ps0_256x128x128_512",
             "hf_90_r10h05",
             "hf_90_r10h05_mydt_sph_x2",
-            #"rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8"
-            #"hf_15_r10h05_mydt_cyl",
-            # "hf_0_r0710h05_mydt_sph_nocosthp_256x128x1",
-            # "hf_0_r0710h05_mydt_sph_ps0_512x256x1_64x64x1",
-            # "hf_0_r0710h05_mydt_sph_ps0_1024x512x1_64x64x1",
-            # "hf_0_r0710h05_mydt_sph_ps0_2048x1024x1_128x64x1",
-            # "hf_0_10h05_mydt_sph_ps0_frac04_256x128x1_64x64x1"
-            #"rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8"
-            #"rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8",
-            #"hf_0_r10h05_mydt_cyl",
-            #"hf_30_r10h05_mydt_sph_ps2_128x128x128",
-            #"hf_0_r07h05_mydt_sph_nocosthp_256x128x1",
-            #"hf_15_r07h05_mydt_sph_ps2_256x128x128",
-            #"hf_30_r07h05_mydt_sph_ps2_256x128x128",
-            #"hf_0_r07h05_mydt_sph_256x128x1",
-            #"hf_30_r10h05_mydt_sph_x2",
-            #"hf_30_r08h05_mydt_sph_128x128x128",
-            #"hf_15_r10h05_mydt_cyl",
-            #"hf_30_r10h05_mydt_cyl",
-            #"hf_45_r10h05_mydt_cyl",
-            #"hf_60_r10h05_mydt_cyl",
-            #"hf_60_r10h05_cyl",
-            #"hf_75_r10h05_mydt_cyl",
-            #"hf_90_r10h05_mydt_cyl",
-            #"hf_60_r10h05_mydt_cyl_x2",
-            #"hf_60_r08h05_mydt_cyl_x2"
-            #"hf_60_r10h05_mydt_sph_ps1_128x128x128", #-- bad
-            #"hf_60_r10h05_mydt_sph_x2",
-            #"hf_60_r07h05_mydt_sph_ps2_256x128x128",
-            #"hf_60_r10h05_mydt_sph_ps2_128x128x128",
-            #"hf_90_r07h05_mydt_sph_ps2_256x128x128"
-            "hf_90_r07h05_mydt_sph_256x128x128"
+            "hf_90_r07h05_mydt_sph_256x128x128",
+            "hf_0_h10r05_om02_ffde_mydt_sph_ps0_64x32_32x32x1",
+            "hf_0_h10r05_om02_ffde_mydt_sph_ps0_128x64_64x64x1",
+            "hf_0_h10r05_om02_ffde_mydt_sph_ps0_256x128_64x64x1",
+            "hf_0_h10r05_om02_ffde_mydt_sph_ps0_512x256_64x64x1",
+            "hf_0_h10r05_om02_ffde_mydt_sph_ps0_1024x512_64x64x1",
+            "hf_0_h10r05_om02_ffde_mydt_sph_ps0_2048x1024_64x64x1"
             ]
         flistpoynt = [
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_256x128x1_64x64x1",
@@ -250,7 +221,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
             # "hf_0_r0710h05_mydt_sph_ps0_frac04_256x128x1_64x64x1",
             # "hf_0_r0710h05_mydt_sph_ps0_frac02_256x128x1_64x64x1",
             # "hf_0_r0710h05_mydt_sph_ps0_frac01_256x128x1_64x64x1",
-            # "hf_0_r0710h05_mydt_sph_ps0_frac1_256x128x1_64x64x1",
+            # "hf_0_r0710h005_mydt_sph_ps0_frac1_256x128x1_64x64x1",
             #"hf_15_r0710h05_mydt_sph_ps2_256x128x128",
             #"hf_15_r10h05_mydt_cyl",
             "hf_30_r0710h05_mydt_sph_ps2_256x128x128_512",
@@ -289,13 +260,22 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
             # "hf_0_r0710h05_mydt_sph_ps0_2048x1024x1_128x64x1"
             #"rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8"
             ]
+        flistdissconvff = [
+            "hf_0_h10r05_om02_ffde_mydt_sph_ps0_64x32_32x32x1",
+            "hf_0_h10r05_om02_ffde_mydt_sph_ps0_128x64_64x64x1",
+            "hf_0_h10r05_om02_ffde_mydt_sph_ps0_256x128_64x64x1",
+            "hf_0_h10r05_om02_ffde_mydt_sph_ps0_512x256_64x64x1",
+            "hf_0_h10r05_om02_ffde_mydt_sph_ps0_1024x512_64x64x1",
+            "hf_0_h10r05_om02_ffde_mydt_sph_ps0_2048x1024_64x64x1"
+            ]
         ltypelistonlyb = [ [10,5], [10,5,2,5], [10,5,2,5,2,5], [10,5,2,5,2,5,2,5] ] 
         lablistonlyb = ["N_r=256","N_r=512", "N_r=1024", "N_r=2048"]
         lwlistonlyb = [ 2, 1, 1, 1 ]
         flistedot = [
             "hf_90_r10h05_mydt_sph_x2",
             #"hf_90_r0710h05_mydt_sph_ps0_256x128x128_512",
-            "hf_75_r0710h05_mydt_sph_ps2_256x128x128_512",
+            #"hf_75_r0710h05_mydt_sph_ps2_256x128x128_512",
+            "hf_75_r10h05_mydt_sph_ps2_256x128x128_512",
             "hf_60_r10h05_mydt_sph_ps2_256x128x128",
             #"hf_60_r0710h05_mydt_sph_ps2_256x128x128",
             #"hf_60_r10h05_mydt_sph_ps2_128x128x128",
@@ -424,7 +404,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
             #if OmegaNS == 0 or OmegaNS is None: OmegaNS = 0.2
             Rlc = 1. / OmegaNS
             #evaluate at 2Rlc
-            reval = 2 * Rlc
+            reval = 0.5 * Rlc
             ieval = iofr(reval)
             #Spindown energy losses
             Edot_code = FE
@@ -455,7 +435,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
             tf_list.append( t )
     #change dir for figure saving
     os.chdir("/home/atchekho/run2")
-    plt.figure(1)
+    plt.figure(1,figsize=(6,4))
     plt.clf()
     edot_list_toplot = []
     poynt_list_toplot = []
@@ -469,7 +449,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
             poynt_list_toplot[i][rvec_list[ile]<0.7*rlc_list[i]] *= NaN
     a = np.linspace(0,np.pi/2.,1000)
     plt.plot(a*180/np.pi,1+1.2*np.sin(a)**2,'g-',lw=2) #,label=r"$1+1.2\sin^2\alpha$"
-    plt.text(46, 1.1, r"$\displaystyle\frac{L}{L_{\rm aligned}} = 1+1.2\sin^2\alpha$", fontsize = 20)
+    plt.text(35, 0.8, r"$\displaystyle\frac{L}{L_{\rm aligned}} = 1+1.2\sin^2\alpha$", fontsize = 20)
     plt.plot(np.array(alpha_list)*180/np.pi, edot_list_toplot, "rs",ms=15)
     ax1 = plt.gca()
     for label in ax1.get_xticklabels() + ax1.get_yticklabels():
@@ -550,7 +530,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
                      100+rvec_list[i],c='k',
                      ls='--',lw=2)
         crvlist0 = [ltot,lpoynt]
-        leglist0 = [r"${\rm Total}$", r"${\rm Poynting}$"]
+        leglist0 = [r"${\rm Total,}\ L(r)$", r"${\rm Poynting,}\ L_{\rm EM}(r)$"]
         lpoynt[0].set_dashes(defaultdashes)
         leg0 = plt.legend(crvlist0,leglist0,loc="upper right",title=r"${\rm Energy\ losses\!\!:}$",ncol=1,frameon=True, fancybox=True,borderpad = 0.3,borderaxespad=0.4,handlelength=2.2,columnspacing=0.3,handletextpad=0.1)
         if newlist != 1:
@@ -574,30 +554,53 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
         res_list = []
         reldiss_list = []
         reldiss1_list = []
+        res_listff = []
+        reldiss_listff = []
+        reldiss1_listff = []
         for i,f in enumerate(flist):
             if f in flistdissconv:
                 res_list.append(len(rvec_list[i]))
                 myi = np.arange(len(rvec_list[i]))
+                myival06 = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(0.6)+0.5)
                 myival = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(5.)+0.5)
                 myival1 = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(1.5)+0.5)
-                reldiss_list.append(100*(edotvec_list[i]-poyntvec_list[i])[myival]/edot_list[i])
-                reldiss1_list.append(100*(edotvec_list[i]-poyntvec_list[i])[myival1]/edot_list[i])
+                reldiss_list.append(100*(edotvec_list[i][myival06]-poyntvec_list[i][myival])/edotvec_list[i][myival06])
+                reldiss1_list.append(100*(edotvec_list[i][myival06]-poyntvec_list[i][myival1])/edotvec_list[i][myival06])
+            if f in flistdissconvff:
+                res_listff.append(len(rvec_list[i]))
+                myi = np.arange(len(rvec_list[i]))
+                myival06 = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(0.6)+0.5)
+                myival = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(5.)+0.5)
+                myival1 = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(1.5)+0.5)
+                reldiss_listff.append(100*(edotvec_list[i][myival06]-poyntvec_list[i][myival])/edotvec_list[i][myival06])
+                reldiss1_listff.append(100*(edotvec_list[i][myival06]-poyntvec_list[i][myival1])/edotvec_list[i][myival06])
         #plt.plot(res,0.11*(1-np.log10(res/1000.)),'b-')
         plt.plot(res,100*0.11/(res/1024.)**(1./3.),'g-',lw=2)
-        plt.text(350, 0.18*100, r"$\epsilon_{\rm 5} \propto N_r^{-1/3}$", fontsize = 20)
-        plt.plot(res_list,reldiss_list,'rs',ms=10)
+        plt.plot(res,100*0.44/(res/1024.)**(0.),'r--',lw=2)
+        #plt.plot(res,100*0.44/(res/1024.)**(1./40.),'r--',lw=2)
+        #plt.plot(res,100*0.45*1./(1.+0.03*np.log2(res/1024.)),'r--',lw=2)
+        plt.text(320, 0.18*100, r"$\epsilon_{\rm 5} \propto N_r^{-1/3}\ {\rm (MHD)}$", fontsize = 20)
+        plt.text(200, 0.50*100, r"$\epsilon_{\rm 5} \propto N_r^{0}\ {\rm (force{-}free)}$", fontsize = 20)
+        plt.plot(res_list,reldiss_list,'gs',ms=10)
+        plt.plot(res_listff,reldiss_listff,'rv',ms=10)
         #plt.plot(res_list,reldiss1_list,'bs',ms=10)
         plt.xlim(50,3000)
-        plt.ylim(0.05*100,0.5*100)
+        plt.ylim(0.08*100,1.0*100)
         plt.xscale('log')
         plt.yscale('log')
         plt.grid(b=True)
         ax3 = plt.gca()
         plt.xlabel(r"$N_r$",fontsize=20,va='center')
-        plt.ylabel(r"$\epsilon_{\rm 5}\ [\%]$",fontsize=25,ha='right')
+        plt.ylabel(r"$\epsilon_{\rm 5}\ [\%]$",fontsize=25,ha='center')
         ax4 = ax3.twiny()
         ax4.set_xlim(ax3.get_xlim()[0]/2/np.pi,ax3.get_xlim()[1]/2/np.pi)
         ax4.set_xscale('log')
+        for l in ax3.get_xticklines() + ax3.get_yticklines() + ax4.get_xticklines():
+            l.set_markersize(10)
+            #l.set_markeredgewidth(1.5) 
+        for l in ax3.xaxis.get_minorticklines() + ax3.yaxis.get_minorticklines() + ax4.xaxis.get_minorticklines():
+            l.set_markersize(4)
+            #l.set_markeredgewidth(1.5) 
         # tck_lab=[r"$16$",r"$160$"]
         # tck_val=[100,1000]
         # ax4.set_xticks(tck_val)
@@ -612,34 +615,48 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
         reldiss_list = []
         reldiss1_list = []
         fout = open( "simtex%d.txt" % newlist, "w" )
+        foutff = open( "simtexff%d.txt" % newlist, "w" )
         for i,f in enumerate(flist):
             #compute dissipated fraction
             myi = np.arange(len(rvec_list[i]))
+            myival06 = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(0.6)+0.5)
             myival = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(5.)+0.5)
             myival1 = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(1.5)+0.5)
-            reldiss_list.append(100*(edotvec_list[i][myival1]-poyntvec_list[i][myival])/edot_list[i])
-            reldiss1_list.append(100*(edotvec_list[i][myival1]-poyntvec_list[i][myival1])/edot_list[i])
+            reldiss_list.append(100*(edotvec_list[i][myival06]-poyntvec_list[i][myival])/edotvec_list[i][myival06])
+            reldiss1_list.append(100*(edotvec_list[i][myival06]-poyntvec_list[i][myival1])/edotvec_list[i][myival06])
             #contruct simulation name
             if dims_list[i][0] != 256:
                 suff = "R%d" % dims_list[i][0]
             else:
                 suff = ""
-            simname = "D%d%s" % (int(alpha_list[i]*180./np.pi+0.5), suff)
+            if f == "hf_90_r07h05_mydt_sph_256x128x128":
+                suff = "%s$^\\dagger$" % suff
+            if f.find("ffde") >= 0:
+                fouttouse = foutff
+                simname = "D%d%sff" % (int(alpha_list[i]*180./np.pi+0.5), suff)
+                #suff = "%sff" % suff
+            else:
+                simname = "D%d%s" % (int(alpha_list[i]*180./np.pi+0.5), suff)
+                fouttouse = fout
             print("Simulation %s :" % simname)
             #
             # LATEX output for table
             #
-            fout.write( "%8s & $%d$ & $%d\\times%d\\times%d$ & $%3.2g$ & $%3.3g$ & $%3.3g$  & $%3.2g$ \\\\ %% %s\n" 
+            fouttouse.write( "%8s & $%d$ & $%d\\times%d\\times%d$ & $%3.2g$ & $%3.3g$ & $%3.2g$  \\\\ %% %s\n" 
                              % ( simname, int(alpha_list[i]*180./np.pi+0.5), 
                                  dims_list[i][0], dims_list[i][1], dims_list[i][2], 
                                  tf_list[i]/(2*np.pi*rlc_list[i]),
-                                 edot_list[i], reldiss1_list[i], reldiss_list[i], 
+                                 edot_list[i], reldiss_list[i], 
                                  flist[i] )
                         )
         #flush to disk just in case to make sure all is written
         fout.flush()
         os.fsync(fout.fileno())
         fout.close()
+        #same for force-free file
+        foutff.flush()
+        os.fsync(foutff.fileno())
+        foutff.close()
             
                 
 
@@ -2605,6 +2622,15 @@ def rrdump(dumpname,write2xphi=False, whichdir = 3, flipspin = False, resetdefco
                       dtype=np.float64, 
                       skiprows=1, 
                       unpack = True )
+    upperdumpname = "dumps/rdumpupperpole%s" % dumpname[5:]
+    if os.path.isfile(os.path.join(upperdumpname)):
+        gin = open( upperdumpname )
+        print("File %s exists, reading from it..." % upperdumpname)
+        gdrawupper = np.fromfile(gin,dtype=np.float64,count=-1)  #nx*ny*nz*11)
+        gin.close()
+        gdupper=gdrawupper.view().reshape((-1,nx,1,nz), order='F')
+    else:
+        gdrawupper = gdupper = None
     gd=gdraw.view().reshape((-1,nx,ny,nz), order='F')
     rho,ug = gd[0:2,:,:,:].view() 
     B = np.zeros_like(gd[4:8])
@@ -2641,6 +2667,19 @@ def rrdump(dumpname,write2xphi=False, whichdir = 3, flipspin = False, resetdefco
         gd1 = gdraw.view().reshape((nz,ny,nx,-1),order='C')
         gd1.tofile(gout)
         gout.close()
+        #write out upperpole rdump
+        if gdrawupper is not None:
+            gout = open( upperdumpname + "spinflip", "wb" )
+            for headerel in header:
+                s = "%s " % headerel
+                gout.write( s )
+            gout.write( "\n" )
+            gout.flush()
+            os.fsync(gout.fileno())
+            #reshape the rdump content
+            gd1 = gdrawupper.view().reshape((nz,1,nx,-1),order='C')
+            gd1.tofile(gout)
+            gout.close()
         print( " done!" )
 
     if resetdefcoord:
@@ -2686,51 +2725,85 @@ def rrdump(dumpname,write2xphi=False, whichdir = 3, flipspin = False, resetdefco
 
     if write2xphi and whichdir is not None:
         print( "Writing out 2xphi rdump...", )
-        #write out a dump with twice as many cells in phi-direction:
-        gout = open( "dumps/" + dumpname + "2xphi", "wb" )
-        #double the number of phi-cells
-        newnx = nx
-        newny = ny
-        newnz = nz
-        if whichdir == 3:
-            #refine phi-dir
-            header[2] = "%d" % (2*nz)
-            newnz = 2*nz
-        elif whichdir == 2:
-            #refine theta-dir
-            header[1] = "%d" % (2*ny)
-            newny = 2*ny
-        for headerel in header:
-            s = "%s " % headerel
-            gout.write( s )
-        gout.write( "\n" )
-        gout.flush()
-        os.fsync(gout.fileno())
-        #reshape the rdump content
-        gd1 = gdraw.view().reshape((nz,ny,nx,-1),order='C')
-        #allocate memory for refined grid, nz' = 2*nz
-        gd2 = np.zeros((newnz,newny,newnx,numcols),order='C',dtype=np.float64)
-        if whichdir == 3:
-            #copy even k's
-            gd2[0::2,:,:,:] = gd1[:,:,:,:]
-            #copy odd k's
-            gd2[1::2,:,:,:] = gd1[:,:,:,:]
-            #in the new cells, adjust gdetB[3] to be averages of immediately adjacent cells (this ensures divb=0)
-            gdetB3index = numcols/2+5+2
-            gd2[1:-1:2,:,:,gdetB3index] = 0.5*(gd1[:-1,:,:,gdetB3index]+gd1[1:,:,:,gdetB3index])
-            gd2[-1,:,:,gdetB3index] = 0.5*(gd1[0,:,:,gdetB3index]+gd1[-1,:,:,gdetB3index])
-        elif whichdir == 2:
-            #copy even j's
-            gd2[:,0::2,:,:] = gd1[:,:,:,:]
-            #copy odd j's
-            gd2[:,1::2,:,:] = gd1[:,:,:,:]
-            #in the new cells, adjust gdetB[2] to be averages of immediately adjacent cells (this ensures divb=0)
-            gdetB2index = numcols/2+5+1
-            gd2[:,1:-1:2,:,gdetB2index] = 0.5*(gd1[:,:-1,:,gdetB2index]+gd1[:,1:,:,gdetB2index])
-            gd2[:,-1,:,gdetB2index] = 0.5*(0.0+gd1[:,-1,:,gdetB2index])
-        gd2.tofile(gout)
-        gout.close()
+        writeoutrdump(dumpname, header, gdraw, gdrawupper, nx, ny, nz, whichdir = whichdir)
         print( " done!" )
+
+def writeoutrdump(dumpname, header, gdraw, gdrawupper, nx, ny, nz, whichdir = 3):
+    #write out a dump with twice as many cells in phi-direction:
+    gout = open( "dumps/" + dumpname + "2xphi", "wb" )
+    if gdrawupper is not None:
+        dumpnameupperpole = "dumps/rdumpupperpole%s" % dumpname[5:]
+        goutupper = open( dumpnameupperpole + "2xphi", "wb" )
+    else:
+        goutupper = None
+    #double the number of cells in whichdir direction
+    newnx = nx
+    newny = ny
+    newnz = nz
+    if whichdir == 3:
+        #refine phi-dir
+        header[2] = "%d" % (2*nz)
+        newnz = 2*nz
+    elif whichdir == 2:
+        #refine theta-dir
+        header[1] = "%d" % (2*ny)
+        newny = 2*ny
+    for headerel in header:
+        s = "%s " % headerel
+        gout.write( s )
+        # if goutupper is not None:
+        #     goutupper.write( s )
+    gout.write( "\n" )
+    gout.flush()
+    os.fsync(gout.fileno())
+    if goutupper is not None:
+        goutupper.write( "\n" )
+        goutupper.flush()
+        os.fsync(goutupper.fileno())
+    #reshape the rdump content
+    gd1 = gdraw.view().reshape((nz,ny,nx,-1),order='C')
+    numcols = gd1.shape[-1]  #total number of columns is made up of (n prim vars) + (n cons vars) = numcols
+    #allocate memory for refined grid, nz' = 2*nz
+    gd2 = np.zeros((newnz,newny,newnx,numcols),order='C',dtype=np.float64)
+    #for upperpole dumps:
+    if gdrawupper is not None:
+        #reshape the rdump content
+        gd1upper = gdrawupper.view().reshape((nz,ny,nx,-1),order='C')
+        numcolsupper = gd1upper.shape[-1]  #total number of columns (currently only B2)
+        #allocate memory for refined grid, nz' = 2*nz
+        gd2upper = np.zeros((newnz,newny,newnx,numcolsupper),order='C',dtype=np.float64)
+    if whichdir == 3:
+        #copy even k's
+        gd2[0::2,:,:,:] = gd1[:,:,:,:]
+        #copy odd k's
+        gd2[1::2,:,:,:] = gd1[:,:,:,:]
+        #in the new cells, adjust gdetB[3] to be averages of immediately adjacent cells (this ensures divb=0)
+        gdetB3index = numcols/2+5+2
+        gd2[1:-1:2,:,:,gdetB3index] = 0.5*(gd1[:-1,:,:,gdetB3index]+gd1[1:,:,:,gdetB3index])
+        gd2[-1,:,:,gdetB3index] = 0.5*(gd1[0,:,:,gdetB3index]+gd1[-1,:,:,gdetB3index])
+        if gdrawupper is not None:
+            #copy even k's
+            gd2upper[0::2,:,:,:] = gd1upper[:,:,:,:]
+            #copy odd k's
+            gd2upper[1::2,:,:,:] = gd1upper[:,:,:,:]
+    elif whichdir == 2:
+        #copy even j's
+        gd2[:,0::2,:,:] = gd1[:,:,:,:]
+        #copy odd j's
+        gd2[:,1::2,:,:] = gd1[:,:,:,:]
+        #in the new cells, adjust gdetB[2] to be averages of immediately adjacent cells (this ensures divb=0)
+        gdetB2index = numcols/2+5+1
+        gd2[:,1:-1:2,:,gdetB2index] = 0.5*(gd1[:,:-1,:,gdetB2index]+gd1[:,1:,:,gdetB2index])
+        gd2[:,-1,:,gdetB2index] = 0.5*(0.0+gd1[:,-1,:,gdetB2index])
+        if gdrawupper is not None:
+            print("Warning: don't know what to do with refining resolution in upperpole dump")
+    gd2.tofile(gout)
+    gout.close()
+    if gd2upper is not None:
+        gd2upper.tofile(goutupper)
+        goutupper.close()
+
+    
         
 
 def fieldcalctoth():
@@ -3120,6 +3193,8 @@ def grid3d(dumpname,use2d=False,doface=False): #read grid dump file: header and 
     nx = int(header[1])
     ny = int(header[2])
     nz = int(header[3])
+    if nz == 1:
+        usinggdump2d = False
     #grid internal coordinates starting point
     _startx1=myfloat(float(header[4]))
     _startx2=myfloat(float(header[5]))
