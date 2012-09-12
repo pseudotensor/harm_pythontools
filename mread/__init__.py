@@ -184,6 +184,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
     flistonlyb = []
     flistdissconv = []
     flistdissconvff = []
+    flistedotvsomega = []
     if newlist == 1:
         flist = [
             #"rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8",
@@ -327,6 +328,13 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
         ltypelistonlyb = [ [10,5], [10,5,2,5], [10,5,2,5,2,5], [10,5,2,5,2,5,2,5] ] 
         lablistonlyb = ["N_r=256","N_r=512", "N_r=1024", "N_r=2048"]
         lwlistonlyb = [ 2, 1, 1, 1 ]
+    elif newlist == 4:
+        flist = [
+            "hf_60_r10h05_mydt_sph_ps2_128x64x64",
+            "hf_60_r10h05_mydt_sph_om0375_ps2_128x64x64_16x16x16",
+            "hf_60_r10h05_mydt_sph_om05_ps2_128x64x64_16x16x16"            
+            ]
+        flistedotvsomega = flist
     else:
         flist = [
             "hf_0_r10h05_mydt_cyl",
@@ -404,7 +412,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
             #if OmegaNS == 0 or OmegaNS is None: OmegaNS = 0.2
             Rlc = 1. / OmegaNS
             #evaluate at 2Rlc
-            reval = 0.5 * Rlc
+            reval = 0.55 * Rlc
             ieval = iofr(reval)
             #Spindown energy losses
             Edot_code = FE
@@ -475,7 +483,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
         ]
     labxlist = [ 0.4, 2,  0.4, 2]
     labylist = [ 0.875,  1.5, 1.78, 2.35 ]
-    if plotpoynt:
+    if plotpoynt and (len(flistpoynt)+len(flistonlyb)>0):
         plt.figure(2)
         plt.clf()
         a = np.linspace(0,np.pi/2.,1000)
@@ -547,7 +555,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
         leg2.get_title().set_fontsize(20)
         plt.savefig("fig_poynt.eps",bbox_inches='tight',pad_inches=0.02)
         plt.savefig("fig_poynt.pdf",bbox_inches='tight',pad_inches=0.02)
-    if plotdissconv and len(flistdissconv) != 0:
+    if plotdissconv and (len(flistdissconv)+len(flistdissconvff)>0):
         plt.figure(3,figsize=(6,4))
         plt.clf()
         res = 10**np.linspace(0,4,100)
@@ -611,6 +619,35 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
             label.set_fontsize(20)
         plt.savefig("fig_dissconv.eps",bbox_inches='tight',pad_inches=0.02)
         plt.savefig("fig_dissconv.pdf",bbox_inches='tight',pad_inches=0.02)
+    if len(flistedotvsomega) > 0:
+        plt.figure(4,figsize=(6,4))
+        plt.clf()
+        om = 10**np.linspace(0,1.01,0.01)
+        om_list = []
+        ed_list = []
+        for i,f in enumerate(flist):
+            if f in flistedotvsomega:
+                om_list.append(1/rlc_list[i])
+                ed_list.append(edot_list[i])
+        plt.plot(om_list,ed_list,'gs',ms=10)
+        plt.xlim(0.05,0.5)
+        plt.ylim(0,3)
+        plt.xscale('log')
+        plt.yscale('log')
+        plt.grid(b=True)
+        ax5 = plt.gca()
+        plt.xlabel(r"$r_*/R_{\rm LC}$",fontsize=25,va='center')
+        plt.ylabel(r"$L/L_{\rm aligned}$",fontsize=25,ha='center')
+        for l in ax5.get_xticklines() + ax5.get_yticklines():
+            l.set_markersize(10)
+            #l.set_markeredgewidth(1.5) 
+        for l in ax5.xaxis.get_minorticklines() + ax5.yaxis.get_minorticklines():
+            l.set_markersize(4)
+            #l.set_markeredgewidth(1.5) 
+        for label in ax5.get_xticklabels() + ax5.get_yticklabels():
+            label.set_fontsize(20)
+        plt.savefig("fig_edotvsomega.eps",bbox_inches='tight',pad_inches=0.02)
+        plt.savefig("fig_edotvsomega.pdf",bbox_inches='tight',pad_inches=0.02)
     if writetable:
         reldiss_list = []
         reldiss1_list = []
