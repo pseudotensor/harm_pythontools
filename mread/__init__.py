@@ -44,6 +44,27 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
+def mkvelvsr():
+    os.chdir("/home/atchekho/run2/hf_60_r10h05_ff_om02_ps2_256x128x128_32x16x32")
+    grid3d("gdump.bin", use2d = 1)
+    rfd("fieldline0064.bin")
+    plt.plot(OmegaNS*r[:,0,0],(uu[0])[:,ny/2,0],label="Force-free")
+    os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_sph_ps2_256x128x128")
+    grid3d("gdump.bin", use2d = 1)
+    rfd("fieldline0064.bin")
+    #computevars(n1=64,n2=137)
+    #plt.plot(OmegaNS*r[:,0,0],(uu[1]*dxdxp[1,1])[:,ny/2,0],label="Relativistic MHD")
+    plt.plot(OmegaNS*r[:,0,0],((1+avguur**2+(r*avguuth)**2+(r*np.sin(h)*avguuph)**2)**0.5)[:,ny/2,0],label="Relativistic MHD")
+    # os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_sph_c33om0375_ps2_512x256x256_32x32x64")
+    # grid3d("gdump.bin", use2d = 1)
+    # rfd("fieldline0064.bin")
+    # #computevars(n1=64,n2=137)
+    # plt.plot(OmegaNS*r[:,0,0],(uu[1]*dxdxp[1,1])[:,ny/2,0],label="Relativistic MHD hires")
+    plt.legend(loc="upper left")
+    plt.xlim(0,3)
+    plt.ylim(0,10)
+    
+
 def mkfig1(dosavefig=1,figno=1):
     os.chdir("/home/atchekho/run2/hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1")
     grid3d("gdump.bin",use2d=True)
@@ -329,12 +350,19 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
         lablistonlyb = ["N_r=256","N_r=512", "N_r=1024", "N_r=2048"]
         lwlistonlyb = [ 2, 1, 1, 1 ]
     elif newlist == 4:
+        # flist = [
+        #     "hf_60_r10h05_mydt_sph_ps2_128x64x64",
+        #     "hf_60_r10h05_mydt_sph_om0375_ps2_128x64x64_16x16x16",
+        #     "hf_60_r10h05_mydt_sph_om05_ps2_128x64x64_16x16x16"            
+        #     ]
         flist = [
-            "hf_60_r10h05_mydt_sph_ps2_128x64x64",
-            "hf_60_r10h05_mydt_sph_om0375_ps2_128x64x64_16x16x16",
-            "hf_60_r10h05_mydt_sph_om05_ps2_128x64x64_16x16x16"            
+            "hf_90_r10h05_mydt_sphc33_om01_ps2_256x128x256_32x16x32",
+            "hf_90_r10h05_mydt_sph_om0375_ps0_128x64x64_16x16x16",
+            "hf_90_r10h05_mydt_sph_x2",
+            "hf_90_r10h05_mydt_sph_om05_ps0_128x64x64_16x16x16"
             ]
         flistedotvsomega = flist
+        flistpoynt = flist
     else:
         flist = [
             "hf_0_r10h05_mydt_cyl",
@@ -622,7 +650,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
     if len(flistedotvsomega) > 0:
         plt.figure(4,figsize=(6,4))
         plt.clf()
-        om = 10**np.linspace(0,1.01,0.01)
+        om = np.linspace(0,1.,100)
         om_list = []
         ed_list = []
         for i,f in enumerate(flist):
@@ -630,14 +658,15 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
                 om_list.append(1/rlc_list[i])
                 ed_list.append(edot_list[i])
         plt.plot(om_list,ed_list,'gs',ms=10)
-        plt.xlim(0.05,0.5)
-        plt.ylim(0,3)
-        plt.xscale('log')
-        plt.yscale('log')
+        plt.plot(om,1.66-(om-0.5)/0.3*0.57)
+        plt.xlim(0.0,0.5)
+        plt.ylim(1,3)
+        plt.xscale('linear')
+        plt.yscale('linear')
         plt.grid(b=True)
         ax5 = plt.gca()
         plt.xlabel(r"$r_*/R_{\rm LC}$",fontsize=25,va='center')
-        plt.ylabel(r"$L/L_{\rm aligned}$",fontsize=25,ha='center')
+        plt.ylabel(r"$L/L_{\rm aligned}$",fontsize=25,ha='right')
         for l in ax5.get_xticklines() + ax5.get_yticklines():
             l.set_markersize(10)
             #l.set_markeredgewidth(1.5) 
@@ -795,23 +824,29 @@ def getrandxyz(sz=100):
 def mksz(sz=100):
     np.savetxt("cs.txt",getrandxyz(sz=sz))
 
-def computevars(n1=31, n2 = 53,use2d=True):
+def computevars(n1=31, n2 = 53,use2d=True,calct=0):
     global avgbsq, avgrho, avgug, avgbsqow, avgbsqorho, avgBr, avgBth, avgBph, avguut, avguur, avguuth, avguuph
-    grid3d("gdump.bin", use2d = use2d)
-    [avgbsq, avgrho, avgug, avgbsqow, avgbsqorho, avgBr, avgBth, avgBph, avguut, avguur, avguuth, avguuph] = avgvar(
+    global trth,trphi,trphicons,trthEM,trphiEM
+    [avgbsq, avgrho, avgug, avgbsqow, avgbsqorho, avgBr, avgBth, avgBph, avguut, avguur, avguuth, avguuph,
+     trth,trphi,trphicons,trthEM,trphiEM] = avgvar(
         [lambda: bsq,
          lambda: rho,
          lambda: ug,
-         lambda: bsq/(rho+gam*ug), 
-         lambda: bsq/rho, 
+         lambda: bsq/(rho+gam*ug+1e-15), 
+         lambda: bsq/(rho+1e-15), 
          lambda: B[1]*dxdxp[1,1], 
          lambda: B[2]*dxdxp[2,2], 
          lambda: B[3]*dxdxp[3,3], 
          lambda: uu[0], 
          lambda: uu[1]*dxdxp[1,1], 
          lambda: uu[2]*dxdxp[2,2], 
-         lambda: uu[3]*dxdxp[3,3]], 
-        n1 = n1, n2 = n2)
+         lambda: uu[3]*dxdxp[3,3], 
+         lambda: Tud[1,2]*dxdxp[1,1]/dxdxp[2,2],
+         lambda: Tud[1,3]*dxdxp[1,1]/dxdxp[3,3],
+         lambda: np.concatenate((0.5*(gdetF[1,2,:-1]+gdetF[1,2,1:]),gdetF[1,2,nx-1:nx]))/gdet*dxdxp[1,1]/dxdxp[3,3],
+         lambda: TudEM[1,2]*dxdxp[1,1]/dxdxp[2,2],
+         lambda: TudEM[1,3]*dxdxp[1,1]/dxdxp[3,3]],
+        n1 = n1, n2 = n2, calct=calct, use2d=use2d)
 
 def varstotxt(f="file.txt",rad=6):
     ii=iofr(rad)
@@ -822,14 +857,19 @@ def varstotxt(f="file.txt",rad=6):
                 avgBr, r*avgBth, r*np.sin(h)*avgBph, 
                 avguut, 
                 avguur, r*avguuth, r*np.sin(h)*avguuph,
+                trth,trphi,trphicons,trthEM,trphiEM
                ]
     for i in xrange(len(arrsave)):
         arrsave[i] = (arrsave[i])[ii].ravel()
     np.savetxt(f, np.array(arrsave).T, 
-               fmt="%3d %3d %3d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g" )
+               fmt="%3d %3d %3d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g" )
+
+def loadandwritevars(n1=32,n2=64):
+    computevars(n1=n1,n2=n2,calct=1,use2d=0)
+    writemanyvarstotxt()
 
 def writemanyvarstotxt():
-    radii_list = np.arange(30,31,1)
+    radii_list = np.arange(Rin,40.,0.5)
     for rad in radii_list:
         varstotxt(f="file%d.txt" % (10*rad),rad=rad)
 
@@ -883,6 +923,56 @@ def plotvars(suff=""):
     plt.figure();plotvar(avguur[iofr(5.5)],label=r"$u^r(1.1R_{\rm LC})$",fname="uur_11Rlc%s.pdf"%suff)
     plt.figure();plotvar(avguur[iofr(7.5)],label=r"$u^r(1.5R_{\rm LC})$",fname="uur_15Rlc%s.pdf"%suff)
     
+def plotangaxis(whichaxis='y',no=64,doreload=1):
+    if doreload:
+        grid3d("gdump.bin",use2d=1)
+        rfd("fieldline%04d.bin" % no)
+        cvel()
+        Tcalcud()
+    angyden = compangaxis(Tud[1],whichaxis=whichaxis)[3]
+    angy = (r**2*np.sin(h)*angyden*dxdxp[2,2]*_dx2*dxdxp[3,3]*_dx3).sum(-1).sum(-1)
+    #angy = (gdet*angyden/dxdxp[1,1]*_dx2*_dx3).sum(-1).sum(-1)
+    plt.figure();plt.plot(r[:,0,0],angy);plt.xlim(Rin,10)
+    return angyden
+    
+
+def compangaxis(Tud1,whichaxis='x'):
+    trth = Tud1[2]*dxdxp[1,1]/dxdxp[2,2]
+    trph = Tud1[3]*dxdxp[1,1]/dxdxp[3,3]
+    trr  = (Tud1[1]*dxdxp[1,1]-trth*dxdxp[2,1])/dxdxp[1,1]
+    th = h
+    if whichaxis == 'x':
+        #rotate by 90-deg around y-axis to so Tud1[3] is angular momentum around x-axis
+        trrnew = trr
+        trthnew = ( -(trth*cos(ph)*cos(th)*pow(pow(cos(th),2) + pow(sin(ph),2)*pow(sin(th),2),-0.5)) 
+                - trph*pow(pow(cos(th),2) + pow(sin(ph),2)*pow(sin(th),2),-1)*sin(ph) )
+        trphnew = (pow(pow(cos(th),2) + pow(sin(ph),2)*pow(sin(th),2),-1.5)*
+                   (-4*trph*cos(ph)*cos(th)*pow(pow(cos(th),2) + pow(sin(ph),2)*pow(sin(th),2),0.5) 
+                   + 4*trth*pow(sin(ph),3)*pow(sin(th),4) + 
+                     4*trth*pow(cos(th),4)*sin(ph) - trth*pow(cos(th),2)*pow(sin(th),2)*(-7*sin(ph) 
+                     + sin(3*ph)))*sin(th))/4.
+    if whichaxis == 'y':
+        #rotate by -90-deg around x-axis to so Tud1[3] is angular momentum around y-axis
+        Cot = lambda x: 1/tan(x)
+        Sec = lambda x: 1/cos(x)
+        Csc = lambda x: 1/sin(x)
+        trrnew = trr
+        trthnew = pow(1 + pow(Cot(th),2)*pow(Sec(ph),2),-1) * pow(pow(cos(th),2) + pow(cos(ph),2)*pow(sin(th),2),-0.5) \
+            * pow(-1 + sin(ph),-1) \
+            * pow(1 + sin(ph),-1)*(-(trph*cos(ph)*pow(Csc(th),2)*pow(pow(cos(th),2) + pow(cos(ph),2)*pow(sin(th),2),0.5)) + 
+                                    trth*cos(th)*(pow(cos(ph),2) + pow(Cot(th),2))*sin(ph))
+        trphnew = -(trth*cos(ph)*pow(pow(cos(th),2) + pow(cos(ph),2)*pow(sin(th),2),-0.5)*sin(th)) - \
+            trph*Cot(th)*pow(1 + pow(Cot(th),2)*pow(Sec(ph),2),-1)*Sec(ph)*tan(ph)
+    if whichaxis == 'z':
+        trrnew = trr
+        trthnew = trth
+        trphnew = trph
+    Tud1new = np.zeros_like(Tud1)
+    Tud1new[1] = (trrnew  * dxdxp[1,1] + trthnew * dxdxp[2,1])/dxdxp[1,1]
+    Tud1new[2] = trthnew / dxdxp[1,1] * dxdxp[2,2]
+    Tud1new[3] = trphnew / dxdxp[1,1] * dxdxp[3,3]
+    return( Tud1new )
+    #return( trphnew )
 
 def plotnsp(no=30):
     grid3d("gdump.bin",use2d=True)
@@ -923,7 +1013,8 @@ def plotnsp(no=30):
     plt.grid(b=True)
     plt.savefig("ns_spindown.pdf",bbox_inches='tight',pad_inches=0.02)
 
-def avgvar(funclist, n1 = 0, n2 = 0 ):
+def avgvar(funclist, n1 = 0, n2 = 0, calct = 0, use2d = 1 ):
+    grid3d("gdump.bin",use2d=use2d)
     if not isinstance(funclist,list):
         funclist = [funclist,]
     num = n2 - n1
@@ -933,6 +1024,7 @@ def avgvar(funclist, n1 = 0, n2 = 0 ):
         rfd(fname)
         cvel()
         faraday()
+        Tcalcud()
         if n1 == i:
             avgval = rotatevar( funclist )
         else:
@@ -4744,6 +4836,8 @@ def plotit(ts,fs,md):
     fig.savefig('test.pdf')
 
 def iofr(rval):
+    if rval < r[0,0,0]:
+        return 0
     res = interp1d(r[:,0,0], ti[:,0,0], kind='linear')
     return(np.floor(res(rval)+0.5))
 
