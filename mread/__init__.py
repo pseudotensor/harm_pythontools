@@ -2962,7 +2962,7 @@ def fieldcalcface(gdetB1=None):
     """
     Computes the field vector potential
     """
-    global aphi
+    #global aphi
     if gdetB1 == None:
         gdetB1 = gdetB[1]
     #average in phi and add up
