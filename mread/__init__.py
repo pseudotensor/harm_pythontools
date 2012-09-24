@@ -11649,6 +11649,205 @@ def plotflux(doreload=True):
     plt.savefig("plotflux.eps",bbox_inches='tight',pad_inches=0.02,dpi=100)
     plt.savefig("plotflux.pdf",bbox_inches='tight',pad_inches=0.02,dpi=100)
 
+def plotfluxrodrigo(doreload=True,plotvarname="flux",figno=1,doretro=1,dn=0):
+    global reslist, avgmemlist
+    fig = plt.figure(figno, figsize=(10,5), dpi=100)
+    plt.clf()
+    dirlist=["/home/atchekho/run/rtf2_15r34_2pi_a-0.9gg50rbr1e3_0_0_0_faildufix2",
+             "/home/atchekho/run/rtf2_15r36.21_a-0.5_0_0_0",
+             "/home/atchekho/run/rtf2_15r35.64_a-0.2_0_0_0",
+             "/home/atchekho/run2/rtf2_15r35_a0.0_0_0_0",
+             "/home/atchekho/run/rtf2_15r35_a0.1_0_0_0",
+             "/home/atchekho/run/rtf2_15r35_a0.2_0_0_0",
+             "/home/atchekho/run/rtf2_15r34.475_a0.5_0_0_0",
+             "/home/atchekho/run/rtf2_15r34.1_pi_0_0_0",
+             "/home/atchekho/run/rtf2_15r34_2pi_a0.99gg500rbr1e3_0_0_0"
+             ]
+    caplist=[r"$\mathrm{A-0.9f}$", 
+             r"$\mathrm{A-0.5}$", 
+             r"$\mathrm{A-0.2}$", 
+             r"$\mathrm{A0}$", 
+             r"$\mathrm{A0.1}$", 
+             r"$\mathrm{A0.2}$", 
+             r"$\mathrm{A0.5}$", 
+             r"$\mathrm{A0.9f}$", 
+             r"$\mathrm{A0.99f}$"
+             ]
+    lslist=["-","--","-.",
+            "-","--","-.",
+            "-","--","-."]
+    clrlist=["blue", "cyan", "orange",
+             "black", "green", "pink",
+             "red","magenta","brown"]
+    lwlist=[2,2,2,
+            2,2,2,
+            2,2,2
+            ]
+    # dirlist.reverse()
+    # caplist.reverse()
+    # lslist.reverse()
+    # clrlist.reverse()
+    # lwlist.reverse()
+    crvlist1=[]
+    crvlist2=[]
+    lablist1=[]
+    lablist2=[]
+    if doreload:
+        reslist=[]
+        avgmemlist=[]
+    for i,dirpath in enumerate(dirlist):
+        os.chdir(dirpath)
+        grid3d("gdump.bin",use2d=True)
+        if doreload:
+            res = takeoutfloors(doreload=doreload,isinteractive=0,writefile=False)
+            avgmem = get2davg(usedefault=1)
+            reslist.append(res)
+            avgmemlist.append(avgmem)
+        else:
+            res = reslist[i]
+            avgmem = avgmemlist[i]
+        a_eta,a_Fm,a_Fe,a_Fl = res
+        assignavg2dvars(avgmem)
+        rho = avg_rho
+        bsq = avg_bsq
+        if True:
+            aphi = fieldcalc(gdetB1=avg_gdetB[0])
+            aphibh=aphi[iofr(rhor),ny/2,0]
+        else:
+            aphi = np.zeros_like(avg_B[0])
+            aphi = (0.5*np.abs(avg_gdetB[0]).sum(1)*_dx2)[:,:,None]+aphi*0
+            aphibh = aphi[iofr(rhor),0,0]
+        #aphi = scaletofullwedge(nz*(avg_psisq)**0.5)
+        #old way:
+        #unitsfactor=(4*np.pi)**0.5*2*np.pi
+        #phibh=fstot[:,ihor]/4/np.pi/FMavg**0.5*unitsfactor
+        #where fstot = (gdetB1).sum(2).sum(1)*_dx2*_dx3 at horizon
+        ihor=iofr(rhor)
+        risco=Risco(a)
+        iisco=iofr(risco)
+        if doretro == 0 and a < 0: continue
+        jval = ny/2
+        if plotvarname == "flux":
+            phibh = (4*np.pi)**0.5*aphi/a_Fm**0.5
+            plotvar = phibh
+        elif plotvarname == "bz":
+            Bz = -r*dxdxp[2,2]*avg_gdetB[1]/gdet
+            #Bz = -avg_gdetB[1]/dxdxp[1,1]/r**2 #fake derivative for testing
+            Bzosqrtmdot = (4*np.pi)**0.5*Bz/a_Fm**0.5
+            plotvar = radavg(Bzosqrtmdot,dn=dn)
+        elif plotvarname == "brbh":
+            Br = dxdxp[1,1]*avg_B[0]
+            Brosqrtmdot = (4*np.pi)**0.5*Br/a_Fm**0.5
+            plotvar = Brosqrtmdot #radavg(Brosqrtmdot,dn=dn)
+            jval = ny/4
+        elif plotvarname == "brbhavg":
+            area = (gdet*_dx2*(aphi<aphibh)).mean(-1).sum(-1)
+            area = area[:,None,None]
+            Bravg = aphibh/area*dxdxp[1,1]
+            Bravgosqrtmdot = (4*np.pi)**0.5*Bravg/a_Fm**0.5
+            plotvar = Bravgosqrtmdot #radavg(Brosqrtmdot,dn=dn)
+            jval = 0
+            plt.figure(0)
+            plt.plot(omegah_compute(a)*2,Bravgosqrtmdot[iofr(rhor),0,0],'s',color=clrlist[i])
+            if i == len(caplist) - 1:
+                myomh = np.arange(-0.5,0.5,0.001)
+                #bfit = 65+(130.-65.)/(omegah_compute(0.99)-0)*myomh
+                bfit = 65 *( 1 + 2.2 * myomh)
+                bfit[myomh<0] =  bfit[myomh<0]*0+65
+                plt.plot(myomh*2,bfit,'orange')
+                plt.xlabel(r"$\Omega_{\rm H}(a)/\Omega_{\rm H}(a=1)$",fontsize=20)
+                plt.ylabel(r"$b_{\rm H}=\langle B_{\rm H}\rangle/(\dot M r_g^2 c)^{1/2}$",fontsize=20)
+                plt.text(0.4,110,r"$b_{\rm H} = 65[1+2.2 \Omega_{\rm H}(a)/\Omega_{\rm H}(a=1)$]",ha="right",fontsize=20,color='orange')
+                plt.xlim(-1,1)
+            plt.figure(figno)
+        else:
+            pdb.set_trace()
+            print( "Unknown plotvarname %s" % plotvarname )
+            return
+        if dirpath == "/home/atchekho/run/rtf2_15r34.1_betax0.5_0_0_0_2xphi_restart15000" or \
+           dirpath == "/home/atchekho/run/rtf2_15r34.1_betax0.5_0_0_0":
+            iof10 = iofr(10)
+            crv=plt.plot(r[:iof10,jval,0],plotvar[:iof10,jval,0],label=caplist[i],ls=lslist[i],color=clrlist[i],lw=lwlist[i])
+        else:
+            crv=plt.plot(r[ihor:,jval,0],plotvar[ihor:,jval,0],label=caplist[i],ls=lslist[i],color=clrlist[i],lw=lwlist[i])
+        #print a, risco, iisco, r[iisco,jval,0], plotvar[iisco,jval,0] 
+        plt.plot(r[iisco,jval,0],plotvar[iisco,jval,0],'o',color=clrlist[i],lw=lwlist[i])
+        plt.plot(r[ihor,jval,0],plotvar[ihor,jval,0],'s',color=clrlist[i],lw=lwlist[i])
+        if a >= 0:
+            crvlist1.append(crv)
+            lablist1.append(caplist[i])
+        else:
+            crvlist2.append(crv)
+            lablist2.append(caplist[i])
+    if plotvarname == "flux":
+        plt.xlim(1,20.-1e-5)
+        plt.ylim(0,139.99)
+        loc1 = "upper left"
+        ncol1 = 3
+        loc2 = "lower right"
+        ncol2 = 2
+        plt.ylabel(r'$\langle\phi(r,\theta=\pi/2)\rangle$        ',fontsize=22,ha="center")
+    elif plotvarname == "bz":
+        plt.plot(r[:,0,0],0.25/r[:,0,0]**1.25,'b-')
+        plt.xlim(1,20.-1e-5)
+        plt.ylim(1e-2,1)
+        plt.xscale("log")
+        plt.yscale("log")
+        loc1 = "upper right"
+        ncol1 = 3
+        loc2 = "upper right"
+        ncol2 = 1
+    elif plotvarname == "brbh":
+        plt.plot(r[:,0,0],5./r[:,0,0]**1.25,'b-')
+        plt.plot(r[:,0,0],8./r[:,0,0]**2,'g-')
+        plt.xlim(1,20.-1e-5)
+        plt.ylim(1e-2,10)
+        plt.xscale("log")
+        plt.yscale("log")
+        loc1 = "lower left"
+        ncol1 = 3
+        loc2 = "upper right"
+        ncol2 = 1
+    elif plotvarname == "brbhavg":
+        # plt.plot(r[:,0,0],160./r[:,0,0]**.75,'r-')
+        plt.plot(r[iofr(1.1):iofr(2.2),0,0],170./r[iofr(1.1):iofr(2.2),0,0]**1.25,color='orange',lw=3)
+        plt.plot(r[:,0,0],100./r[:,0,0]**1.75,color='brown',lw=3)
+        plt.text(1.5,120,r"$\propto r^{-5/4}$",fontsize=20,color='orange')
+        plt.text(1.1,30,r"$\propto r^{-7/4}$",fontsize=20,color='brown')
+        # plt.plot(r[:,0,0],175./r[:,0,0]**1.75,'g-')
+        # plt.plot(r[:,0,0],200./r[:,0,0]**2,'b-')
+        plt.xlim(1,20.-1e-5)
+        plt.ylim(1,200)
+        plt.xscale("log")
+        plt.yscale("log")
+        loc1 = "lower left"
+        ncol1 = 3
+        loc2 = "upper right"
+        ncol2 = 1
+        plt.ylabel(r'$\langle B^r_{\rm jet}\rangle/(\dot M r_g^2 c)^{1/2}$',fontsize=22,ha="right")
+    plt.xlabel(r'$r\ [r_g]$',fontsize=20)
+    #plt.legend(loc="upper left",ncol=1)
+    leg1=plt.legend(crvlist1,lablist1,loc=loc1,title=r"${\rm Prograde}$:",frameon=True,labelspacing=0.15,ncol=ncol1)
+    if doretro:
+        leg2=plt.legend(crvlist2,lablist2,loc=loc2,title=r"${\rm Retrograde}$:",frameon=True,labelspacing=0.15,ncol=ncol2)
+        plt.gca().add_artist(leg1)
+    else:
+        leg2 = leg1
+    for t in leg1.get_texts() + leg2.get_texts():
+        t.set_fontsize(20)    # the legend text fontsize
+    leg1.get_title().set_fontsize(20)
+    leg2.get_title().set_fontsize(20)
+    plt.grid(b=True)
+    for label in plt.gca().get_xticklabels() + plt.gca().get_yticklabels():
+        label.set_fontsize(18)
+    plt.savefig("plot_%s.eps" % plotvarname,bbox_inches='tight',pad_inches=0.02,dpi=100)
+    plt.savefig("plot_%s.pdf" % plotvarname,bbox_inches='tight',pad_inches=0.02,dpi=100)
+    if plotvarname == "brbhavg":
+        plt.figure(0)
+        plt.savefig("plot_bjetvsomh.eps",bbox_inches='tight',pad_inches=0.02,dpi=100)
+        plt.savefig("plot_bjetvsomh.pdf",bbox_inches='tight',pad_inches=0.02,dpi=100)
+        plt.figure(figno)
+
 def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,bare=0,fc='k',bor=200):
     grid3d("gdump.bin",use2d=True)
     flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
@@ -11763,9 +11962,15 @@ def mkjetretrofig1():
         plt.savefig("plotmkmdot.pdf",bbox_inches='tight',pad_inches=0.02)
 
 
-def radavg(vec):
+def radavg(vec,dn=1):
     avgvec = np.copy(vec)
-    avgvec[1:-1] = (avgvec[0:-2]+avgvec[1:-1]+avgvec[2:])/3.
+    if dn < 0: dn = 0
+    l = len(vec)
+    avgvec[dn:l-dn] *= 0
+    for i1 in xrange(0,dn+1):
+        i2 = l - 2*dn + i1
+        avgvec[dn:l-dn] += vec[i1:i2]
+    avgvec[dn:l-dn] /= (dn+1.)
     return(avgvec)
 
 def plotBavg(doradavg=True):
