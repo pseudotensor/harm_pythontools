@@ -11649,8 +11649,8 @@ def plotflux(doreload=True):
     plt.savefig("plotflux.eps",bbox_inches='tight',pad_inches=0.02,dpi=100)
     plt.savefig("plotflux.pdf",bbox_inches='tight',pad_inches=0.02,dpi=100)
 
-def plotfluxrodrigo(doreload=True,plotvarname="flux",figno=1,doretro=1,dn=0):
-    global reslist, avgmemlist
+def plotfluxrodrigo(doreload=True,plotvarname="flux",figno=1,doretro=1,dn=0,savefiles=0):
+    global reslist, avgmemlist, ftotlist, fsqtotlist
     fig = plt.figure(figno, figsize=(10,5), dpi=100)
     plt.clf()
     dirlist=["/home/atchekho/run/rtf2_15r34_2pi_a-0.9gg50rbr1e3_0_0_0_faildufix2",
@@ -11695,56 +11695,93 @@ def plotfluxrodrigo(doreload=True,plotvarname="flux",figno=1,doretro=1,dn=0):
     if doreload:
         reslist=[]
         avgmemlist=[]
+        ftotlist=[]
+        fsqtotlist=[]
     for i,dirpath in enumerate(dirlist):
         os.chdir(dirpath)
         grid3d("gdump.bin",use2d=True)
+        ihor = iofr(rhor)
         if doreload:
-            res = takeoutfloors(doreload=doreload,isinteractive=0,writefile=False)
+            qtymem=getqtyvstime(ihor,0.2)
+            qty_ts = qtymem[0,:,0][0]
+            qty_te = qtymem[0,:,0][-1]
+            res = takeoutfloors(doreload=doreload,isinteractive=0,writefile=False,qtymem=qtymem)
             avgmem = get2davg(usedefault=1)
+            assignavg2dvars(avgmem)
+            print("%s: a = %g:" % (caplist[i][9:-2],a) )
+            print("QTY  : ts = %5g, te = %5g" % (qty_ts, qty_te))
+            print("AVG2D: ts = %5g, te = %5g" % (avg_ts[0], avg_te[0]))
+            md, ftot, fsqtot, f30, fsq30, pjemtot  = plotqtyvstime(qtymem,ihor=ihor,whichplot=-1,fti=avg_ts[0],ftf=avg_te[0])
             reslist.append(res)
             avgmemlist.append(avgmem)
+            ftotlist.append(ftot)
+            fsqtotlist.append(fsqtot)
+            qtymem = None
+            del qtymem
         else:
             res = reslist[i]
             avgmem = avgmemlist[i]
+            ftot = ftotlist[i]
+            fsqtot = fsqtotlist[i]
         a_eta,a_Fm,a_Fe,a_Fl = res
         assignavg2dvars(avgmem)
         rho = avg_rho
         bsq = avg_bsq
         if True:
             aphi = fieldcalc(gdetB1=avg_gdetB[0])
-            aphibh=aphi[iofr(rhor),ny/2,0]
+            aphibh=aphi[ihor,ny/2,0]
         else:
             aphi = np.zeros_like(avg_B[0])
             aphi = (0.5*np.abs(avg_gdetB[0]).sum(1)*_dx2)[:,:,None]+aphi*0
-            aphibh = aphi[iofr(rhor),0,0]
+            aphibh = aphi[ihor,0,0]
+        avg_absgdetB0symm = 0.5*(avg_absgdetB[0]+avg_absgdetB[0][:,::-1])
+        avg_absgdetB0symm[:,ny/2:] *= -1
+        aphiabs = fieldcalcface(gdetB1=avg_absgdetB0symm)*(4*np.pi)**0.5/a_Fm**0.5
+        aphiabsbh = aphiabs[iofr(rhor),ny/2,0]
+        #getting fsqtot the old way
+        #unitsfactor=(4*np.pi)**0.5*2*np.pi
+        #phibh=fstot[:,ihor]/4/np.pi/FMavg**0.5*unitsfactor
+        #where fstot = (gdetB1).sum(2).sum(1)*_dx2*_dx3 at horizon
+        phitotbh   = (4*np.pi)**0.5*(0.5*ftot)  /a_Fm**0.5
+        phitotbhsq = (4*np.pi)**0.5*(0.5*fsqtot)/a_Fm**0.5
         #aphi = scaletofullwedge(nz*(avg_psisq)**0.5)
         #old way:
         #unitsfactor=(4*np.pi)**0.5*2*np.pi
         #phibh=fstot[:,ihor]/4/np.pi/FMavg**0.5*unitsfactor
         #where fstot = (gdetB1).sum(2).sum(1)*_dx2*_dx3 at horizon
-        ihor=iofr(rhor)
         risco=Risco(a)
         iisco=iofr(risco)
         if doretro == 0 and a < 0: continue
         jval = ny/2
+        #Bz
+        if 1:
+            Bz = -r*dxdxp[2,2]*avg_gdetB[1]/gdet
+        else:
+            Bz = r*dxdxp[2,2]*avg_absgdetB[1]/gdet
+        #Bz = -avg_gdetB[1]/dxdxp[1,1]/r**2 #fake derivative for testing
+        Bzosqrtmdot = (4*np.pi)**0.5*Bz/a_Fm**0.5
+        Br = dxdxp[1,1]*avg_absB[0]
+        Brosqrtmdot = (4*np.pi)**0.5*Br/a_Fm**0.5
+        #Bravg
+        if 0:
+            area = (gdet*_dx2*(aphi<aphibh)).mean(-1).sum(-1)
+            area = area[:,None,None]
+            Bravg = aphibh/area*dxdxp[1,1]
+        else:
+            area = (gdet*_dx2*(aphiabs<aphiabsbh)).mean(-1).sum(-1)
+            #pdb.set_trace()
+            area = area[:,None,None]
+            Bravg = aphiabsbh/area*dxdxp[1,1]
         if plotvarname == "flux":
             phibh = (4*np.pi)**0.5*aphi/a_Fm**0.5
             plotvar = phibh
         elif plotvarname == "bz":
-            Bz = -r*dxdxp[2,2]*avg_gdetB[1]/gdet
-            #Bz = -avg_gdetB[1]/dxdxp[1,1]/r**2 #fake derivative for testing
-            Bzosqrtmdot = (4*np.pi)**0.5*Bz/a_Fm**0.5
             plotvar = radavg(Bzosqrtmdot,dn=dn)
         elif plotvarname == "brbh":
-            Br = dxdxp[1,1]*avg_B[0]
-            Brosqrtmdot = (4*np.pi)**0.5*Br/a_Fm**0.5
             plotvar = Brosqrtmdot #radavg(Brosqrtmdot,dn=dn)
             jval = ny/4
         elif plotvarname == "brbhavg":
-            area = (gdet*_dx2*(aphi<aphibh)).mean(-1).sum(-1)
-            area = area[:,None,None]
-            Bravg = aphibh/area*dxdxp[1,1]
-            Bravgosqrtmdot = (4*np.pi)**0.5*Bravg/a_Fm**0.5
+            Bravgosqrtmdot = Bravg
             plotvar = Bravgosqrtmdot #radavg(Brosqrtmdot,dn=dn)
             jval = 0
             plt.figure(0)
@@ -11752,13 +11789,39 @@ def plotfluxrodrigo(doreload=True,plotvarname="flux",figno=1,doretro=1,dn=0):
             if i == len(caplist) - 1:
                 myomh = np.arange(-0.5,0.5,0.001)
                 #bfit = 65+(130.-65.)/(omegah_compute(0.99)-0)*myomh
-                bfit = 65 *( 1 + 2.2 * myomh)
-                bfit[myomh<0] =  bfit[myomh<0]*0+65
+                bfit =  1.1 + 2.2 * myomh
+                bfit[myomh<0] =  bfit[myomh<0]*0+1.1
                 plt.plot(myomh*2,bfit,'orange')
                 plt.xlabel(r"$\Omega_{\rm H}(a)/\Omega_{\rm H}(a=1)$",fontsize=20)
                 plt.ylabel(r"$b_{\rm H}=\langle B_{\rm H}\rangle/(\dot M r_g^2 c)^{1/2}$",fontsize=20)
-                plt.text(0.4,110,r"$b_{\rm H} = 65[1+2.2 \Omega_{\rm H}(a)/\Omega_{\rm H}(a=1)$]",ha="right",fontsize=20,color='orange')
+                plt.text(0.3,1.5,r"$b_{\rm H} = 1.1[1+2\Omega_{\rm H}(a)/\Omega_{\rm H}(a=1)$]",ha="right",fontsize=20,color='orange')
                 plt.xlim(-1,1)
+                plt.ylim(0,2.5)
+            plt.figure(figno)
+        elif plotvarname == "phi":
+            #phibh = (4*np.pi)**0.5*aphi/a_Fm**0.5
+            if 0:
+                plotvar = aphi
+            else:
+                plotvar = aphiabs
+            jval = ny/2
+            plt.figure(0)
+            plt.plot(omegah_compute(a)*2,phitotbh,'s',color=clrlist[i])
+            plt.plot(omegah_compute(a)*2,phitotbhsq,'v',color=clrlist[i])
+            plt.plot(omegah_compute(a)*2,aphibh*(4*np.pi)**0.5/a_Fm**0.5,'^',color=clrlist[i])
+            plt.plot(omegah_compute(a)*2,np.max(aphiabs[ihor,:,0]),'o',color=clrlist[i])
+            plt.xlim(-1,1)
+            plt.ylim(0,65)
+            # if i == len(caplist) - 1:
+            #     myomh = np.arange(-0.5,0.5,0.001)
+            #     #bfit = 65+(130.-65.)/(omegah_compute(0.99)-0)*myomh
+            #     bfit = 65 *( 1 + 2.2 * myomh)
+            #     bfit[myomh<0] =  bfit[myomh<0]*0+65
+            #     plt.plot(myomh*2,bfit,'orange')
+            #     plt.xlabel(r"$\Omega_{\rm H}(a)/\Omega_{\rm H}(a=1)$",fontsize=20)
+            #     plt.ylabel(r"$b_{\rm H}=\langle B_{\rm H}\rangle/(\dot M r_g^2 c)^{1/2}$",fontsize=20)
+            #     plt.text(0.4,110,r"$b_{\rm H} = 65[1+2.2 \Omega_{\rm H}(a)/\Omega_{\rm H}(a=1)$]",ha="right",fontsize=20,color='orange')
+            #     plt.xlim(-1,1)
             plt.figure(figno)
         else:
             pdb.set_trace()
@@ -11779,6 +11842,30 @@ def plotfluxrodrigo(doreload=True,plotvarname="flux",figno=1,doretro=1,dn=0):
         else:
             crvlist2.append(crv)
             lablist2.append(caplist[i])
+        if savefiles:
+            fname="A%g.dat" % a
+            print("Opening %s" % fname)
+            fout = open( fname, "w" )
+            fout.write("#a \t nx \t ny \t nz \t tavgstart \t tavgend \t eta       \t phiabs \t sqrtphiabssq \t bh\n")
+            fout.write("%g \t %d \t %d \t %d \t %8g \t %8g \t %g \t %g \t %9g \t %g\n" %
+                       (a,    nx,   ny,   nz, avg_ts[0], avg_te[0], a_eta, phitotbh, phitotbhsq,
+                        Bravg[iofr(rhor),0,0]) )
+            fout.write("#i  r        bh     |brdisk|  bzdisk   phi\n")
+            arrsave = [ti[:,0,0], 
+                       r[:,0,0],
+                       Bravg[:,0,0],
+                       Brosqrtmdot[:,ny/2,0],
+                       Bzosqrtmdot[:,ny/2,0],
+                       aphi[:,ny/2,0]
+                       ]
+            # ii = iofr(r)
+            # for i in xrange(len(arrsave)):
+            #     arrsave[i] = (arrsave[i])[ii].ravel()
+            fout.flush()
+            os.fsync(fout.fileno())
+            np.savetxt(fout, np.array(arrsave).T, 
+                       fmt="%3d %g %g %g %g %g" )
+            fout.close()
     if plotvarname == "flux":
         plt.xlim(1,20.-1e-5)
         plt.ylim(0,139.99)
@@ -11795,8 +11882,9 @@ def plotfluxrodrigo(doreload=True,plotvarname="flux",figno=1,doretro=1,dn=0):
         plt.yscale("log")
         loc1 = "upper right"
         ncol1 = 3
-        loc2 = "upper right"
+        loc2 = "lower left"
         ncol2 = 1
+        plt.ylabel(r'$B^z_{\rm disk}/(\dot M r_g^2 c)^{1/2}$',fontsize=22,ha="right")
     elif plotvarname == "brbh":
         plt.plot(r[:,0,0],5./r[:,0,0]**1.25,'b-')
         plt.plot(r[:,0,0],8./r[:,0,0]**2,'g-')
@@ -11810,14 +11898,14 @@ def plotfluxrodrigo(doreload=True,plotvarname="flux",figno=1,doretro=1,dn=0):
         ncol2 = 1
     elif plotvarname == "brbhavg":
         # plt.plot(r[:,0,0],160./r[:,0,0]**.75,'r-')
-        plt.plot(r[iofr(1.1):iofr(2.2),0,0],170./r[iofr(1.1):iofr(2.2),0,0]**1.25,color='orange',lw=3)
-        plt.plot(r[:,0,0],100./r[:,0,0]**1.75,color='brown',lw=3)
-        plt.text(1.5,120,r"$\propto r^{-5/4}$",fontsize=20,color='orange')
-        plt.text(1.1,30,r"$\propto r^{-7/4}$",fontsize=20,color='brown')
+        plt.plot(r[iofr(1.):iofr(2.2),0,0],2.65/r[iofr(1.):iofr(2.2),0,0]**1.25,color='orange',lw=3)
+        plt.plot(r[:,0,0],10./r[:,0,0]**1.75,color='brown',lw=3)
+        plt.text(1.1,2.5,r"$\propto r^{-5/4}$",fontsize=20,color='orange')
+        plt.text(4.2,1.57,r"$\propto r^{-7/4}$",fontsize=20,color='brown')
         # plt.plot(r[:,0,0],175./r[:,0,0]**1.75,'g-')
         # plt.plot(r[:,0,0],200./r[:,0,0]**2,'b-')
         plt.xlim(1,20.-1e-5)
-        plt.ylim(1,200)
+        plt.ylim(1e-2,10)
         plt.xscale("log")
         plt.yscale("log")
         loc1 = "lower left"
@@ -11825,6 +11913,14 @@ def plotfluxrodrigo(doreload=True,plotvarname="flux",figno=1,doretro=1,dn=0):
         loc2 = "upper right"
         ncol2 = 1
         plt.ylabel(r'$\langle B^r_{\rm jet}\rangle/(\dot M r_g^2 c)^{1/2}$',fontsize=22,ha="right")
+    elif plotvarname == "phi":
+        plt.xlim(1,20.-1e-5)
+        plt.ylim(0,139.99)
+        loc1 = "upper left"
+        ncol1 = 3
+        loc2 = "lower right"
+        ncol2 = 2
+        plt.ylabel(r'$\langle\phi_{\rm BH}(r,\theta=\pi/2)\rangle$        ',fontsize=22,ha="center")
     plt.xlabel(r'$r\ [r_g]$',fontsize=20)
     #plt.legend(loc="upper left",ncol=1)
     leg1=plt.legend(crvlist1,lablist1,loc=loc1,title=r"${\rm Prograde}$:",frameon=True,labelspacing=0.15,ncol=ncol1)
@@ -11840,12 +11936,12 @@ def plotfluxrodrigo(doreload=True,plotvarname="flux",figno=1,doretro=1,dn=0):
     plt.grid(b=True)
     for label in plt.gca().get_xticklabels() + plt.gca().get_yticklabels():
         label.set_fontsize(18)
-    plt.savefig("plot_%s.eps" % plotvarname,bbox_inches='tight',pad_inches=0.02,dpi=100)
-    plt.savefig("plot_%s.pdf" % plotvarname,bbox_inches='tight',pad_inches=0.02,dpi=100)
+    plt.savefig("../plot_%s.eps" % plotvarname,bbox_inches='tight',pad_inches=0.02,dpi=100)
+    plt.savefig("../plot_%s.pdf" % plotvarname,bbox_inches='tight',pad_inches=0.02,dpi=100)
     if plotvarname == "brbhavg":
         plt.figure(0)
-        plt.savefig("plot_bjetvsomh.eps",bbox_inches='tight',pad_inches=0.02,dpi=100)
-        plt.savefig("plot_bjetvsomh.pdf",bbox_inches='tight',pad_inches=0.02,dpi=100)
+        plt.savefig("../plot_bjetvsomh.eps",bbox_inches='tight',pad_inches=0.02,dpi=100)
+        plt.savefig("../plot_bjetvsomh.pdf",bbox_inches='tight',pad_inches=0.02,dpi=100)
         plt.figure(figno)
 
 def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,bare=0,fc='k',bor=200):
