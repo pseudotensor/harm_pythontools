@@ -862,6 +862,51 @@ def getrandxyz(sz=100):
 def mksz(sz=100):
     np.savetxt("cs.txt",getrandxyz(sz=sz))
 
+def saveavgvars(fname="avgvars.npz"):
+    global avgbsq, avgrho, avgug, avgbsqow, avgbsqorho, avgBr, avgBth, avgBph, avguut, avguur, avguuth, avguuph
+    global trth,trphi,trphicons,trthEM,trphiEM
+    np.savez(fname,
+        avgbsq=avgbsq,
+        avgrho=avgrho,
+        avgug=avgug,
+        avgbsqow=avgbsqow,
+        avgbsqorho=avgbsqorho,
+        avgBr=avgBr,
+        avgBth=avgBth,
+        avgBph=avgBph,
+        avguut=avguut,
+        avguur=avguur,
+        avguuth=avguuth,
+        avguuph=avguuph,
+        trth=trth,
+        trphi=trphi,
+        trphicons=trphicons,
+        trthEM=trthEM,
+        trphiEM=trphiEM )
+
+def loadavgvars(fname="avgvars.npz"):
+    global avgbsq, avgrho, avgug, avgbsqow, avgbsqorho, avgBr, avgBth, avgBph, avguut, avguur, avguuth, avguuph
+    global trth,trphi,trphicons,trthEM,trphiEM
+    npzfile = np.load(fname)
+    avgbsq=npzfile['avgbsq']
+    avgrho=npzfile['avgrho']
+    avgug=npzfile['avgug']
+    avgbsqow=npzfile['avgbsqow']
+    avgbsqorho=npzfile['avgbsqorho']
+    avgBr=npzfile['avgBr']
+    avgBth=npzfile['avgBth']
+    avgBph=npzfile['avgBph']
+    avguut=npzfile['avguut']
+    avguur=npzfile['avguur']
+    avguuth=npzfile['avguuth']
+    avguuph=npzfile['avguuph']
+    trth=npzfile['trth']
+    trphi=npzfile['trphi']
+    trphicons=npzfile['trphicons']
+    trthEM=npzfile['trthEM']
+    trphiEM=npzfile['trphiEM']
+
+
 def computevars(n1=31, n2 = 53,use2d=True,calct=0):
     global avgbsq, avgrho, avgug, avgbsqow, avgbsqorho, avgBr, avgBth, avgBph, avguut, avguur, avguuth, avguuph
     global trth,trphi,trphicons,trthEM,trphiEM
