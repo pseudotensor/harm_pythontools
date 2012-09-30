@@ -44,26 +44,56 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
-def mkvelvsr():
-    os.chdir("/home/atchekho/run2/hf_60_r10h05_ff_om02_ps2_256x128x128_32x16x32")
-    grid3d("gdump.bin", use2d = 1)
-    rfd("fieldline0064.bin")
-    plt.plot(OmegaNS*r[:,0,0],(uu[0])[:,ny/2,0],label="Force-free")
+def ijkavg(v):
+    #vravg = np.zeros((v.shape[0]-1,v.shape[1]-1,v.shape[2]-1))
+    vavg = 0.5*(v[1:]+v[:-1])
+    vavg = 0.5*(vavg[:,1:]+vavg[:,:-1])
+    vavg[:,:,1:] = 0.5*(vavg[:,:,1:]+vavg[:,:,:-1])
+    vavg[:,:,0]  = 0.5*(vavg[:,:,-1]+vavg[:,:,0])
+    return(vavg)
+
+
+def mkvelvsr(dn=2,recomputeavg=0,doreload=0,fntsize=24):
+    # os.chdir("/home/atchekho/run2/hf_60_r10h05_ff_om02_ps2_256x128x128_32x16x32")
+    # grid3d("gdump.bin", use2d = 1)
+    # rfd("fieldline0064.bin")
+    # plt.plot(OmegaNS*r[:,0,0],(uu[0])[:,ny/2,0],label="Force-free")
+    fig=plt.figure(1,figsize=(6,6))
+    ax = fig.add_subplot(111, aspect='equal')
     os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_sph_ps2_256x128x128")
-    grid3d("gdump.bin", use2d = 1)
-    rfd("fieldline0064.bin")
-    #computevars(n1=64,n2=137)
-    #plt.plot(OmegaNS*r[:,0,0],(uu[1]*dxdxp[1,1])[:,ny/2,0],label="Relativistic MHD")
-    plt.plot(OmegaNS*r[:,0,0],((1+avguur**2+(r*avguuth)**2+(r*np.sin(h)*avguuph)**2)**0.5)[:,ny/2,0],label="Relativistic MHD")
+    if 'gv3' not in globals() or doreload:
+        grid3d("gdump.bin", use2d = 1)
+        rfd("fieldline0064.bin")
+    if 'avguur' not in globals() or recomputeavg:
+        computevars(n1=64,n2=137)
+    #plt.plot(OmegaNS*r[:,0,0],radavg(uu[1]*dxdxp[1,1],dn=1)[:,ny/2,0])
+    #plt.plot(OmegaNS*r[:,0,0],radavg(avguur,dn=1)[:,ny/2,0])
+    #radial, theta, and phi-average along theta = pi/2, phi = 0
+    #allavguur = 0.5*radavg(avguur[:,ny/2-1:ny/2+1,0].mean(-1)+avguur[:,ny/2-1:ny/2+1,-1].mean(-1),dn=dn)
+    allavguur = 0.5*radavg(avguur[:,ny/2-dn:ny/2+dn,0:dn].mean(-1).mean(-1)+avguur[:,ny/2-dn:ny/2+dn,nz-1-dn:nz].mean(-1).mean(-1),dn=dn)
+    plt.clf()
+    plt.plot(OmegaNS*r[:,0,0],allavguur,label=r"${\rm Relativistic\ MHD}$",color='g',lw=2)
+    plt.plot(OmegaNS*r[:,0,0],OmegaNS*r[:,0,0],label=r"${\rm Split{-}monopole\ force{-}free}$",color='r',lw=2)
+    #plt.plot(OmegaNS*r[:,0,0],((1+avguur**2+(r*avguuth)**2+(r*np.sin(h)*avguuph)**2)**0.5)[:,ny/2,0],label="Relativistic MHD")
     # os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_sph_c33om0375_ps2_512x256x256_32x32x64")
     # grid3d("gdump.bin", use2d = 1)
     # rfd("fieldline0064.bin")
     # #computevars(n1=64,n2=137)
     # plt.plot(OmegaNS*r[:,0,0],(uu[1]*dxdxp[1,1])[:,ny/2,0],label="Relativistic MHD hires")
-    plt.legend(loc="upper left")
-    plt.xlim(0,3)
-    plt.ylim(0,10)
-    
+    leg = plt.legend(loc="upper left")
+    plt.xlim(OmegaNS*Rin,4-1e-5)
+    plt.ylim(0,6.-1e-5)
+    plt.xlabel(r"$r/R_{\rm LC}$",fontsize=fntsize)
+    plt.ylabel(r"$u^r$",fontsize=fntsize)
+    ax = plt.gca()
+    for label in ax.get_xticklabels() + ax.get_yticklabels():
+        label.set_fontsize(fntsize)
+    plt.grid(b=1)
+    for t in leg.get_texts():
+       t.set_fontsize(20)    # the legend text fontsize
+    #ax.set_aspect('equal')
+
+
 
 def mkfig1(dosavefig=1,figno=1):
     os.chdir("/home/atchekho/run2/hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1")
@@ -147,6 +177,7 @@ def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,
     if whichvar == 'Bphi':
         mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=40,plotlen=2.5/OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=(ii1%32)/32.*nz,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=2,ncell=1600,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5,dosavefig=0,cb=cb,fntsize=20,vmin=vmin,vmax=vmax,whichvar=whichvar,**kwargs)
     else:
+        deltak = 0
         if whichvar == 'bsqow':
             if 'avgbsq' in globals():
                 print "Using time-averages"
@@ -161,6 +192,13 @@ def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,
             else:
                 print "No time-averages computed, so using instantaneous values"
                 fnc = lambda: -np.log10(4*np.pi*amin(radavg(bsq/(rho+gam*ug)),800+0*bsq))
+        elif whichvar == 'uur':
+            if 'avgbsq' in globals():
+                print "Using time-averages"
+                fnc = lambda: avguur
+            else:
+                print "No time-averages computed, so using instantaneous values"
+                fnc = lambda: uu[1]*dxdxp[1,1]
         mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',
                 dobhfield=40,plotlen=2.5/OmegaNS,isnstar=True,
                 minlenbhfield=0.0,density=1.2,whichr=1.3,
@@ -12060,17 +12098,30 @@ def mkjetretrofig1():
         plt.savefig("plotmkmdot.eps",bbox_inches='tight',pad_inches=0.02)
         plt.savefig("plotmkmdot.pdf",bbox_inches='tight',pad_inches=0.02)
 
+def cycle(v,n=1,axis=0):
+    w = v.swapaxes(0,axis)
+    if n != 0:
+        return( np.concatenate(w[-n:],w[n:]).swapaxes(0,axis) )
+    else:
+        return( v )
 
-def radavg(vec,dn=1):
-    avgvec = np.copy(vec)
+def radavg(vecin,dn=1,axis=0):
+    vec = vecin.swapaxes(0,axis)
     if dn < 0: dn = 0
-    l = len(vec)
-    avgvec[dn:l-dn] *= 0
-    for i1 in xrange(0,dn+1):
-        i2 = l - 2*dn + i1
-        avgvec[dn:l-dn] += vec[i1:i2]
-    avgvec[dn:l-dn] /= (dn+1.)
-    return(avgvec)
+    l = vec.shape[0]
+    if axis == 3:
+        avgvec = np.zeros_like(vec)
+        for i1 in xrange(-dn,dn+1):
+            avgvec += cycle(vec,n=i1)
+        avgvec /= (2.*dn+1.)
+    else:
+        avgvec = np.copy(vec)
+        avgvec[dn:l-dn] *= 0
+        for i1 in xrange(0,2*dn+1):
+            i2 = l - 2*dn + i1
+            avgvec[dn:l-dn] += vec[i1:i2]
+        avgvec[dn:l-dn] /= (2.*dn+1.)
+    return(avgvec.swapaxes(0,axis))
 
 def plotBavg(doradavg=True):
     Br = dxdxp[1,1]*avg_B[0]+dxdxp[1,2]*avg_B[1]
