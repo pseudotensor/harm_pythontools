@@ -12078,7 +12078,7 @@ def plotfluxrodrigo(doreload=True,plotvarname="flux",figno=1,doretro=1,dn=0,save
         plt.savefig("../plot_bjetvsomh.pdf",bbox_inches='tight',pad_inches=0.02,dpi=100)
         plt.figure(figno)
 
-def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,f=None,bare=0,fc='k',bor=200,maxaphi=None,dolc=1):
+def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,f=None,bare=0,fc='k',bor=200,maxaphi=None,dolc=1,cb=0):
     grid3d("gdump.bin",use2d=True)
     flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
     flist.sort()
@@ -12145,7 +12145,7 @@ def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,f=None,bare=0,fc='k',bor=200,maxa
                 #plc(uu[1]*dxdxp[1,1],cb=True,levels=np.arange(0,10,1),xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,10);plt.ylim(-5,5)
                 plc(uu[0],cb=True,levels=np.arange(0,10,1),xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,10);plt.ylim(-5,5)
             elif f is not None:
-                plc(f(),xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,10);plt.ylim(-5,5)
+                plc(f(),xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=cb);plt.xlim(0,10);plt.ylim(-5,5)
             rmax = len
             plt.xlim(0,rmax)
             plt.ylim(-0.5*rmax,0.5*rmax)
