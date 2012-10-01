@@ -52,8 +52,15 @@ def ijkavg(v):
     vavg[:,:,0]  = 0.5*(vavg[:,:,-1]+vavg[:,:,0])
     return(vavg)
 
+def rhpto123(vecu):
+    vecout = np.empty((4,vecu[1].shape[0],vecu[1].shape[1],vecu[1].shape[2]),dtype=vecu[1].dtype)
+    vecout[0] = vecu[0]
+    vecout[1] = vecu[1]/dxdxp[1,1]
+    vecout[2] = (vecu[2]-dxdxp[2,1]*vecu[1])/dxdxp[2,2]
+    vecout[3] = vecu[3]/dxdxp[3,3]
+    return(vecout)
 
-def mkvelvsr(dn=2,recomputeavg=0,doreload=0,fntsize=24):
+def mkvelvsr(dn=2,recomputeavg=0,doreload=0,fntsize=28,avgfname="avgvars.npz"):
     # os.chdir("/home/atchekho/run2/hf_60_r10h05_ff_om02_ps2_256x128x128_32x16x32")
     # grid3d("gdump.bin", use2d = 1)
     # rfd("fieldline0064.bin")
@@ -63,36 +70,80 @@ def mkvelvsr(dn=2,recomputeavg=0,doreload=0,fntsize=24):
     os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_sph_ps2_256x128x128")
     if 'gv3' not in globals() or doreload:
         grid3d("gdump.bin", use2d = 1)
-        rfd("fieldline0064.bin")
-    if 'avguur' not in globals() or recomputeavg:
-        computevars(n1=64,n2=137)
+        # if os.path.isfile("dumps/fieldline0064.bin"):
+        #     rfd("fieldline0064.bin")
+    if 'avguur' not in globals():
+        if recomputeavg or not os.path.isfile( avgfname ):
+            computevars(n1=64,n2=137)
+        else:
+            loadavgvars(fname=avgfname)
     #plt.plot(OmegaNS*r[:,0,0],radavg(uu[1]*dxdxp[1,1],dn=1)[:,ny/2,0])
     #plt.plot(OmegaNS*r[:,0,0],radavg(avguur,dn=1)[:,ny/2,0])
     #radial, theta, and phi-average along theta = pi/2, phi = 0
     #allavguur = 0.5*radavg(avguur[:,ny/2-1:ny/2+1,0].mean(-1)+avguur[:,ny/2-1:ny/2+1,-1].mean(-1),dn=dn)
+    avgBu=rhpto123([0*avgBr,avgBr,avgBth,avgBph])
+    avgBd=mdot(gv3,avgBu)
+    avguu=rhpto123([avguut,avguur,avguuth,avguuph])
+    avgvu=avguu/avguu[0]
+    avgBsq=mdot(avgBu,avgBd)
+    avgBdotv=mdot(avgBd,avgvu)
+    avgvpar=np.sign(avgBu[1])*avgBdotv/avgBsq**0.5
+    avgupar=avguu[0]*avgvpar
     allavguur = 0.5*radavg(avguur[:,ny/2-dn:ny/2+dn,0:dn].mean(-1).mean(-1)+avguur[:,ny/2-dn:ny/2+dn,nz-1-dn:nz].mean(-1).mean(-1),dn=dn)
+    allavgupar = 0.5*radavg(avgupar[:,ny/2-dn:ny/2+dn,0:dn].mean(-1).mean(-1)+avgupar[:,ny/2-dn:ny/2+dn,nz-1-dn:nz].mean(-1).mean(-1),dn=dn)
+    allavgBr = 0.5*radavg(avgBr[:,ny/2-dn:ny/2+dn,0:dn].mean(-1).mean(-1)+avgBr[:,ny/2-dn:ny/2+dn,nz-1-dn:nz].mean(-1).mean(-1),dn=dn)
+    var = avgbsq/(avgrho+gam*avgug)
+    allavgbsqow = 0.5*radavg(var[:,ny/2-dn:ny/2+dn,0:dn].mean(-1).mean(-1)+var[:,ny/2-dn:ny/2+dn,nz-1-dn:nz].mean(-1).mean(-1),dn=dn)
+    var = (r*avguuph)
+    allavgruuph = 0.5*radavg(var[:,ny/2-dn:ny/2+dn,0:dn].mean(-1).mean(-1)+var[:,ny/2-dn:ny/2+dn,nz-1-dn:nz].mean(-1).mean(-1),dn=dn)
+    var = (r*avguuth)
+    allavgruuz = 0.5*radavg(var[:,ny/2-dn:ny/2+dn,0:dn].mean(-1).mean(-1)+var[:,ny/2-dn:ny/2+dn,nz-1-dn:nz].mean(-1).mean(-1),dn=dn)
     plt.clf()
-    plt.plot(OmegaNS*r[:,0,0],allavguur,label=r"${\rm Relativistic\ MHD}$",color='g',lw=2)
-    plt.plot(OmegaNS*r[:,0,0],OmegaNS*r[:,0,0],label=r"${\rm Split{-}monopole\ force{-}free}$",color='r',lw=2)
+    l2,=plt.plot(OmegaNS*r[:,0,0],allavguur,label=r"$u_R$",color='g',lw=2)
+    l3,=plt.plot(OmegaNS*r[:,0,0],allavgruuz,label=r"$u_z$",color='b',lw=2)
+    l4,=plt.plot(OmegaNS*r[:,0,0],allavgruuph,label=r"$u_\varphi$",color='m',lw=2)
+    l5,=plt.plot(OmegaNS*r[:,0,0],allavgupar,label=r"$u_{||}$",color='c',lw=2)
+    l1,=plt.plot(OmegaNS*r[:,0,0],OmegaNS*r[:,0,0],'g:',label=r"$\Omega R$",lw=2)
+    # l4,=plt.plot(OmegaNS*r[:,0,0],allavgBr*r[:,0,0]**2,label=r"$u_{||},\ {\rm RMHD}$",color='b',lw=2)
+    # l4,=plt.plot(OmegaNS*r[:,0,0],allavgbsqow,label=r"$u_{||},\ {\rm RMHD}$",color='b',lw=2)
+    l3.set_dashes([10,5])
+    l4.set_dashes([15,5,5,5])
+    l5.set_dashes([10,3,2,3])
+    bsqowcutoff = 10**1.
+    rcs=OmegaNS*r[:,0,0][(allavgbsqow<bsqowcutoff)*(OmegaNS*r[:,0,0]<3)]
+    x=(rcs[0],rcs[-1])
+    y=(-2,10)
+    rec=matplotlib.patches.Rectangle((x[0],y[0]),width=(x[1]-x[0]),height=y[1]-y[0],color='yellow',alpha=0.6,ec='none')
+    plt.gca().add_artist(rec)
+    plt.text((x[0]+x[1])*0.5,4.5,r"$w/b^2>0.1$",rotation=90,ha="center",va="center",fontsize=fntsize)
     #plt.plot(OmegaNS*r[:,0,0],((1+avguur**2+(r*avguuth)**2+(r*np.sin(h)*avguuph)**2)**0.5)[:,ny/2,0],label="Relativistic MHD")
     # os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_sph_c33om0375_ps2_512x256x256_32x32x64")
     # grid3d("gdump.bin", use2d = 1)
     # rfd("fieldline0064.bin")
     # #computevars(n1=64,n2=137)
     # plt.plot(OmegaNS*r[:,0,0],(uu[1]*dxdxp[1,1])[:,ny/2,0],label="Relativistic MHD hires")
-    leg = plt.legend(loc="upper left")
-    plt.xlim(OmegaNS*Rin,4-1e-5)
-    plt.ylim(0,6.-1e-5)
-    plt.xlabel(r"$r/R_{\rm LC}$",fontsize=fntsize)
-    plt.ylabel(r"$u^r$",fontsize=fntsize)
+    leg = plt.legend(loc="upper left",numpoints=30,labelspacing=0.3,ncol=1,borderpad = 0.3,borderaxespad=0.7,handlelength=2.5,handletextpad=0.2,fancybox=True)
+    plt.xlim(0.+1e-5,4-1e-5)
+    plt.ylim(-1.,6.-1e-5)
+    ax=plt.gca()
+    tcks = ax.get_xticks()
+    labs = []
+    for tck in tcks:
+        if tck==int(tck):
+            labs.append(r"$%d$" % tck)
+        else:
+            labs.append("")
+    ax.set_xticklabels(labs)
+    plt.xlabel(r"$x/R_{\rm LC}$",fontsize=fntsize)
+    plt.ylabel(r"${\rm 4{-}velocity}$",fontsize=fntsize,ha="center")
     ax = plt.gca()
     for label in ax.get_xticklabels() + ax.get_yticklabels():
         label.set_fontsize(fntsize)
     plt.grid(b=1)
     for t in leg.get_texts():
-       t.set_fontsize(20)    # the legend text fontsize
+       t.set_fontsize(fntsize)    # the legend text fontsize
     #ax.set_aspect('equal')
-
+    plt.savefig("fig_uur1d.pdf",bbox_inches='tight',pad_inches=0.02)
 
 
 def mkfig1(dosavefig=1,figno=1):
