@@ -65,7 +65,7 @@ def mkvelvsr(dn=2,recomputeavg=0,doreload=0,fntsize=28,avgfname="avgvars.npz"):
     # grid3d("gdump.bin", use2d = 1)
     # rfd("fieldline0064.bin")
     # plt.plot(OmegaNS*r[:,0,0],(uu[0])[:,ny/2,0],label="Force-free")
-    fig=plt.figure(1,figsize=(6,6))
+    fig=plt.figure(1,figsize=(7,6))
     ax = fig.add_subplot(111, aspect='equal')
     os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_sph_ps2_256x128x128")
     if 'gv3' not in globals() or doreload:
@@ -99,11 +99,13 @@ def mkvelvsr(dn=2,recomputeavg=0,doreload=0,fntsize=28,avgfname="avgvars.npz"):
     var = (r*avguuth)
     allavgruuz = 0.5*radavg(var[:,ny/2-dn:ny/2+dn,0:dn].mean(-1).mean(-1)+var[:,ny/2-dn:ny/2+dn,nz-1-dn:nz].mean(-1).mean(-1),dn=dn)
     plt.clf()
-    l2,=plt.plot(OmegaNS*r[:,0,0],allavguur,label=r"$u_R$",color='g',lw=2)
+    uuffmono = OmegaNS*r[:,0,0]*np.sin(h[:,ny/2,0])
+    l2,=plt.plot(OmegaNS*r[:,0,0],allavguur,label=r"$u_r$",color='g',lw=2)
+    l1a,=plt.plot(OmegaNS*r[:,0,0],uuffmono**2/(1+uuffmono**2)**0.5,'g:',label=r"$u_r^{\rm ff,mono}$",lw=2)
     l3,=plt.plot(OmegaNS*r[:,0,0],allavgruuz,label=r"$u_z$",color='b',lw=2)
     l4,=plt.plot(OmegaNS*r[:,0,0],allavgruuph,label=r"$u_\varphi$",color='m',lw=2)
+    l1b,=plt.plot(OmegaNS*r[:,0,0],uuffmono/(1+uuffmono**2)**0.5,'m:',label=r"$u_\varphi^{\rm ff,mono}$",lw=2)
     l5,=plt.plot(OmegaNS*r[:,0,0],allavgupar,label=r"$u_{||}$",color='c',lw=2)
-    l1,=plt.plot(OmegaNS*r[:,0,0],OmegaNS*r[:,0,0],'g:',label=r"$\Omega R$",lw=2)
     # l4,=plt.plot(OmegaNS*r[:,0,0],allavgBr*r[:,0,0]**2,label=r"$u_{||},\ {\rm RMHD}$",color='b',lw=2)
     # l4,=plt.plot(OmegaNS*r[:,0,0],allavgbsqow,label=r"$u_{||},\ {\rm RMHD}$",color='b',lw=2)
     l3.set_dashes([10,5])
@@ -115,14 +117,14 @@ def mkvelvsr(dn=2,recomputeavg=0,doreload=0,fntsize=28,avgfname="avgvars.npz"):
     y=(-2,10)
     rec=matplotlib.patches.Rectangle((x[0],y[0]),width=(x[1]-x[0]),height=y[1]-y[0],color='yellow',alpha=0.6,ec='none')
     plt.gca().add_artist(rec)
-    plt.text((x[0]+x[1])*0.5,4.5,r"$w/b^2>%g$" % (1./bsqowcutoff),rotation=90,ha="center",va="center",fontsize=fntsize)
+    # plt.text((x[0]+x[1])*0.5,4.5,r"$w/b^2>%g$" % (1./bsqowcutoff),rotation=90,ha="center",va="center",fontsize=fntsize)
     #plt.plot(OmegaNS*r[:,0,0],((1+avguur**2+(r*avguuth)**2+(r*np.sin(h)*avguuph)**2)**0.5)[:,ny/2,0],label="Relativistic MHD")
     # os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_sph_c33om0375_ps2_512x256x256_32x32x64")
     # grid3d("gdump.bin", use2d = 1)
     # rfd("fieldline0064.bin")
     # #computevars(n1=64,n2=137)
     # plt.plot(OmegaNS*r[:,0,0],(uu[1]*dxdxp[1,1])[:,ny/2,0],label="Relativistic MHD hires")
-    leg = plt.legend(loc="upper left",numpoints=30,labelspacing=0.3,ncol=1,borderpad = 0.3,borderaxespad=0.7,handlelength=2.5,handletextpad=0.2,fancybox=True)
+    leg = plt.legend(loc="upper center",numpoints=30,labelspacing=0.1,ncol=2,borderpad = 0.3,borderaxespad=0.4,handlelength=2.5,handletextpad=0.2,fancybox=True,columnspacing=0.1)
     plt.xlim(0.+1e-5,4-1e-5)
     plt.ylim(-1.,6.-1e-5)
     ax=plt.gca()
@@ -143,6 +145,9 @@ def mkvelvsr(dn=2,recomputeavg=0,doreload=0,fntsize=28,avgfname="avgvars.npz"):
     for t in leg.get_texts():
        t.set_fontsize(fntsize)    # the legend text fontsize
     #ax.set_aspect('equal')
+    bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
+    letter = "c"
+    plt.text(0.2,5.5,r"$(\mathrm{%s})$" % letter,fontsize=30,color='k',va='top',ha='left',bbox=bbox_props)
     plt.savefig("fig_uur1d.pdf",bbox_inches='tight',pad_inches=0.02)
 
 
@@ -157,7 +162,7 @@ def mkfig1(dosavefig=1,figno=1):
 #mkfig2(ii=95) #subsequent runs
 def mkfig2(dosavefig=1,ii=95,n1=None,n2=None,figno=2):
     global B
-    os.chdir("/home/atchekho/run2/hf_60_r0710h05_mydt_sph_ps2_256x128x128")
+    #os.chdir("/home/atchekho/run2/hf_60_r0710h05_mydt_sph_ps2_256x128x128")
     grid3d("gdump.bin",use2d=True)
     # myB = B
     # mygdetB = gdetB
@@ -166,11 +171,11 @@ def mkfig2(dosavefig=1,ii=95,n1=None,n2=None,figno=2):
     mkfig1gen(ii=ii,dosavefig=dosavefig,letter="b",whichvar='wobsqkomi',label=r"$\log_{10}(w/b^2)$",dostreamlines=1,n1=n1,n2=n2,figno=figno)
     mkfig1gen(ii=ii,dosavefig=dosavefig,letter="d",whichvar='uur',label=r"$u_r\ (y=0)$",dostreamlines=1,n1=n1,n2=n2,figno=figno)
     mkfig1gen(ii=ii,dosavefig=dosavefig,letter="e",whichvar='uur',label=r"$u_r\ (x=0)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,kval=nz/4)
-    mkfig1gen(ii=ii,dosavefig=dosavefig,letter="e",whichvar='uur',label=r"$u_r\ (z=0)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,doxyslice=1)
+    mkfig1gen(ii=ii,dosavefig=dosavefig,letter="f",whichvar='uur',label=r"$u_r\ (z=0)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,kval=0,doxyslice=1)
     # B = myB
     
 
-def mkfig1gen(dosavefig=1,letter="a",whichvar='wobsqkomi',label = None,ii=64,dostreamlines=1, n1=None,n2=None,figno=1,kval=0,doxyslice=0):
+def mkfig1gen(dosavefig=1,letter="a",whichvar='wobsqkomi',label = None,ii=64,dostreamlines=1, n1=None,n2=None,figno=1,kval=None,doxyslice=0):
     ftrans = lambda x: max(min(1,0.5+(x-0.5)*1.25),0)
     #"squeezed" cm.jet colormap (so that the darkest red and blue are squeezed out)
     cdict = {'blue': (
@@ -194,8 +199,8 @@ def mkfig1gen(dosavefig=1,letter="a",whichvar='wobsqkomi',label = None,ii=64,dos
     if label is not None:
         plt.text(2.23/OmegaNS,2.23/OmegaNS,label,fontsize=20,color='k',va='top',ha='right',bbox=bbox_props)
     if dosavefig:
-        plt.savefig("fig%d_%s.eps" % (figno,whichvar),bbox_inches='tight',pad_inches=0.02)
-        plt.savefig("fig%d_%s.pdf" % (figno,whichvar),bbox_inches='tight',pad_inches=0.02)
+        plt.savefig("fig%d%s_%s.eps" % (figno,letter,whichvar),bbox_inches='tight',pad_inches=0.02)
+        plt.savefig("fig%d%s_%s.pdf" % (figno,letter,whichvar),bbox_inches='tight',pad_inches=0.02)
 
 def mklargescalepulsarplot(ii=256):
     #FAR
@@ -219,7 +224,7 @@ def mklargescalepulsarplot(ii=256):
     plt.savefig("fig_large.eps",bbox_inches='tight',pad_inches=0.02)
     plt.savefig("fig_large.pdf",bbox_inches='tight',pad_inches=0.02)
 
-def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,cb=1,vmin=0,vmax=100,**kwargs):
+def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,cb=1,vmin=0,vmax=100,doxyslice=0,**kwargs):
     #NEAR
     #os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_cyl_x2")
     plt.figure(0,figsize=(7,4))
@@ -230,11 +235,17 @@ def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,
         ii1 = ii+1
     else:
         ii1 = ii
-    kval = kwargs.pop('kval',(ii1%32)/32.*nz)
-    doxyslice = kwargs.pop('doxyslice',0)
+    kval = kwargs.pop('kval',None)
+    kvalori = kval
+    kvalvar = kval
+    if kvalvar is None:
+        kvalvar = 0
+    if kval is None:
+        kval = 0
+    kval += (ii1%32)/32.*nz
+    kval %= nz
     if n1 is not None and n2 is not None:
         computevars(n1=n1,n2=n2)
-    kvalvar = kval
     if whichvar == 'Bphi':
         mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=40,plotlen=2.5/OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=kval,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=2,ncell=1600,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5,dosavefig=0,cb=cb,fntsize=20,vmin=vmin,vmax=vmax,whichvar=whichvar,**kwargs)
     else:
@@ -245,7 +256,7 @@ def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,
                 fnc = lambda: amin(radavg(avgbsq/(avgrho+gam*avgug)),80+0*avgbsqow)
                 kvalvar = 0
             else:
-                print "No time-averages computed, so using instantaneous values"
+                print "No time-averages computed, so using instantaneous values,thetarot=thetarot"
                 fnc = lambda: amin(radavg(bsq/(rho+gam*ug)),80+0*bsq)
         elif whichvar == 'wobsqkomi':
             if 'avgbsq' in globals():
@@ -258,15 +269,16 @@ def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,
         elif whichvar == 'uur':
             if 'avgbsq' in globals():
                 print "Using time-averages"
-                fnc = lambda: avguur
-                kvalvar = 0
+                fnc = lambda: radavg(avguur,dn=1)
+                vmin = 0
+                vmax = 4
             else:
                 print "No time-averages computed, so using instantaneous values"
                 fnc = lambda: uu[1]*dxdxp[1,1]
         mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',
                 dobhfield=40,plotlen=2.5/OmegaNS,isnstar=True,
                 minlenbhfield=0.0,density=1.2,whichr=1.3,
-                minlengthdefault=0.05,kval=kval,kvalvar=kvalvar
+                minlengthdefault=0.05,kval=kval,kvalvar=kvalvar,
                 dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,
                 populatestreamlines=1,downsample=2,
                 ncell=1600,dsval=0.001,dnarrow=1,
@@ -275,7 +287,6 @@ def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,
                 avgbsqorho=fnc,
                 cb=cb,fntsize=20,dosavefig=0,
                 vmin=vmin,vmax=vmax,**kwargs)
-
     #mkmovie(whichi=50,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=40,plotlen=15,isnstar=True,minlenbhfield=0.0,density=2,whichr=1.3,minlengthdefault=0.05,kval=0,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5)
     plt.xlim(-2.5/OmegaNS,2.5/OmegaNS)
     plt.ylim(-2.5/OmegaNS,2.5/OmegaNS)
@@ -288,11 +299,18 @@ def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,
     ax1.set_yticks(tck/OmegaNS)    
     ax1.set_xticklabels(s_tck)
     ax1.set_yticklabels(s_tck)
-    plt.xlabel(r"$x/R_{\rm LC}$",fontsize=20)
-    plt.ylabel(r"$y/R_{\rm LC}$",fontsize=20)
+    if doxyslice:
+        plt.xlabel(r"$x/R_{\rm LC}$",fontsize=20)
+        plt.ylabel(r"$y/R_{\rm LC}$",fontsize=20)
+    elif kvalori < 2:
+        plt.xlabel(r"$x/R_{\rm LC}$",fontsize=20)
+        plt.ylabel(r"$z/R_{\rm LC}$",fontsize=20)
+    else:
+        plt.xlabel(r"$y/R_{\rm LC}$",fontsize=20)
+        plt.ylabel(r"$z/R_{\rm LC}$",fontsize=20)
     plt.draw()
     if dosavefig:
-        plt.savefig("fig_small_%s.eps" % whichvar,bbox_inches='tight',pad_inches=0.02)
+        #plt.savefig("fig_small_%s.eps" % whichvar,bbox_inches='tight',pad_inches=0.02)
         plt.savefig("fig_small_%s.pdf" % whichvar,bbox_inches='tight',pad_inches=0.02)
 
 def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetable=1):
@@ -2379,9 +2397,9 @@ def reinterp(vartointerp,extent,ncell,domask=1,isasymmetric=False,rhor=None,kval
     maxr = 2*np.max(np.abs(np.array(extent)))
     xraw=r*np.sin(h)
     yraw=r*np.cos(h)
-    x=xraw[:,:,kval].view().reshape(-1)
-    y=yraw[:,:,kval].view().reshape(-1)
-    var=vartointerp[:,:,kval].view().reshape(-1)
+    x=xraw[:,:,int(kval):int(kval+1.5)].mean(2).view().reshape(-1)
+    y=yraw[:,:,int(kval):int(kval+1.5)].mean(2).view().reshape(-1)
+    var=vartointerp[:,:,int(kval):int(kval+1.5)].mean(2).view().reshape(-1)
     if dolimitr:
         myr=r[:,:,kval].view().reshape(-1)
         x = x[myr<maxr]
@@ -2412,18 +2430,18 @@ def reinterp(vartointerp,extent,ncell,domask=1,isasymmetric=False,rhor=None,kval
         varinterpolated = zi
     return(varinterpolated)
 
-def reinterpxy(vartointerp,extent,ncell,domask=1,mirrorfactor=1,rhor=None):
+def reinterpxy(vartointerp,extent,ncell,domask=1,mirrorfactor=1,rhor=None,thetarot=0):
     global xi,yi,zi
     #grid3d("gdump")
     #rfd("fieldline0250.bin")
     if rhor is None:
         rhor = (1+np.sqrt(1-a**2))
-    xraw=r*np.sin(h)*np.cos(ph)
-    yraw=r*np.sin(h)*np.sin(ph)
+    xraw=r*np.sin(h)*np.cos(ph-thetarot)
+    yraw=r*np.sin(h)*np.sin(ph-thetarot)
     #2 cells below the midplane
     x=xraw[:,ny/2+1,:].view().reshape(-1)
     y=yraw[:,ny/2+1,:].view().reshape(-1)
-    var=vartointerp[:,ny/2+1,:].view().reshape(-1)
+    var=vartointerp[:,ny/2-1,:].view().reshape(-1)
     #mirror
     if nz*_dx3*dxdxp[3,3,0,0,0] < 0.99 * 2 * np.pi:
         x=np.concatenate((-x,x))
@@ -2508,15 +2526,15 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
                 Bpnorm[:,:NBND]*=NaN
                 Bpnorm[:,-NBND+1:]*=NaN
         #
-        iBz = reinterp(Bznorm,extent,ncell,isasymmetric=False,domask=domask,rhor=rhor,kval=kval,domirror=domirror)
-        iBR = reinterp(BRnorm,extent,ncell,isasymmetric=True,domask=domask,rhor=rhor,kval=kval,domirror=domirror) #isasymmetric = True tells to flip the sign across polar axis
+        iBz = reinterp(Bznorm,extent,ncell,isasymmetric=False,domask=domask,rhor=rhor,kval=kval-0.5,domirror=domirror)
+        iBR = reinterp(BRnorm,extent,ncell,isasymmetric=True,domask=domask,rhor=rhor,kval=kval-0.5,domirror=domirror) #isasymmetric = True tells to flip the sign across polar axis
         iBp = reinterp(Bpnorm,extent,ncell,isasymmetric=True,domask=domask,rhor=rhor,kval=kval,domirror=domirror) #isasymmetric = True tells to flip the sign         #
         if whichvar is not None:
             cvel()
-            irho = reinterp(rho,extent,ncell,isasymmetric=False,domask=domask,rhor=rhor,kval=kval,domirror=domirror)
-            iug  = reinterp(ug,extent,ncell,isasymmetric=False,domask=domask,rhor=rhor,kval=kval,domirror=domirror)
-            ibsq = reinterp(bsq,extent,ncell,isasymmetric=False,domask=domask,rhor=rhor,kval=kval,domirror=domirror)
-            iavgbsqorho = reinterp(avgbsqorho(),extent,ncell,isasymmetric=False,domask=domask,rhor=rhor,kval=kvalvar,domirror=domirror)
+            irho = reinterp(rho,extent,ncell,isasymmetric=False,domask=domask,rhor=rhor,kval=kval-0.5,domirror=domirror)
+            iug  = reinterp(ug,extent,ncell,isasymmetric=False,domask=domask,rhor=rhor,kval=kval-0.5,domirror=domirror)
+            ibsq = reinterp(bsq,extent,ncell,isasymmetric=False,domask=domask,rhor=rhor,kval=kval-0.5,domirror=domirror)
+            iavgbsqorho = reinterp(avgbsqorho(),extent,ncell,isasymmetric=False,domask=domask,rhor=rhor,kval=kvalvar-0.5,domirror=domirror)
         if 0 and dorandomcolor:
             Ba=np.copy(B)
             cond = (B[1]<0)
@@ -2540,11 +2558,11 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
             iBaz = None
             iBaR = None
         if showjet:
-            imu = reinterp(mu,extent,ncell,domask=0.8,rhor=rhor,kval=kval)
+            imu = reinterp(mu,extent,ncell,domask=0.8,rhor=rhor,kval=kval-0.5)
         #
         if dovarylw:
-            iibeta = reinterp(0.5*bsq/(gam-1)/ug,extent,ncell,domask=0,rhor=rhor,kval=kval)
-            ibsqorho = reinterp(bsq/rho,extent,ncell,domask=0,rhor=rhor,kval=kval)
+            iibeta = reinterp(0.5*bsq/(gam-1)/ug,extent,ncell,domask=0,rhor=rhor,kval=kval-0.5)
+            ibsqorho = reinterp(bsq/rho,extent,ncell,domask=0,rhor=rhor,kval=kval-0.5)
             ibsqo2rho = 0.5 * ibsqorho
         xi = np.linspace(extent[0], extent[1], ncell)
         yi = np.linspace(extent[2], extent[3], ncell)
@@ -2633,13 +2651,12 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
     if streamlines == 1:
         return(traj)
 
-def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,arrowsize=1,isnstar=False,dobhfield=False,avgbsqorho=None,whichvar=None,fntsize=None,aphiaccent=None,cmap=None):
+def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,arrowsize=1,isnstar=False,avgbsqorho=None,whichvar=None,fntsize=None,aphiaccent=None,cmap=None,**kwargs):
     extent=(-len,len,-len,len)
     if cmap is None:
         palette=cm.jet
     else:
         palette=cmap
-    palette=cm.jet
     if isnstar:
         domask = Rin
     if avgbsqorho is None:
@@ -2651,12 +2668,18 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
         rhor=1
         ihor = 0
         #a=1
+    lw=kwargs.pop('lw',None)
+    dovarylw=kwargs.pop('dovarylw',0)
+    dobhfield=kwargs.pop('dobhfield',True)
+    density=kwargs.pop('density',1)
+    downsample=kwargs.pop('downsample',1)
+    thetarot=kwargs.pop('thetarot',0)
     palette.set_bad('k', 1.0)
     #palette.set_over('r', 1.0)
     #palette.set_under('g', 1.0)
-    ilrho = reinterpxy(np.log10(rho),extent,ncell,domask=1.0,rhor=rhor)
+    ilrho = reinterpxy(np.log10(rho),extent,ncell,domask=1.0,rhor=rhor,thetarot=thetarot)
     aphi = fieldcalc()+rho*0
-    iaphi = reinterpxy(aphi,extent,ncell,rhor=rhor)
+    iaphi = reinterpxy(aphi,extent,ncell,rhor=rhor,thetarot=thetarot)
     if whichvar is not None:
         iavgbsqorho = reinterpxy(avgbsqorho(),extent,ncell,domask=domask,rhor=rhor)
     #maxabsiaphi=np.max(np.abs(iaphi))
@@ -2681,30 +2704,34 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
         Bxnorm=BRnorm*np.cos(ph)-Bpnorm*np.sin(ph)
         Bynorm=BRnorm*np.sin(ph)+Bpnorm*np.cos(ph)
         #
-        iBx = reinterpxy(Bxnorm,extent,ncell,domask=1,mirrorfactor=-1.,rhor=rhor)
-        iBy = reinterpxy(Bynorm,extent,ncell,domask=1,mirrorfactor=-1.,rhor=rhor)
-        iibeta = reinterpxy(0.5*bsq/(gam-1)/ug,extent,ncell,domask=0,rhor=rhor)
-        ibsqorho = reinterpxy(bsq/rho,extent,ncell,domask=0,rhor=rhor)
+        iBx = reinterpxy(Bxnorm,extent,ncell,domask=1,mirrorfactor=-1.,rhor=rhor,thetarot=thetarot)
+        iBy = reinterpxy(Bynorm,extent,ncell,domask=1,mirrorfactor=-1.,rhor=rhor,thetarot=thetarot)
+        iibeta = reinterpxy(0.5*bsq/(gam-1)/ug,extent,ncell,domask=0,rhor=rhor,thetarot=thetarot)
+        ibsqorho = reinterpxy(bsq/rho,extent,ncell,domask=0,rhor=rhor,thetarot=thetarot)
         ibsqo2rho = 0.5 * ibsqorho
         xi = np.linspace(extent[0], extent[1], ncell)
         yi = np.linspace(extent[2], extent[3], ncell)
     if ax == None:
         if whichvar == 'avgbsqorho':
-            CS = ax.imshow(iavgbsqorho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower', vmin=vmin,vmax=vmax)
+            CS = plt.imshow(iavgbsqorho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower', vmin=vmin,vmax=vmax)
         else:
             CS = plt.imshow(ilrho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
         plt.xlim(extent[0],extent[1])
         plt.ylim(extent[2],extent[3])
     else:
-        CS = ax.imshow(ilrho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
+        if whichvar == 'avgbsqorho':
+            CS = ax.imshow(iavgbsqorho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower', vmin=vmin,vmax=vmax)
+        else:
+            CS = ax.imshow(ilrho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
         if dostreamlines:
-            lw = 0.5+1*ftr(np.log10(amax(ibsqo2rho,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
-            lw += 1*ftr(np.log10(amax(iibeta,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
-            lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
-            # if t < 1500:
-            #     lw *= ftr(ilrho,-2.,-1.9)
-            lw *= ftr(iaphi,0.001,0.002)
-            fstreamplot(yi,xi,iBx,iBy,density=1,downsample=1,linewidth=lw,detectLoops=True,dodiskfield=False,dobhfield=True,startatmidplane=False,a=a,arrowsize=arrowsize)
+            if dovarylw:
+                lw = 0.5+1*ftr(np.log10(amax(ibsqo2rho,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
+                lw += 1*ftr(np.log10(amax(iibeta,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
+                lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
+                # if t < 1500:
+                #     lw *= ftr(ilrho,-2.,-1.9)
+                lw *= ftr(iaphi,0.001,0.002)
+            fstreamplot(yi,xi,iBx,iBy,density=density,downsample=downsample,linewidth=lw,detectLoops=True,dodiskfield=False,dobhfield=dobhfield,startatmidplane=False,a=a,arrowsize=arrowsize)
         ax.set_xlim(extent[0],extent[1])
         ax.set_ylim(extent[2],extent[3])
     #CS.cmap=cm.jet
@@ -9182,6 +9209,7 @@ def mkmovieframe( findex, fname, **kwargs ):
     vmax = kwargs.pop('vmax',0.5625)
     showtime = kwargs.pop('showtime',1)
     dontloadfiles = kwargs.pop('dontloadfiles',0)
+    doxyslice = kwargs.pop('doxyslice',0)
     # oldnz=nz
     if dontloadfiles==False:
         rfd("../"+fname)
@@ -9349,8 +9377,8 @@ def mkmovieframe( findex, fname, **kwargs ):
         #gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.45, wspace=0.05)
         ax1 = plt.subplot(gs1[:, -1])
         if domakeframes:
-            if doxy:
-                mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=vmin,vmax=vmax,len=plotlen,ax=ax1,pt=False,dostreamlines=dostreamlines,**kwargs)
+            if doxyslice:
+                mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=vmin,vmax=vmax,len=plotlen,ax=ax1,pt=False,dostreamlines=dostreamlines,ds=0.005,thetastart=0,thetaend=2*np.pi,thetarot=(1.*kval)/(1.*nz)*2*np.pi,**kwargs)
                 ax1.set_ylabel(r'$y\ [r_g]$',fontsize=16,ha='center')
                 ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
             else:
@@ -12238,7 +12266,7 @@ def cycle(v,n=1,axis=0):
     else:
         return( v )
 
-def radavg(vecin,dn=1,axis=0):
+def radavg(vecin,dn=2,axis=0):
     vec = vecin.swapaxes(0,axis)
     if dn < 0: dn = 0
     l = vec.shape[0]
