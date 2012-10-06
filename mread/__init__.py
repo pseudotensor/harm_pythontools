@@ -60,21 +60,22 @@ def rhpto123(vecu):
     vecout[3] = vecu[3]/dxdxp[3,3]
     return(vecout)
 
-def mkvelvsr(dn=2,recomputeavg=0,doreload=0,fntsize=28,avgfname="avgvars.npz",nz0=None):
+def mkvelvsr(dn=2,recomputeavg=0,doreload=0,fntsize=28,avgfname="avgvars.npz",nz0=None,cd=1,n1=64,n2=137,clf=1):
     # os.chdir("/home/atchekho/run2/hf_60_r10h05_ff_om02_ps2_256x128x128_32x16x32")
     # grid3d("gdump.bin", use2d = 1)
     # rfd("fieldline0064.bin")
     # plt.plot(OmegaNS*r[:,0,0],(uu[0])[:,ny/2,0],label="Force-free")
     fig=plt.figure(1,figsize=(7,6))
     ax = fig.add_subplot(111, aspect='equal')
-    os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_sph_ps2_256x128x128")
+    if cd == 1:
+        os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_sph_ps2_256x128x128")
     if 'gv3' not in globals() or doreload:
         grid3d("gdump.bin", use2d = 1)
         # if os.path.isfile("dumps/fieldline0064.bin"):
         #     rfd("fieldline0064.bin")
-    if 'avguur' not in globals():
+    if 'avguur' not in globals() or recomputeavg:
         if recomputeavg or not os.path.isfile( avgfname ):
-            computevars(n1=64,n2=137)
+            computevars(n1=n1,n2=n2)
         else:
             loadavgvars(fname=avgfname)
     if nz0 is None:
