@@ -60,7 +60,7 @@ def rhpto123(vecu):
     vecout[3] = vecu[3]/dxdxp[3,3]
     return(vecout)
 
-def mkvelvsr(dn=2,recomputeavg=0,doreload=0,fntsize=28,avgfname="avgvars.npz"):
+def mkvelvsr(dn=2,recomputeavg=0,doreload=0,fntsize=28,avgfname="avgvars.npz",nz0=None):
     # os.chdir("/home/atchekho/run2/hf_60_r10h05_ff_om02_ps2_256x128x128_32x16x32")
     # grid3d("gdump.bin", use2d = 1)
     # rfd("fieldline0064.bin")
@@ -77,6 +77,8 @@ def mkvelvsr(dn=2,recomputeavg=0,doreload=0,fntsize=28,avgfname="avgvars.npz"):
             computevars(n1=64,n2=137)
         else:
             loadavgvars(fname=avgfname)
+    if nz0 is None:
+        nz0 = nz/2
     #plt.plot(OmegaNS*r[:,0,0],radavg(uu[1]*dxdxp[1,1],dn=1)[:,ny/2,0])
     #plt.plot(OmegaNS*r[:,0,0],radavg(avguur,dn=1)[:,ny/2,0])
     #radial, theta, and phi-average along theta = pi/2, phi = 0
@@ -89,44 +91,53 @@ def mkvelvsr(dn=2,recomputeavg=0,doreload=0,fntsize=28,avgfname="avgvars.npz"):
     avgBdotv=mdot(avgBd,avgvu)
     avgvpar=np.sign(avgBu[1])*avgBdotv/avgBsq**0.5
     avgupar=avguu[0]*avgvpar
-    allavguur = 0.5*radavg(avguur[:,ny/2-dn:ny/2+dn,0:dn].mean(-1).mean(-1)+avguur[:,ny/2-dn:ny/2+dn,nz-1-dn:nz].mean(-1).mean(-1),dn=dn)
-    allavgupar = 0.5*radavg(avgupar[:,ny/2-dn:ny/2+dn,0:dn].mean(-1).mean(-1)+avgupar[:,ny/2-dn:ny/2+dn,nz-1-dn:nz].mean(-1).mean(-1),dn=dn)
-    allavgBr = 0.5*radavg(avgBr[:,ny/2-dn:ny/2+dn,0:dn].mean(-1).mean(-1)+avgBr[:,ny/2-dn:ny/2+dn,nz-1-dn:nz].mean(-1).mean(-1),dn=dn)
+    allavguur = radavg(avguur[:,ny/2-dn:ny/2+dn,nz0-dn:nz0+dn].mean(-1).mean(-1),dn=dn)
+    allavgupar = radavg(avgupar[:,ny/2-dn:ny/2+dn,nz0-dn:nz0+dn].mean(-1).mean(-1),dn=dn)
+    allavgBr = radavg(avgBr[:,ny/2-dn:ny/2+dn,nz0-dn:nz0+dn].mean(-1).mean(-1),dn=dn)
     var = avgbsq/(avgrho+gam*avgug)
-    allavgbsqow = 0.5*radavg(var[:,ny/2-dn:ny/2+dn,0:dn].mean(-1).mean(-1)+var[:,ny/2-dn:ny/2+dn,nz-1-dn:nz].mean(-1).mean(-1),dn=dn)
+    allavgbsqow = radavg(var[:,ny/2-dn:ny/2+dn,nz0-dn:nz0+dn].mean(-1).mean(-1),dn=dn)
     var = (r*avguuph)
-    allavgruuph = 0.5*radavg(var[:,ny/2-dn:ny/2+dn,0:dn].mean(-1).mean(-1)+var[:,ny/2-dn:ny/2+dn,nz-1-dn:nz].mean(-1).mean(-1),dn=dn)
+    allavgruuph = radavg(var[:,ny/2-dn:ny/2+dn,nz0-dn:nz0+dn].mean(-1).mean(-1),dn=dn)
     var = (r*avguuth)
-    allavgruuz = 0.5*radavg(var[:,ny/2-dn:ny/2+dn,0:dn].mean(-1).mean(-1)+var[:,ny/2-dn:ny/2+dn,nz-1-dn:nz].mean(-1).mean(-1),dn=dn)
+    allavgruuz = radavg(var[:,ny/2-dn:ny/2+dn,nz0-dn:nz0+dn].mean(-1).mean(-1),dn=dn)
+    allavguu = (allavguur**2+allavgruuz**2+allavgruuph**2)**0.5
     plt.clf()
     uuffmono = OmegaNS*r[:,0,0]*np.sin(h[:,ny/2,0])
-    l2,=plt.plot(OmegaNS*r[:,0,0],allavguur,label=r"$u_r$",color='g',lw=2)
-    l1a,=plt.plot(OmegaNS*r[:,0,0],uuffmono**2/(1+uuffmono**2)**0.5,'g:',label=r"$u_r^{\rm ff,mono}$",lw=2)
-    l3,=plt.plot(OmegaNS*r[:,0,0],allavgruuz,label=r"$u_z$",color='b',lw=2)
-    l4,=plt.plot(OmegaNS*r[:,0,0],allavgruuph,label=r"$u_\varphi$",color='m',lw=2)
-    l1b,=plt.plot(OmegaNS*r[:,0,0],uuffmono/(1+uuffmono**2)**0.5,'m:',label=r"$u_\varphi^{\rm ff,mono}$",lw=2)
-    l5,=plt.plot(OmegaNS*r[:,0,0],allavgupar,label=r"$u_{||}$",color='c',lw=2)
+    #####l3,=plt.plot(OmegaNS*r[:,0,0],allavgruuz,label=r"$u_z$",color='b',lw=2)
+    #####l3.set_dashes([10,5])
+    if 0:
+        l2,=plt.plot(OmegaNS*r[:,0,0],allavguur,label=r"$u_r$",color='g',lw=2)
+        l1a,=plt.plot(OmegaNS*r[:,0,0],uuffmono**2/(1+uuffmono**2)**0.5,'g:',label=r"$u_r^{\rm ff,mono}$",lw=2)
+        l4,=plt.plot(OmegaNS*r[:,0,0],allavgruuph,label=r"$u_\varphi$",color='m',lw=2)
+        l4.set_dashes([15,5,5,5])
+        l1b,=plt.plot(OmegaNS*r[:,0,0],uuffmono/(1+uuffmono**2)**0.5,'m:',label=r"$u_\varphi^{\rm ff,mono}$",lw=2)
+        leg = plt.legend(loc="upper center",numpoints=30,labelspacing=0.1,ncol=2,borderpad = 0.3,borderaxespad=0.4,handlelength=2.5,handletextpad=0.2,fancybox=True,columnspacing=0.1)
+        plt.xlim(0.+1e-5,4-1e-5)
+        plt.ylim(-1.,6.-1e-5)
+    else:
+        plt.plot(OmegaNS*r[:,0,0],allavguu,label=r"$u$",color='g',lw=2)
+        l1b,=plt.plot(OmegaNS*r[:,0,0],uuffmono,'m--',label=r"$\Omega R$",lw=2)
+        l5,=plt.plot(OmegaNS*r[:,0,0],allavgupar,label=r"$u_{||}$",color='c',lw=2)
+        l5.set_dashes([10,3,2,3])
+        leg = plt.legend(loc="lower right",bbox_to_anchor=(1,0.2),numpoints=30,labelspacing=0.3,ncol=1,borderpad = 0.3,borderaxespad=0.7,handlelength=2.5,handletextpad=0.2,fancybox=True,columnspacing=0.1)
+        plt.xlim(0.+1e-5,4-1e-5)
+        plt.ylim(-1.,6.-1e-5)
     # l4,=plt.plot(OmegaNS*r[:,0,0],allavgBr*r[:,0,0]**2,label=r"$u_{||},\ {\rm RMHD}$",color='b',lw=2)
     # l4,=plt.plot(OmegaNS*r[:,0,0],allavgbsqow,label=r"$u_{||},\ {\rm RMHD}$",color='b',lw=2)
-    l3.set_dashes([10,5])
-    l4.set_dashes([15,5,5,5])
-    l5.set_dashes([10,3,2,3])
     bsqowcutoff = 10**1.
     rcs=OmegaNS*r[:,0,0][(allavgbsqow<bsqowcutoff)*(OmegaNS*r[:,0,0]<3)]
-    x=(rcs[0],rcs[-1])
-    y=(-2,10)
-    rec=matplotlib.patches.Rectangle((x[0],y[0]),width=(x[1]-x[0]),height=y[1]-y[0],color='yellow',alpha=0.6,ec='none')
-    plt.gca().add_artist(rec)
-    # plt.text((x[0]+x[1])*0.5,4.5,r"$w/b^2>%g$" % (1./bsqowcutoff),rotation=90,ha="center",va="center",fontsize=fntsize)
+    if len(rcs)>1:
+        x=(rcs[0],rcs[-1])
+        y=(-2,10)
+        rec=matplotlib.patches.Rectangle((x[0],y[0]),width=(x[1]-x[0]),height=y[1]-y[0],color='yellow',alpha=0.6,ec='none')
+        plt.gca().add_artist(rec)
+        plt.text((x[0]+x[1])*0.5,4.5,r"$w/b^2>%g$" % (1./bsqowcutoff),rotation=90,ha="center",va="center",fontsize=fntsize)
     #plt.plot(OmegaNS*r[:,0,0],((1+avguur**2+(r*avguuth)**2+(r*np.sin(h)*avguuph)**2)**0.5)[:,ny/2,0],label="Relativistic MHD")
     # os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_sph_c33om0375_ps2_512x256x256_32x32x64")
     # grid3d("gdump.bin", use2d = 1)
     # rfd("fieldline0064.bin")
     # #computevars(n1=64,n2=137)
     # plt.plot(OmegaNS*r[:,0,0],(uu[1]*dxdxp[1,1])[:,ny/2,0],label="Relativistic MHD hires")
-    leg = plt.legend(loc="upper center",numpoints=30,labelspacing=0.1,ncol=2,borderpad = 0.3,borderaxespad=0.4,handlelength=2.5,handletextpad=0.2,fancybox=True,columnspacing=0.1)
-    plt.xlim(0.+1e-5,4-1e-5)
-    plt.ylim(-1.,6.-1e-5)
     ax=plt.gca()
     tcks = ax.get_xticks()
     labs = []
@@ -160,22 +171,35 @@ def mkfig1(dosavefig=1,figno=1):
     
 #mkfig2(ii=95,n1=64,n2=97) #1st run
 #mkfig2(ii=95) #subsequent runs
-def mkfig2(dosavefig=1,ii=95,n1=None,n2=None,figno=2):
+def mkfig2(dosavefig=1,ii=95,n1=None,n2=None,figno=2,recomputeavg=0,doreload=0,avgfname="avgvars.npz"):
     global B
     #os.chdir("/home/atchekho/run2/hf_60_r0710h05_mydt_sph_ps2_256x128x128")
-    grid3d("gdump.bin",use2d=True)
-    # myB = B
-    # mygdetB = gdetB
-    rfd("fieldline%04d.bin" % ii)
-    mkfig1gen(ii=ii,dosavefig=dosavefig,letter="a",whichvar='Bphi',label=r"$B_\otimes$",dostreamlines=1,figno=figno)
-    mkfig1gen(ii=ii,dosavefig=dosavefig,letter="b",whichvar='wobsqkomi',label=r"$\log_{10}(w/b^2)$",dostreamlines=1,n1=n1,n2=n2,figno=figno)
-    mkfig1gen(ii=ii,dosavefig=dosavefig,letter="d",whichvar='uur',label=r"$u_r\ (y=0)$",dostreamlines=1,n1=n1,n2=n2,figno=figno)
-    mkfig1gen(ii=ii,dosavefig=dosavefig,letter="e",whichvar='uur',label=r"$u_r\ (x=0)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,kval=nz/4)
-    mkfig1gen(ii=ii,dosavefig=dosavefig,letter="f",whichvar='uur',label=r"$u_r\ (z=0)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,kval=0,doxyslice=1)
+    os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_sph_ps2_256x128x128")
+    if 'gv3' not in globals() or doreload:
+        grid3d("gdump.bin", use2d = 1)
+        # if os.path.isfile("dumps/fieldline0064.bin"):
+        #     rfd("fieldline0064.bin")
+    else:
+        print("Skip loading gdump2d.bin because already have a grid file loaded.")
+    if 'avguur' not in globals():
+        if recomputeavg or not os.path.isfile( avgfname ):
+            computevars(n1=64,n2=137)
+        else:
+            print("Loading averages from the average file")
+            loadavgvars(fname=avgfname)
+    if 'rho' not in globals():
+        rfd("fieldline%04d.bin" % ii)
+    else:
+        print("Skip loading fieldline%04d.bin because already have a data file loaded." % ii)
+    # mkfig1gen(ii=ii,dosavefig=dosavefig,letter="a",whichvar='Bphi',label=r"$B_\otimes$",dostreamlines=1,figno=figno,xla=r"$x/R_{\rm LC}$",yla=r"$z/R_{\rm LC}$")
+    # mkfig1gen(ii=ii,dosavefig=dosavefig,letter="b",whichvar='wobsqkomi',label=r"$\log_{10}(w/b^2)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,xla=r"$x/R_{\rm LC}$",yla=r"$z/R_{\rm LC}$")
+    mkfig1gen(ii=ii,dosavefig=dosavefig,letter="d",whichvar='uu',label=r"$u\ (y=0)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,xla=r"$x/R_{\rm LC}$",yla=r"$z/R_{\rm LC}$")
+    mkfig1gen(ii=ii,dosavefig=dosavefig,letter="e",whichvar='uu',label=r"$u\ (x=0)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,kval=nz/4,xla=r"$y/R_{\rm LC}$",yla=r"$z/R_{\rm LC}$")
+    # mkfig1gen(ii=ii,dosavefig=dosavefig,letter="f",whichvar='uu',label=r"$u\ (z=0)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,kval=0,doxyslice=1,xla=r"$x/R_{\rm LC}$",yla=r"$y/R_{\rm LC}$")
     # B = myB
     
 
-def mkfig1gen(dosavefig=1,letter="a",whichvar='wobsqkomi',label = None,ii=64,dostreamlines=1, n1=None,n2=None,figno=1,kval=None,doxyslice=0):
+def mkfig1gen(dosavefig=1,letter="a",whichvar='wobsqkomi',label = None,ii=64,dostreamlines=1, n1=None,n2=None,figno=1,kval=None,doxyslice=0,xla=r"$x/R_{\rm LC}$",yla=r"$z/R_{\rm LC}$"):
     ftrans = lambda x: max(min(1,0.5+(x-0.5)*1.25),0)
     #"squeezed" cm.jet colormap (so that the darkest red and blue are squeezed out)
     cdict = {'blue': (
@@ -198,8 +222,10 @@ def mkfig1gen(dosavefig=1,letter="a",whichvar='wobsqkomi',label = None,ii=64,dos
     plt.text(-2.23/OmegaNS,2.23/OmegaNS,r"$(\mathrm{%s})$" % letter,fontsize=20,color='k',va='top',ha='left',bbox=bbox_props)
     if label is not None:
         plt.text(2.23/OmegaNS,2.23/OmegaNS,label,fontsize=20,color='k',va='top',ha='right',bbox=bbox_props)
+    plt.xlabel(xla,fontsize=20)
+    plt.ylabel(yla,fontsize=20)
     if dosavefig:
-        plt.savefig("fig%d%s_%s.eps" % (figno,letter,whichvar),bbox_inches='tight',pad_inches=0.02)
+        #plt.savefig("fig%d%s_%s.eps" % (figno,letter,whichvar),bbox_inches='tight',pad_inches=0.02)
         plt.savefig("fig%d%s_%s.pdf" % (figno,letter,whichvar),bbox_inches='tight',pad_inches=0.02)
 
 def mklargescalepulsarplot(ii=256):
@@ -224,7 +250,7 @@ def mklargescalepulsarplot(ii=256):
     plt.savefig("fig_large.eps",bbox_inches='tight',pad_inches=0.02)
     plt.savefig("fig_large.pdf",bbox_inches='tight',pad_inches=0.02)
 
-def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,cb=1,vmin=0,vmax=100,doxyslice=0,**kwargs):
+def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,cb=1,vmin=0,vmax=100,**kwargs):
     #NEAR
     #os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_cyl_x2")
     plt.figure(0,figsize=(7,4))
@@ -275,6 +301,15 @@ def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,
             else:
                 print "No time-averages computed, so using instantaneous values"
                 fnc = lambda: uu[1]*dxdxp[1,1]
+        elif whichvar == 'uu':
+            if 'avgbsq' in globals():
+                print "Using time-averages"
+                fnc = lambda: radavg((avguur**2+(r*avguuth)**2+(r*np.sin(h)*avguuph)**2)**0.5,dn=1)
+                vmin = 0
+                vmax = 4
+            else:
+                print "No time-averages computed, so using instantaneous values"
+                fnc = lambda: uu[1]*dxdxp[1,1]
         mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',
                 dobhfield=40,plotlen=2.5/OmegaNS,isnstar=True,
                 minlenbhfield=0.0,density=1.2,whichr=1.3,
@@ -299,15 +334,15 @@ def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,
     ax1.set_yticks(tck/OmegaNS)    
     ax1.set_xticklabels(s_tck)
     ax1.set_yticklabels(s_tck)
-    if doxyslice:
-        plt.xlabel(r"$x/R_{\rm LC}$",fontsize=20)
-        plt.ylabel(r"$y/R_{\rm LC}$",fontsize=20)
-    elif kvalori < 2:
-        plt.xlabel(r"$x/R_{\rm LC}$",fontsize=20)
-        plt.ylabel(r"$z/R_{\rm LC}$",fontsize=20)
-    else:
-        plt.xlabel(r"$y/R_{\rm LC}$",fontsize=20)
-        plt.ylabel(r"$z/R_{\rm LC}$",fontsize=20)
+    # if doxyslice:
+    #     plt.xlabel(r"$x/R_{\rm LC}$",fontsize=20)
+    #     plt.ylabel(r"$y/R_{\rm LC}$",fontsize=20)
+    # elif kvalori < 2:
+    #     plt.xlabel(r"$x/R_{\rm LC}$",fontsize=20)
+    #     plt.ylabel(r"$z/R_{\rm LC}$",fontsize=20)
+    # else:
+    #     plt.xlabel(r"$y/R_{\rm LC}$",fontsize=20)
+    #     plt.ylabel(r"$z/R_{\rm LC}$",fontsize=20)
     plt.draw()
     if dosavefig:
         #plt.savefig("fig_small_%s.eps" % whichvar,bbox_inches='tight',pad_inches=0.02)
