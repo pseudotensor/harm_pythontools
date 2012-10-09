@@ -12178,7 +12178,7 @@ def plotfluxrodrigo(doreload=True,plotvarname="flux",figno=1,doretro=1,dn=0,save
         plt.savefig("../plot_bjetvsomh.pdf",bbox_inches='tight',pad_inches=0.02,dpi=100)
         plt.figure(figno)
 
-def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,f=None,bare=0,fc='k',bor=200,maxaphi=None,dolc=1):
+def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,f=None,bare=0,fc='k',bor=200,maxaphi=None,dolc=1,runit=1):
     grid3d("gdump.bin",use2d=True)
     flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
     flist.sort()
@@ -12193,7 +12193,7 @@ def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,f=None,bare=0,fc='k',bor=200,maxa
         sys.stdout.flush()
         aphi=fieldcalc()
         if fldindex == startn and maxaphi is None:
-            maxaphi = 2*68.471001
+            maxaphi = 2*68.471001/runit
             #maxaphi = 380
             #maxaphi = (5*10)**0.5*3*3*3.2 #aphi.max()
         #fig=plt.figure(1,figsize=(10,10))
@@ -12215,11 +12215,11 @@ def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,f=None,bare=0,fc='k',bor=200,maxa
                 cbar=plt.colorbar(cts)
                 cbar.set_ticks(levs)
                 cbar.ax.set_ylabel(r'$b^2\!/4\pi\rho$',fontsize=18,labelpad=-5)
-            x=[5,5]
-            y=[-5,5]
+            x=np.array([5,5])*runit
+            y=np.array([-5,5])*runit
             #plt.grid(b=True)
-            plc(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,numc)*maxaphi/np.float(numc),colors=fc)
-            plc(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0.5*maxaphi,),linewidths=3,colors=fc)
+            plc(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,numc)*maxaphi/np.float(numc),colors=fc,xmax=10*runit,ymax=5*runit)
+            plc(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0.5*maxaphi,),linewidths=3,colors=fc,xmax=10*runit,ymax=5*runit)
             if dolc:
                 plt.plot(x,y,lw=3,color='r',alpha=0.5)
             #plc(uu[2]*dxdxp[2][2],xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=False,levels=np.arange(-0.5,0.5,0.1));plt.xlim(0,10);plt.ylim(-5,5)            
@@ -12233,10 +12233,10 @@ def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,f=None,bare=0,fc='k',bor=200,maxa
             #draw NS
             ax=plt.gca()
             ax.set_aspect('equal')  
-            el = Ellipse((0,0), 2, 2, facecolor='k', alpha=1)
+            el = Ellipse((0,0), 2*runit, 2*runit, facecolor='k', alpha=1)
             art=ax.add_artist(el)
             art.set_zorder(20)
-            el = Ellipse((0,0), 7, 7, edgecolor="r", facecolor='none', alpha=1)
+            el = Ellipse((0,0), 7*runit, 7*runit, edgecolor="r", facecolor='none', alpha=1)
             art=ax.add_artist(el)
             art.set_zorder(20)
             if op and f is None:
@@ -12246,7 +12246,7 @@ def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,f=None,bare=0,fc='k',bor=200,maxa
                 plc(uu[0],cb=True,levels=np.arange(0,10,1),xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,10);plt.ylim(-5,5)
             elif f is not None:
                 plc(f(),xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,10);plt.ylim(-5,5)
-            rmax = len
+            rmax = len*runit
             plt.xlim(0,rmax)
             plt.ylim(-0.5*rmax,0.5*rmax)
         else:
