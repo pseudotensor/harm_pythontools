@@ -3295,7 +3295,7 @@ def rfd(fieldlinefilename,**kwargs):
     #Velocity components: u1, u2, u3, 
     #Cell-centered magnetic field components: B1, B2, B3, 
     #Face-centered magnetic field components multiplied by metric determinant: gdetB1, gdetB2, gdetB3
-    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,rho,lrho,ug,uu,uut,uu,B,uux,gdetB,rhor,r,h,ph,gdetF,fdbody,OmegaNS,AlphaNS,Bstag
+    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,rho,lrho,ug,uu,uut,uu,B,uux,gdetB,rhor,r,h,ph,gdetF,fdbody,OmegaNS,AlphaNS,Bstag,defcoord
     #read image
     if 'rho' in globals():
         del rho
@@ -3321,20 +3321,6 @@ def rfd(fieldlinefilename,**kwargs):
         del gdetF
     if 'fdbody' in globals():
         del fdbody
-    if os.path.isfile("coordparms.dat"):
-        coordparams = np.loadtxt( "coordparms.dat", 
-                      dtype=np.float64, 
-                      skiprows=0, 
-                      unpack = False )
-        if len(coordparams)>=14:
-            OmegaNS = coordparams[13]
-            AlphaNS = coordparams[14]
-        else:
-            OmegaNS = 0
-            AlphaNS = 0
-    else:
-        OmegaNS = 0
-        AlphaNS = 0
     fin = open( "dumps/" + fieldlinefilename, "rb" )
     header = fin.readline().split()
     #time of the dump
@@ -3357,6 +3343,30 @@ def rfd(fieldlinefilename,**kwargs):
     Rin=myfloat(float(header[14]))
     #Spherical polar radius of the outermost radial cell
     Rout=myfloat(float(header[15]))
+    defcoord = myfloat(float(header[18]))
+    #
+    if os.path.isfile("coordparms.dat"):
+        coordparams = np.loadtxt( "coordparms.dat", 
+                      dtype=np.float64, 
+                      skiprows=0, 
+                      unpack = False )
+        if defcoord == 3010: #SNSCOORDS
+            if len(coordparams)>=14:
+                OmegaNS = coordparams[13]
+                AlphaNS = coordparams[14]
+            else:
+                OmegaNS = 0
+                AlphaNS = 0
+        elif defcoord == 3000: #SJETCOORDS
+            if len(coordparams)>=27:
+                OmegaNS = coordparams[26]
+                AlphaNS = coordparams[27]
+            else:
+                OmegaNS = 0
+                AlphaNS = 0
+    else:
+        OmegaNS = 0
+        AlphaNS = 0
     #read grid dump per-cell data
     #
     body = np.fromfile(fin,dtype=np.float32,count=-1)
@@ -3516,22 +3526,8 @@ def grid3d(dumpname,use2d=False,doface=False): #read grid dump file: header and 
     #non-uniform coordinates, (r, h, ph), which correspond to radius (r), polar angle (theta), and toroidal angle (phi).
     #There are more variables, e.g., dxdxp, which is the Jacobian of (x1,x2,x3)->(r,h,ph) transformation, that I can
     #go over, if needed.
-    global nx,ny,nz,_startx1,_startx2,_startx3,_dx1,_dx2,_dx3,gam,a,R0,Rin,Rout,ti,tj,tk,x1,x2,x3,r,h,ph,conn,gn3,gv3,ck,dxdxp,gdet,OmegaNS,AlphaNS
+    global nx,ny,nz,_startx1,_startx2,_startx3,_dx1,_dx2,_dx3,gam,a,R0,Rin,Rout,ti,tj,tk,x1,x2,x3,r,h,ph,conn,gn3,gv3,ck,dxdxp,gdet,OmegaNS,AlphaNS,defcoord
     global tif,tjf,tkf,rf,hf,phf,rhor
-    if os.path.isfile("coordparms.dat"):
-        coordparams = np.loadtxt( "coordparms.dat", 
-                      dtype=np.float64, 
-                      skiprows=0, 
-                      unpack = False )
-        if len(coordparams)>=14:
-            OmegaNS = coordparams[13]
-            AlphaNS = coordparams[14]
-        else:
-            OmegaNS = 0
-            AlphaNS = 0
-    else:
-        OmegaNS = 0
-        AlphaNS = 0
     usinggdump2d = False
     if dumpname.endswith(".bin"):
         dumpnamenoext = os.path.splitext(dumpname)[0]
@@ -3570,6 +3566,29 @@ def grid3d(dumpname,use2d=False,doface=False): #read grid dump file: header and 
     Rin=myfloat(float(header[14]))
     #Spherical polar radius of the outermost radial cell
     Rout=myfloat(float(header[15]))
+    defcoord = myfloat(float(header[18]))
+    if os.path.isfile("coordparms.dat"):
+        coordparams = np.loadtxt( "coordparms.dat", 
+                      dtype=np.float64, 
+                      skiprows=0, 
+                      unpack = False )
+        if defcoord == 3010: #SNSCOORDS
+            if len(coordparams)>=14:
+                OmegaNS = coordparams[13]
+                AlphaNS = coordparams[14]
+            else:
+                OmegaNS = 0
+                AlphaNS = 0
+        elif defcoord == 3000: #SJETCOORDS
+            if len(coordparams)>=27:
+                OmegaNS = coordparams[26]
+                AlphaNS = coordparams[27]
+            else:
+                OmegaNS = 0
+                AlphaNS = 0
+    else:
+        OmegaNS = 0
+        AlphaNS = 0
     #read grid dump per-cell data
     #
     if use2d:
@@ -12178,7 +12197,7 @@ def plotfluxrodrigo(doreload=True,plotvarname="flux",figno=1,doretro=1,dn=0,save
         plt.savefig("../plot_bjetvsomh.pdf",bbox_inches='tight',pad_inches=0.02,dpi=100)
         plt.figure(figno)
 
-def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,f=None,bare=0,fc='k',bor=200,maxaphi=None,dolc=1,runit=1):
+def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,f=None,bare=0,fc='k',bor=200,maxaphi=None,dolc=1,runit=1,numc=40,minaphi=0):
     grid3d("gdump.bin",use2d=True)
     flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
     flist.sort()
@@ -12199,7 +12218,6 @@ def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,f=None,bare=0,fc='k',bor=200,maxa
         #fig=plt.figure(1,figsize=(10,10))
         #plt.clf()
         #ax = fig.add_subplot(111, aspect='equal')
-        numc=40
         cvel()
         if not bare:
             plt.clf()
@@ -12218,8 +12236,8 @@ def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,f=None,bare=0,fc='k',bor=200,maxa
             x=np.array([5,5])*runit
             y=np.array([-5,5])*runit
             #plt.grid(b=True)
-            plc(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(1,numc)*maxaphi/np.float(numc),colors=fc,xmax=10*runit,ymax=5*runit)
-            plc(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0.5*maxaphi,),linewidths=3,colors=fc,xmax=10*runit,ymax=5*runit)
+            plc(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=minaphi+np.arange(1,numc)*(maxaphi-minaphi)/np.float(numc),colors=fc,xmax=10*runit,ymax=5*runit)
+            plc(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0.5*(minaphi+maxaphi),),linewidths=3,colors=fc,xmax=10*runit,ymax=5*runit)
             if dolc:
                 plt.plot(x,y,lw=3,color='r',alpha=0.5)
             #plc(uu[2]*dxdxp[2][2],xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=False,levels=np.arange(-0.5,0.5,0.1));plt.xlim(0,10);plt.ylim(-5,5)            
