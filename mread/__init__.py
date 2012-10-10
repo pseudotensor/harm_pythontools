@@ -349,7 +349,7 @@ def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,
         #plt.savefig("fig_small_%s.eps" % whichvar,bbox_inches='tight',pad_inches=0.02)
         plt.savefig("fig_small_%s.pdf" % whichvar,bbox_inches='tight',pad_inches=0.02)
 
-def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetable=1):
+def psrspindown(doreload=1,newlist=1,plotpoynt=1,revaloRlc=0.5,plotdissconv=1,writetable=1,rdiss0=0.5,rdiss=5):
     global alpha_list, edot_list, name_list
     global edotvec_list, poyntvec_list, rvec_list, rlc_list
     global name_list, dims_list, tf_list
@@ -362,6 +362,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
     flistdissconv = []
     flistdissconvff = []
     flistedotvsomega = []
+    flistedotff = []
     if newlist == 1:
         flist = [
             #"rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8",
@@ -377,20 +378,25 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
             "hf_45_r0710h05_mydt_sph_ps2_256x128x128_512",
             #"hf_60_r0710h05_mydt_sph_ps2_256x128x128",
             #"hf_60_r10h05",
-            "hf_60_r10h05_mydt_sph_ps2_128x64x64",
             "hf_60_r10h05_mydt_sph_ps2_256x128x128",
+            "hf_60_r10h05_mydt_sph_ps2_128x64x64",
+            "hf_60_r10h05_mydt_sph_ps2_128x128x128",
+            "hf_60_r10h05_mydt_sph_c33om0375_ps2_512x256x256_32x32x64",
             #"hf_75_r0710h05_mydt_sph_ps2_256x128x128_512",
             "hf_75_r10h05_mydt_sph_ps2_256x128x128_512",
             #"hf_90_r0710h05_mydt_sph_ps0_256x128x128_512",
-            "hf_90_r10h05",
             "hf_90_r10h05_mydt_sph_x2",
+            "hf_90_r10h05",
             "hf_90_r07h05_mydt_sph_256x128x128",
             "hf_0_h10r05_om02_ffde_mydt_sph_ps0_64x32_32x32x1",
             "hf_0_h10r05_om02_ffde_mydt_sph_ps0_128x64_64x64x1",
             "hf_0_h10r05_om02_ffde_mydt_sph_ps0_256x128_64x64x1",
             "hf_0_h10r05_om02_ffde_mydt_sph_ps0_512x256_64x64x1",
             "hf_0_h10r05_om02_ffde_mydt_sph_ps0_1024x512_64x64x1",
-            "hf_0_h10r05_om02_ffde_mydt_sph_ps0_2048x1024_64x64x1"
+            "hf_0_h10r05_om02_ffde_mydt_sph_ps0_2048x1024_64x64x1",
+            "hf_30_r10h05_ff_om02_ps2_256x128x128_32x16x32",
+            "hf_60_r10h05_ff_om02_ps2_256x128x128_32x16x32",
+            "hf_90_r10h05_ff_om02_ps2_256x128x128_32x16x32"
             ]
         flistpoynt = [
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_256x128x1_64x64x1",
@@ -402,21 +408,27 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
             # "hf_0_r0710h005_mydt_sph_ps0_frac1_256x128x1_64x64x1",
             #"hf_15_r0710h05_mydt_sph_ps2_256x128x128",
             #"hf_15_r10h05_mydt_cyl",
-            "hf_30_r0710h05_mydt_sph_ps2_256x128x128_512",
-            #"hf_30_r10h05_mydt_sph_x2",
-            "hf_60_r0710h05_mydt_sph_ps2_256x128x128",
-            #"hf_60_r10h05_mydt_sph_ps2_128x128x128",
-            "hf_90_r0710h05_mydt_sph_ps0_256x128x128_512",
-            #"hf_90_r10h05_mydt_sph_x2",
+            #"hf_30_r0710h05_mydt_sph_ps2_256x128x128_512",
             "hf_30_r10h05_mydt_sph_x2",
+            #"hf_60_r0710h05_mydt_sph_ps2_256x128x128",
+            #"hf_60_r10h05_mydt_sph_ps2_128x128x128",
+            #"hf_90_r0710h05_mydt_sph_ps0_256x128x128_512",
+            #"hf_90_r10h05_mydt_sph_x2",
+            #"hf_30_r10h05_mydt_sph_x2",
             "hf_60_r10h05_mydt_sph_ps2_256x128x128",
+            #"hf_60_r10h05_mydt_sph_ps2_128x64x64",
             "hf_90_r10h05_mydt_sph_x2"
             ]
         flistonlyb = [
+            "hf_0_r10h05_mydt_sph_ps0_oldfixup_128x64x1_64x64x1",
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_256x128x1_64x64x1",
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_512x256x1_64x64x1",
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_1024x512x1_64x64x1",
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1",
+            #"hf_60_r10h05_mydt_sph_c33om0375_ps2_512x256x256_32x32x64",
+            #"hf_60_r10h05_mydt_sph_ps2_128x128x128",
+            "hf_60_r10h05_mydt_sph_ps2_128x64x64",
+            #"hf_90_r10h05",
             #"rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8"
             # "hf_0_r0710h05_mydt_sph_nocosthp_256x128x1",
             # "hf_0_r0710h05_mydt_sph_ps0_512x256x1_64x64x1",
@@ -446,9 +458,9 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
             "hf_0_h10r05_om02_ffde_mydt_sph_ps0_1024x512_64x64x1",
             "hf_0_h10r05_om02_ffde_mydt_sph_ps0_2048x1024_64x64x1"
             ]
-        ltypelistonlyb = [ [10,5], [10,5,2,5], [10,5,2,5,2,5], [10,5,2,5,2,5,2,5] ] 
-        lablistonlyb = ["N_r=256","N_r=512", "N_r=1024", "N_r=2048"]
-        lwlistonlyb = [ 2, 1, 1, 1 ]
+        ltypelistonlyb = [ [5,5], [10,5], [10,5,2,5], [10,5,2,5,2,5], [10,5,2,5,2,5,2,5], [5,5], [5,5] ] 
+        lablistonlyb = ["N_r=128", "N_r=256","N_r=512", "N_r=1024", "N_r=2048", "N_r=128", "N_r=128"]
+        lwlistonlyb = [ 1, 2, 1, 1, 1, 1, 1 ]
         flistedot = [
             "hf_90_r10h05_mydt_sph_x2",
             #"hf_90_r0710h05_mydt_sph_ps0_256x128x128_512",
@@ -463,7 +475,13 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
             #"hf_30_r0710h05_mydt_sph_ps2_256x128x128_512",
             "hf_15_r0710h05_mydt_sph_ps2_256x128x128",
             #"hf_15_r10h05_mydt_cyl",
-            "hf_0_r10h05_mydt_sph_ps0_oldfixup_256x128x1_64x64x1",
+            "hf_0_r10h05_mydt_sph_ps0_oldfixup_256x128x1_64x64x1"
+            ]
+        flistedotff = [
+            "hf_0_h10r05_om02_ffde_mydt_sph_ps0_256x128_64x64x1",
+            "hf_30_r10h05_ff_om02_ps2_256x128x128_32x16x32",
+            "hf_60_r10h05_ff_om02_ps2_256x128x128_32x16x32",
+            "hf_90_r10h05_ff_om02_ps2_256x128x128_32x16x32"
             ]
     elif newlist == 2:
         flist = [
@@ -596,7 +614,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
             #if OmegaNS == 0 or OmegaNS is None: OmegaNS = 0.2
             Rlc = 1. / OmegaNS
             #evaluate at 2Rlc
-            reval = 0.55 * Rlc
+            reval = revaloRlc * Rlc
             ieval = iofr(reval)
             #Spindown energy losses
             Edot_code = FE
@@ -630,6 +648,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
     plt.figure(1,figsize=(6,4))
     plt.clf()
     edot_list_toplot = []
+    edotff_list_toplot = []
     poynt_list_toplot = []
     for i,f in enumerate(flist):
         poynt_list_toplot.append(poyntvec_list[i])
@@ -637,17 +656,26 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
             edot_list_toplot.append(edot_list[i])
         else:
             edot_list_toplot.append(NaN)
+        if f in flistedotff:
+            edotff_list_toplot.append(edot_list[i])
+        else:
+            edotff_list_toplot.append(NaN)
         if f == "rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8":
+            #hide noisy part, not used anymore
             poynt_list_toplot[i][rvec_list[ile]<0.7*rlc_list[i]] *= NaN
     a = np.linspace(0,np.pi/2.,1000)
     plt.plot(a*180/np.pi,1+1.2*np.sin(a)**2,'g-',lw=2) #,label=r"$1+1.2\sin^2\alpha$"
     plt.text(35, 0.8, r"$\displaystyle\frac{L}{L_{\rm aligned}} = 1+1.2\sin^2\alpha$", fontsize = 20)
-    plt.plot(np.array(alpha_list)*180/np.pi, edot_list_toplot, "rs",ms=15)
+    plt.plot(np.array(alpha_list)*180/np.pi, edot_list_toplot, "rs",ms=15,label=r"${\rm MHD\ with\ HARM}$")
+    plt.plot(np.array(alpha_list)*180/np.pi, edotff_list_toplot, "ko",ms=15, mfc='None',label=r"${\rm Force{-}free\ with\ HARM}$")
     ax1 = plt.gca()
     for label in ax1.get_xticklabels() + ax1.get_yticklabels():
         label.set_fontsize(20)
     plt.xlabel(r"$\alpha\ {\rm [^\circ]}$",fontsize=20)
     plt.ylabel(r"$L/L_{\rm aligned}$",fontsize=20)
+    leg = plt.legend(loc="upper left")
+    for t in leg.get_texts():
+       t.set_fontsize(20)    # the legend text fontsize
     plt.ylim(0,2.999)
     plt.xlim(0,90)
     tck = np.linspace(0,90,7)
@@ -658,7 +686,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
     #    t.set_fontsize(20)    # the legend text fontsize
     plt.savefig("fig_edot.eps",bbox_inches='tight',pad_inches=0.02)
     plt.savefig("fig_edot.pdf",bbox_inches='tight',pad_inches=0.02)
-    clrs=["r","g","b","m","c","k","y","pink","brown","orange"]
+    clrs=["r","g","b","m","c","k","y","pink","brown","orange","red"]
     lablist = [
         r"$\alpha=0^\circ$",
         r"$\alpha=30^\circ$",
@@ -695,6 +723,10 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
                                  ls='--',lw=2)
                     l.set_dashes(defaultdashes)
             if f in flistonlyb:
+                # plt.plot(rvec_list[i]/rlc_list[i], edotvec_list[i],
+                #          c=clrs[clrindex],
+                #          ls="-",lw=2,
+                #          label=r"$\alpha=%g^\circ$" % (alpha_list[i]*180/np.pi))
                 mydashes = ltypelistonlyb[flistonlyb.index(f)]
                 mylegtext = lablistonlyb[flistonlyb.index(f)]
                 mylw = lwlistonlyb[flistonlyb.index(f)]
@@ -729,7 +761,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
             leg1 = plt.legend(loc="upper left",title=r"${\rm Inclination\ study}\!\!:$",ncol=2,frameon=True, fancybox=True,borderpad = 0.3,borderaxespad=0.4,handlelength=2.2,columnspacing=0.3,handletextpad=0.1) #,labelspacing=0.15) #,title=r"${\rm Inclination}\ (N_r=256)\!\!:$"
         else:
             leg1 = leg0
-        leg2=plt.legend(crvlist,leglist,loc="lower right",title=r"${\rm Dissipation\ study}\ (\alpha=0^\circ)\!\!:$",ncol=2,frameon=True, fancybox=True,borderpad = 0.3,borderaxespad=0.4,handlelength=4.,columnspacing=0.15,handletextpad=0.1) #,labelspacing=0.15)
+        leg2=plt.legend(crvlist,leglist,loc="lower right",title=r"${\rm Resolution\ study}\!\!:$",ncol=3,frameon=True, fancybox=True,borderpad = 0.3,borderaxespad=0.4,handlelength=4.,columnspacing=0.15,handletextpad=0.1) #,labelspacing=0.15)
         plt.gca().add_artist(leg0)
         plt.gca().add_artist(leg1)
         for t in leg0.get_texts()+leg1.get_texts()+leg2.get_texts():
@@ -753,16 +785,16 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
             if f in flistdissconv:
                 res_list.append(len(rvec_list[i]))
                 myi = np.arange(len(rvec_list[i]))
-                myival06 = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(0.6)+0.5)
-                myival = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(5.)+0.5)
+                myival06 = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(rdiss0)+0.5)
+                myival = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(rdiss)+0.5)
                 myival1 = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(1.5)+0.5)
                 reldiss_list.append(100*(edotvec_list[i][myival06]-poyntvec_list[i][myival])/edotvec_list[i][myival06])
                 reldiss1_list.append(100*(edotvec_list[i][myival06]-poyntvec_list[i][myival1])/edotvec_list[i][myival06])
             if f in flistdissconvff:
                 res_listff.append(len(rvec_list[i]))
                 myi = np.arange(len(rvec_list[i]))
-                myival06 = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(0.6)+0.5)
-                myival = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(5.)+0.5)
+                myival06 = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(rdiss0)+0.5)
+                myival = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(rdiss)+0.5)
                 myival1 = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(1.5)+0.5)
                 reldiss_listff.append(100*(edotvec_list[i][myival06]-poyntvec_list[i][myival])/edotvec_list[i][myival06])
                 reldiss1_listff.append(100*(edotvec_list[i][myival06]-poyntvec_list[i][myival1])/edotvec_list[i][myival06])
@@ -841,8 +873,8 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
         for i,f in enumerate(flist):
             #compute dissipated fraction
             myi = np.arange(len(rvec_list[i]))
-            myival06 = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(0.6)+0.5)
-            myival = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(5.)+0.5)
+            myival06 = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(rdiss0)+0.5)
+            myival = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(rdiss)+0.5)
             myival1 = int(interp1d(rvec_list[i]/rlc_list[i],myi,kind='linear')(1.5)+0.5)
             reldiss_list.append(100*(edotvec_list[i][myival06]-poyntvec_list[i][myival])/edotvec_list[i][myival06])
             reldiss1_list.append(100*(edotvec_list[i][myival06]-poyntvec_list[i][myival1])/edotvec_list[i][myival06])
@@ -853,7 +885,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,reval=2,plotdissconv=1,writetab
                 suff = ""
             if f == "hf_90_r07h05_mydt_sph_256x128x128":
                 suff = "%s$^\\dagger$" % suff
-            if f.find("ffde") >= 0:
+            if f.find("ff") >= 0:
                 fouttouse = foutff
                 simname = "D%d%sff" % (int(alpha_list[i]*180./np.pi+0.5), suff)
                 #suff = "%sff" % suff
