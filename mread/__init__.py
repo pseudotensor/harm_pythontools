@@ -44,6 +44,59 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
+#see also plotrodrigo()
+def plotfields(nu=1.5,r0=15,pow=0.6,nubh=2,doreload=1,fname=None,daphi=0.22,maxaphi=5,fntsize=24):
+    #a=0.99:
+    #plotfields(nu=1.4,r0=15,pow=0.6,nubh=1.5,daphi=0.25,fname="avg2d20_0200_0314.npy",maxaphi=2)
+    #plotfields(nu=1.4,r0=15,pow=0.58,nubh=1.5,daphi=0.25,fname="avg2d20_0200_0314.npy",maxaphi=2)
+    #plotfields(nu=1.4,r0=15,pow=0.58,nubh=1.5,daphi=0.25,fname="avg2d20_0200_0328.npy",maxaphi=2,doreload=1)
+    grid3d("gdump.bin",use2d=True)
+    if fname is not None:
+        avg=rdavg2d(fname=fname)
+    else:
+        avg=rdavg2d(usedefault=1)
+    aphi = fieldcalc(gdetB1=avg_gdetB[0])
+    aphibh = aphi[iofr(rhor),ny/2,0]
+    if 1:
+        #nu = 1.5; r0=15;
+        myaphi = (((r+r0)/(rhor+r0))**nu*(1-np.abs(np.cos(h))))**pow;#mx=2.2;myaphi[myaphi>mx]=myaphi[myaphi>mx]*0+mx
+    else:
+        myaphi = (((r+r0)/(rhor+r0))**nu*(1-np.abs(np.cos(h))));
+        varnu = ((nubh-nu)*(amax(1-myaphi,0*myaphi))+nu)
+        myaphibh = (((r+r0)/(rhor+r0))**varnu*(1-np.abs(np.cos(h))))
+        #myaphi[myaphi<1] = myaphibh[myaphi<1]
+        myaphi = myaphibh
+        myaphi[myaphi>1] = myaphi[myaphi>1]**pow
+    # mx=100;
+    # myaphi[myaphi>mx]=myaphi[myaphi>mx]*0+mx
+    #compute average absolute field
+    avg_absgdetB0symm = 0.5*(avg_absgdetB[0]+avg_absgdetB[0][:,::-1])
+    avg_absgdetB0symm[:,ny/2:] *= -1
+    aphiabs = fieldcalc(gdetB1=avg_absgdetB0symm) #*(4*np.pi)**0.5/a_Fm**0.5
+    aphiabsbh = aphiabs[iofr(rhor),ny/2,0]
+    print aphibh, aphiabsbh
+    plco(myaphi,xy=1,nc=10,xmax=80,ymax=40,colors='r',levels=np.arange(0,maxaphi,daphi),linestyles='--',lw=2);
+    plc(aphiabs,xy=1,nc=20,xmax=80,ymax=40,colors='k',levels=np.arange(0,500,10),lw=2)
+    # plt.figure()
+    # plt.plot(h[iofr(40),:,0],myaphi[iofr(40),:,0],'x-')
+    # plt.figure()
+    # plt.plot(r[:,0,0],0.2*(r[:,0,0]/Rin)**(-5/4))
+    # plt.plot(r[:,0,0],(-dxdxp[1,1]*avg_B[0])[:,ny/2,0])
+    # plt.plot(r[:,0,0],(dxdxp[1,1]*avg_absB[0])[:,ny/2,0])
+    # plt.xlim(Rin,20)
+    # plt.ylim(1e-5,10)
+    ax = plt.gca()
+    el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
+    art=ax.add_artist(el)
+    art.set_zorder(20)
+    plt.xlabel(r"$x\ [r_g]$",fontsize=fntsize)
+    plt.ylabel(r"$z\ [r_g]$",fontsize=fntsize,ha="center")
+    for label in ax.get_xticklabels() + ax.get_yticklabels():
+        label.set_fontsize(fntsize)
+    plt.grid(b=1)
+    
+
+
 def ijkavg(v):
     #vravg = np.zeros((v.shape[0]-1,v.shape[1]-1,v.shape[2]-1))
     vavg = 0.5*(v[1:]+v[:-1])
