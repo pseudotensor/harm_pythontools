@@ -374,19 +374,21 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,revaloRlc=0.5,plotdissconv=1,wr
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1",
             "hf_15_r0710h05_mydt_sph_ps2_256x128x128",
             "hf_30_r10h05_mydt_sph_x2",
+            "hf_30_r10h05_mydt_sph_ps2_128x64x64",
             #"hf_30_r0710h05_mydt_sph_ps2_256x128x128_512",
             "hf_45_r0710h05_mydt_sph_ps2_256x128x128_512",
             #"hf_60_r0710h05_mydt_sph_ps2_256x128x128",
             #"hf_60_r10h05",
             "hf_60_r10h05_mydt_sph_ps2_256x128x128",
             "hf_60_r10h05_mydt_sph_ps2_128x64x64",
-            "hf_60_r10h05_mydt_sph_ps2_128x128x128",
-            "hf_60_r10h05_mydt_sph_c33om0375_ps2_512x256x256_32x32x64",
+            #"hf_60_r10h05_mydt_sph_ps2_128x128x128",
+            #"hf_60_r10h05_mydt_sph_c33om0375_ps2_512x256x256_32x32x64",
             #"hf_75_r0710h05_mydt_sph_ps2_256x128x128_512",
             "hf_75_r10h05_mydt_sph_ps2_256x128x128_512",
             #"hf_90_r0710h05_mydt_sph_ps0_256x128x128_512",
             "hf_90_r10h05_mydt_sph_x2",
-            "hf_90_r10h05",
+            "hf_90_r10h05_mydt_sph_ps2_128x64x64",
+            # "hf_90_r10h05",
             "hf_90_r07h05_mydt_sph_256x128x128",
             "hf_0_h10r05_om02_ffde_mydt_sph_ps0_64x32_32x32x1",
             "hf_0_h10r05_om02_ffde_mydt_sph_ps0_128x64_64x64x1",
@@ -428,6 +430,8 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,revaloRlc=0.5,plotdissconv=1,wr
             #"hf_60_r10h05_mydt_sph_c33om0375_ps2_512x256x256_32x32x64",
             #"hf_60_r10h05_mydt_sph_ps2_128x128x128",
             "hf_60_r10h05_mydt_sph_ps2_128x64x64",
+            "hf_30_r10h05_mydt_sph_ps2_128x64x64",
+            "hf_90_r10h05_mydt_sph_ps2_128x64x64",
             #"hf_90_r10h05",
             #"rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8"
             # "hf_0_r0710h05_mydt_sph_nocosthp_256x128x1",
@@ -735,8 +739,9 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,revaloRlc=0.5,plotdissconv=1,wr
                          ls='--',lw=mylw)
                 l, = crv
                 l.set_dashes(mydashes)
-                crvlist.append(crv)
-                leglist.append(r"$%s$" % mylegtext)
+                if alpha_list[i] == 0:
+                    crvlist.append(crv)
+                    leglist.append(r"$%s$" % mylegtext)
         plt.xlim(0.2,5)
         plt.ylim(0,3)
         plt.grid(b=1)
