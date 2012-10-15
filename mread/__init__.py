@@ -75,6 +75,10 @@ def plotfields(nu=1.5,r0=15,pow=0.6,nubh=2,doreload=1,fname=None,daphi=0.22,maxa
     aphiabs = fieldcalc(gdetB1=avg_absgdetB0symm) #*(4*np.pi)**0.5/a_Fm**0.5
     aphiabsbh = aphiabs[iofr(rhor),ny/2,0]
     print aphibh, aphiabsbh
+    #
+    # 2D Field Figure
+    #
+    plt.figure(1)
     plco(myaphi,xy=1,nc=10,xmax=80,ymax=40,colors='r',levels=np.arange(0,maxaphi,daphi),linestyles='--',lw=2);
     plc(aphiabs,xy=1,nc=20,xmax=80,ymax=40,colors='k',levels=np.arange(0,500,10),lw=2)
     # plt.figure()
@@ -94,7 +98,41 @@ def plotfields(nu=1.5,r0=15,pow=0.6,nubh=2,doreload=1,fname=None,daphi=0.22,maxa
     for label in ax.get_xticklabels() + ax.get_yticklabels():
         label.set_fontsize(fntsize)
     plt.grid(b=1)
-    
+    #
+    # Omega_F vs. radius figure
+    #
+    plt.figure(2)
+    ihor = iofr(rhor)
+    navg=2
+    #plt.plot(h[ihor,:,0],avg_omegaf1b[ihor,:,0]*dxdxp[3,3,0,0,0]/omegah)
+    plt.clf()
+    ax = plt.gca()
+    plt.plot(np.array([rhor,rhor]),np.array([1e-5,10]),color='orange',lw=4,alpha=0.7)
+    plt.text(1,0.015,r"$r=r_{\rm H}$",fontsize=fntsize,color='orange',rotation='90',ha='center',va='center')
+    omnhemi = avg_omegaf1b[ihor-navg:ihor+navg+1,:ny/2,0].mean(0)*dxdxp[3,3,0,0,0]
+    omshemi = avg_omegaf1b[ihor-navg:ihor+navg+1,ny-1:ny/2-1:-1,0].mean(0)*dxdxp[3,3,0,0,0]
+    om = 0.5*(omnhemi + omshemi)
+    plt.plot((r*np.sin(h))[ihor,:ny/2,0],om,'k-',lw=2)
+    plt.plot(r[ihor:,0,0],radavg(avg_omegaf1b[ihor:,ny/2-navg:ny/2+navg+1,0].mean(-1),dn=1)*dxdxp[3,3,0,0,0],'k-',lw=2)
+    plt.plot(r[ihor:,0,0],radavg((avg_uu[3]/avg_uu[0])[ihor:,ny/2-navg:ny/2+navg+1,0].mean(-1),dn=1)*dxdxp[3,3,0,0,0],'r-.',lw=2)
+    plt.plot(r[ihor:,0,0],1./(r[ihor:,0,0]**1.5+a),'g--',lw=2)
+    prmax=200
+    plt.plot(r[:iofr(prmax),0,0],3*(rhor/r[:iofr(prmax),0,0])**1.5,'k:',lw=2)
+    plt.plot(r[:iofr(prmax),0,0],0.05*(rhor/r[:iofr(prmax),0,0])**1.2,'k:',lw=2)
+    plt.text(7,0.3,r"$r^{-1.5}$",fontsize=fntsize)
+    plt.text(2,0.007,r"$r^{-1.2}$",fontsize=fntsize)
+    plt.text(1.46,0.18,r"$\Omega$",fontsize=fntsize,color='red',ha='center',va='center')
+    plt.text(2.15,0.4,r"$\Omega_{\rm K}$",fontsize=fntsize,color='green',ha='center',va='center')
+    plt.text(0.5,0.13,r"$\Omega_{\rm F}$",fontsize=fntsize,color='black',ha='center',va='center')
+    plt.xlabel(r"$x\ [r_g]$",fontsize=fntsize)
+    plt.ylabel(r"$\Omega$",fontsize=fntsize,ha="center")
+    for label in ax.get_xticklabels() + ax.get_yticklabels():
+        label.set_fontsize(fntsize)
+    plt.grid(b=1)
+    plt.xlim(3e-1,100)
+    plt.ylim(1e-3,1.)
+    plt.xscale('log')
+    plt.yscale('log')
 
 
 def ijkavg(v):
