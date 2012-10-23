@@ -60,11 +60,13 @@ def rhpto123(vecu):
     vecout[3] = vecu[3]/dxdxp[3,3]
     return(vecout)
 
-def mkvelvsr(dn=2,recomputeavg=0,doreload=0,fntsize=28,avgfname="avgvars.npz",nz0=None,cd=1,n1=64,n2=137,clf=1):
+def mkvelvsr(dn=2,recomputeavg=0,doreload=0,fntsize=28,avgfname="avgvars.npz",nz0=None,cd=0,n1=64,n2=137,clf=1):
     # os.chdir("/home/atchekho/run2/hf_60_r10h05_ff_om02_ps2_256x128x128_32x16x32")
     # grid3d("gdump.bin", use2d = 1)
     # rfd("fieldline0064.bin")
     # plt.plot(OmegaNS*r[:,0,0],(uu[0])[:,ny/2,0],label="Force-free")
+    # cd /scratch/gpfs/atchekho/run/hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50
+    # mkvelsvsr(n1=64,n2=106) #does not recompute avgs since already has them 
     fig=plt.figure(1,figsize=(7,6))
     ax = fig.add_subplot(111, aspect='equal')
     if cd == 1:
@@ -125,7 +127,7 @@ def mkvelvsr(dn=2,recomputeavg=0,doreload=0,fntsize=28,avgfname="avgvars.npz",nz
         plt.ylim(-1.,6.-1e-5)
     # l4,=plt.plot(OmegaNS*r[:,0,0],allavgBr*r[:,0,0]**2,label=r"$u_{||},\ {\rm RMHD}$",color='b',lw=2)
     # l4,=plt.plot(OmegaNS*r[:,0,0],allavgbsqow,label=r"$u_{||},\ {\rm RMHD}$",color='b',lw=2)
-    bsqowcutoff = 10**1.
+    bsqowcutoff = 5.
     rcs=OmegaNS*r[:,0,0][(allavgbsqow<bsqowcutoff)*(OmegaNS*r[:,0,0]<3)]
     if len(rcs)>1:
         x=(rcs[0],rcs[-1])
@@ -172,10 +174,10 @@ def mkfig1(dosavefig=1,figno=1):
     
 #mkfig2(ii=95,n1=64,n2=97) #1st run
 #mkfig2(ii=95) #subsequent runs
-def mkfig2(dosavefig=1,ii=95,n1=None,n2=None,figno=2,recomputeavg=0,doreload=0,avgfname="avgvars.npz"):
+def mkfig2(dosavefig=1,ii=96,n1=None,n2=None,figno=2,recomputeavg=0,doreload=0,avgfname="avgvars.npz"):
     global B
     #os.chdir("/home/atchekho/run2/hf_60_r0710h05_mydt_sph_ps2_256x128x128")
-    os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_sph_ps2_256x128x128")
+    #os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_sph_ps2_256x128x128")
     if 'gv3' not in globals() or doreload:
         grid3d("gdump.bin", use2d = 1)
         # if os.path.isfile("dumps/fieldline0064.bin"):
@@ -184,23 +186,24 @@ def mkfig2(dosavefig=1,ii=95,n1=None,n2=None,figno=2,recomputeavg=0,doreload=0,a
         print("Skip loading gdump2d.bin because already have a grid file loaded.")
     if 'avguur' not in globals():
         if recomputeavg or not os.path.isfile( avgfname ):
-            computevars(n1=64,n2=137)
+            computevars(n1=n1,n2=n2)
+            doreload = 1
         else:
             print("Loading averages from the average file")
             loadavgvars(fname=avgfname)
-    if 'rho' not in globals():
+    if 'rho' not in globals() or doreload:
         rfd("fieldline%04d.bin" % ii)
     else:
         print("Skip loading fieldline%04d.bin because already have a data file loaded." % ii)
     # mkfig1gen(ii=ii,dosavefig=dosavefig,letter="a",whichvar='Bphi',label=r"$B_\otimes$",dostreamlines=1,figno=figno,xla=r"$x/R_{\rm LC}$",yla=r"$z/R_{\rm LC}$")
     # mkfig1gen(ii=ii,dosavefig=dosavefig,letter="b",whichvar='wobsqkomi',label=r"$\log_{10}(w/b^2)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,xla=r"$x/R_{\rm LC}$",yla=r"$z/R_{\rm LC}$")
-    mkfig1gen(ii=ii,dosavefig=dosavefig,letter="d",whichvar='uu',label=r"$u\ (y=0)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,xla=r"$x/R_{\rm LC}$",yla=r"$z/R_{\rm LC}$")
-    mkfig1gen(ii=ii,dosavefig=dosavefig,letter="e",whichvar='uu',label=r"$u\ (x=0)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,kval=nz/4,xla=r"$y/R_{\rm LC}$",yla=r"$z/R_{\rm LC}$")
-    # mkfig1gen(ii=ii,dosavefig=dosavefig,letter="f",whichvar='uu',label=r"$u\ (z=0)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,kval=0,doxyslice=1,xla=r"$x/R_{\rm LC}$",yla=r"$y/R_{\rm LC}$")
+    # mkfig1gen(ii=ii,dosavefig=dosavefig,letter="d",whichvar='uu',label=r"$u\ (y=0)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,xla=r"$x/R_{\rm LC}$",yla=r"$z/R_{\rm LC}$")
+    # mkfig1gen(ii=ii,dosavefig=dosavefig,letter="e",whichvar='uu',label=r"$u\ (x=0)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,kval=nz/4,xla=r"$y/R_{\rm LC}$",yla=r"$z/R_{\rm LC}$")
+    mkfig1gen(ii=ii,dosavefig=dosavefig,letter="f",whichvar='uu',label=r"$u\ (z=0)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,kval=0,doxyslice=1,xla=r"$x/R_{\rm LC}$",yla=r"$y/R_{\rm LC}$")
     # B = myB
     
 
-def mkfig1gen(dosavefig=1,letter="a",whichvar='wobsqkomi',label = None,ii=64,dostreamlines=1, n1=None,n2=None,figno=1,kval=None,doxyslice=0,xla=r"$x/R_{\rm LC}$",yla=r"$z/R_{\rm LC}$"):
+def mkfig1gen(dosavefig=1,letter="a",whichvar='wobsqkomi',label = None,ii=64,dostreamlines=1, n1=None,n2=None,figno=1,kval=None,doxyslice=0,xla=r"$x/R_{\rm LC}$",yla=r"$z/R_{\rm LC}$",**kwargs):
     ftrans = lambda x: max(min(1,0.5+(x-0.5)*1.25),0)
     #"squeezed" cm.jet colormap (so that the darkest red and blue are squeezed out)
     cdict = {'blue': (
@@ -218,7 +221,7 @@ def mkfig1gen(dosavefig=1,letter="a",whichvar='wobsqkomi',label = None,ii=64,dos
                      (1, 1, 1))}
     sjetmap = colors.LinearSegmentedColormap('sjet', cdict)
     aphi=fieldcalc(); aphilc=aphi[iofr(1./OmegaNS),ny/2,0]; maxaphi = 2*aphilc; ncont = 2*20+1;
-    mksmallscalepulsarplot(ii=ii,whichvar=whichvar,dosavefig=0,cb=1,vmin=-3,vmax=1,dostreamlines=dostreamlines,maxaphi=maxaphi,ncont=ncont,aphiaccent=aphilc,showtime=0,dontloadfiles=1,n1=n1,n2=n2,cmap=sjetmap,kval=kval,doxyslice=doxyslice)
+    mksmallscalepulsarplot(ii=ii,whichvar=whichvar,dosavefig=0,cb=1,vmin=-3,vmax=1,dostreamlines=dostreamlines,maxaphi=maxaphi,ncont=ncont,aphiaccent=aphilc,showtime=0,dontloadfiles=1,n1=n1,n2=n2,cmap=sjetmap,kval=kval,doxyslice=doxyslice,**kwargs)
     bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
     plt.text(-2.23/OmegaNS,2.23/OmegaNS,r"$(\mathrm{%s})$" % letter,fontsize=20,color='k',va='top',ha='left',bbox=bbox_props)
     if label is not None:
@@ -271,6 +274,8 @@ def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,
         kval = 0
     kval += (ii1%32)/32.*nz
     kval %= nz
+    minlengthdefault = kwargs.pop('minlengthdefault',0.05)
+    print minlengthdefault
     if n1 is not None and n2 is not None:
         computevars(n1=n1,n2=n2)
     if whichvar == 'Bphi':
@@ -312,9 +317,9 @@ def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,
                 print "No time-averages computed, so using instantaneous values"
                 fnc = lambda: uu[1]*dxdxp[1,1]
         mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',
-                dobhfield=40,plotlen=2.5/OmegaNS,isnstar=True,
+                dobhfield=40,plotlen=3/OmegaNS,isnstar=True,
                 minlenbhfield=0.0,density=1.2,whichr=1.3,
-                minlengthdefault=0.05,kval=kval,kvalvar=kvalvar,
+                minlengthdefault=minlengthdefault,kval=kval,kvalvar=kvalvar,
                 dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,
                 populatestreamlines=1,downsample=2,
                 ncell=1600,dsval=0.001,dnarrow=1,
@@ -372,32 +377,15 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,revaloRlc=0.5,plotdissconv=1,wr
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_512x256x1_64x64x1",
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_1024x512x1_64x64x1",
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1",
-            "hf_15_r0710h05_mydt_sph_ps2_256x128x128",
-            "hf_30_r10h05_mydt_sph_x2",
-            "hf_30_r10h05_mydt_sph_x1",
-            #"hf_30_r10h05_mydt_sph_ps2_128x64x64",
-            #"hf_30_r0710h05_mydt_sph_ps2_256x128x128_512",
-            "hf_45_r0710h05_mydt_sph_ps2_256x128x128_512",
-            #"hf_60_r0710h05_mydt_sph_ps2_256x128x128",
-            #"hf_60_r10h05",
+            "hf_15_r10h05_mydt_sph_ps2_256x128x128_bsqorho",
+            "hf_30_r10h05_mydt_sph_x2_bsqorho50",
+            "hf_45_r10h05_mydt_sph_ps2_256x128x128_32x16x32_bsqorho50",
             "hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50",
             "hf_60_r10h05_mydt_sphcyl_ps2_512x256x256_512_bsqorho50",
             "hf_60_r10h05_mydt_sph_ps2_128x64x64_128_bsqorho50",
             "hf_60_r10h05_mydt_sph_ps2_64x32x32_16_bsqorho50",
-            # "hf_60_r10h05_mydt_sph_ps2_256x128x128",
-            # #"hf_60_r10h05_mydt_sph_ps2_128x64x64",
-            # "hf_60_r10h05_mydt_sph_ps2_128x64x64_half",
-            #"hf_60_r10h05_mydt_sph_ps2_unirc_128x64x64_bnd",
-            #"hf_60_r10h05_mydt_sph_ps2_128x128x128",
-            #"hf_60_r10h05_mydt_sph_c33om0375_ps2_512x256x256_32x32x64",
-            #"hf_75_r0710h05_mydt_sph_ps2_256x128x128_512",
-            "hf_75_r10h05_mydt_sph_ps2_256x128x128_512",
-            #"hf_90_r0710h05_mydt_sph_ps0_256x128x128_512",
-            "hf_90_r10h05_mydt_sph_x2",
-            "hf_90_r10h05_mydt_sph_x1",
-            #"hf_90_r10h05_mydt_sph_ps2_128x64x64",
-            #"hf_90_r10h05",
-            "hf_90_r07h05_mydt_sph_256x128x128",
+            "hf_75_r10h05_mydt_sph_ps2_256x128x128_256_bsqorho50",
+            "hf_90_r10h05_mydt_sph_x2_bsqorho50",
             "hf_0_h10r05_om02_ffde_mydt_sph_ps0_64x32_32x32x1",
             "hf_0_h10r05_om02_ffde_mydt_sph_ps0_128x64_64x64x1",
             "hf_0_h10r05_om02_ffde_mydt_sph_ps0_256x128_64x64x1",
@@ -410,43 +398,30 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,revaloRlc=0.5,plotdissconv=1,wr
             ]
         flistpoynt = [
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_256x128x1_64x64x1",
-            #"hf_0_r10h05_mydt_sph_ps0_256x128x1_64x64x1",
-            #"rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8",
-            # "hf_0_r0710h05_mydt_sph_ps0_frac04_256x128x1_64x64x1",
-            # "hf_0_r0710h05_mydt_sph_ps0_frac02_256x128x1_64x64x1",
-            # "hf_0_r0710h05_mydt_sph_ps0_frac01_256x128x1_64x64x1",
-            # "hf_0_r0710h005_mydt_sph_ps0_frac1_256x128x1_64x64x1",
-            #"hf_15_r0710h05_mydt_sph_ps2_256x128x128",
-            #"hf_15_r10h05_mydt_cyl",
-            #"hf_30_r0710h05_mydt_sph_ps2_256x128x128_512",
-            "hf_30_r10h05_mydt_sph_x2",
-            #"hf_60_r0710h05_mydt_sph_ps2_256x128x128",
-            #"hf_60_r10h05_mydt_sph_ps2_128x128x128",
-            #"hf_90_r0710h05_mydt_sph_ps0_256x128x128_512",
-            #"hf_90_r10h05_mydt_sph_x2",
-            #"hf_30_r10h05_mydt_sph_x2",
+            "hf_30_r10h05_mydt_sph_x2_bsqorho50",
             "hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50",
-            #"hf_60_r10h05_mydt_sph_ps2_256x128x128",
-            #"hf_60_r10h05_mydt_sph_ps2_128x64x64",
-            "hf_90_r10h05_mydt_sph_x2"
+            "hf_90_r10h05_mydt_sph_x2_bsqorho50"
             ]
         flistonlyb = [
+            "hf_0_r10h05_mydt_sph_ps0_oldfixup_64x32x1_64x64x1",
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_128x64x1_64x64x1",
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_256x128x1_64x64x1",
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_512x256x1_64x64x1",
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_1024x512x1_64x64x1",
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1",
-            "hf_30_r10h05_mydt_sph_x1",
+            "hf_30_r10h05_mydt_sph_x1_bsqorho50",
+            # "hf_30_r10h05_mydt_sph_x1",
             "hf_60_r10h05_mydt_sphcyl_ps2_512x256x256_512_bsqorho50",
             "hf_60_r10h05_mydt_sph_ps2_128x64x64_128_bsqorho50",
             "hf_60_r10h05_mydt_sph_ps2_64x32x32_16_bsqorho50",
+            "hf_90_r10h05_mydt_sph_x1_bsqorho50",
             # "hf_60_r10h05_mydt_sph_ps2_128x64x64_half",
             #"hf_60_r10h05_mydt_sph_c33om0375_ps2_512x256x256_32x32x64",
             #"hf_60_r10h05_mydt_sph_ps2_128x128x128",
             # "hf_60_r10h05_mydt_sph_ps2_128x64x64",
             # "hf_60_r10h05_mydt_sph_ps2_unirc_128x64x64_bnd",
             #"hf_30_r10h05_mydt_sph_ps2_128x64x64",
-            "hf_90_r10h05_mydt_sph_x1",
+            # "hf_90_r10h05_mydt_sph_x1",
             #"hf_90_r10h05_mydt_sph_ps2_128x64x64",
             #"hf_90_r10h05",
             #"rwvpx_novpar_10rlc_bsqorho400_rbr1e2_x8"
@@ -482,25 +457,23 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,revaloRlc=0.5,plotdissconv=1,wr
             "hf_0_h10r05_om02_ffde_mydt_sph_ps0_1024x512_64x64x1",
             "hf_0_h10r05_om02_ffde_mydt_sph_ps0_2048x1024_64x64x1"
             ]
-        ltypelistonlyb = [ [5,5], [10,5], [10,5,2,5], [10,5,2,5,2,5], [10,5,2,5,2,5,2,5], [5,5], [5,5], [5,5], [5,5], [5,5],[5,5] ] 
-        lablistonlyb = ["N_r=128", "N_r=256","N_r=512", "N_r=1024", "N_r=2048", "N_r=128", "N_r=128", "N_r=128", "N_r=512", "N_r=128", "N_r=64"]
-        lwlistonlyb = [ 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
+        ltypelistonlyb = [ [2,2], [5,5], [10,5], [10,5,2,5], [10,5,2,5,2,5], [10,5,2,5,2,5,2,5], [5,5], 
+                           [10,5,2,5],   #60: 512
+                           #[10,5]       #60: 256 (show in other way)
+                           [5,5],        #60: 128
+                           [2,2],        #60: 64
+                           [5,5],       
+                           [5,5] ] 
+        lablistonlyb = ["N_r=64", "N_r=128", "N_r=256","N_r=512", "N_r=1024", "N_r=2048", "N_r=128", "N_r=128", "N_r=128", "N_r=512", "N_r=128", "N_r=64"]
+        lwlistonlyb = [ 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
         flistedot = [
-            "hf_90_r10h05_mydt_sph_x2",
-            #"hf_90_r0710h05_mydt_sph_ps0_256x128x128_512",
-            #"hf_75_r0710h05_mydt_sph_ps2_256x128x128_512",
-            "hf_75_r10h05_mydt_sph_ps2_256x128x128_512",
-            #"hf_60_r10h05_mydt_sph_ps2_256x128x128", 
+            "hf_0_r10h05_mydt_sph_ps0_oldfixup_256x128x1_64x64x1",
+            "hf_15_r10h05_mydt_sph_ps2_256x128x128_bsqorho",
+            "hf_30_r10h05_mydt_sph_x2_bsqorho50",
+            "hf_45_r10h05_mydt_sph_ps2_256x128x128_32x16x32_bsqorho50",
             "hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50",
-            #"hf_60_r0710h05_mydt_sph_ps2_256x128x128",
-            #"hf_60_r10h05_mydt_sph_ps2_128x128x128",
-            #"hf_30_r10h05_mydt_sph_x2",
-            "hf_45_r0710h05_mydt_sph_ps2_256x128x128_512",
-            "hf_30_r10h05_mydt_sph_x2",
-            #"hf_30_r0710h05_mydt_sph_ps2_256x128x128_512",
-            "hf_15_r0710h05_mydt_sph_ps2_256x128x128",
-            #"hf_15_r10h05_mydt_cyl",
-            "hf_0_r10h05_mydt_sph_ps0_oldfixup_256x128x1_64x64x1"
+            "hf_75_r10h05_mydt_sph_ps2_256x128x128_256_bsqorho50",
+            "hf_90_r10h05_mydt_sph_x2_bsqorho50"
             ]
         flistedotff = [
             "hf_0_h10r05_om02_ffde_mydt_sph_ps0_256x128_64x64x1",
@@ -728,6 +701,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,revaloRlc=0.5,plotdissconv=1,wr
         crvlist = []
         leglist = []
         edot0 = 0
+        mini=3
         for i,f in enumerate(flist):
             #if i%2==1: continue
             mydashes = None
@@ -762,8 +736,8 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,revaloRlc=0.5,plotdissconv=1,wr
                 mydashes = ltypelistonlyb[flistonlyb.index(f)]
                 mylegtext = lablistonlyb[flistonlyb.index(f)]
                 mylw = lwlistonlyb[flistonlyb.index(f)]
-                crv = plt.plot(rvec_list[i]/rlc_list[i], 
-                         poynt_list_toplot[i]-edotcurr0+edot0,c=clrs[clrindex],
+                crv = plt.plot(rvec_list[i][mini:]/rlc_list[i], 
+                         poynt_list_toplot[i][mini:]-edotcurr0+edot0,c=clrs[clrindex],
                          ls='--',lw=mylw)
                 l, = crv
                 l.set_dashes(mydashes)
@@ -780,6 +754,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,revaloRlc=0.5,plotdissconv=1,wr
         plt.ylabel(r"$L/L_{\rm aligned}$",fontsize=20)
         plt.ylim(0,2.999)
         plt.xlim(0.21,5)
+        #fake curves, just for legend:
         ltot = plt.plot(rvec_list[i]/rlc_list[i], 
                      100+rvec_list[i],c='k',
                      ls='-',lw=2)
@@ -1103,7 +1078,7 @@ def loadavgvars(fname="avgvars.npz"):
     trphiEM=npzfile['trphiEM']
 
 
-def computevars(n1=31, n2 = 53,use2d=True,calct=0):
+def computevars(n1=31, n2 = 53,use2d=True,calct=0,avgfname="avgvars.npz"):
     global avgbsq, avgrho, avgug, avgbsqow, avgbsqorho, avgBr, avgBth, avgBph, avguut, avguur, avguuth, avguuph
     global trth,trphi,trphicons,trthEM,trphiEM
     [avgbsq, avgrho, avgug, avgbsqow, avgbsqorho, avgBr, avgBth, avgBph, avguut, avguur, avguuth, avguuph,
@@ -1126,6 +1101,8 @@ def computevars(n1=31, n2 = 53,use2d=True,calct=0):
          lambda: TudEM[1,2]*dxdxp[1,1]/dxdxp[2,2],
          lambda: TudEM[1,3]*dxdxp[1,1]/dxdxp[3,3]],
         n1 = n1, n2 = n2, calct=calct, use2d=use2d)
+    if not os.path.isfile( avgfname ):
+        saveavgvars( avgfname )
 
 def varstotxt(f="file.txt",rad=6):
     ii=iofr(rad)
