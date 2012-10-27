@@ -48,6 +48,19 @@ def testcbar():
     img=imshow(rand(100,100))
     colorbar(img)
 
+def japlot(doreload=1,k=0):
+    if doreload:
+        grid3d("gdump.bin",use2d=1)
+        loadavgvars()
+    nskip=0
+    for roRlc in np.arange(0.6,2.2,0.2):
+        myi = iofr(roRlc/OmegaNS)
+        plt.plot(h[myi,nskip:nz-nskip,0],avgBsq[myi,nskip:nz-nskip,k]**0.5,'x-',label=r"$B(r=%g)$"%roRlc)
+    plt.legend()
+    plt.plot(h[myi,nskip:nz-nskip,0],((avgug*gam+avgrho)/avgbsq/4/np.pi)[myi,nskip:nz-nskip,k]**0.5,'x:')
+    plt.xlabel(r"$\theta$",fontsize=20)
+    plt.ylabel(r"$|B|$",fontsize=20)
+    plt.savefig("fig%d.pdf"%k,bbox_inches='tight',pad_inches=0.02)
 
 #see also plotrodrigo()
 def plotfields(nu=1.5,r0=15,pow=0.6,nubh=2,doreload=1,fname=None,daphi=0.22,maxaphi=5,fntsize=24):
@@ -1173,8 +1186,7 @@ def loadavgvars(fname="avgvars.npz"):
     trphicons=npzfile['trphicons']
     trthEM=npzfile['trthEM']
     trphiEM=npzfile['trphiEM']
-    avgBsq = (avgBr**2+avgBth**2+avgBph**2)**0.5
-
+    avgBsq = (avgBr**2+(r*avgBth)**2+(r*np.sin(h)*avgBph)**2)**0.5
 
 def computevars(n1=31, n2 = 53,use2d=True,calct=0,avgfname="avgvars.npz"):
     global avgbsq, avgrho, avgug, avgbsqow, avgbsqorho, avgBr, avgBth, avgBph, avguut, avguur, avguuth, avguuph
