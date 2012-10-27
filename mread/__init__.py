@@ -44,6 +44,57 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
+def reinterpfld(vars,newRin=None,newRout=None):
+    if newRin is None: newRin = Rin
+    if newRout is None: newRout = 1000
+    newstartx1 = np.log(newRin)
+    newdx1 = np.log(newRout/newRin)
+    newdx2 = 1./ny
+    newdx3 = 2*np.pi/nz
+    newx1 = newstartx1 + (ti+0.5)*_dx1
+    newx2 = (tj+0.5)*_dx2
+    newx3 = (tk+0.5)*_dx3
+    newr  = np.exp(newx1)
+    newh  = np.exp(newx2)
+    newph = np.exp(newx3)
+    newdxdxp11 = newr
+    newdxdxp22 = np.pi+r*0
+    newdxdxp33 = 1.+r*0
+    ####
+    logr = np.log(r)
+    lognewr = np.log(newr)
+    newvars = np.empty_like(vars)
+    listvars = [5,6,7,  #u1,u2,u3
+                8,9,10, #B1,B2,B3
+                11,12,13,
+                20,21,22,
+                23,24,25]
+    print( "Preparing to look over variables..." )
+    for ivar in xrange(vars.shape[0]):
+        print( "Processing variable %d of %d..." % (ivar, vars.shape[0]) )
+        if ivar in listvars[0::3]: #radial
+            vartointerp = vars[ivar]*dxdxp[1,1]
+        elif ivar in listvars[1::3]: #theta
+            vartointerp = vars[ivar-1]*dxdxp[2,1]+vars[ivar]*dxdxp[2,2]
+        elif ivar in listvars[2::3]: #phi
+            vartointerp = vars[ivar]*dxdxp[3,3]
+        else:
+            vartointerp = vars[ivar]
+        for myk in xrange(nz):
+            print( "... processing k %d of %d..." % (myk, nz) )
+            newvars[ivar,:,:,myk] = griddata(
+                (logr[:,:,0].ravel(), h[:,:,0].ravel()),
+                vartointerp[:,:,myk].ravel(),
+                (lognewr[:,:,0], newh[:,:,0]),
+                method='linear')
+        if ivar in listvars[0::3]: #radial
+            newvars[ivar]  /= newdxdxp11
+        elif ivar in listvars[1::3]: #theta
+            newvars[ivar] /= newdxdxp22
+        elif ivar in listvars[2::3]: #phi
+            newvars[ivar] /= newdxdxp33
+    return newvar
+
 def testcbar():
     img=imshow(rand(100,100))
     colorbar(img)
@@ -3617,7 +3668,30 @@ def rfd(fieldlinefilename,**kwargs):
         h = hnew
         ph = phnew
         gc.collect()
-
+    savenewgrid = kwargs.pop("savenewgrid",0)
+    if savenewgrid:
+        newRout = 1000
+        newd = reinterpfld(d,newRin=Rin,newRout=newRout)
+        print( "Saving new grid...", )
+        #write out a dump with flipped spin:
+        gout = open( "dumps/" + fieldlinefilename + "newgrid", "wb" )
+        header[7] = "%d" % np.log(Rout/Rin)/nx
+        header[8] = "%d" % (1./ny)
+        header[9] = "%d" % (2*np.pi/nz)
+        #Spherical polar radius of the innermost radial cell
+        header[14] = "%g" % Rin
+        header[15] = "%g" % Rout
+        for headerel in header:
+            s = "%s " % headerel
+            gout.write( s )
+        gout.write( "\n" )
+        gout.flush()
+        os.fsync(gout.fileno())
+        #reshape the rdump content
+        gd1 = body.view().reshape((nz,ny,nx,-1),order='C')
+        gd1.tofile(gout)
+        gout.close()
+        print( " done!" )
 
 def cvel():
     global ud,etad, etau, gamma, vu, vd, bu, bd, bsq
