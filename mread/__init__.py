@@ -673,6 +673,10 @@ def reinterp3dspc_opt_all(Vorig,Vmetric,rho,ug,uu,B,gdetB=None):
     start_time=datetime.now()
     print("reinterp3dspc_opt_all(start) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
     #
+    ######################################
+    # Setup variables
+    ######################################
+    #
     rhoi=np.copy(rho)
     ugi=np.copy(ug)
     uui=np.copy(uu)
@@ -718,6 +722,10 @@ def reinterp3dspc_opt_all(Vorig,Vmetric,rho,ug,uu,B,gdetB=None):
     #
     print("reinterp3dspc_opt_all(done with tk) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
     #
+    ######################################
+    # Interpolate (and transform from X->V for vectors)
+    ######################################
+    #
     # explore fast way:
     if 1==1:
         tjorigarray=np.copy(tkorigarray)
@@ -734,29 +742,61 @@ def reinterp3dspc_opt_all(Vorig,Vmetric,rho,ug,uu,B,gdetB=None):
         print("reinterp3dspc_opt_all(done with tjorigarray) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         #
         rhoi[:,:,:]=rho[faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
-        ug[:,:,:]=ug[faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
+        ugi[:,:,:]=ug[faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
         #
         print("reinterp3dspc_opt_all(done with rho,ug) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         #
-        uui[0,:,:,:]=uu[0,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
-        uui[1,:,:,:]=uu[1,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
-        uui[2,:,:,:]=uu[2,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
-        uui[3,:,:,:]=uu[3,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
+        # do dxdxp first since needed for both uu and B.  Only need 4 full spatially dependent values of dxdxp
+        if 1==1:
+            dxdxpi=np.copy(uu)
+            dxdxpi[0,:,:,:]=dxdxp[1,1,faketi[:,None,None],inttjorigarray[:,:,:],0] #inttkorigarray[:,:,:]]
+            dxdxpi[1,:,:,:]=dxdxp[1,2,faketi[:,None,None],inttjorigarray[:,:,:],0] #inttkorigarray[:,:,:]]
+            dxdxpi[2,:,:,:]=dxdxp[2,1,faketi[:,None,None],inttjorigarray[:,:,:],0] #inttkorigarray[:,:,:]]
+            dxdxpi[3,:,:,:]=dxdxp[2,2,faketi[:,None,None],inttjorigarray[:,:,:],0] #inttkorigarray[:,:,:]]
+        #
+        print("reinterp3dspc_opt_all(done with dxdxp11,12,21,22) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
+        #
+        if 1==1:
+            uui[0,:,:,:]=uu[0,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
+            uui[1,:,:,:]=uu[1,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
+            uui[2,:,:,:]=uu[2,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
+            uui[3,:,:,:]=uu[3,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
+
+            uui = dxdxpverysimpletensordot(uui,dxdxpi,dxdxp)
+        else:
+            #uui[:,:,:,:] = dxdxpsimpletensordot(uu[:,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]],dxdxp[:,:,faketi[:,None,None],inttjorigarray[:,:,:],0],axes=[0,1])
+            uui[:,:,:,:] = dxdxpsimpletensordot4uu(uu,dxdxp,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:])
         #
         print("reinterp3dspc_opt_all(done with uu[0-4]) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         #
-        #Bi[0,:,:,:]=B[0,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]] # should still be zero
-        Bi[1,:,:,:]=B[1,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
-        Bi[2,:,:,:]=B[2,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
-        Bi[3,:,:,:]=B[3,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
+        if 1==1:
+            #Bi[0,:,:,:]=B[0,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]] # should still be zero
+            Bi[0]=B[0]*0.0 # still zero
+            Bi[1,:,:,:]=B[1,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
+            Bi[2,:,:,:]=B[2,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
+            Bi[3,:,:,:]=B[3,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
+
+            Bi = dxdxpverysimpletensordot(Bi,dxdxpi,dxdxp)
+        else:
+            #Bi[:,:,:,:] = dxdxpsimpletensordot(B[:,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]],dxdxp[:,:,faketi[:,None,None],inttjorigarray[:,:,:],0],axes=[0,1])
+            Bi[:,:,:,:] = dxdxpsimpletensordot4B(B,dxdxp,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:])
         #
         print("reinterp3dspc_opt_all(done with B[1-4]) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         #
         if gdetB!=None:
-            #gdetBi[0,:,:,:]=gdetB[0,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]] # should still be zero
-            gdetBi[1,:,:,:]=gdetB[1,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
-            gdetBi[2,:,:,:]=gdetB[2,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
-            gdetBi[3,:,:,:]=gdetB[3,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
+            if 1==1:
+                #gdetBi[0,:,:,:]=gdetB[0,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]] # should still be zero
+                gdetBi[0]=gdetB[0]*0.0 # still zero
+                gdetBi[1,:,:,:]=gdetB[1,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
+                gdetBi[2,:,:,:]=gdetB[2,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
+                gdetBi[3,:,:,:]=gdetB[3,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]]
+
+                gdetBi = dxdxpverysimpletensordot(gdetBi,dxdxpi,dxdxp)
+            else:
+                # GODMARK: not quite right to transform gdetB this way (need to divide out gdet and put it back, but don't have gdet at faces)
+                #gdetBi[:,:,:,:] = dxdxpsimpletensordot(gdetB[:,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:]],dxdxp[:,:,faketi[:,None,None],inttjorigarray[:,:,:],0],axes=[0,1])
+                gdetBi[:,:,:,:] = dxdxpsimpletensordot4B(gdetB,dxdxp,faketi[:,None,None],inttjorigarray[:,:,:],inttkorigarray[:,:,:])
+
             #
             print("reinterp3dspc_opt_all(done with gdetB[1-4]) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
             #
@@ -838,6 +878,10 @@ def reinterp3dspc_opt_all(Vorig,Vmetric,rho,ug,uu,B,gdetB=None):
         #
         print("reinterp3dspc_opt_all(end fast but slower interp) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         #
+    ######################################
+    # Return results
+    ######################################
+    #
     if(gdetB==None):
         return(rhoi,ugi,uui[0],uui[1],uui[2],uui[3],Bi[1],Bi[2],Bi[3])
     else:
@@ -5520,6 +5564,7 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
         Bh = dxdxp[2,1]*B[1]+dxdxp[2,2]*B[2]
         Bp = B[3]*dxdxp[3,3]
         #
+        #
         Brnorm=Br
         Bhnorm=Bh*np.abs(r)
         Bpnorm=Bp*np.abs(r*np.sin(h))
@@ -5528,6 +5573,7 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
         BRnorm=Brnorm*np.sin(h)+Bhnorm*np.cos(h)
         Bxnorm=BRnorm*np.cos(ph)-Bpnorm*np.sin(ph)
         Bynorm=BRnorm*np.sin(ph)+Bpnorm*np.cos(ph)
+        #
         #
         iBx = reinterpxy(Bxnorm,extent,ncell,domask=1)
         iBy = reinterpxy(Bynorm,extent,ncell,domask=1)
@@ -5572,8 +5618,9 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
 
 def setupframe(gs=3,loadq=0,which=1):
     #
+    #
     if loadq==1:
-        grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=True )
+        grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=use2dglobal )
         flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
         sort_nicely(flist)
         firstfieldlinefile=flist[0]
@@ -6212,7 +6259,7 @@ def computeavg(qty):
     return(avgqty)
 
 def doall():
-    grid3d("gdump.bin",use2d=True)
+    grid3d("gdump.bin",use2d=use2dglobal)
     
     if np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) < 1.5:
         #lo-res 0.99 settings
@@ -6442,7 +6489,8 @@ def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None):
             firstfieldlinefile=flist[0]
             rfdheaderonly(firstfieldlinefile)
             # gdet needed to normalize divb
-            #grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=True )
+            #    use2dglobal=True
+            #grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=use2dglobal )
             #
             # OLD:
             divbcentold1=(gd1[0:nz-1,0:ny-1,1:nx  ,gdetB1index]-gd1[0:nz-1,0:ny-1,0:nx-1,gdetB1index])/_dx1
@@ -6702,14 +6750,14 @@ def rgfd(fieldlinefilename,**kwargs):
     if 'gv3' not in globals():
         gdumpname = glob.glob( os.path.join("dumps/", "gdump*") )
         #read the 1st found file
-        grid3d(os.path.basename(gdumpname[0]),use2d=True)
+        grid3d(os.path.basename(gdumpname[0]),use2d=use2dglobal)
     rfd(fieldlinefilename,**kwargs)
     cvel()
 
 
 #  http://norvig.com/python-lisp.html   
 
-def rfdheader():
+def rfdheader(fin=None):
     global t,nx,ny,nz,startx1,startx2,startx3,_dx1,_dx2,_dx3,nstep,gam,a,R0,Rin,Rout,hslope,rundt,defcoord
     global MBH,QBH,EP3,THETAROT,_is,_ie,_js,_je,_ks,_ke,whichdump,whichdumpversion,numcolumns
     global rhor
@@ -6805,9 +6853,8 @@ def rfdheader():
         numcolumns=int(header[29])
 
 def rfdheaderonly(filename="dumps/fieldline0000.bin"):
-    global fin
     fin = open(filename, "rb" )
-    rfdheader()
+    rfdheader(fin=fin)
     fin.close()
 
 def rfdheaderfirstfile():
@@ -6851,16 +6898,32 @@ def rfd(fieldlinefilename,**kwargs):
     global rho,ug,uu,B,gdetB
     #
     #read image
-    global fin
     #
     # get starting time so can compute time differences
     start_time=datetime.now()
     #
-    #
+    #### read header
     fname= "dumps/" + fieldlinefilename
     fin = open(fname, "rb" )
-    rfdheader()
+    rfdheader(fin=fin)
+    fin.close()
     #
+    #
+    # check if last-read gdump has same nx,ny,nz,THETAROT as fieldline file
+    if nx==nxgdump and ny==nygdump and nz==nzgdump and THETAROT==THETAROTgdump:
+        print("fieldline file has same nx,ny,nz,THETAROT as gdump file") ; sys.stdout.flush()
+    else:
+        print("fieldline file has different nx,ny,nz,THETAROT as gdump file, so reading correct gdump file") ; sys.stdout.flush()
+        if THETAROT==0.0:
+            grid3d("gdump.bin",use2d=use2dglobal,usethetarot0=True)
+        else:
+            grid3d("gdump.bin",use2d=use2dglobal,usethetarot0=False)
+        # re-read fieldline file header so (e.g.) time is correct
+    #
+    #
+    # generally re-read header in case grid3d() was loaded
+    fin = open(fname, "rb" )
+    rfdheader(fin=fin)
     #read grid dump per-cell data
     #
     if(0):
@@ -6899,28 +6962,38 @@ def rfd(fieldlinefilename,**kwargs):
     #B[1:4,:,:,:]=d[8:11,:,:,:]
     # start at 7 so B[1] is correct.  7=<ignore> 8=B[1] 9=B[2] 10=B[3]
     B=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
-    B=d[7:11,:,:,:]
+    # have to make copy so mods to B[0] won't change d[7]
+    B=np.copy(d[7:11,:,:,:])
     B[0]=0*B[0]
     #
+    #
+    #
+    #
     gotgdetB=0
-    if(d.shape[0]>=14): 
+    if(d.shape[0]>=14):
+        print("Getting gdetB: dshape0=%d" % (d.shape[0])) ; sys.stdout.flush()
         #new image format additionally contains gdet*B^i
         #face-centered magnetic field components multiplied by gdet
         # below assumes gdetB[0] is never needed
         gdetB=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
-        gdetB = d[10:14,:,:,:]
+        # have to make copy so mods to gdetB[0] won't change B[3]
+        gdetB = np.copy(d[10:14,:,:,:])
         gdetB[0]=0*gdetB[0]
         gotgdetB=1
     #
     # see if THETAROT non-zero so need to rotate and transform data
     global nzgdump
     #
-    print("rfd(before rfdtransform) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-    # whether to always do transformation (for testing)
+    #
+    #DEBUGTHETAROT=1
     DEBUGTHETAROT=0
     #
-    if DEBUGTHETAROT or np.fabs(THETAROT-0.0)>1E-13:
+    #
+    # Only need to rotate data to align with THETAROT0 gdump if use2dglobal==True
+    if use2dglobal==True and (DEBUGTHETAROT or np.fabs(THETAROT-0.0)>1E-13):
         #
+        print("rfd(before rfdtransform) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
+        # whether to always do transformation (for testing)
         # save result so can use it if repeat
         fnamenpz =  "dumps/" + fieldlinefilename + ".npz"
         print("THETAROT=%21.15g for fnamenpz=%s" % (THETAROT,fnamenpz)) ; sys.stdout.flush()
@@ -6959,23 +7032,28 @@ def rfd(fieldlinefilename,**kwargs):
                 np.savez(fnamenpz,rho=rho,ug=ug,uu=uu,B=B,gdetB=gdetB)
             else:
                 np.savez(fnamenpz,rho=rho,ug=ug,uu=uu,B=B)
-        #
+            #
+            #
+            print("rfd(after rfdtransform) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
+    else:
+        print("No rdtrans for file=%s with THETAROT=%g" % (fname,THETAROT)) ;  sys.stdout.flush()
     #
-    print("rfd(after rfdtransform) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
     # compute extra things
+    #
+    #
     ######################
     rfdprocess(gotgdetB=gotgdetB)
     #
     print("rfd(after rfdprocess) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
     #
+    #
 
 
 # testing
 # cd /lustre/medusa/jmckinne/data3/jmckinne/jmckinne/sashaa99t0.6/test1
-# rm -rf python*.out ; rm -rf gmon.out ; rm -rf torun*.sh ; rm -rf sh*.sh __init*.py* py nohup.out ; killall -s 9 python ; bsub*.sh sasha*.err sasha*.out out.txt outnew.txt
+# rm -rf python*.out ; rm -rf gmon.out ; rm -rf torun*.sh ; rm -rf sh*.sh __init*.py* py nohup.out ; killall -s 9 python ; rm -rf bsub*.sh sasha*.err sasha*.out out.txt outnew.txt ; rm -rf fitplot*.png data*.txt lrho*.eps lrho*.png fmax.txt phi*.pdf pjet*.pdf *.npy aphi.png aphi.eps aphi.pdf
 
 # edit makemovie.sh and for system=4 make numnodes=1 and numcorespernode=1 and plot stuff so memtot=8 and numcores=1
-# qsub -I -A TG-PHY120005  -q analysis -l ncpus=1,mem=8GB,walltime=3:00:00
 # sh makemovie.sh sashaa99t0.6 1 1 1 0 0 0 0 0 0 0 1 0 0 0 0 4 0
 #
 # for parallel run:
@@ -7030,7 +7108,10 @@ def rfdtransform(gotgdetB=0):
     print("wtf: %d\n",nz) ; sys.stdout.flush()
     print("wtf2: %d\n",nzgdump) ; sys.stdout.flush()
     #
+    ###########################################
     # first deal with ti,tj,tk,x1,x2,x3,r,h,ph that are gdump data size, while need true ph at least on same sized-grid as rfd() data is on.
+    ###########################################
+    #
     ti1d=ti[:,0,0].view().reshape(-1)
     tj1d=tj[0,:,0].view().reshape(-1)
     tk1d=tk[0,0,:].view().reshape(-1)
@@ -7052,6 +7133,8 @@ def rfdtransform(gotgdetB=0):
     #print("shapes: ",x1.shape,x2.shape,x3.shape,r.shape,x11d.shape,x11d[:,None,None].shape,x21d.shape,x21d[None,:,None].shape,x31dnew.shape,x31dnew[None,None,:].shape) ; sys.stdout.flush()
     #
     #http://mail.scipy.org/pipermail/astropy/2011-April/001255.html
+    print("pre-r2d shape (nx=%d ny=%d)" % (nx,ny)) ; sys.stdout.flush()
+    print(r[:,:,0].shape) ; sys.stdout.flush()
     # .view().reshape(-1)
     r2d=r[:,:,0].view().reshape((nx,ny))
     h2d=h[:,:,0].view().reshape((nx,ny))
@@ -7084,6 +7167,11 @@ def rfdtransform(gotgdetB=0):
     # set nzgdump since updated 3d things.  Now won't have to do this again unless read-in gdump again.
     #    nzgdump=nz
     #
+    #
+    ###########################################
+    # Assign Vmetric
+    ###########################################
+    #
     Vmetric=np.zeros((4,nx,ny,nz),dtype='float32')
     Vmetric[0]=Vmetric[0]*0.0
     Vmetric[1]=r3d
@@ -7097,6 +7185,11 @@ def rfdtransform(gotgdetB=0):
     #print(Vmetric[2].shape)
     #print(Vmetric[3].shape)
     #sys.stdout.flush()
+    #
+    #
+    ###########################################
+    # Assign Vorig
+    ###########################################
     #
     print("rotate_VtoVmetric BEGIN\n");sys.stdout.flush()
     # get Vorig if different than Vmetric
@@ -7122,6 +7215,11 @@ def rfdtransform(gotgdetB=0):
     #
     print("rotate_VtoVmetric END\n");sys.stdout.flush()
     print("rfdtransform(done assign Vorig) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
+    #
+    #
+    ###########################################
+    # Interpolate (and transform vectors from X->V)
+    ###########################################
     #
     print("reinterp3dspc BEGIN\n");sys.stdout.flush()
     #
@@ -7168,16 +7266,56 @@ def rfdtransform(gotgdetB=0):
     print("reinterp3dspc END\n");sys.stdout.flush()
     print("rfdtransform(done assign interpolated prims) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
     #
+    #
+    ###########################################
     # Get transformation matrices that actually only depend upon Vmetric=r,h,ph
+    ###########################################
+    #
     # transV2Vmetric^\mu[Vmetric]_\nu[V] u^\nu[V] : So first index is Vmetric-type.  Second index is V-type.  Operates on contravariant V-type.
     # transVmetric2V^\mu[V]_\nu[Vmetric] u^\nu[Vmetric] : So first index is V-type.  Second index is Vmetric-type.  Operates on contravariant Vmetric-type.
     print("set_transV2Vmetric BEGIN\n");sys.stdout.flush()
     #
     (transV2Vmetric)=set_transV2Vmetric(Vmetric=Vmetric,b0=-THETAROT)
+    #(transV2Vmetric)=set_transV2Vmetric(Vmetric=Vmetric,b0=+THETAROT)
     gc.collect() #try to release unneeded memory
+    #
+    # test transV2Vmetric
+    #
+    utest1old=np.zeros((4),dtype=r.dtype)
+    utest1old[0]=1.0
+    utest1old[1]=1.0
+    utest1old[2]=0.0
+    utest1old[3]=0.0
+    utest1new=np.tensordot(utest1old,transV2Vmetric[:,:,60,ny/2,nz/4],axes=[0,1])
+    print("utest1new");sys.stdout.flush()
+    print(utest1new);sys.stdout.flush()
+    #
+    utest1old=np.zeros((4),dtype=r.dtype)
+    utest1old[0]=1.0
+    utest1old[1]=0.0
+    utest1old[2]=1.0
+    utest1old[3]=0.0
+    utest1new=np.tensordot(utest1old,transV2Vmetric[:,:,60,ny/2,nz/4],axes=[0,1])
+    print("utest2new");sys.stdout.flush()
+    print(utest1new);sys.stdout.flush()
+    #
+    utest1old=np.zeros((4),dtype=r.dtype)
+    utest1old[0]=1.0
+    utest1old[1]=0.0
+    utest1old[2]=0.0
+    utest1old[3]=1.0
+    utest1new=np.tensordot(utest1old,transV2Vmetric[:,:,60,ny/2,nz/4],axes=[0,1])
+    print("utest3new");sys.stdout.flush()
+    print(utest1new);sys.stdout.flush()
+    #
     #
     print("set_transV2Vmetric END\n");sys.stdout.flush()
     print("rfdtransform(done get transV2Vmetric) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
+    #
+    ###########################################
+    # Transform vector components from Vorig -> Vmetric -> Xmetric
+    ###########################################
+    #
     # transform tensors (gv3=gv3_{\mu[V]\nu[V]} and dxdxp=dx^\mu[V]/dxp^\nu[V], but dxdxp just dV/dX that we understand now is just dVmetric/dXmetric that is already new grid by assumed rotation)
     # So only have to transform gv3 (everything remains correct/consistent as long as all vector components are interpolated in same spatial way and transformed in correct/consistent way)
     # using transV just does a local rotation, not global.  Global relocation done by interpolation already.
@@ -7200,14 +7338,22 @@ def rfdtransform(gotgdetB=0):
     print("About to do uunew1");sys.stdout.flush()
     printusage()
     #
-    uunew1=tensordot01(uu,dxdxp) #,axes=([0],[1])) # now u^\mu[V]
+    if 0==1:
+        uunew1=tensordot01(uu,dxdxp) #,axes=([0],[1])) # now u^\mu[V]
+    else:
+        uunew1=uu # assume already applied dxdxp at same r,theta,phi location as uu
+    #
     printusage()
     uunew2=tensordot01(uunew1,transV2Vmetric) #,axes=([0],[1])) # now u^\nu[Vmetric]
     uunew3=tensordot00(uunew2,idxdxp) #,axes=([0],[0])) # now u^\nu[Xmetric]
     uu=np.copy(uunew3) # overwrite
     #
     # assumes no transformation on time component, which is true for the spatial rotation involving THETAROT
-    Bnew1=tensordot01(B,dxdxp) #,axes=([0],[1])) # now u^\mu[V]
+    if 0==1:
+        Bnew1=tensordot01(B,dxdxp) #,axes=([0],[1])) # now u^\mu[V]
+    else:
+        Bnew1=B # assume already applied dxdxp at same r,theta,phi location as uu
+    #
     Bnew2=tensordot01(Bnew1,transV2Vmetric) #,axes=([0],[1])) # now u^\nu[Vmetric]
     Bnew3=tensordot00(Bnew2,idxdxp) #,axes=([0],[0])) # now u^\nu[Xmetric]
     B=np.copy(Bnew3) # overwrite
@@ -7217,7 +7363,11 @@ def rfdtransform(gotgdetB=0):
         # assume for gdetB that gdet changes little for Vorig and Vmetric.  Inaccurate near BH, but only use gdetB in special cases.  Even very near BH, gdet doesn't change too much with THETAROT changes.
         # To get accurate, would have to divide out gdet[Vorig] and multiply by gdet[V].
         # But, then divB=0 won't be very accurate still.  To have that, would have to form A_i and recompute face values of gdetB.
-        gdetBnew1=tensordot01(gdetB,dxdxp) #,axes=([0],[1])) # now u^\mu[V]
+        if 0==1:
+            gdetBnew1=tensordot01(gdetB,dxdxp) #,axes=([0],[1])) # now u^\mu[V]
+        else:
+            gdetBnew1=gdetB # assume already applied dxdxp at same r,theta,phi location as uu
+        #
         gdetBnew2=tensordot01(gdetBnew1,transV2Vmetric) #,axes=([0],[1])) # now u^\nu[Vmetric]
         gdetBnew3=tensordot00(gdetBnew2,idxdxp) #,axes=([0],[0])) # now u^\nu[Xmetric]
         gdetB=np.copy(gdetBnew3) # overwrite
@@ -7246,6 +7396,14 @@ def tensordot00(uu,dxdxp):
     result = (uu[:,None,None,None] * dxdxptrans[:,:,None,None,None]).sum(axis=1).reshape(4,nx,ny,nz)
     return(result)
 
+
+def invtest():
+    b=np.array([[ 2,  2,  3,  4], [ 5,  6,  7,  8],   [ 9, 10, 11, 12],   [13, 12, 15, 16]])
+    #b = 1+np.arange(4*4).reshape(4, 4)
+    binv=np.linalg.inv(b)
+    result=np.tensordot(b,binv,axes=[1,0])
+    print(result)
+                
 
 # above tensordot01 and tensordot00 were tested using the below
 def tensordottest():
@@ -7286,6 +7444,64 @@ def tensordottest():
 
     np.sum(ctrue2-c22)
 
+def dxdxpsimpletensordot4uu(uu,dxdxp,iii,jjj,kkk):
+    #np.tensordot
+    # axis not necessary since hard-code axis effectively below
+    #
+    uui=np.copy(uu)
+    #
+    uui[0]=uu[0,iii,jjj,kkk]*1.0 # since dxdxp[0,0] always 1.0 for simple normal setup
+    uu1temp=uu[1,iii,jjj,kkk]
+    uu2temp=uu[2,iii,jjj,kkk]
+    uui[1]=uu1temp*dxdxp[1,1,iii,jjj,kkk] + uu2temp*dxdxp[1,2,iii,jjj,kkk]
+    uui[2]=uu1temp*dxdxp[2,1,iii,jjj,kkk] + uu2temp*dxdxp[2,2,iii,jjj,kkk]
+    uui[3]=uu[3,iii,jjj,kkk]*dxdxp[3,3,0,0,0] # since dxdxp33 constant with r,\theta,\phi for simple normal setup
+    #
+    return(uui)
+    #
+
+# note dxdxpi only has 0,1,2,3  corresponding to dxdxp11,dxdxp12,dxdxp21,dxdxp22
+def dxdxpverysimpletensordot(uuXi,dxdxpi,dxdxp):
+    #
+    uuVi=np.copy(uuXi)
+    #
+    uuVi[0]=uuXi[0]*dxdxp[0,0,0,0,0] # since dxdxp00 always constant (and 1.0) for simple normal setup
+    uuVi[1]=uuXi[1]*dxdxpi[0] + uuXi[2]*dxdxpi[1]
+    uuVi[2]=uuXi[1]*dxdxpi[2] + uuXi[2]*dxdxpi[3]
+    uuVi[3]=uuXi[3]*dxdxp[3,3,0,0,0] # since dxdxp33 constant with r,\theta,\phi for simple normal setup
+    #
+    return(uuVi)
+    #
+
+def dxdxpsimpletensordot4B(B,dxdxp,iii,jjj,kkk):
+    #np.tensordot
+    # axis not necessary since hard-code axis effectively below
+    #
+    Bi=np.copy(B)
+    #
+    Bi[0]=B[0, 0,0,0]*1.0 # since B[0] is still 0
+    B1temp=B[1,iii,jjj,kkk]
+    B2temp=B[2,iii,jjj,kkk]
+    Bi[1]=B1temp*dxdxp[1,1,iii,jjj,kkk] + B2temp*dxdxp[1,2,iii,jjj,kkk]
+    Bi[2]=B1temp*dxdxp[2,1,iii,jjj,kkk] + B2temp*dxdxp[2,2,iii,jjj,kkk]
+    Bi[3]=B[3,iii,jjj,kkk]*dxdxp[3,3,0,0,0] # since dxdxp33 constant with r,\theta,\phi for simple normal setup
+    #
+    return(Bi)
+    #
+
+# not used yet:
+def rotsimpletensordot(uu,rot,axis):
+    #np.tensordot
+    # axis not necessary since hard-code axis effectively below
+    #
+    uui=np.copy(uu)
+    #
+    uui[0]=uu[0]*1.0 # since dxdxp[0,0] always 1.0 for simple normal setup
+    uui[1]=uu[1]*dxdxp[1,1] + uu[2]*dxdxp[1,2]
+    uui[2]=uu[1]*dxdxp[2,1] + uu[2]*dxdxp[2,2]
+    uui[3]=uu[3]*dxdxp[3,3,0,0,0] # since constant with r,\theta,\phi for simple normal setup
+    #
+    #
 
 def rfdprocess(gotgdetB=0):
     #
@@ -7364,7 +7580,11 @@ def rfdprocess(gotgdetB=0):
         r = rnew
         h = hnew
         ph = phnew
+        print("phnew") ; sys.stdout.flush()
+        print(phnew[0,0,:]) ; sys.stdout.flush()
         gc.collect()
+    else:
+        print("r in globals has shape2 of nz") ; sys.stdout.flush()
     #
     # other stuff
     entropy=(gam-1.0)*ugclean/rho**(gam)
@@ -7544,12 +7764,20 @@ def grid3d_thetarot_notusing(dumpname,use2d=False,doface=False): #read grid dump
     print( "Done grid3d!" ) ; sys.stdout.flush()
 
 
-def grid3d(dumpname,use2d=False,doface=False): #read grid dump file: header and body
+def grid3d(dumpname,use2d=False,doface=False,usethetarot0=False): #read grid dump file: header and body
     #
-    fullfieldlinefilename="dumps/gdump.bin"
-    if os.path.isfile(fullfieldlinefilename):
+    #
+    #
+    if usethetarot0==True:
+        filename="dumps/gdump.THETAROT0.bin"
+        dumpname="gdump.THETAROT0.bin" # override input
+    else:
+        filename="dumps/gdump.bin"
+        # just use input dumpname
+    #
+    if os.path.isfile(filename):
         # only need header of true gdump.bin to get true THETAROT
-        rfdheaderonly(fullfieldlinefilename)
+        rfdheaderonly(filename)
     else:
         # if no gdump, use last fieldline file that is assumed to be consistent with gdump that didn't exist.
         # allows non-creation of gdump if restarting with tilt from non-tilt run.  So then enver have to have gdump.bin with THETAROT tilt.
@@ -7559,12 +7787,19 @@ def grid3d(dumpname,use2d=False,doface=False): #read grid dump file: header and 
     global nzgdumptrue
     nzgdumptrue=nz
     #
-    
+    global nxgdump,nygdump,nzgdump,THETAROTgdump
+    nxgdump=nx
+    nygdump=ny
+    nzgdump=nz
+    THETAROTgdump=THETAROT
+    #
+    # determine if need to read THETAROT0 or normal general gdump
+    #../../dumps/gdump.THETAROT0.bin
     #
     #
     # for THETAROT!=0, assume gdump.THETAROT0.bin exists corresponding to the non-rotated THETAROT=0 version.
     # Using this vastly speeds-up read-in and doesn't use excessive (too much!) memory required for full 3D interpolation of (a minimum) gv3 while reading in all other things because binary and using np.fromfile().
-    if np.fabs(THETAROT-0.0)>1E-13:
+    if np.fabs(THETAROT-0.0)>1E-13 and use2d==True:
         realdumpname="gdump.THETAROT0.bin"
         # NOTEMARK: older sasha runs that weren't tilted had 32-64 phi-zones, whereas new has 128 phi-zones.  But once read-in, only use one-phi zone for this file and that's all that's needed.  The actual nz and full 3D things (ti,tj,tk,x1,x2,x3,r,h,ph) will be overwritten or corrected when rfd() is called
         # Note:  So for tilted runs, *only* need non-tilted gdump and that only has to be axisymmetric for BH solutions!
@@ -7630,19 +7865,28 @@ def grid3d_load(dumpname=None,use2d=False,doface=False,loadsimple=False): #read 
         lnz = 1
     else:
         lnz = nz
+    #
+    print( "Done reading grid header" ) ; sys.stdout.flush()
+    #
     ncols = 126
     if dumpname.endswith(".bin"):
+        print( "Start reading grid as binary with lnz=%d" % (lnz) ) ; sys.stdout.flush()
         body = np.fromfile(gin,dtype=np.float64,count=ncols*nx*ny*lnz) 
         gd = body.view().reshape((-1,nx,ny,lnz),order='F')
         gin.close()
+        print( "Done reading grid as binary with lnz=%d" % (lnz) ) ; sys.stdout.flush()
     else:
+        print( "Start reading grid as text with lnz=%d" % (lnz) ) ; sys.stdout.flush()
         gin.close()
         gd = np.loadtxt( "dumps/" + dumpname, 
                       dtype=np.float64, 
                       skiprows=1, 
                       unpack = True ).view().reshape((126,nx,ny,lnz), order='F')
+        print( "End reading grid as text with lnz=%d" % (lnz) ) ; sys.stdout.flush()
     gd=myfloat(gd)
     gc.collect()
+    #
+    print( "Done reading grid" ) ; sys.stdout.flush()
     #
     # always load ti,tj,tk,x1,x2,x3,r,h,ph
     # SUPERNOTEMARK: for use2d, note that tk depends upon \phi unlike all other things for a Kerr metric in standard coordinates
@@ -12120,6 +12364,24 @@ def Tcalcud(maxbsqorho=None, which=None):
     unb=enth*ud[0]
     # unbound here means *thermally* rather than kinetically (-u_t>1) or fully thermo-magnetically (\mu>1) unbound.
     isunbound=(-unb>1.0)
+    #
+    #
+    print("TudEM[1,0,5,0,0]=%g" % (TudEM[1,0,5,0,0])) ; sys.stdout.flush()
+    print("bsq[5,0,0]=%g" % (bsq[5,0,0])) ; sys.stdout.flush()
+    print("uu[1,5,0,0]=%g" % (uu[1,5,0,0])) ; sys.stdout.flush()
+    print("ud[0,5,0,0]=%g" % (ud[0,5,0,0])) ; sys.stdout.flush()
+    print("bu[1,5,0,0]=%g" % (bu[1,5,0,0])) ; sys.stdout.flush()
+    print("bd[0,5,0,0]=%g" % (bd[0,5,0,0])) ; sys.stdout.flush()
+    #
+    print("uu[0,5,0,0]=%g" % (uu[0,5,0,0])) ; sys.stdout.flush()
+    print("B[0,5,0,0]=%g" % (B[0,5,0,0])) ; sys.stdout.flush()
+    print("uu[1,5,0,0]=%g" % (uu[1,5,0,0])) ; sys.stdout.flush()
+    print("B[1,5,0,0]=%g" % (B[1,5,0,0])) ; sys.stdout.flush()
+    print("uu[2,5,0,0]=%g" % (uu[2,5,0,0])) ; sys.stdout.flush()
+    print("B[2,5,0,0]=%g" % (B[2,5,0,0])) ; sys.stdout.flush()
+    print("uu[3,5,0,0]=%g" % (uu[3,5,0,0])) ; sys.stdout.flush()
+    print("B[3,5,0,0]=%g" % (B[3,5,0,0])) ; sys.stdout.flush()
+    print("udotB[5,0,0]=%g" % (ud[0,5,0,0]*B[0,5,0,0] + ud[1,5,0,0]*B[1,5,0,0] + ud[2,5,0,0]*B[2,5,0,0] + ud[3,5,0,0]*B[3,5,0,0])) ; sys.stdout.flush()
 
 def faraday():
     # MEMMARK: 32+4=36 full 3D vars
@@ -12465,11 +12727,9 @@ def fix_defaulttimes2(ts,fti,ftf):
         truetmax=np.max(ts)
         truetmin=np.min(ts)
     #
-    if truetmin>fti:
+    if (truetmin<fti and truetmax<fti) or (truetmin>ftf and truetmax>ftf):
         fti=truetmin
-    #
-    if truetmax<ftf:
-        ftf=truetmax
+        ftf=truetmin
     #
     return(fti,ftf)
 
@@ -12488,11 +12748,15 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #ifluxacc = iofr(2.0)
     # sasha says r=5 is best so that also his A-0.9N100 model gets agreement between our floor subtractions.
     ifluxacc = iofr(5.0)
+    # SUPERGODMARK
+    #ifluxacc=ihor
     #
     #############
     # problem with using large iflux is that while fine for time-averages, bad for quantities vs. time -- can be very wrong at any one moment, so use horizon for that with time-averaged correction instead
     #iflux = ifluxacc
     iflux = iofr(rhor)
+    # SUPERGODMARK
+    #iflux=ihor
     ##########
     #
     rjetin=10.
@@ -13153,8 +13417,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     for tic in ts:
         tici=np.where(ts==tic)[0]
-        #print("tici") ; sys.stdout.flush()
-        #print(tici) ; sys.stdout.flush()
+        print("tici") ; sys.stdout.flush()
+        print(tici) ; sys.stdout.flush()
         #print("tic") ; sys.stdout.flush()
         #print(tic) ; sys.stdout.flush()
         print("lenchecks: %d %d %d" % (len(mdot5vsr[:]),len(mdtot[tici,:]),len(md5[tici,:]))) ; sys.stdout.flush()
@@ -14719,7 +14983,18 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     # no iflux correction for j, mw, w numerators. Only need correction for BH term that uses ihor.
     # note that mdotfinavg already corrected since could correct total fluxes from before
-    if iflux!=ihor:
+    #
+    # SUPERGODMARK
+    dofluxcorrect=0
+    #
+    # default
+    mdtotfix=timeavg(mdtot[:,ihor],ts,fti,ftf)*0.0 + 1.0
+    etatotfix=mdtotfix
+    letatotfix=mdtotfix
+    pjtotfix=etatotfix
+    ljtotfix=letatotfix
+    #
+    if iflux!=ihor and dofluxcorrect==1:
         # correct, so total energy is as at iflux, but fraction of energy in each term is as at ihor -- allows for energy conversion from iflux to ihor
         # This causes slight problems when totals are near zero when plotting eta's vs time.
         # so maybe multiply by time-averaged corrected ratio?  At least for averages?
@@ -14733,13 +15008,19 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         pjtotfix=etatotfix
         ljtotfix=letatotfix
     #
-    if iflux!=ifluxacc:
+    if iflux!=ifluxacc and dofluxcorrect==1:
         # if this is case, then choosing to have fluxes at ihor so no bad time-dependence on any quantities, but still want averages to be correct as total energy is measured at iflux, so correct.
         mdtotfix=timeavg(mdtot[:,ifluxacc],ts,fti,ftf)/timeavg(mdtot[:,iflux],ts,fti,ftf)
         etatotfix=timeavg(pjemtot[:,ifluxacc]+pjmaketot[:,ifluxacc],ts,fti,ftf)/timeavg(pjemtot[:,iflux]+pjmaketot[:,iflux],ts,fti,ftf)
         letatotfix=timeavg(ljemtot[:,ifluxacc]+ljmaketot[:,ifluxacc],ts,fti,ftf)/timeavg(ljemtot[:,iflux]+ljmaketot[:,iflux],ts,fti,ftf)
         pjtotfix=etatotfix
         ljtotfix=letatotfix
+    #
+    # report corrections if any
+    print("ihor=%d iflux=%d ifluxacc=%d" % (ihor,iflux,ifluxacc)) ; sys.stdout.flush()
+    print("mdotfix=%g etatotfix=%g letatotfix=%g pjtotfix=%g ljtotfix=%g" % (mdtotfix,etatotfix,letatotfix,pjtotfix,ljtotfix)) ; sys.stdout.flush()
+    #
+    print("mdotfinavg=%g" % (mdotfinavg)) ; sys.stdout.flush()
     #
     etabhEM = prefactor*pjemtot[:,ihor]/mdotfinavg     * etatotfix
     etabhMAKE = prefactor*pjmaketot[:,ihor]/mdotfinavg * etatotfix
@@ -15382,7 +15663,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     elif modelname=="thickdiskfull3d7tilt0.7":
         fieldtype="PoloidalFlip"
         truemodelname="{\\bf A0.94BfN40t0.7}"
-    elif modelname=="thickdiskfull3d7emacs scrtilt1.5708":
+    elif modelname=="thickdiskfull3d7tilt1.5708":
         fieldtype="PoloidalFlip"
         truemodelname="{\\bf A0.94BfN40t1.5708}"
     elif modelname=="thickdiskhr3tilt0.35":
@@ -16972,7 +17253,6 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         bas3rhosq_vsr=np.zeros(nx,dtype=r.dtype)
         bsqrhosq_vsr=np.zeros(nx,dtype=r.dtype)
         #
-        # GODMARK: add vuasrotrhosq_vsr and other such things.  Needed for models where rotational axis ill-defined or tilted (not thickdisk7, but maybe thickdiskhr3)
         #
         # columns=23
         favg1 = open('datavsr1.txt', 'w')
@@ -18730,7 +19010,6 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         Qlcorrad30dcbsq=(jofhfloatsimple(np.pi*0.5+np.pi/lcorrad30dcbsq,iofr(4.0)) - ny*0.5)
         #
         #
-        # GODMARK: Need to ask how many zones *cover* mode since not uniform grid really and don't really have NHU resolution
         #
         print("lcorradhor and Q: %g %g : %g %g" % (lcorradhordcrho0,Qlcorradhordcrho0,lcorradhordcbsq,Qlcorradhordcbsq)) ; sys.stdout.flush()
         print("lcorrad4   and Q: %g %g : %g %g" % (lcorrad4dcrho0,Qlcorrad4dcrho0,lcorrad4dcbsq,Qlcorrad4dcbsq)) ; sys.stdout.flush()
@@ -19118,7 +19397,6 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         #
         #
-        # GODMARK: Need to ask how many zones *cover* mode since not uniform grid really and don't really have NHU resolution
         #
         print("ncorradhor and Q: %g %g : %g %g" % (ncorradhordcrho0,Qncorradhordcrho0,ncorradhordcbsq,Qncorradhordcbsq)) ; sys.stdout.flush()
         print("ncorrad4   and Q: %g %g : %g %g" % (ncorrad4dcrho0,Qncorrad4dcrho0,ncorrad4dcbsq,Qncorrad4dcbsq)) ; sys.stdout.flush()
@@ -21590,7 +21868,7 @@ def getstagparams2(bsqorho=None,uu=None,var=None,rmax=20,doplot=1,doreadgrid=1):
 def getstagparams(bsqorho=None,uu=None,var=None,rmax=20,doplot=1,doreadgrid=1):
     if uu is None:
         if doreadgrid:
-            grid3d("gdump.bin",use2d=True)
+            grid3d("gdump.bin",use2d=use2dglobal)
         avgmem = get2davg(usedefault=1)
         assignavg2dvars(avgmem)
     #
@@ -21729,7 +22007,7 @@ def plotfluxes(doreload=1):
 def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=None,isinteractive=1,returndf=0,dolegend=True,plotldtot=True,lw=1):
     global dUfloor, qtymem, DUfloorori, etad0, DU
     #Mdot, E, L
-    grid3d("gdump.bin",use2d=True)
+    grid3d("gdump.bin",use2d=use2dglobal)
     istag, jstag, hstag, rstag = getstagparams(rmax=20,doplot=0,doreadgrid=0)
     if np.abs(a - 0.99)<1e-4 and scaletofullwedge(1.0) < 1.5:
         #hi-res 0.99 settings
@@ -21955,7 +22233,7 @@ def computeeta(start_t=8000,end_t=1e6,numintervals=8,doreload=1):
     end_t=defaultftf
     #
     #getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
-    grid3d("gdump.bin", use2d = True)
+    grid3d("gdump.bin", use2d = use2dglobal)
     qtymem = getqtyvstime( iofr(rhor) )
     start_of_sim_t = qtymem[0,0,0]
     end_t1 = qtymem[0,-1,0]
@@ -22598,7 +22876,7 @@ def ploteta():
     #AT: plt.legend( loc = 'upper left', bbox_to_anchor = (0.5, 0.5) ) #0.5, 0.5 = center of plot
     #To generate movies for all sub-folders of a folder:
     #cd ~/Research/runart; for f in *; do cd ~/Research/runart/$f; (python  ~/py/mread/__init__.py &> python.out &); done
-    grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=True )
+    grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=use2dglobal )
     #rd( "dump0000.bin" )
     #rfd("fieldline0000.bin")  #to definea
     #grid3dlight("gdump")
@@ -22676,7 +22954,7 @@ def mkmovie(framesize=50, domakeavi=False):
     else:
         dontloadfiles = False
         print("Loading grid3d") ;sys.stdout.flush()
-        grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=True )
+        grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=use2dglobal )
         #grid3dlight("gdump")
         #rd( "dump0000.bin" )
         #flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
@@ -23116,7 +23394,7 @@ def mk2davg():
     avoidplotsglobal=1
     #
     if len(sys.argv[2:])>1:
-        grid3d("gdump.bin",use2d=True)
+        grid3d("gdump.bin",use2d=use2dglobal)
         #rd("dump0000.bin")
         #rfd("fieldline0000.bin")
         #rfdheaderfirstfile()
@@ -23345,7 +23623,7 @@ def loadavg():
 
 def mkavgfigs():
     ###########################################
-    grid3d("gdump.bin",use2d=True)
+    grid3d("gdump.bin",use2d=use2dglobal)
     #
     #rfdfirstfile()
     #global maxrho
@@ -24255,7 +24533,7 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
         dontloadfiles = True
     else:
         dontloadfiles = False
-        grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=True )
+        grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=use2dglobal )
         #rd( "dump0000.bin" )
         rfdheaderfirstfile()
         #rfdfirstfile()
@@ -24575,7 +24853,7 @@ def generate_time_series():
     global avoidplotsglobal
     avoidplotsglobal=0
     #cd ~/run; for f in rtf*; do cd ~/run/$f; (nice -n 10 python  ~/py/mread/__init__.py &> python.out); done
-    grid3d("gdump.bin",use2d=True)
+    grid3d("gdump.bin",use2d=use2dglobal)
     #rd("dump0000.bin")
     #rfdfirstfile()
     #global maxrho
@@ -24743,7 +25021,7 @@ def oldstuff():
             dontloadfiles = True
         else:
             dontloadfiles = False
-            grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=True )
+            grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=use2dglobal )
             rd( "dump0000.bin" )
             qtymem=None #clear to free mem
             rhor=1+(1+a**2)**0.5
@@ -24957,7 +25235,7 @@ def oldstuff():
         #pl(r,np.log10(entk));plt.xlim(1,20);plt.ylim(-3,-0.5)
     if False:
         #VRPLOT
-        #grid3d("gdump.bin",use2d=True)
+        #grid3d("gdump.bin",use2d=use2dglobal)
         #rd("dump0000.bin")
         #rfd("fieldline0000.bin")
         rhor=1+(1-a**2)**0.5
@@ -24987,8 +25265,14 @@ def main(argv=None):
     #OLDQTYMEMMEM=1
     OLDQTYMEMMEM=0
     #
+    global use2dglobal
+    # whether use 2d slice of gdump or full 3d
+    #use2dglobal=True
+    # for now, use2dglobal=True doesn't work for tilted sims due to some transformation issue.
+    use2dglobal=False
     #
     #
+    global nxgdump,nygdump,nzgdump
     #
     #
     # runtype==-1 just skip and do nothing
@@ -25023,7 +25307,7 @@ def main(argv=None):
         print epsFm, epsFke
         mklotsopanels(epsFm=epsFm,epsFke=epsFke,fti=fti,ftf=ftf,domakeframes=True,prefactor=1)
     if runtype==7:
-        grid3d( "gdump.bin",use2d=True )
+        grid3d( "gdump.bin",use2d=use2dglobal )
         fno=0
         rfd("fieldline%04d.bin" % fno)
         plt.clf();
@@ -25033,7 +25317,7 @@ def main(argv=None):
         #Short tutorial. Some of the names will sound familiar :)
         print( "Running a short tutorial: read in grid, 0th dump, plot and compute some things." )
         #1 read in gdump (specifying "use2d=True" reads in just one r-theta slice to save memory)
-        grid3d("gdump.bin", use2d = True)
+        grid3d("gdump.bin", use2d = use2dglobal)
         #2 read in dump0000
         doreaddump = 0
         if doreaddump:

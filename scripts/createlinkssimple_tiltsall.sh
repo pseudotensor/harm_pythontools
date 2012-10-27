@@ -66,6 +66,8 @@ do
     #######
     thedir=$run
     #######
+    dumpdirnontilt=""
+    #
     if [ "$thedir" == "sashaam9full2pit0.15" ] ||
         [ "$thedir" == "sashaam9full2pit0.3" ] ||
         [ "$thedir" == "sashaam9full2pit0.6" ] ||
@@ -90,7 +92,7 @@ do
         dumpdirnontilt=/lustre/medusa/jmckinne/data1/jmckinne/jmckinne/sasha99/dumps/
     fi
     #######
-    if [ "$thedir" == "thickdiskfull3d7" ] ||
+    if [ "$thedir" == "thickdiskfull3d7tilt0.35" ] ||
         [ "$thedir" == "thickdiskfull3d7tilt0.7" ] ||
         [ "$thedir" == "thickdiskfull3d7tilt1.5708" ]
     then
