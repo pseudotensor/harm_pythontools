@@ -44,6 +44,11 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
+def testcbar():
+    img=imshow(rand(100,100))
+    colorbar(img)
+
+
 #see also plotrodrigo()
 def plotfields(nu=1.5,r0=15,pow=0.6,nubh=2,doreload=1,fname=None,daphi=0.22,maxaphi=5,fntsize=24):
     #a=0.99:
