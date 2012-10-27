@@ -1058,6 +1058,7 @@ def saveavgvars(fname="avgvars.npz"):
 def loadavgvars(fname="avgvars.npz"):
     global avgbsq, avgrho, avgug, avgbsqow, avgbsqorho, avgBr, avgBth, avgBph, avguut, avguur, avguuth, avguuph
     global trth,trphi,trphicons,trthEM,trphiEM
+    global avgBsq
     npzfile = np.load(fname)
     avgbsq=npzfile['avgbsq']
     avgrho=npzfile['avgrho']
@@ -1076,6 +1077,7 @@ def loadavgvars(fname="avgvars.npz"):
     trphicons=npzfile['trphicons']
     trthEM=npzfile['trthEM']
     trphiEM=npzfile['trphiEM']
+    avgBsq = (avgBr**2+avgBth**2+avgBph**2)**0.5
 
 
 def computevars(n1=31, n2 = 53,use2d=True,calct=0,avgfname="avgvars.npz"):
