@@ -48,7 +48,7 @@ def reinterpfld(vars,newRin=None,newRout=None):
     if newRin is None: newRin = Rin
     if newRout is None: newRout = 1000
     newstartx1 = 1.*np.log(newRin)
-    newdx1 = 1.*np.log(newRout/newRin)
+    newdx1 = 1.*np.log(newRout/newRin)/nx
     newdx2 = 1./ny
     newdx3 = 2*np.pi/nz
     newx1 = newstartx1 + (ti+0.5)*newdx1
