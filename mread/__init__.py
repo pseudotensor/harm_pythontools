@@ -3675,7 +3675,7 @@ def rfd(fieldlinefilename,**kwargs):
         print( "Saving new grid...", )
         #write out a dump with flipped spin:
         gout = open( "dumps/" + fieldlinefilename + "newgrid", "wb" )
-        header[7] = "%d" % np.log(Rout/Rin)/nx
+        header[7] = "%d" % (np.log(Rout/Rin)/nx)
         header[8] = "%d" % (1./ny)
         header[9] = "%d" % (2*np.pi/nz)
         #Spherical polar radius of the innermost radial cell
