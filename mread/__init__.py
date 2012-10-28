@@ -47,16 +47,16 @@ import visit_writer
 def reinterpfld(vars,newRin=None,newRout=None):
     if newRin is None: newRin = Rin
     if newRout is None: newRout = 1000
-    newstartx1 = np.log(newRin)
-    newdx1 = np.log(newRout/newRin)
+    newstartx1 = 1.*np.log(newRin)
+    newdx1 = 1.*np.log(newRout/newRin)
     newdx2 = 1./ny
     newdx3 = 2*np.pi/nz
     newx1 = newstartx1 + (ti+0.5)*newdx1
     newx2 = (tj+0.5)*newdx2
     newx3 = (tk+0.5)*newdx3
     newr  = np.exp(newx1)
-    newh  = np.exp(newx2)
-    newph = np.exp(newx3)
+    newh  = np.pi*newx2
+    newph = newx3
     newdxdxp11 = newr
     newdxdxp22 = np.pi+r*0
     newdxdxp33 = 1.+r*0
