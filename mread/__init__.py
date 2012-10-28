@@ -3689,7 +3689,7 @@ def rfd(fieldlinefilename,**kwargs):
         gout.flush()
         os.fsync(gout.fileno())
         #reshape the rdump content
-        gd1 = body.view().reshape((nz,ny,nx,-1),order='C')
+        gd1 = newd.reshape(-1,order='F') #view().reshape((nz,ny,nx,-1),order='C')
         gd1.tofile(gout)
         gout.close()
         print( " done!" )
