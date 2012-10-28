@@ -3670,8 +3670,9 @@ def rfd(fieldlinefilename,**kwargs):
         gc.collect()
     savenewgrid = kwargs.pop("savenewgrid",0)
     if savenewgrid:
+        newRin = Rin
         newRout = 1000
-        newd = reinterpfld(d,newRin=Rin,newRout=newRout)
+        newd = reinterpfld(d,newRin=newRin,newRout=newRout)
         print( "Saving new grid...", )
         #write out a dump with flipped spin:
         gout = open( "dumps/" + fieldlinefilename + "newgrid", "wb" )
