@@ -3602,7 +3602,8 @@ def rfd(fieldlinefilename,**kwargs):
     ug=d[1,:,:,:]
     #d[4] is the time component of 4-velocity, u^t
     #d[5:8] are 3-velocities, v^i
-    uu=d[4:8,:,:,:]  #again, note uu[i] are 3-velocities (as read from the fieldline file)
+    uu=np.copy(d[4:8,:,:,:])  #avoid modifying original; again, note uu[i] are 3-velocities (as read from the fieldline file)
+    #uu=d[4:8,:,:,:]  #again, note uu[i] are 3-velocities (as read from the fieldline file)
     #multiply by u^t to get 4-velocities: u^i = u^t v^i
     uu[1:4]=uu[1:4] * uu[0]
     B = np.zeros_like(uu)
