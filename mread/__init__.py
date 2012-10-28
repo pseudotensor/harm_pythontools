@@ -51,9 +51,9 @@ def reinterpfld(vars,newRin=None,newRout=None):
     newdx1 = np.log(newRout/newRin)
     newdx2 = 1./ny
     newdx3 = 2*np.pi/nz
-    newx1 = newstartx1 + (ti+0.5)*_dx1
-    newx2 = (tj+0.5)*_dx2
-    newx3 = (tk+0.5)*_dx3
+    newx1 = newstartx1 + (ti+0.5)*newdx1
+    newx2 = (tj+0.5)*newdx2
+    newx3 = (tk+0.5)*newdx3
     newr  = np.exp(newx1)
     newh  = np.exp(newx2)
     newph = np.exp(newx3)
@@ -3675,12 +3675,12 @@ def rfd(fieldlinefilename,**kwargs):
         print( "Saving new grid...", )
         #write out a dump with flipped spin:
         gout = open( "dumps/" + fieldlinefilename + "newgrid", "wb" )
-        header[7] = "%d" % (np.log(Rout/Rin)/nx)
+        header[7] = "%d" % (1.*np.log(newRout/newRin)/nx)
         header[8] = "%d" % (1./ny)
         header[9] = "%d" % (2*np.pi/nz)
         #Spherical polar radius of the innermost radial cell
-        header[14] = "%g" % Rin
-        header[15] = "%g" % Rout
+        header[14] = "%g" % newRin
+        header[15] = "%g" % newRout
         for headerel in header:
             s = "%s " % headerel
             gout.write( s )
