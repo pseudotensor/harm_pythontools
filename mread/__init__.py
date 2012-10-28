@@ -90,7 +90,7 @@ def reinterpfld(vars,newRin=None,newRout=None):
                 (logr[:,:,0].ravel(), oldh[:,:,0].ravel()),
                 vartointerp[:,:,myk].ravel(),
                 (lognewr[:,:,0], newh[:,:,0]),
-                method='cubic')
+                method='linear')
         if ivar in listvars[0::3]: #radial
             newvars[ivar]  /= newdxdxp11
         elif ivar in listvars[1::3]: #theta
