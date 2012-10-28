@@ -62,6 +62,10 @@ def reinterpfld(vars,newRin=None,newRout=None):
     newdxdxp33 = 1.+r*0
     ####
     logr = np.log(r)
+    oldh = np.copy(h)
+    #to avoid nans
+    oldh[:,0,:] *= 0
+    oldh[:,ny-1,:] *= 0 + np.pi
     lognewr = np.log(newr)
     newvars = np.empty_like(vars)
     listvars = [5,6,7,  #u1,u2,u3
@@ -83,7 +87,7 @@ def reinterpfld(vars,newRin=None,newRout=None):
         for myk in xrange(nz):
             print( "... processing k %d of %d..." % (myk, nz) )
             newvars[ivar,:,:,myk] = griddata(
-                (logr[:,:,0].ravel(), h[:,:,0].ravel()),
+                (logr[:,:,0].ravel(), oldh[:,:,0].ravel()),
                 vartointerp[:,:,myk].ravel(),
                 (lognewr[:,:,0], newh[:,:,0]),
                 method='cubic')
