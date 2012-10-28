@@ -93,7 +93,7 @@ def reinterpfld(vars,newRin=None,newRout=None):
             newvars[ivar] /= newdxdxp22
         elif ivar in listvars[2::3]: #phi
             newvars[ivar] /= newdxdxp33
-    return newvar
+    return newvars
 
 def testcbar():
     img=imshow(rand(100,100))
