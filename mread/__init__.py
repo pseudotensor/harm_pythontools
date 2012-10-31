@@ -1579,6 +1579,7 @@ def assignavg2dvars(avgmem,DTf=5):
     global avg_bsquu
     global avg_absbu, avg_absbd, avg_absuu, avg_absud, avg_absomegaf2
     global avg_omegaf1, avg_absomegaf1, avg_omegaf1b, avg_absomegaf1b, avg_omegaf2b, avg_absomegaf2b
+    global avg_Bd3, avg_absBd3
 
     #avg defs
     i=0
@@ -1693,6 +1694,11 @@ def assignavg2dvars(avgmem,DTf=5):
         avg_absomegaf2b=avgmem[i,:,:,None];i+=n
     else:
         print( "Old-ish format: missing avg_omegaf1, avg_absomegaf1, avg_omegaf1b, avg_absomegaf1b, avg_omegaf2b, avg_absomegaf2b" )
+    if avgmem.shape[0] >= 206+9+4+17+6+2:
+        avg_Bd3 += Bd3.sum(-1)[:,:,None]
+        avg_absBd3 += np.abs(Bd3).sum(-1)[:,:,None]
+    else:
+        print( "Old-ish format: missing avg_Bd3, avg_absBd3" )
         
     #derived quantities
     avg_gamma=avg_uu[0]/(-gn3[0,0])**0.5
@@ -1709,6 +1715,8 @@ def get2davgone(whichgroup=-1,itemspergroup=20,removefloors=False):
     global avg_omegaf1, avg_absomegaf1, avg_omegaf1b, avg_absomegaf1b, avg_omegaf2b, avg_absomegaf2b
     global rho
     global ug
+    global avg_Bd3, avg_absBd3
+
     if whichgroup < 0 or itemspergroup <= 0:
         print( "whichgroup = %d, itemspergroup = %d not allowed" % (whichgroup, itemspergroup) )
         return None
@@ -1725,7 +1733,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20,removefloors=False):
     #
     #print "Number of time slices: %d" % flist.shape[0]
     #store 2D data
-    navg=206+9+4+17+6 #206+9+4+17
+    navg=206+9+4+17+6+2 #206+9+4+17
     avgmem=np.zeros((navg,nx,ny),dtype=np.float32)
     assignavg2dvars(avgmem)
     ##
@@ -1871,6 +1879,11 @@ def get2davgone(whichgroup=-1,itemspergroup=20,removefloors=False):
             avg_absomegaf1b+=np.abs(omegaf1b).sum(-1)[:,:,None]
             avg_omegaf2b+=omegaf2b.sum(-1)[:,:,None]
             avg_absomegaf2b+=np.abs(omegaf2b).sum(-1)[:,:,None]
+        if avg_Bd3 is not None:
+            Bd3 = bd[3]*ud[0]-bd[0]*ud[3]
+            avg_Bd3 += Bd3.sum(-1)[:,:,None]
+            avg_absBd3 += np.abs(Bd3).sum(-1)[:,:,None]
+            
     if avg_nitems[0] == 0:
         print( "No files found" )
         return None
