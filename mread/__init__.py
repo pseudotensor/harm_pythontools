@@ -1695,8 +1695,9 @@ def assignavg2dvars(avgmem,DTf=5):
     else:
         print( "Old-ish format: missing avg_omegaf1, avg_absomegaf1, avg_omegaf1b, avg_absomegaf1b, avg_omegaf2b, avg_absomegaf2b" )
     if avgmem.shape[0] >= 206+9+4+17+6+2:
-        avg_Bd3 += Bd3.sum(-1)[:,:,None]
-        avg_absBd3 += np.abs(Bd3).sum(-1)[:,:,None]
+        n = 1
+        avg_Bd3=avgmem[i,:,:,None];i+=n
+        avg_absBd3=navgmem[i,:,:,None];i+=n
     else:
         print( "Old-ish format: missing avg_Bd3, avg_absBd3" )
         
