@@ -8957,18 +8957,44 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     #
     #############
     #
+    # <B^r> (area-averaged radial field strength)
+    #
+    #############
+    doplotBravg = True
+    if doplotBravg:
+        ax4 = plt.subplot(gs[0:4,5:10])
+        plt.xlim(-1,1)
+        plt.ylim(0,5)
+        u_rhorlist = 1+(1-u_alist**2)**0.5
+        area_list = 4./3.*np.pi*(u_alist**2+3*u_rhorlist**2)
+        bravg_list = 2*u_philist/area_list
+        bravg_stdlist = 2*u_phistdlist/area_list
+        #analytic approx
+        myomh = omegah_compute(mya)
+        #bfit = 65+(130.-65.)/(omegah_compute(0.99)-0)*myomh
+        bfit =  1.05 + 2.6 * myomh
+        bfit[myomh<0] =  bfit[myomh<0]*0+1.05 - 0.5 * myomh[myomh<0]
+        bfit*=2.
+        ax4.errorbar(2*omegah_compute(u_alist),bravg_list,yerr=2*bravg_stdlist,label=r'$\langle \lvert B^r\rvert\rangle_{\rm H}$',mec='r',mfc='none',ecolor='r',fmt='o',lw=2,elinewidth=2,mew=1)
+        plt.plot(2*omegah_compute(mya),bfit,'k:')
+        plt.grid()
+        pdb.set_trace()
+    #############
+    #
     # s (spin-up parameter)
     #
     #############
-    ax4 = plt.subplot(gs[0:4,5:10])
-    x=(0.07,0.07)
-    y=(-10,10)
-    plt.plot(x,y,color='red',lw=4,alpha=0.3)
-    l,=plt.plot(mya,sparthin(mya),'c-.',lw=2,label=r"$s_{\rm NT}$")
-    l.set_dashes([10,3,2,3,2,3])
-    if doanalytic:
-        #to show "analytic" rought approximation of Ramesh
-        plt.plot(mya,sparthin(0)*(1-mya),'k-',lw=1)
+    doplots = False
+    if doplots:
+        ax4 = plt.subplot(gs[0:4,5:10])
+        x=(0.07,0.07)
+        y=(-10,10)
+        plt.plot(x,y,color='red',lw=4,alpha=0.3)
+        l,=plt.plot(mya,sparthin(mya),'c-.',lw=2,label=r"$s_{\rm NT}$")
+        l.set_dashes([10,3,2,3,2,3])
+        if doanalytic:
+            #to show "analytic" rought approximation of Ramesh
+            plt.plot(mya,sparthin(0)*(1-mya),'k-',lw=1)
     #plt.plot(alist,sparlist,'ro',mec='r')
     if False:
         newa=np.concatenate((u_alist[0:-4],u_alist[-4:]))
@@ -8981,33 +9007,35 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     else:
         slopes_sparfunc = pchip_init(u_alist,u_sparlist)
         spar_func = interp1d(mya1,pchip_eval(u_alist, u_sparlist, slopes_sparfunc, mya1),bounds_error=False)
-    # spar_func2=poly1dt(spar_polyfit)
-    lspar,=plt.plot(mya,spar_func(mya),'r-',lw=2)
-    # lspar.set_dashes([2,3,2,3])
-    ax4.errorbar(u_alist,u_sparlist,yerr=2*u_sparstdlist,mec='r',mfc='none',ecolor='r',fmt='o',color='r',lw=2,elinewidth=2,mew=1)
-    #fake plot call: move it out of plot bounds but use it to populate legend info
-    ax4.errorbar(u_alist-100,u_sparlist-100,yerr=2*u_sparstdlist,label=r"$s_{\rm MAD}$",mec='r',mfc='none',ecolor='r',fmt='o',color='r',ls='-',lw=2,elinewidth=2,mew=1)
+    if doplots:
+        # spar_func2=poly1dt(spar_polyfit)
+        lspar,=plt.plot(mya,spar_func(mya),'r-',lw=2)
+        # lspar.set_dashes([2,3,2,3])
+        ax4.errorbar(u_alist,u_sparlist,yerr=2*u_sparstdlist,mec='r',mfc='none',ecolor='r',fmt='o',color='r',lw=2,elinewidth=2,mew=1)
+        #fake plot call: move it out of plot bounds but use it to populate legend info
+        ax4.errorbar(u_alist-100,u_sparlist-100,yerr=2*u_sparstdlist,label=r"$s_{\rm MAD}$",mec='r',mfc='none',ecolor='r',fmt='o',color='r',ls='-',lw=2,elinewidth=2,mew=1)
     #rough analytic solution
     aeq = brentq(spar_func,-1,1)
-    plt.plot(mya,-12*(mya-aeq),'k:',lw=2,label=r"$s_{\rm approx}$")
-    if doanalytic:
-        #to show "analytic" rought approximation of Ramesh
-        plt.plot(mya,-8*mya,'k-',lw=1)
-    #plt.plot(alist[:9],sparlist[:9],'ro-',lw=2,label=r"$s_{\rm MAD}$")
-    plt.text(x[0]+0.02,7,r"$a_{\rm eq}^{\rm Sim}\!\approx0.07$",va="center",ha="left",fontsize=16,color="red",alpha=1)
-    plt.xlim(-1,1)
-    plt.ylim(-10,10)
-    plt.grid()
-    plt.ylabel(r"$s$", fontsize='x-large',ha='center',labelpad=9) # = (\dot F_L/M - 2 a \dot F_E)/\dot F_M
-    #plt.xlabel(r"$a$",fontsize='x-large')
-    plt.legend(ncol=1,loc='lower left',frameon=True,labelspacing=0.0,borderpad=0.2) #,scatterpoints=1,numpoints=1)
-    plt.setp( ax4.get_xticklabels(), visible=False )
-    plt.text(-0.85,  0.9*(plt.ylim()[1]-plt.ylim()[0])+plt.ylim()[0], r"$(\mathrm{d})$", size=16, rotation=0.,
-             ha="center", va="center",
-             color='k',weight='regular' #,bbox=bbox_props
-             )
-    ax4r = ax4.twinx()
-    ax4r.set_ylim(ax4.get_ylim())
+    if doplots:
+        plt.plot(mya,-12*(mya-aeq),'k:',lw=2,label=r"$s_{\rm approx}$")
+        if doanalytic:
+            #to show "analytic" rought approximation of Ramesh
+            plt.plot(mya,-8*mya,'k-',lw=1)
+        #plt.plot(alist[:9],sparlist[:9],'ro-',lw=2,label=r"$s_{\rm MAD}$")
+        plt.text(x[0]+0.02,7,r"$a_{\rm eq}^{\rm Sim}\!\approx0.07$",va="center",ha="left",fontsize=16,color="red",alpha=1)
+        plt.xlim(-1,1)
+        plt.ylim(-10,10)
+        plt.grid()
+        plt.ylabel(r"$s$", fontsize='x-large',ha='center',labelpad=9) # = (\dot F_L/M - 2 a \dot F_E)/\dot F_M
+        #plt.xlabel(r"$a$",fontsize='x-large')
+        plt.legend(ncol=1,loc='lower left',frameon=True,labelspacing=0.0,borderpad=0.2) #,scatterpoints=1,numpoints=1)
+        plt.setp( ax4.get_xticklabels(), visible=False )
+        plt.text(-0.85,  0.9*(plt.ylim()[1]-plt.ylim()[0])+plt.ylim()[0], r"$(\mathrm{d})$", size=16, rotation=0.,
+                 ha="center", va="center",
+                 color='k',weight='regular' #,bbox=bbox_props
+                 )
+        ax4r = ax4.twinx()
+        ax4r.set_ylim(ax4.get_ylim())
     #plt.savefig("jetwindeta.pdf",bbox_inches='tight',pad_inches=0)
     #plt.savefig("jetwindeta.eps",bbox_inches='tight',pad_inches=0)
     plt.savefig("jetwindeta.pdf",bbox_inches='tight',pad_inches=0.02)
@@ -13176,7 +13204,7 @@ if __name__ == "__main__":
         #Pro vs. retrograde spins, updated diagnostics
         readmytests1()
         plotpowers('siminfo.txt',plotetas=True,format=2) #new format; data from 2d average dumps
-    if False:
+    if True:
         #Jet efficiency vs. spin, update diagnostics
         readmytests1()
         plotpowers('siminfo.txt',plotetas=False,format=2) #new format; data from 2d average dumps
