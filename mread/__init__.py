@@ -8502,6 +8502,10 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-1,plotetas=False
         unitsfactor = (4*np.pi)**0.5*2*np.pi
     else:
         unitsfactor = 1.
+    if xvar == "a":
+        xf = lambda x: x
+    else:
+        xf = lambda x: 2*omegah_compute(x)
     if format == 0: #old format
         gd1 = np.loadtxt( fname, unpack = True, usecols = [1,2,3,4,5,6,7,8,9,10,11,12,13,14] )
         #gd=gd1.view().reshape((-1,nx,ny,nz), order='F')
@@ -8794,7 +8798,7 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-1,plotetas=False
     col= ( 0.52941176,  0.80784314,  0.98039216, 0.5) #(0.5,0.5,1,0.75) #(0.8,1,0.8,1)
     if dofill:
         ax1.fill_between(mya,newy1,newy2,where=newy1>newy2,facecolor=col,edgecolor=col)
-    lphi,=ax1.plot(mya,f*unitsfactor,'k:',label=r'$\phi_{\rm fit}$',lw=2) #=2.9(1-0.6 \Omega_{\rm H})
+    lphi,=ax1.plot(myspina6,mypsiosqrtmdot*unitsfactor,'k:',label=r'$\phi_{\rm fit}$',lw=2) #=2.9(1-0.6 \Omega_{\rm H})
     lphi.set_dashes([2,3,2,3])
     #ax1.plot(alist,y1*unitsfactor,'o',label=r'$\langle\phi^2\!\rangle^{1/2}$',mfc='r')
     ax1.errorbar(u_alist,u_philist,yerr=2*u_phistdlist,label=r'$\langle\phi^2\!\rangle^{1/2}$',mec='r',mfc='none',ecolor='r',fmt='o',lw=2,elinewidth=2,mew=1)  #,mfc='none',ecolor='r',fmt='o',lw=2,elinewidth=1,mew=1)
