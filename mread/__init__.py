@@ -8497,7 +8497,7 @@ def computeavgs():
     print( "a = -0.9:")
     getetaavg('siminfo.txt',('A-0.9f','A-0.9','A-0.9$l_r$','A-0.9$l_\\theta$','A-0.9$h_\\theta$','A-0.9$h_\\varphi$',))
 
-def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=False,nsigma=1,eps=1e-5,dofill=False,doanalytic=False,fntsize=25):
+def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-1,plotetas=False,nsigma=1,eps=1e-5,dofill=False,doanalytic=False,fntsize=25):
     if usegaussianunits == True:
         unitsfactor = (4*np.pi)**0.5*2*np.pi
     else:
@@ -8661,8 +8661,11 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         mypsiosqrtmdot = amin(fneg6,fpos6)
     else:
         #analytic approx
-        bfit =  1.05 + 1.8 * myomh6 + 6 * myomh6**3
-        bfit[myomh6<0] =  bfit[myomh6<0]*0+1.05 - 0.5 * myomh6[myomh6<0]
+        b0=1.1
+        b1 =1.8
+        b3 = 5
+        bfit =  1.1 + b1 * myomh6 + b3 * myomh6**3
+        bfit[myomh6<0] =  1.1 + 0 * myomh6[myomh6<0] - 4 * myomh6[myomh6<0]**3
         bfit*=2.
         rhor6 = 1+(1-myspina6**2)**0.5
         areabh = 4./3.*np.pi*(myspina6**2+3*rhor6**2)
@@ -8973,7 +8976,7 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     if doplotBravg:
         ax4 = plt.subplot(gs[0:4,5:10])
         plt.xlim(-1,1)
-        plt.ylim(0,5)
+        plt.ylim(0,5.5)
         u_rhorlist = 1+(1-u_alist**2)**0.5
         area_list = 4./3.*np.pi*(u_alist**2+3*u_rhorlist**2)
         bravg_list = 2*u_philist/area_list
