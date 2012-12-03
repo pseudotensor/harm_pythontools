@@ -8657,7 +8657,16 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     #mypsiosqrtmdot = f0*(1.+(f1*(1+np.sign(myomh6))/2. + f1n*(1-np.sign(myomh6))/2.)*myomh6)
     fneg6 = f0 * (1 + f1*myomh6 + f2 * myomh6**2)
     fpos6 = f0n* (1 + f1n*myomh6)
-    mypsiosqrtmdot = amin(fneg6,fpos6)
+    if False:
+        mypsiosqrtmdot = amin(fneg6,fpos6)
+    else:
+        #analytic approx
+        bfit =  1.05 + 1.8 * myomh6 + 6 * myomh6**3
+        bfit[myomh6<0] =  bfit[myomh6<0]*0+1.05 - 0.5 * myomh6[myomh6<0]
+        bfit*=2.
+        rhor6 = 1+(1-myspina6**2)**0.5
+        areabh = 4./3.*np.pi*(myspina6**2+3*rhor6**2)
+        mypsiosqrtmdot = 0.5 * bfit * areabh / unitsfactor
     myeta6 = (mypsiosqrtmdot)**2*mypow6
     # plt.figure(5)
     # plt.clf()
@@ -8969,14 +8978,8 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         area_list = 4./3.*np.pi*(u_alist**2+3*u_rhorlist**2)
         bravg_list = 2*u_philist/area_list
         bravg_stdlist = 2*u_phistdlist/area_list
-        #analytic approx
-        myomh = omegah_compute(mya)
-        #bfit = 65+(130.-65.)/(omegah_compute(0.99)-0)*myomh
-        bfit =  1.05 + 2.6 * myomh
-        bfit[myomh<0] =  bfit[myomh<0]*0+1.05 - 0.5 * myomh[myomh<0]
-        bfit*=2.
         ax4.errorbar(2*omegah_compute(u_alist),bravg_list,yerr=2*bravg_stdlist,label=r'$\langle \lvert B^r\rvert\rangle_{\rm H}$',mec='r',mfc='none',ecolor='r',fmt='o',lw=2,elinewidth=2,mew=1)
-        plt.plot(2*omegah_compute(mya),bfit,'k:')
+        plt.plot(2*omegah_compute(myspina6),bfit,'k:')
         plt.grid()
         pdb.set_trace()
     #############
