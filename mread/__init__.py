@@ -518,7 +518,14 @@ def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,
         #plt.savefig("fig_small_%s.eps" % whichvar,bbox_inches='tight',pad_inches=0.02)
         plt.savefig("fig_small_%s.pdf" % whichvar,bbox_inches='tight',pad_inches=0.02)
 
-def psrspindown(doreload=1,newlist=1,plotpoynt=1,revaloRlc=0.5,plotdissconv=1,writetable=1,rdiss0=0.5,rdiss=5,rdiss1=2):
+def mkd60movie():
+    grid3d("gdump.bin",use2d=1)
+    rfd("fieldline0000.bin")
+    mkmovie(whichi=0,whichn=1,doqtymem=False,frametype='Rzpanel',dobhfield=40,plotlen=2.5/OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.05,kval=0,whichvar="Bphi",dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=2,ncell=1600,dsval=0.001,dnarrow=0,cb=0,lcunits=1,detectLoops=1)
+    #mkmovie(whichi=0,whichn=1,doqtymem=False,frametype='Rzpanel',dobhfield=40,plotlen=2.5/OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=0,whichvar="Bphi",dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=2,ncell=1600,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5,dosavefig=1,cb=cb,fntsize=20)
+
+
+def psrspindown(doreload=1,newlist=1,plotpoynt=1,revaloRlc=1,plotdissconv=1,writetable=1,rdiss0=1,rdiss=5,rdiss1=2):
     global alpha_list, edot_list, name_list
     global edotvec_list, poyntvec_list, rvec_list, rlc_list
     global name_list, dims_list, tf_list
@@ -575,9 +582,9 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,revaloRlc=0.5,plotdissconv=1,wr
             "hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1",
             "hf_30_r10h05_mydt_sph_x1_bsqorho50",
             # "hf_30_r10h05_mydt_sph_x1",
-            "hf_60_r10h05_mydt_sphcyl_ps2_512x256x256_512_bsqorho50",
-            "hf_60_r10h05_mydt_sph_ps2_128x64x64_128_bsqorho50",
-            "hf_60_r10h05_mydt_sph_ps2_64x32x32_16_bsqorho50",
+            #"hf_60_r10h05_mydt_sphcyl_ps2_512x256x256_512_bsqorho50",
+            #"hf_60_r10h05_mydt_sph_ps2_128x64x64_128_bsqorho50",
+            #"hf_60_r10h05_mydt_sph_ps2_64x32x32_16_bsqorho50",
             "hf_90_r10h05_mydt_sph_x1_bsqorho50",
             # "hf_60_r10h05_mydt_sph_ps2_128x64x64_half",
             #"hf_60_r10h05_mydt_sph_c33om0375_ps2_512x256x256_32x32x64",
@@ -829,7 +836,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,revaloRlc=0.5,plotdissconv=1,wr
     plt.plot(a*180/np.pi,1+1.2*np.sin(a)**2,'g-',lw=2) #,label=r"$1+1.2\sin^2\alpha$"
     plt.text(35, 0.8, r"$\displaystyle\frac{L}{L_{\rm aligned}} = 1+1.2\sin^2\alpha$", fontsize = 20)
     plt.plot(np.array(alpha_list)*180/np.pi, edot_list_toplot, "rs",ms=15,label=r"${\rm MHD\ with\ HARM}$")
-    plt.plot(np.array(alpha_list)*180/np.pi, edotff_list_toplot, "ko",ms=15, mfc='None',label=r"${\rm Force{-}free\ with\ HARM}$")
+    #plt.plot(np.array(alpha_list)*180/np.pi, edotff_list_toplot, "ko",ms=15, mfc='None',label=r"${\rm Force{-}free\ with\ HARM}$")
     ax1 = plt.gca()
     for label in ax1.get_xticklabels() + ax1.get_yticklabels():
         label.set_fontsize(20)
@@ -9497,7 +9504,7 @@ def mkmovie(framesize=50, whichi=0, whichn=1,doqtymem=True,domakeavi=False,use2d
         #os.system("scp mov.avi 128.112.70.76:Research/movies/mov_`basename \`pwd\``.avi")
 
 def mkmovieframe( findex, fname, **kwargs ):
-    global OmegaNS
+    global OmegaNS, t
     dostreamlines = kwargs.pop('dostreamlines',True)
     frametype = kwargs.pop('frametype','5panels')
     prefactor = kwargs.pop('prefactor',1.)
@@ -9528,6 +9535,7 @@ def mkmovieframe( findex, fname, **kwargs ):
     showtime = kwargs.pop('showtime',1)
     dontloadfiles = kwargs.pop('dontloadfiles',0)
     doxyslice = kwargs.pop('doxyslice',0)
+    lcunits = kwargs.pop('lcunits',0)
     # oldnz=nz
     if dontloadfiles==False:
         rfd("../"+fname)
@@ -9711,6 +9719,28 @@ def mkmovieframe( findex, fname, **kwargs ):
         f = t/(2*np.pi/OmegaNS)
         if showtime:
             placeletter(ax1,"t=%3d.%02d" % (int(f), np.round(100*(f-np.floor(f)))), color="k",fx = 0.8, bbox=bbox_props )
+        if lcunits:
+            plt.xlim(-2.5/OmegaNS,2.5/OmegaNS)
+            plt.ylim(-2.5/OmegaNS,2.5/OmegaNS)
+            ax1.set_ylabel(r'$z/R_{\rm LC}$',fontsize=20,ha='center')
+            ax1.set_xlabel(r'$x/R_{\rm LC}$',fontsize=20)
+            ax1 = plt.gca()
+            for label in ax1.get_xticklabels() + ax1.get_yticklabels():
+                label.set_fontsize(20)
+            tck = np.linspace(-2.,2.,5)
+            s_tck = [(r'$%d$' % t) for t in tck]
+            ax1.set_xticks(tck/OmegaNS)    
+            ax1.set_yticks(tck/OmegaNS)    
+            ax1.set_xticklabels(s_tck)
+            ax1.set_yticklabels(s_tck)
+        else:
+            ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
+            ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
+            gs2 = GridSpec(1, 1)
+            gs2.update(left=0.5, right=1, top=0.995, bottom=0.48, wspace=0.05)
+            ax2 = plt.subplot(gs2[:, -1])
+            ax2.set_ylabel(r'$y\ [r_g]$',fontsize=16,ha='center')
+            ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         # gs2 = GridSpec(1, 1)
         # gs2.update(left=0.5, right=1, top=0.995, bottom=0.48, wspace=0.05)
         # ax2 = plt.subplot(gs2[:, -1])
@@ -9727,13 +9757,6 @@ def mkmovieframe( findex, fname, **kwargs ):
         ax1 = plt.subplot(gs1[:, -1])
         if domakeframes:
             mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,**kwargs)
-        ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
-        ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
-        gs2 = GridSpec(1, 1)
-        gs2.update(left=0.5, right=1, top=0.995, bottom=0.48, wspace=0.05)
-        ax2 = plt.subplot(gs2[:, -1])
-        ax2.set_ylabel(r'$y\ [r_g]$',fontsize=16,ha='center')
-        ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         if domakeframes:
             mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True,**kwargs)
     if dosavefig:
