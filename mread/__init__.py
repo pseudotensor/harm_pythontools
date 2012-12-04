@@ -1402,6 +1402,34 @@ def compangaxis(Tud1,whichaxis='x'):
     return( Tud1new )
     #return( trphnew )
 
+
+def plotpangle(r0=10,doreload=1,dnpole=0,no=106):
+    if doreload:
+        grid3d("gdump.bin", use2d=1)
+        rfd("fieldline%04d.bin" % no)
+        cvel()
+        Tcalcud()
+    #magnetic flux at star; 0.5 accts for two hemispheres
+    #"mean" because getting vector potential (which does not require integration in phi), not flux
+    Max_flux_code = 0.5 * np.abs(gdetB[1,0,dnpole:ny-dnpole,:]).sum(-1).sum(-1)*_dx2*_dx3
+    #conversion prefactors
+    #1/(2*np.pi) -- to convert from A_\phi to Psi (flux)
+    #(4*np.pi)**0.5 -- to convert from Lorentz-Heaviside to Gaussian
+    mudip = Max_flux_code * Rin / (2*np.pi) * (4*np.pi)**0.5
+    #mudip = 1.5*3.162277660168379332*2*3*3*0.5*(4*np.pi)**0.5
+    #Normalized Edot such that aligned dipole should be unity
+    norm = mudip**2 * OmegaNS**4 
+    ii = iofr(r0)
+    #dFE/dtheta
+    eflux=(-gdet*Tud[1,0]*_dx2*_dx3).mean(2)/(gdet*_dx2*_dx3).mean(2)/norm
+    emflux=(-gdet*TudEM[1,0]*_dx2*_dx3).mean(2)/(gdet*_dx2*_dx3).mean(2)/norm
+    etot=(gdet[ii,:,0]*eflux[ii]).sum(0)*_dx2*_dx3*nz
+    emono=etot*(2./np.pi)*np.sin(h[ii,:,0])**2
+    pdb.set_trace()
+    plt.plot(h[ii,:,0],eflux[ii,:])
+    plt.plot(h[ii,:,0],emono)
+    plt.plot(h[ii,:,0],emflux[ii,:])
+
 def plotnsp(no=30,dnpole=0,doreload=1):
     if doreload:
         grid3d("gdump.bin",use2d=True)
@@ -13258,7 +13286,7 @@ if __name__ == "__main__":
         #Pro vs. retrograde spins, updated diagnostics
         readmytests1()
         plotpowers('siminfo.txt',plotetas=True,format=2) #new format; data from 2d average dumps
-    if True:
+    if False:
         #Jet efficiency vs. spin, update diagnostics
         readmytests1()
         plotpowers('siminfo.txt',plotetas=False,format=2) #new format; data from 2d average dumps
