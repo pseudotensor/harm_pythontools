@@ -8504,11 +8504,15 @@ def computeavgs():
     print( "a = -0.9:")
     getetaavg('siminfo.txt',('A-0.9f','A-0.9','A-0.9$l_r$','A-0.9$l_\\theta$','A-0.9$h_\\theta$','A-0.9$h_\\varphi$',))
 
-def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=False,nsigma=1,eps=1e-5,dofill=False,doanalytic=False,fntsize=25):
+def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-1,plotetas=False,nsigma=1,eps=1e-5,dofill=False,doanalytic=False,fntsize=25,xvar="a"):
     if usegaussianunits == True:
         unitsfactor = (4*np.pi)**0.5*2*np.pi
     else:
         unitsfactor = 1.
+    if xvar == "a":
+        xf = lambda x: x
+    else:
+        xf = lambda x: 2*omegah_compute(x)
     if format == 0: #old format
         gd1 = np.loadtxt( fname, unpack = True, usecols = [1,2,3,4,5,6,7,8,9,10,11,12,13,14] )
         #gd=gd1.view().reshape((-1,nx,ny,nz), order='F')
@@ -8619,8 +8623,8 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         #def wmom(arrin, weights_in, inputmean=None, calcerr=False, sdev=False):
         plt.savefig( "fig1.eps",bbox_inches='tight',pad_inches=0.02  )
         return
-    mya=np.arange(-1,1,0.001)
-    mya1 = np.arange(-1,1+0.001,0.001)
+    mya=np.linspace(-1,1,num=2000) #np.arange(-1,1.0019,0.001)
+    mya1 = mya #np.arange(-1,1+0.0019,0.001)
     rhor = 1+(1-mya**2)**0.5
     myomh = mya / 2/ rhor
     #fitting function
@@ -8664,7 +8668,19 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     #mypsiosqrtmdot = f0*(1.+(f1*(1+np.sign(myomh6))/2. + f1n*(1-np.sign(myomh6))/2.)*myomh6)
     fneg6 = f0 * (1 + f1*myomh6 + f2 * myomh6**2)
     fpos6 = f0n* (1 + f1n*myomh6)
-    mypsiosqrtmdot = amin(fneg6,fpos6)
+    if False:
+        mypsiosqrtmdot = amin(fneg6,fpos6)
+    else:
+        #analytic approx
+        b0=1.1
+        b1 =1.8
+        b3 = 5
+        bfit =  1.1 + b1 * myomh6 + b3 * myomh6**3
+        bfit[myomh6<0] =  1.1 + 0 * myomh6[myomh6<0] - 4 * myomh6[myomh6<0]**3
+        bfit*=2.
+        rhor6 = 1+(1-myspina6**2)**0.5
+        areabh = 4./3.*np.pi*(myspina6**2+3*rhor6**2)
+        mypsiosqrtmdot = 0.5 * bfit * areabh / unitsfactor
     myeta6 = (mypsiosqrtmdot)**2*mypow6
     # plt.figure(5)
     # plt.clf()
@@ -8783,26 +8799,29 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     # phi
     #
     #############
-    ax1 = plt.subplot(gs[0:4,0:5])
+    ax1 = plt.subplot(gs[4:8,0:5])
     newy1 = 1.05*f*unitsfactor
     newy2 = 0.95*f*unitsfactor
     col= ( 0.52941176,  0.80784314,  0.98039216, 0.5) #(0.5,0.5,1,0.75) #(0.8,1,0.8,1)
     if dofill:
-        ax1.fill_between(mya,newy1,newy2,where=newy1>newy2,facecolor=col,edgecolor=col)
-    lphi,=ax1.plot(mya,f*unitsfactor,'k:',label=r'$\phi_{\rm fit}$',lw=2) #=2.9(1-0.6 \Omega_{\rm H})
-    lphi.set_dashes([2,3,2,3])
+        ax1.fill_between(xf(mya),newy1,newy2,where=newy1>newy2,facecolor=col,edgecolor=col)
     #ax1.plot(alist,y1*unitsfactor,'o',label=r'$\langle\phi^2\!\rangle^{1/2}$',mfc='r')
-    ax1.errorbar(u_alist,u_philist,yerr=2*u_phistdlist,label=r'$\langle\phi^2\!\rangle^{1/2}$',mec='r',mfc='none',ecolor='r',fmt='o',lw=2,elinewidth=2,mew=1)  #,mfc='none',ecolor='r',fmt='o',lw=2,elinewidth=1,mew=1)
+    ax1.errorbar(xf(u_alist),u_philist,yerr=2*u_phistdlist,label=r'$\phi$',mec='r',mfc='none',ecolor='r',fmt='o',lw=2,elinewidth=2,mew=1,zorder=20)  #,mfc='none',ecolor='r',fmt='o',lw=2,elinewidth=1,mew=1)
+    lphi,=ax1.plot(xf(myspina6),mypsiosqrtmdot*unitsfactor,'k:',label=r'$\phi(b_{\rm H}^{\rm fit})$',lw=2) #=2.9(1-0.6 \Omega_{\rm H})
+    lphi.set_dashes([2,3,2,3])
     # plt.plot(mya,(250+0*mya)*rhor) 
     # plt.plot(mya,250./((3./(mya**2 + 3*rhor**2))**2*2*rhor**2)) 
     #plt.plot(mya,((mya**2+3*rhor**2)/3)**2/(2/rhor)) 
     plt.ylim(ymin=0.0001)
-    plt.ylabel(r"$\phi_{\rm BH}$",fontsize='x-large',ha='center',labelpad=16)
+    plt.ylabel(r"$\phi$",fontsize=20,ha='center',labelpad=16)
+    plt.xlabel(r"$a$",fontsize=20,ha='center',labelpad=5)
+    for label in ax1.get_xticklabels() + ax1.get_yticklabels():
+        label.set_fontsize(18)
     plt.grid()
-    plt.setp( ax1.get_xticklabels(), visible=False )
-    plt.legend(ncol=1,loc='lower center',frameon=True,labelspacing=0.0,borderpad=0.2) #,scatterpoints=1,numpoints=1)
+    #plt.setp( ax1.get_xticklabels(), visible=False )
+    plt.legend(ncol=1,loc='lower right',frameon=True,labelspacing=0.0,borderpad=0.2) #,scatterpoints=1,numpoints=1)
     bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
-    plt.text(-0.85, 0.9*plt.ylim()[1], r"$(\mathrm{a})$", size=16, rotation=0.,
+    plt.text(-0.85, 0.9*plt.ylim()[1], r"$(\mathrm{b})$", size=16, rotation=0.,
              ha="center", va="center",
              color='k',weight='regular',bbox=bbox_props
              )
@@ -8811,12 +8830,42 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         ax1r = ax1.twinx()
         ax1r.set_xlim(-1,1)
         ax1r.set_ylim(ax1.get_ylim())
+    #############
+    #
+    # <B^r> (area-averaged radial field strength)
+    #
+    #############
+    doplotBravg = True
+    if doplotBravg:
+        ax4 = plt.subplot(gs[0:4,0:5])
+        plt.xlim(-1,1)
+        plt.ylim(1e-5,5.5)
+        u_rhorlist = 1+(1-u_alist**2)**0.5
+        area_list = 4./3.*np.pi*(u_alist**2+3*u_rhorlist**2)
+        bravg_list = 2*u_philist/area_list
+        bravg_stdlist = 2*u_phistdlist/area_list
+        ax4.errorbar(xf(u_alist),bravg_list,yerr=2*bravg_stdlist,label=r'$b_{\rm H}$',mec='r',mfc='none',ecolor='r',fmt='o',lw=2,elinewidth=2,mew=1,zorder=20)
+        lbr,=plt.plot(xf(myspina6),bfit,'k:',lw=2,label=r'$b_{\rm H}^{\rm fit}$')
+        lbr.set_dashes([2,3,2,3])
+        plt.grid()
+        plt.ylabel(r"$b_{\rm H}$",fontsize=20,ha='center',labelpad=16)
+        plt.text(-0.85, 0.9*plt.ylim()[1], r"$(\mathrm{a})$", size=16, rotation=0.,
+             ha="center", va="center",
+             color='k',weight='regular',bbox=bbox_props
+             )
+        for label in ax4.get_xticklabels() + ax4.get_yticklabels():
+            label.set_fontsize(18)
+        plt.setp( ax4.get_xticklabels(), visible=False )
+        plt.legend(ncol=1,loc='lower right',frameon=True,labelspacing=0.0,borderpad=0.2) #,scatterpoints=1,numpoints=1)
+    plt.savefig("brflux.pdf",bbox_inches='tight',pad_inches=0.02)
+    pdb.set_trace()
     #
     #############
     #
     # eta
     #
     #############
+    plt.figure(10, figsize=(10,6),dpi=100)
     ax2 = plt.subplot(gs[4:10,0:5])
     newy1 = 1.1*100*fac*myeta6
     newy2 = 0.9*100*fac*myeta6
@@ -8824,7 +8873,7 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         ax2.fill_between(myspina6,newy1,newy2,where=newy1>newy2,facecolor=col,edgecolor=col,lw=2)
     #plt.plot(alist,100*(etawindlist-etalist),'gv',label=r'$\eta_{\rm wind}$')
     #plt.plot(myspina6,0.9*100*fac*myeta6,'k',label=r'$0.9\eta_{\rm BZ6}(\phi_{\rm fit})$' )
-    leta6,=plt.plot(myspina6,100*fac*myeta6,'k:',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$',lw=2)
+    leta6,=plt.plot(xf(myspina6),100*fac*myeta6,'k:',label=r'$\eta_{\rm BZ6}(b_{\rm H}^{\rm fit})$',lw=2)
     leta6.set_dashes([2,3,2,3])
     #plt.plot(myspina6,(100-4.4305)*fac*myeta6+4.4305,'k:',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$',lw=2)
     #u_etalist[0]*=0.8
@@ -8842,43 +8891,47 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     eta_func = interp1d(mya1,pchip_eval(u_alist, 100*u_etalist, slopes_etafunc, mya1),bounds_error=False)
     #eta_func=np.poly1d(z)    
     # eta_func2=poly1dt(z)    
-    ltot,=plt.plot(mya,eta_func(mya),'r-',lw=2)
+    ltot,=plt.plot(xf(mya),eta_func(mya),'r-',lw=2)
     #ltot.set_dashes([2,3,2,3])
     # plt.plot(myspina6,4.4305+20*(myomh6/omegah_compute(0.9))**1+100*(myomh6/omegah_compute(0.9))**2+10*(myomh6/omegah_compute(0.9))**3-30*(myomh6/omegah_compute(0.9))**4,'k--',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$',lw=2)
     # plt.plot(myspina6,4.4305+130*(myomh6/omegah_compute(0.9))**2-30*(myomh6/omegah_compute(0.9))**4,'k--',label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$',lw=2)
     # plt.plot(myspina6,95*(np.abs(omegah_compute(myspina6))/omegah_compute(0.9))**2+5,'k:',label=r'$100(a/0.9)^2$',lw=2)
     #plt.plot(u_alist,100*u_etalist,'o',label=r'$\eta$',mfc='r',lw=2)
-    ax2.errorbar(u_alist,100*u_etalist,yerr=2*100*u_etastdlist,mec='r',mfc='none',ecolor='r',fmt='o',lw=2,elinewidth=2,mew=1,color='r')
+    ax2.errorbar(xf(u_alist),100*u_etalist,yerr=2*100*u_etastdlist,mec='r',mfc='none',ecolor='r',fmt='o',lw=2,elinewidth=2,mew=1,color='r')
     #fake plot call: move it out of plot bounds but use it to populate legend info
-    ax2.errorbar(u_alist-10,100*u_etalist,yerr=2*100*u_etastdlist,label=r'$\eta$',mec='r',mfc='none',ecolor='r',fmt='o',lw=2,elinewidth=2,mew=1,color='r',ls='-')
+    ax2.errorbar(xf(u_alist)-10,100*u_etalist,yerr=2*100*u_etastdlist,label=r'$\eta$',mec='r',mfc='none',ecolor='r',fmt='o',lw=2,elinewidth=2,mew=1,color='r',ls='-')
     plt.ylim(-10,160-1e-5)
     plt.xlim(-1,1)
     plt.grid()
     # plt.setp( ax2.get_xticklabels(), visible=False )
-    plt.ylabel(r"$\eta\  [\%]$",fontsize='x-large',ha='center',labelpad=12)
-    plt.xlabel(r"$a$",fontsize='x-large')
-    plt.text(-0.85,  0.9*plt.ylim()[1], r"$(\mathrm{b})$", size=16, rotation=0.,
-             ha="center", va="center",
-             color='k',weight='regular',bbox=bbox_props
-             )
+    plt.ylabel(r"$\eta\  [\%]$",fontsize=20,ha='center',labelpad=12)
+    plt.xlabel(r"$a$",fontsize=20)
+    # plt.text(-0.85,  0.9*plt.ylim()[1], r"$(\mathrm{b})$", size=16, rotation=0.,
+    #          ha="center", va="center",
+    #          color='k',weight='regular',bbox=bbox_props
+    #          )
     plt.legend(ncol=1,loc='upper center',frameon=True,labelspacing=0.0,borderpad=0.2)
     #second y-axis
-    # ax2r = ax2.twinx()
-    # ax2r.set_xlim(-1,1)
-    # ax2r.set_ylim(0.0001,160)
+    ax2r = ax2.twinx()
+    ax2r.set_xlim(-1,1)
+    ax2r.set_ylim(-10,160-1e-5)
+    for label in ax2.get_xticklabels() + ax2.get_yticklabels() + ax2r.get_yticklabels():
+        label.set_fontsize(18)
+    plt.savefig("eta.pdf",bbox_inches='tight',pad_inches=0.02)
     #
     #############
     #
     # eta_j, eta_w
     #
     #############
+    plt.figure(11, figsize=(10,6),dpi=100)
     ax3 = plt.subplot(gs[4:10,5:10])
     newy1 = 1.1*0.85*100*fac*myeta6
     newy2 = 0.9*0.85*100*fac*myeta6
     #col=(0.93333333,  0.60980392,  0.93333333,0.75) #(0.8,0.52,0.25,0.4)
     if dofill:
-        ax3.fill_between(myspina6,newy1,newy2,where=newy1>newy2,facecolor=col,edgecolor=col)  #(0.8,1,0.8,1)
-    l,=ax3.plot(myspina6,0.85*100*fac*myeta6,'k:',lw=2,label=r'$0.85\eta_{\rm BZ6}(\phi_{\rm fit})$' )
+        ax3.fill_between(xf(myspina6),newy1,newy2,where=newy1>newy2,facecolor=col,edgecolor=col)  #(0.8,1,0.8,1)
+    l,=ax3.plot(xf(myspina6),0.85*100*fac*myeta6,'k:',lw=2,label=r'$0.85\eta_{\rm BZ6}(b_{\rm H}^{\rm fit})$' )
     #l.set_dashes([2,3,2,3]) #set_dashes([2,3,2,8,2,3,2,6]) #set_dashes([10,5])
     #plt.plot(myspina6,myeta6,'r:',label=r'$\eta_{\rm BZ,6}$')
     #plt.plot(alist,100*etajetlist,'gs',label=r'$\eta_{\rm jet}$',lw=2)
@@ -8893,9 +8946,9 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         #etaws = u_eta_s_wind_unb_list #u_eta_s_wind_list
         etaws = u_eta_s_wind_list
         etasigma = u_eta_s_wind_stdlist
-    ax3.errorbar(u_alist,100*etajs,yerr=2*100*sigma,mec='g',mfc='none',ecolor='g',fmt='s',lw=2,elinewidth=2,mew=1,zorder=20)
+    ax3.errorbar(xf(u_alist),100*etajs,yerr=2*100*sigma,mec='g',mfc='none',ecolor='g',fmt='s',lw=2,elinewidth=2,mew=1,zorder=20)
     #fake plot call: move it out of plot bounds but use it to populate legend info
-    ljfake=ax3.errorbar(u_alist-10,100*etajs,yerr=2*100*sigma,label=r'$\eta_{\rm jet}$',mec='g',mfc='none',ecolor='g',fmt='s',lw=2,elinewidth=2,mew=1,zorder=20,ls='-')
+    ljfake=ax3.errorbar(xf(u_alist)-10,100*etajs,yerr=2*100*sigma,label=r'$\eta_{\rm jet}$',mec='g',mfc='none',ecolor='g',fmt='s',lw=2,elinewidth=2,mew=1,zorder=20,ls='-')
     ljfake[0].set_dashes([10,5])
     #sigma[2]*=100
     #sigma[4]*=100
@@ -8931,51 +8984,56 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
         etawind_func = interp1d(mya1,pchip_eval(u_alist, 100*etaws, slopes_windfunc, mya1),bounds_error=False)
     #etajet_func=lambda a: eta_func(a) - etawind_func(a)
     #pdb.set_trace()
-    lj,=ax3.plot(mya1,etajet_func(mya1),"g:",lw=2,zorder=20)
+    lj,=ax3.plot(xf(mya1),etajet_func(mya1),"g:",lw=2,zorder=20)
     #lj.set_dashes([2,3,2,3])
     lj.set_dashes([10,5])
-    lw,=ax3.plot(mya1,etawind_func(mya1),"b:",lw=2)
+    lw,=ax3.plot(xf(mya1),etawind_func(mya1),"b:",lw=2)
     lw.set_dashes([10,3,2,3])
     # lw.set_dashes([2,3,2,8,2,3,2,6])
     #plt.plot(alist,100*etaEMlist,'rx',label=r'$\eta_{\rm jet}$')
     #plt.plot(alist,100*etawindlist,'bv',label=r'$\eta_{\rm wind}$')
-    ax3.errorbar(u_alist,100*etaws,yerr=2*100*etasigma,mfc='b',ecolor='b',color='b',fmt='.',lw=2,elinewidth=2,mew=1)
+    ax3.errorbar(xf(u_alist),100*etaws,yerr=2*100*etasigma,mfc='b',ecolor='b',color='b',fmt='.',lw=2,elinewidth=2,mew=1)
     #fake plot call: move it out of plot bounds but use it to populate legend info
-    lwfake=ax3.errorbar(u_alist-10,100*etaws,yerr=2*100*etasigma,label=r'$\eta_{\rm wind}$',mfc='b',ecolor='b',color='b',fmt='.',lw=2,elinewidth=2,mew=1,ls=':')
+    lwfake=ax3.errorbar(xf(u_alist)-10,100*etaws,yerr=2*100*etasigma,label=r'$\eta_{\rm wind}$',mfc='b',ecolor='b',color='b',fmt='.',lw=2,elinewidth=2,mew=1,ls=':')
     lwfake[0].set_dashes([10,3,2,3])
     #plt.plot(myspina6,100*fac*myeta6,'k-',lw=2) #,label=r'$\eta_{\rm BZ6}(\phi_{\rm fit})$' )
     if True:
         myapos = np.arange(0,0.99+0.001,0.001)
-        ax3.plot(myapos,100*0.002/(1-np.abs(myapos)),'gray',lw=2,label=r"$\eta_{\rm HK06}$",zorder=2)
+        ax3.plot(xf(myapos),100*0.002/(1-np.abs(myapos)),'gray',lw=2,label=r"$\eta_{\rm HK06}$",zorder=2)
     plt.xlim(-1,1)
     plt.ylim(-10,160-1e-5)
     plt.grid()
     plt.legend(ncol=1,loc='upper center',frameon=True,labelspacing=0.0,borderpad=0.2)
-    plt.xlabel(r"$a$",fontsize='x-large')
-    plt.ylabel(r"$\eta_{\rm jet},\ \eta_{\rm wind}\  [\%]$",fontsize='x-large',ha='center',labelpad=12)
-    plt.text(-0.85,  0.9*plt.ylim()[1], r"$(\mathrm{c})$", size=16, rotation=0.,
-             ha="center", va="center",
-             color='k',weight='regular',bbox=bbox_props
-             )
+    plt.xlabel(r"$a$",fontsize=20)
+    plt.ylabel(r"$\eta_{\rm jet},\ \eta_{\rm wind}\  [\%]$",fontsize=20,ha='center',labelpad=12)
+    # plt.text(-0.85,  0.9*plt.ylim()[1], r"$(\mathrm{c})$", size=16, rotation=0.,
+    #          ha="center", va="center",
+    #          color='k',weight='regular',bbox=bbox_props
+    #          )
     #second y-axis
     ax3r = ax3.twinx()
     ax3r.set_xlim(-1,1)
     ax3r.set_ylim(ax3.get_ylim())
+    for label in ax3.get_xticklabels() + ax3.get_yticklabels() + ax3r.get_yticklabels():
+        label.set_fontsize(18)
+    plt.savefig("etajetwind.pdf",bbox_inches='tight',pad_inches=0.02)
     #
     #############
     #
     # s (spin-up parameter)
     #
     #############
-    ax4 = plt.subplot(gs[0:4,5:10])
-    x=(0.07,0.07)
-    y=(-10,10)
-    plt.plot(x,y,color='red',lw=4,alpha=0.3)
-    l,=plt.plot(mya,sparthin(mya),'c-.',lw=2,label=r"$s_{\rm NT}$")
-    l.set_dashes([10,3,2,3,2,3])
-    if doanalytic:
-        #to show "analytic" rought approximation of Ramesh
-        plt.plot(mya,sparthin(0)*(1-mya),'k-',lw=1)
+    doplots = False
+    if doplots:
+        ax4 = plt.subplot(gs[0:4,5:10])
+        x=(0.07,0.07)
+        y=(-10,10)
+        plt.plot(x,y,color='red',lw=4,alpha=0.3)
+        l,=plt.plot(mya,sparthin(mya),'c-.',lw=2,label=r"$s_{\rm NT}$")
+        l.set_dashes([10,3,2,3,2,3])
+        if doanalytic:
+            #to show "analytic" rought approximation of Ramesh
+            plt.plot(mya,sparthin(0)*(1-mya),'k-',lw=1)
     #plt.plot(alist,sparlist,'ro',mec='r')
     if False:
         newa=np.concatenate((u_alist[0:-4],u_alist[-4:]))
@@ -8988,36 +9046,37 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-20,plotetas=Fals
     else:
         slopes_sparfunc = pchip_init(u_alist,u_sparlist)
         spar_func = interp1d(mya1,pchip_eval(u_alist, u_sparlist, slopes_sparfunc, mya1),bounds_error=False)
-    # spar_func2=poly1dt(spar_polyfit)
-    lspar,=plt.plot(mya,spar_func(mya),'r-',lw=2)
-    # lspar.set_dashes([2,3,2,3])
-    ax4.errorbar(u_alist,u_sparlist,yerr=2*u_sparstdlist,mec='r',mfc='none',ecolor='r',fmt='o',color='r',lw=2,elinewidth=2,mew=1)
-    #fake plot call: move it out of plot bounds but use it to populate legend info
-    ax4.errorbar(u_alist-100,u_sparlist-100,yerr=2*u_sparstdlist,label=r"$s_{\rm MAD}$",mec='r',mfc='none',ecolor='r',fmt='o',color='r',ls='-',lw=2,elinewidth=2,mew=1)
+    if doplots:
+        # spar_func2=poly1dt(spar_polyfit)
+        lspar,=plt.plot(mya,spar_func(mya),'r-',lw=2)
+        # lspar.set_dashes([2,3,2,3])
+        ax4.errorbar(u_alist,u_sparlist,yerr=2*u_sparstdlist,mec='r',mfc='none',ecolor='r',fmt='o',color='r',lw=2,elinewidth=2,mew=1)
+        #fake plot call: move it out of plot bounds but use it to populate legend info
+        ax4.errorbar(u_alist-100,u_sparlist-100,yerr=2*u_sparstdlist,label=r"$s_{\rm MAD}$",mec='r',mfc='none',ecolor='r',fmt='o',color='r',ls='-',lw=2,elinewidth=2,mew=1)
     #rough analytic solution
     aeq = brentq(spar_func,-1,1)
-    plt.plot(mya,-12*(mya-aeq),'k:',lw=2,label=r"$s_{\rm approx}$")
-    if doanalytic:
-        #to show "analytic" rought approximation of Ramesh
-        plt.plot(mya,-8*mya,'k-',lw=1)
-    #plt.plot(alist[:9],sparlist[:9],'ro-',lw=2,label=r"$s_{\rm MAD}$")
-    plt.text(x[0]+0.02,7,r"$a_{\rm eq}^{\rm Sim}\!\approx0.07$",va="center",ha="left",fontsize=16,color="red",alpha=1)
-    plt.xlim(-1,1)
-    plt.ylim(-10,10)
-    plt.grid()
-    plt.ylabel(r"$s$", fontsize='x-large',ha='center',labelpad=9) # = (\dot F_L/M - 2 a \dot F_E)/\dot F_M
-    #plt.xlabel(r"$a$",fontsize='x-large')
-    plt.legend(ncol=1,loc='lower left',frameon=True,labelspacing=0.0,borderpad=0.2) #,scatterpoints=1,numpoints=1)
-    plt.setp( ax4.get_xticklabels(), visible=False )
-    plt.text(-0.85,  0.9*(plt.ylim()[1]-plt.ylim()[0])+plt.ylim()[0], r"$(\mathrm{d})$", size=16, rotation=0.,
-             ha="center", va="center",
-             color='k',weight='regular' #,bbox=bbox_props
-             )
-    ax4r = ax4.twinx()
-    ax4r.set_ylim(ax4.get_ylim())
+    if doplots:
+        plt.plot(mya,-12*(mya-aeq),'k:',lw=2,label=r"$s_{\rm approx}$")
+        if doanalytic:
+            #to show "analytic" rought approximation of Ramesh
+            plt.plot(mya,-8*mya,'k-',lw=1)
+        #plt.plot(alist[:9],sparlist[:9],'ro-',lw=2,label=r"$s_{\rm MAD}$")
+        plt.text(x[0]+0.02,7,r"$a_{\rm eq}^{\rm Sim}\!\approx0.07$",va="center",ha="left",fontsize=16,color="red",alpha=1)
+        plt.xlim(-1,1)
+        plt.ylim(-10,10)
+        plt.grid()
+        plt.ylabel(r"$s$", fontsize='x-large',ha='center',labelpad=9) # = (\dot F_L/M - 2 a \dot F_E)/\dot F_M
+        #plt.xlabel(r"$a$",fontsize='x-large')
+        plt.legend(ncol=1,loc='lower left',frameon=True,labelspacing=0.0,borderpad=0.2) #,scatterpoints=1,numpoints=1)
+        plt.setp( ax4.get_xticklabels(), visible=False )
+        plt.text(-0.85,  0.9*(plt.ylim()[1]-plt.ylim()[0])+plt.ylim()[0], r"$(\mathrm{d})$", size=16, rotation=0.,
+                 ha="center", va="center",
+                 color='k',weight='regular' #,bbox=bbox_props
+                 )
+        ax4r = ax4.twinx()
+        ax4r.set_ylim(ax4.get_ylim())
     #plt.savefig("jetwindeta.pdf",bbox_inches='tight',pad_inches=0)
     #plt.savefig("jetwindeta.eps",bbox_inches='tight',pad_inches=0)
-    plt.savefig("jetwindeta.pdf",bbox_inches='tight',pad_inches=0.02)
     # plt.savefig("jetwindeta.eps",bbox_inches='tight',pad_inches=0.02)
     # plt.savefig("jetwindeta.png",bbox_inches='tight',pad_inches=0.02)
     #plt.plot(mspina2[mhor2==hor],5*mpow2a[mhor2==hor])
@@ -13199,7 +13258,7 @@ if __name__ == "__main__":
         #Pro vs. retrograde spins, updated diagnostics
         readmytests1()
         plotpowers('siminfo.txt',plotetas=True,format=2) #new format; data from 2d average dumps
-    if False:
+    if True:
         #Jet efficiency vs. spin, update diagnostics
         readmytests1()
         plotpowers('siminfo.txt',plotetas=False,format=2) #new format; data from 2d average dumps
