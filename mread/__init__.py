@@ -833,8 +833,12 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,revaloRlc=1,plotdissconv=1,writ
             #hide noisy part, not used anymore
             poynt_list_toplot[i][rvec_list[ile]<0.7*rlc_list[i]] *= NaN
     a = np.linspace(0,np.pi/2.,1000)
+    gs3 = GridSpec(2, 2)
+    #gs3.update(left=0.05, right=0.95, top=0.30, bottom=0.03, wspace=0.01, hspace=0.04)
+    #mdot
+    ax31 = plt.subplot(gs3[-1,:])
     plt.plot(a*180/np.pi,1+1.2*np.sin(a)**2,'g-',lw=2) #,label=r"$1+1.2\sin^2\alpha$"
-    plt.text(35, 0.8, r"$\displaystyle\frac{L}{L_{\rm aligned}} = 1+1.2\sin^2\alpha$", fontsize = 20)
+    plt.text(43, 0.9, r"$\displaystyle\frac{L}{L_{\rm aligned}} = 1+1.2\sin^2\alpha$", fontsize = 18)
     plt.plot(np.array(alpha_list)*180/np.pi, edot_list_toplot, "rs",ms=15,label=r"${\rm MHD\ with\ HARM}$")
     #plt.plot(np.array(alpha_list)*180/np.pi, edotff_list_toplot, "ko",ms=15, mfc='None',label=r"${\rm Force{-}free\ with\ HARM}$")
     ax1 = plt.gca()
@@ -842,13 +846,15 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,revaloRlc=1,plotdissconv=1,writ
         label.set_fontsize(20)
     plt.xlabel(r"$\alpha\ {\rm [^\circ]}$",fontsize=20)
     plt.ylabel(r"$L/L_{\rm aligned}$",fontsize=20)
-    leg = plt.legend(loc="upper left")
-    for t in leg.get_texts():
-       t.set_fontsize(20)    # the legend text fontsize
-    plt.ylim(0,2.999)
+    # leg = plt.legend(loc="upper left")
+    # for t in leg.get_texts():
+    #    t.set_fontsize(20)    # the legend text fontsize
+    plt.ylim(0.8,2.4)
     plt.xlim(0,90)
     tck = np.linspace(0,90,7)
     ax1.set_xticks(tck)
+    tck = np.linspace(1.,2.,3)
+    ax1.set_yticks(tck)
     plt.grid(b=1)
     #leg = plt.legend(loc="lower right")
     #for t in leg.get_texts():
@@ -1421,14 +1427,16 @@ def plotpangle(r0=10,doreload=1,dnpole=0,no=106):
     norm = mudip**2 * OmegaNS**4 
     ii = iofr(r0)
     #dFE/dtheta
-    eflux=(-gdet*Tud[1,0]*_dx2*_dx3).mean(2)/(gdet*_dx2*_dx3).mean(2)/norm
-    emflux=(-gdet*TudEM[1,0]*_dx2*_dx3).mean(2)/(gdet*_dx2*_dx3).mean(2)/norm
+    eflux=(-gdet*Tud[1,0]*_dx2*_dx3).mean(2)/(gdet*_dx2*_dx3).mean(2)/norm #/np.sin(h[:,:,0])**1
+    emflux=(-gdet*TudEM[1,0]*_dx2*_dx3).mean(2)/(gdet*_dx2*_dx3).mean(2)/norm #/np.sin(h[:,:,0])**1
     etot=(gdet[ii,:,0]*eflux[ii]).sum(0)*_dx2*_dx3*nz
-    emono=etot*(2./np.pi)*np.sin(h[ii,:,0])**2
-    pdb.set_trace()
-    plt.plot(h[ii,:,0],eflux[ii,:])
-    plt.plot(h[ii,:,0],emono)
-    plt.plot(h[ii,:,0],emflux[ii,:])
+    #emono=etot*(2./np.pi)*np.sin(h[ii,:,0])**2
+    emono=eflux[ii,ny/2]*np.sin(h[ii,:,0])**2
+    #pdb.set_trace()
+    plt.plot(h[ii,:,0],eflux[ii,:], label="Total")
+    plt.plot(h[ii,:,0],emono, label="Mono")
+    plt.plot(h[ii,:,0],emflux[ii,:], label="EM")
+    plt.legend(loc="upper right")
 
 def plotnsp(no=30,dnpole=0,doreload=1):
     if doreload:
