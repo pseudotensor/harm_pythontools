@@ -834,8 +834,46 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,revaloRlc=1,plotdissconv=1,writ
             poynt_list_toplot[i][rvec_list[ile]<0.7*rlc_list[i]] *= NaN
     a = np.linspace(0,np.pi/2.,1000)
     gs3 = GridSpec(2, 2)
-    #gs3.update(left=0.05, right=0.95, top=0.30, bottom=0.03, wspace=0.01, hspace=0.04)
+    gs3.update(left=0.15, right=0.95, top=0.96, bottom=0.15, wspace=0.01, hspace=0.4)
     #mdot
+    ax30 = plt.subplot(gs3[-2,:])
+    plt.setp( ax30.get_xticklabels(), visible=False )
+    os.chdir("hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1")
+    th0,s0=plotpangle(inject=1,doreload=1,no=690)
+    os.chdir("../hf_30_r10h05_mydt_sph_x2_bsqorho50")
+    num=1
+    for dumpno in xrange(0,num):
+        th30,b=plotpangle(inject=1,doreload=1,no=164-dumpno)
+        if dumpno == 0:
+            s30 = b
+        else:
+            s30 += b
+    s30 = s30 * 1. / num
+    os.chdir("../hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50")  
+    th60,s60=plotpangle(inject=1,doreload=1,no=106)
+    os.chdir("../hf_90_r10h05_mydt_sph_x2_bsqorho50")
+    th90,s90=plotpangle(inject=1,doreload=1,no=160)
+    plt.plot(th90/np.pi*180,3*np.sin(th90)**2, 'k:', lw=2)
+    plt.plot(th0/np.pi*180,  s0, 'r', lw=2, label=r"$\alpha=0^\circ$")
+    plt.plot(th30/np.pi*180, s30, 'g', lw=2, label=r"$\alpha=30^\circ$")
+    plt.plot(th60/np.pi*180, s60, 'b', lw=2, label=r"$\alpha=60^\circ$")
+    plt.plot(th90/np.pi*180, s90, 'm', lw=2, label=r"$\alpha=90^\circ$")
+    plt.text(45,2.2,r"$3\sin^2\theta$",rotation=45,ha='center',va='center',fontsize=20)
+    plt.xlim(0,90)
+    tck = np.linspace(0,90,7)
+    ax1 = plt.gca()
+    ax1.set_xticks(tck)
+    plt.ylim(0,4)
+    # tck = np.linspace(0.,.5,0)
+    # ax1.set_yticks(tck)
+    leg = plt.legend(loc="upper left",ncol=1,borderaxespad=0,frameon=False,labelspacing=0)
+    for t in leg.get_texts():
+       t.set_fontsize(20)    # the legend text fontsize
+    plt.grid(b=1)
+    for label in ax1.get_xticklabels() + ax1.get_yticklabels():
+        label.set_fontsize(20)
+    plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20)
+    plt.ylabel(r"$4\pi dL/d\Omega(\theta)$",fontsize=20)
     ax31 = plt.subplot(gs3[-1,:])
     plt.plot(a*180/np.pi,1+1.2*np.sin(a)**2,'g-',lw=2) #,label=r"$1+1.2\sin^2\alpha$"
     plt.text(43, 0.9, r"$\displaystyle\frac{L}{L_{\rm aligned}} = 1+1.2\sin^2\alpha$", fontsize = 18)
@@ -1409,7 +1447,7 @@ def compangaxis(Tud1,whichaxis='x'):
     #return( trphnew )
 
 
-def plotpangle(r0=10,doreload=1,dnpole=0,no=106):
+def plotpangle(r0=10,doreload=1,dnpole=0,no=106,inject=0):
     if doreload:
         grid3d("gdump.bin", use2d=1)
         rfd("fieldline%04d.bin" % no)
@@ -1430,13 +1468,21 @@ def plotpangle(r0=10,doreload=1,dnpole=0,no=106):
     eflux=(-gdet*Tud[1,0]*_dx2*_dx3).mean(2)/(gdet*_dx2*_dx3).mean(2)/norm #/np.sin(h[:,:,0])**1
     emflux=(-gdet*TudEM[1,0]*_dx2*_dx3).mean(2)/(gdet*_dx2*_dx3).mean(2)/norm #/np.sin(h[:,:,0])**1
     etot=(gdet[ii,:,0]*eflux[ii]).sum(0)*_dx2*_dx3*nz
+    print etot
     #emono=etot*(2./np.pi)*np.sin(h[ii,:,0])**2
-    emono=eflux[ii,ny/2]*np.sin(h[ii,:,0])**2
+    emono=np.sin(h[ii,:,0])**2
+    fac = 4*np.pi*r[ii,0,0]**2
     #pdb.set_trace()
-    plt.plot(h[ii,:,0],eflux[ii,:], label="Total")
-    plt.plot(h[ii,:,0],emono, label="Mono")
-    plt.plot(h[ii,:,0],emflux[ii,:], label="EM")
-    plt.legend(loc="upper right")
+    if not inject:
+        plt.plot(h[ii,:,0],eflux[ii,:]*dxdxp[1,1,ii,:,0]*fac, label="Total")
+        plt.plot(h[ii,:,0],emono, label="Mono")
+        plt.plot(h[ii,:,0],emflux[ii,:]*dxdxp[1,1,ii,:,0]*fac, label="EM")
+        plt.legend(loc="upper right")
+    else:
+        return h[ii,:,0],eflux[ii,:]*dxdxp[1,1,ii,:,0]*fac
+        
+
+        
 
 def plotnsp(no=30,dnpole=0,doreload=1):
     if doreload:
