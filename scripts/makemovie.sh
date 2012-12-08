@@ -401,6 +401,14 @@ then
     # Note that this gives you a node for <=24 hours, so you can run 8 processes in parallel.  If you want to open a few xterm's from that window with (xterm &), in that terminal you will have to set the DISPLAY variable to whatever it was in the login node of nautilus (or else, the display variable is empty, and the new xterm windows refuse to spawn).
 fi
 
+
+# Nautilus fix
+# this starts a bunch of single node jobs
+if [ $system -eq 4 ]
+then
+    numcorespernodeeff=$(($memtot / 4))
+fi
+
 # Kraken
 # this starts a bunch of single node jobs
 if [ $system -eq 5 ] &&
@@ -878,7 +886,7 @@ then
                         #
                         if [ $system -eq 4 ]
                         then
-		                    bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l mem=${memtot}GB,walltime=$timetot,ncpus=$numcorespernode -q $thequeue -N $jobname -o $outputfile -e $errorfile -M jmckinne@stanford.edu ./$thebatch"
+		                    bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l mem=${memtot}GB,walltime=$timetot,ncpus=$numcorespernodeeff -q $thequeue -N $jobname -o $outputfile -e $errorfile -M jmckinne@stanford.edu ./$thebatch"
                         elif [ $system -eq 5 ]
                         then
                             superbatch=superbatchfile.$thebatch
@@ -1402,7 +1410,7 @@ then
                         #
                         if [ $system -eq 4 ]
                         then
-		                    bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l mem=${memtot}GB,walltime=$timetot,ncpus=$numcorespernode -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
+		                    bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l mem=${memtot}GB,walltime=$timetot,ncpus=$numcorespernodeeff -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
                         elif [ $system -eq 5 ]
                         then
                             superbatch=superbatchfile.$thebatch
@@ -1568,6 +1576,7 @@ echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
 ####################################
 
 itemspergroup=$(( 20 ))
+itemspergrouptext=`printf "%02d"  "$itemspergroup"`
 
 
 if [ $makeavg -eq 1 ]
@@ -1744,7 +1753,7 @@ then
                         #
                         if [ $system -eq 4 ]
                         then
-		                    bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l mem=${memtot}GB,walltime=$timetot,ncpus=$numcorespernode -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
+		                    bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l mem=${memtot}GB,walltime=$timetot,ncpus=$numcorespernodeeff -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
                         elif [ $system -eq 5 ]
                         then
                             superbatch=superbatchfile.$thebatch
@@ -1875,7 +1884,7 @@ then
     # must be step=1, or no merge occurs
     step=1
     whichgroups=$(( 0 ))
-    numavg2dmerge=`ls -vrt | egrep "avg2d"${itemspergroup}"_[0-9]*\.npy"|wc|awk '{print $1}'`
+    numavg2dmerge=`ls -vrt | egrep "avg2d"${itemspergrouptext}"_[0-9]*\.npy"|wc|awk '{print $1}'`
     #whichgroupe=$(( $itemspergroup * $runn ))
     whichgroupe=$numavg2dmerge
 
@@ -1891,7 +1900,7 @@ then
 	    ((nohup python $myinitfile6 $runtype $modelname $whichgroups $whichgroupe $step $itemspergroup 2>&1 1>&3 | tee python_${runn}_${runn}.avg.stderr.out) 3>&1 1>&2 | tee python_${runn}_${runn}.avg.out) > python_${runn}_${runn}.avg.full.out 2>&1
 
         # copy resulting avg file to avg2d.npy
-	    avg2dmerge=`ls -vrt avg2d${itemspergroup}_${groupsnum}_${groupenum}.npy | head -1`    
+	    avg2dmerge=`ls -vrt avg2d${itemspergrouptext}_${groupsnum}_${groupenum}.npy | head -1`    
 	    cp $avg2dmerge avg2d.npy
 
     fi

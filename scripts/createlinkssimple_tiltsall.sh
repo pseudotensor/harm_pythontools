@@ -1,4 +1,6 @@
-dirrunstilt="sashaam9full2pit0.15 sashaa9b100t0.15 sashaa99t0.15 sashaam9full2pit0.3 sashaa9b100t0.3 sashaa99t0.3 sashaam9full2pit0.6 sashaa9b100t0.6 sashaa99t0.6 sashaam9full2pit1.5708 sashaa9b100t1.5708 sashaa99t1.5708 thickdiskfull3d7tilt0.35 thickdiskfull3d7tilt0.7 thickdiskfull3d7tilt1.5708"
+#dirrunstilt="sashaam9full2pit0.15 sashaa9b100t0.15 sashaa99t0.15 sashaam9full2pit0.3 sashaa9b100t0.3 sashaa99t0.3 sashaam9full2pit0.6 sashaa9b100t0.6 sashaa99t0.6 sashaam9full2pit1.5708 sashaa9b100t1.5708 sashaa99t1.5708 thickdiskfull3d7tilt0.35 thickdiskfull3d7tilt0.7 thickdiskfull3d7tilt1.5708"
+#dirrunstilt="thickdiskfull3d7tilt0.35  thickdiskfull3d7tilt1.5708"
+dirrunstilt="thickdiskfull3d7tilt0.35  thickdiskfull3d7tilt1.5708"
 
 cd /lustre/medusa/jmckinne/data3/jmckinne/jmckinne/
 
@@ -16,8 +18,8 @@ then
     mv thickdiskfull3d7i thickdiskfull3d7tilt0.35i
     mv thickdiskfull3d7j thickdiskfull3d7tilt0.35j
     mv thickdiskfull3d7k thickdiskfull3d7tilt0.35k
-    mv thickdiskfull3d7k.old1 thickdiskfull3d7tilt0.35k.old1
-    mv thickdiskfull3d7k.old2 thickdiskfull3d7tilt0.35k.old2
+    mv thickdiskfull3d7k.old1 old1.thickdiskfull3d7tilt0.35k
+    mv thickdiskfull3d7k.old2 old2.thickdiskfull3d7tilt0.35k
     mv thickdiskfull3d7l thickdiskfull3d7tilt0.35l
     mv thickdiskfull3d7m thickdiskfull3d7tilt0.35m
     mv thickdiskfull3d7n thickdiskfull3d7tilt0.35n
@@ -27,6 +29,32 @@ then
     mv thickdiskfull3d7r thickdiskfull3d7tilt0.35r
     mv thickdiskfull3d7s thickdiskfull3d7tilt0.35s
     mv thickdiskfull3d7t thickdiskfull3d7tilt0.35t
+
+
+	mv thickdiskfull3d7u thickdiskfull3d7tilt0.35u
+	mv thickdiskfull3d7v thickdiskfull3d7tilt0.35v
+	mv thickdiskfull3d7w thickdiskfull3d7tilt0.35w
+	mv thickdiskfull3d7x thickdiskfull3d7tilt0.35x
+	mv thickdiskfull3d7y thickdiskfull3d7tilt0.35y
+	mv thickdiskfull3d7z thickdiskfull3d7tilt0.35z
+	mv thickdiskfull3d7nexta thickdiskfull3d7tilt0.35nexta
+	mv thickdiskfull3d7nextb thickdiskfull3d7tilt0.35nextb
+	mv thickdiskfull3d7nextc thickdiskfull3d7tilt0.35nextc
+	mv thickdiskfull3d7nextd thickdiskfull3d7tilt0.35nextd
+	mv thickdiskfull3d7nexte thickdiskfull3d7tilt0.35nexte
+	mv thickdiskfull3d7nextf thickdiskfull3d7tilt0.35nextf
+	mv thickdiskfull3d7nextg thickdiskfull3d7tilt0.35nextg
+	mv thickdiskfull3d7nexth thickdiskfull3d7tilt0.35nexth
+	mv thickdiskfull3d7nexti thickdiskfull3d7tilt0.35nexti
+	mv thickdiskfull3d7nextj thickdiskfull3d7tilt0.35nextj
+	mv thickdiskfull3d7nextk thickdiskfull3d7tilt0.35nextk
+	mv thickdiskfull3d7nextl thickdiskfull3d7tilt0.35nextl
+	mv thickdiskfull3d7nextm thickdiskfull3d7tilt0.35nextm
+	mv thickdiskfull3d7nextn thickdiskfull3d7tilt0.35nextn
+	mv thickdiskfull3d7nexto thickdiskfull3d7tilt0.35nexto
+	mv thickdiskfull3d7nextp thickdiskfull3d7tilt0.35nextp
+
+
 fi
 
 
@@ -66,8 +94,6 @@ do
     #######
     thedir=$run
     #######
-    dumpdirnontilt=""
-    #
     if [ "$thedir" == "sashaam9full2pit0.15" ] ||
         [ "$thedir" == "sashaam9full2pit0.3" ] ||
         [ "$thedir" == "sashaam9full2pit0.6" ] ||

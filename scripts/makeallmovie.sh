@@ -27,7 +27,8 @@
 # ALL:
 dircollectnontilt='thickdisk7 thickdisk8 thickdisk11 thickdisk12 thickdisk13 run.like8 thickdiskr7 thickdiskrr2 thickdisk16 thickdisk5 thickdisk14 thickdiskr1 thickdiskr2 thickdisk9 thickdiskr3 thickdisk17 thickdisk10 thickdiskr15 thickdisk3 thickdiskhr3 runlocaldipole3dfiducial blandford3d_new sasham9full2pi sasham5 sasham2 sasha0 sasha1 sasha2 sasha5 sasha9b25 sasha9b50 sasha9b100 sasha9b200 sasha99'
 
-dircollecttilt="sashaam9full2pit0.15 sashaa9b100t0.15 sashaa99t0.15 sashaam9full2pit0.3 sashaa9b100t0.3 sashaa99t0.3 sashaam9full2pit0.6 sashaa9b100t0.6 sashaa99t0.6 sashaam9full2pit1.5708 sashaa9b100t1.5708 sashaa99t1.5708 thickdiskfull3d7tilt0.35 thickdiskfull3d7tilt0.7 thickdiskfull3d7tilt1.5708"
+dircollecttilt="thickdiskfull3d7tilt0.35 thickdiskfull3d7tilt0.7 thickdiskfull3d7tilt1.5708 sashaam9full2pit0.15 sashaa9b100t0.15 sashaa99t0.15 sashaam9full2pit0.3 sashaa9b100t0.3 sashaa99t0.3 sashaam9full2pit0.6 sashaa9b100t0.6 sashaa99t0.6 sashaam9full2pit1.5708 sashaa9b100t1.5708 sashaa99t1.5708"
+
 
 #################
 # choose:
@@ -375,33 +376,117 @@ then
             keepfilesend=$(( 1+1502 )) #tend=3000
         fi
     #
-       # THETAROT simulations
-        if [ "$thedir" == "sashaam9full2pit0.15" ] ||
-            [ "$thedir" == "sashaa9b100t0.15" ] ||
-            [ "$thedir" == "sashaa99t0.15" ] ||
-            [ "$thedir" == "sashaam9full2pit0.3" ] ||
-            [ "$thedir" == "sashaa9b100t0.3" ] ||
-            [ "$thedir" == "sashaa99t0.3" ] ||
-            [ "$thedir" == "sashaam9full2pit0.6" ] ||
-            [ "$thedir" == "sashaa9b100t0.6" ] ||
-            [ "$thedir" == "sashaa99t0.6" ] ||
-            [ "$thedir" == "sashaam9full2pit1.5708" ] ||
-            [ "$thedir" == "sashaa9b100t1.5708" ] ||
-            [ "$thedir" == "sashaa99t1.5708" ] ||
-            [ "$thedir" == "thickdiskfull3d7tilt0.35" ] ||
-            [ "$thedir" == "thickdiskfull3d7tilt0.7" ] ||
-            [ "$thedir" == "thickdiskfull3d7tilt1.5708" ]
+#       # THETAROT simulations
+#        if [ "$thedir" == "sashaam9full2pit0.15" ] ||
+#            [ "$thedir" == "sashaa9b100t0.15" ] ||
+#            [ "$thedir" == "sashaa99t0.15" ] ||
+#            [ "$thedir" == "sashaam9full2pit0.3" ] ||
+#            [ "$thedir" == "sashaa9b100t0.3" ] ||
+#            [ "$thedir" == "sashaa99t0.3" ] ||
+#            [ "$thedir" == "sashaam9full2pit0.6" ] ||
+#            [ "$thedir" == "sashaa9b100t0.6" ] ||
+#            [ "$thedir" == "sashaa99t0.6" ] ||
+#            [ "$thedir" == "sashaam9full2pit1.5708" ] ||
+#            [ "$thedir" == "sashaa9b100t1.5708" ] ||
+#            [ "$thedir" == "sashaa99t1.5708" ] ||
+#            [ "$thedir" == "thickdiskfull3d7tilt0.35" ] ||
+#            [ "$thedir" == "thickdiskfull3d7tilt0.7" ] ||
+#            [ "$thedir" == "thickdiskfull3d7tilt1.5708" ]
+#        then
+#            # keep all files
+#            #keepfilesstart=$(( 1 ))
+#            #keepfilesend=$(( $numfiles ))
+#            #
+#            # if only want to get first and last file images, then just do below that avoids keeping anything.  But then later first and last file force to be kept separately.
+#            keepfilesstart=$(( 3390 ))
+#            keepfilesend=$(( 5023 ))
+#        fi
+#
+        if  [ "$thedir" == "sashaa99t0.15" ]
         then
-            # keep all files
-            #keepfilesstart=$(( 1 ))
-            #keepfilesend=$(( $numfiles ))
-            #
-            # if only want to get first and last file images, then just do below that avoids keeping anything.  But then later first and last file force to be kept separately.
-            keepfilesstart=$(( 1 ))
-            keepfilesend=$(( -1 ))
+            keepfilesstart=$(( 4390 ))
+            keepfilesend=$(( 5023 ))
         fi
-    #
-    #
+
+        if  [ "$thedir" == "sashaa99t0.3" ]
+        then
+            keepfilesstart=$(( 4390 ))
+            keepfilesend=$(( 5016 ))
+        fi
+
+        if  [ "$thedir" == "sashaa99t0.6" ]
+        then
+            keepfilesstart=$(( 4390 ))
+            keepfilesend=$(( 5192 ))
+        fi
+        if  [ "$thedir" == "sashaa99t1.5708" ]
+        then
+            keepfilesstart=$(( 4390 ))
+            keepfilesend=$(( 5737 ))
+        fi
+##############
+        if  [ "$thedir" == "sashaam9full2pit0.15" ]
+        then
+            keepfilesstart=$(( 3390 ))
+            keepfilesend=$(( 4655 ))
+        fi
+
+        if  [ "$thedir" == "sashaam9full2pit0.3" ]
+        then
+            keepfilesstart=$(( 3390 ))
+            keepfilesend=$(( 4418 ))
+        fi
+
+        if  [ "$thedir" == "sashaam9full2pit0.6" ]
+        then
+            keepfilesstart=$(( 3390 ))
+            keepfilesend=$(( 4079 ))
+        fi
+        if  [ "$thedir" == "sashaam9full2pit1.5708" ]
+        then
+            keepfilesstart=$(( 3390 ))
+            keepfilesend=$(( 4715 ))
+        fi
+##############
+        if  [ "$thedir" == "sasha9b100t0.15" ]
+        then
+            keepfilesstart=$(( 3390 ))
+            keepfilesend=$(( 4057 ))
+        fi
+
+        if  [ "$thedir" == "sasha9b100t0.3" ]
+        then
+            keepfilesstart=$(( 3390 ))
+            keepfilesend=$(( 4516 ))
+        fi
+
+        if  [ "$thedir" == "sasha9b100t0.6" ]
+        then
+            keepfilesstart=$(( 3390 ))
+            keepfilesend=$(( 4201 ))
+        fi
+        if  [ "$thedir" == "sasha9b100t1.5708" ]
+        then
+            keepfilesstart=$(( 3390 ))
+            keepfilesend=$(( 4876 ))
+        fi
+    ##############
+	if  [ "$thedir" == "thickdiskfull3d7tilt0.35" ]
+	then
+            keepfilesstart=$(( 3898 ))
+            keepfilesend=$(( 5493 ))
+	fi
+	if [ "$thedir" == "thickdiskfull3d7tilt0.7" ]
+	then
+            keepfilesstart=$(( 3898 ))
+            keepfilesend=$(( 5063 ))
+	fi
+	if [ "$thedir" == "thickdiskfull3d7tilt1.5708" ]
+	then
+            keepfilesstart=$(( 3898 ))
+            keepfilesend=$(( 4932 ))
+	fi
+    #################
         if [ $keepfilesstart -le $keepfilesend ]
         then
 
