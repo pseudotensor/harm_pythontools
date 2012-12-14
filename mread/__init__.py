@@ -13153,6 +13153,10 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=0):
     alpha = 2.2;
     ttrig = 30*86400
     Lxb = 0.8*2.5e-10*((t+ttrig)/(1e3+ttrig))**(-alpha)
+    #####
+    # alpha = 2.5;
+    # ttrig = 60*86400
+    # Lxc = 0.6*2.5e-10*((t+ttrig)/(1e3+ttrig))**(-alpha)
     ####
     plt.figure(1)
     plt.clf()
@@ -13162,6 +13166,7 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=0):
     plt.errorbar(np.array(t3-t0)*tfac,np.array(Fx3),yerr=[[Fx3/2.],[0]],color="black",lolims=True,lw=1.5)
     plt.plot((t-t0)*tfac,Lxa,color="red",lw=2,label=r"$(t-t_{\rm trig}+15\ {\rm days})^{-5/3}$",zorder=20)
     plt.plot((t-t0)*tfac,Lxb,color="blue",lw=2,label=r"$(t-t_{\rm trig}+30\ {\rm days})^{-2.2}$")
+    # plt.plot((t-t0)*tfac,Lxc,color="green",lw=2,label=r"$(t-t_{\rm trig}+60\ {\rm days})^{-2.5}$")
     ####
     plt.xlim(1e3*tfac,0.9999*1e8*tfac)
     plt.ylim(3e-15,1e-8)
@@ -13192,10 +13197,10 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=0):
     plt.figure(2)
     plt.clf()
     t0=-15*86400
-    tmin=8e4
-    tmax=2e8
+    tmin=5e4
+    tmax=8e8
     plt.xlim(tmin*tfac,tmax*tfac)
-    plt.ylim(3e-15,1e-8)
+    plt.ylim(1e-16,1e-8)
     #
     plt.plot((t1-t0)*tfac,Fx1,"k.")
     plt.plot((t2-t0)*tfac,Fx2,"k.")
@@ -13207,11 +13212,13 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=0):
     tmad = tabsmad+t0
     ton=1e6
     toff=4.3e7
+    ladaf=Lxa[t>=toff][0]/15.
+    tadaf=t[Lxa<=ladaf][0]
     tlab = tmin**0.03*tmax**0.97*tfac
-    plt.text(tlab,5e-9,r"$\operatorname{White\ dwarf}$",fontsize=25,ha='right',va='top')
-    plt.text(tlab,0.7e-9,r"$t_{\rm trig}-t_{\rm disr}=15\ {\rm days}$",fontsize=20,ha='right',va='bottom')
-    plt.text(tlab,0.25e-9,r"$M_\bullet=0.5\times10^5M_\odot$",fontsize=20,ha='right',va='bottom')
-    plt.text(tlab,0.089e-9,r"$M_\bigstar=0.5M_\odot$",fontsize=20,ha='right',va='bottom')
+    plt.text(tlab,5e-9,r"$\operatorname{Complete\ disruption}$",fontsize=25,ha='right',va='top')
+    plt.text(tlab,0.4e-9,r"$t_{\rm trig}-t_{\rm disr}=15^{+15}_{-7}\ {\rm days}$",fontsize=20,ha='right',va='bottom')
+    # plt.text(tlab,0.25e-9,r"$M_\bullet=0.5\times10^5M_\odot$",fontsize=20,ha='right',va='bottom')
+    # plt.text(tlab,0.089e-9,r"$M_\bigstar=0.5M_\odot$",fontsize=20,ha='right',va='bottom')
     plt.plot((t-t0)[(t>tmad)*(t<toff)]*tfac,Lxa[(t>tmad)*(t<toff)],
              color="red",lw=3)
     plt.plot((t-t0)[t<tmad]*tfac,Lxa[t>tmad][0]+0*(t-t0)[t<tmad],
@@ -13226,6 +13233,10 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=0):
     # col="blue"
     # plt.gca().fill_between((t-t0)[whicht],1e-12*Lxa[whicht],Lxa[whicht],
     #                        where=Lxa[whicht]>0,facecolor=col,edgecolor=col,alpha=0.4)
+    whicht = (t>tadaf)*(t<tmax)
+    col="blue"
+    plt.gca().fill_between((t-t0)[whicht]*tfac,1e-12*Lxa[whicht],Lxa[whicht],
+                           where=Lxa[whicht]>0,facecolor=col,edgecolor=col,alpha=0.2)
     whicht = (t>ton)*(t<toff)
     col="green"
     plt.gca().fill_between((t-t0)[whicht]*tfac,1e-12*Lxa[whicht],Lxa[whicht],
@@ -13239,27 +13250,29 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=0):
     plt.gca().fill_between((t-t0)[whicht]*tfac,1e-12*Lxa[whicht],Lxa[t>tmad][0]+0*Lxa[whicht],
                            where=Lxa[whicht]>0,facecolor=col,edgecolor=col,alpha=0.2)
     #captions
-    #captions
     tpos=((tmin)*(tmad-t0))**0.5*tfac
-    plt.text(tpos,1e-13,r"${\rm Stage\ 1}$",fontsize=25,ha="center",va="bottom")
-    plt.text(tpos,0.3e-13,r"${\rm Precessing}$",fontsize=18,ha="center",va="bottom")
-    plt.text(tpos,0.12e-13,r"$\operatorname{disk-aligned\ jet}$",fontsize=18,ha="center",va="bottom")
+    plt.text(tpos,1e-10,r"${\rm Stage\ 1}$",fontsize=25,ha="center",va="bottom")
+    plt.text(tpos,0.3e-10,r"${\rm Precessing}$",fontsize=18,ha="center",va="bottom")
+    plt.text(tpos,0.12e-10,r"$\operatorname{disk-aligned\ jet}$",fontsize=18,ha="center",va="bottom")
     plt.text(tpos,1.1*Lxa[t>tmad][0],r"$L_j\simeq{\rm const}$",
              fontsize=25,ha="center",va="bottom",rotation=0)
     tpos=((tmad-t0)*(ton-t0))**0.5*tfac
-    plt.text(tpos,1e-13,r"${\rm Stage\ 2}$",fontsize=25,ha="center",va="bottom")
-    plt.text(tpos,0.3e-13,r"${\rm Wobbling}$",fontsize=18,ha="center",va="bottom")
-    plt.text(tpos,0.12e-13,r"${\rm jet}$",fontsize=18,ha="center",va="bottom")
+    plt.text(tpos,1e-12,r"${\rm Stage\ 2}$",fontsize=25,ha="center",va="bottom")
+    plt.text(tpos,0.3e-12,r"${\rm Wobbling}$",fontsize=18,ha="center",va="bottom")
+    plt.text(tpos,0.12e-12,r"${\rm jet}$",fontsize=18,ha="center",va="bottom")
     tpos=((ton-t0)*(toff-t0))**0.5*tfac
     plt.text(tpos,1e-13,r"${\rm Stage\ 3}$",fontsize=25,ha="center",va="bottom")
     plt.text(tpos,0.3e-13,r"${\rm Steady}$",fontsize=18,ha="center",va="bottom")
-    plt.text(tpos,0.12e-13,r"${\rm spin{-}aligned\ jet}$",fontsize=18,ha="center",va="bottom")
-    plt.text(tpos,6e-11,r"$L_j\propto\dot M\propto t^{-5/3}$",
-             fontsize=25,ha="center",va="center",rotation=-34)
-    tpos=((toff-t0)*tmax)**0.5*tfac
-    plt.text(tpos,1e-13,r"${\rm Stage\ 4}$",fontsize=25,ha="center",va="bottom",rotation=0)
-    plt.text(tpos,0.2e-13,r"${\rm No\ jet}$",fontsize=18,ha="center",va="bottom",rotation=0)
-    # pdb.set_trace()
+    plt.text(tpos,0.12e-13,r"$\operatorname{spin-aligned\ jet}$",fontsize=18,ha="center",va="bottom")
+    plt.text(tpos,7e-11,r"$L_j\propto\dot M\propto t^{-5/3}$",
+             fontsize=25,ha="center",va="center",rotation=-33)
+    tpos=((toff-t0)*(tadaf-t0))**0.5*tfac
+    plt.text(tpos,1e-15,r"${\rm Stg.\ 4}$",fontsize=25,ha="center",va="bottom",rotation=0)
+    plt.text(tpos,0.2e-15,r"${\rm No\ jet}$",fontsize=18,ha="center",va="bottom",rotation=0)
+    tpos=((tadaf-t0)*tmax)**0.5*tfac
+    plt.text(tpos,1e-15,r"${\rm Stg.\ 5}$",fontsize=25,ha="center",va="bottom",rotation=0)
+    plt.text(tpos,0.3e-15,r"${\rm Jet}$",fontsize=18,ha="center",va="bottom",rotation=0)
+    plt.text(tpos,0.12e-15,r"$\operatorname{restart}$",fontsize=18,ha="center",va="bottom")
     ax = plt.gca()
     for label in ax.get_xticklabels() + ax.get_yticklabels():
         label.set_fontsize(fntsize)
@@ -13283,23 +13296,25 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=0):
     plt.figure(3)
     plt.clf()
     t0=-30*86400
-    tmin=2e5
-    tmax=2e8
+    tmin=1.5e5
+    ladaf=Lxb[t>=toff][0]/15.
+    tadaf=t[Lxb<=ladaf][0]
+    tmax=5e8   
     plt.xlim(tmin*tfac,tmax*tfac)
-    plt.ylim(3e-15,1e-8)
+    plt.ylim(1e-16,1e-8)
     plt.plot((t1-t0)*tfac,Fx1,"k.")
     plt.plot((t2-t0)*tfac,Fx2,"k.")
     plt.plot((t4-t0)*tfac,Fx4,"ks")
     ####
     plt.errorbar(np.array(t3-t0)*tfac,np.array(Fx3),yerr=[[Fx3/2.],[0]],
                  color="black",lolims=True,lw=1.5)
-    tabsmad = 1.58904e6
+    tabsmad = 1.2e6
     tmad = tabsmad+t0
     tlab = tmin**0.03*tmax**0.97*tfac
-    plt.text(tlab,5e-9,r"$\operatorname{Main-sequence\ star}$",fontsize=25,ha='right',va='top')
-    plt.text(tlab,0.7e-9,r"$t_{\rm trig}-t_{\rm disr}=30\ {\rm days}$",fontsize=20,ha='right',va='bottom')
-    plt.text(tlab,0.25e-9,r"$M_\bullet=1.4\times10^5M_\odot$",fontsize=20,ha='right',va='bottom')
-    plt.text(tlab,0.089e-9,r"$M_\bigstar=0.5M_\odot$",fontsize=20,ha='right',va='bottom')
+    plt.text(tlab,5e-9,r"$\operatorname{Partial\ disruption}$",fontsize=25,ha='right',va='top')
+    plt.text(tlab,0.4e-9,r"$t_{\rm trig}-t_{\rm disr}=30^{+30}_{-15}\ {\rm days}$",fontsize=20,ha='right',va='bottom')
+    # plt.text(tlab,0.25e-9,r"$M_\bullet=1.4\times10^5M_\odot$",fontsize=20,ha='right',va='bottom')
+    # plt.text(tlab,0.089e-9,r"$M_\bigstar=0.5M_\odot$",fontsize=20,ha='right',va='bottom')
     plt.plot((t-t0)[(t>tmad)*(t<toff)]*tfac,Lxb[(t>tmad)*(t<toff)],
              color="red",lw=3)
     plt.plot((t-t0)[t<tmad]*tfac,Lxb[t>tmad][0]+0*(t-t0)[t<tmad],
@@ -13314,6 +13329,10 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=0):
     # col="blue"
     # plt.gca().fill_between((t-t0)[whicht],1e-12*Lxb[whicht],Lxb[whicht],
     #                        where=Lxb[whicht]>0,facecolor=col,edgecolor=col,alpha=0.4)
+    whicht = (t>tadaf)*(t<tmax)
+    col="blue"
+    plt.gca().fill_between((t-t0)[whicht]*tfac,1e-12*Lxb[whicht],Lxb[whicht],
+                           where=Lxb[whicht]>0,facecolor=col,edgecolor=col,alpha=0.2)
     whicht = (t>ton)*(t<toff)
     col="green"
     plt.gca().fill_between((t-t0)[whicht]*tfac,1e-12*Lxb[whicht],Lxb[whicht],
@@ -13328,24 +13347,28 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=0):
                            where=Lxb[whicht]>0,facecolor=col,edgecolor=col,alpha=0.2)
     #captions
     tpos=((tmin)*(tmad-t0))**0.5*tfac
-    plt.text(tpos,1e-13,r"${\rm Stage\ 1}$",fontsize=25,ha="center",va="bottom")
-    plt.text(tpos,0.3e-13,r"${\rm Precessing}$",fontsize=18,ha="center",va="bottom")
-    plt.text(tpos,0.12e-13,r"$\operatorname{disk-aligned\ jet}$",fontsize=18,ha="center",va="bottom")
+    plt.text(tpos,1e-10,r"${\rm Stage\ 1}$",fontsize=25,ha="center",va="bottom")
+    plt.text(tpos,0.3e-10,r"${\rm Precessing}$",fontsize=18,ha="center",va="bottom")
+    plt.text(tpos,0.12e-10,r"$\operatorname{disk-aligned\ jet}$",fontsize=18,ha="center",va="bottom")
     plt.text(tpos,1.1*Lxb[t>tmad][0],r"$L_j\simeq{\rm const}$",
              fontsize=25,ha="center",va="bottom",rotation=0)
     tpos=((tmad-t0)*(ton-t0))**0.5*tfac
-    plt.text(tpos,1e-13,r"${\rm Stage\ 2}$",fontsize=25,ha="center",va="bottom")
-    plt.text(tpos,0.3e-13,r"${\rm Wobbling}$",fontsize=18,ha="center",va="bottom")
-    plt.text(tpos,0.12e-13,r"${\rm jet}$",fontsize=18,ha="center",va="bottom")
+    plt.text(tpos,1e-12,r"${\rm Stage\ 2}$",fontsize=25,ha="center",va="bottom")
+    plt.text(tpos,0.3e-12,r"${\rm Wobbling}$",fontsize=18,ha="center",va="bottom")
+    plt.text(tpos,0.12e-12,r"${\rm jet}$",fontsize=18,ha="center",va="bottom")
     tpos=((ton-t0)*(toff-t0))**0.5*tfac
     plt.text(tpos,1e-13,r"${\rm Stage\ 3}$",fontsize=25,ha="center",va="bottom")
     plt.text(tpos,0.3e-13,r"${\rm Steady}$",fontsize=18,ha="center",va="bottom")
     plt.text(tpos,0.12e-13,r"$\operatorname{spin-aligned\ jet}$",fontsize=18,ha="center",va="bottom")
     plt.text(tpos,5e-11,r"$L_j\propto\dot M\propto t^{-2.2}$",
-             fontsize=25,ha="center",va="center",rotation=-40)
-    tpos=((toff-t0)*tmax)**0.5*tfac
-    plt.text(tpos,1e-13,r"${\rm Stage\ 4}$",fontsize=25,ha="center",va="bottom",rotation=0)
-    plt.text(tpos,0.2e-13,r"${\rm No\ jet}$",fontsize=18,ha="center",va="bottom",rotation=0)
+             fontsize=25,ha="center",va="center",rotation=-38)
+    tpos=((toff-t0)*(tadaf-t0))**0.5*tfac
+    plt.text(tpos,1e-15,r"${\rm Stg.\ 4}$",fontsize=25,ha="center",va="bottom",rotation=0)
+    plt.text(tpos,0.2e-15,r"${\rm No\ jet}$",fontsize=18,ha="center",va="bottom",rotation=0)
+    tpos=((tadaf-t0)*tmax)**0.5*tfac
+    plt.text(tpos,1e-15,r"${\rm Stg.\ 5}$",fontsize=25,ha="center",va="bottom",rotation=0)
+    plt.text(tpos,0.3e-15,r"${\rm Jet}$",fontsize=18,ha="center",va="bottom",rotation=0)
+    plt.text(tpos,0.12e-15,r"$\operatorname{restart}$",fontsize=18,ha="center",va="bottom")
     #other comments
     # pdb.set_trace()
     ax = plt.gca()
@@ -13364,6 +13387,18 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=0):
     if dosavefig:
         plt.savefig("figFxMS.pdf",bbox_inches='tight',pad_inches=0.02)
 
+def horslimfit():
+    hor = [0.04, 0.15, 0.25, 0.4]
+    lam = [0.1, 0.5, 1, 2]
+    plt.plot(lam,np.arctan(hor),'o-')
+    myh = 10**np.linspace(-2,2)
+    myl = 2*(myh/0.4)**1.4
+    plt.plot(myl,np.arctan(myh),'-')
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlim(0.01,50)
+    plt.ylim(0.01,5)
+    
 
     
 def makevtk(no=52):
