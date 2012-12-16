@@ -13263,9 +13263,14 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
     ####
     plt.figure(1)
     plt.clf()
-    plt.plot((t1-t0)*tfac,Fx1,"k.")
+    crv1 = plt.plot((t1-t0)*tfac,Fx1,"k.")
+    lab1 = r"${\it Swift}/{\rm XRT}$"
     plt.plot((t2-t0)*tfac,Fx2,"k.")
-    plt.plot((t4-t0)*tfac,Fx4,"ks")
+    crv2 = plt.plot((t4-t0)*tfac,Fx4,"ks")
+    lab2 = r"${\it Chandra}$"
+    crvlist = [crv1, crv2]
+    leglist = [lab1, lab2]
+    leg0 = plt.legend(crvlist,leglist,loc="upper right",borderaxespad=1)
     plt.errorbar(np.array(t3-t0)*tfac,np.array(Fx3),yerr=[[Fx3/2.],[0]],color="black",lolims=True,lw=1.5)
     plt.plot((t-t0)*tfac,Lxa,color="red",lw=2,label=r"$(t-t_{\rm trig}+15\ {\rm days})^{-5/3}$",zorder=20)
     plt.plot((t-t0)*tfac,Lxb,color="blue",lw=2,label=r"$(t-t_{\rm trig}+30\ {\rm days})^{-2.2}$")
@@ -13282,7 +13287,8 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
     for label in ax.get_xticklabels() + ax.get_yticklabels():
         label.set_fontsize(fntsize)
     leg = plt.legend(loc="lower left",borderaxespad=1)
-    for txt in leg.get_texts():
+    ax.add_artist(leg0)
+    for txt in leg0.get_texts() + leg.get_texts():
        txt.set_fontsize(fntsize)    # the legend text fontsize-0*86400
     for l in ax.get_xticklines() + ax.get_yticklines():
         l.set_markersize(10)
@@ -13375,7 +13381,7 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
     tpos=((tadaf-t0)*tmax)**0.5*tfac
     plt.text(tpos,1e-15,r"${\rm Stg.\ 5}$",fontsize=25,ha="center",va="bottom",rotation=0)
     plt.text(tpos,0.3e-15,r"${\rm Jet}$",fontsize=18,ha="center",va="bottom",rotation=0)
-    plt.text(tpos,0.12e-15,r"$\operatorname{restart}$",fontsize=18,ha="center",va="bottom")
+    plt.text(tpos,0.12e-15,r"$\operatorname{revival}$",fontsize=18,ha="center",va="bottom")
     ax = plt.gca()
     for label in ax.get_xticklabels() + ax.get_yticklabels():
         label.set_fontsize(fntsize)
@@ -13471,7 +13477,7 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
     tpos=((tadaf-t0)*tmax)**0.5*tfac
     plt.text(tpos,1e-15,r"${\rm Stg.\ 5}$",fontsize=25,ha="center",va="bottom",rotation=0)
     plt.text(tpos,0.3e-15,r"${\rm Jet}$",fontsize=18,ha="center",va="bottom",rotation=0)
-    plt.text(tpos,0.12e-15,r"$\operatorname{restart}$",fontsize=18,ha="center",va="bottom")
+    plt.text(tpos,0.12e-15,r"$\operatorname{revival}$",fontsize=18,ha="center",va="bottom")
     #other comments
     # pdb.set_trace()
     ax = plt.gca()
