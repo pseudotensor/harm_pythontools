@@ -840,43 +840,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,revaloRlc=1,plotdissconv=1,writ
     bbox = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.5)
     ax30 = plt.subplot(gs3[-2,:])
     #plt.setp( ax30.get_xticklabels(), visible=False )
-    os.chdir("hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1")
-    th0,s0=plotpangle(inject=1,doreload=1,no=690)
-    os.chdir("../hf_30_r10h05_mydt_sph_x2_bsqorho50")
-    num=1
-    for dumpno in xrange(0,num):
-        th30,b=plotpangle(inject=1,doreload=1,no=164-dumpno)
-        if dumpno == 0:
-            s30 = b
-        else:
-            s30 += b
-    s30 = s30 * 1. / num
-    os.chdir("../hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50")  
-    th60,s60=plotpangle(inject=1,doreload=1,no=106)
-    os.chdir("../hf_90_r10h05_mydt_sph_x2_bsqorho50")
-    th90,s90=plotpangle(inject=1,doreload=1,no=160)
-    plt.plot(th90/np.pi*180,5*np.sin(th90)**2, 'k:', lw=2)
-    plt.plot(th0/np.pi*180,  s0, 'r', lw=2, label=r"$\alpha=0^\circ$")
-    plt.plot(th30/np.pi*180, s30, 'g', lw=2, label=r"$\alpha=30^\circ$")
-    plt.plot(th60/np.pi*180, s60, 'b', lw=2, label=r"$\alpha=60^\circ$")
-    plt.plot(th90/np.pi*180, s90, 'm', lw=2, label=r"$\alpha=90^\circ$")
-    plt.text(45,3.2,r"$\propto\sin^2\theta$",rotation=25,ha='center',va='center',fontsize=20)
-    plt.xlim(0,90)
-    tck = np.linspace(0,90,7)
-    ax1 = plt.gca()
-    ax1.set_xticks(tck)
-    ax1.set_xticklabels((r"$0$",r"$15$",r"$30$","",r"$60$",r"$75$",r"$90$"))
-    plt.ylim(0,5)
-    tck = np.linspace(1,4,4)
-    ax1.set_yticks(tck)
-    leg = plt.legend(loc="upper left",ncol=1,borderaxespad=0,frameon=False,labelspacing=0)
-    for t in leg.get_texts():
-       t.set_fontsize(20)    # the legend text fontsize
-    plt.grid(b=1)
-    for label in ax1.get_xticklabels() + ax1.get_yticklabels():
-        label.set_fontsize(20)
-    plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20,labelpad=-8)
-    plt.ylabel(r"$4\pi\,{\rm d}(L/L_0)/{\rm d}\Omega$",fontsize=18)
+    plotpsrangpower()
     placeletter( ax30,"($\mathrm{a})$",fx=0.05,fy=0.87,ha="center",va="center",bbox=bbox)
     ax31 = plt.subplot(gs3[-1,:])
     plt.plot(a*180/np.pi,1+1.2*np.sin(a)**2,'g-',lw=2) #,label=r"$1+1.2\sin^2\alpha$"
@@ -1462,6 +1426,62 @@ def compangaxis(Tud1,whichaxis='x'):
     Tud1new[3] = trphnew / dxdxp[1,1] * dxdxp[3,3]
     return( Tud1new )
     #return( trphnew )
+
+
+def plotpsrangpower(cachefname="psrangle.npz"):
+    if os.path.isfile(cachefname):
+	npzfile = np.load(cachefname)
+	th0 = npzfile['th0']
+	th30 = npzfile['th30']
+	th60 = npzfile['th60']
+	th90 = npzfile['th90']
+	s0 = npzfile['s0']
+	s30 = npzfile['s30']
+	s60 = npzfile['s60']
+	s90 = npzfile['s90']
+    else:
+	os.chdir("/home/atchekho/run2/hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1")
+	th0,s0=plotpangle(inject=1,doreload=1,no=690)
+	os.chdir("../hf_30_r10h05_mydt_sph_x2_bsqorho50")
+	num=1
+	for dumpno in xrange(0,num):
+	    th30,b=plotpangle(inject=1,doreload=1,no=164-dumpno)
+	    if dumpno == 0:
+		s30 = b
+	    else:
+		s30 += b
+	s30 = s30 * 1. / num
+	gc.collect()
+	os.chdir("../hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50")  
+	th60,s60=plotpangle(inject=1,doreload=1,no=106)
+	gc.collect()
+	os.chdir("../hf_90_r10h05_mydt_sph_x2_bsqorho50")
+	th90,s90=plotpangle(inject=1,doreload=1,no=160)
+	gc.collect()
+        os.chdir("..")
+        np.savez(cachefname, th0=th0, th30=th30, th60=th60, th90=th90, s0=s0, s30=s30, s60=s60, s90=s90)
+    plt.plot(th90/np.pi*180,5*np.sin(th90)**2, 'k:', lw=2)
+    plt.plot(th0/np.pi*180,  s0, 'r', lw=2, label=r"$\alpha=0^\circ$")
+    plt.plot(th30/np.pi*180, s30, 'g', lw=2, label=r"$\alpha=30^\circ$")
+    plt.plot(th60/np.pi*180, s60, 'b', lw=2, label=r"$\alpha=60^\circ$")
+    plt.plot(th90/np.pi*180, s90, 'm', lw=2, label=r"$\alpha=90^\circ$")
+    plt.text(45,3.2,r"$\propto\sin^2\theta$",rotation=25,ha='center',va='center',fontsize=20)
+    plt.xlim(0,90)
+    tck = np.linspace(0,90,7)
+    ax1 = plt.gca()
+    ax1.set_xticks(tck)
+    ax1.set_xticklabels((r"$0$",r"$15$",r"$30$","",r"$60$",r"$75$",r"$90$"))
+    plt.ylim(0,5)
+    tck = np.linspace(1,4,4)
+    ax1.set_yticks(tck)
+    leg = plt.legend(loc="upper left",ncol=1,borderaxespad=0,frameon=False,labelspacing=0)
+    for t in leg.get_texts():
+       t.set_fontsize(20)    # the legend text fontsize
+    plt.grid(b=1)
+    for label in ax1.get_xticklabels() + ax1.get_yticklabels():
+        label.set_fontsize(20)
+    plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20,labelpad=-8)
+    plt.ylabel(r"$4\pi\,{\rm d}(L/L_0)/{\rm d}\Omega$",fontsize=18)
 
 
 def plotpangle(r0=10,doreload=1,dnpole=0,no=106,inject=0):
@@ -13236,6 +13256,7 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
                       unpack = True )
     t3, errt3_neg, errt3_pos,  Fx3, err_Fx3 = cvals
     t0 = 0
+    #time and flux of Chandra measurement
     t4 = 5.2704e7
     Fx4 = 5.8e-15
     #####
@@ -13252,10 +13273,12 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
     alpha = 5./3.;
     ttrig = 15*86400
     Lxa = 0.8*3e-10*((t+ttrig)/(1e3+ttrig))**(-alpha)
+    Lxa0 = 0.8*3e-10*((t)/(1e3+ttrig))**(-alpha)
     #####
     alpha = 2.2;
     ttrig = 30*86400
     Lxb = 0.8*2.5e-10*((t+ttrig)/(1e3+ttrig))**(-alpha)
+    Lxb0 = 0.8*2.5e-10*((t)/(1e3+ttrig))**(-alpha)
     #####
     # alpha = 2.5;
     # ttrig = 60*86400
@@ -13272,11 +13295,13 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
     leglist = [lab1, lab2]
     leg0 = plt.legend(crvlist,leglist,loc="upper right",borderaxespad=1)
     plt.errorbar(np.array(t3-t0)*tfac,np.array(Fx3),yerr=[[Fx3/2.],[0]],color="black",lolims=True,lw=1.5)
+    plt.plot((t-t0)*tfac,Lxa0,":",label=r"$(t-t_{\rm trig})^{-5/3}$",color="red",lw=2,zorder=20)
+    plt.plot((t-t0)*tfac,Lxb0,":",label=r"$(t-t_{\rm trig})^{-2.2}$",color="blue",lw=2)
     plt.plot((t-t0)*tfac,Lxa,color="red",lw=2,label=r"$(t-t_{\rm trig}+15\ {\rm days})^{-5/3}$",zorder=20)
     plt.plot((t-t0)*tfac,Lxb,color="blue",lw=2,label=r"$(t-t_{\rm trig}+30\ {\rm days})^{-2.2}$")
     # plt.plot((t-t0)*tfac,Lxc,color="green",lw=2,label=r"$(t-t_{\rm trig}+60\ {\rm days})^{-2.5}$")
     ####
-    plt.xlim(1e3*tfac,0.9999*1e8*tfac)
+    plt.xlim(1e3*tfac,2e3)
     plt.ylim(3e-15,1e-8)
     plt.xscale("log")
     plt.yscale("log")
@@ -13516,7 +13541,7 @@ def makevtk(no=52):
     writevtk(no=no,t=t)
 
 if __name__ == "__main__":
-    if True:
+    if False:
         plt.clf()
         ubsplot()
     if False:
