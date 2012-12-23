@@ -1428,8 +1428,79 @@ def compangaxis(Tud1,whichaxis='x'):
     #return( trphnew )
 
 
+
+def pvsrstar(roRlc=1.5):
+    os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50")  
+    th60_02,e60_02,s60_02=plotpangle(roRlc=roRlc,inject=1,doreload=1,no=106)
+    gc.collect()
+    os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_sph_om01_ps2_128x128x128_16x16x32")
+    th60_01,e60_01,s60_01=plotpangle(roRlc=roRlc,inject=1,doreload=1,no=69)
+    gc.collect()
+    os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_sph_om0375_ps2_128x64x64_16x16x16")
+    th60_0375,e60_0375,s60_0375=plotpangle(roRlc=roRlc,inject=1,doreload=1,no=128)
+    gc.collect()
+    os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_sph_om05_ps2_128x64x64_16x16x16")
+    th60_05,e60_05,s60_05=plotpangle(roRlc=roRlc,inject=1,doreload=1,no=128)
+    gc.collect()
+    os.chdir("/home/atchekho/run2/testmono")
+    thmono,emono,smono=plotpangle(roRlc=roRlc,inject=1,doreload=1,no=80)
+    gc.collect()
+    #Jason's data
+    os.chdir("/home/atchekho/run2/pon_theta")
+    th60ff,s60ff = np.loadtxt("alpha60.txt", 
+                      dtype=np.float64, 
+                      skiprows=0, 
+                      unpack = True )
+    #
+    os.chdir("/home/atchekho/run2/pon_theta")
+    thmonoff,smonoff = np.loadtxt("monopole.txt", 
+                      dtype=np.float64, 
+                      skiprows=0, 
+                      unpack = True )
+    #
+    plt.plot(th60_01/np.pi*180,  e60_01/np.max(e60_01), 'r', lw=2, label=r"$0.1$")
+    plt.plot(th60_02/np.pi*180,  e60_02/np.max(e60_02), 'g', lw=2, label=r"$0.2$")
+    plt.plot(th60_0375/np.pi*180,  e60_0375/np.max(e60_0375), 'b', lw=2, label=r"$0.375$")
+    plt.plot(th60_05/np.pi*180,  e60_05/np.max(e60_05), 'c', lw=2, label=r"$0.5$")
+    plt.plot(thmono/np.pi*180,  smono/np.max(smono), 'g--', lw=2, label=r"${\rm mono}$")
+    plt.plot(th60ff/np.pi*180,  s60ff/np.max(s60ff)/np.sin(th60ff), 'k--', lw=2, label=r"$0.375,\ {\rm ff}$")
+    # plt.plot(thmonoff/np.pi*180,  smonoff/np.max(smonoff)/np.sin(thmonoff), 'k:', lw=2, label=r"${\rm Monopole}$")
+    plt.plot(th60ff/np.pi*180,np.sin(th60ff)**4,"m-.",lw=2,label=r"$\sin^4\theta$")
+    plt.plot(th60ff/np.pi*180,np.sin(th60ff)**3.5,"r:",lw=2,label=r"$\sin^{3.5}\theta$")
+    plt.plot(th60ff/np.pi*180,np.sin(th60ff)**2,"r--",lw=2,label=r"$\sin^{2}\theta$")
+    plt.xlim(0,180)
+    plt.ylim(0,1)
+    plt.legend(loc="lower center")
+    plt.xlabel(r"$\theta$",fontsize=20)
+    plt.ylabel(r"$dL/d\Omega$",fontsize=20)
+    plt.title(r"${\rm MHD:}\ \alpha=60^\circ,\ R_*/R_{\rm LC}=0.2$",fontsize=20)
+    plt.xlim(0,180)
+    plt.ylim(0,1)
+    plt.grid(b=1)
+    plt.savefig("L60rstar.pdf",bbox_inches='tight',pad_inches=0.02)
+
+def pbrsq(roRlc=1.5,doreload=1):
+    os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50")  
+    th60_02,e60_02,s60_02=plotpangle(roRlc=roRlc,inject=1,doreload=doreload,no=106)
+    etot,psitot,Brsqavg=plotpangle(roRlc=roRlc,inject=2,doreload=0,no=106)
+    gc.collect()
+    plt.plot(th60_02/np.pi*180, Brsqavg/np.max(Brsqavg), 'm-.', lw=2, label=r"$\langle B_r^2\rangle$")
+    Fe = OmegaNS**2*(roRlc/OmegaNS*np.sin(th60_02))**2*Brsqavg
+    #pdb.set_trace()
+    plt.plot(th60_02/np.pi*180, s60_02/np.max(s60_02), 'g-', lw=2, label=r"$F_{\rm EM}$")
+    plt.plot(th60_02/np.pi*180, Fe/np.max(Fe), 'r--', lw=2, label=r"$\Omega^2R^2\langle B_r^2\rangle$")
+    plt.plot(th60_02/np.pi*180, np.sin(th60_02)**4, 'b:', lw=2, label=r"$\sin^4\theta$")
+    plt.legend(loc="upper right")
+    plt.xlabel(r"$\theta$",fontsize=20)
+    plt.ylabel(r"${\rm Various\ normalized\ quantities}$",fontsize=20)
+    plt.title(r"${\rm MHD:}\ \alpha=60^\circ,\ R_*/R_{\rm LC}=0.2$",fontsize=20)
+    plt.xlim(0,180)
+    plt.ylim(0,1)
+    plt.grid(b=1)
+    plt.savefig("brsq.pdf",bbox_inches='tight',pad_inches=0.02)
+
 def plotpsrangpower(cachefname="psrangle.npz"):
-    if os.path.isfile(cachefname):
+    if cachefname is not None and os.path.isfile(cachefname):
 	npzfile = np.load(cachefname)
 	th0 = npzfile['th0']
 	th30 = npzfile['th30']
@@ -1439,27 +1510,50 @@ def plotpsrangpower(cachefname="psrangle.npz"):
 	s30 = npzfile['s30']
 	s60 = npzfile['s60']
 	s90 = npzfile['s90']
+	e0 = npzfile['e0']
+	e30 = npzfile['e30']
+	e60 = npzfile['e60']
+	e90 = npzfile['e90']
+	psi0 = npzfile['psi0']
+	psi30 = npzfile['psi30']
+	psi60 = npzfile['psi60']
+	psi90 = npzfile['psi90']
+	etot0 = npzfile['etot0']
+	etot30 = npzfile['etot30']
+	etot60 = npzfile['etot60']
+	etot90 = npzfile['etot90']
+	brsqavg0 = npzfile['brsqavg0']
+	brsqavg30 = npzfile['brsqavg30']
+	brsqavg60 = npzfile['brsqavg60']
+	brsqavg90 = npzfile['brsqavg90']
+	ebrsq0 = npzfile['ebrsq0']
+	ebrsq30 = npzfile['ebrsq30']
+	ebrsq60 = npzfile['ebrsq60']
+	ebrsq90 = npzfile['ebrsq90']
+	ebr0 = npzfile['ebr0']
+	ebr30 = npzfile['ebr30']
+	ebr60 = npzfile['ebr60']
+	ebr90 = npzfile['ebr90']
     else:
 	os.chdir("/home/atchekho/run2/hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1")
-	th0,s0=plotpangle(inject=1,doreload=1,no=690)
+	th0,e0,s0=plotpangle(inject=1,doreload=1,no=690)
+	etot0,psi0,brsqavg0,ebrsq0,ebr0=plotpangle(inject=2,doreload=0,no=690)
 	os.chdir("../hf_30_r10h05_mydt_sph_x2_bsqorho50")
-	num=1
-	for dumpno in xrange(0,num):
-	    th30,b=plotpangle(inject=1,doreload=1,no=164-dumpno)
-	    if dumpno == 0:
-		s30 = b
-	    else:
-		s30 += b
-	s30 = s30 * 1. / num
+        th30,e30,s30=plotpangle(inject=1,doreload=1,no=164)
+	etot30,psi30,brsqavg30,ebrsq30,ebr30=plotpangle(inject=2,doreload=0,no=164)
 	gc.collect()
 	os.chdir("../hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50")  
-	th60,s60=plotpangle(inject=1,doreload=1,no=106)
+	th60,e60,s60=plotpangle(inject=1,doreload=1,no=106)
+	etot60,psi60,brsqavg60,ebrsq60,ebr60=plotpangle(inject=2,doreload=0,no=106)
 	gc.collect()
 	os.chdir("../hf_90_r10h05_mydt_sph_x2_bsqorho50")
-	th90,s90=plotpangle(inject=1,doreload=1,no=160)
+	th90,e90,s90=plotpangle(inject=1,doreload=1,no=160)
+	etot90,psi90,brsqavg90,ebrsq90,ebr90=plotpangle(inject=2,doreload=0,no=160)
 	gc.collect()
         os.chdir("..")
-        np.savez(cachefname, th0=th0, th30=th30, th60=th60, th90=th90, s0=s0, s30=s30, s60=s60, s90=s90)
+        if cachefname is not None:
+            np.savez(cachefname, th0=th0, th30=th30, th60=th60, th90=th90, s0=s0, s30=s30, s60=s60, s90=s90, e0=e0, e30=e30, e60=e60, e90=e90,  psi0=psi0, psi30=psi30, psi60=psi60, psi90=psi90,  etot0=etot0, etot30=etot30, etot60=etot60, etot90=etot90,  brsqavg0=brsqavg0, brsqavg30=brsqavg30, brsqavg60=brsqavg60, brsqavg90=brsqavg90, ebrsq0=ebrsq0, ebrsq30=ebrsq30, ebrsq60=ebrsq60, ebrsq90=ebrsq90, ebr0=ebr0, ebr30=ebr30, ebr60=ebr60, ebr90=ebr90)
+    plt.figure(1)
     plt.plot(th90/np.pi*180,5*np.sin(th90)**2, 'k:', lw=2)
     plt.plot(th0/np.pi*180,  s0, 'r', lw=2, label=r"$\alpha=0^\circ$")
     plt.plot(th30/np.pi*180, s30, 'g', lw=2, label=r"$\alpha=30^\circ$")
@@ -1482,18 +1576,61 @@ def plotpsrangpower(cachefname="psrangle.npz"):
         label.set_fontsize(20)
     plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20,labelpad=-8)
     plt.ylabel(r"$4\pi\,{\rm d}(L/L_0)/{\rm d}\Omega$",fontsize=18)
+    plt.figure(2)
+    psis = np.array([psi0, psi30, psi60, psi90])
+    etots = np.array([etot0, etot30, etot60, etot90])
+    alphas = np.array([0, 30, 60, 90])
+    ebrsqs = np.array([ebrsq0, ebrsq30, ebrsq60, ebrsq90])
+    ebrs = np.array([ebr0, ebr30, ebr60, ebr90])
+    plt.plot(alphas, psis**2,'o-')
+    plt.grid(b=1)
+    ax1=plt.gca()
+    for label in ax1.get_xticklabels() + ax1.get_yticklabels():
+        label.set_fontsize(20)
+    plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20)
+    plt.ylabel(r"$\Psi_{\rm open}^2/\Psi_{\rm tot}^2$",fontsize=20)
+    plt.figure(3)
+    alphas = np.array([0, 30, 60, 90])
+    plt.plot(th0,brsqavg0)
+    plt.plot(th30,brsqavg30)
+    plt.plot(th60,brsqavg60)
+    plt.plot(th90,brsqavg90)
+    # plt.figure(4)
+    # en = np.array([
+    #      (brsqavg0* np.sin(th0)**3*(th0[1]-th0[0])   *len(th0)).sum(), 
+    #      (brsqavg30*np.sin(th30)**3*(th30[1]-th30[0])*len(th30)).sum(),
+    #      (brsqavg60*np.sin(th60)**3*(th60[1]-th60[0])*len(th60)).sum(),
+    #      (brsqavg90*np.sin(th90)**3*(th90[1]-th90[0])*len(th90)).sum()
+    #      ])
+    # plt.plot(alphas, en)
+    plt.figure(5)
+    plt.plot(alphas, etots, 'o-', label=r"$L$")
+    plt.plot(alphas, ebrsqs, 'o-',label=r"$\int\Omega^2R^2\langle B_r^2\rangle d\Omega$")
+    plt.plot(alphas, ebrs, 'o-', label=r"$\int\Omega^2R^2\langle|B_r|\rangle^2d\Omega$")
+    ax1=plt.gca()
+    leg = plt.legend(loc="lower right",ncol=1)
+    for t in leg.get_texts():
+       t.set_fontsize(20)    # the legend text fontsize
+    for label in ax1.get_xticklabels() + ax1.get_yticklabels():
+        label.set_fontsize(20)
+    plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20)
+    plt.ylabel(r"$L/L_{\rm aligned}$",fontsize=20)
+    plt.grid(b=1)
+    plt.savefig("Lbsq.pdf",bbox_inches='tight',pad_inches=0.02)
 
 
-def plotpangle(r0=10,doreload=1,dnpole=0,no=106,inject=0):
+def plotpangle(roRlc=None,r0=10,doreload=1,dnpole=0,no=106,inject=0):
     if doreload:
         grid3d("gdump.bin", use2d=1)
         rfd("fieldline%04d.bin" % no)
         cvel()
         Tcalcud()
+    if roRlc is not None:
+        r0 = roRlc/OmegaNS
     #magnetic flux at star; 0.5 accts for two hemispheres
     #"mean" because getting vector potential (which does not require integration in phi), not flux
     Max_flux_code = 0.5 * np.abs(gdetB[1,0,dnpole:ny-dnpole,:]).sum(-1).sum(-1)*_dx2*_dx3
-    Bsurf = Max_flux_code/(4*np.pi*Rin**2)
+    Bsurf = Max_flux_code/(2*np.pi*Rin**2)
     Max_flux_r0 =   0.5 * np.abs(gdetB[1,iofr(r0),dnpole:ny-dnpole,:]).sum(-1).sum(-1)*_dx2*_dx3
     #conversion prefactors
     #1/(2*np.pi) -- to convert from A_\phi to Psi (flux)
@@ -1502,11 +1639,14 @@ def plotpangle(r0=10,doreload=1,dnpole=0,no=106,inject=0):
     #mudip = 1.5*3.162277660168379332*2*3*3*0.5*(4*np.pi)**0.5
     #Normalized Edot such that aligned dipole should be unity
     norm = mudip**2 * OmegaNS**4 
+    Bavg = Max_flux_r0/(2*np.pi*r0**2)/norm**0.5
     ii = iofr(r0)
     #dFE/dtheta
     eflux=(-gdet*Tud[1,0]*_dx2*_dx3).mean(2)/(gdet*_dx2*_dx3).mean(2)/norm #/np.sin(h[:,:,0])**1
     emflux=(-gdet*TudEM[1,0]*_dx2*_dx3).mean(2)/(gdet*_dx2*_dx3).mean(2)/norm #/np.sin(h[:,:,0])**1
-    Brsqavg=(-gdet*(B[1]*dxdxp[1,1])**2*_dx2*_dx3).mean(2)/(gdet*_dx2*_dx3).mean(2)/Bsurf**2
+    Brsqavg=(gdet*(B[1]*dxdxp[1,1])**2*_dx2*_dx3).mean(2)/(gdet*_dx2*_dx3).mean(2)/norm
+    ebrsq = (2*np.pi*OmegaNS**2*Brsqavg[ii]*r0**4*np.sin(h[ii,:,0])**3*dxdxp[2,2,0,0,0]*_dx2).sum()
+    ebr = (2*np.pi*OmegaNS**2*Bavg**2*r0**4*np.sin(h[ii,:,0])**3*dxdxp[2,2,0,0,0]*_dx2).sum()
     psitot = Max_flux_r0 / Max_flux_code
     etot=(gdet[ii,:,0]*eflux[ii]).sum(0)*_dx2*_dx3*nz
     print etot
@@ -1520,9 +1660,9 @@ def plotpangle(r0=10,doreload=1,dnpole=0,no=106,inject=0):
         plt.plot(h[ii,:,0],emflux[ii,:]*dxdxp[1,1,ii,:,0]*fac, label="EM")
         plt.legend(loc="upper right")
     elif inject == 1:
-        return h[ii,:,0],eflux[ii,:]*dxdxp[1,1,ii,:,0]*fac
+        return h[ii,:,0],eflux[ii,:]*dxdxp[1,1,ii,:,0]*fac,emflux[ii,:]*dxdxp[1,1,ii,:,0]*fac
     elif inject == 2:
-        return etot, psitot, Brsqavg[ii]
+        return etot, psitot, Brsqavg[ii], ebrsq, ebr
         
 
         
