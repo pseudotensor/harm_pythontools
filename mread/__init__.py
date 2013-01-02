@@ -13546,11 +13546,19 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
     if dosavefig:
         plt.savefig("figFxMS.pdf",bbox_inches='tight',pad_inches=0.02)
 
-def ubsfluxplot(alpha=5./3.,mstar=1,rstar=1,mbh=5,fntsize=20):
+def ubsfluxplot(alpha=5./3.,fntsize=20,tmin=4,tmax=1e4,Pj=2e46,a=0.9,lammad=240,lamfossil=None,lamcrit=0.3,fb=1):
+    lammad*=lamcrit/0.3
+    #mbh5=(158.204 * facc**1.5 *  mstar**2)/(lamcrit/0.3)**1.5
+    mbh5 = (2.16346 * fb)/(lamcrit/0.3)/a**2
+    mstar = 1.33215/mbh5
+    #MS star
+    rstar = mstar
+    #for a complete disruption
+    facc = 0.0341865 * (((lamcrit/0.3)**1.5 * mbh5)/mstar**2)**(2./3.)
     day = 86400. #s
     year = 365*day #s
     Msun = 1.99e33 #g
-    tfb = 0.11*year*rstar**1.5*(mbh/6.)**0.5/mstar  #s, from Ulmer 1999 with Rp = Rt
+    tfb = 0.11*year*rstar**1.5*(mbh5/10.)**0.5/mstar  #s, from Ulmer 1999 with Rp = Rt
     t = 10.**np.linspace(np.log10(0.3*tfb),9,1e4) #in seconds
     mdot = Msun*mstar*(alpha-1)*(t/tfb)**(-alpha)/(2*tfb) #g/s
     tpeak = 1.5*tfb
@@ -13558,18 +13566,96 @@ def ubsfluxplot(alpha=5./3.,mstar=1,rstar=1,mbh=5,fntsize=20):
     k = (0.75 - (2./3.)**(-1 - alpha) + (3*alpha)/2.)/(-1 + alpha)
     mdot[t<tpeak] = mdotpeak*(1.-((t/tfb-1.5)/(k-1.5))**2)
     mdot[mdot<0]*=0
+    mdot *= facc
+    mdotpeak *= facc
+    m = mdot*0
+    cond = (t>k*tfb)*(t<tpeak)
+    m[cond] = -((2**alpha*3**(-1 - alpha)*(-1 + alpha)*mstar*Msun*
+       (-(k*tfb) + t)**2*((-9 + 4*k)*tfb + 2*t))/((3 - 2*k)**2*tfb**3))[cond]
+    #total mass accreted pre-peak
+    mprepeak = -2**(-1+alpha)*3**(-1-alpha)*(-1+alpha)*(-3+2*k)*mstar*Msun
+    cond = (t>tpeak)
+    m[cond] = (mprepeak + 0.25 * mstar * Msun * (2**alpha*3**(1 - alpha)
+                                                 - 2*(tfb/t)**(-1 + alpha)))[cond]
+    m *= facc
+    m1 = mdot*0 + 0.5 * mstar * Msun * (1 - (tfb/t)**(-1 + alpha))
+    m1[m1<0]*=0
+    m1*=facc
+    omegah = a/(1+(1-a**2)**0.5)
+    Medd = 1.3e44*mbh5/(3e10)**2
+    l = mdot/Medd
+    #
+    if lamfossil is None:
+        Phi30peakokappa = 0.54*mbh5**(-1./3.)*mstar**(1./3.)*(Pj/2.e46)**0.5*(tpeak/tfb)**(2./3.)
+        Phi30MADpeak = 0.067*mbh5**1.5*(mdotpeak/Medd)**0.5*(1-0.38*omegah)
+        kappa = Phi30MADpeak/Phi30peakokappa
+        lamfossil = kappa**2*lammad*1e-6
+    else:
+        lamfossil*=lamcrit/0.3
+        kappa = (lamfossil/lammad/1e-6)**0.5
+    print( "mbh5 = %g, mstar = %g, facc = %g, lamfossil = %g, kappa = %g" % (mbh5, mstar, facc, lamfossil, kappa) )
+    Phi30 = 0.54 * kappa * mbh5**(-1./3.)*mstar**(1./3.)*(Pj/2.e46)**0.5*(t/tfb)**(2./3.)
+    Phi30MAD = 0.067*mbh5**1.5*l**0.5*(1-0.38*omegah)
+    print( "ratio that should be unity: %g, %g, %g, %g, %g" % (Phi30MAD[t>tpeak][0]/Phi30[t>tpeak][0], Phi30MAD[t>tpeak][0], Phi30[t>tpeak][0], mdot[t>tpeak][0], mdotpeak) )
+    Phi30[mdot<=0]*=0
+    ###
+    plt.figure(1)
     plt.clf()
-    plt.plot(t/day,mdot)
+    plt.plot(t/day,mdot/Medd,lw=2)
+    ax = plt.gca()
+    plt.xscale("log")
+    plt.yscale("log")
+    plt.xlim(tmin,tmax)
+    plt.xlabel(r"${\rm Days\ since\ disruption},\ t$",fontsize=fntsize)
+    plt.ylabel(r"$\lambda\equiv f_{\rm acc}\dot M_{\rm fb}/\dot M_{\rm Edd}$",fontsize=fntsize)
+    plt.grid(b=1)
+    ax1 = ax.twinx()
+    ax1.set_ylim(0.067*mbh5**1.5*(np.array((ax.get_ylim())))**0.5*(1-0.38*omegah))
+    ax1.set_yscale('log')
+    ax1.set_ylabel(r"$\Phi_{\bullet,30}^{\rm MAD},\ \Phi_{\bullet,30}$",fontsize=fntsize,ha="left",labelpad=5)
+    ax1.plot(t/day,Phi30,'g--',lw=2)
+    ax1.set_xlim(tmin,tmax)
+    for label in ax.get_xticklabels() + ax.get_yticklabels() + ax1.get_yticklabels():
+        label.set_fontsize(fntsize)
+    #
+    #
+    # ACCRETED MASS
+    #
+    #
+    plt.figure(2)
+    plt.clf()
+    plt.plot(t/day,m/Msun)
+    #plt.plot(t/day,m1/Msun)
     ax = plt.gca()
     for label in ax.get_xticklabels() + ax.get_yticklabels():
         label.set_fontsize(fntsize)
     plt.xscale("log")
-    plt.yscale("log")
-    plt.xlim(t[0]/day,1e4)
-    plt.xlabel(r"${\rm Days\ since\ disruption},\ t\ {\rm days}$",fontsize=fntsize)
-    plt.ylabel(r"$\dot M_{\rm fb}\ {\rm [g\,s^{-1}]}$",fontsize=fntsize)
+    # plt.yscale("log")
+    plt.xlim(tmin,tmax)
+    plt.ylim(0,1)
+    plt.xlabel(r"${\rm Days\ since\ disruption},\ t$",fontsize=fntsize)
+    plt.ylabel(r"$M(t)/M_\star$",fontsize=fntsize)
     plt.grid(b=1)
-
+    #
+    #
+    # FLUX
+    #
+    #
+    plt.figure(3)
+    plt.clf()
+    plt.plot(t/day,Phi30)
+    plt.plot(t/day,Phi30MAD)
+    #plt.plot(t/day,m1/Msun)
+    ax = plt.gca()
+    for label in ax.get_xticklabels() + ax.get_yticklabels():
+        label.set_fontsize(fntsize)
+    plt.xscale("log")
+    # plt.yscale("log")
+    plt.xlim(tmin,tmax)
+    plt.ylim(0,2)
+    plt.xlabel(r"${\rm Days\ since\ disruption},\ t$",fontsize=fntsize)
+    plt.ylabel(r"$\Phi_{30}(t)$",fontsize=fntsize)
+    plt.grid(b=1)
 
 def horslimfit():
     hor = [0.04, 0.15, 0.25, 0.4]
