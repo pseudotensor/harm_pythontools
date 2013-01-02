@@ -13546,7 +13546,7 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
     if dosavefig:
         plt.savefig("figFxMS.pdf",bbox_inches='tight',pad_inches=0.02)
 
-def ubsfluxplot(alpha=5./3.,fntsize=20,tmin=4,tmax=1e4,Pj=2e46,a=0.9,lammad=240,lamfossil=None,lamcrit=0.3,fb=1):
+def ubsfluxplot(alpha=5./3.,fntsize=20,tmin=4,tmax=1e4,Pj=2e46,a=0.9,lammad=240,lamfossil=None,lamcrit=0.3,fb=1,z=0.353):
     lammad*=lamcrit/0.3
     #mbh5=(158.204 * facc**1.5 *  mstar**2)/(lamcrit/0.3)**1.5
     mbh5 = (2.16346 * fb)/(lamcrit/0.3)/a**2
@@ -13554,7 +13554,7 @@ def ubsfluxplot(alpha=5./3.,fntsize=20,tmin=4,tmax=1e4,Pj=2e46,a=0.9,lammad=240,
     #MS star
     rstar = mstar
     #for a complete disruption
-    facc = 0.0341865 * (((lamcrit/0.3)**1.5 * mbh5)/mstar**2)**(2./3.)
+    facc = 0.020655 * (((lamcrit/0.3)**1.5 * mbh5)/mstar**2)**(2./3.)
     day = 86400. #s
     year = 365*day #s
     Msun = 1.99e33 #g
@@ -13582,7 +13582,7 @@ def ubsfluxplot(alpha=5./3.,fntsize=20,tmin=4,tmax=1e4,Pj=2e46,a=0.9,lammad=240,
     m1[m1<0]*=0
     m1*=facc
     omegah = a/(1+(1-a**2)**0.5)
-    Medd = 1.3e44*mbh5/(3e10)**2
+    Medd = 1.248e39*1e5*mbh5/(3e10)**2
     l = mdot/Medd
     #
     if lamfossil is None:
@@ -13593,7 +13593,7 @@ def ubsfluxplot(alpha=5./3.,fntsize=20,tmin=4,tmax=1e4,Pj=2e46,a=0.9,lammad=240,
     else:
         lamfossil*=lamcrit/0.3
         kappa = (lamfossil/lammad/1e-6)**0.5
-    print( "mbh5 = %g, mstar = %g, facc = %g, lamfossil = %g, kappa = %g" % (mbh5, mstar, facc, lamfossil, kappa) )
+    print( "mbh5 = %g, mstar = %g, facc = %g, lamfossil = %g, lammad = %g, lampeak = %g, lam40d = %g, lamoff = %g" % (mbh5, mstar, facc, lamfossil, lammad, mdotpeak/Medd, mdot[t>day*40/(1+z)][0]/Medd, mdot[t>day*530/(1+z)][0]/Medd) )
     Phi30 = 0.54 * kappa * mbh5**(-1./3.)*mstar**(1./3.)*(Pj/2.e46)**0.5*(t/tfb)**(2./3.)
     Phi30MAD = 0.067*mbh5**1.5*l**0.5*(1-0.38*omegah)
     print( "ratio that should be unity: %g, %g, %g, %g, %g" % (Phi30MAD[t>tpeak][0]/Phi30[t>tpeak][0], Phi30MAD[t>tpeak][0], Phi30[t>tpeak][0], mdot[t>tpeak][0], mdotpeak) )
@@ -13601,7 +13601,7 @@ def ubsfluxplot(alpha=5./3.,fntsize=20,tmin=4,tmax=1e4,Pj=2e46,a=0.9,lammad=240,
     ###
     plt.figure(1)
     plt.clf()
-    plt.plot(t/day,mdot/Medd,lw=2)
+    plt.plot((1+z)*t/day,mdot/Medd,lw=2)
     ax = plt.gca()
     plt.xscale("log")
     plt.yscale("log")
@@ -13613,7 +13613,7 @@ def ubsfluxplot(alpha=5./3.,fntsize=20,tmin=4,tmax=1e4,Pj=2e46,a=0.9,lammad=240,
     ax1.set_ylim(0.067*mbh5**1.5*(np.array((ax.get_ylim())))**0.5*(1-0.38*omegah))
     ax1.set_yscale('log')
     ax1.set_ylabel(r"$\Phi_{\bullet,30}^{\rm MAD},\ \Phi_{\bullet,30}$",fontsize=fntsize,ha="left",labelpad=5)
-    ax1.plot(t/day,Phi30,'g--',lw=2)
+    ax1.plot((1+z)*t/day,Phi30,'g--',lw=2)
     ax1.set_xlim(tmin,tmax)
     for label in ax.get_xticklabels() + ax.get_yticklabels() + ax1.get_yticklabels():
         label.set_fontsize(fntsize)
@@ -13624,8 +13624,8 @@ def ubsfluxplot(alpha=5./3.,fntsize=20,tmin=4,tmax=1e4,Pj=2e46,a=0.9,lammad=240,
     #
     plt.figure(2)
     plt.clf()
-    plt.plot(t/day,m/Msun)
-    #plt.plot(t/day,m1/Msun)
+    plt.plot((1+z)*t/day,m/(mstar*Msun*facc))
+    #plt.plot((1+z)*t/day,m1/Msun/facc)
     ax = plt.gca()
     for label in ax.get_xticklabels() + ax.get_yticklabels():
         label.set_fontsize(fntsize)
@@ -13634,7 +13634,7 @@ def ubsfluxplot(alpha=5./3.,fntsize=20,tmin=4,tmax=1e4,Pj=2e46,a=0.9,lammad=240,
     plt.xlim(tmin,tmax)
     plt.ylim(0,1)
     plt.xlabel(r"${\rm Days\ since\ disruption},\ t$",fontsize=fntsize)
-    plt.ylabel(r"$M(t)/M_\star$",fontsize=fntsize)
+    plt.ylabel(r"$M(t)/f_{\rm acc}M_\star$",fontsize=fntsize)
     plt.grid(b=1)
     #
     #
@@ -13643,9 +13643,9 @@ def ubsfluxplot(alpha=5./3.,fntsize=20,tmin=4,tmax=1e4,Pj=2e46,a=0.9,lammad=240,
     #
     plt.figure(3)
     plt.clf()
-    plt.plot(t/day,Phi30)
-    plt.plot(t/day,Phi30MAD)
-    #plt.plot(t/day,m1/Msun)
+    plt.plot((1+z)*t/day,Phi30)
+    plt.plot((1+z)*t/day,Phi30MAD)
+    #plt.plot((1+z)*t/day,m1/Msun)
     ax = plt.gca()
     for label in ax.get_xticklabels() + ax.get_yticklabels():
         label.set_fontsize(fntsize)
