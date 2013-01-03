@@ -13546,16 +13546,17 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
     if dosavefig:
         plt.savefig("figFxMS.pdf",bbox_inches='tight',pad_inches=0.02)
 
-def ubsfluxplot(alpha=5./3.,fntsize=20,Pj=1e46,lammad=240,lamfossil=None,lamcrit=0.3,fb=0.8,z=0.353,isms=0):
+def ubsfluxplot(alpha=5./3.,fntsize=20,lammad=240,lamfossil=None,lamcrit=0.3,fb=2,z=0.353,isms=1):
+    Pj = fb * 1e46
     lammad*=lamcrit/0.3
     ttr = 30*86400
     #mbh5=(158.204 * facc**1.5 *  mstar**2)/(lamcrit/0.3)**1.5
-    a = 0.9
+    mbh5=5
     if isms:
         #MS star
         tmin=4
         tmax=1e4
-        mbh5 = (1. * fb)/(lamcrit/0.3)/a**2
+        a = ((1. * fb)/(lamcrit/0.3)/mbh5)**0.5
         mstar = 1.33215/mbh5
         rstar = mstar
         #for a complete disruption
@@ -13566,7 +13567,8 @@ def ubsfluxplot(alpha=5./3.,fntsize=20,Pj=1e46,lammad=240,lamfossil=None,lamcrit
         tmax=1e4
         mstar = 0.6 #0.0099121*mbh5**(1./3.)
         rstar = 1.29310344827586206897e-2*(mstar/0.6)**(-1./3.)
-        mbh5 = (1. * fb)/(lamcrit/0.3)/a**2
+        #mbh5 = (1. * fb)/(lamcrit/0.3)/a**2
+        a = ((1. * fb)/(lamcrit/0.3)/mbh5)**0.5
         #for a complete disruption
         facc = (mbh5*(lamcrit/0.3)**1.5/0.383697)**(2./3.)
         #mbh5 = (0.383697 * facc**1.5)/(lamcrit/0.3)**1.5
@@ -13605,22 +13607,24 @@ def ubsfluxplot(alpha=5./3.,fntsize=20,Pj=1e46,lammad=240,lamfossil=None,lamcrit
     l = mdot/Medd
     #
     if lamfossil is None and isms:
-        Phi30peakokappa = 0.54*mbh5**(-1./3.)*mstar**(1./3.)*(Pj/2.e46)**0.5*(tpeak/tfb)**(2./3.)
-        Phi30MADpeak = 0.067*mbh5**1.5*(mdotpeak/Medd)**0.5*(1-0.38*omegah)
+        Phi30peakokappa = 0.54*mbh5**(-1./3.)*mstar**(1./3.)*(fb/2.)**0.5*(tpeak/tfb)**(2./3.)
+        lammad = mdotpeak/Medd
+        Phi30MADpeak = 0.067*mbh5**1.5*(lammad)**0.5*(1-0.38*omegah)
         kappa = Phi30MADpeak/Phi30peakokappa
         lamfossil = kappa**2*lammad*1e-6
     elif lamfossil is None and not isms:
-        Phi30peakokappa = 0.54*mbh5**(-1./3.)*mstar**(1./3.)*(Pj/2.e46)**0.5*(ttr/tfb)**(2./3.)
-        Phi30MADpeak = 0.067*mbh5**1.5*(mdot[t>ttr][0]/Medd)**0.5*(1-0.38*omegah)
+        Phi30peakokappa = 0.54*mbh5**(-1./3.)*mstar**(1./3.)*(fb/2.)**0.5*(ttr/tfb)**(2./3.)
+        lammad = mdot[t>ttr][0]/Medd
+        Phi30MADpeak = 0.067*mbh5**1.5*(lammad)**0.5*(1-0.38*omegah)
         kappa = Phi30MADpeak/Phi30peakokappa
         lamfossil = kappa**2*lammad*1e-6
     else:
         lamfossil*=lamcrit/0.3
         kappa = (lamfossil/lammad/1e-6)**0.5
-    print( "a = %g, mbh5 = %g, mstar = %g, facc = %g, lamfossil = %g, lammad = %g, lampeak = %g, lam40d = %g, lamoff = %g" % (a, mbh5, mstar, facc, lamfossil, lammad, mdotpeak/Medd, mdot[t>day*40/(1+z)][0]/Medd, mdot[t>day*530/(1+z)][0]/Medd) )
-    Phi30 = 0.54 * kappa * mbh5**(-1./3.)*mstar**(1./3.)*(Pj/2.e46)**0.5*(t/tfb)**(2./3.)
+    print( "a = %g, mbh5 = %g, mstar = %g, facc = %g, lamfossil = %g, lammad = %g, lampeak = %g, lam40d = %g, lamoff = %g, kappa = %g" % (a, mbh5, mstar, facc, lamfossil, lammad, mdotpeak/Medd, mdot[t>day*40/(1+z)][0]/Medd, mdot[t>day*530/(1+z)][0]/Medd, kappa) )
+    Phi30 = 0.54 * kappa * mbh5**(-1./3.)*mstar**(1./3.)*(fb/2.)**0.5*(t/tfb)**(2./3.)
     Phi30MAD = 0.067*mbh5**1.5*l**0.5*(1-0.38*omegah)
-    print( "ratio that should be unity: %g, %g, %g, %g, %g" % (Phi30MAD[t>tpeak][0]/Phi30[t>tpeak][0], Phi30MAD[t>tpeak][0], Phi30[t>tpeak][0], mdot[t>tpeak][0], mdotpeak) )
+    # print( "ratio that should be unity: %g, %g, %g, %g, %g" % (Phi30MAD[t>tpeak][0]/Phi30[t>tpeak][0], Phi30MAD[t>tpeak][0], Phi30[t>tpeak][0], mdot[t>tpeak][0], mdotpeak) )
     Phi30[mdot<=0]*=0
     ###
     plt.figure(1)
