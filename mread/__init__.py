@@ -13546,21 +13546,20 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
     if dosavefig:
         plt.savefig("figFxMS.pdf",bbox_inches='tight',pad_inches=0.02)
 
-def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,lamcrit=0.3,z=0.353,disruptiontype="ms partial",dosavefig=0):
+def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="ms partial",dosavefig=0):
     plt.figure(1,figsize=(8,12))
     plt.clf()
     gs1 = GridSpec(3, 3)
     gs1.update(left=0.15, right=0.85, top=0.96, bottom=0.15, wspace=0.01, hspace=0.06)
     #
-    lammad*=lamcrit/0.3
-    #mbh5=(158.204 * facc**1.5 *  mstar**2)/(lamcrit/0.3)**1.5
-    mbh5=3
     if disruptiontype=="ms complete":
         #MS star
+        lamcrit=0.3
+        mbh5=3
         fb = 1
         ttr = 30*86400
         alpha=5./3.
-        tmin=4
+        tmin=1
         tmax=1e4
         a = ((1. * fb)/(lamcrit/0.3)/mbh5)**0.5
         mstar = 1.33215/mbh5
@@ -13569,12 +13568,14 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,lamcrit=0.3,z=0.353,disrupt
         facc = 0.020655 * (((lamcrit/0.3)**1.5 * mbh5)/mstar**2)**(2./3.)
     elif disruptiontype=="ms partial":
         #MS star
+        lamcrit=0.2
+        mbh5=3
         fb = 1
         ttr = 60*86400
         alpha=2.2
-        tmin=4
+        tmin=1
         tmax=1e4
-        a = ((1. * fb)/(lamcrit/0.3)/mbh5)**0.5
+        a = (1. * fb/(lamcrit/0.3)/mbh5)**0.5
         tpeakottr=0.5
         mstar = 5.32862/mbh5*(tpeakottr)**2
         rstar = mstar
@@ -13582,20 +13583,21 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,lamcrit=0.3,z=0.353,disrupt
         facc = 0.0802857 * (((lamcrit/0.3)**2.5 * mbh5)/mstar**4)**(2./5.)
     elif disruptiontype=="wd complete":
         #WD
-        fb = 2
+        mbh5=1.8
+        lamcrit=0.1
+        fb = 0.5
         ttr = 30*86400
         alpha=5./3.
         tmin=0.01
         tmax=1e4
         mstar = 0.6 #0.0099121*mbh5**(1./3.)
         rstar = 1.29310344827586206897e-2*(mstar/0.6)**(-1./3.)
-        #mbh5 = (1. * fb)/(lamcrit/0.3)/a**2
-        a = ((1. * fb)/(lamcrit/0.3)/mbh5)**0.5
         #for a complete disruption
-        facc = (mbh5*(lamcrit/0.3)**1.5/0.383697)**(2./3.)
+        facc = 1.89383*(lamcrit/0.3)*mbh5**(2./3.)
         #mbh5 = (0.383697 * facc**1.5)/(lamcrit/0.3)**1.5
         a = ((1. * fb)/(lamcrit/0.3)/mbh5)**0.5
         if a > 1:
+            print( "a = %g > 1!" % a )
             a = 1
         #fb = (0.177353 * a**2 * facc**1.5)/(lamcrit/0.3)**0.5
     day = 86400. #s
@@ -13611,23 +13613,39 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,lamcrit=0.3,z=0.353,disrupt
     mdot = facc*Msun*mstar*(alpha-1)*(t/tfb)**(-alpha)/(2*tfb) #g/s
     tpeak = 1.5*tfb
     mdotpeak = facc*Msun*mstar*(alpha-1)*(tpeak/tfb)**(-alpha)/(2*tfb) #g/s
-    k = (0.75 - (2./3.)**(-1 - alpha) + (3*alpha)/2.)/(-1 + alpha)
-    mdot[t<tpeak] = mdotpeak*(1.-((t/tfb-1.5)/(k-1.5))**2)
-    mdot[mdot<0]*=0
-    l = mdot/Medd
+    if disruptiontype=="ms complete":
+        tmad = tpeak
+    elif disruptiontype=="ms partial":
+        tmad = 0.75*ttr/(1.+z)
+    elif disruptiontype=="wd complete":
+        tmad = (ttr-4*day)/(1.+z)
     #
     # Accreted mass, m
     #
     m = mdot*0
-    cond = (t>k*tfb)*(t<tpeak)
-    m[cond] = -((2**alpha*3**(-1 - alpha)*(-1 + alpha)*mstar*Msun*
-       (-(k*tfb) + t)**2*((-9 + 4*k)*tfb + 2*t))/((3 - 2*k)**2*tfb**3))[cond]
-    #total mass accreted pre-peak
-    mprepeak = -2**(-1+alpha)*3**(-1-alpha)*(-1+alpha)*(-3+2*k)*mstar*Msun
+    if 0: #use (t-tpeak)^2 suppression
+        k = (0.75 - (2./3.)**(-1 - alpha) + (3*alpha)/2.)/(-1 + alpha)
+        cond = (t>k*tfb)*(t<tpeak)
+        mdot[t<tpeak] = mdotpeak*(1.-((t/tfb-1.5)/(k-1.5))**2)
+        m[cond] = -((2**alpha*3**(-1 - alpha)*(-1 + alpha)*mstar*Msun*
+                  (-(k*tfb) + t)**2*((-9 + 4*k)*tfb + 2*t))/((3 - 2*k)**2*tfb**3))[cond]
+        #total mass accreted pre-peak
+        mprepeak = -2**(-1+alpha)*3**(-1-alpha)*(-1+alpha)*(-3+2*k)*mstar*Msun
+    elif 1: #use (t-tpeak)^3 suppression -- looks in better with Guillochon's papers
+        k = -((3. + 2.**(3. - alpha) * 3.**alpha - 15. * alpha)/(10. * (-1. + alpha)))
+        cond = (t>k*tfb)*(t<tpeak)
+        mdot[t<tpeak] = mdotpeak*(1.-((t/tfb-1.5)/(k-1.5))**3)
+        # m[cond] = (mdotpeak/facc)* (-k * tfb - ((3 * tfb - 2*k*tfb)**4 - (3*tfb - 2*t)**4)/(
+        #              8.*(-3. + 2.*k)**3.*tfb**3) + t)
+        m[cond] = (mdotpeak*tfb*(-k + ((3. - 2.*k)**4
+                                              - (3. - 2.*t/tfb)**4)/ (8.*(3.-2.*k)**3) + t/tfb))[cond]
+        #total mass accreted pre-peak
+        mprepeak = 5./8. * (3. - 2. * k) * (mdotpeak/facc) * tfb
+    mdot[mdot<0]*=0
+    l = mdot/Medd
     cond = (t>tpeak)
-    m[cond] = (mprepeak + 0.25 * mstar * Msun * (2**alpha*3**(1 - alpha)
+    m[cond] = facc*(mprepeak + 0.25 * mstar * Msun * (2**alpha*3**(1 - alpha)
                                                  - 2*(tfb/t)**(-1 + alpha)))[cond]
-    m *= facc
     # simplified version of m that ignores pre-peak
     m1 = mdot*0 + 0.5 * mstar * Msun * (1 - (tfb/t)**(-1 + alpha))
     m1[m1<0]*=0
@@ -13635,12 +13653,6 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,lamcrit=0.3,z=0.353,disrupt
     #
     #
     if lamfossil is None:
-        if disruptiontype=="ms complete":
-            tmad = tpeak
-        elif disruptiontype=="ms partial":
-            tmad = ttr/(1.+z)
-        elif disruptiontype=="wd complete":
-            tmad = ttr/(1.+z)
         Phi30okappa_MAD = 0.54*mbh5**(-1./3.)*mstar**(1./3.)*(fb/2.)**0.5*(tmad/tfb)**(2./3.)
         lammad = mdot[t>tmad][0]/Medd
         Phi30MAD_MAD = 0.067*mbh5**1.5*(lammad)**0.5*(1-0.38*omegah)
@@ -13649,7 +13661,7 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,lamcrit=0.3,z=0.353,disrupt
     else:
         lamfossil*=lamcrit/0.3
         kappa = (lamfossil/lammad/1e-6)**0.5
-    print( "a = %g, mbh5 = %g, mstar = %g, facc = %g, lamfossil = %g, lammad = %g, lampeak = %g, lam40d = %g, lamoff = %g, kappa = %g" % (a, mbh5, mstar, facc, lamfossil, lammad, mdotpeak/Medd, mdot[t>day*40/(1+z)][0]/Medd, mdot[t>(day*500+ttr)/(1+z)][0]/Medd, kappa) )
+    print( "a = %g, mbh5 = %g, mstar = %g, facc = %g, lamfossil = %g, lammad = %g, lampeak = %g, lam(ttr) = %g, lamoff = %g, kappa = %g" % (a, mbh5, mstar, facc, lamfossil, lammad, mdotpeak/Medd, mdot[t>ttr/(1+z)][0]/Medd, mdot[t>(day*500+ttr)/(1+z)][0]/Medd, kappa) )
     Phi30 = 0.54 * kappa * mbh5**(-1./3.)*mstar**(1./3.)*(fb/2.)**0.5*(t/tfb)**(2./3.)
     Phi30MAD = 0.067*mbh5**1.5*l**0.5*(1-0.38*omegah)
     phimad = 70*(1-0.38*omegah)
@@ -13683,7 +13695,7 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,lamcrit=0.3,z=0.353,disrupt
     ax2 = plt.subplot(gs1[1, :])
     plt.setp( ax2.get_xticklabels(), visible=False )
     plt.plot((1+z)*t/day,m/(mstar*Msun*facc))
-    #plt.plot((1+z)*t/day,m1/Msun/facc)
+    plt.plot((1+z)*t/day,m1/(mstar*Msun*facc))
     ax = plt.gca()
     for label in ax.get_xticklabels() + ax.get_yticklabels():
         label.set_fontsize(fntsize)
@@ -13738,6 +13750,8 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,lamcrit=0.3,z=0.353,disrupt
     if dosavefig:
 	if disruptiontype=="ms complete":
             plt.savefig("msflux.pdf",bbox_inches='tight',pad_inches=0.02)
+	elif disruptiontype=="ms partial":
+            plt.savefig("mspartflux.pdf",bbox_inches='tight',pad_inches=0.02)
 	elif disruptiontype=="wd complete":
             plt.savefig("wdflux.pdf",bbox_inches='tight',pad_inches=0.02)
 
