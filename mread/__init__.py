@@ -13843,7 +13843,6 @@ if __name__ == "__main__":
         plt.clf()
         ubsplot(dosavefig=0)
     if True:
-        plt.clf()
         ubsfluxplot()
     if False:
         grid3d("gdump.bin",use2d=1)
