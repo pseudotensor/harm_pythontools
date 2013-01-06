@@ -13546,7 +13546,7 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
     if dosavefig:
         plt.savefig("figFxMS.pdf",bbox_inches='tight',pad_inches=0.02)
 
-def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="ms partial",dosavefig=1):
+def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wd complete",dosavefig=1):
     plt.figure(1,figsize=(8,12))
     plt.clf()
     gs1 = GridSpec(3, 3)
@@ -13566,6 +13566,10 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="ms 
         rstar = mstar
         #for a complete disruption
         facc = 0.020655 * (((lamcrit/0.3)**1.5 * mbh5)/mstar**2)**(2./3.)
+        lmin = 1e-4
+        lmax = 1e4
+        phimin = 10
+        phimax = 1e4
     elif disruptiontype=="ms partial":
         #MS star
         lamcrit=0.2
@@ -13581,6 +13585,13 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="ms 
         rstar = mstar
         #for a partial disruption
         facc = 0.0802857 * (((lamcrit/0.3)**2.5 * mbh5)/mstar**4)**(2./5.)
+        lmin = 1e-4
+        lmax = 1e4
+        phimin = 10
+        phimax = 1e4
+        loclegl = "center right"
+        bboxl = (1,0.63)
+        loclegphi = "upper right"
     elif disruptiontype=="wd complete":
         #WD
         mbh5=1.8
@@ -13600,6 +13611,13 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="ms 
             print( "a = %g > 1!" % a )
             a = 1
         #fb = (0.177353 * a**2 * facc**1.5)/(lamcrit/0.3)**0.5
+        lmin = 1e-4
+        lmax = 1e6
+        phimin = 10
+        phimax = 1e4
+        loclegl = "lower left"
+        bboxl = (0,0)
+        loclegphi = "upper left"
     day = 86400. #s
     year = 365*day #s
     Msun = 1.99e33 #g
@@ -13689,7 +13707,7 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="ms 
     #plt.xlabel(r"${\rm Days\ since\ disruption},\ t$",fontsize=fntsize)
     plt.ylabel(r"$\lambda\equiv f_{\rm acc}\dot M_{\rm fb}/\dot M_{\rm Edd}$",fontsize=fntsize)
     plt.grid(b=1)
-    plt.ylim(1e-4,1e4)
+    plt.ylim(lmin,lmax)
     ylims=ax.get_ylim()
     ax.set_ylim(ylims[0]*(1+1e-5),ylims[1]*(1-1e-5))
     ax1twin = ax.twinx()
@@ -13705,7 +13723,7 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="ms 
     l.set_dashes([10,5])
     ax1twin.plot((1+z)*t/day,Phi30on,'b:',lw=1,label=r"$\Phi_{\rm on,30}$")
     ax1twin.set_xlim(tmin,tmax)
-    leg=plt.legend(bbox_to_anchor=(1,0.63),loc="center right",borderaxespad=1)
+    leg=plt.legend(bbox_to_anchor=bboxl,loc=loclegl,borderaxespad=1)
     for txt in leg.get_texts():
         txt.set_fontsize(0.8*fntsize)    # the legend text fontsize-0*86400
     ax.set_xlim(tmin,tmax)
@@ -13730,14 +13748,14 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="ms 
         l,=plt.plot((1+z)*t/day,phid,'c--',lw=4,label=r"$\phi_{\rm D}$")
         l.set_dashes([10,5])
         plt.plot((1+z)*t/day,t*0+phion,"b:",lw=1,label=r"$\phi_{\rm on}$",zorder=1)
-        leg=plt.legend(loc="upper right",borderaxespad=1)
+        leg=plt.legend(loc=loclegphi,borderaxespad=1)
         for txt in leg.get_texts():
             txt.set_fontsize(0.8*fntsize)    # the legend text fontsize-0*86400
         ax = ax3
         plt.xscale("log")
         plt.yscale("log")
         plt.xlim(tmin,tmax)
-        plt.ylim(10,1e4)
+        plt.ylim(phimin,phimax)
         plt.xlabel(r"${\rm Days\ since\ disruption},\ t$",fontsize=fntsize)
         plt.ylabel(r"$\phi$",fontsize=fntsize)
         plt.grid(b=1)
