@@ -13546,18 +13546,20 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
     if dosavefig:
         plt.savefig("figFxMS.pdf",bbox_inches='tight',pad_inches=0.02)
 
-def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wd complete",dosavefig=1):
+def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wdc",
+                dosavefig=1,hr=1,lamrevive = 0.02):
     plt.figure(1,figsize=(8,12))
     plt.clf()
     gs1 = GridSpec(3, 3)
     gs1.update(left=0.15, right=0.85, top=0.96, bottom=0.15, wspace=0.01, hspace=0.06)
     #
-    if disruptiontype=="ms complete":
+    #
+    if disruptiontype=="msc":
         #MS star
         lamcrit=0.3
         mbh5=3
         fb = 1
-        ttr = 30*86400
+        ttr = 30*86400/(1.+z)
         alpha=5./3.
         tmin=10
         tmax=1e4
@@ -13570,14 +13572,19 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wd 
         lmax = 1e4
         phimin = 10
         phimax = 1e4
-    elif disruptiontype=="ms partial":
+        beta = 2
+        loclegl = "upper right"
+        bboxl = (1,1)
+        loclegphi = "upper right"
+        bboxp = (1,1)
+    elif disruptiontype=="msp":
         #MS star
         lamcrit=0.2
         mbh5=3
-        fb = 1
-        ttr = 60*86400
+        fb = 1.8
+        ttr = 60*86400/(1.+z)
         alpha=2.2
-        tmin=10
+        tmin=5
         tmax=1e4
         a = (1. * fb/(lamcrit/0.3)/mbh5)**0.5
         tpeakottr=0.5
@@ -13589,15 +13596,17 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wd 
         lmax = 1e4
         phimin = 10
         phimax = 1e4
-        loclegl = "center right"
-        bboxl = (1,0.63)
+        loclegl = "upper right"
+        bboxl = (1,0.92)
         loclegphi = "upper right"
-    elif disruptiontype=="wd complete":
+        beta = 0.8
+        bboxp = (1,0.92)
+    elif disruptiontype=="wdc":
         #WD
-        mbh5=1.8
-        lamcrit=0.1
-        fb = 0.5
-        ttr = 30*86400
+        mbh5=0.1
+        lamcrit=0.4
+        fb = 0.1
+        ttr = 30*86400/(1.+z)
         alpha=5./3.
         tmin=0.01
         tmax=1e4
@@ -13612,12 +13621,14 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wd 
             a = 1
         #fb = (0.177353 * a**2 * facc**1.5)/(lamcrit/0.3)**0.5
         lmin = 1e-4
-        lmax = 1e6
-        phimin = 10
-        phimax = 1e4
+        lmax = 1e7
+        phimin = 1
+        phimax = 1e3
         loclegl = "lower left"
         bboxl = (0,0)
         loclegphi = "upper left"
+        beta = 1
+        bboxp = (0,1)
     day = 86400. #s
     year = 365*day #s
     Msun = 1.99e33 #g
@@ -13631,12 +13642,15 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wd 
     mdot = facc*Msun*mstar*(alpha-1)*(t/tfb)**(-alpha)/(2*tfb) #g/s
     tpeak = 1.5*tfb
     mdotpeak = facc*Msun*mstar*(alpha-1)*(tpeak/tfb)**(-alpha)/(2*tfb) #g/s
-    if disruptiontype=="ms complete":
+    PhiDmaxoPhiBH = 15.*rstar*mstar**(-1./3.)*mbh5**(-2./3.)*beta**(-1)*(hr/0.3)**(-1)
+    print( "PhiDmaxoPhiBH = %g" % PhiDmaxoPhiBH)
+    # pdb.set_trace()
+    if disruptiontype=="msc":
         tmad = tpeak
-    elif disruptiontype=="ms partial":
-        tmad = 0.75*ttr/(1.+z)
-    elif disruptiontype=="wd complete":
-        tmad = (ttr-4*day)/(1.+z)
+    elif disruptiontype=="msp":
+        tmad = 1.4*tpeak
+    elif disruptiontype=="wdc":
+        tmad = (ttr-0*day/(1+z))
     #
     # Accreted mass, m
     #
@@ -13679,7 +13693,7 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wd 
     else:
         lamfossil*=lamcrit/0.3
         kappa = (lamfossil/lammad/1e-6)**0.5
-    print( "a = %g, mbh5 = %g, mstar = %g, facc = %g, lamfossil = %g, lammad = %g, lampeak = %g, lam(ttr) = %g, lamoff = %g, kappa = %g" % (a, mbh5, mstar, facc, lamfossil, lammad, mdotpeak/Medd, mdot[t>ttr/(1+z)][0]/Medd, mdot[t>(day*500+ttr)/(1+z)][0]/Medd, kappa) )
+    print( "a = %g, mbh5 = %g, mstar = %g, facc = %g, lamfossil = %g, lammad = %g, lampeak = %g, lam(ttr) = %g, lamoff = %g, kappa = %g" % (a, mbh5, mstar, facc, lamfossil, lammad, mdotpeak/Medd, mdot[t>ttr/(1+z)][0]/Medd, mdot[t>(day*500+ttr*(1+z))/(1+z)][0]/Medd, kappa) )
     Phi30fb = 0.54 * kappa * mbh5**(-1./3.)*mstar**(1./3.)*(fb/2.)**0.5*(t/tfb)**(2./3.)
     Phi30MAD = 0.067*mbh5**1.5*l**0.5*(1-0.38*omegah)
     phimad = 70*(1-0.38*omegah)
@@ -13687,12 +13701,21 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wd 
     Phi30on = phion * (mbh5*mdot**0.5)/3.8e14
     # print( "ratio that should be unity: %g, %g, %g, %g, %g" % (Phi30MAD[t>tpeak][0]/Phi30[t>tpeak][0], Phi30MAD[t>tpeak][0], Phi30[t>tpeak][0], mdot[t>tpeak][0], mdotpeak) )
     Phi30fb[mdot<=0]*=0
-    Phi30bh = Phi30fb*(t<tmad) + Phi30MAD*(t>=tmad)
+    toff = t[(t>tfb)*(l<lamcrit)][0]
+    trevive = t[(t>tfb)*(l<lamrevive)][0]
+    # print( "lamcrit = %g, lamrevive = %g" % (lamcrit, lamrevive))
+    print( "toff = %g, trevive = %g" % ((toff-ttr)/day*(1+z), trevive/day*(1+z)))
+    # pdb.set_trace()
+    Phi30bh = (Phi30fb*(t<tmad) + Phi30MAD*(t>=tmad))*((t<toff)+(t>trevive))+1e-100*(1.-((t<toff)+(t>trevive)))
     Phi30d = Phi30fb - Phi30bh
     Phi30d[Phi30d<0]*=0
+    talign = t[(Phi30d/Phi30bh>PhiDmaxoPhiBH)*(t>tpeak)][0]
+    Phi30d[t>talign]=Phi30bh[t>talign]*PhiDmaxoPhiBH
     phifb = 3.8e14 * Phi30fb / (mbh5*mdot**0.5)
     phid = 3.8e14 * Phi30d / (mbh5*mdot**0.5)
-    phibh = phifb*(t<tmad) + phimad*(t>=tmad)
+    phibh = phifb*(t<tmad) + phimad*(t>=tmad)*((t<toff)+(t>trevive))+1e-100*(1.-((t<toff)+(t>trevive)))
+    ton = t[(t>tfb)*(phibh>phion)][0]
+    print( "ton = %g, tmad = %g, talign = %g, talign/tmad = %g (%g)" % (ton*(1+z)/day, tmad*(1+z)/day, talign/day*(1+z),talign/tmad, (1+PhiDmaxoPhiBH)**(6./(4+3*alpha))) )
     ###
     #
     #
@@ -13715,15 +13738,16 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wd 
     ax1twin.set_yscale('log')
     ax1twin.set_ylabel(r"$\Phi_{30}$",fontsize=fntsize,ha="left",labelpad=5)
     plt.plot((1+z)*t/day,
-             (mdot/Medd)**0.5*0.067*mbh5**1.5*(1-0.38*omegah),
+             Phi30MAD,
              "b-",lw=2,label=r"$\lambda,\ \Phi_{\rm \bullet,30}^{\rm MAD}$")
     ax1twin.plot((1+z)*t/day,Phi30fb,'g:',lw=2,label=r"$\Phi_{\rm fb,30}$")
-    ax1twin.plot((1+z)*t/day,Phi30bh,'r--',lw=4,label=r"$\Phi_{\rm \bullet,30}$")
+    ax1twin.plot((1+z)*t/day,Phi30bh,'r--',lw=4,label=r"$\Phi_{\rm \bullet,30}$",zorder=5)
     l,=ax1twin.plot((1+z)*t/day,Phi30d,'c--',lw=4,label=r"$\Phi_{\rm D,30}$")
     l.set_dashes([10,5])
-    ax1twin.plot((1+z)*t/day,Phi30on,'b:',lw=1,label=r"$\Phi_{\rm on,30}$")
+    ax1twin.plot((1+z)*t/day,Phi30on,'b:',lw=2,label=r"$\Phi_{\rm on,30}$")
     ax1twin.set_xlim(tmin,tmax)
-    leg=plt.legend(bbox_to_anchor=bboxl,loc=loclegl,borderaxespad=1)
+    showstages(t, ax=ax1twin,z=z,ton=ton,tmad=tmad,talign=talign,toff=toff,trevive=trevive)
+    leg=plt.legend(bbox_to_anchor=bboxl,loc=loclegl,borderaxespad=1,labelspacing=0.1)
     for txt in leg.get_texts():
         txt.set_fontsize(0.8*fntsize)    # the legend text fontsize-0*86400
     ax.set_xlim(tmin,tmax)
@@ -13741,16 +13765,18 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wd 
     #
     if 1:
         ax3 = plt.subplot(gs1[1, :])
+        plt.xscale("log")
+        plt.yscale("log")
+        plt.xlim(tmin,tmax)
+        plt.ylim(phimin,phimax)
+        showstages(t, ax=ax3,z=z,ton=ton,tmad=tmad,talign=talign,toff=toff,trevive=trevive)
         #plt.setp( ax3.get_xticklabels(), visible=False )
         plt.plot((1+z)*t/day,t*0+phimad,"b-",lw=2,label=r"$\phi_\bullet^{\rm MAD}$",zorder=1)
         plt.plot((1+z)*t/day,phifb,"g:",lw=2,label=r"$\phi_{\rm fb}$")
-        plt.plot((1+z)*t/day,phibh,"r--",lw=4,label=r"$\phi_\bullet$")
+        plt.plot((1+z)*t/day,phibh,"r--",lw=4,label=r"$\phi_\bullet$",zorder=5)
         l,=plt.plot((1+z)*t/day,phid,'c--',lw=4,label=r"$\phi_{\rm D}$")
         l.set_dashes([10,5])
-        plt.plot((1+z)*t/day,t*0+phion,"b:",lw=1,label=r"$\phi_{\rm on}$",zorder=1)
-        leg=plt.legend(loc=loclegphi,borderaxespad=1)
-        for txt in leg.get_texts():
-            txt.set_fontsize(0.8*fntsize)    # the legend text fontsize-0*86400
+        plt.plot((1+z)*t/day,t*0+phion,"b:",lw=2,label=r"$\phi_{\rm on}$",zorder=1)
         ax = ax3
         plt.xscale("log")
         plt.yscale("log")
@@ -13763,6 +13789,10 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wd 
         axtwin.set_ylabel(r"$\phi$",fontsize=fntsize)
         axtwin.set_yscale("log")
         axtwin.set_ylim(ax3.get_ylim()[0]*(1+1e-5),ax3.get_ylim()[1])
+        axtwin.set_xlim(tmin,tmax)
+        leg=ax3.legend(bbox_to_anchor=bboxp, loc=loclegphi,borderaxespad=1,labelspacing=0.1)
+        for txt in leg.get_texts():
+            txt.set_fontsize(0.8*fntsize)    # the legend text fontsize-0*86400
         for label in ax.get_xticklabels() + ax.get_yticklabels() + axtwin.get_yticklabels():
             label.set_fontsize(fntsize)
         for l in ax.get_xticklines() + ax.get_yticklines() + axtwin.get_yticklines():
@@ -13812,12 +13842,45 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wd 
         plt.ylabel(r"$\Phi_{30}(t)$",fontsize=fntsize)
         plt.grid(b=1)
     if dosavefig:
-	if disruptiontype=="ms complete":
+	if disruptiontype=="msc":
             plt.savefig("msflux.pdf",bbox_inches='tight',pad_inches=0.02)
-	elif disruptiontype=="ms partial":
+	elif disruptiontype=="msp":
             plt.savefig("mspartflux.pdf",bbox_inches='tight',pad_inches=0.02)
 	elif disruptiontype=="wd complete":
             plt.savefig("wdflux.pdf",bbox_inches='tight',pad_inches=0.02)
+
+
+def showstages(t, ax=None, z = None, ton=None, tmad = None, talign = None, toff = None, trevive = None, fontsize = 20):
+    day = 86400
+    ymin = ax.get_ylim()[0]
+    ymax = ax.get_ylim()[1]
+    tmin = ax.get_xlim()[0]*day/(1+z)
+    tmax = ax.get_xlim()[1]*day/(1+z)
+    whicht = (tmin/tmax)**0.05*(ton*tmad)**0.5
+    yval = ymax**0.9*ymin**0.1
+    plt.text(whicht*(1+z)/day, yval, r"$\operatorname{Stages:}$", fontsize=fontsize, va="baseline", ha="right")
+    whicht = (ton*tmad)**0.5
+    plt.text(whicht*(1+z)/day, yval, r"$1$", fontsize=fontsize, va="baseline", ha="center")
+    whicht = (t>ton)*(t<tmad)
+    col="red"
+    ax.fill_between(t[whicht]*(1+z)/day,ymin+t[whicht]*0,ymax+t[whicht]*0,facecolor=col,edgecolor=col,alpha=0.1)
+    whicht = (tmad*talign)**0.5
+    plt.text(whicht*(1+z)/day, yval, r"$2$", fontsize=fontsize, va="baseline", ha="center")
+    col="yellow"
+    whicht = (t>tmad)*(t<talign)
+    ax.fill_between(t[whicht]*(1+z)/day,ymin+t[whicht]*0,ymax+t[whicht]*0,facecolor=col,edgecolor=col,alpha=0.2)
+    whicht = (talign*toff)**0.5
+    plt.text(whicht*(1+z)/day, yval, r"$3$", fontsize=fontsize, va="baseline", ha="center")
+    col="green"
+    whicht = (t>talign)*(t<toff)
+    ax.fill_between(t[whicht]*(1+z)/day,ymin+t[whicht]*0,ymax+t[whicht]*0,facecolor=col,edgecolor=col,alpha=0.2)
+    whicht = (toff*trevive)**0.5
+    plt.text(whicht*(1+z)/day, yval, r"$4$", fontsize=fontsize, va="baseline", ha="center")
+    whicht = (trevive*tmax)**0.5
+    plt.text(whicht*(1+z)/day, yval, r"$5$", fontsize=fontsize, va="baseline", ha="center")
+    col="blue"
+    whicht = (t>trevive)
+    ax.fill_between(t[whicht]*(1+z)/day,ymin+t[whicht]*0,ymax+t[whicht]*0,facecolor=col,edgecolor=col,alpha=0.2)
 
 def horslimfit():
     hor = [0.04, 0.15, 0.25, 0.4]
