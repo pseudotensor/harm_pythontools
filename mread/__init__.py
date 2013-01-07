@@ -13846,7 +13846,7 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wdc
             plt.savefig("msflux.pdf",bbox_inches='tight',pad_inches=0.02)
 	elif disruptiontype=="msp":
             plt.savefig("mspartflux.pdf",bbox_inches='tight',pad_inches=0.02)
-	elif disruptiontype=="wd complete":
+	elif disruptiontype=="wdc":
             plt.savefig("wdflux.pdf",bbox_inches='tight',pad_inches=0.02)
 
 
