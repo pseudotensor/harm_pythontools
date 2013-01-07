@@ -13626,9 +13626,9 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wdc
         phimax = 1e3
         loclegl = "lower left"
         bboxl = (0,0)
-        loclegphi = "upper left"
+        loclegphi = "lower left"
         beta = 1
-        bboxp = (0,1)
+        bboxp = (0,0)
     day = 86400. #s
     year = 365*day #s
     Msun = 1.99e33 #g
