@@ -13459,14 +13459,24 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
     # plt.plot((t-t0)*tfac,Lxa,color="red",lw=2,label=r"$(t+5\ {\rm days})^{-4/3}$")
     #####
     alpha = 5./3.;
-    ttrig = 15*86400
+    ttrig = ttriga = 15*86400
     Lxa = 0.8*3e-10*((t+ttrig)/(1e3+ttrig))**(-alpha)
     Lxa0 = 0.8*3e-10*((t)/(1e3+ttrig))**(-alpha)
     #####
     alpha = 2.2;
-    ttrig = 30*86400
+    ttrig = ttrigb = 30*86400
     Lxb = 0.8*2.5e-10*((t+ttrig)/(1e3+ttrig))**(-alpha)
-    Lxb0 = 0.8*2.5e-10*((t)/(1e3+ttrig))**(-alpha)
+    Lxb0 = 0.8*2.5e-10*((t)/(1e3+ttrigb))**(-alpha)
+    #####
+    alpha = 5./3.;
+    ttrig = 5*86400
+    Lxc = 0.8*3e-10*((t+ttrig)/(1e3+ttriga))**(-alpha)
+    Lxc0 = 0.8*3e-10*((t)/(1e3+ttriga))**(-alpha)
+    #####
+    alpha = 2.2;
+    ttrig = 20*86400
+    Lxd = 0.8*3e-10*((t+ttrig)/(1e3+ttrigb))**(-alpha)
+    Lxd0 = 0.8*3e-10*((t)/(1e3+ttrigb))**(-alpha)
     #####
     # alpha = 2.5;
     # ttrig = 60*86400
@@ -13484,9 +13494,12 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
     leg0 = plt.legend(crvlist,leglist,loc="upper right",borderaxespad=1)
     plt.errorbar(np.array(t3-t0)*tfac,np.array(Fx3),yerr=[[Fx3/2.],[0]],color="black",lolims=True,lw=1.5)
     plt.plot((t-t0)*tfac,Lxa0,":",label=r"$(t-t_{\rm trig})^{-5/3}$",color="red",lw=2,zorder=20)
+    #plt.plot((t-t0)*tfac,Lxc0,":",label=r"$(t-t_{\rm trig})^{-5/3}$",color="green",lw=2)
     plt.plot((t-t0)*tfac,Lxb0,":",label=r"$(t-t_{\rm trig})^{-2.2}$",color="blue",lw=2)
     plt.plot((t-t0)*tfac,Lxa,color="red",lw=2,label=r"$(t-t_{\rm trig}+15\ {\rm days})^{-5/3}$",zorder=20)
     plt.plot((t-t0)*tfac,Lxb,color="blue",lw=2,label=r"$(t-t_{\rm trig}+30\ {\rm days})^{-2.2}$")
+    plt.plot((t-t0)*tfac,Lxc,'--',color="red",lw=2,label=r"$(t-t_{\rm trig}+5\ {\rm days})^{-5/3}$",zorder=19)
+    #plt.plot((t-t0)*tfac,Lxd,'--',color="blue",lw=2,label=r"$(t-t_{\rm trig}+10\ {\rm days})^{-2.2}$",zorder=19)
     # plt.plot((t-t0)*tfac,Lxc,color="green",lw=2,label=r"$(t-t_{\rm trig}+60\ {\rm days})^{-2.5}$")
     ####
     plt.xlim(1e3*tfac,2e3)
@@ -13502,7 +13515,7 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
     leg = plt.legend(loc="lower left",borderaxespad=1)
     ax.add_artist(leg0)
     for txt in leg0.get_texts() + leg.get_texts():
-       txt.set_fontsize(fntsize)    # the legend text fontsize-0*86400
+       txt.set_fontsize(0.8*fntsize)    # the legend text fontsize-0*86400
     for l in ax.get_xticklines() + ax.get_yticklines():
         l.set_markersize(10)
         #l.set_markeredgewidth(1.5) 
@@ -13545,6 +13558,8 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
              color="red",lw=3)
     plt.plot((t-t0)[t<tmad]*tfac,Lxa[t>tmad][0]+0*(t-t0)[t<tmad],
              color="red",lw=3)
+    plt.plot((t-t0)[t<tmad]*tfac,Lxa[t>tmad][0]*((t-t0)[t<tmad]/(t-t0)[t<tmad][-1])**(4./3.),
+             color="red",lw=3)
     l,=plt.plot((t-t0)[(t<=tmad)]*tfac,Lxa[(t<=tmad)],
              color="red",lw=1.5)
     l.set_dashes([10,5])
@@ -13566,18 +13581,22 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
     whicht = (t<=ton)*(t>=tmad)
     col="yellow"
     plt.gca().fill_between((t-t0)[whicht]*tfac,1e-12*Lxa[whicht],Lxa[whicht],
-                           where=Lxa[whicht]>0,facecolor=col,edgecolor=col,alpha=0.6)
+                           where=Lxa[whicht]>0,facecolor=col,edgecolor=col,alpha=0.2)
     whicht = (t<tmad)
     col="red"
     plt.gca().fill_between((t-t0)[whicht]*tfac,1e-12*Lxa[whicht],Lxa[t>tmad][0]+0*Lxa[whicht],
-                           where=Lxa[whicht]>0,facecolor=col,edgecolor=col,alpha=0.2)
+                           where=Lxa[whicht]>0,facecolor=col,edgecolor=col,alpha=0.1)
+    plt.gca().fill_between((t-t0)[whicht]*tfac,1e-12*Lxa[whicht],Lxa[t>tmad][0]*((t-t0)[t<tmad]/(t-t0)[t<tmad][-1])**(4./3.),
+                           where=Lxa[whicht]>0,facecolor=col,edgecolor=col,alpha=0.1)
     #captions
-    tpos=((tmin)*(tmad-t0))**0.5*tfac
-    plt.text(tpos,1e-10,r"${\rm Stage\ 1}$",fontsize=25,ha="center",va="bottom")
-    plt.text(tpos,0.3e-10,r"${\rm Precessing}$",fontsize=18,ha="center",va="bottom")
-    plt.text(tpos,0.12e-10,r"$\operatorname{disk-aligned\ jet}$",fontsize=18,ha="center",va="bottom")
-    plt.text(tpos,1.1*Lxa[t>tmad][0],r"$L_j\simeq{\rm const}$",
+    tpos=(tmin)**0.4*(tmad-t0)**0.6*tfac
+    plt.text(tpos,1.1*Lxa[t>tmad][0],r"$L_j\propto t^0{-}t^{4/3}$",
              fontsize=25,ha="center",va="bottom",rotation=0)
+    tpos=(tmin)**0.5*(tmad-t0)**0.5*tfac
+    plt.text(tpos,0.2*1e-10,r"${\rm Stage\ 1}$",fontsize=25,ha="center",va="bottom")
+    plt.text(tpos,0.2*0.3e-10,r"${\rm Precessing}$",fontsize=18,ha="center",va="bottom")
+    plt.text(tpos,0.2*0.12e-10,r"$\operatorname{disk-aligned}$",fontsize=18,ha="center",va="bottom")
+    plt.text(tpos,0.2*0.48e-11,r"$\operatorname{jet}$",fontsize=18,ha="center",va="bottom")
     tpos=((tmad-t0)*(ton-t0))**0.5*tfac
     plt.text(tpos,1e-12,r"${\rm Stage\ 2}$",fontsize=25,ha="center",va="bottom")
     plt.text(tpos,0.3e-12,r"${\rm Wobbling}$",fontsize=18,ha="center",va="bottom")
@@ -13639,7 +13658,9 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
     # plt.text(tlab,0.089e-9,r"$M_\bigstar=0.5M_\odot$",fontsize=20,ha='right',va='bottom')
     plt.plot((t-t0)[(t>tmad)*(t<toff)]*tfac,Lxb[(t>tmad)*(t<toff)],
              color="red",lw=3)
-    plt.plot((t-t0)[t<tmad]*tfac,Lxb[t>tmad][0]+0*(t-t0)[t<tmad],
+    plt.plot((t-t0)[t<tmad]*tfac,Lxb[t<tmad][-1]+0*(t-t0)[t<tmad],
+             color="red",lw=3)
+    plt.plot((t-t0)[t<tmad]*tfac,Lxb[t<tmad][-1]*((t-t0)[t<tmad]/(t-t0)[t<tmad][-1])**(4./3.),
              color="red",lw=3)
     l,=plt.plot((t-t0)[(t<=tmad)]*tfac,Lxb[(t<=tmad)],
              color="red",lw=1.5)
@@ -13662,18 +13683,22 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
     whicht = (t<=ton)*(t>=tmad)
     col="yellow"
     plt.gca().fill_between((t-t0)[whicht]*tfac,1e-12*Lxb[whicht],Lxb[whicht],
-                           where=Lxb[whicht]>0,facecolor=col,edgecolor=col,alpha=0.6)
+                           where=Lxb[whicht]>0,facecolor=col,edgecolor=col,alpha=0.2)
     whicht = (t<tmad)
     col="red"
     plt.gca().fill_between((t-t0)[whicht]*tfac,1e-12*Lxb[whicht],Lxb[t>tmad][0]+0*Lxb[whicht],
-                           where=Lxb[whicht]>0,facecolor=col,edgecolor=col,alpha=0.2)
+                           where=Lxb[whicht]>0,facecolor=col,edgecolor=col,alpha=0.1)
+    plt.gca().fill_between((t-t0)[whicht]*tfac,1e-12*Lxb[whicht],Lxb[t>tmad][0]*((t-t0)[t<tmad]/(t-t0)[t<tmad][-1])**(4./3.),
+                           where=Lxb[whicht]>0,facecolor=col,edgecolor=col,alpha=0.1)
     #captions
-    tpos=((tmin)*(tmad-t0))**0.5*tfac
-    plt.text(tpos,1e-10,r"${\rm Stage\ 1}$",fontsize=25,ha="center",va="bottom")
-    plt.text(tpos,0.3e-10,r"${\rm Precessing}$",fontsize=18,ha="center",va="bottom")
-    plt.text(tpos,0.12e-10,r"$\operatorname{disk-aligned\ jet}$",fontsize=18,ha="center",va="bottom")
-    plt.text(tpos,1.1*Lxb[t>tmad][0],r"$L_j\simeq{\rm const}$",
+    tpos=((tmin)**0.4*(tmad-t0)**0.6)*tfac
+    plt.text(tpos,1.1*Lxb[t>tmad][0],r"$L_j\propto t^0{-}t^{4/3}$",
              fontsize=25,ha="center",va="bottom",rotation=0)
+    tpos=((tmin)**0.5*(tmad-t0)**0.5)*tfac
+    plt.text(tpos,0.2*1e-10,r"${\rm Stage\ 1}$",fontsize=25,ha="center",va="bottom")
+    plt.text(tpos,0.2*0.3e-10,r"${\rm Precessing}$",fontsize=18,ha="center",va="bottom")
+    plt.text(tpos,0.2*0.12e-10,r"$\operatorname{disk-aligned}$",fontsize=18,ha="center",va="bottom")
+    plt.text(tpos,0.2*0.48e-11,r"$\operatorname{jet}$",fontsize=18,ha="center",va="bottom")
     tpos=((tmad-t0)*(ton-t0))**0.5*tfac
     plt.text(tpos,1e-12,r"${\rm Stage\ 2}$",fontsize=25,ha="center",va="bottom")
     plt.text(tpos,0.3e-12,r"${\rm Wobbling}$",fontsize=18,ha="center",va="bottom")
@@ -13709,6 +13734,347 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
     if dosavefig:
         plt.savefig("figFxMS.pdf",bbox_inches='tight',pad_inches=0.02)
 
+def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wdc",
+                dosavefig=0,hr=1,lamrevive = 0.02):
+    plt.figure(1,figsize=(8,12))
+    plt.clf()
+    gs1 = GridSpec(3, 3)
+    gs1.update(left=0.15, right=0.85, top=0.96, bottom=0.15, wspace=0.01, hspace=0.06)
+    #
+    #
+    if disruptiontype=="msc":
+        #MS star
+        lamcrit=0.3
+        mbh5=3
+        fb = 1
+        ttr = 30*86400/(1.+z)
+        alpha=5./3.
+        tmin=10
+        tmax=1e4
+        a = ((1. * fb)/(lamcrit/0.3)/mbh5)**0.5
+        mstar = 1.33215/mbh5
+        rstar = mstar
+        #for a complete disruption
+        facc = 0.020655 * (((lamcrit/0.3)**1.5 * mbh5)/mstar**2)**(2./3.)
+        lmin = 1e-4
+        lmax = 1e4
+        phimin = 10
+        phimax = 1e4
+        beta = 2
+        loclegl = "upper right"
+        bboxl = (1,1)
+        loclegphi = "upper right"
+        bboxp = (1,1)
+    elif disruptiontype=="msp":
+        #MS star
+        lamcrit=0.2
+        mbh5=3
+        fb = 1.8
+        ttr = 60*86400/(1.+z)
+        alpha=2.2
+        tmin=5
+        tmax=1e4
+        a = (1. * fb/(lamcrit/0.3)/mbh5)**0.5
+        tpeakottr=0.5
+        mstar = 5.32862/mbh5*(tpeakottr)**2
+        rstar = mstar
+        #for a partial disruption
+        facc = 0.0802857 * (((lamcrit/0.3)**2.5 * mbh5)/mstar**4)**(2./5.)
+        lmin = 1e-4
+        lmax = 1e4
+        phimin = 10
+        phimax = 1e4
+        loclegl = "upper right"
+        bboxl = (1,0.92)
+        loclegphi = "upper right"
+        beta = 0.8
+        bboxp = (1,0.92)
+    elif disruptiontype=="wdc":
+        #WD
+        mbh5=0.1
+        lamcrit=0.4
+        fb = 0.1
+        ttr = 30*86400/(1.+z)
+        alpha=5./3.
+        tmin=0.01
+        tmax=1e4
+        mstar = 0.6 #0.0099121*mbh5**(1./3.)
+        rstar = 1.29310344827586206897e-2*(mstar/0.6)**(-1./3.)
+        #for a complete disruption
+        facc = 1.89383*(lamcrit/0.3)*mbh5**(2./3.)
+        #mbh5 = (0.383697 * facc**1.5)/(lamcrit/0.3)**1.5
+        a = ((1. * fb)/(lamcrit/0.3)/mbh5)**0.5
+        if a > 1:
+            print( "a = %g > 1!" % a )
+            a = 1
+        #fb = (0.177353 * a**2 * facc**1.5)/(lamcrit/0.3)**0.5
+        lmin = 1e-4
+        lmax = 1e7
+        phimin = 1
+        phimax = 1e3
+        loclegl = "lower left"
+        bboxl = (0,0)
+        loclegphi = "lower left"
+        beta = 1
+        bboxp = (0,0)
+    day = 86400. #s
+    year = 365*day #s
+    Msun = 1.99e33 #g
+    omegah = a/(1+(1-a**2)**0.5)
+    Medd = (1.248e39/(3e10)**2*1e5)*mbh5
+    #
+    # Define Mdot
+    #
+    tfb = 0.11*year*rstar**1.5*(mbh5/10.)**0.5/mstar      #s, from Ulmer 1999 with Rp = Rt
+    t = 10.**np.linspace(np.log10(0.01*tfb),9,1e4)        #in seconds
+    mdot = facc*Msun*mstar*(alpha-1)*(t/tfb)**(-alpha)/(2*tfb) #g/s
+    tpeak = 1.5*tfb
+    mdotpeak = facc*Msun*mstar*(alpha-1)*(tpeak/tfb)**(-alpha)/(2*tfb) #g/s
+    PhiDmaxoPhiBH = 15.*rstar*mstar**(-1./3.)*mbh5**(-2./3.)*beta**(-1)*(hr/0.3)**(-1)
+    print( "PhiDmaxoPhiBH = %g" % PhiDmaxoPhiBH)
+    # pdb.set_trace()
+    if disruptiontype=="msc":
+        tmad = tpeak
+    elif disruptiontype=="msp":
+        tmad = 1.4*tpeak
+    elif disruptiontype=="wdc":
+        tmad = (ttr-0*day/(1+z))
+    #
+    # Accreted mass, m
+    #
+    m = mdot*0
+    if 0: #use (t-tpeak)^2 suppression
+        k = (0.75 - (2./3.)**(-1 - alpha) + (3*alpha)/2.)/(-1 + alpha)
+        cond = (t>k*tfb)*(t<tpeak)
+        mdot[t<tpeak] = mdotpeak*(1.-((t/tfb-1.5)/(k-1.5))**2)
+        m[cond] = -((2**alpha*3**(-1 - alpha)*(-1 + alpha)*mstar*Msun*
+                  (-(k*tfb) + t)**2*((-9 + 4*k)*tfb + 2*t))/((3 - 2*k)**2*tfb**3))[cond]
+        #total mass accreted pre-peak
+        mprepeak = -2**(-1+alpha)*3**(-1-alpha)*(-1+alpha)*(-3+2*k)*mstar*Msun
+    elif 1: #use (t-tpeak)^3 suppression -- agrees better with Guillochon's papers
+        k = -((3. + 2.**(3. - alpha) * 3.**alpha - 15. * alpha)/(10. * (-1. + alpha)))
+        cond = (t>k*tfb)*(t<tpeak)
+        mdot[t<tpeak] = mdotpeak*(1.-((t/tfb-1.5)/(k-1.5))**3)
+        # m[cond] = (mdotpeak/facc)* (-k * tfb - ((3 * tfb - 2*k*tfb)**4 - (3*tfb - 2*t)**4)/(
+        #              8.*(-3. + 2.*k)**3.*tfb**3) + t)
+        m[cond] = (mdotpeak*tfb*(-k + ((3. - 2.*k)**4
+                                              - (3. - 2.*t/tfb)**4)/ (8.*(3.-2.*k)**3) + t/tfb))[cond]
+        #total mass accreted pre-peak
+        mprepeak = 5./8. * (3. - 2. * k) * (mdotpeak/facc) * tfb
+    mdot[mdot<0]*=0
+    l = mdot/Medd
+    cond = (t>tpeak)
+    m[cond] = facc*(mprepeak + 0.25 * mstar * Msun * (2**alpha*3**(1 - alpha)
+                                                 - 2*(tfb/t)**(-1 + alpha)))[cond]
+    # simplified version of m that ignores pre-peak
+    m1 = mdot*0 + 0.5 * mstar * Msun * (1 - (tfb/t)**(-1 + alpha))
+    m1[m1<0]*=0
+    m1*=facc
+    #
+    #
+    if lamfossil is None:
+        Phi30okappa_MAD = 0.54*mbh5**(-1./3.)*mstar**(-2./3.)*rstar*(fb/2.)**0.5*(tmad/tfb)**(2./3.)
+        lammad = mdot[t>tmad][0]/Medd
+        Phi30MAD_MAD = 0.067*mbh5**1.5*(lammad)**0.5*(1-0.38*omegah)
+        kappa = Phi30MAD_MAD/Phi30okappa_MAD
+        lamfossil = kappa**2*lammad*1e-6
+    else:
+        lamfossil*=lamcrit/0.3
+        kappa = (lamfossil/lammad/1e-6)**0.5
+    print( "a = %g, mbh5 = %g, mstar = %g, facc = %g, lamfossil = %g, lammad = %g, lampeak = %g, lam(ttr) = %g, lamoff = %g, kappa = %g" % (a, mbh5, mstar, facc, lamfossil, lammad, mdotpeak/Medd, mdot[t>ttr/(1+z)][0]/Medd, mdot[t>(day*500+ttr*(1+z))/(1+z)][0]/Medd, kappa) )
+    Phi30fb = 0.54 * kappa * mbh5**(-1./3.)*mstar**(-2./3.)*rstar*(fb/2.)**0.5*(t/tfb)**(2./3.)
+    Phi30MAD = 0.067*mbh5**1.5*l**0.5*(1-0.38*omegah)
+    print( "Phi30MAD = %g, Bsurf = %g G" %
+           (Phi30MAD[t>tmad][0],
+            (1e30/6.96e10**2)*Phi30MAD[t>tmad][0]/(2*np.pi*rstar**2)
+           )
+        )
+    phimad = 70*(1-0.38*omegah)
+    phion = 4*np.pi*1.5 #from Komi, average value
+    Phi30on = phion * (mbh5*mdot**0.5)/3.8e14
+    # print( "ratio that should be unity: %g, %g, %g, %g, %g" % (Phi30MAD[t>tpeak][0]/Phi30[t>tpeak][0], Phi30MAD[t>tpeak][0], Phi30[t>tpeak][0], mdot[t>tpeak][0], mdotpeak) )
+    Phi30fb[mdot<=0]*=0
+    toff = t[(t>tfb)*(l<lamcrit)][0]
+    trevive = t[(t>tfb)*(l<lamrevive)][0]
+    # print( "lamcrit = %g, lamrevive = %g" % (lamcrit, lamrevive))
+    print( "toff = %g, trevive = %g" % ((toff-ttr)/day*(1+z), trevive/day*(1+z)))
+    # pdb.set_trace()
+    Phi30bh = (Phi30fb*(t<tmad) + Phi30MAD*(t>=tmad))*((t<toff)+(t>trevive))+1e-100*(1.-((t<toff)+(t>trevive)))
+    Phi30d = Phi30fb - Phi30bh
+    Phi30d[Phi30d<0]*=0
+    talign = t[(Phi30d/Phi30bh>PhiDmaxoPhiBH)*(t>tpeak)][0]
+    Phi30d[t>talign]=Phi30bh[t>talign]*PhiDmaxoPhiBH
+    phifb = 3.8e14 * Phi30fb / (mbh5*mdot**0.5)
+    phid = 3.8e14 * Phi30d / (mbh5*mdot**0.5)
+    phibh = phifb*(t<tmad) + phimad*(t>=tmad)*((t<toff)+(t>trevive))+1e-100*(1.-((t<toff)+(t>trevive)))
+    ton = t[(t>tfb)*(phibh>phion)][0]
+    print( "ton = %g, tmad = %g, talign = %g, talign/tmad = %g (%g)" % (ton*(1+z)/day, tmad*(1+z)/day, talign/day*(1+z),talign/tmad, (1+PhiDmaxoPhiBH)**(6./(4+3*alpha))) )
+    ###
+    #
+    #
+    # Mdot/Medd and Phi30
+    #
+    #
+    ax1 = plt.subplot(gs1[0, :])
+    plt.setp( ax1.get_xticklabels(), visible=False )
+    ax = plt.gca()
+    plt.xscale("log")
+    plt.yscale("log")
+    #plt.xlabel(r"${\rm Days\ since\ disruption},\ t$",fontsize=fntsize)
+    plt.ylabel(r"$\lambda\equiv f_{\rm acc}\dot M_{\rm fb}/\dot M_{\rm Edd}$",fontsize=fntsize)
+    plt.grid(b=1)
+    plt.ylim(lmin,lmax)
+    ylims=ax.get_ylim()
+    ax.set_ylim(ylims[0]*(1+1e-5),ylims[1]*(1-1e-5))
+    ax1twin = ax.twinx()
+    ax1twin.set_ylim(0.067*mbh5**1.5*(np.array((ax.get_ylim())))**0.5*(1-0.38*omegah))
+    ax1twin.set_yscale('log')
+    ax1twin.set_ylabel(r"$\Phi_{30}$",fontsize=fntsize,ha="left",labelpad=5)
+    plt.plot((1+z)*t/day,
+             Phi30MAD,
+             "b-",lw=2,label=r"$\lambda,\ \Phi_{\rm \bullet,30}^{\rm MAD}$")
+    ax1twin.plot((1+z)*t/day,Phi30fb,'g:',lw=2,label=r"$\Phi_{\rm fb,30}$")
+    ax1twin.plot((1+z)*t/day,Phi30bh,'r--',lw=4,label=r"$\Phi_{\rm \bullet,30}$",zorder=5)
+    l,=ax1twin.plot((1+z)*t/day,Phi30d,'c--',lw=4,label=r"$\Phi_{\rm D,30}$")
+    l.set_dashes([10,5])
+    ax1twin.plot((1+z)*t/day,Phi30on,'b:',lw=2,label=r"$\Phi_{\rm on,30}$")
+    ax1twin.set_xlim(tmin,tmax)
+    showstages(t, ax=ax1twin,z=z,ton=ton,tmad=tmad,talign=talign,toff=toff,trevive=trevive)
+    leg=plt.legend(bbox_to_anchor=bboxl,loc=loclegl,borderaxespad=1,labelspacing=0.1)
+    for txt in leg.get_texts():
+        txt.set_fontsize(0.8*fntsize)    # the legend text fontsize-0*86400
+    ax.set_xlim(tmin,tmax)
+    for label in ax.get_xticklabels() + ax.get_yticklabels() + ax1twin.get_yticklabels():
+        label.set_fontsize(fntsize)
+    for l in ax.get_xticklines() + ax.get_yticklines() + ax1twin.get_yticklines():
+        l.set_markersize(10)
+        #l.set_markeredgewidth(1.5) 
+        for l in ax.xaxis.get_minorticklines() + ax.yaxis.get_minorticklines() + ax1twin.yaxis.get_minorticklines():
+            l.set_markersize(4)
+    #
+    #
+    # Dimensionless flux
+    #
+    #
+    if 1:
+        ax3 = plt.subplot(gs1[1, :])
+        plt.xscale("log")
+        plt.yscale("log")
+        plt.xlim(tmin,tmax)
+        plt.ylim(phimin,phimax)
+        showstages(t, ax=ax3,z=z,ton=ton,tmad=tmad,talign=talign,toff=toff,trevive=trevive)
+        #plt.setp( ax3.get_xticklabels(), visible=False )
+        plt.plot((1+z)*t/day,t*0+phimad,"b-",lw=2,label=r"$\phi_\bullet^{\rm MAD}$",zorder=1)
+        plt.plot((1+z)*t/day,phifb,"g:",lw=2,label=r"$\phi_{\rm fb}$")
+        plt.plot((1+z)*t/day,phibh,"r--",lw=4,label=r"$\phi_\bullet$",zorder=5)
+        l,=plt.plot((1+z)*t/day,phid,'c--',lw=4,label=r"$\phi_{\rm D}$")
+        l.set_dashes([10,5])
+        plt.plot((1+z)*t/day,t*0+phion,"b:",lw=2,label=r"$\phi_{\rm on}$",zorder=1)
+        ax = ax3
+        plt.xscale("log")
+        plt.yscale("log")
+        plt.xlim(tmin,tmax)
+        plt.ylim(phimin,phimax)
+        plt.xlabel(r"${\rm Days\ since\ disruption},\ t$",fontsize=fntsize)
+        plt.ylabel(r"$\phi$",fontsize=fntsize)
+        plt.grid(b=1)
+        axtwin = ax.twinx()
+        axtwin.set_ylabel(r"$\phi$",fontsize=fntsize)
+        axtwin.set_yscale("log")
+        axtwin.set_ylim(ax3.get_ylim()[0]*(1+1e-5),ax3.get_ylim()[1])
+        axtwin.set_xlim(tmin,tmax)
+        leg=ax3.legend(bbox_to_anchor=bboxp, loc=loclegphi,borderaxespad=1,labelspacing=0.1)
+        for txt in leg.get_texts():
+            txt.set_fontsize(0.8*fntsize)    # the legend text fontsize-0*86400
+        for label in ax.get_xticklabels() + ax.get_yticklabels() + axtwin.get_yticklabels():
+            label.set_fontsize(fntsize)
+        for l in ax.get_xticklines() + ax.get_yticklines() + axtwin.get_yticklines():
+            l.set_markersize(10)
+            #l.set_markeredgewidth(1.5) 
+            for l in ax.xaxis.get_minorticklines() + ax.yaxis.get_minorticklines() + axtwin.yaxis.get_minorticklines():
+                l.set_markersize(4)
+    #
+    #
+    # ACCRETED MASS
+    #
+    #
+    if 0:
+        ax2 = plt.subplot(gs1[1, :])
+        plt.setp( ax2.get_xticklabels(), visible=False )
+        plt.plot((1+z)*t/day,m/(mstar*Msun*facc))
+        plt.plot((1+z)*t/day,m1/(mstar*Msun*facc))
+        ax = plt.gca()
+        for label in ax.get_xticklabels() + ax.get_yticklabels():
+            label.set_fontsize(fntsize)
+        plt.xscale("log")
+        # plt.yscale("log")
+        plt.xlim(tmin,tmax)
+        plt.ylim(1e-5,1-1e-5)
+        #plt.xlabel(r"${\rm Days\ since\ disruption},\ t$",fontsize=fntsize)
+        plt.ylabel(r"$M(t)/f_{\rm acc}M_\star$",fontsize=fntsize)
+        plt.grid(b=1)
+    #
+    #
+    # FLUX
+    #
+    #
+    if 0:
+        ax3 = plt.subplot(gs1[2, :])
+        #plt.setp( ax3.get_xticklabels(), visible=False )
+        plt.plot((1+z)*t/day,Phi30fb)
+        plt.plot((1+z)*t/day,Phi30MAD)
+        #plt.plot((1+z)*t/day,m1/Msun)
+        ax = plt.gca()
+        for label in ax.get_xticklabels() + ax.get_yticklabels():
+            label.set_fontsize(fntsize)
+        plt.xscale("log")
+        # plt.yscale("log")
+        plt.xlim(tmin,tmax)
+        plt.ylim(1e-5,2-1e-5)
+        plt.xlabel(r"${\rm Days\ since\ disruption},\ t$",fontsize=fntsize)
+        plt.ylabel(r"$\Phi_{30}(t)$",fontsize=fntsize)
+        plt.grid(b=1)
+    if dosavefig:
+	if disruptiontype=="msc":
+            plt.savefig("msflux.pdf",bbox_inches='tight',pad_inches=0.02)
+	elif disruptiontype=="msp":
+            plt.savefig("mspartflux.pdf",bbox_inches='tight',pad_inches=0.02)
+	elif disruptiontype=="wdc":
+            plt.savefig("wdflux.pdf",bbox_inches='tight',pad_inches=0.02)
+
+
+def showstages(t, ax=None, z = None, ton=None, tmad = None, talign = None, toff = None, trevive = None, fontsize = 20):
+    day = 86400
+    ymin = ax.get_ylim()[0]
+    ymax = ax.get_ylim()[1]
+    tmin = ax.get_xlim()[0]*day/(1+z)
+    tmax = ax.get_xlim()[1]*day/(1+z)
+    whicht = (tmin/tmax)**0.05*(ton*tmad)**0.5
+    yval = ymax**0.9*ymin**0.1
+    plt.text(whicht*(1+z)/day, yval, r"$\operatorname{Stages:}$", fontsize=fontsize, va="baseline", ha="right")
+    whicht = (ton*tmad)**0.5
+    plt.text(whicht*(1+z)/day, yval, r"$1$", fontsize=fontsize, va="baseline", ha="center")
+    whicht = (t>ton)*(t<tmad)
+    col="red"
+    ax.fill_between(t[whicht]*(1+z)/day,ymin+t[whicht]*0,ymax+t[whicht]*0,facecolor=col,edgecolor=col,alpha=0.1)
+    whicht = (tmad*talign)**0.5
+    plt.text(whicht*(1+z)/day, yval, r"$2$", fontsize=fontsize, va="baseline", ha="center")
+    col="yellow"
+    whicht = (t>tmad)*(t<talign)
+    ax.fill_between(t[whicht]*(1+z)/day,ymin+t[whicht]*0,ymax+t[whicht]*0,facecolor=col,edgecolor=col,alpha=0.2)
+    whicht = (talign*toff)**0.5
+    plt.text(whicht*(1+z)/day, yval, r"$3$", fontsize=fontsize, va="baseline", ha="center")
+    col="green"
+    whicht = (t>talign)*(t<toff)
+    ax.fill_between(t[whicht]*(1+z)/day,ymin+t[whicht]*0,ymax+t[whicht]*0,facecolor=col,edgecolor=col,alpha=0.2)
+    whicht = (toff*trevive)**0.5
+    plt.text(whicht*(1+z)/day, yval, r"$4$", fontsize=fontsize, va="baseline", ha="center")
+    whicht = (trevive*tmax)**0.5
+    plt.text(whicht*(1+z)/day, yval, r"$5$", fontsize=fontsize, va="baseline", ha="center")
+    col="blue"
+    whicht = (t>trevive)
+    ax.fill_between(t[whicht]*(1+z)/day,ymin+t[whicht]*0,ymax+t[whicht]*0,facecolor=col,edgecolor=col,alpha=0.2)
+
 def horslimfit():
     hor = [0.04, 0.15, 0.25, 0.4]
     lam = [0.1, 0.5, 1, 2]
@@ -13731,7 +14097,9 @@ def makevtk(no=52):
 if __name__ == "__main__":
     if False:
         plt.clf()
-        ubsplot()
+        ubsplot(dosavefig=0)
+    if True:
+        ubsfluxplot()
     if False:
         grid3d("gdump.bin",use2d=1)
         rfd("fieldline0200.bin")
