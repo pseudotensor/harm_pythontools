@@ -13547,7 +13547,7 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
         plt.savefig("figFxMS.pdf",bbox_inches='tight',pad_inches=0.02)
 
 def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wdc",
-                dosavefig=1,hr=1,lamrevive = 0.02):
+                dosavefig=0,hr=1,lamrevive = 0.02):
     plt.figure(1,figsize=(8,12))
     plt.clf()
     gs1 = GridSpec(3, 3)
@@ -13685,7 +13685,7 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wdc
     #
     #
     if lamfossil is None:
-        Phi30okappa_MAD = 0.54*mbh5**(-1./3.)*mstar**(1./3.)*(fb/2.)**0.5*(tmad/tfb)**(2./3.)
+        Phi30okappa_MAD = 0.54*mbh5**(-1./3.)*mstar**(-2./3.)*rstar*(fb/2.)**0.5*(tmad/tfb)**(2./3.)
         lammad = mdot[t>tmad][0]/Medd
         Phi30MAD_MAD = 0.067*mbh5**1.5*(lammad)**0.5*(1-0.38*omegah)
         kappa = Phi30MAD_MAD/Phi30okappa_MAD
@@ -13694,8 +13694,13 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wdc
         lamfossil*=lamcrit/0.3
         kappa = (lamfossil/lammad/1e-6)**0.5
     print( "a = %g, mbh5 = %g, mstar = %g, facc = %g, lamfossil = %g, lammad = %g, lampeak = %g, lam(ttr) = %g, lamoff = %g, kappa = %g" % (a, mbh5, mstar, facc, lamfossil, lammad, mdotpeak/Medd, mdot[t>ttr/(1+z)][0]/Medd, mdot[t>(day*500+ttr*(1+z))/(1+z)][0]/Medd, kappa) )
-    Phi30fb = 0.54 * kappa * mbh5**(-1./3.)*mstar**(1./3.)*(fb/2.)**0.5*(t/tfb)**(2./3.)
+    Phi30fb = 0.54 * kappa * mbh5**(-1./3.)*mstar**(-2./3.)*rstar*(fb/2.)**0.5*(t/tfb)**(2./3.)
     Phi30MAD = 0.067*mbh5**1.5*l**0.5*(1-0.38*omegah)
+    print( "Phi30MAD = %g, Bsurf = %g G" %
+           (Phi30MAD[t>tmad][0],
+            (1e30/6.96e10**2)*Phi30MAD[t>tmad][0]/(2*np.pi*rstar**2)
+           )
+        )
     phimad = 70*(1-0.38*omegah)
     phion = 4*np.pi*1.5 #from Komi, average value
     Phi30on = phion * (mbh5*mdot**0.5)/3.8e14
