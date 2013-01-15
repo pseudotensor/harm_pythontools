@@ -3647,6 +3647,7 @@ def rd(dump,oldfmt=False):
         #gdetB = np.zeros_like(B)
         #gdetB[1:4] = U[5:8]
         gdetB = gdet*B
+    return gd
 
 def rgfd(fieldlinefilename,**kwargs):
     if not os.path.isfile(os.path.join("dumps/", fieldlinefilename)):
@@ -13921,7 +13922,7 @@ if __name__ == "__main__":
     if False:
         plt.clf()
         ubsplot(dosavefig=0)
-    if True:
+    if False:
         ubsfluxplot()
     if False:
         grid3d("gdump.bin",use2d=1)
