@@ -3835,6 +3835,7 @@ def rd(dump,oldfmt=False):
         #gdetB = np.zeros_like(B)
         #gdetB[1:4] = U[5:8]
         gdetB = gdet*B
+    return gd
 
 def rgfd(fieldlinefilename,**kwargs):
     if not os.path.isfile(os.path.join("dumps/", fieldlinefilename)):
@@ -13735,7 +13736,8 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
         plt.savefig("figFxMS.pdf",bbox_inches='tight',pad_inches=0.02)
 
 def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wdc",
-                dosavefig=0,hr=1,lamrevive = 0.02):
+                dosavefig=1,hr=1,lamrevive = 0.02,fontsize=20):
+    bbox = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.5)
     plt.figure(1,figsize=(8,12))
     plt.clf()
     gs1 = GridSpec(3, 3)
@@ -13765,6 +13767,7 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wdc
         bboxl = (1,1)
         loclegphi = "upper right"
         bboxp = (1,1)
+        plottitle = r"${\rm Main Sequence Star Complete Disruption}$"
     elif disruptiontype=="msp":
         #MS star
         lamcrit=0.2
@@ -13789,6 +13792,7 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wdc
         loclegphi = "upper right"
         beta = 0.8
         bboxp = (1,0.92)
+        plottitle = r"${\rm Main\ Sequence\ Star\ Partial\ Disruption}$"
     elif disruptiontype=="wdc":
         #WD
         mbh5=0.1
@@ -13817,6 +13821,7 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wdc
         loclegphi = "lower left"
         beta = 1
         bboxp = (0,0)
+        plottitle = r"${\rm White\ Dwarf\ Complete\ Disruption}$"
     day = 86400. #s
     year = 365*day #s
     Msun = 1.99e33 #g
@@ -13916,13 +13921,14 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wdc
     #
     #
     ax1 = plt.subplot(gs1[0, :])
+    plt.title(plottitle, fontsize=20)
     plt.setp( ax1.get_xticklabels(), visible=False )
     ax = plt.gca()
     plt.xscale("log")
     plt.yscale("log")
     #plt.xlabel(r"${\rm Days\ since\ disruption},\ t$",fontsize=fntsize)
     plt.ylabel(r"$\lambda\equiv f_{\rm acc}\dot M_{\rm fb}/\dot M_{\rm Edd}$",fontsize=fntsize)
-    plt.grid(b=1)
+    #plt.grid(b=1)
     plt.ylim(lmin,lmax)
     ylims=ax.get_ylim()
     ax.set_ylim(ylims[0]*(1+1e-5),ylims[1]*(1-1e-5))
@@ -13941,6 +13947,9 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wdc
     ax1twin.set_xlim(tmin,tmax)
     showstages(t, ax=ax1twin,z=z,ton=ton,tmad=tmad,talign=talign,toff=toff,trevive=trevive)
     leg=plt.legend(bbox_to_anchor=bboxl,loc=loclegl,borderaxespad=1,labelspacing=0.1)
+    ymin = plt.gca().get_ylim()[0]
+    ymax = plt.gca().get_ylim()[1]
+    plt.text(tmin**0.92*tmax**0.08, ymin**0.25*ymax**0.75, "($\mathrm{a})$",ha="center",va="center",bbox=bbox,size=20)
     for txt in leg.get_texts():
         txt.set_fontsize(0.8*fntsize)    # the legend text fontsize-0*86400
     ax.set_xlim(tmin,tmax)
@@ -13977,12 +13986,15 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wdc
         plt.ylim(phimin,phimax)
         plt.xlabel(r"${\rm Days\ since\ disruption},\ t$",fontsize=fntsize)
         plt.ylabel(r"$\phi$",fontsize=fntsize)
-        plt.grid(b=1)
+        #plt.grid(b=1)
         axtwin = ax.twinx()
         axtwin.set_ylabel(r"$\phi$",fontsize=fntsize)
         axtwin.set_yscale("log")
         axtwin.set_ylim(ax3.get_ylim()[0]*(1+1e-5),ax3.get_ylim()[1])
         axtwin.set_xlim(tmin,tmax)
+        ymin = plt.gca().get_ylim()[0]
+        ymax = plt.gca().get_ylim()[1]
+        plt.text(tmin**0.92*tmax**0.08, ymin**0.2*ymax**0.8, "($\mathrm{b})$",ha="center",va="center",bbox=bbox,size=20)
         leg=ax3.legend(bbox_to_anchor=bboxp, loc=loclegphi,borderaxespad=1,labelspacing=0.1)
         for txt in leg.get_texts():
             txt.set_fontsize(0.8*fntsize)    # the legend text fontsize-0*86400
@@ -14098,7 +14110,7 @@ if __name__ == "__main__":
     if False:
         plt.clf()
         ubsplot(dosavefig=0)
-    if True:
+    if False:
         ubsfluxplot()
     if False:
         grid3d("gdump.bin",use2d=1)
