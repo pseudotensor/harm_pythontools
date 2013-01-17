@@ -1129,6 +1129,13 @@ def plotoblique():
     os.chdir("../hf_90_r10h05_mydt_sph_x2_bsqorho50")
     etot, psitot, Brsqavg = plotpangle(inject=1,doreload=1,no=160)
 
+def testtheta():
+    os.chdir("../hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50")  
+    grid3d("gdump.bin")
+    rfd("fieldline0106.bin")
+    cvel()
+    Tcalcud()
+    
                 
 
 def plotcs(r0orlc=2):
