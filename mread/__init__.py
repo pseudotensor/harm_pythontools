@@ -1336,10 +1336,23 @@ def loadandwritevars(n1=32,n2=64):
     computevars(n1=n1,n2=n2,calct=1,use2d=0)
     writemanyvarstotxt()
 
-def writemanyvarstotxt():
+def writemanyvarstotxt(fname="file"):
     radii_list = np.arange(Rin,40.,0.5)
     for rad in radii_list:
-        varstotxt(f="file%d.txt" % (10*rad),rad=rad)
+        varstotxt(f="%s_%d.txt" % (fname,(10*rad)),rad=rad)
+
+#for Sasha Philippov and Jason Li
+def converttotxt():
+    runlist = [ "hf_0_h10r05_om02_ffde_mydt_sph_ps0_2048x1024_64x64x1",
+                "hf_15_r10h05_mydt_sph_ps2_256x128x128_bsqorho",
+                "hf_30_r10h05_mydt_sph_x2_bsqorho50",
+                "hf_45_r10h05_mydt_sph_ps2_256x128x128_32x16x32_bsqorho50",
+                "hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50",
+                "hf_75_r10h05_mydt_sph_ps2_256x128x128_256_bsqorho50",
+                "hf_90_r10h05_mydt_sph_x2_bsqorho50" ]
+    for f in runlist:
+        os.chdir("/home/atchekho/run2/%s" % f)
+        writemanyvarstotxt("../%s" % f)
 
 def plotgammauuravg():
     plt.clf()
@@ -4023,17 +4036,18 @@ def rfd(fieldlinefilename,**kwargs):
         h = hnew
         ph = phnew
         gc.collect()
+    #save file for Josh
     savenewgrid = kwargs.pop("savenewgrid",0)
     if savenewgrid:
         newRin = Rin
         newRout = 1000
         newd = reinterpfld(d,newRin=newRin,newRout=newRout)
         print( "Saving new grid...", )
-        #write out a dump with flipped spin:
+        #write out a dump with reinterpolated grid spin:
         gout = open( "dumps/" + fieldlinefilename + "newgrid", "wb" )
-        header[7] = "%d" % (1.*np.log(newRout/newRin)/nx)
-        header[8] = "%d" % (1./ny)
-        header[9] = "%d" % (2*np.pi/nz)
+        header[7] = "%g" % (1.*np.log(newRout/newRin)/nx)
+        header[8] = "%g" % (1./ny)
+        header[9] = "%g" % (2*np.pi/nz)
         #Spherical polar radius of the innermost radial cell
         header[14] = "%g" % newRin
         header[15] = "%g" % newRout
