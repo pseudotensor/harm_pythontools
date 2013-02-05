@@ -1337,7 +1337,8 @@ def loadandwritevars(n1=32,n2=64):
     writemanyvarstotxt()
 
 def writemanyvarstotxt(fname="file"):
-    radii_list = np.arange(Rin,40.,0.5)
+    #radii_list = np.arange(Rin,40.,0.5)
+    radii_list = Rin*10**(np.arange(0,1,0.02)*np.log10(2./(OmegaNS*Rin)))
     for rad in radii_list:
         varstotxt(f="%s_%d.txt" % (fname,(10*rad)),rad=rad)
 
@@ -1351,12 +1352,12 @@ def converttotxt():
                 "hf_75_r10h05_mydt_sph_ps2_256x128x128_256_bsqorho50",
                 "hf_90_r10h05_mydt_sph_x2_bsqorho50" ]
     n1n2 = [ #[400,401],
-			 [140,167],
-			 [128,165],
-			 [128,165],
-			 [64,107],
-			 [64,94],
-			 [128,160] ]
+			 [140,141],
+			 [140,141],
+			 [140,141],
+			 [106,107],
+			 [93,94],
+			 [159,160] ]
     for (i,f) in enumerate(runlist):
         os.chdir("/home/atchekho/run2/%s" % f)
         loadandwritevars(n1=n1n2[i][0],n2=n1n2[i][1])
