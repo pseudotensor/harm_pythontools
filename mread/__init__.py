@@ -1350,7 +1350,7 @@ def converttotxt():
                 "hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50",
                 "hf_75_r10h05_mydt_sph_ps2_256x128x128_256_bsqorho50",
                 "hf_90_r10h05_mydt_sph_x2_bsqorho50" ]
-	n1n2 = [ [400,401],
+    n1n2 = [ [400,401],
 			 [128,167],
 			 [128,165],
 			 [128,165],
