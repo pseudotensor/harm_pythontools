@@ -1129,14 +1129,22 @@ def plotoblique():
     os.chdir("../hf_90_r10h05_mydt_sph_x2_bsqorho50")
     etot, psitot, Brsqavg = plotpangle(inject=1,doreload=1,no=160)
 
-def testtheta():
-    os.chdir("../hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50")  
-    grid3d("gdump.bin")
-    rfd("fieldline0106.bin")
-    cvel()
-    Tcalcud()
-    
-                
+def testtheta(doreload = 1):
+    if doreload:
+        os.chdir("/home/atchekho/run2/hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50")  
+        grid3d("gdump.bin")
+        rfd("fieldline0106.bin")
+        cvel()
+        Tcalcud()
+    plt.clf()
+    rr = 1.5/OmegaNS
+    ii = iofr(rr)
+    dLdomega = -(gdet*Tud[1][0]*_dx2*_dx3).sum(-1)/(gdet*_dx2*_dx3).sum(-1)
+    maxdLdomega = np.max(dLdomega[ii])
+    plt.plot(h[ii,:,0],dLdomega[ii,:]/maxdLdomega)
+    plt.plot(h[ii,:,0],np.sin(h[ii,:,0])**3.5,":",label=r"$\sin^{3.5}\theta$")
+    plt.plot(h[ii,:,0],np.sin(h[ii,:,0])**4,"--",label=r"$\sin^{4}\theta$")
+    plt.legend(loc="upper right")
 
 def plotcs(r0orlc=2):
     flist=["rwvpx_novpar_07rlc_bsqorho200_rbr1e2",
