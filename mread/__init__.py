@@ -1359,7 +1359,7 @@ def converttotxt():
 			 [128,160] ]
     for (i,f) in enumerate(runlist):
         os.chdir("/home/atchekho/run2/%s" % f)
-		loadandwritevars(n1=n1n2[i][0],n2=n1n2[i][1])
+        loadandwritevars(n1=n1n2[i][0],n2=n1n2[i][1])
         writemanyvarstotxt("../%s" % f)
 
 def plotgammauuravg():
