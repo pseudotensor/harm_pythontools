@@ -1328,10 +1328,23 @@ def loadandwritevars(n1=32,n2=64):
     computevars(n1=n1,n2=n2,calct=1,use2d=0)
     writemanyvarstotxt()
 
-def writemanyvarstotxt():
+def writemanyvarstotxt(fname="file"):
     radii_list = np.arange(Rin,40.,0.5)
     for rad in radii_list:
-        varstotxt(f="file%d.txt" % (10*rad),rad=rad)
+        varstotxt(f="%s_%d.txt" % (fname,(10*rad)),rad=rad)
+
+#for Sasha Philippov and Jason Li
+def converttotxt():
+    runlist = [ "hf_0_h10r05_om02_ffde_mydt_sph_ps0_2048x1024_64x64x1",
+                "hf_15_r10h05_mydt_sph_ps2_256x128x128_bsqorho",
+                "hf_30_r10h05_mydt_sph_x2_bsqorho50",
+                "hf_45_r10h05_mydt_sph_ps2_256x128x128_32x16x32_bsqorho50",
+                "hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50",
+                "hf_75_r10h05_mydt_sph_ps2_256x128x128_256_bsqorho50",
+                "hf_90_r10h05_mydt_sph_x2_bsqorho50" ]
+    for f in runlist:
+        os.chdir("/home/atchekho/run2/%s" % f)
+        writemanyvarstotxt("../%s" % f)
 
 def plotgammauuravg():
     plt.clf()
