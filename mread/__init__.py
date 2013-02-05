@@ -1350,8 +1350,16 @@ def converttotxt():
                 "hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50",
                 "hf_75_r10h05_mydt_sph_ps2_256x128x128_256_bsqorho50",
                 "hf_90_r10h05_mydt_sph_x2_bsqorho50" ]
-    for f in runlist:
+	n1n2 = [ [400,401],
+			 [128,167],
+			 [128,165],
+			 [128,165],
+			 [64,107],
+			 [64,94],
+			 [128,160] ]
+    for (i,f) in enumerate(runlist):
         os.chdir("/home/atchekho/run2/%s" % f)
+		loadandwritevars(n1=n1n2[i][0],n2=n1n2[i][1])
         writemanyvarstotxt("../%s" % f)
 
 def plotgammauuravg():
