@@ -4015,17 +4015,18 @@ def rfd(fieldlinefilename,**kwargs):
         h = hnew
         ph = phnew
         gc.collect()
+    #save file for Josh
     savenewgrid = kwargs.pop("savenewgrid",0)
     if savenewgrid:
         newRin = Rin
         newRout = 1000
         newd = reinterpfld(d,newRin=newRin,newRout=newRout)
         print( "Saving new grid...", )
-        #write out a dump with flipped spin:
+        #write out a dump with reinterpolated grid spin:
         gout = open( "dumps/" + fieldlinefilename + "newgrid", "wb" )
-        header[7] = "%d" % (1.*np.log(newRout/newRin)/nx)
-        header[8] = "%d" % (1./ny)
-        header[9] = "%d" % (2*np.pi/nz)
+        header[7] = "%g" % (1.*np.log(newRout/newRin)/nx)
+        header[8] = "%g" % (1./ny)
+        header[9] = "%g" % (2*np.pi/nz)
         #Spherical polar radius of the innermost radial cell
         header[14] = "%g" % newRin
         header[15] = "%g" % newRout
