@@ -1344,21 +1344,27 @@ def writemanyvarstotxt(fname="file"):
 
 #for Sasha Philippov and Jason Li
 def converttotxt():
-    runlist = [ "hf_0_h10r05_om02_ffde_mydt_sph_ps0_2048x1024_64x64x1",
+    runlist = [ #"hf_0_h10r05_om02_ffde_mydt_sph_ps0_2048x1024_64x64x1",
                 # "hf_15_r10h05_mydt_sph_ps2_256x128x128_bsqorho",
                 # "hf_30_r10h05_mydt_sph_x2_bsqorho50",
                 # "hf_45_r10h05_mydt_sph_ps2_256x128x128_32x16x32_bsqorho50",
                 # "hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50",
                 # "hf_75_r10h05_mydt_sph_ps2_256x128x128_256_bsqorho50",
-                # "hf_90_r10h05_mydt_sph_x2_bsqorho50"
+                # "hf_90_r10h05_mydt_sph_x2_bsqorho50",
+				hf_60_r10h05_mydt_sph_om01_ps2_128x128x128_16x16x32,
+				hf_60_r10h05_mydt_sph_om0375_ps2_128x64x64_16x16x16,
+				hf_60_r10h05_mydt_sph_om05_ps2_128x64x64_16x16x16
 				]
-    n1n2 = [ [400,401],
+    n1n2 = [ #[400,401],
 			 # [140,141],
 			 # [140,141],
 			 # [140,141],
 			 # [106,107],
 			 # [93,94],
-			 # [159,160]
+			 # [159,160],
+			 [69,70],
+			 [106,107],
+			 [106,107]
 			 ]
     for (i,f) in enumerate(runlist):
         os.chdir("/home/atchekho/run2/%s" % f)
