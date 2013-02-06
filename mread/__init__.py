@@ -1351,9 +1351,9 @@ def converttotxt():
                 # "hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50",
                 # "hf_75_r10h05_mydt_sph_ps2_256x128x128_256_bsqorho50",
                 # "hf_90_r10h05_mydt_sph_x2_bsqorho50",
-				hf_60_r10h05_mydt_sph_om01_ps2_128x128x128_16x16x32,
-				hf_60_r10h05_mydt_sph_om0375_ps2_128x64x64_16x16x16,
-				hf_60_r10h05_mydt_sph_om05_ps2_128x64x64_16x16x16
+				"hf_60_r10h05_mydt_sph_om01_ps2_128x128x128_16x16x32",
+				"hf_60_r10h05_mydt_sph_om0375_ps2_128x64x64_16x16x16",
+				"hf_60_r10h05_mydt_sph_om05_ps2_128x64x64_16x16x16"
 				]
     n1n2 = [ #[400,401],
 			 # [140,141],
