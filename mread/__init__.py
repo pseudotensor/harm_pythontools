@@ -1348,23 +1348,25 @@ def converttotxt():
                 # "hf_15_r10h05_mydt_sph_ps2_256x128x128_bsqorho",
                 # "hf_30_r10h05_mydt_sph_x2_bsqorho50",
                 # "hf_45_r10h05_mydt_sph_ps2_256x128x128_32x16x32_bsqorho50",
+				"hf_60_r10h05_mydt_sph_ps2_256x128x128_128_bsqorho50",
                 # "hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50",
                 # "hf_75_r10h05_mydt_sph_ps2_256x128x128_256_bsqorho50",
                 # "hf_90_r10h05_mydt_sph_x2_bsqorho50",
-				"hf_60_r10h05_mydt_sph_om01_ps2_128x128x128_16x16x32",
-				"hf_60_r10h05_mydt_sph_om0375_ps2_128x64x64_16x16x16",
-				"hf_60_r10h05_mydt_sph_om05_ps2_128x64x64_16x16x16"
+				#"hf_60_r10h05_mydt_sph_om01_ps2_128x128x128_16x16x32",
+				#"hf_60_r10h05_mydt_sph_om0375_ps2_128x64x64_16x16x16",
+				#"hf_60_r10h05_mydt_sph_om05_ps2_128x64x64_16x16x16"
 				]
     n1n2 = [ #[400,401],
 			 # [140,141],
 			 # [140,141],
 			 # [140,141],
+			 [158,159],
 			 # [106,107],
 			 # [93,94],
 			 # [159,160],
-			 [69,70],
-			 [106,107],
-			 [106,107]
+			 #[69,70],
+			 #[106,107],
+			 #[106,107]
 			 ]
     for (i,f) in enumerate(runlist):
         os.chdir("/home/atchekho/run2/%s" % f)
@@ -14151,6 +14153,49 @@ def makevtk(no=52):
     #grid3d("gdump.bin",doface=True) #,use2d=True)
     rfd("fieldline%04d.bin" % no)
     writevtk(no=no,t=t)
+
+def readhdf5():
+	import h5py
+	os.chdir("/scratch/gpfs/atchekho/run/hdf5test")
+	f = h5py.File('fhrs.003','r')
+	f.values() #lists the values available in the file
+
+#returns interpolated value of hdf5's variable
+#x,y,z in units of Rlc
+def fval(v,x,y,z):
+	#get array dimensions
+	resvec = var.shape
+	centvec = v.shape/2
+	#
+	Rlc = 80
+	Rst = 30
+	#
+	xvec = np.array([x,y,z],dtype=np.float64)
+	ii = xvec*Rlc + centvec
+	ivecf = np.floor(ivec)
+	ivecc = np.ceil(ivec)
+	ivecd = ivec - ivecf
+	#vertex indices
+	i0 = ivecf[0]
+	j0 = ivecf[1]
+	k0 = ivecf[2]
+	i1 = ivecc[0]
+	j1 = ivecc[1]
+	k1 = ivecc[2]
+	idel = ivecd[0] - ivecf[0]
+	jdel = ivecd[1] - ivecf[1]
+	kdel = ivecd[2] - ivecf[2]
+	#
+	c00 = v[i0,j0,k0]*(1.-idel)+v[i1,j0,k0]*idel
+	c10 = v[i0,j1,k0]*(1.-idel)+v[i1,j1,k0]*idel
+	c01 = v[i0,j0,k1]*(1.-idel)+v[i1,j0,k1]*idel
+	c11 = v[i0,j1,k1]*(1.-idel)+v[i1,j1,k0]*idel
+	#
+	c0 = c00*(1.-jdel)+c10*jdel
+	c1 = c01*(1.-jdel)+c11*jdel
+	#
+	interpval = c0*(1.-kdel)+c1*kdel
+	return interpval
 
 if __name__ == "__main__":
     if False:
