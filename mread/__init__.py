@@ -14172,21 +14172,35 @@ def readhdf5():
 	f = h5py.File('fhrs.003','r')
 	f.values() #lists the values available in the file
 
+def svsth(f,nth=128,nphi=256):
+    r=1.5
+    #
+    ex = f["ex"]
+    ey = f["ey"]
+    ez = f["ez"]
+    bx = f["bx"]
+    by = f["by"]
+    bz = f["bz"]
+    #
+    # for j in xrange(nth):
+    #     for k in xrange(nphi):
+    #         fval(
+
 #returns interpolated value of hdf5's variable
 #x,y,z in units of Rlc
 def fval(v,x,y,z):
 	#get array dimensions
-	resvec = var.shape
-	centvec = v.shape/2
+	resvec = np.array([401,401,401])
+	centvec = resvec/2
 	#
 	Rlc = 80
 	Rst = 30
 	#
 	xvec = np.array([x,y,z],dtype=np.float64)
-	ii = xvec*Rlc + centvec
+	ivec = xvec*Rlc + centvec
 	ivecf = np.floor(ivec)
 	ivecc = np.ceil(ivec)
-	ivecd = ivec - ivecf
+	ivecd = 1.*(ivec - ivecf)
 	#vertex indices
 	i0 = ivecf[0]
 	j0 = ivecf[1]
@@ -14194,19 +14208,20 @@ def fval(v,x,y,z):
 	i1 = ivecc[0]
 	j1 = ivecc[1]
 	k1 = ivecc[2]
-	idel = ivecd[0] - ivecf[0]
-	jdel = ivecd[1] - ivecf[1]
-	kdel = ivecd[2] - ivecf[2]
+	idel = ivecd[0]
+	jdel = ivecd[1]
+	kdel = ivecd[2]
 	#
-	c00 = v[i0,j0,k0]*(1.-idel)+v[i1,j0,k0]*idel
-	c10 = v[i0,j1,k0]*(1.-idel)+v[i1,j1,k0]*idel
-	c01 = v[i0,j0,k1]*(1.-idel)+v[i1,j0,k1]*idel
-	c11 = v[i0,j1,k1]*(1.-idel)+v[i1,j1,k0]*idel
+	c00 = v(i0,j0,k0)*(1.-idel)+v(i1,j0,k0)*idel
+	c10 = v(i0,j1,k0)*(1.-idel)+v(i1,j1,k0)*idel
+	c01 = v(i0,j0,k1)*(1.-idel)+v(i1,j0,k1)*idel
+	c11 = v(i0,j1,k1)*(1.-idel)+v(i1,j1,k0)*idel
 	#
 	c0 = c00*(1.-jdel)+c10*jdel
 	c1 = c01*(1.-jdel)+c11*jdel
 	#
 	interpval = c0*(1.-kdel)+c1*kdel
+        #pdb.set_trace()
 	return interpval
 
 if __name__ == "__main__":
