@@ -1338,9 +1338,9 @@ def loadandwritevars(n1=32,n2=64):
 
 def writemanyvarstotxt(fname="file"):
     #radii_list = np.arange(Rin,40.,0.5)
-    radii_list = Rin*10**(np.arange(0,1,0.02)*np.log10(2./(OmegaNS*Rin)))
-    for rad in radii_list:
-        varstotxt(f="%s_%d.txt" % (fname,(10*rad)),rad=rad)
+    #radii_list = Rin*10**(np.arange(0,1+0.01,0.01)*np.log10(10./(OmegaNS*Rin)))
+    for i in ti[:,0,0]:
+        varstotxt(f="%s_%d.txt" % (fname,i),rad=r[i,0,0])
 
 #for Sasha Philippov and Jason Li
 def converttotxt():
@@ -1348,24 +1348,26 @@ def converttotxt():
                 # "hf_15_r10h05_mydt_sph_ps2_256x128x128_bsqorho",
                 # "hf_30_r10h05_mydt_sph_x2_bsqorho50",
                 # "hf_45_r10h05_mydt_sph_ps2_256x128x128_32x16x32_bsqorho50",
+		"hf_60_r10h05_mydt_sph_ps2_256x128x128_128_bsqorho50",
                 # "hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50",
                 # "hf_75_r10h05_mydt_sph_ps2_256x128x128_256_bsqorho50",
                 # "hf_90_r10h05_mydt_sph_x2_bsqorho50",
-				"hf_60_r10h05_mydt_sph_om01_ps2_128x128x128_16x16x32",
-				"hf_60_r10h05_mydt_sph_om0375_ps2_128x64x64_16x16x16",
-				"hf_60_r10h05_mydt_sph_om05_ps2_128x64x64_16x16x16"
+		#"hf_60_r10h05_mydt_sph_om01_ps2_128x128x128_16x16x32",
+	   	#"hf_60_r10h05_mydt_sph_om0375_ps2_128x64x64_16x16x16",
+		#"hf_60_r10h05_mydt_sph_om05_ps2_128x64x64_16x16x16"
 				]
     n1n2 = [ #[400,401],
-			 # [140,141],
-			 # [140,141],
-			 # [140,141],
-			 # [106,107],
-			 # [93,94],
-			 # [159,160],
-			 [69,70],
-			 [106,107],
-			 [106,107]
-			 ]
+	     # [140,141],
+	     # [140,141],
+	     # [140,141],
+	     [158,159],
+	     # [106,107],
+	     # [93,94],
+	     # [159,160],
+	     #[69,70],
+	     #[106,107],
+	     #[106,107]
+	   ]
     for (i,f) in enumerate(runlist):
         os.chdir("/home/atchekho/run2/%s" % f)
         loadandwritevars(n1=n1n2[i][0],n2=n1n2[i][1])
@@ -1781,6 +1783,8 @@ def plotnsp(no=30,dnpole=0,doreload=1):
     #total energy flux minus rest-mass
     sTot_noRM = -(gdetF[1,1]).sum(2).sum(1)*_dx2*_dx3
     sTot_noRM2= -(gdet*Tud[1,0]+gdet*rho*uu[1]).sum(2).sum(1)*_dx2*_dx3
+    #lTot = -(gdetF[1,2]/dxdxp[3,3]).sum(2).sum(1)*_dx2*_dx3
+    lTot = -(gdet*Tud[1,3]/dxdxp[3,3]).sum(2).sum(1)*_dx2*_dx3
     sEMKE= -(gdet*TudEM[1,0]+gdet*rho*uu[1]*(1+ud[0])).sum(2).sum(1)*_dx2*_dx3
     sEM = -(gdet*TudEM)[1,0].sum(2).sum(1)*_dx2*_dx3
     sKETH = -(gdet*(rho*uu[1]+TudMA[1,0])).sum(2).sum(1)*_dx2*_dx3
@@ -1788,7 +1792,9 @@ def plotnsp(no=30,dnpole=0,doreload=1):
     smass2 = (gdet*rho*uu[1]).sum(2).sum(1)*_dx2*_dx3
     eps2=1.-sEM[iofr(2*rlc)]/sTot_noRM[iofr(1*rlc)]
     eps5=1.-sEM[iofr(5*rlc)]/sTot_noRM[iofr(1*rlc)]
-    print "eps2=%g, eps5=%g" % (eps2, eps5)
+    print( "edot=%g, mudip=%g, norm=%g, eps2=%g, eps5=%g" % 
+           (sTot_noRM[iofr(1*rlc)]/norm, mudip, norm, eps2, eps5) )
+    plt.figure(1)
     plt.plot(r[:,0,0]/rlc,sTot_noRM/norm,'r')
     #plt.plot(r[:,0,0]/rlc,sTot_noRM2/norm,'k')
     plt.plot(r[:,0,0]/rlc,radavg(sEM)/norm,'b-')
@@ -1802,6 +1808,14 @@ def plotnsp(no=30,dnpole=0,doreload=1):
     plt.ylabel(r"$S$",fontsize=18)
     plt.grid(b=True)
     plt.savefig("ns_spindown.pdf",bbox_inches='tight',pad_inches=0.02)
+    plt.figure(2)
+    plt.plot(r[:,0,0]/rlc,-lTot/(norm/OmegaNS),'r')
+    plt.xlim(Rin/rlc,5)
+    plt.ylim(0,3)
+    plt.xlabel(r"$r/r_{\rm LC}$",fontsize=18)
+    plt.ylabel(r"$L$",fontsize=18)
+    plt.grid(b=True)
+    plt.savefig("ns_ldot.pdf",bbox_inches='tight',pad_inches=0.02)
 
 def avgvar(funclist, n1 = 0, n2 = 0, calct = 0, use2d = 1 ):
     grid3d("gdump.bin",use2d=use2d)
