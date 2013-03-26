@@ -1548,100 +1548,100 @@ def pbrsq(roRlc=1.5,doreload=1):
 
 def plotpsrangpower(cachefname="psrangle.npz"):
     if cachefname is not None and os.path.isfile(cachefname):
-		npzfile = np.load(cachefname)
-		th0 = npzfile['th0']
-		th15 = npzfile['th15']
-		th30 = npzfile['th30']
-		th45 = npzfile['th45']
-		th60 = npzfile['th60']
-		th75 = npzfile['th75']
-		th90 = npzfile['th90']
-		s0 = npzfile['s0']
-		s15 = npzfile['s15']
-		s30 = npzfile['s30']
-		s45 = npzfile['s45']
-		s60 = npzfile['s60']
-		s75 = npzfile['s75']
-		s90 = npzfile['s90']
-		e0 = npzfile['e0']
-		e15 = npzfile['e15']
-		e30 = npzfile['e30']
-		e45 = npzfile['e45']
-		e60 = npzfile['e60']
-		e75 = npzfile['e75']
-		e90 = npzfile['e90']
-		psi0 = npzfile['psi0']
-		psi15 = npzfile['psi15']
-		psi30 = npzfile['psi30']
-		psi45 = npzfile['psi45']
-		psi60 = npzfile['psi60']
-		psi75 = npzfile['psi75']
-		psi90 = npzfile['psi90']
-		etot0 = npzfile['etot0']
-		etot15 = npzfile['etot15']
-		etot30 = npzfile['etot30']
-		etot45 = npzfile['etot45']
-		etot60 = npzfile['etot60']
-		etot75 = npzfile['etot75']
-		etot90 = npzfile['etot90']
-		brsqavg0 = npzfile['brsqavg0']
-		brsqavg15 = npzfile['brsqavg15']
-		brsqavg30 = npzfile['brsqavg30']
-		brsqavg45 = npzfile['brsqavg45']
-		brsqavg60 = npzfile['brsqavg60']
-		brsqavg75 = npzfile['brsqavg75']
-		brsqavg90 = npzfile['brsqavg90']
-		ebrsq0 = npzfile['ebrsq0']
-		ebrsq15 = npzfile['ebrsq15']
-		ebrsq30 = npzfile['ebrsq30']
-		ebrsq45 = npzfile['ebrsq45']
-		ebrsq60 = npzfile['ebrsq60']
-		ebrsq75 = npzfile['ebrsq75']
-		ebrsq90 = npzfile['ebrsq90']
-		ebr0 = npzfile['ebr0']
-		ebr15 = npzfile['ebr15']
-		ebr30 = npzfile['ebr30']
-		ebr45 = npzfile['ebr45']
-		ebr60 = npzfile['ebr60']
-		ebr75 = npzfile['ebr75']
-		ebr90 = npzfile['ebr90']
+        npzfile = np.load(cachefname)
+        th0 = npzfile['th0']
+        th15 = npzfile['th15']
+        th30 = npzfile['th30']
+        th45 = npzfile['th45']
+        th60 = npzfile['th60']
+        th75 = npzfile['th75']
+        th90 = npzfile['th90']
+        s0 = npzfile['s0']
+        s15 = npzfile['s15']
+        s30 = npzfile['s30']
+        s45 = npzfile['s45']
+        s60 = npzfile['s60']
+        s75 = npzfile['s75']
+        s90 = npzfile['s90']
+        e0 = npzfile['e0']
+        e15 = npzfile['e15']
+        e30 = npzfile['e30']
+        e45 = npzfile['e45']
+        e60 = npzfile['e60']
+        e75 = npzfile['e75']
+        e90 = npzfile['e90']
+        psi0 = npzfile['psi0']
+        psi15 = npzfile['psi15']
+        psi30 = npzfile['psi30']
+        psi45 = npzfile['psi45']
+        psi60 = npzfile['psi60']
+        psi75 = npzfile['psi75']
+        psi90 = npzfile['psi90']
+        etot0 = npzfile['etot0']
+        etot15 = npzfile['etot15']
+        etot30 = npzfile['etot30']
+        etot45 = npzfile['etot45']
+        etot60 = npzfile['etot60']
+        etot75 = npzfile['etot75']
+        etot90 = npzfile['etot90']
+        brsqavg0 = npzfile['brsqavg0']
+        brsqavg15 = npzfile['brsqavg15']
+        brsqavg30 = npzfile['brsqavg30']
+        brsqavg45 = npzfile['brsqavg45']
+        brsqavg60 = npzfile['brsqavg60']
+        brsqavg75 = npzfile['brsqavg75']
+        brsqavg90 = npzfile['brsqavg90']
+        ebrsq0 = npzfile['ebrsq0']
+        ebrsq15 = npzfile['ebrsq15']
+        ebrsq30 = npzfile['ebrsq30']
+        ebrsq45 = npzfile['ebrsq45']
+        ebrsq60 = npzfile['ebrsq60']
+        ebrsq75 = npzfile['ebrsq75']
+        ebrsq90 = npzfile['ebrsq90']
+        ebr0 = npzfile['ebr0']
+        ebr15 = npzfile['ebr15']
+        ebr30 = npzfile['ebr30']
+        ebr45 = npzfile['ebr45']
+        ebr60 = npzfile['ebr60']
+        ebr75 = npzfile['ebr75']
+        ebr90 = npzfile['ebr90']
     else:
-		os.chdir("/home/atchekho/run2/hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1")
-		th0,e0,s0=plotpangle(inject=1,doreload=1,no=690)
-		etot0,psi0,brsqavg0,ebrsq0,ebr0=plotpangle(inject=2,doreload=0,no=690)
-		os.chdir("../hf_15_r10h05_mydt_sph_ps2_256x128x128_bsqorho")
-			th15,e15,s15=plotpangle(inject=1,doreload=1,no=166)
-		etot15,psi15,brsqavg15,ebrsq15,ebr15=plotpangle(inject=2,doreload=0,no=164)
-		gc.collect()
-		os.chdir("../hf_30_r10h05_mydt_sph_x2_bsqorho50")
-			th30,e30,s30=plotpangle(inject=1,doreload=1,no=164)
-		etot30,psi30,brsqavg30,ebrsq30,ebr30=plotpangle(inject=2,doreload=0,no=164)
-		gc.collect()
-		os.chdir("../hf_45_r10h05_mydt_sph_ps2_256x128x128_32x16x32_bsqorho50")
-			th45,e45,s45=plotpangle(inject=1,doreload=1,no=164)
-		etot45,psi45,brsqavg45,ebrsq45,ebr45=plotpangle(inject=2,doreload=0,no=164)
-		gc.collect()
-		os.chdir("../hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50")  
-		th60,e60,s60=plotpangle(inject=1,doreload=1,no=106)
-		etot60,psi60,brsqavg60,ebrsq60,ebr60=plotpangle(inject=2,doreload=0,no=106)
-		gc.collect()
-		os.chdir("../hf_75_r10h05_mydt_sph_ps2_256x128x128_256_bsqorho50")
-		th75,e75,s75=plotpangle(inject=1,doreload=1,no=93)
-		etot75,psi75,brsqavg75,ebrsq75,ebr75=plotpangle(inject=2,doreload=0,no=93)
-		gc.collect()
-		os.chdir("../hf_90_r10h05_mydt_sph_x2_bsqorho50")
-		th90,e90,s90=plotpangle(inject=1,doreload=1,no=160)
-		etot90,psi90,brsqavg90,ebrsq90,ebr90=plotpangle(inject=2,doreload=0,no=160)
-		gc.collect()
+        os.chdir("/home/atchekho/run2/hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1")
+        th0,e0,s0=plotpangle(inject=1,doreload=1,no=690)
+        etot0,psi0,brsqavg0,ebrsq0,ebr0=plotpangle(inject=2,doreload=0,no=690)
+        os.chdir("../hf_15_r10h05_mydt_sph_ps2_256x128x128_bsqorho")
+        th15,e15,s15=plotpangle(inject=1,doreload=1,no=166)
+        etot15,psi15,brsqavg15,ebrsq15,ebr15=plotpangle(inject=2,doreload=0,no=164)
+        gc.collect()
+        os.chdir("../hf_30_r10h05_mydt_sph_x2_bsqorho50")
+        th30,e30,s30=plotpangle(inject=1,doreload=1,no=164)
+        etot30,psi30,brsqavg30,ebrsq30,ebr30=plotpangle(inject=2,doreload=0,no=164)
+        gc.collect()
+        os.chdir("../hf_45_r10h05_mydt_sph_ps2_256x128x128_32x16x32_bsqorho50")
+        th45,e45,s45=plotpangle(inject=1,doreload=1,no=164)
+        etot45,psi45,brsqavg45,ebrsq45,ebr45=plotpangle(inject=2,doreload=0,no=164)
+        gc.collect()
+        os.chdir("../hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50")  
+        th60,e60,s60=plotpangle(inject=1,doreload=1,no=106)
+        etot60,psi60,brsqavg60,ebrsq60,ebr60=plotpangle(inject=2,doreload=0,no=106)
+        gc.collect()
+        os.chdir("../hf_75_r10h05_mydt_sph_ps2_256x128x128_256_bsqorho50")
+        th75,e75,s75=plotpangle(inject=1,doreload=1,no=93)
+        etot75,psi75,brsqavg75,ebrsq75,ebr75=plotpangle(inject=2,doreload=0,no=93)
+        gc.collect()
+        os.chdir("../hf_90_r10h05_mydt_sph_x2_bsqorho50")
+        th90,e90,s90=plotpangle(inject=1,doreload=1,no=160)
+        etot90,psi90,brsqavg90,ebrsq90,ebr90=plotpangle(inject=2,doreload=0,no=160)
+        gc.collect()
         os.chdir("..")
         if cachefname is not None:
             np.savez(cachefname, th0=th0, th15=th15, th30=th30, th45=th45, th60=th60, th75=th75, th90=th90, s0=s0, s15=s15, s30=s30, s45=s45, s60=s60, s75=s75, s90=s90, e0=e0, e15=e15, e30=e30, e45=e45, e60=e60, e75=e75, e90=e90,  psi0=psi0, psi15=psi15, psi30=psi30, psi45=psi45, psi60=psi60, psi75=psi75, psi90=psi90,  etot0=etot0, etot15=etot15, etot30=etot30, etot45=etot45, etot60=etot60, etot75=etot75, etot90=etot90,  brsqavg0=brsqavg0, brsqavg15=brsqavg15,  brsqavg30=brsqavg30, brsqavg45=brsqavg45,  brsqavg60=brsqavg60,  brsqavg75=brsqavg75, brsqavg90=brsqavg90, ebrsq0=ebrsq0, ebrsq15=ebrsq15, ebrsq30=ebrsq30, ebrsq45=ebrsq45, ebrsq60=ebrsq60, ebrsq75=ebrsq75, ebrsq90=ebrsq90, ebr0=ebr0, ebr15=ebr15, ebr30=ebr30, ebr45=ebr45, ebr60=ebr60, ebr75=ebr75, ebr90=ebr90)
-    plt.figure(1)
+    #plt.figure(1)
     plt.plot(th90/np.pi*180,5*np.sin(th90)**2, 'k:', lw=2)
-    plt.plot(th0/np.pi*180,  s0, 'r', lw=2, label=r"$\alpha=0^\circ$")
-    plt.plot(th30/np.pi*180, s30, 'g', lw=2, label=r"$\alpha=30^\circ$")
-    plt.plot(th60/np.pi*180, s60, 'b', lw=2, label=r"$\alpha=60^\circ$")
-    plt.plot(th90/np.pi*180, s90, 'm', lw=2, label=r"$\alpha=90^\circ$")
+    plt.plot(th0/np.pi*180,  e0, 'r', lw=2, label=r"$\alpha=0^\circ$")
+    plt.plot(th30/np.pi*180, e30, 'g', lw=2, label=r"$\alpha=30^\circ$")
+    plt.plot(th60/np.pi*180, e60, 'b', lw=2, label=r"$\alpha=60^\circ$")
+    plt.plot(th90/np.pi*180, e90, 'm', lw=2, label=r"$\alpha=90^\circ$")
     plt.text(45,3.2,r"$\propto\sin^2\theta$",rotation=25,ha='center',va='center',fontsize=20)
     plt.xlim(0,90)
     tck = np.linspace(0,90,7)
@@ -1659,37 +1659,37 @@ def plotpsrangpower(cachefname="psrangle.npz"):
         label.set_fontsize(20)
     plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20,labelpad=-8)
     plt.ylabel(r"$4\pi\,{\rm d}(L/L_0)/{\rm d}\Omega$",fontsize=18)
-    plt.figure(2)
-    psis = np.array([psi0, psi15, psi30, psi45, psi60, psi75, psi90])
-    etots = np.array([etot0, etot15, etot30, etot45, etot60, etot75, etot90])
-    alphas = np.array([0, 15, 30, 45, 60, 75, 90])
-    ebrsqs = np.array([ebrsq0, ebrsq15, ebrsq30, ebrsq45, ebrsq60, ebrsq75, ebrsq90])
-    ebrs = np.array([ebr0, ebr15, ebr30, ebr45, ebr60, ebr75, ebr90])
-    plt.plot(alphas, psis**2,'o-')
-    plt.grid(b=1)
-    ax1=plt.gca()
-    for label in ax1.get_xticklabels() + ax1.get_yticklabels():
-        label.set_fontsize(20)
-    plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20)
-    plt.ylabel(r"$\Psi_{\rm open}^2/\Psi_{\rm tot}^2$",fontsize=20)
-    plt.figure(3)
-    #plt.plot(th0,brsqavg0)
-    #plt.plot(th30,brsqavg30)
-    plt.plot(th60*180/np.pi,brsqavg60/np.max(brsqavg60))
-    #plt.plot(th90,brsqavg90)
-    plt.ylim(0,1)
-    plt.xlim(0,180)
-    plt.grid(b=1)
-    ax1=plt.gca()
-    for label in ax1.get_xticklabels() + ax1.get_yticklabels():
-        label.set_fontsize(20)
-    plt.grid(b=1)
-    ax1=plt.gca()
-    for label in ax1.get_xticklabels() + ax1.get_yticklabels():
-        label.set_fontsize(20)
-    plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20)
-    plt.ylabel(r"$B_r$",fontsize=20)
-    plt.savefig("Br.pdf",bbox_inches='tight',pad_inches=0.02)
+    # plt.figure(2)
+    # psis = np.array([psi0, psi15, psi30, psi45, psi60, psi75, psi90])
+    # etots = np.array([etot0, etot15, etot30, etot45, etot60, etot75, etot90])
+    # alphas = np.array([0, 15, 30, 45, 60, 75, 90])
+    # ebrsqs = np.array([ebrsq0, ebrsq15, ebrsq30, ebrsq45, ebrsq60, ebrsq75, ebrsq90])
+    # ebrs = np.array([ebr0, ebr15, ebr30, ebr45, ebr60, ebr75, ebr90])
+    # plt.plot(alphas, psis**2,'o-')
+    # plt.grid(b=1)
+    # ax1=plt.gca()
+    # for label in ax1.get_xticklabels() + ax1.get_yticklabels():
+    #     label.set_fontsize(20)
+    # plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20)
+    # plt.ylabel(r"$\Psi_{\rm open}^2/\Psi_{\rm tot}^2$",fontsize=20)
+    # plt.figure(3)
+    # #plt.plot(th0,brsqavg0)
+    # #plt.plot(th30,brsqavg30)
+    # plt.plot(th60*180/np.pi,brsqavg60/np.max(brsqavg60))
+    # #plt.plot(th90,brsqavg90)
+    # plt.ylim(0,1)
+    # plt.xlim(0,180)
+    # plt.grid(b=1)
+    # ax1=plt.gca()
+    # for label in ax1.get_xticklabels() + ax1.get_yticklabels():
+    #     label.set_fontsize(20)
+    # plt.grid(b=1)
+    # ax1=plt.gca()
+    # for label in ax1.get_xticklabels() + ax1.get_yticklabels():
+    #     label.set_fontsize(20)
+    # plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20)
+    # plt.ylabel(r"$B_r$",fontsize=20)
+    # plt.savefig("Br.pdf",bbox_inches='tight',pad_inches=0.02)
     # plt.figure(4)
     # en = np.array([
     #      (brsqavg0* np.sin(th0)**3*(th0[1]-th0[0])   *len(th0)).sum(), 
@@ -1698,20 +1698,20 @@ def plotpsrangpower(cachefname="psrangle.npz"):
     #      (brsqavg90*np.sin(th90)**3*(th90[1]-th90[0])*len(th90)).sum()
     #      ])
     # plt.plot(alphas, en)
-    plt.figure(5)
-    plt.plot(alphas, etots, 'o-', label=r"$L$")
-    #plt.plot(alphas, ebrsqs, 'go-',label=r"$\int\Omega_\star^2R^2\langle B_r^2\rangle d\omega$")
-    plt.plot(alphas, ebrs, 'ro-', label=r"$(\kappa/c)\Phi_{\rm open}^2\Omega_\star^2$")
-    ax1=plt.gca()
-    leg = plt.legend(loc="lower right",ncol=1)
-    for t in leg.get_texts():
-       t.set_fontsize(20)    # the legend text fontsize
-    for label in ax1.get_xticklabels() + ax1.get_yticklabels():
-        label.set_fontsize(20)
-    plt.xlabel(r"$\alpha\ {\rm [^\circ]}$",fontsize=20)
-    plt.ylabel(r"$L/L_{\rm aligned}$",fontsize=20)
-    plt.grid(b=1)
-    plt.savefig("Lbsq.pdf",bbox_inches='tight',pad_inches=0.02)
+    # plt.figure(5)
+    # plt.plot(alphas, etots, 'o-', label=r"$L$")
+    # #plt.plot(alphas, ebrsqs, 'go-',label=r"$\int\Omega_\star^2R^2\langle B_r^2\rangle d\omega$")
+    # plt.plot(alphas, ebrs, 'ro-', label=r"$(\kappa/c)\Phi_{\rm open}^2\Omega_\star^2$")
+    # ax1=plt.gca()
+    # leg = plt.legend(loc="lower right",ncol=1)
+    # for t in leg.get_texts():
+    #    t.set_fontsize(20)    # the legend text fontsize
+    # for label in ax1.get_xticklabels() + ax1.get_yticklabels():
+    #     label.set_fontsize(20)
+    # plt.xlabel(r"$\alpha\ {\rm [^\circ]}$",fontsize=20)
+    # plt.ylabel(r"$L/L_{\rm aligned}$",fontsize=20)
+    # plt.grid(b=1)
+    # plt.savefig("Lbsq.pdf",bbox_inches='tight',pad_inches=0.02)
 
 
 def plotpangle(roRlc=None,r0=10,doreload=1,dnpole=0,no=106,inject=0):
@@ -14167,13 +14167,12 @@ def makevtk(no=52):
     writevtk(no=no,t=t)
 
 def readhdf5():
-	import h5py
-	os.chdir("/scratch/gpfs/atchekho/run/hdf5test")
-	f = h5py.File('fhrs.003','r')
-	f.values() #lists the values available in the file
+    import h5py
+    os.chdir("/scratch/gpfs/atchekho/run/hdf5test")
+    f = h5py.File('fhrs.003','r')
+    f.values() #lists the values available in the file
 
-def svsth(f,nth=128,nphi=256):
-    r=1.5
+def svsth(f,nth=128,nphi=256,r=1.5):
     #
     ex = f["ex"]
     ey = f["ey"]
@@ -14206,11 +14205,31 @@ def svsth(f,nth=128,nphi=256):
             spoyntavg[jth] *= (np.sin(th)*r**2*dth*dphi)
         elif 1:
             #enable for dL/dOmega
-            spoyntavg[jth] /= (1. * nphi)
+            spoyntavg[jth] *=  (r**2 / (1. * nphi))
         print( "%02d%% done: j = %d, th = %g, dth = %g, sp = %g" % (100.*(jth+1)/nth+0.5, jth, th, dth, spoyntavg[jth]) )
         sys.stdout.flush()
     #spoyntavg*=(r**2*dth*dphi)
     return(spoyntavg)
+
+def plotsvsth(nth=128,nphi=256):
+    import h5py
+    f = h5py.File('fhrs.006','r')
+    rlist = [1.5, 2, 2.5, 3, 3.5, 4, 4.5, 4.95]
+    #rlist = [1.5, 2]
+    rveclist = []
+    splist = []
+    ones = np.ones((nth),dtype=np.float64)
+    os.chdir("/scratch/gpfs/jgli/alpha60/forcefree_halfstarrlc/output")
+    for rval in rlist:
+        #multiply r by 0.5 to account for larger box size
+        sp = svsth(f,nth=nth,nphi=nphi,r=0.5*rval)
+        splist.append(sp)
+        rveclist.append(0.5*rval*ones)
+    th=np.linspace(0,np.pi,nth,False)+np.pi/(2.*nth)
+    os.chdir("/home/atchekho/run2/")
+    np.savetxt("ff.txt", np.array([th] + splist).T, fmt="%g %g %g %g %g %g %g %g %g" ) 
+               #fmt="%g %g %g")
+    f.close()
 
 #returns interpolated value of hdf5's variable
 #x,y,z in units of Rlc
