@@ -1339,7 +1339,7 @@ def loadandwritevars(n1=32,n2=64):
 def writemanyvarstotxt(fname="file"):
     #radii_list = np.arange(Rin,40.,0.5)
     #radii_list = Rin*10**(np.arange(0,1+0.01,0.01)*np.log10(10./(OmegaNS*Rin)))
-    for i in ti[:,0,0]:
+    for i in ti[::4,0,0]:
         varstotxt(f="%s_%d.txt" % (fname,i),rad=r[i,0,0])
 
 #for Sasha Philippov and Jason Li
@@ -14181,10 +14181,36 @@ def svsth(f,nth=128,nphi=256):
     bx = f["bx"]
     by = f["by"]
     bz = f["bz"]
+    spoyntx = lambda i,j,k: ey[i,j,k]*bz[i,j,k]-ez[i,j,k]*by[i,j,k]
+    spoynty = lambda i,j,k: ez[i,j,k]*bx[i,j,k]-ex[i,j,k]*bz[i,j,k]
+    spoyntz = lambda i,j,k: ex[i,j,k]*by[i,j,k]-ey[i,j,k]*bx[i,j,k]
     #
-    # for j in xrange(nth):
-    #     for k in xrange(nphi):
-    #         fval(
+    dth = np.pi/nth
+    dphi = 2*np.pi/nphi
+    spoyntavg = np.zeros((nth),dtype=np.float64)
+    thgrid = np.linspace(0,np.pi,nth,False)+0.5*dth
+    phigrid = np.linspace(0,2*np.pi,nphi,False)+0.5*dphi
+    print( "%02d%% done" % 0 )
+    for jth in xrange(nth):
+        th = thgrid[jth]
+        for kphi in xrange(nphi):
+            phi = phigrid[kphi]
+            rx = r*np.sin(th)*np.cos(phi)
+            ry = r*np.sin(th)*np.sin(phi)
+            rz = r*np.cos(th)
+            #dot product of surface normal and poynting vector
+            spoynt = (rx*fval(spoyntx,rx,ry,rz) + ry*fval(spoynty,rx,ry,rz) + rz*fval(spoyntz,rx,ry,rz))/r
+            spoyntavg[jth] += spoynt
+        if 0:
+            #enable for dL/dtheta*dtheta
+            spoyntavg[jth] *= (np.sin(th)*r**2*dth*dphi)
+        elif 1:
+            #enable for dL/dOmega
+            spoyntavg[jth] /= (1. * nphi)
+        print( "%02d%% done: j = %d, th = %g, dth = %g, sp = %g" % (100.*(jth+1)/nth+0.5, jth, th, dth, spoyntavg[jth]) )
+        sys.stdout.flush()
+    #spoyntavg*=(r**2*dth*dphi)
+    return(spoyntavg)
 
 #returns interpolated value of hdf5's variable
 #x,y,z in units of Rlc
@@ -14196,7 +14222,7 @@ def fval(v,x,y,z):
 	Rlc = 80
 	Rst = 30
 	#
-	xvec = np.array([x,y,z],dtype=np.float64)
+	xvec = np.array([z,y,x],dtype=np.float64)
 	ivec = xvec*Rlc + centvec
 	ivecf = np.floor(ivec)
 	ivecc = np.ceil(ivec)
@@ -14223,6 +14249,58 @@ def fval(v,x,y,z):
 	interpval = c0*(1.-kdel)+c1*kdel
         #pdb.set_trace()
 	return interpval
+
+#compute normalized angular distribution of pulsar spindown energy
+def sp(dno=48,rorlc=1.5,drl=1):
+    if drl:
+        grid3d("gdump.bin",use2d=1)
+        rfd("fieldline%04d.bin" % dno); #potentially, the concentration toward midplane is a function of time (spreads?)
+        cvel()
+        Tcalcud()
+    #dE/dArea, where dE = gdet*xxx*dx2*dx3, dArea = gdet*dx2*dx3
+    spoynt = (-gdet*Tud[1,0]*_dx2*_dx3).mean(-1)[:,:,None]/(gdet*_dx2*_dx3)
+    myi = iofr(rorlc/OmegaNS)
+    plt.plot(h[myi,:,0],spoynt[myi,:,0]/np.max(spoynt[myi,:,0]))
+    plt.plot(h[myi,:,0],np.sin(h[myi,:,0])**4,"g--")
+    plt.plot(h[myi,:,0],np.sin(h[myi,:,0])**3.5,"r-.")
+    np.savetxt("mhdom0375_15Rlc.txt", 
+               np.array([h[myi,:,0],spoynt[myi,:,0]/np.max(spoynt[myi,:,0])]).T, 
+               fmt="%21.15g %21.15g" )
+    plt.xlim(0,np.pi)
+    plt.ylim(0,1)
+
+def plotmhdvsff(fntsize=20):
+    #np.savetxt("ffree_15Rlc.txt", np.array([th128,sp128]).T, fmt="%21.15g %21.15g" )
+    #np.savetxt("sigsq1_15Rlc.txt", np.array([th128,sp128]).T, fmt="%21.15g %21.15g" )
+    plt.clf()
+    th60ff,s60ff = np.loadtxt("ffree_15Rlc.txt", 
+                      dtype=np.float64, 
+                      skiprows=0, 
+                      unpack = True )
+    th60sigsq1,s60sigsq1 = np.loadtxt("sigsq1_15Rlc.txt", 
+                      dtype=np.float64, 
+                      skiprows=0, 
+                      unpack = True )
+    th60mhd,s60mhd = np.loadtxt("mhdom0375_15Rlc.txt", 
+                      dtype=np.float64, 
+                      skiprows=0, 
+                      unpack = True )
+    plt.plot(th60ff,s60ff/np.max(s60ff),"b",lw=1,label="Force-free (Jason)")
+    plt.plot(th60sigsq1,s60sigsq1/np.max(s60sigsq1),"r",label="sigsq1 (Jason)")
+    plt.plot(th60mhd,s60mhd/np.max(s60mhd),"g",label="MHD")
+    plt.plot(th60ff,np.sin(th60ff)**3.5,"r-.",label=r"$\sin^{3.5}\theta$")
+    plt.plot(th60ff,np.sin(th60ff)**4,"g--",label=r"$\sin^4\theta$")
+    plt.legend(loc="lower center")
+    plt.ylabel(r"$\langle dL/d\Omega\rangle_\varphi$",fontsize=fntsize)
+    plt.xlabel(r"$\theta$",fontsize=fntsize)
+    plt.grid(b=1)
+    plt.xlim(0,np.pi)
+    plt.ylim(0,1)
+    ax = plt.gca()
+    for label in ax.get_xticklabels() + ax.get_yticklabels():
+        label.set_fontsize(fntsize)
+    plt.savefig("figmhdvsffree.pdf",bbox_inches='tight',pad_inches=0.02)
+
 
 if __name__ == "__main__":
     if False:
