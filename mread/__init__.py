@@ -1548,91 +1548,91 @@ def pbrsq(roRlc=1.5,doreload=1):
 
 def plotpsrangpower(cachefname="psrangle.npz"):
     if cachefname is not None and os.path.isfile(cachefname):
-	npzfile = np.load(cachefname)
-	th0 = npzfile['th0']
-	th15 = npzfile['th15']
-	th30 = npzfile['th30']
-	th45 = npzfile['th45']
-	th60 = npzfile['th60']
-	th75 = npzfile['th75']
-	th90 = npzfile['th90']
-	s0 = npzfile['s0']
-	s15 = npzfile['s15']
-	s30 = npzfile['s30']
-	s45 = npzfile['s45']
-	s60 = npzfile['s60']
-	s75 = npzfile['s75']
-	s90 = npzfile['s90']
-	e0 = npzfile['e0']
-	e15 = npzfile['e15']
-	e30 = npzfile['e30']
-	e45 = npzfile['e45']
-	e60 = npzfile['e60']
-	e75 = npzfile['e75']
-	e90 = npzfile['e90']
-	psi0 = npzfile['psi0']
-	psi15 = npzfile['psi15']
-	psi30 = npzfile['psi30']
-	psi45 = npzfile['psi45']
-	psi60 = npzfile['psi60']
-	psi75 = npzfile['psi75']
-	psi90 = npzfile['psi90']
-	etot0 = npzfile['etot0']
-	etot15 = npzfile['etot15']
-	etot30 = npzfile['etot30']
-	etot45 = npzfile['etot45']
-	etot60 = npzfile['etot60']
-	etot75 = npzfile['etot75']
-	etot90 = npzfile['etot90']
-	brsqavg0 = npzfile['brsqavg0']
-	brsqavg15 = npzfile['brsqavg15']
-	brsqavg30 = npzfile['brsqavg30']
-	brsqavg45 = npzfile['brsqavg45']
-	brsqavg60 = npzfile['brsqavg60']
-	brsqavg75 = npzfile['brsqavg75']
-	brsqavg90 = npzfile['brsqavg90']
-	ebrsq0 = npzfile['ebrsq0']
-	ebrsq15 = npzfile['ebrsq15']
-	ebrsq30 = npzfile['ebrsq30']
-	ebrsq45 = npzfile['ebrsq45']
-	ebrsq60 = npzfile['ebrsq60']
-	ebrsq75 = npzfile['ebrsq75']
-	ebrsq90 = npzfile['ebrsq90']
-	ebr0 = npzfile['ebr0']
-	ebr15 = npzfile['ebr15']
-	ebr30 = npzfile['ebr30']
-	ebr45 = npzfile['ebr45']
-	ebr60 = npzfile['ebr60']
-	ebr75 = npzfile['ebr75']
-	ebr90 = npzfile['ebr90']
+		npzfile = np.load(cachefname)
+		th0 = npzfile['th0']
+		th15 = npzfile['th15']
+		th30 = npzfile['th30']
+		th45 = npzfile['th45']
+		th60 = npzfile['th60']
+		th75 = npzfile['th75']
+		th90 = npzfile['th90']
+		s0 = npzfile['s0']
+		s15 = npzfile['s15']
+		s30 = npzfile['s30']
+		s45 = npzfile['s45']
+		s60 = npzfile['s60']
+		s75 = npzfile['s75']
+		s90 = npzfile['s90']
+		e0 = npzfile['e0']
+		e15 = npzfile['e15']
+		e30 = npzfile['e30']
+		e45 = npzfile['e45']
+		e60 = npzfile['e60']
+		e75 = npzfile['e75']
+		e90 = npzfile['e90']
+		psi0 = npzfile['psi0']
+		psi15 = npzfile['psi15']
+		psi30 = npzfile['psi30']
+		psi45 = npzfile['psi45']
+		psi60 = npzfile['psi60']
+		psi75 = npzfile['psi75']
+		psi90 = npzfile['psi90']
+		etot0 = npzfile['etot0']
+		etot15 = npzfile['etot15']
+		etot30 = npzfile['etot30']
+		etot45 = npzfile['etot45']
+		etot60 = npzfile['etot60']
+		etot75 = npzfile['etot75']
+		etot90 = npzfile['etot90']
+		brsqavg0 = npzfile['brsqavg0']
+		brsqavg15 = npzfile['brsqavg15']
+		brsqavg30 = npzfile['brsqavg30']
+		brsqavg45 = npzfile['brsqavg45']
+		brsqavg60 = npzfile['brsqavg60']
+		brsqavg75 = npzfile['brsqavg75']
+		brsqavg90 = npzfile['brsqavg90']
+		ebrsq0 = npzfile['ebrsq0']
+		ebrsq15 = npzfile['ebrsq15']
+		ebrsq30 = npzfile['ebrsq30']
+		ebrsq45 = npzfile['ebrsq45']
+		ebrsq60 = npzfile['ebrsq60']
+		ebrsq75 = npzfile['ebrsq75']
+		ebrsq90 = npzfile['ebrsq90']
+		ebr0 = npzfile['ebr0']
+		ebr15 = npzfile['ebr15']
+		ebr30 = npzfile['ebr30']
+		ebr45 = npzfile['ebr45']
+		ebr60 = npzfile['ebr60']
+		ebr75 = npzfile['ebr75']
+		ebr90 = npzfile['ebr90']
     else:
-	os.chdir("/home/atchekho/run2/hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1")
-	th0,e0,s0=plotpangle(inject=1,doreload=1,no=690)
-	etot0,psi0,brsqavg0,ebrsq0,ebr0=plotpangle(inject=2,doreload=0,no=690)
-	os.chdir("../hf_15_r10h05_mydt_sph_ps2_256x128x128_bsqorho")
-        th15,e15,s15=plotpangle(inject=1,doreload=1,no=166)
-	etot15,psi15,brsqavg15,ebrsq15,ebr15=plotpangle(inject=2,doreload=0,no=164)
-	gc.collect()
-	os.chdir("../hf_30_r10h05_mydt_sph_x2_bsqorho50")
-        th30,e30,s30=plotpangle(inject=1,doreload=1,no=164)
-	etot30,psi30,brsqavg30,ebrsq30,ebr30=plotpangle(inject=2,doreload=0,no=164)
-	gc.collect()
-	os.chdir("../hf_45_r10h05_mydt_sph_ps2_256x128x128_32x16x32_bsqorho50")
-        th45,e45,s45=plotpangle(inject=1,doreload=1,no=164)
-	etot45,psi45,brsqavg45,ebrsq45,ebr45=plotpangle(inject=2,doreload=0,no=164)
-	gc.collect()
-	os.chdir("../hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50")  
-	th60,e60,s60=plotpangle(inject=1,doreload=1,no=106)
-	etot60,psi60,brsqavg60,ebrsq60,ebr60=plotpangle(inject=2,doreload=0,no=106)
-	gc.collect()
-	os.chdir("../hf_75_r10h05_mydt_sph_ps2_256x128x128_256_bsqorho50")
-	th75,e75,s75=plotpangle(inject=1,doreload=1,no=93)
-	etot75,psi75,brsqavg75,ebrsq75,ebr75=plotpangle(inject=2,doreload=0,no=93)
-	gc.collect()
-	os.chdir("../hf_90_r10h05_mydt_sph_x2_bsqorho50")
-	th90,e90,s90=plotpangle(inject=1,doreload=1,no=160)
-	etot90,psi90,brsqavg90,ebrsq90,ebr90=plotpangle(inject=2,doreload=0,no=160)
-	gc.collect()
+		os.chdir("/home/atchekho/run2/hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1")
+		th0,e0,s0=plotpangle(inject=1,doreload=1,no=690)
+		etot0,psi0,brsqavg0,ebrsq0,ebr0=plotpangle(inject=2,doreload=0,no=690)
+		os.chdir("../hf_15_r10h05_mydt_sph_ps2_256x128x128_bsqorho")
+			th15,e15,s15=plotpangle(inject=1,doreload=1,no=166)
+		etot15,psi15,brsqavg15,ebrsq15,ebr15=plotpangle(inject=2,doreload=0,no=164)
+		gc.collect()
+		os.chdir("../hf_30_r10h05_mydt_sph_x2_bsqorho50")
+			th30,e30,s30=plotpangle(inject=1,doreload=1,no=164)
+		etot30,psi30,brsqavg30,ebrsq30,ebr30=plotpangle(inject=2,doreload=0,no=164)
+		gc.collect()
+		os.chdir("../hf_45_r10h05_mydt_sph_ps2_256x128x128_32x16x32_bsqorho50")
+			th45,e45,s45=plotpangle(inject=1,doreload=1,no=164)
+		etot45,psi45,brsqavg45,ebrsq45,ebr45=plotpangle(inject=2,doreload=0,no=164)
+		gc.collect()
+		os.chdir("../hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50")  
+		th60,e60,s60=plotpangle(inject=1,doreload=1,no=106)
+		etot60,psi60,brsqavg60,ebrsq60,ebr60=plotpangle(inject=2,doreload=0,no=106)
+		gc.collect()
+		os.chdir("../hf_75_r10h05_mydt_sph_ps2_256x128x128_256_bsqorho50")
+		th75,e75,s75=plotpangle(inject=1,doreload=1,no=93)
+		etot75,psi75,brsqavg75,ebrsq75,ebr75=plotpangle(inject=2,doreload=0,no=93)
+		gc.collect()
+		os.chdir("../hf_90_r10h05_mydt_sph_x2_bsqorho50")
+		th90,e90,s90=plotpangle(inject=1,doreload=1,no=160)
+		etot90,psi90,brsqavg90,ebrsq90,ebr90=plotpangle(inject=2,doreload=0,no=160)
+		gc.collect()
         os.chdir("..")
         if cachefname is not None:
             np.savez(cachefname, th0=th0, th15=th15, th30=th30, th45=th45, th60=th60, th75=th75, th90=th90, s0=s0, s15=s15, s30=s30, s45=s45, s60=s60, s75=s75, s90=s90, e0=e0, e15=e15, e30=e30, e45=e45, e60=e60, e75=e75, e90=e90,  psi0=psi0, psi15=psi15, psi30=psi30, psi45=psi45, psi60=psi60, psi75=psi75, psi90=psi90,  etot0=etot0, etot15=etot15, etot30=etot30, etot45=etot45, etot60=etot60, etot75=etot75, etot90=etot90,  brsqavg0=brsqavg0, brsqavg15=brsqavg15,  brsqavg30=brsqavg30, brsqavg45=brsqavg45,  brsqavg60=brsqavg60,  brsqavg75=brsqavg75, brsqavg90=brsqavg90, ebrsq0=ebrsq0, ebrsq15=ebrsq15, ebrsq30=ebrsq30, ebrsq45=ebrsq45, ebrsq60=ebrsq60, ebrsq75=ebrsq75, ebrsq90=ebrsq90, ebr0=ebr0, ebr15=ebr15, ebr30=ebr30, ebr45=ebr45, ebr60=ebr60, ebr75=ebr75, ebr90=ebr90)
