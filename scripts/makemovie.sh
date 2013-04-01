@@ -1188,8 +1188,6 @@ then
     if [ $makemontage -eq 1 ]
     then
 
-        echo "WTF"
-
         # create montage of t vs. r and t vs. h plots
         files=`ls -rt plot*.png`
         montage -geometry 300x600 $files montage_plot.png

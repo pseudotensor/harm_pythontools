@@ -5301,7 +5301,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
     ####################
     #
     # get iqty
-    print("dorho=%d doentropy=%d dobsq=%d dobeta=%d doQ1=%d doQ2=%d : vmin=%g vmax=%g" % (dorho,doentropy,dobsq,dobeta,doQ1,doQ2,vmin,vmax)) ; sys.stdout.flush()
+    print("dorho=%d doentropy=%d dobsq=%d dobeta=%d doQ1=%d doQ2=%d dovel=%d: vmin=%g vmax=%g" % (dorho,doentropy,dobsq,dobeta,doQ1,doQ2,dovel,vmin,vmax)) ; sys.stdout.flush()
     doqty=0
     dologz=0
     if dorho:
@@ -5317,8 +5317,8 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
     elif dobsq:
         lbsq=np.log10(bsq*0.5+1E-30)
         dologz=0 # SUPERGOD
-        #qty=lbsq # SUPERGOD
-        qty=gdet*TudEM[1,0] # SUPERGOD
+        qty=lbsq # SUPERGOD
+        #qty=gdet*TudEM[1,0] # SUPERGOD
         doqty=1
     elif dobeta:
         lbeta=np.log10(betatoplot+1E-30)
@@ -5346,8 +5346,10 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
     #
     ###########################################
     # setup field stuff
+    print("HERE0") ; sys.stdout.flush()
     radmax=np.sqrt(lenx**2 + leny**2)
     iouter=iofr(radmax)
+    print("HERE1") ; sys.stdout.flush()
     #
     if doaphi==1:
         if numcontours is not None:
@@ -5392,6 +5394,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
             print("levsB=%g",levs)
         #
     #
+    print("HERE2") ; sys.stdout.flush()
     if doaphiavg==1:
         if numcontours is not None:
             print("numcontoursB check: %s %d" % (fname,numcontours))
@@ -5430,7 +5433,8 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
             print("levs2B=%g",levs)
         #
     #
-    print("dovel=%d checkstream: %g" % (dovel,B[1][30,ny/2,0]))
+    #print("dovel=%d checkstream: %g" % (dovel,B[1][30,ny/2,0]))
+    print("dovel=%d" % (dovel))
     #
     if dostreamlines==1:
         if numcontours is not None:
@@ -5562,6 +5566,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
     #for c in cset2.collections:
     #    c.set_linestyle('solid')
     #CS = plt.contourf(xi,yi,zi,15,cmap=palette)
+    print("before if ax")
     if ax == None:
         ax = plt.gca()
         # CS = plt.imshow(ilrho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
@@ -20010,6 +20015,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     if(len(ts)>=6):
         tsnew,bsqrhosqrad4new=maketsuniform(toplot=bsqrhosqrad4)
         tsnew,bs3rhosqrad4new=maketsuniform(toplot=bs3rhosqrad4)
+    else:
+        tsnew=ts
+        bsqrhosqrad4new=bsqrhosqrad4
+        bs3rhosqrad4new=bs3rhosqrad4
     # 
     # 
     #
@@ -20360,7 +20369,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         #########################################################################################
         # fft needed for specplot
-        if dospecplot==1 and dofftplot==1:
+        if dospecplot==1 and dofftplot==1 and (len(ts)>=6): # fails if not enough times, so skip then
             print("dospecplot==1" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
             # Create a spectogram using matplotlib.mlab.specgram()
             # http://matplotlib.sourceforge.net/api/mlab_api.html#matplotlib.mlab.specgram
@@ -20567,7 +20576,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     for whichfftplot in np.arange(0,numplots):
     #
     #
-        if dofftplot==1 or dospecplot==1: # needed by dospecplot==1
+        if (dofftplot==1 or dospecplot==1) and (len(ts)>=6): # needed by dospecplot==1
             print("dofftplot==1 whichfftplot==%d" % (whichfftplot) + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
             #
             ####################
@@ -20865,7 +20874,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         #########################################################################################
         # fft needed for specplot
-        if dospecplot==1 and dofftplot==1:
+        if dospecplot==1 and dofftplot==1 and (len(ts)>=6):
             print("dospecplot==1" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
             # Create a spectogram using matplotlib.mlab.specgram()
             # http://matplotlib.sourceforge.net/api/mlab_api.html#matplotlib.mlab.specgram
@@ -25701,6 +25710,17 @@ def main(argv=None):
         aphi = None
         gc.collect()
 
+
+def tutorial1():
+    # first load grid file
+    grid3d("gdump.bin")
+    # now try loading a single fieldline file
+    rfd("fieldline0000.bin")
+    # now plot something you read-in
+    plt.figure(1)
+    lrho=np.log(rho)
+    plco(lrho,cb=True,nc=50)
+    plc(aphi,colors='k')
 
 
 if __name__ == "__main__":
