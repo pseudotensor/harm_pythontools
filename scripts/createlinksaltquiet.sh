@@ -39,7 +39,8 @@ mkdir -p $newfullpath/dumps
 cd $newfullpath/dumps/
 
 
-allfiles=`ls -al ${oldfullpath}/dumps/fieldline*.bin | awk '{print $8}'`
+#allfiles=`ls -al ${oldfullpath}/dumps/fieldline*.bin | awk '{print $8}'`
+allfiles=`ls ${oldfullpath}/dumps/fieldline*.bin`
 numfiles=`echo $allfiles | wc | awk '{print $2}'`
 
 iii=0
@@ -49,7 +50,7 @@ do
     condition=$(( $iii % $skipfactor ))
     if [ $condition -eq 0 ]
 	then
-	#echo $fil
+    #echo $fil
 	ln -sf $fil .
 	jjj=$(( $jjj + 1 ))
     fi

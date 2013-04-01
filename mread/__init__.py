@@ -5825,10 +5825,24 @@ def maketsuniform(toplot=None):
     #
     # detect late-time sampling rate
     # GODMARK: Only makes sense if at least 6 dump times
-    dtsample1 = ts[-3] - ts[-4]
-    dtsample2 = ts[-4] - ts[-5]
+    if(len(ts)>=6):
+        dtsample1 = ts[-3] - ts[-4]
+        dtsample2 = ts[-4] - ts[-5]
+        print("%g %g %g : dtsample=%g" % (ts[-3],ts[-4],ts[-5],dtsample)) ; sys.stdout.flush()
+    elif(len(ts)>=2):
+        # need at least 6
+        dtsample1 = ts[1]-ts[2]
+        dtsample2 = ts[0]-ts[1]
+        return
+    elif(len(ts)==2):
+        dtsample1 = ts[1]-ts[0]
+        dtsample2 = dtsample2
+        return
+    else:
+        # can't do anything in this function
+        return
+    #
     dtsample = 0.5*(dtsample1+dtsample2)
-    print("%g %g %g : dtsample=%g" % (ts[-3],ts[-4],ts[-5],dtsample)) ; sys.stdout.flush()
     #
     ###################
     # get number of subsamples
@@ -5977,7 +5991,12 @@ def maketsuniform(toplot=None):
 def finishframe(cb=1,label=1,tight=1,useextent=1,uselim=1,testdpiinches=0,toplot=None,extent=None,vmin=None,vmax=None,which=1,mintoplot=-6,maxtoplot=1,filenum=None,fileletter=None,pllabel="",maxbsqorho=None,maxbsqou=None,radius=None):
     #
     # make time uniformly stepping
-    tsnew,toplotnew=maketsuniform(toplot=toplot)
+    #if(len(ts)>6):
+    #    tsnew,toplotnew=maketsuniform(toplot=toplot)
+    #else:
+    #    ts=ts
+    #    toplotnew=toplot
+    toplotnew=toplot
     #
     #
     #
@@ -19747,23 +19766,28 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         print( "HLatex4: ModelName & $\\alpha_{b,\\rm{}eff}$ & $\\alpha_{b,\\rm{}eff2}$ & $\\alpha_b$ & $\\alpha_{b,\\rm{}M2}$ & $\\alpha_{b,\\rm{}mag}$ & $\\bfrac{Q_{n,\\rm{}cor,}}{{}_{\\{\\rho_0,b^2\\}}}$ & $\\bfrac{Q_{l,\\rm{}cor,}}{{}_{\\{\\rho_0,b^2\\}}}$ & $\\bfrac{Q_{m,\\rm{}cor,}}{{}_{\\{\\rho_0,b^2\\}}}$ & $Q_{\\theta,\\rm{}MRI,\\{i,  o\\}}$ & $Q_{\\phi,\\rm{}MRI,\\{i,  o\\}}$ & $S_{\\rm{}d,\\rm{}MRI,\\{i,  o\\}}$ & $\\bfrac{r_{\\{S_{\\rm{}d},S_{\\rm{}d,\\rm{}weak}\\}}}{{\ }_{\\rm{}MRI=1/2}}$   \\\\" )
         print( "VLatex4: %s        & %g                      & %g                      & %g          & %s                     & %g                      & %d, %d                                              & %d, %d                                              & %d, %d                                              & %g, %g                              & %g, %g                            & %g, %g                              & %s, %s                                                         \\\\ %% %s" % (truemodelname, roundto2(alphaeff_vsr_avg), roundto2(alphaeff2_vsr_avg), roundto2(alphatot3), roundto2alpha(alphamag3_vsr_avg,alphatot3), roundto2(alphamag4_vsr_avg), roundto2intfloat(Qncorrad8dcrho0),roundto2intfloat(Qncorrad8dcbsq), roundto2intfloat(Qlcorrad8dcrho0),roundto2intfloat(Qlcorrad8dcbsq), roundto2intfloat(Qmcorrad8dcrho0),roundto2intfloat(Qmcorrad8dcbsq), roundto2intfloat(qmridiskrfitin2_avg), roundto2intfloat(qmridiskrfitout2_avg), roundto2intfloat(q3mridiskrfitin2_avg), roundto2intfloat(q3mridiskrfitout2_avg), roundto2(1.0/iq2mridiskrfitin2_avg), roundto2(1.0/iq2mridiskrfitout2_avg), roundto2_rq2mri1(rq2mri1,rq2mri1cut,fakerstagreport), roundto2_rq2mri1(rq2mri2,rq2mri2cut,fakerstagreport), modelname ) )
     #
+    #
+    #
+    #
+    if dopowervsnplots==1: 
+        #
+        # Science Paper outputs
+        print( "HLatex81: ModelName & $a/M$ & $\\theta_{\\rm{}rot} & $T_f$ & $T^a_i$--$T^a_f$ & $r_{\\rm{}in}$ & $r_{\\rm{}out}$ & $H/R$ & $\\dot{M}_{\\rm{}H}$  & $\\Upsilon_{\\rm{}H}$ & $\\eta_{\\rm{}H}$ \\\\")
+        print( "VLatex81: %s        & %g    & %g                   & %g    & %g--%g           & %g             & %g              & %g    & %g                    & %g                    & %g                \\\\ %% %s" % (truemodelname, a, THETAROT, ts[-1], truetmin, truetmax, roundto2(rfitin2), roundto2(rfitout2), roundto2(hoverr30_avg), roundto2(mdotfinavg) , roundto2forupsilon(phibh_avg), roundto3foreta(etabh_avg), modelname ) )
+        #
+        #print( "HLatex3: ModelName & $N^d_{\\theta,{\\rm{}H}}$  & $\\theta^d_{\\rm{}H}$  & $\\theta^d_{5}$ & $\\theta^d_{20}$ & $\\theta^d_{100}$ & $\\theta^t_{\\rm{}20}$ & $\\theta^{dc}_{\\rm{}H}$  & $\\theta^{dc}_{5}$ & $\\theta^{dc}_{20}$ & $\\theta^{dc}_{100}$ & $\\theta^{cj}_{\\rm{}H}$  & $\\theta^{cj}_{5}$ & $\\theta^{cj}_{20}$ & $\\theta^{cj}_{100}$ \\\\" )
+        #print( "VLatex3: %s         & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g  \\\\ %% %s" % (truemodelname, roundto2(numcellsdiskihor), roundto2(hoverrhor_avg), roundto2( hoverr5_avg), roundto2(hoverr20_avg), roundto2(hoverr100_avg), roundto2(horalt1_avg[iofr(20)]), roundto2(hoverrcoronahor_avg), roundto2( hoverrcorona5_avg), roundto2(hoverrcorona20_avg), roundto2(hoverrcorona100_avg), roundto2(hoverr_jethor_avg), roundto2( hoverr_jet5_avg), roundto2(hoverr_jet20_avg), roundto2(hoverr_jet100_avg), modelname ) )
+        #
+        print( "HLatex82: ModelName & $\\alpha_{b,\\rm{}mag}$ & $\\bfrac{Q_{n,\\rm{}cor,}}{{}_{\\{\\rho_0,b^2\\}}}$ & $\\bfrac{Q_{l,\\rm{}cor,}}{{}_{\\{\\rho_0,b^2\\}}}$ & $\\bfrac{Q_{m,\\rm{}cor,}}{{}_{\\{\\rho_0,b^2\\}}}$ & $Q_{\\theta,\\rm{}MRI,\\{i,  o\\}}$ & $Q_{\\phi,\\rm{}MRI,\\{i,  o\\}}$ & $S_{\\rm{}d,\\rm{}MRI,\\{i,  o\\}}$  \\\\" )
+        print( "VLatex82: %s         & %g                      & %d, %d                                              & %d, %d                                              & %d, %d                                              & %g, %g                              & %g, %g                            & %g, %g                               \\\\ %% %s" % (truemodelname, roundto2(alphamag4_vsr_avg), roundto2intfloat(Qncorrad8dcrho0),roundto2intfloat(Qncorrad8dcbsq), roundto2intfloat(Qlcorrad8dcrho0),roundto2intfloat(Qlcorrad8dcbsq), roundto2intfloat(Qmcorrad8dcrho0),roundto2intfloat(Qmcorrad8dcbsq), roundto2intfloat(qmridiskrfitin2_avg), roundto2intfloat(qmridiskrfitout2_avg), roundto2intfloat(q3mridiskrfitin2_avg), roundto2intfloat(q3mridiskrfitout2_avg), roundto2(1.0/iq2mridiskrfitin2_avg), roundto2(1.0/iq2mridiskrfitout2_avg), modelname ) )
+        #
+        #
     ############################
     #
     # some space-time plots
     #
     ###########################
-    # Science Paper outputs
-    print( "HLatex81: ModelName & $a/M$ & $\\theta_{\\rm{}rot} & $T_f$ & $T^a_i$--$T^a_f$ & $r_{\\rm{}in}$ & $r_{\\rm{}out}$ & $H/R$ & $\\dot{M}_{\\rm{}H}$  & $\\Upsilon_{\\rm{}H}$ & $\\eta_{\\rm{}H}$ \\\\")
-    print( "VLatex81: %s        & %g    & %g                   & %g    & %g--%g           & %g             & %g              & %g    & %g                    & %g                    & %g                \\\\ %% %s" % (truemodelname, a, THETAROT, ts[-1], truetmin, truetmax, roundto2(rfitin2), roundto2(rfitout2), roundto2(hoverr30_avg), roundto2(mdotfinavg) , roundto2forupsilon(phibh_avg), roundto3foreta(etabh_avg), modelname ) )
     #
-    #print( "HLatex3: ModelName & $N^d_{\\theta,{\\rm{}H}}$  & $\\theta^d_{\\rm{}H}$  & $\\theta^d_{5}$ & $\\theta^d_{20}$ & $\\theta^d_{100}$ & $\\theta^t_{\\rm{}20}$ & $\\theta^{dc}_{\\rm{}H}$  & $\\theta^{dc}_{5}$ & $\\theta^{dc}_{20}$ & $\\theta^{dc}_{100}$ & $\\theta^{cj}_{\\rm{}H}$  & $\\theta^{cj}_{5}$ & $\\theta^{cj}_{20}$ & $\\theta^{cj}_{100}$ \\\\" )
-    #print( "VLatex3: %s         & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g & %g  \\\\ %% %s" % (truemodelname, roundto2(numcellsdiskihor), roundto2(hoverrhor_avg), roundto2( hoverr5_avg), roundto2(hoverr20_avg), roundto2(hoverr100_avg), roundto2(horalt1_avg[iofr(20)]), roundto2(hoverrcoronahor_avg), roundto2( hoverrcorona5_avg), roundto2(hoverrcorona20_avg), roundto2(hoverrcorona100_avg), roundto2(hoverr_jethor_avg), roundto2( hoverr_jet5_avg), roundto2(hoverr_jet20_avg), roundto2(hoverr_jet100_avg), modelname ) )
-    #
-    print( "HLatex82: ModelName & $\\alpha_{b,\\rm{}mag}$ & $\\bfrac{Q_{n,\\rm{}cor,}}{{}_{\\{\\rho_0,b^2\\}}}$ & $\\bfrac{Q_{l,\\rm{}cor,}}{{}_{\\{\\rho_0,b^2\\}}}$ & $\\bfrac{Q_{m,\\rm{}cor,}}{{}_{\\{\\rho_0,b^2\\}}}$ & $Q_{\\theta,\\rm{}MRI,\\{i,  o\\}}$ & $Q_{\\phi,\\rm{}MRI,\\{i,  o\\}}$ & $S_{\\rm{}d,\\rm{}MRI,\\{i,  o\\}}$  \\\\" )
-    print( "VLatex82: %s         & %g                      & %d, %d                                              & %d, %d                                              & %d, %d                                              & %g, %g                              & %g, %g                            & %g, %g                               \\\\ %% %s" % (truemodelname, roundto2(alphamag4_vsr_avg), roundto2intfloat(Qncorrad8dcrho0),roundto2intfloat(Qncorrad8dcbsq), roundto2intfloat(Qlcorrad8dcrho0),roundto2intfloat(Qlcorrad8dcbsq), roundto2intfloat(Qmcorrad8dcrho0),roundto2intfloat(Qmcorrad8dcbsq), roundto2intfloat(qmridiskrfitin2_avg), roundto2intfloat(qmridiskrfitout2_avg), roundto2intfloat(q3mridiskrfitin2_avg), roundto2intfloat(q3mridiskrfitout2_avg), roundto2(1.0/iq2mridiskrfitin2_avg), roundto2(1.0/iq2mridiskrfitout2_avg), modelname ) )
-
-
-
     # switched from B->E in above since E uses actual instantaneous flux (average) [rather than t=0 values of flux] to normalize the H flux.  More conservative given dissipatin can/does occur.
     sys.stdout.flush()
     #
@@ -19983,8 +20007,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     ######################################
     # first ensure time sequence is uniform
-    tsnew,bsqrhosqrad4new=maketsuniform(toplot=bsqrhosqrad4)
-    tsnew,bs3rhosqrad4new=maketsuniform(toplot=bs3rhosqrad4)
+    if(len(ts)>=6):
+        tsnew,bsqrhosqrad4new=maketsuniform(toplot=bsqrhosqrad4)
+        tsnew,bs3rhosqrad4new=maketsuniform(toplot=bs3rhosqrad4)
     # 
     # 
     #
@@ -23986,9 +24011,11 @@ def mkavgfigs():
         rholab=avg_rho*avg_uu[0] # GODMARK: Not full avg of rholab directly
         ug=avg_ug
         # use t-phi-averaged gdet B
+        B=np.copy(avg_uu)
         B[1] = avg_B[0]
         B[2] = avg_B[1]
         B[3] = avg_B[2]
+        gdetB=np.copy(avg_uu)
         gdetB[1:] = avg_gdetB[0:]
         bsq = avg_bsq
         mu = avg_mu

@@ -293,7 +293,8 @@ fi
 if [ $system -eq 3 ]
 then
     # 4 for thickdisk7 (until new memory put in)
-    numcorespernode=12
+#    numcorespernode=12
+    numcorespernode=1  # MAVARA
     numnodes=1
     thequeue="none"
 fi
@@ -1186,6 +1187,9 @@ then
     makemontage=$makemontage
     if [ $makemontage -eq 1 ]
     then
+
+        echo "WTF"
+
         # create montage of t vs. r and t vs. h plots
         files=`ls -rt plot*.png`
         montage -geometry 300x600 $files montage_plot.png
@@ -1575,7 +1579,7 @@ echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
 #
 ####################################
 
-itemspergroup=$(( 20 ))
+itemspergroup=$(( 1 )) # MAVARA
 itemspergrouptext=`printf "%02d"  "$itemspergroup"`
 
 
