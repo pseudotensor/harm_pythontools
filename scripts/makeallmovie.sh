@@ -32,7 +32,7 @@ dircollecttilt="thickdiskfull3d7tilt0.35 thickdiskfull3d7tilt0.7 thickdiskfull3d
 
 #################
 # choose:
-dircollect=$dircollecttilt
+dircollect="run"
 
 
 # note that thickdisk1 is actually bad, so ignore it.
@@ -47,7 +47,7 @@ dirrunstilt="sashaam9full2pit0.15 sashaa9b100t0.15 sashaa99t0.15 sashaam9full2pi
 
 ###################
 # choose
-dirruns=$dirrunstilt
+dirruns="run"
 
 
 #dirruns='thickdisk17'
@@ -86,7 +86,7 @@ dirruns=$dirrunstilt
 #dirruns='sasha99'
 
 # number of files to keep
-numkeep=450
+numkeep=2
 
 
 EXPECTED_ARGS=20
@@ -153,6 +153,7 @@ isorangegpu=`echo $HOSTNAME | grep "orange-gpu" | wc -l`
 isjmck=`echo $HOSTNAME | grep "ki-jmck" | wc -l`
 isnautilus=`echo $HOSTNAME | egrep 'conseil|arronax' | wc -l`
 iskraken=`echo $HOSTNAME | grep "kraken" | wc -l`
+isphysics179=`echo $HOSTNAME | grep "physics-179" | wc -l`
 
 # parallel>=1 sets to use batch sysem if long job *and* if multiple jobs then submit all of them to batch system
 # 1 = orange
@@ -160,6 +161,7 @@ iskraken=`echo $HOSTNAME | grep "kraken" | wc -l`
 # 3 = ki-jmck
 # 4 = Nautilus
 # 5 = Kraken
+# 6 = physics-179
 if [ $isorange -eq 1  ]
 then
     system=1
@@ -181,6 +183,10 @@ then
     system=5
     #parallel=1
     parallel=2 # so uses makemoviec instead of python with appropriate arg changes
+elif [ $isphysics179 -eq 1 ]
+then
+    system=6
+    parallel=0
 else
     # CHOOSE
     system=3
@@ -852,7 +858,8 @@ fi
 echo "Now collect Latex results"
 
 if [ $collect -eq 1 ] &&
-    [ $system -ne 3 ]
+    [ $system -ne 3 ] &&
+    [ $system -ne 6 ]
 then
     # then copy over results
     for thedir in $dircollect
@@ -878,7 +885,9 @@ fi
 
 
 if [ $collect -eq 1 ] &&
-    [ $system -eq 3 ]
+    [ $system -eq 3 ] ||
+    [ $collect -eq 1 ] &&
+    [ $system -eq 6 ]
 then
 
     cd $dirname/
