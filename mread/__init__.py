@@ -816,7 +816,7 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,revaloRlc=1,plotdissconv=1,writ
             tf_list.append( t )
     #change dir for figure saving
     os.chdir("/home/atchekho/run2")
-    plt.figure(1,figsize=(6,4))
+    plt.figure(1,figsize=(6,6))
     plt.clf()
     edot_list_toplot = []
     edotff_list_toplot = []
@@ -835,15 +835,15 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,revaloRlc=1,plotdissconv=1,writ
             #hide noisy part, not used anymore
             poynt_list_toplot[i][rvec_list[ile]<0.7*rlc_list[i]] *= NaN
     a = np.linspace(0,np.pi/2.,1000)
-    gs3 = GridSpec(2, 2)
+    gs3 = GridSpec(3, 3)
     gs3.update(left=0.15, right=0.95, top=0.96, bottom=0.15, wspace=0.01, hspace=0.4)
     bbox = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.5)
-    ax30 = plt.subplot(gs3[-2,:])
+    ax30 = plt.subplot(gs3[-3:-1,:])
     #plt.setp( ax30.get_xticklabels(), visible=False )
     plotpsrangpower()
-    placeletter( ax30,"($\mathrm{a})$",fx=0.05,fy=0.87,ha="center",va="center",bbox=bbox)
+    placeletter( ax30,"($\mathrm{a})$",fx=0.05,fy=0.87,ha="center",va="center",bbox=bbox,size=20)
     ax31 = plt.subplot(gs3[-1,:])
-    plt.plot(a*180/np.pi,1+1.2*np.sin(a)**2,'g-',lw=2) #,label=r"$1+1.2\sin^2\alpha$"
+    plt.plot(a*180/np.pi,1+1.2*np.sin(a)**2,'k-',lw=2) #,label=r"$1+1.2\sin^2\alpha$"
     plt.text(53, 0.9, r"$\displaystyle\frac{L}{L_0} = 1+1.2\sin^2\alpha$", fontsize = 18)
     plt.plot(np.array(alpha_list)*180/np.pi, edot_list_toplot, "rs",ms=15,label=r"${\rm MHD\ with\ HARM}$")
     #plt.plot(np.array(alpha_list)*180/np.pi, edotff_list_toplot, "ko",ms=15, mfc='None',label=r"${\rm Force{-}free\ with\ HARM}$")
@@ -851,13 +851,13 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,revaloRlc=1,plotdissconv=1,writ
     for label in ax1.get_xticklabels() + ax1.get_yticklabels():
         label.set_fontsize(20)
     plt.xlabel(r"$\alpha\ {\rm [^\circ]}$",fontsize=20,labelpad=-8)
-    plt.ylabel(r"$L/L_0$",fontsize=18)
+    plt.ylabel(r"$L/L_0$",fontsize=22)
     # leg = plt.legend(loc="upper left")
     # for t in leg.get_texts():
     #    t.set_fontsize(20)    # the legend text fontsize
     plt.ylim(0.8,2.4)
     plt.xlim(0,90)
-    placeletter( ax31,"($\mathrm{b})$",fx=0.05,ha="center",bbox=bbox)
+    placeletter( ax31,"($\mathrm{b})$",fx=0.05,ha="center",bbox=bbox,size=20)
     tck = np.linspace(0,90,7)
     ax1.set_xticks(tck)
     tck = np.linspace(1.,2.,3)
@@ -878,9 +878,9 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,revaloRlc=1,plotdissconv=1,writ
         r"$\alpha=90^\circ$", 
         ]
     labxlist = [ 0.4, 2,  0.4, 2]
-    labylist = [ 0.875,  1.5, 1.78, 2.35 ]
+    labylist = [ 0.84,  1.45, 1.78, 2.3 ]
     if plotpoynt and (len(flistpoynt)+len(flistonlyb)>0):
-        plt.figure(2)
+        plt.figure(2,figsize=(6,4.7))
         plt.clf()
         a = np.linspace(0,np.pi/2.,1000)
         clrindex = -1
@@ -937,9 +937,10 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,revaloRlc=1,plotdissconv=1,writ
         for label in ax2.get_xticklabels() + ax2.get_yticklabels():
             label.set_fontsize(20)
         plt.xlabel(r"$r/R_{\rm LC}$",fontsize=20)
-        plt.ylabel(r"$L/L_{\rm aligned}$",fontsize=20)
-        plt.ylim(0,2.999)
+        plt.ylabel(r"$L/L_0$",fontsize=22)
+        plt.ylim(0,2.4)
         plt.xlim(0.21,5)
+        placeletter(ax2,"$(\mathrm{c})$",size=18,fx=0.06,fy=0.92,ha="center",va="center",color='k',bbox=None)
         #fake curves, just for legend:
         ltot = plt.plot(rvec_list[i]/rlc_list[i], 
                      100+rvec_list[i],c='k',
@@ -952,14 +953,17 @@ def psrspindown(doreload=1,newlist=1,plotpoynt=1,revaloRlc=1,plotdissconv=1,writ
         lpoynt[0].set_dashes(defaultdashes)
         leg0 = plt.legend(crvlist0,leglist0,loc="upper right",title=r"${\rm Energy\ losses\!\!:}$",ncol=1,frameon=True, fancybox=True,borderpad = 0.3,borderaxespad=0.4,handlelength=2.2,columnspacing=0.3,handletextpad=0.1)
         if newlist != 1:
-            leg1 = plt.legend(loc="upper left",title=r"${\rm Inclination\ study}\!\!:$",ncol=2,frameon=True, fancybox=True,borderpad = 0.3,borderaxespad=0.4,handlelength=2.2,columnspacing=0.3,handletextpad=0.1) #,labelspacing=0.15) #,title=r"${\rm Inclination}\ (N_r=256)\!\!:$"
+            leg1 = plt.legend(loc="upper left",title=r"${\rm Inclination\ study}\!\!:$",ncol=2,frameon=True, fancybox=True,borderpad = 0.3,borderaxespad=0.4,handlelength=1.1,columnspacing=0.3,handletextpad=0.1) #,labelspacing=0.15) #,title=r"${\rm Inclination}\ (N_r=256)\!\!:$"
         else:
             leg1 = leg0
-        leg2=plt.legend(crvlist,leglist,loc="lower right",title=r"${\rm Resolution\ study}\!\!:$",ncol=3,frameon=True, fancybox=True,borderpad = 0.3,borderaxespad=0.4,handlelength=4.,columnspacing=0.15,handletextpad=0.1) #,labelspacing=0.15)
-        plt.gca().add_artist(leg0)
-        plt.gca().add_artist(leg1)
-        for t in leg0.get_texts()+leg1.get_texts()+leg2.get_texts():
+        #,title=r"${\rm Resolution\ study}\!\!:$"
+        leg2=plt.legend(crvlist,leglist,loc="lower right",ncol=2,frameon=True, fancybox=True,borderpad = 0.3,borderaxespad=0.4,handlelength=4.,columnspacing=0.15,handletextpad=0.1) #,labelspacing=0.15)
+        #plt.gca().add_artist(leg0)
+        #plt.gca().add_artist(leg1)
+        for t in leg0.get_texts()+leg1.get_texts(): #+leg2.get_texts():
             t.set_fontsize(20)    # the legend text fontsize
+        for t in leg2.get_texts():
+            t.set_fontsize(17)    # the legend text fontsize
         leg0.get_title().set_fontsize(20)
         leg1.get_title().set_fontsize(20)
         leg2.get_title().set_fontsize(20)
@@ -1343,30 +1347,43 @@ def writemanyvarstotxt(fname="file"):
         varstotxt(f="%s_%d.txt" % (fname,i),rad=r[i,0,0])
 
 #for Sasha Philippov and Jason Li
+#just run without arguments
 def converttotxt():
     runlist = [ #"hf_0_h10r05_om02_ffde_mydt_sph_ps0_2048x1024_64x64x1",
                 # "hf_15_r10h05_mydt_sph_ps2_256x128x128_bsqorho",
                 # "hf_30_r10h05_mydt_sph_x2_bsqorho50",
                 # "hf_45_r10h05_mydt_sph_ps2_256x128x128_32x16x32_bsqorho50",
-		"hf_60_r10h05_mydt_sph_ps2_256x128x128_128_bsqorho50",
+		#"hf_60_r10h05_mydt_sph_ps2_256x128x128_128_bsqorho50",
                 # "hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50",
                 # "hf_75_r10h05_mydt_sph_ps2_256x128x128_256_bsqorho50",
                 # "hf_90_r10h05_mydt_sph_x2_bsqorho50",
 		#"hf_60_r10h05_mydt_sph_om01_ps2_128x128x128_16x16x32",
 	   	#"hf_60_r10h05_mydt_sph_om0375_ps2_128x64x64_16x16x16",
-		#"hf_60_r10h05_mydt_sph_om05_ps2_128x64x64_16x16x16"
+		#"hf_60_r10h05_mydt_sph_om05_ps2_128x64x64_16x16x16",
+                # "hf_30_r10h05_mydt_sph_ps2_128x64x64_128_bsqorho50_om0375",
+                # "hf_30_r10h05_mydt_sph_ps2_128x64x64_128_bsqorho50_om05",
+                # "hf_90_r10h05_mydt_sph_om0375_ps0_128x64x64_16x16x16",
+                # "hf_90_r10h05_mydt_sph_om05_ps0_128x64x64_16x16x16",
+                # "hf_90_r10h05_mydt_sphc33_om01_ps2_256x128x256_32x16x32",
+                "hf_0_r10h05_mydt_sph_ps0_oldfixup_256x128x1_32x32x1_om01"
 				]
     n1n2 = [ #[400,401],
 	     # [140,141],
 	     # [140,141],
 	     # [140,141],
-	     [158,159],
+	     #[158,159],
 	     # [106,107],
 	     # [93,94],
 	     # [159,160],
 	     #[69,70],
 	     #[106,107],
-	     #[106,107]
+	     #[106,107],
+             # [128,129],
+             # [75,76],
+             # [128,129],
+             # [128,129],
+             # [82, 83],
+             [328,329]
 	   ]
     for (i,f) in enumerate(runlist):
         os.chdir("/home/atchekho/run2/%s" % f)
@@ -1519,7 +1536,7 @@ def pvsrstar(roRlc=1.5):
     plt.ylim(0,1)
     plt.legend(loc="lower center")
     plt.xlabel(r"$\theta$",fontsize=20)
-    plt.ylabel(r"$dL/d\Omega$",fontsize=20)
+    plt.ylabel(r"$dL/d\omega$",fontsize=20)
     plt.title(r"${\rm MHD:}\ \alpha=60^\circ,\ R_*/R_{\rm LC}=0.1{-}0.5$",fontsize=20)
     plt.xlim(0,180)
     plt.ylim(0,1)
@@ -1637,28 +1654,37 @@ def plotpsrangpower(cachefname="psrangle.npz"):
         if cachefname is not None:
             np.savez(cachefname, th0=th0, th15=th15, th30=th30, th45=th45, th60=th60, th75=th75, th90=th90, s0=s0, s15=s15, s30=s30, s45=s45, s60=s60, s75=s75, s90=s90, e0=e0, e15=e15, e30=e30, e45=e45, e60=e60, e75=e75, e90=e90,  psi0=psi0, psi15=psi15, psi30=psi30, psi45=psi45, psi60=psi60, psi75=psi75, psi90=psi90,  etot0=etot0, etot15=etot15, etot30=etot30, etot45=etot45, etot60=etot60, etot75=etot75, etot90=etot90,  brsqavg0=brsqavg0, brsqavg15=brsqavg15,  brsqavg30=brsqavg30, brsqavg45=brsqavg45,  brsqavg60=brsqavg60,  brsqavg75=brsqavg75, brsqavg90=brsqavg90, ebrsq0=ebrsq0, ebrsq15=ebrsq15, ebrsq30=ebrsq30, ebrsq45=ebrsq45, ebrsq60=ebrsq60, ebrsq75=ebrsq75, ebrsq90=ebrsq90, ebr0=ebr0, ebr15=ebr15, ebr30=ebr30, ebr45=ebr45, ebr60=ebr60, ebr75=ebr75, ebr90=ebr90)
     #plt.figure(1)
-    plt.plot(th90/np.pi*180,5*np.sin(th90)**2, 'k:', lw=2)
-    plt.plot(th0/np.pi*180,  e0, 'r', lw=2, label=r"$\alpha=0^\circ$")
+    plt.plot(th90/np.pi*180, e90, 'm', lw=4, label=r"$\alpha=90^\circ$")
+    plt.plot(th60/np.pi*180, e60, 'b', lw=3, label=r"$\alpha=60^\circ$")
     plt.plot(th30/np.pi*180, e30, 'g', lw=2, label=r"$\alpha=30^\circ$")
-    plt.plot(th60/np.pi*180, e60, 'b', lw=2, label=r"$\alpha=60^\circ$")
-    plt.plot(th90/np.pi*180, e90, 'm', lw=2, label=r"$\alpha=90^\circ$")
-    plt.text(45,3.2,r"$\propto\sin^2\theta$",rotation=25,ha='center',va='center',fontsize=20)
-    plt.xlim(0,90)
-    tck = np.linspace(0,90,7)
+    plt.plot(th0/np.pi*180,  e0, 'r', lw=1, label=r"$\alpha=0^\circ$")
+    #
+    crv1 = plt.plot(th90/np.pi*180,3.6*np.sin(th90)**2, 'k-.', lw=2)
+    lab1 = r"$\sin^2\theta$"
+    crv2 = plt.plot(th90/np.pi*180,3.6*np.sin(th90)**4, '--', color = 'orange', lw=2)
+    lab2 = r"$\sin^4\theta$"
+    crvlist = [crv1, crv2]
+    leglist = [lab1, lab2]
+    leg0 = plt.legend(crvlist,leglist,loc="upper right",ncol=1,borderaxespad=0.4,frameon=False,labelspacing=0.2)
+    #
+    #plt.text(45,3.2,r"$\propto\sin^2\theta$",rotation=25,ha='center',va='center',fontsize=20)
+    plt.xlim(0,180)
+    tck = np.linspace(0,180,7)
     ax1 = plt.gca()
     ax1.set_xticks(tck)
-    ax1.set_xticklabels((r"$0$",r"$15$",r"$30$","",r"$60$",r"$75$",r"$90$"))
+    ax1.set_xticklabels((r"$0$",r"$30$",r"$60$","",r"$120$",r"$150$",r"$180$"))
     plt.ylim(0,5)
     tck = np.linspace(1,4,4)
     ax1.set_yticks(tck)
-    leg = plt.legend(loc="upper left",ncol=1,borderaxespad=0,frameon=False,labelspacing=0)
-    for t in leg.get_texts():
+    leg = plt.legend(loc="upper left",ncol=1,borderaxespad=0.4,frameon=False,labelspacing=0.2)
+    ax1.add_artist(leg0)
+    for t in leg.get_texts() + leg0.get_texts():
        t.set_fontsize(20)    # the legend text fontsize
     plt.grid(b=1)
     for label in ax1.get_xticklabels() + ax1.get_yticklabels():
         label.set_fontsize(20)
     plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20,labelpad=-8)
-    plt.ylabel(r"$4\pi\,{\rm d}(L/L_0)/{\rm d}\Omega$",fontsize=18)
+    plt.ylabel(r"$4\pi\,{\rm d}(L/L_0)/{\rm d}\omega$",fontsize=22)
     # plt.figure(2)
     # psis = np.array([psi0, psi15, psi30, psi45, psi60, psi75, psi90])
     # etots = np.array([etot0, etot15, etot30, etot45, etot60, etot75, etot90])
