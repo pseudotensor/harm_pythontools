@@ -14133,11 +14133,11 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wdc
         plt.ylabel(r"$\Phi_{30}(t)$",fontsize=fntsize)
         plt.grid(b=1)
     if dosavefig:
-	if disruptiontype=="msc":
+        if disruptiontype=="msc":
             plt.savefig("msflux.pdf",bbox_inches='tight',pad_inches=0.02)
-	elif disruptiontype=="msp":
+        elif disruptiontype=="msp":
             plt.savefig("mspartflux.pdf",bbox_inches='tight',pad_inches=0.02)
-	elif disruptiontype=="wdc":
+        elif disruptiontype=="wdc":
             plt.savefig("wdflux.pdf",bbox_inches='tight',pad_inches=0.02)
 
 
