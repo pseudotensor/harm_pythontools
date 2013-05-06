@@ -23633,6 +23633,9 @@ def mkmovieframe(findex=None,filenum=None,framesize=None):
         # for Jon's thickdisk models
         vminforframe=-2.4
         vmaxforframe=1.5625
+    elif modelname=="Deepth64cool":        
+        vminforframe=-6.9
+        vmaxforframe=-0.2
     else:
         # default
         vminforframe=-4.0
@@ -23647,7 +23650,7 @@ def mkmovieframe(findex=None,filenum=None,framesize=None):
     gs1 = GridSpec(1, 1)
     gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
     ax1 = plt.subplot(gs1[:, -1])
-    mkframe("lrho%04d_Rz%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax1,cb=False,pt=False,dobsq=1,dorho=0)
+    mkframe("lrho%04d_Rz%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax1,cb=False,pt=False,dobsq=0,dorho=1)
     #
     plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
     plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=10,fontsize=16)
@@ -23657,10 +23660,10 @@ def mkmovieframe(findex=None,filenum=None,framesize=None):
     ax2 = plt.subplot(gs2[:, -1])
     #
     if nz==1:
-        mkframe("lrho%04d_xy%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax2,cb=True,dostreamlines=True,dobsq=1,dorho=0)
+        mkframe("lrho%04d_xy%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax2,cb=True,dostreamlines=True,dobsq=0,dorho=1)
     else:
         # If using 2D data, then for now, have to replace below with mkframe version above and replace ax1->ax2.  Some kind of qhull error.
-        mkframexy("lrho%04d_xy%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax2,cb=True,pt=False,dostreamlines=True,dobsq=1,dorho=0)
+        mkframexy("lrho%04d_xy%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax2,cb=True,pt=False,dostreamlines=True,dobsq=0,dorho=1)
     #
     #
     plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
@@ -23680,7 +23683,7 @@ def mkmovieframe(findex=None,filenum=None,framesize=None):
     gs1 = GridSpec(1, 1)
     gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
     ax1 = plt.subplot(gs1[:, -1])
-    mkframe("lrhosmall%04d_Rz%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax1,cb=False,pt=False,dobsq=1,dorho=0)
+    mkframe("lrhosmall%04d_Rz%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax1,cb=False,pt=False,dobsq=0,dorho=1)
     #
     plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
     plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=10,fontsize=16)
@@ -23690,10 +23693,10 @@ def mkmovieframe(findex=None,filenum=None,framesize=None):
     ax2 = plt.subplot(gs2[:, -1])
     #
     if nz==1:
-        mkframe("lrhosmall%04d_xy%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax2,cb=True,dostreamlines=True,dobsq=1,dorho=0)
+        mkframe("lrhosmall%04d_xy%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax2,cb=True,dostreamlines=True,dobsq=0,dorho=1)
     else:
         # If using 2D data, then for now, have to replace below with mkframe version above and replace ax1->ax2.  Some kind of qhull error.
-        mkframexy("lrhosmall%04d_xy%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax2,cb=True,pt=False,dostreamlines=True,dobsq=1,dorho=0)
+        mkframexy("lrhosmall%04d_xy%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax2,cb=True,pt=False,dostreamlines=True,dobsq=0,dorho=1)
     #
     #
     plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
