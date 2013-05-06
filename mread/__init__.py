@@ -1818,8 +1818,10 @@ def plotnsp(no=30,dnpole=0,doreload=1):
     smass2 = (gdet*rho*uu[1]).sum(2).sum(1)*_dx2*_dx3
     eps2=1.-sEM[iofr(2*rlc)]/sTot_noRM[iofr(1*rlc)]
     eps5=1.-sEM[iofr(5*rlc)]/sTot_noRM[iofr(1*rlc)]
-    print( "edot=%g, mudip=%g, norm=%g, eps2=%g, eps5=%g" % 
-           (sTot_noRM[iofr(1*rlc)]/norm, mudip, norm, eps2, eps5) )
+    print( "edot=%g, ltot=%g,mudip=%g, norm=%g, eps2=%g, eps5=%g" % 
+           (sTot_noRM[iofr(1*rlc)]/norm, 
+            -lTot[iofr(1*rlc)]/(norm/OmegaNS),
+            mudip, norm, eps2, eps5) )
     plt.figure(1)
     plt.plot(r[:,0,0]/rlc,sTot_noRM/norm,'r')
     #plt.plot(r[:,0,0]/rlc,sTot_noRM2/norm,'k')
@@ -1842,6 +1844,13 @@ def plotnsp(no=30,dnpole=0,doreload=1):
     plt.ylabel(r"$L$",fontsize=18)
     plt.grid(b=True)
     plt.savefig("ns_ldot.pdf",bbox_inches='tight',pad_inches=0.02)
+
+def k0plot():
+    #for 90 degrees at two rotations
+    #plotnsp(no=64) #and read off ltot
+    rstarorlc = [0.2, 3./8., 0.5]
+    ldotff    = [2.08868,   1.79591, 1.54806]
+    ldotmhd   = [2.1663,   1.87401, 1.61609]
 
 def avgvar(funclist, n1 = 0, n2 = 0, calct = 0, use2d = 1 ):
     grid3d("gdump.bin",use2d=use2d)
