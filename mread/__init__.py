@@ -46,6 +46,55 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
+def r_josh():
+    global _startx1, _startx2, _startx3
+    global x1, x2, x3
+    _startx1 = np.log(Rin)
+    _endx1 = np.log(Rout)
+    _startx2 = 0
+    _startx3 = 0
+    x1 = np.linspace( _startx1 + 0.5*_dx1, _endx1 - 0.5*_dx1, nx, endpoint = False)
+    x2 = 0.5*_dx2+_dx2*np.pi*tj
+    x3 = 0.5*_dx3+_dx3*2*np.pi*tk
+
+def gcov_josh():
+    globar r, h, ph, gcov, dxdxp
+    hslope = 0
+    th_len = np.pi
+    M_PI = np.pi
+    TT = 0
+    r = 
+    gcov = np.zeros(4,4,r.shape[0],r.shape[1],r.shape[2])
+    cth = np.cos(th);
+    sth = np.abs(np.sin(th));
+    if (sth < SMALL):
+        sth = SMALL
+    s2 = sth * sth;
+    rho2 = r * r + a * a * cth * cth;
+
+    # transformation for Kerr-Schild -> modified Kerr-Schild
+    tfac = 1.;
+    rfac = r - R0;
+    hfac = th_len + 2.*M_PI*hslope*cos(2. * M_PI * x2);
+    pfac = 1.;
+
+    gcov[TT][TT] = (-1. + 2. * r / rho2) * tfac * tfac;
+    gcov[TT][1] = (2. * r / rho2) * tfac * rfac;
+    gcov[TT][3] = (-2. * a * r * s2 / rho2) * tfac * pfac;
+
+    gcov[1][TT] = gcov[TT][1];
+    gcov[1][1] = (1. + 2. * r / rho2) * rfac * rfac;
+    gcov[1][3] = (-a * s2 * (1. + 2. * r / rho2)) * rfac * pfac;
+
+    gcov[2][2] = rho2 * hfac * hfac;
+
+    gcov[3][TT] = gcov[TT][3];
+    gcov[3][1] = gcov[1][3];
+    gcov[3][3] = s2 * (rho2 + a * a * s2 * (1. + 2. * r / rho2)) * pfac * pfac;
+
+
+
+
 def reinterpfld(vars,newRin=None,newRout=None):
     if newRin is None: newRin = Rin
     if newRout is None: newRout = 1000
@@ -4076,6 +4125,9 @@ def rfd(fieldlinefilename,**kwargs):
         print( "Saving new grid...", )
         #write out a dump with reinterpolated grid spin:
         gout = open( "dumps/" + fieldlinefilename + "newgrid", "wb" )
+        header[4] = "%g" % (1.*np.log(newRin))
+        header[5] = "%g" % (0.)
+        header[6] = "%g" % (0.)
         header[7] = "%g" % (1.*np.log(newRout/newRin)/nx)
         header[8] = "%g" % (1./ny)
         header[9] = "%g" % (2*np.pi/nz)
