@@ -49,26 +49,30 @@ import visit_writer
 def r_josh():
     global _startx1, _startx2, _startx3
     global x1, x2, x3
+    global r, h, ph
     _startx1 = np.log(Rin)
     _endx1 = np.log(Rout)
     _startx2 = 0
     _startx3 = 0
-    x1 = np.linspace( _startx1 + 0.5*_dx1, _endx1 - 0.5*_dx1, nx, endpoint = False)
-    x2 = 0.5*_dx2+_dx2*np.pi*tj
+    x1[:,:,:] = np.linspace( _startx1 + 0.5*_dx1, _endx1 - 0.5*_dx1, nx, endpoint = False)[:,None,None]
+    r[:,:,:] = np.exp(x1)[:,:,:]
+    x2 = 0.5*_dx2+_dx2*tj
+    h[:,:,:] = x2[:,:,:]*np.pi
     x3 = 0.5*_dx3+_dx3*2*np.pi*tk
+    ph[:,:,:] = x3[:,:,:]
 
 def gcov_josh():
-    globar r, h, ph, gcov, dxdxp
+    global r, h, ph, gcov, dxdxp
     hslope = 0
     th_len = np.pi
     M_PI = np.pi
     TT = 0
-    r = 
-    gcov = np.zeros(4,4,r.shape[0],r.shape[1],r.shape[2])
+    th = h
+    SMALL = 1e-7
+    gcov = np.zeros((4,4,r.shape[0],r.shape[1],r.shape[2]))
     cth = np.cos(th);
     sth = np.abs(np.sin(th));
-    if (sth < SMALL):
-        sth = SMALL
+    sth[sth<SMALL] = SMALL+sth[sth<SMALL]
     s2 = sth * sth;
     rho2 = r * r + a * a * cth * cth;
 
