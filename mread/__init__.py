@@ -9323,6 +9323,8 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-1,plotetas=False
     ax3.errorbar(xf(u_alist),100*etajs,yerr=2*100*sigma,mec='g',mfc='none',ecolor='g',fmt='s',lw=2,elinewidth=2,mew=1,zorder=20)
     #fake plot call: move it out of plot bounds but use it to populate legend info
     ljfake=ax3.errorbar(xf(u_alist)-10,100*etajs,yerr=2*100*sigma,label=r'$\eta_{\rm jet}$',mec='g',mfc='none',ecolor='g',fmt='s',lw=2,elinewidth=2,mew=1,zorder=20,ls='-')
+    np.savetxt("etavsa.txt", np.array([u_alist, 100*etajs, 100*sigma, 100*etaws, 100*etasigma, 100*u_etalist, 100*u_etastdlist]).T, 
+               fmt="%g %g %g %g %g %g %g" )
     ljfake[0].set_dashes([10,5])
     #sigma[2]*=100
     #sigma[4]*=100
@@ -9359,6 +9361,7 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-1,plotetas=False
     #etajet_func=lambda a: eta_func(a) - etawind_func(a)
     #pdb.set_trace()
     lj,=ax3.plot(xf(mya1),etajet_func(mya1),"g:",lw=2,zorder=20)
+    ax3.plot(xf(mya1),100*0.65*mya1**2*(1+0.85*mya1**2),"r-",lw=2,zorder=20)
     #lj.set_dashes([2,3,2,3])
     lj.set_dashes([10,5])
     lw,=ax3.plot(xf(mya1),etawind_func(mya1),"b:",lw=2)
@@ -14301,7 +14304,52 @@ def plotmhdvsff(fntsize=20):
         label.set_fontsize(fntsize)
     plt.savefig("figmhdvsffree.pdf",bbox_inches='tight',pad_inches=0.02)
 
+def plotpunsly(fntsize = 20):
+    plt.clf()
+    ax = plt.gca()
+    a = np.arange(0,1,0.0001)
+    etaj = 100*0.65*a**2*(1+0.85*a**2)
+    #
+    res = np.loadtxt("etavsa.txt", 
+                      dtype=np.float64, 
+                      skiprows=0, 
+                      unpack = True )
+    a_list, etaj_list, sigma_etaj_list, etaw_list, sigma_etaw_list, eta_list, sigma_eta_list = res
+    #
+    etahk06=0.002/(1-a)
+    plt.plot(a,etahk06/Ebindisco(a))
+    #
+    ahk06_list=np.array([0.9, 0.93, 0.95, 0.99])
+    etajhk06_list=np.array([0.892/19.2, 0.824/21.8, 1.46/20.3, 3.28/15.5])
+    plt.plot(ahk06_list,etajhk06_list/Ebindisco(ahk06_list),"bs")
+    #
+    ymin = 10.**-0.35+a*0
+    ymax = 10.**0.25+a*0
+    ymax2 = 3*10.**0.25+a*0
+    col = "m"
+    ax.fill_between(a,ymin,ymax,facecolor=col,edgecolor=col,alpha=0.2)
+    col = "r"
+    ax.fill_between(a,ymax,ymax2,facecolor=col,edgecolor=col,alpha=0.2)
+    #
+    plt.plot(a_list, 0.01*etaj_list/Ebindisco(a_list), "g^")
+    plt.plot(a, 0.01*etaj/Ebindisco(a), "g-")
+    # plt.text( 0.96, 0.15, r"${\rm HK06\ fit}$", fontsize=fntsize, color="b")
+    # plt.text( 0.87, 0.24, r"${\rm HK06\ data}$", fontsize=fntsize, color="b")
+    # plt.text( 0.89, 3.55, r"${\rm TMN12\ data}$", fontsize=fntsize, color="g")
+    # plt.text( 0.95, 3.49, r"${\rm NMT13\ fit}$", fontsize=fntsize, color="g")
+    # plt.text( 0.86, 1.25, r"${\rm This\ paper's\ error\ band}$", fontsize=fntsize, color="m")
+    # plt.text( 0.86, 2., r"${\rm Additional\ error\ band\ likely\ missed\ by\ authors}$", fontsize=fntsize, color="r")
+    plt.xlim(0.1,1)
+    plt.ylim(10**-1.7,10**1)
+    plt.yscale('log')
+    plt.xlabel(r"$a/M$", fontsize = fntsize)
+    plt.ylabel(r"$\eta_{\rm jet}/\eta_{\rm NT}\equiv P_{\rm jet}/\eta_{\rm NT}\dot Mc^2$", fontsize = fntsize)
+    for label in ax.get_xticklabels() + ax.get_yticklabels():
+        label.set_fontsize(fntsize)
+    plt.savefig("etajetoveretant_allspin.pdf",bbox_inches='tight',pad_inches=0.02)
 
+
+    
 if __name__ == "__main__":
     if False:
         plt.clf()
