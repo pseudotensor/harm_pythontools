@@ -25728,6 +25728,7 @@ def tutorial1():
     plt.figure(1)
     lrho=np.log(rho)
     plco(lrho,cb=True,nc=50)
+    aphi = fieldcalc() # keep sign information
     plc(aphi,colors='k')
 
 
