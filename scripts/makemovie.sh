@@ -293,7 +293,6 @@ fi
 if [ $system -eq 3 ]
 then
     # 4 for thickdisk7 (until new memory put in)
-#    numcorespernode=12
     numcorespernode=1  # MAVARA
     numnodes=1
     thequeue="none"
@@ -543,6 +542,16 @@ then
 
 fi
 
+#############################################
+# physics-179
+if [ $system -eq 6 ]
+then
+    numcorespernode=16
+    numnodes=1
+    thequeue="none"
+fi
+
+
 
 
 if [ $useoverride -eq 0 ]
@@ -661,6 +670,10 @@ then
     elif [ $system -eq 5 ]
     then
         sed -e 's/USEKIJMCK=1/USEKIJMCK=0/g' -e 's/USEKRAKEN=0/USEKRAKEN=1/g' -e 's/USENAUTILUS=1/USENAUTILUS=0/g' -e 's/USEMPI=0/USEMPI=1/g' Makefile > Makefile.temp
+        cp Makefile.temp Makefile
+    elif [ $system -eq 6 ]
+    then
+        sed -e 's/USEKIJMCK=0/USEKIJMCK=1/g' -e 's/USEKRAKEN=1/USEKRAKEN=0/g' -e 's/USENAUTILUS=1/USENAUTILUS=0/g' -e 's/USEMPI=1/USEMPI=0/g' Makefile > Makefile.temp
         cp Makefile.temp Makefile
     else
         echo "Not setup for system=$sytem"
@@ -1188,8 +1201,6 @@ then
     if [ $makemontage -eq 1 ]
     then
 
-        echo "WTF"
-
         # create montage of t vs. r and t vs. h plots
         files=`ls -rt plot*.png`
         montage -geometry 300x600 $files montage_plot.png
@@ -1579,7 +1590,8 @@ echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
 #
 ####################################
 
-itemspergroup=$(( 1 )) # MAVARA
+#itemspergroup=$(( 1 )) # MAVARA
+itemspergroup=$(( 20 ))
 itemspergrouptext=`printf "%02d"  "$itemspergroup"`
 
 

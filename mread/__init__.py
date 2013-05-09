@@ -5301,7 +5301,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
     ####################
     #
     # get iqty
-    print("dorho=%d doentropy=%d dobsq=%d dobeta=%d doQ1=%d doQ2=%d : vmin=%g vmax=%g" % (dorho,doentropy,dobsq,dobeta,doQ1,doQ2,vmin,vmax)) ; sys.stdout.flush()
+    print("dorho=%d doentropy=%d dobsq=%d dobeta=%d doQ1=%d doQ2=%d dovel=%d: vmin=%g vmax=%g" % (dorho,doentropy,dobsq,dobeta,doQ1,doQ2,dovel,vmin,vmax)) ; sys.stdout.flush()
     doqty=0
     dologz=0
     if dorho:
@@ -5317,8 +5317,8 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
     elif dobsq:
         lbsq=np.log10(bsq*0.5+1E-30)
         dologz=0 # SUPERGOD
-        #qty=lbsq # SUPERGOD
-        qty=gdet*TudEM[1,0] # SUPERGOD
+        qty=lbsq # SUPERGOD
+        #qty=gdet*TudEM[1,0] # SUPERGOD
         doqty=1
     elif dobeta:
         lbeta=np.log10(betatoplot+1E-30)
@@ -5343,11 +5343,15 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         #
         iqty = reinterp(qty,extent,ncell,domask=1.0)
     #
+    if dovel==1:
+        dovarylw=0
     #
     ###########################################
     # setup field stuff
+    print("HERE0") ; sys.stdout.flush()
     radmax=np.sqrt(lenx**2 + leny**2)
     iouter=iofr(radmax)
+    print("HERE1") ; sys.stdout.flush()
     #
     if doaphi==1:
         if numcontours is not None:
@@ -5392,6 +5396,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
             print("levsB=%g",levs)
         #
     #
+    print("HERE2") ; sys.stdout.flush()
     if doaphiavg==1:
         if numcontours is not None:
             print("numcontoursB check: %s %d" % (fname,numcontours))
@@ -5430,7 +5435,8 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
             print("levs2B=%g",levs)
         #
     #
-    print("dovel=%d checkstream: %g" % (dovel,B[1][30,ny/2,0]))
+    #print("dovel=%d checkstream: %g" % (dovel,B[1][30,ny/2,0]))
+    print("dovel=%d" % (dovel)) ; sys.stdout.flush()
     #
     if dostreamlines==1:
         if numcontours is not None:
@@ -5562,6 +5568,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
     #for c in cset2.collections:
     #    c.set_linestyle('solid')
     #CS = plt.contourf(xi,yi,zi,15,cmap=palette)
+    print("before if ax") ; sys.stdout.flush()
     if ax == None:
         ax = plt.gca()
         # CS = plt.imshow(ilrho, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
@@ -5581,6 +5588,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
     #
     ###########################################
     # plot image
+    print("HERE5") ; sys.stdout.flush()
     if doqty==1:
         CS = ax.imshow(iqty, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
         if True == cb:
@@ -5595,6 +5603,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
     #
     ###########################################
     # other stuff
+    print("HERE6") ; sys.stdout.flush()
     if showjet:
         #ax.contour(imu,linewidths=0.5,colors='g', extent=extent,hold='on',origin='lower',levels=(2,))
         ax.contour(iaphi,linewidths=0.5,colors='b', extent=extent,hold='on',origin='lower',levels=(aphi[ihor,ny/2,0],))
@@ -5602,6 +5611,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
     #
     ###########################################
     # plot field stuff
+    print("HERE7") ; sys.stdout.flush()
     if doaphi==1 or doaphiavg==1:
         #cset2 = ax.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
         #cset2 = ax.contour(iaphi,linewidths=2.0,colors='r', extent=extent,hold='on',origin='lower',levels=levs)
@@ -5615,7 +5625,8 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
             # just have as really thick so obvious
             cset3 = ax.contour(iaphi,linewidths=4.0,colors=inputcoloraphi, extent=extent,hold='on',origin='lower',levels=(doaphicont,))
     #
-    if dostreamlines==1:
+    print("HERE8") ; sys.stdout.flush()
+    if dostreamlines==1 and dovel==0: # problem with hang on dovel==1
         if dovarylw:
             lw = 0.5+1*ftr(np.log10(amax(ibsqo2rho,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
             #lw += 1*ftr(np.log10(amax(iibeta,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
@@ -5626,6 +5637,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
     #
     # goes on top:
+    print("HERE9") ; sys.stdout.flush()
     if dojonwindplot:
         mwindmaxbeta=2
         #ax.contour(imu,linewidths=4,colors='g', extent=extent,hold='on',origin='lower',levels=(1,2,))
@@ -5638,6 +5650,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
             ax.contour(iuu1,linewidths=4,colors='green', extent=extent,hold='on',origin='lower',levels=(0,))
     #
     #
+    print("HERE10") ; sys.stdout.flush()
     ax.set_xlim(extent[0],extent[1])
     ax.set_ylim(extent[2],extent[3])
     #CS.cmap=cm.jet
@@ -7331,8 +7344,8 @@ def rfdtransform(gotgdetB=0):
     global r,h,ph
     global rho,ug,uu,B,gdetB
     #
-    print("wtf: %d\n",nz) ; sys.stdout.flush()
-    print("wtf2: %d\n",nzgdump) ; sys.stdout.flush()
+    print("what: %d\n",nz) ; sys.stdout.flush()
+    print("what2: %d\n",nzgdump) ; sys.stdout.flush()
     #
     ###########################################
     # first deal with ti,tj,tk,x1,x2,x3,r,h,ph that are gdump data size, while need true ph at least on same sized-grid as rfd() data is on.
@@ -14882,13 +14895,13 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     iq2mridisk20[:,qcondition2==False]=0
     iq2mridisk20=((iq2mridisk20[:,qcondition2]*normmridisk[:,qcondition2]).sum(axis=1))/((normmridisk[:,qcondition2]).sum(axis=1))
     #
-    #wtf1=np.sum(iq2mridisk20[:,qcondition2]*normmridisk[:,qcondition2],axis=1)
-    #wtf2=np.sum(iq2mridisk20[:,qcondition2],axis=1)
-    #wtf3=np.sum(normmridisk[:,qcondition2],axis=1)
-    #wtf4=np.sum(qcondition)
-    #print("god=%g %g %g %g" % ( wtf1[0],wtf2[0],wtf3[0],wtf4 ) )
-    #print("god1=%g %g %g %g" % ( wtf1[1],wtf2[1],wtf3[1],wtf4 ) )
-    #print("god2=%g %g %g %g" % ( wtf1[2],wtf2[2],wtf3[2],wtf4 ) )
+    #what1=np.sum(iq2mridisk20[:,qcondition2]*normmridisk[:,qcondition2],axis=1)
+    #what2=np.sum(iq2mridisk20[:,qcondition2],axis=1)
+    #what3=np.sum(normmridisk[:,qcondition2],axis=1)
+    #what4=np.sum(qcondition)
+    #print("god=%g %g %g %g" % ( what1[0],what2[0],what3[0],what4 ) )
+    #print("god1=%g %g %g %g" % ( what1[1],what2[1],what3[1],what4 ) )
+    #print("god2=%g %g %g %g" % ( what1[2],what2[2],what3[2],what4 ) )
     #
     qmridiskweak20=np.copy(qmridiskweak)
     qmridiskweak20[:,qcondition2==False]=0
@@ -15043,13 +15056,13 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     iq2mridiskrfitin2[:,qcondition2==False]=0
     iq2mridiskrfitin2=((iq2mridiskrfitin2[:,qcondition2]*normmridisk[:,qcondition2]).sum(axis=1))/((normmridisk[:,qcondition2]).sum(axis=1))
     #
-    #wtf1=np.sum(iq2mridiskrfitin2[:,qcondition2]*normmridisk[:,qcondition2],axis=1)
-    #wtf2=np.sum(iq2mridiskrfitin2[:,qcondition2],axis=1)
-    #wtf3=np.sum(normmridisk[:,qcondition2],axis=1)
-    #wtf4=np.sum(qcondition)
-    #print("god=%g %g %g %g" % ( wtf1[0],wtf2[0],wtf3[0],wtf4 ) )
-    #print("god1=%g %g %g %g" % ( wtf1[1],wtf2[1],wtf3[1],wtf4 ) )
-    #print("god2=%g %g %g %g" % ( wtf1[2],wtf2[2],wtf3[2],wtf4 ) )
+    #what1=np.sum(iq2mridiskrfitin2[:,qcondition2]*normmridisk[:,qcondition2],axis=1)
+    #what2=np.sum(iq2mridiskrfitin2[:,qcondition2],axis=1)
+    #what3=np.sum(normmridisk[:,qcondition2],axis=1)
+    #what4=np.sum(qcondition)
+    #print("god=%g %g %g %g" % ( what1[0],what2[0],what3[0],what4 ) )
+    #print("god1=%g %g %g %g" % ( what1[1],what2[1],what3[1],what4 ) )
+    #print("god2=%g %g %g %g" % ( what1[2],what2[2],what3[2],what4 ) )
     #
     qmridiskweakrfitin2=np.copy(qmridiskweak)
     qmridiskweakrfitin2[:,qcondition2==False]=0
@@ -18175,15 +18188,15 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         (hoverr_jet_vsr_fit,hoverr_jet_vsr_fitsigma,hoverr_jet_vsr_fitgoodness)=jonpolyfit((np.fabs(r[iin:ijetout,0,0])),(np.fabs(hoverr_jet_vsr[iin:ijetout])),1,dologx=1,dology=1,doabs=1,num=numfit) ; numfit+=1
         # below stalls python for some reason
         #thetaalongfield_fit,#thetaalongfield_fitsigma,#thetaalongfield_fitgoodness)=jonpolyfit((np.fabs(r[iin:ijetout,0,0])),(np.fabs(thetaalongfield[iin:ijetout])),1,dologx=1,dology=1,doabs=1,num=numfit) ; numfit+=1
-        print("wtf1") ; sys.stdout.flush()
+        print("what1") ; sys.stdout.flush()
         (qmridisk_vsr_fit,qmridisk_vsr_fitsigma,qmridisk_vsr_fitgoodness)=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(qmridisk_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1,num=numfit) ; numfit+=1
         (q3mridisk_vsr_fit,q3mridisk_vsr_fitsigma,q3mridisk_vsr_fitgoodness)=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(q3mridisk_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1,num=numfit) ; numfit+=1
-        print("wtf2") ; sys.stdout.flush()
+        print("what2") ; sys.stdout.flush()
         (iq2mridisk_vsr_fit,iq2mridisk_vsr_fitsigma,iq2mridisk_vsr_fitgoodness)=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(iq2mridisk_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1,num=numfit) ; numfit+=1
-        print("wtf3") ; sys.stdout.flush()
+        print("what3") ; sys.stdout.flush()
         (qmridiskweak_vsr_fit,qmridiskweak_vsr_fitsigma,qmridiskweak_vsr_fitgoodness)=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(qmridiskweak_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1,num=numfit) ; numfit+=1
         (q3mridiskweak_vsr_fit,q3mridiskweak_vsr_fitsigma,q3mridiskweak_vsr_fitgoodness)=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(q3mridiskweak_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1,num=numfit) ; numfit+=1
-        print("wtf4") ; sys.stdout.flush()
+        print("what4") ; sys.stdout.flush()
         (iq2mridiskweak_vsr_fit,iq2mridiskweak_vsr_fitsigma,iq2mridiskweak_vsr_fitgoodness)=jonpolyfit((np.fabs(r[iin2:iout2,0,0])),(np.fabs(iq2mridiskweak_vsr[iin2:iout2])),1,dologx=1,dology=1,doabs=1,num=numfit) ; numfit+=1
         #
         print("hoverr_jet_vsr_fit=%g" % (hoverr_jet_vsr_fit[0]))
@@ -18240,7 +18253,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     if dodatavsrh==1 or dofftplot==1 or dospecplot==1:
     #
-        print("wtfa1") ; sys.stdout.flush()
+        print("whata1") ; sys.stdout.flush()
         ###################
         # h1
         ###################
@@ -18306,7 +18319,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         ###################
         # h2
         ###################
-        print("wtfa2") ; sys.stdout.flush()
+        print("whata2") ; sys.stdout.flush()
         # now interpolate from size ny to size nx
         # get \theta at r=8 in size of nx rather than ny
         xold=tj[0,0,0]+(tj[0,:,0]-tj[0,0,0])/(tj[0,-1,0]-tj[0,0,0])
@@ -20010,6 +20023,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     if(len(ts)>=6):
         tsnew,bsqrhosqrad4new=maketsuniform(toplot=bsqrhosqrad4)
         tsnew,bs3rhosqrad4new=maketsuniform(toplot=bs3rhosqrad4)
+    else:
+        tsnew=ts
+        bsqrhosqrad4new=bsqrhosqrad4
+        bs3rhosqrad4new=bs3rhosqrad4
     # 
     # 
     #
@@ -20360,7 +20377,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         #########################################################################################
         # fft needed for specplot
-        if dospecplot==1 and dofftplot==1:
+        if dospecplot==1 and dofftplot==1 and (len(ts)>=6): # fails if not enough times, so skip then
             print("dospecplot==1" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
             # Create a spectogram using matplotlib.mlab.specgram()
             # http://matplotlib.sourceforge.net/api/mlab_api.html#matplotlib.mlab.specgram
@@ -20567,7 +20584,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     for whichfftplot in np.arange(0,numplots):
     #
     #
-        if dofftplot==1 or dospecplot==1: # needed by dospecplot==1
+        if (dofftplot==1 or dospecplot==1) and (len(ts)>=6): # needed by dospecplot==1
             print("dofftplot==1 whichfftplot==%d" % (whichfftplot) + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
             #
             ####################
@@ -20865,7 +20882,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         #########################################################################################
         # fft needed for specplot
-        if dospecplot==1 and dofftplot==1:
+        if dospecplot==1 and dofftplot==1 and (len(ts)>=6):
             print("dospecplot==1" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
             # Create a spectogram using matplotlib.mlab.specgram()
             # http://matplotlib.sourceforge.net/api/mlab_api.html#matplotlib.mlab.specgram
@@ -25704,6 +25721,17 @@ def main(argv=None):
         aphi = None
         gc.collect()
 
+
+def tutorial1():
+    # first load grid file
+    grid3d("gdump.bin")
+    # now try loading a single fieldline file
+    rfd("fieldline0000.bin")
+    # now plot something you read-in
+    plt.figure(1)
+    lrho=np.log(rho)
+    plco(lrho,cb=True,nc=50)
+    plc(aphi,colors='k')
 
 
 if __name__ == "__main__":
