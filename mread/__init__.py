@@ -46,23 +46,45 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
+def test_josh():
+    grid3d("gdump.bin",use2d=1)
+    rfd("fieldline5468.binnewgrid")
+    r_josh()
+    gcov_josh()
+              
 def r_josh():
     global _startx1, _startx2, _startx3
     global x1, x2, x3
-    global r, h, ph
-    _startx1 = np.log(Rin)
-    _endx1 = np.log(Rout)
-    _startx2 = 0
-    _startx3 = 0
-    x1[:,:,:] = np.linspace( _startx1 + 0.5*_dx1, _endx1 - 0.5*_dx1, nx, endpoint = False)[:,None,None]
-    r[:,:,:] = np.exp(x1)[:,:,:]
-    x2 = 0.5*_dx2+_dx2*tj
-    h[:,:,:] = x2[:,:,:]*np.pi
-    x3 = 0.5*_dx3+_dx3*2*np.pi*tk
-    ph[:,:,:] = x3[:,:,:]
+    global r, h, ph, R0
+    if 1:
+		_startx2 = 0
+		_startx3 = 0
+		R0 = 0
+    _startx1 = np.log(Rin-R0)
+    _endx1 = np.log(Rout-R0)
+    if 0:
+        #fixups of the file:
+        x1[:,:,:] = np.linspace( _startx1 + 0.5*_dx1, _endx1 - 0.5*_dx1, nx, endpoint = False)[:,None,None]
+        r[:,:,:] = R0 + np.exp(x1)[:,:,:]
+        x2 = 0.5*_dx2+_dx2*tj
+        h[:,:,:] = x2[:,:,:]*np.pi
+        x3 = 0.5*_dx3+_dx3*2*np.pi*tk
+        ph[:,:,:] = x3[:,:,:]
+    elif 1:
+        _startx1 = 1.*np.log(newRin)
+        _dx1 = 1.*np.log(newRout/newRin)/nx
+        _dx2 = 1./ny
+        _dx3 = 2*np.pi/nz
+        x1 = _startx1 + (ti+0.5)*_dx1
+        x2 = (tj+0.5)*_dx2
+        x3 = (tk+0.5)*_dx3
+        r  = np.exp(newx1)
+        h  = np.pi*newx2
+        ph = newx3
+
 
 def gcov_josh():
-    global r, h, ph, gcov, dxdxp
+    global r, h, ph, gcov, dxdxp, gcon
     hslope = 0
     th_len = np.pi
     M_PI = np.pi
@@ -82,20 +104,28 @@ def gcov_josh():
     hfac = th_len + 2.*M_PI*hslope*cos(2. * M_PI * x2);
     pfac = 1.;
 
-    gcov[TT][TT] = (-1. + 2. * r / rho2) * tfac * tfac;
-    gcov[TT][1] = (2. * r / rho2) * tfac * rfac;
-    gcov[TT][3] = (-2. * a * r * s2 / rho2) * tfac * pfac;
+    gcov[TT,TT] = (-1. + 2. * r / rho2) * tfac * tfac;
+    gcov[TT,1] = (2. * r / rho2) * tfac * rfac;
+    gcov[TT,3] = (-2. * a * r * s2 / rho2) * tfac * pfac;
 
-    gcov[1][TT] = gcov[TT][1];
-    gcov[1][1] = (1. + 2. * r / rho2) * rfac * rfac;
-    gcov[1][3] = (-a * s2 * (1. + 2. * r / rho2)) * rfac * pfac;
+    gcov[1,TT] = gcov[TT,1];
+    gcov[1,1] = (1. + 2. * r / rho2) * rfac * rfac;
+    gcov[1,3] = (-a * s2 * (1. + 2. * r / rho2)) * rfac * pfac;
 
-    gcov[2][2] = rho2 * hfac * hfac;
+    gcov[2,2] = rho2 * hfac * hfac;
 
-    gcov[3][TT] = gcov[TT][3];
-    gcov[3][1] = gcov[1][3];
-    gcov[3][3] = s2 * (rho2 + a * a * s2 * (1. + 2. * r / rho2)) * pfac * pfac;
+    gcov[3,TT] = gcov[TT,3];
+    gcov[3,1] = gcov[1,3];
+    gcov[3,3] = s2 * (rho2 + a * a * s2 * (1. + 2. * r / rho2)) * pfac * pfac;
 
+    gcon = np.copy(gcov)
+
+    #flip off-diagonal element signs
+    #first, flip diagnoal signs
+    for i in xrange(0,4):
+        gcon[i,i,:,:,:] *= -1
+    #next, flip the rest
+    gcon *= -1
 
 
 
@@ -1899,11 +1929,22 @@ def plotnsp(no=30,dnpole=0,doreload=1):
     plt.savefig("ns_ldot.pdf",bbox_inches='tight',pad_inches=0.02)
 
 def k0plot():
+    #sasha philippov
     #for 90 degrees at two rotations
     #plotnsp(no=64) #and read off ltot
-    rstarorlc = [0.2, 3./8., 0.5]
-    ldotff    = [2.08868,   1.79591, 1.54806]
-    ldotmhd   = [2.1663,   1.87401, 1.61609]
+    rstarorlc = [0.1, 0.2, 3./8., 0.5]
+    #the 2.2185 is not converged (only after 1 period)
+    ldotff90    = np.array([2.2185, 2.08868,   1.79591, 1.54806])
+    #the 2.33646 is not converted (only after 2 turns)
+    ldotmhd90   = np.array([2.33252, 2.1663,   1.87401, 1.61609])
+    #need to check if om=0.2 same as at smaller time
+    ldotmhd45   = np.array([1.7000,       1.64364,  1.43659, 1.26705])
+    plt.plot(rstarorlc,ldotmhd90-1,'ro-')
+    plt.plot(rstarorlc,ldotff90-1,'bo-')
+    plt.plot(rstarorlc,(ldotmhd45-1)/np.sin(np.pi*45./180.)**2,'gx-')
+    plt.ylim(0,1.5)
+    #plt.xscale('log')
+    #plt.yscale('log')
 
 def avgvar(funclist, n1 = 0, n2 = 0, calct = 0, use2d = 1 ):
     grid3d("gdump.bin",use2d=use2d)
@@ -4046,6 +4087,7 @@ def rfd(fieldlinefilename,**kwargs):
     #black hole spin
     a=myfloat(float(header[12]))
     rhor = 1+(1-a**2)**0.5
+    R0=myfloat(float(header[13]))
     #Spherical polar radius of the innermost radial cell
     Rin=myfloat(float(header[14]))
     #Spherical polar radius of the outermost radial cell
@@ -4160,17 +4202,19 @@ def rfd(fieldlinefilename,**kwargs):
     if savenewgrid:
         newRin = Rin
         newRout = 1000
+        newR0 = 0
         newd = reinterpfld(d,newRin=newRin,newRout=newRout)
         print( "Saving new grid...", )
         #write out a dump with reinterpolated grid spin:
         gout = open( "dumps/" + fieldlinefilename + "newgrid", "wb" )
         header[4] = "%g" % (1.*np.log(newRin))
-        header[5] = "%g" % (0.)
-        header[6] = "%g" % (0.)
+        header[5] = "%g" % (0.) #_startx2
+        header[6] = "%g" % (0.) #_startx3
         header[7] = "%g" % (1.*np.log(newRout/newRin)/nx)
         header[8] = "%g" % (1./ny)
         header[9] = "%g" % (2*np.pi/nz)
         #Spherical polar radius of the innermost radial cell
+        header[13] = "%g" % newR0
         header[14] = "%g" % newRin
         header[15] = "%g" % newRout
         for headerel in header:
