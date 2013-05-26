@@ -3962,6 +3962,46 @@ def rdo(dump,oldfmt=False):
     """ Read in old dump format """
     rd(dump,oldfmt=True)
 
+def rd2d(dump):
+    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,ti,tj,tk,x1,x2,x3,r,h,ph,rho,ug,vu,B,pg,cs2,Sden,U,gdetB,divb,uu,ud,bu,bd,v1m,v1p,v2m,v2p,gdet,bsq
+    #read image
+    fin = open( "dumps/" + dump, "rb" )
+    header = fin.readline().split()
+    t = myfloat(np.float64(header[0]))
+    nx = int(header[1])
+    ny = int(header[2])
+    nz = 1
+    _dx1=myfloat(float(header[5]))
+    _dx2=myfloat(float(header[6]))
+    _dx3=1.
+    a=myfloat(float(header[9]))
+    gam=myfloat(float(header[10]))
+    Rin=myfloat(float(header[22]))
+    Rout=myfloat(float(header[23]))
+    hslope=myfloat(float(header[24]))
+    R0=myfloat(float(header[25]))
+    fin.close()
+    gd = np.loadtxt( "dumps/"+dump, 
+                  dtype=np.float64, 
+                  skiprows=1, 
+                  unpack = True ).view().reshape((-1,ny,nx), order='F')
+    gd=myfloat(gd.transpose(0,2,1))
+    gd=gd[:,:,:,None]
+    gc.collect()
+    ti,tj,x1,x2,r,h,rho,ug = gd[0:8,:,:].view() 
+    vu=np.zeros_like(gd[0:4])
+    B=np.zeros_like(gd[0:4])
+    vu[1:4] = gd[8:11]
+    B[1:4] = gd[11:14]
+    divb = gd[14]
+    uu = gd[15:19]
+    ud = gd[19:23]
+    bu = gd[23:27]
+    bd = gd[27:31]
+    bsq = mdot(bu,bd)
+    v1m,v1p,v2m,v2p=gd[31:35]
+    gdet=gd[35]
+
 def rd(dump,oldfmt=False):
     global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,ti,tj,tk,x1,x2,x3,r,h,ph,rho,ug,vu,B,pg,cs2,Sden,U,gdetB,divb,uu,ud,bu,bd
     global v1m,v1p,v2m,v2p,v3m,v3p,bsq,olddumpfmt
@@ -4635,7 +4675,7 @@ def mdot(a,b):
     the following structure: tensor[m,n,i,j,k] OR vector[m,i,j,k], 
     where i,j,k are spatial indices and m,n are variable indices. 
     """
-    if a.ndim == 4 and b.ndim == 4:
+    if (a.ndim == 3 and b.ndim == 3) or (a.ndim == 4 and b.ndim == 4):
           c = (a*b).sum(0)
     elif a.ndim == 5 and b.ndim == 4:
           c = np.empty(amax(a[:,0,:,:,:].shape,b.shape),dtype=b.dtype)      
@@ -4675,7 +4715,10 @@ def fcalc():
     """
     Computes the field vector potential
     """
-    daphi = np.sum(gdet*B[1],axis=2)*_dx2*_dx3
+    if len(gdet.shape)==2:
+        daphi = (gdet*B[1])*_dx2*_dx3
+    else:
+        daphi = np.sum(gdet*B[1],axis=2)*_dx2*_dx3
     aphi=daphi.cumsum(axis=1)
     aphi/=(nz*_dx3)
     return(aphi)
@@ -5751,50 +5794,52 @@ def faraday():
     #
     # from jon branch, 04/10/2012
     #
-    B1hat=B[1]*np.sqrt(gv3[1,1])
-    B2hat=B[2]*np.sqrt(gv3[2,2])
-    B3nonhat=B[3]
-    v1hat=uu[1]*np.sqrt(gv3[1,1])/uu[0]
-    v2hat=uu[2]*np.sqrt(gv3[2,2])/uu[0]
-    v3nonhat=uu[3]/uu[0]
-    #
-    aB1hat=np.fabs(B1hat)
-    aB2hat=np.fabs(B2hat)
-    av1hat=np.fabs(v1hat)
-    av2hat=np.fabs(v2hat)
-    #
-    vpol=np.sqrt(av1hat**2 + av2hat**2)
-    Bpol=np.sqrt(aB1hat**2 + aB2hat**2)
-    #
-    #omegaf1b=(omegaf1*aB1hat+omegaf2*aB2hat)/(aB1hat+aB2hat)
-    #E1hat=fdd[0,1]*np.sqrt(gn3[1,1])
-    #E2hat=fdd[0,2]*np.sqrt(gn3[2,2])
-    #Epabs=np.sqrt(E1hat**2+E2hat**2)
-    #Bpabs=np.sqrt(aB1hat**2+aB2hat**2)+1E-15
-    #omegaf2b=Epabs/Bpabs
-    #
-    # assume field swept back so omegaf is always larger than vphi (only true for outflow, so put in sign switch for inflow as relevant for disk near BH or even jet near BH)
-    # GODMARK: These assume rotation about z-axis
-    omegaf2b=np.fabs(v3nonhat) + np.sign(uu[1])*(vpol/Bpol)*np.fabs(B3nonhat)
-    #
-    omegaf1b=v3nonhat - B3nonhat*(v1hat*B1hat+v2hat*B2hat)/(B1hat**2+B2hat**2)
+    if 0:
+        B1hat=B[1]*np.sqrt(gv3[1,1])
+        B2hat=B[2]*np.sqrt(gv3[2,2])
+        B3nonhat=B[3]
+        v1hat=uu[1]*np.sqrt(gv3[1,1])/uu[0]
+        v2hat=uu[2]*np.sqrt(gv3[2,2])/uu[0]
+        v3nonhat=uu[3]/uu[0]
+        #
+        aB1hat=np.fabs(B1hat)
+        aB2hat=np.fabs(B2hat)
+        av1hat=np.fabs(v1hat)
+        av2hat=np.fabs(v2hat)
+        #
+        vpol=np.sqrt(av1hat**2 + av2hat**2)
+        Bpol=np.sqrt(aB1hat**2 + aB2hat**2)
+        #
+        #omegaf1b=(omegaf1*aB1hat+omegaf2*aB2hat)/(aB1hat+aB2hat)
+        #E1hat=fdd[0,1]*np.sqrt(gn3[1,1])
+        #E2hat=fdd[0,2]*np.sqrt(gn3[2,2])
+        #Epabs=np.sqrt(E1hat**2+E2hat**2)
+        #Bpabs=np.sqrt(aB1hat**2+aB2hat**2)+1E-15
+        #omegaf2b=Epabs/Bpabs
+        #
+        # assume field swept back so omegaf is always larger than vphi (only true for outflow, so put in sign switch for inflow as relevant for disk near BH or even jet near BH)
+        # GODMARK: These assume rotation about z-axis
+        omegaf2b=np.fabs(v3nonhat) + np.sign(uu[1])*(vpol/Bpol)*np.fabs(B3nonhat)
+        #
+        omegaf1b=v3nonhat - B3nonhat*(v1hat*B1hat+v2hat*B2hat)/(B1hat**2+B2hat**2)
     #
     # charge
     #
-    rhoc = np.zeros_like(rho)
-    if nx>=2:
-        rhoc[1:-1] += ((gdet*fuu[0,1])[2:]-(gdet*fuu[0,1])[:-2])/(2*_dx1)
-    if ny>2:
-        rhoc[:,1:-1] += ((gdet*fuu[0,2])[:,2:]-(gdet*fuu[0,2])[:,:-2])/(2*_dx2)
-    if ny>=2 and nz > 1: #not sure if properly works for 2D XXX
-        rhoc[:,0,:nz/2] += ((gdet*fuu[0,2])[:,1,:nz/2]+(gdet*fuu[0,2])[:,0,nz/2:])/(2*_dx2)
-        rhoc[:,0,nz/2:] += ((gdet*fuu[0,2])[:,1,nz/2:]+(gdet*fuu[0,2])[:,0,:nz/2])/(2*_dx2)
-    if nz>2:
-        rhoc[:,:,1:-1] += ((gdet*fuu[0,3])[:,:,2:]-(gdet*fuu[0,3])[:,:,:-2])/(2*_dx3)
-    if nz>=2:
-        rhoc[:,:,0] += ((gdet*fuu[0,3])[:,:,1]-(gdet*fuu[0,3])[:,:,-1])/(2*_dx3)
-        rhoc[:,:,-1] += ((gdet*fuu[0,3])[:,:,0]-(gdet*fuu[0,3])[:,:,-2])/(2*_dx3)
-    rhoc /= gdet
+    if 0:
+        rhoc = np.zeros_like(rho)
+        if nx>=2:
+            rhoc[1:-1] += ((gdet*fuu[0,1])[2:]-(gdet*fuu[0,1])[:-2])/(2*_dx1)
+        if ny>2:
+            rhoc[:,1:-1] += ((gdet*fuu[0,2])[:,2:]-(gdet*fuu[0,2])[:,:-2])/(2*_dx2)
+        if ny>=2 and nz > 1: #not sure if properly works for 2D XXX
+            rhoc[:,0,:nz/2] += ((gdet*fuu[0,2])[:,1,:nz/2]+(gdet*fuu[0,2])[:,0,nz/2:])/(2*_dx2)
+            rhoc[:,0,nz/2:] += ((gdet*fuu[0,2])[:,1,nz/2:]+(gdet*fuu[0,2])[:,0,:nz/2])/(2*_dx2)
+        if nz>2:
+            rhoc[:,:,1:-1] += ((gdet*fuu[0,3])[:,:,2:]-(gdet*fuu[0,3])[:,:,:-2])/(2*_dx3)
+        if nz>=2:
+            rhoc[:,:,0] += ((gdet*fuu[0,3])[:,:,1]-(gdet*fuu[0,3])[:,:,-1])/(2*_dx3)
+            rhoc[:,:,-1] += ((gdet*fuu[0,3])[:,:,0]-(gdet*fuu[0,3])[:,:,-2])/(2*_dx3)
+        rhoc /= gdet
 
 def jetpowcalc(which=2,minbsqorho=10,minmu=None,donorthsouth=0,excludebound=True):
     if which==0:
