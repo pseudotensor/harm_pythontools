@@ -371,7 +371,11 @@ def mkvelvsr(dn=2,recomputeavg=0,doreload=0,fntsize=28,avgfname="avgvars.npz",nz
         l1b,=plt.plot(OmegaNS*r[:,0,0],uuffmono,'m--',label=r"$\Omega R$",lw=2)
         l5,=plt.plot(OmegaNS*r[:,0,0],allavgupar,label=r"$u_{||}$",color='c',lw=2)
         l5.set_dashes([10,3,2,3])
-        leg = plt.legend(loc="lower right",bbox_to_anchor=(1,0.2),numpoints=30,labelspacing=0.3,ncol=1,borderpad = 0.3,borderaxespad=0.7,handlelength=2.5,handletextpad=0.2,fancybox=True,columnspacing=0.1)
+        if 1:
+            plt.plot(OmegaNS*r[:,0,0],allavguur,'p:',label=r"$u_R$",lw=2)
+            plt.plot(OmegaNS*r[:,0,0],allavgruuz,'b:',label=r"$u_z$",lw=2)
+            plt.plot(OmegaNS*r[:,0,0],allavgruuph,'r:',label=r"$u_\varphi$",lw=2)
+        leg = plt.legend(loc="upper left",numpoints=30,labelspacing=0.3,ncol=1,borderpad = 0.3,borderaxespad=0.7,handlelength=2.5,handletextpad=0.2,fancybox=True,columnspacing=0.1) #loc="lower right",bbox_to_anchor=(1,0.2)
         plt.xlim(0.+1e-5,4-1e-5)
         plt.ylim(-1.,6.-1e-5)
     # l4,=plt.plot(OmegaNS*r[:,0,0],allavgBr*r[:,0,0]**2,label=r"$u_{||},\ {\rm RMHD}$",color='b',lw=2)
@@ -418,7 +422,7 @@ def mkfig1(dosavefig=1,figno=1):
     os.chdir("/home/atchekho/run2/hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1")
     grid3d("gdump.bin",use2d=True)
     rfd("fieldline0610.bin")
-    mkfig1gen(dosavefig=dosavefig,letter="a",whichvar='Bphi',label=r"$B_\otimes$",dostreamlines=0)
+    #mkfig1gen(dosavefig=dosavefig,letter="a",whichvar='Bphi',label=r"$B_\otimes$",dostreamlines=0)
     mkfig1gen(dosavefig=dosavefig,letter="b",whichvar='wobsqkomi',label=r"$\log_{10}(w/b^2)$",dostreamlines=0)
     
 #mkfig2(ii=95,n1=64,n2=97) #1st run
