@@ -422,8 +422,8 @@ def mkfig1(dosavefig=1,figno=1):
     os.chdir("/home/atchekho/run2/hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1")
     grid3d("gdump.bin",use2d=True)
     rfd("fieldline0610.bin")
-    #mkfig1gen(dosavefig=dosavefig,letter="a",whichvar='Bphi',label=r"$B_\otimes$",dostreamlines=0)
-    mkfig1gen(dosavefig=dosavefig,letter="b",whichvar='wobsqkomi',label=r"$\log_{10}(w/b^2)$",dostreamlines=0)
+    mkfig1gen(dosavefig=dosavefig,letter="a",whichvar='Bphi',label=r"$B_\otimes$",dostreamlines=0)
+    #mkfig1gen(dosavefig=dosavefig,letter="b",whichvar='wobsqkomi',label=r"$\log_{10}(w/b^2)$",dostreamlines=0)
     
 #mkfig2(ii=95,n1=64,n2=97) #1st run
 #mkfig2(ii=95) #subsequent runs
@@ -532,7 +532,7 @@ def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,
     if n1 is not None and n2 is not None:
         computevars(n1=n1,n2=n2)
     if whichvar == 'Bphi':
-        mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=40,plotlen=2.5/OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=kval,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=2,ncell=1600,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5,dosavefig=0,cb=cb,fntsize=20,vmin=vmin,vmax=vmax,whichvar=whichvar,**kwargs)
+        mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=40,plotlen=2.5/OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=kval,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=2,ncell=400,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5,dosavefig=0,cb=cb,fntsize=20,vmin=vmin,vmax=vmax,whichvar=whichvar,**kwargs)
     else:
         deltak = 0
         if whichvar == 'bsqow':
