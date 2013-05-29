@@ -342,8 +342,15 @@ def mkvelvsr(dn=2,recomputeavg=0,doreload=0,fntsize=28,avgfname="avgvars.npz",nz
     avgBsq=mdot(avgBu,avgBd)
     avgBdotv=mdot(avgBd,avgvu)
     avgvpar=np.sign(avgBu[1])*avgBdotv/avgBsq**0.5
+    avgvu_dr=avgvu - avgBdotv*avgBu/avgBsq
+    avguutsq_dr = -1. / mdot(mdot(gv3,avgvu_dr),avgvu_dr)
+    avguut_dr = (avguutsq_dr)**0.5
+    alpha = (-1./gn3[0,0])**0.5
+    avglorgam_dr = alpha * avguut_dr
+    avgu_dr = (avglorgam_dr**2 - 1.)**0.5
     avgupar=avguu[0]*avgvpar
     allavguur = radavg(avguur[:,ny/2-dn:ny/2+dn,nz0-dn:nz0+dn].mean(-1).mean(-1),dn=dn)
+    allavgu_dr = radavg(avgu_dr[:,ny/2-dn:ny/2+dn,nz0-dn:nz0+dn].mean(-1).mean(-1),dn=dn)
     allavgupar = radavg(avgupar[:,ny/2-dn:ny/2+dn,nz0-dn:nz0+dn].mean(-1).mean(-1),dn=dn)
     allavgBr = radavg(avgBr[:,ny/2-dn:ny/2+dn,nz0-dn:nz0+dn].mean(-1).mean(-1),dn=dn)
     var = avgbsq/(avgrho+gam*avgug)
@@ -368,6 +375,8 @@ def mkvelvsr(dn=2,recomputeavg=0,doreload=0,fntsize=28,avgfname="avgvars.npz",nz
         plt.ylim(-1.,6.-1e-5)
     else:
         plt.plot(OmegaNS*r[:,0,0],allavguu,label=r"$u$",color='g',lw=2)
+        l,=plt.plot(OmegaNS*r[:,0,0],allavgu_dr,label=r"$u_{\rm dr}$",color='r',lw=2)
+        l.set_dashes([10,3,2,3])
         l1b,=plt.plot(OmegaNS*r[:,0,0],uuffmono,'m--',label=r"$\Omega R$",lw=2)
         l5,=plt.plot(OmegaNS*r[:,0,0],allavgupar,label=r"$u_{||}$",color='c',lw=2)
         l5.set_dashes([10,3,2,3])
