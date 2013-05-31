@@ -22,7 +22,6 @@ def setpythonpath():
         pythonpath=""
     #
 
-
 def getpythonpath():
     import os
     localpythonpath=os.environ['PYTHONPATH'].split(os.pathsep)
@@ -110,7 +109,7 @@ def runglobalsetup(argv=None):
     setpythonpath()
     #
     global runtype
-    if len(sys.argv[1:])>0:
+    if len(sys.argv[1:])>0 and sys.argv[1] != '--pylab':  # MAVARA added 'and sys.argv[1] test so can use main() after running __init__.py from ipython terminal
         runtype=int(sys.argv[1])
     else:
         print("No run type specified") ; sys.stdout.flush()
@@ -25684,7 +25683,7 @@ def main(argv=None):
         if doreaddump:
             rd("dump0000.bin")
         #   or, instead of dump, you could read in fieldline0000.bin
-        rfdfirstfile()
+        rfdfirstfile()  #MAVARA replace with rfd("fieldline1800.bin") for analysis of another output time
         #3 compute extra things
         docomputeextrathings = False
         if docomputeextrathings:
@@ -25720,6 +25719,7 @@ def main(argv=None):
         udphi = None
         aphi = None
         gc.collect()
+        raw_input("")
 
 
 def tutorial1():
@@ -25731,8 +25731,67 @@ def tutorial1():
     plt.figure(1)
     lrho=np.log(rho)
     plco(lrho,cb=True,nc=50)
+    aphi = fieldcalc() # keep sign information
     plc(aphi,colors='k')
 
+def marktesttutorial1():
+    # first load grid file
+    grid3d("gdump.bin")
+    # now try loading a single fieldline file
+    rfd("fieldline0000.bin")
+    # now plot something you read-in
+    cvel()
+    fig = plt.figure(1)
+    ax = fig.add_subplot(111, aspect='equal')
+    lrho=np.log(rho)
+    lbeta=np.log(beta)
+    print("length of beta variable: ",beta.shape)
+    print("mean along radius in disk at phi=0: ", np.mean(beta[:,31,0]))
+    plt.clf()
+    plt.plot(bu[1][:,31,0])    #beta[:,31,0])
+    #plco(beta,cb=True,nc=50)
+
+    fig = plt.figure(2)  #open figure 2
+    ax = fig.add_subplot(111, aspect='equal')
+    plco(lbeta,cb=True,nc=50,xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+#    plc(beta,nc=100,colors='k',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    plt.xlim(0,50)
+    plt.ylim(-25,25)
+    ax.set_aspect('equal')   
+    fig = plt.figure(3)  #open figure 2
+    ax = fig.add_subplot(111, aspect='equal')
+    plco(lrho,cb=True,nc=50,xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+#    plc(beta,nc=100,colors='k',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    plt.xlim(0,50)
+    plt.ylim(-25,25)
+    ax.set_aspect('equal')
+
+def plotvertfieldequator():
+    # first load grid file
+    grid3d("gdump.bin")
+    # now try loading a single fieldline file
+    rfd("fieldline0000.bin")
+    # now plot something you read-in
+    cvel()
+    fig = plt.figure(1)
+    ax = fig.add_subplot(111, aspect='equal')
+    lrho=np.log(rho)
+    lbeta=np.log(beta)
+    print("length of beta variable: ",beta.shape)
+    print("mean along radius in disk at phi=0: ", np.mean(beta[:,31,0]))
+    plt.clf()
+    Bd = mdot(gv3,B) 
+    #plt.plot(bsq[:,31,0])
+    #test3 = r[:,31,0]**-1 * sqrt((3*0**2-4*0*sqrt(r[:,31,0])+r[:,31,0]**2)/(r[:,31,0]**2 *(0+pow(r[:,31,0],3./2)**2)))
+    #test2 = r[:,31,0]**-1 * sqrt((3*.97**2-4*.97*sqrt(r[:,31,0])+r[:,31,0]**2)/(r[:,31,0]**2 *(.97+pow(r[:,31,0],3./2)**2)))
+    #test3[0] = 0.0
+    #plt.plot(test3*.0002, linestyle='none', marker='.')
+    #plt.plot(test2*.0002, linestyle='none', marker='.')
+    #plt.ylim([1e-8, 1e-4])
+    #plt.yscale('log')
+    #plt.plot((B[2,:,31,0]*Bd[2,:,31,0]), marker='o')    #beta[:,31,0])     np.log10()
+    plt.plot(r[:,31,0],beta[:,31,0], linestyle='none', marker='.' )
+    #plco(beta,cb=True,nc=50)
 
 if __name__ == "__main__":
     # no, can't use sys.exit since want C code that calls this to continue after done
