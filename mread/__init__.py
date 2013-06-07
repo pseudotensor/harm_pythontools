@@ -1647,8 +1647,9 @@ def assignavg2dvars(avgmem):
     global avg_absrhouu,avg_absfdd
     global avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
     global avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
-    global avg_TudPA, avg_TudEN
+    global avg_TudPA, avg_TudEN, avg_TudRAD
     global avg_gamma,avg_pg,avg_pb,avg_beta
+    global avg_KAPPAUSER,avg_KAPPAESUSER
     #avg defs
     i=0
     # 1
@@ -1742,6 +1743,7 @@ def assignavg2dvars(avgmem):
     #P/IE
     avg_TudPA=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
     avg_TudEN=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
+    avg_TudRAD=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
     # 3
     #mu,sigma
     n=1
@@ -1751,6 +1753,9 @@ def assignavg2dvars(avgmem):
     # 1
     n=1
     avg_psisq=avgmem[i,:,:,None];i+=n
+    #
+    avg_KAPPAUSER=avgmem[i,:,:,None];i+=1 # i=1
+    avg_KAPPAESUSER=avgmem[i,:,:,None];i+=1 # i=1
     #
     # number of full 2D quantities
     nqtyavg=i
@@ -1797,6 +1802,7 @@ def getnqtyavg():
     #value=1 + 4 + 16 + 6 + 4 + 24 + 32 + 80 + 32 + 32 + 3 + 6 + 1
     # added&moved abs versions
     value=1 + 4 + 16*2 + 6*2 + 4*2 + 24+4 + 32+16 + 80 + 32 + 32 + 3 + 1
+    value=value+16+2 # for TudRAD and KAPPAUSER and KAPPAESUSER
     return(value)
 
 
@@ -2020,10 +2026,11 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     """
     global avg_ts,avg_te,avg_nitems,avg_rho,avg_ug,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_omegaf2b,avg_omegaf1,avg_omegaf1b,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
     global avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
-    global avg_TudPA, avg_TudEN
+    global avg_TudPA, avg_TudEN,avg_TudRAD
     global avg_absuu,avg_absbu,avg_absud,avg_absbd
     global avg_absomegaf2,avg_absomegaf2b,avg_absomegaf1,avg_absomegaf1b
     global avg_absrhouu,avg_absfdd
+    global avg_KAPPAUSER,avg_KAPPAESUSER
     global firstfieldlinefile
     #
     if whichgroup < 0 or itemspergroup <= 0:
@@ -2211,6 +2218,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         #PA/IE (EM is B) -- for gammie plot
         avg_TudPA+=TudPA.sum(-1)[:,:,:,:,None]*localdt[itert]
         avg_TudEN+=TudEN.sum(-1)[:,:,:,:,None]*localdt[itert]
+        avg_TudRAD+=TudRAD.sum(-1)[:,:,:,:,None]*localdt[itert]
         #
         # 3
         #mu,sigma
@@ -2219,6 +2227,8 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         avg_bsqorho += (bsq/rhounclean).sum(-1)[:,:,None]*localdt[itert] # keep as unclean since want to know what bsqorho is
         #
         #
+        avg_KAPPAUSER+=KAPPAUSER.sum(-1)[:,:,None]*localdt[itert]
+        avg_KAPPAESUSER+=KAPPAESUSER.sum(-1)[:,:,None]*localdt[itert]
         # 1
         n=1
         aphi = fieldcalcface()
@@ -2524,6 +2534,13 @@ def issashamodel(modelname):
 
 def ismb09model(modelname):
     if modelname=="runlocaldipole3dfiducial" or modelname=="blandford3d_new":
+        return(1)
+    else:
+        return(0)
+    #
+
+def isradmodelA(modelname):
+    if modelname=="runrad1" or modelname=="runrad2":
         return(1)
     else:
         return(0)
@@ -4043,9 +4060,11 @@ def intangle_foravg2d(qty,hoverr=None,thetamid=np.pi/2,minbsqorho=None,maxbsqorh
         qtynew=qty
     #
     # translate from avg to normal quantity
-    global bsq,rho,ug,uu,ud,rhoclean,ugclean,rhounclean,ugunclean,enth,unb,isunbound,tiny,entropy
+    global bsq,rho,ug,uu,ud,rhoclean,ugclean,rhounclean,ugunclean,enth,unb,isunbound,tiny,entropy,Erf,uradu,uradd
     bsq=avg_bsq
     rho=avg_rho
+    KAPPAUSER=avg_KAPPAUSER
+    KAPPAESUSER=avg_KAPPAESUSER
     ug=avg_ug
     uu=avg_uu
     ud=avg_ud
@@ -5241,7 +5260,7 @@ def ftr(x,xb,xf):
 
 
 # dobhfield=True : GODMARK: Set to False since already showing BH penetrating field because comes from large radii down to hole
-def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,len=20,lenx=None,leny=None,ncell=800,pt=True,shrink=1,dovel=False,doaphi=False,dostreamlines=True,doaphiavg=False,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,doentropy=False,dobsq=False,dobeta=False,doQ1=False,doQ2=False,dovarylw=True,dobhfield=False,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,domidfield=True,showjet=False,arrowsize=1,forceeqsym=0,dojonwindplot=False,doaphicont=None,inputlevs=None,numcontours=30,signaphi=1,aphipow=1.0,showuu1eq0=True,inputcoloraphi=None):
+def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,len=20,lenx=None,leny=None,ncell=800,pt=True,shrink=1,dovel=False,doaphi=False,dostreamlines=True,doaphiavg=False,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,doentropy=False,dobsq=False,dobeta=False,doQ1=False,doQ2=False,doErf=False,dovarylw=True,dobhfield=False,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,domidfield=True,showjet=False,arrowsize=1,forceeqsym=0,dojonwindplot=False,dotaurad=False,dobsqorholine=False,doaphicont=None,inputlevs=None,numcontours=30,signaphi=1,aphipow=1.0,showuu1eq0=True,inputcoloraphi=None):
     #
     levs=inputlevs
     #
@@ -5268,11 +5287,12 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
     #
     #
     ####################
-    if dojonwindplot==1:
+    # always compute in case want to show, but use dojonwindplot==? to control if shown in some cases
+    if 1==1 or dojonwindplot==1:
         #
         # below needed in case operating on averages instead of from rfd()
-        uu=uutrue
-        (rhoclean,ugclean,uu,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
+        #uu=uutrue
+        (rhoclean,ugclean,uufuck,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
         localmaxbsqorho=maxbsqorhonear
         #ud = mdot(gv3,uu)                  #g_mn u^n
         # no, assume any cleaning occurs upon rfd() and averages get that result
@@ -5297,13 +5317,46 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         #imu = reinterp(mu,extent,ncell,domask=1.0)
         #
         iuu1  = reinterp(uu[1],extent,ncell,domask=1.0)
+        #
+        taurad1=(KAPPAUSER+KAPPAESUSER)*_dx1*np.sqrt(np.fabs(gv3[1,1]))
+        radiussettau1zero=80
+        taurad1[r[:,0,0]>radiussettau1zero,:,:]=0 # to get rid of parts of flow that aren't in steady-state and wouldn't have contributed
+        #print("taurad1") ; sys.stdout.flush()
+        #print(taurad1[:,0,0]) ; sys.stdout.flush()
+        #print("r") ; sys.stdout.flush()
+        #print(r[:,0,0]) ; sys.stdout.flush()
+        taurad1integrated=np.cumsum(taurad1,axis=0)
+        #print("taurad1integrated") ; sys.stdout.flush()
+        #print(taurad1integrated[:,0,0]) ; sys.stdout.flush()
+        #
+        taurad1flip=taurad1[::-1,:,:]
+        taurad1flipintegrated=np.cumsum(taurad1flip,axis=0)
+        taurad1flipintegrated=taurad1flipintegrated[::-1,:,:]
+        #print("taurad1flipintegrated") ; sys.stdout.flush()
+        #print(taurad1flipintegrated[:,0,0]) ; sys.stdout.flush()
+        #
+        taurad2=(KAPPAUSER+KAPPAESUSER)*_dx2*np.sqrt(np.fabs(gv3[2,2]))
+        taurad2integrated=np.cumsum(taurad2,axis=1)
+        #
+        taurad2flip=taurad2[:,::-1,:]
+        taurad2flipintegrated=np.cumsum(taurad2flip,axis=1)
+        taurad2flipintegrated=taurad2integrated[:,::-1,:]
+        #
+        taurad3=(KAPPAUSER+KAPPAESUSER)*_dx3*np.sqrt(np.fabs(gv3[3,3]))
+        #
+        itaurad1integrated = reinterp(taurad1integrated,extent,ncell,domask=1.0)
+        itaurad1flipintegrated = reinterp(taurad1flipintegrated,extent,ncell,domask=1.0)
+        itaurad2integrated = reinterp(taurad2integrated,extent,ncell,domask=1.0)
+        itaurad2flipintegrated = reinterp(taurad2flipintegrated,extent,ncell,domask=1.0)
     #
     ####################
     #
     # get iqty
-    print("dorho=%d doentropy=%d dobsq=%d dobeta=%d doQ1=%d doQ2=%d dovel=%d: vmin=%g vmax=%g" % (dorho,doentropy,dobsq,dobeta,doQ1,doQ2,dovel,vmin,vmax)) ; sys.stdout.flush()
+    print("dorho=%d doentropy=%d dobsq=%d dobeta=%d doErf=%d doQ1=%d doQ2=%d dovel=%d: vmin=%g vmax=%g" % (dorho,doentropy,dobsq,dobeta,doErf,doQ1,doQ2,dovel,vmin,vmax)) ; sys.stdout.flush()
     doqty=0
     dologz=0
+    streamtype=1
+    #
     if dorho:
         lrho=np.log10(rho+1E-30)
         dologz=1
@@ -5320,6 +5373,12 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         qty=lbsq # SUPERGOD
         #qty=gdet*TudEM[1,0] # SUPERGOD
         doqty=1
+    elif doErf:
+        lErf=np.log10(Erf+1E-30)
+        dologz=1
+        qty=lErf
+        doqty=1
+        streamtype=2
     elif dobeta:
         lbeta=np.log10(betatoplot+1E-30)
         dologz=1
@@ -5390,11 +5449,12 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         ncont = numcontours #30
         if inputlevs is None:
             levs=np.linspace(miniaphi,maxiaphi,ncont)
-            print("levsA=%g",levs)
         else:
             levs=inputlevs
-            print("levsB=%g",levs)
         #
+        # to get rid of zero contours that are just noise -- especially near t=0
+        levs=levs[np.fabs(levs[:])>1E-10]
+        print("levs=%21.15g",levs)
     #
     print("HERE2") ; sys.stdout.flush()
     if doaphiavg==1:
@@ -5429,10 +5489,11 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         if inputlevs is None:
             #levs=np.linspace(-maxabsiaphi,maxabsiaphi,ncont) # um, iaphi is never negative
             levs=np.linspace(0,maxabsiaphi,ncont)
-            print("levs2A=%g",levs)
         else:
             levs=inputlevs
-            print("levs2B=%g",levs)
+        # to get rid of zero contours that are just noise -- especially near t=0
+        levs=levs[np.fabs(levs[:])>1E-10]
+        print("levs2=%21.15g",levs)
         #
     #
     #print("dovel=%d checkstream: %g" % (dovel,B[1][30,ny/2,0]))
@@ -5454,9 +5515,18 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         #
         # note, below is not necessarily B, can be uu
         # convert from x^(i) to B^{r,h,ph}
-        Br = dxdxp[1,1]*B[1]+dxdxp[1,2]*B[2]
-        Bh = dxdxp[2,1]*B[1]+dxdxp[2,2]*B[2]
-        Bp = B[3]*dxdxp[3,3]
+        if streamtype==1:
+            Br = dxdxp[1,1]*B[1]+dxdxp[1,2]*B[2]
+            Bh = dxdxp[2,1]*B[1]+dxdxp[2,2]*B[2]
+            Bp = B[3]*dxdxp[3,3]
+        else:
+            Br = dxdxp[1,1]*uradu[1]/uradu[0]+dxdxp[1,2]*uradu[2]/uradu[0]
+            Bh = dxdxp[2,1]*uradu[1]/uradu[0]+dxdxp[2,2]*uradu[2]/uradu[0]
+            Bp = uradu[3]/uradu[0]*dxdxp[3,3]
+            # sign issue with fstreamplot()
+            #Br = -Br
+            #Bh = -Bh
+            #Bp = -Bp
         #
         # note that this conversion to orthonormal basis ignores GR!
         Brnorm=Br
@@ -5617,13 +5687,17 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         #cset2 = ax.contour(iaphi,linewidths=2.0,colors='r', extent=extent,hold='on',origin='lower',levels=levs)
         # can't see red on red density
         if inputcoloraphi==None:
-            inputcoloraphi='red'
+            #inputcoloraphi='red'
+            inputcoloraphi='black'
         #
-        cset2 = ax.contour(iaphi,linewidths=2.0,colors=inputcoloraphi, extent=extent,hold='on',origin='lower',levels=levs)
+        #lweightaphi=4.0
+        lweightaphi=1.0
+        #
+        cset2 = ax.contour(iaphi,linewidths=lweightaphi,colors=inputcoloraphi, extent=extent,hold='on',origin='lower',levels=levs)
         if doaphicont is not None:
             #cset3 = ax.contour(iaphi,linewidths=4.0,colors='#00aa00', extent=extent,hold='on',origin='lower',levels=(doaphicont,))
             # just have as really thick so obvious
-            cset3 = ax.contour(iaphi,linewidths=4.0,colors=inputcoloraphi, extent=extent,hold='on',origin='lower',levels=(doaphicont,))
+            cset3 = ax.contour(iaphi,linewidths=lweightaphi,colors=inputcoloraphi, extent=extent,hold='on',origin='lower',levels=(doaphicont,))
     #
     print("HERE8") ; sys.stdout.flush()
     if dostreamlines==1 and dovel==0: # problem with hang on dovel==1
@@ -5633,11 +5707,24 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
             #lw *= ftr(np.log10(amax(iibeta,1e-6+0*iibeta)),-3.5,-3.4)
             # if t < 1500:
             #lw *= ftr(iaphi,0.001,0.002)
+            # overwrite for radiation stream lines
+            if streamtype==2:
+                lw = 1.0+1*ftr(np.log10(amax(ibsqo2rho,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
+            #
         fstreamplot(yi,xi,iBR,iBz,ua=iBaR,va=iBaz,useblank=useblank,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=detectLoops,dodiskfield=dodiskfield,dobhfield=dobhfield,startatmidplane=startatmidplane,domidfield=domidfield,a=a,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,dsval=dsval,color=color,doarrows=doarrows,dorandomcolor=dorandomcolor,skipblankint=skipblankint,minindent=minindent,minlengthdefault=minlengthdefault,arrowsize=arrowsize)
         #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
     #
     # goes on top:
-    print("HERE9") ; sys.stdout.flush()
+    print("HERE9a") ; sys.stdout.flush()
+    if dotaurad:
+        ax.contour(itaurad1flipintegrated,linewidths=4,colors='cyan', extent=extent,hold='on',origin='lower',levels=(1,))
+        ax.contour(itaurad2integrated,linewidths=4,colors='red', extent=extent,hold='on',origin='lower',levels=(1,))
+        ax.contour(itaurad2flipintegrated,linewidths=4,colors='red', extent=extent,hold='on',origin='lower',levels=(1,))
+    print("HERE9b") ; sys.stdout.flush()
+    if dobsqorholine:
+        ax.contour(ibsqorho,linewidths=4,colors='red', extent=extent,hold='on',origin='lower',levels=(1,))  # 29.5
+    #
+    print("HERE9c") ; sys.stdout.flush()
     if dojonwindplot:
         mwindmaxbeta=2
         #ax.contour(imu,linewidths=4,colors='g', extent=extent,hold='on',origin='lower',levels=(1,2,))
@@ -5657,14 +5744,17 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
     #CS.set_axis_bgcolor("#bdb76b")
     #plt.title(r'$\log_{10}\rho$ at $t = %4.0f$' % t)
     if True == pt:
-        plt.title('log rho at t = %4.0f' % t)
+        if dorho==1:
+            plt.title('log rho at t = %4.0f' % t)
+        if doErf==1:
+            plt.title('log Erf at t = %4.0f' % t)
     #if None != fname:
     #    plt.savefig( fname + '.png' )
     return(levs)
 
 
 
-def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,arrowsize=1,dorho=True,doentropy=False,dobsq=False,dobeta=False,doQ1=False,doQ2=False):
+def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,arrowsize=1,dorho=True,doentropy=False,dobsq=False,dobeta=False,doQ1=False,doQ2=False,doErf=False):
     extent=(-len,len,-len,len)
     palette=cm.jet
     palette.set_bad('k', 1.0)
@@ -5673,9 +5763,12 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
     #
     ####################
     # get iqty
-    print("dorho=%d doentropy=%d dobsq=%d dobeta=%d doQ1=%d doQ2=%d : vmin=%g vmax=%g" % (dorho,doentropy,dobsq,dobeta,doQ1,doQ2,vmin,vmax)) ; sys.stdout.flush()
+    print("dorho=%d doentropy=%d dobsq=%d dobeta=%d doQ1=%d doQ2=%d doErf=%d : vmin=%g vmax=%g" % (dorho,doentropy,dobsq,dobeta,doQ1,doQ2,doErf,vmin,vmax)) ; sys.stdout.flush()
+    # defaults:
     doqty=0
     dologz=0
+    streamtype=1
+    #
     if dorho:
         lrho=np.log10(rho+1E-30)
         dologz=1
@@ -5691,6 +5784,12 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
         dologz=1
         qty=lbsq
         doqty=1
+    elif doErf:
+        lErf=np.log10(Erf+1E-30)
+        dologz=1
+        qty=lErf
+        doqty=1
+        streamtype=2
     elif dobeta:
         qty=betatoplot
         dologz=0
@@ -5726,9 +5825,14 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
     #    c.set_linestyle('solid')
     #CS = plt.contourf(xi,yi,zi,15,cmap=palette)
     if dostreamlines:
-        Br = dxdxp[1,1]*B[1]+dxdxp[1,2]*B[2]
-        Bh = dxdxp[2,1]*B[1]+dxdxp[2,2]*B[2]
-        Bp = B[3]*dxdxp[3,3]
+        if streamtype==1:
+            Br = dxdxp[1,1]*B[1]+dxdxp[1,2]*B[2]
+            Bh = dxdxp[2,1]*B[1]+dxdxp[2,2]*B[2]
+            Bp = B[3]*dxdxp[3,3]
+        else:
+            Br = dxdxp[1,1]*uradu[1]/uradu[0]+dxdxp[1,2]*uradu[2]/uradu[0]
+            Bh = dxdxp[2,1]*uradu[1]/uradu[0]+dxdxp[2,2]*uradu[2]/uradu[0]
+            Bp = uradu[3]/uradu[0]*dxdxp[3,3]
         #
         #
         Brnorm=Br
@@ -5776,7 +5880,10 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
                 cbar = plt.colorbar(CS,ax=ax,shrink=shrink,format=r'$10^{%0.1f}$')
     #plt.title(r'$\log_{10}\rho$ at $t = %4.0f$' % t)
     if True == pt:
-        plt.title('log rho at t = %4.0f' % t)
+        if dorho==1:
+            plt.title('log rho at t = %4.0f' % t)
+        if doErf==1:
+            plt.title('log Erf at t = %4.0f' % t)
     #
     #if None != fname:
     #    plt.savefig( fname + '.png' )
@@ -6416,19 +6523,19 @@ def ravg(dumpname):
         fin = open( "dumps/%s-col%04d" % ( dumpname, i ) , "rb" )
         print("Reading %s-col%04d..." % (dumpname,i) ) ; sys.stdout.flush()
         header = fin.readline().split()
-        t = myfloat(np.float64(header[0]))
+        t = myfloatalt(np.float64(header[0]))
         nx = int(header[1])
         ny = int(header[2])
         nz = int(header[3])
         if j == 0:
             avgU=np.zeros((ilist.shape[0],nx,ny,nz),dtype=np.float32)
-        _dx1=myfloat(float(header[7]))
-        _dx2=myfloat(float(header[8]))
-        _dx3=myfloat(float(header[9]))
-        gam=myfloat(float(header[11]))
-        a=myfloat(float(header[12]))
-        Rin=myfloat(float(header[14]))
-        Rout=myfloat(float(header[15]))
+        _dx1=myfloatalt(float(header[7]))
+        _dx2=myfloatalt(float(header[8]))
+        _dx3=myfloatalt(float(header[9]))
+        gam=myfloatalt(float(header[11]))
+        a=myfloatalt(float(header[12]))
+        Rin=myfloatalt(float(header[14]))
+        Rout=myfloatalt(float(header[15]))
         if dumpname.endswith(".bin"):
             body = np.fromfile(fin,dtype=np.float64,count=-1)  #nx*ny*nz*11)
             gd = body.view().reshape((-1,nx,ny,nz),order='F')
@@ -6878,17 +6985,17 @@ def rd(dump,oldfmt=False):
     olddumpfmt = oldfmt
     fin = open( "dumps/" + dump, "rb" )
     header = fin.readline().split()
-    t = myfloat(np.float64(header[0]))
+    t = myfloatalt(np.float64(header[0]))
     nx = int(header[1])
     ny = int(header[2])
     nz = int(header[3])
-    _dx1=myfloat(float(header[7]))
-    _dx2=myfloat(float(header[8]))
-    _dx3=myfloat(float(header[9]))
-    gam=myfloat(float(header[11]))
-    a=myfloat(float(header[12]))
-    Rin=myfloat(float(header[14]))
-    Rout=myfloat(float(header[15]))
+    _dx1=myfloatalt(float(header[7]))
+    _dx2=myfloatalt(float(header[8]))
+    _dx3=myfloatalt(float(header[9]))
+    gam=myfloatalt(float(header[11]))
+    a=myfloatalt(float(header[12]))
+    Rin=myfloatalt(float(header[14]))
+    Rout=myfloatalt(float(header[15]))
     if dump.endswith(".bin"):
         body = np.fromfile(fin,dtype=np.float64,count=-1)  #nx*ny*nz*11)
         gd = body.view().reshape((-1,nx,ny,nz),order='F')
@@ -6952,51 +7059,52 @@ def rfdheader(fin=None):
     global MBH,QBH,EP3,THETAROT,_is,_ie,_js,_je,_ks,_ke,whichdump,whichdumpversion,numcolumns
     global rhor
     #
+    #
     header = fin.readline().split()
     #
     numheaderitems=len(header) #.shape[0]
     #
     #
     #time of the dump
-    t = myfloat(np.float64(header[0]))
+    t = myfloatalt(np.float64(header[0]))
     print("rfdheader: t=%g" % (t)) ; sys.stdout.flush()
     #dimensions of the grid
     nx = int(header[1])
     ny = int(header[2])
     nz = int(header[3])
     #
-    startx1=myfloat(float(header[4]))
-    startx2=myfloat(float(header[5]))
-    startx3=myfloat(float(header[6]))
+    startx1=myfloatalt(float(header[4]))
+    startx2=myfloatalt(float(header[5]))
+    startx3=myfloatalt(float(header[6]))
     #cell size in internal coordintes
-    _dx1=myfloat(float(header[7]))
-    _dx2=myfloat(float(header[8]))
-    _dx3=myfloat(float(header[9]))
+    _dx1=myfloatalt(float(header[7]))
+    _dx2=myfloatalt(float(header[8]))
+    _dx3=myfloatalt(float(header[9]))
     #
     nstep=int(header[10])
     #other information: 
     #polytropic index
-    gam=myfloat(float(header[11]))
+    gam=myfloatalt(float(header[11]))
     #black hole spin
-    a=myfloat(float(header[12]))
+    a=myfloatalt(float(header[12]))
     rhor=1+(1-a**2)**0.5
-    R0=myfloat(float(header[13]))
+    R0=myfloatalt(float(header[13]))
     #Spherical polar radius of the innermost radial cell
-    Rin=myfloat(float(header[14]))
+    Rin=myfloatalt(float(header[14]))
     #Spherical polar radius of the outermost radial cell
-    Rout=myfloat(float(header[15]))
+    Rout=myfloatalt(float(header[15]))
     #
-    hslope=myfloat(float(header[16]))
+    hslope=myfloatalt(float(header[16]))
     #
-    rundt=myfloat(float(header[17]))
+    rundt=myfloatalt(float(header[17]))
     defcoord=int(header[18])
     #
     if numheaderitems==32:
         print("Found 32 header items, reading them in\n")  ; sys.stdout.flush()
-        MBH=myfloat(float(header[19]))
-        QBH=myfloat(float(header[20]))
-        EP3=myfloat(float(header[21]))
-        THETAROT=myfloat(float(header[22]))
+        MBH=myfloatalt(float(header[19]))
+        QBH=myfloatalt(float(header[20]))
+        EP3=myfloatalt(float(header[21]))
+        THETAROT=myfloatalt(float(header[22]))
         #
         _is=int(header[23])
         _ie=int(header[24])
@@ -7010,9 +7118,9 @@ def rfdheader(fin=None):
     #
     if numheaderitems==31:
         print("Found 31 header items, reading them in and setting THETAROT=0.0\n")  ; sys.stdout.flush()
-        MBH=myfloat(float(header[19]))
-        QBH=myfloat(float(header[20]))
-        EP3=myfloat(float(header[21]))
+        MBH=myfloatalt(float(header[19]))
+        QBH=myfloatalt(float(header[20]))
+        EP3=myfloatalt(float(header[21]))
         THETAROT=0.0
         #
         _is=int(header[22])
@@ -7027,8 +7135,8 @@ def rfdheader(fin=None):
     #
     if numheaderitems==30:
         print("Found 30 header items, reading them in and setting EP3=THETAROT=0.0\n")  ; sys.stdout.flush()
-        MBH=myfloat(float(header[19]))
-        QBH=myfloat(float(header[20]))
+        MBH=myfloatalt(float(header[19]))
+        QBH=myfloatalt(float(header[20]))
         EP3=0.0
         THETAROT=0.0
         #
@@ -7085,7 +7193,7 @@ def rfd(fieldlinefilename,**kwargs):
     #Velocity components: u1, u2, u3, 
     #Cell-centered magnetic field components: B1, B2, B3, 
     #Face-centered magnetic field components multiplied by metric determinant: gdetB1, gdetB2, gdetB3
-    global rho,ug,uu,B,gdetB
+    global rho,ug,uu,B,gdetB,Erf,uradu
     #
     #read image
     #
@@ -7207,9 +7315,11 @@ def rfd(fieldlinefilename,**kwargs):
     #
     #
     #
+    global numcolumns
+    print("numcolumnshere: %d" % (numcolumns)) ; sys.stdout.flush()
     #
     gotgdetB=0
-    if(d.shape[0]>=14):
+    if(d.shape[0]>=14 and numcolumns==11+3):
         print("Getting gdetB: dshape0=%d" % (d.shape[0])) ; sys.stdout.flush()
         #new image format additionally contains gdet*B^i
         #face-centered magnetic field components multiplied by gdet
@@ -7219,6 +7329,39 @@ def rfd(fieldlinefilename,**kwargs):
         gdetB = np.copy(d[10:14,:,:,:])
         gdetB[0]=0*gdetB[0]
         gotgdetB=1
+    #
+    #
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
+    global KAPPAUSER,KAPPAESUSER
+    #
+    if(numcolumns==16):
+        Erf=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
+        uradu=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
+        Erf=d[11,:,:,:] # radiation frame radiation energy density
+        uradu=d[12:16,:,:,:]  #again, note uu[i] are 3-velocities (as read from the fieldline file)
+        #multiply by u^t to get 4-velocities: u^i = u^t v^i
+        uradu[1:4]=uradu[1:4] * uradu[0]
+        #
+        maxErf=np.max(Erf)
+        minErf=np.min(Erf)
+        print("maxErf=%g minErf=%g" % (maxErf,minErf)) ; sys.stdout.flush()
+        #
+        rddims()
+        #
+        # now compute auxillary opacity related quantities since only otherwise in raddump???? files and not in fieldline files
+        KAPPA=1.0
+        KAPPAES=1.0
+        # KORALTODO: Put a lower limit on T~1E4K so not overly wrongly opaque in spots where u_g->0 anomologously?
+        T1E4K=(1.0E4/TEMPBAR)
+        # ideal gas assumed for Tgas
+        # code pg
+        pg=(gam-1.0)*ug
+        # code Tgas
+        Tgas=pg/rho
+        KAPPAUSER=(rho*KAPPA*KAPPA_FF_CODE(rho,Tgas+T1E4K))
+        KAPPAESUSER=(rho*KAPPAES*KAPPA_ES_CODE(rho,Tgas))
+        #
+    #
     #
     # see if THETAROT non-zero so need to rotate and transform data
     global nzgdump
@@ -7259,6 +7402,9 @@ def rfd(fieldlinefilename,**kwargs):
             if gotgdetB==1:
                 gdetB=data['gdetB']
             #
+            if numcolumns==16:
+                Erf=data['Erf']
+                uradu=data['uradu']
             data.close()
         else:
             print("THETAROT=%21.15g for rfdtransform" % (THETAROT)) ; sys.stdout.flush()
@@ -7286,6 +7432,51 @@ def rfd(fieldlinefilename,**kwargs):
     print("rfd(after rfdprocess) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
     #
     #
+
+def pow(x,n):
+    return(x**n)
+def KAPPA_ES_CODE(rhocode,Tcode):
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
+    y=(0.2*(1.0+XFACT)/OPACITYBAR)
+    return(y)
+def KAPPA_FF_CODE(rhocode,Tcode):
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
+    y=(1.0E23*ZATOM*ZATOM/(MUE*MUI)*(rhocode*RHOBAR)*pow(Tcode*TEMPBAR,-7.0/2.0)/OPACITYBAR)
+    return(y)
+def KAPPA_BF_CODE(rhocode,Tcode):
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
+    y=(1.0E25*ZATOM*(1.0+XFACT)*(rhocode*RHOBAR)*pow(Tcode*TEMPBAR,-7.0/2.0)/OPACITYBAR)
+    return(y)
+
+def rddims():
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
+    # then also get radiation constants
+    fname= "dimensions.txt"
+    fin = open(fname, "rt" )
+    dimfile = fin.readline().split()
+    numheaderitems=len(dimfile) #.shape[0]
+    GGG = np.float64(dimfile[0])
+    CCCTRUE = np.float64(dimfile[1])
+    MSUNCM = np.float64(dimfile[2])
+    MPERSUN = np.float64(dimfile[3])
+    LBAR = np.float64(dimfile[4])
+    TBAR = np.float64(dimfile[5])
+    VBAR = np.float64(dimfile[6])
+    RHOBAR = np.float64(dimfile[7])
+    MBAR = np.float64(dimfile[8])
+    ENBAR = np.float64(dimfile[9])
+    UBAR = np.float64(dimfile[10])
+    TEMPBAR = np.float64(dimfile[11])
+    ARAD_CODE_DEF = np.float64(dimfile[12])
+    XFACT = np.float64(dimfile[13])
+    ZATOM = np.float64(dimfile[14])
+    AATOM = np.float64(dimfile[15])
+    MUE = np.float64(dimfile[16])
+    MUI = np.float64(dimfile[17])
+    OPACITYBAR = np.float64(dimfile[18])
+    MASSCM = np.float64(dimfile[19])
+    KORAL2HARMRHO1 = np.float64(dimfile[20])
+    fin.close()
 
 
 # testing
@@ -7342,7 +7533,7 @@ def rfdtransform(gotgdetB=0):
     # modified globals
     global nzgdump
     global r,h,ph
-    global rho,ug,uu,B,gdetB
+    global rho,ug,uu,B,gdetB,Erf,uradu
     #
     print("what: %d\n",nz) ; sys.stdout.flush()
     print("what2: %d\n",nzgdump) ; sys.stdout.flush()
@@ -7479,6 +7670,7 @@ def rfdtransform(gotgdetB=0):
             gdetB2i=reinterp3dspc(Vorig,Vmetric,gdetB[2])
             gdetB3i=reinterp3dspc(Vorig,Vmetric,gdetB[3])
         #
+        # NOT SETUP FOR URADU GODMARK
         rho=rhoi
         ug=ugi
         uu[0]=uu0i
@@ -7610,6 +7802,8 @@ def rfdtransform(gotgdetB=0):
         gdetBnew2=tensordot01(gdetBnew1,transV2Vmetric) #,axes=([0],[1])) # now u^\nu[Vmetric]
         gdetBnew3=tensordot00(gdetBnew2,idxdxp) #,axes=([0],[0])) # now u^\nu[Xmetric]
         gdetB=np.copy(gdetBnew3) # overwrite
+    #
+    # NOT SETUP FOR URADU GODMARK
     #
     printusage()
     print("tensordots END\n");sys.stdout.flush()
@@ -7745,7 +7939,7 @@ def rotsimpletensordot(uu,rot,axis):
 def rfdprocess(gotgdetB=0):
     #
     # external globals
-    global rho,ug,uu,B,gdetB
+    global rho,ug,uu,B,gdetB,Erf,uradu
     # derived quantities
     global lrho,rholab,lrholab,ug,uut,uu,uux,rhor,r,h,ph,rhoclean,rholabclean,rhounclean,rholabunclean,ugclean,ugunclean,uuclean,entropy
     global gdetB # tells either exists before or will be created here
@@ -7845,7 +8039,7 @@ def getbsq_pre():
 
 def cvel():
     # MEMMARK: (4+4+4+1+4+4+4+4+6)=35 full 3D vars
-    global ud,etad, etau, gamma, vu, vd, bu, bd, bsq,beta,betatoplot,Q1,Q2,Q2toplot
+    global ud,etad, etau, gamma, vu, vd, bu, bd, bsq,beta,betatoplot,Q1,Q2,Q2toplot,uradd
     #
     #
     ud = mdot(gv3,uu)                  #g_mn u^n
@@ -7905,6 +8099,8 @@ def cvel():
     #Q2toplot[np.isnan(Q2toplot)]=1E3
     #
     aphi = fieldcalc()
+    #
+    uradd = mdot(gv3,uradu)                  #g_mn urad^n
 
 
 def decolumnify(dumpname):
@@ -7942,6 +8138,9 @@ def myfloat(f,acc=1):
         return( np.float32(f) )
     else:
         return( np.float64(f) )
+
+def myfloatalt(f):
+    return( np.float64(f) )
 
 
 
@@ -8081,23 +8280,23 @@ def grid3d_load(dumpname=None,use2d=False,doface=False,loadsimple=False): #read 
     nzgdump=nz
     #
     #grid internal coordinates starting point
-    _startx1=myfloat(float(header[4]))
-    _startx2=myfloat(float(header[5]))
-    _startx3=myfloat(float(header[6]))
+    _startx1=myfloatalt(float(header[4]))
+    _startx2=myfloatalt(float(header[5]))
+    _startx3=myfloatalt(float(header[6]))
     #cell size in internal coordintes
-    _dx1=myfloat(float(header[7]))
-    _dx2=myfloat(float(header[8]))
-    _dx3=myfloat(float(header[9]))
+    _dx1=myfloatalt(float(header[7]))
+    _dx2=myfloatalt(float(header[8]))
+    _dx3=myfloatalt(float(header[9]))
     #other information: 
     #polytropic index
-    gam=myfloat(float(header[11]))
+    gam=myfloatalt(float(header[11]))
     #black hole spin
-    a=myfloat(float(header[12]))
+    a=myfloatalt(float(header[12]))
     rhor = 1+(1-a**2)**0.5
     #Spherical polar radius of the innermost radial cell
-    Rin=myfloat(float(header[14]))
+    Rin=myfloatalt(float(header[14]))
     #Spherical polar radius of the outermost radial cell
-    Rout=myfloat(float(header[15]))
+    Rout=myfloatalt(float(header[15]))
     #read grid dump per-cell data
     #
     if use2d:
@@ -8248,11 +8447,11 @@ def rdebug(debugfname):
     nx = int(header[1])
     ny = int(header[2])
     nz = int(header[3])
-    _dx1=myfloat(float(header[7]))
-    _dx2=myfloat(float(header[8]))
-    _dx3=myfloat(float(header[9]))
-    gam=myfloat(float(header[11]))
-    a=myfloat(float(header[12]))
+    _dx1=myfloatalt(float(header[7]))
+    _dx2=myfloatalt(float(header[8]))
+    _dx3=myfloatalt(float(header[9]))
+    gam=myfloatalt(float(header[11]))
+    a=myfloatalt(float(header[12]))
     if debugfname.endswith(".bin"):
         body = np.fromfile(fin,dtype=np.float64,count=-1)  #nx*ny*nz*11)
         gd = body.view().reshape((-1,nx,ny,nz),order='F')
@@ -8752,6 +8951,7 @@ def getnonbobnqty():
         value=1 + 6 + 14 + 4 + 22*5 + 25 + 22*3 + (13*4+13*4) + 11+15 + (14+2+48) +  (8+42) + (6) + (13*4+13*4) + (13*4+13*4)
     else:
         value=2 + 6 + 14 + 4 + 22*5 + 25 + 22*3 + (13*4+13*4) + 11+15 + (14+2+48) +  (8+42) + (6) + (13*4+13*4) + (13*4+13*4)
+        value=value+2 # for edrad and ldrad
 
     #value=702 # fake temp over what's needed   GODMARK
 
@@ -9539,6 +9739,10 @@ def getqtymem(qtymem):
     global     eden
     eden=qtymem[i];i+=1
     #
+    global edrad
+    edrad=qtymem[i];i+=1
+    print("GOT HERE edrad") ; sys.stdout.flush()
+    #
     global     edma30
     edma30=qtymem[i];i+=1
     global     edm30
@@ -9683,6 +9887,9 @@ def getqtymem(qtymem):
     ldpa=qtymem[i];i+=1
     global     lden
     lden=qtymem[i];i+=1
+    #
+    global     ldrad
+    ldrad=qtymem[i];i+=1
     #
     global     ldma30
     ldma30=qtymem[i];i+=1
@@ -12191,6 +12398,8 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         edpa[qindex]=intangle(-gdet*TudPA[1][0])
         eden[qindex]=intangle(-gdet*TudEN[1][0])
         #
+        edrad[qindex]=intangle(-gdet*TudRAD[1][0],which=(KAPPAUSER+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))<=1.0)
+        #
         edma30[qindex]=intangle(-gdet*TudMA[1][0],which=(condmaxbsqorho==0))
         edm30[qindex]=intangle(gdet*rho*uu[1],which=(condmaxbsqorho==0))
         #
@@ -12289,6 +12498,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         ldm[qindex]=intangle(0.0*gdet*rho*uu[3]*dxdxp[3,3])
         ldpa[qindex]=intangle(gdet*TudPA[1][3]/dxdxp[3,3])
         lden[qindex]=intangle(gdet*TudEN[1][3]/dxdxp[3,3])
+        ldrad[qindex]=intangle(gdet*TudRAD[1][3]/dxdxp[3,3],which=(KAPPAUSER+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))<=1.0)
         #
         ldma30[qindex]=intangle(gdet*TudMA[1][3]/dxdxp[3,3],which=(condmaxbsqorho==0))
         ldm30[qindex]=intangle(0.0*gdet*rho*uu[3]*dxdxp[3,3],which=(condmaxbsqorho==0))
@@ -12590,7 +12800,7 @@ def amin(arg1,arg2):
 # allow to remove rho and ug component to remove floor effects
 def Tcalcud(maxbsqorho=None, which=None):
     # MEMMARK: 16*5+5=85 full 3D vars.
-    global Tud, TudEM, TudMA, TudPA, TudEN
+    global Tud, TudEM, TudMA, TudPA, TudEN, TudRAD
     global mu, sigma
     global enth
     global unb, isunbound
@@ -12613,6 +12823,7 @@ def Tcalcud(maxbsqorho=None, which=None):
     TudEM = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
     TudPA = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
     TudEN = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
+    TudRAD = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
     for kapa in np.arange(4):
         for nu in np.arange(4):
             if(kapa==nu): delta = 1
@@ -12623,6 +12834,7 @@ def Tcalcud(maxbsqorho=None, which=None):
             TudEN[kapa,nu] = wnorhoclean*uu[kapa]*ud[nu]+pg*delta
             #Tud[kapa,nu] = eta*uu[kapa]*ud[nu]+(pg+0.5*bsq)*delta-bu[kapa]*bd[nu]
             Tud[kapa,nu] = TudEM[kapa,nu] + TudMA[kapa,nu]
+            TudRAD[kapa,nu] = (Erf/3.0)*(4.0*uradu[kapa]*uradd[nu]+delta)
     #mu = -Tud[1,0]/(rhoclean*uu[1])
     mu = -Tud[1,0]*divideavoidinf(rhoclean*uu[1])
     sigma = TudEM[1,0]*divideavoidinf(TudMA[1,0])
@@ -12753,6 +12965,10 @@ def jetpowcalc(which=2,minbsqorho=None,mumin=None,mumax=None,maxbeta=None,maxbsq
         jetpowden = gdet*(TudPA[1,3])/dxdxp[3,3]
     if which==18:
         jetpowden = gdet*(TudEN[1,3])/dxdxp[3,3]
+    if which==19:
+        jetpowden = -gdet*(TudRAD[1,0])
+    if which==20:
+        jetpowden = gdet*(TudRAD[1,3])/dxdxp[3,3]
     #
     ############################################
     #jetpowden[tj>=ny-2] = 0*jetpowden[tj>=ny-2]
@@ -13045,6 +13261,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         rjetout=50.
     # jon's Choice below
     showextra=True
+    showrad=True
     #
     #
     nqtynonbob = getnonbobnqty()
@@ -13178,6 +13395,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     print("mdtot.shape")
     print(mdtot.shape)
+    #
+    global edrad
+    print("edrad.shape")
+    print(edrad.shape)
     #
     #
     #
@@ -13357,15 +13578,17 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     edemvsr = timeavg(edem,ts,fti,ftf)
     edmavsr = timeavg(edma-edma30,ts,fti,ftf)
     edmvsr = timeavg(edm-edm30,ts,fti,ftf)
-    edpavsr = timeavg(edpa-edm30,ts,fti,ftf)  # assume floor already taken out (really true for above as well, so don'tneed edm30 except for edmvsr)
+    edpavsr = timeavg(edpa-edm30,ts,fti,ftf)  # assume floor already taken out (really true for above as well, so don't need edm30 except for edmvsr)
     edenvsr = timeavg(eden,ts,fti,ftf)
+    edradvsr = timeavg(edrad,ts,fti,ftf)
     #
     ldtotvsr = timeavg(ldtot,ts,fti,ftf)
     ldemvsr = timeavg(ldem,ts,fti,ftf)
     ldmavsr = timeavg(ldma-ldma30,ts,fti,ftf)
     ldmvsr = timeavg(ldm-ldm30,ts,fti,ftf)
-    ldpavsr = timeavg(ldpa,ts,fti,ftf)  # assume floor already taken out (really true for above as well, so don'tneed ldm30 except for ldmvsr)
+    ldpavsr = timeavg(ldpa,ts,fti,ftf)  # assume floor already taken out (really true for above as well, so don't need ldm30 except for ldmvsr)
     ldenvsr = timeavg(lden,ts,fti,ftf)
+    ldradvsr = timeavg(ldrad,ts,fti,ftf)
     #
     phiabsj_mu1vsr = timeavg(phiabsj_mu1[:,:],ts,fti,ftf)
     #
@@ -13412,6 +13635,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     pjentot = eden
     pjenfinavgvsr = timeavg(pjentot,ts,fti,ftf)
     #
+    pjradtot = edrad
+    pjradfinavgvsr = timeavg(pjradtot,ts,fti,ftf)
+    #
     # free energy (use em+make=ke so bsq/rho>30 correction can be made less number of times)
     pjketot = pjemtot + pjmaketot
     pjkefinavgvsr = pjemfinavgvsr + pjmakefinavgvsr
@@ -13442,6 +13668,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     # EN energy (floor already accounted for, just remove rest-mass term)
     ljentot = lden
     ljenfinavgvsr = timeavg(ljentot,ts,fti,ftf)
+    ljradtot = lden
+    ljradfinavgvsr = timeavg(ljradtot,ts,fti,ftf)
     #
     # free energy (use em+make=ke so bsq/rho>30 correction can be made less number of times)
     ljketot = ljemtot + ljmaketot
@@ -15219,6 +15447,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     mdotjetiniavg = timeavg(np.abs(mdjet[:,iofr(rjetout)]),ts,iti,itf)
     mdotjetfinavg = timeavg(np.abs(mdjet[:,iofr(rjetout)]),ts,fti,ftf)
     #
+    edradoutiniavg = timeavg(edrad[:,iofr(rjetout)],ts,iti,itf)
+    ldradoutiniavg = timeavg(ldrad[:,iofr(rjetout)],ts,iti,itf)
+    #
     # handle md10 issue inside computation for mdin (i.e. avoid including bsq/rho>30)
     mdotinrdiskininiavg = timeavg(np.abs(mdin[:,iofr(rdiskin)]),ts,iti,itf)
     mdotinrdiskinfinavg = timeavg(np.abs(mdin[:,iofr(rdiskin)]),ts,fti,ftf)
@@ -16458,6 +16689,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         # default
         windplotfactor=1.0
     #
+    #
     sashaplot1=0
     #
     #####################################
@@ -16484,44 +16716,76 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     #####################################
     # Jon's version of Mdot plot
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
+    rddims()
+    MSUN=1.9891E33
+    sigmaT=0.665E-24
+    mproton=1.673E-24
+    Ledd=4.0*np.pi*GGG*(MPERSUN*MSUN)*mproton*CCCTRUE/sigmaT
+    Ledd=Ledd/(ENBAR/TBAR) # so in same units as code units
+    if showrad:
+        normfactor=Ledd
+        radplotfactor=1.0;
+        Mdotplotfactor=1.0/500.0;
+    else:
+        normfactor=1.0
+        radplotfactor=1.0/500.0;
+        Mdotplotfactor=1.0;
+    #
+    print("normfactor=%g CCCTRUE=%g ENBAR=%g TBAR=%g" % (normfactor,CCCTRUE,ENBAR,TBAR)) ; sys.stdout.flush()
+    #
+    # to ensure only looking at positive fluxes
+    edrad[edrad<0.0]=0.0
+    #
     if whichplot == 1 and sashaplot1 == 0:
         if dotavg:
-            ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+mdotfinavg,color=(ofc,fc,fc))
+            ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+mdotfinavg/normfactor*Mdotplotfactor,color=(ofc,fc,fc))
             if showextra:
-                ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+mdotjetfinavg,'--',color=(fc,fc+0.5*(1-fc),fc))
-                ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+mdotmwoutfinavg*windplotfactor,'-.',color=(fc,fc,1))
+                ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+mdotjetfinavg/normfactor*Mdotplotfactor,'--',color=(fc,fc+0.5*(1-fc),fc))
+                ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+mdotmwoutfinavg*windplotfactor/normfactor*Mdotplotfactor,'-.',color=(fc,fc,1))
             if(iti>fti):
-                ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+mdotiniavg,color=(ofc,fc,fc))
+                ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+mdotiniavg/normfactor*Mdotplotfactor,color=(ofc,fc,fc))
                 if showextra:
-                    ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+mdotjetiniavg,color=(fc,fc+0.5*(1-fc),fc))
-                    ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+mdotmwoutiniavg*windplotfactor,color=(fc,fc,1))
+                    ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+mdotjetiniavg/normfactor*Mdotplotfactor,color=(fc,fc+0.5*(1-fc),fc))
+                    ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+mdotmwoutiniavg*windplotfactor/normfactor*Mdotplotfactor,color=(fc,fc,1))
+        if showrad:
+            ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+edradoutiniavg*radplotfactor/normfactor,color=(fc,fc,1))
         #
         print("before ax.plot1") ; sys.stdout.flush()
-        ax.plot(ts,np.abs(mdtot[:,iflux]*mdtotfix),clr,label=r'$\dot M_{\rm H}c^2$')  # can't use ifluxacc
+        ax.plot(ts,np.abs(mdtot[:,iflux]*mdtotfix/normfactor*Mdotplotfactor),clr,label=r'$\dot M_{\rm H}c^2/500$')  # can't use ifluxacc
         if showextra:
             print("before ax.plot2") ; sys.stdout.flush()
-            ax.plot(ts,np.abs(mdjet[:,iofr(rjetout)]),'g--',label=r'$\dot M_{\rm j}c^2$')
+            ax.plot(ts,np.abs(mdjet[:,iofr(rjetout)]/normfactor*Mdotplotfactor),'g--',label=r'$\dot M_{\rm j}c^2/500$')
             if windplotfactor==1.0:
                 print("before ax.plot3") ; sys.stdout.flush()
-                ax.plot(ts,windplotfactor*np.abs(mdmwind[:,iofr(rjetout)]),'b-.',label=r'$\dot M_{\rm mw,o}c^2$')
+                ax.plot(ts,windplotfactor*np.abs(mdmwind[:,iofr(rjetout)]/normfactor*Mdotplotfactor),'b-.',label=r'$\dot M_{\rm mw,o}c^2/500$')
             elif windplotfactor==0.1:
-                ax.plot(ts,windplotfactor*np.abs(mdmwind[:,iofr(rjetout)]),'b-.',label=r'$0.1\dot M_{\rm mw,o}c^2$')
+                ax.plot(ts,windplotfactor*np.abs(mdmwind[:,iofr(rjetout)]/normfactor*Mdotplotfactor),'b-.',label=r'$0.1\dot M_{\rm mw,o}c^2/500$')
+        if showrad:
+            ax.plot(ts,edrad[:,iofr(rjetout)]*radplotfactor/normfactor,'c-.',label=r'$\dot L_{\rm rad,o}$')
+            print("edradtest") ; sys.stdout.flush()
+            print(edrad[:,iofr(rjetout)]*radplotfactor/normfactor) ; sys.stdout.flush()
         #
         if findex != None:
             if not isinstance(findex,tuple):
-                ax.plot(ts[findex],np.abs(mdtot[:,iflux]*mdtotfix)[findex],'o',mfc='r')
+                ax.plot(ts[findex],np.abs(mdtot[:,iflux]*mdtotfix)[findex]/normfactor*Mdotplotfactor,'o',mfc='r')
                 if showextra:
-                    ax.plot(ts[findex],np.abs(mdjet[:,iofr(rjetout)])[findex],'gs')
-                    ax.plot(ts[findex],windplotfactor*np.abs(mdmwind[:,iofr(rjetout)])[findex],'bv')
+                    ax.plot(ts[findex],np.abs(mdjet[:,iofr(rjetout)])[findex]/normfactor*Mdotplotfactor,'gs')
+                    ax.plot(ts[findex],windplotfactor*np.abs(mdmwind[:,iofr(rjetout)])[findex]/normfactor*Mdotplotfactor,'bv')
+                if showrad:
+                    ax.plot(ts[findex],edrad[:,iofr(rjetout)][findex]*radplotfactor/normfactor,'bv')
             else:
                 for fi in findex:
-                    ax.plot(ts[fi],np.abs(mdtot[:,iflux]*mdtotfix)[fi],'o',mfc='r')#,label=r'$\dot M$')
+                    ax.plot(ts[fi],np.abs(mdtot[:,iflux]*mdtotfix)[fi]/normfactor*Mdotplotfactor,'o',mfc='r')#,label=r'$\dot M$')
                     if showextra:
-                        ax.plot(ts[fi],np.abs(mdjet[:,iofr(rjetout)])[fi],'gs')
-                        ax.plot(ts[fi],windplotfactor*np.abs(mdmwind[:,iofr(rjetout)])[fi],'bv')
+                        ax.plot(ts[fi],np.abs(mdjet[:,iofr(rjetout)])[fi]/normfactor*Mdotplotfactor,'gs')
+                        ax.plot(ts[fi],windplotfactor*np.abs(mdmwind[:,iofr(rjetout)])[fi]/normfactor*Mdotplotfactor,'bv')
+                    if showrad:
+                        ax.plot(ts[fi],edrad[:,iofr(rjetout)][fi]*radplotfactor/normfactor,'bv')
         #
         #ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,labelpad=9)
-        ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,ha='left',labelpad=20)
+        #ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,ha='left',labelpad=20)
+        ax.set_ylabel(r'$\dot E/L_{\rm Edd}$',fontsize=16,ha='left',labelpad=20)
         #
         plt.setp( ax.get_xticklabels(), visible=False)
         ax.set_xlim(ts[0],ts[-1])
@@ -16545,7 +16809,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             # see text.Text, lines.Line2D, and patches.Rectangle for more info on
             # the settable properties of lines, text, and rectangles
             #frame.set_facecolor('0.80')      # set the frame face color to light gray
-            plt.setp(ltext, fontsize=12)    # the legend text fontsize
+            #plt.setp(ltext, fontsize=12)    # the legend text fontsize
+            plt.setp(ltext, fontsize=10)    # the legend text fontsize
             #plt.setp(llines, linewidth=1.5)      # the legend linewidth
             #leg.draw_frame(False)           # don't draw the legend frame
     #
@@ -16747,6 +17012,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         if issashamodel(modelname):
             ymin=0
         #
+        if isradmodelA(modelname):
+            ymin=0
+        #
         ymaxbh=np.max(etabh)
         ymaxj=np.max(etaj)
         ymaxmw=np.max(etamwout)
@@ -16823,6 +17091,12 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     print( "eta_H = %g, eta_HEM = %g, eta_HMAKE = %g, eta_jwout = %g, eta_j = %g, eta_jEM = %g, eta_jMAKE = %g, eta_mwin = %g, eta_mwinEM = %g, eta_mwinMAKE = %g, eta_mwout = %g, eta_mwoutEM = %g, eta_mwoutMAKE = %g, eta_win = %g, eta_winEM = %g, eta_winMAKE = %g, eta_wout = %g, eta_woutEM = %g, eta_woutMAKE = %g, pemtot_H = %g" % ( etabh_avg, etabhEM_avg, etabhMAKE_avg, etaj_avg + etawout_avg, etaj_avg, etajEM_avg, etajMAKE_avg, etamwin_avg, etamwinEM_avg, etamwinMAKE_avg, etamwout_avg, etamwoutEM_avg, etamwoutMAKE_avg, etawin_avg, etawinEM_avg, etawinMAKE_avg, etawout_avg, etawoutEM_avg, etawoutMAKE_avg, pemtot_avg ) )
     #
     print( "leta_H = %g, leta_HEM = %g, leta_HMAKE = %g, leta_jwout = %g, leta_j = %g, leta_jEM = %g, leta_jMAKE = %g, leta_mwin = %g, leta_mwinEM = %g, leta_mwinMAKE = %g, leta_mwout = %g, leta_mwoutEM = %g, leta_mwoutMAKE = %g, leta_win = %g, leta_winEM = %g, leta_winMAKE = %g, leta_wout = %g, leta_woutEM = %g, leta_woutMAKE = %g, lemtot_H = %g" % ( letabh_avg, letabhEM_avg, letabhMAKE_avg, letaj_avg + letawout_avg, letaj_avg, letajEM_avg, letajMAKE_avg, letamwin_avg, letamwinEM_avg, letamwinMAKE_avg, letamwout_avg, letamwoutEM_avg, letamwoutMAKE_avg, letawin_avg, letawinEM_avg, letawinMAKE_avg, letawout_avg, letawoutEM_avg, letawoutMAKE_avg, lemtot_avg ) )
+    #
+    # KORAL OUTPUTS
+    print( "mdotfinavg=%g " % (mdotfinavg/normfactor)) ; sys.stdout.flush()
+    print( "edradoutiniavg=%g " % (edradoutiniavg/normfactor)) ; sys.stdout.flush()
+    print( "ldradoutiniavg/eradoutiniavg=%g " % (ldradoutiniavg/edradoutiniavg)) ; sys.stdout.flush()
+    #
     #
     if iti > fti:
         print( "incomplete output: %g %g" % (iti, fti) )
@@ -21562,6 +21836,10 @@ def vminmax_rho(qty=None):
         # for Jon's thickdisk models
         vminforframe=-2.4
         vmaxforframe=1.5625
+    elif isradmodelA(modelname):
+        # default
+        vminforframe=-6.0
+        vmaxforframe=0.0
     else:
         # default
         vminforframe=-4.0
@@ -21582,6 +21860,9 @@ def vminmax_ug(qty=None):
         # for Jon's thickdisk models
         vminforframe=-3.4
         vmaxforframe=3.0
+    elif isradmodelA(modelname):
+        vminforframe=-10
+        vmaxforframe=-2
     else:
         # default
         vminforframe=-6.0
@@ -21601,6 +21882,9 @@ def vminmax_bsq(qty=None):
         # for Jon's thickdisk models
         vminforframe=-7.0
         vmaxforframe=3.0
+    elif isradmodelA(modelname):
+        vminforframe=-10
+        vmaxforframe=-2
     else:
         # default
         vminforframe=-7.0
@@ -21620,6 +21904,9 @@ def vminmax_entropy(qty=None):
     elif isthickdiskmodel(modelname):
         # for Jon's thickdisk models
         vminforframe=-1.0
+        vmaxforframe=4.0
+    elif isradmodelA(modelname):
+        vminforframe=-6.0
         vmaxforframe=4.0
     else:
         # default
@@ -21667,15 +21954,18 @@ def mkstreamplotprepost(fname=None,veldensity=8,inputlevs=None,numcontours=30,ap
         # for Jon's thickdisk models
         vminforframe=-2.4
         vmaxforframe=1.5625
+    elif isradmodelA(modelname):
+        vminforframe=-6
+        vmaxforframe=0
     else:
         # default
         vminforframe=-4.0
         vmaxforframe=2.0
     #
     # for dojonwindplot
-    global B,uutrue
+    global B #,uutrue
     Btrue=np.copy(B)
-    uutrue=uu
+    #uutrue=uu
     #      
     returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=bsq,rho=rho,uu=uu,lenx=finallenx,leny=finalleny,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname=fname,veldensity=veldensity,signaphi=signaphi,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,dojonwindplot=1,showuu1eq0=showuu1eq0)
     #
@@ -22644,6 +22934,7 @@ def gen_vpot(whichloop=None,phase=0.0,whichfield=None,fieldhor=0.194,rin=10):
     #whichfield = 0 -- single loop follows density contours
     #whichfield = None -- alternating loops
     global rho_av, rholab_av, rho_max, var, uq, uqc, uqcomax, aB, B, res,ud,etad, etau, gamma, vu, vd, bu, bd, bsq, phi
+    # NO URADU YET GODMARK
     #res=np.abs(bu[2]/np.sqrt(rho)/((uu[3]+1e-15)/uu[0])/_dx2)
     #plco(res,cb=True)
     #plt.plot(ti[:,ny/2,0],res[:,ny/2,0])
@@ -23639,6 +23930,9 @@ def mkmovieframe(findex=None,filenum=None,framesize=None):
     #Rz xy
     #
     #
+    #default
+    vminforframerad=-6
+    vmaxforframerad=0
     if ismb09model(modelname):
         # for MB09 dipolar fiducial model
         vminforframe=-4.0
@@ -23650,38 +23944,69 @@ def mkmovieframe(findex=None,filenum=None,framesize=None):
         # for Jon's thickdisk models
         vminforframe=-2.4
         vmaxforframe=1.5625
+    elif isradmodelA(modelname):
+        vminforframe=-6
+        vmaxforframe=2
+        vminforframerad=-6
+        vmaxforframerad=0
     else:
         # default
         vminforframe=-4.0
         vmaxforframe=2.0
     #
+    mydobsq=0
+    mydorho=1
     #
     ###########################
     # BIG BOX
     ###########################
     plotsize=framesize
     #
+    # LEFT PANEL
     gs1 = GridSpec(1, 1)
-    gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
+    if isradmodelA(modelname)==0:
+        gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
+    else:
+        gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
+    #
     ax1 = plt.subplot(gs1[:, -1])
-    mkframe("lrho%04d_Rz%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax1,cb=False,pt=False,dobsq=1,dorho=0)
+    if isradmodelA(modelname)==0:
+        mkframe("lrho%04d_Rz%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax1,cb=False,pt=False,dobsq=mydobsq,dorho=mydorho)
+    else:
+        mkframe("lrho%04d_Rz%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax1,cb=True,pt=True,dobsq=mydobsq,dorho=mydorho,dostreamlines=0,doaphi=1,dobsqorholine=True)
     #
     plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
     plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=10,fontsize=16)
     #
+    # RIGHT PANEL
     gs2 = GridSpec(1, 1)
-    gs2.update(left=0.5, right=1, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
+    if isradmodelA(modelname)==0:
+        gs2.update(left=0.5, right=0.95, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
+    else:
+        gs2.update(left=0.55, right=0.95, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
     ax2 = plt.subplot(gs2[:, -1])
     #
-    if nz==1:
-        mkframe("lrho%04d_xy%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax2,cb=True,dostreamlines=True,dobsq=1,dorho=0)
+    # RIGHT PANEL
+    if isradmodelA(modelname)==0:
+        if nz==1:
+            mkframe("lrho%04d_xy%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax2,cb=True,dostreamlines=True,dobsq=mydobsq,dorho=mydorho)
+        else:
+            # If using 2D data, then for now, have to replace below with mkframe version above and replace ax1->ax2.  Some kind of qhull error.
+            mkframexy("lrho%04d_xy%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax2,cb=True,pt=False,dostreamlines=True,dobsq=mydobsq,dorho=mydorho)
     else:
-        # If using 2D data, then for now, have to replace below with mkframe version above and replace ax1->ax2.  Some kind of qhull error.
-        mkframexy("lrho%04d_xy%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax2,cb=True,pt=False,dostreamlines=True,dobsq=1,dorho=0)
+        if nz==1:
+            mkframe("lrho%04d_xy%g" % (filenum,plotsize),vmin=vminforframerad,vmax=vmaxforframerad,len=plotsize,ax=ax2,cb=True,dostreamlines=True,dobsq=0,dorho=0,doErf=1,dotaurad=True)
+        else:
+            # If using 2D data, then for now, have to replace below with mkframe version above and replace ax1->ax2.  Some kind of qhull error.
+            mkframexy("lrho%04d_xy%g" % (filenum,plotsize),vmin=vminforframerad,vmax=vmaxforframerad,len=plotsize,ax=ax2,cb=True,pt=True,dostreamlines=True,dobsq=0,dorho=0,doErf=1,dotaurad=True)
     #
     #
-    plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
-    plt.ylabel(r"$y\ [r_g]$",ha='left',labelpad=10,fontsize=16)
+    if nz==1:
+        plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
+        plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=10,fontsize=16)
+    else:
+        plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
+        plt.ylabel(r"$y\ [r_g]$",ha='left',labelpad=10,fontsize=16)
     #
     #
     #print xxx
@@ -23694,27 +24019,50 @@ def mkmovieframe(findex=None,filenum=None,framesize=None):
     ###########################
     plotsize=framesize/5
     #
+    # LEFT PANEL
     gs1 = GridSpec(1, 1)
-    gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
+    if isradmodelA(modelname)==0:
+        gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
+    else:
+        gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
+        #
     ax1 = plt.subplot(gs1[:, -1])
-    mkframe("lrhosmall%04d_Rz%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax1,cb=False,pt=False,dobsq=1,dorho=0)
+    if isradmodelA(modelname)==0:
+        mkframe("lrhosmall%04d_Rz%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax1,cb=False,pt=False,dobsq=mydobsq,dorho=mydorho)
+    else:
+        mkframe("lrhosmall%04d_Rz%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax1,cb=True,pt=True,dobsq=mydobsq,dorho=mydorho,dostreamlines=0,doaphi=1,dobsqorholine=True)
     #
     plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
     plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=10,fontsize=16)
     #
+    # RIGHT PANEL
     gs2 = GridSpec(1, 1)
-    gs2.update(left=0.5, right=1, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
+    if isradmodelA(modelname)==0:
+        gs2.update(left=0.55, right=0.95, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
+    else:
+        gs2.update(left=0.55, right=0.95, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
     ax2 = plt.subplot(gs2[:, -1])
     #
-    if nz==1:
-        mkframe("lrhosmall%04d_xy%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax2,cb=True,dostreamlines=True,dobsq=1,dorho=0)
+    if isradmodelA(modelname)==0:
+        if nz==1:
+            mkframe("lrhosmall%04d_xy%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax2,cb=True,dostreamlines=True,dobsq=mydobsq,dorho=mydorho)
+        else:
+            # If using 2D data, then for now, have to replace below with mkframe version above and replace ax1->ax2.  Some kind of qhull error.
+            mkframexy("lrhosmall%04d_xy%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax2,cb=True,pt=False,dostreamlines=True,dobsq=mydobsq,dorho=mydorho)
     else:
-        # If using 2D data, then for now, have to replace below with mkframe version above and replace ax1->ax2.  Some kind of qhull error.
-        mkframexy("lrhosmall%04d_xy%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax2,cb=True,pt=False,dostreamlines=True,dobsq=1,dorho=0)
+        if nz==1:
+            mkframe("lrhosmall%04d_xy%g" % (filenum,plotsize),vmin=vminforframerad,vmax=vmaxforframerad,len=plotsize,ax=ax2,cb=True,dostreamlines=True,dobsq=0,dorho=0,doErf=1,dotaurad=True)
+        else:
+            # If using 2D data, then for now, have to replace below with mkframe version above and replace ax1->ax2.  Some kind of qhull error.
+            mkframexy("lrhosmall%04d_xy%g" % (filenum,plotsize),vmin=vminforframerad,vmax=vmaxforframerad,len=plotsize,ax=ax2,cb=True,pt=True,dostreamlines=True,dobsq=0,dorho=0,doErf=1,dotaurad=True)
     #
     #
-    plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
-    plt.ylabel(r"$y\ [r_g]$",ha='left',labelpad=10,fontsize=16)
+    if nz==1:
+        plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
+        plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=10,fontsize=16)
+    else:
+        plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
+        plt.ylabel(r"$y\ [r_g]$",ha='left',labelpad=10,fontsize=16)
     #
     #
     #print xxx
@@ -24013,6 +24361,9 @@ def mkavgfigs():
         # for Jon's thickdisk models
         vminforframe=-2.4
         vmaxforframe=1.5625
+    elif isradmodelA(modelname):
+        vminforframe=-6
+        vmaxforframe=0
     else:
         # default
         vminforframe=-4.0
@@ -24023,8 +24374,15 @@ def mkavgfigs():
     if mkstreampart1==1:
         #
         # for dojonwindplot
-        global rho,rholab,ug,B,gdetB,bsq,mu,ud,uu,beta,uutrue
+        global rho,rholab,ug,B,gdetB,Erf,uradu,bsq,mu,ud,uu,beta #,uutrue
+        global KAPPAUSER,KAPPAESUSER
+        #
+        global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
+        rddims()
+        #
         rho=avg_rho
+        KAPPAUSER=avg_KAPPAUSER
+        KAPPAESUSER=avg_KAPPAESUSER
         rholab=avg_rho*avg_uu[0] # GODMARK: Not full avg of rholab directly
         ug=avg_ug
         # use t-phi-averaged gdet B
@@ -24037,7 +24395,7 @@ def mkavgfigs():
         bsq = avg_bsq
         mu = avg_mu
         uu=avg_uu
-        uutrue=uu
+        #uutrue=uu
         ud=avg_ud
         beta = avg_beta
         #
@@ -24182,7 +24540,7 @@ def mkavgfigs():
         # avg_ts,avg_te,avg_nitems,avg_rho,avg_ug,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_omegaf2b,avg_omegaf1
         # avg_omegaf1b,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
         # avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
-        # avg_TudPA, avg_TudEN
+        # avg_TudPA, avg_TudEN, avg_TudRAD
         # avg_gamma
         #
         # get horizon cut of everything and print out for SM plotting vs. theta
@@ -24201,7 +24559,7 @@ def mkavgfigs():
         avg1.close()
         avg1 = open('dataavgvsh1.txt', 'w')
         # below doesn't yet show columns for each component of vector or tensors
-        avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudEN  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma gdet dxdxp11 dxdxp22dx2 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd\n")
+        avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudEN  avg_TudRAD  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma gdet dxdxp11 dxdxp22dx2 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd avg_KAPPAUSER avg_KAPPAESUSER\n")
         avg1.write("#%g %g %d :  %g %d\n" % (avg_ts[0],avg_te[0],avg_nitems[0],rhor,ihor))
         for jj in np.arange(0,len(h[0,:,0])):
             # columns 1-6
@@ -24322,6 +24680,12 @@ def mkavgfigs():
             for ll in np.arange(0,4):
                 for mm in np.arange(0,4):
                     avg1.write("%g " % (avg_absfdd[mm,ll,ihor,jj,0]))
+            # columns 290- (290+16)
+            for ll in np.arange(0,4):
+                for mm in np.arange(0,4):
+                    avg1.write("%g " % (avg_TudRAD[mm,ll,ihor,jj,0]))
+            avg1.write("%g " % (avg_KAPPAUSER[ihor,jj,0]))
+            avg1.write("%g " % (avg_KAPPESAUSER[ihor,jj,0]))
             avg1.write("\n")
         #
         avg1.close()
@@ -24346,7 +24710,7 @@ def mkavgfigs():
         avg1.close()
         avg1 = open('dataavgvsr1.txt', 'w')
         # below doesn't yet show columns for each component of vector or tensors
-        avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudEN  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma avggdet dxdxp11 dxdxp22dx2 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd rhosqint rhosqint2\n")
+        avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudEN  avg_TudRAD  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma avggdet dxdxp11 dxdxp22dx2 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd rhosqint rhosqint2 avg_KAPPAUSER avg_KAPPAESUSER\n")
         avg1.write("#%g %g %d :  %g %d\n" % (avg_ts[0],avg_te[0],avg_nitems[0],rhor,ihor))
         #
         bsq=avg_bsq
@@ -24382,10 +24746,12 @@ def mkavgfigs():
         #avg_rho,avg_ug,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_omegaf2b,avg_omegaf1
         # avg_omegaf1b,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
         # avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
-        # avg_TudPA, avg_TudEN
+        # avg_TudPA, avg_TudEN, avg_TudRAD
         # avg_gamma
         # get averages (vs radius only in the end)
         avgvsr_rho=intangle_foravg2d(gdet*denfactor*avg_rho,**keywordsrhosq)/rhosqint
+        avgvsr_KAPPAUSER=intangle_foravg2d(gdet*denfactor*avg_KAPPAUSER,**keywordsrhosq)/rhosqint
+        avgvsr_KAPPAESUSER=intangle_foravg2d(gdet*denfactor*avg_KAPPAESUSER,**keywordsrhosq)/rhosqint
         avgvsr_ug=intangle_foravg2d(gdet*denfactor*avg_ug,**keywordsrhosq)/rhosqint
         avgvsr_bsq=intangle_foravg2d(gdet*denfactor*avg_bsq,**keywordsrhosq)/rhosqint
         avgvsr_unb=intangle_foravg2d(gdet*denfactor*avg_unb,**keywordsrhosq)/rhosqint
@@ -24448,6 +24814,7 @@ def mkavgfigs():
         avgvsr_TudMA=np.zeros_like(avgvsr_Tud)
         avgvsr_TudPA=np.zeros_like(avgvsr_Tud)
         avgvsr_TudEN=np.zeros_like(avgvsr_Tud)
+        avgvsr_TudRAD=np.zeros_like(avgvsr_Tud)
         # doabs=0 for below since care about sign (e.g. flux in or out) and can't easily recover sign unless know more details
         # except fdd, which oscillates around 0 near equator.  Actually, only fdd has abs during averaging unlike all other doabs==1 quantities, so movement of sign of quantities (e.g. across equator) will cause bad averaging there for these other quantities.
         for ll in np.arange(0,4):
@@ -24464,6 +24831,7 @@ def mkavgfigs():
                 avgvsr_TudMA[mm,ll]=intangle_foravg2d(gdet*denfactor*avg_TudMA[mm,ll],doabs=0,**keywordsrhosq)/rhosqint
                 avgvsr_TudPA[mm,ll]=intangle_foravg2d(gdet*denfactor*avg_TudPA[mm,ll],doabs=0,**keywordsrhosq)/rhosqint
                 avgvsr_TudEN[mm,ll]=intangle_foravg2d(gdet*denfactor*avg_TudEN[mm,ll],doabs=0,**keywordsrhosq)/rhosqint
+                avgvsr_TudRAD[mm,ll]=intangle_foravg2d(gdet*denfactor*avg_TudRAD[mm,ll],doabs=0,**keywordsrhosq)/rhosqint
         avgvsr_mu=intangle_foravg2d(gdet*denfactor*avg_mu,**keywordsrhosq)/rhosqint
         avgvsr_sigma=intangle_foravg2d(gdet*denfactor*avg_sigma,**keywordsrhosq)/rhosqint
         avgvsr_bsqorho=intangle_foravg2d(gdet*denfactor*avg_bsqorho,**keywordsrhosq)/rhosqint
@@ -24619,6 +24987,10 @@ def mkavgfigs():
                     avg1.write("%g " % (avgvsr_absfdd[mm,ll,ii]))
             # columns 290-292
             avg1.write("%g %g %g " % (avgvsr_hor[ii],rhosqint[ii],rhosqint2[ii]))
+            # columns 293- (293+16)
+            for ll in np.arange(0,4):
+                for mm in np.arange(0,4):
+                    avg1.write("%g " % (avgvsr_TudRAD[mm,ll,ii]))
             avg1.write("\n")
         #
         avg1.close()
@@ -24632,7 +25004,7 @@ def mkavgfigs():
         avg1.close()
         avg1 = open('dataavg1.txt', 'w')
         # below doesn't yet show columns for each component of vector or tensors
-        avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudEN  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma gdet dxdxp11 dxdxp22 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd\n")
+        avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudEN  avg_TudRAD  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma gdet dxdxp11 dxdxp22 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd avg_KAPPAUSER avg_KAPPAESUSER\n")
         avg1.write("#%g %g %d :  %g %d\n" % (avg_ts[0],avg_te[0],avg_nitems[0],rhor,ihor))
         for jj in np.arange(0,len(h[0,:,0])):
             for ii in np.arange(0,len(r[:,0,0])):
@@ -24754,6 +25126,12 @@ def mkavgfigs():
                 for ll in np.arange(0,4):
                     for mm in np.arange(0,4):
                         avg1.write("%g " % (avg_absfdd[mm,ll,ii,jj,0]))
+                # columns 290- (290+16)
+                for ll in np.arange(0,4):
+                    for mm in np.arange(0,4):
+                        avg1.write("%g " % (avg_TudRAD[mm,ll,ii,jj,0]))
+                avg1.write("%g " % (avg_KAPPAUSER[ii,jj,0]))
+                avg1.write("%g " % (avg_KAPPAESUSER[ii,jj,0]))
                 avg1.write("\n")
             # end over ii
         # end over jj
@@ -24763,11 +25141,18 @@ def mkavgfigs():
     #########################################
     if mkstreampart4==1:
         #
-        #avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudEN  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma gdet dxdxp11 dxdxp22 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd")
+        #avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudEN  avg_TudRAD  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma gdet dxdxp11 dxdxp22 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd avg_KAPPAUSER avg_KAPPAESUSER")
         print("Doing field mkframe")
         sys.stdout.flush()
-        global rho,rholab,ug,B,gdetB,bsq,mu,ud,uu,beta
+        global rho,rholab,ug,B,gdetB,Erf,uradu,bsq,mu,ud,uu,beta
+        global KAPPAUSER,KAPPAESUSER
+        #
+        global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
+        rddims()
+        #
         rho=avg_rho
+        KAPPAUSER=avg_KAPPAUSER
+        KAPPAESUSER=avg_KAPPAESUSER
         rholab=avg_rho*avg_uu[0]
         ug=avg_ug
         # use t-phi-averaged gdet B
