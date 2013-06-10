@@ -2540,7 +2540,7 @@ def ismb09model(modelname):
     #
 
 def isradmodelA(modelname):
-    if modelname=="runrad1" or modelname=="runrad2":
+    if modelname=="runrad1" or modelname=="runrad2" or modelname=="runnorad1":
         return(1)
     else:
         return(0)
@@ -5087,7 +5087,8 @@ def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
     if( cb == True): #use color bar
         plt.colorbar(res,ax=ax)
 
-def reinterp(vartointerp,extent,ncell,domask=1,isasymmetric=False):
+def reinterp(vartointerp,extent,ncell,domask=1,isasymmetric=False,interporder='cubic'):
+#def reinterp(vartointerp,extent,ncell,domask=1,isasymmetric=False,interporder='linear'):
     global xi,yi,zi
     #grid3d("gdump")
     #rfd("fieldline0250.bin")
@@ -5110,7 +5111,7 @@ def reinterp(vartointerp,extent,ncell,domask=1,isasymmetric=False):
     xi = np.linspace(extent[0], extent[1], ncell)
     yi = np.linspace(extent[2], extent[3], ncell)
     # grid the data.
-    zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method='cubic')
+    zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method=interporder)
     #zi[interior] = np.ma.masked
     if domask!=0:
         interior = np.sqrt((xi[None,:]**2) + (yi[:,None]**2)) < (1+np.sqrt(1-a**2))*domask
@@ -5119,7 +5120,7 @@ def reinterp(vartointerp,extent,ncell,domask=1,isasymmetric=False):
         varinterpolated = zi
     return(varinterpolated)
 
-def reinterpxy(vartointerp,extent,ncell,domask=1):
+def reinterpxy(vartointerp,extent,ncell,domask=1,interporder='cubic'):
     global xi,yi,zi
     #grid3d("gdump")
     #rfd("fieldline0250.bin")
@@ -5138,7 +5139,7 @@ def reinterpxy(vartointerp,extent,ncell,domask=1):
     xi = np.linspace(extent[0], extent[1], ncell)
     yi = np.linspace(extent[2], extent[3], ncell)
     # grid the data.
-    zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method='cubic')
+    zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method=interporder)
     #zi[interior] = np.ma.masked
     if domask!=0:
         interior = np.sqrt((xi[None,:]**2) + (yi[:,None]**2)) < (1+np.sqrt(1-a**2))*domask
@@ -5321,34 +5322,53 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         taurad1=(KAPPAUSER+KAPPAESUSER)*_dx1*np.sqrt(np.fabs(gv3[1,1]))
         radiussettau1zero=80
         taurad1[r[:,0,0]>radiussettau1zero,:,:]=0 # to get rid of parts of flow that aren't in steady-state and wouldn't have contributed
-        #print("taurad1") ; sys.stdout.flush()
-        #print(taurad1[:,0,0]) ; sys.stdout.flush()
-        #print("r") ; sys.stdout.flush()
-        #print(r[:,0,0]) ; sys.stdout.flush()
+        np.set_printoptions(threshold=sys.maxint)
+        print("taurad1") ; sys.stdout.flush()
+        print(taurad1[:,0,0]) ; sys.stdout.flush()
+        print("r") ; sys.stdout.flush()
+        print(r[:,0,0]) ; sys.stdout.flush()
         taurad1integrated=np.cumsum(taurad1,axis=0)
-        #print("taurad1integrated") ; sys.stdout.flush()
-        #print(taurad1integrated[:,0,0]) ; sys.stdout.flush()
+        print("taurad1integrated") ; sys.stdout.flush()
+        print(taurad1integrated[:,0,0]) ; sys.stdout.flush()
         #
         taurad1flip=taurad1[::-1,:,:]
         taurad1flipintegrated=np.cumsum(taurad1flip,axis=0)
         taurad1flipintegrated=taurad1flipintegrated[::-1,:,:]
-        #print("taurad1flipintegrated") ; sys.stdout.flush()
-        #print(taurad1flipintegrated[:,0,0]) ; sys.stdout.flush()
+        print("taurad1flipintegrated") ; sys.stdout.flush()
+        print(taurad1flipintegrated[:,0,0]) ; sys.stdout.flush()
         #
         taurad2=(KAPPAUSER+KAPPAESUSER)*_dx2*np.sqrt(np.fabs(gv3[2,2]))
         taurad2integrated=np.cumsum(taurad2,axis=1)
+#        for kk in np.arange(0,nz):
+#                for ii in np.arange(0,nx):
+#        for jj in np.arange(ny/2,ny):
+#            taurad2integrated[:,jj,:]=0 #taurad2integrated[:,ny/2,:]
         #
         taurad2flip=taurad2[:,::-1,:]
         taurad2flipintegrated=np.cumsum(taurad2flip,axis=1)
         taurad2flipintegrated=taurad2integrated[:,::-1,:]
+        for jj in np.arange(0,ny/2):
+            taurad2flipintegrated[:,jj,:]=taurad2integrated[:,jj,:]
+        for jj in np.arange(ny/2,ny):
+            taurad2integrated[:,jj,:]=taurad2flipintegrated[:,jj,:]
         #
         taurad3=(KAPPAUSER+KAPPAESUSER)*_dx3*np.sqrt(np.fabs(gv3[3,3]))
         #
-        itaurad1integrated = reinterp(taurad1integrated,extent,ncell,domask=1.0)
-        itaurad1flipintegrated = reinterp(taurad1flipintegrated,extent,ncell,domask=1.0)
-        itaurad2integrated = reinterp(taurad2integrated,extent,ncell,domask=1.0)
-        itaurad2flipintegrated = reinterp(taurad2flipintegrated,extent,ncell,domask=1.0)
-    #
+        # use linear to avoid oscillations that lead to multiple similar contours where only 1 originally existed
+        itaurad1integrated = reinterp(taurad1integrated,extent,ncell,domask=1.0,interporder='linear')
+        itaurad1flipintegrated = reinterp(taurad1flipintegrated,extent,ncell,domask=1.0,interporder='linear')
+        itaurad2integrated = reinterp(taurad2integrated,extent,ncell,domask=1.0,interporder='linear')
+        itaurad2flipintegrated = reinterp(taurad2flipintegrated,extent,ncell,domask=1.0,interporder='linear')
+        #
+        #
+        print("taurad2") ; sys.stdout.flush()
+        print(taurad2[60,:,0]) ; sys.stdout.flush()
+        print("taurad2integrated") ; sys.stdout.flush()
+        print(taurad2integrated[5,:,0]) ; sys.stdout.flush()
+        print(taurad2integrated[25,:,0]) ; sys.stdout.flush()
+        print(taurad2integrated[60,:,0]) ; sys.stdout.flush()
+        print(taurad2integrated[100,:,0]) ; sys.stdout.flush()
+        np.set_printoptions(threshold=10)
     ####################
     #
     # get iqty
@@ -5719,7 +5739,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
     if dotaurad:
         ax.contour(itaurad1flipintegrated,linewidths=4,colors='cyan', extent=extent,hold='on',origin='lower',levels=(1,))
         ax.contour(itaurad2integrated,linewidths=4,colors='red', extent=extent,hold='on',origin='lower',levels=(1,))
-        ax.contour(itaurad2flipintegrated,linewidths=4,colors='red', extent=extent,hold='on',origin='lower',levels=(1,))
+        #ax.contour(itaurad2flipintegrated,linewidths=4,colors='red', extent=extent,hold='on',origin='lower',levels=(1,))
     print("HERE9b") ; sys.stdout.flush()
     if dobsqorholine:
         ax.contour(ibsqorho,linewidths=4,colors='red', extent=extent,hold='on',origin='lower',levels=(1,))  # 29.5
@@ -5948,7 +5968,7 @@ def maketsuniform(toplot=None):
     if(len(ts)>=6):
         dtsample1 = ts[-3] - ts[-4]
         dtsample2 = ts[-4] - ts[-5]
-        print("%g %g %g : dtsample=%g" % (ts[-3],ts[-4],ts[-5],dtsample)) ; sys.stdout.flush()
+        print("%g %g %g : dtsample1=%g: dtsample2=%g" % (ts[-3],ts[-4],ts[-5],dtsample1,dtsample2)) ; sys.stdout.flush()
     elif(len(ts)>=2):
         # need at least 6
         dtsample1 = ts[1]-ts[2]
@@ -13220,6 +13240,9 @@ def fix_defaulttimes2(ts,fti,ftf):
 def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None):
     global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
     #
+    # controls many things for radiation runs
+    showrad=1
+    #
     # need to compute this again
     rhor=1+(1-a**2)**0.5
     ihor = np.floor(iofr(rhor)+0.5)
@@ -13228,10 +13251,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     # choose radius where to measure total fluxes.  If ihor!=iflux for horizon quantities, components will be renormalized by totals
     #ifluxacc = iofr(2.0)
-    # sasha says r=5 is best so that also his A-0.9N100 model gets agreement between our floor subtractions.
+    # sasha says r=5 is best so that also his A-0.9N100 model gets agreement between our floor subtractions.  Doesn't work well for highly time variable behavior.
     ifluxacc = iofr(5.0)
-    # SUPERGODMARK
-    #ifluxacc=ihor
+    if showrad==1:
+        ifluxacc=ihor
     #
     #############
     # problem with using large iflux is that while fine for time-averages, bad for quantities vs. time -- can be very wrong at any one moment, so use horizon for that with time-averaged correction instead
@@ -13246,7 +13269,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     ##########
     #
     # where to measure energy/momentum fluxes
-    ihoruse=iofr(5.0)
+    ihoruse=iofr(5.0) # doesn't work well for highly time variable behavior
+    if showrad==1:
+        ihoruse=iofr(rhor)
     # where to measure magnetic flux
     ihorusemag=ihor
     #
@@ -13261,7 +13286,6 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         rjetout=50.
     # jon's Choice below
     showextra=True
-    showrad=True
     #
     #
     nqtynonbob = getnonbobnqty()
@@ -15555,16 +15579,20 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     print("mdotfinavg=%g" % (mdotfinavg)) ; sys.stdout.flush()
     #
+    # KORAL: radiation eta vs. time and averages
+    #
     etabhEM = prefactor*pjemtot[:,ihoruse]/mdotfinavg     * etatotfix
     etabhMAKE = prefactor*pjmaketot[:,ihoruse]/mdotfinavg * etatotfix
     etabhPAKE = prefactor*pjpaketot[:,ihoruse]/mdotfinavg * etatotfix
     etabhEN = prefactor*pjentot[:,ihoruse]/mdotfinavg     * etatotfix
-    etabh = etabhEM + etabhMAKE
+    etabhRAD=prefactor*edrad[:,ihoruse]/mdotfinavg     * etatotfix
+    etabh = etabhEM + etabhMAKE + etabhRAD
     etajEM = prefactor*pjem_mu1[:,iofr(rjetout)]/mdotfinavg
     etajMAKE = prefactor*pjmake_mu1[:,iofr(rjetout)]/mdotfinavg
     etajPAKE = prefactor*pjpake_mu1[:,iofr(rjetout)]/mdotfinavg
     etajEN = prefactor*pjen_mu1[:,iofr(rjetout)]/mdotfinavg
     etaj = etajEM + etajMAKE
+    etaoutRAD=prefactor*edrad[:,iofr(rjetout)]/mdotfinavg
     #etajlocal = etaj*(mdotfinavg/mdotinrdiskoutfinavg)
     etamwinEM = prefactor*pjem_mumax1m[:,iofr(rjetin)]/mdotfinavg
     etamwinMAKE = prefactor*pjmake_mumax1m[:,iofr(rjetin)]/mdotfinavg
@@ -15595,12 +15623,14 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     etabhMAKE2 = etabhMAKE * (mdotfinavg/mdotiniavg)
     etabhPAKE2 = etabhPAKE * (mdotfinavg/mdotiniavg)
     etabhEN2 = etabhEN * (mdotfinavg/mdotiniavg)
-    etabh2 = etabhEM2 + etabhMAKE2
+    etabhRAD2 = etabhRAD * (mdotfinavg/mdotiniavg)
+    etabh2 = etabhEM2 + etabhMAKE2 + etabhRAD2
     etajEM2 = prefactor*pjem_mu1[:,iofr(rjetout)]/mdotiniavg
     etajMAKE2 = prefactor*pjmake_mu1[:,iofr(rjetout)]/mdotiniavg
     etajPAKE2 = prefactor*pjpake_mu1[:,iofr(rjetout)]/mdotiniavg
     etajEN2 = prefactor*pjen_mu1[:,iofr(rjetout)]/mdotiniavg
     etaj2 = etajEM2 + etajMAKE2
+    etaoutRAD2=etaoutRAD * (mdotfinavg/mdotiniavg)
     #etaj2local = etaj2*(mdotiniavg/mdotinrdiskoutiniavg)
     etamwinEM2 = prefactor*pjem_mumax1m[:,iofr(rjetin)]/mdotiniavg
     etamwinMAKE2 = prefactor*pjmake_mumax1m[:,iofr(rjetin)]/mdotiniavg
@@ -15785,6 +15815,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         #
     if dotavg:
+        etaoutRAD_avg=timeavg(etaoutRAD,ts,fti,ftf)
+        etabhRAD_avg=timeavg(etabhRAD,ts,fti,ftf)
+        #
         etabh_avg = timeavg(etabh,ts,fti,ftf)
         etabhEM_avg = timeavg(etabhEM,ts,fti,ftf)
         etabhMAKE_avg = timeavg(etabhMAKE,ts,fti,ftf)
@@ -15865,12 +15898,15 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         #
         if(iti>fti):
+            #
             etabh2_avg = timeavg(etabh2,ts,iti,itf)
             etabhEM2_avg = timeavg(etabhEM2,ts,iti,itf)
             etabhMAKE2_avg = timeavg(etabhMAKE2,ts,iti,itf)
             etabhPAKE2_avg = timeavg(etabhPAKE2,ts,iti,itf)
             etabhEN2_avg = timeavg(etabhEN2,ts,iti,itf)
+            etabhRAD2_avg=timeavg(etabhRAD2,ts,iti,itf)
             etaj2_avg = timeavg(etaj2,ts,iti,itf)
+            etaoutRAD2_avg=timeavg(etaoutRAD2,ts,iti,itf)
             #etaj2local_avg = timeavg(etaj2local,ts,iti,itf)
             etajEM2_avg = timeavg(etajEM2,ts,iti,itf)
             etajMAKE2_avg = timeavg(etajMAKE2,ts,iti,itf)
@@ -16713,6 +16749,14 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         ax.set_xlim(ts[0],ts[-1])
         if showextra:
             plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderaxespad=0,frameon=True,labelspacing=0)
+        if showrad==1:
+                ymax=10
+                ax.set_ylim((0,ymax))
+        #
+        ymax=ax.get_ylim()[1]
+        #ymax=2*(np.floor(np.floor(ymax+1.5)/2))
+        ax.set_yticks((ymax/2.0,ymax,ymax/2.0))
+        ax.grid(True)
     #
     #####################################
     # Jon's version of Mdot plot
@@ -16726,7 +16770,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     if showrad:
         normfactor=Ledd
         radplotfactor=1.0;
-        Mdotplotfactor=1.0/500.0;
+        Mdotplotfactor=1.0/(mdotfinavg/normfactor)
     else:
         normfactor=1.0
         radplotfactor=1.0/500.0;
@@ -16735,7 +16779,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     print("normfactor=%g CCCTRUE=%g ENBAR=%g TBAR=%g" % (normfactor,CCCTRUE,ENBAR,TBAR)) ; sys.stdout.flush()
     #
     # to ensure only looking at positive fluxes
-    edrad[edrad<0.0]=0.0
+    #edrad[edrad<0.0]=0.0
+    # FUDGE because don't know how to limit plot using ymax or ticks.
+    #edrad[ts[:]<300,:]=0.0
     #
     if whichplot == 1 and sashaplot1 == 0:
         if dotavg:
@@ -16749,20 +16795,21 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                     ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+mdotjetiniavg/normfactor*Mdotplotfactor,color=(fc,fc+0.5*(1-fc),fc))
                     ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+mdotmwoutiniavg*windplotfactor/normfactor*Mdotplotfactor,color=(fc,fc,1))
         if showrad:
-            ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+edradoutiniavg*radplotfactor/normfactor,color=(fc,fc,1))
+            ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+edradoutiniavg*radplotfactor/normfactor,color=(fc,1,1))
         #
         print("before ax.plot1") ; sys.stdout.flush()
-        ax.plot(ts,np.abs(mdtot[:,iflux]*mdtotfix/normfactor*Mdotplotfactor),clr,label=r'$\dot M_{\rm H}c^2/500$')  # can't use ifluxacc
+        ax.plot(ts,np.abs(mdtot[:,iflux]*mdtotfix/normfactor*Mdotplotfactor),clr,label=r'$\dot M_{\rm H}c^2/%d$' % (1.0/Mdotplotfactor))  # can't use ifluxacc
+        ts,np.abs(mdtot[:,iflux]*mdtotfix/normfactor*Mdotplotfactor)
         if showextra:
             print("before ax.plot2") ; sys.stdout.flush()
-            ax.plot(ts,np.abs(mdjet[:,iofr(rjetout)]/normfactor*Mdotplotfactor),'g--',label=r'$\dot M_{\rm j}c^2/500$')
+            ax.plot(ts,np.abs(mdjet[:,iofr(rjetout)]/normfactor*Mdotplotfactor),'g--',label=r'$\dot M_{\rm j}c^2/%d$' % (1.0/Mdotplotfactor))
             if windplotfactor==1.0:
                 print("before ax.plot3") ; sys.stdout.flush()
-                ax.plot(ts,windplotfactor*np.abs(mdmwind[:,iofr(rjetout)]/normfactor*Mdotplotfactor),'b-.',label=r'$\dot M_{\rm mw,o}c^2/500$')
+                ax.plot(ts,windplotfactor*np.abs(mdmwind[:,iofr(rjetout)]/normfactor*Mdotplotfactor),'b-.',label=r'$\dot M_{\rm mw,o}c^2/%d$' % (1.0/Mdotplotfactor))
             elif windplotfactor==0.1:
-                ax.plot(ts,windplotfactor*np.abs(mdmwind[:,iofr(rjetout)]/normfactor*Mdotplotfactor),'b-.',label=r'$0.1\dot M_{\rm mw,o}c^2/500$')
+                ax.plot(ts,windplotfactor*np.abs(mdmwind[:,iofr(rjetout)]/normfactor*Mdotplotfactor),'b-.',label=r'$0.1\dot M_{\rm mw,o}c^2/%d$' % (1.0/Mdotplotfactor))
         if showrad:
-            ax.plot(ts,edrad[:,iofr(rjetout)]*radplotfactor/normfactor,'c-.',label=r'$\dot L_{\rm rad,o}$')
+            ax.plot(ts,edrad[:,iofr(rjetout)]*radplotfactor/normfactor,'c-.',label=r'$L_{\rm rad,o}$')
             print("edradtest") ; sys.stdout.flush()
             print(edrad[:,iofr(rjetout)]*radplotfactor/normfactor) ; sys.stdout.flush()
         #
@@ -16786,6 +16833,15 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,labelpad=9)
         #ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,ha='left',labelpad=20)
         ax.set_ylabel(r'$\dot E/L_{\rm Edd}$',fontsize=16,ha='left',labelpad=20)
+        #
+        ymax=ax.get_ylim()[1]
+        if showrad==1:
+                ymax=min(ymax,3.0*mdotfinavg/normfactor*Mdotplotfactor)
+                ax.set_ylim((0,ymax))
+        #
+        #ymax=2*(np.floor(np.floor(ymax+1.5)/2))
+        ax.set_yticks((ymax/2.0,ymax,ymax/2.0))
+        ax.grid(True)
         #
         plt.setp( ax.get_xticklabels(), visible=False)
         ax.set_xlim(ts[0],ts[-1])
@@ -16941,6 +16997,36 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         ax.set_xlim(ts[0],ts[-1])
         if showextra:
             plt.legend(loc='upper left',bbox_to_anchor=(0.02,0.98),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
+        #
+        ymax=ax.get_ylim()[1]
+        #if 100 < ymax and ymax < 200: 
+        #        #ymax = 2
+        #        tck=(100,)
+        #        ax.set_yticks(tck)
+        #        #ax.set_yticklabels(('','100','200'))
+        #elif ymax < 100: 
+        #        #ymax = 100
+        #        tck=(ymax/10,ymax)
+        #        ax.set_yticks(tck)
+        #        ax.set_yticklabels(('','100'))
+        if ymax>=100:
+                ymax=min(400,ymax) # don't expect higher than 400% efficiency, so assume anomolous peak
+                ax.set_ylim((0,ymax))
+                ymax=np.floor(ymax/100.*0.9999)+1
+                ymax*=100
+                ax.set_ylim((0,ymax))
+                tck=np.arange(1,ymax/100.,(ymax/100.0-1.0)/2.0)*100
+                ax.set_yticks(tck)
+        elif ymax>=10:
+                ymax=np.floor(ymax/10.*0.9999)+1
+                ymax*=10
+                ax.set_ylim((0,ymax))
+                tck=np.arange(1,ymax/10.,(ymax/10.0-1.0)/2.0)*10
+                ax.set_yticks(tck)
+        else:
+                ax.set_yticks((ymax/2.0,ymax))
+        #
+        ax.grid(True)
     #
     # Done with Sasha's whichplot==4
     # Print Sasha's result
@@ -16985,23 +17071,35 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                 if showextra:
                     ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etaj2_avg,'--',color=(fc,fc+0.5*(1-fc),fc))
                     ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etamwout2_avg,'-.',color=(fc,fc,1))
+            if showrad:
+                ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etaoutRAD_avg,'-.',color=(fc,1,1))
+                ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]-etabhRAD_avg,'-.',color=(fc,0.5,.7))
         #
         ax.plot(ts,etabh,clr,label=r'$\eta_{\rm H}$')
         if showextra:
             ax.plot(ts,etaj,'g--',label=r'$\eta_{\rm j}$')
             ax.plot(ts,etamwout,'b-.',label=r'$\eta_{\rm mw,o}$')
+        if showrad:
+            ax.plot(ts,etaoutRAD,'c-.',label=r'$\eta_{\rm rad,out}$')
+            ax.plot(ts,-etabhRAD,'c-.',label=r'$-\eta_{\rm rad,H}$')
         if findex != None:
             if not isinstance(findex,tuple):
                 ax.plot(ts[findex],etabh[findex],'o',mfc='r')
                 if showextra:
                     ax.plot(ts[findex],etaj[findex],'gs')
                     ax.plot(ts[findex],etamwout[findex],'bv')
+                if showrad:
+                    ax.plot(ts[findex],etaoutRAD[findex],'cs')
+                    ax.plot(ts[findex],-etabhRAD[findex],'cv')
             else:
                 for fi in findex:
                     ax.plot(ts[fi],etabh[fi],'o',mfc='r')#,label=r'$\dot M$')
                     if showextra:
                         ax.plot(ts[fi],etamwout[fi],'bv')#,label=r'$\dot M$')
                         ax.plot(ts[fi],etaj[fi],'gs')#,label=r'$\dot M$')
+                    if showrad:
+                        ax.plot(ts[fi],etaoutRAD[fi],'cv')#,label=r'$\dot M$')
+                        ax.plot(ts[fi],-etabhRAD[fi],'cs')#,label=r'$\dot M$')
         #ax.set_ylim(0,2)
         yminbh=np.min(etabh)
         yminj=np.min(etaj)
@@ -17020,12 +17118,44 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         ymaxmw=np.max(etamwout)
         ymax=max(ymaxbh,ymaxj)
         ymax=max(ymax,ymaxmw)
+        ymax=min(ymax,3.0*etabh_avg)
         #
         ax.set_ylim(ymin,ymax)
         #
         ax.set_xlabel(r'$t\;[r_g/c]$',fontsize=16)
         ax.set_ylabel(r'$\eta\ [\%]$',fontsize=16,ha='left',labelpad=20)
         ax.set_xlim(ts[0],ts[-1])
+        #
+        #ymax=ax.get_ylim()[1]
+        #if 100 < ymax and ymax < 200: 
+        #        #ymax = 2
+        #        tck=(100,)
+        #        ax.set_yticks(tck)
+        #        #ax.set_yticklabels(('','100','200'))
+        #elif ymax < 100: 
+        #        #ymax = 100
+        #        tck=(ymax/10,ymax)
+        #        ax.set_yticks(tck)
+        #        ax.set_yticklabels(('','100'))
+        if ymax>=100:
+                ymax=min(400,ymax) # don't expect higher than 400% efficiency, so assume anomolous peak
+                ax.set_ylim((0,ymax))
+                ymax=np.floor(ymax/100.*0.9999)+1
+                ymax*=100
+                ax.set_ylim((0,ymax))
+                tck=np.arange(1,ymax/100.,(ymax/100.0-1.0)/2.0)*100
+                ax.set_yticks(tck)
+        elif ymax>=10:
+                ymax=np.floor(ymax/10.*0.9999)+1
+                ymax*=10
+                ax.set_ylim((0,ymax))
+                tck=np.arange(1,ymax/10.,(ymax/10.0-1.0)/2.0)*10
+                ax.set_yticks(tck)
+        else:
+                ax.set_yticks((ymax/2.0,ymax))
+        #
+        ax.grid(True)
+        #
         if showextra:
             leg=ax.legend(loc='upper left',bbox_to_anchor=(0.02,0.98),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
             # set some legend properties.  All the code below is optional.  The
@@ -17038,7 +17168,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             # see text.Text, lines.Line2D, and patches.Rectangle for more info on
             # the settable properties of lines, text, and rectangles
             #frame.set_facecolor('0.80')      # set the frame face color to light gray
-            plt.setp(ltext, fontsize=12)    # the legend text fontsize
+            plt.setp(ltext, fontsize=11)    # the legend text fontsize
             #plt.setp(llines, linewidth=1.5)      # the legend linewidth
             #leg.draw_frame(False)           # don't draw the legend frame
     #
@@ -17096,6 +17226,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     print( "mdotfinavg=%g " % (mdotfinavg/normfactor)) ; sys.stdout.flush()
     print( "edradoutiniavg=%g " % (edradoutiniavg/normfactor)) ; sys.stdout.flush()
     print( "ldradoutiniavg/eradoutiniavg=%g " % (ldradoutiniavg/edradoutiniavg)) ; sys.stdout.flush()
+    print( "etabhRAD_avg=%g etaoutRAD_avg=%g " % (etabhRAD_avg,etaoutRAD_avg)) ; sys.stdout.flush()
+
     #
     #
     if iti > fti:
@@ -17382,6 +17514,34 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                     ax.plot(ts[fi],phibh[fi],'o',mfc='r')
                     ax.plot(ts[fi],phimwout[fi],'bv')
         ax.set_ylabel(r'$\Upsilon$',fontsize=16,ha='left',labelpad=20)
+        #
+        ymax=ax.get_ylim()[1]
+        ymax=min(ymax,3.0*phibh_avg)
+        #if 1 < ymax and ymax < 2: 
+        #        #ymax = 2
+        #        tck=(1,)
+        #        ax.set_yticks(tck)
+        #        #ax.set_yticklabels(('','1','2'))
+        #elif ymax < 1: 
+        #        #ymax = 1
+        #        tck=(ymax/10,ymax)
+        #        ax.set_yticks(tck)
+        #        ax.set_yticklabels(('','1'))
+        if ymax >=1:
+                ymax=np.floor(ymax*0.9999)+1
+                tck=np.arange(1,ymax,(ymax-1.0)/2.0)
+                ax.set_yticks(tck)
+        elif ymax <1 and ymax > 0.1:
+                ymax=1
+                ax.set_ylim((0,ymax))
+                tck=np.arange(ymax/2.0,(3.0/2.0)*ymax,ymax/2.0)
+                ax.set_yticks(tck)
+        else:
+                ax.set_yticks((ymax/2.0,ymax))
+                #ax.set_ylim((0,ymax))
+        #
+        ax.grid(True)
+        #
         if showextra:
             leg=ax.legend(loc='upper left',bbox_to_anchor=(0.02,0.98),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
             # set some legend properties.  All the code below is optional.  The
@@ -23515,7 +23675,7 @@ def ploteta():
     # eta = pjet/<mdot>
     #
     ax34 = plt.gca()
-    plotqtyvstime(qtymem,fullresultsoutput=0,ax=ax34,whichplot=4,prefactor=1)
+    (yavgref)=plotqtyvstime(qtymem,fullresultsoutput=0,ax=ax34,whichplot=4,prefactor=1)
     ymax=ax34.get_ylim()[1]
     #if 1 < ymax and ymax < 2: 
     #    #ymax = 2
@@ -23528,6 +23688,7 @@ def ploteta():
     #    ax34.set_yticks(tck)
     #    #ax34.set_yticklabels(('','1'))
     if ymax >= 1:
+        ymax=min(4,ymax) # don't expect efficiencies larger than 400%.
         ymax=np.floor(ymax)+1
         tck=np.arange(1,ymax,(ymax-1.0)/2.0)
         ax34.set_yticks(tck)
@@ -23824,6 +23985,9 @@ def mkmovieframepre2():
 
 def mkmovieframe(findex=None,filenum=None,framesize=None):
     #
+    # choose
+    showrad=1
+    #
     print("mkmovieframe: findex=%d filenum=%d framesize=%d" % (findex,filenum,framesize)) ; sys.stdout.flush()
     # could do time-dependent frame size
     #plotlen = plotleni+(plotlenf-plotleni)*(t-plotlenti)/(plotlentf-plotlenti)
@@ -23847,10 +24011,6 @@ def mkmovieframe(findex=None,filenum=None,framesize=None):
     #mdot
     ax31 = plt.subplot(gs3[-3,:])
     plotqtyvstime(qtymem,fullresultsoutput=0,ax=ax31,whichplot=1,findex=findex)
-    ymax=ax31.get_ylim()[1]
-    #ymax=2*(np.floor(np.floor(ymax+1.5)/2))
-    ax31.set_yticks((ymax/2.0,ymax,ymax/2.0))
-    ax31.grid(True)
     #ax31.set_ylim((0,ymax))
     #pjet
     # ax32 = plt.subplot(gs3[-2,:])
@@ -23870,62 +24030,12 @@ def mkmovieframe(findex=None,filenum=None,framesize=None):
     #
     ax35 = plt.subplot(gs3[-2,:])
     plotqtyvstime(qtymem,fullresultsoutput=0,ax=ax35,whichplot=5,findex=findex)
-    ymax=ax35.get_ylim()[1]
-    #if 1 < ymax and ymax < 2: 
-    #    #ymax = 2
-    #    tck=(1,)
-    #    ax35.set_yticks(tck)
-    #    #ax35.set_yticklabels(('','1','2'))
-    #elif ymax < 1: 
-    #    #ymax = 1
-    #    tck=(ymax/10,ymax)
-    #    ax35.set_yticks(tck)
-    #    ax35.set_yticklabels(('','1'))
-    if ymax >=1:
-        ymax=np.floor(ymax*0.9999)+1
-        tck=np.arange(1,ymax,(ymax-1.0)/2.0)
-        ax35.set_yticks(tck)
-    elif ymax <1 and ymax > 0.1:
-        ymax=1
-        ax35.set_ylim((0,ymax))
-        tck=np.arange(ymax/2.0,(3.0/2.0)*ymax,ymax/2.0)
-        ax35.set_yticks(tck)
-    else:
-        ax35.set_yticks((ymax/2.0,ymax))
-        #ax35.set_ylim((0,ymax))
-    #
-    ax35.grid(True)
     #
     #####################
     # eta=pjet/<mdot>
     #
     ax34 = plt.subplot(gs3[-1,:])
     plotqtyvstime(qtymem,fullresultsoutput=0,ax=ax34,whichplot=4,findex=findex)
-    ymax=ax34.get_ylim()[1]
-    #if 100 < ymax and ymax < 200: 
-    #    #ymax = 2
-    #    tck=(100,)
-    #    ax34.set_yticks(tck)
-    #    #ax34.set_yticklabels(('','100','200'))
-    #elif ymax < 100: 
-    #    #ymax = 100
-    #    tck=(ymax/10,ymax)
-    #    ax34.set_yticks(tck)
-    #    ax34.set_yticklabels(('','100'))
-    if ymax>=100:
-        ymax=np.floor(ymax/100.*0.9999)+1
-        ymax*=100
-        tck=np.arange(1,ymax/100.,(ymax/100.0-1.0)/2.0)*100
-        ax34.set_yticks(tck)
-    elif ymax>=10:
-        ymax=np.floor(ymax/10.*0.9999)+1
-        ymax*=10
-        tck=np.arange(1,ymax/10.,(ymax/10.0-1.0)/2.0)*10
-        ax34.set_yticks(tck)
-    else:
-        ax34.set_yticks((ymax/2.0,ymax))
-    #
-    ax34.grid(True)
     #reset lower limit to 0
     #Rz xy
     #
