@@ -17223,9 +17223,11 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     print( "leta_H = %g, leta_HEM = %g, leta_HMAKE = %g, leta_jwout = %g, leta_j = %g, leta_jEM = %g, leta_jMAKE = %g, leta_mwin = %g, leta_mwinEM = %g, leta_mwinMAKE = %g, leta_mwout = %g, leta_mwoutEM = %g, leta_mwoutMAKE = %g, leta_win = %g, leta_winEM = %g, leta_winMAKE = %g, leta_wout = %g, leta_woutEM = %g, leta_woutMAKE = %g, lemtot_H = %g" % ( letabh_avg, letabhEM_avg, letabhMAKE_avg, letaj_avg + letawout_avg, letaj_avg, letajEM_avg, letajMAKE_avg, letamwin_avg, letamwinEM_avg, letamwinMAKE_avg, letamwout_avg, letamwoutEM_avg, letamwoutMAKE_avg, letawin_avg, letawinEM_avg, letawinMAKE_avg, letawout_avg, letawoutEM_avg, letawoutMAKE_avg, lemtot_avg ) )
     #
     # KORAL OUTPUTS
+    print( "Things per unit Ledd" ) ; sys.stdout.flush()
     print( "mdotfinavg=%g " % (mdotfinavg/normfactor)) ; sys.stdout.flush()
     print( "edradoutiniavg=%g " % (edradoutiniavg/normfactor)) ; sys.stdout.flush()
     print( "ldradoutiniavg/eradoutiniavg=%g " % (ldradoutiniavg/edradoutiniavg)) ; sys.stdout.flush()
+    print( "Eff in percent, so 100% is up to Mdot level." ) ; sys.stdout.flush()
     print( "etabhRAD_avg=%g etaoutRAD_avg=%g " % (etabhRAD_avg,etaoutRAD_avg)) ; sys.stdout.flush()
 
     #
