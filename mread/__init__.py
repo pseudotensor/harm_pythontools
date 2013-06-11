@@ -2540,7 +2540,7 @@ def ismb09model(modelname):
     #
 
 def isradmodelA(modelname):
-    if modelname=="runrad1" or modelname=="runrad2" or modelname=="runnorad1":
+    if modelname=="runrad1" or modelname=="runrad2" or modelname=="runnorad1" or modelname=="runrad1torusfixed":
         return(1)
     else:
         return(0)
@@ -5346,7 +5346,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         #
         taurad2flip=taurad2[:,::-1,:]
         taurad2flipintegrated=np.cumsum(taurad2flip,axis=1)
-        taurad2flipintegrated=taurad2integrated[:,::-1,:]
+        taurad2flipintegrated=taurad2flipintegrated[:,::-1,:]
         for jj in np.arange(0,ny/2):
             taurad2flipintegrated[:,jj,:]=taurad2integrated[:,jj,:]
         for jj in np.arange(ny/2,ny):
