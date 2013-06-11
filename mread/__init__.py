@@ -5469,11 +5469,11 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         ncont = numcontours #30
         if inputlevs is None:
             levs=np.linspace(miniaphi,maxiaphi,ncont)
+            # to get rid of zero contours that are just noise -- especially near t=0
+            levs=levs[np.fabs(levs[:])>1E-10]
         else:
             levs=inputlevs
         #
-        # to get rid of zero contours that are just noise -- especially near t=0
-        levs=levs[np.fabs(levs[:])>1E-10]
         print("levs=%21.15g",levs)
     #
     print("HERE2") ; sys.stdout.flush()
@@ -5509,10 +5509,10 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         if inputlevs is None:
             #levs=np.linspace(-maxabsiaphi,maxabsiaphi,ncont) # um, iaphi is never negative
             levs=np.linspace(0,maxabsiaphi,ncont)
+            # to get rid of zero contours that are just noise -- especially near t=0
+            levs=levs[np.fabs(levs[:])>1E-10]
         else:
             levs=inputlevs
-        # to get rid of zero contours that are just noise -- especially near t=0
-        levs=levs[np.fabs(levs[:])>1E-10]
         print("levs2=%21.15g",levs)
         #
     #
@@ -23789,10 +23789,23 @@ def mkmovie(framesize=50, domakeavi=False):
         levelfieldlinefile=re.sub("dumps/","",levelfieldlinefile)
         rfd(levelfieldlinefile)
     #
+    #
     # DEBUG: Avoid initfinal and stream unless specifically wanted
     skip1gen=0
     skip2gen=1
     skip3gen=1
+    #
+    if skip1gen==0:
+        # now have levels as inputlevs and aphijetouter for that contour line
+        inputlevs1=None
+        #mkmovieframepre1(fname=levelfieldlinefile) # already read in above
+        mkmovieframepre2()
+        inputlevs1temp=mkmovieframe(findex=0,filenum=choseindex,framesize=framesize,inputlevs=inputlevs1,savefile=False)
+        inputlevs1=inputlevs1temp
+        # to get rid of zero contours that are just noise -- especially near t=0
+        inputlevs1=inputlevs1[np.fabs(inputlevs1[:])>1E-10]
+        print("inputlevs1 for all time")  ;sys.stdout.flush()
+        print(inputlevs1)  ;sys.stdout.flush()
     #
     if skip2gen==0: 
         #########
@@ -23894,7 +23907,7 @@ def mkmovie(framesize=50, domakeavi=False):
                 mkmovieframepre2()
                 cvelalready=1
             #
-            mkmovieframe(findex=qtyfindex,filenum=filenum,framesize=framesize)
+            inputlevs1temp=mkmovieframe(findex=qtyfindex,filenum=filenum,framesize=framesize,inputlevs=inputlevs1)
             #
         printusage()
         #
@@ -23985,7 +23998,7 @@ def mkmovieframepre2():
     Tcalcud()
 
 
-def mkmovieframe(findex=None,filenum=None,framesize=None):
+def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile=True):
     #
     # choose
     showrad=1
@@ -24085,7 +24098,7 @@ def mkmovieframe(findex=None,filenum=None,framesize=None):
     if isradmodelA(modelname)==0:
         mkframe("lrho%04d_Rz%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax1,cb=False,pt=False,dobsq=mydobsq,dorho=mydorho)
     else:
-        mkframe("lrho%04d_Rz%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax1,cb=True,pt=True,dobsq=mydobsq,dorho=mydorho,dostreamlines=0,doaphi=1,dobsqorholine=True)
+        inputlevs=mkframe("lrho%04d_Rz%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax1,cb=True,pt=True,dobsq=mydobsq,dorho=mydorho,dostreamlines=0,doaphi=1,dobsqorholine=True)
     #
     plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
     plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=10,fontsize=16)
@@ -24121,11 +24134,12 @@ def mkmovieframe(findex=None,filenum=None,framesize=None):
         plt.ylabel(r"$y\ [r_g]$",ha='left',labelpad=10,fontsize=16)
     #
     #
-    #print xxx
-    plt.savefig( "lrho%04d_Rzxym1.png" % (filenum)  )
-    if saveeps==1:
-        plt.savefig( "lrho%04d_Rzxym1.eps" % (filenum)  )
-    #
+    if savefile==True:
+        #print xxx
+        plt.savefig( "lrho%04d_Rzxym1.png" % (filenum)  )
+        if saveeps==1:
+                plt.savefig( "lrho%04d_Rzxym1.eps" % (filenum)  )
+        #
     ###########################
     # SMALL BOX
     ###########################
@@ -24142,7 +24156,7 @@ def mkmovieframe(findex=None,filenum=None,framesize=None):
     if isradmodelA(modelname)==0:
         mkframe("lrhosmall%04d_Rz%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax1,cb=False,pt=False,dobsq=mydobsq,dorho=mydorho)
     else:
-        mkframe("lrhosmall%04d_Rz%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax1,cb=True,pt=True,dobsq=mydobsq,dorho=mydorho,dostreamlines=0,doaphi=1,dobsqorholine=True)
+        inputlevs2=mkframe("lrhosmall%04d_Rz%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax1,cb=True,pt=True,dobsq=mydobsq,dorho=mydorho,dostreamlines=0,doaphi=1,dobsqorholine=True)
     #
     plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
     plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=10,fontsize=16)
@@ -24177,11 +24191,16 @@ def mkmovieframe(findex=None,filenum=None,framesize=None):
         plt.ylabel(r"$y\ [r_g]$",ha='left',labelpad=10,fontsize=16)
     #
     #
-    #print xxx
-    plt.savefig( "lrhosmall%04d_Rzxym1.png" % (filenum)  )
-    if saveeps==1:
-        plt.savefig( "lrhosmall%04d_Rzxym1.eps" % (filenum)  )
-    #print xxx
+    if savefile==True:
+        #print xxx
+        plt.savefig( "lrhosmall%04d_Rzxym1.png" % (filenum)  )
+        if saveeps==1:
+                plt.savefig( "lrhosmall%04d_Rzxym1.eps" % (filenum)  )
+        #print xxx
+    #
+    # use big box so includes contours that end up in small box later.
+    return inputlevs
+    #
 
 
 
