@@ -431,8 +431,8 @@ def mkfig1(dosavefig=1,figno=1):
     os.chdir("/home/atchekho/run2/hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1")
     grid3d("gdump.bin",use2d=True)
     rfd("fieldline0610.bin")
-    mkfig1gen(dosavefig=dosavefig,letter="a",whichvar='Bphi',label=r"$B_\otimes$",dostreamlines=0)
-    #mkfig1gen(dosavefig=dosavefig,letter="b",whichvar='wobsqkomi',label=r"$\log_{10}(w/b^2)$",dostreamlines=0)
+    mkfig1gen(dosavefig=dosavefig,letter="a",whichvar='Bphi',label=r"$B_\otimes$",dostreamlines=0,lcunits=1)
+    mkfig1gen(dosavefig=dosavefig,letter="b",whichvar='wobsqkomi',label=r"$\log_{10}(w/b^2)$",dostreamlines=0,lcunits=1)
     
 #mkfig2(ii=95,n1=64,n2=97) #1st run
 #mkfig2(ii=95) #subsequent runs
@@ -457,11 +457,11 @@ def mkfig2(dosavefig=1,ii=96,n1=None,n2=None,figno=2,recomputeavg=0,doreload=0,a
         rfd("fieldline%04d.bin" % ii)
     else:
         print("Skip loading fieldline%04d.bin because already have a data file loaded." % ii)
-    # mkfig1gen(ii=ii,dosavefig=dosavefig,letter="a",whichvar='Bphi',label=r"$B_\otimes$",dostreamlines=1,figno=figno,xla=r"$x/R_{\rm LC}$",yla=r"$z/R_{\rm LC}$")
-    # mkfig1gen(ii=ii,dosavefig=dosavefig,letter="b",whichvar='wobsqkomi',label=r"$\log_{10}(w/b^2)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,xla=r"$x/R_{\rm LC}$",yla=r"$z/R_{\rm LC}$")
-    # mkfig1gen(ii=ii,dosavefig=dosavefig,letter="d",whichvar='uu',label=r"$u\ (y=0)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,xla=r"$x/R_{\rm LC}$",yla=r"$z/R_{\rm LC}$")
-    # mkfig1gen(ii=ii,dosavefig=dosavefig,letter="e",whichvar='uu',label=r"$u\ (x=0)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,kval=nz/4,xla=r"$y/R_{\rm LC}$",yla=r"$z/R_{\rm LC}$")
-    mkfig1gen(ii=ii,dosavefig=dosavefig,letter="f",whichvar='uu',label=r"$u\ (z=0)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,kval=0,doxyslice=1,xla=r"$x/R_{\rm LC}$",yla=r"$y/R_{\rm LC}$")
+    # mkfig1gen(ii=ii,dosavefig=dosavefig,letter="a",whichvar='Bphi',label=r"$B_\otimes$",dostreamlines=1,figno=figno,xla=r"$x/R_{\rm LC}$",yla=r"$z/R_{\rm LC}$",lcunits=1)
+    # mkfig1gen(ii=ii,dosavefig=dosavefig,letter="b",whichvar='wobsqkomi',label=r"$\log_{10}(w/b^2)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,xla=r"$x/R_{\rm LC}$",yla=r"$z/R_{\rm LC}$",lcunits=1)
+    # mkfig1gen(ii=ii,dosavefig=dosavefig,letter="d",whichvar='uu',label=r"$u\ (y=0)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,xla=r"$x/R_{\rm LC}$",yla=r"$z/R_{\rm LC}$",lcunits=1)
+    # mkfig1gen(ii=ii,dosavefig=dosavefig,letter="e",whichvar='uu',label=r"$u\ (x=0)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,kval=nz/4,xla=r"$y/R_{\rm LC}$",yla=r"$z/R_{\rm LC}$",lcunits=1)
+    mkfig1gen(ii=ii,dosavefig=dosavefig,letter="f",whichvar='uu',label=r"$u\ (z=0)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,kval=0,doxyslice=1,xla=r"$x/R_{\rm LC}$",yla=r"$y/R_{\rm LC}$",lcunits=1)
     # B = myB
     
 
@@ -541,7 +541,7 @@ def mksmallscalepulsarplot(ii=65,whichvar='Bphi',n1=None,n2=None,dosavefig=True,
     if n1 is not None and n2 is not None:
         computevars(n1=n1,n2=n2)
     if whichvar == 'Bphi':
-        mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=40,plotlen=2.5/OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=kval,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=2,ncell=400,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5,dosavefig=0,cb=cb,fntsize=20,vmin=vmin,vmax=vmax,whichvar=whichvar,**kwargs)
+        mkmovie(whichi=ii,whichn=0,doqtymem=False,frametype='Rzpanel',dobhfield=40,plotlen=2.5/OmegaNS,isnstar=True,minlenbhfield=0.0,density=1.2,whichr=1.3,minlengthdefault=0.03,kval=kval,dovarylw=0,maxsBphi=2.76704*(OmegaNS/0.2)**1.5,populatestreamlines=1,downsample=2,ncell=1600,dsval=0.001,dnarrow=1,detectLoops=1,arrowsize=0.5,dosavefig=0,cb=cb,fntsize=20,vmin=vmin,vmax=vmax,whichvar=whichvar,**kwargs)
     else:
         deltak = 0
         if whichvar == 'bsqow':
