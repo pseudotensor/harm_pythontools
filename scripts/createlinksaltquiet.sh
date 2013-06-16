@@ -73,6 +73,7 @@ then
     ln -sf $oldfullpath/dumps/dump0000 .
 fi
 
+cd $newfullpath/
 ln -sf $oldfullpath/coordparms.dat .
 ln -sf $oldfullpath/dimensions.txt .
 

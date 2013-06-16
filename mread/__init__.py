@@ -2716,7 +2716,9 @@ def getdefaulttimes1():
     if modelname=="sashaa9b100t1.5708":
         defaultfti=17000 # real start is ~8000
         defaultftf=21000 # problem beyond 21000
-        
+    if modelname=="runrad1torusfixed":
+        defaultfti=300
+        defaultftf=1e4
     #
     return defaultfti,defaultftf
 
@@ -2783,6 +2785,10 @@ def getdefaulttimes2():
     if isthickdiskmodel(modelname)==2:
         defaultfti=11000 # real start at ~8000
         defaultftf=14000 # real end a bit after 17000
+    #
+    if modelname=="runrad1torusfixed":
+        defaultfti=300
+        defaultftf=1e4
     #
     return defaultfti,defaultftf
 
@@ -7340,6 +7346,7 @@ def rfd(fieldlinefilename,**kwargs):
     #
     gotgdetB=0
     if(d.shape[0]>=14 and numcolumns==11+3):
+        gotgdetB=1
         print("Getting gdetB: dshape0=%d" % (d.shape[0])) ; sys.stdout.flush()
         #new image format additionally contains gdet*B^i
         #face-centered magnetic field components multiplied by gdet
@@ -7348,13 +7355,15 @@ def rfd(fieldlinefilename,**kwargs):
         # have to make copy so mods to gdetB[0] won't change B[3]
         gdetB = np.copy(d[10:14,:,:,:])
         gdetB[0]=0*gdetB[0]
-        gotgdetB=1
     #
     #
     global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
     global KAPPAUSER,KAPPAESUSER
     #
+    global gotrad
+    gotrad=0
     if(numcolumns==16):
+        gotrad=1
         Erf=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
         uradu=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
         Erf=d[11,:,:,:] # radiation frame radiation energy density
@@ -7447,7 +7456,7 @@ def rfd(fieldlinefilename,**kwargs):
     #
     #
     ######################
-    rfdprocess(gotgdetB=gotgdetB)
+    rfdprocess(gotgdetB=gotgdetB,gotrad=gotrad)
     #
     print("rfd(after rfdprocess) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
     #
@@ -7956,7 +7965,7 @@ def rotsimpletensordot(uu,rot,axis):
     #
     #
 
-def rfdprocess(gotgdetB=0):
+def rfdprocess(gotgdetB=0,gotrad=0):
     #
     # external globals
     global rho,ug,uu,B,gdetB,Erf,uradu
@@ -7983,6 +7992,42 @@ def rfdprocess(gotgdetB=0):
         print(gdetB.shape) ; sys.stdout.flush()
         gdetB[1:4] = gdet * B[1:4]
         #
+        #
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
+    global KAPPAUSER,KAPPAESUSER
+    if(gotrad==0):
+        GGG=1
+        CCCTRUE=1
+        MSUNCM=1
+        MPERSUN=1
+        LBAR=1
+        TBAR=1
+        VBAR=1
+        RHOBAR=1
+        MBAR=1
+        ENBAR=1
+        UBAR=1
+        TEMPBAR=1
+        ARAD_CODE_DEF=1
+        XFACT=1
+        ZATOM=1
+        AATOM=1
+        MUE=1
+        MUI=1
+        OPACITYBAR=1
+        MASSCM=1
+        KORAL2HARMRHO1=1
+        KAPPAUSER=rho*0
+        KAPPAESUSER=rho*0
+        Erf=rho*0
+        uradu=uu*0
+        KAPPA=1.0
+        KAPPAES=1.0
+        T1E4K=(1.0E4/TEMPBAR)
+        pg=(gam-1.0)*ug
+        Tgas=pg/rho
+        KAPPAUSER=rho*0
+        KAPPAESUSER=rho*0
         #
     #
     # get floor-cleaned versions (override uu[3] completely)
@@ -13241,7 +13286,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
     #
     # controls many things for radiation runs
-    showrad=1
+    global gotrad
+    showrad=gotrad # assume if got, then show.
     #
     # need to compute this again
     rhor=1+(1-a**2)**0.5
@@ -13253,6 +13299,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #ifluxacc = iofr(2.0)
     # sasha says r=5 is best so that also his A-0.9N100 model gets agreement between our floor subtractions.  Doesn't work well for highly time variable behavior.
     ifluxacc = iofr(5.0)
+    ifluxacc=ihor
     if showrad==1:
         ifluxacc=ihor
     #
@@ -13270,6 +13317,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     # where to measure energy/momentum fluxes
     ihoruse=iofr(5.0) # doesn't work well for highly time variable behavior
+    ihoruse=iofr(rhor)
     if showrad==1:
         ihoruse=iofr(rhor)
     # where to measure magnetic flux
@@ -16760,13 +16808,18 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     #####################################
     # Jon's version of Mdot plot
-    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
-    rddims()
-    MSUN=1.9891E33
-    sigmaT=0.665E-24
-    mproton=1.673E-24
-    Ledd=4.0*np.pi*GGG*(MPERSUN*MSUN)*mproton*CCCTRUE/sigmaT
-    Ledd=Ledd/(ENBAR/TBAR) # so in same units as code units
+    if gotrad:
+        global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
+        rddims()
+        MSUN=1.9891E33
+        sigmaT=0.665E-24
+        mproton=1.673E-24
+        Ledd=4.0*np.pi*GGG*(MPERSUN*MSUN)*mproton*CCCTRUE/sigmaT
+        Ledd=Ledd/(ENBAR/TBAR) # so in same units as code units
+        print("CCCTRUE=%g ENBAR=%g TBAR=%g" % (CCCTRUE,ENBAR,TBAR)) ; sys.stdout.flush()
+    else:
+        Ledd=1
+    #
     if showrad:
         normfactor=Ledd
         radplotfactor=1.0;
@@ -16776,7 +16829,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         radplotfactor=1.0/500.0;
         Mdotplotfactor=1.0;
     #
-    print("normfactor=%g CCCTRUE=%g ENBAR=%g TBAR=%g" % (normfactor,CCCTRUE,ENBAR,TBAR)) ; sys.stdout.flush()
+    print("normfactor=%g" % (normfactor)) ; sys.stdout.flush()
     #
     # to ensure only looking at positive fluxes
     #edrad[edrad<0.0]=0.0
@@ -16831,8 +16884,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                         ax.plot(ts[fi],edrad[:,iofr(rjetout)][fi]*radplotfactor/normfactor,'bv')
         #
         #ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,labelpad=9)
-        #ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,ha='left',labelpad=20)
-        ax.set_ylabel(r'$\dot E/L_{\rm Edd}$',fontsize=16,ha='left',labelpad=20)
+        if showrad:
+            ax.set_ylabel(r'$\dot E/L_{\rm Edd}$',fontsize=16,ha='left',labelpad=20)
+        else:
+            ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,ha='left',labelpad=20)
         #
         ymax=ax.get_ylim()[1]
         if showrad==1:
@@ -23801,11 +23856,12 @@ def mkmovie(framesize=50, domakeavi=False):
         #mkmovieframepre1(fname=levelfieldlinefile) # already read in above
         mkmovieframepre2()
         inputlevs1temp=mkmovieframe(findex=0,filenum=choseindex,framesize=framesize,inputlevs=inputlevs1,savefile=False)
-        inputlevs1=inputlevs1temp
-        # to get rid of zero contours that are just noise -- especially near t=0
-        inputlevs1=inputlevs1[np.fabs(inputlevs1[:])>1E-10]
-        print("inputlevs1 for all time")  ;sys.stdout.flush()
-        print(inputlevs1)  ;sys.stdout.flush()
+        if inputlevs1temp!=None:
+            inputlevs1=inputlevs1temp
+            # to get rid of zero contours that are just noise -- especially near t=0
+            inputlevs1=inputlevs1[np.fabs(inputlevs1[:])>1E-10]
+            print("inputlevs1 for all time")  ;sys.stdout.flush()
+            print(inputlevs1)  ;sys.stdout.flush()
     #
     if skip2gen==0: 
         #########
@@ -24000,8 +24056,6 @@ def mkmovieframepre2():
 
 def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile=True):
     #
-    # choose
-    showrad=1
     #
     print("mkmovieframe: findex=%d filenum=%d framesize=%d" % (findex,filenum,framesize)) ; sys.stdout.flush()
     # could do time-dependent frame size
@@ -24079,8 +24133,42 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
         vminforframe=-4.0
         vmaxforframe=2.0
     #
-    mydobsq=0
-    mydorho=1
+    if nz==1:
+        mydoaphi=1
+        mydostreamlines=0
+    else:
+        mydoaphi=0
+        mydostreamlines=1
+    #
+    if isradmodelA(modelname):
+        mydobsqleft=0
+        mydorholeft=1
+        mydobsqright=0
+        mydorhoright=0
+        leftcb=1
+        leftpt=1
+        mydobsqorholine=1
+        mydoErf=1
+        mydotaurad=1
+        vmaxforframeleft=vmaxforframe
+        vmaxforframeright=vmaxforframerad
+        vminforframeleft=vminforframe
+        vminforframeright=vminforframerad
+    else:
+        mydobsqleft=0
+        mydorholeft=1
+        mydobsqright=0
+        mydorhoright=1
+        leftcb=0
+        leftpt=0
+        mydobsqorholine=0
+        mydoErf=0
+        mydotaurad=0
+        vmaxforframeleft=vmaxforframe
+        vmaxforframeright=vmaxforframe
+        vminforframeleft=vminforframe
+        vminforframeright=vminforframe
+    #
     #
     ###########################
     # BIG BOX
@@ -24089,42 +24177,29 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
     #
     # LEFT PANEL
     gs1 = GridSpec(1, 1)
-    if isradmodelA(modelname)==0:
-        gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
-    else:
-        gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
+    gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
     #
     ax1 = plt.subplot(gs1[:, -1])
-    if isradmodelA(modelname)==0:
-        mkframe("lrho%04d_Rz%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax1,cb=False,pt=False,dobsq=mydobsq,dorho=mydorho)
-    else:
-        inputlevs=mkframe("lrho%04d_Rz%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax1,cb=True,pt=True,dobsq=mydobsq,dorho=mydorho,dostreamlines=0,doaphi=1,dobsqorholine=True)
+    #
+    inputlevs=mkframe("lrho%04d_Rz%g" % (filenum,plotsize),vmin=vminforframeleft,vmax=vmaxforframeleft,len=plotsize,ax=ax1,cb=leftcb,pt=leftpt,dobsq=mydobsqleft,dorho=mydorholeft,dostreamlines=mydostreamlines,doaphi=mydoaphi,dobsqorholine=mydobsqorholine)
     #
     plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
     plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=10,fontsize=16)
     #
     # RIGHT PANEL
     gs2 = GridSpec(1, 1)
-    if isradmodelA(modelname)==0:
-        gs2.update(left=0.5, right=0.95, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
-    else:
+    if leftcb:
         gs2.update(left=0.55, right=0.95, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
+    else:
+        gs2.update(left=0.5, right=0.95, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
     ax2 = plt.subplot(gs2[:, -1])
     #
     # RIGHT PANEL
-    if isradmodelA(modelname)==0:
-        if nz==1:
-            mkframe("lrho%04d_xy%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax2,cb=True,dostreamlines=True,dobsq=mydobsq,dorho=mydorho)
-        else:
-            # If using 2D data, then for now, have to replace below with mkframe version above and replace ax1->ax2.  Some kind of qhull error.
-            mkframexy("lrho%04d_xy%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax2,cb=True,pt=False,dostreamlines=True,dobsq=mydobsq,dorho=mydorho)
+    if nz==1:
+        mkframe("lrho%04d_xy%g" % (filenum,plotsize),vmin=vminforframeright,vmax=vmaxforframeright,len=plotsize,ax=ax2,cb=True,dostreamlines=True,dobsq=mydobsqright,dorho=mydorhoright,doErf=mydoErf,dotaurad=mydotaurad)
     else:
-        if nz==1:
-            mkframe("lrho%04d_xy%g" % (filenum,plotsize),vmin=vminforframerad,vmax=vmaxforframerad,len=plotsize,ax=ax2,cb=True,dostreamlines=True,dobsq=0,dorho=0,doErf=1,dotaurad=True)
-        else:
-            # If using 2D data, then for now, have to replace below with mkframe version above and replace ax1->ax2.  Some kind of qhull error.
-            mkframexy("lrho%04d_xy%g" % (filenum,plotsize),vmin=vminforframerad,vmax=vmaxforframerad,len=plotsize,ax=ax2,cb=True,pt=True,dostreamlines=True,dobsq=0,dorho=0,doErf=1,dotaurad=True)
-    #
+        # If using 2D data, then for now, have to replace below with mkframe version above and replace ax1->ax2.  Some kind of qhull error.
+        mkframexy("lrho%04d_xy%g" % (filenum,plotsize),vmin=vminforframeright,vmax=vmaxforframeright,len=plotsize,ax=ax2,cb=True,pt=True,dostreamlines=True,dobsq=mydobsqright,dorho=mydorhoright,doErf=mydoErf,dotaurad=mydotaurad)
     #
     if nz==1:
         plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
@@ -24147,40 +24222,24 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
     #
     # LEFT PANEL
     gs1 = GridSpec(1, 1)
-    if isradmodelA(modelname)==0:
-        gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
-    else:
-        gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
-        #
+    gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
+    #
     ax1 = plt.subplot(gs1[:, -1])
-    if isradmodelA(modelname)==0:
-        mkframe("lrhosmall%04d_Rz%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax1,cb=False,pt=False,dobsq=mydobsq,dorho=mydorho)
-    else:
-        inputlevs2=mkframe("lrhosmall%04d_Rz%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax1,cb=True,pt=True,dobsq=mydobsq,dorho=mydorho,dostreamlines=0,doaphi=1,dobsqorholine=True)
+    inputlevs2=mkframe("lrhosmall%04d_Rz%g" % (filenum,plotsize),vmin=vminforframeleft,vmax=vmaxforframeleft,len=plotsize,ax=ax1,cb=leftcb,pt=leftpt,dobsq=mydobsqleft,dorho=mydorholeft,dostreamlines=mydostreamlines,doaphi=mydoaphi,dobsqorholine=mydobsqorholine)
     #
     plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
     plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=10,fontsize=16)
     #
     # RIGHT PANEL
     gs2 = GridSpec(1, 1)
-    if isradmodelA(modelname)==0:
-        gs2.update(left=0.55, right=0.95, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
-    else:
-        gs2.update(left=0.55, right=0.95, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
+    gs2.update(left=0.55, right=0.95, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
     ax2 = plt.subplot(gs2[:, -1])
     #
-    if isradmodelA(modelname)==0:
-        if nz==1:
-            mkframe("lrhosmall%04d_xy%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax2,cb=True,dostreamlines=True,dobsq=mydobsq,dorho=mydorho)
-        else:
-            # If using 2D data, then for now, have to replace below with mkframe version above and replace ax1->ax2.  Some kind of qhull error.
-            mkframexy("lrhosmall%04d_xy%g" % (filenum,plotsize),vmin=vminforframe,vmax=vmaxforframe,len=plotsize,ax=ax2,cb=True,pt=False,dostreamlines=True,dobsq=mydobsq,dorho=mydorho)
+    if nz==1:
+        mkframe("lrhosmall%04d_xy%g" % (filenum,plotsize),vmin=vminforframeright,vmax=vmaxforframeright,len=plotsize,ax=ax2,cb=True,dostreamlines=True,dobsq=mydobsqright,dorho=mydorhoright,doErf=mydoErf,dotaurad=mydotaurad)
     else:
-        if nz==1:
-            mkframe("lrhosmall%04d_xy%g" % (filenum,plotsize),vmin=vminforframerad,vmax=vmaxforframerad,len=plotsize,ax=ax2,cb=True,dostreamlines=True,dobsq=0,dorho=0,doErf=1,dotaurad=True)
-        else:
-            # If using 2D data, then for now, have to replace below with mkframe version above and replace ax1->ax2.  Some kind of qhull error.
-            mkframexy("lrhosmall%04d_xy%g" % (filenum,plotsize),vmin=vminforframerad,vmax=vmaxforframerad,len=plotsize,ax=ax2,cb=True,pt=True,dostreamlines=True,dobsq=0,dorho=0,doErf=1,dotaurad=True)
+        # If using 2D data, then for now, have to replace below with mkframe version above and replace ax1->ax2.  Some kind of qhull error.
+        mkframexy("lrhosmall%04d_xy%g" % (filenum,plotsize),vmin=vminforframeright,vmax=vmaxforframeright,len=plotsize,ax=ax2,cb=True,pt=True,dostreamlines=True,dobsq=mydobsqright,dorho=mydorhoright,doErf=mydoErf,dotaurad=mydotaurad)
     #
     #
     if nz==1:
