@@ -2540,7 +2540,19 @@ def ismb09model(modelname):
     #
 
 def isradmodelA(modelname):
-    if modelname=="runrad1" or modelname=="runrad2" or modelname=="runnorad1" or modelname=="runrad1torusfixed":
+    if modelname=="runrad1" or modelname=="runrad2" or modelname=="runnorad1":
+        return(1)
+    else:
+        return(0)
+    #
+def isradmodelB(modelname): # for lower densities with Mdot\sim 100Ledd/c^2
+    if modelname=="runrad1torusfixed":
+        return(1)
+    else:
+        return(0)
+    #
+def isradmodel(modelname):
+    if isradmodelA(modelname) or isradmodelB(modelname):
         return(1)
     else:
         return(0)
@@ -17165,7 +17177,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         if issashamodel(modelname):
             ymin=0
         #
-        if isradmodelA(modelname):
+        if isradmodel(modelname):
             ymin=0
         #
         ymaxbh=np.max(etabh)
@@ -22057,6 +22069,10 @@ def vminmax_rho(qty=None):
         # default
         vminforframe=-6.0
         vmaxforframe=0.0
+    elif isradmodelB(modelname):
+        # default
+        vminforframe=-6.0
+        vmaxforframe=0.0
     else:
         # default
         vminforframe=-4.0
@@ -22080,6 +22096,9 @@ def vminmax_ug(qty=None):
     elif isradmodelA(modelname):
         vminforframe=-10
         vmaxforframe=-2
+    elif isradmodelB(modelname):
+        vminforframe=-10
+        vmaxforframe=-2
     else:
         # default
         vminforframe=-6.0
@@ -22100,6 +22119,9 @@ def vminmax_bsq(qty=None):
         vminforframe=-7.0
         vmaxforframe=3.0
     elif isradmodelA(modelname):
+        vminforframe=-10
+        vmaxforframe=-2
+    elif isradmodelB(modelname):
         vminforframe=-10
         vmaxforframe=-2
     else:
@@ -22125,6 +22147,9 @@ def vminmax_entropy(qty=None):
     elif isradmodelA(modelname):
         vminforframe=-6.0
         vmaxforframe=4.0
+    elif isradmodelB(modelname):
+        vminforframe=-8.0
+        vmaxforframe=2.0
     else:
         # default
         vminforframe=-1.0
@@ -22174,6 +22199,9 @@ def mkstreamplotprepost(fname=None,veldensity=8,inputlevs=None,numcontours=30,ap
     elif isradmodelA(modelname):
         vminforframe=-6
         vmaxforframe=0
+    elif isradmodelB(modelname):
+        vminforframe=-8
+        vmaxforframe=-2
     else:
         # default
         vminforframe=-4.0
@@ -24128,6 +24156,11 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
         vmaxforframe=2
         vminforframerad=-6
         vmaxforframerad=0
+    elif isradmodelB(modelname):
+        vminforframe=-8
+        vmaxforframe=0
+        vminforframerad=-8
+        vmaxforframerad=-2
     else:
         # default
         vminforframe=-4.0
@@ -24140,7 +24173,7 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
         mydoaphi=0
         mydostreamlines=1
     #
-    if isradmodelA(modelname):
+    if isradmodel(modelname):
         mydobsqleft=0
         mydorholeft=1
         mydobsqright=0
@@ -24554,6 +24587,9 @@ def mkavgfigs():
     elif isradmodelA(modelname):
         vminforframe=-6
         vmaxforframe=0
+    elif isradmodelB(modelname):
+        vminforframe=-8
+        vmaxforframe=-2
     else:
         # default
         vminforframe=-4.0
@@ -24875,7 +24911,7 @@ def mkavgfigs():
                 for mm in np.arange(0,4):
                     avg1.write("%g " % (avg_TudRAD[mm,ll,ihor,jj,0]))
             avg1.write("%g " % (avg_KAPPAUSER[ihor,jj,0]))
-            avg1.write("%g " % (avg_KAPPESAUSER[ihor,jj,0]))
+            avg1.write("%g " % (avg_KAPPAESUSER[ihor,jj,0]))
             avg1.write("\n")
         #
         avg1.close()
