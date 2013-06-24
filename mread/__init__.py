@@ -46,6 +46,109 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
+def lasota_plots():
+    #Omega_F
+    plt.figure(1)
+    plt.clf()
+    omegaf_plot()
+    plt.savefig("omegaf.pdf",bbox_inches='tight',pad_inches=0.02)
+    #E_H - Omega L_H
+    plt.figure(2)
+    plt.clf()
+    eminusomegal_plot()
+    plt.savefig("eminusomegal.pdf",bbox_inches='tight',pad_inches=0.02)
+    #L_H
+    plt.figure(3)
+    plt.clf()
+    lh_plot()
+    plt.savefig("lh.pdf",bbox_inches='tight',pad_inches=0.02)
+    #E-related stuff
+    plt.figure(4)
+    plt.clf()
+    compute_Eup()
+    plt.savefig("E.pdf",bbox_inches='tight',pad_inches=0.02)
+
+def omegaf_plot(fntsize=20):
+    ih = iofr(rhor)
+    faraday()
+    omegah = a/(2*rhor)
+    plt.plot((np.pi-h[ih,:,0])/np.pi,(omegaf2*dxdxp[3,3])[ih,:,0]/omegah,"k-",lw=2)
+    plt.ylim(1e-5,0.7)
+    plt.xlabel(r"$\theta_{\rm H}/\pi$",fontsize=fntsize)
+    plt.ylabel(r"$\Omega_{\rm F},\ {\rm in\ units\ of\ \Omega_{\rm H}}$",fontsize=fntsize)
+    plt.grid(b=1)
+    ax = plt.gca()
+    for label in ax.get_xticklabels() + ax.get_yticklabels():
+        label.set_fontsize(fntsize)
+
+def eminusomegal_plot(fntsize=20):
+    ih = iofr(rhor)
+    faraday()
+    Tcalcud()
+    Eh = -(-Tud[1,0]*dxdxp[1,1])
+    omegah = a/(2*rhor)
+    omegaf = omegaf2*dxdxp[3,3]
+    Lh = -(Tud[1,3]*dxdxp[1,1]/dxdxp[3,3])
+    plt.plot((np.pi-h[ih,:,0])/np.pi,(Eh-omegah*Lh)[ih,:,0]/np.abs(Eh[ih,0,0]),"k-",lw=2,label=r"$E_{\rm H}-\Omega_{\rm H}J_{\rm H}$")
+    plt.plot((np.pi-h[ih,:,0])/np.pi,(Eh-0.5*omegah*Lh)[ih,:,0]/np.abs(Eh[ih,0,0]),"k:",lw=2,label=r"$E_{\rm H}-0.5\Omega_{\rm H}J_{\rm H}$")
+    plt.plot((np.pi-h[ih,:,0])/np.pi,(Eh-omegaf*Lh)[ih,:,0]/np.abs(Eh[ih,0,0]),"k--",lw=2,label=r"$E_{\rm H}-\Omega_{\rm H}J_{\rm H}$")
+    leg = plt.legend(loc="lower right")
+    plt.ylim(-1,1)
+    plt.xlabel(r"$\theta_{\rm H}/\pi$",fontsize=fntsize)
+    plt.ylabel(r"$E_{\rm H} - \Omega J_{\rm H},\ {\rm in\ units\ of\ \left|E_{\rm H}(\theta=\pi/2)\right|}$",fontsize=fntsize)
+    plt.grid(b=1)
+    ax = plt.gca()
+    for label in ax.get_xticklabels() + ax.get_yticklabels() + leg.get_texts():
+        label.set_fontsize(fntsize)
+    
+def lh_plot(fntsize=20):
+    ih = iofr(rhor)
+    faraday()
+    Tcalcud()
+    Eh = -(-Tud[1,0]*dxdxp[1,1])
+    omegah = a/(2*rhor)
+    omegaf = omegaf2*dxdxp[3,3]
+    Lh = -(Tud[1,3]*dxdxp[1,1]/dxdxp[3,3])
+    plt.plot((np.pi-h[ih,:,0])/np.pi,Lh[ih,:,0]/np.abs(Lh[ih,0,0]),"k-",lw=2,label=r"$J_{\rm H}$")
+    leg = plt.legend(loc="upper right")
+    plt.ylim(-1,1)
+    plt.xlabel(r"$\theta_{\rm H}/\pi$",fontsize=fntsize)
+    plt.ylabel(r"$J_{\rm H},\ {\rm in\ units\ of\ \left|J_{\rm H}(\theta=\pi/2)\right|}$",fontsize=fntsize)
+    plt.grid(b=1)
+    ax = plt.gca()
+    for label in ax.get_xticklabels() + ax.get_yticklabels() + leg.get_texts():
+        label.set_fontsize(fntsize)
+
+def compute_Eup(fntsize=20):
+    global Eup
+    ih = iofr(rhor)
+    faraday()
+    Tcalcud()
+    #ksid is [0.,0.,0.,1.]
+    ksid = np.zeros_like(uu)
+    ksid[3] += 1. 
+    #etad is [-1.,0.,0.,0.]
+    etad = np.zeros_like(uu)
+    etad[0] += -1.
+    omegah = a/(2*rhor)
+    ld = etad+omegah*ksid
+    Eup = mdot(fuu,ld)
+    Edp = mdot(gv3,Eup)
+    FEksi = mdot(mdot(fuu,ksid),Edp)
+    Epsq = mdot(Eup,Edp)
+    plt.plot((np.pi-h[ih,:,0])/np.pi,(omegah*FEksi - Epsq)[ih,:,0],label=r"$\omega_{\rm H} F^{\mu\nu}E_\mu\xi_\nu-E^2$")
+    plt.plot((np.pi-h[ih,:,0])/np.pi,(-omegah*FEksi - Epsq)[ih,:,0],label=r"$\omega_{\rm H} F^{\mu\nu}\xi_\mu E_\nu-E^2$")
+    plt.plot((np.pi-h[ih,:,0])/np.pi,(Epsq)[ih,:,0],label=r"$E^2\equiv E^\mu E_\mu$")
+    plt.title(r"$E^\mu = F^{\mu\nu}\xi_\nu$",fontsize=fntsize)
+    leg = plt.legend(loc="center right")
+    plt.ylim(-1,1)
+    plt.xlabel(r"$\theta_{\rm H}/\pi$",fontsize=fntsize)
+    plt.ylabel(r"$f(\theta)$",fontsize=fntsize)
+    plt.grid(b=1)
+    ax = plt.gca()
+    for label in ax.get_xticklabels() + ax.get_yticklabels() + leg.get_texts():
+        label.set_fontsize(fntsize)
+    
 def test_josh():
     grid3d("gdump.bin",use2d=1)
     rfd("fieldline5468.binnewgrid")
