@@ -498,8 +498,15 @@ def mkvelvsr(dn=2,recomputeavg=0,doreload=0,fntsize=28,avgfname="avgvars.npz",nz
     avgBsq=mdot(avgBu,avgBd)
     avgBdotv=mdot(avgBd,avgvu)
     avgvpar=np.sign(avgBu[1])*avgBdotv/avgBsq**0.5
+    avgvu_dr=avgvu - avgBdotv*avgBu/avgBsq
+    avguutsq_dr = -1. / mdot(mdot(gv3,avgvu_dr),avgvu_dr)
+    avguut_dr = (avguutsq_dr)**0.5
+    alpha = (-1./gn3[0,0])**0.5
+    avglorgam_dr = alpha * avguut_dr
+    avgu_dr = (avglorgam_dr**2 - 1.)**0.5
     avgupar=avguu[0]*avgvpar
     allavguur = radavg(avguur[:,ny/2-dn:ny/2+dn,nz0-dn:nz0+dn].mean(-1).mean(-1),dn=dn)
+    allavgu_dr = radavg(avgu_dr[:,ny/2-dn:ny/2+dn,nz0-dn:nz0+dn].mean(-1).mean(-1),dn=dn)
     allavgupar = radavg(avgupar[:,ny/2-dn:ny/2+dn,nz0-dn:nz0+dn].mean(-1).mean(-1),dn=dn)
     allavgBr = radavg(avgBr[:,ny/2-dn:ny/2+dn,nz0-dn:nz0+dn].mean(-1).mean(-1),dn=dn)
     var = avgbsq/(avgrho+gam*avgug)
@@ -524,10 +531,16 @@ def mkvelvsr(dn=2,recomputeavg=0,doreload=0,fntsize=28,avgfname="avgvars.npz",nz
         plt.ylim(-1.,6.-1e-5)
     else:
         plt.plot(OmegaNS*r[:,0,0],allavguu,label=r"$u$",color='g',lw=2)
+        l,=plt.plot(OmegaNS*r[:,0,0],allavgu_dr,label=r"$u_{\rm dr}$",color='r',lw=2)
+        l.set_dashes([10,3,2,3])
         l1b,=plt.plot(OmegaNS*r[:,0,0],uuffmono,'m--',label=r"$\Omega R$",lw=2)
         l5,=plt.plot(OmegaNS*r[:,0,0],allavgupar,label=r"$u_{||}$",color='c',lw=2)
         l5.set_dashes([10,3,2,3])
-        leg = plt.legend(loc="lower right",bbox_to_anchor=(1,0.2),numpoints=30,labelspacing=0.3,ncol=1,borderpad = 0.3,borderaxespad=0.7,handlelength=2.5,handletextpad=0.2,fancybox=True,columnspacing=0.1)
+        if 1:
+            plt.plot(OmegaNS*r[:,0,0],allavguur,'p:',label=r"$u_R$",lw=2)
+            plt.plot(OmegaNS*r[:,0,0],allavgruuz,'b:',label=r"$u_z$",lw=2)
+            plt.plot(OmegaNS*r[:,0,0],allavgruuph,'r:',label=r"$u_\varphi$",lw=2)
+        leg = plt.legend(loc="upper left",numpoints=30,labelspacing=0.3,ncol=1,borderpad = 0.3,borderaxespad=0.7,handlelength=2.5,handletextpad=0.2,fancybox=True,columnspacing=0.1) #loc="lower right",bbox_to_anchor=(1,0.2)
         plt.xlim(0.+1e-5,4-1e-5)
         plt.ylim(-1.,6.-1e-5)
     # l4,=plt.plot(OmegaNS*r[:,0,0],allavgBr*r[:,0,0]**2,label=r"$u_{||},\ {\rm RMHD}$",color='b',lw=2)
@@ -574,8 +587,8 @@ def mkfig1(dosavefig=1,figno=1):
     os.chdir("/home/atchekho/run2/hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1")
     grid3d("gdump.bin",use2d=True)
     rfd("fieldline0610.bin")
-    mkfig1gen(dosavefig=dosavefig,letter="a",whichvar='Bphi',label=r"$B_\otimes$",dostreamlines=0)
-    mkfig1gen(dosavefig=dosavefig,letter="b",whichvar='wobsqkomi',label=r"$\log_{10}(w/b^2)$",dostreamlines=0)
+    mkfig1gen(dosavefig=dosavefig,letter="a",whichvar='Bphi',label=r"$B_\otimes$",dostreamlines=0,lcunits=1)
+    mkfig1gen(dosavefig=dosavefig,letter="b",whichvar='wobsqkomi',label=r"$\log_{10}(w/b^2)$",dostreamlines=0,lcunits=1)
     
 #mkfig2(ii=95,n1=64,n2=97) #1st run
 #mkfig2(ii=95) #subsequent runs
@@ -600,11 +613,11 @@ def mkfig2(dosavefig=1,ii=96,n1=None,n2=None,figno=2,recomputeavg=0,doreload=0,a
         rfd("fieldline%04d.bin" % ii)
     else:
         print("Skip loading fieldline%04d.bin because already have a data file loaded." % ii)
-    # mkfig1gen(ii=ii,dosavefig=dosavefig,letter="a",whichvar='Bphi',label=r"$B_\otimes$",dostreamlines=1,figno=figno,xla=r"$x/R_{\rm LC}$",yla=r"$z/R_{\rm LC}$")
-    # mkfig1gen(ii=ii,dosavefig=dosavefig,letter="b",whichvar='wobsqkomi',label=r"$\log_{10}(w/b^2)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,xla=r"$x/R_{\rm LC}$",yla=r"$z/R_{\rm LC}$")
-    # mkfig1gen(ii=ii,dosavefig=dosavefig,letter="d",whichvar='uu',label=r"$u\ (y=0)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,xla=r"$x/R_{\rm LC}$",yla=r"$z/R_{\rm LC}$")
-    # mkfig1gen(ii=ii,dosavefig=dosavefig,letter="e",whichvar='uu',label=r"$u\ (x=0)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,kval=nz/4,xla=r"$y/R_{\rm LC}$",yla=r"$z/R_{\rm LC}$")
-    mkfig1gen(ii=ii,dosavefig=dosavefig,letter="f",whichvar='uu',label=r"$u\ (z=0)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,kval=0,doxyslice=1,xla=r"$x/R_{\rm LC}$",yla=r"$y/R_{\rm LC}$")
+    # mkfig1gen(ii=ii,dosavefig=dosavefig,letter="a",whichvar='Bphi',label=r"$B_\otimes$",dostreamlines=1,figno=figno,xla=r"$x/R_{\rm LC}$",yla=r"$z/R_{\rm LC}$",lcunits=1)
+    # mkfig1gen(ii=ii,dosavefig=dosavefig,letter="b",whichvar='wobsqkomi',label=r"$\log_{10}(w/b^2)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,xla=r"$x/R_{\rm LC}$",yla=r"$z/R_{\rm LC}$",lcunits=1)
+    # mkfig1gen(ii=ii,dosavefig=dosavefig,letter="d",whichvar='uu',label=r"$u\ (y=0)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,xla=r"$x/R_{\rm LC}$",yla=r"$z/R_{\rm LC}$",lcunits=1)
+    # mkfig1gen(ii=ii,dosavefig=dosavefig,letter="e",whichvar='uu',label=r"$u\ (x=0)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,kval=nz/4,xla=r"$y/R_{\rm LC}$",yla=r"$z/R_{\rm LC}$",lcunits=1)
+    mkfig1gen(ii=ii,dosavefig=dosavefig,letter="f",whichvar='uu',label=r"$u\ (z=0)$",dostreamlines=1,n1=n1,n2=n2,figno=figno,kval=0,doxyslice=1,xla=r"$x/R_{\rm LC}$",yla=r"$y/R_{\rm LC}$",lcunits=1)
     # B = myB
     
 
