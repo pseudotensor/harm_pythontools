@@ -66,23 +66,25 @@ def plot_current():
 
 
 def mkenergyplot(fntsize=20):
-    plt.clf()
     mkstreamlinefigure(length=29.99,doenergy=True,frameon=True,dpi=600,showticks=True,dotakeoutfloors=1,usedefault=1)
+    plt.savefig("fig2.pdf",bbox_inches='tight',pad_inches=0.02)
     plt.figure(2)
+    plt.clf()
     ih=iofr(rhor);
     # mddenavg = radavg(mdden,axis=1,dn=3)
     # endenavg = radavg(enden,axis=1,dn=3)
-    endenavg = np.copy(enden_global)
-    mddenavg = np.copy(mdden_global)
-    endenavg[:,0:2]=enden[:,2:3]*(h[:,0:2]/h[:,2:3])**3
-    endenavg[:,ny-2:ny]=enden[:,ny-3:ny-2]*((np.pi-h[:,ny-2:ny])/(np.pi-h[:,ny-3:ny-2]))**3
-    mddenavg[:,0:2]=mdden[:,2:3]*(h[:,0:2]/h[:,2:3])**1
-    mddenavg[:,ny-2:ny]=mdden[:,ny-3:ny-2]*(h[:,0:2]/h[:,2:3])**1
+    endenavg = np.copy(enden_global)/dxdxp[2,2]/dxdxp[3,3]
+    mddenavg = np.copy(mdden_global)/dxdxp[2,2]/dxdxp[3,3]
+    endenavg[:,0:2]=endenavg[:,2:3]*(np.sin(h[:,0:2])/np.sin(h[:,2:3]))**3
+    endenavg[:,ny-2:ny]=endenavg[:,ny-3:ny-2]*(np.sin(h[:,ny-2:ny])/np.sin(h[:,ny-3:ny-2]))**3
+    mddenavg[:,0:2]=mddenavg[:,2:3]*(np.sin(h[:,0:2])/np.sin(h[:,2:3]))**0
+    mddenavg[:,ny-2:ny]=mddenavg[:,ny-3:ny-2]*(np.sin(h[:,0:2])/np.sin(h[:,2:3]))**1
     mddenavg/=(r**2*np.sin(h))
     endenavg/=(r**2*np.sin(h))
-    plt.plot(h[ih,:,0]/np.pi,(mddenavg/dxdxp[2,2]/dxdxp[3,3])[ih,:,0],label=r"$-\rho u^r$")
-    plt.plot(h[ih,:,0]/np.pi,(-endenavg/dxdxp[2,2]/dxdxp[3,3])[ih,:,0],label=r"$T^r_t+\rho u^r$")
-    plt.plot(h[ih,:,0]/np.pi,((endenavg-mddenavg)/dxdxp[2,2]/dxdxp[3,3])[ih,:,0],label=r"$T^r_t$")
+    plt.plot(h[ih,:,0]/np.pi,(mddenavg)[ih,:,0],"b-",lw=2,label=r"$-\rho u^r$")
+    plt.plot(h[ih,:,0]/np.pi,(-endenavg)[ih,:,0],"r--",lw=2,label=r"$T^r_t+\rho u^r$")
+    plt.plot(h[ih,:,0]/np.pi,(endenavg-mddenavg)[ih,:,0],"g-",lw=2,label=r"$T^r_t$")
+    plt.ylim(-200,200)
     leg = plt.legend(loc="lower right")
     plt.xlabel(r"$\theta_{\rm H}/\pi$",fontsize=fntsize)
     plt.ylabel(r"${\rm Fluxes}$",fontsize=fntsize)
@@ -90,6 +92,7 @@ def mkenergyplot(fntsize=20):
     ax = plt.gca()
     for label in ax.get_xticklabels() + ax.get_yticklabels() + leg.get_texts():
         label.set_fontsize(fntsize)
+    plt.savefig("fig_horizon_fluxes.pdf",bbox_inches='tight',pad_inches=0.02)
     
     
 
@@ -11211,6 +11214,8 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         else:
             is_output_cell_center = True
             usestaggeredfluxes = False
+        usestaggeredfluxes = True
+        is_output_cell_center = False
         #######################
         #
         # REMOVE FLOORS
