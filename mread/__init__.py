@@ -71,6 +71,7 @@ def plot_current_slices(nstart=20,nstop=220,nstep=20):
         cNorm = cNorm=Normalize(vmin=0, vmax=1)
         clr = cm.ScalarMappable(cmap=cm.jet,norm=cNorm).to_rgba(0.3)
         rfd("fieldline%04d.bin" % fdno)
+        cvel()
         #compute enclosed current
         Bd3 = bd[3]*ud[0]-bd[0]*ud[3]
         maxBd3 = np.max(np.mean(Bd3,axis=2),axis=1)
