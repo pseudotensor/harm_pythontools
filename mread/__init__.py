@@ -68,7 +68,8 @@ def plot_current_slices(nstart=20,nstop=220,nstep=20):
     grid3d("gdump.bin",use2d=1)
     for fdno in np.arange(nstart,nstop,nstep):
         fracdone = 1.*nstart/nstop
-        clr = cm.jet.to_rgba(fracdone)
+        cNorm = cNorm=Normalize(vmin=0, vmax=1)
+        clr = cm.ScalarMappable(cmap=cm.jet,norm=cNorm).to_rgba(0.3)
         rfd("fieldline%04d.bin" % fdno)
         #compute enclosed current
         Bd3 = bd[3]*ud[0]-bd[0]*ud[3]
