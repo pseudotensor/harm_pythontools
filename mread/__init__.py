@@ -65,6 +65,162 @@ def plot_current():
     plt.savefig("fig_current_a099.pdf",bbox_inches='tight',pad_inches=0.02)
 
 
+def mkenergyplot(fntsize=20):
+    plt.clf()
+    mkstreamlinefigure(length=29.99,doenergy=True,frameon=True,dpi=600,showticks=True,dotakeoutfloors=1,usedefault=1)
+    plt.figure(2)
+    ih=iofr(rhor);
+    # mddenavg = radavg(mdden,axis=1,dn=3)
+    # endenavg = radavg(enden,axis=1,dn=3)
+    endenavg = np.copy(enden_global)
+    mddenavg = np.copy(mdden_global)
+    endenavg[:,0:2]=enden[:,2:3]*(h[:,0:2]/h[:,2:3])**3
+    endenavg[:,ny-2:ny]=enden[:,ny-3:ny-2]*((np.pi-h[:,ny-2:ny])/(np.pi-h[:,ny-3:ny-2]))**3
+    mddenavg[:,0:2]=mdden[:,2:3]*(h[:,0:2]/h[:,2:3])**1
+    mddenavg[:,ny-2:ny]=mdden[:,ny-3:ny-2]*(h[:,0:2]/h[:,2:3])**1
+    mddenavg/=(r**2*np.sin(h))
+    endenavg/=(r**2*np.sin(h))
+    plt.plot(h[ih,:,0]/np.pi,(mddenavg/dxdxp[2,2]/dxdxp[3,3])[ih,:,0],label=r"$-\rho u^r$")
+    plt.plot(h[ih,:,0]/np.pi,(-endenavg/dxdxp[2,2]/dxdxp[3,3])[ih,:,0],label=r"$T^r_t+\rho u^r$")
+    plt.plot(h[ih,:,0]/np.pi,((endenavg-mddenavg)/dxdxp[2,2]/dxdxp[3,3])[ih,:,0],label=r"$T^r_t$")
+    leg = plt.legend(loc="lower right")
+    plt.xlabel(r"$\theta_{\rm H}/\pi$",fontsize=fntsize)
+    plt.ylabel(r"${\rm Fluxes}$",fontsize=fntsize)
+    plt.grid(b=1)
+    ax = plt.gca()
+    for label in ax.get_xticklabels() + ax.get_yticklabels() + leg.get_texts():
+        label.set_fontsize(fntsize)
+    
+    
+
+def lasota_plots(doreload=0):
+    if 'gv3' not in globals() or 'rho' not in globals() or doreload:
+        grid3d("gdump")
+        rdo("dumplast")
+    #Omega_F
+    plt.figure(1)
+    plt.clf()
+    omegaf_plot()
+    plt.savefig("omegaf.pdf",bbox_inches='tight',pad_inches=0.02)
+    #E_H - Omega L_H
+    plt.figure(2)
+    plt.clf()
+    eminusomegal_plot()
+    plt.savefig("eminusomegal.pdf",bbox_inches='tight',pad_inches=0.02)
+    #L_H
+    plt.figure(3)
+    plt.clf()
+    lh_plot()
+    plt.savefig("lh.pdf",bbox_inches='tight',pad_inches=0.02)
+    #E-related stuff
+    plt.figure(4)
+    plt.clf()
+    compute_Eup()
+    plt.savefig("E.pdf",bbox_inches='tight',pad_inches=0.02)
+
+def lasota_stag(doreload=0):
+    if 'gv3' not in globals() or 'rho' not in globals() or doreload:
+        grid3d("gdump")
+        rdo("dumplast")
+    rergo = 1+(1-a**2*np.cos(h)**2)**0.5
+    plco(uu[1]*dxdxp[1,1],xy=1,levels=np.arange(-5,5+0.005,0.005),cb=1,linewidths=10)
+    plc(uu[1]*dxdxp[1,1],xy=1,levels=np.arange(-5,5+0.005,0.005),cb=0,linewidths=10,mirrory=1)
+    plc(uu[1],xy=1,mirrory=0,levels=(0,),linestyles="dashed",colors="black")
+    plc(uu[1],xy=1,mirrory=1,levels=(0,),linestyles="dashed",colors="black")
+    plc(r-rergo,xy=1,mirrory=0,levels=(0,),linestyles="solid",colors="red",linewidths=2)
+    plc(r-rergo,xy=1,mirrory=1,levels=(0,),linestyles="solid",colors="red",linewidths=2)
+    plt.xlim(0,30)
+    plt.ylim(-15,15)
+    ax = plt.gca()
+    el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
+    art=ax.add_artist(el)
+    art.set_zorder(20)
+    plt.savefig("stagnation.pdf",bbox_inches='tight',pad_inches=0.02)
+
+def omegaf_plot(fntsize=20):
+    ih = iofr(rhor)
+    faraday()
+    omegah = a/(2*rhor)
+    plt.plot((np.pi-h[ih,:,0])/np.pi,(omegaf2*dxdxp[3,3])[ih,:,0]/omegah,"k-",lw=2)
+    plt.ylim(1e-5,0.7)
+    plt.xlabel(r"$\theta_{\rm H}/\pi$",fontsize=fntsize)
+    plt.ylabel(r"$\Omega_{\rm F},\ {\rm in\ units\ of\ \Omega_{\rm H}}$",fontsize=fntsize)
+    plt.grid(b=1)
+    ax = plt.gca()
+    for label in ax.get_xticklabels() + ax.get_yticklabels():
+        label.set_fontsize(fntsize)
+
+def eminusomegal_plot(fntsize=20):
+    ih = iofr(rhor)
+    faraday()
+    Tcalcud()
+    Eh = -(-Tud[1,0]*dxdxp[1,1])
+    omegah = a/(2*rhor)
+    omegaf = omegaf2*dxdxp[3,3]
+    Lh = -(Tud[1,3]*dxdxp[1,1]/dxdxp[3,3])
+    plt.plot((np.pi-h[ih,:,0])/np.pi,(Eh-omegah*Lh)[ih,:,0]/np.abs(Eh[ih,0,0]),"k-",lw=2,label=r"$E_{\rm H}-\Omega_{\rm H}J_{\rm H}$")
+    plt.plot((np.pi-h[ih,:,0])/np.pi,(Eh-0.5*omegah*Lh)[ih,:,0]/np.abs(Eh[ih,0,0]),"k:",lw=2,label=r"$E_{\rm H}-0.5\Omega_{\rm H}J_{\rm H}$")
+    plt.plot((np.pi-h[ih,:,0])/np.pi,(Eh-omegaf*Lh)[ih,:,0]/np.abs(Eh[ih,0,0]),"k--",lw=2,label=r"$E_{\rm H}-\Omega_{\rm H}J_{\rm H}$")
+    leg = plt.legend(loc="lower right")
+    plt.ylim(-1,1)
+    plt.xlabel(r"$\theta_{\rm H}/\pi$",fontsize=fntsize)
+    plt.ylabel(r"$E_{\rm H} - \Omega J_{\rm H},\ {\rm in\ units\ of\ \left|E_{\rm H}(\theta=\pi/2)\right|}$",fontsize=fntsize)
+    plt.grid(b=1)
+    ax = plt.gca()
+    for label in ax.get_xticklabels() + ax.get_yticklabels() + leg.get_texts():
+        label.set_fontsize(fntsize)
+    
+def lh_plot(fntsize=20):
+    ih = iofr(rhor)
+    faraday()
+    Tcalcud()
+    Eh = -(-Tud[1,0]*dxdxp[1,1])
+    omegah = a/(2*rhor)
+    omegaf = omegaf2*dxdxp[3,3]
+    Lh = -(Tud[1,3]*dxdxp[1,1]/dxdxp[3,3])
+    plt.plot((np.pi-h[ih,:,0])/np.pi,Lh[ih,:,0]/np.abs(Lh[ih,0,0]),"k-",lw=2,label=r"$J_{\rm H}$")
+    leg = plt.legend(loc="upper right")
+    plt.ylim(-1,1)
+    plt.xlabel(r"$\theta_{\rm H}/\pi$",fontsize=fntsize)
+    plt.ylabel(r"$J_{\rm H},\ {\rm in\ units\ of\ \left|J_{\rm H}(\theta=\pi/2)\right|}$",fontsize=fntsize)
+    plt.grid(b=1)
+    ax = plt.gca()
+    for label in ax.get_xticklabels() + ax.get_yticklabels() + leg.get_texts():
+        label.set_fontsize(fntsize)
+
+def compute_Eup(fntsize=20):
+    global Eup
+    ih = iofr(rhor)
+    faraday()
+    Tcalcud()
+    #ksid is [0.,0.,0.,1.]
+    ksiu = np.zeros_like(uu)
+    ksiu[3] += 1. 
+    #etad is [-1.,0.,0.,0.]
+    etau = np.zeros_like(uu)
+    etau[0] += -1.
+    omegah = a/(2*rhor)
+    lu = etau+omegah/dxdxp[3,3]*ksiu
+    ld = mdot(gv3,lu)
+    Edp = mdot(fdd,lu)
+    Eup = mdot(gn3,Edp)
+    FEksi = mdot(mdot(fdd,ksiu),Eup)
+    qty = omegah*mdot(mdot(fdd,ksiu),mdot(fuu,ld)) - mdot(mdot(fdd,lu),mdot(fuu,ld))
+    Epsq = mdot(Eup,Edp)
+    plt.plot((np.pi-h[ih,:,0])/np.pi,(omegah*FEksi - Epsq)[ih,:,0]/Epsq[ih,0,0],"b-",label=r"$\omega_{\rm H} F^{\mu\nu}E_\mu\xi_\nu-E^2$",lw=2)
+    #plt.plot((np.pi-h[ih,:,0])/np.pi,(-omegah*FEksi - Epsq)[ih,:,0]/Epsq[ih,0,0],"g-",label=r"$\omega_{\rm H} F^{\mu\nu}\xi_\mu E_\nu-E^2$",lw=2)
+    plt.plot((np.pi-h[ih,:,0])/np.pi,qty[ih,:,0]/Epsq[ih,0,0],"r--",label=r"$\omega_{\rm H} F_{\mu\nu}\xi^\mu F^{\nu\beta}\ell_\beta-F_{\alpha\beta}\ell^\beta F^{\alpha\nu}\ell_\nu$", lw=2)
+    plt.plot((np.pi-h[ih,:,0])/np.pi,(Epsq)[ih,:,0]/Epsq[ih,0,0],"k-",label=r"$E^2\equiv E^\mu E_\mu$",lw=2)
+    #plt.title(r"$E^\alpha = F^{\alpha}{\ \mu}\ell_\mu$",fontsize=fntsize)
+    leg = plt.legend(loc="upper right")
+    plt.ylim(-0.1,5)
+    plt.xlabel(r"$\theta_{\rm H}/\pi$",fontsize=fntsize)
+    plt.ylabel(r"$f(\theta)\ {\rm in\ units}\ E^2(\theta)$",fontsize=fntsize)
+    plt.grid(b=1)
+    ax = plt.gca()
+    for label in ax.get_xticklabels() + ax.get_yticklabels() + leg.get_texts():
+        label.set_fontsize(fntsize)
+    
 def test_josh():
     grid3d("gdump.bin",use2d=1)
     rfd("fieldline5468.binnewgrid")
@@ -3169,6 +3325,7 @@ def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
     cb = kwargs.pop('cb', False)
     nc = kwargs.pop('nc', 15)
     k = kwargs.pop('k',0)
+    mirrory = kwargs.pop('mirrory',0)
     #cmap = kwargs.pop('cmap',cm.jet)
     isfilled = kwargs.pop('isfilled',False)
     xy = kwargs.pop('xy',0)
@@ -3177,6 +3334,7 @@ def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
     if xy:
         xcoord = r * np.sin(h)
         ycoord = r * np.cos(h)
+        if mirrory: ycoord *= -1
     if (None != xcoord and None != ycoord):
         xcoord = xcoord[:,:,None] if xcoord.ndim == 2 else xcoord[:,:,k:k+1]
         ycoord = ycoord[:,:,None] if ycoord.ndim == 2 else ycoord[:,:,k:k+1]
@@ -3288,6 +3446,8 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
     #palette.set_under('g', 1.0)
     if isnstar:
         domask = Rin
+    else:
+        domask = 1
     if avgbsqorho is None:
         avgbsqorho = lambda: rho
     if not isnstar:
@@ -10933,9 +11093,41 @@ def removefloorsavg2djetwind(usestaggeredfluxes=False,DFfloor=None, jet1x2=None,
     #
     return( F_jet1, F_jet2, F_wind, F_wind1, F_wind2 )
 
+def testfloors(dotakeoutfloors=1,usestaggeredfluxes=1):
+    DFfloor=takeoutfloors(ax=None,doreload=1,dotakeoutfloors=dotakeoutfloors,dofeavg=0,isinteractive=0,writefile=False,doplot=False,aphi_j_val=0, ndim=2, is_output_cell_center = False)
+    avgmem = get2davg(usedefault=1)
+    assignavg2dvars(avgmem)
+    rho = avg_rho
+    bsq = avg_bsq
+    #######################
+    #
+    # REMOVE FLOORS
+    #
+    #######################
+    Fm_floorremoved, FmMinusFe_floorremoved1, FmMinusFe_floorremoved2  = removefloorsavg2d(usestaggeredfluxes=usestaggeredfluxes,DFfloor=DFfloor)
+    enden1 = FmMinusFe_floorremoved1
+    enden = enden1
+    enden2 = FmMinusFe_floorremoved2
+    mdden = Fm_floorremoved
+    en=(enden.cumsum(1)-0.5*enden)*_dx2*_dx3 #subtract half of current cell's density to get cell-centered quantity
+    md=(mdden).sum(2).sum(1)*_dx2*_dx3
+    #pdb.set_trace()
+    #mdot vs. radius
+    #pick out a scalar value at r = 5M
+    md=md[iofr(5)]
+    a_Fm=md
+    a_FmminusFe=enden.sum(1)[iofr(5),0]*_dx2*_dx3
+    a_Fe1=md-a_FmminusFe
+    a_eta = a_FmminusFe/md
+    #equatorial trajectory: starts at r = rh, theta = pi/2
+    rhor=1+(1-a**2)**0.5
+    radval=10.
+    plco(enden1,xy=1)
+
+
 def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,showticks=True,usedefault=2,fc='white',mc='white',dotakeoutfloors=0,showtitle=False):
     #fc='#D8D8D8'
-    global bsq, ug, mu, B, DF, qtymem
+    global bsq, ug, mu, B, DF, qtymem, en_global, md_global, enden_global, mdden_global
     mylen = length/frac
     arrowsize=4
     grid3d("gdump.bin",use2d=True)
@@ -11029,8 +11221,12 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
         enden = enden1
         enden2 = FmMinusFe_floorremoved2
         mdden = Fm_floorremoved
+        enden_global = np.copy(enden)
+        mdden_global = np.copy(mdden)
         en=(enden.cumsum(1)-0.5*enden)*_dx2*_dx3 #subtract half of current cell's density to get cell-centered quantity
         md=(mdden).sum(2).sum(1)*_dx2*_dx3
+        en_global = np.copy(en)
+        md_global = np.copy(md)
         #pdb.set_trace()
         #mdot vs. radius
         #pick out a scalar value at r = 5M
