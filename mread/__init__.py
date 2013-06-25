@@ -46,6 +46,25 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
+def plot_current():
+    #works on jemmy
+    os.chdir("/Users/atchekho/Research/run/rtf2_15r34_2pi_a0.99gg500rbr1e3_0_0_0")
+    grid3d("gdump.bin",use2d=1)
+    avg=rdavg2d()
+    aphi=fieldcalc(gdetB1=avg_gdetB[0])
+    aphihor=aphi[iofr(rhor),ny/2,0]
+    plco(aphi,xy=1,colors="gray",levels=np.arange(0,10*aphihor,0.25*aphihor))
+    plc(aphi,xy=1,colors="gray",levels=(aphihor,),linewidths=2)
+    res=plc(avg_Bd3,xy=1,linewidths=2,nc=30)
+    cb=plt.colorbar(res,ax=plt.gca())
+    cb.set_label(r"$I\propto RB_\varphi$",fontsize=20)
+    plt.xlim(0,50)
+    plt.ylim(-25,25)
+    plt.ylabel(r"$z\ [r_g]$",fontsize=20)
+    plt.xlabel(r"$R\ [r_g]$",fontsize=20)
+    plt.savefig("fig_current_a099.pdf",bbox_inches='tight',pad_inches=0.02)
+
+
 def test_josh():
     grid3d("gdump.bin",use2d=1)
     rfd("fieldline5468.binnewgrid")
