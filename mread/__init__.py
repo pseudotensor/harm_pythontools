@@ -8,11 +8,11 @@ from pychip import pchip_init, pchip_eval
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 ## for Palatino and other serif fonts use:
 # rc('font',**{'family':'serif','serif':['Palatino']})
-rc('mathtext',fontset='cm')
-rc('mathtext',rm='stix')
-rc('text', usetex=True)
+#rc('mathtext',fontset='cm')
+#rc('mathtext',rm='stix')
+#rc('text', usetex=True)
 #add amsmath to the preamble
-matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"] 
+#matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"] 
 
 #from pylab import figure, axes, plot, xlabel, ylabel, title, grid, savefig, show
 
@@ -65,20 +65,29 @@ def plot_current():
     plt.savefig("fig_current_a099.pdf",bbox_inches='tight',pad_inches=0.02)
 
 def plot_current_slices(nstart=20,nstop=220,nstep=20):
+    global Bd3
     grid3d("gdump.bin",use2d=1)
     for fdno in np.arange(nstart,nstop,nstep):
-        fracdone = 1.*nstart/nstop
+        fracdone = 1.*fdno/nstop
         cNorm = cNorm=Normalize(vmin=0, vmax=1)
-        clr = cm.ScalarMappable(cmap=cm.jet,norm=cNorm).to_rgba(0.3)
-        rfd("fieldline%04d.bin" % fdno)
+        clr = cm.ScalarMappable(cmap=cm.jet,norm=cNorm).to_rgba(fracdone)
+        fname = "fieldline%04d.bin" % fdno
+        print("Reading %s... (%3d%% done)" % (fname, 100*fracdone))
+        rfd(fname)
         cvel()
         #compute enclosed current
         Bd3 = bd[3]*ud[0]-bd[0]*ud[3]
-        maxBd3 = np.max(np.mean(Bd3,axis=2),axis=1)
-        plt.plot(r[:,0,0],maxBd3,color=clr)
-    plt.xlim(rhor,0.2*t)
+        Bd3jet = Bd3*(bsq/rho>2)
+        maxBd3 = np.max(np.mean(Bd3jet,axis=2),axis=1)
+        plt.plot(r[:,0,0],maxBd3,color=clr,label="t=%g"%t)
+    plt.legend(loc="upper right")
+    plt.ylim(0,15)
+    plt.xlim(rhor,1e5)
+    plt.xlabel("r")
+    plt.ylabel("I")
     plt.xscale('log')
-    plt.yscale('log')
+    plt.yscale('linear')
+    plt.savefig("mad_jet_current_vs_z.pdf",bbox_inches='tight',pad_inches=0.02)
     
 
 def mkenergyplot(fntsize=20):
