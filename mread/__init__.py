@@ -64,6 +64,20 @@ def plot_current():
     plt.xlabel(r"$R\ [r_g]$",fontsize=20)
     plt.savefig("fig_current_a099.pdf",bbox_inches='tight',pad_inches=0.02)
 
+def plot_current_slices(nstart=20,nstop=220,nstep=20):
+    grid3d("gdump.bin",use2d=1)
+    for fdno in np.arange(nstart,nstop,nstep):
+        fracdone = 1.*nstart/nstop
+        clr = cm.jet.to_rgba(fracdone)
+        rfd("fieldline%04d.bin" % fdno)
+        #compute enclosed current
+        Bd3 = bd[3]*ud[0]-bd[0]*ud[3]
+        maxBd3 = np.max(np.mean(Bd3,axis=2),axis=1)
+        plt.plot(r[:,0,0],maxBd3,color=clr)
+    plt.xlim(rhor,0.2*t)
+    plt.xscale('log')
+    plt.yscale('log')
+    
 
 def mkenergyplot(fntsize=20):
     mkstreamlinefigure(length=29.99,doenergy=True,frameon=True,dpi=600,showticks=True,dotakeoutfloors=1,usedefault=1)
