@@ -1,4 +1,4 @@
-import matplotlib
+фмп_import matplotlib
 matplotlib.use('Agg')
 from matplotlib import rc
 from streamlines import streamplot
@@ -146,6 +146,17 @@ def lasota_plots(doreload=0):
     compute_Eup()
     plt.savefig("E.pdf",bbox_inches='tight',pad_inches=0.02)
 
+def lasota_mad_plots(doreload=0):
+    if 'gv3' not in globals() or 'rho' not in globals() or doreload:
+        grid3d("gdump")
+        rdo("dumplast")
+    avgs=rdavg2d()
+    #Omega_F
+    plt.figure(1)
+    plt.clf()
+    omegaf_plot(useavgs=True)
+    plt.savefig("omegaf_mad.pdf",bbox_inches='tight',pad_inches=0.02)
+    
 def lasota_stag(doreload=0):
     if 'gv3' not in globals() or 'rho' not in globals() or doreload:
         grid3d("gdump")
@@ -165,11 +176,15 @@ def lasota_stag(doreload=0):
     art.set_zorder(20)
     plt.savefig("stagnation.pdf",bbox_inches='tight',pad_inches=0.02)
 
-def omegaf_plot(fntsize=20):
+def omegaf_plot(fntsize=20,useavgs=0):
     ih = iofr(rhor)
     faraday()
     omegah = a/(2*rhor)
-    plt.plot((np.pi-h[ih,:,0])/np.pi,(omegaf2*dxdxp[3,3])[ih,:,0]/omegah,"k-",lw=2)
+    if useavgs == 1:
+        om = avg_omegaf1b
+    else:
+        om = omegaf2
+    plt.plot((np.pi-h[ih,:,0])/np.pi,(om*dxdxp[3,3])[ih,:,0]/omegah,"k-",lw=2)
     plt.ylim(1e-5,0.7)
     plt.xlabel(r"$\theta_{\rm H}/\pi$",fontsize=fntsize)
     plt.ylabel(r"$\Omega_{\rm F},\ {\rm in\ units\ of\ \Omega_{\rm H}}$",fontsize=fntsize)
