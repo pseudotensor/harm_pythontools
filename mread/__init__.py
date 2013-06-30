@@ -1,4 +1,4 @@
-фмп_import matplotlib
+import matplotlib
 matplotlib.use('Agg')
 from matplotlib import rc
 from streamlines import streamplot
@@ -8,11 +8,11 @@ from pychip import pchip_init, pchip_eval
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 ## for Palatino and other serif fonts use:
 # rc('font',**{'family':'serif','serif':['Palatino']})
-#rc('mathtext',fontset='cm')
-#rc('mathtext',rm='stix')
-#rc('text', usetex=True)
+rc('mathtext',fontset='cm')
+rc('mathtext',rm='stix')
+rc('text', usetex=True)
 #add amsmath to the preamble
-#matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"] 
+matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"] 
 
 #from pylab import figure, axes, plot, xlabel, ylabel, title, grid, savefig, show
 
@@ -108,7 +108,7 @@ def mkenergyplot(fntsize=20):
     endenavg/=(r**2*np.sin(h))
     plt.plot(h[ih,:,0]/np.pi,(mddenavg)[ih,:,0],"b-",lw=2,label=r"$-\rho u^r$")
     plt.plot(h[ih,:,0]/np.pi,(-endenavg)[ih,:,0],"r--",lw=2,label=r"$T^r_t+\rho u^r$")
-    plt.plot(h[ih,:,0]/np.pi,(endenavg-mddenavg)[ih,:,0],"g-",lw=2,label=r"$T^r_t$")
+    plt.plot(h[ih,:,0]/np.pi,(-endenavg+mddenavg)[ih,:,0],"g-",lw=2,label=r"$T^r_t$")
     plt.ylim(-200,200)
     leg = plt.legend(loc="lower right")
     plt.xlabel(r"$\theta_{\rm H}/\pi$",fontsize=fntsize)
@@ -147,9 +147,9 @@ def lasota_plots(doreload=0):
     plt.savefig("E.pdf",bbox_inches='tight',pad_inches=0.02)
 
 def lasota_mad_plots(doreload=0):
-    if 'gv3' not in globals() or 'rho' not in globals() or doreload:
-        grid3d("gdump")
-        rdo("dumplast")
+    if 'gv3' not in globals() or doreload:
+        grid3d("gdump.bin",use2d=1)
+        #rfd("fieldline5468.bin")
     avgs=rdavg2d()
     #Omega_F
     plt.figure(1)
@@ -178,16 +178,17 @@ def lasota_stag(doreload=0):
 
 def omegaf_plot(fntsize=20,useavgs=0):
     ih = iofr(rhor)
-    faraday()
+    if not useavgs:
+        faraday()
     omegah = a/(2*rhor)
     if useavgs == 1:
         om = avg_omegaf1b
     else:
         om = omegaf2
-    plt.plot((np.pi-h[ih,:,0])/np.pi,(om*dxdxp[3,3])[ih,:,0]/omegah,"k-",lw=2)
+    plt.plot((np.pi-h[ih,:,0])/np.pi,radavg(om*dxdxp[3,3])[ih,:,0]/omegah,"k-",lw=2)
     plt.ylim(1e-5,0.7)
     plt.xlabel(r"$\theta_{\rm H}/\pi$",fontsize=fntsize)
-    plt.ylabel(r"$\Omega_{\rm F},\ {\rm in\ units\ of\ \Omega_{\rm H}}$",fontsize=fntsize)
+    plt.ylabel(r"$\omega_{\rm F},\ {\rm in\ units\ of\ \omega_{\rm H}}$",fontsize=fntsize)
     plt.grid(b=1)
     ax = plt.gca()
     for label in ax.get_xticklabels() + ax.get_yticklabels():
@@ -201,13 +202,13 @@ def eminusomegal_plot(fntsize=20):
     omegah = a/(2*rhor)
     omegaf = omegaf2*dxdxp[3,3]
     Lh = -(Tud[1,3]*dxdxp[1,1]/dxdxp[3,3])
-    plt.plot((np.pi-h[ih,:,0])/np.pi,(Eh-omegah*Lh)[ih,:,0]/np.abs(Eh[ih,0,0]),"k-",lw=2,label=r"$E_{\rm H}-\Omega_{\rm H}J_{\rm H}$")
-    plt.plot((np.pi-h[ih,:,0])/np.pi,(Eh-0.5*omegah*Lh)[ih,:,0]/np.abs(Eh[ih,0,0]),"k:",lw=2,label=r"$E_{\rm H}-0.5\Omega_{\rm H}J_{\rm H}$")
-    plt.plot((np.pi-h[ih,:,0])/np.pi,(Eh-omegaf*Lh)[ih,:,0]/np.abs(Eh[ih,0,0]),"k--",lw=2,label=r"$E_{\rm H}-\Omega_{\rm H}J_{\rm H}$")
+    plt.plot((np.pi-h[ih,:,0])/np.pi,(Eh-omegah*Lh)[ih,:,0]/np.abs(Eh[ih,0,0]),"k-",lw=2,label=r"$E_{\rm H}-\omega_{\rm H}J_{\rm H}$")
+    plt.plot((np.pi-h[ih,:,0])/np.pi,(Eh-0.5*omegah*Lh)[ih,:,0]/np.abs(Eh[ih,0,0]),"k:",lw=2,label=r"$E_{\rm H}-0.5\omega_{\rm H}J_{\rm H}$")
+    plt.plot((np.pi-h[ih,:,0])/np.pi,(Eh-omegaf*Lh)[ih,:,0]/np.abs(Eh[ih,0,0]),"k--",lw=2,label=r"$E_{\rm H}-\omega_{\rm F}J_{\rm H}$")
     leg = plt.legend(loc="lower right")
     plt.ylim(-1,1)
     plt.xlabel(r"$\theta_{\rm H}/\pi$",fontsize=fntsize)
-    plt.ylabel(r"$E_{\rm H} - \Omega J_{\rm H},\ {\rm in\ units\ of\ \left|E_{\rm H}(\theta=\pi/2)\right|}$",fontsize=fntsize)
+    plt.ylabel(r"$E_{\rm H} - \omega J_{\rm H},\ {\rm in\ units\ of\ \left|E_{\rm H}(\theta=\pi/2)\right|}$",fontsize=fntsize)
     plt.grid(b=1)
     ax = plt.gca()
     for label in ax.get_xticklabels() + ax.get_yticklabels() + leg.get_texts():
@@ -252,13 +253,13 @@ def compute_Eup(fntsize=20):
     Epsq = mdot(Eup,Edp)
     plt.plot((np.pi-h[ih,:,0])/np.pi,(omegah*FEksi - Epsq)[ih,:,0]/Epsq[ih,0,0],"b-",label=r"$\omega_{\rm H} F^{\mu\nu}E_\mu\xi_\nu-E^2$",lw=2)
     #plt.plot((np.pi-h[ih,:,0])/np.pi,(-omegah*FEksi - Epsq)[ih,:,0]/Epsq[ih,0,0],"g-",label=r"$\omega_{\rm H} F^{\mu\nu}\xi_\mu E_\nu-E^2$",lw=2)
-    plt.plot((np.pi-h[ih,:,0])/np.pi,qty[ih,:,0]/Epsq[ih,0,0],"r--",label=r"$\omega_{\rm H} F_{\mu\nu}\xi^\mu F^{\nu\beta}\ell_\beta-F_{\alpha\beta}\ell^\beta F^{\alpha\nu}\ell_\nu$", lw=2)
+    # plt.plot((np.pi-h[ih,:,0])/np.pi,qty[ih,:,0]/Epsq[ih,0,0],"r--",label=r"$\omega_{\rm H} F_{\mu\nu}\xi^\mu F^{\nu\beta}\ell_\beta-F_{\alpha\beta}\ell^\beta F^{\alpha\nu}\ell_\nu$", lw=2)
     plt.plot((np.pi-h[ih,:,0])/np.pi,(Epsq)[ih,:,0]/Epsq[ih,0,0],"k-",label=r"$E^2\equiv E^\mu E_\mu$",lw=2)
     #plt.title(r"$E^\alpha = F^{\alpha}{\ \mu}\ell_\mu$",fontsize=fntsize)
     leg = plt.legend(loc="upper right")
     plt.ylim(-0.1,5)
     plt.xlabel(r"$\theta_{\rm H}/\pi$",fontsize=fntsize)
-    plt.ylabel(r"$f(\theta)\ {\rm in\ units}\ E^2(\theta)$",fontsize=fntsize)
+    plt.ylabel(r"${\rm Various,\ in\ units}\ E^2(\theta=\pi/2)$",fontsize=fntsize)
     plt.grid(b=1)
     ax = plt.gca()
     for label in ax.get_xticklabels() + ax.get_yticklabels() + leg.get_texts():
@@ -5987,7 +5988,10 @@ def faraday():
     if 'omemaf2' in globals():
         del omegaf2
     # these are native values according to HARM
-    fdd = np.zeros((4,4,nx,ny,nz),dtype=rho.dtype)
+    if 'rho' in globals():
+        fdd = np.zeros((4,4,nx,ny,nz),dtype=rho.dtype)
+    else:
+        fdd = np.zeros((4,4,nx,ny,nz),dtype=np.float32)
     #fdd[0,0]=0*gdet
     #fdd[1,1]=0*gdet
     #fdd[2,2]=0*gdet
