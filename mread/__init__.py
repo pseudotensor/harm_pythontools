@@ -4173,8 +4173,49 @@ def rdo(dump,oldfmt=False):
     """ Read in old dump format """
     rd(dump,oldfmt=True)
 
+def grid2d(dump):
+    global t,nx,ny,nz,_dx1,_dx2,_dx3,a,gam,Rin,Rout,hslope,R0,ti,tj,tk,x1,x2,x3,r,h,ph,gcov,gcon,gdet,drdx,gn3,gv3,guu,gdd
+    #read image
+    fin = open( "dumps/" + dump, "rb" )
+    header = fin.readline().split()
+    t = myfloat(np.float64(header[0]))
+    nx = int(header[1])
+    ny = int(header[2])
+    nz = 1
+    _dx1=myfloat(float(header[5]))
+    _dx2=myfloat(float(header[6]))
+    _dx3=1.
+    a=myfloat(float(header[9]))
+    gam=myfloat(float(header[10]))
+    Rin=myfloat(float(header[22]))
+    Rout=myfloat(float(header[23]))
+    hslope=myfloat(float(header[24]))
+    R0=myfloat(float(header[25]))
+    fin.close()
+    gd = np.loadtxt( "dumps/"+dump, 
+                  dtype=np.float64, 
+                  skiprows=1, 
+                  unpack = True ).view().reshape((-1,ny,nx), order='F')
+    #transpose: (quantity,theta,r) to (quantity,r,theta)
+    gd=myfloat(gd.transpose(0,2,1))
+    #make into 3D array: from (quantity,r,theta) to (quantity,r,theta,phi) with 1 cell in phi
+    gd=gd[:,:,:,None]
+    #clean up memory
+    gc.collect()
+    ti,tj,x1,x2,r,h = gd[0:6,:,:].view()
+    tk = 0*ti
+    ph = 0*h
+    gv3 = gd[6:22].view().reshape((4,4,nx,ny,nz),order='F').transpose(1,0,2,3,4)
+    gn3 = gd[22:38].view().reshape((4,4,nx,ny,nz),order='F').transpose(1,0,2,3,4)
+    gcov = gv3
+    gcon = gn3
+    guu = gn3
+    gdd = gv3
+    gdet = gd[38]
+    drdx = gd[39:55].view().reshape((4,4,nx,ny,nz),order='F').transpose(1,0,2,3,4)
+
 def rd2d(dump):
-    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,ti,tj,tk,x1,x2,x3,r,h,ph,rho,ug,vu,B,pg,cs2,Sden,U,gdetB,divb,uu,ud,bu,bd,v1m,v1p,v2m,v2p,gdet,bsq
+    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,hslope,a,R0,Rin,Rout,ti,tj,tk,x1,x2,x3,r,h,ph,rho,ug,vu,B,pg,cs2,Sden,U,gdetB,divb,uu,ud,bu,bd,v1m,v1p,v2m,v2p,gdet,bsq,gdet
     #read image
     fin = open( "dumps/" + dump, "rb" )
     header = fin.readline().split()
@@ -4200,6 +4241,8 @@ def rd2d(dump):
     gd=gd[:,:,:,None]
     gc.collect()
     ti,tj,x1,x2,r,h,rho,ug = gd[0:8,:,:].view() 
+    tk = 0*ti
+    ph = 0*h
     vu=np.zeros_like(gd[0:4])
     B=np.zeros_like(gd[0:4])
     vu[1:4] = gd[8:11]
@@ -14124,7 +14167,7 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
         plt.savefig("figFxWD.pdf",bbox_inches='tight',pad_inches=0.02)
     ########################################
     ####
-    ####  FIGURE 2: MS
+    ####  FIGURE 3: MS
     ####
     ########################################
     plt.figure(3)
@@ -14226,6 +14269,111 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
             l.set_markersize(4)
     if dosavefig:
         plt.savefig("figFxMS.pdf",bbox_inches='tight',pad_inches=0.02)
+    ########################################
+    ####
+    ####  FIGURE 4: WD, short delay
+    ####
+    ########################################
+    plt.figure(4)
+    plt.clf()
+    t0=-5*86400
+    tmin=2e4
+    tmax=8e8
+    plt.xlim(tmin*tfac,tmax*tfac)
+    plt.ylim(1e-16,1e-8)
+    #
+    plt.plot((t1-t0)*tfac,Fx1,"k.")
+    plt.plot((t2-t0)*tfac,Fx2,"k.")
+    plt.plot((t4-t0)*tfac,Fx4,"ks")
+    ####
+    plt.errorbar(np.array(t3-t0)*tfac,np.array(Fx3),yerr=[[Fx3/2.],[0]],
+                 color="black",lolims=True,lw=1.5)
+    tabsmad = 584748
+    tmad = tabsmad+t0
+    ton=1e6
+    toff=4.3e7
+    ladaf=Lxc[t>=toff][0]/15.
+    tadaf=t[Lxc<=ladaf][0]
+    tlab = tmin**0.03*tmax**0.97*tfac
+    plt.text(tlab,5e-9,r"$\operatorname{Complete\ disruption}$",fontsize=25,ha='right',va='top')
+    plt.text(tlab,0.4e-9,r"$t_{\rm trig}-t_{\rm disr}=5^{+5}_{-3}\ {\rm days}$",fontsize=20,ha='right',va='bottom')
+    # plt.text(tlab,0.25e-9,r"$M_\bullet=0.5\times10^5M_\odot$",fontsize=20,ha='right',va='bottom')
+    # plt.text(tlab,0.089e-9,r"$M_\bigstar=0.5M_\odot$",fontsize=20,ha='right',va='bottom')
+    plt.plot((t-t0)[(t>tmad)*(t<toff)]*tfac,Lxc[(t>tmad)*(t<toff)],
+             color="red",lw=3)
+    plt.plot((t-t0)[t<tmad]*tfac,Lxc[t>tmad][0]+0*(t-t0)[t<tmad],
+             color="red",lw=3)
+    plt.plot((t-t0)[t<tmad]*tfac,Lxc[t>tmad][0]*((t-t0)[t<tmad]/(t-t0)[t<tmad][-1])**(4./3.),
+             color="red",lw=3)
+    l,=plt.plot((t-t0)[(t<=tmad)]*tfac,Lxc[(t<=tmad)],
+             color="red",lw=1.5)
+    l.set_dashes([10,5])
+    l,=plt.plot((t-t0)[(t>=toff)]*tfac,Lxc[(t>=toff)],
+             color="red",lw=1.5)
+    l.set_dashes([10,5])
+    # whicht = (t>=toff)
+    # col="blue"
+    # plt.gca().fill_between((t-t0)[whicht],1e-12*Lxc[whicht],Lxc[whicht],
+    #                        where=Lxc[whicht]>0,facecolor=col,edgecolor=col,alpha=0.4)
+    whicht = (t>tadaf)*(t<tmax)
+    col="blue"
+    plt.gca().fill_between((t-t0)[whicht]*tfac,1e-12*Lxc[whicht],Lxc[whicht],
+                           where=Lxc[whicht]>0,facecolor=col,edgecolor=col,alpha=0.2)
+    whicht = (t>ton)*(t<toff)
+    col="green"
+    plt.gca().fill_between((t-t0)[whicht]*tfac,1e-12*Lxc[whicht],Lxc[whicht],
+                           where=Lxc[whicht]>0,facecolor=col,edgecolor=col,alpha=0.2)
+    whicht = (t<=ton)*(t>=tmad)
+    col="yellow"
+    plt.gca().fill_between((t-t0)[whicht]*tfac,1e-12*Lxc[whicht],Lxc[whicht],
+                           where=Lxc[whicht]>0,facecolor=col,edgecolor=col,alpha=0.2)
+    whicht = (t<tmad)
+    col="red"
+    plt.gca().fill_between((t-t0)[whicht]*tfac,1e-12*Lxc[whicht],Lxc[t>tmad][0]+0*Lxc[whicht],
+                           where=Lxc[whicht]>0,facecolor=col,edgecolor=col,alpha=0.1)
+    plt.gca().fill_between((t-t0)[whicht]*tfac,1e-12*Lxc[whicht],Lxc[t>tmad][0]*((t-t0)[t<tmad]/(t-t0)[t<tmad][-1])**(4./3.),
+                           where=Lxc[whicht]>0,facecolor=col,edgecolor=col,alpha=0.1)
+    #captions
+    tpos=(tmin)**0.55*(tmad-t0)**0.45*tfac
+    plt.text(tpos,1.1*Lxc[t>tmad][0],r"$L_j\propto t^0{-}t^{4/3}$",
+             fontsize=25,ha="center",va="bottom",rotation=0)
+    tpos=(tmin)**0.5*(tmad-t0)**0.5*tfac
+    plt.text(tpos,0.2*1e-10,r"${\rm Stage\ 1}$",fontsize=25,ha="center",va="bottom")
+    plt.text(tpos,0.2*0.3e-10,r"${\rm Precessing}$",fontsize=18,ha="center",va="bottom")
+    plt.text(tpos,0.2*0.12e-10,r"$\operatorname{disk-aligned}$",fontsize=18,ha="center",va="bottom")
+    plt.text(tpos,0.2*0.48e-11,r"$\operatorname{jet}$",fontsize=18,ha="center",va="bottom")
+    tpos=((tmad-t0)*(ton-t0))**0.5*tfac
+    plt.text(tpos,1e-12,r"${\rm Stage\ 2}$",fontsize=25,ha="center",va="bottom")
+    plt.text(tpos,0.3e-12,r"${\rm Wobbling}$",fontsize=18,ha="center",va="bottom")
+    plt.text(tpos,0.12e-12,r"${\rm jet}$",fontsize=18,ha="center",va="bottom")
+    tpos=((ton-t0)*(toff-t0))**0.5*tfac
+    plt.text(tpos,1e-13,r"${\rm Stage\ 3}$",fontsize=25,ha="center",va="bottom")
+    plt.text(tpos,0.3e-13,r"${\rm Steady}$",fontsize=18,ha="center",va="bottom")
+    plt.text(tpos,0.12e-13,r"$\operatorname{spin-aligned\ jet}$",fontsize=18,ha="center",va="bottom")
+    plt.text(tpos,7e-11,r"$L_j\propto\dot M\propto t^{-5/3}$",
+             fontsize=25,ha="center",va="center",rotation=-33)
+    tpos=((toff-t0)*(tadaf-t0))**0.5*tfac
+    plt.text(tpos,1e-15,r"${\rm Stg.\ 4}$",fontsize=25,ha="center",va="bottom",rotation=0)
+    plt.text(tpos,0.2e-15,r"${\rm No\ jet}$",fontsize=18,ha="center",va="bottom",rotation=0)
+    tpos=((tadaf-t0)*tmax)**0.5*tfac
+    plt.text(tpos,1e-15,r"${\rm Stg.\ 5}$",fontsize=25,ha="center",va="bottom",rotation=0)
+    plt.text(tpos,0.3e-15,r"${\rm Jet}$",fontsize=18,ha="center",va="bottom",rotation=0)
+    plt.text(tpos,0.12e-15,r"$\operatorname{revival}$",fontsize=18,ha="center",va="bottom")
+    ax = plt.gca()
+    for label in ax.get_xticklabels() + ax.get_yticklabels():
+        label.set_fontsize(fntsize)
+    plt.xscale("log")
+    plt.yscale("log")
+    plt.xlabel(r"${\rm Days\ since\ disruption},\ t-t_{\rm trig}+5\ {\rm days}$",fontsize=fntsize)
+    plt.ylabel(r"$F_{\rm X}(0.3{-}10\ {\rm keV})\ {\rm [erg\, cm^{-2}\,s^{-1}]}$",fontsize=fntsize)
+    plt.grid(b=1)
+    for l in ax.get_xticklines() + ax.get_yticklines():
+        l.set_markersize(10)
+        #l.set_markeredgewidth(1.5) 
+        for l in ax.xaxis.get_minorticklines() + ax.yaxis.get_minorticklines():
+            l.set_markersize(4)
+    if dosavefig:
+        plt.savefig("figFxWD5d.pdf",bbox_inches='tight',pad_inches=0.02)
 
 def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wdc",
                 dosavefig=1,hr=1,lamrevive = 0.02,fontsize=20):
