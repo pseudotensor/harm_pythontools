@@ -23652,6 +23652,9 @@ def mkmovieframe(findex=None,filenum=None,framesize=None):
     elif modelname=="Deepth64cool":        
         vminforframe=-6.9
         vmaxforframe=-0.2
+    elif modelname=="Cooling3dnotilt128x64x8":        
+        vminforframe=-6.9
+        vmaxforframe=-0.2
     else:
         # default
         vminforframe=-4.0
@@ -25726,13 +25729,32 @@ def tutorial1():
     # first load grid file
     grid3d("gdump.bin")
     # now try loading a single fieldline file
-    rfd("fieldline0000.bin")
+    rfd("fieldline0200.bin")
     # now plot something you read-in
-    plt.figure(1)
+    plt.figure(4)
     lrho=np.log(rho)
     plco(lrho,cb=True,nc=50)
     aphi = fieldcalc() # keep sign information
     plc(aphi,colors='k')
+
+def testgrid():
+    # first load grid file
+    grid3d("gdump.bin")
+    # now try loading a single fieldline file
+    rfd("fieldline0050.bin")
+    # now plot something you read-in
+    fig = plt.figure(2)
+    lrho=np.log10(rho)
+    #ax = fig.add_subplot(111, aspect='equal')
+    #plco(lrho,cb=True,nc=20,xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    plt.plot(rho[:,31,0])
+    #plt.xlim(0,50)
+    #plt.ylim(0,50)
+    #ax.set_aspect('equal')
+    #plt.plot(r[:,:,0]*np.sin(h[:,:,0]),r[:,:,0]*np.cos(h[:,:,0]),marker='.', linestyle='none') #r[9,:,0]*np.cos(h[9,:,0]))
+    ##fig = plt.figure(2)
+    ##_dx1
+    print("cell aspect ratio: ",(r[30,31,0]*np.sin(h[30,31,0])-r[29,31,0]*np.sin(h[29,31,0])) / (r[30,32,0]*np.cos(h[30,32,0])-r[30,31,0]*np.cos(h[30,31,0]))         )
 
 def marktesttutorial1():
     # first load grid file
@@ -25744,9 +25766,9 @@ def marktesttutorial1():
     fig = plt.figure(1)
     ax = fig.add_subplot(111, aspect='equal')
     lrho=np.log(rho)
-    lbeta=np.log(beta)
+    lbeta=np.log10(beta)
     print("length of beta variable: ",beta.shape)
-    print("mean along radius in disk at phi=0: ", np.mean(beta[:,31,0]))
+    print("mean along radius in disk at phi=0: ", np.mean(beta[:,7,0]))
     plt.clf()
     plt.plot(bu[1][:,31,0])    #beta[:,31,0])
     #plco(beta,cb=True,nc=50)
@@ -25789,8 +25811,10 @@ def plotvertfieldequator():
     #plt.plot(test2*.0002, linestyle='none', marker='.')
     #plt.ylim([1e-8, 1e-4])
     #plt.yscale('log')
-    #plt.plot((B[2,:,31,0]*Bd[2,:,31,0]), marker='o')    #beta[:,31,0])     np.log10()
-    plt.plot(r[:,31,0],beta[:,31,0], linestyle='none', marker='.' )
+    #plt.plot((B[2,:,63,0]*Bd[2,:,63,0])*60, marker='o')    #beta[:,31,0])     np.log10()
+    plt.plot(r[:,31,0],beta[:,31,0], marker='.', linestyle='none') #ug[:,31,0]/bsq[:,31,0], marker='.', linestyle='none') 
+    #plt.plot(ug[:,63,0], marker='o') 
+    #plt.plot(r[:,31,0],beta[:,31,0], linestyle='none', marker='.' )
     #plco(beta,cb=True,nc=50)
 
 if __name__ == "__main__":

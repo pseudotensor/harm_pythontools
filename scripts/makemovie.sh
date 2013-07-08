@@ -1254,7 +1254,7 @@ then
     echo "myinitfile4="${myinitfile4}
     
     #sed -n '1h;1!H;${;g;s/if False:[\n \t]*#make a movie[\n \t]*mkmovie()/if True:\n\t#make a movie\n\tmkmovie()/g;p;}'  $initfile > $myinitfile4
-    runtype=4
+    runtype=4    # MAVARA This is set here, read into main() in __init__.py as an argument that then sets the run type and the functions in __init__ that are called.
     cp $initfile $myinitfile4
     
     
