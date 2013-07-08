@@ -1590,8 +1590,8 @@ echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
 #
 ####################################
 
-#itemspergroup=$(( 1 )) # MAVARA
-itemspergroup=$(( 20 ))
+itemspergroup=$(( 6 )) # MAVARA
+#itemspergroup=$(( 20 ))
 itemspergrouptext=`printf "%02d"  "$itemspergroup"`
 
 
