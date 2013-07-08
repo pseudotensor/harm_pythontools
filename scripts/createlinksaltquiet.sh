@@ -40,7 +40,8 @@ cd $newfullpath/dumps/
 
 
 #allfiles=`ls -al ${oldfullpath}/dumps/fieldline*.bin | awk '{print $8}'`
-allfiles=`ls ${oldfullpath}/dumps/fieldline*.bin`
+#allfiles=`ls ${oldfullpath}/dumps/fieldline*.bin`
+allfiles=`find ${oldfullpath}/dumps/ -name "fieldline*.bin"`
 numfiles=`echo $allfiles | wc | awk '{print $2}'`
 
 iii=0
@@ -59,7 +60,21 @@ done
 
 echo "Skipped so that went from $numfiles files to $jjj files"
 
-ln -sf $oldfullpath/dumps/gdump*bin .
-ln -sf $oldfullpath/dumps/dump0000.bin .
+if [ -e $oldfullpath/dumps/gdump*bin ]
+then
+    ln -sf $oldfullpath/dumps/gdump*bin .
+fi
+if [ -e $oldfullpath/dumps/gdump ]
+then
+    ln -sf $oldfullpath/dumps/gdump .
+fi
+if [ -e $oldfullpath/dumps/dump0000 ]
+then
+    ln -sf $oldfullpath/dumps/dump0000 .
+fi
+
+cd $newfullpath/
+ln -sf $oldfullpath/coordparms.dat .
+ln -sf $oldfullpath/dimensions.txt .
 
 
