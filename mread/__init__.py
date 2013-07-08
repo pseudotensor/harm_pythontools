@@ -4215,7 +4215,7 @@ def grid2d(dump):
     drdx = gd[39:55].view().reshape((4,4,nx,ny,nz),order='F').transpose(1,0,2,3,4)
 
 def rd2d(dump):
-    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,hslope,a,R0,Rin,Rout,ti,tj,tk,x1,x2,x3,r,h,ph,rho,ug,vu,B,pg,cs2,Sden,U,gdetB,divb,uu,ud,bu,bd,v1m,v1p,v2m,v2p,gdet,bsq,gdet
+    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,hslope,a,R0,Rin,Rout,ti,tj,tk,x1,x2,x3,r,h,ph,rho,ug,vu,B,pg,cs2,Sden,U,gdetB,divb,uu,ud,bu,bd,v1m,v1p,v2m,v2p,gdet,bsq,gdet,alpha,rhor
     #read image
     fin = open( "dumps/" + dump, "rb" )
     header = fin.readline().split()
@@ -4255,7 +4255,11 @@ def rd2d(dump):
     bsq = mdot(bu,bd)
     v1m,v1p,v2m,v2p=gd[31:35]
     gdet=gd[35]
-
+    rhor = 1+(1-a**2)**0.5
+    if "guu" in globals():
+        #lapse
+        alpha = (-guu[0,0])**(-0.5)
+        
 def rd(dump,oldfmt=False):
     global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,ti,tj,tk,x1,x2,x3,r,h,ph,rho,ug,vu,B,pg,cs2,Sden,U,gdetB,divb,uu,ud,bu,bd
     global v1m,v1p,v2m,v2p,v3m,v3p,bsq,olddumpfmt
