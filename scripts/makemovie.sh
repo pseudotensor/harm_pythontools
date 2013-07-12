@@ -1590,8 +1590,25 @@ echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
 #
 ####################################
 
+numfiles=`find dumps/ -name "fieldline*.bin"|wc -l`
+
+echo "NUMFILES=$numfiles"
+
 #itemspergroup=$(( 1 )) # MAVARA
 itemspergroup=$(( 20 ))
+
+# catch too small number of files
+# must match __init__.py
+if [ $numfiles -le $itemspergroup ]
+then
+    if [ $numfiles -eq 1 ]
+    then
+        itemspergroup=1
+    else
+        itemspergroup=$(( $numfiles - 1))
+    fi
+fi
+
 itemspergrouptext=`printf "%02d"  "$itemspergroup"`
 
 
