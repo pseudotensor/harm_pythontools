@@ -2367,6 +2367,7 @@ def assignavg2dvars(avgmem,DTf=5):
     global avg_absbu, avg_absbd, avg_absuu, avg_absud, avg_absomegaf2
     global avg_omegaf1, avg_absomegaf1, avg_omegaf1b, avg_absomegaf1b, avg_omegaf2b, avg_absomegaf2b
     global avg_Bd3, avg_absBd3
+    global avg_fuufdd
 
     #avg defs
     i=0
@@ -2487,6 +2488,12 @@ def assignavg2dvars(avgmem,DTf=5):
         avg_absBd3=avgmem[i,:,:,None];i+=n
     else:
         print( "Old-ish format: missing avg_Bd3, avg_absBd3" )
+    if avgmem.shape[0] >= 206+9+4+17+6+2+16:
+        n = 16
+        avg_fuufdd=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
+    else:
+        avg_fuufdd = None
+        print( "Old-ish format: missing avg_fuufdd" )
         
     #derived quantities
     avg_gamma=avg_uu[0]/(-gn3[0,0])**0.5
@@ -2671,6 +2678,14 @@ def get2davgone(whichgroup=-1,itemspergroup=20,removefloors=False):
             Bd3 = bd[3]*ud[0]-bd[0]*ud[3]
             avg_Bd3 += Bd3.sum(-1)[:,:,None]
             avg_absBd3 += np.abs(Bd3).sum(-1)[:,:,None]
+        if avg_fuufdd is not None:
+            n=16
+            #energy fluxes and faraday
+            fud = mdot(gn3,fdd)
+            fuu = mdot(gn3,fud.transpose(1,0,2,3,4)).transpose(1,0,2,3,4)
+            #F^ki F_kj
+            fuufdd = mdot(fuu.transpose(1,0,2,3,4),fdd)
+            avg_fuufdd+=fuufdd.sum(-1)[:,:,:,:,None]
             
     if avg_nitems[0] == 0:
         print( "No files found" )
