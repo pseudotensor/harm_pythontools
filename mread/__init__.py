@@ -4184,7 +4184,7 @@ def grid2d(dump):
     nz = 1
     _dx1=myfloat(float(header[5]))
     _dx2=myfloat(float(header[6]))
-    _dx3=1.
+    _dx3=2*np.pi
     a=myfloat(float(header[9]))
     gam=myfloat(float(header[10]))
     Rin=myfloat(float(header[22]))
@@ -4225,7 +4225,7 @@ def rd2d(dump):
     nz = 1
     _dx1=myfloat(float(header[5]))
     _dx2=myfloat(float(header[6]))
-    _dx3=1.
+    _dx3=2*np.pi
     a=myfloat(float(header[9]))
     gam=myfloat(float(header[10]))
     Rin=myfloat(float(header[22]))
