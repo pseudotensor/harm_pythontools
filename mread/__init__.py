@@ -224,8 +224,8 @@ def eminusomegal_plot(fntsize=20,useavgs=0):
     omegaf = om*dxdxp[3,3]
     Lh = -(tud[1,3]*dxdxp[1,1]/dxdxp[3,3])
     plt.plot((np.pi-h[ih,:,0])/np.pi,(Eh[ih,:,0])/np.abs(Eh[ih,jx,0]),"k-.",lw=2,label=r"$E_{\rm H}\equiv T^r_t$")
-    l,=plt.plot((np.pi-h[ih,:,0])/np.pi,(0.5*omegah*Lh[ih,:,0])/np.abs(Eh[ih,jx,0]),"k-.",lw=2,label=r"$0.5\omega_{\rm H}J_{\rm H}\equiv -0.5\omega_{\rm H}T^r_\varphi$")
-    l.set_dashes([10,3,2,3])
+    #l,=plt.plot((np.pi-h[ih,:,0])/np.pi,(0.5*omegah*Lh[ih,:,0])/np.abs(Eh[ih,jx,0]),"k-.",lw=2,label=r"$0.5\omega_{\rm H}J_{\rm H}\equiv -0.5\omega_{\rm H}T^r_\varphi$")
+    #l.set_dashes([10,3,2,3])
     plt.plot((np.pi-h[ih,:,0])/np.pi,(Eh-omegah*Lh)[ih,:,0]/np.abs(Eh[ih,jx,0]),"k-",lw=2,label=r"$E_{\rm H}-\omega_{\rm H}J_{\rm H}$")
     plt.plot((np.pi-h[ih,:,0])/np.pi,(Eh-0.5*omegah*Lh)[ih,:,0]/np.abs(Eh[ih,jx,0]),"k:",lw=2,label=r"$E_{\rm H}-0.5\omega_{\rm H}J_{\rm H}$")
     plt.plot((np.pi-h[ih,:,0])/np.pi,(Eh-omegaf*Lh)[ih,:,0]/np.abs(Eh[ih,jx,0]),"k--",lw=2,label=r"$E_{\rm H}-\omega_{\rm F}J_{\rm H}$")
@@ -265,16 +265,16 @@ def compute_Eup(fntsize=20,useavgs=0):
     if not useavgs:
         faraday()
         Tcalcud()
-        #ksid is [0.,0.,0.,1.]
+        #ksiu is [0.,0.,0.,OmegaH]
         ksiu = np.zeros_like(uu)
-        #etad is [-1.,0.,0.,0.]
+        #etau is [1.,0.,0.,0.]
         etau = np.zeros_like(uu)
         myfdd = fdd
         myfuu = fuu
     else:
-        #ksid is [0.,0.,0.,1.]
+        #ksiu is [0.,0.,0.,OmegaH]
         ksiu = np.zeros_like(avg_uu)
-        #etad is [-1.,0.,0.,0.]
+        #etau is [1.,0.,0.,0.]
         etau = np.zeros_like(avg_uu)
         myfdd = avg_fdd
         myfud = mdot(gn3,myfdd)
@@ -286,7 +286,7 @@ def compute_Eup(fntsize=20,useavgs=0):
         om = omegaf2
         jx = 0
     ksiu[3] += 1. 
-    etau[0] += -1.
+    etau[0] += 1.
     omegah = a/(2*rhor)
     lu = etau+omegah/dxdxp[3,3]*ksiu
     ld = mdot(gv3,lu)
@@ -300,8 +300,11 @@ def compute_Eup(fntsize=20,useavgs=0):
     # plt.plot((np.pi-h[ih,:,0])/np.pi,qty[ih,:,0]/Epsq[ih,0,0],"r--",label=r"$\omega_{\rm H} F_{\mu\nu}\xi^\mu F^{\nu\beta}\ell_\beta-F_{\alpha\beta}\ell^\beta F^{\alpha\nu}\ell_\nu$", lw=2)
     plt.plot((np.pi-h[ih,:,0])/np.pi,(Epsq)[ih,:,0]/np.max(Epsq[ih,:,0]),"k-",label=r"$E^2\equiv E^\mu E_\mu$",lw=2)
     #plt.title(r"$E^\alpha = F^{\alpha}{\ \mu}\ell_\mu$",fontsize=fntsize)
-    leg = plt.legend(loc="upper right")
-    plt.ylim(-0.1,5)
+    leg = plt.legend(loc="upper center",frameon=False)
+    if useavgs:
+        plt.ylim(-0.1,10)
+    else:
+        plt.ylim(-0.1,15)
     plt.xlabel(r"$\theta_{\rm H}/\pi$",fontsize=fntsize)
     plt.ylabel(r"${\rm Various,\ in\ units}\ \max(E^2)$",fontsize=fntsize)
     plt.grid(b=1)
