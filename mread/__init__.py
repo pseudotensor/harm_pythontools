@@ -2511,6 +2511,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20,removefloors=False):
     global rho
     global ug
     global avg_Bd3, avg_absBd3
+    global avg_fuufdd
 
     if whichgroup < 0 or itemspergroup <= 0:
         print( "whichgroup = %d, itemspergroup = %d not allowed" % (whichgroup, itemspergroup) )
