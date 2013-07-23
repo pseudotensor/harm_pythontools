@@ -6142,7 +6142,7 @@ def faraday():
     #
     # from jon branch, 04/10/2012
     #
-    if 0:
+    if 1:
         B1hat=B[1]*np.sqrt(gv3[1,1])
         B2hat=B[2]*np.sqrt(gv3[2,2])
         B3nonhat=B[3]
