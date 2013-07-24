@@ -5807,7 +5807,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
 
 
 
-def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,arrowsize=1,dorho=True,doentropy=False,dobsq=False,dobeta=False,doQ1=False,doQ2=False,doErf=False):
+def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,arrowsize=1,dorho=True,doentropy=False,dobsq=False,dobeta=False,doQ1=False,doQ2=False,doErf=False):  #MAVARA added dotaurad
     extent=(-len,len,-len,len)
     palette=cm.jet
     palette.set_bad('k', 1.0)
@@ -14008,7 +14008,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     # figure out where v^{x^1} passes through zero (if anywhere)
     ioutlist=ti[:,0,0][vus1rhosqdc_vsr>0]
-    iout=ioutlist[0]
+    iout=ioutlist[0]  #MAVARA this fixes out of bound error?
     if len(ioutlist)>0:
         iout=ioutlist[0]
         istagfromvus1rhosqdc=iout
@@ -14662,7 +14662,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             #
             if iout<=iin:
                 # only happens with runlocaldipole3dfiducial
-                print("inside loop: Changed iin=%d to iofr(6.0)=%d" % (iin,iofr(6.0))) ; sys.stdout.flush()
+                #print("inside loop: Changed iin=%d to iofr(6.0)=%d" % (iin,iofr(6.0))) ; sys.stdout.flush()   #MAVARA test remove
                 print("inside loop: Changed iout=%d to iofr(12.0)=%d" % (iout,iofr(12.0))) ; sys.stdout.flush()
                 iin=iofr(6.0)
                 iout=iofr(12.0)
@@ -14671,7 +14671,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                 iout=iin+3
             #
             # get fit so can extract average value over interesting radial range
-            print("alphamag fits: iin=%d iout=%d" % (iin,iout))
+            #print("alphamag fits: iin=%d iout=%d" % (iin,iout)) ; sys.stdout.flush() # MAVARA added flush()
             alphamag1_vsr_avg=np.average(np.fabs(alphamag1_vsr[iin:iout]))
             alphamag2_vsr_avg=np.average(np.fabs(alphamag2_vsr[iin:iout]))
             alphamag3_vsr_avg=np.average(np.fabs(alphamag3_vsr[iin:iout]))
