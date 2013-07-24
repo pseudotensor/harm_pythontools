@@ -3531,16 +3531,18 @@ def horcalc(hortype=1,which1=1,which2=1,denfactor=None):
     """
     Compute root mean square deviation of disk body from equatorial plane
     """
+    print("denfactorhorcalc: ", denfactor[:,0,0])
     if denfactor is None:
         denfactor=rholab
     #
     # determine when have to revert to which2
     which=which1
-    testit=which1.sum(axis=1)
-    for i in np.arange(0,nx):
-        for k in np.arange(0,nz):
-            if testit[i,k]==0:
-                which[i,:,k]=which2[i,:,k]
+    if isinstance(which1, int) == False:
+        testit=which1.sum(axis=1)
+        for i in np.arange(0,nx):
+            for k in np.arange(0,nz):
+                if testit[i,k]==0:
+                    which[i,:,k]=which2[i,:,k]
     #
     tiny=np.finfo(rho.dtype).tiny
     #
@@ -3559,7 +3561,7 @@ def horcalc(hortype=1,which1=1,which2=1,denfactor=None):
     else:
         thetamid3d=0.5*np.pi+thetamid3d
     #
-    up=(gdet*denfactor*(h-thetamid3d)**2*which).sum(axis=1)
+    up=(gdet*denfactor*(h-thetamid3d)**2 *which).sum(axis=1)
     #up=(gdet*denfactor*(h-1.57)**2*which).sum(axis=1)
     dn=(gdet*denfactor*which).sum(axis=1)
     hoverr2d= (up/(dn+tiny))**0.5
@@ -10786,7 +10788,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         diskcondition1=condmaxbsqorho
         diskcondition2=condmaxbsqorho
         # was denfactor=rho, but want uniform with corona and jet
-        hoverr3d,thetamid3d=horcalc(hortype=1,which1=diskcondition1,which2=diskcondition2,denfactor=rholab)
+        hoverr3d,thetamid3d=horcalc(hortype=1,denfactor=rho) #which1=diskcondition1,which2=diskcondition2,denfactor=rholab) # MAVARA changed so no weighting by beta conditional
         hoverr[qindex]=hoverr3d.sum(2).sum(1)/(ny*nz)
         thetamid[qindex]=thetamid3d.sum(2).sum(1)/(ny*nz)
         #
@@ -17173,7 +17175,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                 ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etaoutRAD_avg,'-.',color=(fc,1,1))
                 ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]-etabhRAD_avg,'-.',color=(fc,0.5,.7))
         #
-        ax.plot(ts,etabh,clr,label=r'$\eta_{\rm H}$')
+        ax.plot(ts,etabh,clr,label=r'$\eta_{\rm H}$')     # MAVARA plot in movie window of eta_bh, the black hole acc efficiency
         if showextra:
             ax.plot(ts,etaj,'g--',label=r'$\eta_{\rm j}$')
             ax.plot(ts,etamwout,'b-.',label=r'$\eta_{\rm mw,o}$')
@@ -17220,7 +17222,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         ax.set_ylim(ymin,ymax)
         #
-        ax.set_xlabel(r'$t\;[r_g/c]$',fontsize=16)
+        ax.set_xlabel(r'$t\;[r_g/c]$',fontsize=16)  # MAVARANOTE this is the label for the plots at the bottom of the movie windows.
         ax.set_ylabel(r'$\eta\ [\%]$',fontsize=16,ha='left',labelpad=20)
         ax.set_xlim(ts[0],ts[-1])
         #
@@ -23908,6 +23910,7 @@ def mkmovie(framesize=50, domakeavi=False):
     skip1gen=0
     skip2gen=1
     skip3gen=1
+    skip4gen=0
     #
     if skip1gen==0:
         # now have levels as inputlevs and aphijetouter for that contour line
@@ -23983,6 +23986,7 @@ def mkmovie(framesize=50, domakeavi=False):
         skip1=(dontloadfiles == False and os.path.isfile("lrho%04d_Rzxym1.png" % (filenum)) and os.path.isfile("lrhosmall%04d_Rzxym1.png" % (filenum)))
         skip2=(dontloadfiles == False and os.path.isfile("initfinal%04d.png" % (filenum)))
         skip3=(dontloadfiles == False and os.path.isfile("stream%04d.png" % (filenum)))
+        skip4=(dontloadfiles == False and os.path.isfile("hoverrvsr%04d.png" % (filenum)))
         #
         # Avoid initfinal and stream unless specifically wanted
         if skip1gen==1:
@@ -23991,10 +23995,12 @@ def mkmovie(framesize=50, domakeavi=False):
             skip2=skip2gen
         if skip3gen==1:
             skip3=skip3gen
+        if skip4gen==1:
+            skip4=skip4gen
         #
         #
         #
-        if skip1 and skip2 and skip3:
+        if skip1 and skip2 and skip3 and skip4:
             print("Fully skipped: %s",fname)
             continue
         #
@@ -24023,6 +24029,7 @@ def mkmovie(framesize=50, domakeavi=False):
                 cvelalready=1
             #
             inputlevs1temp=mkmovieframe(findex=qtyfindex,filenum=filenum,framesize=framesize,inputlevs=inputlevs1)
+            #
             #
         printusage()
         #
@@ -24081,6 +24088,25 @@ def mkmovie(framesize=50, domakeavi=False):
         printusage()
         #
         #
+        ####################################
+        # hoverr movie frame
+        if skip4==1:
+            print( "hoverrvsr: Skipping " + fname + " as hoverrvsr%04d.png exists" % (filenum) ) ; sys.stdout.flush()
+        else:
+            if skip1==1:
+                getqtymem(qtymem)
+            if cvelalready==0:
+                cvel()
+                cvelalready=1
+            #
+            print( "hoverrvsr: Processing " + fname + " ..." ) ; sys.stdout.flush()
+            mkhoverrmovieframe(findex=qtyfindex,filenum=filenum,framesize=framesize)
+        #
+        ####################################
+        #
+        #
+        #
+        #
     print( "Done mkmovie!" ) ; sys.stdout.flush()
     #
     printusage()
@@ -24095,6 +24121,28 @@ def mkmovie(framesize=50, domakeavi=False):
         os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 1 mov_%s_Rzxym1p1.avi" % (os.path.basename(os.getcwd())) )
         os.system("ffmpeg -fflags +genpts -r 20 -i lrho%%04d_Rzxym1.png -vcodec mpeg4 -qmax 5 -b 10000k -pass 2 mov_%s_Rzxym1.avi" % (os.path.basename(os.getcwd())) )
         #os.system("scp mov.avi 128.112.70.76:Research/movies/mov_`basename \`pwd\``.avi")
+
+def mkhoverrmovieframe(findex=None,filenum=None,framesize=None): # MAVARANOTE this requires getqtymem() to have been called previously, say, in plotqtyvstime, so hoverr is global
+    #
+    print("mkhoverrmovieframe: findex=%d filenum=%d framesize=%d" % (findex,filenum,framesize)) ; sys.stdout.flush()
+    #print("hoverrtestval =%d" % (hoverr[30,0,0])) ; sys.stdout.flush()
+    plotlen = framesize
+    #
+    plt.figure(0, figsize=(12,9), dpi=100)
+    plt.clf()
+    #cvel() # MAVARA moved this to just before call to mkhoverrmovieframe
+
+    print(hoverr[findex,:]) ; sys.stdout.flush()
+
+    plt.xscale('log')
+    plt.plot(r[:,ny/2,0], hoverr[findex,:])
+    #plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
+    #plt.ylabel(r"$y\ [r_g]$",ha='left',labelpad=10,fontsize=16)
+    #plt.ylim([0.0,1.0])
+
+    plt.savefig( "hoverrvsr%04d.png" % (filenum)  )
+    #
+    #
 
 
 def mkmovieframepre1(fname=None):
@@ -26389,11 +26437,11 @@ def main(argv=None):
         raw_input("")
 
 
-def tutorial1():
+def tutorial1(filenametut="fieldline0000.bin"):
     # first load grid file
     grid3d("gdump.bin")
     # now try loading a single fieldline file
-    rfd("fieldline0200.bin")
+    rfd(filenametut)
     # now plot something you read-in
     plt.figure(4)
     lrho=np.log(rho)
