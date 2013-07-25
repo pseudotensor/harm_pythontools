@@ -13673,6 +13673,15 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         ftf = defaultftf
         print( "Warning: titf.txt not found: using default numbers for averaging: %g %g %g %g" % (iti, itf, fti, ftf) ) ; sys.stdout.flush()
     #
+    if iti>ts[-1]:
+        itf=ts[-1]*0.99
+    if itf<ts[1]:
+        itf=ts[1]*1.01
+    if fti>ts[-1]:
+        ftf=ts[-1]*0.99
+    if ftf<ts[1]:
+        ftf=ts[1]*1.01
+    #
     (truetmin,truetmax)=fix_defaulttimes(ts,fti,ftf)
     #
     print("Part1" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
@@ -24426,8 +24435,13 @@ def mk2davg():
         step = int(sys.argv[4])
         itemspergroup = int(sys.argv[5])
         if numfiles< itemspergroup:
-            print("numfiles=%d is less than itemspergroup=%d and code not setup for such exceptions." % (numfiles,itemspergroup)) ; sys.stdout.flush()
-            exit
+            print("1: numfiles=%d is less than itemspergroup=%d and code not setup for such exceptions." % (numfiles,itemspergroup)) ; sys.stdout.flush()
+            # must match makemovie.sh
+            if numfiles==1:
+                itemspergroup=1
+            else:
+                itemspergroup=numfiles-1
+            #exit
         whichgroupe=int(np.ceil(1.0*numfiles/itemspergroup))
         print("whichgroups=%d step=%d itemspergroup=%d whichgroupe=%d numfiles=%d" % (whichgroups,step,itemspergroup,whichgroupe,numfiles)) ; sys.stdout.flush()
         print("NONMERGE: whichgroups=%d step=%d whichgroupe=%d itemspergroup=%d" % (whichgroups,step,whichgroupe,itemspergroup)) ; sys.stdout.flush()
@@ -24439,6 +24453,13 @@ def mk2davg():
         whichgroupe = int(sys.argv[4])
         step = int(sys.argv[5])
         itemspergroup = int(sys.argv[6])
+        if numfiles< itemspergroup:
+            print("2: numfiles=%d is less than itemspergroup=%d and code not setup for such exceptions." % (numfiles,itemspergroup)) ; sys.stdout.flush()
+            # must match makemovie.sh
+            if numfiles==1:
+                itemspergroup=1
+            else:
+                itemspergroup=numfiles-1
         print("MERGE: whichgroups=%d step=%d whichgroupe=%d itemspergroup=%d" % (whichgroups,step,whichgroupe,itemspergroup)) ; sys.stdout.flush()
         if step == 0:
             avgmem = get2davg(usedefault=1,domerge=True)
@@ -24643,7 +24664,10 @@ def mkavgfigs():
     ###########################################
     grid3d("gdump.bin",use2d=use2dglobal)
     #
-    #rfdfirstfile()
+    # read first file so know what type of data dealing with.
+    # gets gotrad, for example.
+    rfdfirstfile()
+    #
     #global maxrho
     #maxrho=np.max(rho)
     #print("maxrho=%g" % (maxrho))
@@ -24705,7 +24729,8 @@ def mkavgfigs():
         global KAPPAUSER,KAPPAESUSER,tauradintegrated
         #
         global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
-        rddims()
+        if gotrad==1:
+            rddims()
         #
         rho=avg_rho
         KAPPAUSER=avg_KAPPAUSER
@@ -25479,7 +25504,8 @@ def mkavgfigs():
         global KAPPAUSER,KAPPAESUSER,tauradintegrated
         #
         global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
-        rddims()
+        if gotrad==1:
+            rddims()
         #
         rho=avg_rho
         KAPPAUSER=avg_KAPPAUSER
