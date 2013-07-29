@@ -4853,7 +4853,7 @@ def grid3d(dumpname,use2d=False,doface=False): #read grid dump file: header and 
     #non-uniform coordinates, (r, h, ph), which correspond to radius (r), polar angle (theta), and toroidal angle (phi).
     #There are more variables, e.g., dxdxp, which is the Jacobian of (x1,x2,x3)->(r,h,ph) transformation, that I can
     #go over, if needed.
-    global nx,ny,nz,_startx1,_startx2,_startx3,_dx1,_dx2,_dx3,gam,a,R0,Rin,Rout,ti,tj,tk,x1,x2,x3,r,h,ph,conn,gn3,gv3,ck,dxdxp,gdet,OmegaNS,AlphaNS,defcoord
+    global nx,ny,nz,_startx1,_startx2,_startx3,_dx1,_dx2,_dx3,gam,a,R0,Rin,Rout,ti,tj,tk,x1,x2,x3,r,h,ph,conn,gn3,gv3,ck,dxdxp,gdet,OmegaNS,AlphaNS,defcoord,phiwedgesize
     global tif,tjf,tkf,rf,hf,phf,rhor
     usinggdump2d = False
     if dumpname.endswith(".bin"):
@@ -4963,6 +4963,7 @@ def grid3d(dumpname,use2d=False,doface=False): #read grid dump file: header and 
     ck = gd[106:110].view().reshape((4,nx,ny,lnz), order='F')
     #grid mapping Jacobian
     dxdxp = gd[110:126].view().reshape((4,4,nx,ny,lnz), order='F').transpose(1,0,2,3,4)
+    phiwedgesize = nz*_dx3*dxdxp[3,3,0,0,0]
     if doface:
         #CELL VERTICES:
         #RADIAL:
@@ -7813,7 +7814,7 @@ def get_dFfloor(Dt, Dno, dotakeoutfloors=True,aphi_j_val=0, ndim=1, is_output_ce
     requires gdump to be loaded [grid3d("gdump.bin",use2d=True)], and arrays, Dt and Dno, 
     set up."""
     #initialize with zeros
-    global nx, ny, nz
+    global nx, ny, nz, _dx3
     cachefname = "dumps/floorv2info.npz"
     #r-,th-, and phi- indices
     RR=0
@@ -7833,6 +7834,8 @@ def get_dFfloor(Dt, Dno, dotakeoutfloors=True,aphi_j_val=0, ndim=1, is_output_ce
             nx = npzfile['nx']
             ny = npzfile['ny']
             nz = npzfile['nz']
+            #correct _dx3 if not set properly (e.g., due to changing nz)
+            _dx3 = phiwedgesize/(dxdxp[3,3,0,0,0]*nz)
             if( Dt.shape == npzfile_Dt.shape and (Dt == npzfile_Dt).all() and
                 Dno.shape == npzfile_Dno.shape and (Dno == npzfile_Dno).all() ):
                 DUin = np.copy( npzfile_DUin )
