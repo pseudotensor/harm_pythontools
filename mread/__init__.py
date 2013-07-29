@@ -121,7 +121,7 @@ def mkenergyplot(fntsize=20):
     
     
 
-def lasota_plots(doreload=0):
+def lasota_plots(doreload=0,dofig=0):
     if 'gv3' not in globals() or 'rho' not in globals() or doreload:
         grid3d("gdump")
         rdo("dumplast")
@@ -129,43 +129,50 @@ def lasota_plots(doreload=0):
     plt.figure(1)
     plt.clf()
     omegaf_plot()
-    plt.savefig("omegaf.pdf",bbox_inches='tight',pad_inches=0.02)
+    if dofig:
+        plt.savefig("omegaf.pdf",bbox_inches='tight',pad_inches=0.02)
     #E_H - Omega L_H
     plt.figure(2)
     plt.clf()
     eminusomegal_plot()
-    plt.savefig("eminusomegal.pdf",bbox_inches='tight',pad_inches=0.02)
+    if dofig:
+        plt.savefig("eminusomegal.pdf",bbox_inches='tight',pad_inches=0.02)
     #L_H
     plt.figure(3)
     plt.clf()
     lh_plot()
-    plt.savefig("lh.pdf",bbox_inches='tight',pad_inches=0.02)
+    if dofig:
+        plt.savefig("lh.pdf",bbox_inches='tight',pad_inches=0.02)
     #E-related stuff
     plt.figure(4)
     plt.clf()
     compute_Eup()
     plt.savefig("E.pdf",bbox_inches='tight',pad_inches=0.02)
 
-def lasota_mad_plots(doreload=0):
+def lasota_mad_plots(doreload=0,fname="avg2d20_0316_0329.npy",dofig=0):
     if 'gv3' not in globals() or doreload:
         grid3d("gdump.bin",use2d=1)
         #rfd("fieldline5468.bin")
-    avgs=rdavg2d()
+    if 'avg_rho' not in globals() or doreload:
+        avgs=rdavg2d(fname=fname)
     #Omega_F
     plt.figure(1)
     plt.clf()
     omegaf_plot(useavgs=True)
-    plt.savefig("omegaf_mad.pdf",bbox_inches='tight',pad_inches=0.02)
+    if dofig:
+        plt.savefig("omegaf_mad.pdf",bbox_inches='tight',pad_inches=0.02)
     #E_H - Omega L_H
     plt.figure(2)
     plt.clf()
-    eminusomegal_plot(useavgs=1)
-    plt.savefig("eminusomegal_mad.pdf",bbox_inches='tight',pad_inches=0.02)
+    eminusomegal_plot(useavgs=1,doreload=doreload,fname=fname)
+    if dofig:
+        plt.savefig("eminusomegal_mad.pdf",bbox_inches='tight',pad_inches=0.02)
     #E-related stuff
     plt.figure(4)
     plt.clf()
     compute_Eup(useavgs=1)
-    plt.savefig("E_mad_non_final.pdf",bbox_inches='tight',pad_inches=0.02)
+    if dofig:
+        plt.savefig("E_mad_non_final.pdf",bbox_inches='tight',pad_inches=0.02)
     
 def lasota_stag(doreload=0):
     if 'gv3' not in globals() or 'rho' not in globals() or doreload:
@@ -204,42 +211,169 @@ def omegaf_plot(fntsize=20,useavgs=0):
     for label in ax.get_xticklabels() + ax.get_yticklabels():
         label.set_fontsize(fntsize)
 
-def eminusomegal_plot(fntsize=20,useavgs=0):
+def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None):
+    global B
     ih = iofr(rhor)
     if not useavgs:
         faraday()
         Tcalcud()
     if not useavgs:
         tud = Tud
+        tudEM = TudEM
+        tudMA = TudMA
+        Eh = -(-tud[1,0]*dxdxp[1,1])
+        EhEM = -(-tudEM[1,0]*dxdxp[1,1])
+        EhMA = -(-tudMA[1,0]*dxdxp[1,1])
+        Lh = -(tud[1,3]*dxdxp[1,1]/dxdxp[3,3])
+        if np.abs(h[0,0,0]-h[0,ny-1,0])<1.5*np.pi: #need to mirror
+            Eh = np.concatenate((Eh[:,::-1],Eh[:,::1]),axis=1)
+            EhMA = np.concatenate((EhMA[:,::-1],EhMA[:,::1]),axis=1)
+            EhEM = np.concatenate((EhEM[:,::-1],EhEM[:,::1]),axis=1)
+            Lh = np.concatenate((Lh[:,::-1],Lh[:,::1]),axis=1)
+            hloc = np.concatenate((h-np.pi/2.,h),axis=1)
     else:
+        hloc=h
+        if 'FmminusFe_global' not in globals() or doreload:
+            remove_floors(fname=fname)
         tud = avg_Tud
+        tudEM = avg_TudEM
+        tudMA = avg_TudMA
+        #Eh = -(-tud[1,0]*dxdxp[1,1])
+        #EhMA = -(-tudMA[1,0]*dxdxp[1,1])
+        EhEM = -(-tudEM[1,0]*dxdxp[1,1])
+        # #correct the values
+        nlin=4
+        EhEM[:,ny-1-nlin:] = EhEM[:,ny-1-nlin:ny-1-nlin+1]*(np.sin(h[:,ny-1-nlin:])/np.sin(h[:,ny-1-nlin:ny-1-nlin+1]))**2
+        EhEM[:,:nlin] = EhEM[:,nlin:nlin+1]*(np.sin(h[:,:nlin])/np.sin(h[:,nlin:nlin+1]))**2
+        EhEM1 = radavg(EhEM,axis=1,dn=1)
+        EhEM2 = radavg(EhEM1,axis=0,dn=1)
+        EhEM = EhEM2
+        Eh = -(FmminusFe_global - Fm_global)/gdet/nz*dxdxp[1,1]
+        nzero=10 #!!! specific to rtf2_15r34_2pi_a0.99gg500rbr1e3_0_0_0
+        Eh[:,0:nzero] = EhEM[:,0:nzero]
+        Eh[:,ny-1-nzero:] = EhEM[:,ny-1-nzero:]
+        Eh[Eh<EhEM]=EhEM[Eh<EhEM]
+        EdotmMdot = -(FmminusFe_global)/gdet/nz*dxdxp[1,1]
+        EdotmMdot[:,0:nzero] = EhEM[:,0:nzero]
+        EdotmMdot[:,ny-1-nzero:] = EhEM[:,ny-1-nzero:]
+        EhMA = Eh - EhEM
+        # Eh = 0.5*(Eh+Eh[:,::-1])
+        # EhEM = 0.5*(EhEM+EhEM[:,::-1])
+        # EhMA = 0.5*(EhMA+EhMA[:,::-1])
+        #EhMA = -FmminusFe_global/gdet/nz*dxdxp[1,1]
+        Lh = -(tud[1,3]*dxdxp[1,1]/dxdxp[3,3])
+        # nlin=2
+        # Lh[:,ny-1-nlin:] = Lh[:,ny-1-nlin:ny-1-nlin+1]*np.sin(h[:,ny-1-nlin:])/np.sin(h[:,ny-1-nlin:ny-1-nlin+1])
+        # Lh[:,:nlin] = Lh[:,nlin:nlin+1]*np.sin(h[:,:nlin])/np.sin(h[:,nlin:nlin+1])
+        Lh1 = radavg(Lh,axis=1,dn=1)
+        Lh2 = radavg(Lh1,axis=0,dn=1)
+        Lh = Lh2
     if useavgs == 1:
         om = avg_omegaf1b
         jx = ny/2
     else:
         om = omegaf2
-        jx = 0
-    Eh = -(-tud[1,0]*dxdxp[1,1])
+        jx = ny
     omegah = a/(2*rhor)
     omegaf = om*dxdxp[3,3]
-    Lh = -(tud[1,3]*dxdxp[1,1]/dxdxp[3,3])
-    plt.plot((np.pi-h[ih,:,0])/np.pi,(Eh[ih,:,0])/np.abs(Eh[ih,jx,0]),"k-.",lw=2,label=r"$E_{\rm H}\equiv T^r_t$")
-    #l,=plt.plot((np.pi-h[ih,:,0])/np.pi,(0.5*omegah*Lh[ih,:,0])/np.abs(Eh[ih,jx,0]),"k-.",lw=2,label=r"$0.5\omega_{\rm H}J_{\rm H}\equiv -0.5\omega_{\rm H}T^r_\varphi$")
+    plt.plot((hloc[ih,:,0])/np.pi,(Eh[ih,:,0])/np.abs(Eh[ih,jx,0]),"k-",lw=2,label=r"$\dot e$")
+    l,=plt.plot((hloc[ih,:,0])/np.pi,(EhEM[ih,:,0])/np.abs(Eh[ih,jx,0]),"k:",lw=4,label=r"$\dot e_{\rm EM}$")
+    l,=plt.plot((hloc[ih,:,0])/np.pi,(EhMA[ih,:,0])/np.abs(Eh[ih,jx,0]),"k-.",lw=2,label=r"$\dot e_{\rm MA}$")
+    l.set_dashes([10,5])
+    #l,=plt.plot((hloc[ih,:,0])/np.pi,(0.5*omegah*Lh[ih,:,0])/np.abs(Eh[ih,jx,0]),"k-.",lw=2,label=r"$0.5\omega_{\rm H}J_{\rm H}\equiv -0.5\omega_{\rm H}T^r_\varphi$")
     #l.set_dashes([10,3,2,3])
-    plt.plot((np.pi-h[ih,:,0])/np.pi,(Eh-omegah*Lh)[ih,:,0]/np.abs(Eh[ih,jx,0]),"k-",lw=2,label=r"$E_{\rm H}-\omega_{\rm H}J_{\rm H}$")
-    plt.plot((np.pi-h[ih,:,0])/np.pi,(Eh-0.5*omegah*Lh)[ih,:,0]/np.abs(Eh[ih,jx,0]),"k:",lw=2,label=r"$E_{\rm H}-0.5\omega_{\rm H}J_{\rm H}$")
-    plt.plot((np.pi-h[ih,:,0])/np.pi,(Eh-omegaf*Lh)[ih,:,0]/np.abs(Eh[ih,jx,0]),"k--",lw=2,label=r"$E_{\rm H}-\omega_{\rm F}J_{\rm H}$")
-    leg = plt.legend(loc="lower right",ncol=2)
+    l,=plt.plot((hloc[ih,:,0])/np.pi,(Eh-omegah*Lh)[ih,:,0]/np.abs(Eh[ih,jx,0]),"b-",lw=2,label=r"$\dot e-\omega_{\rm H}\dot \jmath$")
+    l.set_dashes([10,3,2,3])
+    # #plt.plot((h[ih,:,0])/np.pi,(Eh-0.5*omegah*Lh)[ih,:,0]/np.abs(Eh[ih,jx,0]),"k:",lw=2,label=r"$E_{\rm H}-0.5\omega_{\rm H}J_{\rm H}$")
+    # plt.plot((h[ih,:,0])/np.pi,(Eh-omegaf*Lh)[ih,:,0]/np.abs(Eh[ih,jx,0]),"g--",lw=2,label=r"$E_{\rm H}-\omega_{\rm F}J_{\rm H}$")
     if useavgs == 1:
         plt.ylim(-1.5,1.5)
+        leg = plt.legend(loc="lower right",ncol=4,frameon=1)
     else:
-        plt.ylim(-1,1.)
+        plt.ylim(-1.5,1.5)
+        leg = plt.legend(loc="lower right",ncol=4,frameon=1) #,bbox_to_anchor=(1,0.2))
     plt.xlabel(r"$\theta_{\rm H}/\pi$",fontsize=fntsize)
-    plt.ylabel(r"$E_{\rm H} - \omega J_{\rm H},\ {\rm in\ units\ of\ \left|E_{\rm H}(\theta=\pi/2)\right|}$",fontsize=fntsize)
+    plt.ylabel(r"${\rm Various},\ {\rm in\ units\ of\ } \dot e(\theta=\pi/2)$",fontsize=fntsize)
     plt.grid(b=1)
     ax = plt.gca()
     for label in ax.get_xticklabels() + ax.get_yticklabels() + leg.get_texts():
         label.set_fontsize(fntsize)
+    #
+    # 2D figure
+    #
+    fig=plt.figure(5)
+    plt.clf()
+    ax = fig.add_subplot(111, aspect='equal', frameon=1)
+    avg_gdetBlongavg=get2davg(usedefault=1)[24,:,:,None]
+    avg_aphi = fieldcalc(gdetB1=avg_gdetBlongavg)
+    if 1:
+        #normalize avg_phi by Mdot to get dimensionless flux
+        phibh = (4*np.pi)**0.5*avg_aphi/a_Fm_global**0.5
+        avg_aphi = phibh
+        step=10
+        levs=np.arange(step,100*step,step)
+        #for a = 0.99 increase the nuumber of contours by 2x so see more detail
+        if np.abs(a-0.99)<0.01:
+            levs = levs/1.5
+    else:
+        levs=None
+    r2=np.concatenate((r[:,::-1],r),axis=1)
+    h2=np.concatenate((-h[:,::-1],h),axis=1)
+    r3=np.concatenate((r2[:,0:1,:],r2,r2[:,0:1,:]),axis=1)
+    h3=np.concatenate((h2[:,0:1,:]*0+np.pi,h2,h2[:,0:1,:]*0+np.pi),axis=1)
+    # h2[:,0,:]=h2[:,0,:]*0+np.pi
+    # h2[:,-1,:]=h2[:,-1,:]*0+np.pi
+    avg_aphi2=np.concatenate((avg_aphi[:,::-1],avg_aphi,),axis=1)
+    EdotmMdot2=np.concatenate((EdotmMdot[:,::-1],EdotmMdot),axis=1)
+    EdotmMdot3=np.concatenate((EdotmMdot2[:,0:1]*0,EdotmMdot2,EdotmMdot2[:,0:1]*0),axis=1)
+    var3 = EdotmMdot3/np.max(-EdotmMdot3,axis=1)[:,None,:]
+    # plc(-var3,xcoord=r3*np.sin(h3),ycoord=r3*np.cos(h3),
+    #    levels=np.linspace(-1.01,0,102),isfilled=1,cb=0,cmap=cm.BuGn,linewidths=None,linestyles=None,antialiased=False)
+    CS = plc(-var3,xcoord=r3*np.sin(h3),ycoord=r3*np.cos(h3),
+    levels=np.linspace(0.,1,81),isfilled=1,cb=0,cmap=cm.BuGn,linewidths=None,linestyles=None,antialiased=False)
+    shrink = 1.
+    fntsize=20
+    cbar=plt.colorbar(CS,ax=ax,shrink=shrink) # draw colorbar
+    levs_label = np.linspace(0.,1.,6)
+    tcks=[x for x in levs_label]
+    labs=[r'$%g$'%(x) for x in levs_label]
+    cbar.set_ticks(tcks)
+    cbar.set_ticklabels(labs)
+    cbar.update_ticks()
+    if fntsize is not None:
+        #set font size of colorbar tick labels
+        cl = plt.getp(cbar.ax, 'ymajorticklabels')
+        plt.setp(cl, fontsize=fntsize)
+
+    if levs is not None:
+        plc(avg_aphi2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),levels=levs,colors='black',linewidths=2)
+        cnt=plc(avg_aphi2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),levels=levs,colors='white',
+                linewidths=1,linestyles='dashed')
+    else:
+        plc(avg_aphi2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),nc=30,colors='black',linewidths=0.5)
+        cnt=plc(avg_aphi2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),nc=30,colors='white',
+                linewidths=0.5,linestyles='dashed')
+    vec=np.zeros_like(avg_uu)
+    vec[1] = FmminusFe_global
+    vec[1][vec[1]<0] = vec[1][vec[1]<0]*0
+    vec[2] = FmminusFe2_global
+    vec[3] *= 0
+    den=2
+    mylen=33
+    arrowsize=1
+    mksimplevecstream(vec, len=mylen,density=1,downsample=1,cb=False,vmin=-6,vmax=0.5,dobhfield=10,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='r',linewidth=2,startatmidplane=False,arrowsize=arrowsize,populatestreamlines=1)
+    # mkframe("myframe",whichvar=None,len=mylen,ax=plt.gca(),density=den,downsample=1,cb=False,pt=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.0025,color='k',doarrows=True,dorandomcolor=False,lw=2,skipblankint=False,detectLoops=True,ncell=800,minlengthdefault=0.2,startatmidplane=False)
+    plt.xlim(-30,30)
+    plt.ylim(-30,30)
+    plt.xlabel(r"$x\ [r_g]$",fontsize=fntsize)
+    plt.ylabel(r"$z\ [r_g]$",fontsize=fntsize,ha="center")
+    for label in ax.get_xticklabels() + ax.get_yticklabels():
+        label.set_fontsize(fntsize)
+    #black hole
+    el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
+    art=ax.add_artist(el)
+    art.set_zorder(20)
+
     
 def lh_plot(fntsize=20):
     ih = iofr(rhor)
@@ -3541,6 +3675,33 @@ def reinterpxy(vartointerp,extent,ncell,domask=1,mirrorfactor=1,rhor=None,thetar
     
 def ftr(x,xb,xf):
     return( amax(0.0*x,amin(1.0+0.0*x,1.0*(x-xb)/(xf-xb))) )
+
+def mksimplevecstream(B,**kwargs):
+    aspect = kwargs.pop('aspect',1)
+    len = kwargs.pop('len',30)
+    ncell = kwargs.get('ncell',100)
+    ax = kwargs.pop('ax',None)
+    density = kwargs.get('density',2)
+    domask = kwargs.get('domask',True)
+    kval = kwargs.get('kval',0)
+    domirror = kwargs.pop('domirror',1)
+    cb=kwargs.pop("cb",0)
+    rmask = kwargs.pop("rmask",rhor)
+    extent=(-len,len,-len/aspect,len/aspect)
+    Br = dxdxp[1,1]*B[1]+dxdxp[1,2]*B[2]
+    Bh = dxdxp[2,1]*B[1]+dxdxp[2,2]*B[2]
+    Brnorm=Br
+    Bhnorm=Bh*np.abs(r)
+    #
+    Bznorm=Brnorm*np.cos(h)-Bhnorm*np.sin(h)
+    BRnorm=Brnorm*np.sin(h)+Bhnorm*np.cos(h)
+    iBz = reinterp(Bznorm,extent,ncell,isasymmetric=False,domask=domask,rhor=rmask,kval=kval-0.5,domirror=domirror)
+    iBR = reinterp(BRnorm,extent,ncell,isasymmetric=True,domask=domask,rhor=rmask,kval=kval-0.5,domirror=domirror) #isasymmetric = True tells to flip the sign across polar axis
+    xi = np.linspace(extent[0], extent[1], ncell)
+    yi = np.linspace(extent[2], extent[3], ncell)
+    if ax == None:
+        ax = plt.gca()
+    traj = fstreamplot(yi,xi,iBR,iBz,**kwargs)
     
 def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2,whichr=0.9,ncont=100,maxaphi=100,aspect=1.0,isnstar=False,kval=0,kvalvar=0,onlyeta=True,maxsBphi=None,domirror=True,nanout=True,whichvar=None,avgbsqorho=None,fntsize=None,aphiaccent=None,cmap=None):
     extent=(-len,len,-len/aspect,len/aspect)
@@ -11280,6 +11441,51 @@ def testfloors(dotakeoutfloors=1,usestaggeredfluxes=1):
     rhor=1+(1-a**2)**0.5
     radval=10.
     plco(enden1,xy=1)
+
+
+def remove_floors(usestaggeredfluxes=1,dotakeoutfloors=1,fname=None):
+    global en_global, md_global, a_Fm_global, a_FmminusFe_global, a_eta_global, FmminusFe_global, FmminusFe2_global, Fm_global
+    DFfloor=takeoutfloors(ax=None,doreload=1,dotakeoutfloors=dotakeoutfloors,dofeavg=0,isinteractive=0,writefile=False,doplot=False,aphi_j_val=0, ndim=2, is_output_cell_center = False)
+    #
+    #Find accretion rate
+    #
+    # res = takeoutfloors(doreload=True,isinteractive=0,writefile=False)
+    # a_eta,a_Fm,a_Fe,a_Fl = res
+    if fname is None:
+        avgmem = get2davg(usedefault=1)
+    else:
+        avgmem = get2davg(fname=fname)
+    assignavg2dvars(avgmem)
+    #######################
+    #
+    # REMOVE FLOORS
+    #
+    #######################
+    Fm_floorremoved, FmMinusFe_floorremoved1, FmMinusFe_floorremoved2  = removefloorsavg2d(usestaggeredfluxes=usestaggeredfluxes,DFfloor=DFfloor)
+    enden1 = FmMinusFe_floorremoved1
+    enden = enden1
+    enden2 = FmMinusFe_floorremoved2
+    mdden = Fm_floorremoved
+    enden_global = np.copy(enden)
+    mdden_global = np.copy(mdden)
+    en=(enden.cumsum(1)-0.5*enden)*_dx2*_dx3 #subtract half of current cell's density to get cell-centered quantity
+    md=(mdden).sum(2).sum(1)*_dx2*_dx3
+    en_global = np.copy(en)
+    md_global = np.copy(md)
+    FmminusFe_global = enden_global
+    FmminusFe2_global = np.copy(enden2)
+    Fm_global = mdden_global
+    #pdb.set_trace()
+    #mdot vs. radius
+    #pick out a scalar value at r = 5M
+    md=md[iofr(5)]
+    a_Fm=md
+    a_FmminusFe=enden.sum(1)[iofr(5),0]*_dx2*_dx3
+    a_Fe1=md-a_FmminusFe
+    a_eta = a_FmminusFe/md
+    a_Fm_global = a_Fm
+    a_FmminusFe_global = a_FmminusFe
+    a_eta_global = a_eta
 
 
 def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,showticks=True,usedefault=2,fc='white',mc='white',dotakeoutfloors=0,showtitle=False):
