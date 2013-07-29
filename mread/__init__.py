@@ -200,7 +200,13 @@ def omegaf_plot(fntsize=20,useavgs=0):
         om = avg_omegaf1b
     else:
         om = omegaf2
-    plt.plot((np.pi-h[ih,:,0])/np.pi,radavg(om*dxdxp[3,3])[ih,:,0]/omegah,"k-",lw=2)
+    varx = (h[ih,:,0])/np.pi
+    vary = radavg(om*dxdxp[3,3])[ih,:,0]/omegah
+    if useavgs != 1:
+        varx = np.concatenate((1.-varx[::-1],varx))
+        vary = np.concatenate((vary[::-1],vary))
+    pdb.set_trace()
+    plt.plot(varx,vary,"k-",lw=2)
     plt.ylim(1e-5,0.7)
     plt.xlabel(r"$\theta_{\rm H}/\pi$",fontsize=fntsize)
     plt.ylabel(r"$\omega_{\rm F},\ {\rm in\ units\ of\ \omega_{\rm H}}$",fontsize=fntsize)
@@ -391,9 +397,9 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False):
     art.set_zorder(20)
     if dofig:
         if useavgs:
-            plt.savefig("mad_energy_magnetic_lines.pdf",bbox_inches='tight',pad_inches=0.02)
+            plt.savefig("mad_energy_magnetic_lines.png",bbox_inches='tight',pad_inches=0.02,dpi=300)
         else:
-            plt.savefig("ff_energy_magnetic_lines.pdf",bbox_inches='tight',pad_inches=0.02)
+            plt.savefig("ff_energy_magnetic_lines.png",bbox_inches='tight',pad_inches=0.02,dpi=300)
 
     
 def lh_plot(fntsize=20):
