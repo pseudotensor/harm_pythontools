@@ -3725,7 +3725,10 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         rhor=1
         ihor = 0
         #a=1
-    ilrho = reinterp(np.log10(rho),extent,ncell,domask=1.0,rhor=rhor,kval=kval)
+    if 'rho' in globals():
+        ilrho = reinterp(np.log10(rho),extent,ncell,domask=1.0,rhor=rhor,kval=kval)
+    else:
+        ilrho = None
     if True:
         aphi = fieldcalc()
         iaphi = reinterp(aphi,extent,ncell,domask=0,rhor=rhor,kval=kval)
@@ -3737,11 +3740,14 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         Bh = dxdxp[2,1]*B[1]+dxdxp[2,2]*B[2]
         #note toroidal field located at faces
         #Bp = gdetB[3]/gdet*dxdxp[3,3]
-        if Bstag is B:
-            print("Bstag is same as B, so will use gdetB/gdet to show perpendicular field component")
-            Bp = gdetB[3]/gdet*dxdxp[3,3]
+        if "gdetB" in globals():
+            if 'Bstag' not in globals():
+                print("Bstag is same as B, so will use gdetB/gdet to show perpendicular field component")
+                Bp = gdetB[3]/gdet*dxdxp[3,3]
+            elif Bstag is B:
+                Bp = Bstag[3]*dxdxp[3,3]
         else:
-            Bp = Bstag[3]*dxdxp[3,3]
+            Bp = B[3]*dxdxp[3,3]
         #Bp[(h<0)+(h>np.pi)] *= -1
         #Bp = Bstag[2]
         #
@@ -4398,7 +4404,10 @@ def fieldcalcface(gdetB1=None):
     """
     #global aphi
     if gdetB1 == None:
-        gdetB1 = gdetB[1]
+        if 'gdetB' in globals():
+            gdetB1 = gdetB[1]
+        else:
+            gdetB1 = gdet*B[1]
     #average in phi and add up
     daphi = (gdetB1).mean(-1)[:,:,None]*_dx2
     aphi = np.zeros_like(daphi)
