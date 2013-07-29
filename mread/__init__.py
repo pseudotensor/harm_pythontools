@@ -164,9 +164,7 @@ def lasota_mad_plots(doreload=0,fname="avg2d20_0316_0329.npy",dofig=0):
     #E_H - Omega L_H
     plt.figure(2)
     plt.clf()
-    eminusomegal_plot(useavgs=1,doreload=doreload,fname=fname)
-    if dofig:
-        plt.savefig("eminusomegal_mad.pdf",bbox_inches='tight',pad_inches=0.02)
+    eminusomegal_plot(useavgs=1,doreload=doreload,fname=fname,dofig=dofig)
     #E-related stuff
     plt.figure(4)
     plt.clf()
@@ -211,7 +209,7 @@ def omegaf_plot(fntsize=20,useavgs=0):
     for label in ax.get_xticklabels() + ax.get_yticklabels():
         label.set_fontsize(fntsize)
 
-def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None):
+def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False):
     global B
     ih = iofr(rhor)
     if not useavgs:
@@ -229,10 +227,13 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None):
             Eh = np.concatenate((Eh[:,::-1],Eh[:,::1]),axis=1)
             EhMA = np.concatenate((EhMA[:,::-1],EhMA[:,::1]),axis=1)
             EhEM = np.concatenate((EhEM[:,::-1],EhEM[:,::1]),axis=1)
+            EdotmMdot = Eh
             Lh = np.concatenate((Lh[:,::-1],Lh[:,::1]),axis=1)
             hloc = np.concatenate((h-np.pi/2.,h),axis=1)
+            rloc = np.concatenate((r,r),axis=1)
     else:
         hloc=h
+        rloc=r
         if 'FmminusFe_global' not in globals() or doreload:
             remove_floors(fname=fname)
         tud = avg_Tud
@@ -298,15 +299,25 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None):
     ax = plt.gca()
     for label in ax.get_xticklabels() + ax.get_yticklabels() + leg.get_texts():
         label.set_fontsize(fntsize)
+    if dofig:
+        if useavgs:
+            plt.savefig("eminusomegal_mad.pdf",bbox_inches='tight',pad_inches=0.02)
+        else:
+            plt.savefig("eminusomegal.pdf",bbox_inches='tight',pad_inches=0.02)
     #
     # 2D figure
     #
     fig=plt.figure(5)
     plt.clf()
     ax = fig.add_subplot(111, aspect='equal', frameon=1)
-    avg_gdetBlongavg=get2davg(usedefault=1)[24,:,:,None]
-    avg_aphi = fieldcalc(gdetB1=avg_gdetBlongavg)
-    if 1:
+    if useavgs:
+        avg_gdetBlongavg=get2davg(usedefault=1)[24,:,:,None]
+        avg_aphi = fieldcalc(gdetB1=avg_gdetBlongavg)
+    else:
+        avg_aphi = fieldcalcm()
+        #pdb.set_trace()
+        avg_aphi = np.concatenate((avg_aphi[:,::-1],4*np.pi-avg_aphi[:,::1]),axis=1)
+    if useavgs:
         #normalize avg_phi by Mdot to get dimensionless flux
         phibh = (4*np.pi)**0.5*avg_aphi/a_Fm_global**0.5
         avg_aphi = phibh
@@ -316,9 +327,9 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None):
         if np.abs(a-0.99)<0.01:
             levs = levs/1.5
     else:
-        levs=None
-    r2=np.concatenate((r[:,::-1],r),axis=1)
-    h2=np.concatenate((-h[:,::-1],h),axis=1)
+        levs=np.linspace(0,4*np.pi,11)
+    r2=np.concatenate((rloc[:,::-1],rloc),axis=1)
+    h2=np.concatenate((-hloc[:,::-1],hloc),axis=1)
     r3=np.concatenate((r2[:,0:1,:],r2,r2[:,0:1,:]),axis=1)
     h3=np.concatenate((h2[:,0:1,:]*0+np.pi,h2,h2[:,0:1,:]*0+np.pi),axis=1)
     # h2[:,0,:]=h2[:,0,:]*0+np.pi
@@ -353,15 +364,20 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None):
         plc(avg_aphi2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),nc=30,colors='black',linewidths=0.5)
         cnt=plc(avg_aphi2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),nc=30,colors='white',
                 linewidths=0.5,linestyles='dashed')
-    vec=np.zeros_like(avg_uu)
-    vec[1] = FmminusFe_global
-    vec[1][vec[1]<0] = vec[1][vec[1]<0]*0
-    vec[2] = FmminusFe2_global
-    vec[3] *= 0
+    if useavgs:
+        vec=np.zeros_like(avg_uu)
+        vec[1] = FmminusFe_global
+        vec[1][vec[1]<0] = vec[1][vec[1]<0]*0
+        vec[2] = FmminusFe2_global
+        vec[3] *= 0
+        domirrory = False
+    else:
+        vec = -tud[0:,0]
+        domirrory = True
     den=2
     mylen=33
     arrowsize=1
-    mksimplevecstream(vec, len=mylen,density=1,downsample=1,cb=False,vmin=-6,vmax=0.5,dobhfield=10,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='r',linewidth=2,startatmidplane=False,arrowsize=arrowsize,populatestreamlines=1)
+    mksimplevecstream(vec, len=mylen,density=1,downsample=1,cb=False,vmin=-6,vmax=0.5,dobhfield=10,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='r',linewidth=2,startatmidplane=False,arrowsize=arrowsize,populatestreamlines=1,domirrory=domirrory)
     # mkframe("myframe",whichvar=None,len=mylen,ax=plt.gca(),density=den,downsample=1,cb=False,pt=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.0025,color='k',doarrows=True,dorandomcolor=False,lw=2,skipblankint=False,detectLoops=True,ncell=800,minlengthdefault=0.2,startatmidplane=False)
     plt.xlim(-30,30)
     plt.ylim(-30,30)
@@ -373,6 +389,11 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None):
     el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
     art=ax.add_artist(el)
     art.set_zorder(20)
+    if dofig:
+        if useavgs:
+            plt.savefig("mad_energy_magnetic_lines.pdf",bbox_inches='tight',pad_inches=0.02)
+        else:
+            plt.savefig("ff_energy_magnetic_lines.pdf",bbox_inches='tight',pad_inches=0.02)
 
     
 def lh_plot(fntsize=20):
@@ -3599,7 +3620,7 @@ def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
         plt.ylim(-ymax,ymax)
     return res
 
-def reinterp(vartointerp,extent,ncell,domask=1,isasymmetric=False,rhor=None,kval=0,domirror=True,dolimitr=True):
+def reinterp(vartointerp,extent,ncell,ncelly=None,domirrory=0,domask=1,isasymmetric=False,isasymmetricy=False,rhor=None,kval=0,domirror=True,dolimitr=True):
     global xi,yi,zi
     #grid3d("gdump")
     #rfd("fieldline0250.bin")
@@ -3607,6 +3628,12 @@ def reinterp(vartointerp,extent,ncell,domask=1,isasymmetric=False,rhor=None,kval
         rhor = (1+np.sqrt(1-a**2))
     if kval >= vartointerp.shape[2]:
         kval = 0
+    if ncelly is None:
+        ncellx = ncell
+        ncelly = ncell
+    else:
+        ncellx = ncell
+        ncelly = ncelly
     maxr = 2*np.max(np.abs(np.array(extent)))
     xraw=r*np.sin(h)
     yraw=r*np.cos(h)
@@ -3629,10 +3656,17 @@ def reinterp(vartointerp,extent,ncell,domask=1,isasymmetric=False,rhor=None,kval
         if isasymmetric==True:
             varmirror *= -1.
         var=np.concatenate((varmirror,var))
+    if domirrory:
+        x=np.concatenate((x,x))
+        y=np.concatenate((y,-y))
+        varmirror = np.copy(var)
+        if isasymmetricy:
+            varmirror *= -1
+        var=np.concatenate((var,varmirror))
     #else do not do asymmetric part
     # define grid.
-    xi = np.linspace(extent[0], extent[1], ncell)
-    yi = np.linspace(extent[2], extent[3], ncell)
+    xi = np.linspace(extent[0], extent[1], ncelly)
+    yi = np.linspace(extent[2], extent[3], ncellx)
     # grid the data.
     zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method='cubic')
     #zi[interior] = np.ma.masked
@@ -3685,6 +3719,7 @@ def mksimplevecstream(B,**kwargs):
     domask = kwargs.get('domask',True)
     kval = kwargs.get('kval',0)
     domirror = kwargs.pop('domirror',1)
+    domirrory = kwargs.pop('domirrory',1)
     cb=kwargs.pop("cb",0)
     rmask = kwargs.pop("rmask",rhor)
     extent=(-len,len,-len/aspect,len/aspect)
@@ -3695,8 +3730,8 @@ def mksimplevecstream(B,**kwargs):
     #
     Bznorm=Brnorm*np.cos(h)-Bhnorm*np.sin(h)
     BRnorm=Brnorm*np.sin(h)+Bhnorm*np.cos(h)
-    iBz = reinterp(Bznorm,extent,ncell,isasymmetric=False,domask=domask,rhor=rmask,kval=kval-0.5,domirror=domirror)
-    iBR = reinterp(BRnorm,extent,ncell,isasymmetric=True,domask=domask,rhor=rmask,kval=kval-0.5,domirror=domirror) #isasymmetric = True tells to flip the sign across polar axis
+    iBz = reinterp(Bznorm,extent,ncell,isasymmetric=False,isasymmetricy=True,domask=domask,rhor=rmask,kval=kval-0.5,domirror=domirror,domirrory=domirrory)
+    iBR = reinterp(BRnorm,extent,ncell,isasymmetric=True,isasymmetricy=False,domask=domask,rhor=rmask,kval=kval-0.5,domirror=domirror,domirrory=domirrory) #isasymmetric = True tells to flip the sign across polar axis
     xi = np.linspace(extent[0], extent[1], ncell)
     yi = np.linspace(extent[2], extent[3], ncell)
     if ax == None:
