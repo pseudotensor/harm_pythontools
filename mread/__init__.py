@@ -134,9 +134,7 @@ def lasota_plots(doreload=0,dofig=0):
     #E_H - Omega L_H
     plt.figure(2)
     plt.clf()
-    eminusomegal_plot()
-    if dofig:
-        plt.savefig("eminusomegal.pdf",bbox_inches='tight',pad_inches=0.02)
+    eminusomegal_plot(doreload=doreload,dofig=dofig)
     #L_H
     plt.figure(3)
     plt.clf()
@@ -197,7 +195,8 @@ def omegaf_plot(fntsize=20,useavgs=0):
         faraday()
     omegah = a/(2*rhor)
     if useavgs == 1:
-        om = avg_omegaf1b
+        avg_omegaf=get2davg(fname="avg2d20_0070_0329.npy")[238,:,:,None]
+        om = avg_omegaf
     else:
         om = omegaf2
     varx = (h[ih,:,0])/np.pi
@@ -205,7 +204,6 @@ def omegaf_plot(fntsize=20,useavgs=0):
     if useavgs != 1:
         varx = np.concatenate((1.-varx[::-1],varx))
         vary = np.concatenate((vary[::-1],vary))
-    pdb.set_trace()
     plt.plot(varx,vary,"k-",lw=2)
     plt.ylim(1e-5,0.7)
     plt.xlabel(r"$\theta_{\rm H}/\pi$",fontsize=fntsize)
@@ -249,7 +247,7 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False):
         #EhMA = -(-tudMA[1,0]*dxdxp[1,1])
         EhEM = -(-tudEM[1,0]*dxdxp[1,1])
         # #correct the values
-        nlin=4
+        nlin=1
         EhEM[:,ny-1-nlin:] = EhEM[:,ny-1-nlin:ny-1-nlin+1]*(np.sin(h[:,ny-1-nlin:])/np.sin(h[:,ny-1-nlin:ny-1-nlin+1]))**2
         EhEM[:,:nlin] = EhEM[:,nlin:nlin+1]*(np.sin(h[:,:nlin])/np.sin(h[:,nlin:nlin+1]))**2
         EhEM1 = radavg(EhEM,axis=1,dn=1)
@@ -321,8 +319,10 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False):
         avg_aphi = fieldcalc(gdetB1=avg_gdetBlongavg)
     else:
         avg_aphi = fieldcalcm()
+        avg_aphi1 = fieldcalcp()
+        avg_aphi1 += avg_aphi[:,0:1]
         #pdb.set_trace()
-        avg_aphi = np.concatenate((avg_aphi[:,::-1],4*np.pi-avg_aphi[:,::1]),axis=1)
+        avg_aphi = np.concatenate((avg_aphi[:,::-1],avg_aphi1[:,::1]),axis=1)
     if useavgs:
         #normalize avg_phi by Mdot to get dimensionless flux
         phibh = (4*np.pi)**0.5*avg_aphi/a_Fm_global**0.5
@@ -333,7 +333,7 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False):
         if np.abs(a-0.99)<0.01:
             levs = levs/1.5
     else:
-        levs=np.linspace(0,4*np.pi,11)
+        levs=np.linspace(0.1,1,9,endpoint=False)*4*np.pi
     r2=np.concatenate((rloc[:,::-1],rloc),axis=1)
     h2=np.concatenate((-hloc[:,::-1],hloc),axis=1)
     r3=np.concatenate((r2[:,0:1,:],r2,r2[:,0:1,:]),axis=1)
@@ -382,7 +382,7 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False):
         domirrory = True
     den=2
     mylen=33
-    arrowsize=1
+    arrowsize=3
     mksimplevecstream(vec, len=mylen,density=1,downsample=1,cb=False,vmin=-6,vmax=0.5,dobhfield=10,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='r',linewidth=2,startatmidplane=False,arrowsize=arrowsize,populatestreamlines=1,domirrory=domirrory)
     # mkframe("myframe",whichvar=None,len=mylen,ax=plt.gca(),density=den,downsample=1,cb=False,pt=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.0025,color='k',doarrows=True,dorandomcolor=False,lw=2,skipblankint=False,detectLoops=True,ncell=800,minlengthdefault=0.2,startatmidplane=False)
     plt.xlim(-30,30)
@@ -397,10 +397,12 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False):
     art.set_zorder(20)
     if dofig:
         if useavgs:
-            plt.savefig("mad_energy_magnetic_lines.png",bbox_inches='tight',pad_inches=0.02,dpi=300)
+            fname = "mad_energy_magnetic_lines"
         else:
-            plt.savefig("ff_energy_magnetic_lines.png",bbox_inches='tight',pad_inches=0.02,dpi=300)
-
+            fname = "ff_energy_magnetic_lines"
+        plt.savefig("%s.png" % fname,bbox_inches='tight',pad_inches=0.02,dpi=300)
+        os.system("convert %s.png %s.jpg" % (fname, fname))
+        os.system("sam2p %s.jpg %s.pdf" % (fname, fname))
     
 def lh_plot(fntsize=20):
     ih = iofr(rhor)
@@ -453,13 +455,25 @@ def compute_Eup(fntsize=20,useavgs=0):
     ld = mdot(gv3,lu)
     Edp = mdot(myfdd,lu)
     Eup = mdot(gn3,Edp)
+    Epsqold = mdot(Eup,Edp)
     FEksi = mdot(mdot(myfdd,ksiu),Eup)
-    qty = omegah*mdot(mdot(myfdd,ksiu),mdot(myfuu,ld)) - mdot(mdot(myfdd,lu),mdot(myfuu,ld))
-    Epsq = mdot(Eup,Edp)
-    plt.plot((np.pi-h[ih,:,0])/np.pi,(omegah*FEksi - Epsq)[ih,:,0]/np.max(Epsq[ih,:,0]),"b-",label=r"$\omega_{\rm H} F^{\mu\nu}E_\mu\xi_\nu-E^2$",lw=2)
-    #plt.plot((np.pi-h[ih,:,0])/np.pi,(-omegah*FEksi - Epsq)[ih,:,0]/Epsq[ih,0,0],"g-",label=r"$\omega_{\rm H} F^{\mu\nu}\xi_\mu E_\nu-E^2$",lw=2)
-    # plt.plot((np.pi-h[ih,:,0])/np.pi,qty[ih,:,0]/Epsq[ih,0,0],"r--",label=r"$\omega_{\rm H} F_{\mu\nu}\xi^\mu F^{\nu\beta}\ell_\beta-F_{\alpha\beta}\ell^\beta F^{\alpha\nu}\ell_\nu$", lw=2)
+    if useavgs:
+        Epsq = -mdot(mdot(avg_fuufdd,lu),ld)
+        qty = -omegah*mdot(mdot(avg_fuufdd,ksiu),ld) + mdot(mdot(avg_fuufdd,lu),ld)
+    else:
+        qty = omegah*mdot(mdot(myfdd,ksiu),mdot(myfuu,ld)) - mdot(mdot(myfdd,lu),mdot(myfuu,ld))
+        Epsq = mdot(Eup,Edp)
+    #plt.plot((np.pi-h[ih,:,0])/np.pi,(-omegah*FEksi - Epsq)[ih,:,0]/Epsq[ih,0,0],
+    #        "g-",label=r"$\omega_{\rm H} F^{\mu\nu}\xi_\mu E_\nu-E^2$",lw=2)
+    if useavgs:
+        plt.plot((np.pi-h[ih,:,0])/np.pi,(omegah*FEksi - Epsqold)[ih,:,0]/np.max(Epsqold[ih,:,0]),
+            "b--",label=r"$\omega_{\rm H} F^{\mu\nu}E_\mu\xi_\nu-E^2$",lw=2)
+        plt.plot((np.pi-h[ih,:,0])/np.pi,qty[ih,:,0]/Epsq[ih,0,0],"b-",
+            label=r"$\omega_{\rm H} \langle F^{\nu\beta}F_{\mu\nu}\rangle \xi^\mu \ell_\beta-\langle F_{\alpha\beta}F^{\alpha\nu}\rangle\ell^\beta \ell_\nu$", lw=2)
+    
     plt.plot((np.pi-h[ih,:,0])/np.pi,(Epsq)[ih,:,0]/np.max(Epsq[ih,:,0]),"k-",label=r"$E^2\equiv E^\mu E_\mu$",lw=2)
+    if useavgs:
+        plt.plot((np.pi-h[ih,:,0])/np.pi,(Epsqold)[ih,:,0]/np.max(Epsqold[ih,:,0]),"k--",label=r"$E^2\equiv E^\mu E_\mu$",lw=2)
     #plt.title(r"$E^\alpha = F^{\alpha}{\ \mu}\ell_\mu$",fontsize=fntsize)
     leg = plt.legend(loc="upper center",frameon=False)
     if useavgs:
@@ -2845,7 +2859,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20,removefloors=False):
             #energy fluxes and faraday
             fud = mdot(gn3,fdd)
             fuu = mdot(gn3,fud.transpose(1,0,2,3,4)).transpose(1,0,2,3,4)
-            #F^ki F_kj
+            #X^i_j = <F^ik F_kj>
             fuufdd = mdot(fuu.transpose(1,0,2,3,4),fdd)
             avg_fuufdd+=fuufdd.sum(-1)[:,:,:,:,None]
             
