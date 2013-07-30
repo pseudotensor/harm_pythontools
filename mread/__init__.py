@@ -151,8 +151,8 @@ def lasota_mad_plots(doreload=0,fname="avg2d20_0316_0329.npy",dofig=0):
     if 'gv3' not in globals() or doreload:
         grid3d("gdump.bin",use2d=1)
         #rfd("fieldline5468.bin")
-    if 'avg_rho' not in globals() or doreload:
-        avgs=rdavg2d(fname=fname)
+    #if 'avg_rho' not in globals() or doreload:
+    avgs=rdavg2d(fname=fname)
     #Omega_F
     plt.figure(1)
     plt.clf()
@@ -233,8 +233,9 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False):
             EhEM = np.concatenate((EhEM[:,::-1],EhEM[:,::1]),axis=1)
             EdotmMdot = Eh
             Lh = np.concatenate((Lh[:,::-1],Lh[:,::1]),axis=1)
-            hloc = np.concatenate((h-np.pi/2.,h),axis=1)
+            hloc = np.concatenate((np.pi-h[:,::-1],h),axis=1)
             rloc = np.concatenate((r,r),axis=1)
+            uu1=np.concatenate((uu[1,:,::-1],uu[1]),axis=1)
     else:
         hloc=h
         rloc=r
@@ -334,20 +335,21 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False):
             levs = levs/1.5
     else:
         levs=np.linspace(0.1,1,9,endpoint=False)*4*np.pi
+        uu2=np.concatenate((uu1[:,::-1],uu1),axis=1)
     r2=np.concatenate((rloc[:,::-1],rloc),axis=1)
     h2=np.concatenate((-hloc[:,::-1],hloc),axis=1)
     r3=np.concatenate((r2[:,0:1,:],r2,r2[:,0:1,:]),axis=1)
     h3=np.concatenate((h2[:,0:1,:]*0+np.pi,h2,h2[:,0:1,:]*0+np.pi),axis=1)
     # h2[:,0,:]=h2[:,0,:]*0+np.pi
     # h2[:,-1,:]=h2[:,-1,:]*0+np.pi
-    avg_aphi2=np.concatenate((avg_aphi[:,::-1],avg_aphi,),axis=1)
+    avg_aphi2=np.concatenate((avg_aphi[:,::-1],avg_aphi),axis=1)
     EdotmMdot2=np.concatenate((EdotmMdot[:,::-1],EdotmMdot),axis=1)
     EdotmMdot3=np.concatenate((EdotmMdot2[:,0:1]*0,EdotmMdot2,EdotmMdot2[:,0:1]*0),axis=1)
     var3 = EdotmMdot3/np.max(-EdotmMdot3,axis=1)[:,None,:]
     # plc(-var3,xcoord=r3*np.sin(h3),ycoord=r3*np.cos(h3),
     #    levels=np.linspace(-1.01,0,102),isfilled=1,cb=0,cmap=cm.BuGn,linewidths=None,linestyles=None,antialiased=False)
     CS = plc(-var3,xcoord=r3*np.sin(h3),ycoord=r3*np.cos(h3),
-    levels=np.linspace(0.,1,81),isfilled=1,cb=0,cmap=cm.BuGn,linewidths=None,linestyles=None,antialiased=False)
+             levels=np.linspace(0.,1,81),isfilled=1,cb=0,cmap=cm.BuGn,linewidths=None,linestyles=None,antialiased=False)
     shrink = 1.
     fntsize=20
     cbar=plt.colorbar(CS,ax=ax,shrink=shrink) # draw colorbar
@@ -395,6 +397,40 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False):
     el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
     art=ax.add_artist(el)
     art.set_zorder(20)
+    #
+    # STAGNATION SURFACE
+    #
+    if useavgs:
+        istag, jstag, hstag, rstag = getstagparams(doplot=0,fname=fname)
+        linewidth=2
+        myRmax=2.1
+        #z>0
+        rs=rstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)>0]
+        hs=hstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)>0]
+        hs2=np.concatenate((-hs[::-1],hs),axis=1)
+        rs2=np.concatenate((rs[::-1],rs),axis=1)
+        #rs2=radavg(rs2,axis=0,dn=1)
+        xs2=rs2*np.sin(hs2)
+        zs2=rs2*np.cos(hs2)
+        l=len(rs)
+        zs2[l-2]=0.5*(zs2[l-3]+zs2[l-1])
+        zs2[l+1]=0.5*(zs2[l+0]+zs2[l+2])
+        ax.plot(xs2,zs2,'b-',lw=linewidth,zorder=21)
+        #z<0
+        rs=rstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)<0]
+        hs=hstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)<0]
+        hs2=np.concatenate((hs,-hs[::-1]),axis=1)
+        rs2=np.concatenate((rs,rs[::-1]),axis=1)
+        xs2=rs2*np.sin(hs2)
+        zs2=rs2*np.cos(hs2)
+        l=len(rs)
+        zs2[l-2]=0.5*(zs2[l-3]+zs2[l-1])
+        zs2[l+1]=0.5*(zs2[l+0]+zs2[l+2])
+        #rs2=radavg(rs2,axis=0,dn=1)
+        ax.plot(xs2,zs2,'b-',lw=linewidth,zorder=21)
+    else:
+        plc(uu2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),levels=(0,),colors="b",linewidths=2)
+    #
     if dofig:
         if useavgs:
             fname = "mad_energy_magnetic_lines"
@@ -435,6 +471,7 @@ def compute_Eup(fntsize=20,useavgs=0):
         myfdd = fdd
         myfuu = fuu
     else:
+        avgmem=rdavg2d(fname="avg2d20_0070_0329.npy")
         #ksiu is [0.,0.,0.,OmegaH]
         ksiu = np.zeros_like(avg_uu)
         #etau is [1.,0.,0.,0.]
@@ -458,26 +495,43 @@ def compute_Eup(fntsize=20,useavgs=0):
     Epsqold = mdot(Eup,Edp)
     FEksi = mdot(mdot(myfdd,ksiu),Eup)
     if useavgs:
-        Epsq = -mdot(mdot(avg_fuufdd,lu),ld)
-        qty = -omegah*mdot(mdot(avg_fuufdd,ksiu),ld) + mdot(mdot(avg_fuufdd,lu),ld)
+        varx = h[ih,:,0]/np.pi
+        Epsq = mdot(mdot(avg_fuufdd,lu),ld)
+        qty = omegah*mdot(mdot(avg_fuufdd,ksiu),ld) - mdot(mdot(avg_fuufdd,lu),ld)
+        qty = nlinup(qty,nlin=2)
+        Epsq = nlinup(Epsq,nlin=2)
+        vary1 = qty[ih,:,0]/np.max(Epsq[ih,:,0])
+        vary2 = Epsq[ih,:,0]/np.max(Epsq[ih,:,0])
+        vary1 = 0.5*(vary1+vary1[::-1])
+        vary2 = 0.5*(vary2+vary2[::-1])
+        # pdb.set_trace()
     else:
+        varx = h[ih,:,0]/np.pi
+        varx = np.concatenate((1-varx[::-1],varx))
         qty = omegah*mdot(mdot(myfdd,ksiu),mdot(myfuu,ld)) - mdot(mdot(myfdd,lu),mdot(myfuu,ld))
         Epsq = mdot(Eup,Edp)
+        vary1 = qty[ih,:,0]/np.max(Epsq[ih,:,0])
+        vary1 = np.concatenate((vary1[::-1],vary1))
+        vary2 = (Epsq)[ih,:,0]/np.max(Epsq[ih,:,0])
+        vary2 = np.concatenate((vary2[::-1],vary2))
+    if useavgs:
+        plt.plot(varx,vary1,"b-",
+            label=r"$\omega_{\rm H} \langle F^{\nu\beta}F_{\mu\nu}\rangle \xi^\mu \ell_\beta-\langle F_{\alpha\beta}F^{\alpha\nu}\rangle\ell^\beta \ell_\nu$", lw=2)
+        plt.plot(varx,vary2,"k-",label=r"$\langle E^2\rangle\equiv \langle E^\mu E_\mu\rangle$",lw=2)
+    else:
+        plt.plot(varx,vary1,"b-",
+            label=r"$\omega_{\rm H} F^{\nu\beta}F_{\mu\nu} \xi^\mu \ell_\beta - F_{\alpha\beta}F^{\alpha\nu}\ell^\beta \ell_\nu$", lw=2)
+        plt.plot(varx,vary2,"k-",label=r"$E^2\equiv E^\mu E_\mu$",lw=2)
+    # if useavgs:
+    #     plt.plot(varx,(Epsqold)[ih,:,0]/np.max(Epsqold[ih,:,0]),"k--",label=r"$E^2\equiv E^\mu E_\mu$",lw=2)
+    #plt.title(r"$E^\alpha = F^{\alpha}{\ \mu}\ell_\mu$",fontsize=fntsize)
+    # plt.plot(varx,(omegah*FEksi - Epsqold)[ih,:,0]/np.max(Epsqold[ih,:,0]),
+    #     "b--",label=r"$\omega_{\rm H} F^{\mu\nu}E_\mu\xi_\nu-E^2$",lw=2)
     #plt.plot((np.pi-h[ih,:,0])/np.pi,(-omegah*FEksi - Epsq)[ih,:,0]/Epsq[ih,0,0],
     #        "g-",label=r"$\omega_{\rm H} F^{\mu\nu}\xi_\mu E_\nu-E^2$",lw=2)
-    if useavgs:
-        plt.plot((np.pi-h[ih,:,0])/np.pi,(omegah*FEksi - Epsqold)[ih,:,0]/np.max(Epsqold[ih,:,0]),
-            "b--",label=r"$\omega_{\rm H} F^{\mu\nu}E_\mu\xi_\nu-E^2$",lw=2)
-        plt.plot((np.pi-h[ih,:,0])/np.pi,qty[ih,:,0]/Epsq[ih,0,0],"b-",
-            label=r"$\omega_{\rm H} \langle F^{\nu\beta}F_{\mu\nu}\rangle \xi^\mu \ell_\beta-\langle F_{\alpha\beta}F^{\alpha\nu}\rangle\ell^\beta \ell_\nu$", lw=2)
-    
-    plt.plot((np.pi-h[ih,:,0])/np.pi,(Epsq)[ih,:,0]/np.max(Epsq[ih,:,0]),"k-",label=r"$E^2\equiv E^\mu E_\mu$",lw=2)
-    if useavgs:
-        plt.plot((np.pi-h[ih,:,0])/np.pi,(Epsqold)[ih,:,0]/np.max(Epsqold[ih,:,0]),"k--",label=r"$E^2\equiv E^\mu E_\mu$",lw=2)
-    #plt.title(r"$E^\alpha = F^{\alpha}{\ \mu}\ell_\mu$",fontsize=fntsize)
     leg = plt.legend(loc="upper center",frameon=False)
     if useavgs:
-        plt.ylim(-0.1,10)
+        plt.ylim(-0.1,15)
     else:
         plt.ylim(-0.1,15)
     plt.xlabel(r"$\theta_{\rm H}/\pi$",fontsize=fntsize)
@@ -486,6 +540,11 @@ def compute_Eup(fntsize=20,useavgs=0):
     ax = plt.gca()
     for label in ax.get_xticklabels() + ax.get_yticklabels() + leg.get_texts():
         label.set_fontsize(fntsize)
+
+def nlinup(var,nlin=1):
+    var[:,ny-1-nlin:] = var[:,ny-1-nlin:ny-1-nlin+1]*(np.sin(h[:,ny-1-nlin:])/np.sin(h[:,ny-1-nlin:ny-1-nlin+1]))**2
+    var[:,:nlin] = var[:,nlin:nlin+1]*(np.sin(h[:,:nlin])/np.sin(h[:,nlin:nlin+1]))**2
+    return(var)
     
 def test_josh():
     grid3d("gdump.bin",use2d=1)
@@ -2859,7 +2918,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20,removefloors=False):
             #energy fluxes and faraday
             fud = mdot(gn3,fdd)
             fuu = mdot(gn3,fud.transpose(1,0,2,3,4)).transpose(1,0,2,3,4)
-            #X^i_j = <F^ik F_kj>
+            #X^i_j = <F^ki F_kj>
             fuufdd = mdot(fuu.transpose(1,0,2,3,4),fdd)
             avg_fuufdd+=fuufdd.sum(-1)[:,:,:,:,None]
             
@@ -7719,10 +7778,10 @@ def timeavg( qty, ts, fti, ftf, step = 1, sigma = None ):
 
     return( qtyavg )
 
-def getstagparams(var=None,rmax=20,doplot=1,doreadgrid=1,usedefault=1,fixupnearaxis=False):
+def getstagparams(var=None,rmax=20,doplot=1,doreadgrid=1,usedefault=1,fixupnearaxis=False,fname=None):
     if doreadgrid:
         grid3d("gdump.bin",use2d=True)
-    avgmem = get2davg(usedefault=usedefault)
+    avgmem = get2davg(usedefault=usedefault,fname=fname)
     assignavg2dvars(avgmem)
     #a large enough distance that floors are not applied, yet close enough that reaches inflow equilibrium
     rnoflooradded=rmax
