@@ -168,7 +168,7 @@ def lasota_mad_plots(doreload=0,fname="avg2d20_0316_0329.npy",dofig=0):
     plt.clf()
     compute_Eup(useavgs=1)
     if dofig:
-        plt.savefig("E_mad_non_final.pdf",bbox_inches='tight',pad_inches=0.02)
+        plt.savefig("E_mad.pdf",bbox_inches='tight',pad_inches=0.02)
     
 def lasota_stag(doreload=0):
     if 'gv3' not in globals() or 'rho' not in globals() or doreload:
@@ -263,11 +263,14 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False):
         EdotmMdot[:,0:nzero] = EhEM[:,0:nzero]
         EdotmMdot[:,ny-1-nzero:] = EhEM[:,ny-1-nzero:]
         EhMA = Eh - EhEM
+        #EhMA = -FmminusFe_global/gdet/nz*dxdxp[1,1]
+        Lh = -(tud[1,3]*dxdxp[1,1]/dxdxp[3,3])
+        #symmetrize
         # Eh = 0.5*(Eh+Eh[:,::-1])
         # EhEM = 0.5*(EhEM+EhEM[:,::-1])
         # EhMA = 0.5*(EhMA+EhMA[:,::-1])
-        #EhMA = -FmminusFe_global/gdet/nz*dxdxp[1,1]
-        Lh = -(tud[1,3]*dxdxp[1,1]/dxdxp[3,3])
+        # EdotmMdot = 0.5*(EdotmMdot+EdotmMdot[:,::-1])
+        Lh = 0.5*(Lh+Lh[:,::-1])
         # nlin=2
         # Lh[:,ny-1-nlin:] = Lh[:,ny-1-nlin:ny-1-nlin+1]*np.sin(h[:,ny-1-nlin:])/np.sin(h[:,ny-1-nlin:ny-1-nlin+1])
         # Lh[:,:nlin] = Lh[:,nlin:nlin+1]*np.sin(h[:,:nlin])/np.sin(h[:,nlin:nlin+1])
@@ -288,7 +291,7 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False):
     l.set_dashes([10,5])
     #l,=plt.plot((hloc[ih,:,0])/np.pi,(0.5*omegah*Lh[ih,:,0])/np.abs(Eh[ih,jx,0]),"k-.",lw=2,label=r"$0.5\omega_{\rm H}J_{\rm H}\equiv -0.5\omega_{\rm H}T^r_\varphi$")
     #l.set_dashes([10,3,2,3])
-    l,=plt.plot((hloc[ih,:,0])/np.pi,(Eh-omegah*Lh)[ih,:,0]/np.abs(Eh[ih,jx,0]),"b-",lw=2,label=r"$\dot e-\omega_{\rm H}\dot \jmath$")
+    l,=plt.plot((hloc[ih,:,0])/np.pi,(omegah*Lh)[ih,:,0]/np.abs(Eh[ih,jx,0]),"b-",lw=2,label=r"$\omega_{\rm H}\dot \jmath$")
     l.set_dashes([10,3,2,3])
     # #plt.plot((h[ih,:,0])/np.pi,(Eh-0.5*omegah*Lh)[ih,:,0]/np.abs(Eh[ih,jx,0]),"k:",lw=2,label=r"$E_{\rm H}-0.5\omega_{\rm H}J_{\rm H}$")
     # plt.plot((h[ih,:,0])/np.pi,(Eh-omegaf*Lh)[ih,:,0]/np.abs(Eh[ih,jx,0]),"g--",lw=2,label=r"$E_{\rm H}-\omega_{\rm F}J_{\rm H}$")
@@ -296,10 +299,10 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False):
         plt.ylim(-1.5,1.5)
         leg = plt.legend(loc="lower right",ncol=4,frameon=1)
     else:
-        plt.ylim(-1.5,1.5)
+        plt.ylim(-2.5,.5)
         leg = plt.legend(loc="lower right",ncol=4,frameon=1) #,bbox_to_anchor=(1,0.2))
     plt.xlabel(r"$\theta_{\rm H}/\pi$",fontsize=fntsize)
-    plt.ylabel(r"${\rm Various},\ {\rm in\ units\ of\ } \dot e(\theta=\pi/2)$",fontsize=fntsize)
+    plt.ylabel(r"${\rm Various},\ {\rm in\ units\ of\ } \max\left|\dot e\right|$",fontsize=fntsize)
     plt.grid(b=1)
     ax = plt.gca()
     for label in ax.get_xticklabels() + ax.get_yticklabels() + leg.get_texts():
@@ -502,8 +505,9 @@ def compute_Eup(fntsize=20,useavgs=0):
         Epsq = nlinup(Epsq,nlin=2)
         vary1 = qty[ih,:,0]/np.max(Epsq[ih,:,0])
         vary2 = Epsq[ih,:,0]/np.max(Epsq[ih,:,0])
-        vary1 = 0.5*(vary1+vary1[::-1])
-        vary2 = 0.5*(vary2+vary2[::-1])
+        #Symmetrize
+        # vary1 = 0.5*(vary1+vary1[::-1])
+        # vary2 = 0.5*(vary2+vary2[::-1])
         # pdb.set_trace()
     else:
         varx = h[ih,:,0]/np.pi
