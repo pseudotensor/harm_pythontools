@@ -520,12 +520,14 @@ def compute_Eup(fntsize=20,useavgs=0):
         vary2 = np.concatenate((vary2[::-1],vary2))
     if useavgs:
         plt.plot(varx,vary1,"b-",
-            label=r"$\omega_{\rm H} \langle F^{\nu\beta}F_{\mu\nu}\rangle \xi^\mu \ell_\beta-\langle F_{\alpha\beta}F^{\alpha\nu}\rangle\ell^\beta \ell_\nu$", lw=2)
-        plt.plot(varx,vary2,"k-",label=r"$\langle E^2\rangle\equiv \langle E^\mu E_\mu\rangle$",lw=2)
+            #label=r"$\omega_{\rm H} \langle F^{\nu\beta}F_{\mu\nu}\rangle \xi^\mu \ell_\beta-\langle F_{\alpha\beta}F^{\alpha\nu}\rangle\ell^\beta \ell_\nu$",
+            label=r"$\omega_{\rm H}F_{\mu\nu}E^\mu E^\nu-E_\mu E^\mu$", lw=2)
+        plt.plot(varx,vary2,"k-",label=r"$E^2 \equiv E^\mu E_\mu$",lw=2)
     else:
         plt.plot(varx,vary1,"b-",
-            label=r"$\omega_{\rm H} F^{\nu\beta}F_{\mu\nu} \xi^\mu \ell_\beta - F_{\alpha\beta}F^{\alpha\nu}\ell^\beta \ell_\nu$", lw=2)
-        plt.plot(varx,vary2,"k-",label=r"$E^2\equiv E^\mu E_\mu$",lw=2)
+           #label=r"$\omega_{\rm H} F^{\nu\beta}F_{\mu\nu} \xi^\mu \ell_\beta - F_{\alpha\beta}F^{\alpha\nu}\ell^\beta \ell_\nu$",
+           label=r"$\omega_{\rm H}F_{\mu\nu}E^\mu E^\nu-E_\mu E^\mu$", lw=2)
+        plt.plot(varx,vary2,"k-",label=r"$E^2 \equiv E^\mu E_\mu$",lw=2)
     # if useavgs:
     #     plt.plot(varx,(Epsqold)[ih,:,0]/np.max(Epsqold[ih,:,0]),"k--",label=r"$E^2\equiv E^\mu E_\mu$",lw=2)
     #plt.title(r"$E^\alpha = F^{\alpha}{\ \mu}\ell_\mu$",fontsize=fntsize)
