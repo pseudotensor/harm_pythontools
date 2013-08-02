@@ -204,7 +204,20 @@ def omegaf_plot(fntsize=20,useavgs=0):
     if useavgs != 1:
         varx = np.concatenate((1.-varx[::-1],varx))
         vary = np.concatenate((vary[::-1],vary))
-    plt.plot(varx,vary,"k-",lw=2)
+    if useavgs:
+        cellskip = 2
+    else:
+        cellskip = 4
+    if 1:
+        # plt.plot(varx,vary,"k-",lw=2)
+        plt.plot(varx[cellskip:-cellskip],vary[cellskip:-cellskip],"k-",lw=2)
+        plt.plot(varx[:cellskip+1],vary[:cellskip+1],"k:",lw=2)
+        plt.plot(varx[-cellskip-1:],vary[-cellskip-1:],"k:",lw=2)
+    else:
+        plt.plot(varx,vary,"k-",lw=2)
+        # plt.plot(varx[cellskip:-cellskip],vary[cellskip:-cellskip],"k-",lw=2)
+        # plt.plot(varx[:cellskip+1],vary[:cellskip+1],"-",lw=2,color="LightGrey")
+        # plt.plot(varx[-cellskip-1:],vary[-cellskip-1:],"-",lw=2,color="LightGrey")
     plt.ylim(1e-5,0.7)
     plt.xlabel(r"$\theta_{\rm H}/\pi$",fontsize=fntsize)
     plt.ylabel(r"$\omega_{\rm F},\ {\rm in\ units\ of\ \omega_{\rm H}}$",fontsize=fntsize)
@@ -399,13 +412,14 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False):
     #black hole
     el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
     art=ax.add_artist(el)
-    art.set_zorder(20)
+    art.set_zorder(30)
     #
     # STAGNATION SURFACE
     #
+    clr = "Orange"
+    linewidth=4
     if useavgs:
         istag, jstag, hstag, rstag = getstagparams(doplot=0,fname=fname)
-        linewidth=2
         myRmax=2.1
         #z>0
         rs=rstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)>0]
@@ -418,7 +432,7 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False):
         l=len(rs)
         zs2[l-2]=0.5*(zs2[l-3]+zs2[l-1])
         zs2[l+1]=0.5*(zs2[l+0]+zs2[l+2])
-        ax.plot(xs2,zs2,'b-',lw=linewidth,zorder=21)
+        ax.plot(xs2,zs2,'-',color=clr,lw=linewidth,zorder=21)
         #z<0
         rs=rstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)<0]
         hs=hstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)<0]
@@ -430,10 +444,14 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False):
         zs2[l-2]=0.5*(zs2[l-3]+zs2[l-1])
         zs2[l+1]=0.5*(zs2[l+0]+zs2[l+2])
         #rs2=radavg(rs2,axis=0,dn=1)
-        ax.plot(xs2,zs2,'b-',lw=linewidth,zorder=21)
+        ax.plot(xs2,zs2,'-',color=clr,lw=linewidth,zorder=21)
     else:
-        plc(uu2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),levels=(0,),colors="b",linewidths=2)
+        plc(uu2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),levels=(0,),colors=clr,linewidths=linewidth)
     #
+    # ergosphere
+    #
+    rergo3 = 1+(1-a**2*np.cos(h3)**2)**0.5
+    plc(rergo3-r3,levels=(0,),xcoord=r3*np.sin(h3),ycoord=r3*np.cos(h3),linewidths=4,linestyles="solid",colors="cyan",zorder=22)
     if dofig:
         if useavgs:
             fname = "mad_energy_magnetic_lines"
@@ -521,13 +539,13 @@ def compute_Eup(fntsize=20,useavgs=0):
     if useavgs:
         plt.plot(varx,vary1,"b-",
             #label=r"$\omega_{\rm H} \langle F^{\nu\beta}F_{\mu\nu}\rangle \xi^\mu \ell_\beta-\langle F_{\alpha\beta}F^{\alpha\nu}\rangle\ell^\beta \ell_\nu$",
-            label=r"$\omega_{\rm H}F_{\mu\nu}E^\mu E^\nu-E_\mu E^\mu$", lw=2)
-        plt.plot(varx,vary2,"k-",label=r"$E^2 \equiv E^\mu E_\mu$",lw=2)
+           label=r"$\omega_{\rm H}F_{\mu\nu}E^\mu \xi^\nu-E_\mu E^\mu$", lw=2)
+        plt.plot(varx,vary2,"k-",label=r"$E^2 \equiv E_\mu E^\mu$",lw=2)
     else:
         plt.plot(varx,vary1,"b-",
            #label=r"$\omega_{\rm H} F^{\nu\beta}F_{\mu\nu} \xi^\mu \ell_\beta - F_{\alpha\beta}F^{\alpha\nu}\ell^\beta \ell_\nu$",
-           label=r"$\omega_{\rm H}F_{\mu\nu}E^\mu E^\nu-E_\mu E^\mu$", lw=2)
-        plt.plot(varx,vary2,"k-",label=r"$E^2 \equiv E^\mu E_\mu$",lw=2)
+           label=r"$\omega_{\rm H}F_{\mu\nu}E^\mu \xi^\nu-E_\mu E^\mu$", lw=2)
+        plt.plot(varx,vary2,"k-",label=r"$E^2 \equiv E_\mu E^\mu$",lw=2)
     # if useavgs:
     #     plt.plot(varx,(Epsqold)[ih,:,0]/np.max(Epsqold[ih,:,0]),"k--",label=r"$E^2\equiv E^\mu E_\mu$",lw=2)
     #plt.title(r"$E^\alpha = F^{\alpha}{\ \mu}\ell_\mu$",fontsize=fntsize)
