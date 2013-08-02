@@ -156,7 +156,7 @@ def mkenergyplot(fntsize=20):
     
     
 
-def lasota_plots(doreload=0,dofig=0):
+def lasota_plots(doreload=0,dofig=0,dokomistag=0):
     if 'gv3' not in globals() or 'rho' not in globals() or doreload:
         grid3d("gdump")
         rdo("dumplast")
@@ -169,7 +169,7 @@ def lasota_plots(doreload=0,dofig=0):
     #E_H - Omega L_H
     plt.figure(2)
     plt.clf()
-    eminusomegal_plot(doreload=doreload,dofig=dofig)
+    eminusomegal_plot(doreload=doreload,dofig=dofig,dokomistag=dokomistag)
     #L_H
     plt.figure(3)
     plt.clf()
@@ -267,10 +267,36 @@ def stag_compute_analytic(**kwargs):
     OmegaFIDO = 2*a*r/Sigma
     rhor = 1+(1-a**2)**0.5
     OmegaH = a/(2*rhor)
+    pdb.set_trace()
     return(OmegaH/2.-OmegaFIDO)
     #plc(OmegaH/2.-OmegaFIDO,levels=(0,),xcoord=r*sin(h),ycoord=r*cos(h),**kwargs)
 
-def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False):
+def plot_sigma_profile():
+    plt.clf()
+    plt.figure(10)
+    lstyles=["-", "--","-.","-",":"]
+    colors=["c", "m", "y", "g", "k"]
+    Delta = r**2+a**2-2*r
+    Sigma = (r**2+a**2)**2-a**2*Delta*np.sin(h)**2
+    index = 0
+    for myr in (rhor, 2,5,10,100):
+        myi=iofr(myr);
+        plt.plot(np.pi-h[myi,::-1,0],Sigma[myi,::-1,0]/np.max(Sigma[myi,:,0]),label=r"$r=%g$"%myr,lw=6-index,ls=lstyles[index],color=colors[index])
+        index = index + 1
+    plt.legend(loc="lower left")
+    plt.ylabel(r"$\Sigma/\Sigma(\theta=0)$",fontsize=20)
+    plt.xlabel(r"$\theta$",fontsize=20)
+    plt.savefig("Sigma.pdf",bbox_inches='tight',pad_inches=0.02)
+    plt.figure(11)
+    plt.plot(r[:,0,0],Sigma[:,0,0]/np.max(Sigma[:,:,0],axis=1))
+    plt.xscale("log")
+    plt.yscale("linear")
+    plt.ylabel(r"$\Sigma(r,\theta=\pi/2)/\Sigma(\theta=0)$",fontsize=20)
+    plt.xlabel(r"$r$",fontsize=20)
+    plt.xlim(rhor,1e2)
+    plt.savefig("Sigma_vs_r.pdf",bbox_inches='tight',pad_inches=0.02)
+
+def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False,dokomistag=False):
     global B
     ih = iofr(rhor)
     if not useavgs:
@@ -356,7 +382,7 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False):
         plt.ylim(-1.5,1.5)
         leg = plt.legend(loc="lower right",ncol=4,frameon=1)
     else:
-        plt.ylim(-2.5,.5)
+        plt.ylim(-3.,.5)
         leg = plt.legend(loc="lower right",ncol=4,frameon=1) #,bbox_to_anchor=(1,0.2))
     plt.xlabel(r"$\theta_{\rm H}/\pi$",fontsize=fntsize)
     plt.ylabel(r"${\rm Various},\ {\rm in\ units\ of\ } \max\left|\dot e\right|$",fontsize=fntsize)
@@ -492,10 +518,11 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False):
     else:
         plc(uu2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),levels=(0,),colors=clr,linewidths=2)
     #Komi's version of ergosphere
-    res = stag_compute_analytic()
-    res1 = np.concatenate((res[:,::-1],res),axis=1)
-    res2 = np.concatenate((res1[:,::-1],res1),axis=1)
-    plc(res2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),levels=(0,),colors="Orange",linewidths=2)
+    if dokomistag:
+        res = stag_compute_analytic()
+        res1 = np.concatenate((res[:,::-1],res),axis=1)
+        res2 = np.concatenate((res1[:,::-1],res1),axis=1)
+        plc(res2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),levels=(0,),colors="blue",linewidths=2)
     #
     # ergosphere
     #
