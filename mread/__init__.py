@@ -15472,6 +15472,70 @@ def plotpunsly(fntsize = 20):
         label.set_fontsize(fntsize)
     plt.savefig("etajetoveretant_allspin.pdf",bbox_inches='tight',pad_inches=0.02)
 
+def plotmadeta(fntsize = 20,dofig=0):
+    plt.clf()
+    ax = plt.gca()
+    npts = 1.e4
+    #obtain a uniform grid of values on [0,1]
+    a = np.linspace(0.,1.,npts)
+    #exclude the first element (which is zero)
+    a = a[1:]
+    etaj = 100*0.65*a**2*(1+0.85*a**2)
+    eta = 100*1.3*a**2
+    #
+    res = np.loadtxt("etavsa.txt", 
+                      dtype=np.float64, 
+                      skiprows=0, 
+                      unpack = True )
+    a_list, etaj_list, sigma_etaj_list, etaw_list, sigma_etaw_list, eta_list, sigma_eta_list = res
+    #
+    if 0:
+        etahk06=0.002/(1-a)
+        plt.plot(a,etahk06/Ebindisco(a))
+        #
+        ahk06_list=np.array([0.9, 0.93, 0.95, 0.99])
+        etajhk06_list=np.array([0.892/19.2, 0.824/21.8, 1.46/20.3, 3.28/15.5])
+        plt.plot(ahk06_list,etajhk06_list/Ebindisco(ahk06_list),"bs")
+    #
+    #
+    #plt.plot(a_list, 0.01*etaj_list/Ebindisco(a_list), "g^")
+    pylab.errorbar(a_list, 0.01*etaj_list/Ebindisco(a_list), 0.01*sigma_etaj_list/Ebindisco(a_list),marker="o",linestyle="None",color="b",lw=2,fmt='+',elinewidth=2,mew=1,mec="k",label=r"$\eta_{\rm jet}/\epsilon_{\rm NT}$")
+    #, marker='o',ls=None)
+    plt.plot(a, 0.01*etaj/Ebindisco(a), "b-", lw=2, label=r"$1.3a^2/\epsilon_{\rm NT}$")
+    plt.plot(a, 10*a**2, "b--", lw=2, label=r"$10a^2$")
+    pylab.errorbar(a_list, 0.01*eta_list/Ebindisco(a_list), 0.01*sigma_eta_list/Ebindisco(a_list),marker="o",linestyle="None",color="r",lw=2,fmt='+',elinewidth=2,mew=1,mec="k",label=r"$(\eta_{\rm jet}+\eta_{\rm wind})/\epsilon_{\rm NT}$")
+    plt.plot(a, 0.01*eta/Ebindisco(a), "r-", lw=2, label=r"$0.65a^2(1+0.85a^4)/\epsilon_{\rm NT}$")
+    plt.plot(a, 15*a**2, "r--", lw=2, label=r"$15a^2$")
+    #, marker='o',ls=None)
+    # plt.text( 0.96, 0.15, r"${\rm HK06\ fit}$", fontsize=fntsize, color="b")
+    # plt.text( 0.87, 0.24, r"${\rm HK06\ data}$", fontsize=fntsize, color="b")
+    # plt.text( 0.89, 3.55, r"${\rm TMN12\ data}$", fontsize=fntsize, color="g")
+    # plt.text( 0.95, 3.49, r"${\rm NMT13\ fit}$", fontsize=fntsize, color="g")
+    # plt.text( 0.86, 1.25, r"${\rm This\ paper's\ error\ band}$", fontsize=fntsize, color="m")
+    # plt.text( 0.86, 2., r"${\rm Additional\ error\ band\ likely\ missed\ by\ authors}$", fontsize=fntsize, color="r")
+    plt.legend(loc="lower right")
+    plt.grid(b=1)
+    plt.xlim(0.0,1)
+    plt.ylim(1e-3,15)
+    plt.xscale('linear')
+    plt.yscale('log')
+    plt.xlabel(r"$a$", fontsize = fntsize)
+    plt.ylabel(r"$Q_j/L_{\rm bol}$", fontsize = fntsize)
+    for label in ax.get_xticklabels() + ax.get_yticklabels():
+        label.set_fontsize(fntsize)
+    if dofig:
+        plt.savefig("jeteff_linlog.pdf",bbox_inches='tight',pad_inches=0.02)
+    plt.xlim(0.08,1)
+    plt.ylim(1e-2,15)
+    plt.xscale('log')
+    if dofig:
+        plt.savefig("jeteff_loglog.pdf",bbox_inches='tight',pad_inches=0.02)
+    plt.legend(loc="upper left")
+    plt.xscale('linear')
+    plt.yscale('linear')
+    plt.ylim(1e-2,15)
+    if dofig:
+        plt.savefig("jeteff_linlin.pdf",bbox_inches='tight',pad_inches=0.02)
 
     
 if __name__ == "__main__":
