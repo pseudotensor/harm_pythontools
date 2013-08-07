@@ -6727,10 +6727,16 @@ def plotit(ts,fs,md):
     fig.savefig('test.pdf')
 
 def iofr(rval):
-    if rval < r[0,0,0]:
+    rval = np.array(rval)
+    if np.max(rval) < r[0,0,0]:
         return 0
-    res = interp1d(r[:,0,0], ti[:,0,0], kind='linear')
-    return(np.floor(res(rval)+0.5))
+    res = interp1d(r[:,0,0], ti[:,0,0], kind='linear', bounds_error = False, fill_value = 0)(rval)
+    if len(res.shape)>0 and len(res)>0:
+        res[rval<r[0,0,0]]*=0
+        res[rval>r[nx-1,0,0]]=res[rval>r[nx-1,0,0]]*0+nx-1
+    else:
+        res = np.float64(res)
+    return(np.floor(res+0.5))
 
 def plotqtyvstime(qtymem,ihor=None,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None,epsetaj=None,epsFm30=None,sigma=None, usegaussianunits=False, aphi_j_val=0,showextraeta=False,plotFM30=False):
     global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
