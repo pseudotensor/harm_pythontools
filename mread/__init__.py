@@ -183,8 +183,7 @@ def lasota_plots(doreload=0,dofig=0,dokomistag=0,avoidbc=0,fntsize=20):
     plt.figure(4)
     plt.clf()
     compute_Eup(dofig=dofig)
-    plotEr(dofig=dofig,fntsize=fntsize,useavgs=0,doehcraziness=0)
-    plotEr(dofig=dofig,fntsize=fntsize,useavgs=0,doehcraziness=1)
+    plotEr(dofig=dofig,fntsize=fntsize,useavgs=0)
 
 def lasota_mad_plots(doreload=0,fname="avg2d20_0316_0329.npy",dofig=0):
     if 'gv3' not in globals() or doreload:
@@ -791,7 +790,7 @@ def compute_Eup(fntsize=20,useavgs=0,dofig=0):
         else:
             plt.savefig("Eext.pdf",bbox_inches='tight',pad_inches=0.02)
 
-def plotEr(dofig=0,fntsize=20,useavgs=0,doehcraziness=0):
+def plotEr(dofig=0,fntsize=20,useavgs=0):
     global B
     ih = iofr(rhor)
     if not useavgs:
@@ -876,15 +875,12 @@ def plotEr(dofig=0,fntsize=20,useavgs=0,doehcraziness=0):
     plt.plot(varx,vary,label=r"$-\iint \sqrt{-g}T^r_t d\theta d\phi$",lw=2)
     plt.xlim(rhor,20)
     # leg=plt.legend(loc="lower right")
-    if doehcraziness:
-        plt.text(5,vary[10],r"$\dot E(r) = \mathrm{constant}$",fontsize=fntsize,va="bottom")
-        plt.text(rhor*1.3,-vary[10],r"$\dot E_{\rm H}$",fontsize=fntsize,va="center",ha="left")
-        l, = plt.plot(rhor,-vary[10],"bo",lw=4)
-        l.set_clip_on(False)
-    else:
-        plt.text(5,vary[10],r"$-\dot E_{\rm H} = \dot E(r) = \mathrm{constant}$",fontsize=fntsize,va="bottom")
+    plt.text(rhor*1.3,-vary[10],r"$\dot E_{\rm H}$",fontsize=fntsize,va="center",ha="left")
+    l, = plt.plot(rhor,-vary[10],"bo",lw=4)
+    l.set_clip_on(False)
+    plt.text(5,vary[10],r"$-\dot E_{\rm H} = \dot E(r) = \mathrm{constant}$",fontsize=fntsize,va="bottom")
     plt.xlabel(r"$r\ [r_g]$",fontsize=fntsize)
-    plt.ylabel(r"$\dot E\ [c\Phi^2/16\pi^3 r_g^2]$",fontsize=fntsize)
+    plt.ylabel(r"$\dot E\ [c\Phi^2/16\pi r_g^2]$",fontsize=fntsize)
     plt.grid(b=1)
     plt.ylim(-vary[10]*1.2,vary[10]*1.2)
     ax = plt.gca()
@@ -894,10 +890,7 @@ def plotEr(dofig=0,fntsize=20,useavgs=0,doehcraziness=0):
         if useavgs:
             plt.savefig("Evsr_mad.pdf",bbox_inches='tight',pad_inches=0.02)
         else:
-            if doehcraziness:
-                plt.savefig("Evsr_Eh_separate.pdf",bbox_inches='tight',pad_inches=0.02)
-            else:
-                plt.savefig("Evsr_Eh_together.pdf",bbox_inches='tight',pad_inches=0.02)
+            plt.savefig("Evsr.pdf",bbox_inches='tight',pad_inches=0.02)
     
 def nlinup(var,nlin=1):
     var[:,ny-1-nlin:] = var[:,ny-1-nlin:ny-1-nlin+1]*(np.sin(h[:,ny-1-nlin:])/np.sin(h[:,ny-1-nlin:ny-1-nlin+1]))**2
