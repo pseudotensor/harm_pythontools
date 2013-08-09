@@ -159,7 +159,7 @@ def mkenergyplot(fntsize=20):
     
     
 
-def lasota_plots(doreload=0,dofig=0,dokomistag=0):
+def lasota_plots(doreload=0,dofig=0,dokomistag=0,avoidbc=0):
     if 'gv3' not in globals() or 'rho' not in globals() or doreload:
         grid3d("gdump")
         rdo("dumplast")
@@ -172,7 +172,7 @@ def lasota_plots(doreload=0,dofig=0,dokomistag=0):
     #E_H - Omega L_H
     plt.figure(2)
     plt.clf()
-    eminusomegal_plot(doreload=doreload,dofig=dofig,dokomistag=dokomistag)
+    eminusomegal_plot(doreload=doreload,dofig=dofig,dokomistag=dokomistag,avoidbc=avoidbc)
     #L_H
     plt.figure(3)
     plt.clf()
@@ -296,7 +296,7 @@ def plot_sigma_profile():
     plt.xlim(rhor,1e2)
     plt.savefig("Sigma_vs_r.pdf",bbox_inches='tight',pad_inches=0.02)
 
-def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False,dokomistag=False):
+def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False,dokomistag=False,avoidbc=0):
     global B
     ih = iofr(rhor)
     if not useavgs:
@@ -310,6 +310,13 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False,dok
         EhEM = -(-tudEM[1,0]*dxdxp[1,1])
         EhMA = -(-tudMA[1,0]*dxdxp[1,1])
         Lh = -(tud[1,3]*dxdxp[1,1]/dxdxp[3,3])
+        uu1 = uu[1]
+        if 0 and avoidbc:
+            Eh[:,0,:] *= np.nan
+            EhMA[:,0,:] *= np.nan
+            EhEM[:,0,:] *= np.nan
+            Lh[:,0,:] *= np.nan
+            uu1[:,0,:] *= np.nan
         if np.abs(h[0,0,0]-h[0,ny-1,0])<1.5*np.pi: #need to mirror
             Eh = np.concatenate((Eh[:,::-1],Eh[:,::1]),axis=1)
             EhMA = np.concatenate((EhMA[:,::-1],EhMA[:,::1]),axis=1)
@@ -318,7 +325,7 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False,dok
             Lh = np.concatenate((Lh[:,::-1],Lh[:,::1]),axis=1)
             hloc = np.concatenate((np.pi-h[:,::-1],h),axis=1)
             rloc = np.concatenate((r,r),axis=1)
-            uu1=np.concatenate((uu[1,:,::-1],uu[1]),axis=1)
+            uu1=np.concatenate((uu1[:,::-1],uu1),axis=1)
     else:
         hloc=h
         rloc=r
@@ -421,6 +428,8 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False,dok
             levs = levs/1.5
     else:
         levs=np.linspace(0.1,1,9,endpoint=False)*4*np.pi
+        ln = len(levs)
+        levs=np.concatenate((levs[:ln/2],levs[ln/2+1:]))
         uu2=np.concatenate((uu1[:,::-1],uu1),axis=1)
     r2=np.concatenate((rloc[:,::-1],rloc),axis=1)
     h2=np.concatenate((-hloc[:,::-1],hloc),axis=1)
@@ -431,7 +440,11 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False,dok
     avg_aphi2=np.concatenate((avg_aphi[:,::-1],avg_aphi),axis=1)
     EdotmMdot2=np.concatenate((EdotmMdot[:,::-1],EdotmMdot),axis=1)
     EdotmMdot3=np.concatenate((EdotmMdot2[:,0:1]*0,EdotmMdot2,EdotmMdot2[:,0:1]*0),axis=1)
-    var3 = EdotmMdot3/np.max(-EdotmMdot3,axis=1)[:,None,:]
+    var3 = EdotmMdot3/np.nanmax(-EdotmMdot3,axis=1)[:,None,:]
+    if avoidbc:
+        for myj in [ny, 3*ny]:
+            var3[:,myj-1,:] *=np.nan
+            var3[:,myj,:] *=np.nan
     # plc(-var3,xcoord=r3*np.sin(h3),ycoord=r3*np.cos(h3),
     #    levels=np.linspace(-1.01,0,102),isfilled=1,cb=0,cmap=cm.BuGn,linewidths=None,linestyles=None,antialiased=False)
     CS = plc(-var3,xcoord=r3*np.sin(h3),ycoord=r3*np.cos(h3),
@@ -467,11 +480,18 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False,dok
         domirrory = False
     else:
         vec = -tud[0:,0]
+        if 0 and avoidbc:
+            vec[1,:,0,:] *= np.nan
+            vec[2,:,0,:] *= np.nan
         domirrory = True
     den=2
     mylen=33
     arrowsize=3
-    mksimplevecstream(vec, len=mylen,density=1,downsample=1,cb=False,vmin=-6,vmax=0.5,dobhfield=10,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='r',linewidth=2,startatmidplane=False,arrowsize=arrowsize,populatestreamlines=1,domirrory=domirrory)
+    if avoidbc:
+        populatestreamlines=0
+    else:
+        populatestreamlines=1
+    mksimplevecstream(vec, len=mylen,density=1,downsample=1,cb=False,vmin=-6,vmax=0.5,dobhfield=10,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='r',linewidth=1,startatmidplane=False,arrowsize=arrowsize,populatestreamlines=populatestreamlines,domirrory=domirrory)
     # mkframe("myframe",whichvar=None,len=mylen,ax=plt.gca(),density=den,downsample=1,cb=False,pt=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.0025,color='k',doarrows=True,dorandomcolor=False,lw=2,skipblankint=False,detectLoops=True,ncell=800,minlengthdefault=0.2,startatmidplane=False)
     plt.xlim(-30,30)
     plt.ylim(-30,30)
@@ -516,6 +536,10 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False,dok
         #rs2=radavg(rs2,axis=0,dn=1)
         ax.plot(xs2,zs2,'-',color=clr,lw=linewidth,zorder=21)
     else:
+        if avoidbc:
+            for myj in [ny, 3*ny]:
+                uu2[:,myj-1,:] *=np.nan
+                uu2[:,myj,:] *=np.nan
         plc(uu2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),levels=(0,),colors=clr,linewidths=2)
     #Komi's version of ergosphere
     if dokomistag:
@@ -527,6 +551,10 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False,dok
     # ergosphere
     #
     rergo3 = 1+(1-a**2*np.cos(h3)**2)**0.5
+    if avoidbc:
+        for myj in [ny, 3*ny]:
+            rergo3[:,myj-1,:] *=np.nan
+            rergo3[:,myj,:] *=np.nan
     plc(rergo3-r3,levels=(0,),xcoord=r3*np.sin(h3),ycoord=r3*np.cos(h3),linewidths=4,linestyles="solid",colors="cyan",zorder=22)
     if dofig:
         if useavgs:
@@ -660,16 +688,20 @@ def compute_Eup(fntsize=20,useavgs=0,dofig=0):
         tud = TudEM
         ksiu = np.zeros_like(uu)
         etau = np.zeros_like(uu)
+        su = np.zeros_like(uu)
         myfdd = fdd
         myfuu = fuu
     else:
         #avgmem=rdavg2d(fname="avg2d20_0070_0329.npy")
         tud = avg_TudEM
+        tud[1,0] = nlinup(tud[1,0],nlin=2)
         ksiu = np.zeros_like(avg_uu)
         etau = np.zeros_like(avg_uu)
+        su = np.zeros_like(avg_uu)
         myfdd = avg_fdd
         myfud = mdot(gn3,myfdd)
         myfuu = mdot(gn3,myfud.transpose(1,0,2,3,4)).transpose(1,0,2,3,4)
+    tdd = mdot(gv3,tud)
     if useavgs == 1:
         om = avg_omegaf1b
         jx = ny/2
@@ -680,6 +712,7 @@ def compute_Eup(fntsize=20,useavgs=0,dofig=0):
     #etau is [1.,0.,0.,0.]
     ksiu[3] += 1. 
     etau[0] += 1.
+    su[1] += 1.
     omegah = a/(2*rhor)
     lu = etau+omegah/dxdxp[3,3]*ksiu
     ld = mdot(gv3,lu)
@@ -703,19 +736,24 @@ def compute_Eup(fntsize=20,useavgs=0,dofig=0):
         vary2 = np.concatenate((vary2[::-1],vary2))
     vary3 = -vary1ori
     #print np.max(np.abs(vary1nonorm))
-    #vary1 /= np.max(np.abs(vary1nonorm))
-    #vary2 /= np.max(np.abs(vary1nonorm))
-    #vary3 /= np.max(np.abs(vary1nonorm))
-    plt.plot(varx,vary1,label=r"$T^\mu_\nu\eta_\mu\ell^\nu$",lw=2,color="g")
-    plt.plot(varx,vary2,label=r"$T^r_t(r_{\rm H}^2+a^2\cos^2\theta)/(2m r_{\rm H})$",color="b",lw=4,ls=":")
+    vary1 /= np.max(np.abs(vary1nonorm))
+    vary2 /= np.max(np.abs(vary1nonorm))
+    vary3 /= np.max(np.abs(vary1nonorm))
+    if 1 or useavgs:
+        tstring = "{T_{\\rm EM}}"
+    else:
+        tstring = "T"
+    plt.plot(varx,vary1,label=r"$%s^\mu_\nu\eta_\mu\ell^\nu$" % tstring,lw=2,color="g")
+    plt.plot(varx,vary2,label=r"$%s^r_t(r_{\rm H}^2+a^2\cos^2\theta)/(2m r_{\rm H})$"%tstring,color="b",lw=4,ls=":")
     plt.plot(varx,vary3,label=r"$-\omega_{\rm H}F_{\mu\nu}E^\mu \xi^\nu+E_\mu E^\mu$", lw=1,color="r",ls="--")
+    plt.ylim(-1.1,0.1)
     leg = plt.legend(loc="upper center",frameon=False)
     # if useavgs:
     #     plt.ylim(-0.1,15)
     # else:
     #     plt.ylim(-0.1,15)
     plt.xlabel(r"$\theta_{\rm H}/\pi$",fontsize=fntsize)
-    plt.ylabel(r"${\rm Various,\ }f/\max\left|f\right|$",fontsize=fntsize)
+    plt.ylabel(r"${\rm Various,\ }f/\max\left|%s^\mu_\nu\eta_\mu\ell^\nu\right|$"%tstring,fontsize=fntsize)
     plt.grid(b=1)
     ax = plt.gca()
     for label in ax.get_xticklabels() + ax.get_yticklabels() + leg.get_texts():
@@ -726,6 +764,126 @@ def compute_Eup(fntsize=20,useavgs=0,dofig=0):
         else:
             plt.savefig("Econdition.pdf",bbox_inches='tight',pad_inches=0.02)
     #print("exited")
+    plt.figure(16)
+    plt.clf()
+    #su in r,th,ph
+    #su1 in x1,x2,x3
+    su1 = su/dxdxp[1,1]
+    Eext = mdot(mdot(tud,su1),etad)
+    Eext = tdd[1,0]/dxdxp[1,1]
+    rlist = [rhor,(rhor+2)/2., 2, 5., 10.]
+    ilist = iofr(rlist)
+    for myi,myr in zip(ilist,rlist):
+        plt.plot((np.pi-h[myi,::-1,0])/np.pi,Eext[myi,::-1,0],label=r"$r=%g$"%myr)
+    leg=plt.legend(loc="lower right")
+    plt.xlabel(r"$\theta_{\rm H}/\pi$",fontsize=fntsize)
+    plt.ylabel(r"$T_{rt}\equiv T_{\mu\nu} s^\mu\eta^\nu$",fontsize=fntsize)
+    plt.grid(b=1)
+    plt.ylim(-1.3,0.1)
+    ax = plt.gca()
+    for label in ax.get_xticklabels() + ax.get_yticklabels() + leg.get_texts():
+        label.set_fontsize(fntsize)
+    if dofig:
+        if useavgs:
+            plt.savefig("Eext_mad.pdf",bbox_inches='tight',pad_inches=0.02)
+        else:
+            plt.savefig("Eext.pdf",bbox_inches='tight',pad_inches=0.02)
+
+def plotEr(dofig=0,fntsize=20,useavgs=0):
+    global B
+    ih = iofr(rhor)
+    if not useavgs:
+        faraday()
+        Tcalcud()
+    if not useavgs:
+        tud = Tud
+        tudEM = TudEM
+        tudMA = TudMA
+        Eh = -(-tud[1,0]*dxdxp[1,1])
+        EhEM = -(-tudEM[1,0]*dxdxp[1,1])
+        EhMA = -(-tudMA[1,0]*dxdxp[1,1])
+        Lh = -(tud[1,3]*dxdxp[1,1]/dxdxp[3,3])
+        if np.abs(h[0,0,0]-h[0,ny-1,0])<1.5*np.pi: #need to mirror
+            Eh = np.concatenate((Eh[:,::-1],Eh[:,::1]),axis=1)
+            EhMA = np.concatenate((EhMA[:,::-1],EhMA[:,::1]),axis=1)
+            EhEM = np.concatenate((EhEM[:,::-1],EhEM[:,::1]),axis=1)
+            EdotmMdot = Eh
+            Lh = np.concatenate((Lh[:,::-1],Lh[:,::1]),axis=1)
+            hloc = np.concatenate((np.pi-h[:,::-1],h),axis=1)
+            rloc = np.concatenate((r,r),axis=1)
+            gdetloc= np.concatenate((gdet[:,::-1],gdet),axis=1)
+            uu1=np.concatenate((uu[1,:,::-1],uu[1]),axis=1)
+    else:
+        hloc=h
+        rloc=r
+        if 'FmminusFe_global' not in globals() or doreload:
+            remove_floors(fname=fname)
+        tud = avg_Tud
+        tudEM = avg_TudEM
+        tudMA = avg_TudMA
+        #Eh = -(-tud[1,0]*dxdxp[1,1])
+        #EhMA = -(-tudMA[1,0]*dxdxp[1,1])
+        EhEM = -(-tudEM[1,0]*dxdxp[1,1])
+        # #correct the values
+        nlin=1
+        EhEM[:,ny-1-nlin:] = EhEM[:,ny-1-nlin:ny-1-nlin+1]*(np.sin(h[:,ny-1-nlin:])/np.sin(h[:,ny-1-nlin:ny-1-nlin+1]))**2
+        EhEM[:,:nlin] = EhEM[:,nlin:nlin+1]*(np.sin(h[:,:nlin])/np.sin(h[:,nlin:nlin+1]))**2
+        EhEM1 = radavg(EhEM,axis=1,dn=1)
+        EhEM2 = radavg(EhEM1,axis=0,dn=1)
+        EhEM = EhEM2
+        Eh = -(FmminusFe_global - Fm_global)/gdet/nz*dxdxp[1,1]
+        nzero=10 #!!! specific to rtf2_15r34_2pi_a0.99gg500rbr1e3_0_0_0
+        Eh[:,0:nzero] = EhEM[:,0:nzero]
+        Eh[:,ny-1-nzero:] = EhEM[:,ny-1-nzero:]
+        Eh[Eh<EhEM]=EhEM[Eh<EhEM]
+        EdotmMdot = -(FmminusFe_global)/gdet/nz*dxdxp[1,1]
+        EdotmMdot[:,0:nzero] = EhEM[:,0:nzero]
+        EdotmMdot[:,ny-1-nzero:] = EhEM[:,ny-1-nzero:]
+        EhMA = Eh - EhEM
+        #EhMA = -FmminusFe_global/gdet/nz*dxdxp[1,1]
+        Lh = -(tud[1,3]*dxdxp[1,1]/dxdxp[3,3])
+        #symmetrize
+        # Eh = 0.5*(Eh+Eh[:,::-1])
+        # EhEM = 0.5*(EhEM+EhEM[:,::-1])
+        # EhMA = 0.5*(EhMA+EhMA[:,::-1])
+        # EdotmMdot = 0.5*(EdotmMdot+EdotmMdot[:,::-1])
+        Lh = 0.5*(Lh+Lh[:,::-1])
+        # nlin=2
+        # Lh[:,ny-1-nlin:] = Lh[:,ny-1-nlin:ny-1-nlin+1]*np.sin(h[:,ny-1-nlin:])/np.sin(h[:,ny-1-nlin:ny-1-nlin+1])
+        # Lh[:,:nlin] = Lh[:,nlin:nlin+1]*np.sin(h[:,:nlin])/np.sin(h[:,nlin:nlin+1])
+        Lh1 = radavg(Lh,axis=1,dn=1)
+        Lh2 = radavg(Lh1,axis=0,dn=1)
+        Lh = Lh2
+    if useavgs == 1:
+        om = avg_omegaf1b
+        jx = ny/2
+        prefac = 1
+    else:
+        om = omegaf2
+        jx = ny
+        prefac = 2
+    omegah = a/(2*rhor)
+    omegaf = om*dxdxp[3,3]
+    #
+    # PLOTTING
+    #
+    plt.figure(20)
+    plt.clf()
+    plt.plot(rloc[:,0,0],prefac*(-tud[1,0]*gdet).sum(1).sum(-1)*_dx2*_dx3*nz,label=r"$-\iint \sqrt{-g}T^r_t d\theta d\phi$")
+    plt.xlim(rhor,20)
+    leg=plt.legend(loc="lower right")
+    plt.xlabel(r"$r/r_g$",fontsize=fntsize)
+    plt.ylabel(r"$\dot E$",fontsize=fntsize)
+    plt.grid(b=1)
+    plt.ylim(-0,0.2)
+    ax = plt.gca()
+    for label in ax.get_xticklabels() + ax.get_yticklabels() + leg.get_texts():
+        label.set_fontsize(fntsize)
+    if dofig:
+        if useavgs:
+            plt.savefig("Evsr_mad.pdf",bbox_inches='tight',pad_inches=0.02)
+        else:
+            plt.savefig("Evsr.pdf",bbox_inches='tight',pad_inches=0.02)
     
 def nlinup(var,nlin=1):
     var[:,ny-1-nlin:] = var[:,ny-1-nlin:ny-1-nlin+1]*(np.sin(h[:,ny-1-nlin:])/np.sin(h[:,ny-1-nlin:ny-1-nlin+1]))**2
