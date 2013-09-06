@@ -875,12 +875,12 @@ def plotEr(dofig=0,fntsize=20,useavgs=0):
     plt.plot(varx,vary,label=r"$-\iint \sqrt{-g}T^r_t d\theta d\phi$",lw=2)
     plt.xlim(rhor,20)
     # leg=plt.legend(loc="lower right")
-    plt.text(rhor*1.3,-vary[10],r"$\dot E_{\rm H}$",fontsize=fntsize,va="center",ha="left")
+    plt.text(rhor*1.3,-vary[10],r"$\dot\Delta E_{\rm H}$",fontsize=fntsize,va="center",ha="left")
     l, = plt.plot(rhor,-vary[10],"bo",lw=4)
     l.set_clip_on(False)
-    plt.text(5,vary[10],r"$-\dot E_{\rm H} = \dot E(r) = \mathrm{constant}$",fontsize=fntsize,va="bottom")
+    plt.text(5,vary[10],r"$-\dot \Delta E_{\rm H} = \dot \Delta E(r) = \mathrm{constant}$",fontsize=fntsize,va="bottom")
     plt.xlabel(r"$r\ [r_g]$",fontsize=fntsize)
-    plt.ylabel(r"$\dot E\ [c\Phi^2/16\pi r_g^2]$",fontsize=fntsize)
+    plt.ylabel(r"$\dot \Delta E\ [c\Phi^2/16\pi r_g^2]$",fontsize=fntsize)
     plt.grid(b=1)
     plt.ylim(-vary[10]*1.2,vary[10]*1.2)
     ax = plt.gca()
@@ -14748,6 +14748,7 @@ def writevtk(fnameformat="fieldline%04d.vtk",t=0,no=None,rhoval=None,ugval=None,
     return 0
 
 def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
+    os.chdir("/Users/atchekho/Research/Papers/jtde")
     cvals = np.loadtxt( "ubs_wt.dat", 
                       dtype=np.float32, 
                       skiprows=0, 
@@ -14795,9 +14796,9 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
     Lxc0 = 0.8*3e-10*((t)/(1e3+ttriga))**(-alpha)
     #####
     alpha = 2.2;
-    ttrig = 20*86400
-    Lxd = 0.8*3e-10*((t+ttrig)/(1e3+ttrigb))**(-alpha)
-    Lxd0 = 0.8*3e-10*((t)/(1e3+ttrigb))**(-alpha)
+    ttrig = 5*86400
+    Lxd = 0.4*3e-10*((t+ttrig)/(1e3+ttrigb))**(-alpha)
+    Lxd0 = 0.4*3e-10*((t)/(1e3+ttrigb))**(-alpha)
     #####
     # alpha = 2.5;
     # ttrig = 60*86400
@@ -14820,7 +14821,7 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
     plt.plot((t-t0)*tfac,Lxa,color="red",lw=2,label=r"$(t-t_{\rm trig}+15\ {\rm days})^{-5/3}$",zorder=20)
     plt.plot((t-t0)*tfac,Lxb,color="blue",lw=2,label=r"$(t-t_{\rm trig}+30\ {\rm days})^{-2.2}$")
     plt.plot((t-t0)*tfac,Lxc,'--',color="red",lw=2,label=r"$(t-t_{\rm trig}+5\ {\rm days})^{-5/3}$",zorder=19)
-    #plt.plot((t-t0)*tfac,Lxd,'--',color="blue",lw=2,label=r"$(t-t_{\rm trig}+10\ {\rm days})^{-2.2}$",zorder=19)
+    plt.plot((t-t0)*tfac,Lxd,'--',color="blue",lw=2,label=r"$(t-t_{\rm trig}+5\ {\rm days})^{-2.2}$",zorder=19)
     # plt.plot((t-t0)*tfac,Lxc,color="green",lw=2,label=r"$(t-t_{\rm trig}+60\ {\rm days})^{-2.5}$")
     ####
     plt.xlim(1e3*tfac,2e3)
