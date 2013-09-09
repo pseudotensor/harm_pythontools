@@ -15257,9 +15257,11 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wdc
     # Define Mdot
     #
     tfb = 0.11*year*rstar**1.5*(mbh5/10.)**0.5/mstar      #s, from Ulmer 1999 with Rp = Rt
+    print( "tfb = %g days" % (tfb/86400.) )
     t = 10.**np.linspace(np.log10(0.01*tfb),9,1e4)        #in seconds
     mdot = facc*Msun*mstar*(alpha-1)*(t/tfb)**(-alpha)/(2*tfb) #g/s
-    tpeak = 1.5*tfb
+    k2 = 1.01
+    tpeak = k2*tfb
     mdotpeak = facc*Msun*mstar*(alpha-1)*(tpeak/tfb)**(-alpha)/(2*tfb) #g/s
     PhiDmaxoPhiBH = 15.*rstar*mstar**(-1./3.)*mbh5**(-2./3.)*beta**(-1)*(hr/0.3)**(-1)
     print( "PhiDmaxoPhiBH = %g" % PhiDmaxoPhiBH)
@@ -15267,7 +15269,7 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wdc
     if disruptiontype=="msc":
         tmad = tpeak
     elif disruptiontype=="msp":
-        tmad = 1.4*tpeak
+        tmad = 1.4*1.5*tfb
     elif disruptiontype=="wdc":
         tmad = (ttr-0*day/(1+z))
     #
@@ -15283,15 +15285,18 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wdc
         #total mass accreted pre-peak
         mprepeak = -2**(-1+alpha)*3**(-1-alpha)*(-1+alpha)*(-3+2*k)*mstar*Msun
     elif 1: #use (t-tpeak)^3 suppression -- agrees better with Guillochon's papers
-        k = -((3. + 2.**(3. - alpha) * 3.**alpha - 15. * alpha)/(10. * (-1. + alpha)))
-        cond = (t>k*tfb)*(t<tpeak)
-        mdot[t<tpeak] = mdotpeak*(1.-((t/tfb-1.5)/(k-1.5))**3)
+        k = (k2 - 5*alpha*k2 + 4*k2**alpha)/(5. - 5.*alpha)
+        print( "k = %g" % k )
+        #old: -((3. + 2.**(3. - alpha) * 3.**alpha - 15. * alpha)/(10. * (-1. + alpha)))
+        cond = (t>k*tfb)*(t<k2*tfb)
+        mdot[t<tpeak] = mdotpeak*(1.-((t-k2*tfb)/((k-k2)*tfb))**3)
+        #old: mdotpeak*(1.-((t/(tpeak/1.5)-1.5)/(k-1.5))**3)
         # m[cond] = (mdotpeak/facc)* (-k * tfb - ((3 * tfb - 2*k*tfb)**4 - (3*tfb - 2*t)**4)/(
         #              8.*(-3. + 2.*k)**3.*tfb**3) + t)
         m[cond] = (mdotpeak*tfb*(-k + ((3. - 2.*k)**4
                                               - (3. - 2.*t/tfb)**4)/ (8.*(3.-2.*k)**3) + t/tfb))[cond]
         #total mass accreted pre-peak
-        mprepeak = 5./8. * (3. - 2. * k) * (mdotpeak/facc) * tfb
+        mprepeak = 5./4. * (k2 - k) * (mdotpeak/facc) * tfb
     mdot[mdot<0]*=0
     l = mdot/Medd
     cond = (t>tpeak)
@@ -15325,8 +15330,8 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wdc
     Phi30on = phion * (mbh5*mdot**0.5)/3.8e14
     # print( "ratio that should be unity: %g, %g, %g, %g, %g" % (Phi30MAD[t>tpeak][0]/Phi30[t>tpeak][0], Phi30MAD[t>tpeak][0], Phi30[t>tpeak][0], mdot[t>tpeak][0], mdotpeak) )
     Phi30fb[mdot<=0]*=0
-    toff = t[(t>tfb)*(l<lamcrit)][0]
-    trevive = t[(t>tfb)*(l<lamrevive)][0]
+    toff = t[(t>k2*tfb)*(l<lamcrit)][0]
+    trevive = t[(t>k2*tfb)*(l<lamrevive)][0]
     # print( "lamcrit = %g, lamrevive = %g" % (lamcrit, lamrevive))
     print( "toff = %g, trevive = %g" % ((toff-ttr)/day*(1+z), trevive/day*(1+z)))
     # pdb.set_trace()
