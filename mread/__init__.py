@@ -15275,8 +15275,8 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wdc
             print( "a = %g > 1!" % a )
             a = 1
         #fb = (0.177353 * a**2 * facc**1.5)/(lamcrit/0.3)**0.5
-        lmin = 1e-4
-        lmax = 1e7
+        lmin = 2e-4
+        lmax = 2e7
         phimin = 1
         phimax = 1e3
         loclegl = "lower left"
@@ -15380,7 +15380,7 @@ def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wdc
     phifb = 3.8e14 * Phi30fb / (mbh5*mdot**0.5)
     phid = 3.8e14 * Phi30d / (mbh5*mdot**0.5)
     phibh = phifb*(t<tmad) + phimad*(t>=tmad)*((t<toff)+(t>trevive))+1e-100*(1.-((t<toff)+(t>trevive)))
-    ton = t[(t>tfb)*(phibh>phion)][0]
+    ton = t[(t>k2*tfb)*(phibh>phion)][0]
     print( "ton = %g, tmad = %g, talign = %g, talign/tmad = %g (%g)" % (ton*(1+z)/day, tmad*(1+z)/day, talign/day*(1+z),talign/tmad, (1+PhiDmaxoPhiBH)**(6./(4+3*alpha))) )
     ###
     #
