@@ -15837,6 +15837,30 @@ def plotmadeta(fntsize = 20,dofig=0):
     if dofig:
         plt.savefig("jeteff_linlin.pdf",bbox_inches='tight',pad_inches=0.02)
 
+def plotmdotin():
+    grid3d("gdump.bin",use2d=1)
+    avgs=rdavg2d(fname="avg2d20_0200_0328.npy")
+    plt.figure(1)
+    plt.plot(r[:,ny/2,0],avg_rho[:,ny/2,0])
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlim(rhor,50)
+    plt.ylim(1e-2,10)
+    avgs=rdavg2d(fname="avg2d20_0264_0314.npy")
+    plt.plot(r[:,ny/2,0],avg_rho[:,ny/2,0])
+    plt.plot(r[:,ny/2,0],(10*r**(-1.5))[:,ny/2,0])
+    plt.plot(r[:,ny/2,0],(10*r**(-1.3))[:,ny/2,0])
+    plt.plot(r[:,ny/2,0],(10*r**(-1.2))[:,ny/2,0])
+    plt.figure(2)
+    mdotin = (gdet*avg_rhouu[1]*(avg_rhouu[1]<0)).sum(-1).sum(-1)*_dx2*_dx3*nz
+    mdotall = (gdet*avg_rhouu[1]).sum(-1).sum(-1)*_dx2*_dx3*nz
+    plt.plot(r[:,ny/2,0],-mdotin[:])
+    plt.plot(r[:,ny/2,0],-mdotall[:])
+    plt.xlim(rhor,50)
+    plt.xscale("log")
+    plt.yscale("log")
+    plt.xlim(rhor,100)
+    plt.ylim(1,30)
     
 if __name__ == "__main__":
     if False:
