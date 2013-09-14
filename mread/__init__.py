@@ -7465,12 +7465,14 @@ def plotqtyvstime(qtymem,ihor=None,whichplot=None,ax=None,findex=None,fti=None,f
         FMiniavg = epsFm * timeavg(mdtot[:,ihor],ts,iti,itf) 
         FEraw = -edtot[:,ihor]
         FE= epsFke*(FMraw-FEraw)
+        FEM = pjemtot[:,ihor]
     else:
         FMiniavg = mdotiniavg
         FMavg = mdotfinavg
         FM = mdtot[:,ihor]-md30[:,ihor]
         FM30 = FM
         FE = pjemtot[:,ihor]
+        FEM = pjemtot[:,ihor]
     if showextra:
         lst = 'solid'
     else:
@@ -7536,7 +7538,7 @@ def plotqtyvstime(qtymem,ihor=None,whichplot=None,ax=None,findex=None,fti=None,f
         ax.set_xlim(ts[0],tmax)
     #######################
     #
-    # eta ***
+    # eta *** LOOKHERE
     #
     #######################
     if whichplot == 4:
@@ -7928,8 +7930,43 @@ def plotqtyvstime(qtymem,ihor=None,whichplot=None,ax=None,findex=None,fti=None,f
         plt.grid()
         plt.legend( loc = 'lower left' )
 
-    #if whichplot == -5:
-        
+    if whichplot == -5:
+        #LOOKHERE jet flares for Rodrigo
+        FM;
+        etabh = prefactor*FE/FMavg
+        etabh_nosigma = prefactor*FE/mdotfinavg
+        etaem_nosigma = prefactor*FEM/mdotfinavg
+        etaj = prefactor*pjke_mu2[:,iofr(100)]/FMavg
+        etaj_nosigma = prefactor*pjke_mu2[:,iofr(100)]/mdotfinavg
+        if epsetaj is not None:
+            etaj *= epsetaj
+            print( "epsetaj = %g" % epsetaj )
+        etaw = prefactor*(pjke_mu1-pjke_mu2)[:,iofr(100)]/FMavg
+        etaw_nosigma = prefactor*(pjke_mu1-pjke_mu2)[:,iofr(100)]/FMavg
+        #ax.plot(ts,np.abs(FM),clr,label=r'$\dot Mc^2$')
+        if usegaussianunits == True:
+            unitsfactor = (4*np.pi)**0.5*2*np.pi
+        else:
+            unitsfactor = 1.
+        omh = a / (2*(1+(1-a**2)**0.5))
+        phibh=unitsfactor*fstot[:,ihor]/4/np.pi/FMavg**0.5
+        phibh_nosigma=unitsfactor*fstot[:,ihor]/4/np.pi/mdotfinavg**0.5
+        phij_nosigma=unitsfactor*phiabsj_mu2[:,iofr(100)]/4/np.pi/mdotfinavg**0.5
+        phiw_nosigma=unitsfactor*(phiabsj_mu1-phiabsj_mu2)[:,iofr(100)]/4/np.pi/mdotfinavg**0.5
+        ii = np.arange(len(etabh))
+        #need to write out
+        #t, FM/mdotfinavg, etabh, etaj_nosigma, etaw_nosigma, phibh_nosigma, phij_nosigma, phiw_nosigma
+        np.savetxt("varsoft_noheader.txt", np.array([ii, ts, FM/mdotfinavg, etabh_nosigma, etaem_nosigma, etaj_nosigma, etaw_nosigma, phibh_nosigma, phij_nosigma, phiw_nosigma]).T, 
+               fmt="%5d %22.16g %22.16g %22.16g %22.16g %22.16g %22.16g %22.16g %22.16g %22.16g" )
+        f = open('varsoft_header.txt', 'w')
+        f.write("%5s %22s %22s %22s %22s %22s %22s %22s %22s %22s" % ("index", "time", "mdot", "etabh", "etaem", "etaj(100)", "etaw(100)", "phibh", "phij(100)", "phiw(100)") )
+        f.close()
+        filenames = ['varsoft_header.txt', 'varsoft_noheader.txt']
+        with open('varsoft.txt', 'w') as outfile:
+            for fname in filenames:
+                with open(fname) as infile:
+                    for line in infile:
+                        outfile.write(line)
     if whichplot == None:
         fig,plotlist=plt.subplots(nrows=4,ncols=1,sharex=True,figsize=(12,16),num=1)
         #plt.clf()
@@ -9736,7 +9773,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     # plt.figure(3)
     # plt.plot(r[:,0,0],-edtot2davg,label="tot2davg")
     # gc.collect()
-
+        
 def computeeta(start_t=8000,end_t=1e5,numintervals=8,doreload=1,qtymem=None,rj=100):
     #getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None):
     grid3d("gdump.bin", use2d = True)
@@ -15999,6 +16036,22 @@ if __name__ == "__main__":
     if False:
         #FIGURE 1 from jetretro w/ mdot, phibh, etabh
         mkjetretrofig1()
+    if False:
+        #DATA FOR RODRIGO on transient jet flares
+        fti=7000
+        ftf=30500
+        doreload = 1
+        domakeframes=1
+        epsFm, epsFke, epsetaj, epsFm30 = takeoutfloors(doreload=doreload,fti=fti,ftf=ftf,returndf=1,isinteractive=0,writefile=False)
+        #epsFm = 
+        #epsFke = 
+        print epsFm, epsFke, epsFm30
+        rhor=1+(1-a**2)**0.5
+        ihor=iofr(rhor)
+        #
+        if 'qtymem' not in globals():
+            qtymem=getqtyvstime(ihor,0.2)
+        plotqtyvstime( qtymem, whichplot = -5, epsFm = epsFm, epsFke = epsFke, epsetaj = epsetaj, epsFm30 = epsFm30)
     if False:
         #FIGURE 1 LOTSOPANELS
         fti=7000
