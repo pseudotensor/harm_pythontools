@@ -10,7 +10,9 @@
 # 
 ###############################################################
 
-
+user="jmckinne"
+userbatch="jmckinn"
+emailaddr="jmckinne@stanford.edu"
 
 EXPECTED_ARGS=18
 E_BADARGS=65
@@ -20,9 +22,11 @@ if [ $# -lt $(($EXPECTED_ARGS)) ]
 then
     echo "Usage: `basename $0` {modelname make1d makemerge makeplot makemontage makepowervsmplots makespacetimeplots makefftplot makespecplot makeinitfinalplot makethradfinalplot makeframes makemovie makeavg makeavgmerge makeavgplot} <system> <parallel> <dirname>"
     echo "only dirname is optional"
-    echo "e.g. sh makemovie.sh thickdisk7 1 1 1 1 1 1 1 0 0 0 0    3 0 /data1/jmckinne/thickdisk7/fulllatest14/"
+    echo "e.g. sh makemovie.sh thickdisk7 1 1 1 1 1 1 1 0 0 0 0    3 0 /data1/$user/thickdisk7/fulllatest14/"
     exit $E_BADARGS
 fi
+
+echo "HOSTNAME=$HOSTNAME"
 
 
 modelname=$1
@@ -900,7 +904,7 @@ then
                         #
                         if [ $system -eq 4 ]
                         then
-		                    bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l mem=${memtot}GB,walltime=$timetot,ncpus=$numcorespernodeeff -q $thequeue -N $jobname -o $outputfile -e $errorfile -M jmckinne@stanford.edu ./$thebatch"
+		                    bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l mem=${memtot}GB,walltime=$timetot,ncpus=$numcorespernodeeff -q $thequeue -N $jobname -o $outputfile -e $errorfile -M $emailaddr ./$thebatch"
                         elif [ $system -eq 5 ]
                         then
                             superbatch=superbatchfile.$thebatch
@@ -922,7 +926,7 @@ then
                             localoutputfile=python_${fakeruni}_${runn}.out
                             rm -rf $localerrorfile
                             rm -rf $localoutputfile
-		                    bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l walltime=$timetot,size=$numtotalcores -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M jmckinne@stanford.edu -m be ./$superbatch"
+		                    bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l walltime=$timetot,size=$numtotalcores -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
                         else
                             # probably specifying ptile below is not necessary
 		                    bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernode] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -958,11 +962,11 @@ then
                     if [ $system -eq 4 ] ||
                         [ $system -eq 5 ]
                     then
-		                pendjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep " Q " | wc -l`
-		                runjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep " R " | wc -l`
+		                pendjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep $userbatch | grep " Q " | wc -l`
+		                runjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep $userbatch | grep " R " | wc -l`
                     else
-		                pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep PEND | wc -l`
-		                runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep RUN | wc -l`
+		                pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep $userbatch | grep PEND | wc -l`
+		                runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep $userbatch | grep RUN | wc -l`
                     fi
 		            totaljobs=$(($pendjobs+$runjobs))
 		            
@@ -1129,7 +1133,7 @@ then
                 rm -rf $localerrorfile
                 rm -rf $localoutputfile
                 #
-		        bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l walltime=$timetotplot,size=$numtotalcoresplot -q $thequeueplot -N $jobname -o $localoutputfile -e $localerrorfile -M jmckinne@stanford.edu -m be ./$superbatch"
+		        bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l walltime=$timetotplot,size=$numtotalcoresplot -q $thequeueplot -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
             else
                 # probably specifying ptile below is not necessary
 		        bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernodeplot] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -1163,11 +1167,11 @@ then
             if [ $system -eq 4 ] ||
                 [ $system -eq 5 ]
             then
-		        pendjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep " Q " | wc -l`
-		        runjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep " R " | wc -l`
+		        pendjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep $userbatch | grep " Q " | wc -l`
+		        runjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep $userbatch | grep " R " | wc -l`
             else
-		        pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep PEND | wc -l`
-		        runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep RUN | wc -l`
+		        pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep $userbatch | grep PEND | wc -l`
+		        runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep $userbatch | grep RUN | wc -l`
             fi
 		    totaljobs=$(($pendjobs+$runjobs))
 		    
@@ -1448,7 +1452,7 @@ then
                             rm -rf $localerrorfile
                             rm -rf $localoutputfile
                             #
-		                    bsubcommand="qsub  -S /bin/bash -A TG-PHY120005 -l walltime=$timetot,size=$numtotalcores -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M jmckinne@stanford.edu -m be ./$superbatch"
+		                    bsubcommand="qsub  -S /bin/bash -A TG-PHY120005 -l walltime=$timetot,size=$numtotalcores -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
                         else
                             # probably specifying ptile below is not necessary
 		                    bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernode] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -1484,11 +1488,11 @@ then
                     if [ $system -eq 4 ] ||
                         [ $system -eq 5 ]
                     then
-		                pendjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep " Q " | wc -l`
-		                runjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep " R " | wc -l`
+		                pendjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep $userbatch | grep " Q " | wc -l`
+		                runjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep $userbatch | grep " R " | wc -l`
                     else
-		                pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep PEND | wc -l`
-		                runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep RUN | wc -l`
+		                pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep $userbatch | grep PEND | wc -l`
+		                runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep $userbatch | grep RUN | wc -l`
                     fi
 		            totaljobs=$(($pendjobs+$runjobs))
 		            
@@ -1809,7 +1813,7 @@ then
                             rm -rf $localerrorfile
                             rm -rf $localoutputfile
                             #
-		                    bsubcommand="qsub  -S /bin/bash -A TG-PHY120005 -l walltime=$timetot,size=$numtotalcores -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M jmckinne@stanford.edu -m be ./$superbatch"
+		                    bsubcommand="qsub  -S /bin/bash -A TG-PHY120005 -l walltime=$timetot,size=$numtotalcores -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
                         else
                             # probably specifying ptile below is not necessary
 		                    bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernode] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -1847,11 +1851,11 @@ then
                     if [ $system -eq 4 ] ||
                         [ $system -eq 5 ]
                     then
-		                pendjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep " Q " | wc -l`
-		                runjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep " R " | wc -l`
+		                pendjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep $userbatch | grep " Q " | wc -l`
+		                runjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep $userbatch | grep " R " | wc -l`
                     else
-		                pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep PEND | wc -l`
-		                runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep RUN | wc -l`
+		                pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep $userbatch | grep PEND | wc -l`
+		                runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep $userbatch | grep RUN | wc -l`
                     fi
                     #
 		            totaljobs=$(($pendjobs+$runjobs))
@@ -2042,7 +2046,7 @@ then
                 rm -rf $localerrorfile
                 rm -rf $localoutputfile
                 #
-		        bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l walltime=$timetotplot,size=$numtotalcoresplot -q $thequeueplot -N $jobname -o $localoutputfile -e $localerrorfile -M jmckinne@stanford.edu -m be ./$superbatch"
+		        bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l walltime=$timetotplot,size=$numtotalcoresplot -q $thequeueplot -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
             else
                     # probably specifying ptile below is not necessary
 		        bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernodeplot] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -2075,11 +2079,11 @@ then
             if [ $system -eq 4 ] ||
                 [ $system -eq 5 ]
             then
-		        pendjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep " Q " | wc -l`
-		        runjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep " R " | wc -l`
+		        pendjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep $userbatch | grep " Q " | wc -l`
+		        runjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep $userbatch | grep " R " | wc -l`
             else
-		        pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep PEND | wc -l`
-		        runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep RUN | wc -l`
+		        pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep $userbatch | grep PEND | wc -l`
+		        runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep $userbatch | grep RUN | wc -l`
             fi
 		    totaljobs=$(($pendjobs+$runjobs))
 		    

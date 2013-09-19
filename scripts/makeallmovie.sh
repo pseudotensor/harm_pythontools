@@ -2,6 +2,12 @@
 # MUST RUN THIS WITH "bash" not "sh" since on some systems that calls "dash" that doesn't correctly handle $RANDOM or other things
 
 
+user="jmckinne"
+userbatch="jmckinn"
+emailaddr="jmckinne@stanford.edu"
+remotehost="ki-jmck.slac.stanford.edu"
+globushost="pseudotensor#ki-jmck"
+globusremote="pseudotensor@cli.globusonline.org"
 
 # note that ubuntu defaults to dash after update.  Also causes \b to appear as ^H unlike bash.  Can't do \\b either -- still appears as ^H
 
@@ -12,7 +18,7 @@
 
 # thickdisk7 on Nautilus:
 #
-# sh makeallmovie.sh fulllatest14 1 1 1 1 1 1 0 1 0 0 0 0 0 0 0 0 0 0 0 /lustre/medusa/jmckinne/data1/jmckinne/jmckinne/
+# sh makeallmovie.sh fulllatest14 1 1 1 1 1 1 0 1 0 0 0 0 0 0 0 0 0 0 0 /lustre/medusa/$user/data1/$user/$user/
 
 
 
@@ -95,22 +101,22 @@ E_BADARGS=65
 if [ $# -lt $EXPECTED_ARGS ]
 then
     echo "Usage: `basename $0` {moviedirname docleanexist dolinks dofiles make1d makemerge makeplot makemontage makepowervsmplots makespacetimeplots makefftplot makespecplot makeinitfinalplot makethradfinalplot makeframes makemovie makeavg makeavgmerge makeavgplot collect} <full path dirname>"
-    echo "e.g. sh makeallmovie.sh moviefinal1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 /data2/jmckinne/"
+    echo "e.g. sh makeallmovie.sh moviefinal1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 /data2/$user/"
     exit $E_BADARGS
 fi
 
 
 
 
-# /Luste/ki/orange/jmckinne/thickdisk7/movie6
+# /Luste/ki/orange/$user/thickdisk7/movie6
 # sh makemovie.sh thickdisk7 1 1 1 0 1 1 0 0 0 0 0 
-# jobstokill=`bjobs -u jmckinne -q kipac-ibq | awk '{print $1}'`
+# jobstokill=`bjobs -u $user -q kipac-ibq | awk '{print $1}'`
 # for fil in $jobstokill ; do bkill -r $fil ; done 
 
 # 
-# /u/ki/jmckinne/nfsslac2/thickdisk7/movie6b
+# /u/ki/$user/nfsslac2/thickdisk7/movie6b
 # sh makemovie.sh thickdisk7 1 1 1 0 1 1 0 0 0 0 0 
-# jobstokill=`bjobs -u jmckinne -q kipac-gpuq | awk '{print $1}'`
+# jobstokill=`bjobs -u $user -q kipac-gpuq | awk '{print $1}'`
 # for fil in $jobstokill ; do bkill -r $fil ; done 
 
 # name of movie directory in each dirrun
@@ -140,8 +146,8 @@ if [ $# -eq $(($EXPECTED_ARGS+1)) ]
 then
     dirname=${21}
 else
-    # On ki-jmck in /data2/jmckinne/
-    # assume run from /data2/jmckinne or wherever full list of links/dirs are.
+    # On ki-jmck in /data2/$user/
+    # assume run from /data2/$user or wherever full list of links/dirs are.
     dirname=`pwd`
 fi
 
@@ -639,7 +645,7 @@ then
         fi
 
         # force use of local __init__.py file (GODMARK: doesn't actually do anything due to export vs. no export part of bash line in makemovie.sh)
-        #sed 's/export initfile=\$MREADPATH\/__init__.py/export initfile=\/data2\/jmckinne\/'${thedir}'\/'${moviedirname}'\/__init__.local.py/g' makemovielocal.temp.sh > makemovielocal.sh
+        #sed 's/export initfile=\$MREADPATH\/__init__.py/export initfile=\/data2\/$user\/'${thedir}'\/'${moviedirname}'\/__init__.local.py/g' makemovielocal.temp.sh > makemovielocal.sh
         cat makemovielocal.temp.sh > makemovielocal.sh
         rm -rf makemovielocal.temp.sh
 
@@ -869,13 +875,13 @@ then
         if [ $system -eq 4 ]
         then
             # use -s 2 in case same file size
-            ssh pseudotensor@cli.globusonline.org scp -D -r -s 2 xsede#nautilus:$dirname/${thedir}/$moviedirname pseudotensor#ki-jmck:/data2/jmckinne/${thedir}/
+            ssh $globusremote scp -D -r -s 2 xsede#nautilus:$dirname/${thedir}/$moviedirname $globushost:/data2/$user/${thedir}/
         elif [ $system -eq 5 ]
         then
-            ssh pseudotensor@cli.globusonline.org scp -D -r -s 2 xsede#kraken:$dirname/${thedir}/$moviedirname pseudotensor#ki-jmck:/data2/jmckinne/${thedir}/
+            ssh $globusremote scp -D -r -s 2 xsede#kraken:$dirname/${thedir}/$moviedirname $globushost:/data2/$user/${thedir}/
         else
-            #scp $dirname/${thedir}/$moviedirname/qty*.npy $dirname/${thedir}/$moviedirname/*.txt $dirname/${thedir}/$moviedirname/*.png $dirname/${thedir}/$moviedirname/*.eps $dirname/${thedir}/$moviedirname/python.plot.*.out jmckinne@ki-jmck.slac.stanford.edu:/data2/jmckinne/${thedir}/$moviedirname/
-            scp -rp $dirname/${thedir}/$moviedirname jmckinne@ki-jmck.slac.stanford.edu:/data2/jmckinne/${thedir}/
+            #scp $dirname/${thedir}/$moviedirname/qty*.npy $dirname/${thedir}/$moviedirname/*.txt $dirname/${thedir}/$moviedirname/*.png $dirname/${thedir}/$moviedirname/*.eps $dirname/${thedir}/$moviedirname/python.plot.*.out $user@$remotehost:/data2/$user/${thedir}/$moviedirname/
+            scp -rp $dirname/${thedir}/$moviedirname $user@$remotehost:/data2/$user/${thedir}/
         fi
 
     done
