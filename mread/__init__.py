@@ -1581,9 +1581,9 @@ def get2davg(usedefault=0,whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergr
         if domerge==True:
             # then merging
             # only include if no inital dump (in case small set of files happens to have tf late but ti=0)
-            # or include if final dump non-zero (in caes small set and includes ti=0 but tf late)
+            # or include if final dump non-zero (in case small set and includes ti=0 but tf late)
             if (tftry!=0 and tstry!=0) or (tftry!=0):
-                if (tstry>avgfti and tstry<avgftf) or ((tftry>avgfti and tftry<avgftf)):
+                if (tstry>avgfti and tstry<avgftf) or ((tftry>avgfti and tftry<avgftf)) or ((tstry<avgfti and tftry>avgftf)):
                     if firstavgoneused==1:
                         ts=avgone[0,0,0]
                         firstavgoneused=0
@@ -1599,7 +1599,7 @@ def get2davg(usedefault=0,whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergr
                     #
             # end if within averaging period of time
             if didntuse==1:
-                print("NOTUSING: During merge: tstry=%g tftry=%g n2avg=%d" % (tstry,tftry,n2avg));sys.stdout.flush()
+                print("NOTUSING: During merge: tstry=%g tftry=%g n2avg=%d avgfti=%g avgftf=%g" % (tstry,tftry,n2avg,avgfti,avgftf));sys.stdout.flush()
         else:
             # then not merging, normal assignments no matter what the time
             ts=avgone[0,0,0]
@@ -26297,6 +26297,7 @@ def main(argv=None):
     global saveeps
     saveeps=0
     #
+    # GODMARK
     global use2dglobal
     # whether use 2d slice of gdump or full 3d
     #use2dglobal=True
