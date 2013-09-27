@@ -2817,19 +2817,29 @@ def k0plot():
     #sasha philippov
     #for 90 degrees at two rotations
     #plotnsp(no=64) #and read off ltot
-    rstarorlc = [0.1, 0.2, 3./8., 0.5]
+    rstarorlc = np.array([0.1, 0.2, 3./8., 0.5])
     #the 2.2185 is not converged (only after 1 period)
     ldotff90    = np.array([2.2185, 2.08868,   1.79591, 1.54806])
     #the 2.33646 is not converted (only after 2 turns)
     ldotmhd90   = np.array([2.33252, 2.1663,   1.87401, 1.61609])
     #need to check if om=0.2 same as at smaller time
     ldotmhd45   = np.array([1.7000,       1.64364,  1.43659, 1.26705])
-    plt.plot(rstarorlc,ldotmhd90-1,'ro-')
-    plt.plot(rstarorlc,ldotff90-1,'bo-')
-    plt.plot(rstarorlc,(ldotmhd45-1)/np.sin(np.pi*45./180.)**2,'gx-')
+    plt.plot(rstarorlc,ldotmhd90-1,'ro-',lw=2,label=r"${\rm MHD},\ 90^\circ$")
+    plt.plot(rstarorlc,ldotff90-1,'bo-',lw=2,label=r"${\rm FF},\ 90^\circ$")
+    plt.plot(rstarorlc,(ldotmhd45-1)/np.sin(np.pi*45./180.)**2,'gx-',lw=2,label=r"${\rm MHD},\ 45^\circ$")
+    plt.plot(rstarorlc,1.5-1.8*rstarorlc,"k:",lw=2,label=r"$1.5-1.8R_*/R_{\rm LC}$")
+    plt.grid(b=1)
     plt.ylim(0,1.5)
+    plt.legend(loc="lower left")
+    ax = plt.gca()
+    for label in ax.get_xticklabels() + ax.get_yticklabels():
+        label.set_fontsize(16)
+    plt.xlabel(r"$R_*/R_{\rm LC}$",fontsize=20)
+    plt.ylabel(r"$k_1$",fontsize=20)
     #plt.xscale('log')
     #plt.yscale('log')
+    plt.savefig("spindownvsrstar.pdf",bbox_inches='tight',pad_inches=0.02)
+
 
 def avgvar(funclist, n1 = 0, n2 = 0, calct = 0, use2d = 1 ):
     grid3d("gdump.bin",use2d=use2d)
@@ -14864,10 +14874,10 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
     ####
     plt.figure(1)
     plt.clf()
-    crv1 = plt.plot((t1-t0)*tfac,Fx1,"k.")
+    crv1, = plt.plot((t1-t0)*tfac,Fx1,"k.")
     lab1 = r"${\it Swift}/{\rm XRT}$"
     plt.plot((t2-t0)*tfac,Fx2,"k.")
-    crv2 = plt.plot((t4-t0)*tfac,Fx4,"ks")
+    crv2, = plt.plot((t4-t0)*tfac,Fx4,"ks")
     lab2 = r"${\it Chandra}$"
     crvlist = [crv1, crv2]
     leglist = [lab1, lab2]
@@ -14903,7 +14913,7 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
             l.set_markersize(4)
     plt.draw()
     if dosavefig:
-        plt.savefig("figFx.pdf",bbox_inches='tight',pad_inches=0.02)
+        plt.savefig("figFx.pdf",bbox_inches='tight',pad_inches=0.04)
     ########################################
     ####
     ####  FIGURE 2: WD
@@ -14931,7 +14941,7 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
     tadaf=t[Lxa<=ladaf][0]
     tlab = tmin**0.03*tmax**0.97*tfac
     plt.text(tlab,5e-9,r"$\operatorname{Complete\ disruption}$",fontsize=25,ha='right',va='top')
-    plt.text(tlab,0.4e-9,r"$t_{\rm trig}-t_{\rm disr}=15^{+15}_{-7}\ {\rm days}$",fontsize=20,ha='right',va='bottom')
+    plt.text(tlab,0.3e-9,r"$t_{\rm trig}-t_{\rm disr}=15^{+15}_{-7}\ {\rm days}$",fontsize=20,ha='right',va='bottom')
     # plt.text(tlab,0.25e-9,r"$M_\bullet=0.5\times10^5M_\odot$",fontsize=20,ha='right',va='bottom')
     # plt.text(tlab,0.089e-9,r"$M_\bigstar=0.5M_\odot$",fontsize=20,ha='right',va='bottom')
     plt.plot((t-t0)[(t>tmad)*(t<toff)]*tfac,Lxa[(t>tmad)*(t<toff)],
@@ -15008,7 +15018,7 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
         for l in ax.xaxis.get_minorticklines() + ax.yaxis.get_minorticklines():
             l.set_markersize(4)
     if dosavefig:
-        plt.savefig("figFxWD.pdf",bbox_inches='tight',pad_inches=0.02)
+        plt.savefig("figFxWD.pdf",bbox_inches='tight',pad_inches=0.04)
     ########################################
     ####
     ####  FIGURE 3: MS
@@ -15033,7 +15043,7 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
     tmad = tabsmad+t0
     tlab = tmin**0.03*tmax**0.97*tfac
     plt.text(tlab,5e-9,r"$\operatorname{Partial\ disruption}$",fontsize=25,ha='right',va='top')
-    plt.text(tlab,0.4e-9,r"$t_{\rm trig}-t_{\rm disr}=30^{+30}_{-15}\ {\rm days}$",fontsize=20,ha='right',va='bottom')
+    plt.text(tlab,0.3e-9,r"$t_{\rm trig}-t_{\rm disr}=30^{+30}_{-15}\ {\rm days}$",fontsize=20,ha='right',va='bottom')
     # plt.text(tlab,0.25e-9,r"$M_\bullet=1.4\times10^5M_\odot$",fontsize=20,ha='right',va='bottom')
     # plt.text(tlab,0.089e-9,r"$M_\bigstar=0.5M_\odot$",fontsize=20,ha='right',va='bottom')
     plt.plot((t-t0)[(t>tmad)*(t<toff)]*tfac,Lxb[(t>tmad)*(t<toff)],
@@ -15112,7 +15122,7 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
         for l in ax.xaxis.get_minorticklines() + ax.yaxis.get_minorticklines():
             l.set_markersize(4)
     if dosavefig:
-        plt.savefig("figFxMS.pdf",bbox_inches='tight',pad_inches=0.02)
+        plt.savefig("figFxMS.pdf",bbox_inches='tight',pad_inches=0.04)
     ########################################
     ####
     ####  FIGURE 4: WD, short delay
@@ -15121,10 +15131,10 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
     plt.figure(4)
     plt.clf()
     t0=-5*86400
-    tmin=2e4
-    tmax=8e8
+    tmin=1e4
+    tmax=9.98e8
     plt.xlim(tmin*tfac,tmax*tfac)
-    plt.ylim(1e-16,1e-8)
+    plt.ylim(1e-16,1e-7)
     #
     plt.plot((t1-t0)*tfac,Fx1,"k.")
     plt.plot((t2-t0)*tfac,Fx2,"k.")
@@ -15132,15 +15142,15 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
     ####
     plt.errorbar(np.array(t3-t0)*tfac,np.array(Fx3),yerr=[[Fx3/2.],[0]],
                  color="black",lolims=True,lw=1.5)
-    tabsmad = 584748
+    tabsmad = 2e5 #584748
     tmad = tabsmad+t0
     ton=1e6
     toff=4.3e7
     ladaf=Lxc[t>=toff][0]/15.
     tadaf=t[Lxc<=ladaf][0]
     tlab = tmin**0.03*tmax**0.97*tfac
-    plt.text(tlab,5e-9,r"$\operatorname{Complete\ disruption}$",fontsize=25,ha='right',va='top')
-    plt.text(tlab,0.4e-9,r"$t_{\rm trig}-t_{\rm disr}=5^{+5}_{-3}\ {\rm days}$",fontsize=20,ha='right',va='bottom')
+    plt.text(tlab,5e-8,r"$\operatorname{Complete\ disruption}$",fontsize=25,ha='right',va='top')
+    plt.text(tlab,0.2e-8,r"$t_{\rm trig}-t_{\rm disr}=5^{+5}_{-3}\ {\rm days}$",fontsize=20,ha='right',va='bottom')
     # plt.text(tlab,0.25e-9,r"$M_\bullet=0.5\times10^5M_\odot$",fontsize=20,ha='right',va='bottom')
     # plt.text(tlab,0.089e-9,r"$M_\bigstar=0.5M_\odot$",fontsize=20,ha='right',va='bottom')
     plt.plot((t-t0)[(t>tmad)*(t<toff)]*tfac,Lxc[(t>tmad)*(t<toff)],
@@ -15178,8 +15188,8 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
     plt.gca().fill_between((t-t0)[whicht]*tfac,1e-12*Lxc[whicht],Lxc[t>tmad][0]*((t-t0)[t<tmad]/(t-t0)[t<tmad][-1])**(4./3.),
                            where=Lxc[whicht]>0,facecolor=col,edgecolor=col,alpha=0.1)
     #captions
-    tpos=(tmin)**0.55*(tmad-t0)**0.45*tfac
-    plt.text(tpos,1.1*Lxc[t>tmad][0],r"$L_j\propto t^0{-}t^{4/3}$",
+    tpos=(tmin)**0.45*(tmad-t0)**0.55*tfac
+    plt.text(tpos,1.02*Lxc[t>tmad][0],r"$L_j\propto t^0{-}t^{4/3}$",
              fontsize=25,ha="center",va="bottom",rotation=0)
     tpos=(tmin)**0.5*(tmad-t0)**0.5*tfac
     plt.text(tpos,0.2*1e-10,r"${\rm Stage\ 1}$",fontsize=25,ha="center",va="bottom")
@@ -15217,7 +15227,7 @@ def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
         for l in ax.xaxis.get_minorticklines() + ax.yaxis.get_minorticklines():
             l.set_markersize(4)
     if dosavefig:
-        plt.savefig("figFxWD5d.pdf",bbox_inches='tight',pad_inches=0.02)
+        plt.savefig("figFxWD5d.pdf",bbox_inches='tight',pad_inches=0.04)
 
 def ubsfluxplot(fntsize=20,lammad=240,lamfossil=None,z=0.353,disruptiontype="wdc",
                 dosavefig=1,hr=1,lamrevive = 0.02,fontsize=20):
