@@ -88,13 +88,16 @@ def mkathtestmovie(**kwargs):
     endn=kwargs.pop("endn",112)
     dn=kwargs.pop("dn",1)
     dosavefig=kwargs.pop("dosavefig",1)
+    plt.figure(1,figsize=(8,6))
     plt.clf()
     for i in xrange(startn,endn,dn):
         rdath3d("%s.%04d.tab"%(name,i));
+        kval=kwargs.pop("k",n3/2)
         #plco(np.log10(pg),levels=np.arange(-4,4,0.1),isfilled=1,antialiased=0,cb=1);
         ax = plt.gca()
         #plt.clf()
-        p=ax.imshow(np.log10(pg[:,:,n3/2].transpose()), extent=(0,n1,0,n2), cmap = cm.jet, norm = colors.Normalize(clip = True),origin='lower',interpolation="nearest",vmin=-3,vmax=3,**kwargs)
+        p=ax.imshow(np.log10(pg[:,:,kval].transpose()), extent=(0,n1,0,n2), cmap = cm.jet, norm = colors.Normalize(clip = True),origin='lower',interpolation="nearest",vmin=-3,vmax=3,**kwargs)
+        print("n=%4d, t=%5.3g: min(rho)=%5.3g, min(pg)=%5.3g" % (i, t, np.min(rho), np.min(pg)))
         if i==startn:
             cbar = plt.colorbar(p)
             cbar.ax.set_ylabel(r'$\log_{10}p$',fontsize=fntsize)
@@ -102,7 +105,7 @@ def mkathtestmovie(**kwargs):
         plt.draw();
         time.sleep(sleepdt)
         if dosavefig:
-            plt.savefig("frame%04d.png"%i,bbox_inches='tight',pad_inches=0.02)
+            plt.savefig("frame%04d.png"%i,bbox_inches='tight',pad_inches=0.02,dpi=300)
 
 
 def plot_current():
