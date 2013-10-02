@@ -3173,6 +3173,7 @@ def assignavg2dvars(avgmem,DTf=5):
     global avg_omegaf1, avg_absomegaf1, avg_omegaf1b, avg_absomegaf1b, avg_omegaf2b, avg_absomegaf2b
     global avg_Bd3, avg_absBd3
     global avg_fuufdd
+    global avg_TuuTddEM, avg_TuuTddMA
 
     #avg defs
     i=0
@@ -3514,7 +3515,6 @@ def get2davgone(whichgroup=-1,itemspergroup=20,removefloors=False):
             #X^i_j = <F^ki F_kj>
             TuuTddMA = mdot(TuuMA.transpose(1,0,2,3,4),TddMA)
             avg_TuuTddMA+=TuuTddMA.sum(-1)[:,:,:,:,None]
-            
     if avg_nitems[0] == 0:
         print( "No files found" )
         return None
