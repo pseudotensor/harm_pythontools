@@ -296,6 +296,14 @@ def stag_compute_analytic(**kwargs):
     return(OmegaH/2.-OmegaFIDO)
     #plc(OmegaH/2.-OmegaFIDO,levels=(0,),xcoord=r*sin(h),ycoord=r*cos(h),**kwargs)
 
+def checkpsq():
+    global rergo, Psq
+    grid3d("gdump")
+    rdo("dumplast")
+    Tcalcud()
+    rergo = 1+(1-a**2*np.cos(h)**2)**0.5
+    Psq=mdot(mdot(gv3,Tud[:,0]),Tud[:,0])
+    
 def plot_sigma_profile():
     plt.clf()
     plt.figure(10)
