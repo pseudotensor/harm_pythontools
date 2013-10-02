@@ -597,6 +597,184 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False,dok
         plt.savefig("%s.png" % fname,bbox_inches='tight',pad_inches=0.02,dpi=300)
         os.system("convert %s.png %s.jpg" % (fname, fname))
         os.system("sam2p %s.jpg %s.pdf" % (fname, fname))
+    #
+    # 2D figure with Noether current, just a copy of the above out of laziness
+    #
+    fig=plt.figure(6,figsize=(8,4))
+    plt.clf()
+    ax = fig.add_subplot(111, aspect='equal', frameon=1)
+    if useavgs:
+        avg_gdetBlongavg=get2davg(usedefault=1)[24,:,:,None]
+        avg_aphi = fieldcalc(gdetB1=avg_gdetBlongavg)
+        Psq=mdot(mdot(gv3,avg_Tud[:,0]),avg_Tud[:,0])  #a hack, in reality there will be cross-correlation
+    else:
+        Psq=mdot(mdot(gv3,Tud[:,0]),Tud[:,0])
+        avg_aphi = fieldcalcm()
+        avg_aphi1 = fieldcalcp()
+        avg_aphi1 += avg_aphi[:,0:1]
+        #pdb.set_trace()
+        avg_aphi = np.concatenate((avg_aphi[:,::-1],avg_aphi1[:,::1]),axis=1)
+    if useavgs:
+        #normalize avg_phi by Mdot to get dimensionless flux
+        phibh = (4*np.pi)**0.5*avg_aphi/a_Fm_global**0.5
+        avg_aphi = phibh
+        step=10
+        levs=np.arange(step,100*step,step)
+        #for a = 0.99 increase the nuumber of contours by 2x so see more detail
+        if np.abs(a-0.99)<0.01:
+            levs = levs/1.5
+    else:
+        levs=np.linspace(0.1,1,9,endpoint=False)*4*np.pi
+        ln = len(levs)
+        levs=np.concatenate((levs[:ln/2],levs[ln/2+1:]))
+        uu2=np.concatenate((uu1[:,::-1],uu1),axis=1)
+    r2=np.concatenate((rloc[:,::-1],rloc),axis=1)
+    h2=np.concatenate((-hloc[:,::-1],hloc),axis=1)
+    r3=np.concatenate((r2[:,0:1,:],r2,r2[:,0:1,:]),axis=1)
+    h3=np.concatenate((h2[:,0:1,:]*0+np.pi,h2,h2[:,0:1,:]*0+np.pi),axis=1)
+    # h2[:,0,:]=h2[:,0,:]*0+np.pi
+    # h2[:,-1,:]=h2[:,-1,:]*0+np.pi
+    avg_aphi2=np.concatenate((avg_aphi[:,::-1],avg_aphi),axis=1)
+    Psq1=np.concatenate((Psq[:,::-1],Psq),axis=1)
+    Psq2=np.concatenate((Psq1[:,::-1],Psq1),axis=1)
+    Psq3=np.concatenate((Psq2[:,0:1],Psq2,Psq2[:,0:1]),axis=1)
+    var3 = Psq3 #/np.nanmax(Psq3)#,axis=1)[:,None,:]
+    if avoidbc:
+        for myj in [ny, 3*ny]:
+            var3[:,myj-1,:] *=np.nan
+            var3[:,myj,:] *=np.nan
+    # plc(-var3,xcoord=r3*np.sin(h3),ycoord=r3*np.cos(h3),
+    #    levels=np.linspace(-1.01,0,102),isfilled=1,cb=0,cmap=cm.BuGn,linewidths=None,linestyles=None,antialiased=False)
+    minval = np.min(var3)
+    maxval = np.max(var3)
+    print("minval = %g, maxval = %g" % (minval, maxval))
+    CS1 = plc(np.log10(-var3),xcoord=r3*np.sin(h3),ycoord=r3*np.cos(h3),
+             levels=np.linspace(-5,np.log10(-minval),81),isfilled=1,cb=0,cmap=cm.Blues,linewidths=None,linestyles=None,antialiased=False)
+    CS2 = plc(np.log10(var3),xcoord=r3*np.sin(h3),ycoord=r3*np.cos(h3),
+             levels=np.linspace(-5,np.log10(maxval),81),isfilled=1,cb=0,cmap=cm.Oranges,linewidths=None,linestyles=None,antialiased=False)
+    res=Psq
+    res1 = np.concatenate((res[:,::-1],res),axis=1)
+    res2 = np.concatenate((res1[:,::-1],res1),axis=1)
+    plc(res2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),levels=(0,),colors="blue",linewidths=2)
+    shrink = 1.
+    fntsize=20
+    cbar1=plt.colorbar(CS1,ax=ax,shrink=shrink) # draw colorbar
+    cbar1.ax.set_ylabel(r"$\log_{10}(-P^2)$",fontsize=16)
+    cbar2=plt.colorbar(CS2,ax=ax,shrink=shrink) # draw colorbar
+    cbar2.ax.set_ylabel(r"$\log_{10}(P^2)$",fontsize=16)
+    # levs_label = np.linspace(0,1.,6)
+    # tcks=[x for x in levs_label]
+    # labs=[r'$%g$'%(x) for x in levs_label]
+    # cbar.set_ticks(tcks)
+    # cbar.set_ticklabels(labs)
+    # cbar.update_ticks()
+    if fntsize is not None:
+        #set font size of colorbar tick labels
+        cl = plt.getp(cbar.ax, 'ymajorticklabels')
+        plt.setp(cl, fontsize=fntsize)
+
+    if levs is not None:
+        plc(avg_aphi2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),levels=levs,colors='black',linewidths=2)
+        cnt=plc(avg_aphi2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),levels=levs,colors='white',
+                linewidths=1,linestyles='dashed')
+    else:
+        plc(avg_aphi2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),nc=30,colors='black',linewidths=0.5)
+        cnt=plc(avg_aphi2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),nc=30,colors='white',
+                linewidths=0.5,linestyles='dashed')
+    if useavgs:
+        vec=np.zeros_like(avg_uu)
+        vec[1] = FmminusFe_global
+        vec[1][vec[1]<0] = vec[1][vec[1]<0]*0
+        vec[2] = FmminusFe2_global
+        vec[3] *= 0
+        domirrory = False
+    else:
+        vec = -tud[0:,0]
+        if 0 and avoidbc:
+            vec[1,:,0,:] *= np.nan
+            vec[2,:,0,:] *= np.nan
+        domirrory = True
+    den=2
+    mylen=33
+    arrowsize=3
+    if avoidbc:
+        populatestreamlines=0
+    else:
+        populatestreamlines=1
+    mksimplevecstream(vec, len=mylen,density=1,downsample=1,cb=False,vmin=-6,vmax=0.5,dobhfield=10,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='r',linewidth=1,startatmidplane=False,arrowsize=arrowsize,populatestreamlines=populatestreamlines,domirrory=domirrory)
+    # mkframe("myframe",whichvar=None,len=mylen,ax=plt.gca(),density=den,downsample=1,cb=False,pt=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.0025,color='k',doarrows=True,dorandomcolor=False,lw=2,skipblankint=False,detectLoops=True,ncell=800,minlengthdefault=0.2,startatmidplane=False)
+    plt.xlim(-30,30)
+    plt.ylim(-30,30)
+    plt.xlabel(r"$x\ [r_g]$",fontsize=fntsize)
+    plt.ylabel(r"$z\ [r_g]$",fontsize=fntsize,ha="center")
+    for label in ax.get_xticklabels() + ax.get_yticklabels():
+        label.set_fontsize(fntsize)
+    #black hole
+    el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
+    art=ax.add_artist(el)
+    art.set_zorder(30)
+    #
+    # STAGNATION SURFACE
+    #
+    clr = "Orange"
+    linewidth=4
+    if useavgs:
+        istag, jstag, hstag, rstag = getstagparams(doplot=0,fname=fname)
+        myRmax=2.1
+        #z>0
+        rs=rstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)>0]
+        hs=hstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)>0]
+        hs2=np.concatenate((-hs[::-1],hs),axis=1)
+        rs2=np.concatenate((rs[::-1],rs),axis=1)
+        #rs2=radavg(rs2,axis=0,dn=1)
+        xs2=rs2*np.sin(hs2)
+        zs2=rs2*np.cos(hs2)
+        l=len(rs)
+        zs2[l-2]=0.5*(zs2[l-3]+zs2[l-1])
+        zs2[l+1]=0.5*(zs2[l+0]+zs2[l+2])
+        ax.plot(xs2,zs2,'-',color=clr,lw=linewidth,zorder=21)
+        #z<0
+        rs=rstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)<0]
+        hs=hstag[(rstag*np.sin(hstag)<myRmax)*np.cos(hstag)<0]
+        hs2=np.concatenate((hs,-hs[::-1]),axis=1)
+        rs2=np.concatenate((rs,rs[::-1]),axis=1)
+        xs2=rs2*np.sin(hs2)
+        zs2=rs2*np.cos(hs2)
+        l=len(rs)
+        zs2[l-2]=0.5*(zs2[l-3]+zs2[l-1])
+        zs2[l+1]=0.5*(zs2[l+0]+zs2[l+2])
+        #rs2=radavg(rs2,axis=0,dn=1)
+        ax.plot(xs2,zs2,'-',color=clr,lw=linewidth,zorder=21)
+    else:
+        if avoidbc:
+            for myj in [ny, 3*ny]:
+                uu2[:,myj-1,:] *=np.nan
+                uu2[:,myj,:] *=np.nan
+        plc(uu2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),levels=(0,),colors=clr,linewidths=2)
+    #Komi's version of ergosphere
+    if dokomistag:
+        res = stag_compute_analytic()
+        res1 = np.concatenate((res[:,::-1],res),axis=1)
+        res2 = np.concatenate((res1[:,::-1],res1),axis=1)
+        plc(res2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),levels=(0,),colors="blue",linewidths=2)
+    #
+    # ergosphere
+    #
+    rergo3 = 1+(1-a**2*np.cos(h3)**2)**0.5
+    if avoidbc:
+        for myj in [ny, 3*ny]:
+            rergo3[:,myj-1,:] *=np.nan
+            rergo3[:,myj,:] *=np.nan
+    plc(rergo3-r3,levels=(0,),xcoord=r3*np.sin(h3),ycoord=r3*np.cos(h3),linewidths=4,linestyles="solid",colors="cyan",zorder=22)
+    plt.xlim(-3.5,3.5);plt.ylim(-3,3)
+    if dofig:
+        if useavgs:
+            fname = "mad_psq"
+        else:
+            fname = "ff_psq"
+        plt.savefig("%s.png" % fname,bbox_inches='tight',pad_inches=0.02,dpi=300)
+        os.system("convert %s.png %s.jpg" % (fname, fname))
+        os.system("sam2p %s.jpg %s.pdf" % (fname, fname))
     
 def lh_plot(fntsize=20):
     ih = iofr(rhor)
