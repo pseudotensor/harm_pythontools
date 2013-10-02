@@ -14456,7 +14456,7 @@ def plotfluxrodrigo(doreload=True,plotvarname="flux",figno=1,doretro=1,dn=0,save
         plt.savefig("../plot_bjetvsomh.pdf",bbox_inches='tight',pad_inches=0.02,dpi=100)
         plt.figure(figno)
 
-def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,f=None,bare=0,fc='k',bor=200,maxaphi=None,dolc=1,runit=1,numc=40,minaphi=0,cb=0):
+def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,f=None,bare=0,fc='k',bor=200,maxaphi=None,dolc=0,runit=1,numc=40,minaphi=0,cb=0):
     grid3d("gdump.bin",use2d=True)
     flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
     flist.sort()
@@ -14492,8 +14492,8 @@ def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,f=None,bare=0,fc='k',bor=200,maxa
                 cbar=plt.colorbar(cts)
                 cbar.set_ticks(levs)
                 cbar.ax.set_ylabel(r'$b^2\!/4\pi\rho$',fontsize=18,labelpad=-5)
-            x=np.array([5,5])*runit
-            y=np.array([-5,5])*runit
+            x=np.array([1,1])*runit/OmegaNS
+            y=np.array([-1,1])*runit/OmegaNS
             #plt.grid(b=True)
             plc(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=minaphi+np.arange(1,numc)*(maxaphi-minaphi)/np.float(numc),colors=fc,xmax=10*runit,ymax=5*runit)
             plc(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=(0.5*(minaphi+maxaphi),),linewidths=3,colors=fc,xmax=10*runit,ymax=5*runit)
@@ -14510,20 +14510,23 @@ def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,f=None,bare=0,fc='k',bor=200,maxa
             #draw NS
             ax=plt.gca()
             ax.set_aspect('equal')  
-            el = Ellipse((0,0), 2*runit, 2*runit, facecolor='k', alpha=1)
+            if OmegaNS>0 :
+                el = Ellipse((0,0), 2*runit, 2*runit, facecolor='k', alpha=1)
+            else:
+                el = Ellipse((0,0), 2*rhor*runit, 2*rhor*runit, facecolor='k', alpha=1)
             art=ax.add_artist(el)
             art.set_zorder(20)
-            el = Ellipse((0,0), 7*runit, 7*runit, edgecolor="r", facecolor='none', alpha=1)
-            art=ax.add_artist(el)
-            art.set_zorder(20)
+            # el = Ellipse((0,0), 7*runit, 7*runit, edgecolor="r", facecolor='none', alpha=1)
+            # art=ax.add_artist(el)
+            # art.set_zorder(20)
             if op and f is None:
                 #plc(uu[1]*dxdxp[1,1],xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(0,1,0.1),lw=2,cb=True)
                 #plc(ug,xcoord=r*np.sin(h),ycoord=r*np.cos(h),levels=np.arange(0,0.01,0.001),lw=2,cb=True)
                 #plc(uu[1]*dxdxp[1,1],cb=True,levels=np.arange(0,10,1),xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,10);plt.ylim(-5,5)
                 plc(uu[0],cb=True,levels=np.arange(0,10,1),xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,10);plt.ylim(-5,5)
             elif f is not None:
-                plc(f(),xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=cb);plt.xlim(0,10);plt.ylim(-5,5)
-                plc(f(),xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,10);plt.ylim(-5,5)
+                plc(f(),xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=cb,levels=np.arange(1,2,0.01));plt.xlim(0,10);plt.ylim(-5,5)
+                #plc(f(),xcoord=r*np.sin(h),ycoord=r*np.cos(h));plt.xlim(0,10);plt.ylim(-5,5)
             rmax = len*runit
             plt.xlim(0,rmax)
             plt.ylim(-0.5*rmax,0.5*rmax)
@@ -14533,7 +14536,10 @@ def mkpulsarmovie(startn=0,endn=-1,len=10,op=1,f=None,bare=0,fc='k',bor=200,maxa
             plt.plot(r[:,0,0],rho[:,0.75*ny,0],'r');plt.xlim(Rin,10);plt.ylim(0,50)
             plt.plot(r[:,0,0],(bsq/rho)[:,0.75*ny,0],'b');plt.xlim(Rin,10);plt.ylim(0,50)
         if not bare:
-            plt.title(r"${\rm max}[b^2\!/4\pi\rho]=%g$, $t=%3.3g$" % (bor, OmegaNS*t/(2*np.pi)),    fontsize=16, color='k')
+            if OmegaNS > 0:
+                plt.title(r"${\rm max}[b^2\!/4\pi\rho]=%g$, $t=%3.3g$" % (bor, OmegaNS*t/(2*np.pi)),    fontsize=16, color='k')
+            else:
+               plt.title(r"$t=%3.3g$" % t,    fontsize=16, color='k')
         #
         plt.draw()
         plt.savefig( 'frame%04d.png' % fldindex )
