@@ -3299,6 +3299,14 @@ def assignavg2dvars(avgmem,DTf=5):
     else:
         avg_fuufdd = None
         print( "Old-ish format: missing avg_fuufdd" )
+    if avgmem.shape[0] >= 206+9+4+17+6+2+16+32:
+        n = 16
+        avg_TuuTddEM=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
+        avg_TuuTddMA=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
+    else:
+        avg_TuuTddEM = None
+        avg_TuuTddMA = None
+        print( "Old-ish format: missing avg_TuuTdd(EM,MA)" )
         
     #derived quantities
     avg_gamma=avg_uu[0]/(-gn3[0,0])**0.5
@@ -3492,6 +3500,20 @@ def get2davgone(whichgroup=-1,itemspergroup=20,removefloors=False):
             #X^i_j = <F^ki F_kj>
             fuufdd = mdot(fuu.transpose(1,0,2,3,4),fdd)
             avg_fuufdd+=fuufdd.sum(-1)[:,:,:,:,None]
+        if avg_TuuTddEM is not None and avgTuuTddMA is not None:
+            n=16
+            #energy fluxes and faraday: EM
+            TuuEM = mdot(gn3,TudEM.transpose(1,0,2,3,4)).transpose(1,0,2,3,4)
+            TddEM = mdot(gn3,TudEM)
+            #X^i_j = <F^ki F_kj>
+            TuuTddEM = mdot(TuuEM.transpose(1,0,2,3,4),TddEM)
+            avg_TuuTddEM+=TuuTddEM.sum(-1)[:,:,:,:,None]
+            #energy fluxes and faraday: MA
+            TuuMA = mdot(gn3,TudMA.transpose(1,0,2,3,4)).transpose(1,0,2,3,4)
+            TddMA = mdot(gn3,TudMA)
+            #X^i_j = <F^ki F_kj>
+            TuuTddMA = mdot(TuuMA.transpose(1,0,2,3,4),TddMA)
+            avg_TuuTddMA+=TuuTddMA.sum(-1)[:,:,:,:,None]
             
     if avg_nitems[0] == 0:
         print( "No files found" )
