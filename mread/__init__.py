@@ -7052,7 +7052,7 @@ def faraday():
     #
     # charge
     #
-    if 0:
+    if 1:
         rhoc = np.zeros_like(rho)
         if nx>=2:
             rhoc[1:-1] += ((gdet*fuu[0,1])[2:]-(gdet*fuu[0,1])[:-2])/(2*_dx1)
@@ -14996,7 +14996,7 @@ def writevtk(fnameformat="fieldline%04d.vtk",t=0,no=None,rhoval=None,ugval=None,
         Bval = B
     if bsqval is None:
         bsqval = bsq
-    if avgrhoc is None:
+    if 'avgrhoc' not in globals() or avgrhoc is None:
         rhocval = rhoc
     Bcart = prime2cart(Bval)
     ucart = prime2cart(uuval)
@@ -15030,7 +15030,7 @@ def writevtk(fnameformat="fieldline%04d.vtk",t=0,no=None,rhoval=None,ugval=None,
                                               dims, 
                                               pts, 
                                               vars)
-    return 0
+    #return 0
 
 def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
     os.chdir("/Users/atchekho/Research/Papers/jtde")
