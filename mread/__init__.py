@@ -47,6 +47,33 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
+def mkbondimovie(xmax=50,ymax=50,startn=0,endn=-1,dosavefig=0,cb=0):
+    grid3d("gdump.bin",use2d=True)
+    flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
+    flist.sort()
+    for fldindex, fldname in enumerate(flist):
+        if fldindex < startn:
+            continue
+        if endn>=0 and fldindex >= endn:
+            break
+        print( "Reading " + fldname + " ..." )
+        sys.stdout.flush()
+        rfd("../"+fldname)
+        sys.stdout.flush()
+        aphi=fieldcalc()
+        plco(lrho,xy=1,xmax=xmax,ymax=ymax,levels=np.arange(-5,1,0.1),cb=cb,isfilled=1)
+        plc(aphi,xy=1,xmax=xmax,ymax=ymax,levels=np.arange(0,100,2),colors="k")
+        el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
+        ax = plt.gca()
+        art=ax.add_artist(el)
+        art.set_zorder(20)
+        plt.xlabel(r"$R\ [r_g]$",fontsize=20)
+        plt.ylabel(r"$z\ [r_g]$",fontsize=20)
+        plt.title(r"$t= %5.5g$" % np.floor(t))
+        plt.draw()
+        if dosavefig:
+            plt.savefig("frame%04d.png"%fldindex,bbox_inches='tight',pad_inches=0.04,dpi=300)
+        
 #so far only for hydro
 def rdath2d(fname):
     global n1, n2, n3, t, ti, tj, tk, x1, x2, x3, rho, v1, v2, v3, pg
@@ -13235,7 +13262,8 @@ def provsretro(dotakeoutfloors=False,doreload=True):
     #flist = ["avg2d20_0000_0001.npy", "avg2d20_0000_0050.npy","avg2d20_0100_0150.npy","avg2d20_0150_0200.npy","avg2d20_0200_0250.npy"]
     #flist = ["avg2d20_00.npy", "avg2d20_0080_0100.npy", "avg2d20_0100_0120.npy", "avg2d20_0120_0140.npy", "avg2d20_0140_0156.npy","avg2d20_0080_0157.npy","avg2d20_0080_0157_nf.npy"]
     #flist = ["avg2d20_0080_0157.npy","avg2d20_0080_0157_nf.npy"]
-    flist = ["avg2d20_0000_0001.npy","avg2d20_0100_0150.npy","avg2d20_0150_0200.npy","avg2d20_0200_0250.npy","avg2d.npy"
+    flist = [#"avg2d20_0000_0001.npy","avg2d20_0100_0150.npy","avg2d20_0150_0200.npy","avg2d20_0200_0250.npy",
+             "avg2d.npy"
              #"avg2dnf.npy"
              ]
     #flist = ["avg0.npy", "avg2.npy"]
