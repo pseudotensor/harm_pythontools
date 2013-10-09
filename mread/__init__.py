@@ -47,7 +47,7 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
-def mkbondimovie(xmax=50,ymax=50,startn=0,endn=-1,dosavefig=0,cb=0):
+def mkbondimovie(xmax=30,ymax=15,startn=0,endn=-1,dosavefig=1,cb=1):
     grid3d("gdump.bin",use2d=True)
     flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
     flist.sort()
