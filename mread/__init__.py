@@ -47,6 +47,34 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
+def mknstartorusmovie(xmax=30,ymax=15,startn=0,endn=-1,dosavefig=1,cb=1):
+    #NSTARTORUS movie:
+    grid3d("gdump.bin",use2d=True)
+    flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
+    flist.sort()
+    for fldindex, fldname in enumerate(flist):
+        if fldindex < startn:
+            continue
+        if endn>=0 and fldindex >= endn:
+            break
+        print( "Reading " + fldname + " ..." )
+        sys.stdout.flush()
+        rfd("../"+fldname)
+        sys.stdout.flush()
+        plt.clf()
+        mkframe("lrho",dostreamlines = True, kval = 0, maxsBphi=7.1042354321207579, domirror=1,nanout=False,dsval=0.001, ncell=400, minlengthdefault=0.0, density=1.2, downsample=2, whichr=5, cb=0, dnarrow=0, populatestreamlines=1, dovarylw=0, whichvar="lrho", isnstar=True, detectLoops=1, minlenbhfield=0.0, dobhfield=40,len=30)
+        el = Ellipse((0,0), 2*Rin, 2*Rin, facecolor='k', alpha=1)
+        ax = plt.gca()
+        art=ax.add_artist(el)
+        art.set_zorder(20)
+        plt.xlabel(r"$R\ [r_g]$",fontsize=20)
+        plt.ylabel(r"$z\ [r_g]$",fontsize=20)
+        plt.title(r"$t= %5.5g$" % np.floor(t))
+        plt.draw()
+        if dosavefig:
+            plt.savefig("frame%04d.png"%fldindex,bbox_inches='tight',pad_inches=0.04,dpi=300)
+
+
 def mkbondimovie(xmax=30,ymax=15,startn=0,endn=-1,dosavefig=1,cb=1):
     grid3d("gdump.bin",use2d=True)
     flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
