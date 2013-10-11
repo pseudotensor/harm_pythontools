@@ -89,7 +89,7 @@ def mkbondimovie(xmax=30,ymax=15,startn=0,endn=-1,dosavefig=1,cb=1):
         rfd("../"+fldname)
         sys.stdout.flush()
         aphi=fieldcalc()
-        plco(lrho,xy=1,xmax=xmax,ymax=ymax,levels=np.arange(-5,1,0.1),cb=cb,isfilled=1)
+        plco(lrho,xy=1,xmax=xmax,ymax=ymax,levels=np.arange(-7,1,0.1),cb=cb,isfilled=1)
         plc(aphi,xy=1,xmax=xmax,ymax=ymax,levels=np.arange(0,100,2),colors="k")
         el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
         ax = plt.gca()
