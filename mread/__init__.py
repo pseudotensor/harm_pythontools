@@ -4506,7 +4506,8 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
             if 'Bstag' not in globals():
                 print("Bstag is same as B, so will use gdetB/gdet to show perpendicular field component")
                 Bp = gdetB[3]/gdet*dxdxp[3,3]
-            elif Bstag is B:
+            #elif Bstag is B:
+            else:
                 Bp = Bstag[3]*dxdxp[3,3]
         else:
             Bp = B[3]*dxdxp[3,3]
