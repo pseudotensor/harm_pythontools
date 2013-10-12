@@ -4365,7 +4365,7 @@ def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
            plt.ylim(-ymax,ymax)
     return res
 
-def reinterp(vartointerp,extent,ncell,ncelly=None,domirrory=0,domask=1,isasymmetric=False,isasymmetricy=False,rhor=None,kval=0,domirror=True,dolimitr=True):
+def reinterp(vartointerp,extent,ncell,ncelly=None,domirrory=0,domask=1,isasymmetric=False,isasymmetricy=False,rhor=None,kval=0,domirror=True,dolimitr=True,method='cubic'):
     global xi,yi,zi
     #grid3d("gdump")
     #rfd("fieldline0250.bin")
@@ -4413,7 +4413,7 @@ def reinterp(vartointerp,extent,ncell,ncelly=None,domirrory=0,domask=1,isasymmet
     xi = np.linspace(extent[0], extent[1], ncelly)
     yi = np.linspace(extent[2], extent[3], ncellx)
     # grid the data.
-    zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method='cubic')
+    zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method=method)
     #zi[interior] = np.ma.masked
     if domask!=0:
         interior = np.sqrt((xi[None,:]**2) + (yi[:,None]**2)) < rhor*domask
