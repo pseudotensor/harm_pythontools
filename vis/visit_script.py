@@ -17,6 +17,7 @@ def VisitScript(no=73,r0=1.05,cdb=True,pf=1,i=60.):
     OpenDatabase(dbname)
     #OpenDatabase("/Users/atchekho/run/test3d_1cpu_16x16x8/fieldline0000.vtk")
     DefineScalarExpression("Rsq", "x*x+y*y")
+    DefineScalarExpression("bsqorho", "bsq/rho")
     DefineScalarExpression("bsqow", "bsq/(rho+4./3.*ug)")
     AddPlot("Contour","Rsq")
     p=ContourAttributes()

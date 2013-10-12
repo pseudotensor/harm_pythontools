@@ -47,6 +47,83 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
+def omerjetstar(fntsize=20):
+    irho = reinterp(lrho,(-5000,5000,-5000,5000),1600,domirror=1,method="linear")
+    plt.clf();CS=plt.imshow(irho,extent=(-2e11,2e11,-2e11,2e11),cmap=cm.hot,interpolation="bilinear")
+    cbar = plt.colorbar(CS)
+    cbar.ax.set_ylabel(r'$\log_{10}\rho$',fontsize=fntsize)
+    plc(aphi,levels=np.arange(0.2,1.1,0.2)*np.max(aphi),
+        symmx=1,linewidths=0.5,alpha=0.2,colors="k",
+        xmax=2e11,ymax=2e11,
+        xcoord=r*sin(h)/2.5e3*1e11,ycoord=r*cos(h)/2.5e3*1e11)
+    plt.xlabel(r"$R\ \rm{[cm]}$",fontsize=fntsize)
+    plt.ylabel(r"$z\ \rm{[cm]}$",fontsize=fntsize)
+    ax = plt.gca()
+    tx = ax.yaxis.get_offset_text()
+    ty = ax.xaxis.get_offset_text()
+    tx.set_size(fntsize)
+    ty.set_size(fntsize)
+    for label in ax.get_xticklabels() + ax.get_yticklabels() + cbar.ax.get_yticklabels():
+        label.set_fontsize(fntsize)
+    plt.savefig("magnetar_jet_breakout.pdf",bbox_inches='tight',pad_inches=0.2)
+
+    
+
+def mknstartorusmovie(xmax=30,ymax=15,startn=0,endn=-1,dosavefig=1,cb=1):
+    #NSTARTORUS movie:
+    grid3d("gdump.bin",use2d=True)
+    flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
+    flist.sort()
+    for fldindex, fldname in enumerate(flist):
+        if fldindex < startn:
+            continue
+        if endn>=0 and fldindex >= endn:
+            break
+        print( "Reading " + fldname + " ..." )
+        sys.stdout.flush()
+        rfd("../"+fldname)
+        sys.stdout.flush()
+        plt.clf()
+        mkframe("lrho",dostreamlines = True, kval = 0, maxsBphi=7.1042354321207579, domirror=1,nanout=False,dsval=0.001, ncell=400, minlengthdefault=0.0, density=1.2, downsample=2, whichr=5, cb=0, dnarrow=0, populatestreamlines=1, dovarylw=0, whichvar="lrho", isnstar=True, detectLoops=1, minlenbhfield=0.0, dobhfield=40,len=30)
+        el = Ellipse((0,0), 2*Rin, 2*Rin, facecolor='k', alpha=1)
+        ax = plt.gca()
+        art=ax.add_artist(el)
+        art.set_zorder(20)
+        plt.xlabel(r"$R\ [r_g]$",fontsize=20)
+        plt.ylabel(r"$z\ [r_g]$",fontsize=20)
+        plt.title(r"$t= %5.5g$" % np.floor(t))
+        plt.draw()
+        if dosavefig:
+            plt.savefig("frame%04d.png"%fldindex,bbox_inches='tight',pad_inches=0.04,dpi=300)
+
+
+def mkbondimovie(xmax=30,ymax=15,startn=0,endn=-1,dosavefig=1,cb=1):
+    grid3d("gdump.bin",use2d=True)
+    flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
+    flist.sort()
+    for fldindex, fldname in enumerate(flist):
+        if fldindex < startn:
+            continue
+        if endn>=0 and fldindex >= endn:
+            break
+        print( "Reading " + fldname + " ..." )
+        sys.stdout.flush()
+        rfd("../"+fldname)
+        sys.stdout.flush()
+        aphi=fieldcalc()
+        plco(lrho,xy=1,xmax=xmax,ymax=ymax,levels=np.arange(-7,1,0.1),cb=cb,isfilled=1)
+        plc(aphi,xy=1,xmax=xmax,ymax=ymax,levels=np.arange(0,100,2),colors="k")
+        el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
+        ax = plt.gca()
+        art=ax.add_artist(el)
+        art.set_zorder(20)
+        plt.xlabel(r"$R\ [r_g]$",fontsize=20)
+        plt.ylabel(r"$z\ [r_g]$",fontsize=20)
+        plt.title(r"$t= %5.5g$" % np.floor(t))
+        plt.draw()
+        if dosavefig:
+            plt.savefig("frame%04d.png"%fldindex,bbox_inches='tight',pad_inches=0.04,dpi=300)
+        
 #so far only for hydro
 def rdath2d(fname):
     global n1, n2, n3, t, ti, tj, tk, x1, x2, x3, rho, v1, v2, v3, pg
@@ -4261,6 +4338,7 @@ def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
     nc = kwargs.pop('nc', 15)
     k = kwargs.pop('k',0)
     mirrory = kwargs.pop('mirrory',0)
+    symmx = kwargs.pop('symmx',0)
     #cmap = kwargs.pop('cmap',cm.jet)
     isfilled = kwargs.pop('isfilled',False)
     xy = kwargs.pop('xy',0)
@@ -4273,7 +4351,20 @@ def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
     if (None != xcoord and None != ycoord):
         xcoord = xcoord[:,:,None] if xcoord.ndim == 2 else xcoord[:,:,k:k+1]
         ycoord = ycoord[:,:,None] if ycoord.ndim == 2 else ycoord[:,:,k:k+1]
-    myvar = myvar[:,:,None] if myvar.ndim == 2 else myvar[:,:,k:k+1]
+        xy=1
+    if xy and symmx:
+        if myvar.ndim == 2:
+            myvar = myvar[:,:,None] if myvar.ndim == 2 else myvar[:,:,k:k+1]
+            myvar=np.concatenate((myvar[:,::-1],myvar),axis=1)
+            xcoord=np.concatenate((-xcoord[:,::-1],xcoord),axis=1)
+            ycoord=np.concatenate((ycoord[:,::-1],ycoord),axis=1)
+        else:
+            symmk = (k+nz/2)%nz
+            myvar=np.concatenate((myvar[:,0:1,k:k+1],myvar[:,::-1,symmk:symmk+1],myvar[:,:,k:k+1]),axis=1)
+            xcoord=np.concatenate((xcoord[:,ny-1:ny,k:k+1],-xcoord[:,::-1],xcoord),axis=1)
+            ycoord=np.concatenate((ycoord[:,ny-1:ny,k:k+1],ycoord[:,::-1],ycoord),axis=1)
+    else:
+        myvar = myvar[:,:,None] if myvar.ndim == 2 else myvar[:,:,k:k+1]
     if ax is None:
         ax = plt.gca()
     if( xcoord == None or ycoord == None ):
@@ -4289,11 +4380,15 @@ def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
     if( cb == True): #use color bar
         plt.colorbar(res,ax=ax)
     if xy:
-        plt.xlim(0,xmax)
-        plt.ylim(-ymax,ymax)
+       if not symmx:
+           plt.xlim(0,xmax)
+           plt.ylim(-ymax,ymax)
+       else:
+           plt.xlim(-xmax,xmax)
+           plt.ylim(-ymax,ymax)
     return res
 
-def reinterp(vartointerp,extent,ncell,ncelly=None,domirrory=0,domask=1,isasymmetric=False,isasymmetricy=False,rhor=None,kval=0,domirror=True,dolimitr=True):
+def reinterp(vartointerp,extent,ncell,ncelly=None,domirrory=0,domask=1,isasymmetric=False,isasymmetricy=False,rhor=None,kval=0,domirror=True,dolimitr=True,method='cubic'):
     global xi,yi,zi
     #grid3d("gdump")
     #rfd("fieldline0250.bin")
@@ -4341,7 +4436,7 @@ def reinterp(vartointerp,extent,ncell,ncelly=None,domirrory=0,domask=1,isasymmet
     xi = np.linspace(extent[0], extent[1], ncelly)
     yi = np.linspace(extent[2], extent[3], ncellx)
     # grid the data.
-    zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method='cubic')
+    zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method=method)
     #zi[interior] = np.ma.masked
     if domask!=0:
         interior = np.sqrt((xi[None,:]**2) + (yi[:,None]**2)) < rhor*domask
@@ -4452,7 +4547,8 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
             if 'Bstag' not in globals():
                 print("Bstag is same as B, so will use gdetB/gdet to show perpendicular field component")
                 Bp = gdetB[3]/gdet*dxdxp[3,3]
-            elif Bstag is B:
+            #elif Bstag is B:
+            else:
                 Bp = Bstag[3]*dxdxp[3,3]
         else:
             Bp = B[3]*dxdxp[3,3]
@@ -7053,7 +7149,7 @@ def faraday():
     #
     # charge
     #
-    if 0:
+    if 1:
         rhoc = np.zeros_like(rho)
         if nx>=2:
             rhoc[1:-1] += ((gdet*fuu[0,1])[2:]-(gdet*fuu[0,1])[:-2])/(2*_dx1)
@@ -13236,7 +13332,8 @@ def provsretro(dotakeoutfloors=False,doreload=True):
     #flist = ["avg2d20_0000_0001.npy", "avg2d20_0000_0050.npy","avg2d20_0100_0150.npy","avg2d20_0150_0200.npy","avg2d20_0200_0250.npy"]
     #flist = ["avg2d20_00.npy", "avg2d20_0080_0100.npy", "avg2d20_0100_0120.npy", "avg2d20_0120_0140.npy", "avg2d20_0140_0156.npy","avg2d20_0080_0157.npy","avg2d20_0080_0157_nf.npy"]
     #flist = ["avg2d20_0080_0157.npy","avg2d20_0080_0157_nf.npy"]
-    flist = ["avg2d20_0000_0001.npy","avg2d20_0100_0150.npy","avg2d20_0150_0200.npy","avg2d20_0200_0250.npy","avg2d.npy"
+    flist = [#"avg2d20_0000_0001.npy","avg2d20_0100_0150.npy","avg2d20_0150_0200.npy","avg2d20_0200_0250.npy",
+             "avg2d.npy"
              #"avg2dnf.npy"
              ]
     #flist = ["avg0.npy", "avg2.npy"]
@@ -14997,7 +15094,7 @@ def writevtk(fnameformat="fieldline%04d.vtk",t=0,no=None,rhoval=None,ugval=None,
         Bval = B
     if bsqval is None:
         bsqval = bsq
-    if avgrhoc is None:
+    if 'avgrhoc' not in globals() or avgrhoc is None:
         rhocval = rhoc
     Bcart = prime2cart(Bval)
     ucart = prime2cart(uuval)
@@ -15031,7 +15128,7 @@ def writevtk(fnameformat="fieldline%04d.vtk",t=0,no=None,rhoval=None,ugval=None,
                                               dims, 
                                               pts, 
                                               vars)
-    return 0
+    #return 0
 
 def ubsplot(alpha = 5./3.,fntsize=20,dosavefig=1):
     os.chdir("/Users/atchekho/Research/Papers/jtde")
