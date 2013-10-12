@@ -48,7 +48,7 @@ import visit_writer
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
 def omerjetstar(fntsize=20):
-    irho = reinterp(lrho,(-5000,5000,-5000,5000),1600,domirror=1,method="linear",vmin=-8,vmax=6)
+    irho = reinterp(lrho,(-5000,5000,-5000,5000),1600,domirror=1,method="linear")
     plt.clf();CS=plt.imshow(irho,extent=(-2e11,2e11,-2e11,2e11),cmap=cm.hot,interpolation="bilinear")
     cbar = plt.colorbar(CS)
     cbar.ax.set_ylabel(r'$\log_{10}\rho$',fontsize=fntsize)
