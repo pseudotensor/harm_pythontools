@@ -3583,13 +3583,13 @@ def get2davgone(whichgroup=-1,itemspergroup=20,removefloors=False):
             n=16
             #energy fluxes and faraday: EM
             TuuEM = mdot(gn3,TudEM.transpose(1,0,2,3,4)).transpose(1,0,2,3,4)
-            TddEM = mdot(gn3,TudEM)
+            TddEM = mdot(gv3,TudEM)
             #X^i_j = <F^ki F_kj>
             TuuTddEM = mdot(TuuEM.transpose(1,0,2,3,4),TddEM)
             avg_TuuTddEM+=TuuTddEM.sum(-1)[:,:,:,:,None]
             #energy fluxes and faraday: MA
             TuuMA = mdot(gn3,TudMA.transpose(1,0,2,3,4)).transpose(1,0,2,3,4)
-            TddMA = mdot(gn3,TudMA)
+            TddMA = mdot(gv3,TudMA)
             #X^i_j = <F^ki F_kj>
             TuuTddMA = mdot(TuuMA.transpose(1,0,2,3,4),TddMA)
             avg_TuuTddMA+=TuuTddMA.sum(-1)[:,:,:,:,None]
