@@ -4328,6 +4328,7 @@ def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
     if (None != xcoord and None != ycoord):
         xcoord = xcoord[:,:,None] if xcoord.ndim == 2 else xcoord[:,:,k:k+1]
         ycoord = ycoord[:,:,None] if ycoord.ndim == 2 else ycoord[:,:,k:k+1]
+        xy=1
     if xy and symmx:
         if myvar.ndim == 2:
             myvar = myvar[:,:,None] if myvar.ndim == 2 else myvar[:,:,k:k+1]
