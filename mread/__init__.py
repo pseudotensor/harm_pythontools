@@ -59,7 +59,11 @@ def omerjetstar(fntsize=20):
     plt.xlabel(r"$R\ [r_g]$",fontsize=fntsize)
     plt.ylabel(r"$z\ [r_g]$",fontsize=fntsize)
     ax = plt.gca()
-    for label in ax.get_xticklabels() + ax.get_yticklabels():
+    tx = ax.yaxis.get_offset_text()
+    ty = ax.xaxis.get_offset_text()
+    tx.set_size(fntsize)
+    ty.set_size(fntsize)
+    for label in ax.get_xticklabels() + ax.get_yticklabels() + cbar.ax.get_yticklabels():
         label.set_fontsize(fntsize)
     plt.savefig("magnetar_jet_breakout.pdf",bbox_inches='tight',pad_inches=0.04)
 
