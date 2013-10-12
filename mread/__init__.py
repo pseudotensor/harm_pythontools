@@ -65,7 +65,7 @@ def omerjetstar(fntsize=20):
     ty.set_size(fntsize)
     for label in ax.get_xticklabels() + ax.get_yticklabels() + cbar.ax.get_yticklabels():
         label.set_fontsize(fntsize)
-    plt.savefig("magnetar_jet_breakout.pdf",bbox_inches='tight',pad_inches=0.04)
+    plt.savefig("magnetar_jet_breakout.pdf",bbox_inches='tight',pad_inches=0.2)
 
     
 
