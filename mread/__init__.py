@@ -3326,6 +3326,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20,removefloors=False):
     global ug
     global avg_Bd3, avg_absBd3
     global avg_fuufdd
+    global avg_TuuTddEM, avg_TuuTddMA
 
     if whichgroup < 0 or itemspergroup <= 0:
         print( "whichgroup = %d, itemspergroup = %d not allowed" % (whichgroup, itemspergroup) )
@@ -3501,7 +3502,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20,removefloors=False):
             #X^i_j = <F^ki F_kj>
             fuufdd = mdot(fuu.transpose(1,0,2,3,4),fdd)
             avg_fuufdd+=fuufdd.sum(-1)[:,:,:,:,None]
-        if avg_TuuTddEM is not None and avgTuuTddMA is not None:
+        if avg_TuuTddEM is not None and avg_TuuTddMA is not None:
             n=16
             #energy fluxes and faraday: EM
             TuuEM = mdot(gn3,TudEM.transpose(1,0,2,3,4)).transpose(1,0,2,3,4)
