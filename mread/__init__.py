@@ -56,8 +56,8 @@ def omerjetstar(fntsize=20):
         symmx=1,linewidths=0.5,alpha=0.2,colors="k",
         xmax=2e11,ymax=2e11,
         xcoord=r*sin(h)/2.5e3*1e11,ycoord=r*cos(h)/2.5e3*1e11)
-    plt.xlabel(r"$R\ \text{[cm]}$",fontsize=fntsize)
-    plt.ylabel(r"$z\ \text{[cm]}$",fontsize=fntsize)
+    plt.xlabel(r"$R\ \rm{[cm]}$",fontsize=fntsize)
+    plt.ylabel(r"$z\ \rm{[cm]}$",fontsize=fntsize)
     ax = plt.gca()
     tx = ax.yaxis.get_offset_text()
     ty = ax.xaxis.get_offset_text()
