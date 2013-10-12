@@ -4315,6 +4315,7 @@ def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
     nc = kwargs.pop('nc', 15)
     k = kwargs.pop('k',0)
     mirrory = kwargs.pop('mirrory',0)
+    symmx = kwargs.pop('symmx',0)
     #cmap = kwargs.pop('cmap',cm.jet)
     isfilled = kwargs.pop('isfilled',False)
     xy = kwargs.pop('xy',0)
@@ -4327,7 +4328,19 @@ def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
     if (None != xcoord and None != ycoord):
         xcoord = xcoord[:,:,None] if xcoord.ndim == 2 else xcoord[:,:,k:k+1]
         ycoord = ycoord[:,:,None] if ycoord.ndim == 2 else ycoord[:,:,k:k+1]
-    myvar = myvar[:,:,None] if myvar.ndim == 2 else myvar[:,:,k:k+1]
+    if xy and symmx:
+        if myvar.ndim == 2:
+            myvar = myvar[:,:,None] if myvar.ndim == 2 else myvar[:,:,k:k+1]
+            myvar=np.concatenate((myvar[:,::-1],myvar),axis=1)
+            xcoord=np.concatenate((-xcoord[:,::-1],xcoord),axis=1)
+            ycoord=np.concatenate((ycoord[:,::-1],ycoord),axis=1)
+        else:
+            symmk = (k+nz/2)%nz
+            myvar=np.concatenate((myvar[:,0:1,k:k+1],myvar[:,::-1,symmk:symmk+1],myvar[:,:,k:k+1]),axis=1)
+            xcoord=np.concatenate((xcoord[:,ny-1:ny,k:k+1],-xcoord[:,::-1],xcoord),axis=1)
+            ycoord=np.concatenate((ycoord[:,ny-1:ny,k:k+1],ycoord[:,::-1],ycoord),axis=1)
+    else:
+        myvar = myvar[:,:,None] if myvar.ndim == 2 else myvar[:,:,k:k+1]
     if ax is None:
         ax = plt.gca()
     if( xcoord == None or ycoord == None ):
@@ -4343,8 +4356,12 @@ def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
     if( cb == True): #use color bar
         plt.colorbar(res,ax=ax)
     if xy:
-        plt.xlim(0,xmax)
-        plt.ylim(-ymax,ymax)
+       if not symmx:
+           plt.xlim(0,xmax)
+           plt.ylim(-ymax,ymax)
+       else:
+           plt.xlim(-xmax,xmax)
+           plt.ylim(-ymax,ymax)
     return res
 
 def reinterp(vartointerp,extent,ncell,ncelly=None,domirrory=0,domask=1,isasymmetric=False,isasymmetricy=False,rhor=None,kval=0,domirror=True,dolimitr=True):
