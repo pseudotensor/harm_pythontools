@@ -47,6 +47,24 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
+def omerjetstar(fntsize=20):
+    irho = reinterp(lrho,(-5000,5000,-5000,5000),1600,domirror=1,method="linear",vmin=-8,vmax=6)
+    plt.clf();CS=plt.imshow(irho,extent=(-2e11,2e11,-2e11,2e11),cmap=cm.hot,interpolation="bilinear")
+    cbar = plt.colorbar(CS)
+    cbar.ax.set_ylabel(r'$\log_{10}\rho$',fontsize=fntsize)
+    plc(aphi,levels=np.arange(0.2,1.1,0.2)*np.max(aphi),
+        symmx=1,linewidths=0.5,alpha=0.2,colors="k",
+        xmax=2e11,ymax=2e11,
+        xcoord=r*sin(h)/2.5e3*1e11,ycoord=r*cos(h)/2.5e3*1e11)
+    plt.xlabel(r"$R\ [r_g]$",fontsize=fntsize)
+    plt.ylabel(r"$z\ [r_g]$",fontsize=fntsize)
+    ax = plt.gca()
+    for label in ax.get_xticklabels() + ax.get_yticklabels():
+        label.set_fontsize(fntsize)
+    plt.savefig("magnetar_jet_breakout.pdf",bbox_inches='tight',pad_inches=0.04)
+
+    
+
 def mknstartorusmovie(xmax=30,ymax=15,startn=0,endn=-1,dosavefig=1,cb=1):
     #NSTARTORUS movie:
     grid3d("gdump.bin",use2d=True)
