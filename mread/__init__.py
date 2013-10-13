@@ -668,12 +668,12 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False,dok
     plc(rergo3-r3,levels=(0,),xcoord=r3*np.sin(h3),ycoord=r3*np.cos(h3),linewidths=4,linestyles="solid",colors="cyan",zorder=22)
     if dofig:
         if useavgs:
-            fname = "mad_energy_magnetic_lines"
+            flname = "mad_energy_magnetic_lines"
         else:
-            fname = "ff_energy_magnetic_lines"
-        plt.savefig("%s.png" % fname,bbox_inches='tight',pad_inches=0.02,dpi=300)
-        os.system("convert %s.png %s.jpg" % (fname, fname))
-        os.system("sam2p %s.jpg %s.pdf" % (fname, fname))
+            flname = "ff_energy_magnetic_lines"
+        plt.savefig("%s.png" % flname,bbox_inches='tight',pad_inches=0.02,dpi=300)
+        os.system("convert %s.png %s.jpg" % (flname, flname))
+        os.system("sam2p %s.jpg %s.pdf" % (flname, flname))
     #
     # 2D figure with Noether current, just a copy of the above out of laziness
     #
@@ -683,9 +683,12 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False,dok
     if useavgs:
         avg_gdetBlongavg=get2davg(usedefault=1)[24,:,:,None]
         avg_aphi = fieldcalc(gdetB1=avg_gdetBlongavg)
-        Psq=mdot(mdot(gv3,avg_Tud[:,0]),avg_Tud[:,0])  #a hack, in reality there will be cross-correlation
+        #Psq=mdot(mdot(gv3,avg_Tud[:,0]),avg_Tud[:,0])  #a hack, in reality there will be cross-correlation
+        Psq1=mdot(gv3[:,0],(avg_TuuTddEM+avg_TuuTddMA)[:,0])
+        #Psq1=mdot(gv3[:,0],(avg_TuuTddEM)[:,0])
     else:
         Psq=mdot(mdot(gv3,Tud[:,0]),Tud[:,0])
+        Psq1=np.concatenate((Psq[:,::-1],Psq),axis=1)
         avg_aphi = fieldcalcm()
         avg_aphi1 = fieldcalcp()
         avg_aphi1 += avg_aphi[:,0:1]
@@ -712,7 +715,6 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False,dok
     # h2[:,0,:]=h2[:,0,:]*0+np.pi
     # h2[:,-1,:]=h2[:,-1,:]*0+np.pi
     avg_aphi2=np.concatenate((avg_aphi[:,::-1],avg_aphi),axis=1)
-    Psq1=np.concatenate((Psq[:,::-1],Psq),axis=1)
     Psq2=np.concatenate((Psq1[:,::-1],Psq1),axis=1)
     Psq3=np.concatenate((Psq2[:,0:1],Psq2,Psq2[:,0:1]),axis=1)
     var3 = Psq3 #/np.nanmax(Psq3)#,axis=1)[:,None,:]
@@ -722,15 +724,15 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False,dok
             var3[:,myj,:] *=np.nan
     # plc(-var3,xcoord=r3*np.sin(h3),ycoord=r3*np.cos(h3),
     #    levels=np.linspace(-1.01,0,102),isfilled=1,cb=0,cmap=cm.BuGn,linewidths=None,linestyles=None,antialiased=False)
-    minval = np.min(var3)
-    maxval = np.max(var3)
+    minval = np.min(var3[r3<10])
+    maxval = np.max(var3[r3<10])
     print("minval = %g, maxval = %g" % (minval, maxval))
     CS1 = plc(np.log10(-var3),xcoord=r3*np.sin(h3),ycoord=r3*np.cos(h3),
-             levels=np.linspace(-5,np.log10(-minval),81),isfilled=1,cb=0,cmap=cm.Blues,linewidths=None,linestyles=None,antialiased=False)
+             levels=np.linspace(np.log10(-minval)-4,np.log10(-minval),81),isfilled=1,cb=0,cmap=cm.Blues,linewidths=None,linestyles=None,antialiased=False)
     CS2 = plc(np.log10(var3),xcoord=r3*np.sin(h3),ycoord=r3*np.cos(h3),
-             levels=np.linspace(-5,np.log10(maxval),81),isfilled=1,cb=0,cmap=cm.Oranges,linewidths=None,linestyles=None,antialiased=False)
-    res=Psq
-    res1 = np.concatenate((res[:,::-1],res),axis=1)
+             levels=np.linspace(np.log10(maxval)-4,np.log10(maxval),81),isfilled=1,cb=0,cmap=cm.Oranges,linewidths=None,linestyles=None,antialiased=False)
+    res1=Psq1
+    #res1 = np.concatenate((res[:,::-1],res),axis=1)
     res2 = np.concatenate((res1[:,::-1],res1),axis=1)
     plc(res2,xcoord=r2*np.sin(h2),ycoord=r2*np.cos(h2),levels=(0,),colors="blue",linewidths=2)
     shrink = 1.
