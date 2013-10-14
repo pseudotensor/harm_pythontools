@@ -6207,7 +6207,7 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None,docomp
     Returns a tuple (ts,fs,mdot,pjetem,pjettot): lists of times, horizon fluxes, and Mdot
     """
     nqtyold=98+134*(dobob==1)
-    nqty=98+134*(dobob==1)+32+1+9
+    nqty=98+134*(dobob==1)+32+1+9+32
     if getnqty:
         return(nqty)
     if whichn != None and (whichi < 0 or whichi > whichn):
@@ -7248,8 +7248,10 @@ def plotqtyvstime(qtymem,ihor=None,whichplot=None,ax=None,findex=None,fti=None,f
     global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
     if ihor is None:
         ihor = iofr(rhor)
-    nqtyold=98
-    nqty=98+32+1
+    nqtyold=98+134*(dobob==1)
+    nqty=98+134*(dobob==1)+32+1+9+32
+    # nqtyold=98
+    # nqty=98+32+1
     ###############################
     #copy this from getqtyvstime()
     ###############################
@@ -7545,6 +7547,7 @@ def plotqtyvstime(qtymem,ihor=None,whichplot=None,ax=None,findex=None,fti=None,f
                 phiabsj_s_all_mu2=qtymem[i];i+=1
                 phiabsj_s_all_mu1=qtymem[i];i+=1
             else:
+                print( "Oldish format: no magnetically unbound outflow" )
                 pjem_n_all_mu10=None
                 pjem_n_all_mu5=None
                 pjem_n_all_mu2=None
