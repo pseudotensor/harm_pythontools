@@ -7244,7 +7244,7 @@ def iofr(rval):
         res = np.float64(res)
     return(np.floor(res+0.5))
 
-def plotqtyvstime(qtymem,ihor=None,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None,epsetaj=None,epsFm30=None,sigma=None, usegaussianunits=False, aphi_j_val=0,showextraeta=False,plotFM30=False):
+def plotqtyvstime(qtymem,ihor=None,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None,epsetaj=None,epsFm30=None,sigma=None, usegaussianunits=False, aphi_j_val=0,showextraeta=False,plotFM30=False,dobob=0):
     global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
     if ihor is None:
         ihor = iofr(rhor)
@@ -14268,26 +14268,35 @@ def plotfluxrodrigo(doreload=True,plotvarname="flux",figno=1,doretro=1,dn=0,save
     global reslist, avgmemlist, ftotlist, fsqtotlist
     fig = plt.figure(figno, figsize=(10,5), dpi=100)
     plt.clf()
-    dirlist=["/home/atchekho/run/rtf2_15r34_2pi_a-0.9gg50rbr1e3_0_0_0_faildufix2",
-             "/home/atchekho/run/rtf2_15r36.21_a-0.5_0_0_0",
-             "/home/atchekho/run/rtf2_15r35.64_a-0.2_0_0_0",
-             "/home/atchekho/run2/rtf2_15r35_a0.0_0_0_0",
-             "/home/atchekho/run/rtf2_15r35_a0.1_0_0_0",
-             "/home/atchekho/run/rtf2_15r35_a0.2_0_0_0",
-             "/home/atchekho/run/rtf2_15r34.475_a0.5_0_0_0",
-             "/home/atchekho/run/rtf2_15r34.1_pi_0_0_0",
+    if 1:
+        dirlist=["/home/atchekho/run/rtf2_15r34_2pi_a-0.9gg50rbr1e3_0_0_0_faildufix2",
+                 "/home/atchekho/run/rtf2_15r36.21_a-0.5_0_0_0",
+                 "/home/atchekho/run/rtf2_15r35.64_a-0.2_0_0_0",
+                 "/home/atchekho/run2/rtf2_15r35_a0.0_0_0_0",
+                 "/home/atchekho/run/rtf2_15r35_a0.1_0_0_0",
+                 "/home/atchekho/run/rtf2_15r35_a0.2_0_0_0",
+                 "/home/atchekho/run/rtf2_15r34.475_a0.5_0_0_0",
+                 "/home/atchekho/run/rtf2_15r34.1_pi_0_0_0",
+                 "/home/atchekho/run/rtf2_15r34_2pi_a0.99gg500rbr1e3_0_0_0"
+                 ]
+        caplist=[r"$\mathrm{A-0.9f}$", 
+                 r"$\mathrm{A-0.5}$", 
+                 r"$\mathrm{A-0.2}$", 
+                 r"$\mathrm{A0}$", 
+                 r"$\mathrm{A0.1}$", 
+                 r"$\mathrm{A0.2}$", 
+                 r"$\mathrm{A0.5}$", 
+                 r"$\mathrm{A0.9f}$", 
+                 r"$\mathrm{A0.99f}$"
+                 ]
+    elif 1:
+            dirlist=[
              "/home/atchekho/run/rtf2_15r34_2pi_a0.99gg500rbr1e3_0_0_0"
              ]
-    caplist=[r"$\mathrm{A-0.9f}$", 
-             r"$\mathrm{A-0.5}$", 
-             r"$\mathrm{A-0.2}$", 
-             r"$\mathrm{A0}$", 
-             r"$\mathrm{A0.1}$", 
-             r"$\mathrm{A0.2}$", 
-             r"$\mathrm{A0.5}$", 
-             r"$\mathrm{A0.9f}$", 
+    caplist=[
              r"$\mathrm{A0.99f}$"
              ]
+
     lslist=["-","--","-.",
             "-","--","-.",
             "-","--","-."]
@@ -14445,9 +14454,9 @@ def plotfluxrodrigo(doreload=True,plotvarname="flux",figno=1,doretro=1,dn=0,save
         if dirpath == "/home/atchekho/run/rtf2_15r34.1_betax0.5_0_0_0_2xphi_restart15000" or \
            dirpath == "/home/atchekho/run/rtf2_15r34.1_betax0.5_0_0_0":
             iof10 = iofr(10)
-            crv=plt.plot(r[:iof10,jval,0],plotvar[:iof10,jval,0],label=caplist[i],ls=lslist[i],color=clrlist[i],lw=lwlist[i])
+            crv,=plt.plot(r[:iof10,jval,0],plotvar[:iof10,jval,0],label=caplist[i],ls=lslist[i],color=clrlist[i],lw=lwlist[i])
         else:
-            crv=plt.plot(r[ihor:,jval,0],plotvar[ihor:,jval,0],label=caplist[i],ls=lslist[i],color=clrlist[i],lw=lwlist[i])
+            crv,=plt.plot(r[ihor:,jval,0],plotvar[ihor:,jval,0],label=caplist[i],ls=lslist[i],color=clrlist[i],lw=lwlist[i])
         #print a, risco, iisco, r[iisco,jval,0], plotvar[iisco,jval,0] 
         plt.plot(r[iisco,jval,0],plotvar[iisco,jval,0],'o',color=clrlist[i],lw=lwlist[i])
         plt.plot(r[ihor,jval,0],plotvar[ihor,jval,0],'s',color=clrlist[i],lw=lwlist[i])
