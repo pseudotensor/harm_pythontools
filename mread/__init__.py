@@ -67,7 +67,43 @@ def omerjetstar(fntsize=20):
         label.set_fontsize(fntsize)
     plt.savefig("magnetar_jet_breakout.pdf",bbox_inches='tight',pad_inches=0.2)
 
+def compute_kaligned(dnpole=0):
+    Max_flux_code = 0.5 * np.abs(gdetB[1,0,dnpole:ny-dnpole,:]).sum(-1).sum(-1)*_dx2*_dx3
+    #conversion prefactors
+    #1/(2*np.pi) -- to convert from A_\phi to Psi (flux)
+    #(4*np.pi)**0.5 -- to convert from Lorentz-Heaviside to Gaussian
+    mudip = Max_flux_code * Rin / (2*np.pi) * (4*np.pi)**0.5
+    #mudip = 1.5*3.162277660168379332*2*3*3*0.5*(4*np.pi)**0.5
+    #Normalized Edot such that aligned dipole should be unity
+    Laligned = mudip**2 * OmegaNS**4
+    Kaligned = Laligned/OmegaNS
+    return Kaligned
     
+def pulsarmoments(doreload=0,dn=3):
+    plt.clf()
+    if 'gv3' not in globals() or 'rho' not in globals() or doreload:
+        grid3d("gdump.bin",use2d=1)
+        rfd("fieldline0096.bin")
+        cvel()
+        Tcalcud()
+    Kx_den = -(Tud[1,2]/dxdxp[2,2]*np.sin(ph)+Tud[1,3]/dxdxp[3,3]*np.cos(h)/np.sin(h)*np.cos(ph))
+    Ky_den =   Tud[1,2]/dxdxp[2,2]*np.cos(ph)-Tud[1,3]/dxdxp[3,3]*np.cos(h)/np.sin(h)*np.sin(ph)
+    Kz_den =   Tud[1,3]/dxdxp[3,3]
+    #convert the radial component from x^1 to r
+    # Kx_den *= dxdxp[1,1]
+    # Ky_den *= dxdxp[1,1]
+    # Kz_den *= dxdxp[1,1]
+    #integrate over all angles
+    Kx = (gdet*Kx_den).sum(-1).sum(-1)*_dx2*_dx3
+    Ky = (gdet*Ky_den).sum(-1).sum(-1)*_dx2*_dx3
+    Kz = (gdet*Kz_den).sum(-1).sum(-1)*_dx2*_dx3
+    Kaligned = compute_kaligned()
+    plt.plot(OmegaNS*r[dn:,0,0],-Kx[dn:]/Kaligned)
+    plt.plot(OmegaNS*r[dn:,0,0],-Ky[dn:]/Kaligned)
+    plt.plot(OmegaNS*r[dn:,0,0],Kz[dn:]/Kaligned)
+    plt.xlim(0,5)
+    plt.ylim(-0.5,2)
+    # pdb.set_trace()
 
 def mknstartorusmovie(xmax=30,ymax=15,startn=0,endn=-1,dosavefig=1,cb=1):
     #NSTARTORUS movie:
