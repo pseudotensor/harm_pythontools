@@ -1413,9 +1413,11 @@ def plotfields(nu=1.5,r0=15,pow=0.6,nubh=2,doreload=1,fname=None,daphi=0.22,maxa
     #
     # 2D Field Figure
     #
-    plt.figure(1)
-    plco(myaphi,xy=1,nc=10,xmax=80,ymax=40,colors='r',levels=np.arange(0,maxaphi,daphi),linestyles='--',lw=2);
-    plc(aphiabs,xy=1,nc=20,xmax=80,ymax=40,colors='k',levels=np.arange(0,500,10),lw=2)
+    fig=plt.figure(1)
+    #ax = fig.add_subplot(111, aspect='equal')
+    #plco(myaphi,xy=1,nc=10,xmax=120,ymax=40,colors='r',levels=np.arange(0,maxaphi,daphi),linestyles='--',lw=2);
+    plco(aphi,xy=1,nc=10,xmax=120,ymax=40,colors='r',levels=np.arange(0,500,10),linestyles='--',linewidths=2);
+    plc(aphiabs,xy=1,nc=20,xmax=120,ymax=40,colors='k',levels=np.arange(0,500,10),lw=2)
     # plt.figure()
     # plt.plot(h[iofr(40),:,0],myaphi[iofr(40),:,0],'x-')
     # plt.figure()
@@ -1428,11 +1430,13 @@ def plotfields(nu=1.5,r0=15,pow=0.6,nubh=2,doreload=1,fname=None,daphi=0.22,maxa
     el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
     art=ax.add_artist(el)
     art.set_zorder(20)
-    plt.xlabel(r"$x\ [r_g]$",fontsize=fntsize)
-    plt.ylabel(r"$z\ [r_g]$",fontsize=fntsize,ha="center")
+    ax.set_xlabel(r"$x\ [r_g]$",fontsize=fntsize)
+    ax.set_ylabel(r"$z\ [r_g]$",fontsize=fntsize,ha="center")
     for label in ax.get_xticklabels() + ax.get_yticklabels():
         label.set_fontsize(fntsize)
-    plt.grid(b=1)
+    ax.grid(b=1)
+    ax.set_aspect('equal')
+    plt.draw()
     #
     # Omega_F vs. radius figure
     #
