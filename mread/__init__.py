@@ -81,19 +81,24 @@ def compute_kaligned(dnpole=0):
     
 def pulsarmoments(**kwargs):
     doreload=kwargs.pop("doreload",0)
-    doclf=kwargs.pop("doclf",1)
     no=kwargs.pop("no",64)
     doinvertkxky=kwargs.pop("doinvertkxky",0)
-    if doclf:
-        plt.clf()
+    dorotatevar=kwargs.pop("dorotatevar",1)
     if 'gv3' not in globals() or 'rho' not in globals() or doreload:
         grid3d("gdump.bin",use2d=1)
         rfd("fieldline%04d.bin" % no)
         cvel()
         Tcalcud()
-    Kx_den = -(Tud[1,2]/dxdxp[2,2]*np.sin(ph)+Tud[1,3]/dxdxp[3,3]*np.cos(h)/np.sin(h)*np.cos(ph))
-    Ky_den =   Tud[1,2]/dxdxp[2,2]*np.cos(ph)-Tud[1,3]/dxdxp[3,3]*np.cos(h)/np.sin(h)*np.sin(ph)
+    if dorotatevar:
+        nperiods = np.floor(OmegaNS*t/(2*np.pi))
+        ph1 = np.copy(ph)
+        Dphi = (OmegaNS*t-nperiods*2*np.pi)
+    else:
+        Dphi = 0
+    Kx_den = -(Tud[1,2]/dxdxp[2,2]*np.sin(ph-Dphi)+Tud[1,3]/dxdxp[3,3]*np.cos(h)/np.sin(h)*np.cos(ph-Dphi))
+    Ky_den =   Tud[1,2]/dxdxp[2,2]*np.cos(ph-Dphi)-Tud[1,3]/dxdxp[3,3]*np.cos(h)/np.sin(h)*np.sin(ph-Dphi)
     Kz_den =   Tud[1,3]/dxdxp[3,3]
+    #     Kx_den,Ky_den,Kz_den = rotatevar([Kx_den,Ky_den,Kz_den])
     #convert the radial component from x^1 to r
     # Kx_den *= dxdxp[1,1]
     # Ky_den *= dxdxp[1,1]
@@ -111,9 +116,125 @@ def pulsarmoments(**kwargs):
     kz = Kz/Kaligned
     return((kx,ky,kz,OmegaNS*r[:,0,0]))
 
+def looppulsar(**kwargs):
+    dn = kwargs.pop("dn",3)
+    whichsims = kwargs.pop("whichsims","mhd45")
+    if whichsims == "ff45":
+        flist = [
+            "hf_45_r10h05_ff_om01_ps2_256x128x128_32x16x32",
+            "hf_45_r10h05_ff_om02_ps2_256x128x128_32x16x32",
+            "hf_45_r10h05_ff_om0375_ps2_144x64x64",
+            "hf_45_r10h05_ff_om05_ps2_144x64x64"
+            ]
+    elif whichsims == "mhd45":
+        flist = [
+            "hf_45_r10h05_mydt_sph_ps0_288x128x256_576_bsqorho50_noavg_om01",
+            "hf_45_r10h05_mydt_sph_ps2_256x128x128_32x16x32_bsqorho50",
+            "hf_45_r10h05_mydt_sph_ps2_144x64x64_64_bsqorho50_noavg_om0375",
+            "hf_45_r10h05_mydt_sph_ps2_144x64x64_64_bsqorho50_noavg_om05"]
+    elif whichsims == "mhd60":
+        flist = [
+            #"hf_60_r10h05_mydt_sph_ps0_576x256x256_576_bsqorho50_noavg_om01",
+            "hf_60_r10h05_mydt_sph_om01_ps2_128x128x128_16x16x32",
+            "hf_60_r10h05_mydt_sph_ps2_128x64x64_128_bsqorho50",
+            "hf_60_r10h05_mydt_sph_ps2_128x64x64_128_bsqorho50_om0375",
+            "hf_60_r10h05_mydt_sph_ps2_128x64x64_128_bsqorho50_om05"]
+    elif whichsims == "ff90":
+        flist = [
+            "hf_90_r10h05_ff_om01_ps2_256x128x128_32x16x32",
+            "hf_90_r10h05_ff_om02_ps2_256x128x128_32x16x32",
+            "hf_90_r10h05_ff_om0375_ps2_144x64x64_32x16x32",
+            "hf_90_r10h05_ff_om05_ps2_144x64x64_32x16x32"]
+    elif whichsims == "mhd90":
+        flist = [
+            #"hf_90_r10h05_mydt_sphc33_om01_ps2_256x128x256_32x16x32",
+            "hf_90_r10h05_mydt_sph_ps0_288x128x256_1152_bsqorho50_noavg_om01",
+            "hf_90_r10h05_mydt_sph_x2_bsqorho50",
+            "hf_90_r10h05_mydt_sph_om0375_ps0_128x64x64_16x16x16",
+            "hf_90_r10h05_mydt_sph_om05_ps0_128x64x64_16x16x16"]
+    k1list=[]
+    dk1list=[]
+    k2list=[]
+    dk2list=[]
+    Omegalist=[]
+    Alphalist=[]
+    for findex, fname in enumerate(flist):
+        os.chdir("/home/atchekho/run2/%s" % fname)
+        print("fname: %s" % fname)
+        kx,ky,kz,omr = pulsarmoments(**kwargs)
+        k2 = kx/(np.sin(AlphaNS)*np.cos(AlphaNS))
+        #linear interpolation to Rstar from 2*Rstar is more accurate:
+        imid=ti[:,0,0][omr>=0.1+omr[0]][0]
+        imin=imid-3
+        imax=imid+3
+        dkdr=(k2[imax]-k2[imin])/(x1[imax,0,0]-x1[imin,0,0])/dxdxp[1,1,imid,0,0]
+        k2a = k2[imid]+dkdr*(omr[0]-omr[imid])
+        k2b = k2[dn]
+        k1  = (kz-1.)/np.sin(AlphaNS)**2
+        k1b = k1[dn]
+        dk2 = np.abs(k2a-k2b)
+        #light cylinder value is more accurate
+        ilc = ti[:,0,0][omr>=1][0]
+        k1a = k1[ilc]
+        dk1 = np.abs(k1a-k1b)
+        pylab.errorbar(OmegaNS, k1a, xerr=None,yerr=dk1,marker='s',ls='None',mfc='r',ecolor='r',elinewidth=1,mew=1)
+        pylab.errorbar(OmegaNS, k2a, xerr=None,yerr=dk2,marker='o',ls='None',mfc='g',ecolor='g',elinewidth=1,mew=1)
+        #pdb.set_trace()
+#,mfc='b',ecolor='b',lw=2,fmt='+',elinewidth=1,mew=1)
+        # plt.plot(OmegaNS,k1a,"rs")
+        # plt.plot(OmegaNS,k2a,"go")
+        k1list.append(k1a)
+        dk1list.append(dk1)
+        k2list.append(k2a)
+        dk2list.append(dk2)
+        Omegalist.append(OmegaNS)
+        Alphalist.append(AlphaNS)
+        print("Om=%g, k1=%g +- %g, k2=%g +- %g" % (OmegaNS, k1a, dk1, k2a, dk2))
+    os.chdir("/home/atchekho/run2/")
+    fp = open( "%s.txt" % whichsims, "wt" )
+    fp.write( "#%9s %10s %10s %10s %10s %10s #%s\n" %
+              ("Omega", "Alpha", "k1", "dk1", "k2", "dk2", "#simname"))
+    for findex, fname in enumerate(flist):
+        fp.write( "%10g %10g %10g %10g %10g %10g #%s\n" % 
+                  (Omegalist[findex],
+                   Alphalist[findex],
+                   k1list[findex],
+                   dk1list[findex],
+                   k2list[findex],
+                   dk2list[findex],
+                   fname
+                   )
+                  )
+    fp.close()
+    plt.xlim(0,0.7)
+    plt.ylim(0,2)
+
+def readandplotpulsarmoments():
+    #mhd45
+    #fnames = ["mhd45", "ff45", "mhd90", "ff90", "mhd60", "ff60"]
+    #colors = ["red","magenta", "green", "cyan", "blue", "yellow"]
+    fnames = ["mhd45", "ff45",  "mhd90", "ff90"]
+    colors = ["red","blue", "green", "cyan"]
+    for index, fname in enumerate(fnames):
+        clr = colors[index]
+        gd = np.loadtxt( "%s.txt" % fname,
+                         dtype=np.float64, 
+                         skiprows=1, 
+                         unpack = True )
+        Omegalist, Alphalist, k1list, dk1list, k2list, dk2list = gd
+        pylab.errorbar(Omegalist, k1list, xerr=None,yerr=dk1list,marker='s',ls='-',mfc=clr,ecolor=clr,elinewidth=1,mew=1,color=clr,label="%s: k1" % fname)
+        if Alphalist[0] < 0.9*np.pi/2.:
+            pylab.errorbar(Omegalist, k2list, xerr=None,yerr=dk2list,marker='o',ls=':',mfc=None,ecolor=clr,elinewidth=1,mew=1,color=clr,label="%s: k2" % fname)
+    plt.legend()
+    plt.xlim(0,0.7)
+    plt.ylim(0,2)
+    plt.savefig("k1k2vsOmega.pdf",bbox_inches='tight',pad_inches=0.04,dpi=300)
+        
+
 def plotpulsarmoments(**kwargs):
     dn = kwargs.pop("dn",3)
     kx,ky,kz,omr = pulsarmoments(**kwargs)
+    #pdb.set_trace()
     plt.plot(OmegaNS*r[dn:,0,0],kx[dn:])
     plt.plot(OmegaNS*r[dn:,0,0],ky[dn:])
     plt.plot(OmegaNS*r[dn:,0,0],kz[dn:])
