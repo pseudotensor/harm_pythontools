@@ -79,11 +79,16 @@ def compute_kaligned(dnpole=0):
     Kaligned = Laligned/OmegaNS
     return Kaligned
     
-def pulsarmoments(doreload=0,dn=3):
-    plt.clf()
+def pulsarmoments(**kwargs):
+    doreload=kwargs.pop("doreload",0)
+    doclf=kwargs.pop("doclf",1)
+    no=kwargs.pop("no",64)
+    doinvertkxky=kwargs.pop("doinvertkxky",0)
+    if doclf:
+        plt.clf()
     if 'gv3' not in globals() or 'rho' not in globals() or doreload:
         grid3d("gdump.bin",use2d=1)
-        rfd("fieldline0096.bin")
+        rfd("fieldline%04d.bin" % no)
         cvel()
         Tcalcud()
     Kx_den = -(Tud[1,2]/dxdxp[2,2]*np.sin(ph)+Tud[1,3]/dxdxp[3,3]*np.cos(h)/np.sin(h)*np.cos(ph))
@@ -97,13 +102,25 @@ def pulsarmoments(doreload=0,dn=3):
     Kx = (gdet*Kx_den).sum(-1).sum(-1)*_dx2*_dx3
     Ky = (gdet*Ky_den).sum(-1).sum(-1)*_dx2*_dx3
     Kz = (gdet*Kz_den).sum(-1).sum(-1)*_dx2*_dx3
+    if doinvertkxky:
+        Kx*=-1
+        Ky*=-1
     Kaligned = compute_kaligned()
-    plt.plot(OmegaNS*r[dn:,0,0],-Kx[dn:]/Kaligned)
-    plt.plot(OmegaNS*r[dn:,0,0],-Ky[dn:]/Kaligned)
-    plt.plot(OmegaNS*r[dn:,0,0],Kz[dn:]/Kaligned)
+    kx = -Kx/Kaligned
+    ky = -Ky/Kaligned
+    kz = Kz/Kaligned
+    return((kx,ky,kz,OmegaNS*r[:,0,0]))
+
+def plotpulsarmoments(**kwargs):
+    dn = kwargs.pop("dn",3)
+    kx,ky,kz,omr = pulsarmoments(**kwargs)
+    plt.plot(OmegaNS*r[dn:,0,0],kx[dn:])
+    plt.plot(OmegaNS*r[dn:,0,0],ky[dn:])
+    plt.plot(OmegaNS*r[dn:,0,0],kz[dn:])
     plt.xlim(0,5)
     plt.ylim(-0.5,2)
-    # pdb.set_trace()
+
+
 
 def mknstartorusmovie(xmax=30,ymax=15,startn=0,endn=-1,dosavefig=1,cb=1):
     #NSTARTORUS movie:
