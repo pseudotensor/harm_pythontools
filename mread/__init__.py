@@ -47,16 +47,48 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
-def omerjetstar(fntsize=20,xmax=5000,ymax=5000):
+def plotomerjetstar(doreload=1,no=8000,startn=0,endn=8000,vhead=0.25):
+    os.chdir("/scratch/gpfs/omerb/Sasha_MHD/runs/run_r1e4_powerDensity_rho_8e7_powInd25_N232_parabGrid_vcap_05")
+    if doreload:
+        grid3d("gdump.bin",use2d=1)
+    flist1 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
+    flist2 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9][0-9].bin") ) )
+    flist1.sort()
+    flist2.sort()
+    flist = flist1 + flist2
+    for fldindex, fldname in enumerate(flist):
+        if fldindex < startn:
+            continue
+        if endn>=0 and fldindex >= endn:
+            break
+        print( "Reading " + fldname + " ..." )
+        sys.stdout.flush()
+        rfd("../"+fldname)
+        sys.stdout.flush()
+        ymax = vad*t*2
+        if  ymax < 20:
+            ymax= 20
+        if ymax > 5000:
+            ymax = 5000
+        xmax = ymax**0.5*2
+        if  xmax < 20
+        xmax = 20
+        omerjetstar(xmax=1000,ymax=5000,aspect=0.2,no=no,aspect=0.2)
+
+
+def omerjetstar(fntsize=20,xmax=5000,ymax=5000,ncell=200,aspect=1):
     xmaxcm = (xmax/5000.)*2e11
     ymaxcm = (ymax/5000.)*2e11
-    irho = reinterp(lrho,(-xmax,xmax,-ymax,ymax),1600,domirror=1,method="linear")
-    plt.clf();CS=plt.imshow(irho,extent=(-xmaxcm,xmaxcm,-ymaxcm,ymaxcm),cmap=cm.hot,interpolation="bilinear")
-    cbar = plt.colorbar(CS)
+    tsecotcode = (2.e11/3.e10)/5000.
+    irho = reinterp(np.log10(rho+1e-15),(-xmax,xmax,-ymax,ymax),800,domirror=1,method="linear")
+    plt.clf();CS=plt.imshow(irho,extent=(-xmaxcm,xmaxcm,-ymaxcm,ymaxcm),cmap=cm.hot,interpolation="bilinear",vmax=6,vmin=-9)
+    CS.get_axes().set_aspect(aspect)
+    cbar = plt.colorbar(CS,extend='both')
     cbar.ax.set_ylabel(r'$\log_{10}\rho$',fontsize=fntsize)
+    aphi=fieldcalc()
     plc(aphi,levels=np.arange(0.2,1.1,0.2)*np.max(aphi),
         symmx=1,linewidths=0.5,alpha=0.2,colors="k",
-        xmax=xmaxcm,ymax=xmaxcm,
+        xmax=xmaxcm,ymax=ymaxcm,
         xcoord=r*sin(h)/xmax*xmaxcm,ycoord=r*cos(h)/xmax*xmaxcm)
     plt.xlabel(r"$R\ \rm{[cm]}$",fontsize=fntsize)
     plt.ylabel(r"$z\ \rm{[cm]}$",fontsize=fntsize)
@@ -67,7 +99,7 @@ def omerjetstar(fntsize=20,xmax=5000,ymax=5000):
     ty.set_size(fntsize)
     for label in ax.get_xticklabels() + ax.get_yticklabels() + cbar.ax.get_yticklabels():
         label.set_fontsize(fntsize)
-    plt.savefig("magnetar_jet_breakout.pdf",bbox_inches='tight',pad_inches=0.2)
+    plt.savefig("/home/atchekho/run2/magnetar_jet_breakout.pdf",bbox_inches='tight',pad_inches=0.2)
 
 def compute_kaligned(dnpole=0):
     Max_flux_code = 0.5 * np.abs(gdetB[1,0,dnpole:ny-dnpole,:]).sum(-1).sum(-1)*_dx2*_dx3
