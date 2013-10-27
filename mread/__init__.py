@@ -158,6 +158,9 @@ def looppulsar(**kwargs):
     dk2list=[]
     Omegalist=[]
     Alphalist=[]
+    Nxlist=[]
+    Nylist=[]
+    Nzlist=[]
     for findex, fname in enumerate(flist):
         os.chdir("/home/atchekho/run2/%s" % fname)
         print("fname: %s" % fname)
@@ -189,19 +192,25 @@ def looppulsar(**kwargs):
         dk2list.append(dk2)
         Omegalist.append(OmegaNS)
         Alphalist.append(AlphaNS)
+        Nxlist.append(nx)
+        Nylist.append(ny)
+        Nzlist.append(nz)
         print("Om=%g, k1=%g +- %g, k2=%g +- %g" % (OmegaNS, k1a, dk1, k2a, dk2))
     os.chdir("/home/atchekho/run2/")
     fp = open( "%s.txt" % whichsims, "wt" )
-    fp.write( "#%9s %10s %10s %10s %10s %10s #%s\n" %
-              ("Omega", "Alpha", "k1", "dk1", "k2", "dk2", "#simname"))
+    fp.write( "#%9s %10s %10s %10s %10s %10s %4s %4s %4s #%s\n" %
+              ("Omega", "Alpha", "k1", "dk1", "k2", "dk2", "nx", "ny", "nz", "#simname"))
     for findex, fname in enumerate(flist):
-        fp.write( "%10g %10g %10g %10g %10g %10g #%s\n" % 
+        fp.write( "%10g %10g %10g %10g %10g %10g %4d %4d %4d #%s\n" % 
                   (Omegalist[findex],
                    Alphalist[findex],
                    k1list[findex],
                    dk1list[findex],
                    k2list[findex],
                    dk2list[findex],
+                   Nxlist[findex],
+                   Nylist[findex],
+                   Nzlist[findex],
                    fname
                    )
                   )
@@ -213,15 +222,15 @@ def readandplotpulsarmoments():
     #mhd45
     #fnames = ["mhd45", "ff45", "mhd90", "ff90", "mhd60", "ff60"]
     #colors = ["red","magenta", "green", "cyan", "blue", "yellow"]
-    fnames = ["mhd45", "ff45",  "mhd90", "ff90"]
-    colors = ["red","blue", "green", "cyan"]
+    fnames = ["mhd45", "ff45",  "mhd60", "mhd90", "ff90"]
+    colors = ["red","blue", "magenta", "green", "cyan"]
     for index, fname in enumerate(fnames):
         clr = colors[index]
         gd = np.loadtxt( "%s.txt" % fname,
                          dtype=np.float64, 
                          skiprows=1, 
                          unpack = True )
-        Omegalist, Alphalist, k1list, dk1list, k2list, dk2list = gd
+        Omegalist, Alphalist, k1list, dk1list, k2list, dk2list, nx, ny, nz = gd
         pylab.errorbar(Omegalist, k1list, xerr=None,yerr=dk1list,marker='s',ls='-',mfc=clr,ecolor=clr,elinewidth=1,mew=1,color=clr,label="%s: k1" % fname)
         if Alphalist[0] < 0.9*np.pi/2.:
             pylab.errorbar(Omegalist, k2list, xerr=None,yerr=dk2list,marker='o',ls=':',mfc=None,ecolor=clr,elinewidth=1,mew=1,color=clr,label="%s: k2" % fname)
