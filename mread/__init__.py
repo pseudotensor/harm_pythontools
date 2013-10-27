@@ -47,7 +47,7 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
-def plotomerjetstar(doreload=1,no=8000,startn=0,endn=8000,vhead=0.25):
+def plotomerjetstar(doreload=1,no=8000,startn=0,endn=8000,vhead=0.25,framename="frame"):
     os.chdir("/scratch/gpfs/omerb/Sasha_MHD/runs/run_r1e4_powerDensity_rho_8e7_powInd25_N232_parabGrid_vcap_05")
     if doreload:
         grid3d("gdump.bin",use2d=1)
@@ -66,14 +66,15 @@ def plotomerjetstar(doreload=1,no=8000,startn=0,endn=8000,vhead=0.25):
         rfd("../"+fldname)
         sys.stdout.flush()
         ymax = vad*t*2
-        if  ymax < 20:
+        if ymax < 20:
             ymax= 20
         if ymax > 5000:
             ymax = 5000
         xmax = ymax**0.5*2
-        if  xmax < 20
-        xmax = 20
-        omerjetstar(xmax=1000,ymax=5000,aspect=0.2,no=no,aspect=0.2)
+        if xmax < 20:
+            xmax = 20
+        omerjetstar(xmax=xmax,ymax=ymax,aspect=xmax/ymax,aspect=0.2)
+        plt.savefig("/home/atchekho/run2/%s%04d.png" % (framename,fldindex),bbox_inches='tight',pad_inches=0.2)
 
 
 def omerjetstar(fntsize=20,xmax=5000,ymax=5000,ncell=200,aspect=1):
@@ -99,7 +100,6 @@ def omerjetstar(fntsize=20,xmax=5000,ymax=5000,ncell=200,aspect=1):
     ty.set_size(fntsize)
     for label in ax.get_xticklabels() + ax.get_yticklabels() + cbar.ax.get_yticklabels():
         label.set_fontsize(fntsize)
-    plt.savefig("/home/atchekho/run2/magnetar_jet_breakout.pdf",bbox_inches='tight',pad_inches=0.2)
 
 def compute_kaligned(dnpole=0):
     Max_flux_code = 0.5 * np.abs(gdetB[1,0,dnpole:ny-dnpole,:]).sum(-1).sum(-1)*_dx2*_dx3
