@@ -47,15 +47,16 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
-def omerjetstar(fntsize=20):
-    irho = reinterp(lrho,(-5000,5000,-5000,5000),1600,domirror=1,method="linear")
-    plt.clf();CS=plt.imshow(irho,extent=(-2e11,2e11,-2e11,2e11),cmap=cm.hot,interpolation="bilinear")
+def omerjetstar(fntsize=20,xmax=5000):
+    xmaxcm = (xmax/5000.)*2e11
+    irho = reinterp(lrho,(-xmax,xmax,-xmax,xmax),1600,domirror=1,method="linear")
+    plt.clf();CS=plt.imshow(irho,extent=(-xmaxcm,xmaxcm,-xmaxcm,xmaxcm),cmap=cm.hot,interpolation="bilinear")
     cbar = plt.colorbar(CS)
     cbar.ax.set_ylabel(r'$\log_{10}\rho$',fontsize=fntsize)
     plc(aphi,levels=np.arange(0.2,1.1,0.2)*np.max(aphi),
         symmx=1,linewidths=0.5,alpha=0.2,colors="k",
-        xmax=2e11,ymax=2e11,
-        xcoord=r*sin(h)/2.5e3*1e11,ycoord=r*cos(h)/2.5e3*1e11)
+        xmax=xmaxcm,ymax=xmaxcm,
+        xcoord=r*sin(h)/xmax*xmaxcm,ycoord=r*cos(h)/xmax*xmaxcm)
     plt.xlabel(r"$R\ \rm{[cm]}$",fontsize=fntsize)
     plt.ylabel(r"$z\ \rm{[cm]}$",fontsize=fntsize)
     ax = plt.gca()
