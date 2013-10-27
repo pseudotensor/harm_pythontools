@@ -47,10 +47,11 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
-def omerjetstar(fntsize=20,xmax=5000):
+def omerjetstar(fntsize=20,xmax=5000,ymax=5000):
     xmaxcm = (xmax/5000.)*2e11
-    irho = reinterp(lrho,(-xmax,xmax,-xmax,xmax),1600,domirror=1,method="linear")
-    plt.clf();CS=plt.imshow(irho,extent=(-xmaxcm,xmaxcm,-xmaxcm,xmaxcm),cmap=cm.hot,interpolation="bilinear")
+    ymaxcm = (ymax/5000.)*2e11
+    irho = reinterp(lrho,(-xmax,xmax,-ymax,ymax),1600,domirror=1,method="linear")
+    plt.clf();CS=plt.imshow(irho,extent=(-xmaxcm,xmaxcm,-ymaxcm,ymaxcm),cmap=cm.hot,interpolation="bilinear")
     cbar = plt.colorbar(CS)
     cbar.ax.set_ylabel(r'$\log_{10}\rho$',fontsize=fntsize)
     plc(aphi,levels=np.arange(0.2,1.1,0.2)*np.max(aphi),
