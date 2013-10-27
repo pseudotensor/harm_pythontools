@@ -47,9 +47,7 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
-#r[((ug/(rho+1e-15)**gam)[:,2:10].mean(1)>2*(ug/(rho+1e-15)**gam)[-20,2:10].mean(1)+1e-5),0:1,0][-1]
-
-def plotomerjetstar(doreload=1,no=8000,startn=0,dn=2,endn=8000,vhead=None,framename="frame",ncell=1600):
+def plotomerjetstar(doreload=1,no=8000,startn=0,dn=2,endn=12000,vhead=None,framename="frame",ncell=1600):
     os.chdir("/scratch/gpfs/omerb/Sasha_MHD/runs/run_r1e4_powerDensity_rho_8e7_powInd25_N232_parabGrid_vcap_05")
     if doreload:
         grid3d("gdump.bin",use2d=1)
@@ -59,8 +57,23 @@ def plotomerjetstar(doreload=1,no=8000,startn=0,dn=2,endn=8000,vhead=None,framen
     flist2.sort()
     flist = flist1.tolist() + flist2.tolist()
     if vhead is None:
-        myt=[0,200,500,1000,2000,3000,10000,1e5]
-        myv=[0.1,0.1,0.2,0.3,0.4,0.4,0.4,1]
+        # myt=[0,200,500,1000,2000,3000,10000,1e5]
+        # myv=[0.1,0.1,0.2,0.3,0.4,0.4,0.4,1]
+        print( "Precomputing head motion data..." )
+        myt = []
+        myv = []
+        for fldindex, fldname in enumerate(flist):
+            if fldindex < startn:
+                continue
+            if endn>=0 and fldindex >= endn:
+                break
+            if fldindex % (dn*100):
+                continue
+            print( "Reading " + fldname + " ..." )
+            rhead = r[((ug/(rho+1e-15)**gam)[:,2:10].mean(1)>2*(ug/(rho+1e-15)**gam)[-20,2:10].mean(1)+1e-5),0:1,0][-1]
+            vhead = rhead / t
+            myv.append(vhead)
+            myt.append(t)
         myvheadfunc=interp1d(myt,myv)
         computevhead = True
     else:
@@ -79,7 +92,7 @@ def plotomerjetstar(doreload=1,no=8000,startn=0,dn=2,endn=8000,vhead=None,framen
         sys.stdout.flush()
         if computevhead:
             vhead=myvheadfunc(t)
-        ymax = vhead*t*2
+        ymax = vhead*t*1.5
         if ymax < 8:
             ymax= 8
         if ymax > 5000:
