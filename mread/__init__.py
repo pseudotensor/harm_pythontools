@@ -67,18 +67,41 @@ def plotomerjetstar(doreload=1,no=8000,startn=0,dn=2,endn=12000,vhead=None,frame
                 continue
             if endn>=0 and fldindex >= endn:
                 break
-            if fldindex % (dn*100):
+            if fldindex > fldindex % (dn*100):
                 continue
             print( "Reading " + fldname + " ..." )
-            rhead = r[((ug/(rho+1e-15)**gam)[:,2:10].mean(1)>2*(ug/(rho+1e-15)**gam)[-20,2:10].mean(1)+1e-5),0:1,0][-1]
-            vhead = rhead / t
+            sys.stdout.flush()
+            rfd("../"+fldname)
+            sys.stdout.flush()
+            ent1d = (ug/(rho+1e-15)**gam)[:,2:10].mean(1)
+            which = (ent1d>0.1*np.max(ent1d))[:,0]
+            vheadmin = 0.1
+            if t < 10*Rin:
+                vhead = vheadmin
+                rhead = vhead * t
+            elif which.sum():
+                rhead = r[which,0,0][-1]
+                vhead = (rhead-1) / (t+1e-5)
+            else:
+                rhead = Rout
+                vhead = 1
+            if vhead > 1:
+                vhead = 1
+            if vhead < vheadmin:
+                vhead = vheadmin
             myv.append(vhead)
             myt.append(t)
-        myvheadfunc=interp1d(myt,myv)
+            print( "t=%g, rhead=%g, vhead=%g" % (t, rhead, vhead) )
+        myvheadfunc=interp1d(myt,myv,kind="cubic",bounds_error=False)
         computevhead = True
     else:
         computevhead = False
     frameno = 0
+    plt.figure(0)
+    plt.plot(r[:,0,0],myvheadfunc(r[:,0,0]))
+    plt.xscale("log")
+    plt.draw()
+    plt.figure(1)
     for fldindex, fldname in enumerate(flist):
         if fldindex < startn:
             continue
@@ -111,7 +134,7 @@ def omerjetstar(fntsize=20,xmax=5000,ymax=5000,ncell=800,aspect=1):
     xmaxcm = (xmax/5000.)*2e11
     ymaxcm = (ymax/5000.)*2e11
     tsectotcode = (2.e11/3.e10)/5000.
-    irho = reinterp(lrho,(-xmax,xmax,-ymax,ymax),ncell,domirror=1,method="linear",domask=0)
+    irho = reinterp(np.log10(rho+1e-15),(-xmax,xmax,-ymax,ymax),ncell,domirror=1,method="linear",domask=0)
     plt.clf();CS=plt.imshow(irho,extent=(-xmaxcm,xmaxcm,-ymaxcm,ymaxcm),cmap=cm.hot,interpolation="bilinear",vmax=7,vmin=-6)
     CS.get_axes().set_aspect(aspect)
     cbar = plt.colorbar(CS,extend='both')
