@@ -81,7 +81,7 @@ def plotomerjetstar(doreload=1,no=8000,startn=0,dn=2,endn=12000,vhead=None,frame
                 rhead = vhead * t
             elif which.sum():
                 rhead = r[which,0,0][-1]
-                vhead = (rhead-1) / (t+1e-5)
+                vhead = (rhead-Rin) / (t+1e-5)
             else:
                 rhead = Rout
                 vhead = 1
