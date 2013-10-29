@@ -63,11 +63,11 @@ def plotomerjetstar(doreload=1,no=8000,startn=0,dn=2,endn=12000,vhead=None,frame
         myt = []
         myv = []
         for fldindex, fldname in enumerate(flist):
-            if fldindex < startn:
-                continue
+            # if fldindex < startn:
+            #     continue
             if endn>=0 and fldindex >= endn:
                 break
-            if fldindex > fldindex % (dn*100):
+            if fldindex % (dn*100):
                 continue
             print( "Reading " + fldname + " ..." )
             sys.stdout.flush()
@@ -85,7 +85,7 @@ def plotomerjetstar(doreload=1,no=8000,startn=0,dn=2,endn=12000,vhead=None,frame
             else:
                 rhead = Rout
                 vhead = 1
-            if vhead > 1:
+            if vhead > 1 or np.isnan(vhead):
                 vhead = 1
             if vhead < vheadmin:
                 vhead = vheadmin
@@ -93,10 +93,8 @@ def plotomerjetstar(doreload=1,no=8000,startn=0,dn=2,endn=12000,vhead=None,frame
             myt.append(t)
             print( "t=%g, rhead=%g, vhead=%g" % (t, rhead, vhead) )
         myvheadfunc=interp1d(myt,myv,kind="cubic",bounds_error=False)
-        computevhead = True
     else:
-        computevhead = False
-    frameno = 0
+        myvheadfunc=lambda t: vhead+0*t
     plt.figure(0)
     plt.plot(r[:,0,0],myvheadfunc(r[:,0,0]))
     plt.xscale("log")
@@ -110,15 +108,15 @@ def plotomerjetstar(doreload=1,no=8000,startn=0,dn=2,endn=12000,vhead=None,frame
         if fldindex % dn:
             continue
         print( "Reading " + fldname + " ..." )
+        frameno = fldindex / dn
         sys.stdout.flush()
         rfd("../"+fldname)
         sys.stdout.flush()
-        if computevhead:
-            vhead=myvheadfunc(t)
+        vhead=myvheadfunc(t)
         ymax = vhead*t*1.5
         if ymax < 8:
             ymax= 8
-        if ymax > 5000:
+        if ymax > 5000 or np.isnan(ymax):
             ymax = 5000
         xmax = ymax**0.75
         if xmax < 8:
@@ -126,14 +124,20 @@ def plotomerjetstar(doreload=1,no=8000,startn=0,dn=2,endn=12000,vhead=None,frame
         print( "xmax=%g, ymax=%g, vhead=%g" % (xmax, ymax, vhead) )
         sys.stdout.flush()
         omerjetstar(xmax=xmax,ymax=ymax,aspect=xmax/ymax,ncell=ncell)
-        plt.savefig("/home/atchekho/run2/%s%04d.png" % (framename,frameno),bbox_inches='tight',pad_inches=0.2)
-        frameno = frameno+1
+        plt.savefig("/home/atchekho/run2/%s%04d.png" % (framename,frameno))
+        #,bbox_inches='tight',pad_inches=0.2)
 
 
 def omerjetstar(fntsize=20,xmax=5000,ymax=5000,ncell=800,aspect=1):
     xmaxcm = (xmax/5000.)*2e11
     ymaxcm = (ymax/5000.)*2e11
     tsectotcode = (2.e11/3.e10)/5000.
+    #
+    gs3 = GridSpec(1, 1)
+    gs3.update(left=0.15, right=0.95, top=0.96, bottom=0.15, wspace=0.01, hspace=0.4)
+    bbox = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.5)
+    ax = plt.subplot(gs3[:,:])
+    #
     irho = reinterp(np.log10(rho+1e-15),(-xmax,xmax,-ymax,ymax),ncell,domirror=1,method="linear",domask=0)
     plt.clf();CS=plt.imshow(irho,extent=(-xmaxcm,xmaxcm,-ymaxcm,ymaxcm),cmap=cm.hot,interpolation="bilinear",vmax=7,vmin=-6)
     CS.get_axes().set_aspect(aspect)
@@ -151,7 +155,7 @@ def omerjetstar(fntsize=20,xmax=5000,ymax=5000,ncell=800,aspect=1):
     art.set_zorder(20)
     #
     plt.xlabel(r"$R\ \rm{[cm]}$",fontsize=fntsize)
-    plt.ylabel(r"$z\ \rm{[cm]}$",fontsize=fntsize)
+    plt.ylabel(r"$z\ \rm{[cm]}$",fontsize=fntsize) #,ha="right")
     plt.title("t = %5.2g seconds" % (t*tsectotcode))
     ax = plt.gca()
     tx = ax.yaxis.get_offset_text()
@@ -3203,59 +3207,62 @@ def plotpsrangpower(cachefname="psrangle.npz"):
         label.set_fontsize(20)
     plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20,labelpad=-8)
     plt.ylabel(r"$4\pi\,{\rm d}(L/L_0)/{\rm d}\omega$",fontsize=22)
-    # plt.figure(2)
-    # psis = np.array([psi0, psi15, psi30, psi45, psi60, psi75, psi90])
-    # etots = np.array([etot0, etot15, etot30, etot45, etot60, etot75, etot90])
-    # alphas = np.array([0, 15, 30, 45, 60, 75, 90])
-    # ebrsqs = np.array([ebrsq0, ebrsq15, ebrsq30, ebrsq45, ebrsq60, ebrsq75, ebrsq90])
-    # ebrs = np.array([ebr0, ebr15, ebr30, ebr45, ebr60, ebr75, ebr90])
-    # plt.plot(alphas, psis**2,'o-')
-    # plt.grid(b=1)
-    # ax1=plt.gca()
-    # for label in ax1.get_xticklabels() + ax1.get_yticklabels():
-    #     label.set_fontsize(20)
-    # plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20)
-    # plt.ylabel(r"$\Psi_{\rm open}^2/\Psi_{\rm tot}^2$",fontsize=20)
-    # plt.figure(3)
-    # #plt.plot(th0,brsqavg0)
-    # #plt.plot(th30,brsqavg30)
-    # plt.plot(th60*180/np.pi,brsqavg60/np.max(brsqavg60))
-    # #plt.plot(th90,brsqavg90)
-    # plt.ylim(0,1)
-    # plt.xlim(0,180)
-    # plt.grid(b=1)
-    # ax1=plt.gca()
-    # for label in ax1.get_xticklabels() + ax1.get_yticklabels():
-    #     label.set_fontsize(20)
-    # plt.grid(b=1)
-    # ax1=plt.gca()
-    # for label in ax1.get_xticklabels() + ax1.get_yticklabels():
-    #     label.set_fontsize(20)
-    # plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20)
-    # plt.ylabel(r"$B_r$",fontsize=20)
-    # plt.savefig("Br.pdf",bbox_inches='tight',pad_inches=0.02)
-    # plt.figure(4)
-    # en = np.array([
-    #      (brsqavg0* np.sin(th0)**3*(th0[1]-th0[0])   *len(th0)).sum(), 
-    #      (brsqavg30*np.sin(th30)**3*(th30[1]-th30[0])*len(th30)).sum(),
-    #      (brsqavg60*np.sin(th60)**3*(th60[1]-th60[0])*len(th60)).sum(),
-    #      (brsqavg90*np.sin(th90)**3*(th90[1]-th90[0])*len(th90)).sum()
-    #      ])
-    # plt.plot(alphas, en)
-    # plt.figure(5)
-    # plt.plot(alphas, etots, 'o-', label=r"$L$")
-    # #plt.plot(alphas, ebrsqs, 'go-',label=r"$\int\Omega_\star^2R^2\langle B_r^2\rangle d\omega$")
-    # plt.plot(alphas, ebrs, 'ro-', label=r"$(\kappa/c)\Phi_{\rm open}^2\Omega_\star^2$")
-    # ax1=plt.gca()
-    # leg = plt.legend(loc="lower right",ncol=1)
-    # for t in leg.get_texts():
-    #    t.set_fontsize(20)    # the legend text fontsize
-    # for label in ax1.get_xticklabels() + ax1.get_yticklabels():
-    #     label.set_fontsize(20)
-    # plt.xlabel(r"$\alpha\ {\rm [^\circ]}$",fontsize=20)
-    # plt.ylabel(r"$L/L_{\rm aligned}$",fontsize=20)
-    # plt.grid(b=1)
-    # plt.savefig("Lbsq.pdf",bbox_inches='tight',pad_inches=0.02)
+    plt.figure(2)
+    psis = np.array([psi0, psi15, psi30, psi45, psi60, psi75, psi90])
+    etots = np.array([etot0, etot15, etot30, etot45, etot60, etot75, etot90])
+    alphas = np.array([0, 15, 30, 45, 60, 75, 90])
+    ebrsqs = np.array([ebrsq0, ebrsq15, ebrsq30, ebrsq45, ebrsq60, ebrsq75, ebrsq90])
+    ebrs = np.array([ebr0, ebr15, ebr30, ebr45, ebr60, ebr75, ebr90])
+    plt.plot(alphas, psis**2,'o-')
+    plt.grid(b=1)
+    ax1=plt.gca()
+    for label in ax1.get_xticklabels() + ax1.get_yticklabels():
+        label.set_fontsize(20)
+    plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20)
+    plt.ylabel(r"$\Psi_{\rm open}^2/\Psi_{\rm tot}^2$",fontsize=20)
+    plt.figure(3)
+    #plt.plot(th0,brsqavg0)
+    #plt.plot(th30,brsqavg30)
+    plt.plot(th60*180/np.pi,brsqavg60/np.max(brsqavg60))
+    #plt.plot(th90,brsqavg90)
+    plt.ylim(0,1)
+    plt.xlim(0,180)
+    plt.grid(b=1)
+    ax1=plt.gca()
+    for label in ax1.get_xticklabels() + ax1.get_yticklabels():
+        label.set_fontsize(20)
+    plt.grid(b=1)
+    ax1=plt.gca()
+    for label in ax1.get_xticklabels() + ax1.get_yticklabels():
+        label.set_fontsize(20)
+    plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20)
+    plt.ylabel(r"$B_r$",fontsize=20)
+    plt.savefig("Br.pdf",bbox_inches='tight',pad_inches=0.02)
+    plt.figure(4)
+    en = np.array([
+         (brsqavg0* np.sin(th0)**3*(th0[1]-th0[0])   *len(th0)).sum(), 
+         (brsqavg15*np.sin(th15)**3*(th15[1]-th15[0])*len(th15)).sum(),
+         (brsqavg30*np.sin(th30)**3*(th30[1]-th30[0])*len(th30)).sum(),
+         (brsqavg45*np.sin(th45)**3*(th45[1]-th45[0])*len(th45)).sum(),
+         (brsqavg60*np.sin(th60)**3*(th60[1]-th60[0])*len(th60)).sum(),
+         (brsqavg75*np.sin(th75)**3*(th75[1]-th75[0])*len(th75)).sum(),
+         (brsqavg90*np.sin(th90)**3*(th90[1]-th90[0])*len(th90)).sum()
+         ])
+    plt.plot(alphas, en)
+    plt.figure(5)
+    plt.plot(alphas, etots, 'o-', label=r"$L$")
+    plt.plot(alphas, ebrsqs, 'go-',label=r"$\int\Omega_\star^2R^2\langle B_r^2\rangle d\omega$")
+    plt.plot(alphas, ebrs, 'ro-', label=r"$(\kappa/c)\Phi_{\rm open}^2\Omega_\star^2$")
+    ax1=plt.gca()
+    leg = plt.legend(loc="lower right",ncol=1)
+    for t in leg.get_texts():
+       t.set_fontsize(20)    # the legend text fontsize
+    for label in ax1.get_xticklabels() + ax1.get_yticklabels():
+        label.set_fontsize(20)
+    plt.xlabel(r"$\alpha\ {\rm [^\circ]}$",fontsize=20)
+    plt.ylabel(r"$L/L_{\rm aligned}$",fontsize=20)
+    plt.grid(b=1)
+    plt.savefig("Lbsq.pdf",bbox_inches='tight',pad_inches=0.02)
 
 
 def plotpangle(roRlc=None,r0=10,doreload=1,dnpole=0,no=106,inject=0):
