@@ -67,7 +67,10 @@ def plotomerjetstar(doreload=1,no=8000,startn=0,dn=2,endn=12000,vhead=None,frame
             #     continue
             if endn>=0 and fldindex >= endn:
                 break
-            if fldindex % (dn*100):
+            if fldindex < dn*100:
+                if fldindex % (dn*10):
+                    continue
+            elif fldindex % (dn*100):
                 continue
             print( "Reading " + fldname + " ..." )
             sys.stdout.flush()
