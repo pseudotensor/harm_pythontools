@@ -5689,7 +5689,62 @@ def rgfd(fieldlinefilename,**kwargs):
         grid3d(os.path.basename(gdumpname[0]))
     rfd(fieldlinefilename,**kwargs)
     cvel()
-    
+
+def set_dumpversions(header):
+    global numheaderitems, numcolumns, whichdump, whichdumpversion,_is,_ie,_js,_je,_ks,_ke
+    global MBH,QBH,EP3,THETAROT
+    #
+    numheaderitems=len(header)
+    if numheaderitems==32:
+        print("Found 32 header items, reading them in\n")  ; sys.stdout.flush()
+        MBH=myfloatalt(float(header[19]))
+        QBH=myfloatalt(float(header[20]))
+        EP3=myfloatalt(float(header[21]))
+        THETAROT=myfloatalt(float(header[22]))
+        #
+        _is=int(header[23])
+        _ie=int(header[24])
+        _js=int(header[25])
+        _je=int(header[26])
+        _ks=int(header[27])
+        _ke=int(header[28])
+        whichdump=int(header[29])
+        whichdumpversion=int(header[30])
+        numcolumns=int(header[31])
+    #
+    if numheaderitems==31:
+        print("Found 31 header items, reading them in and setting THETAROT=0.0\n")  ; sys.stdout.flush()
+        MBH=myfloatalt(float(header[19]))
+        QBH=myfloatalt(float(header[20]))
+        EP3=myfloatalt(float(header[21]))
+        THETAROT=0.0
+        #
+        _is=int(header[22])
+        _ie=int(header[23])
+        _js=int(header[24])
+        _je=int(header[25])
+        _ks=int(header[26])
+        _ke=int(header[27])
+        whichdump=int(header[28])
+        whichdumpversion=int(header[29])
+        numcolumns=int(header[30])
+    #
+    if numheaderitems==30:
+        print("Found 30 header items, reading them in and setting EP3=THETAROT=0.0\n")  ;
+        MBH=myfloatalt(float(header[19]))
+        QBH=myfloatalt(float(header[20]))
+        EP3=0.0
+        THETAROT=0.0
+        #
+        _is=int(header[21])
+        _ie=int(header[22])
+        _js=int(header[23])
+        _je=int(header[24])
+        _ks=int(header[25])
+        _ke=int(header[26])
+        whichdump=int(header[27])
+        whichdumpversion=int(header[28])
+        numcolumns=int(header[29])
 
 def rfd(fieldlinefilename,**kwargs):
     #read information from "fieldline" file: 
@@ -5697,7 +5752,7 @@ def rfd(fieldlinefilename,**kwargs):
     #Velocity components: u1, u2, u3, 
     #Cell-centered magnetic field components: B1, B2, B3, 
     #Face-centered magnetic field components multiplied by metric determinant: gdetB1, gdetB2, gdetB3
-    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,rho,lrho,ug,uu,uut,uu,B,uux,gdetB,rhor,r,h,ph,gdetF,fdbody,OmegaNS,AlphaNS,Bstag,defcoord
+    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,rho,lrho,ug,uu,uut,uu,B,uux,gdetB,rhor,r,h,ph,gdetF,fdbody,OmegaNS,AlphaNS,Bstag,defcoord,numheaderitems,numcolumns
     #read image
     if 'rho' in globals():
         del rho
@@ -5725,6 +5780,7 @@ def rfd(fieldlinefilename,**kwargs):
         del fdbody
     fin = open( "dumps/" + fieldlinefilename, "rb" )
     header = fin.readline().split()
+    set_dumpversions(header)
     #time of the dump
     t = myfloat(np.float64(header[0]))
     #dimensions of the grid
@@ -5882,7 +5938,61 @@ def rfd(fieldlinefilename,**kwargs):
         gd1.tofile(gout)
         gout.close()
         print( " done!" )
+    ##
+    ##
+    ## RADIATION
+    ##
+    ##
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
+    global KAPPAUSER,KAPPAESUSER
+    #
+    global gotrad
+    gotrad=0
+    if numcolumns==16:
+        print("Reading radiation primitives...")
+        gotrad=1
+        Erf=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
+        uradu=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
+        Erf=d[11,:,:,:] # radiation frame radiation energy density
+        uradu=d[12:16,:,:,:]  #again, note uu[i] are 3-velocities (as read from the fieldl
+        #multiply by u^t to get 4-velocities: u^i = u^t v^i
+        uradu[1:4]=uradu[1:4] * uradu[0]
+        #
+        maxErf=np.max(Erf)
+        minErf=np.min(Erf)
+        print("maxErf=%g minErf=%g" % (maxErf,minErf)) ; sys.stdout.flush()
+        #
+        rddims()
+        #
+        # now compute auxillary opacity related quantities since only otherwise in raddump
+        KAPPA=1.0
+        KAPPAES=1.0
+        # KORALTODO: Put a lower limit on T~1E4K so not overly wrongly opaque in spots whe
+        T1E4K=(1.0E4/TEMPBAR)
+        # ideal gas assumed for Tgas
+        # code pg
+        pg=(gam-1.0)*ug
+        # code Tgas
+        Tgas=pg/rho
+        KAPPAUSER=(rho*KAPPA*KAPPA_FF_CODE(rho,Tgas+T1E4K))
+        KAPPAESUSER=(rho*KAPPAES*KAPPA_ES_CODE(rho,Tgas))
+        #
 
+def pow(x,n):
+    return(x**n)
+def KAPPA_ES_CODE(rhocode,Tcode):
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
+    y=(0.2*(1.0+XFACT)/OPACITYBAR)
+    return(y)
+def KAPPA_FF_CODE(rhocode,Tcode):
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
+    y=(1.0E23*ZATOM*ZATOM/(MUE*MUI)*(rhocode*RHOBAR)*pow(Tcode*TEMPBAR,-7.0/2.0)/OPACITYBAR)
+    return(y)
+def KAPPA_BF_CODE(rhocode,Tcode):
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
+    y=(1.0E25*ZATOM*(1.0+XFACT)*(rhocode*RHOBAR)*pow(Tcode*TEMPBAR,-7.0/2.0)/OPACITYBAR)
+    return(y)
+            
 def cvel():
     global ud,etad, etau, gamma, vu, vd, bu, bd, bsq
     if 'ud' in globals():
@@ -5946,7 +6056,39 @@ def decolumnify(dumpname):
     gout.close()
     print( "Done!" )
 
-             
+def rddims():
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
+    # then also get radiation constants
+    fname= "dimensions.txt"
+    fin = open(fname, "rt" )
+    dimfile = fin.readline().split()
+    numheaderitems=len(dimfile) #.shape[0]
+    GGG = np.float64(dimfile[0])
+    CCCTRUE = np.float64(dimfile[1])
+    MSUNCM = np.float64(dimfile[2])
+    MPERSUN = np.float64(dimfile[3])
+    LBAR = np.float64(dimfile[4])
+    TBAR = np.float64(dimfile[5])
+    VBAR = np.float64(dimfile[6])
+    RHOBAR = np.float64(dimfile[7])
+    MBAR = np.float64(dimfile[8])
+    ENBAR = np.float64(dimfile[9])
+    UBAR = np.float64(dimfile[10])
+    TEMPBAR = np.float64(dimfile[11])
+    ARAD_CODE_DEF = np.float64(dimfile[12])
+    XFACT = np.float64(dimfile[13])
+    ZATOM = np.float64(dimfile[14])
+    AATOM = np.float64(dimfile[15])
+    MUE = np.float64(dimfile[16])
+    MUI = np.float64(dimfile[17])
+    OPACITYBAR = np.float64(dimfile[18])
+    MASSCM = np.float64(dimfile[19])
+    KORAL2HARMRHO1 = np.float64(dimfile[20])
+    fin.close()
+    
+def myfloatalt(f):
+    return( np.float64(f) )
+    
 def myfloat(f,acc=1):
     """ acc=1 means np.float32, acc=2 means np.float64 """
     if acc==1:
