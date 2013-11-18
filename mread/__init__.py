@@ -32,7 +32,7 @@ def setmplconfigpath(uniquenum=None):
     #
     # SUPERNOEMARK: below inapplicable to Nautilus for some reason.  Makes Nautilus fail to find some packages if MPLCONFIGDIR not unset.
     #
-    ISNAUTILUS=1
+    ISNAUTILUS=0
     #
     if ISNAUTILUS==1:
         return
@@ -2548,7 +2548,7 @@ def isradmodelA(modelname):
         return(0)
     #
 def isradmodelB(modelname): # for lower densities with Mdot\sim 100Ledd/c^2
-    if modelname=="runrad1torusfixed" or modelname=="runrada0" or modelname=="runnorada0" or modelname=="runnorada9375":
+    if modelname=="runrad1torusfixed" or modelname=="runrada0" or modelname=="runnorada0" or modelname=="runnorada9375" or modelname=="rad1":
         return(1)
     else:
         return(0)
@@ -2726,12 +2726,20 @@ def getdefaulttimes1():
         #defaultftf=25000 # real end a bit after 25000
         defaultftf=30000 # but let go past if did run past
         #
+    #
+    if isradmodel(modelname)==1:
+        defaultfti=300
+        defaultftf=1e4
     # override
     if modelname=="sashaa9b100t1.5708":
         defaultfti=17000 # real start is ~8000
         defaultftf=21000 # problem beyond 21000
     if modelname=="runrad1torusfixed":
         defaultfti=300
+        defaultftf=1e4
+    #
+    if modelname=="rad1":
+        defaultfti=1000
         defaultftf=1e4
     #
     return defaultfti,defaultftf
@@ -2802,6 +2810,10 @@ def getdefaulttimes2():
     #
     if modelname=="runrad1torusfixed":
         defaultfti=300
+        defaultftf=1e4
+    #
+    if modelname=="rad1":
+        defaultfti=1000
         defaultftf=1e4
     #
     return defaultfti,defaultftf
@@ -10591,6 +10603,8 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         horval=0.2
     elif isthickdiskmodel(modelname):
         horval=0.6
+    elif isradmodel(modelname):
+        horval=0.2
     else:
         horval=1.0 # so know how to remove effect
     #
@@ -14477,6 +14491,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     elif isthickdiskmodel(modelname):
         hoverratrmax_t0=hoverr100[0]
         hoverraltatrmax_t0=horalt1[0,iofr(100.0)]
+    elif isradmodel(modelname):
+        hoverratrmax_t0=hoverr20[0]
+        hoverraltatrmax_t0=horalt1[0,iofr(20.0)]
     else:
         # default
         hoverratrmax_t0=hoverr100[0]
@@ -26300,9 +26317,9 @@ def main(argv=None):
     # GODMARK
     global use2dglobal
     # whether use 2d slice of gdump or full 3d
-    #use2dglobal=True
+    use2dglobal=True
     # for now, use2dglobal=True doesn't work for tilted sims due to some transformation issue.
-    use2dglobal=False
+    #use2dglobal=False
     #
     #
     global nxgdump,nygdump,nzgdump
