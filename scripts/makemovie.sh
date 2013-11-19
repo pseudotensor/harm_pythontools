@@ -249,6 +249,9 @@ then
 elif [ $modelname == "thickdiskfull3d7tilt1.5708" ]
 then
     jobsuffix="dc$system"
+elif [ $modelname == "rad1" ]
+then
+    jobsuffix="dd$system"
 else
     jobsuffix="unk$system"        
 fi
@@ -385,9 +388,9 @@ then
     else
         # default for lower res thick disk poloidal and toroidal runs
         echo "Ended up in default for timetot, numcorespernode, and memtot in makemovie.sh"
-        timetot="24:00:00"
-        numcorespernode=80
-        memtot=$((4 + $numcorespernode * 4))
+        timetot="4:00:00"
+        numcorespernode=1024
+        memtot=$((4 + $numcorespernode * 2))
     fi
     #
     # for makeplot part or makeplotavg part
@@ -498,7 +501,13 @@ then
         apcmd="aprun -n $numtasks -N $numcorespernode"
     fi
 
-    numnodes=$(($numtasks/$numcorespernode))
+    if [ $numcorespernode -eq 12 ]
+    then
+	numnodes=$((0 + $numtasks/$numcorespernode))
+    else
+	numnodes=$((1 + $numtasks/$numcorespernode))
+    fi
+
     numtotalcores=$(($numnodes * 12)) # always 12 for Kraken
 
     if [ $numtotalcores -le 512 ]
@@ -513,7 +522,7 @@ then
     fi
 
     # GODMARK: 458 thickdisk7 files only took 1:45 on Kraken
-    timetot="24:00:00" # probably don't need all this is 1 task per fieldline file
+    timetot="3:00:00" # probably don't need all this is 1 task per fieldline file
 
     echo "PART1: $numcorespernode $numcorespersocket $numnodes $numtotalcores $thequeue $timetot"
     echo "PART2: $apcmd"
