@@ -4,7 +4,7 @@
 
 user="jmckinne"
 userbatch="jmckinn"
-emailaddr="jmckinne@stanford.edu"
+emailaddr="pseudotensor@gmail.com"
 remotehost="ki-jmck.slac.stanford.edu"
 globushost="pseudotensor#ki-jmck"
 globusremote="pseudotensor@cli.globusonline.org"
