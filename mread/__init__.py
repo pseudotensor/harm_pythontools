@@ -21,6 +21,17 @@ def setpythonpath():
         sys.stdout.flush()
         pythonpath=""
     #
+    os.environ['PYTHONPATH'] = os.environ['PYTHONPATH'] + ':/nics/b/home/jmckinne/bin'
+    #
+    ISKRAKEN=1
+    # set latex path, else on Kraken can't find "latex"
+    if ISKRAKEN==1:
+        # user must set their own path to "latex" binary
+        os.environ['PATH'] = os.environ['PATH'] + ':/nics/b/home/jmckinne/bin'
+        # or have to link to latex binary in run and PYTHONPATH dirs.
+        # cd $PYTHONPATH ; ln -s ~/bin/latex .
+        # cd rundir/moviedir/ ; ln -s ~/bin/latex .
+
 
 
 def getpythonpath():
@@ -52,6 +63,7 @@ def setmplconfigpath(uniquenum=None):
         print("New MPLCONFIGDIR=%s" % (mycwd)) ; sys.stdout.flush()
     #
     os.environ['MPLCONFIGDIR'] = mycwd
+    os.environ['MPLCONFIGDIR'] = os.environ['MPLCONFIGDIR']# + ':/nics/b/home/jmckinne/bin'
     # now MPLCONFIGDIR is unique, so remove this dir and let matplotlib create it -- else Kraken complains.
     if os.path.isdir(mycwd)==1:
         import shutil
@@ -5820,7 +5832,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
 
 
 
-def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,arrowsize=1,dorho=True,doentropy=False,dobsq=False,dobeta=False,doQ1=False,doQ2=False,doErf=False):
+def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,arrowsize=1,dorho=True,doentropy=False,dobsq=False,dobeta=False,doQ1=False,doQ2=False,doErf=False,dotaurad=False):
     extent=(-len,len,-len,len)
     palette=cm.jet
     palette.set_bad('k', 1.0)
@@ -24231,13 +24243,15 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
         mydoaphi=0
         mydostreamlines=1
     #
-    if isradmodel(modelname):
+    if isradmodel(modelname) and nz==1 :
         mydobsqleft=0
         mydorholeft=1
         mydobsqright=0
         mydorhoright=0
         leftcb=1
+        rightcb=1
         leftpt=1
+        rightpt=1
         mydobsqorholine=1
         mydoErf=1
         mydotaurad=1
@@ -24245,13 +24259,31 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
         vmaxforframeright=vmaxforframerad
         vminforframeleft=vminforframe
         vminforframeright=vminforframerad
+    elif isradmodel(modelname) and nz>1 :
+        mydobsqleft=0
+        mydorholeft=1
+        mydobsqright=0
+        mydorhoright=1
+        leftcb=0
+        rightcb=1
+        leftpt=0
+        rightpt=0
+        mydobsqorholine=0
+        mydoErf=0
+        mydotaurad=1
+        vmaxforframeleft=vmaxforframe
+        vmaxforframeright=vmaxforframe
+        vminforframeleft=vminforframe
+        vminforframeright=vminforframe
     else:
         mydobsqleft=0
         mydorholeft=1
         mydobsqright=0
         mydorhoright=1
         leftcb=0
+        rightcb=1
         leftpt=0
+        rightpt=0
         mydobsqorholine=0
         mydoErf=0
         mydotaurad=0
@@ -24290,7 +24322,7 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
         mkframe("lrho%04d_xy%g" % (filenum,plotsize),vmin=vminforframeright,vmax=vmaxforframeright,len=plotsize,ax=ax2,cb=True,dostreamlines=True,dobsq=mydobsqright,dorho=mydorhoright,doErf=mydoErf,dotaurad=mydotaurad)
     else:
         # If using 2D data, then for now, have to replace below with mkframe version above and replace ax1->ax2.  Some kind of qhull error.
-        mkframexy("lrho%04d_xy%g" % (filenum,plotsize),vmin=vminforframeright,vmax=vmaxforframeright,len=plotsize,ax=ax2,cb=True,pt=True,dostreamlines=True,dobsq=mydobsqright,dorho=mydorhoright,doErf=mydoErf,dotaurad=mydotaurad)
+        mkframexy("lrho%04d_xy%g" % (filenum,plotsize),vmin=vminforframeright,vmax=vmaxforframeright,len=plotsize,ax=ax2,cb=rightcb,pt=rightpt,dostreamlines=True,dobsq=mydobsqright,dorho=mydorhoright,doErf=mydoErf,dotaurad=mydotaurad)
     #
     if nz==1:
         plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')

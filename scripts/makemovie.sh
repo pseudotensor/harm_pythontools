@@ -12,7 +12,7 @@
 
 user="jmckinne"
 userbatch="jmckinn"
-emailaddr="jmckinne@stanford.edu"
+emailaddr="pseudotensor@gmail.com"
 
 EXPECTED_ARGS=18
 E_BADARGS=65
