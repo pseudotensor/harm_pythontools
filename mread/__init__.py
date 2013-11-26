@@ -19266,9 +19266,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             #
         favg1.close()
         #
-        #columns=20
+        #columns=21
         favg2 = open('datavst2.txt', 'w')
-        favg2.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("tici","ts"," etabhEM","etabhMAKE","etabhRAD","etabh","etajEM","etajMAKE","etaj","etamwinEM","etamwinMAKE","etamwin","etamwoutEM","etamwoutMAKE","etamwout","etawinEM","etawinMAKE","etawin","etawoutEM","etawoutMAKE","etawout"  ) )
+        favg2.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("tici","ts"," etabhEM","etabhMAKE","etabhRAD","etabh","etajEM","etajMAKE","etaj","etamwinEM","etamwinMAKE","etamwin","etamwoutEM","etamwoutMAKE","etamwout","etawinEM","etawinMAKE","etawin","etawoutEM","etawoutMAKE","etawout"  ) )
         for tic in ts:
             tici=np.where(ts==tic)[0]
             #
@@ -19276,7 +19276,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             #
         favg2.close()
         #
-        #columns=20
+        #columns=21
         favg3 = open('datavst3.txt', 'w')
         favg3.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("tici","ts"," letabhEM","letabhMAKE","letabhRAD","letabh","letajEM","letajMAKE","letaj","letamwinEM","letamwinMAKE","letamwin","letamwoutEM","letamwoutMAKE","letamwout","letawinEM","letawinMAKE","letawin","letawoutEM","letawoutMAKE","letawout"  ) )
         for tic in ts:
