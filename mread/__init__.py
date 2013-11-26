@@ -10959,7 +10959,11 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         diskcondition=condmaxbsqorho
         #diskcondition=diskcondition*(betatot>1.0)
         # below allows for magnetized disk
-        diskcondition=diskcondition*(bsq/rho<0.5)
+        if isradmodel(modelname):
+            # only around equator, not far away from equator
+            diskcondition=diskcondition*(bsq/rho<1.0)*(np.fabs(h-pi*0.5)<0.1)
+        else:
+            diskcondition=diskcondition*(bsq/rho<0.5)
         # was (bsq/rho<1.0)
         #diskcondition=diskcondition*(mum1fake<1.0)
         #
