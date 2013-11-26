@@ -5751,9 +5751,10 @@ def rd2d(dump):
         #lapse
         alpha = (-guu[0,0])**(-0.5)
         
-def rd(dump,oldfmt=False):
+def rd(dump,oldfmt=False,doreturnarray=False):
     global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,ti,tj,tk,x1,x2,x3,r,h,ph,rho,ug,vu,B,pg,cs2,Sden,U,gdetB,divb,uu,ud,bu,bd
     global v1m,v1p,v2m,v2p,v3m,v3p,bsq,olddumpfmt
+    global Erf,ErfF1,ErfF2,ErfF3
     #read image
     olddumpfmt = oldfmt
     fin = open( "dumps/" + dump, "rb" )
@@ -5779,26 +5780,37 @@ def rd(dump,oldfmt=False):
                       dtype=np.float64, 
                       skiprows=1, 
                       unpack = True ).view().reshape((-1,nx,ny,nz), order='F')
-    gd=myfloat(gd)
+    #gd=myfloat(gd)
     gc.collect()
-    ti,tj,tk,x1,x2,x3,r,h,ph,rho,ug = gd[0:11,:,:,:].view() 
+    NPR, NPRDUMP = set_numnprs()
+    ti,tj,tk,x1,x2,x3,r,h,ph = gd[0:9,:,:,:].view() 
+    n=9
+    rho,ug =gd[9:11]
     vu=np.zeros_like(gd[0:4])
     B=np.zeros_like(gd[0:4])
     vu[1:4] = gd[11:14]
     B[1:4] = gd[14:17]
+    set_dumpversions(header)
+    #if radiation primitives are there
+    #PRAD0 = 8, PRAD1 = 9, PRAD2 = 10, PRAD3 = 11
+    if NPRDUMP >= 12:
+        Erf,ErfF1,ErfF2,ErfF3 = gd[n+8:n+12] 
+    n+=NPRDUMP  #skip to the end of NPRDUMP list
     if not oldfmt:
-        pg,cs2,Sden = gd[17:20]
-        U = gd[20:29]
+        pg,cs2,Sden = gd[n:n+3];n+=3
+        U = gd[n:n+NPR];n+=NPR
         gdetB = np.zeros_like(B)
         gdetB[1:4] = U[5:8]
-        divb = gd[29]
-        uu = gd[30:34]
-        ud = gd[34:38]
-        bu = gd[38:42]
-        bd = gd[42:46]
+        divb = gd[n];n+=1
+        uu = gd[n:n+4];n+=4
+        ud = gd[n:n+4];n+=4
+        bu = gd[n:n+4];n+=4
+        bd = gd[n:n+4];n+=4
         bsq = mdot(bu,bd)
-        v1m,v1p,v2m,v2p,v3m,v3p=gd[46:52]
-        gdet=gd[53]
+        v1m,v1p,v2m,v2p,v3m,v3p=gd[n:n+6];n+=6
+        gdet=gd[n];n+=1
+        if n != gd.shape[0]:
+            print("Using %d out of %d entries in the dump file." % (n, gd.shape[0]))
     else:
         U = gd[17:25]
         divb = gd[25]
@@ -5812,7 +5824,8 @@ def rd(dump,oldfmt=False):
         #gdetB = np.zeros_like(B)
         #gdetB[1:4] = U[5:8]
         gdetB = gdet*B
-    return gd
+    if doreturnarray:
+        return gd
 
 def rgfd(fieldlinefilename,**kwargs):
     if not os.path.isfile(os.path.join("dumps/", fieldlinefilename)):
@@ -5825,13 +5838,27 @@ def rgfd(fieldlinefilename,**kwargs):
     rfd(fieldlinefilename,**kwargs)
     cvel()
 
+def set_numnprs(fname="nprlistinfo.dat"):
+    fin = open( fname , "rb" )
+    header1 = fin.readline().split() #numlines, numversion
+    header2 = fin.readline().split() #NPR (conserved)
+    NPR = len(header2)
+    header3 = fin.readline().split() #NPR2INTERP
+    header4 = fin.readline().split() #NPR2NOTINTERP
+    header5 = fin.readline().split() #NPRBOUND
+    header6 = fin.readline().split() #NPRFLUXBOUND
+    header7 = fin.readline().split() #NPRDUMP
+    NPRDUMP = len(header7)
+    header8 = fin.readline().split() #NPRINVERT
+    return((NPR, NPRDUMP))
+    
 def set_dumpversions(header):
     global numheaderitems, numcolumns, whichdump, whichdumpversion,_is,_ie,_js,_je,_ks,_ke
     global MBH,QBH,EP3,THETAROT
     #
     numheaderitems=len(header)
     if numheaderitems==32:
-        print("Found 32 header items, reading them in\n")  ; sys.stdout.flush()
+        print("Found 32 header items, reading them in")  ; sys.stdout.flush()
         MBH=myfloatalt(float(header[19]))
         QBH=myfloatalt(float(header[20]))
         EP3=myfloatalt(float(header[21]))
@@ -5881,6 +5908,105 @@ def set_dumpversions(header):
         whichdumpversion=int(header[28])
         numcolumns=int(header[29])
 
+def rdr(dumpname,**kwargs):
+    #read information from "raddump" (radiation dump) file: 
+    #Densities: 
+    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,rho,lrho,ug,uu,uut,uu,B,uux,gdetB,rhor,r,h,ph,gdetF,fdbody,OmegaNS,AlphaNS,Bstag,defcoord,numheaderitems,numcolumns
+    global uradu, uradd, kappa, kappaes, tautot, tautotmax, pradffortho, Gdpl, Gdabspl, lamb, ErfLTE, Tgas, Trad, Tradff, vmin1, vmax1, vmin21, vmax21, vmin2, vmax2, vmin22, vmax22, vmin3, vmax3, vmin23, vmax23
+    fin = open( "dumps/" + dumpname, "rb" )
+    header = fin.readline().split()
+    set_dumpversions(header)
+    #time of the dump
+    t = myfloat(np.float64(header[0]))
+    #dimensions of the grid
+    nx = int(header[1])
+    ny = int(header[2])
+    nz = int(header[3])
+    #cell size in internal coordintes
+    _dx1=myfloat(float(header[7]))
+    _dx2=myfloat(float(header[8]))
+    _dx3=myfloat(float(header[9]))
+    #other information: 
+    #polytropic index
+    gam=myfloat(float(header[11]))
+    #black hole spin
+    a=myfloat(float(header[12]))
+    rhor = 1+(1-a**2)**0.5
+    R0=myfloat(float(header[13]))
+    #Spherical polar radius of the innermost radial cell
+    Rin=myfloat(float(header[14]))
+    #Spherical polar radius of the outermost radial cell
+    Rout=myfloat(float(header[15]))
+    defcoord = myfloat(float(header[18]))
+    #
+    if os.path.isfile("coordparms.dat"):
+        coordparams = np.loadtxt( "coordparms.dat", 
+                      dtype=np.float64, 
+                      skiprows=0, 
+                      unpack = False )
+        if defcoord == 3010: #SNSCOORDS
+            if len(coordparams)>=14:
+                OmegaNS = coordparams[13]
+                AlphaNS = coordparams[14]
+            else:
+                OmegaNS = 0
+                AlphaNS = 0
+        elif defcoord == 3000: #SJETCOORDS
+            if len(coordparams)>=27:
+                OmegaNS = coordparams[26]
+                AlphaNS = coordparams[27]
+            else:
+                OmegaNS = 0
+                AlphaNS = 0
+    else:
+        OmegaNS = 0
+        AlphaNS = 0
+    #read grid dump per-cell data
+    #
+    if dumpname.endswith(".bin"):
+        body = np.fromfile(fin,dtype=np.float32,count=-1)
+        fdbody=body
+        fin.close()
+    else:
+        fin.close()
+        body = np.loadtxt( "dumps/"+dumpname, 
+                      dtype=np.float64, 
+                      skiprows=1, 
+                      unpack = True ).view().reshape((-1,nx,ny,nz), order='F')
+    d=body.view().reshape((-1,nx,ny,nz),order='F')
+    #rho, u, -hu_t, -T^t_t/U0, u^t, v1,v2,v3,B1,B2,B3
+    #matter density in the fluid frame
+    n=0
+    uradu=d[n:n+4,:,:,:];n+=4
+    uradd=d[n:n+4,:,:,:];n+=4
+    kappa=d[n,:,:,:];n+=1
+    kappaes=d[n,:,:,:];n+=1
+    tautot=d[n:n+4,:,:,:];n+=4
+    tautotmax=d[n,:,:,:];n+=1
+    pradffortho=d[n:n+4,:,:,:];n+=4
+    Gdpl=d[n:n+4,:,:,:];n+=4
+    Gdabspl=d[n:n+4,:,:,:];n+=4
+    lamb=d[n,:,:,:];n+=1
+    ErfLTE=d[n,:,:,:];n+=1
+    Tgas=d[n:n+1,:,:,:];n+=1
+    Trad=d[n:n+1,:,:,:];n+=1
+    Tradff=d[n:n+1,:,:,:];n+=1
+    vmin1=d[n:n+1,:,:,:];n+=1
+    vmax1=d[n:n+1,:,:,:];n+=1
+    vmin21=d[n:n+1,:,:,:];n+=1
+    vmax21=d[n:n+1,:,:,:];n+=1
+    vmin2=d[n:n+1,:,:,:];n+=1
+    vmax2=d[n:n+1,:,:,:];n+=1
+    vmin22=d[n:n+1,:,:,:];n+=1
+    vmax22=d[n:n+1,:,:,:];n+=1
+    vmin3=d[n:n+1,:,:,:];n+=1
+    vmax3=d[n:n+1,:,:,:];n+=1
+    vmin23=d[n:n+1,:,:,:];n+=1
+    vmax23=d[n:n+1,:,:,:];n+=1
+    if n != d.shape[0]:
+        print("Using %d out of %d entries in the dump file." % (n, d.shape[0]))
+
+        
 def rfd(fieldlinefilename,**kwargs):
     #read information from "fieldline" file: 
     #Densities: rho, u, 
@@ -6080,6 +6206,7 @@ def rfd(fieldlinefilename,**kwargs):
     ##
     global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
     global KAPPAUSER,KAPPAESUSER
+    global Erf,uradu,Tgas
     #
     global gotrad
     gotrad=0
