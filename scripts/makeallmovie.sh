@@ -38,7 +38,7 @@ dircollecttilt="thickdiskfull3d7tilt0.35 thickdiskfull3d7tilt0.7 thickdiskfull3d
 
 #################
 # choose:
-dircollect="run"
+dircollect="rad1"
 
 
 # note that thickdisk1 is actually bad, so ignore it.
@@ -53,7 +53,7 @@ dirrunstilt="sashaam9full2pit0.15 sashaa9b100t0.15 sashaa99t0.15 sashaam9full2pi
 
 ###################
 # choose
-dirruns="run"
+dirruns="rad1"
 
 
 #dirruns='thickdisk17'
@@ -92,7 +92,7 @@ dirruns="run"
 #dirruns='sasha99'
 
 # number of files to keep
-numkeep=2
+numkeep=50 # test
 
 
 EXPECTED_ARGS=20
@@ -269,8 +269,9 @@ then
     #
     ######################
     # default
-        factor=2
-        keepfilesstart=$(( (1 * $numfiles) / $factor ))
+        factor=1
+        #keepfilesstart=$(( (1 * $numfiles) / $factor ))
+	keepfilesstart=0
         keepfilesend=$(( $numfiles ))
     #
     ########################
@@ -865,6 +866,7 @@ echo "Now collect Latex results"
 
 if [ $collect -eq 1 ] &&
     [ $system -ne 3 ] &&
+    [ $system -ne 5 ] &&
     [ $system -ne 6 ]
 then
     # then copy over results
@@ -889,11 +891,21 @@ fi
 
 
 
+if [ $collect -eq 1 ] &&
+    [ $system -eq 5 ]
+then
+    pythonlatexfile="python_u_3_0_1.stdout.out"
+else
+    pythonlatexfile="python.plot.out"
+fi
+
 
 if [ $collect -eq 1 ] &&
     [ $system -eq 3 ] ||
     [ $collect -eq 1 ] &&
-    [ $system -eq 6 ]
+    [ $system -eq 6 ] ||
+    [ $collect -eq 1 ] &&
+    [ $system -eq 5 ]
 then
 
     cd $dirname/
@@ -909,10 +921,11 @@ then
 	    echo "Doing collection for: "$thedir
         if [ $iiter -eq 1 ]
         then
-		    cat $dirname/${thedir}/$moviedirname/python.plot.out | grep "HLatex" >> tables$moviedirname.tex
+		    cat $dirname/${thedir}/$moviedirname/$pythonlatexfile | grep "HLatex" >> tables$moviedirname.tex
 		    echo "HLatex: \hline" >> tables$moviedirname.tex
         fi
-		cat $dirname/${thedir}/$moviedirname/python.plot.out | grep "VLatex" >> tables$moviedirname.tex
+		cat $dirname/${thedir}/$moviedirname/$pythonlatexfile | grep "VLatex" >> tables$moviedirname.tex
+		echo "$dirname $thedir $moviedirname $pythonlatexfile : $iiter"
 
         iiter=$(( $iiter+1))
     done
@@ -1052,6 +1065,7 @@ then
 
 
     echo "For paper, now do:   scp tbl[0-9].tex jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/ ; scp tbl[0-9][0-9].tex jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/"
+    echo "For paper, now do:   scp tbl[0-9].tex jon@physics-179.umd.edu:/data/jon/harm_harmrad/ ; scp tbl[0-9][0-9].tex jon@physics-179.umd.edu:/data/jon/harm_harmrad/"
     
     
 

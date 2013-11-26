@@ -5953,8 +5953,8 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
         #
         iBx = reinterpxy(Bxnorm,extent,ncell,domask=1)
         iBy = reinterpxy(Bynorm,extent,ncell,domask=1)
-        iibeta = reinterpxy((0.5*bsq/(gam-1)/ug,extent,ncell,domask=0)
-        iibetatot = reinterpxy((0.5*bsq/((gam-1)*ug+(4.0/3.0-1)*urad),extent,ncell,domask=0)
+        iibeta = reinterpxy(0.5*bsq/(gam-1)/ug,extent,ncell,domask=0)
+        iibetatot = reinterpxy(0.5*bsq/((gam-1)*ug+(4.0/3.0-1)*urad),extent,ncell,domask=0)
         ibsqorho = reinterpxy(bsq/rho,extent,ncell,domask=0)
         ibsqo2rho = 0.5 * ibsqorho
         xi = np.linspace(extent[0], extent[1], ncell)
