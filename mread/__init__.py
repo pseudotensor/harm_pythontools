@@ -506,9 +506,10 @@ def rdath3d(fname):
         print( "rdath3d: Unknown file type: %s" % fname )
 
 def rdvtk(fname):
-    global n1, n2, n3, t, ti, tj, tk, x1, x2, x3, rho, v1, v2, v3, pg, B1c, B2c, B3c
+    global t, n1, n2, n3, t, ti, tj, tk, x1, x2, x3, rho, v1, v2, v3, pg, B1c, B2c, B3c
     global reader, data, dim
     filename = fname
+    t = GetTimeFromAthenaVTK(filename)
     reader = vtk.vtkStructuredPointsReader()
     reader.SetFileName(filename)
     reader.ReadAllVectorsOn()
@@ -528,15 +529,6 @@ def rdvtk(fname):
     B1c,B2c,B3c = Bc.reshape(vecdim,order="F").transpose(3,0,1,2)
     rho = rho.reshape(scalardim,order="F")
     pg = pg.reshape(scalardim,order="F")
-    #xyz = VN.vtk_to_numpy(data.GetPoints().GetData())
-    # x = zeros(data.GetNumberOfPoints())
-    # y = zeros(data.GetNumberOfPoints())
-    # z = zeros(data.GetNumberOfPoints())    
-    # for i in xrange(data.GetNumberOfPoints()):
-    #     x[i],y[i],z[i] = data.GetPoint(i)
-    # x = x.reshape(dim,order="F")
-    # y = y.reshape(dim,order="F")
-    # z = z.reshape(dim,order="F")
     # Assume regular grid and get: (i) x1,x2,x3 and (ii) ti,tj,tk
     ncorn = data.GetNumberOfPoints()
     xstart,ystart,zstart = data.GetPoint(0)
@@ -554,9 +546,9 @@ def rdvtk(fname):
     ti = np.zeros(scalardim)+ti1d[:,None,None]
     tj = np.zeros(scalardim)+tj1d[None,:,None]
     tk = np.zeros(scalardim)+tk1d[None,None,:]
-    
+
 def rdtab(fname):
-    global n1, n2, n3, t, ti, tj, tk, x1, x2, x3, rho, v1, v2, v3, pg, B1c, B2c, B3c
+    global t, n1, n2, n3, t, ti, tj, tk, x1, x2, x3, rho, v1, v2, v3, pg, B1c, B2c, B3c
     fin = open( fname , "rb" )
     header1 = fin.readline().split()
     header2 = fin.readline().split()
@@ -572,6 +564,27 @@ def rdtab(fname):
     fin.close()
     res = np.loadtxt(fname,dtype=np.float64,skiprows=0,unpack=1).reshape((-1,n1,n2,n3),order="F")
     ti, tj, tk, x1, x2, x3, rho, v1, v2, v3, pg, B1c, B2c, B3c = res
+
+def GetTimeFromAthenaVTK(f_name):
+    """
+    Get the simulation time from a given Athena VTK File.
+
+    The second line in the vtk file is:
+    'PRIMITIVE vars at time= 0.000000e+00, level= 0, domain= 0'
+    """
+
+    # Get Second line from file
+    vtk_file = open(f_name, 'r')
+    parse_line = vtk_file.readline()
+    parse_line = vtk_file.readline()                                                            # Get second line of file
+    vtk_file.close()
+
+    # Parse for time string
+    pl_left, pl_right = parse_line.split("time=")                                               # Split line into left and right of 'time='
+    file_time = pl_right.split(",")[0]                                                          # Split right component around ',' store first element
+    file_time = float64(file_time)                                                              # Convert to float
+
+    return file_time
 
 def mkathtestmovie(**kwargs):
     fntsize = kwargs.pop("fontsize",20)
