@@ -1,4 +1,6 @@
 import matplotlib
+import vtk
+from vtk.util import numpy_support as VN
 matplotlib.use('Agg')
 from matplotlib import rc
 from streamlines import streamplot
@@ -46,6 +48,77 @@ import visit_writer
 
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
+
+def plot_hoverr(fti=2000,ftf=2200):
+    grid3d("gdump.bin",use2d=1)
+    ihor=iofr(rhor)
+    qtymem=getqtyvstime(ihor,0.2)
+    avg=rdavg2d()
+    horavg = plotqtyvstime( qtymem, whichplot = -199, fti=fti, ftf=ftf, aphi_j_val=aphi_j_val )
+    #horavg = plotqtyvstime( qtymem, whichplot = -199, fti=2000, ftf=2200, aphi_j_val=0 )
+
+def readrodrigo():
+    gd = np.loadtxt( fname,
+                     dtype=np.float64, 
+                     skiprows=1, 
+                     unpack = True )
+    ox, oy, oz, orho, ougas, oux, ouy, ouz, vvv, oBx, oBy, oBz, oErf, ourfx, ourfy, ourfz = gd
+    
+
+def test1001comparison():
+    get1001test()
+    grid3d("gdump")
+    rd("dump0000")
+    rdr("raddump0000")
+    plt.figure(1)
+    plt.plot(r[:,0,0],rho[:,0,0])
+    plt.plot(ox,orho)
+    plt.figure(2)
+    #only slight difference in ug.mean(); difference in last digit
+    #perhaps due to initial units conversion
+    plt.plot(r[:,0,0],ug[:,0,0])
+    plt.plot(ox,ougas)
+    plt.figure(3)
+    plt.plot(r[:,0,0],(uu[1]*dxdxp[1,1])[:,0,0])
+    plt.plot(ox,oux)
+    plt.figure(4)
+    plt.plot(r[:,0,0],(uu[2]*dxdxp[2,2])[:,0,0])
+    plt.plot(ox,ouy)
+    plt.figure(5)
+    #difference!!  Need to recalibrate B0
+    plt.plot(r[:,0,0],(B[1]*dxdxp[1,1])[:,0,0])
+    plt.plot(ox,oBx)
+    plt.figure(6)
+    #difference
+    #HARM: 1.6229205794526802e-07
+    #Koral: 1.6234277926130414e-07
+    plt.plot(r[:,0,0],(B[2]*dxdxp[2,2])[:,0,0])
+    plt.plot(ox,oBy)
+    plt.figure(7)
+    #difference
+    #Erf
+    #HARM: 0.0018274111675126903
+    #Koral: 0.0018274099999999538
+    #important?
+    plt.plot(r[:,0,0],pradffortho[0][:,0,0])
+    plt.plot(ox,oErf)
+    plt.figure(8)
+    plt.plot(r[:,0,0],(uradu[1]*dxdxp[1,1])[:,0,0])
+    #plt.plot(r[:,0,0],(pradffortho[1]*dxdxp[1,1])[:,0,0])
+    plt.plot(ox,ourfx)
+    plt.figure(9)
+    plt.plot(r[:,0,0],(uradu[2]*dxdxp[2,2])[:,0,0])
+    plt.plot(ox,ourfy)
+    
+
+def get1001test(fname="res0000.dat"):
+    global ox, orho, ougas, oux, ouy, oBx, oBy, oErf, ourfx, ourfy, ourfz, vvv
+    gd = np.loadtxt( fname,
+                     dtype=np.float64, 
+                     skiprows=1, 
+                     unpack = True )
+    ox, oy, oz, orho, ougas, oux, ouy, ouz, vvv, oBx, oBy, oBz, oErf, ourfx, ourfy, ourfz = gd
+
 
 def plotomerjetstar(doreload=1,no=8000,startn=0,dn=2,endn=12000,vhead=None,framename="frame",ncell=1600):
     os.chdir("/scratch/gpfs/omerb/Sasha_MHD/runs/run_r1e4_powerDensity_rho_8e7_powInd25_N232_parabGrid_vcap_05")
@@ -425,6 +498,65 @@ def rdath2d(fname):
 
 def rdath3d(fname):
     global n1, n2, n3, t, ti, tj, tk, x1, x2, x3, rho, v1, v2, v3, pg, B1c, B2c, B3c
+    if fname.endswith(".tab"):
+        rdtab(fname)
+    elif fname.endswith(".vtk"):
+        rdvtk(fname)
+    else:
+        print( "rdath3d: Unknown file type: %s" % fname )
+
+def rdvtk(fname):
+    global n1, n2, n3, t, ti, tj, tk, x1, x2, x3, rho, v1, v2, v3, pg, B1c, B2c, B3c
+    global reader, data, dim
+    filename = fname
+    reader = vtk.vtkStructuredPointsReader()
+    reader.SetFileName(filename)
+    reader.ReadAllVectorsOn()
+    reader.ReadAllScalarsOn()
+    reader.Update()
+    data = reader.GetOutput()
+    dim = data.GetDimensions()
+    vecdim = list(dim)
+    vecdim = [i-1 for i in dim]
+    scalardim = vecdim[:] #make a copy
+    vecdim.append(3)
+    v = VN.vtk_to_numpy(data.GetCellData().GetArray('velocity'))
+    Bc = VN.vtk_to_numpy(data.GetCellData().GetArray('cell_centered_B'))
+    rho = VN.vtk_to_numpy(data.GetCellData().GetArray('density'))
+    pg = VN.vtk_to_numpy(data.GetCellData().GetArray('pressure'))
+    v1,v2,v3 = v.reshape(vecdim,order="F").transpose(3,0,1,2)
+    B1c,B2c,B3c = Bc.reshape(vecdim,order="F").transpose(3,0,1,2)
+    rho = rho.reshape(scalardim,order="F")
+    pg = pg.reshape(scalardim,order="F")
+    #xyz = VN.vtk_to_numpy(data.GetPoints().GetData())
+    # x = zeros(data.GetNumberOfPoints())
+    # y = zeros(data.GetNumberOfPoints())
+    # z = zeros(data.GetNumberOfPoints())    
+    # for i in xrange(data.GetNumberOfPoints()):
+    #     x[i],y[i],z[i] = data.GetPoint(i)
+    # x = x.reshape(dim,order="F")
+    # y = y.reshape(dim,order="F")
+    # z = z.reshape(dim,order="F")
+    # Assume regular grid and get: (i) x1,x2,x3 and (ii) ti,tj,tk
+    ncorn = data.GetNumberOfPoints()
+    xstart,ystart,zstart = data.GetPoint(0)
+    xend,yend,zend = data.GetPoint(ncorn-1)
+    dx,dy,dz = data.GetSpacing()
+    x1d = np.linspace(xstart+0.5*dx,xend-0.5*dx,scalardim[0])
+    y1d = np.linspace(ystart+0.5*dy,yend-0.5*dy,scalardim[1])
+    z1d = np.linspace(zstart+0.5*dz,zend-0.5*dz,scalardim[2])
+    x1 = np.zeros(scalardim)+x1d[:,None,None]
+    x2 = np.zeros(scalardim)+y1d[None,:,None]
+    x3 = np.zeros(scalardim)+z1d[None,None,:]
+    ti1d = np.arange(scalardim[0])
+    tj1d = np.arange(scalardim[1])
+    tk1d = np.arange(scalardim[2])
+    ti = np.zeros(scalardim)+ti1d[:,None,None]
+    tj = np.zeros(scalardim)+tj1d[None,:,None]
+    tk = np.zeros(scalardim)+tk1d[None,None,:]
+    
+def rdtab(fname):
+    global n1, n2, n3, t, ti, tj, tk, x1, x2, x3, rho, v1, v2, v3, pg, B1c, B2c, B3c
     fin = open( fname , "rb" )
     header1 = fin.readline().split()
     header2 = fin.readline().split()
@@ -449,15 +581,18 @@ def mkathtestmovie(**kwargs):
     endn=kwargs.pop("endn",112)
     dn=kwargs.pop("dn",1)
     dosavefig=kwargs.pop("dosavefig",1)
+    vmin=kwargs.pop("vmin",1e-3)
+    vmax=kwargs.pop("vmax",1e+3)
+    ext=kwargs.pop("ext","vtk")
     plt.figure(1,figsize=(8,6))
     plt.clf()
     for i in xrange(startn,endn,dn):
-        rdath3d("%s.%04d.tab"%(name,i));
+        rdath3d("%s.%04d.%s"%(name,i,ext));
         kval=kwargs.pop("k",n3/2)
         #plco(np.log10(pg),levels=np.arange(-4,4,0.1),isfilled=1,antialiased=0,cb=1);
         ax = plt.gca()
         #plt.clf()
-        p=ax.imshow(np.log10(pg[:,:,kval].transpose()), extent=(0,n1,0,n2), cmap = cm.jet, norm = colors.Normalize(clip = True),origin='lower',interpolation="nearest",vmin=-3,vmax=3,**kwargs)
+        p=ax.imshow(np.log10(pg[:,:,kval].transpose()), extent=(0,n1,0,n2), cmap = cm.jet, norm = colors.Normalize(clip = True),origin='lower',interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
         print("n=%4d, t=%5.3g: min(rho)=%5.3g, min(pg)=%5.3g" % (i, t, np.min(rho), np.min(pg)))
         if i==startn:
             cbar = plt.colorbar(p)
