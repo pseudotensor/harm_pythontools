@@ -8192,8 +8192,8 @@ def getbsq_pre():
 
 
 def cvel():
-    # MEMMARK: (4+4+4+1+4+4+4+4+6)=35 full 3D vars
-    global ud,etad, etau, gamma, vu, vd, bu, bd, bsq,beta,betatoplot,Q1,Q2,Q2toplot,uradd,tauradintegrated
+    # MEMMARK: (4+4+4+1+1+4+4+4+4+6)=36 full 3D vars
+    global ud,etad, etau, gamma, vu, vd, bu, bd, bsq,beta,betatot,betatoplot,Q1,Q2,Q2toplot,uradd,tauradintegrated
     #
     #
     ud = mdot(gv3,uu)                  #g_mn u^n
@@ -11317,7 +11317,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             maxrhosq3d[:,j,:] = maxrhosq2d
         rhosrhosq[qindex]=intangle(gdet*denfactor*rho,**keywordsrhosq)/rhosqint
         ugsrhosq[qindex]=intangle(gdet*denfactor*ug,**keywordsrhosq)/rhosqint
-        uradsrhosq[qindex]=intangle(gdet*denfactor*uradd,**keywordsrhosq)/rhosqint
+        uradsrhosq[qindex]=intangle(gdet*denfactor*urad,**keywordsrhosq)/rhosqint
         # no restriction for velocity or field quantities! (as long as denfactor=1 this is good)
         denfactor=1.0 + rholab*0.0
         # yes, over whole disk so include jet for vel/field
@@ -11817,6 +11817,8 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             denomdrho=avg_rho
             dug=(ug-avg_ug)
             denomdug=avg_ug
+            durad=(urad-avg_urad)
+            denomdurad=avg_urad
             duu0=(myauu0-avg_myauu0)
             denomduu0=avg_myauu0
             duu3=(myauu3-avg_myauu3)
@@ -15301,8 +15303,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #ibetarm1=(bsqrhosq/2.0)/(rhosrhosq*(vus1rhosq**2) + ugsrhosq*(gam-1.0))
     pbrm1=(bsqrhosq/2.0)
     pgpradrm1=ugsrhosq*(gam-1.0)+uradsrhosq*(4.0/3.0-1.0)
-    rhovsqrm1=(rhosrhosq+pgrm1+ugsrhosq)*(uu0rhosq*vus1rhosq)**2
-    ibetarm1=pbrm1/(rhovsqrm1 + pgrm1)
+    rhovsqrm1=(rhosrhosq+pgpradrm1+ugsrhosq)*(uu0rhosq*vus1rhosq)**2
+    ibetarm1=pbrm1/(rhovsqrm1 + pgpradrm1)
     ibetarm1_avg = timeavg_vstvsr(ibetarm1,ts,fti,ftf)
     print("ibetarm1_avg") ; sys.stdout.flush()
     print(ibetarm1_avg) ; sys.stdout.flush()
@@ -17684,7 +17686,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     else:
         # added PAKE and EN to BH term only:
         print( "HLatex6: ModelName & $\\eta_{\\rm{}H}$ & $\\eta^{\\rm{}EM}_{\\rm{}H}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}H}$ & $\\eta^{\\rm{}PAKE}_{\\rm{}H}$ & $\\eta^{\\rm{}EN}_{\\rm{}H}$ & $\\eta^{\\rm{}RAD}_{\\rm{}H}$ & $\\eta_{\\rm{}j}$ & $\\eta^{\\rm{}EM}_j$ & $\\eta^{\\rm{}MAKE}_{\\rm{}j}$ & $\\eta_{\\rm{}mw,o}$ & $\\eta_{\\rm{}w,o}$ & $\\eta_{\\rm{}NT}$ \\\\" )
-        print( "VLatex6: %s         & %g               & %g                           & %g                             & %g                             & %g                           & %g                & %g                   & %g                             & %g                   & %g                  & %g                 \\\\ %% %s" % (truemodelname, roundto3foreta(etabh_avg), roundto3foreta(etabhEM_avg), roundto3foreta(etabhMAKE_avg), roundto3foreta(etabhPAKE_avg), roundto3foreta(etabhEN_avg), roundto3foreta(etabhRAD_avg), roundto3foreta(etaj_avg), roundto3foreta(etajEM_avg), roundto3foreta(etajMAKE_avg), roundto3foreta(etamwout_avg), roundto3foreta(etawout_avg), roundto3foreta(etant), modelname ) )
+        print( "VLatex6: %s         & %g               & %g                           & %g                             & %g                             & %g                           & %g                & %g                   & %g                             & %g                   & %g                   & %g                  & %g                 \\\\ %% %s" % (truemodelname, roundto3foreta(etabh_avg), roundto3foreta(etabhEM_avg), roundto3foreta(etabhMAKE_avg), roundto3foreta(etabhPAKE_avg), roundto3foreta(etabhEN_avg), roundto3foreta(etabhRAD_avg), roundto3foreta(etaj_avg), roundto3foreta(etajEM_avg), roundto3foreta(etajMAKE_avg), roundto3foreta(etamwout_avg), roundto3foreta(etawout_avg), roundto3foreta(etant), modelname ) )
     #
     # 12:
     print( "HLatex7: ModelName & $\\eta_{\\rm{}mw,i}$ & $\\eta^{\\rm{}EM}_{\\rm{}mw,i}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}mw,i}$ & $\\eta_{\\rm{}mw,o}$ & $\\eta^{\\rm{}EM}_{\\rm{}mw,o}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}mw,o}$ & $\\eta_{\\rm{}w,i}$ & $\\eta^{\\rm{}EM}_{\\rm{}w,i}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}w,i}$ & $\\eta_{\\rm{}w,o}$ & $\\eta^{\\rm{}EM}_{\\rm{}w,o}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}w,o}$ \\\\" )
@@ -17700,7 +17702,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     # s-version of Latex8 gives this Latex15 version -- replaces need for Latex8 and Latex9
     if 1==0:
         print( "HLatex15: ModelName & $s_{\\rm{}H}$ & $s^{\\rm{}EM}_{\\rm{}H}$ & $s^{\\rm{}MAKE}_{\\rm{}H}$ & $s_{\\rm{}j}$ & $s^{\\rm{}EM}_j$ & $s^{\\rm{}MAKE}_{\\rm{}j}$ & $s^{\\rm{}RAD}_{\\rm{}j}$ & $s_{\\rm{}mw,o}$ & $s_{\\rm{}w,o}$ & $s_{\\rm{}NT}$ \\\\" )
-        print( "VLatex15: %s        & %g            & %g                       & %g                         & %g            & %g               & %g                         & %g               & %g              & %g             \\\\ %% %s" % (truemodelname, roundto3forl(sbh_avg), roundto3forl(sbhEM_avg), roundto3forl(sbhMAKE_avg), roundto3forl(sbhRAD_avg), roundto3forl(sj_avg), roundto3forl(sjEM_avg), roundto3forl(sjMAKE_avg), roundto3forl(smwout_avg), roundto3forl(swout_avg), roundto3forl(snt), modelname ) )
+        print( "VLatex15: %s        & %g            & %g                       & %g                         & %g                   & %g            & %g               & %g                         & %g               & %g              & %g             \\\\ %% %s" % (truemodelname, roundto3forl(sbh_avg), roundto3forl(sbhEM_avg), roundto3forl(sbhMAKE_avg), roundto3forl(sbhRAD_avg), roundto3forl(sj_avg), roundto3forl(sjEM_avg), roundto3forl(sjMAKE_avg), roundto3forl(smwout_avg), roundto3forl(swout_avg), roundto3forl(snt), modelname ) )
     elif 1==0:
         # added PAKE and EN terms for BH only
         print( "HLatex15: ModelName & $s_{\\rm{}H}$ & $s^{\\rm{}EM}_{\\rm{}H}$ & $s^{\\rm{}MAKE}_{\\rm{}H}$ & $s^{\\rm{}PAKE}_{\\rm{}H}$ & $s^{\\rm{}EN}_{\\rm{}H}$ & $s_{\\rm{}j}$ & $s^{\\rm{}EM}_j$ & $s^{\\rm{}MAKE}_{\\rm{}j}$ & $s_{\\rm{}mw,o}$ & $s_{\\rm{}w,o}$ & $s_{\\rm{}NT}$ \\\\" )
@@ -17709,7 +17711,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     else:
         # added PA and EN terms for BH only and fixed how summed
         print( "HLatex15: ModelName & $s_{\\rm{}H}$ & $s^{\\rm{}EM}_{\\rm{}H}$ & $s^{\\rm{}MA}_{\\rm{}H}$ & $s^{\\rm{}PA}_{\\rm{}H}$ & $s^{\\rm{}EN}_{\\rm{}H}$ & $s^{\\rm{}RAD}_{\\rm{}H}$ & $s_{\\rm{}j}$ & $s^{\\rm{}EM}_j$ & $s^{\\rm{}MA}_{\\rm{}j}$ & $s_{\\rm{}mw,o}$ & $s_{\\rm{}w,o}$ & $s_{\\rm{}NT}$ \\\\" )
-        print( "VLatex15: %s        & %g            & %g                       & %g                         & %g                         & %g                         & %g          & %g               & %g                         & %g               & %g              & %g             \\\\ %% %s" % (truemodelname, roundto3forl(sbh_avg), roundto3forl(sbhEM_avg), roundto3forl(sbhMA_avg), roundto3forl(sbhPA_avg), roundto3forl(sbhEN_avg), roundto3forl(sbhRAD_avg), roundto3forl(sj_avg), roundto3forl(sjEM_avg), roundto3forl(sjMA_avg), roundto3forl(smwout_avg), roundto3forl(swout_avg), roundto3forl(snt), modelname ) )
+        print( "VLatex15: %s        & %g            & %g                       & %g                         & %g                         & %g                         & %g          & %g               & %g                         & %g                   & %g               & %g              & %g             \\\\ %% %s" % (truemodelname, roundto3forl(sbh_avg), roundto3forl(sbhEM_avg), roundto3forl(sbhMA_avg), roundto3forl(sbhPA_avg), roundto3forl(sbhEN_avg), roundto3forl(sbhRAD_avg), roundto3forl(sj_avg), roundto3forl(sjEM_avg), roundto3forl(sjMA_avg), roundto3forl(smwout_avg), roundto3forl(swout_avg), roundto3forl(snt), modelname ) )
     #
     #
     # 12:
@@ -19067,6 +19069,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         bs3rhosqrad4_vsh=np.zeros(nx,dtype=r.dtype)
         bas3rhosqrad4_vsh=np.zeros(nx,dtype=r.dtype)
         bsqrhosqrad4_vsh=np.zeros(nx,dtype=r.dtype)
+        uradsrhosqrad4_vsh=np.zeros(nx,dtype=r.dtype)
         #
         # now interpolate from size ny to size nx
         # get \theta at r=4 in size of nx rather than ny
@@ -19076,7 +19079,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         # columns=22
         favgrad4 = open('datavsh1.txt', 'w')
-        favgrad4.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("ii","hinnx4","rhosrhosqrad4_vsh","ugsrhosqrad4_vsh","uu0rhosqrad4_vsh","vus1rhosqrad4_vsh","vuas1rhosqrad4_vsh","vus3rhosqrad4_vsh","vuas3rhosqrad4_vsh","vuasrotrhosqrad4_vsh","Bs1rhosqrad4_vsh","Bas1rhosqrad4_vsh","Bs2rhosqrad4_vsh","Bas2rhosqrad4_vsh","Bs3rhosqrad4_vsh","Bas3rhosqrad4_vsh","bs1rhosqrad4_vsh","bas1rhosqrad4_vsh","bs2rhosqrad4_vsh","bas2rhosqrad4_vsh","bs3rhosqrad4_vsh","bas3rhosqrad4_vsh","bsqrhosqrad4_vsh" ) )
+        favgrad4.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("ii","hinnx4","rhosrhosqrad4_vsh","ugsrhosqrad4_vsh","uu0rhosqrad4_vsh","vus1rhosqrad4_vsh","vuas1rhosqrad4_vsh","vus3rhosqrad4_vsh","vuas3rhosqrad4_vsh","vuasrotrhosqrad4_vsh","Bs1rhosqrad4_vsh","Bas1rhosqrad4_vsh","Bs2rhosqrad4_vsh","Bas2rhosqrad4_vsh","Bs3rhosqrad4_vsh","Bas3rhosqrad4_vsh","bs1rhosqrad4_vsh","bas1rhosqrad4_vsh","bs2rhosqrad4_vsh","bas2rhosqrad4_vsh","bs3rhosqrad4_vsh","bas3rhosqrad4_vsh","bsqrhosqrad4_vsh","uradsrhosqrad4_vsh" ) )
         for ii in np.arange(0,nx):
             # Q vs h
             # 2+20
@@ -19101,8 +19104,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             bs3rhosqrad4_vsh[ii]=timeavg(bs3rhosqrad4[:,ii],ts,fti,ftf)
             bas3rhosqrad4_vsh[ii]=timeavg(bas3rhosqrad4[:,ii],ts,fti,ftf)
             bsqrhosqrad4_vsh[ii]=timeavg(bsqrhosqrad4[:,ii],ts,fti,ftf)
+            uradsrhosqrad4_vsh[ii]=timeavg(uradsrhosqrad4[:,ii],ts,fti,ftf)
             #
-            favgrad4.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,hinnx4[ii],rhosrhosqrad4_vsh[ii],ugsrhosqrad4_vsh[ii],uu0rhosqrad4_vsh[ii],vus1rhosqrad4_vsh[ii],vuas1rhosqrad4_vsh[ii],vus3rhosqrad4_vsh[ii],vuas3rhosqrad4_vsh[ii],vuasrotrhosqrad4_vsh[ii],Bs1rhosqrad4_vsh[ii],Bas1rhosqrad4_vsh[ii],Bs2rhosqrad4_vsh[ii],Bas2rhosqrad4_vsh[ii],Bs3rhosqrad4_vsh[ii],Bas3rhosqrad4_vsh[ii],bs1rhosqrad4_vsh[ii],bas1rhosqrad4_vsh[ii],bs2rhosqrad4_vsh[ii],bas2rhosqrad4_vsh[ii],bs3rhosqrad4_vsh[ii],bas3rhosqrad4_vsh[ii],bsqrhosqrad4_vsh[ii]) )
+            favgrad4.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,hinnx4[ii],rhosrhosqrad4_vsh[ii],ugsrhosqrad4_vsh[ii],uu0rhosqrad4_vsh[ii],vus1rhosqrad4_vsh[ii],vuas1rhosqrad4_vsh[ii],vus3rhosqrad4_vsh[ii],vuas3rhosqrad4_vsh[ii],vuasrotrhosqrad4_vsh[ii],Bs1rhosqrad4_vsh[ii],Bas1rhosqrad4_vsh[ii],Bs2rhosqrad4_vsh[ii],Bas2rhosqrad4_vsh[ii],Bs3rhosqrad4_vsh[ii],Bas3rhosqrad4_vsh[ii],bs1rhosqrad4_vsh[ii],bas1rhosqrad4_vsh[ii],bs2rhosqrad4_vsh[ii],bas2rhosqrad4_vsh[ii],bs3rhosqrad4_vsh[ii],bas3rhosqrad4_vsh[ii],bsqrhosqrad4_vsh[ii],uradsrhosqrad4_vsh[ii]) )
             #
         favgrad4.close()
         ###################
@@ -19136,10 +19140,11 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         bs3rhosqrad8_vsh=np.zeros(nx,dtype=r.dtype)
         bas3rhosqrad8_vsh=np.zeros(nx,dtype=r.dtype)
         bsqrhosqrad8_vsh=np.zeros(nx,dtype=r.dtype)
+        uradsrhosqrad8_vsh=np.zeros(nx,dtype=r.dtype)
         #
         # columns=22
         favgrad8 = open('datavsh2.txt', 'w')
-        favgrad8.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("ii","hinnx8","rhosrhosqrad8_vsh","ugsrhosqrad8_vsh","uu0rhosqrad8_vsh","vus1rhosqrad8_vsh","vuas1rhosqrad8_vsh","vus3rhosqrad8_vsh","vuas3rhosqrad8_vsh","vuasrotrhosqrad8_vsh","Bs1rhosqrad8_vsh","Bas1rhosqrad8_vsh","Bs2rhosqrad8_vsh","Bas2rhosqrad8_vsh","Bs3rhosqrad8_vsh","Bas3rhosqrad8_vsh","bs1rhosqrad8_vsh","bas1rhosqrad8_vsh","bs2rhosqrad8_vsh","bas2rhosqrad8_vsh","bs3rhosqrad8_vsh","bas3rhosqrad8_vsh","bsqrhosqrad8_vsh" ) )
+        favgrad8.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("ii","hinnx8","rhosrhosqrad8_vsh","ugsrhosqrad8_vsh","uu0rhosqrad8_vsh","vus1rhosqrad8_vsh","vuas1rhosqrad8_vsh","vus3rhosqrad8_vsh","vuas3rhosqrad8_vsh","vuasrotrhosqrad8_vsh","Bs1rhosqrad8_vsh","Bas1rhosqrad8_vsh","Bs2rhosqrad8_vsh","Bas2rhosqrad8_vsh","Bs3rhosqrad8_vsh","Bas3rhosqrad8_vsh","bs1rhosqrad8_vsh","bas1rhosqrad8_vsh","bs2rhosqrad8_vsh","bas2rhosqrad8_vsh","bs3rhosqrad8_vsh","bas3rhosqrad8_vsh","bsqrhosqrad8_vsh","uraddsrhosqrad8_vsh" ) )
         for ii in np.arange(0,nx):
             # Q vs h
             # 2+20
@@ -19164,8 +19169,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             bs3rhosqrad8_vsh[ii]=timeavg(bs3rhosqrad8[:,ii],ts,fti,ftf)
             bas3rhosqrad8_vsh[ii]=timeavg(bas3rhosqrad8[:,ii],ts,fti,ftf)
             bsqrhosqrad8_vsh[ii]=timeavg(bsqrhosqrad8[:,ii],ts,fti,ftf)
+            uradsrhosqrad8_vsh[ii]=timeavg(uradsrhosqrad8[:,ii],ts,fti,ftf)
             #
-            favgrad8.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,hinnx8[ii],rhosrhosqrad8_vsh[ii],ugsrhosqrad8_vsh[ii],uu0rhosqrad8_vsh[ii],vus1rhosqrad8_vsh[ii],vuas1rhosqrad8_vsh[ii],vus3rhosqrad8_vsh[ii],vuas3rhosqrad8_vsh[ii],vuasrotrhosqrad8_vsh[ii],Bs1rhosqrad8_vsh[ii],Bas1rhosqrad8_vsh[ii],Bs2rhosqrad8_vsh[ii],Bas2rhosqrad8_vsh[ii],Bs3rhosqrad8_vsh[ii],Bas3rhosqrad8_vsh[ii],bs1rhosqrad8_vsh[ii],bas1rhosqrad8_vsh[ii],bs2rhosqrad8_vsh[ii],bas2rhosqrad8_vsh[ii],bs3rhosqrad8_vsh[ii],bas3rhosqrad8_vsh[ii],bsqrhosqrad8_vsh[ii]) )
+            favgrad8.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,hinnx8[ii],rhosrhosqrad8_vsh[ii],ugsrhosqrad8_vsh[ii],uu0rhosqrad8_vsh[ii],vus1rhosqrad8_vsh[ii],vuas1rhosqrad8_vsh[ii],vus3rhosqrad8_vsh[ii],vuas3rhosqrad8_vsh[ii],vuasrotrhosqrad8_vsh[ii],Bs1rhosqrad8_vsh[ii],Bas1rhosqrad8_vsh[ii],Bs2rhosqrad8_vsh[ii],Bas2rhosqrad8_vsh[ii],Bs3rhosqrad8_vsh[ii],Bas3rhosqrad8_vsh[ii],bs1rhosqrad8_vsh[ii],bas1rhosqrad8_vsh[ii],bs2rhosqrad8_vsh[ii],bas2rhosqrad8_vsh[ii],bs3rhosqrad8_vsh[ii],bas3rhosqrad8_vsh[ii],bsqrhosqrad8_vsh[ii],uradsrhosqrad8_vsh[ii]) )
             #
         favgrad8.close()
         ###################
@@ -19198,13 +19204,14 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         bs3rhosqrad30_vsh=np.zeros(nx,dtype=r.dtype)
         bas3rhosqrad30_vsh=np.zeros(nx,dtype=r.dtype)
         bsqrhosqrad30_vsh=np.zeros(nx,dtype=r.dtype)
+        uradsrhosqrad30_vsh=np.zeros(nx,dtype=r.dtype)
         #
-        # columns=22
+        # columns=24
         favgrad30 = open('datavsh3.txt', 'w')
-        favgrad30.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("ii","hinnx30","rhosrhosqrad30_vsh","ugsrhosqrad30_vsh","uu0rhosqrad30_vsh","vus1rhosqrad30_vsh","vuas1rhosqrad30_vsh","vus3rhosqrad30_vsh","vuas3rhosqrad30_vsh","vuasrotrhosqrad30_vsh","Bs1rhosqrad30_vsh","Bas1rhosqrad30_vsh","Bs2rhosqrad30_vsh","Bas2rhosqrad30_vsh","Bs3rhosqrad30_vsh","Bas3rhosqrad30_vsh","bs1rhosqrad30_vsh","bas1rhosqrad30_vsh","bs2rhosqrad30_vsh","bas2rhosqrad30_vsh","bs3rhosqrad30_vsh","bas3rhosqrad30_vsh","bsqrhosqrad30_vsh" ) )
+        favgrad30.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("ii","hinnx30","rhosrhosqrad30_vsh","ugsrhosqrad30_vsh","uu0rhosqrad30_vsh","vus1rhosqrad30_vsh","vuas1rhosqrad30_vsh","vus3rhosqrad30_vsh","vuas3rhosqrad30_vsh","vuasrotrhosqrad30_vsh","Bs1rhosqrad30_vsh","Bas1rhosqrad30_vsh","Bs2rhosqrad30_vsh","Bas2rhosqrad30_vsh","Bs3rhosqrad30_vsh","Bas3rhosqrad30_vsh","bs1rhosqrad30_vsh","bas1rhosqrad30_vsh","bs2rhosqrad30_vsh","bas2rhosqrad30_vsh","bs3rhosqrad30_vsh","bas3rhosqrad30_vsh","bsqrhosqrad30_vsh","uradsrhosqrad30_vsh" ) )
         for ii in np.arange(0,nx):
             # Q vs h
-            # 2+20
+            # 2+22
             rhosrhosqrad30_vsh[ii]=timeavg(rhosrhosqrad30[:,ii],ts,fti,ftf)
             ugsrhosqrad30_vsh[ii]=timeavg(ugsrhosqrad30[:,ii],ts,fti,ftf)
             uu0rhosqrad30_vsh[ii]=timeavg(uu0rhosqrad30[:,ii],ts,fti,ftf)
@@ -19226,8 +19233,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             bs3rhosqrad30_vsh[ii]=timeavg(bs3rhosqrad30[:,ii],ts,fti,ftf)
             bas3rhosqrad30_vsh[ii]=timeavg(bas3rhosqrad30[:,ii],ts,fti,ftf)
             bsqrhosqrad30_vsh[ii]=timeavg(bsqrhosqrad30[:,ii],ts,fti,ftf)
+            uradsrhosqrad30_vsh[ii]=timeavg(uradsrhosqrad30[:,ii],ts,fti,ftf)
             #
-            favgrad30.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,hinnx30[ii],rhosrhosqrad30_vsh[ii],ugsrhosqrad30_vsh[ii],uu0rhosqrad30_vsh[ii],vus1rhosqrad30_vsh[ii],vuas1rhosqrad30_vsh[ii],vus3rhosqrad30_vsh[ii],vuas3rhosqrad30_vsh[ii],vuasrotrhosqrad30_vsh[ii],Bs1rhosqrad30_vsh[ii],Bas1rhosqrad30_vsh[ii],Bs2rhosqrad30_vsh[ii],Bas2rhosqrad30_vsh[ii],Bs3rhosqrad30_vsh[ii],Bas3rhosqrad30_vsh[ii],bs1rhosqrad30_vsh[ii],bas1rhosqrad30_vsh[ii],bs2rhosqrad30_vsh[ii],bas2rhosqrad30_vsh[ii],bs3rhosqrad30_vsh[ii],bas3rhosqrad30_vsh[ii],bsqrhosqrad30_vsh[ii]) )
+            favgrad30.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,hinnx30[ii],rhosrhosqrad30_vsh[ii],ugsrhosqrad30_vsh[ii],uu0rhosqrad30_vsh[ii],vus1rhosqrad30_vsh[ii],vuas1rhosqrad30_vsh[ii],vus3rhosqrad30_vsh[ii],vuas3rhosqrad30_vsh[ii],vuasrotrhosqrad30_vsh[ii],Bs1rhosqrad30_vsh[ii],Bas1rhosqrad30_vsh[ii],Bs2rhosqrad30_vsh[ii],Bas2rhosqrad30_vsh[ii],Bs3rhosqrad30_vsh[ii],Bas3rhosqrad30_vsh[ii],bs1rhosqrad30_vsh[ii],bas1rhosqrad30_vsh[ii],bs2rhosqrad30_vsh[ii],bas2rhosqrad30_vsh[ii],bs3rhosqrad30_vsh[ii],bas3rhosqrad30_vsh[ii],bsqrhosqrad30_vsh[ii],uradsrhosqrad30_vsh[ii]) )
             #
             #
         favgrad30.close()
@@ -25253,7 +25261,7 @@ def mkavgfigs():
             for ll in np.arange(0,4):
                 for mm in np.arange(0,4):
                     avg1.write("%g " % (avg_absfdd[mm,ll,ihor,jj,0]))
-            # columns 290- (290+16)
+            # columns 290- (290+15)=305
             for ll in np.arange(0,4):
                 for mm in np.arange(0,4):
                     avg1.write("%g " % (avg_TudRAD[mm,ll,ihor,jj,0]))
@@ -25564,10 +25572,12 @@ def mkavgfigs():
                     avg1.write("%g " % (avgvsr_absfdd[mm,ll,ii]))
             # columns 290-292
             avg1.write("%g %g %g " % (avgvsr_hor[ii],rhosqint[ii],rhosqint2[ii]))
-            # columns 293- (293+16)
+            # columns 293- (293+15) = 308
             for ll in np.arange(0,4):
                 for mm in np.arange(0,4):
                     avg1.write("%g " % (avgvsr_TudRAD[mm,ll,ii]))
+            # column 309
+            avg1.write("%g " % (avgvsr_urad[ii]))
             avg1.write("\n")
         #
         avg1.close()
