@@ -15997,7 +15997,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     letabhMAKE = prefactor*ljmaketot[:,ihoruse]/mdotfinavg * letatotfix
     letabhPAKE = prefactor*ljpaketot[:,ihoruse]/mdotfinavg * letatotfix
     letabhEN = prefactor*ljentot[:,ihoruse]/mdotfinavg     * letatotfix
-    letabh = letabhEM + letabhMAKE
+    letabhRAD=prefactor*ldrad[:,ihoruse]/mdotfinavg     * letatotfix # uses full edrad, not thin
+    letabh = letabhEM + letabhMAKE + letabhRAD
     letajEM = prefactor*ljem_mu1[:,iofr(rjetout)]/mdotfinavg
     letajMAKE = prefactor*ljmake_mu1[:,iofr(rjetout)]/mdotfinavg
     letajPAKE = prefactor*ljpake_mu1[:,iofr(rjetout)]/mdotfinavg
@@ -16190,6 +16191,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         etawoutEN_avg = timeavg(etawoutEN,ts,fti,ftf)
         #
         pemtot_avg = timeavg(pjemtot[:,ihoruse]*pjtotfix,ts,fti,ftf)
+        #
+        letabhRAD_avg=timeavg(letabhRAD,ts,fti,ftf)
         #
         letabh_avg = timeavg(letabh,ts,fti,ftf)
         letabhEM_avg = timeavg(letabhEM,ts,fti,ftf)
