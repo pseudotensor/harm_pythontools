@@ -6991,6 +6991,7 @@ def fieldcalcface(gdetB1=None):
     return(aphi)
 
 
+
 def fieldcalcU(gdetB1=None):
     # 3D wacky in time-dep flow
     #aphi=fieldcalcU3D(gdetB1=gdetB1)
@@ -7047,6 +7048,7 @@ def rolling_window(a, window):
 #    return(aphi)
 
 # 3D version
+# for gdetB1 at FACE1
 def fieldcalcU3D(gdetB1=None):
     global aphi
     if gdetB1 == None:
@@ -7059,6 +7061,9 @@ def fieldcalcU3D(gdetB1=None):
     #sum up from the other pole
     aphi[:,ny/2+1:ny,:]=(-daphi[:,::-1,:].cumsum(axis=1))[:,::-1,:][:,ny/2+1:ny,:]
     #
+    # aphi so far sits at CORN3.  Below gets at CENT so can plot.
+    #
+    # 
     #center it properly in theta
     aphi[:,0:ny-1,:]=0.5*(aphi[:,0:ny-1,:]+aphi[:,1:ny,:]) 
     #special treatment for last cell since no cell at j = ny, and we know aphi[:,ny] should vanish
@@ -7068,6 +7073,192 @@ def fieldcalcU3D(gdetB1=None):
     #
     return(aphi)
 
+
+
+def Bfieldcalc3U3D(Avpot=None):
+    if Avpot == None:
+        print("No Avpot defined"); sys.stdout.flush()
+        exit
+    #
+    gdetBnew = np.zeros_like(gdetB)
+    #
+    #
+    # np.diff takes out[n] = a[n+1] - a[n], as desired for getting gdetB_i @ FACE_i from Avpot_i @ CORN_i
+    gdetBnew[1,:,0:ny-1,:] = + np.diff(Avpot[3],n=1,axis=1)/_dx2
+    gdetBnew[1,:,ny-1,:] =   + (0.0-Avpot[3,:,ny-1,:])/_dx2 #asumes Avpot[3]=0 at outer pole
+
+    gdetBnew[1,:,:,0:nz-1] = - np.diff(Avpot[2],n=1,axis=2)/_dx3
+    gdetBnew[1,:,:,nz-1] =   - (Avpot[2,:,:,0]-Avpot[2,:,:,nz-1])/_dx3 # assumes periodic in \phi
+
+    gdetBnew[2,:,:,0:nz-1] = + np.diff(Avpot[1],n=1,axis=2)/_dx3
+    gdetBnew[2,:,:,nz-1] =   + (Avpot[1,:,:,0]-Avpot[1,:,:,nz-1])/_dx3 # assumes periodic in \phi
+
+    gdetBnew[2,0:nx-1,:,:] = - np.diff(Avpot[3],n=1,axis=0)/_dx1
+    gdetBnew[2,nx-1,:,:] = gdetBnew[2,nx-2,:,:]   # assumes outflow BCs
+
+    gdetBnew[3,0:nx-1,:,:] = np.diff(Avpot[2],n=1,axis=0)/_dx1
+    gdetBnew[3,nx-1,:,:] = gdetBnew[3,nx-2,:,:]  # assumes outflow BCs
+
+    gdetBnew[3,:,0:ny-1,:] = - np.diff(Avpot[1],n=1,axis=1)/_dx2
+    gdetBnew[3,:,ny-1,:] =   -(0.0-Avpot[1,:,ny-1,:])/_dx2 #asumes Avpot[1]=0 at outer pole
+    #
+    return(gdetBnew)
+
+
+# Compute staggered/CORN_i value of A_i from staggered/FACE_i values of \detg B^i
+# Force \detgB2=0 at poles
+# 
+def Afieldcalc3U3D(gdetB=None):
+    if gdetB == None:
+        gdetB = gdetB
+    #
+    #// \detg B1 = d_2 A3 - d_3 A2
+    #// \detg B2 = d_3 A1 - d_1 A3
+    #// \detg B3 = d_1 A2 - d_2 A1
+    #// A1 = F2[B3] = -F3[B2]
+    #// A2 = F3[B1] = -F1[B3]
+    #// A3 = F1[B2] = -F2[B1]
+    #   F1[B2]=A3 and F2[B1]=-A3
+    #
+    # A1 = A1_0 + \int (-gdet B3*dx2) + \int (+gdet*B2*dx3)    # Let A1_0=0 at inner-radial polar corner
+    # A2 = A2_0 + \int (+gdet B3*dx1) + \int (-gdet*B1*dx3)    # Let A2_0=0 at inner-radial polar corner
+    # A3 = A3_0 + \int (-gdet B2*dx1) + \int (+gdet*B1*dx2)    # first term vanishes if first integrate along pole, the out in angle
+    #
+    # hack to ensure polar region regular behaving
+    gdetB[2,:,0,:]=0.0   # right at pole
+    gdetB[2,:,1,:]=0.0   # offset at pole
+    #gdetB[2,:,ny,:]=0.0  # value exists in harm code, but not here, but assume it's 0
+    gdetB[2,:,ny-1,:]=0.0  # offset from pole
+    #
+    #
+    Avpot = np.zeros_like(gdetB)
+    #
+    ####################
+    # GET A_\phi assuming spherical polar coordinates with A_\phi=0 at poles.
+    # get result for each k
+    #global aphi1,aphi2
+    aphi1 = np.zeros_like(gdetB[1])
+    aphi2 = np.zeros_like(gdetB[1])
+    #
+    daphi = gdetB[1]*_dx2
+    #
+    # sum up from j=0 pole
+    # aphi1 is located CORN3 as result of each integral step
+    aphi1[:,0,:]=0
+    aphi1[:,1:ny,:]=(daphi.cumsum(axis=1))[:,0:ny-1,:]
+    # assume aphi1[0,ny,0]=0
+    # sum up from the other pole
+    #aphi2[:,0,:]=0
+    #aphi2[:,1:ny,:]=(-daphi[:,::-1,:].cumsum(axis=1))[:,::-1,:][:,1:ny,:]
+    # assume aphi2[0,ny,0]=0
+    #
+    # average-out pole-to-pole
+    # So A3=0 along entire polar surface of j=0,ny for all r-\phi.
+    #Avpot[3]=0.5*(aphi1+aphi2)
+    Avpot[3]=aphi1
+    #
+    print("DONEA3") ; sys.stdout.flush()
+    #
+    #
+    ####################
+    # GET A_r
+    # get result for each i
+    #
+    ar1a = np.zeros_like(gdetB[1])
+    ar1b = np.zeros_like(gdetB[1])
+    #
+    #
+    print("shapes:",gdetB[1].shape, gdetB[2].shape, gdetB[3].shape, gdetB.shape, gdet.shape,aphi1.shape,aphi2.shape) ; sys.stdout.flush()
+    #
+    #
+    dar3 = gdetB[2]*_dx3
+    #
+    ar1a[:,:,1:nz]=(dar3.cumsum(axis=2))[:,:,0:nz-1]
+    # assume ar1 periodic in phi
+    ar1a[:,:,0]=ar1a[:,:,nz-1] + dar3[:,:,nz-1]
+    #sum up other direction
+    #ar1b[:,:,1:nz]=(-dar3[:,:,::-1].cumsum(axis=2))[:,:,::-1][:,:,1:nz]
+    # assume ar1 periodic in phi
+    #ar1b[:,:,0]=ar1b[:,:,nz-1]
+    #
+    # average result
+    #ar1=0.5*(ar1a+ar1b)
+    ar1=ar1a
+    #
+    ar2a = np.zeros_like(gdetB[1])
+    ar2b = np.zeros_like(gdetB[1])
+    #
+    dar2 = -gdetB[3]*_dx2
+    #
+    # sum up from j=0 pole
+    ar2a[:,0,:]=0
+    ar2a[:,1:ny,:]=(dar2.cumsum(axis=1))[:,0:ny-1,:]
+    # assume ar2a[0,ny,0]=0
+    #sum up from the other pole
+    #ar2b[:,0,:]=0
+    #ar2b[:,1:ny,:]=(-dar2[:,::-1,:].cumsum(axis=1))[:,::-1,:][:,1:ny,:]
+    # assume ar2b[0,ny,0]=0
+    #
+    # average result
+    #ar2 = 0.5*(ar2a+ar2b)
+    ar2 = (ar2a)
+    #
+    # get final answer for j,k for each i
+    j=0
+    while j<ny:
+    #    k=0
+    #    while k<nz:
+        # for each radius (i), for j=0, integrate along \phi out to (k), then for that k fixed, integrate along theta out to (j)
+        # So A1=0 at \phi=0,2\pi for all radius and \theta.
+        Avpot[1,:,j,:]=ar1[:,0,:] + ar2[:,j,:]
+        j += 1
+    #
+    #
+    print("DONEA1") ; sys.stdout.flush()
+    ####################
+    # GET A_\theta
+    # get result for each i
+    #
+    ah1a = np.zeros_like(gdetB[1])
+    ah1b = np.zeros_like(gdetB[1])
+    #
+    #
+    #
+    dah3 = -gdetB[1]*_dx3
+    #
+    ah1a[:,:,1:nz]=(dah3.cumsum(axis=2))[:,:,0:nz-1]
+    # assume ah1 periodic in phi
+    ah1a[:,:,0]=ah1a[:,:,nz-1]+dah3[:,:,nz-1]
+    #sum up other direction
+    #ah1b[:,:,1:nz]=(-dah3[:,:,::-1].cumsum(axis=2))[:,:,::-1][:,:,1:nz]
+    # assume ah1 periodic in phi
+    #ah1b[:,:,0]=ah1b[:,:,nz-1]
+    #
+    # average result
+    #ah1=0.5*(ah1a+ah1b)
+    ah1=ah1a
+    #
+    ####
+    ah2 = np.zeros_like(gdetB[1])
+    #
+    dah1 = gdetB[3]*_dx1
+    #
+    #
+    ah2[1:nx:,:,:]=(dah1.cumsum(axis=0))[0:nx-1,:,:]
+    #
+    # get final answer for i,k for each j
+    #i=0
+    #while i<nx:
+    k=0
+    while k<nz:
+        # for constant theta (j), at k=0, integrate in radius until reach (i) and then integrate in phi (k)
+        # So Avpot[2]=0 on entire \theta-\phi for horizon
+        Avpot[2,:,:,k]=ah1[:,:,k] + ah2[:,:,0]
+        k += 1
+    #
+    print("DONEA2") ; sys.stdout.flush()
+    #
+    return(Avpot)
 
 
 def fieldcalcface2():
@@ -10961,7 +11152,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         # below allows for magnetized disk
         if isradmodel(modelname):
             # only around equator, not far away from equator
-            diskcondition=diskcondition*(bsq/rho<1.0)*(np.fabs(h-pi*0.5)<0.1)
+            diskcondition=diskcondition*(bsq/rho<1.0)*(np.fabs(h-np.pi*0.5)<horval*0.5)
         else:
             diskcondition=diskcondition*(bsq/rho<0.5)
         # was (bsq/rho<1.0)
@@ -16571,7 +16762,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         truemodelname="{\\bf A0.99N100}"
     elif modelname=="rad1":
         fieldtype="Poloidal"
-        truemodelname="{\\bf A0.94BfN40L100}"
+        truemodelname="{\\bf A0.94BfN40L20}"
     ##########################################
     # tilted models
     elif modelname=="thickdiskfull3d7tilt0.35":
@@ -22005,10 +22196,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
 
     ##################################################
     # FINALPLOT data/plots to copy over for rad model:
-    # convert final1_stream.png final1_stream.eps convert middle1_stream.png middle1_stream.eps
-    # scp data*.txt  powervs*.txt rbarnormvs*.txt  jon@physics-179.umd.edu:/data/jon/harm_harmrad/smstuff/
-
-    # scp fft1.eps jon@physics-179.umd.edu:/data/jon/harm_harmrad/fft1_rad1.eps ; scp fft1.png jon@physics-179.umd.edu:/data/jon/harm_harmrad/fft1_rad1.png ; scp spec1.eps jon@physics-179.umd.edu:/data/jon/harm_harmrad/spec1_rad1.eps ; scp spec1.png jon@physics-179.umd.edu:/data/jon/harm_harmrad/spec1_rad1.png ; scp spec2.eps jon@physics-179.umd.edu:/data/jon/harm_harmrad/spec2_rad1.eps ; scp spec2.png jon@physics-179.umd.edu:/data/jon/harm_harmrad/spec2_rad1.png ; scp plot0qvsth_.eps jon@physics-179.umd.edu:/data/jon/harm_harmrad/plottvsth_bphi.eps ;scp plot0qvsth_.png jon@physics-179.umd.edu:/data/jon/harm_harmrad/plottvsth_bphi.png ; scp plot0qvsr_.eps jon@physics-179.umd.edu:/data/jon/harm_harmrad/plottvsr_bphi.eps ;scp plot0qvsr_.png jon@physics-179.umd.edu:/data/jon/harm_harmrad/plottvsr_bphi.png ; scp lrhosmall3215_Rzxym1.eps lrhosmall4190_Rzxym1.eps lrhosmall4300_Rzxym1.eps jon@physics-179.umd.edu:/data/jon/harm_harmrad/ ; scp lrhosmall3215_Rzxym1.png lrhosmall4190_Rzxym1.png lrhosmall4300_Rzxym1.png jon@physics-179.umd.edu:/data/jon/harm_harmrad/ ; scp init1.eps middle1.eps final1.eps jon@physics-179.umd.edu:/data/jon/harm_harmrad/  ; scp init1.png middle1.png final1.png jon@physics-179.umd.edu:/data/jon/harm_harmrad/ ; convert final1_stream.png final1_stream.eps ; scp final1_stream.eps jon@physics-179.umd.edu:/data/jon/harm_harmrad/figfinalflowfield.eps ;scp final1_stream.png jon@physics-179.umd.edu:/data/jon/harm_harmrad/figfinalflowfield.png ; convert middle1_stream.png middle1_stream.eps ; scp middle1_stream.eps jon@physics-179.umd.edu:/data/jon/harm_harmrad/figmiddleflowfield.eps ; scp middle1_stream.png jon@physics-179.umd.edu:/data/jon/harm_harmrad/figmiddleflowfield.png ; convert fig2.png fig2.eps ; scp fig2.eps jon@physics-179.umd.edu:/data/jon/harm_harmrad/figavgflowfield.eps ; scp fig2.png jon@physics-179.umd.edu:/data/jon/harm_harmrad/figavgflowfield.png ; scp fig4_0.eps jon@physics-179.umd.edu:/data/jon/harm_harmrad/outflowzoom.eps;scp fig4_0.png jon@physics-179.umd.edu:/data/jon/harm_harmrad/outflowzoom.png ; scp fig4_1.eps jon@physics-179.umd.edu:/data/jon/harm_harmrad/outflowlarge.eps ;scp fig4_1.png jon@physics-179.umd.edu:/data/jon/harm_harmrad/outflowlarge.png
+    # 
+    # 
+    # scp data*.txt  powervs*.txt rbarnormvs*.txt  jon@physics-179.umd.edu:/data/jon/harm_harmrad/smstuff/ ; convert final1_stream.png final1_stream.eps convert middle1_stream.png middle1_stream.eps ; scp fft1.eps jon@physics-179.umd.edu:/data/jon/harm_harmrad/fft1_rad1.eps ; scp fft1.png jon@physics-179.umd.edu:/data/jon/harm_harmrad/fft1_rad1.png ; scp spec1.eps jon@physics-179.umd.edu:/data/jon/harm_harmrad/spec1_rad1.eps ; scp spec1.png jon@physics-179.umd.edu:/data/jon/harm_harmrad/spec1_rad1.png ; scp spec2.eps jon@physics-179.umd.edu:/data/jon/harm_harmrad/spec2_rad1.eps ; scp spec2.png jon@physics-179.umd.edu:/data/jon/harm_harmrad/spec2_rad1.png ; scp plot0qvsth_.eps jon@physics-179.umd.edu:/data/jon/harm_harmrad/plottvsth_bphi.eps ;scp plot0qvsth_.png jon@physics-179.umd.edu:/data/jon/harm_harmrad/plottvsth_bphi.png ; scp plot0qvsr_.eps jon@physics-179.umd.edu:/data/jon/harm_harmrad/plottvsr_bphi.eps ;scp plot0qvsr_.png jon@physics-179.umd.edu:/data/jon/harm_harmrad/plottvsr_bphi.png ; scp lrhosmall3215_Rzxym1.eps lrhosmall4190_Rzxym1.eps lrhosmall4300_Rzxym1.eps jon@physics-179.umd.edu:/data/jon/harm_harmrad/ ; scp lrhosmall3215_Rzxym1.png lrhosmall4190_Rzxym1.png lrhosmall4300_Rzxym1.png jon@physics-179.umd.edu:/data/jon/harm_harmrad/ ; scp init1.eps middle1.eps final1.eps jon@physics-179.umd.edu:/data/jon/harm_harmrad/  ; scp init1.png middle1.png final1.png jon@physics-179.umd.edu:/data/jon/harm_harmrad/ ; convert final1_stream.png final1_stream.eps ; scp final1_stream.eps jon@physics-179.umd.edu:/data/jon/harm_harmrad/figfinalflowfield.eps ;scp final1_stream.png jon@physics-179.umd.edu:/data/jon/harm_harmrad/figfinalflowfield.png ; convert middle1_stream.png middle1_stream.eps ; scp middle1_stream.eps jon@physics-179.umd.edu:/data/jon/harm_harmrad/figmiddleflowfield.eps ; scp middle1_stream.png jon@physics-179.umd.edu:/data/jon/harm_harmrad/figmiddleflowfield.png ; convert fig2.png fig2.eps ; scp fig2.eps jon@physics-179.umd.edu:/data/jon/harm_harmrad/figavgflowfield.eps ; scp fig2.png jon@physics-179.umd.edu:/data/jon/harm_harmrad/figavgflowfield.png ; scp fig4_0.eps jon@physics-179.umd.edu:/data/jon/harm_harmrad/outflowzoom.eps;scp fig4_0.png jon@physics-179.umd.edu:/data/jon/harm_harmrad/outflowzoom.png ; scp fig4_1.eps jon@physics-179.umd.edu:/data/jon/harm_harmrad/outflowlarge.eps ;scp fig4_1.png jon@physics-179.umd.edu:/data/jon/harm_harmrad/outflowlarge.png
     #
     
 
@@ -26713,6 +26903,69 @@ def tutorial1():
     # now plot something you read-in
     plt.figure(1)
     lrho=np.log(rho)
+    plco(lrho,cb=True,nc=50)
+    aphi = fieldcalc() # keep sign information
+    plc(aphi,colors='k')
+
+def tutorial2():
+    # first load grid file
+    grid3d("gdump.bin")
+    # now try loading a single fieldline file
+    rfd("fieldline0000.bin")
+    (rhoclean,ugclean,uufuck,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
+    cvel()
+    Tcalcud(maxbsqorho=maxbsqorhonear,which=condmaxbsqorho)
+    #
+    diskcondition=condmaxbsqorho
+    # only around equator, not far away from equator
+    diskcondition=diskcondition*(bsq/rho<1.0)*(np.fabs(h-np.pi*0.5)<0.1)
+    #diskcondition=diskcondition*(bsq/rho<0.5)
+    diskeqcondition=diskcondition
+    # (qmri3d,norm3d,q3mri3d,norm33d,iq2mri3d)
+    qmri3ddisk,normmri3ddisk,q3mri3ddisk,norm3mri3ddisk,iq2mri3ddisk=Qmri_simple(which=diskeqcondition)
+    #
+    # Q1
+    qmridisk=qmri3ddisk.sum(2).sum(1)/(ny*nz)
+    normmridisk=normmri3ddisk.sum(2).sum(1)/(ny*nz)
+    #
+    # Q3
+    q3mridisk=q3mri3ddisk.sum(2).sum(1)/(ny*nz)
+    norm3mridisk=norm3mri3ddisk.sum(2).sum(1)/(ny*nz)
+    #
+    # Q2: number of wavelengths per disk scale height
+    iq2mridisk=iq2mri3ddisk.sum(2).sum(1)/(ny*nz)
+    #
+    pg = (gam-1)*ugclean
+    prad = (4.0/3.0-1)*urad
+    #
+    WW = rhoclean + ug + pg + urad + prad
+    EF = bsq + WW
+    val21 = np.fabs(bu[1]*bd[1])/EF
+    val22 = np.fabs(bu[2]*bd[2])/EF
+    val23 = np.fabs(bu[3]*bd[3])/EF
+    #
+    #
+    mydr=dxdxp[1,1]*_dx1
+    mydH=r*dxdxp[2,2]*_dx2
+    mydP=r*np.sin(h)*dxdxp[3,3]*_dx3
+    omegarot=uu[3]/uu[0]*dxdxp[3,3]
+    #
+    idx2mri = np.sqrt(val22)*2*np.pi/omegarot/mydH
+    #
+    #
+    Avpot = np.zeros_like(gdetB)
+    Avpot=Afieldcalc3U3D(gdetB=gdetB)
+    #
+    gdetBnew = np.zeros_like(gdetB)
+    gdetBnew=Bfieldcalc3U3D(Avpot)
+    #
+    # now plot something you read-in
+    plt.figure(2)
+    #lrho=qmri3ddisk
+    #lrho=idx2mri
+    #lrho=Avpot[1]
+    #lrho=gdetB[2]
+    lrho=gdetBnew[1]
     plco(lrho,cb=True,nc=50)
     aphi = fieldcalc() # keep sign information
     plc(aphi,colors='k')
