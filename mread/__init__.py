@@ -520,6 +520,7 @@ def rdvtk(fname):
     vecdim = list(dim)
     vecdim = [i-1 for i in dim]
     scalardim = vecdim[:] #make a copy
+    n1,n2,n3 = scalardim
     vecdim.append(3)
     v = VN.vtk_to_numpy(data.GetCellData().GetArray('velocity'))
     Bc = VN.vtk_to_numpy(data.GetCellData().GetArray('cell_centered_B'))
@@ -593,10 +594,13 @@ def mkathtestmovie(**kwargs):
     startn=kwargs.pop("startn",0)
     endn=kwargs.pop("endn",112)
     dn=kwargs.pop("dn",1)
-    dosavefig=kwargs.pop("dosavefig",1)
+    dosavefig=kwargs.pop("dosavefig",0)
     vmin=kwargs.pop("vmin",1e-3)
     vmax=kwargs.pop("vmax",1e+3)
     ext=kwargs.pop("ext","vtk")
+    func=kwargs.pop("func",None)
+    if func is None:
+        func = lambda: pg[:,:,k]
     plt.figure(1,figsize=(8,6))
     plt.clf()
     for i in xrange(startn,endn,dn):
@@ -605,8 +609,11 @@ def mkathtestmovie(**kwargs):
         #plco(np.log10(pg),levels=np.arange(-4,4,0.1),isfilled=1,antialiased=0,cb=1);
         ax = plt.gca()
         #plt.clf()
-        p=ax.imshow(np.log10(pg[:,:,kval].transpose()), extent=(0,n1,0,n2), cmap = cm.jet, norm = colors.Normalize(clip = True),origin='lower',interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
-        print("n=%4d, t=%5.3g: min(rho)=%5.3g, min(pg)=%5.3g" % (i, t, np.min(rho), np.min(pg)))
+        p=ax.imshow(np.log10(func().transpose()), extent=(0,n1,0,n2), cmap = cm.jet, norm = colors.Normalize(clip = True),origin='lower',interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        print("n=%4d, t=%5.3g: min(rho)=%5.3g, min(pg)=%5.3g, max(pg)=%5.3g" % (i, t, np.min(rho), np.min(pg), np.max(pg)))
+        if pg.max()>1e2:
+            print("Explosions:")
+            print np.where(pg==pg.max())
         if i==startn:
             cbar = plt.colorbar(p)
             cbar.ax.set_ylabel(r'$\log_{10}p$',fontsize=fntsize)
