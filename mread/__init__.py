@@ -599,12 +599,14 @@ def mkathtestmovie(**kwargs):
     vmax=kwargs.pop("vmax",1e+3)
     ext=kwargs.pop("ext","vtk")
     func=kwargs.pop("func",None)
+    doreload=kwargs.pop("doreload",1)
     if func is None:
         func = lambda: pg[:,:,k]
     plt.figure(1,figsize=(11,4))
     plt.clf()
     for i in xrange(startn,endn,dn):
-        rdath3d("%s%04d.%s"%(name,i,ext));
+        if doreload:
+            rdath3d("%s%04d.%s"%(name,i,ext));
         kval=kwargs.pop("k",n3/2)
         #plco(np.log10(pg),levels=np.arange(-4,4,0.1),isfilled=1,antialiased=0,cb=1);
         ax = plt.gca()
