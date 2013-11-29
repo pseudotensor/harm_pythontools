@@ -601,7 +601,7 @@ def mkathtestmovie(**kwargs):
     func=kwargs.pop("func",None)
     if func is None:
         func = lambda: pg[:,:,k]
-    plt.figure(1,figsize=(8,6))
+    plt.figure(1,figsize=(11,4))
     plt.clf()
     for i in xrange(startn,endn,dn):
         rdath3d("%s%04d.%s"%(name,i,ext));
@@ -615,8 +615,13 @@ def mkathtestmovie(**kwargs):
             print("Explosions:")
             print np.where(pg==pg.max())
         if i==startn:
-            cbar = plt.colorbar(p)
+            cbar = plt.colorbar(p,shrink=1,ax=plt.gca())
             cbar.ax.set_ylabel(r'$\log_{10}p$',fontsize=fntsize)
+            plt.xlabel(r"$x$",fontsize=fntsize)
+            plt.ylabel(r"$y$",fontsize=fntsize)
+            ax = plt.gca()
+            for label in ax.get_xticklabels() + ax.get_yticklabels() + cbar.ax.get_yticklabels():
+                label.set_fontsize(fntsize)
         plt.title(r"$t=%g$" % t)
         plt.draw();
         time.sleep(sleepdt)
