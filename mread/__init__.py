@@ -609,7 +609,7 @@ def mkathtestmovie(**kwargs):
         #plco(np.log10(pg),levels=np.arange(-4,4,0.1),isfilled=1,antialiased=0,cb=1);
         ax = plt.gca()
         #plt.clf()
-        p=ax.imshow(np.log10(func().transpose()), extent=(0,n1,0,n2), cmap = cm.jet, norm = colors.Normalize(clip = True),origin='lower',interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        p=ax.imshow(func().transpose(), extent=(0,n1,0,n2), cmap = cm.jet, norm = colors.Normalize(clip = True),origin='lower',interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
         print("n=%4d, t=%5.3g: min(rho)=%5.3g, min(pg)=%5.3g, max(pg)=%5.3g" % (i, t, np.min(rho), np.min(pg), np.max(pg)))
         if pg.max()>1e2:
             print("Explosions:")
@@ -622,7 +622,7 @@ def mkathtestmovie(**kwargs):
             ax = plt.gca()
             for label in ax.get_xticklabels() + ax.get_yticklabels() + cbar.ax.get_yticklabels():
                 label.set_fontsize(fntsize)
-        plt.title(r"$t=%g$" % t)
+        plt.title(r"$t=%g$" % t,fontsize=fntsize)
         plt.draw();
         time.sleep(sleepdt)
         if dosavefig:
