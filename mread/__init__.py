@@ -604,7 +604,7 @@ def mkathtestmovie(**kwargs):
     plt.figure(1,figsize=(8,6))
     plt.clf()
     for i in xrange(startn,endn,dn):
-        rdath3d("%s.%04d.%s"%(name,i,ext));
+        rdath3d("%s%04d.%s"%(name,i,ext));
         kval=kwargs.pop("k",n3/2)
         #plco(np.log10(pg),levels=np.arange(-4,4,0.1),isfilled=1,antialiased=0,cb=1);
         ax = plt.gca()
