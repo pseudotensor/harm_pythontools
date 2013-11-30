@@ -7117,6 +7117,9 @@ def Afieldcalc3U3D(gdetB=None):
     # only extra FACE_i values needed, but easier to store in full 4D array
     gdetBf=np.zeros((4,nx+1,ny+1,nz+1),dtype='float32',order='F')        
     #
+    # set gdetBf
+    gdetBf[:,0:nx,0:ny,0:nz] = gdetB[:,:,:,:]
+    #
     # Radial BCs
     gdetBf[1,nx,:,:]=gdetBf[1,nx-1,:,:] # outflow BCs
     #
