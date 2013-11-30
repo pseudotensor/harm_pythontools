@@ -26946,7 +26946,7 @@ def tutorial2():
     #lrho=idx2mri
     #lrho=Avpotf[3][0:nx,0:ny,0:nz]
     #lrho=gdetB[2]
-    lrho=gdetBnew[1,:,:,0]
+    lrho=gdetBnew[1,:,:,2]
     plco(lrho,cb=True,nc=50)
     aphi = fieldcalc() # keep sign information
     plc(aphi,colors='k')
