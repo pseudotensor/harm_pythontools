@@ -7085,18 +7085,12 @@ def Bfieldcalc3U3D(Avpotf=None):
     #
     # np.diff takes out[n] = a[n+1] - a[n], as desired for getting gdetB_i @ FACE_i from Avpot_i @ CORN_i
     
-    gdetBnew[1,:,0:ny,:] = + np.diff(Avpotf[3],n=1,axis=1)[0:nx,0:ny,0:nz]/_dx2
+    gdetBnew[1,:,:,:] = + np.diff(Avpotf[3],n=1,axis=1)[0:nx,0:ny,0:nz]/_dx2 - np.diff(Avpotf[2],n=1,axis=2)[0:nx,0:ny,0:nz]/_dx3
 
-    gdetBnew[1,:,:,0:nz] = - np.diff(Avpotf[2],n=1,axis=2)[0:nx,0:ny,0:nz]/_dx3
+    gdetBnew[2,:,:,:] = + np.diff(Avpotf[1],n=1,axis=2)[0:nx,0:ny,0:nz]/_dx3 - np.diff(Avpotf[3],n=1,axis=0)[0:nx,0:ny,0:nz]/_dx1
 
-    gdetBnew[2,:,:,0:nz] = + np.diff(Avpotf[1],n=1,axis=2)[0:nx,0:ny,0:nz]/_dx3
+    gdetBnew[3,:,:,:] = + np.diff(Avpotf[2],n=1,axis=0)[0:nx,0:ny,0:nz]/_dx1 - np.diff(Avpotf[1],n=1,axis=1)[0:nx,0:ny,0:nz]/_dx2
 
-    gdetBnew[2,0:nx,:,:] = - np.diff(Avpotf[3],n=1,axis=0)[0:nx,0:ny,0:nz]/_dx1
-
-    gdetBnew[3,0:nx,:,:] = + np.diff(Avpotf[2],n=1,axis=0)[0:nx,0:ny,0:nz]/_dx1
-
-    gdetBnew[3,:,0:ny,:] = - np.diff(Avpotf[1],n=1,axis=1)[0:nx,0:ny,0:nz]/_dx2
-    
     #
     return(gdetBnew)
 
