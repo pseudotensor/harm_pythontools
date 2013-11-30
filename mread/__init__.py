@@ -26944,9 +26944,9 @@ def tutorial2():
     plt.figure(2)
     #lrho=qmri3ddisk
     #lrho=idx2mri
-    lrho=Avpotf[3][0:nx,0:ny,0:nz]
+    #lrho=Avpotf[3][0:nx,0:ny,0:nz]
     #lrho=gdetB[2]
-    #lrho=gdetBnew[1,:,:,0]
+    lrho=gdetBnew[1,:,:,0]
     plco(lrho,cb=True,nc=50)
     aphi = fieldcalc() # keep sign information
     plc(aphi,colors='k')
