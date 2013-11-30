@@ -7075,8 +7075,8 @@ def fieldcalcU3D(gdetB1=None):
 
 
 
-def Bfieldcalc3U3D(Avpot=None):
-    if Avpot == None:
+def Bfieldcalc3U3D(Avpotf=None):
+    if Avpotf == None:
         print("No Avpot defined"); sys.stdout.flush()
         exit
     #
@@ -7084,24 +7084,19 @@ def Bfieldcalc3U3D(Avpot=None):
     #
     #
     # np.diff takes out[n] = a[n+1] - a[n], as desired for getting gdetB_i @ FACE_i from Avpot_i @ CORN_i
-    gdetBnew[1,:,0:ny-1,:] = + np.diff(Avpot[3],n=1,axis=1)/_dx2
-    gdetBnew[1,:,ny-1,:] =   + (0.0-Avpot[3,:,ny-1,:])/_dx2 #asumes Avpot[3]=0 at outer pole
+    
+    gdetBnew[1,:,0:ny,:] = + np.diff(Avpotf[3],n=1,axis=1)[0:nx,0:ny,0:nz]/_dx2
 
-    gdetBnew[1,:,:,0:nz-1] = - np.diff(Avpot[2],n=1,axis=2)/_dx3
-    gdetBnew[1,:,:,nz-1] =   - (Avpot[2,:,:,0]-Avpot[2,:,:,nz-1])/_dx3 # assumes periodic in \phi
+    gdetBnew[1,:,:,0:nz] = - np.diff(Avpotf[2],n=1,axis=2)[0:nx,0:ny,0:nz]/_dx3
 
-    gdetBnew[2,:,:,0:nz-1] = + np.diff(Avpot[1],n=1,axis=2)/_dx3
-    #gdetBnew[2,:,:,nz-1] =   + (Avpot[1,:,:,0]-Avpot[1,:,:,nz-1])/_dx3 # assumes periodic in \phi
-    gdetBnew[2,:,:,nz-1] =   + (Avpot[1,:,:,0]-Avpot[1,:,:,nz-1])/_dx3 # assumes periodic in \phi
+    gdetBnew[2,:,:,0:nz] = + np.diff(Avpotf[1],n=1,axis=2)[0:nx,0:ny,0:nz]/_dx3
 
-    gdetBnew[2,0:nx-1,:,:] = - np.diff(Avpot[3],n=1,axis=0)/_dx1
-    gdetBnew[2,nx-1,:,:] = gdetBnew[2,nx-2,:,:]   # assumes outflow BCs
+    gdetBnew[2,0:nx,:,:] = - np.diff(Avpotf[3],n=1,axis=0)[0:nx,0:ny,0:nz]/_dx1
 
-    gdetBnew[3,0:nx-1,:,:] = np.diff(Avpot[2],n=1,axis=0)/_dx1
-    gdetBnew[3,nx-1,:,:] = gdetBnew[3,nx-2,:,:]  # assumes outflow BCs
+    gdetBnew[3,0:nx,:,:] = + np.diff(Avpotf[2],n=1,axis=0)[0:nx,0:ny,0:nz]/_dx1
 
-    gdetBnew[3,:,0:ny-1,:] = - np.diff(Avpot[1],n=1,axis=1)/_dx2
-    gdetBnew[3,:,ny-1,:] =   -(0.0-Avpot[1,:,ny-1,:])/_dx2 #asumes Avpot[1]=0 at outer pole
+    gdetBnew[3,:,0:ny,:] = - np.diff(Avpotf[1],n=1,axis=1)[0:nx,0:ny,0:nz]/_dx2
+    
     #
     return(gdetBnew)
 
@@ -7112,6 +7107,8 @@ def Bfieldcalc3U3D(Avpot=None):
 def Afieldcalc3U3D(gdetB=None):
     if gdetB == None:
         gdetB = gdetB
+    #
+    print("shapes:",gdetB[1].shape, gdetB[2].shape, gdetB[3].shape, gdetB.shape, gdet.shape) ; sys.stdout.flush()
     #
     #// \detg B1 = d_2 A3 - d_3 A2
     #// \detg B2 = d_3 A1 - d_1 A3
@@ -7125,45 +7122,45 @@ def Afieldcalc3U3D(gdetB=None):
     # A2 = A2_0 + \int (+gdet B3*dx1) + \int (-gdet*B1*dx3)    # Let A2_0=0 at inner-radial polar corner
     # A3 = A3_0 + \int (-gdet B2*dx1) + \int (+gdet*B1*dx2)    # first term vanishes if first integrate along pole, the out in angle
     #
-    gdetB1full=np.zeros((nx+1,ny,nz),dtype='float32',order='F')        
-    gdetB1full=np.zeros((nx+1,ny,nz),dtype='float32',order='F')        
-    gdetB1full=np.zeros((nx+1,ny,nz),dtype='float32',order='F')        
+    # only extra FACE_i values needed, but easier to store in full 4D array
+    gdetBf=np.zeros((4,nx+1,ny+1,nz+1),dtype='float32',order='F')        
     #
-    gdetBfull[:,0:nx+1,0:ny+1,0:nz+1]=gdetB
+    # Radial BCs
+    gdetBf[1,nx,:,:]=gdetBf[1,nx-1,:,:] # outflow BCs
     #
+    # Polar BCs
+    gdetBf[2,:,0,:]=0.0   # right at pole
+    gdetBf[2,:,ny,:]=0.0  # value right at pole
     # hack to ensure polar region regular behaving
-    gdetB[2,:,0,:]=0.0   # right at pole
-    gdetB[2,:,1,:]=0.0   # offset at pole
-    #gdetB[2,:,ny,:]=0.0  # value exists in harm code, but not here, but assume it's 0
-    gdetB[2,:,ny-1,:]=0.0  # offset from pole
+    gdetBf[2,:,1,:]=0.0   # offset at pole
+    gdetBf[2,:,ny-1,:]=0.0  # offset from pole
     #
+    # \Phi BCs
+    gdetBf[3,:,:,nz]=gdetBf[3,:,:,0] # periodic BC
     #
-    Avpot=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
-    #Avpot = np.zeros_like(gdetB)
+    # only planar extension to CORN_i is needed for each j-k plane
+    Avpotf=np.zeros((1,nx+1,ny+1,nz+1),dtype='float32',order='F')
     #
     ####################
     # GET A_\phi assuming spherical polar coordinates with A_\phi=0 at poles.
     # get result for each k
     #global aphi1,aphi2
-    aphi1 = np.zeros_like(gdetB[1])
-    aphi2 = np.zeros_like(gdetB[1])
+    aphi1 = np.zeros_like(Avpotf[3])
+    aphi2 = np.zeros_like(Avpotf[3])
     #
-    daphi = gdetB[1]*_dx2
+    daphi = gdetBf[1]*_dx2
     #
     # sum up from j=0 pole
     # aphi1 is located CORN3 as result of each integral step
     aphi1[:,0,:]=0
-    aphi1[:,1:ny,:]=(daphi.cumsum(axis=1))[:,0:ny-1,:]
-    # assume aphi1[0,ny,0]=0
+    aphi1[:,1:ny+1,:]=(daphi.cumsum(axis=1))[:,0:ny,:]
     # sum up from the other pole
-    #aphi2[:,0,:]=0
-    #aphi2[:,1:ny,:]=(-daphi[:,::-1,:].cumsum(axis=1))[:,::-1,:][:,1:ny,:]
-    # assume aphi2[0,ny,0]=0
+    aphi2[:,0,:]=0
+    aphi2[:,1:ny+1,:]=(-daphi[:,::-1,:].cumsum(axis=1))[:,::-1,:][:,1:ny+1,:]
     #
     # average-out pole-to-pole
     # So A3=0 along entire polar surface of j=0,ny for all r-\phi.
-    #Avpot[3]=0.5*(aphi1+aphi2)
-    Avpot[3]=aphi1
+    Avpotf[3]=0.5*(aphi1+aphi2)
     #
     print("DONEA3") ; sys.stdout.flush()
     #
@@ -7172,53 +7169,42 @@ def Afieldcalc3U3D(gdetB=None):
     # GET A_r
     # get result for each i
     #
-    ar1a = np.zeros_like(gdetB[1])
-    ar1b = np.zeros_like(gdetB[1])
+    ar1a = np.zeros_like(Avpotf[1])
+    ar1b = np.zeros_like(Avpotf[1])
     #
     #
-    print("shapes:",gdetB[1].shape, gdetB[2].shape, gdetB[3].shape, gdetB.shape, gdet.shape,aphi1.shape,aphi2.shape) ; sys.stdout.flush()
+    dar3 = gdetBf[2]*_dx3
     #
-    #
-    dar3 = gdetB[2]*_dx3
-    #
-    ar1a[:,:,1:nz]=(dar3.cumsum(axis=2))[:,:,0:nz-1]
-    # assume ar1 periodic in phi
-    ar1a[:,:,0]=ar1a[:,:,nz-1] + dar3[:,:,nz-1]
+    ar1a[:,:,1:nz+1]=(dar3.cumsum(axis=2))[:,:,0:nz]
     #sum up other direction
-    #ar1b[:,:,1:nz]=(-dar3[:,:,::-1].cumsum(axis=2))[:,:,::-1][:,:,1:nz]
-    # assume ar1 periodic in phi
-    #ar1b[:,:,0]=ar1b[:,:,nz-1]
+    ar1b[:,:,0:nz]=(-dar3[:,:,::-1].cumsum(axis=2))[:,:,::-1][:,:,0:nz]
     #
     # average result
-    #ar1=0.5*(ar1a+ar1b)
-    ar1=ar1a
+    ar1=0.5*(ar1a+ar1b)
     #
-    ar2a = np.zeros_like(gdetB[1])
-    ar2b = np.zeros_like(gdetB[1])
+    ar2a = np.zeros_like(Avpotf[1])
+    ar2b = np.zeros_like(Avpotf[1])
     #
-    dar2 = -gdetB[3]*_dx2
+    dar2 = -gdetBf[3]*_dx2
     #
     # sum up from j=0 pole
     ar2a[:,0,:]=0
-    ar2a[:,1:ny,:]=(dar2.cumsum(axis=1))[:,0:ny-1,:]
-    # assume ar2a[0,ny,0]=0
+    ar2a[:,1:ny+1,:]=(dar2.cumsum(axis=1))[:,0:ny,:]
     #sum up from the other pole
-    #ar2b[:,0,:]=0
-    #ar2b[:,1:ny,:]=(-dar2[:,::-1,:].cumsum(axis=1))[:,::-1,:][:,1:ny,:]
-    # assume ar2b[0,ny,0]=0
+    ar2b[:,0,:]=0
+    ar2b[:,1:ny,:]=(-dar2[:,::-1,:].cumsum(axis=1))[:,::-1,:][:,1:ny,:]
     #
     # average result
-    #ar2 = 0.5*(ar2a+ar2b)
-    ar2 = (ar2a)
+    ar2 = 0.5*(ar2a+ar2b)
     #
     # get final answer for j,k for each i
     j=0
-    while j<ny:
+    while j<=ny:
     #    k=0
-    #    while k<nz:
+    #    while k<=nz:
         # for each radius (i), for j=0, integrate along \phi out to (k), then for that k fixed, integrate along theta out to (j)
         # So A1=0 at \phi=0,2\pi for all radius and \theta.
-        Avpot[1,:,j,:]=ar1[:,0,:] + ar2[:,j,:]
+        Avpotf[1,:,j,:]=ar1[:,0,:] + ar2[:,j,:]
         j += 1
     #
     #
@@ -7227,41 +7213,36 @@ def Afieldcalc3U3D(gdetB=None):
     # GET A_\theta
     # get result for each i
     #
-    ah1a = np.zeros_like(gdetB[1])
-    ah1b = np.zeros_like(gdetB[1])
+    ah1a = np.zeros_like(Avpotf[2])
+    ah1b = np.zeros_like(Avpotf[2])
     #
     #
     #
-    dah3 = -gdetB[1]*_dx3
+    dah3 = -gdetBf[1]*_dx3
     #
-    ah1a[:,:,1:nz]=(dah3.cumsum(axis=2))[:,:,0:nz-1]
-    # assume ah1 periodic in phi
-    ah1a[:,:,0]=ah1a[:,:,nz-1]+dah3[:,:,nz-1]
+    ah1a[:,:,1:nz+1]=(dah3.cumsum(axis=2))[:,:,0:nz]
     #sum up other direction
-    #ah1b[:,:,1:nz]=(-dah3[:,:,::-1].cumsum(axis=2))[:,:,::-1][:,:,1:nz]
-    # assume ah1 periodic in phi
-    #ah1b[:,:,0]=ah1b[:,:,nz-1]
+    ah1b[:,:,1:nz]=(-dah3[:,:,::-1].cumsum(axis=2))[:,:,::-1][:,:,1:nz]
     #
     # average result
-    #ah1=0.5*(ah1a+ah1b)
-    ah1=ah1a
+    ah1=0.5*(ah1a+ah1b)
     #
     ####
-    ah2 = np.zeros_like(gdetB[1])
+    ah2 = np.zeros_like(gdetBf[1])
     #
-    dah1 = gdetB[3]*_dx1
+    dah1 = gdetBf[3]*_dx1
     #
     #
-    ah2[1:nx:,:,:]=(dah1.cumsum(axis=0))[0:nx-1,:,:]
+    ah2[1:nx+1:,:,:]=(dah1.cumsum(axis=0))[0:nx,:,:]
     #
     # get final answer for i,k for each j
     #i=0
-    #while i<nx:
+    #while i<=nx:
     k=0
-    while k<nz:
+    while k<=nz:
         # for constant theta (j), at k=0, integrate in radius until reach (i) and then integrate in phi (k)
         # So Avpot[2]=0 on entire \theta-\phi for horizon
-        Avpot[2,:,:,k]=ah1[:,:,k] + ah2[:,:,0]
+        Avpotf[2,:,:,k]=ah1[:,:,k] + ah2[:,:,0]
         k += 1
     #
     print("DONEA2") ; sys.stdout.flush()
@@ -26961,11 +26942,9 @@ def tutorial2():
     idx2mri = np.sqrt(val22)*2*np.pi/omegarot/mydH
     #
     #
-    Avpot = np.zeros_like(gdetB)
-    Avpot=Afieldcalc3U3D(gdetB=gdetB)
+    Avpotf=Afieldcalc3U3D(gdetB=gdetB)
     #
-    gdetBnew = np.zeros_like(gdetB)
-    gdetBnew=Bfieldcalc3U3D(Avpot)
+    gdetBnew=Bfieldcalc3U3D(Avpotf)
     #
     # now plot something you read-in
     plt.figure(2)
