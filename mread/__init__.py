@@ -7077,7 +7077,7 @@ def fieldcalcU3D(gdetB1=None):
 
 def Bfieldcalc3U3D(Avpotf=None):
     if Avpotf == None:
-        print("No Avpot defined"); sys.stdout.flush()
+        print("No Avpotf defined"); sys.stdout.flush()
         exit
     #
     gdetBnew = np.zeros_like(gdetB)
@@ -7096,8 +7096,6 @@ def Bfieldcalc3U3D(Avpotf=None):
 
 
 # Compute staggered/CORN_i value of A_i from staggered/FACE_i values of \detg B^i
-# Force \detgB2=0 at poles
-# 
 def Afieldcalc3U3D(gdetB=None):
     if gdetB == None:
         gdetB = gdetB
@@ -7138,7 +7136,6 @@ def Afieldcalc3U3D(gdetB=None):
     ####################
     # GET A_\phi assuming spherical polar coordinates with A_\phi=0 at poles.
     # get result for each k
-    #global aphi1,aphi2
     aphi1 = np.zeros_like(Avpotf[3])
     aphi2 = np.zeros_like(Avpotf[3])
     #
@@ -26944,9 +26941,9 @@ def tutorial2():
     plt.figure(2)
     #lrho=qmri3ddisk
     #lrho=idx2mri
-    #lrho=Avpot[1]
+    lrho=Avpotf[3][0:nx,0:ny,0:nz]
     #lrho=gdetB[2]
-    lrho=gdetBnew[1,:,:,0]
+    #lrho=gdetBnew[1,:,:,0]
     plco(lrho,cb=True,nc=50)
     aphi = fieldcalc() # keep sign information
     plc(aphi,colors='k')
