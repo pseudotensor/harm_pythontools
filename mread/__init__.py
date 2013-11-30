@@ -7139,7 +7139,7 @@ def Afieldcalc3U3D(gdetB=None):
     gdetBf[3,:,:,nz]=gdetBf[3,:,:,0] # periodic BC
     #
     # only planar extension to CORN_i is needed for each j-k plane
-    Avpotf=np.zeros((1,nx+1,ny+1,nz+1),dtype='float32',order='F')
+    Avpotf=np.zeros((4,nx+1,ny+1,nz+1),dtype='float32',order='F')
     #
     ####################
     # GET A_\phi assuming spherical polar coordinates with A_\phi=0 at poles.
