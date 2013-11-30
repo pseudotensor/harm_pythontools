@@ -7247,7 +7247,7 @@ def Afieldcalc3U3D(gdetB=None):
     #
     print("DONEA2") ; sys.stdout.flush()
     #
-    return(Avpot)
+    return(Avpotf)
 
 
 def fieldcalcface2():
