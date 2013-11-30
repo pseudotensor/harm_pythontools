@@ -12482,21 +12482,21 @@ def mkmovieframe( findex, fname, **kwargs ):
     #print xxx
 
 def mk2davg():
-    if len(sys.argv[1:])!=0:
+    if len(sys.argv[2:])!=0:
         grid3d("gdump.bin",use2d=True)
         #rd("dump0000.bin")
         rfd("fieldline0000.bin")
-    if len(sys.argv[1:])==2 and sys.argv[1].isdigit() and sys.argv[2].isdigit():
-        whichgroup = int(sys.argv[1])
-        step = int(sys.argv[2])
+    if len(sys.argv[2:])==2 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
+        whichgroup = int(sys.argv[2])
+        step = int(sys.argv[3])
         itemspergroup = 20
         for whichgroup in np.arange(whichgroup,1000,step):
             avgmem = get2davg(whichgroup=whichgroup,itemspergroup=itemspergroup)
         #plot2davg(avgmem)
-    elif len(sys.argv[1:])==3 and sys.argv[1].isdigit() and sys.argv[2].isdigit() and sys.argv[3].isdigit():
-        whichgroups = int(sys.argv[1])
-        whichgroupe = int(sys.argv[2])
-        step = int(sys.argv[3])
+    elif len(sys.argv[2:])==3 and sys.argv[2].isdigit() and sys.argv[3].isdigit() and sys.argv[4].isdigit():
+        whichgroups = int(sys.argv[2])
+        whichgroupe = int(sys.argv[3])
+        step = int(sys.argv[4])
         itemspergroup = 20
         if step == 0:
             avgmem = get2davg(usedefault=1)
@@ -14406,7 +14406,7 @@ def dfdx2(f,dn=4):
     return(dgf)
 
 
-def generate_time_series(docompute=False):
+def mkts(docompute=False):
         #cd ~/run; for f in rtf*; do cd ~/run/$f; (nice -n 10 python  ~/py/mread/__init__.py &> python.out); done
         grid3d("gdump.bin",use2d=True)
         #rd("dump0000.bin")
@@ -14415,9 +14415,9 @@ def generate_time_series(docompute=False):
         ihor = np.floor(iofr(rhor)+0.5);
         #diskflux=diskfluxcalc(ny/2)
         #qtymem=None #clear to free mem
-        if len(sys.argv[1:])==2 and sys.argv[1].isdigit() and sys.argv[2].isdigit():
-            whichi = int(sys.argv[1])
-            whichn = int(sys.argv[2])
+        if len(sys.argv[2:])==2 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
+            whichi = int(sys.argv[2])
+            whichn = int(sys.argv[3])
             if whichi >= whichn:
                 mergeqtyvstime(whichn)
             else:
@@ -14425,6 +14425,23 @@ def generate_time_series(docompute=False):
         else:
             qtymem=getqtyvstime(ihor,0.2,docompute=docompute)
             plotqtyvstime(qtymem)
+
+def mkath():
+    if len(sys.argv[2:])==2 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
+        whichi = int(sys.argv[2])
+        whichn = int(sys.argv[3])
+    else:
+        print( "Usage: %s %s <whichi> <whichn>" % (sys.argv[0], sys.argv[1]) )
+        return
+    flist = np.sort(glob.glob("*[0-9][0-9][0-9][0-9].vtk"))
+    for findex, fname in enumerate(flist):
+        if whichn != 0 and findex % whichn != whichi:
+            continue
+        if whichn == 0 and findex != whichi:
+            continue
+        if os.path.isfile("frame%04.png" % (findex)):
+            print( "Skipping " + fname + " as frame%04d.png exists" % (findex) );
+            mkathtestmovie(name="",func=lambda: np.log10(pg[:,:,128]),vmin=-2,vmax=2,startn=whichi,endn=whichi+1,dn=1,dosavefig=1,doreload=1)
 
 def oldstuff():
     if False:
@@ -16946,6 +16963,12 @@ def plotmdotin():
     plt.ylim(1,30)
     
 if __name__ == "__main__":
+    if sys.argv[1] == "mkts":
+        mkts(docompute=True)
+    elif sys.argv[1] == "mkavg":
+        mk2davg()
+    elif sys.argv[1] == "mkath":
+        mkath()
     if False:
         plt.clf()
         ubsplot(dosavefig=0)
@@ -17107,7 +17130,7 @@ if __name__ == "__main__":
     if False:
         #NEW FORMAT
         #Plot qtys vs. time
-        generate_time_series(docompute=True)
+        mkts(docompute=True)
     if False:
         #make a movie
         fti=7000
