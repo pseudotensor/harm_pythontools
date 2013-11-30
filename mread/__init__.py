@@ -14439,7 +14439,7 @@ def mkath():
             continue
         if whichn == 0 and findex != whichi:
             continue
-        if os.path.isfile("frame%04.png" % (findex)):
+        if os.path.isfile("frame%04d.png" % (findex)):
             print( "Skipping " + fname + " as frame%04d.png exists" % (findex) );
             mkathtestmovie(name="",func=lambda: np.log10(pg[:,:,128]),vmin=-2,vmax=2,startn=whichi,endn=whichi+1,dn=1,dosavefig=1,doreload=1)
 
