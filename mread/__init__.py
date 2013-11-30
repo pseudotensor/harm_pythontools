@@ -7091,6 +7091,7 @@ def Bfieldcalc3U3D(Avpot=None):
     gdetBnew[1,:,:,nz-1] =   - (Avpot[2,:,:,0]-Avpot[2,:,:,nz-1])/_dx3 # assumes periodic in \phi
 
     gdetBnew[2,:,:,0:nz-1] = + np.diff(Avpot[1],n=1,axis=2)/_dx3
+    #gdetBnew[2,:,:,nz-1] =   + (Avpot[1,:,:,0]-Avpot[1,:,:,nz-1])/_dx3 # assumes periodic in \phi
     gdetBnew[2,:,:,nz-1] =   + (Avpot[1,:,:,0]-Avpot[1,:,:,nz-1])/_dx3 # assumes periodic in \phi
 
     gdetBnew[2,0:nx-1,:,:] = - np.diff(Avpot[3],n=1,axis=0)/_dx1
@@ -7124,6 +7125,12 @@ def Afieldcalc3U3D(gdetB=None):
     # A2 = A2_0 + \int (+gdet B3*dx1) + \int (-gdet*B1*dx3)    # Let A2_0=0 at inner-radial polar corner
     # A3 = A3_0 + \int (-gdet B2*dx1) + \int (+gdet*B1*dx2)    # first term vanishes if first integrate along pole, the out in angle
     #
+    gdetB1full=np.zeros((nx+1,ny,nz),dtype='float32',order='F')        
+    gdetB1full=np.zeros((nx+1,ny,nz),dtype='float32',order='F')        
+    gdetB1full=np.zeros((nx+1,ny,nz),dtype='float32',order='F')        
+    #
+    gdetBfull[:,0:nx+1,0:ny+1,0:nz+1]=gdetB
+    #
     # hack to ensure polar region regular behaving
     gdetB[2,:,0,:]=0.0   # right at pole
     gdetB[2,:,1,:]=0.0   # offset at pole
@@ -7131,7 +7138,8 @@ def Afieldcalc3U3D(gdetB=None):
     gdetB[2,:,ny-1,:]=0.0  # offset from pole
     #
     #
-    Avpot = np.zeros_like(gdetB)
+    Avpot=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
+    #Avpot = np.zeros_like(gdetB)
     #
     ####################
     # GET A_\phi assuming spherical polar coordinates with A_\phi=0 at poles.
@@ -26965,7 +26973,7 @@ def tutorial2():
     #lrho=idx2mri
     #lrho=Avpot[1]
     #lrho=gdetB[2]
-    lrho=gdetBnew[1]
+    lrho=gdetBnew[1,:,:,0]
     plco(lrho,cb=True,nc=50)
     aphi = fieldcalc() # keep sign information
     plc(aphi,colors='k')
