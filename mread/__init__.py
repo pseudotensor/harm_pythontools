@@ -583,7 +583,7 @@ def GetTimeFromAthenaVTK(f_name):
     # Parse for time string
     pl_left, pl_right = parse_line.split("time=")                                               # Split line into left and right of 'time='
     file_time = pl_right.split(",")[0]                                                          # Split right component around ',' store first element
-    file_time = float64(file_time)                                                              # Convert to float
+    file_time = np.float64(file_time)                                                              # Convert to float
 
     return file_time
 
