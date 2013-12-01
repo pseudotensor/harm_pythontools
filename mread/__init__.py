@@ -7138,7 +7138,6 @@ def Afieldcalc3U3D(gdetB=None):
     #
     ####################
     # GET A_\phi assuming spherical polar coordinates with A_\phi=0 at poles.
-    # get result for each k
     aphi1 = np.zeros_like(Avpotf[3])
     aphi2 = np.zeros_like(Avpotf[3])
     #
