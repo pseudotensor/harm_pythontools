@@ -7120,9 +7120,9 @@ def Afieldcalc3U3D(gdetB=None):
     #// A3 = F1[B2] = -F2[B1]
     #   F1[B2]=A3 and F2[B1]=-A3
     #
-    # A1 = A1_0 + \int (-gdet B3*dx2) + \int (+gdet*B2*dx3)    # Let A1_0=0 at inner-radial polar corner
-    # A2 = A2_0 + \int (+gdet B3*dx1) + \int (-gdet*B1*dx3)    # Let A2_0=0 at inner-radial polar corner
-    # A3 = A3_0 + \int (-gdet B2*dx1) + \int (+gdet*B1*dx2)    # first term vanishes if first integrate along pole, the out in angle
+    # A1 = A1_0 + \int (-gdet B3*dx2) + \int (+gdet*B2*dx3)    # Let A1_0=0 at \theta=\phi=r=0.
+    # A2 = A2_0 + \int (+gdet B3*dx1) + \int (-gdet*B1*dx3)    # Let A2_0=0 at \theta=\phi=r=0.
+    # A3 = A3_0 + \int (-gdet B2*dx1) + \int (+gdet*B1*dx2)    # Let A3_0=0 at \theta=\phi=r=0.
     #
     # only extra FACE_i values needed, but easier to store in full 4D array
     gdetBf=np.zeros((4,nx+1,ny+1,nz+1),dtype='float32',order='F')        
@@ -7149,6 +7149,16 @@ def Afieldcalc3U3D(gdetB=None):
     #
     ####################
     # GET A_\phi assuming spherical polar coordinates with A_\phi=0 at poles.
+    ####
+    ap1 = np.zeros_like(Avpotf[3])
+    ap2 = np.zeros_like(Avpotf[3])
+    #
+    dap1 = -gdetBf[2]*_dx1
+    #
+    #
+    ap1[1:nx+1:,:,:]=(dap1.cumsum(axis=0))[0:nx,:,:]
+    #
+    #
     aphi1 = np.zeros_like(Avpotf[3])
     aphi2 = np.zeros_like(Avpotf[3])
     #
@@ -7165,9 +7175,14 @@ def Afieldcalc3U3D(gdetB=None):
         #
         # average-out pole-to-pole
         # So A3=0 along entire polar surface of j=0,ny for all r-\phi.
-        Avpotf[3]=0.5*(aphi1+aphi2)
+        ap2=0.5*(aphi1+aphi2)
     else:
-        Avpotf[3]=aphi1
+        ap2=aphi1
+    #
+    j=0
+    while j<=ny:
+        Avpotf[3,:,j,:]=ap1[:,0,:] + ap2[:,j,:]
+        j += 1
     #
     print("DONEA3") ; sys.stdout.flush()
     #
@@ -26970,10 +26985,10 @@ def tutorial2():
     #lrho=idx2mri
     #lrho=Avpotf[3][0:nx,0:ny,0:nz]
     #lrho=gdetB[2]
-    #lrho=gdetBnew[1,:,:,1]
+    #lrho=gdetBnew[1,:,:,-1]
     #lrho=gdetBnew[1,:,:,0]
-    #lrho=gdetBnew[2,:,:,-1]
-    lrho=gdetBnew[3,:,:,1]
+    lrho=gdetBnew[2,:,:,1]
+    #lrho=gdetBnew[3,:,:,1]
     plco(lrho,cb=True,nc=50)
     aphi = fieldcalc() # keep sign information
     plc(aphi,colors='k')
