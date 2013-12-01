@@ -7096,9 +7096,19 @@ def Bfieldcalc3U3D(Avpotf=None):
 
 
 # Compute staggered/CORN_i value of A_i from staggered/FACE_i values of \detg B^i
+#
+# A = A_0 + \int  B.dl such that A_0=0 at r=0,\theta=0,\phi=0.
+#
 def Afieldcalc3U3D(gdetB=None):
     if gdetB == None:
         gdetB = gdetB
+    #
+    # whether to average polar integrals, which can do if no field right on pole
+    dothetaavg=1
+    # whether to average in \phi-direction (NOT RECOMMENDED, or not working fully)
+    dophiavg=0
+    # whether to force B2->0 1-cell away from FACE2 pole, in case divb=0 cleaning.
+    dopoledeath=1
     #
     print("shapes:",gdetB[1].shape, gdetB[2].shape, gdetB[3].shape, gdetB.shape, gdet.shape) ; sys.stdout.flush()
     #
@@ -7126,9 +7136,10 @@ def Afieldcalc3U3D(gdetB=None):
     # Polar BCs
     gdetBf[2,:,0,:]=0.0   # right at pole
     gdetBf[2,:,ny,:]=0.0  # value right at pole
-    # hack to ensure polar region regular behaving
-    gdetBf[2,:,1,:]=0.0   # offset at pole
-    gdetBf[2,:,ny-1,:]=0.0  # offset from pole
+    if dopoledeath==1:
+        # hack to ensure polar region regular behaving
+        gdetBf[2,:,1,:]=0.0   # offset at pole
+        gdetBf[2,:,ny-1,:]=0.0  # offset from pole
     #
     # \Phi BCs
     gdetBf[3,:,:,nz]=gdetBf[3,:,:,0] # periodic BC
@@ -7147,13 +7158,16 @@ def Afieldcalc3U3D(gdetB=None):
     # aphi1 is located CORN3 as result of each integral step
     aphi1[:,0,:]=0
     aphi1[:,1:ny+1,:]=(daphi.cumsum(axis=1))[:,0:ny,:]
-    # sum up from the other pole
-    aphi2[:,0,:]=0
-    aphi2[:,1:ny+1,:]=(-daphi[:,::-1,:].cumsum(axis=1))[:,::-1,:][:,1:ny+1,:]
-    #
-    # average-out pole-to-pole
-    # So A3=0 along entire polar surface of j=0,ny for all r-\phi.
-    Avpotf[3]=0.5*(aphi1+aphi2)
+    if dothetaavg==1:
+        # sum up from the other pole
+        aphi2[:,0,:]=0
+        aphi2[:,1:ny+1,:]=(-daphi[:,::-1,:].cumsum(axis=1))[:,::-1,:][:,1:ny+1,:]
+        #
+        # average-out pole-to-pole
+        # So A3=0 along entire polar surface of j=0,ny for all r-\phi.
+        Avpotf[3]=0.5*(aphi1+aphi2)
+    else:
+        Avpotf[3]=aphi1
     #
     print("DONEA3") ; sys.stdout.flush()
     #
@@ -7169,11 +7183,14 @@ def Afieldcalc3U3D(gdetB=None):
     dar3 = gdetBf[2]*_dx3
     #
     ar1a[:,:,1:nz+1]=(dar3.cumsum(axis=2))[:,:,0:nz]
-    #sum up other direction
-    ar1b[:,:,0:nz]=(-dar3[:,:,::-1].cumsum(axis=2))[:,:,::-1][:,:,0:nz]
-    #
-    # average result
-    ar1=0.5*(ar1a+ar1b)
+    if dophiavg==1:
+        #sum up other direction
+        ar1b[:,:,0:nz]=(-dar3[:,:,::-1].cumsum(axis=2))[:,:,::-1][:,:,0:nz]
+        #
+        # average result
+        ar1=0.5*(ar1a+ar1b)
+    else:
+        ar1=ar1a
     #
     ar2a = np.zeros_like(Avpotf[1])
     ar2b = np.zeros_like(Avpotf[1])
@@ -7183,12 +7200,15 @@ def Afieldcalc3U3D(gdetB=None):
     # sum up from j=0 pole
     ar2a[:,0,:]=0
     ar2a[:,1:ny+1,:]=(dar2.cumsum(axis=1))[:,0:ny,:]
-    #sum up from the other pole
-    ar2b[:,0,:]=0
-    ar2b[:,1:ny,:]=(-dar2[:,::-1,:].cumsum(axis=1))[:,::-1,:][:,1:ny,:]
-    #
-    # average result
-    ar2 = 0.5*(ar2a+ar2b)
+    if dothetaavg==1:
+        #sum up from the other pole
+        ar2b[:,0,:]=0
+        ar2b[:,1:ny,:]=(-dar2[:,::-1,:].cumsum(axis=1))[:,::-1,:][:,1:ny,:]
+        #
+        # average result
+        ar2 = 0.5*(ar2a+ar2b)
+    else:
+        ar2 = ar2a
     #
     # get final answer for j,k for each i
     j=0
@@ -7214,11 +7234,14 @@ def Afieldcalc3U3D(gdetB=None):
     dah3 = -gdetBf[1]*_dx3
     #
     ah1a[:,:,1:nz+1]=(dah3.cumsum(axis=2))[:,:,0:nz]
-    #sum up other direction
-    ah1b[:,:,1:nz]=(-dah3[:,:,::-1].cumsum(axis=2))[:,:,::-1][:,:,1:nz]
-    #
-    # average result
-    ah1=0.5*(ah1a+ah1b)
+    if dophiavg==1:
+        #sum up other direction
+        ah1b[:,:,1:nz]=(-dah3[:,:,::-1].cumsum(axis=2))[:,:,::-1][:,:,1:nz]
+        #
+        # average result
+        ah1=0.5*(ah1a+ah1b)
+    else:
+        ah1=ah1a
     #
     ####
     ah2 = np.zeros_like(gdetBf[1])
@@ -7235,7 +7258,9 @@ def Afieldcalc3U3D(gdetB=None):
     while k<=nz:
         # for constant theta (j), at k=0, integrate in radius until reach (i) and then integrate in phi (k)
         # So Avpot[2]=0 on entire \theta-\phi for horizon
-        Avpotf[2,:,:,k]=ah1[:,:,k] + ah2[:,:,0]
+#        Avpotf[2,:,:,k]=ah1[:,:,k] + ah2[:,:,0]
+        # Or Avpot[2]=0 at \phi=0,all \theta,r plane
+        Avpotf[2,:,:,k]=ah1[:,:,0] + ah2[:,:,k]
         k += 1
     #
     print("DONEA2") ; sys.stdout.flush()
@@ -26940,12 +26965,15 @@ def tutorial2():
     gdetBnew=Bfieldcalc3U3D(Avpotf)
     #
     # now plot something you read-in
-    plt.figure(2)
+    plt.figure(4)
     #lrho=qmri3ddisk
     #lrho=idx2mri
     #lrho=Avpotf[3][0:nx,0:ny,0:nz]
     #lrho=gdetB[2]
-    lrho=gdetBnew[1,:,:,2]
+    #lrho=gdetBnew[1,:,:,1]
+    #lrho=gdetBnew[1,:,:,0]
+    #lrho=gdetBnew[2,:,:,-1]
+    lrho=gdetBnew[3,:,:,1]
     plco(lrho,cb=True,nc=50)
     aphi = fieldcalc() # keep sign information
     plc(aphi,colors='k')
