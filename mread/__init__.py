@@ -6754,6 +6754,13 @@ def rfloor(dumpname):
 #
 # only works for 1 or 2 for newf? for now
 def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclean=True):
+    # get dx1,2,3
+    flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+    sort_nicely(flist)
+    if len(flist)>0:
+        firstfieldlinefile=flist[0]
+        rfdheaderonly(firstfieldlinefile)
+    #
     global nx,ny,nz,t,a,rho,ug,vu,vd,B,gd,gd1,numcols,gdetB
     #print( "Reading " + "dumps/" + dumpname + " ..." )
     gin = open( "dumps/" + dumpname, "rb" )
@@ -6891,19 +6898,20 @@ def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclea
                 gd2[:,1:newny-2:newf2,:,gdetB2index] = 0.5*(gd2[:,0:newny-3:newf2,:,gdetB2index]+gd2[:,2:newny-1:newf2,:,gdetB2index])
                 # use assumed reflective condition to set last value (i.e. B2[tj]=0)
                 #gd2[:,0,:,gdetB2index] = 0.0
-                gd2[:,-1,:,gdetB2index] = 0.5*(gd2[:,-2,:,gdetB2index]+0.0)
-            #
+                gd2[:,-1,:,gdetB2index] = 0.5*(gd2[:,-2,:,gdetB2index])
+                #gd2[:,newny-1,:,gdetB2index] = 0.5*(gd2[:,newny-2,:,gdetB2index]+0.0)
+            #  (B2c-B2m)/(dx2/2) = (0-B2m)/dx2 -> 2*B2c = -B2m + 2*B2m = B2m -> B2c=B2m/2
             if newf3==2:
                 gd2[1:newnz-2:newf3,:,:,gdetB3index] = 0.5*(gd2[0:newnz-3:newf3,:,:,gdetB3index]+gd2[2:newnz-1:newf3,:,:,gdetB3index])
                 # use assumed periodicity in \phi to set last value (i.e. B3[tk]=B3[0]).  gdet and metric are same since metric also periodic.
                 gd2[-1,:,:,gdetB3index] = 0.5*(gd2[0,:,:,gdetB3index]+gd2[-2,:,:,gdetB3index])
         #
         # check divbB=0 for old and new data, but need dx[1,2,3] for that, so get header from a fieldline file.
-        flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
-        sort_nicely(flist)
+        #flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+        #sort_nicely(flist)
         if len(flist)>0:
-            firstfieldlinefile=flist[0]
-            rfdheaderonly(firstfieldlinefile)
+            #firstfieldlinefile=flist[0]
+            #rfdheaderonly(firstfieldlinefile)
             # gdet needed to normalize divb
             #    use2dglobal=True
             #grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=use2dglobal )
@@ -6919,15 +6927,14 @@ def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclea
             #
             divbcentold=divbcentold1+divbcentold2+divbcentold3
             olddimens=(nx>1)+(ny>1)+(nz>1)
-            adivbcentold=(adivbcentold1+adivbcentold2+adivbcentold3)/olddimens
+            adivbcentold=(1E-30+adivbcentold1+adivbcentold2+adivbcentold3)/olddimens
             divbcentoldavg=np.average(np.fabs(divbcentold/adivbcentold))
             divbcentoldmax=np.max(np.fabs(divbcentold/adivbcentold))
             print("divbcentoldavg=%g divbcentoldmax=%g" % (divbcentoldavg,divbcentoldmax)) ; sys.stdout.flush()
             #badi=np.where(np.fabs(fabs[ivalue,:])==np.max(np.fabs(fabs[ivalue,:])))[0]
-            badijk=np.where(divbcentoldmax==np.fabs(divbcentold/adivbcentold))
-            print("badijk") ; sys.stdout.flush()
-            print(badijk) ; sys.stdout.flush()
-
+            badijkold=np.where(divbcentoldmax==np.fabs(divbcentold/adivbcentold))
+            print("badijkold") ; sys.stdout.flush()
+            print(badijkold) ; sys.stdout.flush()
             #
             # NEW (old->new, gd1->gd2, n? -> newn?, _dx? -> (_dx?//float(newf?)) )
             divbcentnew1=(gd2[0:newnz-1,0:newny-1,1:newnx  ,gdetB1index]-gd2[0:newnz-1,0:newny-1,0:newnx-1,gdetB1index])/(_dx1/float(newf1))
@@ -6940,11 +6947,19 @@ def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclea
             #
             newdimens=(newnx>1)+(newny>1)+(newnz>1)
             divbcentnew=divbcentnew1+divbcentnew2+divbcentnew3
-            adivbcentnew=(adivbcentnew1+adivbcentnew2+adivbcentnew3)/newdimens
+            adivbcentnew=(1E-30+adivbcentnew1+adivbcentnew2+adivbcentnew3)/newdimens
+            # below since don't have enough data at outer radial edge
             divbcentnew[:,:,newnx-2]=0
+            # below just debug
+            #divbcentnew[:,0,:]=0
+            #divbcentnew[:,newny-2,:]=0
             divbcentnewavg=np.average(np.fabs(divbcentnew/adivbcentnew))
             divbcentnewmax=np.max(np.fabs(divbcentnew/adivbcentnew))
             print("divbcentnewavg=%g divbcentnewmax=%g" % (divbcentnewavg,divbcentnewmax))
+            #
+            badijknew=np.where(divbcentnewmax==np.fabs(divbcentnew/adivbcentnew))
+            print("badijknew") ; sys.stdout.flush()
+            print(badijknew) ; sys.stdout.flush()
             #
             # DEBUG:
             #print(divbcentnew[7,76,:]/adivbcentnew[7,76,:])
@@ -7122,7 +7137,7 @@ def Afieldcalc3U3D(gdetB=None):
     # whether to force B2->0 1-cell away from FACE2 pole, in case divb=0 cleaning.
     dopoledeath=1
     #
-    print("shapes:",gdetB[1].shape, gdetB[2].shape, gdetB[3].shape, gdetB.shape, gdet.shape) ; sys.stdout.flush()
+    #print("shapes:",gdetB[1].shape, gdetB[2].shape, gdetB[3].shape, gdetB.shape, gdet.shape) ; sys.stdout.flush()
     #
     #// \detg B1 = d_2 A3 - d_3 A2
     #// \detg B2 = d_3 A1 - d_1 A3
@@ -7137,7 +7152,7 @@ def Afieldcalc3U3D(gdetB=None):
     # A3 = A3_0 + \int (-gdet B2*dx1) + \int (+gdet*B1*dx2)    # Let A3_0=0 at \theta=\phi=r=0.
     #
     # only extra FACE_i values needed, but easier to store in full 4D array
-    gdetBf=np.zeros((4,nx+1,ny+1,nz+1),dtype='float32',order='F')        
+    gdetBf=np.zeros((4,nx+1,ny+1,nz+1),dtype='float64',order='F')        
     #
     # set gdetBf
     gdetBf[:,0:nx,0:ny,0:nz] = gdetB[:,:,:,:]
@@ -7157,7 +7172,7 @@ def Afieldcalc3U3D(gdetB=None):
     gdetBf[3,:,:,nz]=gdetBf[3,:,:,0] # periodic BC
     #
     # only planar extension to CORN_i is needed for each j-k plane
-    Avpotf=np.zeros((4,nx+1,ny+1,nz+1),dtype='float32',order='F')
+    Avpotf=np.zeros((4,nx+1,ny+1,nz+1),dtype='float64',order='F')
     #
     ####################
     # GET A_\phi assuming spherical polar coordinates with A_\phi=0 at poles.
