@@ -16964,12 +16964,13 @@ def plotmdotin():
     plt.ylim(1,30)
     
 if __name__ == "__main__":
-    if sys.argv[1] == "mkts":
-        mkts(docompute=True)
-    elif sys.argv[1] == "mkavg":
-        mk2davg()
-    elif sys.argv[1] == "mkath":
-        mkath()
+    if len(sys.argv)>1:
+        if sys.argv[1] == "mkts":
+            mkts(docompute=True)
+        elif sys.argv[1] == "mkavg":
+            mk2davg()
+        elif sys.argv[1] == "mkath":
+            mkath()
     if False:
         plt.clf()
         ubsplot(dosavefig=0)
