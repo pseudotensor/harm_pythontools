@@ -6750,10 +6750,10 @@ def rfloor(dumpname):
 # 1) put file in dumps/rdump-0.bin
 # 2) and file in dumps/fieldline*.bin (just 1 file needed -- any file number)
 # 3) ipython ~/py/mread/__init__.py
-# 4) reresrdump('rdump-0.bin',writenew=1,newf1=2,newf2=2,newf3=2)
+# 4) reresrdump('rdump-0.bin',writenew=1,newf1=2,newf2=2,newf3=2,divbclean=True)
 #
 # only works for 1 or 2 for newf? for now
-def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None):
+def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclean=True):
     global nx,ny,nz,t,a,rho,ug,vu,vd,B,gd,gd1,numcols,gdetB
     #print( "Reading " + "dumps/" + dumpname + " ..." )
     gin = open( "dumps/" + dumpname, "rb" )
@@ -6785,10 +6785,25 @@ def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None):
     numcols = gd.shape[0]  #total number of columns is made up of (n prim vars) + (n cons vars) = numcols
     #
     #NPR=8 # if DODISS==0 and DONOENTROPY==1
-    NPR=9 # if DODISS==1 or DONOENTROPY==0
+    #NPR=9 # if DODISS==1 or DONOENTROPY==0
+    NPR=13 # if DODISS==1 or DONOENTROPY==0 and EOMRADTYPE!=EOMRADNONE
+    #
+    #gdetB starts with 5th conserved variable
+    gdetB1index = NPR+5+0
+    gdetB2index = NPR+5+1
+    gdetB3index = NPR+5+2
     #
     gdetB = np.zeros_like(B)
-    gdetB[1:4] = gd[NPR+5 : NPR+5+3]  #gdetB starts with 5th conserved variable
+    gdetB[1:4] = gd[gdetB1index : gdetB3index+1]
+    #
+    if divbclean==True:
+        Avpotf=Afieldcalc3U3D(gdetB=gdetB)
+        gdetBnew=Bfieldcalc3U3D(Avpotf)
+        gd[gdetB1index]=np.copy(gdetBnew[1])
+        gd[gdetB2index]=np.copy(gdetBnew[2])
+        gd[gdetB3index]=np.copy(gdetBnew[3])
+    #
+    #
     if 'gv3' in globals() and 'gn3' in globals(): 
         vd = mdot(gv3,vu)
         gamma = (1+mdot(mdot(gv3,vu),vu))**0.5
@@ -6828,9 +6843,6 @@ def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None):
         #allocate memory for refined grid, nz' = 2*nz
         gd2 = np.zeros((newnz,newny,newnx,numcols),order='C',dtype=np.float64)
         #
-        gdetB1index = NPR+5+0
-        gdetB2index = NPR+5+1
-        gdetB3index = NPR+5+2
         #################
         # First, copy every old index -> new same 2*index and new 2*index+1
         #
