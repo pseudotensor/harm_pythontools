@@ -6943,49 +6943,67 @@ def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclea
             adivbcentold[3,0:nz-1,0:ny,0:nx] = (np.fabs(gd1[1:nz  ,0:ny,0:nx,gdetB3index])+np.fabs(gd1[0:nz-1,0:ny,0:nx,gdetB3index]))/_dx3
             adivbcentold[3,  nz-1,0:ny,0:nx] = (np.fabs(gd1[0  ,0:ny,0:nx,gdetB3index])+np.fabs(gd1[nz-1,0:ny,0:nx,gdetB3index]))/_dx3
             #
-            divbcentold=divbcentold[1] + divbcentold[2] + divbcentold[3]
+            divbcentold123=divbcentold[1] + divbcentold[2] + divbcentold[3]
             #test debug:
-            #divbcentold[:,ny-1,:]=0
-            divbcentold[:,:,nx-1]=0
+            #divbcentold123[:,ny-1,:]=0
+            divbcentold123[:,:,nx-1]=0
             #
             olddimens=(nx>1)+(ny>1)+(nz>1)
             adivbcentold=(1E-30+adivbcentold[1]+adivbcentold[2]+adivbcentold[3])/olddimens
-            divbcentoldavg=np.average(np.fabs(divbcentold/adivbcentold))
-            divbcentoldmax=np.max(np.fabs(divbcentold/adivbcentold))
+            divbcentoldavg=np.average(np.fabs(divbcentold123/adivbcentold))
+            divbcentoldmax=np.max(np.fabs(divbcentold123/adivbcentold))
             print("divbcentoldavg=%g divbcentoldmax=%g" % (divbcentoldavg,divbcentoldmax)) ; sys.stdout.flush()
             #badi=np.where(np.fabs(fabs[ivalue,:])==np.max(np.fabs(fabs[ivalue,:])))[0]
-            badijkold=np.where(divbcentoldmax==np.fabs(divbcentold/adivbcentold))
+            badijkold=np.where(divbcentoldmax==np.fabs(divbcentold123/adivbcentold))
             print("badijkold") ; sys.stdout.flush()
             print(badijkold) ; sys.stdout.flush()
             #
             #
             # NEW (old->new, gd1->gd2, n? -> newn?, _dx? -> (_dx?//float(newf?)) )
-            divbcentnew1=(gd2[0:newnz-1,0:newny-1,1:newnx  ,gdetB1index]-gd2[0:newnz-1,0:newny-1,0:newnx-1,gdetB1index])/(_dx1/float(newf1))
-            divbcentnew2=(gd2[0:newnz-1,1:newny  ,0:newnx-1,gdetB2index]-gd2[0:newnz-1,0:newny-1,0:newnx-1,gdetB2index])/(_dx2/float(newf2))
-            divbcentnew3=(gd2[1:newnz  ,0:newny-1,0:newnx-1,gdetB3index]-gd2[0:newnz-1,0:newny-1,0:newnx-1,gdetB3index])/(_dx3/float(newf3))
+            divbcentnew=np.zeros((4,newnz,newny,newnx),dtype='float64',order='C')
+            _dx1new=(_dx1/float(newf1))
+            _dx2new=(_dx2/float(newf2))
+            _dx3new=(_dx3/float(newf3))
+            # NEW:
+            divbcentnew[1,0:newnz,0:newny,0:newnx-1] = np.diff(gd2[:,:,:,gdetB1index],n=1,axis=2)/_dx1new
+            # radial edge is copy
+            divbcentnew[1,0:newnz,0:newny,  newnx-1] = (gd2[0:newnz,0:newny,newnx-1  ,gdetB1index]-gd2[0:newnz,0:newny,newnx-1,gdetB1index])/_dx1new
             #
-            adivbcentnew1=1E-30 + (np.fabs(gd2[0:newnz-1,0:newny-1,1:newnx  ,gdetB1index])+np.fabs(gd2[0:newnz-1,0:newny-1,0:newnx-1,gdetB1index]))/(_dx1/float(newf1))
-            adivbcentnew2=1E-30 + (np.fabs(gd2[0:newnz-1,1:newny  ,0:newnx-1,gdetB2index])+np.fabs(gd2[0:newnz-1,0:newny-1,0:newnx-1,gdetB2index]))/(_dx2/float(newf2))
-            adivbcentnew3=1E-30 + (np.fabs(gd2[1:newnz  ,0:newny-1,0:newnx-1,gdetB3index])+np.fabs(gd2[0:newnz-1,0:newny-1,0:newnx-1,gdetB3index]))/(_dx3/float(newf3))
+            divbcentnew[2,0:newnz,0:newny-1,0:newnx] = np.diff(gd2[:,:,:,gdetB2index],n=1,axis=1)/_dx2new
+            # \theta edges are gdetB2=0
+            divbcentnew[2,0:newnz,  newny-1,0:newnx] = (0.0 - gd2[0:newnz,newny-1,0:newnx,gdetB2index])/_dx2new
+            #
+            divbcentnew[3,0:newnz-1,0:newny,0:newnx] = np.diff(gd2[:,:,:,gdetB3index],n=1,axis=0)/_dx3new
+            # \phi edges are periodic
+            divbcentnew[3,  newnz-1,0:newny,0:newnx] = (gd2[0  ,0:newny,0:newnx,gdetB3index]-gd2[newnz-1,0:newny,0:newnx,gdetB3index])/_dx3new
+            #
+            adivbcentnew=np.zeros((4,newnz,newny,newnx),dtype='float64',order='C')
+            adivbcentnew[1,0:newnz,0:newny,0:newnx-1] = (np.fabs(gd2[0:newnz,0:newny,1:newnx  ,gdetB1index])+np.fabs(gd2[0:newnz,0:newny,0:newnx-1,gdetB1index]))/_dx1new
+            adivbcentnew[1,0:newnz,0:newny,  newnx-1] = (np.fabs(gd2[0:newnz,0:newny,newnx-1  ,gdetB1index])+np.fabs(gd2[0:newnz,0:newny,newnx-1,gdetB1index]))/_dx1new
+            adivbcentnew[2,0:newnz,0:newny-1,0:newnx] = (np.fabs(gd2[0:newnz,1:newny  ,0:newnx,gdetB2index])+np.fabs(gd2[0:newnz,0:newny-1,0:newnx,gdetB2index]))/_dx2new
+            adivbcentnew[2,0:newnz,  newny-1,0:newnx] = (np.fabs(0.0) + np.fabs(gd2[0:newnz,newny-1,0:newnx,gdetB2index]))/_dx2new
+            adivbcentnew[3,0:newnz-1,0:newny,0:newnx] = (np.fabs(gd2[1:newnz  ,0:newny,0:newnx,gdetB3index])+np.fabs(gd2[0:newnz-1,0:newny,0:newnx,gdetB3index]))/_dx3new
+            adivbcentnew[3,  newnz-1,0:newny,0:newnx] = (np.fabs(gd2[0  ,0:newny,0:newnx,gdetB3index])+np.fabs(gd2[newnz-1,0:newny,0:newnx,gdetB3index]))/_dx3new
+            #
+            divbcentnew123=divbcentnew[1] + divbcentnew[2] + divbcentnew[3]
+            #test debug:
+            #divbcentnew123[:,newny-1,:]=0
+            divbcentnew123[:,:,newnx-1]=0
             #
             newdimens=(newnx>1)+(newny>1)+(newnz>1)
-            divbcentnew=divbcentnew1+divbcentnew2+divbcentnew3
-            adivbcentnew=(1E-30+adivbcentnew1+adivbcentnew2+adivbcentnew3)/newdimens
-            # below since don't have enough data at outer radial edge
-            divbcentnew[:,:,newnx-2]=0
-            # below just debug
-            #divbcentnew[:,0,:]=0
-            #divbcentnew[:,newny-2,:]=0
-            divbcentnewavg=np.average(np.fabs(divbcentnew/adivbcentnew))
-            divbcentnewmax=np.max(np.fabs(divbcentnew/adivbcentnew))
-            print("divbcentnewavg=%g divbcentnewmax=%g" % (divbcentnewavg,divbcentnewmax))
-            #
-            badijknew=np.where(divbcentnewmax==np.fabs(divbcentnew/adivbcentnew))
+            adivbcentnew=(1E-30+adivbcentnew[1]+adivbcentnew[2]+adivbcentnew[3])/newdimens
+            divbcentnewavg=np.average(np.fabs(divbcentnew123/adivbcentnew))
+            divbcentnewmax=np.max(np.fabs(divbcentnew123/adivbcentnew))
+            print("divbcentnewavg=%g divbcentnewmax=%g" % (divbcentnewavg,divbcentnewmax)) ; sys.stdout.flush()
+            #badi=np.where(np.fabs(fabs[ivalue,:])==np.max(np.fabs(fabs[ivalue,:])))[0]
+            badijknew=np.where(divbcentnewmax==np.fabs(divbcentnew123/adivbcentnew))
             print("badijknew") ; sys.stdout.flush()
             print(badijknew) ; sys.stdout.flush()
             #
+            #
+            #
             # DEBUG:
-            #print(divbcentnew[7,76,:]/adivbcentnew[7,76,:])
+            #print(divbcentnew123[7,76,:]/adivbcentnew[7,76,:])
             #
         else:
             print("No fieldline file to check divb=0") ; sys.stdout.flush()
@@ -26891,7 +26909,7 @@ def main(argv=None):
     #
     global nxgdump,nygdump,nzgdump
     #
-    #reresrdump('rdump-0.bin',writenew=1,newf1=2,newf2=2,newf3=2,divbclean=True)
+    reresrdump('rdump-0.bin',writenew=1,newf1=2,newf2=2,newf3=2,divbclean=True)
     #
     # runtype==-1 just skip and do nothing
     #
