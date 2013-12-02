@@ -1384,15 +1384,16 @@ def compute_Eup(fntsize=20,useavgs=0,dofig=0):
         vary2 = np.concatenate((vary2[::-1],vary2))
     varx1ori = varx
     if useavgs:
-        plt.plot(varx,vary1,"b-",
+        l,=plt.plot(varx,vary1,"b-.",
             #label=r"$\omega_{\rm H} \langle F^{\nu\beta}F_{\mu\nu}\rangle \xi^\mu \ell_\beta-\langle F_{\alpha\beta}F^{\alpha\nu}\rangle\ell^\beta \ell_\nu$",
            label=r"$\omega_{\rm H}F_{\mu\nu}E^\mu \xi^\nu-E_\mu E^\mu$", lw=2)
         plt.plot(varx,vary2,"k-",label=r"$E^2 \equiv E_\mu E^\mu$",lw=2)
     else:
-        plt.plot(varx,vary1,"b-",
+        l,=plt.plot(varx,vary1,"b-.",
            #label=r"$\omega_{\rm H} F^{\nu\beta}F_{\mu\nu} \xi^\mu \ell_\beta - F_{\alpha\beta}F^{\alpha\nu}\ell^\beta \ell_\nu$",
            label=r"$\omega_{\rm H}F_{\mu\nu}E^\mu \xi^\nu-E_\mu E^\mu$", lw=2)
         plt.plot(varx,vary2,"k-",label=r"$E^2 \equiv E_\mu E^\mu$",lw=2)
+    l.set_dashes([10,3,2,3])
     # if useavgs:
     #     plt.plot(varx,(Epsqold)[ih,:,0]/np.max(Epsqold[ih,:,0]),"k--",label=r"$E^2\equiv E^\mu E_\mu$",lw=2)
     #plt.title(r"$E^\alpha = F^{\alpha}{\ \mu}\ell_\mu$",fontsize=fntsize)
@@ -5809,7 +5810,6 @@ def rd(dump,oldfmt=False,doreturnarray=False):
                       unpack = True ).view().reshape((-1,nx,ny,nz), order='F')
     #gd=myfloat(gd)
     gc.collect()
-    NPR, NPRDUMP = set_numnprs()
     ti,tj,tk,x1,x2,x3,r,h,ph = gd[0:9,:,:,:].view() 
     n=9
     rho,ug =gd[9:11]
@@ -5817,13 +5817,14 @@ def rd(dump,oldfmt=False,doreturnarray=False):
     B=np.zeros_like(gd[0:4])
     vu[1:4] = gd[11:14]
     B[1:4] = gd[14:17]
-    set_dumpversions(header)
-    #if radiation primitives are there
-    #PRAD0 = 8, PRAD1 = 9, PRAD2 = 10, PRAD3 = 11
-    if NPRDUMP >= 12:
-        Erf,ErfF1,ErfF2,ErfF3 = gd[n+8:n+12] 
-    n+=NPRDUMP  #skip to the end of NPRDUMP list
     if not oldfmt:
+        NPR, NPRDUMP = set_numnprs()
+        set_dumpversions(header)
+        #if radiation primitives are there
+        #PRAD0 = 8, PRAD1 = 9, PRAD2 = 10, PRAD3 = 11
+        if NPRDUMP >= 12:
+            Erf,ErfF1,ErfF2,ErfF3 = gd[n+8:n+12] 
+        n+=NPRDUMP  #skip to the end of NPRDUMP list
         pg,cs2,Sden = gd[n:n+3];n+=3
         U = gd[n:n+NPR];n+=NPR
         gdetB = np.zeros_like(B)
