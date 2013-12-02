@@ -26891,7 +26891,7 @@ def main(argv=None):
     #
     global nxgdump,nygdump,nzgdump
     #
-    reresrdump('rdump-0.bin',writenew=1,newf1=2,newf2=2,newf3=2,divbclean=True)
+    #reresrdump('rdump-0.bin',writenew=1,newf1=2,newf2=2,newf3=2,divbclean=True)
     #
     # runtype==-1 just skip and do nothing
     #
