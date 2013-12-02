@@ -6804,11 +6804,13 @@ def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclea
     gdetB[1:4] = gd[gdetB1index : gdetB3index+1]
     #
     if divbclean==True:
+        print("Start cleaning"); sys.stdout.flush()
         Avpotf=Afieldcalc3U3D(gdetB=gdetB)
         gdetBnew=Bfieldcalc3U3D(Avpotf)
         gd[gdetB1index]=np.copy(gdetBnew[1])
         gd[gdetB2index]=np.copy(gdetBnew[2])
         gd[gdetB3index]=np.copy(gdetBnew[3])
+        print("End cleaning"); sys.stdout.flush()
     #
     #
     if 'gv3' in globals() and 'gn3' in globals(): 
@@ -6916,18 +6918,38 @@ def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclea
             #    use2dglobal=True
             #grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=use2dglobal )
             #
+            print("gd1.shape()"); sys.stdout.flush()
+            print(gd1.shape); sys.stdout.flush()
+            #
+            divbcentold=np.zeros((4,nz,ny,nx),dtype='float64',order='C')
             # OLD:
-            divbcentold1=(gd1[0:nz-1,0:ny-1,1:nx  ,gdetB1index]-gd1[0:nz-1,0:ny-1,0:nx-1,gdetB1index])/_dx1
-            divbcentold2=(gd1[0:nz-1,1:ny  ,0:nx-1,gdetB2index]-gd1[0:nz-1,0:ny-1,0:nx-1,gdetB2index])/_dx2
-            divbcentold3=(gd1[1:nz  ,0:ny-1,0:nx-1,gdetB3index]-gd1[0:nz-1,0:ny-1,0:nx-1,gdetB3index])/_dx3
+            divbcentold[1,0:nz,0:ny,0:nx-1] = np.diff(gd1[:,:,:,gdetB1index],n=1,axis=2)/_dx1
+            # radial edge is copy
+            divbcentold[1,0:nz,0:ny,  nx-1] = (gd1[0:nz,0:ny,nx-1  ,gdetB1index]-gd1[0:nz,0:ny,nx-1,gdetB1index])/_dx1
             #
-            adivbcentold1=(np.fabs(gd1[0:nz-1,0:ny-1,1:nx  ,gdetB1index])+np.fabs(gd1[0:nz-1,0:ny-1,0:nx-1,gdetB1index]))/_dx1
-            adivbcentold2=(np.fabs(gd1[0:nz-1,1:ny  ,0:nx-1,gdetB2index])+np.fabs(gd1[0:nz-1,0:ny-1,0:nx-1,gdetB2index]))/_dx2
-            adivbcentold3=(np.fabs(gd1[1:nz  ,0:ny-1,0:nx-1,gdetB3index])+np.fabs(gd1[0:nz-1,0:ny-1,0:nx-1,gdetB3index]))/_dx3
+            divbcentold[2,0:nz,0:ny-1,0:nx] = np.diff(gd1[:,:,:,gdetB2index],n=1,axis=1)/_dx2
+            # \theta edges are gdetB2=0
+            divbcentold[2,0:nz,  ny-1,0:nx] = (0.0 - gd1[0:nz,ny-1,0:nx,gdetB2index])/_dx2
             #
-            divbcentold=divbcentold1+divbcentold2+divbcentold3
+            divbcentold[3,0:nz-1,0:ny,0:nx] = np.diff(gd1[:,:,:,gdetB3index],n=1,axis=0)/_dx3
+            # \phi edges are periodic
+            divbcentold[3,  nz-1,0:ny,0:nx] = (gd1[0  ,0:ny,0:nx,gdetB3index]-gd1[nz-1,0:ny,0:nx,gdetB3index])/_dx3
+            #
+            adivbcentold=np.zeros((4,nz,ny,nx),dtype='float64',order='C')
+            adivbcentold[1,0:nz,0:ny,0:nx-1] = (np.fabs(gd1[0:nz,0:ny,1:nx  ,gdetB1index])+np.fabs(gd1[0:nz,0:ny,0:nx-1,gdetB1index]))/_dx1
+            adivbcentold[1,0:nz,0:ny,  nx-1] = (np.fabs(gd1[0:nz,0:ny,nx-1  ,gdetB1index])+np.fabs(gd1[0:nz,0:ny,nx-1,gdetB1index]))/_dx1
+            adivbcentold[2,0:nz,0:ny-1,0:nx] = (np.fabs(gd1[0:nz,1:ny  ,0:nx,gdetB2index])+np.fabs(gd1[0:nz,0:ny-1,0:nx,gdetB2index]))/_dx2
+            adivbcentold[2,0:nz,  ny-1,0:nx] = (np.fabs(0.0) + np.fabs(gd1[0:nz,ny-1,0:nx,gdetB2index]))/_dx2
+            adivbcentold[3,0:nz-1,0:ny,0:nx] = (np.fabs(gd1[1:nz  ,0:ny,0:nx,gdetB3index])+np.fabs(gd1[0:nz-1,0:ny,0:nx,gdetB3index]))/_dx3
+            adivbcentold[3,  nz-1,0:ny,0:nx] = (np.fabs(gd1[0  ,0:ny,0:nx,gdetB3index])+np.fabs(gd1[nz-1,0:ny,0:nx,gdetB3index]))/_dx3
+            #
+            divbcentold=divbcentold[1] + divbcentold[2] + divbcentold[3]
+            #test debug:
+            #divbcentold[:,ny-1,:]=0
+            divbcentold[:,:,nx-1]=0
+            #
             olddimens=(nx>1)+(ny>1)+(nz>1)
-            adivbcentold=(1E-30+adivbcentold1+adivbcentold2+adivbcentold3)/olddimens
+            adivbcentold=(1E-30+adivbcentold[1]+adivbcentold[2]+adivbcentold[3])/olddimens
             divbcentoldavg=np.average(np.fabs(divbcentold/adivbcentold))
             divbcentoldmax=np.max(np.fabs(divbcentold/adivbcentold))
             print("divbcentoldavg=%g divbcentoldmax=%g" % (divbcentoldavg,divbcentoldmax)) ; sys.stdout.flush()
@@ -6936,14 +6958,15 @@ def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclea
             print("badijkold") ; sys.stdout.flush()
             print(badijkold) ; sys.stdout.flush()
             #
+            #
             # NEW (old->new, gd1->gd2, n? -> newn?, _dx? -> (_dx?//float(newf?)) )
             divbcentnew1=(gd2[0:newnz-1,0:newny-1,1:newnx  ,gdetB1index]-gd2[0:newnz-1,0:newny-1,0:newnx-1,gdetB1index])/(_dx1/float(newf1))
             divbcentnew2=(gd2[0:newnz-1,1:newny  ,0:newnx-1,gdetB2index]-gd2[0:newnz-1,0:newny-1,0:newnx-1,gdetB2index])/(_dx2/float(newf2))
             divbcentnew3=(gd2[1:newnz  ,0:newny-1,0:newnx-1,gdetB3index]-gd2[0:newnz-1,0:newny-1,0:newnx-1,gdetB3index])/(_dx3/float(newf3))
             #
-            adivbcentnew1=(np.fabs(gd2[0:newnz-1,0:newny-1,1:newnx  ,gdetB1index])+np.fabs(gd2[0:newnz-1,0:newny-1,0:newnx-1,gdetB1index]))/(_dx1/float(newf1))
-            adivbcentnew2=(np.fabs(gd2[0:newnz-1,1:newny  ,0:newnx-1,gdetB2index])+np.fabs(gd2[0:newnz-1,0:newny-1,0:newnx-1,gdetB2index]))/(_dx2/float(newf2))
-            adivbcentnew3=(np.fabs(gd2[1:newnz  ,0:newny-1,0:newnx-1,gdetB3index])+np.fabs(gd2[0:newnz-1,0:newny-1,0:newnx-1,gdetB3index]))/(_dx3/float(newf3))
+            adivbcentnew1=1E-30 + (np.fabs(gd2[0:newnz-1,0:newny-1,1:newnx  ,gdetB1index])+np.fabs(gd2[0:newnz-1,0:newny-1,0:newnx-1,gdetB1index]))/(_dx1/float(newf1))
+            adivbcentnew2=1E-30 + (np.fabs(gd2[0:newnz-1,1:newny  ,0:newnx-1,gdetB2index])+np.fabs(gd2[0:newnz-1,0:newny-1,0:newnx-1,gdetB2index]))/(_dx2/float(newf2))
+            adivbcentnew3=1E-30 + (np.fabs(gd2[1:newnz  ,0:newny-1,0:newnx-1,gdetB3index])+np.fabs(gd2[0:newnz-1,0:newny-1,0:newnx-1,gdetB3index]))/(_dx3/float(newf3))
             #
             newdimens=(newnx>1)+(newny>1)+(newnz>1)
             divbcentnew=divbcentnew1+divbcentnew2+divbcentnew3
@@ -7170,6 +7193,10 @@ def Afieldcalc3U3D(gdetB=None):
     #
     # \Phi BCs
     gdetBf[3,:,:,nz]=gdetBf[3,:,:,0] # periodic BC
+    #if dopoledeath==1:
+    #    # hack to ensure polar region regular behaving
+    #    gdetBf[3,:,0,:]=0.0   # offset at pole
+    #    gdetBf[3,:,ny,:]=0.0  # offset from pole
     #
     # only planar extension to CORN_i is needed for each j-k plane
     Avpotf=np.zeros((4,nx+1,ny+1,nz+1),dtype='float64',order='F')
@@ -7210,6 +7237,10 @@ def Afieldcalc3U3D(gdetB=None):
     while j<=ny:
         Avpotf[3,:,j,:]=ap1[:,0,:] + ap2[:,j,:]
         j += 1
+    #
+    if dopoledeath==1:
+        #Avpotf[3,:,0,:]=0
+        Avpotf[3,:,ny,:]=Avpotf[3,0,ny,:]
     #
     print("DONEA3") ; sys.stdout.flush()
     #
@@ -7262,6 +7293,9 @@ def Afieldcalc3U3D(gdetB=None):
         Avpotf[1,:,j,:]=ar1[:,0,:] + ar2[:,j,:]
         j += 1
     #
+    if dopoledeath==1:
+        # so A{1,3}=gdetB2=0
+        Avpotf[1,:,ny,:]=0
     #
     print("DONEA1") ; sys.stdout.flush()
     ####################
@@ -26857,6 +26891,7 @@ def main(argv=None):
     #
     global nxgdump,nygdump,nzgdump
     #
+    reresrdump('rdump-0.bin',writenew=1,newf1=2,newf2=2,newf3=2,divbclean=True)
     #
     # runtype==-1 just skip and do nothing
     #
