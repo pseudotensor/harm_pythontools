@@ -6,15 +6,15 @@ from matplotlib import rc
 from streamlines import streamplot
 from streamlines import fstreamplot
 from pychip import pchip_init, pchip_eval
-#rc('verbose', level='debug')
-rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
-## for Palatino and other serif fonts use:
-# rc('font',**{'family':'serif','serif':['Palatino']})
-rc('mathtext',fontset='cm')
-rc('mathtext',rm='stix')
-rc('text', usetex=True)
+# #rc('verbose', level='debug')
+# rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
+# ## for Palatino and other serif fonts use:
+# # rc('font',**{'family':'serif','serif':['Palatino']})
+# rc('mathtext',fontset='cm')
+# rc('mathtext',rm='stix')
+# rc('text', usetex=True)
 #add amsmath to the preamble
-matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"] 
+# matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"] 
 
 #from pylab import figure, axes, plot, xlabel, ylabel, title, grid, savefig, show
 
@@ -618,13 +618,13 @@ def mkathtestmovie(**kwargs):
             print np.where(pg==pg.max())
         if i==startn:
             cbar = plt.colorbar(p,shrink=1,ax=plt.gca())
-            cbar.ax.set_ylabel(r'$\log_{10}p$',fontsize=fntsize)
-            plt.xlabel(r"$x$",fontsize=fntsize)
-            plt.ylabel(r"$y$",fontsize=fntsize)
+            # cbar.ax.set_ylabel(r'$\log_{10}p$',fontsize=fntsize)
+            # plt.xlabel(r"$x$",fontsize=fntsize)
+            # plt.ylabel(r"$y$",fontsize=fntsize)
             ax = plt.gca()
             for label in ax.get_xticklabels() + ax.get_yticklabels() + cbar.ax.get_yticklabels():
                 label.set_fontsize(fntsize)
-        plt.title(r"$t=%g$" % t,fontsize=fntsize)
+        plt.title("t=%g" % t,fontsize=fntsize)
         plt.draw();
         time.sleep(sleepdt)
         if dosavefig:
