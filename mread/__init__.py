@@ -6988,7 +6988,11 @@ def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclea
             divbcentnew123=divbcentnew[1] + divbcentnew[2] + divbcentnew[3]
             #test debug:
             #divbcentnew123[:,newny-1,:]=0
+            #
+            # fix outer radial region where just copied cells and didn't take full care of setting A_i there.
+            # have to do both since doubled cell size.
             divbcentnew123[:,:,newnx-1]=0
+            divbcentnew123[:,:,newnx-2]=0
             #
             newdimens=(newnx>1)+(newny>1)+(newnz>1)
             adivbcentnew=(1E-30+adivbcentnew[1]+adivbcentnew[2]+adivbcentnew[3])/newdimens
@@ -7208,6 +7212,10 @@ def Afieldcalc3U3D(gdetB=None):
         # hack to ensure polar region regular behaving
         gdetBf[2,:,1,:]=0.0   # offset at pole
         gdetBf[2,:,ny-1,:]=0.0  # offset from pole
+        gdetBf[3,:,0,:]=0.0   # offset at pole
+        gdetBf[3,:,ny-1,:]=0.0  # offset from pole
+        #gdetBf[1,:,0,:]=0.0   # offset at pole
+        #gdetBf[1,:,ny-1,:]=0.0  # offset from pole
     #
     # \Phi BCs
     gdetBf[3,:,:,nz]=gdetBf[3,:,:,0] # periodic BC
@@ -7222,8 +7230,8 @@ def Afieldcalc3U3D(gdetB=None):
     ####################
     # GET A_\phi assuming spherical polar coordinates with A_\phi=0 at poles.
     ####
-    ap1 = np.zeros_like(Avpotf[3])
-    ap2 = np.zeros_like(Avpotf[3])
+    ap1 = np.zeros_like(Avpotf[3,:,:,:])
+    ap2 = np.zeros_like(Avpotf[3,:,:,:])
     #
     dap1 = -gdetBf[2]*_dx1
     #
@@ -7231,34 +7239,41 @@ def Afieldcalc3U3D(gdetB=None):
     ap1[1:nx+1:,:,:]=(dap1.cumsum(axis=0))[0:nx,:,:]
     #
     #
-    aphi1 = np.zeros_like(Avpotf[3])
-    aphi2 = np.zeros_like(Avpotf[3])
+    aphi1 = np.zeros_like(Avpotf[3,:,:,:])
+    aphi2 = np.zeros_like(Avpotf[3,:,:,:])
     #
     daphi = gdetBf[1]*_dx2
     #
     # sum up from j=0 pole
     # aphi1 is located CORN3 as result of each integral step
     aphi1[:,0,:]=0
-    aphi1[:,1:ny+1,:]=(daphi.cumsum(axis=1))[:,0:ny,:]
+    #aphi1[:,1:ny/2+1,:]=(daphi.cumsum(axis=1))[:,0:ny/2,:]
+    aphi1[:,1:ny,:]=(daphi.cumsum(axis=1))[:,0:ny-1,:]
+    aphi1[:,ny,:]=0
     if dothetaavg==1:
         # sum up from the other pole
         aphi2[:,0,:]=0
-        aphi2[:,1:ny+1,:]=(-daphi[:,::-1,:].cumsum(axis=1))[:,::-1,:][:,1:ny+1,:]
+        aphi2[:,0:ny-1,:]=(-daphi[:,::-1,:].cumsum(axis=1))[:,::-1,:][:,0:ny-1,:]
+        #aphi2[:,ny/2+1:ny,:]=(-daphi[:,::-1,:].cumsum(axis=1))[:,::-1,:][:,ny/2+1:ny,:]
+        aphi2[:,ny,:]=0
         #
         # average-out pole-to-pole
         # So A3=0 along entire polar surface of j=0,ny for all r-\phi.
         ap2=0.5*(aphi1+aphi2)
+        #ap2=aphi1+aphi2
     else:
         ap2=aphi1
     #
     j=0
     while j<=ny:
         Avpotf[3,:,j,:]=ap1[:,0,:] + ap2[:,j,:]
+        #Avpotf[3,:,j,:]=ap2[:,j,:]
         j += 1
     #
     if dopoledeath==1:
         #Avpotf[3,:,0,:]=0
         Avpotf[3,:,ny,:]=Avpotf[3,0,ny,:]
+        #print("asdf");
     #
     print("DONEA3") ; sys.stdout.flush()
     #
@@ -7309,6 +7324,7 @@ def Afieldcalc3U3D(gdetB=None):
         # for each radius (i), for j=0, integrate along \phi out to (k), then for that k fixed, integrate along theta out to (j)
         # So A1=0 at \phi=0,2\pi for all radius and \theta.
         Avpotf[1,:,j,:]=ar1[:,0,:] + ar2[:,j,:]
+        #Avpotf[1,:,j,:]=ar1[:,j,:] + ar2[:,0,:]
         j += 1
     #
     if dopoledeath==1:
@@ -26909,8 +26925,12 @@ def main(argv=None):
     #
     global nxgdump,nygdump,nzgdump
     #
-    reresrdump('rdump-0.bin',writenew=1,newf1=2,newf2=2,newf3=2,divbclean=True)
+    ####################
+    # can insert test code here if want to just run python instead of ipython:
+    #reresrdump('rdump-0.bin',writenew=1,newf1=1,newf2=2,newf3=2,divbclean=True)
     #
+    # end test code
+    #####################
     # runtype==-1 just skip and do nothing
     #
     if runtype==0:
@@ -27013,7 +27033,8 @@ def tutorial2():
     # first load grid file
     grid3d("gdump.bin")
     # now try loading a single fieldline file
-    rfd("fieldline0000.bin")
+    #rfd("fieldline0000.bin")
+    rfd("fieldline2410.bin")
     (rhoclean,ugclean,uufuck,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
     cvel()
     Tcalcud(maxbsqorho=maxbsqorhonear,which=condmaxbsqorho)
@@ -27056,22 +27077,51 @@ def tutorial2():
     #
     #
     Avpotf=Afieldcalc3U3D(gdetB=gdetB)
-    #
     gdetBnew=Bfieldcalc3U3D(Avpotf)
     #
+    #gdetB=gdetBnew
+    #
     # now plot something you read-in
-    plt.figure(4)
     #lrho=qmri3ddisk
     #lrho=idx2mri
+    #
+    if 1==0:
+        plt.figure(1)
+        lrho=gdetB[3,:,:,1]/gdet[:,:,1]
+        plco(lrho,cb=True,nc=50)
+        aphi = fieldcalc() # keep sign information
+        plc(aphi,colors='k')
+    #
+    if 1==0:
+        plt.figure(2)
+        lrho=gdetBnew[3,:,:,1]/gdet[:,:,1]
+        plco(lrho,cb=True,nc=50)
+        aphi = Avpotf[3,0:nx,0:ny,1]
+        plc(aphi,colors='k')
+        #
+        #
+    if 1==0:
+        plt.figure(3)
+        lrho=gdetB[1,:,:,1]/gdet[:,:,1]
+        plco(lrho,cb=True,nc=50)
+        aphi = fieldcalc() # keep sign information
+        plc(aphi,colors='k')
+        #
+    if 1==1:
+        plt.figure(4)
+        lrho=gdetBnew[1,:,:,1]/gdet[:,:,1]
+        plco(lrho,cb=True,nc=50)
+        #aphi = np.average(Avpotf[3,0:nx,0:ny,0:nz],axis=2)
+        aphi = Avpotf[3,0:nx,0:ny,0:nz]
+        #aphi = fieldcalc(gdetB1=gdetBnew[1]) # keep sign information
+        plc(aphi,colors='k')
+    #
     #lrho=Avpotf[3][0:nx,0:ny,0:nz]
-    #lrho=gdetB[2]
-    #lrho=gdetBnew[1,:,:,-1]
-    #lrho=gdetBnew[1,:,:,0]
-    lrho=gdetBnew[2,:,:,1]
-    #lrho=gdetBnew[3,:,:,1]
-    plco(lrho,cb=True,nc=50)
-    aphi = fieldcalc() # keep sign information
-    plc(aphi,colors='k')
+    #lrho=gdetB[1,:,:,1]/gdet[:,:,1]
+    #lrho=gdetB[1,:,:,-1]
+    #lrho=gdetB[1,:,:,0]
+    #lrho=gdetB[2,:,:,1]
+    #lrho=gdetB[3,:,:,1]
 
 
 if __name__ == "__main__":
