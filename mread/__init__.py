@@ -6752,16 +6752,10 @@ def rfloor(dumpname):
 # 3) ipython ~/py/mread/__init__.py
 # 4) reresrdump('rdump-0.bin',writenew=1,newf1=2,newf2=2,newf3=2,divbclean=True)
 #
-# only works for 1 or 2 for newf? for now
-def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclean=True):
-    # get dx1,2,3
-    flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
-    sort_nicely(flist)
-    if len(flist)>0:
-        firstfieldlinefile=flist[0]
-        rfdheaderonly(firstfieldlinefile)
-    #
+
+def rrdump(dumpname):
     global nx,ny,nz,t,a,rho,ug,vu,vd,B,gd,gd1,numcols,gdetB
+    global numcols,NPR,gdetB1index,gdetB2index,gdetB3index
     #print( "Reading " + "dumps/" + dumpname + " ..." )
     gin = open( "dumps/" + dumpname, "rb" )
     header = gin.readline().split()
@@ -6802,6 +6796,20 @@ def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclea
     #
     gdetB = np.zeros_like(B)
     gdetB[1:4] = gd[gdetB1index : gdetB3index+1]
+    #
+    return(gdraw,gin)
+
+
+# only works for 1 or 2 for newf? for now
+def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclean=True):
+    # get dx1,2,3
+    flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+    sort_nicely(flist)
+    if len(flist)>0:
+        firstfieldlinefile=flist[0]
+        rfdheaderonly(firstfieldlinefile)
+    #
+    gdraw,gin=rrdump(dumpname)
     #
     if divbclean==True:
         print("Start cleaning"); sys.stdout.flush()
@@ -27033,68 +27041,90 @@ def tutorial2():
     # first load grid file
     grid3d("gdump.bin")
     # now try loading a single fieldline file
+    rfd("fieldline0000.bin")
+    #rfd("fieldline2410.bin")
+    #rfd("fieldline2491.bin")
+    #
+    #
+    if 1==1:
+        (rhoclean,ugclean,uufuck,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
+        cvel()
+        Tcalcud(maxbsqorho=maxbsqorhonear,which=condmaxbsqorho)
+        #
+        diskcondition=condmaxbsqorho
+        # only around equator, not far away from equator
+        diskcondition=diskcondition*(bsq/rho<1.0)*(np.fabs(h-np.pi*0.5)<0.1)
+        #diskcondition=diskcondition*(bsq/rho<0.5)
+        diskeqcondition=diskcondition
+        # (qmri3d,norm3d,q3mri3d,norm33d,iq2mri3d)
+        qmri3ddisk,normmri3ddisk,q3mri3ddisk,norm3mri3ddisk,iq2mri3ddisk=Qmri_simple(which=diskeqcondition)
+        #
+        # Q1
+        qmridisk=qmri3ddisk.sum(2).sum(1)/(ny*nz)
+        normmridisk=normmri3ddisk.sum(2).sum(1)/(ny*nz)
+        #
+        # Q3
+        q3mridisk=q3mri3ddisk.sum(2).sum(1)/(ny*nz)
+        norm3mridisk=norm3mri3ddisk.sum(2).sum(1)/(ny*nz)
+        #
+        # Q2: number of wavelengths per disk scale height
+        iq2mridisk=iq2mri3ddisk.sum(2).sum(1)/(ny*nz)
+        #
+        pg = (gam-1)*ugclean
+        prad = (4.0/3.0-1)*urad
+        #
+        WW = rhoclean + ug + pg + urad + prad
+        EF = bsq + WW
+        val21 = np.fabs(bu[1]*bd[1])/EF
+        val22 = np.fabs(bu[2]*bd[2])/EF
+        val23 = np.fabs(bu[3]*bd[3])/EF
+        #
+        #
+        mydr=dxdxp[1,1]*_dx1
+        mydH=r*dxdxp[2,2]*_dx2
+        mydP=r*np.sin(h)*dxdxp[3,3]*_dx3
+        omegarot=uu[3]/uu[0]*dxdxp[3,3]
+        #
+        idx2mri = np.sqrt(val22)*2*np.pi/omegarot/mydH
+    #
+    #
+    #
+    # now plot something you read-in
+    plt.figure(1)
+    #lrho=qmri3ddisk
+    lrho=idx2mri
+    plco(lrho,cb=True,nc=50)
+    aphi = fieldcalc() # keep sign information
+    plc(aphi,colors='k')
+
+def tutorial3():
+    # first load grid file
+    grid3d("gdump.bin")
+    #
+    # now try loading a single fieldline file
     #rfd("fieldline0000.bin")
     rfd("fieldline2410.bin")
-    (rhoclean,ugclean,uufuck,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
-    cvel()
-    Tcalcud(maxbsqorho=maxbsqorhonear,which=condmaxbsqorho)
+    #rfd("fieldline2491.bin")
     #
-    diskcondition=condmaxbsqorho
-    # only around equator, not far away from equator
-    diskcondition=diskcondition*(bsq/rho<1.0)*(np.fabs(h-np.pi*0.5)<0.1)
-    #diskcondition=diskcondition*(bsq/rho<0.5)
-    diskeqcondition=diskcondition
-    # (qmri3d,norm3d,q3mri3d,norm33d,iq2mri3d)
-    qmri3ddisk,normmri3ddisk,q3mri3ddisk,norm3mri3ddisk,iq2mri3ddisk=Qmri_simple(which=diskeqcondition)
+    # look at restart file
+    gdraw,gin=rrdump("rdump-3.bin")
     #
-    # Q1
-    qmridisk=qmri3ddisk.sum(2).sum(1)/(ny*nz)
-    normmridisk=normmri3ddisk.sum(2).sum(1)/(ny*nz)
-    #
-    # Q3
-    q3mridisk=q3mri3ddisk.sum(2).sum(1)/(ny*nz)
-    norm3mridisk=norm3mri3ddisk.sum(2).sum(1)/(ny*nz)
-    #
-    # Q2: number of wavelengths per disk scale height
-    iq2mridisk=iq2mri3ddisk.sum(2).sum(1)/(ny*nz)
-    #
-    pg = (gam-1)*ugclean
-    prad = (4.0/3.0-1)*urad
-    #
-    WW = rhoclean + ug + pg + urad + prad
-    EF = bsq + WW
-    val21 = np.fabs(bu[1]*bd[1])/EF
-    val22 = np.fabs(bu[2]*bd[2])/EF
-    val23 = np.fabs(bu[3]*bd[3])/EF
-    #
-    #
-    mydr=dxdxp[1,1]*_dx1
-    mydH=r*dxdxp[2,2]*_dx2
-    mydP=r*np.sin(h)*dxdxp[3,3]*_dx3
-    omegarot=uu[3]/uu[0]*dxdxp[3,3]
-    #
-    idx2mri = np.sqrt(val22)*2*np.pi/omegarot/mydH
     #
     #
     Avpotf=Afieldcalc3U3D(gdetB=gdetB)
     gdetBnew=Bfieldcalc3U3D(Avpotf)
     #
-    #gdetB=gdetBnew
-    #
-    # now plot something you read-in
-    #lrho=qmri3ddisk
-    #lrho=idx2mri
     #
     if 1==0:
         plt.figure(1)
-        lrho=gdetB[3,:,:,1]/gdet[:,:,1]
+        lrho=gdetB[3,:,:,1] #/gdet[:,:,1]
         plco(lrho,cb=True,nc=50)
         aphi = fieldcalc() # keep sign information
         plc(aphi,colors='k')
     #
     if 1==0:
         plt.figure(2)
-        lrho=gdetBnew[3,:,:,1]/gdet[:,:,1]
+        lrho=gdetBnew[3,:,:,1] #/gdet[:,:,1]
         plco(lrho,cb=True,nc=50)
         aphi = Avpotf[3,0:nx,0:ny,1]
         plc(aphi,colors='k')
@@ -27102,17 +27132,17 @@ def tutorial2():
         #
     if 1==0:
         plt.figure(3)
-        lrho=gdetB[1,:,:,1]/gdet[:,:,1]
+        lrho=gdetB[1,:,:,1] #/gdet[:,:,1]
         plco(lrho,cb=True,nc=50)
         aphi = fieldcalc() # keep sign information
         plc(aphi,colors='k')
         #
     if 1==1:
         plt.figure(4)
-        lrho=gdetBnew[1,:,:,1]/gdet[:,:,1]
+        lrho=gdetBnew[1,:,:,1] #/gdet[:,:,1]
         plco(lrho,cb=True,nc=50)
-        #aphi = np.average(Avpotf[3,0:nx,0:ny,0:nz],axis=2)
-        aphi = Avpotf[3,0:nx,0:ny,0:nz]
+        aphi = np.average(Avpotf[3,0:nx,0:ny,0:nz],axis=2)
+        #aphi = Avpotf[3,0:nx,0:ny,0:nz]
         #aphi = fieldcalc(gdetB1=gdetBnew[1]) # keep sign information
         plc(aphi,colors='k')
     #
