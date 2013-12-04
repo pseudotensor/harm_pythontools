@@ -6750,7 +6750,7 @@ def rfloor(dumpname):
 # 1) put file in dumps/rdump-0.bin
 # 2) and file in dumps/fieldline*.bin (just 1 file needed -- any file number)
 # 3) ipython ~/py/mread/__init__.py
-# 4) reresrdump('rdump-0.bin',writenew=1,newf1=2,newf2=2,newf3=2,divbclean=True)
+# 4) divb,gdetB,gdetBnew=reresrdump('rdump-0.bin',writenew=1,newf1=2,newf2=2,newf3=2,divbclean=True)
 #
 
 def rrdump(dumpname):
@@ -6803,7 +6803,8 @@ def rrdump(dumpname):
 # only works for 1 or 2 for newf? for now
 def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclean=True):
     # get dx1,2,3
-    flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+    #flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+    flist = glob.glob( os.path.join("dumps/", "fieldline2493.bin") )
     sort_nicely(flist)
     if len(flist)>0:
         firstfieldlinefile=flist[0]
@@ -6821,7 +6822,7 @@ def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclea
         print("End cleaning"); sys.stdout.flush()
     #
     #
-    if 'gv3' in globals() and 'gn3' in globals(): 
+    if 0==1 and 'gv3' in globals() and 'gn3' in globals(): 
         vd = mdot(gv3,vu)
         gamma = (1+mdot(mdot(gv3,vu),vu))**0.5
         etad = np.zeros_like(vu)
@@ -6831,14 +6832,16 @@ def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclea
         ud = mdot(gv3,uu)
     else:
         print( 'Metric (gv3, gn3) not defined, I am skipping the computation of uu and ud' )
+    #
+    newnx=newf1*nx
+    newny=newf2*ny
+    newnz=newf3*nz
+    #
     if writenew:
         print( "Writing out new rdump...", ) ; sys.stdout.flush()
         #write out a dump with twice as many cells in phi-direction:
         gout = open( "dumps/" + dumpname + "%d.%d.%d" % (newf1,newf2,newf3), "wb")
         #double the number of phi-cells
-        newnx=newf1*nx
-        newny=newf2*ny
-        newnz=newf3*nz
         header[0] = "%d" % (newnx)
         header[1] = "%d" % (newny)
         header[2] = "%d" % (newnz)
@@ -6855,6 +6858,8 @@ def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclea
         gout.write( "\n" )
         gout.flush()
         os.fsync(gout.fileno())
+    #
+    if 1==1:
         #reshape the rdump content
         gd1 = gdraw.view().reshape((nz,ny,nx,-1),order='C')
         #allocate memory for refined grid, nz' = 2*nz
@@ -7020,10 +7025,25 @@ def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclea
         else:
             print("No fieldline file to check divb=0") ; sys.stdout.flush()
             #
+        print( " done computing gd2 and divb!" ) ; sys.stdout.flush()
+        divbresult=divbcentold123/adivbcentold
+    else:
+        divbresult=0*gdetB
         #
+    if writenew:
         gd2.tofile(gout)
         gout.close()
-        print( " done!" ) ; sys.stdout.flush()
+        print( "DONE Writing out new rdump...", ) ; sys.stdout.flush()
+        #
+        #
+    #
+    #return(divbresult.reshape((nz,ny,nx),order='F'),gd1[0:nz,0:ny,0:nx,gdetB1index-1:gdetB3index+1].reshape((nz,ny,nx,4),order='F'),gd2[0:nz,0:ny,0:nx,gdetB1index-1:gdetB3index+1].reshape((nz,ny,nx,4),order='F'))
+    #    return(np.swapaxes(divbresult,0,2),np.swapaxes(gd1[0:nz,0:ny,0:nx,gdetB1index-1:gdetB3index+1],0,2),np.swapaxes(gd2[0:nz,0:ny,0:nx,gdetB1index-1:gdetB3index+1],0,2))
+    result1=np.swapaxes(divbresult,0,2).reshape((nx,ny,nz),order='F')
+    result2=np.swapaxes(np.swapaxes(gd1[0:nz,0:ny,0:nx,gdetB1index-1:gdetB3index+1],0,3),1,2).reshape((nx,ny,nz,4),order='F')
+    result3=np.swapaxes(np.swapaxes(gd2[0:nz,0:ny,0:nx,gdetB1index-1:gdetB3index+1],0,3),1,2).reshape((nx,ny,nz,4),order='F')
+    return(result1,result2,result3)
+    #
 
 
 
@@ -7481,6 +7501,7 @@ def rfdheader(fin=None):
     global t,nx,ny,nz,startx1,startx2,startx3,_dx1,_dx2,_dx3,nstep,gam,a,R0,Rin,Rout,hslope,rundt,defcoord
     global MBH,QBH,EP3,THETAROT,_is,_ie,_js,_je,_ks,_ke,whichdump,whichdumpversion,numcolumns
     global rhor
+    global header
     #
     #
     header = fin.readline().split()
@@ -11100,7 +11121,8 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
     #
     qtymemready=0
     if fmtver == 2 and os.path.isfile( fname ):
-        qtymem2=np.load( fname )
+        #qtymem2=np.load( fname )
+        qtymem2=np.load( fname , mmap_mode='r' )
         numtimeslices2 = qtymem2.shape[1]
         #require same number of variables, don't allow format changes on the fly for safety
         print "Number of previously saved time slices: %d" % numtimeslices2  ; sys.stdout.flush()
@@ -11115,7 +11137,8 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             qtymem2=None
             qtymemready=1
     elif fmtver == 1 and os.path.isfile("qty.npy"):
-        qtymem2=np.load( "qty.npy" )
+        #qtymem2=np.load( "qty.npy" )
+        qtymem2=np.load( "qty.npy" , mmap_mode='r' )
         numtimeslices2 = qtymem2.shape[1]
         print "Number of previously saved time slices: %d" % numtimeslices2  ; sys.stdout.flush()
         print "Instructed to use old format, reusing prev. saved slices" ; sys.stdout.flush()
@@ -14703,8 +14726,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     ##############
     # true total flux (including BH+disk @ equator) vs. time and radius
-    feqtot[:,ti[:,0,0]<ihor]=0
-    ftruetot=np.copy(feqtot)
+    #feqtot[:,ti[:,0,0]<ihor]=0
+    feqtotmod=np.copy(feqtot)
+    feqtotmod[:,ti[:,0,0]<ihor]=0
+    ftruetot=np.copy(feqtotmod)
     for tic in ts:
         tici=np.where(ts==tic)[0]
         # fstot doesn't account for sign as required
@@ -14735,7 +14760,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         if tici==len(ts)-1:
             print("blobf=%g",blobf) ; sys.stdout.flush()
             for ii in np.arange(0,len(blobf)):
-                filefmax.write( "%d %g   %g  %g %g %g  %g\n" % (ti[ii,0,0],r[ii,0,0],blobf[ii],feqtot[tici,ii],fsmaxtot[tici,ii],fsuphalf[tici,ii],fstot[tici,ii]/2.0)); filefmax.flush()
+                filefmax.write( "%d %g   %g  %g %g %g  %g\n" % (ti[ii,0,0],r[ii,0,0],blobf[ii],feqtotmod[tici,ii],fsmaxtot[tici,ii],fsuphalf[tici,ii],fstot[tici,ii]/2.0)); filefmax.flush()
         #
         #
         # first get where total vertical flux at equator (including horizon) reaches zero.
@@ -14805,9 +14830,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     #
     # kinda odd use of average whichistageq inside time-dependent thing, but done for simplicity
-    feqstag=feqtot[:,istageq]
+    feqstag=feqtotmod[:,istageq]
     # need t=0 value since want full possible source of flux, not just average or current flux available
-    feqstagt0=feqtot[0,istageq]
+    feqstagt0=feqtotmod[0,istageq]
     feqstag_avg1 = timeavg(feqstag,ts,fti,ftf)
     feqstag_avg2 = timeavg(feqstag**2,ts,fti,ftf)**0.5
     feqstagB_avg1 = timeavg(feqstag,ts,0,fti)
@@ -14821,9 +14846,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     sys.stdout.flush()
     #
     # kinda odd use of average istageq inside time-dependent thing, but done for simplicity
-    feqstagnearfin=feqtot[:,istageqnearfin]
+    feqstagnearfin=feqtotmod[:,istageqnearfin]
     # need t=0 value since want full possible source of flux, not just average or current flux available
-    feqstagnearfint0=feqtot[0,istageqnearfin]
+    feqstagnearfint0=feqtotmod[0,istageqnearfin]
     feqstagnearfin_avg1 = timeavg(feqstagnearfin,ts,fti,ftf)
     feqstagnearfin_avg2 = timeavg(feqstagnearfin**2,ts,fti,ftf)**0.5
     feqstagnearfinB_avg1 = timeavg(feqstagnearfin,ts,0,fti)
@@ -16960,7 +16985,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     # get initial extrema
     # get equatorial flux extrema at t=0 to normalize new flux on hole
-    feqtot0extrema=extrema(feqtot[0,:],withendf=True)
+    feqtot0extrema=extrema(feqtotmod[0,:],withendf=True)
     feqtot0extremai=feqtot0extrema[0]
     numextrema0=len(feqtot0extremai)
     # first value is probably 0, so avoid it later below
@@ -17031,7 +17056,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
     #
     # also get final extrema
-    feqtotextremafinal=extrema(feqtot[-1,:],withendf=True)
+    feqtotextremafinal=extrema(feqtotmod[-1,:],withendf=True)
     feqtotextremaifinal=feqtotextremafinal[0]
     numextremafinal=len(feqtotextremaifinal)
     # first value is probably 0, so avoid it later below
@@ -23934,7 +23959,7 @@ def pf(dir=2):
     global bcent
     grid3d("gdump.bin")
     #rfd("fieldline0000.bin")
-    #reresrdump("rdump--0000.bin")
+    #divb,gdetB,gdetBnew=reresrdump("rdump--0000.bin")
     rd("dump0000.bin")
     face2centdonor(); 
     plt.clf(); 
@@ -26730,7 +26755,7 @@ def oldstuff():
     if False:
         grid3d("gdump");
         rfdfirstfile()
-        reresrdump("rdump--0000");
+        divb,gdetB,gdetBnew=reresrdump("rdump--0000");
         plt.clf(); cvel(); plc(bsq,cb=True)
         plt.clf();plt.plot(x1[:,ny/2,0],(bsq/(2*(gam-1)*ug))[:,ny/2,0])
         plt.plot(x1[:,ny/2,0],(bsq/(2*(gam-1)*ug))[:,ny/2,0],'+')
@@ -26739,7 +26764,7 @@ def oldstuff():
         plt.clf();plco(lrho,r*np.sin(h),r*np.cos(h),cb=True,levels=np.arange(-12,0,0.5)); plt.xlim(0,40); plt.ylim(-20,20)
     if False:
         rd( os.path.basename(glob.glob(os.path.join("dumps/", "dump0000*"))[0]) )
-        #reresrdump("rdump--0000")
+        #divb,gdetB,gdetBnew=reresrdump("rdump--0000")
         aphi = fieldcalc()
         plt.clf(); plt.plot(x1[:,ny/2,0],aphi[:,ny/2,0])
     if False:
@@ -26935,7 +26960,7 @@ def main(argv=None):
     #
     ####################
     # can insert test code here if want to just run python instead of ipython:
-    #reresrdump('rdump-0.bin',writenew=1,newf1=1,newf2=2,newf3=2,divbclean=True)
+    #divb,gdetB,gdetBnew=reresrdump('rdump-0.bin',writenew=1,newf1=1,newf2=2,newf3=2,divbclean=True)
     #
     # end test code
     #####################
@@ -27107,12 +27132,16 @@ def tutorial3():
     #rfd("fieldline2491.bin")
     #
     # look at restart file
-    gdraw,gin=rrdump("rdump-3.bin")
+    #gdraw,gin=rrdump("rdump-3.bin")
+    #divb,gdetB,gdetBnew=reresrdump('rdump-bad.bin',writenew=0,newf1=1,newf2=1,newf3=2,divbclean=False)
+    divb,gdetB,gdetBnew=reresrdump('rdump-bad2.bin',writenew=0,newf1=1,newf2=1,newf3=2,divbclean=False)
+    gdraw,gin=rrdump("rdump-bad2.bin")
     #
     #
     #
-    Avpotf=Afieldcalc3U3D(gdetB=gdetB)
-    gdetBnew=Bfieldcalc3U3D(Avpotf)
+    if 0==1:
+        Avpotf=Afieldcalc3U3D(gdetB=gdetB)
+        gdetBnew=Bfieldcalc3U3D(Avpotf)
     #
     #
     if 1==0:
@@ -27137,7 +27166,7 @@ def tutorial3():
         aphi = fieldcalc() # keep sign information
         plc(aphi,colors='k')
         #
-    if 1==1:
+    if 1==0:
         plt.figure(4)
         lrho=gdetBnew[1,:,:,1] #/gdet[:,:,1]
         plco(lrho,cb=True,nc=50)
@@ -27145,6 +27174,22 @@ def tutorial3():
         #aphi = Avpotf[3,0:nx,0:ny,0:nz]
         #aphi = fieldcalc(gdetB1=gdetBnew[1]) # keep sign information
         plc(aphi,colors='k')
+    #
+    if 1==1:
+        plt.figure(5)
+        divbnew=np.copy(divb)
+        thresh=1E-15
+        floor=1E-20
+        divbnew[np.fabs(divbnew)>thresh]=divbnew[np.fabs(divbnew)>thresh]*1.0
+        divbnew[np.fabs(divbnew)<thresh]=divbnew[np.fabs(divbnew)<thresh]*0.0
+        #lrho=np.log10(np.fabs(divb)+floor)
+        lrho=np.log10(np.fabs(divbnew)+floor)
+        whichnz=10
+        plco(lrho[:,:,whichnz],cb=True,nc=50)
+        #aphi = np.average(Avpotf[3,0:nx,0:ny,0:nz],axis=2)
+        #aphi = Avpotf[3,0:nx,0:ny,0:nz]
+        #aphi = fieldcalc(gdetB1=gdetBnew[1]) # keep sign information
+        #plc(aphi,colors='k')
     #
     #lrho=Avpotf[3][0:nx,0:ny,0:nz]
     #lrho=gdetB[1,:,:,1]/gdet[:,:,1]
