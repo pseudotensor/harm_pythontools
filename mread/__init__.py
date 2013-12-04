@@ -453,8 +453,16 @@ def mknstartorusmovie(xmax=30,ymax=15,startn=0,endn=-1,dosavefig=1,cb=1):
         if dosavefig:
             plt.savefig("frame%04d.png"%fldindex,bbox_inches='tight',pad_inches=0.04,dpi=300)
 
-
-def mkbondimovie(xmax=30,ymax=15,startn=0,endn=-1,dosavefig=1,cb=1):
+def mkmov():
+    if len(sys.argv[2:])==2 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
+        whichi = int(sys.argv[2])
+        whichn = int(sys.argv[3])
+    else:
+        print( "Usage: %s %s <whichi> <whichn>" % (sys.argv[0], sys.argv[1]) )
+        return
+    mkbondimovie(whichi = whichi, whichn = whichn)
+    
+def mkbondimovie(xmax=30,ymax=15,startn=0,endn=-1,dosavefig=1,cb=1,whichi=0,whichn=1):
     grid3d("gdump.bin",use2d=True)
     flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
     flist.sort()
@@ -463,6 +471,9 @@ def mkbondimovie(xmax=30,ymax=15,startn=0,endn=-1,dosavefig=1,cb=1):
             continue
         if endn>=0 and fldindex >= endn:
             break
+        if fldindex % whichn != whichi:
+            #do every whichn'th snapshot starting with whichi'th snapshot
+            continue
         print( "Reading " + fldname + " ..." )
         sys.stdout.flush()
         rfd("../"+fldname)
@@ -16972,6 +16983,8 @@ if __name__ == "__main__":
             mk2davg()
         elif sys.argv[1] == "mkath":
             mkath()
+        elif sys.argv[1] == "mkmov":
+            mkmov()
     if False:
         plt.clf()
         ubsplot(dosavefig=0)
