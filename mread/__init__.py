@@ -64,7 +64,15 @@ def readrodrigo():
                      unpack = True )
     ox, oy, oz, orho, ougas, oux, ouy, ouz, vvv, oBx, oBy, oBz, oErf, ourfx, ourfy, ourfz = gd
     
-
+def radtests():
+    grid3d("gdump")
+    rd("dump0000")
+    rdr("raddump0000")
+    plt.plot(r[:,0,0],rho[:,0,0])
+    rdr("raddump0010")
+    plt.plot(r[:,0,0],rho[:,0,0])
+    
+    
 def test1001comparison():
     get1001test()
     grid3d("gdump")
@@ -558,6 +566,8 @@ def rdvtk(fname):
     ti = np.zeros(scalardim)+ti1d[:,None,None]
     tj = np.zeros(scalardim)+tj1d[None,:,None]
     tk = np.zeros(scalardim)+tk1d[None,None,:]
+    #need to make sure this is OK to do while still using the data:
+    reader.CloseVTKFile() 
 
 def rdtab(fname):
     global t, n1, n2, n3, t, ti, tj, tk, x1, x2, x3, rho, v1, v2, v3, pg, B1c, B2c, B3c
@@ -613,7 +623,7 @@ def mkathtestmovie(**kwargs):
     doreload=kwargs.pop("doreload",1)
     if func is None:
         func = lambda: pg[:,:,k]
-    plt.figure(1,figsize=(11,4))
+    plt.figure(1,figsize=(6,4))
     plt.clf()
     for i in xrange(startn,endn,dn):
         if doreload:
