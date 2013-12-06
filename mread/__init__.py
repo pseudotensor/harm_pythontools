@@ -555,6 +555,8 @@ def rdvtk(fname):
     ti = np.zeros(scalardim)+ti1d[:,None,None]
     tj = np.zeros(scalardim)+tj1d[None,:,None]
     tk = np.zeros(scalardim)+tk1d[None,None,:]
+    #need to make sure this is OK to do while still using the data:
+    reader.CloseVTKFile() 
 
 def rdtab(fname):
     global t, n1, n2, n3, t, ti, tj, tk, x1, x2, x3, rho, v1, v2, v3, pg, B1c, B2c, B3c
