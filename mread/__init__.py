@@ -64,7 +64,15 @@ def readrodrigo():
                      unpack = True )
     ox, oy, oz, orho, ougas, oux, ouy, ouz, vvv, oBx, oBy, oBz, oErf, ourfx, ourfy, ourfz = gd
     
-
+def radtests():
+    grid3d("gdump")
+    rd("dump0000")
+    rdr("raddump0000")
+    plt.plot(r[:,0,0],rho[:,0,0])
+    rdr("raddump0010")
+    plt.plot(r[:,0,0],rho[:,0,0])
+    
+    
 def test1001comparison():
     get1001test()
     grid3d("gdump")
