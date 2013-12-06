@@ -649,7 +649,8 @@ def mkathtestmovie(**kwargs):
         plt.draw();
         time.sleep(sleepdt)
         if dosavefig:
-            plt.savefig("frame%04d.png"%i,bbox_inches='tight',pad_inches=0.02,dpi=300)
+            plt.savefig("frame%04d.png"%i,dpi=300)
+            #plt.savefig("frame%04d.png"%i,bbox_inches='tight',pad_inches=0.02,dpi=300)
 
 
 def plot_current():
