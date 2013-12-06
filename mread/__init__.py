@@ -612,7 +612,7 @@ def mkathtestmovie(**kwargs):
     doreload=kwargs.pop("doreload",1)
     if func is None:
         func = lambda: pg[:,:,k]
-    plt.figure(1,figsize=(11,4))
+    plt.figure(1,figsize=(6,4))
     plt.clf()
     for i in xrange(startn,endn,dn):
         if doreload:
