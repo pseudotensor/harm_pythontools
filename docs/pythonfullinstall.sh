@@ -3,6 +3,9 @@ USEOTHER=0
 USEKRAKEN=0
 USEPFE=1
 
+alias cp='cp'
+alias mv='mv'
+
 # see:
 #http://docs.python.org/install/index.html
 
@@ -52,7 +55,7 @@ cd Python-2.7.2/
 make clean
 # on normal system using icc
 #./configure --prefix=$BASE/
-if [ $USEKRAKEN ]
+if [ $USEKRAKEN -eq 1 ]
 then
     # worse:
     #export CC=cc
@@ -96,7 +99,8 @@ if [ $USEPFE -eq 1 ]
 then
 cd $BASE/lib
 ln -s python2.7 python
-mv $BASE/lib/python2.7/site.py $BASE/lib/python2.7/site.py.backup
+#mv $BASE/lib/python2.7/site.py $BASE/lib/python2.7/site.py.backup
+mv /nobackupp8/jmckinn2/lib/python2.7/site.py /nobackupp8/jmckinn2/lib/asdf.py
 fi
 
 cd $SRCDIR
@@ -109,7 +113,7 @@ python setup.py install --home=$BASE
 # mv $BASE/lib/python2.7/site.py.backup $BASE/lib/python2.7/site.py
 
 # doesn't work on PFE for some reason
-if [ $USEKRAKEN ]
+if [ $USEPFE -eq 0 ]
 then
 cd $SRCDIR
 #tar xvzf python-dateutil-1.5.tar.gz
@@ -173,6 +177,10 @@ cp liblapack.a libtmglib.a ~/lib/
 fi
 
 
+
+
+if [ $USEPFE -eq 0 ]
+then
 ############
 # NON-PFE systems MKL
 
@@ -206,8 +214,8 @@ http://www.scipy.org/Installing_SciPy/Linux
 
 
 # DONE WITH MKL
-
-
+###############################
+fi
 
 cd $SRCDIR
 #tar xvzf numpy-1.6.1.tar.gz
@@ -273,7 +281,7 @@ rm -rf build
 # for Kraken, replace -L with what used above in [mkl] section.  Same for PFE.
 # for PFE, remove -axv
 #
-if [ $USEKRAKEN ]
+if [ $USEKRAKEN -eq 1 ]
 then
 python setup.py config --compiler=intelem build_clib --compiler=intelem build_ext --compiler=intelem install --home=$BASE
 fi
@@ -282,7 +290,8 @@ fi
 ## To use GCC:
 if [ $USEPFE -eq 1 ]
 then
-python setup.py install --home=$BASE
+#python setup.py install --home=$BASE
+python setup.py config --compiler=unix --fcompiler=gnu95 install --home=$BASE
 fi
 
 # test numpy to see if anything really works (even compile):
@@ -304,6 +313,11 @@ cd $SRCDIR
 #tar xvzf python-scipy_0.9.0+dfsg1.orig.tar.gz
 cd scipy-0.9.0.orig/
 rm -rf build
+if [ $USEPFE -eq 0 ]
+then
+python setup.py install --home=$BASE
+fi
+
 if [ $USEPFE -eq 1 ]
 then
 export LAPACK=$HOME/lib/liblapack
@@ -313,8 +327,10 @@ export BLAS_SRC=$SRCDIR/BLAS/
 cp $SRCDIR/lapack-3.5.0/liblapack.a $SRCDIR/lapack-3.5.0/libtmglib.a .
 cp $SRCDIR/BLAS/blas_LINUX.a librefblas.a
 cp $SRCDIR/BLAS/blas_LINUX.a libblas.a
+python setup.py config --compiler=unix --fcompiler=gnu95 install --home=$BASE
 fi
-python setup.py install --home=$BASE
+
+#['setup.py', 'config', '--compiler=gcc', 'config_fc', '--fcompiler=gfortran', 'build_clib', '--compiler=gcc', '--fcompiler=gfortran', 'build_ext', '--compiler=gcc', '--fcompiler=gfortran', 'install', '--prefix=/nobackup/jmckinn2/']
 
 
 # DON'T USE NEW SCIPY
@@ -340,6 +356,8 @@ cd matplotlib/matplotlib
 rm -rf build
 python setup.py install --home=$BASE
 
+if [ $USEPFE -eq 0 ] # pfe already has it as a module one can load
+then
 # ffmpeg
 cd $SRCDIR
 #tar xvzf ffmpeg-0.8.tar.gz
@@ -350,7 +368,7 @@ make
 make install
 make libinstall
 make libainstall
-
+fi
 
 # try optimize.leastsq():
 # http://www.scipy.org/scipy_Example_List#head-4c436ae0085d9a56056425d11abff4ccdd3d3620
