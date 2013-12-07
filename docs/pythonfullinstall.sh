@@ -354,7 +354,14 @@ cd $SRCDIR
 # tar xvzf matplotlib.tgz
 cd matplotlib/matplotlib
 rm -rf build
+if [ $USEPFE -eq 1 ]
+then
+python setup.py config --compiler=unix --fcompiler=gnu95 install --home=$BASE
+fi
+if [ $USEPFE -eq 0 ]
+then
 python setup.py install --home=$BASE
+fi
 
 if [ $USEPFE -eq 0 ] # pfe already has it as a module one can load
 then
