@@ -6750,11 +6750,12 @@ def rfloor(dumpname):
 # 1) put file in dumps/rdump-0.bin
 # 2) and file in dumps/fieldline*.bin (just 1 file needed -- any file number)
 # 3) ipython ~/py/mread/__init__.py
-# 4) divb,gdetB,gdetBnew=reresrdump('rdump-0.bin',writenew=1,newf1=2,newf2=2,newf3=2,divbclean=True)
+# 4) divb,gdetB,gdetBnew,Avpotf=reresrdump('rdump-0.bin',writenew=1,newf1=2,newf2=2,newf3=2,divbclean=True,fieldsmooth=True)
 #
 
 def rrdump(dumpname):
     global nx,ny,nz,t,a,rho,ug,vu,vd,B,gd,gd1,numcols,gdetB
+    global vpotr,faild
     global numcols,NPR,gdetB1index,gdetB2index,gdetB3index
     #print( "Reading " + "dumps/" + dumpname + " ..." )
     gin = open( "dumps/" + dumpname, "rb" )
@@ -6783,7 +6784,9 @@ def rrdump(dumpname):
     vu = np.zeros_like(B)
     vu[1:4] = gd[2:5].view() #relative 4-velocity only has non-zero spatial components
     B[1:4] = gd[5:8].view()
-    numcols = gd.shape[0]  #total number of columns is made up of (n prim vars) + (n cons vars) = numcols
+    #
+    numcols = gd.shape[0]  #total number of columns is made up of (n prim vars) + (n cons vars) + (extra stuff) = numcols
+    print("rdump has %d columns of data" % (numcols)); sys.stdout.flush()
     #
     #NPR=8 # if DODISS==0 and DONOENTROPY==1
     #NPR=9 # if DODISS==1 or DONOENTROPY==0
@@ -6797,25 +6800,29 @@ def rrdump(dumpname):
     gdetB = np.zeros_like(B)
     gdetB[1:4] = gd[gdetB1index : gdetB3index+1]
     #
-    return(gdraw,gin)
+    return(gdraw,gin,header)
 
-
+# gd2\[\([A-Za-z0-9:\+\ -]+\),\([A-Za-z0-9:\+\ -]+\),\([A-Za-z0-9:\+\ -]+\),\([A-Za-z0-9:\+\ -]+\)\] -> gd2[\4,\3,\2,\1]
 # only works for 1 or 2 for newf? for now
-def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclean=True):
+def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclean=True,fieldsmooth=True):
     # get dx1,2,3
-    #flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
-    flist = glob.glob( os.path.join("dumps/", "fieldline2493.bin") )
+    flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+    # can specify fieldline
+    #flist = glob.glob( os.path.join("dumps/", "fieldline2493.bin") )
     sort_nicely(flist)
     if len(flist)>0:
         firstfieldlinefile=flist[0]
         rfdheaderonly(firstfieldlinefile)
     #
-    gdraw,gin=rrdump(dumpname)
+    gdraw,gin,header=rrdump(dumpname)
     #
+    Avpotf=np.zeros((4,nx+1,ny+1,nz+1),dtype='float64',order='F')
     if divbclean==True:
         print("Start cleaning"); sys.stdout.flush()
         Avpotf=Afieldcalc3U3D(gdetB=gdetB)
         gdetBnew=Bfieldcalc3U3D(Avpotf)
+        print("gdetBnew"); sys.stdout.flush()
+        print(gdetBnew[2,:,0,:]); sys.stdout.flush()
         gd[gdetB1index]=np.copy(gdetBnew[1])
         gd[gdetB2index]=np.copy(gdetBnew[2])
         gd[gdetB3index]=np.copy(gdetBnew[3])
@@ -6861,9 +6868,10 @@ def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclea
     #
     if 1==1:
         #reshape the rdump content
-        gd1 = gdraw.view().reshape((nz,ny,nx,-1),order='C')
+        gd1 = gdraw.view().reshape((numcols,nx,ny,nz),order='F')
         #allocate memory for refined grid, nz' = 2*nz
-        gd2 = np.zeros((newnz,newny,newnx,numcols),order='C',dtype=np.float64)
+        print("rdump will have %d columns of data of size newnz=%d newny=%d newnx=%d" % (numcols,newnz,newny,newnx)); sys.stdout.flush()
+        gd2 = np.zeros((numcols,newnx,newny,newnz),order='F',dtype=np.float64)
         #
         #################
         # First, copy every old index -> new same 2*index and new 2*index+1
@@ -6872,7 +6880,7 @@ def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclea
         for kst in np.arange(0,newf3):
             for jst in np.arange(0,newf2):
                 for ist in np.arange(0,newf1):
-                    gd2[kst::newf3,jst::newf2,ist::newf1,:] = gd1[:,:,:,:]
+                    gd2[:,ist::newf1,jst::newf2,kst::newf3] = gd1[:,:,:,:]
                 #
             #
         #
@@ -6884,43 +6892,146 @@ def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclea
             if newf1==2:
                 for kst in np.arange(0,newf3):
                     for jst in np.arange(0,newf2):
-                        gd2[kst::newf3,jst::newf2,1:-1:newf1,gdetB1index] = 0.5*(gd1[:,:,:-1,gdetB1index]+gd1[:,:,1:,gdetB1index])
+                        gd2[gdetB1index,1:-1:newf1,jst::newf2,kst::newf3] = 0.5*(gd1[gdetB1index,:-1,:,:]+gd1[gdetB1index,1:,:,:])
                         # fake setting of last radial B1 value somehow since don't have enough data to average locally (would need ti+1 staggered value)
-                        gd2[kst::newf3,jst::newf2,-1,gdetB1index] = 0.5*(gd1[:,:,-1,gdetB1index]+gd1[:,:,-1,gdetB1index])
+                        gd2[gdetB1index,-1,jst::newf2,kst::newf3] = 0.5*(gd1[gdetB1index,-1,:,:]+gd1[gdetB1index,-1,:,:])
             #
             if newf2==2:
                 for kst in np.arange(0,newf3):
                     for ist in np.arange(0,newf1):
-                        gd2[kst::newf3,1:-1:newf2,ist::newf1,gdetB2index] = 0.5*(gd1[:,:-1,:,gdetB2index]+gd1[:,1:,:,gdetB2index])
+                        gd2[gdetB2index,ist::newf1,1:-1:newf2,kst::newf3] = 0.5*(gd1[gdetB2index,:,:-1,:]+gd1[gdetB2index,:,1:,:])
                         # use assumed reflective condition to set last value (i.e. B2[tj]=0)
-                        gd2[kst::newf3,-1,ist::newf1,gdetB2index] = 0.0
+                        gd2[gdetB2index,ist::newf1,-1,kst::newf3] = 0.0
             #
             if newf3==2:
                 for jst in np.arange(0,newf2):
                     for ist in np.arange(0,newf1):
-                        gd2[1:-1:newf3,jst::newf2,ist::newf1,gdetB3index] = 0.5*(gd1[:-1,:,:,gdetB3index]+gd1[1:,:,:,gdetB3index])
+                        gd2[gdetB3index,ist::newf1,jst::newf2,1:-1:newf3] = 0.5*(gd1[gdetB3index,:,:,:-1]+gd1[gdetB3index,:,:,1:])
                         # use assumed periodicity in \phi to set last value (i.e. B3[tk]=B3[0]).  gdet and metric are same since metric also periodic.
-                        gd2[-1,jst::newf2,ist::newf1,gdetB3index] = 0.5*(gd1[0,:,:,gdetB3index]+gd1[-1,:,:,gdetB3index])
+                        gd2[gdetB3index,ist::newf1,jst::newf2,-1] = 0.5*(gd1[gdetB3index,:,:,0]+gd1[gdetB3index,:,:,-1])
             #
         elif 1==1:
             # better way -- use gd2 directly
             if newf1==2:
-                gd2[:,:,1:newnx-2:newf1,gdetB1index] = 0.5*(gd2[:,:,0:newnx-3:newf1,gdetB1index]+gd2[:,:,2:newnx-1:newf1,gdetB1index])
+                gd2[gdetB1index,1:newnx-2:newf1,:,:] = 0.5*(gd2[gdetB1index,0:newnx-3:newf1,:,:]+gd2[gdetB1index,2:newnx-1:newf1,:,:])
                 # fake setting of last radial B1 value somehow since don't have enough data to average locally (would need ti+1 staggered value)
-                gd2[:,:,-1,gdetB1index] = gd2[:,:,-2,gdetB1index]
+                gd2[gdetB1index,-1,:,:] = gd2[gdetB1index,-2,:,:]
             #
             if newf2==2:
-                gd2[:,1:newny-2:newf2,:,gdetB2index] = 0.5*(gd2[:,0:newny-3:newf2,:,gdetB2index]+gd2[:,2:newny-1:newf2,:,gdetB2index])
+                gd2[gdetB2index,:,1:newny-2:newf2,:] = 0.5*(gd2[gdetB2index,:,0:newny-3:newf2,:]+gd2[gdetB2index,:,2:newny-1:newf2,:])
                 # use assumed reflective condition to set last value (i.e. B2[tj]=0)
-                #gd2[:,0,:,gdetB2index] = 0.0
-                gd2[:,-1,:,gdetB2index] = 0.5*(gd2[:,-2,:,gdetB2index])
-                #gd2[:,newny-1,:,gdetB2index] = 0.5*(gd2[:,newny-2,:,gdetB2index]+0.0)
+                #gd2[gdetB2index,:,0,:] = 0.0
+                gd2[gdetB2index,:,-1,:] = 0.5*(gd2[gdetB2index,:,-2,:])
+                #gd2[gdetB2index,:,newny-1,:] = 0.5*(gd2[gdetB2index,:,newny-2,:]+0.0)
             #  (B2c-B2m)/(dx2/2) = (0-B2m)/dx2 -> 2*B2c = -B2m + 2*B2m = B2m -> B2c=B2m/2
             if newf3==2:
-                gd2[1:newnz-2:newf3,:,:,gdetB3index] = 0.5*(gd2[0:newnz-3:newf3,:,:,gdetB3index]+gd2[2:newnz-1:newf3,:,:,gdetB3index])
+                gd2[gdetB3index,:,:,1:newnz-2:newf3] = 0.5*(gd2[gdetB3index,:,:,0:newnz-3:newf3]+gd2[gdetB3index,:,:,2:newnz-1:newf3])
                 # use assumed periodicity in \phi to set last value (i.e. B3[tk]=B3[0]).  gdet and metric are same since metric also periodic.
-                gd2[-1,:,:,gdetB3index] = 0.5*(gd2[0,:,:,gdetB3index]+gd2[-2,:,:,gdetB3index])
+                gd2[gdetB3index,:,:,-1] = 0.5*(gd2[gdetB3index,:,:,0]+gd2[gdetB3index,:,:,-2])
         #
+        #if fieldsmooth==True and 1==0:
+        if fieldsmooth==True:
+            print("Start smoothing result3"); sys.stdout.flush()
+            # fix global _dx?
+            global _dx1,_dx2,_dx3,nx,ny,nz
+            nx=nx*newf1
+            ny=ny*newf2
+            nz=nz*newf3
+            _dx1=(_dx1/float(newf1))
+            _dx2=(_dx2/float(newf2))
+            _dx3=(_dx3/float(newf3))
+            # copy new gdetB
+            gdetBc=np.copy(gd2[gdetB1index-1:gdetB3index+1,:,:,:])
+            # get new A
+            Avpotfc=Afieldcalc3U3D(gdetB=gdetBc)
+            # smooth A
+            reallysmooth=1
+            if reallysmooth==1:
+                Avpotfcs=np.copy(Avpotfc)*0.0
+                sizex = 1
+                sizey = 1
+                sizez = 1
+                x, y, z = np.mgrid[-sizex:sizex+1, -sizey:sizey+1, -sizez:sizez+1]
+                #COEF=0.333
+                COEF=1.0
+                g = np.exp(-COEF*(x**2/float(sizex)+y**2/float(sizey)+z**2/float(sizez)))
+                filter = g/g.sum()
+                from scipy import signal
+                Avpotfcs[1,sizex:nx+1-sizex,sizey:ny+1-sizey,sizez:nz+1-sizez] = signal.convolve(Avpotfc[1],filter,mode='valid')
+                Avpotfcs[2,sizex:nx+1-sizex,sizey:ny+1-sizey,sizez:nz+1-sizez] = signal.convolve(Avpotfc[2],filter,mode='valid')
+                Avpotfcs[3,sizex:nx+1-sizex,sizey:ny+1-sizey,sizez:nz+1-sizez] = signal.convolve(Avpotfc[3],filter,mode='valid')
+            else:
+                Avpotfcs=np.copy(Avpotfc)
+            #
+            recover=1
+            if recover==1:
+                # recover edges
+                Avpotfcs[3,:,:,0]=np.copy(Avpotfc[3,:,:,0])
+                Avpotfcs[3,:,:,1]=np.copy(Avpotfc[3,:,:,1])
+                #Avpotfcs[3,:,:,2]=np.copy(Avpotfc[3,:,:,2])
+                Avpotfcs[3,:,:,nz]=np.copy(Avpotfc[3,:,:,nz])
+                Avpotfcs[3,:,:,nz-1]=np.copy(Avpotfc[3,:,:,nz-1])
+                #Avpotfcs[3,:,:,nz-2]=np.copy(Avpotfc[3,:,:,nz-2])
+                #
+                Avpotfcs[2,:,:,0]=np.copy(Avpotfc[2,:,:,0])
+                Avpotfcs[2,:,:,1]=np.copy(Avpotfc[2,:,:,1])
+                Avpotfcs[2,:,:,nz]=np.copy(Avpotfc[2,:,:,nz])
+                Avpotfcs[2,:,:,nz-1]=np.copy(Avpotfc[2,:,:,nz-1])
+                #Avpotfcs[2,:,:,nz-2]=np.copy(Avpotfc[2,:,:,nz-2])
+                Avpotfcs[1,:,:,0]=np.copy(Avpotfc[1,:,:,0])
+                Avpotfcs[1,:,:,1]=np.copy(Avpotfc[1,:,:,1])
+                Avpotfcs[1,:,:,nz]=np.copy(Avpotfc[1,:,:,nz])
+                Avpotfcs[1,:,:,nz-1]=np.copy(Avpotfc[1,:,:,nz-1])
+                #Avpotfcs[1,:,:,nz-2]=np.copy(Avpotfc[1,:,:,nz-2])
+                #
+                #Avpotfcs=np.copy(Avpotfc)
+            #
+            #
+            death=1
+            if death==1:
+                # still ensure axes are poledeath'ed
+                Avpotfcs[1,:,0,:]=0
+                Avpotfcs[1,:,ny,:]=0
+                #Avpotfcs[1,:,:,0]=0
+                #Avpotfcs[1,:,:,nz]=0
+                #Avpotfcs[1,:,:,nz]=Avpotfcs[1,:,:,0] # was!
+                #
+                #Avpotfcs[2,0,:,:]=0
+                #Avpotfcs[2,nx,:,:]=0
+                #Avpotfcs[2,:,:,0]=0 # was!
+                #Avpotfcs[2,:,:,nz]=0 # was!
+                #Avpotfcs[2,:,:,nz]=Avpotfcs[2,:,:,0]
+                #
+                #Avpotfcs[2,0,:,:]=0
+                #Avpotfcs[2,0,:,:]=0
+                #Avpotfcs[2,:,0,:]=0
+                #Avpotfcs[2,:,ny,:]=0
+                #Avpotfcs[1,:,:,nz]=0
+                #Avpotfcs[2,:,:,nz]=0
+                #
+                Avpotfcs[3,:,0,:]=0
+                Avpotfcs[3,:,ny,:]=0
+                #
+                # and ensure starting point still 0
+                Avpotfcs[1,0,0,0]=0
+                Avpotfcs[2,0,0,0]=0
+                Avpotfcs[3,0,0,0]=0
+            # now get new B
+            gdetBcsnew=Bfieldcalc3U3D(Avpotfcs)
+            # copy back result
+            gd2[gdetB1index,:,:,:]=np.copy(gdetBcsnew[1])
+            gd2[gdetB2index,:,:,:]=np.copy(gdetBcsnew[2])
+            gd2[gdetB3index,:,:,:]=np.copy(gdetBcsnew[3])
+            # restore _dx?
+            nx=nx/newf1
+            ny=ny/newf2
+            nz=nz/newf3
+            _dx1=(_dx1*float(newf1))
+            _dx2=(_dx2*float(newf2))
+            _dx3=(_dx3*float(newf3))
+            #
+            print("End smoothing"); sys.stdout.flush()
+            #
         # check divbB=0 for old and new data, but need dx[1,2,3] for that, so get header from a fieldline file.
         #flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
         #sort_nicely(flist)
@@ -6934,32 +7045,33 @@ def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclea
             print("gd1.shape()"); sys.stdout.flush()
             print(gd1.shape); sys.stdout.flush()
             #
-            divbcentold=np.zeros((4,nz,ny,nx),dtype='float64',order='C')
+            ###
+            divbcentold=np.zeros((4,nx,ny,nz),dtype='float64',order='F')
             # OLD:
-            divbcentold[1,0:nz,0:ny,0:nx-1] = np.diff(gd1[:,:,:,gdetB1index],n=1,axis=2)/_dx1
+            divbcentold[1,0:nx-1,0:ny,0:nz] = np.diff(gd1[gdetB1index,:,:,:],n=1,axis=0)/_dx1
             # radial edge is copy
-            divbcentold[1,0:nz,0:ny,  nx-1] = (gd1[0:nz,0:ny,nx-1  ,gdetB1index]-gd1[0:nz,0:ny,nx-1,gdetB1index])/_dx1
+            divbcentold[1,  nx-1,0:ny,0:nz] = (gd1[gdetB1index,nx-1  ,0:ny,0:nz]-gd1[gdetB1index,nx-1,0:ny,0:nz])/_dx1
             #
-            divbcentold[2,0:nz,0:ny-1,0:nx] = np.diff(gd1[:,:,:,gdetB2index],n=1,axis=1)/_dx2
+            divbcentold[2,0:nx,0:ny-1,0:nz] = np.diff(gd1[gdetB2index,:,:,:],n=1,axis=1)/_dx2
             # \theta edges are gdetB2=0
-            divbcentold[2,0:nz,  ny-1,0:nx] = (0.0 - gd1[0:nz,ny-1,0:nx,gdetB2index])/_dx2
+            divbcentold[2,0:nx,  ny-1,0:nz] = (0.0 - gd1[gdetB2index,0:nx,ny-1,0:nz])/_dx2
             #
-            divbcentold[3,0:nz-1,0:ny,0:nx] = np.diff(gd1[:,:,:,gdetB3index],n=1,axis=0)/_dx3
+            divbcentold[3,0:nx,0:ny,0:nz-1] = np.diff(gd1[gdetB3index,:,:,:],n=1,axis=2)/_dx3
             # \phi edges are periodic
-            divbcentold[3,  nz-1,0:ny,0:nx] = (gd1[0  ,0:ny,0:nx,gdetB3index]-gd1[nz-1,0:ny,0:nx,gdetB3index])/_dx3
+            divbcentold[3,0:nx,0:ny,  nz-1] = (gd1[gdetB3index,0:nx,0:ny,0  ]-gd1[gdetB3index,0:nx,0:ny,nz-1])/_dx3
             #
-            adivbcentold=np.zeros((4,nz,ny,nx),dtype='float64',order='C')
-            adivbcentold[1,0:nz,0:ny,0:nx-1] = (np.fabs(gd1[0:nz,0:ny,1:nx  ,gdetB1index])+np.fabs(gd1[0:nz,0:ny,0:nx-1,gdetB1index]))/_dx1
-            adivbcentold[1,0:nz,0:ny,  nx-1] = (np.fabs(gd1[0:nz,0:ny,nx-1  ,gdetB1index])+np.fabs(gd1[0:nz,0:ny,nx-1,gdetB1index]))/_dx1
-            adivbcentold[2,0:nz,0:ny-1,0:nx] = (np.fabs(gd1[0:nz,1:ny  ,0:nx,gdetB2index])+np.fabs(gd1[0:nz,0:ny-1,0:nx,gdetB2index]))/_dx2
-            adivbcentold[2,0:nz,  ny-1,0:nx] = (np.fabs(0.0) + np.fabs(gd1[0:nz,ny-1,0:nx,gdetB2index]))/_dx2
-            adivbcentold[3,0:nz-1,0:ny,0:nx] = (np.fabs(gd1[1:nz  ,0:ny,0:nx,gdetB3index])+np.fabs(gd1[0:nz-1,0:ny,0:nx,gdetB3index]))/_dx3
-            adivbcentold[3,  nz-1,0:ny,0:nx] = (np.fabs(gd1[0  ,0:ny,0:nx,gdetB3index])+np.fabs(gd1[nz-1,0:ny,0:nx,gdetB3index]))/_dx3
+            adivbcentold=np.zeros((4,nx,ny,nz),dtype='float64',order='F')
+            adivbcentold[1,0:nx-1,0:ny,0:nz] = (np.fabs(gd1[gdetB1index,1:nx  ,0:ny,0:nz])+np.fabs(gd1[gdetB1index,0:nx-1,0:ny,0:nz]))/_dx1
+            adivbcentold[1,  nx-1,0:ny,0:nz] = (np.fabs(gd1[gdetB1index,nx-1  ,0:ny,0:nz])+np.fabs(gd1[gdetB1index,nx-1,0:ny,0:nz]))/_dx1
+            adivbcentold[2,0:nx,0:ny-1,0:nz] = (np.fabs(gd1[gdetB2index,0:nx,1:ny  ,0:nz])+np.fabs(gd1[gdetB2index,0:nx,0:ny-1,0:nz]))/_dx2
+            adivbcentold[2,0:nx,  ny-1,0:nz] = (np.fabs(0.0) + np.fabs(gd1[gdetB2index,0:nx,ny-1,0:nz]))/_dx2
+            adivbcentold[3,0:nx,0:ny,0:nz-1] = (np.fabs(gd1[gdetB3index,0:nx,0:ny,1:nz  ])+np.fabs(gd1[gdetB3index,0:nx,0:ny,0:nz-1]))/_dx3
+            adivbcentold[3,0:nx,0:ny,  nz-1] = (np.fabs(gd1[gdetB3index,0:nx,0:ny,0  ])+np.fabs(gd1[gdetB3index,0:nx,0:ny,nz-1]))/_dx3
             #
             divbcentold123=divbcentold[1] + divbcentold[2] + divbcentold[3]
             #test debug:
             #divbcentold123[:,ny-1,:]=0
-            divbcentold123[:,:,nx-1]=0
+            divbcentold123[nx-1,:,:]=0
             #
             olddimens=(nx>1)+(ny>1)+(nz>1)
             adivbcentold=(1E-30+adivbcentold[1]+adivbcentold[2]+adivbcentold[3])/olddimens
@@ -6973,30 +7085,30 @@ def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclea
             #
             #
             # NEW (old->new, gd1->gd2, n? -> newn?, _dx? -> (_dx?//float(newf?)) )
-            divbcentnew=np.zeros((4,newnz,newny,newnx),dtype='float64',order='C')
+            divbcentnew=np.zeros((4,newnx,newny,newnz),dtype='float64',order='F')
             _dx1new=(_dx1/float(newf1))
             _dx2new=(_dx2/float(newf2))
             _dx3new=(_dx3/float(newf3))
             # NEW:
-            divbcentnew[1,0:newnz,0:newny,0:newnx-1] = np.diff(gd2[:,:,:,gdetB1index],n=1,axis=2)/_dx1new
+            divbcentnew[1,0:newnx-1,0:newny,0:newnz] = np.diff(gd2[gdetB1index,:,:,:],n=1,axis=0)/_dx1new
             # radial edge is copy
-            divbcentnew[1,0:newnz,0:newny,  newnx-1] = (gd2[0:newnz,0:newny,newnx-1  ,gdetB1index]-gd2[0:newnz,0:newny,newnx-1,gdetB1index])/_dx1new
+            divbcentnew[1,  newnx-1,0:newny,0:newnz] = (gd2[gdetB1index,newnx-1  ,0:newny,0:newnz]-gd2[gdetB1index,newnx-1,0:newny,0:newnz])/_dx1new
             #
-            divbcentnew[2,0:newnz,0:newny-1,0:newnx] = np.diff(gd2[:,:,:,gdetB2index],n=1,axis=1)/_dx2new
+            divbcentnew[2,0:newnx,0:newny-1,0:newnz] = np.diff(gd2[gdetB2index,:,:,:],n=1,axis=1)/_dx2new
             # \theta edges are gdetB2=0
-            divbcentnew[2,0:newnz,  newny-1,0:newnx] = (0.0 - gd2[0:newnz,newny-1,0:newnx,gdetB2index])/_dx2new
+            divbcentnew[2,0:newnx,  newny-1,0:newnz] = (0.0 - gd2[gdetB2index,0:newnx,newny-1,0:newnz])/_dx2new
             #
-            divbcentnew[3,0:newnz-1,0:newny,0:newnx] = np.diff(gd2[:,:,:,gdetB3index],n=1,axis=0)/_dx3new
+            divbcentnew[3,0:newnx,0:newny,0:newnz-1] = np.diff(gd2[gdetB3index,:,:,:],n=1,axis=2)/_dx3new
             # \phi edges are periodic
-            divbcentnew[3,  newnz-1,0:newny,0:newnx] = (gd2[0  ,0:newny,0:newnx,gdetB3index]-gd2[newnz-1,0:newny,0:newnx,gdetB3index])/_dx3new
+            divbcentnew[3,0:newnx,0:newny,  newnz-1] = (gd2[gdetB3index,0:newnx,0:newny,0  ]-gd2[gdetB3index,0:newnx,0:newny,newnz-1])/_dx3new
             #
-            adivbcentnew=np.zeros((4,newnz,newny,newnx),dtype='float64',order='C')
-            adivbcentnew[1,0:newnz,0:newny,0:newnx-1] = (np.fabs(gd2[0:newnz,0:newny,1:newnx  ,gdetB1index])+np.fabs(gd2[0:newnz,0:newny,0:newnx-1,gdetB1index]))/_dx1new
-            adivbcentnew[1,0:newnz,0:newny,  newnx-1] = (np.fabs(gd2[0:newnz,0:newny,newnx-1  ,gdetB1index])+np.fabs(gd2[0:newnz,0:newny,newnx-1,gdetB1index]))/_dx1new
-            adivbcentnew[2,0:newnz,0:newny-1,0:newnx] = (np.fabs(gd2[0:newnz,1:newny  ,0:newnx,gdetB2index])+np.fabs(gd2[0:newnz,0:newny-1,0:newnx,gdetB2index]))/_dx2new
-            adivbcentnew[2,0:newnz,  newny-1,0:newnx] = (np.fabs(0.0) + np.fabs(gd2[0:newnz,newny-1,0:newnx,gdetB2index]))/_dx2new
-            adivbcentnew[3,0:newnz-1,0:newny,0:newnx] = (np.fabs(gd2[1:newnz  ,0:newny,0:newnx,gdetB3index])+np.fabs(gd2[0:newnz-1,0:newny,0:newnx,gdetB3index]))/_dx3new
-            adivbcentnew[3,  newnz-1,0:newny,0:newnx] = (np.fabs(gd2[0  ,0:newny,0:newnx,gdetB3index])+np.fabs(gd2[newnz-1,0:newny,0:newnx,gdetB3index]))/_dx3new
+            adivbcentnew=np.zeros((4,newnx,newny,newnz),dtype='float64',order='F')
+            adivbcentnew[1,0:newnx-1,0:newny,0:newnz] = (np.fabs(gd2[gdetB1index,1:newnx  ,0:newny,0:newnz])+np.fabs(gd2[gdetB1index,0:newnx-1,0:newny,0:newnz]))/_dx1new
+            adivbcentnew[1,  newnx-1,0:newny,0:newnz] = (np.fabs(gd2[gdetB1index,newnx-1  ,0:newny,0:newnz])+np.fabs(gd2[gdetB1index,newnx-1,0:newny,0:newnz]))/_dx1new
+            adivbcentnew[2,0:newnx,0:newny-1,0:newnz] = (np.fabs(gd2[gdetB2index,0:newnx,1:newny  ,0:newnz])+np.fabs(gd2[gdetB2index,0:newnx,0:newny-1,0:newnz]))/_dx2new
+            adivbcentnew[2,0:newnx,  newny-1,0:newnz] = (np.fabs(0.0) + np.fabs(gd2[gdetB2index,0:newnx,newny-1,0:newnz]))/_dx2new
+            adivbcentnew[3,0:newnx,0:newny,0:newnz-1] = (np.fabs(gd2[gdetB3index,0:newnx,0:newny,1:newnz  ])+np.fabs(gd2[gdetB3index,0:newnx,0:newny,0:newnz-1]))/_dx3new
+            adivbcentnew[3,0:newnx,0:newny,  newnz-1] = (np.fabs(gd2[gdetB3index,0:newnx,0:newny,0  ])+np.fabs(gd2[gdetB3index,0:newnx,0:newny,newnz-1]))/_dx3new
             #
             divbcentnew123=divbcentnew[1] + divbcentnew[2] + divbcentnew[3]
             #test debug:
@@ -7004,8 +7116,8 @@ def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclea
             #
             # fix outer radial region where just copied cells and didn't take full care of setting A_i there.
             # have to do both since doubled cell size.
-            divbcentnew123[:,:,newnx-1]=0
-            divbcentnew123[:,:,newnx-2]=0
+            divbcentnew123[newnx-1,:,:]=0
+            divbcentnew123[newnx-2,:,:]=0
             #
             newdimens=(newnx>1)+(newny>1)+(newnz>1)
             adivbcentnew=(1E-30+adivbcentnew[1]+adivbcentnew[2]+adivbcentnew[3])/newdimens
@@ -7017,6 +7129,10 @@ def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclea
             print("badijknew") ; sys.stdout.flush()
             print(badijknew) ; sys.stdout.flush()
             #
+            print("TEST1") ; sys.stdout.flush()
+            print(gd1[gdetB2index,:,0,:]) ; sys.stdout.flush()
+            print("TEST2") ; sys.stdout.flush()
+            print(gd2[gdetB2index,:,0,:]) ; sys.stdout.flush()
             #
             #
             # DEBUG:
@@ -7031,18 +7147,28 @@ def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclea
         divbresult=0*gdetB
         #
     if writenew:
-        gd2.tofile(gout)
+        gdout=np.swapaxes(np.swapaxes(gd2,0,3),1,2).reshape((newnz,newny,newnx,numcols),order='C')
+        #
+        gdout.tofile(gout)
         gout.close()
         print( "DONE Writing out new rdump...", ) ; sys.stdout.flush()
         #
         #
     #
+    #######################################
+    # return as if read-in as fieldline file
+    # below swap or reshape no longer done since stay in F order.
     #return(divbresult.reshape((nz,ny,nx),order='F'),gd1[0:nz,0:ny,0:nx,gdetB1index-1:gdetB3index+1].reshape((nz,ny,nx,4),order='F'),gd2[0:nz,0:ny,0:nx,gdetB1index-1:gdetB3index+1].reshape((nz,ny,nx,4),order='F'))
     #    return(np.swapaxes(divbresult,0,2),np.swapaxes(gd1[0:nz,0:ny,0:nx,gdetB1index-1:gdetB3index+1],0,2),np.swapaxes(gd2[0:nz,0:ny,0:nx,gdetB1index-1:gdetB3index+1],0,2))
-    result1=np.swapaxes(divbresult,0,2).reshape((nx,ny,nz),order='F')
-    result2=np.swapaxes(np.swapaxes(gd1[0:nz,0:ny,0:nx,gdetB1index-1:gdetB3index+1],0,3),1,2).reshape((nx,ny,nz,4),order='F')
-    result3=np.swapaxes(np.swapaxes(gd2[0:nz,0:ny,0:nx,gdetB1index-1:gdetB3index+1],0,3),1,2).reshape((nx,ny,nz,4),order='F')
-    return(result1,result2,result3)
+    #result1=np.swapaxes(divbresult,0,2).reshape((nx,ny,nz),order='F')
+    #result2=np.swapaxes(np.swapaxes(gd1[0:nz,0:ny,0:nx,gdetB1index-1:gdetB3index+1],0,3),1,2).reshape((nx,ny,nz,4),order='F')
+    #result3=np.swapaxes(np.swapaxes(gd2[0:nz,0:ny,0:nx,gdetB1index-1:gdetB3index+1],0,3),1,2).reshape((nx,ny,nz,4),order='F')
+    #
+    result1=divbresult
+    result2=gd1[gdetB1index-1:gdetB3index+1,0:nx,0:ny,0:nz]
+    result3=gd2[gdetB1index-1:gdetB3index+1,0:nx,0:ny,0:nz]
+    #
+    return(result1,result2,result3,Avpotf)
     #
 
 
@@ -7180,7 +7306,7 @@ def Bfieldcalc3U3D(Avpotf=None):
         print("No Avpotf defined"); sys.stdout.flush()
         exit
     #
-    gdetBnew = np.zeros_like(gdetB)
+    gdetBnew = np.zeros((4,nx,ny,nz),order='F',dtype=Avpotf.dtype)
     #
     #
     # np.diff takes out[n] = a[n+1] - a[n], as desired for getting gdetB_i @ FACE_i from Avpot_i @ CORN_i
@@ -7299,8 +7425,9 @@ def Afieldcalc3U3D(gdetB=None):
         j += 1
     #
     if dopoledeath==1:
-        #Avpotf[3,:,0,:]=0
-        Avpotf[3,:,ny,:]=Avpotf[3,0,ny,:]
+        Avpotf[3,:,0,:]=0
+        Avpotf[3,:,ny,:]=0
+        #Avpotf[3,:,ny,:]=Avpotf[3,0,ny,:]
         #print("asdf");
     #
     print("DONEA3") ; sys.stdout.flush()
@@ -7357,7 +7484,9 @@ def Afieldcalc3U3D(gdetB=None):
     #
     if dopoledeath==1:
         # so A{1,3}=gdetB2=0
+        Avpotf[1,:,0,:]=0
         Avpotf[1,:,ny,:]=0
+        #print("asdf2");
     #
     print("DONEA1") ; sys.stdout.flush()
     ####################
@@ -7501,7 +7630,7 @@ def rfdheader(fin=None):
     global t,nx,ny,nz,startx1,startx2,startx3,_dx1,_dx2,_dx3,nstep,gam,a,R0,Rin,Rout,hslope,rundt,defcoord
     global MBH,QBH,EP3,THETAROT,_is,_ie,_js,_je,_ks,_ke,whichdump,whichdumpversion,numcolumns
     global rhor
-    global header
+    #global header
     #
     #
     header = fin.readline().split()
@@ -23959,7 +24088,7 @@ def pf(dir=2):
     global bcent
     grid3d("gdump.bin")
     #rfd("fieldline0000.bin")
-    #divb,gdetB,gdetBnew=reresrdump("rdump--0000.bin")
+    #divb,gdetB,gdetBnew,Avpotf=reresrdump("rdump--0000.bin")
     rd("dump0000.bin")
     face2centdonor(); 
     plt.clf(); 
@@ -26755,7 +26884,7 @@ def oldstuff():
     if False:
         grid3d("gdump");
         rfdfirstfile()
-        divb,gdetB,gdetBnew=reresrdump("rdump--0000");
+        divb,gdetB,gdetBnew,Avpotf=reresrdump("rdump--0000");
         plt.clf(); cvel(); plc(bsq,cb=True)
         plt.clf();plt.plot(x1[:,ny/2,0],(bsq/(2*(gam-1)*ug))[:,ny/2,0])
         plt.plot(x1[:,ny/2,0],(bsq/(2*(gam-1)*ug))[:,ny/2,0],'+')
@@ -26764,7 +26893,7 @@ def oldstuff():
         plt.clf();plco(lrho,r*np.sin(h),r*np.cos(h),cb=True,levels=np.arange(-12,0,0.5)); plt.xlim(0,40); plt.ylim(-20,20)
     if False:
         rd( os.path.basename(glob.glob(os.path.join("dumps/", "dump0000*"))[0]) )
-        #divb,gdetB,gdetBnew=reresrdump("rdump--0000")
+        #divb,gdetB,gdetBnew,Avpotf=reresrdump("rdump--0000")
         aphi = fieldcalc()
         plt.clf(); plt.plot(x1[:,ny/2,0],aphi[:,ny/2,0])
     if False:
@@ -26960,7 +27089,8 @@ def main(argv=None):
     #
     ####################
     # can insert test code here if want to just run python instead of ipython:
-    #divb,gdetB,gdetBnew=reresrdump('rdump-0.bin',writenew=1,newf1=1,newf2=2,newf3=2,divbclean=True)
+    # divb,gdetB,gdetBnew,Avpotf=reresrdump('rdump-0.bin',writenew=1,newf1=1,newf2=2,newf3=2,divbclean=True,fieldsmooth=True)
+    # divb,gdetB,gdetBnew,Avpotf=reresrdump('rdump-3.bin',writenew=1,newf1=1,newf2=2,newf3=2,divbclean=False,fieldsmooth=True)
     #
     # end test code
     #####################
@@ -27128,18 +27258,24 @@ def tutorial3():
     #
     # now try loading a single fieldline file
     #rfd("fieldline0000.bin")
-    rfd("fieldline2410.bin")
+    #rfd("fieldline2410.bin")
     #rfd("fieldline2491.bin")
+    #rfd("fieldline2493.bin")
     #
     # look at restart file
-    #gdraw,gin=rrdump("rdump-3.bin")
-    #divb,gdetB,gdetBnew=reresrdump('rdump-bad.bin',writenew=0,newf1=1,newf2=1,newf3=2,divbclean=False)
-    divb,gdetB,gdetBnew=reresrdump('rdump-bad2.bin',writenew=0,newf1=1,newf2=1,newf3=2,divbclean=False)
-    gdraw,gin=rrdump("rdump-bad2.bin")
+    #gdraw,gin,header=rrdump("rdump-3.bin")
+    #
+    #divb,gdetB,gdetBnew,Avpotf=reresrdump('rdump-new.bin',writenew=0,newf1=1,newf2=2,newf3=2,divbclean=True,fieldsmooth=True)
+    #divb,gdetB,gdetBnew,Avpotf=reresrdump('rdump-new.bin',writenew=0,newf1=1,newf2=2,newf3=2,divbclean=True,fieldsmooth=False)
+    #divb,gdetB,gdetBnew,Avpotf=reresrdump('rdump-new.bin',writenew=0,newf1=1,newf2=2,newf3=2,divbclean=False,fieldsmooth=False)
+    #
+    #divb,gdetB,gdetBnew,Avpotf=reresrdump('rdump-bad.bin',writenew=0,newf1=1,newf2=1,newf3=2,divbclean=False,fieldsmooth=True)
+    #divb,gdetB,gdetBnew,Avpotf=reresrdump('rdump-bad2.bin',writenew=0,newf1=1,newf2=1,newf3=2,divbclean=False,fieldsmooth=True)
+    gdraw,gin,header=rrdump("rdump-new.bin")
     #
     #
     #
-    if 0==1:
+    if 1==1:
         Avpotf=Afieldcalc3U3D(gdetB=gdetB)
         gdetBnew=Bfieldcalc3U3D(Avpotf)
     #
@@ -27166,16 +27302,18 @@ def tutorial3():
         aphi = fieldcalc() # keep sign information
         plc(aphi,colors='k')
         #
-    if 1==0:
+    if 1==1:
         plt.figure(4)
-        lrho=gdetBnew[1,:,:,1] #/gdet[:,:,1]
+        WHICHLEV=0
+        #lrho=gdetBnew[1,:,:,WHICHLEV] #/gdet[:,:,WHICHLEV]
+        lrho=gdetB[1,:,:,WHICHLEV] #/gdet[:,:,WHICHLEV]
         plco(lrho,cb=True,nc=50)
-        aphi = np.average(Avpotf[3,0:nx,0:ny,0:nz],axis=2)
-        #aphi = Avpotf[3,0:nx,0:ny,0:nz]
+        #aphi = np.average(Avpotf[3,0:nx,0:ny,0:nz],axis=2)
+        aphi = Avpotf[3,0:nx,0:ny,WHICHLEV]/r[:,:,WHICHLEV]
         #aphi = fieldcalc(gdetB1=gdetBnew[1]) # keep sign information
         plc(aphi,colors='k')
     #
-    if 1==1:
+    if 1==0:
         plt.figure(5)
         divbnew=np.copy(divb)
         thresh=1E-15
