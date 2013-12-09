@@ -807,7 +807,7 @@ def mkathpanelsmovie(**kwargs):
         #y-z
         ax = fig.add_subplot(gs[0,2])
         extent=(ystart,yend*0.99,zstart,zend*0.99);
-        p=ax.imshow(np.log10(pm[n1/2,:,:]).transpose(), extent=extent, cmap = cm.jet, 
+        p=ax.imshow(np.log10(pm[n1/2,:,:]+1e-10).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
         plt.plot([yavg,yavg],[zstart,zend],"k:")
