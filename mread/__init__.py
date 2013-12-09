@@ -593,7 +593,7 @@ def rdath3d(fname,maxfailnum=10):
                 break
             except:
             #except MemoryError:
-                print( "Received memory error while opening %s on try %d out of %d.  Waiting for 10 seconds to retry..." % (failnum, maxfailnum, fname))
+                print( "Received an error while opening %s on try %d out of %d.  Waiting for 10 seconds to retry..." % (fname, failnum, maxfailnum))
                 time.sleep(10)
     else:
         print( "rdath3d: Unknown file type: %s" % fname )
