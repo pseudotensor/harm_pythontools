@@ -14752,7 +14752,7 @@ def mkath(whichplot):
             continue
         if whichplot=="mkath":
             mkathtestmovie(name="",vmin=-2,vmax=2,startn=findex,endn=findex+1,dn=1,dosavefig=1,doreload=1)
-        elif whichplot=="mkathpanels":
+        elif whichplot=="mkpath":
             mkathpanelsmovie(name="",startn=findex,endn=findex+1,dn=1,dosavefig=1,doreload=1)
         else:
             print("mkath(): unknown plot: %s" % whichplot)
@@ -17284,8 +17284,8 @@ if __name__ == "__main__":
             mk2davg()
         elif sys.argv[1] == "mkath":
             mkath("mkath")
-        elif sys.argv[1] == "mkathpanels":
-            mkath("mkathpanels")
+        elif sys.argv[1] == "mkpath":
+            mkath("mkpath")
         elif sys.argv[1] == "mkmov":
             mkmov()
     if False:
