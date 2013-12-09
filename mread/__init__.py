@@ -687,7 +687,7 @@ def mkathtestmovie(**kwargs):
     func=kwargs.pop("func",None)
     doreload=kwargs.pop("doreload",1)
     if func is None:
-        func = lambda: pg[:,:,k]
+        func = lambda: np.log10(pg[:,:,kval])
     plt.figure(1,figsize=(6,4))
     plt.clf()
     for i in xrange(startn,endn,dn):
@@ -716,7 +716,8 @@ def mkathtestmovie(**kwargs):
         plt.draw();
         time.sleep(sleepdt)
         if dosavefig:
-            plt.savefig("frame%04d.png"%i,bbox_inches='tight',pad_inches=0.02,dpi=300)
+            plt.savefig("frame%04d.png"%i,dpi=300)
+            #plt.savefig("frame%04d.png"%i,bbox_inches='tight',pad_inches=0.02,dpi=300)
 
 
 def plot_current():
@@ -14531,7 +14532,7 @@ def mkath():
         if os.path.isfile("frame%04d.png" % (findex)):
             print( "Skipping " + fname + " as frame%04d.png exists" % (findex) );
             continue
-        mkathtestmovie(name="",func=lambda: np.log10(pg[:,:,128]),vmin=-2,vmax=2,startn=findex,endn=findex+1,dn=1,dosavefig=1,doreload=1)
+        mkathtestmovie(name="",vmin=-2,vmax=2,startn=findex,endn=findex+1,dn=1,dosavefig=1,doreload=1)
 
 def oldstuff():
     if False:
