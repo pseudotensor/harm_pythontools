@@ -743,13 +743,14 @@ def mkathpanelsmovie(**kwargs):
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
         plt.plot([yavg,yavg],[zstart,zend],"k:")
         plt.setp( ax.get_xticklabels(), visible=False )
+        plt.text(0.95*xend,0.9*zend,"t=%5.0f" % t,fontsize=textfntsize,ha="right",va="top")
         ax.set_ylabel("z")
         ax.set_xlabel("y",va="top",labelpad=0)
         mkathcolorbar(ax,fig,vmin=vmin,vmax=vmax,label="log10(rho)",ticks=ticks)
         #x-z
         ax = fig.add_subplot(gs[1,0])
         extent=(xstart,xend*0.99,zstart,zend*0.99);
-        plt.text(0.9*xend,0.9*zend,"y=%3.0f" % yavg,fontsize=textfntsize,ha="right",va="top")
+        plt.text(0.95*xend,0.9*zend,"y=%3.0f" % yavg,fontsize=textfntsize,ha="right",va="top")
         p=ax.imshow(np.log10(rho[:,javg,:]).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
