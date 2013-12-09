@@ -622,7 +622,7 @@ def mkathtestmovie(**kwargs):
     func=kwargs.pop("func",None)
     doreload=kwargs.pop("doreload",1)
     if func is None:
-        func = lambda: pg[:,:,k]
+        func = lambda: np.log10(pg[:,:,kval])
     plt.figure(1,figsize=(6,4))
     plt.clf()
     for i in xrange(startn,endn,dn):
@@ -14465,7 +14465,7 @@ def mkath():
         if os.path.isfile("frame%04d.png" % (findex)):
             print( "Skipping " + fname + " as frame%04d.png exists" % (findex) );
             continue
-        mkathtestmovie(name="",func=lambda: np.log10(pg[:,:,128]),vmin=-2,vmax=2,startn=findex,endn=findex+1,dn=1,dosavefig=1,doreload=1)
+        mkathtestmovie(name="",vmin=-2,vmax=2,startn=findex,endn=findex+1,dn=1,dosavefig=1,doreload=1)
 
 def oldstuff():
     if False:
