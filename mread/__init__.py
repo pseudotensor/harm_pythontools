@@ -590,7 +590,8 @@ def rdath3d(fname):
         print( "rdath3d: Unknown file type: %s" % fname )
 
 def rdvtk(fname):
-    global t, n1, n2, n3, t, ti, tj, tk, x1, x2, x3, rho, v1, v2, v3, pg, B1c, B2c, B3c
+    global t, n1, n2, n3, t, ti, tj, tk, x1, x2, x3, rho, v1, v2, v3, pg, B1c, B2c, B3c, dx, dy, dz, pm
+    global xstart, xend, ystart, yend, zstart, zend
     global reader, data, dim
     filename = fname
     t = GetTimeFromAthenaVTK(filename)
@@ -631,11 +632,13 @@ def rdvtk(fname):
     ti = np.zeros(scalardim)+ti1d[:,None,None]
     tj = np.zeros(scalardim)+tj1d[None,:,None]
     tk = np.zeros(scalardim)+tk1d[None,None,:]
+    pm = 0.5*(B1c**2+B2c**2+B3c**2)
     #need to make sure this is OK to do while still using the data:
     reader.CloseVTKFile() 
 
 def rdtab(fname):
-    global t, n1, n2, n3, t, ti, tj, tk, x1, x2, x3, rho, v1, v2, v3, pg, B1c, B2c, B3c
+    global t, n1, n2, n3, t, ti, tj, tk, x1, x2, x3, rho, v1, v2, v3, pg, B1c, B2c, B3c, dx, dy, dz, pm
+    global xstart, xend, ystart, yend, zstart, zend
     fin = open( fname , "rb" )
     header1 = fin.readline().split()
     header2 = fin.readline().split()
@@ -651,6 +654,16 @@ def rdtab(fname):
     fin.close()
     res = np.loadtxt(fname,dtype=np.float64,skiprows=0,unpack=1).reshape((-1,n1,n2,n3),order="F")
     ti, tj, tk, x1, x2, x3, rho, v1, v2, v3, pg, B1c, B2c, B3c = res
+    dx = x1[1,0,0]-x1[0,0,0]
+    dy = x2[0,1,0]-x2[0,0,0]
+    dz = x3[0,0,1]-x3[0,0,0]
+    xstart = x1[0,0,0]-0.5*dx
+    xend = x1[n1-1,0,0]+0.5*dx
+    ystart = x2[0,0,0]-0.5*dy
+    yend = x2[0,n2-1,0]+0.5*dy
+    zstart = x2[0,0,0]-0.5*dz
+    zend = x2[0,0,n3-1]+0.5*dz
+    pm = 0.5*(B1c**2+B2c**2+B3c**2)
 
 def GetTimeFromAthenaVTK(f_name):
     """
