@@ -6,15 +6,15 @@ from matplotlib import rc
 from streamlines import streamplot
 from streamlines import fstreamplot
 from pychip import pchip_init, pchip_eval
-# #rc('verbose', level='debug')
-# rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
-# ## for Palatino and other serif fonts use:
-# # rc('font',**{'family':'serif','serif':['Palatino']})
-# rc('mathtext',fontset='cm')
-# rc('mathtext',rm='stix')
-# rc('text', usetex=True)
+#rc('verbose', level='debug')
+rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
+## for Palatino and other serif fonts use:
+# rc('font',**{'family':'serif','serif':['Palatino']})
+rc('mathtext',fontset='cm')
+rc('mathtext',rm='stix')
+rc('text', usetex=True)
 #add amsmath to the preamble
-# matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"] 
+matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"] 
 
 #from pylab import figure, axes, plot, xlabel, ylabel, title, grid, savefig, show
 
@@ -685,6 +685,211 @@ def GetTimeFromAthenaVTK(f_name):
     file_time = np.float64(file_time)                                                              # Convert to float
 
     return file_time
+
+def mkathcolorbar(ax,fig,vmin=0,vmax=1,label=None,ticks=None):
+    box = ax.get_position()
+    cpos = [box.x0,box.y0+box.height+0.05,box.width,0.03]
+    ax1 = fig.add_axes(cpos)
+    cmap = mpl.cm.jet
+    norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+    if ticks is not None:
+        cb1 = mpl.colorbar.ColorbarBase(ax1, cmap=cmap,
+                                        norm=norm,
+                                        orientation='horizontal',
+                                        ticks=ticks)
+    else:
+        cb1 = mpl.colorbar.ColorbarBase(ax1, cmap=cmap,
+                                        norm=norm,
+                                        orientation='horizontal' )
+    if label is not None:
+        ax1.set_title(label)
+
+def mkathpanelsmovie(**kwargs):
+    fntsize = kwargs.pop("fontsize",20)
+    textfntsize = 0.8*fntsize
+    name=kwargs.pop("name","str-flux-cap")
+    sleepdt=kwargs.pop("sleepdt",0.5)
+    startn=kwargs.pop("startn",0)
+    endn=kwargs.pop("endn",112)
+    dn=kwargs.pop("dn",1)
+    dosavefig=kwargs.pop("dosavefig",0)
+    vmin=kwargs.pop("vmin",1e-3)
+    vmax=kwargs.pop("vmax",1e+3)
+    ext=kwargs.pop("ext","vtk")
+    func=kwargs.pop("func",None)
+    doreload=kwargs.pop("doreload",1)
+    fig=plt.figure(1,figsize=(10,8))
+    for i in xrange(startn,endn,dn):
+        if doreload:
+            rdath3d("%s%04d.%s"%(name,i,ext));
+        kval=kwargs.pop("k",n3/2)
+        yavg = np.sum(x2*rho)/np.sum(rho)
+        javg = np.floor(interp1d(x2[0,:,0],tj[0,:,0])(yavg)+0.5)
+        nxplots = 4
+        nyplots = 3
+        gs = GridSpec(nyplots, nxplots)
+        left = 0.07; right = 0.97; top = 0.88; bottom = 0.08; 
+        wspace=0.1; hspace=0.1
+        gs.update(left=left, right=right, top=top, bottom=bottom, wspace=hspace, hspace=wspace)
+        #First column: rho
+        vmin=-2;  vmax=5;  nticks=vmax-vmin+1
+        #y-z
+        ax = fig.add_subplot(gs[0,0])
+        extent=(ystart,yend*0.99,zstart,zend*0.99);
+        ticks=np.linspace(vmin,vmax,nticks)
+        p=ax.imshow(np.log10(rho[n1/2,:,:]).transpose(), extent=extent, cmap = cm.jet, 
+                    norm = colors.Normalize(clip = True),origin='lower',
+                    interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        plt.plot([yavg,yavg],[zstart,zend],"k:")
+        plt.setp( ax.get_xticklabels(), visible=False )
+        ax.set_ylabel("z")
+        ax.set_xlabel("y",va="top",labelpad=0)
+        mkathcolorbar(ax,fig,vmin=vmin,vmax=vmax,label="log10(rho)",ticks=ticks)
+        #x-z
+        ax = fig.add_subplot(gs[1,0])
+        extent=(xstart,xend*0.99,zstart,zend*0.99);
+        plt.text(0.9*xend,0.9*zend,"y=%3.0f" % yavg,fontsize=textfntsize,ha="right",va="top")
+        p=ax.imshow(np.log10(rho[:,javg,:]).transpose(), extent=extent, cmap = cm.jet, 
+                    norm = colors.Normalize(clip = True),origin='lower',
+                    interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        plt.setp( ax.get_xticklabels(), visible=False )
+        ax.set_ylabel("z")
+        ax.set_xlabel("x",va="top",labelpad=0)
+        #x-y
+        ax = fig.add_subplot(gs[2,0])
+        extent=(xstart,xend*0.99,ystart,yend*0.99);
+        p=ax.imshow(np.log10(rho[:,:,n3/2]).transpose(), extent=extent, cmap = cm.jet, 
+                    norm = colors.Normalize(clip = True),origin='lower',
+                    interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        plt.plot([xstart,xend],[yavg,yavg],"k:")
+        ax.set_xlabel("x",va="top",labelpad=0)
+        ax.set_ylabel("y") #,ha="left") #, labelpad=0)
+        #Second column: pg
+        vmin=-2;  vmax=2; nticks=vmax-vmin+1
+        #y-z
+        ax = fig.add_subplot(gs[0,1])
+        extent=(ystart,yend*0.99,zstart,zend*0.99);
+        ticks=np.linspace(vmin,vmax,nticks)
+        p=ax.imshow(np.log10(pg[n1/2,:,:]).transpose(), extent=extent, cmap = cm.jet, 
+                    norm = colors.Normalize(clip = True),origin='lower',
+                    interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        plt.plot([yavg,yavg],[zstart,zend],"k:")
+        plt.setp( ax.get_xticklabels(), visible=False )
+        plt.setp( ax.get_yticklabels(), visible=False )
+        ax.set_ylabel("z")
+        ax.set_xlabel("y",va="top",labelpad=0)
+        mkathcolorbar(ax,fig,vmin=vmin,vmax=vmax,label="log10(pg)",ticks=ticks)
+        #x-z
+        ax = fig.add_subplot(gs[1,1])
+        extent=(xstart,xend*0.99,zstart,zend*0.99);
+        p=ax.imshow(np.log10(pg[:,javg,:]).transpose(), extent=extent, cmap = cm.jet, 
+                    norm = colors.Normalize(clip = True),origin='lower',
+                    interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        plt.setp( ax.get_xticklabels(), visible=False )
+        plt.setp( ax.get_yticklabels(), visible=False )
+        ax.set_xlabel("x",va="top",labelpad=0)
+        ax.set_ylabel("z")
+        #x-y
+        ax = fig.add_subplot(gs[2,1])
+        extent=(xstart,xend*0.99,ystart,yend*0.99);
+        p=ax.imshow(np.log10(pg[:,:,n3/2]).transpose(), extent=extent, cmap = cm.jet, 
+                    norm = colors.Normalize(clip = True),origin='lower',
+                    interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        plt.plot([xstart,xend],[yavg,yavg],"k:")
+        plt.setp( ax.get_yticklabels(), visible=False )
+        ax.set_xlabel("x",va="top",labelpad=0)
+        ax.set_ylabel("y")
+        #Third column: pm
+        vmin=-2;  vmax=2; nticks=vmax-vmin+1
+        ticks=np.linspace(vmin,vmax,nticks)
+        #y-z
+        ax = fig.add_subplot(gs[0,2])
+        extent=(ystart,yend*0.99,zstart,zend*0.99);
+        p=ax.imshow(np.log10(pm[n1/2,:,:]).transpose(), extent=extent, cmap = cm.jet, 
+                    norm = colors.Normalize(clip = True),origin='lower',
+                    interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        plt.plot([yavg,yavg],[zstart,zend],"k:")
+        plt.setp( ax.get_xticklabels(), visible=False )
+        plt.setp( ax.get_yticklabels(), visible=False )
+        ax.set_xlabel("y",va="top",labelpad=0)
+        ax.set_ylabel("z")
+        mkathcolorbar(ax,fig,vmin=vmin,vmax=vmax,label="log10(pm)",ticks=ticks)
+        #x-z
+        ax = fig.add_subplot(gs[1,2])
+        extent=(xstart,xend*0.99,zstart,zend*0.99);
+        p=ax.imshow(np.log10(pm[:,javg,:]).transpose(), extent=extent, cmap = cm.jet, 
+                    norm = colors.Normalize(clip = True),origin='lower',
+                    interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        plt.setp( ax.get_xticklabels(), visible=False )
+        plt.setp( ax.get_yticklabels(), visible=False )
+        ax.set_xlabel("x",va="top",labelpad=0)
+        ax.set_ylabel("z")
+        #x-y
+        ax = fig.add_subplot(gs[2,2])
+        extent=(xstart,xend*0.99,ystart,yend*0.99);
+        p=ax.imshow(np.log10(pm[:,:,n3/2]).transpose(), extent=extent, cmap = cm.jet, 
+                    norm = colors.Normalize(clip = True),origin='lower',
+                    interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        plt.plot([xstart,xend],[yavg,yavg],"k:")
+        plt.setp( ax.get_yticklabels(), visible=False )
+        ax.set_xlabel("x",va="top",labelpad=0)
+        ax.set_ylabel("y")
+        #Fourth column: vx
+        vmin=-1;  vmax=5;  nticks=(vmax-vmin)/2+1
+        #y-z
+        ax = fig.add_subplot(gs[0,3])
+        extent=(ystart,yend*0.99,zstart,zend*0.99);
+        ticks=np.linspace(vmin,vmax,nticks)
+        p=ax.imshow((v1[n1/2,:,:]).transpose(), extent=extent, cmap = cm.jet, 
+                    norm = colors.Normalize(clip = True),origin='lower',
+                    interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        plt.plot([yavg,yavg],[zstart,zend],"k:")
+        plt.setp( ax.get_xticklabels(), visible=False )
+        plt.setp( ax.get_yticklabels(), visible=False )
+        ax.set_xlabel("y",va="top",labelpad=0)
+        ax.set_ylabel("z")
+        mkathcolorbar(ax,fig,vmin=vmin,vmax=vmax,label="vx",ticks=ticks)
+        #x-z
+        ax = fig.add_subplot(gs[1,3])
+        extent=(xstart,xend*0.99,zstart,zend*0.99);
+        p=ax.imshow((v1[:,javg,:]).transpose(), extent=extent, cmap = cm.jet, 
+                    norm = colors.Normalize(clip = True),origin='lower',
+                    interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        plt.setp( ax.get_xticklabels(), visible=False )
+        plt.setp( ax.get_yticklabels(), visible=False )
+        ax.set_xlabel("x",va="top",labelpad=0)
+        ax.set_ylabel("z")
+        #x-y
+        ax = fig.add_subplot(gs[2,3])
+        extent=(xstart,xend*0.99,ystart,yend*0.99);
+        p=ax.imshow((v1[:,:,n3/2]).transpose(), extent=extent, cmap = cm.jet, 
+                    norm = colors.Normalize(clip = True),origin='lower',
+                    interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        plt.plot([xstart,xend],[yavg,yavg],"k:")
+        plt.setp( ax.get_yticklabels(), visible=False )
+        ax.set_xlabel("x",va="top",labelpad=0)
+        ax.set_ylabel("y")
+        #tighten up layout
+        #gs.tight_layout(fig)
+        print("n=%4d, t=%5.3g: min(rho)=%5.3g, max(rho)=%5.3g, min(pg)=%5.3g, max(pg)=%5.3g" % (i, t, np.min(rho), np.max(rho), np.min(pg), np.max(pg)))
+        if pg.max()>1e2:
+            print("Explosions:")
+            print np.where(pg==pg.max())
+        # if i==startn:
+        #     cbar = plt.colorbar(p,shrink=1,ax=plt.gca())
+        #     # cbar.ax.set_ylabel(r'$\log_{10}p$',fontsize=fntsize)
+        #     # plt.xlabel(r"$x$",fontsize=fntsize)
+        #     # plt.ylabel(r"$y$",fontsize=fntsize)
+        #     ax = plt.gca()
+        #     for label in ax.get_xticklabels() + ax.get_yticklabels() + cbar.ax.get_yticklabels():
+        #         label.set_fontsize(fntsize)
+        # plt.title("t=%g" % t,fontsize=fntsize)
+        plt.draw();
+        time.sleep(sleepdt)
+        if dosavefig:
+            plt.savefig("pframe%04d.png"%i,dpi=300)
+            #plt.savefig("frame%04d.png"%i,bbox_inches='tight',pad_inches=0.02,dpi=300)
+
 
 def mkathtestmovie(**kwargs):
     fntsize = kwargs.pop("fontsize",20)
@@ -14529,7 +14734,7 @@ def mkts(docompute=False):
             qtymem=getqtyvstime(ihor,0.2,docompute=docompute)
             plotqtyvstime(qtymem)
 
-def mkath():
+def mkath(whichplot):
     if len(sys.argv[2:])==2 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
         whichi = int(sys.argv[2])
         whichn = int(sys.argv[3])
@@ -14545,7 +14750,12 @@ def mkath():
         if os.path.isfile("frame%04d.png" % (findex)):
             print( "Skipping " + fname + " as frame%04d.png exists" % (findex) );
             continue
-        mkathtestmovie(name="",vmin=-2,vmax=2,startn=findex,endn=findex+1,dn=1,dosavefig=1,doreload=1)
+        if whichplot=="mkath":
+            mkathtestmovie(name="",vmin=-2,vmax=2,startn=findex,endn=findex+1,dn=1,dosavefig=1,doreload=1)
+        elif whichplot=="mkathpanels":
+            mkathpanelsmovie(name="",startn=findex,endn=findex+1,dn=1,dosavefig=1,doreload=1)
+        else:
+            print("mkath(): unknown plot: %s" % whichplot)
 
 def oldstuff():
     if False:
@@ -17073,7 +17283,9 @@ if __name__ == "__main__":
         elif sys.argv[1] == "mkavg":
             mk2davg()
         elif sys.argv[1] == "mkath":
-            mkath()
+            mkath("mkath")
+        elif sys.argv[1] == "mkathpanels":
+            mkath("mkathpanels")
         elif sys.argv[1] == "mkmov":
             mkmov()
     if False:
