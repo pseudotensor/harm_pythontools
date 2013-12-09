@@ -49,6 +49,71 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
+def plotkomi(fntsize=20):
+    whichplot3=[r"$\rho$", r"$\rho$", r"$B_y$", r"$B_y$", r"$\rho$",r"$\rho$", r"$b^y$"]
+    whichplot2a=[r"$p$", r"$p$", r"$p$", r"$p$", r"$\log_{10}p$", r"$\log_{10}p$", r"$\log_{10}p$" ]
+    whichplot2b=[r"$p_m$", r"$p_m$", None, None, None, r"$\log_{10}p_{\rm tot}$", None]
+    i = -1
+    for testno in [1, 2, 3, 4, 7, 8, 9]:
+        i = i + 1
+        os.chdir("/home/atchekho/Research/code/harm/tests/komi%d" % testno)
+        grid3d("gdump")
+        rd("dump0010") #last dump
+        plt.figure(1,figsize=(6,9))
+        plt.clf()
+        gs3 = GridSpec(3,3)
+        gs3.update(left=0.15, right=0.95, top=0.96, bottom=0.15, wspace=0.01, hspace=0.08)
+        ax30 = plt.subplot(gs3[0,:])
+        plt.setp( ax30.get_xticklabels(), visible=False )
+        if testno == 9:
+            plt.plot(r[:,0,0],(uu[1]*dxdxp[1,1])[:,0,0],"d-",lw=2,label=r"$u_x$")
+            plt.plot(r[:,0,0],(uu[2]*dxdxp[2,2])[:,0,0],"+-",lw=2,label=r"$u_y$")
+            plt.legend(loc="best")
+            for label in leg.get_texts():
+                label.set_fontsize(fntsize)
+            plt.ylabel(r"$u$",fontsize=fntsize)
+        else:
+            plt.plot(r[:,0,0],(uu[1]*dxdxp[1,1])[:,0,0],"+-",lw=2,label=r"$u_x$")
+            plt.ylabel(r"$u_x$",fontsize=fntsize)
+        ax31 = plt.subplot(gs3[1,:])
+        plt.setp( ax31.get_xticklabels(), visible=False )
+        varname = whichplot2a[i]
+        if varname == r"$p$":
+            var = (gam-1)*ug
+        elif varname == r"$\log_{10}p$":
+            var = np.log10((gam-1)*ug)
+        plt.plot(r[:,0,0],(var)[:,0,0],"+-",lw=2,label=varname)
+        varname = whichplot2b[i]
+        if varname == r"$p_m$":
+            var = bsq/2
+        elif varname == r"$\log_{10}p_{\rm tot}$":
+            var = np.log10((gam-1)*ug+bsq/2)
+        if varname is not None:
+            plt.plot(r[:,0,0],var[:,0,0],"d-",lw=2,label=varname)
+        leg=plt.legend(loc="best")
+        plt.ylabel(r"$p$",fontsize=fntsize)
+        ax32 = plt.subplot(gs3[2,:])
+        varname = whichplot3[i]
+        if varname == r"$\rho$":
+            var = rho
+        elif varname == r"$B_y$":
+            var = B[2]*dxdxp[2,2]
+        elif varname == r"$b^y$":
+            var = bu[2]*dxdxp[2,2]
+        plt.plot(r[:,0,0],var[:,0,0],"+-",lw=2)
+        plt.ylabel(varname,fontsize=fntsize)
+        plt.xlabel(r"$x$",fontsize=fntsize)
+        plt.savefig("../komi%d.png" % testno,bbox_inches='tight',pad_inches=0.04,dpi=300)
+        #plt.savefig("../komi%d.png" % i)
+        for label in leg.get_texts():
+            label.set_fontsize(fntsize)
+        for ax in [ax30, ax31, ax32]:
+            for label in ax.get_xticklabels() + ax.get_yticklabels():
+                label.set_fontsize(fntsize)
+
+        
+        
+
 def plot_hoverr(fti=2000,ftf=2200):
     grid3d("gdump.bin",use2d=1)
     ihor=iofr(rhor)
