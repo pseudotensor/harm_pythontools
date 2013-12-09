@@ -718,6 +718,7 @@ def mkathpanelsmovie(**kwargs):
     ext=kwargs.pop("ext","vtk")
     func=kwargs.pop("func",None)
     doreload=kwargs.pop("doreload",1)
+    prefix=kwargs.pop("prefix","")
     fig=plt.figure(1,figsize=(10,8))
     for i in xrange(startn,endn,dn):
         if doreload:
@@ -887,7 +888,7 @@ def mkathpanelsmovie(**kwargs):
         plt.draw();
         time.sleep(sleepdt)
         if dosavefig:
-            plt.savefig("pframe%04d.png"%i,dpi=300)
+            plt.savefig("%s%04d.png"%(prefix,i),dpi=300)
             #plt.savefig("frame%04d.png"%i,bbox_inches='tight',pad_inches=0.02,dpi=300)
 
 
@@ -904,6 +905,7 @@ def mkathtestmovie(**kwargs):
     ext=kwargs.pop("ext","vtk")
     func=kwargs.pop("func",None)
     doreload=kwargs.pop("doreload",1)
+    prefix=kwargs.pop("prefix","")
     if func is None:
         func = lambda: np.log10(pg[:,:,kval])
     plt.figure(1,figsize=(6,4))
@@ -934,7 +936,7 @@ def mkathtestmovie(**kwargs):
         plt.draw();
         time.sleep(sleepdt)
         if dosavefig:
-            plt.savefig("frame%04d.png"%i,dpi=300)
+            plt.savefig("%s%04d.png"%(prefix,i),dpi=300)
             #plt.savefig("frame%04d.png"%i,bbox_inches='tight',pad_inches=0.02,dpi=300)
 
 
@@ -14734,7 +14736,7 @@ def mkts(docompute=False):
             qtymem=getqtyvstime(ihor,0.2,docompute=docompute)
             plotqtyvstime(qtymem)
 
-def mkath(whichplot):
+def mkath(whichplot,prefix=""):
     if len(sys.argv[2:])==2 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
         whichi = int(sys.argv[2])
         whichn = int(sys.argv[3])
@@ -14747,13 +14749,13 @@ def mkath(whichplot):
             continue
         if whichn == 0 and findex != whichi:
             continue
-        if os.path.isfile("frame%04d.png" % (findex)):
+        if os.path.isfile("%s%04d.png" % (prefix,findex)):
             print( "Skipping " + fname + " as frame%04d.png exists" % (findex) );
             continue
         if whichplot=="mkath":
-            mkathtestmovie(name="",vmin=-2,vmax=2,startn=findex,endn=findex+1,dn=1,dosavefig=1,doreload=1)
+            mkathtestmovie(name="",vmin=-2,vmax=2,startn=findex,endn=findex+1,dn=1,dosavefig=1,doreload=1,prefix=prefix)
         elif whichplot=="mkpath":
-            mkathpanelsmovie(name="",startn=findex,endn=findex+1,dn=1,dosavefig=1,doreload=1)
+            mkathpanelsmovie(name="",startn=findex,endn=findex+1,dn=1,dosavefig=1,doreload=1,prefix=prefix)
         else:
             print("mkath(): unknown plot: %s" % whichplot)
 
@@ -17283,9 +17285,9 @@ if __name__ == "__main__":
         elif sys.argv[1] == "mkavg":
             mk2davg()
         elif sys.argv[1] == "mkath":
-            mkath("mkath")
+            mkath("mkath",prefix="frame")
         elif sys.argv[1] == "mkpath":
-            mkath("mkpath")
+            mkath("mkpath",prefix="pframe")
         elif sys.argv[1] == "mkmov":
             mkmov()
     if False:
