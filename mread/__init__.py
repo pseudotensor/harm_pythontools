@@ -580,12 +580,20 @@ def rdath2d(fname):
     res = np.loadtxt(fname,dtype=np.float64,skiprows=0,unpack=1).reshape((-1,n1,n2),order="F")
     ti, tj, x1, x2, rho, v1, v2, v3, pg = res
 
-def rdath3d(fname):
+def rdath3d(fname,maxfailnum=10):
     global n1, n2, n3, t, ti, tj, tk, x1, x2, x3, rho, v1, v2, v3, pg, B1c, B2c, B3c
     if fname.endswith(".tab"):
         rdtab(fname)
     elif fname.endswith(".vtk"):
-        rdvtk(fname)
+        failnum=0
+        while failnum < maxfailnum:
+            try:
+                failnum = failnum + 1
+                rdvtk(fname)
+                break
+            except MemoryError:
+                print( "Received memory error while opening %s on try %d out of %d.  Waiting for 10 seconds to retry..." % (failnum, maxfailnum, fname)
+                time.sleep(10)
     else:
         print( "rdath3d: Unknown file type: %s" % fname )
 
