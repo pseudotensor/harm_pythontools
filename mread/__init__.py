@@ -7,14 +7,14 @@ from streamlines import streamplot
 from streamlines import fstreamplot
 from pychip import pchip_init, pchip_eval
 #rc('verbose', level='debug')
-rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
+#rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 ## for Palatino and other serif fonts use:
-# rc('font',**{'family':'serif','serif':['Palatino']})
-rc('mathtext',fontset='cm')
-rc('mathtext',rm='stix')
-rc('text', usetex=True)
-#add amsmath to the preamble
-matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"] 
+## rc('font',**{'family':'serif','serif':['Palatino']})
+#rc('mathtext',fontset='cm')
+#rc('mathtext',rm='stix')
+#rc('text', usetex=True)
+##add amsmath to the preamble
+#matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"] 
 
 #from pylab import figure, axes, plot, xlabel, ylabel, title, grid, savefig, show
 
@@ -592,7 +592,7 @@ def rdath3d(fname,maxfailnum=10):
                 rdvtk(fname)
                 break
             except MemoryError:
-                print( "Received memory error while opening %s on try %d out of %d.  Waiting for 10 seconds to retry..." % (failnum, maxfailnum, fname)
+                print( "Received memory error while opening %s on try %d out of %d.  Waiting for 10 seconds to retry..." % (failnum, maxfailnum, fname))
                 time.sleep(10)
     else:
         print( "rdath3d: Unknown file type: %s" % fname )
