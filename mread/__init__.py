@@ -841,7 +841,7 @@ def mkathpanelsmovie(**kwargs):
         #x-y
         ax = fig.add_subplot(gs[2,2])
         extent=(xstart,xend*0.99,ystart,yend*0.99);
-        p=ax.imshow(np.log10(pm[:,:,n3/2]).transpose(), extent=extent, cmap = cm.jet, 
+        p=ax.imshow(np.log10(pm[:,:,n3/2]+1e-10).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
         plt.plot([xstart,xend],[yavg,yavg],"k:")
@@ -14763,7 +14763,7 @@ def mkath(whichplot,prefix=""):
         if whichn == 0 and findex != whichi:
             continue
         if os.path.isfile("%s%04d.png" % (prefix,findex)):
-            print( "Skipping " + fname + " as frame%04d.png exists" % (findex) );
+            print( "Skipping " + fname + " as %s%04d.png exists" % (prefix,findex) );
             continue
         if whichplot=="mkath":
             mkathtestmovie(name="",vmin=-2,vmax=2,startn=findex,endn=findex+1,dn=1,dosavefig=1,doreload=1,prefix=prefix)
