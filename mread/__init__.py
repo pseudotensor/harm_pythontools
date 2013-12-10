@@ -601,7 +601,8 @@ def rdath3d(fname,maxfailnum=10):
 def rdvtk(fname):
     global t, n1, n2, n3, t, ti, tj, tk, x1, x2, x3, rho, v1, v2, v3, pg, B1c, B2c, B3c, dx, dy, dz, pm
     global xstart, xend, ystart, yend, zstart, zend
-    global reader, data, dim
+    #global reader, data, 
+    global dim
     filename = fname
     t = GetTimeFromAthenaVTK(filename)
     reader = vtk.vtkStructuredPointsReader()
@@ -644,6 +645,8 @@ def rdvtk(fname):
     pm = 0.5*(B1c**2+B2c**2+B3c**2)
     #need to make sure this is OK to do while still using the data:
     reader.CloseVTKFile() 
+    del data
+    del reader
 
 def rdtab(fname):
     global t, n1, n2, n3, t, ti, tj, tk, x1, x2, x3, rho, v1, v2, v3, pg, B1c, B2c, B3c, dx, dy, dz, pm
