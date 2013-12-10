@@ -828,7 +828,7 @@ def mkathpanelsmovie(**kwargs):
         #x-z
         ax = fig.add_subplot(gs[1,2])
         extent=(xstart,xend*0.99,zstart,zend*0.99);
-        p=ax.imshow(np.log10(pm[:,javg,:]).transpose(), extent=extent, cmap = cm.jet, 
+        p=ax.imshow(np.log10(pm[:,javg,:]+1e-10).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
         plt.setp( ax.get_xticklabels(), visible=False )
