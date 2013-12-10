@@ -741,7 +741,7 @@ def mkathpanelsmovie(**kwargs):
         nxplots = 4
         nyplots = 3
         gs = GridSpec(nyplots, nxplots)
-        left = 0.07; right = 0.97; top = 0.88; bottom = 0.08; 
+        left = 0.05; right = 0.985; top = 0.885; bottom = 0.05; 
         wspace=0.1; hspace=0.1
         gs.update(left=left, right=right, top=top, bottom=bottom, wspace=hspace, hspace=wspace)
         #First column: rho
