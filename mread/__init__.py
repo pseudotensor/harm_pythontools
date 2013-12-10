@@ -585,16 +585,17 @@ def rdath3d(fname,maxfailnum=10):
     if fname.endswith(".tab"):
         rdtab(fname)
     elif fname.endswith(".vtk"):
-        failnum=0
-        while failnum < maxfailnum:
-            try:
-                failnum = failnum + 1
-                rdvtk(fname)
-                break
-            except:
-            #except MemoryError:
-                print( "Received an error while opening %s on try %d out of %d.  Waiting for 10 seconds to retry..." % (fname, failnum, maxfailnum))
-                time.sleep(10)
+        rdvtk(fname)
+        # failnum=0
+        # while failnum < maxfailnum:
+        #     try:
+        #         failnum = failnum + 1
+        #         rdvtk(fname)
+        #         break
+        #     except:
+        #     #except MemoryError:
+        #         print( "Received an error while opening %s on try %d out of %d.  Waiting for 10 seconds to retry..." % (fname, failnum, maxfailnum))
+        #         time.sleep(10)
     else:
         print( "rdath3d: Unknown file type: %s" % fname )
 
@@ -764,7 +765,8 @@ def mkathpanelsmovie(**kwargs):
         if doreload:
             rdath3d("%s%04d.%s"%(name,i,ext));
         kval=kwargs.pop("k",n3/2)
-        yavg = np.sum(x2*rho)/np.sum(rho)
+        #yavg = np.sum(x2*rho)/np.sum(rho) #<-- gives inaccurate results
+        yavg = np.sum((x2-0.5*(xstart+xend))*rho)/np.sum(rho)+0.5*(xstart+xend)
         javg = np.floor(interp1d(x2[0,:,0],tj[0,:,0])(yavg)+0.5)
         nxplots = 4
         nyplots = 3
@@ -781,6 +783,8 @@ def mkathpanelsmovie(**kwargs):
         p=ax.imshow(np.log10(rho[n1/2,:,:]).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        ax.set_xlim(extent[0],extent[1])
+        ax.set_ylim(extent[2],extent[3])
         plt.plot([yavg,yavg],[zstart,zend],"k:")
         plt.setp( ax.get_xticklabels(), visible=False )
         plt.text(0.95*xend,0.9*zend,"t=%5.0f" % t,fontsize=textfntsize,ha="right",va="top")
@@ -794,6 +798,8 @@ def mkathpanelsmovie(**kwargs):
         p=ax.imshow(np.log10(rho[:,javg,:]).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        ax.set_xlim(extent[0],extent[1])
+        ax.set_ylim(extent[2],extent[3])
         plt.setp( ax.get_xticklabels(), visible=False )
         ax.set_ylabel("z")
         ax.set_xlabel("x",va="top",labelpad=0)
@@ -803,6 +809,8 @@ def mkathpanelsmovie(**kwargs):
         p=ax.imshow(np.log10(rho[:,:,n3/2]).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        ax.set_xlim(extent[0],extent[1])
+        ax.set_ylim(extent[2],extent[3])
         plt.plot([xstart,xend],[yavg,yavg],"k:")
         ax.set_xlabel("x",va="top",labelpad=0)
         ax.set_ylabel("y") #,ha="left") #, labelpad=0)
@@ -815,6 +823,8 @@ def mkathpanelsmovie(**kwargs):
         p=ax.imshow(np.log10(pg[n1/2,:,:]).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        ax.set_xlim(extent[0],extent[1])
+        ax.set_ylim(extent[2],extent[3])
         plt.plot([yavg,yavg],[zstart,zend],"k:")
         plt.setp( ax.get_xticklabels(), visible=False )
         plt.setp( ax.get_yticklabels(), visible=False )
@@ -827,6 +837,8 @@ def mkathpanelsmovie(**kwargs):
         p=ax.imshow(np.log10(pg[:,javg,:]).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        ax.set_xlim(extent[0],extent[1])
+        ax.set_ylim(extent[2],extent[3])
         plt.setp( ax.get_xticklabels(), visible=False )
         plt.setp( ax.get_yticklabels(), visible=False )
         ax.set_xlabel("x",va="top",labelpad=0)
@@ -837,6 +849,8 @@ def mkathpanelsmovie(**kwargs):
         p=ax.imshow(np.log10(pg[:,:,n3/2]).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        ax.set_xlim(extent[0],extent[1])
+        ax.set_ylim(extent[2],extent[3])
         plt.plot([xstart,xend],[yavg,yavg],"k:")
         plt.setp( ax.get_yticklabels(), visible=False )
         ax.set_xlabel("x",va="top",labelpad=0)
@@ -850,6 +864,8 @@ def mkathpanelsmovie(**kwargs):
         p=ax.imshow(np.log10(pm[n1/2,:,:]+1e-10).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        ax.set_xlim(extent[0],extent[1])
+        ax.set_ylim(extent[2],extent[3])
         plt.plot([yavg,yavg],[zstart,zend],"k:")
         plt.setp( ax.get_xticklabels(), visible=False )
         plt.setp( ax.get_yticklabels(), visible=False )
@@ -862,6 +878,8 @@ def mkathpanelsmovie(**kwargs):
         p=ax.imshow(np.log10(pm[:,javg,:]+1e-10).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        ax.set_xlim(extent[0],extent[1])
+        ax.set_ylim(extent[2],extent[3])
         plt.setp( ax.get_xticklabels(), visible=False )
         plt.setp( ax.get_yticklabels(), visible=False )
         ax.set_xlabel("x",va="top",labelpad=0)
@@ -872,6 +890,8 @@ def mkathpanelsmovie(**kwargs):
         p=ax.imshow(np.log10(pm[:,:,n3/2]+1e-10).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        ax.set_xlim(extent[0],extent[1])
+        ax.set_ylim(extent[2],extent[3])
         plt.plot([xstart,xend],[yavg,yavg],"k:")
         plt.setp( ax.get_yticklabels(), visible=False )
         ax.set_xlabel("x",va="top",labelpad=0)
@@ -885,6 +905,8 @@ def mkathpanelsmovie(**kwargs):
         p=ax.imshow((v1[n1/2,:,:]).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        ax.set_xlim(extent[0],extent[1])
+        ax.set_ylim(extent[2],extent[3])
         plt.plot([yavg,yavg],[zstart,zend],"k:")
         plt.setp( ax.get_xticklabels(), visible=False )
         plt.setp( ax.get_yticklabels(), visible=False )
@@ -897,6 +919,8 @@ def mkathpanelsmovie(**kwargs):
         p=ax.imshow((v1[:,javg,:]).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        ax.set_xlim(extent[0],extent[1])
+        ax.set_ylim(extent[2],extent[3])
         plt.setp( ax.get_xticklabels(), visible=False )
         plt.setp( ax.get_yticklabels(), visible=False )
         ax.set_xlabel("x",va="top",labelpad=0)
@@ -907,6 +931,8 @@ def mkathpanelsmovie(**kwargs):
         p=ax.imshow((v1[:,:,n3/2]).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        ax.set_xlim(extent[0],extent[1])
+        ax.set_ylim(extent[2],extent[3])
         plt.plot([xstart,xend],[yavg,yavg],"k:")
         plt.setp( ax.get_yticklabels(), visible=False )
         ax.set_xlabel("x",va="top",labelpad=0)
