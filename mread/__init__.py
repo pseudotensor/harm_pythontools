@@ -49,6 +49,25 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
+def plotstreamprofile():
+    plt.clf()
+    r = np.linspace(0,5,1000)
+    rho0=1.
+    r0 = 1.
+    rho = rho0*exp(-(r/r0)**4)
+    rho1 = 1e2*rho0
+    r1 = r0/2.1
+    rhob = rho1*exp(-(r/r1)**2)
+    rho2 = 1e1*rho0
+    r2 = r0/1.3
+    rhoc = rho2*exp(-(r/r2)**3)
+    plt.plot(r,rho)
+    plt.plot(r,rhob)
+    plt.plot(r,rhoc)
+    plt.yscale("log")
+    plt.ylim(1e-4,200)
+    plt.grid(b=1)
+
 def plotkomi(fntsize=20):
     whichplot3=[r"$\rho$", r"$\rho$", r"$B_y$", r"$B_y$", r"$\rho$",r"$\rho$", r"$b^y$"]
     whichplot2a=[r"$p$", r"$p$", r"$p$", r"$p$", r"$\log_{10}p$", r"$\log_{10}p$", r"$\log_{10}p$" ]
