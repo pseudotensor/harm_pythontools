@@ -624,33 +624,33 @@ def rdvtk(fname):
     #global reader, data, 
     global dim
     if 'ti' in globals():
-        del rho
+        del ti
     if 'tj' in globals():
-        del rho
+        del tj
     if 'tk' in globals():
-        del rho
+        del tk
     if 'x1' in globals():
-        del rho
+        del x1
     if 'x2' in globals():
-        del rho
+        del x2
     if 'x3' in globals():
-        del rho
+        del x3
     if 'rho' in globals():
         del rho
     if 'v1' in globals():
-        del rho
+        del v1
     if 'v2' in globals():
-        del rho
+        del v2
     if 'v3' in globals():
-        del rho
+        del v3
     if 'pg' in globals():
-        del rho
+        del pg
     if 'B1c' in globals():
-        del rho
+        del B1c
     if 'B2c' in globals():
-        del rho
+        del B3c
     if 'B3c' in globals():
-        del rho
+        del B3c
     filename = fname
     t = GetTimeFromAthenaVTK(filename)
     reader = vtk.vtkStructuredPointsReader()
