@@ -648,7 +648,7 @@ def rdvtk(fname):
     if 'B1c' in globals():
         del B1c
     if 'B2c' in globals():
-        del B3c
+        del B2c
     if 'B3c' in globals():
         del B3c
     filename = fname
