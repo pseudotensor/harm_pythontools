@@ -5117,7 +5117,7 @@ def remap2unir(rinner=None,router=None,size=None,iin=None,iout=None,result0=None
 # compute integrated optical depth
 def compute_taurad():
         #
-        taurad1=(KAPPAUSER+KAPPAESUSER)*_dx1*np.sqrt(np.fabs(gv3[1,1]))
+        taurad1=uu[0]*(KAPPAUSER+KAPPAESUSER)*_dx1*np.sqrt(np.fabs(gv3[1,1]))
         # FREE PARAMETER:
         radiussettau1zero=80
         taurad1[r[:,0,0]>radiussettau1zero,:,:]=0 # to get rid of parts of flow that aren't in steady-state and wouldn't have contributed
@@ -5136,7 +5136,7 @@ def compute_taurad():
         print("taurad1flipintegrated") ; sys.stdout.flush()
         print(taurad1flipintegrated[:,0,0]) ; sys.stdout.flush()
         #
-        taurad2=(KAPPAUSER+KAPPAESUSER)*_dx2*np.sqrt(np.fabs(gv3[2,2]))
+        taurad2=uu[0]*(KAPPAUSER+KAPPAESUSER)*_dx2*np.sqrt(np.fabs(gv3[2,2]))
         taurad2integrated=np.cumsum(taurad2,axis=1)
 #        for kk in np.arange(0,nz):
 #                for ii in np.arange(0,nx):
@@ -5151,7 +5151,7 @@ def compute_taurad():
         for jj in np.arange(ny/2,ny):
             taurad2integrated[:,jj,:]=taurad2flipintegrated[:,jj,:]
         #
-        taurad3=(KAPPAUSER+KAPPAESUSER)*_dx3*np.sqrt(np.fabs(gv3[3,3]))
+        taurad3=uu[0]*(KAPPAUSER+KAPPAESUSER)*_dx3*np.sqrt(np.fabs(gv3[3,3]))
         #
         tauradintegrated=np.maximum(taurad1flipintegrated,taurad2integrated)
         return(taurad1integrated,taurad1flipintegrated,taurad2integrated,taurad2flipintegrated,tauradintegrated)
@@ -5176,7 +5176,8 @@ def Qmri():
 
 def plco(myvar,xcoord=None,ycoord=None,ax=None,**kwargs):
     plt.clf()
-    plc(myvar,xcoord,ycoord,ax,**kwargs)
+    ax=plc(myvar,xcoord,ycoord,ax,**kwargs)
+    return(ax)
 
 def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
     #
@@ -5202,6 +5203,7 @@ def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
         res = ax.contour(xcoord[:,:,0],ycoord[:,:,0],myvar[:,:,0],nc,**kwargs)
     if( cb == True): #use color bar
         plt.colorbar(res,ax=ax)
+    return(ax)
 
 def reinterp(vartointerp,extent,ncell,domask=1,isasymmetric=False,interporder='cubic'):
 #def reinterp(vartointerp,extent,ncell,domask=1,isasymmetric=False,interporder='linear'):
@@ -5413,7 +5415,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         #
         # below needed in case operating on averages instead of from rfd()
         #uu=uutrue
-        (rhoclean,ugclean,uufuck,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
+        (rhoclean,ugclean,uublob,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
         localmaxbsqorho=maxbsqorhonear
         #ud = mdot(gv3,uu)                  #g_mn u^n
         # no, assume any cleaning occurs upon rfd() and averages get that result
@@ -14704,7 +14706,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         mdot5vsr[:]=mdtot[tici,:] # no longer need md5 since mdtot has floor correction
         #print("mdtot")
         #print(mdtot)
-        #print("fuck: %d" % (tici) )
+        #print("blob: %d" % (tici) )
         #print(len(mdot5vsr))
         #print(mdot5vsr)
         istageqtemp1=ti[:,0,0][mdot5vsr<0]
@@ -27202,7 +27204,7 @@ def tutorial2():
     #
     #
     if 1==1:
-        (rhoclean,ugclean,uufuck,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
+        (rhoclean,ugclean,uublob,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
         cvel()
         Tcalcud(maxbsqorho=maxbsqorhonear,which=condmaxbsqorho)
         #
@@ -27335,6 +27337,170 @@ def tutorial3():
     #lrho=gdetB[1,:,:,0]
     #lrho=gdetB[2,:,:,1]
     #lrho=gdetB[3,:,:,1]
+
+
+def harmradplot1():
+    #
+    # 
+    import os
+    os.chdir("/data/jon/harmgit/koraltestcompare/run.radbeam2d.kscoords.1.30x60.gammaradmaxfix.0.9999")
+    #os.chdir("/data/jon/harmgit/koraltestcompare/run.radbeam2d.kscoords.1.30x60.gammaradmaxfix.0.99999")
+    #
+    # first load grid file
+    grid3d("gdump")
+    # now try loading a single fieldline file
+    rfd("fieldline0019.bin")
+    if 1==1:
+        (rhoclean,ugclean,uublob,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
+        cvel()
+        Tcalcud(maxbsqorho=maxbsqorhonear,which=condmaxbsqorho)
+    # now plot something you read-in
+    plt.figure(1)
+    plt.clf()
+    #toplot=np.log(rho)
+    toplot=-TudRAD[0,0]
+    #toplot=Erf
+    #plco(lrho,cb=True,nc=50)
+    bar=r*0+1
+    ax = plt.gca()
+    myx=r[:,0,:]*np.sin(h[:,0,:])*np.cos(ph[:,0,:])
+    myy=r[:,0,:]*np.sin(h[:,0,:])*np.sin(ph[:,0,:])
+    myz=bar[:,0,:]
+    ax.pcolor(myx,myy,myz)
+    # overlay
+    ax=plc(toplot[:,0,:],xcoord=myx,ycoord=myy,ax=ax,cb=True,nc=50)
+    ax.set_xlabel(r'$x$',fontsize=16,ha='left',labelpad=20)
+    ax.set_ylabel(r'$y$',fontsize=16,ha='left',labelpad=20)
+    plt.savefig("rtest41.eps")
+    from subprocess import call
+    #call(["scp","rtest41.eps jon@physics-179.umd.edu:/data/jon/harm_harmrad/"])
+    os.system("epstopdf rtest41.eps")
+    os.system("scp rtest41.eps rtest41.pdf jon@physics-179.umd.edu:/data/jon/harm_harmrad/")
+    print("time1=%g" % (t))
+
+    #aphi = fieldcalc() # keep sign information
+    #plc(aphi,colors='k')
+def harmradplot2():
+    #
+    # 
+    import os
+    os.chdir("/data/jon/harmgit/koraltestcompare/run.radbeam2d.kscoords.2.30x60.gammaradmaxfix.0.9999")
+    #
+    # first load grid file
+    grid3d("gdump")
+    # now try loading a single fieldline file
+    rfd("fieldline0009.bin")
+    if 1==1:
+        (rhoclean,ugclean,uublob,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
+        cvel()
+        Tcalcud(maxbsqorho=maxbsqorhonear,which=condmaxbsqorho)
+    # now plot something you read-in
+    plt.figure(1)
+    plt.clf()
+    #toplot=np.log(rho)
+    toplot=-TudRAD[0,0]
+    #toplot=Erf
+    #plco(lrho,cb=True,nc=50)
+    bar=r*0+1
+    ax = plt.gca()
+    myx=r[:,0,:]*np.sin(h[:,0,:])*np.cos(ph[:,0,:])
+    myy=r[:,0,:]*np.sin(h[:,0,:])*np.sin(ph[:,0,:])
+    myz=bar[:,0,:]
+    ax.pcolor(myx,myy,myz)
+    # overlay
+    ax=plc(toplot[:,0,:],xcoord=myx,ycoord=myy,ax=ax,cb=True,nc=50)
+    ax.set_xlabel(r'$x$',fontsize=16,ha='left',labelpad=20)
+    ax.set_ylabel(r'$y$',fontsize=16,ha='left',labelpad=20)
+    plt.savefig("rtest42.eps")
+    from subprocess import call
+    #call(["scp","rtest42.eps jon@physics-179.umd.edu:/data/jon/harm_harmrad/"])
+    os.system("epstopdf rtest42.eps")
+    os.system("scp rtest42.eps rtest42.pdf jon@physics-179.umd.edu:/data/jon/harm_harmrad/")
+    print("time2=%g" % (t))
+
+    #aphi = fieldcalc() # keep sign information
+    #plc(aphi,colors='k')
+def harmradplot3():
+    #
+    # 
+    import os
+    os.chdir("/data/jon/harmgit/koraltestcompare/run.radbeam2d.kscoords.3.30x60.gammaradmaxfix.0.9999")
+    #
+    # first load grid file
+    grid3d("gdump")
+    # now try loading a single fieldline file
+    rfd("fieldline0007.bin")
+    if 1==1:
+        (rhoclean,ugclean,uublob,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
+        cvel()
+        Tcalcud(maxbsqorho=maxbsqorhonear,which=condmaxbsqorho)
+    # now plot something you read-in
+    plt.figure(1)
+    plt.clf()
+    #toplot=np.log(rho)
+    toplot=-TudRAD[0,0]
+    #toplot=Erf
+    #plco(lrho,cb=True,nc=50)
+    bar=r*0+1
+    ax = plt.gca()
+    myx=r[:,0,:]*np.sin(h[:,0,:])*np.cos(ph[:,0,:])
+    myy=r[:,0,:]*np.sin(h[:,0,:])*np.sin(ph[:,0,:])
+    myz=bar[:,0,:]
+    ax.pcolor(myx,myy,myz)
+    # overlay
+    ax=plc(toplot[:,0,:],xcoord=myx,ycoord=myy,ax=ax,cb=True,nc=50)
+    ax.set_xlabel(r'$x$',fontsize=16,ha='left',labelpad=20)
+    ax.set_ylabel(r'$y$',fontsize=16,ha='left',labelpad=20)
+    plt.savefig("rtest43.eps")
+    from subprocess import call
+    #call(["scp","rtest43.eps jon@physics-179.umd.edu:/data/jon/harm_harmrad/"])
+    os.system("epstopdf rtest43.eps")
+    os.system("scp rtest43.eps rtest43.pdf jon@physics-179.umd.edu:/data/jon/harm_harmrad/")
+    print("time3=%g" % (t))
+
+    #aphi = fieldcalc() # keep sign information
+    #plc(aphi,colors='k')
+
+def harmradplot4():
+    #
+    # 
+    import os
+    os.chdir("/data/jon/harmgit/koraltestcompare/run.radbeam2d.kscoords.4.30x60.gammaradmaxfix.0.9999")
+    #
+    # first load grid file
+    grid3d("gdump")
+    # now try loading a single fieldline file
+    rfd("fieldline0006.bin")
+    if 1==1:
+        (rhoclean,ugclean,uublob,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
+        cvel()
+        Tcalcud(maxbsqorho=maxbsqorhonear,which=condmaxbsqorho)
+    # now plot something you read-in
+    plt.figure(1)
+    plt.clf()
+    #toplot=np.log(rho)
+    toplot=-TudRAD[0,0]
+    #toplot=Erf
+    #plco(lrho,cb=True,nc=50)
+    bar=r*0+1
+    ax = plt.gca()
+    myx=r[:,0,:]*np.sin(h[:,0,:])*np.cos(ph[:,0,:])
+    myy=r[:,0,:]*np.sin(h[:,0,:])*np.sin(ph[:,0,:])
+    myz=bar[:,0,:]
+    ax.pcolor(myx,myy,myz)
+    # overlay
+    ax=plc(toplot[:,0,:],xcoord=myx,ycoord=myy,ax=ax,cb=True,nc=50)
+    ax.set_xlabel(r'$x$',fontsize=16,ha='left',labelpad=20)
+    ax.set_ylabel(r'$y$',fontsize=16,ha='left',labelpad=20)
+    plt.savefig("rtest44.eps")
+    from subprocess import call
+    #call(["scp","rtest44.eps jon@physics-179.umd.edu:/data/jon/harm_harmrad/"])
+    os.system("epstopdf rtest44.eps")
+    os.system("scp rtest44.eps rtest44.pdf jon@physics-179.umd.edu:/data/jon/harm_harmrad/")
+    #aphi = fieldcalc() # keep sign information
+    #plc(aphi,colors='k')
+    print("time4=%g" % (t))
+
 
 
 if __name__ == "__main__":
