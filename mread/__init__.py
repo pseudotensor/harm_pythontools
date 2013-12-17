@@ -122,7 +122,7 @@ def radwavetest_movie(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",m
     #plt.plot(r[:,0,0],pradffortho[0][:,0,0],"r"); plt.plot(r[:,0,0],a_Erf[:],"b")
     #plot
 
-def plotradtestconv(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",fntsize=20,doreplot=1):
+def plotradtestconv(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",fntsize=20,doreplot=1,usepanels=1):
     #get sorted list of run directories for different resolutions
     #flist = np.sort(glob.glob( "%s*" % prefix ) )
     testnolist = [1, 10, 11, 101, 102, 1001, 1101, 1002, 1102]
@@ -135,28 +135,41 @@ def plotradtestconv(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",fnt
     ylim=(3e-11,1e-6)
     xlim=(4,1e3)
     i=10
-    if 0:
+    if usepanels:
         gs = GridSpec(2,2)
         gs.update(left=0.15, right=0.95, top=0.96, bottom=0.15, wspace=0.01, hspace=0.08)
+        #optically thin,gas-dominated
         ax00 = plt.subplot(gs[0,0])
-        # plt.setp( ax00.get_xticklabels(), visible=False )
+        plt.setp( ax00.get_xticklabels(), visible=False )
         plt.xlim(xlim);plt.ylim(ylim);plt.xscale("log");plt.yscale("log");
+        #optically thick,gas-dominated
         ax01 = plt.subplot(gs[0,1])
         plt.setp( ax01.get_xticklabels(), visible=False )
         plt.setp( ax01.get_yticklabels(), visible=False )
         plt.xlim(xlim);plt.ylim(ylim);plt.xscale("log");plt.yscale("log");
+        #optically thin,radiation-dominated
         ax10 = plt.subplot(gs[1,0])
         plt.xlim(xlim);plt.ylim(ylim);plt.xscale("log");plt.yscale("log");
+        #optically thick,radiation-dominated
         ax11 = plt.subplot(gs[1,1])
+        plt.setp( ax01.get_yticklabels(), visible=False )
         plt.xlim(xlim);plt.ylim(ylim);plt.xscale("log");plt.yscale("log");
     else:
-        #optically thin
-        plt.figure(1)
-        ax10 = ax00 = plt.gca()
+        #optically thin,gas-dominated
+        plt.figure(0)
+        ax00 = plt.gca()
         plt.xlim(xlim);plt.ylim(ylim);plt.xscale("log");plt.yscale("log");
-        #optically thick
+        #optically thick,gas-dominated
+        plt.figure(1)
+        ax01 = plt.gca()
+        plt.xlim(xlim);plt.ylim(ylim);plt.xscale("log");plt.yscale("log");
+        #optically thin,radiation-dominated
         plt.figure(2)
-        ax01 = ax11 = plt.gca()
+        ax10 = plt.gca()
+        plt.xlim(xlim);plt.ylim(ylim);plt.xscale("log");plt.yscale("log");
+        #optically thick,radiation-dominated
+        plt.figure(3)
+        ax11 = plt.gca()
         plt.xlim(xlim);plt.ylim(ylim);plt.xscale("log");plt.yscale("log");
     n00 = 0
     n01 = 0
@@ -191,7 +204,7 @@ def plotradtestconv(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",fnt
             ax = ax11
             n11 = n11 + 1
             n = n11
-        lab = wavetype2text[RADWAVE_WAVETYPE]
+        lab = wavetype2text[int(RADWAVE_WAVETYPE)]
         if lab == "sound": marker = "o"; ls = "-."; color = "g"; lw=2
         if lab == "slow": marker = "v"; ls = "--"; color = "r"; lw=2
         if lab == "fast": marker = "^"; ls = "-"; color = "b"; lw=2
@@ -202,7 +215,8 @@ def plotradtestconv(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",fnt
     x = 10**logx
     y1=scalefac*1e-9*(x/100.)**(-1)
     y2=scalefac*1e-7*(x/100.)**(-2)
-    plt.figure(1)
+
+    if not usepanels: plt.figure(0)
     ax00.set_xlabel(r"$N$",fontsize=fntsize)
     ax00.set_ylabel(r"$L_1\ {\rm error}$",fontsize=fntsize)
     ax00.plot(x,y1,"k:",lw=2)
@@ -214,8 +228,37 @@ def plotradtestconv(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",fnt
     for label in ax.get_xticklabels() + ax.get_yticklabels() + leg.get_texts():
         label.set_fontsize(fntsize)
     plt.grid(b=1)
-    plt.savefig("../radwave_thin.pdf",bbox_inches='tight',pad_inches=0.04)
-    plt.figure(2)
+    if not usepanels: plt.savefig("../radwave_thin.pdf",bbox_inches='tight',pad_inches=0.04)
+        
+    if not usepanels: plt.figure(1)
+    ax01.set_xlabel(r"$N$",fontsize=fntsize)
+    ax01.set_ylabel(r"$L_1\ {\rm error}$",fontsize=fntsize)
+    ax01.plot(x,y1,"k:",lw=2)
+    ax01.plot(x,y2,"k:",lw=2)
+    ax01.text(30,scalefac*2.2e-9,r"$\propto N^{-1}$",va="top",ha="right",fontsize=fntsize)
+    ax01.text(300,scalefac*2e-8,r"$\propto N^{-2}$",va="bottom",ha="left",fontsize=fntsize)
+    leg = ax01.legend(loc="upper right",numpoints=2,handlelength=3,handletextpad=0.4,fancybox=True)
+    ax = ax01
+    for label in ax.get_xticklabels() + ax.get_yticklabels() + leg.get_texts():
+        label.set_fontsize(fntsize)
+    plt.grid(b=1)
+    if not usepanels: plt.savefig("../radwave_thin.pdf",bbox_inches='tight',pad_inches=0.04)
+        
+    if not usepanels: plt.figure(2)
+    ax10.set_xlabel(r"$N$",fontsize=fntsize)
+    ax10.set_ylabel(r"$L_1\ {\rm error}$",fontsize=fntsize)
+    ax10.plot(x,y1,"k:",lw=2)
+    ax10.plot(x,y2,"k:",lw=2)
+    ax10.text(30,scalefac*2.2e-9,r"$\propto N^{-1}$",va="top",ha="right",fontsize=fntsize)
+    ax10.text(300,scalefac*2e-8,r"$\propto N^{-2}$",va="bottom",ha="left",fontsize=fntsize)
+    leg = ax10.legend(loc="upper right",numpoints=2,handlelength=3,handletextpad=0.4,fancybox=True)
+    ax = ax10
+    for label in ax.get_xticklabels() + ax.get_yticklabels() + leg.get_texts():
+        label.set_fontsize(fntsize)
+    plt.grid(b=1)
+    if not usepanels: plt.savefig("../radwave_thin.pdf",bbox_inches='tight',pad_inches=0.04)
+    
+    if not usepanels: plt.figure(3)
     ax11.plot(x,y1,"k:",lw=2)
     ax11.plot(x,y2,"k:",lw=2)
     ax11.text(30,scalefac*2.2e-9,r"$\propto N^{-1}$",va="top",ha="right",fontsize=fntsize)
@@ -227,7 +270,11 @@ def plotradtestconv(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",fnt
     for label in ax.get_xticklabels() + ax.get_yticklabels() + leg.get_texts():
         label.set_fontsize(fntsize)
     plt.grid(b=1)
-    plt.savefig("../radwave_thick.pdf",bbox_inches='tight',pad_inches=0.04)
+    if not usepanels: plt.savefig("../radwave_thick.pdf",bbox_inches='tight',pad_inches=0.04)
+
+    if usepanels:
+        plt.savefig("../radwaves.pdf",bbox_inches='tight',pad_inches=0.04)
+        
 
 def write_test_latex(testno=0,prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",nlist  = [8, 16, 32, 64, 128, 256, 512],i=10):
     fp = open( "%s.txt" % whichsims, "wt" )
@@ -242,7 +289,7 @@ def write_test_latex(testno=0,prefix="radwave",cwd = "/home/atchekho/code/harm/t
                         )
     fp.close()
 
-def compute_test_error(testno=0,prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",nlist  = [8, 16, 32, 64, 128, 256, 512],i=10):
+def compute_test_error(testno=0,prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",nlist  = [8, 16, 32, 64, 128, 256, 512],i=10,ext=".bin"):
     #reset error list
     print( "Test #%d:" % testno )
     errlist = []
