@@ -125,22 +125,14 @@ def radwavetest_movie(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",m
 def plotradtestconv(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",fntsize=20,doreplot=1):
     #get sorted list of run directories for different resolutions
     #flist = np.sort(glob.glob( "%s*" % prefix ) )
-    testnolist = [1, 10, 11, 104, 105, 1001, 1101, 1002, 1102]
-    labellist = ["sound", 
-                 "fast",
-                 "slow",
-                 "sound",
-                 "sound",
-                 "fast",
-                 "slow",
-                 "fast",
-                 "slow"]
+    testnolist = [1, 10, 11, 101, 102, 1001, 1101, 1002, 1102]
     nlist  = [8, 16, 32, 64, 128, 256, 512]
+    wavetype2text = ["sound", "slow", "fast"]
     #nlist  = [64]
     #cwd = os.getcwd()
     plt.figure(1,figsize=(8,6))
     #last dump # = 10
-    ylim=(1e-10,1e-6)
+    ylim=(3e-11,1e-6)
     xlim=(4,1e3)
     i=10
     if 0:
@@ -178,6 +170,7 @@ def plotradtestconv(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",fnt
     for index,testno in enumerate(testnolist):
         if not doreplot: break
         nlist1,errlist=compute_test_error(testno=testno,prefix=prefix,cwd=cwd,nlist=nlist,i=i)
+        write_test_latex(testno=testno,prefix=prefix,cwd=cwd,nlist=nlist,i=i)
         #skip nonradiative tests
         if RADWAVE_KAPPA <= 0: continue 
         #classify radiative tests according to their radiation dominance (RADWAVE_PP)
@@ -198,23 +191,24 @@ def plotradtestconv(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",fnt
             ax = ax11
             n11 = n11 + 1
             n = n11
-        lab = labellist[index]
+        lab = wavetype2text[RADWAVE_WAVETYPE]
         if lab == "sound": marker = "o"; ls = "-."; color = "g"; lw=2
         if lab == "slow": marker = "v"; ls = "--"; color = "r"; lw=2
         if lab == "fast": marker = "^"; ls = "-"; color = "b"; lw=2
         ax.plot(nlist,errlist,marker,ls=ls,color=color,lw=lw,label=r"${\rm %s}$"%lab,ms=ms)
         # plt.title(r"${\rm Test\ %d}$" % testno)
+    scalefac = 0.2
     logx=np.arange(0,4,.1)
     x = 10**logx
-    y1=1e-9*(x/100.)**(-1)
-    y2=1e-7*(x/100.)**(-2)
+    y1=scalefac*1e-9*(x/100.)**(-1)
+    y2=scalefac*1e-7*(x/100.)**(-2)
     plt.figure(1)
     ax00.set_xlabel(r"$N$",fontsize=fntsize)
     ax00.set_ylabel(r"$L_1\ {\rm error}$",fontsize=fntsize)
     ax00.plot(x,y1,"k:",lw=2)
     ax00.plot(x,y2,"k:",lw=2)
-    ax00.text(30,2.2e-9,r"$\propto N^{-1}$",va="top",ha="right",fontsize=fntsize)
-    ax00.text(300,2e-8,r"$\propto N^{-2}$",va="bottom",ha="left",fontsize=fntsize)
+    ax00.text(30,scalefac*2.2e-9,r"$\propto N^{-1}$",va="top",ha="right",fontsize=fntsize)
+    ax00.text(300,scalefac*2e-8,r"$\propto N^{-2}$",va="bottom",ha="left",fontsize=fntsize)
     leg = ax00.legend(loc="upper right",numpoints=2,handlelength=3,handletextpad=0.4,fancybox=True)
     ax = ax00
     for label in ax.get_xticklabels() + ax.get_yticklabels() + leg.get_texts():
@@ -224,8 +218,8 @@ def plotradtestconv(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",fnt
     plt.figure(2)
     ax11.plot(x,y1,"k:",lw=2)
     ax11.plot(x,y2,"k:",lw=2)
-    ax11.text(30,2.2e-9,r"$\propto N^{-1}$",va="top",ha="right",fontsize=fntsize)
-    ax11.text(300,2e-8,r"$\propto N^{-2}$",va="bottom",ha="left",fontsize=fntsize)
+    ax11.text(30,scalefac*2.2e-9,r"$\propto N^{-1}$",va="top",ha="right",fontsize=fntsize)
+    ax11.text(300,scalefac*2e-8,r"$\propto N^{-2}$",va="bottom",ha="left",fontsize=fntsize)
     ax11.set_xlabel(r"$N$",fontsize=fntsize)
     ax11.set_ylabel(r"$L_1\ {\rm error}$",fontsize=fntsize)
     leg = ax11.legend(loc="upper right",numpoints=2,handlelength=3,handletextpad=0.4,fancybox=True)
@@ -234,6 +228,19 @@ def plotradtestconv(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",fnt
         label.set_fontsize(fntsize)
     plt.grid(b=1)
     plt.savefig("../radwave_thick.pdf",bbox_inches='tight',pad_inches=0.04)
+
+def write_test_latex(testno=0,prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",nlist  = [8, 16, 32, 64, 128, 256, 512],i=10):
+    fp = open( "%s.txt" % whichsims, "wt" )
+    fp.write( "#%9s %10s %10s %10s %10s %10s %4s %4s %4s #%s\n" %
+              ("Omega", "Alpha", "k1", "dk1", "k2", "dk2", "nx", "ny", "nz", "#simname"))
+    fp.write( "%8s & $%d$ & $%d\\times%d\\times%d$ & $%3.2g$ & $%3.3g$ & $%3.2g$  \\\\ %% %s\n" 
+                             % ( simname, int(alpha_list[i]*180./np.pi+0.5), 
+                                 dims_list[i][0], dims_list[i][1], dims_list[i][2], 
+                                 tf_list[i]/(2*np.pi*rlc_list[i]),
+                                 edot_list[i], reldiss_list[i], 
+                                 flist[i] )
+                        )
+    fp.close()
 
 def compute_test_error(testno=0,prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",nlist  = [8, 16, 32, 64, 128, 256, 512],i=10):
     #reset error list
@@ -274,7 +281,7 @@ def wavesolution(time=None,x=None):
     global RADWAVE_DUIM, RADWAVE_DB2RE, RADWAVE_DB2IM
     global RADWAVE_DERE, RADWAVE_DEIM, RADWAVE_DFRE
     global RADWAVE_DFIM, RADWAVE_DF2RE, RADWAVE_DF2IM
-    global RADWAVE_OMRE, RADWAVE_OMIM, RADWAVE_DTOUT1
+    global RADWAVE_OMRE, RADWAVE_OMIM, RADWAVE_DTOUT1, RADWAVE_WAVETYPE
     gd =     np.loadtxt( "radtestparams.dat",
                 dtype=np.float64, 
                 skiprows=1, 
@@ -287,7 +294,7 @@ def wavesolution(time=None,x=None):
      RADWAVE_DUIM, RADWAVE_DB2RE, RADWAVE_DB2IM,
      RADWAVE_DERE, RADWAVE_DEIM, RADWAVE_DFRE,
      RADWAVE_DFIM, RADWAVE_DF2RE, RADWAVE_DF2IM,
-     RADWAVE_OMRE, RADWAVE_OMIM, RADWAVE_DTOUT1) = (gd)
+     RADWAVE_OMRE, RADWAVE_OMIM, RADWAVE_DTOUT1, RADWAVE_WAVETYPE) = (gd)
 
     if time is None:
         #if not set, set it to one period
@@ -304,7 +311,7 @@ def wavesolution(time=None,x=None):
     a_Erf=RADWAVE_ERAD+np.exp(-RADWAVE_OMIM*time)*(RADWAVE_DERE*np.cos(RADWAVE_OMRE*time-RADWAVE_KK*x)-RADWAVE_DEIM*np.sin(RADWAVE_OMRE*time-RADWAVE_KK*x));
     a_Fx=0. + np.exp(-RADWAVE_OMIM*time)*(RADWAVE_DFRE*np.cos(RADWAVE_OMRE*time-RADWAVE_KK*x)-RADWAVE_DFIM*np.sin(RADWAVE_OMRE*time-RADWAVE_KK*x));
     a_Fy=0. + np.exp(-RADWAVE_OMIM*time)*(RADWAVE_DF2RE*np.cos(RADWAVE_OMRE*time-RADWAVE_KK*x)-RADWAVE_DF2IM*np.sin(RADWAVE_OMRE*time-RADWAVE_KK*x));
-        
+    return gd
 
 def plotstreamprofile():
     plt.clf()
