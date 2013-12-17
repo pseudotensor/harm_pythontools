@@ -10,11 +10,11 @@ from pychip import pchip_init, pchip_eval
 #rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 ## for Palatino and other serif fonts use:
 ## rc('font',**{'family':'serif','serif':['Palatino']})
-#rc('mathtext',fontset='cm')
-#rc('mathtext',rm='stix')
-#rc('text', usetex=True)
-##add amsmath to the preamble
-#matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"] 
+rc('mathtext',fontset='cm')
+rc('mathtext',rm='stix')
+rc('text', usetex=True)
+#add amsmath to the preamble
+matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"] 
 
 #from pylab import figure, axes, plot, xlabel, ylabel, title, grid, savefig, show
 
@@ -48,6 +48,140 @@ import visit_writer
 
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
+
+def plotradtestconv(prefix="radwaveentropy104",cwd = "/Users/atchekho/Research/code/harmjon/",maxdumps=1800):
+    #get sorted list of run directories for different resolutions
+    #flist = np.sort(glob.glob( "%s*" % prefix ) )
+    #nlist  = [32, 64, 128, 256, 512]
+    nlist  = [64]
+    errlist = []
+    #cwd = os.getcwd()
+    plt.figure(1,figsize=(12,9))
+    for n in nlist:
+        for i in xrange(0,maxdumps,100):
+            #path = os.path.join(cwd, "%s_%d" % (prefix,n))
+            path = os.path.join(cwd, "%s" % (prefix))
+            os.chdir(path)
+            grid3d("gdump")
+            rd("dump%04d" % i)
+            rdr("raddump%04d" % i)
+            wavesolution(time=t,x=r[:,0,0])
+            rhoerr = np.mean(np.abs(rho[:,0,0]-a_rho))/RADWAVE_DRRE;
+            ugerr = np.mean(np.abs(ug[:,0,0]-a_ug))/(RADWAVE_DURE**2+RADWAVE_DUIM**2)**0.5;
+            vxerr = np.mean(np.abs((uu[1]/uu[0]*dxdxp[1,1])[:,0,0]-a_vx))/(RADWAVE_DVRE**2+RADWAVE_DVIM**2)**0.5;
+            vyerr = np.mean(np.abs((uu[2]/uu[0]*dxdxp[2,2])[:,0,0]-a_vy))/(RADWAVE_DV2RE**2+RADWAVE_DV2IM**2)**0.5;
+            if RADWAVE_B0 != 0:
+                Bxerr = np.mean(np.abs((B[1]*dxdxp[1,1])[:,0,0]-a_Bx))/RADWAVE_B0
+                Byerr = np.mean(np.abs((B[2]*dxdxp[2,2])[:,0,0]-a_By))/(RADWAVE_DB2RE**2+RADWAVE_DB2IM**2)**0.5
+            else:
+                Bxerr = 0
+                Byerr = 0
+            Eraderr = np.mean(np.abs(pradffortho[0][:,0,0]-a_Erf))/(RADWAVE_DERE**2+RADWAVE_DERE**2)**0.5;
+            Fxerr = np.mean(np.abs((pradffortho[1]*dxdxp[1,1])[:,0,0]-a_Fx))/(RADWAVE_DFRE**2+RADWAVE_DFIM**2)**0.5;
+            Fyerr = np.mean(np.abs((pradffortho[2]*dxdxp[2,2])[:,0,0]-a_Fy))/(RADWAVE_DF2RE**2+RADWAVE_DF2IM**2)**0.5;
+            print rhoerr, ugerr, vxerr, vyerr, Bxerr, Byerr, Eraderr, Fxerr, Fyerr
+            #print errlist
+            P = 2*np.pi/RADWAVE_OMRE
+            gs3 = GridSpec(3,3)
+            gs3.update(left=0.1, right=0.99, top=0.97, bottom=0.05, wspace=0.2, hspace=0.1)
+            ax = plt.subplot(gs3[0,0])
+            plt.plot(r[:,0,0],rho[:,0,0],"or"); 
+            plt.plot(r[:,0,0],a_rho,"b")
+            if i == 0:
+                ylims = ax.get_ylim()
+            else:
+                ax.set_ylim(ylims)
+            plt.text(0.9*r.max(),0.9*ax.get_ylim()[1]+0.1*ax.get_ylim()[0],r"$t/P = %g$" % (t/P),ha="right",va="top")
+            plt.setp( ax.get_xticklabels(), visible=False )
+            ax.set_ylabel(r"$\rho$")
+            ax = plt.subplot(gs3[0,1])
+            plt.plot(r[:,0,0],ug[:,0,0],"or"); 
+            plt.plot(r[:,0,0],a_ug,"b")
+            plt.setp( ax.get_xticklabels(), visible=False )
+            ax.set_ylabel(r"$u_g$")
+            ax = plt.subplot(gs3[0,2])
+            plt.plot(r[:,0,0],(uu[1]/uu[0]*dxdxp[1,1])[:,0,0],"or"); 
+            plt.plot(r[:,0,0],a_vx,"b")
+            plt.setp( ax.get_xticklabels(), visible=False )
+            ax.set_ylabel(r"$v_x$")
+            ax = plt.subplot(gs3[1,0])
+            plt.plot(r[:,0,0],(uu[2]/uu[0]*dxdxp[2,2])[:,0,0],"or"); 
+            plt.plot(r[:,0,0],a_vy,"b")
+            plt.setp( ax.get_xticklabels(), visible=False )
+            ax.set_ylabel(r"$v_y$")
+            ax = plt.subplot(gs3[1,1])
+            plt.plot(r[:,0,0],(B[1]*dxdxp[1,1])[:,0,0],"or"); 
+            plt.plot(r[:,0,0],a_Bx,"b")
+            plt.setp( ax.get_xticklabels(), visible=False )
+            ax.set_ylabel(r"$B_x$")
+            ax = plt.subplot(gs3[1,2])
+            plt.plot(r[:,0,0],(B[2]*dxdxp[2,2])[:,0,0],"or"); 
+            plt.plot(r[:,0,0],a_By,"b")
+            plt.setp( ax.get_xticklabels(), visible=False )
+            ax.set_ylabel(r"$B_y$")
+            ax = plt.subplot(gs3[2,0])
+            plt.plot(r[:,0,0],pradffortho[0][:,0,0],"or"); 
+            plt.plot(r[:,0,0],a_Erf,"b")
+            ax.set_ylabel(r"$\hat E_{r}$")
+            ax.set_xlabel(r"$x$")
+            ax = plt.subplot(gs3[2,1])
+            plt.plot(r[:,0,0],(pradffortho[1]*dxdxp[1,1])[:,0,0],"or"); 
+            plt.plot(r[:,0,0],a_Fx,"b")
+            ax.set_ylabel(r"$\hat F_{x}$")
+            ax.set_xlabel(r"$x$")
+            ax = plt.subplot(gs3[2,2])
+            plt.plot(r[:,0,0],(pradffortho[2]*dxdxp[2,2])[:,0,0],"or"); 
+            plt.plot(r[:,0,0],a_Fy,"b")
+            ax.set_ylabel(r"$\hat F_{y}$")
+            ax.set_xlabel(r"$x$")
+            plt.draw()
+            plt.savefig("frame%04d.png" % i,dpi=100)
+    #plt.plot(r[:,0,0],rho[:,0,0],"r"); plt.plot(r[:,0,0],a_rho,"b")
+    #plt.plot(r[:,0,0],pradffortho[0][:,0,0],"r"); plt.plot(r[:,0,0],a_Erf[:],"b")
+    #plot
+
+        
+def wavesolution(time=None,x=None):
+    global a_rho, a_ug, a_vx, a_vy, a_Bx, a_By, a_Erf, a_Fx, a_Fy
+    global RADWAVE_RHOZERO, RADWAVE_KK, RADWAVE_UINT, RADWAVE_ERAD, RADWAVE_DRRE
+    global RADWAVE_RHOFAC, RADWAVE_B0, RADWAVE_PP
+    global RADWAVE_CC, RADWAVE_KAPPA, RADWAVE_DRRE
+    global RADWAVE_DRIM, RADWAVE_DVRE, RADWAVE_DVIM
+    global RADWAVE_DV2RE, RADWAVE_DV2IM, RADWAVE_DURE
+    global RADWAVE_DUIM, RADWAVE_DB2RE, RADWAVE_DB2IM
+    global RADWAVE_DERE, RADWAVE_DEIM, RADWAVE_DFRE
+    global RADWAVE_DFIM, RADWAVE_DF2RE, RADWAVE_DF2IM
+    global RADWAVE_OMRE, RADWAVE_OMIM, RADWAVE_DTOUT1
+    gd =     np.loadtxt( "radtestparams.dat",
+                dtype=np.float64, 
+                skiprows=1, 
+                unpack = True)
+    (RADWAVE_RHOZERO, RADWAVE_KK, RADWAVE_UINT, RADWAVE_ERAD, RADWAVE_DRRE,
+     RADWAVE_RHOFAC, RADWAVE_B0, RADWAVE_PP,
+     RADWAVE_CC, RADWAVE_KAPPA, RADWAVE_DRRE,
+     RADWAVE_DRIM, RADWAVE_DVRE, RADWAVE_DVIM,
+     RADWAVE_DV2RE, RADWAVE_DV2IM, RADWAVE_DURE,
+     RADWAVE_DUIM, RADWAVE_DB2RE, RADWAVE_DB2IM,
+     RADWAVE_DERE, RADWAVE_DEIM, RADWAVE_DFRE,
+     RADWAVE_DFIM, RADWAVE_DF2RE, RADWAVE_DF2IM,
+     RADWAVE_OMRE, RADWAVE_OMIM, RADWAVE_DTOUT1) = (gd)
+
+    if time is None:
+        #if not set, set it to one period
+        time = 2*np.pi/RADWAVE_OMRE
+    if x is None:
+        x = np.linspace(0,1,100)
+    #compute the analytic solution at time t
+    a_rho=RADWAVE_RHOZERO*(1+RADWAVE_DRRE*np.exp(-RADWAVE_OMIM*time)*(np.cos(RADWAVE_OMRE*time-RADWAVE_KK*x)-RADWAVE_DRIM/RADWAVE_DRRE*np.sin(RADWAVE_OMRE*time-RADWAVE_KK*x)));
+    a_ug=RADWAVE_UINT+RADWAVE_DURE*np.exp(-RADWAVE_OMIM*time)*(np.cos(RADWAVE_OMRE*time-RADWAVE_KK*x)-RADWAVE_DUIM/RADWAVE_DURE*np.sin(RADWAVE_OMRE*time-RADWAVE_KK*x)) ;
+    a_vx=0. + np.exp(-RADWAVE_OMIM*time)*(RADWAVE_DVRE*np.cos(RADWAVE_OMRE*time-RADWAVE_KK*x)-RADWAVE_DVIM*np.sin(RADWAVE_OMRE*time-RADWAVE_KK*x)) ;
+    a_vy=0. + np.exp(-RADWAVE_OMIM*time)*(RADWAVE_DV2RE*np.cos(RADWAVE_OMRE*time-RADWAVE_KK*x)-RADWAVE_DV2IM*np.sin(RADWAVE_OMRE*time-RADWAVE_KK*x)) ;
+    a_Bx=RADWAVE_B0+x*0;
+    a_By=RADWAVE_B0 + np.exp(-RADWAVE_OMIM*time)*(RADWAVE_DB2RE*np.cos(RADWAVE_OMRE*time-RADWAVE_KK*x)-RADWAVE_DB2IM*np.sin(RADWAVE_OMRE*time-RADWAVE_KK*x)) ;
+    a_Erf=RADWAVE_ERAD+np.exp(-RADWAVE_OMIM*time)*(RADWAVE_DERE*np.cos(RADWAVE_OMRE*time-RADWAVE_KK*x)-RADWAVE_DEIM*np.sin(RADWAVE_OMRE*time-RADWAVE_KK*x));
+    a_Fx=0. + np.exp(-RADWAVE_OMIM*time)*(RADWAVE_DFRE*np.cos(RADWAVE_OMRE*time-RADWAVE_KK*x)-RADWAVE_DFIM*np.sin(RADWAVE_OMRE*time-RADWAVE_KK*x));
+    a_Fy=0. + np.exp(-RADWAVE_OMIM*time)*(RADWAVE_DF2RE*np.cos(RADWAVE_OMRE*time-RADWAVE_KK*x)-RADWAVE_DF2IM*np.sin(RADWAVE_OMRE*time-RADWAVE_KK*x));
+        
 
 def plotstreamprofile():
     plt.clf()
@@ -6177,7 +6311,7 @@ def rd2d(dump):
 def rd(dump,oldfmt=False,doreturnarray=False):
     global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,ti,tj,tk,x1,x2,x3,r,h,ph,rho,ug,vu,B,pg,cs2,Sden,U,gdetB,divb,uu,ud,bu,bd
     global v1m,v1p,v2m,v2p,v3m,v3p,bsq,olddumpfmt
-    global Erf,ErfF1,ErfF2,ErfF3
+    global ErfF0,ErfF1,ErfF2,ErfF3
     #read image
     olddumpfmt = oldfmt
     fin = open( "dumps/" + dump, "rb" )
@@ -6218,7 +6352,7 @@ def rd(dump,oldfmt=False,doreturnarray=False):
         #if radiation primitives are there
         #PRAD0 = 8, PRAD1 = 9, PRAD2 = 10, PRAD3 = 11
         if NPRDUMP >= 12:
-            Erf,ErfF1,ErfF2,ErfF3 = gd[n+8:n+12] 
+            ErfF0,ErfF1,ErfF2,ErfF3 = gd[n+8:n+12] #Rtt, Rtx, Rty, Rtz -- conserved quantities
         n+=NPRDUMP  #skip to the end of NPRDUMP list
         pg,cs2,Sden = gd[n:n+3];n+=3
         U = gd[n:n+NPR];n+=NPR
