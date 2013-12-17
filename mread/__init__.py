@@ -182,8 +182,8 @@ def plotradtestconv(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",fnt
     ms = 10
     for index,testno in enumerate(testnolist):
         if not doreplot: break
-        nlist1,errlist=compute_test_error(testno=testno,prefix=prefix,cwd=cwd,nlist=nlist,i=i)
-        write_test_latex(testno=testno,prefix=prefix,cwd=cwd,nlist=nlist,i=i)
+        nlist1,errlist=compute_test_error(testno=testno,prefix=prefix,cwd=cwd,nlist=nlist,i=i,ext=ext)
+        #write_test_latex(testno=testno,prefix=prefix,cwd=cwd,nlist=nlist,i=i)
         #skip nonradiative tests
         if RADWAVE_KAPPA <= 0: continue 
         #classify radiative tests according to their radiation dominance (RADWAVE_PP)
