@@ -49,10 +49,7 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
-def plotradtestconv(prefix="radwaveentropy104",cwd = "/Users/atchekho/Research/code/harmjon/",maxdumps=1800):
-    #get sorted list of run directories for different resolutions
-    #flist = np.sort(glob.glob( "%s*" % prefix ) )
-    #nlist  = [32, 64, 128, 256, 512]
+def radwavetest_movie(prefix="radwave",cwd = "/home/atchekho/code/harm/",maxdumps=1800):
     nlist  = [64]
     errlist = []
     #cwd = os.getcwd()
@@ -66,21 +63,6 @@ def plotradtestconv(prefix="radwaveentropy104",cwd = "/Users/atchekho/Research/c
             rd("dump%04d" % i)
             rdr("raddump%04d" % i)
             wavesolution(time=t,x=r[:,0,0])
-            rhoerr = np.mean(np.abs(rho[:,0,0]-a_rho))/RADWAVE_DRRE;
-            ugerr = np.mean(np.abs(ug[:,0,0]-a_ug))/(RADWAVE_DURE**2+RADWAVE_DUIM**2)**0.5;
-            vxerr = np.mean(np.abs((uu[1]/uu[0]*dxdxp[1,1])[:,0,0]-a_vx))/(RADWAVE_DVRE**2+RADWAVE_DVIM**2)**0.5;
-            vyerr = np.mean(np.abs((uu[2]/uu[0]*dxdxp[2,2])[:,0,0]-a_vy))/(RADWAVE_DV2RE**2+RADWAVE_DV2IM**2)**0.5;
-            if RADWAVE_B0 != 0:
-                Bxerr = np.mean(np.abs((B[1]*dxdxp[1,1])[:,0,0]-a_Bx))/RADWAVE_B0
-                Byerr = np.mean(np.abs((B[2]*dxdxp[2,2])[:,0,0]-a_By))/(RADWAVE_DB2RE**2+RADWAVE_DB2IM**2)**0.5
-            else:
-                Bxerr = 0
-                Byerr = 0
-            Eraderr = np.mean(np.abs(pradffortho[0][:,0,0]-a_Erf))/(RADWAVE_DERE**2+RADWAVE_DERE**2)**0.5;
-            Fxerr = np.mean(np.abs((pradffortho[1]*dxdxp[1,1])[:,0,0]-a_Fx))/(RADWAVE_DFRE**2+RADWAVE_DFIM**2)**0.5;
-            Fyerr = np.mean(np.abs((pradffortho[2]*dxdxp[2,2])[:,0,0]-a_Fy))/(RADWAVE_DF2RE**2+RADWAVE_DF2IM**2)**0.5;
-            print rhoerr, ugerr, vxerr, vyerr, Bxerr, Byerr, Eraderr, Fxerr, Fyerr
-            #print errlist
             P = 2*np.pi/RADWAVE_OMRE
             gs3 = GridSpec(3,3)
             gs3.update(left=0.1, right=0.99, top=0.97, bottom=0.05, wspace=0.2, hspace=0.1)
@@ -140,6 +122,51 @@ def plotradtestconv(prefix="radwaveentropy104",cwd = "/Users/atchekho/Research/c
     #plt.plot(r[:,0,0],pradffortho[0][:,0,0],"r"); plt.plot(r[:,0,0],a_Erf[:],"b")
     #plot
 
+def plotradtestconv(prefix="radwave",cwd = "/home/atchekho/code/harm/",maxdumps=1800):
+    #get sorted list of run directories for different resolutions
+    #flist = np.sort(glob.glob( "%s*" % prefix ) )
+    testnolist = [1, 10, 11, 104, 105, 1001, 1101, 1002, 1102]
+    nlist  = [8, 16, 32, 64, 128, 256, 512]
+    #nlist  = [64]
+    #cwd = os.getcwd()
+    plt.figure(1,figsize=(8,6))
+    #last dump # = 10
+    i = 10 
+    for testno in testnolist:
+        #reset error list
+        print( "Test #%d:" % testno )
+        errlist = []
+        for n in nlist:
+            print( "Test #%d:" % testno )
+            path = os.path.join(cwd, "%s%d_%d" % (prefix,n))
+            os.chdir(path)
+            grid3d("gdump")
+            rd("dump%04d" % i)
+            rdr("raddump%04d" % i)
+            wavesolution(time=t,x=r[:,0,0])
+            rhoerr = np.mean(np.abs(rho[:,0,0]-a_rho)); #/RADWAVE_DRRE;
+            errlist.append(rhoerr)
+            ugerr = np.mean(np.abs(ug[:,0,0]-a_ug))/(RADWAVE_DURE**2+RADWAVE_DUIM**2)**0.5;
+            vxerr = np.mean(np.abs((uu[1]/uu[0]*dxdxp[1,1])[:,0,0]-a_vx))/(RADWAVE_DVRE**2+RADWAVE_DVIM**2)**0.5;
+            vyerr = np.mean(np.abs((uu[2]/uu[0]*dxdxp[2,2])[:,0,0]-a_vy))/(RADWAVE_DV2RE**2+RADWAVE_DV2IM**2)**0.5;
+            if RADWAVE_B0 != 0:
+                Bxerr = np.mean(np.abs((B[1]*dxdxp[1,1])[:,0,0]-a_Bx))/RADWAVE_B0
+                Byerr = np.mean(np.abs((B[2]*dxdxp[2,2])[:,0,0]-a_By))/(RADWAVE_DB2RE**2+RADWAVE_DB2IM**2)**0.5
+            else:
+                Bxerr = 0
+                Byerr = 0
+            Eraderr = np.mean(np.abs(pradffortho[0][:,0,0]-a_Erf))/(RADWAVE_DERE**2+RADWAVE_DERE**2)**0.5;
+            Fxerr = np.mean(np.abs((pradffortho[1]*dxdxp[1,1])[:,0,0]-a_Fx))/(RADWAVE_DFRE**2+RADWAVE_DFIM**2)**0.5;
+            Fyerr = np.mean(np.abs((pradffortho[2]*dxdxp[2,2])[:,0,0]-a_Fy))/(RADWAVE_DF2RE**2+RADWAVE_DF2IM**2)**0.5;
+            print rhoerr, ugerr, vxerr, vyerr, Bxerr, Byerr, Eraderr, Fxerr, Fyerr
+        plt.clf()
+        plt.plot(nlist,errlist)
+        plt.title("Test #%d" % testno)
+        plt.xscale("log")
+        plt.yscale("log")
+        plt.xlabel(r"$N$")
+        plt.ylabel(r"$L_1\ {\rm error}$")
+        plt.savefig("../radwaveconv_%d.pdf" % testno)
         
 def wavesolution(time=None,x=None):
     global a_rho, a_ug, a_vx, a_vy, a_Bx, a_By, a_Erf, a_Fx, a_Fy
