@@ -894,7 +894,10 @@ fi
 if [ $collect -eq 1 ] &&
     [ $system -eq 5 ]
 then
+# below only appears updated if also do powervsm stuff.
     pythonlatexfile="python_u_3_0_1.stdout.out"
+# below won't have updated Q's
+#    pythonlatexfile="python_u_3_0_0.stdout.out"
 else
     pythonlatexfile="python.plot.out"
 fi

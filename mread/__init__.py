@@ -5794,8 +5794,8 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         #cset2 = ax.contour(iaphi,linewidths=2.0,colors='r', extent=extent,hold='on',origin='lower',levels=levs)
         # can't see red on red density
         if inputcoloraphi==None:
-            inputcoloraphi='red'
-            #inputcoloraphi='black'
+            #inputcoloraphi='red'
+            inputcoloraphi='black'
         #
         #lweightaphi=4.0
         lweightaphi=1.0
@@ -16480,6 +16480,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     letajPAKE = prefactor*ljpake_mu1[:,iofr(rjetout)]/mdotfinavg
     letajEN = prefactor*ljen_mu1[:,iofr(rjetout)]/mdotfinavg
     letaj = letajEM + letajMAKE
+    letaoutRAD=prefactor*ldradthin[:,iofr(rjetin)]/mdotfinavg # thin
     #letajlocal = letaj*(mdotfinavg/mdotinrdiskoutfinavg)
     letamwinEM = prefactor*ljem_mumax1m[:,iofr(rjetin)]/mdotfinavg
     letamwinMAKE = prefactor*ljmake_mumax1m[:,iofr(rjetin)]/mdotfinavg
@@ -16669,6 +16670,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         pemtot_avg = timeavg(pjemtot[:,ihoruse]*pjtotfix,ts,fti,ftf)
         #
         letabhRAD_avg=timeavg(letabhRAD,ts,fti,ftf)
+        letaoutRAD_avg=timeavg(letaoutRAD,ts,fti,ftf)
         #
         letabh_avg = timeavg(letabh,ts,fti,ftf)
         letabhEM_avg = timeavg(letabhEM,ts,fti,ftf)
@@ -16797,6 +16799,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     lbhMAKE_avg=letabhMAKE_avg/prefactor
     lbhPAKE_avg=letabhPAKE_avg/prefactor
     lbhEN_avg=letabhEN_avg/prefactor
+    lbhRAD_avg=letabhRAD_avg/prefactor
     ljmwout_avg=(letaj_avg + letamwout_avg)/prefactor
     #ljmwoutlocal_avg=(letaj_avg + letamwoutlocal_avg)/prefactor
     ljwout_avg=(letaj_avg + letawout_avg)/prefactor
@@ -16807,6 +16810,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     ljMAKE_avg=letajMAKE_avg/prefactor
     ljPAKE_avg=letajPAKE_avg/prefactor
     ljEN_avg=letajEN_avg/prefactor
+    loutRAD_avg=letaoutRAD_avg/prefactor
     lmwin_avg=letamwin_avg/prefactor
     #lmwinlocal_avg=letamwinlocal_avg/prefactor
     lmwinEM_avg=letamwinEM_avg/prefactor
@@ -16843,6 +16847,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     sbhPA_avg  = (-lbhPAKE_avg) - 2.0*a*(1.0-etabhPAKE_avg/prefactor)
     sbhEN_avg  = (-lbhEN_avg) - 2.0*a*(unitys-etabhEN_avg/prefactor)
     sj_avg   = (-lj_avg)  - 2.0*a*(1.0-etaj_avg/prefactor)
+    soutRAD_avg   = (-loutRAD_avg)  - 2.0*a*(unitys-etaoutRAD_avg/prefactor)
     #sjlocal_avg   = (-ljlocal_avg)  - 2.0*a*(1.0-etajlocal_avg/prefactor)
     sjEM_avg   = (-ljEM_avg)  - 2.0*a*(unitys-etajEM_avg/prefactor)
     sjMAKE_avg   = (-ljMAKE_avg)  - 2.0*a*(unitys-etajMAKE_avg/prefactor)
@@ -17043,7 +17048,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         truemodelname="{\\bf A0.99N100}"
     elif modelname=="rad1":
         fieldtype="Poloidal"
-        truemodelname="{\\bf A0.94BfN40L20}"
+        truemodelname="{\\bf A0.94BpN100L20}"
     ##########################################
     # tilted models
     elif modelname=="thickdiskfull3d7tilt0.35":
@@ -17598,9 +17603,11 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         Ledd=Ledd/(ENBAR/TBAR) # so in same units as code units
         einf,linf=elinfcalc(a)
         Medd=Ledd/(1.0-einf)
+        print("CCCTRUE=%g ENBAR=%g TBAR=%g Leddcode=%g Meddcode=%g einf=%g linf=%g" % (CCCTRUE,ENBAR,TBAR,Ledd,Medd,einf,linf)) ; sys.stdout.flush()
         print("CCCTRUE=%g ENBAR=%g TBAR=%g" % (CCCTRUE,ENBAR,TBAR)) ; sys.stdout.flush()
     else:
         Ledd=1
+        Medd=1
     #
     if showrad:
         normfactor=Ledd
@@ -18070,8 +18077,14 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         print( "incomplete output: %g %g" % (iti, fti) )
     #
     # 6:
-    print( "HLatex5: ModelName & $\\dot{M}_{\\rm{}H}$  & $\\dot{M}_{\\rm{}in,i}-\\dot{M}_{\\rm{}H}$ & $\\dot{M}_{\\rm{}in,o}-\\dot{M}_{\\rm{}H}$     & $\\dot{M}_{\\rm{}j}$    & $\\dot{M}_{\\rm{}mw,i}$ & $\\dot{M}_{\\rm{}mw,o}$    & $\\dot{M}_{\\rm{}w,i}$ & $\\dot{M}_{\\rm{}w,o}$ \\\\" )
-    print( "VLatex5: %s         & %g & %g & %g    & %g    & %g & %g   & %g & %g \\\\ %% %s" % (truemodelname, roundto2(mdotfinavg), roundto2(mdotinrdiskinfinavg-mdotfinavg), roundto2(mdotinrdiskoutfinavg-mdotfinavg), roundto2(mdotjetfinavg),    roundto2(mdotmwinfinavg), roundto2(mdotmwoutfinavg),     roundto2(mdotwinfinavg), roundto2(mdotwoutfinavg),    modelname ) )
+    if gotrad==0:
+        print( "HLatex5: ModelName & $\\dot{M}_{\\rm{}H}$  & $\\dot{M}_{\\rm{}in,i}-\\dot{M}_{\\rm{}H}$ & $\\dot{M}_{\\rm{}in,o}-\\dot{M}_{\\rm{}H}$     & $\\dot{M}_{\\rm{}j}$    & $\\dot{M}_{\\rm{}mw,i}$ & $\\dot{M}_{\\rm{}mw,o}$    & $\\dot{M}_{\\rm{}w,i}$ & $\\dot{M}_{\\rm{}w,o}$ \\\\" )
+        print( "VLatex5: %s         & %g & %g & %g    & %g    & %g & %g   & %g & %g \\\\ %% %s" % (truemodelname, roundto2(mdotfinavg), roundto2(mdotinrdiskinfinavg-mdotfinavg), roundto2(mdotinrdiskoutfinavg-mdotfinavg), roundto2(mdotjetfinavg),    roundto2(mdotmwinfinavg), roundto2(mdotmwoutfinavg),     roundto2(mdotwinfinavg), roundto2(mdotwoutfinavg),    modelname ) )
+    else:
+        # then normalize by Eddington
+        print("Normalizing Mdot by Eddington") ; sys.stdout.flush()
+        print( "HLatex5: ModelName & $\\dot{M}_{\\rm{}H}$  & $\\dot{M}_{\\rm{}in,i}-\\dot{M}_{\\rm{}H}$ & $\\dot{M}_{\\rm{}in,o}-\\dot{M}_{\\rm{}H}$     & $\\dot{M}_{\\rm{}j}$    & $\\dot{L}_{\\rm{}rad,o}$    & $\\dot{M}_{\\rm{}mw,i}$ & $\\dot{M}_{\\rm{}mw,o}$    & $\\dot{M}_{\\rm{}w,i}$ & $\\dot{M}_{\\rm{}w,o}$ & $\\dot{L}_{\\rm{}rad,o}$ \\\\" )
+        print( "VLatex5: %s         & %g & %g & %g    & %g    & %g & %g & %g   & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2((1.0/Medd)*mdotfinavg), roundto2((1.0/Medd)*(mdotinrdiskinfinavg-mdotfinavg)), roundto2((1.0/Medd)*(mdotinrdiskoutfinavg-mdotfinavg)), roundto2((1.0/Medd)*mdotjetfinavg), roundto2((1.0/Ledd)*edradoutiniavg),    roundto2((1.0/Medd)*mdotmwinfinavg), roundto2((1.0/Medd)*mdotmwoutfinavg),     roundto2((1.0/Medd)*mdotwinfinavg), roundto2((1.0/Medd)*mdotwoutfinavg), roundto2((1.0/Ledd)*edradoutiniavg),    modelname ) )
     #
     # 12:
     print( "HLatex95: $\\delta r:r \\delta\\theta:r\\sin\\theta \\delta\\phi$" )
@@ -18164,8 +18177,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         print( "VLatex6: %s         & %g               & %g                           & %g                             & %g                & %g                   & %g                             & %g                   & %g                  & %g                 \\\\ %% %s" % (truemodelname, roundto3foreta(etabh_avg), roundto3foreta(etabhEM_avg), roundto3foreta(etabhMAKE_avg), roundto3foreta(etaj_avg), roundto3foreta(etajEM_avg), roundto3foreta(etajMAKE_avg), roundto3foreta(etamwout_avg), roundto3foreta(etawout_avg), roundto3foreta(etant), modelname ) )
     else:
         # added PAKE and EN to BH term only:
-        print( "HLatex6: ModelName & $\\eta_{\\rm{}H}$ & $\\eta^{\\rm{}EM}_{\\rm{}H}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}H}$ & $\\eta^{\\rm{}PAKE}_{\\rm{}H}$ & $\\eta^{\\rm{}EN}_{\\rm{}H}$ & $\\eta^{\\rm{}RAD}_{\\rm{}H}$ & $\\eta_{\\rm{}j}$ & $\\eta^{\\rm{}EM}_j$ & $\\eta^{\\rm{}MAKE}_{\\rm{}j}$ & $\\eta_{\\rm{}mw,o}$ & $\\eta_{\\rm{}w,o}$ & $\\eta_{\\rm{}NT}$ \\\\" )
-        print( "VLatex6: %s         & %g               & %g                           & %g                             & %g                             & %g                           & %g                & %g                   & %g                             & %g                   & %g                   & %g                  & %g                 \\\\ %% %s" % (truemodelname, roundto3foreta(etabh_avg), roundto3foreta(etabhEM_avg), roundto3foreta(etabhMAKE_avg), roundto3foreta(etabhPAKE_avg), roundto3foreta(etabhEN_avg), roundto3foreta(etabhRAD_avg), roundto3foreta(etaj_avg), roundto3foreta(etajEM_avg), roundto3foreta(etajMAKE_avg), roundto3foreta(etamwout_avg), roundto3foreta(etawout_avg), roundto3foreta(etant), modelname ) )
+        print( "HLatex6: ModelName & $\\eta_{\\rm{}H}$ & $\\eta^{\\rm{}EM}_{\\rm{}H}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}H}$ & $\\eta^{\\rm{}PAKE}_{\\rm{}H}$ & $\\eta^{\\rm{}EN}_{\\rm{}H}$ & $\\eta^{\\rm{}RAD}_{\\rm{}H}$ & $\\eta_{\\rm{}j}$ & $\\eta^{\\rm{}EM}_j$ & $\\eta^{\\rm{}MAKE}_{\\rm{}j}$ & $\\eta^{\\rm{}RAD}_{\\rm{}o}$ & $\\eta_{\\rm{}mw,o}$ & $\\eta_{\\rm{}w,o}$ & $\\eta_{\\rm{}NT}$ \\\\" )
+        print( "VLatex6: %s         & %g               & %g                           & %g                             & %g                             & %g                           & %g                & %g                   & %g                             & %g                   & %g                  & %g                   & %g                  & %g                 \\\\ %% %s" % (truemodelname, roundto3foreta(etabh_avg), roundto3foreta(etabhEM_avg), roundto3foreta(etabhMAKE_avg), roundto3foreta(etabhPAKE_avg), roundto3foreta(etabhEN_avg), roundto3foreta(etabhRAD_avg), roundto3foreta(etaj_avg), roundto3foreta(etajEM_avg), roundto3foreta(etajMAKE_avg), roundto3foreta(etaoutRAD_avg), roundto3foreta(etamwout_avg), roundto3foreta(etawout_avg), roundto3foreta(etant), modelname ) )
     #
     # 12:
     print( "HLatex7: ModelName & $\\eta_{\\rm{}mw,i}$ & $\\eta^{\\rm{}EM}_{\\rm{}mw,i}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}mw,i}$ & $\\eta_{\\rm{}mw,o}$ & $\\eta^{\\rm{}EM}_{\\rm{}mw,o}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}mw,o}$ & $\\eta_{\\rm{}w,i}$ & $\\eta^{\\rm{}EM}_{\\rm{}w,i}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}w,i}$ & $\\eta_{\\rm{}w,o}$ & $\\eta^{\\rm{}EM}_{\\rm{}w,o}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}w,o}$ \\\\" )
@@ -18173,24 +18186,24 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     #
     #
-    # 9:
-    # 9:
-    print( "HLatex8: ModelName & $j_{\\rm{}H}$ & $j^{\\rm{}EM}_{\\rm{}H}$ & $j^{\\rm{}MAKE}_{\\rm{}H}$ & $j_{\\rm{}j}$ & $j^{\\rm{}EM}_j$ & $j^{\\rm{}MAKE}_{\\rm{}j}$ & $j_{\\rm{}j+mw,o}$ & $j_{\\rm{}j+w,o}$ & $j_{\\rm{}NT}$ \\\\" )
-    print( "VLatex8: %s        & %g            & %g                       & %g                         & %g            & %g               & %g                         & %g                 & %g                & %g             \\\\ %% %s" % (truemodelname, roundto3forl(lbh_avg), roundto3forl(lbhEM_avg), roundto3forl(lbhMAKE_avg), roundto3forl(lj_avg), roundto3forl(ljEM_avg), roundto3forl(ljMAKE_avg), roundto3forl(lmwout_avg), roundto3forl(lwout_avg), roundto3forl(lnt), modelname ) )
+    # 12:
+    print( "HLatex8: ModelName & $j_{\\rm{}H}$ & $j^{\\rm{}EM}_{\\rm{}H}$ & $j^{\\rm{}MAKE}_{\\rm{}H}$ & $j^{\\rm{}RAD}_{\\rm{}H}$ & $j_{\\rm{}j}$ & $j^{\\rm{}EM}_j$ & $j^{\\rm{}MAKE}_{\\rm{}j}$ & $j^{\\rm{}RAD}_{\\rm{}o}$ & $j_{\\rm{}j+mw,o}$ & $j_{\\rm{}j+w,o}$ & $j_{\\rm{}NT}$ \\\\" )
+    # 13:
+    print( "VLatex8: %s        & %g            & %g                       & %g                         & %g                        & %g            & %g               & %g                         & %g                        & %g                 & %g                & %g             \\\\ %% %s" % (truemodelname, roundto3forl(lbh_avg), roundto3forl(lbhEM_avg), roundto3forl(lbhMAKE_avg), roundto3forl(lbhRAD_avg), roundto3forl(lj_avg), roundto3forl(ljEM_avg), roundto3forl(ljMAKE_avg), roundto3forl(loutRAD_avg), roundto3forl(lmwout_avg), roundto3forl(lwout_avg), roundto3forl(lnt), modelname ) )
     #
     # s-version of Latex8 gives this Latex15 version -- replaces need for Latex8 and Latex9
     if 1==0:
-        print( "HLatex15: ModelName & $s_{\\rm{}H}$ & $s^{\\rm{}EM}_{\\rm{}H}$ & $s^{\\rm{}MAKE}_{\\rm{}H}$ & $s_{\\rm{}j}$ & $s^{\\rm{}EM}_j$ & $s^{\\rm{}MAKE}_{\\rm{}j}$ & $s^{\\rm{}RAD}_{\\rm{}j}$ & $s_{\\rm{}mw,o}$ & $s_{\\rm{}w,o}$ & $s_{\\rm{}NT}$ \\\\" )
-        print( "VLatex15: %s        & %g            & %g                       & %g                         & %g                   & %g            & %g               & %g                         & %g               & %g              & %g             \\\\ %% %s" % (truemodelname, roundto3forl(sbh_avg), roundto3forl(sbhEM_avg), roundto3forl(sbhMAKE_avg), roundto3forl(sbhRAD_avg), roundto3forl(sj_avg), roundto3forl(sjEM_avg), roundto3forl(sjMAKE_avg), roundto3forl(smwout_avg), roundto3forl(swout_avg), roundto3forl(snt), modelname ) )
+        print( "HLatex15: ModelName & $s_{\\rm{}H}$ & $s^{\\rm{}EM}_{\\rm{}H}$ & $s^{\\rm{}MAKE}_{\\rm{}H}$ & $s_{\\rm{}j}$ & $s^{\\rm{}EM}_j$ & $s^{\\rm{}MAKE}_{\\rm{}j}$ & $s^{\\rm{}RAD}_{\\rm{}o}$ & $s_{\\rm{}mw,o}$ & $s_{\\rm{}w,o}$ & $s_{\\rm{}NT}$ \\\\" )
+        print( "VLatex15: %s        & %g            & %g                       & %g                         & %g            & %g               & %g                         & %g                        & %g               & %g              & %g             \\\\ %% %s" % (truemodelname, roundto3forl(sbh_avg), roundto3forl(sbhEM_avg), roundto3forl(sbhMAKE_avg), roundto3forl(sbhRAD_avg), roundto3forl(sj_avg), roundto3forl(sjEM_avg), roundto3forl(sjMAKE_avg), roundto3forl(soutRAD_avg), roundto3forl(smwout_avg), roundto3forl(swout_avg), roundto3forl(snt), modelname ) )
     elif 1==0:
         # added PAKE and EN terms for BH only
-        print( "HLatex15: ModelName & $s_{\\rm{}H}$ & $s^{\\rm{}EM}_{\\rm{}H}$ & $s^{\\rm{}MAKE}_{\\rm{}H}$ & $s^{\\rm{}PAKE}_{\\rm{}H}$ & $s^{\\rm{}EN}_{\\rm{}H}$ & $s_{\\rm{}j}$ & $s^{\\rm{}EM}_j$ & $s^{\\rm{}MAKE}_{\\rm{}j}$ & $s_{\\rm{}mw,o}$ & $s_{\\rm{}w,o}$ & $s_{\\rm{}NT}$ \\\\" )
-        print( "VLatex15: %s        & %g            & %g                       & %g                         & %g                         & %g                         & %g          & %g               & %g                         & %g               & %g              & %g             \\\\ %% %s" % (truemodelname, roundto3forl(sbh_avg), roundto3forl(sbhEM_avg), roundto3forl(sbhMAKE_avg), roundto3forl(sbhPAKE_avg), roundto3forl(sbhEN_avg), roundto3forl(sj_avg), roundto3forl(sjEM_avg), roundto3forl(sjMAKE_avg), roundto3forl(smwout_avg), roundto3forl(swout_avg), roundto3forl(snt), modelname ) )
+        print( "HLatex15: ModelName & $s_{\\rm{}H}$ & $s^{\\rm{}EM}_{\\rm{}H}$ & $s^{\\rm{}MAKE}_{\\rm{}H}$ & $s^{\\rm{}PAKE}_{\\rm{}H}$ & $s^{\\rm{}EN}_{\\rm{}H}$ & $s^{\\rm{}RAD}_{\\rm{}H}$ & $s_{\\rm{}j}$ & $s^{\\rm{}EM}_j$ & $s^{\\rm{}MAKE}_{\\rm{}j}$ & $s^{\\rm{}RAD}_{\\rm{}o}$ & $s_{\\rm{}mw,o}$ & $s_{\\rm{}w,o}$ & $s_{\\rm{}NT}$ \\\\" )
+        print( "VLatex15: %s        & %g            & %g                       & %g                         & %g                         & %g                       & %g                        & %g            & %g               & %g                         & %g                        & %g               & %g              & %g             \\\\ %% %s" % (truemodelname, roundto3forl(sbh_avg), roundto3forl(sbhEM_avg), roundto3forl(sbhMAKE_avg), roundto3forl(sbhPAKE_avg), roundto3forl(sbhEN_avg), roundto3forl(sbhRAD_avg), roundto3forl(sj_avg), roundto3forl(sjEM_avg), roundto3forl(sjMAKE_avg), roundto3forl(soutRAD_avg), roundto3forl(smwout_avg), roundto3forl(swout_avg), roundto3forl(snt), modelname ) )
     #
     else:
         # added PA and EN terms for BH only and fixed how summed
-        print( "HLatex15: ModelName & $s_{\\rm{}H}$ & $s^{\\rm{}EM}_{\\rm{}H}$ & $s^{\\rm{}MA}_{\\rm{}H}$ & $s^{\\rm{}PA}_{\\rm{}H}$ & $s^{\\rm{}EN}_{\\rm{}H}$ & $s^{\\rm{}RAD}_{\\rm{}H}$ & $s_{\\rm{}j}$ & $s^{\\rm{}EM}_j$ & $s^{\\rm{}MA}_{\\rm{}j}$ & $s_{\\rm{}mw,o}$ & $s_{\\rm{}w,o}$ & $s_{\\rm{}NT}$ \\\\" )
-        print( "VLatex15: %s        & %g            & %g                       & %g                         & %g                         & %g                         & %g          & %g               & %g                         & %g                   & %g               & %g              & %g             \\\\ %% %s" % (truemodelname, roundto3forl(sbh_avg), roundto3forl(sbhEM_avg), roundto3forl(sbhMA_avg), roundto3forl(sbhPA_avg), roundto3forl(sbhEN_avg), roundto3forl(sbhRAD_avg), roundto3forl(sj_avg), roundto3forl(sjEM_avg), roundto3forl(sjMA_avg), roundto3forl(smwout_avg), roundto3forl(swout_avg), roundto3forl(snt), modelname ) )
+        print( "HLatex15: ModelName & $s_{\\rm{}H}$ & $s^{\\rm{}EM}_{\\rm{}H}$ & $s^{\\rm{}MA}_{\\rm{}H}$ & $s^{\\rm{}PA}_{\\rm{}H}$ & $s^{\\rm{}EN}_{\\rm{}H}$ & $s^{\\rm{}RAD}_{\\rm{}H}$ & $s_{\\rm{}j}$ & $s^{\\rm{}EM}_j$ & $s^{\\rm{}MA}_{\\rm{}j}$ & $s^{\\rm{}RAD}_{\\rm{}o}$ & $s_{\\rm{}mw,o}$ & $s_{\\rm{}w,o}$ & $s_{\\rm{}NT}$ \\\\" )
+        print( "VLatex15: %s        & %g            & %g                       & %g                         & %g                         & %g                         & %g          & %g               & %g                         & %g                  & %g                        & %g               & %g              & %g             \\\\ %% %s" % (truemodelname, roundto3forl(sbh_avg), roundto3forl(sbhEM_avg), roundto3forl(sbhMA_avg), roundto3forl(sbhPA_avg), roundto3forl(sbhEN_avg), roundto3forl(sbhRAD_avg), roundto3forl(sj_avg), roundto3forl(sjEM_avg), roundto3forl(sjMA_avg), roundto3forl(soutRAD_avg), roundto3forl(smwout_avg), roundto3forl(swout_avg), roundto3forl(snt), modelname ) )
     #
     #
     # 12:
@@ -18824,15 +18837,16 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         bs3rhosq_vsr=np.zeros(nx,dtype=r.dtype)
         bas3rhosq_vsr=np.zeros(nx,dtype=r.dtype)
         bsqrhosq_vsr=np.zeros(nx,dtype=r.dtype)
+        uradsrhosq_vsr=np.zeros(nx,dtype=r.dtype)
         #
         #
-        # columns=23
+        # columns=24
         favg1 = open('datavsr1.txt', 'w')
-        favg1.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("ii","r","rhosrhosq_vsr","ugsrhosq_vsr","uu0rhosq_vsr","vus1rhosq_vsr","vuas1rhosq_vsr","vus3rhosq_vsr","vuas3rhosq_vsr","vuasrotrhosq_vsr","Bs1rhosq_vsr","Bas1rhosq_vsr","Bs2rhosq_vsr","Bas2rhosq_vsr","Bs3rhosq_vsr","Bas3rhosq_vsr","bs1rhosq_vsr","bas1rhosq_vsr","bs2rhosq_vsr","bas2rhosq_vsr","bs3rhosq_vsr","bas3rhosq_vsr","bsqrhosq_vsr" ) )
+        favg1.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("ii","r","rhosrhosq_vsr","ugsrhosq_vsr","uu0rhosq_vsr","vus1rhosq_vsr","vuas1rhosq_vsr","vus3rhosq_vsr","vuas3rhosq_vsr","vuasrotrhosq_vsr","Bs1rhosq_vsr","Bas1rhosq_vsr","Bs2rhosq_vsr","Bas2rhosq_vsr","Bs3rhosq_vsr","Bas3rhosq_vsr","bs1rhosq_vsr","bas1rhosq_vsr","bs2rhosq_vsr","bas2rhosq_vsr","bs3rhosq_vsr","bas3rhosq_vsr","bsqrhosq_vsr","uradsrhosq_vsr" ) )
         for ii in np.arange(0,nx):
             #
             # Q vs r
-            # 2+20
+            # 22
             rhosrhosq_vsr[ii]=timeavg(rhosrhosq[:,ii],ts,fti,ftf)
             ugsrhosq_vsr[ii]=timeavg(ugsrhosq[:,ii],ts,fti,ftf)
             uu0rhosq_vsr[ii]=timeavg(uu0rhosq[:,ii],ts,fti,ftf)
@@ -18854,8 +18868,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             bs3rhosq_vsr[ii]=timeavg(bs3rhosq[:,ii],ts,fti,ftf)
             bas3rhosq_vsr[ii]=timeavg(bas3rhosq[:,ii],ts,fti,ftf)
             bsqrhosq_vsr[ii]=timeavg(bsqrhosq[:,ii],ts,fti,ftf)
+            uradsrhosq_vsr[ii]=timeavg(uradsrhosq[:,ii],ts,fti,ftf)
             #
-            favg1.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],rhosrhosq_vsr[ii],ugsrhosq_vsr[ii],uu0rhosq_vsr[ii],vus1rhosq_vsr[ii],vuas1rhosq_vsr[ii],vus3rhosq_vsr[ii],vuas3rhosq_vsr[ii],vuasrotrhosq_vsr[ii],Bs1rhosq_vsr[ii],Bas1rhosq_vsr[ii],Bs2rhosq_vsr[ii],Bas2rhosq_vsr[ii],Bs3rhosq_vsr[ii],Bas3rhosq_vsr[ii],bs1rhosq_vsr[ii],bas1rhosq_vsr[ii],bs2rhosq_vsr[ii],bas2rhosq_vsr[ii],bs3rhosq_vsr[ii],bas3rhosq_vsr[ii],bsqrhosq_vsr[ii] ) )
+            favg1.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],rhosrhosq_vsr[ii],ugsrhosq_vsr[ii],uu0rhosq_vsr[ii],vus1rhosq_vsr[ii],vuas1rhosq_vsr[ii],vus3rhosq_vsr[ii],vuas3rhosq_vsr[ii],vuasrotrhosq_vsr[ii],Bs1rhosq_vsr[ii],Bas1rhosq_vsr[ii],Bs2rhosq_vsr[ii],Bas2rhosq_vsr[ii],Bs3rhosq_vsr[ii],Bas3rhosq_vsr[ii],bs1rhosq_vsr[ii],bas1rhosq_vsr[ii],bs2rhosq_vsr[ii],bas2rhosq_vsr[ii],bs3rhosq_vsr[ii],bas3rhosq_vsr[ii],bsqrhosq_vsr[ii],uradsrhosq_vsr[ii] ) )
             #
         favg1.close()
         #
@@ -18916,10 +18931,11 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         bs3rhosqdc_vsr=np.zeros(nx,dtype=r.dtype)
         bas3rhosqdc_vsr=np.zeros(nx,dtype=r.dtype)
         bsqrhosqdc_vsr=np.zeros(nx,dtype=r.dtype)
+        uradsrhosqdc_vsr=np.zeros(nx,dtype=r.dtype)
         #
         # columns=22
         favg1b = open('datavsr1b.txt', 'w')
-        favg1b.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("ii","r","rhosrhosqdc_vsr","ugsrhosqdc_vsr","uu0rhosqdc_vsr","vus1rhosqdc_vsr","vuas1rhosqdc_vsr","vus3rhosqdc_vsr","vuas3rhosqdc_vsr","vuasrotrhosqdc_vsr","Bs1rhosqdc_vsr","Bas1rhosqdc_vsr","Bs2rhosqdc_vsr","Bas2rhosqdc_vsr","Bs3rhosqdc_vsr","Bas3rhosqdc_vsr","bs1rhosqdc_vsr","bas1rhosqdc_vsr","bs2rhosqdc_vsr","bas2rhosqdc_vsr","bs3rhosqdc_vsr","bas3rhosqdc_vsr","bsqrhosqdc_vsr" ) )
+        favg1b.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("ii","r","rhosrhosqdc_vsr","ugsrhosqdc_vsr","uu0rhosqdc_vsr","vus1rhosqdc_vsr","vuas1rhosqdc_vsr","vus3rhosqdc_vsr","vuas3rhosqdc_vsr","vuasrotrhosqdc_vsr","Bs1rhosqdc_vsr","Bas1rhosqdc_vsr","Bs2rhosqdc_vsr","Bas2rhosqdc_vsr","Bs3rhosqdc_vsr","Bas3rhosqdc_vsr","bs1rhosqdc_vsr","bas1rhosqdc_vsr","bs2rhosqdc_vsr","bas2rhosqdc_vsr","bs3rhosqdc_vsr","bas3rhosqdc_vsr","bsqrhosqdc_vsr","uradsrhosqdc_vsr" ) )
         for ii in np.arange(0,nx):
             #
             # Q vs r
@@ -18945,8 +18961,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             bs3rhosqdc_vsr[ii]=timeavg(bs3rhosqdc[:,ii],ts,fti,ftf)
             bas3rhosqdc_vsr[ii]=timeavg(bas3rhosqdc[:,ii],ts,fti,ftf)
             bsqrhosqdc_vsr[ii]=timeavg(bsqrhosqdc[:,ii],ts,fti,ftf)
+            uradsrhosqdc_vsr[ii]=timeavg(uradsrhosqdc[:,ii],ts,fti,ftf)
             #
-            favg1b.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],rhosrhosqdc_vsr[ii],ugsrhosqdc_vsr[ii],uu0rhosqdc_vsr[ii],vus1rhosqdc_vsr[ii],vuas1rhosqdc_vsr[ii],vus3rhosqdc_vsr[ii],vuas3rhosqdc_vsr[ii],vuasrotrhosqdc_vsr[ii],Bs1rhosqdc_vsr[ii],Bas1rhosqdc_vsr[ii],Bs2rhosqdc_vsr[ii],Bas2rhosqdc_vsr[ii],Bs3rhosqdc_vsr[ii],Bas3rhosqdc_vsr[ii],bs1rhosqdc_vsr[ii],bas1rhosqdc_vsr[ii],bs2rhosqdc_vsr[ii],bas2rhosqdc_vsr[ii],bs3rhosqdc_vsr[ii],bas3rhosqdc_vsr[ii],bsqrhosqdc_vsr[ii] ) )
+            favg1b.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],rhosrhosqdc_vsr[ii],ugsrhosqdc_vsr[ii],uu0rhosqdc_vsr[ii],vus1rhosqdc_vsr[ii],vuas1rhosqdc_vsr[ii],vus3rhosqdc_vsr[ii],vuas3rhosqdc_vsr[ii],vuasrotrhosqdc_vsr[ii],Bs1rhosqdc_vsr[ii],Bas1rhosqdc_vsr[ii],Bs2rhosqdc_vsr[ii],Bas2rhosqdc_vsr[ii],Bs3rhosqdc_vsr[ii],Bas3rhosqdc_vsr[ii],bs1rhosqdc_vsr[ii],bas1rhosqdc_vsr[ii],bs2rhosqdc_vsr[ii],bas2rhosqdc_vsr[ii],bs3rhosqdc_vsr[ii],bas3rhosqdc_vsr[ii],bsqrhosqdc_vsr[ii],uradsrhosqdc_vsr[ii] ) )
             #
         favg1b.close()
         #
@@ -19004,10 +19021,11 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         bs3rhosqdcden_vsr=np.zeros(nx,dtype=r.dtype)
         bas3rhosqdcden_vsr=np.zeros(nx,dtype=r.dtype)
         bsqrhosqdcden_vsr=np.zeros(nx,dtype=r.dtype)
+        uradsrhosqdcden_vsr=np.zeros(nx,dtype=r.dtype)
         #
         # columns=22
         favg1c = open('datavsr1c.txt', 'w')
-        favg1c.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("ii","r","rhosrhosqdcden_vsr","ugsrhosqdcden_vsr","uu0rhosqdcden_vsr","vus1rhosqdcden_vsr","vuas1rhosqdcden_vsr","vus3rhosqdcden_vsr","vuas3rhosqdcden_vsr","vuasrotrhosqdcden_vsr","Bs1rhosqdcden_vsr","Bas1rhosqdcden_vsr","Bs2rhosqdcden_vsr","Bas2rhosqdcden_vsr","Bs3rhosqdcden_vsr","Bas3rhosqdcden_vsr","bs1rhosqdcden_vsr","bas1rhosqdcden_vsr","bs2rhosqdcden_vsr","bas2rhosqdcden_vsr","bs3rhosqdcden_vsr","bas3rhosqdcden_vsr","bsqrhosqdcden_vsr" ) )
+        favg1c.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("ii","r","rhosrhosqdcden_vsr","ugsrhosqdcden_vsr","uu0rhosqdcden_vsr","vus1rhosqdcden_vsr","vuas1rhosqdcden_vsr","vus3rhosqdcden_vsr","vuas3rhosqdcden_vsr","vuasrotrhosqdcden_vsr","Bs1rhosqdcden_vsr","Bas1rhosqdcden_vsr","Bs2rhosqdcden_vsr","Bas2rhosqdcden_vsr","Bs3rhosqdcden_vsr","Bas3rhosqdcden_vsr","bs1rhosqdcden_vsr","bas1rhosqdcden_vsr","bs2rhosqdcden_vsr","bas2rhosqdcden_vsr","bs3rhosqdcden_vsr","bas3rhosqdcden_vsr","bsqrhosqdcden_vsr","uradsrhosqdcden_vsr" ) )
         for ii in np.arange(0,nx):
             #
             # Q vs r
@@ -19033,8 +19051,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             bs3rhosqdcden_vsr[ii]=timeavg(bs3rhosqdcden[:,ii],ts,fti,ftf)
             bas3rhosqdcden_vsr[ii]=timeavg(bas3rhosqdcden[:,ii],ts,fti,ftf)
             bsqrhosqdcden_vsr[ii]=timeavg(bsqrhosqdcden[:,ii],ts,fti,ftf)
+            uradsrhosqdcden_vsr[ii]=timeavg(uradsrhosqdcden[:,ii],ts,fti,ftf)
             #
-            favg1c.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],rhosrhosqdcden_vsr[ii],ugsrhosqdcden_vsr[ii],uu0rhosqdcden_vsr[ii],vus1rhosqdcden_vsr[ii],vuas1rhosqdcden_vsr[ii],vus3rhosqdcden_vsr[ii],vuas3rhosqdcden_vsr[ii],vuasrotrhosqdcden_vsr[ii],Bs1rhosqdcden_vsr[ii],Bas1rhosqdcden_vsr[ii],Bs2rhosqdcden_vsr[ii],Bas2rhosqdcden_vsr[ii],Bs3rhosqdcden_vsr[ii],Bas3rhosqdcden_vsr[ii],bs1rhosqdcden_vsr[ii],bas1rhosqdcden_vsr[ii],bs2rhosqdcden_vsr[ii],bas2rhosqdcden_vsr[ii],bs3rhosqdcden_vsr[ii],bas3rhosqdcden_vsr[ii],bsqrhosqdcden_vsr[ii] ) )
+            favg1c.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],rhosrhosqdcden_vsr[ii],ugsrhosqdcden_vsr[ii],uu0rhosqdcden_vsr[ii],vus1rhosqdcden_vsr[ii],vuas1rhosqdcden_vsr[ii],vus3rhosqdcden_vsr[ii],vuas3rhosqdcden_vsr[ii],vuasrotrhosqdcden_vsr[ii],Bs1rhosqdcden_vsr[ii],Bas1rhosqdcden_vsr[ii],Bs2rhosqdcden_vsr[ii],Bas2rhosqdcden_vsr[ii],Bs3rhosqdcden_vsr[ii],Bas3rhosqdcden_vsr[ii],bs1rhosqdcden_vsr[ii],bas1rhosqdcden_vsr[ii],bs2rhosqdcden_vsr[ii],bas2rhosqdcden_vsr[ii],bs3rhosqdcden_vsr[ii],bas3rhosqdcden_vsr[ii],bsqrhosqdcden_vsr[ii],uradsrhosqdcden_vsr[ii] ) )
             #
         favg1c.close()
         #
@@ -19091,10 +19110,11 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         bs3rhosqeq_vsr=np.zeros(nx,dtype=r.dtype)
         bas3rhosqeq_vsr=np.zeros(nx,dtype=r.dtype)
         bsqrhosqeq_vsr=np.zeros(nx,dtype=r.dtype)
+        uradsrhosqeq_vsr=np.zeros(nx,dtype=r.dtype)
         #
         # columns=22
         favg2 = open('datavsr2.txt', 'w')
-        favg2.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("ii","r","rhosrhosqeq_vsr","ugsrhosqeq_vsr","uu0rhosqeq_vsr","vus1rhosqeq_vsr","vuas1rhosqeq_vsr","vus3rhosqeq_vsr","vuas3rhosqeq_vsr","vuasrotrhosqeq_vsr","Bs1rhosqeq_vsr","Bas1rhosqeq_vsr","Bs2rhosqeq_vsr","Bas2rhosqeq_vsr","Bs3rhosqeq_vsr","Bas3rhosqeq_vsr","bs1rhosqeq_vsr","bas1rhosqeq_vsr","bs2rhosqeq_vsr","bas2rhosqeq_vsr","bs3rhosqeq_vsr","bas3rhosqeq_vsr","bsqrhosqeq_vsr") )
+        favg2.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("ii","r","rhosrhosqeq_vsr","ugsrhosqeq_vsr","uu0rhosqeq_vsr","vus1rhosqeq_vsr","vuas1rhosqeq_vsr","vus3rhosqeq_vsr","vuas3rhosqeq_vsr","vuasrotrhosqeq_vsr","Bs1rhosqeq_vsr","Bas1rhosqeq_vsr","Bs2rhosqeq_vsr","Bas2rhosqeq_vsr","Bs3rhosqeq_vsr","Bas3rhosqeq_vsr","bs1rhosqeq_vsr","bas1rhosqeq_vsr","bs2rhosqeq_vsr","bas2rhosqeq_vsr","bs3rhosqeq_vsr","bas3rhosqeq_vsr","bsqrhosqeq_vsr","uradsrhosqeq_vsr") )
         for ii in np.arange(0,nx):
             # Q vs. r
             # 2+20
@@ -19119,8 +19139,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             bs3rhosqeq_vsr[ii]=timeavg(bs3rhosqeq[:,ii],ts,fti,ftf)
             bas3rhosqeq_vsr[ii]=timeavg(bas3rhosqeq[:,ii],ts,fti,ftf)
             bsqrhosqeq_vsr[ii]=timeavg(bsqrhosqeq[:,ii],ts,fti,ftf)
+            uradsrhosqeq_vsr[ii]=timeavg(uradsrhosqeq[:,ii],ts,fti,ftf)
             #
-            favg2.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],rhosrhosqeq_vsr[ii],ugsrhosqeq_vsr[ii],uu0rhosqeq_vsr[ii],vus1rhosqeq_vsr[ii],vuas1rhosqeq_vsr[ii],vus3rhosqeq_vsr[ii],vuas3rhosqeq_vsr[ii],vuasrotrhosqeq_vsr[ii],Bs1rhosqeq_vsr[ii],Bas1rhosqeq_vsr[ii],Bs2rhosqeq_vsr[ii],Bas2rhosqeq_vsr[ii],Bs3rhosqeq_vsr[ii],Bas3rhosqeq_vsr[ii],bs1rhosqeq_vsr[ii],bas1rhosqeq_vsr[ii],bs2rhosqeq_vsr[ii],bas2rhosqeq_vsr[ii],bs3rhosqeq_vsr[ii],bas3rhosqeq_vsr[ii],bsqrhosqeq_vsr[ii]) )
+            favg2.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],rhosrhosqeq_vsr[ii],ugsrhosqeq_vsr[ii],uu0rhosqeq_vsr[ii],vus1rhosqeq_vsr[ii],vuas1rhosqeq_vsr[ii],vus3rhosqeq_vsr[ii],vuas3rhosqeq_vsr[ii],vuasrotrhosqeq_vsr[ii],Bs1rhosqeq_vsr[ii],Bas1rhosqeq_vsr[ii],Bs2rhosqeq_vsr[ii],Bas2rhosqeq_vsr[ii],Bs3rhosqeq_vsr[ii],Bas3rhosqeq_vsr[ii],bs1rhosqeq_vsr[ii],bas1rhosqeq_vsr[ii],bs2rhosqeq_vsr[ii],bas2rhosqeq_vsr[ii],bs3rhosqeq_vsr[ii],bas3rhosqeq_vsr[ii],bsqrhosqeq_vsr[ii],uradsrhosqeq_vsr[ii]) )
             #
         favg2.close()
         #
@@ -19174,13 +19195,14 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         bs3rhosqhorpick_vsr=np.zeros(nx,dtype=r.dtype)
         bas3rhosqhorpick_vsr=np.zeros(nx,dtype=r.dtype)
         bsqrhosqhorpick_vsr=np.zeros(nx,dtype=r.dtype)
+        uradsrhosqhorpick_vsr=np.zeros(nx,dtype=r.dtype)
         #
-        # columns=22
+        # columns=24
         favg3 = open('datavsr3.txt', 'w')
-        favg3.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("ii","r","rhosrhosqhorpick_vsr","ugsrhosqhorpick_vsr","uu0rhosqhorpick_vsr","vus1rhosqhorpick_vsr","vuas1rhosqhorpick_vsr","vus3rhosqhorpick_vsr","vuas3rhosqhorpick_vsr","vuasrotrhosqhorpick_vsr","Bs1rhosqhorpick_vsr","Bas1rhosqhorpick_vsr","Bs2rhosqhorpick_vsr","Bas2rhosqhorpick_vsr","Bs3rhosqhorpick_vsr","Bas3rhosqhorpick_vsr","bs1rhosqhorpick_vsr","bas1rhosqhorpick_vsr","bs2rhosqhorpick_vsr","bas2rhosqhorpick_vsr","bs3rhosqhorpick_vsr","bas3rhosqhorpick_vsr","bsqrhosqhorpick_vsr") )
+        favg3.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("ii","r","rhosrhosqhorpick_vsr","ugsrhosqhorpick_vsr","uu0rhosqhorpick_vsr","vus1rhosqhorpick_vsr","vuas1rhosqhorpick_vsr","vus3rhosqhorpick_vsr","vuas3rhosqhorpick_vsr","vuasrotrhosqhorpick_vsr","Bs1rhosqhorpick_vsr","Bas1rhosqhorpick_vsr","Bs2rhosqhorpick_vsr","Bas2rhosqhorpick_vsr","Bs3rhosqhorpick_vsr","Bas3rhosqhorpick_vsr","bs1rhosqhorpick_vsr","bas1rhosqhorpick_vsr","bs2rhosqhorpick_vsr","bas2rhosqhorpick_vsr","bs3rhosqhorpick_vsr","bas3rhosqhorpick_vsr","bsqrhosqhorpick_vsr","uradsrhosqhorpick_vsr") )
         for ii in np.arange(0,nx):
             # Q vs. r
-            # 2+20
+            # 22
             rhosrhosqhorpick_vsr[ii]=timeavg(rhosrhosqhorpick[:,ii],ts,fti,ftf)
             ugsrhosqhorpick_vsr[ii]=timeavg(ugsrhosqhorpick[:,ii],ts,fti,ftf)
             uu0rhosqhorpick_vsr[ii]=timeavg(uu0rhosqhorpick[:,ii],ts,fti,ftf)
@@ -19202,8 +19224,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             bs3rhosqhorpick_vsr[ii]=timeavg(bs3rhosqhorpick[:,ii],ts,fti,ftf)
             bas3rhosqhorpick_vsr[ii]=timeavg(bas3rhosqhorpick[:,ii],ts,fti,ftf)
             bsqrhosqhorpick_vsr[ii]=timeavg(bsqrhosqhorpick[:,ii],ts,fti,ftf)
+            uradsrhosqhorpick_vsr[ii]=timeavg(uradsrhosqhorpick[:,ii],ts,fti,ftf)
             #
-            favg3.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],rhosrhosqhorpick_vsr[ii],ugsrhosqhorpick_vsr[ii],uu0rhosqhorpick_vsr[ii],vus1rhosqhorpick_vsr[ii],vuas1rhosqhorpick_vsr[ii],vus3rhosqhorpick_vsr[ii],vuas3rhosqhorpick_vsr[ii],vuasrotrhosqhorpick_vsr[ii],Bs1rhosqhorpick_vsr[ii],Bas1rhosqhorpick_vsr[ii],Bs2rhosqhorpick_vsr[ii],Bas2rhosqhorpick_vsr[ii],Bs3rhosqhorpick_vsr[ii],Bas3rhosqhorpick_vsr[ii],bs1rhosqhorpick_vsr[ii],bas1rhosqhorpick_vsr[ii],bs2rhosqhorpick_vsr[ii],bas2rhosqhorpick_vsr[ii],bs3rhosqhorpick_vsr[ii],bas3rhosqhorpick_vsr[ii],bsqrhosqhorpick_vsr[ii]) )
+            favg3.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],rhosrhosqhorpick_vsr[ii],ugsrhosqhorpick_vsr[ii],uu0rhosqhorpick_vsr[ii],vus1rhosqhorpick_vsr[ii],vuas1rhosqhorpick_vsr[ii],vus3rhosqhorpick_vsr[ii],vuas3rhosqhorpick_vsr[ii],vuasrotrhosqhorpick_vsr[ii],Bs1rhosqhorpick_vsr[ii],Bas1rhosqhorpick_vsr[ii],Bs2rhosqhorpick_vsr[ii],Bas2rhosqhorpick_vsr[ii],Bs3rhosqhorpick_vsr[ii],Bas3rhosqhorpick_vsr[ii],bs1rhosqhorpick_vsr[ii],bas1rhosqhorpick_vsr[ii],bs2rhosqhorpick_vsr[ii],bas2rhosqhorpick_vsr[ii],bs3rhosqhorpick_vsr[ii],bas3rhosqhorpick_vsr[ii],bsqrhosqhorpick_vsr[ii],uradsrhosqhorpick_vsr[ii]) )
             #
         favg3.close()
         #
@@ -19259,13 +19282,14 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         bs3hor_vsr=np.zeros(nx,dtype=r.dtype)
         bas3hor_vsr=np.zeros(nx,dtype=r.dtype)
         bsqhor_vsr=np.zeros(nx,dtype=r.dtype)
+        uradshor_vsr=np.zeros(nx,dtype=r.dtype)
         #
-        # columns=25
+        # columns=26
         favg4 = open('datavsr4.txt', 'w')
-        favg4.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("ii","r","rhoshor_vsr","ugshor_vsr","bsqshor_vsr","bsqorhoshor_vsr","bsqougshor_vsr","uu0hor_vsr","vus1hor_vsr","vuas1hor_vsr","vus3hor_vsr","vuas3hor_vsr","vuasrothor_vsr","Bs1hor_vsr","Bas1hor_vsr","Bs2hor_vsr","Bas2hor_vsr","Bs3hor_vsr","Bas3hor_vsr","bs1hor_vsr","bas1hor_vsr","bs2hor_vsr","bas2hor_vsr","bs3hor_vsr","bas3hor_vsr","bsqhor_vsr") )
+        favg4.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("ii","r","rhoshor_vsr","ugshor_vsr","bsqshor_vsr","bsqorhoshor_vsr","bsqougshor_vsr","uu0hor_vsr","vus1hor_vsr","vuas1hor_vsr","vus3hor_vsr","vuas3hor_vsr","vuasrothor_vsr","Bs1hor_vsr","Bas1hor_vsr","Bs2hor_vsr","Bas2hor_vsr","Bs3hor_vsr","Bas3hor_vsr","bs1hor_vsr","bas1hor_vsr","bs2hor_vsr","bas2hor_vsr","bs3hor_vsr","bas3hor_vsr","bsqhor_vsr","uradshor_vsr") )
         for ii in np.arange(0,nx):
             # Q vs. r
-            # 2+23=25
+            # 26
             rhoshor_vsr[ii]=timeavg(rhoshor[:,ii],ts,fti,ftf)
             ugshor_vsr[ii]=timeavg(ugshor[:,ii],ts,fti,ftf)
             bsqshor_vsr[ii]=timeavg(bsqshor[:,ii],ts,fti,ftf)
@@ -19290,8 +19314,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             bs3hor_vsr[ii]=timeavg(bs3hor[:,ii],ts,fti,ftf)
             bas3hor_vsr[ii]=timeavg(bas3hor[:,ii],ts,fti,ftf)
             bsqhor_vsr[ii]=timeavg(bsqhor[:,ii],ts,fti,ftf)
+            uradshor_vsr[ii]=timeavg(uradshor[:,ii],ts,fti,ftf)
             #
-            favg4.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],rhoshor_vsr[ii],ugshor_vsr[ii],bsqshor_vsr[ii],bsqorhoshor_vsr[ii],bsqougshor_vsr[ii],uu0hor_vsr[ii],vus1hor_vsr[ii],vuas1hor_vsr[ii],vus3hor_vsr[ii],vuas3hor_vsr[ii],vuasrothor_vsr[ii],Bs1hor_vsr[ii],Bas1hor_vsr[ii],Bs2hor_vsr[ii],Bas2hor_vsr[ii],Bs3hor_vsr[ii],Bas3hor_vsr[ii],bs1hor_vsr[ii],bas1hor_vsr[ii],bs2hor_vsr[ii],bas2hor_vsr[ii],bs3hor_vsr[ii],bas3hor_vsr[ii],bsqhor_vsr[ii]) )
+            favg4.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],rhoshor_vsr[ii],ugshor_vsr[ii],bsqshor_vsr[ii],bsqorhoshor_vsr[ii],bsqougshor_vsr[ii],uu0hor_vsr[ii],vus1hor_vsr[ii],vuas1hor_vsr[ii],vus3hor_vsr[ii],vuas3hor_vsr[ii],vuasrothor_vsr[ii],Bs1hor_vsr[ii],Bas1hor_vsr[ii],Bs2hor_vsr[ii],Bas2hor_vsr[ii],Bs3hor_vsr[ii],Bas3hor_vsr[ii],bs1hor_vsr[ii],bas1hor_vsr[ii],bs2hor_vsr[ii],bas2hor_vsr[ii],bs3hor_vsr[ii],bas3hor_vsr[ii],bsqhor_vsr[ii],uradshor_vsr[ii]) )
             #
         favg4.close()
         #
@@ -19326,17 +19351,17 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         ###################
         # r5
         ###################
-        # columns=51
+        # columns=54
         favg5 = open('datavsr5.txt', 'w')
-        favg5.write("#%s %s   %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s  %s %s %s %s  %s %s %s  %s %s %s %s %s %s %s %s %s %s %s %s  %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("ii","r","mdotfinavgvsr","mdotfinavgvsr5","mdotfinavgvsr10","mdotfinavgvsr30","edemvsr","edmavsr","edmvsr","ldemvsr","ldmavsr","ldmvsr","phiabsj_mu1vsr","pjemfinavgvsr","pjmakefinavgvsr","pjkefinavgvsr","ljemfinavgvsr","ljmakefinavgvsr","ljkefinavgvsr","mdin_vsr","mdjet_vsr","mdmwind_vsr","mdwind_vsr","alphamag1_vsr","alphamag2_vsr","alphamag3_vsr","alphamag4_vsr","alphareynoldsa2_vsr","alphareynoldsb2_vsr","alphareynoldsc2_vsr","alphareynoldsa3_vsr","alphareynoldsb3_vsr","alphareynoldsc3_vsr","fstot_vsr","fsin_vsr","feqtot_vsr","fsmaxtot_vsr","fsuphalf_vsr","upsilon_vsr","etajEM_vsr","etajMAKE_vsr","etamwEM_vsr","etamwMAKE_vsr","etawEM_vsr","etawMAKE_vsr","letajEM_vsr","letajMAKE_vsr","letamwEM_vsr","letamwMAKE_vsr","letawEM_vsr","letawMAKE_vsr","edradvsr","ldradvsr" ) )
+        favg5.write("#%s %s   %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s  %s %s %s %s  %s %s %s  %s %s %s %s %s %s %s %s %s %s %s %s  %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("ii","r","mdotfinavgvsr","mdotfinavgvsr5","mdotfinavgvsr10","mdotfinavgvsr30","edemvsr","edmavsr","edmvsr","ldemvsr","ldmavsr","ldmvsr","phiabsj_mu1vsr","pjemfinavgvsr","pjmakefinavgvsr","pjkefinavgvsr","ljemfinavgvsr","ljmakefinavgvsr","ljkefinavgvsr","mdin_vsr","mdjet_vsr","mdmwind_vsr","mdwind_vsr","alphamag1_vsr","alphamag2_vsr","alphamag3_vsr","alphamag4_vsr","alphareynoldsa2_vsr","alphareynoldsb2_vsr","alphareynoldsc2_vsr","alphareynoldsa3_vsr","alphareynoldsb3_vsr","alphareynoldsc3_vsr","fstot_vsr","fsin_vsr","feqtot_vsr","fsmaxtot_vsr","fsuphalf_vsr","upsilon_vsr","etajEM_vsr","etajMAKE_vsr","etamwEM_vsr","etamwMAKE_vsr","etawEM_vsr","etawMAKE_vsr","letajEM_vsr","letajMAKE_vsr","letamwEM_vsr","letamwMAKE_vsr","letawEM_vsr","letawMAKE_vsr","edradvsr","ldradvsr","ldradthinvsr" ) )
         #
         #
         for ii in np.arange(0,nx):
             # Q vs. r
             #
             #
-            # 2+17+4+3+6+12+2+6=51
-            favg5.write("%d %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],mdotfinavgvsr[ii],mdotfinavgvsr5[ii],mdotfinavgvsr10[ii],mdotfinavgvsr30[ii],edemvsr[ii],edmavsr[ii],edmvsr[ii],ldemvsr[ii],ldmavsr[ii],ldmvsr[ii],phiabsj_mu1vsr[ii],pjemfinavgvsr[ii],pjmakefinavgvsr[ii],pjkefinavgvsr[ii],ljemfinavgvsr[ii],ljmakefinavgvsr[ii],ljkefinavgvsr[ii],mdin_vsr[ii],mdjet_vsr[ii],mdmwind_vsr[ii],mdwind_vsr[ii],alphamag1_vsr[ii],alphamag2_vsr[ii],alphamag3_vsr[ii],alphamag4_vsr[ii],alphareynoldsa2_vsr[ii],alphareynoldsb2_vsr[ii],alphareynoldsc2_vsr[ii],alphareynoldsa3_vsr[ii],alphareynoldsb3_vsr[ii],alphareynoldsc3_vsr[ii],fstot_vsr[ii],fsin_vsr[ii],feqtot_vsr[ii],fsmaxtot_vsr[ii],fsuphalf_vsr[ii],upsilon_vsr[ii],etajEM_vsr[ii],etajMAKE_vsr[ii],etamwEM_vsr[ii],etamwMAKE_vsr[ii],etawEM_vsr[ii],etawMAKE_vsr[ii],letajEM_vsr[ii],letajMAKE_vsr[ii],letamwEM_vsr[ii],letamwMAKE_vsr[ii],letawEM_vsr[ii],letawMAKE_vsr[ii],edradvsr[ii],ldradvsr[ii]) )
+            # 54
+            favg5.write("%d %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],mdotfinavgvsr[ii],mdotfinavgvsr5[ii],mdotfinavgvsr10[ii],mdotfinavgvsr30[ii],edemvsr[ii],edmavsr[ii],edmvsr[ii],ldemvsr[ii],ldmavsr[ii],ldmvsr[ii],phiabsj_mu1vsr[ii],pjemfinavgvsr[ii],pjmakefinavgvsr[ii],pjkefinavgvsr[ii],ljemfinavgvsr[ii],ljmakefinavgvsr[ii],ljkefinavgvsr[ii],mdin_vsr[ii],mdjet_vsr[ii],mdmwind_vsr[ii],mdwind_vsr[ii],alphamag1_vsr[ii],alphamag2_vsr[ii],alphamag3_vsr[ii],alphamag4_vsr[ii],alphareynoldsa2_vsr[ii],alphareynoldsb2_vsr[ii],alphareynoldsc2_vsr[ii],alphareynoldsa3_vsr[ii],alphareynoldsb3_vsr[ii],alphareynoldsc3_vsr[ii],fstot_vsr[ii],fsin_vsr[ii],feqtot_vsr[ii],fsmaxtot_vsr[ii],fsuphalf_vsr[ii],upsilon_vsr[ii],etajEM_vsr[ii],etajMAKE_vsr[ii],etamwEM_vsr[ii],etamwMAKE_vsr[ii],etawEM_vsr[ii],etawMAKE_vsr[ii],letajEM_vsr[ii],letajMAKE_vsr[ii],letamwEM_vsr[ii],letamwMAKE_vsr[ii],letawEM_vsr[ii],letawMAKE_vsr[ii],edradvsr[ii],ldradvsr[ii],ldradthinvsr[ii]) )
         #
         favg5.close()
         #
@@ -19737,31 +19762,31 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         #columns=12
         favg1 = open('datavst1.txt', 'w')
-        favg1.write("#%s %s %s %s %s %s %s %s %s %s %s %s\n" % ("tici","ts","mdtotihor","md10ihor","md30ihor","mdinrdiskin","mdinrdiskout","mdjetrjetout","mdmwindrjetin","mdmwindrjetout","mdwindrdiskin","mdwindrdiskout" ) )
+        favg1.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("tici","ts","mdtotihor","md10ihor","md30ihor","mdinrdiskin","mdinrdiskout","mdjetrjetout","mdmwindrjetin","mdmwindrjetout","mdwindrdiskin","mdwindrdiskout","ldradthin" ) )
         for tic in ts:
             tici=np.where(ts==tic)[0]
             #
-            favg1.write("%d %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], mdtot[tici,iflux],md10[tici,iflux],md30[tici,iflux],mdin[tici,iofr(rdiskin)],mdin[tici,iofr(rdiskout)],mdjet[tici,iofr(rjetout)],mdmwind[tici,iofr(rjetin)],mdmwind[tici,iofr(rjetout)],mdwind[tici,iofr(rdiskin)],mdwind[tici,iofr(rdiskout)]  ) )
+            favg1.write("%d %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], mdtot[tici,iflux],md10[tici,iflux],md30[tici,iflux],mdin[tici,iofr(rdiskin)],mdin[tici,iofr(rdiskout)],mdjet[tici,iofr(rjetout)],mdmwind[tici,iofr(rjetin)],mdmwind[tici,iofr(rjetout)],mdwind[tici,iofr(rdiskin)],mdwind[tici,iofr(rdiskout)],edradthin[tici,iofr(rjetout)]  ) )
             #
         favg1.close()
         #
         #columns=21
         favg2 = open('datavst2.txt', 'w')
-        favg2.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("tici","ts"," etabhEM","etabhMAKE","etabhRAD","etabh","etajEM","etajMAKE","etaj","etamwinEM","etamwinMAKE","etamwin","etamwoutEM","etamwoutMAKE","etamwout","etawinEM","etawinMAKE","etawin","etawoutEM","etawoutMAKE","etawout"  ) )
+        favg2.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("tici","ts"," etabhEM","etabhMAKE","etabhRAD","etabh","etajEM","etajMAKE","etaj","etamwinEM","etamwinMAKE","etamwin","etamwoutEM","etamwoutMAKE","etamwout","etawinEM","etawinMAKE","etawin","etawoutEM","etawoutMAKE","etawout","etaoutRAD"  ) )
         for tic in ts:
             tici=np.where(ts==tic)[0]
             #
-            favg2.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], etabhEM[tici],etabhMAKE[tici],etabhRAD[tici],etabh[tici],etajEM[tici],etajMAKE[tici],etaj[tici],etamwinEM[tici],etamwinMAKE[tici],etamwin[tici],etamwoutEM[tici],etamwoutMAKE[tici],etamwout[tici],etawinEM[tici],etawinMAKE[tici],etawin[tici],etawoutEM[tici],etawoutMAKE[tici],etawout[tici]  ) )
+            favg2.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], etabhEM[tici],etabhMAKE[tici],etabhRAD[tici],etabh[tici],etajEM[tici],etajMAKE[tici],etaj[tici],etamwinEM[tici],etamwinMAKE[tici],etamwin[tici],etamwoutEM[tici],etamwoutMAKE[tici],etamwout[tici],etawinEM[tici],etawinMAKE[tici],etawin[tici],etawoutEM[tici],etawoutMAKE[tici],etawout[tici],etaoutRAD[tici] ) )
             #
         favg2.close()
         #
         #columns=21
         favg3 = open('datavst3.txt', 'w')
-        favg3.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("tici","ts"," letabhEM","letabhMAKE","letabhRAD","letabh","letajEM","letajMAKE","letaj","letamwinEM","letamwinMAKE","letamwin","letamwoutEM","letamwoutMAKE","letamwout","letawinEM","letawinMAKE","letawin","letawoutEM","letawoutMAKE","letawout"  ) )
+        favg3.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("tici","ts"," letabhEM","letabhMAKE","letabhRAD","letabh","letajEM","letajMAKE","letaj","letamwinEM","letamwinMAKE","letamwin","letamwoutEM","letamwoutMAKE","letamwout","letawinEM","letawinMAKE","letawin","letawoutEM","letawoutMAKE","letawout","letaoutRAD"  ) )
         for tic in ts:
             tici=np.where(ts==tic)[0]
             #
-            favg3.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], letabhEM[tici],letabhMAKE[tici],letabhRAD[tici],letabh[tici],letajEM[tici],letajMAKE[tici],letaj[tici],letamwinEM[tici],letamwinMAKE[tici],letamwin[tici],letamwoutEM[tici],letamwoutMAKE[tici],letamwout[tici],letawinEM[tici],letawinMAKE[tici],letawin[tici],letawoutEM[tici],letawoutMAKE[tici],letawout[tici]  ) )
+            favg3.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], letabhEM[tici],letabhMAKE[tici],letabhRAD[tici],letabh[tici],letajEM[tici],letajMAKE[tici],letaj[tici],letamwinEM[tici],letamwinMAKE[tici],letamwin[tici],letamwoutEM[tici],letamwoutMAKE[tici],letamwout[tici],letawinEM[tici],letawinMAKE[tici],letawin[tici],letawoutEM[tici],letawoutMAKE[tici],letawout[tici],letaoutRAD[tici]  ) )
             #
         favg3.close()
         #
