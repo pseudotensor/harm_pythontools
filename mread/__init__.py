@@ -6698,7 +6698,7 @@ def rdr(dumpname,**kwargs):
     #read grid dump per-cell data
     #
     if dumpname.endswith(".bin"):
-        body = np.fromfile(fin,dtype=np.float32,count=-1)
+        body = np.fromfile(fin,dtype=np.float64,count=-1)
         fdbody=body
         fin.close()
     else:
