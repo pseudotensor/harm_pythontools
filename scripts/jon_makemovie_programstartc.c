@@ -7,7 +7,7 @@
 #define USEMPI (USINGMPI)
 
 
-#if(USINGPYTHON)
+#if(USINGPYTHON) // MAVARA (USINGPYTHON)
 //http://wiki.python.org/moin/IntegratingPythonWithOtherLanguages
 //http://docs.python.org/extending/embedding.html
 // Python must come first since can modify standard headers

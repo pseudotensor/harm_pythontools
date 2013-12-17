@@ -307,7 +307,7 @@ then
     # go to directory where "dumps" directory is
     # required for Nautilus, else will change to home directory when job starts
     numnodes=1
-    thequeue="analysis"
+    thequeue="normal"
     #
     if [ "$modelname" == "thickdisk7" ] ||
         [ "$modelname" == "thickdiskr7" ] ||
@@ -381,7 +381,7 @@ then
     else
         # default for lower res thick disk poloidal and toroidal runs
         echo "Ended up in default for timetot, numcorespernode, and memtot in makemovie.sh"
-        timetot="24:00:00"
+        timetot="2:00:00"   #MMMMMMMMMMMMMMMMM
         numcorespernode=80
         memtot=$((4 + $numcorespernode * 4))
     fi
@@ -390,9 +390,9 @@ then
     numcorespernodeplot=1
     numnodesplot=1
     # new analysis can take a long time.
-    timetotplot="8:00:00"
+    timetotplot="2:00:00" #MMMMMMMMMMMMMMM
     # don't always need so much memory.
-    memtotplot=32
+    memtotplot=16 #32 MAVARA
     # interactive use for <1hour:
     # ipython -pylab -colors=LightBG
     #
@@ -414,8 +414,8 @@ fi
 if [ $system -eq 5 ] &&
     [ $parallel -eq 1 ]
 then
-    thequeue="small"
-    timetot="14:00:00" # probably don't need all this is 1 task per fieldline file
+    thequeue="normal"
+    timetot="8:00:00" # probably don't need all this is 1 task per fieldline file
 
     # Kraken only has 16GB per node of 12 cores
     # so determine how many nodes need based upon Nautilus/Kraken memtot above
@@ -437,20 +437,21 @@ then
     fi
 
     numnodes=$(($numtasks/$numcorespernode))
+    numnodesreal=$numnodes
     # total number of cores used by these nodes
     #numtotalcores=$(($numnodes*12))
     # numtotalcores is currently what is allocated per node because each job is for each node
     numtotalcores=12
 
-    apcmd="aprun -n 1 -d 12 -cc none -a xt"
+    apcmd="mpiexec -ppn 12 -np 1" #"aprun -n 1 -d 12 -cc none -a xt"
 
     # setup plotting part
     numnodesplot=1
     numcorespernodeplot=12
     # this gives 16GB free for plotting
     numtotalcoresplot=$numnodesplot
-    thequeueplot="small"
-    apcmdplot="aprun -n 1 -d 12 -cc none -a xt"
+    thequeueplot="normal"
+    apcmdplot="mpiexec -ppn 12 -np 1" #"aprun -n 1 -d 12 -cc none -a xt"
     timetotplot="8:00:00"
 
 fi
@@ -464,16 +465,18 @@ if [ $system -eq 5 ] &&
 then
     # Kraken only has 16GB per node of 12 cores
     # so determine how many nodes need based upon Nautilus/Kraken memtot above
-    memtotnaut=$memtot
-    numcorespernodenaut=$numcorespernode
+    memtotnaut=$memtot #324 from above is the default
+    numcorespernodenaut=$numcorespernode  #80 is the default
 
     # numtasks set equal to total number of time slices, so each task does only 1 fieldline file
     numtasks=`ls dumps/fieldline*.bin |wc -l`
 
     # total memory required is old memtot/numcorespernode from Nautilus multiplied by total number of tasks for Kraken
     memtotpercore=$((1+$memtotnaut/$numcorespernodenaut))
-    numcorespernode=$((16/$memtotpercore))
+    numcorespernode=$((32/$memtotpercore))  # was 24. 32 is the total per node for westemere nodes
 
+    #MAVARA for now just have:
+    #numcorespernode=12 #for westemere
     if [ $numcorespernode -eq 0 ]
     then
         echo "Not enough memory per core to do anything"
@@ -488,33 +491,35 @@ then
         [ $numcorespernode -eq 12 ]
     then
         numcorespersocket=$(($numcorespernode/2))
-        apcmd="aprun -n $numtasks -S $numcorespersocket"
+        apcmd="mpiexec -ppn $numcorespernode -np $numtasks" #"aprun -n $numtasks -S $numcorespersocket"
     else
         # odd, so can't use socket version
-        apcmd="aprun -n $numtasks -N $numcorespernode"
+        apcmd="mpiexec -ppn $numcorespernode -np $numtasks" #mpiexec -np $numtasks -ppn $numcorespernode"
     fi
 
     numnodes=$(($numtasks/$numcorespernode))
-    numtotalcores=$(($numnodes * 12)) # always 12 for Kraken
+    numtotalcores=$(($numnodes * 12)) # always 12 for Kraken   # also 12 for westemere nodes on pleiades
 
-    if [ $numtotalcores -le 512 ]
+    if [ $numtotalcores -le 1024 ]
         then
-        thequeue="small"
+        thequeue="normal"
     elif [ $numtotalcores -le 8192 ]
         then
-        thequeue="medium"
+        thequeue="long"
     elif [ $numtotalcores -le 49536 ]
         then
         thequeue="large"
     fi
 
     # GODMARK: 458 thickdisk7 files only took 1:45 on Kraken
-    timetot="24:00:00" # probably don't need all this is 1 task per fieldline file
+    timetot="2:00:00" # probably don't need all this is 1 task per fieldline file #MMMMMMMMMMMMMMM
 
     echo "PART1: $numcorespernode $numcorespersocket $numnodes $numtotalcores $thequeue $timetot"
     echo "PART2: $apcmd"
 
     # setup fake setup
+    numcorespernodereal=$numcorespernode
+    numnodesreal=$numnodes
     numcorespernode=$numtasks
     numnodes=1
     #
@@ -531,10 +536,10 @@ then
     numcorespernodeplot=12
     # this gives 16GB free for plotting (temp vars + qty2.npy file has to be smaller than this or swapping will occur)
     numtotalcoresplot=$numcorespernodeplot
-    thequeueplot="small"
-    apcmdplot="aprun -n $numtasksplot"
+    thequeueplot="normal"
+    apcmdplot="mpiexec -np $numtasksplot" #mpiexec -np $numtasksplot" #"aprun -n $numtasksplot"
     # only took 6 minutes for thickdisk7 doing 458 files inside qty2.npy!  Up to death at point when tried to resample in time.
-    timetotplot="8:00:00"
+    timetotplot="8:00:00" #MMMMMMMMMMMMMMM
 
 
     echo "PART1P: $numcorespernodeplot $numnodesplot $numtotalcoresplot $thequeueplot $timetotplot"
@@ -581,7 +586,7 @@ echo "runnglobal=$runnglobal"
 # vs. time, etc. you need to pre-generate the file, which I call
 # qty2.npy: This file contains 1d information for every frame.  I
 # generate qty2.npy by running generate_time_series().  
-
+#MAVARA pay attention to above? do I need to run generate_time_series() then?   this is a python function, i think, called through main??
 
 # 1) ensure binary files in place
 
@@ -669,7 +674,7 @@ then
         cp Makefile.temp Makefile
     elif [ $system -eq 5 ]
     then
-        sed -e 's/USEKIJMCK=1/USEKIJMCK=0/g' -e 's/USEKRAKEN=0/USEKRAKEN=1/g' -e 's/USENAUTILUS=1/USENAUTILUS=0/g' -e 's/USEMPI=0/USEMPI=1/g' Makefile > Makefile.temp
+        sed -e 's/USEKIJMCK=1/USEKIJMCK=0/g' -e 's/USEKRAKEN=1/USEKRAKEN=0/g' -e 's/USENAUTILUS=1/USENAUTILUS=0/g' -e 's/USEMPI=0/USEMPI=1/g' Makefile > Makefile.temp  #MMMMMAVARA usekraken=0 so usepfe can be 1
         cp Makefile.temp Makefile
     elif [ $system -eq 6 ]
     then
@@ -694,7 +699,7 @@ localpath=`pwd`
 passpart1="a#"
 passpart2="hyq#ng9"
 
-echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
+#echo $passpart1$passpart2 | /usr/kerberos/bin/kinit  #MAVARA not sure what this does?
 
 #avoid questions that would stall things
 alias cp='cp'
@@ -900,13 +905,13 @@ then
                         #
                         if [ $system -eq 4 ]
                         then
-		                    bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l mem=${memtot}GB,walltime=$timetot,ncpus=$numcorespernodeeff -q $thequeue -N $jobname -o $outputfile -e $errorfile -M jmckinne@stanford.edu ./$thebatch"
+		                    bsubcommand="qsub1 -S /bin/bash -A TG-PHY120005 -l mem=${memtot}GB,walltime=$timetot,ncpus=$numcorespernodeeff -q $thequeue -N $jobname -o $outputfile -e $errorfile -M jmckinne@stanford.edu ./$thebatch"
                         elif [ $system -eq 5 ]
                         then
                             superbatch=superbatchfile.$thebatch
                             rm -rf $superbatch
                             echo "cd $dirname" >> $superbatch
-                            cat ~/setuppython27 >> $superbatch
+                            cat ~/setuppython272 >> $superbatch
                             echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch
                             rm -rf $dirname/matplotlibdir/
                             echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $superbatch
@@ -922,7 +927,7 @@ then
                             localoutputfile=python_${fakeruni}_${runn}.out
                             rm -rf $localerrorfile
                             rm -rf $localoutputfile
-		                    bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l walltime=$timetot,size=$numtotalcores -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M jmckinne@stanford.edu -m be ./$superbatch"
+		                    bsubcommand="qsub -S /bin/bash -l select=$numnodes,ncpus=12,model=wes,walltime=$timetot -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M mavara@astro.umd.edu -m be ./$superbatch"
                         else
                             # probably specifying ptile below is not necessary
 		                    bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernode] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -958,16 +963,16 @@ then
                     if [ $system -eq 4 ] ||
                         [ $system -eq 5 ]
                     then
-		                pendjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep " Q " | wc -l`
-		                runjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep " R " | wc -l`
+		                pendjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep mavara | grep " Q " | wc -l`
+		                runjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep mavara | grep " R " | wc -l`
                     else
 		                pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep PEND | wc -l`
 		                runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep RUN | wc -l`
                     fi
-		            totaljobs=$(($pendjobs+$runjobs))
-		            
-		            if [ $totaljobs -gt 0 ]
-		            then
+		           totaljobs=$(($pendjobs+$runjobs))
+		    
+			   if [ $totaljobs -gt 0 ]
+		             then
 		                echo "PEND=$pendjobs RUN=$runjobs TOTAL=$totaljobs ... waiting ..."
 		                sleep 10
                         firsttimejobscheck=0
@@ -1001,7 +1006,7 @@ then
 fi
 
 
-echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
+#echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
 
 
 ###################################
@@ -1042,7 +1047,7 @@ then
 fi
 
 
-echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
+#echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
 
 
 ###################################
@@ -1107,13 +1112,13 @@ then
             #
             if [ $system -eq 4 ]
             then
-		        bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l mem=${memtotplot}GB,walltime=$timetotplot,ncpus=$numcorespernodeplot -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
+		        bsubcommand="qsub2 -S /bin/bash -A TG-PHY120005 -l mem=${memtotplot}GB,walltime=$timetotplot,ncpus=$numcorespernodeplot -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
             elif [ $system -eq 5 ]
             then
                 superbatch=superbatchfile.$thebatch
                 rm -rf $superbatch
                 echo "cd $dirname" >> $superbatch
-                cat ~/setuppython27 >> $superbatch
+                cat ~/setuppython272 >> $superbatch
                 rm -rf $dirname/matplotlibdir/
                 echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $superbatch
                 echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch
@@ -1123,13 +1128,14 @@ then
                 else
 		            cmdraw="$makemoviecfullfile $chunklisttypeplot $chunklistplot $runnplot $DATADIR $jobcheck $myinitfile3 $runtype $modelname plot $makepowervsmplots $makespacetimeplots $makefftplot $makespecplot $makeinitfinalplot $makethradfinalplot"
                     echo "$apcmdplot $cmdraw" >> $superbatch
+		    echo "mpdallexit" >> $superbatch
                 fi
                 localerrorfile=python.plot.stderr.out
                 localoutputfile=python.plot.out
                 rm -rf $localerrorfile
                 rm -rf $localoutputfile
                 #
-		        bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l walltime=$timetotplot,size=$numtotalcoresplot -q $thequeueplot -N $jobname -o $localoutputfile -e $localerrorfile -M jmckinne@stanford.edu -m be ./$superbatch"
+		bsubcommand="qsub -S /bin/bash -l select=$numnodesplot:walltime=$timetotplot -q $thequeueplot -N $jobname -o $localoutputfile -e $localerrorfile -M mavara@astro.umd.edu -m be ./$superbatch"
             else
                 # probably specifying ptile below is not necessary
 		        bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernodeplot] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -1163,8 +1169,8 @@ then
             if [ $system -eq 4 ] ||
                 [ $system -eq 5 ]
             then
-		        pendjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep " Q " | wc -l`
-		        runjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep " R " | wc -l`
+		        pendjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep mavara | grep " Q " | wc -l`
+		        runjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep mavara | grep " R " | wc -l`
             else
 		        pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep PEND | wc -l`
 		        runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep RUN | wc -l`
@@ -1231,7 +1237,7 @@ fi
 
 
 
-echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
+#echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
 
 
 ###################################
@@ -1425,13 +1431,13 @@ then
                         #
                         if [ $system -eq 4 ]
                         then
-		                    bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l mem=${memtot}GB,walltime=$timetot,ncpus=$numcorespernodeeff -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
+		                    bsubcommand="qsub3 -S /bin/bash -A TG-PHY120005 -l mem=${memtot}GB,walltime=$timetot,ncpus=$numcorespernodeeff -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
                         elif [ $system -eq 5 ]
                         then
                             superbatch=superbatchfile.$thebatch
                             rm -rf $superbatch
                             echo "cd $dirname" >> $superbatch
-                            cat ~/setuppython27 >> $superbatch
+                            cat ~/setuppython272 >> $superbatch
                             rm -rf $dirname/matplotlibdir/
                             echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $superbatch
                             echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch
@@ -1442,13 +1448,14 @@ then
                             else
 		                        cmdraw="$makemoviecfullfile $chunklisttype $chunklist $runn $DATADIR $jobcheck $myinitfile4 $runtype $modelname $fakeruni $runn"
                                 echo "$apcmd $cmdraw" >> $superbatch
+				echo "mpdallexit" >> $superbatch
                             fi
 		                    localerrorfile=python_${fakeruni}_${runn}.stderr.movieframes.out
                             localoutputfile=python_${fakeruni}_${runn}.movieframes.out
                             rm -rf $localerrorfile
                             rm -rf $localoutputfile
                             #
-		                    bsubcommand="qsub  -S /bin/bash -A TG-PHY120005 -l walltime=$timetot,size=$numtotalcores -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M jmckinne@stanford.edu -m be ./$superbatch"
+		                    bsubcommand="qsub  -S /bin/bash -l select=$numnodes:ncpus=12:walltime=$timetot -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M mavara@astro.umd.edu -m be ./$superbatch"
                         else
                             # probably specifying ptile below is not necessary
 		                    bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernode] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -1484,8 +1491,8 @@ then
                     if [ $system -eq 4 ] ||
                         [ $system -eq 5 ]
                     then
-		                pendjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep " Q " | wc -l`
-		                runjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep " R " | wc -l`
+		                pendjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep mavara | grep " Q " | wc -l`
+		                runjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep mavara | grep " R " | wc -l`
                     else
 		                pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep PEND | wc -l`
 		                runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep RUN | wc -l`
@@ -1524,7 +1531,7 @@ then
     
 fi
 
-echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
+#echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
 
 
 ###################################
@@ -1581,7 +1588,7 @@ then
 fi
 
 
-echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
+#echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
 
 
 ###################################
@@ -1622,7 +1629,7 @@ then
 
     echo "Doing avg file"
 
-    runn=${runnglobal}
+    runn=${runnglobal} #num field line files 41
     numparts=1
 
 
@@ -1634,12 +1641,12 @@ then
     cp $initfile $myinitfile5
 
     
-    je=$(( $numparts - 1 ))
+    je=$(( $numparts - 1 )) # 0
     # above two must be exactly divisible
-    itot=$(( $runn/$numparts ))
-    ie=$(( $itot -1 ))
+    itot=$(( $runn/$numparts )) # 41
+    ie=$(( $itot -1 )) #40
 
-    resid=$(( $runn - $itot * $numparts ))
+    resid=$(( $runn - $itot * $numparts )) # 0
     
     echo "Running with $itot cores simultaneously"
     
@@ -1696,7 +1703,7 @@ then
 		            fi
 	            #fi
 
-	            if [ $dowrite -eq 1 ]
+	            if [ $dowrite -eq 1 ] #only happens at first core on each node
 		        then
                   # create script to be run
 		            thebatch="sh5_python_${i}_${numcorespernode}_${runn}.sh"
@@ -1791,33 +1798,34 @@ then
                         #
                         if [ $system -eq 4 ]
                         then
-		                    bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l mem=${memtot}GB,walltime=$timetot,ncpus=$numcorespernodeeff -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
+		                    bsubcommand="qsub4 -S /bin/bash -A TG-PHY120005 -l mem=${memtot}GB,walltime=$timetot,ncpus=$numcorespernodeeff -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
                         elif [ $system -eq 5 ]
                         then
                             superbatch=superbatchfile.$thebatch
                             rm -rf $superbatch
                             echo "cd $dirname" >> $superbatch
-                            cat ~/setuppython27 >> $superbatch
+                            cat ~/setuppython272 >> $superbatch
                             rm -rf $dirname/matplotlibdir/
                             echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $superbatch
                             echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch
-		                    fakeruni=99999999999999
+		            fakeruni=99999999999999
                             if [ $parallel -eq 1 ]
                             then
                                 echo "$apcmd ./$thebatch" >> $superbatch
                             else
-		                        cmdraw="$makemoviecfullfile $chunklisttype $chunklist $runn $DATADIR $jobcheck $myinitfile5 $runtype $modelname $fakeruni $runn $itemspergroup"
+		                cmdraw="$makemoviecfullfile $chunklisttype $chunklist $runn $DATADIR $jobcheck $myinitfile5 $runtype $modelname $fakeruni $runn $itemspergroup"
                                 echo "$apcmd $cmdraw" >> $superbatch
+				echo "mpdallexit" >> $superbatch
                             fi
-		                    localerrorfile=python_${fakeruni}_${runn}.stderr.avg.out
+		            localerrorfile=python_${fakeruni}_${runn}.stderr.avg.out
                             localoutputfile=python_${fakeruni}_${runn}.avg.out
                             rm -rf $localerrorfile
                             rm -rf $localoutputfile
                             #
-		                    bsubcommand="qsub  -S /bin/bash -A TG-PHY120005 -l walltime=$timetot,size=$numtotalcores -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M jmckinne@stanford.edu -m be ./$superbatch"
+		            bsubcommand="qsub  -S /bin/bash -l select=$numnodesreal:ncpus=12 -l walltime=$timetot -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M mavara@astro.umd.edu -m be ./$superbatch"
                         else
                             # probably specifying ptile below is not necessary
-		                    bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernode] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
+		            bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernode] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
                         fi
                         #
 		                if [ $testrun -eq 1 ]
@@ -1852,8 +1860,8 @@ then
                     if [ $system -eq 4 ] ||
                         [ $system -eq 5 ]
                     then
-		                pendjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep " Q " | wc -l`
-		                runjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep " R " | wc -l`
+		                pendjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep mavara | grep " Q " | wc -l`
+		                runjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep mavara | grep " R " | wc -l`
                     else
 		                pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep PEND | wc -l`
 		                runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep RUN | wc -l`
@@ -1894,7 +1902,7 @@ then
 
 fi
 
-echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
+#echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
 
 
 ###################################
@@ -1954,7 +1962,7 @@ then
 
 fi
 
-echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
+#echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
 
 
 ###################################
@@ -2025,13 +2033,13 @@ then
             #
             if [ $system -eq 4 ]
             then
-		        bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l mem=${memtotplot}GB,walltime=$timetotplot,ncpus=$numcorespernodeplot -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
+		        bsubcommand="qsub5 -S /bin/bash -A TG-PHY120005 -l mem=${memtotplot}GB,walltime=$timetotplot,ncpus=$numcorespernodeplot -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
             elif [ $system -eq 5 ]
             then
                 superbatch=superbatchfile.$thebatch
                 rm -rf $superbatch
                 echo "cd $dirname" >> $superbatch
-                cat ~/setuppython27 >> $superbatch
+                cat ~/setuppython272 >> $superbatch
                 rm -rf $dirname/matplotlibdir/
                 echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $superbatch
                 echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch
@@ -2041,13 +2049,14 @@ then
                 else
 		            cmdraw="$makemoviecfullfile $chunklisttypeplot $chunklistplot $runnplot $DATADIR $jobcheck $myinitfile7 $runtype $modelname"
                     echo "$apcmdplot $cmdraw" >> $superbatch
+		    echo "mpdallexit" >> $superbatch
                 fi
                 localerrorfile=python.plot.avg.stderr.out
                 localoutputfile=python.plot.avg.out
                 rm -rf $localerrorfile
                 rm -rf $localoutputfile
-                #
-		        bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l walltime=$timetotplot,size=$numtotalcoresplot -q $thequeueplot -N $jobname -o $localoutputfile -e $localerrorfile -M jmckinne@stanford.edu -m be ./$superbatch"
+                # 
+		        bsubcommand="qsub -S /bin/bash -l select=$numnodes,ncpus=12,model=wes,walltime=$timetotplot -q $thequeueplot -N $jobname -o $localoutputfile -e $localerrorfile -M mavara@astro.umd.edu -m be ./$superbatch"
             else
                     # probably specifying ptile below is not necessary
 		        bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernodeplot] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -2080,8 +2089,8 @@ then
             if [ $system -eq 4 ] ||
                 [ $system -eq 5 ]
             then
-		        pendjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep " Q " | wc -l`
-		        runjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep " R " | wc -l`
+		        pendjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep mavara | grep " Q " | wc -l`
+		        runjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep mavara | grep " R " | wc -l`
             else
 		        pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep PEND | wc -l`
 		        runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep RUN | wc -l`
@@ -2121,7 +2130,7 @@ then
 fi
 
 
-echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
+#echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
 
 
 # to clean-up bad start, use:

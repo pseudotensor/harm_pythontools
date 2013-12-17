@@ -109,7 +109,7 @@ def runglobalsetup(argv=None):
     setpythonpath()
     #
     global runtype
-    if len(sys.argv[1:])>0 and sys.argv[1] != '--pylab':  # MAVARA added 'and sys.argv[1] test so can use main() after running __init__.py from ipython terminal
+    if len(sys.argv[1:])>0 : # and sys.argv[1] != '--pylab':  # MAVARA  added 'and sys.argv[1] test so can use main() after running __init__.py from ipython terminal
         runtype=int(sys.argv[1])
     else:
         print("No run type specified") ; sys.stdout.flush()
@@ -5402,7 +5402,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         print(taurad2integrated[5,:,0]) ; sys.stdout.flush()
         print(taurad2integrated[25,:,0]) ; sys.stdout.flush()
         print(taurad2integrated[60,:,0]) ; sys.stdout.flush()
-        print(taurad2integrated[100,:,0]) ; sys.stdout.flush()
+#        print(taurad2integrated[100,:,0]) ; sys.stdout.flush() #MAVARA
         np.set_printoptions(threshold=10)
     ####################
     #
@@ -5809,7 +5809,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
 
 
 
-def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,arrowsize=1,dorho=True,doentropy=False,dobsq=False,dobeta=False,doQ1=False,doQ2=False,doErf=False):  #MAVARA added dotaurad
+def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,arrowsize=1,dorho=True,doentropy=False,dobsq=False,dobeta=False,doQ1=False,doQ2=False,doErf=False, dotaurad=False):  #MAVARA added dotaurad
     extent=(-len,len,-len,len)
     palette=cm.jet
     palette.set_bad('k', 1.0)
@@ -23839,7 +23839,7 @@ def ploteta():
     ax34r.set_yticks(tck)
     gc.collect()
 
-def mkmovie(framesize=50, domakeavi=False):
+def mkmovie(framesize=100, domakeavi=False):
     # use to avoid making plots in ploqty...() while creating plots
     global avoidplotsglobal
     avoidplotsglobal=1

@@ -14,9 +14,9 @@
 ###########################
 
 USEKIJMCK=0
-USEKRAKEN=1
+USEKRAKEN=0
 USENAUTILUS=0
-
+USEPFE=1
 #############
 # Choose whether to use MPI
 USEMPI=1
@@ -112,6 +112,89 @@ endif
 
 
 
+ifeq ($(USEPFE),1)
+# PFE modeled and largely copied from KRAKEN above. Main changes in USEMPI == 1 section
+
+# Currently, for full compatibility, should load PrgEnv-gnu and unload PrgEnv-intel
+ifeq ($(USEMPI),0)
+# mpicc should work perfectly with linking as long as all paths are set as if source'ed relevant lib paths, include paths, etc.  Should be done by system!
+DFLAGS=-DUSINGMPI=$(USEMPI) -DUSINGPYTHON=$(USEPYTHON)
+# -no-ipo
+COMP=cc $(DFLAGS)
+ifeq ($(USEPYTHON),1)
+CFLAGS=-I/lustre/scratch/proj/sw/python-cnl/2.7.1/cnl3.1_gnu4.6.2/include/python2.7/
+LDFLAGS=-L/lustre/scratch/proj/sw/python-cnl/2.7.1/cnl3.1_gnu4.6.2/lib/ -lpython2.7
+else
+CFLAGS=
+LDFLAGS=
+endif
+CC=$(COMP) $(CFLAGS) $(DFLAGS)
+MCC=$(CC)
+LINKER=$(COMP) $(LDFLAGS)
+endif
+
+
+
+ifeq ($(USEMPITRYING),1)
+# mpicc should work perfectly with linking as long as all paths are set as if source'ed relevant lib paths, include paths, etc.  Should be done by system!
+DFLAGS=-DUSINGMPI=$(USEMPI) -DUSINGPYTHON=$(USEPYTHON)
+#DFLAGS=-DUSINGMPI=0
+# -no-ipo
+COMP=gcc $(DFLAGS)
+ifeq ($(USEPYTHON),1)
+#CFLAGS=-I/sw/xt/python/2.7.1/sles11.1_gnu4.3.2/include/python2.7/
+#CFLAGS=-I/lustre/scratch/proj/sw/python-cnl/2.7.1/cnl3.1_gnu4.6.2/include/python2.7/ -I/opt/cray/mpt/5.3.5/xt/seastar/mpich2-gnu/46/include
+CFLAGS=-I/lustre/scratch/proj/sw/python-cnl/2.7.1/.cnl2.2_gnu4.5.3.static/include/python2.7/ -I/opt/cray/mpt/5.3.5/xt/seastar/mpich2-gnu/46/include
+#CFLAGS=-I/usr/include/python/
+#LDFLAGS=-lstdc++ -L/usr/lib/python2.6 -lpython2.6
+#LDFLAGS=-L/sw/xt/python/2.7.1/sles11.1_gnu4.3.2/lib/ -lpython2.7
+#LDFLAGS=-L/lustre/scratch/proj/sw/python-cnl/2.7.1/cnl3.1_gnu4.6.2/lib/ -lpython2.7 -L/opt/cray/mpt/5.3.5/xt/seastar/mpich2-gnu/46/lib -lmpich_gnu
+LDFLAGS=-L/lustre/scratch/proj/sw/python-cnl/2.7.1/.cnl2.2_gnu4.5.3.static/lib/ -static -lpython2.7 -L/opt/cray/mpt/5.3.5/xt/seastar/mpich2-gnu/46/lib -lmpich_gnu
+else
+CFLAGS=-I/opt/cray/mpt/5.3.5/xt/seastar/mpich2-gnu/46/include
+LDFLAGS=-L/opt/cray/mpt/5.3.5/xt/seastar/mpich2-gnu/46/lib -lmpich_gnu
+endif
+CC=$(COMP) $(CFLAGS) $(DFLAGS)
+MCC=$(CC)
+LINKER=$(COMP) $(LDFLAGS)
+endif
+
+# -dynamic doesn't work with Kraken, says not compiled for compute nodes!  Unless use module load python/2.7.1-cnl specifically
+ifeq ($(USEMPIBAD),1)
+DFLAGS=-DUSINGMPI=$(USEMPI) -DUSINGPYTHON=$(USEPYTHON)
+COMP=cc -dynamic $(DFLAGS)
+ifeq ($(USEPYTHON),1)
+CFLAGS=-I/lustre/scratch/proj/sw/python-cnl/2.7.1/cnl3.1_gnu4.6.2/include/python2.7/
+LDFLAGS=-lpython2.7
+else
+CFLAGS=
+LDFLAGS=
+endif
+CC=$(COMP) $(CFLAGS) $(DFLAGS)
+MCC=$(CC)
+LINKER=$(COMP) $(LDFLAGS)
+endif
+
+# can use below if not using python
+ifeq ($(USEMPI),1)
+DFLAGS=-DUSINGMPI=$(USEMPI) -DUSINGPYTHON=$(USEPYTHON) -openmp
+COMP=mpicc $(DFLAGS)
+ifeq ($(USEPYTHON),1)
+CFLAGS=-I/lustre/scratch/proj/sw/python-cnl/2.7.1/.cnl2.2_gnu4.5.3.static/include/python2.7/
+LDFLAGS=-L/lustre/scratch/proj/sw/python-cnl/2.7.1/.cnl2.2_gnu4.5.3.static/lib/  -lpython2.7
+else
+CFLAGS=
+LDFLAGS=
+endif
+CC=mpicc $(CFLAGS) $(DFLAGS) # was $COMP $CFLAGS $DFLAGS with parenthese around them which I removed in case it made it uncommented here.
+MCC=$(CC)
+LINKER=$(COMP) $(LDFLAGS)
+endif
+
+endif
+
+
+
 
 
 ifeq ($(USENAUTILUS),1)
@@ -176,7 +259,7 @@ makemoviec: jon_makemovie_programstartc.o
 	$(LINKER) -o makemoviec jon_makemovie_programstartc.o
 
 clean:
-	rm -f makemoviec jon_makemovie_programstartc.o
+	#rm -f makemoviec jon_makemovie_programstartc.o
 
 jon_makemovie_programstartc.o: jon_makemovie_programstartc.c Makefile
 	$(MCC)  -c $(CFLAGS)  jon_makemovie_programstartc.c
