@@ -49,7 +49,7 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
-def radwavetest_movie(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",maxdumps=1800):
+def radwavetest_movie(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",maxdumps=1800,ext=".bin"):
     nlist  = [64]
     errlist = []
     #cwd = os.getcwd()
@@ -59,9 +59,9 @@ def radwavetest_movie(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",m
             #path = os.path.join(cwd, "%s_%d" % (prefix,n))
             path = os.path.join(cwd, "%s" % (prefix))
             os.chdir(path)
-            grid3d("gdump")
-            rd("dump%04d" % i)
-            rdr("raddump%04d" % i)
+            grid3d("gdump%s" % ext)
+            rd("dump%04d%s" % (i,ext))
+            rdr("raddump%04d%s" % (i,ext))
             wavesolution(time=t,x=r[:,0,0])
             P = 2*np.pi/RADWAVE_OMRE
             gs3 = GridSpec(3,3)
@@ -297,9 +297,9 @@ def compute_test_error(testno=0,prefix="radwave",cwd = "/home/atchekho/code/harm
         #print( "Test #%d:" % testno )
         path = os.path.join(cwd, "%s%d_%d" % (prefix,testno,n))
         os.chdir(path)
-        grid3d("gdump")
-        rd("dump%04d" % i)
-        rdr("raddump%04d" % i)
+        grid3d("gdump%s" % ext)
+        rd("dump%04d%s" % (i,ext))
+        rdr("raddump%04d%s" % (i,ext))
         wavesolution(time=t,x=r[:,0,0])
         rhoerr = np.mean(np.abs(rho[:,0,0]-a_rho)); #/RADWAVE_DRRE;
         errlist.append(rhoerr)
