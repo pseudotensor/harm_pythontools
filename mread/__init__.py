@@ -49,13 +49,13 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
-def radwavetest_movie(prefix="radwave",cwd = "/home/atchekho/code/harm/",maxdumps=1800):
+def radwavetest_movie(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",maxdumps=1800):
     nlist  = [64]
     errlist = []
     #cwd = os.getcwd()
     plt.figure(1,figsize=(12,9))
     for n in nlist:
-        for i in xrange(0,maxdumps,100):
+        for i in xrange(0,11,1):
             #path = os.path.join(cwd, "%s_%d" % (prefix,n))
             path = os.path.join(cwd, "%s" % (prefix))
             os.chdir(path)
@@ -69,10 +69,10 @@ def radwavetest_movie(prefix="radwave",cwd = "/home/atchekho/code/harm/",maxdump
             ax = plt.subplot(gs3[0,0])
             plt.plot(r[:,0,0],rho[:,0,0],"or"); 
             plt.plot(r[:,0,0],a_rho,"b")
-            if i == 0:
-                ylims = ax.get_ylim()
-            else:
-                ax.set_ylim(ylims)
+            # if i == 0:
+            #     ylims = ax.get_ylim()
+            # else:
+            #     ax.set_ylim(ylims)
             plt.text(0.9*r.max(),0.9*ax.get_ylim()[1]+0.1*ax.get_ylim()[0],r"$t/P = %g$" % (t/P),ha="right",va="top")
             plt.setp( ax.get_xticklabels(), visible=False )
             ax.set_ylabel(r"$\rho$")
@@ -122,7 +122,7 @@ def radwavetest_movie(prefix="radwave",cwd = "/home/atchekho/code/harm/",maxdump
     #plt.plot(r[:,0,0],pradffortho[0][:,0,0],"r"); plt.plot(r[:,0,0],a_Erf[:],"b")
     #plot
 
-def plotradtestconv(prefix="radwave",cwd = "/home/atchekho/code/harm/",maxdumps=1800):
+def plotradtestconv(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/"):
     #get sorted list of run directories for different resolutions
     #flist = np.sort(glob.glob( "%s*" % prefix ) )
     testnolist = [1, 10, 11, 104, 105, 1001, 1101, 1002, 1102]
@@ -138,7 +138,7 @@ def plotradtestconv(prefix="radwave",cwd = "/home/atchekho/code/harm/",maxdumps=
         errlist = []
         for n in nlist:
             print( "Test #%d:" % testno )
-            path = os.path.join(cwd, "%s%d_%d" % (prefix,n))
+            path = os.path.join(cwd, "%s%d_%d" % (prefix,testno,n))
             os.chdir(path)
             grid3d("gdump")
             rd("dump%04d" % i)
@@ -161,7 +161,7 @@ def plotradtestconv(prefix="radwave",cwd = "/home/atchekho/code/harm/",maxdumps=
             print rhoerr, ugerr, vxerr, vyerr, Bxerr, Byerr, Eraderr, Fxerr, Fyerr
         plt.clf()
         plt.plot(nlist,errlist)
-        plt.title("Test #%d" % testno)
+        plt.title(r"${\rm Test\ %d}$" % testno)
         plt.xscale("log")
         plt.yscale("log")
         plt.xlabel(r"$N$")
@@ -17537,6 +17537,8 @@ if __name__ == "__main__":
             mkath("mkpath",prefix="pframe")
         elif sys.argv[1] == "mkmov":
             mkmov()
+        elif sys.argv[1] == "radwaveconv":
+            plotradtestconv()
     if False:
         plt.clf()
         ubsplot(dosavefig=0)
