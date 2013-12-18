@@ -18083,8 +18083,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     else:
         # then normalize by Eddington
         print("Normalizing Mdot by Eddington") ; sys.stdout.flush()
-        print( "HLatex5: ModelName & $\\dot{M}_{\\rm{}H}$  & $\\dot{M}_{\\rm{}in,i}-\\dot{M}_{\\rm{}H}$ & $\\dot{M}_{\\rm{}in,o}-\\dot{M}_{\\rm{}H}$     & $\\dot{M}_{\\rm{}j}$    & $\\dot{L}_{\\rm{}rad,o}$    & $\\dot{M}_{\\rm{}mw,i}$ & $\\dot{M}_{\\rm{}mw,o}$    & $\\dot{M}_{\\rm{}w,i}$ & $\\dot{M}_{\\rm{}w,o}$ & $\\dot{L}_{\\rm{}rad,o}$ \\\\" )
-        print( "VLatex5: %s         & %g & %g & %g    & %g    & %g & %g & %g   & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2((1.0/Medd)*mdotfinavg), roundto2((1.0/Medd)*(mdotinrdiskinfinavg-mdotfinavg)), roundto2((1.0/Medd)*(mdotinrdiskoutfinavg-mdotfinavg)), roundto2((1.0/Medd)*mdotjetfinavg), roundto2((1.0/Ledd)*edradoutiniavg),    roundto2((1.0/Medd)*mdotmwinfinavg), roundto2((1.0/Medd)*mdotmwoutfinavg),     roundto2((1.0/Medd)*mdotwinfinavg), roundto2((1.0/Medd)*mdotwoutfinavg), roundto2((1.0/Ledd)*edradoutiniavg),    modelname ) )
+        print( "HLatex5: ModelName & $\\dot{M}_{\\rm{}H}$  & $\\dot{M}_{\\rm{}in,i}-\\dot{M}_{\\rm{}H}$ & $\\dot{M}_{\\rm{}in,o}-\\dot{M}_{\\rm{}H}$     & $\\dot{M}_{\\rm{}j}$    & $\\dot{M}_{\\rm{}mw,i}$ & $\\dot{M}_{\\rm{}mw,o}$    & $\\dot{M}_{\\rm{}w,i}$ & $\\dot{M}_{\\rm{}w,o}$ & $\\dot{L}_{\\rm{}rad,o}$ \\\\" )
+        print( "VLatex5: %s         & %g & %g & %g    & %g    & %g & %g & %g   & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2((1.0/Medd)*mdotfinavg), roundto2((1.0/Medd)*(mdotinrdiskinfinavg-mdotfinavg)), roundto2((1.0/Medd)*(mdotinrdiskoutfinavg-mdotfinavg)), roundto2((1.0/Medd)*mdotjetfinavg),  roundto2((1.0/Medd)*mdotmwinfinavg), roundto2((1.0/Medd)*mdotmwoutfinavg),     roundto2((1.0/Medd)*mdotwinfinavg), roundto2((1.0/Medd)*mdotwoutfinavg), roundto2((1.0/Ledd)*edradoutiniavg),    modelname ) )
     #
     # 12:
     print( "HLatex95: $\\delta r:r \\delta\\theta:r\\sin\\theta \\delta\\phi$" )
@@ -27369,6 +27369,7 @@ def harmradplot1():
     # 
     import os
     os.chdir("/data/jon/harmgit/koraltestcompare/run.radbeam2d.kscoords.1.30x60.gammaradmaxfix.0.9999")
+    #os.chdir("/data/jon/harmgit/koraltestcompare/run.radbeam2d.kscoords.1.30x60.gammaradmaxfix.0.9999.hll")
     #os.chdir("/data/jon/harmgit/koraltestcompare/run.radbeam2d.kscoords.1.30x60.gammaradmaxfix.0.99999")
     #
     # first load grid file
@@ -27380,6 +27381,7 @@ def harmradplot1():
         cvel()
         Tcalcud(maxbsqorho=maxbsqorhonear,which=condmaxbsqorho)
     # now plot something you read-in
+    plt.close(1)
     plt.figure(1)
     plt.clf()
     #toplot=np.log(rho)
@@ -27525,6 +27527,113 @@ def harmradplot4():
     #aphi = fieldcalc() # keep sign information
     #plc(aphi,colors='k')
     print("time4=%g" % (t))
+
+
+def harmradplot5():
+    #
+    print("GOT HERESTART");sys.stdout.flush()
+    # 
+    import os
+    #os.chdir("/data/jon/harmgit/koraltestcompare/run.raddblshadow.labframe.0.999")
+    #os.chdir("/data/jon/harmgit/koraltestcompare/run.raddblshadow.labframe.0.999.ffbutlabset")
+    #os.chdir("/data/jon/harmgit/koraltestcompare/run.raddblshadow.labframe.0.999.ffbutlabset.bothboundaries")
+    #os.chdir("/data/jon/harmgit/koraltestcompare/run.raddblshadow.labframe.0.999.ffbutlabset.bothboundaries.laxf.paraline.rhoamb1em7/")
+    #os.chdir("/data/jon/harmgit/koraltestcompare/run.dblshadow.new/")
+    #os.chdir("/data/jon/harmgit/koraltestcompare/run.dblshadow.new.hll/")
+    os.chdir("/data/jon/harmgit/koraltestcompare/run.dblshadow.new.hll.fulloutput0/")
+    #
+    print("GOT HEREM1");sys.stdout.flush()
+    #
+    # first load grid file
+    grid3d("gdump")
+    # now try loading a single fieldline file
+    rfd("fieldline0100.bin")
+    #rfd("fieldline0086.bin")
+    if 1==1:
+        (rhoclean,ugclean,uublob,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
+        cvel()
+        Tcalcud(maxbsqorho=maxbsqorhonear,which=condmaxbsqorho)
+    # now plot something you read-in
+    fignum=1
+    plt.close(fignum)
+    fig=plt.figure(fignum,figsize=(9,2.25))
+    #ax=fig.add_subplot(111)
+    plt.clf()
+    plt.axis('equal')
+    #toplot=np.log(rho)
+    #toplot=np.log(ug)
+    toplot=-TudRAD[0,0]
+    #toplot=Erf
+    #plco(lrho,cb=True,nc=50)
+    print("GOT HERE.5");sys.stdout.flush()
+    ax = plt.gca()
+    #plt.figure(num=fignum,figsize=(6,1),dpi=300)
+    #
+    myx=r[:,:,:]
+    myy=h[:,:,:]
+    myz=toplot[:,:,:]
+    print("GOT HERENEW");sys.stdout.flush()
+    newx=np.zeros((nx,2*ny,nz),dtype=myx.dtype)
+    newx[:,ny:2*ny,:]=myx[:,0:ny,:]
+    newx[:,ny-1::-1,:]=myx[:,0:ny,:]
+    newy=np.zeros((nx,2*ny,nz),dtype=myx.dtype)
+    newy[:,ny:2*ny,:]=myy[:,0:ny,:]
+    newy[:,ny-1::-1,:]=-myy[:,0:ny,:]
+    #newy[:,2*ny-1,:]=-myy[:,ny-1,:]
+    newz=np.zeros((nx,2*ny,nz),dtype=myx.dtype)
+    newz[:,ny:2*ny,:]=myz[:,0:ny,:]
+    newz[:,ny-1::-1,:]=myz[:,0:ny,:]
+    #
+    newU=np.zeros((nx,2*ny,nz),dtype=myx.dtype)
+    newU[:,ny:2*ny,:]=-TudRAD[1,0][:,0:ny,:]
+    newU[:,ny-1::-1,:]=-TudRAD[1,0][:,0:ny,:]
+    #
+    newV=np.zeros((nx,2*ny,nz),dtype=myx.dtype)
+    newV[:,ny:2*ny,:]=-TudRAD[2,0][:,0:ny,:]
+    newV[:,ny-1::-1,:]=+TudRAD[2,0][:,0:ny,:]
+    #
+    print("NEWY");sys.stdout.flush()
+    print(newy[nx-1,0,0])
+    print(newy[nx-1,2*ny-1,0])
+    #
+    print("NEWY2");sys.stdout.flush()
+    print(newy[nx-1,1,0])
+    print(newy[nx-1,2*ny-2,0])
+    #
+    print("NEWZ");sys.stdout.flush()
+    print(newz[nx-1,0,0])
+    print(newz[nx-1,2*ny-1,0])
+    #
+    print("NEWZ2");sys.stdout.flush()
+    print(newz[nx-1,1,0])
+    print(newz[nx-1,2*ny-2,0])
+    #
+    #
+    newrho=np.zeros((nx,2*ny,nz),dtype=myx.dtype)
+    newrho[:,ny:2*ny,:]=rho[:,0:ny,:]
+    newrho[:,ny-1::-1,:]=rho[:,0:ny,:]
+    #
+    res = ax.contour(newx[:,:,0],newy[:,:,0],np.log(newrho[:,:,0]+100),3,colors='white')
+    #plc(newrho[:,:,0],xcoord=newx,ycoord=newy,nc=50)
+    print("GOT HERE1");sys.stdout.flush()
+    #res=ax.pcolor(myx,myy,myz)
+    res=ax.pcolor(newx[:,:,0],newy[:,:,0],newz[:,:,0])
+    print("GOT HERE2");sys.stdout.flush()
+    #
+    plt.quiver(newx[::4,::4,0],newy[::4,::4,0],newU[::4,::4,0],newV[::4,::4,0],color='gray') #,width=0.01,linewidth=1,scale=1E10)
+    #
+    ax.set_xlabel(r'$x$',fontsize=16,ha='left',labelpad=10)
+    ax.set_ylabel(r'$y$',fontsize=16,ha='left',labelpad=10)
+    plt.colorbar(res,ax=ax)
+    #
+    plt.savefig("rtest84.eps", bbox_inches='tight')
+    from subprocess import call
+    #call(["scp","rtest84.eps jon@physics-179.umd.edu:/data/jon/harm_harmrad/"])
+    os.system("epstopdf rtest84.eps")
+    os.system("scp rtest84.eps rtest84.pdf jon@physics-179.umd.edu:/data/jon/harm_harmrad/")
+    #aphi = fieldcalc() # keep sign information
+    #plc(aphi,colors='k')
+    print("time=%g" % (t))
 
 
 
