@@ -262,7 +262,7 @@ def write_wave_latex(wavesparamstlist,prefix="radwave",cwd = "/home/atchekho/cod
         if tau <= 0: continue 
         #classify radiative tests according to their radiation dominance (RADWAVE_PP)
         #and optical depth (RADWAVE_KAPPA)
-        index = 2*(tau < 1) + 1*(pp < 1)
+        index = 1*(tau >= 1) + 2*(pp >= 1)
         fp = fplist[index]
         n[index]+=1;
         #first test of this kind?
@@ -273,23 +273,28 @@ def write_wave_latex(wavesparamstlist,prefix="radwave",cwd = "/home/atchekho/cod
             else: str2 = "gas-dominated"
             str = "%s, %s" % (str1, str2)
             fp.write( "\\hline\n" )
-            fp.write( "\\multicolumn{3}{|c|}{%s ($\\tau = %g$, ${\\cal P} = %g$)} \\\\\n" % (str, tau, pp) )
+            fp.write( "\\multicolumn{5}{|c|}{%s ($\\tau = %g$, ${\\cal P} = %g$)} \\\\\n" % (str, tau, pp) )
         lab = wavetype2text[int(RADWAVE_WAVETYPE)]
         fp.write( "\\hline\n" )
         fp.write( "\\parbox[t]{2mm}{\\multirow{9}{*}{\\rotatebox[origin=c]{90}{%s wave}}}" % (lab) )
         #fp.write( "\\multicolumn{2}{|c|}{%s wave} \\\\\n" % (lab) )
-        fp.write( "& %-23s & %21.15g $+$ %-21.15g$i$ \\\\\n"  % ("$\\delta\\rho$", RADWAVE_DRRE, RADWAVE_DRIM) )
-        fp.write( "& %-23s & %21.15g $+$ %-21.15g$i$ \\\\\n"  % ("$\\delta u_g$", RADWAVE_DURE, RADWAVE_DUIM) )
-        fp.write( "& %-23s & %21.15g $+$ %-21.15g$i$ \\\\\n"  % ("$\\delta u_x$", RADWAVE_DVRE, RADWAVE_DVIM) )
-        fp.write( "& %-23s & %21.15g $+$ %-21.15g$i$ \\\\\n"  % ("$\\delta u_y$", RADWAVE_DV2RE, RADWAVE_DV2IM) )
-        fp.write( "& %-23s & %21.15g $+$ %-21.15g$i$ \\\\\n"  % ("$\\delta B_y$", RADWAVE_DB2RE, RADWAVE_DB2IM) )
-        fp.write( "& %-23s & %21.15g $+$ %-21.15g$i$ \\\\\n"  % ("$\\delta \\widehat E$", RADWAVE_DERE, RADWAVE_DEIM) )
-        fp.write( "& %-23s & %21.15g $+$ %-21.15g$i$ \\\\\n"  % ("$\\delta \\widehat F_x$", RADWAVE_DFRE, RADWAVE_DFIM) )
-        fp.write( "& %-23s & %21.15g $+$ %-21.15g$i$ \\\\\n"  % ("$\\delta \\widehat F_y$", RADWAVE_DF2RE, RADWAVE_DF2IM) )
-        fp.write( "& %-23s & %21.15g $+$ %-21.15g$i$ \\\\\n"  % ("$\\delta \\omega$", RADWAVE_OMRE, RADWAVE_OMIM) )
+        format = "& %-23s & %21.15g & $%s$ & %-21.15g$i$ \\\\\n"
+        fp.write( format % ("$\\delta\\rho$", RADWAVE_DRRE, csign(RADWAVE_DRIM), np.abs(RADWAVE_DRIM)) )
+        fp.write( format % ("$\\delta u_g$", RADWAVE_DURE, csign(RADWAVE_DUIM), np.abs(RADWAVE_DUIM)) )
+        fp.write( format % ("$\\delta u_x$", RADWAVE_DVRE, csign(RADWAVE_DVIM), np.abs(RADWAVE_DVIM)) )
+        fp.write( format % ("$\\delta u_y$", RADWAVE_DV2RE, csign(RADWAVE_DV2IM), np.abs(RADWAVE_DV2IM)) )
+        fp.write( format % ("$\\delta B_y$", RADWAVE_DB2RE, csign(RADWAVE_DB2IM), np.abs(RADWAVE_DB2IM)) )
+        fp.write( format % ("$\\delta \\widehat E$", RADWAVE_DERE, csign(RADWAVE_DEIM), np.abs(RADWAVE_DEIM)) )
+        fp.write( format % ("$\\delta \\widehat F_x$", RADWAVE_DFRE, csign(RADWAVE_DFIM), np.abs(RADWAVE_DFIM)) )
+        fp.write( format % ("$\\delta \\widehat F_y$", RADWAVE_DF2RE, csign(RADWAVE_DF2IM), np.abs(RADWAVE_DF2IM)) )
+        fp.write( format % ("$\\delta \\omega$", RADWAVE_OMRE, csign(RADWAVE_OMIM), np.abs(RADWAVE_OMIM)) )
     for fp in fplist:
         fp.close()
 
+def csign(var):
+    if var >=0: return("+")
+    else: return("-")
+        
 def compute_test_error(testno=0,prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",nlist  = [8, 16, 32, 64, 128, 256, 512],i=10,ext=".bin"):
     #reset error list
     print( "Test #%d:" % testno )
