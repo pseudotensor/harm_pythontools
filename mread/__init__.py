@@ -134,7 +134,7 @@ def plotradtestconv(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",fnt
     plt.figure(1,figsize=(8,6))
     #last dump # = 10
     ylim=(5e-12,5e-7)
-    scalefac = 0.2*5e-12/3e-11
+    scalefac = 0.3*5e-12/3e-11
     xlim=(4,2e3)
     i=10
     if usepanels:
@@ -279,14 +279,14 @@ def write_wave_latex(wavesparamstlist,prefix="radwave",cwd = "/home/atchekho/cod
         fp.write( "\\parbox[t]{2mm}{\\multirow{9}{*}{\\rotatebox[origin=c]{90}{%s wave}}}" % (lab) )
         #fp.write( "\\multicolumn{2}{|c|}{%s wave} \\\\\n" % (lab) )
         format = "& %-23s & %21.15g & $%s$ & %-21.15g$i$ \\\\\n"
-        fp.write( format % ("$\\delta\\rho$", RADWAVE_DRRE, csign(RADWAVE_DRIM), np.abs(RADWAVE_DRIM)) )
-        fp.write( format % ("$\\delta u_g$", RADWAVE_DURE, csign(RADWAVE_DUIM), np.abs(RADWAVE_DUIM)) )
-        fp.write( format % ("$\\delta u_x$", RADWAVE_DVRE, csign(RADWAVE_DVIM), np.abs(RADWAVE_DVIM)) )
-        fp.write( format % ("$\\delta u_y$", RADWAVE_DV2RE, csign(RADWAVE_DV2IM), np.abs(RADWAVE_DV2IM)) )
-        fp.write( format % ("$\\delta B_y$", RADWAVE_DB2RE, csign(RADWAVE_DB2IM), np.abs(RADWAVE_DB2IM)) )
+        fp.write( format % ("$\\delta\\rhorest$", RADWAVE_DRRE, csign(RADWAVE_DRIM), np.abs(RADWAVE_DRIM)) )
+        fp.write( format % ("$\\delta \\ug$", RADWAVE_DURE, csign(RADWAVE_DUIM), np.abs(RADWAVE_DUIM)) )
+        fp.write( format % ("$\\delta u^x$", RADWAVE_DVRE, csign(RADWAVE_DVIM), np.abs(RADWAVE_DVIM)) )
+        fp.write( format % ("$\\delta u^y$", RADWAVE_DV2RE, csign(RADWAVE_DV2IM), np.abs(RADWAVE_DV2IM)) )
+        fp.write( format % ("$\\delta B^y$", RADWAVE_DB2RE, csign(RADWAVE_DB2IM), np.abs(RADWAVE_DB2IM)) )
         fp.write( format % ("$\\delta \\widehat E$", RADWAVE_DERE, csign(RADWAVE_DEIM), np.abs(RADWAVE_DEIM)) )
-        fp.write( format % ("$\\delta \\widehat F_x$", RADWAVE_DFRE, csign(RADWAVE_DFIM), np.abs(RADWAVE_DFIM)) )
-        fp.write( format % ("$\\delta \\widehat F_y$", RADWAVE_DF2RE, csign(RADWAVE_DF2IM), np.abs(RADWAVE_DF2IM)) )
+        fp.write( format % ("$\\delta \\widehat F^x$", RADWAVE_DFRE, csign(RADWAVE_DFIM), np.abs(RADWAVE_DFIM)) )
+        fp.write( format % ("$\\delta \\widehat F^y$", RADWAVE_DF2RE, csign(RADWAVE_DF2IM), np.abs(RADWAVE_DF2IM)) )
         fp.write( format % ("$\\delta \\omega$", RADWAVE_OMRE, csign(RADWAVE_OMIM), np.abs(RADWAVE_OMIM)) )
     for fp in fplist:
         fp.close()
