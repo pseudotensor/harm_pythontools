@@ -1770,7 +1770,7 @@ def eminusomegal_plot(fntsize=20,useavgs=0,doreload=0,fname=None,dofig=False,dok
         populatestreamlines=0
     else:
         populatestreamlines=1
-    mksimplevecstream(vec, len=mylen,density=1,downsample=1,cb=False,vmin=-6,vmax=0.5,dobhfield=10,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='r',linewidth=1,startatmidplane=False,arrowsize=arrowsize,populatestreamlines=populatestreamlines,domirrory=domirrory)
+    mksimplevecstream(vec, len=mylen,density=1,downsample=1,cb=False,vmin=-6,vmax=0.5,dobhfield=10,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='r',linewidth=1,startatmidplane=False,arrowsize=arrowsize,populatestreamlines=populatestreamlines,domirrory=domirrory,donanout=True)
     # mkframe("myframe",whichvar=None,len=mylen,ax=plt.gca(),density=den,downsample=1,cb=False,pt=False,dovarylw=False,vmin=-6,vmax=0.5,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.0025,color='k',doarrows=True,dorandomcolor=False,lw=2,skipblankint=False,detectLoops=True,ncell=800,minlengthdefault=0.2,startatmidplane=False)
     plt.xlim(-30,30)
     plt.ylim(-30,30)
@@ -5686,7 +5686,7 @@ def mksimplevecstream(B,**kwargs):
         ax = plt.gca()
     traj = fstreamplot(yi,xi,iBR,iBz,**kwargs)
     
-def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2,whichr=0.9,ncont=100,maxaphi=100,aspect=1.0,isnstar=False,kval=0,kvalvar=0,onlyeta=True,maxsBphi=None,domirror=True,nanout=True,whichvar=None,avgbsqorho=None,fntsize=None,aphiaccent=None,cmap=None):
+def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2,whichr=0.9,ncont=100,maxaphi=100,aspect=1.0,isnstar=False,kval=0,kvalvar=0,onlyeta=True,maxsBphi=None,domirror=True,nanout=False,whichvar="lrho",avgbsqorho=None,fntsize=None,aphiaccent=None,cmap=None):
     extent=(-len,len,-len/aspect,len/aspect)
     if cmap is None:
         palette=cm.jet
