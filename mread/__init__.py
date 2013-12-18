@@ -26224,6 +26224,9 @@ def mkavgfigs():
                 avg1.write("%g " % (avg_KAPPAESUSER[ii,jj,0]))
                 avg1.write("%g " % (avg_tauradintegrated[ii,jj,0]))
                 avg1.write("%g " % (avg_urad[ii,jj,0]))
+                avg1.write("%g " % (r[ii,jj,0]))
+                avg1.write("%g " % (h[ii,jj,0]))
+                avg1.write("%g " % (ph[ii,jj,0]))
                 avg1.write("\n")
             # end over ii
         # end over jj
