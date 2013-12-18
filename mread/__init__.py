@@ -49,6 +49,38 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
+def mkRzxyframe(**kwargs):
+    aspect = kwargs.pop('aspect',1)
+    len = kwargs.pop('len',30)
+    ncell = kwargs.get('ncell',100)
+    ax = kwargs.pop('ax',None)
+    density = kwargs.get('density',2)
+    domask = kwargs.get('domask',True)
+    kval = kwargs.get('kval',0)
+    domirror = kwargs.pop('domirror',1)
+    domirrory = kwargs.pop('domirrory',1)
+    cb=kwargs.pop("cb",0)
+    arrowsize = kwargs.pop("arrowsize",0.5)
+    plotlen = kwargs.pop("plotlen",25)
+    findex = kwargs.pop("findex",0)
+    doslines = kwargs.pop("doslines",1)
+    ##
+    downsample=4
+    density=2
+    dodiskfield=True
+    minlenbhfield=0.2
+    minlendiskfield=0.2
+    gs = GridSpec(2,2)
+    gs.update(left=0.1, right=0.99, top=0.97, bottom=0.05, wspace=0.2, hspace=0.1)
+    ax1 = plt.subplot(gs[:,0])
+    ax2 = plt.subplot(gs[:,1])
+    grid3d("gdump.bin",use2d=1)
+    rfd("fieldline%04d.bin" % findex)
+    rmask = kwargs.pop("rmask",rhor)
+    cvel()
+    mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=dodiskfield,dobhfield=12,dsval=0.005,showjet=False,arrowsize=arrowsize,whichvar="lrho",minlendiskfield=0.5,minlenbhfield=0.2,**kwargs)
+    mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=doslines)
+
 def radwavetest_movie(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",maxdumps=1800,ext=".bin"):
     nlist  = [64]
     errlist = []
