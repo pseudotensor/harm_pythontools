@@ -122,55 +122,62 @@ def radwavetest_movie(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",m
     #plt.plot(r[:,0,0],pradffortho[0][:,0,0],"r"); plt.plot(r[:,0,0],a_Erf[:],"b")
     #plot
 
-def plotradtestconv(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",fntsize=20,doreplot=1,usepanels=1):
+def plotradtestconv(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",fntsize=20,doreplot=1,usepanels=1,ext=".bin",writelatex=0, dosavefig = 1):
     #get sorted list of run directories for different resolutions
     #flist = np.sort(glob.glob( "%s*" % prefix ) )
-    testnolist = [1, 10, 11, 101, 102, 1001, 1101, 1002, 1102]
-    nlist  = [8, 16, 32, 64, 128, 256, 512]
+    testnolist = [101, 102, 103, 104, 1001, 1002, 1003, 1004, 1101, 1102, 1103, 1104] #1, 10, 11, 
+    nlist  = [8, 16, 32, 64, 128, 256, 512, 1024]
+    #nlist  = [8, 16, 32]
     wavetype2text = ["sound", "slow", "fast"]
     #nlist  = [64]
     #cwd = os.getcwd()
     plt.figure(1,figsize=(8,6))
     #last dump # = 10
-    ylim=(3e-11,1e-6)
-    xlim=(4,1e3)
+    ylim=(5e-12,5e-7)
+    scalefac = 0.2*5e-12/3e-11
+    xlim=(4,2e3)
     i=10
     if usepanels:
+        plt.close(0)
+        plt.figure(0,figsize=(12,9))
         gs = GridSpec(2,2)
-        gs.update(left=0.15, right=0.95, top=0.96, bottom=0.15, wspace=0.01, hspace=0.08)
+        gs.update(left=0.09, right=0.98, top=0.98, bottom=0.08, wspace=0.01, hspace=0.01)
         #optically thin,gas-dominated
         ax00 = plt.subplot(gs[0,0])
         plt.setp( ax00.get_xticklabels(), visible=False )
         plt.xlim(xlim);plt.ylim(ylim);plt.xscale("log");plt.yscale("log");
+        plt.ylabel(r"$L_1\ {\rm error}$",fontsize=fntsize)
+        plt.grid(b=1)
         #optically thick,gas-dominated
         ax01 = plt.subplot(gs[0,1])
         plt.setp( ax01.get_xticklabels(), visible=False )
         plt.setp( ax01.get_yticklabels(), visible=False )
         plt.xlim(xlim);plt.ylim(ylim);plt.xscale("log");plt.yscale("log");
+        plt.grid(b=1)
         #optically thin,radiation-dominated
         ax10 = plt.subplot(gs[1,0])
         plt.xlim(xlim);plt.ylim(ylim);plt.xscale("log");plt.yscale("log");
+        plt.xlabel(r"$N$",fontsize=fntsize)
+        plt.ylabel(r"$L_1\ {\rm error}$",fontsize=fntsize)
+        plt.grid(b=1)
         #optically thick,radiation-dominated
         ax11 = plt.subplot(gs[1,1])
-        plt.setp( ax01.get_yticklabels(), visible=False )
+        plt.setp( ax11.get_yticklabels(), visible=False )
         plt.xlim(xlim);plt.ylim(ylim);plt.xscale("log");plt.yscale("log");
+        plt.xlabel(r"$N$",fontsize=fntsize)
+        plt.grid(b=1)
+        axlist = [ax00, ax01, ax10, ax11]
     else:
-        #optically thin,gas-dominated
-        plt.figure(0)
-        ax00 = plt.gca()
-        plt.xlim(xlim);plt.ylim(ylim);plt.xscale("log");plt.yscale("log");
-        #optically thick,gas-dominated
-        plt.figure(1)
-        ax01 = plt.gca()
-        plt.xlim(xlim);plt.ylim(ylim);plt.xscale("log");plt.yscale("log");
-        #optically thin,radiation-dominated
-        plt.figure(2)
-        ax10 = plt.gca()
-        plt.xlim(xlim);plt.ylim(ylim);plt.xscale("log");plt.yscale("log");
-        #optically thick,radiation-dominated
-        plt.figure(3)
-        ax11 = plt.gca()
-        plt.xlim(xlim);plt.ylim(ylim);plt.xscale("log");plt.yscale("log");
+        axlist = []
+        for fignum in xrange(5): 
+            plt.close(fignum)
+            plt.figure(fignum)
+            axlist.append(plt.gca())
+            plt.xlim(xlim);plt.ylim(ylim);plt.xscale("log");plt.yscale("log");
+            plt.xlabel(r"$N$",fontsize=fntsize)
+            plt.ylabel(r"$L_1\ {\rm error}$",fontsize=fntsize)
+            plt.grid(b=1)
+        ax00, ax01, ax10, ax11 = axlist
     n00 = 0
     n01 = 0
     n10 = 0
@@ -179,10 +186,12 @@ def plotradtestconv(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",fnt
     lstyles = ["-", "--", "-.", ":"]
     colors = ["r", "g",  "b",  "m"]
     markers = ["o", "x", "^", "v"]
+    waveparamslist = []
     ms = 10
     for index,testno in enumerate(testnolist):
         if not doreplot: break
-        nlist1,errlist=compute_test_error(testno=testno,prefix=prefix,cwd=cwd,nlist=nlist,i=i,ext=ext)
+        nlist1,errlist,waveparams=compute_test_error(testno=testno,prefix=prefix,cwd=cwd,nlist=nlist,i=i,ext=ext)
+        waveparamslist.append(waveparams)
         #write_test_latex(testno=testno,prefix=prefix,cwd=cwd,nlist=nlist,i=i)
         #skip nonradiative tests
         if RADWAVE_KAPPA <= 0: continue 
@@ -209,85 +218,77 @@ def plotradtestconv(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",fnt
         if lab == "slow": marker = "v"; ls = "--"; color = "r"; lw=2
         if lab == "fast": marker = "^"; ls = "-"; color = "b"; lw=2
         ax.plot(nlist,errlist,marker,ls=ls,color=color,lw=lw,label=r"${\rm %s}$"%lab,ms=ms)
+        if n == 1:
+            ax.text(5,scalefac*2.e-10,r"${\rm \tau = %g,\ {\cal P} = %g}$" % (RADWAVE_KAPPA, RADWAVE_PP),
+                va="bottom",ha="left",fontsize=fntsize)
         # plt.title(r"${\rm Test\ %d}$" % testno)
-    scalefac = 0.2
     logx=np.arange(0,4,.1)
     x = 10**logx
-    y1=scalefac*1e-9*(x/100.)**(-1)
-    y2=scalefac*1e-7*(x/100.)**(-2)
+    y1=1e-10*(x/100.)**(-1)
+    y2=0.2*1e-7*(x/100.)**(-2)
 
-    if not usepanels: plt.figure(0)
-    ax00.set_xlabel(r"$N$",fontsize=fntsize)
-    ax00.set_ylabel(r"$L_1\ {\rm error}$",fontsize=fntsize)
-    ax00.plot(x,y1,"k:",lw=2)
-    ax00.plot(x,y2,"k:",lw=2)
-    ax00.text(30,scalefac*2.2e-9,r"$\propto N^{-1}$",va="top",ha="right",fontsize=fntsize)
-    ax00.text(300,scalefac*2e-8,r"$\propto N^{-2}$",va="bottom",ha="left",fontsize=fntsize)
-    leg = ax00.legend(loc="upper right",numpoints=2,handlelength=3,handletextpad=0.4,fancybox=True)
-    ax = ax00
-    for label in ax.get_xticklabels() + ax.get_yticklabels() + leg.get_texts():
-        label.set_fontsize(fntsize)
-    plt.grid(b=1)
-    if not usepanels: plt.savefig("../radwave_thin.pdf",bbox_inches='tight',pad_inches=0.04)
-        
-    if not usepanels: plt.figure(1)
-    ax01.set_xlabel(r"$N$",fontsize=fntsize)
-    ax01.set_ylabel(r"$L_1\ {\rm error}$",fontsize=fntsize)
-    ax01.plot(x,y1,"k:",lw=2)
-    ax01.plot(x,y2,"k:",lw=2)
-    ax01.text(30,scalefac*2.2e-9,r"$\propto N^{-1}$",va="top",ha="right",fontsize=fntsize)
-    ax01.text(300,scalefac*2e-8,r"$\propto N^{-2}$",va="bottom",ha="left",fontsize=fntsize)
-    leg = ax01.legend(loc="upper right",numpoints=2,handlelength=3,handletextpad=0.4,fancybox=True)
-    ax = ax01
-    for label in ax.get_xticklabels() + ax.get_yticklabels() + leg.get_texts():
-        label.set_fontsize(fntsize)
-    plt.grid(b=1)
-    if not usepanels: plt.savefig("../radwave_thin.pdf",bbox_inches='tight',pad_inches=0.04)
-        
-    if not usepanels: plt.figure(2)
-    ax10.set_xlabel(r"$N$",fontsize=fntsize)
-    ax10.set_ylabel(r"$L_1\ {\rm error}$",fontsize=fntsize)
-    ax10.plot(x,y1,"k:",lw=2)
-    ax10.plot(x,y2,"k:",lw=2)
-    ax10.text(30,scalefac*2.2e-9,r"$\propto N^{-1}$",va="top",ha="right",fontsize=fntsize)
-    ax10.text(300,scalefac*2e-8,r"$\propto N^{-2}$",va="bottom",ha="left",fontsize=fntsize)
-    leg = ax10.legend(loc="upper right",numpoints=2,handlelength=3,handletextpad=0.4,fancybox=True)
-    ax = ax10
-    for label in ax.get_xticklabels() + ax.get_yticklabels() + leg.get_texts():
-        label.set_fontsize(fntsize)
-    plt.grid(b=1)
-    if not usepanels: plt.savefig("../radwave_thin.pdf",bbox_inches='tight',pad_inches=0.04)
-    
-    if not usepanels: plt.figure(3)
-    ax11.plot(x,y1,"k:",lw=2)
-    ax11.plot(x,y2,"k:",lw=2)
-    ax11.text(30,scalefac*2.2e-9,r"$\propto N^{-1}$",va="top",ha="right",fontsize=fntsize)
-    ax11.text(300,scalefac*2e-8,r"$\propto N^{-2}$",va="bottom",ha="left",fontsize=fntsize)
-    ax11.set_xlabel(r"$N$",fontsize=fntsize)
-    ax11.set_ylabel(r"$L_1\ {\rm error}$",fontsize=fntsize)
-    leg = ax11.legend(loc="upper right",numpoints=2,handlelength=3,handletextpad=0.4,fancybox=True)
-    ax = ax11
-    for label in ax.get_xticklabels() + ax.get_yticklabels() + leg.get_texts():
-        label.set_fontsize(fntsize)
-    plt.grid(b=1)
-    if not usepanels: plt.savefig("../radwave_thick.pdf",bbox_inches='tight',pad_inches=0.04)
-
-    if usepanels:
+    for index,ax in enumerate(axlist):
+        if not usepanels: plt.figure(index)
+        ax.plot(x,y1,"k:",lw=2)
+        ax.plot(x,y2,"k:",lw=2)
+        ax.text(30,0.1*2.2e-9,r"$\propto N^{-1}$",va="top",ha="right",fontsize=fntsize)
+        ax.text(300,0.2*2e-8,r"$\propto N^{-2}$",va="bottom",ha="left",fontsize=fntsize)
+        leg = ax.legend(loc="upper right",numpoints=2,handlelength=3,handletextpad=0.4,fancybox=True)
+        for label in ax.get_xticklabels() + ax.get_yticklabels() + leg.get_texts():
+            label.set_fontsize(fntsize)
+        if not usepanels: plt.savefig("../radwave_%d.pdf" % index,bbox_inches='tight',pad_inches=0.04)
+                
+    if usepanels and dosavefig:
         plt.savefig("../radwaves.pdf",bbox_inches='tight',pad_inches=0.04)
         
-
-def write_test_latex(testno=0,prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",nlist  = [8, 16, 32, 64, 128, 256, 512],i=10):
-    fp = open( "%s.txt" % whichsims, "wt" )
-    fp.write( "#%9s %10s %10s %10s %10s %10s %4s %4s %4s #%s\n" %
-              ("Omega", "Alpha", "k1", "dk1", "k2", "dk2", "nx", "ny", "nz", "#simname"))
-    fp.write( "%8s & $%d$ & $%d\\times%d\\times%d$ & $%3.2g$ & $%3.3g$ & $%3.2g$  \\\\ %% %s\n" 
-                             % ( simname, int(alpha_list[i]*180./np.pi+0.5), 
-                                 dims_list[i][0], dims_list[i][1], dims_list[i][2], 
-                                 tf_list[i]/(2*np.pi*rlc_list[i]),
-                                 edot_list[i], reldiss_list[i], 
-                                 flist[i] )
-                        )
-    fp.close()
+    if writelatex:
+        #writes out information about all tests into a LaTeX file
+        write_wave_latex(waveparamslist,prefix=prefix,cwd=cwd)
+        
+def write_wave_latex(wavesparamstlist,prefix="radwave",cwd = "/home/atchekho/code/harm/tests/"):
+    wavetype2text = ["sound", "slow", "fast"]
+    fplist = []
+    n = np.zeros(4,dtype=np.float64)
+    for index in xrange(4):
+        fname = "%s_%d.tex" % (prefix,index)
+        fname = os.path.join(cwd,fname)
+        fplist.append( open( fname, "wt" ) )
+        
+    for wavesol in wavesparamstlist:
+        assign_wavesolution(wavesol)
+        #skip nonradiative tests
+        tau = RADWAVE_KAPPA
+        pp = RADWAVE_PP
+        if tau <= 0: continue 
+        #classify radiative tests according to their radiation dominance (RADWAVE_PP)
+        #and optical depth (RADWAVE_KAPPA)
+        index = 2*(tau < 1) + 1*(pp < 1)
+        fp = fplist[index]
+        n[index]+=1;
+        #first test of this kind?
+        if n[index] == 1:
+            if tau > 1: str1 = "Optically-thick"
+            else: str1 = "Optically-thin"
+            if pp > 1: str2 = "radiation-dominated"
+            else: str2 = "gas-dominated"
+            str = "%s, %s" % (str1, str2)
+            fp.write( "\\hline\n" )
+            fp.write( "\\multicolumn{3}{|c|}{%s ($\\tau = %g$, ${\\cal P} = %g$)} \\\\\n" % (str, tau, pp) )
+        lab = wavetype2text[int(RADWAVE_WAVETYPE)]
+        fp.write( "\\hline\n" )
+        fp.write( "\\parbox[t]{2mm}{\\multirow{9}{*}{\\rotatebox[origin=c]{90}{%s wave}}}" % (lab) )
+        #fp.write( "\\multicolumn{2}{|c|}{%s wave} \\\\\n" % (lab) )
+        fp.write( "& %-23s & %21.15g $+$ %-21.15g$i$ \\\\\n"  % ("$\\delta\\rho$", RADWAVE_DRRE, RADWAVE_DRIM) )
+        fp.write( "& %-23s & %21.15g $+$ %-21.15g$i$ \\\\\n"  % ("$\\delta u_g$", RADWAVE_DURE, RADWAVE_DUIM) )
+        fp.write( "& %-23s & %21.15g $+$ %-21.15g$i$ \\\\\n"  % ("$\\delta u_x$", RADWAVE_DVRE, RADWAVE_DVIM) )
+        fp.write( "& %-23s & %21.15g $+$ %-21.15g$i$ \\\\\n"  % ("$\\delta u_y$", RADWAVE_DV2RE, RADWAVE_DV2IM) )
+        fp.write( "& %-23s & %21.15g $+$ %-21.15g$i$ \\\\\n"  % ("$\\delta B_y$", RADWAVE_DB2RE, RADWAVE_DB2IM) )
+        fp.write( "& %-23s & %21.15g $+$ %-21.15g$i$ \\\\\n"  % ("$\\delta \\widehat E$", RADWAVE_DERE, RADWAVE_DEIM) )
+        fp.write( "& %-23s & %21.15g $+$ %-21.15g$i$ \\\\\n"  % ("$\\delta \\widehat F_x$", RADWAVE_DFRE, RADWAVE_DFIM) )
+        fp.write( "& %-23s & %21.15g $+$ %-21.15g$i$ \\\\\n"  % ("$\\delta \\widehat F_y$", RADWAVE_DF2RE, RADWAVE_DF2IM) )
+        fp.write( "& %-23s & %21.15g $+$ %-21.15g$i$ \\\\\n"  % ("$\\delta \\omega$", RADWAVE_OMRE, RADWAVE_OMIM) )
+    for fp in fplist:
+        fp.close()
 
 def compute_test_error(testno=0,prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",nlist  = [8, 16, 32, 64, 128, 256, 512],i=10,ext=".bin"):
     #reset error list
@@ -300,7 +301,7 @@ def compute_test_error(testno=0,prefix="radwave",cwd = "/home/atchekho/code/harm
         grid3d("gdump%s" % ext)
         rd("dump%04d%s" % (i,ext))
         rdr("raddump%04d%s" % (i,ext))
-        wavesolution(time=t,x=r[:,0,0])
+        waveparams=wavesolution(time=t,x=r[:,0,0])
         rhoerr = np.mean(np.abs(rho[:,0,0]-a_rho)); #/RADWAVE_DRRE;
         errlist.append(rhoerr)
         # ugerr = np.mean(np.abs(ug[:,0,0]-a_ug))/(RADWAVE_DURE**2+RADWAVE_DUIM**2)**0.5;
@@ -316,7 +317,27 @@ def compute_test_error(testno=0,prefix="radwave",cwd = "/home/atchekho/code/harm
         # Fxerr = np.mean(np.abs((pradffortho[1]*dxdxp[1,1])[:,0,0]-a_Fx))/(RADWAVE_DFRE**2+RADWAVE_DFIM**2)**0.5;
         # Fyerr = np.mean(np.abs((pradffortho[2]*dxdxp[2,2])[:,0,0]-a_Fy))/(RADWAVE_DF2RE**2+RADWAVE_DF2IM**2)**0.5;
         # #print rhoerr, ugerr, vxerr, vyerr, Bxerr, Byerr, Eraderr, Fxerr, Fyerr
-    return(nlist,errlist)
+    return(nlist,errlist,waveparams)
+
+def assign_wavesolution(wavesol):
+    global RADWAVE_RHOZERO, RADWAVE_KK, RADWAVE_UINT, RADWAVE_ERAD, RADWAVE_DRRE
+    global RADWAVE_RHOFAC, RADWAVE_B0, RADWAVE_PP
+    global RADWAVE_CC, RADWAVE_KAPPA, RADWAVE_DRRE
+    global RADWAVE_DRIM, RADWAVE_DVRE, RADWAVE_DVIM
+    global RADWAVE_DV2RE, RADWAVE_DV2IM, RADWAVE_DURE
+    global RADWAVE_DUIM, RADWAVE_DB2RE, RADWAVE_DB2IM
+    global RADWAVE_DERE, RADWAVE_DEIM, RADWAVE_DFRE
+    global RADWAVE_DFIM, RADWAVE_DF2RE, RADWAVE_DF2IM
+    global RADWAVE_OMRE, RADWAVE_OMIM, RADWAVE_DTOUT1, RADWAVE_WAVETYPE
+    (RADWAVE_RHOZERO, RADWAVE_KK, RADWAVE_UINT, RADWAVE_ERAD, RADWAVE_DRRE,
+     RADWAVE_RHOFAC, RADWAVE_B0, RADWAVE_PP,
+     RADWAVE_CC, RADWAVE_KAPPA, RADWAVE_DRRE,
+     RADWAVE_DRIM, RADWAVE_DVRE, RADWAVE_DVIM,
+     RADWAVE_DV2RE, RADWAVE_DV2IM, RADWAVE_DURE,
+     RADWAVE_DUIM, RADWAVE_DB2RE, RADWAVE_DB2IM,
+     RADWAVE_DERE, RADWAVE_DEIM, RADWAVE_DFRE,
+     RADWAVE_DFIM, RADWAVE_DF2RE, RADWAVE_DF2IM,
+     RADWAVE_OMRE, RADWAVE_OMIM, RADWAVE_DTOUT1, RADWAVE_WAVETYPE) = (wavesol)
 
 def wavesolution(time=None,x=None):
     global a_rho, a_ug, a_vx, a_vy, a_Bx, a_By, a_Erf, a_Fx, a_Fy
@@ -329,20 +350,11 @@ def wavesolution(time=None,x=None):
     global RADWAVE_DERE, RADWAVE_DEIM, RADWAVE_DFRE
     global RADWAVE_DFIM, RADWAVE_DF2RE, RADWAVE_DF2IM
     global RADWAVE_OMRE, RADWAVE_OMIM, RADWAVE_DTOUT1, RADWAVE_WAVETYPE
-    gd =     np.loadtxt( "radtestparams.dat",
+    wavesol =     np.loadtxt( "radtestparams.dat",
                 dtype=np.float64, 
                 skiprows=1, 
                 unpack = True)
-    (RADWAVE_RHOZERO, RADWAVE_KK, RADWAVE_UINT, RADWAVE_ERAD, RADWAVE_DRRE,
-     RADWAVE_RHOFAC, RADWAVE_B0, RADWAVE_PP,
-     RADWAVE_CC, RADWAVE_KAPPA, RADWAVE_DRRE,
-     RADWAVE_DRIM, RADWAVE_DVRE, RADWAVE_DVIM,
-     RADWAVE_DV2RE, RADWAVE_DV2IM, RADWAVE_DURE,
-     RADWAVE_DUIM, RADWAVE_DB2RE, RADWAVE_DB2IM,
-     RADWAVE_DERE, RADWAVE_DEIM, RADWAVE_DFRE,
-     RADWAVE_DFIM, RADWAVE_DF2RE, RADWAVE_DF2IM,
-     RADWAVE_OMRE, RADWAVE_OMIM, RADWAVE_DTOUT1, RADWAVE_WAVETYPE) = (gd)
-
+    assign_wavesolution(wavesol)
     if time is None:
         #if not set, set it to one period
         time = 2*np.pi/RADWAVE_OMRE
@@ -358,7 +370,7 @@ def wavesolution(time=None,x=None):
     a_Erf=RADWAVE_ERAD+np.exp(-RADWAVE_OMIM*time)*(RADWAVE_DERE*np.cos(RADWAVE_OMRE*time-RADWAVE_KK*x)-RADWAVE_DEIM*np.sin(RADWAVE_OMRE*time-RADWAVE_KK*x));
     a_Fx=0. + np.exp(-RADWAVE_OMIM*time)*(RADWAVE_DFRE*np.cos(RADWAVE_OMRE*time-RADWAVE_KK*x)-RADWAVE_DFIM*np.sin(RADWAVE_OMRE*time-RADWAVE_KK*x));
     a_Fy=0. + np.exp(-RADWAVE_OMIM*time)*(RADWAVE_DF2RE*np.cos(RADWAVE_OMRE*time-RADWAVE_KK*x)-RADWAVE_DF2IM*np.sin(RADWAVE_OMRE*time-RADWAVE_KK*x));
-    return gd
+    return wavesol
 
 def plotstreamprofile():
     plt.clf()
