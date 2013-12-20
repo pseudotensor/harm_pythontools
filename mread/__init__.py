@@ -17625,8 +17625,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         if dotavg:
             ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+mdotfinavg/normfactor*Mdotplotfactor,color=(ofc,fc,fc))
             if showextra:
-                ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+mdotjetfinavg/normfactor*Mdotplotfactor,'--',color=(fc,fc+0.5*(1-fc),fc))
-                ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+mdotmwoutfinavg*windplotfactor/normfactor*Mdotplotfactor,'-.',color=(fc,fc,1))
+                ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+mdotjetfinavg/normfactor*Mdotplotfactor,color=(fc,fc+0.5*(1-fc),fc))
+                ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+mdotmwoutfinavg*windplotfactor/normfactor*Mdotplotfactor,color=(fc,fc,1))
             if(iti>fti):
                 ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+mdotiniavg/normfactor*Mdotplotfactor,color=(ofc,fc,fc))
                 if showextra:
@@ -17902,21 +17902,21 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         if dotavg:
             ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+etabh_avg,color=(ofc,fc,fc)) 
             if showextra:
-                ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+etaj_avg,'--',color=(fc,fc+0.5*(1-fc),fc)) 
+                ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+etaj_avg,color=(fc,fc+0.5*(1-fc),fc)) 
                 if showrad==0: # for now don't show this -- too much on plot
-                    ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+etamwout_avg,'-.',color=(fc,fc,1)) 
+                    ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+etamwout_avg,color=(fc,fc,1)) 
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
             if(iti>fti):
                 ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etabh2_avg,color=(ofc,fc,fc))
                 if showextra:
-                    ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etaj2_avg,'--',color=(fc,fc+0.5*(1-fc),fc))
+                    ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etaj2_avg,color=(fc,fc+0.5*(1-fc),fc))
                     if showrad==0: # for now don't show this -- too much on plot
-                        ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etamwout2_avg,'-.',color=(fc,fc,1))
+                        ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etamwout2_avg,color=(fc,fc,1))
             if showrad:
-                ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etaoutRAD_avg,'-.',color=(fc,1,1))
-                ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+signetaradtoshow*etabhRAD_avg,'-.',color=(fc,0.5,.7))
+                ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etaoutRAD_avg,color=(fc,1,1))
+                ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+signetaradtoshow*etabhRAD_avg,color=(fc,0.5,.7))
         #
         ax.plot(ts,etabh,clr,label=r'$\eta_{\rm H}$')
         if showextra:
@@ -18270,8 +18270,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             #
             ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+etabh_avg,color=(ofc,fc,fc)) 
             if showextra:
-                ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+etaj_avg,'--',color=(fc,fc+0.5*(1-fc),fc)) 
-                ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+etaw_avg,'-.',color=(fc,fc+0.5*(1-fc),fc)) 
+                ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+etaj_avg,color=(fc,fc+0.5*(1-fc),fc)) 
+                ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+etaw_avg,color=(fc,fc+0.5*(1-fc),fc)) 
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
@@ -18283,8 +18283,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                 #
                 ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etabh2_avg,color=(ofc,fc,fc))
                 if showextra:
-                    ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etaj2_avg,'--',color=(fc,fc+0.5*(1-fc),fc))
-                    ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etaw2_avg,'-.',color=(fc,fc+0.5*(1-fc),fc))
+                    ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etaj2_avg,color=(fc,fc+0.5*(1-fc),fc))
+                    ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etaw2_avg,color=(fc,fc+0.5*(1-fc),fc))
         #
         ax.plot(ts,etabh,clr,label=r'$\eta_{\rm H}$')
         if showextra:
@@ -18343,17 +18343,17 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         if dotavg:
             if sashaplot5==0:
                 if showextra:
-                    ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+timeavg(phij**2,ts,fti,ftf)**0.5,'--',color=(fc,fc+0.5*(1-fc),fc))
-                    ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+timeavg(phimwout**2,ts,fti,ftf)**0.5,'-.',color=(fc,fc,1))
+                    ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+timeavg(phij**2,ts,fti,ftf)**0.5,color=(fc,fc+0.5*(1-fc),fc))
+                    ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+timeavg(phimwout**2,ts,fti,ftf)**0.5,color=(fc,fc,1))
                 ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+phibh_avg,color=(ofc,fc,fc))
             else:
                 ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+phibh_avg,color=(ofc,fc,fc),linestyle=lst)
-                #ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+timeavg(phimwout**2,ts,fti,ftf)**0.5,'-.',color=(fc,fc,1))
+                #ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+timeavg(phimwout**2,ts,fti,ftf)**0.5,color=(fc,fc,1))
             #
             if(iti>fti):
                 if showextra:
-                    ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+timeavg(phij2**2,ts,iti,itf)**0.5,'--',color=(fc,fc+0.5*(1-fc),fc))
-                    ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+timeavg(phimwout2**2,ts,iti,itf)**0.5,'-.',color=(fc,fc,1))
+                    ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+timeavg(phij2**2,ts,iti,itf)**0.5,color=(fc,fc+0.5*(1-fc),fc))
+                    ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+timeavg(phimwout2**2,ts,iti,itf)**0.5,color=(fc,fc,1))
                 ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+phibh2_avg,color=(ofc,fc,fc))
         #To approximately get efficiency:
         #ax.plot(ts,2./3.*np.pi*omh**2*np.abs(fsj30[:,ihorusemag]/4/np.pi)**2/mdotfinavg)
