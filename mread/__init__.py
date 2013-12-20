@@ -17895,6 +17895,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     print("plot whichplot==4" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
     #
+    signetaradtoshow=1.0
     #
     #
     if whichplot == 4 and sashaplot4 == 0:
@@ -17902,7 +17903,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+etabh_avg,color=(ofc,fc,fc)) 
             if showextra:
                 ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+etaj_avg,'--',color=(fc,fc+0.5*(1-fc),fc)) 
-                ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+etamwout_avg,'-.',color=(fc,fc,1)) 
+                if showrad==0: # for now don't show this -- too much on plot
+                    ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+etamwout_avg,'-.',color=(fc,fc,1)) 
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
@@ -17910,55 +17912,67 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                 ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etabh2_avg,color=(ofc,fc,fc))
                 if showextra:
                     ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etaj2_avg,'--',color=(fc,fc+0.5*(1-fc),fc))
-                    ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etamwout2_avg,'-.',color=(fc,fc,1))
+                    if showrad==0: # for now don't show this -- too much on plot
+                        ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etamwout2_avg,'-.',color=(fc,fc,1))
             if showrad:
                 ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etaoutRAD_avg,'-.',color=(fc,1,1))
-                ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]-etabhRAD_avg,'-.',color=(fc,0.5,.7))
+                ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+signetaradtoshow*etabhRAD_avg,'-.',color=(fc,0.5,.7))
         #
         ax.plot(ts,etabh,clr,label=r'$\eta_{\rm H}$')
         if showextra:
             ax.plot(ts,etaj,'g--',label=r'$\eta_{\rm j}$')
-            ax.plot(ts,etamwout,'b-.',label=r'$\eta_{\rm mw,o}$')
+            if showrad==0: # for now don't show this -- too much on plot
+                ax.plot(ts,etamwout,'b-.',label=r'$\eta_{\rm mw,o}$')
         if showrad:
             ax.plot(ts,etaoutRAD,'c-.',label=r'$\eta_{\rm rad,out}$')
-            ax.plot(ts,-etabhRAD,'m--',label=r'$-\eta_{\rm rad,H}$')
+            ax.plot(ts,signetaradtoshow*etabhRAD,'m--',label=r'$\eta_{\rm rad,H}$')
 # http://matplotlib.org/examples/pylab_examples/line_styles.html
         if findex != None:
             if not isinstance(findex,tuple):
                 ax.plot(ts[findex],etabh[findex],'o',mfc='r')
                 if showextra:
                     ax.plot(ts[findex],etaj[findex],'gs')
-                    ax.plot(ts[findex],etamwout[findex],'bv')
+                    if showrad==0: # for now don't show this -- too much on plot
+                        ax.plot(ts[findex],etamwout[findex],'bv')
                 if showrad:
                     ax.plot(ts[findex],etaoutRAD[findex],'cs')
-                    ax.plot(ts[findex],-etabhRAD[findex],'cv')
+                    ax.plot(ts[findex],signetaradtoshow*etabhRAD[findex],'cv')
             else:
                 for fi in findex:
                     ax.plot(ts[fi],etabh[fi],'o',mfc='r')#,label=r'$\dot M$')
                     if showextra:
                         ax.plot(ts[fi],etaj[fi],'gs')#,label=r'$\dot M$')
-                        ax.plot(ts[fi],etamwout[fi],'bv')#,label=r'$\dot M$')
+                        if showrad==0: # for now don't show this -- too much on plot
+                            ax.plot(ts[fi],etamwout[fi],'bv')#,label=r'$\dot M$')
                     if showrad:
                         ax.plot(ts[fi],etaoutRAD[fi],'cs')#,label=r'$\dot M$')
-                        ax.plot(ts[fi],-etabhRAD[fi],'cv')#,label=r'$\dot M$')
+                        ax.plot(ts[fi],signetaradtoshow*etabhRAD[fi],'cv')#,label=r'$\dot M$')
         #ax.set_ylim(0,2)
         yminbh=np.min(etabh)
         yminj=np.min(etaj)
-        yminmw=np.min(etamwout)
+        if showrad==0: # for now don't show this -- too much on plot
+            yminmw=np.min(etamwout)
+            ymin=min(ymin,yminmw)
         ymin=min(yminbh,yminj)
-        ymin=min(ymin,yminmw)
         # sasha99 at least drops-out at certain points to eta<<0  -- so force eta=0 as minimum
         if issashamodel(modelname):
             ymin=0
         #
         if isradmodel(modelname):
             ymin=0
-        #
+        # ssh pseudotensor@cli.globusonline.org scp -D -r -s 1 xsede#kraken:/lustre/scratch/jmckinne/rad1/rad1movie3/ pseudotensor#p179:/data/jon/harm_harmrad/pythonstuff
+
+        if signetaradtoshow==1:
+            yminetaradbh=np.min(signetaradtoshow*etabhRAD)
+            ymin=min(ymin,yminetaradbh)
+            ymin=max(ymin,-100.0) # no smaller than -1 (-100%)
+                
         ymaxbh=np.max(etabh)
         ymaxj=np.max(etaj)
-        ymaxmw=np.max(etamwout)
+        if showrad==0: # for now don't show this -- too much on plot
+            ymaxmw=np.max(etamwout)
+            ymax=max(ymax,ymaxmw)
         ymax=max(ymaxbh,ymaxj)
-        ymax=max(ymax,ymaxmw)
         ymax=min(ymax,3.0*etabh_avg)
         #
         ax.set_ylim(ymin,ymax)
@@ -18084,7 +18098,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         # then normalize by Eddington
         print("Normalizing Mdot by Eddington") ; sys.stdout.flush()
         print( "HLatex5: ModelName & $\\dot{M}_{\\rm{}H}$  & $\\dot{M}_{\\rm{}in,i}-\\dot{M}_{\\rm{}H}$ & $\\dot{M}_{\\rm{}in,o}-\\dot{M}_{\\rm{}H}$     & $\\dot{M}_{\\rm{}j}$    & $\\dot{M}_{\\rm{}mw,i}$ & $\\dot{M}_{\\rm{}mw,o}$    & $\\dot{M}_{\\rm{}w,i}$ & $\\dot{M}_{\\rm{}w,o}$ & $\\dot{L}_{\\rm{}rad,o}$ \\\\" )
-        print( "VLatex5: %s         & %g & %g & %g    & %g    & %g & %g & %g   & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2((1.0/Medd)*mdotfinavg), roundto2((1.0/Medd)*(mdotinrdiskinfinavg-mdotfinavg)), roundto2((1.0/Medd)*(mdotinrdiskoutfinavg-mdotfinavg)), roundto2((1.0/Medd)*mdotjetfinavg),  roundto2((1.0/Medd)*mdotmwinfinavg), roundto2((1.0/Medd)*mdotmwoutfinavg),     roundto2((1.0/Medd)*mdotwinfinavg), roundto2((1.0/Medd)*mdotwoutfinavg), roundto2((1.0/Ledd)*edradoutiniavg),    modelname ) )
+        print( "VLatex5: %s         & %g & %g & %g    & %g    & %g & %g & %g   & %g & %g \\\\ %% %s" % (truemodelname, roundto2((1.0/Medd)*mdotfinavg), roundto2((1.0/Medd)*(mdotinrdiskinfinavg-mdotfinavg)), roundto2((1.0/Medd)*(mdotinrdiskoutfinavg-mdotfinavg)), roundto2((1.0/Medd)*mdotjetfinavg),  roundto2((1.0/Medd)*mdotmwinfinavg), roundto2((1.0/Medd)*mdotmwoutfinavg),     roundto2((1.0/Medd)*mdotwinfinavg), roundto2((1.0/Medd)*mdotwoutfinavg), roundto2((1.0/Ledd)*edradoutiniavg),    modelname ) )
     #
     # 12:
     print( "HLatex95: $\\delta r:r \\delta\\theta:r\\sin\\theta \\delta\\phi$" )
@@ -27221,6 +27235,106 @@ def tutorial1():
     plco(lrho,cb=True,nc=50)
     aphi = fieldcalc() # keep sign information
     plc(aphi,colors='k')
+
+def tutorial1alt():
+    # first load grid file
+    grid3d("gdump")
+    # now try loading a single fieldline file
+    rfd("fieldline0000.bin")
+    # now plot something you read-in
+    plt.close(1)
+    plt.figure(1)
+    lrho=np.log10(rho)
+    aphi = fieldcalc() # keep sign information
+    #
+    ###############################
+    if 1==1:
+        (rhoclean,ugclean,uublob,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
+        cvel()
+        Tcalcud(maxbsqorho=maxbsqorhonear,which=condmaxbsqorho)
+        #
+        diskcondition=condmaxbsqorho
+        # only around equator, not far away from equator
+        diskcondition=diskcondition*(bsq/rho<1.0)*(np.fabs(h-np.pi*0.5)<0.1)
+        #diskcondition=diskcondition*(bsq/rho<0.5)
+        diskeqcondition=diskcondition
+        # (qmri3d,norm3d,q3mri3d,norm33d,iq2mri3d)
+        qmri3ddisk,normmri3ddisk,q3mri3ddisk,norm3mri3ddisk,iq2mri3ddisk=Qmri_simple(which=diskeqcondition)
+        #
+        # Q1 = # of grid cells per MRI wavelength.  Want >6 or best ~10 at t=0
+        qmridisk=qmri3ddisk.sum(2).sum(1)/(ny*nz)
+        normmridisk=normmri3ddisk.sum(2).sum(1)/(ny*nz)
+        #
+        # Q3
+        q3mridisk=q3mri3ddisk.sum(2).sum(1)/(ny*nz)
+        norm3mridisk=norm3mri3ddisk.sum(2).sum(1)/(ny*nz)
+        #
+        # Q2: number of wavelengths per disk scale height
+        # iq2=1/Q2 = scale heights per MRI wavelength.  Want <1 at t=0
+        iq2mridisk=iq2mri3ddisk.sum(2).sum(1)/(ny*nz)
+        #
+        pg = (gam-1)*ugclean
+        prad = (4.0/3.0-1)*urad
+        #
+        WW = rhoclean + ug + pg + urad + prad
+        EF = bsq + WW
+        val21 = np.fabs(bu[1]*bd[1])/EF
+        val22 = np.fabs(bu[2]*bd[2])/EF
+        val23 = np.fabs(bu[3]*bd[3])/EF
+        #
+        #
+        mydr=dxdxp[1,1]*_dx1
+        mydH=r*dxdxp[2,2]*_dx2
+        mydP=r*np.sin(h)*dxdxp[3,3]*_dx3
+        omegarot=uu[3]/uu[0]*dxdxp[3,3]
+        #
+        idx2mri = np.sqrt(val22)*2*np.pi/omegarot/mydH
+    #
+    ##############################
+    #nxout=100
+    nxout=70
+    myx=r[0:nxout:,:,0]*np.sin(h[0:nxout,:,0])*np.cos(ph[0:nxout,:,0])
+    myy=r[0:nxout,:,0]*np.sin(h[0:nxout,:,0])*np.sin(ph[0:nxout,:,0])
+    myz=r[0:nxout,:,0]*np.cos(h[0:nxout,:,0])
+    #
+    #############################
+    #
+    if 1==1:
+        myfun=qmri3ddisk
+        myfun[myfun>10]=10
+        myfun[myfun<1E-4]=1E-4
+        myfun[bsq/rho>1]=0
+        myfun[rho<1E-5]=0
+    if 1==0:
+        myfun=iq2mri3ddisk
+        myfun[myfun>10]=10
+        myfun[myfun<1E-4]=1E-4
+        myfun[bsq/rho>1]=0
+        myfun[rho<1E-5]=0
+    if 1==0:
+        myfun=lrho[0:nxout,:,0]
+    if 1==0:
+        myfun=np.log10(1E-5+1.0/beta[0:nxout,:,0])
+    #
+    if 1==0:
+        myfun=idx2mri
+        myfun[myfun>10]=10
+        myfun[myfun<1E-4]=1E-4
+        myfun[bsq/rho>1]=0
+        myfun[rho<1E-5]=0
+    #
+    #
+    myfun2=aphi
+    #
+    #
+    #######################################
+    ax = plt.gca()
+    ax.pcolor(myx,myz,myfun[0:nxout,:,0])
+    plc(myfun[0:nxout,:,0],xcoord=myx,ycoord=myz,ax=ax,cb=True,nc=50)
+    #plco(lrho,cb=True,nc=50)
+    #
+    plc(myfun2[0:nxout,:,0],xcoord=myx,ycoord=myz,ax=ax,colors='k',nc=50)
+    #
 
 def tutorial2():
     # first load grid file
