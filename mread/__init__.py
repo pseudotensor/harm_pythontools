@@ -158,7 +158,7 @@ def plotradtestconv(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",fnt
     xlim=(4,2e3)
     i=10
     if usepanels:
-        plt.close(0)
+        plt.clf()
         plt.figure(0,figsize=(12,9))
         gs = GridSpec(2,2)
         gs.update(left=0.09, right=0.98, top=0.98, bottom=0.08, wspace=0.01, hspace=0.01)
@@ -208,7 +208,7 @@ def plotradtestconv(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",fnt
     markers = ["o", "x", "^", "v"]
     waveparamslist = []
     ms = 10
-    for index,testno in enumerate(testnolist):
+    for testno in testnolist:
         if not doreplot: break
         nlist1,errlist,waveparams=compute_test_error(testno=testno,prefix=prefix,cwd=cwd,nlist=nlist,i=i,ext=ext)
         waveparamslist.append(waveparams)
@@ -217,6 +217,7 @@ def plotradtestconv(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",fnt
         if RADWAVE_KAPPA <= 0: continue 
         #classify radiative tests according to their radiation dominance (RADWAVE_PP)
         #and optical depth (RADWAVE_KAPPA)
+        index = 1*(RADWAVE_KAPPA >= 1) + 2*(RADWAVE_PP >= 1)
         if RADWAVE_KAPPA < 1 and RADWAVE_PP < 1:
             ax = ax00
             n00 = n00 + 1
@@ -239,7 +240,7 @@ def plotradtestconv(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",fnt
         if lab == "fast": marker = "^"; ls = "-"; color = "b"; lw=2
         ax.plot(nlist,errlist,marker,ls=ls,color=color,lw=lw,label=r"${\rm %s}$"%lab,ms=ms)
         if n == 1:
-            ax.text(5,scalefac*2.e-10,r"${\rm \tau = %g,\ {\cal P} = %g}$" % (RADWAVE_KAPPA, RADWAVE_PP),
+            ax.text(5,scalefac*2.e-10,r"${\rm \tau = %g,\ {\mathbb P} = %g}$" % (RADWAVE_KAPPA, RADWAVE_PP),
                 va="bottom",ha="left",fontsize=fntsize)
         # plt.title(r"${\rm Test\ %d}$" % testno)
     logx=np.arange(0,4,.1)
@@ -247,10 +248,12 @@ def plotradtestconv(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",fnt
     y1=1e-10*(x/100.)**(-1)
     y2=0.2*1e-7*(x/100.)**(-2)
 
+    letterlist = ["(a)", "(b)", "(c)", "(d)"]
     for index,ax in enumerate(axlist):
         if not usepanels: plt.figure(index)
         ax.plot(x,y1,"k:",lw=2)
         ax.plot(x,y2,"k:",lw=2)
+        ax.text(5.5,2.e-7,r"${\rm %s}$" % (letterlist[index]),fontsize=fntsize,ha="center",va="center")
         ax.text(30,0.1*2.2e-9,r"$\propto N^{-1}$",va="top",ha="right",fontsize=fntsize)
         ax.text(300,0.2*2e-8,r"$\propto N^{-2}$",va="bottom",ha="left",fontsize=fntsize)
         leg = ax.legend(loc="upper right",numpoints=2,handlelength=3,handletextpad=0.4,fancybox=True)
@@ -267,6 +270,7 @@ def plotradtestconv(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",fnt
         
 def write_wave_latex(wavesparamstlist,prefix="radwave",cwd = "/home/atchekho/code/harm/tests/"):
     wavetype2text = ["sound", "slow", "fast"]
+    letterlist = ["(a)", "(b)", "(c)", "(d)"]
     fplist = []
     n = np.zeros(4,dtype=np.float64)
     for index in xrange(4):
@@ -293,7 +297,8 @@ def write_wave_latex(wavesparamstlist,prefix="radwave",cwd = "/home/atchekho/cod
             else: str2 = "gas-dominated"
             str = "%s, %s" % (str1, str2)
             fp.write( "\\hline\n" )
-            fp.write( "\\multicolumn{5}{|c|}{%s ($\\tau = %g$, ${\\cal P} = %g$)} \\\\\n" % (str, tau, pp) )
+            fp.write( "%s & \\multicolumn{4}{|c|}{%s ($\\tau = %g$, ${\\mathbb P} = %g$)} \\\\\n" 
+                      % (letterlist[index], str, tau, pp) )
         lab = wavetype2text[int(RADWAVE_WAVETYPE)]
         fp.write( "\\hline\n" )
         fp.write( "\\parbox[t]{2mm}{\\multirow{9}{*}{\\rotatebox[origin=c]{90}{%s wave}}}" % (lab) )
