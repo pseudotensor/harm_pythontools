@@ -312,7 +312,7 @@ def write_wave_latex(wavesparamstlist,prefix="radwave",cwd = "/home/atchekho/cod
         fp.write( format % ("$\\delta \\widehat E$", RADWAVE_DERE, csign(RADWAVE_DEIM), np.abs(RADWAVE_DEIM)) )
         fp.write( format % ("$\\delta \\widehat F^x$", RADWAVE_DFRE, csign(RADWAVE_DFIM), np.abs(RADWAVE_DFIM)) )
         fp.write( format % ("$\\delta \\widehat F^y$", RADWAVE_DF2RE, csign(RADWAVE_DF2IM), np.abs(RADWAVE_DF2IM)) )
-        fp.write( format % ("$\\delta \\omega$", RADWAVE_OMRE, csign(RADWAVE_OMIM), np.abs(RADWAVE_OMIM)) )
+        fp.write( format % ("$\\omega$", RADWAVE_OMRE, csign(RADWAVE_OMIM), np.abs(RADWAVE_OMIM)) )
     for fp in fplist:
         fp.close()
 
