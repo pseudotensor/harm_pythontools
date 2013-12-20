@@ -25118,7 +25118,10 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
     #
     # RIGHT PANEL
     gs2 = GridSpec(1, 1)
-    gs2.update(left=0.55, right=0.95, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
+    if leftcb:
+        gs2.update(left=0.55, right=0.95, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
+    else:
+        gs2.update(left=0.5, right=0.95, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
     ax2 = plt.subplot(gs2[:, -1])
     #
     if nz==1:
