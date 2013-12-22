@@ -209,10 +209,10 @@ def mkRzxyframe(**kwargs):
             tcks = np.arange(np.ceil(vmin),np.floor(vmax)+1,2)
         mkvertcolorbar(ax2,fig,vmin=vmin,vmax=vmax,label=label,ticks=tcks,fntsize=fntsize,cmap=cmap)
     if showlabels:
-        ax1.set_xlabel(r"$x\ [r_g]$",fontsize=fntsize)
-        ax1.set_ylabel(r"$z\ [r_g]$",fontsize=fntsize,labelpad=-15)
-        ax2.set_xlabel(r"$x\ [r_g]$",fontsize=fntsize)
-        ax2.set_ylabel(r"$y\ [r_g]$",fontsize=fntsize,labelpad=-15)
+        ax1.set_xlabel(r"$x\ [R_g]$",fontsize=fntsize)
+        ax1.set_ylabel(r"$z\ [R_g]$",fontsize=fntsize,labelpad=-15)
+        ax2.set_xlabel(r"$x\ [R_g]$",fontsize=fntsize)
+        ax2.set_ylabel(r"$y\ [R_g]$",fontsize=fntsize,labelpad=-15)
         for ax in [ax1, ax2]:
             for label in ax.get_xticklabels() + ax.get_yticklabels():
                 label.set_fontsize(fntsize)
