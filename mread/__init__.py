@@ -65,11 +65,6 @@ def plotcolormapdata(cdict = cm.datad["jet"]):
     newmap = mpl.colors.LinearSegmentedColormap("diskjet", cdict)
     mkathcolorbar(ax,fig,cmap=newmap)
 
-def createnewmapandplot():
-    cdict = createnewdic()
-    newmap = mpl.colors.LinearSegmentedColormap("diskjet", cdict)
-    plotrameshreview(doreload=1,plotlen=75,vmin=-3.1,vmax=-1,doresize=0,label=r"$\log\rho$",dostreamlines=1,ncell=800,dobhfield=16,kval=5,fname="new_",cmap=newmap,dovarylw=4)
-    
 def createnewdic():
     whichmap1 = "Paired"
     whichmap2 = "Set3"
@@ -133,6 +128,11 @@ def computephi():
     Phicgs = 0.5*(4*np.pi)**0.5*(gdet*np.abs(B[1])*_dx2*_dx3)[ihor].sum(-1).sum(-1)
     print Phicgs/mdot[0:iofr(10)].mean()**0.5
 
+def createnewmapandplot(**kwargs):
+    cdict = createnewdic()
+    newmap = mpl.colors.LinearSegmentedColormap("diskjet", cdict)
+    plotrameshreview(doreload=0,plotlen=75,vmin=-3.1,vmax=-1,doresize=1,label=r"$\log\rho$",dostreamlines=1,ncell=800,dobhfield=16,kval=5,fname="new_",cmap=newmap,dovarylw=4,**kwargs)
+    
 def plotrameshreview(doreload=1,plotlen=25,vmin=-6,vmax=-0.95,whichvar="lrho",doresize=1,label=r"$\log\rho$",cmap=mpl.cm.jet,dostreamlines=1,**kwargs):
     #for density:
     #high-contrast:
@@ -141,13 +141,15 @@ def plotrameshreview(doreload=1,plotlen=25,vmin=-6,vmax=-0.95,whichvar="lrho",do
     #   plotrameshreview(doreload=0,plotlen=15,vmin=-5,vmax=-2,whichvar=lambda: np.log10(ug),doresize=1)
     #plt.close(1)
     #plt.figure(1,figsize=(9,4))
-    fig=plt.figure(1)
-    dovarylw=kwargs.pop("dovarylw",3)
+    arrowsize=kwargs.pop("arrowsize",0.5)
+    kwargs["arrowsize"]=arrowsize
+    fig=plt.figure(1,figsize=(12.8,6))
+    dovarylw=kwargs.pop("dovarylw",4)
     if doresize:
-        fig.set_size_inches(9,4)
+        fig.set_size_inches(12.8,6)
     plt.clf()
     os.chdir("/home/atchekho/Research/run/sane")
-    mkRzxyframe(findex=9000,dovarylw=dovarylw,dosavefig="png",dodiskfield=64,doreload=doreload,minlendiskfield=0.1,downsample=1,density=1.2,useblankdiskfield=1,dnarrow=0,vmin=vmin,vmax=vmax,showlabels=1,arrowsize=0.5,fntsize=20,plotlen=plotlen,whichvar=whichvar,label=label,cmap=cmap,dostreamlines=dostreamlines,**kwargs)
+    mkRzxyframe(findex=9000,dovarylw=dovarylw,dosavefig=1,dodiskfield=64,doreload=doreload,minlendiskfield=0.1,downsample=1,density=1.2,useblankdiskfield=1,dnarrow=0,vmin=vmin,vmax=vmax,showlabels=1,fntsize=20,plotlen=plotlen,whichvar=whichvar,label=label,cmap=cmap,dostreamlines=dostreamlines,**kwargs)
 
 def mkvertcolorbar(ax,fig,vmin=0,vmax=1,label=None,ticks=None,fntsize=20,cmap=mpl.cm.jet):
     box = ax.get_position()
@@ -191,6 +193,7 @@ def mkRzxyframe(**kwargs):
     label = kwargs.pop("label",r"$\log\rho$")
     cmap = kwargs.pop("cmap",mpl.cm.jet)
     fname = kwargs.pop("fname",mpl.cm.jet)
+    showlabels = kwargs.pop("showlabels",1)
     fig = plt.figure(1)
     gs = GridSpec(2,2)
     gs.update(left=0.1, right=0.9, top=0.97, bottom=0.2, wspace=0.2, hspace=0.1)
@@ -208,18 +211,36 @@ def mkRzxyframe(**kwargs):
         else:
             tcks = np.arange(np.ceil(vmin),np.floor(vmax)+1,2)
         mkvertcolorbar(ax2,fig,vmin=vmin,vmax=vmax,label=label,ticks=tcks,fntsize=fntsize,cmap=cmap)
+    ax1.set_xlabel(r"$x\ [R_g]$",fontsize=fntsize)
+    ax1.set_ylabel(r"$z\ [R_g]$",fontsize=fntsize,labelpad=-15)
+    ax2.set_xlabel(r"$x\ [R_g]$",fontsize=fntsize)
+    ax2.set_ylabel(r"$y\ [R_g]$",fontsize=fntsize,labelpad=-15)
+    for ax in [ax1, ax2]:
+        for label in ax.get_xticklabels() + ax.get_yticklabels():
+            label.set_fontsize(fntsize)
     if showlabels:
-        ax1.set_xlabel(r"$x\ [R_g]$",fontsize=fntsize)
-        ax1.set_ylabel(r"$z\ [R_g]$",fontsize=fntsize,labelpad=-15)
-        ax2.set_xlabel(r"$x\ [R_g]$",fontsize=fntsize)
-        ax2.set_ylabel(r"$y\ [R_g]$",fontsize=fntsize,labelpad=-15)
-        for ax in [ax1, ax2]:
-            for label in ax.get_xticklabels() + ax.get_yticklabels():
-                label.set_fontsize(fntsize)
+        bbox = dict(boxstyle="round,pad=0.1", fc="w", ec=None, alpha=0.75)
+        ax1.text(
+            -73,0,
+            r"${\bf main\ disk\ body}$", size=fntsize,
+            rotation=0., ha="left", va="center",
+            color="black",weight='bold')
+        ax1.text(
+            42.7,49.5,
+            r"${\bf corona}$", size=fntsize,
+            rotation=np.arctan(49.5/42.7)*180./np.pi, ha="center", va="center",
+            color="yellow",weight='bold' )
+        ax1.text(
+            0,56,
+            r"${\bf jet}$", size=fntsize,
+            rotation=90., ha="center", va="center",
+            color="yellow",weight='bold' )
     if dosavefig == 1 or dosavefig == "png":
         plt.savefig("%s%04d.png" % (fname,findex),bbox_inches='tight',pad_inches=0.04,dpi=300)
-    if dosavefig == "pdf":
+    if dosavefig == 1 or dosavefig == "pdf":
         plt.savefig("%s%04d.pdf" % (fname,findex),bbox_inches='tight',pad_inches=0.04,dpi=300)
+    if dosavefig == 1 or dosavefig == "eps":
+        plt.savefig("%s%04d.eps" % (fname,findex),bbox_inches='tight',pad_inches=0.04,dpi=300)
  
 def radwavetest_movie(prefix="radwave",cwd = "/home/atchekho/code/harm/tests/",maxdumps=1800,ext=".bin"):
     nlist  = [64]
@@ -6058,8 +6079,9 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
                 lw = 0.5 + amax(lw1,lw2)
             elif dovarylw==4:
                 #new way, to avoid glitches in u_g in jet region to affect field line thickness
-                lw1 = 2*ftr(np.log10(amax(ibsqo2rho,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
-                lw2 = ftr(np.log10(amax(ibsqo2rho,1e-6+0*ibsqorho)),np.log10(0.05),np.log10(0.1))
+                lw1 = 2*ftr(np.log10(amax(ibsqorho,1e-6+0*ibsqorho)),np.log10(0.9),np.log10(1))
+                val = 1./(6.*(gam-1.))
+                lw2 = ftr(np.log10(amax(iibeta,1e-6+0*ibsqorho)),np.log10(0.9*val),np.log10(val))
                 lw = 0.5 + amax(lw1,lw2)
         #pdb.set_trace()
         traj = fstreamplot(yi,xi,iBR,iBz,ua=iBaR,va=iBaz,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=detectLoops,dodiskfield=dodiskfield,dobhfield=dobhfield,startatmidplane=startatmidplane,a=a,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,dsval=dsval,color=color,doarrows=doarrows,dorandomcolor=dorandomcolor,skipblankint=skipblankint,minindent=minindent,minlengthdefault=minlengthdefault,arrowsize=arrowsize,startxabs=startxabs,startyabs=startyabs,populatestreamlines=populatestreamlines,useblankdiskfield=useblankdiskfield,dnarrow=dnarrow,whichr=whichr)
@@ -6183,8 +6205,9 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
                 lw = 0.5 + amax(lw1,lw2)
             elif dovarylw==4:
                 #new way, to avoid glitches in u_g in jet region to affect field line thickness
-                lw1 = 2*ftr(np.log10(amax(ibsqo2rho,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
-                lw2 = ftr(np.log10(amax(ibsqo2rho,1e-6+0*ibsqorho)),np.log10(0.05),np.log10(0.1))
+                lw1 = 2*ftr(np.log10(amax(ibsqorho,1e-6+0*ibsqorho)),np.log10(0.9),np.log10(1))
+                val = 1./(6.*(gam-1.))
+                lw2 = ftr(np.log10(amax(iibeta,1e-6+0*ibsqorho)),np.log10(0.9*val),np.log10(val))
                 lw = 0.5 + amax(lw1,lw2)
             fstreamplot(yi,xi,iBx,iBy,density=density,downsample=downsample,linewidth=lw,detectLoops=True,dodiskfield=False,dobhfield=dobhfield,startatmidplane=False,a=a,arrowsize=arrowsize,dnarrow=dnarrow)
         ax.set_xlim(extent[0],extent[1])
