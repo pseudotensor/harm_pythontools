@@ -68,7 +68,7 @@ def plotcolormapdata(cdict = cm.datad["jet"]):
 def createnewmapandplot():
     cdict = createnewdic()
     newmap = mpl.colors.LinearSegmentedColormap("diskjet", cdict)
-    plotrameshreview(doreload=1,plotlen=50,vmin=-3.1,vmax=-1,doresize=0,label=r"$\log\rho$",dostreamlines=1,ncell=800,dobhfield=16,kval=5,fname="new_",cmap=newmap,dovarylw=4)
+    plotrameshreview(doreload=1,plotlen=75,vmin=-3.1,vmax=-1,doresize=0,label=r"$\log\rho$",dostreamlines=1,ncell=800,dobhfield=16,kval=5,fname="new_",cmap=newmap,dovarylw=4)
     
 def createnewdic():
     whichmap1 = "Paired"
