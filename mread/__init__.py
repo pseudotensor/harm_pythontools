@@ -49,7 +49,7 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
-def plotcolorbarinfo(whichmap='jet'):
+def plotcolorbarinfo(whichmap='jet',**kwargs):
     plotcolormapdata(cdict = cm.datad[whichmap])
 
 def plotcolormapdata(cdict = cm.datad["jet"]):
@@ -65,11 +65,13 @@ def plotcolormapdata(cdict = cm.datad["jet"]):
     newmap = mpl.colors.LinearSegmentedColormap("diskjet", cdict)
     mkathcolorbar(ax,fig,cmap=newmap)
 
-def createnewdic(redver=1):
+def createnewdic(**kwargs):
     whichmap1 = "Paired"
     whichmap2 = "Set3"
     whichmap3 = "Reds"
     whichmap4 = "BrBG"
+    whichmap5 = "spring"
+    redver = kwargs.pop("redver",0)
     cdata1 = np.array([np.array(cm.datad[whichmap1]['red']),
               np.array(cm.datad[whichmap1]['green']),
               np.array(cm.datad[whichmap1]['blue'])])
@@ -82,7 +84,17 @@ def createnewdic(redver=1):
     cdata4 = np.array([np.array(cm.datad[whichmap4]['red']),
               np.array(cm.datad[whichmap4]['green']),
               np.array(cm.datad[whichmap4]['blue'])])
-    if redver==2:
+    cdata5 = np.array([np.array(cm.datad[whichmap5]['red']),
+              np.array(cm.datad[whichmap5]['green']),
+              np.array(cm.datad[whichmap5]['blue'])])
+    if redver==3:
+        cdata = np.concatenate((cdata2[:,4:5],cdata2[:,-4:-1],cdata1[:,2:4],cdata1[:,-2:-1],cdata1[:,7:5:-1],cdata3[:,-3:1:-1],cdata5[:,0:1]),axis=1)
+        cdata[:,:2,0] = np.linspace(0.,0.25,2)[None,:]
+        cdata[:,2:5,0] = np.array([0.55, 0.6, 0.65])[None,:]
+        cdata[:,5:9,0] = np.linspace(0.7,0.8,4,endpoint=0)[None,:]
+        cdata[:,9:-1,0] = np.linspace(0.8,0.85,cdata[:,9:-1,0].shape[1])[None,:]
+        cdata[:,-1:,0] = np.array([1.])[None,:]
+    elif redver==2:
         cdata = np.concatenate((cdata2[:,4:5],cdata2[:,-4:-1],cdata1[:,2:4],cdata1[:,-2:-1],cdata1[:,7:5:-1],cdata3[:,-3:1:-1],cdata4[:,0:5]),axis=1)
         cdata[:,:2,0] = np.linspace(0.,0.25,2)[None,:]
         cdata[:,2:5,0] = np.array([0.55, 0.6, 0.65])[None,:]
@@ -90,11 +102,11 @@ def createnewdic(redver=1):
         cdata[:,9:-5,0] = np.linspace(0.8,0.85,cdata[:,9:-5,0].shape[1],endpoint=0)[None,:]
         cdata[:,-5:,0] = np.linspace(0.85,1.,cdata[:,-5:,0].shape[1],endpoint=1)[None,:]
     elif redver==1:
-        cdata = np.concatenate((cdata2[:,4:5],cdata2[:,-4:-1],cdata1[:,2:4],cdata1[:,-2:-1],cdata1[:,7:5:-1],cdata3[:,-3:0:-1],cdata1[:,-1:]),axis=1)
+        cdata = np.concatenate((cdata2[:,4:5],cdata2[:,-4:-1],cdata1[:,2:4],cdata1[:,-2:-1],cdata1[:,7:5:-1],cdata3[:,-3:1:-1],cdata1[:,-1:]),axis=1)
         cdata[:,:2,0] = np.linspace(0.,0.25,2)[None,:]
         cdata[:,2:5,0] = np.array([0.55, 0.6, 0.65])[None,:]
         cdata[:,5:9,0] = np.linspace(0.7,0.8,4,endpoint=0)[None,:]
-        cdata[:,9:-1,0] = np.linspace(0.8,0.85,cdata[:,9:-1,0].shape[1])[None,:]
+        cdata[:,9:-1,0] = np.linspace(0.8,0.9,cdata[:,9:-1,0].shape[1])[None,:]
         cdata[:,-1:,0] = np.array([1.])[None,:]
     elif redver==0:
         cdata = np.concatenate((cdata2[:,4:5],cdata2[:,-4:-1],cdata1[:,2:4],cdata1[:,-2:-1],cdata1[:,7:3:-1],cdata1[:,-1:]),axis=1)
