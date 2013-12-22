@@ -79,9 +79,12 @@ def createnewdic():
     cdata2 = np.array([np.array(cm.datad[whichmap2]['red']),
               np.array(cm.datad[whichmap2]['green']),
               np.array(cm.datad[whichmap2]['blue'])])
-    cdata = np.concatenate((cdata1[:,0:1],cdata1[:,2:]),axis=1)
-    cdata[:,:2,0] = np.linspace(0.,0.5,2)[None,:]
-    cdata[:,2:,0] = np.linspace(0.75,1,9)[None,:]
+    cdata = np.concatenate((cdata2[:,4:5],cdata2[:,-4:-1],cdata1[:,2:4],cdata1[:,-2:-1],cdata1[:,7:3:-1],cdata1[:,-1:]),axis=1)
+    cdata[:,:2,0] = np.linspace(0.,0.25,2)[None,:]
+    cdata[:,2:5,0] = np.array([0.55, 0.6, 0.65])[None,:]
+    cdata[:,5:-2,0] = np.linspace(0.7,0.8,5)[None,:]
+    cdata[:,-2:-1,0] = np.array([0.9])[None,:]
+    cdata[:,-1:,0] = np.array([1.])[None,:]
     cdict = {}
     cdict['red'] = cdata[0]
     cdict['green'] = cdata[1]
