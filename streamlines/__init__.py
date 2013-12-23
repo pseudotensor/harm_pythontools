@@ -561,11 +561,13 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
                 except ValueError:
                     # ValueError -- break (AT)
                     break
-                xi += ds*(k1x+2*k2x+2*k3x+k4x) / 6.
-                yi += ds*(k1y+2*k2y+2*k3y+k4y) / 6.
+                dx = ds*(k1x+2*k2x+2*k3x+k4x) / 6.
+                dy = ds*(k1y+2*k2y+2*k3y+k4y) / 6.
+                xi += dx
+                yi += dy
                 # Final position might be out of the domain
                 if not check(xi, yi): break
-                stotal += ds
+                stotal += numpy.hypot(dx/NGX, dy/NGY)
                 nstep += 1
                 if nstep > 3000:
                     #keep nstep within reasonable bounds
