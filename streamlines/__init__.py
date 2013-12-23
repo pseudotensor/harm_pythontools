@@ -738,90 +738,64 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
         yabs = yi * numpy.array(DY) + numpy.array(YOFF)
         return xabs, yabs
 
-    ## Now we build up the trajectory set. I've found it best to look
-    ## for blank==0 along the edges first, and work inwards.
+    if not isinstance(minlengthdefault,list):
+        minlengthdefaultlist = [minlengthdefault,]
+    else:
+        minlengthdefaultlist = minlengthdefault
 
-    if startxabs is not None and startyabs is not None:
-        #tracing a single trajectory
-        xb, yb = xybofxyabs(startxabs,startyabs)
-        #print( "th=%f,x=%f,y=%f,xb=%f,yb=%f" % (th, xabs, yabs, xb, yb) )
-        t = traj( xb, yb, useblank = False, doreport = True, minlength = minlendiskfield )       
-        if t is not None:
-            xi_traj, yi_traj = t
-            xabs_traj, yabs_traj = xyabsofxyi( xi_traj, yi_traj )
-            return( xabs_traj, yabs_traj )
-        else:
-            return( t )
+    #loop over minlengthdefault list: useful for starting with
+    #large minimum length value and continuiung to shorter ones
+    for minlengthdefault in minlengthdefaultlist:
+        ## Now we build up the trajectory set. I've found it best to look
+        ## for blank==0 along the edges first, and work inwards.
 
-    rh = 1+(1-a**2)**0.5
-    rad = whichr*rh
-    if dobhfield:
-        if (ua is not None) and (va is not None):
-            ubackup = u
-            vbackup = v
-            u = ua
-            v = va
-            rad *= 3.
-        if dobhfield == 1:
-            num = 16 #20*density
-        else:
-            num = dobhfield
-        #for th in numpy.linspace(0,2*numpy.pi,num=num,endpoint=False):
-        for it in range(num):
-            th = (2*it+1)*numpy.pi/num
-            if dobhfield == 1 and numpy.abs(numpy.sin(th)) > numpy.sin(numpy.pi/3.):
-                #avoid low-latitude field lines
-                continue
-            xabs = rad * numpy.sin(th)
-            yabs = rad * numpy.cos(th)
-            xb, yb = xybofxyabs(xabs,yabs)
+        if startxabs is not None and startyabs is not None:
+            #tracing a single trajectory
+            xb, yb = xybofxyabs(startxabs,startyabs)
             #print( "th=%f,x=%f,y=%f,xb=%f,yb=%f" % (th, xabs, yabs, xb, yb) )
-            traj( xb, yb, useblank = False, doreport = True, minlength = minlenbhfield )
-        if (ua is not None) and (va is not None):
-            u = ubackup
-            v = vbackup
-            rad /= 3.
+            t = traj( xb, yb, useblank = False, doreport = True, minlength = minlendiskfield )       
+            if t is not None:
+                xi_traj, yi_traj = t
+                xabs_traj, yabs_traj = xyabsofxyi( xi_traj, yi_traj )
+                return( xabs_traj, yabs_traj )
+            else:
+                return( t )
 
-    #if downsampling, only send in streamlines from boundaries
-    if downsample != 1 and populatestreamlines:
-        indent = minindent
-        #for xi in range(max(NBX,NBY)-2*indent):
-        for xi in range(downsample/2,max(NBX,NBY)-2*indent,downsample):
-            if startatmidplane and indent == minindent:
-                #for trajectories that start at left or right wall,
-                #send them in symmetrically away from midplane
-                if xi+indent < NBY/2:
-                    traj(indent, NBY/2+xi+indent)  #lower x
-                    traj(indent, NBY/2-xi-indent-1)  #lower x
-                    traj(NBX-1-indent, NBY/2+xi+indent) #upper x
-                    traj(NBX-1-indent, NBY/2-xi-indent-1) #upper x
+        rh = 1+(1-a**2)**0.5
+        rad = whichr*rh
+        if dobhfield:
+            if (ua is not None) and (va is not None):
+                ubackup = u
+                vbackup = v
+                u = ua
+                v = va
+                rad *= 3.
+            if dobhfield == 1:
+                num = 16 #20*density
             else:
-                traj(indent, xi+indent)  #lower x
-                traj(NBX-1-indent, xi+indent) #upper x
-            if symmy: 
-                if xi+indent < NBX/2:
-                    #symmetrize y
-                    traj(xi+indent, indent, checkalongx = True)  #lower y
-                    traj(NBX-1-(xi+indent), indent, checkalongx = True)  #lower y
-                    traj(xi+indent, NBY-1-indent, checkalongx = True) #upper y
-                    traj(NBX-1-(xi+indent), NBY-1-indent, checkalongx = True) #upper y
-            else:
-                traj(xi+indent, indent, checkalongx = True)  #lower y
-                traj(xi+indent, NBY-1-indent, checkalongx = True) #upper y
-    elif populatestreamlines:
-        for indent in range(minindent,(max(NBX,NBY))/2):
-            for xi in range(max(NBX,NBY)-2*indent):
-                if symmy: 
-                    if xi+indent < NBX/2:
-                        #symmetrize y
-                        traj(xi+indent, indent)  #lower y
-                        traj(NBX-1-(xi+indent), indent)  #lower y
-                        traj(xi+indent, NBY-1-indent) #upper y
-                        traj(NBX-1-(xi+indent), NBY-1-indent) #upper y
-                else:
-                    traj(xi+indent, indent)  #lower y
-                    traj(xi+indent, NBY-1-indent) #upper y
-                if startatmidplane and indent == 0:
+                num = dobhfield
+            #for th in numpy.linspace(0,2*numpy.pi,num=num,endpoint=False):
+            for it in range(num):
+                th = (2*it+1)*numpy.pi/num
+                if dobhfield == 1 and numpy.abs(numpy.sin(th)) > numpy.sin(numpy.pi/3.):
+                    #avoid low-latitude field lines
+                    continue
+                xabs = rad * numpy.sin(th)
+                yabs = rad * numpy.cos(th)
+                xb, yb = xybofxyabs(xabs,yabs)
+                #print( "th=%f,x=%f,y=%f,xb=%f,yb=%f" % (th, xabs, yabs, xb, yb) )
+                traj( xb, yb, useblank = False, doreport = True, minlength = minlenbhfield )
+            if (ua is not None) and (va is not None):
+                u = ubackup
+                v = vbackup
+                rad /= 3.
+
+        #if downsampling, only send in streamlines from boundaries
+        if downsample != 1 and populatestreamlines:
+            indent = minindent
+            #for xi in range(max(NBX,NBY)-2*indent):
+            for xi in range(downsample/2,max(NBX,NBY)-2*indent,downsample):
+                if startatmidplane and indent == minindent:
                     #for trajectories that start at left or right wall,
                     #send them in symmetrically away from midplane
                     if xi+indent < NBY/2:
@@ -832,25 +806,60 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
                 else:
                     traj(indent, xi+indent)  #lower x
                     traj(NBX-1-indent, xi+indent) #upper x
+                if symmy: 
+                    if xi+indent < NBX/2:
+                        #symmetrize y
+                        traj(xi+indent, indent, checkalongx = True)  #lower y
+                        traj(NBX-1-(xi+indent), indent, checkalongx = True)  #lower y
+                        traj(xi+indent, NBY-1-indent, checkalongx = True) #upper y
+                        traj(NBX-1-(xi+indent), NBY-1-indent, checkalongx = True) #upper y
+                else:
+                    traj(xi+indent, indent, checkalongx = True)  #lower y
+                    traj(xi+indent, NBY-1-indent, checkalongx = True) #upper y
+        elif populatestreamlines:
+            for indent in range(minindent,(max(NBX,NBY))/2):
+                for xi in range(max(NBX,NBY)-2*indent):
+                    if symmy: 
+                        if xi+indent < NBX/2:
+                            #symmetrize y
+                            traj(xi+indent, indent)  #lower y
+                            traj(NBX-1-(xi+indent), indent)  #lower y
+                            traj(xi+indent, NBY-1-indent) #upper y
+                            traj(NBX-1-(xi+indent), NBY-1-indent) #upper y
+                    else:
+                        traj(xi+indent, indent)  #lower y
+                        traj(xi+indent, NBY-1-indent) #upper y
+                    if startatmidplane and indent == 0:
+                        #for trajectories that start at left or right wall,
+                        #send them in symmetrically away from midplane
+                        if xi+indent < NBY/2:
+                            traj(indent, NBY/2+xi+indent)  #lower x
+                            traj(indent, NBY/2-xi-indent-1)  #lower x
+                            traj(NBX-1-indent, NBY/2+xi+indent) #upper x
+                            traj(NBX-1-indent, NBY/2-xi-indent-1) #upper x
+                    else:
+                        traj(indent, xi+indent)  #lower x
+                        traj(NBX-1-indent, xi+indent) #upper x
 
-    #do at the end, use shorter minimal length
-    if dodiskfield:
-        if dodiskfield > 1:
-            num = dodiskfield
-        else:
-            num = 32
-        yabs = 0
-        for Rabs in numpy.linspace(x.max(),0,num):
-            if Rabs > rad:
-                xb, yb = xybofxyabs( Rabs, yabs )
-                traj(xb, yb, useblank = useblankdiskfield, minlength = minlendiskfield)
-                xb, yb = xybofxyabs( -Rabs, yabs )
-                traj(xb, yb, useblank = useblankdiskfield, minlength = minlendiskfield)
-
+        #do at the end, use shorter minimal length
+        if dodiskfield:
+            if dodiskfield > 1:
+                num = dodiskfield
+            else:
+                num = 32
+            yabs = 0
+            for Rabs in numpy.linspace(x.max(),0,num):
+                if Rabs > rad:
+                    xb, yb = xybofxyabs( Rabs, yabs )
+                    traj(xb, yb, useblank = useblankdiskfield, minlength = minlendiskfield)
+                    xb, yb = xybofxyabs( -Rabs, yabs )
+                    traj(xb, yb, useblank = useblankdiskfield, minlength = minlendiskfield)
+    ##end of loop over minlengthdefaultlist
+                    
     ## PLOTTING HERE.
     #pylab.pcolormesh(numpy.linspace(x.min(), x.max(), NBX+1),
     #                 numpy.linspace(y.min(), y.max(), NBY+1), blank)
-    
+
     # Load up the defaults - needed to get the color right.
     if type(color) == numpy.ndarray:
         if vmin == None: vmin = color.min()
@@ -858,7 +867,7 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
         if norm == None: norm = matplotlib.colors.normalize
         if cmap == None: cmap = matplotlib.cm.get_cmap(
             matplotlib.rcParams['image.cmap'])
-    
+
     trajectories.reverse()
 
     for t in trajectories:
@@ -869,7 +878,7 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
 
         tgx = numpy.array(t[0])
         tgy = numpy.array(t[1])
-        
+
         points = numpy.array([tx, ty]).T.reshape(-1,1,2)
         segments = numpy.concatenate([points[:-1], points[1:]], axis=1)
 
@@ -880,7 +889,7 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
         else:
             args['linewidth'] = linewidth
             arrowlinewidth = linewidth
-            
+
         if type(color) == numpy.ndarray:            
             args['color'] = cmap(norm(vmin=vmin,vmax=vmax)
                                  (value_at(color, tgx, tgy)[:-1]))
@@ -891,11 +900,11 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
                 color = (val,val,val) 
             args['color'] = color
             arrowcolor = color
-        
+
         lc = matplotlib.collections.LineCollection\
              (segments, **args)
         ax.add_collection(lc)
-            
+
         ## Add arrows every dtx along each trajectory.
         #for n in numpy.arange(max((len(tx)%dtx)/2+dtx/2,1),len(tx)-2,dtx):
         if doarrows:
@@ -905,7 +914,7 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
 
             if type(color) == numpy.ndarray:            
                 arrowcolor = args['color'][n]
-            
+
             if dnarrow < n: #avoid making arrows when field line too short
                 if dnarrow == 0: delt = 1 
                 else: delt = 0

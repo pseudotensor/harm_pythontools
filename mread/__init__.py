@@ -52,19 +52,34 @@ import visit_writer
 def plotcolorbarinfo(whichmap='jet',**kwargs):
     plotcolormapdata(cdict = cm.datad[whichmap])
 
-def plotcolormapdata(cdict = cm.datad["jet"]):
+def plotnewdic(**kwargs):
+    fntsize = kwargs.pop("fntsize",20)
+    dic = createnewdic(**kwargs)
+    ax, ax1, fig = plotcolormapdata(cdict = dic,offset = 0.07)
+    ax.grid(b=1)
+    ax1.grid(b=1)
+    ax.set_xlabel(r"${\rm Normalized\ value}$",fontsize = fntsize)
+    ax.set_ylabel(r"${\rm RGB\ contributions}$",fontsize = fntsize)
+    for label in ax.get_xticklabels() + ax.get_yticklabels() + ax1.get_xticklabels():
+        label.set_fontsize(fntsize)
+    plt.savefig("colormap.pdf",bbox_inches='tight',pad_inches=0.04,dpi=300)
+    
+def plotcolormapdata(cdict = cm.datad["jet"],**kwargs):
+    lw = kwargs.pop("lw",2)
+    kwargs["lw"]=lw
     fig = plt.gcf()
     plt.clf()
     ax = plt.gca()
     cdatablue = np.array(cdict['blue'])
     cdatared = np.array(cdict['red'])
     cdatagreen = np.array(cdict['green'])
-    plt.plot(cdatared[:,0],cdatared[:,1],"ro-")
-    plt.plot(cdatablue[:,0],cdatablue[:,1],"bo-")
-    plt.plot(cdatagreen[:,0],cdatagreen[:,1],"go-")
+    plt.plot(cdatared[:,0],cdatared[:,1],"ro-",lw=lw)
+    plt.plot(cdatablue[:,0],cdatablue[:,1],"bo-",lw=lw)
+    plt.plot(cdatagreen[:,0],cdatagreen[:,1],"go-",lw=lw)
     newmap = mpl.colors.LinearSegmentedColormap("diskjet", cdict)
-    mkathcolorbar(ax,fig,cmap=newmap)
-
+    ax1 = mkathcolorbar(ax,fig,cmap=newmap,ticks=np.linspace(0,1,6),**kwargs)
+    return( ax, ax1, fig )
+    
 def createnewdic(**kwargs):
     whichmap1 = "Paired"
     whichmap2 = "Set3"
@@ -165,9 +180,11 @@ def computephi():
     print Phicgs/mdot[0:iofr(10)].mean()**0.5
 
 def createnewmapandplot(**kwargs):
+    kval = kwargs.pop("kval",5)
+    kwargs["kval"] = kval
     cdict = createnewdic()
     newmap = mpl.colors.LinearSegmentedColormap("diskjet", cdict)
-    plotrameshreview(doreload=0,plotlen=75,vmin=-3.1,vmax=-1,doresize=1,label=r"$\log\rho$",dostreamlines=1,ncell=800,dobhfield=16,kval=5,fname="new_",cmap=newmap,dovarylw=4,**kwargs)
+    plotrameshreview(plotlen=75,vmin=-3.1,vmax=-1,doresize=1,label=r"$\log\rho$",dostreamlines=1,ncell=800,dobhfield=16,fname="new_",cmap=newmap,dovarylw=4,**kwargs)
     
 def plotrameshreview(doreload=1,plotlen=25,vmin=-6,vmax=-0.95,whichvar="lrho",doresize=1,label=r"$\log\rho$",cmap=mpl.cm.jet,dostreamlines=1,**kwargs):
     #for density:
@@ -181,11 +198,13 @@ def plotrameshreview(doreload=1,plotlen=25,vmin=-6,vmax=-0.95,whichvar="lrho",do
     kwargs["arrowsize"]=arrowsize
     fig=plt.figure(1,figsize=(12.8,6))
     dovarylw=kwargs.pop("dovarylw",4)
+    density=kwargs.pop("density",2)
+    kwargs["density"]=density
     if doresize:
         fig.set_size_inches(12.8,6)
     plt.clf()
     os.chdir("/home/atchekho/Research/run/sane")
-    mkRzxyframe(findex=9000,dovarylw=dovarylw,dosavefig=1,dodiskfield=64,doreload=doreload,minlendiskfield=0.1,downsample=1,density=1.2,useblankdiskfield=1,dnarrow=0,vmin=vmin,vmax=vmax,showlabels=1,fntsize=20,plotlen=plotlen,whichvar=whichvar,label=label,cmap=cmap,dostreamlines=dostreamlines,**kwargs)
+    mkRzxyframe(findex=9000,dovarylw=dovarylw,dosavefig=1,dodiskfield=64,doreload=doreload,minlendiskfield=0.1,downsample=1,useblankdiskfield=1,dnarrow=0,vmin=vmin,vmax=vmax,showlabels=1,fntsize=20,plotlen=plotlen,whichvar=whichvar,label=label,cmap=cmap,dostreamlines=dostreamlines,**kwargs)
 
 def mkvertcolorbar(ax,fig,vmin=0,vmax=1,label=None,ticks=None,fntsize=20,cmap=mpl.cm.jet):
     box = ax.get_position()
@@ -1309,9 +1328,11 @@ def GetTimeFromAthenaVTK(f_name):
     return file_time
 
 
-def mkathcolorbar(ax,fig,vmin=0,vmax=1,label=None,ticks=None,cmap=mpl.cm.jet):
+def mkathcolorbar(ax,fig,vmin=0,vmax=1,label=None,ticks=None,cmap=mpl.cm.jet,**kwargs):
+    height = kwargs.pop("height",0.03)
+    offset = kwargs.pop("offset", 0.05)
     box = ax.get_position()
-    cpos = [box.x0,box.y0+box.height+0.05,box.width,0.03]
+    cpos = [box.x0,box.y0+box.height+offset,box.width,height]
     ax1 = fig.add_axes(cpos)
     #cmap = mpl.cm.jet
     norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
@@ -1326,6 +1347,7 @@ def mkathcolorbar(ax,fig,vmin=0,vmax=1,label=None,ticks=None,cmap=mpl.cm.jet):
                                         orientation='horizontal' )
     if label is not None:
         ax1.set_title(label)
+    return( ax1 )
 
 def mkathpanelsmovie(**kwargs):
     fntsize = kwargs.pop("fontsize",20)
@@ -6168,6 +6190,10 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
     downsample=kwargs.pop('downsample',1)
     thetarot=kwargs.pop('thetarot',0)
     dnarrow=kwargs.pop('dnarrow',0)
+    kval=kwargs.pop('kval',None)
+    minlengthdefault=kwargs.pop('minlengthdefault',0.2)
+    if kval is not None:
+        thetarot = ph[0,0,kval]
     palette.set_bad('k', 1.0)
     #palette.set_over('r', 1.0)
     #palette.set_under('g', 1.0)
@@ -6245,7 +6271,7 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
                 val = 1./(6.*(gam-1.))
                 lw2 = ftr(np.log10(amax(iibeta,1e-6+0*ibsqorho)),np.log10(0.9*val),np.log10(val))
                 lw = 0.5 + amax(lw1,lw2)
-            fstreamplot(yi,xi,iBx,iBy,density=density,downsample=downsample,linewidth=lw,detectLoops=True,dodiskfield=False,dobhfield=dobhfield,startatmidplane=False,a=a,arrowsize=arrowsize,dnarrow=dnarrow)
+            fstreamplot(yi,xi,iBx,iBy,density=density,downsample=downsample,linewidth=lw,detectLoops=True,dodiskfield=False,dobhfield=dobhfield,startatmidplane=False,a=a,arrowsize=arrowsize,dnarrow=dnarrow,minlengthdefault=minlengthdefault)
         ax.set_xlim(extent[0],extent[1])
         ax.set_ylim(extent[2],extent[3])
     #CS.cmap=cm.jet
