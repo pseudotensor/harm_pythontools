@@ -180,11 +180,17 @@ def computephi():
     print Phicgs/mdot[0:iofr(10)].mean()**0.5
 
 def createnewmapandplot(**kwargs):
-    kval = kwargs.pop("kval",5)
-    kwargs["kval"] = kval
+    kwargs.setdefault("kval",5)
+    kwargs.setdefault("dobhfield",16)
+    kwargs.setdefault("dovarylw",4)
+    kwargs.setdefault("plotlen",75)
+    kwargs.setdefault("doresize",1)
+    kwargs.setdefault("vmin",-3.1)
+    kwargs.setdefault("vmax",-1)
+    kwargs.setdefault("label",r"$\log\rho$")
     cdict = createnewdic()
     newmap = mpl.colors.LinearSegmentedColormap("diskjet", cdict)
-    plotrameshreview(plotlen=75,vmin=-3.1,vmax=-1,doresize=1,label=r"$\log\rho$",dostreamlines=1,ncell=800,dobhfield=16,fname="new_",cmap=newmap,dovarylw=4,**kwargs)
+    plotrameshreview(dostreamlines=1,fname="new_",cmap=newmap,**kwargs)
     
 def plotrameshreview(doreload=1,plotlen=25,vmin=-6,vmax=-0.95,whichvar="lrho",doresize=1,label=r"$\log\rho$",cmap=mpl.cm.jet,dostreamlines=1,**kwargs):
     #for density:
@@ -194,17 +200,15 @@ def plotrameshreview(doreload=1,plotlen=25,vmin=-6,vmax=-0.95,whichvar="lrho",do
     #   plotrameshreview(doreload=0,plotlen=15,vmin=-5,vmax=-2,whichvar=lambda: np.log10(ug),doresize=1)
     #plt.close(1)
     #plt.figure(1,figsize=(9,4))
-    arrowsize=kwargs.pop("arrowsize",0.5)
-    kwargs["arrowsize"]=arrowsize
+    arrowsize=kwargs.setdefault("arrowsize",0.5)
     fig=plt.figure(1,figsize=(12.8,6))
-    dovarylw=kwargs.pop("dovarylw",4)
-    density=kwargs.pop("density",2)
-    kwargs["density"]=density
+    dovarylw=kwargs.setdefault("dovarylw",4)
+    density=kwargs.setdefault("density",2)
     if doresize:
         fig.set_size_inches(12.8,6)
     plt.clf()
     os.chdir("/home/atchekho/Research/run/sane")
-    mkRzxyframe(findex=9000,dovarylw=dovarylw,dosavefig=1,dodiskfield=64,doreload=doreload,minlendiskfield=0.1,downsample=1,useblankdiskfield=1,dnarrow=0,vmin=vmin,vmax=vmax,showlabels=1,fntsize=20,plotlen=plotlen,whichvar=whichvar,label=label,cmap=cmap,dostreamlines=dostreamlines,**kwargs)
+    mkRzxyframe(findex=9000,dosavefig=1,dodiskfield=64,doreload=doreload,minlendiskfield=0.1,downsample=1,useblankdiskfield=1,dnarrow=0,vmin=vmin,vmax=vmax,showlabels=1,fntsize=20,plotlen=plotlen,whichvar=whichvar,label=label,cmap=cmap,dostreamlines=dostreamlines,**kwargs)
 
 def mkvertcolorbar(ax,fig,vmin=0,vmax=1,label=None,ticks=None,fntsize=20,cmap=mpl.cm.jet):
     box = ax.get_position()
@@ -232,7 +236,7 @@ def mkvertcolorbar(ax,fig,vmin=0,vmax=1,label=None,ticks=None,fntsize=20,cmap=mp
 def mkRzxyframe(**kwargs):
     aspect = kwargs.pop('aspect',1)
     plotlen = kwargs.pop('plotlen',30)
-    ax = kwargs.pop('ax',None)
+    #ax = kwargs.pop('ax',None)
     findex = kwargs.pop("findex",0)
     arrowsize = kwargs.pop("arrowsize",2)
     vmin = kwargs.pop("vmin",-6.)
@@ -258,8 +262,11 @@ def mkRzxyframe(**kwargs):
         grid3d("gdump.bin",use2d=1)
         rfd("fieldline%04d.bin" % findex)
         cvel()
-    mkframe("", vmin=vmin,vmax=vmax,len=plotlen,ax=ax1,cb=False,pt=False,whichvar=whichvar,nanout=False,arrowsize=arrowsize,dovarylw=dovarylw,cmap=cmap,**kwargs)
-    mkframexy("", vmin=vmin,vmax=vmax,len=plotlen,ax=ax2,cb=False,pt=False,whichvar=whichvar,dovarylw=dovarylw,arrowsize=arrowsize,cmap=cmap,**kwargs)
+    mkframe("", vmin=vmin,vmax=vmax,len=plotlen*1.5,ax=ax1,cb=False,pt=False,whichvar=whichvar,nanout=False,arrowsize=arrowsize,dovarylw=dovarylw,cmap=cmap,**kwargs)
+    mkframexy("", vmin=vmin,vmax=vmax,len=plotlen*1.5,ax=ax2,cb=False,pt=False,whichvar=whichvar,dovarylw=dovarylw,arrowsize=arrowsize,cmap=cmap,**kwargs)
+    for ax in [ax1, ax2]:
+        ax.set_xlim(-plotlen,plotlen)
+        ax.set_ylim(-plotlen,plotlen)
     if cb:
         if vmax-vmin <= 5:
             tcks = np.arange(np.ceil(vmin),np.floor(vmax)+1,1)
