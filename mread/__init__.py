@@ -253,6 +253,7 @@ def mkRzxyframe(**kwargs):
     cmap = kwargs.pop("cmap",mpl.cm.jet)
     fname = kwargs.pop("fname",mpl.cm.jet)
     showlabels = kwargs.pop("showlabels",1)
+    whichr = kwargs.pop("whichr",0.9)
     fig = plt.figure(1)
     gs = GridSpec(2,2)
     gs.update(left=0.1, right=0.9, top=0.97, bottom=0.2, wspace=0.2, hspace=0.1)
@@ -262,8 +263,8 @@ def mkRzxyframe(**kwargs):
         grid3d("gdump.bin",use2d=1)
         rfd("fieldline%04d.bin" % findex)
         cvel()
-    mkframe("", vmin=vmin,vmax=vmax,len=plotlen*1.5,ax=ax1,cb=False,pt=False,whichvar=whichvar,nanout=False,arrowsize=arrowsize,dovarylw=dovarylw,cmap=cmap,**kwargs)
-    mkframexy("", vmin=vmin,vmax=vmax,len=plotlen*1.5,ax=ax2,cb=False,pt=False,whichvar=whichvar,dovarylw=dovarylw,arrowsize=arrowsize,cmap=cmap,**kwargs)
+    mkframe("", vmin=vmin,vmax=vmax,len=plotlen,ax=ax1,cb=False,pt=False,whichvar=whichvar,nanout=False,arrowsize=arrowsize,dovarylw=dovarylw,cmap=cmap,**kwargs)
+    mkframexy("", vmin=vmin,vmax=vmax,len=plotlen,ax=ax2,cb=False,pt=False,whichvar=whichvar,dovarylw=dovarylw,arrowsize=arrowsize,cmap=cmap,**kwargs)
     for ax in [ax1, ax2]:
         ax.set_xlim(-plotlen,plotlen)
         ax.set_ylim(-plotlen,plotlen)
@@ -5950,7 +5951,7 @@ def mksimplevecstream(B,**kwargs):
         ax = plt.gca()
     traj = fstreamplot(yi,xi,iBR,iBz,**kwargs)
     
-def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2,whichr=0.9,ncont=100,maxaphi=100,aspect=1.0,isnstar=False,kval=0,kvalvar=0,onlyeta=True,maxsBphi=None,domirror=True,nanout=False,whichvar="lrho",avgbsqorho=None,fntsize=None,aphiaccent=None,cmap=None):
+def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2,whichr=0.9,ncont=100,maxaphi=100,aspect=1.0,isnstar=False,kval=0,kvalvar=0,onlyeta=True,maxsBphi=None,domirror=True,nanout=False,whichvar="lrho",avgbsqorho=None,fntsize=None,aphiaccent=None,cmap=None,domask=1):
     extent=(-len,len,-len/aspect,len/aspect)
     if cmap is None:
         palette=cm.jet
@@ -5962,7 +5963,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
     if isnstar:
         domask = Rin
     else:
-        domask = 1
+        domask = domask
     if avgbsqorho is None:
         avgbsqorho = lambda: rho
     if not isnstar:
@@ -6171,7 +6172,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
     if streamlines == 1:
         return(traj)
 
-def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,arrowsize=1,isnstar=False,avgbsqorho=None,whichvar=None,fntsize=None,aphiaccent=None,cmap=None,**kwargs):
+def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,arrowsize=1,isnstar=False,avgbsqorho=None,whichvar=None,fntsize=None,aphiaccent=None,cmap=None,domask=1,**kwargs):
     extent=(-len,len,-len,len)
     if cmap is None:
         palette=cm.jet
@@ -6180,7 +6181,7 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
     if isnstar:
         domask = Rin
     else:
-        domask = 1
+        domask = domask
     if avgbsqorho is None:
         avgbsqorho = lambda: rho
     if not isnstar:

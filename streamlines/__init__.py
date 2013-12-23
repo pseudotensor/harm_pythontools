@@ -567,7 +567,7 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
                 yi += dy
                 # Final position might be out of the domain
                 if not check(xi, yi): break
-                stotal += numpy.hypot(dx/NGX, dy/NGY)
+                stotal += ds; #numpy.hypot(dx/NGX, dy/NGY)
                 nstep += 1
                 if nstep > 3000:
                     #keep nstep within reasonable bounds
