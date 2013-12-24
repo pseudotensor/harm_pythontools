@@ -180,14 +180,17 @@ def computephi():
     print Phicgs/mdot[0:iofr(10)].mean()**0.5
 
 def createnewmapandplot(**kwargs):
-    kwargs.setdefault("kval",5)
+    kwargs.setdefault("kval",10)
     kwargs.setdefault("dobhfield",16)
     kwargs.setdefault("dovarylw",4)
     kwargs.setdefault("plotlen",75)
+    kwargs.setdefault("density",1.2)
+    kwargs.setdefault("doreload",1)
     kwargs.setdefault("doresize",1)
     kwargs.setdefault("vmin",-3.1)
     kwargs.setdefault("vmax",-1)
     kwargs.setdefault("label",r"$\log\rho$")
+    kwargs.setdefault("minlengthdefault",[0.2, 0.1])
     cdict = createnewdic()
     newmap = mpl.colors.LinearSegmentedColormap("diskjet", cdict)
     plotrameshreview(dostreamlines=1,fname="new_",cmap=newmap,**kwargs)
@@ -204,11 +207,12 @@ def plotrameshreview(doreload=1,plotlen=25,vmin=-6,vmax=-0.95,whichvar="lrho",do
     fig=plt.figure(1,figsize=(12.8,6))
     dovarylw=kwargs.setdefault("dovarylw",4)
     density=kwargs.setdefault("density",2)
+    dosavefig=kwargs.setdefault("dosavefig",1)
     if doresize:
         fig.set_size_inches(12.8,6)
     plt.clf()
     os.chdir("/home/atchekho/Research/run/sane")
-    mkRzxyframe(findex=9000,dosavefig=1,dodiskfield=64,doreload=doreload,minlendiskfield=0.1,downsample=1,useblankdiskfield=1,dnarrow=0,vmin=vmin,vmax=vmax,showlabels=1,fntsize=20,plotlen=plotlen,whichvar=whichvar,label=label,cmap=cmap,dostreamlines=dostreamlines,**kwargs)
+    mkRzxyframe(findex=9000,dodiskfield=64,doreload=doreload,minlendiskfield=0.1,downsample=1,useblankdiskfield=1,dnarrow=0,vmin=vmin,vmax=vmax,showlabels=1,fntsize=20,plotlen=plotlen,whichvar=whichvar,label=label,cmap=cmap,dostreamlines=dostreamlines,**kwargs)
 
 def mkvertcolorbar(ax,fig,vmin=0,vmax=1,label=None,ticks=None,fntsize=20,cmap=mpl.cm.jet):
     box = ax.get_position()
@@ -235,6 +239,8 @@ def mkvertcolorbar(ax,fig,vmin=0,vmax=1,label=None,ticks=None,fntsize=20,cmap=mp
 
 def mkRzxyframe(**kwargs):
     aspect = kwargs.pop('aspect',1)
+    density = kwargs.pop('density',1)
+    densityxy = kwargs.pop('densityxy',density)
     plotlen = kwargs.pop('plotlen',30)
     #ax = kwargs.pop('ax',None)
     findex = kwargs.pop("findex",0)
@@ -254,6 +260,8 @@ def mkRzxyframe(**kwargs):
     fname = kwargs.pop("fname",mpl.cm.jet)
     showlabels = kwargs.pop("showlabels",1)
     whichr = kwargs.pop("whichr",0.9)
+    minlengthdefault = kwargs.pop("minlengthdefault", 0.2)
+    minlengthdefaultxy = kwargs.pop("minlengthdefaultxy", minlengthdefault)
     fig = plt.figure(1)
     gs = GridSpec(2,2)
     gs.update(left=0.1, right=0.9, top=0.97, bottom=0.2, wspace=0.2, hspace=0.1)
@@ -263,8 +271,8 @@ def mkRzxyframe(**kwargs):
         grid3d("gdump.bin",use2d=1)
         rfd("fieldline%04d.bin" % findex)
         cvel()
-    mkframe("", vmin=vmin,vmax=vmax,len=plotlen,ax=ax1,cb=False,pt=False,whichvar=whichvar,nanout=False,arrowsize=arrowsize,dovarylw=dovarylw,cmap=cmap,**kwargs)
-    mkframexy("", vmin=vmin,vmax=vmax,len=plotlen,ax=ax2,cb=False,pt=False,whichvar=whichvar,dovarylw=dovarylw,arrowsize=arrowsize,cmap=cmap,**kwargs)
+    mkframe("", density=density,vmin=vmin,vmax=vmax,len=plotlen,ax=ax1,cb=False,pt=False,whichvar=whichvar,nanout=False,arrowsize=arrowsize,dovarylw=dovarylw,cmap=cmap,minlengthdefault=minlengthdefault,**kwargs)
+    mkframexy("", density=densityxy,vmin=vmin,vmax=vmax,len=plotlen,ax=ax2,cb=False,pt=False,whichvar=whichvar,dovarylw=dovarylw,arrowsize=arrowsize,cmap=cmap,minlengthdefault=minlengthdefaultxy,**kwargs)
     for ax in [ax1, ax2]:
         ax.set_xlim(-plotlen,plotlen)
         ax.set_ylim(-plotlen,plotlen)
@@ -5951,7 +5959,7 @@ def mksimplevecstream(B,**kwargs):
         ax = plt.gca()
     traj = fstreamplot(yi,xi,iBR,iBz,**kwargs)
     
-def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2,whichr=0.9,ncont=100,maxaphi=100,aspect=1.0,isnstar=False,kval=0,kvalvar=0,onlyeta=True,maxsBphi=None,domirror=True,nanout=False,whichvar="lrho",avgbsqorho=None,fntsize=None,aphiaccent=None,cmap=None,domask=1):
+def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2,whichr=0.9,ncont=100,maxaphi=100,aspect=1.0,isnstar=False,kval=0,kvalvar=0,onlyeta=True,maxsBphi=None,domirror=True,nanout=False,whichvar="lrho",avgbsqorho=None,fntsize=None,aphiaccent=None,cmap=None,domask=1,**kwargs):
     extent=(-len,len,-len/aspect,len/aspect)
     if cmap is None:
         palette=cm.jet
@@ -6235,8 +6243,8 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
         #
         Bznorm=Brnorm*np.cos(h)-Bhnorm*np.sin(h)
         BRnorm=Brnorm*np.sin(h)+Bhnorm*np.cos(h)
-        Bxnorm=BRnorm*np.cos(ph)-Bpnorm*np.sin(ph)
-        Bynorm=BRnorm*np.sin(ph)+Bpnorm*np.cos(ph)
+        Bxnorm=BRnorm*np.cos(ph-thetarot)-Bpnorm*np.sin(ph-thetarot)
+        Bynorm=BRnorm*np.sin(ph-thetarot)+Bpnorm*np.cos(ph-thetarot)
         #
         iBx = reinterpxy(Bxnorm,extent,ncell,domask=1,mirrorfactor=-1.,rhor=rhor,thetarot=thetarot)
         iBy = reinterpxy(Bynorm,extent,ncell,domask=1,mirrorfactor=-1.,rhor=rhor,thetarot=thetarot)
