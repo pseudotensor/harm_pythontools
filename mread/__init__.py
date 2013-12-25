@@ -1371,7 +1371,7 @@ def mkathpanelsmovie(**kwargs):
     name=kwargs.pop("name","str-flux-cap")
     sleepdt=kwargs.pop("sleepdt",0.5)
     startn=kwargs.pop("startn",0)
-    endn=kwargs.pop("endn",112)
+    endn=kwargs.pop("endn",100000)
     dn=kwargs.pop("dn",1)
     dosavefig=kwargs.pop("dosavefig",0)
     vmin=kwargs.pop("vmin",1e-3)
