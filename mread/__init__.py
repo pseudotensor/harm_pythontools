@@ -1382,6 +1382,7 @@ def mkathpanelsmovie(**kwargs):
     prefix=kwargs.pop("prefix","")
     fig=plt.figure(1,figsize=(10,8))
     for i in xrange(startn,endn,dn):
+        plt.clf()
         if doreload:
             rdath3d("%s%04d.%s"%(name,i,ext));
         kval=kwargs.pop("k",n3/2)
