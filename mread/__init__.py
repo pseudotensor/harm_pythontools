@@ -1409,7 +1409,7 @@ def mkathpanelsmovie(**kwargs):
         ax.set_aspect((ax.get_xlim()[1]-ax.get_xlim()[0])/(ax.get_ylim()[1]-ax.get_ylim()[0]))
         plt.plot([yavg,yavg],[zstart,zend],"k:")
         plt.setp( ax.get_xticklabels(), visible=False )
-        plt.text(0.95*xend,0.9*zend,"t=%5.0f" % t,fontsize=textfntsize,ha="right",va="top")
+        plt.text(0.95*yend,0.9*zend,"t=%5.0f" % t,fontsize=textfntsize,ha="right",va="top")
         ax.set_ylabel("z")
         ax.set_xlabel("y",va="top",labelpad=0)
         mkathcolorbar(ax,fig,vmin=vmin,vmax=vmax,label="log10(rho)",ticks=ticks)
