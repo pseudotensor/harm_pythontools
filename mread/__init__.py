@@ -1588,7 +1588,7 @@ def mkathpanelsmovie(**kwargs):
         plt.draw();
         time.sleep(sleepdt)
         if dosavefig:
-            plt.savefig("%s%04d.png"%(prefix,i),dpi=300)
+            plt.savefig("%s%04d.png"%(prefix,i),dpi=100)
             #plt.savefig("frame%04d.png"%i,bbox_inches='tight',pad_inches=0.02,dpi=300)
 
 
