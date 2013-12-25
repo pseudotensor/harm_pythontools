@@ -1373,7 +1373,7 @@ def mkathpanelsmovie(**kwargs):
     startn=kwargs.pop("startn",0)
     endn=kwargs.pop("endn",100000)
     dn=kwargs.pop("dn",1)
-    dosavefig=kwargs.pop("dosavefig",0)
+    dosavefig=kwargs.pop("dosavefig",1)
     vmin=kwargs.pop("vmin",1e-3)
     vmax=kwargs.pop("vmax",1e+3)
     ext=kwargs.pop("ext","vtk")
