@@ -15648,7 +15648,7 @@ def mkath(whichplot,prefix=""):
     if len(sys.argv[2:])==2 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
         whichi = int(sys.argv[2])
         whichn = int(sys.argv[3])
-        len = None
+        plotlen = None
     elif len(sys.argv[2:])==3 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
         whichi = int(sys.argv[2])
         whichn = int(sys.argv[3])
