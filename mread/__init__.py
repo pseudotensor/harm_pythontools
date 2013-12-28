@@ -649,12 +649,15 @@ def wavesolution(time=None,x=None):
 def plotstreamprofile():
     plt.clf()
     r = np.linspace(0,5,1000)
-    rho0=1.
+    #1e4
+    rho0=1e4
     r0 = 1.
     rho = rho0*exp(-(r/r0)**4)
+    #1e6
     rho1 = 1e2*rho0
     r1 = r0/2.1
     rhob = rho1*exp(-(r/r1)**2)
+    #1e5
     rho2 = 1e1*rho0
     r2 = r0/1.3
     rhoc = rho2*exp(-(r/r2)**3)
@@ -662,7 +665,7 @@ def plotstreamprofile():
     plt.plot(r,rhob)
     plt.plot(r,rhoc)
     plt.yscale("log")
-    plt.ylim(1e-4,200)
+    plt.ylim(1,200e4)
     plt.grid(b=1)
 
 def plotkomi(fntsize=20):
@@ -1365,6 +1368,27 @@ def mkathcolorbar(ax,fig,vmin=0,vmax=1,label=None,ticks=None,cmap=mpl.cm.jet,**k
         ax1.set_title(label)
     return( ax1 )
 
+def compute_ath_vpot():
+    yavg = np.sum((x2-0.5*(xstart+xend))*rho)/np.sum(rho)+0.5*(xstart+xend)
+    javg = np.floor(interp1d(x2[0,:,0],tj[0,:,0])(yavg)+0.5)
+    kmid = n3/2
+    da1_kmid = (B3c.mean(0))[:,kmid]*dy
+    a1_kmid = da1_kmid.cumsum() #y
+    a1_kmid += da1_kmid/2. #shift by half cell to get cell-centered vec. pot.
+    #set zero of vector potential at the center of the stream
+    a1_kmid -= a1_kmid[javg] #y
+    a1_kmid = a1_kmid[:,None] #y-z
+    da1 = -B2c.mean(0)*dz
+    a1up = da1[:,kmid:].cumsum(1)
+    a1up += da1[:,kmid:]/2.
+    a1dn = -(da1[:,kmid-1::-1].cumsum(1))[:,::-1]
+    a1dn -= da1[:,:kmid]/2.
+    a1 = np.zeros_like(da1)
+    a1[:,kmid:] = a1up
+    a1[:,:kmid] = a1dn
+    a1 += a1_kmid
+    return(a1[None,...])
+
 def mkathpanelsmovie(**kwargs):
     fntsize = kwargs.pop("fontsize",20)
     textfntsize = 0.8*fntsize
@@ -1380,77 +1404,101 @@ def mkathpanelsmovie(**kwargs):
     func=kwargs.pop("func",None)
     doreload=kwargs.pop("doreload",1)
     prefix=kwargs.pop("prefix","")
-    fig=plt.figure(1,figsize=(10,8))
+    len=kwargs.pop("len",None)
+    fig=plt.figure(1,figsize=(15,8))
     for i in xrange(startn,endn,dn):
         plt.clf()
         if doreload:
             rdath3d("%s%04d.%s"%(name,i,ext));
+        if len:
+            xmid = 0.5*(xend+xstart)
+            ymid = 0.5*(yend+ystart)
+            zmid = 0.5*(zend+zstart)
+            xstartplot = xmid - 0.5*len
+            ystartplot = ymid - 0.5*len
+            zstartplot = zmid - 0.5*len
+            xendplot = xmid + 0.5*len
+            yendplot = ymid + 0.5*len
+            zendplot = zmid + 0.5*len
+        else:
+            xstartplot = xstart
+            ystartplot = ystart
+            zstartplot = zstart
+            xendplot = xend
+            yendplot = yend
+            zendplot = zend
         kval=kwargs.pop("k",n3/2)
+        vpot = compute_ath_vpot()
         #yavg = np.sum(x2*rho)/np.sum(rho) #<-- gives inaccurate results
-        yavg = np.sum((x2-0.5*(xstart+xend))*rho)/np.sum(rho)+0.5*(xstart+xend)
+        yavg = np.sum((x2-0.5*(xstartplot+xendplot))*rho)/np.sum(rho)+0.5*(xstartplot+xendplot)
         javg = np.floor(interp1d(x2[0,:,0],tj[0,:,0])(yavg)+0.5)
-        nxplots = 4
+        nxplots = 6
         nyplots = 3
         gs = GridSpec(nyplots, nxplots)
-        left = 0.05; right = 0.985; top = 0.885; bottom = 0.05; 
+        left = 0.04; right = 0.985; top = 0.885; bottom = 0.05; 
         wspace=0.1; hspace=0.1
         gs.update(left=left, right=right, top=top, bottom=bottom, wspace=hspace, hspace=wspace)
         #First column: rho
         vmin=-2;  vmax=5;  nticks=vmax-vmin+1
         #y-z
         ax = fig.add_subplot(gs[0,0])
-        extent=(ystart,yend*0.99,zstart,zend*0.99);
+        extentplot=(ystartplot,yendplot,zstartplot,zendplot);
+        extent=(ystart,yend,zstart,zend);
         ticks=np.linspace(vmin,vmax,nticks)
         p=ax.imshow(np.log10(rho[n1/2,:,:]).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
-        ax.set_xlim(extent[0],extent[1])
-        ax.set_ylim(extent[2],extent[3])
-        ax.set_aspect((ax.get_xlim()[1]-ax.get_xlim()[0])/(ax.get_ylim()[1]-ax.get_ylim()[0]))
-        plt.plot([yavg,yavg],[zstart,zend],"k:")
+        plt.plot([yavg,yavg],[zstartplot,zendplot],"k:")
+        plc(-vpot[0,:,:],levels=np.arange(0,1e4,30),colors="k",zorder=20)
         plt.setp( ax.get_xticklabels(), visible=False )
-        plt.text(0.95*yend,0.9*zend,"t=%5.0f" % t,fontsize=textfntsize,ha="right",va="top")
+        plt.text(0.95*yendplot,0.9*zendplot,"t=%5.0f" % t,fontsize=textfntsize,ha="right",va="top")
         ax.set_ylabel("z")
         ax.set_xlabel("y",va="top",labelpad=0)
+        ax.set_xlim(extentplot[0],extentplot[1])
+        ax.set_ylim(extentplot[2],extentplot[3])
+        #ax.set_aspect((ax.get_xlim()[1]-ax.get_xlim()[0])/(ax.get_ylim()[1]-ax.get_ylim()[0]))
         mkathcolorbar(ax,fig,vmin=vmin,vmax=vmax,label="log10(rho)",ticks=ticks)
         #x-z
         ax = fig.add_subplot(gs[1,0])
-        extent=(xstart,xend*0.99,zstart,zend*0.99);
-        plt.text(0.95*xend,0.9*zend,"y=%3.0f" % yavg,fontsize=textfntsize,ha="right",va="top")
+        extentplot=(xstartplot,xendplot,zstartplot,zendplot);
+        extent=(xstart,xend,zstart,zend);
+        plt.text(0.95*xendplot,0.9*zendplot,"y=%3.0f" % yavg,fontsize=textfntsize,ha="right",va="top")
         p=ax.imshow(np.log10(rho[:,javg,:]).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
-        ax.set_xlim(extent[0],extent[1])
-        ax.set_ylim(extent[2],extent[3])
+        ax.set_xlim(extentplot[0],extentplot[1])
+        ax.set_ylim(extentplot[2],extentplot[3])
         ax.set_aspect((ax.get_xlim()[1]-ax.get_xlim()[0])/(ax.get_ylim()[1]-ax.get_ylim()[0]))
         plt.setp( ax.get_xticklabels(), visible=False )
         ax.set_ylabel("z")
         ax.set_xlabel("x",va="top",labelpad=0)
         #x-y
         ax = fig.add_subplot(gs[2,0])
-        extent=(xstart,xend*0.99,ystart,yend*0.99);
+        extentplot=(xstartplot,xendplot,ystartplot,yendplot);
+        extent=(xstart,xend,ystart,yend);
         p=ax.imshow(np.log10(rho[:,:,n3/2]).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
-        ax.set_xlim(extent[0],extent[1])
-        ax.set_ylim(extent[2],extent[3])
+        ax.set_xlim(extentplot[0],extentplot[1])
+        ax.set_ylim(extentplot[2],extentplot[3])
         ax.set_aspect((ax.get_xlim()[1]-ax.get_xlim()[0])/(ax.get_ylim()[1]-ax.get_ylim()[0]))
-        plt.plot([xstart,xend],[yavg,yavg],"k:")
+        plt.plot([xstartplot,xendplot],[yavg,yavg],"k:")
         ax.set_xlabel("x",va="top",labelpad=0)
         ax.set_ylabel("y") #,ha="left") #, labelpad=0)
         #Second column: pg
         vmin=-2;  vmax=2; nticks=vmax-vmin+1
         #y-z
         ax = fig.add_subplot(gs[0,1])
-        extent=(ystart,yend*0.99,zstart,zend*0.99);
+        extentplot=(ystartplot,yendplot,zstartplot,zendplot);
+        extent=(ystart,yend,zstart,zend);
         ticks=np.linspace(vmin,vmax,nticks)
         p=ax.imshow(np.log10(pg[n1/2,:,:]).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
-        ax.set_xlim(extent[0],extent[1])
-        ax.set_ylim(extent[2],extent[3])
+        ax.set_xlim(extentplot[0],extentplot[1])
+        ax.set_ylim(extentplot[2],extentplot[3])
         ax.set_aspect((ax.get_xlim()[1]-ax.get_xlim()[0])/(ax.get_ylim()[1]-ax.get_ylim()[0]))
-        plt.plot([yavg,yavg],[zstart,zend],"k:")
+        plt.plot([yavg,yavg],[zstartplot,zendplot],"k:")
         plt.setp( ax.get_xticklabels(), visible=False )
         plt.setp( ax.get_yticklabels(), visible=False )
         ax.set_ylabel("z")
@@ -1458,12 +1506,13 @@ def mkathpanelsmovie(**kwargs):
         mkathcolorbar(ax,fig,vmin=vmin,vmax=vmax,label="log10(pg)",ticks=ticks)
         #x-z
         ax = fig.add_subplot(gs[1,1])
-        extent=(xstart,xend*0.99,zstart,zend*0.99);
+        extentplot=(xstartplot,xendplot,zstartplot,zendplot);
+        extent=(xstart,xend,zstart,zend);
         p=ax.imshow(np.log10(pg[:,javg,:]).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
-        ax.set_xlim(extent[0],extent[1])
-        ax.set_ylim(extent[2],extent[3])
+        ax.set_xlim(extentplot[0],extentplot[1])
+        ax.set_ylim(extentplot[2],extentplot[3])
         ax.set_aspect((ax.get_xlim()[1]-ax.get_xlim()[0])/(ax.get_ylim()[1]-ax.get_ylim()[0]))
         plt.setp( ax.get_xticklabels(), visible=False )
         plt.setp( ax.get_yticklabels(), visible=False )
@@ -1471,14 +1520,15 @@ def mkathpanelsmovie(**kwargs):
         ax.set_ylabel("z")
         #x-y
         ax = fig.add_subplot(gs[2,1])
-        extent=(xstart,xend*0.99,ystart,yend*0.99);
+        extentplot=(xstartplot,xendplot,ystartplot,yendplot);
+        extent=(xstart,xend,ystart,yend);
         p=ax.imshow(np.log10(pg[:,:,n3/2]).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
-        ax.set_xlim(extent[0],extent[1])
-        ax.set_ylim(extent[2],extent[3])
+        ax.set_xlim(extentplot[0],extentplot[1])
+        ax.set_ylim(extentplot[2],extentplot[3])
         ax.set_aspect((ax.get_xlim()[1]-ax.get_xlim()[0])/(ax.get_ylim()[1]-ax.get_ylim()[0]))
-        plt.plot([xstart,xend],[yavg,yavg],"k:")
+        plt.plot([xstartplot,xendplot],[yavg,yavg],"k:")
         plt.setp( ax.get_yticklabels(), visible=False )
         ax.set_xlabel("x",va="top",labelpad=0)
         ax.set_ylabel("y")
@@ -1487,14 +1537,15 @@ def mkathpanelsmovie(**kwargs):
         ticks=np.linspace(vmin,vmax,nticks)
         #y-z
         ax = fig.add_subplot(gs[0,2])
-        extent=(ystart,yend*0.99,zstart,zend*0.99);
+        extentplot=(ystartplot,yendplot,zstartplot,zendplot);
+        extent=(ystart,yend,zstart,zend);
         p=ax.imshow(np.log10(pm[n1/2,:,:]+1e-10).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
-        ax.set_xlim(extent[0],extent[1])
-        ax.set_ylim(extent[2],extent[3])
+        ax.set_xlim(extentplot[0],extentplot[1])
+        ax.set_ylim(extentplot[2],extentplot[3])
         ax.set_aspect((ax.get_xlim()[1]-ax.get_xlim()[0])/(ax.get_ylim()[1]-ax.get_ylim()[0]))
-        plt.plot([yavg,yavg],[zstart,zend],"k:")
+        plt.plot([yavg,yavg],[zstartplot,zendplot],"k:")
         plt.setp( ax.get_xticklabels(), visible=False )
         plt.setp( ax.get_yticklabels(), visible=False )
         ax.set_xlabel("y",va="top",labelpad=0)
@@ -1502,12 +1553,13 @@ def mkathpanelsmovie(**kwargs):
         mkathcolorbar(ax,fig,vmin=vmin,vmax=vmax,label="log10(pm)",ticks=ticks)
         #x-z
         ax = fig.add_subplot(gs[1,2])
-        extent=(xstart,xend*0.99,zstart,zend*0.99);
+        extentplot=(xstartplot,xendplot,zstartplot,zendplot);
+        extent=(xstart,xend,zstart,zend);
         p=ax.imshow(np.log10(pm[:,javg,:]+1e-10).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
-        ax.set_xlim(extent[0],extent[1])
-        ax.set_ylim(extent[2],extent[3])
+        ax.set_xlim(extentplot[0],extentplot[1])
+        ax.set_ylim(extentplot[2],extentplot[3])
         ax.set_aspect((ax.get_xlim()[1]-ax.get_xlim()[0])/(ax.get_ylim()[1]-ax.get_ylim()[0]))
         plt.setp( ax.get_xticklabels(), visible=False )
         plt.setp( ax.get_yticklabels(), visible=False )
@@ -1515,14 +1567,15 @@ def mkathpanelsmovie(**kwargs):
         ax.set_ylabel("z")
         #x-y
         ax = fig.add_subplot(gs[2,2])
-        extent=(xstart,xend*0.99,ystart,yend*0.99);
+        extentplot=(xstartplot,xendplot,ystartplot,yendplot);
+        extent=(xstart,xend,ystart,yend);
         p=ax.imshow(np.log10(pm[:,:,n3/2]+1e-10).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
-        ax.set_xlim(extent[0],extent[1])
-        ax.set_ylim(extent[2],extent[3])
+        ax.set_xlim(extentplot[0],extentplot[1])
+        ax.set_ylim(extentplot[2],extentplot[3])
         ax.set_aspect((ax.get_xlim()[1]-ax.get_xlim()[0])/(ax.get_ylim()[1]-ax.get_ylim()[0]))
-        plt.plot([xstart,xend],[yavg,yavg],"k:")
+        plt.plot([xstartplot,xendplot],[yavg,yavg],"k:")
         plt.setp( ax.get_yticklabels(), visible=False )
         ax.set_xlabel("x",va="top",labelpad=0)
         ax.set_ylabel("y")
@@ -1530,15 +1583,16 @@ def mkathpanelsmovie(**kwargs):
         vmin=-1;  vmax=5;  nticks=(vmax-vmin)/2+1
         #y-z
         ax = fig.add_subplot(gs[0,3])
-        extent=(ystart,yend*0.99,zstart,zend*0.99);
+        extentplot=(ystartplot,yendplot,zstartplot,zendplot);
+        extent=(ystart,yend,zstart,zend);
         ticks=np.linspace(vmin,vmax,nticks)
         p=ax.imshow((v1[n1/2,:,:]).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
-        ax.set_xlim(extent[0],extent[1])
-        ax.set_ylim(extent[2],extent[3])
+        ax.set_xlim(extentplot[0],extentplot[1])
+        ax.set_ylim(extentplot[2],extentplot[3])
         ax.set_aspect((ax.get_xlim()[1]-ax.get_xlim()[0])/(ax.get_ylim()[1]-ax.get_ylim()[0]))
-        plt.plot([yavg,yavg],[zstart,zend],"k:")
+        plt.plot([yavg,yavg],[zstartplot,zendplot],"k:")
         plt.setp( ax.get_xticklabels(), visible=False )
         plt.setp( ax.get_yticklabels(), visible=False )
         ax.set_xlabel("y",va="top",labelpad=0)
@@ -1546,12 +1600,13 @@ def mkathpanelsmovie(**kwargs):
         mkathcolorbar(ax,fig,vmin=vmin,vmax=vmax,label="vx",ticks=ticks)
         #x-z
         ax = fig.add_subplot(gs[1,3])
-        extent=(xstart,xend*0.99,zstart,zend*0.99);
+        extentplot=(xstartplot,xendplot,zstartplot,zendplot);
+        extent=(xstart,xend,zstart,zend);
         p=ax.imshow((v1[:,javg,:]).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
-        ax.set_xlim(extent[0],extent[1])
-        ax.set_ylim(extent[2],extent[3])
+        ax.set_xlim(extentplot[0],extentplot[1])
+        ax.set_ylim(extentplot[2],extentplot[3])
         ax.set_aspect((ax.get_xlim()[1]-ax.get_xlim()[0])/(ax.get_ylim()[1]-ax.get_ylim()[0]))
         plt.setp( ax.get_xticklabels(), visible=False )
         plt.setp( ax.get_yticklabels(), visible=False )
@@ -1559,14 +1614,109 @@ def mkathpanelsmovie(**kwargs):
         ax.set_ylabel("z")
         #x-y
         ax = fig.add_subplot(gs[2,3])
-        extent=(xstart,xend*0.99,ystart,yend*0.99);
+        extentplot=(xstartplot,xendplot,ystartplot,yendplot);
+        extent=(xstart,xend,ystart,yend);
         p=ax.imshow((v1[:,:,n3/2]).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
-        ax.set_xlim(extent[0],extent[1])
-        ax.set_ylim(extent[2],extent[3])
+        ax.set_xlim(extentplot[0],extentplot[1])
+        ax.set_ylim(extentplot[2],extentplot[3])
         ax.set_aspect((ax.get_xlim()[1]-ax.get_xlim()[0])/(ax.get_ylim()[1]-ax.get_ylim()[0]))
-        plt.plot([xstart,xend],[yavg,yavg],"k:")
+        plt.plot([xstartplot,xendplot],[yavg,yavg],"k:")
+        plt.setp( ax.get_yticklabels(), visible=False )
+        ax.set_xlabel("x",va="top",labelpad=0)
+        ax.set_ylabel("y")
+        #Fifth column: vy
+        vmin=-2;  vmax=2;  nticks=(vmax-vmin)+1
+        #y-z
+        ax = fig.add_subplot(gs[0,4])
+        extentplot=(ystartplot,yendplot,zstartplot,zendplot);
+        extent=(ystart,yend,zstart,zend);
+        ticks=np.linspace(vmin,vmax,nticks)
+        p=ax.imshow((v2[n1/2,:,:]).transpose(), extent=extent, cmap = cm.jet, 
+                    norm = colors.Normalize(clip = True),origin='lower',
+                    interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        ax.set_xlim(extentplot[0],extentplot[1])
+        ax.set_ylim(extentplot[2],extentplot[3])
+        ax.set_aspect((ax.get_xlim()[1]-ax.get_xlim()[0])/(ax.get_ylim()[1]-ax.get_ylim()[0]))
+        plt.plot([yavg,yavg],[zstartplot,zendplot],"k:")
+        plt.setp( ax.get_xticklabels(), visible=False )
+        plt.setp( ax.get_yticklabels(), visible=False )
+        ax.set_xlabel("y",va="top",labelpad=0)
+        ax.set_ylabel("z")
+        mkathcolorbar(ax,fig,vmin=vmin,vmax=vmax,label="vy",ticks=ticks)
+        #x-z
+        ax = fig.add_subplot(gs[1,4])
+        extentplot=(xstartplot,xendplot,zstartplot,zend);
+        extent=(xstart,xend,zstart,zend);
+        p=ax.imshow((v2[:,javg,:]).transpose(), extent=extent, cmap = cm.jet, 
+                    norm = colors.Normalize(clip = True),origin='lower',
+                    interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        ax.set_xlim(extentplot[0],extentplot[1])
+        ax.set_ylim(extentplot[2],extentplot[3])
+        ax.set_aspect((ax.get_xlim()[1]-ax.get_xlim()[0])/(ax.get_ylim()[1]-ax.get_ylim()[0]))
+        plt.setp( ax.get_xticklabels(), visible=False )
+        plt.setp( ax.get_yticklabels(), visible=False )
+        ax.set_xlabel("x",va="top",labelpad=0)
+        ax.set_ylabel("z")
+        #x-y
+        ax = fig.add_subplot(gs[2,4])
+        extentplot=(xstartplot,xendplot,ystartplot,yendplot);
+        extent=(xstart,xend,ystart,yend);
+        p=ax.imshow((v2[:,:,n3/2]).transpose(), extent=extent, cmap = cm.jet, 
+                    norm = colors.Normalize(clip = True),origin='lower',
+                    interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        ax.set_xlim(extentplot[0],extentplot[1])
+        ax.set_ylim(extentplot[2],extentplot[3])
+        ax.set_aspect((ax.get_xlim()[1]-ax.get_xlim()[0])/(ax.get_ylim()[1]-ax.get_ylim()[0]))
+        plt.plot([xstartplot,xendplot],[yavg,yavg],"k:")
+        plt.setp( ax.get_yticklabels(), visible=False )
+        ax.set_xlabel("x",va="top",labelpad=0)
+        ax.set_ylabel("y")
+        #Sixth column: vz
+        vmin=-2;  vmax=2;  nticks=(vmax-vmin)+1
+        #y-z
+        ax = fig.add_subplot(gs[0,5])
+        extentplot=(ystartplot,yendplot,zstartplot,zendplot);
+        extent=(ystart,yend,zstart,zend);
+        ticks=np.linspace(vmin,vmax,nticks)
+        p=ax.imshow((v3[n1/2,:,:]).transpose(), extent=extent, cmap = cm.jet, 
+                    norm = colors.Normalize(clip = True),origin='lower',
+                    interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        ax.set_xlim(extentplot[0],extentplot[1])
+        ax.set_ylim(extentplot[2],extentplot[3])
+        ax.set_aspect((ax.get_xlim()[1]-ax.get_xlim()[0])/(ax.get_ylim()[1]-ax.get_ylim()[0]))
+        plt.plot([yavg,yavg],[zstart,zend],"k:")
+        plt.setp( ax.get_xticklabels(), visible=False )
+        plt.setp( ax.get_yticklabels(), visible=False )
+        ax.set_xlabel("y",va="top",labelpad=0)
+        ax.set_ylabel("z")
+        mkathcolorbar(ax,fig,vmin=vmin,vmax=vmax,label="vz",ticks=ticks)
+        #x-z
+        ax = fig.add_subplot(gs[1,5])
+        extentplot=(xstartplot,xendplot,zstartplot,zendplot);
+        extent=(xstart,xend,zstart,zend);
+        p=ax.imshow((v3[:,javg,:]).transpose(), extent=extent, cmap = cm.jet, 
+                    norm = colors.Normalize(clip = True),origin='lower',
+                    interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        ax.set_xlim(extentplot[0],extentplot[1])
+        ax.set_ylim(extentplot[2],extentplot[3])
+        ax.set_aspect((ax.get_xlim()[1]-ax.get_xlim()[0])/(ax.get_ylim()[1]-ax.get_ylim()[0]))
+        plt.setp( ax.get_xticklabels(), visible=False )
+        plt.setp( ax.get_yticklabels(), visible=False )
+        ax.set_xlabel("x",va="top",labelpad=0)
+        ax.set_ylabel("z")
+        #x-y
+        ax = fig.add_subplot(gs[2,5])
+        extentplot=(xstartplot,xendplot,ystartplot,yendplot);
+        extent=(xstart,xend,ystart,yend);
+        p=ax.imshow((v3[:,:,n3/2]).transpose(), extent=extent, cmap = cm.jet, 
+                    norm = colors.Normalize(clip = True),origin='lower',
+                    interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        ax.set_xlim(extentplot[0],extentplot[1])
+        ax.set_ylim(extentplot[2],extentplot[3])
+        ax.set_aspect((ax.get_xlim()[1]-ax.get_xlim()[0])/(ax.get_ylim()[1]-ax.get_ylim()[0]))
+        plt.plot([xstartplot,xendplot],[yavg,yavg],"k:")
         plt.setp( ax.get_yticklabels(), visible=False )
         ax.set_xlabel("x",va="top",labelpad=0)
         ax.set_ylabel("y")
@@ -15491,8 +15641,13 @@ def mkath(whichplot,prefix=""):
     if len(sys.argv[2:])==2 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
         whichi = int(sys.argv[2])
         whichn = int(sys.argv[3])
+        len = None
+    elif len(sys.argv[2:])==3 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
+        whichi = int(sys.argv[2])
+        whichn = int(sys.argv[3])
+        len = float(sys.argv[4])
     else:
-        print( "Usage: %s %s <whichi> <whichn>" % (sys.argv[0], sys.argv[1]) )
+        print( "Usage: %s %s <whichi> <whichn> [<len>]" % (sys.argv[0], sys.argv[1]) )
         return
     flist = np.sort(glob.glob("*[0-9][0-9][0-9][0-9].vtk"))
     for findex, fname in enumerate(flist):
@@ -15506,7 +15661,7 @@ def mkath(whichplot,prefix=""):
         if whichplot=="mkath":
             mkathtestmovie(name="",vmin=-2,vmax=2,startn=findex,endn=findex+1,dn=1,dosavefig=1,doreload=1,prefix=prefix)
         elif whichplot=="mkpath":
-            mkathpanelsmovie(name="",startn=findex,endn=findex+1,dn=1,dosavefig=1,doreload=1,prefix=prefix)
+            mkathpanelsmovie(name="",startn=findex,endn=findex+1,dn=1,dosavefig=1,doreload=1,prefix=prefix,len=len)
         else:
             print("mkath(): unknown plot: %s" % whichplot)
 
