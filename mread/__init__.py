@@ -1405,6 +1405,8 @@ def mkathpanelsmovie(**kwargs):
     doreload=kwargs.pop("doreload",1)
     prefix=kwargs.pop("prefix","")
     len=kwargs.pop("len",None)
+    lws=kwargs.pop("lws",0.5)
+    vpotlevels=kwargs.pop("vpotlevels",np.arange(60,1e4,60))
     fig=plt.figure(1,figsize=(15,8))
     for i in xrange(startn,endn,dn):
         plt.clf()
@@ -1449,7 +1451,7 @@ def mkathpanelsmovie(**kwargs):
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
         plt.plot([yavg,yavg],[zstartplot,zendplot],"k:")
-        plc(-vpot[0,:,:],levels=np.arange(0,1e4,30),colors="k",zorder=20)
+        plc(-vpot[0,:,:],levels=vpotlevels,colors="k",zorder=20,xcoord=x2[n1/2],ycoord=x3[n1/2],linewidths=lws)
         plt.setp( ax.get_xticklabels(), visible=False )
         plt.text(0.95*yendplot,0.9*zendplot,"t=%5.0f" % t,fontsize=textfntsize,ha="right",va="top")
         ax.set_ylabel("z")
@@ -1495,6 +1497,7 @@ def mkathpanelsmovie(**kwargs):
         p=ax.imshow(np.log10(pg[n1/2,:,:]).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        plc(-vpot[0,:,:],levels=vpotlevels,colors="k",zorder=20,xcoord=x2[n1/2],ycoord=x3[n1/2],linewidths=lws)
         ax.set_xlim(extentplot[0],extentplot[1])
         ax.set_ylim(extentplot[2],extentplot[3])
         ax.set_aspect((ax.get_xlim()[1]-ax.get_xlim()[0])/(ax.get_ylim()[1]-ax.get_ylim()[0]))
@@ -1542,6 +1545,7 @@ def mkathpanelsmovie(**kwargs):
         p=ax.imshow(np.log10(pm[n1/2,:,:]+1e-10).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        plc(-vpot[0,:,:],levels=vpotlevels,colors="k",zorder=20,xcoord=x2[n1/2],ycoord=x3[n1/2],linewidths=lws)
         ax.set_xlim(extentplot[0],extentplot[1])
         ax.set_ylim(extentplot[2],extentplot[3])
         ax.set_aspect((ax.get_xlim()[1]-ax.get_xlim()[0])/(ax.get_ylim()[1]-ax.get_ylim()[0]))
@@ -1583,6 +1587,7 @@ def mkathpanelsmovie(**kwargs):
         vmin=-1;  vmax=5;  nticks=(vmax-vmin)/2+1
         #y-z
         ax = fig.add_subplot(gs[0,3])
+        plc(-vpot[0,:,:],levels=vpotlevels,colors="k",zorder=20,xcoord=x2[n1/2],ycoord=x3[n1/2],linewidths=lws)
         extentplot=(ystartplot,yendplot,zstartplot,zendplot);
         extent=(ystart,yend,zstart,zend);
         ticks=np.linspace(vmin,vmax,nticks)
@@ -1636,6 +1641,7 @@ def mkathpanelsmovie(**kwargs):
         p=ax.imshow((v2[n1/2,:,:]).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        plc(-vpot[0,:,:],levels=vpotlevels,colors="k",zorder=20,xcoord=x2[n1/2],ycoord=x3[n1/2],linewidths=lws)
         ax.set_xlim(extentplot[0],extentplot[1])
         ax.set_ylim(extentplot[2],extentplot[3])
         ax.set_aspect((ax.get_xlim()[1]-ax.get_xlim()[0])/(ax.get_ylim()[1]-ax.get_ylim()[0]))
@@ -1683,6 +1689,7 @@ def mkathpanelsmovie(**kwargs):
         p=ax.imshow((v3[n1/2,:,:]).transpose(), extent=extent, cmap = cm.jet, 
                     norm = colors.Normalize(clip = True),origin='lower',
                     interpolation="nearest",vmin=vmin,vmax=vmax,**kwargs)
+        plc(-vpot[0,:,:],levels=vpotlevels,colors="k",zorder=20,xcoord=x2[n1/2],ycoord=x3[n1/2],linewidths=lws)
         ax.set_xlim(extentplot[0],extentplot[1])
         ax.set_ylim(extentplot[2],extentplot[3])
         ax.set_aspect((ax.get_xlim()[1]-ax.get_xlim()[0])/(ax.get_ylim()[1]-ax.get_ylim()[0]))
