@@ -15652,7 +15652,7 @@ def mkath(whichplot,prefix=""):
     elif len(sys.argv[2:])==3 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
         whichi = int(sys.argv[2])
         whichn = int(sys.argv[3])
-        len = float(sys.argv[4])
+        plotlen = float(sys.argv[4])
     else:
         print( "Usage: %s %s <whichi> <whichn> [<len>]" % (sys.argv[0], sys.argv[1]) )
         return
@@ -15668,7 +15668,7 @@ def mkath(whichplot,prefix=""):
         if whichplot=="mkath":
             mkathtestmovie(name="",vmin=-2,vmax=2,startn=findex,endn=findex+1,dn=1,dosavefig=1,doreload=1,prefix=prefix)
         elif whichplot=="mkpath":
-            mkathpanelsmovie(name="",startn=findex,endn=findex+1,dn=1,dosavefig=1,doreload=1,prefix=prefix,len=len)
+            mkathpanelsmovie(name="",startn=findex,endn=findex+1,dn=1,dosavefig=1,doreload=1,prefix=prefix,len=plotlen)
         else:
             print("mkath(): unknown plot: %s" % whichplot)
 
