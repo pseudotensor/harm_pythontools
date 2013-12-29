@@ -6327,7 +6327,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
             elif dovarylw==4:
                 #new way, to avoid glitches in u_g in jet region to affect field line thickness
                 lw1 = 2*ftr(np.log10(amax(ibsqorho,1e-6+0*ibsqorho)),np.log10(0.9),np.log10(1))
-                val = 1./(6.*(gam-1.))
+                val = 1. #/(6.*(gam-1.))
                 lw2 = ftr(np.log10(amax(iibeta,1e-6+0*ibsqorho)),np.log10(0.9*val),np.log10(val))
                 lw = 0.5 + amax(lw1,lw2)
         #pdb.set_trace()
@@ -6457,7 +6457,7 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
             elif dovarylw==4:
                 #new way, to avoid glitches in u_g in jet region to affect field line thickness
                 lw1 = 2*ftr(np.log10(amax(ibsqorho,1e-6+0*ibsqorho)),np.log10(0.9),np.log10(1))
-                val = 1./(6.*(gam-1.))
+                val = 1. #/(6.*(gam-1.))
                 lw2 = ftr(np.log10(amax(iibeta,1e-6+0*ibsqorho)),np.log10(0.9*val),np.log10(val))
                 lw = 0.5 + amax(lw1,lw2)
             fstreamplot(yi,xi,iBx,iBy,density=density,downsample=downsample,linewidth=lw,detectLoops=True,dodiskfield=False,dobhfield=dobhfield,startatmidplane=False,a=a,arrowsize=arrowsize,dnarrow=dnarrow,minlengthdefault=minlengthdefault)
