@@ -179,6 +179,9 @@ def computephi():
     Phicgs = 0.5*(4*np.pi)**0.5*(gdet*np.abs(B[1])*_dx2*_dx3)[ihor].sum(-1).sum(-1)
     print Phicgs/mdot[0:iofr(10)].mean()**0.5
 
+def rameshplotfinal():
+    createnewmapandplot(doreload=0,kval=5,minlengthdefault=[0.2],minlengthdefaultxy=[0.2, 0.1],arrowsize=0.5,dosavefig=1)
+    
 def createnewmapandplot(**kwargs):
     kwargs.setdefault("kval",10)
     kwargs.setdefault("dobhfield",16)
