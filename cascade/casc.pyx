@@ -49,7 +49,7 @@ def flnew( flold not None, flnew not None, seed not None, altgrid not None ):
     return flnew_c( flold, flnew, seed, altgrid )
 
 @cython.boundscheck(False) # turn off bounds-checking for entire function
-cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid altgrid ):
+cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid altgrid ) except *:
     """Expect E and flold defined on a regular log grid, Evec"""
     cdef int i
     cdef int j
@@ -92,8 +92,9 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid alt
         N2 += temp2b*grid.dEdxgrid_data[i]*grid.dx
         flnew_data[i] = temp1+temp2
         flnew_alt_data[i] = temp1+temp2b
-        #this is supposed to pass KeyboardInterrupt signal and other signals to python, but it does not do that
-        #PyErr_CheckSignals()
+        if i % int(dim1/10+1) == 0:
+            #this is supposed to pass KeyboardInterrupt signal and other signals to python, but it does not do that
+            PyErr_CheckSignals()
     dN1 = N1 - Nold
     dN2 = N2 - Nold
     #print dN1, dN2
