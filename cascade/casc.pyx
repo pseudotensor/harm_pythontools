@@ -9,7 +9,7 @@ cimport numpy as np
 cimport cython
 from libc.math cimport log, exp, sqrt, pow, fabs
 from libc.stdlib cimport malloc, free
-
+from cpython.exc cimport PyErr_CheckSignals
 
 DTYPE = np.float64
 ctypedef np.float_t DTYPE_t
@@ -48,7 +48,7 @@ cdef public double* get_data( np.ndarray[double, ndim=1] nparray ):
 def flnew( flold not None, flnew not None, seed not None, altgrid not None ):
     return flnew_c( flold, flnew, seed, altgrid )
 
-#@cython.boundscheck(False) # turn off bounds-checking for entire function
+@cython.boundscheck(False) # turn off bounds-checking for entire function
 cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid altgrid ):
     """Expect E and flold defined on a regular log grid, Evec"""
     cdef int i
@@ -92,9 +92,11 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid alt
         N2 += temp2b*grid.dEdxgrid_data[i]*grid.dx
         flnew_data[i] = temp1+temp2
         flnew_alt_data[i] = temp1+temp2b
+        #this is supposed to pass KeyboardInterrupt signal and other signals to python, but it does not do that
+        #PyErr_CheckSignals()
     dN1 = N1 - Nold
     dN2 = N2 - Nold
-    print dN1, dN2
+    #print dN1, dN2
     #if opposite signs or very different errors
     if dN1 < 0 and dN2 > 0 or dN1 > 0 and dN2 < 0 or fabs(dN1) > 2*fabs(dN2) or fabs(dN2) > 2*fabs(dN1):
         wnorm = dN2 - dN1

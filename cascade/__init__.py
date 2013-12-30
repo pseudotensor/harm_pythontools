@@ -66,9 +66,10 @@ def test_fg1( Eold, Enew, seed ):
 def main(Ngen = 10,startN=1,rf=1):
     global dNold, dNnew,fout
     #
-    E0 = 0.01*1e8
+    E0 = 1e8
     ii = np.round(np.log(E0)/np.log(Emax)*Ngrid)
     dx = grid.get_dx()
+    #create an alternate grid with the same number of grid points but shifted by one half
     altgrid = casc.Grid(grid.get_Emin(), grid.get_Emax(), grid.get_E0(), grid.get_Ngrid()*rf, di = 0.5)
     if False:
         dE = Evec[ii] * dx
@@ -98,22 +99,32 @@ def main(Ngen = 10,startN=1,rf=1):
     #error in evolution of electron number
     deltaN = 0
     warnings.simplefilter("error")
-    if startN == 1:
-        Ntot = np.sum( dNnew.func_vec*Evec*dx,axis=-1 )
-        print( gen, Ntot, deltaN )
-    np.seterr(divide='raise')
-    for gen in xrange(startN,Ngen+1):
-        sys.stdout.flush()
-        dNold.set_func( dNnew.func_vec )
-        #pdb.set_trace()
-        Nreordered = casc.flnew( dNold, dNnew, seed, altgrid )
-        deltaN += (Nreordered - Ntot)
-        #pdb.set_trace()
-        plt.plot(Evec, Evec*dNnew.func_vec, '-')
-        # #plt.plot(Evec, dNnew, 'x')
-        Ntot = np.sum( dNnew.func_vec*Evec*dx,axis=-1 )
-        print( gen, Ntot, deltaN )
-        plt.draw()
+    try:
+        print( "#%14s %21s %21s %21s" % ("Generation", "N", "deltaN", "E") )
+        if startN == 1:
+            Ntot = np.sum( dNnew.func_vec*Evec*dx,axis=-1 )
+            Etot = np.sum( dNnew.func_vec*Evec**2*dx,axis=-1 )
+            #print( gen, Ntot, deltaN, Etot )
+            deltaN = 0
+            print( "%15d %21.15g %21.15g %21.15e" % (gen, Ntot, deltaN, Etot) )
+        np.seterr(divide='raise')
+        for gen in xrange(startN,Ngen+1):
+            sys.stdout.flush()
+            #save the distribution from last time step
+            dNold.set_func( dNnew.func_vec )
+            #pdb.set_trace()
+            Nreordered = casc.flnew( dNold, dNnew, seed, altgrid )
+            deltaN += (Nreordered - Ntot)
+            #pdb.set_trace()
+            plt.plot(Evec, Evec*dNnew.func_vec, '-')
+            # #plt.plot(Evec, dNnew, 'x')
+            Ntot = np.sum( dNnew.func_vec*Evec*dx,axis=-1 )
+            Etot = np.sum( dNnew.func_vec*Evec**2*dx,axis=-1 )
+            print( "%15d %21.15g %21.15g %21.15e" % (gen, Ntot, deltaN, Etot) )
+            # print( gen, Ntot, deltaN, Etot )
+            #plt.draw()
+    except (KeyboardInterrupt, SystemExit):
+        print '\n! Received keyboard interrupt, quitting threads.\n'
 
 def plot_convergence(wf = 0):
     s1Gen, s1N = np.loadtxt("casc_sasha_E0_1e8_di0.5.txt", dtype = np.float64, usecols = (0, 1), skiprows = 1, unpack = True)
@@ -180,7 +191,7 @@ if __name__ == "__main__":
     #energy grid, Lorentz factor of initial electron
     warnings.simplefilter("error")
     Emin = 1e-6
-    Emax = 1e7
+    Emax = 2e8
     Ngrid = 1e4
     # Evec = exp(np.linspace(-5,np.log(Emax),Ngrid))
     E0grid = 0
