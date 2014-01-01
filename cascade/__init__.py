@@ -63,10 +63,17 @@ def test_fg1( Eold, Enew, seed ):
     return res
     #plt.plot(Evec,(casc.fg_p(2*Evec,1e8+0*Evec,seed)*(2*Evec>=seed.Egmin)))
 
-def main(Ngen = 10,startN=1,rf=1):
+def main(Ngen = 10,startN=1,rf=1, Ngrid = None, E0 = None):
     global dNold, dNnew,fout
     #
-    E0 = 1e8
+    if E0 is None:
+        E0 = 4.25e8 #=gammamaxIC from ~/Cascade.ipnb
+    #
+    Emin = 1e-6
+    Emax = 2*E0
+    if Ngrid is None:
+        Ngrid = 1e4
+    #
     ii = np.round(np.log(E0)/np.log(Emax)*Ngrid)
     dx = grid.get_dx()
     #create an alternate grid with the same number of grid points but shifted by one half
@@ -99,6 +106,10 @@ def main(Ngen = 10,startN=1,rf=1):
     #error in evolution of electron number
     deltaN = 0
     warnings.simplefilter("error")
+    gen_list = []
+    dNdE_list = []
+    Ntot_list = []
+    Etot_list = []
     try:
         print( "#%14s %21s %21s %21s" % ("Generation", "N", "deltaN", "E") )
         if startN == 1:
@@ -121,10 +132,16 @@ def main(Ngen = 10,startN=1,rf=1):
             Ntot = np.sum( dNnew.func_vec*Evec*dx,axis=-1 )
             Etot = np.sum( dNnew.func_vec*Evec**2*dx,axis=-1 )
             print( "%15d %21.15g %21.15g %21.15e" % (gen, Ntot, deltaN, Etot) )
+            gen_list.append(gen)
+            dNdE_list.append(dNnew)
+            Ntot_list.append(Ntot)
+            Etot_list.append(Etot)
             # print( gen, Ntot, deltaN, Etot )
             #plt.draw()
     except (KeyboardInterrupt, SystemExit):
         print '\n! Received keyboard interrupt, quitting threads.\n'
+    print("Saving results to file...")
+    np.savez("E0_%.2g.npz" % E0, Evec = Evec, gen_list = gen_list, dNdE_list = dNdE_list, Ntot_list = Ntot_list, Etot_list = Etot_list)
 
 def plot_convergence(wf = 0):
     s1Gen, s1N = np.loadtxt("casc_sasha_E0_1e8_di0.5.txt", dtype = np.float64, usecols = (0, 1), skiprows = 1, unpack = True)
@@ -191,7 +208,7 @@ if __name__ == "__main__":
     #energy grid, Lorentz factor of initial electron
     warnings.simplefilter("error")
     Emin = 1e-6
-    Emax = 2e8
+    Emax = 8e8
     Ngrid = 1e4
     # Evec = exp(np.linspace(-5,np.log(Emax),Ngrid))
     E0grid = 0
