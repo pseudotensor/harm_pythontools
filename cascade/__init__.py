@@ -63,39 +63,39 @@ def test_fg1( Eold, Enew, seed ):
     return res
     #plt.plot(Evec,(casc.fg_p(2*Evec,1e8+0*Evec,seed)*(2*Evec>=seed.Egmin)))
 
-def main(Ngen = 10,resume=0,rf=1, Ngrid = None, E0 = None):
+def main(Ngen = 10,resume=0,Ngrid = None, E0 = None):
     global dNold, dNnew,fout
     #
     if E0 is None:
         E0 = 4.25e8 #=gammamaxIC from ~/Cascade.ipnb
-    #
-    Emin = 1e-6
-    Emax = 2*E0
-    if Ngrid is None:
-        Ngrid = 1e4
-    #
-    E0grid = 0
-    grid = casc.Grid(Emin, Emax, E0grid, Ngrid, di = 0.0)
-    Evec = grid.Egrid
-    ivec = np.arange(len(Evec))
-    #
-    ii = np.round(np.log(E0)/np.log(Emax)*Ngrid)
-    dx = grid.get_dx()
-    #create an alternate grid with the same number of grid points but shifted by one half
-    altgrid = casc.Grid(grid.get_Emin(), grid.get_Emax(), grid.get_E0(), grid.get_Ngrid()*rf, di = 0.5)
-    if False:
-        dE = Evec[ii] * dx
-        dN = np.zeros_like(Evec)
-        dN[ii]  = 1/dE
-    elif False:
-        sigmaE = E0/100 #1*grid.dx*E0
-        dN = (2*np.pi)**(-0.5)*exp(-0.5*((Evec-E0)/sigmaE)**2)/sigmaE
-    else: #Avery's method
-        fEw = 0.01 #1*grid.dx*E0
-        dN = np.exp(-0.5*((np.log10(Evec)-np.log10(E0))/fEw)**2)
-        dN /= (dN.sum()*Evec*dx)
-    print( "#%14s %21s %21s %21s" % ("Generation", "N", "deltaN", "E") )
     if resume == 0:
+        #
+        Emin = 1e-6
+        Emax = 2*E0
+        if Ngrid is None:
+            Ngrid = 1e4
+        #
+        E0grid = 0
+        grid = casc.Grid(Emin, Emax, E0grid, Ngrid, di = 0.0)
+        Evec = grid.Egrid
+        ivec = np.arange(len(Evec))
+        #
+        ii = np.round(np.log(E0)/np.log(Emax)*Ngrid)
+        dx = grid.get_dx()
+        #create an alternate grid with the same number of grid points but shifted by one half
+        altgrid = casc.Grid(grid.get_Emin(), grid.get_Emax(), grid.get_E0(), grid.get_Ngrid(), di = 0.5)
+        if False:
+            dE = Evec[ii] * dx
+            dN = np.zeros_like(Evec)
+            dN[ii]  = 1/dE
+        elif False:
+            sigmaE = E0/100 #1*grid.dx*E0
+            dN = (2*np.pi)**(-0.5)*exp(-0.5*((Evec-E0)/sigmaE)**2)/sigmaE
+        else: #Avery's method
+            fEw = 0.01 #1*grid.dx*E0
+            dN = np.exp(-0.5*((np.log10(Evec)-np.log10(E0))/fEw)**2)
+            dN /= (dN.sum()*Evec*dx)
+        print( "#%14s %21s %21s %21s" % ("Generation", "N", "deltaN", "E") )
         dNold = casc.Func.fromGrid(grid)
         dNold.set_func(dN)
         dNnew = casc.Func.fromGrid(grid)
@@ -118,7 +118,20 @@ def main(Ngen = 10,resume=0,rf=1, Ngrid = None, E0 = None):
     else:
         #restart from last snapshot
         npzfile = np.load("E0_%.2g.npz" % E0)
+        Emin = npzfile["Emin"]
+        Emax = npzfile["Emax"]
+        E0grid = npzfile["E0grid"]
         Evec = npzfile["Evec"]
+        Ngrid = npzfile["Ngrid"]
+        #
+        grid = casc.Grid(Emin, Emax, E0grid, Ngrid, di = 0.0)
+        ivec = np.arange(len(Evec))
+        #
+        ii = np.round(np.log(E0)/np.log(Emax)*Ngrid)
+        dx = grid.get_dx()
+        #create an alternate grid with the same number of grid points but shifted by one half
+        altgrid = casc.Grid(grid.get_Emin(), grid.get_Emax(), grid.get_E0(), grid.get_Ngrid(), di = 0.5)
+        #create an alternate grid with the same number of grid points but shifted by one half
         gen_list = list(npzfile["gen_list"])
         dNdE_list = list(npzfile["dNdE_list"])
         Ntot_list = list(npzfile["Ntot_list"])
@@ -130,9 +143,12 @@ def main(Ngen = 10,resume=0,rf=1, Ngrid = None, E0 = None):
         dNold = casc.Func.fromGrid(grid)
         dNold.set_func(dNnew.func_vec)
         deltaN = deltaN_list[-1]
+        gen = gen_list[-1]
         startN = gen_list[-1]+1
         Ntot = Ntot_list[-1]
         Etot = Etot_list[-1]
+        print( "#%14s %21s %21s %21s" % ("Generation", "N", "deltaN", "E") )
+        print( "%15d %21.15g %21.15g %21.15e" % (gen, Ntot, deltaN, Etot) )
     plt.xscale("log")
     plt.yscale("log")
     # plt.ylim(1e-15,1e-4)
@@ -165,7 +181,7 @@ def main(Ngen = 10,resume=0,rf=1, Ngrid = None, E0 = None):
     except (KeyboardInterrupt, SystemExit):
         print '\n! Received keyboard interrupt, quitting threads.\n'
     print("Saving results to file...")
-    np.savez("E0_%.2g.npz" % E0, Evec = Evec, E0 = E0, gen_list = gen_list, deltaN_list = deltaN_list, dNdE_list = dNdE_list, Ntot_list = Ntot_list, Etot_list = Etot_list)
+    np.savez("E0_%.2g.npz" % E0, Evec = Evec, E0 = E0, gen_list = gen_list, deltaN_list = deltaN_list, dNdE_list = dNdE_list, Ntot_list = Ntot_list, Etot_list = Etot_list, Emin = Emin, Emax = Emax, Ngrid = Ngrid, E0grid = E0grid)
 
 def plot_convergence(wf = 0):
     s1Gen, s1N = np.loadtxt("casc_sasha_E0_1e8_di0.5.txt", dtype = np.float64, usecols = (0, 1), skiprows = 1, unpack = True)
