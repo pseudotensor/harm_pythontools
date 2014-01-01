@@ -63,7 +63,7 @@ def test_fg1( Eold, Enew, seed ):
     return res
     #plt.plot(Evec,(casc.fg_p(2*Evec,1e8+0*Evec,seed)*(2*Evec>=seed.Egmin)))
 
-def main(Ngen = 10,startN=1,rf=1, Ngrid = None, E0 = None):
+def main(Ngen = 10,resume=0,rf=1, Ngrid = None, E0 = None):
     global dNold, dNnew,fout
     #
     if E0 is None:
@@ -73,6 +73,11 @@ def main(Ngen = 10,startN=1,rf=1, Ngrid = None, E0 = None):
     Emax = 2*E0
     if Ngrid is None:
         Ngrid = 1e4
+    #
+    E0grid = 0
+    grid = casc.Grid(Emin, Emax, E0grid, Ngrid, di = 0.0)
+    Evec = grid.Egrid
+    ivec = np.arange(len(Evec))
     #
     ii = np.round(np.log(E0)/np.log(Emax)*Ngrid)
     dx = grid.get_dx()
@@ -89,35 +94,53 @@ def main(Ngen = 10,startN=1,rf=1, Ngrid = None, E0 = None):
         fEw = 0.01 #1*grid.dx*E0
         dN = np.exp(-0.5*((np.log10(Evec)-np.log10(E0))/fEw)**2)
         dN /= (dN.sum()*Evec*dx)
-    if startN == 1:
+    print( "#%14s %21s %21s %21s" % ("Generation", "N", "deltaN", "E") )
+    if resume == 0:
         dNold = casc.Func.fromGrid(grid)
         dNold.set_func(dN)
         dNnew = casc.Func.fromGrid(grid)
         dNnew.set_func(dN)
         plt.plot(Evec, Evec*dNold.func_vec,'-x')
+        #
+        gen_list = []
+        dNdE_list = []
+        Ntot_list = []
+        Etot_list = []
+        deltaN_list = []
+        Ntot = np.sum( dNnew.func_vec*Evec*dx,axis=-1 )
+        Etot = np.sum( dNnew.func_vec*Evec**2*dx,axis=-1 )
+        #print( gen, Ntot, deltaN, Etot )
+        deltaN = 0
+        #generation number
+        gen = 0
+        print( "%15d %21.15g %21.15g %21.15e" % (gen, Ntot, deltaN, Etot) )
+        startN = 1
+    else:
+        #restart from last snapshot
+        npzfile = np.load("E0_%.2g.npz" % E0)
+        Evec = npzfile["Evec"]
+        gen_list = list(npzfile["gen_list"])
+        dNdE_list = list(npzfile["dNdE_list"])
+        Ntot_list = list(npzfile["Ntot_list"])
+        Etot_list = list(npzfile["Etot_list"])
+        deltaN_list = list(npzfile["deltaN_list"])
+        E0 = npzfile["E0"]
+        dNnew = casc.Func.fromGrid(grid)
+        dNnew.set_func(dNdE_list[-1])
+        dNold = casc.Func.fromGrid(grid)
+        dNold.set_func(dNnew.func_vec)
+        deltaN = deltaN_list[-1]
+        startN = gen_list[-1]+1
+        Ntot = Ntot_list[-1]
+        Etot = Etot_list[-1]
     plt.xscale("log")
     plt.yscale("log")
     # plt.ylim(1e-15,1e-4)
     plt.ylim(1e-8,1e4)
     plt.xlim(1e4,Emax)
     plt.draw()
-    #generation number
-    gen = 0
-    #error in evolution of electron number
-    deltaN = 0
     warnings.simplefilter("error")
-    gen_list = []
-    dNdE_list = []
-    Ntot_list = []
-    Etot_list = []
     try:
-        print( "#%14s %21s %21s %21s" % ("Generation", "N", "deltaN", "E") )
-        if startN == 1:
-            Ntot = np.sum( dNnew.func_vec*Evec*dx,axis=-1 )
-            Etot = np.sum( dNnew.func_vec*Evec**2*dx,axis=-1 )
-            #print( gen, Ntot, deltaN, Etot )
-            deltaN = 0
-            print( "%15d %21.15g %21.15g %21.15e" % (gen, Ntot, deltaN, Etot) )
         np.seterr(divide='raise')
         for gen in xrange(startN,Ngen+1):
             sys.stdout.flush()
@@ -133,15 +156,16 @@ def main(Ngen = 10,startN=1,rf=1, Ngrid = None, E0 = None):
             Etot = np.sum( dNnew.func_vec*Evec**2*dx,axis=-1 )
             print( "%15d %21.15g %21.15g %21.15e" % (gen, Ntot, deltaN, Etot) )
             gen_list.append(gen)
-            dNdE_list.append(dNnew)
+            dNdE_list.append(dNnew.func_vec)
             Ntot_list.append(Ntot)
             Etot_list.append(Etot)
+            deltaN_list.append(deltaN)
             # print( gen, Ntot, deltaN, Etot )
             #plt.draw()
     except (KeyboardInterrupt, SystemExit):
         print '\n! Received keyboard interrupt, quitting threads.\n'
     print("Saving results to file...")
-    np.savez("E0_%.2g.npz" % E0, Evec = Evec, gen_list = gen_list, dNdE_list = dNdE_list, Ntot_list = Ntot_list, Etot_list = Etot_list)
+    np.savez("E0_%.2g.npz" % E0, Evec = Evec, E0 = E0, gen_list = gen_list, deltaN_list = deltaN_list, dNdE_list = dNdE_list, Ntot_list = Ntot_list, Etot_list = Etot_list)
 
 def plot_convergence(wf = 0):
     s1Gen, s1N = np.loadtxt("casc_sasha_E0_1e8_di0.5.txt", dtype = np.float64, usecols = (0, 1), skiprows = 1, unpack = True)
@@ -211,10 +235,6 @@ if __name__ == "__main__":
     Emax = 8e8
     Ngrid = 1e4
     # Evec = exp(np.linspace(-5,np.log(Emax),Ngrid))
-    E0grid = 0
-    grid = casc.Grid(Emin, Emax, E0grid, Ngrid, di = 0.0)
-    Evec = grid.Egrid
-    ivec = np.arange(len(Evec))
     #1 eV in units of m_e c^2
     eV = 1/(511.e3)
     #spectral index
