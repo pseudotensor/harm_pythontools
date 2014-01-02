@@ -10,6 +10,7 @@ cimport cython
 from libc.math cimport log, exp, sqrt, pow, fabs
 from libc.stdlib cimport malloc, free
 from cpython.exc cimport PyErr_CheckSignals
+from cython.parallel import parallel, prange
 
 DTYPE = np.float64
 ctypedef np.float_t DTYPE_t
@@ -49,6 +50,38 @@ def flnew( flold not None, flnew not None, seed not None, altgrid not None ):
     return flnew_c( flold, flnew, seed, altgrid )
 
 @cython.boundscheck(False) # turn off bounds-checking for entire function
+cdef void compute_inner_convolution_c( int i,
+                                     SeedPhoton seed, 
+                                     Func flold_func, 
+                                     Grid altgrid,
+                                     double* ptemp1,
+                                     double* ptemp2,
+                                     double* ptemp2b) nogil:
+    cdef double temp1, temp2, temp2b
+    cdef Grid grid = flold_func
+    cdef double *Evec_data = grid.Egrid_data
+    cdef double *Evecb_data = altgrid.Egrid_data
+    cdef double *flold_data = flold_func.func_vec_data
+    cdef int dim1 = flold_func.Ngrid
+    cdef double Eenew = Evec_data[i]
+    #cdef int dim2b = altgrid.Ngrid
+    temp1 = 0
+    temp2 = 0
+    temp2b = 0
+    for j in range(dim1):
+        temp1 += K1(Eenew,Evec_data[j],seed)*flold_data[j]*grid.dEdxgrid_data[j]*grid.dx
+        temp2 += K2(Eenew,Eenew+Evec_data[j],seed)*flold_func.fofE(Eenew+Evec_data[j])*grid.dEdxgrid_data[j]*grid.dx
+        #for j from 0 <= j < dim2b:
+        temp2b += K2(Eenew,Eenew+Evecb_data[j],seed)*flold_func.fofE(Eenew+Evecb_data[j])*altgrid.dEdxgrid_data[j]*altgrid.dx
+    # temp1sum += temp1*grid.dEdxgrid_data[i]*grid.dx
+    #combine the two integrals into one more accurate integral (with twice res)
+    temp2b = 0.5 * (temp2+temp2b)
+    ptemp1[0] = temp1
+    ptemp2[0] = temp2
+    ptemp2b[0] = temp2b
+    return
+
+@cython.boundscheck(False) # turn off bounds-checking for entire function
 cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid altgrid ) except *:
     """Expect E and flold defined on a regular log grid, Evec"""
     cdef int i
@@ -63,11 +96,11 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid alt
     cdef double *flold_data = flold_func.func_vec_data
     cdef int dim1 = flold_func.Ngrid
     cdef int dim2b = altgrid.Ngrid
-    cdef double temp1, temp2, temp2b, temp1sum, temp2sum
     cdef double N1, N2, Nold, dN1, dN2
     cdef double w1, w2, wnorm
     cdef double *flnew_data =  <double *>malloc(dim1 * sizeof(double))
     cdef double *flnew_alt_data =  <double *>malloc(dim1 * sizeof(double))
+    cdef double temp1, temp2, temp2b
 
     #old number of electrons
     Nold = flold_func.norm()
@@ -75,26 +108,14 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid alt
     # temp1sum = 0
     N1 = 0
     N2 = 0
-    for i from 0 <= i < dim1:
-        Eenew = Evec_data[i]
-        temp1 = 0
-        temp2 = 0
-        temp2b = 0
-        for j from 0 <= j < dim1:
-            temp1 += K1(Eenew,Evec_data[j],seed)*flold_data[j]*grid.dEdxgrid_data[j]*grid.dx
-            temp2 += K2(Eenew,Eenew+Evec_data[j],seed)*flold_func.fofE(Eenew+Evec_data[j])*grid.dEdxgrid_data[j]*grid.dx
-            #for j from 0 <= j < dim2b:
-            temp2b += K2(Eenew,Eenew+Evecb_data[j],seed)*flold_func.fofE(Eenew+Evecb_data[j])*altgrid.dEdxgrid_data[j]*altgrid.dx
-        # temp1sum += temp1*grid.dEdxgrid_data[i]*grid.dx
-        #combine the two integrals into one more accurate integral (with twice res)
-        temp2b = 0.5 * (temp2+temp2b)
+    for i in prange(dim1, nogil=True):
+        compute_inner_convolution_c(i, seed, flold_func, altgrid, &temp1, &temp2, &temp2b)
         N1 += temp2*grid.dEdxgrid_data[i]*grid.dx
         N2 += temp2b*grid.dEdxgrid_data[i]*grid.dx
         flnew_data[i] = temp1+temp2
         flnew_alt_data[i] = temp1+temp2b
-        if i % int(dim1/10+1) == 0:
-            #this is supposed to pass KeyboardInterrupt signal and other signals to python, but it does not do that
-            PyErr_CheckSignals()
+    #this is supposed to pass KeyboardInterrupt signal and other signals to python, but it does not do that
+    PyErr_CheckSignals()
     dN1 = N1 - Nold
     dN2 = N2 - Nold
     #print dN1, dN2
@@ -109,8 +130,9 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid alt
     else:
         w1 = 0
         w2 = 1
-    for i from 0 <= i < dim1:
-        flnew_func.set_funci_c(i,w1 * flnew_data[i] + w2 * flnew_alt_data[i])
+    with nogil:
+        for i in prange(dim1):
+            flnew_func.set_funci_c(i,w1 * flnew_data[i] + w2 * flnew_alt_data[i])
     free(flnew_alt_data)
     free(flnew_data)
     return(w1*N1+w2*N2)
@@ -406,7 +428,7 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
         return tiny
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
-    cdef int set_funci_c(self, int i, double f):
+    cdef int set_funci_c(self, int i, double f) nogil:
         self.func_vec_data[i] = max(f,tiny)
         self.lfunc_vec_data[i] = log(self.func_vec_data[i])
         return 0
