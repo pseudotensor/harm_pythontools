@@ -137,7 +137,7 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid alt
         w2 = 1
     for i from 0 <= i < dim1: #in xrange(dim1):
         flnew_func.set_funci_c(i,w1 * flnew_data[i] + w2 * flnew_alt_data[i])
-    dN = w1*fabs(dN1) + w2*fabs(dN2)
+    dN = fabs(w1*dN1) + fabs(w2*dN2)
     if dN > 1e-2:
         print( "Jump in the number of electrons: dN = %g, dN1 = %g, dN2 = %g, w1 = %g, w2 = %g" % (dN, dN1, dN2, w1, w2) )
         for i from 0 <= i < dim1:
