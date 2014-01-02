@@ -69,7 +69,7 @@ cdef void compute_inner_convolution_c( int i,
     temp1 = 0
     temp2 = 0
     temp2b = 0
-    for j in range(dim1):
+    for j from 0 <= j < dim1: #in xrange(dim1):
         temp1 += K1(Eenew,Evec_data[j],seed)*flold_data[j]*grid.dEdxgrid_data[j]*grid.dx
         temp2 += K2(Eenew,Eenew+Evec_data[j],seed)*flold_func.fofE(Eenew+Evec_data[j])*grid.dEdxgrid_data[j]*grid.dx
         #for j from 0 <= j < dim2b:
@@ -131,7 +131,7 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid alt
     else:
         w1 = 0
         w2 = 1
-    for i in xrange(dim1):
+    for i from 0 <= i < dim1: #in xrange(dim1):
         flnew_func.set_funci_c(i,w1 * flnew_data[i] + w2 * flnew_alt_data[i])
     free(flnew_alt_data)
     free(flnew_data)
