@@ -109,7 +109,7 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid alt
     # temp1sum = 0
     N1 = 0
     N2 = 0
-    for i in prange(dim1, nogil=True, num_threads = 8):
+    for i in prange(dim1, nogil=True):
         compute_inner_convolution_c(i, seed, flold_func, grid, altgrid, &temp1, &temp2, &temp2b)
         N1 += temp2*grid.dEdxgrid_data[i]*grid.dx
         N2 += temp2b*grid.dEdxgrid_data[i]*grid.dx
