@@ -76,7 +76,7 @@ cdef void compute_inner_convolution_c( int i,
         temp2b += K2(Eenew,Eenew+Evecb_data[j],seed)*flold_func.fofE(Eenew+Evecb_data[j])*altgrid.dEdxgrid_data[j]*altgrid.dx
     # temp1sum += temp1*grid.dEdxgrid_data[i]*grid.dx
     #combine the two integrals into one more accurate integral (with twice res)
-    temp2b = 0.5 * (temp2+temp2b)
+    #temp2b = 0.5 * (temp2+temp2b)
     ptemp1[0] = temp1
     ptemp2[0] = temp2
     ptemp2b[0] = temp2b
@@ -124,7 +124,7 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid alt
         #for i in prange(dim1, nogil=True):
         compute_inner_convolution_c(i, seed, flold_func, grid, altgrid, &temp1, &temp2, &temp2b)
         deltaN1[i] = temp2
-        deltaN2[i] = temp2b
+        deltaN2[i] = temp2+temp2b
         N1 += deltaN1[i]*grid.dEdxgrid_data[i]*grid.dx
         N2 += deltaN2[i]*grid.dEdxgrid_data[i]*grid.dx
         flnew_data[i] = temp1+temp2
@@ -140,7 +140,7 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid alt
     for i in prange(dim1, nogil=True):
         compute_inner_convolution_c(i, seed, flold_func, grid, altgrid, &ptemp1, &ptemp2, &ptemp2b)
         pdeltaN1[i] = ptemp2
-        pdeltaN2[i] = ptemp2b
+        pdeltaN2[i] = ptemp2+ptemp2b
         pN1 += pdeltaN1[i]*grid.dEdxgrid_data[i]*grid.dx
         pN2 += pdeltaN2[i]*grid.dEdxgrid_data[i]*grid.dx
         pflnew_data[i] = ptemp1+ptemp2
