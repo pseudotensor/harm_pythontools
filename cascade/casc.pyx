@@ -131,9 +131,8 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid alt
     else:
         w1 = 0
         w2 = 1
-    with nogil:
-        for i in prange(dim1):
-            flnew_func.set_funci_c(i,w1 * flnew_data[i] + w2 * flnew_alt_data[i])
+    for i in xrange(dim1):
+        flnew_func.set_funci_c(i,w1 * flnew_data[i] + w2 * flnew_alt_data[i])
     free(flnew_alt_data)
     free(flnew_data)
     return(w1*N1+w2*N2)
