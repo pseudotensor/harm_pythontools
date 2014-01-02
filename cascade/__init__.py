@@ -63,6 +63,35 @@ def test_fg1( Eold, Enew, seed ):
     return res
     #plt.plot(Evec,(casc.fg_p(2*Evec,1e8+0*Evec,seed)*(2*Evec>=seed.Egmin)))
 
+def get_cascade_info(E0 = None):
+    if E0 is None:
+        E0 = 4.25e8 #=gammamaxIC from ~/Cascade.ipnb
+    #retrieve saved snapshot
+    npzfile = np.load("E0_%.2g.npz" % E0)
+    Emin = npzfile["Emin"]
+    Emax = npzfile["Emax"]
+    E0grid = npzfile["E0grid"]
+    Evec = npzfile["Evec"]
+    Ngrid = npzfile["Ngrid"]
+    #
+    grid = casc.Grid(Emin, Emax, E0grid, Ngrid, di = 0.0)
+    ivec = np.arange(len(Evec))
+    #
+    ii = np.round(np.log(E0)/np.log(Emax)*Ngrid)
+    dx = grid.get_dx()
+    #create an alternate grid with the same number of grid points but shifted by one half
+    altgrid = casc.Grid(grid.get_Emin(), grid.get_Emax(), grid.get_E0(), grid.get_Ngrid(), di = 0.5)
+    #create an alternate grid with the same number of grid points but shifted by one half
+    gen_list = list(npzfile["gen_list"])
+    dNdE_list = list(npzfile["dNdE_list"])
+    deltaN_list = list(npzfile["deltaN_list"])
+    Ntot_list = list(npzfile["Ntot_list"])
+    Etot_list = list(npzfile["Etot_list"])
+    E0 = npzfile["E0"]
+    # print( "#%14s %21s %21s %21s" % ("Generation", "N", "deltaN", "E") )
+    # print( "%15d %21.15g %21.15g %21.15e" % (gen, Ntot, deltaN, Etot) )
+    return(E0, gen_list, dNdE_list, deltaN_list, Ntot_list, Etot_list)
+    
 def main(Ngen = 10,resume=0,Ngrid = None, E0 = None):
     global dNold, dNnew,fout
     #
@@ -166,7 +195,6 @@ def main(Ngen = 10,resume=0,Ngrid = None, E0 = None):
             Nreordered = casc.flnew( dNold, dNnew, seed, altgrid )
             deltaN += (Nreordered - Ntot)
             #pdb.set_trace()
-            plt.plot(Evec, Evec*dNnew.func_vec, '-')
             # #plt.plot(Evec, dNnew, 'x')
             Ntot = np.sum( dNnew.func_vec*Evec*dx,axis=-1 )
             Etot = np.sum( dNnew.func_vec*Evec**2*dx,axis=-1 )
@@ -176,6 +204,9 @@ def main(Ngen = 10,resume=0,Ngrid = None, E0 = None):
             Ntot_list.append(Ntot)
             Etot_list.append(Etot)
             deltaN_list.append(deltaN)
+            if gen % 10 == 0:
+                plt.plot(Evec, Evec*dNnew.func_vec, '-')
+                plt.draw()
             # print( gen, Ntot, deltaN, Etot )
             #plt.draw()
     except (KeyboardInterrupt, SystemExit):
