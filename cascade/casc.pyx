@@ -7,6 +7,7 @@ from __future__ import division
 import numpy as np
 cimport numpy as np
 cimport cython
+cimport openmp
 from libc.math cimport log, exp, sqrt, pow, fabs
 from libc.stdlib cimport malloc, free
 from cpython.exc cimport PyErr_CheckSignals
@@ -29,16 +30,16 @@ cdef np.ndarray[double, ndim=1] fgvec( np.ndarray[double, ndim=1] Eg, np.ndarray
         Eg1[i] = fg( Eg[i], Ee[i], seed )
     return( Eg1 )
 
-cdef inline double fg( double Eg, double Ee, SeedPhoton seed):
+cdef inline double fg( double Eg, double Ee, SeedPhoton seed) nogil:
     cdef double Ep = Ee-Eg
     cdef double fgval = ( (seed.f(Eg/(2*Ee*Ep))/(2*Ep*Ep)) if (Ep>0 and Ee>0 and Eg>0) else (0) )
     return( fgval )
 
-cdef inline double K1( double Enew, double Eold, SeedPhoton seed ):
+cdef inline double K1( double Enew, double Eold, SeedPhoton seed ) nogil:
     cdef double K = (4*fg(2*Enew,Eold,seed)) if (2*Enew>=seed.Egmin) else (0)
     return( K )
 
-cdef inline double K2( double Enew, double Eold, SeedPhoton seed ):
+cdef inline double K2( double Enew, double Eold, SeedPhoton seed ) nogil:
     cdef double K = fg(Eold-Enew,Eold,seed) if Eold > Enew else 0
     return( K )
 
@@ -53,12 +54,12 @@ def flnew( flold not None, flnew not None, seed not None, altgrid not None ):
 cdef void compute_inner_convolution_c( int i,
                                      SeedPhoton seed, 
                                      Func flold_func, 
+                                     Grid grid,
                                      Grid altgrid,
                                      double* ptemp1,
                                      double* ptemp2,
                                      double* ptemp2b) nogil:
     cdef double temp1, temp2, temp2b
-    cdef Grid grid = flold_func
     cdef double *Evec_data = grid.Egrid_data
     cdef double *Evecb_data = altgrid.Egrid_data
     cdef double *flold_data = flold_func.func_vec_data
@@ -108,8 +109,8 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid alt
     # temp1sum = 0
     N1 = 0
     N2 = 0
-    for i in prange(dim1, nogil=True):
-        compute_inner_convolution_c(i, seed, flold_func, altgrid, &temp1, &temp2, &temp2b)
+    for i in prange(dim1, nogil=True, num_threads = 8):
+        compute_inner_convolution_c(i, seed, flold_func, grid, altgrid, &temp1, &temp2, &temp2b)
         N1 += temp2*grid.dEdxgrid_data[i]*grid.dx
         N2 += temp2b*grid.dEdxgrid_data[i]*grid.dx
         flnew_data[i] = temp1+temp2
@@ -177,7 +178,7 @@ cdef public class SeedPhoton [object CSeedPhoton, type TSeedPhoton ]:
             f_out[i] = self.f(E[i])
         return f_out
 
-    cdef double f(self, double E):
+    cdef double f(self, double E) nogil:
         return( self.Nprefactor*E**(-self.s) if (E >= self.Emin and E <= self.Emax) else 0 )
 
     cpdef double minEg(self, double Eenew, double grid_Emin):
@@ -397,7 +398,7 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
         return norm
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
-    cdef double fofE(self, double Eval):
+    cdef double fofE(self, double Eval) nogil:
         """ Linearly interpolates f(E) in log-log """
         cdef int i
         cdef double logfl, logfr, logf, f, invldiff
