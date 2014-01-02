@@ -97,10 +97,12 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid alt
     cdef double *flold_data = flold_func.func_vec_data
     cdef int dim1 = flold_func.Ngrid
     cdef int dim2b = altgrid.Ngrid
-    cdef double N1, N2, Nold, dN1, dN2
+    cdef double N1, N2, Nold, dN1, dN2, dN
     cdef double w1, w2, wnorm
     cdef double *flnew_data =  <double *>malloc(dim1 * sizeof(double))
     cdef double *flnew_alt_data =  <double *>malloc(dim1 * sizeof(double))
+    cdef double *deltaN1 =  <double *>malloc(dim1 * sizeof(double))
+    cdef double *deltaN2 =  <double *>malloc(dim1 * sizeof(double))
     cdef double temp1, temp2, temp2b
 
     #old number of electrons
@@ -111,8 +113,10 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid alt
     N2 = 0
     for i in prange(dim1, nogil=True):
         compute_inner_convolution_c(i, seed, flold_func, grid, altgrid, &temp1, &temp2, &temp2b)
-        N1 += temp2*grid.dEdxgrid_data[i]*grid.dx
-        N2 += temp2b*grid.dEdxgrid_data[i]*grid.dx
+        deltaN1[i] = temp2*grid.dEdxgrid_data[i]*grid.dx
+        deltaN2[i] = temp2b*grid.dEdxgrid_data[i]*grid.dx
+        N1 += deltaN1[i]
+        N2 += deltaN2[i]
         flnew_data[i] = temp1+temp2
         flnew_alt_data[i] = temp1+temp2b
     #this is supposed to pass KeyboardInterrupt signal and other signals to python, but it does not do that
@@ -133,8 +137,15 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid alt
         w2 = 1
     for i from 0 <= i < dim1: #in xrange(dim1):
         flnew_func.set_funci_c(i,w1 * flnew_data[i] + w2 * flnew_alt_data[i])
+    dN = w1*fabs(dN1) + w2*fabs(dN2)
+    if dN > 1e-2:
+        print( "Jump in the number of electrons: dN = %g, dN1 = %g, dN2 = %g, w1 = %g, w2 = %g" % (dN, dN1, dN2, w1, w2) )
+        for i from 0 <= i < dim1:
+            print( i, deltaN1[i], deltaN2[i] )
     free(flnew_alt_data)
     free(flnew_data)
+    free(deltaN1)
+    free(deltaN2)
     return(w1*N1+w2*N2)
 
 ###############################
