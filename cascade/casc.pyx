@@ -124,7 +124,7 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid alt
         #for i in prange(dim1, nogil=True):
         compute_inner_convolution_c(i, seed, flold_func, grid, altgrid, &temp1, &temp2, &temp2b)
         deltaN1[i] = temp2
-        deltaN2[i] = temp2+temp2b
+        deltaN2[i] = temp2b
         N1 += deltaN1[i]*grid.dEdxgrid_data[i]*grid.dx
         N2 += deltaN2[i]*grid.dEdxgrid_data[i]*grid.dx
         flnew_data[i] = temp1+temp2
@@ -140,7 +140,7 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid alt
     for i in prange(dim1, nogil=True):
         compute_inner_convolution_c(i, seed, flold_func, grid, altgrid, &ptemp1, &ptemp2, &ptemp2b)
         pdeltaN1[i] = ptemp2
-        pdeltaN2[i] = ptemp2+ptemp2b
+        pdeltaN2[i] = ptemp2b
         pN1 += pdeltaN1[i]*grid.dEdxgrid_data[i]*grid.dx
         pN2 += pdeltaN2[i]*grid.dEdxgrid_data[i]*grid.dx
         pflnew_data[i] = ptemp1+ptemp2
@@ -151,7 +151,10 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid alt
     pdN2 = pN2 - Nold
 
     if pdN1 != dN1 or pdN2 != dN2:
-        print("dN1 = %g, pdN1 = %g, dN2 = %g, pdN2 = %g" % (dN1, pdN1, dN2, pdN2) )
+        # if pdN1 != dN1:
+        #     print("dN1 = %g, pdN1 = %g" % (dN1, pdN1) )
+        # if pdN2 != dN2:
+        #     print("dN2 = %g, pdN2 = %g" % (dN2, pdN2) )
         for i from 0 <= i < dim1:
             if deltaN1[i] != pdeltaN1[i]:
                 print( "i = %d: deltaN1[i] = %g, pdeltaN1[i] = %g" % (i, deltaN1[i], pdeltaN1[i]  ) )

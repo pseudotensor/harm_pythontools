@@ -159,7 +159,7 @@ def main(Ngen = 10,resume=0,Ngrid = None, E0 = None):
         ii = np.round(np.log(E0)/np.log(Emax)*Ngrid)
         dx = grid.get_dx()
         #create an alternate grid with the same number of grid points but shifted by one half
-        altgrid = casc.Grid(grid.get_Emin(), grid.get_Emax(), grid.get_E0(), grid.get_Ngrid(), di = 0.5)
+        altgrid = casc.Grid(Emin, Emax, E0grid, Ngrid, di = 0.5)
         #create an alternate grid with the same number of grid points but shifted by one half
         gen_list = list(npzfile["gen_list"])
         dNdE_list = list(npzfile["dNdE_list"])
