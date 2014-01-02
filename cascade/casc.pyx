@@ -105,14 +105,6 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid alt
     cdef double *deltaN2 =  <double *>malloc(dim1 * sizeof(double))
     cdef double temp1, temp2, temp2b
     #
-    cdef double pN1, pN2, pdN1, pdN2, pdN
-    cdef double pw1, pw2, pwnorm
-    cdef double *pflnew_data =  <double *>malloc(dim1 * sizeof(double))
-    cdef double *pflnew_alt_data =  <double *>malloc(dim1 * sizeof(double))
-    cdef double *pdeltaN1 =  <double *>malloc(dim1 * sizeof(double))
-    cdef double *pdeltaN2 =  <double *>malloc(dim1 * sizeof(double))
-    cdef double ptemp1, ptemp2, ptemp2b
-
     
     #old number of electrons
     Nold = flold_func.norm()
@@ -120,8 +112,8 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid alt
     # temp1sum = 0
     N1 = 0
     N2 = 0
-    for i from 0 <= i < dim1: 
-        #for i in prange(dim1, nogil=True):
+    #for i from 0 <= i < dim1: 
+    for i in prange(dim1, nogil=True):
         compute_inner_convolution_c(i, seed, flold_func, grid, altgrid, &temp1, &temp2, &temp2b)
         deltaN1[i] = temp2
         deltaN2[i] = temp2b
@@ -133,33 +125,6 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid alt
     PyErr_CheckSignals()
     dN1 = N1 - Nold
     dN2 = N2 - Nold
-
-    #redo the same in parallel:
-    pN1 = 0
-    pN2 = 0
-    for i in prange(dim1, nogil=True):
-        compute_inner_convolution_c(i, seed, flold_func, grid, altgrid, &ptemp1, &ptemp2, &ptemp2b)
-        pdeltaN1[i] = ptemp2
-        pdeltaN2[i] = ptemp2b
-        pN1 += pdeltaN1[i]*grid.dEdxgrid_data[i]*grid.dx
-        pN2 += pdeltaN2[i]*grid.dEdxgrid_data[i]*grid.dx
-        pflnew_data[i] = ptemp1+ptemp2
-        pflnew_alt_data[i] = ptemp1+ptemp2b
-    #this is supposed to pass KeyboardInterrupt signal and other signals to python, but it does not do that
-    PyErr_CheckSignals()
-    pdN1 = pN1 - Nold
-    pdN2 = pN2 - Nold
-
-    if pdN1 != dN1 or pdN2 != dN2:
-        # if pdN1 != dN1:
-        #     print("dN1 = %g, pdN1 = %g" % (dN1, pdN1) )
-        # if pdN2 != dN2:
-        #     print("dN2 = %g, pdN2 = %g" % (dN2, pdN2) )
-        for i from 0 <= i < dim1:
-            if deltaN1[i] != pdeltaN1[i]:
-                print( "i = %d: deltaN1[i] = %g, pdeltaN1[i] = %g" % (i, deltaN1[i], pdeltaN1[i]  ) )
-            if deltaN2[i] != pdeltaN2[i]:
-                print( "i = %d: deltaN2[i] = %g, pdeltaN2[i] = %g" % (i, deltaN2[i], pdeltaN2[i]  ) )
                        
     #print dN1, dN2
     #if opposite signs or very different errors
@@ -184,11 +149,6 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid alt
     free(flnew_data)
     free(deltaN1)
     free(deltaN2)
-    #parallel
-    free(pflnew_alt_data)
-    free(pflnew_data)
-    free(pdeltaN1)
-    free(pdeltaN2)
     return(w1*N1+w2*N2)
 
 ###############################
