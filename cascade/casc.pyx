@@ -141,7 +141,7 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid alt
     if dN > 1e-2:
         print( "Jump in the number of electrons: dN = %g, dN1 = %g, dN2 = %g, w1 = %g, w2 = %g" % (dN, dN1, dN2, w1, w2) )
         for i from 0 <= i < dim1:
-            print( i, deltaN1[i], deltaN2[i] )
+            print( i, w1*deltaN1[i]+w2*deltaN2[i] )
     free(flnew_alt_data)
     free(flnew_data)
     free(deltaN1)
