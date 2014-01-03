@@ -114,6 +114,10 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid alt
     N2 = 0
     #for i from 0 <= i < dim1: 
     for i in prange(dim1, nogil=True):
+        #reset them to zero so that they are local
+        temp1 = 0
+        temp2 = 0
+        temp2b = 0
         compute_inner_convolution_c(i, seed, flold_func, grid, altgrid, &temp1, &temp2, &temp2b)
         deltaN1[i] = temp2
         deltaN2[i] = temp2b
