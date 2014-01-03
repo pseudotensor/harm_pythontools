@@ -159,8 +159,7 @@ def main(Ngen = 10,resume=0,Ngrid = None, E0 = None):
         ii = np.round(np.log(E0)/np.log(Emax)*Ngrid)
         dx = grid.get_dx()
         #create an alternate grid with the same number of grid points but shifted by one half
-        altgrid = casc.Grid(Emin, Emax, E0grid, Ngrid, di = 0.5)
-        #create an alternate grid with the same number of grid points but shifted by one half
+        altgrid = casc.Grid(grid.get_Emin(), grid.get_Emax(), grid.get_E0(), grid.get_Ngrid(), di = 0.5)
         gen_list = list(npzfile["gen_list"])
         dNdE_list = list(npzfile["dNdE_list"])
         Ntot_list = list(npzfile["Ntot_list"])
@@ -278,10 +277,6 @@ if __name__ == "__main__":
     print ("Hello")
     #energy grid, Lorentz factor of initial electron
     warnings.simplefilter("error")
-    Emin = 1e-6
-    Emax = 8e8
-    Ngrid = 1e4
-    # Evec = exp(np.linspace(-5,np.log(Emax),Ngrid))
     #1 eV in units of m_e c^2
     eV = 1/(511.e3)
     #spectral index
