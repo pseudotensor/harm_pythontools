@@ -112,7 +112,7 @@ def get_cascade_info(**kwargs):
     #########################
     # print( "#%14s %21s %21s %21s" % ("Generation", "N", "deltaN", "E") )
     # print( "%15d %21.15g %21.15g %21.15e" % (gen, Ntot, deltaN, Etot) )
-    return(E0, gen_list, dNdE_list, deltaN_list, Ntot_list, Etot_list, Esmin, Esmax, s)
+    return({"E0": E0, "gen": np.array(gen_list), "dNdE": np.array(dNdE_list), "deltaN": np.array(deltaN_list), "Ntot": np.array(Ntot_list), "Etot": np.array(Etot_list), "Esmin": Esmin, "Esmax": Esmax, "s": s})
     
 def main(Ngen = 10,resume=0,**kwargs):
     global dNold, dNnew,fout
@@ -174,9 +174,16 @@ def main(Ngen = 10,resume=0,**kwargs):
         gen = 0
         print( "%15d %21.15g %21.15g %21.15e" % (gen, Ntot, deltaN, Etot) )
         startN = 1
+        #initial conditions
+        gen_list.append(gen)
+        dNdE_list.append(dNnew.func_vec)
+        Ntot_list.append(Ntot)
+        Etot_list.append(Etot)
+        deltaN_list.append(deltaN)
     else:
         #restart from last snapshot
-        npzfile = np.load("E0_%.2g.npz" % E0)
+        fnamedefault = "E%.2g_N%.2g_s%g_Esmin%.2g_Esmax%.2g.npz" % (E0, Ngrid, s, Esmin, Esmax)
+        npzfile = np.load(fnamedefault)
         Emin = npzfile["Emin"]
         Emax = npzfile["Emax"]
         E0grid = npzfile["E0grid"]
@@ -225,6 +232,7 @@ def main(Ngen = 10,resume=0,**kwargs):
     warnings.simplefilter("error")
     try:
         np.seterr(divide='raise')
+        #save initial conditions
         for gen in xrange(startN,Ngen+1):
             sys.stdout.flush()
             #save the distribution from last time step
@@ -250,7 +258,8 @@ def main(Ngen = 10,resume=0,**kwargs):
     except (KeyboardInterrupt, SystemExit):
         print '\n! Received keyboard interrupt, quitting threads.\n'
     print("Saving results to file...")
-    np.savez("E0_%.2g.npz" % E0, Evec = Evec, E0 = E0, gen_list = gen_list, deltaN_list = deltaN_list, dNdE_list = dNdE_list, Ntot_list = Ntot_list, Etot_list = Etot_list, Emin = Emin, Emax = Emax, Ngrid = Ngrid, E0grid = E0grid, Esmin = Esmin, Esmax = Esmax, s = s)
+    fnamedefault = "E%.2g_N%.2g_s%g_Esmin%.2g_Esmax%.2g.npz" % (E0, Ngrid, s, Esmin, Esmax)
+    np.savez(fnamedefault, Evec = Evec, E0 = E0, gen_list = gen_list, deltaN_list = deltaN_list, dNdE_list = dNdE_list, Ntot_list = Ntot_list, Etot_list = Etot_list, Emin = Emin, Emax = Emax, Ngrid = Ngrid, E0grid = E0grid, Esmin = Esmin, Esmax = Esmax, s = s)
 
 def plot_convergence(wf = 0):
     s1Gen, s1N = np.loadtxt("casc_sasha_E0_1e8_di0.5.txt", dtype = np.float64, usecols = (0, 1), skiprows = 1, unpack = True)
@@ -261,9 +270,12 @@ def plot_convergence(wf = 0):
     sh5e8Gen, sh5e8N = np.loadtxt("casc_sasha_E0_5e8_hybrid.txt", dtype = np.float64, usecols = (0, 1), skiprows = 1, unpack = True)
     sh1e9Gen, sh1e9N = np.loadtxt("casc_sasha_E0_1e9_hybrid.txt", dtype = np.float64, usecols = (0, 1), skiprows = 1, unpack = True)
     sh1e10Gen, sh1e10N = np.loadtxt("casc_sasha_E0_1e10_hybrid.txt", dtype = np.float64, usecols = (0, 1), skiprows = 1, unpack = True)
+    snE4e8 = get_cascade_info(fname="E4.2e+08_N1e+04_s2_Esmin0.0005_Esmax2.npz")
     if wf == 0 or wf == 1:
         plt.figure(1)
         plt.clf()
+        l1, = plt.plot(1+snE4e8["gen"], snE4e8["Ntot"], 'b:', label=r"$E_0 = 10^{10},\ n = 10^4$", lw = 2)
+        l1.set_dashes([10,5])
         l8, = plt.plot(1+sh1e10Gen, sh1e10N, 'g:', label=r"$E_0 = 10^{10},\ n = 10^4$", lw = 2)
         l8.set_dashes([5,2,2,2,2,2,2,2,2,2])
         l7, = plt.plot(1+sh1e9Gen, sh1e9N, 'g:', label=r"$E_0 = 10^9,\ n = 10^4$", lw = 2)
