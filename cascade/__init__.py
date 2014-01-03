@@ -63,11 +63,21 @@ def test_fg1( Eold, Enew, seed ):
     return res
     #plt.plot(Evec,(casc.fg_p(2*Evec,1e8+0*Evec,seed)*(2*Evec>=seed.Egmin)))
 
-def get_cascade_info(E0 = None):
-    if E0 is None:
-        E0 = 4.25e8 #=gammamaxIC from ~/Cascade.ipnb
+def get_cascade_info(**kwargs):
+    E0 = kwargs.pop("E0", 4.25e8)
+    Ngrid = kwargs.pop("Ngrid", 1e4)
+    s = kwargs.pop("s", 2)
+    Esmin = kwargs.pop("Esmin", 0.5e-3)
+    Esmax = kwargs.pop("Esmax", 2)
+    fnamedefault = "E%.2g_N%.2g_s%g_Esmin%.2g_Esmax%.2g.npz" % (E0, Ngrid, s, Esmin, Esmax)
+    fname = kwargs.pop("fname", fnamedefault)
+    #########################
+    #
+    # Open file
+    #
+    #########################
     #retrieve saved snapshot
-    npzfile = np.load("E0_%.2g.npz" % E0)
+    npzfile = np.load( fname )
     Emin = npzfile["Emin"]
     Emax = npzfile["Emax"]
     E0grid = npzfile["E0grid"]
@@ -88,16 +98,36 @@ def get_cascade_info(E0 = None):
     Ntot_list = list(npzfile["Ntot_list"])
     Etot_list = list(npzfile["Etot_list"])
     E0 = npzfile["E0"]
+    if "Esmin" in npzfile:
+        Esmin = npzfile["Esmin"]
+    if "Esmax" in npzfile:
+        Esmax = npzfile["Esmax"]
+    if "s" in npzfile:
+        s = npzfile["s"]
+    npzfile.close()
+    #########################
+    #
+    # Closed file
+    #
+    #########################
     # print( "#%14s %21s %21s %21s" % ("Generation", "N", "deltaN", "E") )
     # print( "%15d %21.15g %21.15g %21.15e" % (gen, Ntot, deltaN, Etot) )
-    return(E0, gen_list, dNdE_list, deltaN_list, Ntot_list, Etot_list)
+    return(E0, gen_list, dNdE_list, deltaN_list, Ntot_list, Etot_list, Esmin, Esmax, s)
     
-def main(Ngen = 10,resume=0,Ngrid = None, E0 = None):
+def main(Ngen = 10,resume=0,**kwargs):
     global dNold, dNnew,fout
+    E0 = kwargs.pop("E0", 4.25e8)  #=gammamaxIC from ~/Cascade.ipnb
+    Ngrid = kwargs.pop("Ngrid", 1e4)
+    #spectral index
+    s = kwargs.pop("s", 2)
+    #lower/upper cutoffs [eV]
+    Esmin = kwargs.pop("Esmin", 0.5e-3)
+    Esmax = kwargs.pop("Esmax", 2)
+    #1 eV in units of m_e c^2
+    eV = 1/(511.e3)
     #
-    if E0 is None:
-        E0 = 4.25e8 #=gammamaxIC from ~/Cascade.ipnb
     if resume == 0:
+        seed = casc.SeedPhoton( Esmin*eV, Esmax*eV, s )
         #
         Emin = 1e-6
         Emax = 2*E0
@@ -152,6 +182,14 @@ def main(Ngen = 10,resume=0,Ngrid = None, E0 = None):
         E0grid = npzfile["E0grid"]
         Evec = npzfile["Evec"]
         Ngrid = npzfile["Ngrid"]
+        if "Esmin" in npzfile:
+            Esmin = npzfile["Esmin"]
+        if "Esmax" in npzfile:
+            Esmax = npzfile["Esmax"]
+        if "s" in npzfile:
+            s = npzfile["s"]
+        #
+        seed = casc.SeedPhoton( Esmin*eV, Esmax*eV, s )
         #
         grid = casc.Grid(Emin, Emax, E0grid, Ngrid, di = 0.0)
         ivec = np.arange(len(Evec))
@@ -177,6 +215,7 @@ def main(Ngen = 10,resume=0,Ngrid = None, E0 = None):
         Etot = Etot_list[-1]
         print( "#%14s %21s %21s %21s" % ("Generation", "N", "deltaN", "E") )
         print( "%15d %21.15g %21.15g %21.15e" % (gen, Ntot, deltaN, Etot) )
+        npzfile.close()
     plt.xscale("log")
     plt.yscale("log")
     # plt.ylim(1e-15,1e-4)
@@ -211,7 +250,7 @@ def main(Ngen = 10,resume=0,Ngrid = None, E0 = None):
     except (KeyboardInterrupt, SystemExit):
         print '\n! Received keyboard interrupt, quitting threads.\n'
     print("Saving results to file...")
-    np.savez("E0_%.2g.npz" % E0, Evec = Evec, E0 = E0, gen_list = gen_list, deltaN_list = deltaN_list, dNdE_list = dNdE_list, Ntot_list = Ntot_list, Etot_list = Etot_list, Emin = Emin, Emax = Emax, Ngrid = Ngrid, E0grid = E0grid)
+    np.savez("E0_%.2g.npz" % E0, Evec = Evec, E0 = E0, gen_list = gen_list, deltaN_list = deltaN_list, dNdE_list = dNdE_list, Ntot_list = Ntot_list, Etot_list = Etot_list, Emin = Emin, Emax = Emax, Ngrid = Ngrid, E0grid = E0grid, Esmin = Esmin, Esmax = Esmax, s = s)
 
 def plot_convergence(wf = 0):
     s1Gen, s1N = np.loadtxt("casc_sasha_E0_1e8_di0.5.txt", dtype = np.float64, usecols = (0, 1), skiprows = 1, unpack = True)
@@ -277,11 +316,3 @@ if __name__ == "__main__":
     print ("Hello")
     #energy grid, Lorentz factor of initial electron
     warnings.simplefilter("error")
-    #1 eV in units of m_e c^2
-    eV = 1/(511.e3)
-    #spectral index
-    s = 2
-    #lower cutoff
-    Esmin = 0.5e-3 * eV
-    Esmax = 2 * eV
-    seed = casc.SeedPhoton( Esmin, Esmax, s )
