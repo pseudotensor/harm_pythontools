@@ -77,6 +77,7 @@ def get_cascade_info(**kwargs):
     #
     #########################
     #retrieve saved snapshot
+    print("Opening %s ..." % fname)
     npzfile = np.load( fname )
     Emin = npzfile["Emin"]
     Emax = npzfile["Emax"]
@@ -93,7 +94,7 @@ def get_cascade_info(**kwargs):
     altgrid = casc.Grid(grid.get_Emin(), grid.get_Emax(), grid.get_E0(), grid.get_Ngrid(), di = 0.5)
     #create an alternate grid with the same number of grid points but shifted by one half
     gen_list = list(npzfile["gen_list"])
-    dNdE_list = list(npzfile["dNdE_list"])
+    dNdE_list = npzfile["dNdE_list"]
     deltaN_list = list(npzfile["deltaN_list"])
     Ntot_list = list(npzfile["Ntot_list"])
     Etot_list = list(npzfile["Etot_list"])
@@ -112,10 +113,10 @@ def get_cascade_info(**kwargs):
     #########################
     # print( "#%14s %21s %21s %21s" % ("Generation", "N", "deltaN", "E") )
     # print( "%15d %21.15g %21.15g %21.15e" % (gen, Ntot, deltaN, Etot) )
-    return({"E0": E0, "gen": np.array(gen_list), "dNdE": np.array(dNdE_list), "deltaN": np.array(deltaN_list), "Ntot": np.array(Ntot_list), "Etot": np.array(Etot_list), "Esmin": Esmin, "Esmax": Esmax, "s": s})
+    return({"E0": E0, "gen": np.array(gen_list), "dNdE": dNdE_list, "deltaN": np.array(deltaN_list), "Ntot": np.array(Ntot_list), "Etot": np.array(Etot_list), "Esmin": Esmin, "Esmax": Esmax, "s": s, "Evec": np.array(Evec)})
     
 def main(Ngen = 10,resume=0,**kwargs):
-    global dNold, dNnew,fout
+    global dNold, dNnew,fout,dNdE_list,Evec
     E0 = kwargs.pop("E0", 4.25e8)  #=gammamaxIC from ~/Cascade.ipnb
     Ngrid = kwargs.pop("Ngrid", 1e4)
     #spectral index
@@ -176,7 +177,7 @@ def main(Ngen = 10,resume=0,**kwargs):
         startN = 1
         #initial conditions
         gen_list.append(gen)
-        dNdE_list.append(dNnew.func_vec)
+        dNdE_list.append(list(dNnew.func_vec))
         Ntot_list.append(Ntot)
         Etot_list.append(Etot)
         deltaN_list.append(deltaN)
@@ -246,7 +247,7 @@ def main(Ngen = 10,resume=0,**kwargs):
             Etot = np.sum( dNnew.func_vec*Evec**2*dx,axis=-1 )
             print( "%15d %21.15g %21.15g %21.15e" % (gen, Ntot, deltaN, Etot) )
             gen_list.append(gen)
-            dNdE_list.append(dNnew.func_vec)
+            dNdE_list.append(list(dNnew.func_vec))
             Ntot_list.append(Ntot)
             Etot_list.append(Etot)
             deltaN_list.append(deltaN)
@@ -271,11 +272,14 @@ def plot_convergence(wf = 0):
     sh1e9Gen, sh1e9N = np.loadtxt("casc_sasha_E0_1e9_hybrid.txt", dtype = np.float64, usecols = (0, 1), skiprows = 1, unpack = True)
     sh1e10Gen, sh1e10N = np.loadtxt("casc_sasha_E0_1e10_hybrid.txt", dtype = np.float64, usecols = (0, 1), skiprows = 1, unpack = True)
     snE4e8 = get_cascade_info(fname="E4.2e+08_N1e+04_s2_Esmin0.0005_Esmax2.npz")
+    snE4e8N5e4 = get_cascade_info(fname="E4.2e+08_N5e+04_s2_Esmin0.0005_Esmax2.npz")
     if wf == 0 or wf == 1:
         plt.figure(1)
         plt.clf()
-        l1, = plt.plot(1+snE4e8["gen"], snE4e8["Ntot"], 'b:', label=r"$E_0 = 10^{10},\ n = 10^4$", lw = 2)
+        l1, = plt.plot(1+snE4e8["gen"], snE4e8["Ntot"], 'b:', label=r"$E_0 = 4.2\times10^{8},\ n = 10^4$", lw = 2)
         l1.set_dashes([10,5])
+        l1, = plt.plot(1+snE4e8N5e4["gen"], snE4e8N5e4["Ntot"], 'r:', label=r"$E_0 = 4.2\times10^{8},\ n = 5\times10^4$", lw = 2)
+        l1.set_dashes([10,5,3,5])
         l8, = plt.plot(1+sh1e10Gen, sh1e10N, 'g:', label=r"$E_0 = 10^{10},\ n = 10^4$", lw = 2)
         l8.set_dashes([5,2,2,2,2,2,2,2,2,2])
         l7, = plt.plot(1+sh1e9Gen, sh1e9N, 'g:', label=r"$E_0 = 10^9,\ n = 10^4$", lw = 2)
