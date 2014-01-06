@@ -96,6 +96,7 @@ def get_cascade_info(**kwargs):
     gen_list = list(npzfile["gen_list"])
     dNdE_list = npzfile["dNdE_list"]
     deltaN_list = list(npzfile["deltaN_list"])
+    deltaE_list = list(npzfile["deltaE_list"])
     Ntot_list = list(npzfile["Ntot_list"])
     Etot_list = list(npzfile["Etot_list"])
     E0 = npzfile["E0"]
@@ -113,7 +114,7 @@ def get_cascade_info(**kwargs):
     #########################
     # print( "#%14s %21s %21s %21s" % ("Generation", "N", "deltaN", "E") )
     # print( "%15d %21.15g %21.15g %21.15e" % (gen, Ntot, deltaN, Etot) )
-    return({"E0": E0, "gen": np.array(gen_list), "dNdE": dNdE_list, "deltaN": np.array(deltaN_list), "Ntot": np.array(Ntot_list), "Etot": np.array(Etot_list), "Esmin": Esmin, "Esmax": Esmax, "s": s, "Evec": np.array(Evec)})
+    return({"E0": E0, "gen": np.array(gen_list), "dNdE": dNdE_list, "deltaN": np.array(deltaN_list), "deltaE": np.array(deltaE_list), "Ntot": np.array(Ntot_list), "Etot": np.array(Etot_list), "Esmin": Esmin, "Esmax": Esmax, "s": s, "Evec": np.array(Evec)})
     
 def main(Ngen = 10,resume=0,**kwargs):
     global dNold, dNnew,fout,dNdE_list,Evec
@@ -155,7 +156,6 @@ def main(Ngen = 10,resume=0,**kwargs):
             fEw = 0.01 #1*grid.dx*E0
             dN = np.exp(-0.5*((np.log10(Evec)-np.log10(E0))/fEw)**2)
             dN /= (dN.sum()*Evec*dx)
-        print( "#%14s %21s %21s %21s" % ("Generation", "N", "deltaN", "E") )
         dNold = casc.Func.fromGrid(grid)
         dNold.set_func(dN)
         dNnew = casc.Func.fromGrid(grid)
@@ -173,20 +173,25 @@ def main(Ngen = 10,resume=0,**kwargs):
         Ntot_list = []
         Etot_list = []
         deltaN_list = []
+        deltaE_list = []
         Ntot = np.sum( dNnew.func_vec*Evec*dx,axis=-1 )
         Etot = np.sum( dNnew.func_vec*Evec**2*dx,axis=-1 )
         #print( gen, Ntot, deltaN, Etot )
         deltaN = 0
+        deltaE = 0
         #generation number
         gen = 0
-        print( "%15d %21.15g %21.15g %21.15e" % (gen, Ntot, deltaN, Etot) )
+        print( "#%14s %21s %21s %21s %21s" % ("Generation", "N", "deltaN", "E", "deltaE") )
+        print( "%15d %21.15g %21.15g %21.15e %21.15e" % (gen, Ntot, deltaN, Etot, deltaE) )
         startN = 1
         #initial conditions
         gen_list.append(gen)
         dNdE_list.append(list(dNnew.func_vec))
+        dNdE_rad_list.append(list(dNnew_rad.func_vec))
         Ntot_list.append(Ntot)
         Etot_list.append(Etot)
         deltaN_list.append(deltaN)
+        deltaE_list.append(deltaE)
     else:
         #restart from last snapshot
         fnamedefault = "E%.2g_N%.2g_s%g_Esmin%.2g_Esmax%.2g.npz" % (E0, Ngrid, s, Esmin, Esmax)
@@ -218,6 +223,7 @@ def main(Ngen = 10,resume=0,**kwargs):
         Ntot_list = list(npzfile["Ntot_list"])
         Etot_list = list(npzfile["Etot_list"])
         deltaN_list = list(npzfile["deltaN_list"])
+        deltaE_list = list(npzfile["deltaE_list"])
         E0 = npzfile["E0"]
         dNnew = casc.Func.fromGrid(grid)
         dNnew.set_func(dNdE_list[-1])
@@ -228,12 +234,13 @@ def main(Ngen = 10,resume=0,**kwargs):
         dNnew_rad = casc.Func.fromGrid(grid)
         dNnew_rad.set_func(dNdE_rad_list[-1].func_vec)
         deltaN = deltaN_list[-1]
+        deltaE = deltaE_list[-1]
         gen = gen_list[-1]
         startN = gen_list[-1]+1
         Ntot = Ntot_list[-1]
         Etot = Etot_list[-1]
-        print( "#%14s %21s %21s %21s" % ("Generation", "N", "deltaN", "E") )
-        print( "%15d %21.15g %21.15g %21.15e" % (gen, Ntot, deltaN, Etot) )
+        print( "#%14s %21s %21s %21s %21s" % ("Generation", "N", "deltaN", "E", "deltaE") )
+        print( "%15d %21.15g %21.15g %21.15e %21.15e" % (gen, Ntot, deltaN, Etot, deltaE) )
         npzfile.close()
     plt.xscale("log")
     plt.yscale("log")
@@ -251,12 +258,17 @@ def main(Ngen = 10,resume=0,**kwargs):
             dNold.set_func( dNnew.func_vec )
             #pdb.set_trace()
             Nreordered = casc.flnew( dNold, dNold_rad, dNnew, dNnew_rad, seed, altgrid )
+            #change in number
             deltaN += (Nreordered - Ntot)
+            #change in energy
+            Eradggic_new = np.sum( (dNnew.func_vec+dNnew_rad.func_vec)*Evec**2*dx,axis=-1 )
+            Eradggic_old = np.sum( (dNold.func_vec+dNold_rad.func_vec)*Evec**2*dx,axis=-1 )
+            deltaE += Eradggic_new - Eradggic_old
             #pdb.set_trace()
             # #plt.plot(Evec, dNnew, 'x')
             Ntot = np.sum( dNnew.func_vec*Evec*dx,axis=-1 )
             Etot = np.sum( dNnew.func_vec*Evec**2*dx,axis=-1 )
-            print( "%15d %21.15g %21.15g %21.15e" % (gen, Ntot, deltaN, Etot) )
+            print( "%15d %21.15g %21.15g %21.15e %21.15e" % (gen, Ntot, deltaN, Etot, deltaE) )
             gen_list.append(gen)
             dNdE_list.append(list(dNnew.func_vec))
             dNdE_rad_list.append(list(dNnew_rad.func_vec))
@@ -272,7 +284,7 @@ def main(Ngen = 10,resume=0,**kwargs):
         print '\n! Received keyboard interrupt, quitting threads.\n'
     print("Saving results to file...")
     fnamedefault = "E%.2g_N%.2g_s%g_Esmin%.2g_Esmax%.2g.npz" % (E0, Ngrid, s, Esmin, Esmax)
-    np.savez(fnamedefault, Evec = Evec, E0 = E0, gen_list = gen_list, deltaN_list = deltaN_list, dNdE_list = dNdE_list, dNdE_rad_list = dNdE_rad_list, Ntot_list = Ntot_list, Etot_list = Etot_list, Emin = Emin, Emax = Emax, Ngrid = Ngrid, E0grid = E0grid, Esmin = Esmin, Esmax = Esmax, s = s)
+    np.savez(fnamedefault, Evec = Evec, E0 = E0, gen_list = gen_list, deltaN_list = deltaN_list, deltaE_list = deltaE_list, dNdE_list = dNdE_list, dNdE_rad_list = dNdE_rad_list, Ntot_list = Ntot_list, Etot_list = Etot_list, Emin = Emin, Emax = Emax, Ngrid = Ngrid, E0grid = E0grid, Esmin = Esmin, Esmax = Esmax, s = s)
 
 def plot_convergence(wf = 0,fntsize=18):
     #
