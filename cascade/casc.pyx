@@ -203,6 +203,9 @@ cdef double flnew_c( Func flold_func, Func flold_rad_func, Func flnew_func, Func
     else:
         ew1 = 0
         ew2 = 1
+
+    print( "dE1 = %e, dE2 = %e, dE = %e" % dE1, dE2, ew1*E1+ew2*E2 )
+    
     #ensure energy conservation under pair production
     for i from 0 <= i < dim1:
         flnew_rad_data[i] = ew1 * flnew_rad_data[i] + ew2 * flnew_rad_alt_data[i]
