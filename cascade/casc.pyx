@@ -36,7 +36,7 @@ cdef inline double fg( double Eg, double Ee, SeedPhoton seed) nogil:
     return( fgval )
 
 cdef inline double K1( double Enew, double Eold, SeedPhoton seed ) nogil:
-    cdef double K = (4*fg(2*Enew,Eold,seed)) if (2*Enew>=seed.Egmin) else (0)
+    cdef double K = (4*fg(2*Enew,Eold,seed)) #if (2*Enew>=seed.Egmin) else (0)
     return( K )
 
 cdef inline double K2( double Enew, double Eold, SeedPhoton seed ) nogil:
@@ -47,8 +47,8 @@ cdef inline double K2( double Enew, double Eold, SeedPhoton seed ) nogil:
 cdef public double* get_data( np.ndarray[double, ndim=1] nparray ):
     return <double *>nparray.data
 
-def flnew( flold not None, flnew not None, seed not None, altgrid not None ):
-    return flnew_c( flold, flnew, seed, altgrid )
+def flnew( flold not None, flold_rad not None, flnew not None, flnew_rad not None, seed not None, altgrid not None ):
+    return flnew_c( flold, flold_rad, flnew, flnew_rad, seed, altgrid )
 
 @cython.boundscheck(False) # turn off bounds-checking for entire function
 cdef void compute_inner_convolution_c( int i,
@@ -56,10 +56,13 @@ cdef void compute_inner_convolution_c( int i,
                                      Func flold_func, 
                                      Grid grid,
                                      Grid altgrid,
+                                     double* ptemp0,
+                                     double* ptemp0b,
                                      double* ptemp1,
+                                     double* ptemp1b,
                                      double* ptemp2,
                                      double* ptemp2b) nogil:
-    cdef double temp1, temp2, temp2b
+    cdef double temp1, temp1b, temp2, temp2b
     cdef double *Evec_data = grid.Egrid_data
     cdef double *Evecb_data = altgrid.Egrid_data
     cdef double *flold_data = flold_func.func_vec_data
@@ -67,23 +70,29 @@ cdef void compute_inner_convolution_c( int i,
     cdef double Eenew = Evec_data[i]
     #cdef int dim2b = altgrid.Ngrid
     temp1 = 0
+    temp1b = 0
     temp2 = 0
     temp2b = 0
     for j from 0 <= j < dim1: #in xrange(dim1):
         temp1 += K1(Eenew,Evec_data[j],seed)*flold_data[j]*grid.dEdxgrid_data[j]*grid.dx
+        temp1b += K1(Eenew,Evecb_data[j],seed)*flold_func.fofE(Evecb_data[j])*altgrid.dEdxgrid_data[j]*altgrid.dx
         temp2 += K2(Eenew,Eenew+Evec_data[j],seed)*flold_func.fofE(Eenew+Evec_data[j])*grid.dEdxgrid_data[j]*grid.dx
-        #for j from 0 <= j < dim2b:
         temp2b += K2(Eenew,Eenew+Evecb_data[j],seed)*flold_func.fofE(Eenew+Evecb_data[j])*altgrid.dEdxgrid_data[j]*altgrid.dx
     # temp1sum += temp1*grid.dEdxgrid_data[i]*grid.dx
     #combine the two integrals into one more accurate integral (with twice res)
-    #temp2b = 0.5 * (temp2+temp2b)
-    ptemp1[0] = temp1
+    #lepton energy lost to non-pair-producing gamma-rays
+    ptemp0[0] = temp1 if (2*Eenew<seed.Egmin) else (0)
+    ptemp0b[0] = temp1b if (2*Eenew<seed.Egmin) else (0)
+    #lepton energy gained via pair-producing gamma-rays
+    ptemp1[0] = temp1 if (2*Eenew>=seed.Egmin) else (0)
+    ptemp1b[0] = temp1b if (2*Eenew>=seed.Egmin) else (0)
+    #lepton energy gained/lost from IC cooling
     ptemp2[0] = temp2
     ptemp2b[0] = temp2b
     return
 
 @cython.boundscheck(False) # turn off bounds-checking for entire function
-cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid altgrid ) except *:
+cdef double flnew_c( Func flold_func, Func flold_rad_func, Func flnew_func, Func flnew_rad_func, SeedPhoton seed, Grid altgrid ) except *:
     """Expect E and flold defined on a regular log grid, Evec"""
     cdef int i
     cdef int j
@@ -95,65 +104,131 @@ cdef double flnew_c( Func flold_func, Func flnew_func, SeedPhoton seed, Grid alt
     # cdef double *flnew_data = flnew_func.func_vec_data
     # cdef double *lflnew_data = flnew_func.lfunc_vec_data
     cdef double *flold_data = flold_func.func_vec_data
+    cdef double *flold_rad_data = flold_rad_func.func_vec_data
     cdef int dim1 = flold_func.Ngrid
     cdef int dim2b = altgrid.Ngrid
-    cdef double N1, N2, Nold, dN1, dN2, dN
-    cdef double w1, w2, wnorm
-    cdef double *flnew_data =  <double *>malloc(dim1 * sizeof(double))
-    cdef double *flnew_alt_data =  <double *>malloc(dim1 * sizeof(double))
-    cdef double *deltaN1 =  <double *>malloc(dim1 * sizeof(double))
-    cdef double *deltaN2 =  <double *>malloc(dim1 * sizeof(double))
-    cdef double temp1, temp2, temp2b
+    cdef double E1, E2, N1, N2, Nold, dE1, dE2, dE, dN1, dN2, dN
+    cdef double nw1, nw2, nwnorm, ew1, ew2, ewnorm
+    cdef double *flnew_rad_data =  <double *>malloc(dim1 * sizeof(double))
+    cdef double *flnew_rad_alt_data =  <double *>malloc(dim1 * sizeof(double))
+    cdef double *flnew_gg_data =  <double *>malloc(dim1 * sizeof(double))
+    cdef double *flnew_gg_alt_data =  <double *>malloc(dim1 * sizeof(double))
+    cdef double *flnew_ic_data =  <double *>malloc(dim1 * sizeof(double))
+    cdef double *flnew_ic_alt_data =  <double *>malloc(dim1 * sizeof(double))
+    cdef double temp0, temp0b, temp1, temp1b, temp2, temp2b
     #
     
     #old number of electrons
     Nold = flold_func.norm()
 
-    # temp1sum = 0
     N1 = 0
     N2 = 0
     #for i from 0 <= i < dim1: 
     for i in prange(dim1, nogil=True):
         #reset them to zero so that they are local
+        temp0 = 0
+        temp0b = 0
         temp1 = 0
+        temp1b = 0
         temp2 = 0
         temp2b = 0
-        compute_inner_convolution_c(i, seed, flold_func, grid, altgrid, &temp1, &temp2, &temp2b)
-        deltaN1[i] = temp2
-        deltaN2[i] = temp2b
-        N1 += deltaN1[i]*grid.dEdxgrid_data[i]*grid.dx
-        N2 += deltaN2[i]*grid.dEdxgrid_data[i]*grid.dx
-        flnew_data[i] = temp1+temp2
-        flnew_alt_data[i] = temp1+temp2b
+        compute_inner_convolution_c(i, seed, flold_func, grid, altgrid, &temp0, &temp0b, &temp1, &temp1b, &temp2, &temp2b)
+        #radiated away via gamma
+        flnew_rad_data[i] = temp0
+        flnew_rad_alt_data[i] = temp0b
+        #put back into electrons via gamma pair production
+        flnew_gg_data[i] = temp1
+        flnew_gg_alt_data[i] = temp1b
+        #redistribution of lepton energy via IC
+        flnew_ic_data[i] = temp2
+        flnew_ic_alt_data[i] = temp2b
+        N1 += flnew_ic_data[i]    *grid.dEdxgrid_data[i]*grid.dx
+        N2 += flnew_ic_alt_data[i]*grid.dEdxgrid_data[i]*grid.dx
+
     #this is supposed to pass KeyboardInterrupt signal and other signals to python, but it does not do that
     PyErr_CheckSignals()
     dN1 = N1 - Nold
     dN2 = N2 - Nold
-                       
-    #print dN1, dN2
-    #if opposite signs or very different errors
+
+    #print( "%e" % dE1 )
+
+    ###########################################################################################
+    #
+    # Conserve the number of electrons in IC cooling: only affects temp2 and temp2b
+    #
     if dN1 < 0 and dN2 > 0 or dN1 > 0 and dN2 < 0 or fabs(dN1) > 2*fabs(dN2) or fabs(dN2) > 2*fabs(dN1):
-        wnorm = dN2 - dN1
-        w1 =  dN2 / wnorm
-        w2 = -dN1 / wnorm
+        nwnorm = dN2 - dN1
+        nw1 =  dN2 / nwnorm
+        nw2 = -dN1 / nwnorm
     elif fabs(dN1) < fabs(dN2):
-        w1 = 1
-        w2 = 0
+        nw1 = 1
+        nw2 = 0
     else:
-        w1 = 0
-        w2 = 1
-    for i from 0 <= i < dim1: #in xrange(dim1):
-        flnew_func.set_funci_c(i,w1 * flnew_data[i] + w2 * flnew_alt_data[i])
+        nw1 = 0
+        nw2 = 1
+
+    #ensure lepton number conservation under IC cooling
+    for i from 0 <= i < dim1:
+        flnew_ic_data[i] = nw1 * flnew_ic_data[i] + nw2 * flnew_ic_alt_data[i]
+    #
+    #
+    ###########################################################################################
+
+    #now that ic_data is finalized, vary the other two: rad_data and gg_data 
+    E1 = 0
+    E2 = 0
+    for i from 0 <= i < dim1:
+        E1 += (flnew_rad_data[i]    +flnew_gg_data[i]    +flnew_ic_data[i])*grid.dEdxgrid_data[i]*grid.dx
+        E2 += (flnew_rad_alt_data[i]+flnew_gg_alt_data[i]+flnew_ic_data[i])*grid.dEdxgrid_data[i]*grid.dx
+
+    #old energy (before scattering; do not count energy of escaped, non-pair-producing gamma-rays)
+    Eold = flold_func.Etot() #+flold_rad_func.Etot()
+
+    #changes in energy (should be zero so energy is conserved)
+    dE1 = E1 - Eold
+    dE2 = E2 - Eold
+        
+    
+    ###########################################################################################
+    #
+    # Conserve total energy in gamma pair production: only affects temp0, temp0b, temp1 and temp1b
+    #
+    if dE1 < 0 and dE2 > 0 or dE1 > 0 and dE2 < 0 or fabs(dE1) > 2*fabs(dE2) or fabs(dE2) > 2*fabs(dE1):
+        ewnorm = dE2 - dE1
+        ew1 =  dE2 / ewnorm
+        ew2 = -dE1 / ewnorm
+    elif fabs(dE1) < fabs(dE2):
+        ew1 = 1
+        ew2 = 0
+    else:
+        ew1 = 0
+        ew2 = 1
+    #ensure energy conservation under pair production
+    for i from 0 <= i < dim1:
+        flnew_rad_data[i] = ew1 * flnew_rad_data[i] + ew2 * flnew_rad_alt_data[i]
+        flnew_gg_data[i]  = ew1 * flnew_gg_data[i]  + ew2 * flnew_gg_alt_data[i]
+    #
+    #
+    ###########################################################################################
+
+    for i from 0 <= i < dim1:
+        #the result should conserve both number and energy of electrons
+        flnew_func.set_funci_c(i,flnew_gg_data[i] + flnew_ic_data[i])
+        #add non-pair-producing, radiated emission to the one from previous time step to keep track of total radiation
+        flnew_rad_func.set_funci_c(i,flold_rad_data[i]+flnew_rad_data[i])
+
     # dN = w1*dN1+w2*dN2
     # if 1 or fabs(dN) > 1e-2:
     #     print( "Jump in the number of electrons: dN = %g, dN1 = %g, dN2 = %g, w1 = %g, w2 = %g" % (dN, dN1, dN2, w1, w2) )
     #     for i from 0 <= i < dim1:
     #         print( i, w1*deltaN1[i]+w2*deltaN2[i] )
-    free(flnew_alt_data)
-    free(flnew_data)
-    free(deltaN1)
-    free(deltaN2)
-    return(w1*N1+w2*N2)
+    free(flnew_rad_alt_data)
+    free(flnew_rad_data)
+    free(flnew_gg_alt_data)
+    free(flnew_gg_data)
+    free(flnew_ic_alt_data)
+    free(flnew_ic_data)
+    return(nw1*N1+nw2*N2)
 
 ###############################
 #
@@ -411,6 +486,15 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
         cdef double norm = 0
         for i from 0 <= i < self.Ngrid:
             norm += self.func_vec_data[i]*self.dEdxgrid_data[i]
+        norm *= self.dx
+        return norm
+
+    @cython.boundscheck(False) # turn off bounds-checking for entire function
+    cdef double Etot(self):
+        cdef int i
+        cdef double norm = 0
+        for i from 0 <= i < self.Ngrid:
+            norm += self.Egrid_data[i] * self.func_vec_data[i]*self.dEdxgrid_data[i]
         norm *= self.dx
         return norm
 

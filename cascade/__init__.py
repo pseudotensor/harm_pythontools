@@ -371,13 +371,14 @@ def plot_convergence(wf = 0,fntsize=18):
     if wf == 0 or wf == 3:
         plt.figure(3)
         plt.clf()
+        ngen = 200
         resolution=[]
         photoncount=[]
         energyperlepton=[]
         for sim in snE4e8list:
             resolution.append(len(sim["dNdE"][0]))
-            photoncount.append(sim["Ntot"][sim["gen"]==200])
-            energyperlepton.append(sim["Etot"][sim["gen"]==200]/sim["Ntot"][sim["gen"]==200])
+            photoncount.append(sim["Ntot"][sim["gen"]==ngen])
+            energyperlepton.append(sim["Etot"][sim["gen"]==ngen]/sim["Ntot"][sim["gen"]==ngen])
         resolution = np.array(resolution)
         photoncount = np.array(photoncount)
         plot(resolution[:-1],np.abs(photoncount[:-1]-photoncount[-1])/photoncount[-1],"ko-")
