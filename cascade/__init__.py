@@ -5,12 +5,12 @@ from streamlines import streamplot
 from streamlines import fstreamplot
 from pychip import pchip_init, pchip_eval
 #rc('verbose', level='debug')
-#rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
-## for Palatino and other serif fonts use:
+# rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
+# for Palatino and other serif fonts use:
 #rc('font',**{'family':'serif','serif':['Palatino']})
 #rc('mathtext',fontset='cm')
 #rc('mathtext',rm='stix')
-#rc('text', usetex=True)
+rc('text', usetex=True)
 
 #from pylab import figure, axes, plot, xlabel, ylabel, title, grid, savefig, show
 
@@ -262,7 +262,10 @@ def main(Ngen = 10,resume=0,**kwargs):
     fnamedefault = "E%.2g_N%.2g_s%g_Esmin%.2g_Esmax%.2g.npz" % (E0, Ngrid, s, Esmin, Esmax)
     np.savez(fnamedefault, Evec = Evec, E0 = E0, gen_list = gen_list, deltaN_list = deltaN_list, dNdE_list = dNdE_list, Ntot_list = Ntot_list, Etot_list = Etot_list, Emin = Emin, Emax = Emax, Ngrid = Ngrid, E0grid = E0grid, Esmin = Esmin, Esmax = Esmax, s = s)
 
-def plot_convergence(wf = 0):
+def plot_convergence(wf = 0,fntsize=18):
+    #
+    # OLD
+    #
     s1Gen, s1N = np.loadtxt("casc_sasha_E0_1e8_di0.5.txt", dtype = np.float64, usecols = (0, 1), skiprows = 1, unpack = True)
     s0Gen, s0N = np.loadtxt("casc_sasha_E0_1e8_di0.txt", dtype = np.float64, usecols = (0, 1), skiprows = 1, unpack = True)
     aGen, aN = np.loadtxt("casc_avery_E0_1e8.txt", dtype = np.float64, usecols = (0, 1), skiprows = 1, unpack = True)
@@ -271,39 +274,81 @@ def plot_convergence(wf = 0):
     sh5e8Gen, sh5e8N = np.loadtxt("casc_sasha_E0_5e8_hybrid.txt", dtype = np.float64, usecols = (0, 1), skiprows = 1, unpack = True)
     sh1e9Gen, sh1e9N = np.loadtxt("casc_sasha_E0_1e9_hybrid.txt", dtype = np.float64, usecols = (0, 1), skiprows = 1, unpack = True)
     sh1e10Gen, sh1e10N = np.loadtxt("casc_sasha_E0_1e10_hybrid.txt", dtype = np.float64, usecols = (0, 1), skiprows = 1, unpack = True)
-    snE4e8 = get_cascade_info(fname="E4.2e+08_N1e+04_s2_Esmin0.0005_Esmax2.npz")
+    #
+    # NEW
+    #
+    snE1e6     = get_cascade_info(fname="E1e+06_N1e+04_s2_Esmin0.0005_Esmax2.npz")
+    snE1e7     = get_cascade_info(fname="E1e+07_N1e+04_s2_Esmin0.0005_Esmax2.npz")
+    snE1e8     = get_cascade_info(fname="E1e+08_N1e+04_s2_Esmin0.0005_Esmax2.npz")
+    #snE1e8N5e4 = get_cascade_info(fname="E1e+08_N5e+04_s2_Esmin0.0005_Esmax2.npz")
+    snE4e8N1e2 = get_cascade_info(fname="E4.2e+08_N1e+02_s2_Esmin0.0005_Esmax2.npz")
+    snE4e8N2e2 = get_cascade_info(fname="E4.2e+08_N2e+02_s2_Esmin0.0005_Esmax2.npz")
+    snE4e8N4e2 = get_cascade_info(fname="E4.2e+08_N4e+02_s2_Esmin0.0005_Esmax2.npz")
+    snE4e8N1e3 = get_cascade_info(fname="E4.2e+08_N1e+03_s2_Esmin0.0005_Esmax2.npz")
+    snE4e8N2e3 = get_cascade_info(fname="E4.2e+08_N2e+03_s2_Esmin0.0005_Esmax2.npz")
+    snE4e8N4e3 = get_cascade_info(fname="E4.2e+08_N4e+03_s2_Esmin0.0005_Esmax2.npz")
+    snE4e8     = get_cascade_info(fname="E4.2e+08_N1e+04_s2_Esmin0.0005_Esmax2.npz")
+    snE4e8N2e4 = get_cascade_info(fname="E4.2e+08_N2e+04_s2_Esmin0.0005_Esmax2.npz")
+    snE4e8N4e4 = get_cascade_info(fname="E4.2e+08_N4e+04_s2_Esmin0.0005_Esmax2.npz")
     snE4e8N5e4 = get_cascade_info(fname="E4.2e+08_N5e+04_s2_Esmin0.0005_Esmax2.npz")
+    snE4e8list = [snE4e8N1e2, snE4e8N2e2, snE4e8N4e2, 
+                  snE4e8N1e3, snE4e8N2e3, snE4e8N4e3,
+                  snE4e8,     snE4e8N2e4, snE4e8N4e4]
+    snE1e9     = get_cascade_info(fname="E1e+09_N1e+04_s2_Esmin0.0005_Esmax2.npz")
+    snE1e10    = get_cascade_info(fname="E1e+10_N1e+04_s2_Esmin0.0005_Esmax2.npz")
     if wf == 0 or wf == 1:
         plt.figure(1)
         plt.clf()
-        l1, = plt.plot(1+snE4e8["gen"], snE4e8["Ntot"], 'b:', label=r"$E_0 = 4.2\times10^{8},\ n = 10^4$", lw = 2)
-        l1.set_dashes([10,5])
-        l1, = plt.plot(1+snE4e8N5e4["gen"], snE4e8N5e4["Ntot"], 'r:', label=r"$E_0 = 4.2\times10^{8},\ n = 5\times10^4$", lw = 2)
-        l1.set_dashes([10,5,3,5])
-        l8, = plt.plot(1+sh1e10Gen, sh1e10N, 'g:', label=r"$E_0 = 10^{10},\ n = 10^4$", lw = 2)
-        l8.set_dashes([5,2,2,2,2,2,2,2,2,2])
-        l7, = plt.plot(1+sh1e9Gen, sh1e9N, 'g:', label=r"$E_0 = 10^9,\ n = 10^4$", lw = 2)
-        l7.set_dashes([10,3,3,3,3,3])
-        l6, = plt.plot(1+sh5e8Gen, sh5e8N, 'r:', label=r"$E_0 = 5\times 10^8,\ n = 10^4$", lw = 2)
-        l6.set_dashes([10,3,3,3,3,3,3,3])
-        # l5, = plt.plot(1+s0Gen, s0N, 'm:', label=r"${\rm Sasha},\ loc=0,\ E_0 = 10^8,\ n = 10^4$", lw = 2)
-        # l2, = plt.plot(1+aGen, aN, 'g-.', label=r"${\rm Avery},\ loc=0,\ E_0 = 10^8,\ n = 10^4$", lw = 2)
-        # l2.set_dashes([10,5,5,5])
-        l3, = plt.plot(1+shGen, shN, 'c',label=r"$E_0 = 10^8,\ n = 10^4$", lw = 2)
-        # l4, = plt.plot(1+shx2Gen, shx2N, 'r', label=r"$E_0 = 10^8,\ n = 2\times10^4$", lw = 2)
-        # l1, = plt.plot(1+s1Gen, s1N, 'b--', label=r"${\rm Sasha},\ loc=0.5,\ E_0 = 10^8,\ n = 10^4$", lw = 2)
-        # l1.set_dashes([10,5])
-        plt.text(30, 100, r"$E_0\!= 10^8$", size = 18)
-        plt.text(120, 250, r"$E_0\!= 5\times 10^8$", size = 18, ha="left")
-        plt.text(100, 1200, r"$E_0\!= 10^9$", size = 18, ha="right")
-        plt.text(13, 4000, r"$E_0\!= 10^{10}$", size = 18, ha="right")
+        #
+        # LINES
+        #
+        l1, = plt.plot(1+snE1e6["gen"], snE1e6["Ntot"], color="red",label=r"$E_0 = 10^{6}$", lw = 2)
+        l1.set_dashes([5,2])
+        l2, = plt.plot(1+snE1e7["gen"], snE1e7["Ntot"], color="Orange", label=r"$E_0 = 10^{7}$", lw = 2)
+        l2.set_dashes([5,2,2,2])
+        l3, = plt.plot(1+snE1e8["gen"], snE1e8["Ntot"], color="DarkGreen", label=r"$E_0 = 10^{8}$", lw = 2)
+        l3.set_dashes([5,2,2,2,2,2])
+        l4, = plt.plot(1+snE4e8["gen"], snE4e8["Ntot"], color="magenta", label=r"$E_0 = 4.2\times10^{8}$", lw = 2)
+        l4.set_dashes([10,5])
+        # l4c, = plt.plot(1+snE4e8N5e4["gen"], snE4e8N5e4["Ntot"], color="LightBlue", label=r"$E_0 = 4.2\times10^{8},\ n = 5\times10^4$", lw = 2)
+        # l4c.set_dashes([10,2,5,2])
+        l5, = plt.plot(1+snE1e9["gen"], snE1e9["Ntot"], color="blue", label=r"$E_0 = 10^{9}$", lw = 2)
+        l5.set_dashes([10,2,2,2,5,2,2,2])
+        l6, = plt.plot(1+snE1e10["gen"], snE1e10["Ntot"], color="black", label=r"$E_0 = 10^{10}$", lw = 2)
+        l6.set_dashes([10,2,2,2,10,2,2,2])
+        # l8, = plt.plot(1+sh1e10Gen, sh1e10N, 'g:', label=r"$E_0 = 10^{10},\ n = 10^4$", lw = 2)
+        # l8.set_dashes([5,2,2,2,2,2,2,2,2,2])
+        # l7, = plt.plot(1+sh1e9Gen, sh1e9N, 'g:', label=r"$E_0 = 10^9,\ n = 10^4$", lw = 2)
+        # l7.set_dashes([10,3,3,3,3,3])
+        # l6, = plt.plot(1+sh5e8Gen, sh5e8N, 'r:', label=r"$E_0 = 5\times 10^8,\ n = 10^4$", lw = 2)
+        # l6.set_dashes([10,3,3,3,3,3,3,3])
+        # # l5, = plt.plot(1+s0Gen, s0N, 'm:', label=r"${\rm Sasha},\ loc=0,\ E_0 = 10^8,\ n = 10^4$", lw = 2)
+        # # l2, = plt.plot(1+aGen, aN, 'g-.', label=r"${\rm Avery},\ loc=0,\ E_0 = 10^8,\ n = 10^4$", lw = 2)
+        # # l2.set_dashes([10,5,5,5])
+        # l3, = plt.plot(1+shGen, shN, 'c',label=r"$E_0 = 10^8,\ n = 10^4$", lw = 2)
+        # # l4, = plt.plot(1+shx2Gen, shx2N, 'r', label=r"$E_0 = 10^8,\ n = 2\times10^4$", lw = 2)
+        # # l1, = plt.plot(1+s1Gen, s1N, 'b--', label=r"${\rm Sasha},\ loc=0.5,\ E_0 = 10^8,\ n = 10^4$", lw = 2)
+        # # l1.set_dashes([10,5])
+        #
+        # LABELS
+        #
+        plt.text(66, 1.2, r"$E_0\!= 10^6$", size = fntsize,va = "bottom", ha="left")
+        plt.text(40*1.25**2, 8, r"$E_0\!= 10^7$", size = fntsize,va = "top", ha="left")
+        plt.text(40*1.25, 60, r"$E_0\!= 10^8$", size = fntsize,va = "top", ha="left")
+        plt.text(40, 220, r"$E_0\!= 4.2\times 10^8$", size = fntsize, ha="left", va="center")
+        plt.text(100, 1200, r"$E_0\!= 10^9$", size = fntsize, ha="right")
+        plt.text(13, 4000, r"$E_0\!= 10^{10}$", size = fntsize, ha="right")
         plt.xscale("log")
         plt.yscale("log")
         plt.ylim(1, 10000)
-        plt.xlabel(r"${\rm Generation}$", fontsize=18)
-        plt.ylabel(r"$N_{\rm leptons}$", fontsize=18)
+        plt.xlim(1, 1e4)
+        plt.xlabel(r"${\rm Generation}$", fontsize=fntsize)
+        plt.ylabel(r"$N_{\rm leptons}$", fontsize=fntsize)
         plt.grid()
-        plt.legend(loc="lower right",handlelength=3,labelspacing=0.15)
+        ax = plt.gca()
+        for label in ax.get_xticklabels() + ax.get_yticklabels():
+            label.set_fontsize(fntsize)
+        #plt.legend(loc="lower right",handlelength=3,labelspacing=0.15)
         plt.savefig("cascade.pdf", bbox_inches='tight', pad_inches=0.02)
     if wf == 0 or wf == 2:
         plt.figure(2)
@@ -323,7 +368,25 @@ def plot_convergence(wf = 0):
         plt.grid(b=True)
         plt.legend(loc="lower right")
         plt.savefig("NvsE0.pdf", bbox_inches='tight', pad_inches=0.02)
-
+    if wf == 0 or wf == 3:
+        plt.figure(3)
+        plt.clf()
+        resolution=[]
+        photoncount=[]
+        energyperlepton=[]
+        for sim in snE4e8list:
+            resolution.append(len(sim["dNdE"][0]))
+            photoncount.append(sim["Ntot"][sim["gen"]==200])
+            energyperlepton.append(sim["Etot"][sim["gen"]==200]/sim["Ntot"][sim["gen"]==200])
+        resolution = np.array(resolution)
+        photoncount = np.array(photoncount)
+        plot(resolution[:-1],np.abs(photoncount[:-1]-photoncount[-1])/photoncount[-1],"ko-")
+        plot(resolution[:-1],np.abs(energyperlepton[:-1]-energyperlepton[-1])/energyperlepton[-1],"bo-.")
+        plt.xlim(50,1e5)
+        plt.ylim(1e-5,2)
+        plt.xscale("log")
+        plt.yscale("log")
+        
         
     # pdb.set_trace()
 
