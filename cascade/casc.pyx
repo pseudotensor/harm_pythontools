@@ -178,8 +178,8 @@ cdef double flnew_c( Func flold_func, Func flold_rad_func, Func flnew_func, Func
     E1 = 0
     E2 = 0
     for i from 0 <= i < dim1:
-        E1 += (flnew_rad_data[i]    +flnew_gg_data[i]    +flnew_ic_data[i])*grid.dEdxgrid_data[i]*grid.dx
-        E2 += (flnew_rad_alt_data[i]+flnew_gg_alt_data[i]+flnew_ic_data[i])*grid.dEdxgrid_data[i]*grid.dx
+        E1 += (flnew_rad_data[i]    +flnew_gg_data[i]    +flnew_ic_data[i])*Evec_data[i]*grid.dEdxgrid_data[i]*grid.dx
+        E2 += (flnew_rad_alt_data[i]+flnew_gg_alt_data[i]+flnew_ic_data[i])*Evec_data[i]*grid.dEdxgrid_data[i]*grid.dx
 
     #old energy (before scattering; do not count energy of escaped, non-pair-producing gamma-rays)
     Eold = flold_func.Etot() #+flold_rad_func.Etot()
