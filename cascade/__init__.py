@@ -160,10 +160,16 @@ def main(Ngen = 10,resume=0,**kwargs):
         dNold.set_func(dN)
         dNnew = casc.Func.fromGrid(grid)
         dNnew.set_func(dN)
+        #no radiation initially
+        dNold_rad = casc.Func.fromGrid(grid)
+        dNold_rad.set_func(dN*0)
+        dNnew_rad = casc.Func.fromGrid(grid)
+        dNnew_rad.set_func(dN*0)
         plt.plot(Evec, Evec*dNold.func_vec,'-x')
         #
         gen_list = []
         dNdE_list = []
+        dNdE_rad_list = []
         Ntot_list = []
         Etot_list = []
         deltaN_list = []
@@ -208,6 +214,7 @@ def main(Ngen = 10,resume=0,**kwargs):
         altgrid = casc.Grid(grid.get_Emin(), grid.get_Emax(), grid.get_E0(), grid.get_Ngrid(), di = 0.5)
         gen_list = list(npzfile["gen_list"])
         dNdE_list = list(npzfile["dNdE_list"])
+        dNdE_rad_list = list(npzfile["dNdE_rad_list"])
         Ntot_list = list(npzfile["Ntot_list"])
         Etot_list = list(npzfile["Etot_list"])
         deltaN_list = list(npzfile["deltaN_list"])
@@ -216,6 +223,10 @@ def main(Ngen = 10,resume=0,**kwargs):
         dNnew.set_func(dNdE_list[-1])
         dNold = casc.Func.fromGrid(grid)
         dNold.set_func(dNnew.func_vec)
+        dNold_rad = casc.Func.fromGrid(grid)
+        dNold_rad.set_func(dNdE_rad_list[-1].func_vec)
+        dNnew_rad = casc.Func.fromGrid(grid)
+        dNnew_rad.set_func(dNdE_rad_list[-1].func_vec)
         deltaN = deltaN_list[-1]
         gen = gen_list[-1]
         startN = gen_list[-1]+1
@@ -239,7 +250,7 @@ def main(Ngen = 10,resume=0,**kwargs):
             #save the distribution from last time step
             dNold.set_func( dNnew.func_vec )
             #pdb.set_trace()
-            Nreordered = casc.flnew( dNold, dNnew, seed, altgrid )
+            Nreordered = casc.flnew( dNold, dNold_rad, dNnew, dNnew_rad, seed, altgrid )
             deltaN += (Nreordered - Ntot)
             #pdb.set_trace()
             # #plt.plot(Evec, dNnew, 'x')
@@ -248,6 +259,7 @@ def main(Ngen = 10,resume=0,**kwargs):
             print( "%15d %21.15g %21.15g %21.15e" % (gen, Ntot, deltaN, Etot) )
             gen_list.append(gen)
             dNdE_list.append(list(dNnew.func_vec))
+            dNdE_rad_list.append(list(dNnew_rad.func_vec))
             Ntot_list.append(Ntot)
             Etot_list.append(Etot)
             deltaN_list.append(deltaN)
@@ -260,7 +272,7 @@ def main(Ngen = 10,resume=0,**kwargs):
         print '\n! Received keyboard interrupt, quitting threads.\n'
     print("Saving results to file...")
     fnamedefault = "E%.2g_N%.2g_s%g_Esmin%.2g_Esmax%.2g.npz" % (E0, Ngrid, s, Esmin, Esmax)
-    np.savez(fnamedefault, Evec = Evec, E0 = E0, gen_list = gen_list, deltaN_list = deltaN_list, dNdE_list = dNdE_list, Ntot_list = Ntot_list, Etot_list = Etot_list, Emin = Emin, Emax = Emax, Ngrid = Ngrid, E0grid = E0grid, Esmin = Esmin, Esmax = Esmax, s = s)
+    np.savez(fnamedefault, Evec = Evec, E0 = E0, gen_list = gen_list, deltaN_list = deltaN_list, dNdE_list = dNdE_list, dNdE_rad_list = dNdE_rad_list, Ntot_list = Ntot_list, Etot_list = Etot_list, Emin = Emin, Emax = Emax, Ngrid = Ngrid, E0grid = E0grid, Esmin = Esmin, Esmax = Esmax, s = s)
 
 def plot_convergence(wf = 0,fntsize=18):
     #
