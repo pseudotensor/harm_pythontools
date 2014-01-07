@@ -95,6 +95,10 @@ def get_cascade_info(**kwargs):
     #create an alternate grid with the same number of grid points but shifted by one half
     gen_list = list(npzfile["gen_list"])
     dNdE_list = npzfile["dNdE_list"]
+    if "dNdE_rad_list" in npzfile:
+        dNdE_rad_list = npzfile["dNdE_rad_list"]
+    else:
+        dNdE_rad_list = dNdE_list*0
     deltaN_list = list(npzfile["deltaN_list"])
     Ntot_list = list(npzfile["Ntot_list"])
     Etot_list = list(npzfile["Etot_list"])
@@ -113,7 +117,7 @@ def get_cascade_info(**kwargs):
     #########################
     # print( "#%14s %21s %21s %21s" % ("Generation", "N", "deltaN", "E") )
     # print( "%15d %21.15g %21.15g %21.15e" % (gen, Ntot, deltaN, Etot) )
-    return({"E0": E0, "gen": np.array(gen_list), "dNdE": dNdE_list, "deltaN": np.array(deltaN_list), "Ntot": np.array(Ntot_list), "Etot": np.array(Etot_list), "Esmin": Esmin, "Esmax": Esmax, "s": s, "Evec": np.array(Evec)})
+    return({"E0": E0, "gen": np.array(gen_list), "dNdE": dNdE_list, "dNdE_rad": dNdE_rad_list, "deltaN": np.array(deltaN_list), "Ntot": np.array(Ntot_list), "Etot": np.array(Etot_list), "Esmin": Esmin, "Esmax": Esmax, "s": s, "Evec": np.array(Evec)})
     
 def main(Ngen = 10,resume=0,**kwargs):
     global dNold, dNnew,fout,dNdE_list,Evec
@@ -286,7 +290,7 @@ def main(Ngen = 10,resume=0,**kwargs):
     fnamedefault = "E%.2g_N%.2g_s%g_Esmin%.2g_Esmax%.2g.npz" % (E0, Ngrid, s, Esmin, Esmax)
     np.savez(fnamedefault, Evec = Evec, E0 = E0, gen_list = gen_list, deltaN_list = deltaN_list, deltaE_list = deltaE_list, dNdE_list = dNdE_list, dNdE_rad_list = dNdE_rad_list, Ntot_list = Ntot_list, Etot_list = Etot_list, Emin = Emin, Emax = Emax, Ngrid = Ngrid, E0grid = E0grid, Esmin = Esmin, Esmax = Esmax, s = s)
 
-def plot_convergence(wf = 0,fntsize=18):
+def plot_convergence(wf = 0,fntsize=18,dosavefig=0):
     #
     # OLD
     #
@@ -373,7 +377,8 @@ def plot_convergence(wf = 0,fntsize=18):
         for label in ax.get_xticklabels() + ax.get_yticklabels():
             label.set_fontsize(fntsize)
         #plt.legend(loc="lower right",handlelength=3,labelspacing=0.15)
-        plt.savefig("cascade.pdf", bbox_inches='tight', pad_inches=0.02)
+        if dosavefig:
+            plt.savefig("cascade.pdf", bbox_inches='tight', pad_inches=0.02)
     if wf == 0 or wf == 2:
         plt.figure(2)
         plt.clf()
@@ -391,7 +396,8 @@ def plot_convergence(wf = 0,fntsize=18):
         plt.ylabel(r"$N_{\rm leptons,\infty}$", fontsize=18)
         plt.grid(b=True)
         plt.legend(loc="lower right")
-        plt.savefig("NvsE0.pdf", bbox_inches='tight', pad_inches=0.02)
+        if dosavefig:
+            plt.savefig("NvsE0.pdf", bbox_inches='tight', pad_inches=0.02)
     if wf == 0 or wf == 3:
         plt.figure(3)
         plt.clf()
@@ -411,6 +417,29 @@ def plot_convergence(wf = 0,fntsize=18):
         plt.ylim(1e-5,2)
         plt.xscale("log")
         plt.yscale("log")
+    if wf == 0 or wf == 3:
+        plt.figure(4)
+        plt.clf()
+        ngen_list = [0, 1,2,3,10,20,40,100,200]
+        lw_list =  np.array(ngen_list)*0+2
+        color_list = cm.rainbow_r(np.linspace(0, 1, len(ngen_list)))
+        fid_sim = snE4e8
+        hr_sim = snE4e8N2e4
+        for ngen,lw,color in zip(ngen_list,lw_list,color_list):
+            plt.plot(fid_sim["Evec"],fid_sim["Evec"]*fid_sim["dNdE"][ngen],lw=lw,color=np.array(color))
+            #plt.plot(fid_sim["Evec"],fid_sim["Evec"]*fid_sim["dNdE_rad"][ngen],"g")
+            # plt.plot(hr_sim["Evec"],hr_sim["Evec"]*hr_sim["dNdE"][ngen],"b:",lw=lw)
+            # plt.plot(hr_sim["Evec"],hr_sim["Evec"]*hr_sim["dNdE_rad"][ngen],"g:",lw=2)
+        plt.xscale("log")
+        plt.yscale("log")
+        plt.xlim(1e4,1e9)
+        plt.ylim(1e-6,1e3)
+
+    # gs = GridSpec(4, 4)
+    # gs.update(left=0.17, right=0.99, top=0.95, bottom=0.06, wspace=0.25, hspace=0.08)
+    # ax1=plt.subplot(gs[0,:])
+    # ax2=plt.subplot(gs[1,:])
+    # ax3=plt.subplot(gs[2:4,:])
         
         
     # pdb.set_trace()
