@@ -111,6 +111,8 @@ def get_cascade_info(**kwargs):
     if "s" in npzfile:
         s = npzfile["s"]
     Eall = ((np.array(dNdE_list)+np.array(dNdE_rad_list))*np.array(Evec)[None,:]**2*dx).sum(axis=-1)
+    Erad = (np.array(dNdE_rad_list)*np.array(Evec)[None,:]**2*dx).sum(axis=-1)
+    Elep = (np.array(dNdE_list)*np.array(Evec)[None,:]**2*dx).sum(axis=-1)
     npzfile.close()
     #########################
     #
@@ -119,7 +121,7 @@ def get_cascade_info(**kwargs):
     #########################
     # print( "#%14s %21s %21s %21s" % ("Generation", "N", "deltaN", "E") )
     # print( "%15d %21.15g %21.15g %21.15e" % (gen, Ntot, deltaN, Etot) )
-    return({"E0": E0, "gen": np.array(gen_list), "dNdE": dNdE_list, "dNdE_rad": dNdE_rad_list, "deltaN": np.array(deltaN_list), "Ntot": np.array(Ntot_list), "Etot": np.array(Etot_list), "Esmin": Esmin, "Esmax": Esmax, "s": s, "Evec": np.array(Evec), "dx": dx, "Eall": Eall})
+    return({"E0": E0, "gen": np.array(gen_list), "dNdE": dNdE_list, "dNdE_rad": dNdE_rad_list, "deltaN": np.array(deltaN_list), "Ntot": np.array(Ntot_list), "Etot": np.array(Etot_list), "Esmin": Esmin, "Esmax": Esmax, "s": s, "Evec": np.array(Evec), "dx": dx, "Eall": Eall, "Erad": Erad, "Elep": Elep})
     
 def main(Ngen = 10,resume=0,**kwargs):
     global dNold, dNnew,fout,dNdE_list,Evec
@@ -325,39 +327,33 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0):
                   snE4e8,     snE4e8N2e4] #, snE4e8N4e4]
     snE1e9     = get_cascade_info(fname="E1e+09_N1e+04_s2_Esmin0.0005_Esmax2.npz")
     snE1e10    = get_cascade_info(fname="E1e+10_N1e+04_s2_Esmin0.0005_Esmax2.npz")
+    sim_list = [snE1e6, snE1e7, snE1e8, snE4e8, snE1e10]
+    dashes_list = [[5,2], [5,2,2,2], [5,2,2,2,2,2], [10,5], [10,2,2,2,5,2,2,2], [10,2,2,2,10,2,2,2]]
+    colors_list = ["red", "Orange", "DarkGreen", "magenta", "blue", "black"]
     if wf == 0 or wf == 1:
-        plt.figure(1,figsize=(6,8))
+        plt.figure(1,figsize=(6,9))
         plt.clf()
-        gs = GridSpec(2, 2)
+        gs = GridSpec(3, 3)
         gs.update(left=0.15, right=0.97, top=0.97, bottom=0.08, wspace=0.04, hspace=0.04)
         ax1=plt.subplot(gs[0,:])
         #
         # LINES
         #
-        l1, = plt.plot(1+snE1e6["gen"], snE1e6["Ntot"], color="red",label=r"$E_0 = 10^{6}$", lw = 2)
-        l1.set_dashes([5,2])
-        l2, = plt.plot(1+snE1e7["gen"], snE1e7["Ntot"], color="Orange", label=r"$E_0 = 10^{7}$", lw = 2)
-        l2.set_dashes([5,2,2,2])
-        l3, = plt.plot(1+snE1e8["gen"], snE1e8["Ntot"], color="DarkGreen", label=r"$E_0 = 10^{8}$", lw = 2)
-        l3.set_dashes([5,2,2,2,2,2])
-        l4, = plt.plot(1+snE4e8["gen"], snE4e8["Ntot"], color="magenta", label=r"$E_0 = 4.2\times10^{8}$", lw = 2)
-        l4.set_dashes([10,5])
-        l5, = plt.plot(1+snE1e9["gen"], snE1e9["Ntot"], color="blue", label=r"$E_0 = 10^{9}$", lw = 2)
-        l5.set_dashes([10,2,2,2,5,2,2,2])
-        l6, = plt.plot(1+snE1e10["gen"], snE1e10["Ntot"], color="black", label=r"$E_0 = 10^{10}$", lw = 2)
-        l6.set_dashes([10,2,2,2,10,2,2,2])
+        for sim,dash,color in zip(sim_list,dashes_list,colors_list):
+            l, = plt.plot(1+sim["gen"], sim["Ntot"], color=color, lw = 2)
+            l.set_dashes(dash)
         #
         # LABELS
         #
-        plt.text(66, 1.2, r"$E_0\!= 10^6$", size = fntsize,va = "bottom", ha="left")
+        plt.text(500, 1.2, r"$E_0\!= 10^6$", size = fntsize,va = "bottom", ha="left")
         plt.text(40*1.25**2, 8, r"$E_0\!= 10^7$", size = fntsize,va = "top", ha="left")
         plt.text(40*1.25, 60, r"$E_0\!= 10^8$", size = fntsize,va = "top", ha="left")
-        plt.text(40, 220, r"$E_0\!= 4.2\times 10^8$", size = fntsize, ha="left", va="center")
-        plt.text(100, 1200, r"$E_0\!= 10^9$", size = fntsize, ha="right")
+        plt.text(40, 1100, r"$E_0\!= 4.3\times 10^8$", size = fntsize, ha="left", va="center")
+        # plt.text(100, 1200, r"$E_0\!= 10^9$", size = fntsize, ha="right")
         plt.text(13, 4000, r"$E_0\!= 10^{10}$", size = fntsize, ha="right")
         plt.xscale("log")
         plt.yscale("log")
-        plt.ylim(1, 10000)
+        plt.ylim(0.5, 20000)
         plt.xlim(1, 1e4)
         plt.ylabel(r"$N_{e^\pm}$", fontsize=fntsize)
         plt.grid()
@@ -371,24 +367,45 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0):
         #
         # LINES
         #
-        sim_list = [snE1e6, snE1e7, snE1e8, snE4e8, snE1e9, snE1e10]
-        dashes_list = [[5,2], [5,2,2,2], [5,2,2,2,2,2], [10,5], [10,2,2,2,5,2,2,2], [10,2,2,2,10,2,2,2]]
-        colors_list = ["red", "Orange", "DarkGreen", "magenta", "blue", "black"]
         for sim,dash,color in zip(sim_list,dashes_list,colors_list):
             l, = plt.plot(1+sim["gen"], sim["Etot"]/sim["Ntot"], color=color, lw = 2)
             l.set_dashes(dash)
-            l,=plt.plot(1+sim["gen"], sim["Eall"], ":", color="gray", lw = 2)
-            l.set_dashes([2,2])
+            # l,=plt.plot(1+sim["gen"], sim["Eall"], ":", color="gray", lw = 2)
+            # l.set_dashes([2,2])
         plt.xscale("log")
         plt.yscale("log")
-        plt.ylim(1e4, 1e10)
         plt.xlim(1, 1e4)
+        plt.ylim(0.5e4, 2e10)
         plt.xlabel(r"${\rm Generation}$", fontsize=fntsize)
         plt.ylabel(r"$\langle E_{e^\pm}\rangle \equiv \langle\gamma_{e^\pm}\rangle$", fontsize=fntsize)
         plt.grid()
         plt.xlabel(r"${\rm N_{\rm gen}+1}$", fontsize=fntsize)
         for label in ax2.get_xticklabels() + ax2.get_yticklabels():
             label.set_fontsize(fntsize)
+        plt.setp( ax2.get_xticklabels(), visible=False)
+        #
+        ax3=plt.subplot(gs[2,:])
+        #
+        # LINES
+        #
+        for sim,dash,color in zip(sim_list,dashes_list,colors_list):
+            l, = plt.plot(1+sim["gen"], sim["Elep"], color=color, lw = 2)
+            l.set_dashes(dash)
+            # l, = plt.plot(1+sim["gen"], sim["Erad"], color=color, lw = 1)
+            # l.set_dashes(dash)
+            l,=plt.plot(1+sim["gen"], sim["Eall"], color=color, lw = 0.5)
+            #l.set_dashes([2,2])
+        plt.xscale("log")
+        plt.yscale("log")
+        plt.xlim(1, 1e4)
+        plt.ylim(0.5e4, 2e10)
+        plt.xlabel(r"${\rm Generation}$", fontsize=fntsize)
+        plt.ylabel(r"$E_{e^\pm},\ E_{\rm tot}$", fontsize=fntsize)
+        plt.grid()
+        plt.xlabel(r"${\rm N_{\rm gen}+1}$", fontsize=fntsize)
+        for label in ax3.get_xticklabels() + ax3.get_yticklabels():
+            label.set_fontsize(fntsize)
+        plt.setp( ax3.get_xticklabels(), visible=False)
         if dosavefig:
             plt.savefig("cascade.pdf", bbox_inches='tight', pad_inches=0.02)
     if wf == 0 or wf == 2:
