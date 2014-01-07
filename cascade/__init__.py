@@ -129,8 +129,6 @@ def main(Ngen = 10,resume=0,**kwargs):
     #lower/upper cutoffs [eV]
     Esmin = kwargs.pop("Esmin", 0.5e-3)
     Esmax = kwargs.pop("Esmax", 2)
-    #1 eV in units of m_e c^2
-    eV = 1/(511.e3)
     #
     if resume == 0:
         seed = casc.SeedPhoton( Esmin*eV, Esmax*eV, s )
@@ -423,35 +421,68 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0):
         plt.figure(4,figsize=(12,8))
         plt.clf()
         gs = GridSpec(4, 4)
-        gs.update(left=0.08, right=0.97, top=0.95, bottom=0.09, wspace=0.25, hspace=0.08)
+        gs.update(left=0.08, right=0.97, top=0.91, bottom=0.09, wspace=0.5, hspace=0.08)
         sim_list = [snE1e6, snE1e7,snE4e8,snE1e10]
         numpanels = 4
         for j in xrange(0,numpanels):
             sim = sim_list[j]
+            E0 = sim["E0"]
             ax1=plt.subplot(gs[j:j+1,0:numpanels/2])
             ax2=plt.subplot(gs[j:j+1,numpanels/2:numpanels])
             ngen_list = [0, 1,2,3,4,10,20,40,100,200]
             lw_list =  np.array(ngen_list)*0+2
             color_list = cm.rainbow_r(np.linspace(0, 1, len(ngen_list)))
             for ngen,lw,color in zip(ngen_list,lw_list,color_list):
-                ax1.plot(sim["Evec"],sim["Evec"]*sim["dNdE"][ngen],lw=lw,color=np.array(color))
-                ax2.plot((2*sim["Evec"]),0.25*(2*sim["Evec"])*sim["dNdE_rad"][ngen],lw=lw,color=np.array(color))
+                ax2.plot(sim["Evec"],sim["Evec"]**2*sim["dNdE"][ngen],lw=lw,color=np.array(color))
+                ax1.plot((2*sim["Evec"]),0.25*(2*sim["Evec"])**2*sim["dNdE_rad"][ngen],lw=lw,color=np.array(color))
                 # plt.plot(hr_sim["Evec"],hr_sim["Evec"]*hr_sim["dNdE"][ngen],"b:",lw=lw)
                 # plt.plot(hr_sim["Evec"],hr_sim["Evec"]*hr_sim["dNdE_rad"][ngen],"g:",lw=2)
+            ax1.set_xlim(1,1e6)
+            ax1.set_ylim(1e-6,1e12)
+            ax1.set_yticks(10.**np.arange(-5,15,5))
+            ax1.set_ylabel(r"$E_\gamma^2dN/dE_\gamma$",fontsize=fntsize)
+            ax2.set_ylabel(r"$E_{e^\pm}^2dN/dE_{e^\pm}$",fontsize=fntsize)
+            ax2.set_xlim(1e4,2e10)
             for ax in [ax1, ax2]:
+                if j == 0:
+                    axt = ax.twiny()
+                    axt.set_xscale("log")
+                    axt.set_xlim(np.array(ax.get_xlim())/eV/1.e9) #get it in GeV
+                    if ax == ax1:
+                        axt.set_xlabel(r"$E_\gamma\ {\rm [GeV]}$",fontsize=fntsize)
+                    if ax == ax2:
+                        axt.set_xlabel(r"$E_{e^\pm}\ {\rm [GeV]}$",fontsize=fntsize)
+                    for label in axt.get_xticklabels() + axt.get_yticklabels():
+                        label.set_fontsize(fntsize)
+                if j < numpanels-1:
+                    plt.setp( ax.get_xticklabels(), visible=False)
                 ax.set_xscale("log")
-                ax.set_yscale("log")
-            ax1.set_xlim(1e4,2e10)
-            ax1.set_ylim(1e-6,1e6)
-            ax2.set_xlim(1,1e6)
-            ax2.set_ylim(1e-6,1e6)
+                ax.set_yscale("log",subsy=[0])
+                ax.grid(b=1)
+                ax.set_ylim(1e-6,1e12)
+                ax.set_yticks(10.**np.arange(-5,15,5))
+                #E0 label
+                ex = 1.*int(np.log10(E0))
+                ma = E0/10**ex
+                if ma == 1:
+                    valstr = "10^{%g}" % ex
+                else:
+                    valstr = "%g\\times 10^{%g}" % (int(ma*10.+0.5)/10.,ex)
+                ax.text(ax.get_xlim()[0]*1.1,ax.get_ylim()[1]*1e-1,r"$E_0=%s$" % valstr,ha="left",va="top",fontsize=fntsize)
+                for label in ax.get_xticklabels() + ax.get_yticklabels():
+                    label.set_fontsize(fntsize)
+        ax1.set_xlabel(r"$E_\gamma\ [m_e c^2]$", fontsize=fntsize)
+        ax2.set_xlabel(r"$E_{e^\pm}\ [m_e c^2]$", fontsize=fntsize)
 
         
         
     # pdb.set_trace()
 
 if __name__ == "__main__":
+    global eV
     #main()
     print ("Hello")
     #energy grid, Lorentz factor of initial electron
     warnings.simplefilter("error")
+    #1 eV in units of m_e c^2
+    eV = 1/(511.e3)
