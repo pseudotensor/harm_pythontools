@@ -204,8 +204,9 @@ cdef double flnew_c( Func flold_func, Func flold_rad_func, Func flnew_func, Func
         ew1 = 0
         ew2 = 1
 
-    # ew1=1
-    # ew2=0
+    #Disable attempts to conserve energy better as leads to nonuniform convergence
+    ew1=1
+    ew2=0
 
     #print( "dE1 = %e, dE2 = %e, dE = %e" % (dE1, dE2, ew1*dE1+ew2*dE2) )
     
