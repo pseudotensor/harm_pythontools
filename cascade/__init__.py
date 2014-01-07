@@ -98,7 +98,8 @@ def get_cascade_info(**kwargs):
     if "dNdE_rad_list" in npzfile:
         dNdE_rad_list = npzfile["dNdE_rad_list"]
     else:
-        dNdE_rad_list = dNdE_list*0
+        print("dNdE_rad_list not defined; setting to 1e-300")
+        dNdE_rad_list = dNdE_list*0 + 1e-300
     deltaN_list = list(npzfile["deltaN_list"])
     Ntot_list = list(npzfile["Ntot_list"])
     Etot_list = list(npzfile["Etot_list"])
@@ -259,6 +260,7 @@ def main(Ngen = 10,resume=0,**kwargs):
             sys.stdout.flush()
             #save the distribution from last time step
             dNold.set_func( dNnew.func_vec )
+            dNold_rad.set_func( dNnew_rad.func_vec )
             #pdb.set_trace()
             Nreordered = casc.flnew( dNold, dNold_rad, dNnew, dNnew_rad, seed, altgrid )
             #change in number
@@ -418,29 +420,31 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0):
         plt.xscale("log")
         plt.yscale("log")
     if wf == 0 or wf == 3:
-        plt.figure(4)
+        plt.figure(4,figsize=(12,8))
         plt.clf()
-        gs = GridSpec(2, 2)
+        gs = GridSpec(4, 4)
         gs.update(left=0.08, right=0.97, top=0.95, bottom=0.09, wspace=0.25, hspace=0.08)
-        ax1=plt.subplot(gs[0,:])
-        ax2=plt.subplot(gs[1,:])
-        ngen_list = [0, 1,2,3,10,20,40,100,200]
-        lw_list =  np.array(ngen_list)*0+2
-        color_list = cm.rainbow_r(np.linspace(0, 1, len(ngen_list)))
-        fid_sim = snE4e8
-        hr_sim = snE4e8N2e4
-        for ngen,lw,color in zip(ngen_list,lw_list,color_list):
-            ax1.plot(fid_sim["Evec"],fid_sim["Evec"]*fid_sim["dNdE"][ngen],lw=lw,color=np.array(color))
-            ax2.plot((2*fid_sim["Evec"]),0.25*(2*fid_sim["Evec"])*fid_sim["dNdE_rad"][ngen],lw=lw,color=np.array(color))
-            # plt.plot(hr_sim["Evec"],hr_sim["Evec"]*hr_sim["dNdE"][ngen],"b:",lw=lw)
-            # plt.plot(hr_sim["Evec"],hr_sim["Evec"]*hr_sim["dNdE_rad"][ngen],"g:",lw=2)
-        for ax in [ax1, ax2]:
-            ax.set_xscale("log")
-            ax.set_yscale("log")
-        ax1.set_xlim(1e4,1e9)
-        ax1.set_ylim(1e-6,1e3)
-        ax2.set_xlim(1,1e6)
-        ax2.set_ylim(1e-6,1e3)
+        sim_list = [snE1e6, snE1e7,snE4e8,snE1e10]
+        numpanels = 4
+        for j in xrange(0,numpanels):
+            sim = sim_list[j]
+            ax1=plt.subplot(gs[j:j+1,0:numpanels/2])
+            ax2=plt.subplot(gs[j:j+1,numpanels/2:numpanels])
+            ngen_list = [0, 1,2,3,4,10,20,40,100,200,400]
+            lw_list =  np.array(ngen_list)*0+2
+            color_list = cm.rainbow_r(np.linspace(0, 1, len(ngen_list)))
+            for ngen,lw,color in zip(ngen_list,lw_list,color_list):
+                ax1.plot(sim["Evec"],sim["Evec"]*sim["dNdE"][ngen],lw=lw,color=np.array(color))
+                ax2.plot((2*sim["Evec"]),0.25*(2*sim["Evec"])*sim["dNdE_rad"][ngen],lw=lw,color=np.array(color))
+                # plt.plot(hr_sim["Evec"],hr_sim["Evec"]*hr_sim["dNdE"][ngen],"b:",lw=lw)
+                # plt.plot(hr_sim["Evec"],hr_sim["Evec"]*hr_sim["dNdE_rad"][ngen],"g:",lw=2)
+            for ax in [ax1, ax2]:
+                ax.set_xscale("log")
+                ax.set_yscale("log")
+            ax1.set_xlim(1e4,2e10)
+            ax1.set_ylim(1e-6,5e4)
+            ax2.set_xlim(1,1e6)
+            ax2.set_ylim(1e-6,5e4)
 
         
         
