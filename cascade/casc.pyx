@@ -174,45 +174,47 @@ cdef double flnew_c( Func flold_func, Func flold_rad_func, Func flnew_func, Func
     #
     ###########################################################################################
 
-    # #now that ic_data is finalized, vary the other two: rad_data and gg_data 
-    # E1 = 0
-    # E2 = 0
-    # for i from 0 <= i < dim1:
-    #     E1 += (flnew_rad_data[i]    +flnew_gg_data[i]    +flnew_ic_data[i])*Evec_data[i]*grid.dEdxgrid_data[i]*grid.dx
-    #     E2 += (flnew_rad_alt_data[i]+flnew_gg_alt_data[i]+flnew_ic_data[i])*Evec_data[i]*grid.dEdxgrid_data[i]*grid.dx
+    do_enforce_energy_conservation = 0
+    if do_enforce_energy_conservation:
+        #now that ic_data is finalized, vary the other two: rad_data and gg_data 
+        E1 = 0
+        E2 = 0
+        for i from 0 <= i < dim1:
+            E1 += (flnew_rad_data[i]    +flnew_gg_data[i]    +flnew_ic_data[i])*Evec_data[i]*grid.dEdxgrid_data[i]*grid.dx
+            E2 += (flnew_rad_alt_data[i]+flnew_gg_alt_data[i]+flnew_ic_data[i])*Evec_data[i]*grid.dEdxgrid_data[i]*grid.dx
 
-    # #old energy (before scattering; do not count energy of escaped, non-pair-producing gamma-rays)
-    # Eold = flold_func.Etot() #+flold_rad_func.Etot()
+        #old energy (before scattering; do not count energy of escaped, non-pair-producing gamma-rays)
+        Eold = flold_func.Etot() #+flold_rad_func.Etot()
 
-    # #changes in energy (should be zero so energy is conserved)
-    # dE1 = E1 - Eold
-    # dE2 = E2 - Eold
-        
-    
-    # ###########################################################################################
-    # #
-    # # Conserve total energy in gamma pair production: only affects temp0, temp0b, temp1 and temp1b
-    # #
-    # if dE1 < 0 and dE2 > 0 or dE1 > 0 and dE2 < 0 or fabs(dE1) > 1.1*fabs(dE2) or fabs(dE2) > 1.1*fabs(dE1):
-    #     ewnorm = dE2 - dE1
-    #     ew1 =  dE2 / ewnorm
-    #     ew2 = -dE1 / ewnorm
-    # elif fabs(dE1) < fabs(dE2):
-    #     ew1 = 1
-    #     ew2 = 0
-    # else:
-    #     ew1 = 0
-    #     ew2 = 1
+        #changes in energy (should be zero so energy is conserved)
+        dE1 = E1 - Eold
+        dE2 = E2 - Eold
 
-    # #print( "dE1 = %e, dE2 = %e, dE = %e" % (dE1, dE2, ew1*dE1+ew2*dE2) )
-    
-    # #ensure energy conservation under pair production
-    # for i from 0 <= i < dim1:
-    #     flnew_rad_data[i] = ew1 * flnew_rad_data[i] + ew2 * flnew_rad_alt_data[i]
-    #     flnew_gg_data[i]  = ew1 * flnew_gg_data[i]  + ew2 * flnew_gg_alt_data[i]
-    #
-    #
-    ###########################################################################################
+
+        ###########################################################################################
+        #
+        # Conserve total energy in gamma pair production: only affects temp0, temp0b, temp1 and temp1b
+        #
+        if dE1 < 0 and dE2 > 0 or dE1 > 0 and dE2 < 0 or fabs(dE1) > 1.5*fabs(dE2) or fabs(dE2) > 1.5*fabs(dE1):
+            ewnorm = dE2 - dE1
+            ew1 =  dE2 / ewnorm
+            ew2 = -dE1 / ewnorm
+        elif fabs(dE1) < fabs(dE2):
+            ew1 = 1
+            ew2 = 0
+        else:
+            ew1 = 0
+            ew2 = 1
+
+        #print( "dE1 = %e, dE2 = %e, dE = %e" % (dE1, dE2, ew1*dE1+ew2*dE2) )
+
+        #ensure energy conservation under pair production
+        for i from 0 <= i < dim1:
+            flnew_rad_data[i] = ew1 * flnew_rad_data[i] + ew2 * flnew_rad_alt_data[i]
+            flnew_gg_data[i]  = ew1 * flnew_gg_data[i]  + ew2 * flnew_gg_alt_data[i]
+        #
+        #
+        ###########################################################################################
 
     for i from 0 <= i < dim1:
         #the result should conserve both number and energy of electrons
