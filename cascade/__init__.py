@@ -110,6 +110,7 @@ def get_cascade_info(**kwargs):
         Esmax = npzfile["Esmax"]
     if "s" in npzfile:
         s = npzfile["s"]
+    Eall = ((np.array(dNdE_list)+np.array(dNdE_rad_list))*np.array(Evec)[None,:]**2*dx).sum(axis=-1)
     npzfile.close()
     #########################
     #
@@ -118,7 +119,7 @@ def get_cascade_info(**kwargs):
     #########################
     # print( "#%14s %21s %21s %21s" % ("Generation", "N", "deltaN", "E") )
     # print( "%15d %21.15g %21.15g %21.15e" % (gen, Ntot, deltaN, Etot) )
-    return({"E0": E0, "gen": np.array(gen_list), "dNdE": dNdE_list, "dNdE_rad": dNdE_rad_list, "deltaN": np.array(deltaN_list), "Ntot": np.array(Ntot_list), "Etot": np.array(Etot_list), "Esmin": Esmin, "Esmax": Esmax, "s": s, "Evec": np.array(Evec)})
+    return({"E0": E0, "gen": np.array(gen_list), "dNdE": dNdE_list, "dNdE_rad": dNdE_rad_list, "deltaN": np.array(deltaN_list), "Ntot": np.array(Ntot_list), "Etot": np.array(Etot_list), "Esmin": Esmin, "Esmax": Esmax, "s": s, "Evec": np.array(Evec), "dx": dx, "Eall": Eall})
     
 def main(Ngen = 10,resume=0,**kwargs):
     global dNold, dNnew,fout,dNdE_list,Evec
@@ -325,8 +326,11 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0):
     snE1e9     = get_cascade_info(fname="E1e+09_N1e+04_s2_Esmin0.0005_Esmax2.npz")
     snE1e10    = get_cascade_info(fname="E1e+10_N1e+04_s2_Esmin0.0005_Esmax2.npz")
     if wf == 0 or wf == 1:
-        plt.figure(1)
+        plt.figure(1,figsize=(6,8))
         plt.clf()
+        gs = GridSpec(2, 2)
+        gs.update(left=0.15, right=0.97, top=0.97, bottom=0.08, wspace=0.04, hspace=0.04)
+        ax1=plt.subplot(gs[0,:])
         #
         # LINES
         #
@@ -338,25 +342,10 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0):
         l3.set_dashes([5,2,2,2,2,2])
         l4, = plt.plot(1+snE4e8["gen"], snE4e8["Ntot"], color="magenta", label=r"$E_0 = 4.2\times10^{8}$", lw = 2)
         l4.set_dashes([10,5])
-        # l4c, = plt.plot(1+snE4e8N5e4["gen"], snE4e8N5e4["Ntot"], color="LightBlue", label=r"$E_0 = 4.2\times10^{8},\ n = 5\times10^4$", lw = 2)
-        # l4c.set_dashes([10,2,5,2])
         l5, = plt.plot(1+snE1e9["gen"], snE1e9["Ntot"], color="blue", label=r"$E_0 = 10^{9}$", lw = 2)
         l5.set_dashes([10,2,2,2,5,2,2,2])
         l6, = plt.plot(1+snE1e10["gen"], snE1e10["Ntot"], color="black", label=r"$E_0 = 10^{10}$", lw = 2)
         l6.set_dashes([10,2,2,2,10,2,2,2])
-        # l8, = plt.plot(1+sh1e10Gen, sh1e10N, 'g:', label=r"$E_0 = 10^{10},\ n = 10^4$", lw = 2)
-        # l8.set_dashes([5,2,2,2,2,2,2,2,2,2])
-        # l7, = plt.plot(1+sh1e9Gen, sh1e9N, 'g:', label=r"$E_0 = 10^9,\ n = 10^4$", lw = 2)
-        # l7.set_dashes([10,3,3,3,3,3])
-        # l6, = plt.plot(1+sh5e8Gen, sh5e8N, 'r:', label=r"$E_0 = 5\times 10^8,\ n = 10^4$", lw = 2)
-        # l6.set_dashes([10,3,3,3,3,3,3,3])
-        # # l5, = plt.plot(1+s0Gen, s0N, 'm:', label=r"${\rm Sasha},\ loc=0,\ E_0 = 10^8,\ n = 10^4$", lw = 2)
-        # # l2, = plt.plot(1+aGen, aN, 'g-.', label=r"${\rm Avery},\ loc=0,\ E_0 = 10^8,\ n = 10^4$", lw = 2)
-        # # l2.set_dashes([10,5,5,5])
-        # l3, = plt.plot(1+shGen, shN, 'c',label=r"$E_0 = 10^8,\ n = 10^4$", lw = 2)
-        # # l4, = plt.plot(1+shx2Gen, shx2N, 'r', label=r"$E_0 = 10^8,\ n = 2\times10^4$", lw = 2)
-        # # l1, = plt.plot(1+s1Gen, s1N, 'b--', label=r"${\rm Sasha},\ loc=0.5,\ E_0 = 10^8,\ n = 10^4$", lw = 2)
-        # # l1.set_dashes([10,5])
         #
         # LABELS
         #
@@ -370,13 +359,36 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0):
         plt.yscale("log")
         plt.ylim(1, 10000)
         plt.xlim(1, 1e4)
-        plt.xlabel(r"${\rm Generation}$", fontsize=fntsize)
-        plt.ylabel(r"$N_{\rm leptons}$", fontsize=fntsize)
+        plt.ylabel(r"$N_{e^\pm}$", fontsize=fntsize)
         plt.grid()
-        ax = plt.gca()
-        for label in ax.get_xticklabels() + ax.get_yticklabels():
+        for label in ax1.get_xticklabels() + ax1.get_yticklabels():
             label.set_fontsize(fntsize)
-        #plt.legend(loc="lower right",handlelength=3,labelspacing=0.15)
+        plt.setp( ax1.get_xticklabels(), visible=False)
+        #
+        # AVERAGE ENERGY PER PARTICLE
+        #
+        ax2=plt.subplot(gs[1,:])
+        #
+        # LINES
+        #
+        sim_list = [snE1e6, snE1e7, snE1e8, snE4e8, snE1e9, snE1e10]
+        dashes_list = [[5,2], [5,2,2,2], [5,2,2,2,2,2], [10,5], [10,2,2,2,5,2,2,2], [10,2,2,2,10,2,2,2]]
+        colors_list = ["red", "Orange", "DarkGreen", "magenta", "blue", "black"]
+        for sim,dash,color in zip(sim_list,dashes_list,colors_list):
+            l, = plt.plot(1+sim["gen"], sim["Etot"]/sim["Ntot"], color=color, lw = 2)
+            l.set_dashes(dash)
+            l,=plt.plot(1+sim["gen"], sim["Eall"], ":", color="gray", lw = 2)
+            l.set_dashes([2,2])
+        plt.xscale("log")
+        plt.yscale("log")
+        plt.ylim(1e4, 1e10)
+        plt.xlim(1, 1e4)
+        plt.xlabel(r"${\rm Generation}$", fontsize=fntsize)
+        plt.ylabel(r"$\langle E_{e^\pm}\rangle \equiv \langle\gamma_{e^\pm}\rangle$", fontsize=fntsize)
+        plt.grid()
+        plt.xlabel(r"${\rm N_{\rm gen}+1}$", fontsize=fntsize)
+        for label in ax2.get_xticklabels() + ax2.get_yticklabels():
+            label.set_fontsize(fntsize)
         if dosavefig:
             plt.savefig("cascade.pdf", bbox_inches='tight', pad_inches=0.02)
     if wf == 0 or wf == 2:
@@ -429,21 +441,29 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0):
             E0 = sim["E0"]
             ax1=plt.subplot(gs[j:j+1,0:numpanels/2])
             ax2=plt.subplot(gs[j:j+1,numpanels/2:numpanels])
-            ngen_list = [0, 1,2,3,4,10,20,40,100,200]
+            ngen_list = [0, 1,2,3,4,10,20,40,100,200,400,1000,2000]
             lw_list =  np.array(ngen_list)*0+2
             color_list = cm.rainbow_r(np.linspace(0, 1, len(ngen_list)))
             for ngen,lw,color in zip(ngen_list,lw_list,color_list):
-                ax2.plot(sim["Evec"],sim["Evec"]**2*sim["dNdE"][ngen],lw=lw,color=np.array(color))
-                ax1.plot((2*sim["Evec"]),0.25*(2*sim["Evec"])**2*sim["dNdE_rad"][ngen],lw=lw,color=np.array(color))
-                # plt.plot(hr_sim["Evec"],hr_sim["Evec"]*hr_sim["dNdE"][ngen],"b:",lw=lw)
-                # plt.plot(hr_sim["Evec"],hr_sim["Evec"]*hr_sim["dNdE_rad"][ngen],"g:",lw=2)
+                #if generation number, has been computed, plot it
+                if ngen in sim["gen"]:
+                    ax1.plot((2*sim["Evec"]),0.25*(2*sim["Evec"])**2*sim["dNdE_rad"][ngen],lw=lw,color=np.array(color))
+                    ax2.plot(sim["Evec"],sim["Evec"]**2*sim["dNdE"][ngen],lw=lw,color=np.array(color),label=r"$%g$" % ngen)
+                    # plt.plot(hr_sim["Evec"],hr_sim["Evec"]*hr_sim["dNdE"][ngen],"b:",lw=lw)
+                    # plt.plot(hr_sim["Evec"],hr_sim["Evec"]*hr_sim["dNdE_rad"][ngen],"g:",lw=2)
             ax1.set_xlim(1,1e6)
             ax1.set_ylim(1e-6,1e12)
             ax1.set_yticks(10.**np.arange(-5,15,5))
             ax1.set_ylabel(r"$E_\gamma^2dN/dE_\gamma$",fontsize=fntsize)
             ax2.set_ylabel(r"$E_{e^\pm}^2dN/dE_{e^\pm}$",fontsize=fntsize)
             ax2.set_xlim(1e4,2e10)
+            if j == 0:
+                leg=ax2.legend(loc="upper right",title=r"${\rm Generation}\!:$",frameon=True, fancybox=True,ncol=3,labelspacing=0.05,columnspacing=0.5,handletextpad=0.04)
+                leg.get_title().set_fontsize(0.8*fntsize)
+                for label in leg.get_texts():
+                    label.set_fontsize(0.8*fntsize)
             for ax in [ax1, ax2]:
+                #x-axis on top
                 if j == 0:
                     axt = ax.twiny()
                     axt.set_xscale("log")
@@ -454,6 +474,7 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0):
                         axt.set_xlabel(r"$E_{e^\pm}\ {\rm [GeV]}$",fontsize=fntsize)
                     for label in axt.get_xticklabels() + axt.get_yticklabels():
                         label.set_fontsize(fntsize)
+                #hide tick labels in intermediate panels
                 if j < numpanels-1:
                     plt.setp( ax.get_xticklabels(), visible=False)
                 ax.set_xscale("log")
@@ -461,7 +482,7 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0):
                 ax.grid(b=1)
                 ax.set_ylim(1e-6,1e12)
                 ax.set_yticks(10.**np.arange(-5,15,5))
-                #E0 label
+                #E0 label in top left corner of panels
                 ex = 1.*int(np.log10(E0))
                 ma = E0/10**ex
                 if ma == 1:
@@ -472,7 +493,9 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0):
                 for label in ax.get_xticklabels() + ax.get_yticklabels():
                     label.set_fontsize(fntsize)
         ax1.set_xlabel(r"$E_\gamma\ [m_e c^2]$", fontsize=fntsize)
-        ax2.set_xlabel(r"$E_{e^\pm}\ [m_e c^2]$", fontsize=fntsize)
+        ax2.set_xlabel(r"$E_{e^\pm}\ [m_e c^2]\equiv \gamma_{e^\pm}$", fontsize=fntsize)
+        if dosavefig:
+            plt.savefig("dNdE.pdf", bbox_inches='tight', pad_inches=0.02)
 
         
         
