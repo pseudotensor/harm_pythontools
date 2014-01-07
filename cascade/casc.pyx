@@ -193,7 +193,7 @@ cdef double flnew_c( Func flold_func, Func flold_rad_func, Func flnew_func, Func
     #
     # Conserve total energy in gamma pair production: only affects temp0, temp0b, temp1 and temp1b
     #
-    if dE1 < 0 and dE2 > 0 or dE1 > 0 and dE2 < 0 or fabs(dE1) > 1.2*fabs(dE2) or fabs(dE2) > 1.2*fabs(dE1):
+    if dE1 < 0 and dE2 > 0 or dE1 > 0 and dE2 < 0 or fabs(dE1) > 1.1*fabs(dE2) or fabs(dE2) > 1.1*fabs(dE1):
         ewnorm = dE2 - dE1
         ew1 =  dE2 / ewnorm
         ew2 = -dE1 / ewnorm
