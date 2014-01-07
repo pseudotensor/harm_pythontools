@@ -420,26 +420,28 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0):
     if wf == 0 or wf == 3:
         plt.figure(4)
         plt.clf()
+        gs = GridSpec(2, 2)
+        gs.update(left=0.08, right=0.97, top=0.95, bottom=0.09, wspace=0.25, hspace=0.08)
+        ax1=plt.subplot(gs[0,:])
+        ax2=plt.subplot(gs[1,:])
         ngen_list = [0, 1,2,3,10,20,40,100,200]
         lw_list =  np.array(ngen_list)*0+2
         color_list = cm.rainbow_r(np.linspace(0, 1, len(ngen_list)))
         fid_sim = snE4e8
         hr_sim = snE4e8N2e4
         for ngen,lw,color in zip(ngen_list,lw_list,color_list):
-            plt.plot(fid_sim["Evec"],fid_sim["Evec"]*fid_sim["dNdE"][ngen],lw=lw,color=np.array(color))
-            #plt.plot(fid_sim["Evec"],fid_sim["Evec"]*fid_sim["dNdE_rad"][ngen],"g")
+            ax1.plot(fid_sim["Evec"],fid_sim["Evec"]*fid_sim["dNdE"][ngen],lw=lw,color=np.array(color))
+            ax2.plot((2*fid_sim["Evec"]),0.25*(2*fid_sim["Evec"])*fid_sim["dNdE_rad"][ngen],lw=lw,color=np.array(color))
             # plt.plot(hr_sim["Evec"],hr_sim["Evec"]*hr_sim["dNdE"][ngen],"b:",lw=lw)
             # plt.plot(hr_sim["Evec"],hr_sim["Evec"]*hr_sim["dNdE_rad"][ngen],"g:",lw=2)
-        plt.xscale("log")
-        plt.yscale("log")
-        plt.xlim(1e4,1e9)
-        plt.ylim(1e-6,1e3)
+        for ax in [ax1, ax2]:
+            ax.set_xscale("log")
+            ax.set_yscale("log")
+        ax1.set_xlim(1e4,1e9)
+        ax1.set_ylim(1e-6,1e3)
+        ax2.set_xlim(1,1e6)
+        ax2.set_ylim(1e-6,1e3)
 
-    # gs = GridSpec(4, 4)
-    # gs.update(left=0.17, right=0.99, top=0.95, bottom=0.06, wspace=0.25, hspace=0.08)
-    # ax1=plt.subplot(gs[0,:])
-    # ax2=plt.subplot(gs[1,:])
-    # ax3=plt.subplot(gs[2:4,:])
         
         
     # pdb.set_trace()
