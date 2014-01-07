@@ -419,7 +419,7 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0):
         plt.ylim(1e-5,2)
         plt.xscale("log")
         plt.yscale("log")
-    if wf == 0 or wf == 3:
+    if wf == 0 or wf == 4:
         plt.figure(4,figsize=(12,8))
         plt.clf()
         gs = GridSpec(4, 4)
@@ -430,7 +430,7 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0):
             sim = sim_list[j]
             ax1=plt.subplot(gs[j:j+1,0:numpanels/2])
             ax2=plt.subplot(gs[j:j+1,numpanels/2:numpanels])
-            ngen_list = [0, 1,2,3,4,10,20,40,100,200,400]
+            ngen_list = [0, 1,2,3,4,10,20,40,100,200]
             lw_list =  np.array(ngen_list)*0+2
             color_list = cm.rainbow_r(np.linspace(0, 1, len(ngen_list)))
             for ngen,lw,color in zip(ngen_list,lw_list,color_list):
@@ -442,9 +442,9 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0):
                 ax.set_xscale("log")
                 ax.set_yscale("log")
             ax1.set_xlim(1e4,2e10)
-            ax1.set_ylim(1e-6,5e4)
+            ax1.set_ylim(1e-6,1e6)
             ax2.set_xlim(1,1e6)
-            ax2.set_ylim(1e-6,5e4)
+            ax2.set_ylim(1e-6,1e6)
 
         
         
