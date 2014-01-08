@@ -335,12 +335,13 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0):
     snE4e8N5e4 = get_cascade_info(fname="E4.2e+08_N5e+04_s2_Esmin0.0005_Esmax2.npz")
     snE4e8list = [snE4e8N1e2, snE4e8N2e2, snE4e8N4e2, 
                   snE4e8N1e3, snE4e8N2e3, snE4e8N4e3,
-                  snE4e8,     snE4e8N2e4] #, snE4e8N4e4]
+                  snE4e8,     snE4e8N2e4, snE4e8N4e4]
     snE1e9     = get_cascade_info(fname="E1e+09_N1e+04_s2_Esmin0.0005_Esmax2.npz")
     snE1e10    = get_cascade_info(fname="E1e+10_N1e+04_s2_Esmin0.0005_Esmax2.npz")
     sim_list = [snE1e6, snE1e7, snE1e8, snE4e8, snE1e10]
     dashes_list = [[5,2], [5,2,2,2], [5,2,2,2,2,2], [10,5], [10,2,2,2,5,2,2,2], [10,2,2,2,10,2,2,2]]
     colors_list = ["red", "Orange", "DarkGreen", "magenta", "blue", "black"]
+    simname_list = []
     if wf == 0 or wf == 1:
         plt.figure(1,figsize=(6,9))
         plt.clf()
@@ -353,15 +354,17 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0):
         for sim,dash,color in zip(sim_list,dashes_list,colors_list):
             l, = plt.plot(1+sim["gen"], sim["Ntot"], color=color, lw = 2)
             l.set_dashes(dash)
+            valstr = get_sci_string_form(sim["E0"])
+            simname_list.append(r"$E_0 = %s$" % valstr)
         #
         # LABELS
         #
-        plt.text(500, 1.2, r"$E_0\!= 10^6$", size = fntsize,va = "bottom", ha="left")
-        plt.text(40*1.25**2, 8, r"$E_0\!= 10^7$", size = fntsize,va = "top", ha="left")
-        plt.text(40*1.25, 60, r"$E_0\!= 10^8$", size = fntsize,va = "top", ha="left")
-        plt.text(40, 1100, r"$E_0\!= 4.3\times 10^8$", size = fntsize, ha="left", va="center")
+        plt.text(500, 1.2, simname_list[0], size = fntsize,va = "bottom", ha="left")
+        plt.text(40*1.25**2, 8, simname_list[1], size = fntsize,va = "top", ha="left")
+        plt.text(40*1.25, 60, simname_list[2], size = fntsize,va = "top", ha="left")
+        plt.text(40, 1100, simname_list[3], size = fntsize, ha="left", va="center")
         # plt.text(100, 1200, r"$E_0\!= 10^9$", size = fntsize, ha="right")
-        plt.text(13, 4000, r"$E_0\!= 10^{10}$", size = fntsize, ha="right")
+        plt.text(13, 4000, simname_list[4], size = fntsize, ha="right")
         plt.xscale("log")
         plt.yscale("log")
         plt.ylim(0.5, 20000)
@@ -383,6 +386,8 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0):
             l.set_dashes(dash)
             # l,=plt.plot(1+sim["gen"], sim["Eall"], ":", color="gray", lw = 2)
             # l.set_dashes([2,2])
+        plt.text(1.5, 0.7e6, simname_list[0], size = fntsize,va = "top", ha="left")
+        plt.text(3, 0.7e10, simname_list[-1], size = fntsize,va = "top", ha="left")
         plt.xscale("log")
         plt.yscale("log")
         plt.xlim(1, 1e4)
@@ -414,11 +419,13 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0):
         plt.ylabel(r"$E_{e^\pm},\ E_{\rm tot}$", fontsize=fntsize)
         plt.grid()
         plt.xlabel(r"${\rm N_{\rm gen}+1}$", fontsize=fntsize)
+        plt.text(1.5, 0.7e6, simname_list[0], size = fntsize,va = "top", ha="left")
+        plt.text(1.5, 0.7e10, simname_list[-1], size = fntsize,va = "top", ha="left")
         for label in ax3.get_xticklabels() + ax3.get_yticklabels():
             label.set_fontsize(fntsize)
         plt.setp( ax3.get_xticklabels(), visible=False)
         if dosavefig:
-            plt.savefig("cascade.pdf", bbox_inches='tight', pad_inches=0.02)
+            plt.savefig("cascade.eps", bbox_inches='tight', pad_inches=0.04)
     if wf == 0 or wf == 2:
         plt.figure(2)
         plt.clf()
@@ -437,11 +444,14 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0):
         plt.grid(b=True)
         plt.legend(loc="lower right")
         if dosavefig:
-            plt.savefig("NvsE0.pdf", bbox_inches='tight', pad_inches=0.02)
+            plt.savefig("NvsE0.pdf", bbox_inches='tight', pad_inches=0.04)
     if wf == 0 or wf == 3:
+        #
+        # CONVERGENCE WITH INCREASING RESOLUTION
+        #
         plt.figure(3)
         plt.clf()
-        ngen = 200
+        ngen = 310
         resolution=[]
         photoncount=[]
         energyperlepton=[]
@@ -458,7 +468,7 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0):
         plt.xscale("log")
         plt.yscale("log")
     if wf == 0 or wf == 4:
-        plt.figure(4,figsize=(12,8))
+        plt.figure(4,figsize=(12,10))
         plt.clf()
         gs = GridSpec(4, 4)
         gs.update(left=0.08, right=0.97, top=0.91, bottom=0.09, wspace=0.5, hspace=0.08)
@@ -482,9 +492,9 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0):
             ax1.set_xlim(1,1e6)
             ax1.set_ylim(1e-6,1e12)
             ax1.set_yticks(10.**np.arange(-5,15,5))
-            ax1.set_ylabel(r"$E_\gamma^2dN/dE_\gamma$",fontsize=fntsize)
-            ax2.set_ylabel(r"$E_{e^\pm}^2dN/dE_{e^\pm}$",fontsize=fntsize)
-            ax2.set_xlim(1e4,2e10)
+            ax1.set_ylabel(r"$E_\gamma^2dN/dE_\gamma$",fontsize=fntsize,labelpad=-7)
+            ax2.set_ylabel(r"$E_{e^\pm}^2dN/dE_{e^\pm}$",fontsize=fntsize,labelpad=-7)
+            ax2.set_xlim(1e3,2e10)
             if j == 0:
                 leg=ax2.legend(loc="upper right",title=r"${\rm Generation}\!:$",frameon=True, fancybox=True,ncol=3,labelspacing=0.05,columnspacing=0.5,handletextpad=0.04)
                 leg.get_title().set_fontsize(0.8*fntsize)
@@ -511,21 +521,24 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0):
                 ax.set_ylim(1e-6,1e12)
                 ax.set_yticks(10.**np.arange(-5,15,5))
                 #E0 label in top left corner of panels
-                ex = 1.*int(np.log10(E0))
-                ma = E0/10**ex
-                if ma == 1:
-                    valstr = "10^{%g}" % ex
-                else:
-                    valstr = "%g\\times 10^{%g}" % (int(ma*10.+0.5)/10.,ex)
+                valstr = get_sci_string_form(E0)
                 ax.text(ax.get_xlim()[0]*1.1,ax.get_ylim()[1]*1e-1,r"$E_0=%s$" % valstr,ha="left",va="top",fontsize=fntsize)
                 for label in ax.get_xticklabels() + ax.get_yticklabels():
                     label.set_fontsize(fntsize)
         ax1.set_xlabel(r"$E_\gamma\ [m_e c^2]$", fontsize=fntsize)
         ax2.set_xlabel(r"$E_{e^\pm}\ [m_e c^2]\equiv \gamma_{e^\pm}$", fontsize=fntsize)
         if dosavefig:
-            plt.savefig("dNdE.pdf", bbox_inches='tight', pad_inches=0.02)
+            plt.savefig("dNdE.eps", bbox_inches='tight', pad_inches=0.04)
 
-        
+def get_sci_string_form(E0):
+    ex = 1.*int(np.log10(E0))
+    ma = E0/10**ex
+    if ma == 1:
+        valstr = "10^{%g}" % ex
+    else:
+        valstr = "%g\\times 10^{%g}" % (int(ma*10.+0.5)/10.,ex)
+    return(valstr)
+
         
     # pdb.set_trace()
 
