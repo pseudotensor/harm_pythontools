@@ -251,12 +251,13 @@ def main(Ngen = 10,resume=0,**kwargs):
         Ntot = Ntot_list[-1]
         Etot = Etot_list[-1]
         npzfile.close()
-    print( "#%14s %21s %21s %21s %21s" % ("Generation", "N", "deltaN", "E", "deltaE") )
-    print( "%15d %21.15g %21.15g %21.15e %21.15e" % (gen, Ntot, deltaN, Etot, deltaE) )
     if do_enforce_energy_conservation:
         print( "Energy conservation is enabled." )
     else:
         print( "Energy conservation is disabled." )
+    print( "Processing %s..." % fnamedefault )
+    print( "#%14s %21s %21s %21s %21s" % ("Generation", "N", "deltaN", "E", "deltaE") )
+    print( "%15d %21.15g %21.15g %21.15e %21.15e" % (gen, Ntot, deltaN, Etot, deltaE) )
     plt.xscale("log")
     plt.yscale("log")
     # plt.ylim(1e-15,1e-4)
