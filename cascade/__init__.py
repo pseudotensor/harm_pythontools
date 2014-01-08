@@ -187,8 +187,6 @@ def main(Ngen = 10,resume=0,**kwargs):
         deltaE = 0
         #generation number
         gen = 0
-        print( "#%14s %21s %21s %21s %21s" % ("Generation", "N", "deltaN", "E", "deltaE") )
-        print( "%15d %21.15g %21.15g %21.15e %21.15e" % (gen, Ntot, deltaN, Etot, deltaE) )
         startN = 1
         #initial conditions
         gen_list.append(gen)
@@ -200,7 +198,10 @@ def main(Ngen = 10,resume=0,**kwargs):
         deltaE_list.append(deltaE)
     else:
         #restart from last snapshot
-        fnamedefault = "E%.2g_N%.2g_s%g_Esmin%.2g_Esmax%.2g.npz" % (E0, Ngrid, s, Esmin, Esmax)
+        if do_enforce_energy_conservation:
+            fnamedefault = "E%.2g_N%.2g_s%g_Esmin%.2g_Esmax%.2g_enc1.npz" % (E0, Ngrid, s, Esmin, Esmax)
+        else:
+            fnamedefault = "E%.2g_N%.2g_s%g_Esmin%.2g_Esmax%.2g.npz" % (E0, Ngrid, s, Esmin, Esmax)
         npzfile = np.load(fnamedefault)
         Emin = npzfile["Emin"]
         Emax = npzfile["Emax"]
@@ -214,9 +215,8 @@ def main(Ngen = 10,resume=0,**kwargs):
         if "s" in npzfile:
             s = npzfile["s"]
         if "do_enforce_energy_conservation" in npzfile:
-            do_enforce_energy_conservation = npzfile["do_enforce_energy_conservation"]
-        else:
-            do_enforce_energy_conservation = 0
+            do_enforce_energy_conservation_fromfile = npzfile["do_enforce_energy_conservation"]
+            assert do_enforce_energy_conservation_fromfile == do_enforce_energy_conservation, "Energy conservation in the file, %d, is different from requested value, %d" % (do_enforce_energy_conservation_fromfile, do_enforce_energy_conservation) 
         print
         #
         seed = casc.SeedPhoton( Esmin*eV, Esmax*eV, s )
@@ -250,9 +250,9 @@ def main(Ngen = 10,resume=0,**kwargs):
         startN = gen_list[-1]+1
         Ntot = Ntot_list[-1]
         Etot = Etot_list[-1]
-        print( "#%14s %21s %21s %21s %21s" % ("Generation", "N", "deltaN", "E", "deltaE") )
-        print( "%15d %21.15g %21.15g %21.15e %21.15e" % (gen, Ntot, deltaN, Etot, deltaE) )
         npzfile.close()
+    print( "#%14s %21s %21s %21s %21s" % ("Generation", "N", "deltaN", "E", "deltaE") )
+    print( "%15d %21.15g %21.15g %21.15e %21.15e" % (gen, Ntot, deltaN, Etot, deltaE) )
     if do_enforce_energy_conservation:
         print( "Energy conservation is enabled." )
     else:
@@ -301,10 +301,11 @@ def main(Ngen = 10,resume=0,**kwargs):
     except (KeyboardInterrupt, SystemExit):
         print '\n! Received keyboard interrupt, quitting threads.\n'
     print("Saving results to file...")
-    fnamedefault = "E%.2g_N%.2g_s%g_Esmin%.2g_Esmax%.2g.npz" % (E0, Ngrid, s, Esmin, Esmax)
+    doenc = "_enc1" if do_enforce_energy_conservation else ""
+    fnamedefault = "E%.2g_N%.2g_s%g_Esmin%.2g_Esmax%.2g%s.npz" % (E0, Ngrid, s, Esmin, Esmax, doenc)
     np.savez(fnamedefault, Evec = Evec, E0 = E0, gen_list = gen_list, deltaN_list = deltaN_list, deltaE_list = deltaE_list, dNdE_list = dNdE_list, dNdE_rad_list = dNdE_rad_list, Ntot_list = Ntot_list, Etot_list = Etot_list, Emin = Emin, Emax = Emax, Ngrid = Ngrid, E0grid = E0grid, Esmin = Esmin, Esmax = Esmax, s = s, do_enforce_energy_conservation = do_enforce_energy_conservation)
 
-def plot_convergence(wf = 0,fntsize=18,dosavefig=0):
+def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservation = 0):
     #
     # OLD
     #
@@ -319,25 +320,30 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0):
     #
     # NEW
     #
-    snE1e6     = get_cascade_info(fname="E1e+06_N1e+04_s2_Esmin0.0005_Esmax2.npz")
-    snE1e7     = get_cascade_info(fname="E1e+07_N1e+04_s2_Esmin0.0005_Esmax2.npz")
-    snE1e8     = get_cascade_info(fname="E1e+08_N1e+04_s2_Esmin0.0005_Esmax2.npz")
-    #snE1e8N5e4 = get_cascade_info(fname="E1e+08_N5e+04_s2_Esmin0.0005_Esmax2.npz")
-    snE4e8N1e2 = get_cascade_info(fname="E4.2e+08_N1e+02_s2_Esmin0.0005_Esmax2.npz")
-    snE4e8N2e2 = get_cascade_info(fname="E4.2e+08_N2e+02_s2_Esmin0.0005_Esmax2.npz")
-    snE4e8N4e2 = get_cascade_info(fname="E4.2e+08_N4e+02_s2_Esmin0.0005_Esmax2.npz")
-    snE4e8N1e3 = get_cascade_info(fname="E4.2e+08_N1e+03_s2_Esmin0.0005_Esmax2.npz")
-    snE4e8N2e3 = get_cascade_info(fname="E4.2e+08_N2e+03_s2_Esmin0.0005_Esmax2.npz")
-    snE4e8N4e3 = get_cascade_info(fname="E4.2e+08_N4e+03_s2_Esmin0.0005_Esmax2.npz")
-    snE4e8     = get_cascade_info(fname="E4.2e+08_N1e+04_s2_Esmin0.0005_Esmax2.npz")
-    snE4e8N2e4 = get_cascade_info(fname="E4.2e+08_N2e+04_s2_Esmin0.0005_Esmax2.npz")
-    snE4e8N4e4 = get_cascade_info(fname="E4.2e+08_N4e+04_s2_Esmin0.0005_Esmax2.npz")
-    snE4e8N5e4 = get_cascade_info(fname="E4.2e+08_N5e+04_s2_Esmin0.0005_Esmax2.npz")
+    doenc = "_enc1" if do_enforce_energy_conservation else ""
+
+    snE4e8N1e2 = get_cascade_info(fname="E4.2e+08_N1e+02_s2_Esmin0.0005_Esmax2%s.npz" % doenc)
+    snE4e8N2e2 = get_cascade_info(fname="E4.2e+08_N2e+02_s2_Esmin0.0005_Esmax2%s.npz" % doenc)
+    snE4e8N4e2 = get_cascade_info(fname="E4.2e+08_N4e+02_s2_Esmin0.0005_Esmax2%s.npz" % doenc)
+    snE4e8N1e3 = get_cascade_info(fname="E4.2e+08_N1e+03_s2_Esmin0.0005_Esmax2%s.npz" % doenc)
+    snE4e8N2e3 = get_cascade_info(fname="E4.2e+08_N2e+03_s2_Esmin0.0005_Esmax2%s.npz" % doenc)
+    snE4e8N4e3 = get_cascade_info(fname="E4.2e+08_N4e+03_s2_Esmin0.0005_Esmax2%s.npz" % doenc)
+    snE4e8     = get_cascade_info(fname="E4.2e+08_N1e+04_s2_Esmin0.0005_Esmax2%s.npz" % doenc)
+    snE4e8N2e4 = get_cascade_info(fname="E4.2e+08_N2e+04_s2_Esmin0.0005_Esmax2%s.npz" % doenc)
+    snE4e8N4e4 = get_cascade_info(fname="E4.2e+08_N4e+04_s2_Esmin0.0005_Esmax2%s.npz" % doenc)
+    snE4e8N5e4 = get_cascade_info(fname="E4.2e+08_N5e+04_s2_Esmin0.0005_Esmax2%s.npz" % doenc)
     snE4e8list = [snE4e8N1e2, snE4e8N2e2, snE4e8N4e2, 
                   snE4e8N1e3, snE4e8N2e3, snE4e8N4e3,
                   snE4e8,     snE4e8N2e4, snE4e8N4e4]
-    snE1e9     = get_cascade_info(fname="E1e+09_N1e+04_s2_Esmin0.0005_Esmax2.npz")
-    snE1e10    = get_cascade_info(fname="E1e+10_N1e+04_s2_Esmin0.0005_Esmax2.npz")
+
+    #hack for now:
+    doenc = ""
+    snE1e6     = get_cascade_info(fname="E1e+06_N1e+04_s2_Esmin0.0005_Esmax2%s.npz" % doenc)
+    snE1e7     = get_cascade_info(fname="E1e+07_N1e+04_s2_Esmin0.0005_Esmax2%s.npz" % doenc)
+    snE1e8     = get_cascade_info(fname="E1e+08_N1e+04_s2_Esmin0.0005_Esmax2%s.npz" % doenc)
+    snE1e9     = get_cascade_info(fname="E1e+09_N1e+04_s2_Esmin0.0005_Esmax2%s.npz" % doenc)
+    snE1e10    = get_cascade_info(fname="E1e+10_N1e+04_s2_Esmin0.0005_Esmax2%s.npz" % doenc)
+
     sim_list = [snE1e6, snE1e7, snE1e8, snE4e8, snE1e10]
     dashes_list = [[5,2], [5,2,2,2], [5,2,2,2,2,2], [10,5], [10,2,2,2,5,2,2,2], [10,2,2,2,10,2,2,2]]
     colors_list = ["red", "Orange", "DarkGreen", "magenta", "blue", "black"]
