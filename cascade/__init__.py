@@ -263,7 +263,7 @@ def main(Ngen = 10,resume=0,**kwargs):
             dNold.set_func( dNnew.func_vec )
             dNold_rad.set_func( dNnew_rad.func_vec )
             #pdb.set_trace()
-            Nreordered = casc.flnew( dNold, dNold_rad, dNnew, dNnew_rad, seed, altgrid )
+            Nreordered = casc.flnew( dNold, dNold_rad, dNnew, dNnew_rad, seed, grid, altgrid )
             #change in number
             deltaN += (Nreordered - Ntot)
             #change in energy

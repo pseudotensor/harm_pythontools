@@ -47,8 +47,8 @@ cdef inline double K2( double Enew, double Eold, SeedPhoton seed ) nogil:
 cdef public double* get_data( np.ndarray[double, ndim=1] nparray ):
     return <double *>nparray.data
 
-def flnew( flold not None, flold_rad not None, flnew not None, flnew_rad not None, seed not None, altgrid not None ):
-    return flnew_c( flold, flold_rad, flnew, flnew_rad, seed, altgrid )
+def flnew( flold not None, flold_rad not None, flnew not None, flnew_rad not None, seed not None, grid not None, altgrid not None ):
+    return flnew_c( flold, flold_rad, flnew, flnew_rad, seed, grid, altgrid )
 
 @cython.boundscheck(False) # turn off bounds-checking for entire function
 cdef void compute_inner_convolution_c( int i,
@@ -92,12 +92,12 @@ cdef void compute_inner_convolution_c( int i,
     return
 
 @cython.boundscheck(False) # turn off bounds-checking for entire function
-cdef double flnew_c( Func flold_func, Func flold_rad_func, Func flnew_func, Func flnew_rad_func, SeedPhoton seed, Grid altgrid ) except *:
+cdef double flnew_c( Func flold_func, Func flold_rad_func, Func flnew_func, Func flnew_rad_func, SeedPhoton seed, Grid grid, Grid altgrid ) except *:
     """Expect E and flold defined on a regular log grid, Evec"""
     cdef int i
     cdef int j
     cdef double a, b, c, d, delta
-    cdef Grid grid = flold_func
+    #cdef Grid grid = flold_func
     #cdef Grid altgrid = Grid(grid.Emin, grid.Emax, grid.E0, grid.Ngrid*2, di = grid.di)
     cdef double *Evec_data = grid.Egrid_data
     cdef double *Evecb_data = altgrid.Egrid_data
