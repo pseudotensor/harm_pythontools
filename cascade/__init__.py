@@ -126,6 +126,7 @@ def get_cascade_info(**kwargs):
 def main(Ngen = 10,resume=0,**kwargs):
     global dNold, dNnew,fout,dNdE_list,Evec
     E0 = kwargs.pop("E0", 4.25e8)  #=gammamaxIC from ~/Cascade.ipnb
+    do_enforce_energy_conservation = kwargs.pop("do_enforce_energy_conservation", 0)
     Ngrid = kwargs.pop("Ngrid", 1e4)
     #spectral index
     s = kwargs.pop("s", 2)
@@ -212,6 +213,11 @@ def main(Ngen = 10,resume=0,**kwargs):
             Esmax = npzfile["Esmax"]
         if "s" in npzfile:
             s = npzfile["s"]
+        if "do_enforce_energy_conservation" in npzfile:
+            do_enforce_energy_conservation = npzfile["do_enforce_energy_conservation"]
+        else:
+            do_enforce_energy_conservation = 0
+        print
         #
         seed = casc.SeedPhoton( Esmin*eV, Esmax*eV, s )
         #
@@ -247,6 +253,10 @@ def main(Ngen = 10,resume=0,**kwargs):
         print( "#%14s %21s %21s %21s %21s" % ("Generation", "N", "deltaN", "E", "deltaE") )
         print( "%15d %21.15g %21.15g %21.15e %21.15e" % (gen, Ntot, deltaN, Etot, deltaE) )
         npzfile.close()
+    if do_enforce_energy_conservation:
+        print( "Energy conservation is enabled." )
+    else:
+        print( "Energy conservation is disabled." )
     plt.xscale("log")
     plt.yscale("log")
     # plt.ylim(1e-15,1e-4)
@@ -263,7 +273,8 @@ def main(Ngen = 10,resume=0,**kwargs):
             dNold.set_func( dNnew.func_vec )
             dNold_rad.set_func( dNnew_rad.func_vec )
             #pdb.set_trace()
-            Nreordered = casc.flnew( dNold, dNold_rad, dNnew, dNnew_rad, seed, grid, altgrid )
+            Nreordered = casc.flnew( dNold, dNold_rad, dNnew, dNnew_rad, seed, 
+                                     grid, altgrid, do_enforce_energy_conservation )
             #change in number
             deltaN += (Nreordered - Ntot)
             #change in energy
@@ -291,7 +302,7 @@ def main(Ngen = 10,resume=0,**kwargs):
         print '\n! Received keyboard interrupt, quitting threads.\n'
     print("Saving results to file...")
     fnamedefault = "E%.2g_N%.2g_s%g_Esmin%.2g_Esmax%.2g.npz" % (E0, Ngrid, s, Esmin, Esmax)
-    np.savez(fnamedefault, Evec = Evec, E0 = E0, gen_list = gen_list, deltaN_list = deltaN_list, deltaE_list = deltaE_list, dNdE_list = dNdE_list, dNdE_rad_list = dNdE_rad_list, Ntot_list = Ntot_list, Etot_list = Etot_list, Emin = Emin, Emax = Emax, Ngrid = Ngrid, E0grid = E0grid, Esmin = Esmin, Esmax = Esmax, s = s)
+    np.savez(fnamedefault, Evec = Evec, E0 = E0, gen_list = gen_list, deltaN_list = deltaN_list, deltaE_list = deltaE_list, dNdE_list = dNdE_list, dNdE_rad_list = dNdE_rad_list, Ntot_list = Ntot_list, Etot_list = Etot_list, Emin = Emin, Emax = Emax, Ngrid = Ngrid, E0grid = E0grid, Esmin = Esmin, Esmax = Esmax, s = s, do_enforce_energy_conservation = do_enforce_energy_conservation)
 
 def plot_convergence(wf = 0,fntsize=18,dosavefig=0):
     #
