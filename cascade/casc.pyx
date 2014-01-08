@@ -416,19 +416,19 @@ cdef public class Grid [object CGrid, type TGrid ]:
         self.set_grid( self.Emin, self.Emax, self.E0, di )
         return olddi
 
-    cdef int iofx(self, double xval):
+    cdef int iofx(self, double xval) nogil:
         """ Returns the index of the cell containing xval """
         cdef int ival
         ival = int( (xval-self.xmin)/self.dx - self.di )
         return ival
 
-    cdef double xofE(self, double Eval):
+    cdef double xofE(self, double Eval) nogil:
         """ Returns the value of x corresponding to Eval """
         cdef double xval
         xval = log(Eval - self.E0)
         return xval
 
-    cdef inline int iofE(self, double Eval):
+    cdef inline int iofE(self, double Eval) nogil:
         """ Returns the index of the cell containing Eval """
         return int( (log(Eval-self.E0)-self.xmin)/self.dx - self.di )
 
@@ -488,7 +488,7 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
         return Einterp
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
-    cdef double norm(self):
+    cdef double norm(self) nogil:
         cdef int i
         cdef double norm = 0
         for i from 0 <= i < self.Ngrid:
@@ -497,7 +497,7 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
         return norm
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
-    cdef double Etot(self):
+    cdef double Etot(self) nogil:
         cdef int i
         cdef double norm = 0
         for i from 0 <= i < self.Ngrid:
@@ -529,7 +529,7 @@ cdef public class Func(Grid)  [object CFunc, type TFunc ]:
         return self.set_func_c( get_data(func_vec) )
 
     @cython.boundscheck(False) # turn off bounds-checking for entire function
-    cdef double set_func_c(self, double *func_vec_data):
+    cdef double set_func_c(self, double *func_vec_data) nogil:
         cdef int i
         for i from 0 <= i < self.Ngrid:
             self.func_vec_data[i] = func_vec_data[i] #if func_vec_data[i] > tiny else tiny
