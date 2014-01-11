@@ -123,7 +123,7 @@ def get_cascade_info(**kwargs):
     # print( "%15d %21.15g %21.15g %21.15e" % (gen, Ntot, deltaN, Etot) )
     return({"E0": E0, "gen": np.array(gen_list), "dNdE": dNdE_list, "dNdE_rad": dNdE_rad_list, "deltaN": np.array(deltaN_list), "Ntot": np.array(Ntot_list), "Etot": np.array(Etot_list), "Esmin": Esmin, "Esmax": Esmax, "s": s, "Evec": np.array(Evec), "dx": dx, "Eall": Eall, "Erad": Erad, "Elep": Elep})
     
-def main(Ngen = 10,resume=0,**kwargs):
+def main(Ngen = 10,resume=None,**kwargs):
     global dNold, dNnew,fout,dNdE_list,Evec
     E0 = kwargs.pop("E0", 4.25e8)  #=gammamaxIC from ~/Cascade.ipnb
     do_enforce_energy_conservation = kwargs.pop("do_enforce_energy_conservation", 0)
@@ -134,6 +134,19 @@ def main(Ngen = 10,resume=0,**kwargs):
     Esmin = kwargs.pop("Esmin", 0.5e-3)
     Esmax = kwargs.pop("Esmax", 2)
     #
+    doenc = "_enc1" if do_enforce_energy_conservation else ""
+    fnamedefault = "E%.2g_N%.2g_s%g_Esmin%.2g_Esmax%.2g%s.npz" % (E0, Ngrid, s, Esmin, Esmax, doenc)
+    #if restart file does not exist, do not restart
+    if not os.path.isfile(fnamedefault): 
+        if resume:
+            print( "File %s does not exist. Nothing to restart from." % fnamedefault )
+        resume = 0
+    elif resume is None:
+        resume = 1
+    if resume:
+        print( "Restarting from %s" % fnamedefault )
+    else:
+        print( "Starting fresh." )
     if resume == 0:
         seed = casc.SeedPhoton( Esmin*eV, Esmax*eV, s )
         #
@@ -198,10 +211,6 @@ def main(Ngen = 10,resume=0,**kwargs):
         deltaE_list.append(deltaE)
     else:
         #restart from last snapshot
-        if do_enforce_energy_conservation:
-            fnamedefault = "E%.2g_N%.2g_s%g_Esmin%.2g_Esmax%.2g_enc1.npz" % (E0, Ngrid, s, Esmin, Esmax)
-        else:
-            fnamedefault = "E%.2g_N%.2g_s%g_Esmin%.2g_Esmax%.2g.npz" % (E0, Ngrid, s, Esmin, Esmax)
         npzfile = np.load(fnamedefault)
         Emin = npzfile["Emin"]
         Emax = npzfile["Emax"]
@@ -216,8 +225,9 @@ def main(Ngen = 10,resume=0,**kwargs):
             s = npzfile["s"]
         if "do_enforce_energy_conservation" in npzfile:
             do_enforce_energy_conservation_fromfile = npzfile["do_enforce_energy_conservation"]
-            assert do_enforce_energy_conservation_fromfile == do_enforce_energy_conservation, "Energy conservation in the file, %d, is different from requested value, %d" % (do_enforce_energy_conservation_fromfile, do_enforce_energy_conservation) 
-        print
+            assert do_enforce_energy_conservation_fromfile == do_enforce_energy_conservation, \
+                    ("Energy conservation in the file, %d, is different from requested value, %d" 
+                    % (do_enforce_energy_conservation_fromfile, do_enforce_energy_conservation))
         #
         seed = casc.SeedPhoton( Esmin*eV, Esmax*eV, s )
         #
@@ -251,11 +261,13 @@ def main(Ngen = 10,resume=0,**kwargs):
         Ntot = Ntot_list[-1]
         Etot = Etot_list[-1]
         npzfile.close()
+    doenc = "_enc1" if do_enforce_energy_conservation else ""
+    fnamedefault = "E%.2g_N%.2g_s%g_Esmin%.2g_Esmax%.2g%s.npz" % (E0, Ngrid, s, Esmin, Esmax, doenc)
+    print( "Processing %s..." % fnamedefault )
     if do_enforce_energy_conservation:
         print( "Energy conservation is enabled." )
     else:
         print( "Energy conservation is disabled." )
-    print( "Processing %s..." % fnamedefault )
     print( "#%14s %21s %21s %21s %21s" % ("Generation", "N", "deltaN", "E", "deltaE") )
     print( "%15d %21.15g %21.15g %21.15e %21.15e" % (gen, Ntot, deltaN, Etot, deltaE) )
     plt.xscale("log")
@@ -302,8 +314,6 @@ def main(Ngen = 10,resume=0,**kwargs):
     except (KeyboardInterrupt, SystemExit):
         print '\n! Received keyboard interrupt, quitting threads.\n'
     print("Saving results to file...")
-    doenc = "_enc1" if do_enforce_energy_conservation else ""
-    fnamedefault = "E%.2g_N%.2g_s%g_Esmin%.2g_Esmax%.2g%s.npz" % (E0, Ngrid, s, Esmin, Esmax, doenc)
     np.savez(fnamedefault, Evec = Evec, E0 = E0, gen_list = gen_list, deltaN_list = deltaN_list, deltaE_list = deltaE_list, dNdE_list = dNdE_list, dNdE_rad_list = dNdE_rad_list, Ntot_list = Ntot_list, Etot_list = Etot_list, Emin = Emin, Emax = Emax, Ngrid = Ngrid, E0grid = E0grid, Esmin = Esmin, Esmax = Esmax, s = s, do_enforce_energy_conservation = do_enforce_energy_conservation)
 
 def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservation = 0):
@@ -458,7 +468,7 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservatio
         #
         plt.figure(3)
         plt.clf()
-        ngen = 310
+        ngen = 200
         resolution=[]
         photoncount=[]
         energyperlepton=[]
