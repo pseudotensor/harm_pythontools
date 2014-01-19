@@ -18,7 +18,7 @@ from numpy import array, arange, random
 from tvtk.api import tvtk
 from mayavi.scripts import mayavi2
 
-def single_type_ug():
+def single_type_ug_tetr():
     """Simple example showing how to create an unstructured grid
     consisting of cells of a single type.
     """
@@ -28,6 +28,21 @@ def single_type_ug():
                     ], 'f')
     tets = array([[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]])
     tet_type = tvtk.Tetra().cell_type
+    ug = tvtk.UnstructuredGrid(points=points)
+    ug.set_cells(tet_type, tets)
+    return ug
+
+def single_type_ug_hexa():
+    """Simple example showing how to create an unstructured grid
+    consisting of cells of a single type.
+    """
+    points = array([[0,0,0], [1,0,0], [1,1,0], [0,1,0], 
+                    [0,0,1], [1,0,1], [1,1,1], [0,1,1], # Hex
+                    [2,0,0], [3,0,0], [3,1,0], [2,1,0],
+                    [2,0,1], [3,0,1], [3,1,1], [2,1,1], # Hex
+                    ], 'f')
+    tets = array([[0, 1, 2, 3, 4, 5, 6, 7], [8, 9, 10, 11, 12, 13, 14, 15]])
+    tet_type = tvtk.Hexahedron().cell_type
     ug = tvtk.UnstructuredGrid(points=points)
     ug.set_cells(tet_type, tets)
     return ug
@@ -70,16 +85,22 @@ def save_xml(ug, file_name):
 
 # ----------------------------------------------------------------------
 # Create the unstructured grids and assign scalars and vectors.
-ug1 = single_type_ug()
+ug1 = single_type_ug_hexa()
 ug2 = mixed_type_ug()
-temperature = arange(0, 120, 10, 'd')
-velocity = random.randn(12, 3)
+temperature1 = arange(0, 160, 10, 'd')
+temperature2 = arange(0, 120, 10, 'd')
+velocity1 = random.randn(16, 3)
+velocity2 = random.randn(12, 3)
+temperature = temperature1
+velocity = velocity1
 for ug in ug1, ug2:
     ug.point_data.scalars = temperature
     ug.point_data.scalars.name = 'temperature'
     # Some vectors.
     ug.point_data.vectors = velocity
     ug.point_data.vectors.name = 'velocity'
+    temperature = temperature2
+    velocity = velocity2
 
 # Uncomment this to save the file to a VTK XML file.
 #save_xml(ug2, 'file.vtu')
