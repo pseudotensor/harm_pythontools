@@ -49,6 +49,44 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
+import h5py
+from mayavi import mlab
+def plot3danatoly():
+    #%run -i ~/py/mread/__init__.py
+    f = h5py.File('flds.tot.025','r')
+    mlab_dens = mlab.pipeline.scalar_field(f["dens"].value)
+    mlab.pipeline.volume(mlab_dens,vmin=0,vmax=4)
+    #field lines
+    u = f["bx"].value
+    v = f["by"].value
+    w = f["bz"].value
+    flow = mlab.flow(u, v, w, seed_scale=1,
+                              seed_resolution=5,integration_direction='both')
+
+def plot_harm_scaling(whichcode="harmrad",whichsystem="stampede",fntsize=20,dosavefig=1):
+    if whichcode == "harmrad":
+        if whichsystem == "stampede":
+            n_list = [16, 32, 512, 4096]
+            s_list = [89036, 176255, 2857894, 22515158]
+    n_list = np.array(n_list,dtype=np.float64)
+    s_list = np.array(s_list,dtype=np.float64)
+    plt.clf()
+    plt.plot(n_list, s_list/s_list[0]*n_list[0],"-s",lw=2,color="black")
+    n_array = np.linspace(1,1e4,100)
+    plt.plot(n_array, n_array,"k:")
+    plt.xscale("log")
+    plt.yscale("log")
+    plt.xlim(10,1e4)
+    plt.ylim(10,1e4)
+    plt.xlabel(r"${\rm Number\ of\ cores}$",fontsize=fntsize)
+    plt.ylabel(r"${\rm Speedup}$",fontsize=fntsize)
+    plt.grid()
+    ax = plt.gca()
+    for label in ax.get_xticklabels() + ax.get_yticklabels():
+        label.set_fontsize(fntsize)
+    plt.savefig("%s_%s_scaling.eps" % (whichcode, whichsystem),
+                bbox_inches='tight',pad_inches=0.06,dpi=300)
+    
 def plotcolorbarinfo(whichmap='jet',**kwargs):
     plotcolormapdata(cdict = cm.datad[whichmap])
 
@@ -8955,19 +8993,23 @@ def fhorvstime(ihor):
     return((ts,fs,md))
 
 def amax(arg1,arg2):
-    arr1 = np.array(arg1)
-    arr2 = np.array(arg2)
-    ret=np.zeros_like(arr1)
-    ret[arr1>=arr2]=arr1[arr1>=arr2]
-    ret[arr2>arr1]=arr2[arr2>arr1]
-    return(ret)
+    return(np.maximum(arg1,arg2))
+    # arr1 = np.array(arg1)
+    # arr2 = np.array(arg2)
+    # #create storage array of size that's largest of arr1 and arr2
+    # ret=np.zeros_like(arr1+arr2)
+    # ret[arr1>=arr2]=arr1[arr1>=arr2]
+    # ret[arr2>arr1]=arr2[arr2>arr1]
+    # return(ret)
 def amin(arg1,arg2):
-    arr1 = np.array(arg1)
-    arr2 = np.array(arg2)
-    ret=np.zeros_like(arr1)
-    ret[arr1<=arr2]=arr1[arr1<=arr2]
-    ret[arr2<arr1]=arr2[arr2<arr1]
-    return(ret)
+    return(np.minimum(arg1,arg2))
+    # arr1 = np.array(arg1)
+    # arr2 = np.array(arg2)
+    # #create storage array of size that's largest of arr1 and arr2
+    # ret=np.zeros_like(arr1+arr2)
+    # ret[arr1<=arr2]=arr1[arr1<=arr2]
+    # ret[arr2<arr1]=arr2[arr2<arr1]
+    # return(ret)
 
 def Tcalcud():
     global Tud, TudEM, TudMA
@@ -12331,6 +12373,18 @@ def sparthin(a):
     s = l-2*a*e 
     return(s)
 
+def Rz_relcorr(a,r):
+    risco=Risco(a)
+    #cap r from below so does not drop below risco
+    rcap = amax(r,risco)
+    lkcap = lk(a,rcap)
+    ekcap = ek(a,rcap)
+    Rz = (lkcap**2-a**2*(ekcap**2-1.))/r
+    return( Rz )
+
+def Tstar(a,r,hor):
+    return( Rz_relcorr(a,r) * hor**2 / r )
+    
 def getetaavg(fname,simnamelist):
     gd1 = np.loadtxt( fname, unpack = True, usecols = [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29] )
     #gd=gd1.view().reshape((-1,nx,ny,nz), order='F')
@@ -17953,20 +18007,20 @@ def svsth(f,nth=128,nphi=256,r=1.5):
 
 def plotsvsth(nth=128,nphi=256):
     import h5py
-    f = h5py.File('fhrs.006','r')
+    #f = h5py.File('fhrs.006','r')
     rlist = [1.5, 2, 2.5, 3, 3.5, 4, 4.5, 4.95]
     #rlist = [1.5, 2]
     rveclist = []
     splist = []
     ones = np.ones((nth),dtype=np.float64)
-    os.chdir("/scratch/gpfs/jgli/alpha60/forcefree_halfstarrlc/output")
+    #os.chdir("/scratch/gpfs/jgli/alpha60/forcefree_halfstarrlc/output")
     for rval in rlist:
         #multiply r by 0.5 to account for larger box size
         sp = svsth(f,nth=nth,nphi=nphi,r=0.5*rval)
         splist.append(sp)
         rveclist.append(0.5*rval*ones)
     th=np.linspace(0,np.pi,nth,False)+np.pi/(2.*nth)
-    os.chdir("/home/atchekho/run2/")
+    #os.chdir("/home/atchekho/run2/")
     np.savetxt("ff.txt", np.array([th] + splist).T, fmt="%g %g %g %g %g %g %g %g %g" ) 
                #fmt="%g %g %g")
     f.close()
