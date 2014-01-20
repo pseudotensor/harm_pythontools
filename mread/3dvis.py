@@ -1,4 +1,5 @@
 import matplotlib
+from mayavi.scripts import mayavi2
 matplotlib.use('WxAgg')
 matplotlib.interactive(True)
 from numpy import mgrid, empty, zeros, sin, cos, pi
@@ -40,8 +41,8 @@ def create_unstructured_grid(s=None,sname=None,v=None,vname=None,minr=1,maxr=20,
     maxi = iofr(maxr)
     rlist = np.linspace(minr,maxr,npts)
     ilist = iofr(rlist)
-    slc0 = lambda f: f[ilist,...]
-    slc1 = lambda f: f[:,ilist,...]
+    slc0 = lambda f: f[ilist,::4,::4]
+    slc1 = lambda f: f[:,ilist,::4,::4]
     # Compute Cartesian coordinates of the grid
     x = slc0(r*sin(h)*cos(ph))
     y = slc0(r*sin(h)*sin(ph))
@@ -96,7 +97,7 @@ def create_unstructured_grid(s=None,sname=None,v=None,vname=None,minr=1,maxr=20,
 
     return( ug )
     
-    
+@mayavi2.standalone    
 def visualize_data(doreload=1):
     grid3d("gdump.bin",use2d=1)
     rfd("fieldline9000.bin")
@@ -119,8 +120,8 @@ def visualize_data(doreload=1):
         # gy.grid_plane.axis = 'y'
         # gz = mlab.pipeline.grid_plane(d)
         # gz.grid_plane.axis = 'z'
-        iso = mlab.pipeline.iso_surface(d)
-        # vol = mlab.pipeline.volume(d,vmin=-4,vmax=-2)
+        #iso = mlab.pipeline.iso_surface(d)
+        vol = mlab.pipeline.volume(d,vmin=-4,vmax=-2)
     # iso.contour.maximum_contour = 75.0
     #vec = mlab.pipeline.vectors(d)
     #vec.glyph.mask_input_points = True
