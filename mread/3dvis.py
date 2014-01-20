@@ -34,16 +34,19 @@ def create_structured_grid(s=None,sname=None,v=None,vname=None,maxr=100):
 
     return( sg )
 
-def create_unstructured_grid(s=None,sname=None,v=None,vname=None,maxr=100):
+def create_unstructured_grid(s=None,sname=None,v=None,vname=None,minr=5,maxr=10):
+    mini = iofr(minr)*0
     maxi = iofr(maxr)
     # Compute Cartesian coordinates of the grid
-    x = (r*sin(h)*cos(ph))[:maxi]
-    y = (r*sin(h)*sin(ph))[:maxi]
-    z = (r*cos(h))[:maxi]
-
+    x = (r*sin(h)*cos(ph))[mini:maxi]
+    y = (r*sin(h)*sin(ph))[mini:maxi]
+    z = (r*cos(h))[mini:maxi]
     nx, ny, nz = z.shape
-    
-    ind = (ti+nx*(tj+tk*ny))[:maxi]
+
+    #ti, tj, tk = mgrid[0:nx,0:ny,0:nz]
+
+    ind = (ti+nx*(tj+tk*ny))[mini:maxi]
+
 
     # The actual points.
     pts = empty((3,) + z.shape, dtype=float)
@@ -52,7 +55,9 @@ def create_unstructured_grid(s=None,sname=None,v=None,vname=None,maxr=100):
     pts[2,...] = z
 
     num_points = pts.size/3
-    
+
+    #ind = np.arange(num_points).reshape(nx,ny,nz)
+
     # We reorder the points, scalars and vectors so this is as per VTK's
     # requirement of x first, y next and z last.
     pts = pts.T.reshape(num_points,3)
@@ -108,11 +113,11 @@ def visualize_data(doreload=1):
         # gz = mlab.pipeline.grid_plane(d)
         # gz.grid_plane.axis = 'z'
         iso = mlab.pipeline.iso_surface(d)
-        # vol = mlab.pipeline.volume(d)
+        # vol = mlab.pipeline.volume(d,vmin=-4,vmax=-2)
     # iso.contour.maximum_contour = 75.0
     #vec = mlab.pipeline.vectors(d)
     #vec.glyph.mask_input_points = True
     #vec.glyph.glyph.scale_factor = 1.5
     #move the camera so it is centered on (0,0,0)
     mlab.view(focalpoint=[0,0,0],distance=50)
-    #mlab.show()
+    mlab.show()
