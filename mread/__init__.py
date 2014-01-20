@@ -7299,7 +7299,7 @@ def rfd(fieldlinefilename,**kwargs):
     #Velocity components: u1, u2, u3, 
     #Cell-centered magnetic field components: B1, B2, B3, 
     #Face-centered magnetic field components multiplied by metric determinant: gdetB1, gdetB2, gdetB3
-    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,rho,lrho,ug,uu,uut,uu,B,uux,gdetB,rhor,r,h,ph,gdetF,fdbody,OmegaNS,AlphaNS,Bstag,defcoord,numheaderitems,numcolumns
+    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,rho,lrho,ug,uu,uut,uu,B,uux,gdetB,rhor,r,h,ph,ti,tj,tk,gdetF,fdbody,OmegaNS,AlphaNS,Bstag,defcoord,numheaderitems,numcolumns
     #read image
     if 'rho' in globals():
         del rho
@@ -7443,6 +7443,12 @@ def rfd(fieldlinefilename,**kwargs):
         phnew = np.zeros((nx,ny,nz),dtype=ph.dtype)
         rnew += r[:,:,0:1]
         hnew += h[:,:,0:1]
+        tinew = np.zeros((nx,ny,nz),dtype=ti.dtype)
+        tjnew = np.zeros((nx,ny,nz),dtype=tj.dtype)
+        tknew = np.zeros((nx,ny,nz),dtype=tk.dtype)
+        tinew += ti[:,:,0:1]
+        tjnew += tj[:,:,0:1]
+        tknew += np.arange(nz)[None,None,:]
         #compute size of phi wedge assuming dxdxp[3][3] is up to date
         phiwedge = dxdxp[3][3][0,0,0]*_dx3*nz
         a_phi = phiwedge/(2.*nz)+np.linspace(0,phiwedge,num=nz,endpoint=False)
@@ -7453,6 +7459,12 @@ def rfd(fieldlinefilename,**kwargs):
         r = rnew
         h = hnew
         ph = phnew
+        del ti
+        del tj
+        del tk
+        ti = tinew
+        tj = tjnew
+        tk = tknew
         gc.collect()
     #save file for Josh
     savenewgrid = kwargs.pop("savenewgrid",0)
