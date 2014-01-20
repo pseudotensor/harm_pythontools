@@ -34,22 +34,22 @@ def create_structured_grid(s=None,sname=None,v=None,vname=None,maxr=100):
 
     return( sg )
 
-def create_structured_grid(s=None,sname=None,v=None,vname=None,maxr=100):
+def create_unstructured_grid(s=None,sname=None,v=None,vname=None,maxr=100):
     maxi = iofr(maxr)
     # Compute Cartesian coordinates of the grid
     x = (r*sin(h)*cos(ph))[:maxi]
     y = (r*sin(h)*sin(ph))[:maxi]
     z = (r*cos(h))[:maxi]
 
-    ind = (ti+tj*ny+tk*ny*nz)[:maxi]
+    nx, ny, nz = z.shape
+    
+    ind = (ti+nx*(tj+tk*ny))[:maxi]
 
     # The actual points.
     pts = empty((3,) + z.shape, dtype=float)
     pts[0,...] = x
     pts[1,...] = y
     pts[2,...] = z
-
-    nx, ny, nz = z.shape
 
     num_points = pts.size/3
     
@@ -63,19 +63,16 @@ def create_structured_grid(s=None,sname=None,v=None,vname=None,maxr=100):
          ], 'd')
     
     tets[4:8] += nx*ny
-
+    #pdb.set_trace()
     #peel off a layer of one cell thick
     ind1 = ind[:nx-1,:ny-1,:].T.ravel()
 
-    #array of grid cells' vertices (8 vertices per cell)
-    ind8 = empty(int1.shape + (8,))
-
-    #define the array of cube's vertices
-    ind8[:,:] = (ind1[:,None] + tets[None,:]) % num_points
+    #define the array of cube's vertices of shape ((nx-1)*(ny-1)*nz,8)
+    tets_array = (ind1[:,None] + tets[None,:]) % num_points
         
     tet_type = tvtk.Hexahedron().cell_type
-    ug = tvtk.UnstructuredGrid(points=points)
-    ug.set_cells(tet_type, tets)
+    ug = tvtk.UnstructuredGrid(points=pts)
+    ug.set_cells(tet_type, tets_array)
 
     if s is not None:
         ug.point_data.scalars = s[:maxi].T.ravel()
@@ -85,26 +82,37 @@ def create_structured_grid(s=None,sname=None,v=None,vname=None,maxr=100):
         ug.point_data.vectors = vec.T.reshape(vec.size/3,3)
         ug.point_data.vectors.name = vname
 
-    return( sg )
+    return( ug )
     
     
 def visualize_data(doreload=1):
     grid3d("gdump.bin",use2d=1)
     rfd("fieldline9000.bin")
-    sg = create_structured_grid(s=lrho,sname="density",v=None,vname=None)
-    # Now visualize the data.
-    d = mlab.pipeline.add_dataset(sg)
-    gx = mlab.pipeline.grid_plane(d)
-    # gy = mlab.pipeline.grid_plane(d)
-    # gy.grid_plane.axis = 'y'
-    gz = mlab.pipeline.grid_plane(d)
-    gz.grid_plane.axis = 'z'
-    iso = mlab.pipeline.iso_surface(d)
-    #vol = mlab.pipeline.volume(d)
+    if 0:
+        sg = create_structured_grid(s=lrho,sname="density",v=None,vname=None)
+        # Now visualize the data.
+        d = mlab.pipeline.add_dataset(sg)
+        gx = mlab.pipeline.grid_plane(d)
+        # gy = mlab.pipeline.grid_plane(d)
+        # gy.grid_plane.axis = 'y'
+        gz = mlab.pipeline.grid_plane(d)
+        gz.grid_plane.axis = 'z'
+        iso = mlab.pipeline.iso_surface(d)
+    if 1:
+        sg = create_unstructured_grid(s=lrho,sname="density",v=None,vname=None)
+        # Now visualize the data.
+        d = mlab.pipeline.add_dataset(sg)
+        # gx = mlab.pipeline.grid_plane(d)
+        # gy = mlab.pipeline.grid_plane(d)
+        # gy.grid_plane.axis = 'y'
+        # gz = mlab.pipeline.grid_plane(d)
+        # gz.grid_plane.axis = 'z'
+        iso = mlab.pipeline.iso_surface(d)
+        # vol = mlab.pipeline.volume(d)
     # iso.contour.maximum_contour = 75.0
     #vec = mlab.pipeline.vectors(d)
     #vec.glyph.mask_input_points = True
     #vec.glyph.glyph.scale_factor = 1.5
     #move the camera so it is centered on (0,0,0)
-    mlab.view(focalpoint=[0,0,0],distance=20)
+    mlab.view(focalpoint=[0,0,0],distance=50)
     #mlab.show()
