@@ -1,7 +1,7 @@
 import matplotlib
 matplotlib.use('WxAgg')
 matplotlib.interactive(True)
-from numpy import mgrid, empty, sin, cos, pi
+from numpy import mgrid, empty, zeros, sin, cos, pi
 from tvtk.api import tvtk
 from mayavi import mlab
 
@@ -34,6 +34,60 @@ def create_structured_grid(s=None,sname=None,v=None,vname=None,maxr=100):
 
     return( sg )
 
+def create_structured_grid(s=None,sname=None,v=None,vname=None,maxr=100):
+    maxi = iofr(maxr)
+    # Compute Cartesian coordinates of the grid
+    x = (r*sin(h)*cos(ph))[:maxi]
+    y = (r*sin(h)*sin(ph))[:maxi]
+    z = (r*cos(h))[:maxi]
+
+    ind = (ti+tj*ny+tk*ny*nz)[:maxi]
+
+    # The actual points.
+    pts = empty((3,) + z.shape, dtype=float)
+    pts[0,...] = x
+    pts[1,...] = y
+    pts[2,...] = z
+
+    nx, ny, nz = z.shape
+
+    num_points = pts.size/3
+    
+    # We reorder the points, scalars and vectors so this is as per VTK's
+    # requirement of x first, y next and z last.
+    pts = pts.T.reshape(num_points,3)
+
+    tets = np.array(
+        [0, 1, nx+1, nx,   #bottom of cube
+         0, 1, nx+1, nx,   #will be top of cube (after addtion of nx*ny)
+         ], 'd')
+    
+    tets[4:8] += nx*ny
+
+    #peel off a layer of one cell thick
+    ind1 = ind[:nx-1,:ny-1,:].T.ravel()
+
+    #array of grid cells' vertices (8 vertices per cell)
+    ind8 = empty(int1.shape + (8,))
+
+    #define the array of cube's vertices
+    ind8[:,:] = (ind1[:,None] + tets[None,:]) % num_points
+        
+    tet_type = tvtk.Hexahedron().cell_type
+    ug = tvtk.UnstructuredGrid(points=points)
+    ug.set_cells(tet_type, tets)
+
+    if s is not None:
+        ug.point_data.scalars = s[:maxi].T.ravel()
+        ug.point_data.scalars.name = sname
+    if v is not None:
+        vec = v[:,:maxi]
+        ug.point_data.vectors = vec.T.reshape(vec.size/3,3)
+        ug.point_data.vectors.name = vname
+
+    return( sg )
+    
+    
 def visualize_data(doreload=1):
     grid3d("gdump.bin",use2d=1)
     rfd("fieldline9000.bin")
