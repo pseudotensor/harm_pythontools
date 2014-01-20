@@ -35,18 +35,17 @@ def create_structured_grid(s=None,sname=None,v=None,vname=None,maxr=100):
 
     return( sg )
     
-def create_unstructured_grid(s=None,sname=None,v=None,vname=None,minr=1,maxr=20,npts=10):
+def create_unstructured_grid(s=None,sname=None,v=None,vname=None,minr=1,maxr=20,npts=10,dj=4,dk=4):
     if minr < rhor: minr = rhor
     mini = iofr(minr)
     maxi = iofr(maxr)
     rlist = np.linspace(minr,maxr,npts)
     ilist = iofr(rlist)
-    slc0 = lambda f: f[ilist,::4,::4]
-    slc1 = lambda f: f[:,ilist,::4,::4]
+    slc = lambda f: f[...,ilist,::dj,::dk]
     # Compute Cartesian coordinates of the grid
-    x = slc0(r*sin(h)*cos(ph))
-    y = slc0(r*sin(h)*sin(ph))
-    z = slc0(r*cos(h))
+    x = slc(r*sin(h)*cos(ph))
+    y = slc(r*sin(h)*sin(ph))
+    z = slc(r*cos(h))
     nx, ny, nz = z.shape
 
     #ti, tj, tk = mgrid[0:nx,0:ny,0:nz]
@@ -88,10 +87,10 @@ def create_unstructured_grid(s=None,sname=None,v=None,vname=None,minr=1,maxr=20,
     ug.set_cells(tet_type, tets_array)
 
     if s is not None:
-        ug.point_data.scalars = slc0(s).T.ravel()
+        ug.point_data.scalars = slc(s).T.ravel()
         ug.point_data.scalars.name = sname
     if v is not None:
-        vec = slc1(v)
+        vec = slc(v)
         ug.point_data.vectors = vec.T.reshape(vec.size/3,3)
         ug.point_data.vectors.name = vname
 
