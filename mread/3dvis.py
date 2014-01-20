@@ -33,20 +33,27 @@ def create_structured_grid(s=None,sname=None,v=None,vname=None,maxr=100):
         sg.point_data.vectors.name = vname
 
     return( sg )
-
-def create_unstructured_grid(s=None,sname=None,v=None,vname=None,minr=5,maxr=10):
-    mini = iofr(minr)*0
+    
+def create_unstructured_grid(s=None,sname=None,v=None,vname=None,minr=1,maxr=20,npts=10):
+    if minr < rhor: minr = rhor
+    mini = iofr(minr)
     maxi = iofr(maxr)
+    rlist = np.linspace(minr,maxr,npts)
+    ilist = iofr(rlist)
+    slc0 = lambda f: f[ilist,...]
+    slc1 = lambda f: f[:,ilist,...]
     # Compute Cartesian coordinates of the grid
-    x = (r*sin(h)*cos(ph))[mini:maxi]
-    y = (r*sin(h)*sin(ph))[mini:maxi]
-    z = (r*cos(h))[mini:maxi]
+    x = slc0(r*sin(h)*cos(ph))
+    y = slc0(r*sin(h)*sin(ph))
+    z = slc0(r*cos(h))
     nx, ny, nz = z.shape
 
     #ti, tj, tk = mgrid[0:nx,0:ny,0:nz]
+    ti = np.arange(nx)[:,None,None]
+    tj = np.arange(ny)[None,:,None]
+    tk = np.arange(nz)[None,None,:]
 
-    ind = (ti+nx*(tj+tk*ny))[mini:maxi]
-
+    ind = (ti+nx*(tj+tk*ny))
 
     # The actual points.
     pts = empty((3,) + z.shape, dtype=float)
@@ -80,10 +87,10 @@ def create_unstructured_grid(s=None,sname=None,v=None,vname=None,minr=5,maxr=10)
     ug.set_cells(tet_type, tets_array)
 
     if s is not None:
-        ug.point_data.scalars = s[:maxi].T.ravel()
+        ug.point_data.scalars = slc0(s).T.ravel()
         ug.point_data.scalars.name = sname
     if v is not None:
-        vec = v[:,:maxi]
+        vec = slc1(v)
         ug.point_data.vectors = vec.T.reshape(vec.size/3,3)
         ug.point_data.vectors.name = vname
 

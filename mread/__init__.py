@@ -9240,7 +9240,7 @@ def iofr(rval):
         res[rval>r[nx-1,0,0]]=res[rval>r[nx-1,0,0]]*0+nx-1
     else:
         res = np.float64(res)
-    return(np.floor(res+0.5))
+    return(np.floor(res+0.5).astype(int))
 
 def plotqtyvstime(qtymem,ihor=None,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None,epsetaj=None,epsFm30=None,sigma=None, usegaussianunits=False, aphi_j_val=0,showextraeta=False,plotFM30=False,dobob=0):
     global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
