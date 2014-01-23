@@ -154,6 +154,24 @@ do
     then
         ln -s $manydir/$mydir/dumps/gdump.THETAROT0.bin .
     fi
+    if [ -e $manydir/$mydir/coordparms.dat ]
+    then
+        cd ../
+        ln -s $manydir/$mydir/coordparms.dat .
+        cd $dumpsdir
+    fi
+    if [ -e $manydir/$mydir/dimensions.txt ]
+    then
+        cd ../
+        ln -s $manydir/$mydir/dimensions.txt .
+        cd $dumpsdir
+    fi
+    if [ -e $manydir/$mydir/nprlistinfo.dat ]
+    then
+        cd ../
+        ln -s $manydir/$mydir/nprlistinfo.dat .
+        cd $dumpsdir
+    fi
 done
 
 

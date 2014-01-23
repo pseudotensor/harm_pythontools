@@ -2565,7 +2565,7 @@ def isradmodelA(modelname):
         return(0)
     #
 def isradmodelB(modelname): # for lower densities with Mdot\sim 100Ledd/c^2
-    if modelname=="runrad1torusfixed" or modelname=="runrada0" or modelname=="runnorada0" or modelname=="runnorada9375" or modelname=="rad1" or modelname=="radma0.8" or modelname=="rada0.8" or modelname=="rada0.94":
+    if modelname=="runrad1torusfixed" or modelname=="runrada0" or modelname=="runnorada0" or modelname=="runnorada9375" or modelname=="rad1" or modelname=="radma0.8" or modelname=="rada0.8" or modelname=="rada0.94" or modelname=="radtest1" or modelname=="radtest2":
         return(1)
     else:
         return(0)
@@ -2763,7 +2763,7 @@ def getdefaulttimes1():
     #
     #if modelname=="rad1" or modelname=="radthin1" or modelname=="radthin2":
     if isradmodel(modelname):
-        defaultfti=3000
+        defaultfti=300
         defaultftf=1e4
     #
     return defaultfti,defaultftf
