@@ -27829,15 +27829,15 @@ def harmradplot5():
         newy[:,ny-1::-1,:]=-myy[:,0:ny,:]
         newz[:,ny:2*ny,:]=myz[:,0:ny,:]
         newz[:,ny-1::-1,:]=myz[:,0:ny,:]
-        newU[:,ny:2*ny,:]=-TudRAD[1,0][:,0:ny,:]
-        newU[:,ny-1::-1,:]=-TudRAD[1,0][:,0:ny,:]
-        #newU[:,ny:2*ny,:]=TudRAD[1,0][:,0:ny,:]/TudRAD[0,0][:,0:ny,:]
-        #newU[:,ny-1::-1,:]=TudRAD[1,0][:,0:ny,:]/TudRAD[0,0][:,0:ny,:]
+        newU[:,ny:2*ny,:]=-TudRAD[1,0][:,0:ny,:]*np.sqrt(gv3[1,1][0,0:ny,:])
+        newU[:,ny-1::-1,:]=-TudRAD[1,0][:,0:ny,:]*np.sqrt(gv3[1,1][0,0:ny,:])
+        #newU[:,ny:2*ny,:]=TudRAD[1,0][:,0:ny,:]/TudRAD[0,0][:,0:ny,:]*np.sqrt(gv3[1,1][0,0:ny,:])
+        #newU[:,ny-1::-1,:]=TudRAD[1,0][:,0:ny,:]/TudRAD[0,0][:,0:ny,:]*np.sqrt(gv3[1,1][0,0:ny,:])
         #
-        newV[:,ny:2*ny,:]=-TudRAD[2,0][:,0:ny,:]
-        newV[:,ny-1::-1,:]=+TudRAD[2,0][:,0:ny,:]
-        #newV[:,ny:2*ny,:]=-TudRAD[2,0][:,0:ny,:]/TudRAD[0,0][:,0:ny,:]
-        #newV[:,ny-1::-1,:]=+TudRAD[2,0][:,0:ny,:]/TudRAD[0,0][:,0:ny,:]
+        newV[:,ny:2*ny,:]=-TudRAD[2,0][:,0:ny,:]*np.sqrt(gv3[2,2][0,0:ny,:])
+        newV[:,ny-1::-1,:]=+TudRAD[2,0][:,0:ny,:]*np.sqrt(gv3[2,2][0,0:ny,:])
+        #newV[:,ny:2*ny,:]=-TudRAD[2,0][:,0:ny,:]/TudRAD[0,0][:,0:ny,:]*np.sqrt(gv3[2,2][0,0:ny,:])
+        #newV[:,ny-1::-1,:]=+TudRAD[2,0][:,0:ny,:]/TudRAD[0,0][:,0:ny,:]*np.sqrt(gv3[2,2][0,0:ny,:])
     #
     if 1==1:
         for jj in np.arange(0,ny):
