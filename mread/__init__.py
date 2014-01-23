@@ -5818,9 +5818,9 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         #
         print("levs") ; sys.stdout.flush()
         print(levs) ; sys.stdout.flush()
-        # if for some reason no levels, avoid failure by setting as single zero level
+        # if for some reason no levels, avoid failure by setting as single 1 level (not zero in case because field small)
         if(levs.shape[0]==0):
-            levs=[0]
+            levs=[1.0]
         cset2 = ax.contour(iaphi,linewidths=lweightaphi,colors=inputcoloraphi, extent=extent,hold='on',origin='lower',levels=levs)
         if doaphicont is not None:
             #cset3 = ax.contour(iaphi,linewidths=4.0,colors='#00aa00', extent=extent,hold='on',origin='lower',levels=(doaphicont,))
