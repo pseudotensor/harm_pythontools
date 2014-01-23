@@ -43,7 +43,7 @@ def setmplconfigpath(uniquenum=None):
     #
     # SUPERNOEMARK: below inapplicable to Nautilus for some reason.  Makes Nautilus fail to find some packages if MPLCONFIGDIR not unset.
     #
-    ISNAUTILUS=0
+    ISNAUTILUS=1 # sometimes physics-179.umd.edu needs this for one file for some reason. (#11 out of 16 usually)
     #
     if ISNAUTILUS==1:
         return
@@ -5125,7 +5125,7 @@ def remap2unir(rinner=None,router=None,size=None,iin=None,iout=None,result0=None
 # compute integrated optical depth
 def compute_taurad():
         #
-        taurad1=uu[0]*(KAPPAUSER+KAPPAESUSER)*_dx1*np.sqrt(np.fabs(gv3[1,1]))
+        taurad1=(KAPPAUSER+KAPPAESUSER)*_dx1*np.sqrt(np.fabs(gv3[1,1]))/(2.0*uu[0])
         # FREE PARAMETER:
         radiussettau1zero=80
         taurad1[r[:,0,0]>radiussettau1zero,:,:]=0 # to get rid of parts of flow that aren't in steady-state and wouldn't have contributed
@@ -5134,16 +5134,19 @@ def compute_taurad():
         print(taurad1[:,0,0]) ; sys.stdout.flush()
         print("r") ; sys.stdout.flush()
         print(r[:,0,0]) ; sys.stdout.flush()
+        ########################### taurad1 (i.e. from small radius)
         taurad1integrated=np.cumsum(taurad1,axis=0)
         print("taurad1integrated") ; sys.stdout.flush()
         print(taurad1integrated[:,0,0]) ; sys.stdout.flush()
         #
+        ########################### taurad1flip (i.e. from large radius)
         taurad1flip=taurad1[::-1,:,:]
         taurad1flipintegrated=np.cumsum(taurad1flip,axis=0)
         taurad1flipintegrated=taurad1flipintegrated[::-1,:,:]
         print("taurad1flipintegrated") ; sys.stdout.flush()
         print(taurad1flipintegrated[:,0,0]) ; sys.stdout.flush()
         #
+        ########################### taurad2 (from theta=0 pole)
         taurad2=uu[0]*(KAPPAUSER+KAPPAESUSER)*_dx2*np.sqrt(np.fabs(gv3[2,2]))
         taurad2integrated=np.cumsum(taurad2,axis=1)
 #        for kk in np.arange(0,nz):
@@ -5151,17 +5154,22 @@ def compute_taurad():
 #        for jj in np.arange(ny/2,ny):
 #            taurad2integrated[:,jj,:]=0 #taurad2integrated[:,ny/2,:]
         #
+        ########################### taurad2flip (from theta=pi pole)
         taurad2flip=taurad2[:,::-1,:]
         taurad2flipintegrated=np.cumsum(taurad2flip,axis=1)
         taurad2flipintegrated=taurad2flipintegrated[:,::-1,:]
+        ########################### merge taurad2's
         for jj in np.arange(0,ny/2):
             taurad2flipintegrated[:,jj,:]=taurad2integrated[:,jj,:]
         for jj in np.arange(ny/2,ny):
             taurad2integrated[:,jj,:]=taurad2flipintegrated[:,jj,:]
         #
+        ########################### taurad3
         taurad3=uu[0]*(KAPPAUSER+KAPPAESUSER)*_dx3*np.sqrt(np.fabs(gv3[3,3]))
         #
+        # so tauradintegrated (final version) is optical depth integrated from large radii and away from pole. 
         tauradintegrated=np.maximum(taurad1flipintegrated,taurad2integrated)
+        #
         return(taurad1integrated,taurad1flipintegrated,taurad2integrated,taurad2flipintegrated,tauradintegrated)
         # use primarily: taurad1flipintegrated taurad2integrated and can use and'ed version
 
@@ -8058,20 +8066,20 @@ def getkappas(gotrad):
 def pow(x,n):
     return(x**n)
 def KAPPA_ES_CODE(rhocode,Tcode):
-    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,Leddcode,Mdoteddcode,ueddcode,beddcode
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
     y=(0.2*(1.0+XFACT)/OPACITYBAR)
     return(y)
 def KAPPA_FF_CODE(rhocode,Tcode):
-    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,Leddcode,Mdoteddcode,ueddcode,beddcode
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
     y=(1.0E23*ZATOM*ZATOM/(MUE*MUI)*(rhocode*RHOBAR)*pow(Tcode*TEMPBAR,-7.0/2.0)/OPACITYBAR)
     return(y)
 def KAPPA_BF_CODE(rhocode,Tcode):
-    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,Leddcode,Mdoteddcode,ueddcode,beddcode
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
     y=(1.0E25*ZATOM*(1.0+XFACT)*(rhocode*RHOBAR)*pow(Tcode*TEMPBAR,-7.0/2.0)/OPACITYBAR)
     return(y)
 
 def rddims(gotrad):
-    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,Leddcode,Mdoteddcode,ueddcode,beddcode
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
     if(gotrad==1):
         # then also get radiation constants
         fname= "dimensions.txt"
@@ -25579,7 +25587,7 @@ def mkavgfigs():
         global rho,rholab,ug,B,gdetB,Erf,urad,uradu,bsq,mu,ud,uu,beta,betatot #,uutrue
         global KAPPAUSER,KAPPAESUSER,tauradintegrated
         #
-        global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,Leddcode,Mdoteddcode,ueddcode,beddcode
+        global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
         if gotrad==1:
             rddims()
         else:
@@ -26366,7 +26374,7 @@ def mkavgfigs():
         global rho,rholab,ug,B,gdetB,Erf,urad,uradu,bsq,mu,ud,uu,beta,betatot
         global KAPPAUSER,KAPPAESUSER,tauradintegrated
         #
-        global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,Leddcode,Mdoteddcode,ueddcode,beddcode
+        global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
         if gotrad==1:
             rddims()
         #
