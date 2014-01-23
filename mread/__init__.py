@@ -6507,7 +6507,7 @@ def mkthrad(loadq=1,qty=None,filenum=1,fileletter="a",logvalue=1,radius=4,pllabe
     if logvalue==1:
         fun0 = np.log10(np.fabs(qty)+1E-30)
     else:
-        fun0 = qty
+        fun0 = np.copy(qty)
     #
     if maxbsqorho is not None or maxbsqou is not None:
         (mintoplot,maxtoplot)=setminmax4mk(logvalue=logvalue,fun0=fun0,which=2,bsqorho=bsqorho,bsqou=bsqou,maxbsqorho=maxbsqorho,maxbsqou=maxbsqou)
@@ -8054,13 +8054,15 @@ def getkappas(gotrad):
         TEMPMIN=(TEMPMINKELVIN/TEMPBAR)
         # ideal gas assumed for Tgas
         # code pg
-        pg=(gam-1.0)*ugclean # use clean to keep pg low and Tgas will have floor like below
+        pg=(gam-1.0)*ug  #clean # use clean to keep pg low and Tgas will have floor like below  # no, need to use what was in simulation to be consistent with simulation's idea of what optical depth was
+        # and of used ugclean above, then in funnel temperature would be very small and kappaff would be huge.
+        #
         prad=(4.0/3.0-1.0)*urad
         # code Tgas for ideal gas
         Tgas=pg/rho
-        # use rhoclean to keep kappa low.
-        KAPPAUSER=(rhoclean*KAPPA*KAPPA_FF_CODE(rhoclean,Tgas+TEMPMIN))
-        KAPPAESUSER=(rhoclean*KAPPAES*KAPPA_ES_CODE(rhoclean,Tgas))
+        # use rho to keep kappa low.
+        KAPPAUSER=(rho*KAPPA*KAPPA_FF_CODE(rho,Tgas+TEMPMIN))
+        KAPPAESUSER=(rho*KAPPAES*KAPPA_ES_CODE(rho,Tgas))
 
 
 def pow(x,n):
@@ -17466,42 +17468,42 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     # THESE ARE NOW UPSILON RATHER THAN phibh[Gaussian,halfflux] due to factor of 0.2
     # normalized to local Mdot
     # choose fstot below so no effect of sign on flux as wanted for Upsilon since sign has no physical effect except through reconnection issues
-    phibh=(fstot[:,ihorusemag]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotfinavg**0.5
+    phibh=(fstot[:,ihorusemag]/2.0)*(0.2*np.sqrt(4.0*np.pi))/(np.fabs(mdotfinavg)+1E-30)**0.5
     #
-    phirdiskin=(fsin[:,iofr(rdiskin)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotinrdiskinfinavg**0.5
-    phirdiskout=(fsin[:,iofr(rdiskout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotinrdiskoutfinavg**0.5
+    phirdiskin=(fsin[:,iofr(rdiskin)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/(np.fabs(mdotinrdiskinfinavg)+1E-30)**0.5
+    phirdiskout=(fsin[:,iofr(rdiskout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/(np.fabs(mdotinrdiskoutfinavg)+1E-30)**0.5
     #
     # normalized to BH Mdot (so kinda non-local, but magnetic flux in jet mostly conserved from hole to large radii)
-    phij=(phiabsj_mu1[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotfinavg**0.5
+    phij=(phiabsj_mu1[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/(np.fabs(mdotfinavg)+1E-30)**0.5
     #
     # normalize wind by its own Mdotout so always well-defined and co-spatial-local normalization
-    phimwin=(phiabsj_mumax1m[:,iofr(rjetin)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotmwinfinavg**0.5    #mdotfinavg**0.5
-    phimwout=(phiabsj_mumax1m[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotmwoutfinavg**0.5    #mdotfinavg**0.5
+    phimwin=(phiabsj_mumax1m[:,iofr(rjetin)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/(np.fabs(mdotmwinfinavg)+1E-30)**0.5    #mdotfinavg)+1E-30)**0.5
+    phimwout=(phiabsj_mumax1m[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/(np.fabs(mdotmwoutfinavg)+1E-30)**0.5    #mdotfinavg)+1E-30)**0.5
     #mdotmwinfinavg mdotmwoutfinavg
     #mdotwinfinavg mdotwoutfinavg
     # mdotinrdiskininiavg  mdotinrdiskoutiniavg
     #
     #
-    phiwin=(phiabsj_mumax1[:,iofr(rdiskin)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotwinfinavg**0.5    #mdotfinavg**0.5
-    phiwout=(phiabsj_mumax1[:,iofr(rdiskout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotwoutfinavg**0.5  #mdotfinavg**0.5
+    phiwin=(phiabsj_mumax1[:,iofr(rdiskin)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/(np.fabs(mdotwinfinavg)+1E-30)**0.5    #mdotfinavg)+1E-30)**0.5
+    phiwout=(phiabsj_mumax1[:,iofr(rdiskout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/(np.fabs(mdotwoutfinavg)+1E-30)**0.5  #mdotfinavg)+1E-30)**0.5
     #
-    phijn=(phiabsj_n_mu1[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotfinavg**0.5
-    phijs=(phiabsj_s_mu1[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotfinavg**0.5
+    phijn=(phiabsj_n_mu1[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/(np.fabs(mdotfinavg)+1E-30)**0.5
+    phijs=(phiabsj_s_mu1[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/(np.fabs(mdotfinavg)+1E-30)**0.5
     #
-    phibh2=(fstot[:,ihorusemag]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotiniavg**0.5
-    phirdiskin2=(fsin[:,iofr(rdiskin)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotinrdiskininiavg**0.5
-    phirdiskout2=(fsin[:,iofr(rdiskout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotinrdiskoutiniavg**0.5
+    phibh2=(fstot[:,ihorusemag]/2.0)*(0.2*np.sqrt(4.0*np.pi))/(np.fabs(mdotiniavg)+1E-30)**0.5
+    phirdiskin2=(fsin[:,iofr(rdiskin)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/(np.fabs(mdotinrdiskininiavg)+1E-30)**0.5
+    phirdiskout2=(fsin[:,iofr(rdiskout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/(np.fabs(mdotinrdiskoutiniavg)+1E-30)**0.5
     #
-    phij2=(phiabsj_mu1[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotiniavg**0.5
-    phimwin2=(phiabsj_mumax1m[:,iofr(rjetin)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotmwininiavg**0.5    #mdotiniavg**0.5
-    phimwout2=(phiabsj_mumax1m[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotmwoutiniavg**0.5 #mdotiniavg**0.5
-    phiwin2=(phiabsj_mumax1[:,iofr(rdiskin)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotwininiavg**0.5    #mdotiniavg**0.5
-    phiwout2=(phiabsj_mumax1[:,iofr(rdiskout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotwoutiniavg**0.5 #mdotiniavg**0.5
+    phij2=(phiabsj_mu1[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/(np.fabs(mdotiniavg)+1E-30)**0.5
+    phimwin2=(phiabsj_mumax1m[:,iofr(rjetin)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/(np.fabs(mdotmwininiavg)+1E-30)**0.5    #mdotiniavg**0.5
+    phimwout2=(phiabsj_mumax1m[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/(np.fabs(mdotmwoutiniavg)+1E-30)**0.5 #mdotiniavg**0.5
+    phiwin2=(phiabsj_mumax1[:,iofr(rdiskin)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/(np.fabs(mdotwininiavg)+1E-30)**0.5    #mdotiniavg**0.5
+    phiwout2=(phiabsj_mumax1[:,iofr(rdiskout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/(np.fabs(mdotwoutiniavg)+1E-30)**0.5 #mdotiniavg**0.5
     #
-    #phijn2=(phiabsj_n_mu2[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotiniavg**0.5
-    #phijs2=(phiabsj_s_mu2[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotiniavg**0.5
-    phijn2=(phiabsj_n_mu1[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotiniavg**0.5
-    phijs2=(phiabsj_s_mu1[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotiniavg**0.5
+    #phijn2=(phiabsj_n_mu2[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/(np.fabs(mdotiniavg)+1E-30)**0.5
+    #phijs2=(phiabsj_s_mu2[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/(np.fabs(mdotiniavg)+1E-30)**0.5
+    phijn2=(phiabsj_n_mu1[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/(np.fabs(mdotiniavg)+1E-30)**0.5
+    phijs2=(phiabsj_s_mu1[:,iofr(rjetout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/(np.fabs(mdotiniavg)+1E-30)**0.5
     #
     if(1 and iti>fti):
         #use phi averaged over the same time interval for iti<t<=itf
@@ -25588,10 +25590,7 @@ def mkavgfigs():
         global KAPPAUSER,KAPPAESUSER,tauradintegrated
         #
         global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
-        if gotrad==1:
-            rddims()
-        else:
-            rddimsfake()
+        rddims(gotrad)
         #
         rho=avg_rho
         KAPPAUSER=avg_KAPPAUSER
@@ -26375,8 +26374,7 @@ def mkavgfigs():
         global KAPPAUSER,KAPPAESUSER,tauradintegrated
         #
         global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
-        if gotrad==1:
-            rddims()
+        rddims(gotrad)
         #
         rho=avg_rho
         KAPPAUSER=avg_KAPPAUSER
