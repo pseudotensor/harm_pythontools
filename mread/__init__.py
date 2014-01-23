@@ -2565,13 +2565,19 @@ def isradmodelA(modelname):
         return(0)
     #
 def isradmodelB(modelname): # for lower densities with Mdot\sim 100Ledd/c^2
-    if modelname=="runrad1torusfixed" or modelname=="runrada0" or modelname=="runnorada0" or modelname=="runnorada9375" or modelname=="rad1":
+    if modelname=="runrad1torusfixed" or modelname=="runrada0" or modelname=="runnorada0" or modelname=="runnorada9375" or modelname=="rad1" or modelname=="radma0.8" or modelname=="rada0.8" or modelname=="rada0.94":
+        return(1)
+    else:
+        return(0)
+    #
+def isradmodelC(modelname): # for lower densities with Mdot\sim 2Ledd/c^2
+    if modelname=="radthin1" or modelname=="radthin2":
         return(1)
     else:
         return(0)
     #
 def isradmodel(modelname):
-    if isradmodelA(modelname) or isradmodelB(modelname):
+    if isradmodelA(modelname) or isradmodelB(modelname) or isradmodelC(modelname):
         return(1)
     else:
         return(0)
@@ -2755,8 +2761,9 @@ def getdefaulttimes1():
         defaultfti=300
         defaultftf=1e4
     #
-    if modelname=="rad1":
-        defaultfti=4000
+    #if modelname=="rad1" or modelname=="radthin1" or modelname=="radthin2":
+    if isradmodel(modelname):
+        defaultfti=3000
         defaultftf=1e4
     #
     return defaultfti,defaultftf
@@ -2829,8 +2836,9 @@ def getdefaulttimes2():
         defaultfti=300
         defaultftf=1e4
     #
-    if modelname=="rad1":
-        defaultfti=4000
+    #if modelname=="rad1":
+    if isradmodel(modelname):
+        defaultfti=3000
         defaultftf=1e4
     #
     return defaultfti,defaultftf
@@ -5465,7 +5473,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
     streamtype=1
     #
     if dorho:
-        lrho=np.log10(rho+1E-30)
+        lrho=np.log10(rho/rhoeddcode+1E-30)
         dologz=1
         qty=lrho
         doqty=1
@@ -5475,13 +5483,13 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         qty=lentropy
         doqty=1
     elif dobsq:
-        lbsq=np.log10(bsq*0.5+1E-30)
+        lbsq=np.log10(bsq*0.5/ueddcode+1E-30)
         dologz=0 # SUPERGOD
         qty=lbsq # SUPERGOD
         #qty=gdet*TudEM[1,0] # SUPERGOD
         doqty=1
     elif doErf:
-        lErf=np.log10(Erf+1E-30)
+        lErf=np.log10(Erf/ueddcode+1E-30)
         dologz=1
         qty=lErf
         doqty=1
@@ -5735,7 +5743,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         #
         if dovarylw:
             iibetatot = reinterp(0.5*bsq/((gam-1)*ug+(4.0/3.0-1)*urad),extent,ncell,domask=0)
-            ibsqorho = reinterp(bsq/rho,extent,ncell,domask=0)
+            ibsqorho = reinterp(bsq/rho,extent,ncell,domask=1)
             ibsqo2rho = 0.5 * ibsqorho
         xi = np.linspace(extent[0], extent[1], ncell)
         yi = np.linspace(extent[2], extent[3], ncell)
@@ -5825,8 +5833,8 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
     # goes on top:
     print("HERE9a") ; sys.stdout.flush()
     if dotaurad:
-        ax.contour(itaurad1flipintegrated,linewidths=4,colors='cyan', extent=extent,hold='on',origin='lower',levels=(1,))
-        ax.contour(itaurad2integrated,linewidths=4,colors='red', extent=extent,hold='on',origin='lower',levels=(1,))
+        #ax.contour(itaurad1flipintegrated,linewidths=4,colors='cyan', extent=extent,hold='on',origin='lower',levels=(1,))
+        ax.contour(itaurad2integrated,linewidths=4,colors='cyan', extent=extent,hold='on',origin='lower',levels=(1,))
         #ax.contour(itaurad2flipintegrated,linewidths=4,colors='red', extent=extent,hold='on',origin='lower',levels=(1,))
     print("HERE9b") ; sys.stdout.flush()
     if dobsqorholine:
@@ -5878,7 +5886,7 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
     streamtype=1
     #
     if dorho:
-        lrho=np.log10(rho+1E-30)
+        lrho=np.log10(rho/rhoeddcode+1E-30)
         dologz=1
         qty=lrho
         doqty=1
@@ -5888,12 +5896,12 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
         qty=lentropy
         doqty=1
     elif dobsq:
-        lbsq=np.log10(bsq*0.5+1E-30)
+        lbsq=np.log10(bsq*0.5/ueddcode+1E-30)
         dologz=1
         qty=lbsq
         doqty=1
     elif doErf:
-        lErf=np.log10(Erf+1E-30)
+        lErf=np.log10(Erf/ueddcode+1E-30)
         dologz=1
         qty=lErf
         doqty=1
@@ -5957,7 +5965,7 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
         iBy = reinterpxy(Bynorm,extent,ncell,domask=1)
         iibeta = reinterpxy(0.5*bsq/(gam-1)/ug,extent,ncell,domask=0)
         iibetatot = reinterpxy(0.5*bsq/((gam-1)*ug+(4.0/3.0-1)*urad),extent,ncell,domask=0)
-        ibsqorho = reinterpxy(bsq/rho,extent,ncell,domask=0)
+        ibsqorho = reinterpxy(bsq/rho,extent,ncell,domask=1)
         ibsqo2rho = 0.5 * ibsqorho
         xi = np.linspace(extent[0], extent[1], ncell)
         yi = np.linspace(extent[2], extent[3], ncell)
@@ -7906,8 +7914,8 @@ def rfd(fieldlinefilename,**kwargs):
         gdetB[0]=0*gdetB[0]
     #
     #
-    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
-    global KAPPAUSER,KAPPAESUSER
+    ######################################################
+    # get any radiation variables
     #
     global gotrad
     gotrad=0
@@ -7928,24 +7936,15 @@ def rfd(fieldlinefilename,**kwargs):
         minErf=np.min(Erf)
         print("maxErf=%g minErf=%g" % (maxErf,minErf)) ; sys.stdout.flush()
         #
-        rddims()
-        #
-        # now compute auxillary opacity related quantities since only otherwise in raddump???? files and not in fieldline files
-        KAPPA=1.0
-        KAPPAES=1.0
-        # KORALTODO: Put a lower limit on T~1E4K so not overly wrongly opaque in spots where u_g->0 anomologously?
-        T1E4K=(1.0E4/TEMPBAR)
-        # ideal gas assumed for Tgas
-        # code pg
-        pg=(gam-1.0)*ug
-        prad=(4.0/3.0-1.0)*urad
-        # code Tgas
-        Tgas=pg/rho
-        KAPPAUSER=(rho*KAPPA*KAPPA_FF_CODE(rho,Tgas+T1E4K))
-        KAPPAESUSER=(rho*KAPPAES*KAPPA_ES_CODE(rho,Tgas))
-        #
+    else:
+        Erf=rho*0
+        urad=Erf*0
+        uradd=uu*0
+        uradu=uu*0
     #
     #
+    #
+    #############################################################################################
     # see if THETAROT non-zero so need to rotate and transform data
     global nzgdump
     #
@@ -8006,60 +8005,150 @@ def rfd(fieldlinefilename,**kwargs):
     else:
         print("No rdtrans for file=%s with THETAROT=%g" % (fname,THETAROT)) ;  sys.stdout.flush()
     #
+    #
+    #############################################################################################
     # compute extra things
     #
     #
     ######################
-    rfdprocess(gotgdetB=gotgdetB,gotrad=gotrad)
+    rfdprocess(gotgdetB=gotgdetB)
+    #
+    #############################################################################################
+    #### now do radiation-dependent stuff
+    rddims(gotrad)
+    getkappas(gotrad)
+    #
     #
     print("rfd(after rfdprocess) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
     #
     #
 
+def getkappas(gotrad):
+    global KAPPAUSER,KAPPAESUSER
+    if(gotrad==0):
+        KAPPA=1.0
+        KAPPAES=1.0
+        # Below should be as same in global.depmnemonics.rad.h
+        TEMPMINKELVIN=1.0E-10 # Kelvin
+        TEMPMIN=(TEMPMINKELVIN/TEMPBAR)
+        pg=(gam-1.0)*ug # ideal gas
+        prad=(4.0/3.0-1.0)*urad # radiation isotropic in some frame
+        Tgas=pg/rho # gas temperature for ideal gas
+        KAPPAUSER=rho*0
+        KAPPAESUSER=rho*0
+        #
+    else:
+        # now compute auxillary opacity related quantities since only otherwise in raddump???? files and not in fieldline files
+        KAPPA=1.0
+        KAPPAES=1.0
+        # KORALTODO: Put a lower limit on T~1E4K so not overly wrongly opaque in spots where u_g->0 anomologously?
+        TEMPMINKELVIN=1.0E-10 # Kelvin
+        TEMPMIN=(TEMPMINKELVIN/TEMPBAR)
+        # ideal gas assumed for Tgas
+        # code pg
+        pg=(gam-1.0)*ugclean # use clean to keep pg low and Tgas will have floor like below
+        prad=(4.0/3.0-1.0)*urad
+        # code Tgas for ideal gas
+        Tgas=pg/rho
+        # use rhoclean to keep kappa low.
+        KAPPAUSER=(rhoclean*KAPPA*KAPPA_FF_CODE(rhoclean,Tgas+TEMPMIN))
+        KAPPAESUSER=(rhoclean*KAPPAES*KAPPA_ES_CODE(rhoclean,Tgas))
+
+
 def pow(x,n):
     return(x**n)
 def KAPPA_ES_CODE(rhocode,Tcode):
-    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,Leddcode,Mdoteddcode,ueddcode,beddcode
     y=(0.2*(1.0+XFACT)/OPACITYBAR)
     return(y)
 def KAPPA_FF_CODE(rhocode,Tcode):
-    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,Leddcode,Mdoteddcode,ueddcode,beddcode
     y=(1.0E23*ZATOM*ZATOM/(MUE*MUI)*(rhocode*RHOBAR)*pow(Tcode*TEMPBAR,-7.0/2.0)/OPACITYBAR)
     return(y)
 def KAPPA_BF_CODE(rhocode,Tcode):
-    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,Leddcode,Mdoteddcode,ueddcode,beddcode
     y=(1.0E25*ZATOM*(1.0+XFACT)*(rhocode*RHOBAR)*pow(Tcode*TEMPBAR,-7.0/2.0)/OPACITYBAR)
     return(y)
 
-def rddims():
-    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
-    # then also get radiation constants
-    fname= "dimensions.txt"
-    fin = open(fname, "rt" )
-    dimfile = fin.readline().split()
-    numheaderitems=len(dimfile) #.shape[0]
-    GGG = np.float64(dimfile[0])
-    CCCTRUE = np.float64(dimfile[1])
-    MSUNCM = np.float64(dimfile[2])
-    MPERSUN = np.float64(dimfile[3])
-    LBAR = np.float64(dimfile[4])
-    TBAR = np.float64(dimfile[5])
-    VBAR = np.float64(dimfile[6])
-    RHOBAR = np.float64(dimfile[7])
-    MBAR = np.float64(dimfile[8])
-    ENBAR = np.float64(dimfile[9])
-    UBAR = np.float64(dimfile[10])
-    TEMPBAR = np.float64(dimfile[11])
-    ARAD_CODE_DEF = np.float64(dimfile[12])
-    XFACT = np.float64(dimfile[13])
-    ZATOM = np.float64(dimfile[14])
-    AATOM = np.float64(dimfile[15])
-    MUE = np.float64(dimfile[16])
-    MUI = np.float64(dimfile[17])
-    OPACITYBAR = np.float64(dimfile[18])
-    MASSCM = np.float64(dimfile[19])
-    KORAL2HARMRHO1 = np.float64(dimfile[20])
-    fin.close()
+def rddims(gotrad):
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,Leddcode,Mdoteddcode,ueddcode,beddcode
+    if(gotrad==1):
+        # then also get radiation constants
+        fname= "dimensions.txt"
+        fin = open(fname, "rt" )
+        dimfile = fin.readline().split()
+        numheaderitems=len(dimfile) #.shape[0]
+        #
+        GGG = np.float64(dimfile[0])
+        CCCTRUE = np.float64(dimfile[1])
+        MSUNCM = np.float64(dimfile[2])
+        MPERSUN = np.float64(dimfile[3])
+        LBAR = np.float64(dimfile[4])
+        TBAR = np.float64(dimfile[5])
+        VBAR = np.float64(dimfile[6])
+        RHOBAR = np.float64(dimfile[7])
+        MBAR = np.float64(dimfile[8])
+        ENBAR = np.float64(dimfile[9])
+        UBAR = np.float64(dimfile[10])
+        TEMPBAR = np.float64(dimfile[11])
+        ARAD_CODE_DEF = np.float64(dimfile[12])
+        XFACT = np.float64(dimfile[13])
+        ZATOM = np.float64(dimfile[14])
+        AATOM = np.float64(dimfile[15])
+        MUE = np.float64(dimfile[16])
+        MUI = np.float64(dimfile[17])
+        OPACITYBAR = np.float64(dimfile[18])
+        MASSCM = np.float64(dimfile[19])
+        KORAL2HARMRHO1 = np.float64(dimfile[20])
+        fin.close()
+        #
+        MSUN=1.9891E33
+        sigmaT=0.665E-24
+        mproton=1.673E-24
+        einf,linf=elinfcalc(a)
+        effnom=1.0-einf
+        #
+        Ledd=4*np.pi*GGG*(MPERSUN*MSUN)*mproton*CCCTRUE/sigmaT
+        Leddcode = Ledd/ENBAR*TBAR
+        Mdotedd = Ledd/(CCCTRUE**2*effnom)
+        Mdoteddcode = Mdotedd/MBAR*TBAR
+        rhoedd = Mdotedd/CCCTRUE*(GGG*MPERSUN*MSUN/CCCTRUE**2)/(GGG*MPERSUN*MSUN/CCCTRUE**2)**3
+        rhoeddcode = rhoedd/RHOBAR
+        uedd = rhoedd*CCCTRUE**2
+        bedd = np.sqrt(uedd)
+        ueddcode = uedd/UBAR
+        beddcode = bedd/np.sqrt(UBAR)
+        #
+        print("CCCTRUE=%g ENBAR=%g TBAR=%g Leddcode=%g Mdoteddcode=%g einf=%g linf=%g uedd=%g bedd=%g" % (CCCTRUE,ENBAR,TBAR,Ledd,Mdotedd,einf,linf,uedd,bedd)) ; sys.stdout.flush()
+        print("CCCTRUE=%g ENBAR=%g TBAR=%g" % (CCCTRUE,ENBAR,TBAR)) ; sys.stdout.flush()
+    else:
+        GGG=1
+        CCCTRUE=1
+        MSUNCM=1
+        MPERSUN=1
+        LBAR=1
+        TBAR=1
+        VBAR=1
+        RHOBAR=1
+        MBAR=1
+        ENBAR=1
+        UBAR=1
+        TEMPBAR=1
+        ARAD_CODE_DEF=1
+        XFACT=1
+        ZATOM=1
+        AATOM=1
+        MUE=1
+        MUI=1
+        OPACITYBAR=1
+        MASSCM=1
+        KORAL2HARMRHO1=1
+        #
+        Leddcode=1
+        Mdoteddcode=1
+        ueddcode=1
+        beddcode=1
+
 
 
 # testing
@@ -8519,7 +8608,7 @@ def rotsimpletensordot(uu,rot,axis):
     #
     #
 
-def rfdprocess(gotgdetB=0,gotrad=0):
+def rfdprocess(gotgdetB=0):
     #
     # external globals
     global rho,ug,uu,B,gdetB,Erf,urad,uradu
@@ -8546,45 +8635,6 @@ def rfdprocess(gotgdetB=0,gotrad=0):
         print(gdetB.shape) ; sys.stdout.flush()
         gdetB[1:4] = gdet * B[1:4]
         #
-        #
-    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
-    global KAPPAUSER,KAPPAESUSER
-    if(gotrad==0):
-        GGG=1
-        CCCTRUE=1
-        MSUNCM=1
-        MPERSUN=1
-        LBAR=1
-        TBAR=1
-        VBAR=1
-        RHOBAR=1
-        MBAR=1
-        ENBAR=1
-        UBAR=1
-        TEMPBAR=1
-        ARAD_CODE_DEF=1
-        XFACT=1
-        ZATOM=1
-        AATOM=1
-        MUE=1
-        MUI=1
-        OPACITYBAR=1
-        MASSCM=1
-        KORAL2HARMRHO1=1
-        KAPPAUSER=rho*0
-        KAPPAESUSER=rho*0
-        Erf=rho*0
-        urad=Erf*0
-        uradd=uu*0
-        uradu=uu*0
-        KAPPA=1.0
-        KAPPAES=1.0
-        T1E4K=(1.0E4/TEMPBAR)
-        pg=(gam-1.0)*ug
-        prad=(4.0/3.0-1.0)*urad
-        Tgas=pg/rho
-        KAPPAUSER=rho*0
-        KAPPAESUSER=rho*0
         #
     #
     # get floor-cleaned versions (override uu[3] completely)
@@ -17049,6 +17099,15 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     elif modelname=="rad1":
         fieldtype="Poloidal"
         truemodelname="{\\bf A0.94BpN100L20}"
+    elif modelname=="rada0.8":
+        fieldtype="Poloidal"
+        truemodelname="{\\bf A0.8BpN100L20}"
+    elif modelname=="rada0.94":
+        fieldtype="Poloidal"
+        truemodelname="{\\bf A0.94pN100L20}"
+    elif modelname=="radma0.8":
+        fieldtype="Largescale"
+        truemodelname="{\\bf A0.8lN100L20}"
     ##########################################
     # tilted models
     elif modelname=="thickdiskfull3d7tilt0.35":
@@ -17476,7 +17535,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     if ismb09model(modelname):
         iinalt=iofr(10.0)
         ioutalt=iofr(12.0)
-    elif isradmodel(modelname):
+    elif isradmodel(modelname):   # r=12--15 for rad sims
         iinalt=iofr(12.0)
         ioutalt=iofr(15.0)
     elif modelname=="a0hr07":
@@ -17593,24 +17652,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     #####################################
     # Jon's version of Mdot plot
-    if gotrad:
-        global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
-        rddims()
-        MSUN=1.9891E33
-        sigmaT=0.665E-24
-        mproton=1.673E-24
-        Ledd=4.0*np.pi*GGG*(MPERSUN*MSUN)*mproton*CCCTRUE/sigmaT
-        Ledd=Ledd/(ENBAR/TBAR) # so in same units as code units
-        einf,linf=elinfcalc(a)
-        Medd=Ledd/(1.0-einf)
-        print("CCCTRUE=%g ENBAR=%g TBAR=%g Leddcode=%g Meddcode=%g einf=%g linf=%g" % (CCCTRUE,ENBAR,TBAR,Ledd,Medd,einf,linf)) ; sys.stdout.flush()
-        print("CCCTRUE=%g ENBAR=%g TBAR=%g" % (CCCTRUE,ENBAR,TBAR)) ; sys.stdout.flush()
-    else:
-        Ledd=1
-        Medd=1
     #
     if showrad:
-        normfactor=Ledd
+        normfactor=Leddcode
         radplotfactor=1.0;
         Mdotplotfactor=1.0/(mdotfinavg/normfactor)
     else:
@@ -17633,7 +17677,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                     ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+mdotjetiniavg/normfactor*Mdotplotfactor,color=(fc,fc+0.5*(1-fc),fc))
                     ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+mdotmwoutiniavg*windplotfactor/normfactor*Mdotplotfactor,color=(fc,fc,1))
         if showrad:
-            ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+edradoutiniavg*radplotfactor/normfactor,color=(fc,1,1))
+            ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+edradoutiniavg*radplotfactor/normfactor,color='c') #(fc,1,1))
         #
         print("before ax.plot1") ; sys.stdout.flush()
         ax.plot(ts,np.abs(mdtot[:,iflux]*mdtotfix/normfactor*Mdotplotfactor),clr,label=r'$\dot M_{\rm H}c^2/%d$' % (1.0/Mdotplotfactor))  # can't use ifluxacc
@@ -17658,7 +17702,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                     ax.plot(ts[findex],np.abs(mdjet[:,iofr(rjetout)])[findex]/normfactor*Mdotplotfactor,'gs')
                     ax.plot(ts[findex],windplotfactor*np.abs(mdmwind[:,iofr(rjetout)])[findex]/normfactor*Mdotplotfactor,'bv')
                 if showrad:
-                    ax.plot(ts[findex],edradthin[:,iofr(rjetout)][findex]*radplotfactor/normfactor,'bv')
+                    ax.plot(ts[findex],edradthin[:,iofr(rjetout)][findex]*radplotfactor/normfactor,'cv')
             else:
                 for fi in findex:
                     ax.plot(ts[fi],np.abs(mdtot[:,iflux]*mdtotfix)[fi]/normfactor*Mdotplotfactor,'o',mfc='r')#,label=r'$\dot M$')
@@ -17666,7 +17710,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                         ax.plot(ts[fi],np.abs(mdjet[:,iofr(rjetout)])[fi]/normfactor*Mdotplotfactor,'gs')
                         ax.plot(ts[fi],windplotfactor*np.abs(mdmwind[:,iofr(rjetout)])[fi]/normfactor*Mdotplotfactor,'bv')
                     if showrad:
-                        ax.plot(ts[fi],edradthin[:,iofr(rjetout)][fi]*radplotfactor/normfactor,'bv')
+                        ax.plot(ts[fi],edradthin[:,iofr(rjetout)][fi]*radplotfactor/normfactor,'cv')
         #
         #ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,labelpad=9)
         if showrad:
@@ -17916,7 +17960,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                         ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etamwout2_avg,color=(fc,fc,1))
             if showrad:
                 ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etaoutRAD_avg,color=(fc,1,1))
-                ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+signetaradtoshow*etabhRAD_avg,color=(fc,0.5,.7))
+                ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+signetaradtoshow*etabhRAD_avg,color='m') #(fc,0.5,.7))
         #
         ax.plot(ts,etabh,clr,label=r'$\eta_{\rm H}$')
         if showextra:
@@ -17924,7 +17968,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             if showrad==0: # for now don't show this -- too much on plot
                 ax.plot(ts,etamwout,'b-.',label=r'$\eta_{\rm mw,o}$')
         if showrad:
-            ax.plot(ts,etaoutRAD,'c-.',label=r'$\eta_{\rm rad,out}$')
+            ax.plot(ts,etaoutRAD,'c-.',label=r'$\eta_{\rm rad,o}$')
             ax.plot(ts,signetaradtoshow*etabhRAD,'m--',label=r'$\eta_{\rm rad,H}$')
 # http://matplotlib.org/examples/pylab_examples/line_styles.html
         if findex != None:
@@ -17936,7 +17980,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                         ax.plot(ts[findex],etamwout[findex],'bv')
                 if showrad:
                     ax.plot(ts[findex],etaoutRAD[findex],'cs')
-                    ax.plot(ts[findex],signetaradtoshow*etabhRAD[findex],'cv')
+                    ax.plot(ts[findex],signetaradtoshow*etabhRAD[findex],'mv')
             else:
                 for fi in findex:
                     ax.plot(ts[fi],etabh[fi],'o',mfc='r')#,label=r'$\dot M$')
@@ -17950,10 +17994,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #ax.set_ylim(0,2)
         yminbh=np.min(etabh)
         yminj=np.min(etaj)
+        ymin=min(yminbh,yminj)
         if showrad==0: # for now don't show this -- too much on plot
             yminmw=np.min(etamwout)
             ymin=min(ymin,yminmw)
-        ymin=min(yminbh,yminj)
         # sasha99 at least drops-out at certain points to eta<<0  -- so force eta=0 as minimum
         if issashamodel(modelname):
             ymin=0
@@ -18008,6 +18052,20 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                 ax.set_yticks(tck)
         else:
                 ax.set_yticks((ymax/2.0,ymax))
+        #
+        # override for rad (currently only applies for rada0.94
+        if showrad==1:
+            ymax=np.floor(ymax/10.*0.9999)+1
+            ymax*=10
+            ymin=np.floor(ymin/10.*0.9999)+1
+            ymin*=10
+            ymax=35
+            ymin=-35
+            ax.set_ylim((ymin,ymax))
+            tck=np.arange(ymin/10,ymax/10.,(ymax/10.0-ymin/10.0)/2.0)*10
+            tck=[-30,-15,0,15,30]
+            ax.set_yticks(tck)
+        #
         #
         ax.grid(True)
         #
@@ -18097,8 +18155,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     else:
         # then normalize by Eddington
         print("Normalizing Mdot by Eddington") ; sys.stdout.flush()
-        print( "HLatex5: ModelName & $\\dot{M}_{\\rm{}H}$  & $\\dot{M}_{\\rm{}in,i}-\\dot{M}_{\\rm{}H}$ & $\\dot{M}_{\\rm{}in,o}-\\dot{M}_{\\rm{}H}$     & $\\dot{M}_{\\rm{}j}$    & $\\dot{M}_{\\rm{}mw,i}$ & $\\dot{M}_{\\rm{}mw,o}$    & $\\dot{M}_{\\rm{}w,i}$ & $\\dot{M}_{\\rm{}w,o}$ & $\\dot{L}_{\\rm{}rad,o}$ \\\\" )
-        print( "VLatex5: %s         & %g & %g & %g    & %g    & %g & %g & %g   & %g & %g \\\\ %% %s" % (truemodelname, roundto2((1.0/Medd)*mdotfinavg), roundto2((1.0/Medd)*(mdotinrdiskinfinavg-mdotfinavg)), roundto2((1.0/Medd)*(mdotinrdiskoutfinavg-mdotfinavg)), roundto2((1.0/Medd)*mdotjetfinavg),  roundto2((1.0/Medd)*mdotmwinfinavg), roundto2((1.0/Medd)*mdotmwoutfinavg),     roundto2((1.0/Medd)*mdotwinfinavg), roundto2((1.0/Medd)*mdotwoutfinavg), roundto2((1.0/Ledd)*edradoutiniavg),    modelname ) )
+        print( "HLatex5: ModelName & $\\dot{M}_{\\rm{}H}$  & $\\dot{M}_{\\rm{}in,i}-\\dot{M}_{\\rm{}H}$ & $\\dot{M}_{\\rm{}in,o}-\\dot{M}_{\\rm{}H}$     & $\\dot{M}_{\\rm{}j}$    & $\\dot{M}_{\\rm{}mw,i}$ & $\\dot{M}_{\\rm{}mw,o}$    & $\\dot{M}_{\\rm{}w,i}$ & $\\dot{M}_{\\rm{}w,o}$ & $L_{\\rm{}rad,o}$ \\\\" )
+        print( "VLatex5: %s         & %g & %g & %g    & %g    & %g & %g & %g   & %g & %g \\\\ %% %s" % (truemodelname, roundto2((1.0/Mdoteddcode)*mdotfinavg), roundto2((1.0/Mdoteddcode)*(mdotinrdiskinfinavg-mdotfinavg)), roundto2((1.0/Mdoteddcode)*(mdotinrdiskoutfinavg-mdotfinavg)), roundto2((1.0/Mdoteddcode)*mdotjetfinavg),  roundto2((1.0/Mdoteddcode)*mdotmwinfinavg), roundto2((1.0/Mdoteddcode)*mdotmwoutfinavg),     roundto2((1.0/Mdoteddcode)*mdotwinfinavg), roundto2((1.0/Mdoteddcode)*mdotwoutfinavg), roundto2((1.0/Leddcode)*edradoutiniavg),    modelname ) )
     #
     # 12:
     print( "HLatex95: $\\delta r:r \\delta\\theta:r\\sin\\theta \\delta\\phi$" )
@@ -22786,7 +22844,7 @@ def mkinitfinalplotpost(fname=None,plottype=0,aphijetouter=None,inputlevs=None,n
                 returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=True,tight=True,pt=False,dorho=False,doentropy=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
             elif whichplot==1:
                 if plottype==0 or plottype==1:
-                    vmaxforframe=np.max(np.log10(bsq[0:iofr(framesize),:,:]))
+                    vmaxforframe=np.max(np.log10(bsq[0:iofr(framesize),:,:]/ueddcode))
                     if(isradmodel(modelname)):
                         # for first plot
                         vminforframe=vmaxforframe-4
@@ -22818,7 +22876,7 @@ def mkinitfinalplotpost(fname=None,plottype=0,aphijetouter=None,inputlevs=None,n
                 returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=True,tight=True,pt=False,dorho=False,doQ2=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
             elif whichplot==5:
                 if plottype==0 or plottype==1:
-                    vmaxforframe=np.max(np.log10(rho[0:iofr(framesize),:,:]))
+                    vmaxforframe=np.max(np.log10(rho[0:iofr(framesize),:,:]/rhoeddcode))
                     if(isradmodel(modelname)): # for first plot
                         vminforframe=vmaxforframe-4
                     else:
@@ -22904,11 +22962,17 @@ def vminmax_rho(qty=None):
         # default
         vminforframe=-6.0
         vmaxforframe=-1.0
+    elif isradmodelC(modelname):
+        # default
+        vminforframe=-8.0
+        vmaxforframe=-4.0
     else:
         # default
         vminforframe=-4.0
         vmaxforframe=2.0
     #
+    vminforframe=np.log10(10.0**vminforframe/rhoeddcode)
+    vmaxforframe=np.log10(10.0**vmaxforframe/rhoeddcode)
     return(vminforframe,vmaxforframe)
 
 
@@ -22930,11 +22994,16 @@ def vminmax_ug(qty=None):
     elif isradmodelB(modelname):
         vminforframe=-10
         vmaxforframe=-2
+    elif isradmodelC(modelname):
+        vminforframe=-10
+        vmaxforframe=-5
     else:
         # default
         vminforframe=-6.0
         vmaxforframe=4.0
     #
+    vminforframe=np.log10(10.0**vminforframe/ueddcode)
+    vmaxforframe=np.log10(10.0**vmaxforframe/ueddcode)
     return(vminforframe,vmaxforframe)
 
 def vminmax_bsq(qty=None):
@@ -22955,12 +23024,17 @@ def vminmax_bsq(qty=None):
     elif isradmodelB(modelname):
         vminforframe=-10
         vmaxforframe=-2
+    elif isradmodelC(modelname):
+        vminforframe=-10
+        vmaxforframe=-5
     else:
         # default
         vminforframe=-7.0
         vmaxforframe=3.0
     #
     #
+    vminforframe=np.log10(10.0**vminforframe/ueddcode)
+    vmaxforframe=np.log10(10.0**vmaxforframe/ueddcode)
     return(vminforframe,vmaxforframe)
 
 def vminmax_entropy(qty=None):
@@ -22981,6 +23055,9 @@ def vminmax_entropy(qty=None):
     elif isradmodelB(modelname):
         vminforframe=-8.0
         vmaxforframe=2.0
+    elif isradmodelC(modelname):
+        vminforframe=-8.0
+        vmaxforframe=0.0
     else:
         # default
         vminforframe=-1.0
@@ -23033,10 +23110,16 @@ def mkstreamplotprepost(fname=None,veldensity=8,inputlevs=None,numcontours=30,ap
     elif isradmodelB(modelname):
         vminforframe=-8
         vmaxforframe=-2
+    elif isradmodelC(modelname):
+        vminforframe=-8
+        vmaxforframe=-4
     else:
         # default
         vminforframe=-4.0
         vmaxforframe=2.0
+    #
+    vminforframe=np.log10(10.0**vminforframe/rhoeddcode)
+    vmaxforframe=np.log10(10.0**vmaxforframe/rhoeddcode)
     #
     # for dojonwindplot
     global B #,uutrue
@@ -24754,6 +24837,12 @@ def mkmovie(framesize=50, domakeavi=False):
     #
     printusage()
     #
+    if 0==1:# when running on command line with ipython, override for just 1 file.  Also comment out "if findex % whichn != whichi:" below.
+        whichn=1
+        whichi=1
+        global modelname
+        modelname="rad1"
+    #
     #
     ################################################
     # LOOP over frames
@@ -24994,10 +25083,20 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
         vmaxforframe=-1
         vminforframerad=-6
         vmaxforframerad=-1
+    elif isradmodelC(modelname):
+        vminforframe=-8
+        vmaxforframe=-3
+        vminforframerad=-8
+        vmaxforframerad=-3
     else:
         # default
         vminforframe=-4.0
         vmaxforframe=2.0
+    #
+    vminforframe=np.log10(10.0**vminforframe/rhoeddcode)
+    vmaxforframe=np.log10(10.0**vmaxforframe/rhoeddcode)
+    vminforframerad=np.log10(10.0**vminforframerad/ueddcode)
+    vmaxforframerad=np.log10(10.0**vmaxforframerad/ueddcode)
     #
     if nz==1:
         mydoaphi=1
@@ -25031,7 +25130,7 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
         rightcb=1
         leftpt=0
         rightpt=0
-        mydobsqorholine=0
+        mydobsqorholine=1
         mydoErf=0
         mydotaurad=1
         vmaxforframeleft=vmaxforframe
@@ -25077,7 +25176,7 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
     if leftcb:
         gs2.update(left=0.55, right=0.95, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
     else:
-        gs2.update(left=0.5, right=0.95, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
+        gs2.update(left=0.45, right=0.95, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
     ax2 = plt.subplot(gs2[:, -1])
     #
     # RIGHT PANEL
@@ -25108,7 +25207,7 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
     #
     # LEFT PANEL
     gs1 = GridSpec(1, 1)
-    gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
+    gs1.update(left=0.05, right=0.42, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
     #
     ax1 = plt.subplot(gs1[:, -1])
     inputlevs2=mkframe("lrhosmall%04d_Rz%g" % (filenum,plotsize),vmin=vminforframeleft,vmax=vmaxforframeleft,len=plotsize,ax=ax1,cb=leftcb,pt=leftpt,dobsq=mydobsqleft,dorho=mydorholeft,dostreamlines=mydostreamlines,doaphi=mydoaphi,dobsqorholine=mydobsqorholine)
@@ -25121,14 +25220,14 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
     if leftcb:
         gs2.update(left=0.55, right=0.95, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
     else:
-        gs2.update(left=0.5, right=0.95, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
+        gs2.update(left=0.49, right=0.95, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
     ax2 = plt.subplot(gs2[:, -1])
     #
     if nz==1:
-        mkframe("lrhosmall%04d_xy%g" % (filenum,plotsize),vmin=vminforframeright,vmax=vmaxforframeright,len=plotsize,ax=ax2,cb=True,dostreamlines=True,dobsq=mydobsqright,dorho=mydorhoright,doErf=mydoErf,dotaurad=mydotaurad)
+        mkframe("lrhosmall%04d_xy%g" % (filenum,plotsize),vmin=vminforframeright,vmax=vmaxforframeright,len=plotsize,ax=ax2,cb=rightcb,dostreamlines=True,dobsq=mydobsqright,dorho=mydorhoright,doErf=mydoErf,dotaurad=mydotaurad)
     else:
         # If using 2D data, then for now, have to replace below with mkframe version above and replace ax1->ax2.  Some kind of qhull error.
-        mkframexy("lrhosmall%04d_xy%g" % (filenum,plotsize),vmin=vminforframeright,vmax=vmaxforframeright,len=plotsize,ax=ax2,cb=True,pt=True,dostreamlines=True,dobsq=mydobsqright,dorho=mydorhoright,doErf=mydoErf,dotaurad=mydotaurad)
+        mkframexy("lrhosmall%04d_xy%g" % (filenum,plotsize),vmin=vminforframeright,vmax=vmaxforframeright,len=plotsize,ax=ax2,cb=rightcb,pt=rightpt,dostreamlines=True,dobsq=mydobsqright,dorho=mydorhoright,doErf=mydoErf,dotaurad=mydotaurad)
     #
     #
     if nz==1:
@@ -25461,10 +25560,16 @@ def mkavgfigs():
     elif isradmodelB(modelname):
         vminforframe=-8
         vmaxforframe=-2
+    elif isradmodelC(modelname):
+        vminforframe=-9
+        vmaxforframe=-4
     else:
         # default
         vminforframe=-4.0
         vmaxforframe=2.0
+    #
+    vminforframe=np.log10(10.0**vminforframe/rhoeddcode)
+    vmaxforframe=np.log10(10.0**vmaxforframe/rhoeddcode)
     #
     #
     #########################################
@@ -25474,9 +25579,11 @@ def mkavgfigs():
         global rho,rholab,ug,B,gdetB,Erf,urad,uradu,bsq,mu,ud,uu,beta,betatot #,uutrue
         global KAPPAUSER,KAPPAESUSER,tauradintegrated
         #
-        global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
+        global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,Leddcode,Mdoteddcode,ueddcode,beddcode
         if gotrad==1:
             rddims()
+        else:
+            rddimsfake()
         #
         rho=avg_rho
         KAPPAUSER=avg_KAPPAUSER
@@ -26259,7 +26366,7 @@ def mkavgfigs():
         global rho,rholab,ug,B,gdetB,Erf,urad,uradu,bsq,mu,ud,uu,beta,betatot
         global KAPPAUSER,KAPPAESUSER,tauradintegrated
         #
-        global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
+        global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,Leddcode,Mdoteddcode,ueddcode,beddcode
         if gotrad==1:
             rddims()
         #
@@ -27160,6 +27267,13 @@ def main(argv=None):
     if runtype==4:
         #make a movie
         mkmovie()
+    if 0==1 or runtype==4: # for command line with ipython
+        global whichn,whichi
+        whichn=1
+        whichi=1
+        global modelname
+        modelname="rad1"
+        mkmovie()
     if runtype==5:
         #fig2 with grayscalestreamlines and red field lines
         mkavgfigs()
@@ -27649,6 +27763,11 @@ def harmradplot4():
     print("time4=%g" % (t))
 
 
+
+# to run this, do, e.g.:
+# ipython
+# run ~/py/mread/__init__.py   # might cplain about matplotlib and pylab as well as no pythonpath found.  Probably ok.
+# 
 def harmradplot5():
     #
     print("GOT HERESTART");sys.stdout.flush()
@@ -27677,6 +27796,8 @@ def harmradplot5():
     fignum=1
     plt.close(fignum)
     fig=plt.figure(fignum,figsize=(9,2.25))
+    #fig=plt.figure(fignum,figsize=(9,2.4))
+    #fig=plt.figure(fignum,figsize=(9,2.4))
     #ax=fig.add_subplot(111)
     plt.clf()
     plt.axis('equal')
@@ -27692,55 +27813,120 @@ def harmradplot5():
     myx=r[:,:,:]
     myy=h[:,:,:]
     myz=toplot[:,:,:]
+    #myz=h[:,:,:]
+    #
     print("GOT HERENEW");sys.stdout.flush()
     newx=np.zeros((nx,2*ny,nz),dtype=myx.dtype)
-    newx[:,ny:2*ny,:]=myx[:,0:ny,:]
-    newx[:,ny-1::-1,:]=myx[:,0:ny,:]
     newy=np.zeros((nx,2*ny,nz),dtype=myx.dtype)
-    newy[:,ny:2*ny,:]=myy[:,0:ny,:]
-    newy[:,ny-1::-1,:]=-myy[:,0:ny,:]
-    #newy[:,2*ny-1,:]=-myy[:,ny-1,:]
     newz=np.zeros((nx,2*ny,nz),dtype=myx.dtype)
-    newz[:,ny:2*ny,:]=myz[:,0:ny,:]
-    newz[:,ny-1::-1,:]=myz[:,0:ny,:]
-    #
     newU=np.zeros((nx,2*ny,nz),dtype=myx.dtype)
-    newU[:,ny:2*ny,:]=-TudRAD[1,0][:,0:ny,:]
-    newU[:,ny-1::-1,:]=-TudRAD[1,0][:,0:ny,:]
-    #
     newV=np.zeros((nx,2*ny,nz),dtype=myx.dtype)
-    newV[:,ny:2*ny,:]=-TudRAD[2,0][:,0:ny,:]
-    newV[:,ny-1::-1,:]=+TudRAD[2,0][:,0:ny,:]
     #
-    print("NEWY");sys.stdout.flush()
-    print(newy[nx-1,0,0])
-    print(newy[nx-1,2*ny-1,0])
+    if 1==0:
+        newx[:,ny:2*ny,:]=myx[:,0:ny,:]
+        newx[:,ny-1::-1,:]=myx[:,0:ny,:]
+        newy[:,ny:2*ny,:]=myy[:,0:ny,:]
+        newy[:,ny-1::-1,:]=-myy[:,0:ny,:]
+        newz[:,ny:2*ny,:]=myz[:,0:ny,:]
+        newz[:,ny-1::-1,:]=myz[:,0:ny,:]
+        newU[:,ny:2*ny,:]=-TudRAD[1,0][:,0:ny,:]
+        newU[:,ny-1::-1,:]=-TudRAD[1,0][:,0:ny,:]
+        #newU[:,ny:2*ny,:]=TudRAD[1,0][:,0:ny,:]/TudRAD[0,0][:,0:ny,:]
+        #newU[:,ny-1::-1,:]=TudRAD[1,0][:,0:ny,:]/TudRAD[0,0][:,0:ny,:]
+        #
+        newV[:,ny:2*ny,:]=-TudRAD[2,0][:,0:ny,:]
+        newV[:,ny-1::-1,:]=+TudRAD[2,0][:,0:ny,:]
+        #newV[:,ny:2*ny,:]=-TudRAD[2,0][:,0:ny,:]/TudRAD[0,0][:,0:ny,:]
+        #newV[:,ny-1::-1,:]=+TudRAD[2,0][:,0:ny,:]/TudRAD[0,0][:,0:ny,:]
     #
-    print("NEWY2");sys.stdout.flush()
-    print(newy[nx-1,1,0])
-    print(newy[nx-1,2*ny-2,0])
+    if 1==1:
+        for jj in np.arange(0,ny):
+            newx[:,ny-1-jj,:] = myx[:,jj,:]
+            newx[:,ny  +jj,:] = myx[:,jj,:]
+            newy[:,ny-1-jj,:] = -myy[:,jj,:]
+            newy[:,ny  +jj,:] = myy[:,jj,:]
+            newz[:,ny-1-jj,:] = myz[:,jj,:]
+            newz[:,ny  +jj,:] = myz[:,jj,:]
+            newU[:,ny-1-jj,:] = -TudRAD[1,0][:,jj,:]*np.sqrt(gv3[1,1][:,jj,:])
+            newU[:,ny  +jj,:] = -TudRAD[1,0][:,jj,:]*np.sqrt(gv3[1,1][:,jj,:])
+            newV[:,ny-1-jj,:] = +TudRAD[2,0][:,jj,:]*np.sqrt(gv3[2,2][:,jj,:])
+            newV[:,ny  +jj,:] = -TudRAD[2,0][:,jj,:]*np.sqrt(gv3[2,2][:,jj,:])
     #
-    print("NEWZ");sys.stdout.flush()
-    print(newz[nx-1,0,0])
-    print(newz[nx-1,2*ny-1,0])
+    if 1==0:
+        print("NEWX");sys.stdout.flush()
+        print(newx[:,0,0])
+        print(newx[:,2*ny-1,0])
+        #
+        print("NEWY");sys.stdout.flush()
+        print(newy[:,0,0])
+        print(newy[:,2*ny-1,0])
+        #
+        #print("NEWY2");sys.stdout.flush()
+        #print(newy[nx-1,1,0])
+        #print(newy[nx-1,2*ny-2,0])
+        #
+        print("NEWZ");sys.stdout.flush()
+        print(newz[:,0,0])
+        print(newz[:,2*ny-1,0])
+        #
+        #print("NEWZ2");sys.stdout.flush()
+        #print(newz[nx-1,1,0])
+        #print(newz[nx-1,2*ny-2,0])
+        #
+        print("shapes");sys.stdout.flush()
+        print(newx.shape);sys.stdout.flush()
+        print(newy.shape);sys.stdout.flush()
+        print(newz.shape);sys.stdout.flush()
     #
-    print("NEWZ2");sys.stdout.flush()
-    print(newz[nx-1,1,0])
-    print(newz[nx-1,2*ny-2,0])
     #
     #
-    newrho=np.zeros((nx,2*ny,nz),dtype=myx.dtype)
-    newrho[:,ny:2*ny,:]=rho[:,0:ny,:]
-    newrho[:,ny-1::-1,:]=rho[:,0:ny,:]
+    if 1==1:
+        newrho=np.zeros((nx,2*ny,nz),dtype=myx.dtype)
+        newrho[:,ny:2*ny,:]=rho[:,0:ny,:]
+        newrho[:,ny-1::-1,:]=rho[:,0:ny,:]
+        #
+        res = ax.contour(newx[:,:,0],newy[:,:,0],np.log(newrho[:,:,0]+100),3,colors='white')
+        #plc(newrho[:,:,0],xcoord=newx,ycoord=newy,nc=50)
     #
-    res = ax.contour(newx[:,:,0],newy[:,:,0],np.log(newrho[:,:,0]+100),3,colors='white')
-    #plc(newrho[:,:,0],xcoord=newx,ycoord=newy,nc=50)
     print("GOT HERE1");sys.stdout.flush()
-    #res=ax.pcolor(myx,myy,myz)
-    res=ax.pcolor(newx[:,:,0],newy[:,:,0],newz[:,:,0])
+    #
+    if 1==1:
+        #res=ax.pcolor(myx,myy,myz)
+        res=ax.pcolor(newx[:,:,0],newy[:,:,0],newz[:,:,0])
+        #res=ax.pcolor(newz[:,:,0])
+        #res=ax.pcolor(myz[:,:,0])
+    #
+    if 1==0:
+        dx, dy = 9.0/100.0, 3.0/100.0
+        res=ax.imshow(np.swapaxes(newz[:,:,0],0,1),extent=[-6.0+dx/2.0,3.0-dx/2.0,-1.5+dy/2.0,+1.5-dy/2.0],aspect='auto')
+    if 1==0:
+        dx, dy = 9.0/100.0, 3.0/100.0
+        #newy, newx = np.mgrid[slice(-1.5+dy/2.0, 1.5 - dy/2.0, dy),slice(-3.0+dx/2.0, 6.0-dx/2.0, dx)]
+        newx, newy = np.mgrid[slice(-6.0+dx/2.0, 3.0, dx),slice(-1.5+dy/2.0, 1.5, dy)]
+        #
+        print("shapes2");sys.stdout.flush()
+        print(newx.shape);sys.stdout.flush()
+        print(newy.shape);sys.stdout.flush()
+        print(newz.shape);sys.stdout.flush()
+        #
+        res=ax.pcolor(newx[:,:],newy[:,:],newz[:,:,0])
+        z_min, z_max = newz.min(), newz.max()
+        ax.axis([-6,3,-1.5,1.5]) # don't use newx newy because those are cell centers
+    #
+    #
     print("GOT HERE2");sys.stdout.flush()
     #
-    plt.quiver(newx[::4,::4,0],newy[::4,::4,0],newU[::4,::4,0],newV[::4,::4,0],color='gray') #,width=0.01,linewidth=1,scale=1E10)
+    if 1==1:
+        # 3,0 or 5,2
+        sf=5 # skip factor
+        ss=2 # starting point
+        #sf=1
+        #ss=0
+        plt.quiver(newx[ss::sf,ss::sf,0],newy[ss::sf,ss::sf,0],newU[ss::sf,ss::sf,0],newV[ss::sf,ss::sf,0],color='gray',pivot='mid') #,width=0.01,linewidth=1,scale=1E10)
+        plt.axis([-6,3,-1.5,1.5]) # don't use newx newy because those are cell centers
+        #
+        #print(newy[0,:,0]);sys.stdout.flush()
+        #print(newy[0,ss::sf,0]);sys.stdout.flush()
     #
     ax.set_xlabel(r'$x$',fontsize=16,ha='left',labelpad=10)
     ax.set_ylabel(r'$y$',fontsize=16,ha='left',labelpad=10)
