@@ -5816,6 +5816,11 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         #lweightaphi=4.0
         lweightaphi=1.0
         #
+        print("levs") ; sys.stdout.flush()
+        print(levs) ; sys.stdout.flush()
+        # if for some reason no levels, avoid failure by setting as single zero level
+        if(levs.shape[0]==0):
+            levs=[0]
         cset2 = ax.contour(iaphi,linewidths=lweightaphi,colors=inputcoloraphi, extent=extent,hold='on',origin='lower',levels=levs)
         if doaphicont is not None:
             #cset3 = ax.contour(iaphi,linewidths=4.0,colors='#00aa00', extent=extent,hold='on',origin='lower',levels=(doaphicont,))
@@ -22170,6 +22175,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             #ytoplot=np.log10(normpowerfft)
             #
             plt.yscale('log')
+            ytoplot=1E-30+ytoplot
             #
             plt.plot(xtoplot,ytoplot,color='k')
             #
