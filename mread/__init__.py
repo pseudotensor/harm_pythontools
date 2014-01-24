@@ -4583,6 +4583,7 @@ def plotpsrangpower(cachefname="psrangle.npz"):
     plt.figure(2)
     psis = np.array([psi0, psi15, psi30, psi45, psi60, psi75, psi90])
     etots = np.array([etot0, etot15, etot30, etot45, etot60, etot75, etot90])
+    ss = np.array([s0, s15, s30, s45, s60, s75, s90])
     alphas = np.array([0, 15, 30, 45, 60, 75, 90])
     ebrsqs = np.array([ebrsq0, ebrsq15, ebrsq30, ebrsq45, ebrsq60, ebrsq75, ebrsq90])
     ebrs = np.array([ebr0, ebr15, ebr30, ebr45, ebr60, ebr75, ebr90])
@@ -4623,7 +4624,8 @@ def plotpsrangpower(cachefname="psrangle.npz"):
          ])
     plt.plot(alphas, en)
     plt.figure(5)
-    plt.plot(alphas, etots, 'o-', label=r"$L$")
+    plt.plot(alphas, etots, 'bo-', label=r"$L$")
+    plt.plot(alphas, ss, 'bo:', label=r"$L$")
     plt.plot(alphas, ebrsqs, 'go-',label=r"$\int\Omega_\star^2R^2\langle B_r^2\rangle d\omega$")
     plt.plot(alphas, ebrs, 'ro-', label=r"$(\kappa/c)\Phi_{\rm open}^2\Omega_\star^2$")
     ax1=plt.gca()
@@ -4668,6 +4670,7 @@ def plotpangle(roRlc=None,r0=10,doreload=1,dnpole=0,no=106,inject=0):
     ebr = (2*np.pi*OmegaNS**2*Bavg**2*r0**4*np.sin(h[ii,:,0])**3*dxdxp[2,2,0,0,0]*_dx2).sum()
     psitot = Max_flux_r0 / Max_flux_code
     etot=(gdet[ii,:,0]*eflux[ii]).sum(0)*_dx2*_dx3*nz
+    emtot=(gdet[ii,:,0]*eflux[ii]).sum(0)*_dx2*_dx3*nz
     print etot
     #emono=etot*(2./np.pi)*np.sin(h[ii,:,0])**2
     emono=np.sin(h[ii,:,0])**2
