@@ -4625,7 +4625,6 @@ def plotpsrangpower(cachefname="psrangle.npz"):
     plt.plot(alphas, en)
     plt.figure(5)
     plt.plot(alphas, etots, 'bo-', label=r"$L$")
-    plt.plot(alphas, ss, 'bo:', label=r"$L$")
     plt.plot(alphas, ebrsqs, 'go-',label=r"$\int\Omega_\star^2R^2\langle B_r^2\rangle d\omega$")
     plt.plot(alphas, ebrs, 'ro-', label=r"$(\kappa/c)\Phi_{\rm open}^2\Omega_\star^2$")
     ax1=plt.gca()
@@ -4684,7 +4683,7 @@ def plotpangle(roRlc=None,r0=10,doreload=1,dnpole=0,no=106,inject=0):
     elif inject == 1:
         return h[ii,:,0],eflux[ii,:]*dxdxp[1,1,ii,:,0]*fac,emflux[ii,:]*dxdxp[1,1,ii,:,0]*fac
     elif inject == 2:
-        return etot, psitot, Brsqavg[ii], ebrsq, ebr
+        return emtot, psitot, Brsqavg[ii], ebrsq, ebr
         
 
         
