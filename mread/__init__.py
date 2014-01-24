@@ -5124,6 +5124,7 @@ def remap2unir(rinner=None,router=None,size=None,iin=None,iout=None,result0=None
 
 # compute integrated optical depth
 def compute_taurad():
+        # uses uu[], KAPPAUSER, KAPPAESUSER, gv3, r
         #
         taurad1=(KAPPAUSER+KAPPAESUSER)*_dx1*np.sqrt(np.fabs(gv3[1,1]))/(2.0*uu[0])
         # FREE PARAMETER:
@@ -5402,6 +5403,10 @@ def ftr(x,xb,xf):
 def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,len=20,lenx=None,leny=None,ncell=800,pt=True,shrink=1,dovel=False,doaphi=False,dostreamlines=True,doaphiavg=False,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,doentropy=False,dobsq=False,dobeta=False,doQ1=False,doQ2=False,doErf=False,dovarylw=True,dobhfield=False,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,domidfield=True,showjet=False,arrowsize=1,forceeqsym=0,dojonwindplot=False,dotaurad=False,dobsqorholine=False,doaphicont=None,inputlevs=None,numcontours=30,signaphi=1,aphipow=1.0,showuu1eq0=True,inputcoloraphi=None):
     #
     levs=inputlevs
+    if levs==None:
+        levs=np.linspace(1,1,1)
+    if levs!=None and levs.shape[0]==0:
+        levs=np.linspace(1,1,1)
     #
     if lenx is not None and leny is not None:
         extent=(-lenx,lenx,-leny,leny)
@@ -5618,6 +5623,10 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
             levs=inputlevs
         print("levs2=%21.15g",levs)
         #
+    if levs==None:
+        levs=np.linspace(1,1,1)
+    if levs!=None and levs.shape[0]==0:
+        levs=np.linspace(1,1,1)
     #
     #print("dovel=%d checkstream: %g" % (dovel,B[1][30,ny/2,0]))
     print("dovel=%d" % (dovel)) ; sys.stdout.flush()
@@ -5819,8 +5828,6 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         print("levs") ; sys.stdout.flush()
         print(levs) ; sys.stdout.flush()
         # if for some reason no levels, avoid failure by setting as single 1 level (not zero in case because field small)
-        if(levs.shape[0]==0):
-            levs=[1.0]
         cset2 = ax.contour(iaphi,linewidths=lweightaphi,colors=inputcoloraphi, extent=extent,hold='on',origin='lower',levels=levs)
         if doaphicont is not None:
             #cset3 = ax.contour(iaphi,linewidths=4.0,colors='#00aa00', extent=extent,hold='on',origin='lower',levels=(doaphicont,))
@@ -24816,7 +24823,10 @@ def mkmovie(framesize=50, domakeavi=False):
         #mkmovieframepre1(fname=levelfieldlinefile) # already read in above
         mkmovieframepre2()
         inputlevs1temp=mkmovieframe(findex=0,filenum=choseindex,framesize=framesize,inputlevs=inputlevs1,savefile=False)
+        # if for some reason no levels, avoid failure by setting as single 1 level (not zero in case because field small)
         if inputlevs1temp!=None:
+            if(inputlevs1temp.shape[0]==0):
+                inputlevs1temp=np.linspace(1,1,1)
             inputlevs1=inputlevs1temp
             # to get rid of zero contours that are just noise -- especially near t=0
             inputlevs1=inputlevs1[np.fabs(inputlevs1[:])>1E-10]
@@ -26225,6 +26235,7 @@ def mkavgfigs():
         #########################
         # full 2D data (so can plot, e.g., disk-wind-jet stuff in SM to compare with older papers)
         #
+        #
         avg1 = open('dataavg0.txt', 'w')
         avg1.write("#%s %s %s   %s %s\n" % ("avg_ts","avg_te","avg_nitems","rhor","ihor"))
         avg1.write("%g %g %d   %g %g %d  %g %g %g  %g  %d %d %d\n" % (avg_ts[0],avg_te[0],avg_nitems[0],a,rhor,ihor,_dx1,_dx2,_dx3,scaletofullwedge(1.0),nx,ny,nz))
@@ -26369,7 +26380,37 @@ def mkavgfigs():
         # end over jj
         avg1.close()
         #
-    #####################
+        #####################
+        # some calculations of averages, so set normal quantities as average
+        # e.g., time-phi average of quantities can sometimes not be preferred if vary alot or pass through zero.
+        rho=avg_rho
+        ug=avg_ug
+        urad=avg_urad
+        uu=avg_uu
+        # get kappa's
+        global KAPPAUSER,KAPPAESUSER
+        getkappas(gotrad)
+        # get tau from averaged data
+        taurad1integrated,taurad1flipintegrated,taurad2integrated,taurad2flipintegrated,tauradintegrated=compute_taurad()
+        #
+        # now save computations from averaged data
+        avg2 = open('dataavg2.txt', 'w')
+        # below doesn't yet show columns for each component of vector or tensors
+        avg2.write("#avg_KAPPAUSER avg_KAPPAESUSER avg_tauradintegrated avg_urad\n")
+        avg2.write("#%g %g %d :  %g %d\n" % (avg_ts[0],avg_te[0],avg_nitems[0],rhor,ihor))
+        for jj in np.arange(0,len(h[0,:,0])):
+            for ii in np.arange(0,len(r[:,0,0])):
+                # columns 1-9
+                avg2.write("%d %g %g %g %g %g %g %g %g " % (jj, h[ii,jj,0], KAPPAUSER[ii,jj,0],KAPPAESUSER[ii,jj,0],taurad1integrated[ii,jj,0],taurad1flipintegrated[ii,jj,0],taurad2integrated[ii,jj,0],taurad2flipintegrated[ii,jj,0],tauradintegrated[ii,jj,0]))
+                # columns 10-12
+                avg2.write("%g " % (r[ii,jj,0]))
+                avg2.write("%g " % (h[ii,jj,0]))
+                avg2.write("%g " % (ph[ii,jj,0]))
+                avg2.write("\n")
+            # end over ii
+        # end over jj
+        avg2.close()
+    #
     #########################################
     if mkstreampart4==1:
         #
