@@ -4546,6 +4546,103 @@ def pbrsq(roRlc=1.5,doreload=1):
     plt.grid(b=1)
     plt.savefig("brsq.pdf",bbox_inches='tight',pad_inches=0.02)
 
+def plotbrsq(cachefname="psrangle.npz"):
+    v = np.load(cachefname)
+    psis = np.array([])
+    thetas = []
+    etots = np.array([])
+    alphas = np.array([])
+    ebrsqs = np.array([])
+    ebrs = np.array([])
+    for th in [0, 15, 30, 45, 60, 75, 90]:
+        psis = np.append(psis, v["psi%g" % th])
+        thetas.append(v["th%g" % th])
+        etots = np.append(etots, v["etot%g" % th])
+        alphas = np.append(alphas, float(th))
+        ebrsqs = np.append(ebrsqs, v["ebrsq%g" % th])
+        ebrs = np.append(ebrs, v["ebr%g" % th])
+    th0 = thetas[0]
+    #rotation angle
+    psisopsi0_func = interp1d(alphas/180.*pi,psis/psis[0])
+    da = 60/180.*np.pi 
+    brsq0_func = interp1d(th0,cos(th0)**2,bounds_error=0,fill_value=1)
+    brsqavg0 = v["brsqavg0"]
+    brsq0num_func = interp1d(th0,brsqavg0/np.max(brsqavg0),bounds_error=0,fill_value=1)
+    oriflux = (2*pi*brsq0_func(th0)**0.5*sin(th0)*(th0[1]-th0[0])).sum(-1)
+    orinumflux = (2*pi*brsq0num_func(th0)**0.5*sin(th0)*(th0[1]-th0[0])).sum(-1)
+    brsqalpha_func = lambda th: (sin(da)**2*brsq0_func(th)**0.5*(orinumflux/oriflux) + cos(da)**2*brsq0num_func(th)**0.5)**2
+    #old theta in terms of new theta, phi, and the amount of rotation, alpha
+    oldth = lambda al,th,ph: arccos(sin(th)*cos(ph)*sin(al)+cos(th)*cos(al))
+    brsq0rot_func = lambda al,th,ph: brsqalpha_func(oldth(al,th,ph))
+    #brsq0rot_func = lambda al,th,ph: cos(oldth(al,th,ph))**2
+    phgrid = np.linspace(0,2*pi,2*len(th0),endpoint=False)[None,:]
+    print len(th0)
+    thgrid = th0[:,None]+0*phgrid
+    phgrid = phgrid + 0*thgrid
+    brsq0rot = brsq0rot_func(da,thgrid,phgrid)
+    dth = (thgrid[1,0]-thgrid[0,0])
+    dph = (phgrid[0,1]-phgrid[0,0])
+    newflux = (brsq0rot**0.5*sin(thgrid)*dth*dph).sum(-1).sum(-1)
+    print("Ori flux = %g, ori num flux = %g, new flux = %g" % (oriflux, orinumflux, newflux))
+    brsq0rotavg = brsq0rot.mean(-1)
+    plt.plot(th0*180/np.pi,brsq0rotavg*psisopsi0_func(da)**2,"r--")
+    print("Flux correction = %g" % psisopsi0_func(da)**2)
+    #
+    # Plotting
+    #
+    plt.figure(1)
+    plt.clf()
+    brsq90 = []
+    brsq0 = []
+    alphas = []
+    for th in [0, 15, 30, 45, 60, 75, 90]:
+        th_array = v["th%g" % th]
+        brsq_array = v["brsqavg%g" % th]
+        brsq_func = interp1d(th_array,brsq_array)
+        brsq90.append(brsq_func(5./180.*pi)/np.max(v["brsqavg0"]))
+        brsq0.append(brsq_func(87./180.*pi)/np.max(v["brsqavg0"]))
+        alphas.append(th)
+    brsq90 = np.array(brsq90)
+    brsq0 = np.array(brsq0)
+    alphas = np.array(alphas)
+    plt.plot(alphas,brsq90/(psis/psis[0])**2,"bo-",label=r"$B_r(90)$")
+    plt.plot(alphas,brsq0/(psis/psis[0])**2,"go-",label=r"$B_r(0)$")
+    t = np.linspace(0,90,100)
+    plt.plot(t,cos(t/180.*pi)**2,"k:")
+    plt.plot(t,0.2+1-cos(t/180.*pi)**2,"k:")
+    plt.legend(loc="best")
+    plt.ylim(0,2)
+    plt.xlim(0,90)
+    plt.grid(b=1)
+    ax1=plt.gca()
+    for label in ax1.get_xticklabels() + ax1.get_yticklabels():
+        label.set_fontsize(20)
+    plt.grid(b=1)
+    ax1=plt.gca()
+    for label in ax1.get_xticklabels() + ax1.get_yticklabels():
+        label.set_fontsize(20)
+    plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20)
+    plt.ylabel(r"$\langle B_r^2\rangle$",fontsize=20)
+    #plt.savefig("Br.pdf",bbox_inches='tight',pad_inches=0.02)
+    plt.figure(2)
+    plt.clf()
+    plt.plot(v["th0"]*180/np.pi,v["brsqavg0"]/np.max(v["brsqavg0"]),"r")
+    plt.plot(v["th30"]*180/np.pi,v["brsqavg30"]/np.max(v["brsqavg0"]),"g")
+    plt.plot(v["th60"]*180/np.pi,v["brsqavg60"]/np.max(v["brsqavg0"]),"b")
+    plt.plot(v["th90"]*180/np.pi,v["brsqavg90"]/np.max(v["brsqavg0"]),"m")
+    plt.ylim(0,2)
+    plt.xlim(0,180)
+    plt.grid(b=1)
+    ax1=plt.gca()
+    for label in ax1.get_xticklabels() + ax1.get_yticklabels():
+        label.set_fontsize(20)
+    plt.grid(b=1)
+    ax1=plt.gca()
+    for label in ax1.get_xticklabels() + ax1.get_yticklabels():
+        label.set_fontsize(20)
+    plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20)
+    plt.ylabel(r"$\langle B_r^2\rangle$",fontsize=20)
+    
 def plotpsrangpower(cachefname="psrangle.npz"):
     if cachefname is not None and os.path.isfile(cachefname):
         npzfile = np.load(cachefname)
@@ -4695,7 +4792,7 @@ def plotpsrangpower(cachefname="psrangle.npz"):
     brsq0num_func = interp1d(th0,brsqavg0/np.max(brsqavg0),bounds_error=0,fill_value=1)
     oriflux = (2*pi*brsq0_func(th0)**0.5*sin(th0)*(th0[1]-th0[0])).sum(-1)
     orinumflux = (2*pi*brsq0num_func(th0)**0.5*sin(th0)*(th0[1]-th0[0])).sum(-1)
-    brsqalpha_func = lambda th: sin(da)**2*brsq0_func(th)*(orinumflux/oriflux)**2 + cos(da)**2*brsq0num_func(th)
+    brsqalpha_func = lambda th: (sin(da)**2*brsq0_func(th)**0.5*(orinumflux/oriflux) + cos(da)**2*brsq0num_func(th)**0.5)**2
     #old theta in terms of new theta, phi, and the amount of rotation, alpha
     oldth = lambda al,th,ph: arccos(sin(th)*cos(ph)*sin(al)+cos(th)*cos(al))
     brsq0rot_func = lambda al,th,ph: brsqalpha_func(oldth(al,th,ph))
