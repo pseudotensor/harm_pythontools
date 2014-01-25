@@ -4690,14 +4690,15 @@ def plotpsrangpower(cachefname="psrangle.npz"):
     plt.plot(th90*180/np.pi,brsqavg90/np.max(brsqavg0),"m")
     #rotation angle
     psisopsi0_func = interp1d(alphas/180.*pi,psis/psis[0])
-    da = 90/180.*np.pi 
+    da = 60/180.*np.pi 
     brsq0_func = interp1d(th0,cos(th0)**2,bounds_error=0,fill_value=1)
     brsq0num_func = interp1d(th0,brsqavg0/np.max(brsqavg0),bounds_error=0,fill_value=1)
     oriflux = (2*pi*brsq0_func(th0)**0.5*sin(th0)*(th0[1]-th0[0])).sum(-1)
     orinumflux = (2*pi*brsq0num_func(th0)**0.5*sin(th0)*(th0[1]-th0[0])).sum(-1)
+    brsqalpha_func = lambda th: sin(da)**2*brsq0_func(th)*(orinumflux/oriflux)**2 + cos(da)**2*brsq0num_func(th)
     #old theta in terms of new theta, phi, and the amount of rotation, alpha
     oldth = lambda al,th,ph: arccos(sin(th)*cos(ph)*sin(al)+cos(th)*cos(al))
-    brsq0rot_func = lambda al,th,ph: brsq0_func(oldth(al,th,ph))
+    brsq0rot_func = lambda al,th,ph: brsqalpha_func(oldth(al,th,ph))
     #brsq0rot_func = lambda al,th,ph: cos(oldth(al,th,ph))**2
     phgrid = np.linspace(0,2*pi,2*len(th0),endpoint=False)[None,:]
     print len(th0)
@@ -4709,7 +4710,7 @@ def plotpsrangpower(cachefname="psrangle.npz"):
     newflux = (brsq0rot**0.5*sin(thgrid)*dth*dph).sum(-1).sum(-1)
     print("Ori flux = %g, ori num flux = %g, new flux = %g" % (oriflux, orinumflux, newflux))
     brsq0rotavg = brsq0rot.mean(-1)
-    plt.plot(th0*180/np.pi,brsq0rotavg*psisopsi0_func(da)**2*(orinumflux/oriflux)**2,"r--")
+    plt.plot(th0*180/np.pi,brsq0rotavg*psisopsi0_func(da)**2,"r--")
     print("Flux correction = %g" % psisopsi0_func(da)**2)
     plt.ylim(0,2)
     plt.xlim(0,180)
