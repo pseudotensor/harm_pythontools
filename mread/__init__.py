@@ -4546,6 +4546,12 @@ def pbrsq(roRlc=1.5,doreload=1):
     plt.grid(b=1)
     plt.savefig("brsq.pdf",bbox_inches='tight',pad_inches=0.02)
 
+def linsolve(a,b):
+    """ solves a x = b. returns: x """
+    x = float((b[0]*a[1,1]-b[1]*a[0,1])/(a[0,0]*a[1,1]-a[1,0]*a[0,1]))
+    y = float((b[0]*a[1,0]-b[1]*a[0,0])/(a[0,1]*a[1,0]-a[1,1]*a[0,0]))
+    return(x,y)
+    
 def plotbrsq(cachefname="psrangle.npz"):
     v = np.load(cachefname)
     psis = np.array([])
@@ -4562,51 +4568,82 @@ def plotbrsq(cachefname="psrangle.npz"):
         ebrsqs = np.append(ebrsqs, v["ebrsq%g" % th])
         ebrs = np.append(ebrs, v["ebr%g" % th])
     th0 = thetas[0]
+    th100 = np.linspace(0,pi,100)
     #rotation angle
     psisopsi0_func = interp1d(alphas/180.*pi,psis/psis[0])
     da = 60/180.*np.pi 
-    brsq0_func = interp1d(th0,cos(th0)**2,bounds_error=0,fill_value=1)
     brsqavg0 = v["brsqavg0"]
-    brsq0num_func = interp1d(th0,brsqavg0/np.max(brsqavg0),bounds_error=0,fill_value=1)
-    oriflux = (2*pi*brsq0_func(th0)**0.5*sin(th0)*(th0[1]-th0[0])).sum(-1)
-    orinumflux = (2*pi*brsq0num_func(th0)**0.5*sin(th0)*(th0[1]-th0[0])).sum(-1)
-    brsqalpha_func = lambda th: (sin(da)**2*brsq0_func(th)**0.5*(orinumflux/oriflux) + cos(da)**2*brsq0num_func(th)**0.5)**2
+    brsq0_an_func_unnorm = interp1d(th0,cos(th0)**2,bounds_error=0,fill_value=1)
+    f = interp1d(th0,brsqavg0/np.max(brsqavg0),bounds_error=0,fill_value=1)
+    brsq0_num_func = interp1d(th100,f(th100))
+    anflux = (2*pi*brsq0_an_func_unnorm(th0)**0.5*sin(th0)*(th0[1]-th0[0])).sum(-1)
+    numflux = (2*pi*brsq0_num_func(th0)**0.5*sin(th0)*(th0[1]-th0[0])).sum(-1)
+    #now rescale aligned vacuum dipole such that its open flux is the same as that of numerical solution
+    brsq0_an_func = lambda th: brsq0_an_func_unnorm(th)*(numflux/anflux)**2
     #old theta in terms of new theta, phi, and the amount of rotation, alpha
     oldth = lambda al,th,ph: arccos(sin(th)*cos(ph)*sin(al)+cos(th)*cos(al))
-    brsq0rot_func = lambda al,th,ph: brsqalpha_func(oldth(al,th,ph))
-    #brsq0rot_func = lambda al,th,ph: cos(oldth(al,th,ph))**2
-    phgrid = np.linspace(0,2*pi,2*len(th0),endpoint=False)[None,:]
-    print len(th0)
-    thgrid = th0[:,None]+0*phgrid
+    brsqalpha_an_func = lambda al,th,ph: brsq0_an_func(oldth(al,th,ph))
+    brsqalpha_num_func = lambda al,th,ph: brsq0_num_func(oldth(al,th,ph))
+    num = 128
+    phgrid = np.linspace(0,2*pi,2*num,endpoint=False)[None,:]
+    thgrid = np.linspace(0,pi,num,endpoint=False)[:,None]+0*phgrid
     phgrid = phgrid + 0*thgrid
-    brsq0rot = brsq0rot_func(da,thgrid,phgrid)
     dth = (thgrid[1,0]-thgrid[0,0])
     dph = (phgrid[0,1]-phgrid[0,0])
-    newflux = (brsq0rot**0.5*sin(thgrid)*dth*dph).sum(-1).sum(-1)
-    print("Ori flux = %g, ori num flux = %g, new flux = %g" % (oriflux, orinumflux, newflux))
-    brsq0rotavg = brsq0rot.mean(-1)
-    plt.plot(th0*180/np.pi,brsq0rotavg*psisopsi0_func(da)**2,"r--")
-    print("Flux correction = %g" % psisopsi0_func(da)**2)
-    #
-    # Plotting
-    #
-    plt.figure(1)
-    plt.clf()
+    brsq_an_func_list = []
+    brsq_num_func_list = []
+    brsq0_an_list = []
+    brsq0_num_list = []
+    brsq90_an_list = []
+    brsq90_num_list = []
+    al1 = 5./180.*pi
+    al2 = 87./180.*pi
+    for da in [0, 15, 30, 45, 60, 75, 90]:
+        an = interp1d(thgrid[:,0],brsqalpha_an_func(da,thgrid,phgrid).mean(-1),bounds_error=0)
+        num = interp1d(thgrid[:,0],brsqalpha_num_func(da,thgrid,phgrid).mean(-1),bounds_error=0)
+        brsq_an_func_list.append(an)
+        brsq_num_func_list.append(num)
+        brsq0_an_list.append(an(al1))
+        brsq0_num_list.append(num(al1))
+        brsq90_an_list.append(an(al2))
+        brsq90_num_list.append(num(al2))
     brsq90 = []
     brsq0 = []
     alphas = []
     for th in [0, 15, 30, 45, 60, 75, 90]:
         th_array = v["th%g" % th]
-        brsq_array = v["brsqavg%g" % th]
+        brsq_array = v["brsqavg%g" % th]/(v["psi%g"%th]/v["psi0"])**2
         brsq_func = interp1d(th_array,brsq_array)
-        brsq90.append(brsq_func(5./180.*pi)/np.max(v["brsqavg0"]))
-        brsq0.append(brsq_func(87./180.*pi)/np.max(v["brsqavg0"]))
+        brsq0.append(brsq_func(al1)/np.max(v["brsqavg0"]))
+        brsq90.append(brsq_func(al2)/np.max(v["brsqavg0"]))
         alphas.append(th)
     brsq90 = np.array(brsq90)
     brsq0 = np.array(brsq0)
     alphas = np.array(alphas)
-    plt.plot(alphas,brsq90/(psis/psis[0])**2,"bo-",label=r"$B_r(90)$")
+    w_an_list = []
+    w_num_list = []
+    for i in xrange(len(alphas)):
+        an1 = float(brsq0_an_list[i])
+        an2 = float(brsq90_an_list[i])
+        num1 = float(brsq0_num_list[i])
+        num2 = float(brsq90_num_list[i])
+        rhs1 = float(brsq0[i])
+        rhs2 = float(brsq90[i])
+        w_an, w_num = linsolve(np.array([[an1,num1],[an2,num2]]),np.array([rhs1,rhs2]))
+        w_an_list.append(w_an)
+        w_num_list.append(w_num)
+        print( "%g*%g + %g*%g = %g =?= %g" % (w_an,an1,w_num,num1,w_an*an1+w_num*num1,rhs1) )
+        print( "%g*%g + %g*%g = %g =?= %g" % (w_an,an2,w_num,num2,w_an*an2+w_num*num2,rhs2) )
+    #
+    # Plotting
+    #
+    #
+    # Fig 1
+    #
+    plt.figure(1)
+    plt.clf()
     plt.plot(alphas,brsq0/(psis/psis[0])**2,"go-",label=r"$B_r(0)$")
+    plt.plot(alphas,brsq90/(psis/psis[0])**2,"bo-",label=r"$B_r(90)$")
     t = np.linspace(0,90,100)
     plt.plot(t,cos(t/180.*pi)**2,"k:")
     plt.plot(t,0.2+1-cos(t/180.*pi)**2,"k:")
@@ -4617,19 +4654,41 @@ def plotbrsq(cachefname="psrangle.npz"):
     ax1=plt.gca()
     for label in ax1.get_xticklabels() + ax1.get_yticklabels():
         label.set_fontsize(20)
+    plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20)
+    plt.ylabel(r"$\langle B_r^2\rangle$",fontsize=20)
+    #plt.savefig("Br.pdf",bbox_inches='tight',pad_inches=0.02)
+    #
+    # Fig 10
+    #
+    plt.figure(10)
+    plt.clf()
+    plt.plot(alphas,w_an_list,"go-",label=r"$w_{\rm an}$")
+    plt.plot(alphas,w_num_list,"bo-",label=r"$w_{\rm num}$")
+    plt.legend(loc="best")
+    plt.ylim(-5,10)
+    plt.xlim(0,90)
     plt.grid(b=1)
     ax1=plt.gca()
     for label in ax1.get_xticklabels() + ax1.get_yticklabels():
         label.set_fontsize(20)
     plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20)
-    plt.ylabel(r"$\langle B_r^2\rangle$",fontsize=20)
+    plt.ylabel(r"$w$",fontsize=20)
     #plt.savefig("Br.pdf",bbox_inches='tight',pad_inches=0.02)
+    #
+    # Fig 2
+    #
     plt.figure(2)
     plt.clf()
+    th = np.linspace(0,pi,100)
     plt.plot(v["th0"]*180/np.pi,v["brsqavg0"]/np.max(v["brsqavg0"]),"r")
-    plt.plot(v["th30"]*180/np.pi,v["brsqavg30"]/np.max(v["brsqavg0"]),"g")
-    plt.plot(v["th60"]*180/np.pi,v["brsqavg60"]/np.max(v["brsqavg0"]),"b")
-    plt.plot(v["th90"]*180/np.pi,v["brsqavg90"]/np.max(v["brsqavg0"]),"m")
+    plt.plot(th*180./pi,w_an_list[0]*brsq_an_func_list[0](th)+w_num_list[0]*brsq_num_func_list[0](th),"r:",lw=2)
+    #plt.plot(th*180./pi,brsq_num_func_list[0](th),"r:",lw=2)
+    plt.plot(v["th30"]*180/np.pi,v["brsqavg30"]/np.max(v["brsqavg0"])/(v["psi30"]/v["psi0"])**2,"g")
+    plt.plot(th*180./pi,w_an_list[2]*brsq_an_func_list[2](th)+w_num_list[2]*brsq_num_func_list[2](th),"g:",lw=2)
+    plt.plot(v["th60"]*180/np.pi,v["brsqavg60"]/np.max(v["brsqavg0"])/(v["psi60"]/v["psi0"])**2,"b")
+    plt.plot(th*180./pi,w_an_list[4]*brsq_an_func_list[4](th)+w_num_list[4]*brsq_num_func_list[4](th),"b:",lw=2)
+    plt.plot(v["th90"]*180/np.pi,v["brsqavg90"]/np.max(v["brsqavg0"])/(v["psi90"]/v["psi0"])**2,"m")
+    plt.plot(th*180./pi,w_an_list[6]*brsq_an_func_list[6](th)+w_num_list[6]*brsq_num_func_list[6](th),"m:",lw=2)
     plt.ylim(0,2)
     plt.xlim(0,180)
     plt.grid(b=1)
