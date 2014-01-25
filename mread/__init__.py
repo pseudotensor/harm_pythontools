@@ -63,6 +63,94 @@ def plot3danatoly():
     flow = mlab.flow(u, v, w, seed_scale=1,
                               seed_resolution=5,integration_direction='both')
 
+def denavg(var):
+    """ average var with density at each radius """
+    num = (gdet*rho*var).sum(-1).sum(-1)
+    den = (gdet*rho).sum(-1).sum(-1)
+    return(num/den)
+    
+def computetilt(fntsize=20,dosavefig=1):
+    global Brnorm, Bhnorm, Bpnorm, Bznorm, BRnorm, Bsq, tilt
+    os.chdir("/home/atchekho/run/sane")
+    grid3d("gdump.bin",use2d=1)
+    rfd("fieldline9000.bin")
+    cvel()
+    Br = dxdxp[1,1]*B[1]+dxdxp[1,2]*B[2]
+    Bh = dxdxp[2,1]*B[1]+dxdxp[2,2]*B[2]
+    Bp = B[3]*dxdxp[3,3]
+    #
+    Brnorm=Br
+    Bhnorm=Bh*np.abs(r)
+    Bpnorm=Bp*np.abs(r*np.sin(h))
+    #
+    Bznorm=Brnorm*np.cos(h)-Bhnorm*np.sin(h)
+    BRnorm=Brnorm*np.sin(h)+Bhnorm*np.cos(h)
+    #
+    Bsq = (Bznorm)**2+(BRnorm)**2+Bpnorm**2
+    #
+    #tiltnum = -BRnorm/gamma*Bpnorm
+    #tiltnum = -gv3[1,1]**0.5*bu[1]*gv3[3,3]**0.5*bu[3]
+    if 1:
+        tiltnum = -gv3[1,1]**0.5*bu[1]*gn3[3,3]**0.5*bd[3]
+        tiltden = bsq
+        tiltavg1 = denavg(tiltnum)/denavg(tiltden)
+    if 1:
+        tiltnum = ((gv3[1,1]**0.5*bu[1])**2+(gv3[2,2]**0.5*bu[2])**2)**0.5*gn3[3,3]**0.5*np.abs(bd[3])
+        tiltden = bsq
+        tiltavg1p = denavg(tiltnum)/denavg(tiltden)
+    if 1:
+        tiltnum = -gv3[1,1]**0.5*bu[1]*gv3[3,3]**0.5*bu[3]
+        tiltden = bsq
+        tiltavg2 = denavg(tiltnum)/denavg(tiltden)
+    if 1:
+        tiltnum = -BRnorm*Bpnorm
+        tiltden = Bsq
+        tiltavg4 = denavg(tiltnum)/denavg(tiltden)
+    if 0:
+        tiltnum = -gv3[1,1]**0.5*B[1]*gv3[3,3]**0.5*B[3]
+        tiltden = Bsq
+    if 1:
+        tiltnum = -Brnorm*Bpnorm
+        tiltden = Bsq
+        tiltavg3 = denavg(tiltnum)/denavg(tiltden)
+    #
+    # PLOTTING
+    #
+    plt.clf()
+    rad = r[:,0,0]
+    plt.plot(rad,tiltavg1,"r",lw=2,label=r"$-\sqrt{g_{rr}g^{\varphi\varphi}}\langle b^r b_\varphi\rangle/\langle b^2\rangle$")
+    l,=plt.plot(rad,tiltavg1p,"m",lw=2,label=r"$\sqrt{g^{\varphi\varphi}}\langle b_{\hat p} \left|b_\varphi\right|\rangle/\langle b^2\rangle$")
+    l.set_dashes([5,3])
+    l,=plt.plot(rad,tiltavg2,"b",lw=2,label=r"$-\sqrt{g_{rr}g_{\varphi\varphi}}\langle b^r b^\varphi\rangle/\langle b^2\rangle$")
+    l.set_dashes([10,5])
+    l,=plt.plot(rad,tiltavg3,"y",lw=2,label=r"$-\langle B_r B_\varphi\rangle/\langle B^2\rangle$")
+    l.set_dashes([10,10])
+    # l,=plt.plot(rad,tiltavg4,"y",lw=2,label=r"$-\langle B_R B_\varphi\rangle/\langle B^2\rangle$")
+    # l.set_dashes([5,5])
+    tilt_expected = sin(2*15.*np.pi/180.)/2.
+    l,=plt.plot(rad,0*rad+tilt_expected,"g",lw=2,label=r"$\theta_{\rm B}=15^\circ$")
+    l.set_dashes([2,4])
+    #
+    # Plot h/r
+    #
+    hor = horsimple()
+    l,=plt.plot(rad,horsimple(),"k",lw=2,label=r"$h/r\equiv\langle(\theta-\pi/2)^2\rangle^{1/2}$")
+    l.set_dashes([10,3,5,3])
+    plt.xlim(rhor,100)
+    plt.xscale("log")
+    plt.ylim(0,1.)
+    plt.xlabel(r"$r\ [r_g]$",fontsize = fntsize)
+    plt.ylabel(r"$-\langle b_{\hat r} b_{\hat \varphi}\rangle/\langle b^2\rangle,\; h/r$",fontsize = fntsize)
+    leg = plt.legend(loc="best")
+    plt.grid(b=1)
+    ax = plt.gca()
+    for label in ax.get_xticklabels() + ax.get_yticklabels() + leg.get_texts():
+        label.set_fontsize(fntsize)
+    if dosavefig:
+        plt.savefig("tilt_angle.pdf",
+                    bbox_inches='tight',pad_inches=0.06,dpi=300)
+
+
 def plot_harm_scaling(whichcode="harmrad",whichsystem="stampede",fntsize=20,dosavefig=1):
     if whichcode == "harmrad":
         if whichsystem == "stampede":
