@@ -4684,25 +4684,34 @@ def plotpsrangpower(cachefname="psrangle.npz"):
     plt.ylabel(r"$\Psi_{\rm open}^2/\Psi_{\rm tot}^2$",fontsize=20)
     plt.figure(3)
     plt.clf()
-    plt.plot(th0*180/np.pi,brsqavg0/np.max(brsqavg60),"r")
-    plt.plot(th30*180/np.pi,brsqavg30/np.max(brsqavg60),"g")
-    plt.plot(th60*180/np.pi,brsqavg60/np.max(brsqavg60),"b")
-    plt.plot(th90*180/np.pi,brsqavg90/np.max(brsqavg60),"m")
+    plt.plot(th0*180/np.pi,brsqavg0/np.max(brsqavg0),"r")
+    plt.plot(th30*180/np.pi,brsqavg30/np.max(brsqavg0),"g")
+    plt.plot(th60*180/np.pi,brsqavg60/np.max(brsqavg0),"b")
+    plt.plot(th90*180/np.pi,brsqavg90/np.max(brsqavg0),"m")
     #rotation angle
     psisopsi0_func = interp1d(alphas/180.*pi,psis/psis[0])
-    da = 30/180.*np.pi 
+    da = 90/180.*np.pi 
     brsq0_func = interp1d(th0,cos(th0)**2,bounds_error=0,fill_value=1)
+    brsq0num_func = interp1d(th0,brsqavg0/np.max(brsqavg0),bounds_error=0,fill_value=1)
+    oriflux = (2*pi*brsq0_func(th0)**0.5*sin(th0)*(th0[1]-th0[0])).sum(-1)
+    orinumflux = (2*pi*brsq0num_func(th0)**0.5*sin(th0)*(th0[1]-th0[0])).sum(-1)
     #old theta in terms of new theta, phi, and the amount of rotation, alpha
     oldth = lambda al,th,ph: arccos(sin(th)*cos(ph)*sin(al)+cos(th)*cos(al))
     brsq0rot_func = lambda al,th,ph: brsq0_func(oldth(al,th,ph))
     #brsq0rot_func = lambda al,th,ph: cos(oldth(al,th,ph))**2
     phgrid = np.linspace(0,2*pi,2*len(th0),endpoint=False)[None,:]
+    print len(th0)
     thgrid = th0[:,None]+0*phgrid
     phgrid = phgrid + 0*thgrid
     brsq0rot = brsq0rot_func(da,thgrid,phgrid)
+    dth = (thgrid[1,0]-thgrid[0,0])
+    dph = (phgrid[0,1]-phgrid[0,0])
+    newflux = (brsq0rot**0.5*sin(thgrid)*dth*dph).sum(-1).sum(-1)
+    print("Ori flux = %g, ori num flux = %g, new flux = %g" % (oriflux, orinumflux, newflux))
     brsq0rotavg = brsq0rot.mean(-1)
-    plt.plot(th0*180/np.pi,brsq0rotavg*psisopsi0_func(da),"r--")
-    plt.ylim(0,1.5)
+    plt.plot(th0*180/np.pi,brsq0rotavg*psisopsi0_func(da)**2*(orinumflux/oriflux)**2,"r--")
+    print("Flux correction = %g" % psisopsi0_func(da)**2)
+    plt.ylim(0,2)
     plt.xlim(0,180)
     plt.grid(b=1)
     ax1=plt.gca()
