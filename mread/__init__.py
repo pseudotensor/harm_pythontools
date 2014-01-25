@@ -4636,7 +4636,7 @@ def plotpsrangpower(cachefname="psrangle.npz"):
         os.chdir("..")
         if cachefname is not None:
             np.savez(cachefname, th0=th0, th15=th15, th30=th30, th45=th45, th60=th60, th75=th75, th90=th90, s0=s0, s15=s15, s30=s30, s45=s45, s60=s60, s75=s75, s90=s90, e0=e0, e15=e15, e30=e30, e45=e45, e60=e60, e75=e75, e90=e90,  psi0=psi0, psi15=psi15, psi30=psi30, psi45=psi45, psi60=psi60, psi75=psi75, psi90=psi90,  etot0=etot0, etot15=etot15, etot30=etot30, etot45=etot45, etot60=etot60, etot75=etot75, etot90=etot90,  brsqavg0=brsqavg0, brsqavg15=brsqavg15,  brsqavg30=brsqavg30, brsqavg45=brsqavg45,  brsqavg60=brsqavg60,  brsqavg75=brsqavg75, brsqavg90=brsqavg90, ebrsq0=ebrsq0, ebrsq15=ebrsq15, ebrsq30=ebrsq30, ebrsq45=ebrsq45, ebrsq60=ebrsq60, ebrsq75=ebrsq75, ebrsq90=ebrsq90, ebr0=ebr0, ebr15=ebr15, ebr30=ebr30, ebr45=ebr45, ebr60=ebr60, ebr75=ebr75, ebr90=ebr90)
-    #plt.figure(1)
+    plt.figure(1)
     plt.plot(th90/np.pi*180, e90, 'm', lw=4, label=r"$\alpha=90^\circ$")
     plt.plot(th60/np.pi*180, e60, 'b', lw=3, label=r"$\alpha=60^\circ$")
     plt.plot(th30/np.pi*180, e30, 'g', lw=2, label=r"$\alpha=30^\circ$")
@@ -4683,10 +4683,25 @@ def plotpsrangpower(cachefname="psrangle.npz"):
     plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20)
     plt.ylabel(r"$\Psi_{\rm open}^2/\Psi_{\rm tot}^2$",fontsize=20)
     plt.figure(3)
-    plt.plot(th0*180/np.pi,brsqavg0/np.max(brsqavg60))
-    plt.plot(th30*180/np.pi,brsqavg30/np.max(brsqavg60))
-    plt.plot(th60*180/np.pi,brsqavg60/np.max(brsqavg60))
-    plt.plot(th90*180/np.pi,brsqavg90/np.max(brsqavg60))
+    plt.clf()
+    plt.plot(th0*180/np.pi,brsqavg0/np.max(brsqavg60),"r")
+    plt.plot(th30*180/np.pi,brsqavg30/np.max(brsqavg60),"g")
+    plt.plot(th60*180/np.pi,brsqavg60/np.max(brsqavg60),"b")
+    plt.plot(th90*180/np.pi,brsqavg90/np.max(brsqavg60),"m")
+    #rotation angle
+    psisopsi0_func = interp1d(alphas/180.*pi,psis/psis[0])
+    da = 30/180.*np.pi 
+    brsq0_func = interp1d(th0,cos(th0)**2,bounds_error=0,fill_value=1)
+    #old theta in terms of new theta, phi, and the amount of rotation, alpha
+    oldth = lambda al,th,ph: arccos(sin(th)*cos(ph)*sin(al)+cos(th)*cos(al))
+    brsq0rot_func = lambda al,th,ph: brsq0_func(oldth(al,th,ph))
+    #brsq0rot_func = lambda al,th,ph: cos(oldth(al,th,ph))**2
+    phgrid = np.linspace(0,2*pi,2*len(th0),endpoint=False)[None,:]
+    thgrid = th0[:,None]+0*phgrid
+    phgrid = phgrid + 0*thgrid
+    brsq0rot = brsq0rot_func(da,thgrid,phgrid)
+    brsq0rotavg = brsq0rot.mean(-1)
+    plt.plot(th0*180/np.pi,brsq0rotavg*psisopsi0_func(da),"r--")
     plt.ylim(0,1.5)
     plt.xlim(0,180)
     plt.grid(b=1)
@@ -4698,7 +4713,7 @@ def plotpsrangpower(cachefname="psrangle.npz"):
     for label in ax1.get_xticklabels() + ax1.get_yticklabels():
         label.set_fontsize(20)
     plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20)
-    plt.ylabel(r"$B_r$",fontsize=20)
+    plt.ylabel(r"$\langle B_r^2\rangle$",fontsize=20)
     plt.savefig("Br.pdf",bbox_inches='tight',pad_inches=0.02)
     plt.figure(4)
     en = np.array([
