@@ -49,9 +49,9 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
-import h5py
-from mayavi import mlab
 def plot3danatoly():
+    import h5py
+    from mayavi import mlab
     #%run -i ~/py/mread/__init__.py
     f = h5py.File('flds.tot.025','r')
     mlab_dens = mlab.pipeline.scalar_field(f["dens"].value)
