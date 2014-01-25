@@ -5980,6 +5980,7 @@ def printjetwindpower(filehandle = None, r = None, stage = 0, powjet = 0, powwin
     os.fsync(filehandle.fileno())
     
 def horsimple():
+    """ Compute hor=<h/r>"""
     hor = ((gdet*rho*(h-np.pi/2)**2).sum(-1).sum(-1)/(gdet*rho).sum(-1).sum(-1))**0.5
     return(hor)
 
