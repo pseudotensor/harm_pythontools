@@ -4687,7 +4687,7 @@ def plotpsrangpower(cachefname="psrangle.npz"):
     plt.plot(th30*180/np.pi,brsqavg30/np.max(brsqavg60))
     plt.plot(th60*180/np.pi,brsqavg60/np.max(brsqavg60))
     plt.plot(th90*180/np.pi,brsqavg90/np.max(brsqavg60))
-    plt.ylim(0,1)
+    plt.ylim(0,1.5)
     plt.xlim(0,180)
     plt.grid(b=1)
     ax1=plt.gca()
