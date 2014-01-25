@@ -4683,10 +4683,10 @@ def plotpsrangpower(cachefname="psrangle.npz"):
     plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20)
     plt.ylabel(r"$\Psi_{\rm open}^2/\Psi_{\rm tot}^2$",fontsize=20)
     plt.figure(3)
-    #plt.plot(th0,brsqavg0)
-    #plt.plot(th30,brsqavg30)
+    plt.plot(th0*180/np.pi,brsqavg0/np.max(brsqavg60))
+    plt.plot(th30*180/np.pi,brsqavg30/np.max(brsqavg60))
     plt.plot(th60*180/np.pi,brsqavg60/np.max(brsqavg60))
-    #plt.plot(th90,brsqavg90)
+    plt.plot(th90*180/np.pi,brsqavg90/np.max(brsqavg60))
     plt.ylim(0,1)
     plt.xlim(0,180)
     plt.grid(b=1)
@@ -4771,7 +4771,7 @@ def plotpangle(roRlc=None,r0=10,doreload=1,dnpole=0,no=106,inject=0):
     elif inject == 1:
         return h[ii,:,0],eflux[ii,:]*dxdxp[1,1,ii,:,0]*fac,emflux[ii,:]*dxdxp[1,1,ii,:,0]*fac
     elif inject == 2:
-        return emtot, psitot, Brsqavg[ii], ebrsq, ebr
+        return etot, psitot, Brsqavg[ii], ebrsq, ebr
         
 
         
