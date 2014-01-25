@@ -4574,7 +4574,8 @@ def plotbrsq(cachefname="psrangle.npz"):
     da = 60/180.*np.pi 
     brsqavg0 = v["brsqavg0"]
     brsq0_an_func_unnorm = interp1d(th0,cos(th0)**2,bounds_error=0,fill_value=1)
-    f = interp1d(th0,brsqavg0/np.max(brsqavg0),bounds_error=0,fill_value=1)
+    which = (th0<85./180.*pi)+(th0>95./180.*pi)
+    f = interp1d(th0[which],brsqavg0[which]/np.max(brsqavg0),bounds_error=0,fill_value=1)
     brsq0_num_func = interp1d(th100,f(th100))
     anflux = (2*pi*brsq0_an_func_unnorm(th0)**0.5*sin(th0)*(th0[1]-th0[0])).sum(-1)
     numflux = (2*pi*brsq0_num_func(th0)**0.5*sin(th0)*(th0[1]-th0[0])).sum(-1)
@@ -4634,6 +4635,9 @@ def plotbrsq(cachefname="psrangle.npz"):
         w_num_list.append(w_num)
         print( "%g*%g + %g*%g = %g =?= %g" % (w_an,an1,w_num,num1,w_an*an1+w_num*num1,rhs1) )
         print( "%g*%g + %g*%g = %g =?= %g" % (w_an,an2,w_num,num2,w_an*an2+w_num*num2,rhs2) )
+          #[0, 15, 30, 45, 60, 75, 90]
+    w_an = [0,  0,  0.25,  0,  0.5,  0,  1]
+    w_num= [1,  0,  0.75,  0,  0.5,  0,  0]
     #
     # Plotting
     #
@@ -4679,16 +4683,19 @@ def plotbrsq(cachefname="psrangle.npz"):
     #
     plt.figure(2)
     plt.clf()
+    sol = []
     th = np.linspace(0,pi,100)
+    for i in xrange(len(thetas)):
+        sol.append( (w_an_list[i]*brsq_an_func_list[i](th)**0.5+w_num_list[i]*brsq_num_func_list[i](th)**0.5)**2 )
     plt.plot(v["th0"]*180/np.pi,v["brsqavg0"]/np.max(v["brsqavg0"]),"r")
-    plt.plot(th*180./pi,w_an_list[0]*brsq_an_func_list[0](th)+w_num_list[0]*brsq_num_func_list[0](th),"r:",lw=2)
+    plt.plot(th*180./pi,sol[0],"r:",lw=2)
     #plt.plot(th*180./pi,brsq_num_func_list[0](th),"r:",lw=2)
     plt.plot(v["th30"]*180/np.pi,v["brsqavg30"]/np.max(v["brsqavg0"])/(v["psi30"]/v["psi0"])**2,"g")
-    plt.plot(th*180./pi,w_an_list[2]*brsq_an_func_list[2](th)+w_num_list[2]*brsq_num_func_list[2](th),"g:",lw=2)
+    plt.plot(th*180./pi,sol[2],"g:",lw=2)
     plt.plot(v["th60"]*180/np.pi,v["brsqavg60"]/np.max(v["brsqavg0"])/(v["psi60"]/v["psi0"])**2,"b")
-    plt.plot(th*180./pi,w_an_list[4]*brsq_an_func_list[4](th)+w_num_list[4]*brsq_num_func_list[4](th),"b:",lw=2)
+    plt.plot(th*180./pi,sol[4],"b:",lw=2)
     plt.plot(v["th90"]*180/np.pi,v["brsqavg90"]/np.max(v["brsqavg0"])/(v["psi90"]/v["psi0"])**2,"m")
-    plt.plot(th*180./pi,w_an_list[6]*brsq_an_func_list[6](th)+w_num_list[6]*brsq_num_func_list[6](th),"m:",lw=2)
+    plt.plot(th*180./pi,sol[6],"m:",lw=2)
     plt.ylim(0,2)
     plt.xlim(0,180)
     plt.grid(b=1)
