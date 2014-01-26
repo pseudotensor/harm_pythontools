@@ -4607,6 +4607,7 @@ def plotbrsq(cachefname="psrangle.npz"):
     # well, actually, not 0 and 90 degrees but al1 = 5 and al2 = 87 degrees:
     al1 = 5./180.*pi
     al2 = 87./180.*pi
+    # fitting functions
     for da in [0, 15, 30, 45, 60, 75, 90]:
         an = interp1d(thgrid[:,0],brsqalpha_an_func(da/180.*pi,thgrid,phgrid).mean(-1),bounds_error=0)
         num = interp1d(thgrid[:,0],brsqalpha_num_func(da/180.*pi,thgrid,phgrid).mean(-1),bounds_error=0)
@@ -4616,16 +4617,17 @@ def plotbrsq(cachefname="psrangle.npz"):
         brsq0_num_list.append(num(al1))
         brsq90_an_list.append(an(al2))
         brsq90_num_list.append(num(al2))
-    brsq90 = []
-    brsq0 = []
+    # numerical solutions
+    brsq0_sol_list = []
+    brsq90_sol_list = []
     for th in [0, 15, 30, 45, 60, 75, 90]:
         th_array = v["th%g" % th]
-        brsq_array = v["brsqavg%g" % th]/(v["psi%g"%th]/v["psi0"])**2
-        brsq_func = interp1d(th_array,brsq_array)
-        brsq0.append(brsq_func(al1)/np.max(v["brsqavg0"]))
-        brsq90.append(brsq_func(al2)/np.max(v["brsqavg0"]))
-    brsq90 = np.array(brsq90)
-    brsq0 = np.array(brsq0)
+        brsq_sol = v["brsqavg%g" % th]/(v["psi%g"%th]/v["psi0"])**2
+        brsq_sol_func = interp1d(th_array,brsq_sol)
+        brsq0_sol_list.append(brsq_sol_func(al1)/np.max(v["brsqavg0"]))
+        brsq90_sol_list.append(brsq_sol_func(al2)/np.max(v["brsqavg0"]))
+    brsq90_sol_list = np.array(brsq90_sol_list)
+    brsq0_sol_list = np.array(brsq0_sol_list)
     alphas = np.array(alphas)
     w_an_list = []
     w_num_list = []
@@ -4634,8 +4636,8 @@ def plotbrsq(cachefname="psrangle.npz"):
         an2 = float(brsq90_an_list[i]**0.5)
         num1 = float(brsq0_num_list[i]**0.5)
         num2 = float(brsq90_num_list[i]**0.5)
-        rhs1 = float(brsq0[i]**0.5)
-        rhs2 = float(brsq90[i]**0.5)
+        rhs1 = float(brsq0_sol_list[i]**0.5)
+        rhs2 = float(brsq90_sol_list[i]**0.5)
         w_an, w_num = linsolve(np.array([[an1,num1],[an2,num2]]),np.array([rhs1,rhs2]))
         w_an_list.append(w_an)
         w_num_list.append(w_num)
@@ -4653,8 +4655,8 @@ def plotbrsq(cachefname="psrangle.npz"):
     #
     plt.figure(1)
     plt.clf()
-    plt.plot(alphas,brsq0/(psis/psis[0])**2,"go-",label=r"$B_r(0)$")
-    plt.plot(alphas,brsq90/(psis/psis[0])**2,"bo-",label=r"$B_r(90)$")
+    plt.plot(alphas,brsq0_sol_list/(psis/psis[0])**2,"go-",label=r"$B_r(0)$")
+    plt.plot(alphas,brsq90_sol_list/(psis/psis[0])**2,"bo-",label=r"$B_r(90)$")
     t = np.linspace(0,90,100)
     plt.plot(t,cos(t/180.*pi)**2,"k:")
     plt.plot(t,0.2+1-cos(t/180.*pi)**2,"k:")
