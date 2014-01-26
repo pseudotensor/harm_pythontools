@@ -4629,6 +4629,7 @@ def plotbrsq(cachefname="psrangle.npz"):
     brsq90_sol_list = np.array(brsq90_sol_list)
     brsq0_sol_list = np.array(brsq0_sol_list)
     alphas = np.array(alphas)
+    # find optical weights, w_an, w_num
     w_an_list = []
     w_num_list = []
     for i in xrange(len(alphas)):
@@ -4644,6 +4645,7 @@ def plotbrsq(cachefname="psrangle.npz"):
         # print( "%g*%g + %g*%g = %g =?= %g" % (w_an,an1,w_num,num1,w_an*an1+w_num*num1,rhs1) )
         # print( "%g*%g + %g*%g = %g =?= %g" % (w_an,an2,w_num,num2,w_an*an2+w_num*num2,rhs2) )
         #[0, 15, 30, 45, 60, 75, 90]
+    # if desired, override the weights
     # w_an_list = [0,  0,  -0.5,  0,  1,  0,  1]
     # w_num_list= [1,  0,  1.5,  0,  0,  0,  0]
     #w_num_list[4] = 1 - w_an_list[4]
