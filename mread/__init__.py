@@ -4576,26 +4576,35 @@ def plotbrsq(cachefname="psrangle.npz"):
     which = (th0<87./180.*pi)+(th0>93./180.*pi)
     f = interp1d(th0[which],brsqavg0[which]/np.max(brsqavg0),bounds_error=0,fill_value=1)
     brsq0_num_func = f
+    #analytic flux: due to vacuum dipole
     anflux = (2*pi*brsq0_an_func_unnorm(th0)**0.5*sin(th0)*(th0[1]-th0[0])).sum(-1)
+    #numerical flux: due to axisymmetric MHD dipole
     numflux = (2*pi*brsq0_num_func(th0)**0.5*sin(th0)*(th0[1]-th0[0])).sum(-1)
     #now rescale aligned vacuum dipole such that its open flux is the same as that of numerical solution
     brsq0_an_func = lambda th: brsq0_an_func_unnorm(th)*(numflux/anflux)**2
     #old theta in terms of new theta, phi, and the amount of rotation, alpha
     oldth = lambda al,th,ph: arccos(sin(th)*cos(ph)*sin(al)+cos(th)*cos(al))
+    #tilt both solutions
     brsqalpha_an_func = lambda al,th,ph: brsq0_an_func(oldth(al,th,ph))
     brsqalpha_num_func = lambda al,th,ph: brsq0_num_func(oldth(al,th,ph))
+    #Prepare to discretize these solutions on a grid of num^2 cells:
+    # create grid
     num = 128
     phgrid = np.linspace(0,2*pi,2*num,endpoint=False)[None,:]
     thgrid = np.linspace(0,pi,num,endpoint=False)[:,None]+0*phgrid
     phgrid = phgrid + 0*thgrid
+    # compute cell spacing
     dth = (thgrid[1,0]-thgrid[0,0])
     dph = (phgrid[0,1]-phgrid[0,0])
+    # arrays for storing discretized solutions
     brsq_an_func_list = []
     brsq_num_func_list = []
+    # arrays for storing the values of these solutions at theta = 0 and 90 degrees
     brsq0_an_list = []
     brsq0_num_list = []
     brsq90_an_list = []
     brsq90_num_list = []
+    # well, actually, not 0 and 90 degrees but al1 = 5 and al2 = 87 degrees:
     al1 = 5./180.*pi
     al2 = 87./180.*pi
     for da in [0, 15, 30, 45, 60, 75, 90]:
@@ -4609,14 +4618,12 @@ def plotbrsq(cachefname="psrangle.npz"):
         brsq90_num_list.append(num(al2))
     brsq90 = []
     brsq0 = []
-    alphas = []
     for th in [0, 15, 30, 45, 60, 75, 90]:
         th_array = v["th%g" % th]
         brsq_array = v["brsqavg%g" % th]/(v["psi%g"%th]/v["psi0"])**2
         brsq_func = interp1d(th_array,brsq_array)
         brsq0.append(brsq_func(al1)/np.max(v["brsqavg0"]))
         brsq90.append(brsq_func(al2)/np.max(v["brsqavg0"]))
-        alphas.append(th)
     brsq90 = np.array(brsq90)
     brsq0 = np.array(brsq0)
     alphas = np.array(alphas)
@@ -4632,11 +4639,12 @@ def plotbrsq(cachefname="psrangle.npz"):
         w_an, w_num = linsolve(np.array([[an1,num1],[an2,num2]]),np.array([rhs1,rhs2]))
         w_an_list.append(w_an)
         w_num_list.append(w_num)
-        print( "%g*%g + %g*%g = %g =?= %g" % (w_an,an1,w_num,num1,w_an*an1+w_num*num1,rhs1) )
-        print( "%g*%g + %g*%g = %g =?= %g" % (w_an,an2,w_num,num2,w_an*an2+w_num*num2,rhs2) )
-          #[0, 15, 30, 45, 60, 75, 90]
+        # print( "%g*%g + %g*%g = %g =?= %g" % (w_an,an1,w_num,num1,w_an*an1+w_num*num1,rhs1) )
+        # print( "%g*%g + %g*%g = %g =?= %g" % (w_an,an2,w_num,num2,w_an*an2+w_num*num2,rhs2) )
+        #[0, 15, 30, 45, 60, 75, 90]
     # w_an_list = [0,  0,  -0.5,  0,  1,  0,  1]
     # w_num_list= [1,  0,  1.5,  0,  0,  0,  0]
+    #w_num_list[4] = 1 - w_an_list[4]
     #
     # Plotting
     #
