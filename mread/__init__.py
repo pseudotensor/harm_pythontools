@@ -14963,6 +14963,73 @@ def mkstreamlinefigure(length=25,doenergy=False,frac=0.75,frameon=True,dpi=300,s
     #plt.savefig("fig2.png",bbox_inches='tight',pad_inches=0.02,dpi=dpi,facecolor=fig.get_facecolor(),transparent=True)
     #fig.get_facecolor()
 
+def mk1panel(findex = 2, bignumbers = 1, fntsize = 20, doxy = 0):
+    doslines = 1
+    plen = plotlen = 25
+    dogrid = False
+    arrowsize=1
+    downsample=4
+    density=2
+    dodiskfield=True
+    minlenbhfield=0.2
+    minlendiskfield=0.2
+    fig=plt.figure(0, figsize=(12,9), dpi=100)
+    plt.clf()
+    gs1 = GridSpec(4, 4)
+    if bignumbers:
+        fntsize = 20
+        fntsize2 = 17
+    else:
+        fntsize = 16
+    if bignumbers:
+        gs1.update(left=0.06, right=0.87, top=0.995, bottom=0.48, wspace=0.01)
+    else:
+        gs1.update(left=0.04, right=0.94, top=0.995, bottom=0.48, wspace=0.05)
+    findexlist=(0,1157,3297,5403)
+    #
+    # PLOT 3
+    #
+    grid3d("gdump.bin",use2d=1)
+    fname = "fieldline%04d.bin" % findexlist[findex]
+    rfd(fname)
+    cvel() #for calculating bsq
+    #Rz
+    ax1 = plt.subplot(gs1[2:4, 2])
+    # plt.text(-0.75*plen, 0.75*plen, r"$(\mathrm{e})$", size=fntsize, rotation=0.,
+    #          ha="center", va="center",
+    #          color='k',weight='regular',bbox=bbox_props
+    #          )
+    mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,arrowsize=arrowsize)
+    ax1.set_xlabel(r'$x\ [r_g]$',fontsize=fntsize)
+    ax1.set_ylabel(r'$z\ [r_g]$',fontsize=fntsize,labelpad=-10)
+    if dogrid: plt.grid()
+    #xy
+    if doxy:
+        ax2 = plt.subplot(gs1[0:2, 2])
+        plt.text(-0.75*plen, 0.8*plen, r"$(\mathrm{c})$", size=fntsize, rotation=0.,
+                 ha="center", va="center",
+                 color='w',weight='regular' #,bbox=bbox_props
+                 )
+        plt.text(0.9*plen, 0.8*plen, r"$t=%g$" % np.floor(t), size=fntsize, rotation=0.,
+                 ha="right", va="center",
+                 color='w',weight='regular' #,bbox=bbox_props
+                 )
+        mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=False)
+        plt.setp( ax2.get_xticklabels(), visible=False)
+        if dogrid: plt.grid()
+    plt.subplots_adjust(hspace=0.03) #increase vertical spacing to avoid crowding
+    if bignumbers:
+        # plt.setp( ax1.get_yticklabels(), visible=False)
+        # plt.setp( ax2.get_yticklabels(), visible=False)
+        for label in ax1.get_xticklabels() + ax1.get_yticklabels(): label.set_fontsize(fntsize2)
+    #
+    plt.savefig( "fig1panel.png",bbox_inches='tight',pad_inches=0.04 )
+    plt.savefig( "fig1panel.eps",bbox_inches='tight',pad_inches=0.04 )
+    #
+    print( "Done!" )
+    sys.stdout.flush()
+
+    
 def mklotsopanels(doreload=1,epsFm=None,epsFke=None,epsetaj=None,epsFm30=None,fti=None,ftf=None,domakeframes=True,prefactor=100,sigma=None,usegaussianunits=False,arrowsize=1,onlyeta=False,bignumbers=False,showcolorbar=True,doslines=True):
     global qtymem
     #Figure 1
@@ -18626,6 +18693,9 @@ if __name__ == "__main__":
         if 'qtymem' not in globals():
             qtymem=getqtyvstime(ihor,0.2)
         plotqtyvstime( qtymem, whichplot = -5, epsFm = epsFm, epsFke = epsFke, epsetaj = epsetaj, epsFm30 = epsFm30)
+    if False:
+        #VERY compact version with a single R-z panel
+        mk1panel()
     if False:
         #FIGURE 1 LOTSOPANELS
         fti=7000
