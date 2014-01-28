@@ -62,19 +62,6 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15):
     # compute cell spacing
     dth = (thgrid[1,0]-thgrid[0,0])
     dph = (phgrid[0,1]-phgrid[0,0])
-    # arrays for storing discretized solutions
-    br_an_func_list = []
-    br_num_func_list = []
-    # arrays for storing the values of these solutions at theta = 0 and 90 degrees
-    br_an_list = []
-    br_num_list = []
-    br0_an_list = []
-    br0_num_list = []
-    br90_an_list = []
-    br90_num_list = []
-    # well, actually, not 0 and 90 degrees but al1 = 5 and al2 = 87 degrees:
-    al1 = 5./180.*pi
-    al2 = 87./180.*pi
     v1 = {}
     # fitting functions
     for da in [0, 15, 30, 45, 60, 75, 90]:
@@ -82,7 +69,11 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15):
         v1["br_num_%g" % da] = br_alpha_num_func(da/180.*pi,v["th2d%g" % da],v["ph2d%g" % da])
     th = alpha
     # proposed analytic solution
-    Br_fit = lambda th: v1["br_an_%g" % th]*sin(th/180.*pi)+v1["br_num_%g" % th]*cos(th/180.*pi)
+    w1=interp1d([0,30,60,90],[1,1,1.5,1])
+    w2=interp1d([0,30,60,90],[1,0.25,0.4,1])
+    Br_fit = lambda th: v1["br_num_%g" % th] if th == 0 else v1["br_num_%g" % th]*cos(th/180.*pi)*w1(th)+v1["br_an_%g" % 90]*sin(th/180.*pi)*w2(th)
+    Br_mhd_fit = lambda th: v1["br_num_%g" % th]*cos(th/180.*pi)
+    Br_vac_fit = lambda th: v1["br_an_%g" % th]*sin(th/180.*pi)
     Brsqavg_fit = lambda th: (Br_fit(th)**2).mean(-1)
     #
     # Plotting
@@ -101,28 +92,40 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15):
     #
     plt.figure(2)
     plt.clf()
-    th = 0; plt.plot(v["th2d%g" % th][:,0],v["Br2d%g" % th][:,0]/(v["psi%g" % th]/v["psi0"])/norm,"r",lw=2)
-    th = 0; plt.plot(v["th2d%g" % th][:,0],Br_fit(th)[:,0],"r:",lw=2)
+    # th = 0; plt.plot(v["th2d%g" % th][:,0],v["Br2d%g" % th][:,0]/(v["psi%g" % th]/v["psi0"])/norm,"r",lw=2)
+    # th = 0; plt.plot(v["th2d%g" % th][:,0],Br_fit(th)[:,0],"r:",lw=2)
     th = 30; plt.plot(v["th2d%g" % th][:,0],v["Br2d%g" % th][:,0]/(v["psi%g" % th]/v["psi0"])/norm,"g",lw=2)
-    th = 30; plt.plot(v["th2d%g" % th][:,0],Br_fit(th)[:,0],"g:",lw=2)
+    #th = 30; plt.plot(v["th2d%g" % th][:,0],Br_fit(th)[:,0],"g:",lw=2)
+    th = 30; plt.plot(v["th2d%g" % th][:,0],Br_mhd_fit(th)[:,0],"g:",lw=2)
+    th = 90; plt.plot(v["th2d%g" % th][:,0],Br_vac_fit(th)[:,0],"g-.",lw=2)
+    plt.plot(v["th2d%g" % th][:,0],(Br_mhd_fit(30)+0.25*Br_vac_fit(90))[:,0],"g--",lw=2)
     th = 60; plt.plot(v["th2d%g" % th][:,0],v["Br2d%g" % th][:,0]/(v["psi%g" % th]/v["psi0"])/norm,"b",lw=2)
-    th = 60; plt.plot(v["th2d%g" % th][:,0],Br_fit(th)[:,0],"b:",lw=2)
-    th = 90; plt.plot(v["th2d%g" % th][:,0],v["Br2d%g" % th][:,0]/(v["psi%g" % th]/v["psi0"])/norm,"m",lw=2)
-    th = 90; plt.plot(v["th2d%g" % th][:,0],Br_fit(th)[:,0],"m:",lw=2)
+    #th = 60; plt.plot(v["th2d%g" % th][:,0],Br_fit(th)[:,0],"b:",lw=2)
+    th = 60; plt.plot(v["th2d%g" % th][:,0],1.5*Br_mhd_fit(th)[:,0],"b:",lw=2)
+    th = 90; plt.plot(v["th2d%g" % th][:,0],0.4*Br_vac_fit(th)[:,0],"b-.",lw=2)
+    plt.plot(v["th2d%g" % th][:,0],(1.5*Br_mhd_fit(60)+0.4*Br_vac_fit(90))[:,0],"b--",lw=2)
+    # th = 90; plt.plot(v["th2d%g" % th][:,0],v["Br2d%g" % th][:,0]/(v["psi%g" % th]/v["psi0"])/norm,"m",lw=2)
+    # th = 90; plt.plot(v["th2d%g" % th][:,0],Br_fit(th)[:,0],"m:",lw=2)
     #
     # Figure 3
     #
     plt.figure(3)
     plt.clf()
     #
-    th = 0; plt.plot(v["th2d%g" % th][:,0],v["Br2d%g" % th][:,0]/(v["psi%g" % th]/v["psi0"])/norm,"r",lw=2)
-    th = 0; plt.plot(v["th2d%g" % th][:,0],Br_fit(th)[:,0],"r:",lw=2)
+    # th = 0; plt.plot(v["th2d%g" % th][:,0],v["Br2d%g" % th][:,0]/(v["psi%g" % th]/v["psi0"])/norm,"r",lw=2)
+    # th = 0; plt.plot(v["th2d%g" % th][:,0],Br_fit(th)[:,0],"r:",lw=2)
     th = 30; plt.plot(v["th2d%g" % th][:,0],v["Br2d%g" % th][:,128/4]/(v["psi%g" % th]/v["psi0"])/norm,"g",lw=2)
-    th = 30; plt.plot(v["th2d%g" % th][:,0],Br_fit(th)[:,128/4],"g:",lw=2)
+    #th = 30; plt.plot(v["th2d%g" % th][:,0],Br_fit(th)[:,128/4],"g:",lw=2)
+    th = 30; plt.plot(v["th2d%g" % th][:,0],Br_mhd_fit(th)[:,128/4],"g:",lw=2)
+    th = 90; plt.plot(v["th2d%g" % th][:,0],Br_vac_fit(th)[:,128/4],"g-.",lw=2)
+    plt.plot(v["th2d%g" % th][:,0],(Br_mhd_fit(30)+0.25*Br_vac_fit(90))[:,128/4],"g--",lw=2)
     th = 60; plt.plot(v["th2d%g" % th][:,0],v["Br2d%g" % th][:,128/4]/(v["psi%g" % th]/v["psi0"])/norm,"b",lw=2)
-    th = 60; plt.plot(v["th2d%g" % th][:,0],Br_fit(th)[:,128/4],"b:",lw=2)
-    th = 90; plt.plot(v["th2d%g" % th][:,0],v["Br2d%g" % th][:,128/4]/(v["psi%g" % th]/v["psi0"])/norm,"m",lw=2)
-    th = 90; plt.plot(v["th2d%g" % th][:,0],Br_fit(th)[:,128/4],"m:",lw=2)
+    #th = 60; plt.plot(v["th2d%g" % th][:,0],Br_fit(th)[:,128/4],"b:",lw=2)
+    th = 60; plt.plot(v["th2d%g" % th][:,0],1.5*Br_mhd_fit(th)[:,128/4],"b:",lw=2)
+    th = 90; plt.plot(v["th2d%g" % th][:,0],0.4*Br_vac_fit(th)[:,128/4],"b-.",lw=2)
+    plt.plot(v["th2d%g" % th][:,0],(1.5*Br_mhd_fit(60)+0.4*Br_vac_fit(90))[:,128/4],"b--",lw=2)
+    # th = 90; plt.plot(v["th2d%g" % th][:,0],v["Br2d%g" % th][:,128/4]/(v["psi%g" % th]/v["psi0"])/norm,"m",lw=2)
+    # th = 90; plt.plot(v["th2d%g" % th][:,0],Br_fit(th)[:,128/4],"m:",lw=2)
     #
     # Fig 4
     #
@@ -148,4 +151,17 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15):
         label.set_fontsize(20)
     plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20)
     plt.ylabel(r"$\langle B_r^2\rangle$",fontsize=20)
+    #
+    # Figure 5
+    #
+    figure(5)
+    clf()
+    f1 = (v1["br_num_%g" % 60]**2).mean(-1)
+    f2 = (v1["br_an_%g" % 90]**2).mean(-1)
+    f = (v1["br_num_%g" % 60]*v1["br_an_%g" % 90]).mean(-1)
+    plot(v["th2d60"][:,0],f,label=r"$f$")
+    plot(v["th2d60"][:,0],f1,label=r"$f_1$")
+    plot(v["th2d60"][:,0],f2,label=r"$f_2$")
+    legend(loc="best")
     v.close()
+    
