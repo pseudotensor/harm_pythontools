@@ -4609,48 +4609,48 @@ def plotpsrangpower(cachefname="psrangle.npz"):
         os.chdir("/home/atchekho/run2/hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1")
         th0,e0,s0=plotpangle(inject=1,doreload=1,no=690)
         etot0,psi0,brsqavg0,ebrsq0,ebr0=plotpangle(inject=2,doreload=0,no=690)
-        j2d0,k2d0,th2d0,ph2d0,uut2d0,uur2d0,uuth2d0,uuph2d0,Br2d0,Bth2d0,Bph2d0,FE2d0,FEM2d0=plotpangle(inject=3,doreload=0,no=690)
+        j2d0,k2d0,th2d0,ph2d0,uut2d0,uur2d0,uuth2d0,uuph2d0,Br2d0,Bth2d0,Bph2d0,FE2d0,FEM2d0,bsq2d0,ug2d0=plotpangle(inject=3,doreload=0,no=690)
         os.chdir("../hf_15_r10h05_mydt_sph_ps2_256x128x128_bsqorho")
         th15,e15,s15=plotpangle(inject=1,doreload=1,no=166)
         etot15,psi15,brsqavg15,ebrsq15,ebr15=plotpangle(inject=2,doreload=0,no=164)
-        j2d15,k2d15,th2d15,ph2d15,uut2d15,uur2d15,uuth2d15,uuph2d15,Br2d15,Bth2d15,Bph2d15,FE2d15,FEM2d15=plotpangle(inject=3,doreload=0,no=690)
+        j2d15,k2d15,th2d15,ph2d15,uut2d15,uur2d15,uuth2d15,uuph2d15,Br2d15,Bth2d15,Bph2d15,FE2d15,FEM2d15,bsq2d15,ug2d15=plotpangle(inject=3,doreload=0,no=690)
         gc.collect()
         os.chdir("../hf_30_r10h05_mydt_sph_x2_bsqorho50")
         th30,e30,s30=plotpangle(inject=1,doreload=1,no=164)
         etot30,psi30,brsqavg30,ebrsq30,ebr30=plotpangle(inject=2,doreload=0,no=164)
-        j2d30,k2d30,th2d30,ph2d30,uut2d30,uur2d30,uuth2d30,uuph2d30,Br2d30,Bth2d30,Bph2d30,FE2d30,FEM2d30=plotpangle(inject=3,doreload=0,no=690)
+        j2d30,k2d30,th2d30,ph2d30,uut2d30,uur2d30,uuth2d30,uuph2d30,Br2d30,Bth2d30,Bph2d30,FE2d30,FEM2d30,bsq2d30,ug2d30=plotpangle(inject=3,doreload=0,no=690)
         gc.collect()
         os.chdir("../hf_45_r10h05_mydt_sph_ps2_256x128x128_32x16x32_bsqorho50")
         th45,e45,s45=plotpangle(inject=1,doreload=1,no=164)
         etot45,psi45,brsqavg45,ebrsq45,ebr45=plotpangle(inject=2,doreload=0,no=164)
-        j2d45,k2d45,th2d45,ph2d45,uut2d45,uur2d45,uuth2d45,uuph2d45,Br2d45,Bth2d45,Bph2d45,FE2d45,FEM2d45=plotpangle(inject=3,doreload=0,no=690)
+        j2d45,k2d45,th2d45,ph2d45,uut2d45,uur2d45,uuth2d45,uuph2d45,Br2d45,Bth2d45,Bph2d45,FE2d45,FEM2d45,bsq2d45,ug2d45=plotpangle(inject=3,doreload=0,no=690)
         gc.collect()
         os.chdir("../hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50")  
         th60,e60,s60=plotpangle(inject=1,doreload=1,no=106)
         etot60,psi60,brsqavg60,ebrsq60,ebr60=plotpangle(inject=2,doreload=0,no=106)
-        j2d60,k2d60,th2d60,ph2d60,uut2d60,uur2d60,uuth2d60,uuph2d60,Br2d60,Bth2d60,Bph2d60,FE2d60,FEM2d60=plotpangle(inject=3,doreload=0,no=690)
+        j2d60,k2d60,th2d60,ph2d60,uut2d60,uur2d60,uuth2d60,uuph2d60,Br2d60,Bth2d60,Bph2d60,FE2d60,FEM2d60,bsq2d60,ug2d60=plotpangle(inject=3,doreload=0,no=690)
         gc.collect()
         os.chdir("../hf_75_r10h05_mydt_sph_ps2_256x128x128_256_bsqorho50")
         th75,e75,s75=plotpangle(inject=1,doreload=1,no=93)
         etot75,psi75,brsqavg75,ebrsq75,ebr75=plotpangle(inject=2,doreload=0,no=93)
-        j2d75,k2d75,th2d75,ph2d75,uut2d75,uur2d75,uuth2d75,uuph2d75,Br2d75,Bth2d75,Bph2d75,FE2d75,FEM2d75=plotpangle(inject=3,doreload=0,no=690)
+        j2d75,k2d75,th2d75,ph2d75,uut2d75,uur2d75,uuth2d75,uuph2d75,Br2d75,Bth2d75,Bph2d75,FE2d75,FEM2d75,bsq2d75,ug2d75=plotpangle(inject=3,doreload=0,no=690)
         gc.collect()
         os.chdir("../hf_90_r10h05_mydt_sph_x2_bsqorho50")
         th90,e90,s90=plotpangle(inject=1,doreload=1,no=160)
         etot90,psi90,brsqavg90,ebrsq90,ebr90=plotpangle(inject=2,doreload=0,no=160)
-        j2d90,k2d90,th2d90,ph2d90,uut2d90,uur2d90,uuth2d90,uuph2d90,Br2d90,Bth2d90,Bph2d90,FE2d90,FEM2d90=plotpangle(inject=3,doreload=0,no=690)
+        j2d90,k2d90,th2d90,ph2d90,uut2d90,uur2d90,uuth2d90,uuph2d90,Br2d90,Bth2d90,Bph2d90,FE2d90,FEM2d90,bsq2d90,ug2d90=plotpangle(inject=3,doreload=0,no=690)
         gc.collect()
         os.chdir("..")
         if cachefname is not None:
             np.savez(cachefname, th0=th0, th15=th15, th30=th30, th45=th45, th60=th60, th75=th75, th90=th90, s0=s0, s15=s15, s30=s30, s45=s45, s60=s60, s75=s75, s90=s90, e0=e0, e15=e15, e30=e30, e45=e45, e60=e60, e75=e75, e90=e90,  psi0=psi0, psi15=psi15, psi30=psi30, psi45=psi45, psi60=psi60, psi75=psi75, psi90=psi90,  etot0=etot0, etot15=etot15, etot30=etot30, etot45=etot45, etot60=etot60, etot75=etot75, etot90=etot90,  brsqavg0=brsqavg0, brsqavg15=brsqavg15,  brsqavg30=brsqavg30, brsqavg45=brsqavg45,  brsqavg60=brsqavg60,  brsqavg75=brsqavg75, brsqavg90=brsqavg90, ebrsq0=ebrsq0, ebrsq15=ebrsq15, ebrsq30=ebrsq30, ebrsq45=ebrsq45, ebrsq60=ebrsq60, ebrsq75=ebrsq75, ebrsq90=ebrsq90, ebr0=ebr0, ebr15=ebr15, ebr30=ebr30, ebr45=ebr45, ebr60=ebr60, ebr75=ebr75, ebr90=ebr90, 
             #2D data: j, k, th, ph, uut, uur, uuth, uuph, Br, Bth, Bph, FE, FEM:
-            j2d0 = j2d0, k2d0 = k2d0, th2d0 = th2d0, ph2d0 = ph2d0, uut2d0 = uut2d0, uur2d0 = uur2d0, uuth2d0 = uuth2d0, uuph2d0 = uuph2d0, Br2d0 = Br2d0, Bth2d0 = Bth2d0, Bph2d0 = Bph2d0, FE2d0 = FE2d0, FEM2d0 = FEM2d0,
-            j2d15 = j2d15, k2d15 = k2d15, th2d15 = th2d15, ph2d15 = ph2d15, uut2d15 = uut2d15, uur2d15 = uur2d15, uuth2d15 = uuth2d15, uuph2d15 = uuph2d15, Br2d15 = Br2d15, Bth2d15 = Bth2d15, Bph2d15 = Bph2d15, FE2d15 = FE2d15, FEM2d15 = FEM2d15,
-            j2d30 = j2d30, k2d30 = k2d30, th2d30 = th2d30, ph2d30 = ph2d30, uut2d30 = uut2d30, uur2d30 = uur2d30, uuth2d30 = uuth2d30, uuph2d30 = uuph2d30, Br2d30 = Br2d30, Bth2d30 = Bth2d30, Bph2d30 = Bph2d30, FE2d30 = FE2d30, FEM2d30 = FEM2d30,
-            j2d45 = j2d45, k2d45 = k2d45, th2d45 = th2d45, ph2d45 = ph2d45, uut2d45 = uut2d45, uur2d45 = uur2d45, uuth2d45 = uuth2d45, uuph2d45 = uuph2d45, Br2d45 = Br2d45, Bth2d45 = Bth2d45, Bph2d45 = Bph2d45, FE2d45 = FE2d45, FEM2d45 = FEM2d45,
-            j2d60 = j2d60, k2d60 = k2d60, th2d60 = th2d60, ph2d60 = ph2d60, uut2d60 = uut2d60, uur2d60 = uur2d60, uuth2d60 = uuth2d60, uuph2d60 = uuph2d60, Br2d60 = Br2d60, Bth2d60 = Bth2d60, Bph2d60 = Bph2d60, FE2d60 = FE2d60, FEM2d60 = FEM2d60,
-            j2d75 = j2d75, k2d75 = k2d75, th2d75 = th2d75, ph2d75 = ph2d75, uut2d75 = uut2d75, uur2d75 = uur2d75, uuth2d75 = uuth2d75, uuph2d75 = uuph2d75, Br2d75 = Br2d75, Bth2d75 = Bth2d75, Bph2d75 = Bph2d75, FE2d75 = FE2d75, FEM2d75 = FEM2d75,
-            j2d90 = j2d90, k2d90 = k2d90, th2d90 = th2d90, ph2d90 = ph2d90, uut2d90 = uut2d90, uur2d90 = uur2d90, uuth2d90 = uuth2d90, uuph2d90 = uuph2d90, Br2d90 = Br2d90, Bth2d90 = Bth2d90, Bph2d90 = Bph2d90, FE2d90 = FE2d90, FEM2d90 = FEM2d90)
+            j2d0 = j2d0, k2d0 = k2d0, th2d0 = th2d0, ph2d0 = ph2d0, uut2d0 = uut2d0, uur2d0 = uur2d0, uuth2d0 = uuth2d0, uuph2d0 = uuph2d0, Br2d0 = Br2d0, Bth2d0 = Bth2d0, Bph2d0 = Bph2d0, FE2d0 = FE2d0, FEM2d0 = FEM2d0, bsq2d0 = bsq2d0, ug2d0 = ug2d0,
+            j2d15 = j2d15, k2d15 = k2d15, th2d15 = th2d15, ph2d15 = ph2d15, uut2d15 = uut2d15, uur2d15 = uur2d15, uuth2d15 = uuth2d15, uuph2d15 = uuph2d15, Br2d15 = Br2d15, Bth2d15 = Bth2d15, Bph2d15 = Bph2d15, FE2d15 = FE2d15, FEM2d15 = FEM2d15, bsq2d15 = bsq2d15, ug2d15 = ug2d15,
+            j2d30 = j2d30, k2d30 = k2d30, th2d30 = th2d30, ph2d30 = ph2d30, uut2d30 = uut2d30, uur2d30 = uur2d30, uuth2d30 = uuth2d30, uuph2d30 = uuph2d30, Br2d30 = Br2d30, Bth2d30 = Bth2d30, Bph2d30 = Bph2d30, FE2d30 = FE2d30, FEM2d30 = FEM2d30, bsq2d30 = bsq2d30, ug2d30 = ug2d30,
+            j2d45 = j2d45, k2d45 = k2d45, th2d45 = th2d45, ph2d45 = ph2d45, uut2d45 = uut2d45, uur2d45 = uur2d45, uuth2d45 = uuth2d45, uuph2d45 = uuph2d45, Br2d45 = Br2d45, Bth2d45 = Bth2d45, Bph2d45 = Bph2d45, FE2d45 = FE2d45, FEM2d45 = FEM2d45, bsq2d45 = bsq2d45, ug2d45 = ug2d45,
+            j2d60 = j2d60, k2d60 = k2d60, th2d60 = th2d60, ph2d60 = ph2d60, uut2d60 = uut2d60, uur2d60 = uur2d60, uuth2d60 = uuth2d60, uuph2d60 = uuph2d60, Br2d60 = Br2d60, Bth2d60 = Bth2d60, Bph2d60 = Bph2d60, FE2d60 = FE2d60, FEM2d60 = FEM2d60, bsq2d60 = bsq2d60, ug2d60 = ug2d60,
+            j2d75 = j2d75, k2d75 = k2d75, th2d75 = th2d75, ph2d75 = ph2d75, uut2d75 = uut2d75, uur2d75 = uur2d75, uuth2d75 = uuth2d75, uuph2d75 = uuph2d75, Br2d75 = Br2d75, Bth2d75 = Bth2d75, Bph2d75 = Bph2d75, FE2d75 = FE2d75, FEM2d75 = FEM2d75, bsq2d75 = bsq2d75, ug2d75 = ug2d75,
+            j2d90 = j2d90, k2d90 = k2d90, th2d90 = th2d90, ph2d90 = ph2d90, uut2d90 = uut2d90, uur2d90 = uur2d90, uuth2d90 = uuth2d90, uuph2d90 = uuph2d90, Br2d90 = Br2d90, Bth2d90 = Bth2d90, Bph2d90 = Bph2d90, FE2d90 = FE2d90, FEM2d90 = FEM2d90, bsq2d90 = bsq2d90, ug2d90 = ug2d90)
     plt.figure(1)
     plt.plot(th90/np.pi*180, e90, 'm', lw=4, label=r"$\alpha=90^\circ$")
     plt.plot(th60/np.pi*180, e60, 'b', lw=3, label=r"$\alpha=60^\circ$")
@@ -4813,17 +4813,19 @@ def plotpangle(roRlc=None,r0=10,doreload=1,dnpole=0,no=106,inject=0):
     elif inject == 2:
         return etot, psitot, Brsqavg[ii], ebrsq, ebr
     elif inject == 3:
-        return tj[ii,:,:],tk[ii,:,:], \
-                      h[ii,:,:],ph[ii,:,:], \
-                      uu[0][ii,:,:], \
-                      (uu[1]*dxdxp[1,1])[ii,:,:], \
-                      (r*uu[2]*dxdxp[2,2])[ii,:,:], \
-                      (r*sin(h)*uu[3]*dxdxp[3,3])[ii,:,:], \
-                      (B[1]*dxdxp[1,1])[ii,:,:], \
-                      (r*B[2]*dxdxp[2,2])[ii,:,:], \
-                      (r*sin(h)*B[3]*dxdxp[3,3])[ii,:,:], \
-                      (-Tud[1,0]*dxdxp[1,1])[ii,:,:], \
-                      (-TudEM[1,0]*dxdxp[1,1])[ii,:,:]
+        return rotatevar(tj[ii,:,:]),rotatevar(tk[ii,:,:]), \
+                      rotatevar(h[ii,:,:]), rotatevar(ph[ii,:,:]), \
+                      rotatevar(uu[0][ii,:,:]), \
+                      rotatevar((uu[1]*dxdxp[1,1])[ii,:,:]), \
+                      rotatevar((r*uu[2]*dxdxp[2,2])[ii,:,:]), \
+                      rotatevar((r*sin(h)*uu[3]*dxdxp[3,3])[ii,:,:]), \
+                      rotatevar((B[1]*dxdxp[1,1])[ii,:,:]), \
+                      rotatevar((r*B[2]*dxdxp[2,2])[ii,:,:]), \
+                      rotatevar((r*sin(h)*B[3]*dxdxp[3,3])[ii,:,:]), \
+                      rotatevar((-Tud[1,0]*dxdxp[1,1])[ii,:,:]), \
+                      rotatevar((-TudEM[1,0]*dxdxp[1,1])[ii,:,:]), \
+                      rotatevar(bsq[ii,:,:]), \
+                      rotatevar(ug[ii,:,:])
         
 
         
@@ -4963,16 +4965,10 @@ def rotatevar(funclist):
     for var in funclist:
         if op.isCallable(var):
             var = var()
-        if var.ndim==3:
-            outlist.append( 
-                np.concatenate((var[:,:,kcells:],  var[:,:,:kcells]),  axis=-1)*(1.-dkcells)+
-                np.concatenate((var[:,:,kcells+1:],var[:,:,:kcells+1]),axis=-1)*dkcells 
-                )
-        else:
-            outlist.append( 
-                np.concatenate((var[:,:,:,kcells:],  var[:,:,:,:kcells]),  axis=-1)*(1.-dkcells)+
-                np.concatenate((var[:,:,:,kcells+1:],var[:,:,:,:kcells+1]),axis=-1)*dkcells 
-                )
+        outlist.append( 
+            np.concatenate((var[...,kcells:],  var[...,:kcells]),  axis=-1)*(1.-dkcells)+
+            np.concatenate((var[...,kcells+1:],var[...,:kcells+1]),axis=-1)*dkcells 
+            )
     return outlist
 
 
