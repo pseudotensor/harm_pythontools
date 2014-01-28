@@ -4813,7 +4813,7 @@ def plotpangle(roRlc=None,r0=10,doreload=1,dnpole=0,no=106,inject=0):
     elif inject == 2:
         return etot, psitot, Brsqavg[ii], ebrsq, ebr
     elif inject == 3:
-        return tj[ii,:,:]),tk[ii,:,:], \
+        return tj[ii,:,:],tk[ii,:,:], \
                       h[ii,:,:], ph[ii,:,:], \
                       rotatevar(uu[0][ii,:,:]), \
                       rotatevar((uu[1]*dxdxp[1,1])[ii,:,:]), \
