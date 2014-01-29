@@ -82,11 +82,20 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15):
     #
     # Plotting
     #
-    plt.figure(1)
+    #
+    # Figure 0
+    #
+    plt.figure(0)
     plt.clf()
+    alphagrid = array([0,30,60,75,90])
+    plot(alphagrid, w1(alphagrid)*cos(alphagrid/180.*pi)**0.5,"o-",label=r"$w_1$")
+    plot(alphagrid, w2(alphagrid)*sin(alphagrid/180.*pi),"o-",label=r"$w_2$")
+    legend(loc="best")
     #
     # Figure 1
     #
+    plt.figure(1)
+    plt.clf()
     plt.plot(v["ph2d%g" % th][128/2,:],v["Br2d%g" % th][128/2,:]/(v["psi%g" % th]/v["psi0"])/norm,"r")
     plt.plot(v["ph2d%g" % th][128/2,:],v1["br_an_%g" % th][128/2,:],"g")
     plt.plot(v["ph2d%g" % th][128/2,:],v1["br_num_%g" % th][128/2,:],"b")
