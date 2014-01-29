@@ -65,7 +65,7 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15):
     th = alpha
     # proposed analytic solution
     #w1=interp1d([0,30,60,90],[1,1.05,1.4,1])
-    if 0:
+    if 1:
         #analytical vacuum dipole for 90-degree solution
         adeg = array([0,30,60,75,90])
         arad = adeg * pi / 180.
