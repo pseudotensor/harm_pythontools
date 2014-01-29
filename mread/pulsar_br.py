@@ -24,7 +24,8 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15):
     alphas = np.array([])
     ebrsqs = np.array([])
     ebrs = np.array([])
-    for th in [0, 15, 30, 45, 60, 75, 90]:
+    thgrid = [0, 15, 30, 45, 60, 75, 90]
+    for th in thgrid:
         psis = np.append(psis, v["psi%g" % th])
         thetas.append(v["th%g" % th])
         etots = np.append(etots, v["etot%g" % th])
@@ -40,8 +41,8 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15):
     which = (th0<87./180.*pi)+(th0>93./180.*pi)
     norm = np.max(abs(v["Br2d0"]))
     print( "Norm = %g" % norm )
-    f = interp1d(th0[which],v["Br2d0"][:,0][which]/norm,bounds_error=0,fill_value=1)
-    br0_num_func = f
+    f = interp1d(th0[which],np.abs(v["Br2d0"])[:,0][which]/norm,bounds_error=0,fill_value=1)
+    br0_num_func = lambda th: f(th)*(2*(th<0.5*pi)-1)
     #analytic flux: due to vacuum dipole
     anflux = 0.5*(2*pi*abs(br0_an_func_unnorm(th0))*sin(th0)*(th0[1]-th0[0])).sum(-1)
     #numerical flux: due to axisymmetric MHD dipole
@@ -53,15 +54,9 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15):
     #tilt both solutions
     br_alpha_an_func = lambda al,th,ph: br0_an_func(oldth(al,th,ph+0.95))
     br_alpha_num_func = lambda al,th,ph: br0_num_func(oldth(al,th,ph+1.4))
-    #Prepare to discretize these solutions on a grid of num^2 cells:
-    # create grid
-    num = 128
-    phgrid = np.linspace(0,2*pi,2*num,endpoint=False)[None,:]
-    thgrid = np.linspace(0,pi,num,endpoint=False)[:,None]+0*phgrid
-    phgrid = phgrid + 0*thgrid
     # compute cell spacing
-    dth = (thgrid[1,0]-thgrid[0,0])
-    dph = (phgrid[0,1]-phgrid[0,0])
+    dth = (v["th2d30"][1,0]-v["th2d30"][0,0])
+    dph = (v["ph2d30"][0,1]-v["ph2d30"][0,0])
     v1 = {}
     # fitting functions
     for da in [0, 15, 30, 45, 60, 75, 90]:
@@ -70,12 +65,18 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15):
     th = alpha
     # proposed analytic solution
     #w1=interp1d([0,30,60,90],[1,1.05,1.4,1])
-    w1=interp1d([0,30,60,90],[1,.97,.95,1])
-    w2=interp1d([0,30,60,90],[1,0.5,0.5,1])
-    Br_fit = lambda th: v1["br_num_%g" % th] if th == 0 else v1["br_num_%g" % th]*cos(th/180.*pi)**0.5*w1(th)+v1["br_an_%g" % 90]*sin(th/180.*pi)*w2(th)
+    if 1:
+        w1=interp1d([0,30,60,75,90],[1,.97,.95,1,1])
+        w2=interp1d([0,30,60,75,90],[1,0.47,0.55,0.6,1.02])
+        Br_fit = lambda th: v1["br_num_%g" % th] if th == 0 else v1["br_num_%g" % th]*cos(th/180.*pi)**0.5*w1(th)+v1["br_an_%g" % 90]*sin(th/180.*pi)*w2(th)
+    else:
+        w1=interp1d([0,30,60,90],[1,.97,.95,1])
+        w2=interp1d([0,30,60,90],[1,0.4,0.5,1])
+        Br_fit = lambda th: v1["br_num_%g" % th] if th == 0 else v1["br_num_%g" % th]*cos(th/180.*pi)**0.5*w1(th)+v["Br2d%g" % 90]/(v["psi%g" % th]/v["psi0"])/norm*sin(th/180.*pi)*w2(th)
     Br_mhd_fit = lambda th: v1["br_num_%g" % th]*cos(th/180.*pi)*w1(th)
     Br_vac_fit = lambda th: v1["br_an_%g" % 90]*sin(th/180.*pi)*w2(th)
     Brsqavg_fit = lambda th: (Br_fit(th)**2).mean(-1)
+    psi_fit = lambda th: 0.5*(2*pi*sin(v["th2d0"][:,:])*abs(Br_fit(th))*(v["th2d0"][1,0]-v["th2d0"][0,0])).sum() if th == 0 else 0.5*(sin(v["th2d30"])*abs(Br_fit(th))*dth*dph).sum()
     #
     # Plotting
     #
@@ -162,5 +163,15 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15):
     plot(v["th2d60"][:,0],f1,label=r"$f_1$")
     plot(v["th2d60"][:,0],f2,label=r"$f_2$")
     legend(loc="best")
+    #
+    # Figure 5
+    #
+    figure(5)
+    clf()
+    psigrid = []
+    for th in thgrid:
+        psigrid.append(psi_fit(th))
+    plot(thgrid,psigrid)
+    #
     v.close()
     
