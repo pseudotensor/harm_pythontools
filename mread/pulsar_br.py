@@ -67,8 +67,11 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15):
     #w1=interp1d([0,30,60,90],[1,1.05,1.4,1])
     if 1:
         #analytical vacuum dipole for 90-degree solution
-        w1=interp1d([0,30,60,75,90],[1,.97,.95,1,1])
-        w2=interp1d([0,30,60,75,90],[1,0.47,0.55,0.65,1.02])
+        adeg = array([0,30,60,75,90])
+        arad = adeg * pi / 180.
+        w1=interp1d(adeg,[1,.97,.95,1,1])
+        w2=interp1d(adeg,[1,0.47,0.55,0.65,1.02])
+        #w2=interp1d(adeg,(1-cos(arad))/sin(arad))
         Br_fit = lambda th: v1["br_num_%g" % th] if th == 0 else v1["br_num_%g" % th]*cos(th/180.*pi)**0.5*w1(th)+v1["br_an_%g" % 90]*sin(th/180.*pi)*w2(th)
     else:
         #numerical MHD solution for 90-degree solution
