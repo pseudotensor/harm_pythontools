@@ -70,7 +70,7 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15):
     th = alpha
     # proposed analytic solution
     #w1=interp1d([0,30,60,90],[1,1.05,1.4,1])
-    w1=interp1d([0,30,60,90],[1,1.0,1.,1])
+    w1=interp1d([0,30,60,90],[1,.97,.95,1])
     w2=interp1d([0,30,60,90],[1,0.5,0.5,1])
     Br_fit = lambda th: v1["br_num_%g" % th] if th == 0 else v1["br_num_%g" % th]*cos(th/180.*pi)**0.5*w1(th)+v1["br_an_%g" % 90]*sin(th/180.*pi)*w2(th)
     Br_mhd_fit = lambda th: v1["br_num_%g" % th]*cos(th/180.*pi)*w1(th)
