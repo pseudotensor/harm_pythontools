@@ -68,7 +68,7 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15):
     if 1:
         #analytical vacuum dipole for 90-degree solution
         w1=interp1d([0,30,60,75,90],[1,.97,.95,1,1])
-        w2=interp1d([0,30,60,75,90],[1,0.47,0.55,0.6,1.02])
+        w2=interp1d([0,30,60,75,90],[1,0.47,0.55,0.65,1.02])
         Br_fit = lambda th: v1["br_num_%g" % th] if th == 0 else v1["br_num_%g" % th]*cos(th/180.*pi)**0.5*w1(th)+v1["br_an_%g" % 90]*sin(th/180.*pi)*w2(th)
     else:
         #numerical MHD solution for 90-degree solution
@@ -88,8 +88,13 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15):
     plt.figure(0)
     plt.clf()
     alphagrid = array([0,30,60,75,90])
+    alphafinegrid = linspace(0,90,100)
     plot(alphagrid, w1(alphagrid)*cos(alphagrid/180.*pi)**0.5,"o-",label=r"$w_1$")
     plot(alphagrid, w2(alphagrid)*sin(alphagrid/180.*pi),"o-",label=r"$w_2$")
+    plot(alphafinegrid, cos(alphafinegrid/180.*pi)**0.5,"-",label=r"$\cos^{1/2}\alpha$")
+    plot(alphafinegrid, 1-cos(alphafinegrid/180.*pi)**0.5,"-",label=r"$1-\cos^{1/2}\alpha$")
+    plot(alphafinegrid, 1-cos(alphafinegrid/180.*pi),"-",label=r"$1-\cos\alpha$")
+    plot(alphafinegrid, sin(alphafinegrid/180.*pi)**2,"-",label=r"$\sin^2\alpha$")
     legend(loc="best")
     #
     # Figure 1
@@ -142,9 +147,9 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15):
     #
     plt.figure(4)
     plt.clf()
-    colors = ["red", "green", "blue", "magenta"]
+    colors = ["red", "green", "blue", "magenta", "black"]
     coliter = iter(colors)
-    for th in [0, 30, 60, 90]:
+    for th in [0, 30, 60, 75, 90]:
         col = next(coliter)
         plt.plot(v["th%g"%th]*180/np.pi,v["brsqavg%g"%th]/np.max(v["brsqavg0"])/(v["psi%g"%th]/v["psi0"])**2,color=col)
         l,=plt.plot(v["th%g"%th]*180/pi,Brsqavg_fit(th),":",color=col,lw=2)
