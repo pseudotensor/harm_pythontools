@@ -66,10 +66,12 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15):
     # proposed analytic solution
     #w1=interp1d([0,30,60,90],[1,1.05,1.4,1])
     if 1:
+        #analytical vacuum dipole for 90-degree solution
         w1=interp1d([0,30,60,75,90],[1,.97,.95,1,1])
         w2=interp1d([0,30,60,75,90],[1,0.47,0.55,0.6,1.02])
         Br_fit = lambda th: v1["br_num_%g" % th] if th == 0 else v1["br_num_%g" % th]*cos(th/180.*pi)**0.5*w1(th)+v1["br_an_%g" % 90]*sin(th/180.*pi)*w2(th)
     else:
+        #numerical MHD solution for 90-degree solution
         w1=interp1d([0,30,60,90],[1,.97,.95,1])
         w2=interp1d([0,30,60,90],[1,0.4,0.5,1])
         Br_fit = lambda th: v1["br_num_%g" % th] if th == 0 else v1["br_num_%g" % th]*cos(th/180.*pi)**0.5*w1(th)+v["Br2d%g" % 90]/(v["psi%g" % th]/v["psi0"])/norm*sin(th/180.*pi)*w2(th)
@@ -121,8 +123,8 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15):
     th = 30; plt.plot(v["th2d%g" % th][:,0],Br_vac_fit(th)[:,128/4],"g-.",lw=2)
     plt.plot(v["th2d%g" % th][:,0],Br_fit(th)[:,128/4],"g--",lw=2)
     th = 60; plt.plot(v["th2d%g" % th][:,0],v["Br2d%g" % th][:,128/4]/(v["psi%g" % th]/v["psi0"])/norm,"b",lw=2)
-    th = 60; plt.plot(v["th2d%g" % th][:,0],1.5*Br_mhd_fit(th)[:,128/4],"b:",lw=2)
-    th = 60; plt.plot(v["th2d%g" % th][:,0],0.4*Br_vac_fit(th)[:,128/4],"b-.",lw=2)
+    th = 60; plt.plot(v["th2d%g" % th][:,0],Br_mhd_fit(th)[:,128/4],"b:",lw=2)
+    th = 60; plt.plot(v["th2d%g" % th][:,0],Br_vac_fit(th)[:,128/4],"b-.",lw=2)
     plt.plot(v["th2d%g" % th][:,0],Br_fit(th)[:,128/4],"b--",lw=2)
     # th = 90; plt.plot(v["th2d%g" % th][:,0],v["Br2d%g" % th][:,128/4]/(v["psi%g" % th]/v["psi0"])/norm,"m",lw=2)
     # th = 90; plt.plot(v["th2d%g" % th][:,0],Br_fit(th)[:,128/4],"m:",lw=2)
@@ -131,15 +133,14 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15):
     #
     plt.figure(4)
     plt.clf()
-    plt.plot(v["th0"]*180/np.pi,v["brsqavg0"]/np.max(v["brsqavg0"]),"r")
-    th = 0; plt.plot(v["th2d%g"%th]*180/pi,Brsqavg_fit(th),"r:",lw=2)
-    plt.plot(v["th30"]*180/np.pi,v["brsqavg30"]/np.max(v["brsqavg0"])/(v["psi30"]/v["psi0"])**2,"g")
-    th = 30; plt.plot(v["th2d%g"%th]*180/pi,Brsqavg_fit(th),"g:",lw=2)
-    plt.plot(v["th60"]*180/np.pi,v["brsqavg60"]/np.max(v["brsqavg0"])/(v["psi60"]/v["psi0"])**2,"b")
-    th = 60; plt.plot(v["th2d%g"%th]*180/pi,Brsqavg_fit(th),"b:",lw=2)
-    plt.plot(v["th90"]*180/np.pi,v["brsqavg90"]/np.max(v["brsqavg0"])/(v["psi90"]/v["psi0"])**2,"m")
-    th = 90; plt.plot(v["th2d%g"%th]*180/pi,Brsqavg_fit(th),"m:",lw=2)
-    plt.ylim(0,2)
+    colors = ["red", "green", "blue", "magenta"]
+    coliter = iter(colors)
+    for th in [0, 30, 60, 90]:
+        col = next(coliter)
+        plt.plot(v["th%g"%th]*180/np.pi,v["brsqavg%g"%th]/np.max(v["brsqavg0"])/(v["psi%g"%th]/v["psi0"])**2,color=col)
+        l,=plt.plot(v["th%g"%th]*180/pi,Brsqavg_fit(th),":",color=col,lw=2)
+        l.set_dashes([2,2])
+    plt.ylim(0,1.5)
     plt.xlim(0,180)
     plt.grid(b=1)
     ax1=plt.gca()
