@@ -190,7 +190,7 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15):
     psigrid = []
     for th in thgrid:
         psigrid.append(psi_fit(th))
-    plot(thgrid,psigrid)
+    plot(thgrid,psigrid,"o-")
     #
     v.close()
     
