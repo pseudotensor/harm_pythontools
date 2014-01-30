@@ -37,11 +37,11 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0):
     psisopsi0_func = interp1d(alphas/180.*pi,psis/psis[0])
     da = 60/180.*np.pi 
     brsqavg0 = v["brsqavg0"]
-    br0_an_func_unnorm = interp1d(th0,cos(th0),bounds_error=0,fill_value=1)
+    br0_an_func_unnorm = lambda th: cos(th)
     which = (th0<87./180.*pi)+(th0>93./180.*pi)
     norm = np.max(abs(v["Br2d0"]))
-    print( "Norm = %g" % norm )
-    f = interp1d(th0[which],np.abs(v["Br2d0"])[:,0][which]/norm,bounds_error=0,fill_value=1)
+    #print( "Norm = %g" % norm )
+    f = interp1d(th0[which],np.abs(v["Br2d0"])[:,0][which]/norm,bounds_error=0,fill_value=1,kind="cubic")
     br0_num_func = lambda th: f(th)*(2*(th<0.5*pi)-1)
     #analytic flux: due to vacuum dipole
     anflux = 0.5*(2*pi*abs(br0_an_func_unnorm(th0))*sin(th0)*(th0[1]-th0[0])).sum(-1)
@@ -74,8 +74,9 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0):
         w2=interp1d(adeg,[1,0.47,0.55,0.65,1.03])
         #w2=interp1d(adeg,0*adeg)
         #w2=interp1d(adeg,(1-cos(arad))/sin(arad))
-        Br_fit = lambda th: v1["br_num_%g" % th] if th == 0 else v1["br_num_%g" % th]*cos(th/180.*pi)**0.5*w1(th)+v1["br_an_%g" % 90]*sin(th/180.*pi)*w2(th)
-        #Br_fit = lambda th: v1["br_num_%g" % th] if th == 0 else v1["br_num_%g" % th]
+        #Br_fit = lambda th: v1["br_num_%g" % th] if th == 0 else v1["br_num_%g" % th]*cos(th/180.*pi)**0.5*w1(th)+v1["br_an_%g" % 90]*sin(th/180.*pi)*w2(th)
+        #Br_fit = lambda th: v1["br_num_%g" % th] if th == 0 else v1["br_num_%g" % th]*cos(th/180.*pi)**0.5*w1(th)+v1["br_an_%g" % 90]*(1-cos(th/180.*pi)**0.5*w1(th))
+        Br_fit = lambda th: v1["br_num_%g" % th] if th == 0 else v1["br_num_%g" % th]
     else:
         #numerical MHD solution for 90-degree solution
         w1=interp1d([0,30,60,75,90],[1,.97,.95,1,1])
@@ -84,7 +85,9 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0):
     Br_mhd_fit = lambda th: v1["br_num_%g" % th]*cos(th/180.*pi)**0.5*w1(th)
     Br_vac_fit = lambda th: v1["br_an_%g" % 90]*sin(th/180.*pi)**0.5*w2(th)
     Brsqavg_fit = lambda th: (Br_fit(th)**2).mean(-1)
-    psi_fit = lambda th: 0.5*(2*pi*sin(v["th2d0"][:,:])*abs(Br_fit(th))*(v["th2d0"][1,0]-v["th2d0"][0,0])).sum() if th == 0 else 0.5*(sin(v["th2d30"])*abs(Br_fit(th))*dth*dph).sum()
+    psi_fit = lambda th: 0.5*(2*pi*sin(v["th2d0"][:,:])*abs(Br_fit(th))*(v["th2d0"][1,0]-v["th2d0"][0,0])).sum() if th == 0 else 0.5*(sin(v["th2d%g"%th])*abs(Br_fit(th))*(v["th2d%g"%th][1,0]-v["th2d%g"%th][0,0])*(v["ph2d%g"%th][0,1]-v["ph2d%g"%th][0,0])).sum()
+    psi_num_fit = lambda th:  0.5*(2*pi*sin(v["th2d0"][:,:])*abs(Br_fit(th))*(v["th2d0"][1,0]-v["th2d0"][0,0])).sum() if th == 0 else 0.5*(sin(v["th2d%g"%th])*abs(v1["br_num_%g" % th])*(v["th2d%g"%th][1,0]-v["th2d%g"%th][0,0])*(v["ph2d%g"%th][0,1]-v["ph2d%g"%th][0,0])).sum()
+    psi_an_fit = lambda th:  0.5*(2*pi*sin(v["th2d0"][:,:])*abs(Br_fit(th))*(v["th2d0"][1,0]-v["th2d0"][0,0])).sum() if th == 0 else 0.5*(sin(v["th2d%g"%th])*abs(v1["br_an_%g" % th])*(v["th2d%g"%th][1,0]-v["th2d%g"%th][0,0])*(v["ph2d%g"%th][0,1]-v["ph2d%g"%th][0,0])).sum()
     #
     # Plotting
     #
@@ -199,9 +202,15 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0):
     figure(5)
     clf()
     psigrid = []
+    psi_an_grid  = []
+    psi_num_grid = []
     for th in thgrid:
         psigrid.append(psi_fit(th))
-    plot(thgrid,psigrid,"o-")
+        psi_an_grid.append(psi_an_fit(th))
+        psi_num_grid.append(psi_num_fit(th))
+    plot(thgrid,psigrid,"bo-")
+    plot(thgrid,psi_an_grid,"ro-")
+    plot(thgrid,psi_num_grid,"go-")
     #
     v.close()
     
