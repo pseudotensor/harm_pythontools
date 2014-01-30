@@ -81,8 +81,8 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0):
         w1=interp1d([0,30,60,75,90],[1,.97,.95,1,1])
         w2=interp1d([0,30,60,75,90],[1,0.4,0.52,0.63,1])
         Br_fit = lambda th: v1["br_num_%g" % th] if th == 0 else v1["br_num_%g" % th]*cos(th/180.*pi)**0.5*w1(th)+v["Br2d%g" % 90]/(v["psi%g" % th]/v["psi0"])/norm*sin(th/180.*pi)*w2(th)
-    Br_mhd_fit = lambda th: v1["br_num_%g" % th]*cos(th/180.*pi)*w1(th)
-    Br_vac_fit = lambda th: v1["br_an_%g" % 90]*sin(th/180.*pi)*w2(th)
+    Br_mhd_fit = lambda th: v1["br_num_%g" % th]*cos(th/180.*pi)**0.5*w1(th)
+    Br_vac_fit = lambda th: v1["br_an_%g" % 90]*sin(th/180.*pi)**0.5*w2(th)
     Brsqavg_fit = lambda th: (Br_fit(th)**2).mean(-1)
     psi_fit = lambda th: 0.5*(2*pi*sin(v["th2d0"][:,:])*abs(Br_fit(th))*(v["th2d0"][1,0]-v["th2d0"][0,0])).sum() if th == 0 else 0.5*(sin(v["th2d30"])*abs(Br_fit(th))*dth*dph).sum()
     #
