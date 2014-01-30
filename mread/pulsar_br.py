@@ -161,8 +161,8 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0):
                  color=col, label = r"$\alpha = %g^\circ$" % th, lw = 1.5)
         l,=plt.plot(v["th%g"%th]*180/pi,Brsqavg_fit(th)*(v["psi%g"%th]/v["psi0"])**2,":",color=col,lw=2.5)
         l.set_dashes([2.5,2.5])
-    # h = v["th%g"%th]*180/np.pi
-    # plt.plot(h,(cos(v["th%g"%th])**2+0.2)),
+    h = v["th%g"%th]
+    plt.plot(h*180/np.pi,(abs(cos(h))**1*0.47+0.2+0.33*abs(h-pi/2)*2/pi)),
     leg = legend(loc = "best")
     for label in leg.get_texts():
         label.set_fontsize(fntsize)
