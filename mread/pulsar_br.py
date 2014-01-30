@@ -16,7 +16,7 @@ def linsolve(a,b):
     y = float((b[0]*a[1,0]-b[1]*a[0,0])/(a[0,1]*a[1,0]-a[1,1]*a[0,0]))
     return(x,y)
     
-def plotbrsq(cachefname="psrangle.npz",alpha = 15):
+def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0):
     v = np.load(cachefname)
     psis = np.array([])
     thetas = []
@@ -69,11 +69,13 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15):
         #analytical vacuum dipole for 90-degree solution
         adeg = array([0,30,60,75,90])
         arad = adeg * pi / 180.
-        w1=interp1d(adeg,[1,.97,.95,1,1])
+        w1=interp1d(adeg,[1,1,1,1,1])
         #w1=interp1d(adeg,1+0*adeg)
         w2=interp1d(adeg,[1,0.47,0.55,0.65,1.03])
+        #w2=interp1d(adeg,0*adeg)
         #w2=interp1d(adeg,(1-cos(arad))/sin(arad))
         Br_fit = lambda th: v1["br_num_%g" % th] if th == 0 else v1["br_num_%g" % th]*cos(th/180.*pi)**0.5*w1(th)+v1["br_an_%g" % 90]*sin(th/180.*pi)*w2(th)
+        #Br_fit = lambda th: v1["br_num_%g" % th] if th == 0 else v1["br_num_%g" % th]
     else:
         #numerical MHD solution for 90-degree solution
         w1=interp1d([0,30,60,75,90],[1,.97,.95,1,1])
@@ -126,8 +128,8 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15):
     th = 60; plt.plot(v["th2d%g" % th][:,0],Br_mhd_fit(th)[:,0],"b:",lw=2)
     th = 60; plt.plot(v["th2d%g" % th][:,0],Br_vac_fit(th)[:,0],"b-.",lw=2)
     plt.plot(v["th2d%g" % th][:,0],Br_fit(th)[:,0],"b--",lw=2)
-    # th = 90; plt.plot(v["th2d%g" % th][:,0],v["Br2d%g" % th][:,0]/(v["psi%g" % th]/v["psi0"])/norm,"m",lw=2)
-    # th = 90; plt.plot(v["th2d%g" % th][:,0],Br_fit(th)[:,0],"m:",lw=2)
+    th = 90; plt.plot(v["th2d%g" % th][:,0],v["Br2d%g" % th][:,0]/(v["psi%g" % th]/v["psi0"])/norm,"m",lw=2)
+    th = 90; plt.plot(v["th2d%g" % th][:,0],Br_fit(th)[:,0],"m:",lw=2)
     #
     # Figure 3
     #
@@ -153,12 +155,18 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15):
     plt.clf()
     colors = ["red", "green", "blue", "magenta", "black"]
     coliter = iter(colors)
-    for th in [0, 30, 60, 75, 90]:
+    for th in [0, 30, 60, 90]:
         col = next(coliter)
-        plt.plot(v["th%g"%th]*180/np.pi,v["brsqavg%g"%th]/np.max(v["brsqavg0"])/(v["psi%g"%th]/v["psi0"])**2,color=col)
-        l,=plt.plot(v["th%g"%th]*180/pi,Brsqavg_fit(th),":",color=col,lw=2)
-        l.set_dashes([2,2])
-    plt.ylim(0,1.5)
+        plt.plot(v["th%g"%th]*180/np.pi,v["brsqavg%g"%th]/np.max(v["brsqavg0"]),
+                 color=col, label = r"$\alpha = %g^\circ$" % th, lw = 1.5)
+        l,=plt.plot(v["th%g"%th]*180/pi,Brsqavg_fit(th)*(v["psi%g"%th]/v["psi0"])**2,":",color=col,lw=2.5)
+        l.set_dashes([2.5,2.5])
+    # h = v["th%g"%th]*180/np.pi
+    # plt.plot(h,(cos(v["th%g"%th])**2+0.2)),
+    leg = legend(loc = "best")
+    for label in leg.get_texts():
+        label.set_fontsize(fntsize)
+    plt.ylim(0,2)
     plt.xlim(0,180)
     plt.grid(b=1)
     ax1=plt.gca()
@@ -168,8 +176,11 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15):
     ax1=plt.gca()
     for label in ax1.get_xticklabels() + ax1.get_yticklabels():
         label.set_fontsize(20)
-    plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20)
-    plt.ylabel(r"$\langle B_r^2\rangle$",fontsize=20)
+    plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=fntsize)
+    plt.ylabel(r"$\langle B_r^2\rangle$",fontsize=fntsize,labelpad=5)
+    if dosavefig: 
+        savefig("Brsq_comparison.pdf",
+            bbox_inches='tight',pad_inches=0.06,dpi=300)
     #
     # Figure 5
     #
