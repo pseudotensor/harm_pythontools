@@ -6,7 +6,7 @@ from numpy import mgrid, empty, zeros, sin, cos, pi
 from tvtk.api import tvtk
 from mayavi import mlab
 
-def create_structured_grid(s=None,sname=None,v=None,vname=None,maxr=100):
+def create_structured_grid(s=None,sname=None,v=None,vname=None,maxr=20):
     maxi = iofr(maxr)
     # Compute Cartesian coordinates of the grid
     x = (r*sin(h)*cos(ph))[:maxi]
@@ -95,11 +95,20 @@ def create_unstructured_grid(s=None,sname=None,v=None,vname=None,minr=1,maxr=20,
         ug.point_data.vectors.name = vname
 
     return( ug )
+
+def wraparound(v):
+    """ wraparound the phi-direction """
+    return( np.concatenate((v,v[...,0:1]),axis=-1) )
     
-@mayavi2.standalone    
-def visualize_data(doreload=1):
-    grid3d("gdump.bin",use2d=1)
-    rfd("fieldline9000.bin")
+#@mayavi2.standalone    
+def visualize_data(doreload=1,no=160):
+    if doreload:
+        grid3d("gdump.bin",use2d=1)
+        #rfd("fieldline9000.bin")
+        rfd("fieldline%04d.bin"%no)
+        cvel()
+    mlab.figure(1, bgcolor=(1, 1, 1), fgcolor=(0, 0, 0), size=(400, 300))
+    mlab.clf()
     if 0:
         sg = create_structured_grid(s=lrho,sname="density",v=None,vname=None)
         # Now visualize the data.
@@ -110,8 +119,8 @@ def visualize_data(doreload=1):
         gz = mlab.pipeline.grid_plane(d)
         gz.grid_plane.axis = 'z'
         iso = mlab.pipeline.iso_surface(d)
-    if 1:
-        sg = create_unstructured_grid(s=lrho,sname="density",v=None,vname=None)
+    if 0:
+        sg = create_unstructured_grid(s=B[1]*dxdxp[1,1],sname="density",v=None,vname=None)
         # Now visualize the data.
         d = mlab.pipeline.add_dataset(sg)
         # gx = mlab.pipeline.grid_plane(d)
@@ -119,12 +128,20 @@ def visualize_data(doreload=1):
         # gy.grid_plane.axis = 'y'
         # gz = mlab.pipeline.grid_plane(d)
         # gz.grid_plane.axis = 'z'
-        #iso = mlab.pipeline.iso_surface(d)
-        vol = mlab.pipeline.volume(d,vmin=-4,vmax=-2)
+        iso = mlab.pipeline.iso_surface(d)
+        # vol = mlab.pipeline.volume(d,vmin=-4,vmax=-2)
+    myr = 20
+    myi = iofr(myr)
+    s = wraparound((np.abs(B[1])*dxdxp[1,1]))[myi,:,:]
+    x = wraparound(r*sin(h)*cos(ph-OmegaNS*t))[myi,:,:]
+    y = wraparound(r*sin(h)*sin(ph-OmegaNS*t))[myi,:,:]
+    z = wraparound(r*cos(h))[myi,:,:]
+    
+    mlab.mesh(x, y, z, scalars=s, colormap='jet')
     # iso.contour.maximum_contour = 75.0
     #vec = mlab.pipeline.vectors(d)
     #vec.glyph.mask_input_points = True
     #vec.glyph.glyph.scale_factor = 1.5
     #move the camera so it is centered on (0,0,0)
     mlab.view(focalpoint=[0,0,0],distance=50)
-    mlab.show()
+    #mlab.show()

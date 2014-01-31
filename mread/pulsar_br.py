@@ -1,5 +1,7 @@
+from mayavi.scripts import mayavi2
 import matplotlib
 import numpy as np
+from mayavi import mlab
 from numpy import *
 rc('mathtext',fontset='cm')
 rc('mathtext',rm='stix')
@@ -198,9 +200,9 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0):
     plot(v["th2d60"][:,0],f2,label=r"$f_2$")
     legend(loc="best")
     #
-    # Figure 5
+    # Figure 6
     #
-    figure(5)
+    figure(6)
     clf()
     psigrid = []
     psi_an_grid  = []
@@ -213,5 +215,31 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0):
     plot(thgrid,psi_an_grid,"ro-")
     plot(thgrid,psi_num_grid,"go-")
     #
+    # Mlab Fig. 1
+    #
+    mlab.figure(1, bgcolor=(1, 1, 1), fgcolor=(0, 0, 0), size=(400, 300))
+    mlab.clf()
+    i = 0
+    A = 1.1
+    for al in [90,75,60,45,30,15]:
+        Br_sm = v["Br2d%g"%al]/(v["psi%g" % al]/v["psi0"])/norm
+        Br_ft = Br_fit(al)
+        th = v["th2d%g"%al]
+        ph = v["ph2d%g"%al]
+        r = 1
+        s_sim = wraparound(np.abs(Br_sm))
+        s_fit = wraparound(np.abs(Br_ft))
+        x = wraparound(r*sin(th)*cos(ph))
+        y = wraparound(r*sin(th)*sin(ph))
+        z = wraparound(r*cos(th))        
+        mlab.mesh(x+A*3*(i-2.5), y, z-1.5*A, scalars=s_sim, colormap='jet',vmin=np.min(s_fit), vmax = np.max(s_fit))
+        mlab.mesh(x+A*3*(i-2.5), y, z+1.5*A, scalars=s_fit, colormap='jet',vmin=np.min(s_fit), vmax = np.max(s_fit))
+        i = i + 1
+        #pdb.set_trace()
+    mlab.view(focalpoint=[0,0,0],distance=25)
     v.close()
+    
+def wraparound(v):
+    """ wraparound the phi-direction """
+    return( np.concatenate((v,v[...,0:1]),axis=-1) )
     
