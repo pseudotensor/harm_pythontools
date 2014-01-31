@@ -1289,7 +1289,7 @@ def mkbondimovie(doreload=1,plotlen=25,vmin=-6,vmax=1,whichvar="lrho",doresize=1
     fig=plt.figure(1,figsize=(12.8,6))
     dovarylw=kwargs.setdefault("dovarylw",4)
     density=kwargs.setdefault("density",2)
-    dosavefig=kwargs.setdefault("dosavefig",1)
+    dosavefig=kwargs.setdefault("dosavefig","png")
     if doresize:
         fig.set_size_inches(12.8,6)
     plt.clf()
