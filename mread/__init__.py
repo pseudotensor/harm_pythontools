@@ -1282,6 +1282,67 @@ def mkmov():
         print( "Usage: %s %s <whichi> <whichn>" % (sys.argv[0], sys.argv[1]) )
         return
     mkbondimovie(whichi = whichi, whichn = whichn)
+
+def postprocess1d(fname = "qty.npz", myr = 5,startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
+    grid3d("gdump.bin",use2d=True)
+    flist1 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
+    flist2 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9][0-9].bin") ) )
+    flist1.sort()
+    flist2.sort()
+    flist = np.concatenate((flist1,flist2))
+    myi = iofr(myr)
+    #rhor = 1+(1-a**2)**0.5
+    ihor = iofr(rhor)
+    FM_list = []
+    PhiBH_list = []
+    FE_list = []
+    FEM_list = []
+    fldindex_list = []
+    if os.path.isfile( fname ):
+        print( "File %s exists, loading from file..." % fname )
+        sys.stdout.flush()
+        v=np.load( fname )
+        FM_list = list(v["FM"])
+        PhiBH_list = list(v["PhiBH"])
+        FE_list = list(v["FE"])
+        FEM_list = list(v["FEM"])
+        fldindex_list = list(v["fldindex"])
+    for fldname in flist:
+        #find the index of the file
+        fldindex = np.int(fldname.split(".")[0].split("e")[-1])
+        if fldindex < startn:
+            continue
+        if endn>=0 and fldindex >= endn:
+            break
+        if fldindex % whichn != whichi:
+            #do every whichn'th snapshot starting with whichi'th snapshot
+            continue
+        print( "Reading " + fldname + " ..." )
+        sys.stdout.flush()
+        rfd("../"+fldname)
+        cvel()
+        Tcalcud()
+        sys.stdout.flush()
+        #mass accretion rate
+        FM = -(gdet*rho*uu[1])[myi].sum()*_dx2*_dx3
+        #magnetic flux on the black hole
+        PhiBH = 0.5*(np.abs(gdetB[1]))[myi].sum()*_dx2*_dx3
+        FE = (gdet*Tud[1,0])[myi].sum()*_dx2*_dx3
+        FEM = (gdet*Tud[1,0])[myi].sum()*_dx2*_dx3
+        # aphi=fieldcalc()
+        # plco(lrho,xy=1,xmax=xmax,ymax=ymax,levels=np.arange(-7,1,0.1),cb=cb,isfilled=1)
+        # plc(aphi,xy=1,xmax=xmax,ymax=ymax,levels=np.arange(0,100,2),colors="k")
+        # el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
+        # ax = plt.gca()
+        # art=ax.add_artist(el)
+        # art.set_zorder(20)
+        # plt.xlabel(r"$R\ [r_g]$",fontsize=20)
+        # plt.ylabel(r"$z\ [r_g]$",fontsize=20)
+        # plt.title(r"$t= %5.5g$" % np.floor(t))
+        # plt.draw()
+    np.savez(fname,
+        avgbsq=avgbsq,
+
     
 def mkbondimovie(doreload=1,plotlen=25,vmin=-6,vmax=1,whichvar="lrho",doresize=1,label=r"$\log\rho$",cmap=mpl.cm.jet,dostreamlines=1,startn=0,endn=-1,whichi=0,whichn=1,dosavefig="png",**kwargs):
     #xmax=30,ymax=15,startn=0,endn=-1,dosavefig=1,cb=1,whichi=0,whichn=1):

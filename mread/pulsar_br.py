@@ -72,9 +72,9 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0):
         #analytical vacuum dipole for 90-degree solution
         adeg = array([0,30,60,75,90])
         arad = adeg * pi / 180.
-        w1=interp1d(adeg,[1,1,1,1,1])
+        w1=interp1d(adeg,[1,0.97,0.93,0.95,1])
         #w1=interp1d(adeg,1+0*adeg)
-        w2=interp1d(adeg,[1,0.47,0.55,0.65,1.03])
+        w2=interp1d(adeg,[1,0.45,0.57,0.65,1.025])
         #w2=interp1d(adeg,0*adeg)
         #w2=interp1d(adeg,(1-cos(arad))/sin(arad))
         Br_fit = lambda th: v1["br_num_%g" % th] if th == 0 else v1["br_num_%g" % th]*cos(th/180.*pi)**0.5*w1(th)+v1["br_an_%g" % 90]*sin(th/180.*pi)*w2(th)
