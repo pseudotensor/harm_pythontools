@@ -247,7 +247,6 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0):
         mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z+1.5*A, scalars=s_fit, colormap='jet',vmin=np.min(s_fit), vmax = np.max(s_fit))
         i = i + 1
         #pdb.set_trace()
-
     # scene.scene.camera.position = [0, -17, 0]
     # scene.scene.camera.focal_point = [0.0, 0.0, 0.0]
     # scene.scene.camera.view_angle = 30.0
@@ -256,7 +255,7 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0):
     # scene.scene.camera.compute_view_plane_normal()
     # 
     # scene.scene.render()
-    scene.scene.camera.position = [-0.29669090943381971, -16.997410817658647, 0.0]
+    scene.scene.camera.position = [-0.0, -17, 0.0]
     scene.scene.camera.focal_point = [0.0, 0.0, 0.0]
     scene.scene.camera.view_angle = 30.0
     scene.scene.camera.view_up = [0.0, 0.0, 1.0]
