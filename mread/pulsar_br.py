@@ -21,7 +21,7 @@ def linsolve(a,b):
 def smoothsign( v, dv ):
     return( (-1.)*(v <= -dv) + 1.*(v >= dv) + (1.*v/dv)*(v > -dv)*(v < dv) )
     
-def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes=1,rorlc=2):
+def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes=1,rorlc=2,rstarorlc=0.2):
     # try:
     #     engine = mayavi.engine
     # except NameError:
@@ -57,7 +57,15 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
     #f = interp1d(th0[which],np.abs(v["Br2d0"])[:,0][which]/norm,bounds_error=0,fill_value=1,kind="cubic")
     f = lambda h: (abs(cos(h))**1*0.47+0.2+0.33*abs(h-pi/2)*2/pi)**0.5
     br0_num_func = lambda th: f(th)*(2*(th<0.5*pi)-1)
-    br_alpha_mono_func_unnorm = lambda alpha,th,ph: smoothsign(cos(alpha)*cos(th)+sin(alpha)*sin(th)*sin(ph+rorlc), 0.05)
+    #old theta in terms of new theta, phi, and the amount of rotation, alpha
+    oldth = lambda al,th,ph: arccos(sin(th)*cos(ph)*sin(al)+cos(th)*cos(al))
+    if 1: 
+        #through bogo's solution
+        br_alpha_mono_func_unnorm = lambda alpha,th,ph: -smoothsign(cos(alpha)*cos(th)+sin(alpha)*sin(th)*sin(ph+pi/2.+1.4), 0.05)
+    else:
+        #through rotating split-monopole
+        br0_mono_func_unnorm = lambda th: (-smoothsign(th-0.5*pi,0.05))
+        br_alpha_mono_func_unnorm = lambda alpha, th, ph: br0_mono_func_unnorm(oldth(alpha, th, ph+1.4))
     #analytic flux: due to vacuum dipole
     anflux = 0.5*(2*pi*abs(br0_an_func_unnorm(th0))*sin(th0)*(th0[1]-th0[0])).sum(-1)
     #monopole flux: due to bogovalov's monopole
@@ -69,11 +77,9 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
     br0_an_func = lambda th: br0_an_func_unnorm(th)*(numflux/anflux)
     br_alpha_mono_func = lambda al,th,ph: br_alpha_mono_func_unnorm(al,th,ph)*(numflux/monoflux)
     #pdb.set_trace()
-    #old theta in terms of new theta, phi, and the amount of rotation, alpha
-    oldth = lambda al,th,ph: arccos(sin(th)*cos(ph)*sin(al)+cos(th)*cos(al))
     #tilt both solutions
     br_alpha_an_func = lambda al,th,ph: br0_an_func(oldth(al,th,ph+0.95))
-    br_alpha_num_func = lambda al,th,ph: br0_num_func(oldth(al,th,ph+1.4))
+    br_alpha_num_func = lambda al,th,ph: br0_num_func(oldth(al,th,ph+1.4)) #used to be +1.4, now +(pi-(2-0.2)) = +1.34
     # compute cell spacing
     dth = (v["th2d30"][1,0]-v["th2d30"][0,0])
     dph = (v["ph2d30"][0,1]-v["ph2d30"][0,0])
@@ -244,8 +250,8 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
     dph = 2*np.pi/nframes
     for nframe in np.arange(nframes):
         print( "Rednering frame %d out of %d..." % (nframe, nframes) )
-        deltaphimono = nframe*dph #-np.pi/2.
-        deltaphi = deltaphimono+0.95 #extra shift to account for R/Rlc
+        deltaphimono = nframe*dph+(1.4) #-np.pi/2.
+        deltaphi = deltaphimono #extra shift to account for R/Rlc
         mlab.clf()
         i = 0
         A = 1.1
