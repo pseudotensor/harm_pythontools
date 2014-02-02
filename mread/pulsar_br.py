@@ -142,7 +142,7 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
                                                Br_fit(al).ravel(),
                                                (tharr(al),put_phi_in_range(pharr(al))),method="nearest")
     Br_fit_new = lambda al: v1["br_num_%g" % al] if al == 0 else Br_fit_func_aligned(al)
-    Br_fit_new_avg = lambda al: interp1d(v["th2d%g"%al][:,0],Br_fit_new(al).mean(-1),bounds_error=0,fill_value=1,kind="cubic")
+    Br_fit_new_avg = lambda al: interp1d(v["th2d%g"%al][:,0],((Br_fit_new(al)**2).mean(-1))**0.5,bounds_error=0,fill_value=1,kind="cubic")
     Br_fit_new_avg_alpha = lambda al: v1["br_num_%g" % al] if al == 0 else Br_fit_new_avg(al)(oldth(al*pi/180.,v["th2d%g"%al],v["ph2d%g"%al]-phi0(al)))
     ###
     ### End averaging out function in phim
@@ -150,7 +150,8 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
     #pdb.set_trace()
     Br_mhd_fit = lambda th: v1["br_num_%g" % th]*cos(th/180.*pi)**0.5*w1(th)
     Br_vac_fit = lambda th: v1["br_an_%g" % 90]*sin(th/180.*pi)**0.5*w2(th)
-    Brsqavg_fit = lambda th: (Br_fit(th)**2).mean(-1)
+    #Brsqavg_fit = lambda th: (Br_fit(th)**2).mean(-1)
+    Brsqavg_fit = lambda al: (Br_fit_new_avg_alpha(al)**2).mean(-1)
     psi_fit = lambda th: 0.5*(2*pi*sin(v["th2d0"][:,:])*abs(Br_fit(th))*(v["th2d0"][1,0]-v["th2d0"][0,0])).sum() if th == 0 else 0.5*(sin(v["th2d%g"%th])*abs(Br_fit(th))*(v["th2d%g"%th][1,0]-v["th2d%g"%th][0,0])*(v["ph2d%g"%th][0,1]-v["ph2d%g"%th][0,0])).sum()
     psi_num_fit = lambda th:  0.5*(2*pi*sin(v["th2d0"][:,:])*abs(Br_fit(th))*(v["th2d0"][1,0]-v["th2d0"][0,0])).sum() if th == 0 else 0.5*(sin(v["th2d%g"%th])*abs(v1["br_num_%g" % th])*(v["th2d%g"%th][1,0]-v["th2d%g"%th][0,0])*(v["ph2d%g"%th][0,1]-v["ph2d%g"%th][0,0])).sum()
     psi_an_fit = lambda th:  0.5*(2*pi*sin(v["th2d0"][:,:])*abs(Br_fit(th))*(v["th2d0"][1,0]-v["th2d0"][0,0])).sum() if th == 0 else 0.5*(sin(v["th2d%g"%th])*abs(v1["br_an_%g" % th])*(v["th2d%g"%th][1,0]-v["th2d%g"%th][0,0])*(v["ph2d%g"%th][0,1]-v["ph2d%g"%th][0,0])).sum()
