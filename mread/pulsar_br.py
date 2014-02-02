@@ -18,7 +18,7 @@ def linsolve(a,b):
     y = float((b[0]*a[1,0]-b[1]*a[0,0])/(a[0,1]*a[1,0]-a[1,1]*a[0,0]))
     return(x,y)
     
-def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0):
+def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes=1):
     # try:
     #     engine = mayavi.engine
     # except NameError:
@@ -227,40 +227,48 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0):
     #
     scene = mlab.figure(1, bgcolor=(1, 1, 1), fgcolor=(0, 0, 0), size=(900, 600))
     #engine = mlab.get_engine()
-    mlab.clf()
-    i = 0
-    A = 1.1
-    al_list = [0, 15, 30, 60, 90]
-    l = len(al_list)
-    for al in al_list:
-        Br_sm = v["Br2d%g"%al]/(v["psi%g" % al]/v["psi0"])/norm
-        Br_ft = Br_fit(al)
-        th = v["th2d%g"%al]
-        ph = v["ph2d%g"%al]
-        if al == 0:
-            ph = np.linspace(0,2*np.pi,128,endpoint=0)[None,:] + 0*th
-            th = th + 0*ph
-            Br_sm = Br_sm + 0*th
-            Br_ft = Br_ft + 0*th
-        r = 1
-        # pdb.set_trace()
-        s_sim = wraparound(np.abs(Br_sm))
-        s_fit = wraparound(np.abs(Br_ft))
-        x = wraparound(r*sin(th)*cos(ph))
-        y = wraparound(r*sin(th)*sin(ph))
-        z = wraparound(r*cos(th))        
-        mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z-1.5*A, scalars=s_sim, colormap='jet',vmin=np.min(s_fit), vmax = np.max(s_fit))
-        mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z+1.5*A, scalars=s_fit, colormap='jet',vmin=np.min(s_fit), vmax = np.max(s_fit))
-        i = i + 1
-        #pdb.set_trace()
-    scene.scene.parallel_projection = True
-    scene.scene.camera.position = [0.0, -19.834710743801651, 0.0]
-    scene.scene.camera.focal_point = [0.0, 0.0, 0.0]
-    scene.scene.camera.view_angle = 30.0
-    scene.scene.camera.view_up = [0.0, 0.0, 1.0]
-    scene.scene.camera.clipping_range = [17.646366008628497, 22.637228418765972]
-    scene.scene.camera.zoom(1.6)
-    scene.scene.show_axes = True
+    nframes=1
+    dph = 2*np.pi/nframes
+    for nframe in np.arange(nframes):
+        print( "Rednering frame %d out of %d..." % (nframe, nframes) )
+        deltaphi = nframe*dph+0.95-np.pi/2.
+        mlab.clf()
+        i = 0
+        A = 1.1
+        al_list = [0, 30, 60, 90]
+        l = len(al_list)
+        for al in al_list:
+            Br_sm = v["Br2d%g"%al]/(v["psi%g" % al]/v["psi0"])/norm
+            Br_ft = Br_fit(al)
+            th = v["th2d%g"%al]
+            ph = v["ph2d%g"%al]
+            ph = ph + deltaphi
+            if al == 0:
+                ph = np.linspace(0,2*np.pi,128,endpoint=0)[None,:] + 0*th
+                th = th + 0*ph
+                Br_sm = Br_sm + 0*th
+                Br_ft = Br_ft + 0*th
+            r = 1
+            # pdb.set_trace()
+            s_sim = wraparound(np.abs(Br_sm))
+            s_fit = wraparound(np.abs(Br_ft))
+            x = wraparound(r*sin(th)*cos(ph))
+            y = wraparound(r*sin(th)*sin(ph))
+            z = wraparound(r*cos(th))        
+            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z-1.5*A, scalars=s_sim, colormap='jet',vmin=np.min(s_fit), vmax = np.max(s_fit))
+            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z+1.5*A, scalars=s_fit, colormap='jet',vmin=np.min(s_fit), vmax = np.max(s_fit))
+            i = i + 1
+            #pdb.set_trace()
+        scene.scene.parallel_projection = True
+        scene.scene.camera.position = [0.0, -19.834710743801651, 0.0]
+        scene.scene.camera.focal_point = [0.0, 0.0, 0.0]
+        scene.scene.camera.view_angle = 30.0
+        scene.scene.camera.view_up = [0.0, 0.0, 1.0]
+        scene.scene.camera.clipping_range = [17.646366008628497, 22.637228418765972]
+        scene.scene.camera.zoom(1.6)
+        scene.scene.show_axes = False
+        if dosavefig:
+            mlab.savefig("frame%04d.png"%nframe, size=None, figure=scene, magnification='auto')
     v.close()
     
 def wraparound(v):
