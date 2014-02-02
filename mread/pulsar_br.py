@@ -132,11 +132,12 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
     oldpharr = lambda al,th,ph: oldph(al*pi/180.,th,ph)
     tharr = lambda al: v["th2d%g"%al]
     pharr = lambda al: v["ph2d%g"%al]
-    Br_fit_func_aligned = lambda al: griddata( (oldtharr(-0.,tharr(al),put_phi_in_range(pharr(al)+0.95)).ravel(),
-                                                oldpharr(-0.,tharr(al),put_phi_in_range(pharr(al)+0.95)).ravel()), 
+    alpha0 = lambda al: (v["th2d%g"%al][(np.where(Br_fit(al)==np.max(Br_fit(al))))[0][0],0])*180./np.pi
+    phi0 = lambda al: v["ph2d%g"%al][0,(np.where(Br_fit(al)==np.max(Br_fit(al))))[1][0]]
+    Br_fit_func_aligned = lambda al: griddata( (oldtharr(alpha0(al),tharr(al),put_phi_in_range(pharr(al)-phi0(al))).ravel(),
+                                                oldpharr(alpha0(al),tharr(al),put_phi_in_range(pharr(al)-phi0(al))).ravel()), 
                                                Br_fit(al).ravel(),
                                                (tharr(al),put_phi_in_range(pharr(al))),method="nearest")
-    # pdb.set_trace()
     Br_fit_new = lambda al: v1["br_num_%g" % al] if al == 0 else Br_fit_func_aligned(al)
     #pdb.set_trace()
     Br_mhd_fit = lambda th: v1["br_num_%g" % th]*cos(th/180.*pi)**0.5*w1(th)
@@ -280,7 +281,7 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
     dph = 2*np.pi/nframes
     for nframe in np.arange(nframes):
         print( "Rednering frame %d out of %d..." % (nframe, nframes) )
-        deltaphimono = nframe*dph+(1.4)  #+1.4 (to align MHD dip) #+0.95 (to align vac dip) #-np.pi/2.
+        deltaphimono = nframe*dph #+1.4 (to align MHD dip) #+0.95 (to align vac dip) #-np.pi/2.
         deltaphi = deltaphimono #extra shift to account for R/Rlc
         mlab.clf()
         i = 0
@@ -289,7 +290,7 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
         l = len(al_list)
         for al in al_list:
             Br_sm = v["Br2d%g"%al]/(v["psi%g" % al]/v["psi0"])/norm
-            Br_ft = Br_fit(al) #Br_fit(al) 
+            Br_ft = Br_fit_new(al) #Br_fit(al) 
             th = v["th2d%g"%al]
             ph = v["ph2d%g"%al]
             if al == 0:
