@@ -57,7 +57,7 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
     #f = interp1d(th0[which],np.abs(v["Br2d0"])[:,0][which]/norm,bounds_error=0,fill_value=1,kind="cubic")
     f = lambda h: (abs(cos(h))**1*0.47+0.2+0.33*abs(h-pi/2)*2/pi)**0.5
     br0_num_func = lambda th: f(th)*(2*(th<0.5*pi)-1)
-    br_alpha_mono_func_unnorm = lambda alpha,th,ph: smoothsign(cos(alpha)*cos(th)+sin(alpha)*sin(th)*sin(ph+rorlc), 0.05) #(smoothsign( th-np.arctan2(cos(alpha),sin(alpha)*sin(ph+rorlc)), 0.05 ))
+    br_alpha_mono_func_unnorm = lambda alpha,th,ph: smoothsign(cos(alpha)*cos(th)+sin(alpha)*sin(th)*sin(ph+rorlc), 0.05)
     #analytic flux: due to vacuum dipole
     anflux = 0.5*(2*pi*abs(br0_an_func_unnorm(th0))*sin(th0)*(th0[1]-th0[0])).sum(-1)
     #monopole flux: due to bogovalov's monopole
@@ -244,7 +244,8 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
     dph = 2*np.pi/nframes
     for nframe in np.arange(nframes):
         print( "Rednering frame %d out of %d..." % (nframe, nframes) )
-        deltaphi = nframe*dph+0.95 #-np.pi/2.
+        deltaphimono = nframe*dph #-np.pi/2.
+        deltaphi = deltaphimono+0.95 #extra shift to account for R/Rlc
         mlab.clf()
         i = 0
         A = 1.1
@@ -255,19 +256,20 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
             Br_ft = Br_fit(al)
             th = v["th2d%g"%al]
             ph = v["ph2d%g"%al]
-            ph = ph + deltaphi
             if al == 0:
                 ph = np.linspace(0,2*np.pi,128,endpoint=0)[None,:] + 0*th
                 th = th + 0*ph
                 Br_sm = Br_sm + 0*th
                 Br_ft = Br_ft + 0*th
-            Br_mono = br_alpha_mono_func(al*pi/180.,th,ph)
+            Br_mono = br_alpha_mono_func(al*pi/180.,th,ph+(deltaphi-deltaphimono)) #un-rotate since monopole already accounts for phase shift
             #pdb.set_trace()
             r = 1
             # pdb.set_trace()
             s_sim = wraparound(np.abs(Br_sm))
             s_fit = wraparound(np.abs(Br_ft))
             s_mono = wraparound(np.abs(Br_mono))
+            #rotate phi grid
+            ph = ph + deltaphi
             x = wraparound(r*sin(th)*cos(ph))
             y = wraparound(r*sin(th)*sin(ph))
             z = wraparound(r*cos(th))        
