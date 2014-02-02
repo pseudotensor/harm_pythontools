@@ -17,8 +17,11 @@ def linsolve(a,b):
     x = float((b[0]*a[1,1]-b[1]*a[0,1])/(a[0,0]*a[1,1]-a[1,0]*a[0,1]))
     y = float((b[0]*a[1,0]-b[1]*a[0,0])/(a[0,1]*a[1,0]-a[1,1]*a[0,0]))
     return(x,y)
+
+def smoothsign( v, dv ):
+    return( (-1.)*(v <= -dv) + 1.*(v >= dv) + (1.*v/dv)*(v > -dv)*(v < dv) )
     
-def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes=1):
+def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes=1,rorlc=2):
     # try:
     #     engine = mayavi.engine
     # except NameError:
@@ -54,12 +57,18 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
     #f = interp1d(th0[which],np.abs(v["Br2d0"])[:,0][which]/norm,bounds_error=0,fill_value=1,kind="cubic")
     f = lambda h: (abs(cos(h))**1*0.47+0.2+0.33*abs(h-pi/2)*2/pi)**0.5
     br0_num_func = lambda th: f(th)*(2*(th<0.5*pi)-1)
+    br_alpha_mono_func_unnorm = lambda alpha,th,ph: smoothsign(th - np.arctan2(cos(alpha),sin(alpha)*sin(ph+rorlc)), 0.08) #(smoothsign( th-np.arctan2(cos(alpha),sin(alpha)*sin(ph+rorlc)), 0.05 ))
     #analytic flux: due to vacuum dipole
     anflux = 0.5*(2*pi*abs(br0_an_func_unnorm(th0))*sin(th0)*(th0[1]-th0[0])).sum(-1)
+    #monopole flux: due to bogovalov's monopole
+    monoflux = 0.5*(2*pi*abs(1.)*sin(th0)*(th0[1]-th0[0])).sum(-1)
     #numerical flux: due to axisymmetric MHD dipole
     numflux = 0.5*(2*pi*abs(br0_num_func(th0))*sin(th0)*(th0[1]-th0[0])).sum(-1)
-    #now rescale aligned vacuum dipole such that its open flux is the same as that of numerical solution
+    print( "anflux = %g, monoflux = %g, numflux = %g" % (anflux, monoflux, numflux) )
+    #now rescale aligned vacuum dipole and bogovalov's monopole such that their open fluxes are the same as that of numerical solution
     br0_an_func = lambda th: br0_an_func_unnorm(th)*(numflux/anflux)
+    br_alpha_mono_func = lambda al,th,ph: br_alpha_mono_func_unnorm(al,th,ph)*(numflux/monoflux)
+    #pdb.set_trace()
     #old theta in terms of new theta, phi, and the amount of rotation, alpha
     oldth = lambda al,th,ph: arccos(sin(th)*cos(ph)*sin(al)+cos(th)*cos(al))
     #tilt both solutions
@@ -252,15 +261,19 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
                 th = th + 0*ph
                 Br_sm = Br_sm + 0*th
                 Br_ft = Br_ft + 0*th
+            Br_mono = br_alpha_mono_func(al*pi/180.,th,ph)
+            #pdb.set_trace()
             r = 1
             # pdb.set_trace()
             s_sim = wraparound(np.abs(Br_sm))
             s_fit = wraparound(np.abs(Br_ft))
+            s_mono = wraparound(np.abs(Br_mono))
             x = wraparound(r*sin(th)*cos(ph))
             y = wraparound(r*sin(th)*sin(ph))
             z = wraparound(r*cos(th))        
-            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z-1.5*A, scalars=s_sim, colormap='jet',vmin=np.min(s_fit), vmax = np.max(s_fit))
-            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z+1.5*A, scalars=s_fit, colormap='jet',vmin=np.min(s_fit), vmax = np.max(s_fit))
+            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z, scalars=s_sim, colormap='jet',vmin=np.min(s_fit), vmax = np.max(s_fit))
+            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z+3*A, scalars=s_fit, colormap='jet',vmin=np.min(s_fit), vmax = np.max(s_fit))
+            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z-3*A, scalars=s_mono, colormap='jet',vmin=np.min(s_fit), vmax = np.max(s_fit))            
             i = i + 1
             #pdb.set_trace()
         scene.scene.parallel_projection = True
