@@ -100,6 +100,10 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
     psi_num_fit = lambda th:  0.5*(2*pi*sin(v["th2d0"][:,:])*abs(Br_fit(th))*(v["th2d0"][1,0]-v["th2d0"][0,0])).sum() if th == 0 else 0.5*(sin(v["th2d%g"%th])*abs(v1["br_num_%g" % th])*(v["th2d%g"%th][1,0]-v["th2d%g"%th][0,0])*(v["ph2d%g"%th][0,1]-v["ph2d%g"%th][0,0])).sum()
     psi_an_fit = lambda th:  0.5*(2*pi*sin(v["th2d0"][:,:])*abs(Br_fit(th))*(v["th2d0"][1,0]-v["th2d0"][0,0])).sum() if th == 0 else 0.5*(sin(v["th2d%g"%th])*abs(v1["br_an_%g" % th])*(v["th2d%g"%th][1,0]-v["th2d%g"%th][0,0])*(v["ph2d%g"%th][0,1]-v["ph2d%g"%th][0,0])).sum()
     #
+    # Bogovalov's split-monopole
+    #
+    
+    #
     # Plotting
     #
     #
@@ -231,7 +235,7 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
     dph = 2*np.pi/nframes
     for nframe in np.arange(nframes):
         print( "Rednering frame %d out of %d..." % (nframe, nframes) )
-        deltaphi = nframe*dph+0.95-np.pi/2.
+        deltaphi = nframe*dph+0.95 #-np.pi/2.
         mlab.clf()
         i = 0
         A = 1.1
