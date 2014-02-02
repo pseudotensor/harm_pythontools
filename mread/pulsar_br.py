@@ -250,7 +250,7 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
     dph = 2*np.pi/nframes
     for nframe in np.arange(nframes):
         print( "Rednering frame %d out of %d..." % (nframe, nframes) )
-        deltaphimono = nframe*dph+(1.4) #-np.pi/2.
+        deltaphimono = nframe*dph+1.4 #+(0.95) #-np.pi/2.
         deltaphi = deltaphimono #extra shift to account for R/Rlc
         mlab.clf()
         i = 0
