@@ -281,7 +281,7 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
     dph = 2*np.pi/nframes
     for nframe in np.arange(nframes):
         print( "Rednering frame %d out of %d..." % (nframe, nframes) )
-        deltaphimono = nframe*dph #+1.4 (to align MHD dip) #+0.95 (to align vac dip) #-np.pi/2.
+        deltaphimono = nframe*dph+1.4 #+1.4 (to align MHD dip) #+0.95 (to align vac dip) #-np.pi/2.
         deltaphi = deltaphimono #extra shift to account for R/Rlc
         mlab.clf()
         i = 0
@@ -290,7 +290,7 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
         l = len(al_list)
         for al in al_list:
             Br_sm = v["Br2d%g"%al]/(v["psi%g" % al]/v["psi0"])/norm
-            Br_ft = Br_fit_new(al) #Br_fit(al) 
+            Br_ft = Br_fit(al) #Br_fit(al) 
             th = v["th2d%g"%al]
             ph = v["ph2d%g"%al]
             if al == 0:
