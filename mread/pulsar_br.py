@@ -11,6 +11,10 @@ matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"]
 import pdb
 from scipy.interpolate import interp1d
 from scipy.interpolate import interp2d
+from scipy.interpolate import RectBivariateSpline
+from scipy.interpolate import griddata
+
+
 
 
 def linsolve(a,b):
@@ -21,7 +25,22 @@ def linsolve(a,b):
 
 def smoothsign( v, dv ):
     return( (-1.)*(v <= -dv) + 1.*(v >= dv) + (1.*v/dv)*(v > -dv)*(v < dv) )
+
+def myarctan2( x1, x2 ):
+    """ Returns actangent in range [0,2pi] as opposed to standard fcn returning in range [-pi,pi] """
+    ang = arctan2( x1, x2 )
+    ang[ang < 0] += 2 * np.pi
+    return ang
     
+oldth = lambda al,th,ph: arccos(sin(th)*cos(ph)*sin(al)+cos(th)*cos(al))
+oldph = lambda al,th,ph: myarctan2(sin(th)*sin(ph),sin(th)*cos(ph)*cos(al)-cos(th)*sin(al))
+
+def put_phi_in_range(ph):
+    newph = np.copy(ph)
+    newph[newph>2*np.pi] -= 2*np.pi
+    newph[newph<0] += 2*np.pi
+    return(newph)
+
 def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes=1,rorlc=2,rstarorlc=0.2):
     # try:
     #     engine = mayavi.engine
@@ -59,8 +78,6 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
     f = lambda h: (abs(cos(h))**1*0.47+0.2+0.33*abs(h-pi/2)*2/pi)**0.5
     br0_num_func = lambda th: f(th)*(2*(th<0.5*pi)-1)
     #old theta in terms of new theta, phi, and the amount of rotation, alpha
-    oldth = lambda al,th,ph: arccos(sin(th)*cos(ph)*sin(al)+cos(th)*cos(al))
-    oldph = lambda al,th,ph: arctan2(sin(th)*sin(ph),sin(th)*cos(ph)*cos(al)-cos(th)*sin(al))
     if 1: 
         #through bogo's solution
         br_alpha_mono_func_unnorm = lambda alpha,th,ph: -smoothsign(cos(alpha)*cos(th)+sin(alpha)*sin(th)*sin(ph+pi/2.+1.4-0*0.95), 0.05)
@@ -95,7 +112,7 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
     #w1=interp1d([0,30,60,90],[1,1.05,1.4,1])
     if 1:
         #analytical vacuum dipole for 90-degree solution
-        adeg = array([0,30,60,75,90])
+        adeg = np.array([0,30,60,75,90])
         arad = adeg * pi / 180.
         w1=interp1d(adeg,[1,0.97,0.93,0.95,1])
         #w1=interp1d(adeg,1+0*adeg)
@@ -110,9 +127,17 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
         w1=interp1d([0,30,60,75,90],[1,.97,.95,1,1])
         w2=interp1d([0,30,60,75,90],[1,0.4,0.52,0.63,1])
         Br_fit = lambda th: v1["br_num_%g" % th] if th == 0 else v1["br_num_%g" % th]*cos(th/180.*pi)**0.5*w1(th)+v["Br2d%g" % 90]/(v["psi%g" % th]/v["psi0"])/norm*sin(th/180.*pi)*w2(th)
-    Br_fit_func = lambda al: interp2d(v["th2d%g"%al].ravel(),v["ph2d%g"%al].ravel(),Br_fit(al).T.ravel())
-    Br_fit_func_aligned = lambda al,th,ph: (Br_fit_func(al)(oldth(-al*pi/180.,th,ph).ravel(),oldph(-al*pi/180.,th,ph).ravel())) #.reshape(np.array(th).shape)
-    Br_fit_new = lambda al: v1["br_num_%g" % al] if al == 0 else Br_fit_func_aligned(al,v["th2d%g"%al],v["ph2d%g"%al])
+    #Br_fit_func = lambda al: griddata((v["th2d%g"%al][:,0],v["ph2d%g"%al][0,:],Br_fit(al))
+    oldtharr = lambda al,th,ph: oldth(al*pi/180.,th,ph)
+    oldpharr = lambda al,th,ph: oldph(al*pi/180.,th,ph)
+    tharr = lambda al: v["th2d%g"%al]
+    pharr = lambda al: v["ph2d%g"%al]
+    Br_fit_func_aligned = lambda al: griddata( (oldtharr(-0.,tharr(al),put_phi_in_range(pharr(al)+0.95)).ravel(),
+                                                oldpharr(-0.,tharr(al),put_phi_in_range(pharr(al)+0.95)).ravel()), 
+                                               Br_fit(al).ravel(),
+                                               (tharr(al),put_phi_in_range(pharr(al))),method="nearest")
+    # pdb.set_trace()
+    Br_fit_new = lambda al: v1["br_num_%g" % al] if al == 0 else Br_fit_func_aligned(al)
     #pdb.set_trace()
     Br_mhd_fit = lambda th: v1["br_num_%g" % th]*cos(th/180.*pi)**0.5*w1(th)
     Br_vac_fit = lambda th: v1["br_an_%g" % 90]*sin(th/180.*pi)**0.5*w2(th)
@@ -132,7 +157,7 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
     #
     plt.figure(0)
     plt.clf()
-    alphagrid = array([0,30,60,75,90])
+    alphagrid = np.array([0,30,60,75,90])
     alphafinegrid = linspace(0,90,100)
     plot(alphagrid, w1(alphagrid)*cos(alphagrid/180.*pi)**0.5,"o-",label=r"$w_1$")
     plot(alphagrid, w2(alphagrid)*sin(alphagrid/180.*pi),"o-",label=r"$w_2$")
@@ -252,11 +277,10 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
     #
     scene = mlab.figure(1, bgcolor=(1, 1, 1), fgcolor=(0, 0, 0), size=(900, 600))
     #engine = mlab.get_engine()
-    nframes=1
     dph = 2*np.pi/nframes
     for nframe in np.arange(nframes):
         print( "Rednering frame %d out of %d..." % (nframe, nframes) )
-        deltaphimono = nframe*dph +(1.4)  #+1.4 (to align MHD dip) #+0.95 (to align vac dip) #-np.pi/2.
+        deltaphimono = nframe*dph+(1.4)  #+1.4 (to align MHD dip) #+0.95 (to align vac dip) #-np.pi/2.
         deltaphi = deltaphimono #extra shift to account for R/Rlc
         mlab.clf()
         i = 0
@@ -265,7 +289,7 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
         l = len(al_list)
         for al in al_list:
             Br_sm = v["Br2d%g"%al]/(v["psi%g" % al]/v["psi0"])/norm
-            Br_ft = Br_fit(al) #Br_fit_new(al)
+            Br_ft = Br_fit(al) #Br_fit(al) 
             th = v["th2d%g"%al]
             ph = v["ph2d%g"%al]
             if al == 0:
@@ -306,7 +330,7 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
         scene.scene.camera.zoom(1.6)
         scene.scene.show_axes = False
         if dosavefig:
-            mlab.savefig("frame%04d.png"%nframe, size=None, figure=scene, magnification='auto')
+            mlab.savefig("frame%04d.png"%nframe, size=(1800,1200), figure=scene, magnification='auto')
     v.close()
     
 def wraparound(v):

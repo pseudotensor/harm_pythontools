@@ -1340,8 +1340,8 @@ def postprocess1d(fname = "qty.npz", myr = 5,startn=0,endn=-1,whichi=0,whichn=1,
         # plt.ylabel(r"$z\ [r_g]$",fontsize=20)
         # plt.title(r"$t= %5.5g$" % np.floor(t))
         # plt.draw()
-    np.savez(fname,
-        avgbsq=avgbsq,
+    # np.savez(fname,
+    #     avgbsq=avgbsq,
 
     
 def mkbondimovie(doreload=1,plotlen=25,vmin=-6,vmax=1,whichvar="lrho",doresize=1,label=r"$\log\rho$",cmap=mpl.cm.jet,dostreamlines=1,startn=0,endn=-1,whichi=0,whichn=1,dosavefig="png",**kwargs):
