@@ -10,6 +10,7 @@ rc('text', usetex=True)
 matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"] 
 import pdb
 from scipy.interpolate import interp1d
+from scipy.interpolate import interp2d
 
 
 def linsolve(a,b):
@@ -59,13 +60,14 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
     br0_num_func = lambda th: f(th)*(2*(th<0.5*pi)-1)
     #old theta in terms of new theta, phi, and the amount of rotation, alpha
     oldth = lambda al,th,ph: arccos(sin(th)*cos(ph)*sin(al)+cos(th)*cos(al))
+    oldph = lambda al,th,ph: arctan2(sin(th)*sin(ph),sin(th)*cos(ph)*cos(al)-cos(th)*sin(al))
     if 1: 
         #through bogo's solution
-        br_alpha_mono_func_unnorm = lambda alpha,th,ph: -smoothsign(cos(alpha)*cos(th)+sin(alpha)*sin(th)*sin(ph+pi/2.+1.4), 0.05)
+        br_alpha_mono_func_unnorm = lambda alpha,th,ph: -smoothsign(cos(alpha)*cos(th)+sin(alpha)*sin(th)*sin(ph+pi/2.+1.4-0*0.95), 0.05)
     else:
         #through rotating split-monopole
         br0_mono_func_unnorm = lambda th: (-smoothsign(th-0.5*pi,0.05))
-        br_alpha_mono_func_unnorm = lambda alpha, th, ph: br0_mono_func_unnorm(oldth(alpha, th, ph+1.4))
+        br_alpha_mono_func_unnorm = lambda alpha, th, ph: br0_mono_func_unnorm(oldth(alpha, th, ph+1.4-0*0.95))
     #analytic flux: due to vacuum dipole
     anflux = 0.5*(2*pi*abs(br0_an_func_unnorm(th0))*sin(th0)*(th0[1]-th0[0])).sum(-1)
     #monopole flux: due to bogovalov's monopole
@@ -78,8 +80,8 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
     br_alpha_mono_func = lambda al,th,ph: br_alpha_mono_func_unnorm(al,th,ph)*(numflux/monoflux)
     #pdb.set_trace()
     #tilt both solutions
-    br_alpha_an_func = lambda al,th,ph: br0_an_func(oldth(al,th,ph+0.95))
-    br_alpha_num_func = lambda al,th,ph: br0_num_func(oldth(al,th,ph+1.4)) #used to be +1.4, now +(pi-(2-0.2)) = +1.34
+    br_alpha_an_func = lambda al,th,ph: br0_an_func(oldth(al,th,ph+0.95-0*0.95))
+    br_alpha_num_func = lambda al,th,ph: br0_num_func(oldth(al,th,ph+1.4-0*0.95)) #used to be +1.4, now +(pi-(2-0.2)) = +1.34
     # compute cell spacing
     dth = (v["th2d30"][1,0]-v["th2d30"][0,0])
     dph = (v["ph2d30"][0,1]-v["ph2d30"][0,0])
@@ -108,6 +110,10 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
         w1=interp1d([0,30,60,75,90],[1,.97,.95,1,1])
         w2=interp1d([0,30,60,75,90],[1,0.4,0.52,0.63,1])
         Br_fit = lambda th: v1["br_num_%g" % th] if th == 0 else v1["br_num_%g" % th]*cos(th/180.*pi)**0.5*w1(th)+v["Br2d%g" % 90]/(v["psi%g" % th]/v["psi0"])/norm*sin(th/180.*pi)*w2(th)
+    Br_fit_func = lambda al: interp2d(v["th2d%g"%al].ravel(),v["ph2d%g"%al].ravel(),Br_fit(al).T.ravel())
+    Br_fit_func_aligned = lambda al,th,ph: (Br_fit_func(al)(oldth(-al*pi/180.,th,ph).ravel(),oldph(-al*pi/180.,th,ph).ravel())) #.reshape(np.array(th).shape)
+    Br_fit_new = lambda al: v1["br_num_%g" % al] if al == 0 else Br_fit_func_aligned(al,v["th2d%g"%al],v["ph2d%g"%al])
+    #pdb.set_trace()
     Br_mhd_fit = lambda th: v1["br_num_%g" % th]*cos(th/180.*pi)**0.5*w1(th)
     Br_vac_fit = lambda th: v1["br_an_%g" % 90]*sin(th/180.*pi)**0.5*w2(th)
     Brsqavg_fit = lambda th: (Br_fit(th)**2).mean(-1)
@@ -250,7 +256,7 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
     dph = 2*np.pi/nframes
     for nframe in np.arange(nframes):
         print( "Rednering frame %d out of %d..." % (nframe, nframes) )
-        deltaphimono = nframe*dph+1.4 #+(0.95) #-np.pi/2.
+        deltaphimono = nframe*dph +(1.4)  #+1.4 (to align MHD dip) #+0.95 (to align vac dip) #-np.pi/2.
         deltaphi = deltaphimono #extra shift to account for R/Rlc
         mlab.clf()
         i = 0
@@ -259,7 +265,7 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
         l = len(al_list)
         for al in al_list:
             Br_sm = v["Br2d%g"%al]/(v["psi%g" % al]/v["psi0"])/norm
-            Br_ft = Br_fit(al)
+            Br_ft = Br_fit(al) #Br_fit_new(al)
             th = v["th2d%g"%al]
             ph = v["ph2d%g"%al]
             if al == 0:
