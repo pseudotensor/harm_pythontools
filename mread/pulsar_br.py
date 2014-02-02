@@ -57,7 +57,7 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
     #f = interp1d(th0[which],np.abs(v["Br2d0"])[:,0][which]/norm,bounds_error=0,fill_value=1,kind="cubic")
     f = lambda h: (abs(cos(h))**1*0.47+0.2+0.33*abs(h-pi/2)*2/pi)**0.5
     br0_num_func = lambda th: f(th)*(2*(th<0.5*pi)-1)
-    br_alpha_mono_func_unnorm = lambda alpha,th,ph: smoothsign(th - np.arctan2(cos(alpha),sin(alpha)*sin(ph+rorlc)), 0.08) #(smoothsign( th-np.arctan2(cos(alpha),sin(alpha)*sin(ph+rorlc)), 0.05 ))
+    br_alpha_mono_func_unnorm = lambda alpha,th,ph: smoothsign(cos(alpha)*cos(th)+sin(alpha)*sin(th)*sin(ph+rorlc), 0.05) #(smoothsign( th-np.arctan2(cos(alpha),sin(alpha)*sin(ph+rorlc)), 0.05 ))
     #analytic flux: due to vacuum dipole
     anflux = 0.5*(2*pi*abs(br0_an_func_unnorm(th0))*sin(th0)*(th0[1]-th0[0])).sum(-1)
     #monopole flux: due to bogovalov's monopole
@@ -271,9 +271,16 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
             x = wraparound(r*sin(th)*cos(ph))
             y = wraparound(r*sin(th)*sin(ph))
             z = wraparound(r*cos(th))        
-            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z, scalars=s_sim, colormap='jet',vmin=np.min(s_fit), vmax = np.max(s_fit))
-            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z+3*A, scalars=s_fit, colormap='jet',vmin=np.min(s_fit), vmax = np.max(s_fit))
-            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z-3*A, scalars=s_mono, colormap='jet',vmin=np.min(s_fit), vmax = np.max(s_fit))            
+            if 0:
+                vmin = np.min(s_fit)
+                vmax = np.max(s_fit)
+                print( "vmin = %g, vmax = %g" % (vmin, vmax) )
+            else:
+                vmin = 0
+                vmax = 1.5
+            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z, scalars=s_sim, colormap='jet',vmin=vmin, vmax = vmax)
+            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z+3*A, scalars=s_fit, colormap='jet',vmin=vmin, vmax = vmax)
+            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z-3*A, scalars=s_mono, colormap='jet',vmin=vmin, vmax = vmax)            
             i = i + 1
             #pdb.set_trace()
         scene.scene.parallel_projection = True
