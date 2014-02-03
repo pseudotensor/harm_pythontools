@@ -63,7 +63,8 @@ fi
 #
 ###########################################
 
-jobprefix=$modelname
+modelnamelen=${#modelname}
+jobprefix=${modelname} #:((modelnamelen-4)):3}
 testrun=0
 rminitfiles=0
 
@@ -246,7 +247,7 @@ elif [ $modelname == "thickdiskfull3d7tilt1.5708" ]
 then
     jobsuffix="dc$system"
 else
-    jobsuffix="unk$system"        
+    jobsuffix="$system"        
 fi
 
 
@@ -307,7 +308,7 @@ then
     # go to directory where "dumps" directory is
     # required for Nautilus, else will change to home directory when job starts
     numnodes=1
-    thequeue="normal"
+    thequeue="devel"
     #
     if [ "$modelname" == "thickdisk7" ] ||
         [ "$modelname" == "thickdiskr7" ] ||
@@ -469,11 +470,11 @@ then
     numcorespernodenaut=$numcorespernode  #80 is the default
 
     # numtasks set equal to total number of time slices, so each task does only 1 fieldline file
-    numtasks=`ls dumps/fieldline*.bin |wc -l`
+    numtasks=`ls dumps/fieldline*.bin |wc -l` #2000 or so
 
     # total memory required is old memtot/numcorespernode from Nautilus multiplied by total number of tasks for Kraken
-    memtotpercore=$((1+$memtotnaut/$numcorespernodenaut))
-    numcorespernode=$((32/$memtotpercore))  # was 24. 32 is the total per node for westemere nodes
+    memtotpercore=$((1+$memtotnaut/$numcorespernodenaut)) #324/80 ~4 as expected from def of memtot
+    numcorespernode=12 #$((32/$memtotpercore))  # was 24. 32 is the total per node for westemere nodes #MAVARA turned to 12 for low res sim since don't need much mem.
 
     #MAVARA for now just have:
     #numcorespernode=12 #for westemere
@@ -491,18 +492,20 @@ then
         [ $numcorespernode -eq 12 ]
     then
         numcorespersocket=$(($numcorespernode/2))
+	numtaskshalf=$(($numtasks/2))
         apcmd="mpiexec -ppn $numcorespernode -np $numtasks" #"aprun -n $numtasks -S $numcorespersocket"
     else
         # odd, so can't use socket version
+	numtaskshalf=$(($numtasks/2))
         apcmd="mpiexec -ppn $numcorespernode -np $numtasks" #mpiexec -np $numtasks -ppn $numcorespernode"
     fi
 
-    numnodes=$(($numtasks/$numcorespernode))
+    numnodes=$(($numtasks/$numcorespernode)) #MAVARA added /2 since numparts changed to 2 in sections where mpiexec is called with qsub
     numtotalcores=$(($numnodes * 12)) # always 12 for Kraken   # also 12 for westemere nodes on pleiades
 
     if [ $numtotalcores -le 1024 ]
         then
-        thequeue="normal"
+        thequeue="devel"
     elif [ $numtotalcores -le 8192 ]
         then
         thequeue="long"
@@ -518,7 +521,7 @@ then
     echo "PART2: $apcmd"
 
     # setup fake setup
-    numcorespernodereal=$numcorespernode
+    numcorespernodereal=$numcorespernode  #as necessary for enough memory per task on each cpu
     numnodesreal=$numnodes
     numcorespernode=$numtasks
     numnodes=1
@@ -536,10 +539,10 @@ then
     numcorespernodeplot=12
     # this gives 16GB free for plotting (temp vars + qty2.npy file has to be smaller than this or swapping will occur)
     numtotalcoresplot=$numcorespernodeplot
-    thequeueplot="normal"
+    thequeueplot="devel"
     apcmdplot="mpiexec -np $numtasksplot" #mpiexec -np $numtasksplot" #"aprun -n $numtasksplot"
     # only took 6 minutes for thickdisk7 doing 458 files inside qty2.npy!  Up to death at point when tried to resample in time.
-    timetotplot="8:00:00" #MMMMMMMMMMMMMMM
+    timetotplot="2:00:00" #MMMMMMMMMMMMMMM
 
 
     echo "PART1P: $numcorespernodeplot $numnodesplot $numtotalcoresplot $thequeueplot $timetotplot"
@@ -912,6 +915,7 @@ then
                             rm -rf $superbatch
                             echo "cd $dirname" >> $superbatch
                             cat ~/setuppython272 >> $superbatch
+			    echo "source ~/binliblinks" >> $superbatch
                             echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch
                             rm -rf $dirname/matplotlibdir/
                             echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $superbatch
@@ -922,12 +926,14 @@ then
                             else
 		                        cmdraw="$makemoviecfullfile $chunklisttype $chunklist $runn $DATADIR $jobcheck $myinitfile1 $runtype $modelname $fakeruni $runn"
                                 echo "$apcmd $cmdraw" >> $superbatch
+				echo "mpdallexit" >> $superbatch
                             fi
                             localerrorfile=python_${fakeruni}_${runn}.stderr.out
                             localoutputfile=python_${fakeruni}_${runn}.out
                             rm -rf $localerrorfile
                             rm -rf $localoutputfile
-		                    bsubcommand="qsub -S /bin/bash -l select=$numnodes,ncpus=12,model=wes,walltime=$timetot -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M mavara@astro.umd.edu -m be ./$superbatch"
+			    sleep 20
+		            bsubcommand="qsub -S /bin/bash -l select=$numnodesreal:ncpus=12 -l walltime=$timetot -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M mavara@astro.umd.edu -m be ./$superbatch"
                         else
                             # probably specifying ptile below is not necessary
 		                    bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernode] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -1119,6 +1125,7 @@ then
                 rm -rf $superbatch
                 echo "cd $dirname" >> $superbatch
                 cat ~/setuppython272 >> $superbatch
+		echo "source ~/binliblinks" >> $superbatch
                 rm -rf $dirname/matplotlibdir/
                 echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $superbatch
                 echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch
@@ -1134,8 +1141,9 @@ then
                 localoutputfile=python.plot.out
                 rm -rf $localerrorfile
                 rm -rf $localoutputfile
+		sleep 20
                 #
-		bsubcommand="qsub -S /bin/bash -l select=$numnodesplot:walltime=$timetotplot -q $thequeueplot -N $jobname -o $localoutputfile -e $localerrorfile -M mavara@astro.umd.edu -m be ./$superbatch"
+		bsubcommand="qsub -S /bin/bash -l select=$numnodesplot:ncpus=12 -l walltime=$timetotplot -q $thequeueplot -N $jobname -o $localoutputfile -e $localerrorfile -M mavara@astro.umd.edu -m be ./$superbatch"
             else
                 # probably specifying ptile below is not necessary
 		        bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernodeplot] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -1438,6 +1446,7 @@ then
                             rm -rf $superbatch
                             echo "cd $dirname" >> $superbatch
                             cat ~/setuppython272 >> $superbatch
+			    echo  "source ~/binliblinks" >> $superbatch
                             rm -rf $dirname/matplotlibdir/
                             echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $superbatch
                             echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch
@@ -1454,8 +1463,9 @@ then
                             localoutputfile=python_${fakeruni}_${runn}.movieframes.out
                             rm -rf $localerrorfile
                             rm -rf $localoutputfile
+			    sleep 20
                             #
-		                    bsubcommand="qsub  -S /bin/bash -l select=$numnodes:ncpus=12:walltime=$timetot -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M mavara@astro.umd.edu -m be ./$superbatch"
+		                    bsubcommand="qsub  -S /bin/bash -l select=$numnodesreal:ncpus=12 -l walltime=$timetot -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M mavara@astro.umd.edu -m be ./$superbatch"
                         else
                             # probably specifying ptile below is not necessary
 		                    bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernode] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -1606,7 +1616,7 @@ numfiles=`find dumps/ -name "fieldline*.bin"|wc -l`
 echo "NUMFILES=$numfiles"
 
 #itemspergroup=$(( 1 )) # MAVARA
-itemspergroup=$(( 20 ))
+itemspergroup=$(( 10 ))
 
 # catch too small number of files
 # must match __init__.py
@@ -1805,6 +1815,7 @@ then
                             rm -rf $superbatch
                             echo "cd $dirname" >> $superbatch
                             cat ~/setuppython272 >> $superbatch
+			    echo "source ~/binliblinks" >> $superbatch
                             rm -rf $dirname/matplotlibdir/
                             echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $superbatch
                             echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch
@@ -1821,6 +1832,7 @@ then
                             localoutputfile=python_${fakeruni}_${runn}.avg.out
                             rm -rf $localerrorfile
                             rm -rf $localoutputfile
+			    sleep 20
                             #
 		            bsubcommand="qsub  -S /bin/bash -l select=$numnodesreal:ncpus=12 -l walltime=$timetot -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M mavara@astro.umd.edu -m be ./$superbatch"
                         else
@@ -2040,6 +2052,7 @@ then
                 rm -rf $superbatch
                 echo "cd $dirname" >> $superbatch
                 cat ~/setuppython272 >> $superbatch
+		echo "source ~/binliblinks" >> $superbatch
                 rm -rf $dirname/matplotlibdir/
                 echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $superbatch
                 echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch
@@ -2055,8 +2068,9 @@ then
                 localoutputfile=python.plot.avg.out
                 rm -rf $localerrorfile
                 rm -rf $localoutputfile
+		sleep 20
                 # 
-		        bsubcommand="qsub -S /bin/bash -l select=$numnodes,ncpus=12,model=wes,walltime=$timetotplot -q $thequeueplot -N $jobname -o $localoutputfile -e $localerrorfile -M mavara@astro.umd.edu -m be ./$superbatch"
+		        bsubcommand="qsub -S /bin/bash -l select=$numnodesplot:ncpus=12 -l walltime=$timetotplot -q $thequeueplot -N $jobname -o $localoutputfile -e $localerrorfile -M mavara@astro.umd.edu -m be ./$superbatch"
             else
                     # probably specifying ptile below is not necessary
 		        bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernodeplot] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
