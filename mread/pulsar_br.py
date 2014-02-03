@@ -142,16 +142,16 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
                                                Br_fit(al).ravel(),
                                                (tharr(al),put_phi_in_range(pharr(al))),method="nearest")
     Br_fit_new = lambda al: v1["br_num_%g" % al] if al == 0 else Br_fit_func_aligned(al)
-    Br_fit_new_avg = lambda al: interp1d(v["th2d%g"%al][:,0],((Br_fit_new(al)**2).mean(-1))**0.5,bounds_error=0,fill_value=1,kind="cubic")
-    Br_fit_new_avg_alpha = lambda al: v1["br_num_%g" % al] if al == 0 else Br_fit_new_avg(al)(oldth(al*pi/180.,v["th2d%g"%al],v["ph2d%g"%al]-phi0(al)))
+    Br_fit_new_avg = lambda al: interp1d(v["th2d%g"%al][:,0],((Br_fit_new(al)**2).mean(-1))**0.5,bounds_error=0,fill_value=(((Br_fit_new(al)**2).mean(-1))**0.5)[0],kind="cubic")
+    Br_fit_new_avg_alpha = lambda al: v1["br_num_%g" % al] if al == 0 else Br_fit_new_avg(al)(oldth(alpha0(al)*pi/180.,v["th2d%g"%al],v["ph2d%g"%al]-phi0(al)))
     ###
     ### End averaging out function in phim
     ###
     #pdb.set_trace()
     Br_mhd_fit = lambda th: v1["br_num_%g" % th]*cos(th/180.*pi)**0.5*w1(th)
     Br_vac_fit = lambda th: v1["br_an_%g" % 90]*sin(th/180.*pi)**0.5*w2(th)
-    #Brsqavg_fit = lambda th: (Br_fit(th)**2).mean(-1)
-    Brsqavg_fit = lambda al: (Br_fit_new_avg_alpha(al)**2).mean(-1)
+    Brsqavg_fit = lambda th: (Br_fit(th)**2).mean(-1)
+    Brsqphimavg_fit = lambda al: (Br_fit_new_avg_alpha(al)**2).mean(-1)
     psi_fit = lambda th: 0.5*(2*pi*sin(v["th2d0"][:,:])*abs(Br_fit(th))*(v["th2d0"][1,0]-v["th2d0"][0,0])).sum() if th == 0 else 0.5*(sin(v["th2d%g"%th])*abs(Br_fit(th))*(v["th2d%g"%th][1,0]-v["th2d%g"%th][0,0])*(v["ph2d%g"%th][0,1]-v["ph2d%g"%th][0,0])).sum()
     psi_num_fit = lambda th:  0.5*(2*pi*sin(v["th2d0"][:,:])*abs(Br_fit(th))*(v["th2d0"][1,0]-v["th2d0"][0,0])).sum() if th == 0 else 0.5*(sin(v["th2d%g"%th])*abs(v1["br_num_%g" % th])*(v["th2d%g"%th][1,0]-v["th2d%g"%th][0,0])*(v["ph2d%g"%th][0,1]-v["ph2d%g"%th][0,0])).sum()
     psi_an_fit = lambda th:  0.5*(2*pi*sin(v["th2d0"][:,:])*abs(Br_fit(th))*(v["th2d0"][1,0]-v["th2d0"][0,0])).sum() if th == 0 else 0.5*(sin(v["th2d%g"%th])*abs(v1["br_an_%g" % th])*(v["th2d%g"%th][1,0]-v["th2d%g"%th][0,0])*(v["ph2d%g"%th][0,1]-v["ph2d%g"%th][0,0])).sum()
@@ -232,11 +232,13 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
     for th in [0, 30, 60, 90]:
         col = next(coliter)
         plt.plot(v["th%g"%th]*180/np.pi,v["brsqavg%g"%th]/np.max(v["brsqavg0"]),
-                 color=col, label = r"$\alpha = %g^\circ$" % th, lw = 1.5)
-        l,=plt.plot(v["th%g"%th]*180/pi,Brsqavg_fit(th)*(v["psi%g"%th]/v["psi0"])**2,":",color=col,lw=2.5)
+                 color=col, label = r"$\alpha = %g^\circ$" % th, lw = 1.)
+        l,=plt.plot(v["th%g"%th]*180/pi,Brsqphimavg_fit(th)*(v["psi%g"%th]/v["psi0"])**2,":",color=col,lw=4)
         l.set_dashes([2.5,2.5])
+        l,=plt.plot(v["th%g"%th]*180/pi,Brsqavg_fit(th)*(v["psi%g"%th]/v["psi0"])**2,":",color=col,lw=2)
+        l.set_dashes([10,5])
     h = v["th%g"%th]
-    plt.plot(h*180/np.pi,(abs(cos(h))**1*0.47+0.2+0.33*abs(h-pi/2)*2/pi)),
+    #plt.plot(h*180/np.pi,(abs(cos(h))**1*0.47+0.2+0.33*abs(h-pi/2)*2/pi)),
     leg = legend(loc = "best")
     for label in leg.get_texts():
         label.set_fontsize(fntsize)
@@ -254,6 +256,35 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
     plt.ylabel(r"$\langle B_r^2\rangle$",fontsize=fntsize,labelpad=5)
     if dosavefig: 
         savefig("Brsq_comparison.pdf",
+            bbox_inches='tight',pad_inches=0.06,dpi=300)
+    #
+    # Fig 14
+    #
+    plt.figure(14)
+    plt.clf()
+    colors = ["red", "green", "blue", "magenta", "black"]
+    coliter = iter(colors)
+    for th in [0, 30, 60, 90]:
+        col = next(coliter)
+        plt.plot(v["th%g"%th]*180/np.pi,Br_fit_new_avg(th)(v["th%g"%th])**2,
+                 color=col, label = r"$\alpha = %g^\circ$" % th, lw = 2.)
+    leg = legend(loc = "best")
+    for label in leg.get_texts():
+        label.set_fontsize(fntsize)
+    plt.ylim(0,2.5)
+    plt.xlim(0,180)
+    plt.grid(b=1)
+    ax1=plt.gca()
+    for label in ax1.get_xticklabels() + ax1.get_yticklabels():
+        label.set_fontsize(20)
+    plt.grid(b=1)
+    ax1=plt.gca()
+    for label in ax1.get_xticklabels() + ax1.get_yticklabels():
+        label.set_fontsize(20)
+    plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=fntsize)
+    plt.ylabel(r"$\langle B_r^2\rangle_{\rm \varphi_m}$",fontsize=fntsize,labelpad=5)
+    if dosavefig: 
+        savefig("Brsqphimavg_comparison.pdf",
             bbox_inches='tight',pad_inches=0.06,dpi=300)
     #
     # Figure 5
@@ -285,21 +316,23 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
     #
     # Mlab Fig. 1
     #
-    scene = mlab.figure(1, bgcolor=(1, 1, 1), fgcolor=(0, 0, 0), size=(900, 600))
+    scene = mlab.figure(1, bgcolor=(1, 1, 1), fgcolor=(0, 0, 0), size=(1200, 800))
     #engine = mlab.get_engine()
     dph = 2*np.pi/nframes
     for nframe in np.arange(nframes):
         print( "Rednering frame %d out of %d..." % (nframe, nframes) )
-        deltaphimono = nframe*dph #+1.4 #+1.4 (to align MHD dip) #+0.95 (to align vac dip) #-np.pi/2.
+        deltaphimono = nframe*dph +1.4 #+1.4 (to align MHD dip) #+0.95 (to align vac dip) #-np.pi/2.
         deltaphi = deltaphimono #extra shift to account for R/Rlc
         mlab.clf()
         i = 0
         A = 1.1
+        B = 0.8
         al_list = [0, 30, 60, 90]
         l = len(al_list)
         for al in al_list:
             Br_sm = v["Br2d%g"%al]/(v["psi%g" % al]/v["psi0"])/norm
-            Br_ft = Br_fit_new_avg_alpha(al) #Br_fit(al) 
+            Br_ft = Br_fit(al)
+            Br_ftavg = Br_fit_new_avg_alpha(al)
             th = v["th2d%g"%al]
             ph = v["ph2d%g"%al]
             if al == 0:
@@ -307,12 +340,14 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
                 th = th + 0*ph
                 Br_sm = Br_sm + 0*th
                 Br_ft = Br_ft + 0*th
+                Br_ftavg = Br_ftavg + 0*th
             Br_mono = br_alpha_mono_func(al*pi/180.,th,ph+(deltaphi-deltaphimono)) #un-rotate since monopole already accounts for phase shift
             #pdb.set_trace()
             r = 1
             # pdb.set_trace()
             s_sim = wraparound(np.abs(Br_sm))
             s_fit = wraparound(np.abs(Br_ft))
+            s_fitavg = wraparound(np.abs(Br_ftavg))
             s_mono = wraparound(np.abs(Br_mono))
             #rotate phi grid
             ph = ph + deltaphi
@@ -326,9 +361,10 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
             else:
                 vmin = 0
                 vmax = 1.5
-            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z, scalars=s_sim, colormap='jet',vmin=vmin, vmax = vmax)
-            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z+3*A, scalars=s_fit, colormap='jet',vmin=vmin, vmax = vmax)
-            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z-3*A, scalars=s_mono, colormap='jet',vmin=vmin, vmax = vmax)            
+            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z+4.5*B, scalars=s_sim, colormap='jet',vmin=vmin, vmax = vmax)
+            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z+1.5*B, scalars=s_fit, colormap='jet',vmin=vmin, vmax = vmax)
+            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z-1.5*B, scalars=s_fitavg, colormap='jet',vmin=vmin, vmax = vmax)
+            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z-4.5*B, scalars=s_mono, colormap='jet',vmin=vmin, vmax = vmax)            
             i = i + 1
             #pdb.set_trace()
         scene.scene.parallel_projection = True
@@ -340,7 +376,7 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
         scene.scene.camera.zoom(1.6)
         scene.scene.show_axes = False
         if dosavefig:
-            mlab.savefig("frame%04d.png"%nframe, size=(1800,1200), figure=scene, magnification='auto')
+            mlab.savefig("frame%04d.png"%nframe, figure=scene, magnification='auto')
     v.close()
     
 def wraparound(v):
