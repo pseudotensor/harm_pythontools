@@ -41,7 +41,7 @@ def put_phi_in_range(ph):
     newph[newph<0] += 2*np.pi
     return(newph)
 
-def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes=1,rorlc=2,rstarorlc=0.2):
+def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,domkmovie=0,nframes=1,rorlc=2,rstarorlc=0.2):
     # try:
     #     engine = mayavi.engine
     # except NameError:
@@ -220,8 +220,8 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
     th = 60; plt.plot(v["th2d%g" % th][:,0],Br_mhd_fit(th)[:,128/4],"b:",lw=2)
     th = 60; plt.plot(v["th2d%g" % th][:,0],Br_vac_fit(th)[:,128/4],"b-.",lw=2)
     plt.plot(v["th2d%g" % th][:,0],Br_fit(th)[:,128/4],"b--",lw=2)
-    # th = 90; plt.plot(v["th2d%g" % th][:,0],v["Br2d%g" % th][:,128/4]/(v["psi%g" % th]/v["psi0"])/norm,"m",lw=2)
-    # th = 90; plt.plot(v["th2d%g" % th][:,0],Br_fit(th)[:,128/4],"m:",lw=2)
+    th = 90; plt.plot(v["th2d%g" % th][:,0],v["Br2d%g" % th][:,128/4]/(v["psi%g" % th]/v["psi0"])/norm,"m",lw=2)
+    th = 90; plt.plot(v["th2d%g" % th][:,0],Br_fit(th)[:,128/4],"m:",lw=2)
     #
     # Fig 4
     #
@@ -229,19 +229,11 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
     plt.clf()
     colors = ["red", "green", "blue", "magenta", "black"]
     coliter = iter(colors)
-    for th in [0, 30, 60, 90]:
-        col = next(coliter)
-        plt.plot(v["th%g"%th]*180/np.pi,v["brsqavg%g"%th]/np.max(v["brsqavg0"]),
-                 color=col, label = r"$\alpha = %g^\circ$" % th, lw = 1.)
-        l,=plt.plot(v["th%g"%th]*180/pi,Brsqphimavg_fit(th)*(v["psi%g"%th]/v["psi0"])**2,":",color=col,lw=4)
-        l.set_dashes([2.5,2.5])
-        l,=plt.plot(v["th%g"%th]*180/pi,Brsqavg_fit(th)*(v["psi%g"%th]/v["psi0"])**2,":",color=col,lw=2)
-        l.set_dashes([10,5])
-    h = v["th%g"%th]
-    #plt.plot(h*180/np.pi,(abs(cos(h))**1*0.47+0.2+0.33*abs(h-pi/2)*2/pi)),
-    leg = legend(loc = "best")
-    for label in leg.get_texts():
-        label.set_fontsize(fntsize)
+    col = "black"
+    th = 30
+    l,=plt.plot(v["th%g"%th]*180/np.pi,(br_alpha_mono_func(0,v["th2d%g"%th],v["ph2d%g"%th])**2)[:,0], ":",
+             color=col, label = r"${\rm split-monopole}$", lw = 2.)
+    l.set_dashes([2,2])
     plt.ylim(0,2)
     plt.xlim(0,180)
     plt.grid(b=1)
@@ -254,8 +246,69 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
         label.set_fontsize(20)
     plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=fntsize)
     plt.ylabel(r"$\langle B_r^2\rangle$",fontsize=fntsize,labelpad=5)
+    for th in [0, 30, 60, 90]:
+        # if dosavefig: 
+        #     savefig("Brsq_comparison_%g.pdf" % th,
+        #             bbox_inches='tight',pad_inches=0.06,dpi=300)
+        col = next(coliter)
+        plt.plot(v["th%g"%th]*180/np.pi,v["brsqavg%g"%th]/np.max(v["brsqavg0"]),
+                 color=col, label = r"$\alpha = %g^\circ$" % th, lw = 2.)
+        # l,=plt.plot(v["th%g"%th]*180/pi,Brsqphimavg_fit(th)*(v["psi%g"%th]/v["psi0"])**2,":",color=col,lw=4)
+        # l.set_dashes([2.5,2.5])
+        l,=plt.plot(v["th%g"%th]*180/pi,Brsqavg_fit(th)*(v["psi%g"%th]/v["psi0"])**2,":",color=col,lw=3)
+        l.set_dashes([2.5,2.5])
+        # l.set_dashes([10,5])
+    h = v["th%g"%th]
+    #plt.plot(h*180/np.pi,(abs(cos(h))**1*0.47+0.2+0.33*abs(h-pi/2)*2/pi)),
+    # leg = legend(loc = "best")
+    # for label in leg.get_texts():
+    #     label.set_fontsize(fntsize)
     if dosavefig: 
         savefig("Brsq_comparison.pdf",
+            bbox_inches='tight',pad_inches=0.06,dpi=300)
+    #
+    # Fig 24
+    #
+    plt.figure(24)
+    plt.clf()
+    colors = ["red", "green", "blue", "magenta", "black"]
+    coliter = iter(colors)
+    th = 30
+    col = "black"
+    l,=plt.plot(v["th%g"%th]*180/np.pi,(sin(v["th2d%g"%th])**2*br_alpha_mono_func(0,v["th2d%g"%th],v["ph2d%g"%th])**2)[:,0], ":",
+             color=col, label = r"${\rm split-monopole}$", lw = 2.)
+    l.set_dashes([2,2])
+    plt.ylim(0,2)
+    plt.xlim(0,180)
+    plt.grid(b=1)
+    ax1=plt.gca()
+    for label in ax1.get_xticklabels() + ax1.get_yticklabels():
+        label.set_fontsize(20)
+    plt.grid(b=1)
+    ax1=plt.gca()
+    for label in ax1.get_xticklabels() + ax1.get_yticklabels():
+        label.set_fontsize(20)
+    plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=fntsize)
+    plt.ylabel(r"$\langle dL/d\omega\rangle$",fontsize=fntsize,labelpad=5)
+    for th in [0, 30, 60, 90]:
+        # if dosavefig: 
+        #     savefig("dLdom_comparison_%g.pdf" % th,
+        #             bbox_inches='tight',pad_inches=0.06,dpi=300)
+        col = next(coliter)
+        plt.plot(v["th%g"%th]*180/np.pi,sin(v["th%g"%th])**2*v["brsqavg%g"%th]/np.max(v["brsqavg0"]),
+                 color=col, label = r"$\alpha = %g^\circ$" % th, lw = 2.)
+        # l,=plt.plot(v["th%g"%th]*180/pi,Brsqphimavg_fit(th)*(v["psi%g"%th]/v["psi0"])**2,":",color=col,lw=4)
+        # l.set_dashes([2.5,2.5])
+        l,=plt.plot(v["th%g"%th]*180/pi,sin(v["th%g"%th])**2*Brsqavg_fit(th)*(v["psi%g"%th]/v["psi0"])**2,":",color=col,lw=3)
+        l.set_dashes([2.5,2.5])
+        # l.set_dashes([10,5])
+    h = v["th%g"%th]
+    #plt.plot(h*180/np.pi,(abs(cos(h))**1*0.47+0.2+0.33*abs(h-pi/2)*2/pi)),
+    # leg = legend(loc = "best")
+    # for label in leg.get_texts():
+    #     label.set_fontsize(fntsize)
+    if dosavefig: 
+        savefig("dLdom_comparison.pdf",
             bbox_inches='tight',pad_inches=0.06,dpi=300)
     #
     # Fig 14
@@ -361,10 +414,10 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
             else:
                 vmin = 0
                 vmax = 1.5
-            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z+4.5*B, scalars=s_sim, colormap='jet',vmin=vmin, vmax = vmax)
-            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z+1.5*B, scalars=s_fit, colormap='jet',vmin=vmin, vmax = vmax)
-            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z-1.5*B, scalars=s_fitavg, colormap='jet',vmin=vmin, vmax = vmax)
-            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z-4.5*B, scalars=s_mono, colormap='jet',vmin=vmin, vmax = vmax)            
+            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z+3.0*B, scalars=s_sim, colormap='jet',vmin=vmin, vmax = vmax)
+            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z+0*1.5*B, scalars=s_fit, colormap='jet',vmin=vmin, vmax = vmax)
+            # mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z-1.5*B, scalars=s_fitavg, colormap='jet',vmin=vmin, vmax = vmax)
+            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z-3.0*B, scalars=s_mono, colormap='jet',vmin=vmin, vmax = vmax)            
             i = i + 1
             #pdb.set_trace()
         scene.scene.parallel_projection = True
@@ -375,7 +428,7 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,nframes
         scene.scene.camera.clipping_range = [17.646366008628497, 22.637228418765972]
         scene.scene.camera.zoom(1.6)
         scene.scene.show_axes = False
-        if dosavefig:
+        if domkmovie:
             mlab.savefig("frame%04d.png"%nframe, figure=scene, magnification='auto')
     v.close()
     

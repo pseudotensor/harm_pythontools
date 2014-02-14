@@ -63,11 +63,72 @@ def plot3danatoly():
     flow = mlab.flow(u, v, w, seed_scale=1,
                               seed_resolution=5,integration_direction='both')
 
+def computephi():
+    grid3d("gdump.bin",use2d=1)
+    rfd("fieldline9000.bin")
+    mdot = (-gdet*rho*uu[1]*_dx2*_dx3).sum(2).sum(1)
+    plt.clf()
+    plt.plot(r[:,0,0],mdot);plt.xlim(rhor,20);plt.ylim(0,1)
+    ihor=iofr(rhor)
+    Phi = (gdet*np.abs(B[1])*_dx2*_dx3)[ihor].sum(-1).sum(-1)
+    print Phi
+    #0.5 for going from 2 to 1 hemispheres
+    #(4*np.pi)**0.5 for converting from Heaviside-Lorentzian to cgs units
+    Phicgs = 0.5*(4*np.pi)**0.5*(gdet*np.abs(B[1])*_dx2*_dx3)[ihor].sum(-1).sum(-1)
+    print Phicgs/mdot[0:iofr(10)].mean()**0.5
+
+
+def computephibh():
+    grid3d("gdump.bin",use2d=1)
+    rfd("fieldline9000.bin")
+    #compute phibh
+    phibh = 0.5*(4*np.pi)**0.5*(abs(gdetB[1])*_dx2*_dx3).sum(-1).sum(-1)/sqrt(-rho*uu[1]*_dx2*_dx3).sum(-1).sum(-1)
+    plt.plot(r[:,ny/2,0],phibh[:,ny/2,0])
+    plt.xlim(rhor,20)
+    plt.ylim(0,100)
+
+
+def computetilt1(fntsize=20,dosavefig=1):
+    os.chdir("/home/atchekho/run/sane")
+    grid3d("gdump.bin",use2d=1)
+    rfd("fieldline9000.bin")
+    cvel()
+    plt.clf()
+    #
+    #tiltnum = -BRnorm/gamma*Bpnorm
+    #tiltnum = -gv3[1,1]**0.5*bu[1]*gv3[3,3]**0.5*bu[3]
+    tiltnum = -gv3[1,1]**0.5*bu[1]*gv3[3,3]**0.5*bu[3]
+    tiltden = bsq/2.
+    tiltavg = denavg(tiltnum)/denavg(tiltden)
+    #
+    # PLOTTING
+    #
+    plt.clf()
+    rad = r[:,0,0]
+    plt.plot(rad,tiltavg,"b",lw=2,label=r"$-\sqrt{g_{rr}g_{\varphi\varphi}}\langle b^r b^\varphi\rangle/\langle b^2/2\rangle$")
+    tilt_expected = sin(2*15.*np.pi/180.)
+    l,=plt.plot(rad,0*rad+tilt_expected,"g",lw=2,label=r"$\theta_{\rm B}=15^\circ$")
+    l.set_dashes([2,4])
+    plt.xlim(rhor,100)
+    plt.xscale("log")
+    plt.ylim(0,1.)
+    plt.xlabel(r"$r\ [r_g]$",fontsize = fntsize)
+    plt.ylabel(r"$-\langle b_{\hat r} b_{\hat \varphi}\rangle/\langle b^2/2\rangle$",fontsize = fntsize)
+    leg = plt.legend(loc="best")
+    plt.grid(b=1)
+    ax = plt.gca()
+    for label in ax.get_xticklabels() + ax.get_yticklabels() + leg.get_texts():
+        label.set_fontsize(fntsize)
+    if dosavefig:
+        plt.savefig("tilt_angle.pdf",
+                    bbox_inches='tight',pad_inches=0.06,dpi=300)
+    
 def denavg(var):
     """ average var with density at each radius """
     num = (gdet*rho*var).sum(-1).sum(-1)
     den = (gdet*rho).sum(-1).sum(-1)
     return(num/den)
+
     
 def computetilt(fntsize=20,dosavefig=1):
     global Brnorm, Bhnorm, Bpnorm, Bznorm, BRnorm, Bsq, tilt
@@ -149,6 +210,7 @@ def computetilt(fntsize=20,dosavefig=1):
     if dosavefig:
         plt.savefig("tilt_angle.pdf",
                     bbox_inches='tight',pad_inches=0.06,dpi=300)
+    
 
 
 def plot_harm_scaling(whichcode="harmrad",whichsystem="stampede",fntsize=20,dosavefig=1):
@@ -292,18 +354,6 @@ def imagelist():
     plotrameshreview(doreload=0,plotlen=75,vmin=-3.1,vmax=-1,doresize=0,label=r"$\log\rho$",dostreamlines=1,ncell=800,dobhfield=16,kval=5,fname="paired_75_",cmap=mpl.cm.Paired)
     plt.draw()
     plotrameshreview(doreload=0,plotlen=75,vmin=-3.1,vmax=-1,doresize=0,label=r"$\log\rho$",dostreamlines=1,ncell=800,dobhfield=16,kval=5,fname="paired_50_",cmap=mpl.cm.Paired)
-
-def computephi():
-    mdot = (-gdet*rho*uu[1]*_dx2*_dx3).sum(2).sum(1)
-    plt.clf()
-    plt.plot(r[:,0,0],mdot);plt.xlim(rhor,20);plt.ylim(0,1)
-    ihor=iofr(rhor)
-    Phi = (gdet*np.abs(B[1])*_dx2*_dx3)[ihor].sum(-1).sum(-1)
-    print Phi
-    #0.5 for going from 2 to 1 hemispheres
-    #(4*np.pi)**0.5 for converting from Heaviside-Lorentzian to cgs units
-    Phicgs = 0.5*(4*np.pi)**0.5*(gdet*np.abs(B[1])*_dx2*_dx3)[ihor].sum(-1).sum(-1)
-    print Phicgs/mdot[0:iofr(10)].mean()**0.5
 
 def rameshplotfinal():
     createnewmapandplot(doreload=0,kval=5,minlengthdefault=[0.2],minlengthdefaultxy=[0.2, 0.1],arrowsize=0.5,dosavefig=1)

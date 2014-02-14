@@ -67,8 +67,9 @@ def get_cascade_info(**kwargs):
     E0 = kwargs.pop("E0", 4.25e8)
     Ngrid = kwargs.pop("Ngrid", 1e4)
     s = kwargs.pop("s", 2)
-    Esmin = kwargs.pop("Esmin", 0.5e-3)
-    Esmax = kwargs.pop("Esmax", 2)
+    Esmin = kwargs.pop("Esmin", 0.0012)
+    gammagg = 1.6e7
+    Esmax = kwargs.pop("Esmax", 2./gammagg/eV)
     fnamedefault = "E%.2g_N%.2g_s%g_Esmin%.2g_Esmax%.2g.npz" % (E0, Ngrid, s, Esmin, Esmax)
     fname = kwargs.pop("fname", fnamedefault)
     #########################
@@ -125,11 +126,11 @@ def get_cascade_info(**kwargs):
     
 def main(Ngen = 10,resume=None,**kwargs):
     global dNold, dNnew,fout,dNdE_list,Evec
-    E0 = kwargs.pop("E0", 4.25e8)  #=gammamaxIC from ~/Cascade.ipnb
+    E0 = kwargs.pop("E0", 1.6e9)  #=gammamaxIC from ~/Cascade.ipnb
     do_enforce_energy_conservation = kwargs.pop("do_enforce_energy_conservation", 0)
     Ngrid = kwargs.pop("Ngrid", 1e4)
     #spectral index
-    s = kwargs.pop("s", 2)
+    s = kwargs.pop("s", 2.2)
     #lower/upper cutoffs [eV]
     Esmin = kwargs.pop("Esmin", 0.5e-3)
     Esmax = kwargs.pop("Esmax", 2)
@@ -347,6 +348,20 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservatio
                   snE4e8N1e3, snE4e8N2e3, snE4e8N4e3,
                   snE4e8,     snE4e8N2e4, snE4e8N4e4]
 
+
+    snE16e9N1e2 = get_cascade_info(fname="E1.6e+09_N1e+02_s2.2_Esmin0.0012_Esmax1.6%s.npz" % doenc)
+    snE16e9N2e2 = get_cascade_info(fname="E1.6e+09_N2e+02_s2.2_Esmin0.0012_Esmax1.6%s.npz" % doenc)
+    snE16e9N4e2 = get_cascade_info(fname="E1.6e+09_N4e+02_s2.2_Esmin0.0012_Esmax1.6%s.npz" % doenc)
+    snE16e9N1e3 = get_cascade_info(fname="E1.6e+09_N1e+03_s2.2_Esmin0.0012_Esmax1.6%s.npz" % doenc)
+    snE16e9N2e3 = get_cascade_info(fname="E1.6e+09_N2e+03_s2.2_Esmin0.0012_Esmax1.6%s.npz" % doenc)
+    snE16e9N4e3 = get_cascade_info(fname="E1.6e+09_N4e+03_s2.2_Esmin0.0012_Esmax1.6%s.npz" % doenc)
+    snE16e9     = get_cascade_info(fname="E1.6e+09_N1e+04_s2.2_Esmin0.0012_Esmax1.6%s.npz" % doenc)
+    snE16e9N2e4 = get_cascade_info(fname="E1.6e+09_N2e+04_s2.2_Esmin0.0012_Esmax1.6%s.npz" % doenc)
+    snE16e9N4e4 = get_cascade_info(fname="E1.6e+09_N4e+04_s2.2_Esmin0.0012_Esmax1.6%s.npz" % doenc)
+    snE16e9list = [snE16e9N1e2, snE16e9N2e2, snE16e9N4e2, 
+                  snE16e9N1e3, snE16e9N2e3, snE16e9N4e3,
+                  snE16e9,     snE16e9N2e4, snE16e9N4e4]
+
     #hack for now:
     doenc = ""
     snE1e6     = get_cascade_info(fname="E1e+06_N1e+04_s2_Esmin0.0005_Esmax2%s.npz" % doenc)
@@ -355,7 +370,7 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservatio
     snE1e9     = get_cascade_info(fname="E1e+09_N1e+04_s2_Esmin0.0005_Esmax2%s.npz" % doenc)
     snE1e10    = get_cascade_info(fname="E1e+10_N1e+04_s2_Esmin0.0005_Esmax2%s.npz" % doenc)
 
-    sim_list = [snE1e6, snE1e7, snE1e8, snE4e8, snE1e10]
+    sim_list = [snE1e6, snE1e7, snE1e8, snE16e9, snE1e10]
     dashes_list = [[5,2], [5,2,2,2], [5,2,2,2,2,2], [10,5], [10,2,2,2,5,2,2,2], [10,2,2,2,10,2,2,2]]
     colors_list = ["red", "Orange", "DarkGreen", "magenta", "blue", "black"]
     simname_list = []
@@ -472,7 +487,7 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservatio
         resolution=[]
         photoncount=[]
         energyperlepton=[]
-        for sim in snE4e8list:
+        for sim in snE16e9list:
             resolution.append(len(sim["dNdE"][0]))
             photoncount.append(sim["Ntot"][sim["gen"]==ngen])
             energyperlepton.append(sim["Etot"][sim["gen"]==ngen]/sim["Ntot"][sim["gen"]==ngen])
@@ -489,7 +504,7 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservatio
         plt.clf()
         gs = GridSpec(4, 4)
         gs.update(left=0.08, right=0.97, top=0.91, bottom=0.09, wspace=0.5, hspace=0.08)
-        sim_list = [snE1e6, snE1e7,snE4e8,snE1e10]
+        sim_list = [snE1e6, snE1e7,snE16e9,snE1e10]
         numpanels = 4
         for j in xrange(0,numpanels):
             sim = sim_list[j]
