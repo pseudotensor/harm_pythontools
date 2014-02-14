@@ -120,6 +120,8 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,domkmov
         #w2=interp1d(adeg,0*adeg)
         #w2=interp1d(adeg,(1-cos(arad))/sin(arad))
         Br_fit = lambda th: v1["br_num_%g" % th] if th == 0 else v1["br_num_%g" % th]*cos(th/180.*pi)**0.5*w1(th)+v1["br_an_%g" % 90]*sin(th/180.*pi)*w2(th)
+        Br_fit1 = lambda th: v1["br_num_%g" % th] if th == 0 else v1["br_num_%g" % th]*cos(th/180.*pi)**0.5*w1(th)
+        Br_fit2 = lambda th: v1["br_num_%g" % th]*0 if th == 0 else v1["br_an_%g" % 90]*sin(th/180.*pi)*w2(th)
         #Br_fit = lambda th: v1["br_num_%g" % th] if th == 0 else v1["br_num_%g" % th]*cos(th/180.*pi)**0.5*w1(th)+v1["br_an_%g" % 90]*(1-cos(th/180.*pi)**0.5*w1(th))
         #Br_fit = lambda th: v1["br_num_%g" % th] if th == 0 else v1["br_num_%g" % th]
     else:
@@ -385,6 +387,8 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,domkmov
         for al in al_list:
             Br_sm = v["Br2d%g"%al]/(v["psi%g" % al]/v["psi0"])/norm
             Br_ft = Br_fit(al)
+            Br_ft1 = Br_fit1(al)
+            Br_ft2 = Br_fit2(al)
             Br_ftavg = Br_fit_new_avg_alpha(al)
             th = v["th2d%g"%al]
             ph = v["ph2d%g"%al]
@@ -393,6 +397,8 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,domkmov
                 th = th + 0*ph
                 Br_sm = Br_sm + 0*th
                 Br_ft = Br_ft + 0*th
+                Br_ft1 = Br_ft1 + 0*th
+                Br_ft2 = Br_ft2 + 0*th
                 Br_ftavg = Br_ftavg + 0*th
             Br_mono = br_alpha_mono_func(al*pi/180.,th,ph+(deltaphi-deltaphimono)) #un-rotate since monopole already accounts for phase shift
             #pdb.set_trace()
@@ -400,6 +406,8 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,domkmov
             # pdb.set_trace()
             s_sim = wraparound(np.abs(Br_sm))
             s_fit = wraparound(np.abs(Br_ft))
+            s_fit1 = wraparound(np.abs(Br_ft1))
+            s_fit2 = wraparound(np.abs(Br_ft2))
             s_fitavg = wraparound(np.abs(Br_ftavg))
             s_mono = wraparound(np.abs(Br_mono))
             #rotate phi grid
@@ -414,10 +422,12 @@ def plotbrsq(cachefname="psrangle.npz",alpha = 15,fntsize=20,dosavefig=0,domkmov
             else:
                 vmin = 0
                 vmax = 1.5
-            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z+3.0*B, scalars=s_sim, colormap='jet',vmin=vmin, vmax = vmax)
-            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z+0*1.5*B, scalars=s_fit, colormap='jet',vmin=vmin, vmax = vmax)
+            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z+4.5*B, scalars=s_sim, colormap='jet',vmin=vmin, vmax = vmax)
+            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z+1.5*B, scalars=s_fit, colormap='jet',vmin=vmin, vmax = vmax)
             # mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z-1.5*B, scalars=s_fitavg, colormap='jet',vmin=vmin, vmax = vmax)
-            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z-3.0*B, scalars=s_mono, colormap='jet',vmin=vmin, vmax = vmax)            
+            #mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z-3.0*B, scalars=s_mono, colormap='jet',vmin=vmin, vmax = vmax)   
+            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z-1.5*B, scalars=s_fit1, colormap='jet',vmin=vmin, vmax = vmax)  
+            mlab.mesh(x+A*3*(i-0.5*l+0.5), y, z-4.5*B, scalars=s_fit2, colormap='jet',vmin=vmin, vmax = vmax)          
             i = i + 1
             #pdb.set_trace()
         scene.scene.parallel_projection = True
