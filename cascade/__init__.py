@@ -132,8 +132,8 @@ def main(Ngen = 10,resume=None,**kwargs):
     #spectral index
     s = kwargs.pop("s", 2.2)
     #lower/upper cutoffs [eV]
-    Esmin = kwargs.pop("Esmin", 0.5e-3)
-    Esmax = kwargs.pop("Esmax", 2)
+    Esmin = kwargs.pop("Esmin", 0.0012)
+    Esmax = kwargs.pop("Esmax", 2/1.6e7/eV)
     #
     doenc = "_enc1" if do_enforce_energy_conservation else ""
     fnamedefault = "E%.2g_N%.2g_s%g_Esmin%.2g_Esmax%.2g%s.npz" % (E0, Ngrid, s, Esmin, Esmax, doenc)
