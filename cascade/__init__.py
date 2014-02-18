@@ -44,7 +44,7 @@ import casc as casc
 reload(casc)
 
 def stagsurf(num_dumps=4,dn=1):
-    os.chdir("/home/atchekho/run/a09new")
+    #os.chdir("/home/atchekho/run/a09new")
     grid3d("gdump.bin",use2d=1)
     color_list = cm.rainbow_r(np.linspace(0, 1, num_dumps))
     plt.clf()
