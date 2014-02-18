@@ -145,7 +145,7 @@ def main(Ngen = 10,resume=None,**kwargs):
     s = kwargs.pop("s", 2.2)
     #lower/upper cutoffs [eV]
     Esmin = kwargs.pop("Esmin", 0.0012)
-    Esmax = kwargs.pop("Esmax", 2/1.6e7/eV)
+    Esmax = kwargs.pop("Esmax", 2./1.3e6/eV)
     #
     doenc = "_enc1" if do_enforce_energy_conservation else ""
     fnamedefault = "E%.2g_N%.2g_s%g_Esmin%.2g_Esmax%.2g%s.npz" % (E0, Ngrid, s, Esmin, Esmax, doenc)
@@ -338,24 +338,24 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservatio
     snE16e9N1e3 = get_cascade_info(fname="E1.6e+09_N1e+03_s2.2_Esmin0.0012_Esmax0.064%s.npz" % doenc)
     snE16e9N2e3 = get_cascade_info(fname="E1.6e+09_N2e+03_s2.2_Esmin0.0012_Esmax0.064%s.npz" % doenc)
     snE16e9N4e3 = get_cascade_info(fname="E1.6e+09_N4e+03_s2.2_Esmin0.0012_Esmax0.064%s.npz" % doenc)
-    snE16e9     = get_cascade_info(fname="E1.6e+09_N1e+04_s2.2_Esmin0.0012_Esmax0.064%s.npz" % doenc)
+    snE16e9N1e4     = get_cascade_info(fname="E1.6e+09_N1e+04_s2.2_Esmin0.0012_Esmax0.064%s.npz" % doenc)
     snE16e9N2e4 = get_cascade_info(fname="E1.6e+09_N2e+04_s2.2_Esmin0.0012_Esmax0.064%s.npz" % doenc)
     snE16e9N4e4 = get_cascade_info(fname="E1.6e+09_N4e+04_s2.2_Esmin0.0012_Esmax0.064%s.npz" % doenc)
     convergence_list = [snE16e9N1e2, snE16e9N2e2, snE16e9N4e2, 
                   snE16e9N1e3, snE16e9N2e3, snE16e9N4e3,
-                  snE16e9,     snE16e9N2e4, snE16e9N4e4]
+                  snE16e9N1e4, snE16e9N2e4, snE16e9N4e4]
 
     #hack for now:
     doenc = ""
-    snE1e6     = get_cascade_info(fname="E1e+06_N1e+04_s2.2_Esmin0.0012_Esmax0.064%s.npz" % doenc)
-    snE1e7     = get_cascade_info(fname="E1e+07_N1e+04_s2.2_Esmin0.0012_Esmax0.064%s.npz" % doenc)
-    snE1e8     = get_cascade_info(fname="E1e+08_N1e+04_s2.2_Esmin0.0012_Esmax0.064%s.npz" % doenc)
-    snE1e9     = get_cascade_info(fname="E1.6e+09_N1e+04_s2.2_Esmin0.0012_Esmax0.064%s.npz" % doenc)
-    snE1e10    = get_cascade_info(fname="E1e+10_N1e+04_s2.2_Esmin0.0012_Esmax0.064%s.npz" % doenc)
+    snE1e6     = get_cascade_info(fname="E1e+06_N1e+04_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
+    snE1e7     = get_cascade_info(fname="E1e+07_N1e+04_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
+    snE1e8     = get_cascade_info(fname="E1e+08_N1e+04_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
+    snE1e9     = get_cascade_info(fname="E1.6e+09_N1e+04_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
+    snE1e10    = get_cascade_info(fname="E1e+10_N1e+04_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
 
-    spectra_list = [snE1e6, snE1e7, snE16e9, snE1e10]
+    spectra_list = [snE1e6, snE1e7, snE1e9, snE1e10]
     
-    sim_list = [snE1e6, snE1e7, snE1e8, snE16e9, snE1e10]
+    sim_list = [snE1e6, snE1e7, snE1e8, snE1e9, snE1e10]
     dashes_list = [[5,2], [5,2,2,2], [5,2,2,2,2,2], [10,5], [10,2,2,2,5,2,2,2], [10,2,2,2,10,2,2,2]]
     colors_list = ["red", "Orange", "DarkGreen", "magenta", "blue", "black"]
     simname_list = []
@@ -381,13 +381,13 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservatio
         #
         for i,sim in enumerate(sim_list):
             name = simname_list[i]
-            if i == 1: continue
-            if i == 0:
-                name = r"$E_0 = 10^6, 10^7$"
+            # if i == 1: continue
+            # if i == 0:
+            #     name = r"$E_0 = 10^6, 10^7$"
             plt.text(30, 1.1*sim["Ntot"][-1], name, size = fntsize,va = "bottom", ha="left")
         plt.xscale("log")
         plt.yscale("log")
-        plt.ylim(0.5, 3e3)
+        plt.ylim(0.5, 2e4)
         plt.xlim(1,Ngenmax)
         plt.ylabel(r"$N_{\rm lep}$", fontsize=fntsize)
         plt.grid()
@@ -466,11 +466,11 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservatio
             y.append( sim["Ntot"][-1] )
         plt.plot(x,y,"-o",lw=2)
         x1 = 10**np.arange(0,12,1)
-        y1 = 2*x1/1.6e7
-        plt.plot(x1,y1,":",lw=2,label=r"$N=2E_0/\epsilon_{\gamma,\rm min}$")
+        y1 = x1/2/1.3e6
+        plt.plot(x1,y1,":",lw=2,label=r"$N=E_0/2\epsilon_{\gamma,\rm min}$")
         plt.xscale("log")
         plt.yscale("log")
-        plt.ylim(0.5,1e3)
+        plt.ylim(0.5,1e4)
         plt.xlim(0.5e6,2e10)
         plt.xlabel(r"$E_0$", fontsize=18)
         plt.ylabel(r"$N_{\rm lep,\infty}$", fontsize=18)
@@ -553,7 +553,7 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservatio
                     ax2.plot(sim["Evec"],sim["Evec"]**2*sim["dNdE"][ngen],lw=lw,color=np.array(color),label=r"$%g$" % ngen)
                     # plt.plot(hr_sim["Evec"],hr_sim["Evec"]*hr_sim["dNdE"][ngen],"b:",lw=lw)
                     # plt.plot(hr_sim["Evec"],hr_sim["Evec"]*hr_sim["dNdE_rad"][ngen],"g:",lw=2)
-            ax1.set_xlim(1,5e7)
+            ax1.set_xlim(1,5e6)
             ax1.set_ylim(1e-6,1e12)
             ax1.set_yticks(10.**np.arange(-5,15,5))
             ax1.set_ylabel(r"$E_\gamma^2dN/dE_\gamma$",fontsize=fntsize,labelpad=-7)
