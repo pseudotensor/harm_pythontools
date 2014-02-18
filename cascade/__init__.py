@@ -43,6 +43,17 @@ import warnings
 import casc as casc
 reload(casc)
 
+def stagsurf(num_dumps=4,dn=1):
+    os.chdir("/home/atchekho/run/a09new")
+    grid3d("gdump.bin",use2d=1)
+    color_list = cm.rainbow_r(np.linspace(0, 1, num_dumps))
+    plt.clf()
+    for i in xrange(num_dumps): 
+        rfd("fieldline%04d.bin"%(i+2000))
+        plc(radavg(radavg(uu[1][...,0:2*dn+1].mean(-1),dn=dn),axis=1,dn=dn),
+            levels=(0,),xy=1,xmax=15,ymax=7.5,
+            colors=[tuple(color_list[i])])
+
 def test_fg( Eold, Enew, seed ):
     Egmin = 2*seed.Emin*Enew**2 / (1.-2*seed.Emin*Enew)
     Egmax = 2*seed.Emax*Enew**2 / (1.-2*seed.Emax*Enew)
@@ -446,7 +457,7 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservatio
         #
         # DEPENDENCE OF NTOT ON E0
         #
-        plt.figure(2)
+        plt.figure(2,figsize=(6,4))
         plt.clf()
         x = []
         y = []
@@ -469,12 +480,12 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservatio
         for label in ax.get_xticklabels() + ax.get_yticklabels()  + leg.get_texts():
             label.set_fontsize(fntsize)
         if dosavefig:
-            plt.savefig("NvsE0.pdf", bbox_inches='tight', pad_inches=0.04)
+            plt.savefig("NvsE0.eps", bbox_inches='tight', pad_inches=0.04)
     if wf == 0 or wf == 3:
         #
         # CONVERGENCE WITH INCREASING RESOLUTION
         #
-        plt.figure(3)
+        plt.figure(3,figsize=(6,4))
         plt.clf()
         ngen = 100
         resolution=[]
@@ -490,12 +501,21 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservatio
             energyperphoton.append(sim["Erad"][sim["gen"]==ngen]/sim["Nrad"][sim["gen"]==ngen])
         resolution = np.array(resolution)
         photoncount = np.array(photoncount)
-        plot(resolution[:-1],np.abs(leptoncount[:-1]-leptoncount[-1])/leptoncount[-1],"bs-",label=r"$dN_\gamma/N_\gamma$",lw=2,ms=10)
-        plot(resolution[:-1],np.abs(photoncount[:-1]-photoncount[-1])/photoncount[-1],"ro-",label=r"$dN_{\rm lep}/N_{\rm lep}$",lw=2,ms=10)
-        plot(resolution[:-1],np.abs(energyperlepton[:-1]-energyperlepton[-1])/energyperlepton[-1],"bs--",label=r"$dE_{\rm lep}/E_{\rm lep}$",lw=2,ms=10)
-        plot(resolution[:-1],np.abs(energyperphoton[:-1]-energyperphoton[-1])/energyperphoton[-1],"ro--",label=r"$dE_{\gamma}/E_{\gamma}$",lw=2,ms=10)
-        plt.xlim(50,1e5)
-        plt.ylim(1e-5,10)
+        plot(resolution[:-1],np.abs(leptoncount[:-1]-leptoncount[-1])/leptoncount[-1],
+             "rs-",label=r"$dN_{\rm lep}/N_{\rm lep}$",lw=2,ms=10)
+        plot(resolution[:-1],np.abs(photoncount[:-1]-photoncount[-1])/photoncount[-1],
+             "bo-",label=r"$dN_\gamma/N_\gamma$",lw=2,ms=10)
+        plot(resolution[:-1],np.abs(energyperlepton[:-1]-energyperlepton[-1])/energyperlepton[-1],
+             "rs--",label=r"$dE_{\rm lep}/E_{\rm lep}$",lw=2,ms=10)
+        plot(resolution[:-1],np.abs(energyperphoton[:-1]-energyperphoton[-1])/energyperphoton[-1],
+             "bo--",label=r"$dE_{\gamma}/E_{\gamma}$",lw=2,ms=10)
+        nres = 10**np.linspace(0,10,100)
+        plt.plot(nres,3*(nres/1e3)**(-2.),"k:",lw=2)
+        plt.plot(nres,0.8e-2*(nres/1e2)**(-1.),"k:",lw=2)
+        plt.text(3e4,0.67e-2,r"$\propto N^{-2}$",fontsize=fntsize,va="bottom",ha="left")
+        plt.text(1e3,4.5e-4,r"$\propto N^{-1}$",fontsize=fntsize,va="top",ha="right")
+        plt.xlim(50,1e6)
+        plt.ylim(1e-5,100)
         plt.xscale("log")
         plt.yscale("log")
         plt.xlabel(r"${\rm Resolution}$", fontsize=18)
@@ -505,6 +525,8 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservatio
         for label in ax.get_xticklabels() + ax.get_yticklabels()  + leg.get_texts():
             label.set_fontsize(fntsize)
         plt.grid(b=True)
+        if dosavefig:
+            plt.savefig("convergence.eps", bbox_inches='tight', pad_inches=0.04)
     if wf == 0 or wf == 4:
         #
         # SPECTRA
