@@ -6289,7 +6289,7 @@ def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
             ycoord=np.concatenate((ycoord[:,::-1],ycoord),axis=1)
         else:
             symmk = (k+nz/2)%nz
-            myvar=np.concatenate((myvar[:,0:1,k:k+1],myvar[:,::-1,symmk:symmk+1],myvar[:,:,k:k+1]),axis=1)
+            myvar=np.concatenate((myvar[:,ny-1:ny,k:k+1],myvar[:,::-1,symmk:symmk+1],myvar[:,:,k:k+1]),axis=1)
             xcoord=np.concatenate((xcoord[:,ny-1:ny,k:k+1],-xcoord[:,::-1],xcoord),axis=1)
             ycoord=np.concatenate((ycoord[:,ny-1:ny,k:k+1],ycoord[:,::-1],ycoord),axis=1)
     else:
@@ -7590,6 +7590,7 @@ def rfd(fieldlinefilename,**kwargs):
         del gdetF
     if 'fdbody' in globals():
         del fdbody
+    print("Opening %s ..." % fieldlinefilename)
     fin = open( "dumps/" + fieldlinefilename, "rb" )
     header = fin.readline().split()
     set_dumpversions(header)
@@ -17071,7 +17072,7 @@ def radavg(vecin,dn=2,axis=0):
     vec = vecin.swapaxes(0,axis)
     if dn < 0: dn = 0
     l = vec.shape[0]
-    if axis == 3:
+    if axis == 2:
         avgvec = np.zeros_like(vec)
         for i1 in xrange(-dn,dn+1):
             avgvec += cycle(vec,n=i1)

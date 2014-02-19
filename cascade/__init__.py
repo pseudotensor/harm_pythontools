@@ -43,16 +43,35 @@ import warnings
 import casc as casc
 reload(casc)
 
-def stagsurf(num_dumps=4,dn=1):
+def stagsurf(dn=1):
     #os.chdir("/home/atchekho/run/a09new")
-    grid3d("gdump.bin",use2d=1)
-    color_list = cm.rainbow_r(np.linspace(0, 1, num_dumps))
+    plt.figure(figsize=(12,8))
     plt.clf()
-    for i in xrange(num_dumps): 
-        rfd("fieldline%04d.bin"%(i+2000))
-        plc(radavg(radavg(uu[1][...,0:2*dn+1].mean(-1),dn=dn),axis=1,dn=dn),
-            levels=(0,),xy=1,xmax=15,ymax=7.5,
-            colors=[tuple(color_list[i])])
+    grid3d("gdump.bin",use2d=1)
+    dump_list1=[2000,2001,2002,2003]
+    dump_list2=[2000,3000,4000,5000]
+    gs = GridSpec(2, 2)
+    gs.update(left=0.15, right=0.97, top=0.97, bottom=0.08, wspace=0.04, hspace=0.04)
+    ax1=plt.subplot(gs[:,0])
+    plotstag(dump_list1,dn=dn)
+    ax1.set_aspect(1.)
+    ax2=plt.subplot(gs[:,1])
+    plotstag(dump_list2,dn=dn)
+    ax2.set_aspect(1.)
+    
+    
+def plotstag(dump_list,dn=1):
+    num_dumps = len(dump_list)
+    color_list = cm.rainbow_r(np.linspace(0, 1, num_dumps))
+    x=y=[1e10,2e10]
+    for i,no in zip(xrange(num_dumps),dump_list): #[2001,2002,2003,2004]):  # #[5255,5403,5452,5468]): 
+        rfd("fieldline%04d.bin"%(no))
+        cvel()
+        toplot = radavg(radavg(uu[1],dn=dn,axis=0),axis=1,dn=dn)
+        toplot[radavg(radavg(bsq,dn=dn),axis=1,dn=dn)/radavg(radavg(rho,dn=dn),axis=1,dn=dn)<10] *= np.nan 
+        plc(toplot,
+            levels=(0,),xy=1,xmax=7.5,ymax=7.5,
+            colors=[tuple(color_list[i])],symmx=1,lw=2)
 
 def test_fg( Eold, Enew, seed ):
     Egmin = 2*seed.Emin*Enew**2 / (1.-2*seed.Emin*Enew)
