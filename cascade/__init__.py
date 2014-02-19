@@ -43,24 +43,43 @@ import warnings
 import casc as casc
 reload(casc)
 
-def stagsurf(dn=1):
+def stagsurf(dn=1,fntsize=20,xmax = 5, ymax = 9, dosavefig=0):
+    global leg1, leg2, ax1, ax2
     #os.chdir("/home/atchekho/run/a09new")
-    plt.figure(figsize=(12,8))
+    plt.figure(1,figsize=(8,8))
     plt.clf()
     grid3d("gdump.bin",use2d=1)
     dump_list1=[2000,2001,2002,2003]
-    dump_list2=[2000,3000,4000,5000]
+    dump_list2=[2000,4000,8000,10000]
     gs = GridSpec(2, 2)
     gs.update(left=0.15, right=0.97, top=0.97, bottom=0.08, wspace=0.04, hspace=0.04)
     ax1=plt.subplot(gs[:,0])
     plotstag(dump_list1,dn=dn)
+    leg1 = plt.legend(loc="lower left",frameon=0,ncol=2,columnspacing=1,handletextpad=0.2) #, bbox_to_anchor=(0.5, 1.05))
+    plt.xlim(-xmax,xmax)
+    plt.ylim(-ymax,ymax)
     ax1.set_aspect(1.)
+    plt.xlabel(r"$x\ [r_g]$",fontsize=fntsize)
+    plt.ylabel(r"$z\ [r_g]$",fontsize=fntsize,labelpad=-10)
     ax2=plt.subplot(gs[:,1])
     plotstag(dump_list2,dn=dn)
+    leg2= plt.legend(loc="lower left",frameon=0,ncol=2,columnspacing=1,handletextpad=0.2) #, bbox_to_anchor=(0.5, 1.05))
+    plt.xlim(-xmax,xmax)
+    plt.ylim(-ymax,ymax)
     ax2.set_aspect(1.)
+    plt.setp( ax2.get_yticklabels(), visible=False)
+    plt.xlabel(r"$x\ [r_g]$",fontsize=fntsize)
+    for ax,lab in zip([ax1,ax2],["a","b"]):
+        ax.text(ax.get_xlim()[0]*0.95+ax.get_xlim()[1]*0.05,
+                ax.get_ylim()[1]*0.95+ax.get_ylim()[0]*0.05,
+                r"$({\rm %s})$" % lab,
+                ha="left",va="top",fontsize=fntsize)
+    for label in ax1.get_xticklabels() + ax1.get_yticklabels() + ax2.get_xticklabels(): # + leg1.get_texts() + leg2.get_texts():
+        label.set_fontsize(fntsize)
+    if dosavefig:
+        plt.savefig("stagsurfaceplot.eps", bbox_inches='tight', pad_inches=0.06)
     
-    
-def plotstag(dump_list,dn=1):
+def plotstag(dump_list,dn=1,fntsize=20,lw=2):
     num_dumps = len(dump_list)
     color_list = cm.rainbow_r(np.linspace(0, 1, num_dumps))
     x=y=[1e10,2e10]
@@ -71,7 +90,12 @@ def plotstag(dump_list,dn=1):
         toplot[radavg(radavg(bsq,dn=dn),axis=1,dn=dn)/radavg(radavg(rho,dn=dn),axis=1,dn=dn)<10] *= np.nan 
         plc(toplot,
             levels=(0,),xy=1,xmax=7.5,ymax=7.5,
-            colors=[tuple(color_list[i])],symmx=1,lw=2)
+            colors=[tuple(color_list[i])],symmx=1,linewidths=lw)
+        plt.plot(x,y,color=color_list[i],label=r"$t=%g$"%(np.round(t)),lw=lw)
+    ax = plt.gca()
+    el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
+    art=ax.add_artist(el)
+    art.set_zorder(20)
 
 def test_fg( Eold, Enew, seed ):
     Egmin = 2*seed.Emin*Enew**2 / (1.-2*seed.Emin*Enew)
@@ -351,15 +375,15 @@ def main(Ngen = 10,resume=None,**kwargs):
 def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservation = 0):
 
     doenc = ""
-    snE16e9N1e2 = get_cascade_info(fname="E1.6e+09_N1e+02_s2.2_Esmin0.0012_Esmax0.064%s.npz" % doenc)
-    snE16e9N2e2 = get_cascade_info(fname="E1.6e+09_N2e+02_s2.2_Esmin0.0012_Esmax0.064%s.npz" % doenc)
-    snE16e9N4e2 = get_cascade_info(fname="E1.6e+09_N4e+02_s2.2_Esmin0.0012_Esmax0.064%s.npz" % doenc)
-    snE16e9N1e3 = get_cascade_info(fname="E1.6e+09_N1e+03_s2.2_Esmin0.0012_Esmax0.064%s.npz" % doenc)
-    snE16e9N2e3 = get_cascade_info(fname="E1.6e+09_N2e+03_s2.2_Esmin0.0012_Esmax0.064%s.npz" % doenc)
-    snE16e9N4e3 = get_cascade_info(fname="E1.6e+09_N4e+03_s2.2_Esmin0.0012_Esmax0.064%s.npz" % doenc)
-    snE16e9N1e4     = get_cascade_info(fname="E1.6e+09_N1e+04_s2.2_Esmin0.0012_Esmax0.064%s.npz" % doenc)
-    snE16e9N2e4 = get_cascade_info(fname="E1.6e+09_N2e+04_s2.2_Esmin0.0012_Esmax0.064%s.npz" % doenc)
-    snE16e9N4e4 = get_cascade_info(fname="E1.6e+09_N4e+04_s2.2_Esmin0.0012_Esmax0.064%s.npz" % doenc)
+    snE16e9N1e2 = get_cascade_info(fname="E1e+10_N1e+02_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
+    snE16e9N2e2 = get_cascade_info(fname="E1e+10_N2e+02_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
+    snE16e9N4e2 = get_cascade_info(fname="E1e+10_N4e+02_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
+    snE16e9N1e3 = get_cascade_info(fname="E1e+10_N1e+03_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
+    snE16e9N2e3 = get_cascade_info(fname="E1e+10_N2e+03_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
+    snE16e9N4e3 = get_cascade_info(fname="E1e+10_N4e+03_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
+    snE16e9N1e4 = get_cascade_info(fname="E1e+10_N1e+04_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
+    snE16e9N2e4 = get_cascade_info(fname="E1e+10_N2e+04_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
+    snE16e9N4e4 = get_cascade_info(fname="E1e+10_N4e+04_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
     convergence_list = [snE16e9N1e2, snE16e9N2e2, snE16e9N4e2, 
                   snE16e9N1e3, snE16e9N2e3, snE16e9N4e3,
                   snE16e9N1e4, snE16e9N2e4, snE16e9N4e4]
