@@ -1438,6 +1438,48 @@ def mkbondimovie(doreload=1,plotlen=25,vmin=-6,vmax=1,whichvar="lrho",doresize=1
         mkRzxyframe(findex=fldindex,dodiskfield=32,doreload=doreload,minlendiskfield=0.1,downsample=1,useblankdiskfield=1,dnarrow=0,vmin=vmin,vmax=vmax,fntsize=20,plotlen=plotlen,whichvar=whichvar,label=label,cmap=cmap,dostreamlines=dostreamlines,showlabels=0,**kwargs)
         if dosavefig:
             plt.savefig("frame%04d.png"%fldindex,bbox_inches='tight',pad_inches=0.04,dpi=300)
+
+def mkathfieldplot(nskip=10,fntsize=20,dosavefig=0,doclf=0,dolegend=1,ltype="-",endn=-1,var=lambda: B3c):
+    flist1 = np.sort(glob.glob( "[0-9][0-9][0-9][0-9].vtk") )
+    flist2 = np.sort(glob.glob( "[0-9][0-9][0-9][0-9][0-9].vtk") )
+    flist1.sort()
+    flist2.sort()
+    flist = np.concatenate((flist1,flist2))
+    if endn >= 0: flist = flist[:endn+1]
+    num_files = len(flist)
+    color_list = cm.rainbow_r(np.linspace(0, 1, num_files))
+    if doclf: plt.clf()
+    for fldname in flist:
+        fldindex = np.int(fldname.split(".")[0])
+        #process every 10th file
+        if fldindex % nskip: continue
+        fname = "%04d.vtk" % fldindex
+        print( "Processing %s ..." % fname )
+        rdath3d(fname)
+        ymid = x2[0,n2/2,n3/2]
+        plt.plot(x2[0,:,n3/2]-ymid,var()[0,:,n3/2],ltype,
+                 color=color_list[fldindex],
+                 label = r"$t = %g$" % t,
+                 lw = 2)
+    if var() is B3c:
+        plt.yscale("log")
+        plt.ylim(0.3,20)
+        plt.ylabel(r"$\log_{10}{B_z}$", fontsize=fntsize)
+        figname = "logBz.pdf"
+    elif var() is v2:
+        plt.yscale("linear")
+        plt.ylim(-1.5,1.5)
+        plt.ylabel(r"$v_y$", fontsize=fntsize)
+        figname = "vy.pdf"
+    else:
+        figname = "fig.pdf"
+    if dolegend: plt.legend(loc = "best")
+    plt.xlabel(r"$y-y_{\rm mid}$", fontsize=fntsize)
+    plt.grid(b=1)
+    if dosavefig:
+        plt.savefig(figname,
+                    bbox_inches='tight',pad_inches=0.06,dpi=300)
+                
         
 #so far only for hydro
 def rdath2d(fname):
