@@ -43,6 +43,31 @@ import warnings
 import casc as casc
 reload(casc)
 
+def plot_pair_producing_fraction():
+    """ plots fraction of upscattered photons that are capable of pair-producing
+        by number (blue) and by energy (green) """
+    em = 1.2e-3*eV
+    eM = 1.6*eV
+    e = 10**np.linspace(1,10,1000)
+    s = 2.2
+    es = lambda eg,e: (eg/2./e/(e-eg))*(eg < e) + eM*(eg >= e)
+    es1 = lambda eg, e: np.minimum(eM,np.maximum(em,es(eg,e)))
+    fpp = lambda es: (es**(1-s)-eM**(1-s))/(em**(1-s)-eM**(1-s))
+    fppe = lambda es: (es**(2-s)-eM**(2-s))/(em**(2-s)-eM**(2-s))
+    plt.clf()
+    plt.plot(e,fpp(es1(1.6e7,e)))
+    plt.xscale("log")
+    plt.yscale("linear")
+    plt.plot(e,fpp(es1(1.3e6,e)),"b-")
+    plt.plot(e,fppe(es1(1.3e6,e)),"g-")
+    plt.xlim(1e5,1e8)
+    plt.plot([1.6e7,1.6e7],[0,1],"k:")
+    plt.ylabel("fraction by energy (green) and number (blue)")
+    plt.xlabel(r"$\gamma")
+    plt.xlabel(r"$\gamma$")
+    plt.savefig("frac.eps", bbox_inches='tight', pad_inches=0.06)
+    plt.savefig("frac.pdf", bbox_inches='tight', pad_inches=0.06)
+
 def stagsurf(dn=1,fntsize=20,xmax = 5, ymax = 9, dosavefig=0):
     global leg1, leg2, ax1, ax2
     #os.chdir("/home/atchekho/run/a09new")
