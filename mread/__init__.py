@@ -10,11 +10,11 @@ from pychip import pchip_init, pchip_eval
 #rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 ## for Palatino and other serif fonts use:
 ## rc('font',**{'family':'serif','serif':['Palatino']})
-rc('mathtext',fontset='cm')
-rc('mathtext',rm='stix')
-rc('text', usetex=True)
-#add amsmath to the preamble
-matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"] 
+# rc('mathtext',fontset='cm')
+# rc('mathtext',rm='stix')
+# rc('text', usetex=True)
+# #add amsmath to the preamble
+# matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"] 
 
 #from pylab import figure, axes, plot, xlabel, ylabel, title, grid, savefig, show
 
@@ -1439,7 +1439,7 @@ def mkbondimovie(doreload=1,plotlen=25,vmin=-6,vmax=1,whichvar="lrho",doresize=1
         if dosavefig:
             plt.savefig("frame%04d.png"%fldindex,bbox_inches='tight',pad_inches=0.04,dpi=300)
 
-def mkathfieldplot(nskip=10,fntsize=20,dosavefig=0,doclf=0,dolegend=1,ltype="-",endn=-1,var=lambda: B3c):
+def mkathfieldplot(nskip=10,fntsize=20,dosavefig=0,doclf=0,dolegend=1,ltype="-",endn=-1,var=lambda: B3c, Rs = 50):
     flist1 = np.sort(glob.glob( "[0-9][0-9][0-9][0-9].vtk") )
     flist2 = np.sort(glob.glob( "[0-9][0-9][0-9][0-9][0-9].vtk") )
     flist1.sort()
@@ -1448,6 +1448,9 @@ def mkathfieldplot(nskip=10,fntsize=20,dosavefig=0,doclf=0,dolegend=1,ltype="-",
     if endn >= 0: flist = flist[:endn+1]
     num_files = len(flist)
     color_list = cm.rainbow_r(np.linspace(0, 1, num_files))
+    phi_list = []
+    t_list = []
+    plt.figure(1)
     if doclf: plt.clf()
     for fldname in flist:
         fldindex = np.int(fldname.split(".")[0])
@@ -1457,30 +1460,71 @@ def mkathfieldplot(nskip=10,fntsize=20,dosavefig=0,doclf=0,dolegend=1,ltype="-",
         print( "Processing %s ..." % fname )
         rdath3d(fname)
         ymid = x2[0,n2/2,n3/2]
-        plt.plot(x2[0,:,n3/2]-ymid,var()[0,:,n3/2],ltype,
-                 color=color_list[fldindex],
-                 label = r"$t = %g$" % t,
-                 lw = 2)
+        yavg = np.sum((x2-0.5*(xstart+xend))*rho)/np.sum(rho)+0.5*(xstart+xend)
+        javg = np.floor(interp1d(x2[0,:,0],tj[0,:,0])(yavg)+0.5)
+        kmid = n3/2
+        #find flux in front of the stream within stream 5 radii
+        phi = B3c[(x2<yavg)*(x2>yavg-5*Rs)].sum()*dx*dy
+        phi_list.append(phi)
+        t_list.append(t)
+        if var() is B3c:
+            RoRs = (yavg-x2[0,:n2/2,n3/2])/Rs
+            plt.plot(RoRs,
+                     var()[0,:n2/2,n3/2]*phi_list[0]/phi,ltype,
+                     color=color_list[fldindex],
+                     label = r"$t = %g$" % t,
+                     lw = 2)
+        else:
+            plt.plot(x2[0,:,n3/2]-ymid,var()[0,:,n3/2],ltype,
+                     color=color_list[fldindex],
+                     label = r"$t = %g$" % t,
+                     lw = 2)
     if var() is B3c:
+        R = 10**np.linspace(-3,3,100)
+        plt.plot(R,10**0.5*R**(-2./3.),"k:",lw=2)
+        plt.text(2.2, 2.4, r"$\propto R^{-2/3}$", fontsize=20, ha = "left", va = "bottom")
         plt.yscale("log")
-        plt.ylim(0.3,20)
-        plt.ylabel(r"$\log_{10}{B_z}$", fontsize=fntsize)
-        figname = "logBz.pdf"
+        plt.xscale("log")
+        #plt.ylim(0.3,20)
+        plt.ylim(0.1,20)
+        plt.xlim(0.1,100)
+        plt.ylabel(r"$I = B_z\times(\Phi|_{t=0}/\Phi|_t)$", fontsize=fntsize)
+        figname = "BzvsRt.pdf"
+        plt.xlabel(r"$R\ [R_s]$", fontsize=fntsize)
+        if dolegend: plt.legend(loc = "best",ncol=1)
     elif var() is v2:
         plt.yscale("linear")
         plt.ylim(-1.5,1.5)
         plt.ylabel(r"$v_y$", fontsize=fntsize)
         figname = "vy.pdf"
+        plt.xlabel(r"$y-y_{\rm mid}$", fontsize=fntsize)
+        if dolegend: plt.legend(loc = "best")
     else:
         figname = "fig.pdf"
-    if dolegend: plt.legend(loc = "best")
-    plt.xlabel(r"$y-y_{\rm mid}$", fontsize=fntsize)
+        plt.xlabel(r"$y-y_{\rm mid}$", fontsize=fntsize)
+        if dolegend: plt.legend(loc = "best")
     plt.grid(b=1)
     if dosavefig:
         plt.savefig(figname,
                     bbox_inches='tight',pad_inches=0.06,dpi=300)
+    plt.figure(2)
+    if doclf: plt.clf()
+    plt.plot(t_list,phi_list,"ko-")
+    f = lininterp([t_list[1],t_list[-1]],
+                 [phi_list[1],phi_list[-1]])
+    myt = np.linspace(0,1e4,100)
+    plt.plot(myt,f(myt),"g:")
+    plt.xlim(0,4000)
+    plt.ylim(0,3.5e9)
+    plt.xlabel(r"$t$",fontsize=fntsize)
+    plt.ylabel(r"$\Phi(R<5R_s)$",fontsize=fntsize)
+    if dosavefig:
+        plt.savefig("phivst.pdf",
+                    bbox_inches='tight',pad_inches=0.06,dpi=300)
                 
-        
+def lininterp(xn, yn):
+    return lambda x: 1.*((x-xn[0])*yn[1]+(xn[1]-x)*yn[0])/(xn[1]-xn[0])
+
 #so far only for hydro
 def rdath2d(fname):
     global n1, n2, n3, t, ti, tj, tk, x1, x2, x3, rho, v1, v2, v3, pg
