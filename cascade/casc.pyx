@@ -257,12 +257,12 @@ cdef public class SeedPhoton [object CSeedPhoton, type TSeedPhoton ]:
     cdef public double Egmin
     cdef public double Nprefactor
 
-    def __init__(self, double Emin, double Emax, double s):
+    def __init__(self, double Emin, double Emax, double s, double Egmin):
         self.Emin = Emin
         self.Emax = Emax
         self.s = s
         #minimum energy gamma-ray to be able to pair produce
-        self.Egmin = 2./Emax
+        self.Egmin = Egmin #2./Emax
         self.Nprefactor = (1.-s)/(pow(Emax,1-s)-pow(Emin,1-s))
 
     cpdef int canPairProduce(self, double E):
