@@ -49,6 +49,21 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
+def cooltest(fname="cooltest.txt"):
+    gd = np.loadtxt( fname,
+                     dtype=np.float64, 
+                     skiprows=0, 
+                     unpack = True )
+    ii, r, Tval, rho, u0 = gd
+    rhor = 1 + (1-0.9**2)**0.5
+    plt.plot(r,Tval,"bo")
+    plt.plot([rhor,rhor],[1e-5,0.1],"r")
+    plt.plot(r,0.01/r,"g")
+    plt.xscale("log")
+    plt.yscale("log")
+    plt.xlim(1,1e3)
+    plt.ylim(1e-5,0.1)
+
 def plot3danatoly():
     import h5py
     from mayavi import mlab
