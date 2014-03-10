@@ -456,16 +456,25 @@ def mkRzxyframe(**kwargs):
     whichr = kwargs.pop("whichr",0.9)
     minlengthdefault = kwargs.pop("minlengthdefault", 0.2)
     minlengthdefaultxy = kwargs.pop("minlengthdefaultxy", minlengthdefault)
+    dostag=kwargs.pop("dostag",0)
+    lwstag=kwargs.pop("lwstag",4)
+    dn=kwargs.pop("dn",1)
     fig = plt.figure(1)
     gs = GridSpec(2,2)
     gs.update(left=0.1, right=0.9, top=0.97, bottom=0.2, wspace=0.2, hspace=0.1)
     ax1 = plt.subplot(gs[:,0])
-    ax2 = plt.subplot(gs[:,1])
     if doreload:
         grid3d("gdump.bin",use2d=1)
         rfd("fieldline%04d.bin" % findex)
         cvel()
     mkframe("", density=density,vmin=vmin,vmax=vmax,len=plotlen,ax=ax1,cb=False,pt=False,whichvar=whichvar,nanout=False,arrowsize=arrowsize,dovarylw=dovarylw,cmap=cmap,minlengthdefault=minlengthdefault,**kwargs)
+    if dostag:
+        toplot = radavg(radavg(uu[1],dn=dn,axis=0),axis=1,dn=dn)
+        toplot[radavg(radavg(bsq,dn=dn),axis=1,dn=dn)/radavg(radavg(rho,dn=dn),axis=1,dn=dn)<10] *= np.nan 
+        plc(toplot,
+            levels=(0,),xy=1,xmax=7.5,ymax=7.5,
+            colors="pink",symmx=1,linewidths=lwstag)
+    ax2 = plt.subplot(gs[:,1])
     mkframexy("", density=densityxy,vmin=vmin,vmax=vmax,len=plotlen,ax=ax2,cb=False,pt=False,whichvar=whichvar,dovarylw=dovarylw,arrowsize=arrowsize,cmap=cmap,minlengthdefault=minlengthdefaultxy,**kwargs)
     for ax in [ax1, ax2]:
         ax.set_xlim(-plotlen,plotlen)
@@ -1411,11 +1420,13 @@ def postprocess1d(fname = "qty.npz", myr = 5,startn=0,endn=-1,whichi=0,whichn=1,
     
 def mkbondimovie(doreload=1,plotlen=25,vmin=-6,vmax=1,whichvar="lrho",doresize=1,label=r"$\log\rho$",cmap=mpl.cm.jet,dostreamlines=1,startn=0,endn=-1,whichi=0,whichn=1,dosavefig="png",**kwargs):
     #xmax=30,ymax=15,startn=0,endn=-1,dosavefig=1,cb=1,whichi=0,whichn=1):
-    arrowsize=kwargs.setdefault("arrowsize",0.5)
+    arrowsize=kwargs.setdefault("arrowsize",2)
     fig=plt.figure(1,figsize=(12.8,6))
     dovarylw=kwargs.setdefault("dovarylw",4)
-    density=kwargs.setdefault("density",2)
-    dosavefig=kwargs.setdefault("dosavefig","png")
+    density=kwargs.setdefault("density",1)
+    dosavefig=kwargs.pop("dosavefig",1)
+    kwargs["dosavefig"]=0 #don't do saving inside of mkRzxyframe()
+    dostag=kwargs.setdefault("dostag",1)
     if doresize:
         fig.set_size_inches(12.8,6)
     plt.clf()
@@ -1452,7 +1463,10 @@ def mkbondimovie(doreload=1,plotlen=25,vmin=-6,vmax=1,whichvar="lrho",doresize=1
         # plt.draw()
         mkRzxyframe(findex=fldindex,dodiskfield=32,doreload=doreload,minlendiskfield=0.1,downsample=1,useblankdiskfield=1,dnarrow=0,vmin=vmin,vmax=vmax,fntsize=20,plotlen=plotlen,whichvar=whichvar,label=label,cmap=cmap,dostreamlines=dostreamlines,showlabels=0,**kwargs)
         if dosavefig:
-            plt.savefig("frame%04d.png"%fldindex,bbox_inches='tight',pad_inches=0.04,dpi=300)
+            if dostag:
+                plt.savefig("frame_stag%04d.png"%fldindex,bbox_inches='tight',pad_inches=0.04,dpi=300)
+            else:
+                plt.savefig("frame%04d.png"%fldindex,bbox_inches='tight',pad_inches=0.04,dpi=300)
 
 def mkathfieldplot(nskip=10,fntsize=20,dosavefig=0,doclf=0,dolegend=1,ltype="-",endn=-1,var=lambda: B3c, Rs = 50):
     flist1 = np.sort(glob.glob( "[0-9][0-9][0-9][0-9].vtk") )
