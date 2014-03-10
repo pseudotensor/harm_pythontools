@@ -1446,6 +1446,14 @@ def mkbondimovie(doreload=1,plotlen=25,vmin=-6,vmax=1,whichvar="lrho",doresize=1
         if fldindex % whichn != whichi:
             #do every whichn'th snapshot starting with whichi'th snapshot
             continue
+        if dosavefig:
+            if dostag:
+                fname = "frame_stag%04d.png"%fldindex
+            else:
+                fname = "frame%04d.png"%fldindex
+            if os.path.isfile( fname ):
+                    print("File %s exists, skipping..." % fname)
+                    continue
         print( "Reading " + fldname + " ..." )
         sys.stdout.flush()
         rfd("../"+fldname)
@@ -1461,6 +1469,7 @@ def mkbondimovie(doreload=1,plotlen=25,vmin=-6,vmax=1,whichvar="lrho",doresize=1
         # plt.ylabel(r"$z\ [r_g]$",fontsize=20)
         # plt.title(r"$t= %5.5g$" % np.floor(t))
         # plt.draw()
+        plt.clf()
         mkRzxyframe(findex=fldindex,dodiskfield=32,doreload=doreload,minlendiskfield=0.1,downsample=1,useblankdiskfield=1,dnarrow=0,vmin=vmin,vmax=vmax,fntsize=20,plotlen=plotlen,whichvar=whichvar,label=label,cmap=cmap,dostreamlines=dostreamlines,showlabels=0,**kwargs)
         if dosavefig:
             if dostag:
