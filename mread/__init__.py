@@ -1473,9 +1473,9 @@ def mkbondimovie(doreload=1,plotlen=25,vmin=-6,vmax=1,whichvar="lrho",doresize=1
         mkRzxyframe(findex=fldindex,dodiskfield=32,doreload=doreload,minlendiskfield=0.1,downsample=1,useblankdiskfield=1,dnarrow=0,vmin=vmin,vmax=vmax,fntsize=20,plotlen=plotlen,whichvar=whichvar,label=label,cmap=cmap,dostreamlines=dostreamlines,showlabels=0,**kwargs)
         if dosavefig:
             if dostag:
-                plt.savefig("frame_stag%04d.png"%fldindex,bbox_inches='tight',pad_inches=0.04,dpi=300)
+                plt.savefig("frame_stag%04d.png"%fldindex,bbox_inches='tight',pad_inches=0.04,dpi=200)
             else:
-                plt.savefig("frame%04d.png"%fldindex,bbox_inches='tight',pad_inches=0.04,dpi=300)
+                plt.savefig("frame%04d.png"%fldindex,bbox_inches='tight',pad_inches=0.04,dpi=200)
 
 def mkathfieldplot(nskip=10,fntsize=20,dosavefig=0,doclf=0,dolegend=1,ltype="-",endn=-1,var=lambda: B3c, Rs = 50):
     flist1 = np.sort(glob.glob( "[0-9][0-9][0-9][0-9].vtk") )
