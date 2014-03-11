@@ -709,4 +709,4 @@ if __name__ == "__main__":
             #call main() with the constructed dictionary
             main(**dict)
     else:
-        print ("Hello, give me 'main' argument to set me in action")
+        print ("Usage:\n\npython ~/py/mread/__init__.py main <keyword> <value> [<keyword1> <value1>]")
