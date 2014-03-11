@@ -701,12 +701,17 @@ if __name__ == "__main__":
     #1 eV in units of m_e c^2
     eV = 1/(511.e3)
     if len(sys.argv)>1:
-        if sys.argv[1] == "main":
-            dict = {}
-            #put the rest of arguments into dictionary
-            for i in range(2,len(sys.argv),2):
-                dict[sys.argv[i]] = float(sys.argv[i+1])
-            #call main() with the constructed dictionary
+        dict = {}
+        #put the rest of arguments into dictionary
+        for i in range(1,len(sys.argv),1):
+            strings = sys.argv[i].split("=")
+            try:
+                dict[strings[0]] = float(strings[1])
+            except:
+                dict[strings[0]] = strings[1]
+        #call main() with the constructed dictionary
+        funcname = dict.pop("funcname","main")
+        if funcname == "main":
             main(**dict)
     else:
-        print ("Usage:\n\npython ~/py/mread/__init__.py main <keyword> <value> [<keyword1> <value1>]")
+        print ("Usage:\n\npython ~/py/mread/__init__.py [funcname = <function_name>] <keyword> <value> [<keyword1> <value1>...]")
