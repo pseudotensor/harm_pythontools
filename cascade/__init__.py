@@ -696,8 +696,17 @@ def get_sci_string_form(E0):
 if __name__ == "__main__":
     global eV
     #main()
-    print ("Hello")
     #energy grid, Lorentz factor of initial electron
     warnings.simplefilter("error")
     #1 eV in units of m_e c^2
     eV = 1/(511.e3)
+    if len(sys.argv)>1:
+        if sys.argv[1] == "main":
+            dict = {}
+            #put the rest of arguments into dictionary
+            for i in range(2,len(sys.argv),2):
+                dict[sys.argv[i]] = float(sys.argv[i+1])
+            #call main() with the constructed dictionary
+            main(**dict)
+    else:
+        print ("Hello, give me 'main' argument to set me in action")
