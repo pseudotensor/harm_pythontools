@@ -8601,10 +8601,16 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None,docomp
         tiny=np.finfo(rho.dtype).tiny
     else:
         tiny = np.finfo(np.float64).tiny
-    flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
-    flist.sort()
+    flist1 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
+    flist2 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9][0-9].bin") ) )
+    flist1.sort()
+    flist2.sort()
+    flist = np.concatenate((flist1,flist2))
     #store 1D data
-    numtimeslices=len(flist)
+    #find the largest filename index -> total number of time snapshots
+    fldname = flist[-1]
+    lastfindex = np.int(fldname.split(".")[0].split("e")[-1])
+    numtimeslices=lastfindex+1 #account for findex = 0
     #np.seterr(invalid='raise',divide='raise')
     #
     print "Number of time slices: %d" % numtimeslices
@@ -8967,7 +8973,9 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None,docomp
         print "Doing every %d-th slice of %d" % (whichi, whichn)
     sys.stdout.flush()
     #end qty defs
-    for findex, fname in enumerate(flist):
+    for fname in flist:
+        #find the index of the file
+        findex = np.int(fldname.split(".")[0].split("e")[-1])
         if( whichi >=0 and whichn > 0 ):
             if( findex % whichn != whichi ):
                 continue
