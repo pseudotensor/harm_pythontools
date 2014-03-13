@@ -719,4 +719,4 @@ if __name__ == "__main__":
         if funcname == "main":
             main(**dict)
     else:
-        print ("Usage:\n\npython ~/py/mread/__init__.py [funcname = <function_name>] <keyword> <value> [<keyword1> <value1>...]")
+        print ("Usage:\n\npython ~/py/mread/__init__.py [funcname=<function_name>] <keyword>=<value> [<keyword1>=<value1>...]")
