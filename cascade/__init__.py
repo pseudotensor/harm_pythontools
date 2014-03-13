@@ -410,12 +410,16 @@ def main(Ngen = 10,resume=None,**kwargs):
             #plt.draw()
     except (KeyboardInterrupt, SystemExit):
         print '\n! Received keyboard interrupt, quitting threads.\n'
+        if gen == startN: return
+    if startN==Ngen+1: 
+        print( "Done!" )
+        return
     print("Saving results to file...")
     np.savez(fnamedefault, Evec = Evec, E0 = E0, gen_list = gen_list, deltaN_list = deltaN_list, deltaE_list = deltaE_list, dNdE_list = dNdE_list, dNdE_rad_list = dNdE_rad_list, Ntot_list = Ntot_list, Etot_list = Etot_list, Emin = Emin, Emax = Emax, Ngrid = Ngrid, E0grid = E0grid, Esmin = Esmin, Esmax = Esmax, Egmin = Egmin, s = s, do_enforce_energy_conservation = do_enforce_energy_conservation)
 
 def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservation = 0):
 
-    doenc = ""
+    doenc = "_enc1" if do_enforce_energy_conservation == 1 else ""
     snE16e9N1e2 = get_cascade_info(fname="E1.6e+09_N1e+02_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
     snE16e9N2e2 = get_cascade_info(fname="E1.6e+09_N2e+02_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
     snE16e9N4e2 = get_cascade_info(fname="E1.6e+09_N4e+02_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
@@ -427,7 +431,7 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservatio
     snE16e9N4e4 = get_cascade_info(fname="E1.6e+09_N4e+04_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
     convergence_list = [snE16e9N1e2, snE16e9N2e2, snE16e9N4e2, 
                   snE16e9N1e3, snE16e9N2e3, snE16e9N4e3,
-                  snE16e9N1e4, snE16e9N2e4] #, snE16e9N4e4]
+                  snE16e9N1e4, snE16e9N2e4, snE16e9N4e4]
 
     #hack for now:
     doenc = ""
