@@ -68,14 +68,15 @@ def plot_pair_producing_fraction():
     plt.savefig("frac.eps", bbox_inches='tight', pad_inches=0.06)
     plt.savefig("frac.pdf", bbox_inches='tight', pad_inches=0.06)
 
-def stagsurf(dn=1,fntsize=20,xmax = 5, ymax = 9, dosavefig=0):
+def stagsurf(dn=1,fntsize=20,xmax = 5, ymax = 12, dosavefig=0):
     global leg1, leg2, ax1, ax2
     #os.chdir("/home/atchekho/run/a09new")
-    plt.figure(1,figsize=(8,8))
+    plt.figure(1,figsize=(7.5,8))
     plt.clf()
     grid3d("gdump.bin",use2d=1)
-    dump_list1=[2000,2001,2002,2003]
-    dump_list2=[2000,4000,8000,10000]
+    dump_list1=[12000,12001,12002,12003]
+    #dump_list2=[2000,4000,8000,10000]
+    dump_list2=[12197, 12677, 15061, 19371]
     gs = GridSpec(2, 2)
     gs.update(left=0.15, right=0.97, top=0.97, bottom=0.08, wspace=0.04, hspace=0.04)
     ax1=plt.subplot(gs[:,0])
