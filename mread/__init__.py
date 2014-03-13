@@ -8975,7 +8975,7 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None,docomp
     #end qty defs
     for fname in flist:
         #find the index of the file
-        findex = np.int(fldname.split(".")[0].split("e")[-1])
+        findex = np.int(fname.split(".")[0].split("e")[-1])
         if( whichi >=0 and whichn > 0 ):
             if( findex % whichn != whichi ):
                 continue
