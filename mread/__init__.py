@@ -7272,7 +7272,7 @@ def writeoutrdump(dumpname, header, gdraw, gdrawupper, nx, ny, nz, whichdir = 3)
         #reshape the rdump content
         gd1upper = gdrawupper.view().reshape((nz,1,nx,-1),order='C')
         numcolsupper = gd1upper.shape[-1]  #total number of columns (currently only B2)
-        print("Number of columns in the gdumpupper dump is %d" % numcolsupper)
+        print("Number of columns in the upper rdump is %d; in rdump is %d" % (numcolsupper, numcols))
         #allocate memory for refined grid, nz' = 2*nz
         gd2upper = np.zeros((newnz,1,newnx,numcolsupper),order='C',dtype=np.float64)
     if whichdir == 3:
@@ -7300,7 +7300,7 @@ def writeoutrdump(dumpname, header, gdraw, gdrawupper, nx, ny, nz, whichdir = 3)
         gd2[:,1:-1:2,:,gdetB2index] = 0.5*(gd1[:,:-1,:,gdetB2index]+gd1[:,1:,:,gdetB2index])
         gd2[:,-1,:,gdetB2index] = 0.5*(0.0+gd1[:,-1,:,gdetB2index])
         if gdrawupper is not None:
-            gd2[:,-1,:,gdetB2index] = 0.5*(gd1upper[:,0,:,0]+gd1[:,-1,:,gdetB2index])
+            gd2[:,-1,:,gdetB2index] = 0.5*(gd1upper[:,0,:,gdetB2index]+gd1[:,-1,:,gdetB2index])
             print("Warning: need to make sure correctly refining resolution in upperpole dump")
     gd2.tofile(gout)
     gout.close()
