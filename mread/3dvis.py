@@ -6,7 +6,7 @@ from numpy import mgrid, empty, zeros, sin, cos, pi
 from tvtk.api import tvtk
 from mayavi import mlab
 
-def create_structured_grid(s=None,sname=None,v=None,vname=None,maxr=20):
+def create_structured_grid(s=None,sname=None,v=None,vname=None,maxr=500):
     maxi = iofr(maxr)
     # Compute Cartesian coordinates of the grid
     x = (r*sin(h)*cos(ph))[:maxi]
@@ -35,7 +35,7 @@ def create_structured_grid(s=None,sname=None,v=None,vname=None,maxr=20):
 
     return( sg )
     
-def create_unstructured_grid(s=None,sname=None,v=None,vname=None,minr=1,maxr=20,npts=10,dj=4,dk=4):
+def create_unstructured_grid(s=None,sname=None,v=None,vname=None,minr=1,maxr=500,npts=100,dj=1,dk=1):
     if minr < rhor: minr = rhor
     mini = iofr(minr)
     maxi = iofr(maxr)
@@ -101,12 +101,28 @@ def wraparound(v):
     return( np.concatenate((v,v[...,0:1]),axis=-1) )
     
 #@mayavi2.standalone    
-def visualize_data(doreload=1,no=160):
+def visualize_data(doreload=1,no=160,rmax=100,ncellx=1000,ncellz=100):
     if doreload:
         grid3d("gdump.bin",use2d=1)
         #rfd("fieldline9000.bin")
         rfd("fieldline%04d.bin"%no)
         cvel()
+    #xi,yi,zi = np.mgrid[-rmax:rmax:ncell*1j,-rmax:rmax:ncell*1j,-rmax:rmax:ncell*1j]
+    xi = np.linspace(-rmax, rmax, ncellx)[None,:] #[:,None,None]
+    yi = np.linspace(-rmax, rmax, ncellx) #[None,:,None]
+    zi = np.linspace(-rmax, rmax, ncellz)[:,None] #[None,None,:]
+    pdb.set_trace()
+    #choose 1.8 > sqrt(3):
+    ph = 0
+    x = (r*sin(h)*cos(ph))[...,0][r[...,0]<1.8*rmax]
+    y = (r*sin(h)*sin(ph))[...,0][r[...,0]<1.8*rmax]
+    z = (r*cos(h))[...,0][r[...,0]<1.8*rmax]
+    # grid the data.
+    var = lrho[...,0][r[...,0]<1.8*rmax]
+    vi = griddata((x, z), var, (xi, zi), method="linear")
+    pdb.set_trace()
+    mlab_dens = mlab.pipeline.scalar_field(xi,yi,zi,vi)
+    pdb.set_trace()
     mlab.figure(1, bgcolor=(1, 1, 1), fgcolor=(0, 0, 0), size=(400, 300))
     mlab.clf()
     if 0:
@@ -119,25 +135,31 @@ def visualize_data(doreload=1,no=160):
         gz = mlab.pipeline.grid_plane(d)
         gz.grid_plane.axis = 'z'
         iso = mlab.pipeline.iso_surface(d)
-    if 0:
-        sg = create_unstructured_grid(s=B[1]*dxdxp[1,1],sname="density",v=None,vname=None)
+    if 1:
+        #sg = create_unstructured_grid(s=B[1]*dxdxp[1,1],sname="density",v=None,vname=None)
+        sg_bsqorho = create_unstructured_grid(s=bsq/rho,sname="density",v=None,vname=None)
+        sg_d = create_unstructured_grid(s=rho,sname="density",v=None,vname=None)
         # Now visualize the data.
-        d = mlab.pipeline.add_dataset(sg)
+        pl_d = mlab.pipeline.add_dataset(sg_d)
+        pl_bsqorho = mlab.pipeline.add_dataset(sg_bsqorho)
         # gx = mlab.pipeline.grid_plane(d)
         # gy = mlab.pipeline.grid_plane(d)
         # gy.grid_plane.axis = 'y'
         # gz = mlab.pipeline.grid_plane(d)
         # gz.grid_plane.axis = 'z'
-        iso = mlab.pipeline.iso_surface(d)
-        # vol = mlab.pipeline.volume(d,vmin=-4,vmax=-2)
+        iso_bsqorho = mlab.pipeline.iso_surface(pl_bsqorho,contours=[10.])
+        iso_d = mlab.pipeline.iso_surface(pl_d,contours=[0.1,1,10.],color=(255./255., 255./255., 0./255.))
+        #vol = mlab.pipeline.volume(d,vmin=-4,vmax=-2)
+        #vol = mlab.pipeline.volume(mlab_dens,vmin=0,vmax=4)
     myr = 20
     myi = iofr(myr)
-    s = wraparound((np.abs(B[1])*dxdxp[1,1]))[myi,:,:]
-    x = wraparound(r*sin(h)*cos(ph-OmegaNS*t))[myi,:,:]
-    y = wraparound(r*sin(h)*sin(ph-OmegaNS*t))[myi,:,:]
-    z = wraparound(r*cos(h))[myi,:,:]
-    
-    mlab.mesh(x, y, z, scalars=s, colormap='jet')
+    if 0:
+        #mesh
+        s = wraparound((np.abs(B[1])*dxdxp[1,1]))[myi,:,:]
+        x = wraparound(r*sin(h)*cos(ph-OmegaNS*t))[myi,:,:]
+        y = wraparound(r*sin(h)*sin(ph-OmegaNS*t))[myi,:,:]
+        z = wraparound(r*cos(h))[myi,:,:]
+        mlab.mesh(x, y, z, scalars=s, colormap='jet')
     # iso.contour.maximum_contour = 75.0
     #vec = mlab.pipeline.vectors(d)
     #vec.glyph.mask_input_points = True

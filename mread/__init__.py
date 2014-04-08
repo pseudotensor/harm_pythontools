@@ -6,15 +6,31 @@ from matplotlib import rc
 from streamlines import streamplot
 from streamlines import fstreamplot
 from pychip import pchip_init, pchip_eval
+#
+# FONT CUSTOMIZATIONS
+# 
+
 #rc('verbose', level='debug')
 #rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 ## for Palatino and other serif fonts use:
 ## rc('font',**{'family':'serif','serif':['Palatino']})
 # rc('mathtext',fontset='cm')
 # rc('mathtext',rm='stix')
-# rc('text', usetex=True)
+
+rc('text', usetex=True)
+font = { 'size'   : 20}
+rc('font', **font)
+rc('xtick', labelsize=20) 
+rc('ytick', labelsize=20) 
+#rc('xlabel', **font) 
+#rc('ylabel', **font) 
+legend = {'fontsize': 20}
+rc('legend',**legend)
+axes = {'labelsize': 20}
+rc('axes', **axes)
+
 # #add amsmath to the preamble
-# matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"] 
+matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"] 
 
 #from pylab import figure, axes, plot, xlabel, ylabel, title, grid, savefig, show
 
@@ -231,21 +247,30 @@ def computetilt(fntsize=20,dosavefig=1):
 def plot_harm_scaling(whichcode="harmrad",whichsystem="stampede",fntsize=20,dosavefig=1):
     if whichcode == "harmrad":
         if whichsystem == "stampede":
-            n_list = [16, 32, 512, 4096]
-            s_list = [89036, 176255, 2857894, 22515158]
+            #weak scaling
+            n_list = [16,    32,     256,      512,     4096,     16384]
+            s_list = [89036, 176255, 1432761, 2857894, 22515158, 88342896]
+            #strong scaling
+            n1_list = [128,    256,     512,     2048,     4096,     8192,     16384]
+            s1_list = [762645, 1432761, 2857894, 9338053,  16694583, 24498946, 43128948]
     n_list = np.array(n_list,dtype=np.float64)
     s_list = np.array(s_list,dtype=np.float64)
+    n1_list = np.array(n1_list,dtype=np.float64)
+    s1_list = np.array(s1_list,dtype=np.float64)
     plt.clf()
-    plt.plot(n_list, s_list/s_list[0]*n_list[0],"-s",lw=2,color="black")
-    n_array = np.linspace(1,1e4,100)
-    plt.plot(n_array, n_array,"k:")
+    n_array = 10**np.linspace(1,5,100)
+    plt.plot(n_array, n_array,"k:",lw=2,label=r"$\rm ideal\ scaling$")
+    plt.plot(n_list, s_list/s_list[0]*n_list[0],"-s",lw=2,color="green",label=r"$\rm weak\ scaling$",markersize=10)
+    # l, = plt.plot(n1_list, s1_list/s_list[0]*n_list[0],"--o",fillstyle="none",lw=2,mew=2,mec="red",color="red",label=r"$\rm strong\ scaling$",markersize=10)
+    #l.set_dashes([10,5])
     plt.xscale("log")
     plt.yscale("log")
-    plt.xlim(10,1e4)
-    plt.ylim(10,1e4)
+    plt.xlim(10,1e5)
+    plt.ylim(10,1e5)
     plt.xlabel(r"${\rm Number\ of\ cores}$",fontsize=fntsize)
     plt.ylabel(r"${\rm Speedup}$",fontsize=fntsize)
     plt.grid()
+    plt.legend(loc="lower right")
     ax = plt.gca()
     for label in ax.get_xticklabels() + ax.get_yticklabels():
         label.set_fontsize(fntsize)
@@ -7245,10 +7270,11 @@ def writeoutrdump(dumpname, header, gdraw, gdrawupper, nx, ny, nz, whichdir = 3)
     #for upperpole dumps:
     if gdrawupper is not None:
         #reshape the rdump content
-        gd1upper = gdrawupper.view().reshape((nz,ny,nx,-1),order='C')
+        gd1upper = gdrawupper.view().reshape((nz,1,nx,-1),order='C')
         numcolsupper = gd1upper.shape[-1]  #total number of columns (currently only B2)
+        print("Number of columns in the gdumpupper dump is %d" % numcolsupper)
         #allocate memory for refined grid, nz' = 2*nz
-        gd2upper = np.zeros((newnz,newny,newnx,numcolsupper),order='C',dtype=np.float64)
+        gd2upper = np.zeros((newnz,1,newnx,numcolsupper),order='C',dtype=np.float64)
     if whichdir == 3:
         #copy even k's
         gd2[0::2,:,:,:] = gd1[:,:,:,:]
@@ -7263,6 +7289,7 @@ def writeoutrdump(dumpname, header, gdraw, gdrawupper, nx, ny, nz, whichdir = 3)
             gd2upper[0::2,:,:,:] = gd1upper[:,:,:,:]
             #copy odd k's
             gd2upper[1::2,:,:,:] = gd1upper[:,:,:,:]
+            print("Warning: need to make sure correctly refining resolution in upperpole dump")
     elif whichdir == 2:
         #copy even j's
         gd2[:,0::2,:,:] = gd1[:,:,:,:]
@@ -7273,7 +7300,8 @@ def writeoutrdump(dumpname, header, gdraw, gdrawupper, nx, ny, nz, whichdir = 3)
         gd2[:,1:-1:2,:,gdetB2index] = 0.5*(gd1[:,:-1,:,gdetB2index]+gd1[:,1:,:,gdetB2index])
         gd2[:,-1,:,gdetB2index] = 0.5*(0.0+gd1[:,-1,:,gdetB2index])
         if gdrawupper is not None:
-            print("Warning: don't know what to do with refining resolution in upperpole dump")
+            gd2[:,-1,:,gdetB2index] = 0.5*(gd1upper[:,0,:,0]+gd1[:,-1,:,gdetB2index])
+            print("Warning: need to make sure correctly refining resolution in upperpole dump")
     gd2.tofile(gout)
     gout.close()
     if gd2upper is not None:

@@ -417,33 +417,69 @@ def main(Ngen = 10,resume=None,**kwargs):
     print("Saving results to file...")
     np.savez(fnamedefault, Evec = Evec, E0 = E0, gen_list = gen_list, deltaN_list = deltaN_list, deltaE_list = deltaE_list, dNdE_list = dNdE_list, dNdE_rad_list = dNdE_rad_list, Ntot_list = Ntot_list, Etot_list = Etot_list, Emin = Emin, Emax = Emax, Ngrid = Ngrid, E0grid = E0grid, Esmin = Esmin, Esmax = Esmax, Egmin = Egmin, s = s, do_enforce_energy_conservation = do_enforce_energy_conservation)
 
-def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservation = 0):
+def ggg( E0 = 1.6e9, Esmin = 0.0012, Egmin = 1.3e6, s = 2.2 ):
+    al = s - 1
+    em = Esmin * eV #convert to ergs
+    ggg_val = (2**(1-al)*em**(1-al)*Egmin**al)**(1./(2*al-1))
+    return( ggg_val )
 
-    doenc = "_enc1" if do_enforce_energy_conservation == 1 else ""
-    snE16e9N1e2 = get_cascade_info(fname="E1.6e+09_N1e+02_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
-    snE16e9N2e2 = get_cascade_info(fname="E1.6e+09_N2e+02_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
-    snE16e9N4e2 = get_cascade_info(fname="E1.6e+09_N4e+02_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
-    snE16e9N1e3 = get_cascade_info(fname="E1.6e+09_N1e+03_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
-    snE16e9N2e3 = get_cascade_info(fname="E1.6e+09_N2e+03_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
-    snE16e9N4e3 = get_cascade_info(fname="E1.6e+09_N4e+03_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
-    snE16e9N1e4 = get_cascade_info(fname="E1.6e+09_N1e+04_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
-    snE16e9N2e4 = get_cascade_info(fname="E1.6e+09_N2e+04_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
-    snE16e9N4e4 = get_cascade_info(fname="E1.6e+09_N4e+04_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
-    convergence_list = [snE16e9N1e2, snE16e9N2e2, snE16e9N4e2, 
-                  snE16e9N1e3, snE16e9N2e3, snE16e9N4e3,
-                  snE16e9N1e4, snE16e9N2e4, snE16e9N4e4]
-
-    #hack for now:
-    doenc = ""
-    snE1e6     = get_cascade_info(fname="E1e+06_N1e+04_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
-    snE1e7     = get_cascade_info(fname="E1e+07_N1e+04_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
-    snE1e8     = get_cascade_info(fname="E1e+08_N1e+04_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
-    snE1e9     = get_cascade_info(fname="E1.6e+09_N1e+04_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
-    snE1e10    = get_cascade_info(fname="E1e+10_N1e+04_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
-
-    spectra_list = [snE1e6, snE1e7, snE1e9, snE1e10]
+def nlep( E0 = 1.6e9, Esmin = 0.0012, Egmin = 1.3e6, s = 2.2 ):
+    return( E0 / ggg(Esmin = Esmin, Egmin = Egmin, s = s) )
     
-    sim_list = [snE1e6, snE1e7, snE1e8, snE1e9, snE1e10]
+def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservation = 0, doreload = 1):
+    global convergence_list, sim_list_Esmin, spectra_list, sim_list, sim_list_Esmax, sim_list_Egmin
+    
+    doenc = "_enc1" if do_enforce_energy_conservation == 1 else ""
+
+    if doreload:
+        snE16e9N1e2 = get_cascade_info(fname="E1.6e+09_N1e+02_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
+        snE16e9N2e2 = get_cascade_info(fname="E1.6e+09_N2e+02_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
+        snE16e9N4e2 = get_cascade_info(fname="E1.6e+09_N4e+02_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
+        snE16e9N1e3 = get_cascade_info(fname="E1.6e+09_N1e+03_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
+        snE16e9N2e3 = get_cascade_info(fname="E1.6e+09_N2e+03_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
+        snE16e9N4e3 = get_cascade_info(fname="E1.6e+09_N4e+03_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
+        snE16e9N1e4 = get_cascade_info(fname="E1.6e+09_N1e+04_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
+        snE16e9N2e4 = get_cascade_info(fname="E1.6e+09_N2e+04_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
+        snE16e9N4e4 = get_cascade_info(fname="E1.6e+09_N4e+04_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
+        snE16e9N1e5 = get_cascade_info(fname="E1.6e+09_N1e+05_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
+        snE16e9N2e5 = get_cascade_info(fname="E1.6e+09_N2e+05_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
+        convergence_list = [snE16e9N1e2, snE16e9N2e2, snE16e9N4e2, 
+                      snE16e9N1e3, snE16e9N2e3, snE16e9N4e3,
+                      snE16e9N1e4, snE16e9N2e4, snE16e9N4e4, snE16e9N1e5, snE16e9N2e5]
+
+        snE16e9Esmin1p2em5 =  get_cascade_info(fname="E1.6e+09_N1e+04_s2.2_Esmin1.2e-05_Esmax0.79%s.npz" % doenc)
+        snE16e9Esmin0p00012 = get_cascade_info(fname="E1.6e+09_N1e+04_s2.2_Esmin0.00012_Esmax0.79%s.npz" % doenc)
+        snE16e9Esmin0p0012 =  snE16e9N1e4
+        snE16e9Esmin0p012 =   get_cascade_info(fname="E1.6e+09_N1e+04_s2.2_Esmin0.012_Esmax0.79%s.npz" % doenc)
+        #snE16e9Esmin0p12 =    get_cascade_info(fname="E1.6e+09_N1e+04_s2.2_Esmin0.12_Esmax0.79%s.npz" % doenc)
+        sim_list_Esmin = [snE16e9Esmin1p2em5, snE16e9Esmin0p00012, snE16e9Esmin0p0012, 
+                          snE16e9Esmin0p012]
+
+        snE16e9Egmin1 = get_cascade_info(fname="E1.6e+09_N1e+04_s2.2_Esmin0.0012_Esmax0.79_Egmin1.3e+04.npz")
+        snE16e9Egmin2 = get_cascade_info(fname="E1.6e+09_N1e+04_s2.2_Esmin0.0012_Esmax0.79_Egmin1.3e+05.npz")
+        snE16e9Egmin3 = snE16e9N1e4
+        snE16e9Egmin4 = get_cascade_info(fname="E1.6e+09_N1e+04_s2.2_Esmin0.0012_Esmax0.79_Egmin1.3e+07.npz")
+        sim_list_Egmin = [snE16e9Egmin1, snE16e9Egmin2, snE16e9Egmin3, snE16e9Egmin4]
+
+        snE16e9Esmax1 = get_cascade_info(fname="E1.6e+09_N1e+04_s2.2_Esmin0.0012_Esmax0.079_Egmin1.3e+06.npz")
+        snE16e9Esmax2 = snE16e9N1e4
+        snE16e9Esmax3 = get_cascade_info(fname="E1.6e+09_N1e+04_s2.2_Esmin0.0012_Esmax1.6_Egmin1.3e+06.npz")
+        snE16e9Esmax4 = get_cascade_info(fname="E1.6e+09_N1e+04_s2.2_Esmin0.0012_Esmax7.9_Egmin1.3e+06.npz")
+        snE16e9Esmax5 = get_cascade_info(fname="E1.6e+09_N1e+04_s2.2_Esmin0.0012_Esmax79_Egmin1.3e+06.npz")
+        sim_list_Esmax = [snE16e9Esmax1, snE16e9Esmax2, snE16e9Esmax3, snE16e9Esmax4, snE16e9Esmax5]
+
+        #hack for now:
+        doenc = ""
+        snE1e6     = get_cascade_info(fname="E1e+06_N1e+04_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
+        snE1e7     = get_cascade_info(fname="E1e+07_N1e+04_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
+        snE1e8     = get_cascade_info(fname="E1e+08_N1e+04_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
+        snE1e9     = get_cascade_info(fname="E1.6e+09_N1e+04_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
+        snE1e10    = get_cascade_info(fname="E1e+10_N1e+04_s2.2_Esmin0.0012_Esmax0.79%s.npz" % doenc)
+
+        spectra_list = [snE1e6, snE1e7, snE1e9, snE1e10]
+
+        sim_list = [snE1e6, snE1e7, snE1e8, snE1e9, snE1e10]
+
     dashes_list = [[5,2], [5,2,2,2], [5,2,2,2,2,2], [10,5], [10,2,2,2,5,2,2,2], [10,2,2,2,10,2,2,2]]
     colors_list = ["red", "Orange", "DarkGreen", "magenta", "blue", "black"]
     simname_list = []
@@ -472,7 +508,7 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservatio
             # if i == 1: continue
             # if i == 0:
             #     name = r"$E_0 = 10^6, 10^7$"
-            plt.text(30, 1.1*sim["Ntot"][-1], name, size = fntsize,va = "bottom", ha="left")
+            plt.text(30, 0.95*sim["Ntot"][-1], name, size = fntsize,va = "bottom", ha="left")
         plt.xscale("log")
         plt.yscale("log")
         plt.ylim(0.5, 2e4)
@@ -485,7 +521,7 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservatio
         #
         # AVERAGE ENERGY PER PARTICLE
         #
-        ax2=plt.subplot(gs[1,:])
+        ax2=plt.subplot(gs[2,:])
         #
         # LINES
         #
@@ -503,12 +539,12 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservatio
         #plt.xlabel(r"${\rm Generation}$", fontsize=fntsize)
         plt.ylabel(r"$\langle\gamma_{\rm lep}\rangle\equiv E_{\rm lep}/N_{\rm lep}$", fontsize=fntsize)
         plt.grid()
-        # plt.xlabel(r"${\rm N_{\rm gen}+1}$", fontsize=fntsize)
+        plt.xlabel(r"${\rm N_{\rm gen}+1}$", fontsize=fntsize)
         for label in ax2.get_xticklabels() + ax2.get_yticklabels():
             label.set_fontsize(fntsize)
-        plt.setp( ax2.get_xticklabels(), visible=False)
+        #plt.setp( ax2.get_xticklabels(), visible=False)
         #
-        ax3=plt.subplot(gs[2,:])
+        ax3=plt.subplot(gs[1,:])
         #
         # LINES
         #
@@ -525,27 +561,31 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservatio
         plt.ylim(0.5e4, 0.95e11)
         #plt.xlabel(r"${\rm Generation}$", fontsize=fntsize)
         plt.ylabel(r"$E_{\rm lep},\ E_{\rm tot}$", fontsize=fntsize)
+        # plt.xlabel(r"${\rm N_{\rm gen}+1}$", fontsize=fntsize)
         plt.grid()
-        plt.xlabel(r"${\rm N_{\rm gen}+1}$", fontsize=fntsize)
         plt.text(4, 0.5e6, simname_list[0], size = fntsize,va = "top", ha="left")
         plt.text(4, 1.2e10, simname_list[-1], size = fntsize,va = "bottom", ha="left")
         for label in ax3.get_xticklabels() + ax3.get_yticklabels():
             label.set_fontsize(fntsize)
-        #plt.setp( ax3.get_xticklabels(), visible=False)
+        plt.setp( ax3.get_xticklabels(), visible=False)
         labs = ["a", "b", "c"]
-        axs = [ax1, ax2, ax3]
+        axs = [ax1, ax3, ax2]
         for ax,lab in zip(axs,labs):
             ax.text(ax.get_xlim()[0]*1.2,ax.get_ylim()[1]**0.98*ax.get_ylim()[0]**0.02,
                     r"$({\rm %s})$" % lab,
                     ha="left",va="top",fontsize=fntsize)
         
         if dosavefig:
-            plt.savefig("cascade.eps", bbox_inches='tight', pad_inches=0.04)
+            plt.savefig("cascade.eps", bbox_inches='tight', pad_inches=0.06)
     if wf == 0 or wf == 2:
+        fntsizebackup = fntsize
+        figw = 4
+        figh = 4*2./3.
+        al = 0.9
         #
         # DEPENDENCE OF NTOT ON E0
         #
-        plt.figure(2,figsize=(6,4))
+        plt.figure(2,figsize=(figw,figh))
         plt.clf()
         x = []
         y = []
@@ -554,28 +594,134 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservatio
             y.append( sim["Ntot"][-1] )
         plt.plot(x,y,"-o",lw=2)
         x1 = 10**np.arange(0,12,1)
-        y1 = x1/2/1.3e6
-        plt.plot(x1,y1,":",lw=2,label=r"$N=E_0/2\epsilon_{\gamma,\rm min}$")
+        y1 = nlep( E0 = x1, Esmin = sim["Esmin"], Egmin = sim["Egmin"], s = sim["s"] ) #x1/2/1.3e6
+        plt.plot(x1,y1,":",lw=2,label=r"$n_\infty/n_g=\gamma_{\rm max,IC}/\gamma_{\gamma\gamma}$")
         plt.xscale("log")
         plt.yscale("log")
-        plt.ylim(0.5,1e4)
+        plt.ylim(0.5,2e4)
         plt.xlim(0.5e6,2e10)
-        plt.xlabel(r"$E_0$", fontsize=18)
-        plt.ylabel(r"$N_{\rm lep,\infty}$", fontsize=18)
-        plt.grid(b=True)
-        leg = plt.legend(loc="lower right")
         ax = plt.gca()
-        for label in ax.get_xticklabels() + ax.get_yticklabels()  + leg.get_texts():
+        lab = "a"
+        ax.text(ax.get_xlim()[0]*1.2,ax.get_ylim()[1]**al*ax.get_ylim()[0]**(1-al),
+                r"$({\rm %s})$" % lab,
+                ha="left",va="top",fontsize=fntsize)
+        plt.xlabel(r"$E_0$", fontsize=fntsize)
+        plt.ylabel(r"$n_\infty/n_g$", fontsize=fntsize)
+        plt.grid(b=True)
+        #leg = plt.legend(loc="lower right")
+        ax = plt.gca()
+        for label in ax.get_xticklabels() + ax.get_yticklabels(): #  + leg.get_texts():
             label.set_fontsize(fntsize)
         if dosavefig:
-            plt.savefig("NvsE0.eps", bbox_inches='tight', pad_inches=0.04)
+            plt.savefig("NvsE0.eps", bbox_inches='tight', pad_inches=0.06)
+        #
+        # Dependence on Egmin
+        #
+        plt.figure(21,figsize=(figw,figh))
+        plt.clf()
+        x = []
+        y = []
+        for sim in sim_list_Esmin:
+            x.append( sim["Esmin"] )
+            y.append( sim["Ntot"][-1] )
+        plt.plot(x,y,"-o",lw=2)
+        x1 = 10.**np.arange(-6.,1.,0.1)
+        y1 = nlep( E0 = sim["E0"], Esmin = x1, Egmin = sim["Egmin"], s = sim["s"] )
+        plt.plot(x1,y1,":",lw=2,label=r"$n_\infty/n_g=\gamma_{\rm max,IC}/\gamma_{\gamma\gamma}$")
+        #pdb.set_trace()
+        plt.xscale("log")
+        plt.yscale("log")
+        plt.ylim(0.5e2,2e3)
+        plt.xlim(0.5e-5,2e-2)
+        ax = plt.gca()
+        lab = "b"
+        ax.text(ax.get_xlim()[0]*1.2,ax.get_ylim()[1]**al*ax.get_ylim()[0]**(1-al),
+                r"$({\rm %s})$" % lab,
+                ha="left",va="top",fontsize=fntsize)
+        plt.xlabel(r"$\epsilon_m$", fontsize=fntsize)
+        plt.ylabel(r"$n_\infty/n_g$", fontsize=fntsize)
+        plt.grid(b=True)
+        #leg = plt.legend(loc="lower right")
+        ax = plt.gca()
+        for label in ax.get_xticklabels() + ax.get_yticklabels(): #  + leg.get_texts():
+            label.set_fontsize(fntsize)
+        if dosavefig:
+            plt.savefig("NvsEsmin.eps", bbox_inches='tight', pad_inches=0.06)
+        #
+        # Dependence on em
+        #
+        plt.figure(22,figsize=(figw,figh))
+        plt.clf()
+        x = []
+        y = []
+        for sim in sim_list_Egmin:
+            x.append( sim["Egmin"] )
+            y.append( sim["Ntot"][-1] )
+        plt.plot(x,y,"-o",lw=2)
+        x1 = 10.**np.arange(1,9,0.1)
+        y1 = nlep( E0 = sim["E0"], Esmin = sim["Esmin"], Egmin = x1, s = sim["s"] )
+        plt.plot(x1,y1,":",lw=2,label=r"$n_\infty/n_g=\gamma_{\rm max,IC}/\gamma_{\gamma\gamma}$")
+        #pdb.set_trace()
+        plt.xscale("log")
+        plt.yscale("log")
+        plt.ylim(0.5e1,2e5)
+        plt.xlim(0.5e4,2e7)
+        ax = plt.gca()
+        lab = "c"
+        ax.text(ax.get_xlim()[0]*1.2,ax.get_ylim()[1]**al*ax.get_ylim()[0]**(1-al),
+                r"$({\rm %s})$" % lab,
+                ha="left",va="top",fontsize=fntsize)
+        plt.xlabel(r"$\epsilon_{\gamma,\rm min}$", fontsize=fntsize)
+        plt.ylabel(r"$n_\infty/n_g$", fontsize=fntsize)
+        plt.grid(b=True)
+        #leg = plt.legend(loc="lower right")
+        ax = plt.gca()
+        for label in ax.get_xticklabels() + ax.get_yticklabels(): #  + leg.get_texts():
+            label.set_fontsize(fntsize)
+        if dosavefig:
+            plt.savefig("NvsEgmin.eps", bbox_inches='tight', pad_inches=0.06)
+        #
+        # Dependence on Esmax
+        #
+        plt.figure(23,figsize=(figw,figh))
+        plt.clf()
+        x = []
+        y = []
+        for sim in sim_list_Esmax:
+            x.append( sim["Esmax"] )
+            y.append( sim["Ntot"][-1] )
+        plt.plot(x,y,"-o",lw=2)
+        x1 = 10.**np.arange(-3,3,0.1)
+        #pdb.set_trace()
+        y1 = x1*0 + nlep( E0 = sim["E0"], Esmin = sim["Esmin"], Egmin = sim["Egmin"], s = sim["s"] )
+        plt.plot(x1,y1,":",lw=2,label=r"$n_\infty/n_g=\gamma_{\rm max,IC}/\gamma_{\gamma\gamma}$")
+        #pdb.set_trace()
+        plt.xscale("log")
+        plt.yscale("log")
+        plt.ylim(0.5e2,2e3)
+        plt.xlim(3e-2,200)
+        ax = plt.gca()
+        lab = "d"
+        ax.text(ax.get_xlim()[0]*1.2,ax.get_ylim()[1]**al*ax.get_ylim()[0]**(1-al),
+                r"$({\rm %s})$" % lab,
+                ha="left",va="top",fontsize=fntsize)
+        plt.xlabel(r"$\epsilon_M$", fontsize=fntsize)
+        plt.ylabel(r"$n_\infty/n_g$", fontsize=fntsize)
+        plt.grid(b=True)
+        #leg = plt.legend(loc="lower right")
+        ax = plt.gca()
+        for label in ax.get_xticklabels() + ax.get_yticklabels(): #  + leg.get_texts():
+            label.set_fontsize(fntsize)
+        if dosavefig:
+            plt.savefig("NvsEsmax.eps", bbox_inches='tight', pad_inches=0.06)
+        fntsize = fntsizebackup
     if wf == 0 or wf == 3:
         #
         # CONVERGENCE WITH INCREASING RESOLUTION
         #
         plt.figure(3,figsize=(6,4))
         plt.clf()
-        ngen = 100
+        ngen = 40
         resolution=[]
         photoncount=[]
         leptoncount=[]
@@ -592,11 +738,11 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservatio
         plot(resolution[:-1],np.abs(leptoncount[:-1]-leptoncount[-1])/leptoncount[-1],
              "rs-",label=r"$dN_{\rm lep}/N_{\rm lep}$",lw=2,ms=10)
         plot(resolution[:-1],np.abs(photoncount[:-1]-photoncount[-1])/photoncount[-1],
-             "bo-",label=r"$dN_\gamma/N_\gamma$",lw=2,ms=10)
+             "bo-",label=r"$dN_{\rm ph}/N_{\rm ph}$",lw=2,ms=10)
         plot(resolution[:-1],np.abs(energyperlepton[:-1]-energyperlepton[-1])/energyperlepton[-1],
              "rs--",label=r"$dE_{\rm lep}/E_{\rm lep}$",lw=2,ms=10)
         plot(resolution[:-1],np.abs(energyperphoton[:-1]-energyperphoton[-1])/energyperphoton[-1],
-             "bo--",label=r"$dE_{\gamma}/E_{\gamma}$",lw=2,ms=10)
+             "bo--",label=r"$dE_{\rm ph}/{\rm ph}$",lw=2,ms=10)
         nres = 10**np.linspace(0,10,100)
         plt.plot(nres,3*(nres/1e3)**(-2.),"k:",lw=2)
         plt.plot(nres,0.8e-2*(nres/1e2)**(-1.),"k:",lw=2)
@@ -614,7 +760,7 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservatio
             label.set_fontsize(fntsize)
         plt.grid(b=True)
         if dosavefig:
-            plt.savefig("convergence.eps", bbox_inches='tight', pad_inches=0.04)
+            plt.savefig("convergence.eps", bbox_inches='tight', pad_inches=0.06)
     if wf == 0 or wf == 4:
         #
         # SPECTRA
@@ -623,11 +769,10 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservatio
         plt.clf()
         gs = GridSpec(4, 4)
         gs.update(left=0.08, right=0.97, top=0.91, bottom=0.09, wspace=0.5, hspace=0.08)
-        sim_list = spectra_list
         numpanels = 4
         labtext = ["a", "b", "c", "d", "e", "f", "g", "h"]
         for j in xrange(0,numpanels):
-            sim = sim_list[j]
+            sim = spectra_list[j]
             E0 = sim["E0"]
             ax1=plt.subplot(gs[j:j+1,0:numpanels/2])
             ax2=plt.subplot(gs[j:j+1,numpanels/2:numpanels])
@@ -644,8 +789,8 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservatio
             ax1.set_xlim(1,5e6)
             ax1.set_ylim(1e-6,1e12)
             ax1.set_yticks(10.**np.arange(-5,15,5))
-            ax1.set_ylabel(r"$E_\gamma^2dN/dE_\gamma$",fontsize=fntsize,labelpad=-7)
-            ax2.set_ylabel(r"$E_{e^\pm}^2dN/dE_{e^\pm}$",fontsize=fntsize,labelpad=-7)
+            ax1.set_ylabel(r"$E_{\rm ph}^2dN/dE_{\rm ph}$",fontsize=fntsize,labelpad=-7)
+            ax2.set_ylabel(r"$E_{{\rm lep}}^2dN/dE_{{\rm lep}}$",fontsize=fntsize,labelpad=-7)
             ax2.set_xlim(1e3,2e10)
             if j == 0:
                 leg=ax2.legend(loc="upper right",title=r"${\rm Generation}\!:$",frameon=True, fancybox=True,ncol=3,labelspacing=0.05,columnspacing=0.5,handletextpad=0.04)
@@ -660,9 +805,9 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservatio
                     axt.set_xscale("log")
                     axt.set_xlim(np.array(ax.get_xlim())/eV/1.e9) #get it in GeV
                     if ax == ax1:
-                        axt.set_xlabel(r"$E_\gamma\ {\rm [GeV]}$",fontsize=fntsize)
+                        axt.set_xlabel(r"$E_{\rm ph}\ {\rm [GeV]}$",fontsize=fntsize)
                     if ax == ax2:
-                        axt.set_xlabel(r"$E_{e^\pm}\ {\rm [GeV]}$",fontsize=fntsize)
+                        axt.set_xlabel(r"$E_{{\rm lep}}\ {\rm [GeV]}$",fontsize=fntsize)
                     for label in axt.get_xticklabels() + axt.get_yticklabels():
                         label.set_fontsize(fntsize)
                 #hide x-tick labels in intermediate panels
@@ -681,10 +826,10 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservatio
                 labno = labno + numpanels
                 for label in ax.get_xticklabels() + ax.get_yticklabels():
                     label.set_fontsize(fntsize)
-        ax1.set_xlabel(r"$E_\gamma\ [m_e c^2]$", fontsize=fntsize)
-        ax2.set_xlabel(r"$E_{e^\pm}\ [m_e c^2]\equiv \gamma_{e^\pm}$", fontsize=fntsize)
+        ax1.set_xlabel(r"$E_{\rm ph}\ [m_e c^2]$", fontsize=fntsize)
+        ax2.set_xlabel(r"$E_{{\rm lep}}\ [m_e c^2]\equiv \gamma_{{\rm lep}}$", fontsize=fntsize)
         if dosavefig:
-            plt.savefig("dNdE.eps", bbox_inches='tight', pad_inches=0.04)
+            plt.savefig("dNdE.eps", bbox_inches='tight', pad_inches=0.06)
 
 def get_sci_string_form(E0):
     ex = 1.*int(np.log10(E0))
