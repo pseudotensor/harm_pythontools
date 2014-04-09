@@ -99,30 +99,60 @@ def create_unstructured_grid(s=None,sname=None,v=None,vname=None,minr=1,maxr=500
 def wraparound(v):
     """ wraparound the phi-direction """
     return( np.concatenate((v,v[...,0:1]),axis=-1) )
+
+def interp3d(xmax=100,ymax=100,zmax=100,ncellx=100,ncelly=100,ncellz=100):
+    #first, construct 1d arrays
+    x3d = np.linspace(-xmax, xmax, ncellx)[:,None,None]
+    y3d = np.linspace(-ymax, ymax, ncelly)[None,:,None]
+    z3d = np.linspace(-zmax, zmax, ncellz)[None,None,:]
+    rmax = (xmax**2+ymax**2+zmax**2)**0.5
+    Rmax = (xmax**2+ymax**2)**0.5
+    #make the arrays 3d
+    x3d = x3d + 0*x3d+0*y3d+0*z3d
+    y3d = y3d + 0*x3d+0*y3d+0*z3d
+    z3d = z3d + 0*x3d+0*y3d+0*z3d
+    #construct meridional 2d grid:
+    R2d = np.linspace(0, 2*Rmax, ncellx*10); dR2d = R2d[1]-R2d[0];
+    z2d = np.linspace(-zmax, zmax, ncellz); dz2d = z2d[1]-z2d[0];
+    #compute i,j-indices on meridional grid:
+    ph = 0
+    x = (r*sin(h))[...,0][r[...,0]<1.1*rmax]
+    z = (r*cos(h))[...,0][r[...,0]<1.1*rmax]
+    i = (ti)[...,0][r[...,0]<1.1*rmax]
+    j = (tj)[...,0][r[...,0]<1.1*rmax]
+    #get i,j-indices on the 2d meridional grid grid
+    i2d = griddata((x, z), i, (R2d[:,None], z2d[None,:]), method="linear",fill_value=0)
+    j2d = griddata((x, z), j, (R2d[:,None], z2d[None,:]), method="linear",fill_value=0)
+    #
+    R3d = (x3d**2+y3d**2)**0.5
+    i3d = np.int32(i2d[np.int32(R3d/dR2d),np.int32((z3d+zmax)/dz2d)])
+    j3d = np.int32(j2d[np.int32(R3d/dR2d),np.int32((z3d+zmax)/dz2d)])
+    #pdb.set_trace()
+    dphi = dxdxp[3,3][0,0,0]*_dx3
+    k3d = np.int32(np.arctan2(x3d, y3d)/dphi-0.5)
+    k3d[k3d<0] = k3d[k3d<0] + nz
+    return i3d, j3d, k3d, x3d, y3d, z3d   
     
 #@mayavi2.standalone    
-def visualize_data(doreload=1,no=160,rmax=100,ncellx=1000,ncellz=100):
+def visualize_data(doreload=1,no=5468,xmax=100,ymax=100,zmax=1000,ncellx=100,ncelly=100,ncellz=1000):
     if doreload:
         grid3d("gdump.bin",use2d=1)
         #rfd("fieldline9000.bin")
         rfd("fieldline%04d.bin"%no)
         cvel()
-    #xi,yi,zi = np.mgrid[-rmax:rmax:ncell*1j,-rmax:rmax:ncell*1j,-rmax:rmax:ncell*1j]
-    xi = np.linspace(-rmax, rmax, ncellx)[None,:] #[:,None,None]
-    yi = np.linspace(-rmax, rmax, ncellx) #[None,:,None]
-    zi = np.linspace(-rmax, rmax, ncellz)[:,None] #[None,None,:]
-    pdb.set_trace()
+    #pdb.set_trace()
     #choose 1.8 > sqrt(3):
-    ph = 0
-    x = (r*sin(h)*cos(ph))[...,0][r[...,0]<1.8*rmax]
-    y = (r*sin(h)*sin(ph))[...,0][r[...,0]<1.8*rmax]
-    z = (r*cos(h))[...,0][r[...,0]<1.8*rmax]
     # grid the data.
-    var = lrho[...,0][r[...,0]<1.8*rmax]
-    vi = griddata((x, z), var, (xi, zi), method="linear")
-    pdb.set_trace()
-    mlab_dens = mlab.pipeline.scalar_field(xi,yi,zi,vi)
-    pdb.set_trace()
+    # var = lrho[...,0][r[...,0]<1.8*rmax]
+    # vi = griddata((x, z), var, (xi, zi), method="linear")
+    # pdb.set_trace()
+    i3d,j3d,k3d,xi,yi,zi = interp3d(xmax=xmax,ymax=ymax,zmax=zmax,ncellx=ncellx,ncelly=ncelly,ncellz=ncellz)
+    lrhoi = lrho[i3d,j3d,k3d]
+    mlab_lrho = mlab.pipeline.scalar_field(xi,yi,zi,lrhoi)
+    mlab_lrho1 = mlab.pipeline.scalar_field(xi,yi,zi,lrhoi)
+    bsqorhoi = (bsq/rho)[i3d,j3d,k3d]
+    mlab_bsqorho = mlab.pipeline.scalar_field(xi,yi,zi,bsqorhoi)
+    # pdb.set_trace()
     mlab.figure(1, bgcolor=(1, 1, 1), fgcolor=(0, 0, 0), size=(400, 300))
     mlab.clf()
     if 0:
@@ -137,20 +167,21 @@ def visualize_data(doreload=1,no=160,rmax=100,ncellx=1000,ncellz=100):
         iso = mlab.pipeline.iso_surface(d)
     if 1:
         #sg = create_unstructured_grid(s=B[1]*dxdxp[1,1],sname="density",v=None,vname=None)
-        sg_bsqorho = create_unstructured_grid(s=bsq/rho,sname="density",v=None,vname=None)
-        sg_d = create_unstructured_grid(s=rho,sname="density",v=None,vname=None)
+        #sg_bsqorho = create_unstructured_grid(s=bsq/rho,sname="density",v=None,vname=None)
+        #sg_d = create_unstructured_grid(s=rho,sname="density",v=None,vname=None)
         # Now visualize the data.
-        pl_d = mlab.pipeline.add_dataset(sg_d)
-        pl_bsqorho = mlab.pipeline.add_dataset(sg_bsqorho)
+        #pl_d = mlab.pipeline.add_dataset(sg_d)
+        #pl_bsqorho = mlab.pipeline.add_dataset(sg_bsqorho)
         # gx = mlab.pipeline.grid_plane(d)
         # gy = mlab.pipeline.grid_plane(d)
         # gy.grid_plane.axis = 'y'
         # gz = mlab.pipeline.grid_plane(d)
         # gz.grid_plane.axis = 'z'
-        iso_bsqorho = mlab.pipeline.iso_surface(pl_bsqorho,contours=[10.])
-        iso_d = mlab.pipeline.iso_surface(pl_d,contours=[0.1,1,10.],color=(255./255., 255./255., 0./255.))
+        #iso_bsqorho = mlab.pipeline.iso_surface(pl_bsqorho,contours=[10.])
+        #iso_d = mlab.pipeline.iso_surface(pl_d,contours=[0.1,1,10.],color=(255./255., 255./255., 0./255.))
         #vol = mlab.pipeline.volume(d,vmin=-4,vmax=-2)
-        #vol = mlab.pipeline.volume(mlab_dens,vmin=0,vmax=4)
+        vol = mlab.pipeline.volume(mlab_lrho,vmin=-6,vmax=1)
+        vol = mlab.pipeline.volume(mlab_lrho1,vmin=-6,vmax=1)
     myr = 20
     myi = iofr(myr)
     if 0:

@@ -7231,6 +7231,7 @@ def rrdump(dumpname,write2xphi=False, whichdir = 3, flipspin = False, resetdefco
         print( " done!" )
 
 def writeoutrdump(dumpname, header, gdraw, gdrawupper, nx, ny, nz, whichdir = 3):
+    global gd1, gd2
     #write out a dump with twice as many cells in phi-direction:
     gout = open( "dumps/" + dumpname + "2xphi", "wb" )
     if gdrawupper is not None:
@@ -7300,7 +7301,13 @@ def writeoutrdump(dumpname, header, gdraw, gdrawupper, nx, ny, nz, whichdir = 3)
         gd2[:,1:-1:2,:,gdetB2index] = 0.5*(gd1[:,:-1,:,gdetB2index]+gd1[:,1:,:,gdetB2index])
         gd2[:,-1,:,gdetB2index] = 0.5*(0.0+gd1[:,-1,:,gdetB2index])
         if gdrawupper is not None:
-            gd2[:,-1,:,gdetB2index] = 0.5*(gd1upper[:,0,:,gdetB2index]+gd1[:,-1,:,gdetB2index])
+            #set the upper element correctly using the pole value
+            gd2[:,-1,:,gdetB2index] = 0.5*(gd1upper[:,-1,:,0]+gd1[:,-1,:,gdetB2index])
+            #copy all elements that are the same
+            gd2upper[:,1::2,:,:] = gd1upper[:,:,:,:]
+            gd2upper[:,2:-1:2,:,:] = 0.5*(gd1upper[:,:-1,:,0]+gd1upper[:,1:,:,:])
+            #treat the lower pole correctly
+            gd2upper[:,0,:,0] = 0.5*(gd1[:,0,:,gdetB2index]+gd1upper[:,0,:,0])
             print("Warning: need to make sure correctly refining resolution in upperpole dump")
     gd2.tofile(gout)
     gout.close()
