@@ -102,9 +102,9 @@ def wraparound(v):
 
 def interp3d(xmax=100,ymax=100,zmax=100,ncellx=100,ncelly=100,ncellz=100):
     #first, construct 1d arrays
-    x3d = np.linspace(-xmax, xmax, ncellx)[:,None,None]
-    y3d = np.linspace(-ymax, ymax, ncelly)[None,:,None]
-    z3d = np.linspace(-zmax, zmax, ncellz)[None,None,:]
+    x3d = np.linspace(-xmax, xmax, ncellx,endpoint=1)[:,None,None]
+    y3d = np.linspace(-ymax, ymax, ncelly,endpoint=1)[None,:,None]
+    z3d = np.linspace(-zmax, zmax, ncellz,endpoint=1)[None,None,:]
     rmax = (xmax**2+ymax**2+zmax**2)**0.5
     Rmax = (xmax**2+ymax**2)**0.5
     #make the arrays 3d
@@ -112,8 +112,8 @@ def interp3d(xmax=100,ymax=100,zmax=100,ncellx=100,ncelly=100,ncellz=100):
     y3d = y3d + 0*x3d+0*y3d+0*z3d
     z3d = z3d + 0*x3d+0*y3d+0*z3d
     #construct meridional 2d grid:
-    R2d = np.linspace(0, 2*Rmax, ncellx*10); dR2d = R2d[1]-R2d[0];
-    z2d = np.linspace(-zmax, zmax, ncellz); dz2d = z2d[1]-z2d[0];
+    R2d = np.linspace(0, 2*Rmax, ncellx*2); dR2d = R2d[1]-R2d[0];
+    z2d = np.linspace(-zmax, zmax, ncellz,endpoint=1); dz2d = z2d[1]-z2d[0];
     #compute i,j-indices on meridional grid:
     ph = 0
     x = (r*sin(h))[...,0][r[...,0]<1.1*rmax]
