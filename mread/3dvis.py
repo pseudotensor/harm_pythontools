@@ -134,11 +134,13 @@ def interp3d(xmax=100,ymax=100,zmax=100,ncellx=100,ncelly=100,ncellz=100):
     k3d[k3d<0] = k3d[k3d<0] + nz
     return i3d, j3d, k3d, x3d, y3d, z3d   
 
-def trilin(a,i,j,k):
+def trilin(a,i,j,k,order=3):
     #a is the array to be interpolated
     #i,j,k are indices, which are 3d arrays; can be non-integers (floats)
     #returns interpolated values of a[i,j,k]
-    
+    nbnd = order
+    a_with_bnd_cells = np.concatenate((lrho[...,-nbnd:],lrho,lrho[...,:nbnd]),axis=-1)
+    return ndimage.map_coordinates(a_with_bnd_cells,np.array([i,j,k+nbnd]),order=order)
     #####################
     # x = i-np.floor(i)
     # i0 = np.int32(np.floor(i))
@@ -186,9 +188,9 @@ def trilin(a,i,j,k):
     #         +a[np.int32(np.ceil(i))][np.int32(np.ceil(j))][np.int32(np.floor(k))]*x*y*(1-z)
     #         +a[np.int32(np.ceil(i))][np.int32(np.ceil(j))][np.int32(np.ceil(k))]*x*y*z
     #         )
-    
+
 #@mayavi2.standalone    
-def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,ncelly=200,ncellz=1000):
+def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,ncelly=200,ncellz=1000,dosavefig=0):
     if doreload:
         grid3d("gdump.bin",use2d=1)
         #rfd("fieldline9000.bin")
@@ -206,12 +208,12 @@ def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,nce
     i3d_jet,j3d_jet,k3d_jet,xi_jet,yi_jet,zi_jet =\
         interp3d(xmax=xmax,ymax=ymax,zmax=zmax,ncellx=ncellx,ncelly=ncelly,ncellz=ncellz)
     #lrhoxpos = lrho*(r*sin(h)*cos(ph)>0)
-    lrhoi_disk = np.float32(lrho[i3d_disk,j3d_disk,k3d_disk])
-    lrhoi_jet = np.float32(lrho[i3d_jet,j3d_jet,k3d_jet])
+    lrhoi_disk = np.float32(trilin(lrho,i3d_disk,j3d_disk,k3d_disk))
+    lrhoi_jet = np.float32(trilin(lrho,i3d_jet,j3d_jet,k3d_jet))
     mlab_lrho_disk = mlab.pipeline.scalar_field(xi_disk,yi_disk,zi_disk,lrhoi_disk)
     mlab_lrho_jet = mlab.pipeline.scalar_field(xi_jet,yi_jet,zi_jet,lrhoi_jet)
-    bsqorhoi_jet = np.float32((bsq/rho)[i3d_jet,j3d_jet,k3d_jet])
-    mlab_bsqorho = mlab.pipeline.scalar_field(xi_jet,yi_jet,zi_jet,bsqorhoi_jet)
+    # bsqorhoi_jet = np.float32((bsq/rho)[i3d_jet,j3d_jet,k3d_jet])
+    # mlab_bsqorho = mlab.pipeline.scalar_field(xi_jet,yi_jet,zi_jet,bsqorhoi_jet)
     #
     # Magnetic field
     #
@@ -227,9 +229,9 @@ def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,nce
     Bx=BR*cos(ph)-Bpnorm*sin(ph)
     By=BR*sin(ph)+Bpnorm*cos(ph)
     Bz=Brnorm*np.cos(h)-Bhnorm*np.sin(h)
-    Bxi = np.float32(Bx[i3d_jet,j3d_jet,k3d_jet])
-    Byi = np.float32(By[i3d_jet,j3d_jet,k3d_jet])
-    Bzi = np.float32(Bz[i3d_jet,j3d_jet,k3d_jet])
+    Bxi = np.float32(Bx[np.int32(i3d_jet),np.int32(j3d_jet),np.int32(k3d_jet)])
+    Byi = np.float32(By[np.int32(i3d_jet),np.int32(j3d_jet),np.int32(k3d_jet)])
+    Bzi = np.float32(Bz[np.int32(i3d_jet),np.int32(j3d_jet),np.int32(k3d_jet)])
     # pdb.set_trace()
     mlab.clf()
     if 0:
@@ -360,4 +362,5 @@ def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,nce
     #move the camera so it is centered on (0,0,0)
     #mlab.view(focalpoint=[0,0,0],distance=500)
     #mlab.show()
-    mlab.savefig("disk_jet_with_field_lines.png", figure=scene, magnification=6.0)
+    if dosavefig:
+        mlab.savefig("disk_jet_with_field_lines.png", figure=scene, magnification=6.0)
