@@ -5,6 +5,7 @@ matplotlib.interactive(True)
 from numpy import mgrid, empty, zeros, sin, cos, pi
 from tvtk.api import tvtk
 from mayavi import mlab
+from scipy import ndimage
 
 def create_structured_grid(s=None,sname=None,v=None,vname=None,maxr=500):
     maxi = iofr(maxr)
@@ -125,35 +126,111 @@ def interp3d(xmax=100,ymax=100,zmax=100,ncellx=100,ncelly=100,ncellz=100):
     j2d = griddata((x, z), j, (R2d[:,None], z2d[None,:]), method="linear",fill_value=0)
     #
     R3d = (x3d**2+y3d**2)**0.5
-    i3d = np.int32(i2d[np.int32(R3d/dR2d),np.int32((z3d+zmax)/dz2d)])
-    j3d = np.int32(j2d[np.int32(R3d/dR2d),np.int32((z3d+zmax)/dz2d)])
+    i3d = (i2d[np.int32(R3d/dR2d),np.int32((z3d+zmax)/dz2d)])
+    j3d = (j2d[np.int32(R3d/dR2d),np.int32((z3d+zmax)/dz2d)])
     #pdb.set_trace()
     dphi = dxdxp[3,3][0,0,0]*_dx3
-    k3d = np.int32(np.arctan2(x3d, y3d)/dphi-0.5)
+    k3d = (np.arctan2(y3d, x3d)/dphi-0.5)
     k3d[k3d<0] = k3d[k3d<0] + nz
     return i3d, j3d, k3d, x3d, y3d, z3d   
+
+def trilin(a,i,j,k):
+    #a is the array to be interpolated
+    #i,j,k are indices, which are 3d arrays; can be non-integers (floats)
+    #returns interpolated values of a[i,j,k]
+    
+    #####################
+    # x = i-np.floor(i)
+    # i0 = np.int32(np.floor(i))
+    # j0 = np.int32(np.floor(j))
+    # k0 = np.int32(np.floor(k))
+    # c00 = a[i0][j0][k0]*(1-x) + a[i0+1][j0][k0]*x
+    # c10 = a[i0][j0+1][k0]*(1-x) + a[i0+1][j0+1][k0]*x
+    # #
+    # x = None; del x
+    # i0 = None; del i0
+    # j0 = None; del j0
+    # k0 = None; del k0
+    # gc.collect()
+    # #
+    # y = j-np.floor(j)
+    # c0 = c00*(1-y)+c10*y
+    # c1 = c01*(1-y)+c11*y
+    # #
+    # c00 = None; del c00
+    # c01 = None; del c01
+    # c10 = None; del c10
+    # c11 = None; del c11
+    # y = None; del y
+    # gc.collect()
+    # #
+    # z = k-np.floor(k)
+    # c = c0*(1-z)+c1*z
+    # #
+    # z = None; del z
+    # c0 = None; del c0
+    # c1 = None; del c1
+    # gc.collect()
+    # #
+    # return( c )
+    #################
+    # x = i-np.floor(i)
+    # y = j-np.floor(j)
+    # z = k-np.floor(k)
+    # return( +a[np.int32(np.floor(i))][np.int32(np.floor(j))][np.int32(np.floor(k))]*(1-x)*(1-y)*(1-z)
+    #         +a[np.int32(np.floor(i))][np.int32(np.floor(j))][np.int32(np.ceil(k))]*(1-x)*(1-y)*z
+    #         +a[np.int32(np.floor(i))][np.int32(np.ceil(j))][np.int32(np.floor(k))]*(1-x)*y*(1-z)
+    #         +a[np.int32(np.floor(i))][np.int32(np.ceil(j))][np.int32(np.ceil(k))]*(1-x)*y*z
+    #         +a[np.int32(np.ceil(i))][np.int32(np.floor(j))][np.int32(np.floor(k))]*x*(1-y)*(1-z)
+    #         +a[np.int32(np.ceil(i))][np.int32(np.floor(j))][np.int32(np.ceil(k))]*x*(1-y)*z
+    #         +a[np.int32(np.ceil(i))][np.int32(np.ceil(j))][np.int32(np.floor(k))]*x*y*(1-z)
+    #         +a[np.int32(np.ceil(i))][np.int32(np.ceil(j))][np.int32(np.ceil(k))]*x*y*z
+    #         )
     
 #@mayavi2.standalone    
-def visualize_data(doreload=1,no=5468,xmax=100,ymax=100,zmax=1000,ncellx=100,ncelly=100,ncellz=1000):
+def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,ncelly=200,ncellz=1000):
     if doreload:
         grid3d("gdump.bin",use2d=1)
         #rfd("fieldline9000.bin")
         rfd("fieldline%04d.bin"%no)
         cvel()
+    scene = mlab.figure(1, bgcolor=(0, 0, 0), fgcolor=(1, 1, 1), size=(210*2, 297*2))
     #pdb.set_trace()
     #choose 1.8 > sqrt(3):
     # grid the data.
     # var = lrho[...,0][r[...,0]<1.8*rmax]
     # vi = griddata((x, z), var, (xi, zi), method="linear")
     # pdb.set_trace()
-    i3d,j3d,k3d,xi,yi,zi = interp3d(xmax=xmax,ymax=ymax,zmax=zmax,ncellx=ncellx,ncelly=ncelly,ncellz=ncellz)
-    lrhoi = lrho[i3d,j3d,k3d]
-    mlab_lrho = mlab.pipeline.scalar_field(xi,yi,zi,lrhoi)
-    mlab_lrho1 = mlab.pipeline.scalar_field(xi,yi,zi,lrhoi)
-    bsqorhoi = (bsq/rho)[i3d,j3d,k3d]
-    mlab_bsqorho = mlab.pipeline.scalar_field(xi,yi,zi,bsqorhoi)
+    i3d_disk,j3d_disk,k3d_disk,xi_disk,yi_disk,zi_disk =\
+        interp3d(xmax=500,ymax=500,zmax=100,ncellx=500,ncelly=500,ncellz=100)
+    i3d_jet,j3d_jet,k3d_jet,xi_jet,yi_jet,zi_jet =\
+        interp3d(xmax=xmax,ymax=ymax,zmax=zmax,ncellx=ncellx,ncelly=ncelly,ncellz=ncellz)
+    #lrhoxpos = lrho*(r*sin(h)*cos(ph)>0)
+    lrhoi_disk = np.float32(lrho[i3d_disk,j3d_disk,k3d_disk])
+    lrhoi_jet = np.float32(lrho[i3d_jet,j3d_jet,k3d_jet])
+    mlab_lrho_disk = mlab.pipeline.scalar_field(xi_disk,yi_disk,zi_disk,lrhoi_disk)
+    mlab_lrho_jet = mlab.pipeline.scalar_field(xi_jet,yi_jet,zi_jet,lrhoi_jet)
+    bsqorhoi_jet = np.float32((bsq/rho)[i3d_jet,j3d_jet,k3d_jet])
+    mlab_bsqorho = mlab.pipeline.scalar_field(xi_jet,yi_jet,zi_jet,bsqorhoi_jet)
+    #
+    # Magnetic field
+    #
+    Br = dxdxp[1,1]*B[1]+dxdxp[1,2]*B[2]
+    Bh = dxdxp[2,1]*B[1]+dxdxp[2,2]*B[2]
+    Bp = B[3]*dxdxp[3,3]
+    #
+    Brnorm=Br
+    Bhnorm=Bh*np.abs(r)
+    Bpnorm=Bp*np.abs(r*np.sin(h))
+    #
+    BR=Brnorm*np.sin(h)+Bhnorm*np.cos(h)
+    Bx=BR*cos(ph)-Bpnorm*sin(ph)
+    By=BR*sin(ph)+Bpnorm*cos(ph)
+    Bz=Brnorm*np.cos(h)-Bhnorm*np.sin(h)
+    Bxi = np.float32(Bx[i3d_jet,j3d_jet,k3d_jet])
+    Byi = np.float32(By[i3d_jet,j3d_jet,k3d_jet])
+    Bzi = np.float32(Bz[i3d_jet,j3d_jet,k3d_jet])
     # pdb.set_trace()
-    mlab.figure(1, bgcolor=(1, 1, 1), fgcolor=(0, 0, 0), size=(400, 300))
     mlab.clf()
     if 0:
         sg = create_structured_grid(s=lrho,sname="density",v=None,vname=None)
@@ -180,21 +257,107 @@ def visualize_data(doreload=1,no=5468,xmax=100,ymax=100,zmax=1000,ncellx=100,nce
         #iso_bsqorho = mlab.pipeline.iso_surface(pl_bsqorho,contours=[10.])
         #iso_d = mlab.pipeline.iso_surface(pl_d,contours=[0.1,1,10.],color=(255./255., 255./255., 0./255.))
         #vol = mlab.pipeline.volume(d,vmin=-4,vmax=-2)
-        vol = mlab.pipeline.volume(mlab_lrho,vmin=-6,vmax=1)
-        vol = mlab.pipeline.volume(mlab_lrho1,vmin=-6,vmax=1)
-    myr = 20
-    myi = iofr(myr)
+        vol_disk = mlab.pipeline.volume(mlab_lrho_disk) #,vmin=-6,vmax=1)
+        vol_disk.volume_mapper.blend_mode = 'maximum_intensity'
+        # Change the otf (opacity transfer function) of disk and jet:
+        from tvtk.util.ctf import PiecewiseFunction
+        otf_disk = PiecewiseFunction()
+        if 0:
+            otf_disk.add_point(-6, 0)
+            otf_disk.add_point(-1.7, 0)
+            otf_disk.add_point(-0.25, 0.8)
+            otf_disk.add_point(1, 0.8)
+        elif 1:
+            #brighter disk
+            otf_disk.add_point(-6., 0)
+            otf_disk.add_point(-1.733, 0)
+            otf_disk.add_point(-1.133, 0.51)
+            otf_disk.add_point(-0.533, 0.796)
+            otf_disk.add_point(1., 1.)
+        vol_disk._otf = otf_disk
+        vol_disk._volume_property.set_scalar_opacity(otf_disk)
+        vol_jet = mlab.pipeline.volume(mlab_lrho_jet) #,vmin=-6,vmax=1)
+        vol_jet.volume_mapper.blend_mode = 'minimum_intensity'
+        otf_jet = PiecewiseFunction()
+        if 0:
+            otf_jet.add_point(-6., 0.429)
+            otf_jet.add_point(-4.547, 0.429)
+            otf_jet.add_point(-2.92, 0)
+            otf_jet.add_point(1, 0.)
+        elif 1:
+            #less diffuse jet, so it does not touch box boundaries
+            otf_jet.add_point(-6.0, 0.408)
+            otf_jet.add_point(-4.8, 0.408)
+            otf_jet.add_point(-3.8, 0.)
+            otf_jet.add_point(1., 0.)
+        vol_jet._otf = otf_jet
+        vol_jet._volume_property.set_scalar_opacity(otf_jet)
+    if 1:
+        streamlines = []
+        xpos = [1, -.77, 3.2, -1.5]
+        ypos = [0,  0.25, 0,  -1]
+        zpos = [0,  0, 0,  0]
+        intdir = ['backward', 'backward', 'forward', 'forward']
+        for sn in xrange(4):
+            streamline = mlab.flow(xi_jet, yi_jet, zi_jet, Bxi, Byi, Bzi, seed_scale=0.01,
+                             seed_resolution=5,
+                             integration_direction=intdir[sn],
+                             seedtype='point')
+            streamlines.append(streamline)
+            streamline.module_manager.scalar_lut_manager.lut_mode = 'gist_yarg'
+            streamline.streamline_type = 'tube'
+            streamline.tube_filter.radius = 2.022536581333679
+            if 0:
+                streamline.seed.widget.phi_resolution = 3
+                streamline.seed.widget.theta_resolution = 3
+                streamline.seed.widget.radius = 1.0
+            elif 0: 
+                #more tightly wound field lines
+                streamline.seed.widget.phi_resolution = 10
+                streamline.seed.widget.theta_resolution = 5
+                #make them more round
+            streamline.tube_filter.number_of_sides = 8
+            streamline.stream_tracer.progress = 1.0
+            streamline.stream_tracer.maximum_number_of_steps = 10000L
+            #streamline.stream_tracer.start_position =  np.array([ 0.,  0.,  0.])
+            streamline.stream_tracer.maximum_propagation = 20000.0
+            streamline.seed.widget.position = np.array([ xpos[sn],  ypos[sn],  zpos[sn]])
+            streamline.seed.widget.enabled = False
+            streamline.update_streamlines = 1
+        #pdb.set_trace()
     if 0:
+        myr = 20
+        myi = iofr(myr)
         #mesh
         s = wraparound((np.abs(B[1])*dxdxp[1,1]))[myi,:,:]
         x = wraparound(r*sin(h)*cos(ph-OmegaNS*t))[myi,:,:]
         y = wraparound(r*sin(h)*sin(ph-OmegaNS*t))[myi,:,:]
         z = wraparound(r*cos(h))[myi,:,:]
         mlab.mesh(x, y, z, scalars=s, colormap='jet')
+    if 1:
+        #show the black hole
+        rbh = rhor
+        thbh = np.linspace(0,np.pi,128,endpoint=1)[:,None]
+        phbh = np.linspace(0,2*np.pi,128,endpoint=1)[None,:]
+        thbh = thbh + 0*phbh + 0*thbh
+        phbh = phbh + 0*phbh + 0*thbh
+        xbh = rbh*sin(thbh)*cos(phbh)
+        ybh = rbh*sin(thbh)*sin(phbh)
+        zbh = rbh*cos(thbh)
+        mlab.mesh(xbh, ybh, zbh, scalars=1+0*thbh, colormap='gist_yarg',vmin=0, vmax = 1)
+    #move camera:
+    scene.scene.camera.position = [1037.2177748124982, 1411.458249001643, -510.33158924621932]
+    scene.scene.camera.focal_point = [9.7224118574481291e-12, -1.2963215809930837e-10, 2.5926431619861676e-11]
+    scene.scene.camera.view_angle = 30.0
+    scene.scene.camera.view_up = [-0.33552748243496205, -0.092397178145941311, -0.93748817059284728]
+    scene.scene.camera.clipping_range = [4.235867945966219, 4235.8679459662189]
+    scene.scene.camera.compute_view_plane_normal()
+    scene.scene.render()    
     # iso.contour.maximum_contour = 75.0
     #vec = mlab.pipeline.vectors(d)
     #vec.glyph.mask_input_points = True
     #vec.glyph.glyph.scale_factor = 1.5
     #move the camera so it is centered on (0,0,0)
-    mlab.view(focalpoint=[0,0,0],distance=50)
+    #mlab.view(focalpoint=[0,0,0],distance=500)
     #mlab.show()
+    mlab.savefig("disk_jet_with_field_lines.png", figure=scene, magnification=6.0)
