@@ -126,13 +126,17 @@ def interp3d(xmax=100,ymax=100,zmax=100,ncellx=100,ncelly=100,ncellz=100):
     j2d = griddata((x, z), j, (R2d[:,None], z2d[None,:]), method="linear",fill_value=0)
     #
     R3d = (x3d**2+y3d**2)**0.5
-    i3d = (i2d[np.int32(R3d/dR2d),np.int32((z3d+zmax)/dz2d)])
-    j3d = (j2d[np.int32(R3d/dR2d),np.int32((z3d+zmax)/dz2d)])
+    i3d = bilin(i2d,(R3d/dR2d),(z3d+zmax)/dz2d)
+    j3d = bilin(j2d,(R3d/dR2d),(z3d+zmax)/dz2d)
     #pdb.set_trace()
     dphi = dxdxp[3,3][0,0,0]*_dx3
     k3d = (np.arctan2(y3d, x3d)/dphi-0.5)
     k3d[k3d<0] = k3d[k3d<0] + nz
     return i3d, j3d, k3d, x3d, y3d, z3d   
+
+def bilin(a,i,j,order=3):
+    return ndimage.map_coordinates(a,np.array([i,j]),order=order)
+
 
 def trilin(a,i,j,k,order=3):
     #a is the array to be interpolated
@@ -205,11 +209,15 @@ def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,nce
     # pdb.set_trace()
     i3d_disk,j3d_disk,k3d_disk,xi_disk,yi_disk,zi_disk =\
         interp3d(xmax=500,ymax=500,zmax=100,ncellx=500,ncelly=500,ncellz=100)
+    print( "Done with inter3d for disk..." )
     i3d_jet,j3d_jet,k3d_jet,xi_jet,yi_jet,zi_jet =\
         interp3d(xmax=xmax,ymax=ymax,zmax=zmax,ncellx=ncellx,ncelly=ncelly,ncellz=ncellz)
+    print( "Done with inter3d for jet..." )
     #lrhoxpos = lrho*(r*sin(h)*cos(ph)>0)
     lrhoi_disk = np.float32(trilin(lrho,i3d_disk,j3d_disk,k3d_disk))
+    print( "Done with trilinear interpolation for disk..." )
     lrhoi_jet = np.float32(trilin(lrho,i3d_jet,j3d_jet,k3d_jet))
+    print( "Done with trilinear interpolation for jet..." )
     mlab_lrho_disk = mlab.pipeline.scalar_field(xi_disk,yi_disk,zi_disk,lrhoi_disk)
     mlab_lrho_jet = mlab.pipeline.scalar_field(xi_jet,yi_jet,zi_jet,lrhoi_jet)
     # bsqorhoi_jet = np.float32((bsq/rho)[i3d_jet,j3d_jet,k3d_jet])
@@ -230,8 +238,11 @@ def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,nce
     By=BR*sin(ph)+Bpnorm*cos(ph)
     Bz=Brnorm*np.cos(h)-Bhnorm*np.sin(h)
     Bxi = np.float32(trilin(Bx,i3d_jet,j3d_jet,k3d_jet))
+    print( "Done with trilinear interpolation for Bx..." )
     Byi = np.float32(trilin(By,i3d_jet,j3d_jet,k3d_jet))
+    print( "Done with trilinear interpolation for By..." )
     Bzi = np.float32(trilin(Bz,i3d_jet,j3d_jet,k3d_jet))
+    print( "Done with trilinear interpolation for Bz..." )
     # pdb.set_trace()
     mlab.clf()
     if 0:
@@ -260,6 +271,7 @@ def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,nce
         #iso_d = mlab.pipeline.iso_surface(pl_d,contours=[0.1,1,10.],color=(255./255., 255./255., 0./255.))
         #vol = mlab.pipeline.volume(d,vmin=-4,vmax=-2)
         vol_disk = mlab.pipeline.volume(mlab_lrho_disk) #,vmin=-6,vmax=1)
+        print( "Done with volume rendering of disk..." )
         vol_disk.volume_mapper.blend_mode = 'maximum_intensity'
         # Change the otf (opacity transfer function) of disk and jet:
         from tvtk.util.ctf import PiecewiseFunction
@@ -279,6 +291,7 @@ def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,nce
         vol_disk._otf = otf_disk
         vol_disk._volume_property.set_scalar_opacity(otf_disk)
         vol_jet = mlab.pipeline.volume(mlab_lrho_jet) #,vmin=-6,vmax=1)
+        print( "Done with volume rendering of jet..." )
         vol_jet.volume_mapper.blend_mode = 'minimum_intensity'
         otf_jet = PiecewiseFunction()
         if 0:
@@ -296,8 +309,8 @@ def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,nce
         vol_jet._volume_property.set_scalar_opacity(otf_jet)
     if 1:
         streamlines = []
-        xpos = [1, -.77, 3.2, -1.5]
-        ypos = [0,  0.25, 0,  -1]
+        xpos = [0.8, -0.5, 1, -0.7]
+        ypos = [0.0,  0.0, 0,  0.3]
         zpos = [0,  0, 0,  0]
         intdir = ['backward', 'backward', 'forward', 'forward']
         for sn in xrange(4):
@@ -326,6 +339,7 @@ def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,nce
             streamline.seed.widget.position = np.array([ xpos[sn],  ypos[sn],  zpos[sn]])
             streamline.seed.widget.enabled = False
             streamline.update_streamlines = 1
+            print( "Done with streamline #%d..." % (sn+1))
         #pdb.set_trace()
     if 0:
         myr = 20
