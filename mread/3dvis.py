@@ -229,9 +229,9 @@ def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,nce
     Bx=BR*cos(ph)-Bpnorm*sin(ph)
     By=BR*sin(ph)+Bpnorm*cos(ph)
     Bz=Brnorm*np.cos(h)-Bhnorm*np.sin(h)
-    Bxi = np.float32(Bx[np.int32(i3d_jet),np.int32(j3d_jet),np.int32(k3d_jet)])
-    Byi = np.float32(By[np.int32(i3d_jet),np.int32(j3d_jet),np.int32(k3d_jet)])
-    Bzi = np.float32(Bz[np.int32(i3d_jet),np.int32(j3d_jet),np.int32(k3d_jet)])
+    Bxi = np.float32(trilin(Bx,i3d_jet,j3d_jet,k3d_jet))
+    Byi = np.float32(trilin(By,i3d_jet,j3d_jet,k3d_jet))
+    Bzi = np.float32(trilin(Bz,i3d_jet,j3d_jet,k3d_jet))
     # pdb.set_trace()
     mlab.clf()
     if 0:
