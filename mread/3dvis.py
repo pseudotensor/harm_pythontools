@@ -138,8 +138,8 @@ def trilin(a,i,j,k,order=3):
     #a is the array to be interpolated
     #i,j,k are indices, which are 3d arrays; can be non-integers (floats)
     #returns interpolated values of a[i,j,k]
-    nbnd = order
-    a_with_bnd_cells = np.concatenate((lrho[...,-nbnd:],lrho,lrho[...,:nbnd]),axis=-1)
+    nbnd = 3
+    a_with_bnd_cells = np.concatenate((a[...,-nbnd:],a,a[...,:nbnd]),axis=-1)
     return ndimage.map_coordinates(a_with_bnd_cells,np.array([i,j,k+nbnd]),order=order)
     #####################
     # x = i-np.floor(i)
