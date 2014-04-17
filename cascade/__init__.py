@@ -77,10 +77,11 @@ def stagsurf(dn=1,fntsize=20,xmax = 5, ymax = 12, dosavefig=0):
     dump_list1=[12000,12001,12002,12003]
     #dump_list2=[2000,4000,8000,10000]
     dump_list2=[12197, 12677, 15061, 19371]
+    ltype_list = ["solid", "dashed", "dashdot", "dotted"]
     gs = GridSpec(2, 2)
     gs.update(left=0.15, right=0.97, top=0.97, bottom=0.08, wspace=0.04, hspace=0.04)
     ax1=plt.subplot(gs[:,0])
-    plotstag(dump_list1,dn=dn)
+    plotstag(dump_list1,dn=dn,linestyle=ltype_list)
     leg1 = plt.legend(loc="lower left",frameon=0,ncol=2,columnspacing=1,handletextpad=0.2) #, bbox_to_anchor=(0.5, 1.05))
     plt.xlim(-xmax,xmax)
     plt.ylim(-ymax,ymax)
@@ -88,7 +89,7 @@ def stagsurf(dn=1,fntsize=20,xmax = 5, ymax = 12, dosavefig=0):
     plt.xlabel(r"$x\ [r_g]$",fontsize=fntsize)
     plt.ylabel(r"$z\ [r_g]$",fontsize=fntsize,labelpad=-10)
     ax2=plt.subplot(gs[:,1])
-    plotstag(dump_list2,dn=dn)
+    plotstag(dump_list2,dn=dn,linestyle=ltype_list)
     leg2= plt.legend(loc="lower left",frameon=0,ncol=2,columnspacing=1,handletextpad=0.2) #, bbox_to_anchor=(0.5, 1.05))
     plt.xlim(-xmax,xmax)
     plt.ylim(-ymax,ymax)
@@ -105,19 +106,23 @@ def stagsurf(dn=1,fntsize=20,xmax = 5, ymax = 12, dosavefig=0):
     if dosavefig:
         plt.savefig("stagsurfaceplot.eps", bbox_inches='tight', pad_inches=0.06)
     
-def plotstag(dump_list,dn=1,fntsize=20,lw=2):
+def plotstag(dump_list,linestyle = "solid", dn=1,fntsize=20,lw=2):
     num_dumps = len(dump_list)
     color_list = cm.rainbow_r(np.linspace(0, 1, num_dumps))
     x=y=[1e10,2e10]
     for i,no in zip(xrange(num_dumps),dump_list): #[2001,2002,2003,2004]):  # #[5255,5403,5452,5468]): 
+        if isinstance(linestyle,list):
+            ls = linestyle[i]
+        else:
+            ls = "solid"
         rfd("fieldline%04d.bin"%(no))
         cvel()
         toplot = radavg(radavg(uu[1],dn=dn,axis=0),axis=1,dn=dn)
         toplot[radavg(radavg(bsq,dn=dn),axis=1,dn=dn)/radavg(radavg(rho,dn=dn),axis=1,dn=dn)<10] *= np.nan 
         plc(toplot,
             levels=(0,),xy=1,xmax=7.5,ymax=7.5,
-            colors=[tuple(color_list[i])],symmx=1,linewidths=lw)
-        plt.plot(x,y,color=color_list[i],label=r"$t=%g$"%(np.round(t)),lw=lw)
+            colors=[tuple(color_list[i])],symmx=1,linewidths=lw,linestyles=ls)
+        plt.plot(x,y,color=color_list[i],label=r"$t=%g$"%(np.round(t)),lw=lw,ls=ls)
     ax = plt.gca()
     el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
     art=ax.add_artist(el)
@@ -765,25 +770,29 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservatio
         #
         # SPECTRA
         #
-        plt.figure(4,figsize=(12,10))
+        plt.figure(4,figsize=(14,10))
         plt.clf()
         gs = GridSpec(4, 4)
         gs.update(left=0.08, right=0.97, top=0.91, bottom=0.09, wspace=0.5, hspace=0.08)
         numpanels = 4
         labtext = ["a", "b", "c", "d", "e", "f", "g", "h"]
+        dashes_list = [None, [10,5], [10,3,3,3], [2,2]]
         for j in xrange(0,numpanels):
             sim = spectra_list[j]
             E0 = sim["E0"]
             ax1=plt.subplot(gs[j:j+1,0:numpanels/2])
             ax2=plt.subplot(gs[j:j+1,numpanels/2:numpanels])
-            ngen_list = [0, 1,2,3,4,10,20,40,100,200,400,1000,2000,4000]
-            lw_list =  np.array(ngen_list)*0+2
+            ngen_list = [0, 1,2,3,10,20,40,100,200,400,1000,2000]
+            lw_list =  list(((np.arange(len(ngen_list))[::1])/4+2))
             color_list = cm.rainbow_r(np.linspace(0, 1, len(ngen_list)))
-            for ngen,lw,color in zip(ngen_list,lw_list,color_list):
+            for i,ngen,lw,color in zip(list(np.arange(len(ngen_list))),ngen_list,lw_list,color_list):
                 #if generation number, has been computed, plot it
                 if ngen in sim["gen"]:
-                    ax1.plot((2*sim["Evec"]),0.25*(2*sim["Evec"])**2*sim["dNdE_rad"][ngen],lw=lw,color=np.array(color))
-                    ax2.plot(sim["Evec"],sim["Evec"]**2*sim["dNdE"][ngen],lw=lw,color=np.array(color),label=r"$%g$" % ngen)
+                    dash = dashes_list[i%len(dashes_list)]
+                    l,=ax1.plot((2*sim["Evec"])[::-1],(0.25*(2*sim["Evec"])**2*sim["dNdE_rad"][ngen])[::-1],lw=lw,color=np.array(color),zorder=-i,dash_joinstyle="bevel")
+                    if dash is not None: l.set_dashes(dash)
+                    l,=ax2.plot(sim["Evec"],sim["Evec"]**2*sim["dNdE"][ngen],lw=lw,color=np.array(color),label=r"$%g$" % ngen,zorder=-i,dash_joinstyle="bevel")
+                    if dash is not None: l.set_dashes(dash)                    
                     # plt.plot(hr_sim["Evec"],hr_sim["Evec"]*hr_sim["dNdE"][ngen],"b:",lw=lw)
                     # plt.plot(hr_sim["Evec"],hr_sim["Evec"]*hr_sim["dNdE_rad"][ngen],"g:",lw=2)
             ax1.set_xlim(1,5e6)
@@ -793,7 +802,7 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservatio
             ax2.set_ylabel(r"$E_{{\rm lep}}^2dN/dE_{{\rm lep}}$",fontsize=fntsize,labelpad=-7)
             ax2.set_xlim(1e3,2e10)
             if j == 0:
-                leg=ax2.legend(loc="upper right",title=r"${\rm Generation}\!:$",frameon=True, fancybox=True,ncol=3,labelspacing=0.05,columnspacing=0.5,handletextpad=0.04)
+                leg=ax2.legend(loc="upper right",title=r"${\rm Generation}\!:$",frameon=True, fancybox=True,ncol=3,labelspacing=0.05,columnspacing=0.5,handletextpad=0.04)#,handlelength=0.5)
                 leg.get_title().set_fontsize(0.8*fntsize)
                 for label in leg.get_texts():
                     label.set_fontsize(0.8*fntsize)

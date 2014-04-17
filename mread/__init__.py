@@ -12818,6 +12818,7 @@ def sparthin(a):
     s = l-2*a*e 
     return(s)
 
+#effective radius for Noble-like cooling
 def Rz_relcorr(a,r):
     risco=Risco(a)
     #cap r from below so does not drop below risco

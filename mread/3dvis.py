@@ -207,15 +207,19 @@ def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,nce
     # var = lrho[...,0][r[...,0]<1.8*rmax]
     # vi = griddata((x, z), var, (xi, zi), method="linear")
     # pdb.set_trace()
+    print( "Running interp3d for disk..." ); sys.stdout.flush()
     i3d_disk,j3d_disk,k3d_disk,xi_disk,yi_disk,zi_disk =\
         interp3d(xmax=500,ymax=500,zmax=100,ncellx=500,ncelly=500,ncellz=100)
     print( "Done with inter3d for disk..." ); sys.stdout.flush()
+    print( "Running interp3d for jet..." ); sys.stdout.flush()
     i3d_jet,j3d_jet,k3d_jet,xi_jet,yi_jet,zi_jet =\
         interp3d(xmax=xmax,ymax=ymax,zmax=zmax,ncellx=ncellx,ncelly=ncelly,ncellz=ncellz)
     print( "Done with inter3d for jet..." ); sys.stdout.flush()
     #lrhoxpos = lrho*(r*sin(h)*cos(ph)>0)
+    print( "Running trilinear interpolation for disk..." ); sys.stdout.flush()
     lrhoi_disk = np.float32(trilin(lrho,i3d_disk,j3d_disk,k3d_disk))
     print( "Done with trilinear interpolation for disk..." ); sys.stdout.flush()
+    print( "Running trilinear interpolation for jet..." ); sys.stdout.flush()
     lrhoi_jet = np.float32(trilin(lrho,i3d_jet,j3d_jet,k3d_jet))
     print( "Done with trilinear interpolation for jet..." ); sys.stdout.flush()
     mlab_lrho_disk = mlab.pipeline.scalar_field(xi_disk,yi_disk,zi_disk,lrhoi_disk)
@@ -237,10 +241,13 @@ def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,nce
     Bx=BR*cos(ph)-Bpnorm*sin(ph)
     By=BR*sin(ph)+Bpnorm*cos(ph)
     Bz=Brnorm*np.cos(h)-Bhnorm*np.sin(h)
+    print( "Running trilinear interpolation for Bx..." ); sys.stdout.flush()
     Bxi = np.float32(trilin(Bx,i3d_jet,j3d_jet,k3d_jet))
     print( "Done with trilinear interpolation for Bx..." ); sys.stdout.flush()
+    print( "Running trilinear interpolation for By..." ); sys.stdout.flush()
     Byi = np.float32(trilin(By,i3d_jet,j3d_jet,k3d_jet))
     print( "Done with trilinear interpolation for By..." ); sys.stdout.flush()
+    print( "Running trilinear interpolation for Bz..." ); sys.stdout.flush()
     Bzi = np.float32(trilin(Bz,i3d_jet,j3d_jet,k3d_jet))
     print( "Done with trilinear interpolation for Bz..." ); sys.stdout.flush()
     # pdb.set_trace()
@@ -270,6 +277,7 @@ def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,nce
         #iso_bsqorho = mlab.pipeline.iso_surface(pl_bsqorho,contours=[10.])
         #iso_d = mlab.pipeline.iso_surface(pl_d,contours=[0.1,1,10.],color=(255./255., 255./255., 0./255.))
         #vol = mlab.pipeline.volume(d,vmin=-4,vmax=-2)
+        print( "Running volume rendering for disk..." ); sys.stdout.flush()
         vol_disk = mlab.pipeline.volume(mlab_lrho_disk) #,vmin=-6,vmax=1)
         print( "Done with volume rendering of disk..." ); sys.stdout.flush()
         vol_disk.volume_mapper.blend_mode = 'maximum_intensity'
@@ -290,6 +298,7 @@ def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,nce
             otf_disk.add_point(1., 1.)
         vol_disk._otf = otf_disk
         vol_disk._volume_property.set_scalar_opacity(otf_disk)
+        print( "Running volume rendering for jet..." ); sys.stdout.flush()
         vol_jet = mlab.pipeline.volume(mlab_lrho_jet) #,vmin=-6,vmax=1)
         print( "Done with volume rendering of jet..." ); sys.stdout.flush()
         vol_jet.volume_mapper.blend_mode = 'minimum_intensity'
@@ -314,6 +323,7 @@ def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,nce
         zpos = [0,  0, 0,  0]
         intdir = ['backward', 'backward', 'forward', 'forward']
         for sn in xrange(4):
+            print( "Running rendering of streamline #%d..." % (sn+1) ); sys.stdout.flush()
             streamline = mlab.flow(xi_jet, yi_jet, zi_jet, Bxi, Byi, Bzi, seed_scale=0.01,
                              seed_resolution=5,
                              integration_direction=intdir[sn],
