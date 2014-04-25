@@ -18,16 +18,16 @@ from pychip import pchip_init, pchip_eval
 # rc('mathtext',rm='stix')
 
 rc('text', usetex=True)
-font = { 'size'   : 20}
-rc('font', **font)
-rc('xtick', labelsize=20) 
-rc('ytick', labelsize=20) 
-#rc('xlabel', **font) 
-#rc('ylabel', **font) 
-legend = {'fontsize': 20}
-rc('legend',**legend)
-axes = {'labelsize': 20}
-rc('axes', **axes)
+# font = { 'size'   : 20}
+# rc('font', **font)
+# rc('xtick', labelsize=20) 
+# rc('ytick', labelsize=20) 
+# #rc('xlabel', **font) 
+# #rc('ylabel', **font) 
+# legend = {'fontsize': 20}
+# rc('legend',**legend)
+# axes = {'labelsize': 20}
+# rc('axes', **axes)
 
 # #add amsmath to the preamble
 matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"] 

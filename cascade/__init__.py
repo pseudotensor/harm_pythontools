@@ -62,11 +62,10 @@ def plot_pair_producing_fraction():
     plt.plot(e,fppe(es1(1.3e6,e)),"g-")
     plt.xlim(1e5,1e8)
     plt.plot([1.6e7,1.6e7],[0,1],"k:")
-    plt.ylabel("fraction by energy (green) and number (blue)")
-    plt.xlabel(r"$\gamma")
-    plt.xlabel(r"$\gamma$")
-    plt.savefig("frac.eps", bbox_inches='tight', pad_inches=0.06)
-    plt.savefig("frac.pdf", bbox_inches='tight', pad_inches=0.06)
+    plt.ylabel("fraction by energy (green) and number (blue)",fontsize=20)
+    plt.xlabel(r"$\gamma$",fontsize=20)
+    #plt.savefig("frac.eps", bbox_inches='tight', pad_inches=0.06)
+    #plt.savefig("frac.pdf", bbox_inches='tight', pad_inches=0.06)
 
 def stagsurf(dn=1,fntsize=20,xmax = 5, ymax = 12, dosavefig=0):
     global leg1, leg2, ax1, ax2
@@ -77,7 +76,7 @@ def stagsurf(dn=1,fntsize=20,xmax = 5, ymax = 12, dosavefig=0):
     dump_list1=[12000,12001,12002,12003]
     #dump_list2=[2000,4000,8000,10000]
     dump_list2=[12197, 12677, 15061, 19371]
-    ltype_list = ["solid", "dashed", "dashdot", "dotted"]
+    ltype_list = [None, [10,5], [10,2,3,2], [2,2]]
     gs = GridSpec(2, 2)
     gs.update(left=0.15, right=0.97, top=0.97, bottom=0.08, wspace=0.04, hspace=0.04)
     ax1=plt.subplot(gs[:,0])
@@ -91,6 +90,8 @@ def stagsurf(dn=1,fntsize=20,xmax = 5, ymax = 12, dosavefig=0):
     ax2=plt.subplot(gs[:,1])
     plotstag(dump_list2,dn=dn,linestyle=ltype_list)
     leg2= plt.legend(loc="lower left",frameon=0,ncol=2,columnspacing=1,handletextpad=0.2) #, bbox_to_anchor=(0.5, 1.05))
+    # for label in leg1.get_texts() + leg2.get_texts():
+    #     label.set_fontsize(14)
     plt.xlim(-xmax,xmax)
     plt.ylim(-ymax,ymax)
     ax2.set_aspect(1.)
@@ -106,23 +107,29 @@ def stagsurf(dn=1,fntsize=20,xmax = 5, ymax = 12, dosavefig=0):
     if dosavefig:
         plt.savefig("stagsurfaceplot.eps", bbox_inches='tight', pad_inches=0.06)
     
-def plotstag(dump_list,linestyle = "solid", dn=1,fntsize=20,lw=2):
+def plotstag(dump_list,linestyle = None, dn=1,fntsize=20,lw=2):
     num_dumps = len(dump_list)
     color_list = cm.rainbow_r(np.linspace(0, 1, num_dumps))
-    x=y=[1e10,2e10]
+    x=[100,100]
+    y=[200,200]
     for i,no in zip(xrange(num_dumps),dump_list): #[2001,2002,2003,2004]):  # #[5255,5403,5452,5468]): 
         if isinstance(linestyle,list):
             ls = linestyle[i]
         else:
-            ls = "solid"
+            ls = None
         rfd("fieldline%04d.bin"%(no))
         cvel()
         toplot = radavg(radavg(uu[1],dn=dn,axis=0),axis=1,dn=dn)
         toplot[radavg(radavg(bsq,dn=dn),axis=1,dn=dn)/radavg(radavg(rho,dn=dn),axis=1,dn=dn)<10] *= np.nan 
-        plc(toplot,
+        CS = plc(toplot,
             levels=(0,),xy=1,xmax=7.5,ymax=7.5,
-            colors=[tuple(color_list[i])],symmx=1,linewidths=lw,linestyles=ls)
-        plt.plot(x,y,color=color_list[i],label=r"$t=%g$"%(np.round(t)),lw=lw,ls=ls)
+        colors=[tuple(color_list[i])],symmx=1,linewidths=lw)
+        l,=plt.plot(x,y,color=color_list[i],label=r"$t=%g$"%(np.round(t)),lw=lw)
+        if ls is not None:
+            for c in CS.collections:
+                c.set_dashes([(0, tuple(ls))])
+            l.set_dashes(ls)
+            #pdb.set_trace()
     ax = plt.gca()
     el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
     art=ax.add_artist(el)
