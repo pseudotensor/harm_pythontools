@@ -1661,7 +1661,7 @@ def assignavg2dvars(avgmem):
     global avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
     global avg_TudPA, avg_TudEN, avg_TudRAD
     global avg_gamma,avg_pg,avg_pb,avg_beta,avg_betatot
-    global avg_KAPPAUSER,avg_KAPPAESUSER,avg_tauradintegrated
+    global avg_KAPPAUSER,avg_KAPPAESUSER,avg_tauradintegrated,avg_tauradeffintegrated
     #avg defs
     i=0
     # 1
@@ -1770,6 +1770,7 @@ def assignavg2dvars(avgmem):
     avg_KAPPAUSER=avgmem[i,:,:,None];i+=1 # i=1
     avg_KAPPAESUSER=avgmem[i,:,:,None];i+=1 # i=1
     avg_tauradintegrated=avgmem[i,:,:,None];i+=1 # i=1
+    avg_tauradeffintegrated=avgmem[i,:,:,None];i+=1 # i=1
     #
     # number of full 2D quantities
     nqtyavg=i
@@ -1818,7 +1819,7 @@ def getnqtyavg():
     #value=1 + 4 + 16 + 6 + 4 + 24 + 32 + 80 + 32 + 32 + 3 + 6 + 1
     # added&moved abs versions
     value=1 + 4 + 16*2 + 6*2 + 4*2 + 24+4 + 32+16 + 80 + 32 + 32 + 3 + 1
-    value=value+16+3 # for TudRAD and KAPPAUSER and KAPPAESUSER and tauradintegrated
+    value=value+16+4 # for TudRAD and KAPPAUSER and KAPPAESUSER and tauradintegrated and tauradeffintegrated
     value=value+1 # for urad
     return(value)
 
@@ -2047,7 +2048,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     global avg_absuu,avg_absbu,avg_absud,avg_absbd
     global avg_absomegaf2,avg_absomegaf2b,avg_absomegaf1,avg_absomegaf1b
     global avg_absrhouu,avg_absfdd
-    global avg_KAPPAUSER,avg_KAPPAESUSER,avg_tauradintegrated
+    global avg_KAPPAUSER,avg_KAPPAESUSER,avg_tauradintegrated,avg_tauradeffintegrated
     global firstfieldlinefile
     #
     if whichgroup < 0 or itemspergroup <= 0:
@@ -2248,6 +2249,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         avg_KAPPAUSER+=KAPPAUSER.sum(-1)[:,:,None]*localdt[itert]
         avg_KAPPAESUSER+=KAPPAESUSER.sum(-1)[:,:,None]*localdt[itert]
         avg_tauradintegrated+=tauradintegrated.sum(-1)[:,:,None]*localdt[itert]
+        avg_tauradeffintegrated+=tauradeffintegrated.sum(-1)[:,:,None]*localdt[itert]
         # 1
         n=1
         aphi = fieldcalcface()
@@ -2565,13 +2567,13 @@ def isradmodelA(modelname):
         return(0)
     #
 def isradmodelB(modelname): # for lower densities with Mdot\sim 100Ledd/c^2
-    if modelname=="runrad1torusfixed" or modelname=="runrada0" or modelname=="runnorada0" or modelname=="runnorada9375" or modelname=="rad1" or modelname=="radma0.8" or modelname=="rada0.8" or modelname=="rada0.94" or modelname=="radtest1" or modelname=="radtest2":
+    if modelname=="runrad1torusfixed" or modelname=="runrada0" or modelname=="runnorada0" or modelname=="runnorada9375" or modelname=="rad1" or modelname=="radma0.8" or modelname=="rada0.8" or modelname=="rada0.94" or modelname=="radtest3" or modelname=="radtest2":
         return(1)
     else:
         return(0)
     #
 def isradmodelC(modelname): # for lower densities with Mdot\sim 2Ledd/c^2
-    if modelname=="radthin1" or modelname=="radthin2":
+    if modelname=="radthin1" or modelname=="radthin2" or modelname=="radtest1":
         return(1)
     else:
         return(0)
@@ -2751,19 +2753,23 @@ def getdefaulttimes1():
         #
     #
     if isradmodel(modelname)==1:
-        defaultfti=300
+        defaultfti=2000
         defaultftf=1e4
     # override
     if modelname=="sashaa9b100t1.5708":
         defaultfti=17000 # real start is ~8000
         defaultftf=21000 # problem beyond 21000
     if modelname=="runrad1torusfixed":
-        defaultfti=300
+        defaultfti=2000
         defaultftf=1e4
     #
     #if modelname=="rad1" or modelname=="radthin1" or modelname=="radthin2":
     if isradmodel(modelname):
-        defaultfti=300
+        defaultfti=2000
+        defaultftf=1e4
+    #
+    if modelname=="radtest1" or modelname=="radtest2":
+        defaultfti=50
         defaultftf=1e4
     #
     return defaultfti,defaultftf
@@ -2833,13 +2839,17 @@ def getdefaulttimes2():
         defaultftf=14000 # real end a bit after 17000
     #
     if modelname=="runrad1torusfixed":
-        defaultfti=300
+        defaultfti=2000
         defaultftf=1e4
     #
     #if modelname=="rad1":
     if isradmodel(modelname):
-        defaultfti=3000
+        defaultfti=2000
         defaultftf=1e4
+    if modelname=="radtest1" or modelname=="radtest2":
+        defaultfti=50
+        defaultftf=1e4
+    #
     #
     return defaultfti,defaultftf
 
@@ -4142,6 +4152,7 @@ def intangle_foravg2d(qty,hoverr=None,thetamid=np.pi/2,minbsqorho=None,maxbsqorh
     KAPPAUSER=avg_KAPPAUSER
     KAPPAESUSER=avg_KAPPAESUSER
     tauradintegrated=avg_tauradintegrated
+    tauradeffintegrated=avg_tauradeffintegrated
     ug=avg_ug
     urad=avg_urad
     uu=avg_uu
@@ -5126,9 +5137,17 @@ def remap2unir(rinner=None,router=None,size=None,iin=None,iout=None,result0=None
 def compute_taurad():
         # uses uu[], KAPPAUSER, KAPPAESUSER, gv3, r
         #
-        taurad1=(KAPPAUSER+KAPPAESUSER)*_dx1*np.sqrt(np.fabs(gv3[1,1]))/(2.0*uu[0])
+        drco=_dx1*np.sqrt(np.fabs(gv3[1,1]))/(2.0*uu[0])
+        dhco=_dx2*np.sqrt(np.fabs(gv3[2,2]))*uu[0]
+        dphco=_dx3*np.sqrt(np.fabs(gv3[3,3]))*uu[0]
+        #
+        taurad1=(KAPPAUSER+KAPPAESUSER)*drco
+        tauradeff1=np.sqrt(KAPPAUSER*(KAPPAUSER+KAPPAESUSER))*drco
+        #
         # FREE PARAMETER:
         radiussettau1zero=80
+        #
+        ############# taurad1
         taurad1[r[:,0,0]>radiussettau1zero,:,:]=0 # to get rid of parts of flow that aren't in steady-state and wouldn't have contributed
         np.set_printoptions(threshold=sys.maxint)
         print("taurad1") ; sys.stdout.flush()
@@ -5147,8 +5166,27 @@ def compute_taurad():
         print("taurad1flipintegrated") ; sys.stdout.flush()
         print(taurad1flipintegrated[:,0,0]) ; sys.stdout.flush()
         #
+        ############# tauradeff1
+        tauradeff1[r[:,0,0]>radiussettau1zero,:,:]=0 # to get rid of parts of flow that aren't in steady-state and wouldn't have contributed
+        np.set_printoptions(threshold=sys.maxint)
+        print("tauradeff1") ; sys.stdout.flush()
+        print(tauradeff1[:,0,0]) ; sys.stdout.flush()
+        print("r") ; sys.stdout.flush()
+        print(r[:,0,0]) ; sys.stdout.flush()
+        ########################### tauradeff1 (i.e. from small radius)
+        tauradeff1integrated=np.cumsum(tauradeff1,axis=0)
+        print("tauradeff1integrated") ; sys.stdout.flush()
+        print(tauradeff1integrated[:,0,0]) ; sys.stdout.flush()
+        #
+        ########################### tauradeff1flip (i.e. from large radius)
+        tauradeff1flip=tauradeff1[::-1,:,:]
+        tauradeff1flipintegrated=np.cumsum(tauradeff1flip,axis=0)
+        tauradeff1flipintegrated=tauradeff1flipintegrated[::-1,:,:]
+        print("tauradeff1flipintegrated") ; sys.stdout.flush()
+        print(tauradeff1flipintegrated[:,0,0]) ; sys.stdout.flush()
+        #
         ########################### taurad2 (from theta=0 pole)
-        taurad2=uu[0]*(KAPPAUSER+KAPPAESUSER)*_dx2*np.sqrt(np.fabs(gv3[2,2]))
+        taurad2=(KAPPAUSER+KAPPAESUSER)*dhco
         taurad2integrated=np.cumsum(taurad2,axis=1)
 #        for kk in np.arange(0,nz):
 #                for ii in np.arange(0,nx):
@@ -5165,13 +5203,34 @@ def compute_taurad():
         for jj in np.arange(ny/2,ny):
             taurad2integrated[:,jj,:]=taurad2flipintegrated[:,jj,:]
         #
+        ########################### tauradeff2 (from theta=0 pole)
+        tauradeff2=np.sqrt(KAPPAUSER*(KAPPAUSER+KAPPAESUSER))*dhco
+        tauradeff2integrated=np.cumsum(tauradeff2,axis=1)
+#        for kk in np.arange(0,nz):
+#                for ii in np.arange(0,nx):
+#        for jj in np.arange(ny/2,ny):
+#            tauradeff2integrated[:,jj,:]=0 #tauradeff2integrated[:,ny/2,:]
+        #
+        ########################### tauradeff2flip (from theta=pi pole)
+        tauradeff2flip=tauradeff2[:,::-1,:]
+        tauradeff2flipintegrated=np.cumsum(tauradeff2flip,axis=1)
+        tauradeff2flipintegrated=tauradeff2flipintegrated[:,::-1,:]
+        ########################### merge tauradeff2's
+        for jj in np.arange(0,ny/2):
+            tauradeff2flipintegrated[:,jj,:]=tauradeff2integrated[:,jj,:]
+        for jj in np.arange(ny/2,ny):
+            tauradeff2integrated[:,jj,:]=tauradeff2flipintegrated[:,jj,:]
+        #
         ########################### taurad3
-        taurad3=uu[0]*(KAPPAUSER+KAPPAESUSER)*_dx3*np.sqrt(np.fabs(gv3[3,3]))
+        taurad3=uu[0]*(KAPPAUSER+KAPPAESUSER)*dphco
+        ########################### tauradeff3
+        tauradeff3=uu[0]*np.sqrt(KAPPAUSER*(KAPPAUSER+KAPPAESUSER))*dphco
         #
         # so tauradintegrated (final version) is optical depth integrated from large radii and away from pole. 
         tauradintegrated=np.maximum(taurad1flipintegrated,taurad2integrated)
+        tauradeffintegrated=np.maximum(tauradeff1flipintegrated,tauradeff2integrated)
         #
-        return(taurad1integrated,taurad1flipintegrated,taurad2integrated,taurad2flipintegrated,tauradintegrated)
+        return(taurad1integrated,taurad1flipintegrated,taurad2integrated,taurad2flipintegrated,tauradintegrated,tauradeff1integrated,tauradeff1flipintegrated,tauradeff2integrated,tauradeff2flipintegrated,tauradeffintegrated)
         # use primarily: taurad1flipintegrated taurad2integrated and can use and'ed version
 
     
@@ -5462,7 +5521,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         #
         iuu1  = reinterp(uu[1],extent,ncell,domask=1.0)
         #
-        taurad1integrated,taurad1flipintegrated,taurad2integrated,taurad2flipintegrated,tauradintegrated=compute_taurad()
+        taurad1integrated,taurad1flipintegrated,taurad2integrated,taurad2flipintegrated,tauradintegrated,tauradeff1integrated,tauradeff1flipintegrated,tauradeff2integrated,tauradeff2flipintegrated,tauradeffintegrated=compute_taurad()
         #
         # use linear to avoid oscillations that lead to multiple similar contours where only 1 originally existed
         itaurad1integrated = reinterp(taurad1integrated,extent,ncell,domask=1.0,interporder='linear')
@@ -5483,6 +5542,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
     print("dorho=%d doentropy=%d dobsq=%d dobeta=%d doErf=%d doQ1=%d doQ2=%d dovel=%d: vmin=%g vmax=%g" % (dorho,doentropy,dobsq,dobeta,doErf,doQ1,doQ2,dovel,vmin,vmax)) ; sys.stdout.flush()
     doqty=0
     dologz=0
+    douru0=0
     streamtype=1
     #
     if dorho:
@@ -5505,6 +5565,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         lErf=np.log10(Erf/ueddcode+1E-30)
         dologz=1
         qty=lErf
+        douru0=1
         doqty=1
         streamtype=2
     elif dobeta:
@@ -5532,6 +5593,13 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
     #
     if dovel==1:
         dovarylw=0
+    if douru0==1:
+        toplot=np.copy(uradu[0])
+        #toplot[toplot<20]=1
+        iuru0 = reinterp(toplot,extent,ncell,domask=1.0)
+        #
+        toplot2=np.copy(np.fabs(uradu[3])*np.sqrt(np.fabs(gv3[3,3])))
+        iuru3 = reinterp(toplot2,extent,ncell,domask=1.0)
     #
     ###########################################
     # setup field stuff
@@ -5806,6 +5874,14 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
     ###########################################
     # other stuff
     print("HERE6") ; sys.stdout.flush()
+    if douru0:
+        GAMMAMAXRAD=50.0
+        levsuru0=np.linspace(20,GAMMAMAXRAD+5+1,5)
+        ax.contour(iuru0,linewidths=0.5,colors='c', extent=extent,hold='on',origin='lower',levels=levsuru0)
+        #levsuru3=np.linspace(5E-2,5E-1,10)
+        levsuru3=np.linspace(20,GAMMAMAXRAD+5+1,5)
+        ax.contour(iuru3,linewidths=0.5,colors='r', extent=extent,hold='on',origin='lower',levels=levsuru3)
+    #
     if showjet:
         #ax.contour(imu,linewidths=0.5,colors='g', extent=extent,hold='on',origin='lower',levels=(2,))
         ax.contour(iaphi,linewidths=0.5,colors='b', extent=extent,hold='on',origin='lower',levels=(aphi[ihor,ny/2,0],))
@@ -8733,7 +8809,7 @@ def getbsq_pre():
 
 def cvel():
     # MEMMARK: (4+4+4+1+1+4+4+4+4+6)=36 full 3D vars
-    global ud,etad, etau, gamma, vu, vd, bu, bd, bsq,beta,betatot,betatoplot,Q1,Q2,Q2toplot,uradd,tauradintegrated
+    global ud,etad, etau, gamma, vu, vd, bu, bd, bsq,beta,betatot,betatoplot,Q1,Q2,Q2toplot,uradd,tauradintegrated,tauradeffintegrated
     #
     #
     ud = mdot(gv3,uu)                  #g_mn u^n
@@ -8798,7 +8874,7 @@ def cvel():
     uradd = mdot(gv3,uradu)                  #g_mn urad^n
     # 
     # get tau's
-    taurad1integrated,taurad1flipintegrated,taurad2integrated,taurad2flipintegrated,tauradintegrated=compute_taurad()
+    taurad1integrated,taurad1flipintegrated,taurad2integrated,taurad2flipintegrated,tauradintegrated,tauradeff1integrated,tauradeff1flipintegrated,tauradeff2integrated,tauradeff2flipintegrated,tauradeffintegrated=compute_taurad()
 
 
 def decolumnify(dumpname):
@@ -11267,6 +11343,8 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         horval=0.2
     else:
         horval=1.0 # so know how to remove effect
+    if isradmodelC(modelname):
+        horval=0.02
     #
     if whichn != None and (whichi < 0 or whichi > whichn):
         print( "whichi = %d shoudl be >= 0 and < whichn = %d" % (whichi, whichn) ) ; sys.stdout.flush()
@@ -17684,7 +17762,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         radplotfactor=1.0/500.0;
         Mdotplotfactor=1.0;
     #
-    print("normfactor=%g" % (normfactor)) ; sys.stdout.flush()
+    print("normfactor=%g Mdotplotfactor=%g mdotfinavg=%g ftf=%g fti=%g" % (normfactor,Mdotplotfactor,mdotfinavg,ftf,fti)) ; sys.stdout.flush()
     #
     #
     if whichplot == 1 and sashaplot1 == 0:
@@ -17702,16 +17780,31 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+edradoutiniavg*radplotfactor/normfactor,color='c') #(fc,1,1))
         #
         print("before ax.plot1") ; sys.stdout.flush()
-        ax.plot(ts,np.abs(mdtot[:,iflux]*mdtotfix/normfactor*Mdotplotfactor),clr,label=r'$\dot M_{\rm H}c^2/%d$' % (1.0/Mdotplotfactor))  # can't use ifluxacc
-        ts,np.abs(mdtot[:,iflux]*mdtotfix/normfactor*Mdotplotfactor)
-        if showextra:
-            print("before ax.plot2") ; sys.stdout.flush()
-            ax.plot(ts,np.abs(mdjet[:,iofr(rjetout)]/normfactor*Mdotplotfactor),'g--',label=r'$\dot M_{\rm j}c^2/%d$' % (1.0/Mdotplotfactor))
-            if windplotfactor==1.0:
-                print("before ax.plot3") ; sys.stdout.flush()
-                ax.plot(ts,windplotfactor*np.abs(mdmwind[:,iofr(rjetout)]/normfactor*Mdotplotfactor),'b-.',label=r'$\dot M_{\rm mw,o}c^2/%d$' % (1.0/Mdotplotfactor))
-            elif windplotfactor==0.1:
-                ax.plot(ts,windplotfactor*np.abs(mdmwind[:,iofr(rjetout)]/normfactor*Mdotplotfactor),'b-.',label=r'$0.1\dot M_{\rm mw,o}c^2/%d$' % (1.0/Mdotplotfactor))
+        if(1.0/Mdotplotfactor>1.0):
+            ax.plot(ts,np.abs(mdtot[:,iflux]*mdtotfix/normfactor*Mdotplotfactor),clr,label=r'$\dot M_{\rm H}c^2/%d$' % (1.0/Mdotplotfactor))  # can't use ifluxacc
+            ts,np.abs(mdtot[:,iflux]*mdtotfix/normfactor*Mdotplotfactor)
+            if showextra:
+                print("before ax.plot2") ; sys.stdout.flush()
+                ax.plot(ts,np.abs(mdjet[:,iofr(rjetout)]/normfactor*Mdotplotfactor),'g--',label=r'$\dot M_{\rm j}c^2/%d$' % (1.0/Mdotplotfactor))
+                if windplotfactor==1.0:
+                    print("before ax.plot3") ; sys.stdout.flush()
+                    ax.plot(ts,windplotfactor*np.abs(mdmwind[:,iofr(rjetout)]/normfactor*Mdotplotfactor),'b-.',label=r'$\dot M_{\rm mw,o}c^2/%d$' % (1.0/Mdotplotfactor))
+                elif windplotfactor==0.1:
+                    ax.plot(ts,windplotfactor*np.abs(mdmwind[:,iofr(rjetout)]/normfactor*Mdotplotfactor),'b-.',label=r'$0.1\dot M_{\rm mw,o}c^2/%d$' % (1.0/Mdotplotfactor))
+        else:
+            ax.plot(ts,np.abs(mdtot[:,iflux]*mdtotfix/normfactor*Mdotplotfactor),clr,label=r'$\dot M_{\rm H}c^2/%2.1g$' % (1.0/Mdotplotfactor))  # can't use ifluxacc
+            ts,np.abs(mdtot[:,iflux]*mdtotfix/normfactor*Mdotplotfactor)
+            if showextra:
+                print("before ax.plot2") ; sys.stdout.flush()
+                if(1.0/Mdotplotfactor>1.0):
+                    ax.plot(ts,np.abs(mdjet[:,iofr(rjetout)]/normfactor*Mdotplotfactor),'g--',label=r'$\dot M_{\rm j}c^2/%2.1g$' % (1.0/Mdotplotfactor))
+                else:
+                    ax.plot(ts,np.abs(mdjet[:,iofr(rjetout)]/normfactor*Mdotplotfactor),'g--',label=r'$\dot M_{\rm j}c^2/%2.1g$' % (1.0/Mdotplotfactor))
+                if windplotfactor==1.0:
+                    print("before ax.plot3") ; sys.stdout.flush()
+                    ax.plot(ts,windplotfactor*np.abs(mdmwind[:,iofr(rjetout)]/normfactor*Mdotplotfactor),'b-.',label=r'$\dot M_{\rm mw,o}c^2/%2.1g$' % (1.0/Mdotplotfactor))
+                elif windplotfactor==0.1:
+                    ax.plot(ts,windplotfactor*np.abs(mdmwind[:,iofr(rjetout)]/normfactor*Mdotplotfactor),'b-.',label=r'$0.1\dot M_{\rm mw,o}c^2/%2.1g$' % (1.0/Mdotplotfactor))
         if showrad:
             ax.plot(ts,edradthin[:,iofr(rjetout)]*radplotfactor/normfactor,'c-.',label=r'$L_{\rm rad,o}$')
             print("edradtest") ; sys.stdout.flush()
@@ -18037,7 +18130,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         ymaxj=np.max(etaj)
         if showrad==0: # for now don't show this -- too much on plot
             ymaxmw=np.max(etamwout)
-            ymax=max(ymax,ymaxmw)
+            ymax=max(ymaxbh,ymaxmw)
         ymax=max(ymaxbh,ymaxj)
         ymax=min(ymax,3.0*etabh_avg)
         #
@@ -25113,16 +25206,25 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
         vminforframe=-8
         vmaxforframe=-3
         vminforframerad=-8
-        vmaxforframerad=-3
+        vmaxforframerad=-4
     else:
         # default
         vminforframe=-4.0
         vmaxforframe=2.0
     #
+    if modelname=="radtest1":
+        vminforframe=-13
+        vmaxforframe=-3
+        # to see polar region drop in Erf:
+        vminforframerad=-6-8
+        vmaxforframerad=-5
+    print("vmaxespre : %g %g %g %g" % (vminforframe,vmaxforframe,vminforframerad,vmaxforframerad)) ; sys.stdout.flush()
+    #
     vminforframe=np.log10(10.0**vminforframe/rhoeddcode)
     vmaxforframe=np.log10(10.0**vmaxforframe/rhoeddcode)
     vminforframerad=np.log10(10.0**vminforframerad/ueddcode)
     vmaxforframerad=np.log10(10.0**vmaxforframerad/ueddcode)
+    print("vmaxespost: %g %g %g %g" % (vminforframe,vmaxforframe,vminforframerad,vmaxforframerad)) ; sys.stdout.flush()
     #
     if nz==1:
         mydoaphi=1
@@ -25603,7 +25705,7 @@ def mkavgfigs():
         #
         # for dojonwindplot
         global rho,rholab,ug,B,gdetB,Erf,urad,uradu,bsq,mu,ud,uu,beta,betatot #,uutrue
-        global KAPPAUSER,KAPPAESUSER,tauradintegrated
+        global KAPPAUSER,KAPPAESUSER,tauradintegrated,tauradeffintegrated
         #
         global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
         rddims(gotrad)
@@ -25612,6 +25714,7 @@ def mkavgfigs():
         KAPPAUSER=avg_KAPPAUSER
         KAPPAESUSER=avg_KAPPAESUSER
         tauradintegrated=avg_tauradintegrated
+        tauradeffintegrated=avg_tauradeffintegrated
         rholab=avg_rho*avg_uu[0] # GODMARK: Not full avg of rholab directly
         ug=avg_ug
         urad=avg_urad
@@ -25689,14 +25792,15 @@ def mkavgfigs():
         print("thetaalongfield3"); sys.stdout.flush()
         aphijetbase3,thetaalongfield3=compute_thetaalongfield(aphi=aphi3,picki=ihor,thetaalongjet=hoverr_jet_vsr,whichpole=0)
         #
-        favg1 = open('datavsravg1.txt', 'w')
-        favg1.write("#%s   %s %s %s  %s   %s %s %s\n" % ("ii","r1","r2","r3","hoverr_jet_vsr","thetaalongfield1","thetaalongfield2","thetaalongfield3" ) )
-        #
-        for ii in np.arange(0,nx):
-            favg1.write("%d   %g %g %g   %g   %g %g %g\n" % (ii,r[ii,thetaalongfield1[ii],0],r[ii,thetaalongfield2[ii],0],r[ii,thetaalongfield3[ii],0],np.pi*0.5-hoverr_jet_vsr[ii],thetaalongfield1[ii],thetaalongfield2[ii],thetaalongfield3[ii]) )
+        if thetaalongfield1.shape==nx:
+            favg1 = open('datavsravg1.txt', 'w')
+            favg1.write("#%s   %s %s %s  %s   %s %s %s\n" % ("ii","r1","r2","r3","hoverr_jet_vsr","thetaalongfield1","thetaalongfield2","thetaalongfield3" ) )
             #
-        #
-        favg1.close()
+            for ii in np.arange(0,nx):
+                favg1.write("%d   %g %g %g   %g   %g %g %g\n" % (ii,r[ii,thetaalongfield1[ii],0],r[ii,thetaalongfield2[ii],0],r[ii,thetaalongfield3[ii],0],np.pi*0.5-hoverr_jet_vsr[ii],thetaalongfield1[ii],thetaalongfield2[ii],thetaalongfield3[ii]) )
+                #
+                #
+            favg1.close()
         #
         ################
         # for Shep:
@@ -25790,7 +25894,7 @@ def mkavgfigs():
         avg1.close()
         avg1 = open('dataavgvsh1.txt', 'w')
         # below doesn't yet show columns for each component of vector or tensors
-        avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudEN  avg_TudRAD  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma gdet dxdxp11 dxdxp22dx2 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd avg_KAPPAUSER avg_KAPPAESUSER avg_tauradintegrated avg_urad\n")
+        avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudEN  avg_TudRAD  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma gdet dxdxp11 dxdxp22dx2 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd avg_KAPPAUSER avg_KAPPAESUSER avg_tauradintegrated avg_tauradeffintegrated avg_urad\n")
         avg1.write("#%g %g %d :  %g %d\n" % (avg_ts[0],avg_te[0],avg_nitems[0],rhor,ihor))
         for jj in np.arange(0,len(h[0,:,0])):
             # columns 1-6
@@ -25918,6 +26022,7 @@ def mkavgfigs():
             avg1.write("%g " % (avg_KAPPAUSER[ihor,jj,0]))
             avg1.write("%g " % (avg_KAPPAESUSER[ihor,jj,0]))
             avg1.write("%g " % (avg_tauradintegrated[ihor,jj,0]))
+            avg1.write("%g " % (avg_tauradeffintegrated[ihor,jj,0]))
             avg1.write("%g " % (avg_urad[ihor,jj,0]))
             avg1.write("\n")
         #
@@ -25943,7 +26048,7 @@ def mkavgfigs():
         avg1.close()
         avg1 = open('dataavgvsr1.txt', 'w')
         # below doesn't yet show columns for each component of vector or tensors
-        avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudEN  avg_TudRAD  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma avggdet dxdxp11 dxdxp22dx2 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd rhosqint rhosqint2 avg_KAPPAUSER avg_KAPPAESUSER avg_tauradintegrated avg_urad\n")
+        avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudEN  avg_TudRAD  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma avggdet dxdxp11 dxdxp22dx2 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd rhosqint rhosqint2 avg_KAPPAUSER avg_KAPPAESUSER avg_tauradintegrated avg_tauradeffintegrated avg_urad\n")
         avg1.write("#%g %g %d :  %g %d\n" % (avg_ts[0],avg_te[0],avg_nitems[0],rhor,ihor))
         #
         bsq=avg_bsq
@@ -25986,6 +26091,7 @@ def mkavgfigs():
         avgvsr_KAPPAUSER=intangle_foravg2d(gdet*denfactor*avg_KAPPAUSER,**keywordsrhosq)/rhosqint
         avgvsr_KAPPAESUSER=intangle_foravg2d(gdet*denfactor*avg_KAPPAESUSER,**keywordsrhosq)/rhosqint
         avgvsr_tauradintegrated=intangle_foravg2d(gdet*denfactor*avg_tauradintegrated,**keywordsrhosq)/rhosqint
+        avgvsr_tauradeffintegrated=intangle_foravg2d(gdet*denfactor*avg_tauradeffintegrated,**keywordsrhosq)/rhosqint
         avgvsr_ug=intangle_foravg2d(gdet*denfactor*avg_ug,**keywordsrhosq)/rhosqint
         avgvsr_urad=intangle_foravg2d(gdet*denfactor*avg_urad,**keywordsrhosq)/rhosqint
         avgvsr_bsq=intangle_foravg2d(gdet*denfactor*avg_bsq,**keywordsrhosq)/rhosqint
@@ -26242,7 +26348,7 @@ def mkavgfigs():
         avg1.close()
         avg1 = open('dataavg1.txt', 'w')
         # below doesn't yet show columns for each component of vector or tensors
-        avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudEN  avg_TudRAD  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma gdet dxdxp11 dxdxp22 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd avg_KAPPAUSER avg_KAPPAESUSER avg_tauradintegrated avg_urad\n")
+        avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudEN  avg_TudRAD  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma gdet dxdxp11 dxdxp22 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd avg_KAPPAUSER avg_KAPPAESUSER avg_tauradintegrated avg_tauradeffintegrated avg_urad\n")
         avg1.write("#%g %g %d :  %g %d\n" % (avg_ts[0],avg_te[0],avg_nitems[0],rhor,ihor))
         for jj in np.arange(0,len(h[0,:,0])):
             for ii in np.arange(0,len(r[:,0,0])):
@@ -26371,6 +26477,7 @@ def mkavgfigs():
                 avg1.write("%g " % (avg_KAPPAUSER[ii,jj,0]))
                 avg1.write("%g " % (avg_KAPPAESUSER[ii,jj,0]))
                 avg1.write("%g " % (avg_tauradintegrated[ii,jj,0]))
+                avg1.write("%g " % (avg_tauradeffintegrated[ii,jj,0]))
                 avg1.write("%g " % (avg_urad[ii,jj,0]))
                 avg1.write("%g " % (r[ii,jj,0]))
                 avg1.write("%g " % (h[ii,jj,0]))
@@ -26391,18 +26498,18 @@ def mkavgfigs():
         global KAPPAUSER,KAPPAESUSER
         getkappas(gotrad)
         # get tau from averaged data
-        taurad1integrated,taurad1flipintegrated,taurad2integrated,taurad2flipintegrated,tauradintegrated=compute_taurad()
+        taurad1integrated,taurad1flipintegrated,taurad2integrated,taurad2flipintegrated,tauradintegrated,tauradeff1integrated,tauradeff1flipintegrated,tauradeff2integrated,tauradeff2flipintegrated,tauradeffintegrated=compute_taurad()
         #
         # now save computations from averaged data
         avg2 = open('dataavg2.txt', 'w')
         # below doesn't yet show columns for each component of vector or tensors
-        avg2.write("#avg_KAPPAUSER avg_KAPPAESUSER avg_tauradintegrated avg_urad\n")
+        avg2.write("#avg_KAPPAUSER avg_KAPPAESUSER avg_tauradintegrated ...\n")
         avg2.write("#%g %g %d :  %g %d\n" % (avg_ts[0],avg_te[0],avg_nitems[0],rhor,ihor))
         for jj in np.arange(0,len(h[0,:,0])):
             for ii in np.arange(0,len(r[:,0,0])):
-                # columns 1-9
-                avg2.write("%d %g %g %g %g %g %g %g %g " % (jj, h[ii,jj,0], KAPPAUSER[ii,jj,0],KAPPAESUSER[ii,jj,0],taurad1integrated[ii,jj,0],taurad1flipintegrated[ii,jj,0],taurad2integrated[ii,jj,0],taurad2flipintegrated[ii,jj,0],tauradintegrated[ii,jj,0]))
-                # columns 10-12
+                # columns 1-14
+                avg2.write("%d %g  %g %g  %g %g %g %g %g  %g %g %g %g %g " % (jj, h[ii,jj,0], KAPPAUSER[ii,jj,0],KAPPAESUSER[ii,jj,0],taurad1integrated[ii,jj,0],taurad1flipintegrated[ii,jj,0],taurad2integrated[ii,jj,0],taurad2flipintegrated[ii,jj,0],tauradintegrated[ii,jj,0],tauradeff1integrated[ii,jj,0],tauradeff1flipintegrated[ii,jj,0],tauradeff2integrated[ii,jj,0],tauradeff2flipintegrated[ii,jj,0],tauradeffintegrated[ii,jj,0]))
+                # columns 15-17
                 avg2.write("%g " % (r[ii,jj,0]))
                 avg2.write("%g " % (h[ii,jj,0]))
                 avg2.write("%g " % (ph[ii,jj,0]))
@@ -26418,7 +26525,7 @@ def mkavgfigs():
         print("Doing field mkframe")
         sys.stdout.flush()
         global rho,rholab,ug,B,gdetB,Erf,urad,uradu,bsq,mu,ud,uu,beta,betatot
-        global KAPPAUSER,KAPPAESUSER,tauradintegrated
+        global KAPPAUSER,KAPPAESUSER,tauradintegrated,tauradeffintegrated
         #
         global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
         rddims(gotrad)
@@ -26427,6 +26534,7 @@ def mkavgfigs():
         KAPPAUSER=avg_KAPPAUSER
         KAPPAESUSER=avg_KAPPAESUSER
         tauradintegrated=avg_tauradintegrated
+        tauradeffintegrated=avg_tauradeffintegrated
         rholab=avg_rho*avg_uu[0]
         ug=avg_ug
         urad=avg_urad
