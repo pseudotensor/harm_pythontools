@@ -5149,41 +5149,41 @@ def compute_taurad():
         #
         ############# taurad1
         taurad1[r[:,0,0]>radiussettau1zero,:,:]=0 # to get rid of parts of flow that aren't in steady-state and wouldn't have contributed
-        np.set_printoptions(threshold=sys.maxint)
-        print("taurad1") ; sys.stdout.flush()
-        print(taurad1[:,0,0]) ; sys.stdout.flush()
-        print("r") ; sys.stdout.flush()
-        print(r[:,0,0]) ; sys.stdout.flush()
+        #np.set_printoptions(threshold=sys.maxint)
+        #print("taurad1") ; sys.stdout.flush()
+        #print(taurad1[:,0,0]) ; sys.stdout.flush()
+        #print("r") ; sys.stdout.flush()
+        #print(r[:,0,0]) ; sys.stdout.flush()
         ########################### taurad1 (i.e. from small radius)
         taurad1integrated=np.cumsum(taurad1,axis=0)
-        print("taurad1integrated") ; sys.stdout.flush()
-        print(taurad1integrated[:,0,0]) ; sys.stdout.flush()
+        #print("taurad1integrated") ; sys.stdout.flush()
+        #print(taurad1integrated[:,0,0]) ; sys.stdout.flush()
         #
         ########################### taurad1flip (i.e. from large radius)
         taurad1flip=taurad1[::-1,:,:]
         taurad1flipintegrated=np.cumsum(taurad1flip,axis=0)
         taurad1flipintegrated=taurad1flipintegrated[::-1,:,:]
-        print("taurad1flipintegrated") ; sys.stdout.flush()
-        print(taurad1flipintegrated[:,0,0]) ; sys.stdout.flush()
+        #print("taurad1flipintegrated") ; sys.stdout.flush()
+        #print(taurad1flipintegrated[:,0,0]) ; sys.stdout.flush()
         #
         ############# tauradeff1
         tauradeff1[r[:,0,0]>radiussettau1zero,:,:]=0 # to get rid of parts of flow that aren't in steady-state and wouldn't have contributed
         np.set_printoptions(threshold=sys.maxint)
-        print("tauradeff1") ; sys.stdout.flush()
-        print(tauradeff1[:,0,0]) ; sys.stdout.flush()
-        print("r") ; sys.stdout.flush()
-        print(r[:,0,0]) ; sys.stdout.flush()
+        #print("tauradeff1") ; sys.stdout.flush()
+        #print(tauradeff1[:,0,0]) ; sys.stdout.flush()
+        #print("r") ; sys.stdout.flush()
+        #print(r[:,0,0]) ; sys.stdout.flush()
         ########################### tauradeff1 (i.e. from small radius)
         tauradeff1integrated=np.cumsum(tauradeff1,axis=0)
-        print("tauradeff1integrated") ; sys.stdout.flush()
-        print(tauradeff1integrated[:,0,0]) ; sys.stdout.flush()
+        #print("tauradeff1integrated") ; sys.stdout.flush()
+        #print(tauradeff1integrated[:,0,0]) ; sys.stdout.flush()
         #
         ########################### tauradeff1flip (i.e. from large radius)
         tauradeff1flip=tauradeff1[::-1,:,:]
         tauradeff1flipintegrated=np.cumsum(tauradeff1flip,axis=0)
         tauradeff1flipintegrated=tauradeff1flipintegrated[::-1,:,:]
-        print("tauradeff1flipintegrated") ; sys.stdout.flush()
-        print(tauradeff1flipintegrated[:,0,0]) ; sys.stdout.flush()
+        #print("tauradeff1flipintegrated") ; sys.stdout.flush()
+        #print(tauradeff1flipintegrated[:,0,0]) ; sys.stdout.flush()
         #
         ########################### taurad2 (from theta=0 pole)
         taurad2=(KAPPAUSER+KAPPAESUSER)*dhco
@@ -5530,12 +5530,12 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         itaurad2flipintegrated = reinterp(taurad2flipintegrated,extent,ncell,domask=1.0,interporder='linear')
         #
         #
-        print("taurad2integrated") ; sys.stdout.flush()
-        print(taurad2integrated[5,:,0]) ; sys.stdout.flush()
-        print(taurad2integrated[25,:,0]) ; sys.stdout.flush()
-        print(taurad2integrated[60,:,0]) ; sys.stdout.flush()
-        print(taurad2integrated[100,:,0]) ; sys.stdout.flush()
-        np.set_printoptions(threshold=10)
+        #print("taurad2integrated") ; sys.stdout.flush()
+        #print(taurad2integrated[5,:,0]) ; sys.stdout.flush()
+        #print(taurad2integrated[25,:,0]) ; sys.stdout.flush()
+        #print(taurad2integrated[60,:,0]) ; sys.stdout.flush()
+        #print(taurad2integrated[100,:,0]) ; sys.stdout.flush()
+        #np.set_printoptions(threshold=10)
     ####################
     #
     # get iqty
@@ -8242,9 +8242,15 @@ def rddims(gotrad):
         MASSCM=1
         KORAL2HARMRHO1=1
         #
+        Ledd=1
         Leddcode=1
+        Mdotedd=1
         Mdoteddcode=1
+        rhoedd=1
+        rhoeddcode=1
+        uedd=1
         ueddcode=1
+        bedd=1
         beddcode=1
 
 
