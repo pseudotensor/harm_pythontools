@@ -5911,8 +5911,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
             cset3 = ax.contour(iaphi,linewidths=lweightaphi,colors=inputcoloraphi, extent=extent,hold='on',origin='lower',levels=(doaphicont,))
     #
     print("HERE8") ; sys.stdout.flush()
-    #if dostreamlines==1 and dovel==0: # problem with hang on dovel==1
-    if dostreamlines==1: # problem with hang on dovel==1
+    if dostreamlines==1 and (dovel==0 and dorad==0 or dorad=1): # problem with hang on dovel==1
         if dovarylw:
             lw = 0.5+1*ftr(np.log10(amax(ibsqo2rho,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
             #lw += 1*ftr(np.log10(amax(iibetatot,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
