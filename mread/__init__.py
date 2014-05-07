@@ -1,3 +1,8 @@
+#setup PYTHONPATH
+import os
+import sys
+sys.path.append(os.path.join(os.environ["HOME"],"py"))
+#######################
 import matplotlib
 import vtk
 from vtk.util import numpy_support as VN
