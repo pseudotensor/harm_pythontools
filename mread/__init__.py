@@ -4821,7 +4821,7 @@ def pbrsq(roRlc=1.5,doreload=1):
     plt.grid(b=1)
     plt.savefig("brsq.pdf",bbox_inches='tight',pad_inches=0.02)
     
-def plotpsrangpower(cachefname="psrangle.npz"):
+def plotpsrangpower(cachefname="psrangle.npz",lw = 2,ms=10,dosavefig=0):
     if cachefname is not None and os.path.isfile(cachefname):
         npzfile = np.load(cachefname)
         th0 = npzfile['th0']
@@ -4958,20 +4958,44 @@ def plotpsrangpower(cachefname="psrangle.npz"):
         label.set_fontsize(20)
     plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20,labelpad=-8)
     plt.ylabel(r"$4\pi\,{\rm d}(L/L_0)/{\rm d}\omega$",fontsize=22)
+    #
+    # Phi(alpha)
+    #
     plt.figure(2)
+    plt.clf()
     psis = np.array([psi0, psi15, psi30, psi45, psi60, psi75, psi90])
     etots = np.array([etot0, etot15, etot30, etot45, etot60, etot75, etot90])
     ss = np.array([s0, s15, s30, s45, s60, s75, s90])
     alphas = np.array([0, 15, 30, 45, 60, 75, 90])
     ebrsqs = np.array([ebrsq0, ebrsq15, ebrsq30, ebrsq45, ebrsq60, ebrsq75, ebrsq90])
     ebrs = np.array([ebr0, ebr15, ebr30, ebr45, ebr60, ebr75, ebr90])
-    plt.plot(alphas, psis**2,'o-')
+    l, = plt.plot(alphas, psis**2/psis[0]**2,'rd-',ms=ms,lw=lw)
+    l.set_dashes([2,2])
     plt.grid(b=1)
     ax1=plt.gca()
-    for label in ax1.get_xticklabels() + ax1.get_yticklabels():
+    plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20,labelpad=15)
+    plt.ylabel(r"$\Phi_{\rm open}^2/\Phi_{\rm open,\ aligned}^2$",fontsize=20)
+    ax1 = plt.gca()
+    tck = np.linspace(0,90,7)
+    ax1.set_xticks(tck)
+    tck = np.linspace(0.9,1.5,7,endpoint=1)
+    ax1.set_yticks(tck)
+    #ax1.set_yticklabels((r"$1$","",r"$2$"))
+    ax1.set_xticklabels((r"$0$",r"$15$",r"$30$",r"$45$",r"$60$",r"$75$",r"$90$"))
+    ax1.set_xlim(-5,95)
+    ax1.set_ylim(0.9,1.5)
+    ax2 = plt.twinx()
+    ylimits = np.array(ax1.get_ylim())*psis[0]**2
+    ax2.set_ylim(ylimits)
+    yticks = tck*psis[0]**2
+    ax2.set_yticks(yticks)
+    ylabels = [(r"$%.2g$" % item) for item in yticks]
+    ax2.set_yticklabels(ylabels)
+    ax2.set_ylabel(r"$\Phi_{\rm open}^2/\Phi_{\rm tot}^2$",fontsize=20)
+    for label in ax1.get_xticklabels() + ax1.get_yticklabels() + ax2.get_yticklabels():
         label.set_fontsize(20)
-    plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20)
-    plt.ylabel(r"$\Psi_{\rm open}^2/\Psi_{\rm tot}^2$",fontsize=20)
+    if dosavefig:
+        plt.savefig("Lbsq.pdf",bbox_inches='tight',pad_inches=0.02)
     plt.figure(3)
     plt.clf()
     plt.plot(th0*180/np.pi,brsqavg0/np.max(brsqavg0),"r")
@@ -5014,7 +5038,8 @@ def plotpsrangpower(cachefname="psrangle.npz"):
         label.set_fontsize(20)
     plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20)
     plt.ylabel(r"$\langle B_r^2\rangle$",fontsize=20)
-    plt.savefig("Br.pdf",bbox_inches='tight',pad_inches=0.02)
+    if dosavefig:
+        plt.savefig("Br.pdf",bbox_inches='tight',pad_inches=0.02)
     plt.figure(4)
     en = np.array([
          (brsqavg0* np.sin(th0)**3*(th0[1]-th0[0])   *len(th0)).sum(), 
@@ -5027,19 +5052,32 @@ def plotpsrangpower(cachefname="psrangle.npz"):
          ])
     plt.plot(alphas, en)
     plt.figure(5)
-    plt.plot(alphas, etots, 'bo-', label=r"$L$")
-    plt.plot(alphas, ebrsqs, 'go-',label=r"$\int\Omega_\star^2R^2\langle B_r^2\rangle d\omega$")
-    plt.plot(alphas, ebrs, 'ro-', label=r"$(\kappa/c)\Phi_{\rm open}^2\Omega_\star^2$")
+    plt.clf()
+    plt.plot(alphas, etots, 'bo-', label=r"$L_{\rm sim}$", lw = lw, ms = ms)
+    l, = plt.plot(alphas, ebrsqs, 'gs-',label=r"$\int\Omega^2R^2\langle B_r^2\rangle_{\!\varphi} d\omega/4\pi c$", lw = lw, ms = ms)
+    l.set_dashes([10,5])
+    l, = plt.plot(alphas, ebrs, 'rd-', label=r"$\Omega^2\Phi_{\rm open}^2/6\pi^2c$", lw = lw, ms = ms)
+    l.set_dashes([2,2])
     ax1=plt.gca()
-    leg = plt.legend(loc="lower right",ncol=1)
+    leg = plt.legend(loc="best",ncol=1,handlelength=3)
     for t in leg.get_texts():
        t.set_fontsize(20)    # the legend text fontsize
     for label in ax1.get_xticklabels() + ax1.get_yticklabels():
         label.set_fontsize(20)
-    plt.xlabel(r"$\alpha\ {\rm [^\circ]}$",fontsize=20)
+    plt.xlabel(r"$\alpha\ {\rm [^\circ]}$",fontsize=20,labelpad=15)
     plt.ylabel(r"$L/L_{\rm aligned}$",fontsize=20)
     plt.grid(b=1)
-    plt.savefig("Lbsq.pdf",bbox_inches='tight',pad_inches=0.02)
+    ax1 = plt.gca()
+    tck = np.linspace(0,90,7)
+    ax1.set_xticks(tck)
+    tck = np.array([1.,1.5,2.,2.5])
+    ax1.set_yticks(tck)
+    #ax1.set_yticklabels((r"$1$","",r"$2$"))
+    ax1.set_xticklabels((r"$0$",r"$15$",r"$30$",r"$45$",r"$60$",r"$75$",r"$90$"))
+    ax1.set_xlim(-5,95)
+    ax1.set_ylim(0.8,2.5)
+    if dosavefig:
+        plt.savefig("Lbsq.pdf",bbox_inches='tight',pad_inches=0.02)
 
 
 def plotpangle(roRlc=None,r0=10,doreload=1,dnpole=0,no=106,inject=0):
