@@ -4966,7 +4966,7 @@ def plotpsrangpower(cachefname="psrangle.npz",lw = 2,ms=10,dosavefig=0):
     #
     # Phi(alpha)
     #
-    plt.figure(2)
+    plt.figure(2,figsize=(6,4))
     plt.clf()
     psis = np.array([psi0, psi15, psi30, psi45, psi60, psi75, psi90])
     etots = np.array([etot0, etot15, etot30, etot45, etot60, etot75, etot90])
@@ -5009,7 +5009,7 @@ def plotpsrangpower(cachefname="psrangle.npz",lw = 2,ms=10,dosavefig=0):
     for label in ax1.get_xticklabels() + ax1.get_yticklabels() + ax2.get_yticklabels():
         label.set_fontsize(20)
     if dosavefig:
-        plt.savefig("Phisq.pdf",bbox_inches='tight',pad_inches=0.02)
+        plt.savefig("Phisq.pdf",bbox_inches='tight',pad_inches=0.04)
     plt.figure(3)
     plt.clf()
     plt.plot(th0*180/np.pi,brsqavg0/np.max(brsqavg0),"r")
@@ -5053,7 +5053,7 @@ def plotpsrangpower(cachefname="psrangle.npz",lw = 2,ms=10,dosavefig=0):
     plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20)
     plt.ylabel(r"$\langle B_r^2\rangle$",fontsize=20)
     if dosavefig:
-        plt.savefig("Br.pdf",bbox_inches='tight',pad_inches=0.02)
+        plt.savefig("Br.pdf",bbox_inches='tight',pad_inches=0.04)
     plt.figure(4)
     en = np.array([
          (brsqavg0* np.sin(th0)**3*(th0[1]-th0[0])   *len(th0)).sum(), 
@@ -5091,7 +5091,7 @@ def plotpsrangpower(cachefname="psrangle.npz",lw = 2,ms=10,dosavefig=0):
     ax1.set_xlim(-5,95)
     ax1.set_ylim(0.8,2.5)
     if dosavefig:
-        plt.savefig("Lbsq.pdf",bbox_inches='tight',pad_inches=0.02)
+        plt.savefig("Lbsq.pdf",bbox_inches='tight',pad_inches=0.04)
 
 
 def plotpangle(roRlc=None,r0=10,doreload=1,dnpole=0,no=106,inject=0):
