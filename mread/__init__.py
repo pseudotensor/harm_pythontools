@@ -4973,7 +4973,7 @@ def plotpsrangpower(cachefname="psrangle.npz",lw = 2,ms=10,dosavefig=0):
     l.set_dashes([2,2])
     plt.grid(b=1)
     ax1=plt.gca()
-    plt.xlabel(r"$\theta\ {\rm [^\circ]}$",fontsize=20,labelpad=15)
+    plt.xlabel(r"$\alpha\ {\rm [^\circ]}$",fontsize=20,labelpad=15)
     plt.ylabel(r"$\Phi_{\rm open}^2/\Phi_{\rm open,\ aligned}^2$",fontsize=20)
     ax1 = plt.gca()
     tck = np.linspace(0,90,7)
@@ -4987,15 +4987,24 @@ def plotpsrangpower(cachefname="psrangle.npz",lw = 2,ms=10,dosavefig=0):
     ax2 = plt.twinx()
     ylimits = np.array(ax1.get_ylim())*psis[0]**2
     ax2.set_ylim(ylimits)
-    yticks = tck*psis[0]**2
+    yticks = np.round(tck*psis[0]**2,decimals=3)
+    txt = ax2.yaxis.get_offset_text()
+    txt.set_fontsize(20)
     ax2.set_yticks(yticks)
-    ylabels = [(r"$%.2g$" % item) for item in yticks]
-    ax2.set_yticklabels(ylabels)
+    #ylabels = [(r"$%.2g$" % item) for item in yticks]
+    #ax2.set_yticklabels(ylabels)
+    ax2.ticklabel_format(axis='y', style='sci', scilimits=(-2,2))
+    # scale_pow = 2
+    # def my_formatter_fun(x, p):
+    #     return "%.2f" % (x * (10 ** scale_pow))
+    # ax2.get_yaxis().set_major_formatter(ticker.FuncFormatter(my_formatter_fun))
+    #ax2.set_ylabel('my label ' + '$10^{{{0:d}}}$'.format(scale_pow))
+    #ax2.set_ylabel(r"$\Phi_{\rm open}^2/\Phi_{\rm tot}^2$" + '$10^{{{0:d}}}$'.format(scale_pow),fontsize=20)
     ax2.set_ylabel(r"$\Phi_{\rm open}^2/\Phi_{\rm tot}^2$",fontsize=20)
     for label in ax1.get_xticklabels() + ax1.get_yticklabels() + ax2.get_yticklabels():
         label.set_fontsize(20)
     if dosavefig:
-        plt.savefig("Lbsq.pdf",bbox_inches='tight',pad_inches=0.02)
+        plt.savefig("Phisq.pdf",bbox_inches='tight',pad_inches=0.02)
     plt.figure(3)
     plt.clf()
     plt.plot(th0*180/np.pi,brsqavg0/np.max(brsqavg0),"r")
