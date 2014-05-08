@@ -6,6 +6,592 @@ from numpy import mgrid, empty, zeros, sin, cos, pi
 from tvtk.api import tvtk
 from mayavi import mlab
 from scipy import ndimage
+import sys
+import numpy as np
+import os
+import gc
+#from mread import grid3d, rfd, cvel
+from scipy.interpolate import griddata
+from scipy.interpolate import interp1d
+
+def amax(arg1,arg2):
+    return(np.maximum(arg1,arg2))
+    # arr1 = np.array(arg1)
+    # arr2 = np.array(arg2)
+    # #create storage array of size that's largest of arr1 and arr2
+    # ret=np.zeros_like(arr1+arr2)
+    # ret[arr1>=arr2]=arr1[arr1>=arr2]
+    # ret[arr2>arr1]=arr2[arr2>arr1]
+    # return(ret)
+def amin(arg1,arg2):
+    return(np.minimum(arg1,arg2))
+    # arr1 = np.array(arg1)
+    # arr2 = np.array(arg2)
+    # #create storage array of size that's largest of arr1 and arr2
+    # ret=np.zeros_like(arr1+arr2)
+    # ret[arr1<=arr2]=arr1[arr1<=arr2]
+    # ret[arr2<arr1]=arr2[arr2<arr1]
+    # return(ret)
+
+
+def mdot(a,b):
+    """
+    Computes a contraction of two tensors/vectors.  Assumes
+    the following structure: tensor[m,n,i,j,k] OR vector[m,i,j,k], 
+    where i,j,k are spatial indices and m,n are variable indices. 
+    """
+    if (a.ndim == 3 and b.ndim == 3) or (a.ndim == 4 and b.ndim == 4):
+          c = (a*b).sum(0)
+    elif a.ndim == 5 and b.ndim == 4:
+          c = np.empty(amax(a[:,0,:,:,:].shape,b.shape),dtype=b.dtype)      
+          for i in range(a.shape[0]):
+                c[i,:,:,:] = (a[i,:,:,:,:]*b).sum(0)
+    elif a.ndim == 4 and b.ndim == 5:
+          c = np.empty(amax(b[0,:,:,:,:].shape,a.shape),dtype=a.dtype)      
+          for i in range(b.shape[1]):
+                c[i,:,:,:] = (a*b[:,i,:,:,:]).sum(0)
+    elif a.ndim == 5 and b.ndim == 5:
+          c = np.empty((a.shape[0],b.shape[1],a.shape[2],a.shape[3],max(a.shape[4],b.shape[4])),dtype=a.dtype)
+          for i in range(c.shape[0]):
+                for j in range(c.shape[1]):
+                      c[i,j,:,:,:] = (a[i,:,:,:,:]*b[:,j,:,:,:]).sum(0)
+    elif a.ndim == 5 and b.ndim == 6:
+          c = np.empty((a.shape[0],b.shape[1],b.shape[2],max(a.shape[2],b.shape[3]),max(a.shape[3],b.shape[4]),max(a.shape[4],b.shape[5])),dtype=a.dtype)
+          for mu in range(c.shape[0]):
+              for k in range(c.shape[1]):
+                  for l in range(c.shape[2]):
+                      c[mu,k,l,:,:,:] = (a[mu,:,:,:,:]*b[:,k,l,:,:,:]).sum(0)
+    else:
+           raise Exception('mdot', 'wrong dimensions')
+    return c
+
+
+def set_numnprs(fname="nprlistinfo.dat"):
+    fin = open( fname , "rb" )
+    header1 = fin.readline().split() #numlines, numversion
+    header2 = fin.readline().split() #NPR (conserved)
+    NPR = len(header2)
+    header3 = fin.readline().split() #NPR2INTERP
+    header4 = fin.readline().split() #NPR2NOTINTERP
+    header5 = fin.readline().split() #NPRBOUND
+    header6 = fin.readline().split() #NPRFLUXBOUND
+    header7 = fin.readline().split() #NPRDUMP
+    NPRDUMP = len(header7)
+    header8 = fin.readline().split() #NPRINVERT
+    return((NPR, NPRDUMP))
+    
+def set_dumpversions(header):
+    global numheaderitems, numcolumns, whichdump, whichdumpversion,_is,_ie,_js,_je,_ks,_ke
+    global MBH,QBH,EP3,THETAROT
+    #
+    numheaderitems=len(header)
+    if numheaderitems==32:
+        print("Found 32 header items, reading them in")  ; sys.stdout.flush()
+        MBH=myfloatalt(float(header[19]))
+        QBH=myfloatalt(float(header[20]))
+        EP3=myfloatalt(float(header[21]))
+        THETAROT=myfloatalt(float(header[22]))
+        #
+        _is=int(header[23])
+        _ie=int(header[24])
+        _js=int(header[25])
+        _je=int(header[26])
+        _ks=int(header[27])
+        _ke=int(header[28])
+        whichdump=int(header[29])
+        whichdumpversion=int(header[30])
+        numcolumns=int(header[31])
+    #
+    if numheaderitems==31:
+        print("Found 31 header items, reading them in and setting THETAROT=0.0\n")  ; sys.stdout.flush()
+        MBH=myfloatalt(float(header[19]))
+        QBH=myfloatalt(float(header[20]))
+        EP3=myfloatalt(float(header[21]))
+        THETAROT=0.0
+        #
+        _is=int(header[22])
+        _ie=int(header[23])
+        _js=int(header[24])
+        _je=int(header[25])
+        _ks=int(header[26])
+        _ke=int(header[27])
+        whichdump=int(header[28])
+        whichdumpversion=int(header[29])
+        numcolumns=int(header[30])
+    #
+    if numheaderitems==30:
+        print("Found 30 header items, reading them in and setting EP3=THETAROT=0.0\n")  ;
+        MBH=myfloatalt(float(header[19]))
+        QBH=myfloatalt(float(header[20]))
+        EP3=0.0
+        THETAROT=0.0
+        #
+        _is=int(header[21])
+        _ie=int(header[22])
+        _js=int(header[23])
+        _je=int(header[24])
+        _ks=int(header[25])
+        _ke=int(header[26])
+        whichdump=int(header[27])
+        whichdumpversion=int(header[28])
+        numcolumns=int(header[29])
+
+def myfloatalt(f):
+    return( np.float64(f) )
+    
+
+def myfloat(f,acc=1):
+    """ acc=1 means np.float32, acc=2 means np.float64 """
+    if acc==1:
+        return( np.float32(f) )
+    else:
+        return( np.float64(f) )
+
+def cvel():
+    global ud,etad, etau, gamma, vu, vd, bu, bd, bsq
+    if 'ud' in globals():
+        del ud
+    if 'etad' in globals():
+        del etad 
+    if 'etau' in globals():
+        del etau 
+    if 'gamma' in globals():
+        del gamma 
+    if 'vu' in globals():
+        del vu 
+    if 'vd' in globals():
+        del vd 
+    if 'bu' in globals():
+        del bu 
+    if 'bd' in globals():
+        del bd 
+    if 'bsq' in globals():
+        del bsq
+    ud = mdot(gv3,uu)                  #g_mn u^n
+    etad = np.zeros_like(uu)
+    etad[0] = -1/(-gn3[0,0])**0.5      #ZAMO frame velocity (definition)
+    etau = mdot(gn3,etad)
+    gamma=-mdot(uu,etad)                #Lorentz factor as measured by ZAMO
+    vu = uu - gamma*etau               #u^m = v^m + gamma eta^m
+    vd = mdot(gv3,vu)
+    bu=np.empty_like(uu)              #allocate memory for bu
+    #set component per component
+    bu[0]=mdot(B[1:4], ud[1:4])             #B^i u_i
+    bu[1:4]=(B[1:4] + bu[0]*uu[1:4])/uu[0]  #b^i = (B^i + b^t u^i)/u^t
+    bd=mdot(gv3,bu)
+    bsq=mdot(bu,bd)
+
+def rfd(fieldlinefilename,**kwargs):
+    #read information from "fieldline" file: 
+    #Densities: rho, u, 
+    #Velocity components: u1, u2, u3, 
+    #Cell-centered magnetic field components: B1, B2, B3, 
+    #Face-centered magnetic field components multiplied by metric determinant: gdetB1, gdetB2, gdetB3
+    global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,rho,lrho,ug,uu,uut,uu,B,uux,gdetB,rhor,r,h,ph,ti,tj,tk,gdetF,fdbody,OmegaNS,AlphaNS,Bstag,defcoord,numheaderitems,numcolumns
+    #read image
+    if 'rho' in globals():
+        del rho
+    if 'lrho' in globals():
+        del lrho
+    if 'ug' in globals():
+        del ug
+    if 'uu' in globals():
+        del uu
+    if 'uut' in globals():
+        del uut
+    if 'uu' in globals():
+        del uu
+    if 'B' in globals():
+        del B
+    if 'uux' in globals():
+        del uux
+    if 'gdetB' in globals():
+        del gdetB
+    if 'rhor' in globals():
+        del rhor
+    if 'gdetF' in globals():
+        del gdetF
+    if 'fdbody' in globals():
+        del fdbody
+    print("Opening %s ..." % fieldlinefilename)
+    fin = open( "dumps/" + fieldlinefilename, "rb" )
+    header = fin.readline().split()
+    set_dumpversions(header)
+    #time of the dump
+    t = myfloat(np.float64(header[0]))
+    #dimensions of the grid
+    nx = int(header[1])
+    ny = int(header[2])
+    nz = int(header[3])
+    #cell size in internal coordintes
+    _dx1=myfloat(float(header[7]))
+    _dx2=myfloat(float(header[8]))
+    _dx3=myfloat(float(header[9]))
+    #other information: 
+    #polytropic index
+    gam=myfloat(float(header[11]))
+    #black hole spin
+    a=myfloat(float(header[12]))
+    rhor = 1+(1-a**2)**0.5
+    R0=myfloat(float(header[13]))
+    #Spherical polar radius of the innermost radial cell
+    Rin=myfloat(float(header[14]))
+    #Spherical polar radius of the outermost radial cell
+    Rout=myfloat(float(header[15]))
+    defcoord = myfloat(float(header[18]))
+    #
+    if os.path.isfile("coordparms.dat"):
+        coordparams = np.loadtxt( "coordparms.dat", 
+                      dtype=np.float64, 
+                      skiprows=0, 
+                      unpack = False )
+        if defcoord == 3010: #SNSCOORDS
+            if len(coordparams)>=14:
+                OmegaNS = coordparams[13]
+                AlphaNS = coordparams[14]
+            else:
+                OmegaNS = 0
+                AlphaNS = 0
+        elif defcoord == 3000: #SJETCOORDS
+            if len(coordparams)>=27:
+                OmegaNS = coordparams[26]
+                AlphaNS = coordparams[27]
+            else:
+                OmegaNS = 0
+                AlphaNS = 0
+    else:
+        OmegaNS = 0
+        AlphaNS = 0
+    #read grid dump per-cell data
+    #
+    body = np.fromfile(fin,dtype=np.float32,count=-1)
+    fdbody=body
+    fin.close()
+    d=body.view().reshape((-1,nx,ny,nz),order='F')
+    #rho, u, -hu_t, -T^t_t/U0, u^t, v1,v2,v3,B1,B2,B3
+    #matter density in the fluid frame
+    rho=d[0,:,:,:]
+    lrho = np.log10(rho)
+    #matter internal energy in the fluid frame
+    ug=d[1,:,:,:]
+    #d[4] is the time component of 4-velocity, u^t
+    #d[5:8] are 3-velocities, v^i
+    uu=np.copy(d[4:8,:,:,:])  #avoid modifying original; again, note uu[i] are 3-velocities (as read from the fieldline file)
+    #uu=d[4:8,:,:,:]  #again, note uu[i] are 3-velocities (as read from the fieldline file)
+    #multiply by u^t to get 4-velocities: u^i = u^t v^i
+    uu[1:4]=uu[1:4] * uu[0]
+    B = np.zeros_like(uu)
+    #cell-centered magnetic field components
+    B[1:4,:,:,:]=d[8:11,:,:,:]
+    ii=11
+    #if the input file contains additional data
+    if d.shape[0]==14 or d.shape[0]==23 or d.shape[0]==26:
+        print("Loading gdetB data...")
+        #new image format additionally contains gdet*B^i
+        gdetB = np.zeros_like(B)
+        #face-centered magnetic field components multiplied by gdet
+        gdetB[1:4] = d[ii:ii+3,:,:,:]; ii=ii+3
+    else:
+        print("No data on gdetB, approximating it.")
+        gdetB = np.zeros_like(B)
+        gdetB[1] = gdet * B[1]
+        gdetB[2] = gdet * B[2]
+        gdetB[3] = gdet * B[3]
+    if d.shape[0]==20 or d.shape[0]==23 or d.shape[0]==26:
+        print("Loading flux data...")
+        gdetF=np.zeros((4,3,nx,ny,nz))
+        gdetF[1,0:3,:,:,:]=d[ii:ii+3,:,:,:]; ii=ii+3
+        gdetF[2,0:3,:,:,:]=d[ii:ii+3,:,:,:]; ii=ii+3
+        gdetF[3,0:3,:,:,:]=d[ii:ii+3,:,:,:]; ii=ii+3
+    else:
+        print("No data on gdetF, setting it to None.")
+        gdetF = None
+    #if includes Bstag in addition to all of the above
+    if d.shape[0]==26:
+        Bstag = np.zeros_like(B)
+        Bstag[1:] =  d[ii:ii+3,:,:,:]; ii=ii+3
+    else:
+        print("No data on Bstag, setting it to B.")
+        Bstag = B
+    #     if 'gdet' in globals():
+    #         #first set everything approximately (B's are at shifted locations by half-cell)
+    #         B = gdetB/gdet  
+    #         #then, average the inner cells to proper locations
+    #         B[1,0:nx-1,:,:] = 0.5*(gdetB[1,0:nx-1,:,:]+gdetB[1,1:nx,:,:])/gdet[0:nx-1,:,:]
+    #         B[2,:,0:ny-1,:] = 0.5*(gdetB[2,:,0:ny-1,:]+gdetB[2,:,1:ny,:])/gdet[:,0:ny-1,:]
+    #         B[3,:,:,0:nz-1] = 0.5*(gdetB[3,:,:,0:nz-1]+gdetB[3,:,:,1:nz])/gdet[:,:,0:nz-1]
+    #         #note: last cells on the grids (near upper boundaries of each dir are at
+    #         #      approximate locations
+    #     else:
+    #         print( "rfd: warning: since gdet is not defined, I am skipping the computation of cell-centered fields, B" )
+    # else:
+    if 'r' in globals() and r.shape[2] != nz:
+        #dynamically change the 3rd dimension size
+        rnew = np.zeros((nx,ny,nz),dtype=r.dtype)
+        hnew = np.zeros((nx,ny,nz),dtype=h.dtype)
+        phnew = np.zeros((nx,ny,nz),dtype=ph.dtype)
+        rnew += r[:,:,0:1]
+        hnew += h[:,:,0:1]
+        tinew = np.zeros((nx,ny,nz),dtype=ti.dtype)
+        tjnew = np.zeros((nx,ny,nz),dtype=tj.dtype)
+        tknew = np.zeros((nx,ny,nz),dtype=tk.dtype)
+        tinew += ti[:,:,0:1]
+        tjnew += tj[:,:,0:1]
+        tknew += np.arange(nz)[None,None,:]
+        #compute size of phi wedge assuming dxdxp[3][3] is up to date
+        phiwedge = dxdxp[3][3][0,0,0]*_dx3*nz
+        a_phi = phiwedge/(2.*nz)+np.linspace(0,phiwedge,num=nz,endpoint=False)
+        phnew += a_phi[None,None,:]
+        del r
+        del h
+        del ph
+        r = rnew
+        h = hnew
+        ph = phnew
+        del ti
+        del tj
+        del tk
+        ti = tinew
+        tj = tjnew
+        tk = tknew
+        gc.collect()
+    #save file for Josh
+    savenewgrid = kwargs.pop("savenewgrid",0)
+    if savenewgrid:
+        newRin = Rin
+        newRout = 1000
+        newR0 = 0
+        newd = reinterpfld(d,newRin=newRin,newRout=newRout)
+        print( "Saving new grid...", )
+        #write out a dump with reinterpolated grid spin:
+        gout = open( "dumps/" + fieldlinefilename + "newgrid", "wb" )
+        header[4] = "%g" % (1.*np.log(newRin))
+        header[5] = "%g" % (0.) #_startx2
+        header[6] = "%g" % (0.) #_startx3
+        header[7] = "%g" % (1.*np.log(newRout/newRin)/nx)
+        header[8] = "%g" % (1./ny)
+        header[9] = "%g" % (2*np.pi/nz)
+        #Spherical polar radius of the innermost radial cell
+        header[13] = "%g" % newR0
+        header[14] = "%g" % newRin
+        header[15] = "%g" % newRout
+        for headerel in header:
+            s = "%s " % headerel
+            gout.write( s )
+        gout.write( "\n" )
+        gout.flush()
+        os.fsync(gout.fileno())
+        #reshape the rdump content
+        gd1 = newd.reshape(-1,order='F') #view().reshape((nz,ny,nx,-1),order='C')
+        gd1.tofile(gout)
+        gout.close()
+        print( " done!" )
+    ##
+    ##
+    ## RADIATION
+    ##
+    ##
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
+    global KAPPAUSER,KAPPAESUSER
+    global Erf,uradu,Tgas
+    #
+    global gotrad
+    gotrad=0
+    if numcolumns==16:
+        print("Reading radiation primitives...")
+        gotrad=1
+        Erf=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
+        uradu=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
+        Erf=d[11,:,:,:] # radiation frame radiation energy density
+        uradu=d[12:16,:,:,:]  #again, note uu[i] are 3-velocities (as read from the fieldl
+        #multiply by u^t to get 4-velocities: u^i = u^t v^i
+        uradu[1:4]=uradu[1:4] * uradu[0]
+        #
+        maxErf=np.max(Erf)
+        minErf=np.min(Erf)
+        print("maxErf=%g minErf=%g" % (maxErf,minErf)) ; sys.stdout.flush()
+        #
+        rddims()
+        #
+        # now compute auxillary opacity related quantities since only otherwise in raddump
+        KAPPA=1.0
+        KAPPAES=1.0
+        # KORALTODO: Put a lower limit on T~1E4K so not overly wrongly opaque in spots whe
+        T1E4K=(1.0E4/TEMPBAR)
+        # ideal gas assumed for Tgas
+        # code pg
+        pg=(gam-1.0)*ug
+        # code Tgas
+        Tgas=pg/rho
+        KAPPAUSER=(rho*KAPPA*KAPPA_FF_CODE(rho,Tgas+T1E4K))
+        KAPPAESUSER=(rho*KAPPAES*KAPPA_ES_CODE(rho,Tgas))
+        #
+
+def grid3d(dumpname,use2d=False,doface=False): #read grid dump file: header and body
+    #The internal cell indices along the three axes: (ti, tj, tk)
+    #The internal uniform coordinates, (x1, x2, x3), are mapped into the physical
+    #non-uniform coordinates, (r, h, ph), which correspond to radius (r), polar angle (theta), and toroidal angle (phi).
+    #There are more variables, e.g., dxdxp, which is the Jacobian of (x1,x2,x3)->(r,h,ph) transformation, that I can
+    #go over, if needed.
+    global nx,ny,nz,_startx1,_startx2,_startx3,_dx1,_dx2,_dx3,gam,a,R0,Rin,Rout,ti,tj,tk,x1,x2,x3,r,h,ph,conn,gn3,gv3,ck,dxdxp,gdet,OmegaNS,AlphaNS,defcoord,phiwedgesize
+    global tif,tjf,tkf,rf,hf,phf,rhor
+    usinggdump2d = False
+    if dumpname.endswith(".bin"):
+        dumpnamenoext = os.path.splitext(dumpname)[0]
+        dumpname2d = dumpnamenoext + "2d.bin"
+        if use2d and os.path.isfile("dumps/"+dumpname2d):
+            #switch to using 2d gdump if exists
+            dumpname = dumpname2d
+            usinggdump2d = True
+    sys.stdout.write( "Reading grid from " + "dumps/" + dumpname + " ..." )
+    gin = open( "dumps/" + dumpname, "rb" )
+    #First line of grid dump file is a text line that contains general grid information:
+    headerline = gin.readline()
+    header = headerline.split()
+    #dimensions of the grid
+    nx = int(header[1])
+    ny = int(header[2])
+    nz = int(header[3])
+    if nz == 1:
+        usinggdump2d = False
+    #grid internal coordinates starting point
+    _startx1=myfloat(float(header[4]))
+    _startx2=myfloat(float(header[5]))
+    _startx3=myfloat(float(header[6]))
+    #cell size in internal coordintes
+    _dx1=myfloat(float(header[7]))
+    _dx2=myfloat(float(header[8]))
+    _dx3=myfloat(float(header[9]))
+    #other information: 
+    #polytropic index
+    gam=myfloat(float(header[11]))
+    #black hole spin
+    a=myfloat(float(header[12]))
+    rhor = 1+(1-a**2)**0.5
+    R0=myfloat(float(header[13]))
+    #Spherical polar radius of the innermost radial cell
+    Rin=myfloat(float(header[14]))
+    #Spherical polar radius of the outermost radial cell
+    Rout=myfloat(float(header[15]))
+    defcoord = myfloat(float(header[18]))
+    if os.path.isfile("coordparms.dat"):
+        coordparams = np.loadtxt( "coordparms.dat", 
+                      dtype=np.float64, 
+                      skiprows=0, 
+                      unpack = False )
+        if defcoord == 3010: #SNSCOORDS
+            if len(coordparams)>=14:
+                OmegaNS = coordparams[13]
+                AlphaNS = coordparams[14]
+            else:
+                OmegaNS = 0
+                AlphaNS = 0
+        elif defcoord == 3000: #SJETCOORDS
+            if len(coordparams)>=27:
+                OmegaNS = coordparams[26]
+                AlphaNS = coordparams[27]
+            else:
+                OmegaNS = 0
+                AlphaNS = 0
+    else:
+        OmegaNS = 0
+        AlphaNS = 0
+    #read grid dump per-cell data
+    #
+    if use2d:
+        lnz = 1
+    else:
+        lnz = nz
+    ncols = 126
+    if dumpname.endswith(".bin"):
+        body = np.fromfile(gin,dtype=np.float64,count=ncols*nx*ny*lnz) 
+        gd = body.view().reshape((-1,nx,ny,lnz),order='F')
+        gin.close()
+        if use2d and not usinggdump2d and not dumpname.endswith("2d.bin"):
+            #2d cache file does not exist, create it for future speedup
+            sys.stdout.write( 
+                "\n Saving a 2d slice of %s as %s for future caching..." 
+                % (dumpname, dumpname2d) )
+            gout = open( "dumps/" + dumpname2d, "wb" )
+            gout.write( headerline )
+            #gout.write( "\n" )
+            gout.flush()
+            os.fsync(gout.fileno())
+            #reshape the gdump content
+            #pdb.set_trace()
+            gd1 = body.view().reshape((lnz,ny,nx,-1),order='C')
+            gd1.tofile(gout)
+            gout.close()
+            sys.stdout.write( "  done!" )
+    else:
+        gin.close()
+        gd = np.loadtxt( "dumps/" + dumpname, 
+                      dtype=np.float64, 
+                      skiprows=1, 
+                      unpack = True ).view().reshape((126,nx,ny,lnz), order='F')
+    gd=myfloat(gd)
+    gc.collect()
+    ti,tj,tk,x1,x2,x3,r,h,ph = gd[0:9,:,:,:].view()
+    #get the right order of indices by reversing the order of indices i,j(,k)
+    conn=gd[9:73].view().reshape((4,4,4,nx,ny,lnz), order='F').transpose(2,1,0,3,4,5)
+    #contravariant metric components, g^{\mu\nu}
+    gn3 = gd[73:89].view().reshape((4,4,nx,ny,lnz), order='F').transpose(1,0,2,3,4)
+    #covariant metric components, g_{\mu\nu}
+    gv3 = gd[89:105].view().reshape((4,4,nx,ny,lnz), order='F').transpose(1,0,2,3,4)
+    #metric determinant
+    gdet = gd[105]
+    ck = gd[106:110].view().reshape((4,nx,ny,lnz), order='F')
+    #grid mapping Jacobian
+    dxdxp = gd[110:126].view().reshape((4,4,nx,ny,lnz), order='F').transpose(1,0,2,3,4)
+    phiwedgesize = nz*_dx3*dxdxp[3,3,0,0,0]
+    if doface:
+        #CELL VERTICES:
+        #RADIAL:
+        #add an extra dimension to rf container since one more faces than centers
+        rf = np.zeros((r.shape[0]+1,r.shape[1]+1,r.shape[2]+1))
+        #operate on log(r): average becomes geometric mean, etc
+        rf[1:nx,0:ny,0:lnz] = (r[1:nx]*r[0:nx-1])**0.5 #- 0.125*(dxdxp[1,1,1:nx]/r[1:nx]-dxdxp[1,1,0:nx-1]/r[0:nx-1])*_dx1
+        #extend in theta
+        rf[1:nx,ny,0:lnz] = rf[1:nx,ny-1,0:lnz]
+        #extend in phi
+        rf[1:nx,:,lnz]   = rf[1:nx,:,lnz-1]
+        #extend in r
+        rf[0] = 0*rf[0] + Rin
+        rf[nx] = 0*rf[nx] + Rout
+        #ANGULAR:
+        hf = np.zeros((h.shape[0]+1,h.shape[1]+1,h.shape[2]+1))
+        hf[0:nx,1:ny,0:lnz] = 0.5*(h[:,1:ny]+h[:,0:ny-1]) #- 0.125*(dxdxp[2,2,:,1:ny]-dxdxp[2,2,:,0:ny-1])*_dx2
+        hf[1:nx-1,1:ny,0:lnz] = 0.5*(hf[0:nx-2,1:ny,0:lnz]+hf[1:nx-1,1:ny,0:lnz])
+        #populate ghost cells in r
+        hf[nx,1:ny,0:lnz] = hf[nx-1,1:ny,0:lnz]
+        #populate ghost cells in phi
+        hf[:,1:ny,lnz] = hf[:,1:ny,lnz-1]
+        #populate ghost cells in theta (note: no need for this since already initialized everything to zero)
+        hf[:,0] = 0*hf[:,0] + 0
+        hf[:,ny] = 0*hf[:,ny] + np.pi
+        #TOROIDAL:
+        phf = np.zeros((ph.shape[0]+1,ph.shape[1]+1,ph.shape[2]+1))
+        phf[0:nx,0:ny,0:lnz] = ph[0:nx,0:ny,0:lnz] - dxdxp[3,3,0,0,0]*0.5*_dx3
+        #extend in phi
+        phf[0:nx,0:ny,lnz]   = ph[0:nx,0:ny,lnz-1] + dxdxp[3,3,0,0,0]*0.5*_dx3
+        #extend in r
+        phf[nx,0:ny,:]   =   phf[nx-1,0:ny,:]
+        #extend in theta
+        phf[:,ny,:]   =   phf[:,ny-1,:]
+        #indices
+        #tif=np.zeros(ti.shape[0]+1,ti.shape[1]+1,ti.shape[2]+1)
+        #tjf=np.zeros(tj.shape[0]+1,tj.shape[1]+1,tj.shape[2]+1)
+        #tkf=np.zeros(tk.shape[0]+1,tk.shape[1]+1,tk.shape[2]+1)
+        tif=np.arange(0,(nx+1)*(ny+1)*(lnz+1)).reshape((nx+1,ny+1,lnz+1),order='F')
+        tjf=np.arange(0,(nx+1)*(ny+1)*(lnz+1)).reshape((nx+1,ny+1,lnz+1),order='F')
+        tkf=np.arange(0,(nx+1)*(ny+1)*(lnz+1)).reshape((nx+1,ny+1,lnz+1),order='F')
+        tif %= (nx+1)
+        tjf /= (nx+1)
+        tjf %= (ny+1)
+        tkf /= (ny+1)*(lnz+1)
+    gc.collect() #try to release unneeded memory
+    print( "  done!" )
+
 
 def create_structured_grid(s=None,sname=None,v=None,vname=None,maxr=500):
     maxi = iofr(maxr)
@@ -482,3 +1068,5 @@ def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,nce
         print( "Saving snapshot..." ); sys.stdout.flush()
         mlab.savefig("disk_jet_with_field_lines.png", figure=scene, magnification=6.0)
         print( "Done!" ); sys.stdout.flush()
+
+vis_grb(dofieldlines=0,dosavefig=1)
