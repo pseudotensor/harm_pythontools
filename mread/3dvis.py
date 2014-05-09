@@ -836,13 +836,18 @@ def vis_grb(doreload=1,no=555,xmax=50,ymax=50,zmax=None,ncellx=100,ncelly=100,nc
         autozoom = 1
         xmax, zmax = get_jet_zmax(t)
         ymax = xmax
+        #to ensure cubical cells
+        # ncellz = np.int32(0.5+zmax/xmax*ncellx)
+        # if ncellz > 1000: ncellz = 1000
+        print( "xmax = %g, ymax = %g, zmax = %g; ncellx = %d, ncelly = %d, ncellz = %d" 
+               % (xmax, ymax, zmax, ncellx, ncelly, ncellz) )
     else:
         autozoom = 0
     if updateframe:
         scene = mlab.figure(1)
     else:
         scene = mlab.figure(1, bgcolor=(0, 0, 0), fgcolor=(1, 1, 1), size=(960,540))#size=(210*2, 297*2))
-    scene.scene.disable_render = True
+        #scene.scene.disable_render = True
     print( "Running interp3d..." ); sys.stdout.flush()
     i3d_jet,j3d_jet,k3d_jet,xi_jet,yi_jet,zi_jet =\
         interp3d(xmax=xmax,ymax=ymax,zmax=zmax,ncellx=ncellx,ncelly=ncelly,ncellz=ncellz)
@@ -860,7 +865,7 @@ def vis_grb(doreload=1,no=555,xmax=50,ymax=50,zmax=None,ncellx=100,ncelly=100,nc
         vmax = lrhoi_jet.max()
     print( "Done with trilinear interpolation for jet..." ); sys.stdout.flush()
     if updateframe:
-        mlab_lrho_jet.mlab_source.scalars = lrhoi_jet
+        mlab_lrho_jet.mlab_source.set(scalars = lrhoi_jet, x = xi_jet, y = yi_jet, z = zi_jet)
     else:
         mlab_lrho_jet = mlab.pipeline.scalar_field(xi_jet,yi_jet,zi_jet,lrhoi_jet)
         # bsqorhoi_jet = np.float32((bsq/rho)[i3d_jet,j3d_jet,k3d_jet])
@@ -968,7 +973,7 @@ def vis_grb(doreload=1,no=555,xmax=50,ymax=50,zmax=None,ncellx=100,ncelly=100,nc
     xyzcam /= np.sum(xyzcam**2)**0.5
     #set the distance to desired one
     xyzcam *= zmax*2
-    scene.scene.disable_render = False
+    #scene.scene.disable_render = False
     scene.scene.camera.position = xyzcam
     scene.scene.camera.focal_point = [9.7224118574481291e-12, -1.2963215809930837e-10, 2.5926431619861676e-11]
     scene.scene.camera.view_angle = 30.0
@@ -986,7 +991,7 @@ def vis_grb(doreload=1,no=555,xmax=50,ymax=50,zmax=None,ncellx=100,ncelly=100,nc
     print( "Done rendering!" ); sys.stdout.flush()
     if dosavefig:
         print( "Saving snapshot..." ); sys.stdout.flush()
-        mlab.savefig("disk_jet_%.png" % no, figure=scene, magnification=2.0)
+        mlab.savefig("disk_jet_%04d.png" % no, figure=scene, magnification=2.0)
         print( "Done!" ); sys.stdout.flush()
 
 
