@@ -8698,6 +8698,8 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None,docomp
     fldname = flist[-1]
     lastfindex = np.int(fldname.split(".")[0].split("e")[-1])
     numtimeslices=lastfindex+1 #account for findex = 0
+    if maxn is not None and numtimeslices > maxn+1:
+        numtimeslices = maxn+1
     #np.seterr(invalid='raise',divide='raise')
     #
     print "Number of time slices: %d" % numtimeslices
@@ -9069,6 +9071,9 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None,docomp
         #skip pre-loaded time slices
         if findex < numtimeslices2: 
             continue
+        if findex >= numtimeslices:
+            #Done!
+            break
         #call garbage collector -- trying to get req'd memory under control
         gc.collect()
         print( "Reading " + fname + " ..." )
@@ -16255,9 +16260,14 @@ def mkts(docompute=False):
         ihor = np.floor(iofr(rhor)+0.5);
         #diskflux=diskfluxcalc(ny/2)
         #qtymem=None #clear to free mem
-        if len(sys.argv[2:])==2 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
+        if len(sys.argv[2:])>=2 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
             whichi = int(sys.argv[2])
             whichn = int(sys.argv[3])
+            if len(sys.argv[2:])==3:
+                if sys.argv[4].isdigit():
+                    maxn = int(sys.argv[4])
+                else:
+                    maxn = None
             if whichi >= whichn:
                 mergeqtyvstime(whichn)
             else:
