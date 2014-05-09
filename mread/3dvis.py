@@ -732,7 +732,7 @@ def trilin(a,i,j,k,order=3):
     a_with_bnd_cells = np.concatenate((a[...,-nbnd:],a,a[...,:nbnd]),axis=-1)
     return ndimage.map_coordinates(a_with_bnd_cells,np.array([i,j,k+nbnd]),order=order)
 
-def vis_grb(doreload=1,no=317,xmax=20,ymax=20,zmax=200,ncellx=100,ncelly=100,ncellz=1000,dosavefig=0,order=3,dofieldlines=1):
+def vis_grb(doreload=1,no=555,xmax=50,ymax=50,zmax=500,ncellx=200,ncelly=200,ncellz=2000,dosavefig=0,order=3,dofieldlines=0):
     if doreload:
         grid3d("gdump.bin",use2d=1)
         rfd("fieldline%04d.bin"%no)
@@ -1069,4 +1069,4 @@ def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,nce
         mlab.savefig("disk_jet_with_field_lines.png", figure=scene, magnification=6.0)
         print( "Done!" ); sys.stdout.flush()
 
-vis_grb(dofieldlines=0,dosavefig=1)
+#vis_grb(dofieldlines=0,dosavefig=1)
