@@ -7,8 +7,8 @@ from tvtk.api import tvtk
 from mayavi import mlab
 from scipy import ndimage
 import sys
+import os,glob
 import numpy as np
-import os
 import gc
 #from mread import grid3d, rfd, cvel
 from scipy.interpolate import griddata
@@ -730,124 +730,246 @@ def trilin(a,i,j,k,order=3):
     #returns interpolated values of a[i,j,k]
     nbnd = 3
     a_with_bnd_cells = np.concatenate((a[...,-nbnd:],a,a[...,:nbnd]),axis=-1)
-    return ndimage.map_coordinates(a_with_bnd_cells,np.array([i,j,k+nbnd]),order=order)
+    return ndimage.map_coordinates(a_with_bnd_cells,np.array([i,j,k+nbnd]),order=order,mode="nearest")
 
-def vis_grb(doreload=1,no=555,xmax=50,ymax=50,zmax=500,ncellx=200,ncelly=200,ncellz=2000,dosavefig=0,order=3,dofieldlines=0):
+def compute_jet_head_velocity(headfile="headinfo.npz",endn=-1,dn=1):
+    if not os.path.isfile( headfile ):
+        print( "Precomputing head motion data..." )
+        thead = []
+        vhead = []
+        rhead = []
+        xmaxes = []
+        ymaxes = []
+        flist1 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
+        flist2 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9][0-9].bin") ) )
+        flist1.sort()
+        flist2.sort()
+        flist = np.concatenate((flist1,flist2))
+        for fldname in flist:
+            fldindex = np.int(fldname.split(".")[0].split("e")[-1])
+            # if fldindex < startn:
+            #     continue
+            if endn>=0 and fldindex >= endn:
+                break
+            if fldindex < dn*100:
+                if fldindex % (dn*10):
+                    continue
+            elif fldindex % (dn*100):
+                continue
+            print( "Reading " + fldname + " ..." )
+            sys.stdout.flush()
+            rfd("../"+fldname)
+            sys.stdout.flush()
+            ent1d = (ug/(rho+1e-15)**gam)[:,2:10].mean(1)
+            which = (ent1d>0.1*np.max(ent1d))[:,0]
+            vheadmin = 0.1
+            if t < 10*Rin:
+                vhead = vheadmin
+                rhead = vhead * t
+            elif which.sum():
+                rhead = r[which,0,0][-1]
+                vhead = (rhead-Rin) / (t+1e-5)
+            else:
+                rhead = Rout
+                vhead = 1
+            if vhead > 1 or np.isnan(vhead):
+                vhead = 1
+            if vhead < vheadmin:
+                vhead = vheadmin
+            ymax = vhead*t*1.5
+            if ymax < 8:
+                ymax= 8
+            if ymax > 5000 or np.isnan(ymax):
+                ymax = 5000
+            xmax = ymax**0.5
+            if xmax < 8:
+                xmax = 8
+            vhead.append(vhead)
+            thead.append(t)
+            rhead.append(rhead)
+            ymaxes.append(ymax)
+            xmaxes.append(xmax)
+            print( "t=%g, rhead=%g, vhead=%g" % (t, rhead, vhead) )
+        print( "Saving to file..." )
+        np.savez( headfile, vhead = vhead, thead = thead, xmaxes = xmaxes, ymaxes = ymaxes)
+    else:
+        print( "Loading precomputed head motion data..." )
+        npzfile = np.load(headfile)
+        vhead=npzfile['vhead']
+        thead=npzfile['thead']
+    myvheadfunc=interp1d(thead,vhead,kind="cubic",bounds_error=False,fill_value = vhead[-1])
+    return myvheadfunc
+
+def get_jet_zmax(t):
+    myvheadfunc = compute_jet_head_velocity()
+    vhead = myvheadfunc(t)
+    ymax = vhead*t*1.5
+    if ymax < 8:
+        ymax= 8
+    if ymax > 5000 or np.isnan(ymax):
+        ymax = 5000
+    xmax = ymax**0.5
+    if xmax < 8:
+        xmax = 8
+    return(xmax,ymax)
+
+def mk_vis_grb_movie():
+    flist1 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
+    flist2 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9][0-9].bin") ) )
+    flist1.sort()
+    flist2.sort()
+    flist = np.concatenate((flist1,flist2))
+    updateframe = 0
+    for fldname in flist:
+        fldindex = np.int(fldname.split(".")[0].split("e")[-1])
+        vis_grb(no=fldindex,updateframe=updateframe,dosavefig=1)
+        updateframe = 1
+    
+def vis_grb(doreload=1,no=555,xmax=50,ymax=50,zmax=None,ncellx=100,ncelly=100,ncellz=1000,dosavefig=0,order=3,dofieldlines=0,updateframe=0):
+    global mlab_lrho_jet, vol_jet, lrhoi_jet, i3d_jet,j3d_jet,k3d_jet,xi_jet,yi_jet,zi_jet
     if doreload:
-        grid3d("gdump.bin",use2d=1)
+        if 'gv3' not in globals():
+            grid3d("gdump.bin",use2d=1)
         rfd("fieldline%04d.bin"%no)
         cvel()
-    scene = mlab.figure(1, bgcolor=(0, 0, 0), fgcolor=(1, 1, 1), size=(210*2, 297*2))
+    if zmax is None:
+        autozoom = 1
+        xmax, zmax = get_jet_zmax(t)
+        ymax = xmax
+    else:
+        autozoom = 0
+    if updateframe:
+        scene = mlab.figure(1)
+    else:
+        scene = mlab.figure(1, bgcolor=(0, 0, 0), fgcolor=(1, 1, 1), size=(960,540))#size=(210*2, 297*2))
+    scene.scene.disable_render = True
     print( "Running interp3d..." ); sys.stdout.flush()
     i3d_jet,j3d_jet,k3d_jet,xi_jet,yi_jet,zi_jet =\
         interp3d(xmax=xmax,ymax=ymax,zmax=zmax,ncellx=ncellx,ncelly=ncelly,ncellz=ncellz)
+    # i3d_jet1,j3d_jet1,k3d_jet1,xi_jet1,yi_jet1,zi_jet1 =\
+    #     interp3d(xmax=xmax,ymax=ymax,zmax=zmax,ncellx=ncellx,ncelly=ncelly,ncellz=ncellz)
     print( "Done with inter3d for jet..." ); sys.stdout.flush()
     print( "Running trilinear interpolation for jet..." ); sys.stdout.flush()
     lrhoi_jet = np.float32(trilin(lrho,i3d_jet,j3d_jet,k3d_jet,order=order))
+    #lrhoi_jet = lrho[np.int32(0.5+i3d_jet),np.int32(0.5+j3d_jet),np.int32(0.5+k3d_jet)]
+    if 1:
+        vmin = 0
+        vmax = 8
+    else:
+        vmin = lrhoi_jet.min()
+        vmax = lrhoi_jet.max()
     print( "Done with trilinear interpolation for jet..." ); sys.stdout.flush()
-    mlab_lrho_jet = mlab.pipeline.scalar_field(xi_jet,yi_jet,zi_jet,lrhoi_jet)
-    # bsqorhoi_jet = np.float32((bsq/rho)[i3d_jet,j3d_jet,k3d_jet])
-    # mlab_bsqorho = mlab.pipeline.scalar_field(xi_jet,yi_jet,zi_jet,bsqorhoi_jet)
-    # pdb.set_trace()
-    mlab.clf()
-    # Change the otf (opacity transfer function) of disk and jet:
-    from tvtk.util.ctf import PiecewiseFunction
-    print( "Running volume rendering for jet..." ); sys.stdout.flush()
-    vmin = lrhoi_jet.min()
-    vmax = lrhoi_jet.max()
-    vol_jet = mlab.pipeline.volume(mlab_lrho_jet,vmin=vmin,vmax=vmax) #,vmin=-6,vmax=1)
-    print( "Done with volume rendering of jet..." ); sys.stdout.flush()
-    if 1:
-        otf_jet = PiecewiseFunction()
-        otf_jet.add_point(vmin, 0.)
-        otf_jet.add_point(vmax, 1.)
-        vol_jet._otf = otf_jet
-        vol_jet._volume_property.set_scalar_opacity(otf_jet)
-    vol_jet.volume_mapper.blend_mode = 'minimum_intensity'
-    #
-    # Streamlines
-    #
-    if dofieldlines:
+    if updateframe:
+        mlab_lrho_jet.mlab_source.scalars = lrhoi_jet
+    else:
+        mlab_lrho_jet = mlab.pipeline.scalar_field(xi_jet,yi_jet,zi_jet,lrhoi_jet)
+        # bsqorhoi_jet = np.float32((bsq/rho)[i3d_jet,j3d_jet,k3d_jet])
+        # mlab_bsqorho = mlab.pipeline.scalar_field(xi_jet,yi_jet,zi_jet,bsqorhoi_jet)
+        # pdb.set_trace()
+        mlab.clf()
+        # Change the otf (opacity transfer function) of disk and jet:
+        from tvtk.util.ctf import PiecewiseFunction
+        print( "Running volume rendering for jet..." ); sys.stdout.flush()
+        vol_jet = mlab.pipeline.volume(mlab_lrho_jet,vmin=vmin,vmax=vmax) #,vmin=-6,vmax=1)
+        print( "Done with volume rendering of jet..." ); sys.stdout.flush()
+        if 1:
+            otf_jet = PiecewiseFunction()
+            otf_jet.add_point(vmin, 0.)
+            otf_jet.add_point(vmax, 1.)
+            vol_jet._otf = otf_jet
+            vol_jet._volume_property.set_scalar_opacity(otf_jet)
+        vol_jet.volume_mapper.blend_mode = 'minimum_intensity'
         #
-        # Magnetic field
+        # Streamlines
         #
-        Br = dxdxp[1,1]*B[1]+dxdxp[1,2]*B[2]
-        Bh = dxdxp[2,1]*B[1]+dxdxp[2,2]*B[2]
-        Bp = B[3]*dxdxp[3,3]
-        #
-        Brnorm=Br
-        Bhnorm=Bh*np.abs(r)
-        Bpnorm=Bp*np.abs(r*np.sin(h))
-        #
-        BR=Brnorm*np.sin(h)+Bhnorm*np.cos(h)
-        Bx=BR*cos(ph)-Bpnorm*sin(ph)
-        By=BR*sin(ph)+Bpnorm*cos(ph)
-        Bz=Brnorm*np.cos(h)-Bhnorm*np.sin(h)
-        print( "Running trilinear interpolation for Bx..." ); sys.stdout.flush()
-        Bxi = np.float32(trilin(Bx,i3d_jet,j3d_jet,k3d_jet,order=order))
-        print( "Done with trilinear interpolation for Bx..." ); sys.stdout.flush()
-        print( "Running trilinear interpolation for By..." ); sys.stdout.flush()
-        Byi = np.float32(trilin(By,i3d_jet,j3d_jet,k3d_jet,order=order))
-        print( "Done with trilinear interpolation for By..." ); sys.stdout.flush()
-        print( "Running trilinear interpolation for Bz..." ); sys.stdout.flush()
-        Bzi = np.float32(trilin(Bz,i3d_jet,j3d_jet,k3d_jet,order=order))
-        print( "Done with trilinear interpolation for Bz..." ); sys.stdout.flush()
-        streamlines = []
-        xpos = [3.0137298, -0.39477735484, 2.5, 2.5]
-        ypos = [3.20705557,  -0.477990151219, 0,  0.]
-        zpos = [4.40640898,  -29.3698147762, 90.5538316429,  -90.5538316429]
-        intdir = ['backward', 'backward', 'forward', 'forward']
-        for sn in xrange(4):
-            print( "Running rendering of streamline #%d..." % (sn+1) ); sys.stdout.flush()
-            streamline = mlab.flow(xi_jet, yi_jet, zi_jet, Bxi, Byi, Bzi, seed_scale=0.01,
-                             seed_resolution=5,
-                             integration_direction=intdir[sn],
-                             seedtype='point')
-            streamlines.append(streamline)
-            streamline.module_manager.scalar_lut_manager.lut_mode = 'gist_yarg'
-            streamline.streamline_type = 'tube'
-            streamline.tube_filter.radius = 0.2
-            if 0:
-                streamline.seed.widget.phi_resolution = 3
-                streamline.seed.widget.theta_resolution = 3
-                streamline.seed.widget.radius = 1.0
-            elif 0: 
-                #more tightly wound field lines
-                streamline.seed.widget.phi_resolution = 10
-                streamline.seed.widget.theta_resolution = 5
-                #make them more round
-            streamline.tube_filter.number_of_sides = 8
-            streamline.stream_tracer.progress = 1.0
-            streamline.stream_tracer.maximum_number_of_steps = 10000L
-            #streamline.stream_tracer.start_position =  np.array([ 0.,  0.,  0.])
-            streamline.stream_tracer.maximum_propagation = 20000.0
-            streamline.seed.widget.position = np.array([ xpos[sn],  ypos[sn],  zpos[sn]])
-            streamline.seed.widget.enabled = False
-            streamline.update_streamlines = 1
-            print( "Done with streamline #%d..." % (sn+1)); sys.stdout.flush()
-        #pdb.set_trace()
-    if 0:
-        myr = 20
-        myi = iofr(myr)
-        #mesh
-        s = wraparound((np.abs(B[1])*dxdxp[1,1]))[myi,:,:]
-        x = wraparound(r*sin(h)*cos(ph-OmegaNS*t))[myi,:,:]
-        y = wraparound(r*sin(h)*sin(ph-OmegaNS*t))[myi,:,:]
-        z = wraparound(r*cos(h))[myi,:,:]
-        mlab.mesh(x, y, z, scalars=s, colormap='jet')
-    if 1:
-        #show the black hole
-        rbh = rhor
-        thbh = np.linspace(0,np.pi,128,endpoint=1)[:,None]
-        phbh = np.linspace(0,2*np.pi,128,endpoint=1)[None,:]
-        thbh = thbh + 0*phbh + 0*thbh
-        phbh = phbh + 0*phbh + 0*thbh
-        xbh = rbh*sin(thbh)*cos(phbh)
-        ybh = rbh*sin(thbh)*sin(phbh)
-        zbh = rbh*cos(thbh)
-        mlab.mesh(xbh, ybh, zbh, scalars=1+0*thbh, colormap='gist_yarg',vmin=0, vmax = 1)
+        if dofieldlines:
+            #
+            # Magnetic field
+            #
+            Br = dxdxp[1,1]*B[1]+dxdxp[1,2]*B[2]
+            Bh = dxdxp[2,1]*B[1]+dxdxp[2,2]*B[2]
+            Bp = B[3]*dxdxp[3,3]
+            #
+            Brnorm=Br
+            Bhnorm=Bh*np.abs(r)
+            Bpnorm=Bp*np.abs(r*np.sin(h))
+            #
+            BR=Brnorm*np.sin(h)+Bhnorm*np.cos(h)
+            Bx=BR*cos(ph)-Bpnorm*sin(ph)
+            By=BR*sin(ph)+Bpnorm*cos(ph)
+            Bz=Brnorm*np.cos(h)-Bhnorm*np.sin(h)
+            print( "Running trilinear interpolation for Bx..." ); sys.stdout.flush()
+            Bxi = np.float32(trilin(Bx,i3d_jet,j3d_jet,k3d_jet,order=order))
+            print( "Done with trilinear interpolation for Bx..." ); sys.stdout.flush()
+            print( "Running trilinear interpolation for By..." ); sys.stdout.flush()
+            Byi = np.float32(trilin(By,i3d_jet,j3d_jet,k3d_jet,order=order))
+            print( "Done with trilinear interpolation for By..." ); sys.stdout.flush()
+            print( "Running trilinear interpolation for Bz..." ); sys.stdout.flush()
+            Bzi = np.float32(trilin(Bz,i3d_jet,j3d_jet,k3d_jet,order=order))
+            print( "Done with trilinear interpolation for Bz..." ); sys.stdout.flush()
+            streamlines = []
+            xpos = [3.0137298, -0.39477735484, 2.5, 2.5]
+            ypos = [3.20705557,  -0.477990151219, 0,  0.]
+            zpos = [4.40640898,  -29.3698147762, 90.5538316429,  -90.5538316429]
+            intdir = ['backward', 'backward', 'forward', 'forward']
+            for sn in xrange(4):
+                print( "Running rendering of streamline #%d..." % (sn+1) ); sys.stdout.flush()
+                streamline = mlab.flow(xi_jet, yi_jet, zi_jet, Bxi, Byi, Bzi, seed_scale=0.01,
+                                 seed_resolution=5,
+                                 integration_direction=intdir[sn],
+                                 seedtype='point')
+                streamlines.append(streamline)
+                streamline.module_manager.scalar_lut_manager.lut_mode = 'gist_yarg'
+                streamline.streamline_type = 'tube'
+                streamline.tube_filter.radius = 0.2
+                if 0:
+                    streamline.seed.widget.phi_resolution = 3
+                    streamline.seed.widget.theta_resolution = 3
+                    streamline.seed.widget.radius = 1.0
+                elif 0: 
+                    #more tightly wound field lines
+                    streamline.seed.widget.phi_resolution = 10
+                    streamline.seed.widget.theta_resolution = 5
+                    #make them more round
+                streamline.tube_filter.number_of_sides = 8
+                streamline.stream_tracer.progress = 1.0
+                streamline.stream_tracer.maximum_number_of_steps = 10000L
+                #streamline.stream_tracer.start_position =  np.array([ 0.,  0.,  0.])
+                streamline.stream_tracer.maximum_propagation = 20000.0
+                streamline.seed.widget.position = np.array([ xpos[sn],  ypos[sn],  zpos[sn]])
+                streamline.seed.widget.enabled = False
+                streamline.update_streamlines = 1
+                print( "Done with streamline #%d..." % (sn+1)); sys.stdout.flush()
+            #pdb.set_trace()
+        if 0:
+            myr = 20
+            myi = iofr(myr)
+            #mesh
+            s = wraparound((np.abs(B[1])*dxdxp[1,1]))[myi,:,:]
+            x = wraparound(r*sin(h)*cos(ph-OmegaNS*t))[myi,:,:]
+            y = wraparound(r*sin(h)*sin(ph-OmegaNS*t))[myi,:,:]
+            z = wraparound(r*cos(h))[myi,:,:]
+            mlab.mesh(x, y, z, scalars=s, colormap='jet')
+        if 1:
+            #show the black hole
+            rbh = rhor
+            thbh = np.linspace(0,np.pi,128,endpoint=1)[:,None]
+            phbh = np.linspace(0,2*np.pi,128,endpoint=1)[None,:]
+            thbh = thbh + 0*phbh + 0*thbh
+            phbh = phbh + 0*phbh + 0*thbh
+            xbh = rbh*sin(thbh)*cos(phbh)
+            ybh = rbh*sin(thbh)*sin(phbh)
+            zbh = rbh*cos(thbh)
+            mlab.mesh(xbh, ybh, zbh, scalars=1+0*thbh, colormap='gist_yarg',vmin=0, vmax = 1)
+    #end if updateframe
     #move camera:
-    scene.scene.camera.position = [-84.130415179516959, -191.49445179042684, 172.61034010953873]
+    xyzcam = np.array([-84.130415179516959, -191.49445179042684, 172.61034010953873])
+    #normalize
+    xyzcam /= np.sum(xyzcam**2)**0.5
+    #set the distance to desired one
+    xyzcam *= zmax*2
+    scene.scene.disable_render = False
+    scene.scene.camera.position = xyzcam
     scene.scene.camera.focal_point = [9.7224118574481291e-12, -1.2963215809930837e-10, 2.5926431619861676e-11]
     scene.scene.camera.view_angle = 30.0
     scene.scene.camera.view_up = [-0.047639798613930195, 0.68023949006977247, 0.73144014501368437]
@@ -864,7 +986,7 @@ def vis_grb(doreload=1,no=555,xmax=50,ymax=50,zmax=500,ncellx=200,ncelly=200,nce
     print( "Done rendering!" ); sys.stdout.flush()
     if dosavefig:
         print( "Saving snapshot..." ); sys.stdout.flush()
-        mlab.savefig("disk_jet_with_field_lines.png", figure=scene, magnification=6.0)
+        mlab.savefig("disk_jet_%.png" % no, figure=scene, magnification=2.0)
         print( "Done!" ); sys.stdout.flush()
 
 
