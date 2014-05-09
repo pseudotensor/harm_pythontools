@@ -837,8 +837,8 @@ def vis_grb(doreload=1,no=555,xmax=50,ymax=50,zmax=None,ncellx=100,ncelly=100,nc
         xmax, zmax = get_jet_zmax(t)
         ymax = xmax
         #to ensure cubical cells
-        # ncellz = np.int32(0.5+zmax/xmax*ncellx)
-        # if ncellz > 1000: ncellz = 1000
+        ncellz = np.int32(0.5+zmax/xmax*ncellx)
+        if ncellz > 1000: ncellz = 1000
         print( "xmax = %g, ymax = %g, zmax = %g; ncellx = %d, ncelly = %d, ncellz = %d" 
                % (xmax, ymax, zmax, ncellx, ncelly, ncellz) )
     else:
@@ -865,7 +865,7 @@ def vis_grb(doreload=1,no=555,xmax=50,ymax=50,zmax=None,ncellx=100,ncelly=100,nc
         vmax = lrhoi_jet.max()
     print( "Done with trilinear interpolation for jet..." ); sys.stdout.flush()
     if updateframe:
-        mlab_lrho_jet.mlab_source.set(scalars = lrhoi_jet, x = xi_jet, y = yi_jet, z = zi_jet)
+        mlab_lrho_jet.mlab_source.reset(scalars = lrhoi_jet, x = xi_jet, y = yi_jet, z = zi_jet)
     else:
         mlab_lrho_jet = mlab.pipeline.scalar_field(xi_jet,yi_jet,zi_jet,lrhoi_jet)
         # bsqorhoi_jet = np.float32((bsq/rho)[i3d_jet,j3d_jet,k3d_jet])
