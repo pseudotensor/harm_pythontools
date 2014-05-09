@@ -974,6 +974,8 @@ def vis_grb(doreload=1,no=555,xmax=50,ymax=50,zmax=None,ncellx=100,ncelly=100,nc
     #set the distance to desired one
     xyzcam *= zmax*2
     #scene.scene.disable_render = False
+    #this is needed to draw the scene somehow...
+    mlab.view(focalpoint=[0,0,0],distance=500)
     scene.scene.camera.position = xyzcam
     scene.scene.camera.focal_point = [9.7224118574481291e-12, -1.2963215809930837e-10, 2.5926431619861676e-11]
     scene.scene.camera.view_angle = 30.0
