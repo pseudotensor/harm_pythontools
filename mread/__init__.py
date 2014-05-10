@@ -8673,7 +8673,7 @@ def mergeqtyvstime(n):
     print( "Done!" )
         
 
-def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None,docompute=False,getnqty=False):
+def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None,docompute=False,getnqty=False,maxn=None):
     """
     Returns a tuple (ts,fs,mdot,pjetem,pjettot): lists of times, horizon fluxes, and Mdot
     """
@@ -8698,8 +8698,9 @@ def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None,docomp
     fldname = flist[-1]
     lastfindex = np.int(fldname.split(".")[0].split("e")[-1])
     numtimeslices=lastfindex+1 #account for findex = 0
-    if maxn is not None and numtimeslices > maxn+1:
+    if maxn >= 0 and maxn is not None and numtimeslices > maxn+1:
         numtimeslices = maxn+1
+        print( "Last time slice to process is %d" % maxn )
     #np.seterr(invalid='raise',divide='raise')
     #
     print "Number of time slices: %d" % numtimeslices
@@ -16268,10 +16269,12 @@ def mkts(docompute=False):
                     maxn = int(sys.argv[4])
                 else:
                     maxn = None
+            if maxn < 0:
+                maxn = None
             if whichi >= whichn:
                 mergeqtyvstime(whichn)
             else:
-                qtymem=getqtyvstime(ihor,0.2,whichi=whichi,whichn=whichn,docompute=docompute)
+                qtymem=getqtyvstime(ihor,0.2,whichi=whichi,whichn=whichn,docompute=docompute,maxn=maxn)
         else:
             qtymem=getqtyvstime(ihor,0.2,docompute=docompute)
             plotqtyvstime(qtymem)
