@@ -703,7 +703,10 @@ def interp3d(xmax=100,ymax=100,zmax=100,ncellx=100,ncelly=100,ncellz=100):
     z2d = np.linspace(-zmax, zmax, ncellz,endpoint=1); dz2d = z2d[1]-z2d[0];
     #compute i,j-indices on meridional grid:
     ph = 0
-    x = (r*sin(h))[...,0][r[...,0]<1.1*rmax]
+    R = r*sin(h)
+    R[:,0,:]*=0
+    R[:,ny-1,:]*=0
+    x = (R)[...,0][r[...,0]<1.1*rmax]
     z = (r*cos(h))[...,0][r[...,0]<1.1*rmax]
     i = (ti)[...,0][r[...,0]<1.1*rmax]
     j = (tj)[...,0][r[...,0]<1.1*rmax]
@@ -803,29 +806,46 @@ def compute_jet_head_velocity(headfile="headinfo.npz",endn=-1,dn=1):
 def get_jet_zmax(t):
     myvheadfunc = compute_jet_head_velocity()
     vhead = myvheadfunc(t)
-    ymax = vhead*t*1.5
-    if ymax < 8:
-        ymax= 8
-    if ymax > 5000 or np.isnan(ymax):
-        ymax = 5000
+    ymf = lambda t: myvheadfunc(t)*t*1.5
+    #ymax = vhead*t*1.5
+    # ymax_filter = interp1d([0,          70,      73,     160,     163,     500, 503 ],
+    #                        [ymf(70),ymf(70),ymf(160),ymf(160),ymf(500),ymf(500)],order=1,bounds_error=False)
+    t_convert = interp1d([0,  400, 405, 600, 605,  800,  805, 1000, 1005, 1200, 1205, 2400, 2405 ],
+                         [400,400, 600, 600, 800,  800, 1000, 1000, 1200, 1200, 2400, 2400, 4800 ],
+                         kind="linear",bounds_error=False,fill_value = 4800)
+    ymax = ymf(t_convert(t))
+    # if ymax < 70:
+    #     ymax= 70
+    # if ymax < 170:
+    #     ymax = 170
+    # if ymax < 500:
+    #     ymax = 500
+    # if ymax < 1000:
+    #     ymax = 1000
+    # if ymax > 5000 or np.isnan(ymax):
+    #     ymax = 5000
     xmax = ymax**0.5
-    if xmax < 8:
-        xmax = 8
+    # if xmax < 8:
+    #     xmax = 8
     return(xmax,ymax)
 
-def mk_vis_grb_movie():
+def mk_vis_grb_movie(n1=0,n2=-1):
     flist1 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
     flist2 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9][0-9].bin") ) )
     flist1.sort()
     flist2.sort()
     flist = np.concatenate((flist1,flist2))
     updateframe = 0
+    #mlab.options.offscreen = True
     for fldname in flist:
         fldindex = np.int(fldname.split(".")[0].split("e")[-1])
+        if fldindex > 0 and fldindex < n1: continue
+        if n2 >= 0 and fldindex > n2: continue
         vis_grb(no=fldindex,updateframe=updateframe,dosavefig=1)
         updateframe = 1
+    #mlab.options.offscreen = False
     
-def vis_grb(doreload=1,no=555,xmax=50,ymax=50,zmax=None,ncellx=100,ncelly=100,ncellz=1000,dosavefig=0,order=3,dofieldlines=0,updateframe=0):
+def vis_grb(doreload=1,no=555,xmax=50,ymax=50,zmax=None,ncellx=50,ncelly=250,ncellz=1000,dosavefig=0,order=3,dofieldlines=0,updateframe=0):
     global mlab_lrho_jet, vol_jet, lrhoi_jet, i3d_jet,j3d_jet,k3d_jet,xi_jet,yi_jet,zi_jet
     if doreload:
         if 'gv3' not in globals():
@@ -835,7 +855,9 @@ def vis_grb(doreload=1,no=555,xmax=50,ymax=50,zmax=None,ncellx=100,ncelly=100,nc
     if zmax is None:
         autozoom = 1
         xmax, zmax = get_jet_zmax(t)
-        ymax = xmax
+        #ymax = xmax
+        ymax = 5*xmax
+        # ncelly = 3*ncellx
         #to ensure cubical cells
         ncellz = np.int32(0.5+zmax/xmax*ncellx)
         if ncellz > 1000: ncellz = 1000
@@ -856,6 +878,8 @@ def vis_grb(doreload=1,no=555,xmax=50,ymax=50,zmax=None,ncellx=100,ncelly=100,nc
     print( "Done with inter3d for jet..." ); sys.stdout.flush()
     print( "Running trilinear interpolation for jet..." ); sys.stdout.flush()
     lrhoi_jet = np.float32(trilin(lrho,i3d_jet,j3d_jet,k3d_jet,order=order))
+    lrhoi_jet[xi_jet**2+yi_jet**2+zi_jet**2<1.1]=lrhoi_jet[xi_jet**2+yi_jet**2+zi_jet**2<1.1]*0
+    lrhoi_jet[xi_jet**2+yi_jet**2+zi_jet**2<0.5]=lrhoi_jet[xi_jet**2+yi_jet**2+zi_jet**2<0.5]*0+8
     #lrhoi_jet = lrho[np.int32(0.5+i3d_jet),np.int32(0.5+j3d_jet),np.int32(0.5+k3d_jet)]
     if 1:
         vmin = 0
@@ -866,6 +890,7 @@ def vis_grb(doreload=1,no=555,xmax=50,ymax=50,zmax=None,ncellx=100,ncelly=100,nc
     print( "Done with trilinear interpolation for jet..." ); sys.stdout.flush()
     if updateframe:
         mlab_lrho_jet.mlab_source.reset(scalars = lrhoi_jet, x = xi_jet, y = yi_jet, z = zi_jet)
+        vol_jet.mlab_source.set(vmin=vmin,vmax=vmax)
     else:
         mlab_lrho_jet = mlab.pipeline.scalar_field(xi_jet,yi_jet,zi_jet,lrhoi_jet)
         # bsqorhoi_jet = np.float32((bsq/rho)[i3d_jet,j3d_jet,k3d_jet])
@@ -957,7 +982,7 @@ def vis_grb(doreload=1,no=555,xmax=50,ymax=50,zmax=None,ncellx=100,ncelly=100,nc
             mlab.mesh(x, y, z, scalars=s, colormap='jet')
         if 1:
             #show the black hole
-            rbh = rhor
+            rbh = 1.0
             thbh = np.linspace(0,np.pi,128,endpoint=1)[:,None]
             phbh = np.linspace(0,2*np.pi,128,endpoint=1)[None,:]
             thbh = thbh + 0*phbh + 0*thbh
@@ -965,22 +990,22 @@ def vis_grb(doreload=1,no=555,xmax=50,ymax=50,zmax=None,ncellx=100,ncelly=100,nc
             xbh = rbh*sin(thbh)*cos(phbh)
             ybh = rbh*sin(thbh)*sin(phbh)
             zbh = rbh*cos(thbh)
-            mlab.mesh(xbh, ybh, zbh, scalars=1+0*thbh, colormap='gist_yarg',vmin=0, vmax = 1)
+            mlab.mesh(xbh, ybh, zbh, scalars=1+0*thbh, colormap='hsv',vmin=0, vmax = 1)
     #end if updateframe
     #move camera:
-    xyzcam = np.array([-84.130415179516959, -191.49445179042684, 172.61034010953873])
+    xyzcam = np.array([-486.61465748231649, 172.85090657454796, 170.35367313278067])
     #normalize
     xyzcam /= np.sum(xyzcam**2)**0.5
     #set the distance to desired one
-    xyzcam *= zmax*2
+    xyzcam *= zmax*1.2
     #scene.scene.disable_render = False
     #this is needed to draw the scene somehow...
-    mlab.view(focalpoint=[0,0,0],distance=500)
+    mlab.view(focalpoint=[0,0,0],distance=zmax)
     scene.scene.camera.position = xyzcam
-    scene.scene.camera.focal_point = [9.7224118574481291e-12, -1.2963215809930837e-10, 2.5926431619861676e-11]
+    scene.scene.camera.focal_point = [0, 0, 0]
     scene.scene.camera.view_angle = 30.0
-    scene.scene.camera.view_up = [-0.047639798613930195, 0.68023949006977247, 0.73144014501368437]
-    scene.scene.camera.clipping_range = [0.64506083390432245, 645.06083390432241]
+    scene.scene.camera.view_up = [0.42349579744064159, 0.82631655530206483, 0.37128460779278855]
+    #scene.scene.camera.clipping_range = [308.18068133365097, 841.65212437961043]
     scene.scene.camera.compute_view_plane_normal()
     scene.scene.render()
     # iso.contour.maximum_contour = 75.0
@@ -993,7 +1018,7 @@ def vis_grb(doreload=1,no=555,xmax=50,ymax=50,zmax=None,ncellx=100,ncelly=100,nc
     print( "Done rendering!" ); sys.stdout.flush()
     if dosavefig:
         print( "Saving snapshot..." ); sys.stdout.flush()
-        mlab.savefig("disk_jet_%04d.png" % no, figure=scene, magnification=2.0)
+        mlab.savefig("disk_jet_fixed_%04d.png" % no, figure=scene, magnification=2.0)
         print( "Done!" ); sys.stdout.flush()
 
 
@@ -1199,3 +1224,4 @@ def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,nce
         print( "Done!" ); sys.stdout.flush()
 
 #vis_grb(dofieldlines=0,dosavefig=1)
+#mk_vis_grb_movie(n1=259)
