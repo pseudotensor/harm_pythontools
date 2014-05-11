@@ -1575,17 +1575,29 @@ def mrgnew(n,fname="qty.npz"):
         sys.stdout.flush()
         vt=np.load( ft )
         #find last element in old array that does not exist in the new array
-        ind = np.array(v["ind"])
-        lasti = (ind<vt["ind"][0]).sum()
+        # ind = np.array(v["ind"])
+        # lasti = (ind<vt["ind"][0]).sum()
         for key in vt.keys():
             if key not in ["ivals", "rvals"]:
-                #has time dependence, so first discard repeated entries
-                del v[key][lasti:]
-                #and then append new entries
-                v[key].append( list(vt[key]) )
+                #     #has time dependence, so first discard repeated entries
+                #     del v[key][lasti:]
+                #     #and then append new entries
+                #     v[key].append( list(vt[key]) )
+                v[key] += list(vt[key])
             else:
                 v[key] = list(vt[key])
         vt.close()    
+    #now sort the resulting list
+    imap = np.argsort(v["ind"])
+    #sort keys that have time series
+    for key in vt.keys():
+        if key not in ["ivals", "rvals"]:
+            if len(v[key]) > 0:
+                v[key] = np.array(v[key])[imap,...]
+    #hack to reintroduce the time if missing
+    if len(v["t"]) == 0:
+        print( "Times are missing, assuming dumping period of 5 and setting t = 5*ind" )
+        v["t"] = np.array(v["ind"])*5.
     print( "Saving into " + fname + " ..." )
     sys.stdout.flush()
     np.savez(fname, 
@@ -1655,6 +1667,7 @@ def postprocess1d(fname = "qty.npz", startn=0,endn=-1,whichi=0,whichn=1,**kwargs
             else:
                 v[key].append(valdic[key])
         v["ind"].append(ind)
+        v["t"].append(t)
     np.savez("qty_%02d_%02d.npz" % (whichi, whichn), 
              FM = v["FM"], 
              FEM = v["FEM"],
