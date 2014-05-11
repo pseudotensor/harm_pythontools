@@ -1387,6 +1387,162 @@ def mkmov():
         return
     mkbondimovie(whichi = whichi, whichn = whichn)
 
+#new movie frame
+def mkmfnew(v,findex=None,fti=None,ftf=None,sigma=None,prefactor=100)
+        tmax=min(ts[-1],max(fti,ftf))
+        plt.figure(0, figsize=(12,9), dpi=100)
+        plt.clf()
+        #mdot,pjet,pjet/mdot plots
+        gs3 = GridSpec(3, 3)
+        gs3.update(left=0.055, right=0.97, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
+        #
+        #mdot plot
+        #
+        ax31 = plt.subplot(gs3[-3,:])
+        ax31.set_ylabel(r'$\dot Mc^2$',fontsize=16,labelpad=9)
+        plt.setp( ax31.get_xticklabels(), visible=False)
+        #start plotting
+        ax31.plot(v["t"][:],v["FM"][:][1],"k")
+        ax31.plot(v["t"][findex],v["FM"][findex][1],'o',mfc='r')
+        FMavg = timeavg(v["FM"][:][1],fti=fti,ftf=ftf,sigma=sigma)+0*v["t"]
+        #ensure of the same shape as the rest
+        l, = ax31.plot(v["t"][:],FMavg[:],"k")
+        l.set_dashes([10,5])
+        #end plotting
+        ymax=ax31.get_ylim()[1]
+        ymax=2*(np.floor(np.floor(ymax+1.5)/2))
+        ax31.set_yticks((ymax/2,ymax))
+        ax31.grid(True)
+        bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
+        placeletter(ax31,"$(\mathrm{c})$",fx=0.02,bbox=bbox_props)
+        ax31r = ax31.twinx()
+        ax31r.set_ylim(ax31.get_ylim())
+        ax31r.set_yticks((ymax/2,ymax))
+        #
+        #\phi plot
+        #
+        ax35 = plt.subplot(gs3[-2,:])
+        #start plotting
+        PhiBHcgs = v["PhiBH"]*(4*np.pi)**0.5
+        phibh = PhiBHcgs/v["FM"]**0.5
+        ax35.plot(v["t"][:],phibh[:][0],"k")
+        ax35.plot(v["t"][findex],phibh[findex][0],'o',mfc='r')
+        phiavg = timeavg(phibh[:][0],fti=fti,ftf=ftf,sigma=sigma)+0*v["t"]
+        l, = ax35.plot(v["t"],phiavg,"k")
+        l.set_dashes([10,5])
+        #end plotting
+        ymax=ax35.get_ylim()[1]
+        if 1 < ymax and ymax < 2: 
+            #ymax = 2
+            tck=(1,)
+            ax35.set_yticks(tck)
+            #ax35.set_yticklabels(('','1','2'))
+        elif ymax < 1: 
+            ymax = 1
+            tck=(0.5,1)
+            ax35.set_yticks(tck)
+            ax35.set_yticklabels(('','1'))
+        else:
+            ymax=np.floor(ymax)+1
+            if ymax >= 60:
+                tck=np.arange(1,ymax/30.)*30.
+            elif ymax >= 20:
+                tck=np.arange(1,ymax/10.)*10.
+            elif ymax >= 10:
+                tck=np.arange(1,ymax/5.)*5.
+            else:
+                tck=np.arange(1,ymax)
+            ax35.set_yticks(tck)
+        ax35.grid(True)
+        placeletter(ax35,"$(\mathrm{d})$",fx=0.02,bbox=bbox_props)
+        if ymax >= 10:
+            ax35.set_ylabel(r"$\phi_{\rm BH}$",size=16,ha='left',labelpad=25)
+        ax35.grid(True)
+        ax35r = ax35.twinx()
+        ax35r.set_ylim(ax35.get_ylim())
+        ax35r.set_yticks(tck)
+        #
+        #pjet/<mdot>
+        #
+        ax34 = plt.subplot(gs3[-1,:])
+        #start plotting
+        etabh = (v["FM"]-v["FE"])/FMavg
+        ax34.plot(v["t"][:],etabh[:][1],"k")
+        ax34.plot(v["t"][findex],phibh[findex][1],'o',mfc='r')
+        etabhavg = timeavg(etabh[:][1],fti=fti,ftf=ftf,sigma=sigma) + 0*v["t"]
+        l, = ax34.plot(v["t"],etabhavg,"k")
+        l.set_dashes([10,5])
+        #end plotting
+        ax34.set_ylim((0,3.8*prefactor))
+        placeletter(ax34,"$(\mathrm{e})$",fx=0.02,bbox=bbox_props)
+        ymax=ax34.get_ylim()[1]
+        ymin=ax34.get_ylim()[0]
+        if ymin < -.25 * prefactor:
+            ymin = -.25 * prefactor
+            ax34.set_ylim((ymin,ymax))
+        if prefactor < ymax and ymax < 1.5*prefactor: 
+            #ymax = 2
+            tck=(0.5*prefactor,prefactor,)
+            if ymin < 0:
+                tck=(0,0.5*prefactor,prefactor,)
+            ax34.set_yticks(tck)
+            #ax34.set_yticklabels(('','100','200'))
+        elif ymax <= prefactor: 
+            ymax=np.floor(ymax)+1
+            if ymin < 0:
+                minval = 0
+            else:
+                minval = 1
+            if ymax >= 50:
+                tck=np.arange(minval,ymax/50.)*50.
+            elif ymax >= 20:
+                tck=np.arange(minval,ymax/10.)*10.
+            elif ymax >= 10:
+                tck=np.arange(minval,ymax/5.)*5.
+            else:
+                tck=np.arange(minval,ymax)
+            ax34.set_yticks(tck)
+            if False:
+                ymax = prefactor
+                tck=(0.5*prefactor,prefactor)
+                if ymin < 0:
+                    tck=(0,0.5*prefactor,prefactor)
+                ax34.set_yticks(tck)
+                if ymin >= 0:
+                    ax34.set_yticklabels(('','%d' % prefactor))
+        else:
+            ymax=np.floor(ymax/prefactor)+1
+            ymax*=prefactor
+            tck=np.arange(1,ymax/prefactor)*prefactor
+            if ymin < 0:
+                tck=np.arange(0,ymax/prefactor)*prefactor
+            ax34.set_yticks(tck)
+        #reset lower limit to 0
+        #ax34.set_ylim((0,ax34.get_ylim()[1]))
+        ax34.grid(True)
+        ax34r = ax34.twinx()
+        ax34r.set_ylim(ax34.get_ylim())
+        ax34r.set_yticks(tck)
+        #Rz xy
+        gs1 = GridSpec(1, 1)
+        gs1.update(left=0.04, right=0.45, top=0.995, bottom=0.48, wspace=0.05)
+        #gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.45, wspace=0.05)
+        ax1 = plt.subplot(gs1[:, -1])
+        if domakeframes:
+            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,maxsBphi=maxsBphi,whichr=1.5,domask=0.5) #domask = 0.5 is important so that magnetic field lines extend down all the way to BH
+        ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
+        ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
+        placeletter(ax1,"$(\mathrm{a})$",va="center",bbox=bbox_props)
+        gs2 = GridSpec(1, 1)
+        gs2.update(left=0.5, right=1, top=0.995, bottom=0.48, wspace=0.05)
+        ax2 = plt.subplot(gs2[:, -1])
+        if domakeframes:
+            mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True,dovarylw=1,domask=0.5) #domask = 0.5 is important so that magnetic field lines extend down all the way to BH
+        ax2.set_ylabel(r'$y\ [r_g]$',fontsize=16,ha='center')
+        ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
+        placeletter(ax2,"$(\mathrm{b})$",va="center",bbox=bbox_props)
+    
+
 def mktsnew():
     if len(sys.argv[2:])>=2 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
         whichi = int(sys.argv[2])
