@@ -1415,6 +1415,7 @@ def postprocess1d(fname = "qty.npz", startn=0,endn=-1,whichi=0,whichn=1,**kwargs
     v["ind"]=[]
     v["ivals"]=[]
     v["rvals"]=[]
+    v["t"]=[]
     if os.path.isfile( fname ):
         print( "File %s exists, loading from file..." % fname )
         sys.stdout.flush()
@@ -1460,7 +1461,8 @@ def postprocess1d(fname = "qty.npz", startn=0,endn=-1,whichi=0,whichn=1,**kwargs
              PhiBH = v["PhiBH"],
              ind = v["ind"],
              ivals = v["ivals"],
-             rvals = v["rvals"]
+             rvals = v["rvals"],
+             t = v["t"]
              )
 
 def cvellite():
