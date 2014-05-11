@@ -1388,7 +1388,7 @@ def mkmov():
     mkbondimovie(whichi = whichi, whichn = whichn)
 
 #new movie frame
-def mkmfnew(v,findex=None,fti=None,ftf=None,sigma=None,prefactor=100)
+def mkmfnew(v,findex=None,fti=None,ftf=None,sigma=None,prefactor=100):
         tmax=min(ts[-1],max(fti,ftf))
         plt.figure(0, figsize=(12,9), dpi=100)
         plt.clf()
@@ -1542,7 +1542,7 @@ def mkmfnew(v,findex=None,fti=None,ftf=None,sigma=None,prefactor=100)
         ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         placeletter(ax2,"$(\mathrm{b})$",va="center",bbox=bbox_props)
     
-
+        
 def mktsnew():
     if len(sys.argv[2:])>=2 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
         whichi = int(sys.argv[2])
@@ -1551,9 +1551,55 @@ def mktsnew():
         if len(sys.argv[2:])==3:
             if sys.argv[4].isdigit():
                 endn = int(sys.argv[4])
-        postprocess1d(endn = endn, whichi = whichi, whichn = whichn)
+        if whichi < whichn:
+            postprocess1d(endn = endn, whichi = whichi, whichn = whichn)
+        else:
+            mrgnew(whichn)
     else:
         print("Syntax error")
+
+def mrgnew(n,fname="qty.npz"):
+    v = {}
+    v["FM"]=[] 
+    v["FEM"]=[]
+    v["FE"]=[]
+    v["PhiBH"]=[]
+    v["ind"]=[]
+    v["ivals"]=[]
+    v["rvals"]=[]
+    v["t"]=[]
+    for i in np.arange(n):
+        #load each file
+        ft = "qty_%02d_%02d.npz" % (i, n)
+        print( "Loading " + ft + " ..." )
+        sys.stdout.flush()
+        vt=np.load( ft )
+        #find last element in old array that does not exist in the new array
+        ind = np.array(v["ind"])
+        lasti = (ind<vt["ind"][0]).sum()
+        for key in vt.keys():
+            if key not in ["ivals", "rvals"]:
+                #has time dependence, so first discard repeated entries
+                del v[key][lasti:]
+                #and then append new entries
+                v[key].append( list(vt[key]) )
+            else:
+                v[key] = list(vt[key])
+        vt.close()    
+    print( "Saving into " + fname + " ..." )
+    sys.stdout.flush()
+    np.savez(fname, 
+             FM = v["FM"], 
+             FEM = v["FEM"],
+             FE = v["FE"],
+             PhiBH = v["PhiBH"],
+             ind = v["ind"],
+             ivals = v["ivals"],
+             rvals = v["rvals"],
+             t = v["t"]
+             )
+    print( "Done!" )
+
 
 def postprocess1d(fname = "qty.npz", startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
     grid3d("gdump.bin",use2d=True)
