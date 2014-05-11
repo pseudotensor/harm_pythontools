@@ -1402,9 +1402,9 @@ def mkmfnew(v,findex=None,fti=None,ftf=None,sigma=None,prefactor=100):
         ax31.set_ylabel(r'$\dot Mc^2$',fontsize=16,labelpad=9)
         plt.setp( ax31.get_xticklabels(), visible=False)
         #start plotting
-        ax31.plot(v["t"][:],v["FM"][:][1],"k")
-        ax31.plot(v["t"][findex],v["FM"][findex][1],'o',mfc='r')
-        FMavg = timeavg(v["FM"][:][1],fti=fti,ftf=ftf,sigma=sigma)+0*v["t"]
+        ax31.plot(v["t"][:],v["FM"][:,1],"k")
+        ax31.plot(v["t"][findex],v["FM"][findex,1],'o',mfc='r')
+        FMavg = timeavg(v["FM"][:,1],fti=fti,ftf=ftf,sigma=sigma)+0*v["t"]
         #ensure of the same shape as the rest
         l, = ax31.plot(v["t"][:],FMavg[:],"k")
         l.set_dashes([10,5])
@@ -1425,9 +1425,9 @@ def mkmfnew(v,findex=None,fti=None,ftf=None,sigma=None,prefactor=100):
         #start plotting
         PhiBHcgs = v["PhiBH"]*(4*np.pi)**0.5
         phibh = PhiBHcgs/v["FM"]**0.5
-        ax35.plot(v["t"][:],phibh[:][0],"k")
-        ax35.plot(v["t"][findex],phibh[findex][0],'o',mfc='r')
-        phiavg = timeavg(phibh[:][0],fti=fti,ftf=ftf,sigma=sigma)+0*v["t"]
+        ax35.plot(v["t"][:],phibh[:,0],"k")
+        ax35.plot(v["t"][findex],phibh[findex,0],'o',mfc='r')
+        phiavg = timeavg(phibh[:,0],fti=fti,ftf=ftf,sigma=sigma)+0*v["t"]
         l, = ax35.plot(v["t"],phiavg,"k")
         l.set_dashes([10,5])
         #end plotting
@@ -1467,9 +1467,9 @@ def mkmfnew(v,findex=None,fti=None,ftf=None,sigma=None,prefactor=100):
         ax34 = plt.subplot(gs3[-1,:])
         #start plotting
         etabh = (v["FM"]-v["FE"])/FMavg
-        ax34.plot(v["t"][:],etabh[:][1],"k")
-        ax34.plot(v["t"][findex],phibh[findex][1],'o',mfc='r')
-        etabhavg = timeavg(etabh[:][1],fti=fti,ftf=ftf,sigma=sigma) + 0*v["t"]
+        ax34.plot(v["t"][:],etabh[:,1],"k")
+        ax34.plot(v["t"][findex],phibh[findex,1],'o',mfc='r')
+        etabhavg = timeavg(etabh[:,1],fti=fti,ftf=ftf,sigma=sigma) + 0*v["t"]
         l, = ax34.plot(v["t"],etabhavg,"k")
         l.set_dashes([10,5])
         #end plotting
