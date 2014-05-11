@@ -1453,7 +1453,7 @@ def postprocess1d(fname = "qty.npz", startn=0,endn=-1,whichi=0,whichn=1,**kwargs
             else:
                 v[key].append(valdic[key])
         v["ind"].append(ind)
-    np.savez(fname, 
+    np.savez("qty_%02d_%02d.npz" % (whichi, whichn), 
              FM = v["FM"], 
              FEM = v["FEM"],
              FE = v["FE"],
