@@ -1387,65 +1387,109 @@ def mkmov():
         return
     mkbondimovie(whichi = whichi, whichn = whichn)
 
-def postprocess1d(fname = "qty.npz", myr = 5,startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
+def postprocess1d(fname = "qty.npz", startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
     grid3d("gdump.bin",use2d=True)
     flist1 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
     flist2 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9][0-9].bin") ) )
     flist1.sort()
     flist2.sort()
     flist = np.concatenate((flist1,flist2))
-    myi = iofr(myr)
-    #rhor = 1+(1-a**2)**0.5
-    ihor = iofr(rhor)
-    FM_list = []
-    PhiBH_list = []
-    FE_list = []
-    FEM_list = []
-    fldindex_list = []
+    v = {}
+    v["FM"]=[] 
+    v["FEM"]=[]
+    v["FE"]=[]
+    v["PhiBH"]=[]
+    v["ind"]=[]
+    v["ivals"]=[]
+    v["rvals"]=[]
     if os.path.isfile( fname ):
         print( "File %s exists, loading from file..." % fname )
         sys.stdout.flush()
-        v=np.load( fname )
-        FM_list = list(v["FM"])
-        PhiBH_list = list(v["PhiBH"])
-        FE_list = list(v["FE"])
-        FEM_list = list(v["FEM"])
-        fldindex_list = list(v["fldindex"])
+        vt=np.load( fname )
+        for key in vt.keys():
+            v[key] = vt[key]
+        vt.close()
+        # FM_list = list(v["FM"])
+        # PhiBH_list = list(v["PhiBH"])
+        # FE_list = list(v["FE"])
+        # FEM_list = list(v["FEM"])
+        # ind_list = list(v["fldindex"])
     for fldname in flist:
         #find the index of the file
-        fldindex = np.int(fldname.split(".")[0].split("e")[-1])
-        if fldindex < startn:
+        ind = np.int(fldname.split(".")[0].split("e")[-1])
+        if ind < startn:
             continue
-        if endn>=0 and fldindex >= endn:
+        if endn>=0 and ind >= endn:
             break
-        if fldindex % whichn != whichi:
+        if ind % whichn != whichi:
             #do every whichn'th snapshot starting with whichi'th snapshot
             continue
         print( "Reading " + fldname + " ..." )
         sys.stdout.flush()
         rfd("../"+fldname)
-        cvel()
-        Tcalcud()
+        cvellite()
         sys.stdout.flush()
-        #mass accretion rate
-        FM = -(gdet*rho*uu[1])[myi].sum()*_dx2*_dx3
-        #magnetic flux on the black hole
-        PhiBH = 0.5*(np.abs(gdetB[1]))[myi].sum()*_dx2*_dx3
-        FE = (gdet*Tud[1,0])[myi].sum()*_dx2*_dx3
-        FEM = (gdet*Tud[1,0])[myi].sum()*_dx2*_dx3
-        # aphi=fieldcalc()
-        # plco(lrho,xy=1,xmax=xmax,ymax=ymax,levels=np.arange(-7,1,0.1),cb=cb,isfilled=1)
-        # plc(aphi,xy=1,xmax=xmax,ymax=ymax,levels=np.arange(0,100,2),colors="k")
-        # el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
-        # ax = plt.gca()
-        # art=ax.add_artist(el)
-        # art.set_zorder(20)
-        # plt.xlabel(r"$R\ [r_g]$",fontsize=20)
-        # plt.ylabel(r"$z\ [r_g]$",fontsize=20)
-        # plt.title(r"$t= %5.5g$" % np.floor(t))
-        # plt.draw()
-    # np.savez(fname,
-    #     avgbsq=avgbsq,
+        valdic = compvals()
+        for key in valdic.keys():
+            if key == "ivals" or key == "rvals":
+                #store only one copy of radial evaluation points
+                v[key] = valdic[key]
+            else:
+                v[key].append(valdic[key])
+        v["ind"].append(ind)
+    np.savez(fname, 
+             FM = v["FM"], 
+             FEM = v["FEM"],
+             FE = v["FE"],
+             PhiBH = v["PhiBH"],
+             ind = v["ind"],
+             ivals = v["ivals"],
+             rvals = v["rvals"]
+             )
+
+def cvellite():
+    global ud, bsq, bu, bd
+    ud = mdot(gv3,uu)                  #g_mn u^n
+    bu=np.empty_like(uu)              #allocate memory for bu
+    #set component per component
+    bu[0]=mdot(B[1:4], ud[1:4])             #B^i u_i
+    bu[1:4]=(B[1:4] + bu[0]*uu[1:4])/uu[0]  #b^i = (B^i + b^t u^i)/u^t
+    bd=mdot(gv3,bu)
+    bsq=mdot(bu,bd)
+    
+  
+def compvals():
+    dic = {}
+    rvals = np.array([rhor,5.,10.,20.,50.,100.])
+    ivals = np.int32(iofr(rvals))
+    #
+    delta = lambda kapa,nu: (kapa==nu)
+    fTudEM = lambda kapa,nu: bsq*uu[kapa]*ud[nu] + 0.5*bsq*delta(kapa,nu) - bu[kapa]*bd[nu]
+    fTudMA = lambda kapa,nu: (rho+ug+pg)*uu[kapa]*ud[nu]+(gam-1)*ug*delta(kapa,nu)
+    fTud = lambda kapa,nu: fTudEM(kapa,nu) + fTudMA(kapa,nu)
+    #
+    FM = -(gdetF[1,0]).sum(-1).sum(-1)*_dx2*_dx3
+    dic["FM"] = FM[ivals]
+    FEM = (gdet*fTudEM(1,0)).sum(-1).sum(-1)*_dx2*_dx3
+    dic["FEM"] = FEM[ivals]
+    #this includes Mdot
+    FE = (gdetF[1,1]).sum(-1).sum(-1)*_dx2*_dx3
+    #subtract Mdot
+    FE += FM
+    dic["FE"] = FE[ivals]
+    #total absolute magnetic flux
+    PhiBH = 0.5*np.abs(gdetB[1]).sum(-1).sum(-1)*_dx2*_dx3
+    dic["PhiBH"] = PhiBH[ivals]
+    dic["rvals"] = rvals
+    dic["ivals"] = ivals
+    return( dic )
+
+    #mu = -fTud(1,0)/(rho*uu[1])
+
+    #left here for reference:
+    # edtotvsr[:-1] = -0.5*(gdetF11[:-1]+gdetF11[1:])
+    # mdtotvsr[:-1] = -0.5*(gdetF10[:-1]+gdetF10[1:])
+    # edtotvsr -= mdtotvsr
 
     
 def mkbondimovie(doreload=1,plotlen=25,vmin=-6,vmax=1,whichvar="lrho",doresize=1,label=r"$\log\rho$",cmap=mpl.cm.jet,dostreamlines=1,startn=0,endn=-1,whichi=0,whichn=1,dosavefig="png",**kwargs):
@@ -6636,7 +6680,7 @@ def mksimplevecstream(B,**kwargs):
         ax = plt.gca()
     traj = fstreamplot(yi,xi,iBR,iBz,**kwargs)
     
-def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2,whichr=0.9,ncont=100,maxaphi=100,aspect=1.0,isnstar=False,kval=0,kvalvar=0,onlyeta=True,maxsBphi=None,domirror=True,nanout=False,whichvar="lrho",avgbsqorho=None,fntsize=None,aphiaccent=None,cmap=None,domask=1,**kwargs):
+def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dovarylw=True,dobhfield=True,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,showjet=False,arrowsize=1,startxabs=None,startyabs=None,populatestreamlines=True,useblankdiskfield=True,dnarrow=2,whichr=1.0,ncont=100,maxaphi=100,aspect=1.0,isnstar=False,kval=0,kvalvar=0,onlyeta=True,maxsBphi=None,domirror=True,nanout=False,whichvar="lrho",avgbsqorho=None,fntsize=None,aphiaccent=None,cmap=None,domask=1,**kwargs):
     extent=(-len,len,-len/aspect,len/aspect)
     if cmap is None:
         palette=cm.jet
@@ -8671,7 +8715,7 @@ def mergeqtyvstime(n):
     sys.stdout.flush()
     np.save( fname , qtymem )
     print( "Done!" )
-        
+
 
 def getqtyvstime(ihor,horval=0.2,fmtver=2,dobob=0,whichi=None,whichn=None,docompute=False,getnqty=False,maxn=None):
     """
@@ -9733,10 +9777,14 @@ def iofr(rval):
         res = np.float64(res)
     return(np.floor(res+0.5).astype(int))
 
-def plotqtyvstime(qtymem,ihor=None,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None,epsetaj=None,epsFm30=None,sigma=None, usegaussianunits=False, aphi_j_val=0,showextraeta=False,plotFM30=False,dobob=0):
+def plotqtyvstime(qtymem,ihor=None,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None,epsetaj=None,epsFm30=None,sigma=None, usegaussianunits=False, aphi_j_val=0,showextraeta=False,plotFM30=False,dobob=0,reval=None):
     global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
     if ihor is None:
         ihor = iofr(rhor)
+    if reval is None:
+        ieval = ihor
+    else:
+        ieval = iofr(reval)
     nqtyold=98+134*(dobob==1)
     nqty=98+134*(dobob==1)+32+1+9+32
     # nqtyold=98
@@ -10299,6 +10347,13 @@ def plotqtyvstime(qtymem,ihor=None,whichplot=None,ax=None,findex=None,fti=None,f
         FEraw = -edtot[:,ihor]
         FE= epsFke*(FMraw-FEraw)
         FEM = pjemtot[:,ihor]
+    elif reval is not None:
+        FM = mdtot[:,ieval]
+        FMiniavg = timeavg(FM,ts,iti,itf)
+        FMavg = timeavg(FM,ts,fti,ftf)
+        FM30 = FM
+        FE = pjemtot[:,ieval]
+        FEM = pjemtot[:,ieval]
     else:
         FMiniavg = mdotiniavg
         FMavg = mdotfinavg
@@ -10396,7 +10451,7 @@ def plotqtyvstime(qtymem,ihor=None,whichplot=None,ax=None,findex=None,fti=None,f
             etabh_avg = timeavg(etabh,ts,fti,ftf,sigma=sigma)
             etabh_avg_nosigma = timeavg(etabh_nosigma,ts,fti,ftf)
             etaw_avg = timeavg(etaw,ts,fti,ftf)
-            ptot_avg = timeavg(pjemtot[:,ihor],ts,fti,ftf)
+            ptot_avg = timeavg(pjemtot[:,ieval],ts,fti,ftf)
             if showextra:
                 ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaj_avg,'--',color=(fc,fc+0.5*(1-fc),fc)) 
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
@@ -10411,7 +10466,7 @@ def plotqtyvstime(qtymem,ihor=None,whichplot=None,ax=None,findex=None,fti=None,f
                 etaj2_avg = timeavg(etaj2,ts,iti,itf)
                 etabh2_avg = timeavg(etabh2,ts,iti,itf)
                 etaw2_avg = timeavg(etaw2,ts,iti,itf)
-                ptot2_avg = timeavg(pjemtot[:,ihor],ts,iti,itf)
+                ptot2_avg = timeavg(pjemtot[:,ieval],ts,iti,itf)
                 if showextra:
                     ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etaj2_avg,'--',color=(fc,fc+0.5*(1-fc),fc))
                 ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etabh2_avg,color=(ofc,fc,fc))
@@ -10463,10 +10518,10 @@ def plotqtyvstime(qtymem,ihor=None,whichplot=None,ax=None,findex=None,fti=None,f
     #
     #######################
     if whichplot == 6:
-        etabh = prefactor*pjemtot[:,ihor]/mdotfinavg
+        etabh = prefactor*pjemtot[:,ieval]/mdotfinavg
         etaj = prefactor*pjke_mu2[:,iofr(100)]/mdotfinavg
         etaw = prefactor*(pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotfinavg
-        etabh2 = prefactor*pjemtot[:,ihor]/mdotiniavg
+        etabh2 = prefactor*pjemtot[:,ieval]/mdotiniavg
         etaj2 = prefactor*pjke_mu2[:,iofr(100)]/mdotiniavg
         etaw2 = prefactor*(pjke_mu1-pjke_mu2)[:,iofr(100)]/mdotiniavg
         if(1 and iti>fti):
@@ -10479,7 +10534,7 @@ def plotqtyvstime(qtymem,ihor=None,whichplot=None,ax=None,findex=None,fti=None,f
             etaj_avg = timeavg(etaj,ts,fti,ftf)
             etabh_avg = timeavg(etabh,ts,fti,ftf)
             etaw_avg = timeavg(etaw,ts,fti,ftf)
-            ptot_avg = timeavg(pjemtot[:,ihor],ts,fti,ftf)
+            ptot_avg = timeavg(pjemtot[:,ieval],ts,fti,ftf)
             if showextra:
                 ax.plot(ts[(ts<ftf)*(ts>=fti)],0*ts[(ts<ftf)*(ts>=fti)]+etaj_avg,'--',color=(fc,fc+0.5*(1-fc),fc)) 
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
@@ -10491,7 +10546,7 @@ def plotqtyvstime(qtymem,ihor=None,whichplot=None,ax=None,findex=None,fti=None,f
                 etaj2_avg = timeavg(etaj2,ts,iti,itf)
                 etabh2_avg = timeavg(etabh2,ts,iti,itf)
                 etaw2_avg = timeavg(etaw2,ts,iti,itf)
-                ptot2_avg = timeavg(pjemtot[:,ihor],ts,iti,itf)
+                ptot2_avg = timeavg(pjemtot[:,ieval],ts,iti,itf)
                 if showextra:
                     ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etaj2_avg,'--',color=(fc,fc+0.5*(1-fc),fc))
                 ax.plot(ts[(ts<itf)*(ts>=iti)],0*ts[(ts<itf)*(ts>=iti)]+etabh2_avg,color=(ofc,fc,fc))
@@ -13289,7 +13344,7 @@ def plotpowers(fname,hor=0,format=2,usegaussianunits=True,nmin=-1,plotetas=False
         plt.setp( ax4.get_xticklabels(), visible=False )
         plt.legend(ncol=1,loc='lower right',frameon=True,labelspacing=0.0,borderpad=0.2) #,scatterpoints=1,numpoints=1)
     plt.savefig("brflux.pdf",bbox_inches='tight',pad_inches=0.02)
-    pdb.set_trace()
+    #pdb.set_trace()
     #
     #############
     #
@@ -14029,6 +14084,7 @@ def mkmovieframe( findex, fname, **kwargs ):
     dontloadfiles = kwargs.pop('dontloadfiles',0)
     doxyslice = kwargs.pop('doxyslice',0)
     lcunits = kwargs.pop('lcunits',0)
+    reval = kwargs.pop('reval',None)
     # oldnz=nz
     if dontloadfiles==False:
         rfd("../"+fname)
@@ -14054,7 +14110,7 @@ def mkmovieframe( findex, fname, **kwargs ):
         gs3.update(left=0.055, right=0.97, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
         #mdot
         ax31 = plt.subplot(gs3[-3,:])
-        plotqtyvstime(qtymem,ax=ax31,whichplot=1,findex=findex,epsFm=epsFm,epsFke=epsFke,epsetaj=epsetaj,epsFm30=epsFm30,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma,usegaussianunits=True)
+        plotqtyvstime(qtymem,ax=ax31,whichplot=1,findex=findex,epsFm=epsFm,epsFke=epsFke,epsetaj=epsetaj,epsFm30=epsFm30,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma,usegaussianunits=True,reval=reval)
         ymax=ax31.get_ylim()[1]
         ymax=2*(np.floor(np.floor(ymax+1.5)/2))
         ax31.set_yticks((ymax/2,ymax))
@@ -14080,7 +14136,7 @@ def mkmovieframe( findex, fname, **kwargs ):
         #\phi
         #
         ax35 = plt.subplot(gs3[-2,:])
-        plotqtyvstime(qtymem,ax=ax35,whichplot=5,findex=findex,epsFm=epsFm,epsFke=epsFke,epsetaj=epsetaj,epsFm30=epsFm30,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma,usegaussianunits=True)
+        plotqtyvstime(qtymem,ax=ax35,whichplot=5,findex=findex,epsFm=epsFm,epsFke=epsFke,epsetaj=epsetaj,epsFm30=epsFm30,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma,usegaussianunits=True,reval=reval)
         ymax=ax35.get_ylim()[1]
         if 1 < ymax and ymax < 2: 
             #ymax = 2
@@ -14115,7 +14171,7 @@ def mkmovieframe( findex, fname, **kwargs ):
         #pjet/<mdot>
         #
         ax34 = plt.subplot(gs3[-1,:])
-        plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findex,epsFm=epsFm,epsFke=epsFke,epsetaj=epsetaj,epsFm30=epsFm30,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma,usegaussianunits=True)
+        plotqtyvstime(qtymem,ax=ax34,whichplot=4,findex=findex,epsFm=epsFm,epsFke=epsFke,epsetaj=epsetaj,epsFm30=epsFm30,fti=fti,ftf=ftf,prefactor=prefactor,sigma=sigma,usegaussianunits=True,reval=reval)
         #OVERRIDE
         #ax34.set_ylim((-.5*prefactor,1.99*prefactor))
         ax34.set_ylim((0,3.8*prefactor))
@@ -14174,7 +14230,7 @@ def mkmovieframe( findex, fname, **kwargs ):
         #gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.45, wspace=0.05)
         ax1 = plt.subplot(gs1[:, -1])
         if domakeframes:
-            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,maxsBphi=maxsBphi)
+            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,maxsBphi=maxsBphi,whichr=1.5,domask=0.5) #domask = 0.5 is important so that magnetic field lines extend down all the way to BH
         ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
         ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         placeletter(ax1,"$(\mathrm{a})$",va="center",bbox=bbox_props)
@@ -14182,7 +14238,7 @@ def mkmovieframe( findex, fname, **kwargs ):
         gs2.update(left=0.5, right=1, top=0.995, bottom=0.48, wspace=0.05)
         ax2 = plt.subplot(gs2[:, -1])
         if domakeframes:
-            mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True)
+            mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True,dovarylw=1,domask=0.5) #domask = 0.5 is important so that magnetic field lines extend down all the way to BH
         ax2.set_ylabel(r'$y\ [r_g]$',fontsize=16,ha='center')
         ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         placeletter(ax2,"$(\mathrm{b})$",va="center",bbox=bbox_props)
@@ -19025,6 +19081,11 @@ if __name__ == "__main__":
         #print epsFm, epsFke
         mkmovie(prefactor=100.,sigma=1500.,usegaussianunits=True,domakeframes=domakeframes)
         #mkmovie(prefactor=100.,usegaussianunits=True,domakeframes=domakeframes)
+    if False:
+        #make a movie for a09new, without using the floor information
+        doreload = 1
+        domakeframes=1
+        mkmovie(prefactor=100.,sigma=1500.,usegaussianunits=True,domakeframes=domakeframes,reval=5)
     if False:
         #fig2 with grayscalestreamlines and red field lines
         #mkstreamlinefigure(length=30,doenergy=False,frameon=True,dpi=600,showticks=False)

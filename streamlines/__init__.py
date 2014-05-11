@@ -27,6 +27,7 @@ import numpy
 import pylab
 import matplotlib
 import matplotlib.patches as mpp
+import pdb
 
 def streamplot(x, y, u, v, density=1, linewidth=1,
                color='k', cmap=None, norm=None, vmax=None, vmin=None,
@@ -744,6 +745,8 @@ def fstreamplot(x, y, u, v, ua = None, va = None, density=1, linewidth=1,
         minlengthdefaultlist = [minlengthdefault,]
     else:
         minlengthdefaultlist = minlengthdefault
+
+    #pdb.set_trace()
 
     #loop over minlengthdefault list: useful for starting with
     #large minimum length value and continuiung to shorter ones
