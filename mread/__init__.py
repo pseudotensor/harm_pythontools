@@ -1391,11 +1391,10 @@ def mktsnew():
     if len(sys.argv[2:])>=2 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
         whichi = int(sys.argv[2])
         whichn = int(sys.argv[3])
+        endn = -1
         if len(sys.argv[2:])==3:
             if sys.argv[4].isdigit():
                 endn = int(sys.argv[4])
-        else:
-            endn = -1
         postprocess1d(endn = endn, whichi = whichi, whichn = whichn)
     else:
         print("Syntax error")
