@@ -1387,6 +1387,19 @@ def mkmov():
         return
     mkbondimovie(whichi = whichi, whichn = whichn)
 
+def mktsnew():
+    if len(sys.argv[2:])>=2 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
+        whichi = int(sys.argv[2])
+        whichn = int(sys.argv[3])
+        if len(sys.argv[2:])==3:
+            if sys.argv[4].isdigit():
+                endn = int(sys.argv[4])
+            else:
+                endn = -1
+            postprocess1d(endn = endn, whichi = whichi, whichn = whichn)
+    else:
+        print("Syntax error")
+
 def postprocess1d(fname = "qty.npz", startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
     grid3d("gdump.bin",use2d=True)
     flist1 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
@@ -1407,7 +1420,7 @@ def postprocess1d(fname = "qty.npz", startn=0,endn=-1,whichi=0,whichn=1,**kwargs
         sys.stdout.flush()
         vt=np.load( fname )
         for key in vt.keys():
-            v[key] = vt[key]
+            v[key] = list(vt[key])
         vt.close()
         # FM_list = list(v["FM"])
         # PhiBH_list = list(v["PhiBH"])
@@ -1423,6 +1436,9 @@ def postprocess1d(fname = "qty.npz", startn=0,endn=-1,whichi=0,whichn=1,**kwargs
             break
         if ind % whichn != whichi:
             #do every whichn'th snapshot starting with whichi'th snapshot
+            continue
+        if ind in v["ind"]:
+            print( "File %04d already processed, skipping..." % ind )
             continue
         print( "Reading " + fldname + " ..." )
         sys.stdout.flush()
@@ -18886,6 +18902,8 @@ if __name__ == "__main__":
     if len(sys.argv)>1:
         if sys.argv[1] == "mkts":
             mkts(docompute=True)
+        if sys.argv[1] == "mktsnew":
+            mktsnew()
         elif sys.argv[1] == "mkavg":
             mk2davg()
         elif sys.argv[1] == "mkath":
