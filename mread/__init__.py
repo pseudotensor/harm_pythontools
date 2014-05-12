@@ -1388,160 +1388,177 @@ def mkmov():
     mkbondimovie(whichi = whichi, whichn = whichn)
 
 #new movie frame
-def mkmfnew(v,findex=None,fti=None,ftf=None,sigma=None,prefactor=100):
-        tmax=min(ts[-1],max(fti,ftf))
-        plt.figure(0, figsize=(12,9), dpi=100)
-        plt.clf()
-        #mdot,pjet,pjet/mdot plots
-        gs3 = GridSpec(3, 3)
-        gs3.update(left=0.055, right=0.97, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
-        #
-        #mdot plot
-        #
-        ax31 = plt.subplot(gs3[-3,:])
-        ax31.set_ylabel(r'$\dot Mc^2$',fontsize=16,labelpad=9)
-        plt.setp( ax31.get_xticklabels(), visible=False)
-        #start plotting
-        ax31.plot(v["t"][:],v["FM"][:,1],"k")
-        ax31.plot(v["t"][findex],v["FM"][findex,1],'o',mfc='r')
-        FMavg = timeavg(v["FM"][:,1],fti=fti,ftf=ftf,sigma=sigma)+0*v["t"]
-        #ensure of the same shape as the rest
-        l, = ax31.plot(v["t"][:],FMavg[:],"k")
-        l.set_dashes([10,5])
-        #end plotting
-        ymax=ax31.get_ylim()[1]
-        ymax=2*(np.floor(np.floor(ymax+1.5)/2))
-        ax31.set_yticks((ymax/2,ymax))
-        ax31.grid(True)
-        bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
-        placeletter(ax31,"$(\mathrm{c})$",fx=0.02,bbox=bbox_props)
-        ax31r = ax31.twinx()
-        ax31r.set_ylim(ax31.get_ylim())
-        ax31r.set_yticks((ymax/2,ymax))
-        #
-        #\phi plot
-        #
-        ax35 = plt.subplot(gs3[-2,:])
-        #start plotting
-        PhiBHcgs = v["PhiBH"]*(4*np.pi)**0.5
-        phibh = PhiBHcgs/v["FM"]**0.5
-        ax35.plot(v["t"][:],phibh[:,0],"k")
-        ax35.plot(v["t"][findex],phibh[findex,0],'o',mfc='r')
-        phiavg = timeavg(phibh[:,0],fti=fti,ftf=ftf,sigma=sigma)+0*v["t"]
-        l, = ax35.plot(v["t"],phiavg,"k")
-        l.set_dashes([10,5])
-        #end plotting
-        ymax=ax35.get_ylim()[1]
-        if 1 < ymax and ymax < 2: 
-            #ymax = 2
-            tck=(1,)
-            ax35.set_yticks(tck)
-            #ax35.set_yticklabels(('','1','2'))
-        elif ymax < 1: 
-            ymax = 1
-            tck=(0.5,1)
-            ax35.set_yticks(tck)
-            ax35.set_yticklabels(('','1'))
+def mkmfnew(v,findex=10000,
+            iti=2e4,itf=97970.0,
+            fti=97970.0,ftf=2e5,
+            sigma=3000,sigma1=None,prefactor=100,domakeframes=1,plotlen=25,maxsBphi=3,
+            doreload=1):
+    global FMavg
+    plt.clf()
+    tmax=min(v["t"][-1],max(fti,ftf))
+    plt.figure(0, figsize=(12,9), dpi=100)
+    plt.clf()
+    #mdot,pjet,pjet/mdot plots
+    gs3 = GridSpec(3, 3)
+    gs3.update(left=0.055, right=0.97, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
+    #
+    #mdot plot
+    #
+    ax31 = plt.subplot(gs3[-3,:])
+    ax31.set_ylabel(r'$\dot Mc^2$',fontsize=16,labelpad=9)
+    plt.setp( ax31.get_xticklabels(), visible=False)
+    #start plotting
+    ax31.plot(v["t"][:],v["FM"][:,1],"k")
+    ax31.plot(v["t"][findex],v["FM"][findex,1],'o',mfc='r')
+    if 'FMavg' not in globals():
+        FMavg = timeavg(v["FM"][:,1],v["t"],fti=iti,ftf=ftf,sigma=sigma)+0*v["t"]
+    t = v["t"]
+    #ensure of the same shape as the rest
+    l, = ax31.plot(t,FMavg[:],"k")
+    l.set_dashes([10,5])
+    #end plotting
+    ymax=ax31.get_ylim()[1]
+    ymax=2*(np.floor(np.floor(ymax+1.5)/2))
+    ax31.set_yticks((ymax/2,ymax))
+    ax31.grid(True)
+    bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
+    placeletter(ax31,"$(\mathrm{c})$",fx=0.02,bbox=bbox_props)
+    ax31r = ax31.twinx()
+    ax31r.set_ylim(ax31.get_ylim())
+    ax31r.set_yticks((ymax/2,ymax))
+    #
+    #\phi plot
+    #
+    ax35 = plt.subplot(gs3[-2,:])
+    #start plotting
+    PhiBHcgs = v["PhiBH"][:,0]*(4*np.pi)**0.5
+    phibh = PhiBHcgs/FMavg**0.5
+    ax35.plot(v["t"][:],phibh[:],"k")
+    ax35.plot(v["t"][findex],phibh[findex],'o',mfc='r')
+    phiavg1 = timeavg(phibh[:],v["t"],fti=iti,ftf=itf,sigma=sigma1)+0*v["t"]
+    phiavg2 = timeavg(phibh[:],v["t"],fti=fti,ftf=ftf,sigma=sigma1)+0*v["t"]
+    l, = ax35.plot(v["t"][(iti<=t)*(t<=itf)],phiavg1[(iti<=t)*(t<=itf)],"k")
+    l.set_dashes([10,5])
+    l, = ax35.plot(v["t"][(fti<=t)*(t<=ftf)],phiavg2[(fti<=t)*(t<=ftf)],"k")
+    l.set_dashes([10,5])
+    #end plotting
+    ymax=ax35.get_ylim()[1]
+    if 1 < ymax and ymax < 2: 
+        #ymax = 2
+        tck=(1,)
+        ax35.set_yticks(tck)
+        #ax35.set_yticklabels(('','1','2'))
+    elif ymax < 1: 
+        ymax = 1
+        tck=(0.5,1)
+        ax35.set_yticks(tck)
+        ax35.set_yticklabels(('','1'))
+    else:
+        ymax=np.floor(ymax)+1
+        if ymax >= 60:
+            tck=np.arange(1,ymax/30.)*30.
+        elif ymax >= 20:
+            tck=np.arange(1,ymax/10.)*10.
+        elif ymax >= 10:
+            tck=np.arange(1,ymax/5.)*5.
         else:
-            ymax=np.floor(ymax)+1
-            if ymax >= 60:
-                tck=np.arange(1,ymax/30.)*30.
-            elif ymax >= 20:
-                tck=np.arange(1,ymax/10.)*10.
-            elif ymax >= 10:
-                tck=np.arange(1,ymax/5.)*5.
-            else:
-                tck=np.arange(1,ymax)
-            ax35.set_yticks(tck)
-        ax35.grid(True)
-        placeletter(ax35,"$(\mathrm{d})$",fx=0.02,bbox=bbox_props)
-        if ymax >= 10:
-            ax35.set_ylabel(r"$\phi_{\rm BH}$",size=16,ha='left',labelpad=25)
-        ax35.grid(True)
-        ax35r = ax35.twinx()
-        ax35r.set_ylim(ax35.get_ylim())
-        ax35r.set_yticks(tck)
-        #
-        #pjet/<mdot>
-        #
-        ax34 = plt.subplot(gs3[-1,:])
-        #start plotting
-        etabh = (v["FM"]-v["FE"])/FMavg
-        ax34.plot(v["t"][:],etabh[:,1],"k")
-        ax34.plot(v["t"][findex],phibh[findex,1],'o',mfc='r')
-        etabhavg = timeavg(etabh[:,1],fti=fti,ftf=ftf,sigma=sigma) + 0*v["t"]
-        l, = ax34.plot(v["t"],etabhavg,"k")
-        l.set_dashes([10,5])
-        #end plotting
-        ax34.set_ylim((0,3.8*prefactor))
-        placeletter(ax34,"$(\mathrm{e})$",fx=0.02,bbox=bbox_props)
-        ymax=ax34.get_ylim()[1]
-        ymin=ax34.get_ylim()[0]
-        if ymin < -.25 * prefactor:
-            ymin = -.25 * prefactor
-            ax34.set_ylim((ymin,ymax))
-        if prefactor < ymax and ymax < 1.5*prefactor: 
-            #ymax = 2
-            tck=(0.5*prefactor,prefactor,)
-            if ymin < 0:
-                tck=(0,0.5*prefactor,prefactor,)
-            ax34.set_yticks(tck)
-            #ax34.set_yticklabels(('','100','200'))
-        elif ymax <= prefactor: 
-            ymax=np.floor(ymax)+1
-            if ymin < 0:
-                minval = 0
-            else:
-                minval = 1
-            if ymax >= 50:
-                tck=np.arange(minval,ymax/50.)*50.
-            elif ymax >= 20:
-                tck=np.arange(minval,ymax/10.)*10.
-            elif ymax >= 10:
-                tck=np.arange(minval,ymax/5.)*5.
-            else:
-                tck=np.arange(minval,ymax)
-            ax34.set_yticks(tck)
-            if False:
-                ymax = prefactor
-                tck=(0.5*prefactor,prefactor)
-                if ymin < 0:
-                    tck=(0,0.5*prefactor,prefactor)
-                ax34.set_yticks(tck)
-                if ymin >= 0:
-                    ax34.set_yticklabels(('','%d' % prefactor))
+            tck=np.arange(1,ymax)
+        ax35.set_yticks(tck)
+    ax35.grid(True)
+    plt.setp( ax35.get_xticklabels(), visible=False)
+    placeletter(ax35,"$(\mathrm{d})$",fx=0.02,bbox=bbox_props)
+    ax35.set_ylabel(r"$\phi$",size=16,ha='left') #labelpad=25
+    ax35.grid(True)
+    ax35r = ax35.twinx()
+    ax35r.set_ylim(ax35.get_ylim())
+    ax35r.set_yticks(tck)
+    #
+    #pjet/<mdot>
+    #
+    ax34 = plt.subplot(gs3[-1,:])
+    #start plotting
+    etabh = (v["FM"]-v["FE"])[:,1]/FMavg
+    #print( "FMavg = %g" % FMavg )
+    ax34.plot(v["t"][:],etabh[:]*prefactor,"k")
+    ax34.plot(v["t"][findex],etabh[findex]*prefactor,'o',mfc='r')
+    etabhavg1 = timeavg(etabh[:],v["t"],fti=iti,ftf=itf,sigma=sigma1) + 0*v["t"]
+    etabhavg2 = timeavg(etabh[:],v["t"],fti=fti,ftf=ftf,sigma=sigma1) + 0*v["t"]
+    l, = ax34.plot(v["t"][(iti<=t)*(t<=itf)],etabhavg1[(iti<=t)*(t<=itf)]*prefactor,"k")
+    l.set_dashes([10,5])
+    l, = ax34.plot(v["t"][(fti<=t)*(t<=ftf)],etabhavg2[(fti<=t)*(t<=ftf)]*prefactor,"k")
+    l.set_dashes([10,5])
+    #end plotting
+    ax34.set_ylim((0,2*prefactor))
+    placeletter(ax34,"$(\mathrm{e})$",fx=0.02,bbox=bbox_props)
+    ymax=ax34.get_ylim()[1]
+    ymin=ax34.get_ylim()[0]
+    if ymin < -.25 * prefactor:
+        ymin = -.25 * prefactor
+        ax34.set_ylim((ymin,ymax))
+    if prefactor < ymax and ymax < 1.5*prefactor: 
+        #ymax = 2
+        tck=(0.5*prefactor,prefactor,)
+        if ymin < 0:
+            tck=(0,0.5*prefactor,prefactor,)
+        ax34.set_yticks(tck)
+        #ax34.set_yticklabels(('','100','200'))
+    elif ymax <= prefactor: 
+        ymax=np.floor(ymax)+1
+        if ymin < 0:
+            minval = 0
         else:
-            ymax=np.floor(ymax/prefactor)+1
-            ymax*=prefactor
-            tck=np.arange(1,ymax/prefactor)*prefactor
+            minval = 1
+        if ymax >= 50:
+            tck=np.arange(minval,ymax/50.)*50.
+        elif ymax >= 20:
+            tck=np.arange(minval,ymax/10.)*10.
+        elif ymax >= 10:
+            tck=np.arange(minval,ymax/5.)*5.
+        else:
+            tck=np.arange(minval,ymax)
+        ax34.set_yticks(tck)
+        if False:
+            ymax = prefactor
+            tck=(0.5*prefactor,prefactor)
             if ymin < 0:
-                tck=np.arange(0,ymax/prefactor)*prefactor
+                tck=(0,0.5*prefactor,prefactor)
             ax34.set_yticks(tck)
-        #reset lower limit to 0
-        #ax34.set_ylim((0,ax34.get_ylim()[1]))
-        ax34.grid(True)
-        ax34r = ax34.twinx()
-        ax34r.set_ylim(ax34.get_ylim())
-        ax34r.set_yticks(tck)
-        #Rz xy
-        gs1 = GridSpec(1, 1)
-        gs1.update(left=0.04, right=0.45, top=0.995, bottom=0.48, wspace=0.05)
-        #gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.45, wspace=0.05)
-        ax1 = plt.subplot(gs1[:, -1])
-        if domakeframes:
-            mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,maxsBphi=maxsBphi,whichr=1.5,domask=0.5) #domask = 0.5 is important so that magnetic field lines extend down all the way to BH
-        ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
-        ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
-        placeletter(ax1,"$(\mathrm{a})$",va="center",bbox=bbox_props)
-        gs2 = GridSpec(1, 1)
-        gs2.update(left=0.5, right=1, top=0.995, bottom=0.48, wspace=0.05)
-        ax2 = plt.subplot(gs2[:, -1])
-        if domakeframes:
-            mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True,dovarylw=1,domask=0.5) #domask = 0.5 is important so that magnetic field lines extend down all the way to BH
-        ax2.set_ylabel(r'$y\ [r_g]$',fontsize=16,ha='center')
-        ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
-        placeletter(ax2,"$(\mathrm{b})$",va="center",bbox=bbox_props)
-    
+            if ymin >= 0:
+                ax34.set_yticklabels(('','%d' % prefactor))
+    else:
+        ymax=np.floor(ymax/prefactor)+1
+        ymax*=prefactor
+        tck=np.arange(1,ymax/prefactor)*prefactor
+        if ymin < 0:
+            tck=np.arange(0,ymax/prefactor)*prefactor
+        ax34.set_yticks(tck)
+    #reset lower limit to 0
+    #ax34.set_ylim((0,ax34.get_ylim()[1]))
+    ax34.set_ylabel(r"$p$",size=16,ha='left',labelpad=0)
+    ax34.grid(True)
+    ax34r = ax34.twinx()
+    ax34r.set_ylim(ax34.get_ylim())
+    ax34r.set_yticks(tck)
+    #Rz xy
+    gs1 = GridSpec(1, 1)
+    gs1.update(left=0.04, right=0.45, top=0.995, bottom=0.48, wspace=0.05)
+    #gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.45, wspace=0.05)
+    ax1 = plt.subplot(gs1[:, -1])
+    if domakeframes:
+        if doreload: rfd("fieldline%04d.bin" % findex)
+        mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,maxsBphi=maxsBphi,whichr=1.5,domask=0.5) #domask = 0.5 is important so that magnetic field lines extend down all the way to BH
+    ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
+    ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
+    placeletter(ax1,"$(\mathrm{a})$",va="center",bbox=bbox_props)
+    gs2 = GridSpec(1, 1)
+    gs2.update(left=0.5, right=1, top=0.995, bottom=0.48, wspace=0.05)
+    ax2 = plt.subplot(gs2[:, -1])
+    if domakeframes:
+        mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True,dovarylw=1,domask=0.5) #domask = 0.5 is important so that magnetic field lines extend down all the way to BH
+    ax2.set_ylabel(r'$y\ [r_g]$',fontsize=16,ha='center')
+    ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
+    placeletter(ax2,"$(\mathrm{b})$",va="center",bbox=bbox_props)
+
         
 def mktsnew():
     if len(sys.argv[2:])>=2 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
@@ -1558,7 +1575,8 @@ def mktsnew():
     else:
         print("Syntax error")
 
-def mrgnew(n,fname="qty.npz"):
+def mrgnew(n=None,fin1=None,fin2=None,fout="qty.npz"):
+    #setup empty variables first (not necessary, here to remember what they are)
     v = {}
     v["FM"]=[] 
     v["FEM"]=[]
@@ -1568,6 +1586,38 @@ def mrgnew(n,fname="qty.npz"):
     v["ivals"]=[]
     v["rvals"]=[]
     v["t"]=[]
+    if n is not None:
+        #merge a numbered sequence of files
+        v = mrgnew_n(n,v)
+    elif fin1 is not None and fin2 is not None:
+        #merge two named files
+        v = mrgnew_f(fin1,v)
+        v = mrgnew_f(fin2,v)
+    print( "Saving into " + fout + " ..." )
+    sys.stdout.flush()
+    np.savez(fout, 
+             FM = v["FM"], 
+             FEM = v["FEM"],
+             FE = v["FE"],
+             PhiBH = v["PhiBH"],
+             ind = v["ind"],
+             ivals = v["ivals"],
+             rvals = v["rvals"],
+             t = v["t"]
+             )
+    print( "Done!" )
+
+def mrgnew_n(n, v=None):
+    if v is None:
+        v = {}
+        v["FM"]=[] 
+        v["FEM"]=[]
+        v["FE"]=[]
+        v["PhiBH"]=[]
+        v["ind"]=[]
+        v["ivals"]=[]
+        v["rvals"]=[]
+        v["t"]=[]
     for i in np.arange(n):
         #load each file
         ft = "qty_%02d_%02d.npz" % (i, n)
@@ -1598,21 +1648,50 @@ def mrgnew(n,fname="qty.npz"):
     if len(v["t"]) == 0:
         print( "Times are missing, assuming dumping period of 5 and setting t = 5*ind" )
         v["t"] = np.array(v["ind"])*5.
-    print( "Saving into " + fname + " ..." )
+    return(v)
+
+def mrgnew_f(ft, v=None):
+    #assumes that the dics in ft and v are sorted in time
+    if v is None:
+        v = {}
+        v["FM"]=[] 
+        v["FEM"]=[]
+        v["FE"]=[]
+        v["PhiBH"]=[]
+        v["ind"]=[]
+        v["ivals"]=[]
+        v["rvals"]=[]
+        v["t"]=[]
+    #load file
+    print( "Loading " + ft + " ..." )
     sys.stdout.flush()
-    np.savez(fname, 
-             FM = v["FM"], 
-             FEM = v["FEM"],
-             FE = v["FE"],
-             PhiBH = v["PhiBH"],
-             ind = v["ind"],
-             ivals = v["ivals"],
-             rvals = v["rvals"],
-             t = v["t"]
-             )
-    print( "Done!" )
-
-
+    vt=np.load( ft )
+    #find last element in old array that does not exist in the new array
+    ind = np.array(v["ind"])
+    lasti = (ind<vt["ind"][0]).sum()
+    for key in vt.keys():
+        if key not in ["ivals", "rvals"]:
+            v[key] = list(v[key])
+            #has time dependence, so first discard repeated entries
+            del v[key][lasti:]
+            #and then append new entries
+            v[key] += list(vt[key])
+        else:
+            v[key] = list(vt[key])
+    vt.close()    
+    #now sort the resulting list
+    imap = np.argsort(v["ind"])
+    #sort keys that have time series
+    for key in vt.keys():
+        if key not in ["ivals", "rvals"]:
+            if len(v[key]) > 0:
+                v[key] = np.array(v[key])[imap,...]
+    #hack to reintroduce the time if missing
+    if len(v["t"]) == 0:
+        print( "Times are missing, assuming dumping period of 5 and setting t = 5*ind" )
+        v["t"] = np.array(v["ind"])*5.
+    return(v)
+    
 def postprocess1d(fname = "qty.npz", startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
     grid3d("gdump.bin",use2d=True)
     flist1 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
@@ -11269,7 +11348,7 @@ def gaussf( x, x0, sigma ):
     """ Returns normalized Gaussian centered at x0 with stdev sigma """
     return( np.exp(-0.5*(x-x0)**2/sigma**2) / (np.sqrt(2*np.pi)*sigma) )
 
-def timeavg( qty, ts, fti, ftf, step = 1, sigma = None ):
+def timeavg( qty, ts, fti=None, ftf=None, step = 1, sigma = None ):
     cond = (ts<ftf)*(ts>=fti)
     if sigma is None:
         #use masked array to remove any stray NaN's
