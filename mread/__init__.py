@@ -1412,7 +1412,8 @@ def mknewmov(startn=0,endn=-1,dosavefig=1):
             continue
         if endn>=0 and fldindex >= endn:
             break
-        if fldindex % (whichn*dn) != whichi:
+        if fldindex % dn: continue
+        if fldindex/dn % (whichn) != whichi:
             #do every whichn'th snapshot starting with whichi'th snapshot
             continue
         if dosavefig:
