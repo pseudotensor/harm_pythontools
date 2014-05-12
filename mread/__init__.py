@@ -1388,10 +1388,10 @@ def mkmov():
     mkbondimovie(whichi = whichi, whichn = whichn)
 
 #new movie frame
-def mkmfnew(v,findex=10000,
-            iti=2e4,itf=97970.0,
+def mkmfnew(v,findex=3500,
+            iti=3500,itf=97970.0,
             fti=97970.0,ftf=2e5,
-            sigma=3000,sigma1=None,prefactor=100,domakeframes=1,plotlen=25,maxsBphi=3,
+            sigma=1500,sigma1=None,prefactor=100,domakeframes=1,plotlen=25,maxsBphi=3,
             doreload=1):
     global FMavg
     plt.clf()
@@ -1417,15 +1417,18 @@ def mkmfnew(v,findex=10000,
     l, = ax31.plot(t,FMavg[:],"k")
     l.set_dashes([10,5])
     #end plotting
+    ax31.set_xlim(0,tmax)
     ymax=ax31.get_ylim()[1]
     ymax=2*(np.floor(np.floor(ymax+1.5)/2))
+    ymax = 26.
     ax31.set_yticks((ymax/2,ymax))
     ax31.grid(True)
-    bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.9)
-    placeletter(ax31,"$(\mathrm{c})$",fx=0.02,bbox=bbox_props)
+    bbox_props = dict(boxstyle="round,pad=0.1", fc="w", ec="w", alpha=0.)
+    placeletter(ax31,"$(\mathrm{c})$",fx=0.15,fy=0.5,bbox=bbox_props)
     ax31r = ax31.twinx()
-    ax31r.set_ylim(ax31.get_ylim())
     ax31r.set_yticks((ymax/2,ymax))
+    ax31r.set_ylim(0,30)
+    ax31.set_ylim(0,30)
     #
     #\phi plot
     #
@@ -1442,6 +1445,7 @@ def mkmfnew(v,findex=10000,
     l, = ax35.plot(v["t"][(fti<=t)*(t<=ftf)],phiavg2[(fti<=t)*(t<=ftf)],"k")
     l.set_dashes([10,5])
     #end plotting
+    ax35.set_xlim(0,tmax)
     ymax=ax35.get_ylim()[1]
     if 1 < ymax and ymax < 2: 
         #ymax = 2
@@ -1466,7 +1470,7 @@ def mkmfnew(v,findex=10000,
         ax35.set_yticks(tck)
     ax35.grid(True)
     plt.setp( ax35.get_xticklabels(), visible=False)
-    placeletter(ax35,"$(\mathrm{d})$",fx=0.02,bbox=bbox_props)
+    placeletter(ax35,"$(\mathrm{d})$",fx=0.15,fy=0.1,bbox=bbox_props)
     ax35.set_ylabel(r"$\phi$",size=16,ha='left') #labelpad=25
     ax35.grid(True)
     ax35r = ax35.twinx()
@@ -1488,52 +1492,15 @@ def mkmfnew(v,findex=10000,
     l, = ax34.plot(v["t"][(fti<=t)*(t<=ftf)],etabhavg2[(fti<=t)*(t<=ftf)]*prefactor,"k")
     l.set_dashes([10,5])
     #end plotting
+    ax34.set_xlim(0,tmax)    
     ax34.set_ylim((0,2*prefactor))
-    placeletter(ax34,"$(\mathrm{e})$",fx=0.02,bbox=bbox_props)
+    placeletter(ax34,"$(\mathrm{e})$",fx=0.15,fy=0.35,bbox=bbox_props)
     ymax=ax34.get_ylim()[1]
-    ymin=ax34.get_ylim()[0]
-    if ymin < -.25 * prefactor:
-        ymin = -.25 * prefactor
-        ax34.set_ylim((ymin,ymax))
-    if prefactor < ymax and ymax < 1.5*prefactor: 
-        #ymax = 2
-        tck=(0.5*prefactor,prefactor,)
-        if ymin < 0:
-            tck=(0,0.5*prefactor,prefactor,)
-        ax34.set_yticks(tck)
-        #ax34.set_yticklabels(('','100','200'))
-    elif ymax <= prefactor: 
-        ymax=np.floor(ymax)+1
-        if ymin < 0:
-            minval = 0
-        else:
-            minval = 1
-        if ymax >= 50:
-            tck=np.arange(minval,ymax/50.)*50.
-        elif ymax >= 20:
-            tck=np.arange(minval,ymax/10.)*10.
-        elif ymax >= 10:
-            tck=np.arange(minval,ymax/5.)*5.
-        else:
-            tck=np.arange(minval,ymax)
-        ax34.set_yticks(tck)
-        if False:
-            ymax = prefactor
-            tck=(0.5*prefactor,prefactor)
-            if ymin < 0:
-                tck=(0,0.5*prefactor,prefactor)
-            ax34.set_yticks(tck)
-            if ymin >= 0:
-                ax34.set_yticklabels(('','%d' % prefactor))
-    else:
-        ymax=np.floor(ymax/prefactor)+1
-        ymax*=prefactor
-        tck=np.arange(1,ymax/prefactor)*prefactor
-        if ymin < 0:
-            tck=np.arange(0,ymax/prefactor)*prefactor
-        ax34.set_yticks(tck)
+    ymax=120
+    tck = (50,100)
+    ax34.set_yticks(tck)
     #reset lower limit to 0
-    #ax34.set_ylim((0,ax34.get_ylim()[1]))
+    ax34.set_ylim(0,150)
     ax34.set_ylabel(r"$p$",size=16,ha='left',labelpad=0)
     ax34.grid(True)
     ax34r = ax34.twinx()
@@ -1547,15 +1514,15 @@ def mkmfnew(v,findex=10000,
     if domakeframes:
         if doreload: rfd("fieldline%04d.bin" % findex)
         mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,maxsBphi=maxsBphi,whichr=1.5,domask=0.5) #domask = 0.5 is important so that magnetic field lines extend down all the way to BH
-    ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
+    ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center',labelpad=-5)
     ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
     placeletter(ax1,"$(\mathrm{a})$",va="center",bbox=bbox_props)
     gs2 = GridSpec(1, 1)
     gs2.update(left=0.5, right=1, top=0.995, bottom=0.48, wspace=0.05)
     ax2 = plt.subplot(gs2[:, -1])
     if domakeframes:
-        mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True,dovarylw=1,domask=0.5) #domask = 0.5 is important so that magnetic field lines extend down all the way to BH
-    ax2.set_ylabel(r'$y\ [r_g]$',fontsize=16,ha='center')
+        mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True,dovarylw=1,domask=0.5) #,label=r"$\log\rho$",fontsize=20) #domask = 0.5 is important so that magnetic field lines extend down all the way to BH
+    ax2.set_ylabel(r'$y\ [r_g]$',fontsize=16,ha='center',labelpad=-5)
     ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
     placeletter(ax2,"$(\mathrm{b})$",va="center",bbox=bbox_props)
 
@@ -7231,6 +7198,8 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
         rhor=1
         ihor = 0
         #a=1
+    label=kwargs.pop('label',None)
+    fontsize=kwargs.pop('fontsize',None)
     lw=kwargs.pop('lw',None)
     dovarylw=kwargs.pop('dovarylw',0)
     dobhfield=kwargs.pop('dobhfield',True)
@@ -7330,6 +7299,7 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
             #set font size of colorbar tick labels
             cl = plt.getp(cbar.ax, 'ymajorticklabels')
             plt.setp(cl, fontsize=fntsize)
+        if label is not None: ax.set_xlabel(label,fontsize=fntsize)
     #plt.title(r'$\log_{10}\rho$ at $t = %4.0f$' % t)
     if True == pt:
         plt.title('log rho at t = %4.0f' % t)
