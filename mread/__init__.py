@@ -1515,7 +1515,7 @@ def mkmfnew(v,findex=10000,
     ax35.grid(True)
     plt.setp( ax35.get_xticklabels(), visible=False)
     placeletter(ax35,"$(\mathrm{d})$",fx=0.15,fy=0.1,bbox=bbox_props)
-    ax35.set_ylabel(r"$\phi$",size=16,ha='left',labelpad=18) #labelpad=25
+    ax35.set_ylabel(r"$\phi$",size=16,ha='left',labelpad=22) #labelpad=25
     ax35.grid(True)
     ax35r = ax35.twinx()
     ax35r.set_ylim(ax35.get_ylim())
