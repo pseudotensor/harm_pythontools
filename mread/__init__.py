@@ -1548,7 +1548,7 @@ def mkmfnew(v,findex=10000,
     #reset lower limit to 0
     ax34.set_xlabel(r'$t\ [r_g]$',fontsize=16)
     ax34.set_ylim(0,150)
-    ax34.set_ylabel(r"$p$",size=16,ha='left',labelpad=0)
+    ax34.set_ylabel(r"$p$",size=16,ha='left',labelpad=5)
     ax34.grid(True)
     ax34r = ax34.twinx()
     ax34r.set_ylim(ax34.get_ylim())
@@ -1563,7 +1563,7 @@ def mkmfnew(v,findex=10000,
     if domakeframes:
         if doreload: rfd("fieldline%04d.bin" % findex)
         mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,maxsBphi=maxsBphi,whichr=1.5,domask=0.5) #domask = 0.5 is important so that magnetic field lines extend down all the way to BH
-    ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center',labelpad=0)
+    ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center',labelpad=5)
     ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
     for label in ax1.get_xticklabels() + ax1.get_yticklabels():
         label.set_fontsize(fntsize)
