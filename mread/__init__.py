@@ -1387,7 +1387,7 @@ def mkmov():
         return
     mkbondimovie(whichi = whichi, whichn = whichn)
 
-def mknewmov(endn=-1):
+def mknewmov(startn=0,endn=-1,dosavefig=1):
     if len(sys.argv[2:])>=2 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
         whichi = int(sys.argv[2])
         whichn = int(sys.argv[3])
