@@ -1387,12 +1387,53 @@ def mkmov():
         return
     mkbondimovie(whichi = whichi, whichn = whichn)
 
+def mknewmov(endn=-1):
+    if len(sys.argv[2:])>=2 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
+        whichi = int(sys.argv[2])
+        whichn = int(sys.argv[3])
+        if len(sys.argv[2:])==3:
+            dn = int(sys.argv[4])
+        else:
+            dn = 1
+    else:
+        print( "Usage: %s %s <whichi> <whichn> [<dn>]" % (sys.argv[0], sys.argv[1]) )
+        return
+    grid3d("gdump.bin",use2d=True)
+    v = np.load("qty.npz")
+    flist1 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
+    flist2 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9][0-9].bin") ) )
+    flist1.sort()
+    flist2.sort()
+    flist = np.concatenate((flist1,flist2))
+    for fldname in flist:
+        #find the index of the file
+        fldindex = np.int(fldname.split(".")[0].split("e")[-1])
+        if fldindex < startn:
+            continue
+        if endn>=0 and fldindex >= endn:
+            break
+        if fldindex % (whichn*dn) != whichi:
+            #do every whichn'th snapshot starting with whichi'th snapshot
+            continue
+        if dosavefig:
+            fname = "frame%04d.png"%fldindex
+            if os.path.isfile( fname ):
+                print("File %s exists, skipping..." % fname)
+                continue
+        print( "Reading " + fldname + " ..." )
+        sys.stdout.flush()
+        rfd("../"+fldname)
+        sys.stdout.flush()
+        plt.clf()
+        mkmfnew(v,findex=fldindex,doreload=0)
+
+    
 #new movie frame
-def mkmfnew(v,findex=3500,
+def mkmfnew(v,findex=10000,
             iti=3500,itf=97970.0,
             fti=97970.0,ftf=2e5,
             sigma=1500,sigma1=None,prefactor=100,domakeframes=1,plotlen=25,maxsBphi=3,
-            doreload=1):
+            doreload=1,dosavefig = 1,fntsize=16):
     global FMavg
     plt.clf()
     tmax=min(v["t"][-1],max(fti,ftf))
@@ -1429,6 +1470,8 @@ def mkmfnew(v,findex=3500,
     ax31r.set_yticks((ymax/2,ymax))
     ax31r.set_ylim(0,30)
     ax31.set_ylim(0,30)
+    for label in ax31.get_xticklabels() + ax31.get_yticklabels() + ax31r.get_yticklabels():
+        label.set_fontsize(fntsize)
     #
     #\phi plot
     #
@@ -1476,6 +1519,8 @@ def mkmfnew(v,findex=3500,
     ax35r = ax35.twinx()
     ax35r.set_ylim(ax35.get_ylim())
     ax35r.set_yticks(tck)
+    for label in ax35.get_xticklabels() + ax35.get_yticklabels() + ax35r.get_yticklabels():
+        label.set_fontsize(fntsize)
     #
     #pjet/<mdot>
     #
@@ -1500,12 +1545,15 @@ def mkmfnew(v,findex=3500,
     tck = (50,100)
     ax34.set_yticks(tck)
     #reset lower limit to 0
+    ax34.set_xlabel(r'$t\ [r_g]$',fontsize=16)
     ax34.set_ylim(0,150)
     ax34.set_ylabel(r"$p$",size=16,ha='left',labelpad=0)
     ax34.grid(True)
     ax34r = ax34.twinx()
     ax34r.set_ylim(ax34.get_ylim())
     ax34r.set_yticks(tck)
+    for label in ax34.get_xticklabels() + ax34.get_yticklabels() + ax34r.get_yticklabels():
+        label.set_fontsize(fntsize)
     #Rz xy
     gs1 = GridSpec(1, 1)
     gs1.update(left=0.04, right=0.45, top=0.995, bottom=0.48, wspace=0.05)
@@ -1516,6 +1564,8 @@ def mkmfnew(v,findex=3500,
         mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,maxsBphi=maxsBphi,whichr=1.5,domask=0.5) #domask = 0.5 is important so that magnetic field lines extend down all the way to BH
     ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center',labelpad=-5)
     ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
+    for label in ax1.get_xticklabels() + ax1.get_yticklabels():
+        label.set_fontsize(fntsize)
     placeletter(ax1,"$(\mathrm{a})$",va="center",bbox=bbox_props)
     gs2 = GridSpec(1, 1)
     gs2.update(left=0.5, right=1, top=0.995, bottom=0.48, wspace=0.05)
@@ -1524,7 +1574,11 @@ def mkmfnew(v,findex=3500,
         mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True,dovarylw=1,domask=0.5) #,label=r"$\log\rho$",fontsize=20) #domask = 0.5 is important so that magnetic field lines extend down all the way to BH
     ax2.set_ylabel(r'$y\ [r_g]$',fontsize=16,ha='center',labelpad=-5)
     ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
+    for label in ax2.get_xticklabels() + ax2.get_yticklabels():
+        label.set_fontsize(fntsize)
     placeletter(ax2,"$(\mathrm{b})$",va="center",bbox=bbox_props)
+    if dosavefig:
+        plt.savefig("frame%04d.png" % findex,dpi=300)
 
         
 def mktsnew():
@@ -19177,6 +19231,8 @@ if __name__ == "__main__":
             mkath("mkpath",prefix="pframe")
         elif sys.argv[1] == "mkmov":
             mkmov()
+        elif sys.argv[1] == "mknewmov":
+            mknewmov()
         elif sys.argv[1] == "radwaveconv":
             plotradtestconv()
     if False:
