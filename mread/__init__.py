@@ -1562,7 +1562,7 @@ def mkmfnew(v,findex=10000,
     if domakeframes:
         if doreload: rfd("fieldline%04d.bin" % findex)
         mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,maxsBphi=maxsBphi,whichr=1.5,domask=0.5) #domask = 0.5 is important so that magnetic field lines extend down all the way to BH
-    ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center',labelpad=-5)
+    ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center',labelpad=0)
     ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
     for label in ax1.get_xticklabels() + ax1.get_yticklabels():
         label.set_fontsize(fntsize)
@@ -1572,7 +1572,7 @@ def mkmfnew(v,findex=10000,
     ax2 = plt.subplot(gs2[:, -1])
     if domakeframes:
         mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=True,pt=False,dostreamlines=True,dovarylw=1,domask=0.5) #,label=r"$\log\rho$",fontsize=20) #domask = 0.5 is important so that magnetic field lines extend down all the way to BH
-    ax2.set_ylabel(r'$y\ [r_g]$',fontsize=16,ha='center',labelpad=-5)
+    ax2.set_ylabel(r'$y\ [r_g]$',fontsize=16,ha='center',labelpad=0)
     ax2.set_xlabel(r'$x\ [r_g]$',fontsize=16)
     for label in ax2.get_xticklabels() + ax2.get_yticklabels():
         label.set_fontsize(fntsize)
