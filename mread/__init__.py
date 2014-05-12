@@ -1434,10 +1434,11 @@ def mkmfnew(v,findex=10000,
             iti=3500,itf=97970.0,
             fti=97970.0,ftf=2e5,
             sigma=1500,sigma1=None,prefactor=100,domakeframes=1,plotlen=25,maxsBphi=3,
-            doreload=1,dosavefig = 1,fntsize=16):
+            doreload=1,dosavefig = 1,fntsize=16,myi=1):
     global FMavg
     plt.clf()
     tmax=min(v["t"][-1],max(fti,ftf))
+    print v["rvals"][myi]
     plt.figure(0, figsize=(12,9), dpi=100)
     plt.clf()
     #mdot,pjet,pjet/mdot plots
@@ -1450,10 +1451,10 @@ def mkmfnew(v,findex=10000,
     ax31.set_ylabel(r'$\dot Mc^2$',fontsize=16,labelpad=9)
     plt.setp( ax31.get_xticklabels(), visible=False)
     #start plotting
-    ax31.plot(v["t"][:],v["FM"][:,1],"k")
-    ax31.plot(v["t"][findex],v["FM"][findex,1],'o',mfc='r')
+    ax31.plot(v["t"][:],v["FM"][:,myi],"k")
+    ax31.plot(v["t"][findex],v["FM"][findex,myi],'o',mfc='r')
     if 'FMavg' not in globals():
-        FMavg = timeavg(v["FM"][:,1],v["t"],fti=iti,ftf=ftf,sigma=sigma)+0*v["t"]
+        FMavg = timeavg(v["FM"][:,myi],v["t"],fti=iti,ftf=ftf,sigma=sigma)+0*v["t"]
     t = v["t"]
     #ensure of the same shape as the rest
     l, = ax31.plot(t,FMavg[:],"k")
@@ -1527,7 +1528,7 @@ def mkmfnew(v,findex=10000,
     #
     ax34 = plt.subplot(gs3[-1,:])
     #start plotting
-    etabh = (v["FM"]-v["FE"])[:,1]/FMavg
+    etabh = (v["FM"]-v["FE"])[:,myi]/FMavg
     #print( "FMavg = %g" % FMavg )
     ax34.plot(v["t"][:],etabh[:]*prefactor,"k")
     ax34.plot(v["t"][findex],etabh[findex]*prefactor,'o',mfc='r')
@@ -1722,6 +1723,7 @@ def postprocess1d(fname = "qty.npz", startn=0,endn=-1,whichi=0,whichn=1,**kwargs
     flist2.sort()
     flist = np.concatenate((flist1,flist2))
     v = {}
+    v["hor"]=[] 
     v["FM"]=[] 
     v["FEM"]=[]
     v["FE"]=[]
@@ -1770,6 +1772,7 @@ def postprocess1d(fname = "qty.npz", startn=0,endn=-1,whichi=0,whichn=1,**kwargs
         v["ind"].append(ind)
         v["t"].append(t)
     np.savez("qty_%02d_%02d.npz" % (whichi, whichn), 
+             hor = v["hor"], 
              FM = v["FM"], 
              FEM = v["FEM"],
              FE = v["FE"],
@@ -1791,10 +1794,13 @@ def cvellite():
     bsq=mdot(bu,bd)
     
   
-def compvals():
+def compvals(di=5):
     dic = {}
-    rvals = np.array([rhor,5.,10.,20.,50.,100.])
-    ivals = np.int32(iofr(rvals))
+    #rvals = np.array([rhor,5.,10.,20.,50.,100.])
+    #ivals = np.int32(iofr(rvals))
+    #every di'th radial cell, so overall nx/di ~ 50 cells
+    ivals = np.int32(ti[::di,ny/2,0]+0.5)
+    rvals = r[::di,ny/2,0]
     #
     delta = lambda kapa,nu: (kapa==nu)
     fTudEM = lambda kapa,nu: bsq*uu[kapa]*ud[nu] + 0.5*bsq*delta(kapa,nu) - bu[kapa]*bd[nu]
@@ -1815,6 +1821,8 @@ def compvals():
     dic["PhiBH"] = PhiBH[ivals]
     dic["rvals"] = rvals
     dic["ivals"] = ivals
+    diskcondition = bsq/rho<10
+    dic["hor"] = horcalc1d(which=diskcondition)
     return( dic )
 
     #mu = -fTud(1,0)/(rho*uu[1])
@@ -6758,8 +6766,7 @@ def horcalc(which=1):
     thetamid2d=up/(dn+tiny)+np.pi/2
     thetamid3d=np.empty((nx,ny,nz),dtype=h.dtype)
     hoverr3d=np.empty((nx,ny,nz),dtype=h.dtype)
-    for j in np.arange(0,ny):
-        thetamid3d[:,j] = thetamid2d
+    thetamid3d = thetamid3d*0+thetamid2d[:,None,:]
     up=(gdet*rho*(h-thetamid3d)**2*which).sum(axis=1)
     dn=(gdet*rho*which).sum(axis=1)
     hoverr2d= (up/(dn+tiny))**0.5
@@ -6767,6 +6774,21 @@ def horcalc(which=1):
         hoverr3d[:,j] = hoverr2d
     return((hoverr3d,thetamid3d))
 
+def horcalc1d(which=1):
+    """
+    Compute root mean square deviation of disk body from equatorial plane
+    """
+    tiny=np.finfo(rho.dtype).tiny
+    up=(gdet*rho*(h-np.pi/2)*which).sum(axis=1)
+    dn=(gdet*rho*which).sum(axis=1)
+    thetamid2d=up/(dn+tiny)+np.pi/2
+    thetamid3d=np.empty((nx,ny,nz),dtype=h.dtype)
+    hoverr3d=np.empty((nx,ny,nz),dtype=h.dtype)
+    up=(gdet*rho*(h-thetamid2d[:,None,:])**2*which).sum(-1).sum(-1)
+    dn=(gdet*rho*which).sum(-1).sum(-1)
+    hoverr1d= (up/(dn+tiny))**0.5
+    return(hoverr1d)
+    
 def intangle(qty,hoverr=None,thetamid=np.pi/2,minbsqorho=None,which=1):
     #somehow gives slightly different answer than when computed directly
     if hoverr == None:
