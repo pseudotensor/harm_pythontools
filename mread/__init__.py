@@ -1434,9 +1434,11 @@ def mkmfnew(v,findex=10000,
             iti=3500,itf=97970.0,
             fti=97970.0,ftf=2e5,
             sigma=1500,sigma1=None,prefactor=100,domakeframes=1,plotlen=25,maxsBphi=3,
-            doreload=1,dosavefig = 1,fntsize=16,myi=1):
+            doreload=1,dosavefig = 1,fntsize=16,myi=None):
     global FMavg
     plt.clf()
+    if myi is None:
+        myi = np.sum(v["rvals"]<5)
     tmax=min(v["t"][-1],max(fti,ftf))
     print v["rvals"][myi]
     plt.figure(0, figsize=(12,9), dpi=100)
@@ -1718,7 +1720,7 @@ def mrgnew_f(ft, v=None):
         v["t"] = np.array(v["ind"])*5.
     return(v)
     
-def postprocess1d(fname = "qty.npz", startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
+def postprocess1d(startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
     grid3d("gdump.bin",use2d=True)
     flist1 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
     flist2 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9][0-9].bin") ) )
@@ -1735,6 +1737,7 @@ def postprocess1d(fname = "qty.npz", startn=0,endn=-1,whichi=0,whichn=1,**kwargs
     v["ivals"]=[]
     v["rvals"]=[]
     v["t"]=[]
+    fname = "qty_%02d_%02d.npz" % (whichi, whichn)
     if os.path.isfile( fname ):
         print( "File %s exists, loading from file..." % fname )
         sys.stdout.flush()
@@ -1825,7 +1828,7 @@ def compvals(di=5):
     dic["rvals"] = rvals
     dic["ivals"] = ivals
     diskcondition = bsq/rho<10
-    dic["hor"] = horcalc1d(which=diskcondition)
+    dic["hor"] = horcalc1d(which=diskcondition)[ivals]
     return( dic )
 
     #mu = -fTud(1,0)/(rho*uu[1])
