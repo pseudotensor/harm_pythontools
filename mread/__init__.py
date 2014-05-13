@@ -1582,7 +1582,7 @@ def mkmfnew(v,findex=10000,
         label.set_fontsize(fntsize)
     placeletter(ax2,"$(\mathrm{b})$",va="center",bbox=bbox_props)
     if dosavefig:
-        plt.savefig("frame%04d.png" % findex,dpi=300)
+        plt.savefig("frame%04d.png" % findex,dpi=120)
 
         
 def mktsnew():
