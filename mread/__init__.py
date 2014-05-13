@@ -1609,6 +1609,7 @@ def mrgnew(n=None,fin1=None,fin2=None,fout="qty.npz"):
     v["ivals"]=[]
     v["rvals"]=[]
     v["t"]=[]
+    v["hor"]=[]
     if n is not None:
         #merge a numbered sequence of files
         v = mrgnew_n(n,v)
@@ -1641,6 +1642,7 @@ def mrgnew_n(n, v=None):
         v["ivals"]=[]
         v["rvals"]=[]
         v["t"]=[]
+        v["hor"]=[]
     for i in np.arange(n):
         #load each file
         ft = "qty_%02d_%02d.npz" % (i, n)
@@ -1685,6 +1687,7 @@ def mrgnew_f(ft, v=None):
         v["ivals"]=[]
         v["rvals"]=[]
         v["t"]=[]
+        v["hor"]=[]
     #load file
     print( "Loading " + ft + " ..." )
     sys.stdout.flush()
