@@ -2730,8 +2730,8 @@ def getdefaulttimes1():
         defaultfti=15000
         defaultftf=1e6
     else:
-        # default (assumes ran at least beyond t=1000)
-        defaultfti=1000
+        # default (assumes ran at least beyond t=1)
+        defaultfti=1
         defaultftf=1e6
     #
     # set tilted models
@@ -2830,7 +2830,7 @@ def getdefaulttimes2():
         defaultfti=9000
         defaultftf=12000
     else:
-        defaultfti=1000
+        defaultfti=1
         defaultftf=1e6
     #
     # set tilted models
@@ -14821,7 +14821,6 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     # figure out where v^{x^1} passes through zero (if anywhere)
     ioutlist=ti[:,0,0][vus1rhosqdc_vsr>0]
-    iout=ioutlist[0]
     if len(ioutlist)>0:
         iout=ioutlist[0]
         istagfromvus1rhosqdc=iout
