@@ -14476,13 +14476,18 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         print( "Warning: titf.txt not found: using default numbers for averaging: %g %g %g %g" % (iti, itf, fti, ftf) ) ; sys.stdout.flush()
     #
     if iti>ts[-1]:
-        itf=ts[-1]*0.99
+        iti=ts[-1]*0.99
     if itf<ts[1]:
         itf=ts[1]*1.01
+    if iti>itf:
+        iti=0.99*itf
+    #
     if fti>ts[-1]:
-        ftf=ts[-1]*0.99
+        fti=ts[-1]*0.99
     if ftf<ts[1]:
         ftf=ts[1]*1.01
+    if fti>ftf:
+        fti=0.99*ftf
     #
     (truetmin,truetmax)=fix_defaulttimes(ts,fti,ftf)
     #
@@ -14498,7 +14503,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     print("ts") ; sys.stdout.flush()
     print(ts) ; sys.stdout.flush()
-    print("iti=%g itf=%g fti=%g ftf=%g"% (iti,itf,fti,ftf)) ; sys.stdout.flush()
+    print("iti=%g itf=%g fti=%g ftf=%g tsm1=%g ts1=%g"% (iti,itf,fti,ftf,ts[-1],ts[1])) ; sys.stdout.flush()
     #
     mdotiniavgvsr = timeavg(mdtot,ts,iti,itf)
     mdotfinavgvsr = timeavg(mdtot,ts,fti,ftf)
