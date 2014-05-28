@@ -3760,13 +3760,13 @@ def betascalc(which=1,rdown=0.0,rup=1.0E3):
     #condition2=condition2*(pg>0.25*pgmax)
     condition2=condition1
     #
-    ibetaavg=np.average(ibeta,weights=condition2*gdet)
+    ibetaavg=np.ma.average(ibeta,weights=condition2*gdet)
     betaavg=1.0/ibetaavg
-    ibetatotavg=np.average(ibetatot,weights=condition2*gdet)
+    ibetatotavg=np.ma.average(ibetatot,weights=condition2*gdet)
     betatotavg=1.0/ibetatotavg
-    pgavg=np.average(pg,weights=condition2*gdet)
-    pbavg=np.average(pb,weights=condition2*gdet)
-    pradavg=np.average(prad,weights=condition2*gdet)
+    pgavg=np.ma.average(pg,weights=condition2*gdet)
+    pbavg=np.ma.average(pb,weights=condition2*gdet)
+    pradavg=np.ma.average(prad,weights=condition2*gdet)
     #
     # find actual minimum betatot
     ibetatotcond=condition1*ibetatot
