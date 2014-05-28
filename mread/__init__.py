@@ -25228,6 +25228,14 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
         # to see polar region drop in Erf:
         vminforframerad=-6-8
         vmaxforframerad=-5
+    #
+    #
+    if modelname=="run": # e.g. for WALD right now
+        vminforframe=-8
+        vmaxforframe=-3
+        # to see polar region drop in Erf:
+        vminforframerad=-8
+        vmaxforframerad=-3
     print("vmaxespre : %g %g %g %g" % (vminforframe,vmaxforframe,vminforframerad,vmaxforframerad)) ; sys.stdout.flush()
     #
     vminforframe=np.log10(10.0**vminforframe/rhoeddcode)
