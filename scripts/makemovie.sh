@@ -300,7 +300,7 @@ fi
 if [ $system -eq 3 ]
 then
     # 4 for thickdisk7 (until new memory put in)
-    numcorespernode=1  # MAVARA
+    numcorespernode=16  # MAVARA
     numnodes=1
     thequeue="none"
 fi
