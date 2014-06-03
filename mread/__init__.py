@@ -13836,6 +13836,7 @@ def faraday():
     # GODMARK: These assume rotation about z-axis
     omegaf2b=np.fabs(v3nonhat) + np.sign(uu[1])*(vpol/Bpol)*np.fabs(B3nonhat)
     #
+    # below omega for the field 
     omegaf1b=v3nonhat - B3nonhat*(v1hat*B1hat+v2hat*B2hat)/(B1hat**2+B2hat**2)
     #
 
@@ -25236,6 +25237,12 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
         # to see polar region drop in Erf:
         vminforframerad=-8
         vmaxforframerad=-3
+    if modelname=="run8": # e.g. for WALD right now
+        vminforframe=-10
+        vmaxforframe=-5
+        # to see polar region drop in Erf:
+        vminforframerad=-10
+        vmaxforframerad=-5
     print("vmaxespre : %g %g %g %g" % (vminforframe,vmaxforframe,vminforframerad,vmaxforframerad)) ; sys.stdout.flush()
     #
     vminforframe=np.log10(10.0**vminforframe/rhoeddcode)
