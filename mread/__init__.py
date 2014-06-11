@@ -1843,6 +1843,12 @@ def getrhouclean(rho,ug,uu):
         maxbsqorhonear=30 # was 30, but want to cut closer to limit so rho vs. \phi plots are better represented # should include all of disk near horizon
         maxbsqorhofar=10 # should include part of jet far away, while maxbsqorhonear might be too restrictive at large radii so no jet would be included
         maxuu0high=50
+    elif iswaldmodel(modelname): # Wald type model, don't remove anything
+        # default
+        maxbsqorhohigh=1E30
+        maxbsqorhonear=1E30
+        maxbsqorhofar=1E30
+        maxuu0high=1E30
     else:
         # default
         maxbsqorhohigh=40
@@ -2580,6 +2586,12 @@ def isradmodelC(modelname): # for lower densities with Mdot\sim 2Ledd/c^2
     #
 def isradmodel(modelname):
     if isradmodelA(modelname) or isradmodelB(modelname) or isradmodelC(modelname):
+        return(1)
+    else:
+        return(0)
+    #
+def iswaldmodel(modelname):
+    if modelname=="run8" or modelname=="run9" or modelname=="run9_paraline_to3_fixuptype0_newgrid_bettercyljet_stillhotandjetstops":
         return(1)
     else:
         return(0)
@@ -15964,7 +15976,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     indicesirm1=ti[irm1cut:nx,0,0][ibetatotrm1_avg[irm1cut:nx]<=1.0] # 1/\betarm=1 is where \betarm=1 # using betatot
     print("indicesirm1") ; sys.stdout.flush()
     print(indicesirm1) ; sys.stdout.flush()
-    irm1=indicesirm1[0] # first instance vs. radius
+    if len(indicesirm1)>0:
+        irm1=indicesirm1[0] # first instance vs. radius
+    else:
+        irm1=0
     print("irm1") ; sys.stdout.flush()
     print(irm1) ; sys.stdout.flush()
     rm1=r[irm1,ny/2,0] # radius
@@ -16041,7 +16056,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     indicesirm3=ti[irm3cut:nx,0,0][ibetatotrm3_avg[irm3cut:nx]<=1.0] # 1/\betarm=1 is where \betarm=1
     print("indicesirm3") ; sys.stdout.flush()
     print(indicesirm3) ; sys.stdout.flush()
-    irm3=indicesirm3[0] # first instance vs. radius
+    if len(indicesirm3)>0:
+        irm3=indicesirm3[0] # first instance vs. radius
+    else:
+        irm3=0
     print("irm3") ; sys.stdout.flush()
     print(irm3) ; sys.stdout.flush()
     rm3=r[irm3,ny/2,0] # radius
@@ -18009,6 +18027,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             plt.legend(loc='upper left',bbox_to_anchor=(0.02,0.98),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
         #
         ymax=ax.get_ylim()[1]
+        #
+        #
         #if 100 < ymax and ymax < 200: 
         #        #ymax = 2
         #        tck=(100,)
@@ -18117,81 +18137,88 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                     if showrad:
                         ax.plot(ts[fi],etaoutRAD[fi],'cs')#,label=r'$\dot M$')
                         ax.plot(ts[fi],signetaradtoshow*etabhRAD[fi],'cv')#,label=r'$\dot M$')
-        #ax.set_ylim(0,2)
-        yminbh=np.min(etabh)
-        yminj=np.min(etaj)
-        ymin=min(yminbh,yminj)
-        if showrad==0: # for now don't show this -- too much on plot
-            yminmw=np.min(etamwout)
-            ymin=min(ymin,yminmw)
-        # sasha99 at least drops-out at certain points to eta<<0  -- so force eta=0 as minimum
-        if issashamodel(modelname):
-            ymin=0
-        #
-        if isradmodel(modelname):
-            ymin=0
-        # ssh pseudotensor@cli.globusonline.org scp -D -r -s 1 xsede#kraken:/lustre/scratch/jmckinne/rad1/rad1movie3/ pseudotensor#p179:/data/jon/harm_harmrad/pythonstuff
-
-        if signetaradtoshow==1:
-            yminetaradbh=np.min(signetaradtoshow*etabhRAD)
-            ymin=min(ymin,yminetaradbh)
-            ymin=max(ymin,-100.0) # no smaller than -1 (-100%)
-                
-        ymaxbh=np.max(etabh)
-        ymaxj=np.max(etaj)
-        if showrad==0: # for now don't show this -- too much on plot
-            ymaxmw=np.max(etamwout)
-            ymax=max(ymaxbh,ymaxmw)
-        ymax=max(ymaxbh,ymaxj)
-        ymax=min(ymax,3.0*etabh_avg)
-        #
-        ax.set_ylim(ymin,ymax)
         #
         ax.set_xlabel(r'$t\;[r_g/c]$',fontsize=16)
         ax.set_ylabel(r'$\eta\ [\%]$',fontsize=16,ha='left',labelpad=20)
         ax.set_xlim(ts[0],ts[-1])
         #
-        #ymax=ax.get_ylim()[1]
-        #if 100 < ymax and ymax < 200: 
-        #        #ymax = 2
-        #        tck=(100,)
-        #        ax.set_yticks(tck)
-        #        #ax.set_yticklabels(('','100','200'))
-        #elif ymax < 100: 
-        #        #ymax = 100
-        #        tck=(ymax/10,ymax)
-        #        ax.set_yticks(tck)
-        #        ax.set_yticklabels(('','100'))
-        if ymax>=100:
-                ymax=min(400,ymax) # don't expect higher than 400% efficiency, so assume anomolous peak
-                ax.set_ylim((0,ymax))
-                ymax=np.floor(ymax/100.*0.9999)+1
-                ymax*=100
-                ax.set_ylim((0,ymax))
-                tck=np.arange(1,ymax/100.,(ymax/100.0-1.0)/2.0)*100
-                ax.set_yticks(tck)
-        elif ymax>=10:
+        if iswaldmodel(modelname):
+            ymax=ax.get_ylim()[1]
+            ax.set_ylim((0,ymax))
+            tck=np.arange(-ymax,ymax,2.0*ymax/5.0)
+            ax.set_yticks(tck)
+        else:
+            #ax.set_ylim(0,2)
+            yminbh=np.min(etabh)
+            yminj=np.min(etaj)
+            ymin=min(yminbh,yminj)
+            if showrad==0: # for now don't show this -- too much on plot
+                yminmw=np.min(etamwout)
+                ymin=min(ymin,yminmw)
+            # sasha99 at least drops-out at certain points to eta<<0  -- so force eta=0 as minimum
+            if issashamodel(modelname):
+                ymin=0
+            #
+            if isradmodel(modelname):
+                ymin=0
+            # ssh pseudotensor@cli.globusonline.org scp -D -r -s 1 xsede#kraken:/lustre/scratch/jmckinne/rad1/rad1movie3/ pseudotensor#p179:/data/jon/harm_harmrad/pythonstuff
+
+            if signetaradtoshow==1:
+                yminetaradbh=np.min(signetaradtoshow*etabhRAD)
+                ymin=min(ymin,yminetaradbh)
+                ymin=max(ymin,-100.0) # no smaller than -1 (-100%)
+                    
+            ymaxbh=np.max(etabh)
+            ymaxj=np.max(etaj)
+            if showrad==0: # for now don't show this -- too much on plot
+                ymaxmw=np.max(etamwout)
+                ymax=max(ymaxbh,ymaxmw)
+            ymax=max(ymaxbh,ymaxj)
+            ymax=min(ymax,3.0*etabh_avg)
+            #
+            ax.set_ylim(ymin,ymax)
+            #
+            #ymax=ax.get_ylim()[1]
+            #if 100 < ymax and ymax < 200: 
+            #        #ymax = 2
+            #        tck=(100,)
+            #        ax.set_yticks(tck)
+            #        #ax.set_yticklabels(('','100','200'))
+            #elif ymax < 100: 
+            #        #ymax = 100
+            #        tck=(ymax/10,ymax)
+            #        ax.set_yticks(tck)
+            #        ax.set_yticklabels(('','100'))
+            if ymax>=100:
+                    ymax=min(400,ymax) # don't expect higher than 400% efficiency, so assume anomolous peak
+                    ax.set_ylim((0,ymax))
+                    ymax=np.floor(ymax/100.*0.9999)+1
+                    ymax*=100
+                    ax.set_ylim((0,ymax))
+                    tck=np.arange(1,ymax/100.,(ymax/100.0-1.0)/2.0)*100
+                    ax.set_yticks(tck)
+            elif ymax>=10:
+                    ymax=np.floor(ymax/10.*0.9999)+1
+                    ymax*=10
+                    ax.set_ylim((0,ymax))
+                    tck=np.arange(1,ymax/10.,(ymax/10.0-1.0)/2.0)*10
+                    ax.set_yticks(tck)
+            else:
+                    ax.set_yticks((ymax/2.0,ymax))
+            #
+            # override for rad (currently only applies for rada0.94
+            if showrad==1:
                 ymax=np.floor(ymax/10.*0.9999)+1
                 ymax*=10
-                ax.set_ylim((0,ymax))
-                tck=np.arange(1,ymax/10.,(ymax/10.0-1.0)/2.0)*10
+                ymin=np.floor(ymin/10.*0.9999)+1
+                ymin*=10
+                ymax=35
+                ymin=-35
+                ax.set_ylim((ymin,ymax))
+                tck=np.arange(ymin/10,ymax/10.,(ymax/10.0-ymin/10.0)/2.0)*10
+                tck=[-30,-15,0,15,30]
                 ax.set_yticks(tck)
-        else:
-                ax.set_yticks((ymax/2.0,ymax))
-        #
-        # override for rad (currently only applies for rada0.94
-        if showrad==1:
-            ymax=np.floor(ymax/10.*0.9999)+1
-            ymax*=10
-            ymin=np.floor(ymin/10.*0.9999)+1
-            ymin*=10
-            ymax=35
-            ymin=-35
-            ax.set_ylim((ymin,ymax))
-            tck=np.arange(ymin/10,ymax/10.,(ymax/10.0-ymin/10.0)/2.0)*10
-            tck=[-30,-15,0,15,30]
-            ax.set_yticks(tck)
-        #
+            #
         #
         ax.grid(True)
         #
@@ -25231,18 +25258,20 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
         vmaxforframerad=-5
     #
     #
-    if modelname=="run": # e.g. for WALD right now
+    if iswaldmodel(modelname):
         vminforframe=-8
         vmaxforframe=-3
         # to see polar region drop in Erf:
         vminforframerad=-8
         vmaxforframerad=-3
-    if modelname=="run8": # e.g. for WALD right now
+    # override
+    if iswaldmodel(modelname):
         vminforframe=-10
         vmaxforframe=-5
         # to see polar region drop in Erf:
         vminforframerad=-10
         vmaxforframerad=-5
+    #
     print("vmaxespre : %g %g %g %g" % (vminforframe,vmaxforframe,vminforframerad,vmaxforframerad)) ; sys.stdout.flush()
     #
     vminforframe=np.log10(10.0**vminforframe/rhoeddcode)
