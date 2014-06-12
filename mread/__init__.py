@@ -7790,7 +7790,30 @@ def rfdheader(fin=None):
     rundt=myfloatalt(float(header[17]))
     defcoord=int(header[18])
     #
-    if numheaderitems==32:
+    if numheaderitems==53:
+        TRACKVPOT=int(header[32])
+        MCOORD=int(header[33])
+        DODISS=int(header[34])
+        DOEVOLVEMETRIC=int(header[35])
+        WHICHVEL=int(header[36])
+        WHICHEOM=int(header[37])
+        REMOVERESTMASSFROMUU=int(header[38])
+        RELTYPE=int(header[39])
+        EOMTYPE=int(header[40])
+        WHICHEOS=int(header[41])
+        DOENTROPY=int(header[42])
+        WHICHENTROPYEVOLVE=int(header[43])
+        CALCFARADAYANDCURRENTS=int(header[44])
+        DOPOLEDEATH=int(header[45])
+        DOPOLESMOOTH=int(header[46])
+        DOPOLEGAMMADEATH=int(header[47])
+        IF3DSPCTHENMPITRANSFERATPOLE=int(header[48])
+        EOMRADTYPE=int(header[49])
+        WHICHRADSOURCEMETHOD=int(header[50])
+        OUTERDEATH=int(header[51])
+        OUTERDEATHRADIUS=int(header[52])
+    #
+    if numheaderitems>=32:
         print("Found 32 header items, reading them in\n")  ; sys.stdout.flush()
         MBH=myfloatalt(float(header[19]))
         QBH=myfloatalt(float(header[20]))
@@ -25385,7 +25408,10 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
     ###########################
     # SMALL BOX
     ###########################
-    plotsize=framesize/5
+    if(iswaldmodel(modelname)):
+        plotsize=6
+    else:
+        plotsize=framesize/5
     #
     # LEFT PANEL
     gs1 = GridSpec(1, 1)
