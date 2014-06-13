@@ -7812,6 +7812,29 @@ def rfdheader(fin=None):
         WHICHRADSOURCEMETHOD=int(header[50])
         OUTERDEATH=int(header[51])
         OUTERDEATHRADIUS=int(header[52])
+    else:
+        # just set defaulst that will generally work for default setup of GRMHD, etc.
+        TRACKVPOT=1 # yes
+        MCOORD=2 # KSCOORDS
+        DODISS=0 # no
+        DOEVOLVEMETRIC=0 # no
+        WHICHVEL=2 # VELREL4
+        WHICHEOM=0 # WITHGDET
+        REMOVERESTMASSFROMUU=2 # fully removed
+        RELTYPE=0 # normal rel
+        EOMTYPE=3 # GRMHD=3 and FFDE=0
+        WHICHEOS=1 # ideal gas
+        DOENTROPY=1 # DOEVOLVEENTROPY
+        WHICHENTROPYEVOLVE=1 # EVOLVESIMPLEENTROPY with DODISS=0 and EVOLVEFULLENTROPY with off
+        CALCFARADAYANDCURRENTS=1 # yes
+        DOPOLEDEATH=0
+        DOPOLESMOOTH=0
+        DOPOLEGAMMADEATH=0
+        IF3DSPCTHENMPITRANSFERATPOLE=0
+        EOMRADTYPE=0 # EOMRADNONE
+        WHICHRADSOURCEMETHOD=3 # SOURCEMETHODIMPLICIT
+        OUTERDEATH=0 # no
+        OUTERDEATHRADIUS=1E7
     #
     if numheaderitems>=32:
         print("Found 32 header items, reading them in\n")  ; sys.stdout.flush()
@@ -25311,10 +25334,16 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
         mydostreamlines=1
     #
     if isradmodel(modelname) and nz==1 :
-        mydobsqleft=0
-        mydorholeft=1
-        mydobsqright=0
-        mydorhoright=0
+        if EOMTYPE==0:
+            mydobsqleft=1
+            mydorholeft=0
+            mydobsqright=0
+            mydorhoright=0
+        else:
+            mydobsqleft=0
+            mydorholeft=1
+            mydobsqright=0
+            mydorhoright=0
         leftcb=1
         rightcb=1
         leftpt=1
@@ -25327,10 +25356,16 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
         vminforframeleft=vminforframe
         vminforframeright=vminforframerad
     elif isradmodel(modelname) and nz>1 :
-        mydobsqleft=0
-        mydorholeft=1
-        mydobsqright=0
-        mydorhoright=1
+        if EOMTYPE==0:
+            mydobsqleft=1
+            mydorholeft=0
+            mydobsqright=1
+            mydorhoright=0
+        else:
+            mydobsqleft=0
+            mydorholeft=1
+            mydobsqright=0
+            mydorhoright=1
         leftcb=0
         rightcb=1
         leftpt=0
@@ -25343,10 +25378,16 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
         vminforframeleft=vminforframe
         vminforframeright=vminforframe
     else:
-        mydobsqleft=0
-        mydorholeft=1
-        mydobsqright=0
-        mydorhoright=1
+        if EOMTYPE==0:
+            mydobsqleft=1
+            mydorholeft=0
+            mydobsqright=1
+            mydorhoright=0
+        else:
+            mydobsqleft=0
+            mydorholeft=1
+            mydobsqright=0
+            mydorhoright=1
         leftcb=0
         rightcb=1
         leftpt=0
