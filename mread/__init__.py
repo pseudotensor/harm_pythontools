@@ -2591,7 +2591,7 @@ def isradmodel(modelname):
         return(0)
     #
 def iswaldmodel(modelname):
-    if modelname=="run8" or modelname=="run9" or modelname=="run9_paraline_to3_fixuptype0_newgrid_bettercyljet_stillhotandjetstops":
+    if modelname=="run8" or modelname=="run9" or modelname=="run9_paraline_to3_fixuptype0_newgrid_bettercyljet_stillhotandjetstops" or modelname=="runnonu":
         return(1)
     else:
         return(0)
@@ -7790,6 +7790,7 @@ def rfdheader(fin=None):
     rundt=myfloatalt(float(header[17]))
     defcoord=int(header[18])
     #
+    global TRACKVPOT,        MCOORD,        DODISS,        DOEVOLVEMETRIC,        WHICHVEL,        WHICHEOM,        REMOVERESTMASSFROMUU,        RELTYPE,        EOMTYPE,        WHICHEOS,        DOENTROPY,        WHICHENTROPYEVOLVE,        CALCFARADAYANDCURRENTS,        DOPOLEDEATH,        DOPOLESMOOTH,        DOPOLEGAMMADEATH,        IF3DSPCTHENMPITRANSFERATPOLE,        EOMRADTYPE,        WHICHRADSOURCEMETHOD,        OUTERDEATH,        OUTERDEATHRADIUS
     if numheaderitems==53:
         TRACKVPOT=int(header[32])
         MCOORD=int(header[33])
@@ -8091,11 +8092,15 @@ def rfd(fieldlinefilename,**kwargs):
         print("maxErf=%g minErf=%g" % (maxErf,minErf)) ; sys.stdout.flush()
         #
     else:
-        Erf=rho*0
-        urad=Erf*0
-        uradd=uu*0
-        uradu=uu*0
+        Erf=rho*0+1E-30
+        urad=Erf*0+1E-30
+        uradd=uu*0+1E-30
+        uradu=uu*0+1E-30
     #
+    global TRACKVPOT,        MCOORD,        DODISS,        DOEVOLVEMETRIC,        WHICHVEL,        WHICHEOM,        REMOVERESTMASSFROMUU,        RELTYPE,        EOMTYPE,        WHICHEOS,        DOENTROPY,        WHICHENTROPYEVOLVE,        CALCFARADAYANDCURRENTS,        DOPOLEDEATH,        DOPOLESMOOTH,        DOPOLEGAMMADEATH,        IF3DSPCTHENMPITRANSFERATPOLE,        EOMRADTYPE,        WHICHRADSOURCEMETHOD,        OUTERDEATH,        OUTERDEATHRADIUS
+    if(EOMTYPE==0):
+        rho=rho+1E-30
+        ug=ug+1E-30
     #
     #
     #############################################################################################
@@ -14912,8 +14917,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     istageqtemp1=np.zeros(nx,dtype=ldma.dtype)
     #
     #
-    #print("tsnew"); sys.stdout.flush()
-    #print(ts); sys.stdout.flush()
+    print("tsnew"); sys.stdout.flush()
+    print(ts); sys.stdout.flush()
     #
     for tic in ts:
         tici=np.where(ts==tic)[0]
@@ -15581,6 +15586,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                 print("Changed iout=%d to iout0=%d" % (iout,iout0)) ; sys.stdout.flush()
                 iout=iout0
         #
+        if iout>nx-1:
+            iout=nx-1
         rfitout0=r[iout,0,0]
         #
         if rieiter==0:
@@ -15684,6 +15691,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             rfitin0=rrangestart
             iin=iofr(rfitin0)
         #
+        if iout>nx-1:
+            iout=nx-1
         rfitout0=r[iout,0,0]
         iout=iofr(rfitout0)
         #
@@ -18136,6 +18145,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     if whichplot == 4 and sashaplot4 == 0:
         if dotavg:
+            print("etabh_avg=%g" % (etabh_avg));
             ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+etabh_avg,color=(ofc,fc,fc)) 
             if showextra:
                 ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+etaj_avg,color=(fc,fc+0.5*(1-fc),fc)) 
@@ -22359,7 +22369,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             #ytoplot=np.log10(normpowerfft)
             #
             plt.yscale('log')
-            ytoplot=1E-30+ytoplot
+            ytoplot=1E-30+np.fabs(ytoplot)
             #
             plt.plot(xtoplot,ytoplot,color='k')
             #
