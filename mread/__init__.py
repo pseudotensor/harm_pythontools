@@ -15581,6 +15581,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                 print("Changed iout=%d to iout0=%d" % (iout,iout0)) ; sys.stdout.flush()
                 iout=iout0
         #
+        if iout>nx-1:
+            iout=nx-1
         rfitout0=r[iout,0,0]
         #
         if rieiter==0:
@@ -15684,6 +15686,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             rfitin0=rrangestart
             iin=iofr(rfitin0)
         #
+        if iout>nx-1:
+            iout=nx-1
         rfitout0=r[iout,0,0]
         iout=iofr(rfitout0)
         #
