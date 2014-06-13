@@ -2723,8 +2723,8 @@ def getdefaulttimes1():
         defaultftf=1e6
     else:
         # default (assumes ran at least beyond t=1000)
-        defaultfti=4000 #mavara 25000 #4000 #10000 #1000
-        defaultftf=8000 #32000 #8000 #20000 #1e6
+        defaultfti=70000 #mavara 25000 #4000 #10000 #1000
+        defaultftf=90000 #32000 #8000 #20000 #1e6
     #
     # set tilted models
     if isthickdiskmodel(modelname)==2:
@@ -2817,8 +2817,8 @@ def getdefaulttimes2():
         defaultfti=9000
         defaultftf=12000
     else:
-        defaultfti=4000 #25000 #4000 #10000 # MAVARA 1000
-        defaultftf=8000 #32000 #8000 #20000 #1e6    6000 and 9000 for BPCooling3... didn't work for some reason
+        defaultfti=70000 #25000 #4000 #10000 # MAVARA 1000
+        defaultftf=90000 #32000 #8000 #20000 #1e6    6000 and 9000 for BPCooling3... didn't work for some reason
     #
     # set tilted models
     if isthickdiskmodel(modelname)==2:
@@ -4156,7 +4156,7 @@ def intangle_foravg2d(qty,hoverr=None,thetamid=np.pi/2,minbsqorho=None,maxbsqorh
     return(result)
 
 
-def intangle(qty,hoverr=None,thetamid=np.pi/2,minbsqorho=None,maxbsqorho=None,inflowonly=None,outflowonly=None,mumax=None,mumin=None,maxbeta=None,unboundonly=None,which=1,doavgn3=1):
+def intangle(qty,hoverr=None,thetamid=np.pi/2,minbsqorho=None,maxbsqorho=None,inflowonly=None,outflowonly=None,mumax=None,mumin=None,maxbeta=None,unboundonly=None,which=1,doavgn3=1,mavara=0):
     integrand = qty
     #
     #somehow gives slightly different answer than when computed directly
@@ -4232,6 +4232,8 @@ def intangle(qty,hoverr=None,thetamid=np.pi/2,minbsqorho=None,maxbsqorho=None,in
     if doavgn3==1:
         # this will be function of r
         integral=(superintegrand).sum(axis=2).sum(axis=1)*_dx2*_dx3
+        if mavara is 1: 
+            integral=integral*_dx1
         # below factor accounts for whether inputted phi slice or averaged or full nz in size, so that integral is correctly summed to full amount
         integral=integral*(nz/len(superintegrand[0,0,:]))
         # below factor accounts for HARM vs. normal full 2\pi size of \phi-direction
@@ -5261,7 +5263,7 @@ def reinterpxy(vartointerp,extent,ncell,domask=1,interporder='cubic'):
     # grid the data.
     zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method=interporder)
     #zi[interior] = np.ma.masked
-    if domask!=0:
+    if domask!=0: # this is the BH horizon mask
         interior = np.sqrt((xi[None,:]**2) + (yi[:,None]**2)) < (1+np.sqrt(1-a**2))*domask
         varinterpolated = ma.masked_where(interior, zi)
     else:
@@ -7938,7 +7940,7 @@ def rfd(fieldlinefilename,**kwargs):
     # start at 7 so B[1] is correct.  7=<ignore> 8=B[1] 9=B[2] 10=B[3]
     B=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
     # have to make copy so mods to B[0] won't change d[7]
-    B=np.copy(d[7:11,:,:,:])#*1.e10) #+1E-30 *(1.+np.random.randn(4,nx,ny,nz)))
+    B=np.copy(d[7:11,:,:,:]) #MAVARACHANGE*1.e3) #+1E-30 *(1.+np.random.randn(4,nx,ny,nz)))
     B[0]=0*B[0]
     #B[2]=B[2]+1E-10
     #
@@ -7956,7 +7958,7 @@ def rfd(fieldlinefilename,**kwargs):
         # below assumes gdetB[0] is never needed
         gdetB=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
         # have to make copy so mods to gdetB[0] won't change B[3]
-        gdetB = np.copy(d[10:14,:,:,:])
+        gdetB = np.copy(d[10:14,:,:,:])#*1.e4+0.000001) #MAVARACHANGE this is a temp addition and multiplyer for low mag field sims so analysis script doesn't hang
         gdetB[0]=0*gdetB[0]
     #
     #
@@ -11845,14 +11847,18 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         denfactor=1.0 + rholab*0.0
         #
         diskcondition=condmaxbsqorho
-        keywordsrhosq={'which': diskcondition}
+        diskconditiontemp=(r>0) #i.e. everywhere. beter way to write this? MAVARACHANGE
+        keywordsrhosq={'which': diskconditiontemp}
+        keywordsrhosqmavara={'which': diskconditiontemp,'mavara': 1}
         rhosqint=intangle(gdet*denfactor,**keywordsrhosq)+tiny # gdet is 2d by default
+        rhosqintmavara=intangle(gdet*denfactor,**keywordsrhosqmavara)+tiny # gdet is 2d by default
         rhosqs[qindex]=rhosqint
         maxrhosq2d=(denfactor*diskcondition).max(1)+tiny
         maxrhosq3d=np.empty_like(rho)
         for j in np.arange(0,ny):
             maxrhosq3d[:,j,:] = maxrhosq2d
-        rhosrhosq[qindex]=intangle(gdet*denfactor*rho,**keywordsrhosq)/rhosqint
+        rhosrhosq[qindex]=intangle(gdet*denfactor*rho,**keywordsrhosqmavara)
+        rhosrhosq[qindex]=rhosrhosq[qindex].cumsum(axis=0) # hijacked by MAVARA #/rhosqint
         ugsrhosq[qindex]=intangle(gdet*denfactor*ug,**keywordsrhosq)/rhosqint
         uradsrhosq[qindex]=intangle(gdet*denfactor*urad,**keywordsrhosq)/rhosqint
         # no restriction for velocity or field quantities! (as long as denfactor=1 this is good)
@@ -11947,13 +11953,17 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         #
         diskcondition=condmaxbsqorho # full non-jet
         keywordsrhosqdcden={'which': diskcondition}
+        keywordsrhosqdcdenmavara={'which': diskcondition,'mavara': 1}
         rhosqdcdenint=intangle(gdet*denfactor,**keywordsrhosqdcden)+tiny # gdet is 2d by default
+        rhosqdcdenintmavara=intangle(gdet*1.,**keywordsrhosqdcdenmavara)+tiny # MAVARANOTE just volume of shells
         rhosqdcdens[qindex]=rhosqdcdenint
         maxrhosqdcden2d=(denfactor*diskcondition).max(1)+tiny
         maxrhosqdcden3d=np.empty_like(rho)
         for j in np.arange(0,ny):
             maxrhosqdcden3d[:,j,:] = maxrhosqdcden2d
-        rhosrhosqdcden[qindex]=intangle(gdet*denfactor*rho,**keywordsrhosqdcden)/rhosqdcdenint
+        rhosrhosqdcden[qindex]=intangle(gdet*denfactor*rho,**keywordsrhosqdcden)/rhosqdcdenint #rholab weigthed surface (of each shell) averaged density
+        rhosrhosqdcden[qindex]=rhosrhosqdcden[qindex]*rhosqintmavara #multiplied surface averaged density by volume of each shell to get mass
+        rhosrhosqdcden[qindex]=rhosrhosqdcden[qindex].cumsum(axis=0) #cumulative mass integral
         ugsrhosqdcden[qindex]=intangle(gdet*denfactor*ug,**keywordsrhosqdcden)/rhosqdcdenint
         uradsrhosqdcden[qindex]=intangle(gdet*denfactor*urad,**keywordsrhosqdcden)/rhosqdcdenint
         denfactor=rholab
@@ -17462,7 +17472,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     # THESE ARE NOW UPSILON RATHER THAN phibh[Gaussian,halfflux] due to factor of 0.2
     # normalized to local Mdot
     # choose fstot below so no effect of sign on flux as wanted for Upsilon since sign has no physical effect except through reconnection issues
-    phibh=(fstot[:,ihorusemag]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotfinavg**0.5
+    phibh=(fstot[:,ihorusemag]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotfinavg**0.5   #MAVARANOTE this includes the normalization value used for upsilon
     #
     phirdiskin=(fsin[:,iofr(rdiskin)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotinrdiskinfinavg**0.5
     phirdiskout=(fsin[:,iofr(rdiskout)]/2.0)*(0.2*np.sqrt(4.0*np.pi))/mdotinrdiskoutfinavg**0.5
@@ -24680,7 +24690,7 @@ def ploteta():
     ax34r.set_yticks(tck)
     gc.collect()
 
-def mkmovie(framesize=700, domakeavi=False):
+def mkmovie(framesize=900, domakeavi=False):
     # use to avoid making plots in ploqty...() while creating plots
     global avoidplotsglobal
     avoidplotsglobal=1
@@ -25021,17 +25031,18 @@ def mkeqfluxmovieframe(findex=None,filenum=None,framesize=None): # MAVARANOTE th
     plotlen = framesize
     #
     plt.figure(0, figsize=(12,9), dpi=100)
-    gs3 = GridSpec(2, 1)
+    gs3 = GridSpec(4, 1)
     #gs3.update(left=0.055, right=0.97, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
     #gs3.update(left=0.055, right=0.97, top=0.41, bottom=0.06, wspace=0.01, hspace=0.04)
     #gs3.update(left=0.055, right=0.95, top=0.42, bottom=0.03, wspace=0.01, hspace=0.04)
     #
-    ##############
+    ##############111111111111111111111111111111111
     #mdot
     #plt.clf()
-    plot1 = plt.subplot(gs3[-2,:])
+    plot1 = plt.subplot(gs3[-4,:])
+    plot1.set_ylabel(r'$A_{phi}$ cumulative')    
     #cvel() # MAVARA moved this to just before call to mkhoverrmovieframe
-    print(hoverr[findex,:]) ; sys.stdout.flush()
+    #print(hoverr[findex,:]) ; sys.stdout.flush()
     #
     normalizer=1.
     if os.path.exists('datavsr5.txt'):
@@ -25042,29 +25053,73 @@ def mkeqfluxmovieframe(findex=None,filenum=None,framesize=None): # MAVARANOTE th
     ihor = np.floor(iofr(rhor)+0.5)
     plot1.set_yscale('log')
     plot1.set_xscale('log')
-    plot1.set_ylim([1.e-2,1.e3]) #500.0])
+    plot1.set_ylim([1.e0,2.e2]) #500.0])
     plot1.set_xlim([2,1000.])
-    plot1.plot(r[:,ny/2,0], ((0.5*fstot[0,ihor]-feqtot[0,ihor]+feqtot[0,:]))*normalizer+1.e-10,'.') #/mdtot[findex,:])
+    plot1.plot(r[:,ny/2,0], ((0.5*fstot[0,ihor]-feqtot[0,ihor]+feqtot[0,:]))*normalizer+1.e-10,'.',label='t=0') #/mdtot[findex,:])
     if os.path.exists('datavsr5.txt'):
-        plot1.plot(r[:,ny/2,0], (0.5*data5[33,ihor]-data5[35,ihor]+data5[35,:])*normalizer,'+') #/mdtot[findex,:])
-    plot1.plot(r[:,ny/2,0], ((0.5*fstot[findex,ihor]-feqtot[findex,ihor]+feqtot[findex,:]))*normalizer+1.e-10) #/mdtot[findex,:])
+        plot1.plot(r[:,ny/2,0], (0.5*data5[33,ihor]-data5[35,ihor]+data5[35,:])*normalizer,'+',label='time avg') #/mdtot[findex,:])
+    plot1.plot(r[:,ny/2,0], ((0.5*fstot[findex,ihor]-feqtot[findex,ihor]+feqtot[findex,:]))*normalizer+1.e-10,label='instant.') #/mdtot[findex,:])
     ## #plot1.plot(r[:,ny/2,0], ((-feqtot[findex,np.floor(iofr(10.)+.5)]+feqtot[findex,:]))*normalizer+1.e-10) #/mdtot[findex,:])
     #plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
     #plt.ylabel(r"$y\ [r_g]$",ha='left',labelpad=10,fontsize=16)
     #plt.ylim([0.0,1.0])
-    ########################
-    plt2 = plt.subplot(gs3[-1,:])
+    plot1.legend(loc='lower right',ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)    
+    ########################22222222222222222222222222222222222222
+    plt3 = plt.subplot(gs3[-3,:])
+    plt3.set_ylabel(r'#inf t , -v_r')
+    #plt3.set_yscale('log')
+    #plt3.set_ylim(.001,.1)
+    plt3.set_yscale('log')
+    plt3.set_ylim(.01,100.)
+    plt3.set_xscale('log')
+    plt3.set_xlim([2,1000.])
+    plt3.plot(r[:,ny/2,0],-1000.*vus1rhosqdcden[findex,:],'-',label=r'-v_rdcden*1000')
+    plt3.plot(r[:,ny/2,0],t/(-r[:,ny/2,0]/vus1rhosqdcden[findex,:]),'.',label='inflow times at t')
+    if os.path.exists('datavsr1c.txt'):
+        data1c = np.loadtxt('datavsr1c.txt',dtype=np.float64,skiprows=1,unpack = True)
+        plt3.plot(r[:,ny/2,0],t/(-r[:,ny/2,0]/data1c[5,:]),'+',label='dcden inf times, t avg')
+    plt3.legend(loc='upper right',ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)    
+    ########################3333333333333333333333333333333
+    plt2 = plt.subplot(gs3[-2,:])
+    plt2.set_ylabel(r'$M_{cum}$/$r^2$')
+    #plt2.set_yscale('log')
     plt2.set_yscale('log')
-    plt2.set_ylim(3.,400.)
+    #plt2.set_ylim(1.e0,1e2)
+    plt2.set_ylim(0.5,100.)
     plt2.set_xscale('log')
     plt2.set_xlim([2,1000.])
     print('shape of eqflux: ')
     print(rhosrhosq.shape)
     print('shape of gdet: ')
     print(gdet.shape)
-    plt2.plot(r[:,ny/2,0],rhosqs[0,:]*rhosrhosq[0,:]/r[:,ny/2,0]/r[:,ny/2,0],'.')
-    plt2.plot(r[:,ny/2,0],rhosqs[findex,:]*rhosrhosq[findex,:]/r[:,ny/2,0]/r[:,ny/2,0])
+    plt2.plot(r[:,ny/2,0],rhosrhosq[0,:]/r[:,ny/2,0]/r[:,ny/2,0],'b.',label='rhosrhosq')
+    plt2.plot(r[:,ny/2,0],rhosrhosq[findex,:]/r[:,ny/2,0]/r[:,ny/2,0],'b-')
+    plt2.plot(r[:,ny/2,0],rhosrhosqdcden[0,:]/r[:,ny/2,0]/r[:,ny/2,0],'c.',label='rhosrhosqdcden')
+    plt2.plot(r[:,ny/2,0],rhosrhosqdcden[findex,:]/r[:,ny/2,0]/r[:,ny/2,0],'c-')
+    plt2.plot(r[:,ny/2,0],mdtotbound[findex,:],'g-',label='mdtotbound')
+    plt2.legend(loc='lower right',ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)    
     #plt2.plot(r[:,ny/2,0],Q2toplot[:,ny/2-4:ny/2+4,:].sum(1).sum(1)/nz/8.)
+    #
+    #    
+    ########################4444444444444444444444444444444444
+    plt4 = plt.subplot(gs3[-1,:])
+    if os.path.exists('datavsr6.txt'):
+        data6 = np.loadtxt('datavsr6.txt',dtype=np.float64,skiprows=1,unpack = True)
+        hoverr_vsrtoplot=data6[7,:]
+        iq2mridiskweak_vsrtoplot=data6[16,:]
+    plt4.set_xlabel(r'r')    
+    plt4.set_ylabel(r'$S_d$')
+    #plt2.set_yscale('log')
+    plt4.set_yscale('log')
+    #plt2.set_ylim(1.e0,1e2)
+    plt4.set_ylim(0.01,50.)
+    plt4.set_xscale('log')
+    plt4.set_xlim([2,1000.])
+    plt4.plot(r[:,ny/2,0],Q2toplot[:,ny/2-4:ny/2+4,:].sum(1).sum(1)/nz/8.,label=r'cvel Q2toplot')
+    plt4.plot(r[:,ny/2,0], hoverr[0,:]/iq2mridiskweak[0,:],'.',label='Q2weak t=0')
+    if os.path.exists('datavsr6.txt'):
+        plt4.plot(r[:,ny/2,0],hoverr_vsrtoplot/iq2mridiskweak_vsrtoplot,'+',label=r'Q2_mridiskweak_vsr')
+    plt4.legend(loc='lower right',ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)    
     plt.savefig( "eqflux%04d.png" % (filenum)  )
     #
     #    
@@ -25282,7 +25337,7 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
     ###########################
     # SMALL BOX
     ###########################
-    plotsize=40.
+    plotsize=20.
     #
     # LEFT PANEL
     gs1 = GridSpec(1, 1)
@@ -27399,7 +27454,7 @@ def main(argv=None):
         gc.collect()
     if runtype==9:
         grid3d( "gdump.bin",use2d=use2dglobal )
-        fno=2550
+        fno=5050
         rfd("fieldline%04d.bin" % fno)
         docomputeextrathings = True
         ihor = np.floor(iofr(rhor)+0.5)
@@ -27411,13 +27466,13 @@ def main(argv=None):
         plt.clf();
         #mkframe("testlrho%04d" % 0, vmin=-8,vmax=0.2,dostreamlines=False,len=50,doaphi=True)
         global qtymem
-        #qtymem=np.load('analyze_rho1/qty2.npy')        
-        qtymem=getqtyvstime(ihor,0.2)
+        qtymem=np.load('analyze_rho1/qty2.npy')        
+        #qtymem=getqtyvstime(ihor,0.2)
         getqtymem(qtymem)
         inputlevs1=None
         #inputlevs1temp=mkmovieframe(findex=0,filenum=fno,framesize=300,inputlevs=inputlevs1)
         #plt.savefig("testlrho%04d.pdf" % (fno))
-        mkeqfluxmovieframe(findex=fno/25,filenum=fno,framesize=1000)
+        mkeqfluxmovieframe(findex=fno/101,filenum=fno,framesize=1000)
         
 
 def tutorial1():
@@ -27848,9 +27903,9 @@ def plotvertfieldequator():
     #
     fig = plt.figure(4)
     plt.clf()
-    plt.yscale('log')
+    plt.yscale('linear')
     plt.xscale('log')
-    plt.ylim(1., 300.)
+    plt.ylim(134.5, 135.5)
     plt.xlim([1., 250.])
     plt.plot(r[:,thetaprobe,0],beta[:,thetaprobe,0], linestyle='none', marker='.' )
     #plt.plot(r[:,24,0],beta[:,24,0], linestyle='none', marker='.' )
@@ -27913,31 +27968,22 @@ def plotflux():
     import time
     grid3d("gdump.bin")
     # now try loading a single fieldline file
-    rfd("fieldline0001.bin")
+    rfd("fieldline0000.bin")
     cvel()
     ######################################
     fig = plt.figure(1)
-    qtymem=np.load('qty2.npy')
+    qtymem=np.load('analyze_rho2/qty2.npy')
     getqtymem(qtymem)
     plt.clf()
     #plt.ylim([0.,20])
-    plt.xlim([0., 60.])
+    plt.xlim([0., 1000.])
     feqtot.shape
     #plt.plot(r[:,32,0],(fsin[fsin.shape[0]-1,:]/(2.0)*((0.2*np.sqrt(4.0*np.pi))/mdtot[fsin.shape[0]-1,:])), marker='.') #feqtot[10,:],marker='.') #fstot.shape[0]-1    
     timei=0
-    plt.plot(r[:,32,0], 0.5*fstot[timei,iofr(rhor)]-feqtot[timei,iofr(rhor)]+feqtot[timei,:])
+    plt.plot(r[:,ny/2,0], 0.5*fstot[timei,iofr(rhor)]-feqtot[timei,iofr(rhor)]+feqtot[timei,:])
     timei=20    
-    plt.plot(r[:,32,0], 0.5*fstot[timei,iofr(rhor)]-feqtot[timei,iofr(rhor)]+feqtot[timei,:])
-    timei=40
-    plt.plot(r[:,32,0], 0.5*fstot[timei,iofr(rhor)]-feqtot[timei,iofr(rhor)]+feqtot[timei,:])
-    timei=60
-    plt.plot(r[:,32,0], 0.5*fstot[timei,iofr(rhor)]-feqtot[timei,iofr(rhor)]+feqtot[timei,:])
-    timei=80
-    plt.plot(r[:,32,0], 0.5*fstot[timei,iofr(rhor)]-feqtot[timei,iofr(rhor)]+feqtot[timei,:])
-    timei=120
-    plt.plot(r[:,32,0], 0.5*fstot[timei,iofr(rhor)]-feqtot[timei,iofr(rhor)]+feqtot[timei,:])
-    timei=120
-    #plt.plot(r[:,32,0], 0.5*fstot[timei,0]+feqtot[timei,:])
+    print("pressure at r=100 is: ",ug[iofr(100),ny/2,0])
+#plt.plot(r[:,32,0], 0.5*fstot[timei,0]+feqtot[timei,:])
     
     ###################################
     
@@ -28072,19 +28118,25 @@ def testgrid():
     ##_dx1
     print("cell aspect ratio: ",(r[1:64,32,0]*np.sin(h[1:64,32,0])-r[0:63,32,0]*np.sin(h[0:63,32,0])) / (r[0:63,32,0]*np.cos(h[0:63,32,0])-r[0:63,33,0]*np.cos(h[0:63,33,0]))         )
     fig = plt.figure(2)
-    plt.plot(h[0,:,0])
+    #plt.ylim(0,np.pi)
+    plt.xlim(0,48.)
+    plt.plot(h[0,:,0]-(np.pi-h[0,::-1,0]),'.')
+    print(h[0,:,0]-(np.pi-h[0,::-1,0]))
     # ********************************
     # Plot courant timestep in each cell
     mydr=dxdxp[1,1]*_dx1
     mydH=r*dxdxp[2,2]*_dx2
     mydP=r*np.sin(h)*dxdxp[3,3]*_dx3
+    print(mydH[0,:,0]-(mydH[0,::-1,0]))
+    print((dxdxp[2,2])[0,:,0]-((dxdxp[2,2])[0,::-1,0]))
     fig3 = plt.figure(3)
     plt.clf()
-    myx=x1[:,:,0]
-    myy=x2[:,:,0]
+    myx=r #x1[:,:,0]
+    myy=h #x2[:,:,0]
     myz=x3[:,:,0]
     myfun=np.log10(mydP[:,:,0])
-    plt.pcolor(myx,myy,myfun,vmin=-2.5,vmax=2.)
+    #plt.pcolor(myx,myy,myfun,vmin=-2.5,vmax=2.)
+    plt.imshow(myfun.T)
     plt.colorbar()
     fig4 = plt.figure(4)
     plt.clf()
@@ -28102,7 +28154,23 @@ def testgrid():
     myfun=np.log10(mydr[:,:,0])
     plt.pcolor(myx,myy,myfun,vmin=-1.5,vmax=2.)
     plt.colorbar()
-
+    fig6 = plt.figure(6)
+    plt.xlim(0,48)
+    plt.plot(mydH[0,:,0],'o')
+    plt.plot(mydH[nx/2,:,0],'.')
+    fig7 = plt.figure(7)
+    plt.plot(h[iofr(40.),:,0],'.')
+    fig8 = plt.figure(8)
+    #plt.clf()
+    plt.plot(r[:,ny/2,0],rho[:,(ny/2-10):(ny/2+10),:].sum(1).sum(1)/20./nz,'.')
+    plt.plot(r[:,ny/2,0],(gam-1)*ug[:,(ny/2-10):(ny/2+10),:].sum(1).sum(1)/20./nz,'-')
+    rfd("fieldline17748.bin")
+    fig8 = plt.figure(8)
+    plt.plot(r[:,ny/2,0],.99*(1./10**(-.6))*r[:,ny/2,0]**(-.6))
+    plt.plot(r[:,ny/2,0],.99*(1./10**(-1.))*r[:,ny/2,0]**(-1.))
+    plt.plot(r[:,ny/2,0],rho[:,(ny/2-10):(ny/2+10),:].sum(1).sum(1)/20./nz,'+')
+    plt.yscale('log')
+    plt.xscale('log')
 
 if __name__ == "__main__":
     # no, can't use sys.exit since want C code that calls this to continue after done

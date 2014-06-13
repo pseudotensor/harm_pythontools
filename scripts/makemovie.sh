@@ -500,7 +500,7 @@ then
         apcmd="mpiexec -ppn $numcorespernode -np $numtasks" #mpiexec -np $numtasks -ppn $numcorespernode"
     fi
 
-    numnodes=$(($numtasks/$numcorespernode)+1) #MAVARACHANGE added +1 on may 6th 2014 so actually enough nodes used#MAVARA added /2 since numparts changed to 2 in sections where mpiexec is called with qsub
+    numnodes=$(($numtasks/$numcorespernode+1)) #MAVARACHANGE added +1 on may 6th 2014 so actually enough nodes used#MAVARA added /2 since numparts changed to 2 in sections where mpiexec is called with qsub
     numtotalcores=$(($numnodes * 12)) # always 12 for Kraken   # also 12 for westemere nodes on pleiades
 
     if [ $numtotalcores -le 1024 ]
@@ -1616,7 +1616,7 @@ numfiles=`find dumps/ -name "fieldline*.bin"|wc -l`
 echo "NUMFILES=$numfiles"
 
 #itemspergroup=$(( 1 )) # MAVARA
-itemspergroup=$(( 2 ))
+itemspergroup=$(( 2 )) # 16 with 100
 
 # catch too small number of files
 # must match __init__.py
