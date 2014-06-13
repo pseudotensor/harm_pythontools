@@ -5935,6 +5935,10 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
             if streamtype==2:
                 lw = 1.0+1*ftr(np.log10(amax(ibsqo2rho,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
             #
+        global TRACKVPOT,        MCOORD,        DODISS,        DOEVOLVEMETRIC,        WHICHVEL,        WHICHEOM,        REMOVERESTMASSFROMUU,        RELTYPE,        EOMTYPE,        WHICHEOS,        DOENTROPY,        WHICHENTROPYEVOLVE,        CALCFARADAYANDCURRENTS,        DOPOLEDEATH,        DOPOLESMOOTH,        DOPOLEGAMMADEATH,        IF3DSPCTHENMPITRANSFERATPOLE,        EOMRADTYPE,        WHICHRADSOURCEMETHOD,        OUTERDEATH,        OUTERDEATHRADIUS
+        if(EOMTYPE==0):
+            lw = 0.5
+        #
         fstreamplot(yi,xi,iBR,iBz,ua=iBaR,va=iBaz,useblank=useblank,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=detectLoops,dodiskfield=dodiskfield,dobhfield=dobhfield,startatmidplane=startatmidplane,domidfield=domidfield,a=a,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,dsval=dsval,color=color,doarrows=doarrows,dorandomcolor=dorandomcolor,skipblankint=skipblankint,minindent=minindent,minlengthdefault=minlengthdefault,arrowsize=arrowsize)
         #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
     #
@@ -6093,6 +6097,10 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
                 # if t < 1500:
                 #     lw *= ftr(iqty,-2.,-1.9)
                 #lw *= ftr(iaphi,0.001,0.002)
+                global TRACKVPOT,        MCOORD,        DODISS,        DOEVOLVEMETRIC,        WHICHVEL,        WHICHEOM,        REMOVERESTMASSFROMUU,        RELTYPE,        EOMTYPE,        WHICHEOS,        DOENTROPY,        WHICHENTROPYEVOLVE,        CALCFARADAYANDCURRENTS,        DOPOLEDEATH,        DOPOLESMOOTH,        DOPOLEGAMMADEATH,        IF3DSPCTHENMPITRANSFERATPOLE,        EOMRADTYPE,        WHICHRADSOURCEMETHOD,        OUTERDEATH,        OUTERDEATHRADIUS
+                if(EOMTYPE==0):
+                    lw = 0.5
+                #
                 fstreamplot(yi,xi,iBx,iBy,density=1,downsample=1,linewidth=lw,detectLoops=True,dodiskfield=False,dobhfield=False,startatmidplane=False,a=a,arrowsize=arrowsize)
             ax.set_xlim(extent[0],extent[1])
             ax.set_ylim(extent[2],extent[3])
