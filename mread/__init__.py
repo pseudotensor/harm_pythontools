@@ -2591,7 +2591,7 @@ def isradmodel(modelname):
         return(0)
     #
 def iswaldmodel(modelname):
-    if modelname=="run8" or modelname=="run9" or modelname=="run9_paraline_to3_fixuptype0_newgrid_bettercyljet_stillhotandjetstops" or modelname=="runnonu":
+    if modelname=="run8" or modelname=="run9" or modelname=="run9_paraline_to3_fixuptype0_newgrid_bettercyljet_stillhotandjetstops" or modelname=="runnonu" or modelname=="runnonuhighres" or modelname=="runnonuhighres_avoidcs" or modelname=="runmhdhigh" or modelname=="runentropyhigh":
         return(1)
     else:
         return(0)
