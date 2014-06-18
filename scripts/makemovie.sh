@@ -303,12 +303,12 @@ fi
 #############################################
 # Nautilus or Kraken (partially)
 if [ $system -eq 4 ] ||
-    [ $system -eq 5 ]
+    [ $system -eq 5 ] #|| [ $system -eq 7 ]    
 then
     # go to directory where "dumps" directory is
     # required for Nautilus, else will change to home directory when job starts
     numnodes=1
-    thequeue="devel"
+    thequeue="standard"
     #
     if [ "$modelname" == "thickdisk7" ] ||
         [ "$modelname" == "thickdiskr7" ] ||
@@ -439,6 +439,7 @@ then
 
     numnodes=$(($numtasks/$numcorespernode))
     numnodesreal=$numnodes
+    numcorespernodereal=$numcorespernode
     # total number of cores used by these nodes
     #numtotalcores=$(($numnodes*12))
     # numtotalcores is currently what is allocated per node because each job is for each node
@@ -493,11 +494,11 @@ then
     then
         numcorespersocket=$(($numcorespernode/2))
 	numtaskshalf=$(($numtasks/2))
-        apcmd="mpiexec -ppn $numcorespernode -np $numtasks" #"aprun -n $numtasks -S $numcorespersocket"
+        apcmd="mpiexec " #"aprun -n $numtasks -S $numcorespersocket"
     else
         # odd, so can't use socket version
 	numtaskshalf=$(($numtasks/2))
-        apcmd="mpiexec -ppn $numcorespernode -np $numtasks" #mpiexec -np $numtasks -ppn $numcorespernode"
+        apcmd="mpiexec "#-ppn $numcorespernode -np $numtasks" #mpiexec -np $numtasks -ppn $numcorespernode"
     fi
 
     numnodes=$(($numtasks/$numcorespernode+1)) #MAVARACHANGE added +1 on may 6th 2014 so actually enough nodes used#MAVARA added /2 since numparts changed to 2 in sections where mpiexec is called with qsub
@@ -549,6 +550,188 @@ then
     echo "PART2P: $apcmdplot"
 
 fi
+
+#############################################
+# Deepthought2 (partially)
+if [ $system -eq 7 ]             #### This if-then constains stuff set for and used within both parallel ==1 and ==2 sections below.
+
+then
+    # go to directory where "dumps" directory is
+    # required for Nautilus, else will change to home directory when job starts
+    # init defaults
+    numnodes=1
+    thequeue="standard"
+    #
+    # defaults
+    echo "Ended up in default for timetot, numcorespernode, and memtot in makemovie.sh"
+    timetot="2:00:00"   #MMMMMMMMMMMMMMMMM
+    numcorespernode=20
+    memtot=$(($numcorespernode * 6)) #actually 6.4 but didn't work with non integer
+    
+    #
+    # for makeplot part or makeplotavg part
+    numcorespernodeplot=1 #1
+    numnodesplot=1
+    # new analysis can take a long time.
+    timetotplot="2:00:00" #MMMMMMMMMMMMMMM
+    # don't always need so much memory.
+    memtotplot=128 #MAVARA
+    # interactive use for <1hour:
+    # ipython -pylab -colors=LightBG
+    #
+    # long normal interactive job:
+    # qsub -I -A TG-PHY120005 -q analysis -l ncpus=8,walltime=24:00:00,mem=32GB
+    # Note that this gives you a node for <=24 hours, so you can run 8 processes in parallel.  If you want to open a few xterm's from that window with (xterm &), in that terminal you will have to set the DISPLAY variable to whatever it was in the login node of nautilus (or else, the display variable is empty, and the new xterm windows refuse to spawn).
+fi
+
+
+
+# Kraken
+# this starts a bunch of single node jobs
+if [ $system -eq 7 ] &&
+    [ $parallel -eq 1 ]
+then
+    thequeue="standard"
+    timetot="8:00:00" # probably don't need all this is 1 task per fieldline file
+
+    # Kraken only has 16GB per node of 12 cores
+    # so determine how many nodes need based upon Nautilus/Kraken memtot above
+
+    # numtasks set equal to total number of time slices, so each task does only 1 fieldline file
+    numtasks=`ls dumps/fieldline*.bin |wc -l`
+    memtotnaut=$memtot
+    numcorespernodenaut=$numcorespernode
+
+    # total memory ***required*** is old memtot/numcorespernode from Nautilus multiplied by total number of tasks for Kraken
+    memtotpercore=$((1+$memtotnaut/$numcorespernodenaut))
+    
+    numcorespernode=$((128/$memtotpercore))
+
+    if [ $numcorespernode -eq 0 ]
+    then
+        echo "Not enough memory per core to do anything"
+        exit
+    fi
+
+    numnodes=$((1+$numtasks/$numcorespernode))
+    numcorespernodereal=$numcorespernode
+    numnodesreal=$numnodes
+    # total number of cores used by these nodes
+    #numtotalcores=$(($numnodes*12))
+    # numtotalcores is currently what is allocated per node because each job is for each node
+    numtotalcores=20
+
+    apcmd="mpiexec -n 32" #-ppn 20 -np 1" #"aprun -n 1 -d 12 -cc none -a xt"
+
+    # setup plotting part
+    numnodesplot=1
+    numcorespernodeplot=20
+    # this gives 16GB free for plotting
+    numtotalcoresplot=$numnodesplot
+    thequeueplot="standard"
+    apcmdplot="mpiexec -n 1" #-n $numtasks" # #"aprun -n 1 -d 12 -cc none -a xt"
+    timetotplot="8:00:00"
+
+fi
+
+
+# Kraken using makemoviec to start fake-MPI job
+# this starts a single many-node-core job
+# script views this as 1 node with many cores
+if [ $system -eq 7 ] &&
+    [ $parallel -eq 2 ]
+then
+    # Kraken only has 16GB per node of 12 cores
+    # so determine how many nodes need based upon Nautilus/Kraken memtot above
+    memtotnaut=$memtot #324 from above is the default
+    numcorespernodenaut=$numcorespernode  #80 is the default
+
+    # numtasks set equal to total number of time slices, so each task does only 1 fieldline file
+    numtasks=`ls dumps/fieldline*.bin |wc -l` #2000 or so
+
+    # total memory required is old memtot/numcorespernode from Nautilus multiplied by total number of tasks for Kraken
+    memtotpercore=$((1+$memtotnaut/$numcorespernodenaut)) #324/80 ~4 as expected from def of memtot
+    numcorespernode=$((128/$memtotpercore))  # was 24. 32 is the total per node for westemere nodes #MAVARA turned to 12 for low res sim since don't need much mem.
+
+    #MAVARA for now just have:
+    #numcorespernode=12 #for westemere
+    if [ $numcorespernode -eq 0 ]
+    then
+        echo "Not enough memory per core to do anything"
+        exit
+    fi
+
+    if [ $numcorespernode -eq 2 ] ||
+        [ $numcorespernode -eq 4 ] ||
+        [ $numcorespernode -eq 6 ] ||
+        [ $numcorespernode -eq 8 ] ||
+        [ $numcorespernode -eq 10 ] ||
+        [ $numcorespernode -eq 12 ] ||
+	[ $numcorespernode -eq 20 ]
+    then
+        numcorespersocket=$(($numcorespernode/2))
+	numtaskshalf=$(($numtasks/2))
+        apcmd="mpiexec -ppn $numcorespernode -np $numtasks" # -n $numtasks" #"aprun -n $numtasks -S $numcorespersocket"
+    else
+        # odd, so can't use socket version
+	numtaskshalf=$(($numtasks/2))
+        apcmd="mpiexec -ppn $numcorespernode -np $numtasks" # -n $numtasks" #mpiexec -np $numtasks -ppn $numcorespernode"
+    fi
+
+    numnodes=$(($numtasks/$numcorespernode+1)) #MAVARACHANGE added +1 on may 6th 2014 so actually enough nodes used#MAVARA added /2 since numparts changed to 2 in sections where mpiexec is called with qsub
+    numtotalcores=$(($numnodes * 20)) # always 12 for Kraken   # also 12 for westemere nodes on pleiades
+
+    if [ $numtotalcores -le 1024 ]
+        then
+        thequeue="standard"
+    elif [ $numtotalcores -le 8192 ]
+        then
+        thequeue="long"
+    elif [ $numtotalcores -le 49536 ]
+        then
+        thequeue="large"
+    fi
+
+    # GODMARK: 458 thickdisk7 files only took 1:45 on Kraken
+    timetot="2:00:00" # probably don't need all this is 1 task per fieldline file #MMMMMMMMMMMMMMM
+
+    echo "PART1: $numcorespernode $numcorespersocket $numnodes $numtotalcores $thequeue $timetot"
+    echo "PART2: $apcmd"
+
+    # setup fake setup
+    numcorespernodereal=$numcorespernode  #as necessary for enough memory per task on each cpu
+    numnodesreal=$numnodes
+    numcorespernode=$numtasks
+    numnodes=1
+    #
+    chunklisttype=0
+    chunklist=\"`seq -s " " 1 $numtasks`\"
+    DATADIR=$dirname
+    
+
+
+
+    # setup plotting part
+    numtasksplot=1
+    numnodesplot=1
+    numcorespernodeplot=20
+    # this gives 16GB free for plotting (temp vars + qty2.npy file has to be smaller than this or swapping will occur)
+    numtotalcoresplot=$numcorespernodeplot
+    thequeueplot="standard"
+    apcmdplot="mpiexec -np $numtasksplot" #mpiexec -np $numtasksplot" #"aprun -n $numtasksplot"
+    # only took 6 minutes for thickdisk7 doing 458 files inside qty2.npy!  Up to death at point when tried to resample in time.
+    timetotplot="2:00:00" #MMMMMMMMMMMMMMM
+
+
+    echo "PART1P: $numcorespernodeplot $numnodesplot $numtotalcoresplot $thequeueplot $timetotplot"
+    echo "PART2P: $apcmdplot"
+
+fi
+
+#############################################
+
+
+
 
 #############################################
 # physics-179
@@ -679,6 +862,10 @@ then
     then
         sed -e 's/USEKIJMCK=1/USEKIJMCK=0/g' -e 's/USEKRAKEN=1/USEKRAKEN=0/g' -e 's/USENAUTILUS=1/USENAUTILUS=0/g' -e 's/USEMPI=0/USEMPI=1/g' Makefile > Makefile.temp  #MMMMMAVARA usekraken=0 so usepfe can be 1
         cp Makefile.temp Makefile
+    elif [ $system -eq 7 ]
+    then
+        sed -e 's/USEKIJMCK=1/USEKIJMCK=0/g' -e 's/USEKRAKEN=1/USEKRAKEN=0/g' -e 's/USENAUTILUS=1/USENAUTILUS=0/g' -e 's/USEMPI=0/USEMPI=1/g' Makefile > Makefile.temp  #MMMMMAVARA usekraken=0 so usepfe can be 1
+        cp Makefile.temp Makefile
     elif [ $system -eq 6 ]
     then
         sed -e 's/USEKIJMCK=0/USEKIJMCK=1/g' -e 's/USEKRAKEN=1/USEKRAKEN=0/g' -e 's/USENAUTILUS=1/USENAUTILUS=0/g' -e 's/USEMPI=1/USEMPI=0/g' Makefile > Makefile.temp
@@ -782,12 +969,12 @@ then
 		        doilist=0
 	        fi
 	    else
-            if [ $useoverride -eq 1 ]
-            then
-                ilist=$ilistoverride
-            else
+		if [ $useoverride -eq 1 ]
+		then
+                    ilist=$ilistoverride
+		else
 	            ilist=`seq 0 $ie`
-            fi
+		fi
 	        doilist=1
 	    fi
 
@@ -795,7 +982,7 @@ then
 	    then
             echo "Data vs. Time: Starting simultaneous run of $itot jobs for group $j"
             for i in $ilist
-	        do
+	    do
 
 	      ############################################################
 	      ############# BEGIN WITH RUN IN PARALLEL OR NOT
@@ -804,79 +991,67 @@ then
 	            modi=$(($i % $numcorespernode))
 
 	            dowrite=0
-	            #if [ $parallel -eq 0 ]
-		        #then
-		        #    dowrite=1
-	            #else
-		            if [ $modi -eq 0 ]
-		            then
-		                dowrite=1
-		            fi
-	            #fi
+	            if [ $modi -eq 0 ]
+		    then
+		        dowrite=1
+		    fi
+	            
 
 	            if [ $dowrite -eq 1 ]
-		        then
-                  # create script to be run
-		            thebatch="sh1_python_${i}_${numcorespernode}_${runn}.sh"
-		            rm -rf $thebatch
-		            echo "j=$j" >> $thebatch
-		            echo "itot=$itot" >> $thebatch
-		            echo "i=$i" >> $thebatch
-		            echo "runn=$runn" >> $thebatch
-		            echo "itemspergroup=$itemspergroup" >> $thebatch
-		            echo "numcorespernode=$numcorespernode" >> $thebatch
+		    then
+                        # create script to be run
+		        thebatch="sh1_python_${i}_${numcorespernode}_${runn}.sh"
+		        rm -rf $thebatch
+		        echo "j=$j" >> $thebatch
+		        echo "itot=$itot" >> $thebatch
+		        echo "i=$i" >> $thebatch
+		        echo "runn=$runn" >> $thebatch
+		        echo "itemspergroup=$itemspergroup" >> $thebatch
+		        echo "numcorespernode=$numcorespernode" >> $thebatch
 	            fi
+	            echo "i=$i numcorespernode=$numcorespernode modi=$modi"
+		    
+		    if [ $modi -eq 0 ]
+		    then
+ 		        myruni='$(( $cor - 1 + $i + $itot * $j ))' #$i will be an integer multiple of numcorespernode since this is only run when modi eq 0
+		        myseq='`seq 1 $numcorespernode`'
+		        if [ $dowrite -eq 1 ]
+			then
+			    echo "for cor in $myseq" >> $thebatch
+			    echo "do" >> $thebatch
+		        fi
+		    fi
 	            
-	            #if [ $parallel -eq 0 ]
-		        #then
-		        #    myruni='$(( $i + $itot * $j ))'
-		        #    echo "cor=0" >> $thebatch
-	            #else
-		            echo "i=$i numcorespernode=$numcorespernode modi=$modi"
-		            if [ $modi -eq 0 ]
-		            then
- 		                myruni='$(( $cor - 1 + $i + $itot * $j ))'
-		                myseq='`seq 1 $numcorespernode`'
-		                if [ $dowrite -eq 1 ]
-			            then
-			                echo "for cor in $myseq" >> $thebatch
-			                echo "do" >> $thebatch
-		                fi
-		            fi
-	            #fi
 
 	            
 	            if [ $dowrite -eq 1 ]
 		        then
-                    echo "cd $dirname" >> $thebatch
-                    echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $thebatch
-                    if [ $system -eq 4 ]
-                    then
-                        echo "unset MPLCONFIGDIR" >> $thebatch
-                    else                        
-                        rm -rf $dirname/matplotlibdir/
-                        echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $thebatch
-                    fi
-		            echo "runi=$myruni" >> $thebatch
-		            echo "textrun=\"Data vs. Time: Running i=\$i j=\$j giving runi=\$runi with runn=\$runn\"" >> $thebatch
-		            echo "echo \$textrun" >> $thebatch
-		            echo "sleep 1" >> $thebatch
-		            cmdraw="python $myinitfile1 $runtype $modelname "'$runi $runn'
-		            cmdfull='((nohup $cmdraw 2>&1 1>&3 | tee python_${runi}_${cor}_${runn}.stderr.out) 3>&1 1>&2 | tee python_${runi}_${cor}_${runn}.out) > python_${runi}_${cor}_${runn}.full.out 2>&1'
-		            echo "cmdraw=\"$cmdraw\"" >> $thebatch
-		            echo "cmdfull=\"$cmdfull\"" >> $thebatch
-		            echo "echo \"\$cmdfull\" > torun_$thebatch.\$cor.sh" >> $thebatch
-		            echo "nohup sh torun_$thebatch.\$cor.sh &" >> $thebatch
+			echo "cd $dirname" >> $thebatch
+			echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $thebatch
+			if [ $system -eq 4 ]
+			then
+                            echo "unset MPLCONFIGDIR" >> $thebatch
+			else                        
+                            rm -rf $dirname/matplotlibdir/
+                            echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $thebatch
+			fi
+		        echo "runi=$myruni" >> $thebatch
+		        echo "textrun=\"Data vs. Time: Running i=\$i j=\$j giving runi=\$runi with runn=\$runn\"" >> $thebatch
+		        echo "echo \$textrun" >> $thebatch
+		        echo "sleep 1" >> $thebatch
+		        cmdraw="python $myinitfile1 $runtype $modelname "'$runi $runn'
+		        cmdfull='((nohup $cmdraw 2>&1 1>&3 | tee python_${runi}_${cor}_${runn}.stderr.out) 3>&1 1>&2 | tee python_${runi}_${cor}_${runn}.out) > python_${runi}_${cor}_${runn}.full.out 2>&1'
+		        echo "cmdraw=\"$cmdraw\"" >> $thebatch
+		        echo "cmdfull=\"$cmdfull\"" >> $thebatch
+		        echo "echo \"\$cmdfull\" > torun_$thebatch.\$cor.sh" >> $thebatch
+		        echo "nohup sh torun_$thebatch.\$cor.sh &" >> $thebatch
 	            fi
 
 
-	            #if [ $parallel -ge 1 ]
-		        #then
-		            if [ $dowrite -eq 1 ]
-		            then
-		                echo "done" >> $thebatch
-		            fi
-	            #fi
+		    if [ $dowrite -eq 1 ]
+		    then
+		        echo "done" >> $thebatch
+		    fi
 
 	            if [ $dowrite -eq 1 ]
 		        then
@@ -885,121 +1060,123 @@ then
 	            fi
 	      #
 	            if [ $parallel -eq 0 ]
+		    then
+		        if [ $dowrite -eq 1 ]
 		        then
-		            if [ $dowrite -eq 1 ]
+ 		            if [ $testrun -eq 1 ]
 		            then
- 		                if [ $testrun -eq 1 ]
-		                then
-		                    echo $thebatch
-		                else
-		                    sh ./$thebatch
-		                fi
-                    fi
-	            else
-		            if [ $dowrite -eq 1 ]
-		            then
-    	              # run bsub on batch file
-                        jobcheck=md.$jobsuffix
-		                jobname=$jobprefix.${i}.${jobcheck}
-		                outputfile=$jobname.out
-		                errorfile=$jobname.err
-                        rm -rf $outputfile
-                        rm -rf $errorfile
-                        #
-                        if [ $system -eq 4 ]
-                        then
-		                    bsubcommand="qsub1 -S /bin/bash -A TG-PHY120005 -l mem=${memtot}GB,walltime=$timetot,ncpus=$numcorespernodeeff -q $thequeue -N $jobname -o $outputfile -e $errorfile -M jmckinne@stanford.edu ./$thebatch"
-                        elif [ $system -eq 5 ]
-                        then
-                            superbatch=superbatchfile.$thebatch
-                            rm -rf $superbatch
-                            echo "cd $dirname" >> $superbatch
-                            cat ~/setuppython272 >> $superbatch
-			    echo "source ~/binliblinks" >> $superbatch
-                            echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch
-                            rm -rf $dirname/matplotlibdir/
-                            echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $superbatch
-		                    fakeruni=99999999999999
-                            if [ $parallel -eq 1 ]
-                            then
-                                echo "$apcmd ./$thebatch" >> $superbatch
-                            else
-		                        cmdraw="$makemoviecfullfile $chunklisttype $chunklist $runn $DATADIR $jobcheck $myinitfile1 $runtype $modelname $fakeruni $runn"
-                                echo "$apcmd $cmdraw" >> $superbatch
-				echo "mpdallexit" >> $superbatch
-                            fi
-                            localerrorfile=python_${fakeruni}_${runn}.stderr.out
-                            localoutputfile=python_${fakeruni}_${runn}.out
-                            rm -rf $localerrorfile
-                            rm -rf $localoutputfile
-			    sleep 20
-		            bsubcommand="qsub -S /bin/bash -l select=$numnodesreal:ncpus=12 -l walltime=$timetot -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M mavara@astro.umd.edu -m be ./$superbatch"
-                        else
-                            # probably specifying ptile below is not necessary
-		                    bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernode] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
-                        fi
-                        #
-		                if [ $testrun -eq 1 ]
-			            then
-			                echo $bsubcommand
-		                else
-			                echo $bsubcommand
-			                echo "$bsubcommand" > bsubshtorun_$thebatch
-			                chmod a+x bsubshtorun_$thebatch
-			                sh bsubshtorun_$thebatch
-		                fi
+		                echo $thebatch
+		            else
+		                sh ./$thebatch
 		            fi
+			fi
+	            else
+		        if [ $dowrite -eq 1 ]
+		        then
+    	              # run bsub on batch file
+                            jobcheck=md.$jobsuffix
+		            jobname=$jobprefix.${i}.${jobcheck}
+		            outputfile=$jobname.out
+		            errorfile=$jobname.err
+                            rm -rf $outputfile
+                            rm -rf $errorfile
+                        #
+                            if [ $system -eq 4 ]
+                            then
+		                bsubcommand="qsub1 -S /bin/bash -A TG-PHY120005 -l mem=${memtot}GB,walltime=$timetot,ncpus=$numcorespernodeeff -q $thequeue -N $jobname -o $outputfile -e $errorfile -M jmckinne@stanford.edu ./$thebatch"
+                            elif [ $system -eq 7 ]
+                            then
+				superbatch=superbatchfile.$thebatch
+				rm -rf $superbatch
+				echo "#!/bin/bash" >> $superbatch
+				echo "cd $dirname" >> $superbatch
+			        cat ~/setuppython273 >> $superbatch
+				# echo "source ~/binliblinks" >> $superbatch
+				echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch
+				rm -rf $dirname/matplotlibdir/
+				echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $superbatch
+		                fakeruni=99999999999999
+				if [ $parallel -eq 1 ]
+				then
+                                    echo "$apcmd ./$thebatch" >> $superbatch
+				else
+		                    cmdraw="$makemoviecfullfile $chunklisttype $chunklist $runn $DATADIR $jobcheck $myinitfile1 $runtype $modelname $fakeruni $runn"
+                                    echo "$apcmd $cmdraw" >> $superbatch
+				    echo "mpdallexit" >> $superbatch
+				fi
+				localerrorfile=python_${fakeruni}_${runn}.stderr.out
+				localoutputfile=python_${fakeruni}_${runn}.out
+				rm -rf $localerrorfile
+				rm -rf $localoutputfile
+				sleep 20
+				bsubcommand="sbatch -n $numtotalcores -t $timetot -p $thequeue --job-name=$jobname -o $localoutputfile -e $localerrorfile --mail-user=mavara@astro.umd.edu ./$superbatch"
+                            else
+                            # probably specifying ptile below is not necessary
+		                bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernode] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
+                            fi
+                        #
+		            if [ $testrun -eq 1 ]
+			    then
+			        echo $bsubcommand
+		            else
+			        echo $bsubcommand
+			        echo "$bsubcommand" > bsubshtorun_$thebatch
+			        chmod a+x bsubshtorun_$thebatch
+			        sh bsubshtorun_$thebatch
+		            fi
+		        fi
 	            fi
 
 	      ############# END WITH RUN IN PARALLEL OR NOT
 	      ############################################################
 	            
-	        done
+	    done   #for loop over ilist
 
 	    # waiting game
-	        if [ $parallel -eq 0 ]
-		    then
-		        wait
-	        else
+	    if [ $parallel -eq 0 ]
+	    then
+		wait
+	    else
                 # Wait to move on until all jobs done
-		        totaljobs=$runn
-		        firsttimejobscheck=1
-		        while [ $totaljobs -gt 0 ]
-		        do
+		totaljobs=$runn
+		firsttimejobscheck=1
+		while [ $totaljobs -gt 0 ]
+		do
                     if [ $system -eq 4 ] ||
-                        [ $system -eq 5 ]
+                        [ $system -eq 7 ]
                     then
-		                pendjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep mavara | grep " Q " | wc -l`
-		                runjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep mavara | grep " R " | wc -l`
+		        pendjobs=`squeue -p $thequeue -u mavara -o "%.7i %.9P %.40j %.8u %.2t %.9M %.6D %R" 2>&1 | grep $jobcheck | grep " Q " | wc -l`
+		        runjobs=`squeue -p $thequeue -u mavara -o "%.7i %.9P %.40j %.8u %.2t %.9M %.6D %R" 2>&1 | grep $jobcheck | grep " R " | wc -l`
                     else
-		                pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep PEND | wc -l`
-		                runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep RUN | wc -l`
+		        pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep PEND | wc -l`
+		        runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep RUN | wc -l`
                     fi
-		           totaljobs=$(($pendjobs+$runjobs))
+		    totaljobs=$(($pendjobs+$runjobs))
 		    
-			   if [ $totaljobs -gt 0 ]
-		             then
-		                echo "PEND=$pendjobs RUN=$runjobs TOTAL=$totaljobs ... waiting ..."
-		                sleep 10
+		    if [ $totaljobs -gt 0 ]
+		    then
+		        echo "PEND=$pendjobs RUN=$runjobs TOTAL=$totaljobs ... waiting ..."
+		        sleep 10
                         firsttimejobscheck=0
-		            else
-		                if [ $firsttimejobscheck -eq 1 ]
-			            then
-			                totaljobs=$runn
-			                echo "waiting for jobs to get started..."
-			                sleep 10
-		                else
-			                echo "DONE!"		      
-		                fi
-		            fi
-		        done
-
-	        fi
-
-
-	        echo "Data vs. Time: Ending simultaneous run of $itot jobs for group $j"
+		    else
+		        if [ $firsttimejobscheck -eq 1 ]
+			then
+			    totaljobs=$runn
+			    echo "waiting for jobs to get started..."
+			    sleep 10
+		        else
+			    echo "DONE!"		      
+		        fi
+		    fi
+		done
+		
 	    fi
-    done
+	    
+
+	    echo "Data vs. Time: Ending simultaneous run of $itot jobs for group $j"
+	    fi
+    
+    done # end of for j in numparts
     
     wait
 
@@ -1038,16 +1215,16 @@ then
 
     echo "Merge to single file"
     if [ $testrun -eq 1 ]
-	then
-	    echo "((nohup python $myinitfile2 $runtype $modelname $runn $runn 2>&1 1>&3 | tee python_${runn}_${runn}.stderr.out) 3>&1 1>&2 | tee python_${runn}_${runn}.out) > python_${runn}_${runn}.full.out 2>&1"
+    then
+	echo "((nohup python $myinitfile2 $runtype $modelname $runn $runn 2>&1 1>&3 | tee python_${runn}_${runn}.stderr.out) 3>&1 1>&2 | tee python_${runn}_${runn}.out) > python_${runn}_${runn}.full.out 2>&1"
     else
-	    ((nohup python $myinitfile2 $runtype $modelname $runn $runn 2>&1 1>&3 | tee python_${runn}_${runn}.stderr.out) 3>&1 1>&2 | tee python_${runn}_${runn}.out) > python_${runn}_${runn}.full.out 2>&1
+	((nohup python $myinitfile2 $runtype $modelname $runn $runn 2>&1 1>&3 | tee python_${runn}_${runn}.stderr.out) 3>&1 1>&2 | tee python_${runn}_${runn}.out) > python_${runn}_${runn}.full.out 2>&1
     fi
 
     if [ $rminitfiles -eq 1 ]
-	then
+    then
         # remove created file
-	    rm -rf $myinitfile2
+	rm -rf $myinitfile2
     fi
 
 fi
@@ -1077,8 +1254,8 @@ then
 
     ##########################################################################
     # string "plot" tells script to do plot
-	thebatch="sh1_pythonplot_${numcorespernodeplot}.sh"
-	rm -rf $thebatch
+    thebatch="sh1_pythonplot_${numcorespernodeplot}.sh"
+    rm -rf $thebatch
     echo "cd $dirname" >> $thebatch
     echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $thebatch
     if [ $system -eq 4 ]
@@ -1088,44 +1265,45 @@ then
         rm -rf $dirname/matplotlibdir/
         echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $thebatch
     fi
-	echo "((nohup python $myinitfile3 $runtype $modelname plot $makepowervsmplots $makespacetimeplots $makefftplot $makespecplot $makeinitfinalplot $makethradfinalplot 2>&1 1>&3 | tee python.plot.stderr.out) 3>&1 1>&2 | tee python.plot.out) > python.plot.full.out 2>&1" >> $thebatch
-	echo "wait" >> $thebatch
-	chmod a+x $thebatch
+    echo "((nohup python $myinitfile3 $runtype $modelname plot $makepowervsmplots $makespacetimeplots $makefftplot $makespecplot $makeinitfinalplot $makethradfinalplot 2>&1 1>&3 | tee python.plot.stderr.out) 3>&1 1>&2 | tee python.plot.out) > python.plot.full.out 2>&1" >> $thebatch
+    echo "wait" >> $thebatch
+    chmod a+x $thebatch
 
-	dowrite=1
+    dowrite=1
     #
-	if [ $parallel -eq 0 ]
+    if [ $parallel -eq 0 ]
+    then
+	if [ $dowrite -eq 1 ]
 	then
-		if [ $dowrite -eq 1 ]
-		then
- 		    if [ $testrun -eq 1 ]
-		    then
-		        echo $thebatch
-		    else
-		        sh ./$thebatch
-		    fi
+ 	    if [ $testrun -eq 1 ]
+	    then
+		echo $thebatch
+	    else
+		sh ./$thebatch
+	    fi
         fi
-	else
-		if [ $dowrite -eq 1 ]
-		then
+    else
+	if [ $dowrite -eq 1 ]
+	then
     	              # run bsub on batch file
             jobcheck=pl.$jobsuffix
-		    jobname=$jobprefix.${jobcheck}
-		    outputfile=$jobname.pl.out
-		    errorfile=$jobname.pl.err
+	    jobname=$jobprefix.${jobcheck}
+	    outputfile=$jobname.pl.out
+	    errorfile=$jobname.pl.err
             rm -rf $outputfile
             rm -rf $errorfile
             #
             if [ $system -eq 4 ]
             then
-		        bsubcommand="qsub2 -S /bin/bash -A TG-PHY120005 -l mem=${memtotplot}GB,walltime=$timetotplot,ncpus=$numcorespernodeplot -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
-            elif [ $system -eq 5 ]
+		bsubcommand="qsub2 -S /bin/bash -A TG-PHY120005 -l mem=${memtotplot}GB,walltime=$timetotplot,ncpus=$numcorespernodeplot -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
+            elif [ $system -eq 7 ]
             then
                 superbatch=superbatchfile.$thebatch
                 rm -rf $superbatch
-                echo "cd $dirname" >> $superbatch
-                cat ~/setuppython272 >> $superbatch
-		echo "source ~/binliblinks" >> $superbatch
+                echo "#!/bin/bash" >> $superbatch
+		echo "cd $dirname" >> $superbatch
+                cat ~/setuppython273 >> $superbatch
+		#echo "source ~/binliblinks" >> $superbatch
                 rm -rf $dirname/matplotlibdir/
                 echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $superbatch
                 echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch
@@ -1133,7 +1311,7 @@ then
                 then
                     echo "$apcmdplot ./$thebatch" >> $superbatch
                 else
-		            cmdraw="$makemoviecfullfile $chunklisttypeplot $chunklistplot $runnplot $DATADIR $jobcheck $myinitfile3 $runtype $modelname plot $makepowervsmplots $makespacetimeplots $makefftplot $makespecplot $makeinitfinalplot $makethradfinalplot"
+		    cmdraw="$makemoviecfullfile $chunklisttypeplot $chunklistplot $runnplot $DATADIR $jobcheck $myinitfile3 $runtype $modelname plot $makepowervsmplots $makespacetimeplots $makefftplot $makespecplot $makeinitfinalplot $makethradfinalplot"
                     echo "$apcmdplot $cmdraw" >> $superbatch
 		    echo "mpdallexit" >> $superbatch
                 fi
@@ -1143,66 +1321,66 @@ then
                 rm -rf $localoutputfile
 		sleep 20
                 #
-		bsubcommand="qsub -S /bin/bash -l select=$numnodesplot:ncpus=12 -l walltime=$timetotplot -q $thequeueplot -N $jobname -o $localoutputfile -e $localerrorfile -M mavara@astro.umd.edu -m be ./$superbatch"
+		bsubcommand="sbatch -N $numnodesplot --ntasks-per-node=20 -t $timetotplot -p $thequeueplot --job-name=$jobname -o $localoutputfile -e $localerrorfile --mail-user=mavara@astro.umd.edu ./$superbatch"
             else
                 # probably specifying ptile below is not necessary
-		        bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernodeplot] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
+		bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernodeplot] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
             fi
                 #
-		    if [ $testrun -eq 1 ]
-			then
-			    echo $bsubcommand
-		    else
-			    echo $bsubcommand
-			    echo "$bsubcommand" > bsubshtorun_pl_$thebatch
-			    chmod a+x bsubshtorun_pl_$thebatch
-			    sh bsubshtorun_pl_$thebatch
-		    fi
-		fi
+	    if [ $testrun -eq 1 ]
+	    then
+		echo $bsubcommand
+	    else
+		echo $bsubcommand
+		echo "$bsubcommand" > bsubshtorun_pl_$thebatch
+		chmod a+x bsubshtorun_pl_$thebatch
+		sh bsubshtorun_pl_$thebatch
+	    fi
 	fi
+    fi
 
 
 
     ##########################################################################
     # waiting game
-	if [ $parallel -eq 0 ]
-	then
-		wait
-	else
+    if [ $parallel -eq 0 ]
+    then
+	wait
+    else
                 # Wait to move on until all jobs done
-		totaljobs=1
-		firsttimejobscheck=1
-		while [ $totaljobs -gt 0 ]
-		do
+	totaljobs=1
+	firsttimejobscheck=1
+	while [ $totaljobs -gt 0 ]
+	do
             if [ $system -eq 4 ] ||
-                [ $system -eq 5 ]
+                [ $system -eq 7 ]
             then
-		        pendjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep mavara | grep " Q " | wc -l`
-		        runjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep mavara | grep " R " | wc -l`
+		pendjobs=`squeue -p $thequeue -u mavara -o "%.7i %.9P %.40j %.8u %.2t %.9M %.6D %R" 2>&1 | grep $jobcheck | grep mavara | grep " Q " | wc -l`
+		runjobs=`squeue -p $thequeue -u mavara -o "%.7i %.9P %.40j %.8u %.2t %.9M %.6D %R" 2>&1 | grep $jobcheck | grep mavara | grep " R " | wc -l`
             else
-		        pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep PEND | wc -l`
-		        runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep RUN | wc -l`
+		pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep PEND | wc -l`
+		runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep RUN | wc -l`
             fi
-		    totaljobs=$(($pendjobs+$runjobs))
-		    
-		    if [ $totaljobs -gt 0 ]
-		    then
-		        echo "PEND=$pendjobs RUN=$runjobs TOTAL=$totaljobs ... waiting ..."
-		        sleep 10
+	    totaljobs=$(($pendjobs+$runjobs))
+	    
+	    if [ $totaljobs -gt 0 ]
+	    then
+		echo "PEND=$pendjobs RUN=$runjobs TOTAL=$totaljobs ... waiting ..."
+		sleep 10
                 firsttimejobscheck=0
-		    else
-		        if [ $firsttimejobscheck -eq 1 ]
-			    then
-			        totaljobs=1
-			        echo "waiting for jobs to get started..."
-			        sleep 10
-		        else
-			        echo "DONE!"		      
-		        fi
-		    fi
-		done
+	    else
+		if [ $firsttimejobscheck -eq 1 ]
+		then
+		    totaljobs=1
+		    echo "waiting for jobs to get started..."
+		    sleep 10
+		else
+		    echo "DONE!"		      
+		fi
+	    fi
+	done
         
-	fi
+    fi
     
     wait
     ##########################################################################
@@ -1236,9 +1414,9 @@ then
 
 
     if [ $rminitfiles -eq 1 ]
-	then
+    then
         # remove created file
-	    rm -rf $myinitfile3
+	rm -rf $myinitfile3
     fi
 
 fi
@@ -1306,78 +1484,67 @@ then
     do
 
 
-	    if [ $j -eq $numparts ]
+	if [ $j -eq $numparts ]
+	then
+	    if [ $resid -gt 0 ]
 	    then
-	        if [ $resid -gt 0 ]
-	        then
-		        residie=$(( $resid - 1 ))
-		        ilist=`seq 0 $residie`
-		        doilist=1
-	        else
-		        doilist=0
-	        fi
+		residie=$(( $resid - 1 ))
+		ilist=`seq 0 $residie`
+		doilist=1
 	    else
-	        ilist=`seq 0 $ie`
-	        doilist=1
+		doilist=0
 	    fi
+	else
+	    ilist=`seq 0 $ie`
+	    doilist=1
+	fi
 
-	    if [ $doilist -eq 1 ]
-	    then
-	        echo "Movie Frames: Starting simultaneous run of $itot jobs for group $j"
-	        for i in $ilist
-	        do
+	if [ $doilist -eq 1 ]
+	then
+	    echo "Movie Frames: Starting simultaneous run of $itot jobs for group $j"
+	    for i in $ilist
+	    do
 
 	      ############################################################
 	      ############# BEGIN WITH RUN IN PARALLEL OR NOT
 
               # for parallel -ge 1, do every numcorespernode starting with i=0
-	            modi=$(($i % $numcorespernode))
+	        modi=$(($i % $numcorespernode))
 
-	            dowrite=0
-	            #if [ $parallel -eq 0 ]
-		        #then
-		        #    dowrite=1
-	            #else
-		            if [ $modi -eq 0 ]
-		            then
-		                dowrite=1
-		            fi
-	            #fi
+	        dowrite=0
+		if [ $modi -eq 0 ]
+		then
+		    dowrite=1
+		fi
 
-	            if [ $dowrite -eq 1 ]
-		        then
+	        if [ $dowrite -eq 1 ]
+		then
                   # create script to be run
-		            thebatch="sh4_python_${i}_${numcorespernode}_${runn}.sh"
-		            rm -rf $thebatch
-		            echo "j=$j" >> $thebatch
-		            echo "itot=$itot" >> $thebatch
-		            echo "i=$i" >> $thebatch
-		            echo "runn=$runn" >> $thebatch
-		            echo "itemspergroup=$itemspergroup" >> $thebatch
-		            echo "numcorespernode=$numcorespernode" >> $thebatch
-	            fi
-	            
-	            #if [ $parallel -eq 0 ]
-		        #then
-		        #    myruni='$(( $i + $itot * $j ))'
-		        #    echo "cor=0" >> $thebatch
-	            #else
-		            echo "i=$i numcorespernode=$numcorespernode modi=$modi"
-		            if [ $modi -eq 0 ]
-		            then
- 		                myruni='$(( $cor - 1 + $i + $itot * $j ))'
-		                myseq='`seq 1 $numcorespernode`'
-		                if [ $dowrite -eq 1 ]
-			            then
-			                echo "for cor in $myseq" >> $thebatch
-			                echo "do" >> $thebatch
-		                fi
-		            fi
-	            #fi
+		    thebatch="sh4_python_${i}_${numcorespernode}_${runn}.sh"
+		    rm -rf $thebatch
+		    echo "j=$j" >> $thebatch
+		    echo "itot=$itot" >> $thebatch
+		    echo "i=$i" >> $thebatch
+		    echo "runn=$runn" >> $thebatch
+		    echo "itemspergroup=$itemspergroup" >> $thebatch
+		    echo "numcorespernode=$numcorespernode" >> $thebatch
+	        fi
+	        
+		echo "i=$i numcorespernode=$numcorespernode modi=$modi"
+		if [ $modi -eq 0 ]
+		then
+ 		    myruni='$(( $cor - 1 + $i + $itot * $j ))'
+		    myseq='`seq 1 $numcorespernode`'
+		    if [ $dowrite -eq 1 ]
+		    then
+			echo "for cor in $myseq" >> $thebatch
+			echo "do" >> $thebatch
+		    fi
+		fi
 
-	            
-	            if [ $dowrite -eq 1 ]
-		        then
+	        
+	        if [ $dowrite -eq 1 ]
+		then
                     echo "cd $dirname" >> $thebatch
                     echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $thebatch
                     if [ $system -eq 4 ]
@@ -1387,156 +1554,154 @@ then
                         rm -rf $dirname/matplotlibdir/
                         echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $thebatch
                     fi
-		            echo "runi=$myruni" >> $thebatch
-		            echo "textrun=\"Movie Frames vs. Time: Running i=\$i j=\$j giving runi=\$runi with runn=\$runn\"" >> $thebatch
-		            echo "echo \$textrun" >> $thebatch
-		            echo "sleep 1" >> $thebatch
-		            cmdraw="python $myinitfile4 $runtype $modelname "'$runi $runn'
-		            cmdfull='((nohup $cmdraw 2>&1 1>&3 | tee python_${runi}_${cor}_${runn}.stderr.movieframes.out) 3>&1 1>&2 | tee python_${runi}_${cor}_${runn}.movieframes.out) > python_${runi}_${cor}_${runn}.full.movieframes.out 2>&1'
-		            echo "cmdraw=\"$cmdraw\"" >> $thebatch
-		            echo "cmdfull=\"$cmdfull\"" >> $thebatch
-		            echo "echo \"\$cmdfull\" > torun_$thebatch.\$cor.sh" >> $thebatch
-		            echo "nohup sh torun_$thebatch.\$cor.sh &" >> $thebatch
-	            fi
+		    echo "runi=$myruni" >> $thebatch
+		    echo "textrun=\"Movie Frames vs. Time: Running i=\$i j=\$j giving runi=\$runi with runn=\$runn\"" >> $thebatch
+		    echo "echo \$textrun" >> $thebatch
+		    echo "sleep 1" >> $thebatch
+		    cmdraw="python $myinitfile4 $runtype $modelname "'$runi $runn'
+		    cmdfull='((nohup $cmdraw 2>&1 1>&3 | tee python_${runi}_${cor}_${runn}.stderr.movieframes.out) 3>&1 1>&2 | tee python_${runi}_${cor}_${runn}.movieframes.out) > python_${runi}_${cor}_${runn}.full.movieframes.out 2>&1'
+		    echo "cmdraw=\"$cmdraw\"" >> $thebatch
+		    echo "cmdfull=\"$cmdfull\"" >> $thebatch
+		    echo "echo \"\$cmdfull\" > torun_$thebatch.\$cor.sh" >> $thebatch
+		    echo "nohup sh torun_$thebatch.\$cor.sh &" >> $thebatch
+	        fi
 
 
-	            #if [ $parallel -ge 1 ]
-		        #then
-		            if [ $dowrite -eq 1 ]
-		            then
-		                echo "done" >> $thebatch
-		            fi
-	            #fi
-
-	            if [ $dowrite -eq 1 ]
-		        then
-		            echo "wait" >> $thebatch
-		            chmod a+x $thebatch
-	            fi
+	       	if [ $dowrite -eq 1 ]
+		then
+		    echo "done" >> $thebatch
+		fi
+	        
+	        if [ $dowrite -eq 1 ]
+		then
+		    echo "wait" >> $thebatch
+		    chmod a+x $thebatch
+	        fi
 	      #
-	            if [ $parallel -eq 0 ]
+	        if [ $parallel -eq 0 ]
+		then
+		    if [ $dowrite -eq 1 ]
+		    then
+		        if [ $testrun -eq 1 ]
 		        then
-		            if [ $dowrite -eq 1 ]
-		            then
-		                if [ $testrun -eq 1 ]
-		                then
-		                    echo $thebatch
-		                else
-		                    echo $thebatch
-		                    sh ./$thebatch
-		                fi
+		            echo $thebatch
+		        else
+		            echo $thebatch
+		            sh ./$thebatch
+		        fi
                     fi
-	            else
-		            if [ $dowrite -eq 1 ]
-		            then
+	        else
+		    if [ $dowrite -eq 1 ]
+		    then
     	              # run bsub on batch file
                         jobcheck=mv.$jobsuffix
-		                jobname=$jobprefix.${i}.${jobcheck}
-		                outputfile=$jobname.out
-		                errorfile=$jobname.err
+		        jobname=$jobprefix.${i}.${jobcheck}
+		        outputfile=$jobname.out
+		        errorfile=$jobname.err
                         rm -rf $outputfile
                         rm -rf $errorfile
                         #
                         if [ $system -eq 4 ]
                         then
-		                    bsubcommand="qsub3 -S /bin/bash -A TG-PHY120005 -l mem=${memtot}GB,walltime=$timetot,ncpus=$numcorespernodeeff -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
-                        elif [ $system -eq 5 ]
+		            bsubcommand="qsub3 -S /bin/bash -A TG-PHY120005 -l mem=${memtot}GB,walltime=$timetot,ncpus=$numcorespernodeeff -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
+                        elif [ $system -eq 7 ]
                         then
                             superbatch=superbatchfile.$thebatch
                             rm -rf $superbatch
+			    echo "#!/bin/bash" >> $superbatch
                             echo "cd $dirname" >> $superbatch
-                            cat ~/setuppython272 >> $superbatch
-			    echo  "source ~/binliblinks" >> $superbatch
+                            cat ~/setuppython273 >> $superbatch
+			    #echo  "source ~/binliblinks" >> $superbatch
                             rm -rf $dirname/matplotlibdir/
                             echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $superbatch
                             echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch
-		                    fakeruni=99999999999999
+		            fakeruni=99999999999999
                             if [ $parallel -eq 1 ]
                             then
                                 echo "$apcmd ./$thebatch" >> $superbatch
                             else
-		                        cmdraw="$makemoviecfullfile $chunklisttype $chunklist $runn $DATADIR $jobcheck $myinitfile4 $runtype $modelname $fakeruni $runn"
+		                cmdraw="$makemoviecfullfile $chunklisttype $chunklist $runn $DATADIR $jobcheck $myinitfile4 $runtype $modelname $fakeruni $runn"
                                 echo "$apcmd $cmdraw" >> $superbatch
 				echo "mpdallexit" >> $superbatch
                             fi
-		                    localerrorfile=python_${fakeruni}_${runn}.stderr.movieframes.out
+		            localerrorfile=python_${fakeruni}_${runn}.stderr.movieframes.out
                             localoutputfile=python_${fakeruni}_${runn}.movieframes.out
                             rm -rf $localerrorfile
                             rm -rf $localoutputfile
 			    sleep 20
                             #
-		                    bsubcommand="qsub  -S /bin/bash -l select=$numnodesreal:ncpus=12 -l walltime=$timetot -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M mavara@astro.umd.edu -m be ./$superbatch"
+		            bsubcommand="sbatch -n $numtotalcores -t $timetot -p $thequeue --job-name=$jobname -o $localoutputfile -e $localerrorfile --mail-user=mavara@astro.umd.edu ./$superbatch"
                         else
                             # probably specifying ptile below is not necessary
-		                    bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernode] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
+		            bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernode] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
                         fi
                         #
-		                if [ $testrun -eq 1 ]
-			            then
-			                echo $bsubcommand
-		                else
-			                echo $bsubcommand
-			                echo "$bsubcommand" > bsubshtorun_$thebatch
-			                chmod a+x bsubshtorun_$thebatch
-			                sh bsubshtorun_$thebatch
-		                fi
-		            fi
-	            fi
+		        if [ $testrun -eq 1 ]
+			then
+			    echo $bsubcommand
+		        else
+			    echo $bsubcommand
+			    echo "$bsubcommand" > bsubshtorun_$thebatch
+			    chmod a+x bsubshtorun_$thebatch
+			    sh bsubshtorun_$thebatch
+		        fi
+		    fi
+	        fi
 
 	      ############# END WITH RUN IN PARALLEL OR NOT
 	      ############################################################
 
-	        done
+	    done
 
 	    # waiting game
-	        if [ $parallel -eq 0 ]
-		    then
-		        wait
-	        else
+	    if [ $parallel -eq 0 ]
+	    then
+		wait
+	    else
                 # Wait to move on until all jobs done
-		        totaljobs=$runn
-		        firsttimejobscheck=1
-		        while [ $totaljobs -gt 0 ]
-		        do
+		totaljobs=$runn
+		firsttimejobscheck=1
+		while [ $totaljobs -gt 0 ]
+		do
                     if [ $system -eq 4 ] ||
-                        [ $system -eq 5 ]
+                        [ $system -eq 7 ]
                     then
-		                pendjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep mavara | grep " Q " | wc -l`
-		                runjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep mavara | grep " R " | wc -l`
+		        pendjobs=`squeue -p $thequeue -u mavara -o "%.7i %.9P %.40j %.8u %.2t %.9M %.6D %R" 2>&1 | grep $jobcheck | grep mavara | grep " Q " | wc -l`
+		        runjobs=`squeue -p $thequeue -u mavara -o "%.7i %.9P %.40j %.8u %.2t %.9M %.6D %R" 2>&1 | grep $jobcheck | grep mavara | grep " R " | wc -l`
                     else
-		                pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep PEND | wc -l`
-		                runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep RUN | wc -l`
+		        pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep PEND | wc -l`
+		        runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep RUN | wc -l`
                     fi
-		            totaljobs=$(($pendjobs+$runjobs))
-		            
-		            if [ $totaljobs -gt 0 ]
-		            then
-		                echo "PEND=$pendjobs RUN=$runjobs TOTAL=$totaljobs ... waiting ..."
-		                sleep 10
+		    totaljobs=$(($pendjobs+$runjobs))
+		    
+		    if [ $totaljobs -gt 0 ]
+		    then
+		        echo "PEND=$pendjobs RUN=$runjobs TOTAL=$totaljobs ... waiting ..."
+		        sleep 10
                         firsttimejobscheck=0
-		            else
-		                if [ $firsttimejobscheck -eq 1 ]
-			            then
-			                totaljobs=$runn
-			                echo "waiting for jobs to get started..."
-			                sleep 10
-		                else
-			                echo "DONE!"		      
-		                fi
-		            fi
-		        done
+		    else
+		        if [ $firsttimejobscheck -eq 1 ]
+			then
+			    totaljobs=$runn
+			    echo "waiting for jobs to get started..."
+			    sleep 10
+		        else
+			    echo "DONE!"		      
+		        fi
+		    fi
+		done
 
-	        fi
-
-	        echo "Movie Frames: Ending simultaneous run of $itot jobs for group $j"
 	    fi
+
+	    echo "Movie Frames: Ending simultaneous run of $itot jobs for group $j"
+	fi
     done
     
     
     if [ $rminitfiles -eq 1 ]
-	then
+    then
         # remove created file
-	    rm -rf $myinitfile4
+	rm -rf $myinitfile4
     fi
     
 fi
@@ -1669,23 +1834,23 @@ then
     for j in `seq 0 $numparts`
     do
 
-	    if [ $j -eq $numparts ]
+	if [ $j -eq $numparts ]
+	then
+	    if [ $resid -gt 0 ]
 	    then
-	        if [ $resid -gt 0 ]
-	        then
-		        residie=$(( $resid - 1 ))
-		        ilist=`seq 0 $residie`
-		        doilist=1
-	        else
-		        doilist=0
-	        fi
+		residie=$(( $resid - 1 ))
+		ilist=`seq 0 $residie`
+		doilist=1
 	    else
-	        ilist=`seq 0 $ie`
-	        doilist=1
+		doilist=0
 	    fi
+	else
+	    ilist=`seq 0 $ie`
+	    doilist=1
+	fi
 
-	    if [ $doilist -eq 1 ]
-	    then
+	if [ $doilist -eq 1 ]
+	then
             echo "Data vs. Time: Starting simultaneous run of $itot jobs for group $j"
             for i in $ilist
             do
@@ -1700,53 +1865,44 @@ then
 	      ############# BEGIN WITH RUN IN PARALLEL OR NOT
 
               # for parallel -ge 1, do every numcorespernode starting with i=0
-	            modi=$(($i % $numcorespernode))
+	        modi=$(($i % $numcorespernode))
 
-	            dowrite=0
-	            #if [ $parallel -eq 0 ]
-		        #then
-		        #    dowrite=1
-	            #else
-		            if [ $modi -eq 0 ]
-		            then
-		                dowrite=1
-		            fi
-	            #fi
+	        dowrite=0
+		if [ $modi -eq 0 ]
+		then
+		    dowrite=1
+		fi
+	        
 
-	            if [ $dowrite -eq 1 ] #only happens at first core on each node
-		        then
+	        if [ $dowrite -eq 1 ] #only happens at first core on each node
+		then
                   # create script to be run
-		            thebatch="sh5_python_${i}_${numcorespernode}_${runn}.sh"
-		            rm -rf $thebatch
-		            echo "j=$j" >> $thebatch
-		            echo "itot=$itot" >> $thebatch
-		            echo "i=$i" >> $thebatch
-		            echo "runn=$runn" >> $thebatch
-		            echo "itemspergroup=$itemspergroup" >> $thebatch
-		            echo "numcorespernode=$numcorespernode" >> $thebatch
-	            fi
-	            
-	            #if [ $parallel -eq 0 ]
-		        #then
-		        #    myruni='$(( $i + $itot * $j ))'
-		        #    echo "cor=0" >> $thebatch
-	            #else
-		            echo "i=$i numcorespernode=$numcorespernode modi=$modi"
-		            if [ $modi -eq 0 ]
-		            then
- 		                myruni='$(( $cor - 1 + $i + $itot * $j ))'
-		                myseq='`seq 1 $numcorespernode`'
-		                if [ $dowrite -eq 1 ]
-			            then
-			                echo "for cor in $myseq" >> $thebatch
-			                echo "do" >> $thebatch
-		                fi
-		            fi
+		    thebatch="sh5_python_${i}_${numcorespernode}_${runn}.sh"
+		    rm -rf $thebatch
+		    echo "j=$j" >> $thebatch
+		    echo "itot=$itot" >> $thebatch
+		    echo "i=$i" >> $thebatch
+		    echo "runn=$runn" >> $thebatch
+		    echo "itemspergroup=$itemspergroup" >> $thebatch
+		    echo "numcorespernode=$numcorespernode" >> $thebatch
+	        fi
+	        
+		echo "i=$i numcorespernode=$numcorespernode modi=$modi"
+		if [ $modi -eq 0 ]
+		then
+ 		    myruni='$(( $cor - 1 + $i + $itot * $j ))'
+		    myseq='`seq 1 $numcorespernode`'
+		    if [ $dowrite -eq 1 ]
+		    then
+			echo "for cor in $myseq" >> $thebatch
+			echo "do" >> $thebatch
+		    fi
+		fi
 	            #fi
 
-	            
-	            if [ $dowrite -eq 1 ]
-		        then
+	        
+	        if [ $dowrite -eq 1 ]
+		then
                     echo "cd $dirname" >> $thebatch
                     echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $thebatch
                     if [ $system -eq 4 ]
@@ -1756,66 +1912,67 @@ then
                         rm -rf $dirname/matplotlibdir/
                         echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $thebatch
                     fi
-		            echo "runi=$myruni" >> $thebatch
-		            echo "textrun=\"Avg Data vs. Time: Running i=\$i j=\$j giving runi=\$runi with runn=\$runn\"" >> $thebatch
-		            echo "echo \$textrun" >> $thebatch
-		            echo "sleep 1" >> $thebatch
-		            cmdraw="python $myinitfile5 $runtype $modelname "'$runi $runn $itemspergroup'
-		            cmdfull='((nohup $cmdraw 2>&1 1>&3 | tee python_${runi}_${cor}_${runn}.stderr.avg.out) 3>&1 1>&2 | tee python_${runi}_${cor}_${runn}.avg.out) > python_${runi}_${cor}_${runn}.full.avg.out 2>&1'
-		            echo "cmdraw=\"$cmdraw\"" >> $thebatch
-		            echo "cmdfull=\"$cmdfull\"" >> $thebatch
-		            echo "echo \"\$cmdfull\" > torun_$thebatch.\$cor.sh" >> $thebatch
-		            echo "sh torun_$thebatch.\$cor.sh &" >> $thebatch
-	            fi
+		    echo "runi=$myruni" >> $thebatch
+		    echo "textrun=\"Avg Data vs. Time: Running i=\$i j=\$j giving runi=\$runi with runn=\$runn\"" >> $thebatch
+		    echo "echo \$textrun" >> $thebatch
+		    echo "sleep 1" >> $thebatch
+		    cmdraw="python $myinitfile5 $runtype $modelname "'$runi $runn $itemspergroup'
+		    cmdfull='((nohup $cmdraw 2>&1 1>&3 | tee python_${runi}_${cor}_${runn}.stderr.avg.out) 3>&1 1>&2 | tee python_${runi}_${cor}_${runn}.avg.out) > python_${runi}_${cor}_${runn}.full.avg.out 2>&1'
+		    echo "cmdraw=\"$cmdraw\"" >> $thebatch
+		    echo "cmdfull=\"$cmdfull\"" >> $thebatch
+		    echo "echo \"\$cmdfull\" > torun_$thebatch.\$cor.sh" >> $thebatch
+		    echo "sh torun_$thebatch.\$cor.sh &" >> $thebatch
+	        fi
 
 
 	            #if [ $parallel -ge 1 ]
 		        #then
-		            if [ $dowrite -eq 1 ]
-		            then
-		                echo "done" >> $thebatch
-		            fi
+		if [ $dowrite -eq 1 ]
+		then
+		    echo "done" >> $thebatch
+		fi
 	            #fi
 
-	            if [ $dowrite -eq 1 ]
-		        then
-		            echo "wait" >> $thebatch
-		            chmod a+x $thebatch
-	            fi
+	        if [ $dowrite -eq 1 ]
+		then
+		    echo "wait" >> $thebatch
+		    chmod a+x $thebatch
+	        fi
 	      #
-	            if [ $parallel -eq 0 ]
+	        if [ $parallel -eq 0 ]
+		then
+		    if [ $dowrite -eq 1 ]
+		    then
+		        if [ $testrun -eq 1 ]
 		        then
-		            if [ $dowrite -eq 1 ]
-		            then
-		                if [ $testrun -eq 1 ]
-		                then
-		                    echo $thebatch
-		                else
-		                    echo $thebatch
-		                    sh ./$thebatch
-		                fi
+		            echo $thebatch
+		        else
+		            echo $thebatch
+		            sh ./$thebatch
+		        fi
                     fi
-	            else
-		            if [ $dowrite -eq 1 ]
-		            then
+	        else
+		    if [ $dowrite -eq 1 ]
+		    then
     	              # run bsub on batch file
                         jobcheck=ma.$jobsuffix
-		                jobname=$jobprefix.${i}.${jobcheck}
-		                outputfile=$jobname.out
-		                errorfile=$jobname.err
+		        jobname=$jobprefix.${i}.${jobcheck}
+		        outputfile=$jobname.out
+		        errorfile=$jobname.err
                         rm -rf $outputfile
                         rm -rf $errorfile
                         #
                         if [ $system -eq 4 ]
                         then
-		                    bsubcommand="qsub4 -S /bin/bash -A TG-PHY120005 -l mem=${memtot}GB,walltime=$timetot,ncpus=$numcorespernodeeff -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
-                        elif [ $system -eq 5 ]
+		            bsubcommand="qsub4 -S /bin/bash -A TG-PHY120005 -l mem=${memtot}GB,walltime=$timetot,ncpus=$numcorespernodeeff -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
+                        elif [ $system -eq 7 ]
                         then
                             superbatch=superbatchfile.$thebatch
                             rm -rf $superbatch
+			    echo "#!/bin/bash" >> $superbatch
                             echo "cd $dirname" >> $superbatch
-                            cat ~/setuppython272 >> $superbatch
-			    echo "source ~/binliblinks" >> $superbatch
+                            cat ~/setuppython273 >> $superbatch
+			    #echo "source ~/binliblinks" >> $superbatch
                             rm -rf $dirname/matplotlibdir/
                             echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $superbatch
                             echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch
@@ -1834,82 +1991,82 @@ then
                             rm -rf $localoutputfile
 			    sleep 20
                             #
-		            bsubcommand="qsub  -S /bin/bash -l select=$numnodesreal:ncpus=12 -l walltime=$timetot -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M mavara@astro.umd.edu -m be ./$superbatch"
+		            bsubcommand="sbatch -n $numtotalcores -t $timetot -p $thequeue --job-name=$jobname -o $localoutputfile -e $localerrorfile --mail-user=mavara@astro.umd.edu ./$superbatch"
                         else
                             # probably specifying ptile below is not necessary
 		            bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernode] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
                         fi
                         #
-		                if [ $testrun -eq 1 ]
-			            then
-			                echo $bsubcommand
-		                else
-			                echo $bsubcommand
-			                echo "$bsubcommand" > bsubshtorun_$thebatch
-			                chmod a+x bsubshtorun_$thebatch
-			                sh bsubshtorun_$thebatch
-		                fi
-		            fi
-	            fi
+		        if [ $testrun -eq 1 ]
+			then
+			    echo $bsubcommand
+		        else
+			    echo $bsubcommand
+			    echo "$bsubcommand" > bsubshtorun_$thebatch
+			    chmod a+x bsubshtorun_$thebatch
+			    sh bsubshtorun_$thebatch
+		        fi
+		    fi
+	        fi
 
 	      ############# END WITH RUN IN PARALLEL OR NOT
 	      ############################################################
 
 
-	        done
+	    done
 
 
 	    # waiting game
-	        if [ $parallel -eq 0 ]
-		    then
-		        wait
-	        else
+	    if [ $parallel -eq 0 ]
+	    then
+		wait
+	    else
                 # Wait to move on until all jobs done
-		        totaljobs=$runn
-		        firsttimejobscheck=1
-		        while [ $totaljobs -gt 0 ]
-		        do
+		totaljobs=$runn
+		firsttimejobscheck=1
+		while [ $totaljobs -gt 0 ]
+		do
                     if [ $system -eq 4 ] ||
-                        [ $system -eq 5 ]
+                        [ $system -eq 7 ]
                     then
-		                pendjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep mavara | grep " Q " | wc -l`
-		                runjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep mavara | grep " R " | wc -l`
+		        pendjobs=`squeue -p $thequeue -u mavara -o "%.7i %.9P %.40j %.8u %.2t %.9M %.6D %R" 2>&1 | grep $jobcheck | grep mavara | grep " Q " | wc -l`
+		        runjobs=`squeue -p $thequeue -u mavara -o "%.7i %.9P %.40j %.8u %.2t %.9M %.6D %R" 2>&1 | grep $jobcheck | grep mavara | grep " R " | wc -l`
                     else
-		                pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep PEND | wc -l`
-		                runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep RUN | wc -l`
+		        pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep PEND | wc -l`
+		        runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep RUN | wc -l`
                     fi
                     #
-		            totaljobs=$(($pendjobs+$runjobs))
-		            
-		            if [ $totaljobs -gt 0 ]
-		            then
-		                echo "PEND=$pendjobs RUN=$runjobs TOTAL=$totaljobs ... waiting ..."
-		                sleep 10
-		                firsttimejobscheck=0
-		            else
-		                if [ $firsttimejobscheck -eq 1 ]
-			            then
-			                totaljobs=$runn
-			                echo "waiting for jobs to get started..."
-			                sleep 10
-		                else
-			                echo "DONE!"		      
-		                fi
-		            fi
-		        done
+		    totaljobs=$(($pendjobs+$runjobs))
+		    
+		    if [ $totaljobs -gt 0 ]
+		    then
+		        echo "PEND=$pendjobs RUN=$runjobs TOTAL=$totaljobs ... waiting ..."
+		        sleep 10
+		        firsttimejobscheck=0
+		    else
+		        if [ $firsttimejobscheck -eq 1 ]
+			then
+			    totaljobs=$runn
+			    echo "waiting for jobs to get started..."
+			    sleep 10
+		        else
+			    echo "DONE!"		      
+		        fi
+		    fi
+		done
 
-	        fi
-
-	        echo "Data vs. Time: Ending simultaneous run of $itot jobs for group $j"
 	    fi
+
+	    echo "Data vs. Time: Ending simultaneous run of $itot jobs for group $j"
+	fi
     done
     
     wait
 
     if [ $rminitfiles -eq 1 ]
-	then
+    then
         # remove created file
-	    rm -rf $myinitfile5
+	rm -rf $myinitfile5
     fi
 
 fi
@@ -1997,14 +2154,14 @@ then
 
 
 
-	
+    
 
 
 
 
     # string "plot" tells script to do plot
-	thebatch="sh1_pythonplot.avg_${numcorespernodeplot}.sh"
-	rm -rf $thebatch
+    thebatch="sh1_pythonplot.avg_${numcorespernodeplot}.sh"
+    rm -rf $thebatch
     echo "cd $dirname" >> $thebatch
     echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $thebatch
     if [ $system -eq 4 ]
@@ -2014,45 +2171,46 @@ then
         rm -rf $dirname/matplotlibdir/
         echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $thebatch
     fi
-	echo "((nohup python $myinitfile7 $runtype $modelname 2>&1 1>&3 | tee python.plot.avg.stderr.out) 3>&1 1>&2 | tee python.plot.avg.out) > python.plot.avg.full.out 2>&1" >> $thebatch
-	echo "wait" >> $thebatch
-	chmod a+x $thebatch
+    echo "((nohup python $myinitfile7 $runtype $modelname 2>&1 1>&3 | tee python.plot.avg.stderr.out) 3>&1 1>&2 | tee python.plot.avg.out) > python.plot.avg.full.out 2>&1" >> $thebatch
+    echo "wait" >> $thebatch
+    chmod a+x $thebatch
 
 
-	dowrite=1
+    dowrite=1
     #
-	if [ $parallel -eq 0 ]
+    if [ $parallel -eq 0 ]
+    then
+	if [ $dowrite -eq 1 ]
 	then
-		if [ $dowrite -eq 1 ]
-		then
- 		    if [ $testrun -eq 1 ]
-		    then
-		        echo $thebatch
-		    else
-		        sh ./$thebatch
-		    fi
+ 	    if [ $testrun -eq 1 ]
+	    then
+		echo $thebatch
+	    else
+		sh ./$thebatch
+	    fi
         fi
-	else
-		if [ $dowrite -eq 1 ]
-		then
+    else
+	if [ $dowrite -eq 1 ]
+	then
     	              # run bsub on batch file
             jobcheck=pa.$jobsuffix
-		    jobname=$jobprefix.${jobcheck}
-		    outputfile=$jobname.pa.out
-		    errorfile=$jobname.pa.err
+	    jobname=$jobprefix.${jobcheck}
+	    outputfile=$jobname.pa.out
+	    errorfile=$jobname.pa.err
             rm -rf $outputfile
             rm -rf $errorfile
             #
             if [ $system -eq 4 ]
             then
-		        bsubcommand="qsub5 -S /bin/bash -A TG-PHY120005 -l mem=${memtotplot}GB,walltime=$timetotplot,ncpus=$numcorespernodeplot -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
-            elif [ $system -eq 5 ]
+		bsubcommand="qsub5 -S /bin/bash -A TG-PHY120005 -l mem=${memtotplot}GB,walltime=$timetotplot,ncpus=$numcorespernodeplot -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
+            elif [ $system -eq 7 ]
             then
                 superbatch=superbatchfile.$thebatch
                 rm -rf $superbatch
+		echo "#!/bin/bash" >> $superbatch
                 echo "cd $dirname" >> $superbatch
-                cat ~/setuppython272 >> $superbatch
-		echo "source ~/binliblinks" >> $superbatch
+                cat ~/setuppython273 >> $superbatch
+		#echo "source ~/binliblinks" >> $superbatch
                 rm -rf $dirname/matplotlibdir/
                 echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $superbatch
                 echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch
@@ -2060,7 +2218,7 @@ then
                 then
                     echo "$apcmdplot ./$thebatch" >> $superbatch
                 else
-		            cmdraw="$makemoviecfullfile $chunklisttypeplot $chunklistplot $runnplot $DATADIR $jobcheck $myinitfile7 $runtype $modelname"
+		    cmdraw="$makemoviecfullfile $chunklisttypeplot $chunklistplot $runnplot $DATADIR $jobcheck $myinitfile7 $runtype $modelname"
                     echo "$apcmdplot $cmdraw" >> $superbatch
 		    echo "mpdallexit" >> $superbatch
                 fi
@@ -2070,65 +2228,65 @@ then
                 rm -rf $localoutputfile
 		sleep 20
                 # 
-		        bsubcommand="qsub -S /bin/bash -l select=$numnodesplot:ncpus=12 -l walltime=$timetotplot -q $thequeueplot -N $jobname -o $localoutputfile -e $localerrorfile -M mavara@astro.umd.edu -m be ./$superbatch"
+		bsubcommand="sbatch -N $numnodesplot --ntasks-per-node=20 -t $timetotplot -p $thequeueplot --job-name=$jobname -o $localoutputfile -e $localerrorfile --mail-user=mavara@astro.umd.edu ./$superbatch"
             else
                     # probably specifying ptile below is not necessary
-		        bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernodeplot] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
+		bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernodeplot] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
             fi
                 #
-		    if [ $testrun -eq 1 ]
-			then
-			    echo $bsubcommand
-		    else
-			    echo $bsubcommand
-			    echo "$bsubcommand" > bsubshtorun_pl.avg_$thebatch
-			    chmod a+x bsubshtorun_pl.avg_$thebatch
-			    sh bsubshtorun_pl.avg_$thebatch
-		    fi
-		fi
+	    if [ $testrun -eq 1 ]
+	    then
+		echo $bsubcommand
+	    else
+		echo $bsubcommand
+		echo "$bsubcommand" > bsubshtorun_pl.avg_$thebatch
+		chmod a+x bsubshtorun_pl.avg_$thebatch
+		sh bsubshtorun_pl.avg_$thebatch
+	    fi
 	fi
+    fi
     
 
     ##########################################################################
     # waiting game
-	if [ $parallel -eq 0 ]
-	then
-		wait
-	else
+    if [ $parallel -eq 0 ]
+    then
+	wait
+    else
                 # Wait to move on until all jobs done
-		totaljobs=1
-		firsttimejobscheck=1
-		while [ $totaljobs -gt 0 ]
-		do
+	totaljobs=1
+	firsttimejobscheck=1
+	while [ $totaljobs -gt 0 ]
+	do
             if [ $system -eq 4 ] ||
-                [ $system -eq 5 ]
+                [ $system -eq 7 ]
             then
-		        pendjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep mavara | grep " Q " | wc -l`
-		        runjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep mavara | grep " R " | wc -l`
+		pendjobs=`squeue -p $thequeue -u mavara -o "%.7i %.9P %.40j %.8u %.2t %.9M %.6D %R" 2>&1 | grep $jobcheck | grep mavara | grep " Q " | wc -l`
+		runjobs=`squeue -p $thequeue -u mavara -o "%.7i %.9P %.40j %.8u %.2t %.9M %.6D %R" 2>&1 | grep $jobcheck | grep mavara | grep " R " | wc -l`
             else
-		        pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep PEND | wc -l`
-		        runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep RUN | wc -l`
+		pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep PEND | wc -l`
+		runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep RUN | wc -l`
             fi
-		    totaljobs=$(($pendjobs+$runjobs))
-		    
-		    if [ $totaljobs -gt 0 ]
-		    then
-		        echo "PEND=$pendjobs RUN=$runjobs TOTAL=$totaljobs ... waiting ..."
-		        sleep 10
+	    totaljobs=$(($pendjobs+$runjobs))
+	    
+	    if [ $totaljobs -gt 0 ]
+	    then
+		echo "PEND=$pendjobs RUN=$runjobs TOTAL=$totaljobs ... waiting ..."
+		sleep 10
                 firsttimejobscheck=0
-		    else
-		        if [ $firsttimejobscheck -eq 1 ]
-			    then
-			        totaljobs=1
-			        echo "waiting for jobs to get started..."
-			        sleep 10
-		        else
-			        echo "DONE!"		      
-		        fi
-		    fi
-		done
+	    else
+		if [ $firsttimejobscheck -eq 1 ]
+		then
+		    totaljobs=1
+		    echo "waiting for jobs to get started..."
+		    sleep 10
+		else
+		    echo "DONE!"		      
+		fi
+	    fi
+	done
         
-	fi
+    fi
     
     wait
     ##########################################################################
@@ -2136,9 +2294,9 @@ then
 
 
     if [ $rminitfiles -eq 1 ]
-	then
+    then
         # remove created file
-	    rm -rf $myinitfile7
+	rm -rf $myinitfile7
     fi
 
 fi

@@ -2723,8 +2723,8 @@ def getdefaulttimes1():
         defaultftf=1e6
     else:
         # default (assumes ran at least beyond t=1000)
-        defaultfti=70000 #mavara 25000 #4000 #10000 #1000
-        defaultftf=90000 #32000 #8000 #20000 #1e6
+        defaultfti=45000 #mavara 25000 #4000 #10000 #1000
+        defaultftf=59000 #32000 #8000 #20000 #1e6
     #
     # set tilted models
     if isthickdiskmodel(modelname)==2:
@@ -2817,8 +2817,8 @@ def getdefaulttimes2():
         defaultfti=9000
         defaultftf=12000
     else:
-        defaultfti=70000 #25000 #4000 #10000 # MAVARA 1000
-        defaultftf=90000 #32000 #8000 #20000 #1e6    6000 and 9000 for BPCooling3... didn't work for some reason
+        defaultfti=45000 #25000 #4000 #10000 # MAVARA 1000
+        defaultftf=59000 #32000 #8000 #20000 #1e6    6000 and 9000 for BPCooling3... didn't work for some reason
     #
     # set tilted models
     if isthickdiskmodel(modelname)==2:

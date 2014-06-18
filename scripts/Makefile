@@ -262,7 +262,7 @@ clean:
 	#rm -f makemoviec jon_makemovie_programstartc.o
 
 jon_makemovie_programstartc.o: jon_makemovie_programstartc.c Makefile
-	$(MCC)  -c $(CFLAGS)  jon_makemovie_programstartc.c
+	$(MCC) -c $(CFLAGS)  jon_makemovie_programstartc.c
 
 
 
