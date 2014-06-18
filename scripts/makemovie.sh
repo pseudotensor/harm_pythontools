@@ -384,7 +384,7 @@ then
         echo "Ended up in default for timetot, numcorespernode, and memtot in makemovie.sh"
         timetot="2:00:00"   #MMMMMMMMMMMMMMMMM
         numcorespernode=80
-        memtot=$((4 + $numcorespernode * 4))
+        memtot=$((4 + $numcorespernode * 2))
     fi
     #
     # for makeplot part or makeplotavg part
@@ -415,8 +415,8 @@ fi
 if [ $system -eq 5 ] &&
     [ $parallel -eq 1 ]
 then
-    thequeue="normal"
-    timetot="8:00:00" # probably don't need all this is 1 task per fieldline file
+    thequeue="devel"
+    timetot="2:00:00" # probably don't need all this is 1 task per fieldline file
 
     # Kraken only has 16GB per node of 12 cores
     # so determine how many nodes need based upon Nautilus/Kraken memtot above
@@ -429,7 +429,7 @@ then
     # total memory required is old memtot/numcorespernode from Nautilus multiplied by total number of tasks for Kraken
     memtotpercore=$((1+$memtotnaut/$numcorespernodenaut))
     
-    numcorespernode=$((16/$memtotpercore))
+    numcorespernode=$((32/$memtotpercore))
 
     if [ $numcorespernode -eq 0 ]
     then
@@ -439,12 +439,13 @@ then
 
     numnodes=$(($numtasks/$numcorespernode))
     numnodesreal=$numnodes
+    numcorespernodereal=$numcorespernode
     # total number of cores used by these nodes
     #numtotalcores=$(($numnodes*12))
     # numtotalcores is currently what is allocated per node because each job is for each node
     numtotalcores=12
 
-    apcmd="mpiexec -ppn 12 -np 1" #"aprun -n 1 -d 12 -cc none -a xt"
+    apcmd="mpiexec -np $numtasks" #"aprun -n 1 -d 12 -cc none -a xt"
 
     # setup plotting part
     numnodesplot=1
@@ -474,7 +475,7 @@ then
 
     # total memory required is old memtot/numcorespernode from Nautilus multiplied by total number of tasks for Kraken
     memtotpercore=$((1+$memtotnaut/$numcorespernodenaut)) #324/80 ~4 as expected from def of memtot
-    numcorespernode=12 #$((32/$memtotpercore))  # was 24. 32 is the total per node for westemere nodes #MAVARA turned to 12 for low res sim since don't need much mem.
+    numcorespernode=$((32/$memtotpercore))  # was 24. 32 is the total per node for westemere nodes #MAVARA turned to 12 for low res sim since don't need much mem.
 
     #MAVARA for now just have:
     #numcorespernode=12 #for westemere
@@ -500,7 +501,13 @@ then
         apcmd="mpiexec -ppn $numcorespernode -np $numtasks" #mpiexec -np $numtasks -ppn $numcorespernode"
     fi
 
+    if [ $numcorespernode -eq 12 ]
+    then
+    numnodes=$(($numtasks/$numcorespernode+0)) #MAVARACHANGE added +1 on may 6th 2014 so actually enough nodes used#MAVARA added /2 since numparts changed to 2 in sections where mpiexec is called with qsub
+    else
     numnodes=$(($numtasks/$numcorespernode+1)) #MAVARACHANGE added +1 on may 6th 2014 so actually enough nodes used#MAVARA added /2 since numparts changed to 2 in sections where mpiexec is called with qsub
+    fi
+
     numtotalcores=$(($numnodes * 12)) # always 12 for Kraken   # also 12 for westemere nodes on pleiades
 
     if [ $numtotalcores -le 1024 ]
@@ -1616,7 +1623,7 @@ numfiles=`find dumps/ -name "fieldline*.bin"|wc -l`
 echo "NUMFILES=$numfiles"
 
 #itemspergroup=$(( 1 )) # MAVARA
-itemspergroup=$(( 2 )) # 16 with 100
+itemspergroup=$(( 20 )) # 16 with 100
 
 # catch too small number of files
 # must match __init__.py

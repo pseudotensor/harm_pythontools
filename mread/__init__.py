@@ -2723,8 +2723,8 @@ def getdefaulttimes1():
         defaultftf=1e6
     else:
         # default (assumes ran at least beyond t=1000)
-        defaultfti=70000 #mavara 25000 #4000 #10000 #1000
-        defaultftf=90000 #32000 #8000 #20000 #1e6
+        defaultfti=45000 #mavara 25000 #4000 #10000 #1000
+        defaultftf=56000 #32000 #8000 #20000 #1e6
     #
     # set tilted models
     if isthickdiskmodel(modelname)==2:
@@ -2817,8 +2817,8 @@ def getdefaulttimes2():
         defaultfti=9000
         defaultftf=12000
     else:
-        defaultfti=70000 #25000 #4000 #10000 # MAVARA 1000
-        defaultftf=90000 #32000 #8000 #20000 #1e6    6000 and 9000 for BPCooling3... didn't work for some reason
+        defaultfti=45000 #25000 #4000 #10000 # MAVARA 1000
+        defaultftf=56000 #32000 #8000 #20000 #1e6    6000 and 9000 for BPCooling3... didn't work for some reason
     #
     # set tilted models
     if isthickdiskmodel(modelname)==2:
@@ -5269,6 +5269,49 @@ def reinterpxy(vartointerp,extent,ncell,domask=1,interporder='cubic'):
     else:
         varinterpolated = zi
     return(varinterpolated)
+
+def reinterpxy4wedges(vartointerp,extent,ncell,domask=1,interporder='cubic'):
+    global xi,yi,zi
+    #grid3d("gdump")
+    #rfd("fieldline0250.bin")
+    xraw1=r*np.sin(h)*np.cos(ph)
+    yraw1=r*np.sin(h)*np.sin(ph)
+    xraw2=r*np.sin(h)*np.cos(ph+np.pi/2.)
+    yraw2=r*np.sin(h)*np.sin(ph+np.pi/2.)
+    xraw3=r*np.sin(h)*np.cos(ph+np.pi)
+    yraw3=r*np.sin(h)*np.sin(ph+np.pi)
+    xraw4=r*np.sin(h)*np.cos(ph+3*np.pi/2.)
+    yraw4=r*np.sin(h)*np.sin(ph+3*np.pi/2.)
+    #2 cells below the midplane
+    x1=xraw1[:,ny/2+1,:].view().reshape(-1)
+    y1=yraw1[:,ny/2+1,:].view().reshape(-1)
+    x2=xraw2[:,ny/2+1,:].view().reshape(-1)
+    y2=yraw2[:,ny/2+1,:].view().reshape(-1)
+    x3=xraw3[:,ny/2+1,:].view().reshape(-1)
+    y3=yraw3[:,ny/2+1,:].view().reshape(-1)
+    x4=xraw4[:,ny/2+1,:].view().reshape(-1)
+    y4=yraw4[:,ny/2+1,:].view().reshape(-1)
+    var=vartointerp[:,ny/2+1,:].view().reshape(-1)
+    #mirror
+    #if nz*_dx3*dxdxp[3,3,0,0,0] < 0.99 * 2 * np.pi:
+    #    x=np.concatenate((-x,x))
+    #    y=np.concatenate((-y,y))
+    #    var=np.concatenate((var,var))
+    x=np.concatenate((x1,x2,x3,x4))
+    y=np.concatenate((y1,y2,y3,y4))
+    var=np.concatenate((var,var,var,var))
+    # define grid.
+    xi = np.linspace(extent[0], extent[1], ncell)
+    yi = np.linspace(extent[2], extent[3], ncell)
+    # grid the data.
+    zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method=interporder)
+    #zi[interior] = np.ma.masked
+    if domask!=0: # this is the BH horizon mask
+        interior = np.sqrt((xi[None,:]**2) + (yi[:,None]**2)) < (1+np.sqrt(1-a**2))*domask
+        varinterpolated = ma.masked_where(interior, zi)
+    else:
+        varinterpolated = zi
+    return(varinterpolated)
     
 def ftr(x,xb,xf):
     return( amax(0.0*x,amin(1.0+0.0*x,1.0*(x-xb)/(xf-xb))) )
@@ -5972,12 +6015,12 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
         qty[np.isinf(qty)]=vmax
         qty[np.isnan(qty)]=vmax
         #
-        iqty = reinterpxy(qty,extent,ncell,domask=1.0)
+        iqty = reinterpxy4wedges(qty,extent,ncell,domask=1.0)
     #
     ##########################
     # get field
     aphi = fieldcalc()+rho*0
-    iaphi = reinterpxy(aphi,extent,ncell)
+    iaphi = reinterpxy4wedges(aphi,extent,ncell)
     #maxabsiaphi=np.max(np.abs(iaphi))
     #maxabsiaphi = 100 #50
     #ncont = 100 #30
