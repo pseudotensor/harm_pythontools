@@ -14,6 +14,9 @@
 #include <Python.h>
 #endif
 
+static int runpy_interactive_system(int argc, char *argv[]);
+static int runpy_interactive(int argc, char *argv[]);
+
 int runpy_script_func(char *scriptname, char *funcname, int argsc, char *argsv[]);
 // alt: using c inside python
 //http://docs.python.org/extending/extending.html
@@ -617,7 +620,7 @@ static void myffprintf(FILE* fileptr, char *format, ...)
 
 
 
-int runpy_interactive_system(int argc, char *argv[])
+static int runpy_interactive_system(int argc, char *argv[])
 {
   fprintf(stdout,"Inside runpy_interactive_system: maxsize=%d\n",MAXCHUNKSTRING+MAXGENNAME); fflush(stdout);
 
@@ -660,7 +663,7 @@ int runpy_interactive_system(int argc, char *argv[])
 // The Very High Level Layer
 // http://docs.python.org/c-api/veryhigh.html#PyRun_SimpleFile
 // Run script assuming main was passed exactly same arguments that get passed to python in makemovie.sh
-int runpy_interactive(int argc, char *argv[])
+static int runpy_interactive(int argc, char *argv[])
 {
 
 #if(USINGPYTHON)
