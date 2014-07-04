@@ -1629,7 +1629,8 @@ def mrgnew(n=None,fin1=None,fin2=None,fout="qty.npz"):
              ind = v["ind"],
              ivals = v["ivals"],
              rvals = v["rvals"],
-             t = v["t"]
+             t = v["t"],
+             hor = v["hor"]
              )
     print( "Done!" )
 
