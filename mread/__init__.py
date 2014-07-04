@@ -6895,7 +6895,10 @@ def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
             xcoord=np.concatenate((-xcoord[:,::-1],xcoord),axis=1)
             ycoord=np.concatenate((ycoord[:,::-1],ycoord),axis=1)
         else:
-            symmk = (k+nz/2)%nz
+            if myvar.shape[-1] > 1: 
+                symmk = (k+nz/2)%nz 
+            else: 
+                symmk = 0
             myvar=np.concatenate((myvar[:,ny-1:ny,k:k+1],myvar[:,::-1,symmk:symmk+1],myvar[:,:,k:k+1]),axis=1)
             xcoord=np.concatenate((xcoord[:,ny-1:ny,k:k+1],-xcoord[:,::-1],xcoord),axis=1)
             ycoord=np.concatenate((ycoord[:,ny-1:ny,k:k+1],ycoord[:,::-1],ycoord),axis=1)
