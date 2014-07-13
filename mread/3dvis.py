@@ -901,7 +901,7 @@ def vis_grb(doreload=1,no=555,xmax=50,ymax=50,zmax=None,ncellx=101,ncelly=101,nc
     #lrhoi_jet = lrho[np.int32(0.5+i3d_jet),np.int32(0.5+j3d_jet),np.int32(0.5+k3d_jet)]
     if 1:
         vmin = 0
-        vmax = 8
+        vmax = 10
     else:
         vmin = lrhoi_jet.min()
         vmax = lrhoi_jet.max()
