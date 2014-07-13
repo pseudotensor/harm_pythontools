@@ -7927,6 +7927,7 @@ def rd2d(dump):
         
 def rd(dump,oldfmt=False,doreturnarray=False):
     global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,ti,tj,tk,x1,x2,x3,r,h,ph,rho,ug,vu,B,pg,cs2,Sden,U,gdetB,divb,uu,ud,bu,bd
+    global jcon, jcov, far, Bstag
     global v1m,v1p,v2m,v2p,v3m,v3p,bsq,olddumpfmt
     global ErfF0,ErfF1,ErfF2,ErfF3
     #read image
@@ -7983,6 +7984,13 @@ def rd(dump,oldfmt=False,doreturnarray=False):
         bsq = mdot(bu,bd)
         v1m,v1p,v2m,v2p,v3m,v3p=gd[n:n+6];n+=6
         gdet=gd[n];n+=1
+        if n != gd.shape[0]:
+            #there are probably currents
+            print("Reading the currents, faraday components, and Bstag components")
+            jcon = gd[n:n+4];n+=4
+            jcov = gd[n:n+4];n+=4
+            far = gd[n:n+6];n+=6
+            Bstag = gd[n:n+3];n+=3
         if n != gd.shape[0]:
             print("Using %d out of %d entries in the dump file." % (n, gd.shape[0]))
     else:
