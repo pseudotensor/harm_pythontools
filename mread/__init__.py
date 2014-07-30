@@ -1662,6 +1662,7 @@ def assignavg2dvars(avgmem):
     global avg_TudPA, avg_TudEN, avg_TudRAD
     global avg_gamma,avg_pg,avg_pb,avg_beta,avg_betatot
     global avg_KAPPAUSER,avg_KAPPAESUSER,avg_tauradintegrated,avg_tauradeffintegrated
+    global avg_vpot,avgvpot2
     #avg defs
     i=0
     # 1
@@ -1772,6 +1773,9 @@ def assignavg2dvars(avgmem):
     avg_tauradintegrated=avgmem[i,:,:,None];i+=1 # i=1
     avg_tauradeffintegrated=avgmem[i,:,:,None];i+=1 # i=1
     #
+    avg_aphi = avgmem[i,:,:,None];i+=1 # i=1
+    avg_aphi2 = avgmem[i,:,:,None];i+=1 # i=1
+    #
     # number of full 2D quantities
     nqtyavg=i
     global navg
@@ -1821,6 +1825,7 @@ def getnqtyavg():
     value=1 + 4 + 16*2 + 6*2 + 4*2 + 24+4 + 32+16 + 80 + 32 + 32 + 3 + 1
     value=value+16+4 # for TudRAD and KAPPAUSER and KAPPAESUSER and tauradintegrated and tauradeffintegrated
     value=value+1 # for urad
+    value=value+2 # for avg_vpot and avg_vpot2
     return(value)
 
 
@@ -2056,6 +2061,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     global avg_absrhouu,avg_absfdd
     global avg_KAPPAUSER,avg_KAPPAESUSER,avg_tauradintegrated,avg_tauradeffintegrated
     global firstfieldlinefile
+    global avg_vpot,avg_vpot2
     #
     if whichgroup < 0 or itemspergroup <= 0:
         print( "get2davgone: whichgroup = %d, itemspergroup = %d not allowed" % (whichgroup, itemspergroup) ) ; sys.stdout.flush()
@@ -2260,6 +2266,11 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         n=1
         aphi = fieldcalcface()
         avg_psisq += ((_dx3*aphi.sum(-1))**2)[:,:,None]*localdt[itert]
+        #
+        # 1 and 1
+        n=1
+        avg_vpot += (scaletofullwedge(nz*_dx3*fieldcalc(gdetB1=gdetB[0]))).sum(-1)[:,:,None]*localdt[itert]
+        avg_vpot2 += (scaletofullwedge((nz*(_dx3*aphi.sum(-1))**2))**0.5)).sum(-1)[:,:,None]*localdt[itert]
         #
         # iterate
         itert=itert+1
