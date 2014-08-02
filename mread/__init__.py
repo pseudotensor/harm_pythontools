@@ -1773,8 +1773,8 @@ def assignavg2dvars(avgmem):
     avg_tauradintegrated=avgmem[i,:,:,None];i+=1 # i=1
     avg_tauradeffintegrated=avgmem[i,:,:,None];i+=1 # i=1
     #
-    avg_aphi = avgmem[i,:,:,None];i+=1 # i=1
-    avg_aphi2 = avgmem[i,:,:,None];i+=1 # i=1
+    avg_vpot = avgmem[i,:,:,None];i+=1 # i=1
+    avg_vpot2 = avgmem[i,:,:,None];i+=1 # i=1
     #
     # number of full 2D quantities
     nqtyavg=i
