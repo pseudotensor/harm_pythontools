@@ -1662,7 +1662,7 @@ def assignavg2dvars(avgmem):
     global avg_TudPA, avg_TudEN, avg_TudRAD
     global avg_gamma,avg_pg,avg_pb,avg_beta,avg_betatot
     global avg_KAPPAUSER,avg_KAPPAESUSER,avg_tauradintegrated,avg_tauradeffintegrated
-    global avg_vpot,avgvpot2
+    global avg_vpot,avg_vpot2
     #avg defs
     i=0
     # 1
