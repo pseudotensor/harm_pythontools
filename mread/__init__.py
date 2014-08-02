@@ -2270,7 +2270,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         # 1 and 1
         n=1
         avg_vpot += (scaletofullwedge(nz*_dx3*fieldcalc(gdetB1=gdetB[0]))).sum(-1)[:,:,None]*localdt[itert]
-        avg_vpot2 += (scaletofullwedge((nz*(_dx3*aphi.sum(-1))**2))**0.5).sum(-1)[:,:,None]*localdt[itert]
+        avg_vpot2 += (scaletofullwedge((nz*(_dx3*aphi)**2))**0.5).sum(-1)[:,:,None]*localdt[itert]
         #
         # iterate
         itert=itert+1
