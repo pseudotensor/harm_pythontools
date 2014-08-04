@@ -6887,7 +6887,7 @@ def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
     if (None != xcoord and None != ycoord):
         xcoord = xcoord[:,:,None] if xcoord.ndim == 2 else xcoord[:,:,k:k+1]
         ycoord = ycoord[:,:,None] if ycoord.ndim == 2 else ycoord[:,:,k:k+1]
-        xy=1
+        #xy=1
     if xy and symmx:
         if myvar.ndim == 2:
             myvar = myvar[:,:,None] if myvar.ndim == 2 else myvar[:,:,k:k+1]
@@ -7967,6 +7967,7 @@ def rd(dump,oldfmt=False,doreturnarray=False):
     if not oldfmt:
         NPR, NPRDUMP = set_numnprs()
         set_dumpversions(header)
+        print( "NPR = %d, NPRDUMP = %d" % (NPR, NPRDUMP) )
         #if radiation primitives are there
         #PRAD0 = 8, PRAD1 = 9, PRAD2 = 10, PRAD3 = 11
         if NPRDUMP >= 12:
@@ -7989,7 +7990,8 @@ def rd(dump,oldfmt=False,doreturnarray=False):
             print("Reading the currents, faraday components, and Bstag components")
             jcon = gd[n:n+4];n+=4
             jcov = gd[n:n+4];n+=4
-            far = gd[n:n+6];n+=6
+            fcon = gd[n:n+6];n+=6
+            fcov = gd[n:n+6];n+=6
             Bstag = gd[n:n+3];n+=3
         if n != gd.shape[0]:
             print("Using %d out of %d entries in the dump file." % (n, gd.shape[0]))
