@@ -14894,7 +14894,7 @@ def mkmanystreamlinesx1x2(doplot=True):
 def plotjpar(doreload=1):
     if doreload:
         grid3d("gdump.bin",use2d=1)
-        rd("dump0003.bin")
+        rd("dump0005.bin")
     #
     Br = dxdxp[1,1]*B[1]+dxdxp[1,2]*B[2]
     Bh = dxdxp[2,1]*B[1]+dxdxp[2,2]*B[2]
@@ -14912,11 +14912,11 @@ def plotjpar(doreload=1):
     jpar = mdot(jcon,Bd)/Bsq**0.5
     #jpar = mdot(jcov,B)/mdot(mdot(gv3,B),B)**0.5
     jgj = OmegaNS*Bznorm/2/np.pi
-    plco(jpar[4:10,:,:].mean(0),xcoord=ph[0,:,:]*180/np.pi,ycoord=h[0,:,:]*180./np.pi,cb=1,isfilled=1,nc=100,antialiased=0)
+    plco(np.abs(jpar[4:10,:,:].mean(0)),xcoord=ph[0,:,:]*180/np.pi,ycoord=h[0,:,:]*180./np.pi,cb=1,isfilled=1,levels=np.linspace(0,36,13),antialiased=0)
     plt.xlabel(r"$\varphi$",fontsize=25)
     plt.ylabel(r"$\theta$",fontsize=25)
     plt.title(r"$\alpha = %g^\circ\!\colon \vec j\cdot \vec B/|\vec B|$" % (AlphaNS*180/np.pi),fontsize=20)
-    plt.savefig("jpar60.png")
+    plt.savefig("jpar%g.png" % (AlphaNS/np.pi*180))
 
 def finddiskjetbnds(r0=30,upperx2=True,maxiter=100,eps=1e-16,doplot=False):
     """upperx2 = False means look for low-x2 boundary; dir = True means look for high-x2 boundary"""
