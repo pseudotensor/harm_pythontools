@@ -1836,8 +1836,8 @@ def compvals(di=5):
         dic["FM"] = FM[ivals]
         #this includes Mdot
         FE = (gdet*fTud(1,0)).sum(-1).sum(-1)*_dx2*_dx3
-        #subtract Mdot
-        FE += FM
+        #no need to subtract Mdot here
+        ##### no need for this ##### FE += FM
         dic["FE"] = FE[ivals]
     FEM = (gdet*fTudEM(1,0)).sum(-1).sum(-1)*_dx2*_dx3
     dic["FEM"] = FEM[ivals]
