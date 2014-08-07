@@ -7191,7 +7191,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
             imu = reinterp(mu,extent,ncell,domask=0.8,rhor=rhor,kval=kval-0.5)
         #
         if dovarylw:
-            iibeta = reinterp(0.5*bsq/(gam-1)/ug,extent,ncell,domask=0,rhor=rhor,kval=kval-0.5)
+            iibeta = reinterp(0.5*bsq/(gam-1)/(ug+urad),extent,ncell,domask=0,rhor=rhor,kval=kval-0.5)
             ibsqorho = reinterp(bsq/rho,extent,ncell,domask=0,rhor=rhor,kval=kval-0.5)
             ibsqo2rho = 0.5 * ibsqorho
         xi = np.linspace(extent[0], extent[1], ncell)
@@ -8587,6 +8587,8 @@ def rfd(fieldlinefilename,**kwargs):
         minErf=np.min(Erf)
         print("maxErf=%g minErf=%g" % (maxErf,minErf)) ; sys.stdout.flush()
         #
+    else:
+        urad = 0
     rddims(gotrad)
     getkappas(gotrad)
 
