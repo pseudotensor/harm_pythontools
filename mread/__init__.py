@@ -1431,10 +1431,10 @@ def mknewmov(startn=0,endn=-1,dosavefig=1):
     
 #new movie frame
 def mkmfnew(v,findex=10000,
-            iti=3500,itf=9500,
-            fti=3500,ftf=9500,
+            iti=2000,itf=5000,
+            fti=2000,ftf=5000,
             sigma=1500,sigma1=None,prefactor=100,domakeframes=1,plotlen=25,maxsBphi=3,
-            doreload=1,dosavefig = 1,fntsize=16,myi=None,vmin=-8,vmax=-2): #vmin=-6,vmax=0.5625):
+            doreload=1,dosavefig = 1,fntsize=16,myi=None,vmin=-9,vmax=-3): #vmin=-6,vmax=0.5625):
     global FMavg
     plt.clf()
     if myi is None:
@@ -1446,7 +1446,7 @@ def mkmfnew(v,findex=10000,
     which = (v["t"] < ftf)
     #mdot,pjet,pjet/mdot plots
     gs3 = GridSpec(3, 3)
-    gs3.update(left=0.07, right=0.96, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
+    gs3.update(left=0.07, right=0.94, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
     #
     #mdot plot
     #
@@ -1457,8 +1457,11 @@ def mkmfnew(v,findex=10000,
     ax31.plot(v["t"][which],v["FM"][which,myi],"k")
     ax31.plot(v["t"][findex],v["FM"][findex,myi],'o',mfc='r')
     if 'FMavg' not in globals():
-        FMavg = timeavg(v["FM"][:,myi],v["t"],fti=iti,ftf=ftf,sigma=sigma)+0*v["t"]
+        FMavg = 0*v["t"]
+        FMavg[which] = timeavg(v["FM"][which,myi],v["t"][which],fti=iti,ftf=ftf,sigma=sigma)
+        FMavg[1-which]  = FMavg[1-which] + FMavg[which][-1]      
     t = v["t"]
+    #pdb.set_trace()
     #ensure of the same shape as the rest
     l, = ax31.plot(t[which],FMavg[which],"k")
     l.set_dashes([10,5])
