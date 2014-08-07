@@ -1606,6 +1606,7 @@ def mrgnew(n=None,fin1=None,fin2=None,fout="qty.npz"):
     v["FM"]=[] 
     v["FEM"]=[]
     v["FE"]=[]
+    v["FR"] = []
     v["PhiBH"]=[]
     v["ind"]=[]
     v["ivals"]=[]
@@ -1625,6 +1626,7 @@ def mrgnew(n=None,fin1=None,fin2=None,fout="qty.npz"):
              FM = v["FM"], 
              FEM = v["FEM"],
              FE = v["FE"],
+             FR = v["FR"],
              PhiBH = v["PhiBH"],
              ind = v["ind"],
              ivals = v["ivals"],
@@ -1640,6 +1642,7 @@ def mrgnew_n(n, v=None):
         v["FM"]=[] 
         v["FEM"]=[]
         v["FE"]=[]
+        v["FR"] = []
         v["PhiBH"]=[]
         v["ind"]=[]
         v["ivals"]=[]
@@ -1685,6 +1688,7 @@ def mrgnew_f(ft, v=None):
         v["FM"]=[] 
         v["FEM"]=[]
         v["FE"]=[]
+        v["FR"] = []
         v["PhiBH"]=[]
         v["ind"]=[]
         v["ivals"]=[]
@@ -1733,6 +1737,7 @@ def postprocess1d(startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
     v["FM"]=[] 
     v["FEM"]=[]
     v["FE"]=[]
+    v["FR"]=[]
     v["PhiBH"]=[]
     v["ind"]=[]
     v["ivals"]=[]
@@ -1783,6 +1788,7 @@ def postprocess1d(startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
              FM = v["FM"], 
              FEM = v["FEM"],
              FE = v["FE"],
+             FR = v["FR"],
              PhiBH = v["PhiBH"],
              ind = v["ind"],
              ivals = v["ivals"],
@@ -1799,7 +1805,9 @@ def cvellite():
     bu[1:4]=(B[1:4] + bu[0]*uu[1:4])/uu[0]  #b^i = (B^i + b^t u^i)/u^t
     bd=mdot(gv3,bu)
     bsq=mdot(bu,bd)
-    
+    if "uradu" in globals():
+        global uradd
+        uradd = mdot(gv3,uradu)
   
 def compvals(di=5):
     dic = {}
@@ -1811,18 +1819,32 @@ def compvals(di=5):
     #
     delta = lambda kapa,nu: (kapa==nu)
     fTudEM = lambda kapa,nu: bsq*uu[kapa]*ud[nu] + 0.5*bsq*delta(kapa,nu) - bu[kapa]*bd[nu]
-    fTudMA = lambda kapa,nu: (rho+ug+pg)*uu[kapa]*ud[nu]+(gam-1)*ug*delta(kapa,nu)
+    fTudMA = lambda kapa,nu: (rho+gam*ug)*uu[kapa]*ud[nu]+(gam-1)*ug*delta(kapa,nu)
     fTud = lambda kapa,nu: fTudEM(kapa,nu) + fTudMA(kapa,nu)
+    fRud = lambda kapa,nu: 4./3.*Erf*uradu[kapa]*uradd[nu]+1./3.*Erf*delta(kapa,nu)
     #
-    FM = -(gdetF[1,0]).sum(-1).sum(-1)*_dx2*_dx3
-    dic["FM"] = FM[ivals]
+    if "gdetF" in globals() and gdetF is not None:
+        FM = -(gdetF[1,0]).sum(-1).sum(-1)*_dx2*_dx3
+        dic["FM"] = FM[ivals]
+        #this includes Mdot
+        FE = (gdetF[1,1]).sum(-1).sum(-1)*_dx2*_dx3
+        #subtract Mdot
+        FE += FM
+        dic["FE"] = FE[ivals]
+    else:
+        FM = -(gdet*rho*uu[1]).sum(-1).sum(-1)*_dx2*_dx3
+        dic["FM"] = FM[ivals]
+        #this includes Mdot
+        FE = (gdet*fTud(1,0)).sum(-1).sum(-1)*_dx2*_dx3
+        #subtract Mdot
+        FE += FM
+        dic["FE"] = FE[ivals]
     FEM = (gdet*fTudEM(1,0)).sum(-1).sum(-1)*_dx2*_dx3
     dic["FEM"] = FEM[ivals]
-    #this includes Mdot
-    FE = (gdetF[1,1]).sum(-1).sum(-1)*_dx2*_dx3
-    #subtract Mdot
-    FE += FM
-    dic["FE"] = FE[ivals]
+    #radiation
+    if "uradu" in globals():
+        FR = (gdet*fRud(1,0)).sum(-1).sum(-1)*_dx2*_dx3
+        dic["FR"] = FR[ivals]
     #total absolute magnetic flux
     PhiBH = 0.5*np.abs(gdetB[1]).sum(-1).sum(-1)*_dx2*_dx3
     dic["PhiBH"] = PhiBH[ivals]
@@ -8034,6 +8056,7 @@ def set_numnprs(fname="nprlistinfo.dat"):
     header7 = fin.readline().split() #NPRDUMP
     NPRDUMP = len(header7)
     header8 = fin.readline().split() #NPRINVERT
+    fin.close()
     return((NPR, NPRDUMP))
     
 def set_dumpversions(header):
@@ -8092,6 +8115,151 @@ def set_dumpversions(header):
         whichdumpversion=int(header[28])
         numcolumns=int(header[29])
 
+def rfdheader(fin=None):
+    global t,nx,ny,nz,startx1,startx2,startx3,_dx1,_dx2,_dx3,nstep,gam,a,R0,Rin,Rout,hslope,rundt,defcoord
+    global MBH,QBH,EP3,THETAROT,_is,_ie,_js,_je,_ks,_ke,whichdump,whichdumpversion,numcolumns
+    global rhor
+    #global header
+    #
+    #
+    header = fin.readline().split()
+    #
+    numheaderitems=len(header) #.shape[0]
+    #
+    #
+    #time of the dump
+    t = myfloatalt(np.float64(header[0]))
+    print("rfdheader: t=%g" % (t)) ; sys.stdout.flush()
+    #dimensions of the grid
+    nx = int(header[1])
+    ny = int(header[2])
+    nz = int(header[3])
+    #
+    startx1=myfloatalt(float(header[4]))
+    startx2=myfloatalt(float(header[5]))
+    startx3=myfloatalt(float(header[6]))
+    #cell size in internal coordintes
+    _dx1=myfloatalt(float(header[7]))
+    _dx2=myfloatalt(float(header[8]))
+    _dx3=myfloatalt(float(header[9]))
+    #
+    nstep=int(header[10])
+    #other information: 
+    #polytropic index
+    gam=myfloatalt(float(header[11]))
+    #black hole spin
+    a=myfloatalt(float(header[12]))
+    rhor=1+(1-a**2)**0.5
+    R0=myfloatalt(float(header[13]))
+    #Spherical polar radius of the innermost radial cell
+    Rin=myfloatalt(float(header[14]))
+    #Spherical polar radius of the outermost radial cell
+    Rout=myfloatalt(float(header[15]))
+    #
+    hslope=myfloatalt(float(header[16]))
+    #
+    rundt=myfloatalt(float(header[17]))
+    defcoord=int(header[18])
+    #
+    global TRACKVPOT,        MCOORD,        DODISS,        DOEVOLVEMETRIC,        WHICHVEL,        WHICHEOM,        REMOVERESTMASSFROMUU,        RELTYPE,        EOMTYPE,        WHICHEOS,        DOENTROPY,        WHICHENTROPYEVOLVE,        CALCFARADAYANDCURRENTS,        DOPOLEDEATH,        DOPOLESMOOTH,        DOPOLEGAMMADEATH,        IF3DSPCTHENMPITRANSFERATPOLE,        EOMRADTYPE,        WHICHRADSOURCEMETHOD,        OUTERDEATH,        OUTERDEATHRADIUS
+    if numheaderitems==53:
+        TRACKVPOT=int(header[32])
+        MCOORD=int(header[33])
+        DODISS=int(header[34])
+        DOEVOLVEMETRIC=int(header[35])
+        WHICHVEL=int(header[36])
+        WHICHEOM=int(header[37])
+        REMOVERESTMASSFROMUU=int(header[38])
+        RELTYPE=int(header[39])
+        EOMTYPE=int(header[40])
+        WHICHEOS=int(header[41])
+        DOENTROPY=int(header[42])
+        WHICHENTROPYEVOLVE=int(header[43])
+        CALCFARADAYANDCURRENTS=int(header[44])
+        DOPOLEDEATH=int(header[45])
+        DOPOLESMOOTH=int(header[46])
+        DOPOLEGAMMADEATH=int(header[47])
+        IF3DSPCTHENMPITRANSFERATPOLE=int(header[48])
+        EOMRADTYPE=int(header[49])
+        WHICHRADSOURCEMETHOD=int(header[50])
+        OUTERDEATH=int(header[51])
+        OUTERDEATHRADIUS=int(header[52])
+    else:
+        # just set defaulst that will generally work for default setup of GRMHD, etc.
+        TRACKVPOT=1 # yes
+        MCOORD=2 # KSCOORDS
+        DODISS=0 # no
+        DOEVOLVEMETRIC=0 # no
+        WHICHVEL=2 # VELREL4
+        WHICHEOM=0 # WITHGDET
+        REMOVERESTMASSFROMUU=2 # fully removed
+        RELTYPE=0 # normal rel
+        EOMTYPE=3 # GRMHD=3 and FFDE=0
+        WHICHEOS=1 # ideal gas
+        DOENTROPY=1 # DOEVOLVEENTROPY
+        WHICHENTROPYEVOLVE=1 # EVOLVESIMPLEENTROPY with DODISS=0 and EVOLVEFULLENTROPY with off
+        CALCFARADAYANDCURRENTS=1 # yes
+        DOPOLEDEATH=0
+        DOPOLESMOOTH=0
+        DOPOLEGAMMADEATH=0
+        IF3DSPCTHENMPITRANSFERATPOLE=0
+        EOMRADTYPE=0 # EOMRADNONE
+        WHICHRADSOURCEMETHOD=3 # SOURCEMETHODIMPLICIT
+        OUTERDEATH=0 # no
+        OUTERDEATHRADIUS=1E7
+    #
+    if numheaderitems>=32:
+        print("Found 32 header items, reading them in\n")  ; sys.stdout.flush()
+        MBH=myfloatalt(float(header[19]))
+        QBH=myfloatalt(float(header[20]))
+        EP3=myfloatalt(float(header[21]))
+        THETAROT=myfloatalt(float(header[22]))
+        #
+        _is=int(header[23])
+        _ie=int(header[24])
+        _js=int(header[25])
+        _je=int(header[26])
+        _ks=int(header[27])
+        _ke=int(header[28])
+        whichdump=int(header[29])
+        whichdumpversion=int(header[30])
+        numcolumns=int(header[31])
+    #
+    if numheaderitems==31:
+        print("Found 31 header items, reading them in and setting THETAROT=0.0\n")  ; sys.stdout.flush()
+        MBH=myfloatalt(float(header[19]))
+        QBH=myfloatalt(float(header[20]))
+        EP3=myfloatalt(float(header[21]))
+        THETAROT=0.0
+        #
+        _is=int(header[22])
+        _ie=int(header[23])
+        _js=int(header[24])
+        _je=int(header[25])
+        _ks=int(header[26])
+        _ke=int(header[27])
+        whichdump=int(header[28])
+        whichdumpversion=int(header[29])
+        numcolumns=int(header[30])
+    #
+    if numheaderitems==30:
+        print("Found 30 header items, reading them in and setting EP3=THETAROT=0.0\n")  ; sys.stdout.flush()
+        MBH=myfloatalt(float(header[19]))
+        QBH=myfloatalt(float(header[20]))
+        EP3=0.0
+        THETAROT=0.0
+        #
+        _is=int(header[21])
+        _ie=int(header[22])
+        _js=int(header[23])
+        _je=int(header[24])
+        _ks=int(header[25])
+        _ke=int(header[26])
+        whichdump=int(header[27])
+        whichdumpversion=int(header[28])
+        numcolumns=int(header[29])
+
+        
 def rdr(dumpname,**kwargs):
     #read information from "raddump" (radiation dump) file: 
     #Densities: 
@@ -8199,56 +8367,35 @@ def rfd(fieldlinefilename,**kwargs):
     #Face-centered magnetic field components multiplied by metric determinant: gdetB1, gdetB2, gdetB3
     global t,nx,ny,nz,_dx1,_dx2,_dx3,gam,a,Rin,Rout,rho,lrho,ug,uu,uut,uu,B,uux,gdetB,rhor,r,h,ph,ti,tj,tk,gdetF,fdbody,OmegaNS,AlphaNS,Bstag,defcoord,numheaderitems,numcolumns
     #read image
-    if 'rho' in globals():
-        del rho
-    if 'lrho' in globals():
-        del lrho
-    if 'ug' in globals():
-        del ug
-    if 'uu' in globals():
-        del uu
-    if 'uut' in globals():
-        del uut
-    if 'uu' in globals():
-        del uu
-    if 'B' in globals():
-        del B
-    if 'uux' in globals():
-        del uux
-    if 'gdetB' in globals():
-        del gdetB
-    if 'rhor' in globals():
-        del rhor
-    if 'gdetF' in globals():
-        del gdetF
-    if 'fdbody' in globals():
-        del fdbody
     print("Opening %s ..." % fieldlinefilename)
     fin = open( "dumps/" + fieldlinefilename, "rb" )
-    header = fin.readline().split()
-    set_dumpversions(header)
-    #time of the dump
-    t = myfloat(np.float64(header[0]))
-    #dimensions of the grid
-    nx = int(header[1])
-    ny = int(header[2])
-    nz = int(header[3])
-    #cell size in internal coordintes
-    _dx1=myfloat(float(header[7]))
-    _dx2=myfloat(float(header[8]))
-    _dx3=myfloat(float(header[9]))
-    #other information: 
-    #polytropic index
-    gam=myfloat(float(header[11]))
-    #black hole spin
-    a=myfloat(float(header[12]))
-    rhor = 1+(1-a**2)**0.5
-    R0=myfloat(float(header[13]))
-    #Spherical polar radius of the innermost radial cell
-    Rin=myfloat(float(header[14]))
-    #Spherical polar radius of the outermost radial cell
-    Rout=myfloat(float(header[15]))
-    defcoord = myfloat(float(header[18]))
+    if 1: #Jon's way
+        rfdheader(fin=fin)
+    else: #old way
+        header = fin.readline().split()
+        set_dumpversions(header)
+        #time of the dump
+        t = myfloat(np.float64(header[0]))
+        #dimensions of the grid
+        nx = int(header[1])
+        ny = int(header[2])
+        nz = int(header[3])
+        #cell size in internal coordintes
+        _dx1=myfloat(float(header[7]))
+        _dx2=myfloat(float(header[8]))
+        _dx3=myfloat(float(header[9]))
+        #other information: 
+        #polytropic index
+        gam=myfloat(float(header[11]))
+        #black hole spin
+        a=myfloat(float(header[12]))
+        rhor = 1+(1-a**2)**0.5
+        R0=myfloat(float(header[13]))
+        #Spherical polar radius of the innermost radial cell
+        Rin=myfloat(float(header[14]))
+        #Spherical polar radius of the outermost radial cell
+        Rout=myfloat(float(header[15]))
+        defcoord = myfloat(float(header[18]))
     #
     if os.path.isfile("coordparms.dat"):
         coordparams = np.loadtxt( "coordparms.dat", 
@@ -8294,8 +8441,10 @@ def rfd(fieldlinefilename,**kwargs):
     #cell-centered magnetic field components
     B[1:4,:,:,:]=d[8:11,:,:,:]
     ii=11
+    global numcolumns
+    print("numcolumnshere: %d" % (numcolumns)) ; sys.stdout.flush()
     #if the input file contains additional data
-    if d.shape[0]==14 or d.shape[0]==23 or d.shape[0]==26:
+    if d.shape[0]>=14 and numcolumns==11+3:
         print("Loading gdetB data...")
         #new image format additionally contains gdet*B^i
         gdetB = np.zeros_like(B)
@@ -8403,7 +8552,7 @@ def rfd(fieldlinefilename,**kwargs):
     ##
     global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
     global KAPPAUSER,KAPPAESUSER
-    global Erf,uradu,Tgas
+    global Erf,uradu,Tgas,prad,urad
     #
     global gotrad
     gotrad=0
@@ -8413,6 +8562,9 @@ def rfd(fieldlinefilename,**kwargs):
         Erf=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
         uradu=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
         Erf=d[11,:,:,:] # radiation frame radiation energy density
+        #
+        # approximation, but correct if used in pressure ultimately
+        urad=Erf
         uradu=d[12:16,:,:,:]  #again, note uu[i] are 3-velocities (as read from the fieldl
         #multiply by u^t to get 4-velocities: u^i = u^t v^i
         uradu[1:4]=uradu[1:4] * uradu[0]
@@ -8421,21 +8573,68 @@ def rfd(fieldlinefilename,**kwargs):
         minErf=np.min(Erf)
         print("maxErf=%g minErf=%g" % (maxErf,minErf)) ; sys.stdout.flush()
         #
-        rddims()
+    rddims(gotrad)
+    getkappas(gotrad)
+
+def elinfcalc(a):
+    # assume disk rotation sense is always positive, but a can be + or -
+    risco=Risco(a)
+    risco2=Risco(-a)
+    #
+    #print( "risco=%g" % (risco) )
+    #
+    if a<0.9999999:
+        einf=(1.0-2.0/risco+a/(risco)**(3.0/2.0))/(1.0-3.0/risco+2.0*a/(risco)**(3.0/2.0))**(1.0/2.0)
+        #print( "einf=%g" % (einf) )
+        linf=(np.sqrt(risco)*(risco**2.0-2.0*a*np.sqrt(risco)+a**2))/(risco*(risco**2.0-3.0*risco+2.0*a*np.sqrt(risco))**(1.0/2.0))
+        #print( "linf=%g" % (linf) )
+    else:
+        if risco<2.0:
+            # einf
+            einf=0.57735
+            # linf
+            linf=0.0
+        else:
+            # einf
+            einf=0.946729
+            # linf
+            linf=4.2339
         #
-        # now compute auxillary opacity related quantities since only otherwise in raddump
+    #
+    return einf,linf
+
+def getkappas(gotrad):
+    global KAPPAUSER,KAPPAESUSER,Tgas,prad
+    if(gotrad==0):
         KAPPA=1.0
         KAPPAES=1.0
-        # KORALTODO: Put a lower limit on T~1E4K so not overly wrongly opaque in spots whe
-        T1E4K=(1.0E4/TEMPBAR)
+        # Below should be as same in global.depmnemonics.rad.h
+        TEMPMINKELVIN=1.0E-10 # Kelvin
+        TEMPMIN=(TEMPMINKELVIN/TEMPBAR)
+        pg=(gam-1.0)*ug # ideal gas
+        prad=(4.0/3.0-1.0)*urad # radiation isotropic in some frame
+        Tgas=pg/rho # gas temperature for ideal gas
+        KAPPAUSER=rho*0
+        KAPPAESUSER=rho*0
+        #
+    else:
+        # now compute auxillary opacity related quantities since only otherwise in raddump???? files and not in fieldline files
+        KAPPA=1.0
+        KAPPAES=1.0
+        # KORALTODO: Put a lower limit on T~1E4K so not overly wrongly opaque in spots where u_g->0 anomologously?
+        TEMPMINKELVIN=1.0E-10 # Kelvin
+        TEMPMIN=(TEMPMINKELVIN/TEMPBAR)
         # ideal gas assumed for Tgas
         # code pg
-        pg=(gam-1.0)*ug
-        # code Tgas
-        Tgas=pg/rho
-        KAPPAUSER=(rho*KAPPA*KAPPA_FF_CODE(rho,Tgas+T1E4K))
-        KAPPAESUSER=(rho*KAPPAES*KAPPA_ES_CODE(rho,Tgas))
+        pg=(gam-1.0)*ug  #clean # use clean to keep pg low and Tgas will have floor like below  # no, need to use what was in simulation to be consistent with simulation's idea of what optical depth was
+        # and of used ugclean above, then in funnel temperature would be very small and kappaff would be huge.
         #
+        prad=(4.0/3.0-1.0)*urad
+        # code Tgas for ideal gas
+        Tgas=pg/rho
+        # use rho to keep kappa low.
+        KAPPAUSER=(rho*KAPPA*KAPPA_FF_CODE(rho,Tgas+TEMPMIN))
+        KAPPAESUSER=(rho*KAPPAES*KAPPA_ES_CODE(rho,Tgas))
 
 def pow(x,n):
     return(x**n)
@@ -8515,35 +8714,90 @@ def decolumnify(dumpname):
     gout.close()
     print( "Done!" )
 
-def rddims():
-    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1
-    # then also get radiation constants
-    fname= "dimensions.txt"
-    fin = open(fname, "rt" )
-    dimfile = fin.readline().split()
-    numheaderitems=len(dimfile) #.shape[0]
-    GGG = np.float64(dimfile[0])
-    CCCTRUE = np.float64(dimfile[1])
-    MSUNCM = np.float64(dimfile[2])
-    MPERSUN = np.float64(dimfile[3])
-    LBAR = np.float64(dimfile[4])
-    TBAR = np.float64(dimfile[5])
-    VBAR = np.float64(dimfile[6])
-    RHOBAR = np.float64(dimfile[7])
-    MBAR = np.float64(dimfile[8])
-    ENBAR = np.float64(dimfile[9])
-    UBAR = np.float64(dimfile[10])
-    TEMPBAR = np.float64(dimfile[11])
-    ARAD_CODE_DEF = np.float64(dimfile[12])
-    XFACT = np.float64(dimfile[13])
-    ZATOM = np.float64(dimfile[14])
-    AATOM = np.float64(dimfile[15])
-    MUE = np.float64(dimfile[16])
-    MUI = np.float64(dimfile[17])
-    OPACITYBAR = np.float64(dimfile[18])
-    MASSCM = np.float64(dimfile[19])
-    KORAL2HARMRHO1 = np.float64(dimfile[20])
-    fin.close()
+def rddims(gotrad):
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
+    if(gotrad==1):
+        # then also get radiation constants
+        fname= "dimensions.txt"
+        fin = open(fname, "rt" )
+        dimfile = fin.readline().split()
+        numheaderitems=len(dimfile) #.shape[0]
+        #
+        GGG = np.float64(dimfile[0])
+        CCCTRUE = np.float64(dimfile[1])
+        MSUNCM = np.float64(dimfile[2])
+        MPERSUN = np.float64(dimfile[3])
+        LBAR = np.float64(dimfile[4])
+        TBAR = np.float64(dimfile[5])
+        VBAR = np.float64(dimfile[6])
+        RHOBAR = np.float64(dimfile[7])
+        MBAR = np.float64(dimfile[8])
+        ENBAR = np.float64(dimfile[9])
+        UBAR = np.float64(dimfile[10])
+        TEMPBAR = np.float64(dimfile[11])
+        ARAD_CODE_DEF = np.float64(dimfile[12])
+        XFACT = np.float64(dimfile[13])
+        ZATOM = np.float64(dimfile[14])
+        AATOM = np.float64(dimfile[15])
+        MUE = np.float64(dimfile[16])
+        MUI = np.float64(dimfile[17])
+        OPACITYBAR = np.float64(dimfile[18])
+        MASSCM = np.float64(dimfile[19])
+        KORAL2HARMRHO1 = np.float64(dimfile[20])
+        fin.close()
+        #
+        MSUN=1.9891E33
+        sigmaT=0.665E-24
+        mproton=1.673E-24
+        einf,linf=elinfcalc(a)
+        effnom=1.0-einf
+        #
+        Ledd=4*np.pi*GGG*(MPERSUN*MSUN)*mproton*CCCTRUE/sigmaT
+        Leddcode = Ledd/ENBAR*TBAR
+        Mdotedd = Ledd/(CCCTRUE**2*effnom)
+        Mdoteddcode = Mdotedd/MBAR*TBAR
+        rhoedd = Mdotedd/CCCTRUE*(GGG*MPERSUN*MSUN/CCCTRUE**2)/(GGG*MPERSUN*MSUN/CCCTRUE**2)**3
+        rhoeddcode = rhoedd/RHOBAR
+        uedd = rhoedd*CCCTRUE**2
+        bedd = np.sqrt(uedd)
+        ueddcode = uedd/UBAR
+        beddcode = bedd/np.sqrt(UBAR)
+        #
+        print("CCCTRUE=%g ENBAR=%g TBAR=%g Leddcode=%g Mdoteddcode=%g einf=%g linf=%g uedd=%g bedd=%g" % (CCCTRUE,ENBAR,TBAR,Ledd,Mdotedd,einf,linf,uedd,bedd)) ; sys.stdout.flush()
+        print("CCCTRUE=%g ENBAR=%g TBAR=%g" % (CCCTRUE,ENBAR,TBAR)) ; sys.stdout.flush()
+    else:
+        GGG=1
+        CCCTRUE=1
+        MSUNCM=1
+        MPERSUN=1
+        LBAR=1
+        TBAR=1
+        VBAR=1
+        RHOBAR=1
+        MBAR=1
+        ENBAR=1
+        UBAR=1
+        TEMPBAR=1
+        ARAD_CODE_DEF=1
+        XFACT=1
+        ZATOM=1
+        AATOM=1
+        MUE=1
+        MUI=1
+        OPACITYBAR=1
+        MASSCM=1
+        KORAL2HARMRHO1=1
+        #
+        Ledd=1
+        Leddcode=1
+        Mdotedd=1
+        Mdoteddcode=1
+        rhoedd=1
+        rhoeddcode=1
+        uedd=1
+        ueddcode=1
+        bedd=1
+        beddcode=1
     
 def myfloatalt(f):
     return( np.float64(f) )
@@ -9936,6 +10190,18 @@ def amin(arg1,arg2):
     # ret[arr2<arr1]=arr2[arr2<arr1]
     # return(ret)
 
+def Rcalcud():
+    global Rud,uradd
+    Rud = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
+    uradd = mdot(gv3,uradu)
+    for kapa in np.arange(4):
+        for nu in np.arange(4):
+            if(kapa==nu): delta = 1
+            else: delta = 0
+            Rud[kapa,nu] = 4./3.*Erf*uradu[kapa]*uradd[nu]
+            if delta:
+                Rud[kapa,nu] += 1./3.*Erf*delta
+            
 def Tcalcud():
     global Tud, TudEM, TudMA
     global mu, sigma
