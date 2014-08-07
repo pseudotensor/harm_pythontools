@@ -7372,7 +7372,7 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
         #
         iBx = reinterpxy(Bxnorm,extent,ncell,domask=1,mirrorfactor=-1.,rhor=rhor,thetarot=thetarot)
         iBy = reinterpxy(Bynorm,extent,ncell,domask=1,mirrorfactor=-1.,rhor=rhor,thetarot=thetarot)
-        iibeta = reinterpxy(0.5*bsq/(gam-1)/ug,extent,ncell,domask=0,rhor=rhor,thetarot=thetarot)
+        iibeta = reinterpxy(0.5*bsq/(gam-1)/(ug+urad),extent,ncell,domask=0,rhor=rhor,thetarot=thetarot)
         ibsqorho = reinterpxy(bsq/rho,extent,ncell,domask=0,rhor=rhor,thetarot=thetarot)
         ibsqo2rho = 0.5 * ibsqorho
         xi = np.linspace(extent[0], extent[1], ncell)
