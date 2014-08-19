@@ -1583,7 +1583,7 @@ def mkmfnew(v,findex=10000,
     if maxval > 0.5:
         ymax=np.floor(maxval+1)*prefactor
     else:
-        ymax = ax34.get_ylim()[1]
+        ymax = maxval #ax34.get_ylim()[1]
     ax34.set_ylim(0,ymax)
     print( "max(etabh) = %g" % ymax )
     if ymax >= 50 and ymax <= 100: 
