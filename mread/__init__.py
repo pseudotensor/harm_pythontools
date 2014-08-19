@@ -1446,7 +1446,11 @@ def mkmfnew(v,findex=10000,
         itf = gd1[1]
         fti = gd1[2]
         ftf = gd1[3]
-        print( "Warning: titf.txt found: using for averaging: iti = %g, itf = %g, fti = %g, ftf = %g" % (iti,itf,fti,ftf) )
+        if len(gd1)>=5:
+            vmin = gd[4]
+            vmax = gd[5]
+            print( "Found titf.txt: iti = %g, itf = %g, fti = %g, ftf = %g, vmin = %g, vmax = %g"
+                   % (iti,itf,fti,ftf,vmin,vmax) )
     else:
         iti = 3500
         itf = 9500
