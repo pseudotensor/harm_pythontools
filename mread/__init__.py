@@ -1579,8 +1579,8 @@ def mkmfnew(v,findex=10000,
     maxval = np.nanmax(ma.filled(etabh[v["t"]<ftf]))
     medval = np.median(ma.filled(etabh[v["t"]<ftf]))
     if maxval > 5*medval:
-        ymax = 2*medval
-    elif maxval > 0.5:
+        maxval = 2*medval
+    if maxval > 0.5:
         ymax=np.floor(maxval+1)*prefactor
     else:
         ymax = ax34.get_ylim()[1]
