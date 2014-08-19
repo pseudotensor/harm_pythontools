@@ -1491,7 +1491,7 @@ def mkmfnew(v,findex=10000,
     ymed=np.median(v["FM"][which,myi])
     if ymax > 1:
         ymax=2*(np.floor(np.floor(ymax+1.5)/2))
-    if yval > 5*ymed:
+    if ymax > 5*ymed:
         ymax = 2*ymed
     print( "max(FM) = %g" % ymax )
     # ymax = 26.
