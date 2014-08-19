@@ -1440,15 +1440,14 @@ def mkmfnew(v,findex=10000,
             os.path.isfile(os.path.join("titf.txt")):
         gd1 = np.loadtxt( "titf.txt",
                           dtype=np.float64, 
-                          skiprows=1, 
                           unpack = True )
         iti = gd1[0]
         itf = gd1[1]
         fti = gd1[2]
         ftf = gd1[3]
         if len(gd1)>=5:
-            vmin = gd[4]
-            vmax = gd[5]
+            vmin = gd1[4]
+            vmax = gd1[5]
             print( "Found titf.txt: iti = %g, itf = %g, fti = %g, ftf = %g, vmin = %g, vmax = %g"
                    % (iti,itf,fti,ftf,vmin,vmax) )
     else:
