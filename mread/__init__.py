@@ -1493,6 +1493,7 @@ def mkmfnew(v,findex=10000,
         ymax=2*(np.floor(np.floor(ymax+1.5)/2))
     if ymax > 5*ymed:
         ymax = 2*ymed
+    ymax = float("{0:.2g}".format(ymax))
     print( "max(FM) = %g" % ymax )
     # ymax = 26.
     ax31.set_yticks((ymax/2.,ymax))
@@ -1583,7 +1584,8 @@ def mkmfnew(v,findex=10000,
     if maxval > 0.5:
         ymax=np.floor(maxval+1)*prefactor
     else:
-        ymax = maxval #ax34.get_ylim()[1]
+        ymax = maxval*prefactor #ax34.get_ylim()[1]
+    ymax = float("{0:.2g}".format(ymax))    
     ax34.set_ylim(0,ymax)
     print( "max(etabh) = %g" % ymax )
     if ymax >= 50 and ymax <= 100: 
