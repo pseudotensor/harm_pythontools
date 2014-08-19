@@ -1574,7 +1574,9 @@ def mkmfnew(v,findex=10000,
     #     print("Got max(etabh) = 0, recomputing...")
     #     ymax = etabh[v["t"]<ftf].nanmax()
     maxval = np.nanmax(ma.filled(etabh[v["t"]<ftf]))
-    if maxval > 0.5:
+    if maxval > 1e3:
+        ymax = 30
+    elif maxval > 0.5:
         ymax=np.floor(maxval+1)*prefactor
     else:
         ymax = ax34.get_ylim()[1]
