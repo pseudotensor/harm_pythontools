@@ -1574,15 +1574,21 @@ def mkmfnew(v,findex=10000,
     # if ymax == 0:
     #     print("Got max(etabh) = 0, recomputing...")
     #     ymax = etabh[v["t"]<ftf].nanmax()
-    ymax=np.floor(np.nanmax(ma.filled(etabh[v["t"]<ftf]))+1)*prefactor
-    print( "max(etabh) = %g" % ymax )
-    ax34.set_ylim(0,ymax)
-    if ymax < 100: 
-        tck = np.arange(0,ymax,50)
+    maxval = np.nanmax(ma.filled(etabh[v["t"]<ftf]))
+    if maxval > 0.5:
+        ymax=np.floor(maxval+1)*prefactor
     else:
+        ymax = ax34.get_ylim()[1]
+    ax34.set_ylim(0,ymax)
+    print( "max(etabh) = %g" % ymax )
+    if ymax >= 50 and ymax <= 100: 
+        tck = np.arange(0,ymax,50)
+    elif ymax > 100:
         tck = np.arange(0,ymax,100)
+        ax34.set_yticks(tck)
+    else:
+        tck = ax34.get_yticks()
     placeletter(ax34,"$(\mathrm{e})$",fx=0.15,fy=0.35,bbox=bbox_props)
-    ax34.set_yticks(tck)
     #reset lower limit to 0
     ax34.set_xlabel(r'$t\ [r_g/c]$',fontsize=16)
     ax34.set_ylim(0,ymax)
