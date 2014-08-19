@@ -1488,8 +1488,11 @@ def mkmfnew(v,findex=10000,
     #end plotting
     ax31.set_xlim(0,tmax)
     ymax=ax31.get_ylim()[1]
+    ymed=np.median(v["FM"][which,myi])
     if ymax > 1:
         ymax=2*(np.floor(np.floor(ymax+1.5)/2))
+    if yval > 5*ymed:
+        ymax = 2*ymed
     print( "max(FM) = %g" % ymax )
     # ymax = 26.
     ax31.set_yticks((ymax/2.,ymax))
@@ -1574,8 +1577,9 @@ def mkmfnew(v,findex=10000,
     #     print("Got max(etabh) = 0, recomputing...")
     #     ymax = etabh[v["t"]<ftf].nanmax()
     maxval = np.nanmax(ma.filled(etabh[v["t"]<ftf]))
-    if maxval > 1e3:
-        ymax = 30
+    medval = np.median(ma.filled(etabh[v["t"]<ftf]))
+    if maxval > 5*medval:
+        ymax = 2*medval
     elif maxval > 0.5:
         ymax=np.floor(maxval+1)*prefactor
     else:
