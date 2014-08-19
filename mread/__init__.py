@@ -1466,7 +1466,7 @@ def mkmfnew(v,findex=10000,
     which = (v["t"] < ftf)
     #mdot,pjet,pjet/mdot plots
     gs3 = GridSpec(3, 3)
-    gs3.update(left=0.07, right=0.94, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
+    gs3.update(left=0.1, right=0.94, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
     #
     #mdot plot
     #
@@ -1586,7 +1586,8 @@ def mkmfnew(v,findex=10000,
         tck = np.arange(0,ymax,100)
         ax34.set_yticks(tck)
     else:
-        tck = ax34.get_yticks()
+        tck = np.array([0,ymax/2,ymax])
+    ax34.set_yticks(tck)
     placeletter(ax34,"$(\mathrm{e})$",fx=0.15,fy=0.35,bbox=bbox_props)
     #reset lower limit to 0
     ax34.set_xlabel(r'$t\ [r_g/c]$',fontsize=16)
