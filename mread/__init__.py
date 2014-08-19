@@ -1479,7 +1479,7 @@ def mkmfnew(v,findex=10000,
     if 'FMavg' not in globals():
         FMavg = 0*v["t"]
         FMavg[which] = timeavg(v["FM"][which,myi],v["t"][which],fti=iti,ftf=ftf,sigma=sigma)
-        FMavg[1-which]  = FMavg[1-which] + FMavg[which][-1]      
+        FMavg[~which]  = FMavg[~which] + FMavg[which][-1]      
     t = v["t"]
     #pdb.set_trace()
     #ensure of the same shape as the rest
