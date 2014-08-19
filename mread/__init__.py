@@ -1436,6 +1436,23 @@ def mkmfnew(v,findex=10000,
             sigma=1500,sigma1=None,prefactor=100,domakeframes=1,plotlen=25,maxsBphi=3,
             doreload=1,dosavefig = 1,fntsize=16,myi=None,vmin=-9,vmax=-3): #vmin=-6,vmax=0.5625):
     global FMavg
+    if iti is None or itf is None or fti is None or ftf is None or\
+            os.path.isfile(os.path.join("titf.txt")):
+        gd1 = np.loadtxt( "titf.txt",
+                          dtype=np.float64, 
+                          skiprows=1, 
+                          unpack = True )
+        iti = gd1[0]
+        itf = gd1[1]
+        fti = gd1[2]
+        ftf = gd1[3]
+        print( "Warning: titf.txt found: using for averaging: iti = %g, itf = %g, fti = %g, ftf = %g" % (iti,itf,fti,ftf) )
+    else:
+        iti = 3500
+        itf = 9500
+        fti = 3500
+        ftf = 9500
+        print( "Warning: titf.txt not found: using default numbers for averaging: iti = %g, itf = %g, fti = %g, ftf = %g" % (iti,itf,fti,ftf) )
     plt.clf()
     if myi is None:
         myi = np.sum(v["rvals"]<5)
