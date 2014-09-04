@@ -1258,6 +1258,158 @@ def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,nce
 #vis_grb(dofieldlines=0,dosavefig=1)
 #mk_vis_grb_movie(n1=259)
 
+def visualize_fieldlines(doreload=1,no=72,xmax=10,ymax=10,zmax=10,ncellx=100,ncelly=100,ncellz=100,dosavefig=0):
+    if doreload:
+        grid3d("gdump.bin",use2d=1)
+        #rfd("fieldline9000.bin")
+        rfd("fieldline%04d.bin"%no)
+        cvel()
+    scene = mlab.figure(1, bgcolor=(0, 0, 0), fgcolor=(1, 1, 1), size=(210*2, 297*2))
+    print( "Running interp3d for jet..." ); sys.stdout.flush()
+    i3d_jet,j3d_jet,k3d_jet,xi_jet,yi_jet,zi_jet =\
+        interp3d(xmax=xmax,ymax=ymax,zmax=zmax,ncellx=ncellx,ncelly=ncelly,ncellz=ncellz)
+    print( "Done with inter3d for jet..." ); sys.stdout.flush()
+    #
+    # Magnetic field
+    #
+    Br = dxdxp[1,1]*B[1]+dxdxp[1,2]*B[2]
+    Bh = dxdxp[2,1]*B[1]+dxdxp[2,2]*B[2]
+    Bp = B[3]*dxdxp[3,3]
+    #
+    Brnorm=Br
+    Bhnorm=Bh*np.abs(r)
+    Bpnorm=Bp*np.abs(r*np.sin(h))
+    #
+    BR=Brnorm*np.sin(h)+Bhnorm*np.cos(h)
+    Bx=BR*cos(ph)-Bpnorm*sin(ph)
+    By=BR*sin(ph)+Bpnorm*cos(ph)
+    Bz=Brnorm*np.cos(h)-Bhnorm*np.sin(h)
+    print( "Running trilinear interpolation for Bx..." ); sys.stdout.flush()
+    Bxi = np.float32(trilin(Bx,i3d_jet,j3d_jet,k3d_jet))
+    print( "Done with trilinear interpolation for Bx..." ); sys.stdout.flush()
+    print( "Running trilinear interpolation for By..." ); sys.stdout.flush()
+    Byi = np.float32(trilin(By,i3d_jet,j3d_jet,k3d_jet))
+    print( "Done with trilinear interpolation for By..." ); sys.stdout.flush()
+    print( "Running trilinear interpolation for Bz..." ); sys.stdout.flush()
+    Bzi = np.float32(trilin(Bz,i3d_jet,j3d_jet,k3d_jet))
+    print( "Done with trilinear interpolation for Bz..." ); sys.stdout.flush()
+    # pdb.set_trace()
+    mlab.clf()
+    if 1:
+        print( "Running interp3d for jet..." ); sys.stdout.flush()
+        i3d_jet,j3d_jet,k3d_jet,xi_jet,yi_jet,zi_jet =\
+          interp3d(xmax=xmax,ymax=ymax,zmax=zmax,ncellx=ncellx,ncelly=ncelly,ncellz=ncellz)
+        print( "Done with inter3d for jet..." ); sys.stdout.flush()
+        print( "Running trilinear interpolation for jet..." ); sys.stdout.flush()
+        lrhoi_jet = np.float32(trilin(lrho,i3d_jet,j3d_jet,k3d_jet))
+        print( "Done with trilinear interpolation for jet..." ); sys.stdout.flush()
+        mlab_lrho_jet = mlab.pipeline.scalar_field(xi_jet,yi_jet,zi_jet,lrhoi_jet)
+        from tvtk.util.ctf import PiecewiseFunction
+        print( "Running volume rendering for jet..." ); sys.stdout.flush()
+        vol_jet = mlab.pipeline.volume(mlab_lrho_jet) #,vmin=-6,vmax=1)
+        print( "Done with volume rendering of jet..." ); sys.stdout.flush()
+        vol_jet.volume_mapper.blend_mode = 'minimum_intensity'
+        otf_jet = PiecewiseFunction()
+        if 0:
+            otf_jet.add_point(-6., 0.429)
+            otf_jet.add_point(-4.547, 0.429)
+            otf_jet.add_point(-2.92, 0)
+            otf_jet.add_point(1, 0.)
+        elif 1:
+            #less diffuse jet, so it does not touch box boundaries
+            otf_jet.add_point(-6.0, 0.408)
+            otf_jet.add_point(-4.8, 0.408)
+            otf_jet.add_point(-3.8, 0.)
+            otf_jet.add_point(1., 0.)
+        vol_jet._otf = otf_jet
+        vol_jet._volume_property.set_scalar_opacity(otf_jet)        
+    if 1:
+        streamlines = []
+        xpos = [1,  0, 0,  0,  0]
+        ypos = [0,  1, 0,  -1, 0]
+        zpos = [0,  0, 1,  0,  1]
+        intdir = ['forward', 'forward', 'forward', 'forward', 'forward']
+        for sn in xrange(4):
+            print( "Running rendering of streamline #%d..." % (sn+1) ); sys.stdout.flush()
+            streamline = mlab.flow(xi_jet, yi_jet, zi_jet, Bxi, Byi, Bzi, seed_scale=0.01,
+                             seed_resolution=5,
+                             integration_direction=intdir[sn],
+                             seedtype='point')
+            streamlines.append(streamline)
+            streamline.module_manager.scalar_lut_manager.lut_mode = 'gist_yarg'
+            streamline.streamline_type = 'tube'
+            streamline.tube_filter.radius = 0.1
+            if 0:
+                streamline.seed.widget.phi_resolution = 3
+                streamline.seed.widget.theta_resolution = 3
+                streamline.seed.widget.radius = 1.0
+            elif 0: 
+                #more tightly wound field lines
+                streamline.seed.widget.phi_resolution = 10
+                streamline.seed.widget.theta_resolution = 5
+                #make them more round
+            streamline.tube_filter.number_of_sides = 8
+            streamline.stream_tracer.progress = 1.0
+            streamline.stream_tracer.maximum_number_of_steps = 10000L
+            #streamline.stream_tracer.start_position =  np.array([ 0.,  0.,  0.])
+            streamline.stream_tracer.maximum_propagation = 20000.0
+            streamline.seed.widget.position = np.array([ xpos[sn],  ypos[sn],  zpos[sn]])
+            streamline.seed.widget.enabled = False
+            streamline.update_streamlines = 1
+            print( "Done with streamline #%d..." % (sn+1)); sys.stdout.flush()
+        #pdb.set_trace()
+    if 0:
+        myr = 20
+        myi = iofr(myr)
+        #mesh
+        s = wraparound((np.abs(B[1])*dxdxp[1,1]))[myi,:,:]
+        x = wraparound(r*sin(h)*cos(ph-OmegaNS*t))[myi,:,:]
+        y = wraparound(r*sin(h)*sin(ph-OmegaNS*t))[myi,:,:]
+        z = wraparound(r*cos(h))[myi,:,:]
+        mlab.mesh(x, y, z, scalars=s, colormap='jet')
+    if 0:
+        #show the black hole
+        rbh = rhor
+        thbh = np.linspace(0,np.pi,128,endpoint=1)[:,None]
+        phbh = np.linspace(0,2*np.pi,128,endpoint=1)[None,:]
+        thbh = thbh + 0*phbh + 0*thbh
+        phbh = phbh + 0*phbh + 0*thbh
+        xbh = rbh*sin(thbh)*cos(phbh)
+        ybh = rbh*sin(thbh)*sin(phbh)
+        zbh = rbh*cos(thbh)
+        mlab.mesh(xbh, ybh, zbh, scalars=1+0*thbh, colormap='jet',vmin=0, vmax = 1)
+    if 1:
+        myr = 1.05
+        myi = iofr(myr)
+        #mesh
+        s = wraparound((1.-1./uu[0]**2)**0.5)[myi,:,:]
+        x = wraparound(r*sin(h)*cos(ph-OmegaNS*t))[myi,:,:]
+        y = wraparound(r*sin(h)*sin(ph-OmegaNS*t))[myi,:,:]
+        z = wraparound(r*cos(h))[myi,:,:]
+        print( "Rotating Br distribution by dphi = %g" % np.arcsin(sin(OmegaNS*t)) )
+        surf = mlab.mesh(x, y, z, scalars=s, colormap='jet',opacity=1)
+        surf.actor.property.backface_culling = True
+    #move camera:
+    scene.scene.camera.position = [1037.2177748124982, 1411.458249001643, -510.33158924621932]
+    scene.scene.camera.focal_point = [9.7224118574481291e-12, -1.2963215809930837e-10, 2.5926431619861676e-11]
+    scene.scene.camera.view_angle = 30.0
+    scene.scene.camera.view_up = [-0.33552748243496205, -0.092397178145941311, -0.93748817059284728]
+    scene.scene.camera.clipping_range = [4.235867945966219, 4235.8679459662189]
+    scene.scene.camera.compute_view_plane_normal()
+    scene.scene.render()    
+    # iso.contour.maximum_contour = 75.0
+    #vec = mlab.pipeline.vectors(d)
+    #vec.glyph.mask_input_points = True
+    #vec.glyph.glyph.scale_factor = 1.5
+    #move the camera so it is centered on (0,0,0)
+    #mlab.view(focalpoint=[0,0,0],distance=500)
+    #mlab.show()
+    print( "Done rendering!" ); sys.stdout.flush()
+    if dosavefig:
+        print( "Saving snapshot..." ); sys.stdout.flush()
+        mlab.savefig("disk_jet_with_field_lines.png", figure=scene, magnification=6.0)
+        print( "Done!" ); sys.stdout.flush()
+
 
 def vis_pulsar(doreload=1,no=96,xmax=21,ymax=21,zmax=21,ncellx=201,ncelly=201,ncellz=201,dosavefig=0,order=3,dofieldlines=1,updateframe=0,doreinterp=1):
     global mlab_lrho_jet, vol_jet, lrhoi_jet, i3d_jet,j3d_jet,k3d_jet,xi_jet,yi_jet,zi_jet, Bxi, Byi, Bzi
