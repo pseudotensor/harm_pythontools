@@ -1258,7 +1258,7 @@ def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,nce
 #vis_grb(dofieldlines=0,dosavefig=1)
 #mk_vis_grb_movie(n1=259)
 
-def visualize_fieldlines(doreload=1,no=72,xmax=10,ymax=10,zmax=10,ncellx=100,ncelly=100,ncellz=100,dosavefig=0):
+def visualize_fieldlines(doreload=1,no=72,xmax=100,ymax=20,zmax=20,ncellx=400,ncelly=100,ncellz=100,dosavefig=0):
     if doreload:
         grid3d("gdump.bin",use2d=1)
         #rfd("fieldline9000.bin")
@@ -1317,10 +1317,10 @@ def visualize_fieldlines(doreload=1,no=72,xmax=10,ymax=10,zmax=10,ncellx=100,nce
             otf_jet.add_point(1, 0.)
         elif 1:
             #less diffuse jet, so it does not touch box boundaries
-            otf_jet.add_point(-6.0, 0.408)
-            otf_jet.add_point(-4.8, 0.408)
-            otf_jet.add_point(-3.8, 0.)
-            otf_jet.add_point(1., 0.)
+            otf_jet.add_point(-2, 1.)
+            otf_jet.add_point(1, 0.1)
+            otf_jet.add_point(2, 0.)
+            otf_jet.add_point(4., 0.)
         vol_jet._otf = otf_jet
         vol_jet._volume_property.set_scalar_opacity(otf_jet)        
     if 1:
@@ -1382,9 +1382,9 @@ def visualize_fieldlines(doreload=1,no=72,xmax=10,ymax=10,zmax=10,ncellx=100,nce
         myr = 1.05
         myi = iofr(myr)
         #mesh
-        #var = (1.-1./uu[0]**2)**0.5
-        faraday()
-        var = omegaf2*dxdxp[3,3]
+        var = (1.-1./uu[0]**2)**0.5
+        #faraday()
+        #var = omegaf2*dxdxp[3,3]
         s = wraparound(var)[myi,:,:]
         x = wraparound(r*sin(h)*cos(ph))[myi,:,:]
         y = wraparound(r*sin(h)*sin(ph))[myi,:,:]
@@ -1393,14 +1393,14 @@ def visualize_fieldlines(doreload=1,no=72,xmax=10,ymax=10,zmax=10,ncellx=100,nce
         surf.actor.property.backface_culling = True
         mlab.colorbar(object=surf,title="Surface velocity magnitude")
     #move camera:
-    scene.scene.camera.position = [1037.2177748124982, 1411.458249001643, -510.33158924621932]
-    scene.scene.camera.focal_point = [9.7224118574481291e-12, -1.2963215809930837e-10, 2.5926431619861676e-11]
+    scene.scene.show_axes = True
+    scene.scene.camera.position = [-7.9580786405131221e-13, -93.080546590412126, -0.039630889892535492]
+    scene.scene.camera.focal_point = [-7.9580786405131221e-13, 0.0065279006958007812, -0.039630889892535492]
     scene.scene.camera.view_angle = 30.0
-    scene.scene.camera.view_up = [-0.33552748243496205, -0.092397178145941311, -0.93748817059284728]
-    scene.scene.camera.clipping_range = [4.235867945966219, 4235.8679459662189]
+    scene.scene.camera.view_up = [1.0, 0.0, 0.0]
+    scene.scene.camera.clipping_range = [52.343213223812199, 144.59973299971753]
     scene.scene.camera.compute_view_plane_normal()
-    scene.scene.render()    
-    # iso.contour.maximum_contour = 75.0
+    scene.scene.render()    # iso.contour.maximum_contour = 75.0
     #vec = mlab.pipeline.vectors(d)
     #vec.glyph.mask_input_points = True
     #vec.glyph.glyph.scale_factor = 1.5
