@@ -1382,13 +1382,16 @@ def visualize_fieldlines(doreload=1,no=72,xmax=10,ymax=10,zmax=10,ncellx=100,nce
         myr = 1.05
         myi = iofr(myr)
         #mesh
-        s = wraparound((1.-1./uu[0]**2)**0.5)[myi,:,:]
-        x = wraparound(r*sin(h)*cos(ph-OmegaNS*t))[myi,:,:]
-        y = wraparound(r*sin(h)*sin(ph-OmegaNS*t))[myi,:,:]
+        #var = (1.-1./uu[0]**2)**0.5
+        faraday()
+        var = omegaf2*dxdxp[3,3]
+        s = wraparound(var)[myi,:,:]
+        x = wraparound(r*sin(h)*cos(ph))[myi,:,:]
+        y = wraparound(r*sin(h)*sin(ph))[myi,:,:]
         z = wraparound(r*cos(h))[myi,:,:]
-        print( "Rotating Br distribution by dphi = %g" % np.arcsin(sin(OmegaNS*t)) )
-        surf = mlab.mesh(x, y, z, scalars=s, colormap='jet',opacity=1)
+        surf = mlab.mesh(x, y, z, scalars=s, colormap='jet',opacity=1,vmin=0,vmax=1)
         surf.actor.property.backface_culling = True
+        mlab.colorbar(object=surf,title="Surface velocity magnitude")
     #move camera:
     scene.scene.camera.position = [1037.2177748124982, 1411.458249001643, -510.33158924621932]
     scene.scene.camera.focal_point = [9.7224118574481291e-12, -1.2963215809930837e-10, 2.5926431619861676e-11]
@@ -1409,6 +1412,105 @@ def visualize_fieldlines(doreload=1,no=72,xmax=10,ymax=10,zmax=10,ncellx=100,nce
         print( "Saving snapshot..." ); sys.stdout.flush()
         mlab.savefig("disk_jet_with_field_lines.png", figure=scene, magnification=6.0)
         print( "Done!" ); sys.stdout.flush()
+
+def faraday():
+    global fdd, fuu, omegaf1, omegaf2, omegaf1b, omegaf2b, rhoc
+    if 'fdd' in globals():
+        del fdd
+    if 'fuu' in globals():
+        del fuu
+    if 'omegaf1' in globals():
+        del omegaf1
+    if 'omemaf2' in globals():
+        del omegaf2
+    # these are native values according to HARM
+    fdd = np.zeros((4,4,nx,ny,nz),dtype=rho.dtype)
+    #fdd[0,0]=0*gdet
+    #fdd[1,1]=0*gdet
+    #fdd[2,2]=0*gdet
+    #fdd[3,3]=0*gdet
+    fdd[0,1]=gdet*(uu[2]*bu[3]-uu[3]*bu[2]) # f_tr
+    fdd[1,0]=-fdd[0,1]
+    fdd[0,2]=gdet*(uu[3]*bu[1]-uu[1]*bu[3]) # f_th
+    fdd[2,0]=-fdd[0,2]
+    fdd[0,3]=gdet*(uu[1]*bu[2]-uu[2]*bu[1]) # f_tp
+    fdd[3,0]=-fdd[0,3]
+    fdd[1,3]=gdet*(uu[2]*bu[0]-uu[0]*bu[2]) # f_rp = gdet*B2
+    fdd[3,1]=-fdd[1,3]
+    fdd[2,3]=gdet*(uu[0]*bu[1]-uu[1]*bu[0]) # f_hp = gdet*B1
+    fdd[3,2]=-fdd[2,3]
+    fdd[1,2]=gdet*(uu[0]*bu[3]-uu[3]*bu[0]) # f_rh = gdet*B3
+    fdd[2,1]=-fdd[1,2]
+    #
+    fuu = np.zeros((4,4,nx,ny,nz),dtype=rho.dtype)
+    #fuu[0,0]=0*gdet
+    #fuu[1,1]=0*gdet
+    #fuu[2,2]=0*gdet
+    #fuu[3,3]=0*gdet
+    fuu[0,1]=-1/gdet*(ud[2]*bd[3]-ud[3]*bd[2]) # f^tr
+    fuu[1,0]=-fuu[0,1]
+    fuu[0,2]=-1/gdet*(ud[3]*bd[1]-ud[1]*bd[3]) # f^th
+    fuu[2,0]=-fuu[0,2]
+    fuu[0,3]=-1/gdet*(ud[1]*bd[2]-ud[2]*bd[1]) # f^tp
+    fuu[3,0]=-fuu[0,3]
+    fuu[1,3]=-1/gdet*(ud[2]*bd[0]-ud[0]*bd[2]) # f^rp
+    fuu[3,1]=-fuu[1,3]
+    fuu[2,3]=-1/gdet*(ud[0]*bd[1]-ud[1]*bd[0]) # f^hp
+    fuu[3,2]=-fuu[2,3]
+    fuu[1,2]=-1/gdet*(ud[0]*bd[3]-ud[3]*bd[0]) # f^rh
+    fuu[2,1]=-fuu[1,2]
+    #
+    # these 2 are equal in degen electrodynamics when d/dt=d/dphi->0
+    omegaf1=fdd[0,1]/fdd[1,3] # = ftr/frp
+    omegaf2=fdd[0,2]/fdd[2,3] # = fth/fhp
+    #
+    # from jon branch, 04/10/2012
+    #
+    B1hat=B[1]*np.sqrt(gv3[1,1])
+    B2hat=B[2]*np.sqrt(gv3[2,2])
+    B3nonhat=B[3]
+    v1hat=uu[1]*np.sqrt(gv3[1,1])/uu[0]
+    v2hat=uu[2]*np.sqrt(gv3[2,2])/uu[0]
+    v3nonhat=uu[3]/uu[0]
+    #
+    aB1hat=np.fabs(B1hat)
+    aB2hat=np.fabs(B2hat)
+    av1hat=np.fabs(v1hat)
+    av2hat=np.fabs(v2hat)
+    #
+    vpol=np.sqrt(av1hat**2 + av2hat**2)
+    Bpol=np.sqrt(aB1hat**2 + aB2hat**2)
+    #
+    #omegaf1b=(omegaf1*aB1hat+omegaf2*aB2hat)/(aB1hat+aB2hat)
+    #E1hat=fdd[0,1]*np.sqrt(gn3[1,1])
+    #E2hat=fdd[0,2]*np.sqrt(gn3[2,2])
+    #Epabs=np.sqrt(E1hat**2+E2hat**2)
+    #Bpabs=np.sqrt(aB1hat**2+aB2hat**2)+1E-15
+    #omegaf2b=Epabs/Bpabs
+    #
+    # assume field swept back so omegaf is always larger than vphi (only true for outflow, so put in sign switch for inflow as relevant for disk near BH or even jet near BH)
+    # GODMARK: These assume rotation about z-axis
+    omegaf2b=np.fabs(v3nonhat) + np.sign(uu[1])*(vpol/Bpol)*np.fabs(B3nonhat)
+    #
+    omegaf1b=v3nonhat - B3nonhat*(v1hat*B1hat+v2hat*B2hat)/(B1hat**2+B2hat**2)
+    #
+    # charge
+    #
+    if 0:
+        rhoc = np.zeros_like(rho)
+        if nx>=2:
+            rhoc[1:-1] += ((gdet*fuu[0,1])[2:]-(gdet*fuu[0,1])[:-2])/(2*_dx1)
+        if ny>2:
+            rhoc[:,1:-1] += ((gdet*fuu[0,2])[:,2:]-(gdet*fuu[0,2])[:,:-2])/(2*_dx2)
+        if ny>=2:
+            rhoc[:,0,:nz/2] += ((gdet*fuu[0,2])[:,1,:nz/2]+(gdet*fuu[0,2])[:,0,nz/2:])/(2*_dx2)
+            rhoc[:,0,nz/2:] += ((gdet*fuu[0,2])[:,1,nz/2:]+(gdet*fuu[0,2])[:,0,:nz/2])/(2*_dx2)
+        if nz>2:
+            rhoc[:,:,1:-1] += ((gdet*fuu[0,3])[:,:,2:]-(gdet*fuu[0,3])[:,:,:-2])/(2*_dx3)
+        if nz>=2:
+            rhoc[:,:,0] += ((gdet*fuu[0,3])[:,:,1]-(gdet*fuu[0,3])[:,:,-1])/(2*_dx3)
+            rhoc[:,:,-1] += ((gdet*fuu[0,3])[:,:,0]-(gdet*fuu[0,3])[:,:,-2])/(2*_dx3)
+        rhoc /= gdet
 
 
 def vis_pulsar(doreload=1,no=96,xmax=21,ymax=21,zmax=21,ncellx=201,ncelly=201,ncellz=201,dosavefig=0,order=3,dofieldlines=1,updateframe=0,doreinterp=1):
