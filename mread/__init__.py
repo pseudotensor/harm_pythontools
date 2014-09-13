@@ -8299,7 +8299,7 @@ def rddims(gotrad):
         ueddcode = uedd/UBAR
         beddcode = bedd/np.sqrt(UBAR)
         #
-        print("CCCTRUE=%g ENBAR=%g TBAR=%g Leddcode=%g Mdoteddcode=%g einf=%g linf=%g uedd=%g bedd=%g" % (CCCTRUE,ENBAR,TBAR,Ledd,Mdotedd,einf,linf,uedd,bedd)) ; sys.stdout.flush()
+        print("CCCTRUE=%g ENBAR=%g TBAR=%g Ledd=%g Mdotedd=%g einf=%g linf=%g uedd=%g bedd=%g" % (CCCTRUE,ENBAR,TBAR,Ledd,Mdotedd,einf,linf,uedd,bedd)) ; sys.stdout.flush()
         print("CCCTRUE=%g ENBAR=%g TBAR=%g" % (CCCTRUE,ENBAR,TBAR)) ; sys.stdout.flush()
     else:
         GGG=1
