@@ -1258,13 +1258,13 @@ def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,nce
 #vis_grb(dofieldlines=0,dosavefig=1)
 #mk_vis_grb_movie(n1=259)
 
-def visualize_fieldlines(doreload=1,no=72,xmax=100,ymax=20,zmax=20,ncellx=400,ncelly=100,ncellz=100,dosavefig=0):
+def visualize_fieldlines(fn=1,doreload=1,no=72,xmax=100,ymax=20,zmax=20,ncellx=400,ncelly=100,ncellz=100,dosavefig=0):
     if doreload:
         grid3d("gdump.bin",use2d=1)
         #rfd("fieldline9000.bin")
         rfd("fieldline%04d.bin"%no)
         cvel()
-    scene = mlab.figure(1, bgcolor=(0, 0, 0), fgcolor=(1, 1, 1), size=(210*2, 297*2))
+    scene = mlab.figure(fn, bgcolor=(0, 0, 0), fgcolor=(1, 1, 1), size=(210*2, 297*2))
     print( "Running interp3d for jet..." ); sys.stdout.flush()
     i3d_jet,j3d_jet,k3d_jet,xi_jet,yi_jet,zi_jet =\
         interp3d(xmax=xmax,ymax=ymax,zmax=zmax,ncellx=ncellx,ncelly=ncelly,ncellz=ncellz)
