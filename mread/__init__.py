@@ -1656,6 +1656,7 @@ def mrgnew(n=None,fin1=None,fin2=None,fout="qty.npz"):
     v["FEM"]=[]
     v["FE"]=[]
     v["FR"] = []
+    v["FRj"] = []
     v["PhiBH"]=[]
     v["ind"]=[]
     v["ivals"]=[]
@@ -1676,6 +1677,7 @@ def mrgnew(n=None,fin1=None,fin2=None,fout="qty.npz"):
              FEM = v["FEM"],
              FE = v["FE"],
              FR = v["FR"],
+             FRj = v["FRj"],
              PhiBH = v["PhiBH"],
              ind = v["ind"],
              ivals = v["ivals"],
@@ -1692,6 +1694,7 @@ def mrgnew_n(n, v=None):
         v["FEM"]=[]
         v["FE"]=[]
         v["FR"] = []
+        v["FRj"] = []
         v["PhiBH"]=[]
         v["ind"]=[]
         v["ivals"]=[]
@@ -1738,6 +1741,7 @@ def mrgnew_f(ft, v=None):
         v["FEM"]=[]
         v["FE"]=[]
         v["FR"] = []
+        v["FRj"] = []
         v["PhiBH"]=[]
         v["ind"]=[]
         v["ivals"]=[]
@@ -1787,6 +1791,7 @@ def postprocess1d(startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
     v["FEM"]=[]
     v["FE"]=[]
     v["FR"]=[]
+    v["FRj"] = []
     v["PhiBH"]=[]
     v["ind"]=[]
     v["ivals"]=[]
@@ -1838,6 +1843,7 @@ def postprocess1d(startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
              FEM = v["FEM"],
              FE = v["FE"],
              FR = v["FR"],
+             FRj = v["FRj"],
              PhiBH = v["PhiBH"],
              ind = v["ind"],
              ivals = v["ivals"],
@@ -1893,7 +1899,9 @@ def compvals(di=5):
     #radiation
     if "uradu" in globals():
         FR = (gdet*fRud(1,0)).sum(-1).sum(-1)*_dx2*_dx3
+        FRj = (gdet*fRud(1,0)*(bsq/rho>10)).sum(-1).sum(-1)*_dx2*_dx3
         dic["FR"] = FR[ivals]
+        dic["FRj"] = FRj[ivals]
     #total absolute magnetic flux
     PhiBH = 0.5*np.abs(gdetB[1]).sum(-1).sum(-1)*_dx2*_dx3
     dic["PhiBH"] = PhiBH[ivals]
