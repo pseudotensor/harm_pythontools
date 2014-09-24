@@ -28253,6 +28253,18 @@ def harmradplot5():
     print("time=%g" % (t))
 
 
+def testkomi1():
+
+    grid3d("gdump.bin")
+    rfd("fieldline0000.bin")
+    plt.plot(r[:,0,0],rho[:,0,0])
+    plt.xlabel('r')
+    plt.ylabel('rho')
+    plt.title('Simpe plot of rho vs r')
+    plt.grid(True)
+    plt.savefig("test1.png")
+    plt.show()
+
 
 if __name__ == "__main__":
     # no, can't use sys.exit since want C code that calls this to continue after done
