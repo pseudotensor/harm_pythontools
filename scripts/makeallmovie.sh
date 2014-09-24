@@ -160,6 +160,7 @@ isjmck=`echo $HOSTNAME | grep "ki-jmck" | wc -l`
 isnautilus=`echo $HOSTNAME | egrep 'conseil|arronax' | wc -l`
 iskraken=`echo $HOSTNAME | grep "kraken" | wc -l`
 isphysics179=`echo $HOSTNAME | grep "physics-179" | wc -l`
+isstampede=`echo $HOSTNAME | grep "stampede" | wc -l`
 
 # parallel>=1 sets to use batch sysem if long job *and* if multiple jobs then submit all of them to batch system
 # 1 = orange
@@ -168,6 +169,7 @@ isphysics179=`echo $HOSTNAME | grep "physics-179" | wc -l`
 # 4 = Nautilus
 # 5 = Kraken
 # 6 = physics-179
+# 7 = stampede
 if [ $isorange -eq 1  ]
 then
     system=1
@@ -193,6 +195,11 @@ elif [ $isphysics179 -eq 1 ]
 then
     system=6
     parallel=0
+elif [ $isstampede -eq 1 ]
+then
+    system=7
+    #parallel=1
+    parallel=2 # so uses makemoviec instead of python with appropriate arg changes
 else
     # CHOOSE
     system=3
@@ -867,7 +874,8 @@ echo "Now collect Latex results"
 if [ $collect -eq 1 ] &&
     [ $system -ne 3 ] &&
     [ $system -ne 5 ] &&
-    [ $system -ne 6 ]
+    [ $system -ne 6 ] &&
+    [ $system -ne 7 ]
 then
     # then copy over results
     for thedir in $dircollect
@@ -878,7 +886,8 @@ then
         then
             # use -s 2 in case same file size
             ssh $globusremote scp -D -r -s 2 xsede#nautilus:$dirname/${thedir}/$moviedirname $globushost:/data2/$user/${thedir}/
-        elif [ $system -eq 5 ]
+        elif [ $system -eq 5 ] ||
+            [ $system -eq 7 ]
         then
             ssh $globusremote scp -D -r -s 2 xsede#kraken:$dirname/${thedir}/$moviedirname $globushost:/data2/$user/${thedir}/
         else
@@ -892,7 +901,9 @@ fi
 
 
 if [ $collect -eq 1 ] &&
-    [ $system -eq 5 ]
+    [ $system -eq 5 ] ||
+    [ $collect -eq 1 ] &&
+    [ $system -eq 7 ]
 then
 # below only appears updated if also do powervsm stuff.
     pythonlatexfile="python_u_3_0_1.stdout.out"
@@ -908,7 +919,9 @@ if [ $collect -eq 1 ] &&
     [ $collect -eq 1 ] &&
     [ $system -eq 6 ] ||
     [ $collect -eq 1 ] &&
-    [ $system -eq 5 ]
+    [ $system -eq 5 ] ||
+    [ $collect -eq 1 ] &&
+    [ $system -eq 7 ]
 then
 
     cd $dirname/
