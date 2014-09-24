@@ -14,9 +14,9 @@
 ###########################
 
 USEKIJMCK=0
-USE179=1
 USEKRAKEN=0
 USENAUTILUS=0
+USESTAMPEDE=1
 
 #############
 # Choose whether to use MPI
@@ -151,6 +151,7 @@ LINKER=$(COMP) $(LDFLAGS)
 endif
 
 
+
 # NOT WORKING:
 ifeq ($(USEMPI),1)
 DFLAGS=-DUSINGMPI=$(USEMPI) -DUSINGPYTHON=$(USEPYTHON)
@@ -172,41 +173,21 @@ endif
 
 
 
-ifeq ($(USE179),1)
-
-# no MPI option yet -- problems
-ifeq ($(USEMPI),0)
-DFLAGS=-DUSINGMPI=$(USEMPI) -DUSINGPYTHON=$(USEPYTHON)
-COMP=icc $(DFLAGS)  -no-ipo
-# mpicc should work perfectly with linking as long as all paths are set as if source'ed relevant lib paths, include paths, etc.  Should be done by system!
-LDFLAGS= -lstdc++ -lpython2.7
-# below -I for ki-jmck
-CFLAGS=-O2 -Wall -g -DUSINGMPI=$(USEMPI) -DUSINGPYTHON=$(USEPYTHON) -I/usr/include/python2.7/
-
-MCC=$(COMP)
-LINKER=$(COMP) $(LDFLAGS)
-endif
-
-
-# NOT SURE IF WORKING:
+ifeq ($(USESTAMPEDE),1)
+# -fast causes lack of proper link
 ifeq ($(USEMPI),1)
 DFLAGS=-DUSINGMPI=$(USEMPI) -DUSINGPYTHON=$(USEPYTHON)
-# /data1/jmckinne/mpich2-install/bin/mpicc uses gcc, but fails to add libraries with -l
-#COMP=icc $(DFLAGS)
-COMP=/usr/bin/mpicc $(DFLAGS)
-#LDFLAGS=-lstdc++ -lpython2.7
-# can't get mpich2 to work
-LDFLAGS=-L /home/jon/mpich-install/lib/ -lopa -lmpl  -lrt -lpthread -lmpich -lpython2.7
-# use /usr/lib/libmpi instead (but code crashes upon run)
-#LDFLAGS=-lmpi -lpython2.7
-CFLAGS=-O2 -Wall -g -DUSINGMPI=$(USEMPI) -DUSINGPYTHON=$(USEPYTHON) -I/usr/include/python2.7/ -I/home/jon/mpich-install/include
-
-MCC=$(COMP)
-LINKER=$(COMP) $(LDFLAGS)
+COMP=mpicc $(DFLAGS)  -no-ipo
+#CFLAGS=-I/sw/analysis/python/2.7.1/sles11.1_intel11.1/include/python2.7/
+# mkl and openmp are Intel specific on Nautilus
+# for GNU must use -fopenmp and cannot use -lmkl
+#LDFLAGS=-lstdc++ -L/sw/analysis/python/2.7.1/sles11.1_intel11.1/lib/ -lpython2.7 -lmpi -lmkl -lopenmp
+LDFLAGS=-lstdc++
+CC=$(COMP) $(CFLAGS) $(DFLAGS)
+MCC=$(CC)
+LINKER=$(CC) $(LDFLAGS)
 endif
-
 endif
-
 
 
 
