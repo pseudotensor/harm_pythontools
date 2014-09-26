@@ -15232,10 +15232,11 @@ def convert_jpar_sasha():
         dirpath = os.path.join(runspath,dir)
         os.chdir(dirpath)
         print("Doing %s..." % dirpath)
-        grid3d("gdump.bin",use2d=1)
+        grid3d("gdump.bin",use2d=0)
         rd(dir_dic[dir])
         #
         Bspc = prime2spc(B)
+        Bcart = prime2cart(B)
         jspc = prime2spc(jcon)
         vspc = prime2spc(uu/uu[0])
         #
@@ -15243,7 +15244,7 @@ def convert_jpar_sasha():
         Bsq=mdot(B,Bd)
         jpar = mdot(jcon,Bd)/Bsq**0.5
         #jpar = mdot(jcov,B)/mdot(mdot(gv3,B),B)**0.5
-        jgj = OmegaNS*Bznorm/2/np.pi
+        jgj = OmegaNS*Bcart[3]/2/np.pi
         dic = {}
         #header
         dic["t"] = t
