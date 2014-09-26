@@ -15218,7 +15218,6 @@ def mkmanystreamlinesx1x2(doplot=True):
             plt.draw()
 
 def convert_jpar_sasha():
-    import h5py
     #j/jgj for sasha philippov
     #setup simulation and corresponding data number list
     dir_dic = {}
@@ -15276,9 +15275,17 @@ def convert_jpar_sasha():
         dic["i"] = ti
         dic["j"] = tj
         dic["k"] = tk
+        #
+        # other data
+        #
+        dic["rho"] = rho
+        dic["pgas"] = (gam-1)*ug
+        dic["polytropic_gamma"] = gam
+        #
         writehdf5(fname = os.path.join("..","%s.hdf5" % dir), data_dic = dic) 
         
 def writehdf5(fname = "jet.hdf5",data_dic=None):
+    import h5py
     f = h5py.File(fname, "w")
     for name in data_dic.keys():
         f.create_dataset(name,data=data_dic[name])
