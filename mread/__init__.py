@@ -15232,7 +15232,7 @@ def convert_jpar_sasha():
         dirpath = os.path.join(runspath,dir)
         os.chdir(dirpath)
         print("Doing %s..." % dirpath)
-        grid3d("gdump.bin",use2d=0)
+        grid3d("gdump.bin",use2d=1)
         rd(dir_dic[dir])
         #
         Bspc = prime2spc(B)
