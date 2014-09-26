@@ -15283,7 +15283,9 @@ def convert_jpar_sasha():
         dic["pgas"] = (gam-1)*ug
         dic["polytropic_gamma"] = gam
         #
-        writehdf5(fname = os.path.join("..","%s.hdf5" % dir), data_dic = dic) 
+        fn = os.path.join("..","%s.hdf5" % dirname)        
+        print("Saving to %s..." % fn)
+        writehdf5(fname = fn, data_dic = dic) 
         
 def writehdf5(fname = "jet.hdf5",data_dic=None):
     import h5py
