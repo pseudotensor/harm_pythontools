@@ -15253,7 +15253,7 @@ def convert_jpar_sasha():
         dic["Nr"] = nx
         dic["Ntheta"] = ny
         dic["Nphi"] = nz
-        dic["AlphaNS"] = AlphaNS*180./np.pi
+        dic["Alpha"] = AlphaNS*180./np.pi
         #data
         dic["Br"] = Bspc[1]
         dic["Btheta"] = Bspc[2]
