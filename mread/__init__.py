@@ -15228,7 +15228,7 @@ def convert_jpar_sasha():
     dir_dic["hf_90_r10h05_mydt_sph_x2_bsqorho50"] = "dump0005.bin"
     #
     for dir in dir_dic.keys():
-        runspath = os.path.join("~","run2")
+        runspath = os.path.join(os.environ["HOME"],"run2")
         dirpath = os.path.join(runspath,dir)
         os.chdir(dirpath)
         print("Doing %s..." % dirpath)
