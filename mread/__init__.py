@@ -15217,6 +15217,73 @@ def mkmanystreamlinesx1x2(doplot=True):
             # ax2
             plt.draw()
 
+def convert_jpar_sasha():
+    #j/jgj for sasha philippov
+    #setup simulation and corresponding data number list
+    dir_dic = {}
+    dir_dic["hf_15_r10h05_mydt_sph_ps2_256x128x128_bsqorho"] = "dump0005.bin"
+    dir_dic["hf_30_r10h05_mydt_sph_x2_bsqorho50"] = "dump0005.bin"
+    dir_dic["hf_60_r10h05_mydt_sph_ps2_128x64x64_128_bsqorho50"] = "dump0005.bin"
+    dir_dic["hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50"] = "dump0002.bin"
+    dir_dic["hf_90_r10h05_mydt_sph_x2_bsqorho50"] = "dump0005.bin"
+    #
+    for dir in dir_dic.keys():
+        runspath = os.path.join("~","run2")
+        dirpath = os.path.join(runspath,dir)
+        os.chdir(dirpath)
+        print("Doing %s..." % dirpath)
+        grid3d("gdump.bin",use2d=1)
+        rd(dir_dic[dir])
+        #
+        Bspc = prime2spc(B)
+        jspc = prime2spc(jcon)
+        vspc = prime2spc(uu/uu[0])
+        #
+        Bd = mdot(gv3,B)
+        Bsq=mdot(B,Bd)
+        jpar = mdot(jcon,Bd)/Bsq**0.5
+        #jpar = mdot(jcov,B)/mdot(mdot(gv3,B),B)**0.5
+        jgj = OmegaNS*Bznorm/2/np.pi
+        dic = {}
+        #header
+        dic["t"] = t
+        dic["directory_name"] = dir
+        dic["Nr"] = nx
+        dic["Ntheta"] = ny
+        dic["Nphi"] = nz
+        dic["AlphaNS"] = AlphaNS*180./np.pi
+        #data
+        dic["Br"] = Bspc[1]
+        dic["Btheta"] = Bspc[2]
+        dic["Bphi"] = Bspc[3]
+        dic["gamma"] = gamma
+        dic["vr"] = vspc[1]
+        dic["vtheta"] = vspc[2]
+        dic["vphi"] = vspc[3]
+        dic["pmag"] = bsq/2.
+        dic["jpar"] = jpar
+        dic["jgj"] = jgj
+        dic["jt"] = jspc[0]
+        dic["jr"] = jspc[1]
+        dic["jtheta"] = jspc[2]
+        dic["jphi"] = jspc[3]
+        dic["Omega"] = OmegaNS
+        dic["r"] = r
+        dic["theta"] = h
+        dic["phi"] = ph
+        dic["i"] = ti
+        dic["j"] = tj
+        dic["k"] = tk
+        writehdf5(fname = os.path.join("..",dir), data_dic = dic) 
+        
+def writehdf5(fname = "jet.hdf5",data_dic=None):
+    f = h5py.File(fname, "w")
+    for name in data_dic.keys():
+        f.create_dataset(name,data=data_dic[name])
+    f.close()
+
+        
+            
 def plotjpar(doreload=1):
     if doreload:
         grid3d("gdump.bin",use2d=1)
@@ -18458,6 +18525,18 @@ def getxyz(r,h,ph):
     z = r*np.cos(h)
     return x,y,z
 
+def prime2spc(V):
+    global dxdxp
+    Vr = dxdxp[1,1]*V[1]+dxdxp[1,2]*V[2]
+    Vh = dxdxp[2,1]*V[1]+dxdxp[2,2]*V[2]
+    Vp = V[3]*dxdxp[3,3]
+    #
+    Vrnorm=Vr
+    Vhnorm=Vh*np.abs(r)
+    Vpnorm=Vp*np.abs(r*np.sin(h))
+    #
+    return(np.array([V[0],Vrnorm,Vhnorm,Vpnorm]))
+
 def prime2cart(V):
     global dxdxp
     Vr = dxdxp[1,1]*V[1]+dxdxp[1,2]*V[2]
@@ -18472,7 +18551,7 @@ def prime2cart(V):
     VRnorm=Vrnorm*np.sin(h)+Vhnorm*np.cos(h)
     Vxnorm=VRnorm*np.cos(ph)-Vpnorm*np.sin(ph)
     Vynorm=VRnorm*np.sin(ph)+Vpnorm*np.cos(ph)
-    return(np.array([0*Vxnorm,Vxnorm,Vynorm,Vznorm]))
+    return(np.array([V[0],Vxnorm,Vynorm,Vznorm]))
 
 #list of variables:
 # rho
