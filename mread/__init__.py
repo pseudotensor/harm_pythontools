@@ -15276,7 +15276,7 @@ def convert_jpar_sasha():
         dic["i"] = ti
         dic["j"] = tj
         dic["k"] = tk
-        writehdf5(fname = os.path.join("..",dir), data_dic = dic) 
+        writehdf5(fname = os.path.join("..","%s.hdf5" % dir), data_dic = dic) 
         
 def writehdf5(fname = "jet.hdf5",data_dic=None):
     f = h5py.File(fname, "w")
