@@ -15218,6 +15218,7 @@ def mkmanystreamlinesx1x2(doplot=True):
             plt.draw()
 
 def convert_jpar_sasha():
+    import h5py
     #j/jgj for sasha philippov
     #setup simulation and corresponding data number list
     dir_dic = {}
