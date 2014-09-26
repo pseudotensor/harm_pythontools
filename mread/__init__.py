@@ -15227,13 +15227,14 @@ def convert_jpar_sasha():
     dir_dic["hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50"] = "dump0002.bin"
     dir_dic["hf_90_r10h05_mydt_sph_x2_bsqorho50"] = "dump0005.bin"
     #
-    for dir in dir_dic.keys():
+    for dirname in dir_dic.keys():
         runspath = os.path.join(os.environ["HOME"],"run2")
-        dirpath = os.path.join(runspath,dir)
+        dirpath = os.path.join(runspath,dirname)
         os.chdir(dirpath)
         print("Doing %s..." % dirpath)
         grid3d("gdump.bin",use2d=1)
-        rd(dir_dic[dir])
+        rd(dir_dic[dirname])
+        cvel()
         #
         Bspc = prime2spc(B)
         Bcart = prime2cart(B)
@@ -15247,8 +15248,8 @@ def convert_jpar_sasha():
         jgj = OmegaNS*Bcart[3]/2/np.pi
         dic = {}
         #header
-        dic["t"] = t
-        dic["directory_name"] = dir
+        dic["num_rotation"] = OmegaNS*t/2/np.pi
+        dic["directory_name"] = dirname
         dic["Nr"] = nx
         dic["Ntheta"] = ny
         dic["Nphi"] = nz
