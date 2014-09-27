@@ -15226,7 +15226,7 @@ def convert_jpar_sasha(which=None):
     dir_dic["hf_60_r10h05_mydt_sph_ps2_128x64x64_128_bsqorho50"] = "dump0005.bin"
     dir_dic["hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50"] = "dump0002.bin"
     dir_dic["hf_90_r10h05_mydt_sph_x2_bsqorho50"] = "dump0005.bin"
-    dic_dic["hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1"] = "dump0020"
+    dir_dic["hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1"] = "dump0020"
     #
     for dirname in dir_dic.keys():
         if which is not None and dirname not in which:
