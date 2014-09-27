@@ -15217,7 +15217,7 @@ def mkmanystreamlinesx1x2(doplot=True):
             # ax2
             plt.draw()
 
-def convert_jpar_sasha():
+def convert_jpar_sasha(which=None):
     #j/jgj for sasha philippov
     #setup simulation and corresponding data number list
     dir_dic = {}
@@ -15226,8 +15226,12 @@ def convert_jpar_sasha():
     dir_dic["hf_60_r10h05_mydt_sph_ps2_128x64x64_128_bsqorho50"] = "dump0005.bin"
     dir_dic["hf_60_r10h05_mydt_sph_ps2_256x128x128_512_bsqorho50"] = "dump0002.bin"
     dir_dic["hf_90_r10h05_mydt_sph_x2_bsqorho50"] = "dump0005.bin"
+    dic_dic["hf_0_r10h05_mydt_sph_ps0_oldfixup_2048x1024x1_64x64x1"] = "dump0020"
     #
     for dirname in dir_dic.keys():
+        if which is not None and dirname not in which:
+            print( "Skipping %s..." % dirname )
+            continue
         runspath = os.path.join(os.environ["HOME"],"run2")
         dirpath = os.path.join(runspath,dirname)
         os.chdir(dirpath)
@@ -15286,7 +15290,7 @@ def convert_jpar_sasha():
         fn = os.path.join("..","%s.hdf5" % dirname)        
         print("Saving to %s..." % fn)
         writehdf5(fname = fn, data_dic = dic) 
-        
+
 def writehdf5(fname = "jet.hdf5",data_dic=None):
     import h5py
     f = h5py.File(fname, "w")
