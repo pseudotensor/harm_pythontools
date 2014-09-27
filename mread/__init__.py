@@ -8501,14 +8501,14 @@ def rfd(fieldlinefilename,**kwargs):
     global numcolumns
     print("numcolumnshere: %d" % (numcolumns)) ; sys.stdout.flush()
     #if the input file contains additional data
-    if d.shape[0]>=14 and numcolumns==11+3:
+    if d.shape[0]>=14 and (numcolumns==11+3 or numcolumns==26): #added == 26 because that's what it is for the pulsar runs
         print("Loading gdetB data...")
         #new image format additionally contains gdet*B^i
         gdetB = np.zeros_like(B)
         #face-centered magnetic field components multiplied by gdet
         gdetB[1:4] = d[ii:ii+3,:,:,:]; ii=ii+3
     else:
-        print("No data on gdetB, approximating it.")
+        print("No data on gdetB, approximating it")
         gdetB = np.zeros_like(B)
         gdetB[1] = gdet * B[1]
         gdetB[2] = gdet * B[2]
