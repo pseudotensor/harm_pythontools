@@ -1258,43 +1258,107 @@ def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,nce
 #vis_grb(dofieldlines=0,dosavefig=1)
 #mk_vis_grb_movie(n1=259)
 
-def visualize_fieldlines(fn=1,doreload=1,no=72,xmax=100,ymax=20,zmax=20,ncellx=400,ncelly=100,ncellz=100,dosavefig=0):
+def tiltedomegaf_bad(alpha=90):
+    from numpy import sin, cos, tan, sqrt
+    cot = lambda x: 1./tan(x)
+    csc = lambda x: 1./sin(x)
+    sec = lambda x: 1./cos(x)
+    
+    alpha *= np.pi/180.;
+    vu = uu/uu[0]
+    v1 = vu[1] - (vu[1]/B[1])*B[1] #zero identically so no need to transform
+    v2 = vu[2] - (vu[1]/B[1])*B[2]
+    #needs modification for grid collimated toward x-axis
+    v2 *= dxdxp[2,2] #to get physical units (no need for r-contribution since v1 = 0)
+    v3 = vu[3] - (vu[1]/B[1])*B[3]
+    v3 *= dxdxp[3,3] #to get physical units
+
+    omegatilt = v3*cos(alpha) + sin(alpha)*(-(v3*cos(ph)*cot(h)) + 
+     -      (v2*csc(h)**2*sin(ph)*sqrt(cos(alpha)**2*cos(ph)**2 + cot(h)**2*sin(alpha)**2 - cos(ph)*cot(h)*sin(2*alpha) + sin(ph)**2))/
+     -       ((cos(alpha) - cos(ph)*cot(h)*sin(alpha))**2 + csc(h)**2*sin(alpha)**2*sin(ph)**2));
+
+    return omegatilt
+
+def prime2cart(V):
+    global dxdxp
+    Vr = dxdxp[1,1]*V[1]+dxdxp[1,2]*V[2]
+    Vh = dxdxp[2,1]*V[1]+dxdxp[2,2]*V[2]
+    Vp = V[3]*dxdxp[3,3]
+    #
+    Vrnorm=Vr
+    Vhnorm=Vh*np.abs(r)
+    Vpnorm=Vp*np.abs(r*np.sin(h))
+    #
+    Vznorm=Vrnorm*np.cos(h)-Vhnorm*np.sin(h)
+    VRnorm=Vrnorm*np.sin(h)+Vhnorm*np.cos(h)
+    Vxnorm=VRnorm*np.cos(ph)-Vpnorm*np.sin(ph)
+    Vynorm=VRnorm*np.sin(ph)+Vpnorm*np.cos(ph)
+    return(np.array([V[0],Vxnorm,Vynorm,Vznorm]))
+
+def getxyz(r,h,ph):
+    x = r*np.sin(h)*cos(ph)
+    y = r*np.sin(h)*sin(ph)
+    z = r*np.cos(h)
+    return x,y,z
+
+def tiltedomegaf():
+    vu = uu/uu[0]
+    vprime = vu - (vu[1]/B[1])*B #zero for vprime[1] identically so no need to transform
+    vcart = prime2cart(vprime)
+    x,y,z = getxyz(r,h,ph)
+    #Rp = Rprime, in the rotated system
+    Rp = (y**2+z**2)**0.5 
+    ephirot = [0,0,-z/Rp,y/Rp]
+    omegatilt = vcart[1]*ephirot[1] + vcart[2]*ephirot[2] + vcart[3]*ephirot[3]
+    omegatilt /= Rp
+    return omegatilt
+    
+def visualize_fieldlines(fn=1,isaligned=0,doreload=1,no=72,xmax=100,ymax=20,zmax=20,ncellx=400,ncelly=100,ncellz=100,dosavefig=0):
+    global ph
+    if isaligned:
+        ncellxold = ncellx; ncellx = ncellz; ncellz = ncellxold
+        xmaxold = xmax; xmax = zmax; zmax = xmaxold
     if doreload:
         grid3d("gdump.bin",use2d=1)
         #rfd("fieldline9000.bin")
         rfd("fieldline%04d.bin"%no)
+        #only needed of FULLOUTPUT is on (to correct the bug in how code outputs data in phi)
+        #if it is on, uncomment the below two lines and set FULLOUTPUT to value in the code
+        #FULLOUTPUT = 2
+        #ph -= FULLOUTPUT*2*np.pi/(nz-2*FULLOUTPUT)
         cvel()
     scene = mlab.figure(fn, bgcolor=(0, 0, 0), fgcolor=(1, 1, 1), size=(210*2, 297*2))
-    print( "Running interp3d for jet..." ); sys.stdout.flush()
-    i3d_jet,j3d_jet,k3d_jet,xi_jet,yi_jet,zi_jet =\
-        interp3d(xmax=xmax,ymax=ymax,zmax=zmax,ncellx=ncellx,ncelly=ncelly,ncellz=ncellz)
-    print( "Done with inter3d for jet..." ); sys.stdout.flush()
-    #
-    # Magnetic field
-    #
-    Br = dxdxp[1,1]*B[1]+dxdxp[1,2]*B[2]
-    Bh = dxdxp[2,1]*B[1]+dxdxp[2,2]*B[2]
-    Bp = B[3]*dxdxp[3,3]
-    #
-    Brnorm=Br
-    Bhnorm=Bh*np.abs(r)
-    Bpnorm=Bp*np.abs(r*np.sin(h))
-    #
-    BR=Brnorm*np.sin(h)+Bhnorm*np.cos(h)
-    Bx=BR*cos(ph)-Bpnorm*sin(ph)
-    By=BR*sin(ph)+Bpnorm*cos(ph)
-    Bz=Brnorm*np.cos(h)-Bhnorm*np.sin(h)
-    print( "Running trilinear interpolation for Bx..." ); sys.stdout.flush()
-    Bxi = np.float32(trilin(Bx,i3d_jet,j3d_jet,k3d_jet))
-    print( "Done with trilinear interpolation for Bx..." ); sys.stdout.flush()
-    print( "Running trilinear interpolation for By..." ); sys.stdout.flush()
-    Byi = np.float32(trilin(By,i3d_jet,j3d_jet,k3d_jet))
-    print( "Done with trilinear interpolation for By..." ); sys.stdout.flush()
-    print( "Running trilinear interpolation for Bz..." ); sys.stdout.flush()
-    Bzi = np.float32(trilin(Bz,i3d_jet,j3d_jet,k3d_jet))
-    print( "Done with trilinear interpolation for Bz..." ); sys.stdout.flush()
-    # pdb.set_trace()
     mlab.clf()
+    if 1:
+        print( "Running interp3d for jet..." ); sys.stdout.flush()
+        i3d_jet,j3d_jet,k3d_jet,xi_jet,yi_jet,zi_jet =\
+            interp3d(xmax=xmax,ymax=ymax,zmax=zmax,ncellx=ncellx,ncelly=ncelly,ncellz=ncellz)
+        print( "Done with inter3d for jet..." ); sys.stdout.flush()
+        #
+        # Magnetic field
+        #
+        Br = dxdxp[1,1]*B[1]+dxdxp[1,2]*B[2]
+        Bh = dxdxp[2,1]*B[1]+dxdxp[2,2]*B[2]
+        Bp = B[3]*dxdxp[3,3]
+        #
+        Brnorm=Br
+        Bhnorm=Bh*np.abs(r)
+        Bpnorm=Bp*np.abs(r*np.sin(h))
+        #
+        BR=Brnorm*np.sin(h)+Bhnorm*np.cos(h)
+        Bx=BR*cos(ph)-Bpnorm*sin(ph)
+        By=BR*sin(ph)+Bpnorm*cos(ph)
+        Bz=Brnorm*np.cos(h)-Bhnorm*np.sin(h)
+        print( "Running trilinear interpolation for Bx..." ); sys.stdout.flush()
+        Bxi = np.float32(trilin(Bx,i3d_jet,j3d_jet,k3d_jet))
+        print( "Done with trilinear interpolation for Bx..." ); sys.stdout.flush()
+        print( "Running trilinear interpolation for By..." ); sys.stdout.flush()
+        Byi = np.float32(trilin(By,i3d_jet,j3d_jet,k3d_jet))
+        print( "Done with trilinear interpolation for By..." ); sys.stdout.flush()
+        print( "Running trilinear interpolation for Bz..." ); sys.stdout.flush()
+        Bzi = np.float32(trilin(Bz,i3d_jet,j3d_jet,k3d_jet))
+        print( "Done with trilinear interpolation for Bz..." ); sys.stdout.flush()
+        # pdb.set_trace()
     if 1:
         print( "Running interp3d for jet..." ); sys.stdout.flush()
         i3d_jet,j3d_jet,k3d_jet,xi_jet,yi_jet,zi_jet =\
@@ -1325,11 +1389,11 @@ def visualize_fieldlines(fn=1,doreload=1,no=72,xmax=100,ymax=20,zmax=20,ncellx=4
         vol_jet._volume_property.set_scalar_opacity(otf_jet)        
     if 1:
         streamlines = []
-        xpos = [1,  0, 0,  0,  0]
-        ypos = [0,  1, 0,  -1, 0]
-        zpos = [0,  0, 1,  0,  1]
-        intdir = ['forward', 'forward', 'forward', 'forward', 'forward']
-        for sn in xrange(4):
+        xpos = [1,  0.5,  0.5, -0.5,  -0.5, -1]
+        ypos = [0,  0.0,  0.0,  0.0,   0.0,  0]
+        zpos = [0,  0.5, -0.5,  0.5,  -0.5,  0]
+        intdir = ['forward', 'forward', 'forward', 'forward', 'forward', 'forward']
+        for sn in xrange(len(xpos)):
             print( "Running rendering of streamline #%d..." % (sn+1) ); sys.stdout.flush()
             streamline = mlab.flow(xi_jet, yi_jet, zi_jet, Bxi, Byi, Bzi, seed_scale=0.01,
                              seed_resolution=5,
@@ -1379,10 +1443,16 @@ def visualize_fieldlines(fn=1,doreload=1,no=72,xmax=100,ymax=20,zmax=20,ncellx=4
         zbh = rbh*cos(thbh)
         mlab.mesh(xbh, ybh, zbh, scalars=1+0*thbh, colormap='jet',vmin=0, vmax = 1)
     if 1:
-        myr = 1.05
-        myi = iofr(myr)
+        #myr = 1.05
+        myi = 0 #iofr(myr)
         #mesh
-        var = (1.-1./uu[0]**2)**0.5
+        #var = (1.-1./uu[0]**2)**0.5
+        if isaligned:
+            cvel()
+            faraday()
+            var = omegaf2*dxdxp[3,3]
+        else:
+            var = tiltedomegaf()
         #faraday()
         #var = omegaf2*dxdxp[3,3]
         s = wraparound(var)[myi,:,:]
@@ -1397,7 +1467,10 @@ def visualize_fieldlines(fn=1,doreload=1,no=72,xmax=100,ymax=20,zmax=20,ncellx=4
     scene.scene.camera.position = [-7.9580786405131221e-13, -93.080546590412126, -0.039630889892535492]
     scene.scene.camera.focal_point = [-7.9580786405131221e-13, 0.0065279006958007812, -0.039630889892535492]
     scene.scene.camera.view_angle = 30.0
-    scene.scene.camera.view_up = [1.0, 0.0, 0.0]
+    if isaligned:
+        scene.scene.camera.view_up = [0.0, 0.0, 1.0]
+    else:
+        scene.scene.camera.view_up = [1.0, 0.0, 0.0]
     scene.scene.camera.clipping_range = [52.343213223812199, 144.59973299971753]
     scene.scene.camera.compute_view_plane_normal()
     scene.scene.render()    # iso.contour.maximum_contour = 75.0
@@ -1412,6 +1485,7 @@ def visualize_fieldlines(fn=1,doreload=1,no=72,xmax=100,ymax=20,zmax=20,ncellx=4
         print( "Saving snapshot..." ); sys.stdout.flush()
         mlab.savefig("disk_jet_with_field_lines.png", figure=scene, magnification=6.0)
         print( "Done!" ); sys.stdout.flush()
+
 
 def faraday():
     global fdd, fuu, omegaf1, omegaf2, omegaf1b, omegaf2b, rhoc
