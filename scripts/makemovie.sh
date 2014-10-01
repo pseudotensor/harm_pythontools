@@ -761,10 +761,6 @@ fi
 
 localpath=`pwd`
 
-passpart1="a#"
-passpart2="hyq#ng9"
-
-echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
 
 #avoid questions that would stall things
 alias cp='cp'
@@ -1102,7 +1098,6 @@ then
 fi
 
 
-echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
 
 
 ###################################
@@ -1143,7 +1138,6 @@ then
 fi
 
 
-echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
 
 
 ###################################
@@ -1360,7 +1354,6 @@ fi
 
 
 
-echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
 
 
 ###################################
@@ -1681,7 +1674,6 @@ then
     
 fi
 
-echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
 
 
 ###################################
@@ -1738,7 +1730,6 @@ then
 fi
 
 
-echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
 
 
 ###################################
@@ -2074,7 +2065,6 @@ then
 
 fi
 
-echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
 
 
 ###################################
@@ -2134,7 +2124,6 @@ then
 
 fi
 
-echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
 
 
 ###################################
@@ -2328,7 +2317,6 @@ then
 fi
 
 
-echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
 
 
 # to clean-up bad start, use:
