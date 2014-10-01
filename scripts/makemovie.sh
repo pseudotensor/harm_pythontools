@@ -977,6 +977,7 @@ then
                             # -N $numtotalnodes # number of nodes requested such that really have access to numnodes*16 total cores even if not using them.
                             superbatch=superbatchfile.$thebatch
                             rm -rf $superbatch
+                            echo "!/bin/bash" >> $superbatch
                             echo "cd $dirname" >> $superbatch
                             cat ~/setuppython27 >> $superbatch
                             echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch
@@ -995,7 +996,7 @@ then
                             rm -rf $localerrorfile
                             rm -rf $localoutputfile
 #		                    bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l walltime=$timetot,size=$numtotalcores -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
-		                    bsubcommand="sbatch -A TG-PHY120005 -t $timetot -p $thequeue -n $numtasks -N $numtotalnodes -J $jobname -o $outputfile -e $errorfile ---user=$emailaddr ./$superbatch"
+		                    bsubcommand="sbatch -A TG-PHY120005 -t $timetot -p $thequeue -n $numtasks -N $numtotalnodes -J $jobname -o $outputfile -e $errorfile --mail-user=$emailaddr --mail-type=begin --mail-type=end ./$superbatch"
 
                         elif [ $system -eq 5 ]
                         then
@@ -1212,6 +1213,7 @@ then
             then
                 superbatch=superbatchfile.$thebatch
                 rm -rf $superbatch
+                echo "!/bin/bash" >> $superbatch
                 echo "cd $dirname" >> $superbatch
                 cat ~/setuppython27 >> $superbatch
                 rm -rf $dirname/matplotlibdir/
@@ -1229,7 +1231,7 @@ then
                 rm -rf $localerrorfile
                 rm -rf $localoutputfile
                 #
-		        bsubcommand="sbatch -A TG-PHY120005 -t $timetot -p $thequeue -n $numtasks -N $numtotalnodes -J $jobname -o $outputfile -e $errorfile ---user=$emailaddr ./$superbatch"
+		        bsubcommand="sbatch -A TG-PHY120005 -t $timetot -p $thequeue -n $numtasks -N $numtotalnodes -J $jobname -o $outputfile -e $errorfile --mail-user=$emailaddr --mail-type=begin --mail-type=end ./$superbatch"
 
             elif [ $system -eq 5 ]
             then
@@ -1557,6 +1559,7 @@ then
                         then
                             superbatch=superbatchfile.$thebatch
                             rm -rf $superbatch
+                            echo "!/bin/bash" >> $superbatch
                             echo "cd $dirname" >> $superbatch
                             cat ~/setuppython27 >> $superbatch
                             rm -rf $dirname/matplotlibdir/
@@ -1575,7 +1578,7 @@ then
                             rm -rf $localerrorfile
                             rm -rf $localoutputfile
                             #
-		                    bsubcommand="sbatch -A TG-PHY120005 -t $timetot -p $thequeue -n $numtasks -N $numtotalnodes -J $jobname -o $outputfile -e $errorfile ---user=$emailaddr ./$superbatch"
+		                    bsubcommand="sbatch -A TG-PHY120005 -t $timetot -p $thequeue -n $numtasks -N $numtotalnodes -J $jobname -o $outputfile -e $errorfile --mail-user=$emailaddr --mail-type=begin --mail-type=end ./$superbatch"
                         elif [ $system -eq 5 ]
                         then
                             superbatch=superbatchfile.$thebatch
@@ -1945,6 +1948,7 @@ then
                         then
                             superbatch=superbatchfile.$thebatch
                             rm -rf $superbatch
+                            echo "!/bin/bash" >> $superbatch
                             echo "cd $dirname" >> $superbatch
                             cat ~/setuppython27 >> $superbatch
                             rm -rf $dirname/matplotlibdir/
@@ -1963,7 +1967,7 @@ then
                             rm -rf $localerrorfile
                             rm -rf $localoutputfile
                             #
-		                    bsubcommand="sbatch -A TG-PHY120005 -t $timetot -p $thequeue -n $numtasks -N $numtotalnodes -J $jobname -o $outputfile -e $errorfile ---user=$emailaddr ./$superbatch"
+		                    bsubcommand="sbatch -A TG-PHY120005 -t $timetot -p $thequeue -n $numtasks -N $numtotalnodes -J $jobname -o $outputfile -e $errorfile --mail-user=$emailaddr --mail-type=begin --mail-type=end ./$superbatch"
                         elif [ $system -eq 5 ]
                         then
                             superbatch=superbatchfile.$thebatch
@@ -2206,6 +2210,7 @@ then
             then
                 superbatch=superbatchfile.$thebatch
                 rm -rf $superbatch
+                echo "!/bin/bash" >> $superbatch
                 echo "cd $dirname" >> $superbatch
                 cat ~/setuppython27 >> $superbatch
                 rm -rf $dirname/matplotlibdir/
@@ -2223,7 +2228,7 @@ then
                 rm -rf $localerrorfile
                 rm -rf $localoutputfile
                 #
-		        bsubcommand="sbatch -A TG-PHY120005 -t $timetot -p $thequeue -n $numtasks -N $numtotalnodes -J $jobname -o $outputfile -e $errorfile ---user=$emailaddr ./$superbatch"
+		        bsubcommand="sbatch -A TG-PHY120005 -t $timetot -p $thequeue -n $numtasks -N $numtotalnodes -J $jobname -o $outputfile -e $errorfile --mail-user=$emailaddr --mail-type=begin --mail-type=end ./$superbatch"
             elif [ $system -eq 5 ]
             then
                 superbatch=superbatchfile.$thebatch
