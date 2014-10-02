@@ -258,6 +258,15 @@ def plot_harm_scaling(whichcode="harmrad",whichsystem="stampede",fntsize=20,dosa
             #strong scaling
             n1_list = [128,    256,     512,     2048,     4096,     8192,     16384]
             s1_list = [762645, 1432761, 2857894, 9338053,  16694583, 24498946, 43128948]
+    elif whichcode == "harm":
+        if whichsystem == "savio":
+            #weak scaling
+            n_list = [1,      10,          20,    100,      200]
+            s_list = [58072,  322601,  454730, 2047743,   4183293 ]
+        elif whichsystem == "pleiades":
+            #weak scaling
+            n_list = [1,          10,      20,     100,      200]
+            s_list = [53919,  339965,  453303, 2182540,  4e6 ]
     n_list = np.array(n_list,dtype=np.float64)
     s_list = np.array(s_list,dtype=np.float64)
     n1_list = np.array(n1_list,dtype=np.float64)
@@ -281,7 +290,42 @@ def plot_harm_scaling(whichcode="harmrad",whichsystem="stampede",fntsize=20,dosa
         label.set_fontsize(fntsize)
     plt.savefig("%s_%s_scaling.eps" % (whichcode, whichsystem),
                 bbox_inches='tight',pad_inches=0.06,dpi=300)
-    
+
+def plot_savio_vs_pleiades(fntsize=20,dosavefig=1):
+    #savio
+    n_list = [1,      10,          20,    100,      200]
+    s_list = [58072,  322601,  454730, 2047743,   4183293 ]
+    #pleiades
+    n1_list = [1,          10,      20,     100,      200]
+    s1_list = [53919,  339965,  453303, 2182540,  3920593 ]
+    n_list = np.array(n_list,dtype=np.float64)
+    s_list = np.array(s_list,dtype=np.float64)
+    n1_list = np.array(n1_list,dtype=np.float64)
+    s1_list = np.array(s1_list,dtype=np.float64)
+    plt.clf()
+    n_array = 10**np.linspace(1,5,100)
+    plt.plot(n_list, 1.0*s_list[0]/n_list[0]*n_list,
+             "k:",lw=2,label=r"$\rm ideal\ scaling$")
+    plt.plot(n_list, s_list,"-s",lw=2,color="green",label=r"$\rm Savio\ scaling$",markersize=10)
+    l, = plt.plot(n1_list, s1_list,"o",fillstyle="none",
+                  lw=2,mew=2,mec="red",color="red",label=r"$\rm Pleiades\ scaling$",markersize=10)
+    l.set_dashes([10,5])
+    plt.fill_between([0.1,20],[1,1],[1e10,1e10],where=[1,1],facecolor="LightGrey",edgecolor="LightGrey",alpha=0.3)
+    plt.annotate(r"${\rm Single\ node}$",(20,1.5e6),fontsize=20,rotation=90,rotation_mode="anchor")
+    plt.xscale("log")
+    plt.yscale("log")
+    plt.xlim(0.3,1e3)
+    plt.ylim(1e4,3e7)
+    plt.xlabel(r"${\rm Number\ of\ cores}$",fontsize=fntsize)
+    plt.ylabel(r"${\rm Zone-cycles\ per\ second}$",fontsize=fntsize)
+    plt.grid()
+    plt.legend(loc="lower right")
+    ax = plt.gca()
+    for label in ax.get_xticklabels() + ax.get_yticklabels():
+        label.set_fontsize(fntsize)
+    plt.savefig("savio_pleiades_scaling.pdf",
+                bbox_inches='tight',pad_inches=0.06,dpi=300)
+
 def plotcolorbarinfo(whichmap='jet',**kwargs):
     plotcolormapdata(cdict = cm.datad[whichmap])
 
