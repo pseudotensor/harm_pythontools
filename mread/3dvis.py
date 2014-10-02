@@ -1313,7 +1313,7 @@ def tiltedomegaf():
     omegatilt /= Rp
     return omegatilt
     
-def visualize_fieldlines(fn=1,isaligned=0,doreload=1,no=72,xmax=100,ymax=20,zmax=20,ncellx=400,ncelly=100,ncellz=100,dosavefig=0):
+def visualize_fieldlines(fn=1,isaligned=0,doreload=1,no=698,xmax=50,ymax=30,zmax=30,ncellx=200,ncelly=100,ncellz=100,dosavefig=0):
     global ph
     if isaligned:
         ncellxold = ncellx; ncellx = ncellz; ncellz = ncellxold
@@ -1461,7 +1461,7 @@ def visualize_fieldlines(fn=1,isaligned=0,doreload=1,no=72,xmax=100,ymax=20,zmax
         z = wraparound(r*cos(h))[myi,:,:]
         surf = mlab.mesh(x, y, z, scalars=s, colormap='jet',opacity=1,vmin=0,vmax=1)
         surf.actor.property.backface_culling = True
-        mlab.colorbar(object=surf,title="Surface velocity magnitude")
+        mlab.colorbar(object=surf,title="Surface angular velocity")
     #move camera:
     scene.scene.show_axes = True
     scene.scene.camera.position = [-7.9580786405131221e-13, -93.080546590412126, -0.039630889892535492]
