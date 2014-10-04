@@ -1313,7 +1313,7 @@ def tiltedomegaf():
     omegatilt /= Rp
     return omegatilt
     
-def visualize_fieldlines(fn=1,isaligned=0,doreload=1,no=698,xmax=50,ymax=30,zmax=30,ncellx=200,ncelly=100,ncellz=100,dosavefig=0):
+def visualize_fieldlines(fn=1,isaligned=0,doreload=1,no=583,xmax=100,ymax=50,zmax=50,ncellx=200,ncelly=100,ncellz=100,dosavefig=0):
     global ph
     if isaligned:
         ncellxold = ncellx; ncellx = ncellz; ncellz = ncellxold
@@ -1416,7 +1416,7 @@ def visualize_fieldlines(fn=1,isaligned=0,doreload=1,no=698,xmax=50,ymax=30,zmax
             streamline.stream_tracer.progress = 1.0
             streamline.stream_tracer.maximum_number_of_steps = 10000L
             #streamline.stream_tracer.start_position =  np.array([ 0.,  0.,  0.])
-            streamline.stream_tracer.maximum_propagation = 20000.0
+            streamline.stream_tracer.maximum_propagation = 70.0
             streamline.seed.widget.position = np.array([ xpos[sn],  ypos[sn],  zpos[sn]])
             streamline.seed.widget.enabled = False
             streamline.update_streamlines = 1
