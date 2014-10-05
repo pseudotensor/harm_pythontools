@@ -1677,6 +1677,91 @@ def mkmfnew(v,findex=10000,
     if dosavefig:
         plt.savefig("frame%04d.png" % findex,dpi=120)
 
+def mkavg2dnew():
+    if len(sys.argv[2:])>=2 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
+        whichi = int(sys.argv[2])
+        whichn = int(sys.argv[3])
+        endn = -1
+        if len(sys.argv[2:])==3:
+            if sys.argv[4].isdigit():
+                endn = int(sys.argv[4])
+        if whichi < whichn:
+            postprocess2d(endn = endn, whichi = whichi, whichn = whichn)
+        else:
+            mrgnew(whichn)
+    else:
+        print("Syntax error")
+
+def get_fieldline_time(fname):
+    fin = open( "dumps/" + fieldlinefilename, "rb" )
+    header = fin.readline().split()
+    #time of the dump
+    t = myfloat(np.float64(header[0]))
+    fin.close()
+    return t
+        
+def postprocess2d(startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
+    grid3d("gdump.bin",use2d=True)
+    flist1 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
+    flist2 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9][0-9].bin") ) )
+    flist1.sort()
+    flist2.sort()
+    flist = np.concatenate((flist1,flist2))
+    #default time interval for one averaging interval
+    deltat = kwargs.pop("deltat",100)
+    #number of intervals in a simulation
+    tlast = get_fieldline_time(flist[-1])
+    #round to smallest integer, i.e., ignore the last incomplete time averaging interval
+    totintervals = np.int32(tlast/deltat) 
+    grid3d("gdump.bin",use2d=1)
+    print("Doing every %d interval out of %d total intervals..." % (whichn,totintervals))
+    for numinterval in xrange(totintervals):
+        #do every whichn'th averaging interval starting with whichi'th snapshot
+        if numinterval < startn:
+            continue
+        if endn>=0 and numinterval >= endn:
+            break
+        if numinterval % whichn != whichi:
+            continue
+        #clear out the receptacle into which average will be stored
+        v = {}
+        avgfname = "avg_%05d_%g.npz" % (numinterval, deltat)
+        print( "Doing interval %d, t = [%g,%g)..." % (numinterval, tstartavg, tendavg) )
+        tstartavg = numinterval * detlat
+        tendavg   = (numinterval+1) * deltat
+        if os.path.isfile( avgfname ):
+            print( "File %s exists, skipping..." % fname )
+            continue     
+        for fldname in flist:
+            t = get_fieldline_time(fldname)
+            #fieldline file falls outside of the averaging interval? skip it
+            if i < tstartavg or t > tendavg:
+                print("%s: t = %g falls outside, skipping" % (fldname, t))
+                continue
+            print("%s: t = %g falls inside, reading..." % (fldname, t))
+            sys.stdout.flush()
+            rfd("../"+fldname)
+            cvellite()
+            sys.stdout.flush()
+            valdic = compvals2d()
+            for key in valdic:
+                if key not in v: v[key] = np.array([],dtype=np.float32())
+                #collect all values of t averaged over
+                if key == "t":
+                    v[key] = list(v[key])+list(valdic[key])
+                else:
+                    if key not in v:
+                        v[key] = np.array(valdic[key])
+                    else:
+                        v[key] += np.array(valdic[key])
+        #obtain the time average by dividing by the number of files in the interval
+        numfiles = np.float32(len(v["t"]))
+        #average all variables except time (times are stacked)
+        for key in v:
+            if key != "t":  v[key] /= numfiles
+        print("Saving the average to %s..." % avgfname)
+        np.savez(avgfname, **v)
+
         
 def mktsnew():
     if len(sys.argv[2:])>=2 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
@@ -1696,17 +1781,6 @@ def mktsnew():
 def mrgnew(n=None,fin1=None,fin2=None,fout="qty.npz"):
     #setup empty variables first (not necessary, here to remember what they are)
     v = {}
-    v["FM"]=[] 
-    v["FEM"]=[]
-    v["FE"]=[]
-    v["FR"] = []
-    v["FRj"] = []
-    v["PhiBH"]=[]
-    v["ind"]=[]
-    v["ivals"]=[]
-    v["rvals"]=[]
-    v["t"]=[]
-    v["hor"]=[]
     if n is not None:
         #merge a numbered sequence of files
         v = mrgnew_n(n,v)
@@ -1716,52 +1790,25 @@ def mrgnew(n=None,fin1=None,fin2=None,fout="qty.npz"):
         v = mrgnew_f(fin2,v)
     print( "Saving into " + fout + " ..." )
     sys.stdout.flush()
-    np.savez(fout, 
-             FM = v["FM"], 
-             FEM = v["FEM"],
-             FE = v["FE"],
-             FR = v["FR"],
-             FRj = v["FRj"],
-             PhiBH = v["PhiBH"],
-             ind = v["ind"],
-             ivals = v["ivals"],
-             rvals = v["rvals"],
-             t = v["t"],
-             hor = v["hor"]
-             )
+    np.savez(fout, **v)
     print( "Done!" )
 
-def mrgnew_n(n, v=None):
+def mrgnew_n(n, v={}):
     if v is None:
         v = {}
-        v["FM"]=[] 
-        v["FEM"]=[]
-        v["FE"]=[]
-        v["FR"] = []
-        v["FRj"] = []
-        v["PhiBH"]=[]
-        v["ind"]=[]
-        v["ivals"]=[]
-        v["rvals"]=[]
-        v["t"]=[]
-        v["hor"]=[]
     for i in np.arange(n):
         #load each file
         ft = "qty_%02d_%02d.npz" % (i, n)
         print( "Loading " + ft + " ..." )
         sys.stdout.flush()
         vt=np.load( ft )
-        #find last element in old array that does not exist in the new array
-        # ind = np.array(v["ind"])
-        # lasti = (ind<vt["ind"][0]).sum()
         for key in vt.keys():
             if key not in ["ivals", "rvals"]:
-                #     #has time dependence, so first discard repeated entries
-                #     del v[key][lasti:]
-                #     #and then append new entries
-                #     v[key].append( list(vt[key]) )
+                if key not in v:
+                    v[key] = []
                 v[key] += list(vt[key])
             else:
+                #no time dependence for these, so same for all times and no need to append
                 v[key] = list(vt[key])
         vt.close()    
     #now sort the resulting list
@@ -1772,26 +1819,13 @@ def mrgnew_n(n, v=None):
             if len(v[key]) > 0:
                 v[key] = np.array(v[key])[imap,...]
     #hack to reintroduce the time if missing
-    if len(v["t"]) == 0:
+    if "t" not in v or len(v["t"]) == 0:
         print( "Times are missing, assuming dumping period of 5 and setting t = 5*ind" )
         v["t"] = np.array(v["ind"])*5.
     return(v)
 
-def mrgnew_f(ft, v=None):
+def mrgnew_f(ft, v={}):
     #assumes that the dics in ft and v are sorted in time
-    if v is None:
-        v = {}
-        v["FM"]=[] 
-        v["FEM"]=[]
-        v["FE"]=[]
-        v["FR"] = []
-        v["FRj"] = []
-        v["PhiBH"]=[]
-        v["ind"]=[]
-        v["ivals"]=[]
-        v["rvals"]=[]
-        v["t"]=[]
-        v["hor"]=[]
     #load file
     print( "Loading " + ft + " ..." )
     sys.stdout.flush()
@@ -1801,6 +1835,9 @@ def mrgnew_f(ft, v=None):
     lasti = (ind<vt["ind"][0]).sum()
     for key in vt.keys():
         if key not in ["ivals", "rvals"]:
+            if key not in v:
+                v[key] = []
+            #convert to list first
             v[key] = list(v[key])
             #has time dependence, so first discard repeated entries
             del v[key][lasti:]
@@ -1817,7 +1854,7 @@ def mrgnew_f(ft, v=None):
             if len(v[key]) > 0:
                 v[key] = np.array(v[key])[imap,...]
     #hack to reintroduce the time if missing
-    if len(v["t"]) == 0:
+    if "t" not in v or len(v["t"]) == 0:
         print( "Times are missing, assuming dumping period of 5 and setting t = 5*ind" )
         v["t"] = np.array(v["ind"])*5.
     return(v)
@@ -1849,11 +1886,6 @@ def postprocess1d(startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
         for key in vt.keys():
             v[key] = list(vt[key])
         vt.close()
-        # FM_list = list(v["FM"])
-        # PhiBH_list = list(v["PhiBH"])
-        # FE_list = list(v["FE"])
-        # FEM_list = list(v["FEM"])
-        # ind_list = list(v["fldindex"])
     for fldname in flist:
         #find the index of the file
         ind = np.int(fldname.split(".")[0].split("e")[-1])
@@ -1907,7 +1939,128 @@ def cvellite():
     if "uradu" in globals():
         global uradd
         uradd = mdot(gv3,uradu)
-  
+
+def fFdd(i,j):
+    if i==0 and j==1:
+        fdd =  gdet*(uu[2]*bu[3]-uu[3]*bu[2]) # f_tr
+    if i==1 and j==0:
+        fdd = -gdet*(uu[2]*bu[3]-uu[3]*bu[2]) # -f_tr
+    if i==0 and j==2:
+        fdd =  gdet*(uu[3]*bu[1]-uu[1]*bu[3]) # f_th
+    if i==2 and j==0:
+        fdd = -gdet*(uu[3]*bu[1]-uu[1]*bu[3]) # -f_th
+    if i==0 and j==3:
+        fdd =  gdet*(uu[1]*bu[2]-uu[2]*bu[1]) # f_tp
+    if i==3 and j==0:
+        fdd = -gdet*(uu[1]*bu[2]-uu[2]*bu[1]) # -f_tp
+    if i==1 and j==3:
+        fdd =  gdet*(uu[2]*bu[0]-uu[0]*bu[2]) # f_rp = gdet*B2
+    if i==3 and j==1:
+        fdd = -gdet*(uu[2]*bu[0]-uu[0]*bu[2]) # -f_rp = gdet*B2
+    if i==2 and j==3:
+        fdd =  gdet*(uu[0]*bu[1]-uu[1]*bu[0]) # f_hp = gdet*B1
+    if i==3 and j==2:
+        fdd = -gdet*(uu[0]*bu[1]-uu[1]*bu[0]) # -f_hp = gdet*B1
+    if i==1 and j==2:
+        fdd =  gdet*(uu[0]*bu[3]-uu[3]*bu[0]) # f_rh = gdet*B3
+    if i==2 and j==1:
+        fdd = -gdet*(uu[0]*bu[3]-uu[3]*bu[0]) # -f_rh = gdet*B3
+    return fdd
+
+def compvals2d():
+    cvellite()
+    #returns angle-averaged values for the currently loaded dump
+    dic = {}
+    #
+    delta = lambda kapa,nu: (kapa==nu)
+    fTudEM = lambda kapa,nu: bsq*uu[kapa]*ud[nu] + 0.5*bsq*delta(kapa,nu) - bu[kapa]*bd[nu]
+    fTudMA = lambda kapa,nu: (rho+gam*ug)*uu[kapa]*ud[nu]+(gam-1)*ug*delta(kapa,nu)
+    fTud = lambda kapa,nu: fTudEM(kapa,nu) + fTudMA(kapa,nu)
+    fRud = lambda kapa,nu: 4./3.*Erf*uradu[kapa]*uradd[nu]+1./3.*Erf*delta(kapa,nu)
+    #quantities
+    dic["rho"]=rho.mean(-1)[:,:,None]
+    dic["ug"]=ug.mean(-1)[:,:,None]
+    dic["bsq"]=bsq.mean(-1)[:,:,None]
+    enth=1+ug*gam/rho
+    dic["unb"]=(enth*ud[0]).mean(-1)[:,:,None]
+    dic["uu"]=uu.mean(-1)[:,:,:,None]
+    dic["bu"]=bu.mean(-1)[:,:,:,None]
+    dic["ud"]=ud.mean(-1)[:,:,:,None]
+    dic["bd"]=bd.mean(-1)[:,:,:,None]
+    #cell-centered magnetic field
+    dic["B"]=B.mean(-1)[:,:,:,None]
+    #face-centered magnetic field
+    dic["gdetB"]=gdetB.mean(-1)[:,:,:,None]
+    #
+    dic["omegaf1"]=omegaf1.mean(-1)[:,:,None]
+    dic["absomegaf1"]=np.abs(omegaf1).mean(-1)[:,:,None]
+    dic["omegaf2"]=omegaf2.mean(-1)[:,:,None]
+    dic["absomegaf2"]=np.abs(omegaf2).mean(-1)[:,:,None]
+    dic["omegaf1b"]=omegaf1b.mean(-1)[:,:,None]
+    dic["absomegaf1b"]=np.abs(omegaf1b).mean(-1)[:,:,None]
+    dic["omegaf2b"]=omegaf2b.mean(-1)[:,:,None]
+    dic["absomegaf2b"]=np.abs(omegaf2b).mean(-1)[:,:,None]
+    dic["absbu"]=np.abs(bu).mean(-1)[:,:,:,None]
+    dic["absbd"]=np.abs(bd).mean(-1)[:,:,:,None]
+    dic["absuu"]=np.abs(uu).mean(-1)[:,:,:,None]
+    dic["absud"]=np.abs(ud).mean(-1)[:,:,:,None]
+    #
+    dic["rhouu"]=(rho*uu).mean(-1)[:,:,:,None]
+    dic["rhobu"]=(rho*bu).mean(-1)[:,:,:,None]
+    dic["rhoud"]=(rho*ud).mean(-1)[:,:,:,None]
+    dic["rhobd"]=(rho*bd).mean(-1)[:,:,:,None]
+    dic["uguu"]=(ug*uu).mean(-1)[:,:,:,None]
+    dic["ugud"]=(ug*ud).mean(-1)[:,:,:,None]
+    #
+    #
+    #properly compute average
+    uuud=odot(uu,ud)[:,:,:,:,None]
+    # part1: rho u^m u_l
+    dic["rhouuud"]=(rho[:,:,None]*uuud).mean(-1)
+    # part2: u u^m u_l
+    dic["uguuud"]=(ug[:,:,None]*uuud).mean(-1)
+    # part3: b^2 u^m u_l
+    dic["bsquuud"]=(bsq[:,:,None]*uuud).mean(-1)
+    # part6: b^m b_l
+    dic["bubd"]=odot(bu,bd)[:,:,:,:,None].mean(-1)
+    # u^m u_l
+    dic["uuud"]=uuud.mean(-1)
+    #
+    #energy fluxes and faraday
+    #EM/MA
+    TudEMavgphi = np.zeros((4,4,nx,ny,1),dtype=np.float32)
+    TudMAavgphi = np.zeros((4,4,nx,ny,1),dtype=np.float32)
+    Tudavgphi = np.zeros((4,4,nx,ny,1),dtype=np.float32)
+    Rudavgphi = np.zeros((4,4,nx,ny,1),dtype=np.float32)
+    Fddavgphi = np.zeros((4,4,nx,ny,1),dtype=np.float32)
+    #to save memory use, average out each component in phi separately
+    for i in xrange(4):
+        for j in xrange(4):
+            TudEMavgphi[i,j] = fTudEM(i,j).mean(-1)[...,None]
+            TudMAavgphi[i,j] = fTudMA(i,j).mean(-1)[...,None]
+            Tudavgphi[i,j] = fTud(i,j).mean(-1)[...,None]
+            Rudavgphi[i,j] = fRud(i,j).mean(-1)[...,None]
+            fddavgphi[i,j] = fFdd(i,j).mean(-1)[...,None]
+    dic["TudEM"]=TudEMavgphi
+    dic["TudMA"]=TudMAavgphi
+    dic["Tud"]=Tudavgphi
+    dic["Rud"]=Rudavgphi
+    dic["Tud"]=Tudphiavg
+    dic["fdd"]=fddphiavg
+    #mu,sigma
+    dic["mu"]= (-fTud(1,0)/(rho*uu[1])).mean(-1)[:,:,None]
+    dic["sigma"]= (-fTudEM(1,0)/fTudMA(1,0)).mean(-1)[:,:,None]
+    dic["bsqorho"]= (bsq/rho).mean(-1)[:,:,None]
+    dic["absB"]= np.abs(B[1:4]).mean(-1)[:,:,:,None]
+    dic["absgdetB"]= np.abs(gdetB[1:4]).mean(-1)[:,:,:,None]
+    aphi = fieldcalcface()
+    dic["aphisq"]= (aphi**2).mean(-1)[:,:,None]
+    dic["gdetF"] = (gdetF[:,:].mean(-1))[:,:,:,:,None]
+    dic["bsquu"]= (bsq*uu).mean(-1)[:,:,:,None]
+    dic["Bd3"]= (bd[3]*ud[0]-bd[0]*ud[3]).mean(-1)[:,:,None]
+    dic["absBd3"]= np.abs(bd[3]*ud[0]-bd[0]*ud[3]).mean(-1)[:,:,None]
+    return dic
+        
 def compvals(di=5):
     dic = {}
     #rvals = np.array([rhor,5.,10.,20.,50.,100.])
@@ -11962,6 +12115,34 @@ def plotfluxes(doreload=1,aphi_j_val=0):
         label.set_fontsize(16)
     plt.savefig("fig4.eps",bbox_inches='tight',pad_inches=0.02)
 
+
+def remove_floor_radm2a(fti=4000,ftf=4200):
+    global avg_uu
+    v = np.load("qty.npz")
+    avg_uu = np.array([-1,-1,-1,-1],dtype=np.float32)
+    grid3d("gdump.bin",use2d=True)
+    Dt = [4000.00154723615-4200.00031700167,
+          4200.00031700167-4000.00154723615]
+    Dno = [1000,1050]
+    Dt = np.array(Dt)
+    Dno = np.array(Dno)
+    DF = get_dFfloor(Dt,Dno)
+    #Fm=(mdtotvsr+DFfloor0)
+    dic=np.load("qty.npz")
+    which = (v["t"] <= ftf)*(v["t"]>=fti)
+    FMavg = v["FM"][which,:].mean(0)
+    dFMavg = DF[0,v["ivals"]]
+    FMcorr = FMavg + dFMavg
+    plt.plot(v["rvals"],FMcorr,label=r"Fmcorr")
+    plt.plot(v["rvals"],FMavg,label=r"FMavg")
+    plt.plot(v["rvals"],dFMavg,label=r"dFMavg")
+    plt.xlim(rhor,20)
+    plt.ylim(1e-4,3e-2)
+    #plt.yscale("log")
+    plt.grid(b=1)
+    plt.legend(loc = "best")
+    
+    
 def get_dFfloor(Dt, Dno, dotakeoutfloors=True,aphi_j_val=0, ndim=1, is_output_cell_center = True):
     """ Returns the (scaled to full wedge) flux correction due to floor activations and fixups, 
     requires gdump to be loaded [grid3d("gdump.bin",use2d=True)], and arrays, Dt and Dno, 
@@ -12010,8 +12191,8 @@ def get_dFfloor(Dt, Dno, dotakeoutfloors=True,aphi_j_val=0, ndim=1, is_output_ce
                 if iDT > 0:
                     DT += iDT
                 if i==0:
-                    DUin = iDUin
-                    DUout = iDUout
+                    DUin = iDUin * np.sign(iDT)
+                    DUout = iDUout * np.sign(iDT)
                 else:
                     DUin += iDUin * np.sign(iDT)
                     DUout += iDUout * np.sign(iDT)
