@@ -70,6 +70,107 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
+# compute integrated optical depth
+def compute_taurad():
+        # uses uu[], KAPPAUSER, KAPPAESUSER, gv3, r
+        #
+        drco=_dx1*np.sqrt(np.fabs(gv3[1,1]))/(2.0*uu[0])
+        dhco=_dx2*np.sqrt(np.fabs(gv3[2,2]))*uu[0]
+        dphco=_dx3*np.sqrt(np.fabs(gv3[3,3]))*uu[0]
+        #
+        taurad1=(KAPPAUSER+KAPPAESUSER)*drco
+        tauradeff1=np.sqrt(KAPPAUSER*(KAPPAUSER+KAPPAESUSER))*drco
+        #
+        # FREE PARAMETER:
+        radiussettau1zero=80
+        #
+        ############# taurad1
+        taurad1[r[:,0,0]>radiussettau1zero,:,:]=0 # to get rid of parts of flow that aren't in steady-state and wouldn't have contributed
+        #np.set_printoptions(threshold=sys.maxint)
+        #print("taurad1") ; sys.stdout.flush()
+        #print(taurad1[:,0,0]) ; sys.stdout.flush()
+        #print("r") ; sys.stdout.flush()
+        #print(r[:,0,0]) ; sys.stdout.flush()
+        ########################### taurad1 (i.e. from small radius)
+        taurad1integrated=np.cumsum(taurad1,axis=0)
+        #print("taurad1integrated") ; sys.stdout.flush()
+        #print(taurad1integrated[:,0,0]) ; sys.stdout.flush()
+        #
+        ########################### taurad1flip (i.e. from large radius)
+        taurad1flip=taurad1[::-1,:,:]
+        taurad1flipintegrated=np.cumsum(taurad1flip,axis=0)
+        taurad1flipintegrated=taurad1flipintegrated[::-1,:,:]
+        #print("taurad1flipintegrated") ; sys.stdout.flush()
+        #print(taurad1flipintegrated[:,0,0]) ; sys.stdout.flush()
+        #
+        ############# tauradeff1
+        tauradeff1[r[:,0,0]>radiussettau1zero,:,:]=0 # to get rid of parts of flow that aren't in steady-state and wouldn't have contributed
+        np.set_printoptions(threshold=sys.maxint)
+        #print("tauradeff1") ; sys.stdout.flush()
+        #print(tauradeff1[:,0,0]) ; sys.stdout.flush()
+        #print("r") ; sys.stdout.flush()
+        #print(r[:,0,0]) ; sys.stdout.flush()
+        ########################### tauradeff1 (i.e. from small radius)
+        tauradeff1integrated=np.cumsum(tauradeff1,axis=0)
+        #print("tauradeff1integrated") ; sys.stdout.flush()
+        #print(tauradeff1integrated[:,0,0]) ; sys.stdout.flush()
+        #
+        ########################### tauradeff1flip (i.e. from large radius)
+        tauradeff1flip=tauradeff1[::-1,:,:]
+        tauradeff1flipintegrated=np.cumsum(tauradeff1flip,axis=0)
+        tauradeff1flipintegrated=tauradeff1flipintegrated[::-1,:,:]
+        #print("tauradeff1flipintegrated") ; sys.stdout.flush()
+        #print(tauradeff1flipintegrated[:,0,0]) ; sys.stdout.flush()
+        #
+        ########################### taurad2 (from theta=0 pole)
+        taurad2=(KAPPAUSER+KAPPAESUSER)*dhco
+        taurad2integrated=np.cumsum(taurad2,axis=1)
+#        for kk in np.arange(0,nz):
+#                for ii in np.arange(0,nx):
+#        for jj in np.arange(ny/2,ny):
+#            taurad2integrated[:,jj,:]=0 #taurad2integrated[:,ny/2,:]
+        #
+        ########################### taurad2flip (from theta=pi pole)
+        taurad2flip=taurad2[:,::-1,:]
+        taurad2flipintegrated=np.cumsum(taurad2flip,axis=1)
+        taurad2flipintegrated=taurad2flipintegrated[:,::-1,:]
+        ########################### merge taurad2's
+        for jj in np.arange(0,ny/2):
+            taurad2flipintegrated[:,jj,:]=taurad2integrated[:,jj,:]
+        for jj in np.arange(ny/2,ny):
+            taurad2integrated[:,jj,:]=taurad2flipintegrated[:,jj,:]
+        #
+        ########################### tauradeff2 (from theta=0 pole)
+        tauradeff2=np.sqrt(KAPPAUSER*(KAPPAUSER+KAPPAESUSER))*dhco
+        tauradeff2integrated=np.cumsum(tauradeff2,axis=1)
+#        for kk in np.arange(0,nz):
+#                for ii in np.arange(0,nx):
+#        for jj in np.arange(ny/2,ny):
+#            tauradeff2integrated[:,jj,:]=0 #tauradeff2integrated[:,ny/2,:]
+        #
+        ########################### tauradeff2flip (from theta=pi pole)
+        tauradeff2flip=tauradeff2[:,::-1,:]
+        tauradeff2flipintegrated=np.cumsum(tauradeff2flip,axis=1)
+        tauradeff2flipintegrated=tauradeff2flipintegrated[:,::-1,:]
+        ########################### merge tauradeff2's
+        for jj in np.arange(0,ny/2):
+            tauradeff2flipintegrated[:,jj,:]=tauradeff2integrated[:,jj,:]
+        for jj in np.arange(ny/2,ny):
+            tauradeff2integrated[:,jj,:]=tauradeff2flipintegrated[:,jj,:]
+        #
+        ########################### taurad3
+        taurad3=uu[0]*(KAPPAUSER+KAPPAESUSER)*dphco
+        ########################### tauradeff3
+        tauradeff3=uu[0]*np.sqrt(KAPPAUSER*(KAPPAUSER+KAPPAESUSER))*dphco
+        #
+        # so tauradintegrated (final version) is optical depth integrated from large radii and away from pole. 
+        tauradintegrated=np.maximum(taurad1flipintegrated,taurad2integrated)
+        tauradeffintegrated=np.maximum(tauradeff1flipintegrated,tauradeff2integrated)
+        #
+        return(taurad1integrated,taurad1flipintegrated,taurad2integrated,taurad2flipintegrated,tauradintegrated,tauradeff1integrated,tauradeff1flipintegrated,tauradeff2integrated,tauradeff2flipintegrated,tauradeffintegrated)
+        # use primarily: taurad1flipintegrated taurad2integrated and can use and'ed version
+
+
 def cooltest(fname="cooltest.txt"):
     gd = np.loadtxt( fname,
                      dtype=np.float64, 
@@ -1677,7 +1778,7 @@ def mkmfnew(v,findex=10000,
     if dosavefig:
         plt.savefig("frame%04d.png" % findex,dpi=120)
 
-def mkavg2dnew():
+def mkavg2dnew(deltat = 100):
     if len(sys.argv[2:])>=2 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
         whichi = int(sys.argv[2])
         whichn = int(sys.argv[3])
@@ -1686,11 +1787,40 @@ def mkavg2dnew():
             if sys.argv[4].isdigit():
                 endn = int(sys.argv[4])
         if whichi < whichn:
-            postprocess2d(endn = endn, whichi = whichi, whichn = whichn)
+            postprocess2d(endn = endn, whichi = whichi, whichn = whichn, deltat = deltat)
         else:
-            mrgnew(whichn)
+            mrgnew2d(whichn,deltat = deltat)
     else:
         print("Syntax error")
+
+###need to finish up: update notation to compute and notation to merge
+def mrgnew2d(whichn1,whichn2,deltat=100):
+    v = {}
+    for n in xrange(whichn1,whichn2+1):
+        v = mrgnew2d_f("avg2d_%05d_%g.npz" % (n,deltat),v)
+    np.savez( "avg2d_%05d_%05d_%g.npz" % (whichn1, whichn2, deltat), **v )
+
+def mrgnew2d_f(ft, v={}):
+    vt = np.load(ft)
+    for key in vt:
+        #leave "t" for last
+        if key == "t":
+            continue
+        if key not in v:
+            v[key]=vt[key]
+        else:
+            #properly average (taking into account the number of elements)
+            ntot = len(v["t"])+len(vt["t"])
+            w = 1.*len(v["t"])/lentot
+            wt = 1.*len(vt["t"])/lentot
+            v[key] = v[key]*w + vt[key]*wt
+    #now deal with "t"
+    v["t"] = list(v["t"]) + list(vt["t"])
+    vt.close()
+    return v
+        
+    
+    
 
 def get_fieldline_time(fname):
     fin = open( "dumps/" + fieldlinefilename, "rb" )
@@ -1725,20 +1855,22 @@ def postprocess2d(startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
             continue
         #clear out the receptacle into which average will be stored
         v = {}
-        avgfname = "avg_%05d_%g.npz" % (numinterval, deltat)
+        avgfname = "avg2d_%05d_%g.npz" % (numinterval, deltat)
         print( "Doing interval %d, t = [%g,%g)..." % (numinterval, tstartavg, tendavg) )
-        tstartavg = numinterval * detlat
+        #start and end times of the interval
+        tstartavg = numinterval     * detlat
         tendavg   = (numinterval+1) * deltat
         if os.path.isfile( avgfname ):
             print( "File %s exists, skipping..." % fname )
             continue     
         for fldname in flist:
+            #this only reads the first line in the file, so it is fast
             t = get_fieldline_time(fldname)
             #fieldline file falls outside of the averaging interval? skip it
-            if i < tstartavg or t > tendavg:
-                print("%s: t = %g falls outside, skipping" % (fldname, t))
+            if i < tstartavg or t >= tendavg:
+                print("%s: t = %g falls outside interval, skipping" % (fldname, t))
                 continue
-            print("%s: t = %g falls inside, reading..." % (fldname, t))
+            print("%s: t = %g falls insidei interval, reading..." % (fldname, t))
             sys.stdout.flush()
             rfd("../"+fldname)
             cvellite()
@@ -9020,7 +9152,8 @@ def rddims(gotrad):
         beddcode = bedd/np.sqrt(UBAR)
         #
         print("Mdoteddcode = %g Leddcode = %g" % (Mdoteddcode, Leddcode) )
-        print("CCCTRUE=%g ENBAR=%g TBAR=%g Leddcode=%g Mdoteddcode=%g einf=%g linf=%g uedd=%g bedd=%g" % (CCCTRUE,ENBAR,TBAR,Ledd,Mdotedd,einf,linf,uedd,bedd)) ; sys.stdout.flush()
+        print("Mdotedd = %g Ledd = %g" % (Mdotedd, Ledd) )
+        print("CCCTRUE=%g ENBAR=%g TBAR=%g Ledd=%g Mdotedd=%g einf=%g linf=%g uedd=%g bedd=%g" % (CCCTRUE,ENBAR,TBAR,Ledd,Mdotedd,einf,linf,uedd,bedd)) ; sys.stdout.flush()
         print("CCCTRUE=%g ENBAR=%g TBAR=%g" % (CCCTRUE,ENBAR,TBAR)) ; sys.stdout.flush()
     else:
         GGG=1

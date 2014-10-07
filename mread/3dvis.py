@@ -701,9 +701,10 @@ def wraparound(v):
 
 def interp3d(xmax=100,ymax=100,zmax=100,ncellx=100,ncelly=100,ncellz=100):
     #first, construct 1d arrays
+    zz = np.linspace(-zmax, zmax, ncellz,endpoint=1)
     x3d = np.linspace(-xmax, xmax, ncellx,endpoint=1)[:,None,None]
     y3d = np.linspace(-ymax, ymax, ncelly,endpoint=1)[None,:,None]
-    z3d = np.linspace(-zmax, zmax, ncellz,endpoint=1)[None,None,:]
+    z3d = zz[None,None,:]
     rmax = (xmax**2+ymax**2+zmax**2)**0.5
     Rmax = (xmax**2+ymax**2)**0.5
     #make the arrays 3d
@@ -712,7 +713,7 @@ def interp3d(xmax=100,ymax=100,zmax=100,ncellx=100,ncelly=100,ncellz=100):
     z3d = z3d + 0*x3d+0*y3d+0*z3d
     #construct meridional 2d grid:
     R2d = np.linspace(0, 2*Rmax, ncellx*2); dR2d = R2d[1]-R2d[0];
-    z2d = np.linspace(-zmax, zmax, ncellz,endpoint=1); dz2d = z2d[1]-z2d[0];
+    z2d = zz; dz2d = z2d[1]-z2d[0];
     #compute i,j-indices on meridional grid:
     ph = 0
     R = r*sin(h)
@@ -723,7 +724,7 @@ def interp3d(xmax=100,ymax=100,zmax=100,ncellx=100,ncelly=100,ncellz=100):
     i = (ti)[...,0][r[...,0]<1.1*rmax]
     j = (tj)[...,0][r[...,0]<1.1*rmax]
     #get i,j-indices on the 2d meridional grid grid
-    i2d = griddata((x, z), i, (R2d[:,None], z2d[None,:]), method="linear",fill_value=0)
+    i2d = griddata((x, z), i, (R2d[:,None], z2d[None,:]), method="linear",fill_value=nx-1)
     j2d = griddata((x, z), j, (R2d[:,None], z2d[None,:]), method="linear",fill_value=0)
     #
     R3d = (x3d**2+y3d**2)**0.5
@@ -736,16 +737,19 @@ def interp3d(xmax=100,ymax=100,zmax=100,ncellx=100,ncelly=100,ncellz=100):
     return i3d, j3d, k3d, x3d, y3d, z3d   
 
 def bilin(a,i,j,order=3):
-    return ndimage.map_coordinates(a,np.array([i,j]),order=order)
+    return ndimage.map_coordinates(a,np.array([i,j]),order=order,mode="nearest")
 
 
-def trilin(a,i,j,k,order=3):
+def trilin(a,i,j,k,order=3,fast=0):
     #a is the array to be interpolated
     #i,j,k are indices, which are 3d arrays; can be non-integers (floats)
     #returns interpolated values of a[i,j,k]
     nbnd = 3
     a_with_bnd_cells = np.concatenate((a[...,-nbnd:],a,a[...,:nbnd]),axis=-1)
-    return ndimage.map_coordinates(a_with_bnd_cells,np.array([i,j,k+nbnd]),order=order,mode="nearest")
+    if not fast:
+        return ndimage.map_coordinates(a_with_bnd_cells,np.array([i,j,k+nbnd]),order=order,mode="nearest")
+    else:
+        return a_with_bnd_cells[np.int32(i),np.int32(j),np.int32(k+nbnd)]
 
 def compute_jet_head_velocity(headfile="headinfo.npz",endn=-1,dn=1):
     if not os.path.isfile( headfile ):
@@ -1313,8 +1317,8 @@ def tiltedomegaf():
     omegatilt /= Rp
     return omegatilt
     
-def visualize_fieldlines(fn=1,isaligned=0,doreload=1,no=583,xmax=100,ymax=50,zmax=50,ncellx=200,ncelly=100,ncellz=100,dosavefig=0):
-    global ph
+def visualize_fieldlines(fn=1,isaligned=0,doreload=1,no=583,xmax=70,ymax=30,zmax=30,ncellx=400,ncelly=200,ncellz=200,dosavefig=0):
+    global ph,lrhoi_jet,i3d_jet,j3d_jet,k3d_jet,xi_jet,yi_jet,zi_jet,scene
     if isaligned:
         ncellxold = ncellx; ncellx = ncellz; ncellz = ncellxold
         xmaxold = xmax; xmax = zmax; zmax = xmaxold
@@ -1327,6 +1331,8 @@ def visualize_fieldlines(fn=1,isaligned=0,doreload=1,no=583,xmax=100,ymax=50,zma
         #FULLOUTPUT = 2
         #ph -= FULLOUTPUT*2*np.pi/(nz-2*FULLOUTPUT)
         cvel()
+    rhead = np.max(r[bsq/rho>0.1])
+    print "rhead = %g" % rhead
     scene = mlab.figure(fn, bgcolor=(0, 0, 0), fgcolor=(1, 1, 1), size=(210*2, 297*2))
     mlab.clf()
     if 1:
@@ -1360,9 +1366,9 @@ def visualize_fieldlines(fn=1,isaligned=0,doreload=1,no=583,xmax=100,ymax=50,zma
         print( "Done with trilinear interpolation for Bz..." ); sys.stdout.flush()
         # pdb.set_trace()
     if 1:
-        print( "Running interp3d for jet..." ); sys.stdout.flush()
-        i3d_jet,j3d_jet,k3d_jet,xi_jet,yi_jet,zi_jet =\
-          interp3d(xmax=xmax,ymax=ymax,zmax=zmax,ncellx=ncellx,ncelly=ncelly,ncellz=ncellz)
+        # print( "Running interp3d for jet..." ); sys.stdout.flush()
+        # i3d_jet,j3d_jet,k3d_jet,xi_jet,yi_jet,zi_jet =\
+        #   interp3d(xmax=xmax,ymax=ymax,zmax=zmax,ncellx=ncellx,ncelly=ncelly,ncellz=ncellz)
         print( "Done with inter3d for jet..." ); sys.stdout.flush()
         print( "Running trilinear interpolation for jet..." ); sys.stdout.flush()
         lrhoi_jet = np.float32(trilin(lrho,i3d_jet,j3d_jet,k3d_jet))
@@ -1379,19 +1385,23 @@ def visualize_fieldlines(fn=1,isaligned=0,doreload=1,no=583,xmax=100,ymax=50,zma
             otf_jet.add_point(-4.547, 0.429)
             otf_jet.add_point(-2.92, 0)
             otf_jet.add_point(1, 0.)
-        elif 1:
+        elif 0:
             #less diffuse jet, so it does not touch box boundaries
             otf_jet.add_point(-2, 1.)
             otf_jet.add_point(1, 0.1)
             otf_jet.add_point(2, 0.)
             otf_jet.add_point(4., 0.)
+        elif 1:
+            #less diffuse jet, so it does not touch box boundaries
+            otf_jet.add_point(lrhoi_jet.min(), .5)
+            otf_jet.add_point(lrhoi_jet.max(), 0.)
         vol_jet._otf = otf_jet
         vol_jet._volume_property.set_scalar_opacity(otf_jet)        
     if 1:
         streamlines = []
-        xpos = [1,  0.5,  0.5, -0.5,  -0.5, -1]
-        ypos = [0,  0.0,  0.0,  0.0,   0.0,  0]
-        zpos = [0,  0.5, -0.5,  0.5,  -0.5,  0]
+        xpos = [1, -1,  0.5,  0.5, -0.5,  -0.5]
+        ypos = [0,  0,  0.0,  0.0,  0.0,   0.0]
+        zpos = [0,  0,  0.5, -0.5,  0.5,  -0.5]
         intdir = ['forward', 'forward', 'forward', 'forward', 'forward', 'forward']
         for sn in xrange(len(xpos)):
             print( "Running rendering of streamline #%d..." % (sn+1) ); sys.stdout.flush()
@@ -1402,7 +1412,7 @@ def visualize_fieldlines(fn=1,isaligned=0,doreload=1,no=583,xmax=100,ymax=50,zma
             streamlines.append(streamline)
             streamline.module_manager.scalar_lut_manager.lut_mode = 'gist_yarg'
             streamline.streamline_type = 'tube'
-            streamline.tube_filter.radius = 0.1
+            streamline.tube_filter.radius = 0.15
             if 0:
                 streamline.seed.widget.phi_resolution = 3
                 streamline.seed.widget.theta_resolution = 3
@@ -1416,7 +1426,7 @@ def visualize_fieldlines(fn=1,isaligned=0,doreload=1,no=583,xmax=100,ymax=50,zma
             streamline.stream_tracer.progress = 1.0
             streamline.stream_tracer.maximum_number_of_steps = 10000L
             #streamline.stream_tracer.start_position =  np.array([ 0.,  0.,  0.])
-            streamline.stream_tracer.maximum_propagation = 70.0
+            streamline.stream_tracer.maximum_propagation = rhead if np.abs(xpos[sn])==1 else 3*rhead
             streamline.seed.widget.position = np.array([ xpos[sn],  ypos[sn],  zpos[sn]])
             streamline.seed.widget.enabled = False
             streamline.update_streamlines = 1
@@ -1461,7 +1471,7 @@ def visualize_fieldlines(fn=1,isaligned=0,doreload=1,no=583,xmax=100,ymax=50,zma
         z = wraparound(r*cos(h))[myi,:,:]
         surf = mlab.mesh(x, y, z, scalars=s, colormap='jet',opacity=1,vmin=0,vmax=1)
         surf.actor.property.backface_culling = True
-        mlab.colorbar(object=surf,title="Surface angular velocity")
+        #mlab.colorbar(object=surf,title="Surface angular velocity")
     #move camera:
     scene.scene.show_axes = True
     scene.scene.camera.position = [-7.9580786405131221e-13, -93.080546590412126, -0.039630889892535492]
