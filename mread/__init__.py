@@ -2041,7 +2041,7 @@ def postprocess1d(startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
                 v[key] = valdic[key]
             else:
                 if key in v:
-                    np.append(v[key], valdic[key])
+                    v[key] = np.append(v[key], valdic[key])
                 else:
                     v[key] = valdic[key]
         v["ind"].append(ind)
@@ -2186,8 +2186,10 @@ def compvals1d(di=5):
     dic = {}
     #rvals = np.array([rhor,5.,10.,20.,50.,100.])
     #ivals = np.int32(iofr(rvals))
-    #every di'th radial cell, so overall nx/di ~ 50 cells
-    ivals = np.int32(ti[::di,ny/2,0]+0.5)
+    ihor = iofr(rhor)
+    i0 = ihor%di
+    #every di'th radial cell including the event horizon cell, so overall nx/di ~ 50 cells
+    ivals = np.int32(ti[i0::di,ny/2,0]+0.5)
     rvals = r[::di,ny/2,0]
     #
     delta = lambda kapa,nu: (kapa==nu)
