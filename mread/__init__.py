@@ -167,8 +167,13 @@ def compute_taurad():
         tauradintegrated=np.maximum(taurad1flipintegrated,taurad2integrated)
         tauradeffintegrated=np.maximum(tauradeff1flipintegrated,tauradeff2integrated)
         #
-        return(taurad1integrated,taurad1flipintegrated,taurad2integrated,taurad2flipintegrated,tauradintegrated,tauradeff1integrated,tauradeff1flipintegrated,tauradeff2integrated,tauradeff2flipintegrated,tauradeffintegrated)
+        #return(taurad1integrated,taurad1flipintegrated,taurad2integrated,taurad2flipintegrated,tauradintegrated,tauradeff1integrated,tauradeff1flipintegrated,tauradeff2integrated,tauradeff2flipintegrated,tauradeffintegrated)
+        #return in the form of a dictionary so it is easy to pull output apart
+        dic = {}
+        dic["tau1"] = taurad1flipintegrated
+        dic["tau2"] = taurad2integrated
         # use primarily: taurad1flipintegrated taurad2integrated and can use and'ed version
+        return dic
 
 
 def cooltest(fname="cooltest.txt"):
@@ -1999,17 +2004,10 @@ def postprocess1d(startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
     flist2.sort()
     flist = np.concatenate((flist1,flist2))
     v = {}
-    v["hor"]=[] 
-    v["FM"]=[] 
-    v["FEM"]=[]
-    v["FE"]=[]
-    v["FR"]=[]
-    v["FRj"] = []
-    v["PhiBH"]=[]
-    v["ind"]=[]
-    v["ivals"]=[]
-    v["rvals"]=[]
-    v["t"]=[]
+    #initialize some variables that are definitely going to be there
+    v["t"] = []
+    v["ind"] = []
+    #the rest will be whatever compvals1d() returns
     fname = "qty_%02d_%02d.npz" % (whichi, whichn)
     if os.path.isfile( fname ):
         print( "File %s exists, loading from file..." % fname )
@@ -2036,28 +2034,19 @@ def postprocess1d(startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
         rfd("../"+fldname)
         cvellite()
         sys.stdout.flush()
-        valdic = compvals()
+        valdic = compvals1d()
         for key in valdic.keys():
             if key == "ivals" or key == "rvals":
                 #store only one copy of radial evaluation points
                 v[key] = valdic[key]
             else:
-                v[key].append(valdic[key])
+                if key in v:
+                    np.append(v[key], valdic[key])
+                else:
+                    v[key] = valdic[key]
         v["ind"].append(ind)
         v["t"].append(t)
-    np.savez("qty_%02d_%02d.npz" % (whichi, whichn), 
-             hor = v["hor"], 
-             FM = v["FM"], 
-             FEM = v["FEM"],
-             FE = v["FE"],
-             FR = v["FR"],
-             FRj = v["FRj"],
-             PhiBH = v["PhiBH"],
-             ind = v["ind"],
-             ivals = v["ivals"],
-             rvals = v["rvals"],
-             t = v["t"]
-             )
+    np.savez("qty_%02d_%02d.npz" % (whichi, whichn), **v)
 
 def cvellite():
     global ud, bsq, bu, bd
@@ -2193,7 +2182,7 @@ def compvals2d():
     dic["absBd3"]= np.abs(bd[3]*ud[0]-bd[0]*ud[3]).mean(-1)[:,:,None]
     return dic
         
-def compvals(di=5):
+def compvals1d(di=5):
     dic = {}
     #rvals = np.array([rhor,5.,10.,20.,50.,100.])
     #ivals = np.int32(iofr(rvals))
@@ -2231,6 +2220,13 @@ def compvals(di=5):
         FRj = (gdet*fRud(1,0)*(bsq/rho>10)).sum(-1).sum(-1)*_dx2*_dx3
         dic["FR"] = FR[ivals]
         dic["FRj"] = FRj[ivals]
+        tau_dic = compute_taurad()
+        tau1 = tau_dic["tau1"]
+        tau2 = tau_dic["tau2"]
+        dic["FRtau1=1"] = (gdet*fRud(1,0)*(tau1<1))[ivals].sum(-1).sum(-1)*_dx2*_dx3
+        dic["FRtau1=2o3"] = (gdet*fRud(1,0)*(tau1<2./3.))[ivals].sum(-1).sum(-1)*_dx2*_dx3
+        dic["FRtau2=1"] = (gdet*fRud(1,0)*(tau2<1))[ivals].sum(-1).sum(-1)*_dx2*_dx3
+        dic["FRtau2=2o3"] = (gdet*fRud(1,0)*(tau2<2./3.))[ivals].sum(-1).sum(-1)*_dx2*_dx3
     #total absolute magnetic flux
     PhiBH = 0.5*np.abs(gdetB[1]).sum(-1).sum(-1)*_dx2*_dx3
     dic["PhiBH"] = PhiBH[ivals]
