@@ -2189,7 +2189,7 @@ def compvals1d(di=5):
     i0 = ihor%di
     #every di'th radial cell including the event horizon cell, so overall nx/di ~ 50 cells
     ivals = np.int32(ti[i0::di,ny/2,0]+0.5)
-    rvals = r[::di,ny/2,0]
+    rvals = r[i0::di,ny/2,0]
     #
     delta = lambda kapa,nu: (kapa==nu)
     fTudEM = lambda kapa,nu: bsq*uu[kapa]*ud[nu] + 0.5*bsq*delta(kapa,nu) - bu[kapa]*bd[nu]
