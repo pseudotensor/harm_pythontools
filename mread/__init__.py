@@ -9106,6 +9106,7 @@ def grid3d(dumpname,use2d=False,doface=False,usethetarot0=False): #read grid dum
     else:
         realdumpname=dumpname
     #
+    print( "realdumpname=%s" % (realdumpname) ) ; sys.stdout.flush()
     #
     # load axisymmetric metric-grid data
     # this sets THETAROT=0 if THETAROT true is non-zero.  rfd() is responsible for setting THETAROT for each fieldline file so data inputted is transformed/interpolated correctly.
@@ -28272,4 +28273,59 @@ if __name__ == "__main__":
     main()
 
 
+# to run this, do, e.g.:
+# ipython
+# run ~/py/mread/__init__.py   # might cplain about matplotlib and pylab as well as no pythonpath found.  Probably ok.
+# 
+def harmradtest1():
+    #
+    print("GOT HERESTART");sys.stdout.flush()
+    # 
+    import os
+    os.chdir("/data/jon/radruns/radma0.8/")
+    #
+    print("GOT HEREM1");sys.stdout.flush()
+    #
+    # first load grid file
+    grid3d("gdump.bin")
+    # now try loading a single fieldline file
+    rfd("fieldline0960.bin")
+    if 1==1:
+        (rhoclean,ugclean,uublob,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
+        cvel()
+        Tcalcud(maxbsqorho=maxbsqorhonear,which=condmaxbsqorho)
+        # reget tau's
+        taurad1integrated,taurad1flipintegrated,taurad2integrated,taurad2flipintegrated,tauradintegrated,tauradeff1integrated,tauradeff1flipintegrated,tauradeff2integrated,tauradeff2flipintegrated,tauradeffintegrated=compute_taurad()
+    # now plot something you read-in
+    #
+    #ax.contour(itaurad1flipintegrated,linewidths=4,colors='cyan', extent=extent,hold='on',origin='lower',levels=(1,))
+    len=150
+    ncell=800
+    extent=(-len,len,-len,len)
+    global taurad2integrated
+    itaurad2integrated = reinterp(taurad2integrated,extent,ncell,domask=1.0,interporder='linear')
+    ax = plt.gca()
+    ax.contour(itaurad2integrated,linewidths=4,colors='cyan', extent=extent,hold='on',origin='lower',levels=(1,))
+    #ax.contour(itaurad2flipintegrated,linewidths=4,colors='red', extent=extent,hold='on',origin='lower',levels=(1,))
+    #
+    avoidfloorcondition=condmaxbsqorho
+    keywordsavoidfloor={'which': avoidfloorcondition}
+    mdtot=mdotcalc(which=avoidfloorcondition)
+    rhor=1+(1-a**2)**0.5
+    ihor = np.floor(iofr(rhor)+0.5)
+    ifluxacc=ihor
+    mdothor=mdtot[iofr(ifluxacc)]
+    #
+    edrad=intangle(-gdet*TudRAD[1][0])
+    tauradlocal=(KAPPAUSER+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
+    #edradthin[qindex]=intangle(-gdet*TudRAD[1][0],which=tauradlocal<=1.0)
+    edradthin=intangle(-gdet*TudRAD[1][0],which=tauradintegrated<=1.0)
+    rjetout=100
+    etarad=edrad[iofr(rjetout)]/mdothor
+    etaradthin=edradthin[iofr(rjetout)]/mdothor
+    print("time=%g" % (t))
+    print("mdothor=%g" % (mdothor/Leddcode));sys.stdout.flush()
+    print("etarad=%g" % (etarad));sys.stdout.flush()
+    print("etaradthin=%g" % (etaradthin));sys.stdout.flush()
+    #
 

@@ -973,7 +973,7 @@ then
                             # -N $numtotalnodes # number of nodes requested such that really have access to numnodes*16 total cores even if not using them.
                             superbatch=superbatchfile.$thebatch
                             rm -rf $superbatch
-                            echo "!/bin/bash" >> $superbatch
+                            echo "#!/bin/bash" >> $superbatch
                             echo "cd $dirname" >> $superbatch
                             cat ~/setuppython27 >> $superbatch
                             echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch
@@ -1207,7 +1207,7 @@ then
             then
                 superbatch=superbatchfile.$thebatch
                 rm -rf $superbatch
-                echo "!/bin/bash" >> $superbatch
+                echo "#!/bin/bash" >> $superbatch
                 echo "cd $dirname" >> $superbatch
                 cat ~/setuppython27 >> $superbatch
                 rm -rf $dirname/matplotlibdir/
@@ -1552,7 +1552,7 @@ then
                         then
                             superbatch=superbatchfile.$thebatch
                             rm -rf $superbatch
-                            echo "!/bin/bash" >> $superbatch
+                            echo "#!/bin/bash" >> $superbatch
                             echo "cd $dirname" >> $superbatch
                             cat ~/setuppython27 >> $superbatch
                             rm -rf $dirname/matplotlibdir/
@@ -1939,7 +1939,7 @@ then
                         then
                             superbatch=superbatchfile.$thebatch
                             rm -rf $superbatch
-                            echo "!/bin/bash" >> $superbatch
+                            echo "#!/bin/bash" >> $superbatch
                             echo "cd $dirname" >> $superbatch
                             cat ~/setuppython27 >> $superbatch
                             rm -rf $dirname/matplotlibdir/
@@ -2199,7 +2199,7 @@ then
             then
                 superbatch=superbatchfile.$thebatch
                 rm -rf $superbatch
-                echo "!/bin/bash" >> $superbatch
+                echo "#!/bin/bash" >> $superbatch
                 echo "cd $dirname" >> $superbatch
                 cat ~/setuppython27 >> $superbatch
                 rm -rf $dirname/matplotlibdir/
