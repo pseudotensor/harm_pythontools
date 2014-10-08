@@ -2035,15 +2035,14 @@ def postprocess1d(startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
         cvellite()
         sys.stdout.flush()
         valdic = compvals1d()
-        for key in valdic.keys():
+        for key in valdic:
             if key == "ivals" or key == "rvals":
                 #store only one copy of radial evaluation points
                 v[key] = valdic[key]
             else:
-                if key in v:
-                    v[key] = np.append(v[key], valdic[key])
-                else:
-                    v[key] = valdic[key]
+                if key not in v:
+                    v[key] = []
+                v[key].append(valdic[key])
         v["ind"].append(ind)
         v["t"].append(t)
     np.savez("qty_%02d_%02d.npz" % (whichi, whichn), **v)
