@@ -28307,10 +28307,12 @@ def harmradtest1(path=None,fil=None):
     len=150
     ncell=800
     extent=(-len,len,-len,len)
-    global taurad2integrated
+    global taurad2integrated,tauradeffintegrated
     itaurad2integrated = reinterp(taurad2integrated,extent,ncell,domask=1.0,interporder='linear')
+    itauradeffintegrated = reinterp(tauradeffintegrated,extent,ncell,domask=1.0,interporder='linear')
     ax = plt.gca()
     ax.contour(itaurad2integrated,linewidths=4,colors='cyan', extent=extent,hold='on',origin='lower',levels=(1,))
+    ax.contour(itauradeffintegrated,linewidths=4,colors='red', extent=extent,hold='on',origin='lower',levels=(1,))
     #ax.contour(itaurad2flipintegrated,linewidths=4,colors='red', extent=extent,hold='on',origin='lower',levels=(1,))
     #
     avoidfloorcondition=condmaxbsqorho
