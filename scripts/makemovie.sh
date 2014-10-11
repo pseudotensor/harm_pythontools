@@ -975,7 +975,6 @@ then
                             rm -rf $superbatch
                             echo "#!/bin/bash" >> $superbatch
                             echo "cd $dirname" >> $superbatch
-                            cat ~/setuppython27 >> $superbatch
                             echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch
                             rm -rf $dirname/matplotlibdir/
                             echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $superbatch
@@ -1209,7 +1208,6 @@ then
                 rm -rf $superbatch
                 echo "#!/bin/bash" >> $superbatch
                 echo "cd $dirname" >> $superbatch
-                cat ~/setuppython27 >> $superbatch
                 rm -rf $dirname/matplotlibdir/
                 echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $superbatch
                 echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch
@@ -1554,7 +1552,6 @@ then
                             rm -rf $superbatch
                             echo "#!/bin/bash" >> $superbatch
                             echo "cd $dirname" >> $superbatch
-                            cat ~/setuppython27 >> $superbatch
                             rm -rf $dirname/matplotlibdir/
                             echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $superbatch
                             echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch
@@ -1941,7 +1938,6 @@ then
                             rm -rf $superbatch
                             echo "#!/bin/bash" >> $superbatch
                             echo "cd $dirname" >> $superbatch
-                            cat ~/setuppython27 >> $superbatch
                             rm -rf $dirname/matplotlibdir/
                             echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $superbatch
                             echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch
@@ -2201,7 +2197,6 @@ then
                 rm -rf $superbatch
                 echo "#!/bin/bash" >> $superbatch
                 echo "cd $dirname" >> $superbatch
-                cat ~/setuppython27 >> $superbatch
                 rm -rf $dirname/matplotlibdir/
                 echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $superbatch
                 echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch

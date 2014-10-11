@@ -28277,19 +28277,24 @@ if __name__ == "__main__":
 # ipython
 # run ~/py/mread/__init__.py   # might cplain about matplotlib and pylab as well as no pythonpath found.  Probably ok.
 # 
-def harmradtest1():
+def harmradtest1(path=None,fil=None):
     #
     print("GOT HERESTART");sys.stdout.flush()
     # 
     import os
-    os.chdir("/data/jon/radruns/radma0.8/")
+    #os.chdir("/data/jon/radruns/radma0.8/")
+    #os.chdir("/data/jon/radruns/radm2a0.8/")
+    os.chdir(path)
     #
     print("GOT HEREM1");sys.stdout.flush()
     #
     # first load grid file
     grid3d("gdump.bin")
     # now try loading a single fieldline file
-    rfd("fieldline0960.bin")
+    #rfd("fieldline0960.bin")
+    #rfd("fieldline0312.bin")
+    rfd(fil)
+    #rfd("fieldline0999.bin")
     if 1==1:
         (rhoclean,ugclean,uublob,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
         cvel()
@@ -28314,16 +28319,20 @@ def harmradtest1():
     rhor=1+(1-a**2)**0.5
     ihor = np.floor(iofr(rhor)+0.5)
     ifluxacc=ihor
-    mdothor=mdtot[iofr(ifluxacc)]
+    mdothor=mdtot[ifluxacc]
     #
     edrad=intangle(-gdet*TudRAD[1][0])
     tauradlocal=(KAPPAUSER+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
     #edradthin[qindex]=intangle(-gdet*TudRAD[1][0],which=tauradlocal<=1.0)
     edradthin=intangle(-gdet*TudRAD[1][0],which=tauradintegrated<=1.0)
     rjetout=100
-    etarad=edrad[iofr(rjetout)]/mdothor
-    etaradthin=edradthin[iofr(rjetout)]/mdothor
+    ijet=iofr(rjetout)
+    edradjet=edrad[ijet]
+    etarad=edradjet/mdothor
+    edradthinjet=edradthin[ijet]
+    etaradthin=edradthinjet/mdothor
     print("time=%g" % (t))
+    print("ihor=%d ifluxacc=%d mdothor=%g edradjet=%g edradthinjet=%g" % (ihor,ifluxacc,mdothor,edradjet,edradthinjet));sys.stdout.flush()
     print("mdothor=%g" % (mdothor/Leddcode));sys.stdout.flush()
     print("etarad=%g" % (etarad));sys.stdout.flush()
     print("etaradthin=%g" % (etaradthin));sys.stdout.flush()
