@@ -1783,39 +1783,39 @@ def mkmfnew(v,findex=10000,
     if dosavefig:
         plt.savefig("frame%04d.png" % findex,dpi=120)
 
-def mkavg2dnew(deltat = 100):
+def mkavg2dnew(deltat = 100,endn = -1):
     if len(sys.argv[2:])>=2 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
         whichi = int(sys.argv[2])
         whichn = int(sys.argv[3])
-        endn = -1
         if len(sys.argv[2:])==3:
             if sys.argv[4].isdigit():
-                endn = int(sys.argv[4])
-        if whichi < whichn:
-            postprocess2d(endn = endn, whichi = whichi, whichn = whichn, deltat = deltat)
-        else:
-            mrgnew2d(whichn,deltat = deltat)
+                deltat = int(sys.argv[4])
+        if sys.argv[1] == "mk2davg":
+            postprocess2d(whichi = whichi, whichn = whichn, deltat = deltat, endn = endn)
+        elif sys.argv[1] == "mk2dmrg":
+            whichn1 = whichi
+            whichn2 = whichn
+            mrgnew2d(whichn1,whichn2,deltat = deltat)
     else:
         print("Syntax error")
 
-###need to finish up: update notation to compute and notation to merge
-def mrgnew2d(whichn1,whichn2,deltat=100):
+def mrg2dnew(whichn1,whichn2,deltat=100):
     v = {}
     for n in xrange(whichn1,whichn2+1):
         v = mrgnew2d_f("avg2d_%05d_%g.npz" % (n,deltat),v)
     np.savez( "avg2d_%05d_%05d_%g.npz" % (whichn1, whichn2, deltat), **v )
 
-def mrgnew2d_f(ft, v={}):
+def mrg2dnew_f(ft, v={}):
     vt = np.load(ft)
     for key in vt:
-        #leave "t" for last
+        #leave "t" for last so can properly average
         if key == "t":
             continue
         if key not in v:
             v[key]=vt[key]
         else:
             #properly average (taking into account the number of elements)
-            ntot = len(v["t"])+len(vt["t"])
+            lentot = len(v["t"])+len(vt["t"])
             w = 1.*len(v["t"])/lentot
             wt = 1.*len(vt["t"])/lentot
             v[key] = v[key]*w + vt[key]*wt
@@ -20074,6 +20074,8 @@ if __name__ == "__main__":
             mktsnew()
         elif sys.argv[1] == "mkavg":
             mk2davg()
+        elif sys.argv[1] == "mk2davg" or sys.argv[1] == "mk2dmrg":
+            mkavg2dnew()
         elif sys.argv[1] == "mkath":
             mkath("mkath",prefix="frame")
         elif sys.argv[1] == "mkpath":
