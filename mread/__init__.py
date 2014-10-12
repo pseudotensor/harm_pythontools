@@ -1900,7 +1900,7 @@ def postprocess2d(startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
         np.savez(avgfname, **v)
 
         
-def mktsnew():
+def mktsnew(prefix = "qty"):
     if len(sys.argv[2:])>=2 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
         whichi = int(sys.argv[2])
         whichn = int(sys.argv[3])
@@ -1909,33 +1909,34 @@ def mktsnew():
             if sys.argv[4].isdigit():
                 endn = int(sys.argv[4])
         if whichi < whichn:
-            postprocess1d(endn = endn, whichi = whichi, whichn = whichn)
+            postprocess1d(endn = endn, whichi = whichi, whichn = whichn, prefix = prefix)
         else:
-            mrgnew(whichn)
+            mrgnew(whichn, prefix = prefix)
     else:
         print("Syntax error")
 
-def mrgnew(n=None,fin1=None,fin2=None,fout="qty.npz"):
+def mrgnew(n=None,fin1=None,fin2=None,fout="qty.npz",**kwargs):
     #setup empty variables first (not necessary, here to remember what they are)
     v = {}
     if n is not None:
         #merge a numbered sequence of files
-        v = mrgnew_n(n,v)
+        v = mrgnew_n(n,v,**kwargs)
     elif fin1 is not None and fin2 is not None:
         #merge two named files
-        v = mrgnew_f(fin1,v)
-        v = mrgnew_f(fin2,v)
+        v = mrgnew_f(fin1,v,**kwargs)
+        v = mrgnew_f(fin2,v,**kwargs)
     print( "Saving into " + fout + " ..." )
     sys.stdout.flush()
     np.savez(fout, **v)
     print( "Done!" )
 
-def mrgnew_n(n, v={}):
+def mrgnew_n(n, v={},**kwargs):
+    prefix = kwargs.pop("prefix","qty")
     if v is None:
         v = {}
     for i in np.arange(n):
         #load each file
-        ft = "qty_%02d_%02d.npz" % (i, n)
+        ft = "%s_%02d_%02d.npz" % (prefix, i, n)
         print( "Loading " + ft + " ..." )
         sys.stdout.flush()
         vt=np.load( ft )
@@ -1961,7 +1962,8 @@ def mrgnew_n(n, v={}):
         v["t"] = np.array(v["ind"])*5.
     return(v)
 
-def mrgnew_f(ft, v={}):
+def mrgnew_f(ft, v={}, **kwargs):
+    prefix = kwargs.pop("prefix","qty")
     #assumes that the dics in ft and v are sorted in time
     #load file
     print( "Loading " + ft + " ..." )
@@ -1997,6 +1999,7 @@ def mrgnew_f(ft, v={}):
     return(v)
     
 def postprocess1d(startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
+    prefix = kwargs.pop("prefix","qty")
     grid3d("gdump.bin",use2d=True)
     flist1 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
     flist2 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9][0-9].bin") ) )
@@ -2008,7 +2011,7 @@ def postprocess1d(startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
     v["t"] = []
     v["ind"] = []
     #the rest will be whatever compvals1d() returns
-    fname = "qty_%02d_%02d.npz" % (whichi, whichn)
+    fname = "%s_%02d_%02d.npz" % (prefix, whichi, whichn)
     if os.path.isfile( fname ):
         print( "File %s exists, loading from file..." % fname )
         sys.stdout.flush()
@@ -2045,7 +2048,7 @@ def postprocess1d(startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
                 v[key].append(valdic[key])
         v["ind"].append(ind)
         v["t"].append(t)
-    np.savez("qty_%02d_%02d.npz" % (whichi, whichn), **v)
+    np.savez("%s_%02d_%02d.npz" % (prefix, whichi, whichn), **v)
 
 def cvellite():
     global ud, bsq, bu, bd
