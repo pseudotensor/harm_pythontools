@@ -2087,16 +2087,17 @@ def fFdd(i,j):
         fdd = -gdet*(uu[0]*bu[3]-uu[3]*bu[0]) # -f_rh = gdet*B3
     return fdd
 
+delta = lambda kapa,nu: (kapa==nu)
+fTudEM = lambda kapa,nu: bsq*uu[kapa]*ud[nu] + 0.5*bsq*delta(kapa,nu) - bu[kapa]*bd[nu]
+fTudMA = lambda kapa,nu: (rho+gam*ug)*uu[kapa]*ud[nu]+(gam-1)*ug*delta(kapa,nu)
+fTud = lambda kapa,nu: fTudEM(kapa,nu) + fTudMA(kapa,nu)
+fRud = lambda kapa,nu: 4./3.*Erf*uradu[kapa]*uradd[nu]+1./3.*Erf*delta(kapa,nu)
+
 def compvals2d():
     cvellite()
     #returns angle-averaged values for the currently loaded dump
     dic = {}
     #
-    delta = lambda kapa,nu: (kapa==nu)
-    fTudEM = lambda kapa,nu: bsq*uu[kapa]*ud[nu] + 0.5*bsq*delta(kapa,nu) - bu[kapa]*bd[nu]
-    fTudMA = lambda kapa,nu: (rho+gam*ug)*uu[kapa]*ud[nu]+(gam-1)*ug*delta(kapa,nu)
-    fTud = lambda kapa,nu: fTudEM(kapa,nu) + fTudMA(kapa,nu)
-    fRud = lambda kapa,nu: 4./3.*Erf*uradu[kapa]*uradd[nu]+1./3.*Erf*delta(kapa,nu)
     #quantities
     dic["rho"]=rho.mean(-1)[:,:,None]
     dic["ug"]=ug.mean(-1)[:,:,None]
@@ -2235,6 +2236,35 @@ def compvals1d(di=5):
     dic["ivals"] = ivals
     diskcondition = bsq/rho<10
     dic["hor"] = horcalc1d(which=diskcondition)[ivals]
+    #jet power and mass outflow in the jets
+    #EM-defined jet (minmu > ...)
+    dic["FEMMAmu>2"] = jetpowcalc(which="EMMA",minmu=2,donorthsouth="both",excludebound=True)[ivals]
+    dic["FEMMAmu>1"] = jetpowcalc(which="EMMA",minmu=1,donorthsouth="both",excludebound=True)[ivals]
+    dic["FEMmu>2"] = jetpowcalc(which="EM",minmu=2,donorthsouth="both",excludebound=True)[ivals]
+    dic["FEMmu>1"] = jetpowcalc(which="EM",minmu=1,donorthsouth="both",excludebound=True)[ivals]
+    dic["FMAmu>2"] = jetpowcalc(which="MA",minmu=2,donorthsouth="both",excludebound=True)[ivals]
+    dic["FMAmu>1"] = jetpowcalc(which="MA",minmu=1,donorthsouth="both",excludebound=True)[ivals]
+    dic["FRMmu>2"] = jetpowcalc(which="RM",minmu=2,donorthsouth="both",excludebound=True)[ivals]
+    dic["FRMmu>1"] = jetpowcalc(which="RM",minmu=1,donorthsouth="both",excludebound=True)[ivals]
+    dic["Phimu>2"] = jetpowcalc(which="Phi",minmu=2,donorthsouth="both",excludebound=True)[ivals]
+    dic["Phimu>1"] = jetpowcalc(which="Phi",minmu=1,donorthsouth="both",excludebound=True)[ivals]
+    if "uradu" in globals():
+        # radiation fluxes
+        dic["FRmurad>1"]= jetpowcalc(which="RAD",minmurad=1,donorthsouth="both",excludebound=True)[ivals]
+        dic["FRmurad>2"]= jetpowcalc(which="RAD",minmurad=2,donorthsouth="both",excludebound=True)[ivals]
+        dic["FRmu>1"]= jetpowcalc(which="RAD",minmu=1,donorthsouth="both",excludebound=True)[ivals]
+        dic["FRmu>2"]= jetpowcalc(which="RAD",minmu=2,donorthsouth="both",excludebound=True)[ivals]
+        # radiation-defined jet (minmurad > ...)
+        dic["FEMMAmurad>2"] = jetpowcalc(which="EMMA",minmurad=2,donorthsouth="both",excludebound=True)[ivals]
+        dic["FEMMAmurad>1"] = jetpowcalc(which="EMMA",minmurad=1,donorthsouth="both",excludebound=True)[ivals]
+        dic["FEMmurad>2"] = jetpowcalc(which="EM",minmurad=2,donorthsouth="both",excludebound=True)[ivals]
+        dic["FEMmurad>1"] = jetpowcalc(which="EM",minmurad=1,donorthsouth="both",excludebound=True)[ivals]
+        dic["FMAmurad>2"] = jetpowcalc(which="MA",minmurad=2,donorthsouth="both",excludebound=True)[ivals]
+        dic["FMAmurad>1"] = jetpowcalc(which="MA",minmurad=1,donorthsouth="both",excludebound=True)[ivals]
+        dic["FRMmurad>2"] = jetpowcalc(which="RM",minmurad=2,donorthsouth="both",excludebound=True)[ivals]
+        dic["FRMmurad>1"] = jetpowcalc(which="RM",minmurad=1,donorthsouth="both",excludebound=True)[ivals]
+        dic["Phimurad>2"] = jetpowcalc(which="Phi",minmurad=2,donorthsouth="both",excludebound=True)[ivals]
+        dic["Phimurad>1"] = jetpowcalc(which="Phi",minmurad=1,donorthsouth="both",excludebound=True)[ivals]
     return( dic )
 
     #mu = -fTud(1,0)/(rho*uu[1])
@@ -10731,24 +10761,47 @@ def faraday():
             rhoc[:,:,-1] += ((gdet*fuu[0,3])[:,:,0]-(gdet*fuu[0,3])[:,:,-2])/(2*_dx3)
         rhoc /= gdet
 
-def jetpowcalc(which=2,minbsqorho=10,minmu=None,donorthsouth=0,excludebound=True):
-    if which==0:
-        jetpowden = -gdet*TudEM[1,0]
-    if which==1:
-        jetpowden = -gdet*TudMA[1,0]
-    if which==2:
-        jetpowden = -gdet*Tud[1,0]
-    if which==3:
+def jetpowcalc(which=2,minbsqorho=10,minmu=None,donorthsouth=0,excludebound=True,minmurad=None):
+    #if saving memory and not computing all Tud components, 
+    #compute necessary ones in place
+    if "TudEM" not in globals():
+        TudEM10 = fTudEM(1,0)
+    if "TudMA" not in globals():
+        TudMA10 = fTudMA(1,0)
+    if "Tud" not in globals():
+        Tud10 = fTud(1,0)
+    if "mu" not in globals():
+        mu = -fTud(1,0)/(rho*uu[1])
+    if "Rud" not in globals():
+        if "uradu" not in globals():
+            Rad10 = 0*rho #no radiation, zero fluxes
+            murad = mu
+        else:
+            Rud10 = fRud(1,0)
+            murad = -(fTud(1,0)+fRud(1,0))/(rho*uu[1])
+    if "isunbound" not in globals():
+        isunbound=(-(1+ug*gam/rho)*ud[0]>1.0)
+    if which==0 or which=="EM":
+        jetpowden = -gdet*TudEM10
+    if which==1 or which=="MA":
+        jetpowden = -gdet*TudMA10
+    if which==2 or which=="EMMA" or which=="MAEM" or which=="tot":
+        jetpowden = -gdet*Tud10
+    if which == "RAD":
+        jetpowden = -gdet*Rud10
+    if which==3 or which=="RM":
         #rest-mass flux
         jetpowden = gdet*rho*uu[1]
-    if which==4:
+    if which==4 or which=="Phi":
         #phi (mag. flux)
         jetpowden = np.abs(gdetB[1])
     #jetpowden[tj>=ny-2] = 0*jetpowden[tj>=ny-2]
     #jetpowden[tj<1] = 0*jetpowden[tj<1]
-    if minmu is None:
+    if minmu is None and minmurad is None:
         jetpowden[bsq/rho<minbsqorho] = 0*jetpowden[bsq/rho<minbsqorho]
     else:
+        if minmu == None:
+            minmu = minmurad
         #zero out outside jet (cut out low magnetization region)
         cond=(mu<minmu)
         #zero out bound region
@@ -10758,14 +10811,17 @@ def jetpowcalc(which=2,minbsqorho=10,minmu=None,donorthsouth=0,excludebound=True
         cond+=(uu[1]<=0.0)
         # 1 = north
         #-1 = south
-        if donorthsouth==1:
+        if donorthsouth==1 or donorthsouth=="north":
             #NORTH
             #[zero out south hemisphere]
             cond += (tj>=ny/2)
-        elif donorthsouth==-1:
+        elif donorthsouth==-1 or donorthsouth=="south":
             #SOUTH
             #[zero out north hemisphere]
             cond += (tj<ny/2)
+        #else:
+            #donorthsouth == 0 or "both"
+            #do nothing: include both poles
         jetpowden[cond] = 0*jetpowden[cond]
     jetpowtot = scaletofullwedge(np.sum(np.sum(jetpowden,axis=2),axis=1)*_dx2*_dx3)
     #print "which = %d, minbsqorho = %g" % (which, minbsqorho)
