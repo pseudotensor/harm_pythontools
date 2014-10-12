@@ -1316,8 +1316,15 @@ def tiltedomegaf():
     omegatilt = vcart[1]*ephirot[1] + vcart[2]*ephirot[2] + vcart[3]*ephirot[3]
     omegatilt /= Rp
     return omegatilt
-    
-def visualize_fieldlines(fn=1,isaligned=0,doreload=1,no=583,xmax=70,ymax=30,zmax=30,ncellx=400,ncelly=200,ncellz=200,dosavefig=0):
+
+# fn - figure number
+# fast = 1 avoids interpolations that make images nicer but take extra time
+# no = the fieldline dump number to load
+# isaligned = 1 means use the box elongated along x-direction (=0 means elongated along z-dir)
+# xmax, ymax, zmax = box sizes in x-, y-, and z-directions
+# ncellx, ncelly, ncellz = resolutions in x-, y-, and z-directions
+# dosavefig = 1 means to save the figure (=0 by default to speed up)
+def visualize_fieldlines(fn=1,fast=1,isaligned=0,doreload=1,no=0,xmax=60,ymax=30,zmax=30,ncellx=100,ncelly=50,ncellz=50,dosavefig=0):
     global ph,lrhoi_jet,i3d_jet,j3d_jet,k3d_jet,xi_jet,yi_jet,zi_jet,scene
     if isaligned:
         ncellxold = ncellx; ncellx = ncellz; ncellz = ncellxold
@@ -1331,7 +1338,8 @@ def visualize_fieldlines(fn=1,isaligned=0,doreload=1,no=583,xmax=70,ymax=30,zmax
         #FULLOUTPUT = 2
         #ph -= FULLOUTPUT*2*np.pi/(nz-2*FULLOUTPUT)
         cvel()
-    rhead = np.max(r[bsq/rho>0.1])
+    bsqorhofid = 0.1*np.max(bsq/rho)
+    rhead = np.max(r[bsq/rho>bsqorhofid])
     print "rhead = %g" % rhead
     scene = mlab.figure(fn, bgcolor=(0, 0, 0), fgcolor=(1, 1, 1), size=(210*2, 297*2))
     mlab.clf()
@@ -1356,13 +1364,13 @@ def visualize_fieldlines(fn=1,isaligned=0,doreload=1,no=583,xmax=70,ymax=30,zmax
         By=BR*sin(ph)+Bpnorm*cos(ph)
         Bz=Brnorm*np.cos(h)-Bhnorm*np.sin(h)
         print( "Running trilinear interpolation for Bx..." ); sys.stdout.flush()
-        Bxi = np.float32(trilin(Bx,i3d_jet,j3d_jet,k3d_jet))
+        Bxi = np.float32(trilin(Bx,i3d_jet,j3d_jet,k3d_jet,fast=fast))
         print( "Done with trilinear interpolation for Bx..." ); sys.stdout.flush()
         print( "Running trilinear interpolation for By..." ); sys.stdout.flush()
-        Byi = np.float32(trilin(By,i3d_jet,j3d_jet,k3d_jet))
+        Byi = np.float32(trilin(By,i3d_jet,j3d_jet,k3d_jet,fast=fast))
         print( "Done with trilinear interpolation for By..." ); sys.stdout.flush()
         print( "Running trilinear interpolation for Bz..." ); sys.stdout.flush()
-        Bzi = np.float32(trilin(Bz,i3d_jet,j3d_jet,k3d_jet))
+        Bzi = np.float32(trilin(Bz,i3d_jet,j3d_jet,k3d_jet,fast=fast))
         print( "Done with trilinear interpolation for Bz..." ); sys.stdout.flush()
         # pdb.set_trace()
     if 1:
@@ -1371,9 +1379,9 @@ def visualize_fieldlines(fn=1,isaligned=0,doreload=1,no=583,xmax=70,ymax=30,zmax
         #   interp3d(xmax=xmax,ymax=ymax,zmax=zmax,ncellx=ncellx,ncelly=ncelly,ncellz=ncellz)
         print( "Done with inter3d for jet..." ); sys.stdout.flush()
         print( "Running trilinear interpolation for jet..." ); sys.stdout.flush()
-        lrhoi_jet = np.float32(trilin(lrho,i3d_jet,j3d_jet,k3d_jet))
+        lrhoi_jet = np.float32(trilin(lrho,i3d_jet,j3d_jet,k3d_jet,fast=fast))
         print( "Done with trilinear interpolation for jet..." ); sys.stdout.flush()
-        mlab_lrho_jet = mlab.pipeline.scalar_field(xi_jet,yi_jet,zi_jet,lrhoi_jet)
+        mlab_lrho_jet = mlab.pipeline.scalar_field(xi_jet,yi_jet,zi_jet,lrhoi_jet,fast=fast)
         from tvtk.util.ctf import PiecewiseFunction
         print( "Running volume rendering for jet..." ); sys.stdout.flush()
         vol_jet = mlab.pipeline.volume(mlab_lrho_jet) #,vmin=-6,vmax=1)
