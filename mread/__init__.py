@@ -2327,6 +2327,9 @@ def compvals1d(di=5):
     diskcondition = bsq/rho<10
     dic["hor"] = horcalc1d(which=diskcondition)[ivals]
     #jet power and mass outflow in the jets
+    #SASMARK: UNBOUND CRITERION INCORRECT WITH RADIATION
+    #Shouldn't compare radiation and gas energies in the same frame??! 
+    #urad and ug are in different frames!
     isunb=(-(1+ug*gam/rho)*ud[0]>1.0)
     mu = -fTud(1,0)/(rho*uu[1])
     #EM-defined jet (minmu > ...)
