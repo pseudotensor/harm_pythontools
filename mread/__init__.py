@@ -2004,10 +2004,16 @@ def mrgnew_f(ft, v={}, **kwargs):
         lasti = (ind<vt["ind"][0]).sum()
     else:
         lasti = None
+        ind = None
     for key in vt.keys():
         if key not in ["ivals", "rvals"]:
             if key not in v:
-                v[key] = []
+                if ind is not None:
+                    #new field, set it to zeros for previoius time
+                    v[key] = np.float32(ind*0)
+                else:
+                    #empty dictionary
+                    v[key] = []
             #convert to list first
             v[key] = list(v[key])
             #has time dependence, so first discard repeated entries
