@@ -1845,7 +1845,7 @@ def postprocess2d(startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
     #default time interval for one averaging interval
     deltat = kwargs.pop("deltat",100)
     #number of intervals in a simulation
-    tlast = get_fieldline_time(flist[-1])
+    tlast = get_fieldline_time("../"+flist[-1])
     #round to smallest integer, i.e., ignore the last incomplete time averaging interval
     totintervals = np.int32(tlast/deltat) 
     grid3d("gdump.bin",use2d=1)
@@ -1860,32 +1860,37 @@ def postprocess2d(startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
             continue
         #clear out the receptacle into which average will be stored
         v = {}
+        v["t"] = []
         avgfname = "avg2d_%05d_%g.npz" % (numinterval, deltat)
-        print( "Doing interval %d, t = [%g,%g)..." % (numinterval, tstartavg, tendavg) )
         #start and end times of the interval
-        tstartavg = numinterval     * detlat
+        tstartavg = numinterval     * deltat
         tendavg   = (numinterval+1) * deltat
+        print( "Doing interval %d, t = [%g,%g)..." % (numinterval, tstartavg, tendavg) )
         if os.path.isfile( avgfname ):
             print( "File %s exists, skipping..." % fname )
             continue     
         for fldname in flist:
             #this only reads the first line in the file, so it is fast
-            t = get_fieldline_time(fldname)
+            t = get_fieldline_time("../"+fldname)
             #fieldline file falls outside of the averaging interval? skip it
-            if i < tstartavg or t >= tendavg:
+            if t < tstartavg or t >= tendavg:
                 print("%s: t = %g falls outside interval, skipping" % (fldname, t))
                 continue
-            print("%s: t = %g falls insidei interval, reading..." % (fldname, t))
+            print("%s: t = %g falls inside interval, reading..." % (fldname, t))
             sys.stdout.flush()
             rfd("../"+fldname)
             cvellite()
             sys.stdout.flush()
             valdic = compvals2d()
             for key in valdic:
-                if key not in v: v[key] = np.array([],dtype=np.float32())
+                #incorrect? should not assign an empty array?
+                #if key not in v: v[key] = np.array([],dtype=np.float32())
                 #collect all values of t averaged over
                 if key == "t":
-                    v[key] = list(v[key])+list(valdic[key])
+                    if key not in v:
+                        v[key] = []
+                    #append values of t that were averaged over
+                    v[key].append(valdic[key])
                 else:
                     if key not in v:
                         v[key] = np.array(valdic[key])
@@ -1893,11 +1898,12 @@ def postprocess2d(startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
                         v[key] += np.array(valdic[key])
         #obtain the time average by dividing by the number of files in the interval
         numfiles = np.float32(len(v["t"]))
-        #average all variables except time (times are stacked)
-        for key in v:
-            if key != "t":  v[key] /= numfiles
-        print("Saving the average to %s..." % avgfname)
-        np.savez(avgfname, **v)
+        if numfiles != 0:
+            #average all variables except time (times are stacked)
+            for key in v:
+                if key != "t":  v[key] /= numfiles
+            print("Saving the average to %s..." % avgfname)
+            np.savez(avgfname, **v)
 
         
 def mktsnew(prefix = "qty"):
@@ -2022,7 +2028,7 @@ def postprocess1d(startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
         print( "File %s exists, loading from file..." % fname )
         sys.stdout.flush()
         vt=np.load( fname )
-        for key in vt.keys():
+        for key in vt:
             v[key] = list(vt[key])
         vt.close()
     for fldname in flist:
@@ -2040,7 +2046,13 @@ def postprocess1d(startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
             continue
         print( "Reading " + fldname + " ..." )
         sys.stdout.flush()
-        rfd("../"+fldname)
+        try: 
+            rfd("../"+fldname)
+        except IOError as e:
+            print( "While reading %s:" % fldname )
+            print( "I/O error({0}): {1}".format(e.errno, e.strerror) )
+            print( "Skipping`" )
+            continue
         cvellite()
         sys.stdout.flush()
         valdic = compvals1d()
@@ -2069,31 +2081,64 @@ def cvellite():
         global uradd
         uradd = mdot(gv3,uradu)
 
+def faradaylite():
+    global omegaf1, omegaf2, omegaf1b, omegaf2b
+    # these 2 are equal in degen electrodynamics when d/dt=d/dphi->0
+    omegaf1=fFdd(0,1)/fFdd(1,3) # = ftr/frp
+    omegaf2=fFdd(0,2)/fFdd(2,3) # = fth/fhp
+    #
+    # from jon branch, 04/10/2012
+    #
+    if 1:
+        B1hat=B[1]*np.sqrt(gv3[1,1])
+        B2hat=B[2]*np.sqrt(gv3[2,2])
+        B3nonhat=B[3]
+        v1hat=uu[1]*np.sqrt(gv3[1,1])/uu[0]
+        v2hat=uu[2]*np.sqrt(gv3[2,2])/uu[0]
+        v3nonhat=uu[3]/uu[0]
+        #
+        aB1hat=np.fabs(B1hat)
+        aB2hat=np.fabs(B2hat)
+        av1hat=np.fabs(v1hat)
+        av2hat=np.fabs(v2hat)
+        #
+        vpol=np.sqrt(av1hat**2 + av2hat**2)
+        Bpol=np.sqrt(aB1hat**2 + aB2hat**2)
+        #
+        # assume field swept back so omegaf is always larger than vphi (only true for outflow, so put in sign switch for inflow as relevant for disk near BH or even jet near BH)
+        # GODMARK: These assume rotation about z-axis
+        omegaf2b=np.fabs(v3nonhat) + np.sign(uu[1])*(vpol/Bpol)*np.fabs(B3nonhat)
+        #
+        omegaf1b=v3nonhat - B3nonhat*(v1hat*B1hat+v2hat*B2hat)/(B1hat**2+B2hat**2)
+
+        
 def fFdd(i,j):
     if i==0 and j==1:
         fdd =  gdet*(uu[2]*bu[3]-uu[3]*bu[2]) # f_tr
-    if i==1 and j==0:
+    elif i==1 and j==0:
         fdd = -gdet*(uu[2]*bu[3]-uu[3]*bu[2]) # -f_tr
-    if i==0 and j==2:
+    elif i==0 and j==2:
         fdd =  gdet*(uu[3]*bu[1]-uu[1]*bu[3]) # f_th
-    if i==2 and j==0:
+    elif i==2 and j==0:
         fdd = -gdet*(uu[3]*bu[1]-uu[1]*bu[3]) # -f_th
-    if i==0 and j==3:
+    elif i==0 and j==3:
         fdd =  gdet*(uu[1]*bu[2]-uu[2]*bu[1]) # f_tp
-    if i==3 and j==0:
+    elif i==3 and j==0:
         fdd = -gdet*(uu[1]*bu[2]-uu[2]*bu[1]) # -f_tp
-    if i==1 and j==3:
+    elif i==1 and j==3:
         fdd =  gdet*(uu[2]*bu[0]-uu[0]*bu[2]) # f_rp = gdet*B2
-    if i==3 and j==1:
+    elif i==3 and j==1:
         fdd = -gdet*(uu[2]*bu[0]-uu[0]*bu[2]) # -f_rp = gdet*B2
-    if i==2 and j==3:
+    elif i==2 and j==3:
         fdd =  gdet*(uu[0]*bu[1]-uu[1]*bu[0]) # f_hp = gdet*B1
-    if i==3 and j==2:
+    elif i==3 and j==2:
         fdd = -gdet*(uu[0]*bu[1]-uu[1]*bu[0]) # -f_hp = gdet*B1
-    if i==1 and j==2:
+    elif i==1 and j==2:
         fdd =  gdet*(uu[0]*bu[3]-uu[3]*bu[0]) # f_rh = gdet*B3
-    if i==2 and j==1:
+    elif i==2 and j==1:
         fdd = -gdet*(uu[0]*bu[3]-uu[3]*bu[0]) # -f_rh = gdet*B3
+    else:
+        fdd = np.zeros_like(uu[0])
     return fdd
 
 delta = lambda kapa,nu: (kapa==nu)
@@ -2104,10 +2149,12 @@ fRud = lambda kapa,nu: 4./3.*Erf*uradu[kapa]*uradd[nu]+1./3.*Erf*delta(kapa,nu)
 
 def compvals2d():
     cvellite()
+    faradaylite()
     #returns angle-averaged values for the currently loaded dump
     dic = {}
     #
     #quantities
+    dic["t"]=t
     dic["rho"]=rho.mean(-1)[:,:,None]
     dic["ug"]=ug.mean(-1)[:,:,None]
     dic["bsq"]=bsq.mean(-1)[:,:,None]
@@ -2170,13 +2217,13 @@ def compvals2d():
             TudMAavgphi[i,j] = fTudMA(i,j).mean(-1)[...,None]
             Tudavgphi[i,j] = fTud(i,j).mean(-1)[...,None]
             Rudavgphi[i,j] = fRud(i,j).mean(-1)[...,None]
-            fddavgphi[i,j] = fFdd(i,j).mean(-1)[...,None]
+            Fddavgphi[i,j] = fFdd(i,j).mean(-1)[...,None]
     dic["TudEM"]=TudEMavgphi
     dic["TudMA"]=TudMAavgphi
     dic["Tud"]=Tudavgphi
     dic["Rud"]=Rudavgphi
-    dic["Tud"]=Tudphiavg
-    dic["fdd"]=fddphiavg
+    dic["Tud"]=Tudavgphi
+    dic["fdd"]=Fddavgphi
     #mu,sigma
     dic["mu"]= (-fTud(1,0)/(rho*uu[1])).mean(-1)[:,:,None]
     dic["sigma"]= (-fTudEM(1,0)/fTudMA(1,0)).mean(-1)[:,:,None]
@@ -2185,7 +2232,8 @@ def compvals2d():
     dic["absgdetB"]= np.abs(gdetB[1:4]).mean(-1)[:,:,:,None]
     aphi = fieldcalcface()
     dic["aphisq"]= (aphi**2).mean(-1)[:,:,None]
-    dic["gdetF"] = (gdetF[:,:].mean(-1))[:,:,:,:,None]
+    if "gdetF" in globals() and gdetF is not None:
+        dic["gdetF"] = (gdetF[:,:].mean(-1))[:,:,:,:,None]
     dic["bsquu"]= (bsq*uu).mean(-1)[:,:,:,None]
     dic["Bd3"]= (bd[3]*ud[0]-bd[0]*ud[3]).mean(-1)[:,:,None]
     dic["absBd3"]= np.abs(bd[3]*ud[0]-bd[0]*ud[3]).mean(-1)[:,:,None]
