@@ -2002,6 +2002,7 @@ def mrgnew_f(ft, v={}, **kwargs):
     if "ind" in v:
         ind = np.array(v["ind"])
         lasti = (ind<vt["ind"][0]).sum()
+        FMbackup = np.copy(v["FM"])
     else:
         lasti = None
         ind = None
@@ -2010,7 +2011,7 @@ def mrgnew_f(ft, v={}, **kwargs):
             if key not in v:
                 if ind is not None:
                     #new field, set it to zeros for previoius time
-                    v[key] = np.float32(ind*0)
+                    v[key] = np.zeros_like(FMbackup)
                 else:
                     #empty dictionary
                     v[key] = []
