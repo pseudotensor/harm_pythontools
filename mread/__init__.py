@@ -1952,7 +1952,7 @@ def mrgnew(n=None,fin1=None,fin2=None,fout="qty.npz",**kwargs):
         v = mrgnew_n(n,v,**kwargs)
     elif fin1 is not None and fin2 is not None:
         #merge two named files
-        v = mrgnew_f(fin1,v,**kwargs)
+        v = np.load(fin1)
         v = mrgnew_f(fin2,v,**kwargs)
     print( "Saving into " + fout + " ..." )
     sys.stdout.flush()
