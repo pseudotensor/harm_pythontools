@@ -1997,6 +1997,13 @@ def mrgnew_f(ft, v={}, **kwargs):
         print( "Times are missing, assuming dumping period of 5 and setting t = 5*ind" )
         v["t"] = np.array(v["ind"])*5.
     return(v)
+
+def testfail(fldname = "fieldline0001.bin")
+    try: 
+        rfd(fldname)
+    except:
+        print("Could not read file %s. Skipping it." % fldname)    
+
     
 def postprocess1d(startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
     prefix = kwargs.pop("prefix","qty")
