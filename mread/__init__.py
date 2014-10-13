@@ -1828,7 +1828,7 @@ def mrg2dnew_f(ft, v={}):
     
 
 def get_fieldline_time(fname):
-    fin = open( "dumps/" + fieldlinefilename, "rb" )
+    fin = open( "dumps/" + fname, "rb" )
     header = fin.readline().split()
     #time of the dump
     t = myfloat(np.float64(header[0]))
