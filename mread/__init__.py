@@ -1802,7 +1802,9 @@ def mkavg2dnew(deltat = 100,endn = -1):
 def mrg2dnew(whichn1,whichn2,deltat=100):
     v = {}
     for n in xrange(whichn1,whichn2+1):
-        v = mrg2dnew_f("avg2d_%05d_%g.npz" % (n,deltat),v)
+        f = "avg2d_%05d_%g.npz" % (n,deltat)
+        print( "Reading %s..." % f )
+        v = mrg2dnew_f(f,v)
     np.savez( "avg2d_%05d_%05d_%g.npz" % (whichn1, whichn2, deltat), **v )
 
 def mrg2dnew_f(ft, v={}):
