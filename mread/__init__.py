@@ -1845,7 +1845,13 @@ def postprocess2d(startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
     #default time interval for one averaging interval
     deltat = kwargs.pop("deltat",100)
     #number of intervals in a simulation
-    tlast = get_fieldline_time("../"+flist[-1])
+    try: 
+        tlast = get_fieldline_time("../"+flist[-1])
+    except IOError as e:
+        print( "While reading %s:" % flist[-1] )
+        print( "I/O error({0}): {1}".format(e.errno, e.strerror) )
+        print( "Skipping" )
+        break
     #round to smallest integer, i.e., ignore the last incomplete time averaging interval
     totintervals = np.int32(tlast/deltat) 
     grid3d("gdump.bin",use2d=1)
@@ -1871,14 +1877,26 @@ def postprocess2d(startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
             continue     
         for fldname in flist:
             #this only reads the first line in the file, so it is fast
-            t = get_fieldline_time("../"+fldname)
+            try: 
+                t = get_fieldline_time("../"+fldname)
+            except IOError as e:
+                print( "While reading %s:" % fldname )
+                print( "I/O error({0}): {1}".format(e.errno, e.strerror) )
+                print( "Skipping" )
+                continue
             #fieldline file falls outside of the averaging interval? skip it
             if t < tstartavg or t >= tendavg:
                 print("%s: t = %g falls outside interval, skipping" % (fldname, t))
                 continue
             print("%s: t = %g falls inside interval, reading..." % (fldname, t))
             sys.stdout.flush()
-            rfd("../"+fldname)
+            try: 
+                rfd("../"+fldname)
+            except IOError as e:
+                print( "While reading %s:" % fldname )
+                print( "I/O error({0}): {1}".format(e.errno, e.strerror) )
+                print( "Skipping" )
+                continue
             cvellite()
             sys.stdout.flush()
             valdic = compvals2d()
@@ -2051,7 +2069,7 @@ def postprocess1d(startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
         except IOError as e:
             print( "While reading %s:" % fldname )
             print( "I/O error({0}): {1}".format(e.errno, e.strerror) )
-            print( "Skipping`" )
+            print( "Skipping" )
             continue
         cvellite()
         sys.stdout.flush()
