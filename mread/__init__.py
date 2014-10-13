@@ -2001,9 +2001,8 @@ def mrgnew_f(ft, v={}, **kwargs):
 def testfail(fldname = "fieldline0001.bin"):
     try: 
         rfd(fldname)
-    except:
-        print( "Could not read file %s. Skipping it. Error: %s" % (fldname, sys.exc_info()[0]) )    
-
+    except IOError as e:
+        print "I/O error({0}): {1}".format(e.errno, e.strerror)
     
 def postprocess1d(startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
     prefix = kwargs.pop("prefix","qty")
