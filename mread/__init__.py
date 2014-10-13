@@ -1795,14 +1795,14 @@ def mkavg2dnew(deltat = 100,endn = -1):
         elif sys.argv[1] == "mk2dmrg":
             whichn1 = whichi
             whichn2 = whichn
-            mrgnew2d(whichn1,whichn2,deltat = deltat)
+            mrg2dnew(whichn1,whichn2,deltat = deltat)
     else:
         print("Syntax error")
 
 def mrg2dnew(whichn1,whichn2,deltat=100):
     v = {}
     for n in xrange(whichn1,whichn2+1):
-        v = mrgnew2d_f("avg2d_%05d_%g.npz" % (n,deltat),v)
+        v = mrg2dnew_f("avg2d_%05d_%g.npz" % (n,deltat),v)
     np.savez( "avg2d_%05d_%05d_%g.npz" % (whichn1, whichn2, deltat), **v )
 
 def mrg2dnew_f(ft, v={}):
