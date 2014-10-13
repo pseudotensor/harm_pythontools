@@ -1998,7 +1998,7 @@ def mrgnew_f(ft, v={}, **kwargs):
         v["t"] = np.array(v["ind"])*5.
     return(v)
 
-def testfail(fldname = "fieldline0001.bin")
+def testfail(fldname = "fieldline0001.bin"):
     try: 
         rfd(fldname)
     except:
