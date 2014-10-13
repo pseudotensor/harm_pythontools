@@ -1585,7 +1585,7 @@ def mkmfnew(v,findex=10000,
             fti=2000,ftf=5000,
             sigma=1500,sigma1=None,prefactor=100,domakeframes=1,plotlen=25,maxsBphi=3,
             doreload=1,dosavefig = 1,fntsize=16,myi=None,vmin=-9,vmax=-3): #vmin=-6,vmax=0.5625):
-    global FMavg
+    global FMavg, t
     if iti is None or itf is None or fti is None or ftf is None or\
             os.path.isfile(os.path.join("titf.txt")):
         gd1 = np.loadtxt( "titf.txt",
