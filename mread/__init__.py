@@ -1886,9 +1886,9 @@ def postprocess2d(startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
                 continue
             #fieldline file falls outside of the averaging interval? skip it
             if t < tstartavg or t >= tendavg:
-                print("%s: t = %g falls outside interval, skipping" % (fldname, t))
+                #print("%s: t = %g falls outside interval, skipping" % (fldname, t))
                 continue
-            print("%s: t = %g falls inside interval, reading..." % (fldname, t))
+            print("%s: t = %g falls inside interval [%g,%g) reading..." % (fldname, t, tstartavg, tendavg))
             sys.stdout.flush()
             try: 
                 rfd("../"+fldname)
