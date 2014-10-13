@@ -2281,86 +2281,94 @@ def compvals1d(di=5):
     #every di'th radial cell including the event horizon cell, so overall nx/di ~ 50 cells
     ivals = np.int32(ti[i0::di,ny/2,0]+0.5)
     rvals = r[i0::di,ny/2,0]
+    gdetvals = gdet[ivals]
+    rhovals = rho[ivals]
+    bsqvals = bsq[ivals]
+    gdetB1vals = gdetB[1,ivals]
+    uu1vals = uu[1,ivals]
     #
     delta = lambda kapa,nu: (kapa==nu)
     fTudEM = lambda kapa,nu: bsq*uu[kapa]*ud[nu] + 0.5*bsq*delta(kapa,nu) - bu[kapa]*bd[nu]
     fTudMA = lambda kapa,nu: (rho+gam*ug)*uu[kapa]*ud[nu]+(gam-1)*ug*delta(kapa,nu)
     fTud = lambda kapa,nu: fTudEM(kapa,nu) + fTudMA(kapa,nu)
     fRud = lambda kapa,nu: 4./3.*Erf*uradu[kapa]*uradd[nu]+1./3.*Erf*delta(kapa,nu)
+    fTud10vals = fTud(1,0)[ivals]
+    fTudEM10vals = fTudEM(1,0)[ivals]
+    fTudMA10vals = fTudMA(1,0)[ivals]
+    dorad =  ("uradu" in globals())
+    if dorad: fRud10vals = fRud(1,0)[ivals]
     #
     if "gdetF" in globals() and gdetF is not None:
-        FM = -(gdetF[1,0]).sum(-1).sum(-1)*_dx2*_dx3
-        dic["FM"] = FM[ivals]
+        dic["FM"] = FM = -(gdetF[1,0,ivals]).sum(-1).sum(-1)*_dx2*_dx3
         #this includes Mdot
-        FE = (gdetF[1,1]).sum(-1).sum(-1)*_dx2*_dx3
+        FE = (gdetF[1,1,ivals]).sum(-1).sum(-1)*_dx2*_dx3
         #subtract Mdot
         FE += FM
-        dic["FE"] = FE[ivals]
+        dic["FE"] = FE
     else:
-        FM = -(gdet*rho*uu[1]).sum(-1).sum(-1)*_dx2*_dx3
-        dic["FM"] = FM[ivals]
+        FM = -(gdetvals*rhovals*uu1vals).sum(-1).sum(-1)*_dx2*_dx3
+        dic["FM"] = FM
         #this includes Mdot
-        FE = (gdet*fTud(1,0)).sum(-1).sum(-1)*_dx2*_dx3
+        FE = (gdetvals*fTud10vals).sum(-1).sum(-1)*_dx2*_dx3
         #no need to subtract Mdot here
         ##### no need for this ##### FE += FM
-        dic["FE"] = FE[ivals]
-    FEM = (gdet*fTudEM(1,0)).sum(-1).sum(-1)*_dx2*_dx3
-    dic["FEM"] = FEM[ivals]
+        dic["FE"] = FE
+    FEM = (gdetvals*fTudEM10vals).sum(-1).sum(-1)*_dx2*_dx3
+    dic["FEM"] = FEM
     #radiation
     if "uradu" in globals():
-        FR = (gdet*fRud(1,0)).sum(-1).sum(-1)*_dx2*_dx3
-        FRj = (gdet*fRud(1,0)*(bsq/rho>10)).sum(-1).sum(-1)*_dx2*_dx3
-        dic["FR"] = FR[ivals]
-        dic["FRj"] = FRj[ivals]
+        FR = (gdetvals*fRud10vals).sum(-1).sum(-1)*_dx2*_dx3
+        FRj = (gdetvals*fRud10vals*(bsqvals/rhovals>10)).sum(-1).sum(-1)*_dx2*_dx3
+        dic["FR"] = FR
+        dic["FRj"] = FRj
         tau_dic = compute_taurad()
-        tau1 = tau_dic["tau1"]
-        tau2 = tau_dic["tau2"]
-        dic["FRtau1=1"] = (gdet*fRud(1,0)*(tau1<1))[ivals].sum(-1).sum(-1)*_dx2*_dx3
-        dic["FRtau1=2o3"] = (gdet*fRud(1,0)*(tau1<2./3.))[ivals].sum(-1).sum(-1)*_dx2*_dx3
-        dic["FRtau2=1"] = (gdet*fRud(1,0)*(tau2<1))[ivals].sum(-1).sum(-1)*_dx2*_dx3
-        dic["FRtau2=2o3"] = (gdet*fRud(1,0)*(tau2<2./3.))[ivals].sum(-1).sum(-1)*_dx2*_dx3
+        tau1 = tau_dic["tau1"][ivals]
+        tau2 = tau_dic["tau2"][ivals]
+        dic["FRtau1=1"] = (gdetvals*fRud10vals*(tau1<1)).sum(-1).sum(-1)*_dx2*_dx3
+        dic["FRtau1=2o3"] = (gdetvals*fRud10vals*(tau1<2./3.)).sum(-1).sum(-1)*_dx2*_dx3
+        dic["FRtau2=1"] = (gdetvals*fRud10vals*(tau2<1)).sum(-1).sum(-1)*_dx2*_dx3
+        dic["FRtau2=2o3"] = (gdetvals*fRud10vals*(tau2<2./3.)).sum(-1).sum(-1)*_dx2*_dx3
     #total absolute magnetic flux
-    PhiBH = 0.5*np.abs(gdetB[1]).sum(-1).sum(-1)*_dx2*_dx3
-    dic["PhiBH"] = PhiBH[ivals]
+    PhiBH = 0.5*np.abs(gdetB1vals).sum(-1).sum(-1)*_dx2*_dx3
+    dic["PhiBH"] = PhiBH
     dic["rvals"] = rvals
     dic["ivals"] = ivals
-    diskcondition = bsq/rho<10
-    dic["hor"] = horcalc1d(which=diskcondition)[ivals]
+    dic["hor"] = horcalc1d(which=bsq/rho<10)[ivals]
     #jet power and mass outflow in the jets
     #SASMARK: UNBOUND CRITERION INCORRECT WITH RADIATION
     #Shouldn't compare radiation and gas energies in the same frame??! 
     #urad and ug are in different frames!
-    isunb=(-(1+ug*gam/rho)*ud[0]>1.0)
-    mu = -fTud(1,0)/(rho*uu[1])
+    isunb=(-(1+ug[ivals]*gam/rhovals)*ud[0,ivals]>1.0)
+    mu = -fTud10vals/(rhovals*uu1vals)
     #EM-defined jet (minmu > ...)
-    dic["FEMMAmu>2"] = (gdet*fTud(1,0)*(mu>2)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
-    dic["FEMMAmu>1"] = (gdet*fTud(1,0)*(mu>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
-    dic["FEMmu>2"] = (gdet*fTudEM(1,0)*(mu>2)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
-    dic["FEMmu>1"] = (gdet*fTudEM(1,0)*(mu>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
-    dic["FMAmu>2"] = (gdet*fTudMA(1,0)*(mu>2)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
-    dic["FMAmu>1"] = (gdet*fTudMA(1,0)*(mu>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
-    dic["FRMmu>2"] = (gdet*rho*uu[1]*(mu>2)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
-    dic["FRMmu>1"] = (gdet*rho*uu[1]*(mu>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
-    dic["Phimu>2"] = (gdetB[1]*(mu>2)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
-    dic["Phimu>1"] = (gdetB[1]*(mu>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
-    if "uradu" in globals():
-        murad = -(fTud(1,0)+fRud(1,0))/(rho*uu[1])
+    dic["FEMMAmu>2"] = (gdetvals*fTud10vals*(mu>2)*(isunb)).sum(-1).sum(-1)*_dx2*_dx3
+    dic["FEMMAmu>1"] = (gdetvals*fTud10vals*(mu>1)*(isunb)).sum(-1).sum(-1)*_dx2*_dx3
+    dic["FEMmu>2"] = (gdetvals*fTudEM10vals*(mu>2)*(isunb)).sum(-1).sum(-1)*_dx2*_dx3
+    dic["FEMmu>1"] = (gdetvals*fTudEM10vals*(mu>1)*(isunb)).sum(-1).sum(-1)*_dx2*_dx3
+    dic["FMAmu>2"] = (gdetvals*fTudMA10vals*(mu>2)*(isunb)).sum(-1).sum(-1)*_dx2*_dx3
+    dic["FMAmu>1"] = (gdetvals*fTudMA10vals*(mu>1)*(isunb)).sum(-1).sum(-1)*_dx2*_dx3
+    dic["FRMmu>2"] = (gdetvals*rhovals*uu1vals*(mu>2)*(isunb)).sum(-1).sum(-1)*_dx2*_dx3
+    dic["FRMmu>1"] = (gdetvals*rhovals*uu1vals*(mu>1)*(isunb)).sum(-1).sum(-1)*_dx2*_dx3
+    dic["Phimu>2"] = (gdetB1vals*(mu>2)*(isunb)).sum(-1).sum(-1)*_dx2*_dx3
+    dic["Phimu>1"] = (gdetB1vals*(mu>1)*(isunb)).sum(-1).sum(-1)*_dx2*_dx3
+    if dorad:
+        murad = -(fTud10vals+fRud10vals)/(rhovals*uu1vals)
         # radiation fluxes
-        dic["FRmurad>1"]= (gdet*fRud(1,0)*(murad>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
-        dic["FRmurad>2"]= (gdet*fRud(1,0)*(murad>2)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
-        dic["FRmu>1"]= (gdet*fRud(1,0)*(mu>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
-        dic["FRmu>2"]= (gdet*fRud(1,0)*(mu>2)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
+        dic["FRmurad>1"]= (gdetvals*fRud10vals*(murad>1)*(isunb)).sum(-1).sum(-1)*_dx2*_dx3
+        dic["FRmurad>2"]= (gdetvals*fRud10vals*(murad>2)*(isunb)).sum(-1).sum(-1)*_dx2*_dx3
+        dic["FRmu>1"]= (gdetvals*fRud10vals*(mu>1)*(isunb)).sum(-1).sum(-1)*_dx2*_dx3
+        dic["FRmu>2"]= (gdetvals*fRud10vals*(mu>2)*(isunb)).sum(-1).sum(-1)*_dx2*_dx3
         # radiation-defined jet (minmurad > ...)
-        dic["FEMMAmurad>2"] = (gdet*fTud(1,0)*(murad>2)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
-        dic["FEMMAmurad>1"] = (gdet*fTud(1,0)*(murad>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
-        dic["FEMmurad>2"] = (gdet*fTudEM(1,0)*(murad>2)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
-        dic["FEMmurad>1"] = (gdet*fTudEM(1,0)*(murad>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
-        dic["FMAmurad>2"] = (gdet*fTudMA(1,0)*(murad>2)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
-        dic["FMAmurad>1"] = (gdet*fTudMA(1,0)*(murad>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
-        dic["FRMmurad>2"] = (gdet*rho*uu[1]*(murad>2)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
-        dic["FRMmurad>1"] = (gdet*rho*uu[1]*(murad>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
-        dic["Phimurad>2"] = (gdetB[1]*(murad>2)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
-        dic["Phimurad>1"] = (gdetB[1]*(murad>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
+        dic["FEMMAmurad>2"] = (gdetvals*fTud10vals*(murad>2)*(isunb)).sum(-1).sum(-1)*_dx2*_dx3
+        dic["FEMMAmurad>1"] = (gdetvals*fTud10vals*(murad>1)*(isunb)).sum(-1).sum(-1)*_dx2*_dx3
+        dic["FEMmurad>2"] = (gdetvals*fTudEM10vals*(murad>2)*(isunb)).sum(-1).sum(-1)*_dx2*_dx3
+        dic["FEMmurad>1"] = (gdetvals*fTudEM10vals*(murad>1)*(isunb)).sum(-1).sum(-1)*_dx2*_dx3
+        dic["FMAmurad>2"] = (gdetvals*fTudMA10vals*(murad>2)*(isunb)).sum(-1).sum(-1)*_dx2*_dx3
+        dic["FMAmurad>1"] = (gdetvals*fTudMA10vals*(murad>1)*(isunb)).sum(-1).sum(-1)*_dx2*_dx3
+        dic["FRMmurad>2"] = (gdetvals*rhovals*uu1vals*(murad>2)*(isunb)).sum(-1).sum(-1)*_dx2*_dx3
+        dic["FRMmurad>1"] = (gdetvals*rhovals*uu1vals*(murad>1)*(isunb)).sum(-1).sum(-1)*_dx2*_dx3
+        dic["Phimurad>2"] = (gdetB1vals*(murad>2)*(isunb)).sum(-1).sum(-1)*_dx2*_dx3
+        dic["Phimurad>1"] = (gdetB1vals*(murad>1)*(isunb)).sum(-1).sum(-1)*_dx2*_dx3
     return( dic )
 
     #mu = -fTud(1,0)/(rho*uu[1])
