@@ -1824,9 +1824,7 @@ def mrg2dnew_f(ft, v={}):
     #now deal with "t"
     if "t" not in v:
         v["t"] = []
-    if not isinstance(v["t"],list):
-        v["t"] = list(v["t"])
-    v["t"] += vt["t"]
+    v["t"] = np.concatenate((v["t"],vt["t"]))
     vt.close()
     return v
         
