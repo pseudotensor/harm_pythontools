@@ -1820,7 +1820,11 @@ def mrg2dnew_f(ft, v={}):
             wt = 1.*len(vt["t"])/lentot
             v[key] = v[key]*w + vt[key]*wt
     #now deal with "t"
-    v["t"] = list(v["t"]) + list(vt["t"])
+    if "t" not in v:
+        v["t"] = []
+    if !isinstance(v["t"],list):
+        v["t"] = list(v["t"])
+    v["t"].append(vt["t"])
     vt.close()
     return v
         
