@@ -2607,7 +2607,12 @@ def iswaldmodel(modelname):
     else:
         return(0)
     #
-
+def ismarkmodel(modelname):
+    if modelname=="mark1":
+        return(1)
+    else:
+        return(0)
+    #
 
 # get averaging times if know the model type
 # defaultfti and defaultftf: averaging for tables and frame averages
@@ -2795,6 +2800,10 @@ def getdefaulttimes1():
         defaultfti=50
         defaultftf=1e4
     #
+    if ismarkmodel(modelname)==1:
+        defaultfti=10000
+        defaultftf=1E5
+    #
     return defaultfti,defaultftf
 
 # get averaging times if know the model type
@@ -2872,6 +2881,10 @@ def getdefaulttimes2():
     if modelname=="radtest1" or modelname=="radtest2":
         defaultfti=50
         defaultftf=1e4
+    #
+    if ismarkmodel(modelname)==1:
+        defaultfti=10000
+        defaultftf=1E5
     #
     #
     return defaultfti,defaultftf
@@ -17365,6 +17378,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     elif modelname=="sashaa99t1.5708":
         fieldtype="Poloidal2"
         truemodelname="A0.99N100T1.5708"
+    elif modelname=="mark1":
+        fieldtype="MAD"
+        truemodelname="mark1"
     else:
         fieldtype="UnknownModelFieldType"
         truemodelname="UnknownModel"
@@ -20901,17 +20917,17 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         # as long as lcor true $l$ value, no need to correct for changes in NHU resolution here
         #nyeffective=float(NHU)
         # assume tabulated or outputs are disk quantities, and that structure is around equatorial plane. So if \delta\theta around equator, see how many cells *cover* that structure rather than just using d\theta at \theta=\pi/2
-        Qlcorradhordcrho0=(jofhfloatsimple(np.pi*0.5+np.pi/lcorradhordcrho0,iofr(4.0)) - ny*0.5)
-        Qlcorradhordcbsq=(jofhfloatsimple(np.pi*0.5+np.pi/lcorradhordcbsq,iofr(4.0)) - ny*0.5)
+        Qlcorradhordcrho0=(jofhfloatsimple(np.pi*0.5+np.pi/lcorradhordcrho0,iofr(rhor)) - ny*0.5)
+        Qlcorradhordcbsq=(jofhfloatsimple(np.pi*0.5+np.pi/lcorradhordcbsq,iofr(rhor)) - ny*0.5)
         #
         Qlcorrad4dcrho0=(jofhfloatsimple(np.pi*0.5+np.pi/lcorrad4dcrho0,iofr(4.0)) - ny*0.5)
         Qlcorrad4dcbsq=(jofhfloatsimple(np.pi*0.5+np.pi/lcorrad4dcbsq,iofr(4.0)) - ny*0.5)
         #
-        Qlcorrad8dcrho0=(jofhfloatsimple(np.pi*0.5+np.pi/lcorrad8dcrho0,iofr(4.0)) - ny*0.5)
-        Qlcorrad8dcbsq=(jofhfloatsimple(np.pi*0.5+np.pi/lcorrad8dcbsq,iofr(4.0)) - ny*0.5)
+        Qlcorrad8dcrho0=(jofhfloatsimple(np.pi*0.5+np.pi/lcorrad8dcrho0,iofr(8.0)) - ny*0.5)
+        Qlcorrad8dcbsq=(jofhfloatsimple(np.pi*0.5+np.pi/lcorrad8dcbsq,iofr(8.0)) - ny*0.5)
         #
-        Qlcorrad30dcrho0=(jofhfloatsimple(np.pi*0.5+np.pi/lcorrad30dcrho0,iofr(4.0)) - ny*0.5)
-        Qlcorrad30dcbsq=(jofhfloatsimple(np.pi*0.5+np.pi/lcorrad30dcbsq,iofr(4.0)) - ny*0.5)
+        Qlcorrad30dcrho0=(jofhfloatsimple(np.pi*0.5+np.pi/lcorrad30dcrho0,iofr(30.0)) - ny*0.5)
+        Qlcorrad30dcbsq=(jofhfloatsimple(np.pi*0.5+np.pi/lcorrad30dcbsq,iofr(30.0)) - ny*0.5)
         #
         #
         #
