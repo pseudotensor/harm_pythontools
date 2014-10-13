@@ -2002,7 +2002,7 @@ def testfail(fldname = "fieldline0001.bin"):
     try: 
         rfd(fldname)
     except:
-        print("Could not read file %s. Skipping it." % fldname)    
+        print( "Could not read file %s. Skipping it. Error: %s" % (fldname, sys.exc_info()[0]) )    
 
     
 def postprocess1d(startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
