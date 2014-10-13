@@ -1851,7 +1851,7 @@ def postprocess2d(startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
         print( "While reading %s:" % flist[-1] )
         print( "I/O error({0}): {1}".format(e.errno, e.strerror) )
         print( "Skipping" )
-        break
+        return
     #round to smallest integer, i.e., ignore the last incomplete time averaging interval
     totintervals = np.int32(tlast/deltat) 
     grid3d("gdump.bin",use2d=1)
