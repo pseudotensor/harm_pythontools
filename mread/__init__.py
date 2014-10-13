@@ -1625,7 +1625,8 @@ def mkmfnew(v,findex=10000,
     plt.setp( ax31.get_xticklabels(), visible=False)
     #start plotting
     ax31.plot(v["t"][which],v["FM"][which,myi],"k")
-    ax31.plot(v["t"][findex],v["FM"][findex,myi],'o',mfc='r')
+    ind = np.where(v["t"]==t)
+    ax31.plot(v["t"][ind],v["FM"][ind,myi],'o',mfc='r')
     if 'FMavg' not in globals():
         FMavg = 0*v["t"]
         FMavg[which] = timeavg(v["FM"][which,myi],v["t"][which],fti=iti,ftf=ftf,sigma=sigma)
@@ -1664,7 +1665,7 @@ def mkmfnew(v,findex=10000,
     PhiBHcgs = v["PhiBH"][:,0]*(4*np.pi)**0.5
     phibh = PhiBHcgs/FMavg**0.5
     ax35.plot(v["t"][which],phibh[which],"k")
-    ax35.plot(v["t"][findex],phibh[findex],'o',mfc='r')
+    ax35.plot(v["t"][ind],phibh[ind],'o',mfc='r')
     phiavg1 = timeavg(phibh[:],v["t"],fti=iti,ftf=itf,sigma=sigma1)+0*v["t"]
     phiavg2 = timeavg(phibh[:],v["t"],fti=fti,ftf=ftf,sigma=sigma1)+0*v["t"]
     l, = ax35.plot(v["t"][(iti<=t)*(t<=itf)],phiavg1[(iti<=t)*(t<=itf)],"k")
@@ -1714,7 +1715,7 @@ def mkmfnew(v,findex=10000,
     etabh = (v["FM"]-v["FE"])[:,myi]/FMavg
     #print( "FMavg = %g" % FMavg )
     ax34.plot(v["t"][which],etabh[which]*prefactor,"k")
-    ax34.plot(v["t"][findex],etabh[findex]*prefactor,'o',mfc='r')
+    ax34.plot(v["t"][ind],etabh[ind]*prefactor,'o',mfc='r')
     etabhavg1 = timeavg(etabh[:],v["t"],fti=iti,ftf=itf,sigma=sigma1) + 0*v["t"]
     etabhavg2 = timeavg(etabh[:],v["t"],fti=fti,ftf=ftf,sigma=sigma1) + 0*v["t"]
     l, = ax34.plot(v["t"][(iti<=t)*(t<=itf)],etabhavg1[(iti<=t)*(t<=itf)]*prefactor,"k")
@@ -1857,7 +1858,7 @@ def postprocess2d(startn=0,endn=-1,whichi=0,whichn=1,**kwargs):
         print( "Skipping" )
         return
     #round to smallest integer, i.e., ignore the last incomplete time averaging interval
-    totintervals = np.int32(tlast/deltat) 
+    totintervals = np.int64(tlast/deltat) 
     grid3d("gdump.bin",use2d=1)
     print("Doing every %d interval out of %d total intervals..." % (whichn,totintervals))
     for numinterval in xrange(totintervals):
