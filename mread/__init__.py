@@ -1826,7 +1826,7 @@ def mrg2dnew_f(ft, v={}):
         v["t"] = []
     if not isinstance(v["t"],list):
         v["t"] = list(v["t"])
-    v["t"].append(vt["t"])
+    v["t"] += vt["t"]
     vt.close()
     return v
         
