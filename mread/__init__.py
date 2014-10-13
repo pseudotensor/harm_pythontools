@@ -2327,34 +2327,37 @@ def compvals1d(di=5):
     diskcondition = bsq/rho<10
     dic["hor"] = horcalc1d(which=diskcondition)[ivals]
     #jet power and mass outflow in the jets
+    isunb=(-(1+ug*gam/rho)*ud[0]>1.0)
+    mu = -fTud(1,0)/(rho*uu[1])
     #EM-defined jet (minmu > ...)
-    dic["FEMMAmu>2"] = jetpowcalc(which="EMMA",minmu=2,donorthsouth="both",excludebound=True)[ivals]
-    dic["FEMMAmu>1"] = jetpowcalc(which="EMMA",minmu=1,donorthsouth="both",excludebound=True)[ivals]
-    dic["FEMmu>2"] = jetpowcalc(which="EM",minmu=2,donorthsouth="both",excludebound=True)[ivals]
-    dic["FEMmu>1"] = jetpowcalc(which="EM",minmu=1,donorthsouth="both",excludebound=True)[ivals]
-    dic["FMAmu>2"] = jetpowcalc(which="MA",minmu=2,donorthsouth="both",excludebound=True)[ivals]
-    dic["FMAmu>1"] = jetpowcalc(which="MA",minmu=1,donorthsouth="both",excludebound=True)[ivals]
-    dic["FRMmu>2"] = jetpowcalc(which="RM",minmu=2,donorthsouth="both",excludebound=True)[ivals]
-    dic["FRMmu>1"] = jetpowcalc(which="RM",minmu=1,donorthsouth="both",excludebound=True)[ivals]
-    dic["Phimu>2"] = jetpowcalc(which="Phi",minmu=2,donorthsouth="both",excludebound=True)[ivals]
-    dic["Phimu>1"] = jetpowcalc(which="Phi",minmu=1,donorthsouth="both",excludebound=True)[ivals]
+    dic["FEMMAmu>2"] = (gdet*fTud(1,0)*(mu>2)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
+    dic["FEMMAmu>1"] = (gdet*fTud(1,0)*(mu>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
+    dic["FEMmu>2"] = (gdet*fTudEM(1,0)*(mu>2)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
+    dic["FEMmu>1"] = (gdet*fTudEM(1,0)*(mu>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
+    dic["FMAmu>2"] = (gdet*fTudMA(1,0)*(mu>2)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
+    dic["FMAmu>1"] = (gdet*fTudMA(1,0)*(mu>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
+    dic["FRMmu>2"] = (gdet*rho*uu[1]*(mu>2)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
+    dic["FRMmu>1"] = (gdet*rho*uu[1]*(mu>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
+    dic["Phimu>2"] = (gdetB[1]*(mu>2)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
+    dic["Phimu>1"] = (gdetB[1]*(mu>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
     if "uradu" in globals():
+        murad = -(fTud(1,0)+fRud(1,0))/(rho*uu[1])
         # radiation fluxes
-        dic["FRmurad>1"]= jetpowcalc(which="RAD",minmurad=1,donorthsouth="both",excludebound=True)[ivals]
-        dic["FRmurad>2"]= jetpowcalc(which="RAD",minmurad=2,donorthsouth="both",excludebound=True)[ivals]
-        dic["FRmu>1"]= jetpowcalc(which="RAD",minmu=1,donorthsouth="both",excludebound=True)[ivals]
-        dic["FRmu>2"]= jetpowcalc(which="RAD",minmu=2,donorthsouth="both",excludebound=True)[ivals]
+        dic["FRmurad>1"]= (gdet*fRud(1,0)*(murad>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
+        dic["FRmurad>2"]= (gdet*fRud(1,0)*(murad>2)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
+        dic["FRmu>1"]= (gdet*fRud(1,0)*(mu>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
+        dic["FRmu>2"]= (gdet*fRud(1,0)*(mu>2)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
         # radiation-defined jet (minmurad > ...)
-        dic["FEMMAmurad>2"] = jetpowcalc(which="EMMA",minmurad=2,donorthsouth="both",excludebound=True)[ivals]
-        dic["FEMMAmurad>1"] = jetpowcalc(which="EMMA",minmurad=1,donorthsouth="both",excludebound=True)[ivals]
-        dic["FEMmurad>2"] = jetpowcalc(which="EM",minmurad=2,donorthsouth="both",excludebound=True)[ivals]
-        dic["FEMmurad>1"] = jetpowcalc(which="EM",minmurad=1,donorthsouth="both",excludebound=True)[ivals]
-        dic["FMAmurad>2"] = jetpowcalc(which="MA",minmurad=2,donorthsouth="both",excludebound=True)[ivals]
-        dic["FMAmurad>1"] = jetpowcalc(which="MA",minmurad=1,donorthsouth="both",excludebound=True)[ivals]
-        dic["FRMmurad>2"] = jetpowcalc(which="RM",minmurad=2,donorthsouth="both",excludebound=True)[ivals]
-        dic["FRMmurad>1"] = jetpowcalc(which="RM",minmurad=1,donorthsouth="both",excludebound=True)[ivals]
-        dic["Phimurad>2"] = jetpowcalc(which="Phi",minmurad=2,donorthsouth="both",excludebound=True)[ivals]
-        dic["Phimurad>1"] = jetpowcalc(which="Phi",minmurad=1,donorthsouth="both",excludebound=True)[ivals]
+        dic["FEMMAmurad>2"] = (gdet*fTud(1,0)*(murad>2)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
+        dic["FEMMAmurad>1"] = (gdet*fTud(1,0)*(murad>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
+        dic["FEMmurad>2"] = (gdet*fTudEM(1,0)*(murad>2)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
+        dic["FEMmurad>1"] = (gdet*fTudEM(1,0)*(murad>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
+        dic["FMAmurad>2"] = (gdet*fTudMA(1,0)*(murad>2)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
+        dic["FMAmurad>1"] = (gdet*fTudMA(1,0)*(murad>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
+        dic["FRMmurad>2"] = (gdet*rho*uu[1]*(murad>2)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
+        dic["FRMmurad>1"] = (gdet*rho*uu[1]*(murad>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
+        dic["Phimurad>2"] = (gdetB[1]*(murad>2)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
+        dic["Phimurad>1"] = (gdetB[1]*(murad>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
     return( dic )
 
     #mu = -fTud(1,0)/(rho*uu[1])
