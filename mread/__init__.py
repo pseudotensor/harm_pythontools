@@ -1952,7 +1952,7 @@ def mrgnew(n=None,fin1=None,fin2=None,fout="qty.npz",**kwargs):
         v = mrgnew_n(n,v,**kwargs)
     elif fin1 is not None and fin2 is not None:
         #merge two named files
-        v = np.load(fin1)
+        v = mrgnew_f(fin1,v,**kwargs)
         v = mrgnew_f(fin2,v,**kwargs)
     print( "Saving into " + fout + " ..." )
     sys.stdout.flush()
@@ -1999,8 +1999,11 @@ def mrgnew_f(ft, v={}, **kwargs):
     sys.stdout.flush()
     vt=np.load( ft )
     #find last element in old array that does not exist in the new array
-    ind = np.array(v["ind"])
-    lasti = (ind<vt["ind"][0]).sum()
+    if "ind" in v:
+        ind = np.array(v["ind"])
+        lasti = (ind<vt["ind"][0]).sum()
+    else:
+        lasti = None
     for key in vt.keys():
         if key not in ["ivals", "rvals"]:
             if key not in v:
@@ -2008,7 +2011,7 @@ def mrgnew_f(ft, v={}, **kwargs):
             #convert to list first
             v[key] = list(v[key])
             #has time dependence, so first discard repeated entries
-            del v[key][lasti:]
+            if lasti is not None: del v[key][lasti:]
             #and then append new entries
             v[key] += list(vt[key])
         else:
