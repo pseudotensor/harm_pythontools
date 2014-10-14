@@ -2608,7 +2608,7 @@ def iswaldmodel(modelname):
         return(0)
     #
 def ismarkmodel(modelname):
-    if modelname=="mark1":
+    if modelname=="mark1" or  modelname=="mark2" or modelname=="mark1b":
         return(1)
     else:
         return(0)
@@ -2801,7 +2801,7 @@ def getdefaulttimes1():
         defaultftf=1e4
     #
     if ismarkmodel(modelname)==1:
-        defaultfti=10000
+        defaultfti=50000
         defaultftf=1E5
     #
     return defaultfti,defaultftf
@@ -5173,7 +5173,13 @@ def remap2unir(rinner=None,router=None,size=None,iin=None,iout=None,result0=None
 def compute_taurad():
         # uses uu[], KAPPAUSER, KAPPAESUSER, gv3, r
         #
-        drco=_dx1*np.sqrt(np.fabs(gv3[1,1]))/(2.0*uu[0])
+        thetavel=0.0
+        betasq=1.0-1.0/(uu[0]**2)
+        betasq[betasq<0.0]=0.0
+        betavel=np.sqrt(betasq)
+        gamfactor=uu[0]*(1.0-betavel*np.cos(thetavel))
+        #drco=_dx1*np.sqrt(np.fabs(gv3[1,1]))/(2.0*uu[0])
+        drco=_dx1*np.sqrt(np.fabs(gv3[1,1]))*gamfactor
         dhco=_dx2*np.sqrt(np.fabs(gv3[2,2]))*uu[0]
         dphco=_dx3*np.sqrt(np.fabs(gv3[3,3]))*uu[0]
         #
@@ -5286,12 +5292,12 @@ def Qmri():
     return(res)
 
 
-def plco(myvar,xcoord=None,ycoord=None,ax=None,**kwargs):
+def plco(myvar,xcoord=None,ycoord=None,ax=None,picker=False,**kwargs):
     plt.clf()
-    ax=plc(myvar,xcoord,ycoord,ax,**kwargs)
+    ax=plc(myvar,xcoord,ycoord,ax,picker=picker,**kwargs)
     return(ax)
 
-def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
+def plc(myvar,xcoord=None,ycoord=None,ax=None,picker=False,**kwargs): #plc
     #
     #
     #
@@ -5302,6 +5308,8 @@ def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
         return
     cb = kwargs.pop('cb', False)
     nc = kwargs.pop('nc', 15)
+    levels = kwargs.pop('levels',(1,))
+    #levels=(aphi[ihor,ny/2,0],))
     k = kwargs.pop('k',0)
     if None != xcoord and None != ycoord:
         xcoord = xcoord[:,:,None] if xcoord.ndim == 2 else xcoord[:,:,k:k+1]
@@ -5310,9 +5318,15 @@ def plc(myvar,xcoord=None,ycoord=None,ax=None,**kwargs): #plc
     if ax is None:
         ax = plt.gca()
     if( xcoord == None or ycoord == None ):
-        res = ax.contour(myvar[:,:,0].transpose(),nc,**kwargs)
+        if nc==15:
+            res = ax.contour(myvar[:,:,0].transpose(),levels=levels,picker=picker,**kwargs)
+        else:
+            res = ax.contour(myvar[:,:,0].transpose(),nc,picker=picker,**kwargs)
     else:
-        res = ax.contour(xcoord[:,:,0],ycoord[:,:,0],myvar[:,:,0],nc,**kwargs)
+        if nc==15:
+            res = ax.contour(xcoord[:,:,0],ycoord[:,:,0],myvar[:,:,0],levels=levels,picker=picker,**kwargs)
+        else:
+            res = ax.contour(xcoord[:,:,0],ycoord[:,:,0],myvar[:,:,0],nc,picker=picker,**kwargs)
     if( cb == True): #use color bar
         plt.colorbar(res,ax=ax)
     return(ax)
@@ -17378,9 +17392,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     elif modelname=="sashaa99t1.5708":
         fieldtype="Poloidal2"
         truemodelname="A0.99N100T1.5708"
-    elif modelname=="mark1":
+    elif modelname=="mark1" or modelname=="mark2" or modelname=="mark1b":
         fieldtype="MAD"
-        truemodelname="mark1"
+        truemodelname="mark"
     else:
         fieldtype="UnknownModelFieldType"
         truemodelname="UnknownModel"
@@ -28320,17 +28334,55 @@ def harmradtest1(path=None,fil=None):
     # now plot something you read-in
     #
     #ax.contour(itaurad1flipintegrated,linewidths=4,colors='cyan', extent=extent,hold='on',origin='lower',levels=(1,))
-    len=150
+    #len=150
+    len = 50
     ncell=800
-    extent=(-len,len,-len,len)
     global taurad2integrated,tauradeffintegrated
+
+    pg = (5.0/3.0-1)*ug
+    Tg = pg/rho
+    lTg = np.log10(Tg)
+    #
+    extent=(-len,len,-len,len)
     itaurad2integrated = reinterp(taurad2integrated,extent,ncell,domask=1.0,interporder='linear')
     itauradeffintegrated = reinterp(tauradeffintegrated,extent,ncell,domask=1.0,interporder='linear')
+    ilTg = reinterp(lTg,extent,ncell,domask=1.0,interporder='linear')
+    #
+    #
+    plt.figure(1)
+    plt.clf()
     ax = plt.gca()
     ax.contour(itaurad2integrated,linewidths=4,colors='cyan', extent=extent,hold='on',origin='lower',levels=(1,))
     ax.contour(itauradeffintegrated,linewidths=4,colors='red', extent=extent,hold='on',origin='lower',levels=(1,))
     #ax.contour(itaurad2flipintegrated,linewidths=4,colors='red', extent=extent,hold='on',origin='lower',levels=(1,))
+    #ax.contour(ilTg,linewidths=4,colors='blue', extent=extent,hold='on',origin='lower',levels=(1E-7,1E-6,1E-5,1E-4,1E-3,1E-2,1E-1))
     #
+    fig2=plt.figure(2)
+    plt.clf()
+    ax2 = plt.gca()
+    #plc(Tg,cb=True,nc=50)
+    myfun=np.log10(Tg)
+    len=40.0
+    nxout=iofr(len)
+    extent=(-len,len,-len,len)
+    #
+    myx=r[0:nxout:,:,0]*np.sin(h[0:nxout,:,0])*np.cos(ph[0:nxout,:,0])
+    myy=r[0:nxout,:,0]*np.sin(h[0:nxout,:,0])*np.sin(ph[0:nxout,:,0])
+    myz=r[0:nxout,:,0]*np.cos(h[0:nxout,:,0])
+    myTg=myfun[0:nxout,:,0]
+    mytau2=taurad2integrated[0:nxout,:,0]
+    mytaueff=tauradeffintegrated[0:nxout,:,0]
+    result=ax2.pcolor(myx,myz,myTg,picker=True)
+    plc(myTg,xcoord=myx,ycoord=myz,ax=ax2,cb=True,nc=50,picker=True)
+    plc(mytau2,xcoord=myx,ycoord=myz,ax=ax2,cb=False,levels=(1,))
+    plc(mytaueff,xcoord=myx,ycoord=myz,ax=ax2,cb=False,levels=(1,))
+    #ax.contour(myx,myz,myfun[0:nxout,:,0],linewidths=4,colors='black', extent=extent,hold='on',origin='lower',levels=(-7,-6,-5,-4,-3,-2,-1,0,1))
+    #cid = fig2.canvas.mpl_connect('button_press_event', onclick)
+    cid = fig2.canvas.mpl_connect('button_press_event', lambda event: onclick(event,lTg,tauradeffintegrated))
+    #
+    #plt.figure(6)
+    #plco(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),colors='k',nc=30)
+#
     avoidfloorcondition=condmaxbsqorho
     keywordsavoidfloor={'which': avoidfloorcondition}
     mdtot=mdotcalc(which=avoidfloorcondition)
@@ -28355,4 +28407,208 @@ def harmradtest1(path=None,fil=None):
     print("etarad=%g" % (etarad));sys.stdout.flush()
     print("etaradthin=%g" % (etaradthin));sys.stdout.flush()
     #
+
+def onclick(event,funorig1,funorig2):
+    #thisline = event.artist
+    #xdata2 = thisline.get_xdata()
+    #ydata2 = thisline.get_ydata()
+    xdata = event.xdata
+    ydata = event.ydata
+    #ind = event.ind
+  # ind=%f zip=%f'%(
+    print 'button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %(
+        event.button, event.x, event.y, event.xdata, event.ydata);
+    #global poo
+    myx=event.xdata
+    myz=event.ydata
+    #
+    extent=(myx*0.99,myx*1.01,myz*0.99,myz*1.01)
+    ncell=2
+    ifun1 = reinterp(funorig1,extent,ncell,domask=1.0,interporder='linear')
+    ifun2 = reinterp(funorig2,extent,ncell,domask=1.0,interporder='linear')
+    #
+    print 'ifun1=%f' %(ifun1[0,0])
+    print 'ifun2=%f' %(ifun2[0,0])
+    sys.stdout.flush()
+#, event.ind, zip(xdata[ind],ydata[ind]))
+
+
+
+
+
+
+
+#import matplotlib.pyplot as plt
+#import matplotlib.mlab as mlab
+import matplotlib.cbook as cbook
+#import numpy as np
+
+def fmt(x, y):
+    return 'x: {x:0.2f}\ny: {y:0.2f}'.format(x = x, y = y)
+
+class DataCursor(object):
+    # http://stackoverflow.com/a/4674445/190597
+    """A simple data cursor widget that displays the x,y location of a
+    matplotlib artist when it is selected."""
+    def __init__(self, artists, x = [], y = [], tolerance = 5, offsets = (-20, 20),
+                 formatter = fmt, display_all = False):
+        """Create the data cursor and connect it to the relevant figure.
+        "artists" is the matplotlib artist or sequence of artists that will be 
+            selected. 
+        "tolerance" is the radius (in points) that the mouse click must be
+            within to select the artist.
+        "offsets" is a tuple of (x,y) offsets in points from the selected
+            point to the displayed annotation box
+        "formatter" is a callback function which takes 2 numeric arguments and
+            returns a string
+        "display_all" controls whether more than one annotation box will
+            be shown if there are multiple axes.  Only one will be shown
+            per-axis, regardless. 
+        """
+        self._points = np.column_stack((x,y))
+        self.formatter = formatter
+        self.offsets = offsets
+        self.display_all = display_all
+        if not cbook.iterable(artists):
+            artists = [artists]
+        self.artists = artists
+        self.axes = tuple(set(art.axes for art in self.artists))
+        self.figures = tuple(set(ax.figure for ax in self.axes))
+
+        self.annotations = {}
+        for ax in self.axes:
+            self.annotations[ax] = self.annotate(ax)
+
+        for artist in self.artists:
+            artist.set_picker(tolerance)
+        for fig in self.figures:
+            fig.canvas.mpl_connect('pick_event', self)
+
+    def annotate(self, ax):
+        """Draws and hides the annotation box for the given axis "ax"."""
+        annotation = ax.annotate(self.formatter, xy = (0, 0), ha = 'right',
+                xytext = self.offsets, textcoords = 'offset points', va = 'bottom',
+                bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.5),
+                arrowprops = dict(arrowstyle = '->', connectionstyle = 'arc3,rad=0')
+                )
+        annotation.set_visible(False)
+        return annotation
+
+    def snap(self, x, y):
+        """Return the value in self._points closest to (x, y).
+        """
+        idx = np.nanargmin(((self._points - (x,y))**2).sum(axis = -1))
+        return self._points[idx]
+    def __call__(self, event):
+        """Intended to be called through "mpl_connect"."""
+        # Rather than trying to interpolate, just display the clicked coords
+        # This will only be called if it's within "tolerance", anyway.
+        x, y = event.mouseevent.xdata, event.mouseevent.ydata
+        annotation = self.annotations[event.artist.axes]
+        if x is not None:
+            if not self.display_all:
+                # Hide any other annotation boxes...
+                for ann in self.annotations.values():
+                    ann.set_visible(False)
+            # Update the annotation in the current axis..
+            x, y = self.snap(x, y)
+            annotation.xy = x, y
+            annotation.set_text(self.formatter(x, y))
+            annotation.set_visible(True)
+            event.canvas.draw()
+
+def testcursor():
+    x=[1,2,3,4,5]
+    y=[6,7,8,9,10]
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    scat = ax.scatter(x, y)
+    DataCursor(scat, x, y)
+    plt.show()
+
+
+
+
+#import matplotlib.pyplot as plt
+#import numpy as np
+import scipy.spatial as spatial
+
+#def fmt(x, y):
+#    return 'x: {x:0.2f}\ny: {y:0.2f}'.format(x=x, y=y)
+
+class FollowDotCursor(object):
+    """Display the x,y location of the nearest data point."""
+    def __init__(self, ax, x, y, tolerance=5, formatter=fmt, offsets=(-20, 20)):
+        try:
+            x = np.asarray(x, dtype='float')
+        except (TypeError, ValueError):
+            x = np.asarray(mdates.date2num(x), dtype='float')
+        y = np.asarray(y, dtype='float')
+        self._points = np.column_stack((x, y))
+        self.offsets = offsets
+        self.scale = x.ptp()
+        self.scale = y.ptp() / self.scale if self.scale else 1
+        self.tree = spatial.cKDTree(self.scaled(self._points))
+        self.formatter = formatter
+        self.tolerance = tolerance
+        self.ax = ax
+        self.fig = ax.figure
+        self.ax.xaxis.set_label_position('top')
+        self.dot = ax.scatter(
+            [x.min()], [y.min()], s=130, color='green', alpha=0.7)
+        self.annotation = self.setup_annotation()
+        plt.connect('motion_notify_event', self)
+
+    def scaled(self, points):
+        points = np.asarray(points)
+        return points * (self.scale, 1)
+
+    def __call__(self, event):
+        ax = self.ax
+        # event.inaxes is always the current axis. If you use twinx, ax could be
+        # a different axis.
+        if event.inaxes == ax:
+            x, y = event.xdata, event.ydata
+        elif event.inaxes is None:
+            return
+        else:
+            inv = ax.transData.inverted()
+            x, y = inv.transform([(event.x, event.y)]).ravel()
+        annotation = self.annotation
+        x, y = self.snap(x, y)
+        annotation.xy = x, y
+        annotation.set_text(self.formatter(x, y))
+        self.dot.set_offsets((x, y))
+        bbox = ax.viewLim
+        event.canvas.draw()
+
+    def setup_annotation(self):
+        """Draw and hide the annotation box."""
+        annotation = self.ax.annotate(
+            '', xy=(0, 0), ha = 'right',
+            xytext = self.offsets, textcoords = 'offset points', va = 'bottom',
+            bbox = dict(
+                boxstyle='round,pad=0.5', fc='yellow', alpha=0.75),
+            arrowprops = dict(
+                arrowstyle='->', connectionstyle='arc3,rad=0'))
+        return annotation
+
+    def snap(self, x, y):
+        """Return the value in self.tree closest to x, y."""
+        dist, idx = self.tree.query(self.scaled((x, y)), k=1, p=1)
+        try:
+            return self._points[idx]
+        except IndexError:
+            # IndexError: index out of bounds
+            return self._points[0]
+
+def testcursor2():
+    x=[1,2,3,4,5]
+    y=[6,7,8,9,10]
+    #
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    ax.scatter(x, y)
+    cursor = FollowDotCursor(ax, x, y)
+    plt.show()
 
