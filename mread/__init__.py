@@ -9046,7 +9046,7 @@ def cvel():
     rinterp=(r-9.0)*(1.0-0.0)/(0.0-9.0) # gives 0 for use near 9   gives 1 for use near 0
     rinterp[rinterp>1.0]=1.0
     rinterp[rinterp<0.0]=0.0
-    condmaxbsqorho=(bsq/rho < rinterp*3000.0 + (1.0-rinterp)*1000.) #* (rho>1.e-3) * (bsq/ug < 9.e4) * (ug/rho < 80)
+    condmaxbsqorho=(bsq/rho < rinterp*30.0 + (1.0-rinterp)*10.) #* (rho>1.e-3) * (bsq/ug < 9.e4) * (ug/rho < 80)
     ############## MAVARA this section uncommented for tiltplot cvel call
     diskcondition1=condmaxbsqorho #*(beta>2.)
     diskcondition2=condmaxbsqorho #*(beta>2.)
