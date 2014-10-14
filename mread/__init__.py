@@ -2723,8 +2723,8 @@ def getdefaulttimes1():
         defaultftf=1e6
     else:
         # default (assumes ran at least beyond t=1000)
-        defaultfti=45000 #mavara 25000 #4000 #10000 #1000
-        defaultftf=59000 #32000 #8000 #20000 #1e6
+        defaultfti=168500 #28500 #167000 #50000 #mavaratime 25000 #4000 #10000 #1000
+        defaultftf=168700 #34500 #169000 #73600 #32000 #8000 #20000 #1e6
     #
     # set tilted models
     if isthickdiskmodel(modelname)==2:
@@ -2817,8 +2817,8 @@ def getdefaulttimes2():
         defaultfti=9000
         defaultftf=12000
     else:
-        defaultfti=45000 #25000 #4000 #10000 # MAVARA 1000
-        defaultftf=59000 #32000 #8000 #20000 #1e6    6000 and 9000 for BPCooling3... didn't work for some reason
+        defaultfti=168500 #28500 #167000 #50000 #58000 #25000 #4000 #10000 # MAVARATIME 1000
+        defaultftf=168700 #34500 #169000 #73600 #66000 #32000 #8000 #20000 #1e6    6000 and 9000 for BPCooling3... didn't work for some reason
     #
     # set tilted models
     if isthickdiskmodel(modelname)==2:
@@ -3576,7 +3576,7 @@ def horcalc(hortype=1,which1=1,which2=1,denfactor=None):
     #
     thetamid3d=np.zeros((nx,ny,nz),dtype=h.dtype)
     # sum over \theta
-    if hortype==1:
+    if hortype==1 or hortype==2 or hortype==3:
         up=(gdet*denfactor*(h-np.pi/2)*which).sum(axis=1)
         dn=(gdet*denfactor*which).sum(axis=1)
         # so average over \theta
@@ -3589,10 +3589,22 @@ def horcalc(hortype=1,which1=1,which2=1,denfactor=None):
     else:
         thetamid3d=0.5*np.pi+thetamid3d
     #
-    up=(gdet*denfactor*(h-thetamid3d)**2*which).sum(axis=1)
-    #up=(gdet*denfactor*(h-1.57)**2*which).sum(axis=1)
-    dn=(gdet*denfactor*which).sum(axis=1)
-    hoverr2d= (up/(dn+tiny))**0.5
+    if hortype==1 or hortype==None:
+        up=(gdet*denfactor*(h-thetamid3d)**2*which).sum(axis=1)
+        #up=(gdet*denfactor*(h-1.57)**2*which).sum(axis=1)
+        dn=(gdet*denfactor*which).sum(axis=1)
+        hoverr2d= (up/(dn+tiny))**0.5
+    elif hortype==2:
+        up=(gdet*denfactor*np.fabs(h-thetamid3d)*which).sum(axis=1)
+        dn=(gdet*denfactor*which).sum(axis=1)
+        hoverr2d=up/(dn+tiny)
+    else:
+        #Penna et al. 2012 version, when denfactor=rho**2, but using thetamid3d rather than pi/2.
+        up=(gdet*denfactor*(h-thetamid3d)**2*which).sum(axis=1)
+        #up=(gdet*denfactor*(h-1.57)**2*which).sum(axis=1)
+        dn=(gdet*denfactor*which).sum(axis=1)
+        hoverr2d= np.sqrt(15.)/3. *(up/(dn+tiny))**0.5
+    #
     hoverr3d=np.empty((nx,ny,nz),dtype=h.dtype)
     for j in np.arange(0,ny):
         hoverr3d[:,j,:] = hoverr2d
@@ -3743,7 +3755,7 @@ def betascalc(which=1,rdown=0.0,rup=1.0E3): #MAVARATEMPCHANGE rdown=0.0 -> 6.0
     condition2=condition1
     #
     print("condition2condition2: ")
-    print(condition2*gdet)
+    #print(condition2*gdet)
     ibetaavg=np.average(ibeta,weights=condition2*gdet)
     betaavg=1.0/ibetaavg
     ibetatotavg=np.average(ibetatot,weights=condition2*gdet)
@@ -5269,6 +5281,92 @@ def reinterpxy(vartointerp,extent,ncell,domask=1,interporder='cubic'):
     else:
         varinterpolated = zi
     return(varinterpolated)
+
+def reinterpxy4wedges(vartointerp,extent,ncell,domask=1,interporder='cubic'):
+    global xi,yi,zi
+    #grid3d("gdump")
+    #rfd("fieldline0250.bin")
+    xraw1=r*np.sin(h)*np.cos(ph)
+    yraw1=r*np.sin(h)*np.sin(ph)
+    xraw2=r*np.sin(h)*np.cos(ph+np.pi/2.)
+    yraw2=r*np.sin(h)*np.sin(ph+np.pi/2.)
+    xraw3=r*np.sin(h)*np.cos(ph+np.pi)
+    yraw3=r*np.sin(h)*np.sin(ph+np.pi)
+    xraw4=r*np.sin(h)*np.cos(ph+3*np.pi/2.)
+    yraw4=r*np.sin(h)*np.sin(ph+3*np.pi/2.)
+    #2 cells below the midplane
+    x1=xraw1[:,ny/2+1,:].view().reshape(-1)
+    y1=yraw1[:,ny/2+1,:].view().reshape(-1)
+    x2=xraw2[:,ny/2+1,:].view().reshape(-1)
+    y2=yraw2[:,ny/2+1,:].view().reshape(-1)
+    x3=xraw3[:,ny/2+1,:].view().reshape(-1)
+    y3=yraw3[:,ny/2+1,:].view().reshape(-1)
+    x4=xraw4[:,ny/2+1,:].view().reshape(-1)
+    y4=yraw4[:,ny/2+1,:].view().reshape(-1)
+    var=vartointerp[:,ny/2+1,:].view().reshape(-1)
+    #mirror
+    #if nz*_dx3*dxdxp[3,3,0,0,0] < 0.99 * 2 * np.pi:
+    #    x=np.concatenate((-x,x))
+    #    y=np.concatenate((-y,y))
+    #    var=np.concatenate((var,var))
+    x=np.concatenate((x1,x2,x3,x4))
+    y=np.concatenate((y1,y2,y3,y4))
+    var=np.concatenate((var,var,var,var))
+    # define grid.
+    xi = np.linspace(extent[0], extent[1], ncell)
+    yi = np.linspace(extent[2], extent[3], ncell)
+    # grid the data.
+    zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method=interporder)
+    #zi[interior] = np.ma.masked
+    if domask!=0: # this is the BH horizon mask
+        interior = np.sqrt((xi[None,:]**2) + (yi[:,None]**2)) < (1+np.sqrt(1-a**2))*domask
+        varinterpolated = ma.masked_where(interior, zi)
+    else:
+        varinterpolated = zi
+    return(varinterpolated)
+
+def reinterpxy4wedges2(vartointerp,extent,ncell,domask=1,interporder='cubic'):
+    global xi,yi,zi
+    #grid3d("gdump")
+    #rfd("fieldline0250.bin")
+    xraw1=r*np.sin(h)*np.cos(ph)
+    yraw1=r*np.sin(h)*np.sin(ph)
+    xraw2=r*np.sin(h)*np.cos(ph+np.pi/2.)
+    yraw2=r*np.sin(h)*np.sin(ph+np.pi/2.)
+    xraw3=r*np.sin(h)*np.cos(ph+np.pi)
+    yraw3=r*np.sin(h)*np.sin(ph+np.pi)
+    xraw4=r*np.sin(h)*np.cos(ph+3*np.pi/2.)
+    yraw4=r*np.sin(h)*np.sin(ph+3*np.pi/2.)
+    #2 cells below the midplane
+    x1=xraw1[:,ny/2+1,:].view().reshape(-1)
+    y1=yraw1[:,ny/2+1,:].view().reshape(-1)
+    x2=xraw2[:,ny/2+1,:].view().reshape(-1)
+    y2=yraw2[:,ny/2+1,:].view().reshape(-1)
+    x3=xraw3[:,ny/2+1,:].view().reshape(-1)
+    y3=yraw3[:,ny/2+1,:].view().reshape(-1)
+    x4=xraw4[:,ny/2+1,:].view().reshape(-1)
+    y4=yraw4[:,ny/2+1,:].view().reshape(-1)
+    var=vartointerp[:,ny/2+1,:].view().reshape(-1)
+    #mirror
+    #if nz*_dx3*dxdxp[3,3,0,0,0] < 0.99 * 2 * np.pi:
+    #    x=np.concatenate((-x,x))
+    #    y=np.concatenate((-y,y))
+    #    var=np.concatenate((var,var))
+    x=np.concatenate((x1,x2,x3,x4))
+    y=np.concatenate((y1,y2,y3,y4))
+    ###########################var=np.concatenate((var,var,var,var))
+    # define grid.
+    xi = np.linspace(extent[0], extent[1], ncell)
+    yi = np.linspace(extent[2], extent[3], ncell)
+    # grid the data.
+    zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method=interporder)
+    #zi[interior] = np.ma.masked
+    if domask!=0: # this is the BH horizon mask
+        interior = np.sqrt((xi[None,:]**2) + (yi[:,None]**2)) < (1+np.sqrt(1-a**2))*domask
+        varinterpolated = ma.masked_where(interior, zi)
+    else:
+        varinterpolated = zi
+    return(varinterpolated)
     
 def ftr(x,xb,xf):
     return( amax(0.0*x,amin(1.0+0.0*x,1.0*(x-xb)/(xf-xb))) )
@@ -5511,9 +5609,18 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
     #
     ####################
     if dorho:
+        R=r*sin(h)
+        hortarget=.1
+        cs_circ=hortarget/sqrt(R)
+        Wcirc=1./(.5+R**1.5)
+        Tfix=(hortarget*R*Wcirc)**2.
+        ee=ug/rho
+        temps=(gam-1)*ee
+        lbsqorho=np.log10(bsq/rho+1E-30)
+        ltemps=np.log10(temps/Tfix+1E-30)
         lrho=np.log10(rho+1E-30)
         dologz=1
-        qty=lrho
+        qty=lrho #(temps-Tfix)/Tfix
         doqty=1
     elif doentropy:
         lentropy=np.log10(entropy+1E-30)
@@ -5558,6 +5665,8 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         qty[np.isnan(qty)]=vmax
         #
         iqty = reinterp(qty,extent,ncell,domask=1.0)
+        icondmaxbsqorho = reinterp(condmaxbsqorho,extent,ncell)
+        iqty=ma.masked_where(icondmaxbsqorho<0.5, iqty)
     #
     if dovel==1:
         dovarylw=0
@@ -5883,7 +5992,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         ax.contour(ibsqorho,linewidths=4,colors='red', extent=extent,hold='on',origin='lower',levels=(1,))  # 29.5
     #
     print("HERE9c") ; sys.stdout.flush()
-    if dojonwindplot:
+    if dojonwindplot:  #MAVARANOTE I believe this is where thick colored lines are added for fig4_* and fig2.png
         mwindmaxbeta=2
         #ax.contour(imu,linewidths=4,colors='g', extent=extent,hold='on',origin='lower',levels=(1,2,))
         ax.contour(ibetatot,linewidths=4,colors='cyan', extent=extent,hold='on',origin='lower',levels=(mwindmaxbeta,))
@@ -5896,7 +6005,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
     #
     #
     print("HERE10") ; sys.stdout.flush()
-    if 1==1:   #MAVARAADD this was added in order to do a quick fix so movie can have y axis scale enhanced, small tilt more obvious
+    if 1==1:   #MAVARAADD else case (?) was added in order to do a quick fix so movie can have y axis scale enhanced, small tilt more obvious
         ax.set_xlim(extent[0],extent[1])
         ax.set_ylim(extent[2],extent[3])
     else:
@@ -5932,9 +6041,18 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
     streamtype=1
     #
     if dorho:
+        R=r*sin(h)
+        hortarget=.1
+        cs_circ=hortarget/sqrt(R)
+        Wcirc=1./(.5+R**1.5)
+        Tfix=(hortarget*R*Wcirc)**2.
+        ee=ug/rho
+        temps=(gam-1)*ee
+        lbsqorho=np.log10(bsq/rho+1E-30)
+        ltemps=np.log10(temps/Tfix+1E-30)
         lrho=np.log10(rho+1E-30)
         dologz=1
-        qty=lrho
+        qty=lrho #(temps-Tfix)/Tfix
         doqty=1
     elif doentropy:
         lentropy=np.log10(entropy+1E-30)
@@ -5972,10 +6090,15 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
         qty[np.isinf(qty)]=vmax
         qty[np.isnan(qty)]=vmax
         #
-        iqty = reinterpxy(qty,extent,ncell,domask=1.0)
+        iqty = reinterpxy(qty,extent,ncell,domask=1.0) #mavarachangewedges
+        icondmaxbsqorho = reinterpxy(condmaxbsqorho,extent,ncell) #mavarachangewedges
+        iqty=ma.masked_where(icondmaxbsqorho<0.5, iqty)
     #
     ##########################
     # get field
+    #gdetB14wedges=np.append(gdetB[1],gdetB[1],axis=2) #MAVARANOTE will need to move this append idea down to the dostreamlines and streamtpye sections
+    #gdetB14wedges=np.append(gdetB14wedges,gdetB[1],axis=2)
+    #gdetB14wedges=np.append(gdetB14wedges,gdetB[1],axis=2)
     aphi = fieldcalc()+rho*0
     iaphi = reinterpxy(aphi,extent,ncell)
     #maxabsiaphi=np.max(np.abs(iaphi))
@@ -5991,25 +6114,52 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
             Br = dxdxp[1,1]*B[1]+dxdxp[1,2]*B[2]
             Bh = dxdxp[2,1]*B[1]+dxdxp[2,2]*B[2]
             Bp = B[3]*dxdxp[3,3]
+            #Br=np.concatenate((Br,Br,Br,Br),axis=2)
+            #Bh=np.concatenate((Bh,Bh,Bh,Bh),axis=2)
+            #Bp=np.concatenate((Bp,Bp,Bp,Bp),axis=2)
         else:
             Br = dxdxp[1,1]*uradu[1]/uradu[0]+dxdxp[1,2]*uradu[2]/uradu[0]
             Bh = dxdxp[2,1]*uradu[1]/uradu[0]+dxdxp[2,2]*uradu[2]/uradu[0]
             Bp = uradu[3]/uradu[0]*dxdxp[3,3]
+            #Br=np.concatenate((Br,Br,Br,Br),axis=2)
+            #Bh=np.concatenate((Bh,Bh,Bh,Bh),axis=2)
+            #Bp=np.concatenate((Bp,Bp,Bp,Bp),axis=2)
         #
         #
-        Brnorm=Br
-        Bhnorm=Bh*np.abs(r)
-        Bpnorm=Bp*np.abs(r*np.sin(h))
+        if 1: #mavarachangewedges
+            Brnorm=Br
+            Bhnorm=Bh*np.abs(r)
+            Bpnorm=Bp*np.abs(r*np.sin(h))
+         #
+            Bznorm=Brnorm*np.cos(h)-Bhnorm*np.sin(h)
+            BRnorm=Brnorm*np.sin(h)+Bhnorm*np.cos(h)
+            Bxnorm=BRnorm*np.cos(ph)-Bpnorm*np.sin(ph)
+            Bynorm=BRnorm*np.sin(ph)+Bpnorm*np.cos(ph)
+         #        
+         #Brnorm=Br
+         #Bhnorm=Bh*np.abs(r)
+         #Bpnorm=Bp*np.abs(r*np.sin(h))
+         #
+         #Bznorm=Brnorm*np.cos(h)-Bhnorm*np.sin(h)
+         #BRnorm=Brnorm*np.sin(h)+Bhnorm*np.cos(h)
+         #Bxnorm=BRnorm*np.cos(ph)-Bpnorm*np.sin(ph)
+         #Bynorm=BRnorm*np.sin(ph)+Bpnorm*np.cos(ph)
+         #
+         #
+        else:
+            Brnorm=np.concatenate((Br,Br,Br,Br),axis=2)
+            Bhnorm=np.concatenate((Bh*np.abs(r),Bh*np.abs(r),Bh*np.abs(r),Bh*np.abs(r)),axis=2)
+            Bpnorm=np.concatenate((Bp*np.abs(r*np.sin(h)),Bp*np.abs(r*np.sin(h+np.pi/2.)),Bp*np.abs(r*np.sin(h+np.pi)),Bp*np.abs(r*np.sin(h+3*np.pi/2.))),axis=2)
+            htemp=np.concatenate((h,h,h,h),axis=2)
+            Bznorm=Brnorm*np.cos(htemp)-Bhnorm*np.sin(htemp)
+            BRnorm=Brnorm*np.sin(htemp)+Bhnorm*np.cos(htemp)
+            phtemp=np.concatenate((ph,ph+np.pi/2.,ph+np.pi,ph+3*np.pi/2.),axis=2)
+            Bxnorm=BRnorm*np.cos(phtemp)-Bpnorm*np.sin(phtemp)
+            Bynorm=BRnorm*np.sin(phtemp)+Bpnorm*np.cos(phtemp)
         #
-        Bznorm=Brnorm*np.cos(h)-Bhnorm*np.sin(h)
-        BRnorm=Brnorm*np.sin(h)+Bhnorm*np.cos(h)
-        Bxnorm=BRnorm*np.cos(ph)-Bpnorm*np.sin(ph)
-        Bynorm=BRnorm*np.sin(ph)+Bpnorm*np.cos(ph)
-        #
-        #
-        iBx = reinterpxy(Bxnorm,extent,ncell,domask=1)
+        iBx = reinterpxy(Bxnorm,extent,ncell,domask=1) #mavarachangewedges reinterpxy4wedges2 used on this and next line
         iBy = reinterpxy(Bynorm,extent,ncell,domask=1)
-        iibeta = reinterpxy(0.5*bsq/(gam-1)/ug,extent,ncell,domask=0)
+        iibeta = reinterpxy(0.5*bsq/(gam-1)/ug,extent,ncell,domask=0) #mavarachangewedges on this and next two lines
         iibetatot = reinterpxy(0.5*bsq/((gam-1)*ug+(4.0/3.0-1)*urad),extent,ncell,domask=0)
         ibsqorho = reinterpxy(bsq/rho,extent,ncell,domask=0)
         ibsqo2rho = 0.5 * ibsqorho
@@ -6834,7 +6984,7 @@ def rrdump(dumpname):
                       dtype=np.float64, 
                       skiprows=1, 
                       unpack = True )
-    gd=gdraw.view().reshape((-1,nx,ny,nz), order='F')
+    gd=gdraw.view().reshape((-1,nx,ny,nz), order='F') #MAVARANOTE the -1 means fill in whatever size necessary for the other dimensions specified
     rho,ug = gd[0:2,:,:,:].view() 
     B = np.zeros_like(gd[4:8])
     vu = np.zeros_like(B)
@@ -7229,6 +7379,144 @@ def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclea
 
 
 
+
+
+
+def reresrdumpmark(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclean=True,fieldsmooth=True):
+    # This takes newf1,2,3 and uses them to divide the number of cells in a given direction by each number. First working for 2 2 2 which is overall half the resolution of the rdump read in
+    # get dx1,2,3
+    flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
+    # can specify fieldline
+    #flist = glob.glob( os.path.join("dumps/", "fieldline2493.bin") )
+    sort_nicely(flist)
+    if len(flist)>0:
+        firstfieldlinefile=flist[0]
+        rfdheaderonly(firstfieldlinefile)
+    #
+    gdraw,gin,header=rrdump(dumpname)
+    #
+    Avpotf=np.zeros((4,nx+1,ny+1,nz+1),dtype='float64',order='F')
+    Avpotf=Afieldcalc3U3D(gdetB=gdetB)
+    fig1 = plt.figure(1)
+    plt.imshow(Avpotf[3,:,ny/2,:])
+    gdetBnewold=Bfieldcalc3U3D(Avpotf)
+    gd[gdetB1index]=np.copy(gdetBnewold[1])
+    gd[gdetB2index]=np.copy(gdetBnewold[2])
+    gd[gdetB3index]=np.copy(gdetBnewold[3])
+    #
+    newnx=nx/newf1
+    newny=ny/newf2
+    newnz=nz/newf3
+    #
+    print( "Writing out new rdump...", ) ; sys.stdout.flush()
+    gout = open( "dumps/" + dumpname + "%d.%d.%d" % (newf1,newf2,newf3), "wb")
+    header[0] = "%d" % (newnx)
+    header[1] = "%d" % (newny)
+    header[2] = "%d" % (newnz)
+    NUMDISSVERSIONS=18
+    for headerel in header[0:len(header)-newnx*(1+NUMDISSVERSIONS)]:    #Copy over all parts that don't change along with the 0,1, and 2 positions which I changed directly
+        s = " %s " % headerel
+        gout.write( s )
+    #
+    #
+    gout.write( "\n" )
+    gout.flush()
+    os.fsync(gout.fileno())
+    if 1==1:
+        gd1 = gdraw.view().reshape((numcols,nx,ny,nz),order='F')
+        fig4 = plt.figure(4)
+        plt.imshow(gd1[gdetB2index,:,ny/2,:])
+        fig5 = plt.figure(5)
+        plt.imshow(gd1[0,:,ny/2,:])
+        print("first gd1 field B2")
+        print(gd1[gdetB2index,:,0,:])
+        print(gd1[gdetB2index,:,-1,:])
+        print(gd1[gdetB2index,:,-2,:])
+        #allocate memory for refined grid
+        print("rdump will have %d columns of data of size newnz=%d newny=%d newnx=%d" % (numcols,newnz,newny,newnx)); sys.stdout.flush()
+        gd2 = np.zeros((numcols,newnx,newny,newnz),order='F',dtype=np.float64)
+        #
+        #################
+        # Interpolate all values 
+        ################
+        for col in np.arange(0,numcols):
+            gd2[col]=rebin3d(gd1[col],(newnx,newny,newnz))
+            #gd2[:,:,:,:] = gd1[:,ist::newf1,jst::newf2,kst::newf3]+gd1[:,ist+1::newf1,jst+1::newf2,kst+1::newf3]
+        #
+        Avpotfnew=np.zeros((4,newnx+1,newny+1,newnz+1),dtype='float64',order='F')
+        Avpotfnew[:,:,:,:] = Avpotf[:,0::newf1,0::newf2,0::newf3]
+        fig2 = plt.figure(2)
+        plt.imshow(Avpotfnew[3,:,newny//2,:])
+        #
+        global _dx1,_dx2,_dx3,nx,ny,nz        
+        nx=nx/newf1
+        ny=ny/newf2
+        nz=nz/newf3
+        _dx1=(_dx1*float(newf1))
+        _dx2=(_dx2*float(newf2))
+        _dx3=(_dx3*float(newf3)) 
+        #
+        gdetBnew=Bfieldcalc3U3D(Avpotfnew)
+        gd2[gdetB1index-1:gdetB3index+1,:,:,:]=gdetBnew[:,:,:,:]
+        fig3 = plt.figure(3)
+        plt.imshow(gd2[gdetB2index,:,newny//2,:])
+        fig6 = plt.figure(6)
+        plt.imshow(gd2[0,:,newny//2,:])
+        print("first gd2 field B2")
+        #print(gd2[gdetB2index,:,0,:])
+        #print(gd2[gdetB2index,:,-1,:])
+        #print(gd2[gdetB2index,:,-2,:])
+        #
+        nx=nx*newf1
+        ny=ny*newf2
+        nz=nz*newf3
+        _dx1=(_dx1/float(newf1))
+        _dx2=(_dx2/float(newf2))
+        _dx3=(_dx3/float(newf3))           
+        #
+        ####################
+        # Second, in the new cells, adjust gdetB[1,2,3] along 1,2,3 direction to be averages of immediately adjacent cells (this ensures divb=0)
+        #
+        #
+        #gd2[gdetB2index,:,-1,:] = 0.5*(gd2[gdetB2index,:,-2,:])
+        #gd2[gdetB3index,:,:,-1] = 0.5*(gd2[gdetB3index,:,:,0]+gd2[gdetB3index,:,:,-2])
+    else:
+        divbresult=0*gdetB
+        #
+    if writenew:
+        gdout=np.swapaxes(np.swapaxes(gd2,0,3),1,2).reshape((newnz,newny,newnx,numcols),order='C')
+        #
+        gdout.tofile(gout)
+        gout.close()
+        print( "DONE Writing out new rdump...", ) ; sys.stdout.flush()
+        #
+        #
+    #
+    #######################################
+    # return as if read-in as fieldline file
+    # below swap or reshape no longer done since stay in F order.
+    #return(divbresult.reshape((nz,ny,nx),order='F'),gd1[0:nz,0:ny,0:nx,gdetB1index-1:gdetB3index+1].reshape((nz,ny,nx,4),order='F'),gd2[0:nz,0:ny,0:nx,gdetB1index-1:gdetB3index+1].reshape((nz,ny,nx,4),order='F'))
+    #    return(np.swapaxes(divbresult,0,2),np.swapaxes(gd1[0:nz,0:ny,0:nx,gdetB1index-1:gdetB3index+1],0,2),np.swapaxes(gd2[0:nz,0:ny,0:nx,gdetB1index-1:gdetB3index+1],0,2))
+    #result1=np.swapaxes(divbresult,0,2).reshape((nx,ny,nz),order='F')
+    #result2=np.swapaxes(np.swapaxes(gd1[0:nz,0:ny,0:nx,gdetB1index-1:gdetB3index+1],0,3),1,2).reshape((nx,ny,nz,4),order='F')
+    #result3=np.swapaxes(np.swapaxes(gd2[0:nz,0:ny,0:nx,gdetB1index-1:gdetB3index+1],0,3),1,2).reshape((nx,ny,nz,4),order='F')
+    #
+    #result1=divbresult
+    result2=gd1[gdetB1index-1:gdetB3index+1,0:nx,0:ny,0:nz]
+    result3=gd2[gdetB1index-1:gdetB3index+1,0:nx,0:ny,0:nz]
+    #
+    return()
+    #return(result2,result3,Avpotf)
+    #
+
+
+def rebin2d(a, shape):
+    sh = shape[0],a.shape[0]//shape[0],shape[1],a.shape[1]//shape[1]
+    return a.reshape(sh).mean(-1).mean(1)
+
+def rebin3d(a, shape):
+    sh = shape[0],a.shape[0]//shape[0],shape[1],a.shape[1]//shape[1],shape[2],a.shape[2]//shape[2]
+    return a.reshape(sh).mean(5).mean(3).mean(1)
 
 
       
@@ -7940,7 +8228,7 @@ def rfd(fieldlinefilename,**kwargs):
     # start at 7 so B[1] is correct.  7=<ignore> 8=B[1] 9=B[2] 10=B[3]
     B=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
     # have to make copy so mods to B[0] won't change d[7]
-    B=np.copy(d[7:11,:,:,:]) #MAVARACHANGE*1.e3) #+1E-30 *(1.+np.random.randn(4,nx,ny,nz)))
+    B=np.copy(d[7:11,:,:,:]) #*0+1.E-7 *np.random.randn(4,nx,ny,nz)) #MAVARACHANGE*1.e3) #+1E-30 *(1.+np.random.randn(4,nx,ny,nz)))
     B[0]=0*B[0]
     #B[2]=B[2]+1E-10
     #
@@ -7958,7 +8246,7 @@ def rfd(fieldlinefilename,**kwargs):
         # below assumes gdetB[0] is never needed
         gdetB=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
         # have to make copy so mods to gdetB[0] won't change B[3]
-        gdetB = np.copy(d[10:14,:,:,:])#*1.e4+0.000001) #MAVARACHANGE this is a temp addition and multiplyer for low mag field sims so analysis script doesn't hang
+        gdetB = np.copy(d[10:14,:,:,:]) #*0+1.E-7 *np.random.randn(4,nx,ny,nz))#*1.e4+0.000001) #MAVARACHANGE this is a temp addition and multiplyer for low mag field sims so analysis script doesn't hang
         gdetB[0]=0*gdetB[0]
     #
     #
@@ -8717,7 +9005,7 @@ def getbsq_pre():
 
 def cvel():
     # MEMMARK: (4+4+4+1+1+4+4+4+4+6)=36 full 3D vars
-    global ud,etad, etau, gamma, vu, vd, bu, bd, bsq,beta,betatot,betatoplot,Q1,Q2,Q3,Q2toplot,uradd,tauradintegrated, thetamid3dtoplot
+    global ud,etad, etau, gamma, vu, vd, bu, bd, bsq,beta,betatot,betatoplot,Q1,Q2,Q3,Q2toplot,uradd,tauradintegrated, thetamid3dtoplot, hoverr2dtoplot,thetamid3dtoplot2, hoverr2dtoplot2,thetamid3dtoplot3, hoverr2dtoplot3
     #
     #
     ud = mdot(gv3,uu)                  #g_mn u^n
@@ -8758,17 +9046,29 @@ def cvel():
     rinterp=(r-9.0)*(1.0-0.0)/(0.0-9.0) # gives 0 for use near 9   gives 1 for use near 0
     rinterp[rinterp>1.0]=1.0
     rinterp[rinterp<0.0]=0.0
-    condmaxbsqorho=(bsq/rho < rinterp*30.0 + (1.0-rinterp)*10.0)
+    condmaxbsqorho=(bsq/rho < rinterp*3000.0 + (1.0-rinterp)*1000.) #* (rho>1.e-3) * (bsq/ug < 9.e4) * (ug/rho < 80)
     ############## MAVARA this section uncommented for tiltplot cvel call
-    diskcondition1=condmaxbsqorho
-    diskcondition2=condmaxbsqorho
+    diskcondition1=condmaxbsqorho #*(beta>2.)
+    diskcondition2=condmaxbsqorho #*(beta>2.)
     # was denfactor=rho, but want uniform with corona and jet
     hoverr3dtoplot,thetamid3dtoplot=horcalc(hortype=1,which1=diskcondition1,which2=diskcondition2,denfactor=rholab)
     hoverrtemp=hoverr3dtoplot.sum(2)/(nz)
     for k in np.arange(0,nz):
         hoverr3dtoplot[:,:,k] = hoverrtemp[:,:]
     hoverr2dtoplot=hoverr3dtoplot.sum(2)/(nz)
-    thetamid2dtoplot=thetamid3dtoplot.sum(2)/(nz)
+    #thetamid2dtoplot=thetamid3dtoplot.sum(2)/(nz)
+    #Now a couple other measures of h/r
+    hoverr3dtoplot2,thetamid3dtoplot2=horcalc(hortype=2,which1=diskcondition1,which2=diskcondition2,denfactor=rholab)
+    hoverrtemp2=hoverr3dtoplot2.sum(2)/(nz)
+    for k in np.arange(0,nz):
+        hoverr3dtoplot2[:,:,k] = hoverrtemp2[:,:]
+    hoverr2dtoplot2=hoverr3dtoplot2.sum(2)/(nz)
+    #Form from eqn. 5.4 from Penna et al 2012
+    hoverr3dtoplot3,thetamid3dtoplot3=horcalc(hortype=3,which1=diskcondition1,which2=diskcondition2,denfactor=rholab**2)
+    hoverrtemp3=hoverr3dtoplot3.sum(2)/(nz)
+    for k in np.arange(0,nz):
+        hoverr3dtoplot3[:,:,k] = hoverrtemp3[:,:]
+    hoverr2dtoplot3=hoverr3dtoplot3.sum(2)/(nz)
     #
     #
     #
@@ -11454,10 +11754,10 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         #rinterp[rinterp>1.0]=1.0
         #rinterp[rinterp<0.0]=0.0
         #condmaxbsqorho=(bsq/rho < rinterp*30.0 + (1.0-rinterp)*10.0)
-        diskcondition1=condmaxbsqorho
-        diskcondition2=condmaxbsqorho
+        diskcondition1=condmaxbsqorho #*(beta>1.0)
+        diskcondition2=condmaxbsqorho #*(beta>1.0)
         # was denfactor=rho, but want uniform with corona and jet
-        hoverr3d,thetamid3d=horcalc(hortype=1,which1=diskcondition1,which2=diskcondition2,denfactor=rholab)
+        hoverr3d,thetamid3d=horcalc(hortype=2,which1=diskcondition1,which2=diskcondition2,denfactor=rholab)
         hoverr[qindex]=hoverr3d.sum(2).sum(1)/(ny*nz)
         thetamid[qindex]=thetamid3d.sum(2).sum(1)/(ny*nz)
         #
@@ -12636,7 +12936,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         #
         #
         # decide if want to compute this, since can be expensive and might not care to always compute it.
-        computethetapow=1
+        computethetapow=0 #MAVARACHANGE to save compute time usually
         #
         print("DISK+CORONA ONLY (never jet)" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         #
@@ -12718,15 +13018,15 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
 
             print("BEFORE POWERVSL") ; sys.stdout.flush()
             print("gdet") ; sys.stdout.flush()
-            print(gdet) ; sys.stdout.flush()
+            #print(gdet) ; sys.stdout.flush()  #MAVARACHANGE commented these four out for time saving and mem like with condition2condition2
             print("denfactor") ; sys.stdout.flush()
-            print(denfactor) ; sys.stdout.flush()
+            #print(denfactor) ; sys.stdout.flush()
             print("dbsq") ; sys.stdout.flush()
-            print(dbsq) ; sys.stdout.flush()
+            #print(dbsq) ; sys.stdout.flush()
             print("bsq") ; sys.stdout.flush()
-            print(bsq) ; sys.stdout.flush()
+            #print(bsq) ; sys.stdout.flush()
             print("avg_bsq") ; sys.stdout.flush()
-            print(avg_bsq) ; sys.stdout.flush()
+            #print(avg_bsq) ; sys.stdout.flush()
             #
             bsqrhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dbsq,denom=denomdbsq,qtypaper=1,diskorjet=0,printouts=1,useminmaxbsqorho=1,**keywordsrhosq_diskcorona_thetapow_rad8)
             #
@@ -14770,7 +15070,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #print(ts); sys.stdout.flush()
     #
     for tic in ts:
-        tici=np.where(ts==tic)[0]
+        tici=np.where(ts==tic)[0][0] #mavarachange seemed to need extra [0]
         print("tici") ; sys.stdout.flush()
         print(tici) ; sys.stdout.flush()
         #print("tic") ; sys.stdout.flush()
@@ -14834,7 +15134,11 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     else:
         trueftf=ftf
     #
-    nearfinti=(trueftf-truefti)*0.85 + truefti
+    #MAVARAADD These if/else statements check to make sure the avgerage has some values even if i use low time res.
+    if( ((ts>(trueftf-truefti)*0.85+truefti)*(ts<trueftf)).sum() > 0):
+        nearfinti=(trueftf-truefti)*0.85 + truefti
+    else:
+        nearfinti=truefti
     # ok, use bsqorho<5 part of flow to exclude jet at large radii
     mdotnearfinavgvsr5 = timeavg(mdtot[:,:],ts,nearfinti,trueftf)
     print("lenmdotnearfinavgvsr5=%d" % (len(mdotnearfinavgvsr5))) ; sys.stdout.flush()
@@ -14867,7 +15171,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     blob=np.zeros(len(mdotfinavgvsr5),dtype=mdotfinavgvsr5.dtype)
     indicesvst=np.zeros(sizet,dtype=ti.dtype)
     for tic in ts:
-        tici=np.where(ts==tic)[0]
+        tici=np.where(ts==tic)[0][0] #MAVARACHANGE added [0]
         #print("tic=%g %d tici=%d" % (tic,len(tic==ts),tici) )
         blob[:]=mdtot[tici,:]
         #print("lenblob=%d" % (len(blob)))
@@ -14935,7 +15239,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     feqtotmod[:,ti[:,0,0]<ihor]=0
     ftruetot=np.copy(feqtotmod)
     for tic in ts:
-        tici=np.where(ts==tic)[0]
+        tici=np.where(ts==tic)[0][0]
         # fstot doesn't account for sign as required
         #ftruetot[tici,:]=ftruetot[tici,:] + (-fstot[tici,ihor]/2)
         # fsmaxtot accounts for sign as required
@@ -14954,7 +15258,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     filefmax = open( "fmax.txt" , "w" )
     #
     for tic in ts:
-        tici=np.where(ts==tic)[0]
+        tici=np.where(ts==tic)[0][0]
         print("tic=%g %d tici=%d" % (tic,len(tic==ts),tici) ) ; sys.stdout.flush()
         blobf[:]=ftruetot[tici,:]
         #print("lenblobf=%d" % (len(blobf)))
@@ -17379,7 +17683,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     fstagmaxvst=np.zeros(sizet,dtype=float)
     #
     for tic in ts:
-        tici=np.where(ts==tic)[0]
+        tici=np.where(ts==tic)[0][0]
         #print("tic=%g %d tici=%d" % (tic,len(tic==ts),tici) )
         blobf[:]=ftruetot[tici,:]
         condition=ti[:,0,0]>=ihorusemag
@@ -19838,7 +20142,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         favg1 = open('datavst1.txt', 'w')
         favg1.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("tici","ts","mdtotihor","md10ihor","md30ihor","mdinrdiskin","mdinrdiskout","mdjetrjetout","mdmwindrjetin","mdmwindrjetout","mdwindrdiskin","mdwindrdiskout","ldradthin" ) )
         for tic in ts:
-            tici=np.where(ts==tic)[0]
+            tici=np.where(ts==tic)[0][0] #MAVARACHANGE
             #
             favg1.write("%d %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], mdtot[tici,iflux],md10[tici,iflux],md30[tici,iflux],mdin[tici,iofr(rdiskin)],mdin[tici,iofr(rdiskout)],mdjet[tici,iofr(rjetout)],mdmwind[tici,iofr(rjetin)],mdmwind[tici,iofr(rjetout)],mdwind[tici,iofr(rdiskin)],mdwind[tici,iofr(rdiskout)],edradthin[tici,iofr(rjetout)]  ) )
             #
@@ -19848,7 +20152,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         favg2 = open('datavst2.txt', 'w')
         favg2.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("tici","ts"," etabhEM","etabhMAKE","etabhRAD","etabh","etajEM","etajMAKE","etaj","etamwinEM","etamwinMAKE","etamwin","etamwoutEM","etamwoutMAKE","etamwout","etawinEM","etawinMAKE","etawin","etawoutEM","etawoutMAKE","etawout","etaoutRAD"  ) )
         for tic in ts:
-            tici=np.where(ts==tic)[0]
+            tici=np.where(ts==tic)[0][0]
             #
             favg2.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], etabhEM[tici],etabhMAKE[tici],etabhRAD[tici],etabh[tici],etajEM[tici],etajMAKE[tici],etaj[tici],etamwinEM[tici],etamwinMAKE[tici],etamwin[tici],etamwoutEM[tici],etamwoutMAKE[tici],etamwout[tici],etawinEM[tici],etawinMAKE[tici],etawin[tici],etawoutEM[tici],etawoutMAKE[tici],etawout[tici],etaoutRAD[tici] ) )
             #
@@ -19858,7 +20162,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         favg3 = open('datavst3.txt', 'w')
         favg3.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("tici","ts"," letabhEM","letabhMAKE","letabhRAD","letabh","letajEM","letajMAKE","letaj","letamwinEM","letamwinMAKE","letamwin","letamwoutEM","letamwoutMAKE","letamwout","letawinEM","letawinMAKE","letawin","letawoutEM","letawoutMAKE","letawout","letaoutRAD"  ) )
         for tic in ts:
-            tici=np.where(ts==tic)[0]
+            tici=np.where(ts==tic)[0][0]
             #
             favg3.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], letabhEM[tici],letabhMAKE[tici],letabhRAD[tici],letabh[tici],letajEM[tici],letajMAKE[tici],letaj[tici],letamwinEM[tici],letamwinMAKE[tici],letamwin[tici],letamwoutEM[tici],letamwoutMAKE[tici],letamwout[tici],letawinEM[tici],letawinMAKE[tici],letawin[tici],letawoutEM[tici],letawoutMAKE[tici],letawout[tici],letaoutRAD[tici]  ) )
             #
@@ -19868,7 +20172,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         favg4 = open('datavst4.txt', 'w')
         favg4.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("tici","ts"," hoverrhor","hoverr2","hoverr5","hoverr10","hoverr20","hoverr100","hoverrcoronahor","hoverrcorona2","hoverrcorona5","hoverrcorona10","hoverrcorona20","hoverrcorona100","hoverr_jethor","hoverr_jet2","hoverr_jet5","hoverr_jet10","hoverr_jet20","hoverr_jet100"  ) )
         for tic in ts:
-            tici=np.where(ts==tic)[0]
+            tici=np.where(ts==tic)[0][0]
             #
             favg4.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], hoverrhor[tici],hoverr2[tici],hoverr5[tici],hoverr10[tici],hoverr20[tici],hoverr100[tici],hoverrcoronahor[tici],hoverrcorona2[tici],hoverrcorona5[tici],hoverrcorona10[tici],hoverrcorona20[tici],hoverrcorona100[tici],hoverr_jethor[tici],hoverr_jet2[tici],hoverr_jet5[tici],hoverr_jet10[tici],hoverr_jet20[tici],hoverr_jet100[tici]  ) )
             #
@@ -19880,7 +20184,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         favg5 = open('datavst5.txt', 'w')
         favg5.write("#%s %s %s %s %s %s  %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("tici","ts"," betamin0","betaavg0","betaratofavg0","betaratofmax0","alphamag1_10","alphamag2_10","alphamag3_10","alphamag4_10","alphareynoldsa2_10","alphareynoldsb2_10","alphareynoldsc2_10","alphareynoldsa3_10","alphareynoldsb3_10","alphareynoldsc3_10","lum1","lum2","lum3","lum4","lum5","lum6","lum7","lum8","lum9","lum10","lum11","lum12","lumsynchth","lumsynchnon1","lumsynchnon2","lumsynchnon3"  ) )
         for tic in ts:
-            tici=np.where(ts==tic)[0]
+            tici=np.where(ts==tic)[0][0]
             #
             favg5.write("%d %g %g %g %g %g %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], betamin[tici,0],betaavg[tici,0],betaratofavg[tici,0],betaratofmax[tici,0],alphamag1[tici,iofr(10.0)],alphamag2[tici,iofr(10.0)],alphamag3[tici,iofr(10.0)],alphamag4[tici,iofr(10.0)],alphareynoldsa2[tici,iofr(10.0)],alphareynoldsb2[tici,iofr(10.0)],alphareynoldsc2[tici,iofr(10.0)],alphareynoldsa3[tici,iofr(10.0)],alphareynoldsb3[tici,iofr(10.0)],alphareynoldsc3[tici,iofr(10.0)],betamin[tici,1],betamin[tici,2],betamin[tici,3],betamin[tici,4],betamin[tici,5],betamin[tici,6],betamin[tici,7],betamin[tici,8],betamin[tici,9],betamin[tici,10],betamin[tici,11],betamin[tici,12],betamin[tici,13],betamin[tici,14],betamin[tici,15],betamin[tici,16]  ) )
             #
@@ -19890,7 +20194,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         favg6 = open('datavst6.txt', 'w')
         favg6.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("tici","ts","qmridiskrfitin2","qmridiskrfitout2","qmridiskrfitout6","q3mridiskrfitin2","q3mridiskrfitout2","q3mridiskrfitout6","iq2mridiskrfitin2","iq2mridiskrfitout2","iq2mridiskrfitout6","qmridiskweakrfitin2","qmridiskweakrfitout2","qmridiskweakrfitout6","q3mridiskweakrfitin2","q3mridiskweakrfitout2","q3mridiskweakrfitout6","iq2mridiskweakrfitin2","iq2mridiskweakrfitout2","iq2mridiskweakrfitout6"   ) )
         for tic in ts:
-            tici=np.where(ts==tic)[0]
+            tici=np.where(ts==tic)[0][0]
             #
             favg6.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici],qmridiskrfitin2[tici],qmridiskrfitout2[tici],qmridiskrfitout6[tici],q3mridiskrfitin2[tici],q3mridiskrfitout2[tici],q3mridiskrfitout6[tici],iq2mridiskrfitin2[tici],iq2mridiskrfitout2[tici],iq2mridiskrfitout6[tici],qmridiskweakrfitin2[tici],qmridiskweakrfitout2[tici],qmridiskweakrfitout6[tici],q3mridiskweakrfitin2[tici],q3mridiskweakrfitout2[tici],q3mridiskweakrfitout6[tici],iq2mridiskweakrfitin2[tici],iq2mridiskweakrfitout2[tici],iq2mridiskweakrfitout6[tici]   ) )
             #
@@ -19900,7 +20204,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         favg7 = open('datavst7.txt', 'w')
         favg7.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("tici","ts"," phibh","phirdiskin","phirdiskout","phij","phimwin","phimwout","phiwin","phiwout","phijn","phijs","fstotihor","fsmaxtotihor","fsuphalfihor","fmaxvst","rifmaxvst","reqstagvst","feqstag","feqstagnearfin","fstotnormA0","fstotnormA1","fstotnormA2","fstotnormC","fstotnormC2","fstotnormBwhichfirstlimited","fstotnormD","fstotnormE","fstotnormE2","fstotnormF" ) )
         for tic in ts:
-            tici=np.where(ts==tic)[0]
+            tici=np.where(ts==tic)[0][0]
             #
             favg7.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], phibh[tici],phirdiskin[tici],phirdiskout[tici],phij[tici],phimwin[tici],phimwout[tici],phiwin[tici],phiwout[tici],phijn[tici],phijs[tici],fstot[tici,ihorusemag],fsmaxtot[tici,ihorusemag],fsuphalf[tici,ihorusemag],fmaxvst[tici],r[ifmaxvst[tici],0,0],reqstagvst[tici],feqstag[tici],feqstagnearfin[tici],fstotnormA[0][tici],fstotnormA[1][tici],fstotnormA[2][tici],fstotnormC[tici],fstotnormC2[tici],fstotnormB[whichfirstlimited][tici],fstotnormD[tici],fstotnormE[tici],fstotnormE2[tici],fstotnormF[tici]   ) )
             #
@@ -20680,11 +20984,11 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         Qlcorrad4dcrho0=(jofhfloatsimple(np.pi*0.5+np.pi/lcorrad4dcrho0,iofr(4.0)) - ny*0.5)
         Qlcorrad4dcbsq=(jofhfloatsimple(np.pi*0.5+np.pi/lcorrad4dcbsq,iofr(4.0)) - ny*0.5)
         #
-        Qlcorrad8dcrho0=(jofhfloatsimple(np.pi*0.5+np.pi/lcorrad8dcrho0,iofr(4.0)) - ny*0.5)
-        Qlcorrad8dcbsq=(jofhfloatsimple(np.pi*0.5+np.pi/lcorrad8dcbsq,iofr(4.0)) - ny*0.5)
+        Qlcorrad8dcrho0=(jofhfloatsimple(np.pi*0.5+np.pi/lcorrad8dcrho0,iofr(8.0)) - ny*0.5)
+        Qlcorrad8dcbsq=(jofhfloatsimple(np.pi*0.5+np.pi/lcorrad8dcbsq,iofr(8.0)) - ny*0.5)
         #
-        Qlcorrad30dcrho0=(jofhfloatsimple(np.pi*0.5+np.pi/lcorrad30dcrho0,iofr(4.0)) - ny*0.5)
-        Qlcorrad30dcbsq=(jofhfloatsimple(np.pi*0.5+np.pi/lcorrad30dcbsq,iofr(4.0)) - ny*0.5)
+        Qlcorrad30dcrho0=(jofhfloatsimple(np.pi*0.5+np.pi/lcorrad30dcrho0,iofr(30.0)) - ny*0.5)
+        Qlcorrad30dcbsq=(jofhfloatsimple(np.pi*0.5+np.pi/lcorrad30dcbsq,iofr(30.0)) - ny*0.5)
         #
         #
         #
@@ -22457,7 +22761,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     #########################################
     #
-    dofinalplots=1
+    dofinalplots=1 #MAVARACHANGE ON JULY 11 2014 might be ok as 1 even if throwing error
     #
     # FINALPLOTS:
     #
@@ -23051,7 +23355,7 @@ def vminmax_entropy(qty=None):
 
 
 
-def mkstreamplotprepost(fname=None,veldensity=8,inputlevs=None,numcontours=30,aphipow=1.0,showuu1eq0=True):
+def mkstreamplotprepost(fname=None,veldensity=8,inputlevs=None,numcontours=30,aphipow=1.0,showuu1eq0=True,dojonwindplot=1):
     # stream plot
     forceeqsym=0
     #mylen = 30
@@ -23070,10 +23374,10 @@ def mkstreamplotprepost(fname=None,veldensity=8,inputlevs=None,numcontours=30,ap
         mylenshowx=100
         mylenshowy=100
     else:
-        finallenx=51
-        finalleny=51
-        mylenshowx=50
-        mylenshowy=50
+        finallenx=101
+        finalleny=101
+        mylenshowx=100
+        mylenshowy=100
     #
     #
     if ismb09model(modelname):
@@ -23103,7 +23407,7 @@ def mkstreamplotprepost(fname=None,veldensity=8,inputlevs=None,numcontours=30,ap
     Btrue=np.copy(B)
     #uutrue=uu
     #      
-    returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=bsq,rho=rho,uu=uu,lenx=finallenx,leny=finalleny,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname=fname,veldensity=veldensity,signaphi=signaphi,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,dojonwindplot=1,showuu1eq0=showuu1eq0)
+    returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=bsq,rho=rho,uu=uu,lenx=finallenx,leny=finalleny,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname=fname,veldensity=veldensity,signaphi=signaphi,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,dojonwindplot=dojonwindplot,showuu1eq0=showuu1eq0)
     #
     # since could have modified B, fix back
     B=np.copy(Btrue)
@@ -24752,7 +25056,7 @@ def mkmovie(framesize=900, domakeavi=False):
     ########################
     ################################################
     # get levels for all frames showing aphi so aphi values constant.
-    numcontours=100
+    numcontours=10
     aphipow=1.0
     #
     # for thickdisk7 use fieldline2500 (if available) to set levels.  Otherwise use final available file.
@@ -24925,7 +25229,7 @@ def mkmovie(framesize=900, domakeavi=False):
                 cvel()
                 cvelalready=1
             #
-            veldensity=8
+            veldensity=12 #MAVARACHANGE was 8, larger number may take MUCH longer
             #
             if modelname=="thickdisk7":
                 if lenflist>1000:
@@ -24944,7 +25248,7 @@ def mkmovie(framesize=900, domakeavi=False):
             #
             print("veldensity=%d" % veldensity) ; sys.stdout.flush()
             print(B.shape) ; sys.stdout.flush()
-            returnlevsstreamnew=mkstreamplotprepost(fname="stream%04d" % filenum,veldensity=veldensity,inputlevs=inputlevsstream,numcontours=numcontours,aphipow=aphipow)
+            returnlevsstreamnew=mkstreamplotprepost(fname="stream%04d" % filenum,veldensity=veldensity,inputlevs=inputlevsstream,numcontours=numcontours,aphipow=aphipow,showuu1eq0=False,dojonwindplot=False)
             ####################################
             #
             #
@@ -25014,12 +25318,18 @@ def mkhoverrmovieframe(findex=None,filenum=None,framesize=None): # MAVARANOTE th
     print(hoverr[findex,:]) ; sys.stdout.flush()
 
     plt.xscale('log')
-    plt.ylim([0.0,.8])
-    plt.plot(r[:,ny/2,0], hoverr[findex,:])
-    #plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
-    #plt.ylabel(r"$y\ [r_g]$",ha='left',labelpad=10,fontsize=16)
+    plt.ylim([0.0,.3])
+    plt.xlim([2.0,1000.])
+    plt.plot(r[:,ny/2,0],hoverr2dtoplot[:,ny/2],label="Orig: rho**1, theta**2)")
+    plt.plot(r[:,ny/2,0],hoverr2dtoplot2[:,ny/2],label="Noble version: rho**1, theta**1)")
+    plt.plot(r[:,ny/2,0],hoverr2dtoplot3[:,ny/2],label="Penna: rho**2, theta**2)")
+    plt.plot([1.,1100.],[.1*(np.pi/2.)**.5,.1*(np.pi/2.)**.5],'-b',lw=2)
+    plt.plot([1.,1100.],[.1,.1],'-b',lw=2)
+    plt.plot([1.,1100.],[.1*(np.pi/2.)**(-.5),.1*(np.pi/2.)**(-.5)],'-b',lw=2)
+    plt.xlabel("R",fontsize=16,ha='center')
+    plt.ylabel("H/R angle (radians)",ha='left',labelpad=10,fontsize=16)
     #plt.ylim([0.0,1.0])
-
+    plt.legend(loc='upper right')
     plt.savefig( "hoverrvsr%04d.png" % (filenum)  )
     #
     #
@@ -25053,7 +25363,7 @@ def mkeqfluxmovieframe(findex=None,filenum=None,framesize=None): # MAVARANOTE th
     ihor = np.floor(iofr(rhor)+0.5)
     plot1.set_yscale('log')
     plot1.set_xscale('log')
-    plot1.set_ylim([1.e0,2.e2]) #500.0])
+    plot1.set_ylim([1.e-1,5.e1]) #500.0])
     plot1.set_xlim([2,1000.])
     plot1.plot(r[:,ny/2,0], ((0.5*fstot[0,ihor]-feqtot[0,ihor]+feqtot[0,:]))*normalizer+1.e-10,'.',label='t=0') #/mdtot[findex,:])
     if os.path.exists('datavsr5.txt'):
@@ -25085,7 +25395,7 @@ def mkeqfluxmovieframe(findex=None,filenum=None,framesize=None): # MAVARANOTE th
     #plt2.set_yscale('log')
     plt2.set_yscale('log')
     #plt2.set_ylim(1.e0,1e2)
-    plt2.set_ylim(0.5,100.)
+    plt2.set_ylim(0.7,300.)
     plt2.set_xscale('log')
     plt2.set_xlim([2,1000.])
     print('shape of eqflux: ')
@@ -25111,12 +25421,13 @@ def mkeqfluxmovieframe(findex=None,filenum=None,framesize=None): # MAVARANOTE th
     plt4.set_ylabel(r'$S_d$')
     #plt2.set_yscale('log')
     plt4.set_yscale('log')
-    #plt2.set_ylim(1.e0,1e2)
-    plt4.set_ylim(0.01,50.)
+    #plt2.set_ylim(4.e-1,1e2)
+    plt4.set_ylim(0.1,10.)
     plt4.set_xscale('log')
     plt4.set_xlim([2,1000.])
-    plt4.plot(r[:,ny/2,0],Q2toplot[:,ny/2-4:ny/2+4,:].sum(1).sum(1)/nz/8.,label=r'cvel Q2toplot')
+    #plt4.plot(r[:,ny/2,0],Q2toplot[:,ny/2-4:ny/2+4,:].sum(1).sum(1)/nz/8.,label=r'cvel Q2toplot')
     plt4.plot(r[:,ny/2,0], hoverr[0,:]/iq2mridiskweak[0,:],'.',label='Q2weak t=0')
+    plt4.plot(r[:,ny/2,0], hoverr[findex,:]/iq2mridiskweak[findex,:],'.',label='Q2weak instant')
     if os.path.exists('datavsr6.txt'):
         plt4.plot(r[:,ny/2,0],hoverr_vsrtoplot/iq2mridiskweak_vsrtoplot,'+',label=r'Q2_mridiskweak_vsr')
     plt4.legend(loc='lower right',ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)    
@@ -25226,7 +25537,7 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
         vminforframe=0.01 #0.# these values for lrho: -4.0
         vmaxforframe=2.0 #500.0    MAVARAVCHANGE             #            0.8
         vminforframebeta=0.01 #0.# these values for lrho: -4.0
-        vmaxforframebeta=100.0 #500.0    MAVARAVCHANGE             #            0.8
+        vmaxforframebeta=200.0 #500.0    MAVARAVCHANGE             #            0.8
     #
     if nz==1:
         mydoaphi=1
@@ -25292,7 +25603,7 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
     ###########################
     # BIG BOX
     ###########################
-    plotsize=framesize
+    plotsize=100. #framesize
     #
     # LEFT PANEL
     gs1 = GridSpec(1, 1)
@@ -25301,6 +25612,7 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
     ax1 = plt.subplot(gs1[:, -1])
     #
     inputlevs=mkframe("lrhotest%04d_Rz%g" % (filenum,plotsize),vmin=vminforframeleft,vmax=vmaxforframeleft,len=plotsize,aspect=None,ax=ax1,cb=leftcb,pt=leftpt,dobsq=mydobsqleft,dorho=mydorholeft,dobeta=mydobetaleft,doQ2=mydoQ2left,doSd=0,dostreamlines=mydostreamlines,doaphi=mydoaphi,dobsqorholine=mydobsqorholine) #MAVARA added doQ2 option
+
     #
     plt.xlabel(r"$x\ [r_g]$",fontsize=16,ha='center')
     plt.ylabel(r"$z\ [r_g]$",ha='left',labelpad=10,fontsize=16)
@@ -25337,7 +25649,7 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
     ###########################
     # SMALL BOX
     ###########################
-    plotsize=20.
+    plotsize=30.
     #
     # LEFT PANEL
     gs1 = GridSpec(1, 1)
@@ -25661,12 +25973,12 @@ def mkavgfigs():
     #
     #
     forceeqsym=0 # forceeqsym=1 makes the streaming take alot longer for some reason.  Also, messes up field geometry so it's not obvious that field threads the disk.
-    mylen = 30.0
+    mylen = 100.0
     mylenshowx=(25.0/30.0)*mylen
     mylenshowy=(25.0/30.0)*mylen
     fntsize=24
     arrowsize=4
-    numcontours=30  # 60 was too many for jet region
+    numcontours=10  # 60 was too many for jet region
     aphipow=1.0
     # keep sign information in general for aphi, but for specific plots force aphi sign to be constant
     if modelname=="thickdisk7":
@@ -26187,16 +26499,16 @@ def mkavgfigs():
         #
         if whichhortype==0:
             avgcondmaxbsqorhol=(avg_bsq/avg_rho > rinterp*25.0 + (1.0-rinterp)*5.0)
-            avgcondmaxbsqorhoh=(avg_bsq/avg_rho < rinterp*35.0 + (1.0-rinterp)*15.0)
-            diskcondition=avgcondmaxbsqorhol*avgcondmaxbsqorhoh
+            avgcondmaxbsqorhoh=(avg_bsq/avg_rho < rinterp*1.0 + (1.0-rinterp)/3.0) #rinterp*35.0 + (1.0-rinterp)*15.0) #MAVARACHANGE 
+            diskcondition=avgcondmaxbsqorhoh #avgcondmaxbsqorhol*avgcondmaxbsqorhoh #MAVARACHANGE
             # focus on non-jet for Gammie plot purposes
             diskcondition=(diskcondition)*(1)
             keywordsrhosq={'which': diskcondition}
             tiny=np.finfo(avg_rho.dtype).tiny
-            denfactor=1.0 + avg_rho*avg_uu[0]*0.0
-            #denfactor=avg_rho*avg_uu[0] # 1 weighting -- maybe squared would be better ala Penna, but then should change other weightings when weight by rho
+            #denfactor=1.0 + avg_rho*avg_uu[0]*0.0 #MAVARACHANGE SWITCHED with next line
+            denfactor=(avg_rho*avg_uu[0])**2 # 1 weighting -- maybe squared would be better ala Penna, but then should change other weightings when weight by rho
             rhosqint3=intangle_foravg2d(gdet*denfactor,**keywordsrhosq)+tiny
-            avgvsr_hor=intangle_foravg2d(gdet*denfactor*np.fabs(h-np.pi*0.5),**keywordsrhosq)/rhosqint3
+            avgvsr_hor=np.sqrt(intangle_foravg2d(gdet*denfactor*np.fabs(h-np.pi*0.5)**2,**keywordsrhosq)/rhosqint3)
         else:
             avgvsr_hor=choosehor + avgvsr_rho*0
         #
@@ -26933,7 +27245,7 @@ def generate_time_series():
     #
     ###################################
     global avoidplotsglobal
-    avoidplotsglobal=0
+    avoidplotsglobal=1 #MAVARACHANGE Aug 6th
     #cd ~/run; for f in rtf*; do cd ~/run/$f; (nice -n 10 python  ~/py/mread/__init__.py &> python.out); done
     grid3d("gdump.bin",use2d=use2dglobal)
     #rd("dump0000.bin")
@@ -26962,7 +27274,7 @@ def generate_time_series():
     else:
         # DOING PLOTS USING NPY FILES (should use full qtymem)
         #
-        # assume here if "plot" as second argument (i.e. not a digit)
+        # assume here if "plot" as second argument (i.e. not a digit) #MAVARANOTE for instance runtype==3,ie makeplot=1
         if len(sys.argv[2:])==4+4 and sys.argv[4].isdigit() and sys.argv[5].isdigit() and sys.argv[6].isdigit() and sys.argv[7].isdigit() and sys.argv[8].isdigit() and sys.argv[9].isdigit():
             makepowervsmplots = int(sys.argv[4])
             makespacetimeplots = int(sys.argv[5])
@@ -27354,7 +27666,7 @@ def main(argv=None):
     # GODMARK
     global use2dglobal
     # whether use 2d slice of gdump or full 3d
-    use2dglobal=True
+    use2dglobal=False #MAVARACHANGE July 21 so gdump.THETAROT0.bin not necessary
     # for now, use2dglobal=True doesn't work for tilted sims due to some transformation issue.
     #use2dglobal=False
     #
@@ -27454,7 +27766,7 @@ def main(argv=None):
         gc.collect()
     if runtype==9:
         grid3d( "gdump.bin",use2d=use2dglobal )
-        fno=5050
+        fno=812
         rfd("fieldline%04d.bin" % fno)
         docomputeextrathings = True
         ihor = np.floor(iofr(rhor)+0.5)
@@ -27463,16 +27775,19 @@ def main(argv=None):
             Tcalcud()
             faraday()
         aphi = fieldcalc()
-        plt.clf();
-        #mkframe("testlrho%04d" % 0, vmin=-8,vmax=0.2,dostreamlines=False,len=50,doaphi=True)
+        plt.clf()
+        print( "here yet1?" )
+        mkframe("testlrho%04d" % fno, vmin=-8,vmax=0.2,dostreamlines=False,len=100,doaphi=True)
         global qtymem
-        qtymem=np.load('analyze_rho1/qty2.npy')        
+        print( "here ye3?" )
+        #qtymem=np.load('qty2.npy')        
         #qtymem=getqtyvstime(ihor,0.2)
-        getqtymem(qtymem)
+        #getqtymem(qtymem)
         inputlevs1=None
-        #inputlevs1temp=mkmovieframe(findex=0,filenum=fno,framesize=300,inputlevs=inputlevs1)
+        inputlevs1temp=mkmovieframe(findex=0,filenum=fno,framesize=100,inputlevs=inputlevs1)
         #plt.savefig("testlrho%04d.pdf" % (fno))
-        mkeqfluxmovieframe(findex=fno/101,filenum=fno,framesize=1000)
+        print( "here yet2?" )
+        #mkeqfluxmovieframe(findex=0000,filenum=fno,framesize=1000)
         
 
 def tutorial1():
@@ -27847,13 +28162,16 @@ def plotvertfieldequator():
     #plt.imshow(np.transpose(lrho[:,:,0]))
     
     fig = plt.figure(1)#,figsize=(2,1.5))
-    #plt.clf()
+    plt.clf()
     #fig.set_figsize_inches((.8,.6))
     #ax = fig.add_subplot(111, aspect='equal')
     #plt.plot(r[:,31,0],br[:,31,0]/bt[:,31,0],marker='.')
     #plt.clf()
-    plt.plot(r[:,thetaprobe,0],(rho)[:,thetaprobe,0],marker='.')
-    #plt.plot(r[:,thetaprobe,0],(ug)[:,thetaprobe,0],marker='.')
+    plt.plot(r[:,thetaprobe,0],(rho)[:,thetaprobe,3],marker='.')
+    plt.plot(r[:,thetaprobe,0],(ug)[:,thetaprobe,3],marker='-')
+    plt.plot(r[:,thetaprobe,0],(bsq)[:,thetaprobe,3],marker='o')
+    print("bsq at thetaprobe and 3 all radii")
+    print(bsq[:,thetaprobe,3])
     plt.yscale('log')
     plt.xscale('log')
     #####plt.plot(r[:,thetaprobe,0],rho[:,thetaprobe,0],marker='o')
@@ -27868,10 +28186,10 @@ def plotvertfieldequator():
     plt.xscale('log')
     plt.ylim([.00001, .01])
     plt.xlim([1., 1000.])
-    print("field is: ")
-    print(B[2,:,thetaprobe,0])
-    plt.plot(r[:,thetaprobe,0], B[2,:,thetaprobe,0], marker='.')    #beta[:,31,0])     np.log10()
-    plt.plot(r[:,thetaprobe,0], r[:,thetaprobe,0]**2 * gdet[:,thetaprobe,0]*B[2,:,thetaprobe,0], marker='o')    #beta[:,31,0])     np.log10()
+    print("field B2 is: ")
+    print(B[2,:,thetaprobe,4])
+    plt.plot(r[:,thetaprobe,0], B[3,:,thetaprobe,0], marker='.')    #beta[:,31,0])     np.log10()
+    plt.plot(r[:,thetaprobe,0], r[:,thetaprobe,0]**2 * gdet[:,thetaprobe,0]*B[3,:,thetaprobe,0], marker='o')    #beta[:,31,0])     np.log10()
     #plt.plot(r[:,31,0],lbeta[:,31,0], marker='.', linestyle='none') #ug[:,31,0]/bsq[:,31,0], marker='.', linestyle='none') 
     #plt.plot(ug[:,31,0], marker='o') 
     #
@@ -27902,16 +28220,24 @@ def plotvertfieldequator():
     ##plt.xlim([10., 250.])
     #
     fig = plt.figure(4)
-    plt.clf()
+    #plt.clf()
+    phiplot=0
     plt.yscale('linear')
     plt.xscale('log')
-    plt.ylim(134.5, 135.5)
+    #plt.ylim(134.5, 135.5)
     plt.xlim([1., 250.])
-    plt.plot(r[:,thetaprobe,0],beta[:,thetaprobe,0], linestyle='none', marker='.' )
+    plt.plot(r[:,thetaprobe,phiplot],beta[:,thetaprobe,phiplot], linestyle='none', marker='.' )
     #plt.plot(r[:,24,0],beta[:,24,0], linestyle='none', marker='.' )
     #plt.plot(r[:,25,0],beta[:,25,0], linestyle='none', marker='.' )
-    #plco(beta,cb=True,nc=50)
-    print(B[2,:,24,0])#*Bd[2,:,31,0])
+    plt.figure(6)
+    plco(beta,cb=True,nc=50)
+    print("field B3 is: ")
+    print(B[3,:,thetaprobe,0])
+    print("field B2 along phi is: ")
+    print(B[2,iofr(15.),thetaprobe,:])
+    fig = plt.figure(5)
+    plt.plot(B[2,iofr(15.),thetaprobe,:])
+    #print(B[3,:,24,0])#*Bd[2,:,31,0])
     print(r[:,32,0])
     #plt.plot(h[30,:,0], beta[30,:,0])
     #plt.plot(h[30,:,0], 30*rho[30,:,0])
@@ -27972,9 +28298,9 @@ def plotflux():
     cvel()
     ######################################
     fig = plt.figure(1)
-    qtymem=np.load('analyze_rho2/qty2.npy')
+    qtymem=np.load('analyze_rho1/qty2.npy')
     getqtymem(qtymem)
-    plt.clf()
+    #plt.clf()
     #plt.ylim([0.,20])
     plt.xlim([0., 1000.])
     feqtot.shape
@@ -27984,7 +28310,17 @@ def plotflux():
     timei=20    
     print("pressure at r=100 is: ",ug[iofr(100),ny/2,0])
 #plt.plot(r[:,32,0], 0.5*fstot[timei,0]+feqtot[timei,:])
-    
+    #
+    ######################################
+    fig = plt.figure(2)
+    plt.plot(r[:,ny/2,0],rhosrhosqdc[0,:])
+    data = np.loadtxt('analyze_rho1/datavsr1b.txt',dtype=np.float64,skiprows=1,unpack = True)
+    plt.plot(r[:,ny/2,0],data[2,:])
+    plt.yscale('log')
+    plt.xscale('log')
+    plt.xlim(1.,500.)
+    #
+    #
     ###################################
     
 
@@ -28040,40 +28376,65 @@ def plotthetamid():
 def plotthetamid2():
     # first load grid file
     import time
-    testr = 10.
+    testr = 7.5
     grid3d("gdump.bin")
     # now try loading a single fieldline file
-    rfd("fieldline0000.bin")
+    rfd("fieldline10979.bin") #13058.bin") #10979.bin")
     cvel()
     rhoplot=rho*.000000001
     lrhoplot=lrho*.000000001
     thetamidavgorig=0.000000001*thetamid3dtoplot[iofreq(testr),:,:]/7.
-    thetamidgrid=[]
+    thetamidgrid1=[]
+    thetamidgrid2=[]
+    thetamidgrid3=[]
+    thetamidgrid4=[]
     #
-    for groupingi in range(0,840,5):
-        flist = glob.glob( os.path.join("dumps/", "fieldline%03d" % groupingi +"*.bin") )
-        flist.extend(glob.glob( os.path.join("dumps/", "fieldline%03d" % (groupingi+1) +"*.bin") ))
-        flist.extend(glob.glob( os.path.join("dumps/", "fieldline%03d" % (groupingi+2) +"*.bin") ))
-        flist.extend(glob.glob( os.path.join("dumps/", "fieldline%03d" % (groupingi+3) +"*.bin") ))
-        flist.extend(glob.glob( os.path.join("dumps/", "fieldline%03d" % (groupingi+4) +"*.bin") ))
-        thetamidavg=thetamidavgorig
+    for groupingi in range(1100,2460,10):             #17(3430,3510,30):  #16(3250,3430,30): #15(3180,3250,30): #14(2930,3180,30):
+        flist = glob.glob( os.path.join("dumps/", "fieldline%04d" % groupingi +"*.bin") )
+        flist.extend(glob.glob( os.path.join("dumps/", "fieldline%04d" % (groupingi+1) +"*.bin") ))
+        flist.extend(glob.glob( os.path.join("dumps/", "fieldline%04d" % (groupingi+2) +"*.bin") ))
+        flist.extend(glob.glob( os.path.join("dumps/", "fieldline%04d" % (groupingi+3) +"*.bin") ))
+        flist.extend(glob.glob( os.path.join("dumps/", "fieldline%04d" % (groupingi+4) +"*.bin") ))
+        flist.extend(glob.glob( os.path.join("dumps/", "fieldline%04d" % (groupingi+5) +"*.bin") ))
+        #flist.extend(glob.glob( os.path.join("dumps/", "fieldline%03d" % (groupingi+6) +"*.bin") ))
+        #flist.extend(glob.glob( os.path.join("dumps/", "fieldline%03d" % (groupingi+7) +"*.bin") ))
+        #flist.extend(glob.glob( os.path.join("dumps/", "fieldline%03d" % (groupingi+8) +"*.bin") ))
+        #flist.extend(glob.glob( os.path.join("dumps/", "fieldline%03d" % (groupingi+9) +"*.bin") ))
+        thetamidavg1=thetamidavgorig
+        thetamidavg2=thetamidavgorig
+        thetamidavg3=thetamidavgorig
+        thetamidavg4=thetamidavgorig
         for findex, fname in enumerate(flist):
-            print( "Reading " + fname + " ..." )
-            rfd("../"+fname)
+            if findex % 1 ==0 :
+                print( "Reading " + fname + " ..." )
+                rfd("../"+fname)
         #fs[findex]=horfluxcalc(ivalue=ihor)
         #md[findex]=mdotcalc(ihor)
         #ts[findex]=t
         # now plot something you read-in
-            cvel()
-            rhoplot=rhoplot+rho*rho/10.
-            lrhoplot=lrhoplot+lrho*lrho/10.
-            thetamidavg=thetamidavg+thetamid3dtoplot[iofreq(testr)-2:iofreq(testr)+1,:,:].sum(0)/1./150.
+                cvel()
+                #rhoplot=rhoplot+rho*rho/10.
+                #lrhoplot=lrhoplot+lrho*lrho/10.
+                thetamidavg1=thetamidavg1+thetamid3dtoplot[iofreq(testr)-1:iofreq(testr)+1,:,:].sum(0)/1./120.
+                thetamidavg2=thetamidavg2+thetamid3dtoplot[iofreq(testr+2.5)-1:iofreq(testr+2.5)+1,:,:].sum(0)/1./120.
+                thetamidavg3=thetamidavg3+thetamid3dtoplot[iofreq(testr+5.0)-1:iofreq(testr+5.0)+1,:,:].sum(0)/1./120.
+                thetamidavg4=thetamidavg4+thetamid3dtoplot[iofreq(testr+7.5)-1:iofreq(testr+7.5)+1,:,:].sum(0)/1./120.
         print("Thetamidavg: ")
-        thetamidavg
-        thetamidgrid.append(thetamidavg[32,:])
+        #thetamidavg
+        #if groupingi==230:
+        #    thetamidgrid=thetamidavg[31,:]/40.
+        #else:
+        #    thetamidgrid=thetamidgrid+thetamidavg[32,:]/40.
+        thetamidgrid1.append(thetamidavg1[32,:])
+        thetamidgrid2.append(thetamidavg2[32,:])
+        thetamidgrid3.append(thetamidavg3[32,:])
+        thetamidgrid4.append(thetamidavg4[32,:])
     ######################################
-    thetamidgrid=np.array(thetamidgrid)
-    np.save("thetamidgrid.npy",thetamidgrid.T)
+    thetamidgrid1=np.array(thetamidgrid1)
+    thetamidgrid2=np.array(thetamidgrid2)
+    thetamidgrid3=np.array(thetamidgrid3)
+    thetamidgrid4=np.array(thetamidgrid4)
+    np.save("thetamidgrid4.npy",[thetamidgrid1.T,thetamidgrid2.T,thetamidgrid3.T,thetamidgrid4.T])
     fig1 = plt.figure(1)
     #    thetamidavg=thetamid3dtoplot[iofreq(12.)-3:iofreq(12.)+3,:,:].sum(0)/7.
     print("size of thetamidgrid: ",thetamidgrid[0])
@@ -28097,7 +28458,7 @@ def plotthetamid2():
     #plco(rhoplot[:,:,phichoice],cb=True,nc=10,xcoord=r[:,:,phichoice]*np.sin(h[:,:,phichoice]),ycoord=r[:,:,phichoice]*np.cos(h[:,:,phichoice]))
     fig3 = plt.figure(3)
     plt.imshow(thetamidgrid.T) #,interpolation='nearest')
-    np.save("thetamidgrid.npy",thetamidgrid.T)
+    np.save("thetamidgrid4.npy",[thetamidgrid1.T,thetamidgrid2.T,thetamidgrid3.T,thetamidgrid4.T])
 
 def testgrid():
     # first load grid file
@@ -28171,6 +28532,69 @@ def testgrid():
     plt.plot(r[:,ny/2,0],rho[:,(ny/2-10):(ny/2+10),:].sum(1).sum(1)/20./nz,'+')
     plt.yscale('log')
     plt.xscale('log')
+
+def plotr():
+    # first load grid file
+    grid3d("gdump.bin")
+    # now try loading a single fieldline file
+    rfd("fieldline0000.bin")
+    # now plot something you read-in
+    plt.figure(1)
+    plt.clf()
+    plt.plot(r[:,ny/2,0],'+')
+    print(r[:,ny/2,0])
+    print(1+(1-.5**2.)**.5)
+
+def plotTempCoolingTest(num,betalim,bsqorholim,fig):
+    # first load grid file
+    if 1==0:
+        grid3d("gdump.bin")
+    # now try loading a single fieldline file
+    rfd("fieldline0000.bin")
+    # now plot something you read-in
+    eei=ug/rho
+    R=r*sin(h)
+    hortarget=.1
+    cs_circ=hortarget/sqrt(R)
+    Wcirc=1./(.5+R**1.5)
+    Tfix=(np.pi/2.)*(hortarget*R*Wcirc)**2.
+    gam=4./3.
+    tempsi=(gam-1)*eei
+    rfd("fieldline%04d.bin" % num) #5921.bin") #bpt2p238104.bin")
+    cvel()
+    ee=ug/rho
+    temps=(gam-1)*ee
+    plt.figure(fig)
+    plt.clf()
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlim([2,1000.])
+    plt.ylim([1.e-5,1.])    
+    plt.plot(r[:,ny/2,0],tempsi[:,ny/2,0],label='Init Temps along eq')
+    plt.plot(r[:,ny/2,0],Tfix[:,ny/2,0],label='T_target')
+    plt.plot(r[:,ny/2,0],2./np.pi*Tfix[:,ny/2,0],label='T_target * 2/pi')
+    #plt.plot(r[:,ny/2,0],np.pi/2.*Tfix[:,ny/2,0],label='T_target * pi/2')
+    plt.plot(r[:,ny/2,0],temps[:,ny/2-10:ny/2+10,:].mean(2).mean(1),'g.',label='Temps averaged around eq')
+    whichtouse=condmaxbsqorho*(bsq/rho<bsqorholim)*(beta>betalim)
+    plt.plot(r[:,ny/2,0],((whichtouse*temps).sum(2).sum(1))/(whichtouse.sum(2).sum(1)+.00000000001),'-g',label='T full average')       #(temps*condmaxbsqorho).mean(2).mean(1),'.')
+    #plt.legend(loc='upper right')
+    plt.figure(fig+1)
+    plt.imshow(bsq[:40,ny/2,:]/rho[:40,ny/2,:])
+
+
+def testtest():
+    plt.xscale('log')
+    plt.ylim([0.,.5])
+    #rholabtest=rholab
+    #for i in arange(0,nz):
+    #    rholabtest[:,:,i]=rholab.mean(2)
+    ##
+    for i in arange(0,np.pi/2,np.pi/50)+np.pi/50:
+        condmaxbsqorhotest=condmaxbsqorho*(h>np.pi/2-i)*(h<np.pi/2+i)
+        h3,hm3=horcalc(hortype=3,which1=condmaxbsqorhotest,which2=condmaxbsqorhotest,denfactor=rholab**2)
+        plt.figure(3)
+        #plt.plot(r[:,ny/2,0],h3[:,ny/2,0])
+        plt.plot(r[:,ny/2,0],h3[:,ny/2,:].mean(1))
 
 if __name__ == "__main__":
     # no, can't use sys.exit since want C code that calls this to continue after done

@@ -252,7 +252,7 @@ fi
 
 
 # defaults
-chunklisttypeplot=0
+chunklisttypeplot=1
 numtasksplot=1
 chunklistplot=\"`seq -s " " 1 $numtasksplot`\"
 runnplot=1
@@ -564,7 +564,7 @@ then
     #
     # defaults
     echo "Ended up in default for timetot, numcorespernode, and memtot in makemovie.sh"
-    timetot="2:00:00"   #MMMMMMMMMMMMMMMMM
+    timetot="24:00:00"   #MMMMMMMMMMMMMMMMM
     numcorespernode=20
     memtot=$(($numcorespernode * 6)) #actually 6.4 but didn't work with non integer
     
@@ -573,7 +573,7 @@ then
     numcorespernodeplot=1 #1
     numnodesplot=1
     # new analysis can take a long time.
-    timetotplot="2:00:00" #MMMMMMMMMMMMMMM
+    timetotplot="24:00:00" #MMMMMMMMMMMMMMM
     # don't always need so much memory.
     memtotplot=128 #MAVARA
     # interactive use for <1hour:
@@ -647,11 +647,11 @@ then
     numcorespernodenaut=$numcorespernode  #80 is the default
 
     # numtasks set equal to total number of time slices, so each task does only 1 fieldline file
-    numtasks=`ls dumps/fieldline*.bin |wc -l` #2000 or so
+    numtasks=100 #`ls dumps/fieldline*.bin |wc -l` #2000 or so
 
     # total memory required is old memtot/numcorespernode from Nautilus multiplied by total number of tasks for Kraken
     memtotpercore=$((1+$memtotnaut/$numcorespernodenaut)) #324/80 ~4 as expected from def of memtot
-    numcorespernode=$((128/$memtotpercore))  # was 24. 32 is the total per node for westemere nodes #MAVARA turned to 12 for low res sim since don't need much mem.
+    numcorespernode=20 #$((128/$memtotpercore))  # was 24. 32 is the total per node for westemere nodes #MAVARA turned to 12 for low res sim since don't need much mem.
 
     #MAVARA for now just have:
     #numcorespernode=12 #for westemere
@@ -670,30 +670,36 @@ then
 	[ $numcorespernode -eq 20 ]
     then
         numcorespersocket=$(($numcorespernode/2))
-	numtaskshalf=$(($numtasks/2))
-        apcmd="mpiexec -ppn $numcorespernode -np $numtasks" # -n $numtasks" #"aprun -n $numtasks -S $numcorespersocket"
+	numtaskshalf=$(($numtasks/100 ))
+        apcmd="mpirun -ppn $numcorespernode -np $numtasks" # -n $numtasks" #"aprun -n $numtasks -S $numcorespersocket"
     else
         # odd, so can't use socket version
-	numtaskshalf=$(($numtasks/2))
-        apcmd="mpiexec -ppn $numcorespernode -np $numtasks" # -n $numtasks" #mpiexec -np $numtasks -ppn $numcorespernode"
+	numtaskshalf=$(($numtasks/100 ))
+        apcmd="mpirun -ppn $numcorespernode -np $numtasks" # -n $numtasks" #mpiexec -np $numtasks -ppn $numcorespernode"
     fi
 
-    numnodes=$(($numtasks/$numcorespernode+1)) #MAVARACHANGE added +1 on may 6th 2014 so actually enough nodes used#MAVARA added /2 since numparts changed to 2 in sections where mpiexec is called with qsub
-    numtotalcores=$(($numnodes * 20)) # always 12 for Kraken   # also 12 for westemere nodes on pleiades
+    numnodes=$(($numtasks/$numcorespernode + 1)) #either need to be exactly divisible or add +1 ::: MAVARACHANGE added +1 on may 6th 2014 so actually enough nodes used#MAVARA added /2 since numparts changed to 2 in sections where mpiexec is called with qsub
+    numtotalcores=$(($numnodes * 20 )) ##/10 # always 12 for Kraken   # also 12 for westemere nodes on pleiades
 
-    if [ $numtotalcores -le 1024 ]
+    if [ $numtotalcores -le 20 ]
         then
-        thequeue="standard"
+        thequeue="debug"
+        thequeueplot="debug"
+	timetot="00:15:00" # probably don't need all this is 1 task per fieldline file #MMMMMMMMMMMMMMM
+	timetotplot="00:15:00" #MMMMMMMMMMMMMMM    
     elif [ $numtotalcores -le 8192 ]
         then
-        thequeue="long"
+        thequeue="standard"
+	thequeueplot="standard"
+	timetot="24:00:00" # probably don't need all this is 1 task per fieldline file #MMMMMMMMMMMMMMM
+	timetotplot="24:00:00" #MMMMMMMMMMMMMMM
     elif [ $numtotalcores -le 49536 ]
         then
         thequeue="large"
     fi
 
     # GODMARK: 458 thickdisk7 files only took 1:45 on Kraken
-    timetot="2:00:00" # probably don't need all this is 1 task per fieldline file #MMMMMMMMMMMMMMM
+    
 
     echo "PART1: $numcorespernode $numcorespersocket $numnodes $numtotalcores $thequeue $timetot"
     echo "PART2: $apcmd"
@@ -701,11 +707,11 @@ then
     # setup fake setup
     numcorespernodereal=$numcorespernode  #as necessary for enough memory per task on each cpu
     numnodesreal=$numnodes
-    numcorespernode=$numtasks
+    numcorespernode=$(($numtasks)) ##/10
     numnodes=1
     #
-    chunklisttype=0
-    chunklist=\"`seq -s " " 1 $numtasks`\"
+    chunklisttype=1
+    chunklist=\"`seq -s " " 1 $numtasks`\" ## was numtasks but changed with numparts = 10
     DATADIR=$dirname
     
 
@@ -717,10 +723,10 @@ then
     numcorespernodeplot=20
     # this gives 16GB free for plotting (temp vars + qty2.npy file has to be smaller than this or swapping will occur)
     numtotalcoresplot=$numcorespernodeplot
-    thequeueplot="standard"
-    apcmdplot="mpiexec -np $numtasksplot" #mpiexec -np $numtasksplot" #"aprun -n $numtasksplot"
+
+    apcmdplot="mpirun -np $numtasksplot" #mpiexec -np $numtasksplot" #"aprun -n $numtasksplot"
     # only took 6 minutes for thickdisk7 doing 458 files inside qty2.npy!  Up to death at point when tried to resample in time.
-    timetotplot="2:00:00" #MMMMMMMMMMMMMMM
+
 
 
     echo "PART1P: $numcorespernodeplot $numnodesplot $numtotalcoresplot $thequeueplot $timetotplot"
@@ -747,7 +753,7 @@ fi
 
 if [ $useoverride -eq 0 ]
 then
-    runnglobal=$(( $numcorespernode * $numnodes ))
+    runnglobal=$(( $numcorespernode * $numnodes )) ##*10
 else
     runnglobal=${runnoverride}
 fi
@@ -1100,16 +1106,17 @@ then
 				then
                                     echo "$apcmd ./$thebatch" >> $superbatch
 				else
-		                    cmdraw="$makemoviecfullfile $chunklisttype $chunklist $runn $DATADIR $jobcheck $myinitfile1 $runtype $modelname $fakeruni $runn"
+		                    echo "echo $chunklist >> $dirname/chunklistfile.txt" >> $superbatch
+				    cmdraw="$makemoviecfullfile $chunklisttype chunklistfile.txt $runn $DATADIR $jobcheck $myinitfile1 $runtype $modelname $fakeruni $runn"
                                     echo "$apcmd $cmdraw" >> $superbatch
-				    echo "mpdallexit" >> $superbatch
+				    #echo "mpdallexit" >> $superbatch
 				fi
 				localerrorfile=python_${fakeruni}_${runn}.stderr.out
 				localoutputfile=python_${fakeruni}_${runn}.out
 				rm -rf $localerrorfile
 				rm -rf $localoutputfile
 				sleep 20
-				bsubcommand="sbatch -n $numtotalcores -t $timetot -p $thequeue --job-name=$jobname -o $localoutputfile -e $localerrorfile --mail-user=mavara@astro.umd.edu ./$superbatch"
+				bsubcommand="sbatch -n $numtotalcores -t $timetot -A astronomy -p $thequeue --job-name=$jobname -o $localoutputfile -e $localerrorfile --mail-user=mavara@astro.umd.edu ./$superbatch"
                             else
                             # probably specifying ptile below is not necessary
 		                bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernode] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -1145,8 +1152,8 @@ then
                     if [ $system -eq 4 ] ||
                         [ $system -eq 7 ]
                     then
-		        pendjobs=`squeue -p $thequeue -u mavara -o "%.7i %.9P %.40j %.8u %.2t %.9M %.6D %R" 2>&1 | grep $jobcheck | grep " Q " | wc -l`
-		        runjobs=`squeue -p $thequeue -u mavara -o "%.7i %.9P %.40j %.8u %.2t %.9M %.6D %R" 2>&1 | grep $jobcheck | grep " R " | wc -l`
+		        pendjobs=`squeue -p $thequeue -u mavara -o "%.7i %.9P %.80j %.8u %.2t %.9M %.6D %R" 2>&1 | grep $jobcheck | grep " Q " | wc -l`
+		        runjobs=`squeue -p $thequeue -u mavara -o "%.7i %.9P %.80j %.8u %.2t %.9M %.6D %R" 2>&1 | grep $jobcheck | grep " R " | wc -l`
                     else
 		        pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep PEND | wc -l`
 		        runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep RUN | wc -l`
@@ -1311,9 +1318,10 @@ then
                 then
                     echo "$apcmdplot ./$thebatch" >> $superbatch
                 else
-		    cmdraw="$makemoviecfullfile $chunklisttypeplot $chunklistplot $runnplot $DATADIR $jobcheck $myinitfile3 $runtype $modelname plot $makepowervsmplots $makespacetimeplots $makefftplot $makespecplot $makeinitfinalplot $makethradfinalplot"
+		    echo "echo $chunklistplot >> $dirname/chunklistfile2.txt" >> $superbatch
+		    cmdraw="$makemoviecfullfile $chunklisttypeplot $dirname/chunklistfile2.txt $runnplot $DATADIR $jobcheck $myinitfile3 $runtype $modelname plot $makepowervsmplots $makespacetimeplots $makefftplot $makespecplot $makeinitfinalplot $makethradfinalplot"
                     echo "$apcmdplot $cmdraw" >> $superbatch
-		    echo "mpdallexit" >> $superbatch
+		    #echo "mpdallexit" >> $superbatch
                 fi
                 localerrorfile=python.plot.stderr.out
                 localoutputfile=python.plot.out
@@ -1321,7 +1329,7 @@ then
                 rm -rf $localoutputfile
 		sleep 20
                 #
-		bsubcommand="sbatch -N $numnodesplot --ntasks-per-node=20 -t $timetotplot -p $thequeueplot --job-name=$jobname -o $localoutputfile -e $localerrorfile --mail-user=mavara@astro.umd.edu ./$superbatch"
+		bsubcommand="sbatch -N $numnodesplot --ntasks-per-node=20 -t $timetotplot -A astronomy -p $thequeueplot --job-name=$jobname -o $localoutputfile -e $localerrorfile --mail-user=mavara@astro.umd.edu ./$superbatch"
             else
                 # probably specifying ptile below is not necessary
 		bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernodeplot] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -1355,8 +1363,8 @@ then
             if [ $system -eq 4 ] ||
                 [ $system -eq 7 ]
             then
-		pendjobs=`squeue -p $thequeue -u mavara -o "%.7i %.9P %.40j %.8u %.2t %.9M %.6D %R" 2>&1 | grep $jobcheck | grep mavara | grep " Q " | wc -l`
-		runjobs=`squeue -p $thequeue -u mavara -o "%.7i %.9P %.40j %.8u %.2t %.9M %.6D %R" 2>&1 | grep $jobcheck | grep mavara | grep " R " | wc -l`
+		pendjobs=`squeue -p $thequeue -u mavara -o "%.7i %.9P %.80j %.8u %.2t %.9M %.6D %R" 2>&1 | grep $jobcheck | grep mavara | grep " Q " | wc -l`
+		runjobs=`squeue -p $thequeue -u mavara -o "%.7i %.9P %.80j %.8u %.2t %.9M %.6D %R" 2>&1 | grep $jobcheck | grep mavara | grep " R " | wc -l`
             else
 		pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep PEND | wc -l`
 		runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep RUN | wc -l`
@@ -1620,9 +1628,10 @@ then
                             then
                                 echo "$apcmd ./$thebatch" >> $superbatch
                             else
-		                cmdraw="$makemoviecfullfile $chunklisttype $chunklist $runn $DATADIR $jobcheck $myinitfile4 $runtype $modelname $fakeruni $runn"
+				echo "echo $chunklist >> $dirname/chunklistfile3.txt" >> $superbatch
+		                cmdraw="$makemoviecfullfile $chunklisttype $dirname/chunklistfile3.txt $runn $DATADIR $jobcheck $myinitfile4 $runtype $modelname $fakeruni $runn"
                                 echo "$apcmd $cmdraw" >> $superbatch
-				echo "mpdallexit" >> $superbatch
+				#echo "mpdallexit" >> $superbatch
                             fi
 		            localerrorfile=python_${fakeruni}_${runn}.stderr.movieframes.out
                             localoutputfile=python_${fakeruni}_${runn}.movieframes.out
@@ -1630,7 +1639,7 @@ then
                             rm -rf $localoutputfile
 			    sleep 20
                             #
-		            bsubcommand="sbatch -n $numtotalcores -t $timetot -p $thequeue --job-name=$jobname -o $localoutputfile -e $localerrorfile --mail-user=mavara@astro.umd.edu ./$superbatch"
+		            bsubcommand="sbatch -n $numtotalcores -t $timetot -A astronomy -p $thequeue --job-name=$jobname -o $localoutputfile -e $localerrorfile --mail-user=mavara@astro.umd.edu ./$superbatch"
                         else
                             # probably specifying ptile below is not necessary
 		            bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernode] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -1666,8 +1675,8 @@ then
                     if [ $system -eq 4 ] ||
                         [ $system -eq 7 ]
                     then
-		        pendjobs=`squeue -p $thequeue -u mavara -o "%.7i %.9P %.40j %.8u %.2t %.9M %.6D %R" 2>&1 | grep $jobcheck | grep mavara | grep " Q " | wc -l`
-		        runjobs=`squeue -p $thequeue -u mavara -o "%.7i %.9P %.40j %.8u %.2t %.9M %.6D %R" 2>&1 | grep $jobcheck | grep mavara | grep " R " | wc -l`
+		        pendjobs=`squeue -p $thequeue -u mavara -o "%.7i %.9P %.80j %.8u %.2t %.9M %.6D %R" 2>&1 | grep $jobcheck | grep mavara | grep " Q " | wc -l`
+		        runjobs=`squeue -p $thequeue -u mavara -o "%.7i %.9P %.80j %.8u %.2t %.9M %.6D %R" 2>&1 | grep $jobcheck | grep mavara | grep " R " | wc -l`
                     else
 		        pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep PEND | wc -l`
 		        runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep RUN | wc -l`
@@ -1781,7 +1790,7 @@ numfiles=`find dumps/ -name "fieldline*.bin"|wc -l`
 echo "NUMFILES=$numfiles"
 
 #itemspergroup=$(( 1 )) # MAVARA
-itemspergroup=$(( 2 )) # 16 with 100
+itemspergroup=$(( 1 )) # 16 with 100
 
 # catch too small number of files
 # must match __init__.py
@@ -1981,9 +1990,10 @@ then
                             then
                                 echo "$apcmd ./$thebatch" >> $superbatch
                             else
-		                cmdraw="$makemoviecfullfile $chunklisttype $chunklist $runn $DATADIR $jobcheck $myinitfile5 $runtype $modelname $fakeruni $runn $itemspergroup"
+				echo "echo $chunklist >> $dirname/chunklistfile4.txt" >> $superbatch
+		                cmdraw="$makemoviecfullfile $chunklisttype $dirname/chunklistfile4.txt $runn $DATADIR $jobcheck $myinitfile5 $runtype $modelname $fakeruni $runn $itemspergroup"
                                 echo "$apcmd $cmdraw" >> $superbatch
-				echo "mpdallexit" >> $superbatch
+				#echo "mpdallexit" >> $superbatch
                             fi
 		            localerrorfile=python_${fakeruni}_${runn}.stderr.avg.out
                             localoutputfile=python_${fakeruni}_${runn}.avg.out
@@ -1991,7 +2001,7 @@ then
                             rm -rf $localoutputfile
 			    sleep 20
                             #
-		            bsubcommand="sbatch -n $numtotalcores -t $timetot -p $thequeue --job-name=$jobname -o $localoutputfile -e $localerrorfile --mail-user=mavara@astro.umd.edu ./$superbatch"
+		            bsubcommand="sbatch -n $numtotalcores -t $timetot -A astronomy -p $thequeue --job-name=$jobname -o $localoutputfile -e $localerrorfile --mail-user=mavara@astro.umd.edu ./$superbatch"
                         else
                             # probably specifying ptile below is not necessary
 		            bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernode] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -2029,8 +2039,8 @@ then
                     if [ $system -eq 4 ] ||
                         [ $system -eq 7 ]
                     then
-		        pendjobs=`squeue -p $thequeue -u mavara -o "%.7i %.9P %.40j %.8u %.2t %.9M %.6D %R" 2>&1 | grep $jobcheck | grep mavara | grep " Q " | wc -l`
-		        runjobs=`squeue -p $thequeue -u mavara -o "%.7i %.9P %.40j %.8u %.2t %.9M %.6D %R" 2>&1 | grep $jobcheck | grep mavara | grep " R " | wc -l`
+		        pendjobs=`squeue -p $thequeue -u mavara -o "%.7i %.9P %.80j %.8u %.2t %.9M %.6D %R" 2>&1 | grep $jobcheck | grep mavara | grep " Q " | wc -l`
+		        runjobs=`squeue -p $thequeue -u mavara -o "%.7i %.9P %.80j %.8u %.2t %.9M %.6D %R" 2>&1 | grep $jobcheck | grep mavara | grep " R " | wc -l`
                     else
 		        pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep PEND | wc -l`
 		        runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep RUN | wc -l`
@@ -2218,9 +2228,10 @@ then
                 then
                     echo "$apcmdplot ./$thebatch" >> $superbatch
                 else
-		    cmdraw="$makemoviecfullfile $chunklisttypeplot $chunklistplot $runnplot $DATADIR $jobcheck $myinitfile7 $runtype $modelname"
+		    echo "echo $chunklistplot >> $dirname/chunklistfile5.txt" >> $superbatch
+		    cmdraw="$makemoviecfullfile $chunklisttypeplot $dirname/chunklistfile5.txt $runnplot $DATADIR $jobcheck $myinitfile7 $runtype $modelname"
                     echo "$apcmdplot $cmdraw" >> $superbatch
-		    echo "mpdallexit" >> $superbatch
+		    #echo "mpdallexit" >> $superbatch
                 fi
                 localerrorfile=python.plot.avg.stderr.out
                 localoutputfile=python.plot.avg.out
@@ -2228,7 +2239,7 @@ then
                 rm -rf $localoutputfile
 		sleep 20
                 # 
-		bsubcommand="sbatch -N $numnodesplot --ntasks-per-node=20 -t $timetotplot -p $thequeueplot --job-name=$jobname -o $localoutputfile -e $localerrorfile --mail-user=mavara@astro.umd.edu ./$superbatch"
+		bsubcommand="sbatch -N $numnodesplot --ntasks-per-node=20 -t $timetotplot -A astronomy -p $thequeueplot --job-name=$jobname -o $localoutputfile -e $localerrorfile --mail-user=mavara@astro.umd.edu ./$superbatch"
             else
                     # probably specifying ptile below is not necessary
 		bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernodeplot] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -2261,8 +2272,8 @@ then
             if [ $system -eq 4 ] ||
                 [ $system -eq 7 ]
             then
-		pendjobs=`squeue -p $thequeue -u mavara -o "%.7i %.9P %.40j %.8u %.2t %.9M %.6D %R" 2>&1 | grep $jobcheck | grep mavara | grep " Q " | wc -l`
-		runjobs=`squeue -p $thequeue -u mavara -o "%.7i %.9P %.40j %.8u %.2t %.9M %.6D %R" 2>&1 | grep $jobcheck | grep mavara | grep " R " | wc -l`
+		pendjobs=`squeue -p $thequeue -u mavara -o "%.7i %.9P %.80j %.8u %.2t %.9M %.6D %R" 2>&1 | grep $jobcheck | grep mavara | grep " Q " | wc -l`
+		runjobs=`squeue -p $thequeue -u mavara -o "%.7i %.9P %.80j %.8u %.2t %.9M %.6D %R" 2>&1 | grep $jobcheck | grep mavara | grep " R " | wc -l`
             else
 		pendjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep PEND | wc -l`
 		runjobs=`bjobs -u all -q $thequeue 2>&1 | grep $jobcheck | grep jmckinn | grep RUN | wc -l`
