@@ -71,7 +71,7 @@ import visit_writer
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
 # compute integrated optical depth
-def compute_taurad():
+def compute_taurad(radiussettau1zero=60):
         # uses uu[], KAPPAUSER, KAPPAESUSER, gv3, r
         #
         drco=_dx1*np.sqrt(np.fabs(gv3[1,1]))/(2.0*uu[0])
@@ -80,9 +80,6 @@ def compute_taurad():
         #
         taurad1=(KAPPAUSER+KAPPAESUSER)*drco
         tauradeff1=np.sqrt(KAPPAUSER*(KAPPAUSER+KAPPAESUSER))*drco
-        #
-        # FREE PARAMETER:
-        radiussettau1zero=80
         #
         ############# taurad1
         taurad1[r[:,0,0]>radiussettau1zero,:,:]=0 # to get rid of parts of flow that aren't in steady-state and wouldn't have contributed
@@ -172,6 +169,8 @@ def compute_taurad():
         dic = {}
         dic["tau1"] = taurad1flipintegrated
         dic["tau2"] = taurad2integrated
+        dic["taueff1"] = tauradeff1flipintegrated
+        dic["taueff2"] = tauradeff2integrated
         # use primarily: taurad1flipintegrated taurad2integrated and can use and'ed version
         return dic
 
