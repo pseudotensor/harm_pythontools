@@ -5170,7 +5170,7 @@ def remap2unir(rinner=None,router=None,size=None,iin=None,iout=None,result0=None
 
 
 # compute integrated optical depth
-def compute_taurad():
+def compute_taurad(domergeangles=True):
         # uses uu[], KAPPAUSER, KAPPAESUSER, gv3, r
         #
         thetavel=0.0
@@ -5239,11 +5239,12 @@ def compute_taurad():
         taurad2flip=taurad2[:,::-1,:]
         taurad2flipintegrated=np.cumsum(taurad2flip,axis=1)
         taurad2flipintegrated=taurad2flipintegrated[:,::-1,:]
-        ########################### merge taurad2's
-        for jj in np.arange(0,ny/2):
-            taurad2flipintegrated[:,jj,:]=taurad2integrated[:,jj,:]
-        for jj in np.arange(ny/2,ny):
-            taurad2integrated[:,jj,:]=taurad2flipintegrated[:,jj,:]
+        if domergeangles==True:
+            ########################### merge taurad2's
+            for jj in np.arange(0,ny/2):
+                taurad2flipintegrated[:,jj,:]=taurad2integrated[:,jj,:]
+            for jj in np.arange(ny/2,ny):
+                taurad2integrated[:,jj,:]=taurad2flipintegrated[:,jj,:]
         #
         ########################### tauradeff2 (from theta=0 pole)
         tauradeff2=np.sqrt(KAPPAUSER*(KAPPAUSER+KAPPAESUSER))*dhco
@@ -5258,10 +5259,11 @@ def compute_taurad():
         tauradeff2flipintegrated=np.cumsum(tauradeff2flip,axis=1)
         tauradeff2flipintegrated=tauradeff2flipintegrated[:,::-1,:]
         ########################### merge tauradeff2's
-        for jj in np.arange(0,ny/2):
-            tauradeff2flipintegrated[:,jj,:]=tauradeff2integrated[:,jj,:]
-        for jj in np.arange(ny/2,ny):
-            tauradeff2integrated[:,jj,:]=tauradeff2flipintegrated[:,jj,:]
+        if domergeangles==True:
+            for jj in np.arange(0,ny/2):
+                tauradeff2flipintegrated[:,jj,:]=tauradeff2integrated[:,jj,:]
+            for jj in np.arange(ny/2,ny):
+                tauradeff2integrated[:,jj,:]=tauradeff2flipintegrated[:,jj,:]
         #
         ########################### taurad3
         taurad3=uu[0]*(KAPPAUSER+KAPPAESUSER)*dphco
@@ -5318,12 +5320,12 @@ def plc(myvar,xcoord=None,ycoord=None,ax=None,picker=False,**kwargs): #plc
     if ax is None:
         ax = plt.gca()
     if( xcoord == None or ycoord == None ):
-        if nc==15:
+        if nc==15:# poor man's way to choose
             res = ax.contour(myvar[:,:,0].transpose(),levels=levels,picker=picker,**kwargs)
         else:
             res = ax.contour(myvar[:,:,0].transpose(),nc,picker=picker,**kwargs)
     else:
-        if nc==15:
+        if nc==15:# poor man's way to choose
             res = ax.contour(xcoord[:,:,0],ycoord[:,:,0],myvar[:,:,0],levels=levels,picker=picker,**kwargs)
         else:
             res = ax.contour(xcoord[:,:,0],ycoord[:,:,0],myvar[:,:,0],nc,picker=picker,**kwargs)
@@ -28308,6 +28310,7 @@ if __name__ == "__main__":
 # run ~/py/mread/__init__.py   # might cplain about matplotlib and pylab as well as no pythonpath found.  Probably ok.
 # 
 def harmradtest1(path=None,fil=None):
+    # e.g. harmradtest1("/data/jon/radruns/rada0.94/","fieldline3000.bin")
     #
     print("GOT HERESTART");sys.stdout.flush()
     # 
@@ -28330,7 +28333,7 @@ def harmradtest1(path=None,fil=None):
         cvel()
         Tcalcud(maxbsqorho=maxbsqorhonear,which=condmaxbsqorho)
         # reget tau's
-        taurad1integrated,taurad1flipintegrated,taurad2integrated,taurad2flipintegrated,tauradintegrated,tauradeff1integrated,tauradeff1flipintegrated,tauradeff2integrated,tauradeff2flipintegrated,tauradeffintegrated=compute_taurad()
+        taurad1integrated,taurad1flipintegrated,taurad2integrated,taurad2flipintegrated,tauradintegrated,tauradeff1integrated,tauradeff1flipintegrated,tauradeff2integrated,tauradeff2flipintegrated,tauradeffintegrated=compute_taurad(domergeangles=True)
     # now plot something you read-in
     #
     #ax.contour(itaurad1flipintegrated,linewidths=4,colors='cyan', extent=extent,hold='on',origin='lower',levels=(1,))
@@ -28344,11 +28347,16 @@ def harmradtest1(path=None,fil=None):
     lTg = np.log10(Tg)
     #
     extent=(-len,len,-len,len)
+    itauradintegrated = reinterp(tauradintegrated,extent,ncell,domask=1.0,interporder='linear')
     itaurad2integrated = reinterp(taurad2integrated,extent,ncell,domask=1.0,interporder='linear')
+    itaurad2flipintegrated = reinterp(taurad2flipintegrated,extent,ncell,domask=1.0,interporder='linear')
     itauradeffintegrated = reinterp(tauradeffintegrated,extent,ncell,domask=1.0,interporder='linear')
+    itauradeff2integrated = reinterp(tauradeff2integrated,extent,ncell,domask=1.0,interporder='linear')
+    itauradeff2flipintegrated = reinterp(tauradeff2flipintegrated,extent,ncell,domask=1.0,interporder='linear')
     ilTg = reinterp(lTg,extent,ncell,domask=1.0,interporder='linear')
     #
     #
+    plt.close(1)
     plt.figure(1)
     plt.clf()
     ax = plt.gca()
@@ -28357,6 +28365,7 @@ def harmradtest1(path=None,fil=None):
     #ax.contour(itaurad2flipintegrated,linewidths=4,colors='red', extent=extent,hold='on',origin='lower',levels=(1,))
     #ax.contour(ilTg,linewidths=4,colors='blue', extent=extent,hold='on',origin='lower',levels=(1E-7,1E-6,1E-5,1E-4,1E-3,1E-2,1E-1))
     #
+    plt.close(2)
     fig2=plt.figure(2)
     plt.clf()
     ax2 = plt.gca()
@@ -28369,16 +28378,36 @@ def harmradtest1(path=None,fil=None):
     myx=r[0:nxout:,:,0]*np.sin(h[0:nxout,:,0])*np.cos(ph[0:nxout,:,0])
     myy=r[0:nxout,:,0]*np.sin(h[0:nxout,:,0])*np.sin(ph[0:nxout,:,0])
     myz=r[0:nxout,:,0]*np.cos(h[0:nxout,:,0])
+    #
     myTg=myfun[0:nxout,:,0]
-    mytau2=taurad2integrated[0:nxout,:,0]
-    mytaueff=tauradeffintegrated[0:nxout,:,0]
-    result=ax2.pcolor(myx,myz,myTg,picker=True)
-    plc(myTg,xcoord=myx,ycoord=myz,ax=ax2,cb=True,nc=50,picker=True)
-    plc(mytau2,xcoord=myx,ycoord=myz,ax=ax2,cb=False,levels=(1,))
-    plc(mytaueff,xcoord=myx,ycoord=myz,ax=ax2,cb=False,levels=(1,))
+    #
+    mytauradintegrated=tauradintegrated[0:nxout,:,0]
+    mytaurad2integrated=taurad2integrated[0:nxout,:,0]
+    mytaurad2flipintegrated=taurad2flipintegrated[0:nxout,:,0]
+    #
+    mytauradeffintegrated=tauradeffintegrated[0:nxout,:,0]
+    mytauradeff2integrated=tauradeff2integrated[0:nxout,:,0]
+    mytauradeff2flipintegrated=tauradeff2flipintegrated[0:nxout,:,0]
+    #
+    ax2.pcolor(myx,myz,myTg,picker=True)
+    #
+    #plc(myTg,xcoord=myx,ycoord=myz,ax=ax2,cb=True,nc=50,picker=True,linewidths=1,colors='black')
+    #
+    plc(mytauradintegrated,xcoord=myx,ycoord=myz,ax=ax2,cb=False,levels=(1,),linewidths=4,colors='blue')
+    #
+    plc(mytaurad2integrated,xcoord=myx,ycoord=myz,ax=ax2,cb=False,levels=(1,),linewidths=2,colors='red')
+    plc(mytaurad2flipintegrated,xcoord=myx,ycoord=myz,ax=ax2,cb=False,levels=(1,),linewidths=2,colors='purple')
+    #
+    plc(mytauradeffintegrated,xcoord=myx,ycoord=myz,ax=ax2,cb=False,levels=(1,),linewidths=4,colors='green')
+    #
+    plc(mytauradeff2integrated,xcoord=myx,ycoord=myz,ax=ax2,cb=False,levels=(1,),linewidths=2,colors='yellow')
+    plc(mytauradeff2flipintegrated,xcoord=myx,ycoord=myz,ax=ax2,cb=False,levels=(1,),linewidths=2,colors='black')
+    #
     #ax.contour(myx,myz,myfun[0:nxout,:,0],linewidths=4,colors='black', extent=extent,hold='on',origin='lower',levels=(-7,-6,-5,-4,-3,-2,-1,0,1))
     #cid = fig2.canvas.mpl_connect('button_press_event', onclick)
-    cid = fig2.canvas.mpl_connect('button_press_event', lambda event: onclick(event,lTg,tauradeffintegrated))
+    #cid = fig2.canvas.mpl_connect('button_press_event', lambda event: onclick(event,lTg,tauradeffintegrated))
+    arglist=[lTg,tauradeffintegrated]
+    cid = fig2.canvas.mpl_connect('button_press_event', lambda event: onclick(event,arglist))
     #
     #plt.figure(6)
     #plco(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),colors='k',nc=30)
@@ -28408,7 +28437,8 @@ def harmradtest1(path=None,fil=None):
     print("etaradthin=%g" % (etaradthin));sys.stdout.flush()
     #
 
-def onclick(event,funorig1,funorig2):
+#def onclick(event,funorig1,funorig2):
+def onclick(event,arglist):
     #thisline = event.artist
     #xdata2 = thisline.get_xdata()
     #ydata2 = thisline.get_ydata()
@@ -28424,12 +28454,13 @@ def onclick(event,funorig1,funorig2):
     #
     extent=(myx*0.99,myx*1.01,myz*0.99,myz*1.01)
     ncell=2
-    ifun1 = reinterp(funorig1,extent,ncell,domask=1.0,interporder='linear')
-    ifun2 = reinterp(funorig2,extent,ncell,domask=1.0,interporder='linear')
-    #
-    print 'ifun1=%f' %(ifun1[0,0])
-    print 'ifun2=%f' %(ifun2[0,0])
-    sys.stdout.flush()
+    lenarglist=len(arglist)
+    print('len(arglist)=%d' % (lenarglist))
+    
+    for funi in range(lenarglist):
+        funorig=arglist[funi]
+        ifun = reinterp(funorig,extent,ncell,domask=1.0,interporder='linear')
+        print 'fun[%d]=%f' %(funi,ifun[0,0]);sys.stdout.flush()
 #, event.ind, zip(xdata[ind],ydata[ind]))
 
 
