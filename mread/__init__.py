@@ -5170,7 +5170,7 @@ def remap2unir(rinner=None,router=None,size=None,iin=None,iout=None,result0=None
 
 
 # compute integrated optical depth
-def compute_taurad(domergeangles=True):
+def compute_taurad(domergeangles=True,radiussettau1zero=80):
         # uses uu[], KAPPAUSER, KAPPAESUSER, gv3, r
         #
         thetavel=0.0
@@ -5187,7 +5187,7 @@ def compute_taurad(domergeangles=True):
         tauradeff1=np.sqrt(KAPPAUSER*(KAPPAUSER+KAPPAESUSER))*drco
         #
         # FREE PARAMETER:
-        radiussettau1zero=80
+        #radiussettau1zero=80
         #
         ############# taurad1
         taurad1[r[:,0,0]>radiussettau1zero,:,:]=0 # to get rid of parts of flow that aren't in steady-state and wouldn't have contributed
@@ -28333,12 +28333,12 @@ def harmradtest1(path=None,fil=None):
         cvel()
         Tcalcud(maxbsqorho=maxbsqorhonear,which=condmaxbsqorho)
         # reget tau's
-        taurad1integrated,taurad1flipintegrated,taurad2integrated,taurad2flipintegrated,tauradintegrated,tauradeff1integrated,tauradeff1flipintegrated,tauradeff2integrated,tauradeff2flipintegrated,tauradeffintegrated=compute_taurad(domergeangles=True)
+        taurad1integrated,taurad1flipintegrated,taurad2integrated,taurad2flipintegrated,tauradintegrated,tauradeff1integrated,tauradeff1flipintegrated,tauradeff2integrated,tauradeff2flipintegrated,tauradeffintegrated=compute_taurad(domergeangles=True,radiussettau1zero=200)
     # now plot something you read-in
     #
     #ax.contour(itaurad1flipintegrated,linewidths=4,colors='cyan', extent=extent,hold='on',origin='lower',levels=(1,))
     #len=150
-    len = 50
+    len = 120
     ncell=800
     global taurad2integrated,tauradeffintegrated
 
@@ -28371,7 +28371,8 @@ def harmradtest1(path=None,fil=None):
     ax2 = plt.gca()
     #plc(Tg,cb=True,nc=50)
     myfun=np.log10(Tg)
-    len=40.0
+    #len=40.0
+    #len=120.0
     nxout=iofr(len)
     extent=(-len,len,-len,len)
     #
@@ -28424,18 +28425,36 @@ def harmradtest1(path=None,fil=None):
     edrad=intangle(-gdet*TudRAD[1][0])
     tauradlocal=(KAPPAUSER+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
     #edradthin[qindex]=intangle(-gdet*TudRAD[1][0],which=tauradlocal<=1.0)
-    edradthin=intangle(-gdet*TudRAD[1][0],which=tauradintegrated<=1.0)
+    edradthin1=intangle(-gdet*TudRAD[1][0],which=tauradintegrated<=1.0)
+    edradthin2=intangle(-gdet*TudRAD[1][0],which=taurad2integrated<=1.0)
+    edradthin3=intangle(-gdet*TudRAD[1][0],which=taurad2flipintegrated<=1.0)
+    edradthin4=intangle(-gdet*TudRAD[1][0],which=tauradeffintegrated<=1.0)
+    edradthin5=intangle(-gdet*TudRAD[1][0],which=tauradeff2integrated<=1.0)
+    edradthin6=intangle(-gdet*TudRAD[1][0],which=tauradeff2flipintegrated<=1.0)
     rjetout=100
     ijet=iofr(rjetout)
     edradjet=edrad[ijet]
     etarad=edradjet/mdothor
-    edradthinjet=edradthin[ijet]
-    etaradthin=edradthinjet/mdothor
+    #
+    edradthinjet1=edradthin1[ijet]
+    edradthinjet2=edradthin2[ijet]
+    edradthinjet3=edradthin3[ijet]
+    edradthinjet4=edradthin4[ijet]
+    edradthinjet5=edradthin5[ijet]
+    edradthinjet6=edradthin6[ijet]
+    #
+    etaradthinjet1=edradthinjet1/mdothor
+    etaradthinjet2=edradthinjet2/mdothor
+    etaradthinjet3=edradthinjet3/mdothor
+    etaradthinjet4=edradthinjet4/mdothor
+    etaradthinjet5=edradthinjet5/mdothor
+    etaradthinjet6=edradthinjet6/mdothor
     print("time=%g" % (t))
-    print("ihor=%d ifluxacc=%d mdothor=%g edradjet=%g edradthinjet=%g" % (ihor,ifluxacc,mdothor,edradjet,edradthinjet));sys.stdout.flush()
+    print("ihor=%d ifluxacc=%d mdothor=%g edradjet=%g" % (ihor,ifluxacc,mdothor,edradjet));sys.stdout.flush()
+    print("edradthinjet=%g edradthinjet2=%g edradthinjet3=%g edradthinjet4=%g edradthinjet5=%g edradthinjet6=%g" % (edradthinjet1,edradthinjet2,edradthinjet3,edradthinjet4,edradthinjet5,edradthinjet6));sys.stdout.flush()
     print("mdothor=%g" % (mdothor/Leddcode));sys.stdout.flush()
     print("etarad=%g" % (etarad));sys.stdout.flush()
-    print("etaradthin=%g" % (etaradthin));sys.stdout.flush()
+    print("etaradthinjet=%g etaradthinjet2=%g etaradthinjet3=%g etaradthinjet4=%g etaradthinjet5=%g etaradthinjet6=%g" % (etaradthinjet1,etaradthinjet2,etaradthinjet3,etaradthinjet4,etaradthinjet5,etaradthinjet6));sys.stdout.flush()
     #
 
 #def onclick(event,funorig1,funorig2):
