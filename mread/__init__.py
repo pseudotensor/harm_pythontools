@@ -28406,8 +28406,9 @@ def harmradtest1(path=None,fil=None):
     #ax.contour(myx,myz,myfun[0:nxout,:,0],linewidths=4,colors='black', extent=extent,hold='on',origin='lower',levels=(-7,-6,-5,-4,-3,-2,-1,0,1))
     #cid = fig2.canvas.mpl_connect('button_press_event', onclick)
     #cid = fig2.canvas.mpl_connect('button_press_event', lambda event: onclick(event,lTg,tauradeffintegrated))
-    arglist=[lTg,tauradeffintegrated]
-    cid = fig2.canvas.mpl_connect('button_press_event', lambda event: onclick(event,arglist))
+    arglist=[lTg,tauradintegrated,tauradeffintegrated]
+    argnamelist=["lTg","tauradintegrated","tauradeffintegrated"]
+    cid = fig2.canvas.mpl_connect('button_press_event', lambda event: onclick(event,arglist,argnamelist))
     #
     #plt.figure(6)
     #plco(aphi,xcoord=r*np.sin(h),ycoord=r*np.cos(h),colors='k',nc=30)
@@ -28438,7 +28439,7 @@ def harmradtest1(path=None,fil=None):
     #
 
 #def onclick(event,funorig1,funorig2):
-def onclick(event,arglist):
+def onclick(event,arglist,argnamelist):
     #thisline = event.artist
     #xdata2 = thisline.get_xdata()
     #ydata2 = thisline.get_ydata()
@@ -28460,7 +28461,7 @@ def onclick(event,arglist):
     for funi in range(lenarglist):
         funorig=arglist[funi]
         ifun = reinterp(funorig,extent,ncell,domask=1.0,interporder='linear')
-        print 'fun[%d]=%f' %(funi,ifun[0,0]);sys.stdout.flush()
+        print '%s[arg%d]=%f' %(argnamelist[funi],funi,ifun[0,0]);sys.stdout.flush()
 #, event.ind, zip(xdata[ind],ydata[ind]))
 
 
