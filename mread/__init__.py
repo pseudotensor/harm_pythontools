@@ -28312,6 +28312,10 @@ if __name__ == "__main__":
 def harmradtest1(path=None,fil=None):
     # e.g. harmradtest1("/data/jon/radruns/rada0.94/","fieldline3000.bin")
     #
+    dozrestrict=0
+    zrestrict=60.0
+    #
+    #
     print("GOT HERESTART");sys.stdout.flush()
     # 
     import os
@@ -28327,7 +28331,13 @@ def harmradtest1(path=None,fil=None):
     #rfd("fieldline0960.bin")
     #rfd("fieldline0312.bin")
     rfd(fil)
-    #rfd("fieldline0999.bin")
+    #
+    if(dozrestrict==1):
+        myz=r*np.cos(h)
+        rho[myz>zrestrict]=0.0
+        rho[myz<-zrestrict]=0.0
+        getkappas(1)
+    #
     if 1==1:
         (rhoclean,ugclean,uublob,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
         cvel()
@@ -28338,7 +28348,8 @@ def harmradtest1(path=None,fil=None):
     #
     #ax.contour(itaurad1flipintegrated,linewidths=4,colors='cyan', extent=extent,hold='on',origin='lower',levels=(1,))
     #len=150
-    len = 120
+    #len = 120
+    len=1E3
     ncell=800
     global taurad2integrated,tauradeffintegrated
 
@@ -28422,39 +28433,34 @@ def harmradtest1(path=None,fil=None):
     ifluxacc=ihor
     mdothor=mdtot[ifluxacc]
     #
-    edrad=intangle(-gdet*TudRAD[1][0])
-    tauradlocal=(KAPPAUSER+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
-    #edradthin[qindex]=intangle(-gdet*TudRAD[1][0],which=tauradlocal<=1.0)
-    edradthin1=intangle(-gdet*TudRAD[1][0],which=tauradintegrated<=1.0)
-    edradthin2=intangle(-gdet*TudRAD[1][0],which=taurad2integrated<=1.0)
-    edradthin3=intangle(-gdet*TudRAD[1][0],which=taurad2flipintegrated<=1.0)
-    edradthin4=intangle(-gdet*TudRAD[1][0],which=tauradeffintegrated<=1.0)
-    edradthin5=intangle(-gdet*TudRAD[1][0],which=tauradeff2integrated<=1.0)
-    edradthin6=intangle(-gdet*TudRAD[1][0],which=tauradeff2flipintegrated<=1.0)
     rjetout=100
     ijet=iofr(rjetout)
+    #
+    edrad=intangle(-gdet*TudRAD[1][0])
     edradjet=edrad[ijet]
-    etarad=edradjet/mdothor
-    #
-    edradthinjet1=edradthin1[ijet]
-    edradthinjet2=edradthin2[ijet]
-    edradthinjet3=edradthin3[ijet]
-    edradthinjet4=edradthin4[ijet]
-    edradthinjet5=edradthin5[ijet]
-    edradthinjet6=edradthin6[ijet]
-    #
-    etaradthinjet1=edradthinjet1/mdothor
-    etaradthinjet2=edradthinjet2/mdothor
-    etaradthinjet3=edradthinjet3/mdothor
-    etaradthinjet4=edradthinjet4/mdothor
-    etaradthinjet5=edradthinjet5/mdothor
-    etaradthinjet6=edradthinjet6/mdothor
+    etaradjet=edradjet/mdothor
     print("time=%g" % (t))
-    print("ihor=%d ifluxacc=%d mdothor=%g edradjet=%g" % (ihor,ifluxacc,mdothor,edradjet));sys.stdout.flush()
-    print("edradthinjet=%g edradthinjet2=%g edradthinjet3=%g edradthinjet4=%g edradthinjet5=%g edradthinjet6=%g" % (edradthinjet1,edradthinjet2,edradthinjet3,edradthinjet4,edradthinjet5,edradthinjet6));sys.stdout.flush()
-    print("mdothor=%g" % (mdothor/Leddcode));sys.stdout.flush()
-    print("etarad=%g" % (etarad));sys.stdout.flush()
-    print("etaradthinjet=%g etaradthinjet2=%g etaradthinjet3=%g etaradthinjet4=%g etaradthinjet5=%g etaradthinjet6=%g" % (etaradthinjet1,etaradthinjet2,etaradthinjet3,etaradthinjet4,etaradthinjet5,etaradthinjet6));sys.stdout.flush()
+    print("ihor=%d ifluxacc=%d mdothor=%g %gLedd edradjet=%g %gLedd etarad=%g" % (ihor,ifluxacc,mdothor,mdothor/Leddcode,edradjet,edradjet/Leddcode,etaradjet));sys.stdout.flush()
+    #
+    tauradlocal=(KAPPAUSER+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
+    #
+    for funi in range(10):
+        taulimit=funi+1.0
+        #edradthin[qindex]=intangle(-gdet*TudRAD[1][0],which=tauradlocal<=taulimit)
+        edradthin1=intangle(-gdet*TudRAD[1][0],which=tauradintegrated<=taulimit)
+        edradthin2=intangle(-gdet*TudRAD[1][0],which=taurad2integrated<=taulimit)
+        edradthin3=intangle(-gdet*TudRAD[1][0],which=taurad2flipintegrated<=taulimit)
+        edradthin4=intangle(-gdet*TudRAD[1][0],which=tauradeffintegrated<=taulimit)
+        edradthin5=intangle(-gdet*TudRAD[1][0],which=tauradeff2integrated<=taulimit)
+        edradthin6=intangle(-gdet*TudRAD[1][0],which=tauradeff2flipintegrated<=taulimit)
+        #        
+        etaradthinjet1=edradthin1[ijet]/mdothor
+        etaradthinjet2=edradthin2[ijet]/mdothor
+        etaradthinjet3=edradthin3[ijet]/mdothor
+        etaradthinjet4=edradthin4[ijet]/mdothor
+        etaradthinjet5=edradthin5[ijet]/mdothor
+        etaradthinjet6=edradthin6[ijet]/mdothor
+        print("taulimit=%g etaradthinjet=%g etaradthinjet2=%g etaradthinjet3=%g etaradthinjet4=%g etaradthinjet5=%g etaradthinjet6=%g" % (taulimit,etaradthinjet1,etaradthinjet2,etaradthinjet3,etaradthinjet4,etaradthinjet5,etaradthinjet6));sys.stdout.flush()
     #
 
 #def onclick(event,funorig1,funorig2):
