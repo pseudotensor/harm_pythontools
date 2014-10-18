@@ -1058,6 +1058,25 @@ def vis_grb(doreload=1,no=555,xmax=50,ymax=50,zmax=None,ncellx=101,ncelly=101,nc
         print( "Done!" ); sys.stdout.flush()
 
 
+def visualize_grid(no = 0, doreload=1):
+    if doreload:
+        grid3d("gdump.bin",use2d=1)
+        rfd("fieldline%04d.bin"%no)
+        cvel()
+    scene = mlab.figure(1, bgcolor=(0, 0, 0), fgcolor=(1, 1, 1), size=(210*2, 297*2))
+    mlab.clf()
+    sg = create_structured_grid(s=lrho,sname="density",v=None,vname=None)
+    # Now visualize the data.
+    d = mlab.pipeline.add_dataset(sg)
+    gx = mlab.pipeline.grid_plane(d)
+    # gy = mlab.pipeline.grid_plane(d)
+    # gy.grid_plane.axis = 'y'
+    gz = mlab.pipeline.grid_plane(d)
+    gz.grid_plane.axis = 'z'
+    iso = mlab.pipeline.iso_surface(d)
+
+        
+
 #@mayavi2.standalone    
 def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,ncelly=200,ncellz=1000,xmax_disk=200,ymax_disk=200,zmax_disk=1000,ncellx_disk=200,ncelly_disk=200,ncellz_disk=1000,dosavefig=0):
     if doreload:
