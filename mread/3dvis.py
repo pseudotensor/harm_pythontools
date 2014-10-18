@@ -1336,6 +1336,19 @@ def tiltedomegaf():
     omegatilt /= Rp
     return omegatilt
 
+def mk_vis_grb_movie(n1=0,n2=-1):
+    flist1 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
+    flist2 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9][0-9].bin") ) )
+    flist1.sort()
+    flist2.sort()
+    flist = np.concatenate((flist1,flist2))
+    for fldname in flist:
+        fldindex = np.int(fldname.split(".")[0].split("e")[-1])
+        if fldindex < n1: continue
+        if n2 >= 0 and fldindex > n2: continue
+        vis_grb(no=fldindex,dosavefig=1)
+
+
 # fn - figure number
 # fast = 1 avoids interpolations that make images nicer but take extra time
 # no = the fieldline dump number to load
@@ -1343,8 +1356,8 @@ def tiltedomegaf():
 # xmax, ymax, zmax = box sizes in x-, y-, and z-directions
 # ncellx, ncelly, ncellz = resolutions in x-, y-, and z-directions
 # dosavefig = 1 means to save the figure (=0 by default to speed up)
-def visualize_fieldlines(fn=1,fast=1,isaligned=0,doreload=1,no=0,xmax=60,ymax=30,zmax=30,ncellx=100,ncelly=50,ncellz=50,dosavefig=0):
-    global ph,lrhoi_jet,i3d_jet,j3d_jet,k3d_jet,xi_jet,yi_jet,zi_jet,scene
+def visualize_fieldlines(fn=1,fast=0,isaligned=0,doreload=1,no=0,xmax=100,ymax=60,zmax=60,ncellx=400,ncelly=200,ncellz=200,dosavefig=0,vmin=-3.6692,vmax=2.27925):
+    global ph,lrhoi_jet,i3d_jet,j3d_jet,k3d_jet,xi_jet,yi_jet,zi_jet,scene,vol_jet,otf_jet
     if isaligned:
         ncellxold = ncellx; ncellx = ncellz; ncellz = ncellxold
         xmaxold = xmax; xmax = zmax; zmax = xmaxold
@@ -1357,7 +1370,7 @@ def visualize_fieldlines(fn=1,fast=1,isaligned=0,doreload=1,no=0,xmax=60,ymax=30
         #FULLOUTPUT = 2
         #ph -= FULLOUTPUT*2*np.pi/(nz-2*FULLOUTPUT)
         cvel()
-    bsqorhofid = 0.1*np.max(bsq/rho)
+    bsqorhofid = 0.01*np.max(bsq/rho)
     rhead = np.max(r[bsq/rho>bsqorhofid])
     print "rhead = %g" % rhead
     scene = mlab.figure(fn, bgcolor=(0, 0, 0), fgcolor=(1, 1, 1), size=(210*2, 297*2))
@@ -1403,14 +1416,18 @@ def visualize_fieldlines(fn=1,fast=1,isaligned=0,doreload=1,no=0,xmax=60,ymax=30
         mlab_lrho_jet = mlab.pipeline.scalar_field(xi_jet,yi_jet,zi_jet,lrhoi_jet,fast=fast)
         from tvtk.util.ctf import PiecewiseFunction
         print( "Running volume rendering for jet..." ); sys.stdout.flush()
-        vol_jet = mlab.pipeline.volume(mlab_lrho_jet) #,vmin=-6,vmax=1)
+        #vmin = lrhoi_jet.min();
+        #vmax = lrhoi_jet.max();
+        print vmin, vmax
+        vol_jet = mlab.pipeline.volume(mlab_lrho_jet,vmin=vmin,vmax=vmax)
         print( "Done with volume rendering of jet..." ); sys.stdout.flush()
-        vol_jet.volume_mapper.blend_mode = 'minimum_intensity'
+        vol_jet.volume_mapper.blend_mode = 'composite'
         otf_jet = PiecewiseFunction()
         if 0:
             otf_jet.add_point(-6., 0.429)
             otf_jet.add_point(-4.547, 0.429)
-            otf_jet.add_point(-2.92, 0)
+            otf_jet.add_point(-2.92, 0.05)
+            otf_jet.add_point(-1, 0)
             otf_jet.add_point(1, 0.)
         elif 0:
             #less diffuse jet, so it does not touch box boundaries
@@ -1418,10 +1435,22 @@ def visualize_fieldlines(fn=1,fast=1,isaligned=0,doreload=1,no=0,xmax=60,ymax=30
             otf_jet.add_point(1, 0.1)
             otf_jet.add_point(2, 0.)
             otf_jet.add_point(4., 0.)
-        elif 1:
+        elif 0:
             #less diffuse jet, so it does not touch box boundaries
             otf_jet.add_point(lrhoi_jet.min(), .5)
             otf_jet.add_point(lrhoi_jet.max(), 0.)
+        elif 0:
+            otf_jet.add_point(vmin, 0.5)
+            otf_jet.add_point(-2.5, 0.5)
+            otf_jet.add_point(-2, 0.02)
+            otf_jet.add_point(-0.5, 0.)
+            otf_jet.add_point(vmax, 0.)
+        else:
+            otf_jet.add_point(vmin, 0.5)
+            otf_jet.add_point(-2.5, 0.5)
+            otf_jet.add_point(-2, 0.02)
+            otf_jet.add_point(-0.5, 0.02)
+            otf_jet.add_point(vmax, 0.02)
         vol_jet._otf = otf_jet
         vol_jet._volume_property.set_scalar_opacity(otf_jet)        
     if 1:
@@ -1439,7 +1468,7 @@ def visualize_fieldlines(fn=1,fast=1,isaligned=0,doreload=1,no=0,xmax=60,ymax=30
             streamlines.append(streamline)
             streamline.module_manager.scalar_lut_manager.lut_mode = 'gist_yarg'
             streamline.streamline_type = 'tube'
-            streamline.tube_filter.radius = 0.15
+            streamline.tube_filter.radius = 0.5
             if 0:
                 streamline.seed.widget.phi_resolution = 3
                 streamline.seed.widget.theta_resolution = 3
@@ -1500,15 +1529,15 @@ def visualize_fieldlines(fn=1,fast=1,isaligned=0,doreload=1,no=0,xmax=60,ymax=30
         surf.actor.property.backface_culling = True
         #mlab.colorbar(object=surf,title="Surface angular velocity")
     #move camera:
-    scene.scene.show_axes = True
-    scene.scene.camera.position = [-7.9580786405131221e-13, -93.080546590412126, -0.039630889892535492]
-    scene.scene.camera.focal_point = [-7.9580786405131221e-13, 0.0065279006958007812, -0.039630889892535492]
+    scene.scene.show_axes = False
+    scene.scene.camera.position = [0, -400, 0]
+    scene.scene.camera.focal_point = [0, 0, 0]
     scene.scene.camera.view_angle = 30.0
     if isaligned:
         scene.scene.camera.view_up = [0.0, 0.0, 1.0]
     else:
         scene.scene.camera.view_up = [1.0, 0.0, 0.0]
-    scene.scene.camera.clipping_range = [52.343213223812199, 144.59973299971753]
+    scene.scene.camera.clipping_range = [100, 800]
     scene.scene.camera.compute_view_plane_normal()
     scene.scene.render()    # iso.contour.maximum_contour = 75.0
     #vec = mlab.pipeline.vectors(d)
@@ -1520,7 +1549,7 @@ def visualize_fieldlines(fn=1,fast=1,isaligned=0,doreload=1,no=0,xmax=60,ymax=30
     print( "Done rendering!" ); sys.stdout.flush()
     if dosavefig:
         print( "Saving snapshot..." ); sys.stdout.flush()
-        mlab.savefig("disk_jet_with_field_lines.png", figure=scene, magnification=6.0)
+        mlab.savefig("disk_jet_with_field_lines.png", figure=scene, magnification=1.0)
         print( "Done!" ); sys.stdout.flush()
 
 
