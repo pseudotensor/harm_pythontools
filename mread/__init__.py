@@ -28444,7 +28444,11 @@ def harmradtest1(path=None,fil=None):
     #
     tauradlocal=(KAPPAUSER+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
     #
-    for funi in range(10):
+    tauradintegratedmax=np.amax(tauradintegrated)
+    tauradintegratedmaxint=tauradintegratedmax.astype(np.int64)
+    print("taumaxe=%g %d" % (tauradintegratedmax,tauradintegratedmaxint));sys.stdout.flush()
+    #
+    for funi in range(0,tauradintegratedmaxint,100):
         taulimit=funi+1.0
         #edradthin[qindex]=intangle(-gdet*TudRAD[1][0],which=tauradlocal<=taulimit)
         edradthin1=intangle(-gdet*TudRAD[1][0],which=tauradintegrated<=taulimit)

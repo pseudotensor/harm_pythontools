@@ -459,6 +459,11 @@ then
     # only took 6 minutes for thickdisk7 doing 458 files inside qty2.npy!  Up to death at point when tried to resample in time.
     timetotplot="8:00:00"
 
+	thequeueplot=$queue
+    numtasksplot=1
+    numtotalnodesplot=1
+
+
 fi
 
 
@@ -1223,7 +1228,7 @@ then
                 rm -rf $localerrorfile
                 rm -rf $localoutputfile
                 #
-		        bsubcommand="sbatch -A TG-PHY120005 -t $timetot -p $thequeue -n $numtasks -N $numtotalnodes -J $jobname -o $outputfile -e $errorfile --mail-user=$emailaddr --mail-type=begin --mail-type=end ./$superbatch"
+		        bsubcommand="sbatch -A TG-PHY120005 -t $timetot -p $thequeueplot -n $numtasksplot -N $numtotalnodesplot -J $jobname -o $outputfile -e $errorfile --mail-user=$emailaddr --mail-type=begin --mail-type=end ./$superbatch"
 
             elif [ $system -eq 5 ]
             then
@@ -2212,7 +2217,7 @@ then
                 rm -rf $localerrorfile
                 rm -rf $localoutputfile
                 #
-		        bsubcommand="sbatch -A TG-PHY120005 -t $timetot -p $thequeue -n $numtasks -N $numtotalnodes -J $jobname -o $outputfile -e $errorfile --mail-user=$emailaddr --mail-type=begin --mail-type=end ./$superbatch"
+		        bsubcommand="sbatch -A TG-PHY120005 -t $timetot -p $thequeueplot -n $numtasksplot -N $numtotalnodesplot -J $jobname -o $outputfile -e $errorfile --mail-user=$emailaddr --mail-type=begin --mail-type=end ./$superbatch"
             elif [ $system -eq 5 ]
             then
                 superbatch=superbatchfile.$thebatch
