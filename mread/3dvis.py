@@ -1322,6 +1322,7 @@ def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncell
     transition_f = np.maximum(np.minimum(1,3*(1-dictau["tau2"])),0)
     qty = np.log10( np.minimum(np.maximum(urad*transition_f,minrad),maxrad) )
     lrhoi_jet = np.float32(trilin(qty,i3d_jet,j3d_jet,k3d_jet))
+    lrhoi_jet = ndimage.filters.gaussian_filter(lrhoi_jet,2,order=3,mode="nearest")
     lrhoi_jet[ncellx/2,ncelly/2,ncellz/2] = np.log10(minrad)
     lrhoi_jet[ncellx/2,ncelly/2,ncellz/2+1] = np.log10(maxrad)
     print( "Done with trilinear interpolation for jet..." ); sys.stdout.flush()
@@ -1407,7 +1408,7 @@ def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncell
             print("Jet urad vmin/vmax: %g, %g" % (vmin, vmax) )
             otf_jet.add_point(vmin, 0)
             otf_jet.add_point(vmin+0.05*(vmax-vmin), 0)
-            otf_jet.add_point(vmin+0.5*(vmax-vmin), 0.04)
+            otf_jet.add_point(vmin+0.5*(vmax-vmin), 0.1)
             otf_jet.add_point(vmax, 1)
         vol_jet._otf = otf_jet
         vol_jet._volume_property.set_scalar_opacity(otf_jet)
@@ -1436,7 +1437,8 @@ def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncell
             vmax = np.log10(maxdisk)
             print("Disk vmin/vmax: %g, %g" % (vmin, vmax) )
             otf_disk.add_point(vmin, 0)
-            otf_disk.add_point(vmin+0.9*(vmax-vmin), 0.)
+            otf_disk.add_point(vmin+0.8*(vmax-vmin), 0.)
+            otf_disk.add_point(vmin+0.93*(vmax-vmin), 0.08)
             otf_disk.add_point(vmax, 0.347)
         vol_disk._otf = otf_disk
         vol_disk._volume_property.set_scalar_opacity(otf_disk)
@@ -1501,11 +1503,11 @@ def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncell
         zbh = rbh*cos(thbh)
         mlab.mesh(xbh, ybh, zbh, scalars=1+0*thbh, colormap='gist_yarg',vmin=0, vmax = 1)
     #move camera:
-    scene.scene.camera.position = [393.82904571500603, 843.1689099573839, -593.52283864776939]
+    scene.scene.camera.position = [-859.35106020552962, 428.88279116475701, -543.94833829177082]
     scene.scene.camera.focal_point = [0.0, 0.0, 0.0]
     scene.scene.camera.view_angle = 30.0
-    scene.scene.camera.view_up = [-0.49639982983367986, -0.33258349227742506, -0.80185748709209281]
-    scene.scene.camera.clipping_range = [439.89225404542503, 1941.9166267096546]
+    scene.scene.camera.view_up = [0.20772523499523163, -0.58144536411289605, -0.78662031202976024]
+    scene.scene.camera.clipping_range = [368.3714513741902, 2032.1100336754646]
     scene.scene.camera.compute_view_plane_normal()
     scene.scene.render()
     # iso.contour.maximum_contour = 75.0
