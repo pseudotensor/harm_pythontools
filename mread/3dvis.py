@@ -1078,7 +1078,7 @@ def visualize_grid(no = 0, doreload=1):
         
 
 #@mayavi2.standalone    
-def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,ncelly=200,ncellz=1000,xmax_disk=200,ymax_disk=200,zmax_disk=1000,ncellx_disk=200,ncelly_disk=200,ncellz_disk=1000,dosavefig=0):
+def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,ncelly=200,ncellz=1000,xmax_disk=200,ymax_disk=200,zmax_disk=200,ncellx_disk=200,ncelly_disk=200,ncellz_disk=200,dosavefig=0):
     if doreload:
         grid3d("gdump.bin",use2d=1)
         #rfd("fieldline9000.bin")
