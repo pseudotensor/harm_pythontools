@@ -1278,6 +1278,20 @@ def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,nce
         mlab.savefig("disk_jet_with_field_lines.png", figure=scene, magnification=6.0)
         print( "Done!" ); sys.stdout.flush()
 
+def mk_rad_movie(n1=0,n2=-1,dn=1):
+    flist1 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
+    flist2 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9][0-9].bin") ) )
+    flist1.sort()
+    flist2.sort()
+    flist = np.concatenate((flist1,flist2))
+    mlab.options.offscreen = True        
+    for fldname in flist:
+        fldindex = np.int(fldname.split(".")[0].split("e")[-1])
+        if fldindex < n1: continue
+        if n2 >= 0 and fldindex > n2: continue
+        visualize_rad(no=fldindex,dosavefig=1)
+    mlab.options.offscreen = False
+        
 
 def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncelly=100,ncellz=500,xmax_disk=100,ymax_disk=100,zmax_disk=100,ncellx_disk=100,ncelly_disk=100,ncellz_disk=100,dosavefig=0):
     if doreload:
@@ -1522,7 +1536,7 @@ def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncell
     print( "Done rendering!" ); sys.stdout.flush()
     if dosavefig:
         print( "Saving snapshot..." ); sys.stdout.flush()
-        mlab.savefig("disk_jet_with_field_lines.png", figure=scene, magnification=6.0)
+        mlab.savefig("frame%04.png" % no, figure=scene)
         print( "Done!" ); sys.stdout.flush()
 
 #vis_grb(dofieldlines=0,dosavefig=1)
