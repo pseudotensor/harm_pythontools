@@ -1321,8 +1321,9 @@ def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncell
     vmaxdisk = np.log10(maxdisk)
     transition_f = np.maximum(np.minimum(1,3*(1-dictau["tau2"])),0)
     qty = np.log10( np.minimum(np.maximum(urad*transition_f,minrad),maxrad) )
+    qty = ndimage.filters.gaussian_filter(qty,1,mode="wrap")
     lrhoi_jet = np.float32(trilin(qty,i3d_jet,j3d_jet,k3d_jet))
-    lrhoi_jet = ndimage.filters.gaussian_filter(lrhoi_jet,2,order=3,mode="nearest")
+    #lrhoi_jet = ndimage.filters.gaussian_filter(lrhoi_jet,1,mode="nearest")
     lrhoi_jet[ncellx/2,ncelly/2,ncellz/2] = np.log10(minrad)
     lrhoi_jet[ncellx/2,ncelly/2,ncellz/2+1] = np.log10(maxrad)
     print( "Done with trilinear interpolation for jet..." ); sys.stdout.flush()
@@ -1408,7 +1409,7 @@ def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncell
             print("Jet urad vmin/vmax: %g, %g" % (vmin, vmax) )
             otf_jet.add_point(vmin, 0)
             otf_jet.add_point(vmin+0.05*(vmax-vmin), 0)
-            otf_jet.add_point(vmin+0.5*(vmax-vmin), 0.1)
+            otf_jet.add_point(vmin+0.5*(vmax-vmin), 0.04)
             otf_jet.add_point(vmax, 1)
         vol_jet._otf = otf_jet
         vol_jet._volume_property.set_scalar_opacity(otf_jet)
@@ -1437,7 +1438,7 @@ def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncell
             vmax = np.log10(maxdisk)
             print("Disk vmin/vmax: %g, %g" % (vmin, vmax) )
             otf_disk.add_point(vmin, 0)
-            otf_disk.add_point(vmin+0.8*(vmax-vmin), 0.)
+            otf_disk.add_point(vmin+0.85*(vmax-vmin), 0.)
             otf_disk.add_point(vmin+0.93*(vmax-vmin), 0.08)
             otf_disk.add_point(vmax, 0.347)
         vol_disk._otf = otf_disk
