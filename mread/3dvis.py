@@ -1336,7 +1336,7 @@ def tiltedomegaf():
     omegatilt /= Rp
     return omegatilt
 
-def mk_vis_grb_movie(n1=0,n2=-1):
+def mk_movie(n1=0,n2=-1):
     flist1 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
     flist2 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9][0-9].bin") ) )
     flist1.sort()
@@ -1346,7 +1346,7 @@ def mk_vis_grb_movie(n1=0,n2=-1):
         fldindex = np.int(fldname.split(".")[0].split("e")[-1])
         if fldindex < n1: continue
         if n2 >= 0 and fldindex > n2: continue
-        vis_grb(no=fldindex,dosavefig=1)
+        visualize_fieldlines(no=fldindex,dosavefig=1,domov=1)
 
 
 # fn - figure number
@@ -1356,7 +1356,7 @@ def mk_vis_grb_movie(n1=0,n2=-1):
 # xmax, ymax, zmax = box sizes in x-, y-, and z-directions
 # ncellx, ncelly, ncellz = resolutions in x-, y-, and z-directions
 # dosavefig = 1 means to save the figure (=0 by default to speed up)
-def visualize_fieldlines(fn=1,fast=0,isaligned=0,doreload=1,no=0,xmax=100,ymax=60,zmax=60,ncellx=400,ncelly=200,ncellz=200,dosavefig=0,vmin=-3.6692,vmax=2.27925):
+def visualize_fieldlines(fn=1,fast=0,isaligned=0,doreload=1,no=0,xmax=100,ymax=30,zmax=30,ncellx=200,ncelly=60,ncellz=60,dosavefig=0,vmin=-3.6692+1,vmax=2.27925+1,domov=0):
     global ph,lrhoi_jet,i3d_jet,j3d_jet,k3d_jet,xi_jet,yi_jet,zi_jet,scene,vol_jet,otf_jet
     if isaligned:
         ncellxold = ncellx; ncellx = ncellz; ncellz = ncellxold
@@ -1441,23 +1441,32 @@ def visualize_fieldlines(fn=1,fast=0,isaligned=0,doreload=1,no=0,xmax=100,ymax=6
             otf_jet.add_point(lrhoi_jet.max(), 0.)
         elif 0:
             otf_jet.add_point(vmin, 0.5)
-            otf_jet.add_point(-2.5, 0.5)
-            otf_jet.add_point(-2, 0.02)
+            otf_jet.add_point(vmin-(-3.6692)-2.5, 0.5)
+            otf_jet.add_point(vmin-(-3.6692)-2, 0.02)
             otf_jet.add_point(-0.5, 0.)
             otf_jet.add_point(vmax, 0.)
-        else:
+        elif 1: #good for lowd
             otf_jet.add_point(vmin, 0.5)
             otf_jet.add_point(-2.5, 0.5)
             otf_jet.add_point(-2, 0.02)
             otf_jet.add_point(-0.5, 0.02)
             otf_jet.add_point(vmax, 0.02)
+        else: #good for hid
+            otf_jet.add_point(vmin, 0.5)
+            otf_jet.add_point(0.5*(vmin+vmax), 0.04)
+            otf_jet.add_point(vmax, 0.0)
         vol_jet._otf = otf_jet
         vol_jet._volume_property.set_scalar_opacity(otf_jet)        
     if 1:
         streamlines = []
-        xpos = [1, -1,  0.5,  0.5, -0.5,  -0.5]
-        ypos = [0,  0,  0.0,  0.0,  0.0,   0.0]
-        zpos = [0,  0,  0.5, -0.5,  0.5,  -0.5]
+        if domov:
+            xpos = [0.5,                     -0.5]
+            ypos = [0.5*np.sin(OmegaNS*t),   0.5*np.sin(OmegaNS*t)]
+            zpos = [0.5*np.cos(OmegaNS*t),   0.5*np.cos(OmegaNS*t)]
+        else: 
+            xpos = [1, -1,  0.5,  0.5, -0.5,  -0.5]
+            ypos = [0,  0,  0.0,  0.0,  0.0,   0.0]
+            zpos = [0,  0,  0.5, -0.5,  0.5,  -0.5]
         intdir = ['forward', 'forward', 'forward', 'forward', 'forward', 'forward']
         for sn in xrange(len(xpos)):
             print( "Running rendering of streamline #%d..." % (sn+1) ); sys.stdout.flush()
@@ -1529,8 +1538,8 @@ def visualize_fieldlines(fn=1,fast=0,isaligned=0,doreload=1,no=0,xmax=100,ymax=6
         surf.actor.property.backface_culling = True
         #mlab.colorbar(object=surf,title="Surface angular velocity")
     #move camera:
-    scene.scene.show_axes = False
-    scene.scene.camera.position = [0, -400, 0]
+    #scene.scene.show_axes = False
+    scene.scene.camera.position = [0, -200, 0]
     scene.scene.camera.focal_point = [0, 0, 0]
     scene.scene.camera.view_angle = 30.0
     if isaligned:
@@ -1549,7 +1558,7 @@ def visualize_fieldlines(fn=1,fast=0,isaligned=0,doreload=1,no=0,xmax=100,ymax=6
     print( "Done rendering!" ); sys.stdout.flush()
     if dosavefig:
         print( "Saving snapshot..." ); sys.stdout.flush()
-        mlab.savefig("disk_jet_with_field_lines.png", figure=scene, magnification=1.0)
+        mlab.savefig("frame%04d.png" % no, figure=scene, magnification=1.0)
         print( "Done!" ); sys.stdout.flush()
 
 
