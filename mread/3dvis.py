@@ -1278,7 +1278,14 @@ def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,nce
         mlab.savefig("disk_jet_with_field_lines.png", figure=scene, magnification=6.0)
         print( "Done!" ); sys.stdout.flush()
 
-def mk_rad_movie(n1=0,n2=-1,dn=1):
+def mk_rad_movie():
+    if len(sys.argv[2:])>=2 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
+        whichi = int(sys.argv[2])
+        whichn = int(sys.argv[3])
+        endn = -1
+        if len(sys.argv[2:])==3:
+            if sys.argv[4].isdigit():
+                dn = int(sys.argv[4])
     flist1 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
     flist2 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9][0-9].bin") ) )
     flist1.sort()
@@ -1287,9 +1294,7 @@ def mk_rad_movie(n1=0,n2=-1,dn=1):
     #mlab.options.offscreen = True        
     for fldname in flist:
         fldindex = np.int(fldname.split(".")[0].split("e")[-1])
-        if fldindex < n1: continue
-        if n2 >= 0 and fldindex > n2: continue
-        if fldindex % dn != 0: continue
+        if fldindex % dn != 0 or (fldindex/dn) % whichn != whichi: continue
         fname = "frame%04d.png" % (fldindex)
         if os.path.isfile(fname):
             print("%s exists, skippping" % fname)
@@ -2127,3 +2132,8 @@ def vis_pulsar(doreload=1,no=96,xmax=21,ymax=21,zmax=21,ncellx=201,ncelly=201,nc
         print( "Saving snapshot..." ); sys.stdout.flush()
         mlab.savefig("disk_jet_nozoomchange_%04d.png" % no, figure=scene, magnification=2.0)
         print( "Done!" ); sys.stdout.flush()
+
+if __name__ == "__main__":
+    if len(sys.argv)>1:
+        if sys.argv[1] == "mk_rad_movie":
+            mk_rad_movie()
