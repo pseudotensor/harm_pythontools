@@ -1302,7 +1302,14 @@ def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncell
     if doreload:
         grid3d("gdump.bin",use2d=1)
         #rfd("fieldline9000.bin")
-        rfd("fieldline%04d.bin"%no)
+        try: 
+            fname = "fieldline%04d.bin"%no
+            rfd(fname)
+        except IOError as e:
+            print( "While reading %s:" % fname )
+            print( "I/O error({0}): {1}".format(e.errno, e.strerror) )
+            print( "Skipping" )
+            return
         cvel()
     dictau = compute_taurad()
     scene = mlab.figure(1, bgcolor=(0, 0, 0), fgcolor=(1, 1, 1), size=(210*2, 297*2))
