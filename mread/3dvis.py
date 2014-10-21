@@ -1471,12 +1471,12 @@ def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncell
         streamlines = []
         OmegaH = a/(2*rhor)
         phase = 0.25*OmegaH*t
-        jetcond = (bsq/rho>5)*(Bpnorm>3*Brnorm)
+        jetcond = (bsq/rho>20)&(Bpnorm>5*Brnorm)
         if (jetcond).sum()>0:
             length1 = length2 = r[jetcond].max()
             xpos = [2*np.sin(phase), 2*np.sin(phase)]
             ypos = [2*np.cos(phase), 2*np.cos(phase)]
-            zpos = [2,-2]
+            zpos = [3,-3]
             lens = [length1, length2]
             intdir = ['forward', 'backward']
             for sn in xrange(len(xpos)):
