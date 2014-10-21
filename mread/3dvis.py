@@ -1284,16 +1284,21 @@ def mk_rad_movie(n1=0,n2=-1,dn=1):
     flist1.sort()
     flist2.sort()
     flist = np.concatenate((flist1,flist2))
-    mlab.options.offscreen = True        
+    #mlab.options.offscreen = True        
     for fldname in flist:
         fldindex = np.int(fldname.split(".")[0].split("e")[-1])
         if fldindex < n1: continue
         if n2 >= 0 and fldindex > n2: continue
+        if fldindex % dn != 0: continue
+        fname = "frame%04d.png" % (fldindex)
+        if os.path.isfile(fname):
+            print("%s exists, skippping" % fname)
+            continue
         visualize_rad(no=fldindex,dosavefig=1)
-    mlab.options.offscreen = False
+    #mlab.options.offscreen = False
         
 
-def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncelly=100,ncellz=500,xmax_disk=100,ymax_disk=100,zmax_disk=100,ncellx_disk=100,ncelly_disk=100,ncellz_disk=100,dosavefig=0):
+def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncelly=100,ncellz=500,xmax_disk=200,ymax_disk=200,zmax_disk=200,ncellx_disk=200,ncelly_disk=200,ncellz_disk=200,dosavefig=0):
     if doreload:
         grid3d("gdump.bin",use2d=1)
         #rfd("fieldline9000.bin")
@@ -1330,7 +1335,7 @@ def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncell
     vminrad = np.log10(minrad)
     vmaxrad = np.log10(maxrad)
     mindisk = 1e-15
-    maxdisk = 1e-2
+    maxdisk = 1e-1
     vmindisk = np.log10(mindisk)
     vmaxdisk = np.log10(maxdisk)
     transition_f = np.maximum(np.minimum(1,3*(1-dictau["tau2"])),0)
@@ -1338,9 +1343,11 @@ def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncell
     qty = ndimage.filters.gaussian_filter(qty,1,mode="wrap")
     lrhoi_jet = np.float32(trilin(qty,i3d_jet,j3d_jet,k3d_jet))
     #lrhoi_jet = ndimage.filters.gaussian_filter(lrhoi_jet,1,mode="nearest")
-    lrhoi_jet[ncellx/2,ncelly/2,ncellz/2] = np.log10(minrad)
-    lrhoi_jet[ncellx/2,ncelly/2,ncellz/2+1] = np.log10(maxrad)
+    lrhoi_jet[ncellx/2,ncelly/2,ncellz/2] = vminrad
+    lrhoi_jet[ncellx/2,ncelly/2,ncellz/2+1] = vmaxrad
     print( "Done with trilinear interpolation for jet..." ); sys.stdout.flush()
+    minlrhodisk = lrhoi_disk.min()
+    maxlrhodisk = lrhoi_disk.max()
     lrhoi_disk[ncellx_disk/2,ncelly_disk/2,ncellz_disk/2] = vmindisk
     lrhoi_disk[ncellx_disk/2,ncelly_disk/2,ncellz_disk/2+1] = vmaxdisk
     mlab_lrho_disk = mlab.pipeline.scalar_field(xi_disk,yi_disk,zi_disk,lrhoi_disk)
@@ -1450,11 +1457,12 @@ def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncell
             #vmax = lrhoi_disk.max()
             vmin = np.log10(mindisk)
             vmax = np.log10(maxdisk)
-            print("Disk vmin/vmax: %g, %g" % (vmin, vmax) )
+            print("Disk vmin/vmax: %g, %g (actual: %g, %g)" % (vmin, vmax, minlrhodisk, maxlrhodisk) )
             otf_disk.add_point(vmin, 0)
-            otf_disk.add_point(vmin+0.85*(vmax-vmin), 0.)
-            otf_disk.add_point(vmin+0.93*(vmax-vmin), 0.08)
-            otf_disk.add_point(vmax, 0.347)
+            otf_disk.add_point(vmin+0.8*(vmax-1-vmin), 0.)
+            otf_disk.add_point(vmin+0.9*(vmax-1-vmin), 0.08)
+            otf_disk.add_point(vmax-1, 0.5)
+            otf_disk.add_point(vmax, 0.5)
         vol_disk._otf = otf_disk
         vol_disk._volume_property.set_scalar_opacity(otf_disk)
         vol_disk.update_ctf = 1
@@ -1462,41 +1470,45 @@ def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncell
     if 1:
         streamlines = []
         OmegaH = a/(2*rhor)
-        phase = 0.25*OmegaH
-        length = r[bsq/rho>1].max()
-        xpos = [np.sin(phase), np.sin(phase)]
-        ypos = [np.cos(phase), np.cos(phase)]
-        zpos = [1,-1]
-        intdir = ['forward', 'backward']
-        for sn in xrange(len(xpos)):
-            print( "Running rendering of streamline #%d..." % (sn+1) ); sys.stdout.flush()
-            streamline = mlab.flow(xi_jet, yi_jet, zi_jet, Bxi, Byi, Bzi, seed_scale=0.01,
-                             seed_resolution=5,
-                             integration_direction=intdir[sn],
-                             seedtype='point')
-            streamlines.append(streamline)
-            streamline.module_manager.scalar_lut_manager.lut_mode = 'gist_yarg'
-            streamline.streamline_type = 'tube'
-            streamline.tube_filter.radius = 2.022536581333679
-            if 0:
-                streamline.seed.widget.phi_resolution = 3
-                streamline.seed.widget.theta_resolution = 3
-                streamline.seed.widget.radius = 1.0
-            elif 0: 
-                #more tightly wound field lines
-                streamline.seed.widget.phi_resolution = 10
-                streamline.seed.widget.theta_resolution = 5
-                #make them more round
-            streamline.tube_filter.number_of_sides = 8
-            streamline.stream_tracer.progress = 1.0
-            streamline.stream_tracer.maximum_number_of_steps = 10000L
-            #streamline.stream_tracer.start_position =  np.array([ 0.,  0.,  0.])
-            streamline.stream_tracer.maximum_propagation = 3*length
-            streamline.seed.widget.position = np.array([ xpos[sn],  ypos[sn],  zpos[sn]])
-            streamline.seed.widget.enabled = False
-            streamline.update_streamlines = 1
-            print( "Done with streamline #%d..." % (sn+1)); sys.stdout.flush()
-        #pdb.set_trace()
+        phase = 0.25*OmegaH*t
+        jetcond = (bsq/rho>5)*(Bpnorm>3*Brnorm)
+        if (jetcond).sum()>0:
+            length1 = length2 = r[jetcond].max()
+            xpos = [2*np.sin(phase), 2*np.sin(phase)]
+            ypos = [2*np.cos(phase), 2*np.cos(phase)]
+            zpos = [2,-2]
+            lens = [length1, length2]
+            intdir = ['forward', 'backward']
+            for sn in xrange(len(xpos)):
+                print( "Running rendering of streamline #%d..." % (sn+1) ); sys.stdout.flush()
+                streamline = mlab.flow(xi_jet, yi_jet, zi_jet, Bxi, Byi, Bzi, seed_scale=0.01,
+                                 seed_resolution=5,
+                                 integration_direction=intdir[sn],
+                                 seedtype='point')
+                streamlines.append(streamline)
+                streamline.module_manager.scalar_lut_manager.lut_mode = 'gist_yarg'
+                streamline.streamline_type = 'tube'
+                streamline.tube_filter.radius = 2.022536581333679
+                if 0:
+                    streamline.seed.widget.phi_resolution = 3
+                    streamline.seed.widget.theta_resolution = 3
+                    streamline.seed.widget.radius = 1.0
+                elif 0: 
+                    #more tightly wound field lines
+                    streamline.seed.widget.phi_resolution = 10
+                    streamline.seed.widget.theta_resolution = 5
+                    #make them more round
+                streamline.tube_filter.number_of_sides = 8
+                streamline.stream_tracer.progress = 1.0
+                streamline.stream_tracer.maximum_number_of_steps = 10000L
+                #streamline.stream_tracer.start_position =  np.array([ 0.,  0.,  0.])
+                streamline.stream_tracer.maximum_propagation = 1*lens[sn]
+                streamline.seed.widget.position = np.array([ xpos[sn],  ypos[sn],  zpos[sn]])
+                streamline.seed.widget.enabled = False
+                streamline.update_streamlines = 1
+                print( "Done with streamline #%d..." % (sn+1)); sys.stdout.flush()
+        else:
+            print("No highly magnetized region, skipping field lines")
     if 0:
         myr = 20
         myi = iofr(myr)
@@ -1536,7 +1548,7 @@ def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncell
     print( "Done rendering!" ); sys.stdout.flush()
     if dosavefig:
         print( "Saving snapshot..." ); sys.stdout.flush()
-        mlab.savefig("frame%04.png" % no, figure=scene)
+        mlab.savefig("frame%04d.png" % no, figure=scene)
         print( "Done!" ); sys.stdout.flush()
 
 #vis_grb(dofieldlines=0,dosavefig=1)
