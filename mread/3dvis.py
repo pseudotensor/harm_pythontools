@@ -1305,8 +1305,7 @@ def mk_rad_movie():
 
 def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncelly=100,ncellz=500,xmax_disk=200,ymax_disk=200,zmax_disk=200,ncellx_disk=200,ncelly_disk=200,ncellz_disk=200,dosavefig=0):
     import mread as mr
-    global r, h, ph, ti, tj, tk, nx, ny, nz, dxdxp, _dx1, _dx2, _dx3
-    from mread import *
+    global r, h, ph, ti, tj, tk, nx, ny, nz, dxdxp, _dx1, _dx2, _dx3, B, gv3, gn3, uu, a, t, rhor, bsq
     if doreload:
         mr.grid3d("gdump.bin",use2d=1)
         #rfd("fieldline9000.bin")
@@ -1318,9 +1317,10 @@ def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncell
             print( "I/O error({0}): {1}".format(e.errno, e.strerror) )
             print( "Skipping" )
             return
-        cvel()
-    from mread import lrho, rho, urad, ti, tj, tk, r, h, ph, nx, ny, nz, dxdxp, _dx1, _dx2, _dx3
-    dictau = compute_taurad()
+        from mread import lrho, rho, urad, ti, tj, tk, r, h, ph, nx, ny, nz, dxdxp, _dx1, _dx2, _dx3, B, gv3, gn3, uu, a, t, rhor
+        mr.cvel()
+        from mread import bsq
+    dictau = mr.compute_taurad()
     scene = mlab.figure(1, bgcolor=(0, 0, 0), fgcolor=(1, 1, 1), size=(210*2, 297*2))
     scene.scene.disable_render = True
     mlab.clf()
@@ -1356,8 +1356,8 @@ def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncell
     vmaxdisk = np.log10(maxdisk)
     transition_f = np.maximum(np.minimum(1,3*(1-dictau["tau2"])),0)
     qty = np.log10( np.minimum(np.maximum(urad*transition_f,minrad),maxrad) )
-    qty = ndimage.filters.gaussian_filter(qty,1,mode="wrap")
     lrhoi_jet = np.float32(trilin(qty,i3d_jet,j3d_jet,k3d_jet))
+    lrhoi_jet = ndimage.filters.gaussian_filter(lrhoi_jet,1,mode="wrap")
     #lrhoi_jet = ndimage.filters.gaussian_filter(lrhoi_jet,1,mode="nearest")
     lrhoi_jet[ncellx/2,ncelly/2,ncellz/2] = vminrad
     lrhoi_jet[ncellx/2,ncelly/2,ncellz/2+1] = vmaxrad
