@@ -1278,14 +1278,15 @@ def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,nce
         mlab.savefig("disk_jet_with_field_lines.png", figure=scene, magnification=6.0)
         print( "Done!" ); sys.stdout.flush()
 
-def mk_rad_movie():
-    if len(sys.argv[2:])>=2 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
-        whichi = int(sys.argv[2])
-        whichn = int(sys.argv[3])
-        endn = -1
-        if len(sys.argv[2:])==3:
-            if sys.argv[4].isdigit():
-                dn = int(sys.argv[4])
+def mk_rad_movie(whichi=None,whichn=None,dn=None):
+    if whichi is None or whichn is None or dn is None:
+        if len(sys.argv[2:])>=2 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
+            whichi = int(sys.argv[2])
+            whichn = int(sys.argv[3])
+            endn = -1
+            if len(sys.argv[2:])==3:
+                if sys.argv[4].isdigit():
+                    dn = int(sys.argv[4])
     flist1 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
     flist2 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9][0-9].bin") ) )
     flist1.sort()
@@ -1303,9 +1304,9 @@ def mk_rad_movie():
     #mlab.options.offscreen = False
         
 
-def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncelly=100,ncellz=500,xmax_disk=200,ymax_disk=200,zmax_disk=200,ncellx_disk=200,ncelly_disk=200,ncellz_disk=200,dosavefig=0):
+def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncelly=100,ncellz=500,xmax_disk=250,ymax_disk=250,zmax_disk=250,ncellx_disk=200,ncelly_disk=200,ncellz_disk=200,dosavefig=0):
     import mread as mr
-    global r, h, ph, ti, tj, tk, nx, ny, nz, dxdxp, _dx1, _dx2, _dx3, B, gv3, gn3, uu, a, t, rhor, bsq
+    global r, h, ph, ti, tj, tk, nx, ny, nz, dxdxp, _dx1, _dx2, _dx3, B, gv3, gn3, uu, a, t, rhor, bsq, scene
     if doreload:
         mr.grid3d("gdump.bin",use2d=1)
         #rfd("fieldline9000.bin")
@@ -1321,8 +1322,11 @@ def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncell
         mr.cvel()
         from mread import bsq
     dictau = mr.compute_taurad()
-    scene = mlab.figure(1, bgcolor=(0, 0, 0), fgcolor=(1, 1, 1), size=(210*2, 297*2))
-    scene.scene.disable_render = True
+    if "scene" not in globals():
+        scene = mlab.figure(1, bgcolor=(0, 0, 0), fgcolor=(1, 1, 1), size=(210*2, 297*2))
+    # else:
+    #     scene = mlab.figure(1)
+    #scene.scene.disable_render = True
     mlab.clf()
     #pdb.set_trace()
     #choose 1.8 > sqrt(3):
@@ -1356,8 +1360,8 @@ def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncell
     vmaxdisk = np.log10(maxdisk)
     transition_f = np.maximum(np.minimum(1,3*(1-dictau["tau2"])),0)
     qty = np.log10( np.minimum(np.maximum(urad*transition_f,minrad),maxrad) )
+    qty = ndimage.filters.gaussian_filter(qty,1,mode="wrap")
     lrhoi_jet = np.float32(trilin(qty,i3d_jet,j3d_jet,k3d_jet))
-    lrhoi_jet = ndimage.filters.gaussian_filter(lrhoi_jet,1,mode="wrap")
     #lrhoi_jet = ndimage.filters.gaussian_filter(lrhoi_jet,1,mode="nearest")
     lrhoi_jet[ncellx/2,ncelly/2,ncellz/2] = vminrad
     lrhoi_jet[ncellx/2,ncelly/2,ncellz/2+1] = vmaxrad
@@ -1446,7 +1450,7 @@ def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncell
             print("Jet urad vmin/vmax: %g, %g" % (vmin, vmax) )
             otf_jet.add_point(vmin, 0)
             otf_jet.add_point(vmin+0.05*(vmax-vmin), 0)
-            otf_jet.add_point(vmin+0.5*(vmax-vmin), 0.04)
+            otf_jet.add_point(vmin+0.5*(vmax-vmin), 0.4)
             otf_jet.add_point(vmax, 1)
         vol_jet._otf = otf_jet
         vol_jet._volume_property.set_scalar_opacity(otf_jet)
@@ -1468,7 +1472,7 @@ def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncell
             otf_disk.add_point(-1.133, 0.51)
             otf_disk.add_point(-0.533, 0.796)
             otf_disk.add_point(1., 1.)
-        else:
+        elif 0:
             #vmin = lrhoi_disk.min()
             #vmax = lrhoi_disk.max()
             vmin = np.log10(mindisk)
@@ -1479,6 +1483,17 @@ def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncell
             otf_disk.add_point(vmin+0.9*(vmax-1-vmin), 0.08)
             otf_disk.add_point(vmax-1, 0.5)
             otf_disk.add_point(vmax, 0.5)
+        else:
+            #vmin = lrhoi_disk.min()
+            #vmax = lrhoi_disk.max()
+            vmin = np.log10(mindisk)
+            vmax = np.log10(maxdisk)
+            print("Disk vmin/vmax: %g, %g (actual: %g, %g)" % (vmin, vmax, minlrhodisk, maxlrhodisk) )
+            otf_disk.add_point(vmin, 0)
+            otf_disk.add_point(vmin+0.8*(vmax-1-vmin), 0.)
+            otf_disk.add_point(vmin+0.9*(vmax-1-vmin), 0.654)
+            otf_disk.add_point(vmax-1, 1)
+            otf_disk.add_point(vmax, 1)
         vol_disk._otf = otf_disk
         vol_disk._volume_property.set_scalar_opacity(otf_disk)
         vol_disk.update_ctf = 1
@@ -1546,11 +1561,11 @@ def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncell
         zbh = rbh*cos(thbh)
         mlab.mesh(xbh, ybh, zbh, scalars=1+0*thbh, colormap='gist_yarg',vmin=0, vmax = 1)
     #move camera:
-    scene.scene.camera.position = [-859.35106020552962, 428.88279116475701, -543.94833829177082]
-    scene.scene.camera.focal_point = [0.0, 0.0, 0.0]
+    scene.scene.camera.position = [-688.00816405612352, -91.761569030216819, -858.2127175737038]
+    scene.scene.camera.focal_point = [2.6959437879713872e-12, 2.9410295868778768e-12, 2.4508579890648971e-13]
     scene.scene.camera.view_angle = 30.0
-    scene.scene.camera.view_up = [0.20772523499523163, -0.58144536411289605, -0.78662031202976024]
-    scene.scene.camera.clipping_range = [368.3714513741902, 2032.1100336754646]
+    scene.scene.camera.view_up = [0.74307707618872376, -0.37262680989185148, -0.55586483914045115]
+    scene.scene.camera.clipping_range = [37.916866113399806, 2448.1180419870261]
     scene.scene.camera.compute_view_plane_normal()
     scene.scene.render()
     # iso.contour.maximum_contour = 75.0
@@ -1560,12 +1575,15 @@ def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncell
     #move the camera so it is centered on (0,0,0)
     #mlab.view(focalpoint=[0,0,0],distance=500)
     #mlab.show()
-    scene.scene.disable_render = False
+    #scene.scene.disable_render = False
     print( "Done rendering!" ); sys.stdout.flush()
     if dosavefig:
         print( "Saving snapshot..." ); sys.stdout.flush()
         mlab.savefig("frame%04d.png" % no, figure=scene)
         print( "Done!" ); sys.stdout.flush()
+    del r, h, ph, ti, tj, tk, nx, ny, nz, dxdxp, _dx1, _dx2, _dx3, B, gv3, gn3, uu, a, t, rhor, bsq
+    gc.collect()
+    
 
 #vis_grb(dofieldlines=0,dosavefig=1)
 #mk_vis_grb_movie(n1=259)
