@@ -87,177 +87,178 @@ runnoverride=128
 # below list obtained from __init__.py and then processed for bash
 if [ $modelname == "thickdisk7" ]
 then
-    jobsuffix="jy$system"       
+    jobprefix="td7"
+    jobsuffix="jy"       
 elif [ $modelname == "thickdisk8" ]
 then
-    jobsuffix="jb$system"       
+    jobsuffix="jb"       
 elif [ $modelname == "thickdisk11" ]
 then
-    jobsuffix="jc$system"       
+    jobsuffix="jc"       
 elif [ $modelname == "thickdisk12" ]
 then
-    jobsuffix="jd$system"       
+    jobsuffix="jd"       
 elif [ $modelname == "thickdisk13" ]
 then
-    jobsuffix="je$system"       
+    jobsuffix="je"       
 elif [ $modelname == "run.like8" ]
 then
-    jobsuffix="jf$system"       
+    jobsuffix="jf"       
 elif [ $modelname == "thickdiskrr2" ]
 then
-    jobsuffix="jg$system"       
+    jobsuffix="jg"       
 elif [ $modelname == "run.liker2butbeta40" ]
 then
-    jobsuffix="jh$system"       
+    jobsuffix="jh"       
 elif [ $modelname == "run.liker2" ]
 then
-    jobsuffix="ji$system"       
+    jobsuffix="ji"       
 elif [ $modelname == "thickdisk16" ]
 then
-    jobsuffix="jj$system"       
+    jobsuffix="jj"       
 elif [ $modelname == "thickdisk5" ]
 then
-    jobsuffix="jk$system"       
+    jobsuffix="jk"       
 elif [ $modelname == "thickdisk14" ]
 then
-    jobsuffix="jl$system"       
+    jobsuffix="jl"       
 elif [ $modelname == "thickdiskr1" ]
 then
-    jobsuffix="jm$system"       
+    jobsuffix="jm"       
 elif [ $modelname == "run.liker1" ]
 then
-    jobsuffix="jn$system"       
+    jobsuffix="jn"       
 elif [ $modelname == "thickdiskr2" ]
 then
-    jobsuffix="jo$system"       
+    jobsuffix="jo"       
 elif [ $modelname == "thickdisk9" ]
 then
-    jobsuffix="jp$system"       
+    jobsuffix="jp"       
 elif [ $modelname == "thickdiskr3" ]
 then
-    jobsuffix="jq$system"       
+    jobsuffix="jq"       
 elif [ $modelname == "thickdisk17" ]
 then
-    jobsuffix="jr$system"       
+    jobsuffix="jr"       
 elif [ $modelname == "thickdisk10" ]
 then
-    jobsuffix="js$system"       
+    jobsuffix="js"       
 elif [ $modelname == "thickdisk15" ]
 then
-    jobsuffix="jt$system"       
+    jobsuffix="jt"       
 elif [ $modelname == "thickdiskr15" ]
 then
-    jobsuffix="ju$system"       
+    jobsuffix="ju"       
 elif [ $modelname == "thickdisk2" ]
 then
-    jobsuffix="jv$system"       
+    jobsuffix="jv"       
 elif [ $modelname == "thickdisk3" ]
 then
-    jobsuffix="jw$system"       
+    jobsuffix="jw"       
 elif [ $modelname == "thickdiskhr3" ]
 then
-    jobsuffix="jx$system"       
+    jobsuffix="jx"       
 elif [ $modelname == "runlocaldipole3dfiducial" ]
 then
-    jobsuffix="ja$system"       
+    jobsuffix="ja"       
 elif [ $modelname == "blandford3d_new" ]
 then
-    jobsuffix="ka$system"       
+    jobsuffix="ka"       
 elif [ $modelname == "a0hr07" ]
 then
-    jobsuffix="kb$system"       
+    jobsuffix="kb"       
 elif [ $modelname == "sasham9" ]
 then
-    jobsuffix="kc$system"       
+    jobsuffix="kc"       
 elif [ $modelname == "sasham9full2pi" ]
 then
-    jobsuffix="kd$system"       
+    jobsuffix="kd"       
 elif [ $modelname == "sasham5" ]
 then
-    jobsuffix="ke$system"       
+    jobsuffix="ke"       
 elif [ $modelname == "sasham2" ]
 then
-    jobsuffix="kf$system"       
+    jobsuffix="kf"       
 elif [ $modelname == "sasha0" ]
 then
-    jobsuffix="kg$system"       
+    jobsuffix="kg"       
 elif [ $modelname == "sasha1" ]
 then
-    jobsuffix="kh$system"       
+    jobsuffix="kh"       
 elif [ $modelname == "sasha2" ]
 then
-    jobsuffix="ki$system"       
+    jobsuffix="ki"       
 elif [ $modelname == "sasha5" ]
 then
-    jobsuffix="kj$system"       
+    jobsuffix="kj"       
 elif [ $modelname == "sasha9b25" ]
 then
-    jobsuffix="kk$system"       
+    jobsuffix="kk"       
 elif [ $modelname == "sasha9b50" ]
 then
-    jobsuffix="kl$system"       
+    jobsuffix="kl"       
 elif [ $modelname == "sasha9b100" ]
 then
-    jobsuffix="km$system"       
+    jobsuffix="km"       
 elif [ $modelname == "sasha9b200" ]
 then
-    jobsuffix="kn$system"       
+    jobsuffix="kn"       
 elif [ $modelname == "sasha99" ]
 then
-    jobsuffix="jz$system"       
+    jobsuffix="jz"       
 elif [ $modelname == "thickdiskr7" ]
 then
-    jobsuffix="ko$system"
+    jobsuffix="ko"
 elif [ $modelname == "sashaa99t0.15" ]
 then
-    jobsuffix="aa$system"
+    jobsuffix="aa"
 elif [ $modelname == "sashaa99t0.3" ]
 then
-    jobsuffix="ab$system"
+    jobsuffix="ab"
 elif [ $modelname == "sashaa99t0.6" ]
 then
-    jobsuffix="ac$system"
+    jobsuffix="ac"
 elif [ $modelname == "sashaa99t1.5708" ]
 then
-    jobsuffix="ad$system"
+    jobsuffix="ad"
 elif [ $modelname == "sashaa9b100t0.15" ]
 then
-    jobsuffix="ba$system"
+    jobsuffix="ba"
 elif [ $modelname == "sashaa9b100t0.3" ]
 then
-    jobsuffix="bb$system"
+    jobsuffix="bb"
 elif [ $modelname == "sashaa9b100t0.6" ]
 then
-    jobsuffix="bc$system"
+    jobsuffix="bc"
 elif [ $modelname == "sashaa9b100t1.5708" ]
 then
-    jobsuffix="bd$system"
+    jobsuffix="bd"
 elif [ $modelname == "sashaam9full2pit0.15" ]
 then
-    jobsuffix="ca$system"
+    jobsuffix="ca"
 elif [ $modelname == "sashaam9full2pit0.3" ]
 then
-    jobsuffix="cb$system"
+    jobsuffix="cb"
 elif [ $modelname == "sashaam9full2pit0.6" ]
 then
-    jobsuffix="cc$system"
+    jobsuffix="cc"
 elif [ $modelname == "sashaam9full2pit1.5708" ]
 then
-    jobsuffix="cd$system"
+    jobsuffix="cd"
 elif [ $modelname == "thickdiskfull3d7tilt0.35" ]
 then
-    jobsuffix="da$system"
+    jobsuffix="da"
 elif [ $modelname == "thickdiskfull3d7tilt0.7" ]
 then
-    jobsuffix="db$system"
+    jobsuffix="db"
 elif [ $modelname == "thickdiskfull3d7tilt1.5708" ]
 then
-    jobsuffix="dc$system"
+    jobsuffix="dc"
 elif [ $modelname == "rad1" ]
 then
-    jobsuffix="dd$system"
+    jobsuffix="dd"
 else
-    jobsuffix="unk$system"
+    jobsuffix="uk"
 fi
 
 
@@ -963,7 +964,7 @@ then
 		            then
     	              # run bsub on batch file
                         jobcheck=md.$jobsuffix
-		                jobname=$jobprefix.${i}.${jobcheck}
+		                jobname=$jobprefix${i}${jobcheck}
 		                outputfile=$jobname.out
 		                errorfile=$jobname.err
                         rm -rf $outputfile
@@ -1198,7 +1199,7 @@ then
 		then
     	              # run bsub on batch file
             jobcheck=pl.$jobsuffix
-		    jobname=$jobprefix.${jobcheck}
+		    jobname=$jobprefix${jobcheck}
 		    outputfile=$jobname.pl.out
 		    errorfile=$jobname.pl.err
             rm -rf $outputfile
@@ -1542,7 +1543,7 @@ then
 		            then
     	              # run bsub on batch file
                         jobcheck=mv.$jobsuffix
-		                jobname=$jobprefix.${i}.${jobcheck}
+		                jobname=$jobprefix${i}${jobcheck}
 		                outputfile=$jobname.out
 		                errorfile=$jobname.err
                         rm -rf $outputfile
@@ -1928,7 +1929,7 @@ then
 		            then
     	              # run bsub on batch file
                         jobcheck=ma.$jobsuffix
-		                jobname=$jobprefix.${i}.${jobcheck}
+		                jobname=$jobprefix${i}${jobcheck}
 		                outputfile=$jobname.out
 		                errorfile=$jobname.err
                         rm -rf $outputfile
@@ -2187,7 +2188,7 @@ then
 		then
     	              # run bsub on batch file
             jobcheck=pa.$jobsuffix
-		    jobname=$jobprefix.${jobcheck}
+		    jobname=$jobprefix${jobcheck}
 		    outputfile=$jobname.pa.out
 		    errorfile=$jobname.pa.err
             rm -rf $outputfile
