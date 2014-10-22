@@ -452,13 +452,13 @@ then
     # setup plotting part
     numtasksplot=1
     numnodesplot=1
-    numcorespernodeplot=12
+    numcorespernodeplot=16
     # this gives 16GB free for plotting (temp vars + qty2.npy file has to be smaller than this or swapping will occur)
     numtotalcoresplot=$numcorespernodeplot
-    thequeueplot="normal"
+    thequeueplot="normal"  # try using this as "serial" instead of takes too long for makeplot or makeavgplot steps.
     apcmdplot="ibrun "
     # only took 6 minutes for thickdisk7 doing 458 files inside qty2.npy!  Up to death at point when tried to resample in time.
-    timetotplot="8:00:00"
+    timetotplot="8:00:00" # for normal can go up to 48 hours.  For serial up to 12 hours.
 
 	thequeueplot=$queue
     numtasksplot=1
