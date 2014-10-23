@@ -452,6 +452,7 @@ then
     # setup plotting part
     numtasksplot=1
     numnodesplot=1
+    numtotalnodesplot=1
     numcorespernodeplot=16
     # this gives 16GB free for plotting (temp vars + qty2.npy file has to be smaller than this or swapping will occur)
     numtotalcoresplot=$numcorespernodeplot
@@ -460,9 +461,6 @@ then
     # only took 6 minutes for thickdisk7 doing 458 files inside qty2.npy!  Up to death at point when tried to resample in time.
     timetotplot="8:00:00" # for normal can go up to 48 hours.  For serial up to 12 hours.
 
-	thequeueplot=$queue
-    numtasksplot=1
-    numtotalnodesplot=1
 
 
 fi
