@@ -2268,7 +2268,7 @@ def compvals2d():
     #
     # Radiation
     #
-    if "urad" is globals():
+    if "urad" in globals():
         dic["urad"] = urad.mean(-1)[:,:,None]
         dic["uradu"] = uradu.mean(-1)[:,:,:,None]
         Rudavgphi = np.zeros((4,4,nx,ny,1),dtype=np.float32)
@@ -2279,7 +2279,7 @@ def compvals2d():
             TudMAavgphi[i,j] = fTudMA(i,j).mean(-1)[...,None]
             Tudavgphi[i,j] = fTud(i,j).mean(-1)[...,None]
             Fddavgphi[i,j] = fFdd(i,j).mean(-1)[...,None]
-            if "urad" is globals():
+            if "urad" in globals():
                 Rudavgphi[i,j] = fRud(i,j).mean(-1)[...,None]
     dic["TudEM"]=TudEMavgphi
     dic["TudMA"]=TudMAavgphi
