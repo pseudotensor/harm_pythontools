@@ -2270,6 +2270,7 @@ def compvals2d():
     #
     if "urad" is globals():
         dic["urad"] = urad.mean(-1)[:,:,None]
+        dic["uradu"] = uradu.mean(-1)[:,:,:,None]
         Rudavgphi = np.zeros((4,4,nx,ny,1),dtype=np.float32)
     #to save memory use, average out each component in phi separately
     for i in xrange(4):
