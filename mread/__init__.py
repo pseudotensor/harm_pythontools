@@ -2395,8 +2395,8 @@ def compvals1d(di=5):
         isunb=(-(1+(ug*gam+urad/3.)/rho)*ud[0]>1.0)
         isbnd=1-isunb
         #average energy transport velocity
-        dic["vE"] = (gdet*uu*(ug+urad)*isbnd).mean(-1).mean(-1)[:,:,:,None] / \
-                    (gdet*   (ug+urad)*isbnd).mean(-1).mean(-1)[:,:,:,None]
+        dic["vE"] =( (gdet*uu*(ug+urad)*isbnd).mean(-1).mean(-1)[:,ivals]
+                   / (gdet*   (ug+urad)*isbnd).mean(-1).mean(-1)[ivals] )
     return( dic )
 
     #mu = -fTud(1,0)/(rho*uu[1])
