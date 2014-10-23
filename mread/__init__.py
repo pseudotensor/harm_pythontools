@@ -2392,6 +2392,11 @@ def compvals1d(di=5):
         dic["FRMmurad>1"] = (gdet*rho*uu[1]*(murad>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
         dic["Phimurad>2"] = (gdetB[1]*(murad>2)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
         dic["Phimurad>1"] = (gdetB[1]*(murad>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
+        isunb=(-(1+(ug*gam+urad/3.)/rho)*ud[0]>1.0)
+        isbnd=1-isunb
+        #average energy transport velocity
+        dic["vE"] = (gdet*uu*(ug+urad)*isbnd).mean(-1).mean(-1)[:,:,:,None] / \
+                    (gdet*   (ug+urad)*isbnd).mean(-1).mean(-1)[:,:,:,None]
     return( dic )
 
     #mu = -fTud(1,0)/(rho*uu[1])
