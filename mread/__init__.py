@@ -2246,7 +2246,6 @@ def compvals2d():
     dic["uguu"]=(ug*uu).mean(-1)[:,:,:,None]
     dic["ugud"]=(ug*ud).mean(-1)[:,:,:,None]
     #
-    #
     #properly compute average
     uuud=odot(uu,ud)[:,:,:,:,None]
     # part1: rho u^m u_l
@@ -2265,20 +2264,27 @@ def compvals2d():
     TudEMavgphi = np.zeros((4,4,nx,ny,1),dtype=np.float32)
     TudMAavgphi = np.zeros((4,4,nx,ny,1),dtype=np.float32)
     Tudavgphi = np.zeros((4,4,nx,ny,1),dtype=np.float32)
-    Rudavgphi = np.zeros((4,4,nx,ny,1),dtype=np.float32)
     Fddavgphi = np.zeros((4,4,nx,ny,1),dtype=np.float32)
+    #
+    # Radiation
+    #
+    if "urad" is globals():
+        dic["urad"] = urad.mean(-1)[:,:,None]
+        Rudavgphi = np.zeros((4,4,nx,ny,1),dtype=np.float32)
     #to save memory use, average out each component in phi separately
     for i in xrange(4):
         for j in xrange(4):
             TudEMavgphi[i,j] = fTudEM(i,j).mean(-1)[...,None]
             TudMAavgphi[i,j] = fTudMA(i,j).mean(-1)[...,None]
             Tudavgphi[i,j] = fTud(i,j).mean(-1)[...,None]
-            Rudavgphi[i,j] = fRud(i,j).mean(-1)[...,None]
             Fddavgphi[i,j] = fFdd(i,j).mean(-1)[...,None]
+            if "urad" is globals():
+                Rudavgphi[i,j] = fRud(i,j).mean(-1)[...,None]
     dic["TudEM"]=TudEMavgphi
     dic["TudMA"]=TudMAavgphi
     dic["Tud"]=Tudavgphi
-    dic["Rud"]=Rudavgphi
+    if "urad" in globals():
+        dic["Rud"]=Rudavgphi
     dic["Tud"]=Tudavgphi
     dic["fdd"]=Fddavgphi
     #mu,sigma

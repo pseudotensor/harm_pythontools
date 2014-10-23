@@ -1280,6 +1280,7 @@ def visualize_data(doreload=1,no=5468,xmax=200,ymax=200,zmax=1000,ncellx=200,nce
 
 def mk_rad_movie(whichi=None,whichn=None,dn=None):
     if whichi is None or whichn is None or dn is None:
+        print("analyzing args...")
         if len(sys.argv[2:])>=2 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
             whichi = int(sys.argv[2])
             whichn = int(sys.argv[3])
@@ -1287,6 +1288,7 @@ def mk_rad_movie(whichi=None,whichn=None,dn=None):
             if len(sys.argv[2:])==3:
                 if sys.argv[4].isdigit():
                     dn = int(sys.argv[4])
+    print("whichi = %d, whichn = %d, dn = %d" % (whichi, whichn, dn))
     flist1 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9].bin") ) )
     flist2 = np.sort(glob.glob( os.path.join("dumps/", "fieldline[0-9][0-9][0-9][0-9][0-9].bin") ) )
     flist1.sort()
@@ -1450,7 +1452,7 @@ def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncell
             print("Jet urad vmin/vmax: %g, %g" % (vmin, vmax) )
             otf_jet.add_point(vmin, 0)
             otf_jet.add_point(vmin+0.05*(vmax-vmin), 0)
-            otf_jet.add_point(vmin+0.5*(vmax-vmin), 0.4)
+            otf_jet.add_point(vmin+0.5*(vmax-vmin), 0.04)
             otf_jet.add_point(vmax, 1)
         vol_jet._otf = otf_jet
         vol_jet._volume_property.set_scalar_opacity(otf_jet)
@@ -1490,8 +1492,9 @@ def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncell
             vmax = np.log10(maxdisk)
             print("Disk vmin/vmax: %g, %g (actual: %g, %g)" % (vmin, vmax, minlrhodisk, maxlrhodisk) )
             otf_disk.add_point(vmin, 0)
-            otf_disk.add_point(vmin+0.8*(vmax-1-vmin), 0.)
-            otf_disk.add_point(vmin+0.9*(vmax-1-vmin), 0.654)
+            otf_disk.add_point(vmin+0.79*(vmax-1-vmin), 0.)
+            otf_disk.add_point(vmin+0.866*(vmax-1-vmin), 0.8)
+            otf_disk.add_point(vmin+0.8862*(vmax-1-vmin), 0.816)
             otf_disk.add_point(vmax-1, 1)
             otf_disk.add_point(vmax, 1)
         vol_disk._otf = otf_disk
@@ -1561,14 +1564,18 @@ def visualize_rad(doreload=1,no=5468,xmax=100,ymax=100,zmax=500,ncellx=100,ncell
         zbh = rbh*cos(thbh)
         mlab.mesh(xbh, ybh, zbh, scalars=1+0*thbh, colormap='gist_yarg',vmin=0, vmax = 1)
     #move camera:
+    scene.scene.camera.position = [-859.35106020552962, 428.88279116475701, -543.94833829177082]
+    scene.scene.camera.focal_point = [0.0, 0.0, 0.0]
     scene.scene.camera.position = [-688.00816405612352, -91.761569030216819, -858.2127175737038]
     scene.scene.camera.focal_point = [2.6959437879713872e-12, 2.9410295868778768e-12, 2.4508579890648971e-13]
     scene.scene.camera.view_angle = 30.0
+    scene.scene.camera.view_up = [0.20772523499523163, -0.58144536411289605, -0.78662031202976024]
+    scene.scene.camera.clipping_range = [368.3714513741902, 2032.1100336754646]
     scene.scene.camera.view_up = [0.74307707618872376, -0.37262680989185148, -0.55586483914045115]
     scene.scene.camera.clipping_range = [37.916866113399806, 2448.1180419870261]
     scene.scene.camera.compute_view_plane_normal()
     scene.scene.render()
-    # iso.contour.maximum_contour = 75.0
+     # iso.contour.maximum_contour = 75.0
     #vec = mlab.pipeline.vectors(d)
     #vec.glyph.mask_input_points = True
     #vec.glyph.glyph.scale_factor = 1.5
@@ -2154,4 +2161,5 @@ def vis_pulsar(doreload=1,no=96,xmax=21,ymax=21,zmax=21,ncellx=201,ncelly=201,nc
 if __name__ == "__main__":
     if len(sys.argv)>1:
         if sys.argv[1] == "mk_rad_movie":
+            print("making movie...")
             mk_rad_movie()
