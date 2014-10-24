@@ -2215,7 +2215,10 @@ def compvals2d():
     dic["rho"]=rho.mean(-1)[:,:,None]
     dic["ug"]=ug.mean(-1)[:,:,None]
     dic["bsq"]=bsq.mean(-1)[:,:,None]
-    enth=1+ug*gam/rho
+    if "urad" in globals():
+        enth=1+(ug*gam+urad/3.)/rho
+    else:
+        enth=1+ug*gam/rho
     dic["unb"]=(enth*ud[0]).mean(-1)[:,:,None]
     dic["uu"]=uu.mean(-1)[:,:,:,None]
     dic["bu"]=bu.mean(-1)[:,:,:,None]
@@ -2272,6 +2275,11 @@ def compvals2d():
         dic["urad"] = urad.mean(-1)[:,:,None]
         dic["uradu"] = uradu.mean(-1)[:,:,:,None]
         Rudavgphi = np.zeros((4,4,nx,ny,1),dtype=np.float32)
+        isunb=(-(1+(ug*gam+urad/3.)/rho)*ud[0]>1.0)
+        isbnd=1-isunb
+        #average energy transport velocity
+        dic["vE"] =( (gdet*uu*(ug+urad)*isbnd).mean(-1)[...,None]
+                   / (gdet*   (ug+urad)*isbnd).mean(-1)[None,...,None] )
     #to save memory use, average out each component in phi separately
     for i in xrange(4):
         for j in xrange(4):
@@ -2375,6 +2383,8 @@ def compvals1d(di=5):
     dic["Phimu>2"] = (gdetB[1]*(mu>2)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
     dic["Phimu>1"] = (gdetB[1]*(mu>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
     if "uradu" in globals():
+        isunb=(-(1+(ug*gam+urad/3.)/rho)*ud[0]>1.0)
+        isbnd=1-isunb
         murad = -(fTud(1,0)+fRud(1,0))/(rho*uu[1])
         # radiation fluxes
         dic["FRmurad>1"]= (gdet*fRud(1,0)*(murad>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
@@ -2392,8 +2402,6 @@ def compvals1d(di=5):
         dic["FRMmurad>1"] = (gdet*rho*uu[1]*(murad>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
         dic["Phimurad>2"] = (gdetB[1]*(murad>2)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
         dic["Phimurad>1"] = (gdetB[1]*(murad>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
-        isunb=(-(1+(ug*gam+urad/3.)/rho)*ud[0]>1.0)
-        isbnd=1-isunb
         #average energy transport velocity
         dic["vE"] =( (gdet*uu*(ug+urad)*isbnd).mean(-1).mean(-1)[:,ivals]
                    / (gdet*   (ug+urad)*isbnd).mean(-1).mean(-1)[ivals] )
