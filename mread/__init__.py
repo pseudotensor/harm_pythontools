@@ -2278,8 +2278,8 @@ def compvals2d():
         isunb=(-(1+(ug*gam+urad/3.)/rho)*ud[0]>1.0)
         isbnd=1-isunb
         #average energy transport velocity
-        dic["vE"] =( (gdet*uu*(ug+urad)*isbnd).mean(-1)[...,None]
-                   / (gdet*   (ug+urad)*isbnd).mean(-1)[None,...,None] )
+        dic["uvE"] = (gdet*uu*(ug+urad)*isbnd).mean(-1)[...,None]
+        dic["uE"]  = gdet*   (ug+urad)*isbnd).mean(-1)[...,None]
     #to save memory use, average out each component in phi separately
     for i in xrange(4):
         for j in xrange(4):
