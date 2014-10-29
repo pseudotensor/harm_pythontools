@@ -5184,7 +5184,8 @@ def compute_taurad(domergeangles=True,radiussettau1zero=80):
         dphco=_dx3*np.sqrt(np.fabs(gv3[3,3]))*uu[0]
         #
         taurad1=(KAPPAUSER+KAPPAESUSER)*drco
-        tauradeff1=np.sqrt(KAPPAUSER*(KAPPAUSER+KAPPAESUSER))*drco
+        # http://arxiv.org/pdf/astro-ph/0408590.pdf equation~3
+        tauradeff1=np.sqrt(3.0*KAPPAUSER*(KAPPAUSER+KAPPAESUSER))*drco
         #
         # FREE PARAMETER:
         #radiussettau1zero=80
@@ -22341,9 +22342,14 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             #print("normpowerfft")
             #print(normpowerfft)
             DTavg=ts[condt][-1]-ts[condt][0]
-            dtavg=ts[condt][-1]-ts[condt][-2]
             DTavgfull=ts[condtfull][-1]-ts[condtfull][0]
-            dtavgfull=ts[condtfull][-1]-ts[condtfull][-2]
+            if(len(ts[condt]<=1):
+                dtavg=DTavg
+                dtavgfull=DTavgfull
+            else:
+                dtavg=ts[condt][-1]-ts[condt][-2]
+                dtavgfull=ts[condtfull][-1]-ts[condtfull][-2]
+            #
             nyquistfft=1.0/(2.0*dtavg)
             nyquistfftfull=1.0/(2.0*dtavgfull)
             print("DTavg=%g dtavg=%g nyquistfft=%g" % (DTavg,dtavg,nyquistfft))
@@ -23830,7 +23836,7 @@ def timeavg_vstvsr( qty, ts, fti, ftf, step = 1 ):
         qtyavg = qtycond[0];
     else:
         # then no value to report, so set to zero and report problem
-        qtyavg = 0
+        qtyavg = 0*qty[0,:]*float('nan')
         print("timeavg has no values within temporal range") ;sys.stdout.flush()
     #
     return( qtyavg )
@@ -23859,7 +23865,7 @@ def timeavg( qty, ts, fti, ftf, step = 1 ):
         qtyavg = qtycond[0];
     else:
         # then no value to report, so set to zero and report problem
-        qtyavg = 0
+        qtyavg = 0*qty[0,:]*float('nan')
         print("timeavg has no values within temporal range") ;sys.stdout.flush()
     #
     return( qtyavg )
@@ -23888,7 +23894,7 @@ def timeavg_sqrt( qty0, ts, fti, ftf, step = 1 ):
         qtyavg = qtycond[0];
     else:
         # then no value to report, so set to zero and report problem
-        qtyavg = 0
+        qtyavg = 0*qty[0,:]*float('nan')
         print("timeavg has no values within temporal range") ;sys.stdout.flush()
     #
     return( qtyavg )
