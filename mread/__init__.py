@@ -22343,7 +22343,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             #print(normpowerfft)
             DTavg=ts[condt][-1]-ts[condt][0]
             DTavgfull=ts[condtfull][-1]-ts[condtfull][0]
-            if(len(ts[condt]<=1):
+            if(len(ts[condt]<=1)):
                 dtavg=DTavg
                 dtavgfull=DTavgfull
             else:

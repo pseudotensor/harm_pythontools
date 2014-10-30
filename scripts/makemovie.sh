@@ -1695,7 +1695,7 @@ then
         
         fps=25
         #
-        #ffmpeg -i lrho%04d_Rzxym1.png -r $fps -sameq lrho.mp4
+        #ffmpeg -i lrho%04d_Rzxym1.png -r $fps lrho.mp4
         #ffmpeg -fflags +genpts -i lrho%04d_Rzxym1.png -r $fps -sameq lrho.$modelname.avi
 
 	    if [ 1 -eq 0 ]
