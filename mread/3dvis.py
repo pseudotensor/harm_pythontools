@@ -1632,6 +1632,21 @@ def prime2cart(V):
     Vynorm=VRnorm*np.sin(ph)+Vpnorm*np.cos(ph)
     return(np.array([V[0],Vxnorm,Vynorm,Vznorm]))
 
+def prime2cyl(V):
+    global dxdxp
+    Vr = dxdxp[1,1]*V[1]+dxdxp[1,2]*V[2]
+    Vh = dxdxp[2,1]*V[1]+dxdxp[2,2]*V[2]
+    Vp = V[3]*dxdxp[3,3]
+    #
+    Vrnorm=Vr
+    Vhnorm=Vh*np.abs(r)
+    Vpnorm=Vp*np.abs(r*np.sin(h))
+    #
+    Vznorm=Vrnorm*np.cos(h)-Vhnorm*np.sin(h)
+    VRnorm=Vrnorm*np.sin(h)+Vhnorm*np.cos(h)
+    return(np.array([V[0],VRnorm,Vznorm,Vpnorm]))
+
+    
 def getxyz(r,h,ph):
     x = r*np.sin(h)*cos(ph)
     y = r*np.sin(h)*sin(ph)
