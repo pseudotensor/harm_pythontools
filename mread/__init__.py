@@ -2383,10 +2383,11 @@ def compvals1d(di=5):
     dic["Phimu>2"] = (gdetB[1]*(mu>2)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
     dic["Phimu>1"] = (gdetB[1]*(mu>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
     if "uradu" in globals():
-        isunb=(-(1+(ug*gam+urad/3.)/rho)*ud[0]>1.0)
-        isbnd=1-isunb
+        isunb=(-(1+(ug*gam+urad)/rho)*ud[0]>1.0)
+        isbnd=~isunb
         murad = -(fTud(1,0)+fRud(1,0))/(rho*uu[1])
         # radiation fluxes
+        dic["FRunb"]= (gdet*fRud(1,0)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
         dic["FRmurad>1"]= (gdet*fRud(1,0)*(murad>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
         dic["FRmurad>2"]= (gdet*fRud(1,0)*(murad>2)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
         dic["FRmu>1"]= (gdet*fRud(1,0)*(mu>1)*(isunb))[ivals].sum(-1).sum(-1)*_dx2*_dx3
