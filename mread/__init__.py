@@ -1552,16 +1552,22 @@ def mknstartorusmovie(xmax=30,ymax=15,startn=0,endn=-1,dosavefig=1,cb=1):
         if dosavefig:
             plt.savefig("frame%04d.png"%fldindex,bbox_inches='tight',pad_inches=0.04,dpi=300)
 
-def mkmov():
+def mkmov(**kwargs):
     if len(sys.argv[2:])==2 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
         whichi = int(sys.argv[2])
         whichn = int(sys.argv[3])
     else:
         print( "Usage: %s %s <whichi> <whichn>" % (sys.argv[0], sys.argv[1]) )
         return
-    mkbondimovie(whichi = whichi, whichn = whichn)
+    mkbondimovie(whichi = whichi, whichn = whichn, **kwargs)
 
-def mknewmov(startn=0,endn=-1,dosavefig=1):
+def mknewmov(**kwargs):
+    startn = kwargs.pop("startn", 0)
+    endn = kwargs.pop("endn",-1)
+    dosavefig = kwargs.setdefault("dosavefig",1)
+    dostreamlines = kwargs.setdefault("dostreamlines",1)
+    ncont = kwargs.setdefault("ncont",200)
+    maxaphi = kwargs.setdefault("maxaphi",1000)
     if len(sys.argv[2:])>=2 and sys.argv[2].isdigit() and sys.argv[3].isdigit():
         whichi = int(sys.argv[2])
         whichn = int(sys.argv[3])
@@ -1600,7 +1606,7 @@ def mknewmov(startn=0,endn=-1,dosavefig=1):
         rfd("../"+fldname)
         sys.stdout.flush()
         plt.clf()
-        mkmfnew(v,findex=fldindex,doreload=0)
+        mkmfnew(v,findex=fldindex,doreload=0,**kwargs)
 
     
 #new movie frame
@@ -1608,7 +1614,7 @@ def mkmfnew(v,findex=10000,
             iti=2000,itf=5000,
             fti=2000,ftf=5000,
             sigma=1500,sigma1=None,prefactor=100,domakeframes=1,plotlen=25,maxsBphi=3,
-            doreload=1,dosavefig = 1,fntsize=16,myi=None,vmin=-9,vmax=-3): #vmin=-6,vmax=0.5625):
+            doreload=1,dosavefig = 1,fntsize=16,myi=None,vmin=-9,vmax=-3,dostreamlines=1,ncont=100,maxaphi=1000): #vmin=-6,vmax=0.5625):
     global FMavg, t
     if iti is None or itf is None or fti is None or ftf is None or\
             os.path.isfile(os.path.join("titf.txt")):
@@ -1619,11 +1625,18 @@ def mkmfnew(v,findex=10000,
         itf = gd1[1]
         fti = gd1[2]
         ftf = gd1[3]
-        if len(gd1)>=5:
+        sys.stdout.write( "Found titf.txt: iti = %g, itf = %g, fti = %g, ftf = %g"
+                   % (iti,itf,fti,ftf) )
+        if len(gd1)>=6:
             vmin = gd1[4]
             vmax = gd1[5]
-            print( "Found titf.txt: iti = %g, itf = %g, fti = %g, ftf = %g, vmin = %g, vmax = %g"
-                   % (iti,itf,fti,ftf,vmin,vmax) )
+            sys.stdout.write( ", vmin = %g, vmax = %g" % (vmin, vmax) )
+            if len(gd1)>=9:
+                mdotmax = gd1[6]
+                phibhmax = gd1[7]
+                etabhmax = gd1[8]
+                sys.stdout.write( ", mdotmax = %g, phibhmax = %g, etabhmax = %g" % (mdotmax, phibhmax, etabhmax) )
+        sys.stdout.write("\n")
     else:
         iti = 3500
         itf = 9500
@@ -1637,7 +1650,6 @@ def mkmfnew(v,findex=10000,
     print v["rvals"][myi]
     plt.figure(0, figsize=(12,9), dpi=100)
     plt.clf()
-    which = (v["t"] < ftf)
     #mdot,pjet,pjet/mdot plots
     gs3 = GridSpec(3, 3)
     gs3.update(left=0.1, right=0.94, top=0.42, bottom=0.06, wspace=0.01, hspace=0.04)
@@ -1647,15 +1659,24 @@ def mkmfnew(v,findex=10000,
     ax31 = plt.subplot(gs3[-3,:])
     ax31.set_ylabel(r'$\dot Mc^2$',fontsize=16) #,labelpad=9)
     plt.setp( ax31.get_xticklabels(), visible=False)
+    which = (v["t"] < ftf)
     #start plotting
-    ax31.plot(v["t"][which],v["FM"][which,myi],"k")
     ind = np.where(v["t"]==t)
+    t = v["t"]
     ax31.plot(v["t"][ind],v["FM"][ind,myi],'o',mfc='r')
-    if 'FMavg' not in globals():
+    if 'FMavg' not in globals() and sigma is not None:
         FMavg = 0*v["t"]
         FMavg[which] = timeavg(v["FM"][which,myi],v["t"][which],fti=iti,ftf=ftf,sigma=sigma)
         FMavg[~which]  = FMavg[~which] + FMavg[which][-1]      
-    t = v["t"]
+    else:
+        FMavg1 = 0*v["t"]
+        FMavg2 = 0*v["t"]
+        FMavg1 = timeavg(v["FM"][which,myi],v["t"],fti=iti,ftf=itf,sigma=sigma)+0*v["t"]
+        FMavg2 = timeavg(v["FM"][which,myi],v["t"],fti=fti,ftf=ftf,sigma=sigma)+0*v["t"]
+        FMavg = np.copy(FMavg1)
+        FMavg[(iti<=t)*(t<=itf)] = FMavg1[(iti<=t)*(t<=itf)]
+        FMavg[(fti<=t)*(t<=ftf)] = FMavg2[(fti<=t)*(t<=ftf)]
+    ax31.plot(v["t"][which],v["FM"][which,myi],"k")
     #pdb.set_trace()
     #ensure of the same shape as the rest
     l, = ax31.plot(t[which],FMavg[which],"k")
@@ -1666,9 +1687,11 @@ def mkmfnew(v,findex=10000,
     ymed=np.median(v["FM"][which,myi])
     if ymax > 1:
         ymax=2*(np.floor(np.floor(ymax+1.5)/2))
-    if ymax > 5*ymed:
-        ymax = 2*ymed
+    # if ymax > 5*ymed:
+    #     ymax = 2*ymed
     ymax = float("{0:.2g}".format(ymax))
+    if "mdotmax" in locals():
+        ymax = mdotmax
     print( "max(FM) = %g" % ymax )
     # ymax = 26.
     ax31.set_yticks((ymax/2.,ymax))
@@ -1699,8 +1722,10 @@ def mkmfnew(v,findex=10000,
     #end plotting
     ax35.set_xlim(0,tmax)
     ymax=ax35.get_ylim()[1]
-    print( "max(phi) = %g" % ymax )
-    if 1 < ymax and ymax < 2: 
+    if "phibhmax" in locals():
+        ymax = phibhmax
+        ax35.set_ylim(0,ymax)
+    elif 1 < ymax and ymax < 2: 
         #ymax = 2
         tck=(1,)
         ax35.set_yticks(tck)
@@ -1721,6 +1746,7 @@ def mkmfnew(v,findex=10000,
         else:
             tck=np.arange(1,ymax)
         ax35.set_yticks(tck)
+    print( "max(phi) = %g" % ymax )
     ax35.grid(True)
     plt.setp( ax35.get_xticklabels(), visible=False)
     placeletter(ax35,"$(\mathrm{d})$",fx=0.15,fy=0.1,bbox=bbox_props)
@@ -1728,7 +1754,8 @@ def mkmfnew(v,findex=10000,
     ax35.grid(True)
     ax35r = ax35.twinx()
     ax35r.set_ylim(ax35.get_ylim())
-    ax35r.set_yticks(tck)
+    if "phibhmax" not in locals():
+        ax35r.set_yticks(tck)
     for label in ax35.get_xticklabels() + ax35.get_yticklabels() + ax35r.get_yticklabels():
         label.set_fontsize(fntsize)
     #
@@ -1754,14 +1781,16 @@ def mkmfnew(v,findex=10000,
     #     ymax = etabh[v["t"]<ftf].nanmax()
     maxval = np.nanmax(ma.filled(etabh[v["t"]<ftf]))
     medval = np.median(ma.filled(etabh[v["t"]<ftf]))
-    if maxval > 5*medval:
-        maxval = 2*medval
+    # if maxval > 5*medval:
+    #     maxval = 2*medval
     if maxval > 0.5:
         ymax=np.floor(maxval+1)*prefactor
     else:
         ymax = maxval*prefactor #ax34.get_ylim()[1]
     ymax = float("{0:.2g}".format(ymax))    
     ax34.set_ylim(0,ymax)
+    if "etabhmax" in locals():
+        ymax = etabhmax
     print( "max(etabh) = %g" % ymax )
     if ymax >= 50 and ymax <= 100: 
         tck = np.arange(0,ymax,50)
@@ -1789,7 +1818,7 @@ def mkmfnew(v,findex=10000,
     ax1 = plt.subplot(gs1[:, -1])
     if domakeframes:
         if doreload: rfd("fieldline%04d.bin" % findex)
-        mkframe("lrho%04d_Rz%g" % (findex,plotlen),len=plotlen,ax=ax1,cb=False,pt=False,maxsBphi=maxsBphi,whichr=1.5,domask=0.5,vmin=vmin,vmax=vmax) #domask = 0.5 is important so that magnetic field lines extend down all the way to BH
+        mkframe("lrho%04d_Rz%g" % (findex,plotlen),len=plotlen,ax=ax1,cb=False,pt=False,maxsBphi=maxsBphi,whichr=1.5,domask=0.5,vmin=vmin,vmax=vmax,dostreamlines=dostreamlines,ncont=ncont,maxaphi=maxaphi) #domask = 0.5 is important so that magnetic field lines extend down all the way to BH
     ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
     ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
     for label in ax1.get_xticklabels() + ax1.get_yticklabels():
@@ -7779,7 +7808,7 @@ def mkframe(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,s
         ax.contour(imu,linewidths=0.5,colors='g', extent=extent,hold='on',origin='lower',levels=(2,))
         ax.contour(iaphi,linewidths=0.5,colors='b', extent=extent,hold='on',origin='lower',levels=(aphi[ihor,ny/2,0],))
     if not dostreamlines:
-        # cset2 = ax.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
+        cset2 = ax.contour(iaphi,linewidths=0.5,colors='k', extent=extent,hold='on',origin='lower',levels=levs)
         # if aphiaccent is not None:
         #     ax.contour(iaphi,linewidths=2,colors='k', extent=extent,hold='on',origin='lower',levels=(aphiaccent,))
         traj = None
@@ -20281,6 +20310,8 @@ if __name__ == "__main__":
             mkmov()
         elif sys.argv[1] == "mknewmov":
             mknewmov()
+        elif sys.argv[1] == "mknewmovaphi":
+            mknewmov(dostreamlines=0,ncont=200,maxaphi=1000,sigma=None)
         elif sys.argv[1] == "radwaveconv":
             plotradtestconv()
     if False:
