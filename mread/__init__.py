@@ -20312,6 +20312,8 @@ if __name__ == "__main__":
             mknewmov()
         elif sys.argv[1] == "mknewmovaphi":
             mknewmov(dostreamlines=0,ncont=200,maxaphi=1000,sigma=None)
+        elif sys.argv[1] == "mknewmovaphisane":
+            mknewmov(dostreamlines=0,ncont=200,maxaphi=100,sigma=None)
         elif sys.argv[1] == "radwaveconv":
             plotradtestconv()
     if False:
