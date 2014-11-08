@@ -1659,7 +1659,7 @@ def mkmfnew(v,findex=10000,
     ax31 = plt.subplot(gs3[-3,:])
     ax31.set_ylabel(r'$\dot Mc^2$',fontsize=16) #,labelpad=9)
     plt.setp( ax31.get_xticklabels(), visible=False)
-    which = (v["t"] < ftf)
+    which = (v["t"] <= ftf)
     #start plotting
     ind = np.where(v["t"]==t)
     t = v["t"]
@@ -1671,8 +1671,8 @@ def mkmfnew(v,findex=10000,
     else:
         FMavg1 = 0*v["t"]
         FMavg2 = 0*v["t"]
-        FMavg1 = timeavg(v["FM"][which,myi],v["t"],fti=iti,ftf=itf,sigma=sigma)+0*v["t"]
-        FMavg2 = timeavg(v["FM"][which,myi],v["t"],fti=fti,ftf=ftf,sigma=sigma)+0*v["t"]
+        FMavg1 = timeavg(v["FM"][which,myi],v["t"][which],fti=iti,ftf=itf,sigma=sigma)+0*v["t"]
+        FMavg2 = timeavg(v["FM"][which,myi],v["t"][which],fti=fti,ftf=ftf,sigma=sigma)+0*v["t"]
         FMavg = np.copy(FMavg1)
         FMavg[(iti<=t)*(t<=itf)] = FMavg1[(iti<=t)*(t<=itf)]
         FMavg[(fti<=t)*(t<=ftf)] = FMavg2[(fti<=t)*(t<=ftf)]
