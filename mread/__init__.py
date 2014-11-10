@@ -20316,6 +20316,8 @@ if __name__ == "__main__":
             mknewmov(dostreamlines=0,ncont=200,maxaphi=100,sigma=None)
         elif sys.argv[1] == "radwaveconv":
             plotradtestconv()
+        elif sys.argv[1] == "mkstagmovie":
+            mkmov(dostag=1,plotlen=15)
     if False:
         plt.clf()
         ubsplot(dosavefig=0)
