@@ -8904,7 +8904,7 @@ def rdr(dumpname,**kwargs):
                       dtype=np.float64, 
                       skiprows=0, 
                       unpack = False )
-        if defcoord == 3010: #SNSCOORDS
+        if defcoord == 3010 or defcoord == 3020: #SNSCOORDS or SNSCOORDSX3D
             if len(coordparams)>=14:
                 OmegaNS = coordparams[13]
                 AlphaNS = coordparams[14]
@@ -9010,7 +9010,7 @@ def rfd(fieldlinefilename,**kwargs):
                       dtype=np.float64, 
                       skiprows=0, 
                       unpack = False )
-        if defcoord == 3010: #SNSCOORDS
+        if defcoord == 3010 or defcoord == 3020: #SNSCOORDS or SNSCOORDSX3D
             if len(coordparams)>=14:
                 OmegaNS = coordparams[13]
                 AlphaNS = coordparams[14]
@@ -9473,7 +9473,7 @@ def grid3d(dumpname,use2d=False,doface=False): #read grid dump file: header and 
                       dtype=np.float64, 
                       skiprows=0, 
                       unpack = False )
-        if defcoord == 3010: #SNSCOORDS
+        if defcoord == 3010 or defcoord == 3020: #SNSCOORDS or SNSCOORDSX3D
             if len(coordparams)>=14:
                 OmegaNS = coordparams[13]
                 AlphaNS = coordparams[14]
