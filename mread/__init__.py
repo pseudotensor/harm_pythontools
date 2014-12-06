@@ -70,6 +70,31 @@ import visit_writer
 #global rho, ug, vu, uu, B, CS
 #global nx,ny,nz,_dx1,_dx2,_dx3,ti,tj,tk,x1,x2,x3,r,h,ph,gdet,conn,gn3,gv3,ck,dxdxp
 
+def plotBphioBz(no=10,fntsize=20,sf=1):
+    grid3d("gdump")
+    rdo("dump%04d" % no)
+    Bpolzphi = prime2polzphi(B)
+    aphi = fieldcalctoth()
+    faraday()
+    plco(Bpolzphi[-1]/Bpolzphi[1],xy=1,isfilled=1,cb=1,levels=np.linspace(0,0.4,20),mirrory=0)
+    #plc(Bpolzphi[-1]/Bpolzphi[1],xy=1,isfilled=1,cb=0,levels=np.linspace(0,0.25,10),mirrory=1)
+    plc(r*sin(h)*omegaf2*dxdxp[3,3],xy=1,isfilled=1,cb=0,levels=np.linspace(0,0.4,20),mirrory=1)
+    plc(aphi**0.5,xy=1,nc=200,colors="k",linewidths=2,mirrory=0)    
+    plc(aphi**0.5,xy=1,nc=200,colors="k",linewidths=2,mirrory=1)
+    plt.xlim(0,10)
+    plt.ylim(-5,5)
+    plt.annotate(r"$B_\varphi/B_p$",(1,0),xytext=(-5,5),xycoords="axes fraction",textcoords="offset points",fontsize=20,rotation=0,rotation_mode="anchor",ha="right",va="bottom",color="white")
+    plt.annotate(r"$\Omega R/c$",(1,1),xytext=(-5,-10),xycoords="axes fraction",textcoords="offset points",fontsize=20,rotation=0,rotation_mode="anchor",ha="right",va="top",color="white")
+    ax = plt.gca()
+    for label in ax.get_xticklabels() + ax.get_yticklabels():
+        label.set_fontsize(fntsize)
+    plt.xlabel(r"$R\ [R_*]$",fontsize=fntsize)
+    plt.ylabel(r"$z\ [R_*]$",fontsize=fntsize)
+    if sf:
+        plt.savefig("vertflux.png",
+                    bbox_inches='tight',pad_inches=0.06,dpi=300)
+    
+    
 # compute integrated optical depth
 def compute_taurad(radiussettau1zero=60):
         # uses uu[], KAPPAUSER, KAPPAESUSER, gv3, r
@@ -19136,6 +19161,17 @@ def prime2spc(V):
     Vpnorm=Vp*np.abs(r*np.sin(h))
     #
     return(np.array([V[0],Vrnorm,Vhnorm,Vpnorm]))
+
+def prime2polzphi(V):
+    Vr = dxdxp[1,1]*V[1]+dxdxp[1,2]*V[2]
+    Vh = dxdxp[2,1]*V[1]+dxdxp[2,2]*V[2]
+    Vp = V[3]*dxdxp[3,3]
+    #
+    Vrnorm=Vr
+    Vhnorm=Vh*np.abs(r)
+    Vpnorm=Vp*np.abs(r*np.sin(h))
+    return(np.array([V[0],(Vrnorm**2+Vhnorm**2)**0.5,Vrnorm*np.cos(h)-Vhnorm*np.sin(h),Vpnorm]))
+    
 
 def prime2cart(V):
     global dxdxp

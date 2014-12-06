@@ -846,6 +846,83 @@ def plot_convergence(wf = 0,fntsize=18,dosavefig=0,do_enforce_energy_conservatio
         ax2.set_xlabel(r"$E_{{\rm lep}}\ [m_e c^2]\equiv \gamma_{{\rm lep}}$", fontsize=fntsize)
         if dosavefig:
             plt.savefig("dNdE.eps", bbox_inches='tight', pad_inches=0.06)
+    if wf == 0 or wf == 5:
+        #
+        # SPECTRA
+        #
+        plt.figure(4,figsize=(14,5))
+        plt.clf()
+        gs = GridSpec(4, 4)
+        gs.update(left=0.08, right=0.97, top=0.91, bottom=0.09, wspace=0.5, hspace=0.08)
+        numpanels = 4
+        labtext = ["a", "b", "c", "d", "e", "f", "g", "h"]
+        for j in [2]:
+            sim = spectra_list[j]
+            E0 = sim["E0"]
+            ax1=plt.subplot(gs[:,0:numpanels/2])
+            ax2=plt.subplot(gs[:,numpanels/2:numpanels])
+            ngen_list = np.array([0,1,2,3,4,5,6,7,8,9,10,20,40,100,200,400,1000,2000])
+            lw_list =  ngen_list*0+2
+            color_list = cm.rainbow_r(np.linspace(0, 1, len(ngen_list)))
+            for i,ngen,lw,color in zip(list(np.arange(len(ngen_list))),ngen_list,lw_list,color_list):
+                print "Doing generation %d" % ngen
+                #if generation number, has been computed, plot it
+                if ngen in sim["gen"]:
+                    l,=ax1.plot((2*sim["Evec"])[::-1],(0.25*(2*sim["Evec"])**2*sim["dNdE_rad"][ngen])[::-1],lw=lw,color=np.array(color),zorder=-i,dash_joinstyle="bevel")
+                    l,=ax2.plot(sim["Evec"],sim["Evec"]**2*sim["dNdE"][ngen],lw=lw,color=np.array(color),label=r"$%g$" % ngen,zorder=-i,dash_joinstyle="bevel")
+                if ngen == 0:
+                    ax1.set_xlim(1,5e6)
+                    ax1.set_ylim(1e-6,1e12)
+                    ax1.set_yticks(10.**np.arange(-5,15,5))
+                    ax1.set_ylabel(r"$E_{\rm ph}^2dN/dE_{\rm ph}$",fontsize=fntsize,labelpad=-7)
+                    ax2.set_ylabel(r"$E_{{\rm lep}}^2dN/dE_{{\rm lep}}$",fontsize=fntsize,labelpad=-7)
+                    ax2.set_xlim(1e3,2e10)
+                    labgen1 = ax1.annotate(r"${\rm Generation}\!: %g$" % ngen,(10,1e10),fontsize=20)
+                    labgen2 = ax2.annotate(r"${\rm Generation}\!: %g$" % ngen,(1e4,1e10),fontsize=20)
+                else:
+                    labgen1.set_text(r"${\rm Generation}\!: %g$" % ngen)
+                    labgen2.set_text(r"${\rm Generation}\!: %g$" % ngen)
+                #ax2.set_title(r"${\rm Generation}\!: %g$" % ngen,fontsize=20)
+                labno = j
+                for ax in [ax1, ax2]:
+                    #x-axis on top
+                    if ngen == 0:
+                        axt = ax.twiny()
+                        axt.set_xscale("log")
+                        axt.set_xlim(np.array(ax.get_xlim())/eV/1.e9) #get it in GeV
+                        if ax == ax1:
+                            axt.set_xlabel(r"$E_{\rm ph}\ {\rm [GeV]}$",fontsize=fntsize)
+                        if ax == ax2:
+                            axt.set_xlabel(r"$E_{{\rm lep}}\ {\rm [GeV]}$",fontsize=fntsize)
+                        for label in axt.get_xticklabels() + axt.get_yticklabels():
+                            label.set_fontsize(fntsize)
+                        #hide x-tick labels in intermediate panels
+                        axt = ax.twiny()
+                        axt.set_xscale("log")
+                        axt.set_xlim(np.array(ax.get_xlim())/eV/1.e9) #get it in GeV
+                        if ax == ax1:
+                            axt.set_xlabel(r"$E_{\rm ph}\ {\rm [GeV]}$",fontsize=fntsize)
+                        if ax == ax2:
+                            axt.set_xlabel(r"$E_{{\rm lep}}\ {\rm [GeV]}$",fontsize=fntsize)
+                        for label in axt.get_xticklabels() + axt.get_yticklabels():
+                            label.set_fontsize(fntsize)
+                        ax.set_xscale("log")
+                        ax.set_yscale("log",subsy=[0])
+                        ax.grid(b=1)
+                        ax.set_ylim(1e-6,1e12)
+                        ax.set_yticks(10.**np.arange(-5,15,5))
+                        #E0 label in top left corner of panels
+                        valstr = get_sci_string_form(E0)
+                        # ax.text(ax.get_xlim()[0]*1.4,ax.get_ylim()[1]*1e-1,
+                        #         r"$({\rm %s})\quad E_0=%s$" % (labtext[labno],valstr),
+                        #         ha="left",va="top",fontsize=fntsize)
+                        labno = labno + numpanels
+                        for label in ax.get_xticklabels() + ax.get_yticklabels():
+                            label.set_fontsize(fntsize)
+                        ax1.set_xlabel(r"$E_{\rm ph}\ [m_e c^2]$", fontsize=fntsize)
+                        ax2.set_xlabel(r"$E_{{\rm lep}}\ [m_e c^2]\equiv \gamma_{{\rm lep}}$", fontsize=fntsize)
+                    if dosavefig:
+                        plt.savefig("dNdE_%05d.png" % ngen, bbox_inches='tight', pad_inches=0.06, dpi=100)
 
 def get_sci_string_form(E0):
     ex = 1.*int(np.log10(E0))

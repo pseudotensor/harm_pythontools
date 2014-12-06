@@ -1685,13 +1685,13 @@ def mk_movie(n1=0,n2=-1):
 # xmax, ymax, zmax = box sizes in x-, y-, and z-directions
 # ncellx, ncelly, ncellz = resolutions in x-, y-, and z-directions
 # dosavefig = 1 means to save the figure (=0 by default to speed up)
-def visualize_fieldlines(fn=1,fast=0,isaligned=0,doreload=1,no=0,xmax=100,ymax=30,zmax=30,ncellx=200,ncelly=60,ncellz=60,dosavefig=0,vmin=-3.6692+1,vmax=2.27925+1,domov=0):
+def visualize_fieldlines(fn=1,fast=0,isaligned=0,doreload=1,no=0,xmax=100,ymax=30,zmax=30,ncellx=200,ncelly=60,ncellz=60,dosavefig=0,vmin=-3.6692+1,vmax=2.27925+1,domov=0,use2d=1):
     global ph,lrhoi_jet,i3d_jet,j3d_jet,k3d_jet,xi_jet,yi_jet,zi_jet,scene,vol_jet,otf_jet
     if isaligned:
         ncellxold = ncellx; ncellx = ncellz; ncellz = ncellxold
         xmaxold = xmax; xmax = zmax; zmax = xmaxold
     if doreload:
-        grid3d("gdump.bin",use2d=1)
+        grid3d("gdump.bin",use2d=use2d)
         #rfd("fieldline9000.bin")
         rfd("fieldline%04d.bin"%no)
         #only needed of FULLOUTPUT is on (to correct the bug in how code outputs data in phi)
