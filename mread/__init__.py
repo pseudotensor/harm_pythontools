@@ -28324,6 +28324,21 @@ if __name__ == "__main__":
     #    sys.exit(main())
     main()
 
+def tutorialgen(path=None,fil=None):
+    # first load grid file
+    grid3d("gdump.bin")
+    print("t=%g" % t );
+    # now try loading a single fieldline file
+    rfd(fil)
+    # now plot something you read-in
+    plt.figure(1)
+    lrho=np.log(rho)
+    plco(lrho,cb=True,nc=50)
+    #plco(ug/rho,cb=True,nc=50)
+    #plco(uu[0],cb=True,nc=50)
+    #aphi = fieldcalc() # keep sign information
+    #plc(aphi,colors='k')
+
 
 # to run this, do, e.g.:
 # ipython
