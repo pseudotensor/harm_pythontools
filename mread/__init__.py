@@ -3131,6 +3131,7 @@ def plot2davg(dosq=True,whichplot=-1):
     foutpower = open( "pjet_2davg_%s.txt" %  os.path.basename(os.getcwd()), "w" )
     # radius of jet power measurement
     rjetin=10.
+    rradin=10.
     if modelname=="blandford3d_new":
         rjetout=30.
     elif modelname=="a0hr07":
@@ -3139,6 +3140,7 @@ def plot2davg(dosq=True,whichplot=-1):
         rjetout=50.
     #
     rjet=rjetout
+    rradout=400.0
     #
     printjetwindpower(filehandle = foutpower, r = rjet, stage = 0, powjet = powjet, powwind = powwind, muminjet = muminjet, muminwind = muminwind, md=md, powjetEMKE=powjetEMKE, powjetwindEMKE=powjetwindEMKE, 
                       ftot=ftot, fsqtot=fsqtot, f30=f30, fsq30=fsq30, pjemtot=pjemtot, eoutEMtot=eoutEMtot)
@@ -14295,6 +14297,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         rjetout=30.
     else:
         rjetout=50.
+    rradout=400.0
     # jon's Choice below
     showextra=True
     #
@@ -16566,8 +16569,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     mdotjetiniavg = timeavg(np.abs(mdjet[:,iofr(rjetout)]),ts,iti,itf)
     mdotjetfinavg = timeavg(np.abs(mdjet[:,iofr(rjetout)]),ts,fti,ftf)
     #
-    edradoutiniavg = timeavg(edradthin[:,iofr(rjetout)],ts,iti,itf)
-    ldradoutiniavg = timeavg(ldradthin[:,iofr(rjetout)],ts,iti,itf)
+    edradoutiniavg = timeavg(edradthin[:,iofr(rradout)],ts,iti,itf)
+    ldradoutiniavg = timeavg(ldradthin[:,iofr(rradout)],ts,iti,itf)
     #
     # handle md10 issue inside computation for mdin (i.e. avoid including bsq/rho>30)
     mdotinrdiskininiavg = timeavg(np.abs(mdin[:,iofr(rdiskin)]),ts,iti,itf)
@@ -16687,7 +16690,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     etajPAKE = prefactor*pjpake_mu1[:,iofr(rjetout)]/mdotfinavg
     etajEN = prefactor*pjen_mu1[:,iofr(rjetout)]/mdotfinavg
     etaj = etajEM + etajMAKE
-    etaoutRAD=prefactor*edradthin[:,iofr(rjetout)]/mdotfinavg # uses thin for out
+    etaoutRAD=prefactor*edradthin[:,iofr(rradout)]/mdotfinavg # uses thin for out
     #etajlocal = etaj*(mdotfinavg/mdotinrdiskoutfinavg)
     etamwinEM = prefactor*pjem_mumax1m[:,iofr(rjetin)]/mdotfinavg
     etamwinMAKE = prefactor*pjmake_mumax1m[:,iofr(rjetin)]/mdotfinavg
@@ -17943,9 +17946,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                 elif windplotfactor==0.1:
                     ax.plot(ts,windplotfactor*np.abs(mdmwind[:,iofr(rjetout)]/normfactor*Mdotplotfactor),'b-.',label=r'$0.1\dot M_{\rm mw,o}c^2/%2.1g$' % (1.0/Mdotplotfactor))
         if showrad:
-            ax.plot(ts,edradthin[:,iofr(rjetout)]*radplotfactor/normfactor,'c-.',label=r'$L_{\rm rad,o}$')
+            ax.plot(ts,edradthin[:,iofr(rradout)]*radplotfactor/normfactor,'c-.',label=r'$L_{\rm rad,o}$')
             print("edradtest") ; sys.stdout.flush()
-            print(edradthin[:,iofr(rjetout)]*radplotfactor/normfactor) ; sys.stdout.flush()
+            print(edradthin[:,iofr(rradout)]*radplotfactor/normfactor) ; sys.stdout.flush()
         #
         if findex != None:
             if not isinstance(findex,tuple):
@@ -17954,7 +17957,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                     ax.plot(ts[findex],np.abs(mdjet[:,iofr(rjetout)])[findex]/normfactor*Mdotplotfactor,'gs')
                     ax.plot(ts[findex],windplotfactor*np.abs(mdmwind[:,iofr(rjetout)])[findex]/normfactor*Mdotplotfactor,'bv')
                 if showrad:
-                    ax.plot(ts[findex],edradthin[:,iofr(rjetout)][findex]*radplotfactor/normfactor,'cv')
+                    ax.plot(ts[findex],edradthin[:,iofr(rradout)][findex]*radplotfactor/normfactor,'cv')
             else:
                 for fi in findex:
                     ax.plot(ts[fi],np.abs(mdtot[:,iflux]*mdtotfix)[fi]/normfactor*Mdotplotfactor,'o',mfc='r')#,label=r'$\dot M$')
@@ -17962,7 +17965,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                         ax.plot(ts[fi],np.abs(mdjet[:,iofr(rjetout)])[fi]/normfactor*Mdotplotfactor,'gs')
                         ax.plot(ts[fi],windplotfactor*np.abs(mdmwind[:,iofr(rjetout)])[fi]/normfactor*Mdotplotfactor,'bv')
                     if showrad:
-                        ax.plot(ts[fi],edradthin[:,iofr(rjetout)][fi]*radplotfactor/normfactor,'cv')
+                        ax.plot(ts[fi],edradthin[:,iofr(rradout)][fi]*radplotfactor/normfactor,'cv')
         #
         #ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,labelpad=9)
         if showrad:
@@ -20100,7 +20103,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         for tic in ts:
             tici=np.where(ts==tic)[0]
             #
-            favg1.write("%d %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], mdtot[tici,iflux],md10[tici,iflux],md30[tici,iflux],mdin[tici,iofr(rdiskin)],mdin[tici,iofr(rdiskout)],mdjet[tici,iofr(rjetout)],mdmwind[tici,iofr(rjetin)],mdmwind[tici,iofr(rjetout)],mdwind[tici,iofr(rdiskin)],mdwind[tici,iofr(rdiskout)],edradthin[tici,iofr(rjetout)]  ) )
+            favg1.write("%d %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], mdtot[tici,iflux],md10[tici,iflux],md30[tici,iflux],mdin[tici,iofr(rdiskin)],mdin[tici,iofr(rdiskout)],mdjet[tici,iofr(rjetout)],mdmwind[tici,iofr(rjetin)],mdmwind[tici,iofr(rjetout)],mdwind[tici,iofr(rdiskin)],mdwind[tici,iofr(rdiskout)],edradthin[tici,iofr(rradout)]  ) )
             #
         favg1.close()
         #
@@ -24995,7 +24998,7 @@ def ploteta():
     ax34r.set_yticks(tck)
     gc.collect()
 
-def mkmovie(framesize=50, domakeavi=False):
+def mkmovie(framesize=500, domakeavi=False):
     # use to avoid making plots in ploqty...() while creating plots
     global avoidplotsglobal
     avoidplotsglobal=1
@@ -28333,7 +28336,8 @@ def tutorialgen(path=None,fil=None):
     # now plot something you read-in
     plt.figure(1)
     lrho=np.log(rho)
-    plco(lrho,cb=True,nc=50)
+    #plco(lrho,cb=True,nc=50)
+    plco(np.log(ug/bsq),cb=True,nc=50)
     #plco(ug/rho,cb=True,nc=50)
     #plco(uu[0],cb=True,nc=50)
     #aphi = fieldcalc() # keep sign information
@@ -28471,8 +28475,11 @@ def harmradtest1(path=None,fil=None):
     rjetout=100
     ijet=iofr(rjetout)
     #
+    rradout=400.0
+    irad=iofr(rradout)
+    #
     edrad=intangle(-gdet*TudRAD[1][0])
-    edradjet=edrad[ijet]
+    edradjet=edrad[irad]
     etaradjet=edradjet/mdothor
     print("time=%g" % (t))
     print("ihor=%d ifluxacc=%d mdothor=%g %gLedd edradjet=%g %gLedd etarad=%g" % (ihor,ifluxacc,mdothor,mdothor/Leddcode,edradjet,edradjet/Leddcode,etaradjet));sys.stdout.flush()
@@ -28493,12 +28500,12 @@ def harmradtest1(path=None,fil=None):
         edradthin5=intangle(-gdet*TudRAD[1][0],which=tauradeff2integrated<=taulimit)
         edradthin6=intangle(-gdet*TudRAD[1][0],which=tauradeff2flipintegrated<=taulimit)
         #        
-        etaradthinjet1=edradthin1[ijet]/mdothor
-        etaradthinjet2=edradthin2[ijet]/mdothor
-        etaradthinjet3=edradthin3[ijet]/mdothor
-        etaradthinjet4=edradthin4[ijet]/mdothor
-        etaradthinjet5=edradthin5[ijet]/mdothor
-        etaradthinjet6=edradthin6[ijet]/mdothor
+        etaradthinjet1=edradthin1[irad]/mdothor
+        etaradthinjet2=edradthin2[irad]/mdothor
+        etaradthinjet3=edradthin3[irad]/mdothor
+        etaradthinjet4=edradthin4[irad]/mdothor
+        etaradthinjet5=edradthin5[irad]/mdothor
+        etaradthinjet6=edradthin6[irad]/mdothor
         print("taulimit=%g etaradthinjet=%g etaradthinjet2=%g etaradthinjet3=%g etaradthinjet4=%g etaradthinjet5=%g etaradthinjet6=%g" % (taulimit,etaradthinjet1,etaradthinjet2,etaradthinjet3,etaradthinjet4,etaradthinjet5,etaradthinjet6));sys.stdout.flush()
     #
 
