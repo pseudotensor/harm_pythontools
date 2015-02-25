@@ -27868,14 +27868,25 @@ def tutorial2():
         mydP=r*np.sin(h)*dxdxp[3,3]*_dx3
         omegarot=uu[3]/uu[0]*dxdxp[3,3]
         #
-        idx2mri = np.sqrt(val22)*2*np.pi/omegarot/mydH
+        lambda2=np.sqrt(val22)*2*np.pi/omegarot
+        #
+        idx2mri = lambda2/mydH
+        idx2mri[idx2mri>20]=20
+        idx2mri[idx2mri<0]=0
+        #
+        myH=0.3*r
+        iq2mri = myH/lambda2
+        iq2mri[iq2mri>2]=2
+        iq2mri[iq2mri<0]=0
+        #
     #
     #
     #
     # now plot something you read-in
     plt.figure(1)
     #lrho=qmri3ddisk
-    lrho=idx2mri
+    #lrho=idx2mri
+    lrho=iq2mri
     plco(lrho,cb=True,nc=50)
     aphi = fieldcalc() # keep sign information
     plc(aphi,colors='k')
