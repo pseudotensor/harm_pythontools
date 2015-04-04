@@ -398,6 +398,8 @@ fTudMA = lambda kapa,nu: (rho+gam*ug)*uu[kapa]*ud[nu]+(gam-1)*ug*delta(kapa,nu)
 fTudPA = lambda kapa,nu: (rho)*uu[kapa]*ud[nu]
 fTudEN = lambda kapa,nu: (gam*ug)*uu[kapa]*ud[nu]+(gam-1)*ug*delta(kapa,nu)
 fTudEM = lambda kapa,nu: bsq*uu[kapa]*ud[nu] + 0.5*bsq*delta(kapa,nu) - bu[kapa]*bd[nu]
+fTudRAD = lambda kapa,nu: (Erf/3.0)*(4.0*uradu[kapa]*uradd[nu]+delta(kapa,nu))
+
 
 fTudEMijk = lambda kapa,nu,i,j,k: bsq*uu[kapa,i,j,k]*ud[nu,i,j,k] + 0.5*bsq[i,j,k]*delta(kapa,nu) - bu[kapa,i,j,k]*bd[nu,i,j,k]
 fTudMAijk = lambda kapa,nu,i,j,k: (rho[i,j,k]+gam*ug[i,j,k])*uu[kapa,i,j,k]*ud[nu,i,j,k]+(gam-1)*ug[i,j,k]*delta(kapa,nu)
