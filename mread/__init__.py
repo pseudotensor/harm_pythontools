@@ -358,6 +358,55 @@ def arctanmath(x,y):
     return(atan2(y,x))
 
 
+def fFdd(i,j):
+    if i==0 and j==1:
+        fdd =  gdet*(uu[2]*bu[3]-uu[3]*bu[2]) # f_tr
+    elif i==1 and j==0:
+        fdd = -gdet*(uu[2]*bu[3]-uu[3]*bu[2]) # -f_tr
+    elif i==0 and j==2:
+        fdd =  gdet*(uu[3]*bu[1]-uu[1]*bu[3]) # f_th
+    elif i==2 and j==0:
+        fdd = -gdet*(uu[3]*bu[1]-uu[1]*bu[3]) # -f_th
+    elif i==0 and j==3:
+        fdd =  gdet*(uu[1]*bu[2]-uu[2]*bu[1]) # f_tp
+    elif i==3 and j==0:
+        fdd = -gdet*(uu[1]*bu[2]-uu[2]*bu[1]) # -f_tp
+    elif i==1 and j==3:
+        fdd =  gdet*(uu[2]*bu[0]-uu[0]*bu[2]) # f_rp = gdet*B2
+    elif i==3 and j==1:
+        fdd = -gdet*(uu[2]*bu[0]-uu[0]*bu[2]) # -f_rp = gdet*B2
+    elif i==2 and j==3:
+        fdd =  gdet*(uu[0]*bu[1]-uu[1]*bu[0]) # f_hp = gdet*B1
+    elif i==3 and j==2:
+        fdd = -gdet*(uu[0]*bu[1]-uu[1]*bu[0]) # -f_hp = gdet*B1
+    elif i==1 and j==2:
+        fdd =  gdet*(uu[0]*bu[3]-uu[3]*bu[0]) # f_rh = gdet*B3
+    elif i==2 and j==1:
+        fdd = -gdet*(uu[0]*bu[3]-uu[3]*bu[0]) # -f_rh = gdet*B3
+    else:
+        fdd = np.zeros_like(uu[0])
+    return fdd
+
+
+
+# lamda functions to avoid storing certain things
+# To use, replace (e.g.) TudEM[i,j] -> fTudEM(i,j) for numerical i,j from 0 through 3
+delta = lambda kapa,nu: (kapa==nu)
+fTud = lambda kapa,nu: fTudEM(kapa,nu) + fTudMA(kapa,nu)
+fRud = lambda kapa,nu: 4./3.*Erf*uradu[kapa]*uradd[nu]+1./3.*Erf*delta(kapa,nu)
+fTudMA = lambda kapa,nu: (rho+gam*ug)*uu[kapa]*ud[nu]+(gam-1)*ug*delta(kapa,nu)
+fTudPA = lambda kapa,nu: (rho)*uu[kapa]*ud[nu]
+fTudEN = lambda kapa,nu: (gam*ug)*uu[kapa]*ud[nu]+(gam-1)*ug*delta(kapa,nu)
+fTudEM = lambda kapa,nu: bsq*uu[kapa]*ud[nu] + 0.5*bsq*delta(kapa,nu) - bu[kapa]*bd[nu]
+
+fTudEMijk = lambda kapa,nu,i,j,k: bsq*uu[kapa,i,j,k]*ud[nu,i,j,k] + 0.5*bsq[i,j,k]*delta(kapa,nu) - bu[kapa,i,j,k]*bd[nu,i,j,k]
+fTudMAijk = lambda kapa,nu,i,j,k: (rho[i,j,k]+gam*ug[i,j,k])*uu[kapa,i,j,k]*ud[nu,i,j,k]+(gam-1)*ug[i,j,k]*delta(kapa,nu)
+fTudijk = lambda kapa,nu,i,j,k: fTudEM(kapa,nu) + fTudMA(kapa,nu)
+fRudijk = lambda kapa,nu,i,j,k: 4./3.*Erf[i,j,k]*uradu[kapa,i,j,k]*uradd[nu,i,j,k]+1./3.*Erf[i,j,k]*delta(kapa,nu)
+
+# fud(
+fud = lambda : (mdot(gv3,uu))                  #g_mn u^n
+
 
 # trans requires input of full 3d Vmetric (not just use2d gdump version)
 def set_transV2Vmetric(Vmetric=None,b0=0.0):
@@ -2218,7 +2267,26 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         # 16*2=32
         n=16
         #energy fluxes and faraday
-        avg_Tud+=Tud.sum(-1)[:,:,:,:,None]*localdt[itert]
+        #avg_Tud+=Tud.sum(-1)[:,:,:,:,None]*localdt[itert]
+        #avg_Tud[:,:,:,:] += Tud[:,:,:,:,:].sum(-1)[:,:,:,:,None]*localdt[itert]
+        ndim=4
+        for ii in range(0,ndim):
+            for jj in range(0,ndim):
+                avg_Tud[ii,jj] += fTud(ii,jj).sum(-1)[:,:,:,:,None]*localdt[itert]
+                avg_TudEM[ii,jj] += fTudEM(ii,jj).sum(-1)[:,:,:,:,None]*localdt[itert]
+                avg_TudMA[ii,jj] += fTudMA(ii,jj).sum(-1)[:,:,:,:,None]*localdt[itert]
+                #16*2=32
+                #PA/IE (EM is B) -- for gammie plot
+                avg_TudPA[ii,jj] += fTudPA(ii,jj).sum(-1)[:,:,:,:,None]*localdt[itert]
+                avg_TudEN[ii,jj] += fTudEN(ii,jj).sum(-1)[:,:,:,:,None]*localdt[itert]
+                avg_TudRAD[ii,jj] += fTudRAD(ii,jj).sum(-1)[:,:,:,:,None]*localdt[itert]
+                avg_TudEM[ii,jj] += fTudEM(ii,jj).sum(-1)[:,:,:,:,None]*localdt[itert]
+                avg_TudMA[ii,jj] += fTudMA(ii,jj).sum(-1)[:,:,:,:,None]*localdt[itert]
+                # 16*2=32
+                #PA/IE (EM is B) -- for gammie plot
+                avg_TudPA[ii,jj] += fTudPA(ii,jj).sum(-1)[:,:,:,:,None]*localdt[itert]
+                avg_TudEN[ii,jj] += fTudEN(ii,jj).sum(-1)[:,:,:,:,None]*localdt[itert]
+                avg_TudRAD[ii,jj] += fTudRAD(ii,jj).sum(-1)[:,:,:,:,None]*localdt[itert]
         avg_fdd+=((fdd)).sum(-1)[:,:,:,:,None]*localdt[itert]
         #
         # 16*1=16
@@ -2241,20 +2309,11 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         # u^m u_l
         avg_uuud+=uuud
         #
-        # 16*2=32
-        #EM/MA
-        avg_TudEM+=TudEM.sum(-1)[:,:,:,:,None]*localdt[itert]
-        avg_TudMA+=TudMA.sum(-1)[:,:,:,:,None]*localdt[itert]
-        # 16*2=32
-        #PA/IE (EM is B) -- for gammie plot
-        avg_TudPA+=TudPA.sum(-1)[:,:,:,:,None]*localdt[itert]
-        avg_TudEN+=TudEN.sum(-1)[:,:,:,:,None]*localdt[itert]
-        avg_TudRAD+=TudRAD.sum(-1)[:,:,:,:,None]*localdt[itert]
         #
         # 3
         #mu,sigma
-        avg_mu += (-Tud[1,0]/(rhoclean*uu[1])).sum(-1)[:,:,None]*localdt[itert]
-        avg_sigma += (-TudEM[1,0]/TudMA[1,0]).sum(-1)[:,:,None]*localdt[itert]
+        avg_mu += (-fTud(1,0)/(rhoclean*uu[1])).sum(-1)[:,:,None]*localdt[itert]
+        avg_sigma += (-fTudEM(1,0)/fTudMA(1,0)).sum(-1)[:,:,None]*localdt[itert]
         avg_bsqorho += (bsq/rhounclean).sum(-1)[:,:,None]*localdt[itert] # keep as unclean since want to know what bsqorho is
         #
         #
@@ -5614,7 +5673,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         lbsq=np.log10(bsq*0.5/ueddcode+1E-30)
         dologz=0 # SUPERGOD
         qty=lbsq # SUPERGOD
-        #qty=gdet*TudEM[1,0] # SUPERGOD
+        #qty=gdet*fTudEM(1,0) # SUPERGOD
         doqty=1
     elif doErf:
         lErf=np.log10(Erf/ueddcode+1E-30)
@@ -12556,6 +12615,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         gc.collect()
         printusage()
         #
+
         # setup things to find l,n Fourier transform of
         if avgexists==1:
             drho=(rho-avg_rho)
@@ -12580,9 +12640,9 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             denomdbsq=avg_bsq
             dFM=(-rho*(uu[1]) -(-avg_rhouu[1]))
             denomdFM=avg_rhouu[1]
-            dTudMA=(TudMA[1,0]-avg_TudMA[1,0])
+            dTudMA=(fTudMA(1,0)-avg_TudMA[1,0])
             denomdTudMA=avg_TudMA[1,0]
-            dTudEM=(TudEM[1,0]-avg_TudEM[1,0])
+            dTudEM=(fTudEM(1,0)-avg_TudEM[1,0])
             denomdTudEM=avg_TudEM[1,0]
         #
         #
@@ -12623,8 +12683,8 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             bas3rhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu3*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_radhor)
             bsqrhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*bsq*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_radhor)
             FMrhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(-rho*uu[1])*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_radhor)
-            FEMArhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(TudMA[1,0])*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_radhor)
-            FEEMrhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(TudEM[1,0])*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_radhor)
+            FEMArhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudMA(1,0))*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_radhor)
+            FEEMrhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudEM(1,0))*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_radhor)
             #
             #
             print("pick out *at* r\sim 4M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
@@ -12648,8 +12708,8 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             bas3rhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu3*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad4)
             bsqrhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*bsq*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad4)
             FMrhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(-rho*uu[1])*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad4)
-            FEMArhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(TudMA[1,0])*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad4)
-            FEEMrhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(TudEM[1,0])*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad4)
+            FEMArhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudMA(1,0))*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad4)
+            FEEMrhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudEM(1,0))*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad4)
             #
             #
             print("pick out *at* r\sim 8M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
@@ -12673,8 +12733,8 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             bas3rhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu3*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad8)
             bsqrhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*bsq*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad8)
             FMrhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(-rho*uu[1])*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad8)
-            FEMArhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(TudMA[1,0])*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad8)
-            FEEMrhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(TudEM[1,0])*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad8)
+            FEMArhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudMA(1,0))*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad8)
+            FEEMrhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudEM(1,0))*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad8)
             #
             print("pick out *at* r\sim 30M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
             denfactor=1.0 + rholab*0.0
@@ -12697,8 +12757,8 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             bas3rhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu3*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad30)
             bsqrhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*bsq*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad30)
             FMrhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(-rho*uu[1])*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad30)
-            FEMArhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(TudMA[1,0])*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad30)
-            FEEMrhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(TudEM[1,0])*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad30)
+            FEMArhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudMA(1,0))*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad30)
+            FEEMrhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudEM(1,0))*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad30)
             #
             #
             #
@@ -12735,8 +12795,8 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             bas3rhosq_jet_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu3*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_radhor)
             bsqrhosq_jet_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*bsq*denfactor,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_radhor)
             FMrhosq_jet_phipow_radhor[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(-rho*uu[1])*denfactor,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_radhor)
-            FEMArhosq_jet_phipow_radhor[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(TudMA[1,0])*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_radhor)
-            FEEMrhosq_jet_phipow_radhor[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(TudEM[1,0])*denfactor,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_radhor)
+            FEMArhosq_jet_phipow_radhor[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudMA(1,0))*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_radhor)
+            FEEMrhosq_jet_phipow_radhor[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudEM(1,0))*denfactor,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_radhor)
             #
             #
             print("pick out *at* r\sim 4M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
@@ -12760,8 +12820,8 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             bas3rhosq_jet_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu3*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad4)
             bsqrhosq_jet_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*bsq*denfactor,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_rad4)
             FMrhosq_jet_phipow_rad4[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(-rho*uu[1])*denfactor,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_rad4)
-            FEMArhosq_jet_phipow_rad4[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(TudMA[1,0])*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad4)
-            FEEMrhosq_jet_phipow_rad4[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(TudEM[1,0])*denfactor,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_rad4)
+            FEMArhosq_jet_phipow_rad4[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudMA(1,0))*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad4)
+            FEEMrhosq_jet_phipow_rad4[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudEM(1,0))*denfactor,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_rad4)
             #
             #
             print("pick out *at* r\sim 8M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
@@ -12785,8 +12845,8 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             bas3rhosq_jet_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu3*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad8)
             bsqrhosq_jet_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*bsq*denfactor,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_rad8)
             FMrhosq_jet_phipow_rad8[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(-rho*uu[1])*denfactor,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_rad8)
-            FEMArhosq_jet_phipow_rad8[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(TudMA[1,0])*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad8)
-            FEEMrhosq_jet_phipow_rad8[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(TudEM[1,0])*denfactor,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_rad8)
+            FEMArhosq_jet_phipow_rad8[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudMA(1,0))*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad8)
+            FEEMrhosq_jet_phipow_rad8[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudEM(1,0))*denfactor,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_rad8)
             #
             print("pick out *at* r\sim 30M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
             denfactor=1.0 + rholab*0.0
@@ -12809,8 +12869,8 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             bas3rhosq_jet_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu3*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad30)
             bsqrhosq_jet_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*bsq*denfactor,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_rad30)
             FMrhosq_jet_phipow_rad30[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(-rho*uu[1])*denfactor,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_rad30)
-            FEMArhosq_jet_phipow_rad30[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(TudMA[1,0])*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad30)
-            FEEMrhosq_jet_phipow_rad30[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(TudEM[1,0])*denfactor,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_rad30)
+            FEMArhosq_jet_phipow_rad30[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudMA(1,0))*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad30)
+            FEEMrhosq_jet_phipow_rad30[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudEM(1,0))*denfactor,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_rad30)
         #
         #
             
@@ -13399,29 +13459,29 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         ##################################
         #
         print("Edot" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-        edtot[qindex]=intangle(-gdet*Tud[1][0])
-        ed2h[qindex]=intangle(-gdet*Tud[1][0],hoverr=2*horval)
-        ed4h[qindex]=intangle(-gdet*Tud[1][0],hoverr=4*horval)
-        ed2hor[qindex]=intangle(-gdet*Tud[1][0],hoverr=2*hoverr3d,thetamid=thetamid3d)
-        edrhosq[qindex]=scaletofullwedge(((-gdet*rho**2*Tud[1][0]).sum(1)/maxrhosq2d).sum(1)*_dx2*_dx3)
+        edtot[qindex]=intangle(-gdet*fTud(1,0))
+        ed2h[qindex]=intangle(-gdet*fTud(1,0),hoverr=2*horval)
+        ed4h[qindex]=intangle(-gdet*fTud(1,0),hoverr=4*horval)
+        ed2hor[qindex]=intangle(-gdet*fTud(1,0),hoverr=2*hoverr3d,thetamid=thetamid3d)
+        edrhosq[qindex]=scaletofullwedge(((-gdet*rho**2*fTud(1,0)).sum(1)/maxrhosq2d).sum(1)*_dx2*_dx3)
         #
         # Tud's already using rhoclean and ugclean
-        edem[qindex]=intangle(-gdet*TudEM[1][0])
-        edma[qindex]=intangle(-gdet*TudMA[1][0])
+        edem[qindex]=intangle(-gdet*fTudEM(1,0))
+        edma[qindex]=intangle(-gdet*fTudMA(1,0))
         edm[qindex]=intangle(gdet*rho*uu[1]) # not using clean version
-        edpa[qindex]=intangle(-gdet*TudPA[1][0])
-        eden[qindex]=intangle(-gdet*TudEN[1][0])
+        edpa[qindex]=intangle(-gdet*fTudPA(1,0))
+        eden[qindex]=intangle(-gdet*fTudEN(1,0))
         #
-        edrad[qindex]=intangle(-gdet*TudRAD[1][0])
+        edrad[qindex]=intangle(-gdet*fTudRAD(1,0))
         tauradlocal=(KAPPAUSER+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
-        #edradthin[qindex]=intangle(-gdet*TudRAD[1][0],which=tauradlocal<=1.0)
-        edradthin[qindex]=intangle(-gdet*TudRAD[1][0],which=tauradintegrated<=1.0)
+        #edradthin[qindex]=intangle(-gdet*fTudRAD(1,0),which=tauradlocal<=1.0)
+        edradthin[qindex]=intangle(-gdet*fTudRAD(1,0),which=tauradintegrated<=1.0)
         #
-        edma30[qindex]=intangle(-gdet*TudMA[1][0],which=(condmaxbsqorho==0))
+        edma30[qindex]=intangle(-gdet*fTudMA(1,0),which=(condmaxbsqorho==0))
         edm30[qindex]=intangle(gdet*rho*uu[1],which=(condmaxbsqorho==0))
         #
-        edtotbound[qindex]=intangle(-gdet*Tud[1][0],which=(-enth*ud[0]<=1))
-        edmabound[qindex]=intangle(-gdet*TudMA[1][0],which=(-enth*ud[0]<=1))
+        edtotbound[qindex]=intangle(-gdet*fTud(1,0),which=(-enth*ud[0]<=1))
+        edmabound[qindex]=intangle(-gdet*fTudMA(1,0),which=(-enth*ud[0]<=1))
         #
         print("Pjet" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         pjem5[qindex]=jetpowcalc(0,minbsqorho=5)
@@ -13509,17 +13569,17 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         #
         print("Ldot" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         # Tud's already using rhoclean and ugclean
-        ldtot[qindex]=intangle(gdet*Tud[1][3]/dxdxp[3,3])
-        ldem[qindex]=intangle(gdet*TudEM[1][3]/dxdxp[3,3])
-        ldma[qindex]=intangle(gdet*TudMA[1][3]/dxdxp[3,3])
+        ldtot[qindex]=intangle(gdet*fTud(1,3)/dxdxp[3,3])
+        ldem[qindex]=intangle(gdet*fTudEM(1,3)/dxdxp[3,3])
+        ldma[qindex]=intangle(gdet*fTudMA(1,3)/dxdxp[3,3])
         ldm[qindex]=intangle(0.0*gdet*rho*uu[3]*dxdxp[3,3])
-        ldpa[qindex]=intangle(gdet*TudPA[1][3]/dxdxp[3,3])
-        lden[qindex]=intangle(gdet*TudEN[1][3]/dxdxp[3,3])
-        ldrad[qindex]=intangle(gdet*TudRAD[1][3]/dxdxp[3,3])
-        #ldradthin[qindex]=intangle(gdet*TudRAD[1][3]/dxdxp[3,3],which=tauradlocal<=1.0)
-        ldradthin[qindex]=intangle(gdet*TudRAD[1][3]/dxdxp[3,3],which=tauradintegrated<=1.0)
+        ldpa[qindex]=intangle(gdet*fTudPA(1,3)/dxdxp[3,3])
+        lden[qindex]=intangle(gdet*fTudEN(1,3)/dxdxp[3,3])
+        ldrad[qindex]=intangle(gdet*fTudRAD(1,3)/dxdxp[3,3])
+        #ldradthin[qindex]=intangle(gdet*fTudRAD(1,3)/dxdxp[3,3],which=tauradlocal<=1.0)
+        ldradthin[qindex]=intangle(gdet*fTudRAD(1,3)/dxdxp[3,3],which=tauradintegrated<=1.0)
         #
-        ldma30[qindex]=intangle(gdet*TudMA[1][3]/dxdxp[3,3],which=(condmaxbsqorho==0))
+        ldma30[qindex]=intangle(gdet*fTudMA(1,3)/dxdxp[3,3],which=(condmaxbsqorho==0))
         ldm30[qindex]=intangle(0.0*gdet*rho*uu[3]*dxdxp[3,3],which=(condmaxbsqorho==0))
         #
         print("north hemisphere" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
@@ -13818,8 +13878,6 @@ def amin(arg1,arg2):
 
 # allow to remove rho and ug component to remove floor effects
 def Tcalcud(maxbsqorho=None, which=None):
-    # MEMMARK: 16*5+5=85 full 3D vars.
-    global Tud, TudEM, TudMA, TudPA, TudEN, TudRAD
     global mu, sigma
     global enth
     global unb, isunbound
@@ -13833,53 +13891,57 @@ def Tcalcud(maxbsqorho=None, which=None):
     # no, assume averages formed out of rfd reads that already include whatever cleaning wanted
     #
     #
-    pg = (gam-1)*ugclean
-    prad = (4.0/3.0-1)*urad
-    w=rhoclean+ugclean+pg
-    wnorhoclean=ugclean+pg
-    eta=w+bsq
-    Tud = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
-    TudMA = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
-    TudEM = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
-    TudPA = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
-    TudEN = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
-    TudRAD = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
-    for kapa in np.arange(4):
-        for nu in np.arange(4):
-            if(kapa==nu): delta = 1
-            else: delta = 0
-            TudEM[kapa,nu] = bsq*uu[kapa]*ud[nu] + 0.5*bsq*delta - bu[kapa]*bd[nu]
-            TudMA[kapa,nu] = w*uu[kapa]*ud[nu]+pg*delta
-            TudPA[kapa,nu] = rhoclean*uu[kapa]*ud[nu]
-            TudEN[kapa,nu] = wnorhoclean*uu[kapa]*ud[nu]+pg*delta
-            #Tud[kapa,nu] = eta*uu[kapa]*ud[nu]+(pg+0.5*bsq)*delta-bu[kapa]*bd[nu]
-            TudRAD[kapa,nu] = (Erf/3.0)*(4.0*uradu[kapa]*uradd[nu]+delta)
-            Tud[kapa,nu] = TudEM[kapa,nu] + TudMA[kapa,nu] + TudRAD[kapa,nu]
-    #mu = -Tud[1,0]/(rhoclean*uu[1])
-    mu = -Tud[1,0]*divideavoidinf(rhoclean*uu[1])
-    sigma = TudEM[1,0]*divideavoidinf(TudMA[1,0])
+    if(GLOBALTUD):
+        # MEMMARK: 16*5+5=85 full 3D vars.
+        global Tud, TudEM, TudMA, TudPA, TudEN, TudRAD
+        pg = (gam-1)*ugclean
+        prad = (4.0/3.0-1)*urad
+        w=rhoclean+ugclean+pg
+        wnorhoclean=ugclean+pg
+        eta=w+bsq
+        Tud = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
+        TudMA = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
+        TudEM = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
+        TudPA = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
+        TudEN = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
+        TudRAD = np.zeros((4,4,nx,ny,nz),dtype=np.float32,order='F')
+        for kapa in np.arange(4):
+            for nu in np.arange(4):
+                if(kapa==nu): delta = 1
+                else: delta = 0
+                TudEM[kapa,nu] = bsq*uu[kapa]*ud[nu] + 0.5*bsq*delta - bu[kapa]*bd[nu]
+                TudMA[kapa,nu] = w*uu[kapa]*ud[nu]+pg*delta
+                TudPA[kapa,nu] = rhoclean*uu[kapa]*ud[nu]
+                TudEN[kapa,nu] = wnorhoclean*uu[kapa]*ud[nu]+pg*delta
+                #Tud[kapa,nu] = eta*uu[kapa]*ud[nu]+(pg+0.5*bsq)*delta-bu[kapa]*bd[nu]
+                TudRAD[kapa,nu] = (Erf/3.0)*(4.0*uradu[kapa]*uradd[nu]+delta)
+                Tud[kapa,nu] = TudEM[kapa,nu] + TudMA[kapa,nu] + TudRAD[kapa,nu]
+        #mu = -fTud(1,0)/(rhoclean*uu[1])
+        #
+        #
+        print("TudEM[1,0,5,0,0]=%g" % (TudEM[1,0,5,0,0])) ; sys.stdout.flush()
+        print("bsq[5,0,0]=%g" % (bsq[5,0,0])) ; sys.stdout.flush()
+        print("uu[1,5,0,0]=%g" % (uu[1,5,0,0])) ; sys.stdout.flush()
+        print("ud[0,5,0,0]=%g" % (ud[0,5,0,0])) ; sys.stdout.flush()
+        print("bu[1,5,0,0]=%g" % (bu[1,5,0,0])) ; sys.stdout.flush()
+        print("bd[0,5,0,0]=%g" % (bd[0,5,0,0])) ; sys.stdout.flush()
+        #
+        print("uu[0,5,0,0]=%g" % (uu[0,5,0,0])) ; sys.stdout.flush()
+        print("B[0,5,0,0]=%g" % (B[0,5,0,0])) ; sys.stdout.flush()
+        print("uu[1,5,0,0]=%g" % (uu[1,5,0,0])) ; sys.stdout.flush()
+        print("B[1,5,0,0]=%g" % (B[1,5,0,0])) ; sys.stdout.flush()
+        print("uu[2,5,0,0]=%g" % (uu[2,5,0,0])) ; sys.stdout.flush()
+        print("B[2,5,0,0]=%g" % (B[2,5,0,0])) ; sys.stdout.flush()
+        print("uu[3,5,0,0]=%g" % (uu[3,5,0,0])) ; sys.stdout.flush()
+        print("B[3,5,0,0]=%g" % (B[3,5,0,0])) ; sys.stdout.flush()
+        print("udotB[5,0,0]=%g" % (ud[0,5,0,0]*B[0,5,0,0] + ud[1,5,0,0]*B[1,5,0,0] + ud[2,5,0,0]*B[2,5,0,0] + ud[3,5,0,0]*B[3,5,0,0])) ; sys.stdout.flush()
+    #
+    mu = -fTud(1,0)*divideavoidinf(rhoclean*uu[1])
+    sigma = fTudEM(1,0)*divideavoidinf(fTudMA(1,0))
     enth=1+ugclean*gam/rhoclean
     unb=enth*ud[0]
     # unbound here means *thermally* rather than kinetically (-u_t>1) or fully thermo-magnetically (\mu>1) unbound.
     isunbound=(-unb>1.0)
-    #
-    #
-    print("TudEM[1,0,5,0,0]=%g" % (TudEM[1,0,5,0,0])) ; sys.stdout.flush()
-    print("bsq[5,0,0]=%g" % (bsq[5,0,0])) ; sys.stdout.flush()
-    print("uu[1,5,0,0]=%g" % (uu[1,5,0,0])) ; sys.stdout.flush()
-    print("ud[0,5,0,0]=%g" % (ud[0,5,0,0])) ; sys.stdout.flush()
-    print("bu[1,5,0,0]=%g" % (bu[1,5,0,0])) ; sys.stdout.flush()
-    print("bd[0,5,0,0]=%g" % (bd[0,5,0,0])) ; sys.stdout.flush()
-    #
-    print("uu[0,5,0,0]=%g" % (uu[0,5,0,0])) ; sys.stdout.flush()
-    print("B[0,5,0,0]=%g" % (B[0,5,0,0])) ; sys.stdout.flush()
-    print("uu[1,5,0,0]=%g" % (uu[1,5,0,0])) ; sys.stdout.flush()
-    print("B[1,5,0,0]=%g" % (B[1,5,0,0])) ; sys.stdout.flush()
-    print("uu[2,5,0,0]=%g" % (uu[2,5,0,0])) ; sys.stdout.flush()
-    print("B[2,5,0,0]=%g" % (B[2,5,0,0])) ; sys.stdout.flush()
-    print("uu[3,5,0,0]=%g" % (uu[3,5,0,0])) ; sys.stdout.flush()
-    print("B[3,5,0,0]=%g" % (B[3,5,0,0])) ; sys.stdout.flush()
-    print("udotB[5,0,0]=%g" % (ud[0,5,0,0]*B[0,5,0,0] + ud[1,5,0,0]*B[1,5,0,0] + ud[2,5,0,0]*B[2,5,0,0] + ud[3,5,0,0]*B[3,5,0,0])) ; sys.stdout.flush()
 
 def faraday():
     # MEMMARK: 32+4=36 full 3D vars
@@ -13960,17 +14022,17 @@ def jetpowcalc(which=2,minbsqorho=None,mumin=None,mumax=None,maxbeta=None,maxbsq
         #rest-mass flux
         jetpowden = gdet*rho*uu[1]
     if which==0:
-        jetpowden = -gdet*TudEM[1,0]
+        jetpowden = -gdet*fTudEM(1,0)
     if which==1:
-        jetpowden = -gdet*TudMA[1,0] # still has rest-mass
+        jetpowden = -gdet*fTudMA(1,0) # still has rest-mass
     if which==2:
-        jetpowden = -gdet*Tud[1,0] # still has rest-mass
+        jetpowden = -gdet*fTud(1,0) # still has rest-mass
     if which==10:
-        jetpowden = gdet*TudEM[1,3]/dxdxp[3,3]
+        jetpowden = gdet*fTudEM(1,3)/dxdxp[3,3]
     if which==11:
-        jetpowden = gdet*TudMA[1,3]/dxdxp[3,3]
+        jetpowden = gdet*fTudMA(1,3)/dxdxp[3,3]
     if which==12:
-        jetpowden = gdet*Tud[1,3]/dxdxp[3,3]
+        jetpowden = gdet*fTud(1,3)/dxdxp[3,3]
     if which==13:
         #rest-mass flux
         jetpowden = 0.0*gdet*rho*uu[3]*dxdxp[3,3]
@@ -13979,17 +14041,17 @@ def jetpowcalc(which=2,minbsqorho=None,mumin=None,mumax=None,maxbeta=None,maxbsq
         jetpowden = np.abs(gdetB[1])
     # new one's:
     if which==15:
-        jetpowden = -gdet*(TudPA[1,0]) # still has rest-mass
+        jetpowden = -gdet*(fTudPA(1,0)) # still has rest-mass
     if which==16:
-        jetpowden = -gdet*(TudEN[1,0])
+        jetpowden = -gdet*(fTudEN(1,0))
     if which==17:
-        jetpowden = gdet*(TudPA[1,3])/dxdxp[3,3]
+        jetpowden = gdet*(fTudPA(1,3))/dxdxp[3,3]
     if which==18:
-        jetpowden = gdet*(TudEN[1,3])/dxdxp[3,3]
+        jetpowden = gdet*(fTudEN(1,3))/dxdxp[3,3]
     if which==19:
-        jetpowden = -gdet*(TudRAD[1,0])
+        jetpowden = -gdet*(fTudRAD(1,0))
     if which==20:
-        jetpowden = gdet*(TudRAD[1,3])/dxdxp[3,3]
+        jetpowden = gdet*(fTudRAD(1,3))/dxdxp[3,3]
     #
     ############################################
     #jetpowden[tj>=ny-2] = 0*jetpowden[tj>=ny-2]
@@ -24835,8 +24897,8 @@ def plotomegaf2hor():
     ihor = np.floor(iofr(rhor)+0.5)
     rhoavg=(rho[ihor].sum(1)/nz)
     bsqorhoavg=(bsq/rho)[ihor].sum(1)/nz
-    TudEM10avg = (-gdet*TudEM[1,0])[ihor].sum(1)/nz
-    Etot = (-gdet*TudEM[1,0])[ihor].sum()*_dx2*_dx3*2
+    TudEM10avg = (-gdet*fTudEM(1,0))[ihor].sum(1)/nz
+    Etot = (-gdet*fTudEM(1,0))[ihor].sum()*_dx2*_dx3*2
     plt.plot(tj[ihor,:,0],omegaf2[ihor].sum(1)/nz*dxdxp[3][3][0,0,0]/omh); 
     plt.plot(tj[ihor,:,0],0.5*rhoavg/np.max(rhoavg)); 
     plt.plot(tj[ihor,:,0],bsqorhoavg/100); 
@@ -27290,7 +27352,7 @@ def oldstuff():
         rfd("fieldline2344.bin")
         cvel()
         Tcalcud()
-        xxx=-Tud[1,0]/(rho*uu[1])
+        xxx=-fTud(1,0)/(rho*uu[1])
         yyy=choplo(chophi(xxx.sum(2)/nz,50),-50)[:,:,None]
         plco(yyy,cb=True,nc=20)
         aphi=fieldcalcface()
@@ -27605,6 +27667,9 @@ def main(argv=None):
     # for now, use2dglobal=True doesn't work for tilted sims due to some transformation issue.
     #use2dglobal=False
     #
+    # whether to compute Tud stuff globally -- uses lots of memory and not faster than just computing on spot
+    global GLOBALTUD
+    GLOBALTUD=0
     #
     global nxgdump,nygdump,nzgdump
     #
@@ -27722,7 +27787,7 @@ def tutorial1():
 
 def tutorial1alt():
     # first load grid file
-    grid3d("gdump")
+    grid3d("gdump.bin")
     # now try loading a single fieldline file
     rfd("fieldline0000.bin")
     # now plot something you read-in
@@ -27783,7 +27848,7 @@ def tutorial1alt():
     #
     #############################
     #
-    if 1==1:
+    if 1==0:
         myfun=qmri3ddisk
         myfun[myfun>10]=10
         myfun[myfun<1E-4]=1E-4
@@ -27795,10 +27860,10 @@ def tutorial1alt():
         myfun[myfun<1E-4]=1E-4
         myfun[bsq/rho>1]=0
         myfun[rho<1E-5]=0
+    if 1==1:
+        myfun=lrho
     if 1==0:
-        myfun=lrho[0:nxout,:,0]
-    if 1==0:
-        myfun=np.log10(1E-5+1.0/beta[0:nxout,:,0])
+        myfun=np.log10(1E-5+1.0/beta)
     #
     if 1==0:
         myfun=idx2mri
@@ -27997,7 +28062,7 @@ def harmradplot1():
     plt.figure(1)
     plt.clf()
     #toplot=np.log(rho)
-    toplot=-TudRAD[0,0]
+    toplot=-fTudRAD(0,0)
     #toplot=Erf
     #plco(lrho,cb=True,nc=50)
     bar=r*0+1
@@ -28037,7 +28102,7 @@ def harmradplot2():
     plt.figure(1)
     plt.clf()
     #toplot=np.log(rho)
-    toplot=-TudRAD[0,0]
+    toplot=-fTudRAD(0,0)
     #toplot=Erf
     #plco(lrho,cb=True,nc=50)
     bar=r*0+1
@@ -28077,7 +28142,7 @@ def harmradplot3():
     plt.figure(1)
     plt.clf()
     #toplot=np.log(rho)
-    toplot=-TudRAD[0,0]
+    toplot=-fTudRAD(0,0)
     #toplot=Erf
     #plco(lrho,cb=True,nc=50)
     bar=r*0+1
@@ -28118,7 +28183,7 @@ def harmradplot4():
     plt.figure(1)
     plt.clf()
     #toplot=np.log(rho)
-    toplot=-TudRAD[0,0]
+    toplot=-fTudRAD(0,0)
     #toplot=Erf
     #plco(lrho,cb=True,nc=50)
     bar=r*0+1
@@ -28181,7 +28246,7 @@ def harmradplot5():
     plt.axis('equal')
     #toplot=np.log(rho)
     #toplot=np.log(ug)
-    toplot=-TudRAD[0,0]
+    toplot=-fTudRAD(0,0)
     #toplot=Erf
     #plco(lrho,cb=True,nc=50)
     print("GOT HERE.5");sys.stdout.flush()
@@ -28207,15 +28272,15 @@ def harmradplot5():
         newy[:,ny-1::-1,:]=-myy[:,0:ny,:]
         newz[:,ny:2*ny,:]=myz[:,0:ny,:]
         newz[:,ny-1::-1,:]=myz[:,0:ny,:]
-        newU[:,ny:2*ny,:]=-TudRAD[1,0][:,0:ny,:]*np.sqrt(gv3[1,1][0,0:ny,:])
-        newU[:,ny-1::-1,:]=-TudRAD[1,0][:,0:ny,:]*np.sqrt(gv3[1,1][0,0:ny,:])
-        #newU[:,ny:2*ny,:]=TudRAD[1,0][:,0:ny,:]/TudRAD[0,0][:,0:ny,:]*np.sqrt(gv3[1,1][0,0:ny,:])
-        #newU[:,ny-1::-1,:]=TudRAD[1,0][:,0:ny,:]/TudRAD[0,0][:,0:ny,:]*np.sqrt(gv3[1,1][0,0:ny,:])
+        newU[:,ny:2*ny,:]=-fTudRAD(1,0)[:,0:ny,:]*np.sqrt(gv3[1,1][0,0:ny,:])
+        newU[:,ny-1::-1,:]=-fTudRAD(1,0)[:,0:ny,:]*np.sqrt(gv3[1,1][0,0:ny,:])
+        #newU[:,ny:2*ny,:]=fTudRAD(1,0)[:,0:ny,:]/TudRAD[0,0][:,0:ny,:]*np.sqrt(gv3[1,1][0,0:ny,:])
+        #newU[:,ny-1::-1,:]=fTudRAD(1,0)[:,0:ny,:]/TudRAD[0,0][:,0:ny,:]*np.sqrt(gv3[1,1][0,0:ny,:])
         #
-        newV[:,ny:2*ny,:]=-TudRAD[2,0][:,0:ny,:]*np.sqrt(gv3[2,2][0,0:ny,:])
-        newV[:,ny-1::-1,:]=+TudRAD[2,0][:,0:ny,:]*np.sqrt(gv3[2,2][0,0:ny,:])
-        #newV[:,ny:2*ny,:]=-TudRAD[2,0][:,0:ny,:]/TudRAD[0,0][:,0:ny,:]*np.sqrt(gv3[2,2][0,0:ny,:])
-        #newV[:,ny-1::-1,:]=+TudRAD[2,0][:,0:ny,:]/TudRAD[0,0][:,0:ny,:]*np.sqrt(gv3[2,2][0,0:ny,:])
+        newV[:,ny:2*ny,:]=-fTudRAD(2,0)[:,0:ny,:]*np.sqrt(gv3[2,2][0,0:ny,:])
+        newV[:,ny-1::-1,:]=+fTudRAD(2,0)[:,0:ny,:]*np.sqrt(gv3[2,2][0,0:ny,:])
+        #newV[:,ny:2*ny,:]=-fTudRAD(2,0)[:,0:ny,:]/TudRAD[0,0][:,0:ny,:]*np.sqrt(gv3[2,2][0,0:ny,:])
+        #newV[:,ny-1::-1,:]=+fTudRAD(2,0)[:,0:ny,:]/TudRAD[0,0][:,0:ny,:]*np.sqrt(gv3[2,2][0,0:ny,:])
     #
     if 1==1:
         for jj in np.arange(0,ny):
@@ -28225,10 +28290,10 @@ def harmradplot5():
             newy[:,ny  +jj,:] = myy[:,jj,:]
             newz[:,ny-1-jj,:] = myz[:,jj,:]
             newz[:,ny  +jj,:] = myz[:,jj,:]
-            newU[:,ny-1-jj,:] = -TudRAD[1,0][:,jj,:]*np.sqrt(gv3[1,1][:,jj,:])
-            newU[:,ny  +jj,:] = -TudRAD[1,0][:,jj,:]*np.sqrt(gv3[1,1][:,jj,:])
-            newV[:,ny-1-jj,:] = +TudRAD[2,0][:,jj,:]*np.sqrt(gv3[2,2][:,jj,:])
-            newV[:,ny  +jj,:] = -TudRAD[2,0][:,jj,:]*np.sqrt(gv3[2,2][:,jj,:])
+            newU[:,ny-1-jj,:] = -fTudRAD(1,0)[:,jj,:]*np.sqrt(gv3[1,1][:,jj,:])
+            newU[:,ny  +jj,:] = -fTudRAD(1,0)[:,jj,:]*np.sqrt(gv3[1,1][:,jj,:])
+            newV[:,ny-1-jj,:] = +fTudRAD(2,0)[:,jj,:]*np.sqrt(gv3[2,2][:,jj,:])
+            newV[:,ny  +jj,:] = -fTudRAD(2,0)[:,jj,:]*np.sqrt(gv3[2,2][:,jj,:])
     #
     if 1==0:
         print("NEWX");sys.stdout.flush()
@@ -28489,7 +28554,7 @@ def harmradtest1(path=None,fil=None):
     rradout=400.0
     irad=iofr(rradout)
     #
-    edrad=intangle(-gdet*TudRAD[1][0])
+    edrad=intangle(-gdet*fTudRAD(1,0))
     edradjet=edrad[irad]
     etaradjet=edradjet/mdothor
     print("time=%g" % (t))
@@ -28503,13 +28568,13 @@ def harmradtest1(path=None,fil=None):
     #
     for funi in range(0,tauradintegratedmaxint,100):
         taulimit=funi+1.0
-        #edradthin[qindex]=intangle(-gdet*TudRAD[1][0],which=tauradlocal<=taulimit)
-        edradthin1=intangle(-gdet*TudRAD[1][0],which=tauradintegrated<=taulimit)
-        edradthin2=intangle(-gdet*TudRAD[1][0],which=taurad2integrated<=taulimit)
-        edradthin3=intangle(-gdet*TudRAD[1][0],which=taurad2flipintegrated<=taulimit)
-        edradthin4=intangle(-gdet*TudRAD[1][0],which=tauradeffintegrated<=taulimit)
-        edradthin5=intangle(-gdet*TudRAD[1][0],which=tauradeff2integrated<=taulimit)
-        edradthin6=intangle(-gdet*TudRAD[1][0],which=tauradeff2flipintegrated<=taulimit)
+        #edradthin[qindex]=intangle(-gdet*fTudRAD(1,0),which=tauradlocal<=taulimit)
+        edradthin1=intangle(-gdet*fTudRAD(1,0),which=tauradintegrated<=taulimit)
+        edradthin2=intangle(-gdet*fTudRAD(1,0),which=taurad2integrated<=taulimit)
+        edradthin3=intangle(-gdet*fTudRAD(1,0),which=taurad2flipintegrated<=taulimit)
+        edradthin4=intangle(-gdet*fTudRAD(1,0),which=tauradeffintegrated<=taulimit)
+        edradthin5=intangle(-gdet*fTudRAD(1,0),which=tauradeff2integrated<=taulimit)
+        edradthin6=intangle(-gdet*fTudRAD(1,0),which=tauradeff2flipintegrated<=taulimit)
         #        
         etaradthinjet1=edradthin1[irad]/mdothor
         etaradthinjet2=edradthin2[irad]/mdothor
