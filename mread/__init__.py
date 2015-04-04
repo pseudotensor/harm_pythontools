@@ -2272,21 +2272,21 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         ndim=4
         for ii in range(0,ndim):
             for jj in range(0,ndim):
-                avg_Tud[ii,jj] += fTud(ii,jj).sum(-1)[:,:,:,:,None]*localdt[itert]
-                avg_TudEM[ii,jj] += fTudEM(ii,jj).sum(-1)[:,:,:,:,None]*localdt[itert]
-                avg_TudMA[ii,jj] += fTudMA(ii,jj).sum(-1)[:,:,:,:,None]*localdt[itert]
+                avg_Tud[ii,jj] += fTud(ii,jj).sum(-1)[:,:,None]*localdt[itert]
+                avg_TudEM[ii,jj] += fTudEM(ii,jj).sum(-1)[:,:,None]*localdt[itert]
+                avg_TudMA[ii,jj] += fTudMA(ii,jj).sum(-1)[:,:,None]*localdt[itert]
                 #16*2=32
                 #PA/IE (EM is B) -- for gammie plot
-                avg_TudPA[ii,jj] += fTudPA(ii,jj).sum(-1)[:,:,:,:,None]*localdt[itert]
-                avg_TudEN[ii,jj] += fTudEN(ii,jj).sum(-1)[:,:,:,:,None]*localdt[itert]
-                avg_TudRAD[ii,jj] += fTudRAD(ii,jj).sum(-1)[:,:,:,:,None]*localdt[itert]
-                avg_TudEM[ii,jj] += fTudEM(ii,jj).sum(-1)[:,:,:,:,None]*localdt[itert]
-                avg_TudMA[ii,jj] += fTudMA(ii,jj).sum(-1)[:,:,:,:,None]*localdt[itert]
+                avg_TudPA[ii,jj] += fTudPA(ii,jj).sum(-1)[:,:,None]*localdt[itert]
+                avg_TudEN[ii,jj] += fTudEN(ii,jj).sum(-1)[:,:,None]*localdt[itert]
+                avg_TudRAD[ii,jj] += fTudRAD(ii,jj).sum(-1)[:,:,None]*localdt[itert]
+                avg_TudEM[ii,jj] += fTudEM(ii,jj).sum(-1)[:,:,None]*localdt[itert]
+                avg_TudMA[ii,jj] += fTudMA(ii,jj).sum(-1)[:,:,None]*localdt[itert]
                 # 16*2=32
                 #PA/IE (EM is B) -- for gammie plot
-                avg_TudPA[ii,jj] += fTudPA(ii,jj).sum(-1)[:,:,:,:,None]*localdt[itert]
-                avg_TudEN[ii,jj] += fTudEN(ii,jj).sum(-1)[:,:,:,:,None]*localdt[itert]
-                avg_TudRAD[ii,jj] += fTudRAD(ii,jj).sum(-1)[:,:,:,:,None]*localdt[itert]
+                avg_TudPA[ii,jj] += fTudPA(ii,jj).sum(-1)[:,:,None]*localdt[itert]
+                avg_TudEN[ii,jj] += fTudEN(ii,jj).sum(-1)[:,:,None]*localdt[itert]
+                avg_TudRAD[ii,jj] += fTudRAD(ii,jj).sum(-1)[:,:,None]*localdt[itert]
         avg_fdd+=((fdd)).sum(-1)[:,:,:,:,None]*localdt[itert]
         #
         # 16*1=16
