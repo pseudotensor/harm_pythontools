@@ -2652,14 +2652,37 @@ def isradmodelC(modelname): # for lower densities with Mdot\sim 2Ledd/c^2
     else:
         return(0)
     #
-def isradmodelD(modelname): # for lower densities with Mdot\sim 100Ledd/c^2 but that are thin disks where we can trust outer domain more
-    if modelname=="radtma0.8" or modelname=="radtma0.0" or modelname=="radta0.0" or modelname=="radta0.8":
+def isradmodelD1(modelname): # for Mdot\sim 100-300Ledd/c^2
+    if modelname=="radtma0.8" or modelname=="radtma0.0":
         return(1)
     else:
         return(0)
     #
+def isradmodelD2(modelname): # for Mdot\sim 5Ledd/c^2
+    if modelname=="radta0.0" or modelname=="radta0.8":
+        return(1)
+    else:
+        return(0)
+    #
+def isradmodelD(modelname):
+    if(isradmodelD1(modelname) or isradmodelD2(modelname)):
+        return(1)
+    else:
+        return(0)
 def isradmodel(modelname):
     if isradmodelA(modelname) or isradmodelB(modelname) or isradmodelC(modelname) or isradmodelD(modelname):
+        return(1)
+    else:
+        return(0)
+    #
+def isradmodeltype1(modelname):
+    if isradmodelA(modelname) or isradmodelB(modelname) or isradmodelC(modelname):
+        return(1)
+    else:
+        return(0)
+    #
+def isradmodeltype2(modelname):
+    if isradmodelD(modelname):
         return(1)
     else:
         return(0)
@@ -8304,14 +8327,77 @@ def rfd(fieldlinefilename,**kwargs):
     printusage()
     #
 
+
+
+# see global.depmnemnics.rad.h
+Power = lambda x,n : x**(n)
+pow = lambda x,n : x**(n)
+log = lambda x : np.log(x)
+Log = lambda x : np.log(x)
+
+# tempmin
+TEMPMINKELVIN = lambda : (1.0E-10) # Kelvin
+TEMPMIN  = lambda : (TEMPMINKELVIN()/TEMPBAR) # Code units
+XSOLAR = lambda : (0.7)
+YSOLAR = lambda : (0.28)
+ZSOLAR = lambda : (1.0-(XSOLAR()+YSOLAR()))
+
+#PURE ELASTIC SCATTERING
+KAPPA_ES_KNCORRF = lambda f: (0.75*((-1.*(1. + 3.*(f)))/Power(1. + 2.*(f),2) +  (0.5*Log(1. + 2.*(f)))/(f) + ((1. + (f))*((2. + 2.*(f))/(1. + 2.*(f)) - (1.*Log(1. + 2.*(f)))/(f)))/Power((f),2)))
+KAPPA_ES_KNCORR = lambda rhocode,Tcode : (KAPPA_ES_KNCORREP(K_BOLTZ*(Tcode)*TEMPBAR/(MELE*CCCTRUE*CCCTRUE)))
+KAPPA_ES_FERMICORR = lambda rhocode,Tcode : (1.0/(1.0+2.7E11*((rhocode)*RHOBAR)/pow((Tcode)*TEMPBAR,2.0))) # Buchler and Yueh 1976 (just Fermi part). Fewer electrons when near Fermi fluid limit.
+KAPPA_ES_KNCORR = lambda rhocode,Tcode : (1.0/(1.0+pow((Tcode)*TEMPBAR/4.5E8,0.86)))  # Buchler and Yueh 1976 .  Klein-Nishina for thermal electrons.
+#kappaes = sigma_T n_e = sigma_T n_b (n_e/n_b) = sigma_T rho/mb (ne/nb)
+KAPPA_ES_CODE = lambda rhocode,Tcode : (0.2*(1.0+XFACT)*KAPPA_ES_FERMICORR(rhocode,Tcode)*KAPPA_ES_KNCORR(rhocode,Tcode)/OPACITYBAR)
+
+# INELASTIC COMPTON TERM
+KAPPA_FORCOMPT_RELCORREP = lambda ep : ((1.0 + 3.683*(ep)+4.0*(ep)*(ep))/(1.0 + (ep))) # Sadowski et al. (2014) Eq 26 and 27.
+KAPPA_FORCOMPT_RELCORR = lambda rhocode,Tcode : (KAPPA_FORCOMPT_RELCORREP(K_BOLTZ*(Tcode)*TEMPBAR/(MELE*CCCTRUE*CCCTRUE)))
+KAPPA_FORCOMPT_CODE = lambda rhocode,Tcode : (0.2*(1.0+XFACT)*KAPPA_ES_FERMICORR(rhocode,Tcode)*KAPPA_FORCOMPT_RELCORR(rhocode,Tcode)/OPACITYBAR)
+#TEMPELE = lambda : (MELE*CCCTRUE*CCCTRUE/K_BOLTZ)
+
+#EMISSION (Tr=Tg) or ABSORBPTION (Tr different from Tg)
+KAPPA_ZETA = lambda  Tgcode,Trcode : ((TEMPMIN()+Trcode)/(TEMPMIN()+Tgcode))
+KAPPA_FF_CODE = lambda rhocode,Tgcode,Trcode : (4.0E22*(1.0+XFACT)*(1.0-ZFACT)*((rhocode)*RHOBAR)*pow((Tgcode)*TEMPBAR,-0.5)*pow((Trcode)*TEMPBAR,-3.0)*log(1.0+1.6*KAPPA_ZETA(Tgcode,Trcode))*(1.0+4.4E-10*(Tgcode*TEMPBAR))/OPACITYBAR)  # ASSUMPTION: Thermal ele and no pairs.  See Rybicki & Lightman Eq~5.25 and McKinney & Uzdensky (2012) .  For Tr,Tg split, see Ramesh notes.
+KAPPA_BF_CODE = lambda rhocode,Tgcode,Trcode : (3.0E25*(ZFACT)*(1.0+XFACT+0.75*YFACT)*((rhocode)*RHOBAR)*pow((Tgcode)*TEMPBAR,-0.5)*pow((Trcode)*TEMPBAR,-3.0)*log(1.0+1.6*KAPPA_ZETA(Tgcode,Trcode))/OPACITYBAR) # ASSUMPTION: Number of electrons similar to for solar abundances for 1+X+(3/4)Y term.  For Tr,Tg split, see Ramesh notes.
+KAPPA_CHIANTIBF_CODE = lambda rhocode,Tgcode,Trcode : (4.0E34*((rhocode*RHOBAR))*(ZFACT/ZSOLAR())*YELE*pow((Tgcode)*TEMPBAR,-1.7)*pow((Trcode)*TEMPBAR,-3.0)/OPACITYBAR) # *XFACT literally from Fig 34.1 in Draine book, but for solar n_H\sim n_b\sim 1/cm^3 only
+KAPPA_HN_CODE = lambda rhocode,Tgcode,Trcode : (1.1E-25*pow(ZFACT,0.5)*pow((rhocode)*RHOBAR,0.5)*pow((Tgcode)*TEMPBAR,7.7+3.0)*pow((Trcode)*TEMPBAR,-3.0)/OPACITYBAR)
+KAPPA_MOL_CODE = lambda rhocode,Tgcode,Trcode : (0.1*ZFACT/OPACITYBAR)
+# see opacities.nb
+KAPPA_GENFF_CODE = lambda rhocode,Tgcode,Trcode : (1.0/(1.0/(KAPPA_MOL_CODE(rhocode,Tgcode,Trcode)+KAPPA_HN_CODE(rhocode,Tgcode,Trcode)) + 1.0/(KAPPA_CHIANTIBF_CODE(rhocode,Tgcode,Trcode)+KAPPA_BF_CODE(rhocode,Tgcode,Trcode)+KAPPA_FF_CODE(rhocode,Tgcode,Trcode)))) # for 1.3E3K \le T \le 1E9K or higher.  Numerically better to have kappa bottom out at low T so no diverent opacity as T->0
+
+
+
+def KAPPA_ES_CODE_PYTHON(rhocode,Tcode):
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
+    if(isradmodeltype1(modelname)):
+       y=(0.2*(1.0+XFACT)/OPACITYBAR)
+    if(isradmodeltype2(modelname)):
+       y=KAPPA_ES_CODE(rhocode,Tcode)
+    return(y)
+
+def KAPPA_FF_CODE_PYTHON(rhocode,Tgcode,Trcode):
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
+    if(isradmodeltype1(modelname)):
+       y=(1.0E23*ZATOM*ZATOM/(MUE*MUI)*(rhocode*RHOBAR)*pow(Tcode*TEMPBAR,-7.0/2.0)/OPACITYBAR)
+    if(isradmodeltype2(modelname)):
+       y=KAPPA_GENFF_CODE(rhocode,Tgcode,Trcode)
+    return(y)
+#def KAPPA_BF_CODE(rhocode,Tcode):
+#    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
+#    y=(1.0E25*ZATOM*(1.0+XFACT)*(rhocode*RHOBAR)*pow(Tcode*TEMPBAR,-7.0/2.0)/OPACITYBAR)
+#    return(y)
+
+
 def getkappas(gotrad):
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
     global KAPPAUSER,KAPPAESUSER
     if(gotrad==0):
         KAPPA=1.0
         KAPPAES=1.0
         # Below should be as same in global.depmnemonics.rad.h
-        TEMPMINKELVIN=1.0E-10 # Kelvin
-        TEMPMIN=(TEMPMINKELVIN/TEMPBAR)
+        #TEMPMINKELVIN=1.0E-10 # Kelvin
+        #TEMPMIN=(TEMPMINKELVIN/TEMPBAR)
         pg=(gam-1.0)*ug # ideal gas
         prad=(4.0/3.0-1.0)*urad # radiation isotropic in some frame
         Tgas=pg/rho # gas temperature for ideal gas
@@ -8323,8 +8409,8 @@ def getkappas(gotrad):
         KAPPA=1.0
         KAPPAES=1.0
         # KORALTODO: Put a lower limit on T~1E4K so not overly wrongly opaque in spots where u_g->0 anomologously?
-        TEMPMINKELVIN=1.0E-10 # Kelvin
-        TEMPMIN=(TEMPMINKELVIN/TEMPBAR)
+        #TEMPMINKELVIN=1.0E-10 # Kelvin
+        #TEMPMIN=(TEMPMINKELVIN/TEMPBAR)
         # ideal gas assumed for Tgas
         # code pg
         pg=(gam-1.0)*ug  #clean # use clean to keep pg low and Tgas will have floor like below  # no, need to use what was in simulation to be consistent with simulation's idea of what optical depth was
@@ -8332,30 +8418,30 @@ def getkappas(gotrad):
         #
         prad=(4.0/3.0-1.0)*urad
         # code Tgas for ideal gas
-        Tgas=pg/rho
+        Tgas=pg/(rho/MUMEAN)
+        #
+        #Eradff = R^a_b u_a u^b
+        Ruu=0.0
+        uraddlocal = mdot(gv3,uradu)                  #g_mn urad^n
+        udlocal = mdot(gv3,uu)                  #g_mn u^n
+        for kapa in np.arange(4):
+            for nu in np.arange(4):
+                if(kapa==nu): delta = 1
+                else: delta = 0
+                Rijkapanu = (Erf/3.0)*(4.0*uradu[kapa]*uraddlocal[nu]+delta)
+                Ruu= Ruu + Rijkapanu*udlocal[kapa]*uu[nu]
+        # fluid-frame temperature of radiation
+        Trad = pow(np.fabs(Ruu)/ARAD_CODE_DEF,0.25) # ASSUMPTION: PLANCK-like in comoving frame even though radiation flowing through cell
+        #
         # use rho to keep kappa low.
-        KAPPAUSER=(rho*KAPPA*KAPPA_FF_CODE(rho,Tgas+TEMPMIN))
-        KAPPAESUSER=(rho*KAPPAES*KAPPA_ES_CODE(rho,Tgas))
+        KAPPAUSER=(rho*KAPPA*KAPPA_FF_CODE_PYTHON(rho,Tgas+TEMPMIN(),Trad+TEMPMIN()))
+        KAPPAESUSER=(rho*KAPPAES*KAPPA_ES_CODE_PYTHON(rho,Tgas))
 
 
-def pow(x,n):
-    return(x**n)
-def KAPPA_ES_CODE(rhocode,Tcode):
-    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
-    y=(0.2*(1.0+XFACT)/OPACITYBAR)
-    return(y)
-def KAPPA_FF_CODE(rhocode,Tcode):
-    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
-    y=(1.0E23*ZATOM*ZATOM/(MUE*MUI)*(rhocode*RHOBAR)*pow(Tcode*TEMPBAR,-7.0/2.0)/OPACITYBAR)
-    return(y)
-def KAPPA_BF_CODE(rhocode,Tcode):
-    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
-    y=(1.0E25*ZATOM*(1.0+XFACT)*(rhocode*RHOBAR)*pow(Tcode*TEMPBAR,-7.0/2.0)/OPACITYBAR)
-    return(y)
 
 def rddims(gotrad):
-    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
-    if(gotrad==1):
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
+    if(gotrad==1 and isradmodeltype1(modelname)):
         # then also get radiation constants
         fname= "dimensions.txt"
         fin = open(fname, "rt" )
@@ -8376,6 +8462,10 @@ def rddims(gotrad):
         TEMPBAR = np.float64(dimfile[11])
         ARAD_CODE_DEF = np.float64(dimfile[12])
         XFACT = np.float64(dimfile[13])
+        YFACT=(1.0-XFACT) # not used really here
+        ZFACT=(1.0-XFACT) # not used really here
+        MUMEAN=(1.0/(2.0*XFACT + 0.75*YFACT + 0.5*ZFACT)) # code didn't really account for MUMEAN in temperature at this time, so overwrite with MUMEAN=1
+        MUMEAN=1
         ZATOM = np.float64(dimfile[14])
         AATOM = np.float64(dimfile[15])
         MUE = np.float64(dimfile[16])
@@ -8385,6 +8475,64 @@ def rddims(gotrad):
         KORAL2HARMRHO1 = np.float64(dimfile[20])
         fin.close()
         #
+    elif(gotrad==1 and isradmodeltype2(modelname)):
+        # then also get radiation constants
+        fname= "dimensions.txt"
+        fin = open(fname, "rt" )
+        dimfile = fin.readline().split()
+        numheaderitems=len(dimfile) #.shape[0]
+        #
+        GGG = np.float64(dimfile[0])
+        CCCTRUE = np.float64(dimfile[1])
+        MSUNCM = np.float64(dimfile[2])
+        MPERSUN = np.float64(dimfile[3])
+        LBAR = np.float64(dimfile[4])
+        TBAR = np.float64(dimfile[5])
+        VBAR = np.float64(dimfile[6])
+        RHOBAR = np.float64(dimfile[7])
+        MBAR = np.float64(dimfile[8])
+        ENBAR = np.float64(dimfile[9])
+        UBAR = np.float64(dimfile[10])
+        TEMPBAR = np.float64(dimfile[11])
+        ARAD_CODE_DEF = np.float64(dimfile[12])
+        XFACT = np.float64(dimfile[13])
+        YFACT = np.float64(dimfile[14])
+        ZFACT = np.float64(dimfile[15])
+        MUMEAN = np.float64(dimfile[16])
+        MUMEAN = np.float64(dimfile[17]) # redundant to keep order of remaining
+        OPACITYBAR = np.float64(dimfile[18])
+        MASSCM = np.float64(dimfile[19])
+        KORAL2HARMRHO1 = np.float64(dimfile[20])
+        fin.close()
+        #
+    else:
+        GGG=1
+        CCCTRUE=1
+        MSUNCM=1
+        MPERSUN=1
+        LBAR=1
+        TBAR=1
+        VBAR=1
+        RHOBAR=1
+        MBAR=1
+        ENBAR=1
+        UBAR=1
+        TEMPBAR=1
+        ARAD_CODE_DEF=1
+        XFACT=1
+        YFACT=0
+        ZFACT=0
+        MUMEAN=1
+        ZATOM=1
+        AATOM=1
+        MUE=1
+        MUI=1
+        OPACITYBAR=1
+        MASSCM=1
+        KORAL2HARMRHO1=1
+    if(gotrad):
+        MUELE = (2.0/(1.0+XFACT))
+        YELE = (1.0/MUELE)
         MSUN=1.9891E33
         sigmaT=0.665E-24
         mproton=1.673E-24
@@ -8405,27 +8553,12 @@ def rddims(gotrad):
         print("CCCTRUE=%g ENBAR=%g TBAR=%g Ledd=%g Mdotedd=%g einf=%g linf=%g uedd=%g bedd=%g" % (CCCTRUE,ENBAR,TBAR,Ledd,Mdotedd,einf,linf,uedd,bedd)) ; sys.stdout.flush()
         print("CCCTRUE=%g ENBAR=%g TBAR=%g" % (CCCTRUE,ENBAR,TBAR)) ; sys.stdout.flush()
     else:
-        GGG=1
-        CCCTRUE=1
-        MSUNCM=1
-        MPERSUN=1
-        LBAR=1
-        TBAR=1
-        VBAR=1
-        RHOBAR=1
-        MBAR=1
-        ENBAR=1
-        UBAR=1
-        TEMPBAR=1
-        ARAD_CODE_DEF=1
-        XFACT=1
-        ZATOM=1
-        AATOM=1
-        MUE=1
-        MUI=1
-        OPACITYBAR=1
-        MASSCM=1
-        KORAL2HARMRHO1=1
+        #
+        MUELE=1
+        YELE=1
+        MSUN=1
+        sigmaT=1
+        mproton=1
         #
         Ledd=1
         Leddcode=1
@@ -8437,6 +8570,7 @@ def rddims(gotrad):
         ueddcode=1
         bedd=1
         beddcode=1
+
 
 
 
@@ -17387,6 +17521,18 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     elif modelname=="radma0.8":
         fieldtype="Largescale"
         truemodelname="{\\bf A0.8lN100L20}"
+    elif modelname=="radta0.0":
+        fieldtype="Toroidal"
+        truemodelname="{\\bf A0.0lN100L20}"
+    elif modelname=="radta0.8":
+        fieldtype="Toroidal"
+        truemodelname="{\\bf A0.8lN100L20}"
+    elif modelname=="radtma0.0":
+        fieldtype="Largescale"
+        truemodelname="{\\bf A0.0lN100L20}"
+    elif modelname=="radtma0.8":
+        fieldtype="Largescale"
+        truemodelname="{\\bf A0.8lN100L20}"
     ##########################################
     # tilted models
     elif modelname=="thickdiskfull3d7tilt0.35":
@@ -17475,33 +17621,39 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         maxrho=1.0 # estimate so don't have to load-in data (otherwise GODMARK should write maxrho elsewhere)
         print("maxrho=%g" % (maxrho))
         #
-        # now replace with desired extrema (avoid values that are just close in value)
-        feqtotextremai=0*np.copy(feqtot0extremai)
-        feqtotextremaval=0*np.copy(feqtot0extremaval)
-        newtic=0
-        # at least sepi cells apart to avoid capturing noise
-        sepi=3
-        for tic in np.arange(0,numextrema0-1+1):
-            #print("tic=%d" % (tic) )
-            # avoid t=0 regions that are much less than initial maximum density to avoid noise (or interpolated-generated noise)
-            if np.fabs(rhosrhosqeq[0,feqtot0extremai[tic]])>maxrho*1E-6:
-                goodtic=(tic==0 and feqtot0extremai[tic]<sepi+feqtot0extremai[tic+1]) or (tic==numextrema0-1 and feqtot0extremai[tic]>feqtot0extremai[tic-1]+sepi) or (tic>0 and tic<numextrema0-1 and feqtot0extremai[tic]<sepi+feqtot0extremai[tic+1] and feqtot0extremai[tic]>feqtot0extremai[tic-1]+sepi)
-                #
-                if(newtic==0) and np.fabs(feqtot0extremaval[tic])>1E-15 and goodtic:
-                    feqtotextremai[newtic]=feqtot0extremai[tic]
-                    feqtotextremaval[newtic]=feqtot0extremaval[tic]
-                    newtic=newtic+1
-                #
-                if(newtic>0) and np.fabs(feqtot0extremaval[tic])>1E-15 and goodtic:
-                    error=np.fabs(feqtotextremaval[newtic-1]-feqtot0extremaval[tic])/(np.fabs(feqtotextremaval[newtic-1])+np.fabs(feqtot0extremaval[tic]))
-                    #print("prior new=%g current old=%g error=%g" % (feqtotextremaval[newtic-1],feqtot0extremaval[tic],error) )
-                    if error>0.4:
+        if(numextrema0>1):
+            # now replace with desired extrema (avoid values that are just close in value)
+            feqtotextremai=0*np.copy(feqtot0extremai)
+            feqtotextremaval=0*np.copy(feqtot0extremaval)
+            newtic=0
+            # at least sepi cells apart to avoid capturing noise
+            sepi=3
+            for tic in np.arange(0,numextrema0-1+1):
+                #print("tic=%d" % (tic) )
+                # avoid t=0 regions that are much less than initial maximum density to avoid noise (or interpolated-generated noise)
+                if np.fabs(rhosrhosqeq[0,feqtot0extremai[tic]])>maxrho*1E-6:
+                    goodtic=(tic==0 and feqtot0extremai[tic]<sepi+feqtot0extremai[tic+1]) or (tic==numextrema0-1 and feqtot0extremai[tic]>feqtot0extremai[tic-1]+sepi) or (tic>0 and tic<numextrema0-1 and feqtot0extremai[tic]<sepi+feqtot0extremai[tic+1] and feqtot0extremai[tic]>feqtot0extremai[tic-1]+sepi)
+                    #
+                    if(newtic==0) and np.fabs(feqtot0extremaval[tic])>1E-15 and goodtic:
                         feqtotextremai[newtic]=feqtot0extremai[tic]
                         feqtotextremaval[newtic]=feqtot0extremaval[tic]
                         newtic=newtic+1
-                    # else add nothing
-                #
-        numextrema=newtic
+                    #
+                    if(newtic>0) and np.fabs(feqtot0extremaval[tic])>1E-15 and goodtic:
+                        error=np.fabs(feqtotextremaval[newtic-1]-feqtot0extremaval[tic])/(np.fabs(feqtotextremaval[newtic-1])+np.fabs(feqtot0extremaval[tic]))
+                        #print("prior new=%g current old=%g error=%g" % (feqtotextremaval[newtic-1],feqtot0extremaval[tic],error) )
+                        if error>0.4:
+                            feqtotextremai[newtic]=feqtot0extremai[tic]
+                            feqtotextremaval[newtic]=feqtot0extremaval[tic]
+                            newtic=newtic+1
+                        # else add nothing
+                    #
+            numextrema=newtic
+        else:
+            feqtotextremai=feqtot0extremai
+            feqtotextremaval=feqtot0extremaval
+            numextrema=numextrema0
+        #
         print("feqtotextrema at t=0: numextrema=%d" % (numextrema) )
         print(feqtotextremai)
         print(feqtotextremaval)
@@ -23300,6 +23452,14 @@ def vminmax_rho(qty=None):
         # default
         vminforframe=-6.0
         vmaxforframe=-1.0
+    elif isradmodelD1(modelname):
+        # default
+        vminforframe=-6.0
+        vmaxforframe=-1.0
+    elif isradmodelD2(modelname):
+        # default
+        vminforframe=-8.0
+        vmaxforframe=-3.0
     elif isradmodelC(modelname):
         # default
         vminforframe=-8.0
@@ -23332,6 +23492,12 @@ def vminmax_ug(qty=None):
     elif isradmodelB(modelname):
         vminforframe=-10
         vmaxforframe=-2
+    elif isradmodelD1(modelname):
+        vminforframe=-10
+        vmaxforframe=-2
+    elif isradmodelD2(modelname):
+        vminforframe=-12
+        vmaxforframe=-4
     elif isradmodelC(modelname):
         vminforframe=-10
         vmaxforframe=-5
@@ -23393,6 +23559,12 @@ def vminmax_entropy(qty=None):
     elif isradmodelB(modelname):
         vminforframe=-8.0
         vmaxforframe=2.0
+    elif isradmodelD1(modelname):
+        vminforframe=-8.0
+        vmaxforframe=2.0
+    elif isradmodelD2(modelname):
+        vminforframe=-10.0
+        vmaxforframe=0.0
     elif isradmodelC(modelname):
         vminforframe=-8.0
         vmaxforframe=0.0
@@ -23448,6 +23620,12 @@ def mkstreamplotprepost(fname=None,veldensity=8,inputlevs=None,numcontours=30,ap
     elif isradmodelB(modelname):
         vminforframe=-8
         vmaxforframe=-2
+    elif isradmodelD1(modelname):
+        vminforframe=-8
+        vmaxforframe=-2
+    elif isradmodelD2(modelname):
+        vminforframe=-10
+        vmaxforframe=-4
     elif isradmodelC(modelname):
         vminforframe=-8
         vmaxforframe=-4
@@ -25464,6 +25642,16 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
         vmaxforframe=-1
         vminforframerad=-6
         vmaxforframerad=-1
+    elif isradmodelD1(modelname):
+        vminforframe=-6
+        vmaxforframe=-1
+        vminforframerad=-6
+        vmaxforframerad=-1
+    elif isradmodelD2(modelname):
+        vminforframe=-8
+        vmaxforframe=-3
+        vminforframerad=-8
+        vmaxforframerad=-3
     elif isradmodelC(modelname):
         vminforframe=-8
         vmaxforframe=-3
@@ -26044,6 +26232,12 @@ def mkavgfigs():
     elif isradmodelB(modelname):
         vminforframe=-8
         vmaxforframe=-2
+    elif isradmodelD1(modelname):
+        vminforframe=-8
+        vmaxforframe=-2
+    elif isradmodelD2(modelname):
+        vminforframe=-10
+        vmaxforframe=-4
     elif isradmodelC(modelname):
         vminforframe=-9
         vmaxforframe=-4
@@ -26063,7 +26257,7 @@ def mkavgfigs():
         global rho,rholab,ug,B,gdetB,Erf,urad,uradu,bsq,mu,ud,uu,beta,betatot #,uutrue
         global KAPPAUSER,KAPPAESUSER,tauradintegrated,tauradeffintegrated
         #
-        global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
+        global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
         rddims(gotrad)
         #
         rho=avg_rho
@@ -26883,7 +27077,7 @@ def mkavgfigs():
         global rho,rholab,ug,B,gdetB,Erf,urad,uradu,bsq,mu,ud,uu,beta,betatot
         global KAPPAUSER,KAPPAESUSER,tauradintegrated,tauradeffintegrated
         #
-        global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
+        global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
         rddims(gotrad)
         #
         rho=avg_rho
@@ -27880,6 +28074,8 @@ def tutorial1():
     plc(aphi,colors='k')
 
 def tutorial1alt():
+    global modelname
+    modelname="radta0.8"
     # first load grid file
     grid3d("gdump.bin")
     # now try loading a single fieldline file
@@ -27935,7 +28131,7 @@ def tutorial1alt():
     #
     ##############################
     #nxout=100
-    nxout=70
+    nxout=150
     myx=r[0:nxout:,:,0]*np.sin(h[0:nxout,:,0])*np.cos(ph[0:nxout,:,0])
     myy=r[0:nxout,:,0]*np.sin(h[0:nxout,:,0])*np.sin(ph[0:nxout,:,0])
     myz=r[0:nxout,:,0]*np.cos(h[0:nxout,:,0])
@@ -27954,9 +28150,9 @@ def tutorial1alt():
         myfun[myfun<1E-4]=1E-4
         myfun[bsq/rho>1]=0
         myfun[rho<1E-5]=0
-    if 1==1:
-        myfun=lrho
     if 1==0:
+        myfun=lrho
+    if 1==1:
         myfun=np.log10(1E-5+1.0/beta)
     #
     if 1==0:
