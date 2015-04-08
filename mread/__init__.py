@@ -392,19 +392,17 @@ def fFdd(i,j):
 # lamda functions to avoid storing certain things
 # To use, replace (e.g.) TudEM[i,j] -> fTudEM(i,j) for numerical i,j from 0 through 3
 delta = lambda kapa,nu: (kapa==nu)
-fTud = lambda kapa,nu: fTudEM(kapa,nu) + fTudMA(kapa,nu)
-fRud = lambda kapa,nu: 4./3.*Erf*uradu[kapa]*uradd[nu]+1./3.*Erf*delta(kapa,nu)
 fTudMA = lambda kapa,nu: (rho+gam*ug)*uu[kapa]*ud[nu]+(gam-1)*ug*delta(kapa,nu)
 fTudPA = lambda kapa,nu: (rho)*uu[kapa]*ud[nu]
 fTudEN = lambda kapa,nu: (gam*ug)*uu[kapa]*ud[nu]+(gam-1)*ug*delta(kapa,nu)
 fTudEM = lambda kapa,nu: bsq*uu[kapa]*ud[nu] + 0.5*bsq*delta(kapa,nu) - bu[kapa]*bd[nu]
 fTudRAD = lambda kapa,nu: (Erf/3.0)*(4.0*uradu[kapa]*uradd[nu]+delta(kapa,nu))
+fTud = lambda kapa,nu: fTudEM(kapa,nu) + fTudMA(kapa,nu) + fTudRAD(kapa,nu)
 
 
 #fTudEMijk = lambda kapa,nu,i,j,k: bsq*uu[kapa,i,j,k]*ud[nu,i,j,k] + 0.5*bsq[i,j,k]*delta(kapa,nu) - bu[kapa,i,j,k]*bd[nu,i,j,k]
 #fTudMAijk = lambda kapa,nu,i,j,k: (rho[i,j,k]+gam*ug[i,j,k])*uu[kapa,i,j,k]*ud[nu,i,j,k]+(gam-1)*ug[i,j,k]*delta(kapa,nu)
 #fTudijk = lambda kapa,nu,i,j,k: fTudEM(kapa,nu) + fTudMA(kapa,nu)
-#fRudijk = lambda kapa,nu,i,j,k: 4./3.*Erf[i,j,k]*uradu[kapa,i,j,k]*uradd[nu,i,j,k]+1./3.*Erf[i,j,k]*delta(kapa,nu)
 
 # fud(
 #fud = lambda : (mdot(gv3,uu))                  #g_mn u^n
@@ -2269,26 +2267,19 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         # 16*2=32
         n=16
         #energy fluxes and faraday
-        #avg_Tud+=Tud.sum(-1)[:,:,:,:,None]*localdt[itert]
-        #avg_Tud[:,:,:,:] += Tud[:,:,:,:,:].sum(-1)[:,:,:,:,None]*localdt[itert]
         ndim=4
         for ii in range(0,ndim):
             for jj in range(0,ndim):
                 avg_Tud[ii,jj] += fTud(ii,jj).sum(-1)[:,:,None]*localdt[itert]
+                #
                 avg_TudEM[ii,jj] += fTudEM(ii,jj).sum(-1)[:,:,None]*localdt[itert]
                 avg_TudMA[ii,jj] += fTudMA(ii,jj).sum(-1)[:,:,None]*localdt[itert]
+                avg_TudRAD[ii,jj] += fTudRAD(ii,jj).sum(-1)[:,:,None]*localdt[itert]
                 #16*2=32
                 #PA/IE (EM is B) -- for gammie plot
                 avg_TudPA[ii,jj] += fTudPA(ii,jj).sum(-1)[:,:,None]*localdt[itert]
                 avg_TudEN[ii,jj] += fTudEN(ii,jj).sum(-1)[:,:,None]*localdt[itert]
-                avg_TudRAD[ii,jj] += fTudRAD(ii,jj).sum(-1)[:,:,None]*localdt[itert]
-                avg_TudEM[ii,jj] += fTudEM(ii,jj).sum(-1)[:,:,None]*localdt[itert]
-                avg_TudMA[ii,jj] += fTudMA(ii,jj).sum(-1)[:,:,None]*localdt[itert]
                 # 16*2=32
-                #PA/IE (EM is B) -- for gammie plot
-                avg_TudPA[ii,jj] += fTudPA(ii,jj).sum(-1)[:,:,None]*localdt[itert]
-                avg_TudEN[ii,jj] += fTudEN(ii,jj).sum(-1)[:,:,None]*localdt[itert]
-                avg_TudRAD[ii,jj] += fTudRAD(ii,jj).sum(-1)[:,:,None]*localdt[itert]
                 avg_fdd[ii,jj] +=((fFdd(ii,jj))).sum(-1)[:,:,None]*localdt[itert]
                 avg_absfdd[ii,jj] +=(np.fabs(fFdd(ii,jj))).sum(-1)[:,:,None]*localdt[itert] # take absolute value since oscillate around 0 near equator and would cancel out and give noise in fdd/fdd type calculations, such as for omegaf
         #
@@ -28075,11 +28066,13 @@ def tutorial1():
 
 def tutorial1alt():
     global modelname
-    modelname="radta0.8"
+    #modelname="radta0.8"
+    modelname="radtma0.8"
     # first load grid file
     grid3d("gdump.bin")
     # now try loading a single fieldline file
-    rfd("fieldline0000.bin")
+    #rfd("fieldline0000.bin")
+    rfd("fieldline2704.bin")
     # now plot something you read-in
     plt.close(1)
     plt.figure(1)
@@ -28130,8 +28123,8 @@ def tutorial1alt():
         idx2mri = np.sqrt(val22)*2*np.pi/omegarot/mydH
     #
     ##############################
-    #nxout=100
-    nxout=150
+    #nxout=20
+    nxout=100
     myx=r[0:nxout:,:,0]*np.sin(h[0:nxout,:,0])*np.cos(ph[0:nxout,:,0])
     myy=r[0:nxout,:,0]*np.sin(h[0:nxout,:,0])*np.sin(ph[0:nxout,:,0])
     myz=r[0:nxout,:,0]*np.cos(h[0:nxout,:,0])
@@ -28152,8 +28145,13 @@ def tutorial1alt():
         myfun[rho<1E-5]=0
     if 1==0:
         myfun=lrho
+    if 1==0:
+        myfun=np.log10(1E-5+1.0/betatot)
     if 1==1:
-        myfun=np.log10(1E-5+1.0/beta)
+        myfun=np.log10(Erf)
+        yfun=gdet*(fTud(1,0))
+        #myfun=np.log10(Erf/bsq)
+        #myfun=uradu[0]
     #
     if 1==0:
         myfun=idx2mri
