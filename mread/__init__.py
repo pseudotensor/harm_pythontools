@@ -389,6 +389,40 @@ def fFdd(i,j):
 
 
 
+# these 2 are equal in degen electrodynamics when d/dt=d/dphi->0
+fomegaf1= lambda : fFdd(0,1)/fFdd(1,3) # = ftr/frp
+fomegaf2 = lambda : fFdd(0,2)/fFdd(2,3) # = fth/fhp
+#
+fB1hat = lambda : B[1]*np.sqrt(gv3[1,1])
+fB2hat = lambda : B[2]*np.sqrt(gv3[2,2])
+fB3nonhat = lambda : B[3]
+fv1hat = lambda : uu[1]*np.sqrt(gv3[1,1])/uu[0]
+fv2hat= lambda : uu[2]*np.sqrt(gv3[2,2])/uu[0]
+fv3nonhat= lambda : uu[3]/uu[0]
+#
+faB1hat= lambda : np.fabs(fB1hat())
+faB2hat = lambda : np.fabs(fB2hat())
+fav1hat= lambda : np.fabs(fv1hat())
+fav2hat= lambda : np.fabs(fv2hat())
+#
+fvpol= lambda : np.sqrt(fav1hat()**2 + fav2hat()**2)
+fBpol= lambda : np.sqrt(faB1hat()**2 + faB2hat()**2)
+#
+#omegaf1b=(omegaf1*aB1hat+omegaf2*aB2hat)/(aB1hat+aB2hat)
+#E1hat=fFdd(0,1)*np.sqrt(gn3[1,1])
+#E2hat=fFdd(0,2)*np.sqrt(gn3[2,2])
+#Epabs=np.sqrt(E1hat**2+E2hat**2)
+#Bpabs=np.sqrt(aB1hat**2+aB2hat**2)+1E-15
+#omegaf2b=Epabs/Bpabs
+#
+# assume field swept back so omegaf is always larger than vphi (only true for outflow, so put in sign switch for inflow as relevant for disk near BH or even jet near BH)
+# GODMARK: These assume rotation about z-axis
+fomegaf2b= lambda : np.fabs(fv3nonhat()) + np.sign(uu[1])*(fvpol()/fBpol())*np.fabs(fB3nonhat())
+#
+# below omega for the field 
+fomegaf1b= lambda : fv3nonhat() - fB3nonhat()*(fv1hat()*fB1hat() + fv2hat()*fB2hat())/(fB1hat()**2+fB2hat()**2)
+
+
 # lamda functions to avoid storing certain things
 # To use, replace (e.g.) TudEM[i,j] -> fTudEM(i,j) for numerical i,j from 0 through 3
 delta = lambda kapa,nu: (kapa==nu)
@@ -398,6 +432,42 @@ fTudEN = lambda kapa,nu: (gam*ug)*uu[kapa]*ud[nu]+(gam-1)*ug*delta(kapa,nu)
 fTudEM = lambda kapa,nu: bsq*uu[kapa]*ud[nu] + 0.5*bsq*delta(kapa,nu) - bu[kapa]*bd[nu]
 fTudRAD = lambda kapa,nu: (Erf/3.0)*(4.0*uradu[kapa]*uradd[nu]+delta(kapa,nu))
 fTud = lambda kapa,nu: fTudEM(kapa,nu) + fTudMA(kapa,nu) + fTudRAD(kapa,nu)
+
+fdivideavoidinf = lambda x: 1.0*np.sign(x)/(np.fabs(x)+1E-30)
+
+fbsqo2rho = lambda : bsq/(2.0*rho)
+fbsqorho = lambda : bsq/(rho)
+
+fentropy= lambda : (gam-1.0)*ugclean/rho**(gam)
+
+fmu = lambda : -fTud(1,0)*fdivideavoidinf(rhoclean*uu[1])
+fsigma = lambda : fTudEM(1,0)*fdivideavoidinf(fTudMA(1,0))
+fenth = lambda : 1.0 + ugclean*gam/rhoclean
+funb = lambda : fenth()*ud[0]
+# unbound here means *thermally* rather than kinetically (-u_t>1) or fully thermo-magnetically (\mu>1) unbound.
+fisunbound = lambda : (-funb()>1.0)
+
+fbeta= lambda : ((gam-1)*ug)/(1E-30 + bsq*0.5)
+fbetatot= lambda : ((gam-1)*ug+(4.0/3.0-1.0)*Erf)/(1E-30 + bsq*0.5)
+
+flrho = lambda : np.log10(rho)
+# lab-frame density
+frholab= lambda : rho*uu[0]
+flrholab = lambda : np.log10(frholab())
+
+# lab-frame versions of clean densities
+frholabclean= lambda : rhoclean*uu[0]
+
+
+        #beta=((gam-1)*ug)*divideavoidinf(bsq*0.5)
+        #beta=((gam-1)*ug)/(1E-30 + bsq*0.5)
+        #betatot=((gam-1)*ug+(4.0/3.0-1)*Erf)/(1E-30 + bsq*0.5)
+        #beta=((gam-1)*ug)/(1E-30 + bsq*0.5)
+        #betatot=((gam-1)*ug + (4.0/3.0-1)*Erf)/(1E-30 + bsq*0.5)
+        #beta=((gam-1)*ug)*divideavoidinf(bsq*0.5)
+        #beta=((gam-1)*ug)/(1E-30 + bsq*0.5)
+        #betatot=((gam-1)*ug+(4.0/3.0-1)*Erf)/(1E-30 + bsq*0.5)
+
 
 
 #fTudEMijk = lambda kapa,nu,i,j,k: bsq*uu[kapa,i,j,k]*ud[nu,i,j,k] + 0.5*bsq[i,j,k]*delta(kapa,nu) - bu[kapa,i,j,k]*bd[nu,i,j,k]
@@ -1699,9 +1769,10 @@ def get2davg(usedefault=0,whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergr
 
 
 def assignavg2dvars(avgmem):
+    print( "about to assignavg2dvars begin"); sys.stdout.flush()
     # MEMMARK: currently 281 2D vars, so not much memory.
     global avg_ts,avg_te,avg_nitems
-    global avg_rho,avg_ug,avg_bsq,avg_unb,avg_urad
+    global avg_rho,avg_ug,avg_bsq,avg_unb,avg_Erf
     global avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_omegaf2b,avg_omegaf1,avg_omegaf1b,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd
     global avg_absuu,avg_absbu,avg_absud,avg_absbd
     global avg_absomegaf2,avg_absomegaf2b,avg_absomegaf1,avg_absomegaf1b
@@ -1719,13 +1790,14 @@ def assignavg2dvars(avgmem):
     avg_ts=avgmem[i,0,:];
     avg_te=avgmem[i,1,:];
     print( "assignavg2dvars: avg_ts=%d avg_te=%d" % (avg_ts[0],avg_te[0])) ; sys.stdout.flush()
+    printusage()
     avg_nitems=avgmem[i,2,:]
     i+=1
     #quantities
     # 4
     avg_rho=avgmem[i,:,:,None];i+=1 # i=1
     avg_ug=avgmem[i,:,:,None];i+=1  # i=2
-    avg_urad=avgmem[i,:,:,None];i+=1  # i=2
+    avg_Erf=avgmem[i,:,:,None];i+=1  # i=2
     avg_bsq=avgmem[i,:,:,None];i+=1 # i=3
     avg_unb=avgmem[i,:,:,None];i+=1
     # 4*4=16
@@ -1838,9 +1910,11 @@ def assignavg2dvars(avgmem):
     avg_gamma=avg_uu[0]/(-gn3[0,0])**0.5
     avg_pg=((gam-1)*avg_ug)
     avg_pb=avg_bsq*0.5
-    avg_prad=(4.0/3.0-1.0)*avg_urad
+    avg_prad=(4.0/3.0-1.0)*avg_Erf
     avg_beta=avg_pg/avg_pb # gas only, ignores radiation
     avg_betatot=(avg_pg+avg_prad)/avg_pb
+    print( "about to assignavg2dvars end"); sys.stdout.flush()
+    printusage()
 
 
 # http://stackoverflow.com/questions/4265284/how-to-do-sort-v-in-osx
@@ -1873,7 +1947,7 @@ def getnqtyavg():
     # added&moved abs versions
     value=1 + 4 + 16*2 + 6*2 + 4*2 + 24+4 + 32+16 + 80 + 32 + 32 + 3 + 1
     value=value+16+4 # for TudRAD and KAPPAUSER and KAPPAESUSER and tauradintegrated and tauradeffintegrated
-    value=value+1 # for urad
+    value=value+1 # for Erf
     value=value+2 # for avg_vpot and avg_vpot2
     return(value)
 
@@ -1881,6 +1955,8 @@ def getnqtyavg():
 # even for average 2D data, clean-out floor already because some of the below involves multiplication or division that cannot be removed after averaging
 # also, since region where bsqorho<maxbsqorho moves around, leakage occurs if only cutting based upon time-phi-averaged bsqorho
 def getrhouclean(rho,ug,uu):
+    print( "about to getrhouclean begin"); sys.stdout.flush()
+    printusage()
     #
     if ismb09model(modelname):
         maxbsqorhohigh=45
@@ -1898,11 +1974,16 @@ def getrhouclean(rho,ug,uu):
         maxbsqorhofar=10 # should include part of jet far away, while maxbsqorhonear might be too restrictive at large radii so no jet would be included
         maxuu0high=50
     elif iswaldmodel(modelname): # Wald type model, don't remove anything
-        # default
         maxbsqorhohigh=1E30
         maxbsqorhonear=1E30
         maxbsqorhofar=1E30
         maxuu0high=1E30
+    elif isradmodel(modelname):
+        # no limit, no removal as all density acts physically, unless very optically thin
+        maxbsqorhohigh=1E5
+        maxbsqorhonear=1E5
+        maxbsqorhofar=1E5
+        maxuu0high=1E5
     else:
         # default
         maxbsqorhohigh=40
@@ -1931,28 +2012,29 @@ def getrhouclean(rho,ug,uu):
     condmaxbsqorho=(bsq/rho < condmaxbsqorhorhs) # used as spatial conditional to replace single value of maxbsqorho 
     #
     print("t=%g" % (t))
-    print("r")
-    print(r[:,ny/2,0])
-    print("condmaxbsqorhorhs along r")
-    print(condmaxbsqorhorhs[:,ny/2,0])
-    print("condmaxbsqorho along eq")
-    print(condmaxbsqorho[0,:,0])
+    #print("r")
+    #print(r[:,ny/2,0])
+    #print("condmaxbsqorhorhs along r")
+    #print(condmaxbsqorhorhs[:,ny/2,0])
+    #print("condmaxbsqorho along eq")
+    #print(condmaxbsqorho[0,:,0])
     #
-    bsqorho=bsq/rho # want this to be using original rho
+    #bsqorho=bsq/rho # want this to be using original rho
     #
     rhoclean = np.copy(rho)
-    rhoclean[bsqorho>maxbsqorhonear]=1E-30
+    rhoclean[fbsqorho()>maxbsqorhonear]=1E-30
     rhoclean[condmaxbsqorho==0]=1E-30
     #
     ugclean = np.copy(ug)
-    ugclean[bsqorho>maxbsqorhonear]=1E-30
+    ugclean[fbsqorho()>maxbsqorhonear]=1E-30
     ugclean[condmaxbsqorho==0]=1E-30
     #
     douuclean=0 # choose (decided to keep original uu3 values even if floor messes them up, because otherwise have to modify uu3 at all radii in way that has \Omega_F constant along field lines.  Can't just modify near horizon since then energy flux not conserved.  Otherwise, worked well.)
-    uuclean = np.copy(uu)
+    # for now, avoided return of uuclean since not using and eats memory
     #
     if douuclean==1:
         #
+        uuclean = np.copy(uu)
         #
         #############
         # force omegaf to be close to stationary/axisymmetric solution where floor dominates
@@ -2095,14 +2177,18 @@ def getrhouclean(rho,ug,uu):
         chosenomegaf=newomegaf[5,:,0]*newdxdxp33[5,:,0]/omegah
         print("chosenomegaf=%g omegarattest=%g ",chosenomegaf,omegarattest) ; sys.stdout.flush()
     #
-    return(rhoclean,ugclean,uuclean,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)
+    print( "about to getrhouclean end"); sys.stdout.flush()
+    printusage()
+    return(rhoclean,ugclean,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)
 
 
 
 def get2davgone(whichgroup=-1,itemspergroup=20):
+    print( "about to get2davgone begin"); sys.stdout.flush()
+    printusage()
     """
     """
-    global avg_ts,avg_te,avg_nitems,avg_rho,avg_ug,avg_urad,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_omegaf2b,avg_omegaf1,avg_omegaf1b,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
+    global avg_ts,avg_te,avg_nitems,avg_rho,avg_ug,avg_Erf,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_omegaf2b,avg_omegaf1,avg_omegaf1b,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
     global avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
     global avg_TudPA, avg_TudEN,avg_TudRAD
     global avg_absuu,avg_absbu,avg_absud,avg_absbd
@@ -2186,15 +2272,16 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         rfd("../"+fldname)
         #
         print( "Computing get2davgone:" + fldname + " ..." ) ;  sys.stdout.flush()
+        print( "before cvel"); printusage() ; sys.stdout.flush()
         cvel()
+        print( "after cvel"); printusage() ; sys.stdout.flush()
         #
         #
         # which is *accepted* condition for non-jet part that's not floor contaminated.  So which==1 means ok to pass into averaging.  So use which==0 to clean-up things
+        print( "before Tud"); printusage() ; sys.stdout.flush()
         Tcalcud(maxbsqorho=maxbsqorhonear,which=condmaxbsqorho)
+        print( "after Tud"); printusage() ; sys.stdout.flush()
         faraday()
-        #
-        bsqo2rho = bsq/(2.0*rhounclean)
-        bsqorho = bsq/(rhounclean)
         #
         #
         ##########################
@@ -2214,10 +2301,9 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         # 4
         avg_rho+=rhoclean.sum(-1)[:,:,None]*localdt[itert]
         avg_ug+=ugclean.sum(-1)[:,:,None]*localdt[itert]
-        avg_urad+=urad.sum(-1)[:,:,None]*localdt[itert]
+        avg_Erf+=Erf.sum(-1)[:,:,None]*localdt[itert]
         avg_bsq+=bsq.sum(-1)[:,:,None]*localdt[itert]
-        enth=1+ugclean*gam/rhoclean
-        avg_unb+=(enth*ud[0]).sum(-1)[:,:,None]*localdt[itert]
+        avg_unb+=(fenth()*ud[0]).sum(-1)[:,:,None]*localdt[itert]
         # 16
         avg_uu+=uu.sum(-1)[:,:,:,None]*localdt[itert]
         avg_bu+=bu.sum(-1)[:,:,:,None]*localdt[itert]
@@ -2240,16 +2326,16 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         #
         # 4
         # omega has to be cleaned because of effects of floor near pole where effect on omegaf alot despite dynamically insignificance, but do it elsewhere
-        avg_omegaf2+=omegaf2.sum(-1)[:,:,None]*localdt[itert]
-        avg_omegaf2b+=omegaf2b.sum(-1)[:,:,None]*localdt[itert]
-        avg_omegaf1+=omegaf1.sum(-1)[:,:,None]*localdt[itert]
-        avg_omegaf1b+=omegaf1b.sum(-1)[:,:,None]*localdt[itert]
+        avg_omegaf2+=fomegaf2().sum(-1)[:,:,None]*localdt[itert]
+        avg_omegaf2b+=fomegaf2b().sum(-1)[:,:,None]*localdt[itert]
+        avg_omegaf1+=fomegaf1().sum(-1)[:,:,None]*localdt[itert]
+        avg_omegaf1b+=fomegaf1b().sum(-1)[:,:,None]*localdt[itert]
         # 4
         # omega has to be cleaned because of effects of floor near pole where effect on omegaf alot despite dynamically insignificance, but do it elsewhere
-        avg_absomegaf2+=(np.fabs(omegaf2)).sum(-1)[:,:,None]*localdt[itert]
-        avg_absomegaf2b+=(np.fabs(omegaf2b)).sum(-1)[:,:,None]*localdt[itert]
-        avg_absomegaf1+=(np.fabs(omegaf1)).sum(-1)[:,:,None]*localdt[itert]
-        avg_absomegaf1b+=(np.fabs(omegaf1b)).sum(-1)[:,:,None]*localdt[itert]
+        avg_absomegaf2+=(np.fabs(fomegaf2())).sum(-1)[:,:,None]*localdt[itert]
+        avg_absomegaf2b+=(np.fabs(fomegaf2b())).sum(-1)[:,:,None]*localdt[itert]
+        avg_absomegaf1+=(np.fabs(fomegaf1())).sum(-1)[:,:,None]*localdt[itert]
+        avg_absomegaf1b+=(np.fabs(fomegaf1b())).sum(-1)[:,:,None]*localdt[itert]
         #
         # 6*4=24
         n=4
@@ -2303,7 +2389,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         #mu,sigma
         avg_mu += (-fTud(1,0)/(rhoclean*uu[1])).sum(-1)[:,:,None]*localdt[itert]
         avg_sigma += (-fTudEM(1,0)/fTudMA(1,0)).sum(-1)[:,:,None]*localdt[itert]
-        avg_bsqorho += (bsq/rhounclean).sum(-1)[:,:,None]*localdt[itert] # keep as unclean since want to know what bsqorho is
+        avg_bsqorho += (bsq/rho).sum(-1)[:,:,None]*localdt[itert] # keep as unclean since want to know what bsqorho is
         #
         #
         avg_KAPPAUSER+=KAPPAUSER.sum(-1)[:,:,None]*localdt[itert]
@@ -2332,8 +2418,8 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     #
     print("denom=%g and localdt[0]=%g" % (denom,localdt[0])) ; sys.stdout.flush()
     #
-    print("avg_bsq when forming") ; sys.stdout.flush()
-    print(avg_bsq) ; sys.stdout.flush()
+    #print("avg_bsq when forming") ; sys.stdout.flush()
+    #print(avg_bsq) ; sys.stdout.flush()
     #
     ######################
     #divide all lines but the header line [which holds (ts,te,nitems)]
@@ -2341,13 +2427,15 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     #avgmem[1:]/=(np.float32(avg_nitems[0])*np.float32(nz))
     avgmem[1:]/=(np.float32(denom)*np.float32(nz))
     #
-    print("avg_bsq when setting avgmem") ; sys.stdout.flush()
-    print(avgmem[3]) ; sys.stdout.flush()
+    #print("avg_bsq when setting avgmem") ; sys.stdout.flush()
+    #print(avgmem[3]) ; sys.stdout.flush()
     #
     print( "Saving to file..." ) ; sys.stdout.flush()
     np.save( fname, avgmem )
     #
     print( "Done avgmem!" ) ; sys.stdout.flush()
+    print( "about to get2davgone end"); sys.stdout.flush()
+    printusage()
     #
     return(avgmem)
 
@@ -2386,7 +2474,7 @@ def extractlena():
     #
     #(cpsi, cr, ch, cR, cz, cBr, cBtheta, cBphi, ceta, crho, cuur, cuutheta, cuuphi, cgamma, comegaf, cmu, csigma, cbsq) = cvals
 
-    vals = (psi, r, h, R, z, -Brnorm, -Bhnorm, -Bpnorm, -eta, rho, uurnorm, uuhnorm, uupnorm, gamma, omegaf2*dxdxp[3][3], mu, sigma, bsq)
+    vals = (psi, r, h, R, z, -Brnorm, -Bhnorm, -Bpnorm, -eta, rho, uurnorm, uuhnorm, uupnorm, gamma, fomegaf2()*dxdxp[3][3], fmu(), fsigma(), bsq)
     nu = 1.0
     om0 = 0.75
 
@@ -2858,8 +2946,8 @@ def getdefaulttimes1():
         #
     #
     if isradmodel(modelname)==1:
-        defaultfti=2000
-        defaultftf=1e4
+        defaultfti=3000
+        defaultftf=1e5
     # override
     if modelname=="sashaa9b100t1.5708":
         defaultfti=17000 # real start is ~8000
@@ -3427,7 +3515,7 @@ def plot2davg(dosq=True,whichplot=-1):
             plc(chophi((r/rhor)**0.75*(1-np.abs(np.cos(h))),1),xcoord=r*np.sin(h),ycoord=r*np.cos(h))
     #xxx
     #plc(h,xcoord=r*np.sin(h),ycoord=r*np.cos(h))
-    #plc(lrho,xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+    #plc(lrho(),xcoord=r*np.sin(h),ycoord=r*np.cos(h))
 
 def printjetwindpower(filehandle = None, r = None, stage = 0, powjet = 0, powwind = 0, muminjet = 0, muminwind = 0, md = 0, powjetEMKE=0, powjetwindEMKE=0, ftot=0, fsqtot=0, f30=0, fsq30=0, pjemtot=0, eoutEMtot = 0):
     if filehandle == None or r == None:
@@ -3695,7 +3783,7 @@ def horcalc(hortype=1,which1=1,which2=1,denfactor=None):
     Compute root mean square deviation of disk body from equatorial plane
     """
     if denfactor is None:
-        denfactor=rholab
+        denfactor=frholab()
     #
     # determine when have to revert to which2
     which=which1
@@ -3817,7 +3905,7 @@ def ravel_index(pos, shape):
 
 def betascalc(which=1,rdown=0.0,rup=1.0E3):
     pg=((gam-1)*ug)
-    prad=((4.0/3.0-1)*urad)
+    prad=((4.0/3.0-1)*Erf)
     pb=bsq*0.5
     # avoid below since this will set beta=0 if bsq=0 but we want actual minimum beta
     #beta=((gam-1)*ug)*divideavoidinf(bsq*0.5)
@@ -3911,7 +3999,7 @@ def betascalc(which=1,rdown=0.0,rup=1.0E3):
 
 def luminosities(which=1,rdown=0.0,rup=1.0E3):
     pg=((gam-1)*ug)
-    prad=((4.0/3.0-1)*urad)
+    prad=((4.0/3.0-1)*Erf)
     pb=bsq*0.5
     # avoid below since this will set beta=0 if bsq=0 but we want actual minimum beta
     #beta=((gam-1)*ug)*divideavoidinf(bsq*0.5)
@@ -4261,7 +4349,7 @@ def intangle_foravg2d(qty,hoverr=None,thetamid=np.pi/2,minbsqorho=None,maxbsqorh
         qtynew=qty
     #
     # translate from avg to normal quantity
-    global bsq,rho,ug,uu,ud,rhoclean,ugclean,rhounclean,ugunclean,enth,unb,isunbound,tiny,entropy,Erf,urad,uradu,uradd
+    global bsq,rho,ug,uu,ud,rhoclean,ugclean,rho,ug,isunbound,tiny,Erf,uradu,uradd
     bsq=avg_bsq
     rho=avg_rho
     KAPPAUSER=avg_KAPPAUSER
@@ -4269,19 +4357,14 @@ def intangle_foravg2d(qty,hoverr=None,thetamid=np.pi/2,minbsqorho=None,maxbsqorh
     tauradintegrated=avg_tauradintegrated
     tauradeffintegrated=avg_tauradeffintegrated
     ug=avg_ug
-    urad=avg_urad
+    Erf=avg_Erf
     uu=avg_uu
     ud=avg_ud
     # averages already removed jet densities
     rhoclean=rho
-    rhounclean=rho
     ugclean=ug
-    ugunclean=ug
-    enth=1+ugclean*gam/rhoclean
-    entropy=(gam-1.0)*ugclean/rho**(gam)
-    unb=enth*ud[0]
     # unbound here means *thermally* rather than kinetically (-u_t>1) or fully thermo-magnetically (\mu>1) unbound.
-    isunbound=(-unb>1.0)
+    isunbound=fisunbound()
     tiny=np.finfo(rho.dtype).tiny
     #
     result=intangle(qtynew,hoverr=hoverr,thetamid=thetamid,minbsqorho=minbsqorho,maxbsqorho=maxbsqorho,inflowonly=inflowonly,outflowonly=outflowonly,mumax=mumax,mumin=mumin,maxbeta=maxbeta,unboundonly=unboundonly,which=which)
@@ -4347,16 +4430,13 @@ def intangle(qty,hoverr=None,thetamid=np.pi/2,minbsqorho=None,maxbsqorho=None,in
     if unboundonly is None:
         insideunbound = 1
     else:
-        insideunbound = (isunbound==1)
+        insideunbound = (fisunbound()==1)
     #
     # beta for wind
-    #beta=((gam-1)*ug)*divideavoidinf(bsq*0.5)
-    beta=((gam-1)*ug)/(1E-30 + bsq*0.5)
-    betatot=((gam-1)*ug+(4.0/3.0-1)*urad)/(1E-30 + bsq*0.5)
     if maxbeta is None:
         insidebeta = 1
     else:
-        insidebeta = (betatot<maxbeta) # using tot now
+        insidebeta = (fbetatot()<maxbeta) # using tot now
     #
     #
     superintegrand=(integrand*insideinflowonly*insideoutflowonly*insidehor*insideminbsqorho*insidemaxbsqorho*insidemumin*insidemumax*insideunbound*insidebeta*which)
@@ -4440,16 +4520,13 @@ def intrpvsh(qty=None,rin=None,rout=None,phiin=None,phiout=None,minbsqorho=None,
     if unboundonly is None:
         insideunbound = 1
     else:
-        insideunbound = (isunbound==1)
+        insideunbound = (fisunbound()==1)
     #
     # beta for wind
-    #beta=((gam-1)*ug)*divideavoidinf(bsq*0.5)
-    beta=((gam-1)*ug)/(1E-30 + bsq*0.5)
-    betatot=((gam-1)*ug+(4.0/3.0-1)*urad)/(1E-30 + bsq*0.5)
     if maxbeta is None:
         insidebeta = 1
     else:
-        insidebeta = (betatot<maxbeta)
+        insidebeta = (betatot()<maxbeta)
     #
     ####################
     # DO SUM
@@ -5250,6 +5327,7 @@ def remap2unir(rinner=None,router=None,size=None,iin=None,iout=None,result0=None
 
 # compute integrated optical depth
 def compute_taurad(domergeangles=True,radiussettau1zero=80):
+    if(gotrad==1):
         # uses uu[], KAPPAUSER, KAPPAESUSER, gv3, r
         if(isradmodelD(modelname)):
             radiussettau1zero=3000
@@ -5259,16 +5337,17 @@ def compute_taurad(domergeangles=True,radiussettau1zero=80):
         thetavel=0.0
         betasq=1.0-1.0/(uu[0]**2)
         betasq[betasq<0.0]=0.0
-        betavel=np.sqrt(betasq)
-        gamfactor=uu[0]*(1.0-betavel*np.cos(thetavel))
-        #drco=_dx1*np.sqrt(np.fabs(gv3[1,1]))/(2.0*uu[0])
-        drco=_dx1*np.sqrt(np.fabs(gv3[1,1]))*gamfactor
-        dhco=_dx2*np.sqrt(np.fabs(gv3[2,2]))*uu[0]
-        dphco=_dx3*np.sqrt(np.fabs(gv3[3,3]))*uu[0]
         #
-        taurad1=(KAPPAUSER+KAPPAESUSER)*drco
+        fbetavel= lambda : np.sqrt(betasq)
+        fgamfactor = lambda : uu[0]*(1.0-fbetavel()*np.cos(thetavel))
+        #drco=_dx1*np.sqrt(np.fabs(gv3[1,1]))/(2.0*uu[0])
+        fdrco= lambda : _dx1*np.sqrt(np.fabs(gv3[1,1]))*fgamfactor()
+        fdhco= lambda : _dx2*np.sqrt(np.fabs(gv3[2,2]))*uu[0]
+        fdphco= lambda : _dx3*np.sqrt(np.fabs(gv3[3,3]))*uu[0]
+        #
+        taurad1=(KAPPAUSER+KAPPAESUSER)*fdrco()
         # http://arxiv.org/pdf/astro-ph/0408590.pdf equation~3
-        tauradeff1=np.sqrt(3.0*KAPPAUSER*(KAPPAUSER+KAPPAESUSER))*drco
+        tauradeff1=np.sqrt(3.0*KAPPAUSER*(KAPPAUSER+KAPPAESUSER))*fdrco()
         #
         # FREE PARAMETER:
         #radiussettau1zero=80
@@ -5312,12 +5391,12 @@ def compute_taurad(domergeangles=True,radiussettau1zero=80):
         #print(tauradeff1flipintegrated[:,0,0]) ; sys.stdout.flush()
         #
         ########################### taurad2 (from theta=0 pole)
-        taurad2=(KAPPAUSER+KAPPAESUSER)*dhco
+        taurad2=(KAPPAUSER+KAPPAESUSER)*fdhco()
         taurad2integrated=np.cumsum(taurad2,axis=1)
-#        for kk in np.arange(0,nz):
-#                for ii in np.arange(0,nx):
-#        for jj in np.arange(ny/2,ny):
-#            taurad2integrated[:,jj,:]=0 #taurad2integrated[:,ny/2,:]
+    #        for kk in np.arange(0,nz):
+    #                for ii in np.arange(0,nx):
+    #        for jj in np.arange(ny/2,ny):
+    #            taurad2integrated[:,jj,:]=0 #taurad2integrated[:,ny/2,:]
         #
         ########################### taurad2flip (from theta=pi pole)
         taurad2flip=taurad2[:,::-1,:]
@@ -5331,12 +5410,12 @@ def compute_taurad(domergeangles=True,radiussettau1zero=80):
                 taurad2integrated[:,jj,:]=taurad2flipintegrated[:,jj,:]
         #
         ########################### tauradeff2 (from theta=0 pole)
-        tauradeff2=np.sqrt(KAPPAUSER*(KAPPAUSER+KAPPAESUSER))*dhco
+        tauradeff2=np.sqrt(KAPPAUSER*(KAPPAUSER+KAPPAESUSER))*fdhco()
         tauradeff2integrated=np.cumsum(tauradeff2,axis=1)
-#        for kk in np.arange(0,nz):
-#                for ii in np.arange(0,nx):
-#        for jj in np.arange(ny/2,ny):
-#            tauradeff2integrated[:,jj,:]=0 #tauradeff2integrated[:,ny/2,:]
+    #        for kk in np.arange(0,nz):
+    #                for ii in np.arange(0,nx):
+    #        for jj in np.arange(ny/2,ny):
+    #            tauradeff2integrated[:,jj,:]=0 #tauradeff2integrated[:,ny/2,:]
         #
         ########################### tauradeff2flip (from theta=pi pole)
         tauradeff2flip=tauradeff2[:,::-1,:]
@@ -5350,16 +5429,28 @@ def compute_taurad(domergeangles=True,radiussettau1zero=80):
                 tauradeff2integrated[:,jj,:]=tauradeff2flipintegrated[:,jj,:]
         #
         ########################### taurad3
-        taurad3=uu[0]*(KAPPAUSER+KAPPAESUSER)*dphco
+        taurad3=uu[0]*(KAPPAUSER+KAPPAESUSER)*fdphco()
         ########################### tauradeff3
-        tauradeff3=uu[0]*np.sqrt(KAPPAUSER*(KAPPAUSER+KAPPAESUSER))*dphco
+        tauradeff3=uu[0]*np.sqrt(KAPPAUSER*(KAPPAUSER+KAPPAESUSER))*fdphco()
         #
         # so tauradintegrated (final version) is optical depth integrated from large radii and away from pole. 
         tauradintegrated=np.maximum(taurad1flipintegrated,taurad2integrated)
         tauradeffintegrated=np.maximum(tauradeff1flipintegrated,tauradeff2integrated)
         #
-        return(taurad1integrated,taurad1flipintegrated,taurad2integrated,taurad2flipintegrated,tauradintegrated,tauradeff1integrated,tauradeff1flipintegrated,tauradeff2integrated,tauradeff2flipintegrated,tauradeffintegrated)
         # use primarily: taurad1flipintegrated taurad2integrated and can use and'ed version
+    else:
+        taurad1integrated=rho*0
+        taurad1flipintegrated=rho*0
+        taurad2integrated=rho*0
+        taurad2flipintegrated=rho*0
+        tauradintegrated=rho*0
+        tauradeff1integrated=rho*0
+        tauradeff1flipintegrated=rho*0
+        tauradeff2integrated=rho*0
+        tauradeff2flipintegrated=rho*0
+        tauradeffintegrated=rho*0
+    #
+    return(taurad1integrated,taurad1flipintegrated,taurad2integrated,taurad2flipintegrated,tauradintegrated,tauradeff1integrated,tauradeff1flipintegrated,tauradeff2integrated,tauradeff2flipintegrated,tauradeffintegrated)
 
     
 def Qmri():
@@ -5631,16 +5722,16 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         #
         # below needed in case operating on averages instead of from rfd()
         #uu=uutrue
-        (rhoclean,ugclean,uublob,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
+        (rhoclean,ugclean,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
         localmaxbsqorho=maxbsqorhonear
         #ud = mdot(gv3,uu)                  #g_mn u^n
         # no, assume any cleaning occurs upon rfd() and averages get that result
         #localmaxbsqorho=maxbsqorho
         #
-        ibetatot = reinterp(betatot,extent,ncell,domask=1.0) # betatot now
+        ibetatot = reinterp(fbetatot(),extent,ncell,domask=1.0) # betatot now
         iud0  = reinterp(ud[0],extent,ncell,domask=1.0)
         #
-        enth=1+ugclean*gam/rhoclean
+        enth=fenth()
         # limit value for same reason as below
         enth[rhoclean<1E-10]=1
         enth[enth>100]=100
@@ -5652,8 +5743,8 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         bsqorho[bsqorho>localmaxbsqorho]=localmaxbsqorho
         ibsqorho = reinterp(bsqorho,extent,ncell,domask=1.0)
         # limit value for same reason as above
-        #mu[mu>localmaxbsqorho]=localmaxbsqorho
-        #imu = reinterp(mu,extent,ncell,domask=1.0)
+        #mu[fmu()>localmaxbsqorho]=localmaxbsqorho # wrong
+        #imu = reinterp(fmu(),extent,ncell,domask=1.0)
         #
         iuu1  = reinterp(uu[1],extent,ncell,domask=1.0)
         #
@@ -5687,7 +5778,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         qty=lrho
         doqty=1
     elif doentropy:
-        lentropy=np.log10(entropy+1E-30)
+        lentropy=np.log10(fentropy()+1E-30)
         dologz=1
         qty=lentropy
         doqty=1
@@ -5705,7 +5796,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         doqty=1
         streamtype=2
     elif dobeta:
-        lbeta=np.log10(betatoplot+1E-30)
+        lbeta=np.log10(fbeta()+1E-30)
         dologz=1
         qty=lbeta
         doqty=1
@@ -5714,7 +5805,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         dologz=0
         doqty=1
     elif doQ2:
-        qty=np.fabs(Q2toplot)
+        qty=np.fabs(Q2)
         dologz=0
         doqty=1
     #
@@ -5960,10 +6051,10 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
             iBaz = None
             iBaR = None
         #if showjet:
-        #    imu = reinterp(mu,extent,ncell,domask=0.8)
+        #    imu = reinterp(fmu(),extent,ncell,domask=0.8)
         #
         if dovarylw:
-            iibetatot = reinterp(0.5*bsq/((gam-1)*ug+(4.0/3.0-1)*urad),extent,ncell,domask=0)
+            iibetatot = reinterp(0.5*bsq/((gam-1)*ug+(4.0/3.0-1)*Erf),extent,ncell,domask=0)
             ibsqorho = reinterp(bsq/rho,extent,ncell,domask=1)
             ibsqo2rho = 0.5 * ibsqorho
         xi = np.linspace(extent[0], extent[1], ncell)
@@ -6127,7 +6218,7 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
         qty=lrho
         doqty=1
     elif doentropy:
-        lentropy=np.log10(entropy+1E-30)
+        lentropy=np.log10(fentropy()+1E-30)
         dologz=1
         qty=lentropy
         doqty=1
@@ -6143,7 +6234,7 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
         doqty=1
         streamtype=2
     elif dobeta:
-        qty=betatoplot
+        qty=fbeta()
         dologz=0
         doqty=1
     elif doQ1:
@@ -6151,7 +6242,7 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
         dologz=0
         doqty=1
     elif doQ2:
-        qty=np.fabs(Q2toplot)
+        qty=np.fabs(Q2)
         dologz=0
         doqty=1
     #
@@ -6200,7 +6291,7 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
         iBx = reinterpxy(Bxnorm,extent,ncell,domask=1)
         iBy = reinterpxy(Bynorm,extent,ncell,domask=1)
         iibeta = reinterpxy(0.5*bsq/(gam-1)/ug,extent,ncell,domask=0)
-        iibetatot = reinterpxy(0.5*bsq/((gam-1)*ug+(4.0/3.0-1)*urad),extent,ncell,domask=0)
+        iibetatot = reinterpxy(0.5*bsq/((gam-1)*ug+(4.0/3.0-1)*Erf),extent,ncell,domask=0)
         ibsqorho = reinterpxy(bsq/rho,extent,ncell,domask=1)
         ibsqo2rho = 0.5 * ibsqorho
         xi = np.linspace(extent[0], extent[1], ncell)
@@ -8065,7 +8156,7 @@ def rfd(fieldlinefilename,**kwargs):
     #Velocity components: u1, u2, u3, 
     #Cell-centered magnetic field components: B1, B2, B3, 
     #Face-centered magnetic field components multiplied by metric determinant: gdetB1, gdetB2, gdetB3
-    global rho,ug,uu,B,gdetB,Erf,urad,uradu
+    global rho,ug,uu,B,gdetB,Erf,uradu
     #
     #read image
     #
@@ -8115,10 +8206,14 @@ def rfd(fieldlinefilename,**kwargs):
     fin.close()
     #
     # fix-up pole : Should have been done during code -- still not perfectly stable near pole
-    whichpoledeath=2
+    if(isradmodelD1(modelname)):
+        whichpoledeath=0#2
+    else:
+        whichpoledeath=0
+    #
     #
     if whichpoledeath==1:
-        if np.fabs(THETAROT>0.0):
+        if 1==1 or np.fabs(THETAROT>0.0):
             print("Fixing primitives") ; sys.stdout.flush()
             for primi in np.arange(0,11):
                 d[primi,:,0,:]=d[primi,:,3,:]
@@ -8144,7 +8239,7 @@ def rfd(fieldlinefilename,**kwargs):
     uu[1:4]=uu[1:4] * uu[0]
     #
     if whichpoledeath==2:
-        if np.fabs(THETAROT>0.0):
+        if 1 or np.fabs(THETAROT>0.0):
             print("Fixing primitives") ; sys.stdout.flush()
             # form relative 4-velocity
             eta=np.copy(uu)*0 # setup memory
@@ -8215,7 +8310,7 @@ def rfd(fieldlinefilename,**kwargs):
         Erf=d[11,:,:,:] # radiation frame radiation energy density
         #
         # approximation, but correct if used in pressure ultimately
-        urad=Erf
+        #urad=Erf
         #
         uradu=d[12:16,:,:,:]  #again, note uu[i] are 3-velocities (as read from the fieldline file)
         #multiply by u^t to get 4-velocities: u^i = u^t v^i
@@ -8227,10 +8322,77 @@ def rfd(fieldlinefilename,**kwargs):
         #
     else:
         Erf=rho*0+1E-30
-        urad=Erf*0+1E-30
+        #urad=Erf*0+1E-30
         uradd=uu*0+1E-30
         uradu=uu*0+1E-30
     #
+    #
+    if whichpoledeath==2:
+        if 1 or np.fabs(THETAROT>0.0):
+            print("Fixing primitives rad") ; sys.stdout.flush()
+            # form relative 4-velocity
+            eta=np.copy(uradu)*0 # setup memory
+            alpha=1.0/np.sqrt(-gn3[0,0])
+            eta[0]=-alpha
+            beta=np.copy(uradu)*0
+            beta[:]=alpha**2*gn3[0,:] # only spatial part will be used
+            etaup=np.copy(uradu)*0
+            etaup[:]=-beta[:]/alpha # spatial part
+            etaup[0]=1.0/alpha
+            #
+            gammarel=-uradu[0]*eta[0]
+            urel=np.copy(uradu)*0
+            urel=uradu - gammarel * etaup  # so uradu = urel + gamma * (-beta/alpha)
+            #
+            # only spatial part of urel will be used
+            nxoutbad=60
+            urel[:,0:nxoutbad,0,:]=urel[:,0:nxoutbad,5,:]
+            urel[:,0:nxoutbad,1,:]=urel[:,0:nxoutbad,5,:]
+            urel[:,0:nxoutbad,2,:]=urel[:,0:nxoutbad,5,:]
+            urel[:,0:nxoutbad,3,:]=urel[:,0:nxoutbad,5,:]
+            urel[:,0:nxoutbad,4,:]=urel[:,0:nxoutbad,5,:]
+            urel[:,0:nxoutbad,ny-1,:]=urel[:,0:nxoutbad,ny-6,:]
+            urel[:,0:nxoutbad,ny-2,:]=urel[:,0:nxoutbad,ny-6,:]
+            urel[:,0:nxoutbad,ny-3,:]=urel[:,0:nxoutbad,ny-6,:]
+            urel[:,0:nxoutbad,ny-4,:]=urel[:,0:nxoutbad,ny-6,:]
+            urel[:,0:nxoutbad,ny-5,:]=urel[:,0:nxoutbad,ny-6,:]
+            #
+            Erf[0:nxoutbad,0,:]=0
+            Erf[0:nxoutbad,1,:]=0
+            Erf[0:nxoutbad,2,:]=0
+            Erf[0:nxoutbad,3,:]=0
+            Erf[0:nxoutbad,4,:]=0
+            Erf[0:nxoutbad,ny-1,:]=0
+            Erf[0:nxoutbad,ny-2,:]=0
+            Erf[0:nxoutbad,ny-3,:]=0
+            Erf[0:nxoutbad,ny-4,:]=0
+            Erf[0:nxoutbad,ny-5,:]=0
+            #
+            # only spatial part of urel will be used
+            nxoutbad=70
+            urel[:,0:nxoutbad,0,:]=urel[:,0:nxoutbad,3,:]
+            urel[:,0:nxoutbad,1,:]=urel[:,0:nxoutbad,3,:]
+            urel[:,0:nxoutbad,2,:]=urel[:,0:nxoutbad,3,:]
+            urel[:,0:nxoutbad,ny-1,:]=urel[:,0:nxoutbad,ny-4,:]
+            urel[:,0:nxoutbad,ny-2,:]=urel[:,0:nxoutbad,ny-4,:]
+            urel[:,0:nxoutbad,ny-3,:]=urel[:,0:nxoutbad,ny-4,:]
+            #
+            Erf[0:nxoutbad,0,:]=0
+            Erf[0:nxoutbad,1,:]=0
+            Erf[0:nxoutbad,2,:]=0
+            Erf[0:nxoutbad,ny-1,:]=0
+            Erf[0:nxoutbad,ny-2,:]=0
+            Erf[0:nxoutbad,ny-3,:]=0
+            #
+            #
+            #urad=Erf
+            #
+            # now back to uradu
+            qsq = gv3[1,1]*urel[1]*urel[1] + gv3[2,2]*urel[2]*urel[2] + gv3[3,3]*urel[3]*urel[3] + 2.0*(gv3[1,2]*urel[1]*urel[2] + gv3[1,3]*urel[1]*urel[3] + gv3[2,3]*urel[2]*urel[3])
+            gamma = np.sqrt(1.0 + qsq)
+            #
+            uradu[:]=urel[:]-(gamma/alpha)*beta[:] # spatial part
+            uradu[0]=gamma/alpha
     global TRACKVPOT,        MCOORD,        DODISS,        DOEVOLVEMETRIC,        WHICHVEL,        WHICHEOM,        REMOVERESTMASSFROMUU,        RELTYPE,        EOMTYPE,        WHICHEOS,        DOENTROPY,        WHICHENTROPYEVOLVE,        CALCFARADAYANDCURRENTS,        DOPOLEDEATH,        DOPOLESMOOTH,        DOPOLEGAMMADEATH,        IF3DSPCTHENMPITRANSFERATPOLE,        EOMRADTYPE,        WHICHRADSOURCEMETHOD,        OUTERDEATH,        OUTERDEATHRADIUS
     if(EOMTYPE==0):
         rho=rho+1E-30
@@ -8390,7 +8552,7 @@ def getkappas(gotrad):
         #TEMPMINKELVIN=1.0E-10 # Kelvin
         #TEMPMIN=(TEMPMINKELVIN/TEMPBAR)
         pg=(gam-1.0)*ug # ideal gas
-        prad=(4.0/3.0-1.0)*urad # radiation isotropic in some frame
+        prad=(4.0/3.0-1.0)*Erf # radiation isotropic in some frame
         Tgas=pg/rho # gas temperature for ideal gas
         KAPPAUSER=rho*0
         KAPPAESUSER=rho*0
@@ -8407,7 +8569,7 @@ def getkappas(gotrad):
         pg=(gam-1.0)*ug  #clean # use clean to keep pg low and Tgas will have floor like below  # no, need to use what was in simulation to be consistent with simulation's idea of what optical depth was
         # and of used ugclean above, then in funnel temperature would be very small and kappaff would be huge.
         #
-        prad=(4.0/3.0-1.0)*urad
+        prad=(4.0/3.0-1.0)*Erf
         # code Tgas for ideal gas
         Tgas=pg/(rho/MUMEAN)
         #
@@ -8619,7 +8781,7 @@ def rfdtransform(gotgdetB=0):
     # modified globals
     global nzgdump
     global r,h,ph
-    global rho,ug,uu,B,gdetB,Erf,urad,uradu
+    global rho,ug,uu,B,gdetB,Erf,uradu
     #
     print("what: %d\n",nz) ; sys.stdout.flush()
     print("what2: %d\n",nzgdump) ; sys.stdout.flush()
@@ -9025,18 +9187,13 @@ def rotsimpletensordot(uu,rot,axis):
 def rfdprocess(gotgdetB=0):
     #
     # external globals
-    global rho,ug,uu,B,gdetB,Erf,urad,uradu
+    global rho,ug,uu,B,gdetB,Erf,uradu
     # derived quantities
-    global lrho,rholab,lrholab,ug,uut,uu,uux,rhor,r,h,ph,rhoclean,rholabclean,rhounclean,rholabunclean,ugclean,ugunclean,uuclean,entropy
+    global ug,uu,rhor,r,h,ph,rhoclean,ugclean
     global gdetB # tells either exists before or will be created here
     global maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp
     #
     #
-    lrho=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
-    lrho = np.log10(rho)
-    # lab-frame density
-    rholab=rho*uu[0]
-    lrholab = np.log10(rholab)
     #
     #if the input file contains additional data
     #
@@ -9054,15 +9211,10 @@ def rfdprocess(gotgdetB=0):
     # get floor-cleaned versions (override uu[3] completely)
     #
     getbsq_pre()
-    (rhoclean,ugclean,uuclean,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
+    (rhoclean,ugclean,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
     maxbsqorho=np.copy(maxbsqorhonear)
-    uu=np.copy(uuclean)
-    rhounclean=np.copy(rho)
-    ugunclean=np.copy(ug)
+    #uu=np.copy(uuclean)
     #
-    # lab-frame versions of clean densities
-    rholabunclean=rhounclean*uu[0]
-    rholabclean=rhoclean*uu[0]
     #
     if 1==0:
         # go here if want rho and ug to be clean versions always.  Including for movie frames.
@@ -9099,14 +9251,13 @@ def rfdprocess(gotgdetB=0):
         r = rnew
         h = hnew
         ph = phnew
-        print("phnew") ; sys.stdout.flush()
-        print(phnew[0,0,:]) ; sys.stdout.flush()
+        #print("phnew") ; sys.stdout.flush()
+        #print(phnew[0,0,:]) ; sys.stdout.flush()
         gc.collect()
     else:
         print("r in globals has shape2 of nz") ; sys.stdout.flush()
     #
     # other stuff
-    entropy=(gam-1.0)*ugclean/rho**(gam)
     #
     #
 
@@ -9125,16 +9276,19 @@ def getbsq_pre():
 
 def cvel():
     # MEMMARK: (4+4+4+1+1+4+4+4+4+6)=36 full 3D vars
-    global ud,etad, etau, gamma, vu, vd, bu, bd, bsq,beta,betatot,betatoplot,Q1,Q2,Q2toplot,uradd,tauradintegrated,tauradeffintegrated
+    #global ud, gamma, vu, vd, bu, bd, bsq,beta,betatot,betatoplot,Q1,Q2,Q2toplot,uradd,tauradintegrated,tauradeffintegrated
+    global ud, bu, bd, bsq,Q1,Q2,uradd,tauradintegrated,tauradeffintegrated
     #
     #
     ud = mdot(gv3,uu)                  #g_mn u^n
-    etad = np.zeros_like(uu)
-    etad[0] = -1/(-gn3[0,0])**0.5      #ZAMO frame velocity (definition)
-    etau = mdot(gn3,etad)
-    gamma=-mdot(uu,etad)                #Lorentz factor as measured by ZAMO
-    vu = uu - gamma*etau               #u^m = v^m + gamma eta^m
-    vd = mdot(gv3,vu)
+    #etad = np.zeros_like(uu)
+    #fetad0 = lambda : -1/(-gn3[0,0])**0.5      #ZAMO frame velocity (definition)
+    # eta^\mu = g^{\mu\nu} \eta_\nu = g^{\mut} \eta_t
+    #fetau = lambda mu : gn3[mu,0]*fetad0()
+    # gamma = -u^\mu \eta_\mu = -u^t \eta_t
+    #gamma= lambda : -uu[0]*fetad0()    #-mdot(uu,etad)                #Lorentz factor as measured by ZAMO
+    #vu = uu - gamma*etau               #u^m = v^m + gamma eta^m
+    #vd = mdot(gv3,vu)
     #
     bu=np.empty_like(uu)              #allocate memory for bu
     #set component per component
@@ -9143,47 +9297,17 @@ def cvel():
     bd=mdot(gv3,bu)
     bsq=mdot(bu,bd)
     #
-    beta=((gam-1)*ug)/(1E-30 + bsq*0.5)
-    betatot=((gam-1)*ug+(4.0/3.0-1.0)*urad)/(1E-30 + bsq*0.5)
-    #betatoplot=np.ma.masked_array(beta,mask=(np.isnan(beta)==True)*(np.isinf(beta)==True)*(beta>1E10))
-    betatoplot=np.copy(betatot)
-    #betatoplot[(betatoplot<30)]=30.0
-    #betatoplot[(betatoplot>1E3)]=1E3
-    #betatoplot[np.isinf(betatoplot)]=1E3
-    #betatoplot[np.isnan(betatoplot)]=1E3
     ##############################
     # compute some things one might plot
     #
-    # disk mass density scale height
-    #diskcondition=(beta>2.0)
-    # was (bsq/rho<1.0)
-    #diskcondition=diskcondition*(mum1fake<1.0)
-    # just avoid floor mass
-    #cond1=(bsq/rho<30)
-    #cond2=(bsq/rho<10)
-    #condmaxbsqorho=cond1*(r<9.0)+cond2*(r>=9.0)
-    # need smooth change since notice small glitches in things with the above
-    #rinterp=(r-9.0)*(1.0-0.0)/(0.0-9.0) # gives 0 for use near 9   gives 1 for use near 0
-    #rinterp[rinterp>1.0]=1.0
-    #rinterp[rinterp<0.0]=0.0
-    #condmaxbsqorho=(bsq/rho < rinterp*30.0 + (1.0-rinterp)*10.0)
-    diskcondition1=condmaxbsqorho
-    diskcondition2=condmaxbsqorho
+    #diskcondition1=condmaxbsqorho
+    #diskcondition2=condmaxbsqorho
     # was denfactor=rho, but want uniform with corona and jet
-    hoverr3dtoplot,thetamid3dtoplot=horcalc(hortype=1,which1=diskcondition1,which2=diskcondition2,denfactor=rholab)
-    hoverr2dtoplot=hoverr3dtoplot.sum(2)/(nz)
-    thetamid2dtoplot=thetamid3dtoplot.sum(2)/(nz)
-    #
-    #
-    #
+    hoverr3dtoplot,thetamid3dtoplot=horcalc(hortype=1,which1=condmaxbsqorho,which2=condmaxbsqorho,denfactor=frholab())
+    #hoverr2dtoplot=hoverr3dtoplot.sum(2)/(nz)
+    #thetamid2dtoplot=thetamid3dtoplot.sum(2)/(nz)
     Q1,Q3,OQ2=compute_resires(hoverrwhich=hoverr3dtoplot)
     Q2=hoverr3dtoplot/OQ2
-    #Q2toplot=np.ma.masked_array(Q2,mask=(np.isnan(Q2)==True)*(np.isinf(Q2)==True)*(Q2>1E10))
-    Q2toplot=np.copy(Q2)
-    #Q2toplot[(Q2toplot<0)]=0.0
-    #Q2toplot[(Q2toplot>1E3)]=1E3
-    #Q2toplot[np.isinf(Q2toplot)]=1E3
-    #Q2toplot[np.isnan(Q2toplot)]=1E3
     #
     aphi = fieldcalc()
     #
@@ -9352,6 +9476,8 @@ def grid3d(dumpname,use2d=False,doface=False,usethetarot0=False): #read grid dum
 
 
 def grid3d_load(dumpname=None,use2d=False,doface=False,loadsimple=False): #read grid dump file: header and body
+    print( "about to grid3d_load begin"); sys.stdout.flush()
+    printusage()
     #The internal cell indices along the three axes: (ti, tj, tk)
     #The internal uniform coordinates, (x1, x2, x3), are mapped into the physical
     #non-uniform coordinates, (r, h, ph), which correspond to radius (r), polar angle (theta), and toroidal angle (phi).
@@ -9440,6 +9566,8 @@ def grid3d_load(dumpname=None,use2d=False,doface=False,loadsimple=False): #read 
         #grid mapping Jacobian
         dxdxp = gd[110:126].view().reshape((4,4,nx,ny,lnz), order='F').transpose(1,0,2,3,4)
         #
+    print( "about to grid3d_load end"); sys.stdout.flush()
+    printusage()
     #
 
 def gridcellverts():
@@ -11851,11 +11979,9 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         # mu>2 is also poor, since mu\propto sin\theta so mu turns small again near pole.
         # bsq/rho>1 much better.
         #
-        beta=((gam-1)*ug)/(1E-30 + bsq*0.5)
-        betatot=((gam-1)*ug + (4.0/3.0-1)*urad)/(1E-30 + bsq*0.5)
         #
         # disk mass density scale height
-        #diskcondition=(betatot>2.0)
+        #diskcondition=(fbetatot()>2.0)
         # was (bsq/rho<1.0)
         #diskcondition=diskcondition*(mum1fake<1.0)
         # just avoid floor mass
@@ -11866,20 +11992,20 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         #rinterp[rinterp>1.0]=1.0
         #rinterp[rinterp<0.0]=0.0
         #condmaxbsqorho=(bsq/rho < rinterp*30.0 + (1.0-rinterp)*10.0)
-        diskcondition1=condmaxbsqorho
-        diskcondition2=condmaxbsqorho
+        #diskcondition1=condmaxbsqorho
+        #diskcondition2=condmaxbsqorho
         # was denfactor=rho, but want uniform with corona and jet
-        hoverr3d,thetamid3d=horcalc(hortype=1,which1=diskcondition1,which2=diskcondition2,denfactor=rholab)
+        hoverr3d,thetamid3d=horcalc(hortype=1,which1=condmaxbsqorho,which2=condmaxbsqorho,denfactor=frholab())
         hoverr[qindex]=hoverr3d.sum(2).sum(1)/(ny*nz)
         thetamid[qindex]=thetamid3d.sum(2).sum(1)/(ny*nz)
         #
         #
         # disk-corona boundary
-        coronacondition1=(betatot<1.0)
-        coronacondition1=coronacondition1*(betatot>0.5)
+        coronacondition1=(fbetatot()<1.0)
+        coronacondition1=coronacondition1*(fbetatot()>0.5)
         coronacondition1=coronacondition1*condmaxbsqorho
-        coronacondition2=(betatot<1.0)
-        coronacondition2=coronacondition2*(betatot>0.1)
+        coronacondition2=(fbetatot()<1.0)
+        coronacondition2=coronacondition2*(fbetatot()>0.1)
         coronacondition2=coronacondition2*condmaxbsqorho
         # was (bsq/rho<1.0)
         # was denfactor=bsq+rho+gam*ug
@@ -11904,7 +12030,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         #
         #####################################################################
         diskcondition=condmaxbsqorho
-        #diskcondition=diskcondition*(betatot>1.0)
+        #diskcondition=diskcondition*(fbetatot()>1.0)
         # below allows for magnetized disk
         if isradmodel(modelname):
             # only around equator, not far away from equator
@@ -11946,7 +12072,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         #
         #####################################################################
         diskaltcondition=(bsq/rho<1.0)
-        #diskaltcondition=diskaltcondition*(betatot>1.0)
+        #diskaltcondition=diskaltcondition*(fbetatot()>1.0)
         betamin[qindex,0],betaavg[qindex,0],betaratofavg[qindex,0],betaratofmax[qindex,0]=betascalc(which=diskaltcondition)
         # no condition, use clean versions if required
         betamin[qindex,1:17]=luminosities()
@@ -11959,66 +12085,66 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         #################################
         #
         #
-        denfactor=1.0 + rholab*0.0
+        denfactor=1.0 + frholab()*0.0
         diskcondition=condmaxbsqorho
-        keywordsrhosq={'which': diskcondition}
-        rhosqint=intangle(gdet*denfactor,**keywordsrhosq)+tiny
-        #alphamag1[qindex]=intangle(gdet*jabs(-bu[1]*np.sqrt(gv3[1,1])*bd[3]*np.sqrt(gn3[3,3]))/(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywordsrhosq)/rhosqint
-        numer=intangle(gdet*jabs(-bu[1]*np.sqrt(gv3[1,1])*bd[3]*np.sqrt(gn3[3,3]))*denfactor,**keywordsrhosq)/rhosqint
-        denom=intangle(gdet*(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywordsrhosq)/rhosqint
+        keywords={'which': diskcondition}
+        rhogenint=intangle(gdet*denfactor,**keywords)+tiny
+        #alphamag1[qindex]=intangle(gdet*jabs(-bu[1]*np.sqrt(gv3[1,1])*bd[3]*np.sqrt(gn3[3,3]))/(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywords)/rhogenint
+        numer=intangle(gdet*jabs(-bu[1]*np.sqrt(gv3[1,1])*bd[3]*np.sqrt(gn3[3,3]))*denfactor,**keywords)/rhogenint
+        denom=intangle(gdet*(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywords)/rhogenint
         alphamag1[qindex]=numer/denom
         #
-        denfactor=1.0 + rholab*0.0
+        denfactor=1.0 + frholab()*0.0
         diskcondition=(bsq/rho<1)
-        keywordsrhosq={'which': diskcondition}
-        rhosqint=intangle(gdet*denfactor,**keywordsrhosq)+tiny
-        #alphamag2[qindex]=intangle(gdet*jabs(-bu[1]*np.sqrt(gv3[1,1])*bd[3]*np.sqrt(gn3[3,3]))/(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywordsrhosq)/rhosqint
-        numer=intangle(gdet*jabs(-bu[1]*np.sqrt(gv3[1,1])*bd[3]*np.sqrt(gn3[3,3]))*denfactor,**keywordsrhosq)/rhosqint
-        denom=intangle(gdet*(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywordsrhosq)/rhosqint
+        keywords={'which': diskcondition}
+        rhogenint=intangle(gdet*denfactor,**keywords)+tiny
+        #alphamag2[qindex]=intangle(gdet*jabs(-bu[1]*np.sqrt(gv3[1,1])*bd[3]*np.sqrt(gn3[3,3]))/(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywords)/rhogenint
+        numer=intangle(gdet*jabs(-bu[1]*np.sqrt(gv3[1,1])*bd[3]*np.sqrt(gn3[3,3]))*denfactor,**keywords)/rhogenint
+        denom=intangle(gdet*(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywords)/rhogenint
         alphamag2[qindex]=numer/denom
         #
         if 1==1:
-            denfactor=rholab
+            denfactor=frholab()
             diskcondition=condmaxbsqorho
-            keywordsrhosq={'which': diskcondition}
-            rhosqint=intangle(gdet*denfactor,**keywordsrhosq)+tiny
-            #alphamag3[qindex]=intangle(gdet*jabs(-bu[1]*np.sqrt(gv3[1,1])*bd[3]*np.sqrt(gn3[3,3]))/(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywordsrhosq)/rhosqint
+            keywords={'which': diskcondition}
+            rhogenint=intangle(gdet*denfactor,**keywords)+tiny
+            #alphamag3[qindex]=intangle(gdet*jabs(-bu[1]*np.sqrt(gv3[1,1])*bd[3]*np.sqrt(gn3[3,3]))/(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywords)/rhogenint
             # do averaging as in Hawley et al. (2010) assessing paper
-            numer=intangle(gdet*jabs(-bu[1]*np.sqrt(gv3[1,1])*bd[3]*np.sqrt(gn3[3,3]))*denfactor,**keywordsrhosq)/rhosqint
-            denom=intangle(gdet*(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywordsrhosq)/rhosqint
+            numer=intangle(gdet*jabs(-bu[1]*np.sqrt(gv3[1,1])*bd[3]*np.sqrt(gn3[3,3]))*denfactor,**keywords)/rhogenint
+            denom=intangle(gdet*(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywords)/rhogenint
             alphamag3[qindex]=numer/denom
             #
             # alpha_mag in Hawley et al. (2011) or Sorathia et al. (2010) convergence papers
-            denfactor=rholab
+            denfactor=frholab()
             diskcondition=condmaxbsqorho
-            keywordsrhosq={'which': diskcondition}
-            rhosqint=intangle(gdet*denfactor,**keywordsrhosq)+tiny
-            #alphamag4[qindex]=intangle(gdet*jabs(-bu[1]*np.sqrt(gv3[1,1])*bd[3]*np.sqrt(gn3[3,3]))/(bsq*0.5)*denfactor,**keywordsrhosq)/rhosqint
-            numer=intangle(gdet*jabs(-bu[1]*np.sqrt(gv3[1,1])*bd[3]*np.sqrt(gn3[3,3]))*denfactor,**keywordsrhosq)/rhosqint
-            denom=intangle(gdet*(bsq*0.5)*denfactor,**keywordsrhosq)/rhosqint
+            keywords={'which': diskcondition}
+            rhogenint=intangle(gdet*denfactor,**keywords)+tiny
+            #alphamag4[qindex]=intangle(gdet*jabs(-bu[1]*np.sqrt(gv3[1,1])*bd[3]*np.sqrt(gn3[3,3]))/(bsq*0.5)*denfactor,**keywords)/rhogenint
+            numer=intangle(gdet*jabs(-bu[1]*np.sqrt(gv3[1,1])*bd[3]*np.sqrt(gn3[3,3]))*denfactor,**keywords)/rhogenint
+            denom=intangle(gdet*(bsq*0.5)*denfactor,**keywords)/rhogenint
             alphamag4[qindex]=numer/denom
         #
         else:
             # tests
-            denfactor=rholab
+            denfactor=frholab()
             diskcondition=condmaxbsqorho
-            keywordsrhosq={'which': diskcondition}
-            rhosqint=intangle(gdet*denfactor,**keywordsrhosq)+tiny
+            keywords={'which': diskcondition}
+            rhogenint=intangle(gdet*denfactor,**keywords)+tiny
             #
-            #numer=intangle(gdet*jabs(-bu[1]*np.sqrt(gv3[1,1])*bd[3]*np.sqrt(gn3[3,3]))*denfactor,**keywordsrhosq)
-            #denom=intangle(gdet*(bsq*0.5)*denfactor,**keywordsrhosq)
+            #numer=intangle(gdet*jabs(-bu[1]*np.sqrt(gv3[1,1])*bd[3]*np.sqrt(gn3[3,3]))*denfactor,**keywords)
+            #denom=intangle(gdet*(bsq*0.5)*denfactor,**keywords)
             #alphamag4[qindex]=numer/denom
             #alphamag3[qindex]=numer/denom
             #
-            #alphamag3[qindex]=intangle(gdet*jabs(-bu[1]*np.sqrt(gv3[1,1])*bd[3]*np.sqrt(gn3[3,3]))*denfactor,**keywordsrhosq)
-            #alphamag4[qindex]=intangle(gdet*(bsq*0.5)*denfactor,**keywordsrhosq)
+            #alphamag3[qindex]=intangle(gdet*jabs(-bu[1]*np.sqrt(gv3[1,1])*bd[3]*np.sqrt(gn3[3,3]))*denfactor,**keywords)
+            #alphamag4[qindex]=intangle(gdet*(bsq*0.5)*denfactor,**keywords)
         #
         gc.collect()
         #################################
         print("alphareynolds" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         #################################
         #
-        # do only disk+corona (bsq/rho<1) and disk (weight by rholab)
+        # do only disk+corona (bsq/rho<1) and disk (weight by frholab())
         # (rho+u+p+bsq) u^\mu u_\nu + \delta^\mu_\nu (p_g + p_b) - b^\mu b_\nu
         #
         # stressreya: rho du^r du_\phi
@@ -12032,81 +12158,81 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             print("for alphareynolds: avgexists=%d" % (avgexists))  ; sys.stdout.flush()
             #
             # stressreya2
-            denfactor=1.0 + rholab*0.0
+            denfactor=1.0 + frholab()*0.0
             diskcondition=(bsq/rho<1)
-            keywordsrhosq={'which': diskcondition}
-            rhosqint=intangle(gdet*denfactor,**keywordsrhosq)+tiny
-            #alphareynoldsa2[qindex]=intangle(gdet*jabs(rho*(uu[1]-avg_uu[1])*np.sqrt(gv3[1,1])*(ud[3]-avg_ud[3])*np.sqrt(gn3[3,3]))/(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywordsrhosq)/rhosqint
+            keywords={'which': diskcondition}
+            rhogenint=intangle(gdet*denfactor,**keywords)+tiny
+            #alphareynoldsa2[qindex]=intangle(gdet*jabs(rho*(uu[1]-avg_uu[1])*np.sqrt(gv3[1,1])*(ud[3]-avg_ud[3])*np.sqrt(gn3[3,3]))/(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywords)/rhogenint
             if avgexists==1:
-                numer=intangle(gdet*jabs(rho*(uu[1]-avg_uu[1])*np.sqrt(gv3[1,1])*(ud[3]-avg_ud[3])*np.sqrt(gn3[3,3]))*denfactor,**keywordsrhosq)/rhosqint
+                numer=intangle(gdet*jabs(rho*(uu[1]-avg_uu[1])*np.sqrt(gv3[1,1])*(ud[3]-avg_ud[3])*np.sqrt(gn3[3,3]))*denfactor,**keywords)/rhogenint
             else:
-                numer=intangle(gdet*jabs(rho*(uu[1])*np.sqrt(gv3[1,1])*(ud[3])*np.sqrt(gn3[3,3]))*denfactor,**keywordsrhosq)/rhosqint
-            denom==intangle(gdet*(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywordsrhosq)/rhosqint
+                numer=intangle(gdet*jabs(rho*(uu[1])*np.sqrt(gv3[1,1])*(ud[3])*np.sqrt(gn3[3,3]))*denfactor,**keywords)/rhogenint
+            denom==intangle(gdet*(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywords)/rhogenint
             alphareynoldsa2[qindex]=numer/denom
             #
             # stressreyb2
-            denfactor=1.0 + rholab*0.0
+            denfactor=1.0 + frholab()*0.0
             diskcondition=(bsq/rho<1)
-            keywordsrhosq={'which': diskcondition}
-            rhosqint=intangle(gdet*denfactor,**keywordsrhosq)+tiny
-            #alphareynoldsb2[qindex]=intangle(gdet*jabs((ug+(gam-1.0)*ug)*(uu[1]-avg_uu[1])*np.sqrt(gv3[1,1])*(ud[3]-avg_ud[3])*np.sqrt(gn3[3,3]))/(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywordsrhosq)/rhosqint
+            keywords={'which': diskcondition}
+            rhogenint=intangle(gdet*denfactor,**keywords)+tiny
+            #alphareynoldsb2[qindex]=intangle(gdet*jabs((ug+(gam-1.0)*ug)*(uu[1]-avg_uu[1])*np.sqrt(gv3[1,1])*(ud[3]-avg_ud[3])*np.sqrt(gn3[3,3]))/(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywords)/rhogenint
             if avgexists==1:
-                numer=intangle(gdet*jabs((ug+(gam-1.0)*ug)*(uu[1]-avg_uu[1])*np.sqrt(gv3[1,1])*(ud[3]-avg_ud[3])*np.sqrt(gn3[3,3]))*denfactor,**keywordsrhosq)/rhosqint
+                numer=intangle(gdet*jabs((ug+(gam-1.0)*ug)*(uu[1]-avg_uu[1])*np.sqrt(gv3[1,1])*(ud[3]-avg_ud[3])*np.sqrt(gn3[3,3]))*denfactor,**keywords)/rhogenint
             else:
-                numer=intangle(gdet*jabs((ug+(gam-1.0)*ug)*(uu[1])*np.sqrt(gv3[1,1])*(ud[3])*np.sqrt(gn3[3,3]))*denfactor,**keywordsrhosq)/rhosqint
-            denom=intangle(gdet*(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywordsrhosq)/rhosqint
+                numer=intangle(gdet*jabs((ug+(gam-1.0)*ug)*(uu[1])*np.sqrt(gv3[1,1])*(ud[3])*np.sqrt(gn3[3,3]))*denfactor,**keywords)/rhogenint
+            denom=intangle(gdet*(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywords)/rhogenint
             alphareynoldsb2[qindex]=numer/denom
             #
             # stressreyc2
-            denfactor=1.0 + rholab*0.0
+            denfactor=1.0 + frholab()*0.0
             diskcondition=(bsq/rho<1)
-            keywordsrhosq={'which': diskcondition}
-            rhosqint=intangle(gdet*denfactor,**keywordsrhosq)+tiny
-            #alphareynoldsc2[qindex]=intangle(gdet*jabs((bsq)*(uu[1]-avg_uu[1])*np.sqrt(gv3[1,1])*(ud[3]-avg_ud[3])*np.sqrt(gn3[3,3]))/(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywordsrhosq)/rhosqint
+            keywords={'which': diskcondition}
+            rhogenint=intangle(gdet*denfactor,**keywords)+tiny
+            #alphareynoldsc2[qindex]=intangle(gdet*jabs((bsq)*(uu[1]-avg_uu[1])*np.sqrt(gv3[1,1])*(ud[3]-avg_ud[3])*np.sqrt(gn3[3,3]))/(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywords)/rhogenint
             if avgexists==1:
-                numer=intangle(gdet*jabs((bsq)*(uu[1]-avg_uu[1])*np.sqrt(gv3[1,1])*(ud[3]-avg_ud[3])*np.sqrt(gn3[3,3]))*denfactor,**keywordsrhosq)/rhosqint
+                numer=intangle(gdet*jabs((bsq)*(uu[1]-avg_uu[1])*np.sqrt(gv3[1,1])*(ud[3]-avg_ud[3])*np.sqrt(gn3[3,3]))*denfactor,**keywords)/rhogenint
             else:
-                numer=intangle(gdet*jabs((bsq)*(uu[1])*np.sqrt(gv3[1,1])*(ud[3])*np.sqrt(gn3[3,3]))*denfactor,**keywordsrhosq)/rhosqint
-            denom=intangle(gdet*(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywordsrhosq)/rhosqint
+                numer=intangle(gdet*jabs((bsq)*(uu[1])*np.sqrt(gv3[1,1])*(ud[3])*np.sqrt(gn3[3,3]))*denfactor,**keywords)/rhogenint
+            denom=intangle(gdet*(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywords)/rhogenint
             alphareynoldsc2[qindex]=numer/denom
             #
             # stressreya3
-            denfactor=rholab
+            denfactor=frholab()
             diskcondition=condmaxbsqorho
-            keywordsrhosq={'which': diskcondition}
-            rhosqint=intangle(gdet*denfactor,**keywordsrhosq)+tiny
-            #alphareynoldsa3[qindex]=intangle(gdet*jabs(rho*(uu[1]-avg_uu[1])*np.sqrt(gv3[1,1])*(ud[3]-avg_ud[3])*np.sqrt(gn3[3,3]))/(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywordsrhosq)/rhosqint
+            keywords={'which': diskcondition}
+            rhogenint=intangle(gdet*denfactor,**keywords)+tiny
+            #alphareynoldsa3[qindex]=intangle(gdet*jabs(rho*(uu[1]-avg_uu[1])*np.sqrt(gv3[1,1])*(ud[3]-avg_ud[3])*np.sqrt(gn3[3,3]))/(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywords)/rhogenint
             if avgexists==1:
-                numer=intangle(gdet*jabs(rho*(uu[1]-avg_uu[1])*np.sqrt(gv3[1,1])*(ud[3]-avg_ud[3])*np.sqrt(gn3[3,3]))*denfactor,**keywordsrhosq)/rhosqint
+                numer=intangle(gdet*jabs(rho*(uu[1]-avg_uu[1])*np.sqrt(gv3[1,1])*(ud[3]-avg_ud[3])*np.sqrt(gn3[3,3]))*denfactor,**keywords)/rhogenint
             else:
-                numer=intangle(gdet*jabs(rho*(uu[1])*np.sqrt(gv3[1,1])*(ud[3])*np.sqrt(gn3[3,3]))*denfactor,**keywordsrhosq)/rhosqint
-            denom=intangle(gdet*(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywordsrhosq)/rhosqint
+                numer=intangle(gdet*jabs(rho*(uu[1])*np.sqrt(gv3[1,1])*(ud[3])*np.sqrt(gn3[3,3]))*denfactor,**keywords)/rhogenint
+            denom=intangle(gdet*(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywords)/rhogenint
             alphareynoldsa3[qindex]=numer/denom
             #
             # stressreyb3
-            denfactor=rholab
+            denfactor=frholab()
             diskcondition=condmaxbsqorho
-            keywordsrhosq={'which': diskcondition}
-            rhosqint=intangle(gdet*denfactor,**keywordsrhosq)+tiny
-            #alphareynoldsb3[qindex]=intangle(gdet*jabs((ug+(gam-1.0)*ug)*(uu[1]-avg_uu[1])*np.sqrt(gv3[1,1])*(ud[3]-avg_ud[3])*np.sqrt(gn3[3,3]))/(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywordsrhosq)/rhosqint
+            keywords={'which': diskcondition}
+            rhogenint=intangle(gdet*denfactor,**keywords)+tiny
+            #alphareynoldsb3[qindex]=intangle(gdet*jabs((ug+(gam-1.0)*ug)*(uu[1]-avg_uu[1])*np.sqrt(gv3[1,1])*(ud[3]-avg_ud[3])*np.sqrt(gn3[3,3]))/(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywords)/rhogenint
             if avgexists==1:
-                numer=intangle(gdet*jabs((ug+(gam-1.0)*ug)*(uu[1]-avg_uu[1])*np.sqrt(gv3[1,1])*(ud[3]-avg_ud[3])*np.sqrt(gn3[3,3]))*denfactor,**keywordsrhosq)/rhosqint
+                numer=intangle(gdet*jabs((ug+(gam-1.0)*ug)*(uu[1]-avg_uu[1])*np.sqrt(gv3[1,1])*(ud[3]-avg_ud[3])*np.sqrt(gn3[3,3]))*denfactor,**keywords)/rhogenint
             else:
-                numer=intangle(gdet*jabs((ug+(gam-1.0)*ug)*(uu[1])*np.sqrt(gv3[1,1])*(ud[3])*np.sqrt(gn3[3,3]))*denfactor,**keywordsrhosq)/rhosqint
-            denom=intangle(gdet*(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywordsrhosq)/rhosqint
+                numer=intangle(gdet*jabs((ug+(gam-1.0)*ug)*(uu[1])*np.sqrt(gv3[1,1])*(ud[3])*np.sqrt(gn3[3,3]))*denfactor,**keywords)/rhogenint
+            denom=intangle(gdet*(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywords)/rhogenint
             alphareynoldsb3[qindex]=numer/denom
             #
             # stressreyc3
-            denfactor=rholab
+            denfactor=frholab()
             diskcondition=condmaxbsqorho
-            keywordsrhosq={'which': diskcondition}
-            rhosqint=intangle(gdet*denfactor,**keywordsrhosq)+tiny
-            #alphareynoldsc3[qindex]=intangle(gdet*jabs((bsq)*(uu[1]-avg_uu[1])*np.sqrt(gv3[1,1])*(ud[3]-avg_ud[3])*np.sqrt(gn3[3,3]))/(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywordsrhosq)/rhosqint
+            keywords={'which': diskcondition}
+            rhogenint=intangle(gdet*denfactor,**keywords)+tiny
+            #alphareynoldsc3[qindex]=intangle(gdet*jabs((bsq)*(uu[1]-avg_uu[1])*np.sqrt(gv3[1,1])*(ud[3]-avg_ud[3])*np.sqrt(gn3[3,3]))/(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywords)/rhogenint
             if avgexists==1:
-                numer=intangle(gdet*jabs((bsq)*(uu[1]-avg_uu[1])*np.sqrt(gv3[1,1])*(ud[3]-avg_ud[3])*np.sqrt(gn3[3,3]))*denfactor,**keywordsrhosq)/rhosqint
+                numer=intangle(gdet*jabs((bsq)*(uu[1]-avg_uu[1])*np.sqrt(gv3[1,1])*(ud[3]-avg_ud[3])*np.sqrt(gn3[3,3]))*denfactor,**keywords)/rhogenint
             else:
-                numer=intangle(gdet*jabs((bsq)*(uu[1])*np.sqrt(gv3[1,1])*(ud[3])*np.sqrt(gn3[3,3]))*denfactor,**keywordsrhosq)/rhosqint
-            denom=intangle(gdet*(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywordsrhosq)/rhosqint
+                numer=intangle(gdet*jabs((bsq)*(uu[1])*np.sqrt(gv3[1,1])*(ud[3])*np.sqrt(gn3[3,3]))*denfactor,**keywords)/rhogenint
+            denom=intangle(gdet*(bsq*0.5+(gam-1.0)*ug)*denfactor,**keywords)/rhogenint
             alphareynoldsc3[qindex]=numer/denom
             #
         #
@@ -12198,46 +12324,46 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         #############
         #rhosq:
         # for most dense part of flow:
-        #denfactor=rholab**2
+        #denfactor=frholab()**2
         # for entire flow:
-        denfactor=1.0 + rholab*0.0
+        denfactor=1.0 + frholab()*0.0
         #
         diskcondition=condmaxbsqorho
-        keywordsrhosq={'which': diskcondition}
-        rhosqint=intangle(gdet*denfactor,**keywordsrhosq)+tiny # gdet is 2d by default
-        rhosqs[qindex]=rhosqint
+        keywords={'which': diskcondition}
+        rhogenint=intangle(gdet*denfactor,**keywords)+tiny # gdet is 2d by default
+        rhosqs[qindex]=rhogenint
         maxrhosq2d=(denfactor*diskcondition).max(1)+tiny
-        maxrhosq3d=np.empty_like(rho)
-        for j in np.arange(0,ny):
-            maxrhosq3d[:,j,:] = maxrhosq2d
-        rhosrhosq[qindex]=intangle(gdet*denfactor*rho,**keywordsrhosq)/rhosqint
-        ugsrhosq[qindex]=intangle(gdet*denfactor*ug,**keywordsrhosq)/rhosqint
-        uradsrhosq[qindex]=intangle(gdet*denfactor*urad,**keywordsrhosq)/rhosqint
+        #maxrhosq3d=np.empty_like(rho)
+        #for j in np.arange(0,ny):
+        #    maxrhosq3d[:,j,:] = maxrhosq2d
+        rhosrhosq[qindex]=intangle(gdet*denfactor*rho,**keywords)/rhogenint
+        ugsrhosq[qindex]=intangle(gdet*denfactor*ug,**keywords)/rhogenint
+        uradsrhosq[qindex]=intangle(gdet*denfactor*Erf,**keywords)/rhogenint
         # no restriction for velocity or field quantities! (as long as denfactor=1 this is good)
-        denfactor=1.0 + rholab*0.0
+        denfactor=1.0 + frholab()*0.0
         # yes, over whole disk so include jet for vel/field
         diskcondition=1 + condmaxbsqorho*0.0
-        keywordsrhosq={'which': diskcondition}
-        rhosqint=intangle(gdet*denfactor,**keywordsrhosq)+tiny
-        uu0rhosq[qindex]=intangle(gdet*denfactor*myuu0(),**keywordsrhosq)/rhosqint
-        vus1rhosq[qindex]=intangle(gdet*denfactor*myuu1(),**keywordsrhosq)/rhosqint
-        vuas1rhosq[qindex]=intangle(gdet*denfactor*np.abs(myuu1()),**keywordsrhosq)/rhosqint
-        vus3rhosq[qindex]=intangle(gdet*denfactor*myuu3(),**keywordsrhosq)/rhosqint
-        vuas3rhosq[qindex]=intangle(gdet*denfactor*np.abs(myuu3()),**keywordsrhosq)/rhosqint
-        vuasrotrhosq[qindex]=intangle(gdet*denfactor*np.abs(myuurot()),**keywordsrhosq)/rhosqint
-        Bs1rhosq[qindex]=intangle(gdet*myB1()*denfactor,**keywordsrhosq)/rhosqint
-        Bas1rhosq[qindex]=intangle(gdet*np.fabs(myB1())*denfactor,**keywordsrhosq)/rhosqint
-        Bs2rhosq[qindex]=intangle(gdet*myB2()*denfactor,**keywordsrhosq)/rhosqint
-        Bas2rhosq[qindex]=intangle(gdet*np.fabs(myB2())*denfactor,**keywordsrhosq)/rhosqint
-        Bs3rhosq[qindex]=intangle(gdet*myB3()*denfactor,**keywordsrhosq)/rhosqint
-        Bas3rhosq[qindex]=intangle(gdet*np.fabs(myB3())*denfactor,**keywordsrhosq)/rhosqint
-        bs1rhosq[qindex]=intangle(gdet*mybu1()*denfactor,**keywordsrhosq)/rhosqint
-        bas1rhosq[qindex]=intangle(gdet*np.fabs(mybu1())*denfactor,**keywordsrhosq)/rhosqint
-        bs2rhosq[qindex]=intangle(gdet*mybu2()*denfactor,**keywordsrhosq)/rhosqint
-        bas2rhosq[qindex]=intangle(gdet*np.fabs(mybu2())*denfactor,**keywordsrhosq)/rhosqint
-        bs3rhosq[qindex]=intangle(gdet*mybu3()*denfactor,**keywordsrhosq)/rhosqint
-        bas3rhosq[qindex]=intangle(gdet*np.fabs(mybu3())*denfactor,**keywordsrhosq)/rhosqint
-        bsqrhosq[qindex]=intangle(gdet*bsq*denfactor,**keywordsrhosq)/rhosqint
+        keywords={'which': diskcondition}
+        rhogenint=intangle(gdet*denfactor,**keywords)+tiny
+        uu0rhosq[qindex]=intangle(gdet*denfactor*myuu0(),**keywords)/rhogenint
+        vus1rhosq[qindex]=intangle(gdet*denfactor*myuu1(),**keywords)/rhogenint
+        vuas1rhosq[qindex]=intangle(gdet*denfactor*np.abs(myuu1()),**keywords)/rhogenint
+        vus3rhosq[qindex]=intangle(gdet*denfactor*myuu3(),**keywords)/rhogenint
+        vuas3rhosq[qindex]=intangle(gdet*denfactor*np.abs(myuu3()),**keywords)/rhogenint
+        vuasrotrhosq[qindex]=intangle(gdet*denfactor*np.abs(myuurot()),**keywords)/rhogenint
+        Bs1rhosq[qindex]=intangle(gdet*myB1()*denfactor,**keywords)/rhogenint
+        Bas1rhosq[qindex]=intangle(gdet*np.fabs(myB1())*denfactor,**keywords)/rhogenint
+        Bs2rhosq[qindex]=intangle(gdet*myB2()*denfactor,**keywords)/rhogenint
+        Bas2rhosq[qindex]=intangle(gdet*np.fabs(myB2())*denfactor,**keywords)/rhogenint
+        Bs3rhosq[qindex]=intangle(gdet*myB3()*denfactor,**keywords)/rhogenint
+        Bas3rhosq[qindex]=intangle(gdet*np.fabs(myB3())*denfactor,**keywords)/rhogenint
+        bs1rhosq[qindex]=intangle(gdet*mybu1()*denfactor,**keywords)/rhogenint
+        bas1rhosq[qindex]=intangle(gdet*np.fabs(mybu1())*denfactor,**keywords)/rhogenint
+        bs2rhosq[qindex]=intangle(gdet*mybu2()*denfactor,**keywords)/rhogenint
+        bas2rhosq[qindex]=intangle(gdet*np.fabs(mybu2())*denfactor,**keywords)/rhogenint
+        bs3rhosq[qindex]=intangle(gdet*mybu3()*denfactor,**keywords)/rhogenint
+        bas3rhosq[qindex]=intangle(gdet*np.fabs(mybu3())*denfactor,**keywords)/rhogenint
+        bsqrhosq[qindex]=intangle(gdet*bsq*denfactor,**keywords)/rhogenint
         #rhosq:
         #
         printusage()
@@ -12249,45 +12375,45 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         #############
         #rhosqdc:
         # for most dense part of flow:
-        #denfactor=rholab**2
+        #denfactor=frholab()**2
         # for entire flow:
-        denfactor=1.0 + rholab*0.0
+        denfactor=1.0 + frholab()*0.0
         #
         diskcondition=condmaxbsqorho*(bsq/rho<1.0) # non-jet
-        keywordsrhosqdc={'which': diskcondition}
-        rhosqdcint=intangle(gdet*denfactor,**keywordsrhosqdc)+tiny # gdet is 2d by default
-        rhosqdcs[qindex]=rhosqdcint
-        maxrhosqdc2d=(denfactor*diskcondition).max(1)+tiny
-        maxrhosqdc3d=np.empty_like(rho)
-        for j in np.arange(0,ny):
-            maxrhosqdc3d[:,j,:] = maxrhosqdc2d
-        rhosrhosqdc[qindex]=intangle(gdet*denfactor*rho,**keywordsrhosqdc)/rhosqdcint
-        ugsrhosqdc[qindex]=intangle(gdet*denfactor*ug,**keywordsrhosqdc)/rhosqdcint
-        uradsrhosqdc[qindex]=intangle(gdet*denfactor*urad,**keywordsrhosqdc)/rhosqdcint
+        keywords={'which': diskcondition}
+        rhogenint=intangle(gdet*denfactor,**keywords)+tiny # gdet is 2d by default
+        rhosqdcs[qindex]=rhogenint
+        #maxrhosqdc2d=(denfactor*diskcondition).max(1)+tiny
+        #maxrhosqdc3d=np.empty_like(rho)
+        #for j in np.arange(0,ny):
+        #    maxrhosqdc3d[:,j,:] = maxrhosqdc2d
+        rhosrhosqdc[qindex]=intangle(gdet*denfactor*rho,**keywords)/rhogenint
+        ugsrhosqdc[qindex]=intangle(gdet*denfactor*ug,**keywords)/rhogenint
+        uradsrhosqdc[qindex]=intangle(gdet*denfactor*Erf,**keywords)/rhogenint
         # no restriction for velocity or field quantities! (as long as denfactor=1 this is good)
-        denfactor=1.0 + rholab*0.0
+        denfactor=1.0 + frholab()*0.0
         diskcondition=condmaxbsqorho*(bsq/rho<1.0) # non-jet
-        keywordsrhosqdc={'which': diskcondition}
-        rhosqdcint=intangle(gdet*denfactor,**keywordsrhosqdc)+tiny
-        uu0rhosqdc[qindex]=intangle(gdet*myuu0()*denfactor,**keywordsrhosqdc)/rhosqdcint
-        vus1rhosqdc[qindex]=intangle(gdet*myuu1()*denfactor,**keywordsrhosqdc)/rhosqdcint
-        vuas1rhosqdc[qindex]=intangle(gdet*np.fabs(myuu1())*denfactor,**keywordsrhosqdc)/rhosqdcint
-        vus3rhosqdc[qindex]=intangle(gdet*myuu3()*denfactor,**keywordsrhosqdc)/rhosqdcint
-        vuas3rhosqdc[qindex]=intangle(gdet*np.fabs(myuu3())*denfactor,**keywordsrhosqdc)/rhosqdcint
-        vuasrotrhosqdc[qindex]=intangle(gdet*np.fabs(myuurot())*denfactor,**keywordsrhosqdc)/rhosqdcint
-        Bs1rhosqdc[qindex]=intangle(gdet*myB1()*denfactor,**keywordsrhosqdc)/rhosqdcint
-        Bas1rhosqdc[qindex]=intangle(gdet*np.fabs(myB1())*denfactor,**keywordsrhosqdc)/rhosqdcint
-        Bs2rhosqdc[qindex]=intangle(gdet*myB2()*denfactor,**keywordsrhosqdc)/rhosqdcint
-        Bas2rhosqdc[qindex]=intangle(gdet*np.fabs(myB2())*denfactor,**keywordsrhosqdc)/rhosqdcint
-        Bs3rhosqdc[qindex]=intangle(gdet*myB3()*denfactor,**keywordsrhosqdc)/rhosqdcint
-        Bas3rhosqdc[qindex]=intangle(gdet*np.fabs(myB3())*denfactor,**keywordsrhosqdc)/rhosqdcint
-        bs1rhosqdc[qindex]=intangle(gdet*mybu1()*denfactor,**keywordsrhosqdc)/rhosqdcint
-        bas1rhosqdc[qindex]=intangle(gdet*np.fabs(mybu1())*denfactor,**keywordsrhosqdc)/rhosqdcint
-        bs2rhosqdc[qindex]=intangle(gdet*mybu2()*denfactor,**keywordsrhosqdc)/rhosqdcint
-        bas2rhosqdc[qindex]=intangle(gdet*np.fabs(mybu2())*denfactor,**keywordsrhosqdc)/rhosqdcint
-        bs3rhosqdc[qindex]=intangle(gdet*mybu3()*denfactor,**keywordsrhosqdc)/rhosqdcint
-        bas3rhosqdc[qindex]=intangle(gdet*np.fabs(mybu3())*denfactor,**keywordsrhosqdc)/rhosqdcint
-        bsqrhosqdc[qindex]=intangle(gdet*bsq*denfactor,**keywordsrhosqdc)/rhosqdcint
+        keywords={'which': diskcondition}
+        rhogenint=intangle(gdet*denfactor,**keywords)+tiny
+        uu0rhosqdc[qindex]=intangle(gdet*myuu0()*denfactor,**keywords)/rhogenint
+        vus1rhosqdc[qindex]=intangle(gdet*myuu1()*denfactor,**keywords)/rhogenint
+        vuas1rhosqdc[qindex]=intangle(gdet*np.fabs(myuu1())*denfactor,**keywords)/rhogenint
+        vus3rhosqdc[qindex]=intangle(gdet*myuu3()*denfactor,**keywords)/rhogenint
+        vuas3rhosqdc[qindex]=intangle(gdet*np.fabs(myuu3())*denfactor,**keywords)/rhogenint
+        vuasrotrhosqdc[qindex]=intangle(gdet*np.fabs(myuurot())*denfactor,**keywords)/rhogenint
+        Bs1rhosqdc[qindex]=intangle(gdet*myB1()*denfactor,**keywords)/rhogenint
+        Bas1rhosqdc[qindex]=intangle(gdet*np.fabs(myB1())*denfactor,**keywords)/rhogenint
+        Bs2rhosqdc[qindex]=intangle(gdet*myB2()*denfactor,**keywords)/rhogenint
+        Bas2rhosqdc[qindex]=intangle(gdet*np.fabs(myB2())*denfactor,**keywords)/rhogenint
+        Bs3rhosqdc[qindex]=intangle(gdet*myB3()*denfactor,**keywords)/rhogenint
+        Bas3rhosqdc[qindex]=intangle(gdet*np.fabs(myB3())*denfactor,**keywords)/rhogenint
+        bs1rhosqdc[qindex]=intangle(gdet*mybu1()*denfactor,**keywords)/rhogenint
+        bas1rhosqdc[qindex]=intangle(gdet*np.fabs(mybu1())*denfactor,**keywords)/rhogenint
+        bs2rhosqdc[qindex]=intangle(gdet*mybu2()*denfactor,**keywords)/rhogenint
+        bas2rhosqdc[qindex]=intangle(gdet*np.fabs(mybu2())*denfactor,**keywords)/rhogenint
+        bs3rhosqdc[qindex]=intangle(gdet*mybu3()*denfactor,**keywords)/rhogenint
+        bas3rhosqdc[qindex]=intangle(gdet*np.fabs(mybu3())*denfactor,**keywords)/rhogenint
+        bsqrhosqdc[qindex]=intangle(gdet*bsq*denfactor,**keywords)/rhogenint
         #rhosqdc:
         #
         printusage()
@@ -12299,44 +12425,44 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         #############
         #rhosqdcden:
         # for most dense part of flow:
-        #denfactor=rholab**2
+        #denfactor=frholab()**2
         # for entire flow:
-        denfactor=rholab
+        denfactor=frholab()
         #
         diskcondition=condmaxbsqorho # full non-jet
-        keywordsrhosqdcden={'which': diskcondition}
-        rhosqdcdenint=intangle(gdet*denfactor,**keywordsrhosqdcden)+tiny # gdet is 2d by default
-        rhosqdcdens[qindex]=rhosqdcdenint
-        maxrhosqdcden2d=(denfactor*diskcondition).max(1)+tiny
-        maxrhosqdcden3d=np.empty_like(rho)
-        for j in np.arange(0,ny):
-            maxrhosqdcden3d[:,j,:] = maxrhosqdcden2d
-        rhosrhosqdcden[qindex]=intangle(gdet*denfactor*rho,**keywordsrhosqdcden)/rhosqdcdenint
-        ugsrhosqdcden[qindex]=intangle(gdet*denfactor*ug,**keywordsrhosqdcden)/rhosqdcdenint
-        uradsrhosqdcden[qindex]=intangle(gdet*denfactor*urad,**keywordsrhosqdcden)/rhosqdcdenint
-        denfactor=rholab
+        keywords={'which': diskcondition}
+        rhogenint=intangle(gdet*denfactor,**keywords)+tiny # gdet is 2d by default
+        rhosqdcdens[qindex]=rhogenint
+        #maxrhosqdcden2d=(denfactor*diskcondition).max(1)+tiny
+        #maxrhosqdcden3d=np.empty_like(rho)
+        #for j in np.arange(0,ny):
+        #    maxrhosqdcden3d[:,j,:] = maxrhosqdcden2d
+        rhosrhosqdcden[qindex]=intangle(gdet*denfactor*rho,**keywords)/rhogenint
+        ugsrhosqdcden[qindex]=intangle(gdet*denfactor*ug,**keywords)/rhogenint
+        uradsrhosqdcden[qindex]=intangle(gdet*denfactor*Erf,**keywords)/rhogenint
+        denfactor=frholab()
         diskcondition=condmaxbsqorho # full non-jet
-        keywordsrhosqdcden={'which': diskcondition}
-        rhosqdcdenint=intangle(gdet*denfactor,**keywordsrhosqdcden)+tiny
-        uu0rhosqdcden[qindex]=intangle(gdet*myuu0()*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
-        vus1rhosqdcden[qindex]=intangle(gdet*myuu1()*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
-        vuas1rhosqdcden[qindex]=intangle(gdet*np.fabs(myuu1())*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
-        vus3rhosqdcden[qindex]=intangle(gdet*myuu3()*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
-        vuas3rhosqdcden[qindex]=intangle(gdet*np.fabs(myuu3())*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
-        vuasrotrhosqdcden[qindex]=intangle(gdet*np.fabs(myuurot())*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
-        Bs1rhosqdcden[qindex]=intangle(gdet*myB1()*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
-        Bas1rhosqdcden[qindex]=intangle(gdet*np.fabs(myB1())*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
-        Bs2rhosqdcden[qindex]=intangle(gdet*myB2()*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
-        Bas2rhosqdcden[qindex]=intangle(gdet*np.fabs(myB2())*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
-        Bs3rhosqdcden[qindex]=intangle(gdet*myB3()*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
-        Bas3rhosqdcden[qindex]=intangle(gdet*np.fabs(myB3())*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
-        bs1rhosqdcden[qindex]=intangle(gdet*mybu1()*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
-        bas1rhosqdcden[qindex]=intangle(gdet*np.fabs(mybu1())*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
-        bs2rhosqdcden[qindex]=intangle(gdet*mybu2()*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
-        bas2rhosqdcden[qindex]=intangle(gdet*np.fabs(mybu2())*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
-        bs3rhosqdcden[qindex]=intangle(gdet*mybu3()*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
-        bas3rhosqdcden[qindex]=intangle(gdet*np.fabs(mybu3())*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
-        bsqrhosqdcden[qindex]=intangle(gdet*bsq*denfactor,**keywordsrhosqdcden)/rhosqdcdenint
+        keywords={'which': diskcondition}
+        rhogenint=intangle(gdet*denfactor,**keywords)+tiny
+        uu0rhosqdcden[qindex]=intangle(gdet*myuu0()*denfactor,**keywords)/rhogenint
+        vus1rhosqdcden[qindex]=intangle(gdet*myuu1()*denfactor,**keywords)/rhogenint
+        vuas1rhosqdcden[qindex]=intangle(gdet*np.fabs(myuu1())*denfactor,**keywords)/rhogenint
+        vus3rhosqdcden[qindex]=intangle(gdet*myuu3()*denfactor,**keywords)/rhogenint
+        vuas3rhosqdcden[qindex]=intangle(gdet*np.fabs(myuu3())*denfactor,**keywords)/rhogenint
+        vuasrotrhosqdcden[qindex]=intangle(gdet*np.fabs(myuurot())*denfactor,**keywords)/rhogenint
+        Bs1rhosqdcden[qindex]=intangle(gdet*myB1()*denfactor,**keywords)/rhogenint
+        Bas1rhosqdcden[qindex]=intangle(gdet*np.fabs(myB1())*denfactor,**keywords)/rhogenint
+        Bs2rhosqdcden[qindex]=intangle(gdet*myB2()*denfactor,**keywords)/rhogenint
+        Bas2rhosqdcden[qindex]=intangle(gdet*np.fabs(myB2())*denfactor,**keywords)/rhogenint
+        Bs3rhosqdcden[qindex]=intangle(gdet*myB3()*denfactor,**keywords)/rhogenint
+        Bas3rhosqdcden[qindex]=intangle(gdet*np.fabs(myB3())*denfactor,**keywords)/rhogenint
+        bs1rhosqdcden[qindex]=intangle(gdet*mybu1()*denfactor,**keywords)/rhogenint
+        bas1rhosqdcden[qindex]=intangle(gdet*np.fabs(mybu1())*denfactor,**keywords)/rhogenint
+        bs2rhosqdcden[qindex]=intangle(gdet*mybu2()*denfactor,**keywords)/rhogenint
+        bas2rhosqdcden[qindex]=intangle(gdet*np.fabs(mybu2())*denfactor,**keywords)/rhogenint
+        bs3rhosqdcden[qindex]=intangle(gdet*mybu3()*denfactor,**keywords)/rhogenint
+        bas3rhosqdcden[qindex]=intangle(gdet*np.fabs(mybu3())*denfactor,**keywords)/rhogenint
+        bsqrhosqdcden[qindex]=intangle(gdet*bsq*denfactor,**keywords)/rhogenint
         #rhosqdcden:
         #
         printusage()
@@ -12346,7 +12472,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         print("at equator and portion of \phi" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         #############
         # for entire flow:
-        denfactor=1.0 + rholab*0.0
+        denfactor=1.0 + frholab()*0.0
         # pick out equator (within 3 cells to smear out grid-scale noise) and a restricted portion of \phi in order to avoid averaging over warping disk
         diskcondition0=(np.abs(tj-ny/2)<3)
         if nz>1:
@@ -12354,41 +12480,41 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             diskcondition0=diskcondition0*(ph<np.pi/4.0)
         #
         diskcondition=diskcondition0*condmaxbsqorho
-        keywordsrhosqeq={'which': diskcondition}
-        rhosqeqint=intangle(gdet*denfactor,**keywordsrhosqeq)+tiny
-        rhosqeqs[qindex]=rhosqeqint
-        maxrhosqeq2d=(denfactor*diskcondition).max(1)+tiny
-        maxrhosqeq3d=np.empty_like(rho)
-        for j in np.arange(0,ny):
-            maxrhosqeq3d[:,j,:] = maxrhosqeq2d
-        rhosrhosqeq[qindex]=intangle(gdet*denfactor*rho,**keywordsrhosqeq)/rhosqeqint
-        ugsrhosqeq[qindex]=intangle(gdet*denfactor*ug,**keywordsrhosqeq)/rhosqeqint
-        uradsrhosqeq[qindex]=intangle(gdet*denfactor*urad,**keywordsrhosqeq)/rhosqeqint
+        keywords={'which': diskcondition}
+        rhogenint=intangle(gdet*denfactor,**keywords)+tiny
+        rhosqeqs[qindex]=rhogenint
+        #maxrhosqeq2d=(denfactor*diskcondition).max(1)+tiny
+        #maxrhosqeq3d=np.empty_like(rho)
+        #for j in np.arange(0,ny):
+        #    maxrhosqeq3d[:,j,:] = maxrhosqeq2d
+        rhosrhosqeq[qindex]=intangle(gdet*denfactor*rho,**keywords)/rhogenint
+        ugsrhosqeq[qindex]=intangle(gdet*denfactor*ug,**keywords)/rhogenint
+        uradsrhosqeq[qindex]=intangle(gdet*denfactor*Erf,**keywords)/rhogenint
         # no restriction for velocity or field quantities! (as long as denfactor=1 this is good)
-        denfactor=1.0 + rholab*0.0
+        denfactor=1.0 + frholab()*0.0
         # yes avoid restriction, at equator no matter if disk or jet
         diskcondition=diskcondition0*(1 + condmaxbsqorho*0.0)
-        keywordsrhosqeq={'which': diskcondition}
-        rhosqeqint=intangle(gdet*denfactor,**keywordsrhosqeq)+tiny
-        uu0rhosqeq[qindex]=intangle(gdet*myuu0()*denfactor,**keywordsrhosqeq)/rhosqeqint
-        vus1rhosqeq[qindex]=intangle(gdet*myuu1()*denfactor,**keywordsrhosqeq)/rhosqeqint
-        vuas1rhosqeq[qindex]=intangle(gdet*np.fabs(myuu1())*denfactor,**keywordsrhosqeq)/rhosqeqint
-        vus3rhosqeq[qindex]=intangle(gdet*myuu3()*denfactor,**keywordsrhosqeq)/rhosqeqint
-        vuas3rhosqeq[qindex]=intangle(gdet*np.fabs(myuu3())*denfactor,**keywordsrhosqeq)/rhosqeqint
-        vuasrotrhosqeq[qindex]=intangle(gdet*np.fabs(myuurot())*denfactor,**keywordsrhosqeq)/rhosqeqint
-        Bs1rhosqeq[qindex]=intangle(gdet*myB1()*denfactor,**keywordsrhosqeq)/rhosqeqint
-        Bas1rhosqeq[qindex]=intangle(gdet*np.fabs(myB1())*denfactor,**keywordsrhosqeq)/rhosqeqint
-        Bs2rhosqeq[qindex]=intangle(gdet*myB2()*denfactor,**keywordsrhosqeq)/rhosqeqint
-        Bas2rhosqeq[qindex]=intangle(gdet*np.fabs(myB2())*denfactor,**keywordsrhosqeq)/rhosqeqint
-        Bs3rhosqeq[qindex]=intangle(gdet*myB3()*denfactor,**keywordsrhosqeq)/rhosqeqint
-        Bas3rhosqeq[qindex]=intangle(gdet*np.fabs(myB3())*denfactor,**keywordsrhosqeq)/rhosqeqint
-        bs1rhosqeq[qindex]=intangle(gdet*mybu1()*denfactor,**keywordsrhosqeq)/rhosqeqint
-        bas1rhosqeq[qindex]=intangle(gdet*np.fabs(mybu1())*denfactor,**keywordsrhosqeq)/rhosqeqint
-        bs2rhosqeq[qindex]=intangle(gdet*mybu2()*denfactor,**keywordsrhosqeq)/rhosqeqint
-        bas2rhosqeq[qindex]=intangle(gdet*np.fabs(mybu2())*denfactor,**keywordsrhosqeq)/rhosqeqint
-        bs3rhosqeq[qindex]=intangle(gdet*mybu3()*denfactor,**keywordsrhosqeq)/rhosqeqint
-        bas3rhosqeq[qindex]=intangle(gdet*np.fabs(mybu3())*denfactor,**keywordsrhosqeq)/rhosqeqint
-        bsqrhosqeq[qindex]=intangle(gdet*bsq*denfactor,**keywordsrhosqeq)/rhosqeqint
+        keywords={'which': diskcondition}
+        rhogenint=intangle(gdet*denfactor,**keywords)+tiny
+        uu0rhosqeq[qindex]=intangle(gdet*myuu0()*denfactor,**keywords)/rhogenint
+        vus1rhosqeq[qindex]=intangle(gdet*myuu1()*denfactor,**keywords)/rhogenint
+        vuas1rhosqeq[qindex]=intangle(gdet*np.fabs(myuu1())*denfactor,**keywords)/rhogenint
+        vus3rhosqeq[qindex]=intangle(gdet*myuu3()*denfactor,**keywords)/rhogenint
+        vuas3rhosqeq[qindex]=intangle(gdet*np.fabs(myuu3())*denfactor,**keywords)/rhogenint
+        vuasrotrhosqeq[qindex]=intangle(gdet*np.fabs(myuurot())*denfactor,**keywords)/rhogenint
+        Bs1rhosqeq[qindex]=intangle(gdet*myB1()*denfactor,**keywords)/rhogenint
+        Bas1rhosqeq[qindex]=intangle(gdet*np.fabs(myB1())*denfactor,**keywords)/rhogenint
+        Bs2rhosqeq[qindex]=intangle(gdet*myB2()*denfactor,**keywords)/rhogenint
+        Bas2rhosqeq[qindex]=intangle(gdet*np.fabs(myB2())*denfactor,**keywords)/rhogenint
+        Bs3rhosqeq[qindex]=intangle(gdet*myB3()*denfactor,**keywords)/rhogenint
+        Bas3rhosqeq[qindex]=intangle(gdet*np.fabs(myB3())*denfactor,**keywords)/rhogenint
+        bs1rhosqeq[qindex]=intangle(gdet*mybu1()*denfactor,**keywords)/rhogenint
+        bas1rhosqeq[qindex]=intangle(gdet*np.fabs(mybu1())*denfactor,**keywords)/rhogenint
+        bs2rhosqeq[qindex]=intangle(gdet*mybu2()*denfactor,**keywords)/rhogenint
+        bas2rhosqeq[qindex]=intangle(gdet*np.fabs(mybu2())*denfactor,**keywords)/rhogenint
+        bs3rhosqeq[qindex]=intangle(gdet*mybu3()*denfactor,**keywords)/rhogenint
+        bas3rhosqeq[qindex]=intangle(gdet*np.fabs(mybu3())*denfactor,**keywords)/rhogenint
+        bsqrhosqeq[qindex]=intangle(gdet*bsq*denfactor,**keywords)/rhogenint
         #
         printusage()
         gc.collect()
@@ -12397,7 +12523,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         print("at 2.5H/R and portion of \phi" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         #############
         # for entire flow:
-        denfactor=1.0 + rholab*0.0
+        denfactor=1.0 + frholab()*0.0
         # pick out *at* horpickit*H/R
         horpickit=2.5
         diskcondition0=(np.abs(h-np.pi*0.5)<horpickit*hoverr3d)
@@ -12407,80 +12533,80 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             diskcondition0=diskcondition0*(ph<np.pi/4.0)
         diskcondition=diskcondition0*condmaxbsqorho
         # and avoid averaging over warp by restricing phi range
-        keywordsrhosqhorpick={'which': diskcondition}
-        rhosqhorpickint=intangle(gdet*denfactor,**keywordsrhosqhorpick)+tiny
-        rhosqhorpicks[qindex]=rhosqhorpickint
-        maxrhosqhorpick2d=(denfactor*diskcondition).max(1)+tiny
-        maxrhosqhorpick3d=np.empty_like(rho)
-        for j in np.arange(0,ny):
-            maxrhosqhorpick3d[:,j,:] = maxrhosqhorpick2d
-        rhosrhosqhorpick[qindex]=intangle(gdet*denfactor*rho,**keywordsrhosqhorpick)/rhosqhorpickint
-        ugsrhosqhorpick[qindex]=intangle(gdet*denfactor*ug,**keywordsrhosqhorpick)/rhosqhorpickint
-        uradsrhosqhorpick[qindex]=intangle(gdet*denfactor*urad,**keywordsrhosqhorpick)/rhosqhorpickint
+        keywords={'which': diskcondition}
+        rhogenint=intangle(gdet*denfactor,**keywords)+tiny
+        rhosqhorpicks[qindex]=rhogenint
+        #maxrhosqhorpick2d=(denfactor*diskcondition).max(1)+tiny
+        #maxrhosqhorpick3d=np.empty_like(rho)
+        #for j in np.arange(0,ny):
+        #    maxrhosqhorpick3d[:,j,:] = maxrhosqhorpick2d
+        rhosrhosqhorpick[qindex]=intangle(gdet*denfactor*rho,**keywords)/rhogenint
+        ugsrhosqhorpick[qindex]=intangle(gdet*denfactor*ug,**keywords)/rhogenint
+        uradsrhosqhorpick[qindex]=intangle(gdet*denfactor*Erf,**keywords)/rhogenint
         # no restriction for velocity or field quantities! (as long as denfactor=1 this is good)
-        denfactor=1.0 + rholab*0.0
+        denfactor=1.0 + frholab()*0.0
         # don't restrict since fixed point in space related to disk but not entirely.  The bsq/rho condition would also remove the disk at inner radii even for H/R within hoverr3d that is mass-density weighted.
         diskcondition=diskcondition0*(1 + condmaxbsqorho*0.0)
-        keywordsrhosqhorpick={'which': diskcondition}
-        rhosqhorpickint=intangle(gdet*denfactor,**keywordsrhosqhorpick)+tiny
-        uu0rhosqhorpick[qindex]=intangle(gdet*myuu0()*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
-        vus1rhosqhorpick[qindex]=intangle(gdet*myuu1()*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
-        vuas1rhosqhorpick[qindex]=intangle(gdet*np.fabs(myuu1())*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
-        vus3rhosqhorpick[qindex]=intangle(gdet*myuu3()*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
-        vuas3rhosqhorpick[qindex]=intangle(gdet*np.fabs(myuu3())*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
-        vuasrotrhosqhorpick[qindex]=intangle(gdet*np.fabs(myuurot())*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
-        Bs1rhosqhorpick[qindex]=intangle(gdet*myB1()*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
-        Bas1rhosqhorpick[qindex]=intangle(gdet*np.fabs(myB1())*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
-        Bs2rhosqhorpick[qindex]=intangle(gdet*myB2()*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
-        Bas2rhosqhorpick[qindex]=intangle(gdet*np.fabs(myB2())*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
-        Bs3rhosqhorpick[qindex]=intangle(gdet*myB3()*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
-        Bas3rhosqhorpick[qindex]=intangle(gdet*np.fabs(myB3())*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
-        bs1rhosqhorpick[qindex]=intangle(gdet*mybu1()*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
-        bas1rhosqhorpick[qindex]=intangle(gdet*np.fabs(mybu1())*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
-        bs2rhosqhorpick[qindex]=intangle(gdet*mybu2()*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
-        bas2rhosqhorpick[qindex]=intangle(gdet*np.fabs(mybu2())*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
-        bs3rhosqhorpick[qindex]=intangle(gdet*mybu3()*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
-        bas3rhosqhorpick[qindex]=intangle(gdet*np.fabs(mybu3())*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
-        bsqrhosqhorpick[qindex]=intangle(gdet*bsq*denfactor,**keywordsrhosqhorpick)/rhosqhorpickint
+        keywords={'which': diskcondition}
+        rhogenint=intangle(gdet*denfactor,**keywords)+tiny
+        uu0rhosqhorpick[qindex]=intangle(gdet*myuu0()*denfactor,**keywords)/rhogenint
+        vus1rhosqhorpick[qindex]=intangle(gdet*myuu1()*denfactor,**keywords)/rhogenint
+        vuas1rhosqhorpick[qindex]=intangle(gdet*np.fabs(myuu1())*denfactor,**keywords)/rhogenint
+        vus3rhosqhorpick[qindex]=intangle(gdet*myuu3()*denfactor,**keywords)/rhogenint
+        vuas3rhosqhorpick[qindex]=intangle(gdet*np.fabs(myuu3())*denfactor,**keywords)/rhogenint
+        vuasrotrhosqhorpick[qindex]=intangle(gdet*np.fabs(myuurot())*denfactor,**keywords)/rhogenint
+        Bs1rhosqhorpick[qindex]=intangle(gdet*myB1()*denfactor,**keywords)/rhogenint
+        Bas1rhosqhorpick[qindex]=intangle(gdet*np.fabs(myB1())*denfactor,**keywords)/rhogenint
+        Bs2rhosqhorpick[qindex]=intangle(gdet*myB2()*denfactor,**keywords)/rhogenint
+        Bas2rhosqhorpick[qindex]=intangle(gdet*np.fabs(myB2())*denfactor,**keywords)/rhogenint
+        Bs3rhosqhorpick[qindex]=intangle(gdet*myB3()*denfactor,**keywords)/rhogenint
+        Bas3rhosqhorpick[qindex]=intangle(gdet*np.fabs(myB3())*denfactor,**keywords)/rhogenint
+        bs1rhosqhorpick[qindex]=intangle(gdet*mybu1()*denfactor,**keywords)/rhogenint
+        bas1rhosqhorpick[qindex]=intangle(gdet*np.fabs(mybu1())*denfactor,**keywords)/rhogenint
+        bs2rhosqhorpick[qindex]=intangle(gdet*mybu2()*denfactor,**keywords)/rhogenint
+        bas2rhosqhorpick[qindex]=intangle(gdet*np.fabs(mybu2())*denfactor,**keywords)/rhogenint
+        bs3rhosqhorpick[qindex]=intangle(gdet*mybu3()*denfactor,**keywords)/rhogenint
+        bas3rhosqhorpick[qindex]=intangle(gdet*np.fabs(mybu3())*denfactor,**keywords)/rhogenint
+        bsqrhosqhorpick[qindex]=intangle(gdet*bsq*denfactor,**keywords)/rhogenint
         #
         ##2h
-        keywords2h={'hoverr': 2*horval, 'which': diskcondition}
-        #denfactor=1.0 + rholab*0.0
-        #gdetint=intangle(gdet*denfactor,**keywords2h)+tiny
+        #keywords={'hoverr': 2*horval, 'which': diskcondition}
+        #denfactor=1.0 + frholab()*0.0
+        #gdetint=intangle(gdet*denfactor,**keywords)+tiny
         #gdetint2h[qindex]=gdetint
-        #rhos2h[qindex]=intangle(gdet*rho,**keywords2h)/gdetint
-        #ugs2h[qindex]=intangle(gdet*ug,**keywords2h)/gdetint
-        #uu02h[qindex]=intangle(gdet*myuu0(),**keywords2h)/gdetint
-        #vus12h[qindex]=intangle(gdet*myuu1(),**keywords2h)/gdetint
-        #vuas12h[qindex]=intangle(gdet*np.fabs(myuu1()),**keywords2h)/gdetint
-        #vus32h[qindex]=intangle(gdet*myuu3(),**keywords2h)/gdetint
-        #vuas32h[qindex]=intangle(gdet*np.fabs(myuu3()),**keywords2h)/gdetint
-        #vuasrot2h[qindex]=intangle(gdet*np.fabs(myuurot()),**keywords2h)/gdetint
-        #Bs12h[qindex]=intangle(gdet*myB1(),**keywords2h)/gdetint
-        #Bas12h[qindex]=intangle(np.abs(gdet*myB1()),**keywords2h)/gdetint
-        #Bs22h[qindex]=intangle(gdet*myB2(),**keywords2h)/gdetint
-        #Bas22h[qindex]=intangle(np.abs(gdet*myB2()),**keywords2h)/gdetint
-        #Bs32h[qindex]=intangle(gdet*myB3(),**keywords2h)/gdetint
-        #Bas32h[qindex]=intangle(np.abs(gdet*myB3()),**keywords2h)/gdetint
+        #rhos2h[qindex]=intangle(gdet*rho,**keywords)/gdetint
+        #ugs2h[qindex]=intangle(gdet*ug,**keywords)/gdetint
+        #uu02h[qindex]=intangle(gdet*myuu0(),**keywords)/gdetint
+        #vus12h[qindex]=intangle(gdet*myuu1(),**keywords)/gdetint
+        #vuas12h[qindex]=intangle(gdet*np.fabs(myuu1()),**keywords)/gdetint
+        #vus32h[qindex]=intangle(gdet*myuu3(),**keywords)/gdetint
+        #vuas32h[qindex]=intangle(gdet*np.fabs(myuu3()),**keywords)/gdetint
+        #vuasrot2h[qindex]=intangle(gdet*np.fabs(myuurot()),**keywords)/gdetint
+        #Bs12h[qindex]=intangle(gdet*myB1(),**keywords)/gdetint
+        #Bas12h[qindex]=intangle(np.abs(gdet*myB1()),**keywords)/gdetint
+        #Bs22h[qindex]=intangle(gdet*myB2(),**keywords)/gdetint
+        #Bas22h[qindex]=intangle(np.abs(gdet*myB2()),**keywords)/gdetint
+        #Bs32h[qindex]=intangle(gdet*myB3(),**keywords)/gdetint
+        #Bas32h[qindex]=intangle(np.abs(gdet*myB3()),**keywords)/gdetint
         ##4h
-        keywords4h={'hoverr': 4*horval, 'which': diskcondition}
-        #denfactor=1.0 + rholab*0.0
-        #gdetint=intangle(gdet*denfactor,**keywords4h)+tiny
+        #keywords={'hoverr': 4*horval, 'which': diskcondition}
+        #denfactor=1.0 + frholab()*0.0
+        #gdetint=intangle(gdet*denfactor,**keywords)+tiny
         #gdetint4h[qindex]=gdetint
-        #rhos4h[qindex]=intangle(gdet*rho,**keywords4h)/gdetint
-        #ugs4h[qindex]=intangle(gdet*ug,**keywords4h)/gdetint
-        #uu04h[qindex]=intangle(gdet*myuu0(),**keywords4h)/gdetint
-        #vus14h[qindex]=intangle(gdet*myuu1(),**keywords4h)/gdetint
-        #vuas14h[qindex]=intangle(gdet*np.fabs(myuu1()),**keywords4h)/gdetint
-        #vus34h[qindex]=intangle(gdet*myuu3(),**keywords4h)/gdetint
-        #vuas34h[qindex]=intangle(gdet*np.fabs(myuu3()),**keywords4h)/gdetint
-        #vuasrot4h[qindex]=intangle(gdet*np.fabs(myuurot()),**keywords4h)/gdetint
-        #Bs14h[qindex]=intangle(gdet*myB1(),**keywords4h)/gdetint
-        #Bas14h[qindex]=intangle(np.abs(gdet*myB1()),**keywords4h)/gdetint
-        #Bs24h[qindex]=intangle(gdet*myB2(),**keywords4h)/gdetint
-        #Bas24h[qindex]=intangle(np.abs(gdet*myB2()),**keywords4h)/gdetint
-        #Bs34h[qindex]=intangle(gdet*myB3(),**keywords4h)/gdetint
-        #Bas34h[qindex]=intangle(np.abs(gdet*myB3()),**keywords4h)/gdetint
+        #rhos4h[qindex]=intangle(gdet*rho,**keywords)/gdetint
+        #ugs4h[qindex]=intangle(gdet*ug,**keywords)/gdetint
+        #uu04h[qindex]=intangle(gdet*myuu0(),**keywords)/gdetint
+        #vus14h[qindex]=intangle(gdet*myuu1(),**keywords)/gdetint
+        #vuas14h[qindex]=intangle(gdet*np.fabs(myuu1()),**keywords)/gdetint
+        #vus34h[qindex]=intangle(gdet*myuu3(),**keywords)/gdetint
+        #vuas34h[qindex]=intangle(gdet*np.fabs(myuu3()),**keywords)/gdetint
+        #vuasrot4h[qindex]=intangle(gdet*np.fabs(myuurot()),**keywords)/gdetint
+        #Bs14h[qindex]=intangle(gdet*myB1(),**keywords)/gdetint
+        #Bas14h[qindex]=intangle(np.abs(gdet*myB1()),**keywords)/gdetint
+        #Bs24h[qindex]=intangle(gdet*myB2(),**keywords)/gdetint
+        #Bas24h[qindex]=intangle(np.abs(gdet*myB2()),**keywords)/gdetint
+        #Bs34h[qindex]=intangle(gdet*myB3(),**keywords)/gdetint
+        #Bas34h[qindex]=intangle(np.abs(gdet*myB3()),**keywords)/gdetint
         ##
         printusage()
         gc.collect()
@@ -12490,41 +12616,41 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         #############
         #2.0hor
         diskcondition=condmaxbsqorho
-        keywordshor={'hoverr': 2.0*hoverr3d, 'thetamid': thetamid3d, 'which': diskcondition}
-        denfactor=1.0 + rholab*0.0
-        gdetint=intangle(gdet*denfactor,**keywordshor) # gdet is 2D by default
+        keywords={'hoverr': 2.0*hoverr3d, 'thetamid': thetamid3d, 'which': diskcondition}
+        denfactor=1.0 + frholab()*0.0
+        gdetint=intangle(gdet*denfactor,**keywords) # gdet is 2D by default
         gdetinthor[qindex]=gdetint+tiny
-        rhoshor[qindex]=intangle(gdet*rho,**keywordshor)/gdetint
-        ugshor[qindex]=intangle(gdet*ug,**keywordshor)/gdetint
+        rhoshor[qindex]=intangle(gdet*rho,**keywords)/gdetint
+        ugshor[qindex]=intangle(gdet*ug,**keywords)/gdetint
         # no restriction for velocity or field quantities!
         #diskcondition=1 + condmaxbsqorho*0.0
         # no, should still restrict since this is choosing within 2H/R -- so focus is the disk!
         diskcondition=condmaxbsqorho
-        keywordshor={'hoverr': 2.0*hoverr3d, 'thetamid': thetamid3d, 'which': diskcondition}
-        gdetint=intangle(gdet*denfactor,**keywordshor)
+        keywords={'hoverr': 2.0*hoverr3d, 'thetamid': thetamid3d, 'which': diskcondition}
+        gdetint=intangle(gdet*denfactor,**keywords)
         gdetinthor[qindex]=gdetint+tiny
-        bsqshor[qindex]=intangle(gdet*bsq,**keywordshor)/gdetint
-        bsqorhoshor[qindex]=intangle(gdet*(bsq/rho),**keywordshor)/gdetint
-        bsqougshor[qindex]=intangle(gdet*(bsq/ug),**keywordshor)/gdetint
-        uu0hor[qindex]=intangle(gdet*myuu0(),**keywordshor)/gdetint
-        vus1hor[qindex]=intangle(gdet*myuu1(),**keywordshor)/gdetint
-        vuas1hor[qindex]=intangle(gdet*np.fabs(myuu1()),**keywordshor)/gdetint
-        vus3hor[qindex]=intangle(gdet*myuu3(),**keywordshor)/gdetint
-        vuas3hor[qindex]=intangle(gdet*np.fabs(myuu3()),**keywordshor)/gdetint
-        vuasrothor[qindex]=intangle(gdet*np.fabs(myuurot()),**keywordshor)/gdetint
-        Bs1hor[qindex]=intangle(gdet*myB1(),**keywordshor)/gdetint
-        Bas1hor[qindex]=intangle(np.abs(gdet*myB1()),**keywordshor)/gdetint
-        Bs2hor[qindex]=intangle(gdet*myB2(),**keywordshor)/gdetint
-        Bas2hor[qindex]=intangle(np.abs(gdet*myB2()),**keywordshor)/gdetint
-        Bs3hor[qindex]=intangle(gdet*myB3(),**keywordshor)/gdetint
-        Bas3hor[qindex]=intangle(np.abs(gdet*myB3()),**keywordshor)/gdetint
-        bs1hor[qindex]=intangle(gdet*mybu1(),**keywordshor)/gdetint
-        bas1hor[qindex]=intangle(np.abs(gdet*mybu1()),**keywordshor)/gdetint
-        bs2hor[qindex]=intangle(gdet*mybu2(),**keywordshor)/gdetint
-        bas2hor[qindex]=intangle(np.abs(gdet*mybu2()),**keywordshor)/gdetint
-        bs3hor[qindex]=intangle(gdet*mybu3(),**keywordshor)/gdetint
-        bas3hor[qindex]=intangle(np.abs(gdet*mybu3()),**keywordshor)/gdetint
-        bsqhor[qindex]=intangle(gdet*bsq,**keywordshor)/gdetint
+        bsqshor[qindex]=intangle(gdet*bsq,**keywords)/gdetint
+        bsqorhoshor[qindex]=intangle(gdet*(bsq/rho),**keywords)/gdetint
+        bsqougshor[qindex]=intangle(gdet*(bsq/ug),**keywords)/gdetint
+        uu0hor[qindex]=intangle(gdet*myuu0(),**keywords)/gdetint
+        vus1hor[qindex]=intangle(gdet*myuu1(),**keywords)/gdetint
+        vuas1hor[qindex]=intangle(gdet*np.fabs(myuu1()),**keywords)/gdetint
+        vus3hor[qindex]=intangle(gdet*myuu3(),**keywords)/gdetint
+        vuas3hor[qindex]=intangle(gdet*np.fabs(myuu3()),**keywords)/gdetint
+        vuasrothor[qindex]=intangle(gdet*np.fabs(myuurot()),**keywords)/gdetint
+        Bs1hor[qindex]=intangle(gdet*myB1(),**keywords)/gdetint
+        Bas1hor[qindex]=intangle(np.abs(gdet*myB1()),**keywords)/gdetint
+        Bs2hor[qindex]=intangle(gdet*myB2(),**keywords)/gdetint
+        Bas2hor[qindex]=intangle(np.abs(gdet*myB2()),**keywords)/gdetint
+        Bs3hor[qindex]=intangle(gdet*myB3(),**keywords)/gdetint
+        Bas3hor[qindex]=intangle(np.abs(gdet*myB3()),**keywords)/gdetint
+        bs1hor[qindex]=intangle(gdet*mybu1(),**keywords)/gdetint
+        bas1hor[qindex]=intangle(np.abs(gdet*mybu1()),**keywords)/gdetint
+        bs2hor[qindex]=intangle(gdet*mybu2(),**keywords)/gdetint
+        bas2hor[qindex]=intangle(np.abs(gdet*mybu2()),**keywords)/gdetint
+        bs3hor[qindex]=intangle(gdet*mybu3(),**keywords)/gdetint
+        bas3hor[qindex]=intangle(np.abs(gdet*mybu3()),**keywords)/gdetint
+        bsqhor[qindex]=intangle(gdet*bsq,**keywords)/gdetint
         #
         #
         #
@@ -12543,7 +12669,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         #
         print("pick out *at* r\sim 4M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         # for entire flow:
-        denfactor=1.0 + rholab*0.0
+        denfactor=1.0 + frholab()*0.0
         pickr=4.0
         spreadr=0.1*pickr
         rin=pickr-spreadr
@@ -12557,46 +12683,50 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         #
         diskcondition=condmaxbsqorho
         # and avoid averaging over warp by restricing phi range
-        keywordsrhosqrad4={'which': diskcondition}
-        rhosqrad4int=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor,**keywordsrhosqrad4)+tiny
-        rhosqrad4[qindex]=rhosqrad4int
-        maxrhosqrad42d=(denfactor*diskcondition).max(1)+tiny
-        maxrhosqrad43d=np.empty_like(rho)
-        for j in np.arange(0,ny):
-            maxrhosqrad43d[:,j,:] = maxrhosqrad42d
-        rhosrhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor*rho,**keywordsrhosqrad4)/rhosqrad4int
-        ugsrhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor*ug,**keywordsrhosqrad4)/rhosqrad4int
-        uradsrhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor*urad,**keywordsrhosqrad4)/rhosqrad4int
+        keywords={'which': diskcondition}
+        rhogenint=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor,**keywords)+tiny
+        rhosqrad4[qindex]=rhogenint
+        #maxrhosqrad42d=(denfactor*diskcondition).max(1)+tiny
+        #maxrhosqrad43d=np.empty_like(rho)
+        #for j in np.arange(0,ny):
+        #    maxrhosqrad43d[:,j,:] = maxrhosqrad42d
+        rhosrhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor*rho,**keywords)/rhogenint
+        ugsrhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor*ug,**keywords)/rhogenint
+        uradsrhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor*Erf,**keywords)/rhogenint
         # no restriction for velocity or field quantities! (as long as denfactor=1 this is good)
-        denfactor=1.0 + rholab*0.0
+        denfactor=1.0 + frholab()*0.0
         diskcondition=(1 + condmaxbsqorho*0.0)
-        keywordsrhosqrad4={'which': diskcondition}
-        rhosqrad4int=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor,**keywordsrhosqrad4)+tiny
-        uu0rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myuu0()*denfactor,**keywordsrhosqrad4)/rhosqrad4int
-        #uu0rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor*uu[0],**keywordsrhosqrad4)/rhosqrad4int
-        vus1rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myuu1()*denfactor,**keywordsrhosqrad4)/rhosqrad4int
-        vuas1rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myuu1())*denfactor,**keywordsrhosqrad4)/rhosqrad4int
-        vus3rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myuu3()*denfactor,**keywordsrhosqrad4)/rhosqrad4int
-        vuas3rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myuu3())*denfactor,**keywordsrhosqrad4)/rhosqrad4int
-        vuasrotrhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myuurot())*denfactor,**keywordsrhosqrad4)/rhosqrad4int
-        Bs1rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myB1()*denfactor,**keywordsrhosqrad4)/rhosqrad4int
-        Bas1rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myB1())*denfactor,**keywordsrhosqrad4)/rhosqrad4int
-        Bs2rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myB2()*denfactor,**keywordsrhosqrad4)/rhosqrad4int
-        Bas2rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myB2())*denfactor,**keywordsrhosqrad4)/rhosqrad4int
-        Bs3rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myB3()*denfactor,**keywordsrhosqrad4)/rhosqrad4int
-        Bas3rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myB3())*denfactor,**keywordsrhosqrad4)/rhosqrad4int
-        bs1rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*mybu1()*denfactor,**keywordsrhosqrad4)/rhosqrad4int
-        bas1rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(mybu1())*denfactor,**keywordsrhosqrad4)/rhosqrad4int
-        bs2rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*mybu2()*denfactor,**keywordsrhosqrad4)/rhosqrad4int
-        bas2rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(mybu2())*denfactor,**keywordsrhosqrad4)/rhosqrad4int
-        bs3rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*mybu3()*denfactor,**keywordsrhosqrad4)/rhosqrad4int
-        bas3rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(mybu3())*denfactor,**keywordsrhosqrad4)/rhosqrad4int
-        bsqrhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*bsq*denfactor,**keywordsrhosqrad4)/rhosqrad4int
+        keywords={'which': diskcondition}
+        rhogenint=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor,**keywords)+tiny
+        uu0rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myuu0()*denfactor,**keywords)/rhogenint
+        #uu0rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor*uu[0],**keywords)/rhogenint
+        vus1rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myuu1()*denfactor,**keywords)/rhogenint
+        vuas1rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myuu1())*denfactor,**keywords)/rhogenint
+        vus3rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myuu3()*denfactor,**keywords)/rhogenint
+        vuas3rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myuu3())*denfactor,**keywords)/rhogenint
+        vuasrotrhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myuurot())*denfactor,**keywords)/rhogenint
+        Bs1rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myB1()*denfactor,**keywords)/rhogenint
+        Bas1rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myB1())*denfactor,**keywords)/rhogenint
+        Bs2rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myB2()*denfactor,**keywords)/rhogenint
+        Bas2rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myB2())*denfactor,**keywords)/rhogenint
+        Bs3rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myB3()*denfactor,**keywords)/rhogenint
+        Bas3rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myB3())*denfactor,**keywords)/rhogenint
+        bs1rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*mybu1()*denfactor,**keywords)/rhogenint
+        bas1rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(mybu1())*denfactor,**keywords)/rhogenint
+        bs2rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*mybu2()*denfactor,**keywords)/rhogenint
+        bas2rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(mybu2())*denfactor,**keywords)/rhogenint
+        bs3rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*mybu3()*denfactor,**keywords)/rhogenint
+        bas3rhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(mybu3())*denfactor,**keywords)/rhogenint
+        bsqrhosqrad4[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*bsq*denfactor,**keywords)/rhogenint
         #
+        #
+        printusage()
+        gc.collect()
+        printusage()
         #
         print("pick out *at* r\sim 8M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         # for entire flow:
-        denfactor=1.0 + rholab*0.0
+        denfactor=1.0 + frholab()*0.0
         pickr=8.0
         spreadr=0.1*pickr
         rin=pickr-spreadr
@@ -12610,46 +12740,51 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         #
         diskcondition=condmaxbsqorho
         # and avoid averaging over warp by restricing phi range
-        keywordsrhosqrad8={'which': diskcondition}
-        rhosqrad8int=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor,**keywordsrhosqrad8)+tiny
-        rhosqrad8[qindex]=rhosqrad8int
-        maxrhosqrad82d=(denfactor*diskcondition).max(1)+tiny
-        maxrhosqrad83d=np.empty_like(rho)
-        for j in np.arange(0,ny):
-            maxrhosqrad83d[:,j,:] = maxrhosqrad82d
-        rhosrhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor*rho,**keywordsrhosqrad8)/rhosqrad8int
-        ugsrhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor*ug,**keywordsrhosqrad8)/rhosqrad8int
-        uradsrhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor*urad,**keywordsrhosqrad8)/rhosqrad8int
+        keywords={'which': diskcondition}
+        rhogenint=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor,**keywords)+tiny
+        rhosqrad8[qindex]=rhogenint
+        #maxrhosqrad82d=(denfactor*diskcondition).max(1)+tiny
+        #maxrhosqrad83d=np.empty_like(rho)
+        #for j in np.arange(0,ny):
+        #    maxrhosqrad83d[:,j,:] = maxrhosqrad82d
+        rhosrhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor*rho,**keywords)/rhogenint
+        ugsrhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor*ug,**keywords)/rhogenint
+        uradsrhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor*Erf,**keywords)/rhogenint
         # no restriction for velocity or field quantities! (as long as denfactor=1 this is good)
-        denfactor=1.0 + rholab*0.0
+        denfactor=1.0 + frholab()*0.0
         diskcondition=(1 + condmaxbsqorho*0.0)
-        keywordsrhosqrad8={'which': diskcondition}
-        rhosqrad8int=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor,**keywordsrhosqrad8)+tiny
-        uu0rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myuu0()*denfactor,**keywordsrhosqrad8)/rhosqrad8int
-        #uu0rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor*uu[0],**keywordsrhosqrad8)/rhosqrad8int
-        vus1rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myuu1()*denfactor,**keywordsrhosqrad8)/rhosqrad8int
-        vuas1rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myuu1())*denfactor,**keywordsrhosqrad8)/rhosqrad8int
-        vus3rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myuu3()*denfactor,**keywordsrhosqrad8)/rhosqrad8int
-        vuas3rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myuu3())*denfactor,**keywordsrhosqrad8)/rhosqrad8int
-        vuasrotrhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myuurot())*denfactor,**keywordsrhosqrad8)/rhosqrad8int
-        Bs1rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myB1()*denfactor,**keywordsrhosqrad8)/rhosqrad8int
-        Bas1rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myB1())*denfactor,**keywordsrhosqrad8)/rhosqrad8int
-        Bs2rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myB2()*denfactor,**keywordsrhosqrad8)/rhosqrad8int
-        Bas2rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myB2())*denfactor,**keywordsrhosqrad8)/rhosqrad8int
-        Bs3rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myB3()*denfactor,**keywordsrhosqrad8)/rhosqrad8int
-        Bas3rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myB3())*denfactor,**keywordsrhosqrad8)/rhosqrad8int
-        bs1rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*mybu1()*denfactor,**keywordsrhosqrad8)/rhosqrad8int
-        bas1rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(mybu1())*denfactor,**keywordsrhosqrad8)/rhosqrad8int
-        bs2rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*mybu2()*denfactor,**keywordsrhosqrad8)/rhosqrad8int
-        bas2rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(mybu2())*denfactor,**keywordsrhosqrad8)/rhosqrad8int
-        bs3rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*mybu3()*denfactor,**keywordsrhosqrad8)/rhosqrad8int
-        bas3rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(mybu3())*denfactor,**keywordsrhosqrad8)/rhosqrad8int
-        bsqrhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*bsq*denfactor,**keywordsrhosqrad8)/rhosqrad8int
+        keywords={'which': diskcondition}
+        rhogenint=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor,**keywords)+tiny
+        uu0rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myuu0()*denfactor,**keywords)/rhogenint
+        #uu0rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor*uu[0],**keywords)/rhogenint
+        vus1rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myuu1()*denfactor,**keywords)/rhogenint
+        vuas1rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myuu1())*denfactor,**keywords)/rhogenint
+        vus3rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myuu3()*denfactor,**keywords)/rhogenint
+        vuas3rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myuu3())*denfactor,**keywords)/rhogenint
+        vuasrotrhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myuurot())*denfactor,**keywords)/rhogenint
+        Bs1rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myB1()*denfactor,**keywords)/rhogenint
+        Bas1rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myB1())*denfactor,**keywords)/rhogenint
+        Bs2rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myB2()*denfactor,**keywords)/rhogenint
+        Bas2rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myB2())*denfactor,**keywords)/rhogenint
+        Bs3rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myB3()*denfactor,**keywords)/rhogenint
+        Bas3rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myB3())*denfactor,**keywords)/rhogenint
+        bs1rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*mybu1()*denfactor,**keywords)/rhogenint
+        bas1rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(mybu1())*denfactor,**keywords)/rhogenint
+        bs2rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*mybu2()*denfactor,**keywords)/rhogenint
+        bas2rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(mybu2())*denfactor,**keywords)/rhogenint
+        bs3rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*mybu3()*denfactor,**keywords)/rhogenint
+        bas3rhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(mybu3())*denfactor,**keywords)/rhogenint
+        bsqrhosqrad8[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*bsq*denfactor,**keywords)/rhogenint
         #
+        #
+        #
+        printusage()
+        gc.collect()
+        printusage()
         #
         print("pick out *at* r\sim 30M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         # for entire flow:
-        denfactor=1.0 + rholab*0.0
+        denfactor=1.0 + frholab()*0.0
         pickr=30.0
         spreadr=0.1*pickr
         rin=pickr-spreadr
@@ -12663,41 +12798,41 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         #
         diskcondition=condmaxbsqorho
         # and avoid averaging over warp by restricing phi range
-        keywordsrhosqrad30={'which': diskcondition}
-        rhosqrad30int=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor,**keywordsrhosqrad30)+tiny
-        rhosqrad30[qindex]=rhosqrad30int
-        maxrhosqrad302d=(denfactor*diskcondition).max(1)+tiny
-        maxrhosqrad303d=np.empty_like(rho)
-        for j in np.arange(0,ny):
-            maxrhosqrad303d[:,j,:] = maxrhosqrad302d
-        rhosrhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor*rho,**keywordsrhosqrad30)/rhosqrad30int
-        ugsrhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor*ug,**keywordsrhosqrad30)/rhosqrad30int
-        uradsrhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor*urad,**keywordsrhosqrad30)/rhosqrad30int
+        keywords={'which': diskcondition}
+        rhogenint=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor,**keywords)+tiny
+        rhosqrad30[qindex]=rhogenint
+        #maxrhosqrad302d=(denfactor*diskcondition).max(1)+tiny
+        #maxrhosqrad303d=np.empty_like(rho)
+        #for j in np.arange(0,ny):
+        #    maxrhosqrad303d[:,j,:] = maxrhosqrad302d
+        rhosrhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor*rho,**keywords)/rhogenint
+        ugsrhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor*ug,**keywords)/rhogenint
+        uradsrhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor*Erf,**keywords)/rhogenint
         # no restriction for velocity or field quantities! (as long as denfactor=1 this is good)
-        denfactor=1.0 + rholab*0.0
+        denfactor=1.0 + frholab()*0.0
         diskcondition=(1 + condmaxbsqorho*0.0)
-        keywordsrhosqrad30={'which': diskcondition}
-        rhosqrad30int=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor,**keywordsrhosqrad30)+tiny
-        uu0rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myuu0()*denfactor,**keywordsrhosqrad30)/rhosqrad30int
-        #uu0rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor*uu[0],**keywordsrhosqrad30)/rhosqrad30int
-        vus1rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myuu1()*denfactor,**keywordsrhosqrad30)/rhosqrad30int
-        vuas1rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myuu1())*denfactor,**keywordsrhosqrad30)/rhosqrad30int
-        vus3rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myuu3()*denfactor,**keywordsrhosqrad30)/rhosqrad30int
-        vuas3rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myuu3())*denfactor,**keywordsrhosqrad30)/rhosqrad30int
-        vuasrotrhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myuurot())*denfactor,**keywordsrhosqrad30)/rhosqrad30int
-        Bs1rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myB1()*denfactor,**keywordsrhosqrad30)/rhosqrad30int
-        Bas1rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myB1())*denfactor,**keywordsrhosqrad30)/rhosqrad30int
-        Bs2rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myB2()*denfactor,**keywordsrhosqrad30)/rhosqrad30int
-        Bas2rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myB2())*denfactor,**keywordsrhosqrad30)/rhosqrad30int
-        Bs3rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myB3()*denfactor,**keywordsrhosqrad30)/rhosqrad30int
-        Bas3rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myB3())*denfactor,**keywordsrhosqrad30)/rhosqrad30int
-        bs1rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*mybu1()*denfactor,**keywordsrhosqrad30)/rhosqrad30int
-        bas1rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(mybu1())*denfactor,**keywordsrhosqrad30)/rhosqrad30int
-        bs2rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*mybu2()*denfactor,**keywordsrhosqrad30)/rhosqrad30int
-        bas2rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(mybu2())*denfactor,**keywordsrhosqrad30)/rhosqrad30int
-        bs3rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*mybu3()*denfactor,**keywordsrhosqrad30)/rhosqrad30int
-        bas3rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(mybu3())*denfactor,**keywordsrhosqrad30)/rhosqrad30int
-        bsqrhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*bsq*denfactor,**keywordsrhosqrad30)/rhosqrad30int
+        keywords={'which': diskcondition}
+        rhogenint=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor,**keywords)+tiny
+        uu0rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myuu0()*denfactor,**keywords)/rhogenint
+        #uu0rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*denfactor*uu[0],**keywords)/rhogenint
+        vus1rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myuu1()*denfactor,**keywords)/rhogenint
+        vuas1rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myuu1())*denfactor,**keywords)/rhogenint
+        vus3rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myuu3()*denfactor,**keywords)/rhogenint
+        vuas3rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myuu3())*denfactor,**keywords)/rhogenint
+        vuasrotrhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myuurot())*denfactor,**keywords)/rhogenint
+        Bs1rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myB1()*denfactor,**keywords)/rhogenint
+        Bas1rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myB1())*denfactor,**keywords)/rhogenint
+        Bs2rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myB2()*denfactor,**keywords)/rhogenint
+        Bas2rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myB2())*denfactor,**keywords)/rhogenint
+        Bs3rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*myB3()*denfactor,**keywords)/rhogenint
+        Bas3rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(myB3())*denfactor,**keywords)/rhogenint
+        bs1rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*mybu1()*denfactor,**keywords)/rhogenint
+        bas1rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(mybu1())*denfactor,**keywords)/rhogenint
+        bs2rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*mybu2()*denfactor,**keywords)/rhogenint
+        bas2rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(mybu2())*denfactor,**keywords)/rhogenint
+        bs3rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*mybu3()*denfactor,**keywords)/rhogenint
+        bas3rhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*np.fabs(mybu3())*denfactor,**keywords)/rhogenint
+        bsqrhosqrad30[qindex]=intrpvsh(rin=rin,rout=rout,phiin=phiin,phiout=phiout,qty=gdet*bsq*denfactor,**keywords)/rhogenint
         #
         #
         #
@@ -12713,8 +12848,8 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         denomdrho = lambda : avg_rho
         dug = lambda : (ug-avg_ug)
         denomdug = lambda : avg_ug
-        durad = lambda : (urad-avg_urad)
-        denomdurad = lambda : avg_urad
+        durad = lambda : (Erf-avg_Erf)
+        denomdurad = lambda : avg_Erf
         duu0 = lambda : (myauu0()-avg_myauu0())
         denomduu0 = lambda : avg_myauu0()
         duu3 = lambda : (myauu3()-avg_myauu3())
@@ -12753,107 +12888,122 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             print("DISK+CORONA ONLY (never jet)" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
             #
             print("pick out *at* r\sim r+" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-            denfactor=1.0 + rholab*0.0
+            denfactor=1.0 + frholab()*0.0
             pickr=rhor
             spreadr=0.1*pickr
             rin=max(pickr-spreadr,1.01*Rin)
             rout=pickr+spreadr
             print("rin=%g rout=%g Rin=%g rhor=%g r0=%g" % (rin,rout,Rin,rhor,r[0,0,0]))
             diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
-            keywordsrhosq_diskcorona_phipow_radhor={'which': diskcondition}
+            keywords={'which': diskcondition}
             maxbsqorho=condmaxbsqorhorhs[iofr(pickr),0,0] # good for r=rhor
-            rhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_radhor)
-            rhosrhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*rho,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_radhor)
-            bsqrhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*bsq*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_radhor)
+            rhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=0,**keywords)
+            rhosrhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*rho,qtypaper=1,diskorjet=0,**keywords)
+            bsqrhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*bsq*denfactor,qtypaper=1,diskorjet=0,**keywords)
             if doreducedpowervsnlm==0:
-                ugsrhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*ug,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_radhor)
-                uradsrhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*urad,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_radhor)
-                uu0rhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuu0()*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_radhor)
-                vuas3rhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuu3()*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_radhor)
-                vuasrotrhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuurot()*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_radhor)
-                bas1rhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu1()*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_radhor)
-                bas2rhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu2()*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_radhor)
-                bas3rhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu3()*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_radhor)
-                FMrhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(-rho*uu[1])*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_radhor)
-                FEMArhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudMA(1,0))*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_radhor)
-                FEEMrhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudEM(1,0))*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_radhor)
+                ugsrhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*ug,qtypaper=1,diskorjet=0,**keywords)
+                uradsrhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*Erf,qtypaper=1,diskorjet=0,**keywords)
+                uu0rhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuu0()*denfactor,qtypaper=0,diskorjet=0,**keywords)
+                vuas3rhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuu3()*denfactor,qtypaper=0,diskorjet=0,**keywords)
+                vuasrotrhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuurot()*denfactor,qtypaper=0,diskorjet=0,**keywords)
+                bas1rhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu1()*denfactor,qtypaper=1,diskorjet=0,**keywords)
+                bas2rhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu2()*denfactor,qtypaper=0,diskorjet=0,**keywords)
+                bas3rhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu3()*denfactor,qtypaper=0,diskorjet=0,**keywords)
+                FMrhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(-rho*uu[1])*denfactor,qtypaper=1,diskorjet=0,**keywords)
+                FEMArhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudMA(1,0))*denfactor,qtypaper=0,diskorjet=0,**keywords)
+                FEEMrhosq_diskcorona_phipow_radhor[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudEM(1,0))*denfactor,qtypaper=1,diskorjet=0,**keywords)
             #
+            #
+            #
+            printusage()
+            gc.collect()
+            printusage()
             #
             print("pick out *at* r\sim 4M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-            denfactor=1.0 + rholab*0.0
+            denfactor=1.0 + frholab()*0.0
             pickr=4.0
             spreadr=0.1*pickr
             rin=pickr-spreadr
             rout=pickr+spreadr
             diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
-            keywordsrhosq_diskcorona_phipow_rad4={'which': diskcondition}
+            keywords={'which': diskcondition}
             maxbsqorho=condmaxbsqorhorhs[iofr(pickr),0,0] # good for r=4
-            rhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad4)
-            rhosrhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*rho,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad4)
-            bsqrhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*bsq*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad4)
+            rhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=0,**keywords)
+            rhosrhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*rho,qtypaper=1,diskorjet=0,**keywords)
+            bsqrhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*bsq*denfactor,qtypaper=1,diskorjet=0,**keywords)
             if doreducedpowervsnlm==0:
-                ugsrhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*ug,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad4)
-                uradsrhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*urad,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad4)
-                uu0rhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuu0()*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad4)
-                vuas3rhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuu3()*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad4)
-                vuasrotrhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuurot()*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad4)
-                bas1rhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu1()*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad4)
-                bas2rhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu2()*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad4)
-                bas3rhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu3()*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad4)
-                FMrhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(-rho*uu[1])*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad4)
-                FEMArhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudMA(1,0))*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad4)
-                FEEMrhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudEM(1,0))*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad4)
+                ugsrhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*ug,qtypaper=1,diskorjet=0,**keywords)
+                uradsrhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*Erf,qtypaper=1,diskorjet=0,**keywords)
+                uu0rhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuu0()*denfactor,qtypaper=0,diskorjet=0,**keywords)
+                vuas3rhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuu3()*denfactor,qtypaper=0,diskorjet=0,**keywords)
+                vuasrotrhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuurot()*denfactor,qtypaper=0,diskorjet=0,**keywords)
+                bas1rhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu1()*denfactor,qtypaper=1,diskorjet=0,**keywords)
+                bas2rhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu2()*denfactor,qtypaper=0,diskorjet=0,**keywords)
+                bas3rhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu3()*denfactor,qtypaper=0,diskorjet=0,**keywords)
+                FMrhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(-rho*uu[1])*denfactor,qtypaper=1,diskorjet=0,**keywords)
+                FEMArhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudMA(1,0))*denfactor,qtypaper=0,diskorjet=0,**keywords)
+                FEEMrhosq_diskcorona_phipow_rad4[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudEM(1,0))*denfactor,qtypaper=1,diskorjet=0,**keywords)
             #
+            #
+            #
+            printusage()
+            gc.collect()
+            printusage()
             #
             print("pick out *at* r\sim 8M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-            denfactor=1.0 + rholab*0.0
+            denfactor=1.0 + frholab()*0.0
             pickr=8.0
             spreadr=0.1*pickr
             rin=pickr-spreadr
             rout=pickr+spreadr
             diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
-            keywordsrhosq_diskcorona_phipow_rad8={'which': diskcondition}
+            keywords={'which': diskcondition}
             maxbsqorho=condmaxbsqorhorhs[iofr(pickr),0,0] # good for r=8
-            rhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad8)
-            rhosrhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*rho,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad8)
-            bsqrhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*bsq*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad8)
+            rhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=0,**keywords)
+            rhosrhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*rho,qtypaper=1,diskorjet=0,**keywords)
+            bsqrhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*bsq*denfactor,qtypaper=1,diskorjet=0,**keywords)
             if doreducedpowervsnlm==0:
-                ugsrhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*ug,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad8)
-                uradsrhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*urad,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad8)
-                uu0rhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuu0()*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad8)
-                vuas3rhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuu3()*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad8)
-                vuasrotrhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuurot()*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad8)
-                bas1rhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu1()*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad8)
-                bas2rhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu2()*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad8)
-                bas3rhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu3()*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad8)
-                FMrhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(-rho*uu[1])*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad8)
-                FEMArhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudMA(1,0))*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad8)
-                FEEMrhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudEM(1,0))*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad8)
+                ugsrhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*ug,qtypaper=1,diskorjet=0,**keywords)
+                uradsrhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*Erf,qtypaper=1,diskorjet=0,**keywords)
+                uu0rhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuu0()*denfactor,qtypaper=0,diskorjet=0,**keywords)
+                vuas3rhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuu3()*denfactor,qtypaper=0,diskorjet=0,**keywords)
+                vuasrotrhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuurot()*denfactor,qtypaper=0,diskorjet=0,**keywords)
+                bas1rhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu1()*denfactor,qtypaper=1,diskorjet=0,**keywords)
+                bas2rhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu2()*denfactor,qtypaper=0,diskorjet=0,**keywords)
+                bas3rhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu3()*denfactor,qtypaper=0,diskorjet=0,**keywords)
+                FMrhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(-rho*uu[1])*denfactor,qtypaper=1,diskorjet=0,**keywords)
+                FEMArhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudMA(1,0))*denfactor,qtypaper=0,diskorjet=0,**keywords)
+                FEEMrhosq_diskcorona_phipow_rad8[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudEM(1,0))*denfactor,qtypaper=1,diskorjet=0,**keywords)
+            #
+            #
+            printusage()
+            gc.collect()
+            printusage()
             #
             print("pick out *at* r\sim 30M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-            denfactor=1.0 + rholab*0.0
+            denfactor=1.0 + frholab()*0.0
             pickr=30.0
             spreadr=0.1*pickr
             rin=pickr-spreadr
             rout=pickr+spreadr
             diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
-            keywordsrhosq_diskcorona_phipow_rad30={'which': diskcondition}
+            keywords={'which': diskcondition}
             maxbsqorho=condmaxbsqorhorhs[iofr(pickr),0,0] # good for r=30
-            rhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad30)
-            rhosrhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*rho,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad30)
-            bsqrhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*bsq*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad30)
+            rhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=0,**keywords)
+            rhosrhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*rho,qtypaper=1,diskorjet=0,**keywords)
+            bsqrhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*bsq*denfactor,qtypaper=1,diskorjet=0,**keywords)
             if doreducedpowervsnlm==0:
-                ugsrhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*ug,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad30)
-                uradsrhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*urad,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad30)
-                uu0rhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuu0()*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad30)
-                vuas3rhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuu3()*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad30)
-                vuasrotrhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuurot()*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad30)
-                bas1rhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu1()*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad30)
-                bas2rhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu2()*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad30)
-                bas3rhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu3()*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad30)
-                FMrhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(-rho*uu[1])*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad30)
-                FEMArhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudMA(1,0))*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad30)
-                FEEMrhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudEM(1,0))*denfactor,qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_phipow_rad30)
+                ugsrhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*ug,qtypaper=1,diskorjet=0,**keywords)
+                uradsrhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*Erf,qtypaper=1,diskorjet=0,**keywords)
+                uu0rhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuu0()*denfactor,qtypaper=0,diskorjet=0,**keywords)
+                vuas3rhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuu3()*denfactor,qtypaper=0,diskorjet=0,**keywords)
+                vuasrotrhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*myuurot()*denfactor,qtypaper=0,diskorjet=0,**keywords)
+                bas1rhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu1()*denfactor,qtypaper=1,diskorjet=0,**keywords)
+                bas2rhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu2()*denfactor,qtypaper=0,diskorjet=0,**keywords)
+                bas3rhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*mybu3()*denfactor,qtypaper=0,diskorjet=0,**keywords)
+                FMrhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(-rho*uu[1])*denfactor,qtypaper=1,diskorjet=0,**keywords)
+                FEMArhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudMA(1,0))*denfactor,qtypaper=0,diskorjet=0,**keywords)
+                FEEMrhosq_diskcorona_phipow_rad30[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudEM(1,0))*denfactor,qtypaper=1,diskorjet=0,**keywords)
             #
             #
             #
@@ -12870,106 +13020,121 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             print("Jet ONLY (never DISK+CORONA)" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
             #
             print("pick out *at* r\sim 4M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-            denfactor=1.0 + rholab*0.0
+            denfactor=1.0 + frholab()*0.0
             pickr=rhor
             spreadr=0.1*pickr
             rin=max(pickr-spreadr,1.01*Rin)
             rout=pickr+spreadr
             diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
-            keywordsrhosq_jet_phipow_radhor={'which': diskcondition}
+            keywords={'which': diskcondition}
             minbsqorho=condmaxbsqorhorhs[iofr(pickr),0,0] # good for r=rhor
-            rhosq_jet_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_radhor)
-            rhosrhosq_jet_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*rho,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_radhor)
-            bsqrhosq_jet_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*bsq*denfactor,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_radhor)
+            rhosq_jet_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=1,**keywords)
+            rhosrhosq_jet_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*rho,qtypaper=1,diskorjet=1,**keywords)
+            bsqrhosq_jet_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*bsq*denfactor,qtypaper=1,diskorjet=1,**keywords)
             if doreducedpowervsnlm==0:
-                ugsrhosq_jet_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*ug,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_radhor)
-                uradsrhosq_jet_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*urad,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_radhor)
-                uu0rhosq_jet_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuu0()*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_radhor)
-                vuas3rhosq_jet_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuu3()*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_radhor)
-                vuasrotrhosq_jet_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuurot()*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_radhor)
-                bas1rhosq_jet_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu1()*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_radhor)
-                bas2rhosq_jet_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu2()*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_radhor)
-                bas3rhosq_jet_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu3()*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_radhor)
-                FMrhosq_jet_phipow_radhor[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(-rho*uu[1])*denfactor,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_radhor)
-                FEMArhosq_jet_phipow_radhor[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudMA(1,0))*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_radhor)
-                FEEMrhosq_jet_phipow_radhor[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudEM(1,0))*denfactor,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_radhor)
+                ugsrhosq_jet_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*ug,qtypaper=1,diskorjet=1,**keywords)
+                uradsrhosq_jet_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*Erf,qtypaper=1,diskorjet=1,**keywords)
+                uu0rhosq_jet_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuu0()*denfactor,qtypaper=0,diskorjet=1,**keywords)
+                vuas3rhosq_jet_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuu3()*denfactor,qtypaper=0,diskorjet=1,**keywords)
+                vuasrotrhosq_jet_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuurot()*denfactor,qtypaper=0,diskorjet=1,**keywords)
+                bas1rhosq_jet_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu1()*denfactor,qtypaper=0,diskorjet=1,**keywords)
+                bas2rhosq_jet_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu2()*denfactor,qtypaper=0,diskorjet=1,**keywords)
+                bas3rhosq_jet_phipow_radhor[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu3()*denfactor,qtypaper=0,diskorjet=1,**keywords)
+                FMrhosq_jet_phipow_radhor[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(-rho*uu[1])*denfactor,qtypaper=1,diskorjet=1,**keywords)
+                FEMArhosq_jet_phipow_radhor[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudMA(1,0))*denfactor,qtypaper=0,diskorjet=1,**keywords)
+                FEEMrhosq_jet_phipow_radhor[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudEM(1,0))*denfactor,qtypaper=1,diskorjet=1,**keywords)
             #
+            #
+            #
+            printusage()
+            gc.collect()
+            printusage()
             #
             print("pick out *at* r\sim 4M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-            denfactor=1.0 + rholab*0.0
+            denfactor=1.0 + frholab()*0.0
             pickr=4.0
             spreadr=0.1*pickr
             rin=pickr-spreadr
             rout=pickr+spreadr
             diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
-            keywordsrhosq_jet_phipow_rad4={'which': diskcondition}
+            keywords={'which': diskcondition}
             minbsqorho=condmaxbsqorhorhs[iofr(pickr),0,0] # good for r=4
-            rhosq_jet_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad4)
-            rhosrhosq_jet_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*rho,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_rad4)
-            bsqrhosq_jet_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*bsq*denfactor,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_rad4)
+            rhosq_jet_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=1,**keywords)
+            rhosrhosq_jet_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*rho,qtypaper=1,diskorjet=1,**keywords)
+            bsqrhosq_jet_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*bsq*denfactor,qtypaper=1,diskorjet=1,**keywords)
             if doreducedpowervsnlm==0:
-                ugsrhosq_jet_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*ug,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_rad4)
-                uradsrhosq_jet_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*urad,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_rad4)
-                uu0rhosq_jet_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuu0()*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad4)
-                vuas3rhosq_jet_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuu3()*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad4)
-                vuasrotrhosq_jet_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuurot()*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad4)
-                bas1rhosq_jet_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu1()*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad4)
-                bas2rhosq_jet_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu2()*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad4)
-                bas3rhosq_jet_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu3()*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad4)
-                FMrhosq_jet_phipow_rad4[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(-rho*uu[1])*denfactor,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_rad4)
-                FEMArhosq_jet_phipow_rad4[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudMA(1,0))*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad4)
-                FEEMrhosq_jet_phipow_rad4[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudEM(1,0))*denfactor,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_rad4)
+                ugsrhosq_jet_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*ug,qtypaper=1,diskorjet=1,**keywords)
+                uradsrhosq_jet_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*Erf,qtypaper=1,diskorjet=1,**keywords)
+                uu0rhosq_jet_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuu0()*denfactor,qtypaper=0,diskorjet=1,**keywords)
+                vuas3rhosq_jet_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuu3()*denfactor,qtypaper=0,diskorjet=1,**keywords)
+                vuasrotrhosq_jet_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuurot()*denfactor,qtypaper=0,diskorjet=1,**keywords)
+                bas1rhosq_jet_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu1()*denfactor,qtypaper=0,diskorjet=1,**keywords)
+                bas2rhosq_jet_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu2()*denfactor,qtypaper=0,diskorjet=1,**keywords)
+                bas3rhosq_jet_phipow_rad4[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu3()*denfactor,qtypaper=0,diskorjet=1,**keywords)
+                FMrhosq_jet_phipow_rad4[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(-rho*uu[1])*denfactor,qtypaper=1,diskorjet=1,**keywords)
+                FEMArhosq_jet_phipow_rad4[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudMA(1,0))*denfactor,qtypaper=0,diskorjet=1,**keywords)
+                FEEMrhosq_jet_phipow_rad4[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudEM(1,0))*denfactor,qtypaper=1,diskorjet=1,**keywords)
             #
+            #
+            #
+            printusage()
+            gc.collect()
+            printusage()
             #
             print("pick out *at* r\sim 8M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-            denfactor=1.0 + rholab*0.0
+            denfactor=1.0 + frholab()*0.0
             pickr=8.0
             spreadr=0.1*pickr
             rin=pickr-spreadr
             rout=pickr+spreadr
             diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
-            keywordsrhosq_jet_phipow_rad8={'which': diskcondition}
+            keywords={'which': diskcondition}
             minbsqorho=condmaxbsqorhorhs[iofr(pickr),0,0] # good for r=8
-            rhosq_jet_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad8)
-            rhosrhosq_jet_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*rho,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_rad8)
-            bsqrhosq_jet_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*bsq*denfactor,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_rad8)
+            rhosq_jet_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=1,**keywords)
+            rhosrhosq_jet_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*rho,qtypaper=1,diskorjet=1,**keywords)
+            bsqrhosq_jet_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*bsq*denfactor,qtypaper=1,diskorjet=1,**keywords)
             if doreducedpowervsnlm==0:
-                ugsrhosq_jet_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*ug,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_rad8)
-                uradsrhosq_jet_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*urad,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_rad8)
-                uu0rhosq_jet_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuu0()*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad8)
-                vuas3rhosq_jet_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuu3()*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad8)
-                vuasrotrhosq_jet_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuurot()*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad8)
-                bas1rhosq_jet_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu1()*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad8)
-                bas2rhosq_jet_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu2()*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad8)
-                bas3rhosq_jet_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu3()*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad8)
-                FMrhosq_jet_phipow_rad8[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(-rho*uu[1])*denfactor,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_rad8)
-                FEMArhosq_jet_phipow_rad8[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudMA(1,0))*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad8)
-                FEEMrhosq_jet_phipow_rad8[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudEM(1,0))*denfactor,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_rad8)
+                ugsrhosq_jet_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*ug,qtypaper=1,diskorjet=1,**keywords)
+                uradsrhosq_jet_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*Erf,qtypaper=1,diskorjet=1,**keywords)
+                uu0rhosq_jet_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuu0()*denfactor,qtypaper=0,diskorjet=1,**keywords)
+                vuas3rhosq_jet_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuu3()*denfactor,qtypaper=0,diskorjet=1,**keywords)
+                vuasrotrhosq_jet_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuurot()*denfactor,qtypaper=0,diskorjet=1,**keywords)
+                bas1rhosq_jet_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu1()*denfactor,qtypaper=0,diskorjet=1,**keywords)
+                bas2rhosq_jet_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu2()*denfactor,qtypaper=0,diskorjet=1,**keywords)
+                bas3rhosq_jet_phipow_rad8[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu3()*denfactor,qtypaper=0,diskorjet=1,**keywords)
+                FMrhosq_jet_phipow_rad8[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(-rho*uu[1])*denfactor,qtypaper=1,diskorjet=1,**keywords)
+                FEMArhosq_jet_phipow_rad8[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudMA(1,0))*denfactor,qtypaper=0,diskorjet=1,**keywords)
+                FEEMrhosq_jet_phipow_rad8[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudEM(1,0))*denfactor,qtypaper=1,diskorjet=1,**keywords)
+            #
+            #
+            printusage()
+            gc.collect()
+            printusage()
             #
             print("pick out *at* r\sim 30M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-            denfactor=1.0 + rholab*0.0
+            denfactor=1.0 + frholab()*0.0
             pickr=30.0
             spreadr=0.1*pickr
             rin=pickr-spreadr
             rout=pickr+spreadr
             diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
-            keywordsrhosq_jet_phipow_rad30={'which': diskcondition}
+            keywords={'which': diskcondition}
             minbsqorho=condmaxbsqorhorhs[iofr(pickr),0,0] # good for r=30
-            rhosq_jet_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad30)
-            rhosrhosq_jet_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*rho,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_rad30)
-            bsqrhosq_jet_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*bsq*denfactor,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_rad30)
+            rhosq_jet_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=1,**keywords)
+            rhosrhosq_jet_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*rho,qtypaper=1,diskorjet=1,**keywords)
+            bsqrhosq_jet_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*bsq*denfactor,qtypaper=1,diskorjet=1,**keywords)
             if doreducedpowervsnlm==0:
-                ugsrhosq_jet_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*ug,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_rad30)
-                uradsrhosq_jet_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*urad,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_rad30)
-                uu0rhosq_jet_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuu0()*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad30)
-                vuas3rhosq_jet_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuu3()*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad30)
-                vuasrotrhosq_jet_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuurot()*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad30)
-                bas1rhosq_jet_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu1()*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad30)
-                bas2rhosq_jet_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu2()*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad30)
-                bas3rhosq_jet_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu3()*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad30)
-                FMrhosq_jet_phipow_rad30[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(-rho*uu[1])*denfactor,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_rad30)
-                FEMArhosq_jet_phipow_rad30[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudMA(1,0))*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_phipow_rad30)
-                FEEMrhosq_jet_phipow_rad30[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudEM(1,0))*denfactor,qtypaper=1,diskorjet=1,**keywordsrhosq_jet_phipow_rad30)
+                ugsrhosq_jet_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*ug,qtypaper=1,diskorjet=1,**keywords)
+                uradsrhosq_jet_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*Erf,qtypaper=1,diskorjet=1,**keywords)
+                uu0rhosq_jet_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuu0()*denfactor,qtypaper=0,diskorjet=1,**keywords)
+                vuas3rhosq_jet_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuu3()*denfactor,qtypaper=0,diskorjet=1,**keywords)
+                vuasrotrhosq_jet_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*myuurot()*denfactor,qtypaper=0,diskorjet=1,**keywords)
+                bas1rhosq_jet_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu1()*denfactor,qtypaper=0,diskorjet=1,**keywords)
+                bas2rhosq_jet_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu2()*denfactor,qtypaper=0,diskorjet=1,**keywords)
+                bas3rhosq_jet_phipow_rad30[qindex]=powervsm(doabs=1,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*mybu3()*denfactor,qtypaper=0,diskorjet=1,**keywords)
+                FMrhosq_jet_phipow_rad30[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(-rho*uu[1])*denfactor,qtypaper=1,diskorjet=1,**keywords)
+                FEMArhosq_jet_phipow_rad30[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudMA(1,0))*denfactor,qtypaper=0,diskorjet=1,**keywords)
+                FEEMrhosq_jet_phipow_rad30[qindex]=powervsm(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*(fTudEM(1,0))*denfactor,qtypaper=1,diskorjet=1,**keywords)
         #
         #
             
@@ -13003,107 +13168,122 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             #
             #
             print("pick out *at* r\sim r+" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-            denfactor=1.0 + rholab*0.0
+            denfactor=1.0 + frholab()*0.0
             pickr=rhor
             spreadr=0.1*pickr
             rin=max(pickr-spreadr,1.01*Rin)
             rout=pickr+spreadr
             print("rin=%g rout=%g Rin=%g rhor=%g r0=%g" % (rin,rout,Rin,rhor,r[0,0,0]))
             diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
-            keywordsrhosq_diskcorona_thetapow_radhor={'which': diskcondition}
+            keywords={'which': diskcondition}
             maxbsqorho=condmaxbsqorhorhs[iofr(pickr),0,0] # good for r=rhor
-            rhosq_diskcorona_thetapow_radhor[qindex]=powervsl(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_radhor)
-            rhosrhosq_diskcorona_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_radhor)
-            bsqrhosq_diskcorona_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_radhor)
+            rhosq_diskcorona_thetapow_radhor[qindex]=powervsl(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=0,**keywords)
+            rhosrhosq_diskcorona_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=0,**keywords)
+            bsqrhosq_diskcorona_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=0,**keywords)
             if doreducedpowervsnlm==0:
-                ugsrhosq_diskcorona_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_radhor)
-                uradsrhosq_diskcorona_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_radhor)
-                uu0rhosq_diskcorona_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_radhor)
-                vuas3rhosq_diskcorona_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_radhor)
-                vuasrotrhosq_diskcorona_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_radhor)
-                bas1rhosq_diskcorona_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_radhor)
-                bas2rhosq_diskcorona_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_radhor)
-                bas3rhosq_diskcorona_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_radhor)
-                FMrhosq_diskcorona_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_radhor)
-                FEMArhosq_diskcorona_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_radhor)
-                FEEMrhosq_diskcorona_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_radhor)
+                ugsrhosq_diskcorona_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=1,diskorjet=0,**keywords)
+                uradsrhosq_diskcorona_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=1,diskorjet=0,**keywords)
+                uu0rhosq_diskcorona_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=0,**keywords)
+                vuas3rhosq_diskcorona_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=0,**keywords)
+                vuasrotrhosq_diskcorona_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=0,**keywords)
+                bas1rhosq_diskcorona_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=1,diskorjet=0,**keywords)
+                bas2rhosq_diskcorona_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=0,**keywords)
+                bas3rhosq_diskcorona_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=0,**keywords)
+                FMrhosq_diskcorona_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=1,diskorjet=0,**keywords)
+                FEMArhosq_diskcorona_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=0,**keywords)
+                FEEMrhosq_diskcorona_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=1,diskorjet=0,**keywords)
             #
+            #
+            #
+            printusage()
+            gc.collect()
+            printusage()
             #
             print("pick out *at* r\sim 4M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-            denfactor=1.0 + rholab*0.0
+            denfactor=1.0 + frholab()*0.0
             pickr=4.0
             spreadr=0.1*pickr
             rin=pickr-spreadr
             rout=pickr+spreadr
             diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
-            keywordsrhosq_diskcorona_thetapow_rad4={'which': diskcondition}
+            keywords={'which': diskcondition}
             maxbsqorho=condmaxbsqorhorhs[iofr(pickr),0,0] # good for r=4
-            rhosq_diskcorona_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad4)
-            rhosrhosq_diskcorona_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad4)
-            bsqrhosq_diskcorona_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad4)
+            rhosq_diskcorona_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=0,**keywords)
+            rhosrhosq_diskcorona_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=0,**keywords)
+            bsqrhosq_diskcorona_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=0,**keywords)
             if doreducedpowervsnlm==0:
-                ugsrhosq_diskcorona_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad4)
-                uradsrhosq_diskcorona_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad4)
-                uu0rhosq_diskcorona_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad4)
-                vuas3rhosq_diskcorona_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad4)
-                vuasrotrhosq_diskcorona_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad4)
-                bas1rhosq_diskcorona_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad4)
-                bas2rhosq_diskcorona_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad4)
-                bas3rhosq_diskcorona_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad4)
-                FMrhosq_diskcorona_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad4)
-                FEMArhosq_diskcorona_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad4)
-                FEEMrhosq_diskcorona_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad4)
+                ugsrhosq_diskcorona_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=1,diskorjet=0,**keywords)
+                uradsrhosq_diskcorona_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=1,diskorjet=0,**keywords)
+                uu0rhosq_diskcorona_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=0,**keywords)
+                vuas3rhosq_diskcorona_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=0,**keywords)
+                vuasrotrhosq_diskcorona_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=0,**keywords)
+                bas1rhosq_diskcorona_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=1,diskorjet=0,**keywords)
+                bas2rhosq_diskcorona_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=0,**keywords)
+                bas3rhosq_diskcorona_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=0,**keywords)
+                FMrhosq_diskcorona_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=1,diskorjet=0,**keywords)
+                FEMArhosq_diskcorona_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=0,**keywords)
+                FEEMrhosq_diskcorona_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=1,diskorjet=0,**keywords)
             #
+            #
+            #
+            printusage()
+            gc.collect()
+            printusage()
             #
             print("pick out *at* r\sim 8M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-            denfactor=1.0 + rholab*0.0
+            denfactor=1.0 + frholab()*0.0
             pickr=8.0
             spreadr=0.1*pickr
             rin=pickr-spreadr
             rout=pickr+spreadr
             diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
-            keywordsrhosq_diskcorona_thetapow_rad8={'which': diskcondition}
+            keywords={'which': diskcondition}
             maxbsqorho=condmaxbsqorhorhs[iofr(pickr),0,0] # good for r=8
-            rhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad8)
-            rhosrhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad8)
-            bsqrhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=0,printouts=0,useminmaxbsqorho=1,**keywordsrhosq_diskcorona_thetapow_rad8)
+            rhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=0,**keywords)
+            rhosrhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=0,**keywords)
+            bsqrhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=0,printouts=0,useminmaxbsqorho=1,**keywords)
             if doreducedpowervsnlm==0:
-                ugsrhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad8)
-                uradsrhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad8)
-                uu0rhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad8)
-                vuas3rhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad8)
-                vuasrotrhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad8)
-                bas1rhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad8)
-                bas2rhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad8)
-                bas3rhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad8)
-                FMrhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad8)
-                FEMArhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad8)
-                FEEMrhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad8)
+                ugsrhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=1,diskorjet=0,**keywords)
+                uradsrhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=1,diskorjet=0,**keywords)
+                uu0rhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=0,**keywords)
+                vuas3rhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=0,**keywords)
+                vuasrotrhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=0,**keywords)
+                bas1rhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=1,diskorjet=0,**keywords)
+                bas2rhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=0,**keywords)
+                bas3rhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=0,**keywords)
+                FMrhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=1,diskorjet=0,**keywords)
+                FEMArhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=0,**keywords)
+                FEEMrhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=1,diskorjet=0,**keywords)
+            #
+            #
+            printusage()
+            gc.collect()
+            printusage()
             #
             print("pick out *at* r\sim 30M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-            denfactor=1.0 + rholab*0.0
+            denfactor=1.0 + frholab()*0.0
             pickr=30.0
             spreadr=0.1*pickr
             rin=pickr-spreadr
             rout=pickr+spreadr
             diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
-            keywordsrhosq_diskcorona_thetapow_rad30={'which': diskcondition}
+            keywords={'which': diskcondition}
             maxbsqorho=condmaxbsqorhorhs[iofr(pickr),0,0] # good for r=30
-            rhosq_diskcorona_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad30)
-            rhosrhosq_diskcorona_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad30)
-            bsqrhosq_diskcorona_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad30)
+            rhosq_diskcorona_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=0,**keywords)
+            rhosrhosq_diskcorona_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=0,**keywords)
+            bsqrhosq_diskcorona_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=0,**keywords)
             if doreducedpowervsnlm==0:
-                ugsrhosq_diskcorona_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad30)
-                uradsrhosq_diskcorona_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad30)
-                uu0rhosq_diskcorona_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad30)
-                vuas3rhosq_diskcorona_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad30)
-                vuasrotrhosq_diskcorona_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad30)
-                bas1rhosq_diskcorona_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad30)
-                bas2rhosq_diskcorona_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad30)
-                bas3rhosq_diskcorona_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad30)
-                FMrhosq_diskcorona_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad30)
-                FEMArhosq_diskcorona_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad30)
-                FEEMrhosq_diskcorona_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_thetapow_rad30)
+                ugsrhosq_diskcorona_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=1,diskorjet=0,**keywords)
+                uradsrhosq_diskcorona_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=1,diskorjet=0,**keywords)
+                uu0rhosq_diskcorona_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=0,**keywords)
+                vuas3rhosq_diskcorona_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=0,**keywords)
+                vuasrotrhosq_diskcorona_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=0,**keywords)
+                bas1rhosq_diskcorona_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=1,diskorjet=0,**keywords)
+                bas2rhosq_diskcorona_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=0,**keywords)
+                bas3rhosq_diskcorona_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=0,**keywords)
+                FMrhosq_diskcorona_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=1,diskorjet=0,**keywords)
+                FEMArhosq_diskcorona_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=0,**keywords)
+                FEEMrhosq_diskcorona_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=1,diskorjet=0,**keywords)
             #
             #
             #
@@ -13120,106 +13300,121 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             print("Jet ONLY (never DISK+CORONA)" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
             #
             print("pick out *at* r\sim 4M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-            denfactor=1.0 + rholab*0.0
+            denfactor=1.0 + frholab()*0.0
             pickr=rhor
             spreadr=0.1*pickr
             rin=max(pickr-spreadr,1.01*Rin)
             rout=pickr+spreadr
             diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
-            keywordsrhosq_jet_thetapow_radhor={'which': diskcondition}
+            keywords={'which': diskcondition}
             minbsqorho=condmaxbsqorhorhs[iofr(pickr),0,0] # good for r=rhor
-            rhosq_jet_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_radhor)
-            rhosrhosq_jet_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_thetapow_radhor)
-            bsqrhosq_jet_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_thetapow_radhor)
+            rhosq_jet_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=1,**keywords)
+            rhosrhosq_jet_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=1,**keywords)
+            bsqrhosq_jet_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=1,**keywords)
             if doreducedpowervsnlm==0:
-                ugsrhosq_jet_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_thetapow_radhor)
-                uradsrhosq_jet_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_thetapow_radhor)
-                uu0rhosq_jet_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_radhor)
-                vuas3rhosq_jet_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_radhor)
-                vuasrotrhosq_jet_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_radhor)
-                bas1rhosq_jet_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_radhor)
-                bas2rhosq_jet_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_radhor)
-                bas3rhosq_jet_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_radhor)
-                FMrhosq_jet_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_thetapow_radhor)
-                FEMArhosq_jet_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_radhor)
-                FEEMrhosq_jet_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_thetapow_radhor)
+                ugsrhosq_jet_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=1,diskorjet=1,**keywords)
+                uradsrhosq_jet_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=1,diskorjet=1,**keywords)
+                uu0rhosq_jet_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=1,**keywords)
+                vuas3rhosq_jet_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=1,**keywords)
+                vuasrotrhosq_jet_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=1,**keywords)
+                bas1rhosq_jet_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=0,diskorjet=1,**keywords)
+                bas2rhosq_jet_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=1,**keywords)
+                bas3rhosq_jet_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=1,**keywords)
+                FMrhosq_jet_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=1,diskorjet=1,**keywords)
+                FEMArhosq_jet_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=1,**keywords)
+                FEEMrhosq_jet_thetapow_radhor[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=1,diskorjet=1,**keywords)
             #
+            #
+            #
+            printusage()
+            gc.collect()
+            printusage()
             #
             print("pick out *at* r\sim 4M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-            denfactor=1.0 + rholab*0.0
+            denfactor=1.0 + frholab()*0.0
             pickr=4.0
             spreadr=0.1*pickr
             rin=pickr-spreadr
             rout=pickr+spreadr
             diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
-            keywordsrhosq_jet_thetapow_rad4={'which': diskcondition}
+            keywords={'which': diskcondition}
             minbsqorho=condmaxbsqorhorhs[iofr(pickr),0,0] # good for r=4
-            rhosq_jet_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_rad4)
-            rhosrhosq_jet_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_thetapow_rad4)
-            bsqrhosq_jet_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_thetapow_rad4)
+            rhosq_jet_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=1,**keywords)
+            rhosrhosq_jet_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=1,**keywords)
+            bsqrhosq_jet_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=1,**keywords)
             if doreducedpowervsnlm==0:
-                ugsrhosq_jet_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_thetapow_rad4)
-                uradsrhosq_jet_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_thetapow_rad4)
-                uu0rhosq_jet_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_rad4)
-                vuas3rhosq_jet_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_rad4)
-                vuasrotrhosq_jet_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_rad4)
-                bas1rhosq_jet_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_rad4)
-                bas2rhosq_jet_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_rad4)
-                bas3rhosq_jet_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_rad4)
-                FMrhosq_jet_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_thetapow_rad4)
-                FEMArhosq_jet_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_rad4)
-                FEEMrhosq_jet_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_thetapow_rad4)
+                ugsrhosq_jet_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=1,diskorjet=1,**keywords)
+                uradsrhosq_jet_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=1,diskorjet=1,**keywords)
+                uu0rhosq_jet_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=1,**keywords)
+                vuas3rhosq_jet_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=1,**keywords)
+                vuasrotrhosq_jet_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=1,**keywords)
+                bas1rhosq_jet_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=0,diskorjet=1,**keywords)
+                bas2rhosq_jet_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=1,**keywords)
+                bas3rhosq_jet_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=1,**keywords)
+                FMrhosq_jet_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=1,diskorjet=1,**keywords)
+                FEMArhosq_jet_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=1,**keywords)
+                FEEMrhosq_jet_thetapow_rad4[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=1,diskorjet=1,**keywords)
             #
+            #
+            #
+            printusage()
+            gc.collect()
+            printusage()
             #
             print("pick out *at* r\sim 8M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-            denfactor=1.0 + rholab*0.0
+            denfactor=1.0 + frholab()*0.0
             pickr=8.0
             spreadr=0.1*pickr
             rin=pickr-spreadr
             rout=pickr+spreadr
             diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
-            keywordsrhosq_jet_thetapow_rad8={'which': diskcondition}
+            keywords={'which': diskcondition}
             minbsqorho=condmaxbsqorhorhs[iofr(pickr),0,0] # good for r=8
-            rhosq_jet_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_rad8)
-            rhosrhosq_jet_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_thetapow_rad8)
-            bsqrhosq_jet_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_thetapow_rad8)
+            rhosq_jet_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=1,**keywords)
+            rhosrhosq_jet_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=1,**keywords)
+            bsqrhosq_jet_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=1,**keywords)
             if doreducedpowervsnlm==0:
-                ugsrhosq_jet_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_thetapow_rad8)
-                uradsrhosq_jet_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_thetapow_rad8)
-                uu0rhosq_jet_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_rad8)
-                vuas3rhosq_jet_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_rad8)
-                vuasrotrhosq_jet_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_rad8)
-                bas1rhosq_jet_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_rad8)
-                bas2rhosq_jet_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_rad8)
-                bas3rhosq_jet_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_rad8)
-                FMrhosq_jet_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_thetapow_rad8)
-                FEMArhosq_jet_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_rad8)
-                FEEMrhosq_jet_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_thetapow_rad8)
+                ugsrhosq_jet_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=1,diskorjet=1,**keywords)
+                uradsrhosq_jet_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=1,diskorjet=1,**keywords)
+                uu0rhosq_jet_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=1,**keywords)
+                vuas3rhosq_jet_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=1,**keywords)
+                vuasrotrhosq_jet_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=1,**keywords)
+                bas1rhosq_jet_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=0,diskorjet=1,**keywords)
+                bas2rhosq_jet_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=1,**keywords)
+                bas3rhosq_jet_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=1,**keywords)
+                FMrhosq_jet_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=1,diskorjet=1,**keywords)
+                FEMArhosq_jet_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=1,**keywords)
+                FEEMrhosq_jet_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=1,diskorjet=1,**keywords)
+            #
+            #
+            printusage()
+            gc.collect()
+            printusage()
             #
             print("pick out *at* r\sim 30M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-            denfactor=1.0 + rholab*0.0
+            denfactor=1.0 + frholab()*0.0
             pickr=30.0
             spreadr=0.1*pickr
             rin=pickr-spreadr
             rout=pickr+spreadr
             diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
-            keywordsrhosq_jet_thetapow_rad30={'which': diskcondition}
+            keywords={'which': diskcondition}
             minbsqorho=condmaxbsqorhorhs[iofr(pickr),0,0] # good for r=30
-            rhosq_jet_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_rad30)
-            rhosrhosq_jet_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_thetapow_rad30)
-            bsqrhosq_jet_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_thetapow_rad30)
+            rhosq_jet_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=1,**keywords)
+            rhosrhosq_jet_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=1,**keywords)
+            bsqrhosq_jet_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=1,**keywords)
             if doreducedpowervsnlm==0:
-                ugsrhosq_jet_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_thetapow_rad30)
-                uradsrhosq_jet_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_thetapow_rad30)
-                uu0rhosq_jet_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_rad30)
-                vuas3rhosq_jet_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_rad30)
-                vuasrotrhosq_jet_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_rad30)
-                bas1rhosq_jet_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_rad30)
-                bas2rhosq_jet_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_rad30)
-                bas3rhosq_jet_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_rad30)
-                FMrhosq_jet_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_thetapow_rad30)
-                FEMArhosq_jet_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_thetapow_rad30)
-                FEEMrhosq_jet_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_thetapow_rad30)
+                ugsrhosq_jet_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=1,diskorjet=1,**keywords)
+                uradsrhosq_jet_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=1,diskorjet=1,**keywords)
+                uu0rhosq_jet_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=1,**keywords)
+                vuas3rhosq_jet_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=1,**keywords)
+                vuasrotrhosq_jet_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=1,**keywords)
+                bas1rhosq_jet_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=0,diskorjet=1,**keywords)
+                bas2rhosq_jet_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=1,**keywords)
+                bas3rhosq_jet_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=1,**keywords)
+                FMrhosq_jet_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=1,diskorjet=1,**keywords)
+                FEMArhosq_jet_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=1,**keywords)
+                FEEMrhosq_jet_thetapow_rad30[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=1,diskorjet=1,**keywords)
         #
         #
         #
@@ -13258,107 +13453,122 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             #
             #
             print("pick out *at* r\sim r+" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-            denfactor=1.0 + rholab*0.0
+            denfactor=1.0 + frholab()*0.0
             pickr=rhor
             spreadr=0.1*pickr
             rin=max(pickr-spreadr,1.01*Rin)
             rout=pickr+spreadr
             print("rin=%g rout=%g Rin=%g rhor=%g r0=%g" % (rin,rout,Rin,rhor,r[0,0,0]))
             diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
-            keywordsrhosq_diskcorona_radiuspow_radhor={'which': diskcondition}
+            keywords={'which': diskcondition}
             maxbsqorho=condmaxbsqorhorhs[iofr(pickr),0,0] # good for r=rhor
-            rhosq_diskcorona_radiuspow_radhor[qindex]=powervsn(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_radhor)
-            rhosrhosq_diskcorona_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_radhor)
-            bsqrhosq_diskcorona_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_radhor)
+            rhosq_diskcorona_radiuspow_radhor[qindex]=powervsn(doabs=1,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=0,**keywords)
+            rhosrhosq_diskcorona_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=0,**keywords)
+            bsqrhosq_diskcorona_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=0,**keywords)
             if doreducedpowervsnlm==0:
-                ugsrhosq_diskcorona_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_radhor)
-                uradsrhosq_diskcorona_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_radhor)
-                uu0rhosq_diskcorona_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_radhor)
-                vuas3rhosq_diskcorona_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_radhor)
-                vuasrotrhosq_diskcorona_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_radhor)
-                bas1rhosq_diskcorona_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_radhor)
-                bas2rhosq_diskcorona_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_radhor)
-                bas3rhosq_diskcorona_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_radhor)
-                FMrhosq_diskcorona_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_radhor)
-                FEMArhosq_diskcorona_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_radhor)
-                FEEMrhosq_diskcorona_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_radhor)
+                ugsrhosq_diskcorona_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=0,diskorjet=0,**keywords)
+                uradsrhosq_diskcorona_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=0,diskorjet=0,**keywords)
+                uu0rhosq_diskcorona_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=0,**keywords)
+                vuas3rhosq_diskcorona_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=0,**keywords)
+                vuasrotrhosq_diskcorona_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=0,**keywords)
+                bas1rhosq_diskcorona_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=0,diskorjet=0,**keywords)
+                bas2rhosq_diskcorona_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=0,**keywords)
+                bas3rhosq_diskcorona_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=0,**keywords)
+                FMrhosq_diskcorona_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=0,diskorjet=0,**keywords)
+                FEMArhosq_diskcorona_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=0,**keywords)
+                FEEMrhosq_diskcorona_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=0,diskorjet=0,**keywords)
             #
+            #
+            #
+            printusage()
+            gc.collect()
+            printusage()
             #
             print("pick out *at* r\sim 4M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-            denfactor=1.0 + rholab*0.0
+            denfactor=1.0 + frholab()*0.0
             pickr=4.0
             spreadr=0.1*pickr
             rin=pickr-spreadr
             rout=pickr+spreadr
             diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
-            keywordsrhosq_diskcorona_radiuspow_rad4={'which': diskcondition}
+            keywords={'which': diskcondition}
             maxbsqorho=condmaxbsqorhorhs[iofr(pickr),0,0] # good for r=4
-            rhosq_diskcorona_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad4)
-            rhosrhosq_diskcorona_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad4)
-            bsqrhosq_diskcorona_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad4)
+            rhosq_diskcorona_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=0,**keywords)
+            rhosrhosq_diskcorona_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=0,**keywords)
+            bsqrhosq_diskcorona_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=0,**keywords)
             if doreducedpowervsnlm==0:
-                ugsrhosq_diskcorona_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad4)
-                uradsrhosq_diskcorona_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad4)
-                uu0rhosq_diskcorona_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad4)
-                vuas3rhosq_diskcorona_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad4)
-                vuasrotrhosq_diskcorona_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad4)
-                bas1rhosq_diskcorona_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad4)
-                bas2rhosq_diskcorona_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad4)
-                bas3rhosq_diskcorona_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad4)
-                FMrhosq_diskcorona_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad4)
-                FEMArhosq_diskcorona_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad4)
-                FEEMrhosq_diskcorona_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad4)
+                ugsrhosq_diskcorona_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=0,diskorjet=0,**keywords)
+                uradsrhosq_diskcorona_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=0,diskorjet=0,**keywords)
+                uu0rhosq_diskcorona_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=0,**keywords)
+                vuas3rhosq_diskcorona_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=0,**keywords)
+                vuasrotrhosq_diskcorona_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=0,**keywords)
+                bas1rhosq_diskcorona_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=0,diskorjet=0,**keywords)
+                bas2rhosq_diskcorona_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=0,**keywords)
+                bas3rhosq_diskcorona_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=0,**keywords)
+                FMrhosq_diskcorona_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=0,diskorjet=0,**keywords)
+                FEMArhosq_diskcorona_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=0,**keywords)
+                FEEMrhosq_diskcorona_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=0,diskorjet=0,**keywords)
             #
+            #
+            #
+            printusage()
+            gc.collect()
+            printusage()
             #
             print("pick out *at* r\sim 8M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-            denfactor=1.0 + rholab*0.0
+            denfactor=1.0 + frholab()*0.0
             pickr=8.0
             spreadr=0.1*pickr
             rin=pickr-spreadr
             rout=pickr+spreadr
             diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
-            keywordsrhosq_diskcorona_radiuspow_rad8={'which': diskcondition}
+            keywords={'which': diskcondition}
             maxbsqorho=condmaxbsqorhorhs[iofr(pickr),0,0] # good for r=8
-            rhosq_diskcorona_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad8)
-            rhosrhosq_diskcorona_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad8)
-            bsqrhosq_diskcorona_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad8)
+            rhosq_diskcorona_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=0,**keywords)
+            rhosrhosq_diskcorona_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=0,**keywords)
+            bsqrhosq_diskcorona_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=0,**keywords)
             if doreducedpowervsnlm==0:
-                ugsrhosq_diskcorona_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad8)
-                uradsrhosq_diskcorona_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad8)
-                uu0rhosq_diskcorona_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad8)
-                vuas3rhosq_diskcorona_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad8)
-                vuasrotrhosq_diskcorona_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad8)
-                bas1rhosq_diskcorona_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad8)
-                bas2rhosq_diskcorona_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad8)
-                bas3rhosq_diskcorona_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad8)
-                FMrhosq_diskcorona_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad8)
-                FEMArhosq_diskcorona_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad8)
-                FEEMrhosq_diskcorona_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad8)
+                ugsrhosq_diskcorona_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=0,diskorjet=0,**keywords)
+                uradsrhosq_diskcorona_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=0,diskorjet=0,**keywords)
+                uu0rhosq_diskcorona_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=0,**keywords)
+                vuas3rhosq_diskcorona_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=0,**keywords)
+                vuasrotrhosq_diskcorona_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=0,**keywords)
+                bas1rhosq_diskcorona_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=0,diskorjet=0,**keywords)
+                bas2rhosq_diskcorona_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=0,**keywords)
+                bas3rhosq_diskcorona_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=0,**keywords)
+                FMrhosq_diskcorona_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=0,diskorjet=0,**keywords)
+                FEMArhosq_diskcorona_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=0,**keywords)
+                FEEMrhosq_diskcorona_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=0,diskorjet=0,**keywords)
+            #
+            #
+            printusage()
+            gc.collect()
+            printusage()
             #
             print("pick out *at* r\sim 30M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-            denfactor=1.0 + rholab*0.0
+            denfactor=1.0 + frholab()*0.0
             pickr=30.0
             spreadr=0.1*pickr
             rin=pickr-spreadr
             rout=pickr+spreadr
             diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
-            keywordsrhosq_diskcorona_radiuspow_rad30={'which': diskcondition}
+            keywords={'which': diskcondition}
             maxbsqorho=condmaxbsqorhorhs[iofr(pickr),0,0] # good for r=30
-            rhosq_diskcorona_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad30)
-            rhosrhosq_diskcorona_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad30)
-            bsqrhosq_diskcorona_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad30)
+            rhosq_diskcorona_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=0,**keywords)
+            rhosrhosq_diskcorona_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=0,**keywords)
+            bsqrhosq_diskcorona_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=0,**keywords)
             if doreducedpowervsnlm==0:
-                ugsrhosq_diskcorona_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad30)
-                uradsrhosq_diskcorona_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad30)
-                uu0rhosq_diskcorona_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad30)
-                vuas3rhosq_diskcorona_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad30)
-                vuasrotrhosq_diskcorona_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad30)
-                bas1rhosq_diskcorona_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad30)
-                bas2rhosq_diskcorona_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad30)
-                bas3rhosq_diskcorona_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad30)
-                FMrhosq_diskcorona_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad30)
-                FEMArhosq_diskcorona_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad30)
-                FEEMrhosq_diskcorona_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=0,diskorjet=0,**keywordsrhosq_diskcorona_radiuspow_rad30)
+                ugsrhosq_diskcorona_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=0,diskorjet=0,**keywords)
+                uradsrhosq_diskcorona_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=0,diskorjet=0,**keywords)
+                uu0rhosq_diskcorona_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=0,**keywords)
+                vuas3rhosq_diskcorona_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=0,**keywords)
+                vuasrotrhosq_diskcorona_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=0,**keywords)
+                bas1rhosq_diskcorona_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=0,diskorjet=0,**keywords)
+                bas2rhosq_diskcorona_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=0,**keywords)
+                bas3rhosq_diskcorona_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=0,**keywords)
+                FMrhosq_diskcorona_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=0,diskorjet=0,**keywords)
+                FEMArhosq_diskcorona_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=0,**keywords)
+                FEEMrhosq_diskcorona_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=0,diskorjet=0,**keywords)
             #
             #
             #
@@ -13375,106 +13585,121 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             print("Jet ONLY (never DISK+CORONA)" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
             #
             print("pick out *at* r\sim 4M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-            denfactor=1.0 + rholab*0.0
+            denfactor=1.0 + frholab()*0.0
             pickr=rhor
             spreadr=0.1*pickr
             rin=max(pickr-spreadr,1.01*Rin)
             rout=pickr+spreadr
             diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
-            keywordsrhosq_jet_radiuspow_radhor={'which': diskcondition}
+            keywords={'which': diskcondition}
             minbsqorho=condmaxbsqorhorhs[iofr(pickr),0,0] # good for r=rhor
-            rhosq_jet_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_radhor)
-            rhosrhosq_jet_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_radiuspow_radhor)
-            bsqrhosq_jet_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_radiuspow_radhor)
+            rhosq_jet_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=1,**keywords)
+            rhosrhosq_jet_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=1,**keywords)
+            bsqrhosq_jet_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=1,**keywords)
             if doreducedpowervsnlm==0:
-                ugsrhosq_jet_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_radhor)
-                uradsrhosq_jet_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_radhor)
-                uu0rhosq_jet_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_radhor)
-                vuas3rhosq_jet_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_radhor)
-                vuasrotrhosq_jet_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_radhor)
-                bas1rhosq_jet_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_radhor)
-                bas2rhosq_jet_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_radhor)
-                bas3rhosq_jet_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_radhor)
-                FMrhosq_jet_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_radhor)
-                FEMArhosq_jet_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_radhor)
-                FEEMrhosq_jet_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_radhor)
+                ugsrhosq_jet_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=0,diskorjet=1,**keywords)
+                uradsrhosq_jet_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=0,diskorjet=1,**keywords)
+                uu0rhosq_jet_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=1,**keywords)
+                vuas3rhosq_jet_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=1,**keywords)
+                vuasrotrhosq_jet_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=1,**keywords)
+                bas1rhosq_jet_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=0,diskorjet=1,**keywords)
+                bas2rhosq_jet_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=1,**keywords)
+                bas3rhosq_jet_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=1,**keywords)
+                FMrhosq_jet_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=0,diskorjet=1,**keywords)
+                FEMArhosq_jet_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=1,**keywords)
+                FEEMrhosq_jet_radiuspow_radhor[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=0,diskorjet=1,**keywords)
             #
+            #
+            #
+            printusage()
+            gc.collect()
+            printusage()
             #
             print("pick out *at* r\sim 4M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-            denfactor=1.0 + rholab*0.0
+            denfactor=1.0 + frholab()*0.0
             pickr=4.0
             spreadr=0.1*pickr
             rin=pickr-spreadr
             rout=pickr+spreadr
             diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
-            keywordsrhosq_jet_radiuspow_rad4={'which': diskcondition}
+            keywords={'which': diskcondition}
             minbsqorho=condmaxbsqorhorhs[iofr(pickr),0,0] # good for r=4
-            rhosq_jet_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad4)
-            rhosrhosq_jet_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad4)
-            bsqrhosq_jet_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad4)
+            rhosq_jet_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=1,**keywords)
+            rhosrhosq_jet_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=1,**keywords)
+            bsqrhosq_jet_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=1,**keywords)
             if doreducedpowervsnlm==0:
-                ugsrhosq_jet_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad4)
-                uradsrhosq_jet_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad4)
-                uu0rhosq_jet_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad4)
-                vuas3rhosq_jet_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad4)
-                vuasrotrhosq_jet_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad4)
-                bas1rhosq_jet_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad4)
-                bas2rhosq_jet_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad4)
-                bas3rhosq_jet_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad4)
-                FMrhosq_jet_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad4)
-                FEMArhosq_jet_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad4)
-                FEEMrhosq_jet_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad4)
+                ugsrhosq_jet_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=0,diskorjet=1,**keywords)
+                uradsrhosq_jet_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=0,diskorjet=1,**keywords)
+                uu0rhosq_jet_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=1,**keywords)
+                vuas3rhosq_jet_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=1,**keywords)
+                vuasrotrhosq_jet_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=1,**keywords)
+                bas1rhosq_jet_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=0,diskorjet=1,**keywords)
+                bas2rhosq_jet_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=1,**keywords)
+                bas3rhosq_jet_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=1,**keywords)
+                FMrhosq_jet_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=0,diskorjet=1,**keywords)
+                FEMArhosq_jet_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=1,**keywords)
+                FEEMrhosq_jet_radiuspow_rad4[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=0,diskorjet=1,**keywords)
             #
+            #
+            #
+            printusage()
+            gc.collect()
+            printusage()
             #
             print("pick out *at* r\sim 8M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-            denfactor=1.0 + rholab*0.0
+            denfactor=1.0 + frholab()*0.0
             pickr=8.0
             spreadr=0.1*pickr
             rin=pickr-spreadr
             rout=pickr+spreadr
             diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
-            keywordsrhosq_jet_radiuspow_rad8={'which': diskcondition}
+            keywords={'which': diskcondition}
             minbsqorho=condmaxbsqorhorhs[iofr(pickr),0,0] # good for r=8
-            rhosq_jet_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad8)
-            rhosrhosq_jet_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad8)
-            bsqrhosq_jet_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad8)
+            rhosq_jet_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=1,**keywords)
+            rhosrhosq_jet_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=1,**keywords)
+            bsqrhosq_jet_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=1,**keywords)
             if doreducedpowervsnlm==0:
-                ugsrhosq_jet_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad8)
-                uradsrhosq_jet_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad8)
-                uu0rhosq_jet_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad8)
-                vuas3rhosq_jet_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad8)
-                vuasrotrhosq_jet_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad8)
-                bas1rhosq_jet_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad8)
-                bas2rhosq_jet_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad8)
-                bas3rhosq_jet_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad8)
-                FMrhosq_jet_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad8)
-                FEMArhosq_jet_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad8)
-                FEEMrhosq_jet_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad8)
+                ugsrhosq_jet_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=0,diskorjet=1,**keywords)
+                uradsrhosq_jet_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=0,diskorjet=1,**keywords)
+                uu0rhosq_jet_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=1,**keywords)
+                vuas3rhosq_jet_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=1,**keywords)
+                vuasrotrhosq_jet_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=1,**keywords)
+                bas1rhosq_jet_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=0,diskorjet=1,**keywords)
+                bas2rhosq_jet_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=1,**keywords)
+                bas3rhosq_jet_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=1,**keywords)
+                FMrhosq_jet_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=0,diskorjet=1,**keywords)
+                FEMArhosq_jet_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=1,**keywords)
+                FEEMrhosq_jet_radiuspow_rad8[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=0,diskorjet=1,**keywords)
+            #
+            #
+            printusage()
+            gc.collect()
+            printusage()
             #
             print("pick out *at* r\sim 30M" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-            denfactor=1.0 + rholab*0.0
+            denfactor=1.0 + frholab()*0.0
             pickr=30.0
             spreadr=0.1*pickr
             rin=pickr-spreadr
             rout=pickr+spreadr
             diskcondition=1.0 + rho*0.0 #(np.abs(r-pickr)<spreadr)
-            keywordsrhosq_jet_radiuspow_rad30={'which': diskcondition}
+            keywords={'which': diskcondition}
             minbsqorho=condmaxbsqorhorhs[iofr(pickr),0,0] # good for r=30
-            rhosq_jet_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad30)
-            rhosrhosq_jet_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad30)
-            bsqrhosq_jet_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad30)
+            rhosq_jet_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor,qtypaper=0,diskorjet=1,**keywords)
+            rhosrhosq_jet_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*drho(),denom=denomdrho(),qtypaper=1,diskorjet=1,**keywords)
+            bsqrhosq_jet_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dbsq(),denom=denomdbsq(),qtypaper=1,diskorjet=1,**keywords)
             if doreducedpowervsnlm==0:
-                ugsrhosq_jet_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad30)
-                uradsrhosq_jet_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad30)
-                uu0rhosq_jet_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad30)
-                vuas3rhosq_jet_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad30)
-                vuasrotrhosq_jet_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad30)
-                bas1rhosq_jet_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad30)
-                bas2rhosq_jet_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad30)
-                bas3rhosq_jet_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad30)
-                FMrhosq_jet_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad30)
-                FEMArhosq_jet_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad30)
-                FEEMrhosq_jet_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=0,diskorjet=1,**keywordsrhosq_jet_radiuspow_rad30)
+                ugsrhosq_jet_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*dug(),denom=denomdug(),qtypaper=0,diskorjet=1,**keywords)
+                uradsrhosq_jet_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*durad(),denom=denomdurad(),qtypaper=0,diskorjet=1,**keywords)
+                uu0rhosq_jet_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu0(),denom=denomduu0(),qtypaper=0,diskorjet=1,**keywords)
+                vuas3rhosq_jet_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duu3(),denom=denomduu3(),qtypaper=0,diskorjet=1,**keywords)
+                vuasrotrhosq_jet_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*duurot(),denom=denomduurot(),qtypaper=0,diskorjet=1,**keywords)
+                bas1rhosq_jet_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db1(),denom=denomdb1(),qtypaper=0,diskorjet=1,**keywords)
+                bas2rhosq_jet_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db2(),denom=denomdb2(),qtypaper=0,diskorjet=1,**keywords)
+                bas3rhosq_jet_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,minbsqorho=minbsqorho,qty=gdet*denfactor*db3(),denom=denomdb3(),qtypaper=0,diskorjet=1,**keywords)
+                FMrhosq_jet_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dFM(),denom=denomdFM(),qtypaper=0,diskorjet=1,**keywords)
+                FEMArhosq_jet_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudMA(),denom=denomdTudMA(),qtypaper=0,diskorjet=1,**keywords)
+                FEEMrhosq_jet_radiuspow_rad30[qindex]=powervsn(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dTudEM(),denom=denomdTudEM(),qtypaper=0,diskorjet=1,**keywords)
         #
         #
         #
@@ -13489,7 +13714,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         #
         #
         diskcondition=condmaxbsqorho
-        keywords2hor={'hoverr': 2.0*hoverr3d, 'thetamid': thetamid3d, 'which': diskcondition}
+        keywords={'hoverr': 2.0*hoverr3d, 'thetamid': thetamid3d, 'which': diskcondition}
         #
         print("Flux" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         # radial absolute flux as function of radius
@@ -13509,7 +13734,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         fsuphalf[qindex]=horfluxcalc(minbsqorho=0,takeabs=0,uphalf=1)
         #
         #
-        fs2hor[qindex]==intangle(np.abs(gdetB[1]),**keywords2hor)
+        fs2hor[qindex]==intangle(np.abs(gdetB[1]),**keywords)
         fsj5[qindex]=horfluxcalc(ivalue=ihor,minbsqorho=5)
         fsj10[qindex]=horfluxcalc(ivalue=ihor,minbsqorho=10)
         fsj20[qindex]=horfluxcalc(ivalue=ihor,minbsqorho=20)
@@ -13519,14 +13744,13 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         ##################################
         print("Mdot" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         avoidfloorcondition=condmaxbsqorho
-        keywordsavoidfloor={'which': avoidfloorcondition}
+        keywords={'which': avoidfloorcondition}
         #
-        enth=1+ug*gam/rho
         mdtot[qindex]=mdotcalc(which=avoidfloorcondition)
-        mdtotbound[qindex]=mdotcalc(which=avoidfloorcondition*(-enth*ud[0]<=1))
-        md2h[qindex]=mdotcalc(**keywords2h)
-        md4h[qindex]=mdotcalc(**keywords4h)
-        md2hor[qindex]=mdotcalc(**keywords2hor)
+        mdtotbound[qindex]=mdotcalc(which=avoidfloorcondition*(-fenth()*ud[0]<=1))
+        md2h[qindex]=mdotcalc(**keywords)
+        md4h[qindex]=mdotcalc(**keywords)
+        md2hor[qindex]=mdotcalc(**keywords)
         md5[qindex]=intangle(-gdet*rho*uu[1],minbsqorho=5)
         md10[qindex]=intangle(-gdet*rho*uu[1],minbsqorho=10)
         md20[qindex]=intangle(-gdet*rho*uu[1],minbsqorho=20)
@@ -13574,8 +13798,8 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         edma30[qindex]=intangle(-gdet*fTudMA(1,0),which=(condmaxbsqorho==0))
         edm30[qindex]=intangle(gdet*rho*uu[1],which=(condmaxbsqorho==0))
         #
-        edtotbound[qindex]=intangle(-gdet*fTud(1,0),which=(-enth*ud[0]<=1))
-        edmabound[qindex]=intangle(-gdet*fTudMA(1,0),which=(-enth*ud[0]<=1))
+        edtotbound[qindex]=intangle(-gdet*fTud(1,0),which=(-fenth()*ud[0]<=1))
+        edmabound[qindex]=intangle(-gdet*fTudMA(1,0),which=(-fenth()*ud[0]<=1))
         #
         print("Pjet" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         pjem5[qindex]=jetpowcalc(0,minbsqorho=5)
@@ -13739,178 +13963,6 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         gc.collect()
         printusage()
         #
-        if dobob==1:
-            #
-            print("Bob's 1D quantities" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
-            #
-            dVF=_dx1*_dx2*_dx3
-            dVA=_dx2*_dx3
-            Dt=1
-            TT=0
-            RR=1
-            TH=2
-            PH=3
-            qtymem[i+0,qindex]=intangle(Dt*dVF*gdet*rho,**keywords2hor)
-            qtymem[i+1,qindex]=intangle(Dt*dVF*gdet*rho*rho,**keywords2hor)
-            qtymem[i+2,qindex]=intangle(Dt*dVF*gdet*rho*ug,**keywords2hor)
-            qtymem[i+3,qindex]=intangle(Dt*dVF*gdet*rho*bsq,**keywords2hor)
-        
-            qtymem[i+4,qindex]=intangle(Dt*dVF*gdet*rho*uu[1],**keywords2hor) #pr[2]
-            qtymem[i+5,qindex]=intangle(Dt*dVF*gdet*rho*uu[2],**keywords2hor) #pr[3]
-            qtymem[i+6,qindex]=intangle(Dt*dVF*gdet*rho*uu[3],**keywords2hor) #pr[4]
-        
-            qtymem[i+7,qindex]=intangle(Dt*dVF*gdet*rho*B[1],**keywords2hor) #pr[5]
-            qtymem[i+8,qindex]=intangle(Dt*dVF*gdet*rho*B[2],**keywords2hor) #pr[6]
-            qtymem[i+9,qindex]=intangle(Dt*dVF*gdet*rho*B[3],**keywords2hor) #pr[7]
-        
-            #rho * u * u
-        
-            qtymem[i+10,qindex]=intangle(Dt*dVA*gdet*rho*(ud[TT])*(ud[TT]),**keywords2hor)
-            qtymem[i+11,qindex]=intangle(Dt*dVA*gdet*rho*(ud[TT])*(ud[RR]),**keywords2hor)
-            qtymem[i+12,qindex]=intangle(Dt*dVA*gdet*rho*(ud[TT])*(ud[TH]),**keywords2hor)
-            qtymem[i+13,qindex]=intangle(Dt*dVA*gdet*rho*(ud[TT])*(ud[PH]),**keywords2hor)
-            qtymem[i+14,qindex]=intangle(Dt*dVA*gdet*rho*(ud[RR])*(ud[RR]),**keywords2hor)
-            qtymem[i+15,qindex]=intangle(Dt*dVA*gdet*rho*(ud[RR])*(ud[TH]),**keywords2hor)
-            qtymem[i+16,qindex]=intangle(Dt*dVA*gdet*rho*(ud[RR])*(ud[PH]),**keywords2hor)
-            qtymem[i+17,qindex]=intangle(Dt*dVA*gdet*rho*(ud[TH])*(ud[TH]),**keywords2hor)
-            qtymem[i+18,qindex]=intangle(Dt*dVA*gdet*rho*(ud[TH])*(ud[PH]),**keywords2hor)
-            qtymem[i+19,qindex]=intangle(Dt*dVA*gdet*rho*(ud[PH])*(ud[PH]),**keywords2hor)
-        
-            qtymem[i+20,qindex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(ud[TT]),**keywords2hor)
-            qtymem[i+21,qindex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(ud[RR]),**keywords2hor)
-            qtymem[i+22,qindex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(ud[TH]),**keywords2hor)
-            qtymem[i+23,qindex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(ud[PH]),**keywords2hor)
-            qtymem[i+24,qindex]=intangle(Dt*dVA*gdet*rho*(uu[RR])*(ud[RR]),**keywords2hor)
-            qtymem[i+25,qindex]=intangle(Dt*dVA*gdet*rho*(uu[RR])*(ud[TH]),**keywords2hor)
-            qtymem[i+26,qindex]=intangle(Dt*dVA*gdet*rho*(uu[RR])*(ud[PH]),**keywords2hor)
-            qtymem[i+27,qindex]=intangle(Dt*dVA*gdet*rho*(uu[TH])*(ud[TH]),**keywords2hor)
-            qtymem[i+28,qindex]=intangle(Dt*dVA*gdet*rho*(uu[TH])*(ud[PH]),**keywords2hor)
-            qtymem[i+29,qindex]=intangle(Dt*dVA*gdet*rho*(uu[PH])*(ud[PH]),**keywords2hor)
-        
-            qtymem[i+30,qindex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(uu[TT]),**keywords2hor)
-            qtymem[i+31,qindex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(uu[RR]),**keywords2hor)
-            qtymem[i+32,qindex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(uu[TH]),**keywords2hor)
-            qtymem[i+33,qindex]=intangle(Dt*dVA*gdet*rho*(uu[TT])*(uu[PH]),**keywords2hor)
-            qtymem[i+34,qindex]=intangle(Dt*dVA*gdet*rho*(uu[RR])*(uu[RR]),**keywords2hor)
-            qtymem[i+35,qindex]=intangle(Dt*dVA*gdet*rho*(uu[RR])*(uu[TH]),**keywords2hor)
-            qtymem[i+36,qindex]=intangle(Dt*dVA*gdet*rho*(uu[RR])*(uu[PH]),**keywords2hor)
-            qtymem[i+37,qindex]=intangle(Dt*dVA*gdet*rho*(uu[TH])*(uu[TH]),**keywords2hor)
-            qtymem[i+38,qindex]=intangle(Dt*dVA*gdet*rho*(uu[TH])*(uu[PH]),**keywords2hor)
-            qtymem[i+39,qindex]=intangle(Dt*dVA*gdet*rho*(uu[PH])*(uu[PH]),**keywords2hor)
-        
-        
-            #UU * u * u
-        
-            qtymem[i+40,qindex]=intangle(Dt*dVA*gdet*ug*(ud[TT])*(ud[TT]),**keywords2hor)
-            qtymem[i+41,qindex]=intangle(Dt*dVA*gdet*ug*(ud[TT])*(ud[RR]),**keywords2hor)
-            qtymem[i+42,qindex]=intangle(Dt*dVA*gdet*ug*(ud[TT])*(ud[TH]),**keywords2hor)
-            qtymem[i+43,qindex]=intangle(Dt*dVA*gdet*ug*(ud[TT])*(ud[PH]),**keywords2hor)
-            qtymem[i+44,qindex]=intangle(Dt*dVA*gdet*ug*(ud[RR])*(ud[RR]),**keywords2hor)
-            qtymem[i+45,qindex]=intangle(Dt*dVA*gdet*ug*(ud[RR])*(ud[TH]),**keywords2hor)
-            qtymem[i+46,qindex]=intangle(Dt*dVA*gdet*ug*(ud[RR])*(ud[PH]),**keywords2hor)
-            qtymem[i+47,qindex]=intangle(Dt*dVA*gdet*ug*(ud[TH])*(ud[TH]),**keywords2hor)
-            qtymem[i+48,qindex]=intangle(Dt*dVA*gdet*ug*(ud[TH])*(ud[PH]),**keywords2hor)
-            qtymem[i+49,qindex]=intangle(Dt*dVA*gdet*ug*(ud[PH])*(ud[PH]),**keywords2hor)
-        
-            qtymem[i+50,qindex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(ud[TT]),**keywords2hor)
-            qtymem[i+51,qindex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(ud[RR]),**keywords2hor)
-            qtymem[i+52,qindex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(ud[TH]),**keywords2hor)
-            qtymem[i+53,qindex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(ud[PH]),**keywords2hor)
-            qtymem[i+54,qindex]=intangle(Dt*dVA*gdet*ug*(uu[RR])*(ud[RR]),**keywords2hor)
-            qtymem[i+55,qindex]=intangle(Dt*dVA*gdet*ug*(uu[RR])*(ud[TH]),**keywords2hor)
-            qtymem[i+56,qindex]=intangle(Dt*dVA*gdet*ug*(uu[RR])*(ud[PH]),**keywords2hor)
-            qtymem[i+57,qindex]=intangle(Dt*dVA*gdet*ug*(uu[TH])*(ud[TH]),**keywords2hor)
-            qtymem[i+58,qindex]=intangle(Dt*dVA*gdet*ug*(uu[TH])*(ud[PH]),**keywords2hor)
-            qtymem[i+59,qindex]=intangle(Dt*dVA*gdet*ug*(uu[PH])*(ud[PH]),**keywords2hor)
-        
-            qtymem[i+60,qindex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(uu[TT]),**keywords2hor)
-            qtymem[i+61,qindex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(uu[RR]),**keywords2hor)
-            qtymem[i+62,qindex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(uu[TH]),**keywords2hor)
-            qtymem[i+63,qindex]=intangle(Dt*dVA*gdet*ug*(uu[TT])*(uu[PH]),**keywords2hor)
-            qtymem[i+64,qindex]=intangle(Dt*dVA*gdet*ug*(uu[RR])*(uu[RR]),**keywords2hor)
-            qtymem[i+65,qindex]=intangle(Dt*dVA*gdet*ug*(uu[RR])*(uu[TH]),**keywords2hor)
-            qtymem[i+66,qindex]=intangle(Dt*dVA*gdet*ug*(uu[RR])*(uu[PH]),**keywords2hor)
-            qtymem[i+67,qindex]=intangle(Dt*dVA*gdet*ug*(uu[TH])*(uu[TH]),**keywords2hor)
-            qtymem[i+68,qindex]=intangle(Dt*dVA*gdet*ug*(uu[TH])*(uu[PH]),**keywords2hor)
-            qtymem[i+69,qindex]=intangle(Dt*dVA*gdet*ug*(uu[PH])*(uu[PH]),**keywords2hor)
-        
-            #bsq * u * u
-        
-            qtymem[i+70,qindex]=intangle(Dt*dVA*gdet*bsq*(ud[TT])*(ud[TT]),**keywords2hor)
-            qtymem[i+71,qindex]=intangle(Dt*dVA*gdet*bsq*(ud[TT])*(ud[RR]),**keywords2hor)
-            qtymem[i+72,qindex]=intangle(Dt*dVA*gdet*bsq*(ud[TT])*(ud[TH]),**keywords2hor)
-            qtymem[i+73,qindex]=intangle(Dt*dVA*gdet*bsq*(ud[TT])*(ud[PH]),**keywords2hor)
-            qtymem[i+74,qindex]=intangle(Dt*dVA*gdet*bsq*(ud[RR])*(ud[RR]),**keywords2hor)
-            qtymem[i+75,qindex]=intangle(Dt*dVA*gdet*bsq*(ud[RR])*(ud[TH]),**keywords2hor)
-            qtymem[i+76,qindex]=intangle(Dt*dVA*gdet*bsq*(ud[RR])*(ud[PH]),**keywords2hor)
-            qtymem[i+77,qindex]=intangle(Dt*dVA*gdet*bsq*(ud[TH])*(ud[TH]),**keywords2hor)
-            qtymem[i+78,qindex]=intangle(Dt*dVA*gdet*bsq*(ud[TH])*(ud[PH]),**keywords2hor)
-            qtymem[i+79,qindex]=intangle(Dt*dVA*gdet*bsq*(ud[PH])*(ud[PH]),**keywords2hor)
-        
-            qtymem[i+80,qindex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(ud[TT]),**keywords2hor)
-            qtymem[i+81,qindex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(ud[RR]),**keywords2hor)
-            qtymem[i+82,qindex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(ud[TH]),**keywords2hor)
-            qtymem[i+83,qindex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(ud[PH]),**keywords2hor)
-            qtymem[i+84,qindex]=intangle(Dt*dVA*gdet*bsq*(uu[RR])*(ud[RR]),**keywords2hor)
-            qtymem[i+85,qindex]=intangle(Dt*dVA*gdet*bsq*(uu[RR])*(ud[TH]),**keywords2hor)
-            qtymem[i+86,qindex]=intangle(Dt*dVA*gdet*bsq*(uu[RR])*(ud[PH]),**keywords2hor)
-            qtymem[i+87,qindex]=intangle(Dt*dVA*gdet*bsq*(uu[TH])*(ud[TH]),**keywords2hor)
-            qtymem[i+88,qindex]=intangle(Dt*dVA*gdet*bsq*(uu[TH])*(ud[PH]),**keywords2hor)
-            qtymem[i+89,qindex]=intangle(Dt*dVA*gdet*bsq*(uu[PH])*(ud[PH]),**keywords2hor)
-        
-            qtymem[i+90,qindex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(uu[TT]),**keywords2hor)
-            qtymem[i+91,qindex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(uu[RR]),**keywords2hor)
-            qtymem[i+92,qindex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(uu[TH]),**keywords2hor)
-            qtymem[i+93,qindex]=intangle(Dt*dVA*gdet*bsq*(uu[TT])*(uu[PH]),**keywords2hor)
-            qtymem[i+94,qindex]=intangle(Dt*dVA*gdet*bsq*(uu[RR])*(uu[RR]),**keywords2hor)
-            qtymem[i+95,qindex]=intangle(Dt*dVA*gdet*bsq*(uu[RR])*(uu[TH]),**keywords2hor)
-            qtymem[i+96,qindex]=intangle(Dt*dVA*gdet*bsq*(uu[RR])*(uu[PH]),**keywords2hor)
-            qtymem[i+97,qindex]=intangle(Dt*dVA*gdet*bsq*(uu[TH])*(uu[TH]),**keywords2hor)
-            qtymem[i+98,qindex]=intangle(Dt*dVA*gdet*bsq*(uu[TH])*(uu[PH]),**keywords2hor)
-            qtymem[i+99,qindex]=intangle(Dt*dVA*gdet*bsq*(uu[PH])*(uu[PH]),**keywords2hor)
-        
-            # b * b
-        
-            qtymem[i+100,qindex]=intangle(Dt*dVA*gdet*(bd[TT])*(bd[TT]),**keywords2hor)
-            qtymem[i+101,qindex]=intangle(Dt*dVA*gdet*(bd[TT])*(bd[RR]),**keywords2hor)
-            qtymem[i+102,qindex]=intangle(Dt*dVA*gdet*(bd[TT])*(bd[TH]),**keywords2hor)
-            qtymem[i+103,qindex]=intangle(Dt*dVA*gdet*(bd[TT])*(bd[PH]),**keywords2hor)
-            qtymem[i+104,qindex]=intangle(Dt*dVA*gdet*(bd[RR])*(bd[RR]),**keywords2hor)
-            qtymem[i+105,qindex]=intangle(Dt*dVA*gdet*(bd[RR])*(bd[TH]),**keywords2hor)
-            qtymem[i+106,qindex]=intangle(Dt*dVA*gdet*(bd[RR])*(bd[PH]),**keywords2hor)
-            qtymem[i+107,qindex]=intangle(Dt*dVA*gdet*(bd[TH])*(bd[TH]),**keywords2hor)
-            qtymem[i+108,qindex]=intangle(Dt*dVA*gdet*(bd[TH])*(bd[PH]),**keywords2hor)
-            qtymem[i+109,qindex]=intangle(Dt*dVA*gdet*(bd[PH])*(bd[PH]),**keywords2hor)
-        
-            qtymem[i+110,qindex]=intangle(Dt*dVA*gdet*(bu[TT])*(bd[TT]),**keywords2hor)
-            qtymem[i+111,qindex]=intangle(Dt*dVA*gdet*(bu[TT])*(bd[RR]),**keywords2hor)
-            qtymem[i+112,qindex]=intangle(Dt*dVA*gdet*(bu[TT])*(bd[TH]),**keywords2hor)
-            qtymem[i+113,qindex]=intangle(Dt*dVA*gdet*(bu[TT])*(bd[PH]),**keywords2hor)
-            qtymem[i+114,qindex]=intangle(Dt*dVA*gdet*(bu[RR])*(bd[RR]),**keywords2hor)
-            qtymem[i+115,qindex]=intangle(Dt*dVA*gdet*(bu[RR])*(bd[TH]),**keywords2hor)
-            qtymem[i+116,qindex]=intangle(Dt*dVA*gdet*(bu[RR])*(bd[PH]),**keywords2hor)
-            qtymem[i+117,qindex]=intangle(Dt*dVA*gdet*(bu[TH])*(bd[TH]),**keywords2hor)
-            qtymem[i+118,qindex]=intangle(Dt*dVA*gdet*(bu[TH])*(bd[PH]),**keywords2hor)
-            qtymem[i+119,qindex]=intangle(Dt*dVA*gdet*(bu[PH])*(bd[PH]),**keywords2hor)
-        
-            qtymem[i+120,qindex]=intangle(Dt*dVA*gdet*(bu[TT])*(bu[TT]),**keywords2hor)
-            qtymem[i+121,qindex]=intangle(Dt*dVA*gdet*(bu[TT])*(bu[RR]),**keywords2hor)
-            qtymem[i+122,qindex]=intangle(Dt*dVA*gdet*(bu[TT])*(bu[TH]),**keywords2hor)
-            qtymem[i+123,qindex]=intangle(Dt*dVA*gdet*(bu[TT])*(bu[PH]),**keywords2hor)
-            qtymem[i+124,qindex]=intangle(Dt*dVA*gdet*(bu[RR])*(bu[RR]),**keywords2hor)
-            qtymem[i+125,qindex]=intangle(Dt*dVA*gdet*(bu[RR])*(bu[TH]),**keywords2hor)
-            qtymem[i+126,qindex]=intangle(Dt*dVA*gdet*(bu[RR])*(bu[PH]),**keywords2hor)
-            qtymem[i+127,qindex]=intangle(Dt*dVA*gdet*(bu[TH])*(bu[TH]),**keywords2hor)
-            qtymem[i+128,qindex]=intangle(Dt*dVA*gdet*(bu[TH])*(bu[PH]),**keywords2hor)
-            qtymem[i+129,qindex]=intangle(Dt*dVA*gdet*(bu[PH])*(bu[PH]),**keywords2hor)
-        
-        
-            #mass flux
-            qtymem[i+130,qindex]=intangle(Dt*dVA*gdet*rho*(uu[TT]),**keywords2hor)
-            qtymem[i+131,qindex]=intangle(Dt*dVA*gdet*rho*(uu[RR]),**keywords2hor)
-            qtymem[i+132,qindex]=intangle(Dt*dVA*gdet*rho*(uu[TH]),**keywords2hor)
-            qtymem[i+133,qindex]=intangle(Dt*dVA*gdet*rho*(uu[PH]),**keywords2hor)
-        #END BOB's QUANTITIES
     #
     #if os.path.isfile("lrho%04d.png" % qindex):
     #    print( "Skipping " + fname + " as lrho%04d.png exists" % qindex );
@@ -13972,9 +14024,6 @@ def amin(arg1,arg2):
 
 # allow to remove rho and ug component to remove floor effects
 def Tcalcud(maxbsqorho=None, which=None):
-    global mu, sigma
-    global enth
-    global unb, isunbound
     #
     bsqo2rho = bsq/(2.0*rho) # uses original rho, which is as desired
     bsqorho = bsq/(rho) # uses original rho, which is as desired
@@ -13986,10 +14035,13 @@ def Tcalcud(maxbsqorho=None, which=None):
     #
     #
     if(GLOBALTUD):
+        global mu, sigma
+        global enth
+        global unb, isunbound
         # MEMMARK: 16*5+5=85 full 3D vars.
         global Tud, TudEM, TudMA, TudPA, TudEN, TudRAD
         pg = (gam-1)*ugclean
-        prad = (4.0/3.0-1)*urad
+        prad = (4.0/3.0-1)*Erf
         w=rhoclean+ugclean+pg
         wnorhoclean=ugclean+pg
         eta=w+bsq
@@ -14029,17 +14081,18 @@ def Tcalcud(maxbsqorho=None, which=None):
         print("uu[3,5,0,0]=%g" % (uu[3,5,0,0])) ; sys.stdout.flush()
         print("B[3,5,0,0]=%g" % (B[3,5,0,0])) ; sys.stdout.flush()
         print("udotB[5,0,0]=%g" % (ud[0,5,0,0]*B[0,5,0,0] + ud[1,5,0,0]*B[1,5,0,0] + ud[2,5,0,0]*B[2,5,0,0] + ud[3,5,0,0]*B[3,5,0,0])) ; sys.stdout.flush()
-    #
-    mu = -fTud(1,0)*divideavoidinf(rhoclean*uu[1])
-    sigma = fTudEM(1,0)*divideavoidinf(fTudMA(1,0))
-    enth=1+ugclean*gam/rhoclean
-    unb=enth*ud[0]
-    # unbound here means *thermally* rather than kinetically (-u_t>1) or fully thermo-magnetically (\mu>1) unbound.
-    isunbound=(-unb>1.0)
+        #
+        mu = -fTud(1,0)*divideavoidinf(rhoclean*uu[1])
+        sigma = fTudEM(1,0)*divideavoidinf(fTudMA(1,0))
+        enth=1+ugclean*gam/rhoclean
+        unb=enth*ud[0]
+        # unbound here means *thermally* rather than kinetically (-u_t>1) or fully thermo-magnetically (\mu>1) unbound.
+        isunbound=(-unb>1.0)
 
 def faraday():
+    atesttesttest=1
     # MEMMARK: 32+4=36 full 3D vars
-    global omegaf1, omegaf1b, omegaf2, omegaf2b
+    #global omegaf1, omegaf1b, omegaf2, omegaf2b
     #global fdd,fuu
     # these are native values according to HARM
     #fdd = np.zeros((4,4,nx,ny,nz),dtype=rho.dtype)
@@ -14079,23 +14132,23 @@ def faraday():
     #fuu[2,1]=-fuu[1,2]
     #
     # these 2 are equal in degen electrodynamics when d/dt=d/dphi->0
-    omegaf1=fFdd(0,1)/fFdd(1,3) # = ftr/frp
-    omegaf2=fFdd(0,2)/fFdd(2,3) # = fth/fhp
+    #omegaf1=fFdd(0,1)/fFdd(1,3) # = ftr/frp
+    #omegaf2=fFdd(0,2)/fFdd(2,3) # = fth/fhp
     #
-    B1hat=B[1]*np.sqrt(gv3[1,1])
-    B2hat=B[2]*np.sqrt(gv3[2,2])
-    B3nonhat=B[3]
-    v1hat=uu[1]*np.sqrt(gv3[1,1])/uu[0]
-    v2hat=uu[2]*np.sqrt(gv3[2,2])/uu[0]
-    v3nonhat=uu[3]/uu[0]
+    #B1hat=B[1]*np.sqrt(gv3[1,1])
+    #B2hat=B[2]*np.sqrt(gv3[2,2])
+    #B3nonhat=B[3]
+    #v1hat=uu[1]*np.sqrt(gv3[1,1])/uu[0]
+    #v2hat=uu[2]*np.sqrt(gv3[2,2])/uu[0]
+    #v3nonhat=uu[3]/uu[0]
     #
-    aB1hat=np.fabs(B1hat)
-    aB2hat=np.fabs(B2hat)
-    av1hat=np.fabs(v1hat)
-    av2hat=np.fabs(v2hat)
+    #aB1hat=np.fabs(B1hat)
+    #aB2hat=np.fabs(B2hat)
+    #av1hat=np.fabs(v1hat)
+    #av2hat=np.fabs(v2hat)
     #
-    vpol=np.sqrt(av1hat**2 + av2hat**2)
-    Bpol=np.sqrt(aB1hat**2 + aB2hat**2)
+    #vpol=np.sqrt(av1hat**2 + av2hat**2)
+    #Bpol=np.sqrt(aB1hat**2 + aB2hat**2)
     #
     #omegaf1b=(omegaf1*aB1hat+omegaf2*aB2hat)/(aB1hat+aB2hat)
     #E1hat=fFdd(0,1)*np.sqrt(gn3[1,1])
@@ -14106,10 +14159,10 @@ def faraday():
     #
     # assume field swept back so omegaf is always larger than vphi (only true for outflow, so put in sign switch for inflow as relevant for disk near BH or even jet near BH)
     # GODMARK: These assume rotation about z-axis
-    omegaf2b=np.fabs(v3nonhat) + np.sign(uu[1])*(vpol/Bpol)*np.fabs(B3nonhat)
+    #omegaf2b=np.fabs(v3nonhat) + np.sign(uu[1])*(vpol/Bpol)*np.fabs(B3nonhat)
     #
     # below omega for the field 
-    omegaf1b=v3nonhat - B3nonhat*(v1hat*B1hat+v2hat*B2hat)/(B1hat**2+B2hat**2)
+    #omegaf1b=v3nonhat - B3nonhat*(v1hat*B1hat+v2hat*B2hat)/(B1hat**2+B2hat**2)
     #
 
 def jetpowcalc(which=2,minbsqorho=None,mumin=None,mumax=None,maxbeta=None,maxbsqorho=None,inflowonly=None,outflowonly=None,unboundonly=None,donorthsouth=0,conditional=1):
@@ -14169,13 +14222,10 @@ def jetpowcalc(which=2,minbsqorho=None,mumin=None,mumax=None,maxbeta=None,maxbsq
             cond=(mum1fake>mumax)
         #
         # avoid disk component that might be unbound and moving out as transient or as part of outer part of disk
-        #beta=((gam-1)*ug)*divideavoidinf(bsq*0.5)
-        beta=((gam-1)*ug)/(1E-30 + bsq*0.5)
-        betatot=((gam-1)*ug+(4.0/3.0-1)*urad)/(1E-30 + bsq*0.5)
         if maxbeta is None:
             donothing0000temp=1
         else:
-            cond+=(betatot>maxbeta) # always use betatot
+            cond+=(fbetatot()>maxbeta) # always use betatot
         #
         if maxbsqorho is None:
             donothing0001temp=1
@@ -14190,7 +14240,7 @@ def jetpowcalc(which=2,minbsqorho=None,mumin=None,mumax=None,maxbeta=None,maxbsq
         # NOTEMARK: this gives Edot[wind,out,unbound], but really want Edot[wind,net] because that's required to compute efficiency.  Edotout never otherwise used even if "interesting"
         if unboundonly==1:
             #zero out bound region
-            cond+=(1-isunbound)
+            cond+=(1-fisunbound())
         #
         if inflowonly==1:
             #zero out outflowing region
@@ -22979,16 +23029,16 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         else:
             rfdlastfile()
         #
-        denfactor=1.0 + rholab*0
+        denfactor=1.0 + frholab()*0
         diskcondition=condmaxbsqorho # full non-jet
         keywordsrhosqdcfull1={'which': diskcondition}
         tiny=np.finfo(rho.dtype).tiny
-        rhosqdcfull1int=intangle(gdet*denfactor,doavgn3=0,**keywordsrhosqdcfull1)+tiny # gdet is 2d by default
-        rhosrhosqdcfull1=intangle(gdet*denfactor*rho,doavgn3=0,**keywordsrhosqdcfull1)/rhosqdcfull1int
+        rhogenint=intangle(gdet*denfactor,doavgn3=0,**keywordsrhosqdcfull1)+tiny # gdet is 2d by default
+        rhosrhosqdcfull1=intangle(gdet*denfactor*rho,doavgn3=0,**keywordsrhosqdcfull1)/rhogenint
         #
         datavsphi = open('datavsphi1.txt', 'w')
         for ii in np.arange(0,nz):
-            datavsphi.write("%g %d %g  %g %g %g %g  %g %g %g %g  %g %g %g %g\n" % (t,ii,ph[0,ny/2,ii],rhosrhosqdcfull1[ihor,ii],rhosrhosqdcfull1[i4,ii],rhosrhosqdcfull1[i8,ii],rhosrhosqdcfull1[i30,ii],rhoclean[ihor,ny/2,ii],rhoclean[i4,ny/2,ii],rhoclean[i8,ny/2,ii],rhoclean[i30,ny/2,ii],rhounclean[ihor,ny/2,ii],rhounclean[i4,ny/2,ii],rhounclean[i8,ny/2,ii],rhounclean[i30,ny/2,ii]))
+            datavsphi.write("%g %d %g  %g %g %g %g  %g %g %g %g  %g %g %g %g\n" % (t,ii,ph[0,ny/2,ii],rhosrhosqdcfull1[ihor,ii],rhosrhosqdcfull1[i4,ii],rhosrhosqdcfull1[i8,ii],rhosrhosqdcfull1[i30,ii],rhoclean[ihor,ny/2,ii],rhoclean[i4,ny/2,ii],rhoclean[i8,ny/2,ii],rhoclean[i30,ny/2,ii],rho[ihor,ny/2,ii],rho[i4,ny/2,ii],rho[i8,ny/2,ii],rho[i30,ny/2,ii]))
         datavsphi.close()
         #
         # output density vs. \phi on r_{\\rm{}H}, 4M, 8M, 30M so can see mode structure in \phi
@@ -22998,16 +23048,16 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         else:
             rfdlastfile()
         #
-        denfactor=1.0 + rholab*0
+        denfactor=1.0 + frholab()*0
         diskcondition=condmaxbsqorho # full non-jet
         keywordsrhosqdcfull2={'which': diskcondition}
         tiny=np.finfo(rho.dtype).tiny
-        rhosqdcfull2int=intangle(gdet*denfactor,doavgn3=0,**keywordsrhosqdcfull2)+tiny # gdet is 2d by default
-        rhosrhosqdcfull2=intangle(gdet*denfactor*rho,doavgn3=0,**keywordsrhosqdcfull2)/rhosqdcfull2int
+        rhogenint=intangle(gdet*denfactor,doavgn3=0,**keywordsrhosqdcfull2)+tiny # gdet is 2d by default
+        rhosrhosqdcfull2=intangle(gdet*denfactor*rho,doavgn3=0,**keywordsrhosqdcfull2)/rhogenint
         #
         datavsphi = open('datavsphi2.txt', 'w')
         for ii in np.arange(0,nz):
-            datavsphi.write("%g %d %g  %g %g %g %g  %g %g %g %g  %g %g %g %g\n" % (t,ii,ph[0,ny/2,ii],rhosrhosqdcfull2[ihor,ii],rhosrhosqdcfull2[i4,ii],rhosrhosqdcfull2[i8,ii],rhosrhosqdcfull2[i30,ii],rhoclean[ihor,ny/2,ii],rhoclean[i4,ny/2,ii],rhoclean[i8,ny/2,ii],rhoclean[i30,ny/2,ii],rhounclean[ihor,ny/2,ii],rhounclean[i4,ny/2,ii],rhounclean[i8,ny/2,ii],rhounclean[i30,ny/2,ii]))
+            datavsphi.write("%g %d %g  %g %g %g %g  %g %g %g %g  %g %g %g %g\n" % (t,ii,ph[0,ny/2,ii],rhosrhosqdcfull2[ihor,ii],rhosrhosqdcfull2[i4,ii],rhosrhosqdcfull2[i8,ii],rhosrhosqdcfull2[i30,ii],rhoclean[ihor,ny/2,ii],rhoclean[i4,ny/2,ii],rhoclean[i8,ny/2,ii],rhoclean[i30,ny/2,ii],rho[ihor,ny/2,ii],rho[i4,ny/2,ii],rho[i8,ny/2,ii],rho[i30,ny/2,ii]))
         datavsphi.close()
         #
         # output density vs. \phi on r_{\\rm{}H}, 4M, 8M, 30M so can see mode structure in \phi
@@ -23020,16 +23070,16 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         else:
             rfdlastfile()
         #
-        denfactor=1.0 + rholab*0
+        denfactor=1.0 + frholab()*0
         diskcondition=condmaxbsqorho # full non-jet
         keywordsrhosqdcfull3={'which': diskcondition}
         tiny=np.finfo(rho.dtype).tiny
-        rhosqdcfull3int=intangle(gdet*denfactor,doavgn3=0,**keywordsrhosqdcfull3)+tiny # gdet is 2d by default
-        rhosrhosqdcfull3=intangle(gdet*denfactor*rho,doavgn3=0,**keywordsrhosqdcfull3)/rhosqdcfull3int
+        rhogenint=intangle(gdet*denfactor,doavgn3=0,**keywordsrhosqdcfull3)+tiny # gdet is 2d by default
+        rhosrhosqdcfull3=intangle(gdet*denfactor*rho,doavgn3=0,**keywordsrhosqdcfull3)/rhogenint
         #
         datavsphi = open('datavsphi3.txt', 'w')
         for ii in np.arange(0,nz):
-            datavsphi.write("%g %d %g  %g %g %g %g  %g %g %g %g  %g %g %g %g\n" % (t,ii,ph[0,ny/2,ii],rhosrhosqdcfull3[ihor,ii],rhosrhosqdcfull3[i4,ii],rhosrhosqdcfull3[i8,ii],rhosrhosqdcfull3[i30,ii],rhoclean[ihor,ny/2,ii],rhoclean[i4,ny/2,ii],rhoclean[i8,ny/2,ii],rhoclean[i30,ny/2,ii],rhounclean[ihor,ny/2,ii],rhounclean[i4,ny/2,ii],rhounclean[i8,ny/2,ii],rhounclean[i30,ny/2,ii]))
+            datavsphi.write("%g %d %g  %g %g %g %g  %g %g %g %g  %g %g %g %g\n" % (t,ii,ph[0,ny/2,ii],rhosrhosqdcfull3[ihor,ii],rhosrhosqdcfull3[i4,ii],rhosrhosqdcfull3[i8,ii],rhosrhosqdcfull3[i30,ii],rhoclean[ihor,ny/2,ii],rhoclean[i4,ny/2,ii],rhoclean[i8,ny/2,ii],rhoclean[i30,ny/2,ii],rho[ihor,ny/2,ii],rho[i4,ny/2,ii],rho[i8,ny/2,ii],rho[i30,ny/2,ii]))
         datavsphi.close()
         #
         #
@@ -23316,11 +23366,11 @@ def mkinitfinalplotpost(fname=None,plottype=0,aphijetouter=None,inputlevs=None,n
             #
             if whichplot==0:
                 if plottype==0 or plottype==1:
-                    #vmaxforframe=np.max(np.log10(entropy[0:iofr(framesize),:,:]))
+                    #vmaxforframe=np.max(np.log10(fentropy()[0:iofr(framesize),:,:]))
                     vmaxforframe=-0.8
                     vminforframe=-1.25
                 elif plottype==2:
-                    (vminforframe,vmaxforframe)=vminmax_entropy(qty=entropy)
+                    (vminforframe,vmaxforframe)=vminmax_entropy(qty=fentropy())
                 #
                 returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=True,tight=True,pt=False,dorho=False,doentropy=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
             elif whichplot==1:
@@ -23337,11 +23387,11 @@ def mkinitfinalplotpost(fname=None,plottype=0,aphijetouter=None,inputlevs=None,n
                 returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=True,tight=True,pt=False,dorho=False,dobsq=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
             elif whichplot==2:
                 if plottype==0 or plottype==1:
-                    vminforframe=np.log10(1.0/np.max(1.0/betatot[0:iofr(framesize),:,:]))
-                    vmaxforframe=np.log10(min(500.0,np.max(betatot[0:iofr(framesize),:,:])))
+                    vminforframe=np.log10(1.0/np.max(1.0/fbetatot()[0:iofr(framesize),:,:]))
+                    vmaxforframe=np.log10(min(500.0,np.max(fbetatot()[0:iofr(framesize),:,:])))
                 else:
-                    #vminforframe=1.0/np.max(1.0/betatot[0:iofr(framesize),:,:])
-                    #vmaxforframe=min(50.0,np.max(betatot[0:iofr(framesize),:,:]))
+                    #vminforframe=1.0/np.max(1.0/fbetatot()[0:iofr(framesize),:,:])
+                    #vmaxforframe=min(50.0,np.max(fbetatot()[0:iofr(framesize),:,:]))
                     vminforframe=-3.0
                     vmaxforframe=3.0
                 returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=True,tight=True,pt=False,dorho=False,dobeta=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
@@ -25068,7 +25118,7 @@ def plotomegaf2hor():
     bsqorhoavg=(bsq/rho)[ihor].sum(1)/nz
     TudEM10avg = (-gdet*fTudEM(1,0))[ihor].sum(1)/nz
     Etot = (-gdet*fTudEM(1,0))[ihor].sum()*_dx2*_dx3*2
-    plt.plot(tj[ihor,:,0],omegaf2[ihor].sum(1)/nz*dxdxp[3][3][0,0,0]/omh); 
+    plt.plot(tj[ihor,:,0],fomegaf2()[ihor].sum(1)/nz*dxdxp[3][3][0,0,0]/omh); 
     plt.plot(tj[ihor,:,0],0.5*rhoavg/np.max(rhoavg)); 
     plt.plot(tj[ihor,:,0],bsqorhoavg/100); 
     plt.plot(tj[ihor,:,0],0.5*TudEM10avg/np.max(TudEM10avg)); 
@@ -25121,7 +25171,7 @@ def plotrfisco():
 
 def plotaphivsr():
     plt.clf();plt.semilogx(r[:,0,0],aphi[:,ny/2,0]/10,label=r'$\Phi/10$')
-    plt.semilogx(r[:,0,0],15+lrho[:,ny/2,0],label=r'$\log_{10}\rho+15$')
+    plt.semilogx(r[:,0,0],15+flrho()[:,ny/2,0],label=r'$\log_{10}\rho+15$')
     plt.semilogx(r[:,0,0],20+np.log10(ug[:,ny/2,0]),label=r'$\log_{10}u_g\!+20$')
     plt.semilogx(r[:,0,0],(r[:,0,0]-34)**(2./3.)/2.1,label=r'$\propto (r-r_{\rm max})^{2/3}\!$')
     plt.grid()
@@ -26245,7 +26295,7 @@ def mkavgfigs():
     if mkstreampart1==1:
         #
         # for dojonwindplot
-        global rho,rholab,ug,B,gdetB,Erf,urad,uradu,bsq,mu,ud,uu,beta,betatot #,uutrue
+        global rho,rholab,ug,B,gdetB,Erf,uradu,bsq,mu,ud,uu,beta,betatot #,uutrue
         global KAPPAUSER,KAPPAESUSER,tauradintegrated,tauradeffintegrated
         #
         global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
@@ -26258,7 +26308,7 @@ def mkavgfigs():
         tauradeffintegrated=avg_tauradeffintegrated
         rholab=avg_rho*avg_uu[0] # GODMARK: Not full avg of rholab directly
         ug=avg_ug
-        urad=avg_urad
+        Erf=avg_Erf
         # use t-phi-averaged gdet B
         B=np.copy(avg_uu)
         B[1] = avg_B[0]
@@ -26564,7 +26614,7 @@ def mkavgfigs():
             avg1.write("%g " % (avg_KAPPAESUSER[ihor,jj,0]))
             avg1.write("%g " % (avg_tauradintegrated[ihor,jj,0]))
             avg1.write("%g " % (avg_tauradeffintegrated[ihor,jj,0]))
-            avg1.write("%g " % (avg_urad[ihor,jj,0]))
+            avg1.write("%g " % (avg_Erf[ihor,jj,0]))
             avg1.write("\n")
         #
         avg1.close()
@@ -26589,12 +26639,12 @@ def mkavgfigs():
         avg1.close()
         avg1 = open('dataavgvsr1.txt', 'w')
         # below doesn't yet show columns for each component of vector or tensors
-        avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudEN  avg_TudRAD  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma avggdet dxdxp11 dxdxp22dx2 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd rhosqint rhosqint2 avg_KAPPAUSER avg_KAPPAESUSER avg_tauradintegrated avg_tauradeffintegrated avg_urad\n")
+        avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudEN  avg_TudRAD  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma avggdet dxdxp11 dxdxp22dx2 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd rhosqint rhosqint2 avg_KAPPAUSER avg_KAPPAESUSER avg_tauradintegrated avg_tauradeffintegrated avg_Erf\n")
         avg1.write("#%g %g %d :  %g %d\n" % (avg_ts[0],avg_te[0],avg_nitems[0],rhor,ihor))
         #
         bsq=avg_bsq
         rho=avg_rho
-        (rhoclean,ugclean,uuclean,maxbsqorhonear,maxbsqorhofar,avgcondmaxbsqorho,avgcondmaxbsqorhorhs,rinterp)=getrhouclean(avg_rho,avg_ug,avg_uu)
+        (rhoclean,ugclean,maxbsqorhonear,maxbsqorhofar,avgcondmaxbsqorho,avgcondmaxbsqorhorhs,rinterp)=getrhouclean(avg_rho,avg_ug,avg_uu)
         maxbsqorho=np.copy(maxbsqorhonear)
         diskcondition=avgcondmaxbsqorho
         #
@@ -26634,7 +26684,7 @@ def mkavgfigs():
         avgvsr_tauradintegrated=intangle_foravg2d(gdet*denfactor*avg_tauradintegrated,**keywordsrhosq)/rhosqint
         avgvsr_tauradeffintegrated=intangle_foravg2d(gdet*denfactor*avg_tauradeffintegrated,**keywordsrhosq)/rhosqint
         avgvsr_ug=intangle_foravg2d(gdet*denfactor*avg_ug,**keywordsrhosq)/rhosqint
-        avgvsr_urad=intangle_foravg2d(gdet*denfactor*avg_urad,**keywordsrhosq)/rhosqint
+        avgvsr_urad=intangle_foravg2d(gdet*denfactor*avg_Erf,**keywordsrhosq)/rhosqint
         avgvsr_bsq=intangle_foravg2d(gdet*denfactor*avg_bsq,**keywordsrhosq)/rhosqint
         avgvsr_unb=intangle_foravg2d(gdet*denfactor*avg_unb,**keywordsrhosq)/rhosqint
         avgvsr_uu=np.zeros((4,nx),dtype=np.float32)
@@ -26889,7 +26939,7 @@ def mkavgfigs():
         avg1.close()
         avg1 = open('dataavg1.txt', 'w')
         # below doesn't yet show columns for each component of vector or tensors
-        avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudEN  avg_TudRAD  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma gdet dxdxp11 dxdxp22 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd avg_KAPPAUSER avg_KAPPAESUSER avg_tauradintegrated avg_tauradeffintegrated avg_urad\n")
+        avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudEN  avg_TudRAD  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma gdet dxdxp11 dxdxp22 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd avg_KAPPAUSER avg_KAPPAESUSER avg_tauradintegrated avg_tauradeffintegrated avg_Erf\n")
         avg1.write("#%g %g %d :  %g %d\n" % (avg_ts[0],avg_te[0],avg_nitems[0],rhor,ihor))
         for jj in np.arange(0,len(h[0,:,0])):
             for ii in np.arange(0,len(r[:,0,0])):
@@ -27019,7 +27069,7 @@ def mkavgfigs():
                 avg1.write("%g " % (avg_KAPPAESUSER[ii,jj,0]))
                 avg1.write("%g " % (avg_tauradintegrated[ii,jj,0]))
                 avg1.write("%g " % (avg_tauradeffintegrated[ii,jj,0]))
-                avg1.write("%g " % (avg_urad[ii,jj,0]))
+                avg1.write("%g " % (avg_Erf[ii,jj,0]))
                 avg1.write("%g " % (r[ii,jj,0]))
                 avg1.write("%g " % (h[ii,jj,0]))
                 avg1.write("%g " % (ph[ii,jj,0]))
@@ -27033,7 +27083,7 @@ def mkavgfigs():
         # e.g., time-phi average of quantities can sometimes not be preferred if vary alot or pass through zero.
         rho=avg_rho
         ug=avg_ug
-        urad=avg_urad
+        Erf=avg_Erf
         uu=avg_uu
         # get kappa's
         global KAPPAUSER,KAPPAESUSER
@@ -27065,7 +27115,7 @@ def mkavgfigs():
         #avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudEN  avg_TudRAD  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma gdet dxdxp11 dxdxp22 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd avg_KAPPAUSER avg_KAPPAESUSER avg_tauradintegrated")
         print("Doing field mkframe")
         sys.stdout.flush()
-        global rho,rholab,ug,B,gdetB,Erf,urad,uradu,bsq,mu,ud,uu,beta,betatot
+        global rho,rholab,ug,B,gdetB,Erf,uradu,bsq,mu,ud,uu,beta,betatot
         global KAPPAUSER,KAPPAESUSER,tauradintegrated,tauradeffintegrated
         #
         global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
@@ -27078,7 +27128,7 @@ def mkavgfigs():
         tauradeffintegrated=avg_tauradeffintegrated
         rholab=avg_rho*avg_uu[0]
         ug=avg_ug
-        urad=avg_urad
+        Erf=avg_Erf
         # use t-phi-averaged gdet B
         B[1] = avg_B[0]
         B[2] = avg_B[1]
@@ -27591,7 +27641,7 @@ def oldstuff():
         plt.clf()
         rfd("fieldline1000.bin")
         #plot contours of density
-        plc(lrho,xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,nc=50)
+        plc(flrho(),xcoord=r*np.sin(h),ycoord=r*np.cos(h),cb=True,nc=50)
         plt.xlim(0,2)
         plt.ylim(-2,2)
         plt.savefig("logdensity.png")
@@ -27746,7 +27796,7 @@ def oldstuff():
         plt.plot(x1[:,ny/2,0],(bsq/(2*(gam-1)*ug))[:,ny/2,0],'+')
         plt.plot(x1[:,ny/2,0],(0.01*rho)[:,ny/2,0])
     if False:
-        plt.clf();plco(lrho,r*np.sin(h),r*np.cos(h),cb=True,levels=np.arange(-12,0,0.5)); plt.xlim(0,40); plt.ylim(-20,20)
+        plt.clf();plco(flrho(),r*np.sin(h),r*np.cos(h),cb=True,levels=np.arange(-12,0,0.5)); plt.xlim(0,40); plt.ylim(-20,20)
     if False:
         rd( os.path.basename(glob.glob(os.path.join("dumps/", "dump0000*"))[0]) )
         #divb,gdetB,gdetBnew,Avpotf=reresrdump("rdump--0000")
@@ -28025,12 +28075,12 @@ def main(argv=None):
         aphi = fieldcalc()
         #5 plot density and overplotted vector potential
         plt.figure(1)  #open figure 1
-        plco(lrho,cb=True,nc=50) #plco -- erases and plots; cb=True tells it to draw color bar, nc = number of contours
+        plco(flrho(),cb=True,nc=50) #plco -- erases and plots; cb=True tells it to draw color bar, nc = number of contours
         plc(aphi,colors='k') #plc -- overplots without erasing; colors='k' says plot in blac'k'
         #5a compute same in x-z coordinates
         fig = plt.figure(2)  #open figure 2
         ax = fig.add_subplot(111, aspect='equal')
-        plco(lrho,cb=True,nc=50,xcoord=r*np.sin(h),ycoord=r*np.cos(h))
+        plco(flrho(),cb=True,nc=50,xcoord=r*np.sin(h),ycoord=r*np.cos(h))
         plc(aphi,nc=100,colors='k',xcoord=r*np.sin(h),ycoord=r*np.cos(h))
         plt.xlim(0,50)
         plt.ylim(-25,25)
@@ -28064,15 +28114,20 @@ def tutorial1():
     aphi = fieldcalc() # keep sign information
     plc(aphi,colors='k')
 
-def tutorial1alt():
+def tutorial1alt(filename=None):
     global modelname
     #modelname="radta0.8"
-    modelname="radtma0.8"
+    #modelname="radtma0.8"
+    modelname="thickdisk7"
     # first load grid file
     grid3d("gdump.bin")
     # now try loading a single fieldline file
     #rfd("fieldline0000.bin")
-    rfd("fieldline2704.bin")
+    #rfd("fieldline2704.bin")
+    #rfd("fieldline0519.bin")
+    if(filename==None):
+       filename="fieldline1385.bin"
+    rfd(filename)
     # now plot something you read-in
     plt.close(1)
     plt.figure(1)
@@ -28081,7 +28136,7 @@ def tutorial1alt():
     #
     ###############################
     if 1==1:
-        (rhoclean,ugclean,uublob,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
+        (rhoclean,ugclean,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
         cvel()
         Tcalcud(maxbsqorho=maxbsqorhonear,which=condmaxbsqorho)
         #
@@ -28106,8 +28161,9 @@ def tutorial1alt():
         iq2mridisk=iq2mri3ddisk.sum(2).sum(1)/(ny*nz)
         #
         pg = (gam-1)*ugclean
-        prad = (4.0/3.0-1)*urad
+        prad = (4.0/3.0-1)*Erf
         #
+        urad = Erf # APPROXIMATION GODMARK SUPERGODMARK TODOMARK
         WW = rhoclean + ug + pg + urad + prad
         EF = bsq + WW
         val21 = np.fabs(bu[1]*bd[1])/EF
@@ -28123,11 +28179,17 @@ def tutorial1alt():
         idx2mri = np.sqrt(val22)*2*np.pi/omegarot/mydH
     #
     ##############################
-    #nxout=20
-    nxout=100
-    myx=r[0:nxout:,:,0]*np.sin(h[0:nxout,:,0])*np.cos(ph[0:nxout,:,0])
-    myy=r[0:nxout,:,0]*np.sin(h[0:nxout,:,0])*np.sin(ph[0:nxout,:,0])
-    myz=r[0:nxout,:,0]*np.cos(h[0:nxout,:,0])
+    fakegrid=0
+    if fakegrid==0:
+        nxout=240
+        myx=r[0:nxout:,:,0]*np.sin(h[0:nxout,:,0])*np.cos(ph[0:nxout,:,0])
+        myy=r[0:nxout,:,0]*np.sin(h[0:nxout,:,0])*np.sin(ph[0:nxout,:,0])
+        myz=r[0:nxout,:,0]*np.cos(h[0:nxout,:,0])
+    else:
+        nxout=100
+        myx=r[0:nxout:,:,0]
+        myy=1
+        myz=h[0:nxout,:,0]
     #
     #############################
     #
@@ -28144,14 +28206,19 @@ def tutorial1alt():
         myfun[bsq/rho>1]=0
         myfun[rho<1E-5]=0
     if 1==0:
-        myfun=lrho
+        myfun=flrho()
     if 1==0:
-        myfun=np.log10(1E-5+1.0/betatot)
+        myfun=np.log10(1E-5+1.0/fbetatot())
     if 1==1:
-        myfun=np.log10(Erf)
-        yfun=gdet*(fTud(1,0))
-        #myfun=np.log10(Erf/bsq)
-        #myfun=uradu[0]
+        #myfun=np.log10(Erf)
+        #myfun=gdet*(-fTud(1,0))
+        #myfun=gdet*(-fTudRAD(1,0))
+        #myfun[]=0
+        #myfun=np.log10(Erf/rho)
+        #myfun=np.log10(rho)
+        myfun=np.log10(bsq)
+        #myfun=-gdet*Erf*uradu[1]*uradd[0]
+        #myfun=-Erf*uradu[1]*uradd[0]
     #
     if 1==0:
         myfun=idx2mri
@@ -28163,14 +28230,19 @@ def tutorial1alt():
     #
     myfun2=aphi
     #
+    vminmost=np.amin(myfun)
+    vmaxmost=np.amax(myfun)
+    print("vminmost=%g vmaxmost=%g" % (vminmost,vmaxmost)) ;sys.stdout.flush()
     #
     #######################################
     ax = plt.gca()
-    ax.pcolor(myx,myz,myfun[0:nxout,:,0])
-    plc(myfun[0:nxout,:,0],xcoord=myx,ycoord=myz,ax=ax,cb=True,nc=50)
-    #plco(lrho,cb=True,nc=50)
+    plt.pcolormesh(myx,myz,myfun[0:nxout,:,0],vmin=-10)
+    plt.colorbar()
+    plt.savefig("testplot_%s.png" % (filename) )
+    #plc(myfun[0:nxout,:,0],xcoord=myx,ycoord=myz,ax=ax,cb=True,nc=50)
+    #plco(flrho(),cb=True,nc=50)
     #
-    plc(myfun2[0:nxout,:,0],xcoord=myx,ycoord=myz,ax=ax,colors='k',nc=50)
+    #plc(myfun2[0:nxout,:,0],xcoord=myx,ycoord=myz,ax=ax,colors='k',nc=50)
     #
 
 def tutorial2():
@@ -28183,7 +28255,7 @@ def tutorial2():
     #
     #
     if 1==1:
-        (rhoclean,ugclean,uublob,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
+        (rhoclean,ugclean,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
         cvel()
         Tcalcud(maxbsqorho=maxbsqorhonear,which=condmaxbsqorho)
         #
@@ -28207,9 +28279,9 @@ def tutorial2():
         iq2mridisk=iq2mri3ddisk.sum(2).sum(1)/(ny*nz)
         #
         pg = (gam-1)*ugclean
-        prad = (4.0/3.0-1)*urad
+        prad = (4.0/3.0-1)*Erf
         #
-        WW = rhoclean + ug + pg + urad + prad
+        WW = rhoclean + ug + pg + Erf + prad
         EF = bsq + WW
         val21 = np.fabs(bu[1]*bd[1])/EF
         val22 = np.fabs(bu[2]*bd[2])/EF
@@ -28342,7 +28414,7 @@ def harmradplot1():
     # now try loading a single fieldline file
     rfd("fieldline0019.bin")
     if 1==1:
-        (rhoclean,ugclean,uublob,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
+        (rhoclean,ugclean,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
         cvel()
         Tcalcud(maxbsqorho=maxbsqorhonear,which=condmaxbsqorho)
     # now plot something you read-in
@@ -28352,7 +28424,7 @@ def harmradplot1():
     #toplot=np.log(rho)
     toplot=-fTudRAD(0,0)
     #toplot=Erf
-    #plco(lrho,cb=True,nc=50)
+    #plco(flrho(),cb=True,nc=50)
     bar=r*0+1
     ax = plt.gca()
     myx=r[:,0,:]*np.sin(h[:,0,:])*np.cos(ph[:,0,:])
@@ -28383,7 +28455,7 @@ def harmradplot2():
     # now try loading a single fieldline file
     rfd("fieldline0009.bin")
     if 1==1:
-        (rhoclean,ugclean,uublob,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
+        (rhoclean,ugclean,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
         cvel()
         Tcalcud(maxbsqorho=maxbsqorhonear,which=condmaxbsqorho)
     # now plot something you read-in
@@ -28392,7 +28464,7 @@ def harmradplot2():
     #toplot=np.log(rho)
     toplot=-fTudRAD(0,0)
     #toplot=Erf
-    #plco(lrho,cb=True,nc=50)
+    #plco(flrho(),cb=True,nc=50)
     bar=r*0+1
     ax = plt.gca()
     myx=r[:,0,:]*np.sin(h[:,0,:])*np.cos(ph[:,0,:])
@@ -28423,7 +28495,7 @@ def harmradplot3():
     # now try loading a single fieldline file
     rfd("fieldline0007.bin")
     if 1==1:
-        (rhoclean,ugclean,uublob,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
+        (rhoclean,ugclean,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
         cvel()
         Tcalcud(maxbsqorho=maxbsqorhonear,which=condmaxbsqorho)
     # now plot something you read-in
@@ -28432,7 +28504,7 @@ def harmradplot3():
     #toplot=np.log(rho)
     toplot=-fTudRAD(0,0)
     #toplot=Erf
-    #plco(lrho,cb=True,nc=50)
+    #plco(flrho(),cb=True,nc=50)
     bar=r*0+1
     ax = plt.gca()
     myx=r[:,0,:]*np.sin(h[:,0,:])*np.cos(ph[:,0,:])
@@ -28464,7 +28536,7 @@ def harmradplot4():
     # now try loading a single fieldline file
     rfd("fieldline0006.bin")
     if 1==1:
-        (rhoclean,ugclean,uublob,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
+        (rhoclean,ugclean,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
         cvel()
         Tcalcud(maxbsqorho=maxbsqorhonear,which=condmaxbsqorho)
     # now plot something you read-in
@@ -28473,7 +28545,7 @@ def harmradplot4():
     #toplot=np.log(rho)
     toplot=-fTudRAD(0,0)
     #toplot=Erf
-    #plco(lrho,cb=True,nc=50)
+    #plco(flrho(),cb=True,nc=50)
     bar=r*0+1
     ax = plt.gca()
     myx=r[:,0,:]*np.sin(h[:,0,:])*np.cos(ph[:,0,:])
@@ -28520,7 +28592,7 @@ def harmradplot5():
     rfd("fieldline0100.bin")
     #rfd("fieldline0086.bin")
     if 1==1:
-        (rhoclean,ugclean,uublob,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
+        (rhoclean,ugclean,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
         cvel()
         Tcalcud(maxbsqorho=maxbsqorhonear,which=condmaxbsqorho)
     # now plot something you read-in
@@ -28536,7 +28608,7 @@ def harmradplot5():
     #toplot=np.log(ug)
     toplot=-fTudRAD(0,0)
     #toplot=Erf
-    #plco(lrho,cb=True,nc=50)
+    #plco(flrho(),cb=True,nc=50)
     print("GOT HERE.5");sys.stdout.flush()
     ax = plt.gca()
     #plt.figure(num=fignum,figsize=(6,1),dpi=300)
@@ -28742,7 +28814,7 @@ def harmradtest1(path=None,fil=None):
         getkappas(1)
     #
     if 1==1:
-        (rhoclean,ugclean,uublob,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
+        (rhoclean,ugclean,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
         cvel()
         Tcalcud(maxbsqorho=maxbsqorhonear,which=condmaxbsqorho)
         # reget tau's
