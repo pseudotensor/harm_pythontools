@@ -6458,7 +6458,7 @@ def maketsuniform(toplot=None):
                 toplotnewsub[newtici,:]=toplot[tici,:]
                 tsnewsub[newtici]=ts[tici]
                 newtici=newtici+1
-            elif tici==len(ts)-1:
+            elif tici==len(ts)-1 and newtici<=len(ts)-1:
                 toplotnewsub[newtici,:]=toplot[tici,:]
                 tsnewsub[newtici]=ts[tici]
                 newtici=newtici+1
