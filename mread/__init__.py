@@ -2723,8 +2723,8 @@ def getdefaulttimes1():
         defaultftf=1e6
     else:
         # default (assumes ran at least beyond t=1000)
-        defaultfti=168500 #28500 #167000 #50000 #mavaratime 25000 #4000 #10000 #1000
-        defaultftf=168700 #34500 #169000 #73600 #32000 #8000 #20000 #1e6
+        defaultfti=104500 #28500 #167000 #50000 #mavaratime 25000 #4000 #10000 #1000
+        defaultftf=106500 #34500 #169000 #73600 #32000 #8000 #20000 #1e6
     #
     # set tilted models
     if isthickdiskmodel(modelname)==2:
@@ -2817,8 +2817,8 @@ def getdefaulttimes2():
         defaultfti=9000
         defaultftf=12000
     else:
-        defaultfti=168500 #28500 #167000 #50000 #58000 #25000 #4000 #10000 # MAVARATIME 1000
-        defaultftf=168700 #34500 #169000 #73600 #66000 #32000 #8000 #20000 #1e6    6000 and 9000 for BPCooling3... didn't work for some reason
+        defaultfti=104500 #28500 #167000 #50000 #58000 #25000 #4000 #10000 # MAVARATIME 1000
+        defaultftf=106500 #34500 #169000 #73600 #66000 #32000 #8000 #20000 #1e6    6000 and 9000 for BPCooling3... didn't work for some reason
     #
     # set tilted models
     if isthickdiskmodel(modelname)==2:
@@ -3393,6 +3393,94 @@ def compute_resires(hoverrwhich=None):
         #bsqphidir=bu[3]*bd[3]
         bsqphidir=bu3ks*bd3ks
         va3sq = np.fabs(bsqphidir/(rho+bsq+gam*ug))
+        lambda3 = 2.0*np.pi * np.sqrt(va3sq) / omega
+        # azimuthal grid cells per MRI wavelength
+        res3=np.fabs(lambda3/mydP)
+        #
+        # MRI wavelengths over the whole disk
+        if hoverrwhich is not None:
+            #ires2=np.fabs(lambda2)
+            ires2=np.fabs(lambda2*divideavoidinf(r*(2.0*hoverrwhich)))
+            #sumhoverrwhich=np.sum(hoverrwhich)
+            #print("sumhoverrwhich")
+            #print(sumhoverrwhich)
+            #sumires2=np.sum(ires2)
+            #print("sumires2")
+            #print(sumires2)
+            #ires2=np.fabs(lambda2/(r*(2.0*0.2)))
+            ires2[np.fabs(hoverrwhich)<10^(-10)]=0
+            ires2[hoverrwhich!=hoverrwhich]=0
+            ires2[np.isnan(hoverrwhich)==1]=0
+            ires2[np.isinf(hoverrwhich)==1]=0
+        else:
+            # h/r=1 set, so can use <h/r>_t later so more stable result
+            ires2=np.fabs(lambda2*divideavoidinf(r*(2.0*1.0)))
+        #
+    return(res,res3,ires2)
+
+
+def compute_resires2(hoverrwhich=None):
+    #
+    # Note:  Toroidal field case: A_\theta -> A_1 A_2 A_3 via idxdxp's and then B1,B2,B3 computed via differences of A_i.
+    # So even if only setting A_\theta implies B^\theta = 0, Btheta = dx^\theta/dxp^i B^i will give non-zero value due to truncation error.
+    #
+    mydH = r*dxdxp[2][2]*_dx2  # GODMARK: inaccurate a bit as \theta component because dxdxp[1][2] and dxdxp[2][1] are non-zero.  So say so in paper.
+    #mydH = r*(_dx1*dxdxp[2][1] + _dx2*dxdxp[2][2]) # GODMARK: Seems logical, but wrong.
+    mydP = r*np.sin(h)*dxdxp[3][3]*_dx3
+    #
+    #
+    ################ IF USE OMEGAFIX==1, should use Kep Omega here
+    #
+    # BELOW FOR OMEGAFIX==0
+    #omega = np.fabs(dxdxp[3][3]*uu[3]/uu[0])+1.0e-15
+    # much of thick disk remains sub-Keplerian, so for estimate of Q must force consistency with assumptions of the Qmri measure
+    # BELOW FOR OMEGAFIX==1
+    # GODMARK: Leaving as OMEGAFIX==1 because want to average omega and vau2 separately (avoids stupid limit where omaga=0 could be true randomly and kill result's meaning)
+    #R = r*np.sin(h)
+    #omega = 1.0/(a + R**(3.0/2.0))
+    #
+    omega=1.0 + r*0.0 # now no longer using OMEGAFIX (i.e. OMEGAFIX=0 should be set)
+    #
+    #####################################
+    #
+    # don't use 0==1 part anymore (since can't readily compute res2 consistently)
+    if 0==1:
+        vau2 = np.abs(bu[2])/np.sqrt(rho+bsq()+gam*ug)
+        lambdamriu2 = 2*np.pi * vau2 / omega
+        res=np.fabs(lambdamriu2/_dx2)
+        res2=0
+    #
+    # distinguish between b^2 and b^\theta since off of equator they are different than if b^\theta=0 want that to be captured in Qmri measures.
+    bu0ks=bu[0]*dxdxp[0][0]
+    bu1ks=bu[1]*dxdxp[1][1] + bu[2]*dxdxp[1][2]
+    bu2ks=bu[1]*dxdxp[2][1] + bu[2]*dxdxp[2][2]
+    bu3ks=bu[3]*dxdxp[3][3]
+    #
+    # inverse of dx^{ks}/dx^{mks}
+    idxdxp00=1/dxdxp[0][0]
+    idxdxp11=dxdxp[2][2]/(dxdxp[2][2]*dxdxp[1][1]-dxdxp[2][1]*dxdxp[1][2])
+    idxdxp12=dxdxp[1][2]/(dxdxp[2][1]*dxdxp[1][2]-dxdxp[2][2]*dxdxp[1][1])
+    idxdxp21=dxdxp[2][1]/(dxdxp[2][1]*dxdxp[1][2]-dxdxp[2][2]*dxdxp[1][1])
+    idxdxp22=dxdxp[1][1]/(dxdxp[2][2]*dxdxp[1][1]-dxdxp[2][1]*dxdxp[1][2])
+    idxdxp33=1/dxdxp[3][3]
+    #
+    bd0ks=bd()[0]*idxdxp00
+    bd1ks=bd()[1]*idxdxp11+bd()[2]*idxdxp21
+    bd2ks=bd()[1]*idxdxp12+bd()[2]*idxdxp22
+    bd3ks=bd()[3]*idxdxp33
+    #
+    #
+    if 1==1:
+        #bsqvert=bu[2]*bd[2]
+        bsqvert=bu2ks*bd2ks
+        va2sq = np.fabs(bsqvert/(rho+bsq()+gam*ug))
+        lambda2 = 2.0*np.pi * np.sqrt(va2sq) / omega
+        # vertical grid cells per MRI wavelength
+        res=np.fabs(lambda2/mydH)
+        #
+        #bsqphidir=bu[3]*bd[3]
+        bsqphidir=bu3ks*bd3ks
+        va3sq = np.fabs(bsqphidir/(rho+bsq()+gam*ug))
         lambda3 = 2.0*np.pi * np.sqrt(va3sq) / omega
         # azimuthal grid cells per MRI wavelength
         res3=np.fabs(lambda3/mydP)
@@ -5485,7 +5573,7 @@ def ftr(x,xb,xf):
 
 
 # dobhfield=True : GODMARK: Set to False since already showing BH penetrating field because comes from large radii down to hole
-def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,len=20,lenx=None,leny=None,aspect=None,ncell=800,pt=True,shrink=1,dovel=False,doaphi=False,dostreamlines=True,doaphiavg=False,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,doentropy=False,dobsq=False,dobeta=False,doQ1=False,doQ2=False,doSd=False,doErf=False,dovarylw=True,dobhfield=False,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,domidfield=True,showjet=False,arrowsize=1,forceeqsym=0,dojonwindplot=False,dotaurad=False,dobsqorholine=False,doaphicont=None,inputlevs=None,numcontours=30,signaphi=1,aphipow=1.0,showuu1eq0=True,inputcoloraphi=None):
+def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,len=20,lenx=None,leny=None,aspect=None,ncell=1600,pt=True,shrink=1,dovel=False,doaphi=False,dostreamlines=True,doaphiavg=False,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,doentropy=False,dobsq=False,dobeta=False,doQ1=False,doQ2=False,doSd=False,doErf=False,dovarylw=True,dobhfield=False,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,domidfield=True,showjet=False,arrowsize=1,forceeqsym=0,dojonwindplot=False,dotaurad=False,dobsqorholine=False,doaphicont=None,inputlevs=None,numcontours=90,signaphi=1,aphipow=1.0,showuu1eq0=True,inputcoloraphi=None):  #MAVARACHANGE numcontours from 30
     #
     levs=inputlevs
     #
@@ -5666,7 +5754,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         #
         iqty = reinterp(qty,extent,ncell,domask=1.0)
         icondmaxbsqorho = reinterp(condmaxbsqorho,extent,ncell)
-        iqty=ma.masked_where(icondmaxbsqorho<0.5, iqty)
+        #iqty=ma.masked_where(icondmaxbsqorho<0.5, iqty)
     #
     if dovel==1:
         dovarylw=0
@@ -6025,7 +6113,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
 
 
 
-def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True,shrink=1,dostreamlines=True,arrowsize=1,dorho=True,doentropy=False,dobsq=False,dobeta=False,doQ1=False,doQ2=False,doErf=False,dotaurad=False):
+def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=1600,pt=True,shrink=1,dostreamlines=True,arrowsize=1,dorho=True,doentropy=False,dobsq=False,dobeta=False,doQ1=False,doQ2=False,doErf=False,dotaurad=False):
     extent=(-len,len,-len,len)
     palette=cm.jet
     palette.set_bad('k', 1.0)
@@ -6092,7 +6180,7 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
         #
         iqty = reinterpxy(qty,extent,ncell,domask=1.0) #mavarachangewedges
         icondmaxbsqorho = reinterpxy(condmaxbsqorho,extent,ncell) #mavarachangewedges
-        iqty=ma.masked_where(icondmaxbsqorho<0.5, iqty)
+        #iqty=ma.masked_where(icondmaxbsqorho<0.5, iqty)
     #
     ##########################
     # get field
@@ -9005,7 +9093,7 @@ def getbsq_pre():
 
 def cvel():
     # MEMMARK: (4+4+4+1+1+4+4+4+4+6)=36 full 3D vars
-    global ud,etad, etau, gamma, vu, vd, bu, bd, bsq,beta,betatot,betatoplot,Q1,Q2,Q3,Q2toplot,uradd,tauradintegrated, thetamid3dtoplot, hoverr2dtoplot,thetamid3dtoplot2, hoverr2dtoplot2,thetamid3dtoplot3, hoverr2dtoplot3
+    global ud,etad, etau, gamma, vu, vd, bu, bd, bsq,beta,betatest,betatot,betatoplot,Q1,Q2,Q3,Q2toplot,uradd,tauradintegrated, thetamid3dtoplot, hoverr2dtoplot,thetamid3dtoplot2, hoverr2dtoplot2,thetamid3dtoplot3, hoverr2dtoplot3
     #
     #
     ud = mdot(gv3,uu)                  #g_mn u^n
@@ -9024,6 +9112,7 @@ def cvel():
     bsq=mdot(bu,bd)
     #
     beta=((gam-1)*ug)/(1E-30 + bsq*0.5)
+    #betatest=lambda: ((gam-1)*ug)/(1E-30 + bsq*0.5)
     betatot=((gam-1)*ug+(4.0/3.0-1.0)*urad)/(1E-30 + bsq*0.5)
     #betatoplot=np.ma.masked_array(beta,mask=(np.isnan(beta)==True)*(np.isinf(beta)==True)*(beta>1E10))
     betatoplot=np.copy(betatot)
@@ -9051,6 +9140,13 @@ def cvel():
     diskcondition1=condmaxbsqorho #*(beta>2.)
     diskcondition2=condmaxbsqorho #*(beta>2.)
     # was denfactor=rho, but want uniform with corona and jet
+    #
+    #MAVARAADD the next 4 lines added for by-hand use of cvel() at command line after avg2d.npy variables loaded to get hor from avg2d
+    #global rho_avg_3d
+    #rho_avg_3d=np.zeros_like(r)
+    #for k in np.arange(0,nz):
+    #    rho_avg_3d[:,:,k] = avg_rho[:,:,0]
+    #
     hoverr3dtoplot,thetamid3dtoplot=horcalc(hortype=1,which1=diskcondition1,which2=diskcondition2,denfactor=rholab)
     hoverrtemp=hoverr3dtoplot.sum(2)/(nz)
     for k in np.arange(0,nz):
@@ -9064,16 +9160,135 @@ def cvel():
         hoverr3dtoplot2[:,:,k] = hoverrtemp2[:,:]
     hoverr2dtoplot2=hoverr3dtoplot2.sum(2)/(nz)
     #Form from eqn. 5.4 from Penna et al 2012
-    hoverr3dtoplot3,thetamid3dtoplot3=horcalc(hortype=3,which1=diskcondition1,which2=diskcondition2,denfactor=rholab**2)
-    hoverrtemp3=hoverr3dtoplot3.sum(2)/(nz)
+    hoverr3dtoplot3,thetamid3dtoplot3=horcalc(hortype=3,which1=diskcondition1,which2=diskcondition2,denfactor=rholab**2) #rho_avg_3d**2)
+    hoverrtemp3sum=np.zeros_like(hoverr3dtoplot3[:,:,0])
+    normsums=np.zeros_like(hoverr3dtoplot3[:,0,0])
+    for i in np.arange(0,nx):
+        for k in np.arange(0,nz):
+            hoverrtemp3sum[i,:]+=hoverr3dtoplot3[i,:,k]*rholab[i,ny/2,k].mean(0)
+            normsums[i]+=rholab[i,ny/2,k].mean(0)
+        hoverrtemp3sum[i]=hoverrtemp3sum[i]/normsums[i]
+    #
+    hoverrtemp3=np.copy(hoverrtemp3sum)
+    #
+    #hoverrtemp3=hoverr3dtoplot3.sum(2)/(nz)
     for k in np.arange(0,nz):
         hoverr3dtoplot3[:,:,k] = hoverrtemp3[:,:]
     hoverr2dtoplot3=hoverr3dtoplot3.sum(2)/(nz)
     #
     #
     #
-    Q1,Q3,OQ2=compute_resires()#hoverrwhich=hoverr3dtoplot)
-    vrot,omegarot=vomegarot()
+    Q1,Q3,OQ2=compute_resires() #hoverrwhich=hoverr3dtoplot)
+    vrot,omegarot=vomegarot() # this is also how omegarot is calculated for computation in Qmri_simple
+    Q1=Q1/omegarot
+    Q3=Q3/omegarot
+    OQ2=OQ2/omegarot
+    Q2=hoverr3dtoplot/OQ2
+    #Q2toplot=np.ma.masked_array(Q2,mask=(np.isnan(Q2)==True)*(np.isinf(Q2)==True)*(Q2>1E10))
+    Q2toplot=np.copy(Q2)
+    #Q2toplot[(Q2toplot<0)]=0.0
+    #Q2toplot[(Q2toplot>1E3)]=1E3
+    #Q2toplot[np.isinf(Q2toplot)]=1E3
+    #Q2toplot[np.isnan(Q2toplot)]=1E3
+    #
+    aphi = fieldcalc()
+    #
+    uradd = mdot(gv3,uradu)                  #g_mn urad^n
+    # 
+    # get tau's
+    taurad1integrated,taurad1flipintegrated,taurad2integrated,taurad2flipintegrated,tauradintegrated=compute_taurad()
+
+
+def cvel2():
+    # MEMMARK: (4+4+4+1+1+4+4+4+4+6)=36 full 3D vars
+    global ud,etad, etau, gamma, vu, vd, bu, bd, bsq,beta,betatest,betatot,betatoplot,Q1,Q2,Q3,Q2toplot,uradd,tauradintegrated, thetamid3dtoplot, hoverr2dtoplot,thetamid3dtoplot2, hoverr2dtoplot2,thetamid3dtoplot3, hoverr2dtoplot3
+    #
+    #
+    ud = lambda : mdot(gv3,uu)                  #g_mn u^n
+    etad = np.zeros_like(uu)
+    etad[0] = -1/(-gn3[0,0])**0.5      #ZAMO frame velocity (definition)
+    etau = lambda : mdot(gn3,etad)
+    gamma= lambda : -mdot(uu,etad)                #Lorentz factor as measured by ZAMO
+    vu = lambda : uu - gamma()*etau()               #u^m = v^m + gamma eta^m
+    vd = lambda : mdot(gv3,vu())
+    #
+    bu=np.empty_like(uu)              #allocate memory for bu
+    #set component per component
+    bu[0]=mdot(B[1:4], ud()[1:4])             #B^i u_i
+    bu[1:4]=(B[1:4] + bu[0]*uu[1:4])/uu[0]  #b^i = (B^i + b^t u^i)/u^t
+    #    bu=lambda : np.concatenate((mdot(B[1:4], ud()[1:4]),(B[1:4] + (mdot(B[1:4], ud()[1:4]))*uu[1:4])/uu[0]))             #B^i u_i
+    bd=lambda : mdot(gv3,bu)
+    bsq=lambda : mdot(bu,bd())
+    #
+    beta=lambda : ((gam-1)*ug)/(1E-30 + bsq()*0.5)
+    #betatest=lambda: ((gam-1)*ug)/(1E-30 + bsq*0.5)
+    betatot=lambda : ((gam-1)*ug+(4.0/3.0-1.0)*urad)/(1E-30 + bsq()*0.5)
+    #betatoplot=np.ma.masked_array(beta,mask=(np.isnan(beta)==True)*(np.isinf(beta)==True)*(beta>1E10))
+    betatoplot=lambda : np.copy(betatot())
+    #betatoplot[(betatoplot<30)]=30.0
+    #betatoplot[(betatoplot>1E3)]=1E3
+    #betatoplot[np.isinf(betatoplot)]=1E3
+    #betatoplot[np.isnan(betatoplot)]=1E3
+    ##############################
+    # compute some things one might plot
+    #
+    # disk mass density scale height
+    #diskcondition=(beta>2.0)
+    # was (bsq/rho<1.0)
+    #diskcondition=diskcondition*(mum1fake<1.0)
+    ############# just avoid floor mass
+    cond1=(bsq()/rho<30)
+    cond2=(bsq()/rho<10)
+    condmaxbsqorho= cond1*(r<9.0)+cond2*(r>=9.0)
+    # need smooth change since notice small glitches in things with the above
+    rinterp=(r-9.0)*(1.0-0.0)/(0.0-9.0) # gives 0 for use near 9   gives 1 for use near 0
+    rinterp[rinterp>1.0]=1.0
+    rinterp[rinterp<0.0]=0.0
+    condmaxbsqorho=(bsq()/rho < rinterp*30.0 + (1.0-rinterp)*10.) #* (rho>1.e-3) * (bsq/ug < 9.e4) * (ug/rho < 80)
+    ############## MAVARA this section uncommented for tiltplot cvel call
+    diskcondition1=condmaxbsqorho #*(beta>2.)
+    diskcondition2=condmaxbsqorho #*(beta>2.)
+    # was denfactor=rho, but want uniform with corona and jet
+    #
+    #MAVARAADD the next 4 lines added for by-hand use of cvel() at command line after avg2d.npy variables loaded to get hor from avg2d
+    #global rho_avg_3d
+    #rho_avg_3d=np.zeros_like(r)
+    #for k in np.arange(0,nz):
+    #    rho_avg_3d[:,:,k] = avg_rho[:,:,0]
+    #
+    hoverr3dtoplot,thetamid3dtoplot=horcalc(hortype=1,which1=diskcondition1,which2=diskcondition2,denfactor=rholab)
+    hoverrtemp=hoverr3dtoplot.sum(2)/(nz)
+    for k in np.arange(0,nz):
+        hoverr3dtoplot[:,:,k] = hoverrtemp[:,:]
+    hoverr2dtoplot=hoverr3dtoplot.sum(2)/(nz)
+    #thetamid2dtoplot=thetamid3dtoplot.sum(2)/(nz)
+    #Now a couple other measures of h/r
+    hoverr3dtoplot2,thetamid3dtoplot2=horcalc(hortype=2,which1=diskcondition1,which2=diskcondition2,denfactor=rholab)
+    hoverrtemp2=hoverr3dtoplot2.sum(2)/(nz)
+    for k in np.arange(0,nz):
+        hoverr3dtoplot2[:,:,k] = hoverrtemp2[:,:]
+    hoverr2dtoplot2=hoverr3dtoplot2.sum(2)/(nz)
+    #Form from eqn. 5.4 from Penna et al 2012
+    hoverr3dtoplot3,thetamid3dtoplot3=horcalc(hortype=3,which1=diskcondition1,which2=diskcondition2,denfactor=rholab**2) #rho_avg_3d**2)
+    hoverrtemp3sum=np.zeros_like(hoverr3dtoplot3[:,:,0])
+    normsums=np.zeros_like(hoverr3dtoplot3[:,0,0])
+    for i in np.arange(0,nx):
+        for k in np.arange(0,nz):
+            hoverrtemp3sum[i,:]+=hoverr3dtoplot3[i,:,k]*rholab[i,ny/2,k].mean(0)
+            normsums[i]+=rholab[i,ny/2,k].mean(0)
+        hoverrtemp3sum[i]=hoverrtemp3sum[i]/normsums[i]
+    #
+    hoverrtemp3=np.copy(hoverrtemp3sum)
+    #
+    #hoverrtemp3=hoverr3dtoplot3.sum(2)/(nz)
+    for k in np.arange(0,nz):
+        hoverr3dtoplot3[:,:,k] = hoverrtemp3[:,:]
+    hoverr2dtoplot3=hoverr3dtoplot3.sum(2)/(nz)
+    #
+    #
+    #
+    Q1,Q3,OQ2=compute_resires2() #hoverrwhich=hoverr3dtoplot)
+    vrot,omegarot=vomegarot() # this is also how omegarot is calculated for computation in Qmri_simple
     Q1=Q1/omegarot
     Q3=Q3/omegarot
     OQ2=OQ2/omegarot
@@ -12698,7 +12913,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         #############
         #
         # decide if want to compute this, since can be expensive and might not care to always compute it.
-        computephipow=1
+        computephipow=0
         #
         if computephipow==1:
             print("DISK+CORONA ONLY (never jet)" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
@@ -13028,7 +13243,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
             print("avg_bsq") ; sys.stdout.flush()
             #print(avg_bsq) ; sys.stdout.flush()
             #
-            bsqrhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dbsq,denom=denomdbsq,qtypaper=1,diskorjet=0,printouts=1,useminmaxbsqorho=1,**keywordsrhosq_diskcorona_thetapow_rad8)
+            bsqrhosq_diskcorona_thetapow_rad8[qindex]=powervsl(doabs=0,rin=rin,rout=rout,maxbsqorho=maxbsqorho,qty=gdet*denfactor*dbsq,denom=denomdbsq,qtypaper=1,diskorjet=0,printouts=0,useminmaxbsqorho=1,**keywordsrhosq_diskcorona_thetapow_rad8) #MAVARACHANGE printouts was 1
             #
             for iter in np.arange(0,len(bsqrhosq_diskcorona_thetapow_rad8[qindex])):
                 #print("iter=%d bsqrhosq_diskcorona_thetapow_rad8[iter,1]=%g\n" % (iter,bsqrhosq_diskcorona_thetapow_rad8[iter,1]))
@@ -13202,7 +13417,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         # This periodic-likeness ensures don't introduce artificial scales size of \delta r (range of Fourier transform) or on smallest scales of Fourier transform due to jump at boundary.
         # Also, more comparable to local simulation.
         # Be careful by dealing with things that vanish across equator by using absolute versions of average and quantity itself.
-        computeradiuspow=1
+        computeradiuspow=0
         #
         print("DISK+CORONA ONLY (never jet)" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         #
@@ -18702,13 +18917,14 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     sashaplot5 = 0
     #
     #
+    scaledownphi=0.1
     # For whichplot==5 Plot:
     if whichplot == 5:
         if dotavg:
             if sashaplot5==0:
                 if showextra:
                     ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+timeavg(phij**2,ts,fti,ftf)**0.5,'--',color=(fc,fc+0.5*(1-fc),fc))
-                    ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+timeavg(phimwout**2,ts,fti,ftf)**0.5,'-.',color=(fc,fc,1))
+                    ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+scaledownphi*timeavg(phimwout**2,ts,fti,ftf)**0.5,'-.',color=(fc,fc,1))
                 ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+phibh_avg,color=(ofc,fc,fc))
             else:
                 ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+phibh_avg,color=(ofc,fc,fc),linestyle=lst)
@@ -18717,7 +18933,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             if(iti>fti):
                 if showextra:
                     ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+timeavg(phij2**2,ts,iti,itf)**0.5,'--',color=(fc,fc+0.5*(1-fc),fc))
-                    ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+timeavg(phimwout2**2,ts,iti,itf)**0.5,'-.',color=(fc,fc,1))
+                    ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+scaledownphi*timeavg(phimwout2**2,ts,iti,itf)**0.5,'-.',color=(fc,fc,1))
                 ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+phibh2_avg,color=(ofc,fc,fc))
         #To approximately get efficiency:
         #ax.plot(ts,2./3.*np.pi*omh**2*np.abs(fsj30[:,ihorusemag]/4/np.pi)**2/mdotfinavg)
@@ -18727,19 +18943,19 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         if showextra:
             ax.plot(ts,phij,'g--',label=r'$\Upsilon_{\rm j}$')
-            ax.plot(ts,phimwout,'b-.',label=r'$\Upsilon_{\rm mw,o}$')
+            ax.plot(ts,scaledownphi*phimwout,'b-.',label=r'0.1$\times\Upsilon_{\rm mw,o}$')
         if findex != None:
             if not isinstance(findex,tuple):
                 if showextra:
                     ax.plot(ts[findex],phij[findex],'gs')
                 ax.plot(ts[findex],phibh[findex],'o',mfc='r')
-                ax.plot(ts[findex],phimwout[findex],'bv')
+                ax.plot(ts[findex],scaledownphi*phimwout[findex],'bv')
             else:
                 for fi in findex:
                     if showextra:
                         ax.plot(ts[fi],phij[fi],'gs')
                     ax.plot(ts[fi],phibh[fi],'o',mfc='r')
-                    ax.plot(ts[fi],phimwout[fi],'bv')
+                    ax.plot(ts[fi],scaledownphi*phimwout[fi],'bv')
         ax.set_ylabel(r'$\Upsilon$',fontsize=16,ha='left',labelpad=20)
         #
         ymax=ax.get_ylim()[1]
@@ -25056,7 +25272,7 @@ def mkmovie(framesize=900, domakeavi=False):
     ########################
     ################################################
     # get levels for all frames showing aphi so aphi values constant.
-    numcontours=10
+    numcontours=30 #MAVARACHANGE from 10
     aphipow=1.0
     #
     # for thickdisk7 use fieldline2500 (if available) to set levels.  Otherwise use final available file.
@@ -25363,8 +25579,8 @@ def mkeqfluxmovieframe(findex=None,filenum=None,framesize=None): # MAVARANOTE th
     ihor = np.floor(iofr(rhor)+0.5)
     plot1.set_yscale('log')
     plot1.set_xscale('log')
-    plot1.set_ylim([1.e-1,5.e1]) #500.0])
-    plot1.set_xlim([2,1000.])
+    plot1.set_ylim([0.5*fstot[0,ihor]*normalizer *.5 ,normalizer*(0.5*fstot[0,ihor]-feqtot[0,ihor]+feqtot[0,iofr(200.)])   ]) #500.0])
+    plot1.set_xlim([2,200.])
     plot1.plot(r[:,ny/2,0], ((0.5*fstot[0,ihor]-feqtot[0,ihor]+feqtot[0,:]))*normalizer+1.e-10,'.',label='t=0') #/mdtot[findex,:])
     if os.path.exists('datavsr5.txt'):
         plot1.plot(r[:,ny/2,0], (0.5*data5[33,ihor]-data5[35,ihor]+data5[35,:])*normalizer,'+',label='time avg') #/mdtot[findex,:])
@@ -25382,7 +25598,7 @@ def mkeqfluxmovieframe(findex=None,filenum=None,framesize=None): # MAVARANOTE th
     plt3.set_yscale('log')
     plt3.set_ylim(.01,100.)
     plt3.set_xscale('log')
-    plt3.set_xlim([2,1000.])
+    plt3.set_xlim([2,500.])
     plt3.plot(r[:,ny/2,0],-1000.*vus1rhosqdcden[findex,:],'-',label=r'-v_rdcden*1000')
     plt3.plot(r[:,ny/2,0],t/(-r[:,ny/2,0]/vus1rhosqdcden[findex,:]),'.',label='inflow times at t')
     if os.path.exists('datavsr1c.txt'):
@@ -25397,7 +25613,7 @@ def mkeqfluxmovieframe(findex=None,filenum=None,framesize=None): # MAVARANOTE th
     #plt2.set_ylim(1.e0,1e2)
     plt2.set_ylim(0.7,300.)
     plt2.set_xscale('log')
-    plt2.set_xlim([2,1000.])
+    plt2.set_xlim([2,500.])
     print('shape of eqflux: ')
     print(rhosrhosq.shape)
     print('shape of gdet: ')
@@ -25424,7 +25640,7 @@ def mkeqfluxmovieframe(findex=None,filenum=None,framesize=None): # MAVARANOTE th
     #plt2.set_ylim(4.e-1,1e2)
     plt4.set_ylim(0.1,10.)
     plt4.set_xscale('log')
-    plt4.set_xlim([2,1000.])
+    plt4.set_xlim([2,500.])
     #plt4.plot(r[:,ny/2,0],Q2toplot[:,ny/2-4:ny/2+4,:].sum(1).sum(1)/nz/8.,label=r'cvel Q2toplot')
     plt4.plot(r[:,ny/2,0], hoverr[0,:]/iq2mridiskweak[0,:],'.',label='Q2weak t=0')
     plt4.plot(r[:,ny/2,0], hoverr[findex,:]/iq2mridiskweak[findex,:],'.',label='Q2weak instant')
@@ -25603,7 +25819,7 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
     ###########################
     # BIG BOX
     ###########################
-    plotsize=100. #framesize
+    plotsize=200. #framesize
     #
     # LEFT PANEL
     gs1 = GridSpec(1, 1)
@@ -25649,7 +25865,7 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
     ###########################
     # SMALL BOX
     ###########################
-    plotsize=30.
+    plotsize=20.
     #
     # LEFT PANEL
     gs1 = GridSpec(1, 1)
@@ -27813,7 +28029,7 @@ def testtutorial1():
     # first load grid file
     grid3d("gdump.bin")
     # now try loading a single fieldline file
-    rfd("fieldline0000.bin")
+    rfd("fieldline0573.bin")
     # now plot something you read-in
     plt.figure(1)
     lrho=np.log10(rho)
@@ -27821,8 +28037,8 @@ def testtutorial1():
     myx=x1[:,:,0]
     myy=x2[:,:,0]
     myz=x3[:,:,0]
-    myfun=1/Q1[:,:,0]
-    plt.pcolor(myx,myy,myfun,vmin=0.,vmax=200.)
+    myfun=lrho[:,:,0] #1/Q1[:,:,0]
+    plt.pcolor(myx,myy,myfun,vmin=-4.,vmax=1.)
     plt.colorbar()
     print("r at 80th cell: ",r[80,32,0])
 
@@ -28537,14 +28753,18 @@ def plotr():
     # first load grid file
     grid3d("gdump.bin")
     # now try loading a single fieldline file
-    rfd("fieldline0000.bin")
+    #rfd("fieldline0000.bin")
     # now plot something you read-in
-    plt.figure(1)
+    plt.figure(3)
     plt.clf()
     plt.plot(r[:,ny/2,0],'+')
     print(r[:,ny/2,0])
     print(1+(1-.5**2.)**.5)
-
+    fig2=plt.figure(4)
+    #ax = fig2.add_subplot(111, aspect='equal')
+    #ax.set_aspect('auto') #equal')
+    plt.plot(r[:,:,0]*np.sin(h[:,:,0]),r[:,:,0]*np.cos(h[:,:,0]),marker='o', linestyle='none') #r[9,:,0]*np.cos(h[9,:,0]))
+    
 def plotTempCoolingTest(num,betalim,bsqorholim,fig):
     # first load grid file
     if 1==0:
@@ -28596,6 +28816,97 @@ def testtest():
         #plt.plot(r[:,ny/2,0],h3[:,ny/2,0])
         plt.plot(r[:,ny/2,0],h3[:,ny/2,:].mean(1))
 
+def tutorialanglarmomentumcalc():
+    # first load grid file
+    grid3d("gdump.bin")
+    # now try loading a single fieldline file
+    rfd("fieldline0000.bin")
+    #rfd("fieldline2410.bin")
+    #rfd("fieldline2491.bin")
+    #
+    #
+    if 1==1:
+        (rhoclean,ugclean,uublob,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
+        cvel()
+        Tcalcud(maxbsqorho=maxbsqorhonear,which=condmaxbsqorho)
+        #
+        diskcondition=condmaxbsqorho
+        # only around equator, not far away from equator
+        diskcondition=diskcondition*(bsq/rho<1.0)*(np.fabs(h-np.pi*0.5)<0.1)
+        #diskcondition=diskcondition*(bsq/rho<0.5)
+        diskeqcondition=diskcondition
+        # (qmri3d,norm3d,q3mri3d,norm33d,iq2mri3d)
+        qmri3ddisk,normmri3ddisk,q3mri3ddisk,norm3mri3ddisk,iq2mri3ddisk=Qmri_simple(which=diskeqcondition)
+        #
+        # Q1
+        qmridisk=qmri3ddisk.sum(2).sum(1)/(ny*nz)
+        normmridisk=normmri3ddisk.sum(2).sum(1)/(ny*nz)
+        #
+        # Q3
+        q3mridisk=q3mri3ddisk.sum(2).sum(1)/(ny*nz)
+        norm3mridisk=norm3mri3ddisk.sum(2).sum(1)/(ny*nz)
+        #
+        # Q2: number of wavelengths per disk scale height
+        iq2mridisk=iq2mri3ddisk.sum(2).sum(1)/(ny*nz)
+        #
+        pg = (gam-1)*ugclean
+        prad = (4.0/3.0-1)*urad
+        #
+        WW = rhoclean + ug + pg + urad + prad
+        EF = bsq + WW
+        val21 = np.fabs(bu[1]*bd[1])/EF
+        val22 = np.fabs(bu[2]*bd[2])/EF
+        val23 = np.fabs(bu[3]*bd[3])/EF
+        #
+        #
+        mydr=dxdxp[1,1]*_dx1
+        mydH=r*dxdxp[2,2]*_dx2
+        mydP=r*np.sin(h)*dxdxp[3,3]*_dx3
+        omegarot=uu[3]/uu[0]*dxdxp[3,3]
+        #
+        idx2mri = np.sqrt(val22)*2*np.pi/omegarot/mydH
+    #
+    #
+    #
+    p=ph
+    # inverse of dx^{ks}/dx^{mks}    (taken from computeresires())
+    idxdxp00=1/dxdxp[0][0]
+    idxdxp11=dxdxp[2][2]/(dxdxp[2][2]*dxdxp[1][1]-dxdxp[2][1]*dxdxp[1][2])
+    idxdxp12=dxdxp[1][2]/(dxdxp[2][1]*dxdxp[1][2]-dxdxp[2][2]*dxdxp[1][1])
+    idxdxp21=dxdxp[2][1]/(dxdxp[2][1]*dxdxp[1][2]-dxdxp[2][2]*dxdxp[1][1])
+    idxdxp22=dxdxp[1][1]/(dxdxp[2][2]*dxdxp[1][1]-dxdxp[2][1]*dxdxp[1][2])
+    idxdxp33=1/dxdxp[3][3]
+    #markspot
+    x=r*sin(h)*cos(ph)
+    y=r*sin(h)*sin(ph)
+    z=r*cos(h)
+    #
+    mvecinternal=Tud[0,:]
+    #get T_ij internal into T_ij sph pol
+    mvec_r=Tud[0,1]*idxdxp11 + Tud[0,2]*idxdxp21
+    mvec_h=Tud[0,1]*idxdxp12 + Tud[0,2]*idxdxp22
+    mvec_p=Tud[0,3]*idxdxp33
+    #
+    #get T_ij sph pol into sph pol quasi-orthonormal \hat{i}\hat{j}
+    mvec_rhat=mvec_r/sqrt(gv3[1,1])
+    mvec_hhat=mvec_h/sqrt(gv3[2,2])
+    mvec_phat=mvec_p/sqrt(gv3[3,3])
+    #
+    #get T_ij quasi-ortho into cartesian
+    mvecx=mvec_rhat*sin(h)*cos(p) + mvec_hhat*cos(h)*cos(p) - mvec_phat*sin(p)
+    mvecy=mvec_rhat*sin(h)*sin(p) + mvec_hhat*cos(h)*sin(p) + mvec_phat*cos(p)
+    mvecz=mvec_rhat*cos(h)        - mvec_hhat*sin(h)
+    #
+    #take L=x cross p
+    Lx = mvecy * z - mvecz * y
+    Ly = mvecz * x - mvecx * z
+    Lz = mvecx * y - mvecy * x
+    #
+    #integrate in phi
+    print(Lz[:,ny/2,0])
+    print(Lx[:,ny/2,0])
+    
+        
 if __name__ == "__main__":
     # no, can't use sys.exit since want C code that calls this to continue after done
     #    sys.exit(main())

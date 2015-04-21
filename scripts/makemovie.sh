@@ -647,11 +647,11 @@ then
     numcorespernodenaut=$numcorespernode  #80 is the default
 
     # numtasks set equal to total number of time slices, so each task does only 1 fieldline file
-    numtasks=100 #`ls dumps/fieldline*.bin |wc -l` #2000 or so
+    numtasks=36 #`ls dumps/fieldline*.bin |wc -l` #2000 or so
 
     # total memory required is old memtot/numcorespernode from Nautilus multiplied by total number of tasks for Kraken
     memtotpercore=$((1+$memtotnaut/$numcorespernodenaut)) #324/80 ~4 as expected from def of memtot
-    numcorespernode=20 #$((128/$memtotpercore))  # was 24. 32 is the total per node for westemere nodes #MAVARA turned to 12 for low res sim since don't need much mem.
+    numcorespernode=12 #$((128/$memtotpercore))  # was 24. 32 is the total per node for westemere nodes #MAVARA turned to 12 for low res sim since don't need much mem.
 
     #MAVARA for now just have:
     #numcorespernode=12 #for westemere
@@ -678,21 +678,21 @@ then
         apcmd="mpirun -ppn $numcorespernode -np $numtasks" # -n $numtasks" #mpiexec -np $numtasks -ppn $numcorespernode"
     fi
 
-    numnodes=$(($numtasks/$numcorespernode + 1)) #either need to be exactly divisible or add +1 ::: MAVARACHANGE added +1 on may 6th 2014 so actually enough nodes used#MAVARA added /2 since numparts changed to 2 in sections where mpiexec is called with qsub
+    numnodes=$(($numtasks/$numcorespernode)) #either need to be exactly divisible or add +1 ::: MAVARACHANGE added +1 on may 6th 2014 so actually enough nodes used#MAVARA added /2 since numparts changed to 2 in sections where mpiexec is called with qsub
     numtotalcores=$(($numnodes * 20 )) ##/10 # always 12 for Kraken   # also 12 for westemere nodes on pleiades
 
-    if [ $numtotalcores -le 20 ]
+    if [ $numtotalcores -le 60 ]
         then
-        thequeue="debug"
-        thequeueplot="debug"
-	timetot="00:15:00" # probably don't need all this is 1 task per fieldline file #MMMMMMMMMMMMMMM
-	timetotplot="00:15:00" #MMMMMMMMMMMMMMM    
+        thequeue="scavenger"
+        thequeueplot="scavenger"
+	timetot="20:15:00" # probably don't need all this is 1 task per fieldline file #MMMMMMMMMMMMMMM
+	timetotplot="20:15:00" #MMMMMMMMMMMMMMM    
     elif [ $numtotalcores -le 8192 ]
         then
-        thequeue="standard"
-	thequeueplot="standard"
-	timetot="24:00:00" # probably don't need all this is 1 task per fieldline file #MMMMMMMMMMMMMMM
-	timetotplot="24:00:00" #MMMMMMMMMMMMMMM
+        thequeue="high-priority"
+	thequeueplot="high-priority"
+	timetot="48:00:00" # probably don't need all this is 1 task per fieldline file #MMMMMMMMMMMMMMM
+	timetotplot="48:00:00" #MMMMMMMMMMMMMMM
     elif [ $numtotalcores -le 49536 ]
         then
         thequeue="large"
@@ -720,7 +720,7 @@ then
     # setup plotting part
     numtasksplot=1
     numnodesplot=1
-    numcorespernodeplot=20
+    numcorespernodeplot=12
     # this gives 16GB free for plotting (temp vars + qty2.npy file has to be smaller than this or swapping will occur)
     numtotalcoresplot=$numcorespernodeplot
 
@@ -1116,7 +1116,7 @@ then
 				rm -rf $localerrorfile
 				rm -rf $localoutputfile
 				sleep 20
-				bsubcommand="sbatch -n $numtotalcores -t $timetot -A astronomy -p $thequeue --job-name=$jobname -o $localoutputfile -e $localerrorfile --mail-user=mavara@astro.umd.edu ./$superbatch"
+				bsubcommand="sbatch -n $numtotalcores -t $timetot -p $thequeue --job-name=$jobname -o $localoutputfile -e $localerrorfile --mail-user=mavara@astro.umd.edu ./$superbatch" #-A astronomy
                             else
                             # probably specifying ptile below is not necessary
 		                bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernode] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -1193,6 +1193,7 @@ then
 	    rm -rf $myinitfile1
     fi
 
+sleep 30
 fi
 
 
@@ -1329,7 +1330,7 @@ then
                 rm -rf $localoutputfile
 		sleep 20
                 #
-		bsubcommand="sbatch -N $numnodesplot --ntasks-per-node=20 -t $timetotplot -A astronomy -p $thequeueplot --job-name=$jobname -o $localoutputfile -e $localerrorfile --mail-user=mavara@astro.umd.edu ./$superbatch"
+		bsubcommand="sbatch -N $numnodesplot --ntasks-per-node=20 -t $timetotplot -p $thequeueplot --job-name=$jobname -o $localoutputfile -e $localerrorfile --mail-user=mavara@astro.umd.edu ./$superbatch" # -A astronomy
             else
                 # probably specifying ptile below is not necessary
 		bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernodeplot] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -1427,6 +1428,7 @@ then
 	rm -rf $myinitfile3
     fi
 
+sleep 30
 fi
 
 
@@ -1639,7 +1641,7 @@ then
                             rm -rf $localoutputfile
 			    sleep 20
                             #
-		            bsubcommand="sbatch -n $numtotalcores -t $timetot -A astronomy -p $thequeue --job-name=$jobname -o $localoutputfile -e $localerrorfile --mail-user=mavara@astro.umd.edu ./$superbatch"
+		            bsubcommand="sbatch -n $numtotalcores -t $timetot -p $thequeue --job-name=$jobname -o $localoutputfile -e $localerrorfile --mail-user=mavara@astro.umd.edu ./$superbatch" # -A astronomy
                         else
                             # probably specifying ptile below is not necessary
 		            bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernode] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -1712,7 +1714,8 @@ then
         # remove created file
 	rm -rf $myinitfile4
     fi
-    
+
+sleep 30    
 fi
 
 #echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
@@ -2001,7 +2004,7 @@ then
                             rm -rf $localoutputfile
 			    sleep 20
                             #
-		            bsubcommand="sbatch -n $numtotalcores -t $timetot -A astronomy -p $thequeue --job-name=$jobname -o $localoutputfile -e $localerrorfile --mail-user=mavara@astro.umd.edu ./$superbatch"
+		            bsubcommand="sbatch -n $numtotalcores -t $timetot -p $thequeue --job-name=$jobname -o $localoutputfile -e $localerrorfile --mail-user=mavara@astro.umd.edu ./$superbatch" #-A astronomy
                         else
                             # probably specifying ptile below is not necessary
 		            bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernode] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -2079,6 +2082,7 @@ then
 	rm -rf $myinitfile5
     fi
 
+sleep 120
 fi
 
 #echo $passpart1$passpart2 | /usr/kerberos/bin/kinit
@@ -2127,7 +2131,7 @@ then
         # copy resulting avg file to avg2d.npy
 	    avg2dmerge=`ls -vrt avg2d${itemspergrouptext}_${groupsnum}_${groupenum}.npy | head -1`    
 	    cp $avg2dmerge avg2d.npy
-
+	    wait
     fi
 
     if [ $rminitfiles -eq 1 ]
@@ -2137,7 +2141,7 @@ then
     fi
 
 
-
+sleep 120
 
 fi
 
@@ -2239,7 +2243,7 @@ then
                 rm -rf $localoutputfile
 		sleep 20
                 # 
-		bsubcommand="sbatch -N $numnodesplot --ntasks-per-node=20 -t $timetotplot -A astronomy -p $thequeueplot --job-name=$jobname -o $localoutputfile -e $localerrorfile --mail-user=mavara@astro.umd.edu ./$superbatch"
+		bsubcommand="sbatch -N $numnodesplot --ntasks-per-node=20 -t $timetotplot -p $thequeueplot --job-name=$jobname -o $localoutputfile -e $localerrorfile --mail-user=mavara@astro.umd.edu ./$superbatch" # -A astronomy
             else
                     # probably specifying ptile below is not necessary
 		bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernodeplot] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -2310,6 +2314,7 @@ then
 	rm -rf $myinitfile7
     fi
 
+sleep 30
 fi
 
 
