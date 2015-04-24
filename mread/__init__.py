@@ -478,6 +478,74 @@ frholabclean= lambda : rhoclean*uu[0]
 #fud = lambda : (mdot(gv3,uu))                  #g_mn u^n
 
 
+# MEMMARK: below increases as if 48 variables per 3D point!
+# should be about 30, not 48.  GODMARK.  metric and avg stuff should be 2d!
+#
+# fully obtain approximate invariant 3-vel and 4-field so averaging makes sense
+sigmaks = lambda : r**2+(a*np.cos(h))**2
+deltaks = lambda : r**2-2*r+a**2
+Aks = lambda : (r**2+a**2)**2-a**2*deltaks()*(np.sin(h))**2
+        #
+gvks00 = lambda : -(1.0-2.0*r/sigmaks())
+gvks11 = lambda : (1.0+2.0*r/sigmaks())
+gvks22 = lambda : sigmaks()
+gvks33 = lambda : (np.sin(h))**2*(sigmaks() + a**2*(1.0 + 2.0*r/sigmaks())*(np.sin(h))**2)
+        #
+myuu0 = lambda : uu[0]*dxdxp[0,0]
+myuu1 = lambda : (uu[1]*dxdxp[1,1] + uu[2]*dxdxp[1,2])*np.sqrt(gvks11())/myuu0()
+myuu2 = lambda : (uu[1]*dxdxp[2,1] + uu[2]*dxdxp[2,2])*np.sqrt(gvks22())/myuu0()
+myuu3 = lambda : (uu[3]*dxdxp[3,3])*np.sqrt(gvks33())/myuu0()
+myuurot = lambda : np.sqrt(myuu2()**2+myuu3()**2)
+myB1 = lambda : (B[1]*dxdxp[1,1] + B[2]*dxdxp[1,2])*np.sqrt(gvks11())
+myB2 = lambda : (B[1]*dxdxp[2,1] + B[2]*dxdxp[2,2])*np.sqrt(gvks22())
+myB3 = lambda : (B[3]*dxdxp[3,3])*np.sqrt(gvks33())
+mybu1 = lambda : (bu[1]*dxdxp[1,1] + bu[2]*dxdxp[1,2])*np.sqrt(gvks11())
+mybu2 = lambda : (bu[1]*dxdxp[2,1] + bu[2]*dxdxp[2,2])*np.sqrt(gvks22())
+mybu3 = lambda : (bu[3]*dxdxp[3,3])*np.sqrt(gvks33())
+        #
+        # NOTEMARK: works since metric not \phi-dependent
+avg_myuu0 = lambda : avg_uu[0]*dxdxp[0,0]
+avg_myuu1 = lambda : (avg_uu[1]*dxdxp[1,1] + avg_uu[2]*dxdxp[1,2])*np.sqrt(gvks11())/avg_myuu0()
+avg_myuu2 = lambda : (avg_uu[1]*dxdxp[2,1] + avg_uu[2]*dxdxp[2,2])*np.sqrt(gvks22())/avg_myuu0()
+avg_myuu3 = lambda : (avg_uu[3]*dxdxp[3,3])*np.sqrt(gvks33())/avg_myuu0()
+avg_myuurot = lambda : np.sqrt(avg_myuu2()**2+avg_myuu3()**2)    # GODMARK: should have rot version directly averaged so \theta,\phi correlations accounted for
+avg_myB1 = lambda : (avg_B[1-1]*dxdxp[1,1] + avg_B[2-1]*dxdxp[1,2])*np.sqrt(gvks11())
+avg_myB2 = lambda : (avg_B[1-1]*dxdxp[2,1] + avg_B[2-1]*dxdxp[2,2])*np.sqrt(gvks22())
+avg_myB3 = lambda : (avg_B[3-1]*dxdxp[3,3])*np.sqrt(gvks33())
+avg_mybu1 = lambda : (avg_bu[1]*dxdxp[1,1] + avg_bu[2]*dxdxp[1,2])*np.sqrt(gvks11())
+avg_mybu2 = lambda : (avg_bu[1]*dxdxp[2,1] + avg_bu[2]*dxdxp[2,2])*np.sqrt(gvks22())
+avg_mybu3 = lambda : (avg_bu[3]*dxdxp[3,3])*np.sqrt(gvks33())
+        #
+avg_myauu0 = lambda : avg_absuu[0]*dxdxp[0,0]
+avg_myauu1 = lambda : (avg_absuu[1]*dxdxp[1,1] + avg_absuu[2]*dxdxp[1,2])*np.sqrt(gvks11())/avg_myauu0()
+avg_myauu2 = lambda : (avg_absuu[1]*dxdxp[2,1] + avg_absuu[2]*dxdxp[2,2])*np.sqrt(gvks22())/avg_myauu0()
+avg_myauu3 = lambda : (avg_absuu[3]*dxdxp[3,3])*np.sqrt(gvks33())/avg_myauu0()
+avg_myauurot = lambda : np.sqrt(avg_myauu2()**2+avg_myauu3()**2)
+#avg_myauurot = lambda : np.sqrt(avg_myauu2()**2+avg_myauu3()**2) # GODMARK
+avg_myaB1 = lambda : (avg_absB[1-1]*dxdxp[1,1] + avg_absB[2-1]*dxdxp[1,2])*np.sqrt(gvks11())
+avg_myaB2 = lambda : (avg_absB[1-1]*dxdxp[2,1] + avg_absB[2-1]*dxdxp[2,2])*np.sqrt(gvks22())
+avg_myaB3 = lambda : (avg_absB[3-1]*dxdxp[3,3])*np.sqrt(gvks33())
+avg_myabu1 = lambda : (avg_absbu[1]*dxdxp[1,1] + avg_absbu[2]*dxdxp[1,2])*np.sqrt(gvks11())
+avg_myabu2 = lambda : (avg_absbu[1]*dxdxp[2,1] + avg_absbu[2]*dxdxp[2,2])*np.sqrt(gvks22())
+avg_myabu3 = lambda : (avg_absbu[3]*dxdxp[3,3])*np.sqrt(gvks33())
+#
+#############################################
+myauu0 = lambda : (np.abs(myuu0()))
+myauu1 = lambda : (np.abs(myuu1()))
+myauu2 = lambda : (np.abs(myuu2()))
+myauu3 = lambda : (np.abs(myuu3()))
+myauurot = lambda : np.abs(myuurot())
+myaB1 = lambda : np.abs(myB1())
+myaB2 = lambda : np.abs(myB2())
+myaB3 = lambda : np.abs(myB3())
+myabu1 = lambda : np.abs(mybu1())
+myabu2 = lambda : np.abs(mybu2())
+myabu3 = lambda : np.abs(mybu3())
+# 0 = 1 + u^t u_t + u^r u_r + u^h u_h + u^p u_p
+# 0 = 1 + u^r u_r / (1+u^t u_t) + u^h u_h / (1+u^t u_t) + u^p u_p / (1+u^t u_t)
+# 1/(-u^t u_t) + 1 =  + u^r u_r / (-u^t u_t) + u^h u_h / (-u^t u_t) + u^p u_p / (-u^t u_t)
+
+
 # trans requires input of full 3d Vmetric (not just use2d gdump version)
 def set_transV2Vmetric(Vmetric=None,b0=0.0):
     #
@@ -2720,7 +2788,7 @@ def isradmodelA(modelname):
         return(0)
     #
 def isradmodelB(modelname): # for lower densities with Mdot\sim 100Ledd/c^2
-    if modelname=="runrad1torusfixed" or modelname=="runrada0" or modelname=="runnorada0" or modelname=="runnorada9375" or modelname=="rad1" or modelname=="radma0.8" or modelname=="rada0.8" or modelname=="rada0.94" or modelname=="radtest3" or modelname=="radtest2":
+    if modelname=="runrad1torusfixed" or modelname=="runrada0" or modelname=="runnorada0" or modelname=="runnorada9375" or modelname=="rad1" or modelname=="radma0.8" or modelname=="rada0.8" or modelname=="rada0.94" or modelname=="radtest3" or modelname=="radtest2" or modelname=="radm2a0.8":
         return(1)
     else:
         return(0)
@@ -2732,7 +2800,7 @@ def isradmodelC(modelname): # for lower densities with Mdot\sim 2Ledd/c^2
         return(0)
     #
 def isradmodelD1(modelname): # for Mdot\sim 100-300Ledd/c^2
-    if modelname=="radtma0.8" or modelname=="radtma0.0":
+    if modelname=="radtma0.8" or modelname=="radtma0.0" or modelname=="radtha0.0" or modelname=="radtha0.8":
         return(1)
     else:
         return(0)
@@ -2958,8 +3026,8 @@ def getdefaulttimes1():
     #
     #if modelname=="rad1" or modelname=="radthin1" or modelname=="radthin2":
     if isradmodel(modelname):
-        defaultfti=2000
-        defaultftf=1e4
+        defaultfti=15000
+        defaultftf=5e4
     #
     if modelname=="radtest1" or modelname=="radtest2":
         defaultfti=50
@@ -8532,7 +8600,7 @@ def KAPPA_ES_CODE_PYTHON(rhocode,Tcode):
 def KAPPA_FF_CODE_PYTHON(rhocode,Tgcode,Trcode):
     global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
     if(isradmodeltype1(modelname)):
-       y=(1.0E23*ZATOM*ZATOM/(MUE*MUI)*(rhocode*RHOBAR)*pow(Tcode*TEMPBAR,-7.0/2.0)/OPACITYBAR)
+       y=(1.0E23*ZATOM*ZATOM/(MUE*MUI)*(rhocode*RHOBAR)*pow(Tgcode*TEMPBAR,-7.0/2.0)/OPACITYBAR)
     if(isradmodeltype2(modelname)):
        y=KAPPA_GENFF_CODE(rhocode,Tgcode,Trcode)
     return(y)
@@ -12246,72 +12314,6 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         print("all primitives in various forms" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         #################################
         #
-        # MEMMARK: below increases as if 48 variables per 3D point!
-        # should be about 30, not 48.  GODMARK.  metric and avg stuff should be 2d!
-        #
-        # fully obtain approximate invariant 3-vel and 4-field so averaging makes sense
-        sigmaks = lambda : r**2+(a*np.cos(h))**2
-        deltaks = lambda : r**2-2*r+a**2
-        Aks = lambda : (r**2+a**2)**2-a**2*deltaks()*(np.sin(h))**2
-                #
-        gvks00 = lambda : -(1.0-2.0*r/sigmaks())
-        gvks11 = lambda : (1.0+2.0*r/sigmaks())
-        gvks22 = lambda : sigmaks()
-        gvks33 = lambda : (np.sin(h))**2*(sigmaks() + a**2*(1.0 + 2.0*r/sigmaks())*(np.sin(h))**2)
-                #
-        myuu0 = lambda : uu[0]*dxdxp[0,0]
-        myuu1 = lambda : (uu[1]*dxdxp[1,1] + uu[2]*dxdxp[1,2])*np.sqrt(gvks11())/myuu0()
-        myuu2 = lambda : (uu[1]*dxdxp[2,1] + uu[2]*dxdxp[2,2])*np.sqrt(gvks22())/myuu0()
-        myuu3 = lambda : (uu[3]*dxdxp[3,3])*np.sqrt(gvks33())/myuu0()
-        myuurot = lambda : np.sqrt(myuu2()**2+myuu3()**2)
-        myB1 = lambda : (B[1]*dxdxp[1,1] + B[2]*dxdxp[1,2])*np.sqrt(gvks11())
-        myB2 = lambda : (B[1]*dxdxp[2,1] + B[2]*dxdxp[2,2])*np.sqrt(gvks22())
-        myB3 = lambda : (B[3]*dxdxp[3,3])*np.sqrt(gvks33())
-        mybu1 = lambda : (bu[1]*dxdxp[1,1] + bu[2]*dxdxp[1,2])*np.sqrt(gvks11())
-        mybu2 = lambda : (bu[1]*dxdxp[2,1] + bu[2]*dxdxp[2,2])*np.sqrt(gvks22())
-        mybu3 = lambda : (bu[3]*dxdxp[3,3])*np.sqrt(gvks33())
-                #
-                # NOTEMARK: works since metric not \phi-dependent
-        avg_myuu0 = lambda : avg_uu[0]*dxdxp[0,0]
-        avg_myuu1 = lambda : (avg_uu[1]*dxdxp[1,1] + avg_uu[2]*dxdxp[1,2])*np.sqrt(gvks11())/avg_myuu0()
-        avg_myuu2 = lambda : (avg_uu[1]*dxdxp[2,1] + avg_uu[2]*dxdxp[2,2])*np.sqrt(gvks22())/avg_myuu0()
-        avg_myuu3 = lambda : (avg_uu[3]*dxdxp[3,3])*np.sqrt(gvks33())/avg_myuu0()
-        avg_myuurot = lambda : np.sqrt(avg_myuu2()**2+avg_myuu3()**2)    # GODMARK: should have rot version directly averaged so \theta,\phi correlations accounted for
-        avg_myB1 = lambda : (avg_B[1-1]*dxdxp[1,1] + avg_B[2-1]*dxdxp[1,2])*np.sqrt(gvks11())
-        avg_myB2 = lambda : (avg_B[1-1]*dxdxp[2,1] + avg_B[2-1]*dxdxp[2,2])*np.sqrt(gvks22())
-        avg_myB3 = lambda : (avg_B[3-1]*dxdxp[3,3])*np.sqrt(gvks33())
-        avg_mybu1 = lambda : (avg_bu[1]*dxdxp[1,1] + avg_bu[2]*dxdxp[1,2])*np.sqrt(gvks11())
-        avg_mybu2 = lambda : (avg_bu[1]*dxdxp[2,1] + avg_bu[2]*dxdxp[2,2])*np.sqrt(gvks22())
-        avg_mybu3 = lambda : (avg_bu[3]*dxdxp[3,3])*np.sqrt(gvks33())
-                #
-        avg_myauu0 = lambda : avg_absuu[0]*dxdxp[0,0]
-        avg_myauu1 = lambda : (avg_absuu[1]*dxdxp[1,1] + avg_absuu[2]*dxdxp[1,2])*np.sqrt(gvks11())/avg_myauu0()
-        avg_myauu2 = lambda : (avg_absuu[1]*dxdxp[2,1] + avg_absuu[2]*dxdxp[2,2])*np.sqrt(gvks22())/avg_myauu0()
-        avg_myauu3 = lambda : (avg_absuu[3]*dxdxp[3,3])*np.sqrt(gvks33())/avg_myauu0()
-        avg_myauurot = lambda : np.sqrt(avg_myauu2()**2+avg_myauu3()**2)
-        #avg_myauurot = lambda : np.sqrt(avg_myauu2()**2+avg_myauu3()**2) # GODMARK
-        avg_myaB1 = lambda : (avg_absB[1-1]*dxdxp[1,1] + avg_absB[2-1]*dxdxp[1,2])*np.sqrt(gvks11())
-        avg_myaB2 = lambda : (avg_absB[1-1]*dxdxp[2,1] + avg_absB[2-1]*dxdxp[2,2])*np.sqrt(gvks22())
-        avg_myaB3 = lambda : (avg_absB[3-1]*dxdxp[3,3])*np.sqrt(gvks33())
-        avg_myabu1 = lambda : (avg_absbu[1]*dxdxp[1,1] + avg_absbu[2]*dxdxp[1,2])*np.sqrt(gvks11())
-        avg_myabu2 = lambda : (avg_absbu[1]*dxdxp[2,1] + avg_absbu[2]*dxdxp[2,2])*np.sqrt(gvks22())
-        avg_myabu3 = lambda : (avg_absbu[3]*dxdxp[3,3])*np.sqrt(gvks33())
-        #
-        #############################################
-        myauu0 = lambda : (np.abs(myuu0()))
-        myauu1 = lambda : (np.abs(myuu1()))
-        myauu2 = lambda : (np.abs(myuu2()))
-        myauu3 = lambda : (np.abs(myuu3()))
-        myauurot = lambda : np.abs(myuurot())
-        myaB1 = lambda : np.abs(myB1())
-        myaB2 = lambda : np.abs(myB2())
-        myaB3 = lambda : np.abs(myB3())
-        myabu1 = lambda : np.abs(mybu1())
-        myabu2 = lambda : np.abs(mybu2())
-        myabu3 = lambda : np.abs(mybu3())
-        # 0 = 1 + u^t u_t + u^r u_r + u^h u_h + u^p u_p
-        # 0 = 1 + u^r u_r / (1+u^t u_t) + u^h u_h / (1+u^t u_t) + u^p u_p / (1+u^t u_t)
-        # 1/(-u^t u_t) + 1 =  + u^r u_r / (-u^t u_t) + u^h u_h / (-u^t u_t) + u^p u_p / (-u^t u_t)
         #
         #
         printusage()
@@ -28181,7 +28183,7 @@ def tutorial1alt(filename=None):
     ##############################
     fakegrid=0
     if fakegrid==0:
-        nxout=240
+        nxout=iofr(30.0)
         myx=r[0:nxout:,:,0]*np.sin(h[0:nxout,:,0])*np.cos(ph[0:nxout,:,0])
         myy=r[0:nxout,:,0]*np.sin(h[0:nxout,:,0])*np.sin(ph[0:nxout,:,0])
         myz=r[0:nxout,:,0]*np.cos(h[0:nxout,:,0])
@@ -28207,9 +28209,13 @@ def tutorial1alt(filename=None):
         myfun[rho<1E-5]=0
     if 1==0:
         myfun=flrho()
-    if 1==0:
-        myfun=np.log10(1E-5+1.0/fbetatot())
     if 1==1:
+        #myfun=np.log10(1E-5+1.0/fbetatot())
+        #myfun=myB2()
+        pg = (gam-1)*ugclean
+        prad = (4.0/3.0-1)*Erf
+        myfun=(mybu1()*mybu3())/(bsq*0.5+pg+prad)
+    if 1==0:
         #myfun=np.log10(Erf)
         #myfun=gdet*(-fTud(1,0))
         #myfun=gdet*(-fTudRAD(1,0))
@@ -28217,6 +28223,7 @@ def tutorial1alt(filename=None):
         #myfun=np.log10(Erf/rho)
         #myfun=np.log10(rho)
         myfun=np.log10(bsq)
+        #myfun=fbeta()
         #myfun=-gdet*Erf*uradu[1]*uradd[0]
         #myfun=-Erf*uradu[1]*uradd[0]
     #
@@ -28234,9 +28241,16 @@ def tutorial1alt(filename=None):
     vmaxmost=np.amax(myfun)
     print("vminmost=%g vmaxmost=%g" % (vminmost,vmaxmost)) ;sys.stdout.flush()
     #
+    vmintoplot=-.13
+    vmaxtoplot=0.13
+    #
+    vmintoplot=-0.4
+    vmaxtoplot=0.6
+    #
+    #
     #######################################
     ax = plt.gca()
-    plt.pcolormesh(myx,myz,myfun[0:nxout,:,0],vmin=-10)
+    plt.pcolormesh(myx,myz,myfun[0:nxout,:,0],vmin=vmintoplot,vmax=vmaxtoplot)
     plt.colorbar()
     plt.savefig("testplot_%s.png" % (filename) )
     #plc(myfun[0:nxout,:,0],xcoord=myx,ycoord=myz,ax=ax,cb=True,nc=50)
