@@ -8274,7 +8274,7 @@ def rfd(fieldlinefilename,**kwargs):
     #Velocity components: u1, u2, u3, 
     #Cell-centered magnetic field components: B1, B2, B3, 
     #Face-centered magnetic field components multiplied by metric determinant: gdetB1, gdetB2, gdetB3
-    global rho,ug,yfl,uu,B,gdetB,Erf,uradu
+    global rho,ug,yfl1,yfl2,yfl3,yfl4,yfl5,uu,B,gdetB,Erf,uradu
     #
     #read image
     #
@@ -8390,21 +8390,31 @@ def rfd(fieldlinefilename,**kwargs):
 
     #
     #rho, u, -hu_t, -T^t_t/U0, u^t, v1,v2,v3,B1,B2,B3
-    if(numcolumns==50):
-        s00=3
-        sii=s00+4
+    if(numcolumns==29):
         #
         rho=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
         rho=d[0,:,:,:]
         ug=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
         ug=d[1,:,:,:]
-        yfl=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
-        yfl=d[2,:,:,:]
+
+        yfl1=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
+        yfl1=d[2,:,:,:]
+        yfl2=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
+        yfl2=d[3,:,:,:]
+        yfl3=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
+        yfl3=d[4,:,:,:]
+        yfl4=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
+        yfl4=d[5,:,:,:]
+        yfl5=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
+        yfl5=d[6,:,:,:]
+        #
+        s00=7
         #
         uu=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
         uu=d[s00:s00+4,:,:,:]
         uu[1:4]=uu[1:4] * uu[0]
         #
+        sii=s00+4
     else:
         s00=2
         sii=8
@@ -8487,7 +8497,7 @@ def rfd(fieldlinefilename,**kwargs):
     #
     global gotrad
     gotrad=0
-    if(numcolumns==16 or numcolumns==50):
+    if(numcolumns==16 or numcolumns==29):
         gotrad=1
         Erf=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
         uradu=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
@@ -8510,7 +8520,7 @@ def rfd(fieldlinefilename,**kwargs):
         uradd=uu*0+1E-30
         uradu=uu*0+1E-30
     #
-    if(numcolumns==50):
+    if(numcolumns==29):
         # Tgas,Tradff,nradff,kappa,kappan,kappaemit,kappanemit,kappaes,lambda,nlambda
         sjj=sii+4+4 # 6+4+4 = 14
         #
@@ -8528,36 +8538,61 @@ def rfd(fieldlinefilename,**kwargs):
         # (1  +  1+1+1 + (EOMRADTYPE!=EOMRADNONE)) = 5
         skk=sjj+10 # 14+10=24
         #
-        F1rhotot=d[skk,:,:,:]
-        F1uutot=d[skk+1,:,:,:]
-        F1u3tot=d[skk+2,:,:,:]
-        F1urad0tot=d[skk+3,:,:,:]
-        F1urad3tot=d[skk+4,:,:,:]
-        #
-        F1rhopake=d[skk+5,:,:,:]
-        F1uupake=d[skk+6,:,:,:]
-        F1u3pake=d[skk+7,:,:,:]
-        F1urad0pake=d[skk+8,:,:,:]
-        F1urad3pake=d[skk+9,:,:,:]
-        #
-        F1rhoen=d[skk+10,:,:,:]
-        F1uuen=d[skk+11,:,:,:]
-        F1u3en=d[skk+12,:,:,:]
-        F1urad0en=d[skk+13,:,:,:]
-        F1urad3en=d[skk+14,:,:,:]
-        #
-        F1rhoem=d[skk+15,:,:,:]
-        F1uuem=d[skk+16,:,:,:]
-        F1u3em=d[skk+17,:,:,:]
-        F1urad0em=d[skk+18,:,:,:]
-        F1urad3em=d[skk+19,:,:,:]
-        #
-        F1rhorad=d[skk+20,:,:,:]
-        F1uurad=d[skk+21,:,:,:]
-        F1u3rad=d[skk+22,:,:,:]
-        F1urad0rad=d[skk+23,:,:,:]
-        F1urad3rad=d[skk+24,:,:,:] # index 48
-        #
+#        F1rhotot=d[skk,:,:,:]
+#        F1uutot=d[skk+1,:,:,:]
+#        F1u3tot=d[skk+2,:,:,:]
+#        F1urad0tot=d[skk+3,:,:,:]
+#        F1urad3tot=d[skk+4,:,:,:]
+#        F1yfl1tot=d[skk+5,:,:,:]
+#        F1yfl2tot=d[skk+6,:,:,:]
+#        F1yfl3tot=d[skk+7,:,:,:]
+#        F1yfl4tot=d[skk+8,:,:,:]
+#        F1yfl5tot=d[skk+9,:,:,:]
+#        #
+#        F1rhopake=d[skk+10,:,:,:]
+#        F1uupake=d[skk+11,:,:,:]
+#        F1u3pake=d[skk+12,:,:,:]
+#        F1urad0pake=d[skk+13,:,:,:]
+#        F1urad3pake=d[skk+14,:,:,:]
+#        F1yfl1pake=d[skk+15,:,:,:]
+#        F1yfl2pake=d[skk+16,:,:,:]
+#        F1yfl3pake=d[skk+17,:,:,:]
+#        F1yfl4pake=d[skk+18,:,:,:]
+#        F1yfl5pake=d[skk+19,:,:,:]
+#        #
+#        F1rhoen=d[skk+20,:,:,:]
+#        F1uuen=d[skk+21,:,:,:]
+#        F1u3en=d[skk+22,:,:,:]
+#        F1urad0en=d[skk+23,:,:,:]
+#        F1urad3en=d[skk+24,:,:,:]
+#        F1yfl1en=d[skk+25,:,:,:]
+#        F1yfl2en=d[skk+26,:,:,:]
+#        F1yfl3en=d[skk+27,:,:,:]
+#        F1yfl4en=d[skk+28,:,:,:]
+#        F1yfl5en=d[skk+29,:,:,:]
+#        #
+#        F1rhoem=d[skk+30,:,:,:]
+#        F1uuem=d[skk+31,:,:,:]
+#        F1u3em=d[skk+32,:,:,:]
+#        F1urad0em=d[skk+33,:,:,:]
+#        F1urad3em=d[skk+34,:,:,:]
+#        F1yfl1em=d[skk+35,:,:,:]
+#        F1yfl2em=d[skk+36,:,:,:]
+#        F1yfl3em=d[skk+37,:,:,:]
+#        F1yfl4em=d[skk+38,:,:,:]
+#        F1yfl5em=d[skk+39,:,:,:]
+#        #
+#        F1rhorad=d[skk+40,:,:,:]
+#        F1uurad=d[skk+41,:,:,:]
+#        F1u3rad=d[skk+42,:,:,:]
+#        F1urad0rad=d[skk+43,:,:,:]
+#        F1urad3rad=d[skk+44,:,:,:]
+#        F1yfl1rad=d[skk+45,:,:,:]
+#        F1yfl2rad=d[skk+46,:,:,:]
+#        F1yfl3rad=d[skk+47,:,:,:]
+#        F1yfl4rad=d[skk+48,:,:,:]
+#        F1yfl5rad=d[skk+49,:,:,:]
+#        #
     #
     if whichpoledeath==2:
         if 1 or np.fabs(THETAROT>0.0):
@@ -9018,7 +9053,7 @@ def rfdtransform(gotgdetB=0):
     # modified globals
     global nzgdump
     global r,h,ph
-    global rho,ug,yfl,uu,B,gdetB,Erf,uradu
+    global rho,ug,yfl1,yfl2,yfl3,yfl4,yfl5,uu,B,gdetB,Erf,uradu
     #
     print("what: %d\n",nz) ; sys.stdout.flush()
     print("what2: %d\n",nzgdump) ; sys.stdout.flush()
@@ -9424,7 +9459,7 @@ def rotsimpletensordot(uu,rot,axis):
 def rfdprocess(gotgdetB=0):
     #
     # external globals
-    global rho,ug,yfl,uu,B,gdetB,Erf,uradu,gotrad
+    global rho,ug,yfl1,yfl2,yfl3,yfl4,yfl5,uu,B,gdetB,Erf,uradu,gotrad
     # derived quantities
     global ug,uu,rhor,r,h,ph,rhoclean,ugclean
     global gdetB # tells either exists before or will be created here
@@ -28352,11 +28387,13 @@ def tutorial1(filename=None,fignum=None,whichplot=1):
     # now plot something you read-in
     plt.close(fignum)
     fig=plt.figure(fignum)
-    lrho=np.log10(yfl/rho)
+    lrho=np.log10(yfl1/rho)
     if(whichplot==1):
         lrho=np.log10(rho)
+        #lrho=np.log10(Erf)
     if(whichplot==2):
-        lrho=yfl/rho
+        lrho=yfl1/rho
+    #lrho=bsq/rho
     #plco(lrho,cb=True,nc=50)
     #plt.imshow(lrho)
     #aphi = fieldcalc() # keep sign information
@@ -28368,7 +28405,8 @@ def tutorial1(filename=None,fignum=None,whichplot=1):
     #myy=r[0:nxout,:,0]*np.sin(h[0:nxout,:,0])*np.sin(ph[0:nxout,:,0])
     #myz=r[0:nxout,:,0]*np.cos(h[0:nxout,:,0])
     #plt.pcolormesh(myx,myz,lrho[0:nxout,:,0]) #,vmin=vmintoplot,vmax=vmaxtoplot)
-    extent=(0,10,-10,10)
+    len=40.0
+    extent=(0,len,-len,len)
     ncell=800
     Rhor=1+sqrt(1.0-a**2)
     domask=Rin/Rhor
@@ -28377,12 +28415,12 @@ def tutorial1(filename=None,fignum=None,whichplot=1):
     plt.imshow(ifun,extent=extent)
     plt.colorbar()
     #
-    vminmost=np.amin(yfl/rho)
-    vmaxmost=np.amax(yfl/rho)
+    vminmost=np.amin(lrho)
+    vmaxmost=np.amax(lrho)
     print("vminmost=%g vmaxmost=%g" % (vminmost,vmaxmost)) ;sys.stdout.flush()
-    yfltrue=yfl/rho
-    arglist=[yfltrue,np.log10(rho),np.log10(yfl),uu[0]]
-    argnamelist=["yfltrue","lrho","lrhofl","uu0"]
+    yfl1true=yfl1/rho
+    arglist=[yfl1true,np.log10(rho),np.log10(yfl1),uu[0]]
+    argnamelist=["yfl1true","lrho","lrhofl","uu0"]
     cid = fig.canvas.mpl_connect('button_press_event', lambda event: onclick(event,arglist,argnamelist,domask=domask))
 
 def tutorial1alt(filename=None,fignum=None):
