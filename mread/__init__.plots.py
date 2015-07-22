@@ -43,10 +43,7 @@ def setmplconfigpath(uniquenum=None):
     #
     # SUPERNOEMARK: below inapplicable to Nautilus for some reason.  Makes Nautilus fail to find some packages if MPLCONFIGDIR not unset.
     #
-    # sometimes physics-179.umd.edu needs this for one file for some reason. (#11 out of 16 usually)
-    # for stampede, needs to be 0
-    global ISNAUTILUS
-    ISNAUTILUS=0
+    ISNAUTILUS=1 # sometimes physics-179.umd.edu needs this for one file for some reason. (#11 out of 16 usually)
     #
     if ISNAUTILUS==1:
         return
@@ -70,7 +67,7 @@ def setmplconfigpath(uniquenum=None):
     # now MPLCONFIGDIR is unique, so remove this dir and let matplotlib create it -- else Kraken complains.
     if os.path.isdir(mycwd)==1:
         import shutil
-        shutil.rmtree(mycwd,ignore_errors=True)
+        shutil.rmtree(mycwd)
     #
     try:
         # try importing matplotlib.  If error, then create directory myself (Nautilus vs. Kraken issue)
@@ -181,17 +178,7 @@ runglobalsetup()
 
 import shutil
 
-
-import random
-random.seed()
-import time
-n = random.random()
-time.sleep(10.0+100.0*n) # on supercomputer's need to wait so file system gets up to date
-
 import matplotlib
-#matplotlib.get_cachedir()
-n = random.random()
-time.sleep(10.0*n) # on supercomputer's need to wait so file system gets up to date
 matplotlib.use('Agg')
 from matplotlib import rc
 from matplotlib import mlab
@@ -323,9 +310,6 @@ def printusage():
     # below for unix
     memoryusage=memory()
     print("memoryusage=%g" % (memoryusage)) ; sys.stdout.flush()
-    #
-    residentusage=resident()
-    print("residentusage=%g" % (residentusage)) ; sys.stdout.flush()
     #
     
 
@@ -5446,6 +5430,7 @@ def compute_taurad(domergeangles=True,radiussettau1zero=80):
         fdphco= lambda : _dx3*np.sqrt(np.fabs(gv3[3,3]))*uu[0]
         #
         taurad1=(KAPPAUSER+KAPPAESUSER)*fdrco()
+        #taurad1=(KAPPAESUSER)*fdrco()
         # http://arxiv.org/pdf/astro-ph/0408590.pdf equation~3
         tauradeff1=np.sqrt(3.0*KAPPAUSER*(KAPPAUSER+KAPPAESUSER))*fdrco()
         #
@@ -5534,7 +5519,8 @@ def compute_taurad(domergeangles=True,radiussettau1zero=80):
         tauradeff3=uu[0]*np.sqrt(KAPPAUSER*(KAPPAUSER+KAPPAESUSER))*fdphco()
         #
         # so tauradintegrated (final version) is optical depth integrated from large radii and away from pole. 
-        tauradintegrated=np.maximum(taurad1flipintegrated,taurad2integrated)
+        #tauradintegrated=np.maximum(taurad1flipintegrated,taurad2integrated)
+        tauradintegrated=taurad1flipintegrated # GODMARK TEMP
         tauradeffintegrated=np.maximum(tauradeff1flipintegrated,tauradeff2integrated)
         #
         # use primarily: taurad1flipintegrated taurad2integrated and can use and'ed version
@@ -6456,6 +6442,7 @@ def mkframexy(fname,ax=None,cb=True,vmin=None,vmax=None,len=20,ncell=800,pt=True
         #CS.cmap=cm.jet
         #CS.set_axis_bgcolor("#bdb76b")
         if True == cb:
+            print("shrink=%g shrinkcb=%g" % (shrink,shrinkcb)); sys.stdout.flush()
             if dologz==0:
                 cbar = plt.colorbar(CS,ax=ax,shrink=shrinkcb) # draw colorbar
             else:
@@ -8290,7 +8277,7 @@ def rfd(fieldlinefilename,**kwargs):
     #Velocity components: u1, u2, u3, 
     #Cell-centered magnetic field components: B1, B2, B3, 
     #Face-centered magnetic field components multiplied by metric determinant: gdetB1, gdetB2, gdetB3
-    global rho,ug,yfl1,yfl2,yfl3,yfl4,yfl5,uu,B,gdetB,Erf,uradu
+    global rho,ug,uu,B,gdetB,Erf,uradu
     #
     #read image
     #
@@ -8342,23 +8329,13 @@ def rfd(fieldlinefilename,**kwargs):
     #
     # fix-up pole : Should have been done during code -- still not perfectly stable near pole
     if(isradmodelD1(modelname)):
-        whichpoledeath=0#2
+        whichpoledeath=1 #0 #2
     else:
         whichpoledeath=0
     #
     #
+    radfixlocal=0
     if whichpoledeath==1:
-        if 1==1 or np.fabs(THETAROT>0.0):
-            print("Fixing primitives") ; sys.stdout.flush()
-            for primi in np.arange(0,11):
-                d[primi,:,0,:]=d[primi,:,3,:]
-                d[primi,:,1,:]=d[primi,:,3,:]
-                d[primi,:,2,:]=d[primi,:,3,:]
-                d[primi,:,ny-1,:]=d[primi,:,ny-4,:]
-                d[primi,:,ny-2,:]=d[primi,:,ny-4,:]
-                d[primi,:,ny-3,:]=d[primi,:,ny-4,:]
-    #
-    if whichpoledeath==3:
         if radfixlocal==1 and np.fabs(THETAROT>0.0):
             print("Fixing primitives") ; sys.stdout.flush()
             for primi in np.arange(0,2):
@@ -8403,50 +8380,20 @@ def rfd(fieldlinefilename,**kwargs):
 #                d[primi,:,ny-5,:]=1E-10
 #                d[primi,:,ny-6,:]=1E-10
 #    #
-
     #
     #rho, u, -hu_t, -T^t_t/U0, u^t, v1,v2,v3,B1,B2,B3
-    if(numcolumns==29):
-        #
-        rho=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
-        rho=d[0,:,:,:]
-        ug=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
-        ug=d[1,:,:,:]
-
-        yfl1=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
-        yfl1=d[2,:,:,:]
-        yfl2=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
-        yfl2=d[3,:,:,:]
-        yfl3=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
-        yfl3=d[4,:,:,:]
-        yfl4=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
-        yfl4=d[5,:,:,:]
-        yfl5=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
-        yfl5=d[6,:,:,:]
-        #
-        s00=7
-        #
-        uu=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
-        uu=d[s00:s00+4,:,:,:]
-        uu[1:4]=uu[1:4] * uu[0]
-        #
-        sii=s00+4
-    else:
-        s00=2
-        sii=8
-        rho=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
-        rho=d[0,:,:,:]
-        #matter internal energy in the fluid frame
-        ug=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
-        ug=d[1,:,:,:]
-        #d[4] is the time component of 4-velocity, u^t
-        #d[5:8] are 3-velocities, v^i
-        uu=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
-        uu=d[4:8,:,:,:]  #again, note uu[i] are 3-velocities (as read from the fieldline file)
-        #multiply by u^t to get 4-velocities: u^i = u^t v^i
-        uu[1:4]=uu[1:4] * uu[0]
-        #
-        #
+    #matter density in the fluid frame
+    rho=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
+    rho=d[0,:,:,:]
+    #matter internal energy in the fluid frame
+    ug=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
+    ug=d[1,:,:,:]
+    #d[4] is the time component of 4-velocity, u^t
+    #d[5:8] are 3-velocities, v^i
+    uu=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
+    uu=d[4:8,:,:,:]  #again, note uu[i] are 3-velocities (as read from the fieldline file)
+    #multiply by u^t to get 4-velocities: u^i = u^t v^i
+    uu[1:4]=uu[1:4] * uu[0]
     #
     if whichpoledeath==2:
         if 1 or np.fabs(THETAROT>0.0):
@@ -8487,7 +8434,7 @@ def rfd(fieldlinefilename,**kwargs):
     # start at 7 so B[1] is correct.  7=<ignore> 8=B[1] 9=B[2] 10=B[3]
     B=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
     # have to make copy so mods to B[0] won't change d[7]
-    B=np.copy(d[sii-1:sii-1+4,:,:,:])
+    B=np.copy(d[7:11,:,:,:])
     B[0]=0*B[0]
     #
     #
@@ -8504,25 +8451,26 @@ def rfd(fieldlinefilename,**kwargs):
         # below assumes gdetB[0] is never needed
         gdetB=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
         # have to make copy so mods to gdetB[0] won't change B[3]
-        gdetB = np.copy(d[sii-1+3:sii-1+3+4,:,:,:])
+        gdetB = np.copy(d[10:14,:,:,:])
         gdetB[0]=0*gdetB[0]
     #
     #
     ######################################################
     # get any radiation variables
     #
-    global gotrad
+    global gotrad,radfix
     gotrad=0
-    if(numcolumns==16 or numcolumns==29):
+    if(numcolumns==16):
         gotrad=1
+        radfix=0 # whether to remove bad radiation flux in polar region
         Erf=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
         uradu=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
-        Erf=d[sii+3,:,:,:] # radiation frame radiation energy density
+        Erf=d[11,:,:,:] # radiation frame radiation energy density
         #
         # approximation, but correct if used in pressure ultimately
         #urad=Erf
         #
-        uradu=d[sii+4:sii+4+4,:,:,:]  #again, note uu[i] are 3-velocities (as read from the fieldline file)
+        uradu=d[12:16,:,:,:]  #again, note uu[i] are 3-velocities (as read from the fieldline file)
         #multiply by u^t to get 4-velocities: u^i = u^t v^i
         uradu[1:4]=uradu[1:4] * uradu[0]
         #
@@ -8536,79 +8484,6 @@ def rfd(fieldlinefilename,**kwargs):
         uradd=uu*0+1E-30
         uradu=uu*0+1E-30
     #
-    if(numcolumns==29):
-        # Tgas,Tradff,nradff,kappa,kappan,kappaemit,kappanemit,kappaes,lambda,nlambda
-        sjj=sii+4+4 # 6+4+4 = 14
-        #
-        Tgas=d[sjj,:,:,:]
-        Tradff=d[sjj+1,:,:,:]
-        nradff=d[sjj+2,:,:,:]
-        kappa=d[sjj+3,:,:,:]
-        kappan=d[sjj+4,:,:,:]
-        kappaemit=d[sjj+5,:,:,:]
-        kappanemit=d[sjj+6,:,:,:]
-        kappaes=d[sjj+7,:,:,:]
-        elambda=d[sjj+8,:,:,:]
-        nlambda=d[sjj+9,:,:,:]
-        #  (pl==RHO || pl==UU || pl==U3 || pl==URAD0 || pl==URAD3) = 5
-        # (1  +  1+1+1 + (EOMRADTYPE!=EOMRADNONE)) = 5
-        skk=sjj+10 # 14+10=24
-        #
-#        F1rhotot=d[skk,:,:,:]
-#        F1uutot=d[skk+1,:,:,:]
-#        F1u3tot=d[skk+2,:,:,:]
-#        F1urad0tot=d[skk+3,:,:,:]
-#        F1urad3tot=d[skk+4,:,:,:]
-#        F1yfl1tot=d[skk+5,:,:,:]
-#        F1yfl2tot=d[skk+6,:,:,:]
-#        F1yfl3tot=d[skk+7,:,:,:]
-#        F1yfl4tot=d[skk+8,:,:,:]
-#        F1yfl5tot=d[skk+9,:,:,:]
-#        #
-#        F1rhopake=d[skk+10,:,:,:]
-#        F1uupake=d[skk+11,:,:,:]
-#        F1u3pake=d[skk+12,:,:,:]
-#        F1urad0pake=d[skk+13,:,:,:]
-#        F1urad3pake=d[skk+14,:,:,:]
-#        F1yfl1pake=d[skk+15,:,:,:]
-#        F1yfl2pake=d[skk+16,:,:,:]
-#        F1yfl3pake=d[skk+17,:,:,:]
-#        F1yfl4pake=d[skk+18,:,:,:]
-#        F1yfl5pake=d[skk+19,:,:,:]
-#        #
-#        F1rhoen=d[skk+20,:,:,:]
-#        F1uuen=d[skk+21,:,:,:]
-#        F1u3en=d[skk+22,:,:,:]
-#        F1urad0en=d[skk+23,:,:,:]
-#        F1urad3en=d[skk+24,:,:,:]
-#        F1yfl1en=d[skk+25,:,:,:]
-#        F1yfl2en=d[skk+26,:,:,:]
-#        F1yfl3en=d[skk+27,:,:,:]
-#        F1yfl4en=d[skk+28,:,:,:]
-#        F1yfl5en=d[skk+29,:,:,:]
-#        #
-#        F1rhoem=d[skk+30,:,:,:]
-#        F1uuem=d[skk+31,:,:,:]
-#        F1u3em=d[skk+32,:,:,:]
-#        F1urad0em=d[skk+33,:,:,:]
-#        F1urad3em=d[skk+34,:,:,:]
-#        F1yfl1em=d[skk+35,:,:,:]
-#        F1yfl2em=d[skk+36,:,:,:]
-#        F1yfl3em=d[skk+37,:,:,:]
-#        F1yfl4em=d[skk+38,:,:,:]
-#        F1yfl5em=d[skk+39,:,:,:]
-#        #
-#        F1rhorad=d[skk+40,:,:,:]
-#        F1uurad=d[skk+41,:,:,:]
-#        F1u3rad=d[skk+42,:,:,:]
-#        F1urad0rad=d[skk+43,:,:,:]
-#        F1urad3rad=d[skk+44,:,:,:]
-#        F1yfl1rad=d[skk+45,:,:,:]
-#        F1yfl2rad=d[skk+46,:,:,:]
-#        F1yfl3rad=d[skk+47,:,:,:]
-#        F1yfl4rad=d[skk+48,:,:,:]
-#        F1yfl5rad=d[skk+49,:,:,:]
-#        #
     #
     if whichpoledeath==2:
         if 1 or np.fabs(THETAROT>0.0):
@@ -8779,9 +8654,10 @@ YSOLAR = lambda : (0.28)
 ZSOLAR = lambda : (1.0-(XSOLAR()+YSOLAR()))
 
 #PURE ELASTIC SCATTERING
-#KAPPA_ES_KNCORRF = lambda f: (0.75*((-1.*(1. + 3.*(f)))/Power(1. + 2.*(f),2) +  (0.5*Log(1. + 2.*(f)))/(f) + ((1. + (f))*((2. + 2.*(f))/(1. + 2.*(f)) - (1.*Log(1. + 2.*(f)))/(f)))/Power((f),2)))
+KAPPA_ES_KNCORRF = lambda f: (0.75*((-1.*(1. + 3.*(f)))/Power(1. + 2.*(f),2) +  (0.5*Log(1. + 2.*(f)))/(f) + ((1. + (f))*((2. + 2.*(f))/(1. + 2.*(f)) - (1.*Log(1. + 2.*(f)))/(f)))/Power((f),2)))
 #KAPPA_ES_KNCORR = lambda rhocode,Tcode : (KAPPA_ES_KNCORREP(K_BOLTZ*(Tcode)*TEMPBAR/(MELE*CCCTRUE*CCCTRUE)))
 KAPPA_ES_FERMICORR = lambda rhocode,Tcode : (1.0/(1.0+2.7E11*((rhocode)*RHOBAR)/pow((Tcode)*TEMPBAR,2.0))) # Buchler and Yueh 1976 (just Fermi part). Fewer electrons when near Fermi fluid limit.
+#KAPPA_ES_FERMICORR = lambda rhocode,Tcode : (1.0)
 KAPPA_ES_KNCORR = lambda rhocode,Tcode : (1.0/(1.0+pow((Tcode)*TEMPBAR/4.5E8,0.86)))  # Buchler and Yueh 1976 .  Klein-Nishina for thermal electrons.
 #kappaes = sigma_T n_e = sigma_T n_b (n_e/n_b) = sigma_T rho/mb (ne/nb)
 KAPPA_ES_CODE = lambda rhocode,Tcode : (0.2*(1.0+XFACT)*KAPPA_ES_FERMICORR(rhocode,Tcode)*KAPPA_ES_KNCORR(rhocode,Tcode)/OPACITYBAR)
@@ -8806,8 +8682,6 @@ KAPPA_GENFF_CODE = lambda rhocode,Tgcode,Trcode : (1.0/(1.0/(KAPPA_MOL_CODE(rhoc
 
 def KAPPA_ES_CODE_PYTHON(rhocode,Tcode):
     global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
-    # default
-    y=KAPPA_ES_CODE(rhocode,Tcode)
     if(isradmodeltype1(modelname)):
        y=(0.2*(1.0+XFACT)/OPACITYBAR)
     if(isradmodeltype2(modelname)):
@@ -8816,9 +8690,6 @@ def KAPPA_ES_CODE_PYTHON(rhocode,Tcode):
 
 def KAPPA_FF_CODE_PYTHON(rhocode,Tgcode,Trcode):
     global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
-    #default
-    y=KAPPA_GENFF_CODE(rhocode,Tgcode,Trcode)
-    #
     if(isradmodeltype1(modelname)):
        y=(1.0E23*ZATOM*ZATOM/(MUE*MUI)*(rhocode*RHOBAR)*pow(Tgcode*TEMPBAR,-7.0/2.0)/OPACITYBAR)
     if(isradmodeltype2(modelname)):
@@ -9069,7 +8940,7 @@ def rfdtransform(gotgdetB=0):
     # modified globals
     global nzgdump
     global r,h,ph
-    global rho,ug,yfl1,yfl2,yfl3,yfl4,yfl5,uu,B,gdetB,Erf,uradu
+    global rho,ug,uu,B,gdetB,Erf,uradu
     #
     print("what: %d\n",nz) ; sys.stdout.flush()
     print("what2: %d\n",nzgdump) ; sys.stdout.flush()
@@ -9475,7 +9346,7 @@ def rotsimpletensordot(uu,rot,axis):
 def rfdprocess(gotgdetB=0):
     #
     # external globals
-    global rho,ug,yfl1,yfl2,yfl3,yfl4,yfl5,uu,B,gdetB,Erf,uradu,gotrad
+    global rho,ug,uu,B,gdetB,Erf,uradu,gotrad
     # derived quantities
     global ug,uu,rhor,r,h,ph,rhoclean,ugclean
     global gdetB # tells either exists before or will be created here
@@ -9503,15 +9374,13 @@ def rfdprocess(gotgdetB=0):
     maxbsqorho=np.copy(maxbsqorhonear)
     #uu=np.copy(uuclean)
     #
-    if 1==0: # test
-        rho=np.copy(rhoclean)
-        ug=np.copy(ugclean)
+    if 1==0: # SUPERCLEAN
         global rhounclean,ugunclean
         rhounclean=np.copy(rho)
         ugunclean=np.copy(ug)
+        rho=np.copy(rhoclean)
+        ug=np.copy(ugclean)
     #
-    global gotrad
-    print("gotrad=%d\n" % (gotrad)) ; sys.stdout.flush()
     if(gotrad==0):
         # go here if want rho and ug to be clean versions always.  Including for movie frames.
         # assume if need bsqorho or something like that, ok if goes to infinity (except some plots need fixing)
@@ -11287,17 +11156,17 @@ def getqtymem(qtymem,formovie=False):
     edtot=qtymem[i];i+=1
     global     ed2h
     ed2h=qtymem[i];i+=1
-    global     lden30
-    lden30=qtymem[i];i+=1
-    global     eden30
-    eden30=qtymem[i];i+=1
-    global     edpake30
-    edpake30=qtymem[i];i+=1
+    global     ed4h
+    ed4h=qtymem[i];i+=1
+    global     ed2hor
+    ed2hor=qtymem[i];i+=1
+    global     edrhosq
+    edrhosq=qtymem[i];i+=1
     #
     global     edem
     edem=qtymem[i];i+=1
-    global     edmake
-    edmake=qtymem[i];i+=1
+    global     edma
+    edma=qtymem[i];i+=1
     global     edm
     edm=qtymem[i];i+=1
     global     edpa
@@ -11310,15 +11179,15 @@ def getqtymem(qtymem,formovie=False):
     edradthin=qtymem[i];i+=1
     print("GOT HERE edrad") ; sys.stdout.flush()
     #
-    global     edmake30
-    edmake30=qtymem[i];i+=1
+    global     edma30
+    edma30=qtymem[i];i+=1
     global     edm30
     edm30=qtymem[i];i+=1
     #
     global     edtotbound
     edtotbound=qtymem[i];i+=1
-    global     edmakebound
-    edmakebound=qtymem[i];i+=1
+    global     edmabound
+    edmabound=qtymem[i];i+=1
     #
     #Pjet : NQTY=2
     global     pjem5
@@ -12131,25 +12000,25 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
     #
     #############################################
     #
-   global ISSCRATCH
-    #
-    if(ISSCRATCH==1):
-        fnameprefix="/tmp/"
-    else:
-        fnameprefix=""
-    #
-    #
-    #
-    #
     havefull=0
     print "Number of time slices: %d" % numtimeslices ; sys.stdout.flush()
     if whichi >=0 and whichi < whichn:
         fname = "qty2_%d_%d.npy" % (whichi, whichn)
         havefull=0
     else:
-        fname = "%sqty2.npy" % (fnameprefix)
+        fname = "qty2.npy" 
         havefull=1
     #
+    #############################################
+    global qtymem
+    if OLDQTYMEMMEM==1 or havefull==1:
+        qtymem=np.zeros((nqty,numtimeslices,nx),dtype=np.float32)
+    else:
+        # only need to process slices currently dealing with
+        # this can be coincidentally the same as above when whichn=1
+        qtymem=np.zeros((nqty,numtimesliceslocal,nx),dtype=np.float32)
+    #
+    #np.seterr(invalid='raise',divide='raise')
     #
     #############################################
     print("File trying to load or see if exist: %s" % fname) ; sys.stdout.flush()
@@ -12163,23 +12032,9 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         print "Number of previously saved time slices: %d" % numtimeslices2  ; sys.stdout.flush()
         if( (numtimeslices2 >= numtimeslices and (OLDQTYMEMMEM==1 or havefull==1)) or (numtimeslices2 >= numtimesliceslocal and OLDQTYMEMMEM==0) )  :
             print "Number of previously saved time slices is >= than of timeslices to be loaded, re-using previously saved time slices" ; sys.stdout.flush()
-            #np.save("qty2.npy,qtymem2[:,:-1])  #kill last time slice
-            print( "before return(qtymem2)" ) ; sys.stdout.flush()
-            printusage()
+            #np.save("qty2.npy",qtymem2[:,:-1])  #kill last time slice
             return(qtymem2)
         else:
-            #
-            #############################################
-            global qtymem
-            if OLDQTYMEMMEM==1 or havefull==1:
-                qtymem=np.zeros((nqty,numtimeslices,nx),dtype=np.float32)
-            else:
-                # only need to process slices currently dealing with
-                # this can be coincidentally the same as above when whichn=1
-                qtymem=np.zeros((nqty,numtimesliceslocal,nx),dtype=np.float32)
-            #
-            #np.seterr(invalid='raise',divide='raise')
-            #
             assert qtymem2.shape[0] == qtymem.shape[0]
             print "Number of previously saved time slices is < than of timeslices to be loaded, re-using previously saved time slices" ; sys.stdout.flush()
             qtymem[:,0:numtimeslices2] = qtymem2[:,0:numtimeslices2]
@@ -12193,19 +12048,9 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         print "Instructed to use old format, reusing prev. saved slices" ; sys.stdout.flush()
         return(qtymem2)
     else:
-        #############################################
-        global qtymem
-        if OLDQTYMEMMEM==1 or havefull==1:
-            qtymem=np.zeros((nqty,numtimeslices,nx),dtype=np.float32)
-        else:
-            # only need to process slices currently dealing with
-            # this can be coincidentally the same as above when whichn=1
-            qtymem=np.zeros((nqty,numtimesliceslocal,nx),dtype=np.float32)
-        #
         numtimeslices2 = 0
         print("No previous data: %s" % fname) ; sys.stdout.flush()
     #
-
     ###########################
     #
     # take qtymem (if read partial data) and fill in variable names
@@ -14036,22 +13881,23 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         print("Edot" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         edtot[qindex]=intangle(-gdet*fTud(1,0))
         ed2h[qindex]=intangle(-gdet*fTud(1,0),hoverr=2*horval)
-        #ed4h[qindex]=intangle(-gdet*fTud(1,0),hoverr=4*horval)
-        #ed2hor[qindex]=intangle(-gdet*fTud(1,0),hoverr=2*hoverr3d,thetamid=thetamid3d)
+        ed4h[qindex]=intangle(-gdet*fTud(1,0),hoverr=4*horval)
+        ed2hor[qindex]=intangle(-gdet*fTud(1,0),hoverr=2*hoverr3d,thetamid=thetamid3d)
+        edrhosq[qindex]=scaletofullwedge(((-gdet*rho**2*fTud(1,0)).sum(1)/maxrhosq2d).sum(1)*_dx2*_dx3)
         #
         # Tud's already using rhoclean and ugclean
         edem[qindex]=intangle(-gdet*fTudEM(1,0))
-        edmake[qindex]=intangle(-gdet*fTudMAKE(1,0))
-        edpake[qindex]=intangle(-gdet*fTudPAKE(1,0))
-        eden[qindex]=intangle(-gdet*fTudEN(1,0))
+        edma[qindex]=intangle(-gdet*fTudMA(1,0))
         edm[qindex]=intangle(gdet*rho*uu[1]) # not using clean version
+        edpa[qindex]=intangle(-gdet*fTudPA(1,0))
+        eden[qindex]=intangle(-gdet*fTudEN(1,0))
         #
         myfun0=(-fTudRAD(1,0))*gdet
-        radlocalfix=0 # whether to fix floor-level radiation in polar region
-        if(radlocalfix):
+        if(radfix>=1):
             myuse=(bsq/rho>1)
             myuse[myfun0>0]=False
             myfun0[myuse==True] = 0
+        #
         edrad[qindex]=intangle(myfun0)
         #
         #
@@ -14060,13 +13906,11 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         #edradthin[qindex]=intangle(myfun0,which=tauradintegrated<=1.0)
         edradthin[qindex]=intangle(myfun0,which=tauradintegrated<=1.0)
         #
-        edmake30[qindex]=intangle(-gdet*fTudMAKE(1,0),which=(condmaxbsqorho==0))
-        edpake30[qindex]=intangle(-gdet*fTudPAKE(1,0),which=(condmaxbsqorho==0))
-        eden30[qindex]=intangle(-gdet*fTudEN(1,0),which=(condmaxbsqorho==0))
+        edma30[qindex]=intangle(-gdet*fTudMA(1,0),which=(condmaxbsqorho==0))
         edm30[qindex]=intangle(gdet*rho*uu[1],which=(condmaxbsqorho==0))
         #
-        edtotbound[qindex]=intangle(-gdet*fTudKE(1,0),which=(-fenth()*ud[0]<=1))
-        edmakebound[qindex]=intangle(-gdet*fTudMAKE(1,0),which=(-fenth()*ud[0]<=1))
+        edtotbound[qindex]=intangle(-gdet*fTud(1,0),which=(-fenth()*ud[0]<=1))
+        edmabound[qindex]=intangle(-gdet*fTudMA(1,0),which=(-fenth()*ud[0]<=1))
         #
         print("Pjet" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         pjem5[qindex]=jetpowcalc(0,minbsqorho=5)
@@ -14165,8 +14009,6 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         ldradthin[qindex]=intangle(gdet*fTudRAD(1,3)/dxdxp[3,3],which=tauradintegrated<=1.0)
         #
         ldma30[qindex]=intangle(gdet*fTudMA(1,3)/dxdxp[3,3],which=(condmaxbsqorho==0))
-        ldpa30[qindex]=intangle(gdet*fTudPA(1,3)/dxdxp[3,3],which=(condmaxbsqorho==0))
-        lden30[qindex]=intangle(gdet*fTudEN(1,3)/dxdxp[3,3],which=(condmaxbsqorho==0))
         ldm30[qindex]=intangle(0.0*gdet*rho*uu[3]*dxdxp[3,3],which=(condmaxbsqorho==0))
         #
         print("north hemisphere" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
@@ -14727,7 +14569,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     else:
         print("gotrad already defined as %d" % (gotrad)) ; sys.stdout.flush()
     # controls many things for radiation runs
-    global gotrad
+    global gotrad,radfix
     showrad=gotrad # assume if got, then show.
     #
     # need to compute this again
@@ -15106,10 +14948,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     mdtotvsr = mdotfinavgvsr
     edtotvsr = timeavg(edtot,ts,fti,ftf)
     edemvsr = timeavg(edem,ts,fti,ftf)
-    edmakevsr = timeavg(edmake-edmake30,ts,fti,ftf)
-    edpakevsr = timeavg(edpake-edpake30,ts,fti,ftf)
+    edmavsr = timeavg(edma-edma30,ts,fti,ftf)
     edmvsr = timeavg(edm-edm30,ts,fti,ftf)
-    edenvsr = timeavg(eden-eden30,ts,fti,ftf)
+    edpavsr = timeavg(edpa-edm30,ts,fti,ftf)  # assume floor already taken out (really true for above as well, so don't need edm30 except for edmvsr)
+    edenvsr = timeavg(eden,ts,fti,ftf)
     edradvsr = timeavg(edrad,ts,fti,ftf)
     edradthinvsr = timeavg(edradthin,ts,fti,ftf)
     #
@@ -15117,8 +14959,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     ldemvsr = timeavg(ldem,ts,fti,ftf)
     ldmavsr = timeavg(ldma-ldma30,ts,fti,ftf)
     ldmvsr = timeavg(ldm-ldm30,ts,fti,ftf)
-    ldpavsr = timeavg(ldpa-ldpa30,ts,fti,ftf)
-    ldenvsr = timeavg(lden-lden30,ts,fti,ftf)
+    ldpavsr = timeavg(ldpa,ts,fti,ftf)  # assume floor already taken out (really true for above as well, so don't need ldm30 except for ldmvsr)
+    ldenvsr = timeavg(lden,ts,fti,ftf)
     ldradvsr = timeavg(ldrad,ts,fti,ftf)
     ldradthinvsr = timeavg(ldradthin,ts,fti,ftf)
     #
@@ -15156,15 +14998,15 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     pjemfinavgvsr5 = timeavg(pjem5[:,:],ts,fti,ftf)
     #
     # MA free energy (but remove matter-energy flux created by floors (i.e. bsq/rho>30) near horizon)
-    pjmaketot = (edmake-edmake30) #- (edm-edm30)
+    pjmaketot = (edma-edma30) - (edm-edm30)
     pjmakefinavgvsr = timeavg(pjmaketot,ts,fti,ftf)
     #
     # PA free (PAKE) energy
-    pjpaketot = (edpake-edpake30) #- (edm-edm30)
+    pjpaketot = (edpa-edma30) - (edm-edm30)
     pjpakefinavgvsr = timeavg(pjpaketot,ts,fti,ftf)
     #
-    # EN energy
-    pjentot = (eden-eden30)
+    # EN energy (assume floor already taken out)
+    pjentot = eden
     pjenfinavgvsr = timeavg(pjentot,ts,fti,ftf)
     #
     pjradtot = edradthin # use thin version for "jet" output values
@@ -22256,8 +22098,6 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         # convert *.png -composite output.png
         # convert *.png -append output.png
     #
-    #
-    #
     numplots=0
     if dofftplot==1 or dospecplot==1:
         #
@@ -23367,7 +23207,6 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         #
         #
-        #
         # FINALPLOT:
         # ssh jmckinne@orange.slac.stanford.edu
         # cd /lustre/ki/orange/jmckinne/thickdisk7/movie8new4
@@ -23567,7 +23406,6 @@ def mkinitfinalplotpost(fname=None,plottype=0,aphijetouter=None,inputlevs=None,n
                     adjustprops = dict(left=0.1, bottom=0.3, right=0.97, top=0.7, wspace=0.0, hspace=0.0)
                 else:
                     adjustprops = dict(left=0.1, bottom=0.09, right=0.97, top=0.99, wspace=0.0, hspace=0.0)
-                #adjustprops = dict(left=0.1, bottom=0.09, right=0.97, top=0.99, wspace=0.0, hspace=0.0)
             #plt.cla()
             #fig = pylab.figure(**figprops)
             fig1.subplots_adjust(**adjustprops)
@@ -23645,6 +23483,7 @@ def mkinitfinalplotpost(fname=None,plottype=0,aphijetouter=None,inputlevs=None,n
         #plt.set_xticklabels([])
         #
         if 1==1:
+            #
             findex=0
             if plottype==0 or plottype==1:
                 framesize=150
@@ -23658,11 +23497,6 @@ def mkinitfinalplotpost(fname=None,plottype=0,aphijetouter=None,inputlevs=None,n
                 plotsizex=framesize*90.0/150.0
                 plotsizey=framesize
                 dobsqorholine=True
-            #
-            #framesize=150
-            #plotsize=framesize
-            #plotsizex=framesize*90.0/150.0
-            #plotsizey=framesize
             #
             #
             if whichplot==0:
@@ -23768,7 +23602,6 @@ def mkinitfinalplotpost(fname=None,plottype=0,aphijetouter=None,inputlevs=None,n
                 plt.savefig("%s.png" % fname ,dpi=DPI,bbox_inches='tight')#,,pad_inches=0.1)
             else:
                 plt.savefig("%s.png" % fname ,dpi=DPI)#,bbox_inches='tight',pad_inches=0.1)
-#            plt.savefig("%s.png" % fname ,dpi=DPI)#,bbox_inches='tight',pad_inches=0.1)
         #
         #
         #
@@ -25691,29 +25524,7 @@ def mkmovie(framesize=500, domakeavi=False):
         skip1a=(os.path.isfile("lrho%04d_Rzxym1.png" % (filenum)))
         skip1b=(os.path.isfile("lrhosmall%04d_Rzxym1.png" % (filenum)))
         skip1c=(os.path.isfile("lrhovsmall%04d_Rzxym1.png" % (filenum)))
-        #
-        from PIL import Image
-        if skip1a==1:
-            try:
-                v_image = Image.open("lrho%04d_Rzxym1.png" % (filenum))
-                v_image.verify()
-            except:
-                skip1a=0
-        if skip1b==1:
-            try:
-                v_image = Image.open("lrhosmall%04d_Rzxym1.png" % (filenum))
-                v_image.verify()
-            except:
-                skip1b=0
-        if skip1c==1:
-            try:
-                v_image = Image.open("lrhovsmall%04d_Rzxym1.png" % (filenum))
-                v_image.verify()
-            except:
-                skip1c=0
-        #
         skip1=(skip1a and skip1b and skip1c)
-        #
         skip2=(os.path.isfile("initfinal%04d.png" % (filenum)))
         skip3=(os.path.isfile("stream%04d.png" % (filenum)))
         #
@@ -26101,15 +25912,15 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
             mydorhoright=0
         else:
             mydobsqleft=0
-            mydorholeft=1
+            mydorholeft=0 #1 TEMP
             mydobsqright=0
-            mydorhoright=1
-        leftcb=0
+            mydorhoright=0 #1 TEMP
+        leftcb=0 #1 #0 TEMP
         rightcb=1
         leftpt=0
         rightpt=0
-        mydobsqorholine=1
-        mydoErf=0
+        mydobsqorholine=0 #1 TEMP
+        mydoErf=1 # TEMP
         mydotauradleft=1
         mydotauradright=0
         vmaxforframeleft=vmaxforframe
@@ -26149,7 +25960,7 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
         #
         # LEFT PANEL
         gs1 = GridSpec(1, 1)
-        gs1.update(left=0.05, right=0.42, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
+        gs1.update(left=0.05, right=0.45, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
         #
         ax1 = plt.subplot(gs1[:, -1])
         #
@@ -26163,7 +25974,7 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
         if leftcb:
             gs2.update(left=0.55, right=0.95, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
         else:
-            gs2.update(left=0.49, right=0.95, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
+            gs2.update(left=0.45, right=0.95, top=0.99, bottom=0.48, wspace=0.01, hspace=0.05)
         ax2 = plt.subplot(gs2[:, -1])
         #
         # RIGHT PANEL
@@ -26243,7 +26054,7 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
         if(iswaldmodel(modelname)):
             plotsize=3
         else:
-            plotsize=framesize/50
+            plotsize=framesize/50*2
         #
         # LEFT PANEL
         gs1 = GridSpec(1, 1)
@@ -28314,14 +28125,6 @@ def main(argv=None):
     #OLDQTYMEMMEM=1
     OLDQTYMEMMEM=0
     #
-    # specify machine type
-    ##global ISNAUTILUS # can't be defined here as called before main()
-    ##ISNAUTILUS=0 # sometimes physics-179.umd.edu needs this for one file for some reason. (#11 out of 16 usually)
-    #
-    # specify disk type (put in /tmp if distributed disk)
-    global ISSCRATCH
-    ISSCRATCH=1
-    #
     # whether to save any eps files (can be expensive on memory)
     global saveeps
     saveeps=0
@@ -28445,57 +28248,17 @@ def main(argv=None):
         gc.collect()
 
 
-def tutorial1(filename=None,fignum=None,whichplot=1):
+def tutorial1():
     # first load grid file
     grid3d("gdump.bin")
-    if(filename==None):
-        filename="fieldline0007.bin"
-    if(fignum==None):
-        fignum=1
     # now try loading a single fieldline file
-    rfd(filename)
+    rfd("fieldline0000.bin")
     # now plot something you read-in
-    plt.close(fignum)
-    fig=plt.figure(fignum)
-    lrho=np.log10(yfl1/rho)
-    if(whichplot==1):
-        lrho=np.log10(rho)
-        #lrho=np.log10(Erf)
-    if(whichplot==2):
-        lrho=yfl1/rho
-    #lrho=bsq/rho
-    #plco(lrho,cb=True,nc=50)
-    #plt.imshow(lrho)
-    #aphi = fieldcalc() # keep sign information
-    #plc(aphi,colors='k')
-    #
-    ax = plt.gca()
-    #nxout=iofr(10.0)
-    #myx=r[0:nxout:,:,0]*np.sin(h[0:nxout,:,0])*np.cos(ph[0:nxout,:,0])
-    #myy=r[0:nxout,:,0]*np.sin(h[0:nxout,:,0])*np.sin(ph[0:nxout,:,0])
-    #myz=r[0:nxout,:,0]*np.cos(h[0:nxout,:,0])
-    #plt.pcolormesh(myx,myz,lrho[0:nxout,:,0]) #,vmin=vmintoplot,vmax=vmaxtoplot)
-    len=40.0
-    extent=(0,len,-len,len)
-    ncell=800
-    Rhor=1+sqrt(1.0-a**2)
-    domask=Rin/Rhor
-    ifun = reinterp(lrho,extent,ncell,domask=domask,interporder='linear')
-    #
-    plt.imshow(ifun,extent=extent)
-    plt.colorbar()
-    #
-    #################################################
-    if(whichplot==2):
-        ax.contour(ifun,linewidths=4,colors='cyan', extent=extent,hold='on',origin='lower',levels=(0,))
-    #
-    vminmost=np.amin(lrho)
-    vmaxmost=np.amax(lrho)
-    print("vminmost=%g vmaxmost=%g" % (vminmost,vmaxmost)) ;sys.stdout.flush()
-    yfl1true=yfl1/rho
-    arglist=[yfl1true,np.log10(rho),np.log10(yfl1),uu[0]]
-    argnamelist=["yfl1true","lrho","lrhofl","uu0"]
-    cid = fig.canvas.mpl_connect('button_press_event', lambda event: onclick(event,arglist,argnamelist,domask=domask))
+    plt.figure(1)
+    lrho=np.log(rho)
+    plco(lrho,cb=True,nc=50)
+    aphi = fieldcalc() # keep sign information
+    plc(aphi,colors='k')
 
 def tutorial1alt(filename=None,fignum=None):
     global modelname
@@ -28719,171 +28482,6 @@ def tutorial1alt(filename=None,fignum=None):
     argnamelist=["myfun","bsqorho","bsqoall","uu0","bsqoug","bsqopg","bsqourad","bsqoprad","tauradlocal"]
     cid = fig.canvas.mpl_connect('button_press_event', lambda event: onclick(event,arglist,argnamelist))
 
-
-def tutorial1alt2(filename=None,fignum=None):
-    global modelname
-    #modelname="radta0.8"
-    modelname="radtma0.8"
-    #modelname="Pbp2pmadHRntbf"
-    # first load grid file
-    grid3d("gdump.bin")
-    # now try loading a single fieldline file
-    #rfd("fieldline0000.bin")
-    #rfd("fieldline2704.bin")
-    #rfd("fieldline0519.bin")
-    if(filename==None):
-       filename="fieldline1385.bin"
-    rfd(filename)
-    # now plot something you read-in
-    plt.close(fignum)
-    plt.figure(fignum)
-    lrho=np.log10(rho)
-    aphi = fieldcalc() # keep sign information
-    #
-    ###############################
-    if 1==1:
-        (rhoclean,ugclean,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
-        cvel()
-        Tcalcud(maxbsqorho=maxbsqorhonear,which=condmaxbsqorho)
-        #
-        diskcondition=condmaxbsqorho
-        # only around equator, not far away from equator
-        diskcondition=diskcondition*(bsq/rho<1.0)*(np.fabs(h-np.pi*0.5)<0.1)
-        #diskcondition=diskcondition*(bsq/rho<0.5)
-        diskeqcondition=diskcondition
-        # (qmri3d,norm3d,q3mri3d,norm33d,iq2mri3d)
-        qmri3ddisk,normmri3ddisk,q3mri3ddisk,norm3mri3ddisk,iq2mri3ddisk=Qmri_simple(which=diskeqcondition)
-        #
-        # Q1 = # of grid cells per MRI wavelength.  Want >6 or best ~10 at t=0
-        qmridisk=qmri3ddisk.sum(2).sum(1)/(ny*nz)
-        normmridisk=normmri3ddisk.sum(2).sum(1)/(ny*nz)
-        #
-        # Q3
-        q3mridisk=q3mri3ddisk.sum(2).sum(1)/(ny*nz)
-        norm3mridisk=norm3mri3ddisk.sum(2).sum(1)/(ny*nz)
-        #
-        # Q2: number of wavelengths per disk scale height
-        # iq2=1/Q2 = scale heights per MRI wavelength.  Want <1 at t=0
-        iq2mridisk=iq2mri3ddisk.sum(2).sum(1)/(ny*nz)
-        #
-        pg = (gam-1)*ugclean
-        prad = (4.0/3.0-1)*Erf
-        #
-        urad = Erf # APPROXIMATION GODMARK SUPERGODMARK TODOMARK
-        WW = rhoclean + ug + pg + urad + prad
-        EF = bsq + WW
-        val21 = np.fabs(bu[1]*bd[1])/EF
-        val22 = np.fabs(bu[2]*bd[2])/EF
-        val23 = np.fabs(bu[3]*bd[3])/EF
-        #
-        #
-        mydr=dxdxp[1,1]*_dx1
-        mydH=r*dxdxp[2,2]*_dx2
-        mydP=r*np.sin(h)*dxdxp[3,3]*_dx3
-        omegarot=uu[3]/uu[0]*dxdxp[3,3]
-        #
-        idx2mri = np.sqrt(val22)*2*np.pi/omegarot/mydH
-    #
-    ##############################
-    fakegrid=0
-    if fakegrid==0:
-        nxout=iofr(15.0)
-        myx=r[0:nxout:,:,0]*np.sin(h[0:nxout,:,0])*np.cos(ph[0:nxout,:,0])
-        myy=r[0:nxout,:,0]*np.sin(h[0:nxout,:,0])*np.sin(ph[0:nxout,:,0])
-        myz=r[0:nxout,:,0]*np.cos(h[0:nxout,:,0])
-    else:
-        nxout=100
-        myx=r[0:nxout:,:,0]
-        myy=1
-        myz=h[0:nxout,:,0]
-    #
-    #############################
-    #
-    if 1==0:
-        myfun=qmri3ddisk
-        myfun[myfun>10]=10
-        myfun[myfun<1E-4]=1E-4
-        myfun[bsq/rho>1]=0
-        myfun[rho<1E-5]=0
-    if 1==0:
-        myfun=iq2mri3ddisk
-        myfun[myfun>10]=10
-        myfun[myfun<1E-4]=1E-4
-        myfun[bsq/rho>1]=0
-        myfun[rho<1E-5]=0
-    if 1==0:
-        #myfun=np.log(rho)
-        myfun0=(-fTudRAD(1,0))*gdet*_dx2*_dx3
-        #myuse=(bsq/rho>1)
-        #myuse[myfun0>0]=False
-        #myfun0[myuse==True] = 0
-        #myfun0=(-fTud(1,0))*gdet*_dx2*_dx3
-        #myfun0=(fTud(1,3))*gdet*_dx2*_dx3
-        #
-        #myfun1=myfun0.sum(-1)
-        #ihor=iofr(1.5)
-        #myfunhor=myfun1[ihor,:,]
-        #result=myfunhor.sum(-1)
-        #print("result=%g" % (result)); sys.stdout.flush()
-        #myfun=myfun1[:,:,None]
-        #
-        myfun=myfun0
-        #myfun=np.log(ugclean)
-        #myfun=np.log(rhoclean)
-        #myfun=np.log(bsq/rho)
-    if 1==0:
-        #myfun=np.log10(1E-5+1.0/fbetatot())
-        #myfun=myB2()
-        pg = (gam-1)*ugclean
-        prad = (4.0/3.0-1)*Erf
-        myfun=(mybu1()*mybu3())/(bsq*0.5+pg+prad)
-    if 1==1:
-        #myfun=np.log10(Erf)
-        #myfun=gdet*(-fTud(1,0))
-        #myfun=gdet*(-fTudRAD(1,0))
-        #myfun[]=0
-        #myfun=np.log10(Erf+1E-10)
-        #myfun=np.log10(Erf/rho+1E-10)
-        myfun=np.log10(bsq/rho)
-        #myfun=np.log10(bsq)
-        #myfun=np.log10(ug)
-        #myfun=fbeta()
-        #myfun=-gdet*Erf*uradu[1]*uradd[0]
-        #myfun=-Erf*uradu[1]*uradd[0]
-    #
-    if 1==0:
-        myfun=idx2mri
-        myfun[myfun>10]=10
-        myfun[myfun<1E-4]=1E-4
-        myfun[bsq/rho>1]=0
-        myfun[rho<1E-5]=0
-    #
-    #
-    myfun2=aphi
-    #
-    vminmost=np.amin(myfun)
-    vmaxmost=np.amax(myfun)
-    print("vminmost=%g vmaxmost=%g" % (vminmost,vmaxmost)) ;sys.stdout.flush()
-    #
-    #vmintoplot=-.13
-    #vmaxtoplot=0.13
-    #
-    #vmintoplot=-0.4
-    #vmaxtoplot=0.6
-    #
-    #
-    #######################################
-    ax = plt.gca()
-    #plt.pcolormesh(myx,myz,myfun[0:nxout,:,0],vmin=vmintoplot,vmax=vmaxtoplot)
-    whichphi=59
-    plt.pcolormesh(myx,myz,myfun[0:nxout,:,whichphi])
-    plt.colorbar()
-    plt.savefig("testplot_%s.png" % (filename) )
-    #plc(myfun[0:nxout,:,0],xcoord=myx,ycoord=myz,ax=ax,cb=True,nc=50)
-    #plco(flrho(),cb=True,nc=50)
-    #
-    #plc(myfun2[0:nxout,:,0],xcoord=myx,ycoord=myz,ax=ax,colors='k',nc=50)
-    #
 
 def tutorial2():
     # first load grid file
@@ -29585,6 +29183,11 @@ def harmradtest1(path=None,fil=None):
         print("taulimit=%g etaradthinjet=%g etaradthinjet2=%g etaradthinjet3=%g etaradthinjet4=%g etaradthinjet5=%g etaradthinjet6=%g" % (taulimit,etaradthinjet1,etaradthinjet2,etaradthinjet3,etaradthinjet4,etaradthinjet5,etaradthinjet6));sys.stdout.flush()
     #
 
+
+
+
+
+
 # supermad1(
 def supermad1(filename=None,fignum=1):
     global modelname
@@ -29799,9 +29402,7 @@ def supermad1(filename=None,fignum=1):
 
 
 #def onclick(event,funorig1,funorig2):
-def onclick(event,arglist,argnamelist,domask=None):
-    if(domask==None):
-        domask=1.0
+def onclick(event,arglist,argnamelist):
     #thisline = event.artist
     #xdata2 = thisline.get_xdata()
     #ydata2 = thisline.get_ydata()
@@ -29819,12 +29420,10 @@ def onclick(event,arglist,argnamelist,domask=None):
     ncell=2
     lenarglist=len(arglist)
     print('len(arglist)=%d' % (lenarglist))
-    print(extent)
-    print(Rin)
     
     for funi in range(lenarglist):
         funorig=arglist[funi]
-        ifun = reinterp(funorig,extent,ncell,domask=domask,interporder='linear')
+        ifun = reinterp(funorig,extent,ncell,domask=1.0,interporder='linear')
         print '%s[arg%d]=%f' %(argnamelist[funi],funi,ifun[0,0]);sys.stdout.flush()
 #, event.ind, zip(xdata[ind],ydata[ind]))
 

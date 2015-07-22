@@ -71,7 +71,7 @@ fi
 #
 ###########################################
 
-jobprefix=$modelname
+jobprefix=''
 testrun=0
 rminitfiles=0
 
@@ -421,16 +421,24 @@ then
     # required for Nautilus, else will change to home directory when job starts
     thequeue="normal"
     # CHOOSE total time
-    timetot="4:00:00"
+    #timetot="4:30:00"
+    #timetot="24:00:00"
+    timetot="04:00:00"
+    #
+    # make1d: 0:44:30 for numtasks=512 and all files.
     #
     # numtasks set equal to total number of time slices, so each task does only 1 fieldline file
     # CHOOSE below or set numtasks to some number <= number of field lines
     numtasks=`ls dumps/fieldline*.bin |wc -l`  # true total number of tasks
-    numtaskscorr=$(($numtasks+1))
+    numtasks=$(($numtasks/2))
+    numtasks=210
+    #numtasks=16
+    numtaskscorr=$(($numtasks))
     # choose below number of cores per node (16 maximum for stampede, probably less if each fieldline file needs more memory than system has)
     # choose 2 because thickdisk7 needs 12GB/core and only have 32GB per node
-    numtaskspernode=2
-    numtotalnodes=$(($numtaskscorr/$numtaskspernode))
+    # stampede with radtma0.8 has resident max of 2GB/task, so can't quite have 16 tasks per node, so go with 14.
+    numtaskspernode=14
+    numtotalnodes=$((($numtaskscorr+$numtaskspernode-1)/$numtaskspernode))
     apcmd="ibrun "
 
     # -n $numtasks # how many actual MPI processes there are.
@@ -459,7 +467,7 @@ then
     thequeueplot="normal"  # try using this as "serial" instead of takes too long for makeplot or makeavgplot steps.
     apcmdplot="ibrun "
     # only took 6 minutes for thickdisk7 doing 458 files inside qty2.npy!  Up to death at point when tried to resample in time.
-    timetotplot="8:00:00" # for normal can go up to 48 hours.  For serial up to 12 hours.
+    timetotplot="1:00:00" # for normal can go up to 48 hours.  For serial up to 12 hours.
 
 
 
@@ -713,7 +721,9 @@ echo "runnglobal=$runnglobal"
 # copy over python script path since supercomputers (e.g. Kraken) can't access home directory while running.
 #rm -rf $dirname/py/
 echo "dirname=$dirname"
-cp -a $HOME/py $dirname/
+cp -a $HOME/pythontools $dirname/
+cd $dirname
+ln -s $dirname/pythontools $dirname/py
 # setup py path
 MYPYTHONPATH=$dirname/py/
 MREADPATH=$MYPYTHONPATH/mread/
@@ -1053,8 +1063,8 @@ then
 		        do
                     if [ $system -eq 7 ]
                     then
-		                pendjobs=`showq 2>&1 | grep $jobcheck | grep $userbatch | grep "Waiting" | wc -l`
-		                runjobs=`showq 2>&1 | grep $jobcheck | grep $userbatch | grep "Running" | wc -l`
+		                pendjobs=`showq -u $user | grep $userbatch | grep -v "SUMMARY OF JOBS"  2>&1 | grep $jobcheck | grep $userbatch | grep "Waiting" | wc -l`
+		                runjobs=`showq -u $user | grep $userbatch | grep -v "SUMMARY OF JOBS" 2>&1 | grep $jobcheck | grep $userbatch | grep "Running" | wc -l`
                     elif [ $system -eq 4 ] ||
                         [ $system -eq 5 ]
                     then
@@ -1069,14 +1079,14 @@ then
 		            if [ $totaljobs -gt 0 ]
 		            then
 		                echo "PEND=$pendjobs RUN=$runjobs TOTAL=$totaljobs ... waiting ..."
-		                sleep 10
+		                sleep 300
                         firsttimejobscheck=0
 		            else
 		                if [ $firsttimejobscheck -eq 1 ]
 			            then
 			                totaljobs=$runn
 			                echo "waiting for jobs to get started..."
-			                sleep 10
+			                sleep 300
 		                else
 			                echo "DONE!"		      
 		                fi
@@ -1283,8 +1293,8 @@ then
 		do
             if [ $system -eq 7 ]
             then
-		        pendjobs=`showq 2>&1 | grep $jobcheck | grep $userbatch | grep "Waiting" | wc -l`
-		        runjobs=`showq 2>&1 | grep $jobcheck | grep $userbatch | grep "Running" | wc -l`
+		        pendjobs=`showq -u $user | grep $userbatch | grep -v "SUMMARY OF JOBS" 2>&1 | grep $jobcheck | grep $userbatch | grep "Waiting" | wc -l`
+		        runjobs=`showq -u $user | grep $userbatch | grep -v "SUMMARY OF JOBS" 2>&1 | grep $jobcheck | grep $userbatch | grep "Running" | wc -l`
             elif [ $system -eq 4 ] ||
                 [ $system -eq 5 ]
             then
@@ -1299,14 +1309,14 @@ then
 		    if [ $totaljobs -gt 0 ]
 		    then
 		        echo "PEND=$pendjobs RUN=$runjobs TOTAL=$totaljobs ... waiting ..."
-		        sleep 10
+		        sleep 300
                 firsttimejobscheck=0
 		    else
 		        if [ $firsttimejobscheck -eq 1 ]
 			    then
 			        totaljobs=1
 			        echo "waiting for jobs to get started..."
-			        sleep 10
+			        sleep 300
 		        else
 			        echo "DONE!"		      
 		        fi
@@ -1630,8 +1640,8 @@ then
 		        do
                     if [ $system -eq 7 ]
                     then
-		                pendjobs=`showq 2>&1 | grep $jobcheck | grep $userbatch | grep "Waiting" | wc -l`
-		                runjobs=`showq 2>&1 | grep $jobcheck | grep $userbatch | grep "Running" | wc -l`
+		                pendjobs=`showq -u $user | grep $userbatch | grep -v "SUMMARY OF JOBS" 2>&1 | grep $jobcheck | grep $userbatch | grep "Waiting" | wc -l`
+		                runjobs=`showq -u $user | grep $userbatch | grep -v "SUMMARY OF JOBS" 2>&1 | grep $jobcheck | grep $userbatch | grep "Running" | wc -l`
                     elif [ $system -eq 4 ] ||
                         [ $system -eq 5 ]
                     then
@@ -1646,14 +1656,14 @@ then
 		            if [ $totaljobs -gt 0 ]
 		            then
 		                echo "PEND=$pendjobs RUN=$runjobs TOTAL=$totaljobs ... waiting ..."
-		                sleep 10
+		                sleep 300
                         firsttimejobscheck=0
 		            else
 		                if [ $firsttimejobscheck -eq 1 ]
 			            then
 			                totaljobs=$runn
 			                echo "waiting for jobs to get started..."
-			                sleep 10
+			                sleep 300
 		                else
 			                echo "DONE!"		      
 		                fi
@@ -2018,8 +2028,8 @@ then
 		        do
                     if [ $system -eq 7 ]
                     then
-		                pendjobs=`showq 2>&1 | grep $jobcheck | grep $userbatch | grep "Waiting" | wc -l`
-		                runjobs=`showq 2>&1 | grep $jobcheck | grep $userbatch | grep "Running" | wc -l`
+		                pendjobs=`showq -u $user | grep $userbatch | grep -v "SUMMARY OF JOBS" 2>&1 | grep $jobcheck | grep $userbatch | grep "Waiting" | wc -l`
+		                runjobs=`showq -u $user | grep $userbatch | grep -v "SUMMARY OF JOBS" 2>&1 | grep $jobcheck | grep $userbatch | grep "Running" | wc -l`
                     elif [ $system -eq 4 ] ||
                         [ $system -eq 5 ]
                     then
@@ -2035,14 +2045,14 @@ then
 		            if [ $totaljobs -gt 0 ]
 		            then
 		                echo "PEND=$pendjobs RUN=$runjobs TOTAL=$totaljobs ... waiting ..."
-		                sleep 10
+		                sleep 300
 		                firsttimejobscheck=0
 		            else
 		                if [ $firsttimejobscheck -eq 1 ]
 			            then
 			                totaljobs=$runn
 			                echo "waiting for jobs to get started..."
-			                sleep 10
+			                sleep 300
 		                else
 			                echo "DONE!"		      
 		                fi
@@ -2270,8 +2280,8 @@ then
 		do
             if [ $system -eq 7 ]
             then
-		        pendjobs=`showq 2>&1 | grep $jobcheck | grep $userbatch | grep "Waiting" | wc -l`
-		        runjobs=`showq 2>&1 | grep $jobcheck | grep $userbatch | grep "Running" | wc -l`
+		        pendjobs=`showq -u $user | grep $userbatch | grep -v "SUMMARY OF JOBS" 2>&1 | grep $jobcheck | grep $userbatch | grep "Waiting" | wc -l`
+		        runjobs=`showq -u $user | grep $userbatch | grep -v "SUMMARY OF JOBS" 2>&1 | grep $jobcheck | grep $userbatch | grep "Running" | wc -l`
             elif [ $system -eq 4 ] ||
                 [ $system -eq 5 ]
             then
@@ -2286,14 +2296,14 @@ then
 		    if [ $totaljobs -gt 0 ]
 		    then
 		        echo "PEND=$pendjobs RUN=$runjobs TOTAL=$totaljobs ... waiting ..."
-		        sleep 10
+		        sleep 300
                 firsttimejobscheck=0
 		    else
 		        if [ $firsttimejobscheck -eq 1 ]
 			    then
 			        totaljobs=1
 			        echo "waiting for jobs to get started..."
-			        sleep 10
+			        sleep 300
 		        else
 			        echo "DONE!"		      
 		        fi

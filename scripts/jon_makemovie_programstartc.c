@@ -160,16 +160,129 @@ int main(int argc, char *argv[])
     if(runtype==2 || runtype==3 || runtype==4){
       // assumes large amount of space ready for this
       if(argc-numargs>=5){
-	sprintf(*(argv+numargs+4),"%d",subjobnumber-1); // -1 because needs to be from 0 to n-1 while chunk# goes from 1 to n
+        sprintf(*(argv+numargs+4),"%d",subjobnumber-1); // -1 because needs to be from 0 to n-1 while chunk# goes from 1 to n
       }
       else{
-	fprintf(stderr,"No runi given"); fflush(stderr);
+        fprintf(stderr,"No runi given"); fflush(stderr);
       }
     }
   }
   else{
     fprintf(stderr,"No runtype given"); fflush(stderr);
   }
+
+  ////////////////////////////////////////
+  // before running python, copy over any .npy files needed.  Copy so for any system maximal distribution for disk system
+  // E.g., on stampede, copy to /tmp/ and use that file.
+  // to ensure no race condition by multiple cores, go through sequentially and test
+
+
+  // 1) Every core deletes the /tmp/*.npy files, can be done in race mode
+  char systemstring[MAXCHUNKSTRING+MAXGENNAME];
+  sprintf(systemstring,"rm -rf /tmp/*.npy");
+
+  int id;
+  int error1=0;
+  for(id=0;id<truenumprocs;id++){
+    error1=system(systemstring);
+    
+    if(error1==-1){
+      fprintf(stderr,"AFork failed for command: %s",systemstring);
+      exit(1);
+    }
+    if(error1>0){
+      fprintf(stderr,"ACommand returned error1 for: %s",systemstring);
+      exit(1);
+    }      
+  }
+
+  /// get whether files exist for copying
+  int fileexists1=0;
+  if( access( "qty2.npy", F_OK ) != -1 ){
+    // file exists
+    fileexists1++;
+  }
+  else {
+    // file doesn't exist
+  }
+  int fileexists2=0;
+  if( access( "avg2d.npy", F_OK ) != -1 ){
+    // file exists
+    fileexists2++;
+  }
+  else {
+    // file doesn't exist
+  }
+
+  // 2) Every core that first sees no file, copies over the file.
+  char systemstring1[MAXCHUNKSTRING+MAXGENNAME];
+  char systemstring2[MAXCHUNKSTRING+MAXGENNAME];
+  sprintf(systemstring1,"cp qty2.npy /tmp/");
+  sprintf(systemstring2,"cp avg2d.npy /tmp/");
+
+  int error2=0;
+  for(id=0;id<truenumprocs;id++){
+    if(myid==id){
+
+      int fileexists1new=0;
+      if( access( "/tmp/qty2.npy", F_OK ) != -1 ){
+        // file exists
+        fileexists1new++;
+      }
+      else {
+        // file doesn't exist
+      }
+      int fileexists2new=0;
+      if( access( "/tmp/avg2d.npy", F_OK ) != -1 ){
+        // file exists
+        fileexists2new++;
+      }
+      else {
+        // file doesn't exist
+      }
+
+      if(fileexists1new==0 && fileexists1){
+
+        error2=system(systemstring1);
+          
+        if(error2==-1){
+          fprintf(stderr,"BFork failed for command: %s",systemstring1);
+          exit(1);
+        }
+        if(error2>0){
+          fprintf(stderr,"BCommand returned error2 for: %s",systemstring1);
+          exit(1);
+        }
+      }
+    
+
+      if(fileexists2new==0 && fileexists2){
+        
+        error2=system(systemstring2);
+        
+        if(error2==-1){
+          fprintf(stderr,"BFork failed for command: %s",systemstring2);
+          exit(1);
+        }
+        if(error2>0){
+          fprintf(stderr,"BCommand returned error2 for: %s",systemstring2);
+          exit(1);
+        }
+      }
+      
+    }// end if myid==id
+    
+#if(USEMPI)
+    // Barrier required to ensure sequential access since no idea what order of cores is on system and how bunched into nodes.  Could use name of processor that id's the node, somewhow.
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+  }
+ 
+
+  ////////////////////////////////////////
+
+
+
   if(USINGPYTHON){
     runpy_interactive(argc-numargs, argv+numargs);
     // Need to exit (Ctrl-D EOF) and not quit(), or else entire code quits
@@ -283,8 +396,8 @@ static int myargs(int argc, char *argv[])
       strcpy(chunkliststring,argv[argi]); argi++;
       strsize=strlen(chunkliststring);
       if(strsize>MAXCHUNKSTRING){
-	myffprintf(stderr,"Increase MAXCHUNKSTRING or use malloc!\n");
-	exit(1);
+        myffprintf(stderr,"Increase MAXCHUNKSTRING or use malloc!\n");
+        exit(1);
       }
       myffprintf(stderr,"strsize=%d chunkliststring=%s\n",(int)strsize,chunkliststring);
     }
@@ -298,32 +411,32 @@ static int myargs(int argc, char *argv[])
       FILE* chunklistfile;
       chunklistfile=fopen(chunkliststringfilename,"rt");
       if(chunklistfile==NULL){
-	myffprintf(stderr,"Cannot open %s\n",chunkliststringfilename);
-	exit(1);
+        myffprintf(stderr,"Cannot open %s\n",chunkliststringfilename);
+        exit(1);
       }
       else{
-	// then create chunkliststring
-	int index=0;
-	char ch;
-	while(!feof(chunklistfile)){
-	  ch=fgetc(chunklistfile);
-	  if(ch=='\n'){
-	    chunkliststring[index]='\0';
-	    break; // then done!
-	  }
-	  else{
-	    chunkliststring[index]=ch;
-	    index++;
-	  }
-	}// end while if !feof()
-	fclose(chunklistfile);
+        // then create chunkliststring
+        int index=0;
+        char ch;
+        while(!feof(chunklistfile)){
+          ch=fgetc(chunklistfile);
+          if(ch=='\n'){
+            chunkliststring[index]='\0';
+            break; // then done!
+          }
+          else{
+            chunkliststring[index]=ch;
+            index++;
+          }
+        }// end while if !feof()
+        fclose(chunklistfile);
       }//end else if can open file
 
       // get string information like when chunklist on command line
       strsize=strlen(chunkliststring);
       if(strsize>MAXCHUNKSTRING){
-	myffprintf(stderr,"Increase MAXCHUNKSTRING or use malloc!\n");
-	exit(1);
+        myffprintf(stderr,"Increase MAXCHUNKSTRING or use malloc!\n");
+        exit(1);
       }
       myffprintf(stderr,"strsize=%d chunkliststring=%s\n",(int)strsize,chunkliststring);
 
@@ -398,8 +511,8 @@ static int get_chunklist(size_t strsize, char* chunkliststring, int *chunklist, 
     else{
 
       if(chunklist[*numchunks]<=0){
-	myffprintf(stderr,"Chunk number problem: %d\n",chunklist[*numchunks]);
-	exit(1);
+        myffprintf(stderr,"Chunk number problem: %d\n",chunklist[*numchunks]);
+        exit(1);
       }
 
       // iterate
@@ -556,12 +669,12 @@ static int finish_tpy_makemovie(int myid, int *chunklist, int totalchunks, char 
       sprintf(finishname,"finish.%d",i);
       myfinishfile=fopen(finishname,"rt");
       if(myfinishfile==NULL){
-	finished=0;
-	break; // no point in checking rest of files, so exit for loop
+        finished=0;
+        break; // no point in checking rest of files, so exit for loop
       }
       else{
-	// then file exists, so no missing files so far
-	fclose(myfinishfile);
+        // then file exists, so no missing files so far
+        fclose(myfinishfile);
       }
     }
     if(finished==0){
@@ -734,64 +847,64 @@ int runpy_code(char *code)
 int runpy_script_func(char *scriptname, char *funcname, int argsc, char *argsv[])
 {
 #if(USINGPYTHON)
-    PyObject *pName, *pModule, *pDict, *pFunc;
-    PyObject *pArgs, *pValue;
-    int i;
+  PyObject *pName, *pModule, *pDict, *pFunc;
+  PyObject *pArgs, *pValue;
+  int i;
 
 
-    Py_Initialize();
+  Py_Initialize();
 
-    pName = PyString_FromString(scriptname);
-    /* Error checking of pName left out */
+  pName = PyString_FromString(scriptname);
+  /* Error checking of pName left out */
 
-    pModule = PyImport_Import(pName); // this imports the script
-    Py_DECREF(pName);
+  pModule = PyImport_Import(pName); // this imports the script
+  Py_DECREF(pName);
 
-    if (pModule != NULL) {
-        pFunc = PyObject_GetAttrString(pModule, funcname);
-        /* pFunc is a new reference */
+  if (pModule != NULL) {
+    pFunc = PyObject_GetAttrString(pModule, funcname);
+    /* pFunc is a new reference */
 
-        if (pFunc && PyCallable_Check(pFunc)) {
-          pArgs = PyTuple_New(argsc);
-            for (i = 0; i <argsc; ++i) {
-                pValue = PyInt_FromLong(atoi(argsv[i]));
-                if (!pValue) {
-                    Py_DECREF(pArgs);
-                    Py_DECREF(pModule);
-                    fprintf(stderr, "Cannot convert argument\n");
-                    return 1;
-                }
-                /* pValue reference stolen here: */
-                PyTuple_SetItem(pArgs, i, pValue);
-            }
-            pValue = PyObject_CallObject(pFunc, pArgs); // this is where we call a function with arguments
-            Py_DECREF(pArgs);
-            if (pValue != NULL) {
-                printf("Result of call: %ld\n", PyInt_AsLong(pValue));
-                Py_DECREF(pValue);
-            }
-            else {
-                Py_DECREF(pFunc);
-                Py_DECREF(pModule);
-                PyErr_Print();
-                fprintf(stderr,"Call failed\n");
-                return 1;
-            }
+    if (pFunc && PyCallable_Check(pFunc)) {
+      pArgs = PyTuple_New(argsc);
+      for (i = 0; i <argsc; ++i) {
+        pValue = PyInt_FromLong(atoi(argsv[i]));
+        if (!pValue) {
+          Py_DECREF(pArgs);
+          Py_DECREF(pModule);
+          fprintf(stderr, "Cannot convert argument\n");
+          return 1;
         }
-        else {
-            if (PyErr_Occurred())
-                PyErr_Print();
-            fprintf(stderr, "Cannot find function \"%s\"\n", funcname);
-        }
-        Py_XDECREF(pFunc);
+        /* pValue reference stolen here: */
+        PyTuple_SetItem(pArgs, i, pValue);
+      }
+      pValue = PyObject_CallObject(pFunc, pArgs); // this is where we call a function with arguments
+      Py_DECREF(pArgs);
+      if (pValue != NULL) {
+        printf("Result of call: %ld\n", PyInt_AsLong(pValue));
+        Py_DECREF(pValue);
+      }
+      else {
+        Py_DECREF(pFunc);
         Py_DECREF(pModule);
+        PyErr_Print();
+        fprintf(stderr,"Call failed\n");
+        return 1;
+      }
     }
     else {
+      if (PyErr_Occurred())
         PyErr_Print();
-        fprintf(stderr, "Failed to load \"%s\"\n", scriptname);
-        return 1;
+      fprintf(stderr, "Cannot find function \"%s\"\n", funcname);
     }
-    Py_Finalize();
+    Py_XDECREF(pFunc);
+    Py_DECREF(pModule);
+  }
+  else {
+    PyErr_Print();
+    fprintf(stderr, "Failed to load \"%s\"\n", scriptname);
+    return 1;
+  }
+  Py_Finalize();
 #endif
-    return 0;
+  return 0;
 }
