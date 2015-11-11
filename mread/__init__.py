@@ -186,12 +186,12 @@ import random
 random.seed()
 import time
 n = random.random()
-time.sleep(10.0+100.0*n) # on supercomputer's need to wait so file system gets up to date
+#time.sleep(10.0+100.0*n) # on supercomputer's need to wait so file system gets up to date
 
 import matplotlib
 #matplotlib.get_cachedir()
 n = random.random()
-time.sleep(10.0*n) # on supercomputer's need to wait so file system gets up to date
+#time.sleep(10.0*n) # on supercomputer's need to wait so file system gets up to date
 matplotlib.use('Agg')
 from matplotlib import rc
 from matplotlib import mlab
@@ -7692,6 +7692,22 @@ def fieldcalcface(gdetB1=None):
     return(aphi)
 
 
+def fieldcalcall(gdetB1=None):
+    """
+    Computes the field vector potential
+    """
+    global aphi
+    if gdetB1 == None:
+        gdetB1 = gdetB[1]
+    #average in phi and add up
+    daphi = gdetB1
+    aphi = np.zeros_like(daphi)
+    aphi[:,1:ny/2+1]=(daphi.cumsum(axis=1))[:,0:ny/2]
+    #sum up from the other pole
+    aphi[:,ny/2+1:ny]=(-daphi[:,::-1].cumsum(axis=1))[:,::-1][:,ny/2+1:ny]
+    return(aphi)
+
+
 
 def fieldcalcU(gdetB1=None):
     # 3D wacky in time-dep flow
@@ -9516,8 +9532,9 @@ def rfdprocess(gotgdetB=0):
         # go here if want rho and ug to be clean versions always.  Including for movie frames.
         # assume if need bsqorho or something like that, ok if goes to infinity (except some plots need fixing)
         #print("Overwritting rho,ug with cleaned versions") ; sys.stdout.flush()
-        rho=np.copy(rhoclean)
-        ug=np.copy(ugclean)
+        #rho=np.copy(rhoclean)
+        #ug=np.copy(ugclean)
+        print("NOT Overwritting rho,ug with cleaned versions") ; sys.stdout.flush()
         #
     #if 1==0:
     #
@@ -12131,7 +12148,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
     #
     #############################################
     #
-   global ISSCRATCH
+    global ISSCRATCH
     #
     if(ISSCRATCH==1):
         fnameprefix="/tmp/"
@@ -17613,6 +17630,15 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     #unitys=1.0
     unitys=0.0
+    #
+    # normal expression is da = l - 2*a*e where l is specific angular momentum accreted and e is specific energy accreted.
+    # Our l<0 when accreting positive specific angular momentum, so we switch that sign
+    # We know that for NT's definition of e that eta = 1-e, so da = -l - 2*a*(1-eta)
+    # Now, the NT eta and our eta are the same eta.  So given the final da = -l -2a(1-eta) we can use our l and our eta.
+    #
+    # s = -l -2a(1-eta)
+    # here l is positive corresponds to extraction of angular momentum out of BH moving out to positive radius.  So this is negative the angular momentum that is accreted.  I.e. l<0 means BH has absorbed positive angular momentum.
+    #
     sbh_avg  = (-lbh_avg) - 2.0*a*(1.0-etabh_avg/prefactor)
     sbhEM_avg  = (-lbhEM_avg) - 2.0*a*(unitys-etabhEM_avg/prefactor)
     sbhMAKE_avg  = (-lbhMAKE_avg) - 2.0*a*(unitys-etabhMAKE_avg/prefactor)
@@ -28463,6 +28489,243 @@ def tutorial1(filename=None,fignum=None,whichplot=1):
         #lrho=np.log10(Erf)
     if(whichplot==2):
         lrho=yfl1/rho
+        lrho[lrho<0]=0
+        lrho[lrho>1]=1
+    if(whichplot==3):
+        lrho=np.log10(bsq/rho)
+    if(whichplot==4):
+        lrho=uu[0]
+    if(whichplot==5):
+        lrho=Erf
+    if(whichplot==6):
+        lrho=yfl2
+    if(whichplot==7):
+        lrho=yfl3
+    if(whichplot==8):
+        lrho=yfl4
+    if(whichplot==9):
+        lrho=yfl5
+    if(whichplot==10):
+        rhor=1+(1-a**2)**0.5
+        ihor = np.floor(iofr(rhor)+0.5)
+        omegah=a/(2*rhor)
+        lrho=fomegaf2()*dxdxp[3,3]/omegah
+        lrho[lrho>1]=1
+        lrho[lrho<-1]=-1
+    if(whichplot==11):
+        lrho=yfl1
+    if(whichplot==12):
+        lrho=uradu[0]
+    if(whichplot==13):
+        lrho=np.log10(Erf)
+    #lrho=bsq/rho
+    #plco(lrho,cb=True,nc=50)
+    #plt.imshow(lrho)
+    #aphi = fieldcalc() # keep sign information
+    #plc(aphi,colors='k')
+    #
+    ax = plt.gca()
+    #nxout=iofr(10.0)
+    #myx=r[0:nxout:,:,0]*np.sin(h[0:nxout,:,0])*np.cos(ph[0:nxout,:,0])
+    #myy=r[0:nxout,:,0]*np.sin(h[0:nxout,:,0])*np.sin(ph[0:nxout,:,0])
+    #myz=r[0:nxout,:,0]*np.cos(h[0:nxout,:,0])
+    #plt.pcolormesh(myx,myz,lrho[0:nxout,:,0]) #,vmin=vmintoplot,vmax=vmaxtoplot)
+    len=20
+    extent=(0,len,-len,len)
+    ncell=800
+    Rhor=1+sqrt(1.0-a**2)
+    domask=Rin/Rhor
+    ifun = reinterp(lrho,extent,ncell,domask=domask,interporder='linear')
+    #
+    plt.imshow(ifun,extent=extent)
+    plt.colorbar()
+    #
+    #################################################
+    if(whichplot==2):
+        ax.contour(ifun,linewidths=2,colors='cyan', extent=extent,hold='on',origin='lower',levels=(1E-10,))
+        ax.contour(ifun,linewidths=2,colors='green', extent=extent,hold='on',origin='lower',levels=(1-1E-10,))
+    #
+    if(whichplot==10):
+        ax.contour(ifun,linewidths=2,colors='cyan', extent=extent,hold='on',origin='lower',levels=(0.25,))
+        ax.contour(ifun,linewidths=2,colors='green', extent=extent,hold='on',origin='lower',levels=(0.4,))
+    #
+    vminmost=np.amin(lrho)
+    vmaxmost=np.amax(lrho)
+    print("vminmost=%g vmaxmost=%g" % (vminmost,vmaxmost)) ;sys.stdout.flush()
+    yfl1true=yfl1/rho
+    arglist=[yfl1true,np.log10(rho),np.log10(yfl1),uu[0],bsq/rho]
+    argnamelist=["yfl1true","lrho","lrhofl","uu0","bsq/rho"]
+    cid = fig.canvas.mpl_connect('button_press_event', lambda event: onclick(event,arglist,argnamelist,domask=domask))
+
+def tutorial1a(filename=None,which=1,fignum=1):
+    global modelname
+    modelname="radtma0.8"
+    #
+    # first load grid file
+    grid3d("gdump.bin")
+    # now try loading a single fieldline file
+    if(filename==None):
+        rfd("fieldline8368.bin")
+    else:
+        rfd(filename)
+    #
+    pg=(gam-1.0)*ug  #clean # use clean to keep pg low and Tgas will have floor like below  # no, need to use what was in simulation to be consistent with simulation's idea of what optical depth was
+    # and of used ugclean above, then in funnel temperature would be very small and kappaff would be huge.
+    #
+    prad=(4.0/3.0-1.0)*Erf
+    # code Tgas for ideal gas
+    Tgas=pg/(rho/MUMEAN)
+    #
+    #Eradff = R^a_b u_a u^b
+    Ruu=0.0
+    uraddlocal = mdot(gv3,uradu)                  #g_mn urad^n
+    udlocal = mdot(gv3,uu)                  #g_mn u^n
+    for kapa in np.arange(4):
+        for nu in np.arange(4):
+            if(kapa==nu): delta = 1
+            else: delta = 0
+            Rijkapanu = (Erf/3.0)*(4.0*uradu[kapa]*uraddlocal[nu]+delta)
+            Ruu= Ruu + Rijkapanu*udlocal[kapa]*uu[nu]
+    # fluid-frame temperature of radiation
+    Trad = pow(np.fabs(Ruu)/ARAD_CODE_DEF,0.25) # ASSUMPTION: PLANCK-like in comoving frame even though radiation flowing through cell
+    #
+    # now plot something you read-in
+    plt.close(fignum)
+    fig=plt.figure(fignum)
+    plt.clf()
+    ax = plt.gca()
+    #
+    whichaphi=0
+    #
+    if(which==1):
+        myfun=np.log10(rho)
+    if(which==2):
+        rhor=1+(1-a**2)**0.5
+        ihor = np.floor(iofr(rhor)+0.5)
+        omegah=a/(2*rhor)
+        myfun=fomegaf2()*dxdxp[3,3]/omegah
+        myfun[myfun>1]=1
+        myfun[myfun<-1]=-1
+    if(which==3):
+        myfun=np.log10(bsq)
+    if(which==4):
+        myfun=np.log10(Erf)
+    if(which==5):
+        myfun=uu[0]
+    if(which==6):
+        myfun=yfl1
+    if(which==7):
+        myfun=yfl2
+    if(which==8):
+        myfun=yfl3
+    if(which==9):
+        myfun=yfl4
+    if(which==10):
+        myfun=yfl5
+    if(which==11):
+        myfun=uradu[0]
+    if(which==12):
+        myfun=yfl1/rho
+        myfun[myfun>1]=1
+        myfun[myfun<0]=0
+    if(which==13):
+        myfun=bsq/rho
+    if(which==14):
+        myfun=Tgas*TEMPBAR
+    if(which==15):
+        myfun=Trad*TEMPBAR
+    if(which==16):
+        global uradd
+        uradd = mdot(gv3,uradu)                  #g_mn urad^n
+        #myfun=np.log10(-fTudRAD(0,0)*1E30)
+        myfun=-fTudRAD(0,0)
+    #
+    plt.imshow(myfun[:,:,whichaphi])
+    plt.colorbar()
+    #
+    #getkappas(1)
+    tauradlocal=(KAPPAUSER+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
+    #tauradlocal=(KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
+    ax.contour(tauradlocal[:,:,whichaphi],linewidths=4,colors='cyan', levels=(1,))
+    print("TAU: %g" % (tauradlocal[0,0,0])) ; sys.stdout.flush()
+    pg = (gam-1)*ug
+    Tcode=gam*pg/rho
+    print("Tcode=%g %g" % (Tcode[0,0,0],TEMPBAR));  sys.stdout.flush()
+    y1=KAPPA_ES_CODE(rho[0,0,0],Tcode[0,0,0])
+    y2=KAPPA_ES_FERMICORR(rho[0,0,0],Tcode[0,0,0])
+    y3=KAPPA_ES_KNCORR(rho[0,0,0],Tcode[0,0,0])
+    print("y: %g %g %g" % (y1,y2,y3)) ; sys.stdout.flush()
+    #
+    bsqorho=bsq/rho
+    BSQORHOLIMIT=100
+    bsqorholimit=BSQORHOLIMIT/5
+    factor=np.exp(-bsqorho/bsqorholimit)
+    ax.contour(factor[:,:,whichaphi],linewidths=4,colors='red', levels=(.5,))
+    #
+    vminmost=np.amin(myfun)
+    vmaxmost=np.amax(myfun)
+    print("vminmost=%g vmaxmost=%g" % (vminmost,vmaxmost)) ;sys.stdout.flush()
+    #
+    #ax.contour(myfun[:,:,whichaphi],linewidths=3,colors='magenta', levels=(vmaxmost*0.9,))
+    #
+    #
+    Rhor=1+sqrt(1-a**2)
+    domask=Rin/Rhor
+    #
+    bsqorho=bsq/rho
+    pg = (gam-1)*ug
+    urad=Erf
+    prad = (4.0/3.0-1)*Erf
+    bsqoall=bsq/(rho+ug+pg+urad+prad)
+    bsqoug=bsq/(ug)
+    bsqopg=bsq/(pg)
+    bsqourad=bsq/(urad)
+    bsqoprad=bsq/(prad)
+    arglist=[myfun,bsqorho,bsqoall,uu[0],bsqoug,bsqopg,bsqourad,bsqoprad,r,h,np.log10(tauradlocal)]
+    argnamelist=["myfun","bsqorho","bsqoall","uu0","bsqoug","bsqopg","bsqourad","bsqoprad","r","h","log10(tauradlocal)"]
+    cid = fig.canvas.mpl_connect('button_press_event', lambda event: onclick2(event,arglist,argnamelist,domask=domask))
+    #
+
+def onclick2(event,arglist,argnamelist,domask=1.0):
+    #thisline = event.artist
+    #xdata2 = thisline.get_xdata()
+    #ydata2 = thisline.get_ydata()
+    xdata = event.xdata
+    ydata = event.ydata
+    #ind = event.ind
+  # ind=%f zip=%f'%(
+    print 'button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %(
+        event.button, event.x, event.y, event.xdata, event.ydata);
+    #global poo
+    myx=np.rint(event.xdata)
+    myz=np.rint(event.ydata)
+    #
+    lenarglist=len(arglist)
+    print('len(arglist)=%d' % (lenarglist))
+    #
+    for funi in range(lenarglist):
+        funorig=arglist[funi]
+        print '%s[arg%d]=%f' %(argnamelist[funi],funi,funorig[myz,myx,0]);sys.stdout.flush()
+#, event.ind, zip(xdata[ind],ydata[ind]))
+
+def tutorial1old(filename=None,fignum=None,whichplot=1):
+    # first load grid file
+    grid3d("gdump.bin")
+    if(filename==None):
+        filename="fieldline0007.bin"
+    if(fignum==None):
+        fignum=1
+    # now try loading a single fieldline file
+    rfd(filename)
+    # now plot something you read-in
+    plt.close(fignum)
+    fig=plt.figure(fignum)
+    lrho=np.log10(yfl1/rho)
+    if(whichplot==1):
+        lrho=np.log10(rho)
+        #lrho=np.log10(Erf)
+    if(whichplot==2):
+        lrho=yfl1/rho
     #lrho=bsq/rho
     #plco(lrho,cb=True,nc=50)
     #plt.imshow(lrho)
@@ -28884,6 +29147,282 @@ def tutorial1alt2(filename=None,fignum=None):
     #
     #plc(myfun2[0:nxout,:,0],xcoord=myx,ycoord=myz,ax=ax,colors='k',nc=50)
     #
+
+
+def tutorial1other(filename=None,fignum=None,whichplot=1):
+    # first load grid file
+    grid3d("gdump.bin")
+    if(filename==None):
+        filename="fieldline0007.bin"
+    if(fignum==None):
+        fignum=1
+    # now try loading a single fieldline file
+    rfd(filename)
+    # now plot something you read-in
+    plt.close(fignum)
+    fig=plt.figure(fignum)
+    lrho=np.log10(yfl1/rho)
+    if(whichplot==1):
+        lrho=np.log10(rho)
+        #lrho=np.log10(Erf)
+    if(whichplot==2):
+        lrho=yfl1/rho
+        lrho[lrho<0]=0
+        lrho[lrho>1]=1
+    if(whichplot==3):
+        lrho=np.log10(bsq/rho)
+    if(whichplot==4):
+        lrho=uu[0]
+    if(whichplot==5):
+        lrho=Erf
+    if(whichplot==6):
+        lrho=yfl2
+    if(whichplot==7):
+        lrho=yfl3
+    if(whichplot==8):
+        lrho=yfl4
+    if(whichplot==9):
+        lrho=yfl5
+    if(whichplot==10):
+        rhor=1+(1-a**2)**0.5
+        ihor = np.floor(iofr(rhor)+0.5)
+        omegah=a/(2*rhor)
+        lrho=fomegaf2()*dxdxp[3,3]/omegah
+        lrho[lrho>1]=1
+        lrho[lrho<-1]=-1
+    if(whichplot==11):
+        lrho=yfl1
+    if(whichplot==12):
+        lrho=uradu[0]
+    if(whichplot==13):
+        lrho=np.log10(Erf)
+    #lrho=bsq/rho
+    #plco(lrho,cb=True,nc=50)
+    #plt.imshow(lrho)
+    #aphi = fieldcalc() # keep sign information
+    #plc(aphi,colors='k')
+    #
+    ax = plt.gca()
+    #nxout=iofr(10.0)
+    #myx=r[0:nxout:,:,0]*np.sin(h[0:nxout,:,0])*np.cos(ph[0:nxout,:,0])
+    #myy=r[0:nxout,:,0]*np.sin(h[0:nxout,:,0])*np.sin(ph[0:nxout,:,0])
+    #myz=r[0:nxout,:,0]*np.cos(h[0:nxout,:,0])
+    #plt.pcolormesh(myx,myz,lrho[0:nxout,:,0]) #,vmin=vmintoplot,vmax=vmaxtoplot)
+    len=20
+    extent=(0,len,-len,len)
+    ncell=800
+    Rhor=1+sqrt(1.0-a**2)
+    domask=Rin/Rhor
+    ifun = reinterp(lrho,extent,ncell,domask=domask,interporder='linear')
+    #
+    plt.imshow(ifun,extent=extent)
+    plt.colorbar()
+    #
+    #################################################
+    if(whichplot==2):
+        ax.contour(ifun,linewidths=2,colors='cyan', extent=extent,hold='on',origin='lower',levels=(1E-10,))
+        ax.contour(ifun,linewidths=2,colors='green', extent=extent,hold='on',origin='lower',levels=(1-1E-10,))
+    #
+    if(whichplot==10):
+        ax.contour(ifun,linewidths=2,colors='cyan', extent=extent,hold='on',origin='lower',levels=(0.25,))
+        ax.contour(ifun,linewidths=2,colors='green', extent=extent,hold='on',origin='lower',levels=(0.4,))
+    #
+    vminmost=np.amin(lrho)
+    vmaxmost=np.amax(lrho)
+    print("vminmost=%g vmaxmost=%g" % (vminmost,vmaxmost)) ;sys.stdout.flush()
+    yfl1true=yfl1/rho
+    arglist=[yfl1true,np.log10(rho),np.log10(yfl1),uu[0],bsq/rho]
+    argnamelist=["yfl1true","lrho","lrhofl","uu0","bsq/rho"]
+    cid = fig.canvas.mpl_connect('button_press_event', lambda event: onclick(event,arglist,argnamelist,domask=domask))
+
+def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0,whichtj=-1,outerti=100):
+    global modelname
+    modelname="radtma0.8"
+    #
+    # first load grid file
+    grid3d("gdump.bin")
+    # now try loading a single fieldline file
+    if(filename==None):
+        rfd("fieldline8368.bin")
+    else:
+        rfd(filename)
+    #
+    radtrunc=r[outerti,0,0]
+    print("radtrunc=%g" % (radtrunc)) ;sys.stdout.flush()
+    #
+    pg=(gam-1.0)*ug  #clean # use clean to keep pg low and Tgas will have floor like below  # no, need to use what was in simulation to be consistent with simulation's idea of what optical depth was
+    # and of used ugclean above, then in funnel temperature would be very small and kappaff would be huge.
+    #
+    prad=(4.0/3.0-1.0)*Erf
+    # code Tgas for ideal gas
+    Tgas=pg/(rho/MUMEAN)
+    #
+    #Eradff = R^a_b u_a u^b
+    Ruu=0.0
+    uraddlocal = mdot(gv3,uradu)                  #g_mn urad^n
+    udlocal = mdot(gv3,uu)                  #g_mn u^n
+    for kapa in np.arange(4):
+        for nu in np.arange(4):
+            if(kapa==nu): delta = 1
+            else: delta = 0
+            Rijkapanu = (Erf/3.0)*(4.0*uradu[kapa]*uraddlocal[nu]+delta)
+            Ruu= Ruu + Rijkapanu*udlocal[kapa]*uu[nu]
+    # fluid-frame temperature of radiation
+    Trad = pow(np.fabs(Ruu)/ARAD_CODE_DEF,0.25) # ASSUMPTION: PLANCK-like in comoving frame even though radiation flowing through cell
+    #
+    # now plot something you read-in
+    plt.close(fignum)
+    fig=plt.figure(fignum)
+    plt.clf()
+    ax = plt.gca()
+    #
+    #whichaphi=32
+    #
+    pg = (gam-1)*ug
+    Tcode=gam*pg/rho
+    if(which==1):
+        myfun=np.log10(rho)
+    if(which==2):
+        rhor=1+(1-a**2)**0.5
+        ihor = np.floor(iofr(rhor)+0.5)
+        omegah=a/(2*rhor)
+        myfun=fomegaf2()*dxdxp[3,3]/omegah
+        myfun[myfun>1]=1
+        myfun[myfun<-1]=-1
+    if(which==3):
+        myfun=np.log10(bsq)
+    if(which==4):
+        myfun=np.log10(Erf)
+    if(which==5):
+        myfun=uu[0]
+    if(which==6):
+        myfun=yfl1
+    if(which==7):
+        myfun=yfl2
+    if(which==8):
+        myfun=yfl3
+    if(which==9):
+        myfun=yfl4
+    if(which==10):
+        myfun=yfl5
+    if(which==11):
+        myfun=uradu[0]
+    if(which==12):
+        myfun=yfl1/rho
+        myfun[myfun>1]=1
+        myfun[myfun<0]=0
+    if(which==13):
+        myfun=bsq/rho
+    if(which==14):
+        myfun=Tgas*TEMPBAR
+    if(which==15):
+        myfun=Trad*TEMPBAR
+    if(which==16):
+        myfun=Trad/Tgas
+    if(which==17):
+        myfun=bsq/pg
+        myfun[myfun>20]=20
+        myfun[bsq/rho>1]=0
+        blob=uu[1]/uu[0]*np.sqrt(gv3[1,1])
+        myfun[blob<0.02]=0
+    if(which==18):
+        myfun=uu[1]*np.sqrt(gv3[1,1])
+    #
+    
+    #
+    #
+    if 1==0:
+        #getkappas(1)
+        tauradlocal=(KAPPAUSER+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
+        #tauradlocal=(KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
+        ax.contour(tauradlocal[0:outerti,:,whichaphi],linewidths=4,colors='cyan', levels=(1,))
+        print("TAU: %g" % (tauradlocal[0,0,0])) ; sys.stdout.flush()
+        print("Tcode=%g %g" % (Tcode[0,0,0],TEMPBAR));  sys.stdout.flush()
+        y1=KAPPA_ES_CODE(rho[0,0,0],Tcode[0,0,0])
+        y2=KAPPA_ES_FERMICORR(rho[0,0,0],Tcode[0,0,0])
+        y3=KAPPA_ES_KNCORR(rho[0,0,0],Tcode[0,0,0])
+        print("y: %g %g %g" % (y1,y2,y3)) ; sys.stdout.flush()
+    else:
+        tauradlocal=rho
+    #
+    bsqorho=bsq/rho
+    BSQORHOLIMIT=100
+    bsqorholimit=BSQORHOLIMIT/5
+    factor=np.exp(-bsqorho/bsqorholimit)
+    
+    if(whichtj==-1):
+        plt.imshow(myfun[0:outerti,:,whichaphi])
+        ax.contour(factor[0:outerti,:,whichaphi],linewidths=4,colors='red', levels=(.5,))
+    else:
+        plt.imshow(myfun[0:outerti,whichtj,:])
+        ax.contour(factor[0:outerti,whichtj,:],linewidths=4,colors='red', levels=(.5,))
+    plt.colorbar()
+    #
+    vminmost=np.amin(myfun)
+    vmaxmost=np.amax(myfun)
+    print("vminmost=%g vmaxmost=%g" % (vminmost,vmaxmost)) ;sys.stdout.flush()
+    #
+    #ax.contour(myfun[0:outerti,:,whichaphi],linewidths=3,colors='magenta', levels=(vmaxmost*0.9,))
+    #
+    if(whichtj==-1):
+        aphi = np.fabs(fieldcalcall()) # keep sign information
+        rhor=1+sqrt(1-a**2)
+        ihor=iofr(rhor)
+        aphimax=np.amax(aphi[0:outerti,:,whichaphi])
+        #aphimin=np.amin(aphi[0:outerti,:,whichaphi])
+        print("aphimax=%g" % (aphimax))
+        #levels=np.arange(0,20.0*aphi[ihor,ny/2,whichaphi],(20.0*aphi[ihor,ny/2,whichaphi]-0.0)/100)
+        numlevels=50
+        levels=np.arange(0,aphimax,(aphimax-0)/numlevels)
+        print("levels") ; sys.stdout.flush()
+        print(levels) ; sys.stdout.flush()
+        #matplotlib.rcParams['contour.negative_linestyle'] = 'solid'
+        ax.contour(aphi[0:outerti,:,whichaphi],linewidths=3,colors='black',levels=levels)
+        #ax.contour(aphi[0:outerti,:,whichaphi],linewidths=3,colors='black')
+    #
+    Rhor=1+sqrt(1-a**2)
+    domask=Rin/Rhor
+    #
+    bsqorho=bsq/rho
+    pg = (gam-1)*ug
+    urad=Erf
+    prad = (4.0/3.0-1)*Erf
+    bsqoall=bsq/(rho+ug+pg+urad+prad)
+    bsqoug=bsq/(ug)
+    bsqopg=bsq/(pg)
+    bsqourad=bsq/(urad)
+    bsqoprad=bsq/(prad)
+    
+    arglist=[myfun,bsqorho,bsqoall,uu[0],uradu[0],bsqoug,bsqopg,bsqourad,bsqoprad,r,h,np.log10(tauradlocal)]
+    argnamelist=["myfun","bsqorho","bsqoall","uu0","uru0","bsqoug","bsqopg","bsqourad","bsqoprad","r","h","log10(tauradlocal)"]
+    cid = fig.canvas.mpl_connect('button_press_event', lambda event: onclick2(event,arglist,argnamelist,whichaphi,whichtj,domask=domask))
+    #
+
+def onclick2(event,arglist,argnamelist,whichaphi,whichtj,domask=1.0):
+    #thisline = event.artist
+    #xdata2 = thisline.get_xdata()
+    #ydata2 = thisline.get_ydata()
+    xdata = event.xdata
+    ydata = event.ydata
+    #ind = event.ind
+  # ind=%f zip=%f'%(
+    print 'button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %(
+        event.button, event.x, event.y, event.xdata, event.ydata);
+    #global poo
+    myx=np.rint(event.xdata)
+    myz=np.rint(event.ydata)
+    #
+    lenarglist=len(arglist)
+    print('len(arglist)=%d' % (lenarglist))
+    #
+    for funi in range(lenarglist):
+        funorig=arglist[funi]
+        if(whichtj==-1):
+            print '%s[arg%d]=%f' %(argnamelist[funi],funi,funorig[myz,myx,whichaphi]);sys.stdout.flush()
+        else:
+            print '%s[arg%d]=%f' %(argnamelist[funi],funi,funorig[myz,whichtj,myx]);sys.stdout.flush()
+#, event.ind, zip(xdata[ind],ydata[ind]))
+
 
 def tutorial2():
     # first load grid file
@@ -30007,4 +30546,61 @@ def testcursor2():
     ax.scatter(x, y)
     cursor = FollowDotCursor(ax, x, y)
     plt.show()
+
+def reinterpxymegan(vartointerp,extent,ncell,domask=2,interporder='cubic'):
+    global xi,yi,zi
+    #grid3d("gdump")
+    #rfd("fieldline0250.bin")
+    xraw=r*np.sin(h)*np.cos(ph)
+    yraw=r*np.sin(h)*np.sin(ph)
+    #2 cells below the midplane
+    x=xraw[:,ny/2+1,:].view().reshape(-1)
+    y=yraw[:,ny/2+1,:].view().reshape(-1)
+    var=vartointerp[:,ny/2+1,:].view().reshape(-1)
+    ugvar=ug[:,ny/2+1,:].view().reshape(-1)
+    #mirror
+    if nz*_dx3*dxdxp[3,3,0,0,0] < 0.99 * 2 * np.pi:
+        x=np.concatenate((-x,x))
+        y=np.concatenate((-y,y))
+        var=np.concatenate((var,var))
+    # define grid.
+    xi = np.linspace(extent[0], extent[1], ncell)
+    yi = np.linspace(extent[2], extent[3], ncell)
+    # grid the data.
+    zi = griddata((x, y), var, (xi[None,:], yi[:,None]), method=interporder)
+    ugzi = griddata((x, y), ugvar, (xi[None,:], yi[:,None]), method='nearest')
+    #zi[interior] = np.ma.masked
+    if domask==1:
+        interior = np.sqrt((xi[None,:]**2) + (yi[:,None]**2)) < (1+np.sqrt(1-a**2))*domask
+        varinterpolated = ma.masked_where(interior, zi)
+    elif domask==2:
+        interior = np.sqrt((xi[None,:]**2) + (yi[:,None]**2)) < (1+np.sqrt(1-a**2))*domask
+        interior[ugzi<1E-20] = True
+        varinterpolated = ma.masked_where(interior, zi)
+    else:
+        varinterpolated = zi
+    return(varinterpolated)
+
+def Megantest(fnumber):
+    """Function to compute and save the radial average of Reynolds and Maxwell Stresses and the vertical B field (lab frame) in the desired range from r1 to r2"""
+    ###Megan's test function to be used in iPython                                                                                                                                                            
+    grid3d("gdump.bin",use2d=True)
+    rfd("fieldline"+str(fnumber)+".bin")
+    cvel()
+                                                                                                                                                                                         
+    len=15
+    ncell=100
+    #extent=(0,len,0,2*np.pi)                                                                                                                                                                                
+    extent=(-len,len,-len,len)
+    #ibeta=0.5*bsq/((gam-1)*ug)
+    ibeta=0.5*bsq/((gam-1)*ug)
+    #iibeta = reinterpxymegan(ibeta,extent,ncell,domask=2,interporder='nearest')
+    iibeta = reinterpxy(ibeta,extent,ncell,domask=1,interporder='nearest')
+    
+    plt.close(1)
+    fig = plt.figure(1)
+    CS = plt.imshow(iibeta, extent=extent, origin='lower') #,vmin=vmin,vmax=vmax)
+    plt.colorbar(CS)
+
+    return ibeta
 

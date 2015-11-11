@@ -420,19 +420,33 @@ then
     # go to directory where "dumps" directory is
     # required for Nautilus, else will change to home directory when job starts
     thequeue="normal"
+    #
     # CHOOSE total time
     #timetot="4:30:00"
     #timetot="24:00:00"
-    timetot="04:00:00"
     #
+    # makeavg:
+    #timetot="00:30:00" # makeavg2d takes 0:17:00 for 512 tasks for all files
     # make1d: 0:44:30 for numtasks=512 and all files.
+    #timetot="01:00:00"
+    #timetot="04:00:00" # took 4 hours
+    # makemovie
+    timetot="01:00:00"
     #
     # numtasks set equal to total number of time slices, so each task does only 1 fieldline file
     # CHOOSE below or set numtasks to some number <= number of field lines
     numtasks=`ls dumps/fieldline*.bin |wc -l`  # true total number of tasks
-    numtasks=$(($numtasks/2))
-    numtasks=210
-    #numtasks=16
+    #
+    #numtasks=$(($numtasks/2))
+    
+    # for makeavg2d only needs 1 hour for 512 tasks
+    #numtasks=512
+    # for make1d only needs 1 hour for 512 tasks
+    numtasks=512
+    # for makemovie only needs 1 hour for 210 tasks
+    #numtasks=210
+    #
+    #
     numtaskscorr=$(($numtasks))
     # choose below number of cores per node (16 maximum for stampede, probably less if each fieldline file needs more memory than system has)
     # choose 2 because thickdisk7 needs 12GB/core and only have 32GB per node
@@ -721,9 +735,9 @@ echo "runnglobal=$runnglobal"
 # copy over python script path since supercomputers (e.g. Kraken) can't access home directory while running.
 #rm -rf $dirname/py/
 echo "dirname=$dirname"
-cp -a $HOME/pythontools $dirname/
+cp -a $HOME/py $dirname/
 cd $dirname
-ln -s $dirname/pythontools $dirname/py
+ln -s $dirname/py $dirname/py
 # setup py path
 MYPYTHONPATH=$dirname/py/
 MREADPATH=$MYPYTHONPATH/mread/
