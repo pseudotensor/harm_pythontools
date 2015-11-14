@@ -10491,7 +10491,7 @@ def getnonbobnqty():
     else:
         #value=2 + 6 + 14 + 4 + 22*5 + 25 + 22*3 + (13*4+13*4) + 11+15 + (14+2+48) +  (8+42) + (6) + (13*4+13*4) + (13*4+13*4)
         # with urad stuff
-        value=2 + 6 + 14 + 4 + 23*5 + 26 + 23*3 + (14*4+14*4) + 11+15 + (14+2+48) +  (8+42) + (6) + (14*4+14*4) + (14*4+14*4) +1
+        value=2 + 6 + 14 + 4 + 23*5 + 26 + 23*3 + (14*4+14*4) + 11+15 + (14+2+48) +  (8+42) + (6) + (14*4+14*4) + (14*4+14*4) +1+1
         value=value+4 # for edrad edradthin and ldrad ldradthin
                                
 
@@ -11471,6 +11471,8 @@ def getqtymem(qtymem,formovie=False):
     ldm=qtymem[i];i+=1
     global     ldpa
     ldpa=qtymem[i];i+=1
+    global     ldpa30
+    ldpa30=qtymem[i];i+=1
     global     lden
     lden=qtymem[i];i+=1
     #
@@ -15194,7 +15196,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     pjkefinavgvsr = pjemfinavgvsr + pjmakefinavgvsr
     #
     #
-    pjmafinavgvsr = timeavg(edma[:,:],ts,fti,ftf)
+    pjmafinavgvsr = timeavg(edmake[:,:]-edmake30[:,:],ts,fti,ftf)
     pjmafinavgvsr5 = timeavg(pjma5[:,:],ts,fti,ftf)
     #
     pjtotfinavgvsr = pjemfinavgvsr + pjmafinavgvsr
