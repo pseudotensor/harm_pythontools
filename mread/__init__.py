@@ -10491,7 +10491,7 @@ def getnonbobnqty():
     else:
         #value=2 + 6 + 14 + 4 + 22*5 + 25 + 22*3 + (13*4+13*4) + 11+15 + (14+2+48) +  (8+42) + (6) + (13*4+13*4) + (13*4+13*4)
         # with urad stuff
-        value=2 + 6 + 14 + 4 + 23*5 + 26 + 23*3 + (14*4+14*4) + 11+15 + (14+2+48) +  (8+42) + (6) + (14*4+14*4) + (14*4+14*4)
+        value=2 + 6 + 14 + 4 + 23*5 + 26 + 23*3 + (14*4+14*4) + 11+15 + (14+2+48) +  (8+42) + (6) + (14*4+14*4) + (14*4+14*4) +1
         value=value+4 # for edrad edradthin and ldrad ldradthin
                                
 
@@ -11309,6 +11309,8 @@ def getqtymem(qtymem,formovie=False):
     global     eden30
     eden30=qtymem[i];i+=1
     global     edpake30
+    edpake=qtymem[i];i+=1
+    global     edpake
     edpake30=qtymem[i];i+=1
     #
     global     edem
