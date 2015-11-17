@@ -3040,7 +3040,7 @@ def getdefaulttimes1():
         #
     #
     if isradmodel(modelname)==1:
-        defaultfti=3000
+        defaultfti=1
         defaultftf=1e5
     # override
     if modelname=="sashaa9b100t1.5708":
