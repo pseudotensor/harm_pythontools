@@ -1998,8 +1998,8 @@ def assignavg2dvars(avgmem):
     avg_pg=((gam-1)*avg_ug)
     avg_pb=avg_bsq*0.5
     avg_prad=(4.0/3.0-1.0)*avg_Erf
-    avg_beta=avg_pg/avg_pb # gas only, ignores radiation
-    avg_betatot=(avg_pg+avg_prad)/avg_pb
+    avg_beta=avg_pg/(1E-50+avg_pb) # gas only, ignores radiation
+    avg_betatot=(avg_pg+avg_prad)/(1E-50+avg_pb)
     print( "about to assignavg2dvars end"); sys.stdout.flush()
     printusage()
 
@@ -3818,7 +3818,7 @@ def Qmri_simple(which=1,hoverrwhich=None,weak=None):
     # now put in \Omega that has less noise than local ratio, but still accounts for \Omega(r,\phi) so proper for tilted disk
     #
     omegaavginphi=(omegarot3d).sum(axis=2)/float(nz)
-    overomegaavginphi=1.0/omegaavginphi
+    overomegaavginphi=1.0/(1E-50+omegaavginphi)
     overomegaavginphi[np.fabs(omegaavginphi)<1E-20]=0.0 # if omega=0, assume don't care about that point (happens at t=0 when density=0 outside field region or density region).  later in code, norm3d will take care of removing such regions explicitly so they don't matter (i.e. not part of average even if zero).
     #
     # divide-out Omega(r) for final qmri's.  Note that \theta direction here is really duplicated single value.  So really just ratio of angular averages in the end.
@@ -5093,7 +5093,7 @@ def qty_vstheta(inputsize=None,size=None,qty=None,iin=None,iout=None,denomvsthet
         if ignorephase==0 and dofft==1:
             for kk in np.arange(len(qtyslice[0,:])):
                 qtyvstheta=qtyslice[:,kk]
-                qtyvsthetatemp=qtyvstheta/denomvstheta
+                qtyvsthetatemp=qtyvstheta/(1E-50+denomvstheta)
                 # form stable ratio that removes geometry issues (but exaggerates simple wave mode amplitudes at large latitudes: NOTEMARK)
                 # need to account for 0/0
                 qtyvsthetatemp[qtyvstheta==0]=0 # normal 0/0 check
@@ -5120,7 +5120,7 @@ def qty_vstheta(inputsize=None,size=None,qty=None,iin=None,iout=None,denomvsthet
     result0=result0/numinavgresult0
     # get averaged spectrum
     if ignorephase==0 and dofft==1:
-        Yfft1=Yfft1/numinavg
+        Yfft1=Yfft1/(1E-50+numinavg)
     #
     if numinavg==0:
         print("Got numinavg=0 for qty_vstheta") ; sys.stdout.flush()
@@ -5362,7 +5362,7 @@ def qty_vsr(inputsize=None,size=None,qty=None,iin=None,iout=None,iavg=None,rinne
             for kk in np.arange(0,len(qtypart[0,0,:])):
                 qtyvsr=qtypart[:,jj,kk]
                 # more stable ratio.  Also consistent with using gdet-volume-integration for numerator and denominator, which wouldn't make sense for direct ratio
-                qtyvsrtemp=qtyvsr/denomvsr
+                qtyvsrtemp=qtyvsr/(1E-50+denomvsr)
                 qtyvsrtemp[qtyvsr==0]=0 # normal 0/0 check
                 qtyvsrtemp[denomvsr==0]=0 # more aggressive in case x/0, justr assume ignorable and set to zero
                 #
@@ -8210,6 +8210,11 @@ def rfdheader(fin=None):
         OUTERDEATH=0 # no
         OUTERDEATHRADIUS=1E7
     #
+    MBH=1
+    QBH=0
+    EP3=0
+    THETAROT=0
+    numcolumns=31
     if numheaderitems>=32:
         print("Found 32 header items, reading them in\n")  ; sys.stdout.flush()
         MBH=myfloatalt(float(header[19]))
@@ -8244,22 +8249,15 @@ def rfdheader(fin=None):
         whichdumpversion=int(header[29])
         numcolumns=int(header[30])
     #
-    if numheaderitems==30:
-        print("Found 30 header items, reading them in and setting EP3=THETAROT=0.0\n")  ; sys.stdout.flush()
+    if numheaderitems==30 or numheaderitems==21:
+        print("Found %d header items, reading them in and setting EP3=THETAROT=0.0\n" % (numheaderitems)); sys.stdout.flush()
         MBH=myfloatalt(float(header[19]))
         QBH=myfloatalt(float(header[20]))
         EP3=0.0
         THETAROT=0.0
+        numcolumns=11 # master branch        
         #
-        _is=int(header[21])
-        _ie=int(header[22])
-        _js=int(header[23])
-        _je=int(header[24])
-        _ks=int(header[25])
-        _ke=int(header[26])
-        whichdump=int(header[27])
-        whichdumpversion=int(header[28])
-        numcolumns=int(header[29])
+    print("Found %d header items\n" % (numheaderitems))  ; sys.stdout.flush()
 
 def rfdheaderonly(filename="dumps/fieldline0000.bin"):
     fin = open(filename, "rb" )
@@ -9623,7 +9621,7 @@ def cvel():
     #hoverr2dtoplot=hoverr3dtoplot.sum(2)/(nz)
     #thetamid2dtoplot=thetamid3dtoplot.sum(2)/(nz)
     Q1,Q3,OQ2=compute_resires(hoverrwhich=hoverr3dtoplot)
-    Q2=hoverr3dtoplot/OQ2
+    Q2=hoverr3dtoplot/(1E-50+OQ2)
     #
     aphi = fieldcalc()
     #
@@ -14046,7 +14044,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         #
         mdjet[qindex]=intangle(gdet*rho*uu[1],mumin=1,which=condmaxbsqorho,outflowonly=1)
         #
-        mdrhosq[qindex]=scaletofullwedge(((-gdet*rho**2*rho*uu[1]*diskcondition).sum(1)/maxrhosq2d).sum(1)*_dx2*_dx3)
+        mdrhosq[qindex]=scaletofullwedge(((-gdet*rho**2*rho*uu[1]*diskcondition).sum(1)/(1E-50+maxrhosq2d)).sum(1)*_dx2*_dx3)
         #mdrhosq[qindex]=(-gdet*rho**2*rho*uu[1]).sum(1).sum(1)/(-gdet*rho**2).sum(1).sum(1)*(-gdet).sum(1).sum(1)*_dx2*_dx3
         #
         # use same below maxbsqorho condition for fsin for proper division comparison
@@ -19347,7 +19345,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         return( mdotfinavg, fstotfinavg, fstotsqfinavg, fsj30finavg, fsj30sqfinavg, pjemfinavgtot )
 
     if whichplot == -2:
-        return( mdtotvsr, edtotvsr, edmavsr, ldtotvsr )
+        return( mdtotvsr, edtotvsr, edmakevsr, ldtotvsr )
 
     if whichplot == -300:
         #BL metric g_rr
@@ -20251,7 +20249,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         ###################
         # columns=54
         favg5 = open('datavsr5.txt', 'w')
-        favg5.write("#%s %s   %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s  %s %s %s %s  %s %s %s  %s %s %s %s %s %s %s %s %s %s %s %s  %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("ii","r","mdotfinavgvsr","mdotfinavgvsr5","mdotfinavgvsr10","mdotfinavgvsr30","edemvsr","edmavsr","edmvsr","ldemvsr","ldmavsr","ldmvsr","phiabsj_mu1vsr","pjemfinavgvsr","pjmakefinavgvsr","pjkefinavgvsr","ljemfinavgvsr","ljmakefinavgvsr","ljkefinavgvsr","mdin_vsr","mdjet_vsr","mdmwind_vsr","mdwind_vsr","alphamag1_vsr","alphamag2_vsr","alphamag3_vsr","alphamag4_vsr","alphareynoldsa2_vsr","alphareynoldsb2_vsr","alphareynoldsc2_vsr","alphareynoldsa3_vsr","alphareynoldsb3_vsr","alphareynoldsc3_vsr","fstot_vsr","fsin_vsr","feqtot_vsr","fsmaxtot_vsr","fsuphalf_vsr","upsilon_vsr","etajEM_vsr","etajMAKE_vsr","etamwEM_vsr","etamwMAKE_vsr","etawEM_vsr","etawMAKE_vsr","letajEM_vsr","letajMAKE_vsr","letamwEM_vsr","letamwMAKE_vsr","letawEM_vsr","letawMAKE_vsr","edradvsr","ldradvsr","ldradthinvsr" ) )
+        favg5.write("#%s %s   %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s  %s %s %s %s  %s %s %s  %s %s %s %s %s %s %s %s %s %s %s %s  %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("ii","r","mdotfinavgvsr","mdotfinavgvsr5","mdotfinavgvsr10","mdotfinavgvsr30","edemvsr","edmakevsr","edmvsr","ldemvsr","ldmavsr","ldmvsr","phiabsj_mu1vsr","pjemfinavgvsr","pjmakefinavgvsr","pjkefinavgvsr","ljemfinavgvsr","ljmakefinavgvsr","ljkefinavgvsr","mdin_vsr","mdjet_vsr","mdmwind_vsr","mdwind_vsr","alphamag1_vsr","alphamag2_vsr","alphamag3_vsr","alphamag4_vsr","alphareynoldsa2_vsr","alphareynoldsb2_vsr","alphareynoldsc2_vsr","alphareynoldsa3_vsr","alphareynoldsb3_vsr","alphareynoldsc3_vsr","fstot_vsr","fsin_vsr","feqtot_vsr","fsmaxtot_vsr","fsuphalf_vsr","upsilon_vsr","etajEM_vsr","etajMAKE_vsr","etamwEM_vsr","etamwMAKE_vsr","etawEM_vsr","etawMAKE_vsr","letajEM_vsr","letajMAKE_vsr","letamwEM_vsr","letamwMAKE_vsr","letawEM_vsr","letawMAKE_vsr","edradvsr","ldradvsr","ldradthinvsr" ) )
         #
         #
         for ii in np.arange(0,nx):
@@ -20259,7 +20257,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             #
             #
             # 54
-            favg5.write("%d %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],mdotfinavgvsr[ii],mdotfinavgvsr5[ii],mdotfinavgvsr10[ii],mdotfinavgvsr30[ii],edemvsr[ii],edmavsr[ii],edmvsr[ii],ldemvsr[ii],ldmavsr[ii],ldmvsr[ii],phiabsj_mu1vsr[ii],pjemfinavgvsr[ii],pjmakefinavgvsr[ii],pjkefinavgvsr[ii],ljemfinavgvsr[ii],ljmakefinavgvsr[ii],ljkefinavgvsr[ii],mdin_vsr[ii],mdjet_vsr[ii],mdmwind_vsr[ii],mdwind_vsr[ii],alphamag1_vsr[ii],alphamag2_vsr[ii],alphamag3_vsr[ii],alphamag4_vsr[ii],alphareynoldsa2_vsr[ii],alphareynoldsb2_vsr[ii],alphareynoldsc2_vsr[ii],alphareynoldsa3_vsr[ii],alphareynoldsb3_vsr[ii],alphareynoldsc3_vsr[ii],fstot_vsr[ii],fsin_vsr[ii],feqtot_vsr[ii],fsmaxtot_vsr[ii],fsuphalf_vsr[ii],upsilon_vsr[ii],etajEM_vsr[ii],etajMAKE_vsr[ii],etamwEM_vsr[ii],etamwMAKE_vsr[ii],etawEM_vsr[ii],etawMAKE_vsr[ii],letajEM_vsr[ii],letajMAKE_vsr[ii],letamwEM_vsr[ii],letamwMAKE_vsr[ii],letawEM_vsr[ii],letawMAKE_vsr[ii],edradvsr[ii],ldradvsr[ii],ldradthinvsr[ii]) )
+            favg5.write("%d %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],mdotfinavgvsr[ii],mdotfinavgvsr5[ii],mdotfinavgvsr10[ii],mdotfinavgvsr30[ii],edemvsr[ii],edmakevsr[ii],edmvsr[ii],ldemvsr[ii],ldmavsr[ii],ldmvsr[ii],phiabsj_mu1vsr[ii],pjemfinavgvsr[ii],pjmakefinavgvsr[ii],pjkefinavgvsr[ii],ljemfinavgvsr[ii],ljmakefinavgvsr[ii],ljkefinavgvsr[ii],mdin_vsr[ii],mdjet_vsr[ii],mdmwind_vsr[ii],mdwind_vsr[ii],alphamag1_vsr[ii],alphamag2_vsr[ii],alphamag3_vsr[ii],alphamag4_vsr[ii],alphareynoldsa2_vsr[ii],alphareynoldsb2_vsr[ii],alphareynoldsc2_vsr[ii],alphareynoldsa3_vsr[ii],alphareynoldsb3_vsr[ii],alphareynoldsc3_vsr[ii],fstot_vsr[ii],fsin_vsr[ii],feqtot_vsr[ii],fsmaxtot_vsr[ii],fsuphalf_vsr[ii],upsilon_vsr[ii],etajEM_vsr[ii],etajMAKE_vsr[ii],etamwEM_vsr[ii],etamwMAKE_vsr[ii],etawEM_vsr[ii],etawMAKE_vsr[ii],letajEM_vsr[ii],letajMAKE_vsr[ii],letamwEM_vsr[ii],letamwMAKE_vsr[ii],letawEM_vsr[ii],letawMAKE_vsr[ii],edradvsr[ii],ldradvsr[ii],ldradthinvsr[ii]) )
         #
         favg5.close()
         #
@@ -20270,7 +20268,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         (mdotfinavgvsr10_fit,mdotfinavgvsr10_fitsigma,mdotfinavgvsr10_fitgoodness)=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(mdotfinavgvsr10[iin1:iout1])),1,dologx=1,dology=1,doabs=1,num=numfit) ; numfit+=1 # odd ball name
         (mdotfinavgvsr30_fit,mdotfinavgvsr30_fitsigma,mdotfinavgvsr30_fitgoodness)=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(mdotfinavgvsr30[iin1:iout1])),1,dologx=1,dology=1,doabs=1,num=numfit) ; numfit+=1 # odd ball name
         (edemvsr_fit,edemvsr_fitsigma,edemvsr_fitgoodness)=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(edemvsr[iin1:iout1])),1,dologx=1,dology=1,doabs=1,num=numfit) ; numfit+=1
-        (edmavsr_fit,edmavsr_fitsigma,edmavsr_fitgoodness)=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(edmavsr[iin1:iout1])),1,dologx=1,dology=1,doabs=1,num=numfit) ; numfit+=1
+        (edmakevsr_fit,edmakevsr_fitsigma,edmakevsr_fitgoodness)=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(edmakevsr[iin1:iout1])),1,dologx=1,dology=1,doabs=1,num=numfit) ; numfit+=1
         (edmvsr_fit,edmvsr_fitsigma,edmvsr_fitgoodness)=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(edmvsr[iin1:iout1])),1,dologx=1,dology=1,doabs=1,num=numfit) ; numfit+=1
         (ldemvsr_fit,ldemvsr_fitsigma,ldemvsr_fitgoodness)=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(ldemvsr[iin1:iout1])),1,dologx=1,dology=1,doabs=1,num=numfit) ; numfit+=1
         (ldmavsr_fit,ldmavsr_fitsigma,ldmavsr_fitgoodness)=jonpolyfit((np.fabs(r[iin1:iout1,0,0])),(np.fabs(ldmavsr[iin1:iout1])),1,dologx=1,dology=1,doabs=1,num=numfit) ; numfit+=1
@@ -24794,7 +24792,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     DUfloor1 = DU[1]
     DUfloor4 = DU[4]
     #at this time we have the floor information, now get averages:
-    mdtotvsr, edtotvsr, edmavsr, ldtotvsr = plotqtyvstime( qtymem, fullresultsoutput=0,whichplot = -2, fti=fti, ftf=ftf )
+    mdtotvsr, edtotvsr, edmakevsr, ldtotvsr = plotqtyvstime( qtymem, fullresultsoutput=0,whichplot = -2, fti=fti, ftf=ftf )
     if dofeavg:
         FE=np.load("fe.npy")
     #edtotvsr-=FE
@@ -24893,7 +24891,7 @@ def takeoutfloors(ax=None,doreload=1,dotakeoutfloors=1,dofeavg=0,fti=None,ftf=No
     # plt.plot(r[:,0,0],-avg_tudmass,label="mymass")
     # plt.plot(r[:,0,0],-avg_tudmassug,label="mymassug")
     # plt.plot(r[:,0,0],-avg_tudug,label="myug")
-    # plt.plot(r[:,0,0],edmavsr,label="ma")
+    # plt.plot(r[:,0,0],edmakevsr,label="ma")
     # plt.plot(r[:,0,0],edtotvsr-edmvsr,label="tot-m")
     # #plt.plot(r[:,0,0],DUfloor[1])
     # plt.xlim(rh,20); plt.ylim(-20,20)
@@ -28475,7 +28473,7 @@ def main(argv=None):
         gc.collect()
 
 
-def tutorial1(filename=None,fignum=None,whichplot=1):
+def tutorial1(modelname="blandford3d_new",filename=None,fignum=None,whichplot=1):
     # first load grid file
     grid3d("gdump.bin")
     if(filename==None):
@@ -28487,7 +28485,124 @@ def tutorial1(filename=None,fignum=None,whichplot=1):
     # now plot something you read-in
     plt.close(fignum)
     fig=plt.figure(fignum)
-    lrho=np.log10(yfl1/rho)
+    #
+    GGG0=(6.674e-8)
+    CCCTRUE0=(2.99792458e10) #// cgs in cm/s
+    MSUN=(1.989E33) #//cgs in grams
+    ARAD=(7.56593E-15) #// cgs in erg/(K^4 cm^3)
+    K_BOLTZ=(1.3806488e-16) #// cgs in erg/K
+    M_PROTON=(1.67262158e-24) #// proton mass in cgs in grams
+    MB=(1.66054E-24)
+    MPOME=(1836.15)
+    MELE=(M_PROTON/MPOME) #// electron mass in cgs in grams
+    HPLANCK=(6.62607E-27) #// cgs
+    QCHARGE=(4.8029E-10) #// cgs
+    #
+    pg=(gam-1.0)*ug
+    betaplasma=pg/(bsq/2.0)
+    # code Tgas for ideal gas in units of m_p c^2
+    TgasK=pg/(rho/MUMEAN)*(MB*CCCTRUE0**2)/K_BOLTZ
+    if modelname=="thickdisk7":
+        #Trat=35 ###### from Roman table
+        Trat=10 ###### from Roman table
+        #
+        #Trat=2
+        #Trat=100
+    if modelname=="blandford3d_new":
+        Trat=50 ###### from Roman table
+        #
+        #Trat=1E5
+        #Trat=100
+    TejetK=Trat*(MELE*CCCTRUE0**2)/K_BOLTZ
+    TediskK=TgasK/10.0 ###### need T(u/rho)
+    if 1==1:
+        betac=1.0 # Roman choice
+        #betac=1E-5
+        TefinalK=TediskK*np.exp(-bsq/rho/betac) + TejetK*(1.0-np.exp(-bsq/rho/betac))
+        #TefinalK[TefinalK>0.5*TgasK]=0.5*TgasK[TefinalK>0.5*TgasK]
+        #
+    if 1==0:
+        betac=1.0 # Roman choice
+        TefinalK=TediskK*np.exp(-betac/betaplasma) + TejetK*(1.0-np.exp(-betac/betaplasma))
+        #TefinalK[TefinalK>0.5*TgasK]=0.5*TgasK[TefinalK>0.5*TgasK]
+    #
+    TpoTe=0.1 # fiducial choice
+    c1=0.92
+    c2=1.6/TpoTe
+    c3=18+5*np.log10(TpoTe)
+    QpoQe=c1*(c2**2+betaplasma**(2.0-0.2*np.log10(TpoTe)))/(c3**2+betaplasma**(2.0-0.2*np.log10(TpoTe)))*np.sqrt(MPOME*TpoTe)*np.exp(-1.0/betaplasma)
+    fe=1.0/(1.0+QpoQe)
+    #
+    if 1==0:
+        TefinalK=(0.5*TgasK)*(fe) + TediskK*(1.0-fe)
+    #
+    #
+    pgeff=(K_BOLTZ*TefinalK/(MB*CCCTRUE0**2))*(rho/MUMEAN)
+    #
+    TeK=np.float64(TefinalK)
+    #
+    # remove floor region
+    romansetup=1
+    #
+    if romansetup==1:
+        bsqorhocut=4 ######## Roman default
+    else:
+        bsqorhocut=40 ######## was 4
+        #
+    rho[bsq/rho>bsqorhocut]=rho[bsq/rho>bsqorhocut]*1E-10
+    #
+    if modelname=="thickdisk7":
+        thlimit=0.02
+        tjlimit=8
+        jsnufloor=1E-7
+        rhofact=4E-18 # how much in grams is 1 unit of code density
+    if modelname=="blandford3d_new":
+        thlimit=0.01
+        tjlimit=3
+        jsnufloor=1E-15
+        rhofact=4E-17 # how much in grams is 1 unit of code density
+    #
+    if romansetup==1:
+        rho[1.0-np.fabs(np.cos(h))<thlimit]=0
+    else:
+        rho[tj<tjlimit]=0
+        rho[tj>ny-1-tjlimit]=0
+    #
+    #rho=np.copy(rhoclean)
+    #
+    rhotrue=np.float64(rho*rhofact)
+    ne=np.float64(rhotrue/MB)
+    BG=np.float64(np.sqrt(bsq*rhofact*CCCTRUE0**2)*np.sqrt(4.0*np.pi))
+    T10=np.float64(TeK/1E10)
+    #
+    nuM=np.float64(1.2E7*BG*T10**2)
+    phii=np.float64(K_BOLTZ*TeK/(HPLANCK*nuM))
+    dd = 130*np.exp(2.19+2.96)
+    ee=3.0
+    #
+    gg = np.float64(1.0)
+    gg = np.float64( dd*phii**(-ee) )
+    #
+    #
+    kappa = np.float64(2E-11*ne*BG**(-1.0)*T10**(-5.0)*gg)
+    #
+    BB = np.float64((ARAD*TeK**4)*CCCTRUE0/(4.0*np.pi))
+    #
+    lambdarate = np.float64(kappa*BB*4.0*np.pi)
+    #
+    thetae=np.float64(K_BOLTZ*TeK/(MELE*CCCTRUE0**2))
+    GHz=1E9
+    nu=np.float64(230.0*GHz) # choose frequency
+    dnu=nu # so jsnu is in Jansky really but on right order of magnitude as if emissivity
+    xM=np.float64(nu/nuM)
+    Alpha=1.0
+    Beta=1.0
+    Gamma=1.0
+    Iprime=np.float64(4.0505*Alpha/xM**(1.0/6.0)*(1.0 + 0.40*Beta/xM**(1.0/4.0) + 0.5316*Gamma/xM**(1.0/2.0))*np.exp(-1.8899*xM**(1.0/3.0)))
+    #
+    jsnu=np.float64(4.43E-30*nuM*ne*xM*Iprime/(2.0*thetae**2)*dnu)
+    #
+    #
     if(whichplot==1):
         lrho=np.log10(rho)
         #lrho=np.log10(Erf)
@@ -28522,6 +28637,31 @@ def tutorial1(filename=None,fignum=None,whichplot=1):
         lrho=uradu[0]
     if(whichplot==13):
         lrho=np.log10(Erf)
+    if(whichplot==14):
+        #lrho=np.log10(lambdarate) # lambdarate
+        #lrho=BG**2/((1E-10+rhotrue)*CCCTRUE0**2) #np.log10(jsnu+1E-50)
+        #lrho=np.log10(jsnu+1E-50)
+        lrho=np.log10(jsnu+jsnufloor)
+        #lrho=TeK
+        #
+    if(whichplot==15):
+        lrho=np.log10(lambdarate) # lambdarate
+        #lrho=BG**2/((1E-10+rhotrue)*CCCTRUE0**2) #np.log10(jsnu+1E-50)
+        #lrho=np.log10(jsnu+1E-50)
+        #
+    if(whichplot==16):
+        lrho=np.log10(thetae)
+    if(whichplot==17):
+        lrho=fe
+        lrho=BG
+        #lrho=jsnu
+    if(whichplot==18):
+        # pg = (4/3-1)*ug
+        uge=(rho/(MB*CCCTRUE0**2))*K_BOLTZ*TeK/(4.0/3.0-1.0)
+        lrho=(uge/ug)
+    if(whichplot==19):
+        lrho=np.log10(rhoclean+1E-10)
+        #lrho=np.log10(Erf)
     #lrho=bsq/rho
     #plco(lrho,cb=True,nc=50)
     #plt.imshow(lrho)
@@ -28542,7 +28682,18 @@ def tutorial1(filename=None,fignum=None,whichplot=1):
     ifun = reinterp(lrho,extent,ncell,domask=domask,interporder='linear')
     #
     plt.imshow(ifun,extent=extent)
-    plt.colorbar()
+    #plt.axis([x.min(), x.max(), y.min(), y.max()])
+    #plt.axis([0, limitx, 0, limity])
+    #ax.set_aspect('equal')   
+    if whichplot==14 or whichplot==16:
+        plt.colorbar(format=r'$10^{%0.1f}$')
+        #plt.axis([0, len, -len, len])
+        plt.xlabel(r'$x [r_g]$',fontsize=16,ha='left')#,labelpad=0)
+        plt.ylabel(r'$z [r_g]$',fontsize=16,ha='left')#,labelpad=20)
+        #plt.xlabel('R/rg')
+        #plt.ylabel('z/rg')
+    else:
+        plt.colorbar()
     #
     #################################################
     if(whichplot==2):
@@ -28553,13 +28704,25 @@ def tutorial1(filename=None,fignum=None,whichplot=1):
         ax.contour(ifun,linewidths=2,colors='cyan', extent=extent,hold='on',origin='lower',levels=(0.25,))
         ax.contour(ifun,linewidths=2,colors='green', extent=extent,hold='on',origin='lower',levels=(0.4,))
     #
+    #
+    plt.savefig("plot_%s_%s_%d_%g_%d.png" % (modelname,filename,whichplot,Trat,romansetup),bbox_inches='tight')
+    #
+    #
     vminmost=np.amin(lrho)
     vmaxmost=np.amax(lrho)
     print("vminmost=%g vmaxmost=%g" % (vminmost,vmaxmost)) ;sys.stdout.flush()
-    yfl1true=yfl1/rho
-    arglist=[yfl1true,np.log10(rho),np.log10(yfl1),uu[0],bsq/rho]
-    argnamelist=["yfl1true","lrho","lrhofl","uu0","bsq/rho"]
+    if 0==1:
+        yfl1true=yfl1/rho
+    else:
+        yfl1=rho
+        yfl1true=yfl1/rho
+    #
+    arglist=[lrho,np.log10(rho),np.log10(yfl1),uu[0],bsq/rho]
+    argnamelist=["qty","lrho","lrhofl","uu0","bsq/rho"]
     cid = fig.canvas.mpl_connect('button_press_event', lambda event: onclick(event,arglist,argnamelist,domask=domask))
+
+
+
 
 def tutorial1a(filename=None,which=1,fignum=1):
     global modelname
