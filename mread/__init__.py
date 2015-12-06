@@ -2843,7 +2843,8 @@ def isradmodelD(modelname):
     else:
         return(0)
 def isradmodel(modelname):
-    if isradmodelA(modelname) or isradmodelB(modelname) or isradmodelC(modelname) or isradmodelD(modelname):
+    global gotrad
+    if gotrad or isradmodelA(modelname) or isradmodelB(modelname) or isradmodelC(modelname) or isradmodelD(modelname):
         return(1)
     else:
         return(0)
@@ -28336,6 +28337,9 @@ def main(argv=None):
     global avoidplotsglobal,avoidfitplotsglobal
     avoidplotsglobal=1
     avoidfitplotsglobal=1
+    #
+    global gotrad
+    gotrad=0
     #
     global OLDQTYMEMMEM
     # only need =1 if reading in older type data
