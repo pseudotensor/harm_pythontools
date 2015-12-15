@@ -452,7 +452,7 @@ then
     # choose below number of cores per node (16 maximum for stampede, probably less if each fieldline file needs more memory than system has)
     # choose 2 because thickdisk7 needs 12GB/core and only have 32GB per node
     # stampede with radtma0.8 has resident max of 2GB/task, so can't quite have 16 tasks per node, so go with 14.
-    numtaskspernode=14
+    numtaskspernode=16
     numtotalnodes=$((($numtaskscorr+$numtaskspernode-1)/$numtaskspernode))
     apcmd="ibrun "
 
