@@ -17,6 +17,7 @@
 user=$USER
 userbatch=${USER:2:6}
 emailaddr="pseudotensor@gmail.com"
+ACCOUNT="TG-PHY120005"
 
 EXPECTED_ARGS=18
 E_BADARGS=65
@@ -409,7 +410,7 @@ then
     # ipython -pylab -colors=LightBG
     #
     # long normal interactive job:
-    # qsub -I -A TG-PHY120005 -q analysis -l ncpus=8,walltime=24:00:00,mem=32GB
+    # qsub -I -A $ACCOUNT -q analysis -l ncpus=8,walltime=24:00:00,mem=32GB
     # Note that this gives you a node for <=24 hours, so you can run 8 processes in parallel.  If you want to open a few xterm's from that window with (xterm &), in that terminal you will have to set the DISPLAY variable to whatever it was in the login node of nautilus (or else, the display variable is empty, and the new xterm windows refuse to spawn).
 fi
 
@@ -994,7 +995,7 @@ then
                         #
                         if [ $system -eq 4 ]
                         then
-		                    bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l mem=${memtot}GB,walltime=$timetot,ncpus=$numcorespernodeeff -q $thequeue -N $jobname -o $outputfile -e $errorfile -M $emailaddr ./$thebatch"
+		                    bsubcommand="qsub -S /bin/bash -A $ACCOUNT -l mem=${memtot}GB,walltime=$timetot,ncpus=$numcorespernodeeff -q $thequeue -N $jobname -o $outputfile -e $errorfile -M $emailaddr ./$thebatch"
                         elif [ $system -eq 7 ]
                         then
                             # -n $numtasks # how many actual MPI processes there are.
@@ -1018,8 +1019,8 @@ then
                             localoutputfile=python_${fakeruni}_${runn}.out
                             rm -rf $localerrorfile
                             rm -rf $localoutputfile
-#		                    bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l walltime=$timetot,size=$numtotalcores -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
-		                    bsubcommand="sbatch -A TG-PHY120005 -t $timetot -p $thequeue -n $numtasks -N $numtotalnodes -J $jobname -o $outputfile -e $errorfile --mail-user=$emailaddr --mail-type=begin --mail-type=end ./$superbatch"
+#		                    bsubcommand="qsub -S /bin/bash -A $ACCOUNT -l walltime=$timetot,size=$numtotalcores -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
+		                    bsubcommand="sbatch -A $ACCOUNT -t $timetot -p $thequeue -n $numtasks -N $numtotalnodes -J $jobname -o $outputfile -e $errorfile --mail-user=$emailaddr --mail-type=begin --mail-type=end ./$superbatch"
 
                         elif [ $system -eq 5 ]
                         then
@@ -1042,7 +1043,7 @@ then
                             localoutputfile=python_${fakeruni}_${runn}.out
                             rm -rf $localerrorfile
                             rm -rf $localoutputfile
-		                    bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l walltime=$timetot,size=$numtotalcores -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
+		                    bsubcommand="qsub -S /bin/bash -A $ACCOUNT -l walltime=$timetot,size=$numtotalcores -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
                         else
                             # probably specifying ptile below is not necessary
 		                    bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernode] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -1229,7 +1230,7 @@ then
             #
             if [ $system -eq 4 ]
             then
-		        bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l mem=${memtotplot}GB,walltime=$timetotplot,ncpus=$numcorespernodeplot -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
+		        bsubcommand="qsub -S /bin/bash -A $ACCOUNT -l mem=${memtotplot}GB,walltime=$timetotplot,ncpus=$numcorespernodeplot -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
             elif [ $system -eq 7 ]
             then
                 superbatch=superbatchfile.$thebatch
@@ -1251,7 +1252,7 @@ then
                 rm -rf $localerrorfile
                 rm -rf $localoutputfile
                 #
-		        bsubcommand="sbatch -A TG-PHY120005 -t $timetot -p $thequeueplot -n $numtasksplot -N $numtotalnodesplot -J $jobname -o $outputfile -e $errorfile --mail-user=$emailaddr --mail-type=begin --mail-type=end ./$superbatch"
+		        bsubcommand="sbatch -A $ACCOUNT -t $timetot -p $thequeueplot -n $numtasksplot -N $numtotalnodesplot -J $jobname -o $outputfile -e $errorfile --mail-user=$emailaddr --mail-type=begin --mail-type=end ./$superbatch"
 
             elif [ $system -eq 5 ]
             then
@@ -1274,7 +1275,7 @@ then
                 rm -rf $localerrorfile
                 rm -rf $localoutputfile
                 #
-		        bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l walltime=$timetotplot,size=$numtotalcoresplot -q $thequeueplot -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
+		        bsubcommand="qsub -S /bin/bash -A $ACCOUNT -l walltime=$timetotplot,size=$numtotalcoresplot -q $thequeueplot -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
             else
                 # probably specifying ptile below is not necessary
 		        bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernodeplot] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -1573,7 +1574,7 @@ then
                         #
                         if [ $system -eq 4 ]
                         then
-		                    bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l mem=${memtot}GB,walltime=$timetot,ncpus=$numcorespernodeeff -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
+		                    bsubcommand="qsub -S /bin/bash -A $ACCOUNT -l mem=${memtot}GB,walltime=$timetot,ncpus=$numcorespernodeeff -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
                         elif [ $system -eq 7 ]
                         then
                             superbatch=superbatchfile.$thebatch
@@ -1596,7 +1597,7 @@ then
                             rm -rf $localerrorfile
                             rm -rf $localoutputfile
                             #
-		                    bsubcommand="sbatch -A TG-PHY120005 -t $timetot -p $thequeue -n $numtasks -N $numtotalnodes -J $jobname -o $outputfile -e $errorfile --mail-user=$emailaddr --mail-type=begin --mail-type=end ./$superbatch"
+		                    bsubcommand="sbatch -A $ACCOUNT -t $timetot -p $thequeue -n $numtasks -N $numtotalnodes -J $jobname -o $outputfile -e $errorfile --mail-user=$emailaddr --mail-type=begin --mail-type=end ./$superbatch"
                         elif [ $system -eq 5 ]
                         then
                             superbatch=superbatchfile.$thebatch
@@ -1619,7 +1620,7 @@ then
                             rm -rf $localerrorfile
                             rm -rf $localoutputfile
                             #
-		                    bsubcommand="qsub  -S /bin/bash -A TG-PHY120005 -l walltime=$timetot,size=$numtotalcores -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
+		                    bsubcommand="qsub  -S /bin/bash -A $ACCOUNT -l walltime=$timetot,size=$numtotalcores -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
                         else
                             # probably specifying ptile below is not necessary
 		                    bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernode] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -1959,7 +1960,7 @@ then
                         #
                         if [ $system -eq 4 ]
                         then
-		                    bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l mem=${memtot}GB,walltime=$timetot,ncpus=$numcorespernodeeff -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
+		                    bsubcommand="qsub -S /bin/bash -A $ACCOUNT -l mem=${memtot}GB,walltime=$timetot,ncpus=$numcorespernodeeff -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
                         elif [ $system -eq 7 ]
                         then
                             superbatch=superbatchfile.$thebatch
@@ -1982,7 +1983,7 @@ then
                             rm -rf $localerrorfile
                             rm -rf $localoutputfile
                             #
-		                    bsubcommand="sbatch -A TG-PHY120005 -t $timetot -p $thequeue -n $numtasks -N $numtotalnodes -J $jobname -o $outputfile -e $errorfile --mail-user=$emailaddr --mail-type=begin --mail-type=end ./$superbatch"
+		                    bsubcommand="sbatch -A $ACCOUNT -t $timetot -p $thequeue -n $numtasks -N $numtotalnodes -J $jobname -o $outputfile -e $errorfile --mail-user=$emailaddr --mail-type=begin --mail-type=end ./$superbatch"
                         elif [ $system -eq 5 ]
                         then
                             superbatch=superbatchfile.$thebatch
@@ -2005,7 +2006,7 @@ then
                             rm -rf $localerrorfile
                             rm -rf $localoutputfile
                             #
-		                    bsubcommand="qsub  -S /bin/bash -A TG-PHY120005 -l walltime=$timetot,size=$numtotalcores -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
+		                    bsubcommand="qsub  -S /bin/bash -A $ACCOUNT -l walltime=$timetot,size=$numtotalcores -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
                         else
                             # probably specifying ptile below is not necessary
 		                    bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernode] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -2218,7 +2219,7 @@ then
             #
             if [ $system -eq 4 ]
             then
-		        bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l mem=${memtotplot}GB,walltime=$timetotplot,ncpus=$numcorespernodeplot -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
+		        bsubcommand="qsub -S /bin/bash -A $ACCOUNT -l mem=${memtotplot}GB,walltime=$timetotplot,ncpus=$numcorespernodeplot -q $thequeue -N $jobname -o $outputfile -e $errorfile ./$thebatch"
             elif [ $system -eq 7 ]
             then
                 superbatch=superbatchfile.$thebatch
@@ -2240,7 +2241,7 @@ then
                 rm -rf $localerrorfile
                 rm -rf $localoutputfile
                 #
-		        bsubcommand="sbatch -A TG-PHY120005 -t $timetot -p $thequeueplot -n $numtasksplot -N $numtotalnodesplot -J $jobname -o $outputfile -e $errorfile --mail-user=$emailaddr --mail-type=begin --mail-type=end ./$superbatch"
+		        bsubcommand="sbatch -A $ACCOUNT -t $timetot -p $thequeueplot -n $numtasksplot -N $numtotalnodesplot -J $jobname -o $outputfile -e $errorfile --mail-user=$emailaddr --mail-type=begin --mail-type=end ./$superbatch"
             elif [ $system -eq 5 ]
             then
                 superbatch=superbatchfile.$thebatch
@@ -2262,7 +2263,7 @@ then
                 rm -rf $localerrorfile
                 rm -rf $localoutputfile
                 #
-		        bsubcommand="qsub -S /bin/bash -A TG-PHY120005 -l walltime=$timetotplot,size=$numtotalcoresplot -q $thequeueplot -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
+		        bsubcommand="qsub -S /bin/bash -A $ACCOUNT -l walltime=$timetotplot,size=$numtotalcoresplot -q $thequeueplot -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
             else
                     # probably specifying ptile below is not necessary
 		        bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernodeplot] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
