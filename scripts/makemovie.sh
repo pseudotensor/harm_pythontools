@@ -443,7 +443,7 @@ then
     # for makeavg2d only needs 1 hour for 512 tasks
     #numtasks=512
     # for make1d only needs 1 hour for 512 tasks
-    numtasks=512
+    #numtasks=512
     # for makemovie only needs 1 hour for 210 tasks
     #numtasks=210
     #
