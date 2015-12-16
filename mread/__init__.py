@@ -8907,6 +8907,33 @@ def getkappas(gotrad):
 
 def rddims(gotrad):
     global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
+    #
+    if 1==1: # default
+        GGG=1
+        CCCTRUE=1
+        MSUNCM=1
+        MPERSUN=1
+        LBAR=1
+        TBAR=1
+        VBAR=1
+        RHOBAR=1
+        MBAR=1
+        ENBAR=1
+        UBAR=1
+        TEMPBAR=1
+        ARAD_CODE_DEF=1
+        XFACT=1
+        YFACT=0
+        ZFACT=0
+        MUMEAN=1
+        ZATOM=1
+        AATOM=1
+        MUE=1
+        MUI=1
+        OPACITYBAR=1
+        MASSCM=1
+        KORAL2HARMRHO1=1
+    #
     if(gotrad==1 and isradmodeltype1(modelname)):
         # then also get radiation constants
         fname= "dimensions.txt"
@@ -8941,7 +8968,7 @@ def rddims(gotrad):
         KORAL2HARMRHO1 = np.float64(dimfile[20])
         fin.close()
         #
-    elif(gotrad==1 and isradmodeltype2(modelname)):
+    else: #if(gotrad==1 and isradmodeltype2(modelname)): # default
         # then also get radiation constants
         fname= "dimensions.txt"
         fin = open(fname, "rt" )
@@ -8969,33 +8996,12 @@ def rddims(gotrad):
         OPACITYBAR = np.float64(dimfile[18])
         MASSCM = np.float64(dimfile[19])
         KORAL2HARMRHO1 = np.float64(dimfile[20])
+        #
+        if(numheaderitems==22):
+            TEMPMIN = np.float64(dimfile[21])
+        #
         fin.close()
         #
-    else:
-        GGG=1
-        CCCTRUE=1
-        MSUNCM=1
-        MPERSUN=1
-        LBAR=1
-        TBAR=1
-        VBAR=1
-        RHOBAR=1
-        MBAR=1
-        ENBAR=1
-        UBAR=1
-        TEMPBAR=1
-        ARAD_CODE_DEF=1
-        XFACT=1
-        YFACT=0
-        ZFACT=0
-        MUMEAN=1
-        ZATOM=1
-        AATOM=1
-        MUE=1
-        MUI=1
-        OPACITYBAR=1
-        MASSCM=1
-        KORAL2HARMRHO1=1
     if(gotrad):
         MUELE = (2.0/(1.0+XFACT))
         YELE = (1.0/MUELE)
