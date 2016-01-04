@@ -2120,6 +2120,7 @@ def getrhouclean(rho,ug,uu):
     rhoclean[condmaxbsqorho==0]=1E-30
     #
     ugclean = np.copy(ug)
+    global gotrad
     if(gotrad==0):
         ugclean[fbsqorho()>maxbsqorhonear]=1E-30
         ugclean[condmaxbsqorho==0]=1E-30
@@ -5426,6 +5427,7 @@ def remap2unir(rinner=None,router=None,size=None,iin=None,iout=None,result0=None
 
 # compute integrated optical depth
 def compute_taurad(domergeangles=True,radiussettau1zero=80):
+    global gotrad
     if(gotrad==1):
         # uses uu[], KAPPAUSER, KAPPAESUSER, gv3, r
         # default
@@ -8537,7 +8539,7 @@ def rfd(fieldlinefilename,**kwargs):
     # get any radiation variables
     #
     global gotrad
-    gotrad=0
+    gotrad=0 # where gotrad defined as 0 and overwritten if appropriate
     if(numcolumns==16 or numcolumns==29):
         gotrad=1
         Erf=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
@@ -9506,7 +9508,7 @@ def rotsimpletensordot(uu,rot,axis):
 def rfdprocess(gotgdetB=0):
     #
     # external globals
-    global rho,ug,yfl1,yfl2,yfl3,yfl4,yfl5,uu,B,gdetB,Erf,uradu,gotrad
+    global rho,ug,yfl1,yfl2,yfl3,yfl4,yfl5,uu,B,gdetB,Erf,uradu
     # derived quantities
     global ug,uu,rhor,r,h,ph,rhoclean,ugclean
     global gdetB # tells either exists before or will be created here
@@ -26675,6 +26677,7 @@ def mkavgfigs():
         global KAPPAUSER,KAPPAESUSER,tauradintegrated,tauradeffintegrated
         #
         global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
+        global gotrad
         rddims(gotrad)
         #
         rho=avg_rho
@@ -28354,8 +28357,8 @@ def main(argv=None):
     avoidplotsglobal=1
     avoidfitplotsglobal=1
     #
-    global gotrad
-    gotrad=0
+    #global gotrad
+    #gotrad=0
     #
     global OLDQTYMEMMEM
     # only need =1 if reading in older type data
