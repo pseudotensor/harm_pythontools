@@ -71,7 +71,7 @@ int getchunklistfromfile;
 int totalchunks;
 char chunkliststring[MAXCHUNKSTRING];
 int chunklist[MAXCHUNKSTRING];
-int numchunks;
+int numchunks,numchunksactual;
 
 char DATADIR[MAXGENNAME];
 char jobprefix[MAXGENNAME];
@@ -499,18 +499,19 @@ static int myargs(int argc, char *argv[])
 
     int itemspergroup=4; // needs to be same as in makemovie.sh
 
-    if(numchunks!=truenumprocs && runtype!=2){
-      myffprintf(stderr,"Must have numchunks=%d equal to truenumprocs=%d\n",numchunks,truenumprocs);
-      myffprintf(stderr,"Required since cannot fork(), so each proc can only call 1 python call.\n");
-      exit(1);
+    if(runtype==2){
+      numchunksactual=numchunks/itemspergroup;
+      numchunksactual=numchunksactual+1;
     }
-    else if(0){ //numchunks!=truenumprocs && runtype==2){ // do later
-      myffprintf(stderr,"Must have numchunks=%d equal to truenumprocs=%d\n",numchunks,truenumprocs);
+    else numchunksactual=numchunks;
+
+    if(numchunksactual!=truenumprocs){
+      myffprintf(stderr,"Must have numchunksactual=%d equal to truenumprocs=%d\n",numchunksactual,truenumprocs);
       myffprintf(stderr,"Required since cannot fork(), so each proc can only call 1 python call.\n");
       exit(1);
     }
     else{
-      myffprintf(stderr,"Good chunk count: numchunks=%d\n",numchunks);
+      myffprintf(stderr,"Good chunk count: numchunksactual=%d\n",numchunksactual);
     }// end else if good numchunks
   }// end if good number of arguments
 
@@ -707,7 +708,7 @@ static int finish_tpy_makemovie(int myid, int *chunklist, int totalchunks, char 
 
     finished=1; // guess that finished
     int i;
-    for(i=0;i<numchunks;i++){
+    for(i=0;i<numchunksactual;i++){
       sprintf(finishname,"finish.%d",i);
       myfinishfile=fopen(finishname,"rt");
       if(myfinishfile==NULL){
