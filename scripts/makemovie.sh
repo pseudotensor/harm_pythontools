@@ -642,7 +642,7 @@ fi
 #itemspergroup=$(( 1 )) # MAVARA
 itemspergroup=$(( 4 ))
 numtasksavg=$(( ($numtasks)/$itemspergroup))
-numtasksavg=$(($truenumtasks+1))
+numtasksavg=$(($numtasksavg+1))
 numtaskscorravg=$(($numtasksavg))
 numtotalnodesavg=$((($numtaskscorravg+$numtaskspernode-1)/$numtaskspernode))
 
