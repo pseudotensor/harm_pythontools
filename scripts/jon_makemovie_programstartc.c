@@ -171,12 +171,17 @@ int main(int argc, char *argv[])
     fprintf(stderr,"No runtype given"); fflush(stderr);
   }
 
-  //  fprintf(stderr,"STEP2: %d\n",myid); fflush(stderr);
+  fprintf(stderr,"STEP2: %d\n",myid); fflush(stderr);
   
   ////////////////////////////////////////
   // before running python, copy over any .npy files needed.  Copy so for any system maximal distribution for disk system
   // E.g., on stampede, copy to /tmp/ and use that file.
   // to ensure no race condition by multiple cores, go through sequentially and test
+
+#if(USEMPI)
+      // Barrier required to ensure sequential access since no idea what order of cores is on system and how bunched into nodes.  Could use name of processor that id's the node, somewhow.
+      MPI_Barrier(MPI_COMM_WORLD);
+#endif
 
 
   // 1) Every core deletes the /tmp/*.npy files, can be done in race mode
@@ -197,7 +202,12 @@ int main(int argc, char *argv[])
       exit(1);
     }      
   }
-  //  fprintf(stderr,"STEP3: %d\n",myid); fflush(stderr);
+  fprintf(stderr,"STEP3: %d\n",myid); fflush(stderr);
+
+#if(USEMPI)
+      // Barrier required to ensure sequential access since no idea what order of cores is on system and how bunched into nodes.  Could use name of processor that id's the node, somewhow.
+      MPI_Barrier(MPI_COMM_WORLD);
+#endif
 
   /// get whether files exist for copying
   int fileexists1=0;
@@ -217,14 +227,14 @@ int main(int argc, char *argv[])
     // file doesn't exist
   }
 
-  //    fprintf(stderr,"STEP3b: %d %d\n",id,myid); fflush(stderr);
+  fprintf(stderr,"STEP3b: %d %d\n",id,myid); fflush(stderr);
 #if(USEMPI)
       // Barrier required to ensure sequential access since no idea what order of cores is on system and how bunched into nodes.  Could use name of processor that id's the node, somewhow.
       MPI_Barrier(MPI_COMM_WORLD);
 #endif
-      //    fprintf(stderr,"STEP3c: %d %d\n",id,myid); fflush(stderr);
+      fprintf(stderr,"STEP3c: %d %d\n",id,myid); fflush(stderr);
 
-      //  fprintf(stderr,"STEP4: %d\n",myid); fflush(stderr);
+      fprintf(stderr,"STEP4: %d\n",myid); fflush(stderr);
 
   // 2) Every core that first sees no file, copies over the file.
   char systemstring1[MAXCHUNKSTRING+MAXGENNAME];
@@ -282,20 +292,20 @@ int main(int argc, char *argv[])
         }
       }
 
-      //      fprintf(stderr,"STEP5a: %d %d\n",id,myid); fflush(stderr);
+      fprintf(stderr,"STEP5a: %d %d\n",id,myid); fflush(stderr);
 
       
     }// end if myid==id
 
-    //    fprintf(stderr,"STEP5b: %d %d\n",id,myid); fflush(stderr);
+    fprintf(stderr,"STEP5b: %d %d\n",id,myid); fflush(stderr);
 #if(USEMPI)
       // Barrier required to ensure sequential access since no idea what order of cores is on system and how bunched into nodes.  Could use name of processor that id's the node, somewhow.
       MPI_Barrier(MPI_COMM_WORLD);
 #endif
-      //    fprintf(stderr,"STEP5c: %d %d\n",id,myid); fflush(stderr);
+      fprintf(stderr,"STEP5c: %d %d\n",id,myid); fflush(stderr);
     
   }
-  //  fprintf(stderr,"STEP6: %d\n",myid); fflush(stderr);
+  fprintf(stderr,"STEP6: %d\n",myid); fflush(stderr);
  
 
   ////////////////////////////////////////
@@ -311,7 +321,7 @@ int main(int argc, char *argv[])
     runpy_interactive_system(argc-numargs, argv+numargs);
   }
 
-  //  fprintf(stderr,"STEP7: %d\n",myid); fflush(stderr);
+  fprintf(stderr,"STEP7: %d\n",myid); fflush(stderr);
 
   // go back to directory where job list and completion info is kept
   error=chdir(cwdnew);
