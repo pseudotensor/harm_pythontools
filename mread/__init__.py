@@ -8970,7 +8970,7 @@ def rddims(gotrad):
         KORAL2HARMRHO1 = np.float64(dimfile[20])
         fin.close()
         #
-    else: #if(gotrad==1 and isradmodeltype2(modelname)): # default
+    elif(gotrad==1):
         # then also get radiation constants
         fname= "dimensions.txt"
         fin = open(fname, "rt" )
@@ -10142,6 +10142,8 @@ def mdot(a,b):
     else:
            raise Exception('mdot', 'wrong dimensions')
     return c
+
+
 
 def fieldcalc(gdetB1=None):
     """
@@ -28403,6 +28405,8 @@ def main(argv=None):
     #
     # end test code
     #####################
+    # to get type of file (so gotrad defined)
+    rfdheaderfirstfile()
     # runtype==-1 just skip and do nothing
     #
     if runtype==0:
@@ -28496,7 +28500,57 @@ def main(argv=None):
         gc.collect()
 
 
-def tutorial1(modelname="blandford3d_new",filename=None,fignum=None,whichplot=1):
+def doitmb09q():
+    # tempcase 1 2 3
+    # betaccase 1 2
+    # cuttype 1 2 3
+    #whichplots=[1, 14, 16, 22]
+    whichplots=[1,22]
+    for whichplot in whichplots:
+        tempcases=[1, 2, 3]
+        for tempcase in tempcases:
+            betaccases=[1, 2]
+            for betaccase in betaccases:
+                cuttypes=[1, 2]
+                for cuttype in cuttypes:
+                    tutorial1(modelname="blandford3d_new",filename="fieldline2140.bin",fignum=3,whichplot=whichplot,tempcase=tempcase,betaccase=betaccase,cuttype=cuttype)
+                #
+
+
+def doitmb09d():
+    # tempcase 1 2 3
+    # betaccase 1 2
+    # cuttype 1 2 3
+    whichplots=[1, 14, 16, 22]
+    #whichplots=[1,22]
+    for whichplot in whichplots:
+        tempcases=[1, 2, 3]
+        for tempcase in tempcases:
+            betaccases=[1, 2]
+            for betaccase in betaccases:
+                cuttypes=[1, 2]
+                for cuttype in cuttypes:
+                    tutorial1(modelname="runlocaldipole3dfiducial",filename="fieldline1600.bin",fignum=3,whichplot=whichplot,tempcase=tempcase,betaccase=betaccase,cuttype=cuttype)
+                #
+
+def doitthickdisk7():
+    # tempcase 1 2 3
+    # betaccase 1 2
+    # cuttype 1 2 3
+    #whichplots=[1, 14, 16, 22]
+    whichplots=[14, 16]
+    for whichplot in whichplots:
+        tempcases=[1, 2, 3]
+        for tempcase in tempcases:
+            betaccases=[1, 2, 3]
+            for betaccase in betaccases:
+                cuttypes=[1, 2]
+                for cuttype in cuttypes:
+                    tutorial1(modelname="thickdisk7",filename="fieldline5550.bin",fignum=3,whichplot=whichplot,tempcase=tempcase,betaccase=betaccase,cuttype=cuttype)
+                #
+
+
+def tutorial1(modelname="blandford3d_new",filename=None,fignum=None,whichplot=1,tempcase=None,betaccase=None,cuttype=None):
     # first load grid file
     grid3d("gdump.bin")
     if(filename==None):
@@ -28508,6 +28562,13 @@ def tutorial1(modelname="blandford3d_new",filename=None,fignum=None,whichplot=1)
     # now plot something you read-in
     plt.close(fignum)
     fig=plt.figure(fignum)
+    #
+    if modelname=="thickdisk7":
+        print("rextend=%g" % (r[143,0,0])) ;sys.stdout.flush()
+    if modelname=="blandford3d_new":
+        print("rextend=%g" % (r[120,0,0])) ;sys.stdout.flush()
+    if modelname=="runlocaldipole3dfiducial":
+        print("rextend=%g" % (r[120,0,0])) ;sys.stdout.flush()
     #
     GGG0=(6.674e-8)
     CCCTRUE0=(2.99792458e10) #// cgs in cm/s
@@ -28525,21 +28586,50 @@ def tutorial1(modelname="blandford3d_new",filename=None,fignum=None,whichplot=1)
     betaplasma=pg/(bsq/2.0)
     # code Tgas for ideal gas in units of m_p c^2
     TgasK=pg/(rho/MUMEAN)*(MB*CCCTRUE0**2)/K_BOLTZ
+    #
+    if tempcase==None:
+        tempcase=1
+    #
     if modelname=="thickdisk7":
-        #Trat=35 ###### from Roman table
-        Trat=10 ###### from Roman table
-        #
-        #Trat=2
-        #Trat=100
+        if tempcase==1:
+            Trat=10 ###### from Roman table MAD-disk
+        if tempcase==2:
+            Trat=35 ###### from Roman table MAD-jet
+        if tempcase==3:
+            Trat=100 # Alternative case
     if modelname=="blandford3d_new":
-        Trat=50 ###### from Roman table
-        #
-        #Trat=1E5
-        #Trat=100
+        print("rextend=%g" % (r[120,0,0])) ;sys.stdout.flush()
+        if tempcase==1:
+            Trat=35
+        if tempcase==2:
+            Trat=50 ###### from Roman table quadrupole disk
+        if tempcase==3:
+            Trat=100
+    if modelname=="runlocaldipole3dfiducial":
+        # runlocaldipole3dfiducial
+        print("rextend=%g" % (r[120,0,0])) ;sys.stdout.flush()
+        if tempcase==1:
+            Trat=35
+        if tempcase==2:
+            Trat=50 ###### from Roman table dipole disk
+        if tempcase==3:
+            Trat=100
+    #
     TejetK=Trat*(MELE*CCCTRUE0**2)/K_BOLTZ
+    #
+    # effectively accounting for Shcherbakov integration for near-BH region.
     TediskK=TgasK/10.0 ###### need T(u/rho)
+    #
+    if betaccase==None:
+        betaccase=1
+    #
     if 1==1:
-        betac=1.0 # Roman choice
+        if betaccase==1:
+            betac=1.0 # Roman choice for MADdisk, dipole, and quadrupole
+        if betaccase==2:
+            betac=4.0 # Roman choice for MADjet
+        if betaccase==3:
+            betac=40.0 # Alt Roman choice
         #betac=1E-5
         TefinalK=TediskK*np.exp(-bsq/rho/betac) + TejetK*(1.0-np.exp(-bsq/rho/betac))
         #TefinalK[TefinalK>0.5*TgasK]=0.5*TgasK[TefinalK>0.5*TgasK]
@@ -28564,28 +28654,37 @@ def tutorial1(modelname="blandford3d_new",filename=None,fignum=None,whichplot=1)
     #
     TeK=np.float64(TefinalK)
     #
-    # remove floor region
-    romansetup=1
+    # how remove floor region
+    if cuttype==None:
+        cuttype=1
     #
-    if romansetup==1:
+    if cuttype==1:
+        bsqorhocut=1000 # i.e. includejet=1
+    elif cuttype==2:
         bsqorhocut=4 ######## Roman default
-    else:
-        bsqorhocut=40 ######## was 4
-        #
+    elif cuttype==3:
+        bsqorhocut=10
+        #bsqorhocut=40 ######## was 4
+        #bsqorhocut=100 ######## was 4
+    #
     rho[bsq/rho>bsqorhocut]=rho[bsq/rho>bsqorhocut]*1E-10
     #
     if modelname=="thickdisk7":
-        thlimit=0.02
+        thlimit=0.025
         tjlimit=8
         jsnufloor=1E-7
         rhofact=4E-18 # how much in grams is 1 unit of code density
-    if modelname=="blandford3d_new":
+    if modelname=="blandford3d_new" or modelname=="runlocaldipole3dfiducial":
         thlimit=0.01
         tjlimit=3
         jsnufloor=1E-15
         rhofact=4E-17 # how much in grams is 1 unit of code density
     #
-    if romansetup==1:
+    # for polar axis cut
+    polarcuttype=1
+    #
+    # how to excise polar axis
+    if polarcuttype==1:
         rho[1.0-np.fabs(np.cos(h))<thlimit]=0
     else:
         rho[tj<tjlimit]=0
@@ -28606,6 +28705,9 @@ def tutorial1(modelname="blandford3d_new",filename=None,fignum=None,whichplot=1)
     gg = np.float64(1.0)
     gg = np.float64( dd*phii**(-ee) )
     #
+    rhor=1+(1-a**2)**0.5
+    ihor = np.floor(iofr(rhor)+0.5)
+    omegah=a/(2*rhor)
     #
     kappa = np.float64(2E-11*ne*BG**(-1.0)*T10**(-5.0)*gg)
     #
@@ -28625,9 +28727,17 @@ def tutorial1(modelname="blandford3d_new",filename=None,fignum=None,whichplot=1)
     #
     jsnu=np.float64(4.43E-30*nuM*ne*xM*Iprime/(2.0*thetae**2)*dnu)
     #
+    if modelname=="thickdisk7":
+        Mdotavghor=48
+    if modelname=="blandford3d_new":
+        Mdotavghor=0.94
+    if modelname=="runlocaldipole3dfiducial":
+        Mdotavghor=0.082
+    #
     #
     if(whichplot==1):
-        lrho=np.log10(rho)
+        # rho r_g^3/(r_g/c) / Mdot
+        lrho=np.log10(rho/Mdotavghor)
         #lrho=np.log10(Erf)
     if(whichplot==2):
         lrho=yfl1/rho
@@ -28635,6 +28745,7 @@ def tutorial1(modelname="blandford3d_new",filename=None,fignum=None,whichplot=1)
         lrho[lrho>1]=1
     if(whichplot==3):
         lrho=np.log10(bsq/rho)
+        #lrho=np.log10(bsq)
     if(whichplot==4):
         lrho=uu[0]
     if(whichplot==5):
@@ -28648,9 +28759,6 @@ def tutorial1(modelname="blandford3d_new",filename=None,fignum=None,whichplot=1)
     if(whichplot==9):
         lrho=yfl5
     if(whichplot==10):
-        rhor=1+(1-a**2)**0.5
-        ihor = np.floor(iofr(rhor)+0.5)
-        omegah=a/(2*rhor)
         lrho=fomegaf2()*dxdxp[3,3]/omegah
         lrho[lrho>1]=1
         lrho[lrho<-1]=-1
@@ -28664,7 +28772,7 @@ def tutorial1(modelname="blandford3d_new",filename=None,fignum=None,whichplot=1)
         #lrho=np.log10(lambdarate) # lambdarate
         #lrho=BG**2/((1E-10+rhotrue)*CCCTRUE0**2) #np.log10(jsnu+1E-50)
         #lrho=np.log10(jsnu+1E-50)
-        lrho=np.log10(jsnu+jsnufloor)
+        lrho=np.log10((jsnu+jsnufloor)/Mdotavghor)
         #lrho=TeK
         #
     if(whichplot==15):
@@ -28685,31 +28793,51 @@ def tutorial1(modelname="blandford3d_new",filename=None,fignum=None,whichplot=1)
     if(whichplot==19):
         lrho=np.log10(rhoclean+1E-10)
         #lrho=np.log10(Erf)
+    if(whichplot==20):
+        lrho=B[3]*np.sqrt(gv3[3,3])*r
+        #lrho[r<1.1*rhor]=0
+    if(whichplot==21):
+        faraday()
+        
+        lrho=B[3]*np.sqrt(gv3[3,3])*r/np.average(np.fabs(B[1][ihor,:,:]*np.sqrt(gv3[1,1][ihor,:,:])*rhor))
+    if(whichplot==22):
+        # B^2 = Mdot c^2*(r_g/c) / r_g^3 = Mdot c/r_g^2 -> B^2 r_g^2/(c Mdot) is dimensionless
+        Bphigauss = B[3]*np.sqrt(4.0*np.pi)
+        lrho=Bphigauss*np.sqrt(gv3[3,3])*r/(np.sqrt(Mdotavghor)*rhor)
     #lrho=bsq/rho
     #plco(lrho,cb=True,nc=50)
     #plt.imshow(lrho)
-    #aphi = fieldcalc() # keep sign information
-    #plc(aphi,colors='k')
     #
     ax = plt.gca()
+    #
     #nxout=iofr(10.0)
     #myx=r[0:nxout:,:,0]*np.sin(h[0:nxout,:,0])*np.cos(ph[0:nxout,:,0])
     #myy=r[0:nxout,:,0]*np.sin(h[0:nxout,:,0])*np.sin(ph[0:nxout,:,0])
     #myz=r[0:nxout,:,0]*np.cos(h[0:nxout,:,0])
     #plt.pcolormesh(myx,myz,lrho[0:nxout,:,0]) #,vmin=vmintoplot,vmax=vmaxtoplot)
-    len=20
+    len=15
     extent=(0,len,-len,len)
     ncell=800
     Rhor=1+sqrt(1.0-a**2)
     domask=Rin/Rhor
+    domask=1.0
     ifun = reinterp(lrho,extent,ncell,domask=domask,interporder='linear')
     #
-    plt.imshow(ifun,extent=extent)
+    cmap = matplotlib.cm.jet
+    cmap.set_bad('black',1.)
+    plt.imshow(ifun,extent=extent,cmap=cmap)
     #plt.axis([x.min(), x.max(), y.min(), y.max()])
     #plt.axis([0, limitx, 0, limity])
     #ax.set_aspect('equal')   
-    if whichplot==14 or whichplot==16:
+    if whichplot==14 or whichplot==16 or whichplot==1:
         plt.colorbar(format=r'$10^{%0.1f}$')
+        #plt.axis([0, len, -len, len])
+        plt.xlabel(r'$x [r_g]$',fontsize=16,ha='left')#,labelpad=0)
+        plt.ylabel(r'$z [r_g]$',fontsize=16,ha='left')#,labelpad=20)
+        #plt.xlabel('R/rg')
+        #plt.ylabel('z/rg')
+    elif whichplot==22:
+        plt.colorbar(format=r'$%0.2f$')
         #plt.axis([0, len, -len, len])
         plt.xlabel(r'$x [r_g]$',fontsize=16,ha='left')#,labelpad=0)
         plt.ylabel(r'$z [r_g]$',fontsize=16,ha='left')#,labelpad=20)
@@ -28727,8 +28855,25 @@ def tutorial1(modelname="blandford3d_new",filename=None,fignum=None,whichplot=1)
         ax.contour(ifun,linewidths=2,colors='cyan', extent=extent,hold='on',origin='lower',levels=(0.25,))
         ax.contour(ifun,linewidths=2,colors='green', extent=extent,hold='on',origin='lower',levels=(0.4,))
     #
+    if(whichplot==1 or whichplot==20 or whichplot==21 or whichplot==22):
+        aphi = fieldcalc() # keep sign information
+        #fieldcalcU(gdetB1))
+        aphi3d= fieldcalcU3D()
+        iaphi = reinterp(aphi,extent,ncell,domask=domask,interporder='linear')
+        miniaphi=np.min((iaphi))
+        maxiaphi=np.max((iaphi))
+        ncont=20
+        levs=np.linspace(miniaphi,maxiaphi,ncont)
+        ax.contour(iaphi,linewidths=1,colors='black', extent=extent,hold='on',origin='lower',levels=levs)
+        #ncont=10
+        # Aphi,\theta = r^2 \sin\theta B^r
+        #dAphi = 
+        #maxaphi=ncont*dAphi
+        #levs=np.linspace(0,maxaphi,ncont)
+        #ax.contour(iaphi,linewidths=1,colors='black', extent=extent,hold='on',origin='lower',levels=lev)
+        #plc(aphi,colors='k',ax=ax)
     #
-    plt.savefig("plot_%s_%s_%d_%g_%d.png" % (modelname,filename,whichplot,Trat,romansetup),bbox_inches='tight')
+    plt.savefig("plot_%s_%s_%d_%g_%g_%g_%d.png" % (modelname,filename,whichplot,Trat,betac,bsqorhocut,polarcuttype),bbox_inches='tight')
     #
     #
     vminmost=np.amin(lrho)
@@ -28829,6 +28974,37 @@ def tutorial1a(filename=None,which=1,fignum=1):
         uradd = mdot(gv3,uradu)                  #g_mn urad^n
         #myfun=np.log10(-fTudRAD(0,0)*1E30)
         myfun=-fTudRAD(0,0)
+    if(which==17):
+        pg=(gam-1.0)*ug
+        betaplasma=pg/(bsq/2.0)
+        ibetaplasma=(bsq/2.0)/pg
+        # code Tgas for ideal gas in units of m_p c^2
+        GGG0=(6.674e-8)
+        CCCTRUE0=(2.99792458e10) #// cgs in cm/s
+        MSUN=(1.989E33) #//cgs in grams
+        ARAD=(7.56593E-15) #// cgs in erg/(K^4 cm^3)
+        K_BOLTZ=(1.3806488e-16) #// cgs in erg/K
+        M_PROTON=(1.67262158e-24) #// proton mass in cgs in grams
+        MB=(1.66054E-24)
+        MPOME=(1836.15)
+        MELE=(M_PROTON/MPOME) #// electron mass in cgs in grams
+        HPLANCK=(6.62607E-27) #// cgs
+        QCHARGE=(4.8029E-10) #// cgs
+        #
+        TgasK=pg/(rho/MUMEAN)*(MB*CCCTRUE0**2)/K_BOLTZ
+        #
+        myfun=np.log10(bsq/(1E-10+ug))
+    if(which==18):
+        myfun=np.log10(ug)
+    if(which==19):
+        myfun=ug/rho
+        myfun[myfun>100]=100
+        myfun[myfun<0]=0
+    if(which==20):
+        myfun=1.0/rho
+        myfun[myfun>10]=10
+    if(which==21):
+        myfun=Tgas
     #
     plt.imshow(myfun[:,:,whichaphi])
     plt.colorbar()
@@ -28871,12 +29047,17 @@ def tutorial1a(filename=None,which=1,fignum=1):
     bsqopg=bsq/(pg)
     bsqourad=bsq/(urad)
     bsqoprad=bsq/(prad)
-    arglist=[myfun,bsqorho,bsqoall,uu[0],bsqoug,bsqopg,bsqourad,bsqoprad,r,h,np.log10(tauradlocal)]
-    argnamelist=["myfun","bsqorho","bsqoall","uu0","bsqoug","bsqopg","bsqourad","bsqoprad","r","h","log10(tauradlocal)"]
-    cid = fig.canvas.mpl_connect('button_press_event', lambda event: onclick2(event,arglist,argnamelist,domask=domask))
+    #arglist=[myfun,bsqorho,bsqoall,uu[0],bsqoug,bsqopg,bsqourad,bsqoprad,r,h,np.log10(tauradlocal)]
+    #argnamelist=["myfun","bsqorho","bsqoall","uu0","bsqoug","bsqopg","bsqourad","bsqoprad","r","h","log10(tauradlocal)"]
+    #cid = fig.canvas.mpl_connect('button_press_event', lambda event: onclick2(event,arglist,argnamelist,domask=domask))
+    #
+    arglist=[myfun,bsqorho,bsqoall,uu[0],uradu[0],bsqoug,bsqopg,bsqourad,bsqoprad,r,h,np.log10(tauradlocal)]
+    argnamelist=["myfun","bsqorho","bsqoall","uu0","uru0","bsqoug","bsqopg","bsqourad","bsqoprad","r","h","log10(tauradlocal)"]
+    whichtj=-1
+    cid = fig.canvas.mpl_connect('button_press_event', lambda event: onclick2(event,arglist,argnamelist,whichaphi,whichtj,domask=domask))
     #
 
-def onclick2(event,arglist,argnamelist,domask=1.0):
+def onclick2old(event,arglist,argnamelist,domask=1.0):
     #thisline = event.artist
     #xdata2 = thisline.get_xdata()
     #ydata2 = thisline.get_ydata()
@@ -29425,7 +29606,7 @@ def tutorial1other(filename=None,fignum=None,whichplot=1):
     argnamelist=["yfl1true","lrho","lrhofl","uu0","bsq/rho"]
     cid = fig.canvas.mpl_connect('button_press_event', lambda event: onclick(event,arglist,argnamelist,domask=domask))
 
-def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0,whichtj=-1,outerti=100):
+def tutorial1aother(filename=None,which=1,fignum=1,whichaphi=0,whichtj=-1,outerti=100):
     global modelname
     modelname="radtma0.8"
     #
