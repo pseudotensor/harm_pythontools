@@ -8270,6 +8270,12 @@ def rfdheader(fin=None):
         THETAROT=0.0
         numcolumns=11 # master branch        
         #
+    #
+    global gotrad
+    gotrad=0 # where gotrad defined as 0 and overwritten if appropriate
+    if(numcolumns==16 or numcolumns==29):
+        gotrad=1
+    #
     print("Found %d header items\n" % (numheaderitems))  ; sys.stdout.flush()
 
 def rfdheaderonly(filename="dumps/fieldline0000.bin"):
@@ -8539,9 +8545,7 @@ def rfd(fieldlinefilename,**kwargs):
     # get any radiation variables
     #
     global gotrad
-    gotrad=0 # where gotrad defined as 0 and overwritten if appropriate
     if(numcolumns==16 or numcolumns==29):
-        gotrad=1
         Erf=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
         uradu=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
         Erf=d[sii+3,:,:,:] # radiation frame radiation energy density
