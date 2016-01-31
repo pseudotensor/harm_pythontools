@@ -1769,7 +1769,7 @@ numfiles=`find dumps/ -name "fieldline*.bin"|wc -l`
 echo "NUMFILES=$numfiles"
 
 #itemspergroup=$(( 1 )) # MAVARA
-itemspergroup=$(( 20 ))
+itemspergroup=$(( 4 ))
 
 # catch too small number of files
 # must match __init__.py
