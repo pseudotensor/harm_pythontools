@@ -635,6 +635,17 @@ then
 
 fi
 
+
+
+#############################################
+# setup tasks, cores, and nodes for make2davg
+numtasksavg=$(($numtasks/$itemspergroup))
+numtasksavg=$(($truenumtasks+1))
+numtaskscorravg=$(($numtasksavg))
+numtotalnodesavg=$((($numtaskscorravg+$numtaskspernode-1)/$numtaskspernode))
+
+
+
 #############################################
 # physics-179
 if [ $system -eq 6 ]
@@ -1983,7 +1994,7 @@ then
                             rm -rf $localerrorfile
                             rm -rf $localoutputfile
                             #
-		                    bsubcommand="sbatch -A $ACCOUNT -t $timetot -p $thequeue -n $numtasks -N $numtotalnodes -J $jobname -o $outputfile -e $errorfile --mail-user=$emailaddr --mail-type=begin --mail-type=end ./$superbatch"
+		                    bsubcommand="sbatch -A $ACCOUNT -t $timetot -p $thequeue -n $numtasksavg -N $numtotalnodesavg -J $jobname -o $outputfile -e $errorfile --mail-user=$emailaddr --mail-type=begin --mail-type=end ./$superbatch"
                         elif [ $system -eq 5 ]
                         then
                             superbatch=superbatchfile.$thebatch
@@ -2006,7 +2017,7 @@ then
                             rm -rf $localerrorfile
                             rm -rf $localoutputfile
                             #
-		                    bsubcommand="qsub  -S /bin/bash -A $ACCOUNT -l walltime=$timetot,size=$numtotalcores -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
+		                    bsubcommand="qsub  -S /bin/bash -A $ACCOUNT -l walltime=$timetot,size=$numtotalcoresavg -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
                         else
                             # probably specifying ptile below is not necessary
 		                    bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernode] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
