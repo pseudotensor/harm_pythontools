@@ -485,6 +485,9 @@ static int myargs(int argc, char *argv[])
 
 
 
+    int runtype;
+    runtype=atoi(*(argv+numargs+2));
+
     ///////////////////////
     //
     // now get chunk list
@@ -493,7 +496,14 @@ static int myargs(int argc, char *argv[])
     get_chunklist(strsize,chunkliststring,chunklist,&numchunks);
     print_chunklist(numchunks,chunklist);
 
-    if(numchunks!=truenumprocs){
+    int itemspergroup=4; // needs to be same as in makemovie.sh
+
+    if(numchunks!=truenumprocs && runtype!=5){
+      myffprintf(stderr,"Must have numchunks=%d equal to truenumprocs=%d\n",numchunks,truenumprocs);
+      myffprintf(stderr,"Required since cannot fork(), so each proc can only call 1 python call.\n");
+      exit(1);
+    }
+    else if(0){ //numchunks!=truenumprocs && runtype==5){ // do later
       myffprintf(stderr,"Must have numchunks=%d equal to truenumprocs=%d\n",numchunks,truenumprocs);
       myffprintf(stderr,"Required since cannot fork(), so each proc can only call 1 python call.\n");
       exit(1);
