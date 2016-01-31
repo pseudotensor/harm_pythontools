@@ -639,7 +639,9 @@ fi
 
 #############################################
 # setup tasks, cores, and nodes for make2davg
-numtasksavg=$(($numtasks/$itemspergroup))
+#itemspergroup=$(( 1 )) # MAVARA
+itemspergroup=$(( 4 ))
+numtasksavg=$(( ($numtasks)/$itemspergroup))
 numtasksavg=$(($truenumtasks+1))
 numtaskscorravg=$(($numtasksavg))
 numtotalnodesavg=$((($numtaskscorravg+$numtaskspernode-1)/$numtaskspernode))
@@ -1779,8 +1781,6 @@ numfiles=`find dumps/ -name "fieldline*.bin"|wc -l`
 
 echo "NUMFILES=$numfiles"
 
-#itemspergroup=$(( 1 )) # MAVARA
-itemspergroup=$(( 4 ))
 
 # catch too small number of files
 # must match __init__.py
