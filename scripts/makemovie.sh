@@ -81,6 +81,10 @@ rminitfiles=0
 useoverride=0
 ilistoverride=`seq 24 31`
 runnoverride=128
+#############################################
+# setup tasks, cores, and nodes for make2davg
+#itemspergroup=$(( 1 )) # MAVARA
+itemspergroup=$(( 4 ))
 
 
 #########################################################################
@@ -485,6 +489,15 @@ then
     timetotplot="1:00:00" # for normal can go up to 48 hours.  For serial up to 12 hours.
 
 
+#############################################
+# setup tasks, cores, and nodes for make2davg
+#itemspergroup=$(( 1 )) # MAVARA
+itemspergroup=$(( 4 ))
+numtasksavg=$((($numtasks)/($itemspergroup)))
+numtasksavg=$(($numtasksavg+1))
+numtaskscorravg=$(($numtasksavg))
+numtotalnodesavg=$((($numtaskscorravg+$numtaskspernode-1)/$numtaskspernode))
+
 
 fi
 
@@ -637,14 +650,6 @@ fi
 
 
 
-#############################################
-# setup tasks, cores, and nodes for make2davg
-#itemspergroup=$(( 1 )) # MAVARA
-itemspergroup=$(( 4 ))
-numtasksavg=$(( ($numtasks)/$itemspergroup))
-numtasksavg=$(($numtasksavg+1))
-numtaskscorravg=$(($numtasksavg))
-numtotalnodesavg=$((($numtaskscorravg+$numtaskspernode-1)/$numtaskspernode))
 
 
 

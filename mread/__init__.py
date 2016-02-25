@@ -29104,8 +29104,6 @@ def tutorial1old(filename=None,fignum=None,whichplot=1):
     #lrho=bsq/rho
     #plco(lrho,cb=True,nc=50)
     #plt.imshow(lrho)
-    #aphi = fieldcalc() # keep sign information
-    #plc(aphi,colors='k')
     #
     ax = plt.gca()
     #nxout=iofr(10.0)
@@ -29123,6 +29121,9 @@ def tutorial1old(filename=None,fignum=None,whichplot=1):
     plt.imshow(ifun,extent=extent)
     plt.colorbar()
     #
+    aphi = fieldcalc() # keep sign information
+    iaphi = reinterp(aphi,extent,ncell,domask=domask,interporder='linear')
+    ax.contour(iaphi,linewidths=4,colors='black', extent=extent,hold='on',origin='lower')
     #################################################
     if(whichplot==2):
         ax.contour(ifun,linewidths=4,colors='cyan', extent=extent,hold='on',origin='lower',levels=(0,))
