@@ -489,14 +489,12 @@ then
     timetotplot="1:00:00" # for normal can go up to 48 hours.  For serial up to 12 hours.
 
 
-#############################################
-# setup tasks, cores, and nodes for make2davg
-#itemspergroup=$(( 1 )) # MAVARA
-itemspergroup=$(( 4 ))
-numtasksavg=$((($numtasks)/($itemspergroup)))
-numtasksavg=$(($numtasksavg+1))
-numtaskscorravg=$(($numtasksavg))
-numtotalnodesavg=$((($numtaskscorravg+$numtaskspernode-1)/$numtaskspernode))
+    #############################################
+    # setup tasks, cores, and nodes for make2davg
+    numtasksavg=$((($numtasks)/($itemspergroup)))
+    numtasksavg=$(($numtasksavg+1))
+    numtaskscorravg=$(($numtasksavg))
+    numtotalnodesavg=$((($numtaskscorravg+$numtaskspernode-1)/$numtaskspernode))
 
 
 fi
@@ -552,6 +550,13 @@ then
     thequeueplot="small"
     apcmdplot="aprun -n 1 -d 12 -cc none -a xt"
     timetotplot="8:00:00"
+
+    #############################################
+    # setup tasks, cores, and nodes for make2davg
+    numtasksavg=$((($numtasks)/($itemspergroup)))
+    numtasksavg=$(($numtasksavg+1))
+    numtaskscorravg=$(($numtasksavg))
+    numtotalnodesavg=$((($numtaskscorravg+$numtaskspernode-1)/$numtaskspernode))
 
 fi
 
@@ -645,6 +650,13 @@ then
 
     echo "PART1P: $numcorespernodeplot $numnodesplot $numtotalcoresplot $thequeueplot $timetotplot"
     echo "PART2P: $apcmdplot"
+
+    #############################################
+    # setup tasks, cores, and nodes for make2davg
+    numtasksavg=$((($numtasks)/($itemspergroup)))
+    numtasksavg=$(($numtasksavg+1))
+    numtaskscorravg=$(($numtasksavg))
+    numtotalnodesavg=$((($numtaskscorravg+$numtaskspernode-1)/$numtaskspernode))
 
 fi
 
