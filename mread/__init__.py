@@ -14762,16 +14762,16 @@ def fix_defaulttimes2(ts,fti,ftf):
 def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None,formovie=False):
     global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
     #
-    try:
-        gotrad
-    except NameError:
-        # to get "gotrad"
-        rfdfirstfile()
-        print("gotrad newly defined as %d" % (gotrad)) ; sys.stdout.flush()
-    else:
-        print("gotrad already defined as %d" % (gotrad)) ; sys.stdout.flush()
+    #try:
+    #    gotrad
+    #except NameError:
+    #    # to get "gotrad"
+    rfdfirstfile()
+    #    print("gotrad newly defined as %d" % (gotrad)) ; sys.stdout.flush()
+    #else:
+    #    print("gotrad already defined as %d" % (gotrad)) ; sys.stdout.flush()
     # controls many things for radiation runs
-    global gotrad
+    #global gotrad
     showrad=gotrad # assume if got, then show.
     
     #
