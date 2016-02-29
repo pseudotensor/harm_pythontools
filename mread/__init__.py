@@ -14773,12 +14773,13 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     # controls many things for radiation runs
     global gotrad
     showrad=gotrad # assume if got, then show.
+    
     #
     # need to compute this again
     rhor=1+(1-a**2)**0.5
     ihor = np.floor(iofr(rhor)+0.5)
     #
-    print("rhor=%g ihor=%d" % (rhor,ihor)) ; sys.stdout.flush()
+    print("showrad=%d rhor=%g ihor=%d" % (showrad,rhor,ihor)) ; sys.stdout.flush()
     #
     # choose radius where to measure total fluxes.  If ihor!=iflux for horizon quantities, components will be renormalized by totals
     #ifluxacc = iofr(2.0)
@@ -18466,10 +18467,12 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     # Jon's version of Mdot plot
     #
     if showrad:
+        print("In showrad True");
         normfactor=Leddcode
         radplotfactor=1.0;
         Mdotplotfactor=1.0/(mdotfinavg/normfactor)
     else:
+        print("In showrad False");
         normfactor=1.0
         radplotfactor=1.0/500.0;
         Mdotplotfactor=1.0;
