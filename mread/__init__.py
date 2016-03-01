@@ -8229,7 +8229,7 @@ def rfdheader(fin=None):
     THETAROT=0
     numcolumns=31
     if numheaderitems>=32:
-        print("Found 32 header items, reading them in\n")  ; sys.stdout.flush()
+        print("Found %d header items, reading them in\n" % (numheaderitems))  ; sys.stdout.flush()
         MBH=myfloatalt(float(header[19]))
         QBH=myfloatalt(float(header[20]))
         EP3=myfloatalt(float(header[21]))
@@ -8464,7 +8464,23 @@ def rfd(fieldlinefilename,**kwargs):
         uu[1:4]=uu[1:4] * uu[0]
         #
         sii=s00+4
-    else:
+    elif(numcolumns==9): # latest koralinsert code removed T stuff
+        s00=2
+        sii=6
+        rho=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
+        rho=d[0,:,:,:]
+        #matter internal energy in the fluid frame
+        ug=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
+        ug=d[1,:,:,:]
+        #d[4] is the time component of 4-velocity, u^t
+        #d[5:8] are 3-velocities, v^i
+        uu=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
+        uu=d[2:6,:,:,:]  #again, note uu[i] are 3-velocities (as read from the fieldline file)
+        #multiply by u^t to get 4-velocities: u^i = u^t v^i
+        uu[1:4]=uu[1:4] * uu[0]
+        #
+        #
+    else: # latest koralinsert code removed T stuff
         s00=2
         sii=8
         rho=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
@@ -8723,7 +8739,8 @@ def rfd(fieldlinefilename,**kwargs):
     #
     #
     # Only need to rotate data to align with THETAROT0 gdump if use2dglobal==True
-    if use2dglobal==True and (DEBUGTHETAROT or np.fabs(THETAROT-0.0)>1E-13):
+    #if use2dglobal==True and (DEBUGTHETAROT or np.fabs(THETAROT-0.0)>1E-13):
+    if 0: # GODMARK: For tilted, not working yet.  Have to use full 3D data.
         #
         print("rfd(before rfdtransform) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         # whether to always do transformation (for testing)
@@ -9787,6 +9804,9 @@ def grid3d(dumpname,use2d=False,doface=False,usethetarot0=False): #read grid dum
     # determine if need to read THETAROT0 or normal general gdump
     #../../dumps/gdump.THETAROT0.bin
     #
+    # GODMARK: For tilted sims, can't have use2d=True currently, so override
+    if np.fabs(THETAROT-0.0)>1E-13:
+        use2d=False
     #
     # for THETAROT!=0, assume gdump.THETAROT0.bin exists corresponding to the non-rotated THETAROT=0 version.
     # Using this vastly speeds-up read-in and doesn't use excessive (too much!) memory required for full 3D interpolation of (a minimum) gv3 while reading in all other things because binary and using np.fromfile().
@@ -23869,8 +23889,8 @@ def vminmax_rho(qty=None):
         vmaxforframe=-4.0
     elif isradmodel(modelname):
         # default
-        vminforframe=-10.0
-        vmaxforframe=-6.0
+        vminforframe=-8.0
+        vmaxforframe=-4.0
     else:
         # default
         vminforframe=-4.0
@@ -23909,8 +23929,8 @@ def vminmax_ug(qty=None):
         vminforframe=-10
         vmaxforframe=-5
     elif isradmodel(modelname):
-        vminforframe=-12
-        vmaxforframe=-7
+        vminforframe=-10
+        vmaxforframe=-5
     else:
         # default
         vminforframe=-6.0
@@ -23942,8 +23962,8 @@ def vminmax_bsq(qty=None):
         vminforframe=-10
         vmaxforframe=-5
     elif isradmodel(modelname):
-        vminforframe=-12
-        vmaxforframe=-7
+        vminforframe=-10
+        vmaxforframe=-5
     else:
         # default
         vminforframe=-7.0
@@ -23982,8 +24002,8 @@ def vminmax_entropy(qty=None):
         vminforframe=-8.0
         vmaxforframe=0.0
     elif isradmodel(modelname):
-        vminforframe=-10.0
-        vmaxforframe=-2.0
+        vminforframe=-8.0
+        vmaxforframe=0.0
     else:
         # default
         vminforframe=-1.0
@@ -24046,8 +24066,8 @@ def mkstreamplotprepost(fname=None,veldensity=8,inputlevs=None,numcontours=30,ap
         vminforframe=-8
         vmaxforframe=-4
     elif isradmodel(modelname):
-        vminforframe=-10
-        vmaxforframe=-6
+        vminforframe=-8
+        vmaxforframe=-4
     else:
         # default
         vminforframe=-4.0
@@ -26101,10 +26121,10 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
         vminforframerad=-8
         vmaxforframerad=-4
     elif isradmodel(modelname):
-        vminforframe=-10
-        vmaxforframe=-5
-        vminforframerad=-10
-        vmaxforframerad=-6
+        vminforframe=-8
+        vmaxforframe=-3
+        vminforframerad=-8
+        vmaxforframerad=-4
     else:
         # default
         vminforframe=-4.0
@@ -26691,8 +26711,8 @@ def mkavgfigs():
         vminforframe=-9
         vmaxforframe=-4
     elif isradmodel(modelname):
-        vminforframe=-11
-        vmaxforframe=-6
+        vminforframe=-9
+        vmaxforframe=-4
     else:
         # default
         vminforframe=-4.0
@@ -28413,7 +28433,7 @@ def main(argv=None):
     # GODMARK
     global use2dglobal
     # whether use 2d slice of gdump or full 3d
-    use2dglobal=True
+    use2dglobal=False
     # for now, use2dglobal=True doesn't work for tilted sims due to some transformation issue.
     #use2dglobal=False
     #
