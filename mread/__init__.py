@@ -14766,7 +14766,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #    gotrad
     #except NameError:
     #    # to get "gotrad"
-    rfdfirstfile()
+    rfdheaderfirstfile()
     #    print("gotrad newly defined as %d" % (gotrad)) ; sys.stdout.flush()
     #else:
     #    print("gotrad already defined as %d" % (gotrad)) ; sys.stdout.flush()
