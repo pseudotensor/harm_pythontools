@@ -26084,6 +26084,11 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
         vmaxforframe=-3
         vminforframerad=-8
         vmaxforframerad=-4
+    elif isradmodel(modelname):
+        vminforframe=-10
+        vmaxforframe=-5
+        vminforframerad=-10
+        vmaxforframerad=-6
     else:
         # default
         vminforframe=-4.0
