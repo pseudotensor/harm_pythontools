@@ -23867,6 +23867,10 @@ def vminmax_rho(qty=None):
         # default
         vminforframe=-8.0
         vmaxforframe=-4.0
+    elif isradmodel(modelname):
+        # default
+        vminforframe=-10.0
+        vmaxforframe=-6.0
     else:
         # default
         vminforframe=-4.0
@@ -23904,6 +23908,9 @@ def vminmax_ug(qty=None):
     elif isradmodelC(modelname):
         vminforframe=-10
         vmaxforframe=-5
+    elif isradmodel(modelname):
+        vminforframe=-12
+        vmaxforframe=-7
     else:
         # default
         vminforframe=-6.0
@@ -23934,6 +23941,9 @@ def vminmax_bsq(qty=None):
     elif isradmodelC(modelname):
         vminforframe=-10
         vmaxforframe=-5
+    elif isradmodel(modelname):
+        vminforframe=-12
+        vmaxforframe=-7
     else:
         # default
         vminforframe=-7.0
@@ -23971,6 +23981,9 @@ def vminmax_entropy(qty=None):
     elif isradmodelC(modelname):
         vminforframe=-8.0
         vmaxforframe=0.0
+    elif isradmodel(modelname):
+        vminforframe=-10.0
+        vmaxforframe=-2.0
     else:
         # default
         vminforframe=-1.0
@@ -24032,6 +24045,9 @@ def mkstreamplotprepost(fname=None,veldensity=8,inputlevs=None,numcontours=30,ap
     elif isradmodelC(modelname):
         vminforframe=-8
         vmaxforframe=-4
+    elif isradmodel(modelname):
+        vminforframe=-10
+        vmaxforframe=-6
     else:
         # default
         vminforframe=-4.0
@@ -26674,6 +26690,9 @@ def mkavgfigs():
     elif isradmodelC(modelname):
         vminforframe=-9
         vmaxforframe=-4
+    elif isradmodel(modelname):
+        vminforframe=-11
+        vmaxforframe=-6
     else:
         # default
         vminforframe=-4.0
