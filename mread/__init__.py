@@ -28433,12 +28433,7 @@ def main(argv=None):
     # GODMARK
     global use2dglobal
     # whether use 2d slice of gdump or full 3d
-    #use2dglobal=True
-    # for now, use2dglobal=True doesn't work for tilted sims due to some transformation issue.
-    if THETAROT==0.0:
-        use2dglobal=True
-    else:
-        use2dglobal=False
+    use2dglobal=True
     #
     # whether to compute Tud stuff globally -- uses lots of memory and not faster than just computing on spot
     global GLOBALTUD
@@ -28461,6 +28456,12 @@ def main(argv=None):
     #####################
     # to get type of file (so gotrad defined)
     rfdheaderfirstfile()
+    # for now, use2dglobal=True doesn't work for tilted sims due to some transformation issue.
+    if THETAROT==0.0:
+        use2dglobal=True
+    else:
+        use2dglobal=False
+    #
     # runtype==-1 just skip and do nothing
     #
     if runtype==0:
