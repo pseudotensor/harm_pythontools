@@ -6495,7 +6495,7 @@ def setupframe(gs=3,loadq=0,which=1):
         rfdheaderonly(firstfieldlinefile)
         #
         qtymem=None #clear to free mem
-        rhor=1+(1+a**2)**0.5
+        rhor=1+(1-a**2)**0.5
         ihor = np.floor(iofr(rhor)+0.5)
         qtymem=getqtyvstime(ihor,0.2)
     #
@@ -25631,7 +25631,7 @@ def ploteta():
     #rfd("fieldline0000.bin")  #to definea
     #grid3dlight("gdump")
     qtymem=None #clear to free mem
-    rhor=1+(1+a**2)**0.5
+    rhor=1+(1-a**2)**0.5
     ihor = np.floor(iofr(rhor)+0.5)
     qtymem=getqtyvstime(ihor,0.2)
     fig=plt.figure(0, figsize=(12,6), dpi=100)
@@ -25834,7 +25834,7 @@ def mkmovie(framesize=500, domakeavi=False):
         if(loadqtymem==1 and didloadqtymem==0):
             global qtymem
             qtymem=None #clear to free mem
-            rhor=1+(1+a**2)**0.5
+            rhor=1+(1-a**2)**0.5
             ihor = np.floor(iofr(rhor)+0.5)
             print("Loading qty file") ;sys.stdout.flush()
             qtymem=getqtyvstime(ihor,0.2)
@@ -27689,7 +27689,7 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
         #
         #grid3dlight("gdump")
         qtymem=None #clear to free mem
-        rhor=1+(1+a**2)**0.5
+        rhor=1+(1-a**2)**0.5
         ihor = np.floor(iofr(rhor)+0.5)
         qtymem=getqtyvstime(ihor,0.2)
         #flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
@@ -28150,7 +28150,7 @@ def oldstuff():
     if False:
         grid3d("gdump.bin")
         rfdfirstfile()
-        rhor=1+(1+a**2)**0.5
+        rhor=1+(1-a**2)**0.5
         ihor = np.floor(iofr(rhor)+0.5)
         hf=horfluxcalc(ivalue=ihor)
         df=diskfluxcalc(ny/2)
@@ -28172,7 +28172,7 @@ def oldstuff():
             grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=use2dglobal )
             rd( "dump0000.bin" )
             qtymem=None #clear to free mem
-            rhor=1+(1+a**2)**0.5
+            rhor=1+(1-a**2)**0.5
             ihor = np.floor(iofr(rhor)+0.5)
             qtymem=getqtyvstime(ihor,0.2)
             #flist = np.sort(glob.glob( os.path.join("dumps/", "fieldline*.bin") ) )
@@ -31031,3 +31031,43 @@ def Megantest(fnumber):
 
     return ibeta
 
+
+def areahor(filename=None):
+    # first load grid file
+    grid3d("gdump.bin",use2d=0)
+    #myr3d=mk2d3d(r)
+    #myh3d=mk2d3d(h)
+    #myph3d=mk2d3d(ph)
+    #for k in range(0,nz):
+    #    myph3d[:,:,k]=(0.5+k)*2*np.pi/nz
+    #
+    if(filename==None):
+        filename="fieldline0000.bin"
+    # now try loading a single fieldline file
+    rfd(filename)
+    #
+    rhor=1+(1-a**2)**0.5
+    print("rhor=%g" % (rhor))
+    #
+    ihor = np.floor(iofr(rhor)+0.5)
+    #unit=r*0+1
+    #unit=1.0/np.sqrt(gv3[1,1])
+    #unit=1.0*np.sqrt(gn3[1,1])
+    idxdxp11=dxdxp[2][2]/(dxdxp[2][2]*dxdxp[1][1]-dxdxp[2][1]*dxdxp[1][2])
+    unit=idxdxp11 # dx1/dr
+    #
+    area = np.sum(unit[ihor,:,:]*gdet[ihor,:,:]*_dx2*_dx3)
+    print("area=%g" % (area))
+    areashould = 4.0*np.pi/3.0*(3.0*rhor*rhor+a*a)
+    print("areashould=%g" % (areashould))
+    areaup = np.sum(unit[ihor,0:ny/2,:]*gdet[ihor,0:ny/2,:]*_dx2*_dx3)
+    print("areaup=%g" % (areaup))
+    areaupshould = areashould/2.0
+    print("areaupshould=%g" % (areaupshould))
+    scale=scaletofullwedge(1.0)
+    print("scale=%g" % (scale))
+    #
+    area = np.sum(unit[ihor,:,:]*gdet[ihor+1,:,:]*_dx2*_dx3)
+    print("area=%g" % (area))
+    areaup = np.sum(unit[ihor,0:ny/2,:]*gdet[ihor+1,0:ny/2,:]*_dx2*_dx3)
+    print("areaup=%g" % (areaup))
