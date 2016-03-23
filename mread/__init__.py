@@ -8276,6 +8276,7 @@ def rfdheader(fin=None):
     if(numcolumns==16 or numcolumns==29):
         gotrad=1
     #
+    rddims(gotrad)
     print("Found %d header items\n" % (numheaderitems))  ; sys.stdout.flush()
 
 def rfdheaderonly(filename="dumps/fieldline0000.bin"):
@@ -28554,13 +28555,37 @@ def main(argv=None):
         aphi = None
         gc.collect()
 
+# (Tesim,Tpsim,Torigsim)=rdroman(filename="T_grid_SANE_dipole-jet.dat",nxextra=350-nx)
+# (Tesim,Tpsim,Torigsim)=rdroman(filename="T_grid_SANE_quadrupole-disk.dat",nxextra=350-nx)
+# (Tesim,Tpsim,Torigsim)=rdroman(filename="T_grid_MAD-disk.dat",nxextra=650-nx)
+# (Tesim,Tpsim,Torigsim)=rdroman(filename="T_grid_MAD-jet.dat",nxextra=650-nx)
+
+def rdroman(filename=None,nxextra=None):
+    fin = open( filename, "rt" )
+    gd = np.loadtxt( filename, 
+                      dtype=np.float32, 
+                      skiprows=1, 
+                      unpack = True ).view().reshape((-1,nx+nxextra,ny,nz), order='C')
+    gd=myfloat(gd)
+    gc.collect()
+    ridxsim,thidxsim,phidxsim,Tesim,Tpsim,Torigsim,rhosim,rsim,costhsim = gd[0:11,:,:,:].view() 
+    #
+    print("ridxsim");
+    print(ridxsim[1,0,0])
+    print("thidxsim");
+    print(thidxsim[1,0,0])
+    print("phidxsim");
+    print(phidxsim[1,0,0])
+    #print("r");
+    #print(r[1,0,0])
+    return(Tesim[0:nx,0:ny,0:nz],Tpsim[0:nx,0:ny,0:nz],Torigsim[0:nx,0:ny,0:nz])
 
 def doitmb09q():
     # tempcase 1 2 3
     # betaccase 1 2
     # cuttype 1 2 3
-    #whichplots=[1, 14, 16, 22]
-    whichplots=[1,22]
+    whichplots=[1, 14, 16, 22]
+    #whichplots=[1,22]
     for whichplot in whichplots:
         tempcases=[1, 2, 3]
         for tempcase in tempcases:
@@ -28568,7 +28593,7 @@ def doitmb09q():
             for betaccase in betaccases:
                 cuttypes=[1, 2]
                 for cuttype in cuttypes:
-                    tutorial1(modelname="blandford3d_new",filename="fieldline2140.bin",fignum=3,whichplot=whichplot,tempcase=tempcase,betaccase=betaccase,cuttype=cuttype)
+                    sgrpol1(modelname="blandford3d_new",filename="fieldline2140.bin",fignum=3,whichplot=whichplot,tempcase=tempcase,betaccase=betaccase,cuttype=cuttype)
                 #
 
 
@@ -28585,15 +28610,15 @@ def doitmb09d():
             for betaccase in betaccases:
                 cuttypes=[1, 2]
                 for cuttype in cuttypes:
-                    tutorial1(modelname="runlocaldipole3dfiducial",filename="fieldline1600.bin",fignum=3,whichplot=whichplot,tempcase=tempcase,betaccase=betaccase,cuttype=cuttype)
+                    sgrpol1(modelname="runlocaldipole3dfiducial",filename="fieldline1600.bin",fignum=3,whichplot=whichplot,tempcase=tempcase,betaccase=betaccase,cuttype=cuttype)
                 #
 
 def doitthickdisk7():
     # tempcase 1 2 3
     # betaccase 1 2
     # cuttype 1 2 3
-    #whichplots=[1, 14, 16, 22]
-    whichplots=[14, 16]
+    whichplots=[1, 14, 16, 22]
+    #whichplots=[14, 16]
     for whichplot in whichplots:
         tempcases=[1, 2, 3]
         for tempcase in tempcases:
@@ -28601,11 +28626,15 @@ def doitthickdisk7():
             for betaccase in betaccases:
                 cuttypes=[1, 2]
                 for cuttype in cuttypes:
-                    tutorial1(modelname="thickdisk7",filename="fieldline5550.bin",fignum=3,whichplot=whichplot,tempcase=tempcase,betaccase=betaccase,cuttype=cuttype)
+                    sgrpol1(modelname="thickdisk7",filename="fieldline5550.bin",fignum=3,whichplot=whichplot,tempcase=tempcase,betaccase=betaccase,cuttype=cuttype)
                 #
 
+# default choices
+# sgrpol1(modelname="runlocaldipole3dfiducial",filename="fieldline1600.bin",fignum=1,whichplot=16,tempcase=3,betaccase=1,cuttype=1)
+# sgrpol1(modelname="blandford3d_new",filename="fieldline2140.bin",fignum=1,whichplot=16,tempcase=3,betaccase=1,cuttype=1)
+# sgrpol1(modelname="thickdisk7",filename="fieldline5550.bin",fignum=1,whichplot=16,tempcase=3,betaccase=1,cuttype=1)
 
-def tutorial1(modelname="blandford3d_new",filename=None,fignum=None,whichplot=1,tempcase=None,betaccase=None,cuttype=None):
+def sgrpol1(modelname="blandford3d_new",filename=None,fignum=None,whichplot=1,tempcase=None,betaccase=None,cuttype=None):
     # first load grid file
     grid3d("gdump.bin")
     if(filename==None):
@@ -28668,12 +28697,27 @@ def tutorial1(modelname="blandford3d_new",filename=None,fignum=None,whichplot=1,
         if tempcase==2:
             Trat=50 ###### from Roman table dipole disk
         if tempcase==3:
-            Trat=100
+            Trat=100 ###### dipole jet
     #
     TejetK=Trat*(MELE*CCCTRUE0**2)/K_BOLTZ
     #
-    # effectively accounting for Shcherbakov integration for near-BH region.
-    TediskK=TgasK/10.0 ###### need T(u/rho)
+    #
+    if modelname=="thickdisk7":
+        if tempcase==1:
+            (Tesim,Tpsim,Torigsim)=rdroman(filename="T_grid_MAD-disk.dat",nxextra=650-nx)
+        if tempcase==2 or tempcase==3: # 3 is fake
+            (Tesim,Tpsim,Torigsim)=rdroman(filename="T_grid_MAD-jet.dat",nxextra=650-nx)
+        TediskK=Tesim
+    elif modelname=="blandford3d_new":
+        (Tesim,Tpsim,Torigsim)=rdroman(filename="T_grid_SANE_quadrupole-disk.dat",nxextra=350-nx)
+        TediskK=Tesim
+    elif modelname=="runlocaldipole3dfiducial":
+        (Tesim,Tpsim,Torigsim)=rdroman(filename="T_grid_SANE_dipole-jet.dat",nxextra=350-nx)
+        TediskK=Tesim
+    else:
+        # effectively accounting for Shcherbakov integration for near-BH region.
+        TediskK=TgasK/10.0 ###### need T(u/rho)
+
     #
     if betaccase==None:
         betaccase=1
