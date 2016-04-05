@@ -8481,6 +8481,31 @@ def rfd(fieldlinefilename,**kwargs):
         uu[1:4]=uu[1:4] * uu[0]
         #
         #
+    elif(numcolumns==12): # tilted koralinsert no radiation
+        s00=2
+        sii=6
+        rho=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
+        rho=d[0,:,:,:]
+        #matter internal energy in the fluid frame
+        ug=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
+        ug=d[1,:,:,:]
+
+        yfl1=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
+        yfl1=d[2,:,:,:]
+        yfl2=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
+        yfl2=d[3,:,:,:]
+        yfl3=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
+        yfl3=d[4,:,:,:]
+
+        s00=5
+        #d[4] is the time component of 4-velocity, u^t
+        #d[5:8] are 3-velocities, v^i
+        uu=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
+        uu=d[s00:s00+4,:,:,:]  #again, note uu[i] are 3-velocities (as read from the fieldline file)
+        #multiply by u^t to get 4-velocities: u^i = u^t v^i
+        uu[1:4]=uu[1:4] * uu[0]
+        #
+        #
     else: # latest koralinsert code removed T stuff
         s00=2
         sii=8
@@ -25785,7 +25810,7 @@ def mkmovie(framesize=500, domakeavi=False):
         skip1b=(os.path.isfile("lrhosmall%04d_Rzxym1.png" % (filenum)))
         skip1c=(os.path.isfile("lrhovsmall%04d_Rzxym1.png" % (filenum)))
         #
-        from PIL import Image
+        #from PIL import Image
         if skip1a==1:
             try:
                 v_image = Image.open("lrho%04d_Rzxym1.png" % (filenum))
