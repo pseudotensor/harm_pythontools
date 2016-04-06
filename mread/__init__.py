@@ -8466,13 +8466,13 @@ def rfd(fieldlinefilename,**kwargs):
         #
         sii=s00+4
     elif(numcolumns==9): # latest koralinsert code removed T stuff
-        s00=2
-        sii=6
         rho=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
         rho=d[0,:,:,:]
         #matter internal energy in the fluid frame
         ug=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
         ug=d[1,:,:,:]
+        #
+        s00=2
         #d[4] is the time component of 4-velocity, u^t
         #d[5:8] are 3-velocities, v^i
         uu=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
@@ -8480,15 +8480,17 @@ def rfd(fieldlinefilename,**kwargs):
         #multiply by u^t to get 4-velocities: u^i = u^t v^i
         uu[1:4]=uu[1:4] * uu[0]
         #
+        sii=s00+4
+        #
         #
     elif(numcolumns==12): # tilted koralinsert no radiation
-        s00=2
-        sii=6
         rho=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
         rho=d[0,:,:,:]
         #matter internal energy in the fluid frame
         ug=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
         ug=d[1,:,:,:]
+
+        s00=2
 
         yfl1=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
         yfl1=d[2,:,:,:]
@@ -8505,22 +8507,23 @@ def rfd(fieldlinefilename,**kwargs):
         #multiply by u^t to get 4-velocities: u^i = u^t v^i
         uu[1:4]=uu[1:4] * uu[0]
         #
+        sii=s00+4
         #
     else: # latest koralinsert code removed T stuff
-        s00=2
-        sii=8
         rho=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
         rho=d[0,:,:,:]
         #matter internal energy in the fluid frame
         ug=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
         ug=d[1,:,:,:]
+        s00=4
         #d[4] is the time component of 4-velocity, u^t
         #d[5:8] are 3-velocities, v^i
         uu=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
-        uu=d[4:8,:,:,:]  #again, note uu[i] are 3-velocities (as read from the fieldline file)
+        uu=d[s00:s00+4,:,:,:]  #again, note uu[i] are 3-velocities (as read from the fieldline file)
         #multiply by u^t to get 4-velocities: u^i = u^t v^i
         uu[1:4]=uu[1:4] * uu[0]
         #
+        sii=s00+4
         #
     #
     if whichpoledeath==2:
@@ -29053,6 +29056,18 @@ def tutorial1a(filename=None,which=1,fignum=1):
     fig=plt.figure(fignum)
     plt.clf()
     ax = plt.gca()
+    #
+    testfun=bsq*0
+    testfun=np.logical_and(r>10,r<20)
+    testfun=np.logical_and(testfun,np.abs(h-0.5*np.pi)<0.05)
+    mybsq=bsq[testfun]
+    mypg=pg[testfun]
+    mygdet=gdet[testfun]
+    mybsqsum=np.sum(mybsq*mygdet)
+    mypgsum=np.sum(mypg*mygdet)
+    mysumrat=0.5*mybsqsum/mypgsum
+    print("mysumrat")
+    print(mysumrat)
     #
     whichaphi=0
     #
