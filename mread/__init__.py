@@ -23922,8 +23922,8 @@ def vminmax_rho(qty=None):
         vmaxforframe=-4.0
     else:
         # default
-        vminforframe=-4.0
-        vmaxforframe=2.0
+        vminforframe=-8.0
+        vmaxforframe=-4.0
     #
     vminforframe=np.log10(10.0**vminforframe/rhoeddcode)
     vmaxforframe=np.log10(10.0**vmaxforframe/rhoeddcode)
@@ -24099,8 +24099,8 @@ def mkstreamplotprepost(fname=None,veldensity=8,inputlevs=None,numcontours=30,ap
         vmaxforframe=-4
     else:
         # default
-        vminforframe=-4.0
-        vmaxforframe=2.0
+        vminforframe=-8.0
+        vmaxforframe=-4.0
     #
     vminforframe=np.log10(10.0**vminforframe/rhoeddcode)
     vmaxforframe=np.log10(10.0**vmaxforframe/rhoeddcode)
@@ -26156,8 +26156,8 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
         vmaxforframerad=-4
     else:
         # default
-        vminforframe=-4.0
-        vmaxforframe=2.0
+        vminforframe=-8.0
+        vmaxforframe=-4.0
     #
     if modelname=="radtest1":
         vminforframe=-13
@@ -26744,8 +26744,8 @@ def mkavgfigs():
         vmaxforframe=-4
     else:
         # default
-        vminforframe=-4.0
-        vmaxforframe=2.0
+        vminforframe=-8.0
+        vmaxforframe=-4.0
     #
     vminforframe=np.log10(10.0**vminforframe/rhoeddcode)
     vmaxforframe=np.log10(10.0**vmaxforframe/rhoeddcode)
