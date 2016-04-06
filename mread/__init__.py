@@ -2080,9 +2080,9 @@ def getrhouclean(rho,ug,uu):
         maxuu0high=50
     else:
         # default
-        maxbsqorhohigh=40
-        maxbsqorhonear=30
-        maxbsqorhofar=10
+        maxbsqorhohigh=100
+        maxbsqorhonear=50
+        maxbsqorhofar=5
         maxuu0high=50
     #
     #
@@ -2731,7 +2731,7 @@ def getdefaulttimes():
     return defaultfti,defaultftf
 
 def isthickdiskmodel(modelname):
-    if modelname=="thickdisk7":
+    if modelname=="sthickdiskmodelthickdisk7":
         return(1)
     elif modelname=="thickdiskr7":
         return(1)
@@ -3028,9 +3028,9 @@ def getdefaulttimes1():
     # set tilted models
     if isthickdiskmodel(modelname)==2:
         # all thickdisk models
-        defaultfti=14000 # real start at ~8000
+        defaultfti=4000 # real start at ~8000
         #defaultftf=17000 # real end a bit after 13000
-        defaultftf=17000 # but let go past if did run past.  can't go beyond about 17000 because of polarity flip
+        defaultftf=5000 # but let go past if did run past.  can't go beyond about 17000 because of polarity flip
     elif issashamodel(modelname)==2:
         # all other sasha models
         defaultfti=17000 # real start is ~8000
@@ -3130,8 +3130,8 @@ def getdefaulttimes2():
     #
     # set tilted models
     if isthickdiskmodel(modelname)==2:
-        defaultfti=11000 # real start at ~8000
-        defaultftf=14000 # real end a bit after 17000
+        defaultfti=4000 # real start at ~8000
+        defaultftf=5000 # real end a bit after 17000
     #
     #if modelname=="runrad1torusfixed":
     #    defaultfti=2000
@@ -23894,8 +23894,8 @@ def vminmax_rho(qty=None):
         vmaxforframe=0.5
     elif isthickdiskmodel(modelname):
         # for Jon's thickdisk models
-        vminforframe=-2.4
-        vmaxforframe=1.5625
+        vminforframe=-10
+        vmaxforframe=5.0
     elif isradmodelA(modelname):
         # default
         vminforframe=-6.0
@@ -23922,8 +23922,8 @@ def vminmax_rho(qty=None):
         vmaxforframe=-4.0
     else:
         # default
-        vminforframe=-4.0
-        vmaxforframe=2.0
+        vminforframe=-8.0
+        vmaxforframe=-10.0
     #
     vminforframe=np.log10(10.0**vminforframe/rhoeddcode)
     vmaxforframe=np.log10(10.0**vmaxforframe/rhoeddcode)
@@ -24099,8 +24099,8 @@ def mkstreamplotprepost(fname=None,veldensity=8,inputlevs=None,numcontours=30,ap
         vmaxforframe=-4
     else:
         # default
-        vminforframe=-4.0
-        vmaxforframe=2.0
+        vminforframe=-8.0
+        vmaxforframe=-4.0
     #
     vminforframe=np.log10(10.0**vminforframe/rhoeddcode)
     vmaxforframe=np.log10(10.0**vmaxforframe/rhoeddcode)
@@ -26156,8 +26156,8 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
         vmaxforframerad=-4
     else:
         # default
-        vminforframe=-4.0
-        vmaxforframe=2.0
+        vminforframe=-8.0
+        vmaxforframe=-4.0
     #
     if modelname=="radtest1":
         vminforframe=-13
@@ -26744,8 +26744,8 @@ def mkavgfigs():
         vmaxforframe=-4
     else:
         # default
-        vminforframe=-4.0
-        vmaxforframe=2.0
+        vminforframe=-8.0
+        vmaxforframe=-4.0
     #
     vminforframe=np.log10(10.0**vminforframe/rhoeddcode)
     vmaxforframe=np.log10(10.0**vmaxforframe/rhoeddcode)
