@@ -2078,6 +2078,11 @@ def getrhouclean(rho,ug,uu):
         maxbsqorhonear=50
         maxbsqorhofar=5
         maxuu0high=50
+    elif isdanilomodel(modelname):
+        maxbsqorhohigh=100
+        maxbsqorhonear=50
+        maxbsqorhofar=5
+        maxuu0high=50
     else:
         # default
         maxbsqorhohigh=100
@@ -2877,6 +2882,13 @@ def ismarkmodel(modelname):
         return(0)
     #
 
+def isdanilomodel(modelname):
+    if modelname=="tilt1" or modelname=="tilt2" or modelname=="tilt3" or modelname=="tiltfish1" or modelname=="tiltfish2":
+        return(1)
+    else:
+        return(0)
+    #
+
 # get averaging times if know the model type
 # defaultfti and defaultftf: averaging for tables and frame averages
 # default2fti and default2ftf: averaging for 
@@ -3067,6 +3079,11 @@ def getdefaulttimes1():
         defaultfti=50000
         defaultftf=1E6
     #
+    if isdanilomodel(modelname)==1:
+       defaultfti=4000
+       defaultftf=5000
+    #
+
     return defaultfti,defaultftf
 
 # get averaging times if know the model type
@@ -3149,6 +3166,9 @@ def getdefaulttimes2():
         defaultfti=10000
         defaultftf=1E5
     #
+    if isdanilomodel(modelname)==1:
+        defaultfti=4000
+        defaultftf=5000
     #
     return defaultfti,defaultftf
 
@@ -23920,15 +23940,17 @@ def vminmax_rho(qty=None):
         # default
         vminforframe=-8.0
         vmaxforframe=-4.0
+    elif isdanilomodel(modelname):
+        vminforframe=-10.0
+        vmaxforframe=-3.0
     else:
         # default
-        vminforframe=-8.0
-        vmaxforframe=-10.0
+        vminforframe=-10.0
+        vmaxforframe=-3.0
     #
     vminforframe=np.log10(10.0**vminforframe/rhoeddcode)
     vmaxforframe=np.log10(10.0**vmaxforframe/rhoeddcode)
     return(vminforframe,vmaxforframe)
-
 
 def vminmax_ug(qty=None):
     if ismb09model(modelname):
@@ -23960,6 +23982,9 @@ def vminmax_ug(qty=None):
     elif isradmodel(modelname):
         vminforframe=-10
         vmaxforframe=-5
+    elif isdanilomodel(modelname):
+        vminforframe=-6.0
+        vmaxforframe=4.0
     else:
         # default
         vminforframe=-6.0
@@ -23993,6 +24018,9 @@ def vminmax_bsq(qty=None):
     elif isradmodel(modelname):
         vminforframe=-10
         vmaxforframe=-5
+    elif isdanilomodel(modelname):
+        vminforframe=-7.0
+        vmaxforframe=3.0
     else:
         # default
         vminforframe=-7.0
@@ -24033,6 +24061,9 @@ def vminmax_entropy(qty=None):
     elif isradmodel(modelname):
         vminforframe=-8.0
         vmaxforframe=0.0
+    elif isdanilomodel(modelname):
+        vminforframe=-1.0
+        vmaxforframe=4.0
     else:
         # default
         vminforframe=-1.0
@@ -24097,10 +24128,13 @@ def mkstreamplotprepost(fname=None,veldensity=8,inputlevs=None,numcontours=30,ap
     elif isradmodel(modelname):
         vminforframe=-8
         vmaxforframe=-4
+    elif isdanilomodel(modelname):
+        vminforframe=-10
+        vmaxforframe=-3
     else:
         # default
-        vminforframe=-8.0
-        vmaxforframe=-4.0
+        vminforframe=-10.0
+        vmaxforframe=-3.0
     #
     vminforframe=np.log10(10.0**vminforframe/rhoeddcode)
     vmaxforframe=np.log10(10.0**vmaxforframe/rhoeddcode)
@@ -24116,12 +24150,6 @@ def mkstreamplotprepost(fname=None,veldensity=8,inputlevs=None,numcontours=30,ap
     B=np.copy(Btrue)
     #
     return(returnlevs)
-
-
-
-
-
-
 
 # cat datavsr6.txt | awk '{print $1" "$2" "$10" "$11}' | column -t | less -S
 # cat datavsr6.txt | awk '{print $1" "$2" "1.57-$10" "$11}' | column -t > datavsrshare.txt
@@ -24521,14 +24549,6 @@ def mkpowervsnlm(mode=None,truenfft=None,loadq=0,qty=None,pllabel="",filenum=0,f
     #
     # whichrun="thickdisk7" ; scp powervs*.txt rbarnormvs*.txt jmckinne@ki-jmck:/data2/jmckinne/$whichrun/fromorange_movie8new4/
     #
-
-
-
-
-
-
-
-
 
 def timeavg_vstvsr( qty, ts, fti, ftf, step = 1 ):
     cond = (ts<=ftf)*(ts>=fti)
@@ -26154,10 +26174,13 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
         vmaxforframe=-3
         vminforframerad=-8
         vmaxforframerad=-4
+    elif isdanilomodel(modelname):
+        vminforframe=-10
+        vmaxforframe=-3
     else:
         # default
-        vminforframe=-8.0
-        vmaxforframe=-4.0
+        vminforframe=-10.0
+        vmaxforframe=-3.0
     #
     if modelname=="radtest1":
         vminforframe=-13
@@ -26742,10 +26765,13 @@ def mkavgfigs():
     elif isradmodel(modelname):
         vminforframe=-9
         vmaxforframe=-4
+    elif isdanilomodel(modelname):
+        vminforframe=-10.0
+        vmaxforframe=-3.0
     else:
         # default
-        vminforframe=-8.0
-        vmaxforframe=-4.0
+        vminforframe=-10.0
+        vmaxforframe=-3.0
     #
     vminforframe=np.log10(10.0**vminforframe/rhoeddcode)
     vmaxforframe=np.log10(10.0**vmaxforframe/rhoeddcode)
