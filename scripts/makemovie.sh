@@ -491,7 +491,8 @@ then
 
     #############################################
     # setup tasks, cores, and nodes for make2davg
-    numtasksavg=$((($numtasks)/($itemspergroup)))
+    numtasksavg0=`ls dumps/fieldline*.bin |wc -l`  # true total number of tasks
+    numtasksavg=$((($numtasks0)/($itemspergroup)))
     numtasksavg=$(($numtasksavg+1))
     numtaskscorravg=$(($numtasksavg))
     numtotalnodesavg=$((($numtaskscorravg+$numtaskspernode-1)/$numtaskspernode))
