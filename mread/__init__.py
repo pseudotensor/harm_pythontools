@@ -26532,8 +26532,14 @@ def mkstreamplot1(Btrue=None,gdetB=None,bsq=None,rho=None,uu=None,len=30,lenx=No
     #if False:
         #velocity
         print("Doing velocity mkstreamplot1") ; sys.stdout.flush()
-        B=np.copy(Btrue)
-        B[1:] = np.copy(uu[1:])
+        # avoid override below if want to do what is inputted for streams
+        overrideB=1
+        if overrideB==1:
+            B=np.copy(Btrue)
+            B[1:] = np.copy(uu[1:])
+        else:
+            # use true B
+            B=np.copy(Btrue)
         # density=24 is highest quality but 10X-30X slower than density=8
         # 8 looks fine.
         # 2 good for testing.
@@ -26542,7 +26548,8 @@ def mkstreamplot1(Btrue=None,gdetB=None,bsq=None,rho=None,uu=None,len=30,lenx=No
         mkframe("myframe",dovel=True,len=len,lenx=lenx,leny=leny,ax=axnew,density=veldensity,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=vminforframe,vmax=vmaxforframe,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False,forceeqsym=forceeqsym,inputlevs=inputlevs)
         #
         # fix back
-        B=np.copy(Btrue)
+        if overrideB==1:
+            B=np.copy(Btrue)
     #
     if showuu1eq0==True:
     #if False:
@@ -26785,11 +26792,27 @@ def mkavgfigs():
         beta = avg_beta
         betatot = avg_betatot
         #
-        # normal field
         Btrue=np.zeros((4,nx,ny,nz),dtype=avg_B.dtype)
-        Btrue[1:4] = np.copy(avg_B[0:3])
-        B[1:4] = np.copy(avg_B[0:3])
-        gdetB[1:4] = np.copy(avg_gdetB[0:3])
+        if(1==1):
+            # normal field
+            Btrue[1:4] = np.copy(avg_B[0:3])
+            B[1:4] = np.copy(avg_B[0:3])
+            gdetB[1:4] = np.copy(avg_gdetB[0:3])
+        if(1==0):
+            # velocity
+            Btrue[1:4] = np.copy(avg_uu[0:3])
+            B[1:4] = np.copy(avg_uu[0:3])
+            gdetB[1:4] = np.copy(gdet*avg_uu[0:3])
+        if(1==0):
+            # mass flux
+            Btrue[1:4] = np.copy(avg_rhouu[0:3])
+            B[1:4] = np.copy(avg_rhouu[0:3])
+            gdetB[1:4] = np.copy(gdet*avg_rhouu[0:3])
+        if 1==0: # radiation flux lines instead of magnetic lines
+            for ll in np.arange(0,4):
+                Btrue[ll,:,:,:]=np.copy(avg_TudRAD[ll,0,:,:,:]) # radiation tensor 
+                B[ll,:,:,:]=np.copy(avg_TudRAD[ll,0,:,:,:])
+                gdetB[ll,:,:,:]=np.copy(gdet[:,:,:]*avg_TudRAD[ll,0,:,:,:]) 
         #call
         returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uu=avg_uu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig2",veldensity=8,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=1) #,showuu1eq0=False)
         # fix back
