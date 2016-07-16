@@ -2115,9 +2115,11 @@ def getrhouclean(rho,ug,uu):
     #
     #bsqorho=bsq/rho # want this to be using original rho
     #
-    rhoclean = np.copy(rho)
-    rhoclean[fbsqorho()>maxbsqorhonear]=1E-30
-    rhoclean[condmaxbsqorho==0]=1E-30
+    rhoclean=np.copy(rho)
+    global gotrad
+    if(gotrad==0):
+        rhoclean[fbsqorho()>maxbsqorhonear]=1E-30
+        rhoclean[condmaxbsqorho==0]=1E-30
     #
     ugclean = np.copy(ug)
     global gotrad
@@ -8273,8 +8275,13 @@ def rfdheader(fin=None):
     #
     global gotrad
     gotrad=0 # where gotrad defined as 0 and overwritten if appropriate
-    if(numcolumns==16 or numcolumns==29):
+    if(numcolumns==16 or numcolumns==30 or numcolumns==31):
         gotrad=1
+    #
+    global gotkappas
+    gotkappas=0 # whether got kappas from fieldline files
+    if(numcolumns==30 or numcolumns==31):
+        gotkappas=1
     #
     rddims(gotrad)
     print("Found %d header items\n" % (numheaderitems))  ; sys.stdout.flush()
@@ -8440,7 +8447,7 @@ def rfd(fieldlinefilename,**kwargs):
 
     #
     #rho, u, -hu_t, -T^t_t/U0, u^t, v1,v2,v3,B1,B2,B3
-    if(numcolumns==29):
+    if(numcolumns==30 or numcolumns==31):
         #
         rho=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
         rho=d[0,:,:,:]
@@ -8567,6 +8574,7 @@ def rfd(fieldlinefilename,**kwargs):
     # have to make copy so mods to B[0] won't change d[7]
     B=np.copy(d[sii-1:sii-1+4,:,:,:])
     B[0]=0*B[0]
+    sii=sii+3
     #
     #
     #
@@ -8582,29 +8590,53 @@ def rfd(fieldlinefilename,**kwargs):
         # below assumes gdetB[0] is never needed
         gdetB=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
         # have to make copy so mods to gdetB[0] won't change B[3]
-        gdetB = np.copy(d[sii-1+3:sii-1+3+4,:,:,:])
+        gdetB = np.copy(d[sii-1:sii-1+4,:,:,:])
         gdetB[0]=0*gdetB[0]
+        sii=sii+4
     #
     #
     ######################################################
     # get any radiation variables
     #
     global gotrad
-    if(numcolumns==16 or numcolumns==29):
+    if(numcolumns==16 or numcolumns==30):
         Erf=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
         uradu=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
-        Erf=d[sii+3,:,:,:] # radiation frame radiation energy density
+        Erf=d[sii,:,:,:] # radiation frame radiation energy density
         #
         # approximation, but correct if used in pressure ultimately
         #urad=Erf
         #
-        uradu=d[sii+4:sii+4+4,:,:,:]  #again, note uu[i] are 3-velocities (as read from the fieldline file)
+        uradu=d[sii+1:sii+1+4,:,:,:]  #again, note uu[i] are 3-velocities (as read from the fieldline file)
         #multiply by u^t to get 4-velocities: u^i = u^t v^i
         uradu[1:4]=uradu[1:4] * uradu[0]
         #
         maxErf=np.max(Erf)
         minErf=np.min(Erf)
         print("maxErf=%g minErf=%g" % (maxErf,minErf)) ; sys.stdout.flush()
+
+        sii=sii+1+4
+        #
+    elif(numcolumns==31):
+        nrad=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
+        Erf=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
+        uradu=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
+        #
+        nrad=d[sii,:,:,:] # radiation frame radiation number density
+        Erf=d[sii+1,:,:,:] # radiation frame radiation energy density
+        #
+        # approximation, but correct if used in pressure ultimately
+        #urad=Erf
+        #
+        uradu=d[sii+2:sii+2+4,:,:,:]  #again, note uu[i] are 3-velocities (as read from the fieldline file)
+        #multiply by u^t to get 4-velocities: u^i = u^t v^i
+        uradu[1:4]=uradu[1:4] * uradu[0]
+        #
+        maxErf=np.max(Erf)
+        minErf=np.min(Erf)
+        print("maxErf=%g minErf=%g" % (maxErf,minErf)) ; sys.stdout.flush()
+
+        sii=sii+2+4
         #
     else:
         Erf=rho*0+1E-30
@@ -8612,80 +8644,82 @@ def rfd(fieldlinefilename,**kwargs):
         uradd=uu*0+1E-30
         uradu=uu*0+1E-30
     #
-    if(numcolumns==29):
-        # Tgas,Tradff,nradff,kappa,kappan,kappaemit,kappanemit,kappaes,lambda,nlambda
-        sjj=sii+4+4 # 6+4+4 = 14
+    if(numcolumns==30 or numcolumns==31):
+        # Tgas,Tradff,nradff,varexpf,kappa,kappan,kappaemit,kappanemit,kappaes,lambda,nlambda
+        global Tgas,Tradff,nradff,varexpf,kappa,kappan,kappaemit,kappanemit,kappaes,elambda,nlambda
         #
-        Tgas=d[sjj,:,:,:]
-        Tradff=d[sjj+1,:,:,:]
-        nradff=d[sjj+2,:,:,:]
-        kappa=d[sjj+3,:,:,:]
-        kappan=d[sjj+4,:,:,:]
-        kappaemit=d[sjj+5,:,:,:]
-        kappanemit=d[sjj+6,:,:,:]
-        kappaes=d[sjj+7,:,:,:]
-        elambda=d[sjj+8,:,:,:]
-        nlambda=d[sjj+9,:,:,:]
+        Tgas=d[sii,:,:,:]
+        Tradff=d[sii+1,:,:,:]
+        nradff=d[sii+2,:,:,:]
+        varexpf=d[sii+3,:,:,:]
+        kappa=d[sii+4,:,:,:]
+        kappan=d[sii+5,:,:,:]
+        kappaemit=d[sii+6,:,:,:]
+        kappanemit=d[sii+7,:,:,:]
+        kappaes=d[sii+8,:,:,:]
+        elambda=d[sii+9,:,:,:]
+        nlambda=d[sii+10,:,:,:]
         #  (pl==RHO || pl==UU || pl==U3 || pl==URAD0 || pl==URAD3) = 5
         # (1  +  1+1+1 + (EOMRADTYPE!=EOMRADNONE)) = 5
-        skk=sjj+10 # 14+10=24
         #
-#        F1rhotot=d[skk,:,:,:]
-#        F1uutot=d[skk+1,:,:,:]
-#        F1u3tot=d[skk+2,:,:,:]
-#        F1urad0tot=d[skk+3,:,:,:]
-#        F1urad3tot=d[skk+4,:,:,:]
-#        F1yfl1tot=d[skk+5,:,:,:]
-#        F1yfl2tot=d[skk+6,:,:,:]
-#        F1yfl3tot=d[skk+7,:,:,:]
-#        F1yfl4tot=d[skk+8,:,:,:]
-#        F1yfl5tot=d[skk+9,:,:,:]
+        sii=sii+11
+#        F1rhotot=d[sii,:,:,:]
+#        F1uutot=d[sii+1,:,:,:]
+#        F1u3tot=d[sii+2,:,:,:]
+#        F1urad0tot=d[sii+3,:,:,:]
+#        F1urad3tot=d[sii+4,:,:,:]
+#        F1yfl1tot=d[sii+5,:,:,:]
+#        F1yfl2tot=d[sii+6,:,:,:]
+#        F1yfl3tot=d[sii+7,:,:,:]
+#        F1yfl4tot=d[sii+8,:,:,:]
+#        F1yfl5tot=d[sii+9,:,:,:]
 #        #
-#        F1rhopake=d[skk+10,:,:,:]
-#        F1uupake=d[skk+11,:,:,:]
-#        F1u3pake=d[skk+12,:,:,:]
-#        F1urad0pake=d[skk+13,:,:,:]
-#        F1urad3pake=d[skk+14,:,:,:]
-#        F1yfl1pake=d[skk+15,:,:,:]
-#        F1yfl2pake=d[skk+16,:,:,:]
-#        F1yfl3pake=d[skk+17,:,:,:]
-#        F1yfl4pake=d[skk+18,:,:,:]
-#        F1yfl5pake=d[skk+19,:,:,:]
+#        F1rhopake=d[sii+10,:,:,:]
+#        F1uupake=d[sii+11,:,:,:]
+#        F1u3pake=d[sii+12,:,:,:]
+#        F1urad0pake=d[sii+13,:,:,:]
+#        F1urad3pake=d[sii+14,:,:,:]
+#        F1yfl1pake=d[sii+15,:,:,:]
+#        F1yfl2pake=d[sii+16,:,:,:]
+#        F1yfl3pake=d[sii+17,:,:,:]
+#        F1yfl4pake=d[sii+18,:,:,:]
+#        F1yfl5pake=d[sii+19,:,:,:]
 #        #
-#        F1rhoen=d[skk+20,:,:,:]
-#        F1uuen=d[skk+21,:,:,:]
-#        F1u3en=d[skk+22,:,:,:]
-#        F1urad0en=d[skk+23,:,:,:]
-#        F1urad3en=d[skk+24,:,:,:]
-#        F1yfl1en=d[skk+25,:,:,:]
-#        F1yfl2en=d[skk+26,:,:,:]
-#        F1yfl3en=d[skk+27,:,:,:]
-#        F1yfl4en=d[skk+28,:,:,:]
-#        F1yfl5en=d[skk+29,:,:,:]
+#        F1rhoen=d[sii+20,:,:,:]
+#        F1uuen=d[sii+21,:,:,:]
+#        F1u3en=d[sii+22,:,:,:]
+#        F1urad0en=d[sii+23,:,:,:]
+#        F1urad3en=d[sii+24,:,:,:]
+#        F1yfl1en=d[sii+25,:,:,:]
+#        F1yfl2en=d[sii+26,:,:,:]
+#        F1yfl3en=d[sii+27,:,:,:]
+#        F1yfl4en=d[sii+28,:,:,:]
+#        F1yfl5en=d[sii+29,:,:,:]
 #        #
-#        F1rhoem=d[skk+30,:,:,:]
-#        F1uuem=d[skk+31,:,:,:]
-#        F1u3em=d[skk+32,:,:,:]
-#        F1urad0em=d[skk+33,:,:,:]
-#        F1urad3em=d[skk+34,:,:,:]
-#        F1yfl1em=d[skk+35,:,:,:]
-#        F1yfl2em=d[skk+36,:,:,:]
-#        F1yfl3em=d[skk+37,:,:,:]
-#        F1yfl4em=d[skk+38,:,:,:]
-#        F1yfl5em=d[skk+39,:,:,:]
+#        F1rhoem=d[sii+30,:,:,:]
+#        F1uuem=d[sii+31,:,:,:]
+#        F1u3em=d[sii+32,:,:,:]
+#        F1urad0em=d[sii+33,:,:,:]
+#        F1urad3em=d[sii+34,:,:,:]
+#        F1yfl1em=d[sii+35,:,:,:]
+#        F1yfl2em=d[sii+36,:,:,:]
+#        F1yfl3em=d[sii+37,:,:,:]
+#        F1yfl4em=d[sii+38,:,:,:]
+#        F1yfl5em=d[sii+39,:,:,:]
 #        #
-#        F1rhorad=d[skk+40,:,:,:]
-#        F1uurad=d[skk+41,:,:,:]
-#        F1u3rad=d[skk+42,:,:,:]
-#        F1urad0rad=d[skk+43,:,:,:]
-#        F1urad3rad=d[skk+44,:,:,:]
-#        F1yfl1rad=d[skk+45,:,:,:]
-#        F1yfl2rad=d[skk+46,:,:,:]
-#        F1yfl3rad=d[skk+47,:,:,:]
-#        F1yfl4rad=d[skk+48,:,:,:]
-#        F1yfl5rad=d[skk+49,:,:,:]
+#        F1rhorad=d[sii+40,:,:,:]
+#        F1uurad=d[sii+41,:,:,:]
+#        F1u3rad=d[sii+42,:,:,:]
+#        F1urad0rad=d[sii+43,:,:,:]
+#        F1urad3rad=d[sii+44,:,:,:]
+#        F1yfl1rad=d[sii+45,:,:,:]
+#        F1yfl2rad=d[sii+46,:,:,:]
+#        F1yfl3rad=d[sii+47,:,:,:]
+#        F1yfl4rad=d[sii+48,:,:,:]
+#        F1yfl5rad=d[sii+49,:,:,:]
 #        #
     #
+    print("final sii=%d" % (sii)) ; sys.stdout.flush()
     if whichpoledeath==2:
         if 1 or np.fabs(THETAROT>0.0):
             print("Fixing primitives rad") ; sys.stdout.flush()
@@ -8830,8 +8864,10 @@ def rfd(fieldlinefilename,**kwargs):
     #
     #############################################################################################
     #### now do radiation-dependent stuff
+    global gotrad
     rddims(gotrad)
-    getkappas(gotrad)
+    global gotkappas
+    getkappas(gotrad,gotkappas)
     #
     #
     print("rfd(after rfdprocess) time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
@@ -8851,6 +8887,8 @@ Log = lambda x : np.log(x)
 # tempmin
 TEMPMINKELVIN = lambda : (1.0E-10) # Kelvin
 TEMPMIN  = lambda : (TEMPMINKELVIN()/TEMPBAR) # Code units
+TEMPMAXKELVIN = lambda : (1.0E14) # Kelvin
+TEMPMAX  = lambda : (TEMPMAXKELVIN()/TEMPBAR) # Code units
 XSOLAR = lambda : (0.7)
 YSOLAR = lambda : (0.28)
 ZSOLAR = lambda : (1.0-(XSOLAR()+YSOLAR()))
@@ -8882,7 +8920,7 @@ KAPPA_GENFF_CODE = lambda rhocode,Tgcode,Trcode : (1.0/(1.0/(KAPPA_MOL_CODE(rhoc
 
 
 def KAPPA_ES_CODE_PYTHON(rhocode,Tcode):
-    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE,NRAD_ARAD_CODE,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
     # default
     y=KAPPA_ES_CODE(rhocode,Tcode)
     if(isradmodeltype1(modelname)):
@@ -8892,7 +8930,7 @@ def KAPPA_ES_CODE_PYTHON(rhocode,Tcode):
     return(y)
 
 def KAPPA_FF_CODE_PYTHON(rhocode,Tgcode,Trcode):
-    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE,NRAD_ARAD_CODE,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
     #default
     y=KAPPA_GENFF_CODE(rhocode,Tgcode,Trcode)
     #
@@ -8902,13 +8940,13 @@ def KAPPA_FF_CODE_PYTHON(rhocode,Tgcode,Trcode):
        y=KAPPA_GENFF_CODE(rhocode,Tgcode,Trcode)
     return(y)
 #def KAPPA_BF_CODE(rhocode,Tcode):
-#    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
+#    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE,NRAD_ARAD_CODE,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
 #    y=(1.0E25*ZATOM*(1.0+XFACT)*(rhocode*RHOBAR)*pow(Tcode*TEMPBAR,-7.0/2.0)/OPACITYBAR)
 #    return(y)
 
 
-def getkappas(gotrad):
-    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
+def getkappas(gotrad, gotkappas):
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE,NRAD_ARAD_CODE,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
     global KAPPAUSER,KAPPAESUSER
     if(gotrad==0):
         KAPPA=1.0
@@ -8949,16 +8987,544 @@ def getkappas(gotrad):
                 Rijkapanu = (Erf/3.0)*(4.0*uradu[kapa]*uraddlocal[nu]+delta)
                 Ruu= Ruu + Rijkapanu*udlocal[kapa]*uu[nu]
         # fluid-frame temperature of radiation
-        Trad = pow(np.fabs(Ruu)/ARAD_CODE_DEF,0.25) # ASSUMPTION: PLANCK-like in comoving frame even though radiation flowing through cell
+        Trad = pow(np.fabs(Ruu)/ARAD_CODE,0.25) # ASSUMPTION: PLANCK-like in comoving frame even though radiation flowing through cell
         #
-        # use rho to keep kappa low.
-        KAPPAUSER=(rho*KAPPA*KAPPA_FF_CODE_PYTHON(rho,Tgas+TEMPMIN(),Trad+TEMPMIN()))
-        KAPPAESUSER=(rho*KAPPAES*KAPPA_ES_CODE_PYTHON(rho,Tgas))
+        if(gotkappas==0):
+            # use rho to keep kappa low.
+            KAPPAUSER=(rho*KAPPA*KAPPA_FF_CODE_PYTHON(rho,Tgas+TEMPMIN(),Trad+TEMPMIN()))
+            KAPPAESUSER=(rho*KAPPAES*KAPPA_ES_CODE_PYTHON(rho,Tgas))
+        else:
+            # use read-in accurate versions produced by harmrad
+            KAPPAUSER=kappa
+            KAPPAESUSER=kappaes
 
+def Power(x,y):
+    return(np.power(x,y))
+def prpow(x,y):
+    return(np.power(x,y))
+
+    # (kappadensityreal,kappasyreal,kappadcreal,kappaesreal)=getkappasdetails(gotrad, gotkappas)
+def getkappasdetails(gotrad, gotkappas):
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE,NRAD_ARAD_CODE,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
+    BFIELDBAR=(VBAR*sqrt(RHOBAR))  #// speed ~ b/sqrt(rho)
+    K_BOLTZ=(1.3806488e-16) #// cgs in erg/K
+    M_PROTON=(1.67262158e-24) #// proton mass in cgs in grams
+    MB=(1.66054E-24) #// = 1/N_A = 1/(Avogadro's number) = baryon mass in cgs in grams (as often used in general EOSs)
+    MPOME=(1836.15)
+    #//SIGMA_RAD (5.67e-5) #// cgs in erg/(cm^2 s K^4)
+    HPLANCK=(6.62607E-27) #// cgs
+    QCHARGE=(4.8029E-10) #// cgs
+    MELE=(M_PROTON/MPOME) #// electron mass in cgs in grams
+    TEMPELE=(MELE*CCCTRUE*CCCTRUE/K_BOLTZ)
+    M_PI=np.pi
+    CCCTRUE0=CCCTRUE
+
+    global KAPPAUSER,KAPPAESUSER
+    # now compute auxillary opacity related quantities since only otherwise in raddump???? files and not in fieldline files
+    KAPPA=1.0
+    KAPPAES=1.0
+    # KORALTODO: Put a lower limit on T~1E4K so not overly wrongly opaque in spots where u_g->0 anomologously?
+    #TEMPMINKELVIN=1.0E-10 # Kelvin
+    #TEMPMIN=(TEMPMINKELVIN/TEMPBAR)
+    # ideal gas assumed for Tgas
+    #
+    # code Tgas for ideal gas
+    pg=(gam-1.0)*ug
+    Tg=pg/(rho/MUMEAN)
+    #
+    #Eradff = R^a_b u_a u^b
+    if 1==0:
+        Ruu=0.0
+        uraddlocal = mdot(gv3,uradu)                  #g_mn urad^n
+        udlocal = mdot(gv3,uu)                  #g_mn u^n
+        for kapa in np.arange(4):
+            for nu in np.arange(4):
+                if(kapa==nu): delta = 1
+                else: delta = 0
+                Rijkapanu = (Erf/3.0)*(4.0*uradu[kapa]*uraddlocal[nu]+delta)
+                Ruu= Ruu + Rijkapanu*udlocal[kapa]*uu[nu]
+        # fluid-frame temperature of radiation
+        # below like TRADTYPE==0
+        #Tr = np.power(np.fabs(Ruu)/ARAD_CODE,0.25) # ASSUMPTION: PLANCK-like in comoving frame even though radiation flowing through cell
+        # below like TRADTYPE==1
+        Ruurat=Ruu/ARAD_CODE
+        nradffrat=nradff # already has NRAD_ARAD_CODE inside
+        EBAR0=(2.7011780329190638961)
+        Tr=Ruurat/(nradffrat*EBAR0+1E-50)
+    if 1==1:
+        Tr = Tradff # use fluid-frame Trad from fieldline file instead of recomputing
+    #
+    Bco=1E-50+np.sqrt(bsq)
+    ###### follow kappa_func_fits_all in init.koral.c
+    # used ~/Downloads/ctopy-1.3/ctopy: cat topy.c | ~/Downloads/ctopy-1.3/ctopy > topy2.py
+    #
+    Te=Tg*1.0 # assume electrons and gas/ions/protons are same temperature
+  
+    # "real" here means cgs and Gaussian for B and Kelvin for temperature
+    rhoreal=rho*RHOBAR
+    nereal=3.0110683499999995e23*rhoreal*(1.0 + XFACT)
+    Breal=Bco*BFIELDBAR
+    Tereal=Te*TEMPBAR+TEMPMINKELVIN() # Apply minimum electron temperature so ff and fb opacities don't diverge
+    Tereal[Tereal>TEMPMAXKELVIN()]=TEMPMAXKELVIN()
+    Tgreal=Tg*TEMPBAR+TEMPMINKELVIN() # Apply minimum electron temperature so ff and fb opacities don't diverge
+    Tgreal[Tgreal>TEMPMAXKELVIN()]=TEMPMAXKELVIN()
+    Trreal=Tr*TEMPBAR
+    Trreal[Trreal>TEMPMAXKELVIN()]=TEMPMAXKELVIN()
+
+    ximin=1E-20
+    xi = ximin+Trreal/Tereal # Apply minimum \xi beyond which assume constant so as Trreal->0 expressions don't misbehave
+    ximax=1E20
+    xi[xi>1E20]=ximax
+
+    xie = 1 # emission xi
+  
+    thetae = Tereal/TEMPELE
+    thetaesq=thetae*thetae
+    thetaecubed=thetaesq*thetae
+  
+    #////////////
+    #
+    # free-free for e-i
+    # below in [cm^{-1}]
+    #
+    #////////////
+  
+    # ff prefactor
+    kappaffreal=1.2E24*np.power(Tereal,-7.0/2.0)*np.power(rhoreal,2.0)*(1.0+XFACT)*(1.0-ZFACT)
+    # see nizisq.nb -- ensured continuous and differentiable at thetae=1
+    #    Rei = (1.0+2.0*thetae+2.0*thetae*thetae)/(1.0+3.8*thetae+5.1*thetaesq+(8.0/M_PI)*thetaecubed)*log(1.0+3.42*thetae)
+    Reilow = 1.0 + 1.7644624334086192*Power(thetae,1.34)
+    Reihigh = 1.4019447514099515*Power(thetae,0.5)*(1.5 + Log(0.48 + 1.123*thetae))
+    Rei=Reihigh
+    Rei[thetae<1.0]=Reilow[thetae<1.0]
+  
+    kappaffreal *= Rei
+  
+  
+    kappanffreal=kappaffreal*1.0 # same prefactor
+    kappaemitffreal=kappaffreal*1.0 # same prefactor
+    kappanemitffreal=kappaffreal*1.0 # same prefactor
+  
+    # absorption
+  
+    # XRB Ledd
+    aa = 0.3564568198863157 - 0.19982886985727735*Power(1. - 1.*varexpf,0.5646962005387126) + 0.18848660385247928*Power(varexpf,13.940235230123522)
+    bb = 3.0641759806549147 + 0.25543546368991477*Power(1. - 1.*varexpf,0.3128511829901932) + 0.07219025685305303*Power(varexpf,1.3638629108321003)
+    cc = 5.99474041542733 - 1.4436038489430345*Power(1. - 1.*varexpf,0.12828451539717775) - 1.4051865724895833*Power(varexpf,3.0775239339815585)
+    #      aa = 0.9315361341095171 - 0.6768085524145425*Power(1 - varexpf,0.7198306274197313) + 1.9002183262398797*Power(varexpf,37.829441097625605)
+    #    bb = 3.1012402220434816 + 0.4612339875024576*Power(1 - varexpf,0.03596567451632021) - 0.02585416821144859*Power(varexpf,114.93181787377999)
+    #    cc = 10.042113525722476 - 9.063716681172405*Power(1 - varexpf,2.4433708236615708e-9) - 0.6884461811691391*Power(varexpf,4.432030473409409)
+  
+    kappaffreal *= aa*np.power(xi,-bb)*np.log(1.0+cc*xi)
+  
+    # List(4. - 2.06*Power(1. - 1.*varvarvar,1.) + 21.*Power(varvarvar,5.),3.1503757694129613 + 0.0008942404015805927*Power(1. - 1.*varvarvar,10.174621780103456) -     0.41243605382204196*Power(varvarvar,59.06672963853068),4.552732466653472e-7 + 2.3916452081662603*Power(1. - 1.*varvarvar,0.5522198226571239) + 5.27043093753271*Power(varvarvar,69.17066973904404))
+  
+  #if EVOLVENRAD or 1:
+    # XRB Ledd
+    aan = 4. - 2.06*Power(1. - 1.*varexpf,1.) + 21.*Power(varexpf,5.)
+    bbn = 3.1503757694129613 + 0.0008942404015805927*Power(1. - 1.*varexpf,10.174621780103456) -      0.41243605382204196*Power(varexpf,59.06672963853068)
+    ccn = 4.552732466653472e-7 + 2.3916452081662603*Power(1. - 1.*varexpf,0.5522198226571239) + 5.27043093753271*Power(varexpf,69.17066973904404)
+    #    aan=1.27*Power(E,1.842068074395237*Power(varexpf,2) + 1.151292546497023*Power(varexpf,4) + 2.8206667389177063*Power(varexpf,70.))
+    #    bbn=3.0976213586221544 - 0.03091777713803534*Power(1 - varexpf,4.613930997481447) - 0.3099700393164486*Power(varexpf,162.16873912467364)
+    #    ccn=0.00010386408308833163 + 5.934327626527228*Power(1 - varexpf,0.5880281963526498) + 62558.02370357485*Power(varexpf,1.3444132516555986e6)
+  
+    kappanffreal *= aan*np.power(xi,-bbn)*np.log(1.0+ccn*xi)
+  #endif
+  
+    # emission (just Planck varexpf=1 but using actual direct fit instead of fit over many varexpf)
+  
+    # XRB Ledd
+    aae = 0.5316463286647214
+    bbe = 3.140128803410833
+    cce = 4.522392868247536
+    #    aae=0.3759100641660466
+    #    bbe=3.0775444410210264
+    #    cce=9.354365388578165
+   
+    kappaemitffreal *= aae*np.power(xie,-bbe)*np.log(1.0+cce*xie)
+  
+  #if EVOLVENRAD or 1:
+    # XRB Ledd
+    aane = 20.
+    bbne = 2.6669560547974855
+    ccne = 5.
+    #    aane=7.418554613651609
+    #    bbne=2.0551425132443293
+    #    ccne=62558.213216069445
+  
+    kappanemitffreal *= aane*np.power(xie,-bbne)*np.log(1.0+ccne*xie)
+  #endif
+  
+    #////////////
+    #
+    # Add free-free for e-e
+    # below in [cm^{-1}]
+    #
+    #////////////
+    #Ree = thetae*(0.851+2.0*thetae)/(1.0+3.8*thetae+5.1*thetaesq+(8.0/M_PI)*thetaecubed)*log(1.0+10.4*thetaesq)
+    Reelow =1.706666666666667*thetae*(1 + 1.1*thetae + Power(thetae,2) - 1.063803438337589*Power(thetae,2.5))
+    Reehigh = 2.489326395711546*Power(thetae,0.5)*(1.28 + Log(1.123*thetae))
+    Ree = Reehigh
+    Ree[thetae<1.0]=Reelow[thetae<1.0]
+  
+    # just add-in factor by which free-free e-e adds-in (see nizisq.nb)
+    factorffee=0.5*(1.0+XFACT)*Ree/((1.0-ZFACT)*Rei)
+    kappaffeereal = kappaffreal*factorffee
+    kappanffeereal = kappanffreal*factorffee
+    kappaemitffeereal = kappaemitffreal*factorffee
+    kappanemitffeereal = kappanemitffreal*factorffee
+      
+    #////////////
+    #
+    # Add bound-free
+    # below in [cm^{-1}]
+    #
+    #////////////
+  
+    # just add-in factor by which bound-free adds-in
+    factorbf=750.0*ZFACT*(1.0+XFACT+0.75*YFACT)/((1.0+XFACT)*(1.0-ZFACT))
+    kappabfreal = kappaffreal*factorbf
+    kappanbfreal = kappanffreal*factorbf
+    kappaemitbfreal = kappaemitffreal*factorbf
+    kappanemitbfreal = kappanemitffreal*factorbf
+  
+    #////////////
+    #
+    # Add Chianti
+    # below in [cm^{-1}]
+    #  [TODO: Could use ff as prefactor to these as well for more uniform treatment as Trreal and Tereal become different.]
+    #  [TODO: Could use each ff prefactor for each kappa type (4 types) so opacities behave uniformly as Trreal and Tereal become different.  But not clear if all scale the same with temperature.  At least for Chianti it's reasonable.]
+    #  [TODO: integrate real low-temp opacities]
+    #
+    #////////////
+  
+    # kappachiantirealbase = 30.0*1E33*pow(rhoreal,2.0)*(0.1+ZFACT/ZSOLAR())*XFACT*(1.0+XFACT)*pow(Tereal,-1.7)*pow(Trreal,-3.0)
+    # just add-in factor by which chianti adds-in (see nizisq.nb)
+    factorchianti=2.50672E10*XFACT*(0.1+ZFACT/ZSOLAR())*np.power(Tereal,-1.2)/(1.0-ZFACT)
+    kappachiantireal = kappaffreal*factorchianti
+    kappanchiantireal = kappanffreal*factorchianti
+    kappaemitchiantireal = kappaemitffreal*factorchianti
+    kappanemitchiantireal = kappanemitffreal*factorchianti
+  
+    #////////////
+    #
+    # Add H^-
+    # below in [cm^{-1}]
+    #
+    #////////////
+  
+    # kappahminusbase = 33.0*1E-25*pow(ZFACT,0.5)*pow(rhoreal,1.5)*pow(Tereal,7.7)
+    # just add-in factor by which H^- adds-in (see nizisq.nb), but remove Rei
+    factorhm=np.power(np.float64(5.6704289139619668e-05*Tereal),11.2)*np.power(ZFACT,0.5)/(1E-50+np.power(rhoreal,0.5)*(1.0+XFACT)*(1.0-ZFACT)*Rei)
+    kappahmreal = kappaffreal*factorhm
+    kappanhmreal = kappanffreal*factorhm
+    kappaemithmreal = kappaemitffreal*factorhm
+    kappanemithmreal = kappanemitffreal*factorhm
+  
+    #////////////
+    #
+    # Add Chianti that fits Opal
+    # below in [cm^{-1}]
+    #
+    #////////////
+  
+    # just add-in factor by which chianti opal adds-in
+    factorchiantiopal=3E-13*np.power(Tereal,1.6)*np.power(1E-50+rhoreal,-0.4)
+    kappachiantiopalreal = kappaffreal*factorchianti*factorchiantiopal
+    kappanchiantiopalreal = kappanffreal*factorchianti*factorchiantiopal
+    kappaemitchiantiopalreal = kappaemitffreal*factorchianti*factorchiantiopal
+    kappanemitchiantiopalreal = kappanemitffreal*factorchianti*factorchiantiopal
+  
+    #////////////
+    #
+    # Add H^- that fits Opal
+    # below in [cm^{-1}]
+    #
+    #////////////
+  
+    # just add-in factor by which H^- opal adds-in
+    factorhmopal=1E4*np.power(Tereal,-1.2)
+    kappahmopalreal = kappaffreal*factorhm*factorhmopal
+    kappanhmopalreal = kappanffreal*factorhm*factorhmopal
+    kappaemithmopalreal = kappaemitffreal*factorhm*factorhmopal
+    kappanemithmopalreal = kappanemitffreal*factorhm*factorhmopal
+  
+    #////////////
+    #
+    # Add molecular (without T dependence)
+    # below in [cm^{-1}]
+    #
+    #////////////
+  
+    kappamolreal = 3.0*ZFACT*rhoreal
+    kappanmolreal = kappamolreal*1.0
+    kappaemitmolreal = kappamolreal*1.0
+    kappanemitmolreal = kappamolreal*1.0
+  
+    #////////////
+    #
+    # Add Fe line (see opal_findfit.nb)
+    # below in [cm^{-1}]
+    #
+    #////////////
+  
+    kappafereal = rhoreal*0.3*np.exp(-6.0*np.power(-12.0+np.log(Tereal),2.0))
+    kappanfereal = kappafereal*1.0
+    kappaemitfereal = kappafereal*1.0
+    kappanemitfereal = kappafereal*1.0
+  
+    #////////////
+    #
+    # Low-density interpolation
+    # below in [cm^{-1}]
+    #
+    #////////////
+    kappalowdensityreal  = 1.0/ ( 1.0/(kappamolreal + kappahmreal) + 1.0/(kappachiantireal + kappaffreal + kappaffeereal + kappabfreal) )
+    kappanlowdensityreal  = 1.0/ ( 1.0/(kappanmolreal + kappanhmreal) + 1.0/(kappanchiantireal + kappanffreal + kappanffeereal + kappanbfreal) )
+    kappaemitlowdensityreal  = 1.0/ ( 1.0/(kappaemitmolreal + kappaemithmreal) + 1.0/(kappaemitchiantireal + kappaemitffreal + kappaemitffeereal + kappaemitbfreal) )
+    kappanemitlowdensityreal  = 1.0/ ( 1.0/(kappanemitmolreal + kappanemithmreal) + 1.0/(kappanemitchiantireal + kappanemitffreal + kappanemitffeereal + kappanemitbfreal) )
+  
+    #////////////
+    #
+    # full range density interpolation
+    # below in [cm^{-1}]
+    #
+    #////////////
+    kappadensityreal  = kappafereal + 1.0/ ( 1.0/(kappamolreal + kappahmopalreal) + 1.0/(kappachiantiopalreal) + 1.0/(kappachiantireal + kappaffreal + kappaffeereal + kappabfreal) )
+
+    kappandensityreal  = kappanfereal + 1.0/ ( 1.0/(kappanmolreal + kappanhmopalreal) + 1.0/(kappanchiantiopalreal) + 1.0/(kappanchiantireal + kappanffreal + kappanffeereal + kappanbfreal) )
+    kappaemitdensityreal  = kappaemitfereal + 1.0/ ( 1.0/(kappaemitmolreal + kappaemithmopalreal) + 1.0/(kappaemitchiantiopalreal) + 1.0/(kappaemitchiantireal + kappaemitffreal + kappaemitffeereal + kappaemitbfreal) )
+    kappanemitdensityreal  = kappanemitfereal + 1.0/ ( 1.0/(kappanemitmolreal + kappanemithmopalreal) + 1.0/(kappanemitchiantiopalreal) + 1.0/(kappanemitchiantireal + kappanemitffreal + kappanemitffeereal + kappanemitbfreal) )
+  
+  
+    #////////////
+    #
+    # Cylco-Synchrotron
+    # below in [cm^{-1}]
+    #
+    #////////////
+  
+    nuM = 1.5*QCHARGE*Breal/(2.0*M_PI*MELE*CCCTRUE0)*thetaesq
+    minnuM = (K_BOLTZ*Trreal)/(HPLANCK*1E20) # minimum nuM so that phi is no bigger than 1E20
+    minTrreal = 1E-20*(HPLANCK*(minnuM+nuM))/(K_BOLTZ)
+    phiphi = (K_BOLTZ*(minTrreal+Trreal))/(HPLANCK*(minnuM+nuM))
+
+    minnuMe = (K_BOLTZ*Tereal)/(HPLANCK*1E20) # minimum nuM so that phi is no bigger than 1E20
+    minTereale = 1E-20*(HPLANCK*(minnuMe+nuM))/(K_BOLTZ)
+    phiphie = (K_BOLTZ*(minTereale+Tereal))/(HPLANCK*(minnuMe+nuM))
+
+  
+    # synch prefactor
+    BFIELDMIN	= (1E-30) # just for division purposes, as nuM multiplied above will zero-out near Breal=0
+    #  kappasyreal=2.13E-11*nereal/(Breal+BFIELDMIN)*pow(Tereal/1E10,-5.0)
+    kappasyreal=5.85374E-14*nereal*phiphi*np.power(thetae,-3.0)/(minTrreal+Trreal)
+    kappaemitsyreal=5.85374E-14*nereal*phiphie*np.power(thetae,-3.0)/(minTereale+Tereal)
+  
+    # low-temp factor
+    #  q0 = 1.0/ (1.0+pow(3.3*thetae,-5.0))
+    #  q1 = 1.0 + pow(3.3*thetae,-5.0)
+    #  qsyn = pow(log10(q0) + ( 0.5 + (1.0/M_PI)*atan(3.0+log10(phiphi)) )*(log10(q1) - log10(q0)) ,10.0)
+    qsyn=1.0 # issues TODO
+    kappasyreal *= qsyn
+      
+    kappansyreal=kappasyreal*1.0 # same prefactor
+    #kappaemitsyreal=kappasyreal*1.0 # same prefactor
+    kappanemitsyreal=kappaemitsyreal*1.0 # same prefactor
+ 
+    phiphiinfit=np.copy(phiphi)
+    phiphiinfit[phiphiinfit<1E-2]=1E-2
+    phiphieinfit=np.copy(phiphie)
+    phiphieinfit[phiphieinfit<1E-2]=1E-2
+ 
+    varexpf[varexpf>0.99] = 0.99
+    
+    # absorption
+  
+    # XRB Ledd
+    aas=1.2717090231066859 - 8.237581949899209e-9*Power(1. - 1.*varexpf,2.415933175034019) - 2.310668567595542e-8*Power(varexpf,33.99434202709177)
+    bbs=1.060851343360245 - 0.004747123512839568*Power(1. - 1.*varexpf,1.5464083937328197) - 0.026075188907016322*Power(varexpf,738.0958924659135)
+    ccs=0.0005843126554802812 + 0.0000410567490719383*Power(1. - 1.*varexpf,0.37174211933661433) + 0.0001789801048824479*Power(varexpf,432.208942737546)
+    dds=18.267252224714966 - 3.333556659049229*Power(1. - 1.*varexpf,2.7594532239756604) - 17.651647145151042*Power(varexpf,49.40047066070007)
+    ees=2.4851294642136326 + 1.2316705357826585*Power(1. - 1.*varexpf,0.21357152750491384) + 0.42683282553665336*Power(varexpf,0.6543955138816183)
+ 
+
+    kappasyreal *= 1.0/( 1.0/(aas*np.power(phiphiinfit,-bbs)*np.log(1.0+ccs*phiphiinfit)) + 1.0/(dds*np.power(phiphiinfit,-ees)) )
+  
+  #if EVOLVENRAD or 1:
+    # XRB Ledd
+    aans=0.0020896556908760167 - 0.000552135392124191*Power(1. - 1.*varexpf,0.13484101986913094) - 0.00035919475351279596*Power(varexpf,1.3117367224699348)
+    bbns=0.947936882050393 + 0.04325767539629399*Power(1. - 1.*varexpf,0.15851143273201895) + 0.03500295073258275*Power(varexpf,5.426349783477622)
+    ccns=1.0428616563608024 - 0.06847935580879305*Power(1. - 1.*varexpf,2.804976762985117) - 0.12190075333271566*Power(varexpf,37.127481710076715)
+    ddns=8.710677885264703 - 6.470485714643377*Power(1. - 1.*varexpf,0.43622943950210663) - 8.58797778984234*Power(varexpf,155.08065851132326)
+    eens=2.447135378534403 + 0.5059941053985519*Power(1. - 1.*varexpf,0.1554411719728079) - 0.4466674305010909*Power(varexpf,393.57969904498856)
+  
+    kappansyreal *= 1.0/( 1.0/(aans*np.power(phiphiinfit,-bbns)*np.log(1.0+ccns*phiphiinfit)) + 1.0/(ddns*np.power(phiphiinfit,-eens)) )
+  #endif
+  
+    # emission (just Planck varexpf=1 but using actual direct fit instead of fit over many varexpf)
+    if 1==0:
+       # XRB Ledd
+       aaes=1.2717090000000002
+       bbes=1.0347761544532286
+       cces=0.0007632927603627291
+       ddes=0.6156050795639245
+       eees=2.911962289750286
+
+       aanes=0.0017304609373632208
+       bbnes=0.9829398327829757
+       ccnes=0.9209609030280868
+       ddnes=0.12270009542236275
+       eenes=2.0004679480333123
+    if 1==1:
+       aaes=1.27171;
+       bbes=1.06083
+       cces=0.000594048
+       ddes=7.52335
+       eees=3.36979
+       
+       aanes=0.00143843
+       bbnes=1.00193
+       ccnes=0.958925
+       ddnes=6.03561
+       eenes=2.68591
+
+
+    kappaemitsyreal *= 1.0/( 1.0/(aaes*np.power(phiphieinfit,-bbes)*np.log(1.0+cces*phiphieinfit)) + 1.0/(ddes*np.power(phiphieinfit,-eees)) )
+  
+  #if EVOLVENRAD or 1:
+    # XRB Ledd
+  
+    kappanemitsyreal *= 1.0/( 1.0/(aanes*np.power(phiphieinfit,-bbnes)*np.log(1.0+ccnes*phiphieinfit)) + 1.0/(ddnes*np.power(phiphieinfit,-eenes)) )
+  #endif
+  
+    #////////////
+    #
+    # DC
+    # below in [cm^{-1}]
+    #
+    #////////////
+  
+    #    thetar = K_BOLTZ*Trreal/(MELE*CCCTRUE0*CCCTRUE0)
+    thetar = Trreal/TEMPELE
+  
+    # dc prefactor
+    kappadcreal=7.36E-46*nereal*Trreal*Trreal*varexpf
+  
+    # high-thetae factor
+    pdc = np.power(1.0+thetae,-3.0)
+    kappadcreal *= pdc
+      
+    kappandcreal=kappadcreal*1.0 # same prefactor
+    kappaemitdcreal=kappadcreal*1.0 # same prefactor
+    kappanemitdcreal=kappadcreal*1.0 # same prefactor
+
+    thetarinfit=np.copy(thetar)
+    thetarinfit[thetarinfit<1E-4]=1E-4
+  
+    # absorption
+  
+    # XRB Ledd
+    aadc=3.10482346702441e-8 + 4.162489998316388*Power(1. - 1.*varexpf,1.6896115787181434) + 6.702210386421933*Power(varexpf,0.941782674568028)
+    bbdc=0.04202835820213653 - 0.03337036710130055*Power(1. - 1.*varexpf,0.4693413976733784) - 0.002097439704449637*Power(varexpf,0.021742118711173992)
+    ccdc=3.8020287401719655 + 0.2009643395406986*Power(1. - 1.*varexpf,0.25767159028663056) - 0.18040020940821044*Power(varexpf,33.009903857413704)
+    dddc=0.11793169411613985 - 0.06262831233321572*Power(1. - 1.*varexpf,0.34961114748511685) + 0.016889330731907487*Power(varexpf,35.3723390749425)
+      
+    kappadcreal *= 1.0/( 1.0/aadc + 1.0/(bbdc*np.power(thetarinfit,-ccdc)) + 1.0/(dddc*np.power(thetarinfit,-ccdc/3.0)) )
+  
+  #if EVOLVENRAD or 1:
+    # XRB Ledd
+    aandc=87.4586627372423 - 76.35909344479292*Power(1. - 1.*varexpf,0.13586634790456995) + 29.385274489218205*Power(varexpf,285.27285622653653)
+    bbndc=1.1604225625247175 - 1.1192436863350592*Power(1. - 1.*varexpf,0.1339258484550137) + 0.1955857773358507*Power(varexpf,18.1030753003189)
+    ccndc=3.9257505990037376 + 0.04266044504755229*Power(1. - 1.*varexpf,181.71820529516145) - 0.8002705331174753*Power(varexpf,21.623589714867247)
+    ddndc=2.8625119194776856 - 2.716652341873481*Power(1. - 1.*varexpf,0.1055549863784506) + 1.8741117433895793*Power(varexpf,309.10043138151474)
+  
+    kappandcreal *= 1.0/( 1.0/aandc + 1.0/(bbndc*np.power(thetarinfit,-ccndc)) + 1.0/(ddndc*np.power(thetarinfit,-ccndc/3.0)) )
+  #endif
+  
+    # emission
+  
+    # XRB Ledd
+    aaedc=6.335417556116487 - 0.058933985431348646*Power(1. - 1.*varexpf,10.71634135441363) + 0.48765467682596686*Power(varexpf,1.7536859250821957)
+    bbedc=0.008747549563345837 + 0.014220493179111593*Power(1. - 1.*varexpf,0.36109285953630127) + 0.028227296616735897*Power(varexpf,1.556532326060757)
+    ccedc=3.7824716575816524 + 0.18426457897750437*Power(1. - 1.*varexpf,0.3661610552743282) - 0.1602799611377681*Power(varexpf,15.388944611235807)
+    ddedc=0.11936934944026895 - 0.025640260828114658*Power(1. - 1.*varexpf,0.39821885979760463) + 0.014988119208161788*Power(varexpf,26.289513268487767)
+   
+    kappaemitdcreal *= 1.0/( 1.0/aaedc + 1.0/(bbedc*np.power(thetarinfit,-ccedc)) + 1.0/(ddedc*np.power(thetarinfit,-ccedc/3.0)) )
+  
+  #if EVOLVENRAD or 1:
+    # XRB Ledd
+    aanedc=197.97520843920014 - 94.77219201589888*Power(1. - 1.*varexpf,0.9245008022924389) - 81.66905945089535*Power(varexpf,1.010185534936844)
+    bbnedc=4.798508367755025e-11 + 1.0490039263100823*Power(1. - 1.*varexpf,0.24861894212727034) + 1.3060425347854707*Power(varexpf,1.1248777879043648)
+    ccnedc=3.4389272678970677 + 0.441710530722887*Power(1. - 1.*varexpf,0.3614676129393117) - 0.4179301735940477*Power(varexpf,14.840910987577235)
+    ddnedc=3.375250751641187 - 1.3820659504372945*Power(1. - 1.*varexpf,0.31579132247596853) + 1.3742704814428137*Power(varexpf,31.28257475560334)
+  
+    kappanemitdcreal *= 1.0/( 1.0/aanedc + 1.0/(bbnedc*np.power(thetarinfit,-ccnedc)) + 1.0/(ddnedc*np.power(thetarinfit,-ccnedc/3.0)) )
+  #endif
+  
+    # Planck for interpolation to it when expf->1.  dcpl same as edcpl
+    aadcpl=6.8308477566235427614037721740062696378080011960029
+    bbdcpl=0.03737660642072567319753249796331010429215268940195
+    ccdcpl=3.6263522982307391011876292625424350179419071859114
+    dddcpl=0.13396823846337876662165099344371722644585939843797
+  
+    #   ndcpl same as nedcpl
+    aandcpl=116.24082637910697352499285024420803245395311274652
+    bbndcpl=1.3436648321999717296470441601823998776061527255987
+    ccndcpl=3.0309933617509186060061141161349078396542823722783
+    ddndcpl=4.7183006844597535352187951503958715513547062753028
+  
+    # But for DC varexp fits, varexp=1 matches to direct Planck fit very well, so no need to specially interpolate near expf=1.
+  
+    #////////////
+    #
+    # Get final absorption/emission opacities
+    #
+    #////////////
+  
+    kappareal = kappadensityreal + kappasyreal + kappadcreal
+    kappanreal = kappandensityreal + kappansyreal + kappandcreal
+    kappaemitreal = kappaemitdensityreal + kappaemitsyreal + kappaemitdcreal
+    kappanemitreal = kappanemitdensityreal + kappanemitsyreal + kappanemitdcreal
+  
+    #////////////
+    #
+    # Electron Scattering
+    #
+    #////////////
+    ##define KAPPA_ES_KNCORRF(f) (0.75*((-1.*(1. + 3.*(f)))/Power(1. + 2.*(f),2) +  (0.5*Log(1. + 2.*(f)))/(f) + ((1. + (f))*((2. + 2.*(f))/(1. + 2.*(f)) - (1.*Log(1. + 2.*(f)))/(f)))/Power((f),2)))
+    ##define KAPPA_ES_KNCORR(rhocode,Tcode) (KAPPA_ES_KNCORREP(K_BOLTZ*(Tcode)*TEMPBAR/(MELE*CCCTRUE*CCCTRUE)))
+  
+    # Buchler and Yueh 1976 (just Fermi part). Fewer electrons when near Fermi fluid limit.
+    kappa_es_fermicorr = (1.0/(1.0+2.7E11*prpow(rhoreal,2.0)/prpow(Tereal,2.0)))
+      
+    # Buchler and Yueh 1976 .  Klein-Nishina for thermal electrons.
+    kappa_es_kncorr = (1.0/(1.0+prpow(Tereal/4.5E8,0.86)))
+  
+    #/ kappaes = sigma_T n_e = sigma_T n_b (n_e/n_b) = sigma_T rho/mb (ne/nb)
+    # below in [cm^{-1}]
+    kappaesreal = 0.2*(1.0+XFACT)*(rhoreal)*kappa_es_fermicorr*kappa_es_kncorr
+  
+      
+    #////////////
+    #
+    # Return code value of opacity
+    #
+    #////////////
+    overopacitybaralt=1.0/(OPACITYBAR*RHOBAR) # for those opacities in cm^{-1}
+    
+    # return results
+    lkappa = kappareal * overopacitybaralt
+    lkappan = kappanreal * overopacitybaralt
+    lkappaemit = kappaemitreal * overopacitybaralt
+    lkappanemit = kappanemitreal * overopacitybaralt
+    lkappaes = kappaesreal * overopacitybaralt
+  
+    return(kappadensityreal * overopacitybaralt,kappasyreal * overopacitybaralt,kappadcreal * overopacitybaralt,kappaesreal * overopacitybaralt, kappandensityreal * overopacitybaralt,kappansyreal * overopacitybaralt,kappandcreal * overopacitybaralt,phiphi)
+    
 
 
 def rddims(gotrad):
-    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
+    global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE,NRAD_ARAD_CODE,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
     #
     if 1==1: # default
         GGG=1
@@ -8973,7 +9539,8 @@ def rddims(gotrad):
         ENBAR=1
         UBAR=1
         TEMPBAR=1
-        ARAD_CODE_DEF=1
+        ARAD_CODE=1
+        NRAD_ARAD_CODE=1
         XFACT=1
         YFACT=0
         ZFACT=0
@@ -9005,8 +9572,9 @@ def rddims(gotrad):
         ENBAR = np.float64(dimfile[9])
         UBAR = np.float64(dimfile[10])
         TEMPBAR = np.float64(dimfile[11])
-        ARAD_CODE_DEF = np.float64(dimfile[12])
+        ARAD_CODE = np.float64(dimfile[12])
         XFACT = np.float64(dimfile[13])
+        #
         YFACT=(1.0-XFACT) # not used really here
         ZFACT=(1.0-XFACT) # not used really here
         MUMEAN=(1.0/(2.0*XFACT + 0.75*YFACT + 0.5*ZFACT)) # code didn't really account for MUMEAN in temperature at this time, so overwrite with MUMEAN=1
@@ -9039,18 +9607,18 @@ def rddims(gotrad):
         ENBAR = np.float64(dimfile[9])
         UBAR = np.float64(dimfile[10])
         TEMPBAR = np.float64(dimfile[11])
-        ARAD_CODE_DEF = np.float64(dimfile[12])
-        XFACT = np.float64(dimfile[13])
-        YFACT = np.float64(dimfile[14])
-        ZFACT = np.float64(dimfile[15])
-        MUMEAN = np.float64(dimfile[16])
-        MUMEAN = np.float64(dimfile[17]) # redundant to keep order of remaining
-        OPACITYBAR = np.float64(dimfile[18])
-        MASSCM = np.float64(dimfile[19])
-        KORAL2HARMRHO1 = np.float64(dimfile[20])
+        ARAD_CODE = np.float64(dimfile[12])
+        NRAD_ARAD_CODE = np.float64(dimfile[13])
         #
-        if(numheaderitems==22):
-            TEMPMIN = np.float64(dimfile[21])
+        XFACT = np.float64(dimfile[14])
+        YFACT = np.float64(dimfile[15])
+        ZFACT = np.float64(dimfile[16])
+        MUMEAN = np.float64(dimfile[17])
+        MUMEAN = np.float64(dimfile[18]) # redundant to keep order of remaining
+        OPACITYBAR = np.float64(dimfile[19])
+        MASSCM = np.float64(dimfile[20])
+        KORAL2HARMRHO1 = np.float64(dimfile[21])
+        TEMPMIN = np.float64(dimfile[22])
         #
         fin.close()
         #
@@ -9153,6 +9721,7 @@ def rfdtransform(gotgdetB=0):
     global nzgdump
     global r,h,ph
     global rho,ug,yfl1,yfl2,yfl3,yfl4,yfl5,uu,B,gdetB,Erf,uradu
+    global Tgas,Tradff,nradff,varexpf,kappa,kappan,kappaemit,kappanemit,kappaes,elambda,nlambda
     #
     print("what: %d\n",nz) ; sys.stdout.flush()
     print("what2: %d\n",nzgdump) ; sys.stdout.flush()
@@ -9559,6 +10128,7 @@ def rfdprocess(gotgdetB=0):
     #
     # external globals
     global rho,ug,yfl1,yfl2,yfl3,yfl4,yfl5,uu,B,gdetB,Erf,uradu
+    global Tgas,Tradff,nradff,varexpf,kappa,kappan,kappaemit,kappanemit,kappaes,elambda,nlambda
     # derived quantities
     global ug,uu,rhor,r,h,ph,rhoclean,ugclean
     global gdetB # tells either exists before or will be created here
@@ -26763,9 +27333,10 @@ def mkavgfigs():
         #
         # for dojonwindplot
         global rho,rholab,ug,B,gdetB,Erf,uradu,bsq,mu,ud,uu,beta,betatot #,uutrue
+        global Tgas,Tradff,nradff,varexpf,kappa,kappan,kappaemit,kappanemit,kappaes,elambda,nlambda
         global KAPPAUSER,KAPPAESUSER,tauradintegrated,tauradeffintegrated
         #
-        global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
+        global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE,NRAD_ARAD_CODE,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
         global gotrad
         rddims(gotrad)
         #
@@ -27571,7 +28142,8 @@ def mkavgfigs():
         uu=avg_uu
         # get kappa's
         global KAPPAUSER,KAPPAESUSER
-        getkappas(gotrad)
+        global gotrad,gotkappas
+        getkappas(gotrad,gotkappas)
         # get tau from averaged data
         taurad1integrated,taurad1flipintegrated,taurad2integrated,taurad2flipintegrated,tauradintegrated,tauradeff1integrated,tauradeff1flipintegrated,tauradeff2integrated,tauradeff2flipintegrated,tauradeffintegrated=compute_taurad()
         #
@@ -27600,9 +28172,10 @@ def mkavgfigs():
         print("Doing field mkframe")
         sys.stdout.flush()
         global rho,rholab,ug,B,gdetB,Erf,uradu,bsq,mu,ud,uu,beta,betatot
+        global Tgas,Tradff,nradff,varexpf,kappa,kappan,kappaemit,kappanemit,kappaes,elambda,nlambda
         global KAPPAUSER,KAPPAESUSER,tauradintegrated,tauradeffintegrated
         #
-        global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE_DEF,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
+        global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE,NRAD_ARAD_CODE,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
         rddims(gotrad)
         #
         rho=avg_rho
@@ -29072,8 +29645,15 @@ def tutorial1a(filename=None,which=1,fignum=1):
             Rijkapanu = (Erf/3.0)*(4.0*uradu[kapa]*uraddlocal[nu]+delta)
             Ruu= Ruu + Rijkapanu*udlocal[kapa]*uu[nu]
     # fluid-frame temperature of radiation
-    Trad = pow(np.fabs(Ruu)/ARAD_CODE_DEF,0.25) # ASSUMPTION: PLANCK-like in comoving frame even though radiation flowing through cell
+    Tradlte0 = pow(np.fabs(Ruu)/ARAD_CODE,0.25) # ASSUMPTION: PLANCK-like in comoving frame even though radiation flowing through cell
+    EBAR0=(2.7011780329190638961)
+    nradffratlte0 = Tradlte0**3/EBAR0 #NRAD_ARAD_CODE*
+    Ruurat=Ruu/ARAD_CODE
+    nradffrat=nradff #/NRAD_ARAD_CODE # already insdie
+    Tradtype1=Ruurat/(nradffrat*EBAR0+1E-50)
     #
+    global gotrad,gotkappas
+    (kappadensityreal,kappasyreal,kappadcreal,kappaesreal,kappandensityreal,kappansyreal,kappandcreal,phiphi)=getkappasdetails(gotrad, gotkappas)
     # now plot something you read-in
     plt.close(fignum)
     fig=plt.figure(fignum)
@@ -29130,7 +29710,7 @@ def tutorial1a(filename=None,which=1,fignum=1):
     if(which==14):
         myfun=Tgas*TEMPBAR
     if(which==15):
-        myfun=Trad*TEMPBAR
+        myfun=Tradff*TEMPBAR
     if(which==16):
         global uradd
         uradd = mdot(gv3,uradu)                  #g_mn urad^n
@@ -29167,6 +29747,78 @@ def tutorial1a(filename=None,which=1,fignum=1):
         myfun[myfun>10]=10
     if(which==21):
         myfun=Tgas
+    if(which==22):
+        myfun=np.log10(kappadensityreal)
+    if(which==23):
+        myfun=np.log10(kappasyreal)
+    if(which==24):
+        myfun=np.log10(kappadcreal)
+    if(which==25):
+        myfun=np.log10(kappaesreal)
+    if(which==26):
+        myfun=np.log10(kappa)
+    if(which==27):
+        myfun=np.log10(kappaemit)
+    if(which==28):
+        myfun=np.log10(kappan)
+    if(which==29):
+        myfun=np.log10(kappanemit)
+    if(which==30):
+        myfun=np.log10(kappaes)
+    if(which==31):
+        pg=(gam-1.0)*ug
+        Tg=pg/(rho/MUMEAN)
+        Tgreal=Tg*TEMPBAR+TEMPMINKELVIN() # Apply minimum electron temperature so ff and fb opacities don't diverge
+        Tereal=Tgreal
+        myfun=np.log10(Tgreal)
+        #rhoreal=rho*RHOBAR
+        #factorhm=2.75739E-48*np.power(Tereal,11.2)*np.power(ZFACT,0.5)/(1E-50+np.power(rhoreal,0.5)*(1.0+XFACT)*(1.0-ZFACT))
+        #myfun=np.power(np.float64(5.6704289139619668e-05*Tereal),11.2)
+    if(which==32):
+        myfun=np.log10((kappadensityreal+kappasyreal+kappadcreal))
+    if(which==33):
+        myfun=np.log10((kappadensityreal+kappasyreal+kappadcreal)/(kappa))
+    if(which==34):
+        myfun=np.log10((kappadensityreal)/(kappa))
+    if(which==35):
+        myfun=np.log10((kappasyreal)/(kappa))
+    if(which==36):
+        myfun=np.log10((kappadcreal)/(kappa))
+    if(which==40):
+        myfun=np.log10(Tradff/Tgas)
+    if(which==50):
+        myfun=np.log10(kappandensityreal/kappan)
+    if(which==51):
+        myfun=np.log10(kappansyreal/kappan)
+    if(which==52):
+        myfun=np.log10(kappandcreal/kappan)
+    if(which==53):
+        myfun=np.log10((kappandensityreal+kappansyreal+kappandcreal)/kappan)
+    if(which==54):
+        myfun=np.log10(kappa/kappan)
+    if(which==55):
+        myfun=np.log10(kappandensityreal/kappadensityreal)
+    if(which==56):
+        myfun=np.log10(kappansyreal/kappasyreal)
+    if(which==57):
+        myfun=np.log10(kappandcreal/kappadcreal)
+    if(which==58):
+        myfun=np.log10(Tradff/Tradlte0)
+    if(which==59):
+        myfun=np.log10(nradffrat/nradffratlte0)
+    if(which==60):
+        myfun=varexpf
+    if(which==61):
+        myfun = np.log10(phiphi)
+    if(which==62):
+        myfun=np.log10(nradffrat)
+    if(which==63):
+        myfun=np.log10((kappandensityreal)/kappansyreal)
+    if(which==64):
+        myfun=np.log10((kappandcreal)/kappansyreal)
+    #
+    #
+    #
     #
     plt.imshow(myfun[:,:,whichaphi])
     plt.colorbar()
@@ -29241,7 +29893,7 @@ def onclick2old(event,arglist,argnamelist,domask=1.0):
         print '%s[arg%d]=%f' %(argnamelist[funi],funi,funorig[myz,myx,0]);sys.stdout.flush()
 #, event.ind, zip(xdata[ind],ydata[ind]))
 
-def tutorial1old(filename=None,fignum=None,whichplot=1):
+def fcol(filename=None,fignum=None,whichplot=1):
     # first load grid file
     grid3d("gdump.bin")
     if(filename==None):
@@ -29251,6 +29903,35 @@ def tutorial1old(filename=None,fignum=None,whichplot=1):
     # now try loading a single fieldline file
     rfd(filename)
     # now plot something you read-in
+    #
+    pg=(gam-1.0)*ug  #clean # use clean to keep pg low and Tgas will have floor like below  # no, need to use what was in simulation to be consistent with simulation's idea of what optical depth was
+    # and of used ugclean above, then in funnel temperature would be very small and kappaff would be huge.
+    #
+    prad=(4.0/3.0-1.0)*Erf
+    # code Tgas for ideal gas
+    Tgas=pg/(rho/MUMEAN)
+    #
+    #Eradff = R^a_b u_a u^b
+    Ruu=0.0
+    uraddlocal = mdot(gv3,uradu)                  #g_mn urad^n
+    udlocal = mdot(gv3,uu)                  #g_mn u^n
+    for kapa in np.arange(4):
+        for nu in np.arange(4):
+            if(kapa==nu): delta = 1
+            else: delta = 0
+            Rijkapanu = (Erf/3.0)*(4.0*uradu[kapa]*uraddlocal[nu]+delta)
+            Ruu= Ruu + Rijkapanu*udlocal[kapa]*uu[nu]
+    # fluid-frame temperature of radiation
+    Tradlte0 = pow(np.fabs(Ruu)/ARAD_CODE,0.25) # ASSUMPTION: PLANCK-like in comoving frame even though radiation flowing through cell
+    EBAR0=(2.7011780329190638961)
+    nradffratlte0 = Tradlte0**3/EBAR0 #NRAD_ARAD_CODE*
+    Ruurat=Ruu/ARAD_CODE
+    nradffrat=nradff #/NRAD_ARAD_CODE # already insdie
+    Tradtype1=Ruurat/(nradffrat*EBAR0+1E-50)
+    #
+    global gotrad,gotkappas
+    (kappadensityreal,kappasyreal,kappadcreal,kappaesreal,kappandensityreal,kappansyreal,kappandcreal,phiphi)=getkappasdetails(gotrad, gotkappas)
+    #
     plt.close(fignum)
     fig=plt.figure(fignum)
     lrho=np.log10(yfl1/rho)
@@ -29269,22 +29950,51 @@ def tutorial1old(filename=None,fignum=None,whichplot=1):
     #myy=r[0:nxout,:,0]*np.sin(h[0:nxout,:,0])*np.sin(ph[0:nxout,:,0])
     #myz=r[0:nxout,:,0]*np.cos(h[0:nxout,:,0])
     #plt.pcolormesh(myx,myz,lrho[0:nxout,:,0]) #,vmin=vmintoplot,vmax=vmaxtoplot)
-    len=40.0
+    len=50.0
     extent=(0,len,-len,len)
     ncell=800
     Rhor=1+sqrt(1.0-a**2)
     domask=Rin/Rhor
     ifun = reinterp(lrho,extent,ncell,domask=domask,interporder='linear')
+    ifun2 = reinterp(Tradff/Tradlte0,extent,ncell,domask=domask,interporder='linear')
     #
     plt.imshow(ifun,extent=extent)
     plt.colorbar()
     #
     aphi = fieldcalc() # keep sign information
     iaphi = reinterp(aphi,extent,ncell,domask=domask,interporder='linear')
-    ax.contour(iaphi,linewidths=4,colors='black', extent=extent,hold='on',origin='lower')
+    #ax.contour(iaphi,linewidths=4,colors='green', extent=extent,hold='on',origin='lower')
     #################################################
+    ax.contour(ifun2,linewidths=2,colors='black', extent=extent,hold='on',origin='lower',levels=(1.1,))
+    ax.contour(ifun2,linewidths=2,colors='black', extent=extent,hold='on',origin='lower',levels=(1.5,))
+    ax.contour(ifun2,linewidths=2,colors='black', extent=extent,hold='on',origin='lower',levels=(2,))
+    ax.contour(ifun2,linewidths=2,colors='black', extent=extent,hold='on',origin='lower',levels=(3,))
+    ax.contour(ifun2,linewidths=2,colors='black', extent=extent,hold='on',origin='lower',levels=(5,))
+    ax.contour(ifun2,linewidths=2,colors='black', extent=extent,hold='on',origin='lower',levels=(6,))
+    ax.contour(ifun2,linewidths=2,colors='black', extent=extent,hold='on',origin='lower',levels=(7,))
+    #
     if(whichplot==2):
         ax.contour(ifun,linewidths=4,colors='cyan', extent=extent,hold='on',origin='lower',levels=(0,))
+    #
+    taurad1integrated,taurad1flipintegrated,taurad2integrated,taurad2flipintegrated,tauradintegrated,tauradeff1integrated,tauradeff1flipintegrated,tauradeff2integrated,tauradeff2flipintegrated,tauradeffintegrated=compute_taurad(domergeangles=True,radiussettau1zero=400)
+    global taurad2integrated,tauradeffintegrated
+    #
+    tauradintegratedavg=np.average(tauradintegrated,axis=-1)[:,:,None]
+    #
+    itauradintegrated = reinterp(tauradintegratedavg,extent,ncell,domask=1.0,interporder='linear')
+    itaurad2integrated = reinterp(taurad2integrated,extent,ncell,domask=1.0,interporder='linear')
+    itaurad2flipintegrated = reinterp(taurad2flipintegrated,extent,ncell,domask=1.0,interporder='linear')
+    itauradeffintegrated = reinterp(tauradeffintegrated,extent,ncell,domask=1.0,interporder='linear')
+    itauradeff2integrated = reinterp(tauradeff2integrated,extent,ncell,domask=1.0,interporder='linear')
+    itauradeff2flipintegrated = reinterp(tauradeff2flipintegrated,extent,ncell,domask=1.0,interporder='linear')
+    #
+    tauradlocal=(KAPPAUSER+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
+    tauradlocalavg=np.average(tauradlocal,axis=-1)[:,:,None]
+    itauradlocal = reinterp(tauradlocal,extent,ncell,domask=1.0,interporder='linear')
+    #
+    #ax.contour(itauradeff2integrated,linewidths=4,colors='cyan', extent=extent,hold='on',origin='lower',levels=(1,))
+    #ax.contour(itauradlocal,linewidths=4,colors='cyan', extent=extent,hold='on',origin='lower',levels=(1,))
+    #
     #
     vminmost=np.amin(lrho)
     vmaxmost=np.amax(lrho)
@@ -29293,6 +30003,121 @@ def tutorial1old(filename=None,fignum=None,whichplot=1):
     arglist=[yfl1true,np.log10(rho),np.log10(yfl1),uu[0]]
     argnamelist=["yfl1true","lrho","lrhofl","uu0"]
     cid = fig.canvas.mpl_connect('button_press_event', lambda event: onclick(event,arglist,argnamelist,domask=domask))
+    plt.savefig("fcol2.png")
+
+def compkappa(filename=None,fignum=None,whichplot=1):
+    # first load grid file
+    grid3d("gdump.bin")
+    if(filename==None):
+        filename="fieldline0007.bin"
+    if(fignum==None):
+        fignum=1
+    # now try loading a single fieldline file
+    rfd(filename)
+    # now plot something you read-in
+    #
+    pg=(gam-1.0)*ug  #clean # use clean to keep pg low and Tgas will have floor like below  # no, need to use what was in simulation to be consistent with simulation's idea of what optical depth was
+    # and of used ugclean above, then in funnel temperature would be very small and kappaff would be huge.
+    #
+    prad=(4.0/3.0-1.0)*Erf
+    # code Tgas for ideal gas
+    Tgas=pg/(rho/MUMEAN)
+    #
+    #Eradff = R^a_b u_a u^b
+    Ruu=0.0
+    uraddlocal = mdot(gv3,uradu)                  #g_mn urad^n
+    udlocal = mdot(gv3,uu)                  #g_mn u^n
+    for kapa in np.arange(4):
+        for nu in np.arange(4):
+            if(kapa==nu): delta = 1
+            else: delta = 0
+            Rijkapanu = (Erf/3.0)*(4.0*uradu[kapa]*uraddlocal[nu]+delta)
+            Ruu= Ruu + Rijkapanu*udlocal[kapa]*uu[nu]
+    # fluid-frame temperature of radiation
+    Tradlte0 = pow(np.fabs(Ruu)/ARAD_CODE,0.25) # ASSUMPTION: PLANCK-like in comoving frame even though radiation flowing through cell
+    EBAR0=(2.7011780329190638961)
+    nradffratlte0 = Tradlte0**3/EBAR0 #NRAD_ARAD_CODE*
+    Ruurat=Ruu/ARAD_CODE
+    nradffrat=nradff #/NRAD_ARAD_CODE # already insdie
+    Tradtype1=Ruurat/(nradffrat*EBAR0+1E-50)
+    #
+    global gotrad,gotkappas
+    (kappadensityreal,kappasyreal,kappadcreal,kappaesreal,kappandensityreal,kappansyreal,kappandcreal,phiphi)=getkappasdetails(gotrad, gotkappas)
+    #
+    plt.close(fignum)
+    fig=plt.figure(fignum)
+    lrho=np.log10(yfl1/rho)
+    if(whichplot==1):
+        lrho=np.log10(rho)
+        #lrho=np.log10(Erf)
+    if(whichplot==2):
+        lrho=yfl1/rho
+    #lrho=bsq/rho
+    #plco(lrho,cb=True,nc=50)
+    #plt.imshow(lrho)
+    #
+    ax = plt.gca()
+    #nxout=iofr(10.0)
+    #myx=r[0:nxout:,:,0]*np.sin(h[0:nxout,:,0])*np.cos(ph[0:nxout,:,0])
+    #myy=r[0:nxout,:,0]*np.sin(h[0:nxout,:,0])*np.sin(ph[0:nxout,:,0])
+    #myz=r[0:nxout,:,0]*np.cos(h[0:nxout,:,0])
+    #plt.pcolormesh(myx,myz,lrho[0:nxout,:,0]) #,vmin=vmintoplot,vmax=vmaxtoplot)
+    len=50.0
+    extent=(0,len,-len,len)
+    ncell=800
+    Rhor=1+sqrt(1.0-a**2)
+    domask=Rin/Rhor
+    #ifun = reinterp(np.log10(kappa),extent,ncell,domask=domask,interporder='linear')
+    #ifun = reinterp(np.log10(kappadensityreal/kappa),extent,ncell,domask=domask,interporder='linear')
+    ifun = reinterp(np.log10(kappasyreal/kappa),extent,ncell,domask=domask,interporder='linear')
+    ifun2 = reinterp(Tradff/Tradlte0,extent,ncell,domask=domask,interporder='linear')
+    #
+    plt.imshow(ifun,extent=extent)
+    plt.colorbar()
+    #
+    aphi = fieldcalc() # keep sign information
+    iaphi = reinterp(aphi,extent,ncell,domask=domask,interporder='linear')
+    #ax.contour(iaphi,linewidths=4,colors='green', extent=extent,hold='on',origin='lower')
+    #################################################
+    ax.contour(ifun2,linewidths=2,colors='black', extent=extent,hold='on',origin='lower',levels=(1.1,))
+    ax.contour(ifun2,linewidths=2,colors='black', extent=extent,hold='on',origin='lower',levels=(1.5,))
+    ax.contour(ifun2,linewidths=2,colors='black', extent=extent,hold='on',origin='lower',levels=(2,))
+    ax.contour(ifun2,linewidths=2,colors='black', extent=extent,hold='on',origin='lower',levels=(3,))
+    ax.contour(ifun2,linewidths=2,colors='black', extent=extent,hold='on',origin='lower',levels=(5,))
+    ax.contour(ifun2,linewidths=2,colors='black', extent=extent,hold='on',origin='lower',levels=(6,))
+    ax.contour(ifun2,linewidths=2,colors='black', extent=extent,hold='on',origin='lower',levels=(7,))
+    #
+    if(whichplot==2):
+        ax.contour(ifun,linewidths=4,colors='cyan', extent=extent,hold='on',origin='lower',levels=(0,))
+    #
+    taurad1integrated,taurad1flipintegrated,taurad2integrated,taurad2flipintegrated,tauradintegrated,tauradeff1integrated,tauradeff1flipintegrated,tauradeff2integrated,tauradeff2flipintegrated,tauradeffintegrated=compute_taurad(domergeangles=True,radiussettau1zero=400)
+    global taurad2integrated,tauradeffintegrated
+    #
+    tauradintegratedavg=np.average(tauradintegrated,axis=-1)[:,:,None]
+    #
+    itauradintegrated = reinterp(tauradintegratedavg,extent,ncell,domask=1.0,interporder='linear')
+    itaurad2integrated = reinterp(taurad2integrated,extent,ncell,domask=1.0,interporder='linear')
+    itaurad2flipintegrated = reinterp(taurad2flipintegrated,extent,ncell,domask=1.0,interporder='linear')
+    itauradeffintegrated = reinterp(tauradeffintegrated,extent,ncell,domask=1.0,interporder='linear')
+    itauradeff2integrated = reinterp(tauradeff2integrated,extent,ncell,domask=1.0,interporder='linear')
+    itauradeff2flipintegrated = reinterp(tauradeff2flipintegrated,extent,ncell,domask=1.0,interporder='linear')
+    #
+    tauradlocal=(KAPPAUSER+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
+    tauradlocalavg=np.average(tauradlocal,axis=-1)[:,:,None]
+    itauradlocal = reinterp(tauradlocal,extent,ncell,domask=1.0,interporder='linear')
+    #
+    #ax.contour(itauradeff2integrated,linewidths=4,colors='cyan', extent=extent,hold='on',origin='lower',levels=(1,))
+    #ax.contour(itauradlocal,linewidths=4,colors='cyan', extent=extent,hold='on',origin='lower',levels=(1,))
+    #
+    #
+    vminmost=np.amin(lrho)
+    vmaxmost=np.amax(lrho)
+    print("vminmost=%g vmaxmost=%g" % (vminmost,vmaxmost)) ;sys.stdout.flush()
+    yfl1true=yfl1/rho
+    arglist=[yfl1true,np.log10(rho),np.log10(yfl1),uu[0]]
+    argnamelist=["yfl1true","lrho","lrhofl","uu0"]
+    cid = fig.canvas.mpl_connect('button_press_event', lambda event: onclick(event,arglist,argnamelist,domask=domask))
+    plt.savefig("fcol2.png")
 
 def tutorial1alt(filename=None,fignum=None):
     global modelname
@@ -29481,7 +30306,8 @@ def tutorial1alt(filename=None,fignum=None):
     #################################################
     if 1==1:
         # reget tau's
-        getkappas(1)
+        global gotrad,gotkappas
+        getkappas(gotrad,gotkappas)
         taurad1integrated,taurad1flipintegrated,taurad2integrated,taurad2flipintegrated,tauradintegrated,tauradeff1integrated,tauradeff1flipintegrated,tauradeff2integrated,tauradeff2flipintegrated,tauradeffintegrated=compute_taurad(domergeangles=True,radiussettau1zero=200)
     global taurad2integrated,tauradeffintegrated
     #
@@ -29802,7 +30628,7 @@ def tutorial1aother(filename=None,which=1,fignum=1,whichaphi=0,whichtj=-1,outert
             Rijkapanu = (Erf/3.0)*(4.0*uradu[kapa]*uraddlocal[nu]+delta)
             Ruu= Ruu + Rijkapanu*udlocal[kapa]*uu[nu]
     # fluid-frame temperature of radiation
-    Trad = pow(np.fabs(Ruu)/ARAD_CODE_DEF,0.25) # ASSUMPTION: PLANCK-like in comoving frame even though radiation flowing through cell
+    Tradlte0 = pow(np.fabs(Ruu)/ARAD_CODE,0.25) # ASSUMPTION: PLANCK-like in comoving frame even though radiation flowing through cell
     #
     # now plot something you read-in
     plt.close(fignum)
@@ -30524,7 +31350,7 @@ def harmradtest1(path=None,fil=None):
         myz=r*np.cos(h)
         rho[myz>zrestrict]=0.0
         rho[myz<-zrestrict]=0.0
-        getkappas(1)
+        getkappas(1,0)
     #
     if 1==1:
         (rhoclean,ugclean,maxbsqorhonear,maxbsqorhofar,condmaxbsqorho,condmaxbsqorhorhs,rinterp)=getrhouclean(rho,ug,uu)
@@ -30846,7 +31672,7 @@ def supermad1(filename=None,fignum=1):
     #################################################
     if 1==1:
         # reget tau's
-        getkappas(1)
+        getkappas(1,0)
         taurad1integrated,taurad1flipintegrated,taurad2integrated,taurad2flipintegrated,tauradintegrated,tauradeff1integrated,tauradeff1flipintegrated,tauradeff2integrated,tauradeff2flipintegrated,tauradeffintegrated=compute_taurad(domergeangles=True,radiussettau1zero=200)
     global taurad2integrated,tauradeffintegrated
     #
