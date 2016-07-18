@@ -418,10 +418,10 @@ then
     # Note that this gives you a node for <=24 hours, so you can run 8 processes in parallel.  If you want to open a few xterm's from that window with (xterm &), in that terminal you will have to set the DISPLAY variable to whatever it was in the login node of nautilus (or else, the display variable is empty, and the new xterm windows refuse to spawn).
 fi
 
+
 #############################################
-# stampede and pfe
-if [ $system -eq 7 ] ||
-    [ $system -eq 8 ] # works for PFE for "san" that's 16 cores/node as well.  If change from san, change this.  Same queue name "normal".  But job can only be as long as 8 hours on PFE, 48 hours on stampede.
+# stampede
+if [ $system -eq 7 ]
 then
     # go to directory where "dumps" directory is
     # required for Nautilus, else will change to home directory when job starts
@@ -486,6 +486,87 @@ then
     numtotalcoresplot=$numcorespernodeplot
     thequeueplot="normal"  # try using this as "serial" instead of takes too long for makeplot or makeavgplot steps.
     apcmdplot="ibrun "
+    # only took 6 minutes for thickdisk7 doing 458 files inside qty2.npy!  Up to death at point when tried to resample in time.
+    timetotplot="1:00:00" # for normal can go up to 48 hours.  For serial up to 12 hours.
+
+
+    #############################################
+    # setup tasks, cores, and nodes for make2davg
+    numtasksavg0=`ls dumps/fieldline*.bin |wc -l`  # true total number of tasks
+    numtasksavg=$((($numtasksavg0)/($itemspergroup)))
+    numtasksavg=$(($numtasksavg+1))
+    numtaskscorravg=$(($numtasksavg))
+    numtotalnodesavg=$((($numtaskscorravg+$numtaskspernode-1)/$numtaskspernode))
+
+
+fi
+#############################################
+# pfe (very similar to stampede, but apcmd different and numtaskspernode can be >16 if not using model=san
+if [ $system -eq 8 ]
+then
+    # go to directory where "dumps" directory is
+    # required for Nautilus, else will change to home directory when job starts
+    thequeue="normal"
+    #
+    # CHOOSE total time
+    #timetot="4:30:00"
+    #timetot="24:00:00"
+    #
+    # makeavg:
+    #timetot="00:30:00" # makeavg2d takes 0:17:00 for 512 tasks for all files
+    # make1d: 0:44:30 for numtasks=512 and all files.
+    #timetot="01:00:00"
+    #timetot="04:00:00" # took 4 hours
+    # makemovie
+    timetot="01:00:00"
+    #
+    # numtasks set equal to total number of time slices, so each task does only 1 fieldline file
+    # CHOOSE below or set numtasks to some number <= number of field lines
+    numtasks=`ls dumps/fieldline*.bin |wc -l`  # true total number of tasks
+    #
+    #numtasks=$(($numtasks/2))
+    
+    # for makeavg2d only needs 1 hour for 512 tasks
+    #numtasks=512
+    # for make1d only needs 1 hour for 512 tasks
+    #numtasks=512
+    # for makemovie only needs 1 hour for 210 tasks
+    #numtasks=210
+    #
+    #
+    numtaskscorr=$(($numtasks))
+    # choose below number of cores per node (16 maximum for stampede, probably less if each fieldline file needs more memory than system has)
+    # choose 2 because thickdisk7 needs 12GB/core and only have 32GB per node
+    # stampede with radtma0.8 has resident max of 2GB/task, so can't quite have 16 tasks per node, so go with 14.
+    numtaskspernode=16
+    numtotalnodes=$((($numtaskscorr+$numtaskspernode-1)/$numtaskspernode))
+    apcmd="mpiexec -np $numtaskcorr "
+
+    # -n $numtasks # how many actual MPI processes there are.
+    # -N $numtotalnodes # number of nodes requested such that really have access to numnodes*16 total cores even if not using them.
+    
+
+    #################
+    # setup fake setup
+    numcorespernode=$numtasks
+    numnodes=1
+    #
+    chunklisttype=0
+    chunklist=\"`seq -s " " 1 $numtasks`\"
+    DATADIR=$dirname
+    
+
+
+    ##############################
+    # setup plotting part
+    numtasksplot=1
+    numnodesplot=1
+    numtotalnodesplot=1
+    numcorespernodeplot=16
+    # this gives 16GB free for plotting (temp vars + qty2.npy file has to be smaller than this or swapping will occur)
+    numtotalcoresplot=$numcorespernodeplot
+    thequeueplot="normal"  # try using this as "serial" instead of takes too long for makeplot or makeavgplot steps.
+    apcmdplot="mpiexec -np $numtasksplot "
     # only took 6 minutes for thickdisk7 doing 458 files inside qty2.npy!  Up to death at point when tried to resample in time.
     timetotplot="1:00:00" # for normal can go up to 48 hours.  For serial up to 12 hours.
 
