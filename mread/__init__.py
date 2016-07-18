@@ -187,13 +187,13 @@ random.seed()
 import time
 n = random.random()
 # TURN ON BELOW FOR STAMPEDE (so matplotlibdir??? will be randomly created)
-#time.sleep(10.0+100.0*n) # on supercomputer's need to wait so file system gets up to date
+time.sleep(10.0+100.0*n) # on supercomputer's need to wait so file system gets up to date
 
 import matplotlib
 #matplotlib.get_cachedir()
 n = random.random()
 # TURN ON BELOW FOR STAMPEDE (so matplotlibdir??? will be randomly created)
-#time.sleep(10.0*n) # on supercomputer's need to wait so file system gets up to date
+time.sleep(10.0*n) # on supercomputer's need to wait so file system gets up to date
 matplotlib.use('Agg')
 from matplotlib import rc
 from matplotlib import mlab

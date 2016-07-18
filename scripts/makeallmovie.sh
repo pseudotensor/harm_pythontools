@@ -38,7 +38,7 @@ dircollecttilt="thickdiskfull3d7tilt0.35 thickdiskfull3d7tilt0.7 thickdiskfull3d
 
 #################
 # choose:
-dircollect="rad1"
+dircollect="jonharmrad1"
 
 
 # note that thickdisk1 is actually bad, so ignore it.
@@ -53,7 +53,7 @@ dirrunstilt="sashaam9full2pit0.15 sashaa9b100t0.15 sashaa99t0.15 sashaam9full2pi
 
 ###################
 # choose
-dirruns="rad1"
+dirruns="jonharmrad1"
 
 
 #dirruns='thickdisk17'
@@ -161,15 +161,17 @@ isnautilus=`echo $HOSTNAME | egrep 'conseil|arronax' | wc -l`
 iskraken=`echo $HOSTNAME | grep "kraken" | wc -l`
 isphysics179=`echo $HOSTNAME | grep "physics-179" | wc -l`
 isstampede=`echo $HOSTNAME | grep "stampede" | wc -l`
+ispfe=`echo $HOSTNAME | grep "pfe" | wc -l`
 
 # parallel>=1 sets to use batch sysem if long job *and* if multiple jobs then submit all of them to batch system
-# 1 = orange
-# 2 = orange-gpu
-# 3 = ki-jmck
-# 4 = Nautilus
-# 5 = Kraken
-# 6 = physics-179
-# 7 = stampede
+# 1 = orange with qsub
+# 2 = orange-gpu with qsub
+# 3 = ki-jmck with no batch
+# 4 = Nautilus with qsub
+# 5 = Kraken with qsub
+# 6 = physics-179 with no batch
+# 7 = stampede with sbatch
+# 8 = pfe (NASA) with qsub
 if [ $isorange -eq 1  ]
 then
     system=1
@@ -198,6 +200,11 @@ then
 elif [ $isstampede -eq 1 ]
 then
     system=7
+    #parallel=1
+    parallel=2 # so uses makemoviec instead of python with appropriate arg changes
+elif [ $ispfe -eq 1 ]
+then
+    system=8
     #parallel=1
     parallel=2 # so uses makemoviec instead of python with appropriate arg changes
 else
@@ -875,7 +882,8 @@ if [ $collect -eq 1 ] &&
     [ $system -ne 3 ] &&
     [ $system -ne 5 ] &&
     [ $system -ne 6 ] &&
-    [ $system -ne 7 ]
+    [ $system -ne 7 ] &&
+    [ $system -ne 8 ]
 then
     # then copy over results
     for thedir in $dircollect
@@ -903,7 +911,9 @@ fi
 if [ $collect -eq 1 ] &&
     [ $system -eq 5 ] ||
     [ $collect -eq 1 ] &&
-    [ $system -eq 7 ]
+    [ $system -eq 7 ] ||
+    [ $collect -eq 1 ] &&
+    [ $system -eq 8 ]
 then
 # below only appears updated if also do powervsm stuff.
     pythonlatexfile="python_u_3_0_1.stdout.out"
@@ -921,7 +931,9 @@ if [ $collect -eq 1 ] &&
     [ $collect -eq 1 ] &&
     [ $system -eq 5 ] ||
     [ $collect -eq 1 ] &&
-    [ $system -eq 7 ]
+    [ $system -eq 7 ] ||
+    [ $collect -eq 1 ] &&
+    [ $system -eq 8 ]
 then
 
     cd $dirname/

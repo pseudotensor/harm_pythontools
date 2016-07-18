@@ -419,8 +419,9 @@ then
 fi
 
 #############################################
-# stampede partially
-if [ $system -eq 7 ]
+# stampede and pfe
+if [ $system -eq 7 ] ||
+    [ $system -eq 8 ] # works for PFE for "san" that's 16 cores/node as well.  If change from san, change this.  Same queue name "normal".  But job can only be as long as 8 hours on PFE, 48 hours on stampede.
 then
     # go to directory where "dumps" directory is
     # required for Nautilus, else will change to home directory when job starts
@@ -492,7 +493,7 @@ then
     #############################################
     # setup tasks, cores, and nodes for make2davg
     numtasksavg0=`ls dumps/fieldline*.bin |wc -l`  # true total number of tasks
-    numtasksavg=$((($numtasks0)/($itemspergroup)))
+    numtasksavg=$((($numtasksavg0)/($itemspergroup)))
     numtasksavg=$(($numtasksavg+1))
     numtaskscorravg=$(($numtasksavg))
     numtotalnodesavg=$((($numtaskscorravg+$numtaskspernode-1)/$numtaskspernode))
@@ -801,7 +802,11 @@ then
     then
         sed -e 's/USEKIJMCK=0/USEKIJMCK=1/g' -e 's/USEKRAKEN=1/USEKRAKEN=0/g' -e 's/USENAUTILUS=1/USENAUTILUS=0/g' -e 's/USEMPI=1/USEMPI=0/g' Makefile > Makefile.temp
         cp Makefile.temp Makefile
-    elif [ $system -eq 7 ]
+    elif [ $system -eq 7 ] # leave as default stampede
+    then
+        sed -e 's/USEKIJMCK=1/USEKIJMCK=0/g' -e 's/USEKRAKEN=1/USEKRAKEN=0/g' -e 's/USENAUTILUS=1/USENAUTILUS=0/g' -e 's/USESTAMPEDE=0/USESTAMPEDE=1/g' -e 's/USEMPI=0/USEMPI=1/g' Makefile > Makefile.temp
+        cp Makefile.temp Makefile
+    elif [ $system -eq 8 ] # leave as default stampede
     then
         sed -e 's/USEKIJMCK=1/USEKIJMCK=0/g' -e 's/USEKRAKEN=1/USEKRAKEN=0/g' -e 's/USENAUTILUS=1/USENAUTILUS=0/g' -e 's/USESTAMPEDE=0/USESTAMPEDE=1/g' -e 's/USEMPI=0/USEMPI=1/g' Makefile > Makefile.temp
         cp Makefile.temp Makefile
@@ -1075,6 +1080,28 @@ then
                             rm -rf $localerrorfile
                             rm -rf $localoutputfile
 		                    bsubcommand="qsub -S /bin/bash -A $ACCOUNT -l walltime=$timetot,size=$numtotalcores -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
+                        elif [ $system -eq 8 ]
+                        then
+                            superbatch=superbatchfile.$thebatch
+                            rm -rf $superbatch
+                            echo "cd $dirname" >> $superbatch
+                            #cat ~/setuppython27 >> $superbatch
+                            echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch
+                            rm -rf $dirname/matplotlibdir/
+                            echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $superbatch
+		                    fakeruni=99999999999999
+                            if [ $parallel -eq 1 ]
+                            then
+                                echo "$apcmd ./$thebatch" >> $superbatch
+                            else
+		                        cmdraw="$makemoviecfullfile $chunklisttype $chunklist $runn $DATADIR $jobcheck $myinitfile1 $runtype $modelname $fakeruni $runn"
+                                echo "$apcmd $cmdraw" >> $superbatch
+                            fi
+                            localerrorfile=python_${fakeruni}_${runn}.stderr.out
+                            localoutputfile=python_${fakeruni}_${runn}.out
+                            rm -rf $localerrorfile
+                            rm -rf $localoutputfile
+		                    bsubcommand="qsub -S /bin/bash -l walltime=$timetot,select=$numtotalnodes:ncpus=16:model=san -W group_list=s1497 -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
                         else
                             # probably specifying ptile below is not necessary
 		                    bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernode] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -1112,7 +1139,8 @@ then
 		                pendjobs=`showq -u $user | grep $userbatch | grep -v "SUMMARY OF JOBS"  2>&1 | grep $jobcheck | grep $userbatch | grep "Waiting" | wc -l`
 		                runjobs=`showq -u $user | grep $userbatch | grep -v "SUMMARY OF JOBS" 2>&1 | grep $jobcheck | grep $userbatch | grep "Running" | wc -l`
                     elif [ $system -eq 4 ] ||
-                        [ $system -eq 5 ]
+                        [ $system -eq 5 ] ||
+                        [ $system -eq 8 ]
                     then
 		                pendjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep $userbatch | grep " Q " | wc -l`
 		                runjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep $userbatch | grep " R " | wc -l`
@@ -1307,6 +1335,28 @@ then
                 rm -rf $localoutputfile
                 #
 		        bsubcommand="qsub -S /bin/bash -A $ACCOUNT -l walltime=$timetotplot,size=$numtotalcoresplot -q $thequeueplot -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
+            elif [ $system -eq 8 ]
+            then
+                superbatch=superbatchfile.$thebatch
+                rm -rf $superbatch
+                echo "cd $dirname" >> $superbatch
+                rm -rf $dirname/matplotlibdir/
+                echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $superbatch
+                echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch
+                if [ $parallel -eq 1 ]
+                then
+                    echo "$apcmdplot ./$thebatch" >> $superbatch
+                else
+		            cmdraw="$makemoviecfullfile $chunklisttypeplot $chunklistplot $runnplot $DATADIR $jobcheck $myinitfile3 $runtype $modelname plot $makepowervsmplots $makespacetimeplots $makefftplot $makespecplot $makeinitfinalplot $makethradfinalplot"
+                    echo "$apcmdplot $cmdraw" >> $superbatch
+                fi
+                localerrorfile=python.plot.stderr.out
+                localoutputfile=python.plot.out
+                rm -rf $localerrorfile
+                rm -rf $localoutputfile
+                #
+		        #bsubcommand="qsub -S /bin/bash -A $ACCOUNT -l walltime=$timetotplot,size=$numtotalcoresplot -q $thequeueplot -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
+		        bsubcommand="qsub -S /bin/bash -l walltime=$timetot,select=$numtotalnodes:ncpus=16:model=san -W group_list=s1497 -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
             else
                 # probably specifying ptile below is not necessary
 		        bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernodeplot] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -1342,7 +1392,8 @@ then
 		        pendjobs=`showq -u $user | grep $userbatch | grep -v "SUMMARY OF JOBS" 2>&1 | grep $jobcheck | grep $userbatch | grep "Waiting" | wc -l`
 		        runjobs=`showq -u $user | grep $userbatch | grep -v "SUMMARY OF JOBS" 2>&1 | grep $jobcheck | grep $userbatch | grep "Running" | wc -l`
             elif [ $system -eq 4 ] ||
-                [ $system -eq 5 ]
+                [ $system -eq 5 ] ||
+                [ $system -eq 8 ]
             then
 		        pendjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep $userbatch | grep " Q " | wc -l`
 		        runjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep $userbatch | grep " R " | wc -l`
@@ -1652,6 +1703,29 @@ then
                             rm -rf $localoutputfile
                             #
 		                    bsubcommand="qsub  -S /bin/bash -A $ACCOUNT -l walltime=$timetot,size=$numtotalcores -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
+                        elif [ $system -eq 8 ]
+                        then
+                            superbatch=superbatchfile.$thebatch
+                            rm -rf $superbatch
+                            echo "cd $dirname" >> $superbatch
+                            rm -rf $dirname/matplotlibdir/
+                            echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $superbatch
+                            echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch
+		                    fakeruni=99999999999999
+                            if [ $parallel -eq 1 ]
+                            then
+                                echo "$apcmd ./$thebatch" >> $superbatch
+                            else
+		                        cmdraw="$makemoviecfullfile $chunklisttype $chunklist $runn $DATADIR $jobcheck $myinitfile4 $runtype $modelname $fakeruni $runn"
+                                echo "$apcmd $cmdraw" >> $superbatch
+                            fi
+		                    localerrorfile=python_${fakeruni}_${runn}.stderr.movieframes.out
+                            localoutputfile=python_${fakeruni}_${runn}.movieframes.out
+                            rm -rf $localerrorfile
+                            rm -rf $localoutputfile
+                            #
+		                    bsubcommand="qsub -S /bin/bash -l walltime=$timetot,select=$numtotalnodes:ncpus=16:model=san -W group_list=s1497 -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
+		                    #bsubcommand="qsub  -S /bin/bash -A $ACCOUNT -l walltime=$timetot,size=$numtotalcores -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
                         else
                             # probably specifying ptile below is not necessary
 		                    bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernode] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -1689,7 +1763,8 @@ then
 		                pendjobs=`showq -u $user | grep $userbatch | grep -v "SUMMARY OF JOBS" 2>&1 | grep $jobcheck | grep $userbatch | grep "Waiting" | wc -l`
 		                runjobs=`showq -u $user | grep $userbatch | grep -v "SUMMARY OF JOBS" 2>&1 | grep $jobcheck | grep $userbatch | grep "Running" | wc -l`
                     elif [ $system -eq 4 ] ||
-                        [ $system -eq 5 ]
+                        [ $system -eq 5 ] ||
+                        [ $system -eq 8 ]
                     then
 		                pendjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep $userbatch | grep " Q " | wc -l`
 		                runjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep $userbatch | grep " R " | wc -l`
@@ -2036,6 +2111,29 @@ then
                             rm -rf $localoutputfile
                             #
 		                    bsubcommand="qsub  -S /bin/bash -A $ACCOUNT -l walltime=$timetot,size=$numtotalcoresavg -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
+                        elif [ $system -eq 8 ]
+                        then
+                            superbatch=superbatchfile.$thebatch
+                            rm -rf $superbatch
+                            echo "cd $dirname" >> $superbatch
+                            rm -rf $dirname/matplotlibdir/
+                            echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $superbatch
+                            echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch
+		                    fakeruni=99999999999999
+                            if [ $parallel -eq 1 ]
+                            then
+                                echo "$apcmd ./$thebatch" >> $superbatch
+                            else
+		                        cmdraw="$makemoviecfullfile $chunklisttype $chunklist $runn $DATADIR $jobcheck $myinitfile5 $runtype $modelname $fakeruni $runn $itemspergroup"
+                                echo "$apcmd $cmdraw" >> $superbatch
+                            fi
+		                    localerrorfile=python_${fakeruni}_${runn}.stderr.avg.out
+                            localoutputfile=python_${fakeruni}_${runn}.avg.out
+                            rm -rf $localerrorfile
+                            rm -rf $localoutputfile
+                            #
+		                    bsubcommand="qsub -S /bin/bash -l walltime=$timetot,select=$numtotalnodes:ncpus=16:model=san -W group_list=s1497 -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
+		                    #bsubcommand="qsub  -S /bin/bash -A $ACCOUNT -l walltime=$timetot,size=$numtotalcoresavg -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
                         else
                             # probably specifying ptile below is not necessary
 		                    bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernode] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -2075,7 +2173,8 @@ then
 		                pendjobs=`showq -u $user | grep $userbatch | grep -v "SUMMARY OF JOBS" 2>&1 | grep $jobcheck | grep $userbatch | grep "Waiting" | wc -l`
 		                runjobs=`showq -u $user | grep $userbatch | grep -v "SUMMARY OF JOBS" 2>&1 | grep $jobcheck | grep $userbatch | grep "Running" | wc -l`
                     elif [ $system -eq 4 ] ||
-                        [ $system -eq 5 ]
+                        [ $system -eq 5 ] ||
+                        [ $system -eq 8 ]
                     then
 		                pendjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep $userbatch | grep " Q " | wc -l`
 		                runjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep $userbatch | grep " R " | wc -l`
@@ -2293,6 +2392,28 @@ then
                 rm -rf $localoutputfile
                 #
 		        bsubcommand="qsub -S /bin/bash -A $ACCOUNT -l walltime=$timetotplot,size=$numtotalcoresplot -q $thequeueplot -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
+            elif [ $system -eq 8 ]
+            then
+                superbatch=superbatchfile.$thebatch
+                rm -rf $superbatch
+                echo "cd $dirname" >> $superbatch
+                rm -rf $dirname/matplotlibdir/
+                echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $superbatch
+                echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch
+                if [ $parallel -eq 1 ]
+                then
+                    echo "$apcmdplot ./$thebatch" >> $superbatch
+                else
+		            cmdraw="$makemoviecfullfile $chunklisttypeplot $chunklistplot $runnplot $DATADIR $jobcheck $myinitfile7 $runtype $modelname"
+                    echo "$apcmdplot $cmdraw" >> $superbatch
+                fi
+                localerrorfile=python.plot.avg.stderr.out
+                localoutputfile=python.plot.avg.out
+                rm -rf $localerrorfile
+                rm -rf $localoutputfile
+                #
+		        bsubcommand="qsub -S /bin/bash -l walltime=$timetot,select=$numtotalnodes:ncpus=16:model=san -W group_list=s1497 -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
+                #bsubcommand="qsub -S /bin/bash -A $ACCOUNT -l walltime=$timetotplot,size=$numtotalcoresplot -q $thequeueplot -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
             else
                     # probably specifying ptile below is not necessary
 		        bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernodeplot] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -2327,7 +2448,8 @@ then
 		        pendjobs=`showq -u $user | grep $userbatch | grep -v "SUMMARY OF JOBS" 2>&1 | grep $jobcheck | grep $userbatch | grep "Waiting" | wc -l`
 		        runjobs=`showq -u $user | grep $userbatch | grep -v "SUMMARY OF JOBS" 2>&1 | grep $jobcheck | grep $userbatch | grep "Running" | wc -l`
             elif [ $system -eq 4 ] ||
-                [ $system -eq 5 ]
+                [ $system -eq 5 ] ||
+                [ $system -eq 8 ]
             then
 		        pendjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep $userbatch | grep " Q " | wc -l`
 		        runjobs=`qstat -e $thequeue 2>&1 | grep $jobcheck | grep $userbatch | grep " R " | wc -l`

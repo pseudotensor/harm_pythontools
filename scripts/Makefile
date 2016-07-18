@@ -17,6 +17,7 @@ USEKIJMCK=0
 USEKRAKEN=0
 USENAUTILUS=0
 USESTAMPEDE=1
+# works for PFE as well
 
 #############
 # Choose whether to use MPI
