@@ -578,6 +578,7 @@ then
     numtasksavg=$(($numtasksavg+1))
     numtaskscorravg=$(($numtasksavg))
     numtotalnodesavg=$((($numtaskscorravg+$numtaskspernode-1)/$numtaskspernode))
+    apcmdavg="mpiexec -np $numtasksavg "
 
 
 fi
@@ -2158,10 +2159,10 @@ then
 		                    fakeruni=99999999999999
                             if [ $parallel -eq 1 ]
                             then
-                                echo "$apcmd ./$thebatch" >> $superbatch
+                                echo "$apcmdavg ./$thebatch" >> $superbatch
                             else
 		                        cmdraw="$makemoviecfullfile $chunklisttype $chunklist $runn $DATADIR $jobcheck $myinitfile5 $runtype $modelname $fakeruni $runn $itemspergroup"
-                                echo "$apcmd $cmdraw" >> $superbatch
+                                echo "$apcmdavg $cmdraw" >> $superbatch
                             fi
 		                    localerrorfile=python_${fakeruni}_${runn}.stderr.avg.out
                             localoutputfile=python_${fakeruni}_${runn}.avg.out
@@ -2181,10 +2182,10 @@ then
 		                    fakeruni=99999999999999
                             if [ $parallel -eq 1 ]
                             then
-                                echo "$apcmd ./$thebatch" >> $superbatch
+                                echo "$apcmdavg ./$thebatch" >> $superbatch
                             else
 		                        cmdraw="$makemoviecfullfile $chunklisttype $chunklist $runn $DATADIR $jobcheck $myinitfile5 $runtype $modelname $fakeruni $runn $itemspergroup"
-                                echo "$apcmd $cmdraw" >> $superbatch
+                                echo "$apcmdavg $cmdraw" >> $superbatch
                             fi
 		                    localerrorfile=python_${fakeruni}_${runn}.stderr.avg.out
                             localoutputfile=python_${fakeruni}_${runn}.avg.out
@@ -2203,10 +2204,10 @@ then
 		                    fakeruni=99999999999999
                             if [ $parallel -eq 1 ]
                             then
-                                echo "$apcmd ./$thebatch" >> $superbatch
+                                echo "$apcmdavg ./$thebatch" >> $superbatch
                             else
 		                        cmdraw="$makemoviecfullfile $chunklisttype $chunklist $runn $DATADIR $jobcheck $myinitfile5 $runtype $modelname $fakeruni $runn $itemspergroup"
-                                echo "$apcmd $cmdraw" >> $superbatch
+                                echo "$apcmdavg $cmdraw" >> $superbatch
                             fi
 		                    localerrorfile=python_${fakeruni}_${runn}.stderr.avg.out
                             localoutputfile=python_${fakeruni}_${runn}.avg.out
