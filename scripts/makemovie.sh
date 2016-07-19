@@ -540,7 +540,7 @@ then
     # stampede with radtma0.8 has resident max of 2GB/task, so can't quite have 16 tasks per node, so go with 14.
     numtaskspernode=16
     numtotalnodes=$((($numtaskscorr+$numtaskspernode-1)/$numtaskspernode))
-    apcmd="mpiexec -np $numtaskcorr "
+    apcmd="mpiexec -np $numtaskscorr "
 
     # -n $numtasks # how many actual MPI processes there are.
     # -N $numtotalnodes # number of nodes requested such that really have access to numnodes*16 total cores even if not using them.
@@ -1437,7 +1437,7 @@ then
                 rm -rf $localoutputfile
                 #
 		        #bsubcommand="qsub -S /bin/bash -A $ACCOUNT -l walltime=$timetotplot,size=$numtotalcoresplot -q $thequeueplot -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
-		        bsubcommand="qsub -S /bin/bash -l walltime=$timetot,select=$numtotalnodes:ncpus=16:model=san -W group_list=s1497 -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
+		        bsubcommand="qsub -S /bin/bash -l walltime=$timetotplot,select=$numtotalnodesplot:ncpus=16:model=san -W group_list=s1497 -q $thequeueplot -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
             else
                 # probably specifying ptile below is not necessary
 		        bsubcommand="bsub -n 1 -x -R span[ptile=$numcorespernodeplot] -q $thequeue -J $jobname -o $outputfile -e $errorfile ./$thebatch"
@@ -2213,7 +2213,7 @@ then
                             rm -rf $localerrorfile
                             rm -rf $localoutputfile
                             #
-		                    bsubcommand="qsub -S /bin/bash -l walltime=$timetot,select=$numtotalnodes:ncpus=16:model=san -W group_list=s1497 -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
+		                    bsubcommand="qsub -S /bin/bash -l walltime=$timetot,select=$numtotalnodesavg:ncpus=16:model=san -W group_list=s1497 -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
 		                    #bsubcommand="qsub  -S /bin/bash -A $ACCOUNT -l walltime=$timetot,size=$numtotalcoresavg -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
                         else
                             # probably specifying ptile below is not necessary
@@ -2493,7 +2493,7 @@ then
                 rm -rf $localerrorfile
                 rm -rf $localoutputfile
                 #
-		        bsubcommand="qsub -S /bin/bash -l walltime=$timetot,select=$numtotalnodes:ncpus=16:model=san -W group_list=s1497 -q $thequeue -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
+		        bsubcommand="qsub -S /bin/bash -l walltime=$timetotplot,select=$numtotalnodesplot:ncpus=16:model=san -W group_list=s1497 -q $thequeueplot -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
                 #bsubcommand="qsub -S /bin/bash -A $ACCOUNT -l walltime=$timetotplot,size=$numtotalcoresplot -q $thequeueplot -N $jobname -o $localoutputfile -e $localerrorfile -M $emailaddr -m be ./$superbatch"
             else
                     # probably specifying ptile below is not necessary
