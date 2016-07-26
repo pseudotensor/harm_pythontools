@@ -29615,7 +29615,7 @@ def sgrpol1(modelname="blandford3d_new",filename=None,fignum=None,whichplot=1,te
 
 
 
-def tutorial1a(filename=None,which=1,fignum=1):
+def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     global modelname
     modelname="radtma0.8"
     #
@@ -29672,7 +29672,7 @@ def tutorial1a(filename=None,which=1,fignum=1):
     print("mysumrat")
     print(mysumrat)
     #
-    whichaphi=0
+    #whichaphi=0
     #
     if(which==1):
         myfun=np.log10(rho)
@@ -29708,9 +29708,9 @@ def tutorial1a(filename=None,which=1,fignum=1):
     if(which==13):
         myfun=bsq/rho
     if(which==14):
-        myfun=Tgas*TEMPBAR
+        myfun=np.log10(Tgas*TEMPBAR)
     if(which==15):
-        myfun=Tradff*TEMPBAR
+        myfun=np.log10(Tradff*TEMPBAR)
     if(which==16):
         global uradd
         uradd = mdot(gv3,uradu)                  #g_mn urad^n
@@ -29817,6 +29817,19 @@ def tutorial1a(filename=None,which=1,fignum=1):
     if(which==64):
         myfun=np.log10((kappandcreal)/kappansyreal)
     #
+    if(which==100):
+        myfun=np.log10(ug/rho)
+    if(which==101):
+        myfun=np.log10(ug/Erf)
+    if(which==102):
+        myfun=uu[0]
+    if(which==103):
+        global uradd
+        uradd = mdot(gv3,uradu)                  #g_mn urad^n
+        global ud
+        ud = mdot(gv3,uu)                  #g_mn urad^n
+        #myfun=np.log10(-fTudRAD(0,0)*1E30)
+        myfun=-fTudRAD(1,0)
     #
     #
     #
@@ -29837,10 +29850,11 @@ def tutorial1a(filename=None,which=1,fignum=1):
     print("y: %g %g %g" % (y1,y2,y3)) ; sys.stdout.flush()
     #
     bsqorho=bsq/rho
-    BSQORHOLIMIT=100
-    bsqorholimit=BSQORHOLIMIT/5
-    factor=np.exp(-bsqorho/bsqorholimit)
-    ax.contour(factor[:,:,whichaphi],linewidths=4,colors='red', levels=(.5,))
+    #BSQORHOLIMIT=100
+    #bsqorholimit=BSQORHOLIMIT/5
+    #factor=np.exp(-bsqorho/bsqorholimit)
+    #ax.contour(factor[:,:,whichaphi],linewidths=4,colors='red', levels=(.5,))
+    ax.contour(bsqorho[:,:,whichaphi],linewidths=4,colors='red', levels=(1.0,))
     #
     vminmost=np.amin(myfun)
     vmaxmost=np.amax(myfun)
@@ -29848,6 +29862,9 @@ def tutorial1a(filename=None,which=1,fignum=1):
     #
     #ax.contour(myfun[:,:,whichaphi],linewidths=3,colors='magenta', levels=(vmaxmost*0.9,))
     #
+    print(r[0:20,0,0])
+    Rhor=1+sqrt(1.0-a**2)
+    print("Rhor=%g" % (Rhor))
     #
     Rhor=1+sqrt(1-a**2)
     domask=Rin/Rhor

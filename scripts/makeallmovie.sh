@@ -38,7 +38,8 @@ dircollecttilt="thickdiskfull3d7tilt0.35 thickdiskfull3d7tilt0.7 thickdiskfull3d
 
 #################
 # choose:
-dircollect="rad1"
+#dircollect="rad1"
+dircollect="jonharmrad1 jonharmrad2 jonharmrad3 jonharmrad5 jonharmrad7 jonharmrad8 jonharmrad9 jonharmrad10 jonharmrad11 jonharmrad13 jonharmrad14 jonharmrad15"
 
 
 # note that thickdisk1 is actually bad, so ignore it.
@@ -53,7 +54,8 @@ dirrunstilt="sashaam9full2pit0.15 sashaa9b100t0.15 sashaa99t0.15 sashaam9full2pi
 
 ###################
 # choose
-dirruns="rad1"
+#dirruns="rad1"
+dirruns="jonharmrad1 jonharmrad2 jonharmrad3 jonharmrad5 jonharmrad7 jonharmrad8 jonharmrad9 jonharmrad10 jonharmrad11 jonharmrad13 jonharmrad14 jonharmrad15"
 
 
 #dirruns='thickdisk17'
@@ -161,6 +163,7 @@ isnautilus=`echo $HOSTNAME | egrep 'conseil|arronax' | wc -l`
 iskraken=`echo $HOSTNAME | grep "kraken" | wc -l`
 isphysics179=`echo $HOSTNAME | grep "physics-179" | wc -l`
 isstampede=`echo $HOSTNAME | grep "stampede" | wc -l`
+ispfe=`echo $HOSTNAME | grep "pfe" | wc -l`
 
 # parallel>=1 sets to use batch sysem if long job *and* if multiple jobs then submit all of them to batch system
 # 1 = orange
@@ -170,6 +173,7 @@ isstampede=`echo $HOSTNAME | grep "stampede" | wc -l`
 # 5 = Kraken
 # 6 = physics-179
 # 7 = stampede
+# 8 = pfe
 if [ $isorange -eq 1  ]
 then
     system=1
@@ -198,6 +202,11 @@ then
 elif [ $isstampede -eq 1 ]
 then
     system=7
+    #parallel=1
+    parallel=2 # so uses makemoviec instead of python with appropriate arg changes
+elif [ $ispfe -eq 1 ]
+then
+    system=8
     #parallel=1
     parallel=2 # so uses makemoviec instead of python with appropriate arg changes
 else
@@ -869,14 +878,16 @@ fi
 
 ##############################################
 #
-echo "Now collect Latex results"
 
-if [ $collect -eq 1 ] &&
+# for systems doing remote collection
+if [ $collect -ge 1 ] &&
     [ $system -ne 3 ] &&
     [ $system -ne 5 ] &&
     [ $system -ne 6 ] &&
-    [ $system -ne 7 ]
+    [ $system -ne 7 ] &&
+    [ $system -ne 8 ]
 then
+    echo "Now collect Latex results"
     # then copy over results
     for thedir in $dircollect
     do
@@ -900,47 +911,78 @@ fi
 
 
 
-if [ $collect -eq 1 ] &&
+if [ $collect -ge 1 ] &&
     [ $system -eq 5 ] ||
-    [ $collect -eq 1 ] &&
-    [ $system -eq 7 ]
+    [ $collect -ge 1 ] &&
+    [ $system -eq 7 ] ||
+    [ $collect -ge 1 ] &&
+    [ $system -eq 8 ]
 then
+    echo "Now collect Latex results: "$system
 # below only appears updated if also do powervsm stuff.
     pythonlatexfile="python_u_3_0_1.stdout.out"
 # below won't have updated Q's
 #    pythonlatexfile="python_u_3_0_0.stdout.out"
 else
+    echo "Now collect Latex results: "$system
     pythonlatexfile="python.plot.out"
 fi
 
 
-if [ $collect -eq 1 ] &&
+
+
+if [ $collect -ge 1 ] &&
     [ $system -eq 3 ] ||
-    [ $collect -eq 1 ] &&
+    [ $collect -ge 1 ] &&
     [ $system -eq 6 ] ||
-    [ $collect -eq 1 ] &&
+    [ $collect -ge 1 ] &&
     [ $system -eq 5 ] ||
-    [ $collect -eq 1 ] &&
-    [ $system -eq 7 ]
+    [ $collect -ge 1 ] &&
+    [ $system -eq 7 ] ||
+    [ $collect -ge 1 ] &&
+    [ $system -eq 8 ]
 then
+    echo "Now collect Latex results"
 
     cd $dirname/
 
     echo "Doing collection"
 
-    # refresh tables.tex
-    rm  -rf tables$moviedirname.tex
+    if [ $collect -eq 2 ]
+    then
+        # refresh tables.tex
+        prepath=$moviedirname/
+        rm -rf $prepath
+        mkdir $prepath
+        rm  -rf ${prepath}/tables$moviedirname.tex
+        extraname="$moviedirname"
+    fi
+
 
     iiter=1
     for thedir in $dircollect
     do
-	    echo "Doing collection for: "$thedir
+
+	    echo "Doing collection for: "$thedir/$moviedirname
+
+        if [ $collect -eq 1 ]
+        then
+            cd $dirname/${thedir}/$moviedirname/
+            # refresh tables.tex
+            extraname="_${thedir}_$moviedirname"
+            prepath=""
+            rm  -rf ${prepath}/tables${extraname}.tex
+            extrapath=""
+        else
+            extrapath=${thedir}/$moviedirname
+        fi
+
         if [ $iiter -eq 1 ]
         then
-		    cat $dirname/${thedir}/$moviedirname/$pythonlatexfile | grep "HLatex" >> tables$moviedirname.tex
-		    echo "HLatex: \hline" >> tables$moviedirname.tex
+		    cat ${extrapath}/pythonlatexfile | grep "HLatex" >> ${prepath}/tables${extraname}.tex
+		    echo "HLatex: \hline" >> ${prepath}/tables${extraname}.tex
         fi
-		cat $dirname/${thedir}/$moviedirname/$pythonlatexfile | grep "VLatex" >> tables$moviedirname.tex
+		cat ${extrapath}/$pythonlatexfile | grep "VLatex" >> ${prepath}/tables${extraname}.tex
 		echo "$dirname $thedir $moviedirname $pythonlatexfile : $iiter"
 
         iiter=$(( $iiter+1))
@@ -948,8 +990,8 @@ then
 
 
     # temporary fix to model names:
-    #cat tables$moviedirname.tex | sed 's/0_C/0\_C/g' | sed 's/A94BfN40\\_C5/A-94BfN10\\_Cx/g' | sed 's/A-94BfN10\\_C1/A94BfN40\\_C5/g' | sed 's/A-94BfN10\\_Cx/A-94BfN10\\_C1/g' | sed 's/MB09_D /MB09\\_D /g'  > tables$moviedirname.tex.tmp
-    #mv tables$moviedirname.tex.tmp tables$moviedirname.tex
+    #cat ${prepath}/tables${extraname}.tex | sed 's/0_C/0\_C/g' | sed 's/A94BfN40\\_C5/A-94BfN10\\_Cx/g' | sed 's/A-94BfN10\\_C1/A94BfN40\\_C5/g' | sed 's/A-94BfN10\\_Cx/A-94BfN10\\_C1/g' | sed 's/MB09_D /MB09\\_D /g'  > ${prepath}/tables${extraname}.tex.tmp
+    #mv ${prepath}/tables${extraname}.tex.tmp ${prepath}/tables${extraname}.tex
 
     ##############################################
     #
@@ -962,7 +1004,7 @@ then
 
 
         ###############################
-        fname=table$numtbl$moviedirname.tex
+        fname=${prepath}/table$numtbl${extraname}.tex
         rm -rf $fname
         #
         echo "\begin{table*}" >> $fname
@@ -1038,7 +1080,7 @@ then
         fi
         #
         echo "\begin{center}" >> $fname
-        rawnumc=`grep "Latex$numtbl:" tables$moviedirname.tex | sed 's/[HV]Latex$numtbl: //g' | tail -1 | wc | awk '{print $2}'`
+        rawnumc=`grep "Latex$numtbl:" ${prepath}/tables${extraname}.tex | sed 's/[HV]Latex$numtbl: //g' | tail -1 | wc | awk '{print $2}'`
         numc=$(( ($rawnumc - 2)/2 ))
         str1="\begin{tabular}[h]{|"
         str2=""
@@ -1060,9 +1102,9 @@ then
         if [ $numtbl -eq 14 ] # fits
         then
             # no 2D or MB09D models here
-            egrep "Latex$numtbl:|Latex:" tables$moviedirname.tex | sed 's/\([0-9]\)%/\1\\%/g' | sed 's/[HV]Latex'$numtbl': //g' | sed 's/[HV]Latex: //g' | sed 's/\$\&/$ \&/g'   | sed 's/A0\.94BpN100 /\\\\\nA0\.94BpN100 /g' | sed 's/{\\bf A-0.94BfN40HR} /\\\\\n{\\bf A-0.94BfN40HR} /g' | sed 's/A-0\.94BtN10 /\\\\\nA-0\.94BtN10 /g'  | sed 's/MB09Q /\\\\\nMB09Q /g'| sed 's/A-0.9N100 /\\\\\nA-0.9N100 /g'  | sed 's/} \&/}$ \&/g' | sed 's/} \\/}$  \\/g' | sed 's/nan/0/g' | sed 's/e+0/e/g' | sed 's/e-0/e-/g'  | column  -t >> $fname
+            egrep "Latex$numtbl:|Latex:" ${prepath}/tables${extraname}.tex | sed 's/\([0-9]\)%/\1\\%/g' | sed 's/[HV]Latex'$numtbl': //g' | sed 's/[HV]Latex: //g' | sed 's/\$\&/$ \&/g'   | sed 's/A0\.94BpN100 /\\\\\nA0\.94BpN100 /g' | sed 's/{\\bf A-0.94BfN40HR} /\\\\\n{\\bf A-0.94BfN40HR} /g' | sed 's/A-0\.94BtN10 /\\\\\nA-0\.94BtN10 /g'  | sed 's/MB09Q /\\\\\nMB09Q /g'| sed 's/A-0.9N100 /\\\\\nA-0.9N100 /g'  | sed 's/} \&/}$ \&/g' | sed 's/} \\/}$  \\/g' | sed 's/nan/0/g' | sed 's/e+0/e/g' | sed 's/e-0/e-/g'  | column  -t >> $fname
         else
-            egrep "Latex$numtbl:|Latex:" tables$moviedirname.tex | sed 's/\([0-9]\)%/\1\\%/g' | sed 's/[HV]Latex'$numtbl': //g' | sed 's/[HV]Latex: //g' | sed 's/\$\&/$ \&/g'   | sed 's/A0\.94BpN100 /\\\\\nA0\.94BpN100 /g' | sed 's/{\\bf A-0.94BfN40HR} /\\\\\n{\\bf A-0.94BfN40HR} /g' | sed 's/A-0\.94BtN10 /\\\\\nA-0\.94BtN10 /g'  | sed 's/MB09D /\\\\\nMB09D /g'| sed 's/A-0.9N100 /\\\\\nA-0.9N100 /g'  | sed 's/} \&/}$ \&/g' | sed 's/} \\/}$  \\/g' | sed 's/nan/0/g' | sed 's/e+0/e/g' | sed 's/e-0/e-/g'  | column  -t >> $fname
+            egrep "Latex$numtbl:|Latex:" ${prepath}/tables${extraname}.tex | sed 's/\([0-9]\)%/\1\\%/g' | sed 's/[HV]Latex'$numtbl': //g' | sed 's/[HV]Latex: //g' | sed 's/\$\&/$ \&/g'   | sed 's/A0\.94BpN100 /\\\\\nA0\.94BpN100 /g' | sed 's/{\\bf A-0.94BfN40HR} /\\\\\n{\\bf A-0.94BfN40HR} /g' | sed 's/A-0\.94BtN10 /\\\\\nA-0\.94BtN10 /g'  | sed 's/MB09D /\\\\\nMB09D /g'| sed 's/A-0.9N100 /\\\\\nA-0.9N100 /g'  | sed 's/} \&/}$ \&/g' | sed 's/} \\/}$  \\/g' | sed 's/nan/0/g' | sed 's/e+0/e/g' | sed 's/e-0/e-/g'  | column  -t >> $fname
         fi
         #
         echo "\hline" >> $fname
@@ -1075,13 +1117,13 @@ then
 
         # Copy over to final table file names
 
-        cp $fname tbl$numtbl.tex
+        cp $fname ${prepath}/tbl$numtbl.tex
 
     done
 
 
-    echo "For paper, now do:   scp tbl[0-9].tex jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/ ; scp tbl[0-9][0-9].tex jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/"
-    echo "For paper, now do:   scp tbl[0-9].tex jon@physics-179.umd.edu:/data/jon/harm_harmrad/ ; scp tbl[0-9][0-9].tex jon@physics-179.umd.edu:/data/jon/harm_harmrad/"
+    echo "For paper, now do:   scp ${prepath}/tbl[0-9].tex jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/ ; scp ${prepath}/tbl[0-9][0-9].tex jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/"
+    echo "For paper, now do:   scp ${prepath}/tbl[0-9].tex jon@physics-179.umd.edu:/data/jon/harm_harmrad/ ; scp ${prepath}/tbl[0-9][0-9].tex jon@physics-179.umd.edu:/data/jon/harm_harmrad/"
     
     
 
@@ -1092,13 +1134,13 @@ then
 
 	echo "Doing Aux Tables"
 
-    grep "Latex42:" tables$moviedirname.tex | sed 's/[HV]Latex42: //g'  | column  -t > table42$moviedirname.tex
-    grep "Latex93:" tables$moviedirname.tex | sed 's/[HV]Latex93: //g'  | column  -t > table93$moviedirname.tex
-    grep "Latex94:" tables$moviedirname.tex | sed 's/[HV]Latex94: //g'  | column  -t > table94$moviedirname.tex
-    grep "Latex95:" tables$moviedirname.tex | sed 's/[HV]Latex95: //g'  | column  -t > table95$moviedirname.tex
-    grep "Latex96:" tables$moviedirname.tex | sed 's/[HV]Latex96: //g'  | column  -t > table96$moviedirname.tex
-    grep "Latex97:" tables$moviedirname.tex | sed 's/[HV]Latex97: //g'  | column  -t > table97$moviedirname.tex
-    grep "Latex99:" tables$moviedirname.tex | sed 's/[HV]Latex99: //g'  | column  -t > table99$moviedirname.tex
+    grep "Latex42:" ${prepath}/tables${extraname}.tex | sed 's/[HV]Latex42: //g'  | column  -t > ${prepath}/table42${extraname}.tex
+    grep "Latex93:" ${prepath}/tables${extraname}.tex | sed 's/[HV]Latex93: //g'  | column  -t > ${prepath}/table93${extraname}.tex
+    grep "Latex94:" ${prepath}/tables${extraname}.tex | sed 's/[HV]Latex94: //g'  | column  -t > ${prepath}/table94${extraname}.tex
+    grep "Latex95:" ${prepath}/tables${extraname}.tex | sed 's/[HV]Latex95: //g'  | column  -t > ${prepath}/table95${extraname}.tex
+    grep "Latex96:" ${prepath}/tables${extraname}.tex | sed 's/[HV]Latex96: //g'  | column  -t > ${prepath}/table96${extraname}.tex
+    grep "Latex97:" ${prepath}/tables${extraname}.tex | sed 's/[HV]Latex97: //g'  | column  -t > ${prepath}/table97${extraname}.tex
+    grep "Latex99:" ${prepath}/tables${extraname}.tex | sed 's/[HV]Latex99: //g'  | column  -t > ${prepath}/table99${extraname}.tex
 
     echo "Done with collection"
 
