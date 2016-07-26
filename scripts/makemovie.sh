@@ -1946,7 +1946,6 @@ then
         then
             cp ~/py/scripts/makelinkimagenew3.sh .
             sh ./makelinkimagenew3.sh
-            echo "to get off pfe, do something like: scp jonharmrad*/movienew1/*.mp4 jon@physics-179.umd.edu:"
         fi
 
 
