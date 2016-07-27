@@ -967,25 +967,30 @@ then
 
         if [ $collect -eq 1 ]
         then
-            cd $dirname/${thedir}/$moviedirname/
+            cd ${thedir}/$moviedirname/
             # refresh tables.tex
             extraname="_${thedir}_$moviedirname"
-            prepath=""
+            prepath="./"
             rm  -rf ${prepath}/tables${extraname}.tex
-            extrapath=""
+            extrapath="./"
         else
             extrapath=${thedir}/$moviedirname
         fi
 
         if [ $iiter -eq 1 ]
         then
-		    cat ${extrapath}/pythonlatexfile | grep "HLatex" >> ${prepath}/tables${extraname}.tex
+		    cat ${extrapath}/$pythonlatexfile | grep "HLatex" >> ${prepath}/tables${extraname}.tex
 		    echo "HLatex: \hline" >> ${prepath}/tables${extraname}.tex
         fi
 		cat ${extrapath}/$pythonlatexfile | grep "VLatex" >> ${prepath}/tables${extraname}.tex
 		echo "$dirname $thedir $moviedirname $pythonlatexfile : $iiter"
 
         iiter=$(( $iiter+1))
+
+        if [ $collect -eq 1 ]
+        then
+            cd ../../
+        fi
     done
 
 
@@ -1118,6 +1123,11 @@ then
         # Copy over to final table file names
 
         cp $fname ${prepath}/tbl$numtbl.tex
+
+        if [ $collect -eq 1 ]
+        then
+            cd ../../
+        fi
 
     done
 
