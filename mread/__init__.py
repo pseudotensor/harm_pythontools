@@ -1814,7 +1814,7 @@ def get2davg(usedefault=0,whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergr
                     avgtot += avgone*localdt
                     nitems += avgone[0,2,0]
                     n2avg += 1
-                    print("USING: During merge: ts=%g tf=%g tstry=%g tftry=%g n2avg=%d" % (ts,tf,tstry,tftry,n2avg));sys.stdout.flush()
+                    print("USING: During merge: tstry=%g tftry=%g n2avg=%d avgfti=%g avgftf=%g" % (tstry,tftry,n2avg,avgfti,avgftf));sys.stdout.flush()
                     didntuse=0
                     #
             # end if within averaging period of time
@@ -1830,7 +1830,7 @@ def get2davg(usedefault=0,whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergr
             avgtot += avgone*localdt
             nitems += avgone[0,2,0]
             n2avg += 1
-            print("During NONmerge: ts=%g tf=%g tstry=%g tftry=%g n2avg=%d" % (ts,tf,tstry,tftry,n2avg));sys.stdout.flush()
+            print("During NONmerge: ts=%g tf=%g tstry=%g tftry=%g n2avg=%d avgfti=%g avgftf=%g" % (ts,tf,tstry,tftry,n2avg,avgfti,avgftf));sys.stdout.flush()
     # end for loop over whichgroups->whichgroupe
     #
     # set final avg file times and number of items
@@ -1871,13 +1871,12 @@ def assignavg2dvars(avgmem):
     global avg_TudPA, avg_TudEN, avg_TudRAD
     global avg_gamma,avg_pg,avg_pb,avg_beta,avg_betatot
     global avg_vpot,avg_vpot2
-    #
     # 4
-    global avg_KAPPAUSER,avg_KAPPAESUSER,avg_tauradintegrated,avg_tauradeffintegrated
+    global avg_KAPPAUSER,avg_KAPPAUSERnofe,avg_KAPPAESUSER,avg_tauradintegrated,avg_tauradeffintegrated
     # 9
     global avg_Tgas,avg_Tradfflte,avg_Tradff,avg_Tradlablte,avg_Tradfftype1,avg_Tradlabtype1,avg_nradffratlte,avg_nradffrat,avg_nradlabrat
     # 9
-    global avg_kappadensityreal,avg_kappasyreal,avg_kappadcreal,avg_kappaesreal,avg_kappandensityreal,avg_kappansyreal,avg_kappandcreal,avg_phiphi,avg_varexpf
+    global avg_kappadensityreal,avg_kappadensityrealnofe,avg_kappasyreal,avg_kappadcreal,avg_kappaesreal,avg_kappandensityreal,avg_kappansyreal,avg_kappandcreal,avg_phiphi,avg_varexpf
     #avg defs
     i=0
     # 1
@@ -1989,8 +1988,9 @@ def assignavg2dvars(avgmem):
     #
     global gotrad
     if(gotrad):
-        # 4
+        # 5
         avg_KAPPAUSER=avgmem[i,:,:,None];i+=1 # i=1
+        avg_KAPPAUSERnofe=avgmem[i,:,:,None];i+=1 # i=1
         avg_KAPPAESUSER=avgmem[i,:,:,None];i+=1 # i=1
         avg_tauradintegrated=avgmem[i,:,:,None];i+=1 # i=1
         avg_tauradeffintegrated=avgmem[i,:,:,None];i+=1 # i=1
@@ -2004,8 +2004,9 @@ def assignavg2dvars(avgmem):
         avg_nradffratlte=avgmem[i,:,:,None];i+=1 # i=1
         avg_nradffrat=avgmem[i,:,:,None];i+=1 # i=1
         avg_nradlabrat=avgmem[i,:,:,None];i+=1 # i=1
-        # 9
+        # 10
         avg_kappadensityreal=avgmem[i,:,:,None];i+=1 # i=1
+        avg_kappadensityrealnofe=avgmem[i,:,:,None];i+=1 # i=1
         avg_kappasyreal=avgmem[i,:,:,None];i+=1 # i=1
         avg_kappadcreal=avgmem[i,:,:,None];i+=1 # i=1
         avg_kappaesreal=avgmem[i,:,:,None];i+=1 # i=1
@@ -2067,8 +2068,10 @@ def getnqtyavg():
     value=value+16 # for TudRAD
     value=value+1 # for Erf
     value=value+2 # for avg_vpot and avg_vpot2
-    value=value+4 # for KAPPAUSER and KAPPAESUSER and tauradintegrated and tauradeffintegrated
-    value=value+18 # Tgas,Trad's,kappas,etc.
+    global gotrad
+    if(gotrad):
+        value=value+5 # for KAPPAUSER and KAPPAESUSER and tauradintegrated and tauradeffintegrated
+        value=value+19 # Tgas,Trad's,kappas,etc.
     return(value)
 
 
@@ -2327,11 +2330,11 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     global firstfieldlinefile
     global avg_vpot,avg_vpot2
     # 4
-    global avg_KAPPAUSER,avg_KAPPAESUSER,avg_tauradintegrated,avg_tauradeffintegrated
+    global avg_KAPPAUSER,avg_KAPPAUSERnofe,avg_KAPPAESUSER,avg_tauradintegrated,avg_tauradeffintegrated
     # 9
     global avg_Tgas,avg_Tradfflte,avg_Tradff,avg_Tradlablte,avg_Tradfftype1,avg_Tradlabtype1,avg_nradffratlte,avg_nradffrat,avg_nradlabrat
     # 9
-    global avg_kappadensityreal,avg_kappasyreal,avg_kappadcreal,avg_kappaesreal,avg_kappandensityreal,avg_kappansyreal,avg_kappandcreal,avg_phiphi,avg_varexpf
+    global avg_kappadensityreal,avg_kappadensityrealnofe,avg_kappasyreal,avg_kappadcreal,avg_kappaesreal,avg_kappandensityreal,avg_kappansyreal,avg_kappandcreal,avg_phiphi,avg_varexpf
     #
     if whichgroup < 0 or itemspergroup <= 0:
         print( "get2davgone: whichgroup = %d, itemspergroup = %d not allowed" % (whichgroup, itemspergroup) ) ; sys.stdout.flush()
@@ -2372,7 +2375,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         #
         print( "Reading " + fldname + " ..." ) ; sys.stdout.flush()
         #rfdheaderonly("../"+fldname)
-        rfdheaderonly(fldname)
+        rfdheaderonly(fldname,typefile=1)
         #
         if itert==0:
             # create array with 1 element
@@ -2537,67 +2540,73 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         avg_vpot += (scaletofullwedge(nz*_dx3*fieldcalc(gdetB1=gdetB[0]))).sum(-1)[:,:,None]*localdt[itert]
         avg_vpot2 += (scaletofullwedge((nz*(_dx3*aphi)**2))**0.5).sum(-1)[:,:,None]*localdt[itert]
         #
-        avg_KAPPAUSER+=KAPPAUSER.sum(-1)[:,:,None]*localdt[itert]
-        avg_KAPPAESUSER+=KAPPAESUSER.sum(-1)[:,:,None]*localdt[itert]
-        avg_tauradintegrated+=tauradintegrated.sum(-1)[:,:,None]*localdt[itert]
-        avg_tauradeffintegrated+=tauradeffintegrated.sum(-1)[:,:,None]*localdt[itert]
-        #
-        # 4
-        #pg=(gam-1.0)*ug  #clean # use clean to keep pg low and Tgas will have floor like below  # no, need to use what was in simulation to be consistent with simulation's idea of what optical depth was
-        # and of used ugclean above, then in funnel temperature would be very small and kappaff would be huge.
-        #
-        #prad=(4.0/3.0-1.0)*Erf
-        # code Tgas for ideal gas
-        #Tgas=pg/(rho/MUMEAN)
-        #
-        #Eradff = R^a_b u_a u^b
-        Ruu=0.0
-        uraddlocal = mdot(gv3,uradu)                  #g_mn urad^n
-        udlocal = mdot(gv3,uu)                  #g_mn u^n
-        for kapa in np.arange(4):
-            for nu in np.arange(4):
-                if(kapa==nu): delta = 1
-                else: delta = 0
-                Rijkapanu = (Erf/3.0)*(4.0*uradu[kapa]*uraddlocal[nu]+delta)
-                Ruu= Ruu + Rijkapanu*udlocal[kapa]*uu[nu]
-        # fluid-frame temperature of radiation
-        Tradfflte = pow(np.fabs(Ruu)/ARAD_CODE,0.25) # ASSUMPTION: PLANCK-like in comoving frame even though radiation flowing through cell
-        R00 = (Erf/3.0)*(4.0*uradu[0]*uraddlocal[0]+1)
-        Tradlablte = pow(np.fabs(R00)/ARAD_CODE,0.25) # ASSUMPTION: PLANCK-like in comoving frame even though radiation flowing through cell
-        EBAR0=(2.7011780329190638961)
-        nradffratlte = Tradfflte**3/EBAR0 #NRAD_ARAD_CODE*
-        Ruurat=Ruu/ARAD_CODE
-        nradffrat=nradff #/NRAD_ARAD_CODE # already inside from harmrad
-        nradlabrat=nrad #/NRAD_ARAD_CODE # already inside from harmrad
-        Tradfftype1=Ruurat/(nradffrat*EBAR0+1E-50)
-        R00rat=R00/ARAD_CODE
-        Tradlabtype1=R00rat/(nradlabrat*EBAR0+1E-50)
-        #
-        # 9
-        avg_Tgas+=(np.fabs(Tgas)).sum(-1)[:,:,:,None]*localdt[itert]
-        #
-        avg_Tradfflte+=(np.fabs(Tradfflte)).sum(-1)[:,:,:,None]*localdt[itert]
-        avg_Tradff+=(np.fabs(Tradff)).sum(-1)[:,:,:,None]*localdt[itert]
-        avg_Tradlablte+=(np.fabs(Tradlablte)).sum(-1)[:,:,:,None]*localdt[itert]
-        #
-        avg_Tradfftype1+=(np.fabs(Tradfftype1)).sum(-1)[:,:,:,None]*localdt[itert]
-        avg_Tradlabtype1+=(np.fabs(Tradlabtype1)).sum(-1)[:,:,:,None]*localdt[itert]
-        #
-        avg_nradffratlte+=(np.fabs(nradffratlte)).sum(-1)[:,:,:,None]*localdt[itert]
-        avg_nradffrat+=(np.fabs(nradffrat)).sum(-1)[:,:,:,None]*localdt[itert]
-        avg_nradlabrat+=(np.fabs(nradlabrat)).sum(-1)[:,:,:,None]*localdt[itert]
-        # 9
-        global gotrad,gotkappas
-        (kappadensityreal,kappasyreal,kappadcreal,kappaesreal,kappandensityreal,kappansyreal,kappandcreal,phiphi)=getkappasdetails(gotrad, gotkappas)
-        avg_kappadensityreal+=(np.fabs(kappadensityreal)).sum(-1)[:,:,:,None]*localdt[itert]
-        avg_kappasyreal+=(np.fabs(kappasyreal)).sum(-1)[:,:,:,None]*localdt[itert]
-        avg_kappadcreal+=(np.fabs(kappadcreal)).sum(-1)[:,:,:,None]*localdt[itert]
-        avg_kappaesreal+=(np.fabs(kappaesreal)).sum(-1)[:,:,:,None]*localdt[itert]
-        avg_kappandensityreal+=(np.fabs(kappandensityreal)).sum(-1)[:,:,:,None]*localdt[itert]
-        avg_kappansyreal+=(np.fabs(kappansyreal)).sum(-1)[:,:,:,None]*localdt[itert]
-        avg_kappandcreal+=(np.fabs(kappandcreal)).sum(-1)[:,:,:,None]*localdt[itert]
-        avg_phiphi+=(np.fabs(phiphi)).sum(-1)[:,:,:,None]*localdt[itert]
-        avg_varexpf+=(np.fabs(varexpf)).sum(-1)[:,:,:,None]*localdt[itert]
+        global gotrad
+        if(gotrad):
+            global gotrad,gotkappas
+            (kappadensityreal,kappasyreal,kappadcreal,kappaesreal,kappandensityreal,kappansyreal,kappandcreal,phiphi,kappachiantireal,kappaffreal,kappabfreal,kappafereal,kappamolreal,kappahmopalreal,kappachiantiopalreal,kappaffeereal)=getkappasdetails(gotrad, gotkappas)
+            #
+            #
+            avg_KAPPAUSER+=KAPPAUSER.sum(-1)[:,:,None]*localdt[itert]
+            avg_KAPPAUSERnofe+=(KAPPAUSER-kappafereal).sum(-1)[:,:,None]*localdt[itert]
+            avg_KAPPAESUSER+=KAPPAESUSER.sum(-1)[:,:,None]*localdt[itert]
+            avg_tauradintegrated+=tauradintegrated.sum(-1)[:,:,None]*localdt[itert]
+            avg_tauradeffintegrated+=tauradeffintegrated.sum(-1)[:,:,None]*localdt[itert]
+            #
+            # 4
+            #pg=(gam-1.0)*ug  #clean # use clean to keep pg low and Tgas will have floor like below  # no, need to use what was in simulation to be consistent with simulation's idea of what optical depth was
+            # and of used ugclean above, then in funnel temperature would be very small and kappaff would be huge.
+            #
+            #prad=(4.0/3.0-1.0)*Erf
+            # code Tgas for ideal gas
+            #Tgas=pg/(rho/MUMEAN)
+            #
+            #Eradff = R^a_b u_a u^b
+            Ruu=0.0
+            uraddlocal = mdot(gv3,uradu)                  #g_mn urad^n
+            udlocal = mdot(gv3,uu)                  #g_mn u^n
+            for kapa in np.arange(4):
+                for nu in np.arange(4):
+                    if(kapa==nu): delta = 1
+                    else: delta = 0
+                    Rijkapanu = (Erf/3.0)*(4.0*uradu[kapa]*uraddlocal[nu]+delta)
+                    Ruu= Ruu + Rijkapanu*udlocal[kapa]*uu[nu]
+            # fluid-frame temperature of radiation
+            Tradfflte = pow(np.fabs(Ruu)/ARAD_CODE,0.25) # ASSUMPTION: PLANCK-like in comoving frame even though radiation flowing through cell
+            R00 = (Erf/3.0)*(4.0*uradu[0]*uraddlocal[0]+1)
+            Tradlablte = pow(np.fabs(R00)/ARAD_CODE,0.25) # ASSUMPTION: PLANCK-like in comoving frame even though radiation flowing through cell
+            EBAR0=(2.7011780329190638961)
+            nradffratlte = Tradfflte**3/EBAR0 #NRAD_ARAD_CODE*
+            Ruurat=Ruu/ARAD_CODE
+            nradffrat=nradff #/NRAD_ARAD_CODE # already inside from harmrad
+            nradlabrat=nrad #/NRAD_ARAD_CODE # already inside from harmrad
+            Tradfftype1=Ruurat/(nradffrat*EBAR0+1E-50)
+            R00rat=R00/ARAD_CODE
+            Tradlabtype1=R00rat/(nradlabrat*EBAR0+1E-50)
+            #
+            # 9
+            avg_Tgas+=(np.fabs(Tgas)).sum(-1)[:,:,None]*localdt[itert]
+            #
+            avg_Tradfflte+=(np.fabs(Tradfflte)).sum(-1)[:,:,None]*localdt[itert]
+            avg_Tradff+=(np.fabs(Tradff)).sum(-1)[:,:,None]*localdt[itert]
+            avg_Tradlablte+=(np.fabs(Tradlablte)).sum(-1)[:,:,None]*localdt[itert]
+            #
+            avg_Tradfftype1+=(np.fabs(Tradfftype1)).sum(-1)[:,:,None]*localdt[itert]
+            avg_Tradlabtype1+=(np.fabs(Tradlabtype1)).sum(-1)[:,:,None]*localdt[itert]
+            #
+            avg_nradffratlte+=(np.fabs(nradffratlte)).sum(-1)[:,:,None]*localdt[itert]
+            avg_nradffrat+=(np.fabs(nradffrat)).sum(-1)[:,:,None]*localdt[itert]
+            avg_nradlabrat+=(np.fabs(nradlabrat)).sum(-1)[:,:,None]*localdt[itert]
+            # 9
+            avg_kappadensityreal+=(np.fabs(kappadensityreal)).sum(-1)[:,:,None]*localdt[itert]
+            avg_kappadensityrealnofe+=(np.fabs(kappadensityreal-kappafereal)).sum(-1)[:,:,None]*localdt[itert]
+            avg_kappasyreal+=(np.fabs(kappasyreal)).sum(-1)[:,:,None]*localdt[itert]
+            avg_kappadcreal+=(np.fabs(kappadcreal)).sum(-1)[:,:,None]*localdt[itert]
+            avg_kappaesreal+=(np.fabs(kappaesreal)).sum(-1)[:,:,None]*localdt[itert]
+            avg_kappandensityreal+=(np.fabs(kappandensityreal)).sum(-1)[:,:,None]*localdt[itert]
+            avg_kappansyreal+=(np.fabs(kappansyreal)).sum(-1)[:,:,None]*localdt[itert]
+            avg_kappandcreal+=(np.fabs(kappandcreal)).sum(-1)[:,:,None]*localdt[itert]
+            avg_phiphi+=(np.fabs(phiphi)).sum(-1)[:,:,None]*localdt[itert]
+            avg_varexpf+=(np.fabs(varexpf)).sum(-1)[:,:,None]*localdt[itert]
         #
         #
         #########
@@ -3142,7 +3151,7 @@ def getdefaulttimes1():
         #
     #
     if isradmodel(modelname)==1:
-        defaultfti=1
+        defaultfti=1000
         defaultftf=1e5
     # override
     if modelname=="sashaa9b100t1.5708":
@@ -3259,7 +3268,7 @@ def getdefaulttimes3():
     flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
     sort_nicely(flist)
     lastfieldlinefile=flist[-1]
-    rfdheaderonly(lastfieldlinefile)
+    rfdheaderonly(lastfieldlinefile,typefile=1)
     truetf=t
     print("truetf=%g" % (truetf))
     #
@@ -4550,10 +4559,14 @@ def intangle_foravg2d(qty,hoverr=None,thetamid=np.pi/2,minbsqorho=None,maxbsqorh
     global bsq,rho,ug,uu,ud,rhoclean,ugclean,rho,ug,isunbound,tiny,Erf,uradu,uradd
     bsq=avg_bsq
     rho=avg_rho
-    KAPPAUSER=avg_KAPPAUSER
-    KAPPAESUSER=avg_KAPPAESUSER
-    tauradintegrated=avg_tauradintegrated
-    tauradeffintegrated=avg_tauradeffintegrated
+    #
+    global gotrad
+    if(gotrad):
+        KAPPAUSER=avg_KAPPAUSER
+        KAPPAUSERnofe=avg_KAPPAUSERnofe
+        KAPPAESUSER=avg_KAPPAESUSER
+        tauradintegrated=avg_tauradintegrated
+        tauradeffintegrated=avg_tauradeffintegrated
     ug=avg_ug
     Erf=avg_Erf
     uu=avg_uu
@@ -5528,17 +5541,19 @@ def compute_taurad(domergeangles=True,radiussettau1zero=80):
     global gotrad
     if(gotrad==1):
         # uses uu[], KAPPAUSER, KAPPAESUSER, gv3, r
-        # default
-        if(isradmodel(modelname)):
-            radiussettau1zero=500
-        # for newer models that have good outer radii regions
-        if(isradmodelD(modelname)):
-            radiussettau1zero=3000
-        if(isradmodelB(modelname)):
-            radiussettau1zero=1000
-        if(isradmodel(modelname)): # not looking at older models anymore
-            radiussettau1zero=4000
-        #
+        # if no input, then change.
+        if(radiussettau1zero==80):
+            # default
+            if(isradmodel(modelname)):
+                radiussettau1zero=500
+            # for newer models that have good outer radii regions
+            if(isradmodelD(modelname)):
+                radiussettau1zero=3000
+            if(isradmodelB(modelname)):
+                radiussettau1zero=1000
+            if(isradmodel(modelname)): # not looking at older models anymore
+                radiussettau1zero=4000
+            #
         thetavel=0.0
         betasq=1.0-1.0/(uu[0]**2)
         betasq[betasq<0.0]=0.0
@@ -5552,7 +5567,7 @@ def compute_taurad(domergeangles=True,radiussettau1zero=80):
         #
         taurad1=(KAPPAESUSER)*fdrco() # only ES
         # http://arxiv.org/pdf/astro-ph/0408590.pdf equation~3
-        tauradeff1=np.sqrt(3.0*KAPPAUSER*(KAPPAUSER+KAPPAESUSER))*fdrco()
+        tauradeff1=np.sqrt(3.0*KAPPAUSERnofe*(KAPPAUSERnofe+KAPPAESUSER))*fdrco()
         #
         # FREE PARAMETER:
         #radiussettau1zero=80
@@ -5615,7 +5630,7 @@ def compute_taurad(domergeangles=True,radiussettau1zero=80):
                 taurad2integrated[:,jj,:]=taurad2flipintegrated[:,jj,:]
         #
         ########################### tauradeff2 (from theta=0 pole)
-        tauradeff2=np.sqrt(3.0*KAPPAUSER*(KAPPAUSER+KAPPAESUSER))*fdhco()
+        tauradeff2=np.sqrt(3.0*KAPPAUSERnofe*(KAPPAUSERnofe+KAPPAESUSER))*fdhco()
         tauradeff2integrated=np.cumsum(tauradeff2,axis=1)
     #        for kk in np.arange(0,nz):
     #                for ii in np.arange(0,nx):
@@ -5636,13 +5651,13 @@ def compute_taurad(domergeangles=True,radiussettau1zero=80):
         ########################### taurad3
         taurad3=uu[0]*(KAPPAESUSER)*fdphco()
         ########################### tauradeff3
-        tauradeff3=uu[0]*np.sqrt(KAPPAUSER*(KAPPAUSER+KAPPAESUSER))*fdphco()
+        tauradeff3=uu[0]*np.sqrt(KAPPAUSERnofe*(KAPPAUSERnofe+KAPPAESUSER))*fdphco()
         #
         #tauradintegrated=np.maximum(taurad1flipintegrated,taurad2integrated)
         #tauradeffintegrated=np.maximum(tauradeff1flipintegrated,tauradeff2integrated)
         # so tauradintegrated (final version) is optical depth integrated from large radii only
-        tauradintegrated=np.maximum(taurad1flipintegrated)
-        tauradeffintegrated=np.maximum(tauradeff1flipintegrated)
+        tauradintegrated=np.copy(taurad1flipintegrated)
+        tauradeffintegrated=np.copy(tauradeff1flipintegrated)
         #
         # use primarily: taurad1flipintegrated taurad2integrated and can use and'ed version
     else:
@@ -5970,22 +5985,24 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         taurad1integrated,taurad1flipintegrated,taurad2integrated,taurad2flipintegrated,tauradintegrated,tauradeff1integrated,tauradeff1flipintegrated,tauradeff2integrated,tauradeff2flipintegrated,tauradeffintegrated=compute_taurad()
         #
         # use linear to avoid oscillations that lead to multiple similar contours where only 1 originally existed
-        itaurad1integrated = reinterp(taurad1integrated,extent,ncell,domask=1.0,interporder='linear')
-        itaurad1flipintegrated = reinterp(taurad1flipintegrated,extent,ncell,domask=1.0,interporder='linear')
-        itaurad2integrated = reinterp(taurad2integrated,extent,ncell,domask=1.0,interporder='linear')
-        itaurad2flipintegrated = reinterp(taurad2flipintegrated,extent,ncell,domask=1.0,interporder='linear')
+        itauradintegrated = reinterp(tauradintegrated,extent,ncell,domask=1.0,interporder='linear')
+        itauradeffintegrated = reinterp(tauradeffintegrated,extent,ncell,domask=1.0,interporder='linear')
+        #itaurad2integrated = reinterp(taurad2integrated,extent,ncell,domask=1.0,interporder='linear')
+        #itaurad2flipintegrated = reinterp(taurad2flipintegrated,extent,ncell,domask=1.0,interporder='linear')
         #
         #
-        #print("taurad2integrated") ; sys.stdout.flush()
-        #print(taurad2integrated[5,:,0]) ; sys.stdout.flush()
-        #print(taurad2integrated[25,:,0]) ; sys.stdout.flush()
-        #print(taurad2integrated[60,:,0]) ; sys.stdout.flush()
-        #print(taurad2integrated[100,:,0]) ; sys.stdout.flush()
-        #np.set_printoptions(threshold=10)
+        np.set_printoptions(threshold=sys.maxint)
+        print("tauradintegrated") ; sys.stdout.flush()
+        print(np.shape(tauradintegrated)) ; sys.stdout.flush()
+        print(tauradintegrated[:,ny/4,0]) ; sys.stdout.flush()
+        print("tauradeffintegrated") ; sys.stdout.flush()
+        print(np.shape(tauradeffintegrated)) ; sys.stdout.flush()
+        print(tauradeffintegrated[:,ny/4,0]) ; sys.stdout.flush()
+        np.set_printoptions(threshold=10)
     ####################
     #
     # get iqty
-    print("dorho=%d doentropy=%d dobsq=%d dobeta=%d doErf=%d doQ1=%d doQ2=%d dovel=%d: vmin=%g vmax=%g" % (dorho,doentropy,dobsq,dobeta,doErf,doQ1,doQ2,dovel,vmin,vmax)) ; sys.stdout.flush()
+    print("dorho=%d doentropy=%d dobsq=%d dobeta=%d doErf=%d doQ1=%d doQ2=%d dovel=%d dotaurad=%d: vmin=%g vmax=%g" % (dorho,doentropy,dobsq,dobeta,doErf,doQ1,doQ2,dovel,dotaurad,vmin,vmax)) ; sys.stdout.flush()
     doqty=0
     dologz=0
     douru0=0
@@ -6408,9 +6425,8 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
     # goes on top:
     print("HERE9a") ; sys.stdout.flush()
     if dotaurad:
-        #ax.contour(itaurad1flipintegrated,linewidths=4,colors='cyan', extent=extent,hold='on',origin='lower',levels=(1,))
-        ax.contour(itaurad2integrated,linewidths=4,colors='cyan', extent=extent,hold='on',origin='lower',levels=(1,))
-        #ax.contour(itaurad2flipintegrated,linewidths=4,colors='red', extent=extent,hold='on',origin='lower',levels=(1,))
+        ax.contour(itauradintegrated,linewidths=4,colors='yellow', extent=extent,hold='on',origin='lower',levels=(1,))
+        ax.contour(itauradeffintegrated,linewidths=4,colors='purple', extent=extent,hold='on',origin='lower',levels=(1,))
     print("HERE9b") ; sys.stdout.flush()
     if dobsqorholine:
         ax.contour(ibsqorho,linewidths=4,colors='red', extent=extent,hold='on',origin='lower',levels=(1,))  # 29.5
@@ -6594,7 +6610,7 @@ def setupframe(gs=3,loadq=0,which=1):
         flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
         sort_nicely(flist)
         firstfieldlinefile=flist[0]
-        rfdheaderonly(firstfieldlinefile)
+        rfdheaderonly(firstfieldlinefile,typefile=1)
         #
         qtymem=None #clear to free mem
         rhor=1+(1-a**2)**0.5
@@ -7402,7 +7418,7 @@ def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclea
     sort_nicely(flist)
     if len(flist)>0:
         firstfieldlinefile=flist[0]
-        rfdheaderonly(firstfieldlinefile)
+        rfdheaderonly(firstfieldlinefile,typefile=1)
     #
     gdraw,gin,header=rrdump(dumpname)
     #
@@ -7627,7 +7643,7 @@ def reresrdump(dumpname,writenew=False,newf1=None,newf2=None,newf3=None,divbclea
         #sort_nicely(flist)
         if len(flist)>0:
             #firstfieldlinefile=flist[0]
-            #rfdheaderonly(firstfieldlinefile)
+            #rfdheaderonly(firstfieldlinefile,typefile=1)
             # gdet needed to normalize divb
             #    use2dglobal=True
             #grid3d( os.path.basename(glob.glob(os.path.join("dumps/", "gdump*"))[0]), use2d=use2dglobal )
@@ -8232,7 +8248,7 @@ def rgfd(fieldlinefilename,**kwargs):
 
 #  http://norvig.com/python-lisp.html   
 
-def rfdheader(fin=None):
+def rfdheader(fin=None,typefile=1):
     global t,nx,ny,nz,startx1,startx2,startx3,_dx1,_dx2,_dx3,nstep,gam,a,R0,Rin,Rout,hslope,rundt,defcoord
     global MBH,QBH,EP3,THETAROT,_is,_ie,_js,_je,_ks,_ke,whichdump,whichdumpversion,numcolumns
     global rhor
@@ -8246,7 +8262,7 @@ def rfdheader(fin=None):
     #
     #time of the dump
     t = myfloatalt(np.float64(header[0]))
-    print("rfdheader: t=%g" % (t)) ; sys.stdout.flush()
+    print("rfdheader: t=%g typefile=%d" % (t,typefile)) ; sys.stdout.flush()
     #dimensions of the grid
     nx = int(header[1])
     ny = int(header[2])
@@ -8373,22 +8389,24 @@ def rfdheader(fin=None):
         numcolumns=11 # master branch        
         #
     #
-    global gotrad
-    gotrad=0 # where gotrad defined as 0 and overwritten if appropriate
-    if(numcolumns==16 or numcolumns==30 or numcolumns==31):
-        gotrad=1
-    #
-    global gotkappas
-    gotkappas=0 # whether got kappas from fieldline files
-    if(numcolumns==30 or numcolumns==31):
-        gotkappas=1
-    #
-    rddims(gotrad)
+    if(typefile==1):
+        global gotrad
+        gotrad=0 # where gotrad defined as 0 and overwritten if appropriate
+        if(numcolumns==16 or numcolumns==30 or numcolumns==31):
+            gotrad=1
+        #
+        global gotkappas
+        gotkappas=0 # whether got kappas from fieldline files
+        if(numcolumns==30 or numcolumns==31):
+            gotkappas=1
+            #
+        rddims(gotrad)
+        print("gotrad=%d\n" % (gotrad))  ; sys.stdout.flush()
     print("Found %d header items\n" % (numheaderitems))  ; sys.stdout.flush()
 
-def rfdheaderonly(filename="dumps/fieldline0000.bin"):
+def rfdheaderonly(filename="dumps/fieldline0000.bin",typefile=1):
     fin = open(filename, "rb" )
-    rfdheader(fin=fin)
+    rfdheader(fin=fin,typefile=typefile)
     fin.close()
 
 def rfdheaderfirstfile():
@@ -8396,14 +8414,14 @@ def rfdheaderfirstfile():
     sort_nicely(flist)
     firstfieldlinefile=flist[0]
     #rfd("fieldline0000.bin")  #to definea
-    rfdheaderonly(firstfieldlinefile)
+    rfdheaderonly(firstfieldlinefile,typefile=1)
 
 def rfdheaderlastfile():
     flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
     sort_nicely(flist)
     lastfieldlinefile=flist[-1]
     #rfd("fieldline0000.bin")  #to definea
-    rfdheaderonly(lastfieldlinefile)
+    rfdheaderonly(lastfieldlinefile,typefile=1)
 
 
 def rfdfirstfile():
@@ -8431,7 +8449,7 @@ def rfd(fieldlinefilename,**kwargs):
     #Velocity components: u1, u2, u3, 
     #Cell-centered magnetic field components: B1, B2, B3, 
     #Face-centered magnetic field components multiplied by metric determinant: gdetB1, gdetB2, gdetB3
-    global rho,ug,yfl1,yfl2,yfl3,yfl4,yfl5,uu,B,gdetB,Erf,uradu
+    global rho,ug,yfl1,yfl2,yfl3,yfl4,yfl5,uu,B,gdetB,Erf,nrad,uradu
     #
     #read image
     #
@@ -8441,7 +8459,7 @@ def rfd(fieldlinefilename,**kwargs):
     #### read header
     fname= "dumps/" + fieldlinefilename
     fin = open(fname, "rb" )
-    rfdheader(fin=fin)
+    rfdheader(fin=fin,typefile=1)
     fin.close()
     #
     #
@@ -8460,7 +8478,7 @@ def rfd(fieldlinefilename,**kwargs):
     #
     # generally re-read header in case grid3d() was loaded
     fin = open(fname, "rb" )
-    rfdheader(fin=fin)
+    rfdheader(fin=fin,typefile=1)
     #read grid dump per-cell data
     #
     if(0):
@@ -9050,7 +9068,7 @@ def KAPPA_FF_CODE_PYTHON(rhocode,Tgcode,Trcode):
 
 def getkappas(gotrad, gotkappas):
     global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE,NRAD_ARAD_CODE,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
-    global KAPPAUSER,KAPPAESUSER
+    global KAPPAUSER,KAPPAUSERnofe,KAPPAESUSER
     if(gotrad==0):
         KAPPA=1.0
         KAPPAES=1.0
@@ -9061,6 +9079,7 @@ def getkappas(gotrad, gotkappas):
         prad=(4.0/3.0-1.0)*Erf # radiation isotropic in some frame
         Tgas=pg/rho # gas temperature for ideal gas
         KAPPAUSER=rho*0
+        KAPPAUSERnofe=rho*0
         KAPPAESUSER=rho*0
         #
     else:
@@ -9095,10 +9114,13 @@ def getkappas(gotrad, gotkappas):
         if(gotkappas==0):
             # use rho to keep kappa low.
             KAPPAUSER=(rho*KAPPA*KAPPA_FF_CODE_PYTHON(rho,Tgas+TEMPMIN(),Trad+TEMPMIN()))
+            KAPPAUSERnofe=np.copy(KAPPAUSER)
             KAPPAESUSER=(rho*KAPPAES*KAPPA_ES_CODE_PYTHON(rho,Tgas))
         else:
             # use read-in accurate versions produced by harmrad
             KAPPAUSER=kappa
+            kappafereal = (rho*RHOBAR)*0.3*np.exp(-6.0*np.power(-12.0+np.log(Tgas*TEMPBAR),2.0))
+            KAPPAUSERnofe=kappa-kappafereal # should only be done if had fe, which currently always do
             KAPPAESUSER=kappaes
 
 def Power(x,y):
@@ -9122,7 +9144,7 @@ def getkappasdetails(gotrad, gotkappas):
     M_PI=np.pi
     CCCTRUE0=CCCTRUE
 
-    global KAPPAUSER,KAPPAESUSER
+    global KAPPAUSER,KAPPAUSERnofe,KAPPAESUSER
     # now compute auxillary opacity related quantities since only otherwise in raddump???? files and not in fieldline files
     KAPPA=1.0
     KAPPAES=1.0
@@ -9622,8 +9644,9 @@ def getkappasdetails(gotrad, gotkappas):
     lkappanemit = kappanemitreal * overopacitybaralt
     lkappaes = kappaesreal * overopacitybaralt
   
-    return(kappadensityreal * overopacitybaralt,kappasyreal * overopacitybaralt,kappadcreal * overopacitybaralt,kappaesreal * overopacitybaralt, kappandensityreal * overopacitybaralt,kappansyreal * overopacitybaralt,kappandcreal * overopacitybaralt,phiphi)
+    return(kappadensityreal * overopacitybaralt,kappasyreal * overopacitybaralt,kappadcreal * overopacitybaralt,kappaesreal * overopacitybaralt, kappandensityreal * overopacitybaralt,kappansyreal * overopacitybaralt,kappandcreal * overopacitybaralt,phiphi,kappachiantireal * overopacitybaralt,kappaffreal * overopacitybaralt,kappabfreal * overopacitybaralt,kappafereal * overopacitybaralt,kappamolreal * overopacitybaralt,kappahmopalreal * overopacitybaralt,kappachiantiopalreal * overopacitybaralt,kappaffeereal * overopacitybaralt)
     
+
 
 
 def rddims(gotrad):
@@ -9823,7 +9846,7 @@ def rfdtransform(gotgdetB=0):
     # modified globals
     global nzgdump
     global r,h,ph
-    global rho,ug,yfl1,yfl2,yfl3,yfl4,yfl5,uu,B,gdetB,Erf,uradu
+    global rho,ug,yfl1,yfl2,yfl3,yfl4,yfl5,uu,B,gdetB,Erf,nrad,uradu
     global Tgas,Tradff,nradff,varexpf,kappa,kappan,kappaemit,kappanemit,kappaes,elambda,nlambda
     #
     print("what: %d\n",nz) ; sys.stdout.flush()
@@ -10230,7 +10253,7 @@ def rotsimpletensordot(uu,rot,axis):
 def rfdprocess(gotgdetB=0):
     #
     # external globals
-    global rho,ug,yfl1,yfl2,yfl3,yfl4,yfl5,uu,B,gdetB,Erf,uradu
+    global rho,ug,yfl1,yfl2,yfl3,yfl4,yfl5,uu,B,gdetB,Erf,nrad,uradu
     global Tgas,Tradff,nradff,varexpf,kappa,kappan,kappaemit,kappanemit,kappaes,elambda,nlambda
     # derived quantities
     global ug,uu,rhor,r,h,ph,rhoclean,ugclean
@@ -10487,11 +10510,11 @@ def grid3d(dumpname,use2d=False,doface=False,usethetarot0=False): #read grid dum
     #
     if os.path.isfile(filename):
         # only need header of true gdump.bin to get true THETAROT
-        rfdheaderonly(filename)
+        rfdheaderonly(filename,typefile=2)
     else:
         # if no gdump, use last fieldline file that is assumed to be consistent with gdump that didn't exist.
         # allows non-creation of gdump if restarting with tilt from non-tilt run.  So then enver have to have gdump.bin with THETAROT tilt.
-        rfdheaderlastfile()
+        rfdheaderlastfile(typefile=1)
     #
     # for rfd() to use to see if different nz size
     global nzgdumptrue
@@ -14821,7 +14844,7 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         edrad[qindex]=intangle(myfun0)
         #
         #
-        tauradlocal=(KAPPAUSER+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
+        tauradlocal=(KAPPAUSERnofe+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
         #edradthin[qindex]=intangle(myfun0,which=tauradlocal<=1.0)
         #edradthin[qindex]=intangle(myfun0,which=tauradintegrated<=1.0)
         edradthin[qindex]=intangle(myfun0,which=tauradintegrated<=1.0)
@@ -26418,7 +26441,7 @@ def mkmovie(framesize=500, domakeavi=False):
         firstfieldlinefile=flist[0]
         #rfd("fieldline0000.bin")  #to definea
         print("Loading header of first file") ;sys.stdout.flush()
-        rfdheaderonly(firstfieldlinefile)
+        rfdheaderonly(firstfieldlinefile,typefile=1)
         #
         ########################
         #rfdfirstfile()
@@ -27168,7 +27191,7 @@ def mk2davg():
 
 
 
-def mkstreamplot1(Btrue=None,gdetB=None,bsq=None,rho=None,uu=None,len=30,lenx=None,leny=None,mylenshowx=None,mylenshowy=None,fntsize=24,arrowsize=4,vminforframe=-4,vmaxforframe=0.5,forceeqsym=0,fname=None,veldensity=8,signaphi=1,numcontours=30,inputlevs=None,aphipow=1.0,dojonwindplot=0,showuu1eq0=True):
+def mkstreamplot1(Btrue=None,gdetB=None,bsq=None,rho=None,uu=None,len=30,lenx=None,leny=None,mylenshowx=None,mylenshowy=None,fntsize=24,arrowsize=4,vminforframe=-4,vmaxforframe=0.5,forceeqsym=0,fname=None,veldensity=8,signaphi=1,numcontours=30,inputlevs=None,aphipow=1.0,dojonwindplot=0,showuu1eq0=True,dotaurad=False,doaphi=False,doaphiavg=False):
     #
     returnlevs=None
     global B # need to tell this function that B is global because assignment to B is taken as local otherwise
@@ -27193,7 +27216,7 @@ def mkstreamplot1(Btrue=None,gdetB=None,bsq=None,rho=None,uu=None,len=30,lenx=No
     if leny is None:
         leny=len
     #
-    print("mkstreamplot1b: %g %g %g %g" % (lenx,leny,mylenshowx,mylenshowy)) ; sys.stdout.flush()
+    print("mkstreamplot1b: %g %g %g %g : dotaurad=%d" % (lenx,leny,mylenshowx,mylenshowy,dotaurad)) ; sys.stdout.flush()
     #
     #
     fig=plt.figure(176,figsize=(12,9),dpi=300)
@@ -27218,7 +27241,7 @@ def mkstreamplot1(Btrue=None,gdetB=None,bsq=None,rho=None,uu=None,len=30,lenx=No
         # 2 good for testing.
         #veldensity=8
         #
-        mkframe("myframe",dovel=True,len=len,lenx=lenx,leny=leny,ax=axnew,density=veldensity,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=vminforframe,vmax=vmaxforframe,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False,forceeqsym=forceeqsym,inputlevs=inputlevs)
+        mkframe("myframe",dovel=True,len=len,lenx=lenx,leny=leny,ax=axnew,density=veldensity,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=vminforframe,vmax=vmaxforframe,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False,forceeqsym=forceeqsym,inputlevs=inputlevs,dotaurad=dotaurad,doaphi=doaphi,doaphiavg=doaphiavg)
         #
         # fix back
         if overrideB==1:
@@ -27293,7 +27316,7 @@ def mkstreamplot1(Btrue=None,gdetB=None,bsq=None,rho=None,uu=None,len=30,lenx=No
         finalleny=leny
         #finallen=2.0*mylen
         # useblank=True causes field lines to stop tracing when they get closer together at slightly larger distances.  
-        returnlevs=mkframe("myframe",doaphiavg=False,doaphi=True,dostreamlines=False,useblank=False,len=finallen,lenx=finallenx,leny=finalleny,ax=axnew,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=vminforframe,vmax=vmaxforframe,dobhfield=8,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.01,dsval=0.01,color='r',lw=2,startatmidplane=True,domidfield=False,showjet=False,arrowsize=arrowsize,forceeqsym=forceeqsym,signaphi=signaphi,numcontours=numcontours,inputlevs=inputlevs,aphipow=aphipow,dojonwindplot=dojonwindplot,showuu1eq0=showuu1eq0)
+        returnlevs=mkframe("myframe",dostreamlines=False,useblank=False,len=finallen,lenx=finallenx,leny=finalleny,ax=axnew,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=vminforframe,vmax=vmaxforframe,dobhfield=8,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.01,dsval=0.01,color='r',lw=2,startatmidplane=True,domidfield=False,showjet=False,arrowsize=arrowsize,forceeqsym=forceeqsym,signaphi=signaphi,numcontours=numcontours,inputlevs=inputlevs,aphipow=aphipow,dojonwindplot=dojonwindplot,showuu1eq0=showuu1eq0,dotaurad=dotaurad,doaphi=doaphi,doaphiavg=doaphiavg)
         #
         # fix back
         B=np.copy(Btrue)
@@ -27373,14 +27396,14 @@ def mkavgfigs():
     #
     #
     mkstreampart1=1
-    mkstreampart2=1 # NOTEMARK: set to zero if don't want to read-in qty.npy stuff
+    mkstreampart2=0 # NOTEMARK: set to zero if don't want to read-in qty.npy stuff
     mkstreampart3=1
     mkstreampart4=1
     #
     #
     #
     forceeqsym=0 # forceeqsym=1 makes the streaming take alot longer for some reason.  Also, messes up field geometry so it's not obvious that field threads the disk.
-    mylen = 30.0
+    mylen = 100.0
     mylenshowx=(25.0/30.0)*mylen
     mylenshowy=(25.0/30.0)*mylen
     fntsize=24
@@ -27435,19 +27458,22 @@ def mkavgfigs():
     if mkstreampart1==1:
         #
         # for dojonwindplot
-        global rho,rholab,ug,B,gdetB,Erf,uradu,bsq,mu,ud,uu,beta,betatot #,uutrue
+        global rho,rholab,ug,B,gdetB,nrad,Erf,uradu,bsq,mu,ud,uu,beta,betatot #,uutrue
         global Tgas,Tradff,nradff,varexpf,kappa,kappan,kappaemit,kappanemit,kappaes,elambda,nlambda
-        global KAPPAUSER,KAPPAESUSER,tauradintegrated,tauradeffintegrated
+        global KAPPAUSER,KAPPAUSERnofe,KAPPAESUSER,tauradintegrated,tauradeffintegrated
         #
         global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE,NRAD_ARAD_CODE,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
         global gotrad
         rddims(gotrad)
         #
         rho=avg_rho
-        KAPPAUSER=avg_KAPPAUSER
-        KAPPAESUSER=avg_KAPPAESUSER
-        tauradintegrated=avg_tauradintegrated
-        tauradeffintegrated=avg_tauradeffintegrated
+        global gotrad
+        if(gotrad):
+            KAPPAUSER=avg_KAPPAUSER
+            KAPPAUSERnofe=avg_KAPPAUSERnofe
+            KAPPAESUSER=avg_KAPPAESUSER
+            tauradintegrated=avg_tauradintegrated
+            tauradeffintegrated=avg_tauradeffintegrated
         rholab=avg_rho*avg_uu[0] # GODMARK: Not full avg of rholab directly
         ug=avg_ug
         Erf=avg_Erf
@@ -27472,25 +27498,34 @@ def mkavgfigs():
             Btrue[1:4] = np.copy(avg_B[0:3])
             B[1:4] = np.copy(avg_B[0:3])
             gdetB[1:4] = np.copy(avg_gdetB[0:3])
-        if(1==0):
+            returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uu=avg_uu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig2a",veldensity=8,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=1,dotaurad=True,doaphi=False,doaphiavg=False) #,showuu1eq0=False)
+        if(1==1):
             # velocity
             Btrue[1:4] = np.copy(avg_uu[0:3])
             B[1:4] = np.copy(avg_uu[0:3])
             gdetB[1:4] = np.copy(gdet*avg_uu[0:3])
-        if(1==0):
+            returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uu=avg_uu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig2b",veldensity=8,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=1,dotaurad=True,doaphi=False,doaphiavg=False) #,showuu1eq0=False)
+        if(1==1):
             # mass flux
             Btrue[1:4] = np.copy(avg_rhouu[0:3])
             B[1:4] = np.copy(avg_rhouu[0:3])
             gdetB[1:4] = np.copy(gdet*avg_rhouu[0:3])
-        if 1==0: # radiation flux lines instead of magnetic lines
+            returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uu=avg_uu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig2c",veldensity=8,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=1,dotaurad=True,doaphi=False,doaphiavg=False) #,showuu1eq0=False)
+        if 1==1: # radiation flux lines instead of magnetic lines
             for ll in np.arange(0,4):
                 Btrue[ll,:,:,:]=np.copy(avg_TudRAD[ll,0,:,:,:]) # radiation tensor 
                 B[ll,:,:,:]=np.copy(avg_TudRAD[ll,0,:,:,:])
                 gdetB[ll,:,:,:]=np.copy(gdet[:,:,:]*avg_TudRAD[ll,0,:,:,:]) 
+            returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uu=avg_uu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig2d",veldensity=8,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=1,dotaurad=True,doaphi=False,doaphiavg=False) #,showuu1eq0=False)
         #call
-        returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uu=avg_uu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig2",veldensity=8,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=1) #,showuu1eq0=False)
         # fix back
-        B=np.copy(Btrue)
+        B=np.copy(avg_uu)
+        B[1] = avg_B[0]
+        B[2] = avg_B[1]
+        B[3] = avg_B[2]
+        Btrue[1:4] = np.copy(avg_B[0:3])
+        gdetB=np.copy(avg_uu)
+        gdetB[1:] = avg_gdetB[0:]
         #
     #
     #
@@ -27524,6 +27559,7 @@ def mkavgfigs():
         #
         ##############################
         # get generate_time_series() type averages and calculations
+        # needs qty2.npy
         hoverr_jet_vsr = getbasicqtystuff()
         #
         #
@@ -27768,10 +27804,12 @@ def mkavgfigs():
             for ll in np.arange(0,4):
                 for mm in np.arange(0,4):
                     avg1.write("%g " % (avg_TudRAD[mm,ll,ihor,jj,0]))
-            avg1.write("%g " % (avg_KAPPAUSER[ihor,jj,0]))
-            avg1.write("%g " % (avg_KAPPAESUSER[ihor,jj,0]))
-            avg1.write("%g " % (avg_tauradintegrated[ihor,jj,0]))
-            avg1.write("%g " % (avg_tauradeffintegrated[ihor,jj,0]))
+            global gotrad
+            if(gotrad):
+                avg1.write("%g " % (avg_KAPPAUSER[ihor,jj,0]))
+                avg1.write("%g " % (avg_KAPPAESUSER[ihor,jj,0]))
+                avg1.write("%g " % (avg_tauradintegrated[ihor,jj,0]))
+                avg1.write("%g " % (avg_tauradeffintegrated[ihor,jj,0]))
             avg1.write("%g " % (avg_Erf[ihor,jj,0]))
             avg1.write("\n")
         #
@@ -27837,10 +27875,12 @@ def mkavgfigs():
         # avg_gamma
         # get averages (vs radius only in the end)
         avgvsr_rho=intangle_foravg2d(gdet*denfactor*avg_rho,**keywordsrhosq)/rhosqint
-        avgvsr_KAPPAUSER=intangle_foravg2d(gdet*denfactor*avg_KAPPAUSER,**keywordsrhosq)/rhosqint
-        avgvsr_KAPPAESUSER=intangle_foravg2d(gdet*denfactor*avg_KAPPAESUSER,**keywordsrhosq)/rhosqint
-        avgvsr_tauradintegrated=intangle_foravg2d(gdet*denfactor*avg_tauradintegrated,**keywordsrhosq)/rhosqint
-        avgvsr_tauradeffintegrated=intangle_foravg2d(gdet*denfactor*avg_tauradeffintegrated,**keywordsrhosq)/rhosqint
+        global gotrad
+        if(gotrad):
+            avgvsr_KAPPAUSER=intangle_foravg2d(gdet*denfactor*avg_KAPPAUSER,**keywordsrhosq)/rhosqint
+            avgvsr_KAPPAESUSER=intangle_foravg2d(gdet*denfactor*avg_KAPPAESUSER,**keywordsrhosq)/rhosqint
+            avgvsr_tauradintegrated=intangle_foravg2d(gdet*denfactor*avg_tauradintegrated,**keywordsrhosq)/rhosqint
+            avgvsr_tauradeffintegrated=intangle_foravg2d(gdet*denfactor*avg_tauradeffintegrated,**keywordsrhosq)/rhosqint
         avgvsr_ug=intangle_foravg2d(gdet*denfactor*avg_ug,**keywordsrhosq)/rhosqint
         avgvsr_urad=intangle_foravg2d(gdet*denfactor*avg_Erf,**keywordsrhosq)/rhosqint
         avgvsr_bsq=intangle_foravg2d(gdet*denfactor*avg_bsq,**keywordsrhosq)/rhosqint
@@ -28223,10 +28263,12 @@ def mkavgfigs():
                 for ll in np.arange(0,4):
                     for mm in np.arange(0,4):
                         avg1.write("%g " % (avg_TudRAD[mm,ll,ii,jj,0]))
-                avg1.write("%g " % (avg_KAPPAUSER[ii,jj,0]))
-                avg1.write("%g " % (avg_KAPPAESUSER[ii,jj,0]))
-                avg1.write("%g " % (avg_tauradintegrated[ii,jj,0]))
-                avg1.write("%g " % (avg_tauradeffintegrated[ii,jj,0]))
+                global gotrad
+                if(gotrad):
+                    avg1.write("%g " % (avg_KAPPAUSER[ii,jj,0]))
+                    avg1.write("%g " % (avg_KAPPAESUSER[ii,jj,0]))
+                    avg1.write("%g " % (avg_tauradintegrated[ii,jj,0]))
+                    avg1.write("%g " % (avg_tauradeffintegrated[ii,jj,0]))
                 avg1.write("%g " % (avg_Erf[ii,jj,0]))
                 avg1.write("%g " % (r[ii,jj,0]))
                 avg1.write("%g " % (h[ii,jj,0]))
@@ -28274,7 +28316,7 @@ def mkavgfigs():
         #avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudEN  avg_TudRAD  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma gdet dxdxp11 dxdxp22 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd avg_KAPPAUSER avg_KAPPAESUSER avg_tauradintegrated")
         print("Doing field mkframe")
         sys.stdout.flush()
-        global rho,rholab,ug,B,gdetB,Erf,uradu,bsq,mu,ud,uu,beta,betatot
+        global rho,rholab,ug,B,gdetB,Erf,nrad,uradu,bsq,mu,ud,uu,beta,betatot
         global Tgas,Tradff,nradff,varexpf,kappa,kappan,kappaemit,kappanemit,kappaes,elambda,nlambda
         global KAPPAUSER,KAPPAESUSER,tauradintegrated,tauradeffintegrated
         #
@@ -28282,10 +28324,13 @@ def mkavgfigs():
         rddims(gotrad)
         #
         rho=avg_rho
-        KAPPAUSER=avg_KAPPAUSER
-        KAPPAESUSER=avg_KAPPAESUSER
-        tauradintegrated=avg_tauradintegrated
-        tauradeffintegrated=avg_tauradeffintegrated
+        global gotrad
+        if(gotrad):
+            KAPPAUSER=avg_KAPPAUSER
+            KAPPAUSERnofe=avg_KAPPAUSERnofe
+            KAPPAESUSER=avg_KAPPAESUSER
+            tauradintegrated=avg_tauradintegrated
+            tauradeffintegrated=avg_tauradeffintegrated
         rholab=avg_rho*avg_uu[0]
         ug=avg_ug
         Erf=avg_Erf
@@ -28325,8 +28370,8 @@ def mkavgfigs():
                 plt.clf()
                 ax = fig.add_subplot(111, aspect='equal')
                 #
-                finallenx=90
-                finalleny=150
+                finallenx=90*10
+                finalleny=150*10
                 mylenshowx = finallenx
                 mylenshowy = finalleny
             #
@@ -28371,6 +28416,156 @@ def mkavgfigs():
     # for sasha99 model:
     #
     # convert fig2.png fig2.eps ; scp fig2.eps jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/figavgflowfieldsasha99.eps ; scp fig2.png jon@ki-rh42:/data/jon/thickdisk/harm_thickdisk/figavgflowfieldsasha99.png 
+    #
+    #
+
+
+
+# for harmrad dc+syn paper
+def mkavgfigs2():
+    ###########################################
+    grid3d("gdump.bin",use2d=use2dglobal)
+    #
+    # read first file so know what type of data dealing with.
+    # gets gotrad, for example.
+    rfdfirstfile()
+    #
+    #global maxrho
+    #maxrho=np.max(rho)
+    #print("maxrho=%g" % (maxrho))
+    #
+    # load avg file
+    loadavg()
+    #
+    #
+    #
+    mkstreampart1=1
+    mkstreampart2=1 # NOTEMARK: set to zero if don't want to read-in qty.npy stuff
+    mkstreampart3=1
+    mkstreampart4=1
+    #
+    #
+    #
+    forceeqsym=0 # forceeqsym=1 makes the streaming take alot longer for some reason.  Also, messes up field geometry so it's not obvious that field threads the disk.
+    mylen = 100.0
+    mylenshowx=(25.0/30.0)*mylen
+    mylenshowy=(25.0/30.0)*mylen
+    fntsize=24
+    arrowsize=4
+    numcontours=30  # 60 was too many for jet region
+    aphipow=1.0
+    # keep sign information in general for aphi, but for specific plots force aphi sign to be constant
+    if modelname=="thickdisk7":
+        signaphi=-1.0
+    else:
+        signaphi=1.0
+    #
+    if ismb09model(modelname):
+        # for MB09 dipolar fiducial model
+        vminforframe=-4.0
+        vmaxforframe=0.5
+    elif issashamodel(modelname):
+        vminforframe=-4.0
+        vmaxforframe=0.5
+    elif isthickdiskmodel(modelname):
+        # for Jon's thickdisk models
+        vminforframe=-2.4
+        vmaxforframe=1.5625
+    elif isradmodelA(modelname):
+        vminforframe=-6
+        vmaxforframe=0
+    elif isradmodelB(modelname):
+        vminforframe=-8
+        vmaxforframe=-2
+    elif isradmodelD1(modelname):
+        vminforframe=-8
+        vmaxforframe=-2
+    elif isradmodelD2(modelname):
+        vminforframe=-10
+        vmaxforframe=-4
+    elif isradmodelC(modelname):
+        vminforframe=-9
+        vmaxforframe=-4
+    elif isradmodel(modelname):
+        vminforframe=-9
+        vmaxforframe=-4
+    else:
+        # default
+        vminforframe=-8.0
+        vmaxforframe=-4.0
+    #
+    vminforframe=np.log10(10.0**vminforframe/rhoeddcode)
+    vmaxforframe=np.log10(10.0**vmaxforframe/rhoeddcode)
+    #
+    #
+    #########################################
+    if mkstreampart1==1:
+        #
+        # for dojonwindplot
+        global rho,rholab,ug,B,gdetB,nrad,Erf,uradu,bsq,mu,ud,uu,beta,betatot #,uutrue
+        global Tgas,Tradff,nradff,varexpf,kappa,kappan,kappaemit,kappanemit,kappaes,elambda,nlambda
+        global KAPPAUSER,KAPPAUSER_nofe,KAPPAESUSER,tauradintegrated,tauradeffintegrated
+        #
+        global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE,NRAD_ARAD_CODE,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
+        global gotrad
+        rddims(gotrad)
+        #
+        rho=avg_rho
+        global gotrad
+        if(gotrad):
+            KAPPAUSER=avg_KAPPAUSER
+            KAPPAUSERnofe=avg_KAPPAUSERnofe
+            KAPPAESUSER=avg_KAPPAESUSER
+            tauradintegrated=avg_tauradintegrated
+            tauradeffintegrated=avg_tauradeffintegrated
+        rholab=avg_rho*avg_uu[0] # GODMARK: Not full avg of rholab directly
+        ug=avg_ug
+        Erf=avg_Erf
+        # use t-phi-averaged gdet B
+        B=np.copy(avg_uu)
+        B[1] = avg_B[0]
+        B[2] = avg_B[1]
+        B[3] = avg_B[2]
+        gdetB=np.copy(avg_uu)
+        gdetB[1:] = avg_gdetB[0:]
+        bsq = avg_bsq
+        mu = avg_mu
+        uu=avg_uu
+        #uutrue=uu
+        ud=avg_ud
+        beta = avg_beta
+        betatot = avg_betatot
+        #
+        Btrue=np.zeros((4,nx,ny,nz),dtype=avg_B.dtype)
+        if(1==1):
+            # normal field
+            Btrue[1:4] = np.copy(avg_B[0:3])
+            B[1:4] = np.copy(avg_B[0:3])
+            gdetB[1:4] = np.copy(avg_gdetB[0:3])
+        if(1==0):
+            # velocity
+            Btrue[1:4] = np.copy(avg_uu[0:3])
+            B[1:4] = np.copy(avg_uu[0:3])
+            gdetB[1:4] = np.copy(gdet*avg_uu[0:3])
+        if(1==0):
+            # mass flux
+            Btrue[1:4] = np.copy(avg_rhouu[0:3])
+            B[1:4] = np.copy(avg_rhouu[0:3])
+            gdetB[1:4] = np.copy(gdet*avg_rhouu[0:3])
+        if 1==0: # radiation flux lines instead of magnetic lines
+            for ll in np.arange(0,4):
+                Btrue[ll,:,:,:]=np.copy(avg_TudRAD[ll,0,:,:,:]) # radiation tensor 
+                B[ll,:,:,:]=np.copy(avg_TudRAD[ll,0,:,:,:])
+                gdetB[ll,:,:,:]=np.copy(gdet[:,:,:]*avg_TudRAD[ll,0,:,:,:]) 
+        #call
+        returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uu=avg_uu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig3",veldensity=8,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=1,dotaurad=True) #,showuu1eq0=False)
+        # fix back
+        B=np.copy(Btrue)
+        #
+    #
+    #
+    #
+    #########################################
     #
     #
 
@@ -29151,8 +29346,10 @@ def main(argv=None):
     ##ISNAUTILUS=0 # sometimes physics-179.umd.edu needs this for one file for some reason. (#11 out of 16 usually)
     #
     # specify disk type (put in /tmp if distributed disk)
+    # For specific systems like stampede and pfe, this should be 1
+    # For local systems like bh02, should be 0
     global ISSCRATCH
-    ISSCRATCH=1
+    ISSCRATCH=0
     #
     # whether to save any eps files (can be expensive on memory)
     global saveeps
@@ -29219,6 +29416,7 @@ def main(argv=None):
     if runtype==5:
         #fig2 with grayscalestreamlines and red field lines
         mkavgfigs()
+        mkavgfigs2()
     if runtype==6:
         #FIGURE 1 LOTSOPANELS
         fti=7000
@@ -29756,7 +29954,10 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     Tradtype1=Ruurat/(nradffrat*EBAR0+1E-50)
     #
     global gotrad,gotkappas
-    (kappadensityreal,kappasyreal,kappadcreal,kappaesreal,kappandensityreal,kappansyreal,kappandcreal,phiphi)=getkappasdetails(gotrad, gotkappas)
+    (kappadensityreal,kappasyreal,kappadcreal,kappaesreal,kappandensityreal,kappansyreal,kappandcreal,phiphi,kappachiantireal,kappaffreal,kappabfreal,kappafereal,kappamolreal,kappahmopalreal,kappachiantiopalreal,kappaffeereal)=getkappasdetails(gotrad, gotkappas)
+    #
+    #
+    #
     # now plot something you read-in
     plt.close(fignum)
     fig=plt.figure(fignum)
@@ -29775,6 +29976,59 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     print("mysumrat")
     print(mysumrat)
     #
+    #
+    #if 1==1:
+    #    loadavg()
+    #    #
+    #    #
+    print("gotrad=%d gotkappas=%d" % (gotrad,gotkappas)) ; sys.stdout.flush()
+    global KAPPAUSER,KAPPAUSERnofe,KAPPAESUSER
+    getkappas(gotrad,gotkappas)
+    #
+    # override to see how effective photosphere affected
+    #KAPPAUSER=kappadensityreal
+    #KAPPAUSER=kappasyreal
+    #KAPPAUSER=kappadcreal
+    #KAPPAUSER=kappandensityreal
+    #KAPPAUSER=kappansyreal
+    #KAPPAUSER=kappandcreal
+    #KAPPAUSER=kappachiantireal
+    #KAPPAUSER=kappaffreal
+    #KAPPAUSER=kappabfreal
+    #KAPPAUSER=kappadensityreal-kappafereal
+    #KAPPAUSER=kappafereal
+    #KAPPAUSER=kappamolreal
+    #KAPPAUSER=kappahmopalreal
+    #KAPPAUSER=kappachiantiopalreal
+    #KAPPAUSER=kappaffeereal
+    #
+    tauradlocal=(KAPPAUSERnofe+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
+    #
+    if 1==1:
+        # use time-phi average
+        loadavg()
+        KAPPAUSER=np.copy(rho)
+        KAPPAUSERnofe=np.copy(rho)
+        KAPPAESUSER=np.copy(rho)
+        for kk in np.arange(0,nz):
+                KAPPAUSER[:,:,kk]=avg_KAPPAUSER[:,:,0]
+                KAPPAUSERnofe[:,:,kk]=avg_KAPPAUSERnofe[:,:,0]
+                KAPPAESUSER[:,:,kk]=avg_KAPPAESUSER[:,:,0]
+    if 1==0:
+        KAPPAUSERavg=np.average(KAPPAUSER,axis=-1)[:,:,None]
+        KAPPAUSERnofeavg=np.average(KAPPAUSERnofe,axis=-1)[:,:,None]
+        KAPPAESUSERavg=np.average(KAPPAESUSER,axis=-1)[:,:,None]
+        for kk in np.arange(0,nz):
+                KAPPAUSER[:,:,kk]=KAPPAUSERavg[:,:,0]
+                KAPPAUSERnofe[:,:,kk]=KAPPAUSERnofeavg[:,:,0]
+                KAPPAESUSER[:,:,kk]=KAPPAESUSERavg[:,:,0]
+    #
+    taurad1integrated,taurad1flipintegrated,taurad2integrated,taurad2flipintegrated,tauradintegrated,tauradeff1integrated,tauradeff1flipintegrated,tauradeff2integrated,tauradeff2flipintegrated,tauradeffintegrated=compute_taurad(domergeangles=True,radiussettau1zero=1100)
+    #getkappas(1)
+    #tauradlocal=(KAPPAUSERnofe+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
+    #tauradlocal=(KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
+    #
+    # override
     #whichaphi=0
     #
     if(which==1):
@@ -29838,7 +30092,7 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
         #
         TgasK=pg/(rho/MUMEAN)*(MB*CCCTRUE0**2)/K_BOLTZ
         #
-        myfun=np.log10(bsq/(1E-10+ug))
+        myfun=np.log10(bsq/(1E-30+ug))
     if(which==18):
         myfun=np.log10(ug)
     if(which==19):
@@ -29887,6 +30141,12 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
         myfun=np.log10((kappasyreal)/(kappa))
     if(which==36):
         myfun=np.log10((kappadcreal)/(kappa))
+    if(which==37):
+        myfun=np.log10((kappaffreal)/(kappa))
+    if(which==38):
+        myfun=np.log10((kappabfreal)/(kappa))
+    if(which==39):
+        myfun=np.log10((kappachiantireal)/(kappa))
     if(which==40):
         myfun=np.log10(Tradff/Tgas)
     if(which==50):
@@ -29936,14 +30196,23 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     #
     #
     #
+    # overrides
+    #myfun=np.log10(KAPPAUSERnofe/avg_KAPPAUSERnofe)
+    #myfun=np.log10(KAPPAUSERnofe)
+    #myfun=tauradeffintegrated
+    #
+    ##### start actual plotting
     plt.imshow(myfun[:,:,whichaphi])
     plt.colorbar()
     #
-    #getkappas(1)
-    tauradlocal=(KAPPAUSER+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
-    #tauradlocal=(KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
-    ax.contour(tauradlocal[:,:,whichaphi],linewidths=4,colors='cyan', levels=(1,))
-    print("TAU: %g" % (tauradlocal[0,0,0])) ; sys.stdout.flush()
+    #ax.contour(tauradlocal[:,:,whichaphi],linewidths=4,colors='cyan', levels=(1,))
+    ax.contour(tauradintegrated[:,:,whichaphi],linewidths=4,colors='yellow', levels=(1,))
+    ax.contour(tauradeffintegrated[:,:,whichaphi],linewidths=4,colors='purple', levels=(1,))
+    #print("TAU: %g" % (tauradlocal[0,0,0])) ; sys.stdout.flush()
+    print("shapes") ; sys.stdout.flush()
+    print(np.shape(tauradintegrated)) ; sys.stdout.flush()
+    print(np.shape(tauradeffintegrated)) ; sys.stdout.flush()
+    #
     pg = (gam-1)*ug
     Tcode=gam*pg/rho
     print("Tcode=%g %g" % (Tcode[0,0,0],TEMPBAR));  sys.stdout.flush()
@@ -29985,8 +30254,8 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     #argnamelist=["myfun","bsqorho","bsqoall","uu0","bsqoug","bsqopg","bsqourad","bsqoprad","r","h","log10(tauradlocal)"]
     #cid = fig.canvas.mpl_connect('button_press_event', lambda event: onclick2(event,arglist,argnamelist,domask=domask))
     #
-    arglist=[myfun,bsqorho,bsqoall,uu[0],uradu[0],bsqoug,bsqopg,bsqourad,bsqoprad,r,h,np.log10(tauradlocal)]
-    argnamelist=["myfun","bsqorho","bsqoall","uu0","uru0","bsqoug","bsqopg","bsqourad","bsqoprad","r","h","log10(tauradlocal)"]
+    arglist=[myfun,np.log10(rho),np.log10(Tgas*TEMPBAR),bsqorho,bsqoall,uu[0],uradu[0],bsqoug,bsqopg,bsqourad,bsqoprad,r,h,np.log10(tauradintegrated)]
+    argnamelist=["myfun","rho","TgasK","bsqorho","bsqoall","uu0","uru0","bsqoug","bsqopg","bsqourad","bsqoprad","r","h","log10(tauradlocal)"]
     whichtj=-1
     cid = fig.canvas.mpl_connect('button_press_event', lambda event: onclick2(event,arglist,argnamelist,whichaphi,whichtj,domask=domask))
     #
@@ -30050,7 +30319,7 @@ def fcol(filename=None,fignum=None,whichplot=1):
     Tradtype1=Ruurat/(nradffrat*EBAR0+1E-50)
     #
     global gotrad,gotkappas
-    (kappadensityreal,kappasyreal,kappadcreal,kappaesreal,kappandensityreal,kappansyreal,kappandcreal,phiphi)=getkappasdetails(gotrad, gotkappas)
+    (kappadensityreal,kappasyreal,kappadcreal,kappaesreal,kappandensityreal,kappansyreal,kappandcreal,phiphi,kappachiantireal,kappaffreal,kappabfreal,kappafereal,kappamolreal,kappahmopalreal,kappachiantiopalreal,kappaffeereal)=getkappasdetails(gotrad, gotkappas)
     #
     plt.close(fignum)
     fig=plt.figure(fignum)
@@ -30108,7 +30377,7 @@ def fcol(filename=None,fignum=None,whichplot=1):
     itauradeff2integrated = reinterp(tauradeff2integrated,extent,ncell,domask=1.0,interporder='linear')
     itauradeff2flipintegrated = reinterp(tauradeff2flipintegrated,extent,ncell,domask=1.0,interporder='linear')
     #
-    tauradlocal=(KAPPAUSER+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
+    tauradlocal=(KAPPAUSERnofe+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
     tauradlocalavg=np.average(tauradlocal,axis=-1)[:,:,None]
     itauradlocal = reinterp(tauradlocal,extent,ncell,domask=1.0,interporder='linear')
     #
@@ -30162,7 +30431,7 @@ def compkappa(filename=None,fignum=None,whichplot=1):
     Tradtype1=Ruurat/(nradffrat*EBAR0+1E-50)
     #
     global gotrad,gotkappas
-    (kappadensityreal,kappasyreal,kappadcreal,kappaesreal,kappandensityreal,kappansyreal,kappandcreal,phiphi)=getkappasdetails(gotrad, gotkappas)
+    (kappadensityreal,kappasyreal,kappadcreal,kappaesreal,kappandensityreal,kappansyreal,kappandcreal,phiphi,kappachiantireal,kappaffreal,kappabfreal,kappafereal,kappamolreal,kappahmopalreal,kappachiantiopalreal,kappaffeereal)=getkappasdetails(gotrad, gotkappas)
     #
     plt.close(fignum)
     fig=plt.figure(fignum)
@@ -30222,7 +30491,7 @@ def compkappa(filename=None,fignum=None,whichplot=1):
     itauradeff2integrated = reinterp(tauradeff2integrated,extent,ncell,domask=1.0,interporder='linear')
     itauradeff2flipintegrated = reinterp(tauradeff2flipintegrated,extent,ncell,domask=1.0,interporder='linear')
     #
-    tauradlocal=(KAPPAUSER+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
+    tauradlocal=(KAPPAUSERnofe+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
     tauradlocalavg=np.average(tauradlocal,axis=-1)[:,:,None]
     itauradlocal = reinterp(tauradlocal,extent,ncell,domask=1.0,interporder='linear')
     #
@@ -30440,7 +30709,7 @@ def tutorial1alt(filename=None,fignum=None):
     itauradeff2integrated = reinterp(tauradeff2integrated,extent,ncell,domask=1.0,interporder='linear')
     itauradeff2flipintegrated = reinterp(tauradeff2flipintegrated,extent,ncell,domask=1.0,interporder='linear')
     #
-    tauradlocal=(KAPPAUSER+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
+    tauradlocal=(KAPPAUSERnofe+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
     tauradlocalavg=np.average(tauradlocal,axis=-1)[:,:,None]
     itauradlocal = reinterp(tauradlocal,extent,ncell,domask=1.0,interporder='linear')
     #
@@ -30813,7 +31082,7 @@ def tutorial1aother(filename=None,which=1,fignum=1,whichaphi=0,whichtj=-1,outert
     #
     if 1==0:
         #getkappas(1)
-        tauradlocal=(KAPPAUSER+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
+        tauradlocal=(KAPPAUSERnofe+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
         #tauradlocal=(KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
         ax.contour(tauradlocal[0:outerti,:,whichaphi],linewidths=4,colors='cyan', levels=(1,))
         print("TAU: %g" % (tauradlocal[0,0,0])) ; sys.stdout.flush()
@@ -31579,7 +31848,7 @@ def harmradtest1(path=None,fil=None):
     print("time=%g" % (t))
     print("ihor=%d ifluxacc=%d mdothor=%g %gLedd edradjet=%g %gLedd etarad=%g" % (ihor,ifluxacc,mdothor,mdothor/Leddcode,edradjet,edradjet/Leddcode,etaradjet));sys.stdout.flush()
     #
-    tauradlocal=(KAPPAUSER+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
+    tauradlocal=(KAPPAUSERnofe+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
     #
     tauradintegratedmax=np.amax(tauradintegrated)
     tauradintegratedmaxint=tauradintegratedmax.astype(np.int64)
