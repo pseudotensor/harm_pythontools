@@ -1001,7 +1001,7 @@ then
     ##############################################
     #
     # Tables:
-    numtbls=17
+    numtbls=18
 
     for numtbl in `seq 1 $numtbls`
     do
@@ -1016,76 +1016,96 @@ then
         if [ $numtbl -eq 1 ]
         then
             echo "\caption{Physical Model Parameters}" >> $fname
+            numtblreal=$numtbl
         fi
         if [ $numtbl -eq 2 ]
         then
             echo "\caption{Numerical Model Parameters}" >> $fname
+            numtblreal=$numtbl
         fi
         if [ $numtbl -eq 3 ]
         then
             echo "\caption{Grid Cells across Half-Thickness at Horizon, Half-Thicknesses of Disk, and Location for Interfaces for Disk-Corona and Corona-Jet}" >> $fname
+            numtblreal=$numtbl
         fi
         if [ $numtbl -eq 16 ]
         then
             echo "\caption{Grid Cells across Half-Thickness at Horizon, Half-Thicknesses of Disk, and Location for Interfaces for Disk-Corona and Corona-Jet}" >> $fname
+            numtblreal=$numtbl
         fi
         if [ $numtbl -eq 17 ]
         then
             echo "\caption{Grid Cells across Half-Thickness at Horizon, Half-Thicknesses of Disk, and Location for Interfaces for Disk-Corona and Corona-Jet}" >> $fname
+            numtblreal=$numtbl
+        fi
+        if [ $numtbl -eq 18 ]
+        then
+            echo "\caption{Percent Energy Efficiency: BH, Jet, Winds, and NT for Inner Radius}" >> $fname
+            numtblreal=66
         fi
         if [ $numtbl -eq 4 ]
         then
             echo "\caption{Viscosities, Grid Cells per Correlation lengths and MRI Wavelengths, MRI Wavelengths per full Disk Height, and Radii for MRI Suppression}" >> $fname
+            numtblreal=$numtbl
         fi
         if [ $numtbl -eq 5 ]
         then
             echo "\caption{Rest-Mass Accretion and Ejection Rates}" >> $fname
+            numtblreal=$numtbl
         fi
         if [ $numtbl -eq 6 ]
         then
             echo "\caption{Percent Energy Efficiency: BH, Jet, Winds, and NT}" >> $fname
+            numtblreal=$numtbl
         fi
         if [ $numtbl -eq 7 ]
         then
             echo "\caption{Percent Energy Efficiency: Magnetized Wind and Entire Wind}" >> $fname
+            numtblreal=$numtbl
         fi
         if [ $numtbl -eq 8 ]
         then
             echo "\caption{Specific Angular Momentum: BH, Jet, Winds, and NT}" >> $fname
+            numtblreal=$numtbl
         fi
         if [ $numtbl -eq 9 ]
         then
             echo "\caption{Specific Angular Momentum: Magnetized Wind and Entire Wind}" >> $fname
+            numtblreal=$numtbl
         fi
         if [ $numtbl -eq 10 ]
         then
             echo "\caption{Spin-Up Parameter}" >> $fname
+            numtblreal=$numtbl
         fi
         if [ $numtbl -eq 15 ]
         then
             echo "\caption{Spin-Up Parameter: BH, Jet, Winds, and NT}" >> $fname
+            numtblreal=$numtbl
         fi
         if [ $numtbl -eq 11 ]
         then
             echo "\caption{Absolute Magnetic Flux per unit: Rest-Mass Fluxes, Initial Magnetic Fluxes, Available Magnetic Fluxes, and BH Magnetic Flux}" >> $fname
+            numtblreal=$numtbl
         fi
         if [ $numtbl -eq 12 ]
         then
             echo "\caption{Inner and Outer Radii for Least-Square Fits, Disk+Corona Stagnation Radius, and Fitted Power-Law Indices for Disk Flow}" >> $fname
+            numtblreal=$numtbl
         fi
-        #
         if [ $numtbl -eq 13 ]
         then
             echo "\caption{Inner and Outer Radii for Least-Square Fits, and Fitted Power-Law Indices for Wind Flow}" >> $fname
+            numtblreal=$numtbl
         fi
-        #
         if [ $numtbl -eq 14 ]
         then
             echo "\caption{Inner and Outer Radii for Least-Square Fits, Disk+Corona Stagnation Radius, and Fitted Power-Law Indices for Disk and Wind Flows}" >> $fname
+            numtblreal=$numtbl
         fi
         #
         echo "\begin{center}" >> $fname
-        rawnumc=`grep "Latex$numtbl:" ${prepath}/tables${extraname}.tex | sed 's/[HV]Latex$numtbl: //g' | tail -1 | wc | awk '{print $2}'`
+        rawnumc=`grep "Latex$numtblreal:" ${prepath}/tables${extraname}.tex | sed 's/[HV]Latex$numtblreal: //g' | tail -1 | wc | awk '{print $2}'`
         numc=$(( ($rawnumc - 2)/2 ))
         str1="\begin{tabular}[h]{|"
         str2=""
@@ -1107,9 +1127,9 @@ then
         if [ $numtbl -eq 14 ] # fits
         then
             # no 2D or MB09D models here
-            egrep "Latex$numtbl:|Latex:" ${prepath}/tables${extraname}.tex | sed 's/\([0-9]\)%/\1\\%/g' | sed 's/[HV]Latex'$numtbl': //g' | sed 's/[HV]Latex: //g' | sed 's/\$\&/$ \&/g'   | sed 's/A0\.94BpN100 /\\\\\nA0\.94BpN100 /g' | sed 's/{\\bf A-0.94BfN40HR} /\\\\\n{\\bf A-0.94BfN40HR} /g' | sed 's/A-0\.94BtN10 /\\\\\nA-0\.94BtN10 /g'  | sed 's/MB09Q /\\\\\nMB09Q /g'| sed 's/A-0.9N100 /\\\\\nA-0.9N100 /g'  | sed 's/} \&/}$ \&/g' | sed 's/} \\/}$  \\/g' | sed 's/nan/0/g' | sed 's/e+0/e/g' | sed 's/e-0/e-/g'  | column  -t >> $fname
+            egrep "Latex$numtblreal:|Latex:" ${prepath}/tables${extraname}.tex | sed 's/\([0-9]\)%/\1\\%/g' | sed 's/[HV]Latex'$numtblreal': //g' | sed 's/[HV]Latex: //g' | sed 's/\$\&/$ \&/g'   | sed 's/A0\.94BpN100 /\\\\\nA0\.94BpN100 /g' | sed 's/{\\bf A-0.94BfN40HR} /\\\\\n{\\bf A-0.94BfN40HR} /g' | sed 's/A-0\.94BtN10 /\\\\\nA-0\.94BtN10 /g'  | sed 's/MB09Q /\\\\\nMB09Q /g'| sed 's/A-0.9N100 /\\\\\nA-0.9N100 /g'  | sed 's/} \&/}$ \&/g' | sed 's/} \\/}$  \\/g' | sed 's/nan/0/g' | sed 's/e+0/e/g' | sed 's/e-0/e-/g'  | column  -t >> $fname
         else
-            egrep "Latex$numtbl:|Latex:" ${prepath}/tables${extraname}.tex | sed 's/\([0-9]\)%/\1\\%/g' | sed 's/[HV]Latex'$numtbl': //g' | sed 's/[HV]Latex: //g' | sed 's/\$\&/$ \&/g'   | sed 's/A0\.94BpN100 /\\\\\nA0\.94BpN100 /g' | sed 's/{\\bf A-0.94BfN40HR} /\\\\\n{\\bf A-0.94BfN40HR} /g' | sed 's/A-0\.94BtN10 /\\\\\nA-0\.94BtN10 /g'  | sed 's/MB09D /\\\\\nMB09D /g'| sed 's/A-0.9N100 /\\\\\nA-0.9N100 /g'  | sed 's/} \&/}$ \&/g' | sed 's/} \\/}$  \\/g' | sed 's/nan/0/g' | sed 's/e+0/e/g' | sed 's/e-0/e-/g'  | column  -t >> $fname
+            egrep "Latex$numtblreal:|Latex:" ${prepath}/tables${extraname}.tex | sed 's/\([0-9]\)%/\1\\%/g' | sed 's/[HV]Latex'$numtblreal': //g' | sed 's/[HV]Latex: //g' | sed 's/\$\&/$ \&/g'   | sed 's/A0\.94BpN100 /\\\\\nA0\.94BpN100 /g' | sed 's/{\\bf A-0.94BfN40HR} /\\\\\n{\\bf A-0.94BfN40HR} /g' | sed 's/A-0\.94BtN10 /\\\\\nA-0\.94BtN10 /g'  | sed 's/MB09D /\\\\\nMB09D /g'| sed 's/A-0.9N100 /\\\\\nA-0.9N100 /g'  | sed 's/} \&/}$ \&/g' | sed 's/} \\/}$  \\/g' | sed 's/nan/0/g' | sed 's/e+0/e/g' | sed 's/e-0/e-/g'  | column  -t >> $fname
         fi
         #
         echo "\hline" >> $fname
