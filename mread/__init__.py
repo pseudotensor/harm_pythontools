@@ -18014,13 +18014,14 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     etajMAKE2 = prefactor*pjmake_mu1[:,iofr(rjetout)]/mdotiniavg
     etajPAKE2 = prefactor*pjpake_mu1[:,iofr(rjetout)]/mdotiniavg
     etajEN2 = prefactor*pjen_mu1[:,iofr(rjetout)]/mdotiniavg
+    etajin2 = etajEM2 + etajMAKE2
     #
-    etajin2 = etajinEM2 + etajinMAKE2
     etajinEM2 = prefactor*pjem_mu1[:,iofr(rjetin)]/mdotiniavg
     etajinMAKE2 = prefactor*pjmake_mu1[:,iofr(rjetin)]/mdotiniavg
     etajinPAKE2 = prefactor*pjpake_mu1[:,iofr(rjetin)]/mdotiniavg
     etajinEN2 = prefactor*pjen_mu1[:,iofr(rjetin)]/mdotiniavg
     etajin2 = etajinEM2 + etajinMAKE2
+    #
     etaoutRAD2=etaoutRAD * (mdotfinavg/mdotiniavg)
     #etaj2local = etaj2*(mdotiniavg/mdotinrdiskoutiniavg)
     etamwinEM2 = prefactor*pjem_mumax1m[:,iofr(rjetin)]/mdotiniavg
