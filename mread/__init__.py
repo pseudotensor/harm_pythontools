@@ -18437,12 +18437,14 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     ljMAKE_avg=letajMAKE_avg/prefactor
     ljPAKE_avg=letajPAKE_avg/prefactor
     ljEN_avg=letajEN_avg/prefactor
-    lj_avg=letajin_avg/prefactor
+    #
+    ljin_avg=letajin_avg/prefactor
     #ljlinocal_avg=letajinlinocal_avg/prefactor
-    ljEM_avg=letajinEM_avg/prefactor
-    ljMAKE_avg=letajinMAKE_avg/prefactor
-    ljPAKE_avg=letajinPAKE_avg/prefactor
-    ljEN_avg=letajinEN_avg/prefactor
+    ljinEM_avg=letajinEM_avg/prefactor
+    ljinMAKE_avg=letajinMAKE_avg/prefactor
+    ljinPAKE_avg=letajinPAKE_avg/prefactor
+    ljinEN_avg=letajinEN_avg/prefactor
+    #
     loutRAD_avg=letaoutRAD_avg/prefactor
     lmwin_avg=letamwin_avg/prefactor
     #lmwinlocal_avg=letamwinlocal_avg/prefactor
