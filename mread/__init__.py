@@ -2954,6 +2954,12 @@ def isradmodelD2(modelname): # for Mdot\sim 5Ledd/c^2
     else:
         return(0)
     #
+def isradmodelnrad(modelname):
+    if modelname=="jonharmrad1" or modelname=="jonharmrad2" or modelname=="jonharmrad3" or modelname=="jonharmrad4" or modelname=="jonharmrad5" or modelname=="jonharmrad6" or modelname=="jonharmrad7" or modelname=="jonharmrad8" or modelname=="jonharmrad9" or modelname=="jonharmrad10" or modelname=="jonharmrad11" or modelname=="jonharmrad12" or modelname=="jonharmrad13" or modelname=="jonharmrad14" or modelname=="jonharmrad15" or modelname=="jonharmrad16":
+        return(1)
+    else:
+        return(0)
+    #
 def isradmodelD(modelname):
     if(isradmodelD1(modelname) or isradmodelD2(modelname)):
         return(1)
@@ -3157,8 +3163,9 @@ def getdefaulttimes1():
         defaultftf=30000 # but let go past if did run past
         #
     #
+    # default radmodel
     if isradmodel(modelname)==1:
-        defaultfti=1000
+        defaultfti=1
         defaultftf=1e5
     # override
     if modelname=="sashaa9b100t1.5708":
@@ -3173,10 +3180,13 @@ def getdefaulttimes1():
     #    defaultfti=15000
     #    defaultftf=5e4
     #
-    if modelname=="radtest1" or modelname=="radtest2":
+    if modelname=="radtest" or modelname=="radtest1" or modelname=="radtest2":
         defaultfti=50
         defaultftf=1e4
     #
+    if isradmodelnrad(modelname)==1:
+        defaultfti=1000
+        defaultftf=1e5
     if ismarkmodel(modelname)==1:
         defaultfti=50000
         defaultftf=1E6
@@ -8400,7 +8410,7 @@ def rfdheader(fin=None,typefile=1):
     if(typefile==1):
         global gotrad
         gotrad=0 # where gotrad defined as 0 and overwritten if appropriate
-        if(numcolumns==16 or or numcolumns==29 or numcolumns==31):
+        if(numcolumns==16 or numcolumns==29 or numcolumns==31):
             gotrad=1
         #
         global gotkappas
@@ -8762,9 +8772,8 @@ def rfd(fieldlinefilename,**kwargs):
         uradd=uu*0+1E-30
         uradu=uu*0+1E-30
     #
+    global Tgas,Tradff,nradff,varexpf,kappa,kappan,kappaemit,kappanemit,kappaes,elambda,nlambda
     if(numcolumns==31):
-        # Tgas,Tradff,nradff,varexpf,kappa,kappan,kappaemit,kappanemit,kappaes,lambda,nlambda
-        global Tgas,Tradff,nradff,varexpf,kappa,kappan,kappaemit,kappanemit,kappaes,elambda,nlambda
         #
         Tgas=d[sii,:,:,:]
         Tradff=d[sii+1,:,:,:]
@@ -8780,12 +8789,11 @@ def rfd(fieldlinefilename,**kwargs):
         #
         sii=sii+11
     elif(numcolumns==29):
-        # Tgas,Tradff,nradff,varexpf,kappa,kappan,kappaemit,kappanemit,kappaes,lambda,nlambda
-        global Tgas,Tradff,nradff,varexpf,kappa,kappan,kappaemit,kappanemit,kappaes,elambda,nlambda
         #
         Tgas=d[sii,:,:,:]
         Tradff=d[sii+1,:,:,:]
         nradff=d[sii+2,:,:,:] # if numcolumns==29, then just NRADEVOLVE 0 and this is LTE
+        varexpf=1.0 + rho*0.0
         kappa=d[sii+3,:,:,:]
         kappan=d[sii+4,:,:,:]
         kappaemit=d[sii+5,:,:,:]
@@ -9733,6 +9741,7 @@ def rddims(gotrad):
         fin = open(fname, "rt" )
         dimfile = fin.readline().split()
         numheaderitems=len(dimfile) #.shape[0]
+        print("for dimensions.txt, numheaderitems=%d" % (numheaderitems))
         #
         GGG = np.float64(dimfile[0])
         CCCTRUE = np.float64(dimfile[1])
@@ -9747,17 +9756,21 @@ def rddims(gotrad):
         UBAR = np.float64(dimfile[10])
         TEMPBAR = np.float64(dimfile[11])
         ARAD_CODE = np.float64(dimfile[12])
-        NRAD_ARAD_CODE = np.float64(dimfile[13])
+        if(numheaderitems==23):
+            NRAD_ARAD_CODE = np.float64(dimfile[13])
+            nextsii=14
+        else:
+            nextsii=13
         #
-        XFACT = np.float64(dimfile[14])
-        YFACT = np.float64(dimfile[15])
-        ZFACT = np.float64(dimfile[16])
-        MUMEAN = np.float64(dimfile[17])
-        MUMEAN = np.float64(dimfile[18]) # redundant to keep order of remaining
-        OPACITYBAR = np.float64(dimfile[19])
-        MASSCM = np.float64(dimfile[20])
-        KORAL2HARMRHO1 = np.float64(dimfile[21])
-        TEMPMIN = np.float64(dimfile[22])
+        XFACT = np.float64(dimfile[nextsii])
+        YFACT = np.float64(dimfile[nextsii+1])
+        ZFACT = np.float64(dimfile[nextsii+2])
+        MUMEAN = np.float64(dimfile[nextsii+3])
+        MUMEAN = np.float64(dimfile[nextsii+4]) # redundant to keep order of remaining
+        OPACITYBAR = np.float64(dimfile[nextsii+5])
+        MASSCM = np.float64(dimfile[nextsii+6])
+        KORAL2HARMRHO1 = np.float64(dimfile[nextsii+7])
+        TEMPMIN = np.float64(dimfile[nextsii+8])
         #
         fin.close()
         #
