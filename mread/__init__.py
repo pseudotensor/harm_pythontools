@@ -2552,39 +2552,11 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
             avg_tauradintegrated+=tauradintegrated.sum(-1)[:,:,None]*localdt[itert]
             avg_tauradeffintegrated+=tauradeffintegrated.sum(-1)[:,:,None]*localdt[itert]
             #
-            # 4
-            #pg=(gam-1.0)*ug  #clean # use clean to keep pg low and Tgas will have floor like below  # no, need to use what was in simulation to be consistent with simulation's idea of what optical depth was
-            # and of used ugclean above, then in funnel temperature would be very small and kappaff would be huge.
-            #
-            #prad=(4.0/3.0-1.0)*Erf
-            # code Tgas for ideal gas
-            #Tgas=pg/(rho/MUMEAN)
-            #
-            #Eradff = R^a_b u_a u^b
-            Ruu=0.0
-            uraddlocal = mdot(gv3,uradu)                  #g_mn urad^n
-            udlocal = mdot(gv3,uu)                  #g_mn u^n
-            for kapa in np.arange(4):
-                for nu in np.arange(4):
-                    if(kapa==nu): delta = 1
-                    else: delta = 0
-                    Rijkapanu = (Erf/3.0)*(4.0*uradu[kapa]*uraddlocal[nu]+delta)
-                    Ruu= Ruu + Rijkapanu*udlocal[kapa]*uu[nu]
-            # fluid-frame temperature of radiation
-            Tradfflte = pow(np.fabs(Ruu)/ARAD_CODE,0.25) # ASSUMPTION: PLANCK-like in comoving frame even though radiation flowing through cell
-            R00 = (Erf/3.0)*(4.0*uradu[0]*uraddlocal[0]+1)
-            Tradlablte = pow(np.fabs(R00)/ARAD_CODE,0.25) # ASSUMPTION: PLANCK-like in comoving frame even though radiation flowing through cell
-            EBAR0=(2.7011780329190638961)
-            nradffratlte = Tradfflte**3/EBAR0 #NRAD_ARAD_CODE*
-            Ruurat=Ruu/ARAD_CODE
-            nradffrat=nradff #/NRAD_ARAD_CODE # already inside from harmrad
-            nradlabrat=nrad #/NRAD_ARAD_CODE # already inside from harmrad
-            Tradfftype1=Ruurat/(nradffrat*EBAR0+1E-50)
-            R00rat=R00/ARAD_CODE
-            Tradlabtype1=R00rat/(nradlabrat*EBAR0+1E-50)
             #
             # 9
             avg_Tgas+=(np.fabs(Tgas)).sum(-1)[:,:,None]*localdt[itert]
+            #
+            (Tradfflte,Tradlablte,nradffratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1)=getTrads()
             #
             avg_Tradfflte+=(np.fabs(Tradfflte)).sum(-1)[:,:,None]*localdt[itert]
             avg_Tradff+=(np.fabs(Tradff)).sum(-1)[:,:,None]*localdt[itert]
@@ -2643,6 +2615,41 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     #
     return(avgmem)
 
+
+
+def getTrads():
+    # 4
+    #pg=(gam-1.0)*ug  #clean # use clean to keep pg low and Tgas will have floor like below  # no, need to use what was in simulation to be consistent with simulation's idea of what optical depth was
+    # and of used ugclean above, then in funnel temperature would be very small and kappaff would be huge.
+    #
+    #prad=(4.0/3.0-1.0)*Erf
+    # code Tgas for ideal gas
+    #Tgas=pg/(rho/MUMEAN)
+    #
+    #Eradff = R^a_b u_a u^b
+    Ruu=0.0
+    uraddlocal = mdot(gv3,uradu)                  #g_mn urad^n
+    udlocal = mdot(gv3,uu)                  #g_mn u^n
+    for kapa in np.arange(4):
+        for nu in np.arange(4):
+            if(kapa==nu): delta = 1
+            else: delta = 0
+            Rijkapanu = (Erf/3.0)*(4.0*uradu[kapa]*uraddlocal[nu]+delta)
+            Ruu= Ruu + Rijkapanu*udlocal[kapa]*uu[nu]
+    # fluid-frame temperature of radiation
+    Tradfflte = pow(np.fabs(Ruu)/ARAD_CODE,0.25) # ASSUMPTION: PLANCK-like in comoving frame even though radiation flowing through cell
+    R00 = (Erf/3.0)*(4.0*uradu[0]*uraddlocal[0]+1)
+    Tradlablte = pow(np.fabs(R00)/ARAD_CODE,0.25) # ASSUMPTION: PLANCK-like in comoving frame even though radiation flowing through cell
+    EBAR0=(2.7011780329190638961)
+    nradffratlte = Tradfflte**3/EBAR0 #NRAD_ARAD_CODE*
+    Ruurat=Ruu/ARAD_CODE
+    nradffrat=nradff #/NRAD_ARAD_CODE # already inside from harmrad
+    nradlabrat=nrad #/NRAD_ARAD_CODE # already inside from harmrad
+    Tradfftype1=Ruurat/(nradffrat*EBAR0+1E-50)
+    R00rat=R00/ARAD_CODE
+    Tradlabtype1=R00rat/(nradlabrat*EBAR0+1E-50)
+    #
+    return(Tradfflte,Tradlablte,nradffratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1)
 
 
 def extractlena():
@@ -8393,12 +8400,12 @@ def rfdheader(fin=None,typefile=1):
     if(typefile==1):
         global gotrad
         gotrad=0 # where gotrad defined as 0 and overwritten if appropriate
-        if(numcolumns==16 or numcolumns==30 or numcolumns==31):
+        if(numcolumns==16 or or numcolumns==29 or numcolumns==31):
             gotrad=1
         #
         global gotkappas
         gotkappas=0 # whether got kappas from fieldline files
-        if(numcolumns==30 or numcolumns==31):
+        if(numcolumns==29 or numcolumns==31):
             gotkappas=1
             #
         rddims(gotrad)
@@ -8565,8 +8572,7 @@ def rfd(fieldlinefilename,**kwargs):
 #    #
 
     #
-    #rho, u, -hu_t, -T^t_t/U0, u^t, v1,v2,v3,B1,B2,B3
-    if(numcolumns==30 or numcolumns==31):
+    if(numcolumns==29 or numcolumns==31):
         #
         rho=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
         rho=d[0,:,:,:]
@@ -8591,7 +8597,7 @@ def rfd(fieldlinefilename,**kwargs):
         uu[1:4]=uu[1:4] * uu[0]
         #
         sii=s00+4
-    elif(numcolumns==9): # latest koralinsert code removed T stuff
+    elif(numcolumns==9): # koralinsert code removed Tud stuff
         rho=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
         rho=d[0,:,:,:]
         #matter internal energy in the fluid frame
@@ -8635,21 +8641,9 @@ def rfd(fieldlinefilename,**kwargs):
         #
         sii=s00+4
         #
-    else: # latest koralinsert code removed T stuff
-        rho=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
-        rho=d[0,:,:,:]
-        #matter internal energy in the fluid frame
-        ug=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
-        ug=d[1,:,:,:]
-        s00=4
-        #d[4] is the time component of 4-velocity, u^t
-        #d[5:8] are 3-velocities, v^i
-        uu=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
-        uu=d[s00:s00+4,:,:,:]  #again, note uu[i] are 3-velocities (as read from the fieldline file)
-        #multiply by u^t to get 4-velocities: u^i = u^t v^i
-        uu[1:4]=uu[1:4] * uu[0]
-        #
-        sii=s00+4
+    else:
+        print("python not setup for this fieldline file") ; sys.stdout.flush()
+        sys.exit(1)
         #
     #
     if whichpoledeath==2:
@@ -8685,6 +8679,8 @@ def rfd(fieldlinefilename,**kwargs):
             uu[0]=gamma/alpha
             
     #
+    ##############
+    # any numcolumns has 3 field components
     #B = np.zeros_like(uu)
     #cell-centered magnetic field components
     #B[1:4,:,:,:]=d[8:11,:,:,:]
@@ -8715,10 +8711,10 @@ def rfd(fieldlinefilename,**kwargs):
     #
     #
     ######################################################
-    # get any radiation variables
+    # get any additional radiation variables
     #
     global gotrad
-    if(numcolumns==16 or numcolumns==30):
+    if(numcolumns==16 or numcolumns==29):
         Erf=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
         uradu=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
         Erf=d[sii,:,:,:] # radiation frame radiation energy density
@@ -8766,14 +8762,14 @@ def rfd(fieldlinefilename,**kwargs):
         uradd=uu*0+1E-30
         uradu=uu*0+1E-30
     #
-    if(numcolumns==30 or numcolumns==31):
+    if(numcolumns==31):
         # Tgas,Tradff,nradff,varexpf,kappa,kappan,kappaemit,kappanemit,kappaes,lambda,nlambda
         global Tgas,Tradff,nradff,varexpf,kappa,kappan,kappaemit,kappanemit,kappaes,elambda,nlambda
         #
         Tgas=d[sii,:,:,:]
         Tradff=d[sii+1,:,:,:]
         nradff=d[sii+2,:,:,:] #(but already pre-divied by NRAD_ARAD_CODE in harmrad)
-        varexpf=d[sii+3,:,:,:]
+        varexpf=d[sii+3,:,:,:] # new item
         kappa=d[sii+4,:,:,:]
         kappan=d[sii+5,:,:,:]
         kappaemit=d[sii+6,:,:,:]
@@ -8781,10 +8777,26 @@ def rfd(fieldlinefilename,**kwargs):
         kappaes=d[sii+8,:,:,:]
         elambda=d[sii+9,:,:,:]
         nlambda=d[sii+10,:,:,:]
-        #  (pl==RHO || pl==UU || pl==U3 || pl==URAD0 || pl==URAD3) = 5
-        # (1  +  1+1+1 + (EOMRADTYPE!=EOMRADNONE)) = 5
         #
         sii=sii+11
+    elif(numcolumns==29):
+        # Tgas,Tradff,nradff,varexpf,kappa,kappan,kappaemit,kappanemit,kappaes,lambda,nlambda
+        global Tgas,Tradff,nradff,varexpf,kappa,kappan,kappaemit,kappanemit,kappaes,elambda,nlambda
+        #
+        Tgas=d[sii,:,:,:]
+        Tradff=d[sii+1,:,:,:]
+        nradff=d[sii+2,:,:,:] # if numcolumns==29, then just NRADEVOLVE 0 and this is LTE
+        kappa=d[sii+3,:,:,:]
+        kappan=d[sii+4,:,:,:]
+        kappaemit=d[sii+5,:,:,:]
+        kappanemit=d[sii+6,:,:,:]
+        kappaes=d[sii+7,:,:,:]
+        elambda=d[sii+8,:,:,:]
+        nlambda=d[sii+9,:,:,:]
+        #
+        sii=sii+10
+
+        #
 #        F1rhotot=d[sii,:,:,:]
 #        F1uutot=d[sii+1,:,:,:]
 #        F1u3tot=d[sii+2,:,:,:]
@@ -30016,25 +30028,10 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     #
     prad=(4.0/3.0-1.0)*Erf
     # code Tgas for ideal gas
-    Tgas=pg/(rho/MUMEAN)
+    #Tgas=pg/(rho/MUMEAN)
     #
-    #Eradff = R^a_b u_a u^b
-    Ruu=0.0
-    uraddlocal = mdot(gv3,uradu)                  #g_mn urad^n
-    udlocal = mdot(gv3,uu)                  #g_mn u^n
-    for kapa in np.arange(4):
-        for nu in np.arange(4):
-            if(kapa==nu): delta = 1
-            else: delta = 0
-            Rijkapanu = (Erf/3.0)*(4.0*uradu[kapa]*uraddlocal[nu]+delta)
-            Ruu= Ruu + Rijkapanu*udlocal[kapa]*uu[nu]
-    # fluid-frame temperature of radiation
-    Tradlte0 = pow(np.fabs(Ruu)/ARAD_CODE,0.25) # ASSUMPTION: PLANCK-like in comoving frame even though radiation flowing through cell
-    EBAR0=(2.7011780329190638961)
-    nradffratlte0 = Tradlte0**3/EBAR0 #NRAD_ARAD_CODE*
-    Ruurat=Ruu/ARAD_CODE
-    nradffrat=nradff #/NRAD_ARAD_CODE # already insdie
-    Tradtype1=Ruurat/(nradffrat*EBAR0+1E-50)
+    #
+    (Tradfflte,Tradlablte,nradffratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1)=getTrads()
     #
     global gotrad,gotkappas
     (kappadensityreal,kappasyreal,kappadcreal,kappaesreal,kappandensityreal,kappansyreal,kappandcreal,phiphi,kappachiantireal,kappaffreal,kappabfreal,kappafereal,kappamolreal,kappahmopalreal,kappachiantiopalreal,kappaffeereal)=getkappasdetails(gotrad, gotkappas)
@@ -30097,6 +30094,11 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
                 KAPPAUSER[:,:,kk]=avg_KAPPAUSER[:,:,0]
                 KAPPAUSERnofe[:,:,kk]=avg_KAPPAUSERnofe[:,:,0]
                 KAPPAESUSER[:,:,kk]=avg_KAPPAESUSER[:,:,0]
+        kappa=np.copy(KAPPAUSERnofe)
+        kappaes=np.copy(KAPPAESUSER)
+        Tgas=avg_Tgas
+        Tradlabtype1=avg_Tradlabtype1
+        Tradlablte=avg_Tradlablte
     if 1==0:
         KAPPAUSERavg=np.average(KAPPAUSER,axis=-1)[:,:,None]
         KAPPAUSERnofeavg=np.average(KAPPAUSERnofe,axis=-1)[:,:,None]
@@ -30105,6 +30107,8 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
                 KAPPAUSER[:,:,kk]=KAPPAUSERavg[:,:,0]
                 KAPPAUSERnofe[:,:,kk]=KAPPAUSERnofeavg[:,:,0]
                 KAPPAESUSER[:,:,kk]=KAPPAESUSERavg[:,:,0]
+        kappa=np.copy(KAPPAUSERnofe)
+        kappaes=np.copy(KAPPAESUSER)
     #
     taurad1integrated,taurad1flipintegrated,taurad2integrated,taurad2flipintegrated,tauradintegrated,tauradeff1integrated,tauradeff1flipintegrated,tauradeff2integrated,tauradeff2flipintegrated,tauradeffintegrated=compute_taurad(domergeangles=True,radiussettau1zero=1100)
     #getkappas(1)
@@ -30150,7 +30154,7 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     if(which==14):
         myfun=np.log10(Tgas*TEMPBAR)
     if(which==15):
-        myfun=np.log10(Tradff*TEMPBAR)
+        myfun=np.log10(Tradlabtype1*TEMPBAR)
     if(which==16):
         global uradd
         uradd = mdot(gv3,uradu)                  #g_mn urad^n
@@ -30249,7 +30253,7 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     if(which==57):
         myfun=np.log10(kappandcreal/kappadcreal)
     if(which==58):
-        myfun=np.log10(Tradff/Tradlte0)
+        myfun=np.log10(Tradlabtype1/Tradlablte)
     if(which==59):
         myfun=np.log10(nradffrat/nradffratlte0)
     if(which==60):
@@ -30275,7 +30279,7 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
         global ud
         ud = mdot(gv3,uu)                  #g_mn urad^n
         #myfun=np.log10(-fTudRAD(0,0)*1E30)
-        myfun=-fTudRAD(1,0)
+        myfun=-gdet*fTudRAD(1,0)
     #
     #
     #

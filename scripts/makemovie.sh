@@ -1945,7 +1945,7 @@ then
         if [ 1 -eq 1 ]
         then
             cp ~/py/scripts/makelinkimagenew3.sh .
-            sh ./makelinkimagenew3.sh
+            sh ./makelinkimagenew3.sh $modelname
         fi
 
 
