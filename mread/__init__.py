@@ -5559,7 +5559,7 @@ def remap2unir(rinner=None,router=None,size=None,iin=None,iout=None,result0=None
 # compute integrated optical depth
 def compute_taurad(domergeangles=True,radiussettau1zero=80):
     global gotrad
-    if(gotrad==1):
+    if(gotrad):
         # uses uu[], KAPPAUSER, KAPPAESUSER, gv3, r
         # if no input, then change.
         if(radiussettau1zero==80):
@@ -5588,6 +5588,7 @@ def compute_taurad(domergeangles=True,radiussettau1zero=80):
         taurad1=(KAPPAESUSER)*fdrco() # only ES
         # http://arxiv.org/pdf/astro-ph/0408590.pdf equation~3
         tauradeff1=np.sqrt(3.0*KAPPAUSERnofe*(KAPPAUSERnofe+KAPPAESUSER))*fdrco()
+        #
         #
         # FREE PARAMETER:
         #radiussettau1zero=80
@@ -6435,7 +6436,7 @@ def mkframe(fname,ax=None,ax2=None,cb=1,tight=False,useblank=True,vmin=None,vmax
     #
     global gotrad
     print("HERE8: %d" % (gotrad)) ; sys.stdout.flush()
-    if dostreamlines==1 and (dovel==0 and gotrad==0 or gotrad==1): # problem with hang on dovel==1 and gotrad=0
+    if dostreamlines==1 and (dovel==0 and gotrad==0 or gotrad): # problem with hang on dovel==1 and gotrad=0
         lw=2 # default
         iradius = reinterp(r,extent,ncell,domask=1)
         #alphavary = alpha*(1.0 - (rhor/iradius)*(1.0-1.0/density))
@@ -8454,8 +8455,10 @@ def rfdheader(fin=None,typefile=1):
     if(typefile==1):
         global gotrad
         gotrad=0 # where gotrad defined as 0 and overwritten if appropriate
-        if(numcolumns==16 or numcolumns==29 or numcolumns==31):
+        if(numcolumns==16 or numcolumns==29):
             gotrad=1
+        if(numcolumns==31):
+            gotrad=2
         #
         global gotkappas
         gotkappas=0 # whether got kappas from fieldline files
@@ -9176,7 +9179,7 @@ def getkappas(gotrad, gotkappas):
         # fluid-frame temperature of radiation
         Trad = pow(np.fabs(Ruu)/ARAD_CODE,0.25) # ASSUMPTION: PLANCK-like in comoving frame even though radiation flowing through cell
         #
-        if(gotkappas==0):
+        if(gotkappas==0 or gotrad==1):
             # use rho to keep kappa low.
             KAPPAUSER=(rho*KAPPA*KAPPA_FF_CODE_PYTHON(rho,Tgas+TEMPMIN(),Trad+TEMPMIN()))
             KAPPAUSERnofe=np.copy(KAPPAUSER)
@@ -9744,7 +9747,7 @@ def rddims(gotrad):
         MASSCM=1
         KORAL2HARMRHO1=1
     #
-    if(gotrad==1 and isradmodeltype1(modelname)):
+    if(gotrad>0 and isradmodeltype1(modelname)):
         # then also get radiation constants
         fname= "dimensions.txt"
         fin = open(fname, "rt" )
@@ -9779,7 +9782,7 @@ def rddims(gotrad):
         KORAL2HARMRHO1 = np.float64(dimfile[20])
         fin.close()
         #
-    elif(gotrad==1):
+    elif(gotrad>0):
         # then also get radiation constants
         fname= "dimensions.txt"
         fin = open(fname, "rt" )
@@ -9818,7 +9821,7 @@ def rddims(gotrad):
         #
         fin.close()
         #
-    if(gotrad):
+    if(gotrad>0):
         MUELE = (2.0/(1.0+XFACT))
         YELE = (1.0/MUELE)
         MSUN=1.9891E33
@@ -15601,7 +15604,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     # sasha says r=5 is best so that also his A-0.9N100 model gets agreement between our floor subtractions.  Doesn't work well for highly time variable behavior.
     ifluxacc = iofr(5.0)
     ifluxacc=ihor
-    if showrad==1:
+    if showrad>0:
         ifluxacc=ihor
     #
     #############
@@ -15619,7 +15622,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     # where to measure energy/momentum fluxes
     ihoruse=iofr(5.0) # doesn't work well for highly time variable behavior
     ihoruse=iofr(rhor)
-    if showrad==1:
+    if showrad>0:
         ihoruse=iofr(rhor)
     # where to measure magnetic flux
     ihorusemag=ihor
@@ -19346,7 +19349,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         ax.set_xlim(ts[0],ts[-1])
         if showextra:
             plt.legend(loc='upper left',bbox_to_anchor=(0.05,0.95),ncol=1,borderaxespad=0,frameon=True,labelspacing=0)
-        if showrad==1:
+        if showrad>0:
                 ymax=10
                 ax.set_ylim((0,ymax))
         #
@@ -19358,7 +19361,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #####################################
     # Jon's version of Mdot plot
     #
-    if showrad:
+    if showrad>0:
         print("In showrad True");
         normfactor=Leddcode
         radplotfactor=1.0;
@@ -19441,7 +19444,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,ha='left',labelpad=20)
         #
         ymax=ax.get_ylim()[1]
-        if showrad==1:
+        if showrad>0:
                 ymax=min(ymax,3.0*mdotfinavg/normfactor*Mdotplotfactor)
                 ax.set_ylim((0,ymax))
         #
@@ -19786,7 +19789,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                     ax.set_yticks((ymax/2.0,ymax))
             #
             # override for rad (currently only applies for rada0.94
-            if showrad==1:
+            if showrad>0:
                 ymax=np.floor(ymax/10.*0.9999)+1
                 ymax*=10
                 ymin=np.floor(ymin/10.*0.9999)+1
