@@ -7112,6 +7112,13 @@ def mktr(loadq=1,qty=None,filenum=1,fileletter="a",logvalue=1,pllabel="",bsqorho
     fun0[np.isnan(fun0)==1]=mintoplot
     #
     #
+    # Copy, and Catch nan's in case division by zero somewhere done, else will fail when trying to do log plot
+    if logvalue==1:
+        fun0[np.isnan(fun0)]=-30
+        fun0[np.isinf(fun0)]=-30
+    else:
+        fun0[np.isnan(fun0)]=1E-30
+        fun0[np.isinf(fun0)]=1E-30
     #
     #
     #
