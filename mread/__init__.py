@@ -7085,6 +7085,9 @@ def mktr(loadq=1,qty=None,filenum=1,fileletter="a",logvalue=1,pllabel="",bsqorho
     rhor=1+(1-a**2)**0.5
     myRin=rhor
     #
+    # Catch nan's in case division by zero somewhere done, else will fail when trying to do log plot
+    qty[np.isnan(qty)]=1E-30
+    qty[np.isinf(qty)]=1E-30
     #
     if logvalue==1:
         fun0 = np.log10(np.fabs(qty)+1E-30)
@@ -24473,7 +24476,7 @@ def mkinitfinalplot():
                 # inputlevs=None so independent contours from initplot
                 # default
                 showuu1eq0=True
-                if firstlast==1:
+                if firstlast==1 or firstlast==2:
                     numcontours=30 # less contours for field lines
                     showuu1eq0=False
                 #
@@ -24609,10 +24612,10 @@ def mkinitfinalplotpost(fname=None,plottype=0,aphijetouter=None,inputlevs=None,n
                 plotsizey=framesize*90.0/150.0
                 dobsqorholine=False
             if plottype==2:
-                framesize=700
+                framesize=150
                 plotsize=framesize
-                plotsizex=framesize*90.0/150.0
-                plotsizey=framesize
+                plotsizex=framesize
+                plotsizey=framesize*150.0/90.0
                 dobsqorholine=True
             #
             #framesize=150
