@@ -7152,6 +7152,8 @@ def mktr(loadq=1,qty=None,filenum=1,fileletter="a",logvalue=1,pllabel="",bsqorho
         #print(fold)
         funnew[tici,:]=np.interp(xnew,xold,fold)
     toplot=funnew
+    toplot[np.isnan(toplot)]=-30
+    toplot[np.isinf(toplot)]=-30
     #extent=(np.log10(myRin),np.log10(myRout),ts[0],ts[-1])
     # assume plot shows in log
     extent=(myRin,myRout,ts[0],ts[-1])
