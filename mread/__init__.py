@@ -6894,6 +6894,8 @@ def finishframe(cb=1,label=1,tight=1,useextent=1,uselim=1,testdpiinches=0,toplot
     #    toplotnew=toplot
     toplotnew=toplot
     #
+    toplotnew[isnan(toplotnew)]=1E-30
+    toplotnew[isinf(toplotnew)]=1E-30
     #
     #
     palette=cm.jet
