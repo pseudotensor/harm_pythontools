@@ -27733,7 +27733,7 @@ def mkavgfigs():
         print(np.shape(avg_rho))
         print(np.shape(avg_eout))
         #
-        myveldensity=1 # 1 through 8 is reasonable, with 1 for testing and 8 for production
+        myveldensity=8 # 1 through 8 is reasonable, with 1 for testing and 8 for production
         if(1==1):
             #
             # normal field
