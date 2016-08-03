@@ -24663,14 +24663,14 @@ def mkinitfinalplotpost(fname=None,plottype=0,aphijetouter=None,inputlevs=None,n
                 #
                 returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=1,tight=True,pt=False,dorho=False,doQ2=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
             elif whichplot==5:
-                if plottype==0 or plottype==1:
+                if plottype==0 or plottype==1 or plottype==2:
                     vmaxforframe=np.max(np.log10(rho[0:iofr(framesize),:,:]/rhoeddcode))
                     if(isradmodel(modelname)): # for first plot
                         vminforframe=vmaxforframe-4
                     else:
                         vminforframe=vmaxforframe-6
-                elif plottype==2:
-                    (vminforframe,vmaxforframe)=vminmax_rho(qty=rho)
+                #elif plottype==2:
+                #    (vminforframe,vmaxforframe)=vminmax_rho(qty=rho)
                 #
                 returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=1,tight=True,pt=False,dorho=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,dobsqorholine=dobsqorholine,inputcoloraphi='green')
                 cax.set_aspect(1)
