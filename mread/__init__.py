@@ -1857,6 +1857,8 @@ def get2davg(usedefault=0,whichgroup=-1,whichgroups=-1,whichgroupe=-1,itemspergr
     
 
 
+
+
 def assignavg2dvars(avgmem):
     print( "about to assignavg2dvars begin"); sys.stdout.flush()
     # MEMMARK: currently 281 2D vars, so not much memory.
@@ -1867,8 +1869,8 @@ def assignavg2dvars(avgmem):
     global avg_absomegaf2,avg_absomegaf2b,avg_absomegaf1,avg_absomegaf1b
     global avg_absrhouu,avg_absfdd
     global avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
-    global avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
-    global avg_TudPA, avg_TudEN, avg_TudRAD
+    global avg_TudEM, avg_TudMAKE, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
+    global avg_TudPAKE, avg_TudEN, avg_TudRAD # avg_TudKE = avg_TudMAKE+avg_TudEM+avg_TudRAD
     global avg_gamma,avg_pg,avg_pb,avg_beta,avg_betatot
     global avg_vpot,avg_vpot2
     # 4
@@ -1966,11 +1968,11 @@ def assignavg2dvars(avgmem):
     n=16
     #EM/MA
     avg_TudEM=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
-    avg_TudMA=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
+    avg_TudMAKE=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
     # 2*16=32
     n=16
     #P/IE
-    avg_TudPA=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
+    avg_TudPAKE=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
     avg_TudEN=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
     avg_TudRAD=avgmem[i:i+n,:,:,None].reshape((4,4,nx,ny,1));i+=n
     # 3
@@ -2322,8 +2324,8 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     """
     """
     global avg_ts,avg_te,avg_nitems,avg_rho,avg_ug,avg_Erf,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_omegaf2b,avg_omegaf1,avg_omegaf1b,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
-    global avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
-    global avg_TudPA, avg_TudEN,avg_TudRAD
+    global avg_TudEM, avg_TudMAKE, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
+    global avg_TudPAKE, avg_TudEN,avg_TudRAD
     global avg_absuu,avg_absbu,avg_absud,avg_absbd
     global avg_absomegaf2,avg_absomegaf2b,avg_absomegaf1,avg_absomegaf1b
     global avg_absrhouu,avg_absfdd
@@ -2497,11 +2499,11 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
                 avg_Tud[ii,jj] += fTud(ii,jj).sum(-1)[:,:,None]*localdt[itert]
                 #
                 avg_TudEM[ii,jj] += fTudEM(ii,jj).sum(-1)[:,:,None]*localdt[itert]
-                avg_TudMA[ii,jj] += fTudMA(ii,jj).sum(-1)[:,:,None]*localdt[itert]
+                avg_TudMAKE[ii,jj] += fTudMAKE(ii,jj).sum(-1)[:,:,None]*localdt[itert]
                 avg_TudRAD[ii,jj] += fTudRAD(ii,jj).sum(-1)[:,:,None]*localdt[itert]
                 #16*2=32
                 #PA/IE (EM is B) -- for gammie plot
-                avg_TudPA[ii,jj] += fTudPA(ii,jj).sum(-1)[:,:,None]*localdt[itert]
+                avg_TudPAKE[ii,jj] += fTudPAKE(ii,jj).sum(-1)[:,:,None]*localdt[itert]
                 avg_TudEN[ii,jj] += fTudEN(ii,jj).sum(-1)[:,:,None]*localdt[itert]
                 # 16*2=32
                 avg_fdd[ii,jj] +=((fFdd(ii,jj))).sum(-1)[:,:,None]*localdt[itert]
@@ -3358,9 +3360,9 @@ def plot2davg(dosq=True,whichplot=-1):
     #
     eout1den   = scaletofullwedge(nz*(-gdet*avg_Tud[1,0]*_dx2*_dx3).sum(axis=2))
     eout1denEM = scaletofullwedge(nz*(-gdet*avg_TudEM[1,0]*_dx2*_dx3).sum(axis=2))
-    eout1denMA = scaletofullwedge(nz*(-gdet*avg_TudMA[1,0]*_dx2*_dx3).sum(axis=2))
+    eout1denMA = scaletofullwedge(nz*(-gdet*avg_TudMAKE[1,0]*_dx2*_dx3).sum(axis=2))
     #subtract off rest-energy flux
-    eout1denKE = scaletofullwedge(nz*(gdet*(-avg_TudMA[1,0]-avg_rhouu[1])*_dx2*_dx3).sum(axis=2))
+    eout1denKE = scaletofullwedge(nz*(gdet*(-avg_TudMAKE[1,0]-avg_rhouu[1])*_dx2*_dx3).sum(axis=2))
     #eout1den=eout1denEM+eout1denMA
     #eout1   = eout1den.cumsum(axis=1)
     eoutEM1 = eout1denEM.cumsum(axis=1)
@@ -3372,8 +3374,8 @@ def plot2davg(dosq=True,whichplot=-1):
     #sum from from theta = pi
     eout2den   = scaletofullwedge(nz*(-gdet*avg_Tud[1,0]*_dx2*_dx3)[:,::-1].sum(axis=2))
     eout2denEM = scaletofullwedge(nz*(-gdet*avg_TudEM[1,0]*_dx2*_dx3)[:,::-1].sum(axis=2))
-    eout2denMA = scaletofullwedge(nz*(-gdet*avg_TudMA[1,0]*_dx2*_dx3)[:,::-1].sum(axis=2))
-    eout2denKE = scaletofullwedge(nz*(gdet*(-avg_TudMA[1,0]-avg_rhouu[1])*_dx2*_dx3).sum(axis=2))
+    eout2denMA = scaletofullwedge(nz*(-gdet*avg_TudMAKE[1,0]*_dx2*_dx3)[:,::-1].sum(axis=2))
+    eout2denKE = scaletofullwedge(nz*(gdet*(-avg_TudMAKE)*_dx2*_dx3).sum(axis=2))
     #eout2den=eout2denEM+eout2denMA
     #eout2   = eout2den.cumsum(axis=1)[:,::-1]
     eoutEM2 = eout2denEM.cumsum(axis=1)[:,::-1]
@@ -5932,7 +5934,7 @@ def ftr(x,xb,xf):
 
 
 # dobhfield=True : GODMARK: Set to False since already showing BH penetrating field because comes from large radii down to hole
-def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,len=20,lenx=None,leny=None,ncell=800,pt=True,shrink=1,dovel=False,doaphi=False,dostreamlines=True,doaphiavg=False,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,doentropy=False,dobsq=False,dobeta=False,doQ1=False,doQ2=False,doErf=False,dovarylw=True,dobhfield=False,dsval=0.01,color='k',dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,domidfield=True,showjet=False,arrowsize=1,forceeqsym=0,dojonwindplot=False,dotaurad=False,dobsqorholine=False,doaphicont=None,inputlevs=None,numcontours=30,signaphi=1,aphipow=1.0,showuu1eq0=True,inputcoloraphi=None):
+def mkframe(fname,ax=None,ax2=None,cb=1,tight=False,useblank=True,vmin=None,vmax=None,len=20,lenx=None,leny=None,ncell=800,pt=True,shrink=1,dovel=False,doaphi=False,dostreamlines=True,doaphiavg=False,downsample=4,density=2,dodiskfield=False,minlendiskfield=0.2,minlenbhfield=0.2,dorho=True,doentropy=False,dobsq=False,dobeta=False,doQ1=False,doQ2=False,doErf=False,doeflux=False,dovarylw=True,dobhfield=False,dsval=0.01,color='k',alpha=0,dorandomcolor=False,doarrows=True,lw=None,skipblankint=False,detectLoops=True,minindent=1,minlengthdefault=0.2,startatmidplane=True,domidfield=True,showjet=False,arrowsize=1,forceeqsym=0,dojonwindplot=False,dotaurad=False,dobsqorholine=False,doaphicont=None,inputlevs=None,numcontours=30,signaphi=1,aphipow=1.0,showuu1eq0=True,inputcoloraphi=None):
     #
     levs=inputlevs
     if levs==None:
@@ -6076,6 +6078,11 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         doqty=1
     elif doQ2:
         qty=np.fabs(Q2)
+        dologz=0
+        doqty=1
+    elif doeflux:
+        global avg_eflux
+        qty=np.fabs(avg_eflux)
         dologz=0
         doqty=1
     #
@@ -6367,7 +6374,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
     if doqty==1:
         print("HERE5A") ; sys.stdout.flush()
         CS = ax.imshow(iqty, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=vmin,vmax=vmax)
-        if True == cb:
+        if cb == 1:
             print("HERE5B") ; sys.stdout.flush()
             print("shrink=%g shrinkcb=%g" % (shrink,shrinkcb)); sys.stdout.flush()
             #cbaxes = fig.add_axes([0.8,0.1,0.03,0.8]) 
@@ -6376,8 +6383,15 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
             else:
                 cbar = plt.colorbar(CS,ax=ax,format=r'$10^{%0.1f}$')
         #
+        if cb == 2:
+            print("HERE5Bb") ; sys.stdout.flush()
+            print("shrink=%g shrinkcb=%g" % (shrink,shrinkcb)); sys.stdout.flush()
+            #cbaxes = fig.add_axes([0.8,0.1,0.03,0.8]) 
+            cbar = plt.colorbar(CS,ax=ax,pad=0)
+        #
         if tight==True:
-            plt.axis('tight')
+            plt.axis('tight',ax=ax)
+            plt.axis('tight',ax=ax2)
         #CS = plt.contour(X, Y, Z)
     #
     ###########################################
@@ -6423,6 +6437,19 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
     print("HERE8: %d" % (gotrad)) ; sys.stdout.flush()
     if dostreamlines==1 and (dovel==0 and gotrad==0 or gotrad==1): # problem with hang on dovel==1 and gotrad=0
         lw=2 # default
+        iradius = reinterp(r,extent,ncell,domask=1)
+        #alphavary = alpha*(1.0 - (rhor/iradius)*(1.0-1.0/density))
+        dilutepower=0.5
+        interpradius=alpha*(iradius/len)**dilutepower
+        interpradius[interpradius>alpha]=alpha
+        alphavary = interpradius
+        alphavary[alphavary<0]=0.0
+        alphavary[alphavary>1.0]=1.0
+        #print("alphavary");
+        #print(np.shape(alphavary))
+        #print(type(alphavary))
+        # can override with constant
+        #alphavary = alpha
         if dovarylw:
             lw = 0.5+1*ftr(np.log10(amax(ibsqo2rho,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
             #lw += 1*ftr(np.log10(amax(iibetatot,1e-6+0*ibsqorho)),np.log10(1),np.log10(2))
@@ -6437,8 +6464,10 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         if(EOMTYPE==0):
             lw = 0.5
         #
-        fstreamplot(xi,yi,iBR,iBz,ua=iBaR,va=iBaz,useblank=useblank,density=density,downsample=downsample,linewidth=lw,ax=ax,detectLoops=detectLoops,dodiskfield=dodiskfield,dobhfield=dobhfield,startatmidplane=startatmidplane,domidfield=domidfield,a=a,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,dsval=dsval,color=color,doarrows=doarrows,dorandomcolor=dorandomcolor,skipblankint=skipblankint,minindent=minindent,minlengthdefault=minlengthdefault,arrowsize=arrowsize)
-        #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax)
+        #ax2=np.copy(ax)
+        #ax2.clf()
+        fstreamplot(xi,yi,iBR,iBz,ua=iBaR,va=iBaz,useblank=useblank,density=density,downsample=downsample,linewidth=lw,alpha=alphavary,ax=ax,ax2=ax2,detectLoops=detectLoops,dodiskfield=dodiskfield,dobhfield=dobhfield,startatmidplane=startatmidplane,domidfield=domidfield,a=a,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,dsval=dsval,color=color,doarrows=doarrows,dorandomcolor=dorandomcolor,skipblankint=skipblankint,minindent=minindent,minlengthdefault=minlengthdefault,arrowsize=arrowsize)
+        #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax2)
     #
     # goes on top:
     print("HERE9a") ; sys.stdout.flush()
@@ -6450,7 +6479,7 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         ax.contour(ibsqorho,linewidths=4,colors='red', extent=extent,hold='on',origin='lower',levels=(1,))  # 29.5
     #
     print("HERE9c") ; sys.stdout.flush()
-    if dojonwindplot:
+    if dojonwindplot==1:
         mwindmaxbeta=2
         #ax.contour(imu,linewidths=4,colors='g', extent=extent,hold='on',origin='lower',levels=(1,2,))
         ax.contour(ibetatot,linewidths=4,colors='cyan', extent=extent,hold='on',origin='lower',levels=(mwindmaxbeta,))
@@ -6460,11 +6489,26 @@ def mkframe(fname,ax=None,cb=True,tight=False,useblank=True,vmin=None,vmax=None,
         #ax.contour(-iunb,linewidths=4,colors='red', extent=extent,hold='on',origin='lower',levels=(1,))
         if showuu1eq0==True:
             ax.contour(iuu1,linewidths=4,colors='green', extent=extent,hold='on',origin='lower',levels=(0,))
+    if dojonwindplot==2:
+        #mwindmaxbeta=2
+        #ax.contour(imu,linewidths=4,colors='g', extent=extent,hold='on',origin='lower',levels=(1,2,))
+        #ax.contour(ibetatot,linewidths=4,colors='cyan', extent=extent,hold='on',origin='lower',levels=(mwindmaxbeta,))
+        #ax.contour(ibetatot,linewidths=4,colors='magenta', extent=extent,hold='on',origin='lower',levels=(1,))
+        ax.contour(ibsqorho,linewidths=4,colors='blue', extent=extent,hold='on',origin='lower',levels=(1,))  # 29.5
+        #ax.contour(-iud0,linewidths=4,colors='black', extent=extent,hold='on',origin='lower',levels=(1,))
+        #ax.contour(-iunb,linewidths=4,colors='red', extent=extent,hold='on',origin='lower',levels=(1,))
+        if showuu1eq0==True:
+            ax.contour(iuu1,linewidths=4,colors='green', extent=extent,hold='on',origin='lower',levels=(0,))
     #
     #
     print("HERE10") ; sys.stdout.flush()
     ax.set_xlim(extent[0],extent[1])
     ax.set_ylim(extent[2],extent[3])
+    if ax2!=None:
+        ax2.set_xlim(extent[0],extent[1])
+        ax2.set_ylim(extent[2],extent[3])
+        if doqty==1 and tight==True:
+            plt.axis('tight',ax=ax2)
     #CS.cmap=cm.jet
     #CS.set_axis_bgcolor("#bdb76b")
     #plt.title(r'$\log_{10}\rho$ at $t = %4.0f$' % t)
@@ -13938,8 +13982,8 @@ def getqtyvstime(ihor,horval=1.0,fmtver=2,dobob=0,whichi=None,whichn=None,altrea
         denomdbsq = lambda : avg_bsq
         dFM = lambda : (-rho*(uu[1]) -(-avg_rhouu[1]))
         denomdFM = lambda : avg_rhouu[1]
-        dTudMA = lambda : (fTudMA(1,0)-avg_TudMA[1,0])
-        denomdTudMA = lambda : avg_TudMA[1,0]
+        dTudMA = lambda : (fTudMAKE(1,0)-avg_TudMAKE[1,0]) # MAKE
+        denomdTudMA = lambda : avg_TudMAKE[1,0] # MAKE
         dTudEM = lambda : (fTudEM(1,0)-avg_TudEM[1,0])
         denomdTudEM = lambda : avg_TudEM[1,0]
         # setup things to find l,n Fourier transform of
@@ -18039,7 +18083,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     etajMAKE2 = prefactor*pjmake_mu1[:,iofr(rjetout)]/mdotiniavg
     etajPAKE2 = prefactor*pjpake_mu1[:,iofr(rjetout)]/mdotiniavg
     etajEN2 = prefactor*pjen_mu1[:,iofr(rjetout)]/mdotiniavg
-    etajin2 = etajEM2 + etajMAKE2
+    etaj2 = etajEM2 + etajMAKE2
     #
     etajinEM2 = prefactor*pjem_mu1[:,iofr(rjetin)]/mdotiniavg
     etajinMAKE2 = prefactor*pjmake_mu1[:,iofr(rjetin)]/mdotiniavg
@@ -24582,7 +24626,7 @@ def mkinitfinalplotpost(fname=None,plottype=0,aphijetouter=None,inputlevs=None,n
                 elif plottype==2:
                     (vminforframe,vmaxforframe)=vminmax_entropy(qty=fentropy())
                 #
-                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=True,tight=True,pt=False,dorho=False,doentropy=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
+                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=1,tight=True,pt=False,dorho=False,doentropy=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
             elif whichplot==1:
                 if plottype==0 or plottype==1:
                     vmaxforframe=np.max(np.log10(bsq[0:iofr(framesize),:,:]/ueddcode))
@@ -24594,7 +24638,7 @@ def mkinitfinalplotpost(fname=None,plottype=0,aphijetouter=None,inputlevs=None,n
                 else:
                     (vminforframe,vmaxforframe)=vminmax_bsq(qty=bsq)
                 #
-                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=True,tight=True,pt=False,dorho=False,dobsq=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
+                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=1,tight=True,pt=False,dorho=False,dobsq=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
             elif whichplot==2:
                 if plottype==0 or plottype==1:
                     vminforframe=np.log10(1.0/np.max(1.0/fbetatot()[0:iofr(framesize),:,:]))
@@ -24604,17 +24648,17 @@ def mkinitfinalplotpost(fname=None,plottype=0,aphijetouter=None,inputlevs=None,n
                     #vmaxforframe=min(50.0,np.max(fbetatot()[0:iofr(framesize),:,:]))
                     vminforframe=-3.0
                     vmaxforframe=3.0
-                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=True,tight=True,pt=False,dorho=False,dobeta=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
+                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=1,tight=True,pt=False,dorho=False,dobeta=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
             elif whichplot==3:
                 vminforframe=0
                 vmaxforframe=np.max(Q1[0:iofr(framesize),:,:])
                 #
-                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=True,tight=True,pt=False,dorho=False,doQ1=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
+                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=1,tight=True,pt=False,dorho=False,doQ1=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
             elif whichplot==4:
                 vminforframe=np.min(Q2[0:iofr(framesize),:,:])
                 vmaxforframe=min(10.0,np.max(Q2[0:iofr(framesize),:,:]))
                 #
-                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=True,tight=True,pt=False,dorho=False,doQ2=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
+                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=1,tight=True,pt=False,dorho=False,doQ2=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
             elif whichplot==5:
                 if plottype==0 or plottype==1:
                     vmaxforframe=np.max(np.log10(rho[0:iofr(framesize),:,:]/rhoeddcode))
@@ -24625,7 +24669,7 @@ def mkinitfinalplotpost(fname=None,plottype=0,aphijetouter=None,inputlevs=None,n
                 elif plottype==2:
                     (vminforframe,vmaxforframe)=vminmax_rho(qty=rho)
                 #
-                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=True,tight=True,pt=False,dorho=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,dobsqorholine=dobsqorholine,inputcoloraphi='green')
+                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=1,tight=True,pt=False,dorho=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,dobsqorholine=dobsqorholine,inputcoloraphi='green')
                 cax.set_aspect(1)
             #
         if 1==1:
@@ -27098,7 +27142,7 @@ def mkmovieframe(findex=None,filenum=None,framesize=None,inputlevs=None,savefile
         #
         # RIGHT PANEL
         if nz==1:
-            mkframe("lrho%04d_xy%g" % (filenum,plotsize),vmin=vminforframeright,vmax=vmaxforframeright,len=plotsize,ax=ax2,cb=True,dostreamlines=True,dobsq=mydobsqright,dorho=mydorhoright,doErf=mydoErf,dotaurad=mydotauradright)
+            mkframe("lrho%04d_xy%g" % (filenum,plotsize),vmin=vminforframeright,vmax=vmaxforframeright,len=plotsize,ax=ax2,cb=1,dostreamlines=True,dobsq=mydobsqright,dorho=mydorhoright,doErf=mydoErf,dotaurad=mydotauradright)
         else:
             # If using 2D data, then for now, have to replace below with mkframe version above and replace ax1->ax2.  Some kind of qhull error.
             mkframexy("lrho%04d_xy%g" % (filenum,plotsize),vmin=vminforframeright,vmax=vmaxforframeright,len=plotsize,ax=ax2,cb=rightcb,pt=rightpt,dostreamlines=True,dobsq=mydobsqright,dorho=mydorhoright,doErf=mydoErf,dotaurad=mydotauradright)
@@ -27299,7 +27343,7 @@ def mk2davg():
 
 
 
-def mkstreamplot1(Btrue=None,gdetB=None,bsq=None,rho=None,uu=None,len=30,lenx=None,leny=None,mylenshowx=None,mylenshowy=None,fntsize=24,arrowsize=4,vminforframe=-4,vmaxforframe=0.5,forceeqsym=0,fname=None,veldensity=8,signaphi=1,numcontours=30,inputlevs=None,aphipow=1.0,dojonwindplot=0,showuu1eq0=True,dotaurad=False,doaphi=False,doaphiavg=False):
+def mkstreamplot1(Btrue=None,gdetB=None,bsq=None,rho=None,uu=None,len=30,lenx=None,leny=None,mylenshowx=None,mylenshowy=None,fntsize=24,arrowsize=4,vminforframe=-4,vmaxforframe=0.5,forceeqsym=0,fname=None,veldensity=8,signaphi=1,numcontours=30,inputlevs=None,aphipow=1.0,dojonwindplot=0,showuu1eq0=True,dotaurad=False,doaphi=False,doaphiavg=False,dorho=False,doeflux=False,alpha=0):
     #
     returnlevs=None
     global B # need to tell this function that B is global because assignment to B is taken as local otherwise
@@ -27326,18 +27370,27 @@ def mkstreamplot1(Btrue=None,gdetB=None,bsq=None,rho=None,uu=None,len=30,lenx=No
     #
     print("mkstreamplot1b: %g %g %g %g : dotaurad=%d" % (lenx,leny,mylenshowx,mylenshowy,dotaurad)) ; sys.stdout.flush()
     #
-    #
+    # setup so no facecolor by default and transparent, else stream will have background that will overwrite another plot
     fig=plt.figure(176,figsize=(12,9),dpi=300)
+    fig.patch.set_facecolor('none')
+    fig.patch.set_alpha(1.0)
     fig.clf()
     #plt.cla()
     axnew = fig.add_subplot(111, aspect='equal')
+    axnew.patch.set_facecolor('none')
+    axnew.patch.set_alpha(1.0)
+    #
+    #axnew2 = fig.add_subplot(111, aspect='equal',alpha=0.1)
+    #axnew2.patch.set_facecolor('none')
+    #axnew2.patch.set_alpha(0.1)
+    axnew2=axnew
     #
     if True:
     #if False:
         #velocity
         print("Doing velocity mkstreamplot1") ; sys.stdout.flush()
         # avoid override below if want to do what is inputted for streams
-        overrideB=1
+        overrideB=0
         if overrideB==1:
             B=np.copy(Btrue)
             B[1:] = np.copy(uu[1:])
@@ -27349,14 +27402,17 @@ def mkstreamplot1(Btrue=None,gdetB=None,bsq=None,rho=None,uu=None,len=30,lenx=No
         # 2 good for testing.
         #veldensity=8
         #
-        mkframe("myframe",dovel=True,len=len,lenx=lenx,leny=leny,ax=axnew,density=veldensity,downsample=1,cb=False,pt=False,dorho=False,dovarylw=False,vmin=vminforframe,vmax=vmaxforframe,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False,forceeqsym=forceeqsym,inputlevs=inputlevs,dotaurad=dotaurad,doaphi=doaphi,doaphiavg=doaphiavg)
+        mkframe("myframe",len=len,lenx=lenx,leny=leny,ax=axnew,ax2=axnew,density=veldensity,downsample=1,cb=2,pt=False,dorho=dorho,doeflux=doeflux,dovarylw=False,vmin=vminforframe,vmax=vmaxforframe,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',alpha=alpha,doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False,forceeqsym=forceeqsym,inputlevs=inputlevs,dotaurad=dotaurad,doaphi=doaphi,doaphiavg=doaphiavg,showuu1eq0=showuu1eq0,dojonwindplot=dojonwindplot) # ,dostreamlines=False
+        #mkframe("myframe",len=len,lenx=lenx,leny=leny,ax=axnew2,ax2=axnew2,density=veldensity,downsample=1,cb=2,pt=False,dorho=False,doeflux=False,dovarylw=False,vmin=vminforframe,vmax=vmaxforframe,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',alpha=alpha,doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False,forceeqsym=forceeqsym,inputlevs=inputlevs,dotaurad=dotaurad,doaphi=0,doaphiavg=0,showuu1eq0=0,dojonwindplot=0)
+
+        #mkframe("myframe",dovel=True,len=len,lenx=lenx,leny=leny,ax=axnew,ax2=axnew2,density=veldensity,downsample=1,cb=2,pt=False,dorho=False,doeflux=doeflux,dovarylw=False,vmin=vminforframe,vmax=vmaxforframe,dobhfield=False,dodiskfield=False,minlenbhfield=0.2,minlendiskfield=0.5,dsval=0.005,color='k',doarrows=False,dorandomcolor=True,lw=1,skipblankint=True,detectLoops=False,ncell=800,minindent=5,minlengthdefault=0.2,startatmidplane=False,forceeqsym=forceeqsym,inputlevs=inputlevs,dotaurad=dotaurad,doaphi=doaphi,doaphiavg=doaphiavg,dostreamlines=False)
         #
         # fix back
         if overrideB==1:
             B=np.copy(Btrue)
     #
-    if showuu1eq0==True:
-    #if False:
+    #if showuu1eq0==True:
+    if False:
         print("Doing stagnation surface mkstreamplot1") ; sys.stdout.flush()
         istag, jstag, hstag, rstag = getstagparams(bsqorho=bsqorho,uu=uu,doplot=0)
         if 1==0:
@@ -27410,7 +27466,7 @@ def mkstreamplot1(Btrue=None,gdetB=None,bsq=None,rho=None,uu=None,len=30,lenx=No
             #
         #
     #
-    if True:
+    if False:
         #field
         print("Doing field mkstreamplot1") ; sys.stdout.flush()
         # use true B
@@ -27424,7 +27480,7 @@ def mkstreamplot1(Btrue=None,gdetB=None,bsq=None,rho=None,uu=None,len=30,lenx=No
         finalleny=leny
         #finallen=2.0*mylen
         # useblank=True causes field lines to stop tracing when they get closer together at slightly larger distances.  
-        returnlevs=mkframe("myframe",dostreamlines=False,useblank=False,len=finallen,lenx=finallenx,leny=finalleny,ax=axnew,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=vminforframe,vmax=vmaxforframe,dobhfield=8,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.01,dsval=0.01,color='r',lw=2,startatmidplane=True,domidfield=False,showjet=False,arrowsize=arrowsize,forceeqsym=forceeqsym,signaphi=signaphi,numcontours=numcontours,inputlevs=inputlevs,aphipow=aphipow,dojonwindplot=dojonwindplot,showuu1eq0=showuu1eq0,dotaurad=dotaurad,doaphi=doaphi,doaphiavg=doaphiavg)
+        returnlevs=mkframe("myframe",dostreamlines=False,useblank=False,len=finallen,lenx=finallenx,leny=finalleny,ax=axnew,density=1,downsample=4,cb=0,pt=False,dorho=False,dovarylw=False,vmin=vminforframe,vmax=vmaxforframe,dobhfield=8,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.01,dsval=0.01,color='r',lw=2,startatmidplane=True,domidfield=False,showjet=False,arrowsize=arrowsize,forceeqsym=forceeqsym,signaphi=signaphi,numcontours=numcontours,inputlevs=inputlevs,aphipow=aphipow,dojonwindplot=dojonwindplot,showuu1eq0=showuu1eq0,dotaurad=dotaurad,doaphi=doaphi,doaphiavg=doaphiavg)
         #
         # fix back
         B=np.copy(Btrue)
@@ -27442,6 +27498,7 @@ def mkstreamplot1(Btrue=None,gdetB=None,bsq=None,rho=None,uu=None,len=30,lenx=No
     ##########################
     # finish setup of plot
     axnew.set_aspect('equal')   
+    axnew2.set_aspect('equal')   
     rhor=1+(1-a**2)**0.5
     el = Ellipse((0,0), 2*rhor, 2*rhor, facecolor='k', alpha=1)
     art=axnew.add_artist(el)
@@ -27458,7 +27515,7 @@ def mkstreamplot1(Btrue=None,gdetB=None,bsq=None,rho=None,uu=None,len=30,lenx=No
         #plt.savefig("%s.pdf" % fname,bbox_inches='tight',pad_inches=0.02,dpi=300)
         #plt.savefig("%s.eps" % fname,bbox_inches='tight',pad_inches=0.02,dpi=300)
     # just convert png to eps or pdf after since otherwise too large
-    plt.savefig("%s.png" % fname,bbox_inches='tight',pad_inches=0.02,dpi=300)
+    plt.savefig("%s.png" % fname,bbox_inches='tight',pad_inches=0.02,dpi=300) #,transparent=True)
     print("Done Writing File: %s" % fname) ; sys.stdout.flush()
     #
     return(returnlevs)
@@ -27565,6 +27622,9 @@ def mkavgfigs():
     #########################################
     if mkstreampart1==1:
         #
+        # needs qty2.npy
+        hoverr_jet_vsr = getbasicqtystuff()
+        #
         # for dojonwindplot
         global rho,rholab,ug,B,gdetB,nrad,Erf,uradu,bsq,mu,ud,uu,beta,betatot #,uutrue
         global Tgas,Tradff,nradff,varexpf,kappa,kappan,kappaemit,kappanemit,kappaes,elambda,nlambda
@@ -27601,30 +27661,157 @@ def mkavgfigs():
         betatot = avg_betatot
         #
         Btrue=np.zeros((4,nx,ny,nz),dtype=avg_B.dtype)
+        #
+        # sum over fake phi
+        global mdotfinavgvsr
+        #
+        # need to compute this again
+        rhor=1+(1-a**2)**0.5
+        ihor = np.floor(iofr(rhor)+0.5)
+        
+        eoutden   = scaletofullwedge(nz*(-gdet*avg_Tud[1,0]*_dx2*_dx3).sum(axis=2))/mdotfinavgvsr[ihor]
+        eoutdenMAKE = scaletofullwedge(nz*(-gdet*avg_TudMAKE[1,0]*_dx2*_dx3).sum(axis=2))/mdotfinavgvsr[ihor]
+        eoutdenEM = scaletofullwedge(nz*(-gdet*avg_TudEM[1,0]*_dx2*_dx3).sum(axis=2))/mdotfinavgvsr[ihor]
+        eoutdenRAD = scaletofullwedge(nz*(-gdet*avg_TudRAD[1,0]*_dx2*_dx3).sum(axis=2))/mdotfinavgvsr[ihor]
+        mdotden    = scaletofullwedge(nz*(-gdet*avg_rhouu[1]*_dx2*_dx3).sum(axis=2))/mdotfinavgvsr[ihor]
+        #
+        # cumsum over theta
+        eout = eoutden.cumsum(axis=1)
+        eoutEM = eoutdenEM.cumsum(axis=1)
+        eoutMAKE = eoutdenMAKE.cumsum(axis=1)
+        eoutRAD = eoutdenRAD.cumsum(axis=1)
+        mdotout = mdotden.cumsum(axis=1)
+        #
+        eout2 = np.copy(eout)
+        eoutEM2 = np.copy(eoutEM)
+        eoutMAKE2 = np.copy(eoutMAKE)
+        eoutRAD2 = np.copy(eoutRAD)
+        mdotout2 = np.copy(mdotout)
+        #
+        for jj in np.arange(0,ny):
+            eout[:,jj]= eout[:,jj] - eout2[:,ny/2]
+            eoutEM[:,jj]= eoutEM[:,jj] - eoutEM2[:,ny/2]
+            eoutMAKE[:,jj]= eoutMAKE[:,jj] - eoutMAKE2[:,ny/2]
+            eoutRAD[:,jj]= eoutRAD[:,jj] - eoutRAD2[:,ny/2]
+            mdotout[:,jj]= mdotout[:,jj] - mdotout2[:,ny/2]
+        for jj in np.arange(0,ny/2):
+            eout[:,jj]= -eout[:,jj]
+            eoutEM[:,jj]= -eoutEM[:,jj]
+            eoutMAKE[:,jj]= -eoutMAKE[:,jj]
+            eoutRAD[:,jj]= -eoutRAD[:,jj]
+            mdotout[:,jj]= -mdotout[:,jj]
+        #
+        # take theta derivative to get dP/d\theta
+        deout = np.copy(eout)
+        deoutEM = np.copy(eoutEM)
+        deoutMAKE = np.copy(eoutMAKE)
+        deoutRAD = np.copy(eoutRAD)
+        dmdotout = np.copy(mdotout)
+        for ii in np.arange(0,nx):
+            deout[ii,:]=np.gradient(eout[ii,:])/(dxdxp[2,2,ii,:,0]*_dx2)
+            deoutEM[ii,:]=np.gradient(eoutEM[ii,:])/(dxdxp[2,2,ii,:,0]*_dx2)
+            deoutMAKE[ii,:]=np.gradient(eoutMAKE[ii,:])/(dxdxp[2,2,ii,:,0]*_dx2)
+            deoutRAD[ii,:]=np.gradient(eoutRAD[ii,:])/(dxdxp[2,2,ii,:,0]*_dx2)
+            dmdotout[ii,:]=np.gradient(mdotout[ii,:])/(dxdxp[2,2,ii,:,0]*_dx2)
+        #
+        # restore fake 3D mode (can choose, e.g., eout or deout)
+        avg_eout = np.copy(avg_rho)
+        avg_eout[:,:,0] = deout[:,:]
+        avg_eoutEM = np.copy(avg_rho)
+        avg_eoutEM[:,:,0] = deoutEM[:,:]
+        avg_eoutMAKE = np.copy(avg_rho)
+        avg_eoutMAKE[:,:,0] = deoutMAKE[:,:]
+        avg_eoutRAD = np.copy(avg_rho)
+        avg_eoutRAD[:,:,0] = deoutRAD[:,:]
+        avg_mdotout = np.copy(avg_rho)
+        avg_mdotout[:,:,0] = dmdotout[:,:]
+        #
+        print("shapesnew")
+        print(np.shape(avg_rho))
+        print(np.shape(avg_eout))
+        #
+        myveldensity=1 # 1 through 8 is reasonable, with 1 for testing and 8 for production
         if(1==1):
+            #
             # normal field
             Btrue[1:4] = np.copy(avg_B[0:3])
             B[1:4] = np.copy(avg_B[0:3])
             gdetB[1:4] = np.copy(avg_gdetB[0:3])
-            returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uu=avg_uu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig2a",veldensity=8,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=1,dotaurad=True,doaphi=False,doaphiavg=False) #,showuu1eq0=False)
+            global avg_eflux
+            avg_eflux=np.copy(avg_eoutEM)
+            #
+            numoffset=1
+            vminforframe=np.amin(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:])
+            vmaxforframe=np.amax(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:])
+            limitedr=r[numoffset*iofr(rhor):iofr(mylen),:,:]
+            limitedh=h[numoffset*iofr(rhor):iofr(mylen),:,:]
+            print("rmax=%g" % (limitedr[np.where(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:]==vmaxforframe)]))
+            print("hmax=%g" % (limitedh[np.where(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:]==vmaxforframe)]))
+            print("rmin=%g" % (limitedr[np.where(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:]==vminforframe)]))
+            print("hmin=%g" % (limitedh[np.where(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:]==vminforframe)]))
+            print("eflux: %g %g" % (vminforframe,vmaxforframe));sys.stdout.flush()
+            returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uu=avg_uu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig2a",veldensity=myveldensity,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,alpha=0.2,showuu1eq0=True)
         if(1==1):
             # velocity
             Btrue[1:4] = np.copy(avg_uu[0:3])
             B[1:4] = np.copy(avg_uu[0:3])
             gdetB[1:4] = np.copy(gdet*avg_uu[0:3])
-            returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uu=avg_uu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig2b",veldensity=8,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=1,dotaurad=True,doaphi=False,doaphiavg=False) #,showuu1eq0=False)
+            global avg_eflux
+            avg_eflux=np.copy(avg_eoutMAKE)
+            #
+            numoffset=5
+            vminforframe=np.amin(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:])
+            vmaxforframe=np.amax(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:])
+            limitedr=r[numoffset*iofr(rhor):iofr(mylen),:,:]
+            limitedh=h[numoffset*iofr(rhor):iofr(mylen),:,:]
+            print("rmax=%g" % (limitedr[np.where(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:]==vmaxforframe)]))
+            print("hmax=%g" % (limitedh[np.where(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:]==vmaxforframe)]))
+            print("rmin=%g" % (limitedr[np.where(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:]==vminforframe)]))
+            print("hmin=%g" % (limitedh[np.where(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:]==vminforframe)]))
+            print("eflux: %g %g" % (vminforframe,vmaxforframe));sys.stdout.flush()
+            returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uu=avg_uu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig2b",veldensity=myveldensity,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=0,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,alpha=0.2,showuu1eq0=True)
         if(1==1):
             # mass flux
             Btrue[1:4] = np.copy(avg_rhouu[0:3])
             B[1:4] = np.copy(avg_rhouu[0:3])
             gdetB[1:4] = np.copy(gdet*avg_rhouu[0:3])
-            returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uu=avg_uu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig2c",veldensity=8,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=1,dotaurad=True,doaphi=False,doaphiavg=False) #,showuu1eq0=False)
+            global avg_eflux
+            avg_eflux=np.copy(avg_eout)
+            #
+            numoffset=5
+            vminforframe=np.amin(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:])
+            vmaxforframe=np.amax(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:])
+            limitedr=r[numoffset*iofr(rhor):iofr(mylen),:,:]
+            limitedh=h[numoffset*iofr(rhor):iofr(mylen),:,:]
+            print("rmax=%g" % (limitedr[np.where(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:]==vmaxforframe)]))
+            print("hmax=%g" % (limitedh[np.where(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:]==vmaxforframe)]))
+            print("rmin=%g" % (limitedr[np.where(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:]==vminforframe)]))
+            print("hmin=%g" % (limitedh[np.where(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:]==vminforframe)]))
+            print("eflux: %g %g" % (vminforframe,vmaxforframe));sys.stdout.flush()
+            returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uu=avg_uu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig2c",veldensity=myveldensity,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,alpha=0.2,showuu1eq0=True)
         if 1==1: # radiation flux lines instead of magnetic lines
             for ll in np.arange(0,4):
                 Btrue[ll,:,:,:]=np.copy(avg_TudRAD[ll,0,:,:,:]) # radiation tensor 
                 B[ll,:,:,:]=np.copy(avg_TudRAD[ll,0,:,:,:])
                 gdetB[ll,:,:,:]=np.copy(gdet[:,:,:]*avg_TudRAD[ll,0,:,:,:]) 
-            returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uu=avg_uu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig2d",veldensity=8,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=1,dotaurad=True,doaphi=False,doaphiavg=False) #,showuu1eq0=False)
+            global avg_eflux
+            avg_eflux=np.copy(avg_eoutRAD)
+            #
+            numoffset=5
+            vminforframe=np.amin(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:])
+            vmaxforframe=np.amax(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:])
+            limitedr=r[numoffset*iofr(rhor):iofr(mylen),:,:]
+            limitedh=h[numoffset*iofr(rhor):iofr(mylen),:,:]
+            print("rmax=%g" % (limitedr[np.where(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:]==vmaxforframe)]))
+            print("hmax=%g" % (limitedh[np.where(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:]==vmaxforframe)]))
+            print("rmin=%g" % (limitedr[np.where(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:]==vminforframe)]))
+            print("hmin=%g" % (limitedh[np.where(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:]==vminforframe)]))
+
+            print("eflux: %g %g" % (vminforframe,vmaxforframe));sys.stdout.flush()
+            #np.set_printoptions(threshold=sys.maxint)
+            #print(avg_eflux)
+            #np.set_printoptions(threshold=10)
+            returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uu=avg_uu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig2d",veldensity=myveldensity,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,alpha=0.2,showuu1eq0=True)
         #call
         # fix back
         B=np.copy(avg_uu)
@@ -27767,8 +27954,8 @@ def mkavgfigs():
         # things have access to:
         # avg_ts,avg_te,avg_nitems,avg_rho,avg_ug,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_omegaf2b,avg_omegaf1
         # avg_omegaf1b,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
-        # avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
-        # avg_TudPA, avg_TudEN, avg_TudRAD
+        # avg_TudEM, avg_TudMAKE, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
+        # avg_TudPAKE, avg_TudEN, avg_TudRAD
         # avg_gamma
         #
         # get horizon cut of everything and print out for SM plotting vs. theta
@@ -27787,7 +27974,7 @@ def mkavgfigs():
         avg1.close()
         avg1 = open('dataavgvsh1.txt', 'w')
         # below doesn't yet show columns for each component of vector or tensors
-        avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudEN  avg_TudRAD  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma gdet dxdxp11 dxdxp22dx2 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd avg_KAPPAUSER avg_KAPPAESUSER avg_tauradintegrated avg_tauradeffintegrated avg_urad\n")
+        avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMAKE  avg_TudPAKE  avg_TudEN  avg_TudRAD  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma gdet dxdxp11 dxdxp22dx2 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd avg_KAPPAUSER avg_KAPPAESUSER avg_tauradintegrated avg_tauradeffintegrated avg_urad\n")
         avg1.write("#%g %g %d :  %g %d\n" % (avg_ts[0],avg_te[0],avg_nitems[0],rhor,ihor))
         for jj in np.arange(0,len(h[0,:,0])):
             # columns 1-6
@@ -27865,11 +28052,11 @@ def mkavgfigs():
             # columns 185-200
             for ll in np.arange(0,4):
                 for mm in np.arange(0,4):
-                    avg1.write("%g " % (avg_TudMA[mm,ll,ihor,jj,0]))
+                    avg1.write("%g " % (avg_TudMAKE[mm,ll,ihor,jj,0]))
             # columns 201-216
             for ll in np.arange(0,4):
                 for mm in np.arange(0,4):
-                    avg1.write("%g " % (avg_TudPA[mm,ll,ihor,jj,0]))
+                    avg1.write("%g " % (avg_TudPAKE[mm,ll,ihor,jj,0]))
             # columns 217-232
             for ll in np.arange(0,4):
                 for mm in np.arange(0,4):
@@ -27943,7 +28130,7 @@ def mkavgfigs():
         avg1.close()
         avg1 = open('dataavgvsr1.txt', 'w')
         # below doesn't yet show columns for each component of vector or tensors
-        avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudEN  avg_TudRAD  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma avggdet dxdxp11 dxdxp22dx2 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd rhosqint rhosqint2 avg_KAPPAUSER avg_KAPPAESUSER avg_tauradintegrated avg_tauradeffintegrated avg_Erf\n")
+        avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMAKE  avg_TudPAKE  avg_TudEN  avg_TudRAD  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma avggdet dxdxp11 dxdxp22dx2 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd rhosqint rhosqint2 avg_KAPPAUSER avg_KAPPAESUSER avg_tauradintegrated avg_tauradeffintegrated avg_Erf\n")
         avg1.write("#%g %g %d :  %g %d\n" % (avg_ts[0],avg_te[0],avg_nitems[0],rhor,ihor))
         #
         bsq=avg_bsq
@@ -27978,8 +28165,8 @@ def mkavgfigs():
         #
         #avg_rho,avg_ug,avg_bsq,avg_unb,avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_omegaf2b,avg_omegaf1
         # avg_omegaf1b,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd,avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
-        # avg_TudEM, avg_TudMA, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
-        # avg_TudPA, avg_TudEN, avg_TudRAD
+        # avg_TudEM, avg_TudMAKE, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
+        # avg_TudPAKE, avg_TudEN, avg_TudRAD
         # avg_gamma
         # get averages (vs radius only in the end)
         avgvsr_rho=intangle_foravg2d(gdet*denfactor*avg_rho,**keywordsrhosq)/rhosqint
@@ -28066,8 +28253,8 @@ def mkavgfigs():
                 avgvsr_bubd[mm,ll]=intangle_foravg2d(gdet*denfactor*avg_bubd[mm,ll],doabs=0,**keywordsrhosq)/rhosqint
                 avgvsr_uuud[mm,ll]=intangle_foravg2d(gdet*denfactor*avg_uuud[mm,ll],doabs=0,**keywordsrhosq)/rhosqint
                 avgvsr_TudEM[mm,ll]=intangle_foravg2d(gdet*denfactor*avg_TudEM[mm,ll],doabs=0,**keywordsrhosq)/rhosqint
-                avgvsr_TudMA[mm,ll]=intangle_foravg2d(gdet*denfactor*avg_TudMA[mm,ll],doabs=0,**keywordsrhosq)/rhosqint
-                avgvsr_TudPA[mm,ll]=intangle_foravg2d(gdet*denfactor*avg_TudPA[mm,ll],doabs=0,**keywordsrhosq)/rhosqint
+                avgvsr_TudMA[mm,ll]=intangle_foravg2d(gdet*denfactor*avg_TudMAKE[mm,ll],doabs=0,**keywordsrhosq)/rhosqint
+                avgvsr_TudPA[mm,ll]=intangle_foravg2d(gdet*denfactor*avg_TudPAKE[mm,ll],doabs=0,**keywordsrhosq)/rhosqint
                 avgvsr_TudEN[mm,ll]=intangle_foravg2d(gdet*denfactor*avg_TudEN[mm,ll],doabs=0,**keywordsrhosq)/rhosqint
                 avgvsr_TudRAD[mm,ll]=intangle_foravg2d(gdet*denfactor*avg_TudRAD[mm,ll],doabs=0,**keywordsrhosq)/rhosqint
         avgvsr_mu=intangle_foravg2d(gdet*denfactor*avg_mu,**keywordsrhosq)/rhosqint
@@ -28245,7 +28432,7 @@ def mkavgfigs():
         avg1.close()
         avg1 = open('dataavg1.txt', 'w')
         # below doesn't yet show columns for each component of vector or tensors
-        avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudEN  avg_TudRAD  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma gdet dxdxp11 dxdxp22 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd avg_KAPPAUSER avg_KAPPAESUSER avg_tauradintegrated avg_tauradeffintegrated avg_Erf\n")
+        avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMAKE  avg_TudPAKE  avg_TudEN  avg_TudRAD  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma gdet dxdxp11 dxdxp22 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd avg_KAPPAUSER avg_KAPPAESUSER avg_tauradintegrated avg_tauradeffintegrated avg_Erf\n")
         avg1.write("#%g %g %d :  %g %d\n" % (avg_ts[0],avg_te[0],avg_nitems[0],rhor,ihor))
         for jj in np.arange(0,len(h[0,:,0])):
             for ii in np.arange(0,len(r[:,0,0])):
@@ -28324,11 +28511,11 @@ def mkavgfigs():
                 # columns 185-200
                 for ll in np.arange(0,4):
                     for mm in np.arange(0,4):
-                        avg1.write("%g " % (avg_TudMA[mm,ll,ii,jj,0]))
+                        avg1.write("%g " % (avg_TudMAKE[mm,ll,ii,jj,0]))
                 # columns 201-216
                 for ll in np.arange(0,4):
                     for mm in np.arange(0,4):
-                        avg1.write("%g " % (avg_TudPA[mm,ll,ii,jj,0]))
+                        avg1.write("%g " % (avg_TudPAKE[mm,ll,ii,jj,0]))
                 # columns 217-232
                 for ll in np.arange(0,4):
                     for mm in np.arange(0,4):
@@ -28421,7 +28608,7 @@ def mkavgfigs():
     #########################################
     if mkstreampart4==1:
         #
-        #avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMA  avg_TudPA  avg_TudEN  avg_TudRAD  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma gdet dxdxp11 dxdxp22 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd avg_KAPPAUSER avg_KAPPAESUSER avg_tauradintegrated")
+        #avg1.write("#avg_rho avg_ug avg_bsq avg_unb avg_uu avg_bu avg_ud avg_bd avg_B avg_gdetB avg_omegaf2 avg_omegaf2b avg_omegaf1 avg_omegaf1b avg_rhouu avg_rhobu avg_rhoud avg_rhobd avg_uguu avg_ugud avg_Tud avg_fdd avg_rhouuud avg_uguuud avg_bsquuud avg_bubd avg_uuud avg_TudEM  avg_TudMAKE  avg_TudPAKE  avg_TudEN  avg_TudRAD  avg_mu  avg_sigma  avg_bsqorho  avg_absB  avg_absgdetB  avg_psisq avg_gamma gdet dxdxp11 dxdxp22 dxdxp12 dxdxp21 dxdxp33 avg_absuu avg_absbu avg_absud avg_absbd avg_absomegaf2 avg_absomegaf2b avg_absomegaf1 avg_absomegaf1b avg_absrhouu avg_absfdd avg_KAPPAUSER avg_KAPPAESUSER avg_tauradintegrated")
         print("Doing field mkframe")
         sys.stdout.flush()
         global rho,rholab,ug,B,gdetB,Erf,nrad,uradu,bsq,mu,ud,uu,beta,betatot
@@ -28483,7 +28670,7 @@ def mkavgfigs():
                 mylenshowx = finallenx
                 mylenshowy = finalleny
             #
-            mkframe("myframe",dojonwindplot=1,doaphiavg=False,doaphi=False,dostreamlines=False,useblank=False,lenx=finallenx,leny=finalleny,ax=ax,density=1,downsample=4,cb=False,pt=False,dorho=False,dovarylw=False,vmin=vminforframe,vmax=vmaxforframe,dobhfield=8,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.01,dsval=0.01,color='r',lw=2,startatmidplane=True,domidfield=False,showjet=False,arrowsize=arrowsize,forceeqsym=forceeqsym)
+            mkframe("myframe",dojonwindplot=1,doaphiavg=False,doaphi=False,dostreamlines=False,useblank=False,lenx=finallenx,leny=finalleny,ax=ax,density=1,downsample=4,cb=0,pt=False,dorho=False,dovarylw=False,vmin=vminforframe,vmax=vmaxforframe,dobhfield=8,dodiskfield=True,minlenbhfield=0.2,minlendiskfield=0.01,dsval=0.01,color='r',lw=2,startatmidplane=True,domidfield=False,showjet=False,arrowsize=arrowsize,forceeqsym=forceeqsym)
             #
             #
             print("Writing mkstreampart4 File: %d" % (figiter) ) ; sys.stdout.flush()
@@ -28548,10 +28735,6 @@ def mkavgfigs2():
     #
     #
     mkstreampart1=1
-    mkstreampart2=1 # NOTEMARK: set to zero if don't want to read-in qty.npy stuff
-    mkstreampart3=1
-    mkstreampart4=1
-    #
     #
     #
     forceeqsym=0 # forceeqsym=1 makes the streaming take alot longer for some reason.  Also, messes up field geometry so it's not obvious that field threads the disk.
@@ -28626,6 +28809,27 @@ def mkavgfigs2():
             KAPPAESUSER=avg_KAPPAESUSER
             tauradintegrated=avg_tauradintegrated
             tauradeffintegrated=avg_tauradeffintegrated
+            Tgas=avg_Tgas
+            Tradff=avg_Tradff
+            nradff=avg_nradffrat
+            varexpf=avg_varexpf
+            uu=avg_uu
+            uru=avg_uru
+
+        #global avg_rho,avg_ug,avg_bsq,avg_unb,avg_Erf
+        #global avg_uu,avg_bu,avg_ud,avg_bd,avg_B,avg_gdetB,avg_omegaf2,avg_omegaf2b,avg_omegaf1,avg_omegaf1b,avg_rhouu,avg_rhobu,avg_rhoud,avg_rhobd
+        #global avg_absuu,avg_absbu,avg_absud,avg_absbd
+        #global avg_absomegaf2,avg_absomegaf2b,avg_absomegaf1,avg_absomegaf1b
+        #global avg_absrhouu,avg_absfdd
+        #global avg_uguu,avg_ugud,avg_Tud,avg_fdd,avg_rhouuud,avg_uguuud,avg_bsquuud,avg_bubd,avg_uuud
+        #global avg_TudEM, avg_TudMAKE, avg_mu, avg_sigma, avg_bsqorho, avg_absB, avg_absgdetB, avg_psisq
+        #global avg_TudPAKE, avg_TudEN, avg_TudRAD
+        #global avg_gamma,avg_pg,avg_pb,avg_beta,avg_betatot
+        #global avg_vpot,avg_vpot2
+        #global avg_KAPPAUSER,avg_KAPPAUSERnofe,avg_KAPPAESUSER,avg_tauradintegrated,avg_tauradeffintegrated
+        #global avg_Tgas,avg_Tradfflte,avg_Tradff,avg_Tradlablte,avg_Tradfftype1,avg_Tradlabtype1,avg_nradffratlte,avg_nradffrat,avg_nradlabrat
+        #global avg_kappadensityreal,avg_kappadensityrealnofe,avg_kappasyreal,avg_kappadcreal,avg_kappaesreal,avg_kappandensityreal,avg_kappansyreal,avg_kappandcreal,avg_phiphi,avg_varexpf
+
         rholab=avg_rho*avg_uu[0] # GODMARK: Not full avg of rholab directly
         ug=avg_ug
         Erf=avg_Erf
@@ -28670,6 +28874,9 @@ def mkavgfigs2():
         # fix back
         B=np.copy(Btrue)
         #
+    # TODO:
+    # 1) Make power vs. angle in 2D time-phi average.   use cumsum for each x1 across x2.  Do for radiation and EM and total.
+    # 2) Make plots as needed in paper that don't have streamlines on them.  Own plot directly like supermad or others.
     #
     #
     #
@@ -28876,13 +29083,13 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
         #          ha="center", va="center",
         #          color='k',weight='regular',bbox=bbox_props
         #          )
-        mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=False)
+        mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=0,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=False)
         ax1.set_ylabel(r'$z\ [r_g]$',fontsize=16,ha='center')
         ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         if dogrid: plt.grid()
         #xy
         ax2 = plt.subplot(gs1[0:2, 0])
-        mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=False,pt=False,dostreamlines=False,doaphi=True)
+        mkframexy("lrho%04d_xy%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax2,cb=0,pt=False,dostreamlines=False,doaphi=True)
         plt.setp( ax2.get_xticklabels(), visible=False)
         plt.text(-0.75*plen, 0.8*plen, r"$(\mathrm{a})$", size=16, rotation=0.,
                  ha="center", va="center",
@@ -28910,7 +29117,7 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
         #          color='k',weight='regular',bbox=bbox_props
         #          )
         mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,
-                ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,
+                ax=ax1,cb=0,pt=False,dostreamlines=doslines,downsample=downsample,
                 density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield)
         ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         if dogrid: plt.grid()
@@ -28940,7 +29147,7 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
         #          ha="center", va="center",
         #          color='k',weight='regular',bbox=bbox_props
         #          )
-        mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield)
+        mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=0,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield)
         ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         if dogrid: plt.grid()
         #xy
@@ -28969,7 +29176,7 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
         #          ha="center", va="center",
         #          color='k',weight='regular',bbox=bbox_props
         #          )
-        mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield)
+        mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=0,pt=False,dostreamlines=doslines,downsample=downsample,density=density,dodiskfield=dodiskfield,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield)
         ax1.set_xlabel(r'$x\ [r_g]$',fontsize=16)
         if dogrid: plt.grid()
         #xy
@@ -29216,7 +29423,7 @@ def oldstuff():
         cvel() #for calculating bsq
         plt.figure(0, figsize=(12,9), dpi=100)
         plt.clf()
-        mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=False,pt=False)
+        mkframe("lrho%04d_Rz%g" % (findex,plotlen), vmin=-6.,vmax=0.5625,len=plotlen,ax=ax1,cb=0,pt=False)
     if False:
         len=10
         #To generate movies for all sub-folders of a folder:
@@ -29524,7 +29731,7 @@ def main(argv=None):
     if runtype==5:
         #fig2 with grayscalestreamlines and red field lines
         mkavgfigs()
-        mkavgfigs2()
+        #mkavgfigs2()
     if runtype==6:
         #FIGURE 1 LOTSOPANELS
         fti=7000
@@ -30293,6 +30500,12 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
         ud = mdot(gv3,uu)                  #g_mn urad^n
         #myfun=np.log10(-fTudRAD(0,0)*1E30)
         myfun=-gdet*fTudRAD(1,0)
+    if(which==104):
+        myfun=uu[1]
+    if(which==105):
+        myfun=uu[2]
+    if(which==106):
+        myfun=uu[3]*np.fabs(np.sqrt(gv3[3,3]))
     #
     #
     #
