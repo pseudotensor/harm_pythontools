@@ -6904,14 +6904,27 @@ def finishframe(cb=1,label=1,tight=1,useextent=1,uselim=1,testdpiinches=0,toplot
     #palette.set_under('g', 1.0)
     #
     if useextent==1:
-        CS = plt.imshow(toplotnew, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=mintoplot,vmax=maxtoplot)
+        if 1==1:
+            CS = plt.imshow(toplotnew, extent=extent, cmap = palette, norm = colors.Normalize(clip = False),origin='lower',vmin=mintoplot,vmax=maxtoplot)
+        if 1==0:
+            CS = plt.imshow(toplotnew, extent=extent, vmin=mintoplot,vmax=maxtoplot)
+        if 1==0:
+            Nx=np.shape(toplotnew)[0]
+            Ny=np.shape(toplotnew)[1]
+            dx=(extent[1]-extent[0])/Ny
+            dy=(extent[3]-extent[2])/Nx
+            y, x = np.mgrid[slice(extent[2], extent[3], dy),
+                            slice(extent[0], extent[1], dx)]
+            CS = plt.pcolormesh(x,y,toplotnew, vmin=mintoplot,vmax=maxtoplot)
     else:
-        CS = plt.imshow(toplotnew, vmin=mintoplot,vmax=maxtoplot)
+        CS = plt.imshow(toplotnew, extent=extent, vmin=mintoplot,vmax=maxtoplot)
     #
     if tight==1:
         plt.axis('tight')
     #
     if which==1:
+        toplotnew[np.isnan(toplotnew)]=-30
+        toplotnew[np.isinf(toplotnew)]=-30
         plt.xscale('log')
     #
     if uselim==1:
@@ -7098,6 +7111,13 @@ def mktr(loadq=1,qty=None,filenum=1,fileletter="a",logvalue=1,pllabel="",bsqorho
         fun0[np.isnan(fun0)]=1E-30
         fun0[np.isinf(fun0)]=1E-30
     #
+    
+    if bsqorho is not None:
+        bsqorho[np.isnan(bsqorho)]=1E-30
+        bsqorho[np.isinf(bsqorho)]=1E-30
+    if bsqou is not None:
+        bsqou[np.isnan(bsqou)]=1E-30
+        bsqou[np.isinf(bsqou)]=1E-30
     #
     if maxbsqorho is not None or maxbsqou is not None:
         (mintoplot,maxtoplot)=setminmax4mk(logvalue=logvalue,fun0=fun0,myRout=myRout,which=1,bsqorho=bsqorho,bsqou=bsqou,maxbsqorho=maxbsqorho,maxbsqou=maxbsqou)
@@ -7152,8 +7172,8 @@ def mktr(loadq=1,qty=None,filenum=1,fileletter="a",logvalue=1,pllabel="",bsqorho
         #print(fold)
         funnew[tici,:]=np.interp(xnew,xold,fold)
     toplot=funnew
-    toplot[np.isnan(toplot)]=-30
-    toplot[np.isinf(toplot)]=-30
+    toplot[np.isnan(toplot)]=1E-30
+    toplot[np.isinf(toplot)]=1E-30
     #extent=(np.log10(myRin),np.log10(myRout),ts[0],ts[-1])
     # assume plot shows in log
     extent=(myRin,myRout,ts[0],ts[-1])
@@ -7161,6 +7181,17 @@ def mktr(loadq=1,qty=None,filenum=1,fileletter="a",logvalue=1,pllabel="",bsqorho
     #
     #
     print("mktr: num=%d let=%s" % (filenum,fileletter)) ; sys.stdout.flush()
+    print(extent)
+    print(mintoplot)
+    print(maxtoplot)
+    print(filenum)
+    print(fileletter)
+    print(pllabel)
+    print(maxbsqorho)
+    print(maxbsqou)
+    np.set_printoptions(threshold=sys.maxint)
+    print(toplot)
+    np.set_printoptions(threshold=10)
     setupframe(which=1,gs=3)
     finishframe(which=1,toplot=toplot,extent=extent,cb=1,tight=1,useextent=1,uselim=1,label=1,mintoplot=mintoplot,maxtoplot=maxtoplot,filenum=filenum,fileletter=fileletter,pllabel=pllabel,maxbsqorho=maxbsqorho,maxbsqou=maxbsqou)
     #
@@ -23063,8 +23094,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             #
             ####################################
             arrayvsra=[rhosrhosq,ugsrhosq,uu0rhosq,vus1rhosq,vuas1rhosq,vus3rhosq,vuasrotrhosq,Bs1rhosq,Bas1rhosq,Bs2rhosq,Bas2rhosq,Bs3rhosq,Bas3rhosq,bs1rhosq,bas1rhosq,bs2rhosq,bas2rhosq,bs3rhosq,bas3rhosq,bsqrhosq]
-            bsqorhora=bsqrhosq/rhosrhosq
-            bsqoura=bsqrhosq/ugsrhosq
+            bsqorhora=bsqrhosq/(1E-30+rhosrhosq)
+            bsqoura=bsqrhosq/(1E-30+ugsrhosq)
             arrayvsraname=['rhosrhosq','ugsrhosq','uu0rhosq','vus1rhosq','vuas1rhosq','vus3rhosq','vuasrotrhosq','Bs1rhosq','Bas1rhosq','Bs2rhosq','Bas2rhosq','Bs3rhosq','Bas3rhosq','bs1rhosq','bas1rhosq','bs2rhosq','bas2rhosq','bs3rhosq','bas3rhosq','bsqrhosq']
             logvaluearrayvsra=[1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
             #
@@ -23075,8 +23106,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             #
             ################################
             arrayvsra=[rhosrhosqdc,ugsrhosqdc,uu0rhosqdc,vus1rhosqdc,vuas1rhosqdc,vus3rhosqdc,vuasrotrhosqdc,Bs1rhosqdc,Bas1rhosqdc,Bs2rhosqdc,Bas2rhosqdc,Bs3rhosqdc,Bas3rhosqdc,bs1rhosqdc,bas1rhosqdc,bs2rhosqdc,bas2rhosqdc,bs3rhosqdc,bas3rhosqdc,bsqrhosqdc]
-            bsqorhora=bsqrhosqdc/rhosrhosqdc
-            bsqoura=bsqrhosqdc/ugsrhosqdc
+            bsqorhora=bsqrhosqdc/(1E-30+rhosrhosqdc)
+            bsqoura=bsqrhosqdc/(1E-30+ugsrhosqdc)
             arrayvsraname=['rhosrhosqdc','ugsrhosqdc','uu0rhosqdc','vus1rhosqdc','vuas1rhosqdc','vus3rhosqdc','vuasrotrhosqdc','Bs1rhosqdc','Bas1rhosqdc','Bs2rhosqdc','Bas2rhosqdc','Bs3rhosqdc','Bas3rhosqdc','bs1rhosqdc','bas1rhosqdc','bs2rhosqdc','bas2rhosqdc','bs3rhosqdc','bas3rhosqdc','bsqrhosqdc']
             logvaluearrayvsra=[1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
             #
@@ -23087,8 +23118,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             #
             ################################
             arrayvsra=[rhosrhosqdcden,ugsrhosqdcden,uu0rhosqdcden,vus1rhosqdcden,vuas1rhosqdcden,vus3rhosqdcden,vuasrotrhosqdcden,Bs1rhosqdcden,Bas1rhosqdcden,Bs2rhosqdcden,Bas2rhosqdcden,Bs3rhosqdcden,Bas3rhosqdcden,bs1rhosqdcden,bas1rhosqdcden,bs2rhosqdcden,bas2rhosqdcden,bs3rhosqdcden,bas3rhosqdcden,bsqrhosqdcden]
-            bsqorhora=bsqrhosqdcden/rhosrhosqdcden
-            bsqoura=bsqrhosqdcden/ugsrhosqdcden
+            bsqorhora=bsqrhosqdcden/(1E-30+rhosrhosqdcden)
+            bsqoura=bsqrhosqdcden/(1E-30+ugsrhosqdcden)
             arrayvsraname=['rhosrhosqdcden','ugsrhosqdcden','uu0rhosqdcden','vus1rhosqdcden','vuas1rhosqdcden','vus3rhosqdcden','vuasrotrhosqdcden','Bs1rhosqdcden','Bas1rhosqdcden','Bs2rhosqdcden','Bas2rhosqdcden','Bs3rhosqdcden','Bas3rhosqdcden','bs1rhosqdcden','bas1rhosqdcden','bs2rhosqdcden','bas2rhosqdcden','bs3rhosqdcden','bas3rhosqdcden','bsqrhosqdcden']
             logvaluearrayvsra=[1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
             #
@@ -23099,8 +23130,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             #
             ####################################
             arrayvsrb=[rhosrhosqeq,ugsrhosqeq,uu0rhosqeq,vus1rhosqeq,vuas1rhosqeq,vus3rhosqeq,vuasrotrhosqeq,Bs1rhosqeq,Bas1rhosqeq,Bs2rhosqeq,Bas2rhosqeq,Bs3rhosqeq,Bas3rhosqeq,bs1rhosqeq,bas1rhosqeq,bs2rhosqeq,bas2rhosqeq,bs3rhosqeq,bas3rhosqeq,bsqrhosqeq]
-            bsqorhorb=bsqrhosqeq/rhosrhosqeq
-            bsqourb=bsqrhosqeq/ugsrhosqeq
+            bsqorhorb=bsqrhosqeq/(1E-30+rhosrhosqeq)
+            bsqourb=bsqrhosqeq/(1E-30+ugsrhosqeq)
             arrayvsrbname=['rhosrhosqeq','ugsrhosqeq','uu0rhosqeq','vus1rhosqeq','vuas1rhosqeq','vus3rhosqeq','vuasrotrhosqeq','Bs1rhosqeq','Bas1rhosqeq','Bs2rhosqeq','Bas2rhosqeq','Bs3rhosqeq','Bas3rhosqeq','bs1rhosqeq','bas1rhosqeq','bs2rhosqeq','bas2rhosqeq','bs3rhosqeq','bas3rhosqeq','bsqrhosqeq']
             logvaluearrayvsrb=[1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
             iter=1
@@ -23110,8 +23141,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             #
             ####################################
             arrayvsrc=[rhosrhosqhorpick,ugsrhosqhorpick,uu0rhosqhorpick,vus1rhosqhorpick,vuas1rhosqhorpick,vus3rhosqhorpick,vuasrotrhosqhorpick,Bs1rhosqhorpick,Bas1rhosqhorpick,Bs2rhosqhorpick,Bas2rhosqhorpick,Bs3rhosqhorpick,Bas3rhosqhorpick,bs1rhosqhorpick,bas1rhosqhorpick,bs2rhosqhorpick,bas2rhosqhorpick,bs3rhosqhorpick,bas3rhosqhorpick,bsqrhosqhorpick]
-            bsqorhorc=bsqrhosqhorpick/rhosrhosqhorpick
-            bsqourc=bsqrhosqhorpick/ugsrhosqhorpick
+            bsqorhorc=bsqrhosqhorpick/(1E-30+rhosrhosqhorpick)
+            bsqourc=bsqrhosqhorpick/(1E-30+ugsrhosqhorpick)
             arrayvsrcname=['rhosrhosqhorpick','ugsrhosqhorpick','uu0rhosqhorpick','vus1rhosqhorpick','vuas1rhosqhorpick','vus3rhosqhorpick','vuasrotrhosqhorpick','Bs1rhosqhorpick','Bas1rhosqhorpick','Bs2rhosqhorpick','Bas2rhosqhorpick','Bs3rhosqhorpick','Bas3rhosqhorpick','bs1rhosqhorpick','bas1rhosqhorpick','bs2rhosqhorpick','bas2rhosqhorpick','bs3rhosqhorpick','bas3rhosqhorpick','bsqrhosqhorpick']
             logvaluearrayvsrc=[1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
             #
@@ -23122,8 +23153,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             #
             ####################################
             arrayvsrd=[rhoshor,ugshor,bsqshor,bsqorhoshor,bsqougshor,uu0hor,vus1hor,vuas1hor,vus3hor,vuasrothor,Bs1hor,Bas1hor,Bs2hor,Bas2hor,Bs3hor,Bas3hor,bs1hor,bas1hor,bs2hor,bas2hor,bs3hor,bas3hor,bsqhor]
-            bsqorhord=bsqhor/rhoshor
-            bsqourd=bsqhor/ugshor
+            bsqorhord=bsqhor/(1E-30+rhoshor)
+            bsqourd=bsqhor/(1E-30+ugshor)
             arrayvsrdname=['rhoshor','ugshor','bsqshor','bsqorhoshor','bsqougshor','uu0hor','vus1hor','vuas1hor','vus3hor','vuasrothor','Bs1hor','Bas1hor','Bs2hor','Bas2hor','Bs3hor','Bas3hor','bs1hor','bas1hor','bs2hor','bas2hor','bs3hor','bas3hor','bsqhor']
             logvaluearrayvsrd=[1,1,1,1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
             #
@@ -23137,8 +23168,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             #
             ####################################
             arrayvsha=[rhosrhosqrad4,ugsrhosqrad4,uu0rhosqrad4,vus1rhosqrad4,vuas1rhosqrad4,vus3rhosqrad4,vuasrotrhosqrad4,Bs1rhosqrad4,Bas1rhosqrad4,Bs2rhosqrad4,Bas2rhosqrad4,Bs3rhosqrad4,Bas3rhosqrad4,bs1rhosqrad4,bas1rhosqrad4,bs2rhosqrad4,bas2rhosqrad4,bs3rhosqrad4,bas3rhosqrad4,bsqrhosqrad4]
-            bsqorhoha=bsqrhosqrad4/rhosrhosqrad4
-            bsqouha=bsqrhosqrad4/ugsrhosqrad4
+            bsqorhoha=bsqrhosqrad4/(1E-30+rhosrhosqrad4)
+            bsqouha=bsqrhosqrad4/(1E-30+ugsrhosqrad4)
             arrayvshaname=['rhosrhosqrad4','ugsrhosqrad4','uu0rhosqrad4','vus1rhosqrad4','vuas1rhosqrad4','vus3rhosqrad4','vuasrotrhosqrad4','Bs1rhosqrad4','Bas1rhosqrad4','Bs2rhosqrad4','Bas2rhosqrad4','Bs3rhosqrad4','Bas3rhosqrad4','bs1rhosqrad4','bas1rhosqrad4','bs2rhosqrad4','bas2rhosqrad4','bs3rhosqrad4','bas3rhosqrad4','bsqrhosqrad4']
             logvaluearrayvsha=[1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
             #
@@ -23149,8 +23180,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             #
             ####################################
             arrayvshb=[rhosrhosqrad8,ugsrhosqrad8,uu0rhosqrad8,vus1rhosqrad8,vuas1rhosqrad8,vus3rhosqrad8,vuasrotrhosqrad8,Bs1rhosqrad8,Bas1rhosqrad8,Bs2rhosqrad8,Bas2rhosqrad8,Bs3rhosqrad8,Bas3rhosqrad8,bs1rhosqrad8,bas1rhosqrad8,bs2rhosqrad8,bas2rhosqrad8,bs3rhosqrad8,bas3rhosqrad8,bsqrhosqrad8]
-            bsqorhohb=bsqrhosqrad8/rhosrhosqrad8
-            bsqouhb=bsqrhosqrad8/ugsrhosqrad8
+            bsqorhohb=bsqrhosqrad8/(1E-30+rhosrhosqrad8)
+            bsqouhb=bsqrhosqrad8/(1E-30+ugsrhosqrad8)
             arrayvshbname=['rhosrhosqrad8','ugsrhosqrad8','uu0rhosqrad8','vus1rhosqrad8','vuas1rhosqrad8','vus3rhosqrad8','vuasrotrhosqrad8','Bs1rhosqrad8','Bas1rhosqrad8','Bs2rhosqrad8','Bas2rhosqrad8','Bs3rhosqrad8','Bas3rhosqrad8','bs1rhosqrad8','bas1rhosqrad8','bs2rhosqrad8','bas2rhosqrad8','bs3rhosqrad8','bas3rhosqrad8','bsqrhosqrad8']
             logvaluearrayvshb=[1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
             #
@@ -23161,8 +23192,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             #
             ####################################
             arrayvshc=[rhosrhosqrad30,ugsrhosqrad30,uu0rhosqrad30,vus1rhosqrad30,vuas1rhosqrad30,vus3rhosqrad30,vuasrotrhosqrad30,Bs1rhosqrad30,Bas1rhosqrad30,Bs2rhosqrad30,Bas2rhosqrad30,Bs3rhosqrad30,Bas3rhosqrad30,bs1rhosqrad30,bas1rhosqrad30,bs2rhosqrad30,bas2rhosqrad30,bs3rhosqrad30,bas3rhosqrad30,bsqrhosqrad30]
-            bsqorhohc=bsqrhosqrad30/rhosrhosqrad30
-            bsqouhc=bsqrhosqrad30/ugsrhosqrad30
+            bsqorhohc=bsqrhosqrad30/(1E-30+rhosrhosqrad30)
+            bsqouhc=bsqrhosqrad30/(1E-30+ugsrhosqrad30)
             arrayvshcname=['rhosrhosqrad30','ugsrhosqrad30','uu0rhosqrad30','vus1rhosqrad30','vuas1rhosqrad30','vus3rhosqrad30','vuasrotrhosqrad30','Bs1rhosqrad30','Bas1rhosqrad30','Bs2rhosqrad30','Bas2rhosqrad30','Bs3rhosqrad30','Bas3rhosqrad30','bs1rhosqrad30','bas1rhosqrad30','bs2rhosqrad30','bas2rhosqrad30','bs3rhosqrad30','bas3rhosqrad30','bsqrhosqrad30']
             logvaluearrayvshc=[1,1,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]
             #
