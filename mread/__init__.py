@@ -7085,14 +7085,17 @@ def mktr(loadq=1,qty=None,filenum=1,fileletter="a",logvalue=1,pllabel="",bsqorho
     rhor=1+(1-a**2)**0.5
     myRin=rhor
     #
-    # Catch nan's in case division by zero somewhere done, else will fail when trying to do log plot
-    qty[np.isnan(qty)]=1E-30
-    qty[np.isinf(qty)]=1E-30
     #
+    # Copy, and Catch nan's in case division by zero somewhere done, else will fail when trying to do log plot
     if logvalue==1:
         fun0 = np.log10(np.fabs(qty)+1E-30)
+        fun0[np.isnan(fun0)]=-30
+        fun0[np.isinf(fun0)]=-30
     else:
         fun0 = np.copy(qty)
+        fun0[np.isnan(fun0)]=1E-30
+        fun0[np.isinf(fun0)]=1E-30
+    #
     #
     if maxbsqorho is not None or maxbsqou is not None:
         (mintoplot,maxtoplot)=setminmax4mk(logvalue=logvalue,fun0=fun0,myRout=myRout,which=1,bsqorho=bsqorho,bsqou=bsqou,maxbsqorho=maxbsqorho,maxbsqou=maxbsqou)
