@@ -827,13 +827,7 @@ then
             then
                 rm -rf $dirname/${thedir}/$moviedirname/*.avi
             fi
-            if [ $makeavg -eq 1 ]
-            then
-                rm -rf $dirname/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.avg.stderr.out
-                rm -rf $dirname/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.avg.full.out
-                rm -rf $dirname/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.avg.out
-            fi
-            if [ $makeavg -eq 1 ]
+            if [ $makeavg -ge 1 ]
             then
                 rm -rf $dirname/${thedir}/$moviedirname/avg2d[0-9]*_[0-9]*.npy
                 rm -rf $dirname/${thedir}/$moviedirname/python_[0-9]*_[0-9]*.avg.stderr.out
@@ -847,7 +841,19 @@ then
             fi
             if [ $makeavgplot -eq 1 ]
             then
-                rm -rf $dirname/${thedir}/$moviedirname/fig2.png
+                rm -rf $dirname/${thedir}/$moviedirname/fig2*.png
+            fi
+            if [ $makeavgplot -eq 3 ]
+            then
+                rm -rf $dirname/${thedir}/$moviedirname/dataavg*.txt
+            fi
+            if [ $makeavgplot -eq 4 ]
+            then
+                rm -rf $dirname/${thedir}/$moviedirname/fig4*.png
+            fi
+            if [ $makeavgplot -eq 5 ]
+            then
+                rm -rf $dirname/${thedir}/$moviedirname/fig3*.png
             fi
         fi
     ###############

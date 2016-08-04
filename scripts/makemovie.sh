@@ -2381,21 +2381,43 @@ fi
 
 ###################################
 #
-# Make avg plot
+# Make avg plot 1
 #
 ####################################
-if [ $makeavgplot -eq 1 ]
+if [ $makeavgplot -ge 1 ]
 then
+    numinit=$((7+$makeavgplot-1))
 
-    myinitfile7=$localpath/__init__.py.7.$myrand
+    myinitfile7=$localpath/__init__.py.$numinit.$myrand
     echo "myinitfile7="${myinitfile7}
 
     #sed -n '1h;1!H;${;g;s/if False:[\n \t]*#fig2 with grayscalestreamlines and red field lines[\n \t]*mkavgfigs()/if True:\n\t#fig2 with grayscalestreamlines and red field lines\n\tmkavgfigs()/g;p;}'  $initfile > $myinitfile7
-    runtype=5
+    if [ $makeavgplot -eq 1 ]
+        then
+        runtype=5
+    fi
+    if [ $makeavgplot -eq 2 ]
+        then
+        runtype=6
+    fi
+    if [ $makeavgplot -eq 3 ]
+        then
+        runtype=7
+    fi
+    if [ $makeavgplot -eq 4 ]
+        then
+        runtype=8
+    fi
+    if [ $makeavgplot -eq 5 ]
+        then
+        runtype=9
+    fi
+
+
     cp $initfile $myinitfile7
 
 
-    echo "Generate the avg plots"
+    echo "Generate the avg$runtype plots"
 
 
 
@@ -2405,7 +2427,7 @@ then
 
 
     # string "plot" tells script to do plot
-	thebatch="sh1_pythonplot.avg_${numcorespernodeplot}.sh"
+	thebatch="sh1_pythonplot.avg$runtype_${numcorespernodeplot}.sh"
 	rm -rf $thebatch
     echo "cd $dirname" >> $thebatch
     echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $thebatch
@@ -2416,7 +2438,7 @@ then
         rm -rf $dirname/matplotlibdir/
         echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $thebatch
     fi
-	echo "((nohup python $myinitfile7 $runtype $modelname 2>&1 1>&3 | tee python.plot.avg.stderr.out) 3>&1 1>&2 | tee python.plot.avg.out) > python.plot.avg.full.out 2>&1" >> $thebatch
+	echo "((nohup python $myinitfile7 $runtype $modelname 2>&1 1>&3 | tee python.plot.avg$runtype.stderr.out) 3>&1 1>&2 | tee python.plot.avg$runtype.out) > python.plot.avg$runtype.full.out 2>&1" >> $thebatch
 	echo "wait" >> $thebatch
 	chmod a+x $thebatch
 
@@ -2438,10 +2460,10 @@ then
 		if [ $dowrite -eq 1 ]
 		then
     	              # run bsub on batch file
-            jobcheck=pa.$jobsuffix
+            jobcheck=pa$runtype.$jobsuffix
 		    jobname=$jobprefix${jobcheck}
-		    outputfile=$jobname.pa.out
-		    errorfile=$jobname.pa.err
+		    outputfile=$jobname.pa$runtype.out
+		    errorfile=$jobname.pa$runtype.err
             rm -rf $outputfile
             rm -rf $errorfile
             #
@@ -2464,8 +2486,8 @@ then
 		            cmdraw="$makemoviecfullfile $chunklisttypeplot $chunklistplot $runnplot $DATADIR $jobcheck $myinitfile7 $runtype $modelname"
                     echo "$apcmdplot $cmdraw" >> $superbatch
                 fi
-                localerrorfile=python.plot.avg.stderr.out
-                localoutputfile=python.plot.avg.out
+                localerrorfile=python.plot.avg$runtype.stderr.out
+                localoutputfile=python.plot.avg$runtype.out
                 rm -rf $localerrorfile
                 rm -rf $localoutputfile
                 #
@@ -2486,8 +2508,8 @@ then
 		            cmdraw="$makemoviecfullfile $chunklisttypeplot $chunklistplot $runnplot $DATADIR $jobcheck $myinitfile7 $runtype $modelname"
                     echo "$apcmdplot $cmdraw" >> $superbatch
                 fi
-                localerrorfile=python.plot.avg.stderr.out
-                localoutputfile=python.plot.avg.out
+                localerrorfile=python.plot.avg$runtype.stderr.out
+                localoutputfile=python.plot.avg$runtype.out
                 rm -rf $localerrorfile
                 rm -rf $localoutputfile
                 #
@@ -2507,8 +2529,8 @@ then
 		            cmdraw="$makemoviecfullfile $chunklisttypeplot $chunklistplot $runnplot $DATADIR $jobcheck $myinitfile7 $runtype $modelname"
                     echo "$apcmdplot $cmdraw" >> $superbatch
                 fi
-                localerrorfile=python.plot.avg.stderr.out
-                localoutputfile=python.plot.avg.out
+                localerrorfile=python.plot.avg$runtype.stderr.out
+                localoutputfile=python.plot.avg$runtype.out
                 rm -rf $localerrorfile
                 rm -rf $localoutputfile
                 #
@@ -2524,9 +2546,9 @@ then
 			    echo $bsubcommand
 		    else
 			    echo $bsubcommand
-			    echo "$bsubcommand" > bsubshtorun_pl.avg_$thebatch
-			    chmod a+x bsubshtorun_pl.avg_$thebatch
-			    sh bsubshtorun_pl.avg_$thebatch
+			    echo "$bsubcommand" > bsubshtorun_pl.avg$runtype_$thebatch
+			    chmod a+x bsubshtorun_pl.avg$runtype_$thebatch
+			    sh bsubshtorun_pl.avg$runtype_$thebatch
 		    fi
 		fi
 	fi
@@ -2590,6 +2612,10 @@ then
     fi
 
 fi
+# END makeavgplot==1
+
+
+
 
 
 
