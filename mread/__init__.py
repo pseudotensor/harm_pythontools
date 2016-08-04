@@ -3214,7 +3214,7 @@ def getdefaulttimes1():
     if isradmodelnrad(modelname)==1:
         defaultfti=4000
         defaultftf=1e5
-    if modelname==13 or modelname==16:
+    if modelname==jonharmrad13 or modelname==jonharmrad16 or modelname==jonharmrad17:
         defaultfti=1000
         defaultftf=1e5
     if ismarkmodel(modelname)==1:
@@ -27896,6 +27896,8 @@ def mkavgfigs1():
         rhor=1+(1-a**2)**0.5
         ihor = np.floor(iofr(rhor)+0.5)
         
+        avg_TudKE = avg_TudMAKE + avg_TudEM + avg_TudRAD
+        #
         eoutden   = scaletofullwedge(nz*(-gdet*avg_TudKE[1,0]*_dx2*_dx3).sum(axis=2))/mdotfinavgvsr[ihor]
         eoutdenMAKE = scaletofullwedge(nz*(-gdet*avg_TudMAKE[1,0]*_dx2*_dx3).sum(axis=2))/mdotfinavgvsr[ihor]
         eoutdenEM = scaletofullwedge(nz*(-gdet*avg_TudEM[1,0]*_dx2*_dx3).sum(axis=2))/mdotfinavgvsr[ihor]

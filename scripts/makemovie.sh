@@ -14,6 +14,10 @@
 #userbatch="jmckinn"
 #emailaddr="pseudotensor@gmail.com"
 
+# whether to wait and check on runs (if run many jobs, some head nodes won't fork that much)
+dowait=0
+
+
 user=$USER
 userbatch=${USER:2:6}
 emailaddr="pseudotensor@gmail.com"
@@ -1215,9 +1219,12 @@ then
 	        done
 
 	    # waiting game
+            if [ $dowait -eq 1 ]
+            then
 	        if [ $parallel -eq 0 ]
 		    then
 		        wait
+                
 	        else
                 # Wait to move on until all jobs done
 		        totaljobs=$runn
@@ -1258,19 +1265,22 @@ then
 		        done
 
 	        fi
-
+            fi
 
 	        echo "Data vs. Time: Ending simultaneous run of $itot jobs for group $j"
 	    fi
     done
     
-    wait
-
-    if [ $rminitfiles -eq 1 ]
-	then
-        # remove created file
-	    rm -rf $myinitfile1
+    if [ $dowait -eq 1 ]
+    then
+        wait
+        if [ $rminitfiles -eq 1 ]
+	    then
+            # remove created file
+	        rm -rf $myinitfile1
+        fi
     fi
+
 
 fi
 
@@ -1468,6 +1478,8 @@ then
 
     ##########################################################################
     # waiting game
+    if [ $dowait -eq 1 ]
+    then
 	if [ $parallel -eq 0 ]
 	then
 		wait
@@ -1511,46 +1523,59 @@ then
 		done
         
 	fi
-    
-    wait
+    fi
+
+
+    if [ $dowait -eq 1 ]
+    then
+        wait
+    fi
     ##########################################################################
 
 
 
     
-    #########################################################
-    makemontage=$makemontage
-    if [ $makemontage -eq 1 ]
+
+
+    if [ $dowait -eq 1 ]
     then
-
-        # create montage of t vs. r and t vs. h plots
-        files=`ls -rt plot*.png`
-        montage -geometry 300x600 $files montage_plot.png
-        # use -density to control each image size
-        # e.g. default for montage is:
-        # montage -density 72 $files montage.png
-        # but can get each image as 300x300 (each tile) if do:
-        # montage -geometry 300x300 -density 300 $files montage.png
-        #
-        # to display, do:
-        # display montage.png
-        # if want to have smaller window and pan more do (e.g.):
-        # display -geometry 1800x1400 montage.png
-
-        files=`ls -rt powervsm*.png`
-        montage -geometry 500x500 $files montage_powervsm.png
-
+        if [ $rminitfiles -eq 1 ]
+	    then
+            # remove created file
+	        rm -rf $myinitfile3
+        fi
     fi
-
-
-    if [ $rminitfiles -eq 1 ]
-	then
-        # remove created file
-	    rm -rf $myinitfile3
-    fi
-
 fi
 
+
+###################################
+#
+# Make plots that depend upon makeplot being done
+#
+####################################
+#########################################################
+makemontage=$makemontage
+if [ $makemontage -eq 1 ]
+then
+
+    # create montage of t vs. r and t vs. h plots
+    files=`ls -rt plot*.png`
+    montage -geometry 300x600 $files montage_plot.png
+    # use -density to control each image size
+    # e.g. default for montage is:
+    # montage -density 72 $files montage.png
+    # but can get each image as 300x300 (each tile) if do:
+    # montage -geometry 300x300 -density 300 $files montage.png
+    #
+    # to display, do:
+    # display montage.png
+    # if want to have smaller window and pan more do (e.g.):
+    # display -geometry 1800x1400 montage.png
+
+    files=`ls -rt powervsm*.png`
+    montage -geometry 500x500 $files montage_powervsm.png
+
+fi
 
 
 
@@ -1838,6 +1863,8 @@ then
 
 	        done
 
+            if [ $dowait -eq 1 ]
+            then
 	    # waiting game
 	        if [ $parallel -eq 0 ]
 		    then
@@ -1882,16 +1909,19 @@ then
 		        done
 
 	        fi
-
+            fi
 	        echo "Movie Frames: Ending simultaneous run of $itot jobs for group $j"
 	    fi
     done
     
     
-    if [ $rminitfiles -eq 1 ]
-	then
-        # remove created file
-	    rm -rf $myinitfile4
+    if [ $dowait -eq 1 ]
+    then
+        if [ $rminitfiles -eq 1 ]
+	    then
+            # remove created file
+	        rm -rf $myinitfile4
+        fi
     fi
     
 fi
@@ -2264,7 +2294,9 @@ then
 	        done
 
 
-	    # waiting game
+            if [ $dowait -eq 1 ]
+            then
+            # waiting game
 	        if [ $parallel -eq 0 ]
 		    then
 		        wait
@@ -2309,17 +2341,20 @@ then
 		        done
 
 	        fi
-
+            fi
 	        echo "Data vs. Time: Ending simultaneous run of $itot jobs for group $j"
 	    fi
     done
     
-    wait
-
-    if [ $rminitfiles -eq 1 ]
-	then
-        # remove created file
-	    rm -rf $myinitfile5
+    if [ $dowait -eq 1 ]
+    then
+        wait
+        
+        if [ $rminitfiles -eq 1 ]
+	    then
+            # remove created file
+	        rm -rf $myinitfile5
+        fi
     fi
 
 fi
@@ -2562,6 +2597,8 @@ then
 
     ##########################################################################
     # waiting game
+    if [ $dowait -eq 1 ]
+    then
 	if [ $parallel -eq 0 ]
 	then
 		wait
@@ -2605,16 +2642,24 @@ then
 		done
         
 	fi
-    
-    wait
+    fi
+
+
+    if [ $dowait -eq 1 ]
+    then
+        wait
+    fi
     ##########################################################################
     
 
 
-    if [ $rminitfiles -eq 1 ]
-	then
-        # remove created file
-	    rm -rf $myinitfile7
+    if [ $dowait -eq 1 ]
+    then
+        if [ $rminitfiles -eq 1 ]
+	    then
+            # remove created file
+	        rm -rf $myinitfile7
+        fi
     fi
 
 fi
