@@ -6033,15 +6033,15 @@ def mkframe(fname,ax=None,ax2=None,cb=1,tight=False,useblank=True,vmin=None,vmax
     elif lenx is not None:
         extent=(-lenx,lenx,-len,len)
         shrinkcb=shrink*(len/lenx)**0.91
-        print("2 lenx=%g leny=%g shrinkcb=%g" % (lenx,leny,shrinkcb)) ; sys.stdout.flush()
+        print("2 lenx=%g len=%g shrinkcb=%g" % (lenx,len,shrinkcb)) ; sys.stdout.flush()
     elif leny is not None:
         extent=(-len,len,-leny,leny)
         shrinkcb=shrink*(leny/len)**0.91
-        print("3 lenx=%g leny=%g shrinkcb=%g" % (lenx,leny,shrinkcb)) ; sys.stdout.flush()
+        print("3 len=%g leny=%g shrinkcb=%g" % (len,leny,shrinkcb)) ; sys.stdout.flush()
     else:
         extent=(-len,len,-len,len)
         shrinkcb=shrink
-        print("4 lenx=%g leny=%g shrinkcb=%g" % (lenx,leny,shrinkcb)) ; sys.stdout.flush()
+        print("4 len=%g len=%g shrinkcb=%g" % (len,len,shrinkcb)) ; sys.stdout.flush()
     #
     if lenx is None:
         lenx=len

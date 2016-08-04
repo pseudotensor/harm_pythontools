@@ -870,39 +870,45 @@ then
     oldpath=`pwd`
     cd $MYPYTHONPATH/scripts/
 
-    if [ $system -eq 3 ]
-    then
-        sed -e 's/USEKIJMCK=0/USEKIJMCK=1/g' -e 's/USEKRAKEN=1/USEKRAKEN=0/g' -e 's/USENAUTILUS=1/USENAUTILUS=0/g' -e 's/USEMPI=1/USEMPI=0/g' Makefile > Makefile.temp
-        cp Makefile.temp Makefile
-    elif [ $system -eq 4 ]
-    then
-        sed -e 's/USEKIJMCK=1/USEKIJMCK=0/g' -e 's/USEKRAKEN=1/USEKRAKEN=0/g' -e 's/USENAUTILUS=0/USENAUTILUS=1/g' -e 's/USEMPI=0/USEMPI=1/g' Makefile > Makefile.temp
-        cp Makefile.temp Makefile
-    elif [ $system -eq 5 ]
-    then
-        sed -e 's/USEKIJMCK=1/USEKIJMCK=0/g' -e 's/USEKRAKEN=0/USEKRAKEN=1/g' -e 's/USENAUTILUS=1/USENAUTILUS=0/g' -e 's/USEMPI=0/USEMPI=1/g' Makefile > Makefile.temp
-        cp Makefile.temp Makefile
-    elif [ $system -eq 6 ]
-    then
-        sed -e 's/USEKIJMCK=0/USEKIJMCK=1/g' -e 's/USEKRAKEN=1/USEKRAKEN=0/g' -e 's/USENAUTILUS=1/USENAUTILUS=0/g' -e 's/USEMPI=1/USEMPI=0/g' Makefile > Makefile.temp
-        cp Makefile.temp Makefile
-    elif [ $system -eq 7 ] # leave as default stampede
-    then
-        sed -e 's/USEKIJMCK=1/USEKIJMCK=0/g' -e 's/USEKRAKEN=1/USEKRAKEN=0/g' -e 's/USENAUTILUS=1/USENAUTILUS=0/g' -e 's/USESTAMPEDE=0/USESTAMPEDE=1/g' -e 's/USEMPI=0/USEMPI=1/g' Makefile > Makefile.temp
-        cp Makefile.temp Makefile
-    elif [ $system -eq 8 ] # leave as default stampede
-    then
-        sed -e 's/USEKIJMCK=1/USEKIJMCK=0/g' -e 's/USEKRAKEN=1/USEKRAKEN=0/g' -e 's/USENAUTILUS=1/USENAUTILUS=0/g' -e 's/USESTAMPEDE=0/USESTAMPEDE=1/g' -e 's/USEMPI=0/USEMPI=1/g' Makefile > Makefile.temp
-        cp Makefile.temp Makefile
-    else
-        echo "Not setup for system=$sytem"
-        exit
-    fi
-
-    make clean ; make
-    cd $oldpath
     makemoviecfullfile=$MYPYTHONPATH/scripts/makemoviec
-    chmod ug+rx $makemoviecfullfile
+    if [ -e makemoviec [
+    then
+        echo "nothing to do"
+    else
+
+        if [ $system -eq 3 ]
+        then
+            sed -e 's/USEKIJMCK=0/USEKIJMCK=1/g' -e 's/USEKRAKEN=1/USEKRAKEN=0/g' -e 's/USENAUTILUS=1/USENAUTILUS=0/g' -e 's/USEMPI=1/USEMPI=0/g' Makefile > Makefile.temp
+            cp Makefile.temp Makefile
+        elif [ $system -eq 4 ]
+        then
+            sed -e 's/USEKIJMCK=1/USEKIJMCK=0/g' -e 's/USEKRAKEN=1/USEKRAKEN=0/g' -e 's/USENAUTILUS=0/USENAUTILUS=1/g' -e 's/USEMPI=0/USEMPI=1/g' Makefile > Makefile.temp
+            cp Makefile.temp Makefile
+        elif [ $system -eq 5 ]
+        then
+            sed -e 's/USEKIJMCK=1/USEKIJMCK=0/g' -e 's/USEKRAKEN=0/USEKRAKEN=1/g' -e 's/USENAUTILUS=1/USENAUTILUS=0/g' -e 's/USEMPI=0/USEMPI=1/g' Makefile > Makefile.temp
+            cp Makefile.temp Makefile
+        elif [ $system -eq 6 ]
+        then
+            sed -e 's/USEKIJMCK=0/USEKIJMCK=1/g' -e 's/USEKRAKEN=1/USEKRAKEN=0/g' -e 's/USENAUTILUS=1/USENAUTILUS=0/g' -e 's/USEMPI=1/USEMPI=0/g' Makefile > Makefile.temp
+            cp Makefile.temp Makefile
+        elif [ $system -eq 7 ] # leave as default stampede
+        then
+            sed -e 's/USEKIJMCK=1/USEKIJMCK=0/g' -e 's/USEKRAKEN=1/USEKRAKEN=0/g' -e 's/USENAUTILUS=1/USENAUTILUS=0/g' -e 's/USESTAMPEDE=0/USESTAMPEDE=1/g' -e 's/USEMPI=0/USEMPI=1/g' Makefile > Makefile.temp
+            cp Makefile.temp Makefile
+        elif [ $system -eq 8 ] # leave as default stampede
+        then
+            sed -e 's/USEKIJMCK=1/USEKIJMCK=0/g' -e 's/USEKRAKEN=1/USEKRAKEN=0/g' -e 's/USENAUTILUS=1/USENAUTILUS=0/g' -e 's/USESTAMPEDE=0/USESTAMPEDE=1/g' -e 's/USEMPI=0/USEMPI=1/g' Makefile > Makefile.temp
+            cp Makefile.temp Makefile
+        else
+            echo "Not setup for system=$sytem"
+            exit
+        fi
+
+        make clean ; make
+        chmod ug+rx $makemoviecfullfile
+    fi
+    cd $oldpath
 
 fi
 
