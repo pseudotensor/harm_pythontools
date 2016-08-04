@@ -3212,6 +3212,9 @@ def getdefaulttimes1():
         defaultftf=1e4
     #
     if isradmodelnrad(modelname)==1:
+        defaultfti=4000
+        defaultftf=1e5
+    if modelname==13 or modelname==16:
         defaultfti=1000
         defaultftf=1e5
     if ismarkmodel(modelname)==1:
@@ -8690,12 +8693,12 @@ def rfdheader(fin=None,typefile=1):
         gotrad=0 # where gotrad defined as 0 and overwritten if appropriate
         if(numcolumns==16 or numcolumns==29):
             gotrad=1
-        if(numcolumns==31):
+        if(numcolumns==30 or numcolumns==31):
             gotrad=2
         #
         global gotkappas
         gotkappas=0 # whether got kappas from fieldline files
-        if(numcolumns==29 or numcolumns==31):
+        if(numcolumns==29 or numcolumns==30 or numcolumns==31):
             gotkappas=1
             #
         rddims(gotrad)
@@ -8862,7 +8865,7 @@ def rfd(fieldlinefilename,**kwargs):
 #    #
 
     #
-    if(numcolumns==29 or numcolumns==31):
+    if(numcolumns==29 or numcolumns==30 or numcolumns==31):
         #
         rho=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
         rho=d[0,:,:,:]
@@ -9004,7 +9007,7 @@ def rfd(fieldlinefilename,**kwargs):
     # get any additional radiation variables
     #
     global gotrad
-    if(numcolumns==16 or numcolumns==29):
+    if(numcolumns==16 or numcolumns==29 or numcolumns==30):
         Erf=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
         uradu=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
         Erf=d[sii,:,:,:] # radiation frame radiation energy density
@@ -9053,7 +9056,7 @@ def rfd(fieldlinefilename,**kwargs):
         uradu=uu*0+1E-30
     #
     global Tgas,Tradff,nradff,varexpf,kappa,kappan,kappaemit,kappanemit,kappaes,elambda,nlambda
-    if(numcolumns==31):
+    if(numcolumns==30 or numcolumns==31):
         #
         Tgas=d[sii,:,:,:]
         Tradff=d[sii+1,:,:,:]
