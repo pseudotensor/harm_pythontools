@@ -6670,24 +6670,24 @@ def mkframe(fname,ax=None,ax2=None,cb=1,tight=False,useblank=True,vmin=None,vmax
         itaueffradkappahmopalreal = reinterp(tauradeffkappahmopalreal,extent,ncell,domask=1.0)
         itaueffradkappachiantiopalreal = reinterp(tauradeffkappachiantiopalreal,extent,ncell,domask=1.0)
         itaueffradkappaffeereal = reinterp(tauradeffkappaffeereal,extent,ncell,domask=1.0)
-        ax.contour(itaurad,linewidths=2,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
-        #ax.contour(itaueffradkappadensityreal,linewidths=2,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
-        ax.contour(itaueffradkappadensityrealnofe,linewidths=2,colors='purple',extent=extent,hold='on',origin='lower',levels=(1,))
-        ax.contour(itaueffradkappasyreal,linewidths=2,colors='red',extent=extent,hold='on',origin='lower',levels=(1,))
-        ax.contour(itaueffradkappadcreal,linewidths=2,colors='brown',extent=extent,hold='on',origin='lower',levels=(1,))
-        ax.contour(itaueffradkappaesreal,linewidths=2,colors='yellow',extent=extent,hold='on',origin='lower',levels=(1,))
-        #ax.contour(itaueffradkappandensityreal,linewidths=2,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
-        #ax.contour(itaueffradkappansyreal,linewidths=2,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
-        #ax.contour(itaueffradkappandcreal,linewidths=2,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
-        ##ax.contour(itaueffradphiphi,linewidths=2,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
-        #ax.contour(itaueffradkappachiantireal,linewidths=2,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
-        ax.contour(itaueffradkappaffreal,linewidths=2,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
-        ax.contour(itaueffradkappabfreal,linewidths=2,colors='white',extent=extent,hold='on',origin='lower',levels=(1,))
-        #ax.contour(itaueffradkappafereal,linewidths=2,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
-        #ax.contour(itaueffradkappamolreal,linewidths=2,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
-        #ax.contour(itaueffradkappahmopalreal,linewidths=2,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
-        #ax.contour(itaueffradkappachiantiopalreal,linewidths=2,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
-        #ax.contour(itaueffradkappaffeereal,linewidths=2,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
+        ax.contour(itaurad,linewidths=4,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
+        #ax.contour(itaueffradkappadensityreal,linewidths=4,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
+        #ax.contour(itaueffradkappadensityrealnofe,linewidths=4,colors='purple',extent=extent,hold='on',origin='lower',levels=(1,)) # already there
+        ax.contour(itaueffradkappasyreal,linewidths=4,colors='red',extent=extent,hold='on',origin='lower',levels=(1,))
+        ax.contour(itaueffradkappadcreal,linewidths=4,colors='brown',extent=extent,hold='on',origin='lower',levels=(1,))
+        #ax.contour(itaueffradkappaesreal,linewidths=4,colors='yellow',extent=extent,hold='on',origin='lower',levels=(1,)) # already there
+        #ax.contour(itaueffradkappandensityreal,linewidths=4,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
+        #ax.contour(itaueffradkappansyreal,linewidths=4,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
+        #ax.contour(itaueffradkappandcreal,linewidths=4,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
+        ##ax.contour(itaueffradphiphi,linewidths=4,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
+        #ax.contour(itaueffradkappachiantireal,linewidths=4,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
+        ax.contour(itaueffradkappaffreal,linewidths=4,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
+        ax.contour(itaueffradkappabfreal,linewidths=4,colors='white',extent=extent,hold='on',origin='lower',levels=(1,))
+        #ax.contour(itaueffradkappafereal,linewidths=4,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
+        #ax.contour(itaueffradkappamolreal,linewidths=4,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
+        #ax.contour(itaueffradkappahmopalreal,linewidths=4,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
+        #ax.contour(itaueffradkappachiantiopalreal,linewidths=4,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
+        #ax.contour(itaueffradkappaffeereal,linewidths=4,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
     #
     #
     print("HERE10") ; sys.stdout.flush()
@@ -9436,6 +9436,7 @@ def prpow(x,y):
 def getkappasdetails(gotrad, gotkappas):
     global GGG,CCCTRUE,MSUNCM,MPERSUN,LBAR,TBAR,VBAR,RHOBAR,MBAR,ENBAR,UBAR,TEMPBAR,ARAD_CODE,NRAD_ARAD_CODE,XFACT,YFACT,ZFACT,MUMEAN,ZATOM,AATOM,MUE,MUI,OPACITYBAR,MASSCM,KORAL2HARMRHO1,MUELE,YELE,Leddcode,Mdoteddcode,rhoeddcode,ueddcode,beddcode
     BFIELDBAR=(VBAR*sqrt(RHOBAR))  #// speed ~ b/sqrt(rho)
+    BFIELDGAUSSBAR=(BFIELDBAR*np.sqrt(4.0*np.pi))
     K_BOLTZ=(1.3806488e-16) #// cgs in erg/K
     M_PROTON=(1.67262158e-24) #// proton mass in cgs in grams
     MB=(1.66054E-24) #// = 1/N_A = 1/(Avogadro's number) = baryon mass in cgs in grams (as often used in general EOSs)
@@ -9492,7 +9493,7 @@ def getkappasdetails(gotrad, gotkappas):
     # "real" here means cgs and Gaussian for B and Kelvin for temperature
     rhoreal=rho*RHOBAR
     nereal=3.0110683499999995e23*rhoreal*(1.0 + XFACT)
-    Breal=Bco*BFIELDBAR
+    Breal=Bco*BFIELDGAUSSBAR
     Tereal=Te*TEMPBAR+TEMPMINKELVIN() # Apply minimum electron temperature so ff and fb opacities don't diverge
     Tereal[Tereal>TEMPMAXKELVIN()]=TEMPMAXKELVIN()
     Tgreal=Tg*TEMPBAR+TEMPMINKELVIN() # Apply minimum electron temperature so ff and fb opacities don't diverge
@@ -29391,7 +29392,7 @@ def mkavgfigs5():
             vminforframe=np.amin(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:])
             vmaxforframe=np.amax(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:])
             print("eflux: %g %g" % (vminforframe,vmaxforframe));sys.stdout.flush()
-            returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig3c",veldensity=1,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=False,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,doefluxlog=True,alpha=0.2,showuu1eq0=True,dostreamlines=False,showqty1=False,showtaueffs=True)
+            returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig3c",veldensity=1,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,doefluxlog=True,alpha=0.2,showuu1eq0=True,dostreamlines=False,showqty1=False,showtaueffs=True)
         if 1==1: #
             mylen = 130.0
             mylenshowx=(25.0/30.0)*mylen
@@ -29404,7 +29405,7 @@ def mkavgfigs5():
             vminforframe=np.amin(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:])
             vmaxforframe=np.amax(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:])
             print("eflux: %g %g" % (vminforframe,vmaxforframe));sys.stdout.flush()
-            returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig3cbigger",veldensity=1,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=False,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,doefluxlog=True,alpha=0.2,showuu1eq0=True,dostreamlines=False,showqty1=False,showtaueffs=True)
+            returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig3cbigger",veldensity=1,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,doefluxlog=True,alpha=0.2,showuu1eq0=True,dostreamlines=False,showqty1=False,showtaueffs=True)
         if 1==1: #
             mylen = 500.0
             mylenshowx=(25.0/30.0)*mylen
@@ -29417,7 +29418,7 @@ def mkavgfigs5():
             vminforframe=np.amin(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:])
             vmaxforframe=np.amax(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:])
             print("eflux: %g %g" % (vminforframe,vmaxforframe));sys.stdout.flush()
-            returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig3cbiggest",veldensity=1,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=False,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,doefluxlog=True,alpha=0.2,showuu1eq0=True,dostreamlines=False,showqty1=False,showtaueffs=True)
+            returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig3cbiggest",veldensity=1,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,doefluxlog=True,alpha=0.2,showuu1eq0=True,dostreamlines=False,showqty1=False,showtaueffs=True)
         if 1==1: # 
             mylen = 40.0
             mylenshowx=(25.0/30.0)*mylen
