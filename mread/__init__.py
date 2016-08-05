@@ -6483,6 +6483,7 @@ def mkframe(fname,ax=None,ax2=None,cb=1,tight=False,useblank=True,vmin=None,vmax
                 #cbar = plt.colorbar(CS,ax=ax,format=r'$10^{%0.1f}$',shrink=shrinkcb)
                 #cbar = plt.colorbar(CS,cax=cax,format=r'$10^{%0.1f}$')  #,shrink=shrinkcb,fraction=0.046,pad=0.04) # draw colorbar
                 cbar = plt.colorbar(CS,ax=ax,format=r'$10^{%0.1f}$',pad=0.04,shrink=shrinkcb)  #,shrink=shrinkcb,fraction=0.046,pad=0.04) # draw colorbar
+                cbar.ax.tick_params(labelsize=10)
         #
         if cb == 2:
             print("HERE5Bb") ; sys.stdout.flush()
@@ -6494,6 +6495,15 @@ def mkframe(fname,ax=None,ax2=None,cb=1,tight=False,useblank=True,vmin=None,vmax
                 cbar = plt.colorbar(CS,ax=ax,pad=0.04,shrink=shrinkcb) # ,fraction=0.046
             else:
                 cbar = plt.colorbar(CS,ax=ax,pad=0.04,shrink=shrinkcb,format=r'$10^{%0.1f}$') # ,fraction=0.046
+                cbar.ax.tick_params(labelsize=10)
+            #
+        if cb == 3:
+            print("HERE5Bc") ; sys.stdout.flush()
+            if dologz==0:
+                cbar = plt.colorbar(CS,ax=ax,pad=0.04)
+            else:
+                cbar = plt.colorbar(CS,ax=ax,pad=0.04,format=r'$10^{%0.1f}$')
+                cbar.ax.tick_params(labelsize=10)
             #
         #
         if tight==True:
@@ -24866,7 +24876,7 @@ def mkinitfinalplotpost(fname=None,plottype=0,aphijetouter=None,inputlevs=None,n
                 elif plottype==2:
                     (vminforframe,vmaxforframe)=vminmax_entropy(qty=fentropy())
                 #
-                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=1,tight=True,pt=False,dorho=False,doentropy=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
+                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=3,tight=True,pt=False,dorho=False,doentropy=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
             elif whichplot==1:
                 if plottype==0 or plottype==1:
                     vmaxforframe=np.max(np.log10(bsq[0:iofr(framesize),:,:]/ueddcode))
@@ -24878,7 +24888,7 @@ def mkinitfinalplotpost(fname=None,plottype=0,aphijetouter=None,inputlevs=None,n
                 else:
                     (vminforframe,vmaxforframe)=vminmax_bsq(qty=bsq)
                 #
-                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=1,tight=True,pt=False,dorho=False,dobsq=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
+                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=3,tight=True,pt=False,dorho=False,dobsq=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
             elif whichplot==2:
                 if plottype==0 or plottype==1:
                     vminforframe=np.log10(1.0/np.max(1.0/fbetatot()[0:iofr(framesize),:,:]))
@@ -24888,17 +24898,17 @@ def mkinitfinalplotpost(fname=None,plottype=0,aphijetouter=None,inputlevs=None,n
                     #vmaxforframe=min(50.0,np.max(fbetatot()[0:iofr(framesize),:,:]))
                     vminforframe=-3.0
                     vmaxforframe=3.0
-                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=1,tight=True,pt=False,dorho=False,dobeta=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
+                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=3,tight=True,pt=False,dorho=False,dobeta=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
             elif whichplot==3:
                 vminforframe=0
                 vmaxforframe=np.max(Q1[0:iofr(framesize),:,:])
                 #
-                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=1,tight=True,pt=False,dorho=False,doQ1=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
+                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=3,tight=True,pt=False,dorho=False,doQ1=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
             elif whichplot==4:
                 vminforframe=np.min(Q2[0:iofr(framesize),:,:])
                 vmaxforframe=min(10.0,np.max(Q2[0:iofr(framesize),:,:]))
                 #
-                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=1,tight=True,pt=False,dorho=False,doQ2=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
+                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=3,tight=True,pt=False,dorho=False,doQ2=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,inputcoloraphi='black')
             elif whichplot==5:
                 if plottype==0 or plottype==1 or plottype==2:
                     vmaxforframe=np.max(np.log10(rho[0:iofr(framesize),:,:]/rhoeddcode))
@@ -24909,7 +24919,7 @@ def mkinitfinalplotpost(fname=None,plottype=0,aphijetouter=None,inputlevs=None,n
                 #elif plottype==2:
                 #    (vminforframe,vmaxforframe)=vminmax_rho(qty=rho)
                 #
-                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=1,tight=True,pt=False,dorho=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,dobsqorholine=dobsqorholine,inputcoloraphi='green')
+                returnlevs=mkframe("inittype%04d_Rz%g" % (findex,plotsize),vmin=vminforframe,vmax=vmaxforframe,lenx=plotsizex,leny=plotsizey,ax=cax,cb=3,tight=True,pt=False,dorho=True,doaphi=True,dostreamlines=False,shrink=0.8,doaphicont=aphijetouter,inputlevs=inputlevs,numcontours=numcontours,aphipow=aphipow,dobsqorholine=dobsqorholine,inputcoloraphi='green')
                 cax.set_aspect(1)
             #
         if 1==1:
