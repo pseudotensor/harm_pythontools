@@ -1880,7 +1880,7 @@ def assignavg2dvars(avgmem):
     # 17
     global avg_kappadensityreal,avg_kappadensityrealnofe,avg_kappasyreal,avg_kappadcreal,avg_kappaesreal,avg_kappandensityreal,avg_kappansyreal,avg_kappandcreal,avg_phiphi,avg_kappachiantireal,avg_kappaffreal,avg_kappabfreal,avg_kappafereal,avg_kappamolreal,avg_kappahmopalreal,avg_kappachiantiopalreal,avg_kappaffeereal
     # 1
-    global avg_varexpf
+    global avg_varexpf,avg_varexpflab
     #avg defs
     i=0
     # 1
@@ -2029,8 +2029,9 @@ def assignavg2dvars(avgmem):
         avg_kappahmopalreal=avgmem[i,:,:,None];i+=1 # i=1
         avg_kappachiantiopalreal=avgmem[i,:,:,None];i+=1 # i=1
         avg_kappaffeereal=avgmem[i,:,:,None];i+=1 # i=1
-        # 1
+        # 2
         avg_varexpf=avgmem[i,:,:,None];i+=1 # i=1
+        avg_varexpflab=avgmem[i,:,:,None];i+=1 # i=1
     #
     # number of full 2D quantities
     nqtyavg=i
@@ -2087,7 +2088,7 @@ def getnqtyavg():
     global gotrad
     if(gotrad):
         value=value+5 # for KAPPAUSER and KAPPAESUSER and tauradintegrated and tauradeffintegrated
-        value=value+12+17+1 # Tgas,Trad's,kappas,etc.
+        value=value+12+17+2 # Tgas,Trad's,kappas,etc.
     return(value)
 
 
@@ -2351,8 +2352,8 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     global avg_Tgas,avg_Tradfflte,avg_Tradff,avg_Tradlablte,avg_Tradfftype1,avg_Tradlabtype1,avg_Tradfftype3,avg_Tradlabtype3,avg_nradffratlte,avg_nradlabratlte,avg_nradffrat,avg_nradlabrat
     # 17
     global avg_kappadensityreal,avg_kappadensityrealnofe,avg_kappasyreal,avg_kappadcreal,avg_kappaesreal,avg_kappandensityreal,avg_kappansyreal,avg_kappandcreal,avg_phiphi,avg_kappachiantireal,avg_kappaffreal,avg_kappabfreal,avg_kappafereal,avg_kappamolreal,avg_kappahmopalreal,avg_kappachiantiopalreal,avg_kappaffeereal
-    # 1
-    global avg_varexpf
+    # 2
+    global avg_varexpf,avg_varexpflab
     #
     if whichgroup < 0 or itemspergroup <= 0:
         print( "get2davgone: whichgroup = %d, itemspergroup = %d not allowed" % (whichgroup, itemspergroup) ) ; sys.stdout.flush()
@@ -2574,7 +2575,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
             # 12
             avg_Tgas+=(np.fabs(Tgas)).sum(-1)[:,:,None]*localdt[itert]
             #
-            (Tradfflte,Tradlablte,nradffratlte,nradlabratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1,Tradfftype3,Tradlabtype3)=getTrads()
+            (Tradfflte,Tradlablte,nradffratlte,nradlabratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1,Tradfftype3,Tradlabtype3,varexpflab)=getTrads()
             #
             avg_Tradfflte+=(np.fabs(Tradfflte)).sum(-1)[:,:,None]*localdt[itert]
             avg_Tradff+=(np.fabs(Tradff)).sum(-1)[:,:,None]*localdt[itert]
@@ -2607,8 +2608,9 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
             avg_kappahmopalreal+=(np.fabs(kappahmopalreal)).sum(-1)[:,:,None]*localdt[itert]
             avg_kappachiantiopalreal+=(np.fabs(kappachiantiopalreal)).sum(-1)[:,:,None]*localdt[itert]
             avg_kappaffeereal+=(np.fabs(kappaffeereal)).sum(-1)[:,:,None]*localdt[itert]
-            # 1
+            # 2
             avg_varexpf+=(np.fabs(varexpf)).sum(-1)[:,:,None]*localdt[itert]
+            avg_varexpflab+=(np.fabs(varexpflab)).sum(-1)[:,:,None]*localdt[itert]
         #
         #
         #########
@@ -2667,27 +2669,30 @@ def getTrads():
             Rijkapanu = (Erf/3.0)*(4.0*uradu[kapa]*uraddlocal[nu]+delta)
             Ruu= Ruu + Rijkapanu*udlocal[kapa]*uu[nu]
     # fluid-frame temperature of radiation
+    SMALL=1E-50
     Tradfflte = pow(np.fabs(Ruu)/ARAD_CODE,0.25) # ASSUMPTION: PLANCK-like in comoving frame even though radiation flowing through cell
-    R00 = (Erf/3.0)*(4.0*uradu[0]*uraddlocal[0]+1)
+    # R00 can go negative inside ergosphere
+    R00 = np.fabs((-(Erf/3.0)*(4.0*uradu[0]*uraddlocal[0]+1))+SMALL)
     Tradlablte = pow(np.fabs(R00)/ARAD_CODE,0.25) # ASSUMPTION: PLANCK-like in comoving frame even though radiation flowing through cell
     EBAR0=(2.7011780329190638961)
     nradffratlte = Tradfflte**3/EBAR0 #NRAD_ARAD_CODE*
-    Ruurat=Ruu/ARAD_CODE
-    nradffrat=nradff #/NRAD_ARAD_CODE # already inside from harmrad
-    nradlabrat=nrad*uradu[0] #/NRAD_ARAD_CODE # already inside from harmrad
+    Ruurat=np.float64(Ruu/ARAD_CODE)
+    nradffrat=np.float64(nradff) #/NRAD_ARAD_CODE # already inside from harmrad
+    nradlabrat=np.fabs(SMALL+np.float64(nrad*uradu[0])) #/NRAD_ARAD_CODE # already inside from harmrad
     #
-    R00rat=R00/ARAD_CODE
+    R00rat=np.float64(R00/ARAD_CODE)
     nradlabratlte = Tradlablte**3/EBAR0 #NRAD_ARAD_CODE*
     #
-    SMALL=1E-50
     Tradfftype1=Ruurat/(nradffrat*EBAR0 + SMALL)
     Tradlabtype1=R00rat/(nradlabrat*EBAR0 + SMALL)
     #
     Tradfftype3=(Ruurat*(0.333333333327962 + 0.060724957534625555/(0.6467556546674441 + (0.018783960364223317*Power(Ruurat,3))/Power(nradffrat,4))))/(SMALL+nradffrat) # should be same as Tradff
     Tradlabtype3=(R00rat*(0.333333333327962 + 0.060724957534625555/(0.6467556546674441 + (0.018783960364223317*Power(R00rat,3))/Power(nradlabrat,4))))/(SMALL+nradlabrat)
     #
+    varexpflab= 1.6467556546674442/(0.6467556546674441 + (0.018783960364223317*Power(R00rat,3))/Power(SMALL+nradlabrat,4));
     #
-    return(Tradfflte,Tradlablte,nradffratlte,nradlabratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1,Tradfftype3,Tradlabtype3)
+    #
+    return(Tradfflte,Tradlablte,nradffratlte,nradlabratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1,Tradfftype3,Tradlabtype3,varexpflab)
 
 
 def extractlena():
@@ -9078,6 +9083,7 @@ def rfd(fieldlinefilename,**kwargs):
     #
     global Tgas,Tradff,nradff,varexpf,kappa,kappan,kappaemit,kappanemit,kappaes,elambda,nlambda
     if(numcolumns==30 or numcolumns==31):
+        print("inside numcolumns==30 or numcolumsn==31")  ; sys.stdout.flush()
         #
         Tgas=d[sii,:,:,:]
         Tradff=d[sii+1,:,:,:]
@@ -9421,22 +9427,26 @@ def getkappas(gotrad, gotkappas):
         #
         prad=(4.0/3.0-1.0)*Erf
         # code Tgas for ideal gas
-        Tgas=pg/(rho/MUMEAN)
+        try:
+            Tgas
+        except NameError:
+            Tgas=pg/(rho/MUMEAN)
         #
-        #Eradff = R^a_b u_a u^b
-        Ruu=0.0
-        uraddlocal = mdot(gv3,uradu)                  #g_mn urad^n
-        udlocal = mdot(gv3,uu)                  #g_mn u^n
-        for kapa in np.arange(4):
-            for nu in np.arange(4):
-                if(kapa==nu): delta = 1
-                else: delta = 0
-                Rijkapanu = (Erf/3.0)*(4.0*uradu[kapa]*uraddlocal[nu]+delta)
-                Ruu= Ruu + Rijkapanu*udlocal[kapa]*uu[nu]
-        # fluid-frame temperature of radiation
-        Trad = pow(np.fabs(Ruu)/ARAD_CODE,0.25) # ASSUMPTION: PLANCK-like in comoving frame even though radiation flowing through cell
         #
         if(gotkappas==0 or gotrad==1):
+            #Eradff = R^a_b u_a u^b
+            Ruu=0.0
+            uraddlocal = mdot(gv3,uradu)                  #g_mn urad^n
+            udlocal = mdot(gv3,uu)                  #g_mn u^n
+            for kapa in np.arange(4):
+                for nu in np.arange(4):
+                    if(kapa==nu): delta = 1
+                    else: delta = 0
+                    Rijkapanu = (Erf/3.0)*(4.0*uradu[kapa]*uraddlocal[nu]+delta)
+                    Ruu= Ruu + Rijkapanu*udlocal[kapa]*uu[nu]
+            # fluid-frame temperature of radiation
+            Trad = pow(np.fabs(Ruu)/ARAD_CODE,0.25) # ASSUMPTION: PLANCK-like in comoving frame even though radiation flowing through cell
+            
             # use rho to keep kappa low.
             KAPPAUSER=(rho*KAPPA*KAPPA_FF_CODE_PYTHON(rho,Tgas+TEMPMIN(),Trad+TEMPMIN()))
             KAPPAUSERnofe=np.copy(KAPPAUSER)
@@ -28423,6 +28433,7 @@ def mkavgfigs3():
                 avg1.write("%g " % (avg_kappachiantiopalreal[ihor,jj,0]))
                 avg1.write("%g " % (avg_kappaffeereal[ihor,jj,0]))
                 avg1.write("%g " % (avg_varexpf[ihor,jj,0]))
+                avg1.write("%g " % (avg_varexpflab[ihor,jj,0]))
             avg1.write("\n")
         #
         avg1.close()
@@ -28621,6 +28632,7 @@ def mkavgfigs3():
             avgvsr_kappachiantiopalreal=intangle_foravg2d(gdet*denfactor*avg_kappachiantiopalreal,**keywordsrhosq)/rhosqint
             avgvsr_kappaffeereal=intangle_foravg2d(gdet*denfactor*avg_kappaffeereal,**keywordsrhosq)/rhosqint
             avgvsr_varexpf=intangle_foravg2d(gdet*denfactor*avg_varexpf,**keywordsrhosq)/rhosqint
+            avgvsr_varexpflab=intangle_foravg2d(gdet*denfactor*avg_varexpflab,**keywordsrhosq)/rhosqint
         #
         #
         if whichhortype==0:
@@ -28803,6 +28815,7 @@ def mkavgfigs3():
                 avg1.write("%g " % (avgvsr_kappachiantiopalreal[ii]))
                 avg1.write("%g " % (avgvsr_kappaffeereal[ii]))
                 avg1.write("%g " % (avgvsr_varexpf[ii]))
+                avg1.write("%g " % (avgvsr_varexpflab[ii]))
             avg1.write("\n")
         #
         avg1.close()
@@ -28984,6 +28997,7 @@ def mkavgfigs3():
                     avg1.write("%g " % (avg_kappachiantiopalreal[ii,jj,0]))
                     avg1.write("%g " % (avg_kappaffeereal[ii,jj,0]))
                     avg1.write("%g " % (avg_varexpf[ii,jj,0]))
+                    avg1.write("%g " % (avg_varexpflab[ii,jj,0]))
                 avg1.write("\n")
             # end over ii
         # end over jj
@@ -31036,7 +31050,7 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     #Tgas=pg/(rho/MUMEAN)
     #
     #
-    (Tradfflte,Tradlablte,nradffratlte,nradlabratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1,Tradfftype3,Tradlabtype3)=getTrads()
+    (Tradfflte,Tradlablte,nradffratlte,nradlabratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1,Tradfftype3,Tradlabtype3,varexpflab)=getTrads()
     #
     global gotrad,gotkappas
     (kappadensityreal,kappadensityrealnofe,kappasyreal,kappadcreal,kappaesreal,kappandensityreal,kappansyreal,kappandcreal,phiphi,kappachiantireal,kappaffreal,kappabfreal,kappafereal,kappamolreal,kappahmopalreal,kappachiantiopalreal,kappaffeereal)=getkappasdetails(gotrad, gotkappas)
@@ -31089,7 +31103,7 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     #
     tauradlocal=(KAPPAUSERnofe+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
     #
-    if 1==1:
+    if 1==0:
         # use time-phi average
         loadavg()
         KAPPAUSER=np.copy(rho)
@@ -31158,9 +31172,18 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     if(which==13):
         myfun=bsq/rho
     if(which==14):
+        global Tgas
         myfun=np.log10(Tgas*TEMPBAR)
     if(which==15):
         myfun=np.log10(Tradlabtype1*TEMPBAR)
+        #myfun=(Tradlabtype1*TEMPBAR)
+        
+        #uraddlocal = mdot(gv3,uradu)                  #g_mn urad^n
+        #udlocal = mdot(gv3,uu)                  #g_mn u^n
+        ## R00 can go negative inside ergosphere
+        #SMALL=1E-50
+        #R00 = np.fabs(-(Erf/3.0)*(4.0*uradu[0]*uraddlocal[0]+1)+SMALL)
+        #myfun=R00
     if(which==16):
         global uradd
         uradd = mdot(gv3,uradu)                  #g_mn urad^n
@@ -31276,6 +31299,29 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
         myfun=np.log10(Tradlabtype3*TEMPBAR)
     if(which==71):
         myfun=np.log10(Tradlabtype3/Tradlabtype1)
+    if(which==72):
+        #myfun=np.log10(Tradfftype3*TEMPBAR)
+
+        Ruu=0.0
+        uraddlocal = mdot(gv3,uradu)                  #g_mn urad^n
+        udlocal = mdot(gv3,uu)                  #g_mn u^n
+        for kapa in np.arange(4):
+            for nu in np.arange(4):
+                if(kapa==nu): delta = 1
+                else: delta = 0
+                Rijkapanu = (Erf/3.0)*(4.0*uradu[kapa]*uraddlocal[nu]+delta)
+                Ruu= Ruu + Rijkapanu*udlocal[kapa]*uu[nu]
+        # fluid-frame temperature of radiation
+        SMALL=1E-50
+        Ruurat=np.float64(Ruu/ARAD_CODE)
+        myfun=Ruurat**3
+    if(which==73):
+        myfun=np.log10(Tradff*TEMPBAR)
+    if(which==74):
+        myfun=varexpflab
+    if(which==75):
+        nradffrat=np.float64(nradff)
+        myfun=nradffrat**4
     #
     if(which==100):
         myfun=np.log10(ug/rho)
@@ -31312,6 +31358,7 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     plt.imshow(myfun[:,:,whichaphi])
     plt.colorbar()
     #
+    #ax.contour(myfun[:,:,whichaphi],linewidths=4,colors='yellow', levels=(0,))
     #ax.contour(tauradlocal[:,:,whichaphi],linewidths=4,colors='cyan', levels=(1,))
     ax.contour(tauradintegrated[:,:,whichaphi],linewidths=4,colors='yellow', levels=(1,))
     ax.contour(tauradeffintegrated[:,:,whichaphi],linewidths=4,colors='purple', levels=(1,))
@@ -31405,9 +31452,13 @@ def fcol(filename=None,fignum=None,whichplot=1):
     #
     prad=(4.0/3.0-1.0)*Erf
     # code Tgas for ideal gas
-    Tgas=pg/(rho/MUMEAN)
+    try:
+        Tgas
+    except NameError:
+        Tgas=pg/(rho/MUMEAN)
+        #
     #
-    (Tradfflte,Tradlablte,nradffratlte,nradlabratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1,Tradfftype3,Tradlabtype3)=getTrads()
+    (Tradfflte,Tradlablte,nradffratlte,nradlabratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1,Tradfftype3,Tradlabtype3,varexpflab)=getTrads()
     #
     #
     global gotrad,gotkappas
@@ -31502,9 +31553,14 @@ def compkappa(filename=None,fignum=None,whichplot=1):
     #
     prad=(4.0/3.0-1.0)*Erf
     # code Tgas for ideal gas
-    Tgas=pg/(rho/MUMEAN)
+    # code Tgas for ideal gas
+    try:
+        Tgas
+    except NameError:
+        Tgas=pg/(rho/MUMEAN)
+        #
     #
-    (Tradfflte,Tradlablte,nradffratlte,nradlabratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1,Tradfftype3,Tradlabtype3)=getTrads()
+    (Tradfflte,Tradlablte,nradffratlte,nradlabratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1,Tradfftype3,Tradlabtype3,varexpflab)=getTrads()
     #
     global gotrad,gotkappas
     (kappadensityreal,kappadensityrealnofe,kappasyreal,kappadcreal,kappaesreal,kappandensityreal,kappansyreal,kappandcreal,phiphi,kappachiantireal,kappaffreal,kappabfreal,kappafereal,kappamolreal,kappahmopalreal,kappachiantiopalreal,kappaffeereal)=getkappasdetails(gotrad, gotkappas)
@@ -32082,7 +32138,11 @@ def tutorial1aother(filename=None,which=1,fignum=1,whichaphi=0,whichtj=-1,outert
     #
     prad=(4.0/3.0-1.0)*Erf
     # code Tgas for ideal gas
-    Tgas=pg/(rho/MUMEAN)
+    try:
+        Tgas
+    except NameError:
+        Tgas=pg/(rho/MUMEAN)
+        #
     #
     #Eradff = R^a_b u_a u^b
     Ruu=0.0
