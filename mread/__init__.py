@@ -1876,7 +1876,7 @@ def assignavg2dvars(avgmem):
     # 5
     global avg_KAPPAUSER,avg_KAPPAUSERnofe,avg_KAPPAESUSER,avg_tauradintegrated,avg_tauradeffintegrated
     # 10
-    global avg_Tgas,avg_Tradfflte,avg_Tradff,avg_Tradlablte,avg_Tradfftype1,avg_Tradlabtype1,avg_nradffratlte,avg_nradlabratlte,avg_nradffrat,avg_nradlabrat
+    global avg_Tgas,avg_Tradfflte,avg_Tradff,avg_Tradlablte,avg_Tradfftype1,avg_Tradlabtype1,avg_Tradfftype3,avg_Tradlabtype3,avg_nradffratlte,avg_nradlabratlte,avg_nradffrat,avg_nradlabrat
     # 17
     global avg_kappadensityreal,avg_kappadensityrealnofe,avg_kappasyreal,avg_kappadcreal,avg_kappaesreal,avg_kappandensityreal,avg_kappansyreal,avg_kappandcreal,avg_phiphi,avg_kappachiantireal,avg_kappaffreal,avg_kappabfreal,avg_kappafereal,avg_kappamolreal,avg_kappahmopalreal,avg_kappachiantiopalreal,avg_kappaffeereal
     # 1
@@ -1998,13 +1998,15 @@ def assignavg2dvars(avgmem):
         avg_KAPPAESUSER=avgmem[i,:,:,None];i+=1 # i=1
         avg_tauradintegrated=avgmem[i,:,:,None];i+=1 # i=1
         avg_tauradeffintegrated=avgmem[i,:,:,None];i+=1 # i=1
-        # 10
+        # 12
         avg_Tgas=avgmem[i,:,:,None];i+=1 # i=1
         avg_Tradfflte=avgmem[i,:,:,None];i+=1 # i=1
         avg_Tradff=avgmem[i,:,:,None];i+=1 # i=1
         avg_Tradlablte=avgmem[i,:,:,None];i+=1 # i=1
         avg_Tradfftype1=avgmem[i,:,:,None];i+=1 # i=1
         avg_Tradlabtype1=avgmem[i,:,:,None];i+=1 # i=1
+        avg_Tradfftype3=avgmem[i,:,:,None];i+=1 # i=1
+        avg_Tradlabtype3=avgmem[i,:,:,None];i+=1 # i=1
         avg_nradffratlte=avgmem[i,:,:,None];i+=1 # i=1
         avg_nradlabratlte=avgmem[i,:,:,None];i+=1 # i=1
         avg_nradffrat=avgmem[i,:,:,None];i+=1 # i=1
@@ -2085,7 +2087,7 @@ def getnqtyavg():
     global gotrad
     if(gotrad):
         value=value+5 # for KAPPAUSER and KAPPAESUSER and tauradintegrated and tauradeffintegrated
-        value=value+10+17+1 # Tgas,Trad's,kappas,etc.
+        value=value+12+17+1 # Tgas,Trad's,kappas,etc.
     return(value)
 
 
@@ -2346,7 +2348,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     # 5
     global avg_KAPPAUSER,avg_KAPPAUSERnofe,avg_KAPPAESUSER,avg_tauradintegrated,avg_tauradeffintegrated
     # 10
-    global avg_Tgas,avg_Tradfflte,avg_Tradff,avg_Tradlablte,avg_Tradfftype1,avg_Tradlabtype1,avg_nradffratlte,avg_nradlabratlte,avg_nradffrat,avg_nradlabrat
+    global avg_Tgas,avg_Tradfflte,avg_Tradff,avg_Tradlablte,avg_Tradfftype1,avg_Tradlabtype1,avg_Tradfftype3,avg_Tradlabtype3,avg_nradffratlte,avg_nradlabratlte,avg_nradffrat,avg_nradlabrat
     # 17
     global avg_kappadensityreal,avg_kappadensityrealnofe,avg_kappasyreal,avg_kappadcreal,avg_kappaesreal,avg_kappandensityreal,avg_kappansyreal,avg_kappandcreal,avg_phiphi,avg_kappachiantireal,avg_kappaffreal,avg_kappabfreal,avg_kappafereal,avg_kappamolreal,avg_kappahmopalreal,avg_kappachiantiopalreal,avg_kappaffeereal
     # 1
@@ -2569,10 +2571,10 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
             avg_tauradeffintegrated+=tauradeffintegrated.sum(-1)[:,:,None]*localdt[itert]
             #
             #
-            # 10
+            # 12
             avg_Tgas+=(np.fabs(Tgas)).sum(-1)[:,:,None]*localdt[itert]
             #
-            (Tradfflte,Tradlablte,nradffratlte,nradlabratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1)=getTrads()
+            (Tradfflte,Tradlablte,nradffratlte,nradlabratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1,Tradfftype3,Tradlabtype3)=getTrads()
             #
             avg_Tradfflte+=(np.fabs(Tradfflte)).sum(-1)[:,:,None]*localdt[itert]
             avg_Tradff+=(np.fabs(Tradff)).sum(-1)[:,:,None]*localdt[itert]
@@ -2580,6 +2582,8 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
             #
             avg_Tradfftype1+=(np.fabs(Tradfftype1)).sum(-1)[:,:,None]*localdt[itert]
             avg_Tradlabtype1+=(np.fabs(Tradlabtype1)).sum(-1)[:,:,None]*localdt[itert]
+            avg_Tradfftype3+=(np.fabs(Tradfftype3)).sum(-1)[:,:,None]*localdt[itert]
+            avg_Tradlabtype3+=(np.fabs(Tradlabtype3)).sum(-1)[:,:,None]*localdt[itert]
             #
             avg_nradffratlte+=(np.fabs(nradffratlte)).sum(-1)[:,:,None]*localdt[itert]
             avg_nradlabratlte+=(np.fabs(nradlabratlte)).sum(-1)[:,:,None]*localdt[itert]
@@ -2671,12 +2675,19 @@ def getTrads():
     Ruurat=Ruu/ARAD_CODE
     nradffrat=nradff #/NRAD_ARAD_CODE # already inside from harmrad
     nradlabrat=nrad*uradu[0] #/NRAD_ARAD_CODE # already inside from harmrad
-    Tradfftype1=Ruurat/(nradffrat*EBAR0+1E-50)
+    #
     R00rat=R00/ARAD_CODE
-    Tradlabtype1=R00rat/(nradlabrat*EBAR0+1E-50)
     nradlabratlte = Tradlablte**3/EBAR0 #NRAD_ARAD_CODE*
     #
-    return(Tradfflte,Tradlablte,nradffratlte,nradlabratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1)
+    SMALL=1E-50
+    Tradfftype1=Ruurat/(nradffrat*EBAR0 + SMALL)
+    Tradlabtype1=R00rat/(nradlabrat*EBAR0 + SMALL)
+    #
+    Tradfftype3=(Ruurat*(0.333333333327962 + 0.060724957534625555/(0.6467556546674441 + (0.018783960364223317*Power(Ruurat,3))/Power(nradffrat,4))))/(SMALL+nradffrat) # should be same as Tradff
+    Tradlabtype3=(R00rat*(0.333333333327962 + 0.060724957534625555/(0.6467556546674441 + (0.018783960364223317*Power(R00rat,3))/Power(nradlabrat,4))))/(SMALL+nradlabrat)
+    #
+    #
+    return(Tradfflte,Tradlablte,nradffratlte,nradlabratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1,Tradfftype3,Tradlabtype3)
 
 
 def extractlena():
@@ -28388,6 +28399,8 @@ def mkavgfigs3():
                 avg1.write("%g " % (avg_Tradlablte[ihor,jj,0]))
                 avg1.write("%g " % (avg_Tradfftype1[ihor,jj,0]))
                 avg1.write("%g " % (avg_Tradlabtype1[ihor,jj,0]))
+                avg1.write("%g " % (avg_Tradfftype3[ihor,jj,0]))
+                avg1.write("%g " % (avg_Tradlabtype3[ihor,jj,0]))
                 avg1.write("%g " % (avg_nradffratlte[ihor,jj,0]))
                 avg1.write("%g " % (avg_nradlabratlte[ihor,jj,0]))
                 avg1.write("%g " % (avg_nradffrat[ihor,jj,0]))
@@ -28584,6 +28597,8 @@ def mkavgfigs3():
             avgvsr_Tradlablte=intangle_foravg2d(gdet*denfactor*avg_Tradlablte,**keywordsrhosq)/rhosqint
             avgvsr_Tradfftype1=intangle_foravg2d(gdet*denfactor*avg_Tradfftype1,**keywordsrhosq)/rhosqint
             avgvsr_Tradlabtype1=intangle_foravg2d(gdet*denfactor*avg_Tradlabtype1,**keywordsrhosq)/rhosqint
+            avgvsr_Tradfftype3=intangle_foravg2d(gdet*denfactor*avg_Tradfftype3,**keywordsrhosq)/rhosqint
+            avgvsr_Tradlabtype3=intangle_foravg2d(gdet*denfactor*avg_Tradlabtype3,**keywordsrhosq)/rhosqint
             avgvsr_nradffratlte=intangle_foravg2d(gdet*denfactor*avg_nradffratlte,**keywordsrhosq)/rhosqint
             avgvsr_nradlabratlte=intangle_foravg2d(gdet*denfactor*avg_nradlabratlte,**keywordsrhosq)/rhosqint
             avgvsr_nradffrat=intangle_foravg2d(gdet*denfactor*avg_nradffrat,**keywordsrhosq)/rhosqint
@@ -28764,6 +28779,8 @@ def mkavgfigs3():
                 avg1.write("%g " % (avgvsr_Tradlablte[ii]))
                 avg1.write("%g " % (avgvsr_Tradfftype1[ii]))
                 avg1.write("%g " % (avgvsr_Tradlabtype1[ii]))
+                avg1.write("%g " % (avgvsr_Tradfftype3[ii]))
+                avg1.write("%g " % (avgvsr_Tradlabtype3[ii]))
                 avg1.write("%g " % (avgvsr_nradffratlte[ii]))
                 avg1.write("%g " % (avgvsr_nradlabratlte[ii]))
                 avg1.write("%g " % (avgvsr_nradffrat[ii]))
@@ -28943,6 +28960,8 @@ def mkavgfigs3():
                     avg1.write("%g " % (avg_Tradlablte[ii,jj,0]))
                     avg1.write("%g " % (avg_Tradfftype1[ii,jj,0]))
                     avg1.write("%g " % (avg_Tradlabtype1[ii,jj,0]))
+                    avg1.write("%g " % (avg_Tradfftype3[ii,jj,0]))
+                    avg1.write("%g " % (avg_Tradlabtype3[ii,jj,0]))
                     avg1.write("%g " % (avg_nradffratlte[ii,jj,0]))
                     avg1.write("%g " % (avg_nradlabratlte[ii,jj,0]))
                     avg1.write("%g " % (avg_nradffrat[ii,jj,0]))
@@ -29348,7 +29367,7 @@ def mkavgfigs5():
             mylenshowy=(15.0/30.0)*mylen
             #
             global avg_eflux
-            avg_eflux=(avg_Tradlabtype1/avg_Tradlablte)
+            avg_eflux=(avg_Tradlabtype3/avg_Tradlablte)
             #
             numoffset=5
             vminforframe=np.amin(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:])
@@ -29364,7 +29383,7 @@ def mkavgfigs5():
             mylenshowy=(25.0/30.0)*mylen
             #
             global avg_eflux
-            avg_eflux=(avg_Tradlabtype1/avg_Tradlablte)
+            avg_eflux=(avg_Tradlabtype3/avg_Tradlablte)
             #
             numoffset=5
             vminforframe=np.amin(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:])
@@ -29380,7 +29399,7 @@ def mkavgfigs5():
             mylenshowy=(25.0/30.0)*mylen
             #
             global avg_eflux
-            avg_eflux=(avg_Tradlabtype1/avg_Tradlablte)
+            avg_eflux=(avg_Tradlabtype3/avg_Tradlablte)
             #
             numoffset=5
             vminforframe=np.amin(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:])
@@ -29531,7 +29550,7 @@ def mkavgfigs5():
             mylenshowy=(15.0/30.0)*mylen
             #
             global avg_eflux
-            avg_eflux=np.copy(np.log10(avg_Tradlabtype1*TEMPBAR))
+            avg_eflux=np.copy(np.log10(avg_Tradlabtype3*TEMPBAR))
             #
             numoffset=5
             vminforframe=np.amin(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:])
@@ -29547,7 +29566,7 @@ def mkavgfigs5():
             mylenshowy=(25.0/30.0)*mylen
             #
             global avg_eflux
-            avg_eflux=np.copy(np.log10(avg_Tradlabtype1*TEMPBAR))
+            avg_eflux=np.copy(np.log10(avg_Tradlabtype3*TEMPBAR))
             #
             numoffset=5
             vminforframe=np.amin(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:])
@@ -29563,7 +29582,7 @@ def mkavgfigs5():
             mylenshowy=(25.0/30.0)*mylen
             #
             global avg_eflux
-            avg_eflux=np.copy(np.log10(avg_Tradlabtype1*TEMPBAR))
+            avg_eflux=np.copy(np.log10(avg_Tradlabtype3*TEMPBAR))
             #
             numoffset=5
             vminforframe=np.amin(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:])
@@ -31017,7 +31036,7 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     #Tgas=pg/(rho/MUMEAN)
     #
     #
-    (Tradfflte,Tradlablte,nradffratlte,nradlabratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1)=getTrads()
+    (Tradfflte,Tradlablte,nradffratlte,nradlabratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1,Tradfftype3,Tradlabtype3)=getTrads()
     #
     global gotrad,gotkappas
     (kappadensityreal,kappadensityrealnofe,kappasyreal,kappadcreal,kappaesreal,kappandensityreal,kappansyreal,kappandcreal,phiphi,kappachiantireal,kappaffreal,kappabfreal,kappafereal,kappamolreal,kappahmopalreal,kappachiantiopalreal,kappaffeereal)=getkappasdetails(gotrad, gotkappas)
@@ -31084,6 +31103,7 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
         kappaes=np.copy(KAPPAESUSER)
         Tgas=avg_Tgas
         Tradlabtype1=avg_Tradlabtype1
+        Tradlabtype3=avg_Tradlabtype3
         Tradlablte=avg_Tradlablte
     if 1==0:
         KAPPAUSERavg=np.average(KAPPAUSER,axis=-1)[:,:,None]
@@ -31252,6 +31272,10 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
         myfun=np.log10((kappandensityreal)/kappansyreal)
     if(which==64):
         myfun=np.log10((kappandcreal)/kappansyreal)
+    if(which==70):
+        myfun=np.log10(Tradlabtype3*TEMPBAR)
+    if(which==71):
+        myfun=np.log10(Tradlabtype3/Tradlabtype1)
     #
     if(which==100):
         myfun=np.log10(ug/rho)
@@ -31383,23 +31407,8 @@ def fcol(filename=None,fignum=None,whichplot=1):
     # code Tgas for ideal gas
     Tgas=pg/(rho/MUMEAN)
     #
-    #Eradff = R^a_b u_a u^b
-    Ruu=0.0
-    uraddlocal = mdot(gv3,uradu)                  #g_mn urad^n
-    udlocal = mdot(gv3,uu)                  #g_mn u^n
-    for kapa in np.arange(4):
-        for nu in np.arange(4):
-            if(kapa==nu): delta = 1
-            else: delta = 0
-            Rijkapanu = (Erf/3.0)*(4.0*uradu[kapa]*uraddlocal[nu]+delta)
-            Ruu= Ruu + Rijkapanu*udlocal[kapa]*uu[nu]
-    # fluid-frame temperature of radiation
-    Tradlte0 = pow(np.fabs(Ruu)/ARAD_CODE,0.25) # ASSUMPTION: PLANCK-like in comoving frame even though radiation flowing through cell
-    EBAR0=(2.7011780329190638961)
-    nradffratlte0 = Tradlte0**3/EBAR0 #NRAD_ARAD_CODE*
-    Ruurat=Ruu/ARAD_CODE
-    nradffrat=nradff #/NRAD_ARAD_CODE # already insdie
-    Tradtype1=Ruurat/(nradffrat*EBAR0+1E-50)
+    (Tradfflte,Tradlablte,nradffratlte,nradlabratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1,Tradfftype3,Tradlabtype3)=getTrads()
+    #
     #
     global gotrad,gotkappas
     (kappadensityreal,kappadensityrealnofe,kappasyreal,kappadcreal,kappaesreal,kappandensityreal,kappansyreal,kappandcreal,phiphi,kappachiantireal,kappaffreal,kappabfreal,kappafereal,kappamolreal,kappahmopalreal,kappachiantiopalreal,kappaffeereal)=getkappasdetails(gotrad, gotkappas)
@@ -31495,23 +31504,7 @@ def compkappa(filename=None,fignum=None,whichplot=1):
     # code Tgas for ideal gas
     Tgas=pg/(rho/MUMEAN)
     #
-    #Eradff = R^a_b u_a u^b
-    Ruu=0.0
-    uraddlocal = mdot(gv3,uradu)                  #g_mn urad^n
-    udlocal = mdot(gv3,uu)                  #g_mn u^n
-    for kapa in np.arange(4):
-        for nu in np.arange(4):
-            if(kapa==nu): delta = 1
-            else: delta = 0
-            Rijkapanu = (Erf/3.0)*(4.0*uradu[kapa]*uraddlocal[nu]+delta)
-            Ruu= Ruu + Rijkapanu*udlocal[kapa]*uu[nu]
-    # fluid-frame temperature of radiation
-    Tradlte0 = pow(np.fabs(Ruu)/ARAD_CODE,0.25) # ASSUMPTION: PLANCK-like in comoving frame even though radiation flowing through cell
-    EBAR0=(2.7011780329190638961)
-    nradffratlte0 = Tradlte0**3/EBAR0 #NRAD_ARAD_CODE*
-    Ruurat=Ruu/ARAD_CODE
-    nradffrat=nradff #/NRAD_ARAD_CODE # already insdie
-    Tradtype1=Ruurat/(nradffrat*EBAR0+1E-50)
+    (Tradfflte,Tradlablte,nradffratlte,nradlabratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1,Tradfftype3,Tradlabtype3)=getTrads()
     #
     global gotrad,gotkappas
     (kappadensityreal,kappadensityrealnofe,kappasyreal,kappadcreal,kappaesreal,kappandensityreal,kappansyreal,kappandcreal,phiphi,kappachiantireal,kappaffreal,kappabfreal,kappafereal,kappamolreal,kappahmopalreal,kappachiantiopalreal,kappaffeereal)=getkappasdetails(gotrad, gotkappas)
