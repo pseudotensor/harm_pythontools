@@ -28082,7 +28082,7 @@ def mkavgfigs1(whichfig=0):
             print("hmin=%g" % (limitedh[np.where(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:]==vminforframe)]))
             print("eflux: %g %g" % (vminforframe,vmaxforframe));sys.stdout.flush()
             returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig2c",veldensity=myveldensity,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,alpha=0.2,showuu1eq0=True)
-        if wichfig==0 or whichfig==4:
+        if whichfig==0 or whichfig==4:
             # radiation flux lines instead of magnetic lines
             for ll in np.arange(1,4):
                 Btrue[ll,:,:,:]=np.copy(avg_TudRAD[ll,0,:,:,:]) # radiation tensor 
