@@ -1057,7 +1057,8 @@ do
         mychunklisttype=$chunklisttypeplot
         mychunklist=$chunklistplot
 
-        if [ $parallel -eq 2 ]
+        if [ $parallel -eq 2 ] &&
+            [ $makeavgplot -eq 10 ]
         then
             # then assume want parallel mode
             runtype=10
@@ -1103,7 +1104,8 @@ do
         mychunklist=$chunklistplot
         myrunnglobal=$runnglobal
 
-        if [ $parallel -eq 2 ]
+        if [ $parallel -eq 2 ] &&
+            [ $makeavgplot -eq 20 ]
         then
             # then assume want parallel mode
             runtype=20
