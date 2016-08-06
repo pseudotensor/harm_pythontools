@@ -47,7 +47,7 @@ makeplot=$4
 makemontage=$5
 
 # below several part of makeplot options
-makepowervsmplots=$6
+makepowervsmplots=${6}
 makespacetimeplots=${7}
 makefftplot=${8}
 makespecplot=${9}
@@ -304,6 +304,8 @@ chunklisttypeplot=0
 numtasksplot=1
 chunklistplot=\"`seq -s " " 1 $numtasksplot`\"
 runnplot=1
+numnodesplot=1
+numcorespernodeplot=1
 
 
 
@@ -817,8 +819,10 @@ fi
 if [ $useoverride -eq 0 ]
 then
     runnglobal=$(( $numcorespernode * $numnodes ))
+    runnglobalplot=$(( $numcorespernodeplot * $numnodesplot ))
 else
     runnglobal=${runnoverride}
+    runnglobalplot=${runnoverride}
 fi
 echo "runnglobal=$runnglobal"
 
@@ -1003,8 +1007,8 @@ do
         mymemtot=$memtot
         mychunklisttype=$chunklisttype
         mychunklist=$chunklist
-    fi
-    if [ $makeavg -ge 1 ] &&
+        myrunnglobal=$runnglobal
+    elif [ $makeavg -ge 1 ] &&
         [ $runtypes -eq 1 ]
     then
         #takes average of $itemspergroup fieldline files per avg file created
@@ -1020,8 +1024,8 @@ do
         mymemtot=$memtot
         mychunklisttype=$chunklisttype
         mychunklist=$chunklist
-    fi
-    if [ $makeframes -ge 1 ] &&
+        myrunnglobal=$runnglobal
+    elif [ $makeframes -ge 1 ] &&
         [ $runtypes -eq 2 ]
     then
         runtype=4
@@ -1036,14 +1040,14 @@ do
         mymemtot=$memtot
         mychunklisttype=$chunklisttype
         mychunklist=$chunklist
-    fi
-    if [ $makeplot -ge 1 ] &&
+        myrunnglobal=$runnglobal
+    elif [ $makeplot -ge 1 ] &&
         [ $runtypes -eq 3 ]
     then
 
         jobpre="pl"
         myapcmd=$apcmdplot
-        extracmdraw="makepowervsmplots $makespacetimeplots $makefftplot $makespecplot $makeinitfinalplot $makethradfinalplot"
+        extracmdraw="$makepowervsmplots $makespacetimeplots $makefftplot $makespecplot $makeinitfinalplot $makethradfinalplot"
         mynumtasks=$numtasksplot
         mynumtotalnodesavg=$numtotalnodesplot
         mynumcorespernode=$numcorespernodeplot
@@ -1057,7 +1061,9 @@ do
         then
             # then assume want parallel mode
             runtype=10
+            myrunnglobal=$runnglobalplot
         else
+            myrunnglobal=1
             # then assume don't want parallel mode
             if [ $makeplot -eq 1 ]
             then
@@ -1080,14 +1086,13 @@ do
                 runtype=15
             fi
         fi
-    fi
-    if [ $makeavgplot -ge 1 ] &&
+    elif [ $makeavgplot -ge 1 ] &&
         [ $runtypes -eq 4 ]
     then
 
-        jobpre="pl"
+        jobpre="pa"
         myapcmd=$apcmdplot
-        extracmdraw="makepowervsmplots $makespacetimeplots $makefftplot $makespecplot $makeinitfinalplot $makethradfinalplot"
+        extracmdraw=""
         mynumtasks=$numtasksplot
         mynumtotalnodesavg=$numtotalnodesplot
         mynumcorespernode=$numcorespernodeplot
@@ -1096,12 +1101,15 @@ do
         mymemtot=$memtotplot
         mychunklisttype=$chunklisttypeplot
         mychunklist=$chunklistplot
+        myrunnglobal=$runnglobal
 
         if [ $parallel -eq 2 ]
         then
             # then assume want parallel mode
             runtype=20
+            myrunnglobal=$runnglobalplot
         else
+            myrunnglobal=1
             # then assume don't want parallel mode
             if [ $makeavgplot -eq 1 ]
             then
@@ -1125,11 +1133,16 @@ do
             fi
         fi
 
+    else
+        echo "skipping runtypes=$runtypes"
+        continue
     fi
 
+    echo "setup: runtypes=$runtypes runtype=$runtype jobpre=$jobpre"
 
-    runn=${runnglobal}
-    echo "runn,runnglobal=$runn $runnglobal"
+    
+    runn=${myrunnglobal}
+    echo "runn=$runn"
     numparts=1
 
 
@@ -1205,7 +1218,8 @@ do
 		            echo "itot=$itot" >> $thebatch
 		            echo "i=$i" >> $thebatch
 		            echo "runn=$runn" >> $thebatch
-		            echo "itemspergroup=$itemspergroup" >> $thebatch
+		            echo "runtype=$runtype" >> $thebatch
+		            echo "extracmdraw=\"$extracmdraw\"" >> $thebatch
 		            echo "mynumcorespernode=$mynumcorespernode" >> $thebatch
 	            fi
 	            
@@ -1236,11 +1250,11 @@ do
                     then
                         echo "unset MPLCONFIGDIR" >> $thebatch
                     else                        
-                        rm -rf $dirname/matplotlibdir/
-                        echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $thebatch
+                        rm -rf $dirname/matplotlibdir.$runtype/
+                        echo "export MPLCONFIGDIR=$dirname/matplotlibdir.$runtype/" >> $thebatch
                     fi
 		            echo "runi=$myruni" >> $thebatch
-		            echo "textrun=\"Data vs. Time: Running i=\$i j=\$j giving runi=\$runi with runn=\$runn\"" >> $thebatch
+		            echo "textrun=\"runtype=\$runtype: Running i=\$i j=\$j giving runi=\$runi with runn=\$runn\"" >> $thebatch
 		            echo "echo \$textrun" >> $thebatch
 		            echo "sleep 1" >> $thebatch
 		            cmdraw="python $myinitfile $runtype $modelname "'$runi $runn ${extracmdraw}'
@@ -1300,8 +1314,8 @@ do
                             echo "#!/bin/bash" >> $superbatch
                             echo "cd $dirname" >> $superbatch
                             echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch
-                            rm -rf $dirname/matplotlibdir/
-                            echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $superbatch
+                            rm -rf $dirname/matplotlibdir.$runtype/
+                            echo "export MPLCONFIGDIR=$dirname/matplotlibdir.$runtype/" >> $superbatch
 		                    fakeruni=99999999999999
                             if [ $parallel -eq 1 ]
                             then
@@ -1323,8 +1337,8 @@ do
                             echo "cd $dirname" >> $superbatch
                             cat ~/setuppython27 >> $superbatch
                             echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch
-                            rm -rf $dirname/matplotlibdir/
-                            echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $superbatch
+                            rm -rf $dirname/matplotlibdir.$runtype/
+                            echo "export MPLCONFIGDIR=$dirname/matplotlibdir.$runtype/" >> $superbatch
 		                    fakeruni=99999999999999
                             if [ $parallel -eq 1 ]
                             then
@@ -1345,8 +1359,8 @@ do
                             echo "cd $dirname" >> $superbatch
                             #cat ~/setuppython27 >> $superbatch
                             echo "export PYTHONPATH=$dirname/py:$PYTHONPATH" >> $superbatch
-                            rm -rf $dirname/matplotlibdir/
-                            echo "export MPLCONFIGDIR=$dirname/matplotlibdir/" >> $superbatch
+                            rm -rf $dirname/matplotlibdir.$runtype/
+                            echo "export MPLCONFIGDIR=$dirname/matplotlibdir.$runtype/" >> $superbatch
 		                    fakeruni=99999999999999
                             if [ $parallel -eq 1 ]
                             then

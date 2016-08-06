@@ -57,12 +57,12 @@ def setmplconfigpath(uniquenum=None):
         # below also removes trailing /
         origmplconfigdir=os.path.abspath(os.environ['MPLCONFIGDIR'])
         print("Original MPLCONFIGDIR=%s" % (origmplconfigdir)) ; sys.stdout.flush()
-        mycwd=origmplconfigdir + "%d" % (uniquenum)
+        mycwd=origmplconfigdir + "_%d_%d" % (runtype,uniquenum)
         print("New MPLCONFIGDIR=%s" % (mycwd)) ; sys.stdout.flush()
     except KeyError:
         print("No original MPLCONFIGDIR") ; sys.stdout.flush()
         # below always has no trailing /
-        mycwd=os.getcwd() + "/maplotlibdir" + "%s" % (uniquenum)
+        mycwd=os.getcwd() + "/maplotlibdir_%d_%d" % (runtype,uniquenum)
         print("New MPLCONFIGDIR=%s" % (mycwd)) ; sys.stdout.flush()
     #
     os.environ['MPLCONFIGDIR'] = mycwd
@@ -147,28 +147,40 @@ def runglobalsetup(argv=None):
     # etc. if exists
     #
     # below should agree with makemovie.sh and jon_makemovie_programstart.c .
-    if(runtype==2 or runtype==3 or runtype==4 or runtype==10 or runtype==20):
-        # 3 : make1d (and makeplot)
-        # 4 : makeframes
-        # 2 : makeavg (and makeavgplot)
-        # 10: makeplot in parallel==2 mode
-        # 20: makeavgplot in parallel==2 mode
-        if len(sys.argv[4:])>0
-            runnumber=int(argv[3])
-            uppernum=int(argv[4])
-            print("runtype=%d has runnumber=%d uppernum=%d" % (runtype,runnumber,uppernum)) ; sys.stdout.flush()
-            # force unique path or else mkdir in matplotlib will barf on some systems.
-            setmplconfigpath(uniquenum=runnumber)
-            redirectstderrout(runtype=runtype,uniquenum=runnumber,uppernum=uppernum)
-        else:
-            print("runtype=%d should have runnumber and uppernum but doesn't!" % (runtype)) ; sys.stdout.flush()
-            exit
-    elif(runtype>=11 or runtype<=19):
+    # 3 : make1d (and makeplot)
+    # 4 : makeframes
+    # 2 : makeavg (and makeavgplot)
+    # 10: makeplot in parallel==2 mode
+    # 20: makeavgplot in parallel==2 mode
+    if len(sys.argv[4:])>0:
+        runnumber=int(argv[3])
+        uppernum=int(argv[4])
+        print("runtype=%d has runnumber=%d uppernum=%d" % (runtype,runnumber,uppernum)) ; sys.stdout.flush()
+        # force unique path or else mkdir in matplotlib will barf on some systems.
+        setmplconfigpath(uniquenum=runnumber)
+        redirectstderrout(runtype=runtype,uniquenum=runnumber,uppernum=uppernum)
+    else:
+        print("runtype=%d should have runnumber and uppernum but doesn't!" % (runtype)) ; sys.stdout.flush()
+        exit
+
+    #######
+    # check if known runtype
+    if(runtype==3):
+        print("Doing make1d type of run") ; sys.stdout.flush()
+    elif(runtype==4):
+        print("Doing makeframes type of run") ; sys.stdout.flush()
+    elif(runtype==2):
+        print("Doing makeavg type of run") ; sys.stdout.flush()
+    elif(runtype==10):
+        print("Doing parallel==2 makeplot type of run") ; sys.stdout.flush()
+    elif(runtype==20):
+        print("Doing parallel==2 makeavgplot type of run") ; sys.stdout.flush()
+    elif(runtype>=11 and runtype<=19):
         # not parallel==2 mode
-        print("Doing plot type of run") ; sys.stdout.flush()
-    elif(runtype>=21 or runtyhpe<=29):
+        print("Doing normal makeplot type of run") ; sys.stdout.flush()
+    elif(runtype>=21 and runtype<=29):
         # not parallel==2 mode
-        print("Doing avgplot type of run") ; sys.stdout.flush()
+        print("Doing normal makeavgplot type of run") ; sys.stdout.flush()
     else:
         print("unknown runtype=%d" % (runtype)) ; sys.stdout.flush()
         exit
@@ -27583,6 +27595,9 @@ def mk2davg():
     #
     ####################################
     #itemspergroup = 20
+    print("mk2davg args1: %d" % (len(sys.argv[2:]))) ; sys.stdout.flush()
+    print("mk2davg args2: %d %d %d %d" % (len(sys.argv[2:]),sys.argv[3].isdigit(),sys.argv[4].isdigit(),sys.argv[5].isdigit() )) ; sys.stdout.flush()
+    
     if len(sys.argv[2:])==4 and sys.argv[3].isdigit() and sys.argv[4].isdigit() and sys.argv[5].isdigit():
         whichgroups = int(sys.argv[3])
         step = int(sys.argv[4])
