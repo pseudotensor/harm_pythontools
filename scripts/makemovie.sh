@@ -633,7 +633,7 @@ then
     numtotalnodesavg=$((($numtaskscorravg+$numtaskspernode-1)/$numtaskspernode))
     apcmdavg="mpiexec -np $numtasksavg "
 
-
+    echo "numtasksavg=$numtasksavg numtotalnodesavg=$numtotalnodesavg"
 fi
 
 
@@ -1000,7 +1000,7 @@ do
         myapcmd=$apcmd
         extracmdraw=""
         mynumtasks=$numtasks
-        mynumtotalnodesavg=$numtotalnodes
+        mynumtotalnodes=$numtotalnodes
         mynumcorespernode=$numcorespernode
         mythequeue=$thequeue
         mytimetot=$timetot
@@ -1017,7 +1017,7 @@ do
         myapcmd=$apcmdavg
         extracmdraw=$itemspergroup
         mynumtasks=$numtasksavg
-        mynumtotalnodesavg=$numtotalnodesavg
+        mynumtotalnodes=$numtotalnodesavg
         mynumcorespernode=$numcorespernode
         mythequeue=$thequeue
         mytimetot=$timetot
@@ -1033,7 +1033,7 @@ do
         myapcmd=$apcmd
         extracmdraw=""
         mynumtasks=$numtasks
-        mynumtotalnodesavg=$numtotalnodes
+        mynumtotalnodes=$numtotalnodes
         mynumcorespernode=$numcorespernode
         mythequeue=$thequeue
         mytimetot=$timetot
@@ -1049,7 +1049,7 @@ do
         myapcmd=$apcmdplot
         extracmdraw="$makepowervsmplots $makespacetimeplots $makefftplot $makespecplot $makeinitfinalplot $makethradfinalplot"
         mynumtasks=$numtasksplot
-        mynumtotalnodesavg=$numtotalnodesplot
+        mynumtotalnodes=$numtotalnodesplot
         mynumcorespernode=$numcorespernodeplot
         mythequeue=$thequeueplot
         mytimetot=$timetotplot
@@ -1094,7 +1094,7 @@ do
         myapcmd=$apcmdplot
         extracmdraw=""
         mynumtasks=$numtasksplot
-        mynumtotalnodesavg=$numtotalnodesplot
+        mynumtotalnodes=$numtotalnodesplot
         mynumcorespernode=$numcorespernodeplot
         mythequeue=$thequeueplot
         mytimetot=$timetotplot
@@ -1220,6 +1220,7 @@ do
 		            echo "runn=$runn" >> $thebatch
 		            echo "runtype=$runtype" >> $thebatch
 		            echo "extracmdraw=\"$extracmdraw\"" >> $thebatch
+		            echo "mynumcorespernode=$mynumcorespernode" >> $thebatch
 		            echo "mynumcorespernode=$mynumcorespernode" >> $thebatch
 	            fi
 	            
