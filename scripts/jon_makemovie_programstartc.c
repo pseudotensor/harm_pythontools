@@ -153,11 +153,11 @@ int main(int argc, char *argv[])
   else{
     fprintf(stderr,"No python args given\n"); fflush(stderr);
   }
-  // fix-up argument for runi if correct runtype
+  // fix-up argument for runi if correct runtype (all runtype's now)
   if(argc-numargs>=3){
     int runtype;
     runtype=atoi(*(argv+numargs+2));
-    if(runtype==2 || runtype==3 || runtype==4){
+    if(1){
       // assumes large amount of space ready for this
       if(argc-numargs>=5){
         sprintf(*(argv+numargs+4),"%d",subjobnumber-1); // -1 because needs to be from 0 to n-1 while chunk# goes from 1 to n
@@ -497,9 +497,12 @@ static int myargs(int argc, char *argv[])
     get_chunklist(strsize,chunkliststring,chunklist,&numchunks);
     print_chunklist(numchunks,chunklist);
 
-    int itemspergroup=4; // needs to be same as in makemovie.sh
+    //    int itemspergroup=4; // needs to be same as in makemovie.sh
 
     if(runtype==2){
+      int itemspergroup=atoi(*(argv+numargs+2+4));
+      fprintf(stderr,"itemspergroup=%d\n",itemspergroup); fflush(stderr);
+
       numchunksactual=numchunks/itemspergroup;
       numchunksactual=numchunksactual+1;
     }

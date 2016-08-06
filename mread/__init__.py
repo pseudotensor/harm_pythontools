@@ -139,6 +139,7 @@ def runglobalsetup(argv=None):
     #
     print("ModelName = %s" % (modelname) ) ; sys.stdout.flush()
     #
+    # below should agree with makemovie.sh and jon_makemovie_programstart.c .
     # argv[0]: itself + init file
     # argv[1]: runtype
     # argv[2]: modelname
@@ -146,12 +147,7 @@ def runglobalsetup(argv=None):
     # argv[4]: uppernum
     # etc. if exists
     #
-    # below should agree with makemovie.sh and jon_makemovie_programstart.c .
-    # 3 : make1d (and makeplot)
-    # 4 : makeframes
-    # 2 : makeavg (and makeavgplot)
-    # 10: makeplot in parallel==2 mode
-    # 20: makeavgplot in parallel==2 mode
+    global runnumber,uppernum
     if len(sys.argv[4:])>0:
         runnumber=int(argv[3])
         uppernum=int(argv[4])
