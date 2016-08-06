@@ -619,7 +619,7 @@ static int setup_tpy_makemovie(int myid, int *chunklist, int totalchunks, char *
   subchunk=myid+1; // dose-out chunks by CPU id number.
   subjobnumber=chunklist[myid]; // access array with 0 as first element. (C index type.)
   //  sprintf(subjobname,"%sc%dtc%d",jobprefix,subjobnumber,totalchunks);
-  sprintf(subjobname,"%s_%s",jobprefix,runtype); // all chunks in same directory
+  sprintf(subjobname,"%s_%d",jobprefix,runtype); // all chunks in same directory
   sprintf(subjobdir,"%s/%s",DATADIR,subjobname);
 
   // assumes path exists.  Let fail if not, since then not setup properly using chunkbunch.sh script
