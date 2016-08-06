@@ -28024,7 +28024,7 @@ def mkavgfigs1(whichfig=0):
         #
         #
         myveldensity=8 # 1 through 8 is reasonable, with 1 for testing and 8 for production
-        if wichfig==0 or whichfig==1:
+        if whichfig==0 or whichfig==1:
             #
             # normal field
             Btrue[1:4] = np.copy(avg_B[0:3])
@@ -28044,7 +28044,7 @@ def mkavgfigs1(whichfig=0):
             print("hmin=%g" % (limitedh[np.where(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:]==vminforframe)]))
             print("eflux: %g %g" % (vminforframe,vmaxforframe));sys.stdout.flush()
             returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig2a",veldensity=myveldensity,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,alpha=0.2,showuu1eq0=True)
-        if wichfig==0 or whichfig==2:
+        if whichfig==0 or whichfig==2:
             # velocity
             Btrue[1:4] = np.copy(avg_uu[1:4]/avg_uu[0])
             B[1:4] = np.copy(avg_uu[1:4]/avg_uu[0])
@@ -28063,7 +28063,7 @@ def mkavgfigs1(whichfig=0):
             print("hmin=%g" % (limitedh[np.where(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:]==vminforframe)]))
             print("eflux: %g %g" % (vminforframe,vmaxforframe));sys.stdout.flush()
             returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig2b",veldensity=myveldensity,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,alpha=0.2,showuu1eq0=True)
-        if wichfig==0 or whichfig==3:
+        if whichfig==0 or whichfig==3:
             # mass flux
             Btrue[1:4] = np.copy(avg_rhouu[1:4])
             B[1:4] = np.copy(avg_rhouu[1:4])
