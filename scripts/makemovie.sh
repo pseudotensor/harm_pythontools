@@ -926,7 +926,7 @@ then
     cd $MYPYTHONPATH/scripts/
 
     makemoviecfullfile=$MYPYTHONPATH/scripts/makemoviec
-    if [ -e makemoviec [
+    if [ -e makemoviec ]
     then
         echo "nothing to do"
     else
