@@ -18217,6 +18217,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     mdotjetiniavg = timeavg(np.abs(mdjet[:,iofr(rjetout)]),ts,iti,itf)
     mdotjetfinavg = timeavg(np.abs(mdjet[:,iofr(rjetout)]),ts,fti,ftf)
     #
+    edradoutaltiniavg = timeavg(edrad[:,iofr(rradout)],ts,iti,itf)
     edradoutiniavg = timeavg(edradthin[:,iofr(rradout)],ts,iti,itf)
     ldradoutiniavg = timeavg(ldradthin[:,iofr(rradout)],ts,iti,itf)
     #
@@ -20171,6 +20172,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         print( "Things per unit Ledd" ) ; sys.stdout.flush()
         print( "mdotfinavg=%g " % (mdotfinavg/normfactor)) ; sys.stdout.flush()
         print( "edradoutiniavg=%g " % (edradoutiniavg/normfactor)) ; sys.stdout.flush()
+        print( "edradoutaltiniavg=%g " % (edradoutaltiniavg/normfactor)) ; sys.stdout.flush()
         print( "ldradoutiniavg/eradoutiniavg=%g " % (ldradoutiniavg/edradoutiniavg)) ; sys.stdout.flush()
         print( "Eff in percent, so 100% is up to Mdot level." ) ; sys.stdout.flush()
         print( "etabhRAD_avg=%g etaoutRAD_avg=%g " % (etabhRAD_avg,etaoutRAD_avg)) ; sys.stdout.flush()
@@ -20187,8 +20189,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         else:
             # then normalize by Eddington
             print("Normalizing Mdot by Eddington") ; sys.stdout.flush()
-            print( "HLatex5: ModelName & $\\dot{M}_{\\rm{}H}$  & $\\dot{M}_{\\rm{}in,i}-\\dot{M}_{\\rm{}H}$ & $\\dot{M}_{\\rm{}in,o}-\\dot{M}_{\\rm{}H}$     & $\\dot{M}_{\\rm{}j}$    & $\\dot{M}_{\\rm{}mw,i}$ & $\\dot{M}_{\\rm{}mw,o}$    & $\\dot{M}_{\\rm{}w,i}$ & $\\dot{M}_{\\rm{}w,o}$ & $L_{\\rm{}rad,o}$ \\\\" )
-            print( "VLatex5: %s         & %g & %g & %g    & %g    & %g & %g & %g   & %g & %g \\\\ %% %s" % (truemodelname, roundto2((1.0/Mdoteddcode)*mdotfinavg), roundto2((1.0/Mdoteddcode)*(mdotinrdiskinfinavg-mdotfinavg)), roundto2((1.0/Mdoteddcode)*(mdotinrdiskoutfinavg-mdotfinavg)), roundto2((1.0/Mdoteddcode)*mdotjetfinavg),  roundto2((1.0/Mdoteddcode)*mdotmwinfinavg), roundto2((1.0/Mdoteddcode)*mdotmwoutfinavg),     roundto2((1.0/Mdoteddcode)*mdotwinfinavg), roundto2((1.0/Mdoteddcode)*mdotwoutfinavg), roundto2((1.0/Leddcode)*edradoutiniavg),    modelname ) )
+            print( "HLatex5: ModelName & $\\dot{M}_{\\rm{}H}$  & $\\dot{M}_{\\rm{}in,i}-\\dot{M}_{\\rm{}H}$ & $\\dot{M}_{\\rm{}in,o}-\\dot{M}_{\\rm{}H}$     & $\\dot{M}_{\\rm{}j}$    & $\\dot{M}_{\\rm{}mw,i}$ & $\\dot{M}_{\\rm{}mw,o}$    & $\\dot{M}_{\\rm{}w,i}$ & $\\dot{M}_{\\rm{}w,o}$ & $L_{\\rm{}rad,thin,o}$ & $L_{\\rm{}rad,o}$ \\\\" )
+            print( "VLatex5: %s         & %g & %g & %g    & %g    & %g & %g & %g   & %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2((1.0/Mdoteddcode)*mdotfinavg), roundto2((1.0/Mdoteddcode)*(mdotinrdiskinfinavg-mdotfinavg)), roundto2((1.0/Mdoteddcode)*(mdotinrdiskoutfinavg-mdotfinavg)), roundto2((1.0/Mdoteddcode)*mdotjetfinavg),  roundto2((1.0/Mdoteddcode)*mdotmwinfinavg), roundto2((1.0/Mdoteddcode)*mdotmwoutfinavg),     roundto2((1.0/Mdoteddcode)*mdotwinfinavg), roundto2((1.0/Mdoteddcode)*mdotwoutfinavg), roundto2((1.0/Leddcode)*edradoutiniavg), roundto2((1.0/Leddcode)*edradoutaltiniavg),    modelname ) )
         #
         # 12:
         print( "HLatex95: $\\delta r:r \\delta\\theta:r\\sin\\theta \\delta\\phi$" )
