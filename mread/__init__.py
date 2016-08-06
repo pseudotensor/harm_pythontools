@@ -16479,7 +16479,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     ###########################################################################################
     # other things vs. radius (now that have some horizon things, can normalize quantities created below)
     ###########################################################################################
-    if(formovie==False and dolatex=True):
+    if(formovie==False and dolatex==True):
         #
         mdin_vsr=timeavg(mdin[:,:],ts,fti,ftf)
         mdjet_vsr=timeavg(mdjet[:,:],ts,fti,ftf)
@@ -16772,7 +16772,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     print("Part1 whichplot==5" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
     #
 
-    if(formovie==False and dolatex=True):
+    if(formovie==False and dolatex==True):
         ##############
         # true total flux (including BH+disk @ equator) vs. time and radius
         #feqtot[:,ti[:,0,0]<ihor]=0
@@ -16947,7 +16947,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     # END PART1 of COMPUTE JON WHICHPLOT==5
     ######################################
     #
-    if(formovie==False and dolatex=True):
+    if(formovie==False and dolatex==True):
         #################################
         # BEGIN compute h/r stuff (can't depend upon rdiskin or rdiskout -- although could make some of them depend if put some of them later)
         #################################
@@ -17195,7 +17195,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     print("idiskin=%d rdiskin=%g idiskout=%d rdiskout=%g" % (idiskin,rdiskin,idiskout,rdiskout)) ; sys.stdout.flush()
     #
     #
-    if(formovie==False and dolatex=True):
+    if(formovie==False and dolatex==True):
         #
         #################################
         # BEGIN determine iin and iout
@@ -17604,7 +17604,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
 
 
 
-    if(formovie==False and dolatex=True):
+    if(formovie==False and dolatex==True):
         #################################
         # BEGIN compute qMRI stuff
         #################################
@@ -19172,7 +19172,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     ######################################
     print("part2 whichplot==5" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
     #
-    if(formovie==False and dolatex=True):
+    if(formovie==False and dolatex==True):
         # get initial extrema
         # get equatorial flux extrema at t=0 to normalize new flux on hole
         feqtot0extrema=extrema(feqtotmod[0,:],withendf=True)
@@ -19533,7 +19533,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         fsmaxtot2_avg = timeavg(fsmaxtot[:,ihorusemag]**2,ts,iti,itf)**0.5
         fsuphalf2_avg = timeavg(fsuphalf[:,ihorusemag]**2,ts,iti,itf)**0.5
     #
-    if(formovie==False and dolatex=True):
+    if(formovie==False and dolatex==True):
         # use disk-type iin2:iout2
         # NO: fix always to be from r=15 to r=30 so can compare across simulations
         if ismb09model(modelname):
@@ -20122,7 +20122,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     #
     #
-    if(formovie==False and dolatex=True):
+    if(formovie==False and dolatex==True):
         ######################################
         # BEGIN PRINT JON WHICHPLOT==4
         ######################################
@@ -20521,7 +20521,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     # End of whichplot==5
     #
-    if(formovie==False and dolatex=True):
+    if(formovie==False and dolatex==True):
         ######################################
         # BEGIN PRINT JON WHICHPLOT==5
         ######################################
