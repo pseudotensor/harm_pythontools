@@ -15872,7 +15872,7 @@ def fix_defaulttimes2(ts,fti,ftf):
 
 
 # everything done inside this function only needs a final call to plot, not generating npy files or merging them.
-def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None,formovie=False):
+def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None,formovie=False,dolatex=False):
     global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
     #
     #try:
@@ -16479,7 +16479,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     ###########################################################################################
     # other things vs. radius (now that have some horizon things, can normalize quantities created below)
     ###########################################################################################
-    if(formovie==False):
+    if(formovie==False and dolatex=True):
         #
         mdin_vsr=timeavg(mdin[:,:],ts,fti,ftf)
         mdjet_vsr=timeavg(mdjet[:,:],ts,fti,ftf)
@@ -16772,7 +16772,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     print("Part1 whichplot==5" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
     #
 
-    if(formovie==False):
+    if(formovie==False and dolatex=True):
         ##############
         # true total flux (including BH+disk @ equator) vs. time and radius
         #feqtot[:,ti[:,0,0]<ihor]=0
@@ -16947,7 +16947,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     # END PART1 of COMPUTE JON WHICHPLOT==5
     ######################################
     #
-    if(formovie==False):
+    if(formovie==False and dolatex=True):
         #################################
         # BEGIN compute h/r stuff (can't depend upon rdiskin or rdiskout -- although could make some of them depend if put some of them later)
         #################################
@@ -17195,7 +17195,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     print("idiskin=%d rdiskin=%g idiskout=%d rdiskout=%g" % (idiskin,rdiskin,idiskout,rdiskout)) ; sys.stdout.flush()
     #
     #
-    if(formovie==False):
+    if(formovie==False and dolatex=True):
         #
         #################################
         # BEGIN determine iin and iout
@@ -17604,7 +17604,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
 
 
 
-    if(formovie==False):
+    if(formovie==False and dolatex=True):
         #################################
         # BEGIN compute qMRI stuff
         #################################
@@ -19172,7 +19172,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     ######################################
     print("part2 whichplot==5" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
     #
-    if(formovie==False):
+    if(formovie==False and dolatex=True):
         # get initial extrema
         # get equatorial flux extrema at t=0 to normalize new flux on hole
         feqtot0extrema=extrema(feqtotmod[0,:],withendf=True)
@@ -19533,7 +19533,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         fsmaxtot2_avg = timeavg(fsmaxtot[:,ihorusemag]**2,ts,iti,itf)**0.5
         fsuphalf2_avg = timeavg(fsuphalf[:,ihorusemag]**2,ts,iti,itf)**0.5
     #
-    if(formovie==False):
+    if(formovie==False and dolatex=True):
         # use disk-type iin2:iout2
         # NO: fix always to be from r=15 to r=30 so can compare across simulations
         if ismb09model(modelname):
@@ -20122,7 +20122,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     #
     #
-    if(formovie==False):
+    if(formovie==False and dolatex=True):
         ######################################
         # BEGIN PRINT JON WHICHPLOT==4
         ######################################
@@ -20521,7 +20521,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     # End of whichplot==5
     #
-    if(formovie==False):
+    if(formovie==False and dolatex=True):
         ######################################
         # BEGIN PRINT JON WHICHPLOT==5
         ######################################
@@ -20878,8 +20878,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     ######################################
     #
     if(formovie==False):
-        dodatavsrh=1
-        dodatavst=1
+        dodatavsrh=dolatex
+        dodatavst=dolatex
         dopowervsmplots=makepowervsmplots
         dospacetimeplots=makespacetimeplots
         dofftplot=makefftplot
@@ -27836,6 +27836,27 @@ def loadavg():
     assignavg2dvars(avgmem)
     #
 
+# make all figs (whichmode==0) or select (whichmode>0)
+def mkavgfigs(whichmode=0):
+    # runtype==20 can have up to cores runnumbers, usually 16 these days
+    if whichmode==0 or whichmode==1:
+        mkavgfigs1(whichfig=1)
+    if whichmode==0 or whichmode==2:
+        mkavgfigs1(whichfig=2)
+    if whichmode==0 or whichmode==3:
+        mkavgfigs1(whichfig=3)
+    if whichmode==0 or whichmode==4:
+        mkavgfigs1(whichfig=4)
+    if whichmode==0 or whichmode==5:
+        mkavgfigs2()  # NOTEMARK: set to zero if don't want to read-in qty.npy stuff
+    if whichmode==0 or whichmode==6:
+        mkavgfigs3()
+    if whichmode==0 or whichmode==7:
+        mkavgfigs4()
+    if whichmode==0 or whichmode==8:
+        if gotrad==2: # only doing if latest harmrad
+            mkavgfigs5()
+
 
 def mkavgfigs1(whichfig=0):
     ###########################################
@@ -30041,8 +30062,11 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
     print( "Done mklotsopanels!" )
     sys.stdout.flush()
 
-def generate_time_series():
+    
+
+def generate_time_series(whichmode=0):
     #
+    dolatex=0
     global makepowervsmplots
     makepowervsmplots=0
     global makespacetimeplots
@@ -30092,16 +30116,26 @@ def generate_time_series():
         if len(sys.argv[2:])==3+6 and sys.argv[3].isdigit() and sys.argv[4].isdigit() and sys.argv[5].isdigit() and sys.argv[6].isdigit() and sys.argv[7].isdigit() and sys.argv[8].isdigit() and sys.argv[9].isdigit() and sys.argv[10].isdigit():
             whichi = int(sys.argv[3])
             whichn = int(sys.argv[4])
-            makepowervsmplots = int(sys.argv[5])
-            makespacetimeplots = int(sys.argv[6])
-            makefftplot = int(sys.argv[7])
-            makespecplot = int(sys.argv[8])
-            makeinitfinalplot = int(sys.argv[9])
-            makethradfinalplot = int(sys.argv[10])
+            # whichmode==0 do all
+            # whichmode>0 select
+            if(whichmode==0 or whichmode==1):
+                dolatex=1
+            if(whichmode==0 or whichmode==2):
+                makepowervsmplots = int(sys.argv[5])
+            if(whichmode==0 or whichmode==3):
+                makespacetimeplots = int(sys.argv[6])
+            if(whichmode==0 or whichmode==4):
+                makefftplot = int(sys.argv[7])
+            if(whichmode==0 or whichmode==5):
+                makespecplot = int(sys.argv[8])
+            if(whichmode==0 or whichmode==6):
+                makeinitfinalplot = int(sys.argv[9])
+            if(whichmode==0 or whichmode==7):
+                makethradfinalplot = int(sys.argv[10])
             print("Got plot args: %d %d %d %d %d %d" % (makepowervsmplots,makespacetimeplots,makefftplot,makespecplot,makeinitfinalplot,makethradfinalplot))
             #
         qtymem=getqtyvstime(ihor,0.2)
-        plotqtyvstime(qtymem,fullresultsoutput=1)
+        plotqtyvstime(qtymem,fullresultsoutput=1,dolatex=dolatex)
         #
     #
     #
@@ -30527,6 +30561,7 @@ def main(argv=None):
         use2dglobal=False
     #
     # runtype==-1 just skip and do nothing
+    # runtype==10 and 20 can have up to cores runnumbers, usually 16 these days
     #
     if runtype==0:
         readmytests1()
@@ -30538,12 +30573,50 @@ def main(argv=None):
     if runtype==2:
         # makeavg=2, makeavgmerge=2
         mk2davg()
-    if runtype==3 or runtype==11 or runtype==10 and runnumber==0: # make1d
-        # make1d=3, make1dmerge=3, makeplot=10-19
-        generate_time_series()
+    if runtype==3:
+        # make1d=3, make1dmerge=3, or makeplot all without parallel
+        generate_time_series(whichmode=0)
+    if runtype==11:
+        # makeplot all without parallel
+        generate_time_series(whichmode=0)
+    if runtype==12 or runtype==10 and runnumber==0:
+        generate_time_series(whichmode=1)
+    if runtype==13 or runtype==10 and runnumber==1:
+        generate_time_series(whichmode=2)
+    if runtype==14 or runtype==10 and runnumber==2:
+        generate_time_series(whichmode=3)
+    if runtype==15 or runtype==10 and runnumber==3:
+        generate_time_series(whichmode=4)
+    if runtype==16 or runtype==10 and runnumber==4:
+        generate_time_series(whichmode=5)
+    if runtype==17 or runtype==10 and runnumber==5:
+        generate_time_series(whichmode=6)
+    if runtype==18 or runtype==10 and runnumber==6:
+        generate_time_series(whichmode=7)
     if runtype==4:
         #makeframes
         mkmovie()
+    if runtype==21: # if not parallel, then do all
+        mkavgfigs(whichmode=0)
+    if runtype==22 or runtype==20 and runnumber==0:
+        mkavgfigs(whichmode=1)
+    if runtype==23 or runtype==20 and runnumber==1:
+        mkavgfigs(whichmode=2)
+    if runtype==24 or runtype==20 and runnumber==2:
+        mkavgfigs(whichmode=3)
+    if runtype==25 or runtype==20 and runnumber==3:
+        mkavgfigs(whichmode=4)
+    if runtype==26 or runtype==20 and runnumber==4:
+        mkavgfigs(whichmode=5)
+    if runtype==27 or runtype==20 and runnumber==5:
+        mkavgfigs(whichmode=6)
+    if runtype==28 or runtype==20 and runnumber==6:
+        mkavgfigs(whichmode=7)
+    if runtype==29 or runtype==20 and runnumber==7:
+        mkavgfigs(whichmode=8)
+ 
+    #########
+    # other stuff not usually used
     if 0==1 and runtype==4: # for command line with ipython
         global whichn,whichi
         whichn=1
@@ -30551,30 +30624,6 @@ def main(argv=None):
         global modelname
         modelname="rad1"
         mkmovie()
-    if runtype==21: # if not parallel, then do all
-        # fig2 with grayscalestreamlines and red field lines
-        mkavgfigs1(whichfig=0)
-    # runtype==20 can have up to cores runnumbers, usually 16 these days
-    if runtype==20 and runnumber==0:
-        mkavgfigs1(whichfig=1)
-    if runtype==20 and runnumber==1:
-        mkavgfigs1(whichfig=2)
-    if runtype==20 and runnumber==2:
-        mkavgfigs1(whichfig=3)
-    if runtype==20 and runnumber==3:
-        mkavgfigs1(whichfig=4)
-    if runtype==22 or runtype==20 and runnumber==4:
-        mkavgfigs2()  # NOTEMARK: set to zero if don't want to read-in qty.npy stuff
-    if runtype==23 or runtype==20 and runnumber==5:
-        mkavgfigs3()
-    if runtype==24 or runtype==20 and runnumber==6:
-        mkavgfigs4()
-    if runtype==25 or runtype==20 and runnumber==7:
-        if gotrad==2: # only doing if latest harmrad
-            mkavgfigs5()
- 
-    #########
-    # other stuff not usually used
     if runtype==60:
         #FIGURE 1 LOTSOPANELS
         fti=7000

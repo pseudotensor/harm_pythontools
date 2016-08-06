@@ -1057,19 +1057,22 @@ do
         mychunklisttype=$chunklisttypeplot
         mychunklist=$chunklistplot
 
-        if [ $parallel -eq 2 ] &&
-            [ $makeavgplot -eq 10 ]
+        
+        if [ $makeplot -eq 1 ]
         then
-            # then assume want parallel mode
+            runtype=11 # non-parallel plotting mode
+            # could do runtype==3 because args differentiate it in python script
+            myrunnglobal=1
+            # whichmode==0 in pyton script
+        elif [ $parallel -eq 2 ] &&
+            [ $makeplot -eq 10 ]
+        then
+            # then full parallel mode
             runtype=10
             myrunnglobal=$runnglobalplot
         else
             myrunnglobal=1
-            # then assume don't want parallel mode
-            if [ $makeplot -eq 1 ]
-            then
-                runtype=11
-            fi
+            # then assume don't want parallel mode and want to select certain plots to make
             if [ $makeplot -eq 2 ]
             then
                 runtype=12
@@ -1085,6 +1088,18 @@ do
             if [ $makeplot -eq 5 ]
             then
                 runtype=15
+            fi
+            if [ $makeplot -eq 6 ]
+            then
+                runtype=16
+            fi
+            if [ $makeplot -eq 7 ]
+            then
+                runtype=17
+            fi
+            if [ $makeplot -eq 8 ]
+            then
+                runtype=18
             fi
         fi
     elif [ $makeavgplot -ge 1 ] &&
@@ -1104,6 +1119,11 @@ do
         mychunklist=$chunklistplot
         myrunnglobal=$runnglobal
 
+        if [ $makeavgplot -eq 1 ]
+        then
+            runtype=21 # non-parallel plotting mode
+            myrunnglobal=1
+            # whichmode==0 in pyton script
         if [ $parallel -eq 2 ] &&
             [ $makeavgplot -eq 20 ]
         then
@@ -1112,11 +1132,7 @@ do
             myrunnglobal=$runnglobalplot
         else
             myrunnglobal=1
-            # then assume don't want parallel mode
-            if [ $makeavgplot -eq 1 ]
-            then
-                runtype=21
-            fi
+            # then assume don't want parallel mode and want to select
             if [ $makeavgplot -eq 2 ]
             then
                 runtype=22
@@ -1132,6 +1148,22 @@ do
             if [ $makeavgplot -eq 5 ]
             then
                 runtype=25
+            fi
+            if [ $makeavgplot -eq 6 ]
+            then
+                runtype=26
+            fi
+            if [ $makeavgplot -eq 7 ]
+            then
+                runtype=27
+            fi
+            if [ $makeavgplot -eq 8 ]
+            then
+                runtype=28
+            fi
+            if [ $makeavgplot -eq 9 ]
+            then
+                runtype=29
             fi
         fi
 
