@@ -562,7 +562,7 @@ then
     #timetot="04:00:00" # took 4 hours
     # makemovie
     #timetot="01:00:00"
-    timetot="00:10:00"
+    timetot="00:15:00"
     #
     # numtasks set equal to total number of time slices, so each task does only 1 fieldline file
     # CHOOSE below or set numtasks to some number <= number of field lines
@@ -621,7 +621,7 @@ then
     apcmdplot="mpiexec -np $numtasksplot "
     # only took 6 minutes for thickdisk7 doing 458 files inside qty2.npy!  Up to death at point when tried to resample in time.
     #timetotplot="1:00:00" # for normal can go up to 48 hours.  For serial up to 12 hours.
-    timetotplot="0:30:00" # for normal can go up to 48 hours.  For serial up to 12 hours.
+    timetotplot="0:45:00" # for normal can go up to 48 hours.  For serial up to 12 hours.
 
 
     #############################################

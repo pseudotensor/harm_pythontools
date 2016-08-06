@@ -56,7 +56,7 @@ static int init_mpi(int *argc, char **argv[]);
 static int myargs(int argc, char *argv[]);
 static int get_chunklist(size_t strsize, char* chunkliststring, int *chunklist, int *numchunks);
 static int print_chunklist(int numchunks,int *chunklist);
-static int setup_tpy_makemovie(int myid, int *chunklist, int totalchunks, char *jobprefix, char *cwdold, char *cwdnew);
+static int setup_tpy_makemovie(int myid, int *chunklist, int totalchunks, char *jobprefix, char *cwdold, char *cwdnew, int runtype);
 static int finish_tpy_makemovie(int myid, int *chunklist, int totalchunks, char *jobprefix, char *cwdold, char *cwdnew);
 
 static void cpu0fprintf(FILE* fileptr, char *format, ...);
@@ -106,8 +106,10 @@ int main(int argc, char *argv[])
 
   int numargs;
   numargs=myargs(argc,argv);
+  int runtype;
+  runtype=atoi(*(argv+numargs+2));
   
-  myffprintf(stdout,"myargs End: myid=%d.\n",myid);
+  myffprintf(stdout,"myargs End: myid=%d. runtype=%d\n",myid,runtype);
 
 
 
@@ -117,7 +119,7 @@ int main(int argc, char *argv[])
   myffprintf(stdout,"C runchunkn.sh -like Begin: myid=%d.\n",myid);
 
   int subjobnumber;
-  subjobnumber=setup_tpy_makemovie(myid,chunklist,totalchunks,jobprefix,cwdold,cwdnew);
+  subjobnumber=setup_tpy_makemovie(myid,chunklist,totalchunks,jobprefix,cwdold,cwdnew,runtype);
 
   myffprintf(stdout,"C runchunkn.sh -like End: myid=%d.\n",myid);
 
@@ -576,7 +578,7 @@ static int get_chunklist(size_t strsize, char* chunkliststring, int *chunklist, 
 
 
 // do things like in runchunkn.sh script
-static int setup_tpy_makemovie(int myid, int *chunklist, int totalchunks, char *jobprefix, char *cwdold, char *cwdnew)
+static int setup_tpy_makemovie(int myid, int *chunklist, int totalchunks, char *jobprefix, char *cwdold, char *cwdnew, int runtype)
 {
   int subchunk;
   int subjobnumber;
@@ -617,7 +619,7 @@ static int setup_tpy_makemovie(int myid, int *chunklist, int totalchunks, char *
   subchunk=myid+1; // dose-out chunks by CPU id number.
   subjobnumber=chunklist[myid]; // access array with 0 as first element. (C index type.)
   //  sprintf(subjobname,"%sc%dtc%d",jobprefix,subjobnumber,totalchunks);
-  sprintf(subjobname,"%s",jobprefix); // all chunks in same directory
+  sprintf(subjobname,"%s_%s",jobprefix,runtype); // all chunks in same directory
   sprintf(subjobdir,"%s/%s",DATADIR,subjobname);
 
   // assumes path exists.  Let fail if not, since then not setup properly using chunkbunch.sh script
