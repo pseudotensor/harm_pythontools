@@ -6526,7 +6526,7 @@ def mkframe(fname,ax=None,ax2=None,cb=1,tight=False,useblank=True,vmin=None,vmax
                 #cbar = plt.colorbar(CS,ax=ax,format=r'$10^{%0.1f}$',shrink=shrinkcb)
                 #cbar = plt.colorbar(CS,cax=cax,format=r'$10^{%0.1f}$')  #,shrink=shrinkcb,fraction=0.046,pad=0.04) # draw colorbar
                 cbar = plt.colorbar(CS,ax=ax,format=r'$10^{%0.1f}$',pad=0.04,shrink=shrinkcb)  #,shrink=shrinkcb,fraction=0.046,pad=0.04) # draw colorbar
-                cbar.ax.tick_params(labelsize=10)
+                cbar.ax.tick_params(labelsize=16)
         #
         if cb == 2:
             print("HERE5Bb") ; sys.stdout.flush()
@@ -6538,7 +6538,7 @@ def mkframe(fname,ax=None,ax2=None,cb=1,tight=False,useblank=True,vmin=None,vmax
                 cbar = plt.colorbar(CS,ax=ax,pad=0.04,shrink=shrinkcb) # ,fraction=0.046
             else:
                 cbar = plt.colorbar(CS,ax=ax,pad=0.04,shrink=shrinkcb,format=r'$10^{%0.1f}$') # ,fraction=0.046
-                cbar.ax.tick_params(labelsize=10)
+                cbar.ax.tick_params(labelsize=16)
             #
         if cb == 3:
             print("HERE5Bc") ; sys.stdout.flush()
@@ -6546,7 +6546,7 @@ def mkframe(fname,ax=None,ax2=None,cb=1,tight=False,useblank=True,vmin=None,vmax
                 cbar = plt.colorbar(CS,ax=ax,pad=0.04)
             else:
                 cbar = plt.colorbar(CS,ax=ax,pad=0.04,format=r'$10^{%0.1f}$')
-                cbar.ax.tick_params(labelsize=10)
+                cbar.ax.tick_params(labelsize=16)
             #
         #
         if tight==True:
@@ -6723,8 +6723,8 @@ def mkframe(fname,ax=None,ax2=None,cb=1,tight=False,useblank=True,vmin=None,vmax
         itaueffradkappahmopalreal = reinterp(tauradeffkappahmopalreal,extent,ncell,domask=1.0)
         itaueffradkappachiantiopalreal = reinterp(tauradeffkappachiantiopalreal,extent,ncell,domask=1.0)
         itaueffradkappaffeereal = reinterp(tauradeffkappaffeereal,extent,ncell,domask=1.0)
-        ax.contour(itaurad,linewidths=4,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
-        #ax.contour(itaueffradkappadensityreal,linewidths=4,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
+        #ax.contour(itaurad,linewidths=4,colors='black',extent=extent,hold='on',origin='lower',levels=(1,)) # already have
+        #ax.contour(itaueffradkappadensityreal,linewidths=4,colors='black',extent=extent,hold='on',origin='lower',levels=(1,)) # don't show
         #ax.contour(itaueffradkappadensityrealnofe,linewidths=4,colors='purple',extent=extent,hold='on',origin='lower',levels=(1,)) # already there
         ax.contour(itaueffradkappasyreal,linewidths=4,colors='red',extent=extent,hold='on',origin='lower',levels=(1,))
         ax.contour(itaueffradkappadcreal,linewidths=4,colors='brown',extent=extent,hold='on',origin='lower',levels=(1,))
