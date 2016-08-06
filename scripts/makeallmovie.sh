@@ -666,6 +666,9 @@ then
         cat makemovielocal.temp.sh > makemovielocal.sh
         rm -rf makemovielocal.temp.sh
 
+        # copy over entire py directory
+        cp -a $HOME/py ./
+
         echo "cp  __init__.py to __init__.local.py: "$thedir
         cp ~/py/mread/__init__.py __init__.local.temp.py
 

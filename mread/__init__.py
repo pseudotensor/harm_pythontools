@@ -139,21 +139,40 @@ def runglobalsetup(argv=None):
     #
     print("ModelName = %s" % (modelname) ) ; sys.stdout.flush()
     #
+    # argv[0]: itself + init file
+    # argv[1]: runtype
+    # argv[2]: modelname
+    # argv[3]: runnumer
+    # argv[4]: uppernum
+    # etc. if exists
     #
-    # below should agree with jon_makemovie_programstart.c.  But below used more generally.
-    if(runtype==2 or runtype==3 or runtype==4):
-        if len(sys.argv[4:])>0 and argv[3]!="plot":
+    # below should agree with makemovie.sh and jon_makemovie_programstart.c .
+    if(runtype==2 or runtype==3 or runtype==4 or runtype==10 or runtype==20):
+        # 3 : make1d (and makeplot)
+        # 4 : makeframes
+        # 2 : makeavg (and makeavgplot)
+        # 10: makeplot in parallel==2 mode
+        # 20: makeavgplot in parallel==2 mode
+        if len(sys.argv[4:])>0
             runnumber=int(argv[3])
             uppernum=int(argv[4])
             print("runtype=%d has runnumber=%d uppernum=%d" % (runtype,runnumber,uppernum)) ; sys.stdout.flush()
             # force unique path or else mkdir in matplotlib will barf on some systems.
             setmplconfigpath(uniquenum=runnumber)
             redirectstderrout(runtype=runtype,uniquenum=runnumber,uppernum=uppernum)
-        elif argv[3]=="plot":
-            print("Doing plot type of run") ; sys.stdout.flush()
         else:
             print("runtype=%d should have runnumber and uppernum but doesn't!" % (runtype)) ; sys.stdout.flush()
             exit
+    elif(runtype>=11 or runtype<=19):
+        # not parallel==2 mode
+        print("Doing plot type of run") ; sys.stdout.flush()
+    elif(runtype>=21 or runtyhpe<=29):
+        # not parallel==2 mode
+        print("Doing avgplot type of run") ; sys.stdout.flush()
+    else:
+        print("unknown runtype=%d" % (runtype)) ; sys.stdout.flush()
+        exit
+        
     #
     #
 
@@ -30042,6 +30061,7 @@ def generate_time_series():
     #qtymem=None #clear to free mem
     #
     ###################################
+    # argv[1] as runtype could be 3 or 10-19
     if len(sys.argv[2:])==3 and sys.argv[3].isdigit() and sys.argv[4].isdigit():
         whichi = int(sys.argv[3])
         whichn = int(sys.argv[4])
@@ -30055,14 +30075,15 @@ def generate_time_series():
     else:
         # DOING PLOTS USING NPY FILES (should use full qtymem)
         #
-        # assume here if "plot" as second argument (i.e. not a digit)
-        if len(sys.argv[2:])==4+4 and sys.argv[4].isdigit() and sys.argv[5].isdigit() and sys.argv[6].isdigit() and sys.argv[7].isdigit() and sys.argv[8].isdigit() and sys.argv[9].isdigit():
-            makepowervsmplots = int(sys.argv[4])
-            makespacetimeplots = int(sys.argv[5])
-            makefftplot = int(sys.argv[6])
-            makespecplot = int(sys.argv[7])
-            makeinitfinalplot = int(sys.argv[8])
-            makethradfinalplot = int(sys.argv[9])
+        if len(sys.argv[2:])==3+6 and sys.argv[3].isdigit() and sys.argv[4].isdigit() and sys.argv[5].isdigit() and sys.argv[6].isdigit() and sys.argv[7].isdigit() and sys.argv[8].isdigit() and sys.argv[9].isdigit() and sys.argv[10].isdigit():
+            whichi = int(sys.argv[3])
+            whichn = int(sys.argv[4])
+            makepowervsmplots = int(sys.argv[5])
+            makespacetimeplots = int(sys.argv[6])
+            makefftplot = int(sys.argv[7])
+            makespecplot = int(sys.argv[8])
+            makeinitfinalplot = int(sys.argv[9])
+            makethradfinalplot = int(sys.argv[10])
             print("Got plot args: %d %d %d %d %d %d" % (makepowervsmplots,makespacetimeplots,makefftplot,makespecplot,makeinitfinalplot,makethradfinalplot))
             #
         qtymem=getqtyvstime(ihor,0.2)
@@ -30501,14 +30522,13 @@ def main(argv=None):
         readmytests1()
         plotpowers('powerlist2davg.txt',format=1) #new format; data from 2d average dumps
     if runtype==2:
-        #2DAVG
+        # makeavg=2, makeavgmerge=2
         mk2davg()
-    if runtype==3:
-        #NEW FORMAT
-        #Plot qtys vs. time
+    if runtype==3 or runtype==11 or runtype==10 and runnumber==0: # make1d
+        # make1d=3, make1dmerge=3, makeplot=10-19
         generate_time_series()
     if runtype==4:
-        #make a movie
+        #makeframes
         mkmovie()
     if 0==1 and runtype==4: # for command line with ipython
         global whichn,whichi
@@ -30517,15 +30537,15 @@ def main(argv=None):
         global modelname
         modelname="rad1"
         mkmovie()
-    if runtype==5:
+    if runtype==21 or runtype==20 and runnumber==0:
         mkavgfigs1()# fig2 with grayscalestreamlines and red field lines
-    if runtype==6:
+    if runtype==22 or runtype==20 and runnumber==1:
         mkavgfigs2()  # NOTEMARK: set to zero if don't want to read-in qty.npy stuff
-    if runtype==7:
+    if runtype==23 or runtype==20 and runnumber==2:
         mkavgfigs3()
-    if runtype==8:
+    if runtype==24 or runtype==20 and runnumber==3:
         mkavgfigs4()
-    if runtype==9:
+    if runtype==25 or runtype==20 and runnumber==4:
         if gotrad==2: # only doing if latest harmrad
             mkavgfigs5()
  
