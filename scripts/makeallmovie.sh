@@ -667,8 +667,9 @@ then
         rm -rf makemovielocal.temp.sh
 
         # copy over entire py directory
-        cp -a $HOME/py ./
-
+        #cp -a $HOME/py ./
+        rsync -a --exclude=".*" $HOME/py ./
+ 
         echo "cp  __init__.py to __init__.local.py: "$thedir
         cp ~/py/mread/__init__.py __init__.local.temp.py
 
