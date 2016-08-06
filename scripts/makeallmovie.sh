@@ -930,7 +930,8 @@ if [ $collect -ge 1 ] &&
 then
     echo "Now collect Latex results: "$system
 # below only appears updated if also do powervsm stuff.
-    pythonlatexfile="python_u_3_0_1.stdout.out"
+    #pythonlatexfile="python_u_3_0_1.stdout.out"
+    pythonlatexfile="python_u_10_0_16.stdout.out"
 # below won't have updated Q's
 #    pythonlatexfile="python_u_3_0_0.stdout.out"
 else
