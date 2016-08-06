@@ -1124,7 +1124,7 @@ do
             runtype=21 # non-parallel plotting mode
             myrunnglobal=1
             # whichmode==0 in pyton script
-        if [ $parallel -eq 2 ] &&
+        elif [ $parallel -eq 2 ] &&
             [ $makeavgplot -eq 20 ]
         then
             # then assume want parallel mode
