@@ -6742,7 +6742,7 @@ def mkframe(fname,ax=None,ax2=None,cb=1,tight=False,useblank=True,vmin=None,vmax
         ##ax.contour(itaueffradphiphi,linewidths=4,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
         #ax.contour(itaueffradkappachiantireal,linewidths=4,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
         ax.contour(itaueffradkappaffreal,linewidths=4,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
-        ax.contour(itaueffradkappabfreal,linewidths=4,colors='white',extent=extent,hold='on',origin='lower',levels=(1,))
+        #ax.contour(itaueffradkappabfreal,linewidths=4,colors='white',extent=extent,hold='on',origin='lower',levels=(1,))
         #ax.contour(itaueffradkappafereal,linewidths=4,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
         #ax.contour(itaueffradkappamolreal,linewidths=4,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
         #ax.contour(itaueffradkappahmopalreal,linewidths=4,colors='black',extent=extent,hold='on',origin='lower',levels=(1,))
