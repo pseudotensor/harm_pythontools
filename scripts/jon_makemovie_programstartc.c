@@ -106,14 +106,14 @@ int main(int argc, char *argv[])
 
   int numargs;
   numargs=myargs(argc,argv);
-  int system;
-  system=atoi(*(argv+numargs+2));
+  int systemvar;
+  systemvar=atoi(*(argv+numargs+2));
   int parallel;
   parallel=atoi(*(argv+numargs+3));
   int runtype;
   runtype=atoi(*(argv+numargs+4));
   
-  myffprintf(stdout,"myargs End: myid=%d. runtype=%d parallel=%d system=%d\n",myid,system,parallel,runtype);
+  myffprintf(stdout,"myargs End: myid=%d. runtype=%d parallel=%d systemvar=%d\n",myid,systemvar,parallel,runtype);
 
 
 
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
   // argv[4]   argc=5  : DATADIR
   // argv[5]   argc=6  : jobcheck
   // argv[6]   argc=7  : init file
-  // argv[7]   argc=8  : system (pytonarg=1)
+  // argv[7]   argc=8  : systemvar (pytonarg=1)
   // argv[8]   argc=9  : parallel (pytonarg=2)
   // argv[9]   argc=10 : runtype (pytonarg=3)
   // argv[10]  argc=11 : modelname (pytonarg=4)
