@@ -21983,7 +21983,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         sys.stdout.flush()
     #
-    if dopowervsmplots==1: # assumes computephipow==1 when called generate_time_series(), else a waste, but doesn't hurt anything
+    if dolatex>0 or dopowervsmplots==1: # assumes computephipow==1 when called generate_time_series(), else a waste, but doesn't hurt anything
         print("dopowervsmplots==1" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         #
         #
@@ -22040,7 +22040,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         iter=1
         for fil in arrayvsmz:
-            mcortemp=mkpowervsnlm(mode='m',truenfft=numm,loadq=0,qty=fil,pllabel=arrayvsmzname[iter-1],filenum=iter,fileletter="vsmz",logvalue=logvaluearrayvsmz[iter-1],radius=rhor,bsqorho=bsqorhohvsmz,bsqou=bsqouhvsmz)
+            mcortemp=mkpowervsnlm(mode='m',truenfft=numm,loadq=0,qty=fil,pllabel=arrayvsmzname[iter-1],filenum=iter,fileletter="vsmz",logvalue=logvaluearrayvsmz[iter-1],radius=rhor,bsqorho=bsqorhohvsmz,bsqou=bsqouhvsmz,doplotdata=dopowervsmplots)
             #
             if arrayvsmzname[iter-1]=="rhosrhosq_diskcorona_phipow_radhor_vsm":
                 mcorradhordcrho0=mcortemp
@@ -22083,7 +22083,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         iter=1
         for fil in arrayvsma:
-            mcortemp=mkpowervsnlm(mode='m',truenfft=numm,loadq=0,qty=fil,pllabel=arrayvsmaname[iter-1],filenum=iter,fileletter="vsma",logvalue=logvaluearrayvsma[iter-1],radius=4,bsqorho=bsqorhohvsma,bsqou=bsqouhvsma)
+            mcortemp=mkpowervsnlm(mode='m',truenfft=numm,loadq=0,qty=fil,pllabel=arrayvsmaname[iter-1],filenum=iter,fileletter="vsma",logvalue=logvaluearrayvsma[iter-1],radius=4,bsqorho=bsqorhohvsma,bsqou=bsqouhvsma,doplotdata=dopowervsmplots)
             #
             if arrayvsmaname[iter-1]=="rhosrhosq_diskcorona_phipow_rad4_vsm":
                 mcorrad4dcrho0=mcortemp
@@ -22127,7 +22127,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         iter=1
         for fil in arrayvsmb:
-            mcortemp=mkpowervsnlm(mode='m',truenfft=numm,loadq=0,qty=fil,pllabel=arrayvsmbname[iter-1],filenum=iter,fileletter="vsmb",logvalue=logvaluearrayvsmb[iter-1],radius=8,bsqorho=bsqorhohvsmb,bsqou=bsqouhvsmb)
+            mcortemp=mkpowervsnlm(mode='m',truenfft=numm,loadq=0,qty=fil,pllabel=arrayvsmbname[iter-1],filenum=iter,fileletter="vsmb",logvalue=logvaluearrayvsmb[iter-1],radius=8,bsqorho=bsqorhohvsmb,bsqou=bsqouhvsmb,doplotdata=dopowervsmplots)
             #
             if arrayvsmbname[iter-1]=="rhosrhosq_diskcorona_phipow_rad8_vsm":
                 mcorrad8dcrho0=mcortemp
@@ -22170,7 +22170,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         iter=1
         for fil in arrayvsmc:
-            mcortemp=mkpowervsnlm(mode='m',truenfft=numm,loadq=0,qty=fil,pllabel=arrayvsmcname[iter-1],filenum=iter,fileletter="vsmc",logvalue=logvaluearrayvsmc[iter-1],radius=30,bsqorho=bsqorhohvsmc,bsqou=bsqouhvsmc)
+            mcortemp=mkpowervsnlm(mode='m',truenfft=numm,loadq=0,qty=fil,pllabel=arrayvsmcname[iter-1],filenum=iter,fileletter="vsmc",logvalue=logvaluearrayvsmc[iter-1],radius=30,bsqorho=bsqorhohvsmc,bsqou=bsqouhvsmc,doplotdata=dopowervsmplots)
             #
             if arrayvsmcname[iter-1]=="rhosrhosq_diskcorona_phipow_rad30_vsm":
                 mcorrad30dcrho0=mcortemp
@@ -22222,7 +22222,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         iter=1
         for fil in arrayvsmz:
-            mkpowervsnlm(mode='m',truenfft=numm,loadq=0,qty=fil,pllabel=arrayvsmzname[iter-1],filenum=iter,fileletter="vsmz",logvalue=logvaluearrayvsmz[iter-1],radius=rhor,bsqorho=bsqorhohvsmz,bsqou=bsqouhvsmz)
+            mkpowervsnlm(mode='m',truenfft=numm,loadq=0,qty=fil,pllabel=arrayvsmzname[iter-1],filenum=iter,fileletter="vsmz",logvalue=logvaluearrayvsmz[iter-1],radius=rhor,bsqorho=bsqorhohvsmz,bsqou=bsqouhvsmz,doplotdata=dopowervsmplots)
             iter=iter+1
         ####################################
         rhosrhosq_jet_phipow_rad4_vsm=np.zeros(numm,dtype=r.dtype)
@@ -22259,7 +22259,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         iter=1
         for fil in arrayvsma:
-            mkpowervsnlm(mode='m',truenfft=numm,loadq=0,qty=fil,pllabel=arrayvsmaname[iter-1],filenum=iter,fileletter="vsma",logvalue=logvaluearrayvsma[iter-1],radius=4,bsqorho=bsqorhohvsma,bsqou=bsqouhvsma)
+            mkpowervsnlm(mode='m',truenfft=numm,loadq=0,qty=fil,pllabel=arrayvsmaname[iter-1],filenum=iter,fileletter="vsma",logvalue=logvaluearrayvsma[iter-1],radius=4,bsqorho=bsqorhohvsma,bsqou=bsqouhvsma,doplotdata=dopowervsmplots)
             iter=iter+1
         ####################################
         rhosrhosq_jet_phipow_rad8_vsm=np.zeros(numm,dtype=r.dtype)
@@ -22297,7 +22297,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         iter=1
         for fil in arrayvsmb:
-            mkpowervsnlm(mode='m',truenfft=numm,loadq=0,qty=fil,pllabel=arrayvsmbname[iter-1],filenum=iter,fileletter="vsmb",logvalue=logvaluearrayvsmb[iter-1],radius=8,bsqorho=bsqorhohvsmb,bsqou=bsqouhvsmb)
+            mkpowervsnlm(mode='m',truenfft=numm,loadq=0,qty=fil,pllabel=arrayvsmbname[iter-1],filenum=iter,fileletter="vsmb",logvalue=logvaluearrayvsmb[iter-1],radius=8,bsqorho=bsqorhohvsmb,bsqou=bsqouhvsmb,doplotdata=dopowervsmplots)
             iter=iter+1
         ####################################
         rhosrhosq_jet_phipow_rad30_vsm=np.zeros(numm,dtype=r.dtype)
@@ -22334,7 +22334,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         iter=1
         for fil in arrayvsmc:
-            mkpowervsnlm(mode='m',truenfft=numm,loadq=0,qty=fil,pllabel=arrayvsmcname[iter-1],filenum=iter,fileletter="vsmc",logvalue=logvaluearrayvsmc[iter-1],radius=30,bsqorho=bsqorhohvsmc,bsqou=bsqouhvsmc)
+            mkpowervsnlm(mode='m',truenfft=numm,loadq=0,qty=fil,pllabel=arrayvsmcname[iter-1],filenum=iter,fileletter="vsmc",logvalue=logvaluearrayvsmc[iter-1],radius=30,bsqorho=bsqorhohvsmc,bsqou=bsqouhvsmc,doplotdata=dopowervsmplots)
             iter=iter+1
         ####################################
         #
@@ -22379,7 +22379,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     dopowervslplots=dopowervsmplots # assume if want output of power in m, also want power in l
     #
-    if dopowervslplots==1: # assumes computethetapow==1 when called generate_time_series(), else a waste, but doesn't hurt anything.
+    if dolatex>0 or dopowervslplots==1: # assumes computethetapow==1 when called generate_time_series(), else a waste, but doesn't hurt anything.
         #
         print("dopowervslplots==1" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         #
@@ -22431,7 +22431,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         iter=1
         for fil in arrayvslz:
-            lcortemp=mkpowervsnlm(mode='l',truenfft=numl,loadq=0,qty=fil,pllabel=arrayvslzname[iter-1],filenum=iter,fileletter="vslz",logvalue=logvaluearrayvslz[iter-1],radius=rhor,bsqorho=bsqorhohvslz,bsqou=bsqouhvslz)
+            lcortemp=mkpowervsnlm(mode='l',truenfft=numl,loadq=0,qty=fil,pllabel=arrayvslzname[iter-1],filenum=iter,fileletter="vslz",logvalue=logvaluearrayvslz[iter-1],radius=rhor,bsqorho=bsqorhohvslz,bsqou=bsqouhvslz,doplotdata=dopowervslplots)
             #
             if arrayvslzname[iter-1]=="rhosrhosq_diskcorona_thetapow_radhor_vsl":
                 lcorradhordcrho0=lcortemp
@@ -22472,7 +22472,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         iter=1
         for fil in arrayvsla:
-            lcortemp=mkpowervsnlm(mode='l',truenfft=numl,loadq=0,qty=fil,pllabel=arrayvslaname[iter-1],filenum=iter,fileletter="vsla",logvalue=logvaluearrayvsla[iter-1],radius=4,bsqorho=bsqorhohvsla,bsqou=bsqouhvsla)
+            lcortemp=mkpowervsnlm(mode='l',truenfft=numl,loadq=0,qty=fil,pllabel=arrayvslaname[iter-1],filenum=iter,fileletter="vsla",logvalue=logvaluearrayvsla[iter-1],radius=4,bsqorho=bsqorhohvsla,bsqou=bsqouhvsla,doplotdata=dopowervslplots)
             #
             if arrayvslaname[iter-1]=="rhosrhosq_diskcorona_thetapow_rad4_vsl":
                 lcorrad4dcrho0=lcortemp
@@ -22514,7 +22514,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         iter=1
         for fil in arrayvslb:
-            lcortemp=mkpowervsnlm(mode='l',truenfft=numl,loadq=0,qty=fil,pllabel=arrayvslbname[iter-1],filenum=iter,fileletter="vslb",logvalue=logvaluearrayvslb[iter-1],radius=8,bsqorho=bsqorhohvslb,bsqou=bsqouhvslb)
+            lcortemp=mkpowervsnlm(mode='l',truenfft=numl,loadq=0,qty=fil,pllabel=arrayvslbname[iter-1],filenum=iter,fileletter="vslb",logvalue=logvaluearrayvslb[iter-1],radius=8,bsqorho=bsqorhohvslb,bsqou=bsqouhvslb,doplotdata=dopowervslplots)
             #
             if arrayvslbname[iter-1]=="rhosrhosq_diskcorona_thetapow_rad8_vsl":
                 lcorrad8dcrho0=lcortemp
@@ -22555,7 +22555,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         iter=1
         for fil in arrayvslc:
-            lcortemp=mkpowervsnlm(mode='l',truenfft=numl,loadq=0,qty=fil,pllabel=arrayvslcname[iter-1],filenum=iter,fileletter="vslc",logvalue=logvaluearrayvslc[iter-1],radius=30,bsqorho=bsqorhohvslc,bsqou=bsqouhvslc)
+            lcortemp=mkpowervsnlm(mode='l',truenfft=numl,loadq=0,qty=fil,pllabel=arrayvslcname[iter-1],filenum=iter,fileletter="vslc",logvalue=logvaluearrayvslc[iter-1],radius=30,bsqorho=bsqorhohvslc,bsqou=bsqouhvslc,doplotdata=dopowervslplots)
             #
             if arrayvslcname[iter-1]=="rhosrhosq_diskcorona_thetapow_rad30_vsl":
                 lcorrad30dcrho0=lcortemp
@@ -22605,7 +22605,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         iter=1
         for fil in arrayvslz:
-            mkpowervsnlm(mode='l',truenfft=numl,loadq=0,qty=fil,pllabel=arrayvslzname[iter-1],filenum=iter,fileletter="vslz",logvalue=logvaluearrayvslz[iter-1],radius=rhor,bsqorho=bsqorhohvslz,bsqou=bsqouhvslz)
+            mkpowervsnlm(mode='l',truenfft=numl,loadq=0,qty=fil,pllabel=arrayvslzname[iter-1],filenum=iter,fileletter="vslz",logvalue=logvaluearrayvslz[iter-1],radius=rhor,bsqorho=bsqorhohvslz,bsqou=bsqouhvslz,doplotdata=dopowervslplots)
             iter=iter+1
         ####################################
         rhosrhosq_jet_thetapow_rad4_vsl=np.zeros(numl,dtype=r.dtype)
@@ -22640,7 +22640,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         iter=1
         for fil in arrayvsla:
-            mkpowervsnlm(mode='l',truenfft=numl,loadq=0,qty=fil,pllabel=arrayvslaname[iter-1],filenum=iter,fileletter="vsla",logvalue=logvaluearrayvsla[iter-1],radius=4,bsqorho=bsqorhohvsla,bsqou=bsqouhvsla)
+            mkpowervsnlm(mode='l',truenfft=numl,loadq=0,qty=fil,pllabel=arrayvslaname[iter-1],filenum=iter,fileletter="vsla",logvalue=logvaluearrayvsla[iter-1],radius=4,bsqorho=bsqorhohvsla,bsqou=bsqouhvsla,doplotdata=dopowervslplots)
             iter=iter+1
         ####################################
         rhosrhosq_jet_thetapow_rad8_vsl=np.zeros(numl,dtype=r.dtype)
@@ -22676,7 +22676,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         iter=1
         for fil in arrayvslb:
-            mkpowervsnlm(mode='l',truenfft=numl,loadq=0,qty=fil,pllabel=arrayvslbname[iter-1],filenum=iter,fileletter="vslb",logvalue=logvaluearrayvslb[iter-1],radius=8,bsqorho=bsqorhohvslb,bsqou=bsqouhvslb)
+            mkpowervsnlm(mode='l',truenfft=numl,loadq=0,qty=fil,pllabel=arrayvslbname[iter-1],filenum=iter,fileletter="vslb",logvalue=logvaluearrayvslb[iter-1],radius=8,bsqorho=bsqorhohvslb,bsqou=bsqouhvslb,doplotdata=dopowervslplots)
             iter=iter+1
         ####################################
         rhosrhosq_jet_thetapow_rad30_vsl=np.zeros(numl,dtype=r.dtype)
@@ -22711,7 +22711,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         iter=1
         for fil in arrayvslc:
-            mkpowervsnlm(mode='l',truenfft=numl,loadq=0,qty=fil,pllabel=arrayvslcname[iter-1],filenum=iter,fileletter="vslc",logvalue=logvaluearrayvslc[iter-1],radius=30,bsqorho=bsqorhohvslc,bsqou=bsqouhvslc)
+            mkpowervsnlm(mode='l',truenfft=numl,loadq=0,qty=fil,pllabel=arrayvslcname[iter-1],filenum=iter,fileletter="vslc",logvalue=logvaluearrayvslc[iter-1],radius=30,bsqorho=bsqorhohvslc,bsqou=bsqouhvslc,doplotdata=dopowervslplots)
             iter=iter+1
         ####################################
         #
@@ -22758,7 +22758,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     dopowervsnplots=dopowervslplots # assume if want output of power in l, also want power in n
     #
-    if dopowervsnplots==1: # assumes computeradiuspow==1 when called generate_time_series(), else a waste, but doesn't hurt anything.
+    if dolatex>0 or dopowervsnplots==1: # assumes computeradiuspow==1 when called generate_time_series(), else a waste, but doesn't hurt anything.
         #
         print("dopowervsnplots==1" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
         #
@@ -22811,7 +22811,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         iter=1
         for fil in arrayvsnz:
-            ncortemp=mkpowervsnlm(mode='n',truenfft=numn,loadq=0,qty=fil,pllabel=arrayvsnzname[iter-1],filenum=iter,fileletter="vsnz",logvalue=logvaluearrayvsnz[iter-1],radius=rhor,bsqorho=bsqorhohvsnz,bsqou=bsqouhvsnz)
+            ncortemp=mkpowervsnlm(mode='n',truenfft=numn,loadq=0,qty=fil,pllabel=arrayvsnzname[iter-1],filenum=iter,fileletter="vsnz",logvalue=logvaluearrayvsnz[iter-1],radius=rhor,bsqorho=bsqorhohvsnz,bsqou=bsqouhvsnz,doplotdata=dopowervsnplots)
             #
             if arrayvsnzname[iter-1]=="rhosrhosq_diskcorona_radiuspow_radhor_vsn":
                 ncorradhordcrho0=ncortemp
@@ -22852,7 +22852,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         iter=1
         for fil in arrayvsna:
-            ncortemp=mkpowervsnlm(mode='n',truenfft=numn,loadq=0,qty=fil,pllabel=arrayvsnaname[iter-1],filenum=iter,fileletter="vsna",logvalue=logvaluearrayvsna[iter-1],radius=4,bsqorho=bsqorhohvsna,bsqou=bsqouhvsna)
+            ncortemp=mkpowervsnlm(mode='n',truenfft=numn,loadq=0,qty=fil,pllabel=arrayvsnaname[iter-1],filenum=iter,fileletter="vsna",logvalue=logvaluearrayvsna[iter-1],radius=4,bsqorho=bsqorhohvsna,bsqou=bsqouhvsna,doplotdata=dopowervsnplots)
             #
             if arrayvsnaname[iter-1]=="rhosrhosq_diskcorona_radiuspow_rad4_vsn":
                 ncorrad4dcrho0=ncortemp
@@ -22894,7 +22894,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         iter=1
         for fil in arrayvsnb:
-            ncortemp=mkpowervsnlm(mode='n',truenfft=numn,loadq=0,qty=fil,pllabel=arrayvsnbname[iter-1],filenum=iter,fileletter="vsnb",logvalue=logvaluearrayvsnb[iter-1],radius=8,bsqorho=bsqorhohvsnb,bsqou=bsqouhvsnb)
+            ncortemp=mkpowervsnlm(mode='n',truenfft=numn,loadq=0,qty=fil,pllabel=arrayvsnbname[iter-1],filenum=iter,fileletter="vsnb",logvalue=logvaluearrayvsnb[iter-1],radius=8,bsqorho=bsqorhohvsnb,bsqou=bsqouhvsnb,doplotdata=dopowervsnplots)
             #
             if arrayvsnbname[iter-1]=="rhosrhosq_diskcorona_radiuspow_rad8_vsn":
                 ncorrad8dcrho0=ncortemp
@@ -22935,7 +22935,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         iter=1
         for fil in arrayvsnc:
-            ncortemp=mkpowervsnlm(mode='n',truenfft=numn,loadq=0,qty=fil,pllabel=arrayvsncname[iter-1],filenum=iter,fileletter="vsnc",logvalue=logvaluearrayvsnc[iter-1],radius=30,bsqorho=bsqorhohvsnc,bsqou=bsqouhvsnc)
+            ncortemp=mkpowervsnlm(mode='n',truenfft=numn,loadq=0,qty=fil,pllabel=arrayvsncname[iter-1],filenum=iter,fileletter="vsnc",logvalue=logvaluearrayvsnc[iter-1],radius=30,bsqorho=bsqorhohvsnc,bsqou=bsqouhvsnc,doplotdata=dopowervsnplots)
             #
             if arrayvsncname[iter-1]=="rhosrhosq_diskcorona_radiuspow_rad30_vsn":
                 ncorrad30dcrho0=ncortemp
@@ -22985,7 +22985,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         iter=1
         for fil in arrayvsnz:
-            mkpowervsnlm(mode='n',truenfft=numn,loadq=0,qty=fil,pllabel=arrayvsnzname[iter-1],filenum=iter,fileletter="vsnz",logvalue=logvaluearrayvsnz[iter-1],radius=rhor,bsqorho=bsqorhohvsnz,bsqou=bsqouhvsnz)
+            mkpowervsnlm(mode='n',truenfft=numn,loadq=0,qty=fil,pllabel=arrayvsnzname[iter-1],filenum=iter,fileletter="vsnz",logvalue=logvaluearrayvsnz[iter-1],radius=rhor,bsqorho=bsqorhohvsnz,bsqou=bsqouhvsnz,doplotdata=dopowervsnplots)
             iter=iter+1
         ####################################
         rhosrhosq_jet_radiuspow_rad4_vsn=np.zeros(numn,dtype=r.dtype)
@@ -23020,7 +23020,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         iter=1
         for fil in arrayvsna:
-            mkpowervsnlm(mode='n',truenfft=numn,loadq=0,qty=fil,pllabel=arrayvsnaname[iter-1],filenum=iter,fileletter="vsna",logvalue=logvaluearrayvsna[iter-1],radius=4,bsqorho=bsqorhohvsna,bsqou=bsqouhvsna)
+            mkpowervsnlm(mode='n',truenfft=numn,loadq=0,qty=fil,pllabel=arrayvsnaname[iter-1],filenum=iter,fileletter="vsna",logvalue=logvaluearrayvsna[iter-1],radius=4,bsqorho=bsqorhohvsna,bsqou=bsqouhvsna,doplotdata=dopowervsnplots)
             iter=iter+1
         ####################################
         rhosrhosq_jet_radiuspow_rad8_vsn=np.zeros(numn,dtype=r.dtype)
@@ -23056,7 +23056,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         iter=1
         for fil in arrayvsnb:
-            mkpowervsnlm(mode='n',truenfft=numn,loadq=0,qty=fil,pllabel=arrayvsnbname[iter-1],filenum=iter,fileletter="vsnb",logvalue=logvaluearrayvsnb[iter-1],radius=8,bsqorho=bsqorhohvsnb,bsqou=bsqouhvsnb)
+            mkpowervsnlm(mode='n',truenfft=numn,loadq=0,qty=fil,pllabel=arrayvsnbname[iter-1],filenum=iter,fileletter="vsnb",logvalue=logvaluearrayvsnb[iter-1],radius=8,bsqorho=bsqorhohvsnb,bsqou=bsqouhvsnb,doplotdata=dopowervsnplots)
             iter=iter+1
         ####################################
         rhosrhosq_jet_radiuspow_rad30_vsn=np.zeros(numn,dtype=r.dtype)
@@ -23091,7 +23091,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         iter=1
         for fil in arrayvsnc:
-            mkpowervsnlm(mode='n',truenfft=numn,loadq=0,qty=fil,pllabel=arrayvsncname[iter-1],filenum=iter,fileletter="vsnc",logvalue=logvaluearrayvsnc[iter-1],radius=30,bsqorho=bsqorhohvsnc,bsqou=bsqouhvsnc)
+            mkpowervsnlm(mode='n',truenfft=numn,loadq=0,qty=fil,pllabel=arrayvsncname[iter-1],filenum=iter,fileletter="vsnc",logvalue=logvaluearrayvsnc[iter-1],radius=30,bsqorho=bsqorhohvsnc,bsqou=bsqouhvsnc,doplotdata=dopowervsnplots)
             iter=iter+1
         ####################################
         #
@@ -23138,7 +23138,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     #
     #
-    if dopowervsmplots==1 or dopowervslplots==1 or dopowervsnplots==1:
+    if dolatex>0 or dopowervsmplots==1 or dopowervslplots==1 or dopowervsnplots==1:
         ######################################################################################
         # Get full GR vr so can obtain effective alpha (below replaced by 1.0 so can recover)
         # NOTEMARK: sign of v_\phi can be negative for high enough negative a/M and thick disks.
@@ -23198,7 +23198,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         alphatot2=alphareynoldsa2_vsr_avg+alphareynoldsb2_vsr_avg+alphareynoldsc2_vsr_avg+alphamag2_vsr_avg
         alphatot3=alphareynoldsa3_vsr_avg+alphareynoldsb3_vsr_avg+alphareynoldsc3_vsr_avg+alphamag3_vsr_avg
     #
-    if dopowervsmplots==1 and dopowervslplots==1 and dopowervsnplots==1:
+    if dolatex>0:
         #
         print( "HLatex43: ModelName & $\\alpha_b$ & $\\alpha_{b,\\rm{}PA}$ & $\\alpha_{b,\\rm{}EN}$ & $\\alpha_{b,\\rm{}M1}$ & $\\alpha_{b,\\rm{}M2}$ & $\\alpha_{b,\\rm{}mag}$ & $Q_{m,\\rm{}cor,\\{\\rho_0,b^2\\}}$ & $Q_{\\theta,\\rm{}MRI,\\{i,  o\\}}$ & $Q_{\\phi,\\rm{}MRI,\\{i,  o\\}}$ & $S_{\\rm{}d,\\rm{}MRI,\\{i,  o\\}}$ & $r_{\\{S_{\\rm{}d},S_{\\rm{}d,\\rm{}weak}\\},\\rm{}MRI=1/2}$   \\\\" )
         print( "VLatex43: %s        & %g          & %g                        & %g                        & %g                       & %g                    & %g                      & %d, %d                              & %g, %g                              & %g, %g                            & %g, %g                              & %s, %s                                                         \\\\ %% %s" % (truemodelname, roundto2(alphatot3),roundto2(alphareynoldsa3_vsr_avg), roundto2(alphareynoldsb3_vsr_avg), roundto2(alphareynoldsc3_vsr_avg), roundto2(alphamag3_vsr_avg), roundto2(alphamag4_vsr_avg), roundto2intfloat(Qmcorrad8dcrho0),roundto2intfloat(Qmcorrad8dcbsq), roundto2intfloat(qmridiskrfitin2_avg), roundto2intfloat(qmridiskrfitout2_avg), roundto2intfloat(q3mridiskrfitin2_avg), roundto2intfloat(q3mridiskrfitout2_avg), roundto2(1.0/iq2mridiskrfitin2_avg), roundto2(1.0/iq2mridiskrfitout2_avg), roundto2_rq2mri1(rq2mri1,rq2mri1cut,fakerstagreport), roundto2_rq2mri1(rq2mri2,rq2mri2cut,fakerstagreport), modelname ) )
@@ -23212,7 +23212,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     #
     #
-    if dopowervsnplots==1: 
+    if dolatex>0:
         #
         # Science Paper outputs
         print( "HLatex81: ModelName & $a/M$ & $\\theta_{\\rm{}rot} & $T_f$ & $T^a_i$--$T^a_f$ & $r_{\\rm{}in}$ & $r_{\\rm{}out}$ & $H/R$ & $\\dot{M}_{\\rm{}H}$  & $\\Upsilon_{\\rm{}H}$ & $\\eta_{\\rm{}H}$ \\\\")
@@ -25437,7 +25437,7 @@ def compute_thetaalongfield(aphi=None,picki=None,thetaalongjet=None,whichpole=0)
 # plot power vs. m for a given quantity
 # Inputted is qty, which has been time-averaged as absolute value(originally squared, but sqrt taken during time-average).
 #   for mode=='m', so, we assume that over sufficient amount of time, there is no particular special m-dependent modes at fixed \phi positions that one would be interested in measuring.
-def mkpowervsnlm(mode=None,truenfft=None,loadq=0,qty=None,pllabel="",filenum=0,fileletter="",logvalue=0,radius=None,bsqorho=None,bsqou=None):
+def mkpowervsnlm(mode=None,truenfft=None,loadq=0,qty=None,pllabel="",filenum=0,fileletter="",logvalue=0,radius=None,bsqorho=None,bsqou=None,doplotdata=True):
     #
     print("START: pllabel=%s" % (pllabel)) ; sys.stdout.flush()
     #
@@ -25609,7 +25609,7 @@ def mkpowervsnlm(mode=None,truenfft=None,loadq=0,qty=None,pllabel="",filenum=0,f
     #print(ytoplot) ; sys.stdout.flush()
     #
     #
-    if nifft>1:
+    if nifft>1 and doplotdata>0:
         plt.title("%s %g" % (pllabel,normpowersumnot0b) , fontsize=8)
         print("mode=%s\n" % (mode)) ; sys.stdout.flush()
         print("pllabel=%s npnot=%g" % (pllabel,normpowersumnot0b)) ; sys.stdout.flush()
