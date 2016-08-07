@@ -621,7 +621,9 @@ then
     apcmdplot="mpiexec -np $numtasksplot "
     # only took 6 minutes for thickdisk7 doing 458 files inside qty2.npy!  Up to death at point when tried to resample in time.
     #timetotplot="1:00:00" # for normal can go up to 48 hours.  For serial up to 12 hours.
-    timetotplot="0:45:00" # for normal can go up to 48 hours.  For serial up to 12 hours.
+    #timetotplot="0:45:00" # for normal can go up to 48 hours.  For serial up to 12 hours.
+    # if stick to parallel==2 mode, then only need about 10-20 minutes depending upon resolution
+    timetotplot="0:20:00"
 
 
     #############################################
@@ -1065,7 +1067,7 @@ do
             myrunnglobal=1
             # whichmode==0 in pyton script
         elif [ $parallel -eq 2 ] &&
-            [ $makeplot -eq 10 ]
+            [ $makeplot -eq 100 ]
         then
             # then full parallel mode
             runtype=10
@@ -1125,7 +1127,7 @@ do
             myrunnglobal=1
             # whichmode==0 in pyton script
         elif [ $parallel -eq 2 ] &&
-            [ $makeavgplot -eq 20 ]
+            [ $makeavgplot -eq 100 ]
         then
             # then assume want parallel mode
             runtype=20
