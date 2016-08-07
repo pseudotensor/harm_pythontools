@@ -1165,6 +1165,30 @@ do
             then
                 runtype=29
             fi
+            if [ $makeavgplot -eq 10 ]
+            then
+                runtype=30
+            fi
+            if [ $makeavgplot -eq 11 ]
+            then
+                runtype=31
+            fi
+            if [ $makeavgplot -eq 12 ]
+            then
+                runtype=32
+            fi
+            if [ $makeavgplot -eq 13 ]
+            then
+                runtype=33
+            fi
+            if [ $makeavgplot -eq 14 ]
+            then
+                runtype=34
+            fi
+            if [ $makeavgplot -eq 15 ]
+            then
+                runtype=35
+            fi
         fi
 
     else

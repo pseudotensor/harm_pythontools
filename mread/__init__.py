@@ -27847,23 +27847,41 @@ def loadavg():
 # make all figs (whichmode==0) or select (whichmode>0)
 def mkavgfigs(whichmode=0):
     # runtype==20 can have up to cores runnumbers, usually 16 these days
-    if whichmode==0 or whichmode==1:
+    if whichmode==0:
+        mkavgfigs1(whichfig=0) # all in one call
+    if whichmode==1:
         mkavgfigs1(whichfig=1)
-    if whichmode==0 or whichmode==2:
+    if whichmode==2:
         mkavgfigs1(whichfig=2)
-    if whichmode==0 or whichmode==3:
+    if whichmode==3:
         mkavgfigs1(whichfig=3)
-    if whichmode==0 or whichmode==4:
+    if whichmode==4:
         mkavgfigs1(whichfig=4)
+    #
     if whichmode==0 or whichmode==5:
-        mkavgfigs2()  # NOTEMARK: set to zero if don't want to read-in qty.npy stuff
+        mkavgfigs2()
     if whichmode==0 or whichmode==6:
         mkavgfigs3()
     if whichmode==0 or whichmode==7:
         mkavgfigs4()
-    if whichmode==0 or whichmode==8:
-        if gotrad==2: # only doing if latest harmrad
-            mkavgfigs5()
+    #
+    if gotrad==2: # only doing if latest harmrad
+        if whichmode==0:
+            mkavgfigs5(whichfig=0) # all in one call
+        if whichmode==8:
+            mkavgfigs5(whichfig=1)
+        if whichmode==9:
+            mkavgfigs5(whichfig=2)
+        if whichmode==10:
+            mkavgfigs5(whichfig=3)
+        if whichmode==11:
+            mkavgfigs5(whichfig=4)
+        if whichmode==12:
+            mkavgfigs5(whichfig=5)
+        if whichmode==13:
+            mkavgfigs5(whichfig=6)
+        if whichmode==14:
+            mkavgfigs5(whichfig=7)
 
 
 def mkavgfigs1(whichfig=0):
@@ -29275,7 +29293,7 @@ def mkavgfigs4():
 
 
 # for harmrad dc+syn paper
-def mkavgfigs5():
+def mkavgfigs5(whichfig=0):
     ###########################################
     grid3d("gdump.bin",use2d=use2dglobal)
     #
@@ -29389,7 +29407,7 @@ def mkavgfigs5():
         #
         #
         #
-        if 1==1: # 
+        if whichfig==0 or whichfig==1: # 
             mylen = 40.0
             mylenshowx=(25.0/30.0)*mylen
             mylenshowy=(15.0/30.0)*mylen
@@ -29405,7 +29423,7 @@ def mkavgfigs5():
             #print(avg_eflux)
             #np.set_printoptions(threshold=10)
             returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig3a",veldensity=1,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,alpha=0.2,showuu1eq0=True,dostreamlines=False,showqty1=True)
-        if 1==1: # 
+        if whichfig==0 or whichfig==1: # 
             mylen = 130.0
             mylenshowx=(25.0/30.0)*mylen
             mylenshowy=(25.0/30.0)*mylen
@@ -29421,7 +29439,7 @@ def mkavgfigs5():
             #print(avg_eflux)
             #np.set_printoptions(threshold=10)
             returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig3abigger",veldensity=1,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,alpha=0.2,showuu1eq0=True,dostreamlines=False,showqty1=True)
-        if 1==1: # 
+        if whichfig==0 or whichfig==1: # 
             mylen = 500.0
             mylenshowx=(25.0/30.0)*mylen
             mylenshowy=(25.0/30.0)*mylen
@@ -29437,7 +29455,7 @@ def mkavgfigs5():
             #print(avg_eflux)
             #np.set_printoptions(threshold=10)
             returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig3abiggest",veldensity=1,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,alpha=0.2,showuu1eq0=True,dostreamlines=False,showqty1=True)
-        if 1==1: # 
+        if whichfig==0 or whichfig==2: # 
             mylen = 40.0
             mylenshowx=(25.0/30.0)*mylen
             mylenshowy=(15.0/30.0)*mylen
@@ -29453,7 +29471,7 @@ def mkavgfigs5():
             #print(avg_eflux)
             #np.set_printoptions(threshold=10)
             returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig3b",veldensity=1,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,alpha=0.2,showuu1eq0=True,dostreamlines=False,showqty1=True)
-        if 1==1: # 
+        if whichfig==0 or whichfig==2: # 
             mylen = 130.0
             mylenshowx=(25.0/30.0)*mylen
             mylenshowy=(25.0/30.0)*mylen
@@ -29469,7 +29487,7 @@ def mkavgfigs5():
             #print(avg_eflux)
             #np.set_printoptions(threshold=10)
             returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig3bbigger",veldensity=1,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,alpha=0.2,showuu1eq0=True,dostreamlines=False,showqty1=True)
-        if 1==1: # 
+        if whichfig==0 or whichfig==2: # 
             mylen = 500.0
             mylenshowx=(25.0/30.0)*mylen
             mylenshowy=(25.0/30.0)*mylen
@@ -29485,7 +29503,7 @@ def mkavgfigs5():
             #print(avg_eflux)
             #np.set_printoptions(threshold=10)
             returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig3bbiggest",veldensity=1,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,alpha=0.2,showuu1eq0=True,dostreamlines=False,showqty1=True)
-        if 1==1: #
+        if whichfig==0 or whichfig==3: # 
             mylen = 40.0
             mylenshowx=(25.0/30.0)*mylen
             mylenshowy=(15.0/30.0)*mylen
@@ -29498,7 +29516,7 @@ def mkavgfigs5():
             vmaxforframe=np.amax(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:])
             print("eflux: %g %g" % (vminforframe,vmaxforframe));sys.stdout.flush()
             returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig3c",veldensity=1,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,doefluxlog=True,alpha=0.2,showuu1eq0=True,dostreamlines=False,showqty1=False,showtaueffs=True)
-        if 1==1: #
+        if whichfig==0 or whichfig==3: # 
             mylen = 130.0
             mylenshowx=(25.0/30.0)*mylen
             mylenshowy=(25.0/30.0)*mylen
@@ -29511,7 +29529,7 @@ def mkavgfigs5():
             vmaxforframe=np.amax(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:])
             print("eflux: %g %g" % (vminforframe,vmaxforframe));sys.stdout.flush()
             returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig3cbigger",veldensity=1,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,doefluxlog=True,alpha=0.2,showuu1eq0=True,dostreamlines=False,showqty1=False,showtaueffs=True)
-        if 1==1: #
+        if whichfig==0 or whichfig==3: # 
             mylen = 500.0
             mylenshowx=(25.0/30.0)*mylen
             mylenshowy=(25.0/30.0)*mylen
@@ -29524,7 +29542,7 @@ def mkavgfigs5():
             vmaxforframe=np.amax(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:])
             print("eflux: %g %g" % (vminforframe,vmaxforframe));sys.stdout.flush()
             returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig3cbiggest",veldensity=1,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,doefluxlog=True,alpha=0.2,showuu1eq0=True,dostreamlines=False,showqty1=False,showtaueffs=True)
-        if 1==1: # 
+        if whichfig==0 or whichfig==4: # 
             mylen = 40.0
             mylenshowx=(25.0/30.0)*mylen
             mylenshowy=(15.0/30.0)*mylen
@@ -29540,7 +29558,7 @@ def mkavgfigs5():
             #print(avg_eflux)
             #np.set_printoptions(threshold=10)
             returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig3d",veldensity=1,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,alpha=0.2,showuu1eq0=True,dostreamlines=False,showqty1=True)
-        if 1==1: # 
+        if whichfig==0 or whichfig==4: # 
             mylen = 130.0
             mylenshowx=(25.0/30.0)*mylen
             mylenshowy=(25.0/30.0)*mylen
@@ -29556,7 +29574,7 @@ def mkavgfigs5():
             #print(avg_eflux)
             #np.set_printoptions(threshold=10)
             returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig3dbigger",veldensity=1,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,alpha=0.2,showuu1eq0=True,dostreamlines=False,showqty1=True)
-        if 1==1: # 
+        if whichfig==0 or whichfig==4: # 
             mylen = 500.0
             mylenshowx=(25.0/30.0)*mylen
             mylenshowy=(25.0/30.0)*mylen
@@ -29572,7 +29590,7 @@ def mkavgfigs5():
             #print(avg_eflux)
             #np.set_printoptions(threshold=10)
             returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig3dbiggest",veldensity=1,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,alpha=0.2,showuu1eq0=True,dostreamlines=False,showqty1=True)
-        if 1==1: # 
+        if whichfig==0 or whichfig==5: # 
             mylen = 40.0
             mylenshowx=(25.0/30.0)*mylen
             mylenshowy=(15.0/30.0)*mylen
@@ -29588,7 +29606,7 @@ def mkavgfigs5():
             #print(avg_eflux)
             #np.set_printoptions(threshold=10)
             returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig3e",veldensity=1,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,alpha=0.2,showuu1eq0=True,dostreamlines=False,showqty1=True)
-        if 1==1: # 
+        if whichfig==0 or whichfig==5: # 
             mylen = 130.0
             mylenshowx=(25.0/30.0)*mylen
             mylenshowy=(25.0/30.0)*mylen
@@ -29604,7 +29622,7 @@ def mkavgfigs5():
             #print(avg_eflux)
             #np.set_printoptions(threshold=10)
             returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig3ebigger",veldensity=1,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,alpha=0.2,showuu1eq0=True,dostreamlines=False,showqty1=True)
-        if 1==1: # 
+        if whichfig==0 or whichfig==5: # 
             mylen = 500.0
             mylenshowx=(25.0/30.0)*mylen
             mylenshowy=(25.0/30.0)*mylen
@@ -29620,7 +29638,7 @@ def mkavgfigs5():
             #print(avg_eflux)
             #np.set_printoptions(threshold=10)
             returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig3ebiggest",veldensity=1,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,alpha=0.2,showuu1eq0=True,dostreamlines=False,showqty1=True)
-        if 1==1: # 
+        if whichfig==0 or whichfig==6: # 
             mylen = 40.0
             mylenshowx=(25.0/30.0)*mylen
             mylenshowy=(15.0/30.0)*mylen
@@ -29636,7 +29654,7 @@ def mkavgfigs5():
             #print(avg_eflux)
             #np.set_printoptions(threshold=10)
             returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig3f",veldensity=1,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,doefluxlog=True,alpha=0.2,showuu1eq0=True,dostreamlines=False,showqty1=True)
-        if 1==1: # 
+        if whichfig==0 or whichfig==6: # 
             mylen = 130.0
             mylenshowx=(25.0/30.0)*mylen
             mylenshowy=(25.0/30.0)*mylen
@@ -29652,7 +29670,7 @@ def mkavgfigs5():
             #print(avg_eflux)
             #np.set_printoptions(threshold=10)
             returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig3fbigger",veldensity=1,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,doefluxlog=True,alpha=0.2,showuu1eq0=True,dostreamlines=False,showqty1=True)
-        if 1==1: # 
+        if whichfig==0 or whichfig==6: # 
             mylen = 500.0
             mylenshowx=(25.0/30.0)*mylen
             mylenshowy=(25.0/30.0)*mylen
@@ -29668,7 +29686,7 @@ def mkavgfigs5():
             #print(avg_eflux)
             #np.set_printoptions(threshold=10)
             returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig3fbiggest",veldensity=1,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,doefluxlog=True,alpha=0.2,showuu1eq0=True,dostreamlines=False,showqty1=True)
-        if 1==1: # 
+        if whichfig==0 or whichfig==7: # 
             mylen = 40.0
             mylenshowx=(25.0/30.0)*mylen
             mylenshowy=(15.0/30.0)*mylen
@@ -29684,7 +29702,7 @@ def mkavgfigs5():
             #print(avg_eflux)
             #np.set_printoptions(threshold=10)
             returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig3g",veldensity=1,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,doefluxlog=True,alpha=0.2,showuu1eq0=True,dostreamlines=False,showqty1=True)
-        if 1==1: # 
+        if whichfig==0 or whichfig==7: # 
             mylen = 130.0
             mylenshowx=(25.0/30.0)*mylen
             mylenshowy=(25.0/30.0)*mylen
@@ -29700,7 +29718,7 @@ def mkavgfigs5():
             #print(avg_eflux)
             #np.set_printoptions(threshold=10)
             returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig3gbigger",veldensity=1,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,doefluxlog=True,alpha=0.2,showuu1eq0=True,dostreamlines=False,showqty1=True)
-        if 1==1: # 
+        if whichfig==0 or whichfig==7: # 
             mylen = 500.0
             mylenshowx=(25.0/30.0)*mylen
             mylenshowy=(25.0/30.0)*mylen
@@ -30624,6 +30642,18 @@ def main(argv=None):
         mkavgfigs(whichmode=7)
     if runtype==29 or runtype==20 and runnumber==7:
         mkavgfigs(whichmode=8)
+    if runtype==30 or runtype==20 and runnumber==8:
+        mkavgfigs(whichmode=9)
+    if runtype==31 or runtype==20 and runnumber==9:
+        mkavgfigs(whichmode=10)
+    if runtype==32 or runtype==20 and runnumber==10:
+        mkavgfigs(whichmode=11)
+    if runtype==33 or runtype==20 and runnumber==11:
+        mkavgfigs(whichmode=12)
+    if runtype==34 or runtype==20 and runnumber==12:
+        mkavgfigs(whichmode=13)
+    if runtype==35 or runtype==20 and runnumber==13:
+        mkavgfigs(whichmode=14)
  
     #########
     # other stuff not usually used
