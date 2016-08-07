@@ -1256,6 +1256,8 @@ do
 		            echo "extracmdraw=\"$extracmdraw\"" >> $thebatch
 		            echo "mynumcorespernode=$mynumcorespernode" >> $thebatch
 		            echo "mynumcorespernode=$mynumcorespernode" >> $thebatch
+		            echo "system=$system" >> $thebatch
+		            echo "parallel=$parallel" >> $thebatch
 	            fi
 	            
 	            #if [ $parallel -eq 0 ]
@@ -1292,7 +1294,7 @@ do
 		            echo "textrun=\"runtype=\$runtype: Running i=\$i j=\$j giving runi=\$runi with runn=\$runn\"" >> $thebatch
 		            echo "echo \$textrun" >> $thebatch
 		            echo "sleep 1" >> $thebatch
-		            cmdraw="python $myinitfile $runtype $modelname "'$runi $runn ${extracmdraw}'
+		            cmdraw="python $myinitfile $system $parallel $runtype $modelname "'$runi $runn ${extracmdraw}'
 		            cmdfull='((nohup $cmdraw 2>&1 1>&3 | tee python_${runi}_${cor}_${runn}.${runtype}.stderr.out) 3>&1 1>&2 | tee python_${runi}_${cor}_${runn}.${runtype}.out) > python_${runi}_${cor}_${runn}.${runtype}.full.out 2>&1'
 		            echo "cmdraw=\"$cmdraw\"" >> $thebatch
 		            echo "cmdfull=\"$cmdfull\"" >> $thebatch
@@ -1356,7 +1358,7 @@ do
                             then
                                 echo "$myapcmd ./$thebatch" >> $superbatch
                             else
-		                        cmdraw="$makemoviecfullfile $mychunklisttype $mychunklist $runn $DATADIR $jobcheck $myinitfile $runtype $modelname $fakeruni $runn ${extracmdraw}"
+		                        cmdraw="$makemoviecfullfile $mychunklisttype $mychunklist $runn $DATADIR $jobcheck $myinitfile $system $parallel $runtype $modelname $fakeruni $runn ${extracmdraw}"
                                 echo "$myapcmd $cmdraw" >> $superbatch
                             fi
                             localerrorfile=python_${fakeruni}_${runn}.${runtype}.stderr.out
@@ -1379,7 +1381,7 @@ do
                             then
                                 echo "$myapcmd ./$thebatch" >> $superbatch
                             else
-		                        cmdraw="$makemoviecfullfile $mychunklisttype $mychunklist $runn $DATADIR $jobcheck $myinitfile $runtype $modelname $fakeruni $runn ${extracmdraw}"
+		                        cmdraw="$makemoviecfullfile $mychunklisttype $mychunklist $runn $DATADIR $jobcheck $myinitfile $system $parallel $runtype $modelname $fakeruni $runn ${extracmdraw}"
                                 echo "$myapcmd $cmdraw" >> $superbatch
                             fi
                             localerrorfile=python_${fakeruni}_${runn}.${runtype}.stderr.out
@@ -1401,7 +1403,7 @@ do
                             then
                                 echo "$myapcmd ./$thebatch" >> $superbatch
                             else
-		                        cmdraw="$makemoviecfullfile $mychunklisttype $mychunklist $runn $DATADIR $jobcheck $myinitfile $runtype $modelname $fakeruni $runn ${extracmdraw}"
+		                        cmdraw="$makemoviecfullfile $mychunklisttype $mychunklist $runn $DATADIR $jobcheck $myinitfile $system $parallel $runtype $modelname $fakeruni $runn ${extracmdraw}"
                                 echo "$myapcmd $cmdraw" >> $superbatch
                             fi
                             localerrorfile=python_${fakeruni}_${runn}.${runtype}.stderr.out
@@ -1525,9 +1527,9 @@ then
     echo "Merge to single file"
     if [ $testrun -eq 1 ]
 	then
-	    echo "((nohup python $myinitfile2 $runtype $modelname $runn $runn 2>&1 1>&3 | tee python_${runn}_${runn}.stderr.out) 3>&1 1>&2 | tee python_${runn}_${runn}.out) > python_${runn}_${runn}.full.out 2>&1"
+	    echo "((nohup python $myinitfile2 $system $parallel $runtype $modelname $runn $runn 2>&1 1>&3 | tee python_${runn}_${runn}.stderr.out) 3>&1 1>&2 | tee python_${runn}_${runn}.out) > python_${runn}_${runn}.full.out 2>&1"
     else
-	    ((nohup python $myinitfile2 $runtype $modelname $runn $runn 2>&1 1>&3 | tee python_${runn}_${runn}.stderr.out) 3>&1 1>&2 | tee python_${runn}_${runn}.out) > python_${runn}_${runn}.full.out 2>&1
+	    ((nohup python $myinitfile2 $system $parallel $runtype $modelname $runn $runn 2>&1 1>&3 | tee python_${runn}_${runn}.stderr.out) 3>&1 1>&2 | tee python_${runn}_${runn}.out) > python_${runn}_${runn}.full.out 2>&1
     fi
 
     if [ $rminitfiles -eq 1 ]
@@ -1684,9 +1686,9 @@ then
 
     if [ $testrun -eq 1 ]
 	then
-	    echo "((nohup python $myinitfile6 $runtype $modelname $whichgroups $whichgroupe $step 2>&1 1>&3 | tee python_${runn}_${runn}.avg.stderr.out) 3>&1 1>&2 | tee python_${runn}_${runn}.avg.out) > python_${runn}_${runn}.avg.full.out 2>&1"
+	    echo "((nohup python $myinitfile6 $system $parallel $runtype $modelname $whichgroups $whichgroupe $step 2>&1 1>&3 | tee python_${runn}_${runn}.avg.stderr.out) 3>&1 1>&2 | tee python_${runn}_${runn}.avg.out) > python_${runn}_${runn}.avg.full.out 2>&1"
     else
-	    ((nohup python $myinitfile6 $runtype $modelname $whichgroups $whichgroupe $step $itemspergroup 2>&1 1>&3 | tee python_${runn}_${runn}.avg.stderr.out) 3>&1 1>&2 | tee python_${runn}_${runn}.avg.out) > python_${runn}_${runn}.avg.full.out 2>&1
+	    ((nohup python $myinitfile6 $system $parallel $runtype $modelname $whichgroups $whichgroupe $step $itemspergroup 2>&1 1>&3 | tee python_${runn}_${runn}.avg.stderr.out) 3>&1 1>&2 | tee python_${runn}_${runn}.avg.out) > python_${runn}_${runn}.avg.full.out 2>&1
 
         # copy resulting avg file to avg2d.npy
 	    avg2dmerge=`ls -vrt avg2d${itemspergrouptext}_${groupsnum}_${groupenum}.npy | head -1`    

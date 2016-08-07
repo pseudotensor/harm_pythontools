@@ -106,10 +106,14 @@ int main(int argc, char *argv[])
 
   int numargs;
   numargs=myargs(argc,argv);
+  int system;
+  system=atoi(*(argv+numargs+2));
+  int parallel;
+  parallel=atoi(*(argv+numargs+3));
   int runtype;
-  runtype=atoi(*(argv+numargs+2));
+  runtype=atoi(*(argv+numargs+4));
   
-  myffprintf(stdout,"myargs End: myid=%d. runtype=%d\n",myid,runtype);
+  myffprintf(stdout,"myargs End: myid=%d. runtype=%d parallel=%d system=%d\n",myid,system,parallel,runtype);
 
 
 
@@ -156,13 +160,25 @@ int main(int argc, char *argv[])
     fprintf(stderr,"No python args given\n"); fflush(stderr);
   }
   // fix-up argument for runi if correct runtype (all runtype's now)
-  if(argc-numargs>=3){
-    int runtype;
-    runtype=atoi(*(argv+numargs+2));
+  // argv[0]   argc=1  : python call
+  // argv[1]   argc=2  : chunklisttype
+  // argv[2]   argc=3  : chunklist
+  // argv[3]   argc=4  : runn
+  // argv[4]   argc=5  : DATADIR
+  // argv[5]   argc=6  : jobcheck
+  // argv[6]   argc=7  : init file
+  // argv[7]   argc=8  : system (pytonarg=1)
+  // argv[8]   argc=9  : parallel (pytonarg=2)
+  // argv[9]   argc=10 : runtype (pytonarg=3)
+  // argv[10]  argc=11 : modelname (pytonarg=4)
+  // argv[11]  argc=12 : fakeruni (pythonarg=5)
+  // argv[12]  argc=13 : runn (pythonarg=6)
+  // argv[13+] argc=14 : <others> (pytonarg=7)
+  if(argc-numargs>=5){ // at least runtype should be given
     if(1){
       // assumes large amount of space ready for this
       if(argc-numargs>=5){
-        sprintf(*(argv+numargs+4),"%d",subjobnumber-1); // -1 because needs to be from 0 to n-1 while chunk# goes from 1 to n
+        sprintf(*(argv+numargs+6),"%d",subjobnumber-1); // -1 because needs to be from 0 to n-1 while chunk# goes from 1 to n
       }
       else{
         fprintf(stderr,"No runi given"); fflush(stderr);
@@ -397,7 +413,7 @@ static int myargs(int argc, char *argv[])
   size_t strsize;
   int i;
 
-  numargs=1+4; // number of user arguments
+  numargs=1+4; // number of current-program (i.e. non-python) arguments
 
   ////////////////
   //
@@ -488,7 +504,7 @@ static int myargs(int argc, char *argv[])
 
 
     int runtype;
-    runtype=atoi(*(argv+numargs+2));
+    runtype=atoi(*(argv+numargs+4));
     fprintf(stderr,"runtype=%d\n",runtype); fflush(stderr);
 
     ///////////////////////
@@ -499,10 +515,9 @@ static int myargs(int argc, char *argv[])
     get_chunklist(strsize,chunkliststring,chunklist,&numchunks);
     print_chunklist(numchunks,chunklist);
 
-    //    int itemspergroup=4; // needs to be same as in makemovie.sh
 
     if(runtype==2){
-      int itemspergroup=atoi(*(argv+numargs+2+4));
+      int itemspergroup=atoi(*(argv+numargs+4+4));
       fprintf(stderr,"itemspergroup=%d\n",itemspergroup); fflush(stderr);
 
       numchunksactual=numchunks/itemspergroup;

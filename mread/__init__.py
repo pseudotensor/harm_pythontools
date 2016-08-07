@@ -124,33 +124,38 @@ def runglobalsetup(argv=None):
     # force python path to be set before loading rest of file, including modules.
     setpythonpath()
     #
-    global runtype
+    # below should agree with makemovie.sh and jon_makemovie_programstart.c .
+    global system,parallel,runtype,modelname
     if len(sys.argv[1:])>0:
-        runtype=int(sys.argv[1])
+        system=int(sys.argv[1])
+    else:
+        print("No system type specified") ; sys.stdout.flush()
+        system=-1
+    #
+    if len(sys.argv[2:])>0:
+        parallel=int(sys.argv[2])
+    else:
+        print("No parallel type specified") ; sys.stdout.flush()
+        parallel=-1
+    #
+    if len(sys.argv[3:])>0:
+        runtype=int(sys.argv[3])
     else:
         print("No run type specified") ; sys.stdout.flush()
         runtype=-1
     #
-    global modelname
-    if len(sys.argv[2:])>0:
-        modelname = sys.argv[2]
+    if len(sys.argv[4:])>0:
+        modelname = sys.argv[4]
     else:
         modelname = "UnknownModel"
     #
-    print("ModelName = %s" % (modelname) ) ; sys.stdout.flush()
+    print("System, Parallel, Runtype, ModelName = %s %s %s %s" % (system, parallel, runtype, modelname) ) ; sys.stdout.flush()
     #
     # below should agree with makemovie.sh and jon_makemovie_programstart.c .
-    # argv[0]: itself + init file
-    # argv[1]: runtype
-    # argv[2]: modelname
-    # argv[3]: runnumer
-    # argv[4]: uppernum
-    # etc. if exists
-    #
     global runnumber,uppernum
-    if len(sys.argv[4:])>0:
-        runnumber=int(argv[3])
-        uppernum=int(argv[4])
+    if len(sys.argv[6:])>0:
+        runnumber=int(argv[5])
+        uppernum=int(argv[6])
         print("runtype=%d has runnumber=%d uppernum=%d" % (runtype,runnumber,uppernum)) ; sys.stdout.flush()
         # force unique path or else mkdir in matplotlib will barf on some systems.
         setmplconfigpath(uniquenum=runnumber)
@@ -213,14 +218,16 @@ import random
 random.seed()
 import time
 n = random.random()
-# TURN ON BELOW FOR STAMPEDE (so matplotlibdir??? will be randomly created)
-#time.sleep(10.0+100.0*n) # on supercomputer's need to wait so file system gets up to date
+if(parallel==2 and (system==1 or system==2 or system==5 or system==7 or system==8)):
+    # TURN ON BELOW FOR STAMPEDE (so matplotlibdir??? will be randomly created)
+    time.sleep(10.0+100.0*n) # on supercomputer's need to wait so file system gets up to date
 
 import matplotlib
 #matplotlib.get_cachedir()
 n = random.random()
-# TURN ON BELOW FOR STAMPEDE (so matplotlibdir??? will be randomly created)
-#time.sleep(10.0*n) # on supercomputer's need to wait so file system gets up to date
+if(parallel==2 and (system==1 or system==2 or system==5 or system==7 or system==8)):
+    # TURN ON BELOW FOR STAMPEDE (so matplotlibdir??? will be randomly created)
+    time.sleep(10.0*n) # on supercomputer's need to wait so file system gets up to date
 matplotlib.use('Agg')
 from matplotlib import rc
 from matplotlib import mlab
@@ -23621,6 +23628,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             # PICK:
             pickradius=4.0 # must be consistent with where yvalue was picked
             iradius=iofr(pickradius)
+            hoverr_vsr=timeavg(hoverr,ts,fti,ftf)
             if whichfftplot==0:
                 picktheta=np.pi*0.5 + 0.0*hoverr_vsr[iradius]
             elif whichfftplot==1:
@@ -26870,9 +26878,9 @@ def mkmovie(framesize=500, domakeavi=False):
     #To generate movies for all sub-folders of a folder:
     #cd ~/Research/runart; for f in *; do cd ~/Research/runart/$f; (python  ~/py/mread/__init__.py &> python.out &); done
     #
-    if len(sys.argv[2:])==3 and sys.argv[3].isdigit() and (sys.argv[4].isdigit() or sys.argv[4][0]=="-") :
-        whichi = int(sys.argv[3])
-        whichn = int(sys.argv[4])
+    if len(sys.argv[4:])==3 and sys.argv[5].isdigit() and (sys.argv[6].isdigit() or sys.argv[6][0]=="-") :
+        whichi = int(sys.argv[5])
+        whichn = int(sys.argv[6])
         print( "Doing every %d slice of total %d slices" % (whichi, whichn) ) ;sys.stdout.flush()
     else:
         whichi = None
@@ -27576,7 +27584,7 @@ def mk2davg():
     avoidplotsglobal=1
     avoidfitplotsglobal=1
     #
-    if len(sys.argv[2:])>1:
+    if len(sys.argv[4:])>1:
         grid3d("gdump.bin",use2d=use2dglobal)
         #rd("dump0000.bin")
         #rfd("fieldline0000.bin")
@@ -27593,13 +27601,13 @@ def mk2davg():
     #
     ####################################
     #itemspergroup = 20
-    print("mk2davg args1: %d" % (len(sys.argv[2:]))) ; sys.stdout.flush()
-    print("mk2davg args2: %d %d %d %d" % (len(sys.argv[2:]),sys.argv[3].isdigit(),sys.argv[4].isdigit(),sys.argv[5].isdigit() )) ; sys.stdout.flush()
+    print("mk2davg args1: %d" % (len(sys.argv[4:]))) ; sys.stdout.flush()
+    print("mk2davg args2: %d %d %d %d" % (len(sys.argv[4:]),sys.argv[5].isdigit(),sys.argv[6].isdigit(),sys.argv[7].isdigit() )) ; sys.stdout.flush()
     
-    if len(sys.argv[2:])==4 and sys.argv[3].isdigit() and sys.argv[4].isdigit() and sys.argv[5].isdigit():
-        whichgroups = int(sys.argv[3])
-        step = int(sys.argv[4])
-        itemspergroup = int(sys.argv[5])
+    if len(sys.argv[4:])==4 and sys.argv[5].isdigit() and sys.argv[6].isdigit() and sys.argv[7].isdigit():
+        whichgroups = int(sys.argv[5])
+        step = int(sys.argv[6])
+        itemspergroup = int(sys.argv[7])
         if numfiles< itemspergroup:
             print("1: numfiles=%d is less than itemspergroup=%d and code not setup for such exceptions." % (numfiles,itemspergroup)) ; sys.stdout.flush()
             # must match makemovie.sh
@@ -27614,11 +27622,11 @@ def mk2davg():
         for whichgroup in np.arange(whichgroups,whichgroupe,step):
             avgmem = get2davg(whichgroup=whichgroup,itemspergroup=itemspergroup,domerge=False)
         #plot2davg(avgmem)
-    elif len(sys.argv[2:])==5 and sys.argv[3].isdigit() and sys.argv[4].isdigit() and sys.argv[5].isdigit() and sys.argv[6].isdigit():
-        whichgroups = int(sys.argv[3])
-        whichgroupe = int(sys.argv[4])
-        step = int(sys.argv[5])
-        itemspergroup = int(sys.argv[6])
+    elif len(sys.argv[4:])==5 and sys.argv[5].isdigit() and sys.argv[6].isdigit() and sys.argv[7].isdigit() and sys.argv[8].isdigit():
+        whichgroups = int(sys.argv[5])
+        whichgroupe = int(sys.argv[6])
+        step = int(sys.argv[7])
+        itemspergroup = int(sys.argv[8])
         if numfiles< itemspergroup:
             print("2: numfiles=%d is less than itemspergroup=%d and code not setup for such exceptions." % (numfiles,itemspergroup)) ; sys.stdout.flush()
             # must match makemovie.sh
@@ -29746,9 +29754,9 @@ def mklotsopanels(epsFm=None,epsFke=None,fti=None,ftf=None,domakeframes=True,pre
     #cd ~/Research/runart; for f in *; do cd ~/Research/runart/$f; (python  ~/py/mread/__init__.py &> python.out &); done
     #############################################
     print("ModelName = %s" % (modelname) )
-    if len(sys.argv[2:])==3 and sys.argv[3].isdigit() and (sys.argv[4].isdigit() or sys.argv[4][0]=="-") :
-        whichi = int(sys.argv[3])
-        whichn = int(sys.argv[4])
+    if len(sys.argv[4:])==3 and sys.argv[5].isdigit() and (sys.argv[6].isdigit() or sys.argv[6][0]=="-") :
+        whichi = int(sys.argv[5])
+        whichn = int(sys.argv[6])
         print( "Doing every %d slice of total %d slices" % (whichi, whichn) )
         sys.stdout.flush()
     else:
@@ -30099,10 +30107,10 @@ def generate_time_series(whichmode=0):
     #qtymem=None #clear to free mem
     #
     ###################################
-    # argv[1] as runtype could be 3 or 10-19
-    if len(sys.argv[2:])==3 and sys.argv[3].isdigit() and sys.argv[4].isdigit():
-        whichi = int(sys.argv[3])
-        whichn = int(sys.argv[4])
+    # argv[3] as runtype could be 3 or 10-19
+    if len(sys.argv[4:])==3 and sys.argv[5].isdigit() and sys.argv[6].isdigit():
+        whichi = int(sys.argv[5])
+        whichn = int(sys.argv[6])
         if whichi >= whichn:
             # DOING MERGE OF NPY FILES (generates full qtymem)
             mergeqtyvstime(whichn)
@@ -30113,25 +30121,25 @@ def generate_time_series(whichmode=0):
     else:
         # DOING PLOTS USING NPY FILES (should use full qtymem)
         #
-        if len(sys.argv[2:])==3+6 and sys.argv[3].isdigit() and sys.argv[4].isdigit() and sys.argv[5].isdigit() and sys.argv[6].isdigit() and sys.argv[7].isdigit() and sys.argv[8].isdigit() and sys.argv[9].isdigit() and sys.argv[10].isdigit():
-            whichi = int(sys.argv[3])
-            whichn = int(sys.argv[4])
+        if len(sys.argv[4:])==3+6 and sys.argv[5].isdigit() and sys.argv[6].isdigit() and sys.argv[7].isdigit() and sys.argv[8].isdigit() and sys.argv[9].isdigit() and sys.argv[10].isdigit() and sys.argv[11].isdigit() and sys.argv[12].isdigit():
+            whichi = int(sys.argv[5])
+            whichn = int(sys.argv[6])
             # whichmode==0 do all
             # whichmode>0 select
             if(whichmode==0 or whichmode==1):
                 dolatex=1
             if(whichmode==0 or whichmode==2):
-                makepowervsmplots = int(sys.argv[5])
+                makepowervsmplots = int(sys.argv[7])
             if(whichmode==0 or whichmode==3):
-                makespacetimeplots = int(sys.argv[6])
+                makespacetimeplots = int(sys.argv[8])
             if(whichmode==0 or whichmode==4):
-                makefftplot = int(sys.argv[7])
+                makefftplot = int(sys.argv[9])
             if(whichmode==0 or whichmode==5):
-                makespecplot = int(sys.argv[8])
+                makespecplot = int(sys.argv[10])
             if(whichmode==0 or whichmode==6):
-                makeinitfinalplot = int(sys.argv[9])
+                makeinitfinalplot = int(sys.argv[11])
             if(whichmode==0 or whichmode==7):
-                makethradfinalplot = int(sys.argv[10])
+                makethradfinalplot = int(sys.argv[12])
             print("Got plot args: %d %d %d %d %d %d" % (makepowervsmplots,makespacetimeplots,makefftplot,makespecplot,makeinitfinalplot,makethradfinalplot))
             #
         qtymem=getqtyvstime(ihor,0.2)
@@ -30256,9 +30264,9 @@ def oldstuff():
         df=diskfluxcalc(ny/2,rmin=rhor)
         print "Final   (t=%-8g): BHflux = %g, Diskflux = %g" % (t, hf, df)
     if False:
-        if len(sys.argv[2:])==3 and sys.argv[3].isdigit() and (sys.argv[4].isdigit() or sys.argv[4][0]=="-") :
-            whichi = int(sys.argv[3])
-            whichn = int(sys.argv[4])
+        if len(sys.argv[4:])==3 and sys.argv[5].isdigit() and (sys.argv[6].isdigit() or sys.argv[6][0]=="-") :
+            whichi = int(sys.argv[5])
+            whichn = int(sys.argv[6])
             sys.stdout.flush()
         if whichn < 0 and whichn is not None:
             whichn = -whichn
@@ -30522,7 +30530,9 @@ def main(argv=None):
     # For specific systems like stampede and pfe, this should be 1
     # For local systems like bh02, should be 0
     global ISSCRATCH
-    ISSCRATCH=0
+    ISSCRATCH=0 # default
+    if(parallel==2 and (system==1 or system==2 or system==5 or system==7 or system==8)):
+       ISSCRATCH=1
     #
     # whether to save any eps files (can be expensive on memory)
     global saveeps
