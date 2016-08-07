@@ -562,7 +562,7 @@ then
     #timetot="04:00:00" # took 4 hours
     # makemovie
     #timetot="01:00:00"
-    timetot="00:15:00"
+    timetot="00:20:00"
     #
     # numtasks set equal to total number of time slices, so each task does only 1 fieldline file
     # CHOOSE below or set numtasks to some number <= number of field lines
