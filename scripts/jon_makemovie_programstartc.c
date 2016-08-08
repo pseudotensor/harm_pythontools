@@ -707,6 +707,7 @@ static int setup_tpy_makemovie(int myid, int *chunklist, int totalchunks, char *
 // do things like in runchunkn.sh script AFTER binary is called
 static int finish_tpy_makemovie(int myid, int *chunklist, int totalchunks, char *jobprefix, char *cwdold, char *cwdnew)
 {
+  char myfinishname[MAXGENNAME];
   char finishname[MAXGENNAME];
   FILE *myfinishfile;
 
@@ -716,10 +717,10 @@ static int finish_tpy_makemovie(int myid, int *chunklist, int totalchunks, char 
 
 
   // first create my file since this CPU is done.
-  sprintf(finishname,"finish.%d",myid);
-  myfinishfile=fopen(finishname,"wt");
+  sprintf(myfinishname,"finish.%d",myid);
+  myfinishfile=fopen(myfinishname,"wt");
   if(myfinishfile==NULL){
-    myffprintf(stderr,"Could not open %s file\n",finishname);
+    myffprintf(stderr,"Could not open %s file\n",myfinishname);
     exit(1);
   }
   myffprintf(myfinishfile,"1\n"); // stick a 1 in there so non-zero size
@@ -755,7 +756,7 @@ static int finish_tpy_makemovie(int myid, int *chunklist, int totalchunks, char 
   }// end while(1)
 
   // once done, can remove the finish file.
-  remove(finishname);
+  remove(myfinishname);
 
 
   return(0);
