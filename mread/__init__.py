@@ -160,22 +160,25 @@ def runglobalsetup(argv=None):
     #
     print("System, Parallel, Runtype, ModelName = %s %s %s %s" % (system, parallel, runtype, modelname) ) ; sys.stdout.flush()
     #
-    # below should agree with makemovie.sh and jon_makemovie_programstart.c .
-    global runnumber,uppernum
-    if len(sys.argv[6:])>0:
-        runnumber=int(argv[5])
-        uppernum=int(argv[6])
-        print("runtype=%d has runnumber=%d uppernum=%d" % (runtype,runnumber,uppernum)) ; sys.stdout.flush()
-        # force unique path or else mkdir in matplotlib will barf on some systems.
-        setmplconfigpath(uniquenum=runnumber)
-        redirectstderrout(system=system,parallel=parallel,runtype=runtype,uniquenum=runnumber,uppernum=uppernum)
-    else:
-        print("runtype=%d should have runnumber and uppernum but doesn't!" % (runtype)) ; sys.stdout.flush()
-        exit
+    if runtype!=-1:
+        # below should agree with makemovie.sh and jon_makemovie_programstart.c .
+        global runnumber,uppernum
+        if len(sys.argv[6:])>0:
+            runnumber=int(argv[5])
+            uppernum=int(argv[6])
+            print("runtype=%d has runnumber=%d uppernum=%d" % (runtype,runnumber,uppernum)) ; sys.stdout.flush()
+            # force unique path or else mkdir in matplotlib will barf on some systems.
+            setmplconfigpath(uniquenum=runnumber)
+            redirectstderrout(system=system,parallel=parallel,runtype=runtype,uniquenum=runnumber,uppernum=uppernum)
+        else:
+            print("runtype=%d should have runnumber and uppernum but doesn't!" % (runtype)) ; sys.stdout.flush()
+            exit
 
     #######
     # check if known runtype
-    if(runtype==3):
+    if(runtype==-1):
+        print("Assuming command Line mode") ; sys.stdout.flush()
+    elif(runtype==3):
         print("Doing make1d type of run") ; sys.stdout.flush()
     elif(runtype==4):
         print("Doing makeframes type of run") ; sys.stdout.flush()
@@ -2697,6 +2700,8 @@ def getTrads():
     #pg=(gam-1.0)*ug  #clean # use clean to keep pg low and Tgas will have floor like below  # no, need to use what was in simulation to be consistent with simulation's idea of what optical depth was
     # and of used ugclean above, then in funnel temperature would be very small and kappaff would be huge.
     #
+
+
     #prad=(4.0/3.0-1.0)*Erf
     # code Tgas for ideal gas
     #Tgas=pg/(rho/MUMEAN)
@@ -2719,12 +2724,23 @@ def getTrads():
     Tradlablte = pow(np.fabs(R00)/ARAD_CODE,0.25) # ASSUMPTION: PLANCK-like in comoving frame even though radiation flowing through cell
     EBAR0=(2.7011780329190638961)
     nradffratlte = Tradfflte**3/EBAR0 #NRAD_ARAD_CODE*
+    #
+    #
+    #
     Ruurat=np.float64(Ruu/ARAD_CODE)
+    R00rat=np.float64(R00/ARAD_CODE)
+    nradlabratlte = Tradlablte**3/EBAR0 #NRAD_ARAD_CODE*
+    #
+    # first check for issues with nrad (should do in harmrad later) before computing Trad
+    # this is a catch to avoid bad Trads
+    nradfix=1
+    if nradfix==1:
+        nrad[nrad<1E-26]=nradlabratlte
+        nradff[nradff<1E-26]=nradlabratlte
+    #
     nradffrat=np.float64(nradff) #/NRAD_ARAD_CODE # already inside from harmrad
     nradlabrat=np.fabs(SMALL+np.float64(nrad*uradu[0])) #/NRAD_ARAD_CODE # already inside from harmrad
     #
-    R00rat=np.float64(R00/ARAD_CODE)
-    nradlabratlte = Tradlablte**3/EBAR0 #NRAD_ARAD_CODE*
     #
     Tradfftype1=Ruurat/(nradffrat*EBAR0 + SMALL)
     Tradlabtype1=R00rat/(nradlabrat*EBAR0 + SMALL)
@@ -31247,7 +31263,7 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     #
     tauradlocal=(KAPPAUSERnofe+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
     #
-    if 1==0:
+    if 1==1:
         # use time-phi average
         loadavg()
         KAPPAUSER=np.copy(rho)
@@ -31263,6 +31279,7 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
         Tradlabtype1=avg_Tradlabtype1
         Tradlabtype3=avg_Tradlabtype3
         Tradlablte=avg_Tradlablte
+        nradffrat=avg_nradffrat
     if 1==0:
         KAPPAUSERavg=np.average(KAPPAUSER,axis=-1)[:,:,None]
         KAPPAUSERnofeavg=np.average(KAPPAUSERnofe,axis=-1)[:,:,None]
