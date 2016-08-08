@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
   // argv[3]   argc=4  : runn
   // argv[4]   argc=5  : DATADIR
   // argv[5]   argc=6  : jobcheck
-  // argv[6]   argc=7  : init file
+  // argv[6]   argc=7  : init file (pythonarg=0)
   // argv[7]   argc=8  : systemvar (pytonarg=1)
   // argv[8]   argc=9  : parallel (pytonarg=2)
   // argv[9]   argc=10 : runtype (pytonarg=3)
@@ -354,7 +354,7 @@ int main(int argc, char *argv[])
   finish_tpy_makemovie(myid,chunklist,totalchunks,jobprefix,cwdold,cwdnew);
 
 
-  myffprintf(stdout,"Done with jon_makemovie_programstart.c.\n");
+  myffprintf(stdout,"Done with jon_makemovie_programstart.c: myid=%d\n",myid);
 
 #if(USEMPI)
   // finish up MPI
@@ -624,6 +624,11 @@ static int setup_tpy_makemovie(int myid, int *chunklist, int totalchunks, char *
   sprintf(finishname,"finish.%d",myid);
   remove(finishname);
 
+#if(USEMPI)
+  // barrier to ensure all cores remove finish file so other cores don't stop if quickly reach end before any old finish file erased.  finish file is normally removed, but only if ended before time out.
+  MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
 
   /////////////////////
   //
@@ -710,6 +715,7 @@ static int finish_tpy_makemovie(int myid, int *chunklist, int totalchunks, char 
   char myfinishname[MAXGENNAME];
   char finishname[MAXGENNAME];
   FILE *myfinishfile;
+  FILE *finishfile;
 
 
   // change back to old working directory (this is where finish files will be located)
@@ -734,14 +740,14 @@ static int finish_tpy_makemovie(int myid, int *chunklist, int totalchunks, char 
     int i;
     for(i=0;i<numchunksactual;i++){
       sprintf(finishname,"finish.%d",i);
-      myfinishfile=fopen(finishname,"rt");
-      if(myfinishfile==NULL){
+      finishfile=fopen(finishname,"rt");
+      if(finishfile==NULL){
         finished=0;
         break; // no point in checking rest of files, so exit for loop
       }
       else{
         // then file exists, so no missing files so far
-        fclose(myfinishfile);
+        fclose(finishfile);
       }
     }
     if(finished==0){
@@ -755,7 +761,7 @@ static int finish_tpy_makemovie(int myid, int *chunklist, int totalchunks, char 
 
   }// end while(1)
 
-  // once done, can remove the finish file.
+  // once done, can remove my finish file.
   remove(myfinishname);
 
 

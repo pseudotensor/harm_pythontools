@@ -30630,6 +30630,7 @@ def main(argv=None):
         generate_time_series(whichmode=6)
     if runtype==18 or runtype==10 and runnumber==6:
         generate_time_series(whichmode=7)
+    # no runnumber>6 and runnumber<=15 yet (out of 16 possible cores on normal system)
     if runtype==4:
         #makeframes
         mkmovie()
@@ -30663,6 +30664,7 @@ def main(argv=None):
         mkavgfigs(whichmode=13)
     if runtype==35 or runtype==20 and runnumber==13:
         mkavgfigs(whichmode=14)
+    # no runnumber==14 or 15 yet (out of 16 possible cores on normal system)
  
     #########
     # other stuff not usually used
