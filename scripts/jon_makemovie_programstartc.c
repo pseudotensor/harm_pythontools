@@ -618,16 +618,6 @@ static int setup_tpy_makemovie(int myid, int *chunklist, int totalchunks, char *
   }
 
 
-  // At the end, will need to wait for all processes to end.   Do so via a file for each myid.  Here we remove old file if it exists.
-  // ensure to use same name when creating and checking in finish_tpy_makemovie()
-  char finishname[MAXGENNAME];
-  sprintf(finishname,"finish.%d",myid);
-  remove(finishname);
-
-#if(USEMPI)
-  // barrier to ensure all cores remove finish file so other cores don't stop if quickly reach end before any old finish file erased.  finish file is normally removed, but only if ended before time out.
-  MPI_Barrier(MPI_COMM_WORLD);
-#endif
 
 
   /////////////////////
@@ -651,12 +641,27 @@ static int setup_tpy_makemovie(int myid, int *chunklist, int totalchunks, char *
   //  exit(1);
   // }
 
+  ///////////
+  //
+  //// CHDIR
   error=chdir(subjobdir);
 
   if(error!=0){
     myffprintf(stderr,"Failed to change to directory: %s\n",subjobdir);
     exit(1);
   }
+
+
+  // At the end, will need to wait for all processes to end.   Do so via a file for each myid.  Here we remove old file if it exists.
+  // ensure to use same name when creating and checking in finish_tpy_makemovie()
+  char finishname[MAXGENNAME];
+  sprintf(finishname,"finish.%d",myid);
+  remove(finishname);
+
+#if(USEMPI)
+  // barrier to ensure all cores remove finish file so other cores don't stop if quickly reach end before any old finish file erased.  finish file is normally removed, but only if ended before time out.
+  MPI_Barrier(MPI_COMM_WORLD);
+#endif
 
 
   if(parallel<=2){ // not really needed except as pure debug
