@@ -208,7 +208,7 @@ elif [ $ispfe -eq 1 ]
 then
     system=8
     #parallel=1
-    parallel=2 # so uses makemoviec instead of python with appropriate arg changes
+    parallel=3 # so uses makemoviec instead of python with appropriate arg changes
 else
     # CHOOSE
     system=3
