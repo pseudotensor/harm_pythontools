@@ -563,10 +563,21 @@ then
     #timetot="01:00:00"
     #timetot="04:00:00" # took 4 hours
 
-    # 50 files:
-    #timetot="00:20:00"
-    # 500 files:
-    timetot="00:50:00"
+    if [ $makeframes -ge 1 ] ||
+        [ $make1d -ge 1 ]
+    then
+        # 50 files
+        #timetot="00:20:00"
+        # 500 files
+        timetot="00:50:00"
+    elif [ $makeavg -ge 1 ]
+        then
+        # even with 500 files
+        timetot="00:15:00"
+    else
+        # shouldn't matter then as not calling expensive routie that uses this timetot
+        timetot="00:50:00"
+    fi
     #
     # numtasks set equal to total number of time slices, so each task does only 1 fieldline file
     # CHOOSE below or set numtasks to some number <= number of field lines
