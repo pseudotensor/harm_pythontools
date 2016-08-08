@@ -928,20 +928,20 @@ if [ $collect -ge 1 ] &&
     [ $system -eq 8 ]
 then
     # below follows makemovie.sh and agrees with python script file
-    if [ $makeplot -eq 1 ]
+    if  [ $parallel -ge 2 ]
     then
-        pythonlatexfile="python_u_11_0_1.stdout.out"
-    elif  [ $parallel -ge 2 ] &&
-        [ $makeplot -eq 100 ]
-    then
-        pythonlatexfile="python_u_10_0_16.stdout.out"
+        pythonlatexfile1="python_u_10_0_16.stdout.out"
+        pythonlatexfile2=""
     else
-        pythonlatexfile="python_u_12_0_1.stdout.out"
+        # don't know, check both
+        pythonlatexfile1="python_u_11_0_1.stdout.out"
+        pythonlatexfile2="python_u_12_0_1.stdout.out"
     fi
 else
-    pythonlatexfile="python.plot.out"
+    pythonlatexfile1="python.plot.out"
+    pythonlatexfile2=""
 fi
-echo "using pythonlatexfile=$pythonlatexfile"
+echo "using pythonlatexfile1=$pythonlatexfile1  pythonlatexfile2=$pythonlatexfile2"
 
 
 
@@ -991,13 +991,24 @@ then
             extrapath=${thedir}/$moviedirname
         fi
 
+        if [ -e ${extrapath}/$pythonlatexfile1 ]
+        then
+            mypythonlatexfile=${extrapath}/$pythonlatexfile1
+        elif [ -e ${extrapath}/$pythonlatexfile2 ]
+            mypythonlatexfile=${extrapath}/$pythonlatexfile2
+        else
+            echo "No pythonlatexfile found"
+            exit
+        fi
+
+
         if [ $iiter -eq 1 ]
         then
-		    cat ${extrapath}/$pythonlatexfile | grep "HLatex" >> ${prepath}/tables${extraname}.tex
+		    cat $mypythonlatexfile | grep "HLatex" >> ${prepath}/tables${extraname}.tex
 		    echo "HLatex: \hline" >> ${prepath}/tables${extraname}.tex
         fi
-		cat ${extrapath}/$pythonlatexfile | grep "VLatex" >> ${prepath}/tables${extraname}.tex
-		echo "$dirname $thedir $moviedirname $pythonlatexfile : $iiter"
+		cat $mypythonlatexfile | grep "VLatex" >> ${prepath}/tables${extraname}.tex
+		echo "$dirname $thedir $moviedirname $mypythonlatexfile : $iiter"
 
         iiter=$(( $iiter+1))
 
