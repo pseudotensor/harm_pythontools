@@ -442,6 +442,7 @@ then
     numnodesplot=1
     # new analysis can take a long time.
     timetotplot="8:00:00"
+    timetotavgplot=$timetotplot
     # don't always need so much memory.
     memtotplot=32
     # interactive use for <1hour:
@@ -531,6 +532,7 @@ then
     apcmdplot="ibrun "
     # only took 6 minutes for thickdisk7 doing 458 files inside qty2.npy!  Up to death at point when tried to resample in time.
     timetotplot="1:00:00" # for normal can go up to 48 hours.  For serial up to 12 hours.
+    timetotavgplot=$timetotplot
 
 
     #############################################
@@ -626,10 +628,9 @@ then
     #timetotplot="0:45:00" # for normal can go up to 48 hours.  For serial up to 12 hours.
     # if stick to parallel==2 mode, then only need about 10-20 minutes depending upon resolution
     #
-    # 50 files
+    #
     timetotplot="0:20:00"
-    # 500 files
-    timetotplot="0:50:00"
+    timetotavgplot=$timetotplot
 
 
     #############################################
@@ -695,6 +696,7 @@ then
     thequeueplot="small"
     apcmdplot="aprun -n 1 -d 12 -cc none -a xt"
     timetotplot="8:00:00"
+    timetotavgplot=$timetotplot
 
     #############################################
     # setup tasks, cores, and nodes for make2davg
@@ -793,9 +795,10 @@ then
     apcmdplot="aprun -n $numtasksplot"
     # only took 6 minutes for thickdisk7 doing 458 files inside qty2.npy!  Up to death at point when tried to resample in time.
     timetotplot="8:00:00"
+    timetotavgplot=$timetotplot
 
 
-    echo "PART1P: $numcorespernodeplot $numnodesplot $numtotalcoresplot $thequeueplot $timetotplot"
+    echo "PART1P: $numcorespernodeplot $numnodesplot $numtotalcoresplot $thequeueplot $timetotplot $timetotavgplot"
     echo "PART2P: $apcmdplot"
 
     #############################################
@@ -1121,7 +1124,7 @@ do
         mynumtotalnodes=$numtotalnodesplot
         mynumcorespernode=$numcorespernodeplot
         mythequeue=$thequeueplot
-        mytimetot=$timetotplot
+        mytimetot=$timetotavgplot
         mymemtot=$memtotplot
         mychunklisttype=$chunklisttypeplot
         mychunklist=$chunklistplot
