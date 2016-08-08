@@ -30153,7 +30153,7 @@ def generate_time_series(whichmode=0):
             whichn = int(sys.argv[6])
             # whichmode==0 do all
             # whichmode>0 select
-            if(whichmode==0 or whichmode==1):
+            if(whichmode==0 or whichmode==1): # should be associated with runnumber==0 if parallel>2 will work
                 dolatex=1
             if(whichmode==0 or whichmode==2):
                 makepowervsmplots = int(sys.argv[7])
@@ -30617,7 +30617,7 @@ def main(argv=None):
         # makeplot all without parallel
         generate_time_series(whichmode=0)
     if runtype==12 or runtype==10 and runnumber==0:
-        generate_time_series(whichmode=1)
+        generate_time_series(whichmode=1) # dolatex
     if runtype==13 or runtype==10 and runnumber==1:
         generate_time_series(whichmode=2)
     if runtype==14 or runtype==10 and runnumber==2:

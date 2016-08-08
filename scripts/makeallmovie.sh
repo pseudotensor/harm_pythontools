@@ -920,7 +920,6 @@ then
 fi
 
 
-
 if [ $collect -ge 1 ] &&
     [ $system -eq 5 ] ||
     [ $collect -ge 1 ] &&
@@ -928,17 +927,21 @@ if [ $collect -ge 1 ] &&
     [ $collect -ge 1 ] &&
     [ $system -eq 8 ]
 then
-    echo "Now collect Latex results: "$system
-# below only appears updated if also do powervsm stuff.
-    #pythonlatexfile="python_u_3_0_1.stdout.out"
-    pythonlatexfile="python_u_10_0_16.stdout.out"
-# below won't have updated Q's
-#    pythonlatexfile="python_u_3_0_0.stdout.out"
+    # below follows makemovie.sh and agrees with python script file
+    if [ $makeplot -eq 1 ]
+    then
+        pythonlatexfile="python_u_11_0_1.stdout.out"
+    elif  [ $parallel -ge 2 ] &&
+        [ $makeplot -eq 100 ]
+    then
+        pythonlatexfile="python_u_10_0_16.stdout.out"
+    else
+        pythonlatexfile="python_u_12_0_1.stdout.out"
+    fi
 else
-    echo "Now collect Latex results: "$system
     pythonlatexfile="python.plot.out"
 fi
-
+echo "using pythonlatexfile=$pythonlatexfile"
 
 
 
