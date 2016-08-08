@@ -512,7 +512,7 @@ then
 
     ##############################
     # setup plotting part
-    if [ $parallel -eq 2 ]
+    if [ $parallel -ge 2 ]
     then
         numtasksplot=$numtaskspernode
     else
@@ -560,9 +560,11 @@ then
     # make1d: 0:44:30 for numtasks=512 and all files.
     #timetot="01:00:00"
     #timetot="04:00:00" # took 4 hours
-    # makemovie
-    #timetot="01:00:00"
-    timetot="00:20:00"
+
+    # 50 files:
+    #timetot="00:20:00"
+    # 500 files:
+    timetot="00:50:00"
     #
     # numtasks set equal to total number of time slices, so each task does only 1 fieldline file
     # CHOOSE below or set numtasks to some number <= number of field lines
@@ -603,7 +605,7 @@ then
 
     ##############################
     # setup plotting part
-    if [ $parallel -eq 2 ]
+    if [ $parallel -ge 2 ]
     then
         numtasksplot=$numtaskspernode
         chunklistplot=\"`seq -s " " 1 $numtasksplot`\"
@@ -623,7 +625,11 @@ then
     #timetotplot="1:00:00" # for normal can go up to 48 hours.  For serial up to 12 hours.
     #timetotplot="0:45:00" # for normal can go up to 48 hours.  For serial up to 12 hours.
     # if stick to parallel==2 mode, then only need about 10-20 minutes depending upon resolution
+    #
+    # 50 files
     timetotplot="0:20:00"
+    # 500 files
+    timetotplot="0:50:00"
 
 
     #############################################
@@ -704,7 +710,7 @@ fi
 # this starts a single many-node-core job
 # script views this as 1 node with many cores
 if [ $system -eq 5 ] &&
-    [ $parallel -eq 2 ]
+    [ $parallel -ge 2 ]
 then
     # Kraken only has 16GB per node of 12 cores
     # so determine how many nodes need based upon Nautilus/Kraken memtot above
@@ -921,7 +927,7 @@ myrand=${RANDOM}
 echo "RANDOM=$myrand"
 
 # assumes chose correct python library setup and system in Makefile
-if [ $parallel -eq 2 ]
+if [ $parallel -ge 2 ]
 then
     # create makemoviec for local use
     oldpath=`pwd`
@@ -1066,7 +1072,7 @@ do
             # could do runtype==3 because args differentiate it in python script
             myrunnglobal=1
             # whichmode==0 in pyton script
-        elif [ $parallel -eq 2 ] &&
+        elif [ $parallel -ge 2 ] &&
             [ $makeplot -eq 100 ]
         then
             # then full parallel mode
@@ -1126,7 +1132,7 @@ do
             runtype=21 # non-parallel plotting mode
             myrunnglobal=1
             # whichmode==0 in pyton script
-        elif [ $parallel -eq 2 ] &&
+        elif [ $parallel -ge 2 ] &&
             [ $makeavgplot -eq 100 ]
         then
             # then assume want parallel mode

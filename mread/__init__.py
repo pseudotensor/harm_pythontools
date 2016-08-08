@@ -86,26 +86,35 @@ def setmplconfigpath(uniquenum=None):
 
 
 # redirect stderr and stdout to unique files per runnumber if relevant
-def redirectstderrout(runtype=None,uniquenum=None,uppernum=None):
+def redirectstderrout(system=None,parallel=None,runtype=None,uniquenum=None,uppernum=None):
     import os,sys
-    mystderrname=os.getcwd() + "/python_u_%d_%d_%d.stderr.out" % (runtype,uniquenum,uppernum)
-    mystdoutname=os.getcwd() + "/python_u_%d_%d_%d.stdout.out" % (runtype,uniquenum,uppernum)
-    #
-    if os.path.exists(mystderrname)==1:
-        os.remove(mystderrname)
-    #
-    if os.path.exists(mystdoutname)==1:
-        os.remove(mystdoutname)
-    #
     global oldstderr,oldstdout,newstderr,newstdout
-    #newstderr = os.open(mystderrname,os.O_RDWR|os.O_CREAT)
-    #newstdout = os.open(mystdoutname,os.O_RDWR|os.O_CREAT)
-    newstderr = open(mystderrname,'w')
-    newstdout = open(mystdoutname,'w')
+    # if parallel>2, then this will be sent to null as well for these runnumber>0 cores
+    # if parallel<=2, then this will be same file so no different behavior and latex stuff still goes to same file as all other stdout stuff (like originally)
+    if(parallel<=2 or (parallel>2 and runnumber==0) ):
+        mystderrname=os.getcwd() + "/python_u_%d_%d_%d.stderr.out" % (runtype,uniquenum,uppernum)
+        mystdoutname=os.getcwd() + "/python_u_%d_%d_%d.stdout.out" % (runtype,uniquenum,uppernum)
+        #
+        if os.path.exists(mystderrname)==1:
+            os.remove(mystderrname)
+        #
+        if os.path.exists(mystdoutname)==1:
+            os.remove(mystdoutname)
+        #
+        #newstderr = os.open(mystderrname,os.O_RDWR|os.O_CREAT)
+        #newstdout = os.open(mystdoutname,os.O_RDWR|os.O_CREAT)
+        newstderr = open(mystderrname,'w')
+        newstdout = open(mystdoutname,'w')
+    else:
+        # parallel>2 avoids writing to stderr/stdout files at all because too many files
+        newstderr = open(os.devnull, 'w')
+        newstdout = open(os.devnull, 'w')
     oldstderr = sys.stderr
     oldstdout = sys.stdout
     sys.stderr = newstderr
     sys.stdout = newstdout
+    #
+
 
 
 
@@ -159,7 +168,7 @@ def runglobalsetup(argv=None):
         print("runtype=%d has runnumber=%d uppernum=%d" % (runtype,runnumber,uppernum)) ; sys.stdout.flush()
         # force unique path or else mkdir in matplotlib will barf on some systems.
         setmplconfigpath(uniquenum=runnumber)
-        redirectstderrout(runtype=runtype,uniquenum=runnumber,uppernum=uppernum)
+        redirectstderrout(system=system,parallel=parallel,runtype=runtype,uniquenum=runnumber,uppernum=uppernum)
     else:
         print("runtype=%d should have runnumber and uppernum but doesn't!" % (runtype)) ; sys.stdout.flush()
         exit

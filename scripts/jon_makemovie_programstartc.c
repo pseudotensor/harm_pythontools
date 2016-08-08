@@ -56,7 +56,7 @@ static int init_mpi(int *argc, char **argv[]);
 static int myargs(int argc, char *argv[]);
 static int get_chunklist(size_t strsize, char* chunkliststring, int *chunklist, int *numchunks);
 static int print_chunklist(int numchunks,int *chunklist);
-static int setup_tpy_makemovie(int myid, int *chunklist, int totalchunks, char *jobprefix, char *cwdold, char *cwdnew, int runtype);
+static int setup_tpy_makemovie(int myid, int *chunklist, int totalchunks, char *jobprefix, char *cwdold, char *cwdnew, int parallel, int runtype);
 static int finish_tpy_makemovie(int myid, int *chunklist, int totalchunks, char *jobprefix, char *cwdold, char *cwdnew);
 
 static void cpu0fprintf(FILE* fileptr, char *format, ...);
@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
   myffprintf(stdout,"C runchunkn.sh -like Begin: myid=%d.\n",myid);
 
   int subjobnumber;
-  subjobnumber=setup_tpy_makemovie(myid,chunklist,totalchunks,jobprefix,cwdold,cwdnew,runtype);
+  subjobnumber=setup_tpy_makemovie(myid,chunklist,totalchunks,jobprefix,cwdold,cwdnew,parallel,runtype);
 
   myffprintf(stdout,"C runchunkn.sh -like End: myid=%d.\n",myid);
 
@@ -593,7 +593,7 @@ static int get_chunklist(size_t strsize, char* chunkliststring, int *chunklist, 
 
 
 // do things like in runchunkn.sh script
-static int setup_tpy_makemovie(int myid, int *chunklist, int totalchunks, char *jobprefix, char *cwdold, char *cwdnew, int runtype)
+static int setup_tpy_makemovie(int myid, int *chunklist, int totalchunks, char *jobprefix, char *cwdold, char *cwdnew, int parallel, int runtype)
 {
   int subchunk;
   int subjobnumber;
@@ -653,22 +653,25 @@ static int setup_tpy_makemovie(int myid, int *chunklist, int totalchunks, char *
     exit(1);
   }
 
-  ////////////////////////
-  //
-  // setup pychunk.dat
-  //
-  ////////////////////////
-  char pychunkfilename[MAXGENNAME];
-  sprintf(pychunkfilename,"pychunk.%s.%d.%d.dat",jobprefix,subjobnumber,totalchunks);
-  pychunkfile=fopen(pychunkfilename,"wt"); // new file, do not append
-  if(pychunkfile==NULL){
-    myffprintf(stderr,"Failed to open pychunk.dat file\n");
-    exit(1);
+
+  if(parallel<=2){ // not really needed except as pure debug
+    ////////////////////////
+    //
+    // setup pychunk.dat
+    //
+    ////////////////////////
+    char pychunkfilename[MAXGENNAME];
+    sprintf(pychunkfilename,"pychunk.%s.%d.%d.dat",jobprefix,subjobnumber,totalchunks);
+    pychunkfile=fopen(pychunkfilename,"wt"); // new file, do not append
+    if(pychunkfile==NULL){
+      myffprintf(stderr,"Failed to open pychunk.dat file\n");
+      exit(1);
+    }
+
+    myffprintf(pychunkfile,"%d %d\n",subchunk,totalchunks);
+
+    fclose(pychunkfile);
   }
-
-  myffprintf(pychunkfile,"%d %d\n",subchunk,totalchunks);
-
-  fclose(pychunkfile);
 
   ////////
   //
@@ -750,6 +753,9 @@ static int finish_tpy_makemovie(int myid, int *chunklist, int totalchunks, char 
     }
 
   }// end while(1)
+
+  // once done, can remove the finish file.
+  remove(finishname);
 
 
   return(0);
