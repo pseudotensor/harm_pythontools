@@ -2736,7 +2736,7 @@ def getTrads():
     nradfix=1
     if nradfix==1:
         nrad[nrad<1E-26]=nradlabratlte[nrad<1E-26]
-        nradff[nradff<1E-26]=nradlabratlte[nrad<1E-26]
+        nradff[nradff<1E-26]=nradlabratlte[nradff<1E-26]
     #
     nradffrat=np.float64(nradff) #/NRAD_ARAD_CODE # already inside from harmrad
     nradlabrat=np.fabs(SMALL+np.float64(nrad*uradu[0])) #/NRAD_ARAD_CODE # already inside from harmrad
