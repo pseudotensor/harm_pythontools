@@ -2745,7 +2745,7 @@ def getTrads():
     Tradfftype1=Ruurat/(nradffrat*EBAR0 + SMALL)
     Tradlabtype1=R00rat/(nradlabrat*EBAR0 + SMALL)
     #
-    Tradfftype3=(Ruurat*(0.333333333327962 + 0.060724957534625555/(0.6467556546674441 + (0.018783960364223317*Power(Ruurat,3))/Power(nradffrat,4))))/(SMALL+nradffrat) # should be same as Tradff
+    Tradfftype3=(Ruurat*(0.333333333327962 + 0.060724957534625555/(0.6467556546674441 + (0.018783960364223317*Power(Ruurat,3))/Power(nradffrat,4))))/(SMALL+nradffrat) # should be same as Tradff (apart from fixups like nradfix)
     Tradlabtype3=(R00rat*(0.333333333327962 + 0.060724957534625555/(0.6467556546674441 + (0.018783960364223317*Power(R00rat,3))/Power(nradlabrat,4))))/(SMALL+nradlabrat)
     #
     varexpflab= 1.6467556546674442/(0.6467556546674441 + (0.018783960364223317*Power(R00rat,3))/Power(SMALL+nradlabrat,4));
@@ -29438,7 +29438,7 @@ def mkavgfigs5(whichfig=0):
             mylenshowy=(15.0/30.0)*mylen
             #
             global avg_eflux
-            avg_eflux=np.copy(avg_Tradff/avg_Tgas)
+            avg_eflux=np.copy(avg_Tradfftype3/avg_Tgas)
             #
             numoffset=5
             vminforframe=np.amin(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:])
@@ -29454,7 +29454,7 @@ def mkavgfigs5(whichfig=0):
             mylenshowy=(25.0/30.0)*mylen
             #
             global avg_eflux
-            avg_eflux=np.copy(avg_Tradff/avg_Tgas)
+            avg_eflux=np.copy(avg_Tradfftype3/avg_Tgas)
             #
             numoffset=5
             vminforframe=np.amin(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:])
@@ -29470,7 +29470,7 @@ def mkavgfigs5(whichfig=0):
             mylenshowy=(25.0/30.0)*mylen
             #
             global avg_eflux
-            avg_eflux=np.copy(avg_Tradff/avg_Tgas)
+            avg_eflux=np.copy(avg_Tradfftype3/avg_Tgas)
             #
             numoffset=5
             vminforframe=np.amin(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:])
@@ -31477,7 +31477,7 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
         Ruurat=np.float64(Ruu/ARAD_CODE)
         myfun=Ruurat**3
     if(which==73):
-        myfun=np.log10(Tradff*TEMPBAR)
+        myfun=np.log10(Tradfftype3*TEMPBAR)
     if(which==74):
         myfun=varexpflab
     if(which==75):
