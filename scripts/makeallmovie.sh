@@ -995,6 +995,7 @@ then
         then
             mypythonlatexfile=${extrapath}/$pythonlatexfile1
         elif [ -e ${extrapath}/$pythonlatexfile2 ]
+        then
             mypythonlatexfile=${extrapath}/$pythonlatexfile2
         else
             echo "No pythonlatexfile found"
