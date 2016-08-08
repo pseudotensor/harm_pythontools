@@ -2735,8 +2735,8 @@ def getTrads():
     # this is a catch to avoid bad Trads
     nradfix=1
     if nradfix==1:
-        nrad[nrad<1E-26]=nradlabratlte
-        nradff[nradff<1E-26]=nradlabratlte
+        nrad[nrad<1E-26]=nradlabratlte[nrad<1E-26]
+        nradff[nradff<1E-26]=nradlabratlte[nrad<1E-26]
     #
     nradffrat=np.float64(nradff) #/NRAD_ARAD_CODE # already inside from harmrad
     nradlabrat=np.fabs(SMALL+np.float64(nrad*uradu[0])) #/NRAD_ARAD_CODE # already inside from harmrad
@@ -31483,6 +31483,8 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     if(which==75):
         nradffrat=np.float64(nradff)
         myfun=nradffrat**4
+    if(which==76):
+        myfun=np.log10(Tradlabtype3/Tradlablte)
     #
     if(which==100):
         myfun=np.log10(ug/rho)
