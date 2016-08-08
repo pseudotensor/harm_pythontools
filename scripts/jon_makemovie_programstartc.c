@@ -766,6 +766,12 @@ static int finish_tpy_makemovie(int myid, int *chunklist, int totalchunks, char 
 
   }// end while(1)
 
+
+#if(USEMPI)
+  // Barrier so don't remove until all cores reach barrier, else last one to finish will find all finish files then remove its own finish file, so rest of cores won't find that last finish file.
+  MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
   // once done, can remove my finish file.
   remove(myfinishname);
 
