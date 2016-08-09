@@ -28270,11 +28270,13 @@ def mkavgfigs1(whichfig=0):
         # stuff vs. theta
         if 1==1:
             # dP/d\theta / (Mdot_{BH} c^2)
+            # and isotropic equivalent luminosity in ergs/sec
             avg_eoutRADvstheta=avg_eoutRAD[iofr(100),:,0]
-            # isotropic equivalent luminosity in ergs/sec
             avg_eoutRADisovstheta=avg_eoutRAD[iofr(100),:,0]*(np.pi)*(mdotfinavgvsr[ihor])*(ENBAR/TBAR)
+            avg_eoutRADperLeddvstheta=avg_eoutRAD[iofr(100),:,0]*(np.pi)*(mdotfinavgvsr[ihor])/Leddcode
             avg_eoutEMvstheta=avg_eoutEM[iofr(100),:,0]
             avg_eoutEMisovstheta=avg_eoutEM[iofr(100),:,0]*(np.pi)*(mdotfinavgvsr[ihor])*(ENBAR/TBAR)
+            avg_eoutEMperLeddvstheta=avg_eoutEM[iofr(100),:,0]*(np.pi)*(mdotfinavgvsr[ihor])/Leddcode
             avg_Tradlabtype3vstheta=avg_Tradlabtype3[iofr(100),:,0]
             avg_fcollabvstheta=avg_fcollab[iofr(100),:,0]
             avg_varexpfffvstheta=avg_varexpfff[iofr(100),:,0]
@@ -28282,7 +28284,7 @@ def mkavgfigs1(whichfig=0):
             #
             f1 = open('radquantsvsh.%s.txt' % (modelname), 'w')
             for jj in np.arange(0,ny):
-                f1.write("%d %g  %g %g %g %g  %g %g %g %g\n" % (jj,h[iofr(100),jj,0],avg_eoutRADvstheta[jj],avg_eoutRADisovstheta[jj],avg_eoutEMvstheta[jj],avg_eoutEMisovstheta[jj],avg_Tradlabtype3vstheta[jj],avg_fcollabvstheta[jj],avg_varexpfffvstheta[jj],avg_nfcolvstheta[jj]) )
+                f1.write("%d %g  %g %g %g   %g %g %g  %g %g %g %g\n" % (jj,h[iofr(100),jj,0],avg_eoutRADvstheta[jj],avg_eoutRADisovstheta[jj],avg_eoutRADperLeddvstheta[jj],avg_eoutEMvstheta[jj],avg_eoutEMisovstheta[jj],avg_eoutEMperLeddvstheta[jj],avg_Tradlabtype3vstheta[jj],avg_fcollabvstheta[jj],avg_varexpfffvstheta[jj],avg_nfcolvstheta[jj]) )
             f1.close()
         #
         # stuff vs. radius
