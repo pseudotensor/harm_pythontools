@@ -931,9 +931,9 @@ then
     if  [ $parallel -ge 2 ]
     then
         pythonlatexfile1="python_u_10_0_16.stdout.out"
-        pythonlatexfile2=""
-        pythonlatex67file1="python_u_20_0_16.stdout.out"
-        pythonlatex67file2=""
+        pythonlatexfile2="python_u_12_0_16.stdout.out"
+        pythonlatex67file1="python_u_20_0_1.stdout.out"
+        pythonlatex67file2="python_u_22_0_1.stdout.out"
     else
         # don't know, check both
         pythonlatexfile1="python_u_11_0_1.stdout.out"
