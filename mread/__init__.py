@@ -28261,7 +28261,7 @@ def mkavgfigs1(whichfig=0):
         # 
         (truemodelname,fieldtype)=gettruemodelname(modelname)
         #
-        print( "HLatex67: ModelName & $\\left(\\frac{\\hat{T}_\\gamma/T_{\\rm{}gas}}\\right)_{r=r_{\\rm{}H}}$  & $\\left(\\frac{\\hat{T}_\\gamma/T_{\\rm{}gas}}\\right)_{r=5r_g}$  & $\\left(\\frac{\\hat{T}_\\gamma/T_{\\rm{}gas}}\\right)_{r=20r_g}$  & $f_{\\rm{col},r=100r_g,\\rm{rad.beam}}$ & $f_{\\rm{col},r=5r_g,\\rm{disk}}$ & ${\\rm{}e}^{-\\xi}_{r=100r_g,\\rm{rad.beam}}$ & ${\\rm{}e}^{-\\xi}_{r=5r_g,\\rm{disk}}$  \\\\" )
+        print( "HLatex67: ModelName & $\\left(\\frac{\\hat{T}_\\gamma}{T_{\\rm{}gas}}\\right)_{r=r_{\\rm{}H}}$  & $\\left(\\frac{\\hat{T}_\\gamma}{T_{\\rm{}gas}}\\right)_{r=5r_g}$  & $\\left(\\frac{\\hat{T}_\\gamma}{T_{\\rm{}gas}}\\right)_{r=20r_g}$  & $f_{\\rm{col},r=100r_g,\\rm{rad.beam}}$ & $f_{\\rm{col},r=5r_g,\\rm{disk}}$ & ${\\rm{}e}^{-\\xi}_{r=100r_g,\\rm{rad.beam}}$ & ${\\rm{}e}^{-\\xi}_{r=5r_g,\\rm{disk}}$  \\\\" )
         print( "VLatex67: %s         & %g & %g & %g    & %g & %g  & %g & %g & \\\\ %% %s" % (truemodelname, roundto2(result1a),roundto2(result1b),roundto2(result1c),roundto2(radresult2b),roundto2(result2b),roundto2(radresult3b),roundto2(result3b),    modelname ) )
         #
         # make data file of isotropic equivalent luminosities with modelname in name of file, so can cumulate these in separate non-parallel plot script for paper
