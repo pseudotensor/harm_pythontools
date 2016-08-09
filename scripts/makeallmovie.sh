@@ -932,16 +932,23 @@ then
     then
         pythonlatexfile1="python_u_10_0_16.stdout.out"
         pythonlatexfile2=""
+        pythonlatex67file1="python_u_20_0_16.stdout.out"
+        pythonlatex67file2=""
     else
         # don't know, check both
         pythonlatexfile1="python_u_11_0_1.stdout.out"
         pythonlatexfile2="python_u_12_0_1.stdout.out"
+        pythonlatex67file1="python_u_21_0_1.stdout.out"
+        pythonlatex67file2="python_u_22_0_1.stdout.out"
     fi
 else
     pythonlatexfile1="python.plot.out"
     pythonlatexfile2=""
+    pythonlatex67file1="python_u_21_0_1.stdout.out"
+    pythonlatex67file2=""
 fi
 echo "using pythonlatexfile1=$pythonlatexfile1  pythonlatexfile2=$pythonlatexfile2"
+echo "using pythonlatex67file1=$pythonlatex67file1  pythonlatex67file2=$pythonlatex67file2"
 
 
 
@@ -1002,13 +1009,26 @@ then
             exit
         fi
 
+        if [ -e ${extrapath}/$pythonlatex67file1 ]
+        then
+            mypythonlatex67file=${extrapath}/$pythonlatex67file1
+        elif [ -e ${extrapath}/$pythonlatex67file2 ]
+        then
+            mypythonlatex67file=${extrapath}/$pythonlatex67file2
+        else
+            echo "No pythonlatex67file found"
+            exit
+        fi
+
 
         if [ $iiter -eq 1 ]
         then
 		    cat $mypythonlatexfile | grep "HLatex" >> ${prepath}/tables${extraname}.tex
+		    cat $mypythonlatex67file | grep "HLatex" >> ${prepath}/tables${extraname}.tex
 		    echo "HLatex: \hline" >> ${prepath}/tables${extraname}.tex
         fi
 		cat $mypythonlatexfile | grep "VLatex" >> ${prepath}/tables${extraname}.tex
+		cat $mypythonlatex67file | grep "VLatex" >> ${prepath}/tables${extraname}.tex
 		echo "$dirname $thedir $moviedirname $mypythonlatexfile : $iiter"
 
         iiter=$(( $iiter+1))
@@ -1027,7 +1047,7 @@ then
     ##############################################
     #
     # Tables:
-    numtbls=18
+    numtbls=19
 
     for numtbl in `seq 1 $numtbls`
     do
@@ -1128,6 +1148,11 @@ then
         then
             echo "\caption{Inner and Outer Radii for Least-Square Fits, Disk+Corona Stagnation Radius, and Fitted Power-Law Indices for Disk and Wind Flows}" >> $fname
             numtblreal=$numtbl
+        fi
+        if [ $numtbl -eq 19 ]
+        then
+            echo "\caption{Luminosities and Radiative Properties}" >> $fname
+            numtblreal=67
         fi
         #
         echo "\begin{center}" >> $fname
