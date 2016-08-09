@@ -28275,12 +28275,15 @@ def mkavgfigs1(whichfig=0):
         if 1==1:
             # dP/d\theta / (Mdot_{BH} c^2)
             # and isotropic equivalent luminosity in ergs/sec
+            # per unit Ledd
             avg_eoutRADvstheta=avg_eoutRAD[iofr(100),:,0]
             avg_eoutRADisovstheta=avg_eoutRAD[iofr(100),:,0]*(np.pi)*(mdotfinavgvsr[ihor])*(ENBAR/TBAR)
             avg_eoutRADperLeddvstheta=avg_eoutRAD[iofr(100),:,0]*(np.pi)*(mdotfinavgvsr[ihor])/Leddcode
+            #
             avg_eoutEMvstheta=avg_eoutEM[iofr(100),:,0]
             avg_eoutEMisovstheta=avg_eoutEM[iofr(100),:,0]*(np.pi)*(mdotfinavgvsr[ihor])*(ENBAR/TBAR)
             avg_eoutEMperLeddvstheta=avg_eoutEM[iofr(100),:,0]*(np.pi)*(mdotfinavgvsr[ihor])/Leddcode
+            #
             avg_Tradlabtype3vstheta=avg_Tradlabtype3[iofr(100),:,0]
             avg_fcollabvstheta=avg_fcollab[iofr(100),:,0]
             avg_varexpfffvstheta=avg_varexpfff[iofr(100),:,0]
@@ -28296,15 +28299,19 @@ def mkavgfigs1(whichfig=0):
             # 4
             sjj=ny/2-ny/6
             ejj=ny/2+ny/6
-            avg_TradoTgasvsradius=np.average(avg_TradoTgas[:,sjj:ejj,0],axis=1)
-            avg_Tradfftype3vsradius=np.average(avg_Tradfftype3[:,sjj:ejj,0],axis=1)
-            avg_Tradlabtype3vsradius=np.average(avg_Tradlabtype3[:,sjj:ejj,0],axis=1)
-            avg_Tgasvsradius=np.average(avg_Tgas[:,sjj:ejj,0],axis=1)
+            # density^2 weighted
+            bottom=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**2,axis=1)
+            #
+            avg_TradoTgasvsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**2*avg_TradoTgas[:,sjj:ejj,0],axis=1)/bottom
+            avg_Tradfftype3vsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**2*avg_Tradfftype3[:,sjj:ejj,0],axis=1)/bottom
+            avg_Tradlabtype3vsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**2*avg_Tradlabtype3[:,sjj:ejj,0],axis=1)/bottom
+            avg_Tgasvsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**2*avg_Tgas[:,sjj:ejj,0],axis=1)/bottom
             # 3
-            avg_fcollabvsradius=np.average(avg_fcollab[:,sjj:ejj,0],axis=1)
-            avg_varexpfffvsradius=np.average(avg_varexpfff[:,sjj:ejj,0],axis=1)
-            avg_nfcolvsradius=np.average(avg_nfcol[:,sjj:ejj,0],axis=1)
+            avg_fcollabvsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**2*avg_fcollab[:,sjj:ejj,0],axis=1)/bottom
+            avg_varexpfffvsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**2*avg_varexpfff[:,sjj:ejj,0],axis=1)/bottom
+            avg_nfcolvsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**2*avg_nfcol[:,sjj:ejj,0],axis=1)/bottom
             # 16
+            # kappa as own weighting
             avg_kappadensityrealvsradius=np.average(avg_kappadensityreal[:,sjj:ejj,0],axis=1)
             avg_kappadensityrealnofevsradius=np.average(avg_kappadensityrealnofe[:,sjj:ejj,0],axis=1)
             avg_kappasyrealvsradius=np.average(avg_kappasyreal[:,sjj:ejj,0],axis=1)
