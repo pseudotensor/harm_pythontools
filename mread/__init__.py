@@ -8795,12 +8795,15 @@ def rfdheaderonly(filename="dumps/fieldline0000.bin",typefile=1):
     rfdheader(fin=fin,typefile=typefile)
     fin.close()
 
-def rfdheaderfirstfile():
+def rfdheaderfirstfile(which=1):
     flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
     sort_nicely(flist)
-    firstfieldlinefile=flist[0]
-    #rfd("fieldline0000.bin")  #to definea
-    rfdheaderonly(firstfieldlinefile,typefile=1)
+    if which==0 and np.shape(flist)[0]==0:
+        return
+    else:
+        firstfieldlinefile=flist[0]
+        #rfd("fieldline0000.bin")  #to definea
+        rfdheaderonly(firstfieldlinefile,typefile=1)
 
 def rfdheaderlastfile():
     flist = glob.glob( os.path.join("dumps/", "fieldline*.bin") )
@@ -30844,12 +30847,18 @@ def main(argv=None):
     # end test code
     #####################
     # to get type of file (so gotrad defined)
-    rfdheaderfirstfile()
+    rfdheaderfirstfile(which=0)
     # for now, use2dglobal=True doesn't work for tilted sims due to some transformation issue.
-    if THETAROT==0.0:
-        use2dglobal=True
+    try:
+        THETAROT
+    except NameError:
+        print "No THETAROT defined, assume in simple command mode"
     else:
-        use2dglobal=False
+        print "THETAROT defined"
+        if THETAROT==0.0:
+            use2dglobal=True
+        else:
+            use2dglobal=False
     #
     # runtype==-1 just skip and do nothing
     # runtype==10 and 20 can have up to cores runnumbers, usually 16 these days
@@ -33623,6 +33632,296 @@ def supermad1(filename=None,fignum=1):
     #from subprocess import call
     #os.system("epstopdf supermad1.eps")
     #os.system("scp supermad1.eps supermad1.pdf supermad1.png jon@physics-179.umd.edu:/data/jon/harm_supermad/")
+
+
+
+
+# DC paper 1D plots
+def dcpaperplot1():
+    #
+    path="/data/jon/pseudotensor@gmail.com/rad_papers/opacity/harm_dc/"
+    os.chdir(path)
+    #
+    #
+    modelname="jonharmrad1"
+    f1 = open('%s/radquantsvsh.%s.txt' % (modelname,modelname), 'r')
+    jrad1h=np.loadtxt(f1,unpack=True)
+    f1.close()
+    nch=np.shape(jrad1h)[0]
+    print("nch=%d" % (nch))
+    f1 = open('%s/radquantsvsr.%s.txt' % (modelname,modelname), 'r')
+    jrad1r=np.loadtxt(f1,unpack=True)
+    f1.close()
+    ncr=np.shape(jrad1r)[0]
+    print("ncr=%d" % (ncr))
+    #
+    modelname="jonharmrad2"
+    f1 = open('%s/radquantsvsh.%s.txt' % (modelname,modelname), 'r')
+    jrad2h=np.loadtxt(f1,unpack=True)
+    f1.close()
+    nch=np.shape(jrad2h)[0]
+    print("nch=%d" % (nch))
+    f1 = open('%s/radquantsvsr.%s.txt' % (modelname,modelname), 'r')
+    jrad2r=np.loadtxt(f1,unpack=True)
+    f1.close()
+    ncr=np.shape(jrad2r)[0]
+    print("ncr=%d" % (ncr))
+    #
+    modelname="jonharmrad3"
+    f1 = open('%s/radquantsvsh.%s.txt' % (modelname,modelname), 'r')
+    jrad3h=np.loadtxt(f1,unpack=True)
+    f1.close()
+    nch=np.shape(jrad3h)[0]
+    print("nch=%d" % (nch))
+    f1 = open('%s/radquantsvsr.%s.txt' % (modelname,modelname), 'r')
+    jrad3r=np.loadtxt(f1,unpack=True)
+    f1.close()
+    ncr=np.shape(jrad3r)[0]
+    print("ncr=%d" % (ncr))
+    #
+    modelname="jonharmrad5"
+    f1 = open('%s/radquantsvsh.%s.txt' % (modelname,modelname), 'r')
+    jrad5h=np.loadtxt(f1,unpack=True)
+    f1.close()
+    nch=np.shape(jrad5h)[0]
+    print("nch=%d" % (nch))
+    f1 = open('%s/radquantsvsr.%s.txt' % (modelname,modelname), 'r')
+    jrad5r=np.loadtxt(f1,unpack=True)
+    f1.close()
+    ncr=np.shape(jrad5r)[0]
+    print("ncr=%d" % (ncr))
+    #
+    modelname="jonharmrad7"
+    f1 = open('%s/radquantsvsh.%s.txt' % (modelname,modelname), 'r')
+    jrad7h=np.loadtxt(f1,unpack=True)
+    f1.close()
+    nch=np.shape(jrad7h)[0]
+    print("nch=%d" % (nch))
+    f1 = open('%s/radquantsvsr.%s.txt' % (modelname,modelname), 'r')
+    jrad7r=np.loadtxt(f1,unpack=True)
+    f1.close()
+    ncr=np.shape(jrad7r)[0]
+    print("ncr=%d" % (ncr))
+    #
+    modelname="jonharmrad8"
+    f1 = open('%s/radquantsvsh.%s.txt' % (modelname,modelname), 'r')
+    jrad8h=np.loadtxt(f1,unpack=True)
+    f1.close()
+    nch=np.shape(jrad8h)[0]
+    print("nch=%d" % (nch))
+    f1 = open('%s/radquantsvsr.%s.txt' % (modelname,modelname), 'r')
+    jrad8r=np.loadtxt(f1,unpack=True)
+    f1.close()
+    ncr=np.shape(jrad8r)[0]
+    print("ncr=%d" % (ncr))
+    #
+    modelname="jonharmrad9"
+    f1 = open('%s/radquantsvsh.%s.txt' % (modelname,modelname), 'r')
+    jrad9h=np.loadtxt(f1,unpack=True)
+    f1.close()
+    nch=np.shape(jrad9h)[0]
+    print("nch=%d" % (nch))
+    f1 = open('%s/radquantsvsr.%s.txt' % (modelname,modelname), 'r')
+    jrad9r=np.loadtxt(f1,unpack=True)
+    f1.close()
+    ncr=np.shape(jrad9r)[0]
+    print("ncr=%d" % (ncr))
+    #
+    modelname="jonharmrad10"
+    f1 = open('%s/radquantsvsh.%s.txt' % (modelname,modelname), 'r')
+    jrad10h=np.loadtxt(f1,unpack=True)
+    f1.close()
+    nch=np.shape(jrad10h)[0]
+    print("nch=%d" % (nch))
+    f1 = open('%s/radquantsvsr.%s.txt' % (modelname,modelname), 'r')
+    jrad10r=np.loadtxt(f1,unpack=True)
+    f1.close()
+    ncr=np.shape(jrad10r)[0]
+    print("ncr=%d" % (ncr))
+    #
+    modelname="jonharmrad11"
+    f1 = open('%s/radquantsvsh.%s.txt' % (modelname,modelname), 'r')
+    jrad11h=np.loadtxt(f1,unpack=True)
+    f1.close()
+    nch=np.shape(jrad11h)[0]
+    print("nch=%d" % (nch))
+    f1 = open('%s/radquantsvsr.%s.txt' % (modelname,modelname), 'r')
+    jrad11r=np.loadtxt(f1,unpack=True)
+    f1.close()
+    ncr=np.shape(jrad11r)[0]
+    print("ncr=%d" % (ncr))
+    #
+    modelname="jonharmrad13"
+    f1 = open('%s/radquantsvsh.%s.txt' % (modelname,modelname), 'r')
+    jrad13h=np.loadtxt(f1,unpack=True)
+    f1.close()
+    nch=np.shape(jrad13h)[0]
+    print("nch=%d" % (nch))
+    f1 = open('%s/radquantsvsr.%s.txt' % (modelname,modelname), 'r')
+    jrad13r=np.loadtxt(f1,unpack=True)
+    f1.close()
+    ncr=np.shape(jrad13r)[0]
+    print("ncr=%d" % (ncr))
+    #
+    modelname="jonharmrad14"
+    f1 = open('%s/radquantsvsh.%s.txt' % (modelname,modelname), 'r')
+    jrad14h=np.loadtxt(f1,unpack=True)
+    f1.close()
+    nch=np.shape(jrad14h)[0]
+    print("nch=%d" % (nch))
+    f1 = open('%s/radquantsvsr.%s.txt' % (modelname,modelname), 'r')
+    jrad14r=np.loadtxt(f1,unpack=True)
+    f1.close()
+    ncr=np.shape(jrad14r)[0]
+    print("ncr=%d" % (ncr))
+    #
+    modelname="jonharmrad15"
+    f1 = open('%s/radquantsvsh.%s.txt' % (modelname,modelname), 'r')
+    jrad15h=np.loadtxt(f1,unpack=True)
+    f1.close()
+    nch=np.shape(jrad15h)[0]
+    print("nch=%d" % (nch))
+    f1 = open('%s/radquantsvsr.%s.txt' % (modelname,modelname), 'r')
+    jrad15r=np.loadtxt(f1,unpack=True)
+    f1.close()
+    ncr=np.shape(jrad15r)[0]
+    print("ncr=%d" % (ncr))
+    #
+    modelname="jonharmrad16"
+    f1 = open('%s/radquantsvsh.%s.txt' % (modelname,modelname), 'r')
+    jrad16h=np.loadtxt(f1,unpack=True)
+    f1.close()
+    nch=np.shape(jrad16h)[0]
+    print("nch=%d" % (nch))
+    f1 = open('%s/radquantsvsr.%s.txt' % (modelname,modelname), 'r')
+    jrad16r=np.loadtxt(f1,unpack=True)
+    f1.close()
+    ncr=np.shape(jrad16r)[0]
+    print("ncr=%d" % (ncr))
+    #
+    modelname="jonharmrad17"
+    f1 = open('%s/radquantsvsh.%s.txt' % (modelname,modelname), 'r')
+    jrad17h=np.loadtxt(f1,unpack=True)
+    f1.close()
+    nch=np.shape(jrad17h)[0]
+    print("nch=%d" % (nch))
+    f1 = open('%s/radquantsvsr.%s.txt' % (modelname,modelname), 'r')
+    jrad17r=np.loadtxt(f1,unpack=True)
+    f1.close()
+    ncr=np.shape(jrad17r)[0]
+    print("ncr=%d" % (ncr))
+    #
+    if 1==0: # not yet
+        modelname="jonharmrad18"
+        f1 = open('%s/radquantsvsh.%s.txt' % (modelname,modelname), 'r')
+        jrad18h=np.loadtxt(f1,unpack=True)
+        f1.close()
+        nch=np.shape(jrad18h)[0]
+        print("nch=%d" % (nch))
+        f1 = open('%s/radquantsvsr.%s.txt' % (modelname,modelname), 'r')
+        jrad18r=np.loadtxt(f1,unpack=True)
+        f1.close()
+        ncr=np.shape(jrad18r)[0]
+        print("ncr=%d" % (ncr))
+    #
+    #
+    #f1.write("%d %g  %g %g %g   %g %g %g  %g %g %g %g\n" % (jj,h[iofr(100),jj,0],avg_eoutRADvstheta[jj],avg_eoutRADisovstheta[jj],avg_eoutRADperLeddvstheta[jj],avg_eoutEMvstheta[jj],avg_eoutEMisovstheta[jj],avg_eoutEMperLeddvstheta[jj],avg_Tradlabtype3vstheta[jj],avg_fcollabvstheta[jj],avg_varexpfffvstheta[jj],avg_nfcolvstheta[jj]) )
+    #f2 = open('radquantsvsr.%s.txt' % (modelname), 'w')
+    #f2.write("%d %g  %g %g %g %g  %g %g %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,ny/2,0],avg_TradoTgasvsradius[ii],avg_Tradfftype3vsradius[ii],avg_Tradlabtype3vsradius[ii],avg_Tgasvsradius[ii],avg_fcollabvsradius[ii],avg_varexpfffvsradius[ii],avg_nfcolvsradius[ii],avg_kappadensityrealvsradius[ii],avg_kappadensityrealnofevsradius[ii],avg_kappasyrealvsradius[ii],avg_kappadcrealvsradius[ii],avg_kappaesrealvsradius[ii],avg_kappandensityrealvsradius[ii],avg_kappansyrealvsradius[ii],avg_kappandcrealvsradius[ii],avg_kappachiantirealvsradius[ii],avg_kappaffrealvsradius[ii],avg_kappabfrealvsradius[ii],avg_kappaferealvsradius[ii],avg_kappamolrealvsradius[ii],avg_kappahmopalrealvsradius[ii],avg_kappachiantiopalrealvsradius[ii],avg_kappaffeerealvsradius[ii]) )
+    #
+    #
+    global a
+    a=0.8
+    rddims(1)
+    if 1==1: ##### PLOT (Trad/Tgas vs. radius)
+        nxout=70 # about r=50M where models have reached inflow equilibrium
+        fig, (ax1) = plt.subplots(1, 1)
+        plt.gcf().subplots_adjust(bottom=0.15)
+        #plt.clf()
+        plt.ioff()
+        plt.rc('text', usetex=False)
+        #plt.rc('font', family='serif')
+        ax1.set_ylabel(r"$\hat{T}_\gamma/T_{\rm gas}$",fontsize=18)
+        ax1.set_xlabel(r"$r[r_g]$",fontsize=18)
+        for axis in ['top','bottom','left','right']:
+            ax1.spines[axis].set_linewidth(2)
+        #ax1.axhline(linewidth=4, color="black")
+        #ax1.axvline(linewidth=4, color="black")
+        ax1.plot(jrad1r[1][0:nxout],jrad1r[2][0:nxout],color="black",label='1',linewidth=2.0)
+        ax1.plot(jrad2r[1][0:nxout],jrad2r[2][0:nxout],color="black",label='2',linewidth=2.0)
+        ax1.plot(jrad3r[1][0:nxout],jrad3r[2][0:nxout],color="black",label='3',linewidth=2.0)
+        ax1.plot(jrad5r[1][0:nxout],jrad5r[2][0:nxout],color="black",label='5',linewidth=2.0)
+        ax1.plot(jrad7r[1][0:nxout],jrad7r[2][0:nxout],color="red",label='7',linewidth=2.0)
+        ax1.plot(jrad8r[1][0:nxout],jrad8r[2][0:nxout],color="green",label='8',linewidth=2.0)
+        #ax1.plot(jrad18r[1][0:nxout],jrad18r[2][0:nxout],color="black",label='18',linewidth=2.0)
+        ax1.plot(jrad9r[1][0:nxout],jrad9r[2][0:nxout],color="black",label='9',linewidth=2.0)
+        ax1.plot(jrad10r[1][0:nxout],jrad10r[2][0:nxout],color="black",label='10',linewidth=2.0)
+        ax1.plot(jrad11r[1][0:nxout],jrad11r[2][0:nxout],color="black",label='11',linewidth=2.0)
+        ax1.plot(jrad13r[1][0:nxout],jrad13r[2][0:nxout],color="brown",label='13',linewidth=2.0)
+        ax1.plot(jrad14r[1][0:nxout],jrad14r[2][0:nxout],color="orange",label='14',linewidth=2.0)
+        ax1.plot(jrad17r[1][0:nxout],jrad17r[2][0:nxout],color="blue",label='14h',linewidth=2.0)
+        ax1.plot(jrad15r[1][0:nxout],jrad15r[2][0:nxout],color="purple",label='15',linewidth=2.0)
+        ax1.plot(jrad16r[1][0:nxout],jrad16r[2][0:nxout],color="gold",label='15h',linewidth=2.0)
+        ax1.set_xscale('log')
+        legend = ax1.legend(loc='upper right', shadow=True)
+        #plt.axis('tight',ax=ax1)
+        plt.savefig('TradoTgasvsr.png')
+        #plt.show()
+        plt.close()
+    #
+    if 1==1: ##### PLOT (Tradfftype3 vs. radius)
+        nxout=70 # about r=50M where models have reached inflow equilibrium
+        fig, (ax1) = plt.subplots(1, 1)
+        plt.gcf().subplots_adjust(bottom=0.15)
+        #plt.clf()
+        plt.ioff()
+        plt.rc('text', usetex=False)
+        #plt.rc('font', family='serif')
+        ax1.set_ylabel(r"$\hat{T}_\gamma$",fontsize=18)
+        ax1.set_xlabel(r"$r[r_g]$",fontsize=18)
+        for axis in ['top','bottom','left','right']:
+            ax1.spines[axis].set_linewidth(2)
+        #ax1.axhline(linewidth=4, color="black")
+        #ax1.axvline(linewidth=4, color="black")
+        ax1.plot(jrad1r[1][0:nxout],TEMPBAR*jrad1r[3][0:nxout],color="black",label='1',linewidth=2.0,linestyle='-')
+        ax1.plot(jrad2r[1][0:nxout],TEMPBAR*jrad2r[3][0:nxout],color="black",label='2',linewidth=2.0,linestyle='--')
+        ax1.plot(jrad3r[1][0:nxout],TEMPBAR*jrad3r[3][0:nxout],color="black",label='3',linewidth=2.0,linestyle='-.')
+        ax1.plot(jrad5r[1][0:nxout],TEMPBAR*jrad5r[3][0:nxout],color="black",label='5',linewidth=2.0)
+        ax1.plot(jrad7r[1][0:nxout],TEMPBAR*jrad7r[3][0:nxout],color="red",label='7',linewidth=2.0)
+        ax1.plot(jrad8r[1][0:nxout],TEMPBAR*jrad8r[3][0:nxout],color="green",label='8',linewidth=2.0)
+        #ax1.plot(jrad18r[1][0:nxout],TEMPBAR*jrad18r[3][0:nxout],color="black",label='18',linewidth=2.0)
+        ax1.plot(jrad9r[1][0:nxout],TEMPBAR*jrad9r[3][0:nxout],color="black",label='9',linewidth=2.0)
+        ax1.plot(jrad10r[1][0:nxout],TEMPBAR*jrad10r[3][0:nxout],color="black",label='10',linewidth=2.0,linestyle=':')
+        ax1.plot(jrad11r[1][0:nxout],TEMPBAR*jrad11r[3][0:nxout],color="black",label='11',linewidth=2.0)
+        ax1.plot(jrad13r[1][0:nxout],TEMPBAR*jrad13r[3][0:nxout],color="brown",label='13',linewidth=2.0)
+        ax1.plot(jrad14r[1][0:nxout],TEMPBAR*jrad14r[3][0:nxout],color="orange",label='14',linewidth=2.0)
+        ax1.plot(jrad17r[1][0:nxout],TEMPBAR*jrad17r[3][0:nxout],color="blue",label='14h',linewidth=2.0)
+        ax1.plot(jrad15r[1][0:nxout],TEMPBAR*jrad15r[3][0:nxout],color="purple",label='15',linewidth=2.0)
+        ax1.plot(jrad16r[1][0:nxout],TEMPBAR*jrad16r[3][0:nxout],color="gold",label='15h',linewidth=2.0)
+        ax1.set_xscale('log')
+        ax1.set_yscale('log')
+        legend = ax1.legend(loc='upper right', shadow=True)
+        #plt.axis('tight',ax=ax1)
+        plt.savefig('Tradffvsr.png')
+        #plt.show()
+        plt.close()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #def onclick(event,funorig1,funorig2):
