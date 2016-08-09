@@ -15903,6 +15903,226 @@ def fix_defaulttimes2(ts,fti,ftf):
     return(fti,ftf)
 
 
+def gettruemodelname(modelname=None):
+    if modelname=="thickdisk7":
+        fieldtype="PoloidalFlip"
+        truemodelname="{\\bf A0.94BfN40}"
+    elif modelname=="thickdiskr7":
+        fieldtype="PoloidalFlip"
+        truemodelname="{\\bf A-0.94BfN40HR}"
+    elif modelname=="thickdisk8":
+        fieldtype="PoloidalFlip"
+        truemodelname="A0.94BfN100c1"
+    elif modelname=="thickdisk11":
+        fieldtype="PoloidalFlip"
+        truemodelname="A0.94BfN100c2"
+    elif modelname=="thickdisk12":
+        fieldtype="PoloidalFlip"
+        truemodelname="A0.94BfN100c3"
+    elif modelname=="thickdisk13":
+        fieldtype="PoloidalFlip"
+        truemodelname="A0.94BfN100c4"
+    elif modelname=="run.like8":
+        fieldtype="PoloidalFlip"
+        truemodelname="A0.94BfN40c5$^*$"
+    elif modelname=="thickdiskrr2":
+        fieldtype="PoloidalFlip"
+        truemodelname="A-0.94BfN30"
+    elif modelname=="run.liker2butbeta40":
+        fieldtype="PoloidalFlip"
+        truemodelname="A-0.94BfN40c1$^*$"
+    elif modelname=="run.liker2":
+        fieldtype="PoloidalFlip"
+        truemodelname="A-0.94BfN10c2$^*$"
+    elif modelname=="thickdisk16":
+        fieldtype="PoloidalFlip"
+        truemodelname="A-0.5BfN30"
+    elif modelname=="thickdisk5":
+        fieldtype="PoloidalFlip"
+        truemodelname="A0.0BfN10"
+    elif modelname=="thickdisk14":
+        fieldtype="PoloidalFlip"
+        truemodelname="A0.5BfN30"
+    elif modelname=="thickdiskr1":
+        fieldtype="PoloidalFlip"
+        truemodelname="A0.94BfN30"
+    elif modelname=="thickdiskr2":
+        fieldtype="PoloidalFlip"
+        truemodelname="A0.94BfN30r"
+    elif modelname=="run.liker1":
+        fieldtype="PoloidalFlip"
+        truemodelname="A0.94BfN10c$^*$"
+    elif modelname=="thickdisk9":
+        fieldtype="Poloidal"
+        truemodelname="A0.94BpN100"
+    elif modelname=="thickdiskr3":
+        fieldtype="Toroidal"
+        truemodelname="A-0.94BtN10"
+    elif modelname=="thickdisk17":
+        fieldtype="Toroidal"
+        truemodelname="A-0.5BtN10"
+    elif modelname=="thickdisk10":
+        fieldtype="Toroidal"
+        truemodelname="A0.0BtN10"
+    elif modelname=="thickdisk15":
+        fieldtype="Toroidal"
+        truemodelname="A0.5BtN5300"
+    elif modelname=="thickdiskr15":
+        fieldtype="Toroidal"
+        truemodelname="A0.5BtN10"
+    elif modelname=="thickdisk2":
+        fieldtype="Toroidal"
+        truemodelname="A0.94BtN10r"
+    elif modelname=="thickdisk3":
+        fieldtype="Toroidal"
+        truemodelname="A0.94BtN10"
+    elif modelname=="thickdiskhr3":
+        fieldtype="Toroidal"
+        truemodelname="{\\bf A0.94BtN10HR}"
+    elif modelname=="runlocaldipole3dfiducial":
+        fieldtype="PoloidalOld"
+        truemodelname="MB09D"
+    elif modelname=="blandford3d_new":
+        fieldtype="LSQuad"
+        truemodelname="MB09Q"
+    elif modelname=="a0hr07":
+        fieldtype="4Loop"
+        truemodelname="A0HR07"
+    elif modelname=="sasham9":
+        fieldtype="Poloidal2"
+        truemodelname="A-0.9N100halfpi"
+    elif modelname=="sasham9full2pi":
+        fieldtype="Poloidal2"
+        truemodelname="A-0.9N100"
+    elif modelname=="sasham5":
+        fieldtype="Poloidal2"
+        truemodelname="A-0.5N100"
+    elif modelname=="sasham2":
+        fieldtype="Poloidal2"
+        truemodelname="A-0.2N100"
+    elif modelname=="sasha0":
+        fieldtype="Poloidal2"
+        truemodelname="A0.0N100"
+    elif modelname=="sasha1":
+        fieldtype="Poloidal2"
+        truemodelname="A0.1N100"
+    elif modelname=="sasha2":
+        fieldtype="Poloidal2"
+        truemodelname="A0.2N100"
+    elif modelname=="sasha5":
+        fieldtype="Poloidal2"
+        truemodelname="A0.5N100"
+    elif modelname=="sasha9b25":
+        fieldtype="Poloidal2"
+        truemodelname="A0.9N25"
+    elif modelname=="sasha9b50":
+        fieldtype="Poloidal2"
+        truemodelname="A0.9N50"
+    elif modelname=="sasha9b100":
+        fieldtype="Poloidal2"
+        truemodelname="A0.9N100"
+    elif modelname=="sasha9b200":
+        fieldtype="Poloidal2"
+        truemodelname="A0.9N200"
+    elif modelname=="sasha99":
+        fieldtype="Poloidal2"
+        truemodelname="{\\bf A0.99N100}"
+    elif modelname=="rad1":
+        fieldtype="Poloidal"
+        truemodelname="{\\bf A0.94BpN100L20}"
+    elif modelname=="rada0.8":
+        fieldtype="Poloidal"
+        truemodelname="{\\bf A0.8BpN100L20}"
+    elif modelname=="rada0.94":
+        fieldtype="Poloidal"
+        truemodelname="{\\bf A0.94pN100L20}"
+    elif modelname=="radma0.8":
+        fieldtype="Largescale"
+        truemodelname="{\\bf A0.8lN100L20}"
+    elif modelname=="radta0.0":
+        fieldtype="Toroidal"
+        truemodelname="{\\bf A0.0lN100L20}"
+    elif modelname=="radta0.8":
+        fieldtype="Toroidal"
+        truemodelname="{\\bf A0.8lN100L100}"
+    elif modelname=="radtha0.0":
+        fieldtype="Toroidal"
+        truemodelname="{\\bf A0.0lN100L100}"
+    elif modelname=="radtha0.8":
+        fieldtype="Toroidal"
+        truemodelname="{\\bf A0.8lN100L20}"
+    elif modelname=="radtla0.0":
+        fieldtype="Toroidal"
+        truemodelname="{\\bf A0.0lN100L1}"
+    elif modelname=="radtma0.0":
+        fieldtype="Largescale"
+        truemodelname="{\\bf A0.0lN100L20}"
+    elif modelname=="radtma0.8":
+        fieldtype="Largescale"
+        truemodelname="{\\bf A0.8lN100L20}"
+    ##########################################
+    # tilted models
+    elif modelname=="thickdiskfull3d7tilt0.35":
+        fieldtype="PoloidalFlip"
+        truemodelname="A0.94BfN40T0.35"
+    elif modelname=="thickdiskfull3d7tilt0.7":
+        fieldtype="PoloidalFlip"
+        truemodelname="A0.94BfN40T0.7"
+    elif modelname=="thickdiskfull3d7tilt1.5708":
+        fieldtype="PoloidalFlip"
+        truemodelname="A0.94BfN40T1.5708"
+    elif modelname=="thickdiskhr3tilt0.35":
+        fieldtype="Toroidal"
+        truemodelname="A0.94tfN30T0.35"
+    elif modelname=="sasha9b100tilt0.15":
+        fieldtype="Poloidal2"
+        truemodelname="A0.9N100T0.15"
+    elif modelname=="sashaa9b100t0.15":
+        fieldtype="Poloidal2"
+        truemodelname="A0.9N100T0.15"
+    elif modelname=="sashaa9b100t0.3":
+        fieldtype="Poloidal2"
+        truemodelname="A0.9N100T0.3"
+    elif modelname=="sashaa9b100t0.6":
+        fieldtype="Poloidal2"
+        truemodelname="A0.9N100T0.6"
+    elif modelname=="sashaa9b100t1.5708":
+        fieldtype="Poloidal2"
+        truemodelname="A0.9N100T1.5708"
+    elif modelname=="sashaam9full2pit0.15":
+        fieldtype="Poloidal2"
+        truemodelname="A-0.9N100T0.15"
+    elif modelname=="sashaam9full2pit0.3":
+        fieldtype="Poloidal2"
+        truemodelname="A-0.9N100T0.3"
+    elif modelname=="sashaam9full2pit0.6":
+        fieldtype="Poloidal2"
+        truemodelname="A-0.9N100T0.6"
+    elif modelname=="sashaam9full2pit1.5708":
+        fieldtype="Poloidal2"
+        truemodelname="A-0.9N100T1.5708"
+    elif modelname=="sashaa99t0.15":
+        fieldtype="Poloidal2"
+        truemodelname="A0.99N100T0.15"
+    elif modelname=="sashaa99t0.3":
+        fieldtype="Poloidal2"
+        truemodelname="A0.99N100T0.3"
+    elif modelname=="sashaa99t0.6":
+        fieldtype="Poloidal2"
+        truemodelname="A0.99N100T0.6"
+    elif modelname=="sashaa99t1.5708":
+        fieldtype="Poloidal2"
+        truemodelname="A0.99N100T1.5708"
+    elif modelname=="mark1" or modelname=="mark2" or modelname=="mark1b":
+        fieldtype="MAD"
+        truemodelname="mark"
+    else:
+        fieldtype="UnknownModelFieldType"
+        truemodelname=modelname  #"UnknownModel"
+
+    return(truemodelname,fieldtype)
+
+
 # everything done inside this function only needs a final call to plot, not generating npy files or merging them.
 def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None,formovie=False,dolatex=False):
     global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
@@ -18975,221 +19195,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     else:
         gridtype="UnknownModelGridType"
     #
-    if modelname=="thickdisk7":
-        fieldtype="PoloidalFlip"
-        truemodelname="{\\bf A0.94BfN40}"
-    elif modelname=="thickdiskr7":
-        fieldtype="PoloidalFlip"
-        truemodelname="{\\bf A-0.94BfN40HR}"
-    elif modelname=="thickdisk8":
-        fieldtype="PoloidalFlip"
-        truemodelname="A0.94BfN100c1"
-    elif modelname=="thickdisk11":
-        fieldtype="PoloidalFlip"
-        truemodelname="A0.94BfN100c2"
-    elif modelname=="thickdisk12":
-        fieldtype="PoloidalFlip"
-        truemodelname="A0.94BfN100c3"
-    elif modelname=="thickdisk13":
-        fieldtype="PoloidalFlip"
-        truemodelname="A0.94BfN100c4"
-    elif modelname=="run.like8":
-        fieldtype="PoloidalFlip"
-        truemodelname="A0.94BfN40c5$^*$"
-    elif modelname=="thickdiskrr2":
-        fieldtype="PoloidalFlip"
-        truemodelname="A-0.94BfN30"
-    elif modelname=="run.liker2butbeta40":
-        fieldtype="PoloidalFlip"
-        truemodelname="A-0.94BfN40c1$^*$"
-    elif modelname=="run.liker2":
-        fieldtype="PoloidalFlip"
-        truemodelname="A-0.94BfN10c2$^*$"
-    elif modelname=="thickdisk16":
-        fieldtype="PoloidalFlip"
-        truemodelname="A-0.5BfN30"
-    elif modelname=="thickdisk5":
-        fieldtype="PoloidalFlip"
-        truemodelname="A0.0BfN10"
-    elif modelname=="thickdisk14":
-        fieldtype="PoloidalFlip"
-        truemodelname="A0.5BfN30"
-    elif modelname=="thickdiskr1":
-        fieldtype="PoloidalFlip"
-        truemodelname="A0.94BfN30"
-    elif modelname=="thickdiskr2":
-        fieldtype="PoloidalFlip"
-        truemodelname="A0.94BfN30r"
-    elif modelname=="run.liker1":
-        fieldtype="PoloidalFlip"
-        truemodelname="A0.94BfN10c$^*$"
-    elif modelname=="thickdisk9":
-        fieldtype="Poloidal"
-        truemodelname="A0.94BpN100"
-    elif modelname=="thickdiskr3":
-        fieldtype="Toroidal"
-        truemodelname="A-0.94BtN10"
-    elif modelname=="thickdisk17":
-        fieldtype="Toroidal"
-        truemodelname="A-0.5BtN10"
-    elif modelname=="thickdisk10":
-        fieldtype="Toroidal"
-        truemodelname="A0.0BtN10"
-    elif modelname=="thickdisk15":
-        fieldtype="Toroidal"
-        truemodelname="A0.5BtN5300"
-    elif modelname=="thickdiskr15":
-        fieldtype="Toroidal"
-        truemodelname="A0.5BtN10"
-    elif modelname=="thickdisk2":
-        fieldtype="Toroidal"
-        truemodelname="A0.94BtN10r"
-    elif modelname=="thickdisk3":
-        fieldtype="Toroidal"
-        truemodelname="A0.94BtN10"
-    elif modelname=="thickdiskhr3":
-        fieldtype="Toroidal"
-        truemodelname="{\\bf A0.94BtN10HR}"
-    elif modelname=="runlocaldipole3dfiducial":
-        fieldtype="PoloidalOld"
-        truemodelname="MB09D"
-    elif modelname=="blandford3d_new":
-        fieldtype="LSQuad"
-        truemodelname="MB09Q"
-    elif modelname=="a0hr07":
-        fieldtype="4Loop"
-        truemodelname="A0HR07"
-    elif modelname=="sasham9":
-        fieldtype="Poloidal2"
-        truemodelname="A-0.9N100halfpi"
-    elif modelname=="sasham9full2pi":
-        fieldtype="Poloidal2"
-        truemodelname="A-0.9N100"
-    elif modelname=="sasham5":
-        fieldtype="Poloidal2"
-        truemodelname="A-0.5N100"
-    elif modelname=="sasham2":
-        fieldtype="Poloidal2"
-        truemodelname="A-0.2N100"
-    elif modelname=="sasha0":
-        fieldtype="Poloidal2"
-        truemodelname="A0.0N100"
-    elif modelname=="sasha1":
-        fieldtype="Poloidal2"
-        truemodelname="A0.1N100"
-    elif modelname=="sasha2":
-        fieldtype="Poloidal2"
-        truemodelname="A0.2N100"
-    elif modelname=="sasha5":
-        fieldtype="Poloidal2"
-        truemodelname="A0.5N100"
-    elif modelname=="sasha9b25":
-        fieldtype="Poloidal2"
-        truemodelname="A0.9N25"
-    elif modelname=="sasha9b50":
-        fieldtype="Poloidal2"
-        truemodelname="A0.9N50"
-    elif modelname=="sasha9b100":
-        fieldtype="Poloidal2"
-        truemodelname="A0.9N100"
-    elif modelname=="sasha9b200":
-        fieldtype="Poloidal2"
-        truemodelname="A0.9N200"
-    elif modelname=="sasha99":
-        fieldtype="Poloidal2"
-        truemodelname="{\\bf A0.99N100}"
-    elif modelname=="rad1":
-        fieldtype="Poloidal"
-        truemodelname="{\\bf A0.94BpN100L20}"
-    elif modelname=="rada0.8":
-        fieldtype="Poloidal"
-        truemodelname="{\\bf A0.8BpN100L20}"
-    elif modelname=="rada0.94":
-        fieldtype="Poloidal"
-        truemodelname="{\\bf A0.94pN100L20}"
-    elif modelname=="radma0.8":
-        fieldtype="Largescale"
-        truemodelname="{\\bf A0.8lN100L20}"
-    elif modelname=="radta0.0":
-        fieldtype="Toroidal"
-        truemodelname="{\\bf A0.0lN100L20}"
-    elif modelname=="radta0.8":
-        fieldtype="Toroidal"
-        truemodelname="{\\bf A0.8lN100L100}"
-    elif modelname=="radtha0.0":
-        fieldtype="Toroidal"
-        truemodelname="{\\bf A0.0lN100L100}"
-    elif modelname=="radtha0.8":
-        fieldtype="Toroidal"
-        truemodelname="{\\bf A0.8lN100L20}"
-    elif modelname=="radtla0.0":
-        fieldtype="Toroidal"
-        truemodelname="{\\bf A0.0lN100L1}"
-    elif modelname=="radtma0.0":
-        fieldtype="Largescale"
-        truemodelname="{\\bf A0.0lN100L20}"
-    elif modelname=="radtma0.8":
-        fieldtype="Largescale"
-        truemodelname="{\\bf A0.8lN100L20}"
-    ##########################################
-    # tilted models
-    elif modelname=="thickdiskfull3d7tilt0.35":
-        fieldtype="PoloidalFlip"
-        truemodelname="A0.94BfN40T0.35"
-    elif modelname=="thickdiskfull3d7tilt0.7":
-        fieldtype="PoloidalFlip"
-        truemodelname="A0.94BfN40T0.7"
-    elif modelname=="thickdiskfull3d7tilt1.5708":
-        fieldtype="PoloidalFlip"
-        truemodelname="A0.94BfN40T1.5708"
-    elif modelname=="thickdiskhr3tilt0.35":
-        fieldtype="Toroidal"
-        truemodelname="A0.94tfN30T0.35"
-    elif modelname=="sasha9b100tilt0.15":
-        fieldtype="Poloidal2"
-        truemodelname="A0.9N100T0.15"
-    elif modelname=="sashaa9b100t0.15":
-        fieldtype="Poloidal2"
-        truemodelname="A0.9N100T0.15"
-    elif modelname=="sashaa9b100t0.3":
-        fieldtype="Poloidal2"
-        truemodelname="A0.9N100T0.3"
-    elif modelname=="sashaa9b100t0.6":
-        fieldtype="Poloidal2"
-        truemodelname="A0.9N100T0.6"
-    elif modelname=="sashaa9b100t1.5708":
-        fieldtype="Poloidal2"
-        truemodelname="A0.9N100T1.5708"
-    elif modelname=="sashaam9full2pit0.15":
-        fieldtype="Poloidal2"
-        truemodelname="A-0.9N100T0.15"
-    elif modelname=="sashaam9full2pit0.3":
-        fieldtype="Poloidal2"
-        truemodelname="A-0.9N100T0.3"
-    elif modelname=="sashaam9full2pit0.6":
-        fieldtype="Poloidal2"
-        truemodelname="A-0.9N100T0.6"
-    elif modelname=="sashaam9full2pit1.5708":
-        fieldtype="Poloidal2"
-        truemodelname="A-0.9N100T1.5708"
-    elif modelname=="sashaa99t0.15":
-        fieldtype="Poloidal2"
-        truemodelname="A0.99N100T0.15"
-    elif modelname=="sashaa99t0.3":
-        fieldtype="Poloidal2"
-        truemodelname="A0.99N100T0.3"
-    elif modelname=="sashaa99t0.6":
-        fieldtype="Poloidal2"
-        truemodelname="A0.99N100T0.6"
-    elif modelname=="sashaa99t1.5708":
-        fieldtype="Poloidal2"
-        truemodelname="A0.99N100T1.5708"
-    elif modelname=="mark1" or modelname=="mark2" or modelname=="mark1b":
-        fieldtype="MAD"
-        truemodelname="mark"
-    else:
-        fieldtype="UnknownModelFieldType"
-        truemodelname=modelname  #"UnknownModel"
+    (truemodelname,fieldtype)=gettruemodelname(modelname)
     #
     #
     #
@@ -28097,6 +28103,226 @@ def mkavgfigs1(whichfig=0):
         print(np.shape(avg_eout))
         #
         #
+    # generate latex table for some quantities -- do it when calling case that will output even if parallel==3
+    if whichfig==0 or whichfig==1:
+        #
+        avg_TradoTgas=np.copy(avg_Tradfftype3/avg_Tgas) # density weighted, at rh,5M,20M
+        avg_fcollab=(avg_Tradlabtype3/avg_Tradlablte) # rad energy flux weighted at r=100M
+        avg_varexpfff=np.copy(avg_varexpf) # as above
+        avg_nfcol=np.copy(avg_nradlabrat/avg_nradlabratlte) # as above
+        #
+        if 1==1: # density-weighted things
+            numer1a=gdet*avg_rho**2*avg_TradoTgas
+            denom1a=gdet*avg_rho**2
+            sumnumer1a=np.sum(numer1a[iofr(rhor),:,:])
+            sumdenom1a=np.sum(denom1a[iofr(rhor),:,:])
+            result1a=sumnumer1a/sumdenom1a
+            #
+            numer1b=gdet*avg_rho**2*avg_TradoTgas
+            denom1b=gdet*avg_rho**2
+            sumnumer1b=np.sum(numer1b[iofr(5),:,:])
+            sumdenom1b=np.sum(denom1b[iofr(5),:,:])
+            result1b=sumnumer1b/sumdenom1b
+            #
+            numer1c=gdet*avg_rho**2*avg_TradoTgas
+            denom1c=gdet*avg_rho**2
+            sumnumer1c=np.sum(numer1c[iofr(20),:,:])
+            sumdenom1c=np.sum(denom1c[iofr(20),:,:])
+            result1c=sumnumer1c/sumdenom1c
+            #
+            numer2a=gdet*avg_rho**2*avg_fcollab
+            denom2a=gdet*avg_rho**2
+            sumnumer2a=np.sum(numer2a[iofr(rhor),:,:])
+            sumdenom2a=np.sum(denom2a[iofr(rhor),:,:])
+            result2a=sumnumer2a/sumdenom2a
+            #
+            numer2b=gdet*avg_rho**2*avg_fcollab
+            denom2b=gdet*avg_rho**2
+            sumnumer2b=np.sum(numer2b[iofr(5),:,:])
+            sumdenom2b=np.sum(denom2b[iofr(5),:,:])
+            result2b=sumnumer2b/sumdenom2b
+            #
+            numer2c=gdet*avg_rho**2*avg_fcollab
+            denom2c=gdet*avg_rho**2
+            sumnumer2c=np.sum(numer2c[iofr(20),:,:])
+            sumdenom2c=np.sum(denom2c[iofr(20),:,:])
+            result2c=sumnumer2c/sumdenom2c
+            #
+            numer3a=gdet*avg_rho**2*avg_varexpfff
+            denom3a=gdet*avg_rho**2
+            sumnumer3a=np.sum(numer3a[iofr(rhor),:,:])
+            sumdenom3a=np.sum(denom3a[iofr(rhor),:,:])
+            result3a=sumnumer3a/sumdenom3a
+            #
+            numer3b=gdet*avg_rho**2*avg_varexpfff
+            denom3b=gdet*avg_rho**2
+            sumnumer3b=np.sum(numer3b[iofr(5),:,:])
+            sumdenom3b=np.sum(denom3b[iofr(5),:,:])
+            result3b=sumnumer3b/sumdenom3b
+            #
+            numer3c=gdet*avg_rho**2*avg_varexpfff
+            denom3c=gdet*avg_rho**2
+            sumnumer3c=np.sum(numer3c[iofr(20),:,:])
+            sumdenom3c=np.sum(denom3c[iofr(20),:,:])
+            result3c=sumnumer3c/sumdenom3c
+            #
+            numer4a=gdet*avg_rho**2*avg_nfcol
+            denom4a=gdet*avg_rho**2
+            sumnumer4a=np.sum(numer4a[iofr(rhor),:,:])
+            sumdenom4a=np.sum(denom4a[iofr(rhor),:,:])
+            result4a=sumnumer4a/sumdenom4a
+            #
+            numer4b=gdet*avg_rho**2*avg_nfcol
+            denom4b=gdet*avg_rho**2
+            sumnumer4b=np.sum(numer4b[iofr(5),:,:])
+            sumdenom4b=np.sum(denom4b[iofr(5),:,:])
+            result4b=sumnumer4b/sumdenom4b
+            #
+            numer4c=gdet*avg_rho**2*avg_nfcol
+            denom4c=gdet*avg_rho**2
+            sumnumer4c=np.sum(numer4c[iofr(20),:,:])
+            sumdenom4c=np.sum(denom4c[iofr(20),:,:])
+            result4c=sumnumer4c/sumdenom4c
+        #
+        #
+        if 1==1: # radiation flux weighted things
+            radnumer1a=avg_eoutRAD**2*avg_TradoTgas
+            raddenom1a=avg_eoutRAD**2
+            sumradnumer1a=np.sum(radnumer1a[iofr(10),:,:])
+            sumraddenom1a=np.sum(raddenom1a[iofr(10),:,:])
+            radresult1a=sumradnumer1a/sumraddenom1a
+            #
+            radnumer1b=avg_eoutRAD**2*avg_TradoTgas
+            raddenom1b=avg_eoutRAD**2
+            sumradnumer1b=np.sum(radnumer1b[iofr(100),:,:])
+            sumraddenom1b=np.sum(raddenom1b[iofr(100),:,:])
+            radresult1b=sumradnumer1b/sumraddenom1b
+            #
+            radnumer1c=avg_eoutRAD**2*avg_TradoTgas
+            raddenom1c=avg_eoutRAD**2
+            sumradnumer1c=np.sum(radnumer1c[iofr(1000),:,:])
+            sumraddenom1c=np.sum(raddenom1c[iofr(1000),:,:])
+            radresult1c=sumradnumer1c/sumraddenom1c
+            #
+            radnumer2a=avg_eoutRAD**2*avg_fcollab
+            raddenom2a=avg_eoutRAD**2
+            sumradnumer2a=np.sum(radnumer2a[iofr(10),:,:])
+            sumraddenom2a=np.sum(raddenom2a[iofr(10),:,:])
+            radresult2a=sumradnumer2a/sumraddenom2a
+            #
+            radnumer2b=avg_eoutRAD**2*avg_fcollab
+            raddenom2b=avg_eoutRAD**2
+            sumradnumer2b=np.sum(radnumer2b[iofr(100),:,:])
+            sumraddenom2b=np.sum(raddenom2b[iofr(100),:,:])
+            radresult2b=sumradnumer2b/sumraddenom2b
+            #
+            radnumer2c=avg_eoutRAD**2*avg_fcollab
+            raddenom2c=avg_eoutRAD**2
+            sumradnumer2c=np.sum(radnumer2c[iofr(1000),:,:])
+            sumraddenom2c=np.sum(raddenom2c[iofr(1000),:,:])
+            radresult2c=sumradnumer2c/sumraddenom2c
+            #
+            radnumer3a=avg_eoutRAD**2*avg_varexpfff
+            raddenom3a=avg_eoutRAD**2
+            sumradnumer3a=np.sum(radnumer3a[iofr(10),:,:])
+            sumraddenom3a=np.sum(raddenom3a[iofr(10),:,:])
+            radresult3a=sumradnumer3a/sumraddenom3a
+            #
+            radnumer3b=avg_eoutRAD**2*avg_varexpfff
+            raddenom3b=avg_eoutRAD**2
+            sumradnumer3b=np.sum(radnumer3b[iofr(100),:,:])
+            sumraddenom3b=np.sum(raddenom3b[iofr(100),:,:])
+            radresult3b=sumradnumer3b/sumraddenom3b
+            #
+            radnumer3c=avg_eoutRAD**2*avg_varexpfff
+            raddenom3c=avg_eoutRAD**2
+            sumradnumer3c=np.sum(radnumer3c[iofr(1000),:,:])
+            sumraddenom3c=np.sum(raddenom3c[iofr(1000),:,:])
+            radresult3c=sumradnumer3c/sumraddenom3c
+            #
+            radnumer4a=avg_eoutRAD**2*avg_nfcol
+            raddenom4a=avg_eoutRAD**2
+            sumradnumer4a=np.sum(radnumer4a[iofr(10),:,:])
+            sumraddenom4a=np.sum(raddenom4a[iofr(10),:,:])
+            radresult4a=sumradnumer4a/sumraddenom4a
+            #
+            radnumer4b=avg_eoutRAD**2*avg_nfcol
+            raddenom4b=avg_eoutRAD**2
+            sumradnumer4b=np.sum(radnumer4b[iofr(100),:,:])
+            sumraddenom4b=np.sum(raddenom4b[iofr(100),:,:])
+            radresult4b=sumradnumer4b/sumraddenom4b
+            #
+            radnumer4c=avg_eoutRAD**2*avg_nfcol
+            raddenom4c=avg_eoutRAD**2
+            sumradnumer4c=np.sum(radnumer4c[iofr(1000),:,:])
+            sumraddenom4c=np.sum(raddenom4c[iofr(1000),:,:])
+            radresult4c=sumradnumer4c/sumraddenom4c
+        #
+        # 
+        (truemodelname,fieldtype)=gettruemodelname(modelname)
+        #
+        print( "HLatex67: ModelName & $\\left(\\frac{\\hat{T}_\\gamma/T_{\\rm{}gas}}\\right)_{r=r_{\\rm{}H}}$  & $\\left(\\frac{\\hat{T}_\\gamma/T_{\\rm{}gas}}\\right)_{r=5r_g}$  & $\\left(\\frac{\\hat{T}_\\gamma/T_{\\rm{}gas}}\\right)_{r=20r_g}$  & $f_{\\rm{col},r=100r_g,\\rm{rad.beam}}$ & $f_{\\rm{col},r=5r_g,\\rm{disk}}$ & ${\\rm{}e}^{-\\xi}_{r=100r_g,\\rm{rad.beam}}$ & ${\\rm{}e}^{-\\xi}_{r=5r_g,\\rm{disk}}$  \\\\" )
+        print( "VLatex67: %s         & %g & %g & %g    & %g & %g  & %g & %g & \\\\ %% %s" % (truemodelname, roundto2(result1a),roundto2(result1b),roundto2(result1c),roundto2(radresult2b),roundto2(result2b),roundto2(radresult3b),roundto2(result3b),    modelname ) )
+        #
+        # make data file of isotropic equivalent luminosities with modelname in name of file, so can cumulate these in separate non-parallel plot script for paper
+        # same for Trad, Tgas, varexpf, rho, etc. along equator
+        #
+        # stuff vs. theta
+        if 1==1:
+            # dP/d\theta / (Mdot_{BH} c^2)
+            avg_eoutRADvstheta=avg_eoutRAD[iofr(100),:,0]
+            # isotropic equivalent luminosity in ergs/sec
+            avg_eoutRADisovstheta=avg_eoutRAD[iofr(100),:,0]*(np.pi)*(mdotfinavgvsr[ihor])*(ENBAR/TBAR)
+            avg_eoutEMvstheta=avg_eoutEM[iofr(100),:,0]
+            avg_eoutEMisovstheta=avg_eoutEM[iofr(100),:,0]*(np.pi)*(mdotfinavgvsr[ihor])*(ENBAR/TBAR)
+            avg_Tradlabtype3vstheta=avg_Tradlabtype3[iofr(100),:,0]
+            avg_fcollabvstheta=avg_fcollab[iofr(100),:,0]
+            avg_varexpfffvstheta=avg_varexpfff[iofr(100),:,0]
+            avg_nfcolvstheta=avg_nfcol[iofr(100),:,0]
+            #
+            f1 = open('radquantsvsh.%s.txt' % (modelname), 'w')
+            for jj in np.arange(0,ny):
+                f1.write("%d %g  %g %g %g %g  %g %g %g %g\n" % (jj,h[iofr(100),jj,0],avg_eoutRADvstheta[jj],avg_eoutRADisovstheta[jj],avg_eoutEMvstheta[jj],avg_eoutEMisovstheta[jj],avg_Tradlabtype3vstheta[jj],avg_fcollabvstheta[jj],avg_varexpfffvstheta[jj],avg_nfcolvstheta[jj]) )
+            f1.close()
+        #
+        # stuff vs. radius
+        if 1==1:
+            # 4
+            sjj=ny/2-ny/6
+            ejj=ny/2+ny/6
+            avg_TradoTgasvsradius=np.average(avg_TradoTgas[:,sjj:ejj,0],axis=1)
+            avg_Tradfftype3vsradius=np.average(avg_Tradfftype3[:,sjj:ejj,0],axis=1)
+            avg_Tradlabtype3vsradius=np.average(avg_Tradlabtype3[:,sjj:ejj,0],axis=1)
+            avg_Tgasvsradius=np.average(avg_Tgas[:,sjj:ejj,0],axis=1)
+            # 3
+            avg_fcollabvsradius=np.average(avg_fcollab[:,sjj:ejj,0],axis=1)
+            avg_varexpfffvsradius=np.average(avg_varexpfff[:,sjj:ejj,0],axis=1)
+            avg_nfcolvsradius=np.average(avg_nfcol[:,sjj:ejj,0],axis=1)
+            # 16
+            avg_kappadensityrealvsradius=np.average(avg_kappadensityreal[:,sjj:ejj,0],axis=1)
+            avg_kappadensityrealnofevsradius=np.average(avg_kappadensityrealnofe[:,sjj:ejj,0],axis=1)
+            avg_kappasyrealvsradius=np.average(avg_kappasyreal[:,sjj:ejj,0],axis=1)
+            avg_kappadcrealvsradius=np.average(avg_kappadcreal[:,sjj:ejj,0],axis=1)
+            avg_kappaesrealvsradius=np.average(avg_kappaesreal[:,sjj:ejj,0],axis=1)
+            avg_kappandensityrealvsradius=np.average(avg_kappandensityreal[:,sjj:ejj,0],axis=1)
+            avg_kappansyrealvsradius=np.average(avg_kappansyreal[:,sjj:ejj,0],axis=1)
+            avg_kappandcrealvsradius=np.average(avg_kappandcreal[:,sjj:ejj,0],axis=1)
+            avg_kappachiantirealvsradius=np.average(avg_kappachiantireal[:,sjj:ejj,0],axis=1)
+            avg_kappaffrealvsradius=np.average(avg_kappaffreal[:,sjj:ejj,0],axis=1)
+            avg_kappabfrealvsradius=np.average(avg_kappabfreal[:,sjj:ejj,0],axis=1)
+            avg_kappaferealvsradius=np.average(avg_kappafereal[:,sjj:ejj,0],axis=1)
+            avg_kappamolrealvsradius=np.average(avg_kappamolreal[:,sjj:ejj,0],axis=1)
+            avg_kappahmopalrealvsradius=np.average(avg_kappahmopalreal[:,sjj:ejj,0],axis=1)
+            avg_kappachiantiopalrealvsradius=np.average(avg_kappachiantiopalreal[:,sjj:ejj,0],axis=1)
+            avg_kappaffeerealvsradius=np.average(avg_kappaffeereal[:,sjj:ejj,0],axis=1)
+            #
+            f2 = open('radquantsvsr.%s.txt' % (modelname), 'w')
+            for ii in np.arange(0,nx):
+                f2.write("%d %g  %g %g %g %g  %g %g %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,ny/2,0],avg_TradoTgasvsradius[ii],avg_Tradfftype3vsradius[ii],avg_Tradlabtype3vsradius[ii],avg_Tgasvsradius[ii],avg_fcollabvsradius[ii],avg_varexpfffvsradius[ii],avg_nfcolvsradius[ii],avg_kappadensityrealvsradius[ii],avg_kappadensityrealnofevsradius[ii],avg_kappasyrealvsradius[ii],avg_kappadcrealvsradius[ii],avg_kappaesrealvsradius[ii],avg_kappandensityrealvsradius[ii],avg_kappansyrealvsradius[ii],avg_kappandcrealvsradius[ii],avg_kappachiantirealvsradius[ii],avg_kappaffrealvsradius[ii],avg_kappabfrealvsradius[ii],avg_kappaferealvsradius[ii],avg_kappamolrealvsradius[ii],avg_kappahmopalrealvsradius[ii],avg_kappachiantiopalrealvsradius[ii],avg_kappaffeerealvsradius[ii]) )
+            f2.close()
+    #########
+    # PLOTS
+    if 1==1:
         myveldensity=8 # 1 through 8 is reasonable, with 1 for testing and 8 for production
         if whichfig==0 or whichfig==1:
             #
@@ -28192,6 +28418,7 @@ def mkavgfigs1(whichfig=0):
         #
     #
     #
+
 
 
 def mkavgfigs2():
@@ -29769,8 +29996,6 @@ def mkavgfigs5(whichfig=0):
         gdetB=np.copy(avg_uu)
         gdetB[1:] = avg_gdetB[0:]
         #
-    #
-    #
     #
     #
     #
