@@ -1211,6 +1211,10 @@ do
             then
                 runtype=35
             fi
+            if [ $makeavgplot -eq 16 ]
+            then
+                runtype=36
+            fi
         fi
 
     else

@@ -20735,7 +20735,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     #   (no iflux correction)
     #
-    if whichplot == None:
+    if 1==0 and whichplot == None:
         fig,plotlist=plt.subplots(nrows=4,ncols=1,sharex=True,figsize=(12,16),num=1)
         #plt.clf()
         plottitle = "a = %g: %s" % ( a, os.path.basename(os.getcwd()) )
@@ -27929,37 +27929,39 @@ def mkavgfigs(whichmode=0):
     if whichmode==0:
         mkavgfigs1(whichfig=0) # all in one call
     if whichmode==1:
-        mkavgfigs1(whichfig=1)
+        mkavgfigs1(whichfig=1) # latex and data stuff
     if whichmode==2:
         mkavgfigs1(whichfig=2)
     if whichmode==3:
         mkavgfigs1(whichfig=3)
     if whichmode==4:
         mkavgfigs1(whichfig=4)
+    if whichmode==5:
+        mkavgfigs1(whichfig=5)
     #
-    if whichmode==0 or whichmode==5:
-        mkavgfigs2()
     if whichmode==0 or whichmode==6:
-        mkavgfigs3()
+        mkavgfigs2()
     if whichmode==0 or whichmode==7:
+        mkavgfigs3()
+    if whichmode==0 or whichmode==8:
         mkavgfigs4()
     #
     if gotrad==2: # only doing if latest harmrad
         if whichmode==0:
             mkavgfigs5(whichfig=0) # all in one call
-        if whichmode==8:
-            mkavgfigs5(whichfig=1)
         if whichmode==9:
-            mkavgfigs5(whichfig=2)
+            mkavgfigs5(whichfig=1)
         if whichmode==10:
-            mkavgfigs5(whichfig=3)
+            mkavgfigs5(whichfig=2)
         if whichmode==11:
-            mkavgfigs5(whichfig=4)
+            mkavgfigs5(whichfig=3)
         if whichmode==12:
-            mkavgfigs5(whichfig=5)
+            mkavgfigs5(whichfig=4)
         if whichmode==13:
-            mkavgfigs5(whichfig=6)
+            mkavgfigs5(whichfig=5)
         if whichmode==14:
+            mkavgfigs5(whichfig=6)
+        if whichmode==15:
             mkavgfigs5(whichfig=7)
 
 
@@ -28489,7 +28491,7 @@ def mkavgfigs1(whichfig=0):
     # PLOTS
     if 1==1:
         myveldensity=8 # 1 through 8 is reasonable, with 1 for testing and 8 for production
-        if whichfig==0 or whichfig==1:
+        if whichfig==0 or whichfig==2:
             #
             # normal field
             Btrue[1:4] = np.copy(avg_B[0:3])
@@ -28509,7 +28511,7 @@ def mkavgfigs1(whichfig=0):
             print("hmin=%g" % (limitedh[np.where(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:]==vminforframe)]))
             print("eflux: %g %g" % (vminforframe,vmaxforframe));sys.stdout.flush()
             returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig2a",veldensity=myveldensity,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,alpha=0.2,showuu1eq0=True)
-        if whichfig==0 or whichfig==2:
+        if whichfig==0 or whichfig==3:
             # velocity
             Btrue[1:4] = np.copy(avg_uu[1:4]/avg_uu[0])
             B[1:4] = np.copy(avg_uu[1:4]/avg_uu[0])
@@ -28528,7 +28530,7 @@ def mkavgfigs1(whichfig=0):
             print("hmin=%g" % (limitedh[np.where(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:]==vminforframe)]))
             print("eflux: %g %g" % (vminforframe,vmaxforframe));sys.stdout.flush()
             returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig2b",veldensity=myveldensity,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,alpha=0.2,showuu1eq0=True)
-        if whichfig==0 or whichfig==3:
+        if whichfig==0 or whichfig==4:
             # mass flux
             Btrue[1:4] = np.copy(avg_rhouu[1:4])
             B[1:4] = np.copy(avg_rhouu[1:4])
@@ -28547,7 +28549,7 @@ def mkavgfigs1(whichfig=0):
             print("hmin=%g" % (limitedh[np.where(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:]==vminforframe)]))
             print("eflux: %g %g" % (vminforframe,vmaxforframe));sys.stdout.flush()
             returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig2c",veldensity=myveldensity,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,alpha=0.2,showuu1eq0=True)
-        if whichfig==0 or whichfig==4:
+        if whichfig==0 or whichfig==5:
             # radiation flux lines instead of magnetic lines
             for ll in np.arange(1,4):
                 Btrue[ll,:,:,:]=np.copy(avg_TudRAD[ll,0,:,:,:]) # radiation tensor 
