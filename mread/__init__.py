@@ -28377,8 +28377,8 @@ def mkavgfigs1(whichfig=0):
             # 2
             avga_myauu1=np.copy(avg_myauu1())
             avga_myauu3=np.copy(avg_myauu3())
-            avg2_myvrvstheta=avga_myauu1[iofr(100),:,0]
-            avg2_myvphivstheta=avga_myauu3[iofr(100),:,0]
+            avg2_vrvstheta=avga_myauu1[iofr(100),:,0]
+            avg2_vphivstheta=avga_myauu3[iofr(100),:,0]
             # 3
             avga_myaB1=np.copy(avg_myaB1())
             avga_myaB2=np.copy(avg_myaB2())
