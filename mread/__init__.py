@@ -3057,7 +3057,7 @@ def isradmodelD2(modelname): # for Mdot\sim 5Ledd/c^2
         return(0)
     #
 def isradmodelnrad(modelname):
-    if modelname=="jonharmrad1" or modelname=="jonharmrad2" or modelname=="jonharmrad3" or modelname=="jonharmrad4" or modelname=="jonharmrad5" or modelname=="jonharmrad6" or modelname=="jonharmrad7" or modelname=="jonharmrad8" or modelname=="jonharmrad9" or modelname=="jonharmrad10" or modelname=="jonharmrad11" or modelname=="jonharmrad12" or modelname=="jonharmrad13" or modelname=="jonharmrad14" or modelname=="jonharmrad15" or modelname=="jonharmrad16":
+    if modelname=="jonharmrad1" or modelname=="jonharmrad2" or modelname=="jonharmrad3" or modelname=="jonharmrad4" or modelname=="jonharmrad5" or modelname=="jonharmrad6" or modelname=="jonharmrad7" or modelname=="jonharmrad8" or modelname=="jonharmrad9" or modelname=="jonharmrad10" or modelname=="jonharmrad11" or modelname=="jonharmrad12" or modelname=="jonharmrad13" or modelname=="jonharmrad14" or modelname=="jonharmrad15" or modelname=="jonharmrad16" or modelname=="jonharmrad17" or modelname=="jonharmrad18":
         return(1)
     else:
         return(0)
@@ -31528,7 +31528,7 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     #
     tauradlocal=(KAPPAUSERnofe+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
     #
-    if 1==1:
+    if 1==0:
         # use time-phi average
         loadavg()
         KAPPAUSER=np.copy(rho)
@@ -31540,6 +31540,8 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
                 KAPPAESUSER[:,:,kk]=avg_KAPPAESUSER[:,:,0]
         kappa=np.copy(KAPPAUSERnofe)
         kappaes=np.copy(KAPPAESUSER)
+        kappasyreal=np.copy(avg_kappasyreal)
+        kappaffreal=np.copy(avg_kappaffreal)
         Tgas=avg_Tgas
         Tradlabtype1=avg_Tradlabtype1
         Tradlabtype3=avg_Tradlabtype3
@@ -31775,6 +31777,12 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
         myfun=uu[1]
     if(which==201):
         myfun=avg_uu[1]
+    if(which==202):
+        myfun=(avg_kappasyreal/avg_kappaffreal)
+    if(which==203):
+        myfun=np.log10(avg_kappasyreal)
+    if(which==204):
+        myfun=np.log10(avg_kappaffreal)
     #
     #
     # overrides
@@ -33851,7 +33859,7 @@ def dcpaperplot1():
     xlabels=[r"$r[r_g]$"]
     xscales=['log']
     #
-    ylabels=["ii","r",r"$\hat{T}_\gamma/T_{\rm gas}$",r"$\hat{T}_\gamma[\rm K]$",r"$T_\gamma[\rm K]$",r"$T_{\rm gas}[\rm K]$",r"f_{\rm col}",r"$\exp{(-\xi)}$",r"$n_{\rm col}$",r"$\kappa_{\rm tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm tot-Fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm es}$",r"$\kappa_{\rm n,tot}$",r"$\kappa_{\rm n,sy}$",r"$\kappa_{\rm n,dc}$",r"$\kappa_{\rm chianti}/\kappa_{\rm ff}$",r"$\kappa_{\rm ff}$",r"$\kappa_{\rm bf}/\kappa_{\rm ff}$",r"$\kappa_{\rm fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm mol}/\kappa_{\rm ff}$",r"$\kappa_{\rm hmopal}/\kappa_{\rm ff}$",r"\kappa_{\rm chiantiopal}/\kappa_{\rm ff}$",r"\kappa_{\rm ff-ee}/\kappa_{\rm ff}$",r"$\rho$",r"$u_g$",r"$u_\gamma$",r"$b^2$",r"$v_r$",r"$v_\phi$",r"$B_r$",r"$B_z$",r"$B_\phi$"]
+    ylabels=["ii","r",r"$\hat{T}_\gamma/T_{\rm gas}$",r"$\hat{T}_\gamma[\rm K]$",r"$T_\gamma[\rm K]$",r"$T_{\rm gas}[\rm K]$",r"$f_{\rm col}$",r"$\exp{(-\xi)}$",r"$n_{\rm col}$",r"$\kappa_{\rm tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm tot-Fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm es}$",r"$\kappa_{\rm n,tot}$",r"$\kappa_{\rm n,sy}$",r"$\kappa_{\rm n,dc}$",r"$\kappa_{\rm chianti}/\kappa_{\rm ff}$",r"$\kappa_{\rm ff}$",r"$\kappa_{\rm bf}/\kappa_{\rm ff}$",r"$\kappa_{\rm fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm mol}/\kappa_{\rm ff}$",r"$\kappa_{\rm hmopal}/\kappa_{\rm ff}$",r"\kappa_{\rm chiantiopal}/\kappa_{\rm ff}$",r"\kappa_{\rm ff-ee}/\kappa_{\rm ff}$",r"$\rho$",r"$u_g$",r"$u_\gamma$",r"$b^2/\rho$",r"$v_r$",r"$v_\phi$",r"$B_r$",r"$B_z$",r"$B_\phi$"]
     print("ylabels")
     print(np.shape(ylabels))
     yscales=['linear','linear','linear','log','log','log','log','linear','linear','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log']
@@ -33883,7 +33891,7 @@ def dcpaperplot1():
         #ax1.axhline(linewidth=4, color="black")
         #ax1.axvline(linewidth=4, color="black")
         #
-        if ii>=9 and ii<=24:
+        if ii>=9 and ii<=24 and ii!=18:
             fun1=np.copy(1.0/jrad1r[18])
             fun2=np.copy(1.0/jrad2r[18])
             fun3=np.copy(1.0/jrad3r[18])
@@ -33899,6 +33907,38 @@ def dcpaperplot1():
             fun16=np.copy(1.0/jrad16r[18])
             fun17=np.copy(1.0/jrad17r[18])
             #fun18=np.copy(1.0/jrad18r[18])
+        elif ii==26 or ii==27 or ii==28:
+            fun1=np.copy(1.0/jrad1r[25])
+            fun2=np.copy(1.0/jrad2r[25])
+            fun3=np.copy(1.0/jrad3r[25])
+            fun5=np.copy(1.0/jrad5r[25])
+            fun7=np.copy(1.0/jrad7r[25])
+            fun8=np.copy(1.0/jrad8r[25])
+            fun9=np.copy(1.0/jrad9r[25])
+            fun10=np.copy(1.0/jrad10r[25])
+            fun11=np.copy(1.0/jrad11r[25])
+            fun13=np.copy(1.0/jrad13r[25])
+            fun14=np.copy(1.0/jrad14r[25])
+            fun15=np.copy(1.0/jrad15r[25])
+            fun16=np.copy(1.0/jrad16r[25])
+            fun17=np.copy(1.0/jrad17r[25])
+            #fun18=np.copy(1.0/jrad18r[25])
+        elif ii==31 or ii==32 or ii==33:
+            fun1=np.copy(1.0/np.sqrt(jrad1r[25]))
+            fun2=np.copy(1.0/np.sqrt(jrad2r[25]))
+            fun3=np.copy(1.0/np.sqrt(jrad3r[25]))
+            fun5=np.copy(1.0/np.sqrt(jrad5r[25]))
+            fun7=np.copy(1.0/np.sqrt(jrad7r[25]))
+            fun8=np.copy(1.0/np.sqrt(jrad8r[25]))
+            fun9=np.copy(1.0/np.sqrt(jrad9r[25]))
+            fun10=np.copy(1.0/np.sqrt(jrad10r[25]))
+            fun11=np.copy(1.0/np.sqrt(jrad11r[25]))
+            fun13=np.copy(1.0/np.sqrt(jrad13r[25]))
+            fun14=np.copy(1.0/np.sqrt(jrad14r[25]))
+            fun15=np.copy(1.0/np.sqrt(jrad15r[25]))
+            fun16=np.copy(1.0/np.sqrt(jrad16r[25]))
+            fun17=np.copy(1.0/np.sqrt(jrad17r[25]))
+            #fun18=np.copy(1.0/np.sqrt(jrad18r[25]))
         else:
             fun1=np.copy(jrad1r[0]*0.0+1.0)
             fun2=np.copy(jrad2r[0]*0.0+1.0)
