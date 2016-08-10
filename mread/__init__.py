@@ -16119,6 +16119,51 @@ def gettruemodelname(modelname=None):
     elif modelname=="mark1" or modelname=="mark2" or modelname=="mark1b":
         fieldtype="MAD"
         truemodelname="mark"
+    elif modelname=="jonharmrad1":
+        fieldtype="MAD"
+        truemodelname="M1"
+    elif modelname=="jonharmrad2":
+        fieldtype="MAD"
+        truemodelname="M2"
+    elif modelname=="jonharmrad3":
+        fieldtype="MAD"
+        truemodelname="M3"
+    elif modelname=="jonharmrad5":
+        fieldtype="MAD"
+        truemodelname="M5"
+    elif modelname=="jonharmrad7":
+        fieldtype="MAD"
+        truemodelname="M7"
+    elif modelname=="jonharmrad8":
+        fieldtype="MAD"
+        truemodelname="M8"
+    elif modelname=="jonharmrad9":
+        fieldtype="MAD"
+        truemodelname="M9"
+    elif modelname=="jonharmrad10":
+        fieldtype="MAD"
+        truemodelname="M10"
+    elif modelname=="jonharmrad11":
+        fieldtype="MAD"
+        truemodelname="M11"
+    elif modelname=="jonharmrad13":
+        fieldtype="MAD"
+        truemodelname="M13"
+    elif modelname=="jonharmrad14":
+        fieldtype="MAD"
+        truemodelname="M14"
+    elif modelname=="jonharmrad15":
+        fieldtype="MAD"
+        truemodelname="M15"
+    elif modelname=="jonharmrad17":
+        fieldtype="MAD"
+        truemodelname="M14h"
+    elif modelname=="jonharmrad16":
+        fieldtype="MAD"
+        truemodelname="M15h"
+    elif modelname=="jonharmrad18":
+        fieldtype="MAD"
+        truemodelname="M6"
     else:
         fieldtype="UnknownModelFieldType"
         truemodelname=modelname  #"UnknownModel"
@@ -33956,21 +34001,21 @@ def dcpaperplot1():
             fun17=np.copy(jrad17r[0]*0.0+1.0)
             #fun18=np.copy(jrad18r[0]*0.0+1.0)
         #
-        ax1.plot(jrad1r[1][0:nxout],factors[ii]*jrad1r[ii][0:nxout]*fun1[0:nxout],color="black",label='1',linewidth=2.0,linestyle='-')
-        ax1.plot(jrad2r[1][0:nxout],factors[ii]*jrad2r[ii][0:nxout]*fun2[0:nxout],color="black",label='2',linewidth=2.0,linestyle='--')
-        ax1.plot(jrad3r[1][0:nxout],factors[ii]*jrad3r[ii][0:nxout]*fun3[0:nxout],color="black",label='3',linewidth=2.0,linestyle='-.')
-        ax1.plot(jrad5r[1][0:nxout],factors[ii]*jrad5r[ii][0:nxout]*fun5[0:nxout],color="gold",label='5',linewidth=2.0,linestyle='--')
-        ax1.plot(jrad7r[1][0:nxout],factors[ii]*jrad7r[ii][0:nxout]*fun7[0:nxout],color="red",label='7',linewidth=2.0)
-        ax1.plot(jrad8r[1][0:nxout],factors[ii]*jrad8r[ii][0:nxout]*fun8[0:nxout],color="green",label='8',linewidth=2.0)
-        #ax1.plot(jrad18r[1][0:nxout],factors[ii]*jrad18r[ii][0:nxout]*fun18[0:nxout],color="green",label='18',linewidth=2.0,linestyle='--')
-        ax1.plot(jrad9r[1][0:nxout],factors[ii]*jrad9r[ii][0:nxout]*fun9[0:nxout],color="red",label='9',linewidth=2.0,linestyle='--')
-        ax1.plot(jrad10r[1][0:nxout],factors[ii]*jrad10r[ii][0:nxout]*fun10[0:nxout],color="black",label='10',linewidth=2.0,linestyle=':')
-        ax1.plot(jrad11r[1][0:nxout],factors[ii]*jrad11r[ii][0:nxout]*fun11[0:nxout],color="blue",label='11',linewidth=2.0,linestyle='--')
-        ax1.plot(jrad13r[1][0:nxout],factors[ii]*jrad13r[ii][0:nxout]*fun13[0:nxout],color="brown",label='13',linewidth=2.0)
-        ax1.plot(jrad14r[1][0:nxout],factors[ii]*jrad14r[ii][0:nxout]*fun14[0:nxout],color="orange",label='14',linewidth=2.0)
-        ax1.plot(jrad17r[1][0:nxout],factors[ii]*jrad17r[ii][0:nxout]*fun17[0:nxout],color="blue",label='14h',linewidth=2.0)
-        ax1.plot(jrad15r[1][0:nxout],factors[ii]*jrad15r[ii][0:nxout]*fun15[0:nxout],color="purple",label='15',linewidth=2.0)
-        ax1.plot(jrad16r[1][0:nxout],factors[ii]*jrad16r[ii][0:nxout]*fun16[0:nxout],color="gold",label='15h',linewidth=2.0)
+        ax1.plot(jrad1r[1][0:nxout],factors[ii]*jrad1r[ii][0:nxout]*fun1[0:nxout],color="black",label='M1',linewidth=2.0,linestyle='-')
+        ax1.plot(jrad2r[1][0:nxout],factors[ii]*jrad2r[ii][0:nxout]*fun2[0:nxout],color="black",label='M2',linewidth=2.0,linestyle='--')
+        ax1.plot(jrad3r[1][0:nxout],factors[ii]*jrad3r[ii][0:nxout]*fun3[0:nxout],color="black",label='M3',linewidth=2.0,linestyle='-.')
+        ax1.plot(jrad5r[1][0:nxout],factors[ii]*jrad5r[ii][0:nxout]*fun5[0:nxout],color="gold",label='M5',linewidth=2.0,linestyle='--')
+        #ax1.plot(jrad18r[1][0:nxout],factors[ii]*jrad18r[ii][0:nxout]*fun18[0:nxout],color="green",label='M6',linewidth=2.0,linestyle='--')
+        ax1.plot(jrad7r[1][0:nxout],factors[ii]*jrad7r[ii][0:nxout]*fun7[0:nxout],color="red",label='M7',linewidth=2.0)
+        ax1.plot(jrad8r[1][0:nxout],factors[ii]*jrad8r[ii][0:nxout]*fun8[0:nxout],color="green",label='M8',linewidth=2.0)
+        ax1.plot(jrad9r[1][0:nxout],factors[ii]*jrad9r[ii][0:nxout]*fun9[0:nxout],color="red",label='M9',linewidth=2.0,linestyle='--')
+        ax1.plot(jrad10r[1][0:nxout],factors[ii]*jrad10r[ii][0:nxout]*fun10[0:nxout],color="black",label='M10',linewidth=2.0,linestyle=':')
+        ax1.plot(jrad11r[1][0:nxout],factors[ii]*jrad11r[ii][0:nxout]*fun11[0:nxout],color="blue",label='M11',linewidth=2.0,linestyle='--')
+        ax1.plot(jrad13r[1][0:nxout],factors[ii]*jrad13r[ii][0:nxout]*fun13[0:nxout],color="brown",label='M13',linewidth=2.0)
+        ax1.plot(jrad14r[1][0:nxout],factors[ii]*jrad14r[ii][0:nxout]*fun14[0:nxout],color="orange",label='M14',linewidth=2.0)
+        ax1.plot(jrad17r[1][0:nxout],factors[ii]*jrad17r[ii][0:nxout]*fun17[0:nxout],color="blue",label='M14h',linewidth=2.0)
+        ax1.plot(jrad15r[1][0:nxout],factors[ii]*jrad15r[ii][0:nxout]*fun15[0:nxout],color="purple",label='M15',linewidth=2.0)
+        ax1.plot(jrad16r[1][0:nxout],factors[ii]*jrad16r[ii][0:nxout]*fun16[0:nxout],color="gold",label='M15h',linewidth=2.0)
         ax1.set_xscale(xscales[0])
         ax1.set_yscale(yscales[ii])
         legend = ax1.legend(loc='upper right', shadow=True)
