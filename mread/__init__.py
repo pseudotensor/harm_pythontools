@@ -9584,14 +9584,14 @@ def getkappasdetails(gotrad, gotkappas):
     Te=Tg*1.0 # assume electrons and gas/ions/protons are same temperature
   
     # "real" here means cgs and Gaussian for B and Kelvin for temperature
-    rhoreal=rho*RHOBAR
-    nereal=3.0110683499999995e23*rhoreal*(1.0 + XFACT)
-    Breal=Bco*BFIELDGAUSSBAR
-    Tereal=Te*TEMPBAR+TEMPMINKELVIN() # Apply minimum electron temperature so ff and fb opacities don't diverge
+    rhoreal=np.float64(rho*RHOBAR)
+    nereal=np.float64(3.0110683499999995e23*rhoreal*(1.0 + XFACT))
+    Breal=np.float64(Bco*BFIELDGAUSSBAR)
+    Tereal=np.float64(Te*TEMPBAR+TEMPMINKELVIN()) # Apply minimum electron temperature so ff and fb opacities don't diverge
     Tereal[Tereal>TEMPMAXKELVIN()]=TEMPMAXKELVIN()
-    Tgreal=Tg*TEMPBAR+TEMPMINKELVIN() # Apply minimum electron temperature so ff and fb opacities don't diverge
+    Tgreal=np.float64(Tg*TEMPBAR+TEMPMINKELVIN()) # Apply minimum electron temperature so ff and fb opacities don't diverge
     Tgreal[Tgreal>TEMPMAXKELVIN()]=TEMPMAXKELVIN()
-    Trreal=Tr*TEMPBAR
+    Trreal=np.float64(Tr*TEMPBAR)
     Trreal[Trreal>TEMPMAXKELVIN()]=TEMPMAXKELVIN()
 
     ximin=1E-20
@@ -9840,7 +9840,7 @@ def getkappasdetails(gotrad, gotkappas):
     # synch prefactor
     BFIELDMIN	= (1E-30) # just for division purposes, as nuM multiplied above will zero-out near Breal=0
     #  kappasyreal=2.13E-11*nereal/(Breal+BFIELDMIN)*pow(Tereal/1E10,-5.0)
-    kappasyreal=5.85374E-14*nereal*phiphi*np.power(thetae,-3.0)/(minTrreal+Trreal)
+    kappasyreal=np.float64(5.85374E-14*nereal*phiphi*np.power(thetae,-3.0)/(minTrreal+Trreal))
     kappaemitsyreal=5.85374E-14*nereal*phiphie*np.power(thetae,-3.0)/(minTereale+Tereal)
   
     # low-temp factor
@@ -33843,9 +33843,6 @@ def dcpaperplot1():
         print("ncr=%d" % (ncr))
     #
     #
-    #f1.write("%d %g  %g %g %g   %g %g %g  %g %g %g %g\n" % (jj,h[iofr(100),jj,0],avg_eoutRADvstheta[jj],avg_eoutRADisovstheta[jj],avg_eoutRADperLeddvstheta[jj],avg_eoutEMvstheta[jj],avg_eoutEMisovstheta[jj],avg_eoutEMperLeddvstheta[jj],avg_Tradlabtype3vstheta[jj],avg_fcollabvstheta[jj],avg_varexpfffvstheta[jj],avg_nfcolvstheta[jj]) )
-    #f2 = open('radquantsvsr.%s.txt' % (modelname), 'w')
-    #f2.write("%d %g  %g %g %g %g  %g %g %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,ny/2,0],avg_TradoTgasvsradius[ii],avg_Tradfftype3vsradius[ii],avg_Tradlabtype3vsradius[ii],avg_Tgasvsradius[ii],avg_fcollabvsradius[ii],avg_varexpfffvsradius[ii],avg_nfcolvsradius[ii],avg_kappadensityrealvsradius[ii],avg_kappadensityrealnofevsradius[ii],avg_kappasyrealvsradius[ii],avg_kappadcrealvsradius[ii],avg_kappaesrealvsradius[ii],avg_kappandensityrealvsradius[ii],avg_kappansyrealvsradius[ii],avg_kappandcrealvsradius[ii],avg_kappachiantirealvsradius[ii],avg_kappaffrealvsradius[ii],avg_kappabfrealvsradius[ii],avg_kappaferealvsradius[ii],avg_kappamolrealvsradius[ii],avg_kappahmopalrealvsradius[ii],avg_kappachiantiopalrealvsradius[ii],avg_kappaffeerealvsradius[ii]) )
     #
     #
     global a
@@ -33854,17 +33851,18 @@ def dcpaperplot1():
     xlabels=[r"$r[r_g]$"]
     xscales=['log']
     #
-    ylabels=["ii","r",r"$\hat{T}_\gamma/T_{\rm gas}$",r"$\hat{T}_\gamma[\rm K]$","Tradlab","Tgas","fcol","varexpf","nfcol","avg_kappadensityrealvsradius","avg_kappadensityrealnofevsradius","avg_kappasyrealvsradius","avg_kappadcrealvsradius","avg_kappaesrealvsradius","avg_kappandensityrealvsradius","avg_kappansyrealvsradius","avg_kappandcrealvsradius","avg_kappachiantirealvsradius","avg_kappaffrealvsradius","avg_kappabfrealvsradius","avg_kappaferealvsradius","avg_kappamolrealvsradius","avg_kappahmopalrealvsradius","avg_kappachiantiopalrealvsradius","avg_kappaffeerealvsradius"]
+    ylabels=["ii","r",r"$\hat{T}_\gamma/T_{\rm gas}$",r"$\hat{T}_\gamma[\rm K]$",r"$T_\gamma[\rm K]$",r"$T_{\rm gas}[\rm K]$",r"f_{\rm col}",r"$\exp{(-\xi)}$",r"$n_{\rm col}$",r"$\kappa_{\rm tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm tot-Fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm es}$",r"$\kappa_{\rm n,tot}$",r"$\kappa_{\rm n,sy}$",r"$\kappa_{\rm n,dc}$",r"$\kappa_{\rm chianti}/\kappa_{\rm ff}$",r"$\kappa_{\rm ff}$",r"$\kappa_{\rm bf}/\kappa_{\rm ff}$",r"$\kappa_{\rm fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm mol}/\kappa_{\rm ff}$",r"$\kappa_{\rm hmopal}/\kappa_{\rm ff}$",r"\kappa_{\rm chiantiopal}/\kappa_{\rm ff}$",r"\kappa_{\rm ff-ee}/\kappa_{\rm ff}$",r"$\rho$",r"$u_g$",r"$u_\gamma$",r"$b^2$",r"$v_r$",r"$v_\phi$",r"$B_r$",r"$B_z$",r"$B_\phi$"]
     print("ylabels")
     print(np.shape(ylabels))
-    yscales=['linear','linear','linear','log','log','log','linear','linear','linear','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log']
+    yscales=['linear','linear','linear','log','log','log','log','linear','linear','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log']
     print("yscales")
     print(np.shape(yscales))
     #
-    fignames=['ii.png','r.png','TradoTgasvsr.png','Tradffvsr.png','Tradlabvsr.png','Tgasvsr.png','fcolvsr.png','varexpfvsr.png','nfcolvsr.png','kappadensityrealvsradius.png','kappadensityrealnofevsradius.png','kappasyrealvsradius.png','kappadcrealvsradius.png','kappaesrealvsradius.png','kappandensityrealvsradius.png','kappansyrealvsradius.png','kappandcrealvsradius.png','kappachiantirealvsradius.png','kappaffrealvsradius.png','kappabfrealvsradius.png','kappaferealvsradius.png','kappamolrealvsradius.png','kappahmopalrealvsradius.png','kappachiantiopalrealvsradius.png','kappaffeerealvsradius.png']
+    fignames=['ii.png','r.png','TradoTgasvsr.png','Tradffvsr.png','Tradlabvsr.png','Tgasvsr.png','fcolvsr.png','varexpfvsr.png','nfcolvsr.png','kappadensityvsr.png','kappadensitynofevsr.png','kappasyvsr.png','kappadcvsr.png','kappaesvsr.png','kappandensityvsr.png','kappansyvsr.png','kappandcvsr.png','kappachiantivsr.png','kappaffvsr.png','kappabfvsr.png','kappafevsr.png','kappamolvsr.png','kappahmopalvsr.png','kappachiantiopalvsr.png','kappaffeevsr.png',"rhovsr.png","ugvsr.png","Erfvsr.png","bsqvsr.png","vrvsr.png","vphivsr.png","Brvsr.png","Bzvsr.png","Bphivsr.png"]
     print("fignames")
     print(np.shape(fignames))
-    factors=[1,1,1,TEMPBAR,TEMPBAR,TEMPBAR,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    #
+    factors=[1,1,1,TEMPBAR,TEMPBAR,TEMPBAR,1,1,1 ,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 ,1,1,1,1,1,1,1,1,1]
     print("factors")
     print(np.shape(factors))
     #
@@ -33884,21 +33882,55 @@ def dcpaperplot1():
             ax1.spines[axis].set_linewidth(2)
         #ax1.axhline(linewidth=4, color="black")
         #ax1.axvline(linewidth=4, color="black")
-        ax1.plot(jrad1r[1][0:nxout],factors[ii]*jrad1r[ii][0:nxout],color="black",label='1',linewidth=2.0,linestyle='-')
-        ax1.plot(jrad2r[1][0:nxout],factors[ii]*jrad2r[ii][0:nxout],color="black",label='2',linewidth=2.0,linestyle='--')
-        ax1.plot(jrad3r[1][0:nxout],factors[ii]*jrad3r[ii][0:nxout],color="black",label='3',linewidth=2.0,linestyle='-.')
-        ax1.plot(jrad5r[1][0:nxout],factors[ii]*jrad5r[ii][0:nxout],color="black",label='5',linewidth=2.0)
-        ax1.plot(jrad7r[1][0:nxout],factors[ii]*jrad7r[ii][0:nxout],color="red",label='7',linewidth=2.0)
-        ax1.plot(jrad8r[1][0:nxout],factors[ii]*jrad8r[ii][0:nxout],color="green",label='8',linewidth=2.0)
-        #ax1.plot(jrad18r[1][0:nxout],factors[ii]*jrad18r[ii][0:nxout],color="black",label='18',linewidth=2.0)
-        ax1.plot(jrad9r[1][0:nxout],factors[ii]*jrad9r[ii][0:nxout],color="black",label='9',linewidth=2.0)
-        ax1.plot(jrad10r[1][0:nxout],factors[ii]*jrad10r[ii][0:nxout],color="black",label='10',linewidth=2.0,linestyle=':')
-        ax1.plot(jrad11r[1][0:nxout],factors[ii]*jrad11r[ii][0:nxout],color="black",label='11',linewidth=2.0)
-        ax1.plot(jrad13r[1][0:nxout],factors[ii]*jrad13r[ii][0:nxout],color="brown",label='13',linewidth=2.0)
-        ax1.plot(jrad14r[1][0:nxout],factors[ii]*jrad14r[ii][0:nxout],color="orange",label='14',linewidth=2.0)
-        ax1.plot(jrad17r[1][0:nxout],factors[ii]*jrad17r[ii][0:nxout],color="blue",label='14h',linewidth=2.0)
-        ax1.plot(jrad15r[1][0:nxout],factors[ii]*jrad15r[ii][0:nxout],color="purple",label='15',linewidth=2.0)
-        ax1.plot(jrad16r[1][0:nxout],factors[ii]*jrad16r[ii][0:nxout],color="gold",label='15h',linewidth=2.0)
+        #
+        if ii>=9 and ii<=24:
+            fun1=np.copy(1.0/jrad1r[18])
+            fun2=np.copy(1.0/jrad2r[18])
+            fun3=np.copy(1.0/jrad3r[18])
+            fun5=np.copy(1.0/jrad5r[18])
+            fun7=np.copy(1.0/jrad7r[18])
+            fun8=np.copy(1.0/jrad8r[18])
+            fun9=np.copy(1.0/jrad9r[18])
+            fun10=np.copy(1.0/jrad10r[18])
+            fun11=np.copy(1.0/jrad11r[18])
+            fun13=np.copy(1.0/jrad13r[18])
+            fun14=np.copy(1.0/jrad14r[18])
+            fun15=np.copy(1.0/jrad15r[18])
+            fun16=np.copy(1.0/jrad16r[18])
+            fun17=np.copy(1.0/jrad17r[18])
+            #fun18=np.copy(1.0/jrad18r[18])
+        else:
+            fun1=np.copy(jrad1r[0]*0.0+1.0)
+            fun2=np.copy(jrad2r[0]*0.0+1.0)
+            fun3=np.copy(jrad3r[0]*0.0+1.0)
+            fun5=np.copy(jrad5r[0]*0.0+1.0)
+            fun7=np.copy(jrad7r[0]*0.0+1.0)
+            fun8=np.copy(jrad8r[0]*0.0+1.0)
+            fun9=np.copy(jrad9r[0]*0.0+1.0)
+            fun10=np.copy(jrad10r[0]*0.0+1.0)
+            fun11=np.copy(jrad11r[0]*0.0+1.0)
+            fun13=np.copy(jrad13r[0]*0.0+1.0)
+            fun14=np.copy(jrad14r[0]*0.0+1.0)
+            fun15=np.copy(jrad15r[0]*0.0+1.0)
+            fun16=np.copy(jrad16r[0]*0.0+1.0)
+            fun17=np.copy(jrad17r[0]*0.0+1.0)
+            #fun18=np.copy(jrad18r[0]*0.0+1.0)
+        #
+        ax1.plot(jrad1r[1][0:nxout],factors[ii]*jrad1r[ii][0:nxout]*fun1[0:nxout],color="black",label='1',linewidth=2.0,linestyle='-')
+        ax1.plot(jrad2r[1][0:nxout],factors[ii]*jrad2r[ii][0:nxout]*fun2[0:nxout],color="black",label='2',linewidth=2.0,linestyle='--')
+        ax1.plot(jrad3r[1][0:nxout],factors[ii]*jrad3r[ii][0:nxout]*fun3[0:nxout],color="black",label='3',linewidth=2.0,linestyle='-.')
+        ax1.plot(jrad5r[1][0:nxout],factors[ii]*jrad5r[ii][0:nxout]*fun5[0:nxout],color="gold",label='5',linewidth=2.0,linestyle='--')
+        ax1.plot(jrad7r[1][0:nxout],factors[ii]*jrad7r[ii][0:nxout]*fun7[0:nxout],color="red",label='7',linewidth=2.0)
+        ax1.plot(jrad8r[1][0:nxout],factors[ii]*jrad8r[ii][0:nxout]*fun8[0:nxout],color="green",label='8',linewidth=2.0)
+        #ax1.plot(jrad18r[1][0:nxout],factors[ii]*jrad18r[ii][0:nxout]*fun18[0:nxout],color="green",label='18',linewidth=2.0,linestyle='--')
+        ax1.plot(jrad9r[1][0:nxout],factors[ii]*jrad9r[ii][0:nxout]*fun9[0:nxout],color="red",label='9',linewidth=2.0,linestyle='--')
+        ax1.plot(jrad10r[1][0:nxout],factors[ii]*jrad10r[ii][0:nxout]*fun10[0:nxout],color="black",label='10',linewidth=2.0,linestyle=':')
+        ax1.plot(jrad11r[1][0:nxout],factors[ii]*jrad11r[ii][0:nxout]*fun11[0:nxout],color="blue",label='11',linewidth=2.0,linestyle='--')
+        ax1.plot(jrad13r[1][0:nxout],factors[ii]*jrad13r[ii][0:nxout]*fun13[0:nxout],color="brown",label='13',linewidth=2.0)
+        ax1.plot(jrad14r[1][0:nxout],factors[ii]*jrad14r[ii][0:nxout]*fun14[0:nxout],color="orange",label='14',linewidth=2.0)
+        ax1.plot(jrad17r[1][0:nxout],factors[ii]*jrad17r[ii][0:nxout]*fun17[0:nxout],color="blue",label='14h',linewidth=2.0)
+        ax1.plot(jrad15r[1][0:nxout],factors[ii]*jrad15r[ii][0:nxout]*fun15[0:nxout],color="purple",label='15',linewidth=2.0)
+        ax1.plot(jrad16r[1][0:nxout],factors[ii]*jrad16r[ii][0:nxout]*fun16[0:nxout],color="gold",label='15h',linewidth=2.0)
         ax1.set_xscale(xscales[0])
         ax1.set_yscale(yscales[ii])
         legend = ax1.legend(loc='upper right', shadow=True)
