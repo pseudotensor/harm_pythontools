@@ -28302,17 +28302,35 @@ def mkavgfigs1(whichfig=0):
             # 4
             sjj=ny/2-ny/6
             ejj=ny/2+ny/6
-            # density^2 weighted
-            bottom=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**2,axis=1)
+            # density^powerw weighted
+            powerw=1
+            bottom=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**powerw,axis=1)
             #
-            avg_TradoTgasvsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**2*avg_TradoTgas[:,sjj:ejj,0],axis=1)/bottom
-            avg_Tradfftype3vsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**2*avg_Tradfftype3[:,sjj:ejj,0],axis=1)/bottom
-            avg_Tradlabtype3vsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**2*avg_Tradlabtype3[:,sjj:ejj,0],axis=1)/bottom
-            avg_Tgasvsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**2*avg_Tgas[:,sjj:ejj,0],axis=1)/bottom
+            avg_rhovsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**powerw*avg_rho[:,sjj:ejj,0],axis=1)/bottom
+            avg_ugvsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**powerw*avg_ug[:,sjj:ejj,0],axis=1)/bottom
+            avg_Erfvsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**powerw*avg_Erf[:,sjj:ejj,0],axis=1)/bottom
+            avg_bsqvsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**powerw*avg_bsq[:,sjj:ejj,0],axis=1)/bottom
+            #
+            avga_myauu1=np.copy(avg_myauu1())
+            avga_myauu3=np.copy(avg_myauu3())
+            avg_vrvsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**powerw*avga_myauu1[:,sjj:ejj,0],axis=1)/bottom
+            avg_vphivsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**powerw*avga_myauu3[:,sjj:ejj,0],axis=1)/bottom
+            #
+            avga_myaB1=np.copy(avg_myaB1())
+            avga_myaB2=np.copy(avg_myaB2())
+            avga_myaB3=np.copy(avg_myaB3())
+            avg_Brvsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**powerw*avga_myaB1[:,sjj:ejj,0],axis=1)/bottom
+            avg_Bzvsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**powerw*avga_myaB2[:,sjj:ejj,0],axis=1)/bottom
+            avg_Bphivsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**powerw*avga_myaB3[:,sjj:ejj,0],axis=1)/bottom
+            #
+            avg_TradoTgasvsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**powerw*avg_TradoTgas[:,sjj:ejj,0],axis=1)/bottom
+            avg_Tradfftype3vsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**powerw*avg_Tradfftype3[:,sjj:ejj,0],axis=1)/bottom
+            avg_Tradlabtype3vsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**powerw*avg_Tradlabtype3[:,sjj:ejj,0],axis=1)/bottom
+            avg_Tgasvsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**powerw*avg_Tgas[:,sjj:ejj,0],axis=1)/bottom
             # 3
-            avg_fcollabvsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**2*avg_fcollab[:,sjj:ejj,0],axis=1)/bottom
-            avg_varexpfffvsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**2*avg_varexpfff[:,sjj:ejj,0],axis=1)/bottom
-            avg_nfcolvsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**2*avg_nfcol[:,sjj:ejj,0],axis=1)/bottom
+            avg_fcollabvsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**powerw*avg_fcollab[:,sjj:ejj,0],axis=1)/bottom
+            avg_varexpfffvsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**powerw*avg_varexpfff[:,sjj:ejj,0],axis=1)/bottom
+            avg_nfcolvsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**powerw*avg_nfcol[:,sjj:ejj,0],axis=1)/bottom
             # 16
             # kappa as own weighting
             avg_kappadensityrealvsradius=np.average(avg_kappadensityreal[:,sjj:ejj,0],axis=1)
@@ -28334,7 +28352,7 @@ def mkavgfigs1(whichfig=0):
             #
             f2 = open('radquantsvsr.%s.txt' % (modelname), 'w')
             for ii in np.arange(0,nx):
-                f2.write("%d %g  %g %g %g %g  %g %g %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,ny/2,0],avg_TradoTgasvsradius[ii],avg_Tradfftype3vsradius[ii],avg_Tradlabtype3vsradius[ii],avg_Tgasvsradius[ii],avg_fcollabvsradius[ii],avg_varexpfffvsradius[ii],avg_nfcolvsradius[ii],avg_kappadensityrealvsradius[ii],avg_kappadensityrealnofevsradius[ii],avg_kappasyrealvsradius[ii],avg_kappadcrealvsradius[ii],avg_kappaesrealvsradius[ii],avg_kappandensityrealvsradius[ii],avg_kappansyrealvsradius[ii],avg_kappandcrealvsradius[ii],avg_kappachiantirealvsradius[ii],avg_kappaffrealvsradius[ii],avg_kappabfrealvsradius[ii],avg_kappaferealvsradius[ii],avg_kappamolrealvsradius[ii],avg_kappahmopalrealvsradius[ii],avg_kappachiantiopalrealvsradius[ii],avg_kappaffeerealvsradius[ii]) )
+                f2.write("%d %g  %g %g %g %g  %g %g %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g  %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,ny/2,0],avg_TradoTgasvsradius[ii],avg_Tradfftype3vsradius[ii],avg_Tradlabtype3vsradius[ii],avg_Tgasvsradius[ii],avg_fcollabvsradius[ii],avg_varexpfffvsradius[ii],avg_nfcolvsradius[ii],avg_kappadensityrealvsradius[ii],avg_kappadensityrealnofevsradius[ii],avg_kappasyrealvsradius[ii],avg_kappadcrealvsradius[ii],avg_kappaesrealvsradius[ii],avg_kappandensityrealvsradius[ii],avg_kappansyrealvsradius[ii],avg_kappandcrealvsradius[ii],avg_kappachiantirealvsradius[ii],avg_kappaffrealvsradius[ii],avg_kappabfrealvsradius[ii],avg_kappaferealvsradius[ii],avg_kappamolrealvsradius[ii],avg_kappahmopalrealvsradius[ii],avg_kappachiantiopalrealvsradius[ii],avg_kappaffeerealvsradius[ii],avg_rhovsradius[ii],avg_ugvsradius[ii],avg_Erfvsradius[ii],avg_bsqvsradius[ii],avg_vrvsradius[ii],avg_vphivsradius[ii],avg_Brvsradius[ii],avg_Bzvsradius[ii],avg_Bphivsradius[ii]) )
             f2.close()
     #########
     # PLOTS
@@ -33833,78 +33851,62 @@ def dcpaperplot1():
     global a
     a=0.8
     rddims(1)
-    if 1==1: ##### PLOT (Trad/Tgas vs. radius)
-        nxout=70 # about r=50M where models have reached inflow equilibrium
+    xlabels=[r"$r[r_g]$"]
+    xscales=['log']
+    #
+    ylabels=["ii","r",r"$\hat{T}_\gamma/T_{\rm gas}$",r"$\hat{T}_\gamma[\rm K]$","Tradlab","Tgas","fcol","varexpf","nfcol","avg_kappadensityrealvsradius","avg_kappadensityrealnofevsradius","avg_kappasyrealvsradius","avg_kappadcrealvsradius","avg_kappaesrealvsradius","avg_kappandensityrealvsradius","avg_kappansyrealvsradius","avg_kappandcrealvsradius","avg_kappachiantirealvsradius","avg_kappaffrealvsradius","avg_kappabfrealvsradius","avg_kappaferealvsradius","avg_kappamolrealvsradius","avg_kappahmopalrealvsradius","avg_kappachiantiopalrealvsradius","avg_kappaffeerealvsradius"]
+    print("ylabels")
+    print(np.shape(ylabels))
+    yscales=['linear','linear','linear','log','log','log','linear','linear','linear','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log']
+    print("yscales")
+    print(np.shape(yscales))
+    #
+    fignames=['ii.png','r.png','TradoTgasvsr.png','Tradffvsr.png','Tradlabvsr.png','Tgasvsr.png','fcolvsr.png','varexpfvsr.png','nfcolvsr.png','kappadensityrealvsradius.png','kappadensityrealnofevsradius.png','kappasyrealvsradius.png','kappadcrealvsradius.png','kappaesrealvsradius.png','kappandensityrealvsradius.png','kappansyrealvsradius.png','kappandcrealvsradius.png','kappachiantirealvsradius.png','kappaffrealvsradius.png','kappabfrealvsradius.png','kappaferealvsradius.png','kappamolrealvsradius.png','kappahmopalrealvsradius.png','kappachiantiopalrealvsradius.png','kappaffeerealvsradius.png']
+    print("fignames")
+    print(np.shape(fignames))
+    factors=[1,1,1,TEMPBAR,TEMPBAR,TEMPBAR,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    print("factors")
+    print(np.shape(factors))
+    #
+    nxout=70 # about r=50M where models have reached inflow equilibrium
+    #
+    for ii in np.arange(0,ncr):
+        print("ii=%d" % (ii)); sys.stdout.flush()
         fig, (ax1) = plt.subplots(1, 1)
         plt.gcf().subplots_adjust(bottom=0.15)
         #plt.clf()
         plt.ioff()
         plt.rc('text', usetex=False)
         #plt.rc('font', family='serif')
-        ax1.set_ylabel(r"$\hat{T}_\gamma/T_{\rm gas}$",fontsize=18)
-        ax1.set_xlabel(r"$r[r_g]$",fontsize=18)
+        ax1.set_ylabel(ylabels[ii],fontsize=24)
+        ax1.set_xlabel(xlabels[0],fontsize=24)
         for axis in ['top','bottom','left','right']:
             ax1.spines[axis].set_linewidth(2)
         #ax1.axhline(linewidth=4, color="black")
         #ax1.axvline(linewidth=4, color="black")
-        ax1.plot(jrad1r[1][0:nxout],jrad1r[2][0:nxout],color="black",label='1',linewidth=2.0)
-        ax1.plot(jrad2r[1][0:nxout],jrad2r[2][0:nxout],color="black",label='2',linewidth=2.0)
-        ax1.plot(jrad3r[1][0:nxout],jrad3r[2][0:nxout],color="black",label='3',linewidth=2.0)
-        ax1.plot(jrad5r[1][0:nxout],jrad5r[2][0:nxout],color="black",label='5',linewidth=2.0)
-        ax1.plot(jrad7r[1][0:nxout],jrad7r[2][0:nxout],color="red",label='7',linewidth=2.0)
-        ax1.plot(jrad8r[1][0:nxout],jrad8r[2][0:nxout],color="green",label='8',linewidth=2.0)
-        #ax1.plot(jrad18r[1][0:nxout],jrad18r[2][0:nxout],color="black",label='18',linewidth=2.0)
-        ax1.plot(jrad9r[1][0:nxout],jrad9r[2][0:nxout],color="black",label='9',linewidth=2.0)
-        ax1.plot(jrad10r[1][0:nxout],jrad10r[2][0:nxout],color="black",label='10',linewidth=2.0)
-        ax1.plot(jrad11r[1][0:nxout],jrad11r[2][0:nxout],color="black",label='11',linewidth=2.0)
-        ax1.plot(jrad13r[1][0:nxout],jrad13r[2][0:nxout],color="brown",label='13',linewidth=2.0)
-        ax1.plot(jrad14r[1][0:nxout],jrad14r[2][0:nxout],color="orange",label='14',linewidth=2.0)
-        ax1.plot(jrad17r[1][0:nxout],jrad17r[2][0:nxout],color="blue",label='14h',linewidth=2.0)
-        ax1.plot(jrad15r[1][0:nxout],jrad15r[2][0:nxout],color="purple",label='15',linewidth=2.0)
-        ax1.plot(jrad16r[1][0:nxout],jrad16r[2][0:nxout],color="gold",label='15h',linewidth=2.0)
-        ax1.set_xscale('log')
+        ax1.plot(jrad1r[1][0:nxout],factors[ii]*jrad1r[ii][0:nxout],color="black",label='1',linewidth=2.0,linestyle='-')
+        ax1.plot(jrad2r[1][0:nxout],factors[ii]*jrad2r[ii][0:nxout],color="black",label='2',linewidth=2.0,linestyle='--')
+        ax1.plot(jrad3r[1][0:nxout],factors[ii]*jrad3r[ii][0:nxout],color="black",label='3',linewidth=2.0,linestyle='-.')
+        ax1.plot(jrad5r[1][0:nxout],factors[ii]*jrad5r[ii][0:nxout],color="black",label='5',linewidth=2.0)
+        ax1.plot(jrad7r[1][0:nxout],factors[ii]*jrad7r[ii][0:nxout],color="red",label='7',linewidth=2.0)
+        ax1.plot(jrad8r[1][0:nxout],factors[ii]*jrad8r[ii][0:nxout],color="green",label='8',linewidth=2.0)
+        #ax1.plot(jrad18r[1][0:nxout],factors[ii]*jrad18r[ii][0:nxout],color="black",label='18',linewidth=2.0)
+        ax1.plot(jrad9r[1][0:nxout],factors[ii]*jrad9r[ii][0:nxout],color="black",label='9',linewidth=2.0)
+        ax1.plot(jrad10r[1][0:nxout],factors[ii]*jrad10r[ii][0:nxout],color="black",label='10',linewidth=2.0,linestyle=':')
+        ax1.plot(jrad11r[1][0:nxout],factors[ii]*jrad11r[ii][0:nxout],color="black",label='11',linewidth=2.0)
+        ax1.plot(jrad13r[1][0:nxout],factors[ii]*jrad13r[ii][0:nxout],color="brown",label='13',linewidth=2.0)
+        ax1.plot(jrad14r[1][0:nxout],factors[ii]*jrad14r[ii][0:nxout],color="orange",label='14',linewidth=2.0)
+        ax1.plot(jrad17r[1][0:nxout],factors[ii]*jrad17r[ii][0:nxout],color="blue",label='14h',linewidth=2.0)
+        ax1.plot(jrad15r[1][0:nxout],factors[ii]*jrad15r[ii][0:nxout],color="purple",label='15',linewidth=2.0)
+        ax1.plot(jrad16r[1][0:nxout],factors[ii]*jrad16r[ii][0:nxout],color="gold",label='15h',linewidth=2.0)
+        ax1.set_xscale(xscales[0])
+        ax1.set_yscale(yscales[ii])
         legend = ax1.legend(loc='upper right', shadow=True)
         #plt.axis('tight',ax=ax1)
-        plt.savefig('TradoTgasvsr.png')
+        plt.savefig(fignames[ii])
         #plt.show()
         plt.close()
     #
-    if 1==1: ##### PLOT (Tradfftype3 vs. radius)
-        nxout=70 # about r=50M where models have reached inflow equilibrium
-        fig, (ax1) = plt.subplots(1, 1)
-        plt.gcf().subplots_adjust(bottom=0.15)
-        #plt.clf()
-        plt.ioff()
-        plt.rc('text', usetex=False)
-        #plt.rc('font', family='serif')
-        ax1.set_ylabel(r"$\hat{T}_\gamma$",fontsize=18)
-        ax1.set_xlabel(r"$r[r_g]$",fontsize=18)
-        for axis in ['top','bottom','left','right']:
-            ax1.spines[axis].set_linewidth(2)
-        #ax1.axhline(linewidth=4, color="black")
-        #ax1.axvline(linewidth=4, color="black")
-        ax1.plot(jrad1r[1][0:nxout],TEMPBAR*jrad1r[3][0:nxout],color="black",label='1',linewidth=2.0,linestyle='-')
-        ax1.plot(jrad2r[1][0:nxout],TEMPBAR*jrad2r[3][0:nxout],color="black",label='2',linewidth=2.0,linestyle='--')
-        ax1.plot(jrad3r[1][0:nxout],TEMPBAR*jrad3r[3][0:nxout],color="black",label='3',linewidth=2.0,linestyle='-.')
-        ax1.plot(jrad5r[1][0:nxout],TEMPBAR*jrad5r[3][0:nxout],color="black",label='5',linewidth=2.0)
-        ax1.plot(jrad7r[1][0:nxout],TEMPBAR*jrad7r[3][0:nxout],color="red",label='7',linewidth=2.0)
-        ax1.plot(jrad8r[1][0:nxout],TEMPBAR*jrad8r[3][0:nxout],color="green",label='8',linewidth=2.0)
-        #ax1.plot(jrad18r[1][0:nxout],TEMPBAR*jrad18r[3][0:nxout],color="black",label='18',linewidth=2.0)
-        ax1.plot(jrad9r[1][0:nxout],TEMPBAR*jrad9r[3][0:nxout],color="black",label='9',linewidth=2.0)
-        ax1.plot(jrad10r[1][0:nxout],TEMPBAR*jrad10r[3][0:nxout],color="black",label='10',linewidth=2.0,linestyle=':')
-        ax1.plot(jrad11r[1][0:nxout],TEMPBAR*jrad11r[3][0:nxout],color="black",label='11',linewidth=2.0)
-        ax1.plot(jrad13r[1][0:nxout],TEMPBAR*jrad13r[3][0:nxout],color="brown",label='13',linewidth=2.0)
-        ax1.plot(jrad14r[1][0:nxout],TEMPBAR*jrad14r[3][0:nxout],color="orange",label='14',linewidth=2.0)
-        ax1.plot(jrad17r[1][0:nxout],TEMPBAR*jrad17r[3][0:nxout],color="blue",label='14h',linewidth=2.0)
-        ax1.plot(jrad15r[1][0:nxout],TEMPBAR*jrad15r[3][0:nxout],color="purple",label='15',linewidth=2.0)
-        ax1.plot(jrad16r[1][0:nxout],TEMPBAR*jrad16r[3][0:nxout],color="gold",label='15h',linewidth=2.0)
-        ax1.set_xscale('log')
-        ax1.set_yscale('log')
-        legend = ax1.legend(loc='upper right', shadow=True)
-        #plt.axis('tight',ax=ax1)
-        plt.savefig('Tradffvsr.png')
-        #plt.show()
-        plt.close()
 
 
 
