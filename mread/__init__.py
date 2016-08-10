@@ -28108,6 +28108,7 @@ def mkavgfigs1(whichfig=0):
         #
     # generate latex table for some quantities -- do it when calling case that will output even if parallel==3
     if whichfig==0 or whichfig==1:
+        powerw=2
         #
         avg_TradoTgas=np.copy(avg_Tradfftype3/avg_Tgas) # density weighted, at rh,5M,20M
         avg_fcollab=(avg_Tradlabtype3/avg_Tradlablte) # rad energy flux weighted at r=100M
@@ -28115,74 +28116,74 @@ def mkavgfigs1(whichfig=0):
         avg_nfcol=np.copy(avg_nradlabrat/avg_nradlabratlte) # as above
         #
         if 1==1: # density-weighted things
-            numer1a=gdet*avg_rho**2*avg_TradoTgas
-            denom1a=gdet*avg_rho**2
+            numer1a=gdet*avg_rho**powerw*avg_TradoTgas
+            denom1a=gdet*avg_rho**powerw
             sumnumer1a=np.sum(numer1a[iofr(rhor),:,:])
             sumdenom1a=np.sum(denom1a[iofr(rhor),:,:])
             result1a=sumnumer1a/sumdenom1a
             #
-            numer1b=gdet*avg_rho**2*avg_TradoTgas
-            denom1b=gdet*avg_rho**2
+            numer1b=gdet*avg_rho**powerw*avg_TradoTgas
+            denom1b=gdet*avg_rho**powerw
             sumnumer1b=np.sum(numer1b[iofr(5),:,:])
             sumdenom1b=np.sum(denom1b[iofr(5),:,:])
             result1b=sumnumer1b/sumdenom1b
             #
-            numer1c=gdet*avg_rho**2*avg_TradoTgas
-            denom1c=gdet*avg_rho**2
+            numer1c=gdet*avg_rho**powerw*avg_TradoTgas
+            denom1c=gdet*avg_rho**powerw
             sumnumer1c=np.sum(numer1c[iofr(20),:,:])
             sumdenom1c=np.sum(denom1c[iofr(20),:,:])
             result1c=sumnumer1c/sumdenom1c
             #
-            numer2a=gdet*avg_rho**2*avg_fcollab
-            denom2a=gdet*avg_rho**2
+            numer2a=gdet*avg_rho**powerw*avg_fcollab
+            denom2a=gdet*avg_rho**powerw
             sumnumer2a=np.sum(numer2a[iofr(rhor),:,:])
             sumdenom2a=np.sum(denom2a[iofr(rhor),:,:])
             result2a=sumnumer2a/sumdenom2a
             #
-            numer2b=gdet*avg_rho**2*avg_fcollab
-            denom2b=gdet*avg_rho**2
+            numer2b=gdet*avg_rho**powerw*avg_fcollab
+            denom2b=gdet*avg_rho**powerw
             sumnumer2b=np.sum(numer2b[iofr(5),:,:])
             sumdenom2b=np.sum(denom2b[iofr(5),:,:])
             result2b=sumnumer2b/sumdenom2b
             #
-            numer2c=gdet*avg_rho**2*avg_fcollab
-            denom2c=gdet*avg_rho**2
+            numer2c=gdet*avg_rho**powerw*avg_fcollab
+            denom2c=gdet*avg_rho**powerw
             sumnumer2c=np.sum(numer2c[iofr(20),:,:])
             sumdenom2c=np.sum(denom2c[iofr(20),:,:])
             result2c=sumnumer2c/sumdenom2c
             #
-            numer3a=gdet*avg_rho**2*avg_varexpfff
-            denom3a=gdet*avg_rho**2
+            numer3a=gdet*avg_rho**powerw*avg_varexpfff
+            denom3a=gdet*avg_rho**powerw
             sumnumer3a=np.sum(numer3a[iofr(rhor),:,:])
             sumdenom3a=np.sum(denom3a[iofr(rhor),:,:])
             result3a=sumnumer3a/sumdenom3a
             #
-            numer3b=gdet*avg_rho**2*avg_varexpfff
-            denom3b=gdet*avg_rho**2
+            numer3b=gdet*avg_rho**powerw*avg_varexpfff
+            denom3b=gdet*avg_rho**powerw
             sumnumer3b=np.sum(numer3b[iofr(5),:,:])
             sumdenom3b=np.sum(denom3b[iofr(5),:,:])
             result3b=sumnumer3b/sumdenom3b
             #
-            numer3c=gdet*avg_rho**2*avg_varexpfff
-            denom3c=gdet*avg_rho**2
+            numer3c=gdet*avg_rho**powerw*avg_varexpfff
+            denom3c=gdet*avg_rho**powerw
             sumnumer3c=np.sum(numer3c[iofr(20),:,:])
             sumdenom3c=np.sum(denom3c[iofr(20),:,:])
             result3c=sumnumer3c/sumdenom3c
             #
-            numer4a=gdet*avg_rho**2*avg_nfcol
-            denom4a=gdet*avg_rho**2
+            numer4a=gdet*avg_rho**powerw*avg_nfcol
+            denom4a=gdet*avg_rho**powerw
             sumnumer4a=np.sum(numer4a[iofr(rhor),:,:])
             sumdenom4a=np.sum(denom4a[iofr(rhor),:,:])
             result4a=sumnumer4a/sumdenom4a
             #
-            numer4b=gdet*avg_rho**2*avg_nfcol
-            denom4b=gdet*avg_rho**2
+            numer4b=gdet*avg_rho**powerw*avg_nfcol
+            denom4b=gdet*avg_rho**powerw
             sumnumer4b=np.sum(numer4b[iofr(5),:,:])
             sumdenom4b=np.sum(denom4b[iofr(5),:,:])
             result4b=sumnumer4b/sumdenom4b
             #
-            numer4c=gdet*avg_rho**2*avg_nfcol
-            denom4c=gdet*avg_rho**2
+            numer4c=gdet*avg_rho**powerw*avg_nfcol
+            denom4c=gdet*avg_rho**powerw
             sumnumer4c=np.sum(numer4c[iofr(20),:,:])
             sumdenom4c=np.sum(denom4c[iofr(20),:,:])
             result4c=sumnumer4c/sumdenom4c
@@ -28303,7 +28304,6 @@ def mkavgfigs1(whichfig=0):
             sjj=ny/2-ny/6
             ejj=ny/2+ny/6
             # density^powerw weighted
-            powerw=1
             bottom=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**powerw,axis=1)
             #
             avg_rhovsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**powerw*avg_rho[:,sjj:ejj,0],axis=1)/bottom
