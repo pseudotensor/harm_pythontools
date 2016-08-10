@@ -28370,10 +28370,10 @@ def mkavgfigs1(whichfig=0):
             #
             # outer radius
             #
-            avg2_rhovstheta=avg2_rho[iofr(100),:,0]
-            avg2_ugvstheta=avg2_ug[iofr(100),:,0]
-            avg2_Erfvstheta=avg2_Erf[iofr(100),:,0]
-            avg2_bsqvstheta=avg2_bsq[iofr(100),:,0]
+            avg2_rhovstheta=avg_rho[iofr(100),:,0]
+            avg2_ugvstheta=avg_ug[iofr(100),:,0]
+            avg2_Erfvstheta=avg_Erf[iofr(100),:,0]
+            avg2_bsqvstheta=avg_bsq[iofr(100),:,0]
             # 2
             avga_myauu1=np.copy(avg2_myauu1())
             avga_myauu3=np.copy(avg2_myauu3())
@@ -28387,32 +28387,32 @@ def mkavgfigs1(whichfig=0):
             avg2_Bzvstheta=avga_myaB2[iofr(100),:,0]
             avg2_Bphivstheta=avga_myaB3[iofr(100),:,0]
             # 4
-            avg2_TradoTgasvstheta=avg2_TradoTgas[iofr(100),:,0]
-            avg2_Tradfftype3vstheta=avg2_Tradfftype3[iofr(100),:,0]
-            avg2_Tradlabtype3vstheta=avg2_Tradlabtype3[iofr(100),:,0]
-            avg2_Tgasvstheta=avg2_Tgas[iofr(100),:,0]
+            avg2_TradoTgasvstheta=avg_TradoTgas[iofr(100),:,0]
+            avg2_Tradfftype3vstheta=avg_Tradfftype3[iofr(100),:,0]
+            avg2_Tradlabtype3vstheta=avg_Tradlabtype3[iofr(100),:,0]
+            avg2_Tgasvstheta=avg_Tgas[iofr(100),:,0]
             # 3
-            avg2_fcollabvstheta=avg2_fcollab[iofr(100),:,0]
-            avg2_varexpfffvstheta=avg2_varexpfff[iofr(100),:,0]
-            avg2_nfcolvstheta=avg2_nfcol[iofr(100),:,0]
+            avg2_fcollabvstheta=avg_fcollab[iofr(100),:,0]
+            avg2_varexpfffvstheta=avg_varexpfff[iofr(100),:,0]
+            avg2_nfcolvstheta=avg_nfcol[iofr(100),:,0]
             # 16
             # kappa as own weighting
-            avg2_kappadensityrealvstheta=avg2_kappadensityreal[iofr(100),:,0]
-            avg2_kappadensityrealnofevstheta=avg2_kappadensityrealnofe[iofr(100),:,0]
-            avg2_kappasyrealvstheta=avg2_kappasyreal[iofr(100),:,0]
-            avg2_kappadcrealvstheta=avg2_kappadcreal[iofr(100),:,0]
-            avg2_kappaesrealvstheta=avg2_kappaesreal[iofr(100),:,0]
-            avg2_kappandensityrealvstheta=avg2_kappandensityreal[iofr(100),:,0]
-            avg2_kappansyrealvstheta=avg2_kappansyreal[iofr(100),:,0]
-            avg2_kappandcrealvstheta=avg2_kappandcreal[iofr(100),:,0]
-            avg2_kappachiantirealvstheta=avg2_kappachiantireal[iofr(100),:,0]
-            avg2_kappaffrealvstheta=avg2_kappaffreal[iofr(100),:,0]
-            avg2_kappabfrealvstheta=avg2_kappabfreal[iofr(100),:,0]
-            avg2_kappaferealvstheta=avg2_kappafereal[iofr(100),:,0]
-            avg2_kappamolrealvstheta=avg2_kappamolreal[iofr(100),:,0]
-            avg2_kappahmopalrealvstheta=avg2_kappahmopalreal[iofr(100),:,0]
-            avg2_kappachiantiopalrealvstheta=avg2_kappachiantiopalreal[iofr(100),:,0]
-            avg2_kappaffeerealvstheta=avg2_kappaffeereal[iofr(100),:,0]
+            avg2_kappadensityrealvstheta=avg_kappadensityreal[iofr(100),:,0]
+            avg2_kappadensityrealnofevstheta=avg_kappadensityrealnofe[iofr(100),:,0]
+            avg2_kappasyrealvstheta=avg_kappasyreal[iofr(100),:,0]
+            avg2_kappadcrealvstheta=avg_kappadcreal[iofr(100),:,0]
+            avg2_kappaesrealvstheta=avg_kappaesreal[iofr(100),:,0]
+            avg2_kappandensityrealvstheta=avg_kappandensityreal[iofr(100),:,0]
+            avg2_kappansyrealvstheta=avg_kappansyreal[iofr(100),:,0]
+            avg2_kappandcrealvstheta=avg_kappandcreal[iofr(100),:,0]
+            avg2_kappachiantirealvstheta=avg_kappachiantireal[iofr(100),:,0]
+            avg2_kappaffrealvstheta=avg_kappaffreal[iofr(100),:,0]
+            avg2_kappabfrealvstheta=avg_kappabfreal[iofr(100),:,0]
+            avg2_kappaferealvstheta=avg_kappafereal[iofr(100),:,0]
+            avg2_kappamolrealvstheta=avg_kappamolreal[iofr(100),:,0]
+            avg2_kappahmopalrealvstheta=avg_kappahmopalreal[iofr(100),:,0]
+            avg2_kappachiantiopalrealvstheta=avg_kappachiantiopalreal[iofr(100),:,0]
+            avg2_kappaffeerealvstheta=avg_kappaffeereal[iofr(100),:,0]
             #
             # dP/d\theta / (Mdot_{BH} c^2)
             # and isotropic equivalent luminosity in ergs/sec
