@@ -28375,14 +28375,14 @@ def mkavgfigs1(whichfig=0):
             avg2_Erfvstheta=avg_Erf[iofr(100),:,0]
             avg2_bsqvstheta=avg_bsq[iofr(100),:,0]
             # 2
-            avga_myauu1=np.copy(avg2_myauu1())
-            avga_myauu3=np.copy(avg2_myauu3())
+            avga_myauu1=np.copy(avg_myauu1())
+            avga_myauu3=np.copy(avg_myauu3())
             avg2_myvrvstheta=avga_myauu1[iofr(100),:,0]
             avg2_myvphivstheta=avga_myauu3[iofr(100),:,0]
             # 3
-            avga_myaB1=np.copy(avg2_myaB1())
-            avga_myaB2=np.copy(avg2_myaB2())
-            avga_myaB3=np.copy(avg2_myaB3())
+            avga_myaB1=np.copy(avg_myaB1())
+            avga_myaB2=np.copy(avg_myaB2())
+            avga_myaB3=np.copy(avg_myaB3())
             avg2_Brvstheta=avga_myaB1[iofr(100),:,0]
             avg2_Bzvstheta=avga_myaB2[iofr(100),:,0]
             avg2_Bphivstheta=avga_myaB3[iofr(100),:,0]
