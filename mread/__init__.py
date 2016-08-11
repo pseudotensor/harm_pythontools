@@ -576,6 +576,16 @@ avg_myuu1 = lambda : (avg_uu[1]*dxdxp[1,1] + avg_uu[2]*dxdxp[1,2])*np.sqrt(gvks1
 avg_myuu2 = lambda : (avg_uu[1]*dxdxp[2,1] + avg_uu[2]*dxdxp[2,2])*np.sqrt(gvks22())/avg_myuu0()
 avg_myuu3 = lambda : (avg_uu[3]*dxdxp[3,3])*np.sqrt(gvks33())/avg_myuu0()
 avg_myuurot = lambda : np.sqrt(avg_myuu2()**2+avg_myuu3()**2)    # GODMARK: should have rot version directly averaged so \theta,\phi correlations accounted for
+avg_myuradu0 = lambda : avg_uradu[0]*dxdxp[0,0]
+avg_myuradu1 = lambda : (avg_uradu[1]*dxdxp[1,1] + avg_uradu[2]*dxdxp[1,2])*np.sqrt(gvks11())/avg_myuradu0()
+avg_myuradu2 = lambda : (avg_uradu[1]*dxdxp[2,1] + avg_uradu[2]*dxdxp[2,2])*np.sqrt(gvks22())/avg_myuradu0()
+avg_myuradu3 = lambda : (avg_uradu[3]*dxdxp[3,3])*np.sqrt(gvks33())/avg_myuradu0()
+avg_myuradurot = lambda : np.sqrt(avg_myuradu2()**2+avg_myuradu3()**2)    # GODMARK: should have rot version directly averaged so \theta,\phi correlations accounted for
+avg_myuradu0 = lambda : avg_uradu[0]*dxdxp[0,0]
+avg_myuradu1 = lambda : (avg_uradu[1]*dxdxp[1,1] + avg_uradu[2]*dxdxp[1,2])*np.sqrt(gvks11())/avg_myuradu0()
+avg_myuradu2 = lambda : (avg_uradu[1]*dxdxp[2,1] + avg_uradu[2]*dxdxp[2,2])*np.sqrt(gvks22())/avg_myuradu0()
+avg_myuradu3 = lambda : (avg_uradu[3]*dxdxp[3,3])*np.sqrt(gvks33())/avg_myuradu0()
+avg_myuradurot = lambda : np.sqrt(avg_myuradu2()**2+avg_myuradu3()**2)    # GODMARK: should have rot version directly averaged so \theta,\phi correlations accounted for
 avg_myB1 = lambda : (avg_B[1-1]*dxdxp[1,1] + avg_B[2-1]*dxdxp[1,2])*np.sqrt(gvks11())
 avg_myB2 = lambda : (avg_B[1-1]*dxdxp[2,1] + avg_B[2-1]*dxdxp[2,2])*np.sqrt(gvks22())
 avg_myB3 = lambda : (avg_B[3-1]*dxdxp[3,3])*np.sqrt(gvks33())
@@ -588,6 +598,11 @@ avg_myauu1 = lambda : (avg_absuu[1]*dxdxp[1,1] + avg_absuu[2]*dxdxp[1,2])*np.sqr
 avg_myauu2 = lambda : (avg_absuu[1]*dxdxp[2,1] + avg_absuu[2]*dxdxp[2,2])*np.sqrt(gvks22())/avg_myauu0()
 avg_myauu3 = lambda : (avg_absuu[3]*dxdxp[3,3])*np.sqrt(gvks33())/avg_myauu0()
 avg_myauurot = lambda : np.sqrt(avg_myauu2()**2+avg_myauu3()**2)
+avg_myauradu0 = lambda : avg_absuradu[0]*dxdxp[0,0]
+avg_myauradu1 = lambda : (avg_absuradu[1]*dxdxp[1,1] + avg_absuradu[2]*dxdxp[1,2])*np.sqrt(gvks11())/avg_myauradu0()
+avg_myauradu2 = lambda : (avg_absuradu[1]*dxdxp[2,1] + avg_absuradu[2]*dxdxp[2,2])*np.sqrt(gvks22())/avg_myauradu0()
+avg_myauradu3 = lambda : (avg_absuradu[3]*dxdxp[3,3])*np.sqrt(gvks33())/avg_myauradu0()
+avg_myauradurot = lambda : np.sqrt(avg_myauradu2()**2+avg_myauradu3()**2)
 #avg_myauurot = lambda : np.sqrt(avg_myauu2()**2+avg_myauu3()**2) # GODMARK
 avg_myaB1 = lambda : (avg_absB[1-1]*dxdxp[1,1] + avg_absB[2-1]*dxdxp[1,2])*np.sqrt(gvks11())
 avg_myaB2 = lambda : (avg_absB[1-1]*dxdxp[2,1] + avg_absB[2-1]*dxdxp[2,2])*np.sqrt(gvks22())
@@ -1927,6 +1942,8 @@ def assignavg2dvars(avgmem):
     global avg_kappadensityreal,avg_kappadensityrealnofe,avg_kappasyreal,avg_kappadcreal,avg_kappaesreal,avg_kappandensityreal,avg_kappansyreal,avg_kappandcreal,avg_phiphi,avg_kappachiantireal,avg_kappaffreal,avg_kappabfreal,avg_kappafereal,avg_kappamolreal,avg_kappahmopalreal,avg_kappachiantiopalreal,avg_kappaffeereal
     # 1
     global avg_varexpf,avg_varexpflab
+    # 4*6+1=25
+    global avg_uradu,avg_absuradu,avg_Ehaturadu,avg_absEhaturadu,avg_Ehatuu,avg_absEhatuu,avg_Ehat
     #avg defs
     i=0
     # 1
@@ -2078,7 +2095,17 @@ def assignavg2dvars(avgmem):
         # 2
         avg_varexpf=avgmem[i,:,:,None];i+=1 # i=1
         avg_varexpflab=avgmem[i,:,:,None];i+=1 # i=1
-    #
+        #
+        # 4*6+1=25
+        n=4
+        avg_uradu=avgmem[i:i+n,:,:,None];i+=n
+        avg_absuradu=avgmem[i:i+n,:,:,None];i+=n
+        avg_Ehaturadu=avgmem[i:i+n,:,:,None];i+=n
+        avg_absEhaturadu=avgmem[i:i+n,:,:,None];i+=n
+        avg_Ehatuu=avgmem[i:i+n,:,:,None];i+=n
+        avg_absEhatuu=avgmem[i:i+n,:,:,None];i+=n
+        avg_Ehat=avgmem[i:,:,None];i+=1 #i=1
+        #
     # number of full 2D quantities
     nqtyavg=i
     global navg
@@ -2134,7 +2161,7 @@ def getnqtyavg():
     global gotrad
     if(gotrad):
         value=value+5 # for KAPPAUSER and KAPPAESUSER and tauradintegrated and tauradeffintegrated
-        value=value+12+17+2 # Tgas,Trad's,kappas,etc.
+        value=value+12+17+2+37 # Tgas,Trad's,kappas,etc.
     return(value)
 
 
@@ -2400,6 +2427,8 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
     global avg_kappadensityreal,avg_kappadensityrealnofe,avg_kappasyreal,avg_kappadcreal,avg_kappaesreal,avg_kappandensityreal,avg_kappansyreal,avg_kappandcreal,avg_phiphi,avg_kappachiantireal,avg_kappaffreal,avg_kappabfreal,avg_kappafereal,avg_kappamolreal,avg_kappahmopalreal,avg_kappachiantiopalreal,avg_kappaffeereal
     # 2
     global avg_varexpf,avg_varexpflab
+    # 25
+    global avg_uradu,avg_absuradu,avg_Ehaturadu,avg_absEhaturadu,avg_Ehatuu,avg_absEhatuu,avg_Ehat
     #
     if whichgroup < 0 or itemspergroup <= 0:
         print( "get2davgone: whichgroup = %d, itemspergroup = %d not allowed" % (whichgroup, itemspergroup) ) ; sys.stdout.flush()
@@ -2621,7 +2650,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
             # 12
             avg_Tgas+=(np.fabs(Tgas)).sum(-1)[:,:,None]*localdt[itert]
             #
-            (Tradfflte,Tradlablte,nradffratlte,nradlabratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1,Tradfftype3,Tradlabtype3,varexpflab)=getTrads()
+            (Tradfflte,Tradlablte,nradffratlte,nradlabratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1,Tradfftype3,Tradlabtype3,varexpflab,Ruu)=getTrads()
             #
             avg_Tradfflte+=(np.fabs(Tradfflte)).sum(-1)[:,:,None]*localdt[itert]
             avg_Tradff+=(np.fabs(Tradff)).sum(-1)[:,:,None]*localdt[itert]
@@ -2657,7 +2686,15 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
             # 2
             avg_varexpf+=(np.fabs(varexpf)).sum(-1)[:,:,None]*localdt[itert]
             avg_varexpflab+=(np.fabs(varexpflab)).sum(-1)[:,:,None]*localdt[itert]
-        #
+            # 25
+            avg_uradu+=(uradu).sum(-1)[:,:,:,None]*localdt[itert]
+            avg_absuradu+=(uradu).sum(-1)[:,:,:,None]*localdt[itert]
+            avg_Ehaturadu+=(Ruu*uradu).sum(-1)[:,:,:,None]*localdt[itert]
+            avg_absEhaturadu+=(np.fabs(Ruu*uradu)).sum(-1)[:,:,:,None]*localdt[itert]
+            avg_Ehatuu+=(Ruu*uu).sum(-1)[:,:,:,None]*localdt[itert]
+            avg_absEhatuu+=(np.fabs(Ruu*uu)).sum(-1)[:,:,:,None]*localdt[itert]
+            avg_Ehat+=(Ruu).sum(-1)[:,:,None]*localdt[itert]
+            #
         #
         #########
         # iterate
@@ -2751,7 +2788,7 @@ def getTrads():
     varexpflab= 1.6467556546674442/(0.6467556546674441 + (0.018783960364223317*Power(R00rat,3))/Power(SMALL+nradlabrat,4));
     #
     #
-    return(Tradfflte,Tradlablte,nradffratlte,nradlabratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1,Tradfftype3,Tradlabtype3,varexpflab)
+    return(Tradfflte,Tradlablte,nradffratlte,nradlabratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1,Tradfftype3,Tradlabtype3,varexpflab,Ruu)
 
 
 def extractlena():
@@ -31608,7 +31645,7 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     #Tgas=pg/(rho/MUMEAN)
     #
     #
-    (Tradfflte,Tradlablte,nradffratlte,nradlabratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1,Tradfftype3,Tradlabtype3,varexpflab)=getTrads()
+    (Tradfflte,Tradlablte,nradffratlte,nradlabratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1,Tradfftype3,Tradlabtype3,varexpflab,Ruu)=getTrads()
     #
     global gotrad,gotkappas
     (kappadensityreal,kappadensityrealnofe,kappasyreal,kappadcreal,kappaesreal,kappandensityreal,kappansyreal,kappandcreal,phiphi,kappachiantireal,kappaffreal,kappabfreal,kappafereal,kappamolreal,kappahmopalreal,kappachiantiopalreal,kappaffeereal)=getkappasdetails(gotrad, gotkappas)
@@ -32027,7 +32064,7 @@ def fcol(filename=None,fignum=None,whichplot=1):
         Tgas=pg/(rho/MUMEAN)
         #
     #
-    (Tradfflte,Tradlablte,nradffratlte,nradlabratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1,Tradfftype3,Tradlabtype3,varexpflab)=getTrads()
+    (Tradfflte,Tradlablte,nradffratlte,nradlabratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1,Tradfftype3,Tradlabtype3,varexpflab,Ruu)=getTrads()
     #
     #
     global gotrad,gotkappas
@@ -32129,7 +32166,7 @@ def compkappa(filename=None,fignum=None,whichplot=1):
         Tgas=pg/(rho/MUMEAN)
         #
     #
-    (Tradfflte,Tradlablte,nradffratlte,nradlabratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1,Tradfftype3,Tradlabtype3,varexpflab)=getTrads()
+    (Tradfflte,Tradlablte,nradffratlte,nradlabratlte,nradffrat,nradlabrat,Tradfftype1,Tradlabtype1,Tradfftype3,Tradlabtype3,varexpflab,Ruu)=getTrads()
     #
     global gotrad,gotkappas
     (kappadensityreal,kappadensityrealnofe,kappasyreal,kappadcreal,kappaesreal,kappandensityreal,kappansyreal,kappandcreal,phiphi,kappachiantireal,kappaffreal,kappabfreal,kappafereal,kappamolreal,kappahmopalreal,kappachiantiopalreal,kappaffeereal)=getkappasdetails(gotrad, gotkappas)
@@ -33992,10 +34029,10 @@ def dcpaperplot1():
     xlabels=[r"$r[r_g]$"]
     xscales=['log']
     #
-    ylabels=["ii","r",r"$\hat{T}_\gamma/T_{\rm gas}$",r"$\hat{T}_\gamma[\rm K]$",r"$T_\gamma[\rm K]$",r"$T_{\rm gas}[\rm K]$",r"$f_{\rm col}$",r"$\exp{(-\xi)}$",r"$n_{\rm col}$",r"$\kappa_{\rm tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm tot-Fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm es}$",r"$\kappa_{\rm n,tot}$",r"$\kappa_{\rm n,sy}$",r"$\kappa_{\rm n,dc}$",r"$\kappa_{\rm chianti}/\kappa_{\rm ff}$",r"$\kappa_{\rm ff}$",r"$\kappa_{\rm bf}/\kappa_{\rm ff}$",r"$\kappa_{\rm fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm mol}/\kappa_{\rm ff}$",r"$\kappa_{\rm hmopal}/\kappa_{\rm ff}$",r"\kappa_{\rm chiantiopal}/\kappa_{\rm ff}$",r"\kappa_{\rm ff-ee}/\kappa_{\rm ff}$",r"$\rho$",r"$u_g$",r"$u_\gamma$",r"$b^2/\rho$",r"$v_r$",r"$v_\phi$",r"$B_r$",r"$B_z$",r"$B_\phi$"]
+    ylabels=["ii",r"$r$",r"$\hat{T}_\gamma/T_{\rm gas}$",r"$\hat{T}_\gamma[\rm K]$",r"$T_\gamma[\rm K]$",r"$T_{\rm gas}[\rm K]$",r"$f_{\rm col}$",r"$\exp{(-\xi)}$",r"$n_{\rm col}$",r"$\kappa_{\rm tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm tot-Fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm es}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,sy}$/\kappa_{\rm ff}",r"$\kappa_{\rm n,dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm chianti}/\kappa_{\rm ff}$",r"$\kappa_{\rm ff}$",r"$\kappa_{\rm bf}/\kappa_{\rm ff}$",r"$\kappa_{\rm fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm mol}/\kappa_{\rm ff}$",r"$\kappa_{\rm hmopal}/\kappa_{\rm ff}$",r"\kappa_{\rm chiantiopal}/\kappa_{\rm ff}$",r"\kappa_{\rm ff-ee}/\kappa_{\rm ff}$",r"$\rho$",r"$u_g/rho$",r"$u_\gamma/\rho$",r"$b^2/\rho$",r"$v_r$",r"$v_\phi$",r"$B_r/\sqrt{\rho}$",r"$B_z/\sqrt{\rho}$",r"$B_\phi/\sqrt{\rho}$"]
     print("ylabels")
     print(np.shape(ylabels))
-    yscales=['linear','linear','linear','log','log','log','log','linear','linear','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log']
+    yscales=['linear','log','linear','log','log','log','log','linear','linear','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log']
     print("yscales")
     print(np.shape(yscales))
     #
@@ -34025,6 +34062,7 @@ def dcpaperplot1():
         #ax1.axvline(linewidth=4, color="black")
         #
         if ii>=9 and ii<=24 and ii!=18:
+            # normalize kappaff except itself
             fun1=np.copy(1.0/jrad1r[18])
             fun2=np.copy(1.0/jrad2r[18])
             fun3=np.copy(1.0/jrad3r[18])
@@ -34041,6 +34079,7 @@ def dcpaperplot1():
             fun17=np.copy(1.0/jrad17r[18])
             #fun18=np.copy(1.0/jrad18r[18])
         elif ii==26 or ii==27 or ii==28:
+            # normalize densities by rho except itself
             fun1=np.copy(1.0/jrad1r[25])
             fun2=np.copy(1.0/jrad2r[25])
             fun3=np.copy(1.0/jrad3r[25])
@@ -34057,6 +34096,7 @@ def dcpaperplot1():
             fun17=np.copy(1.0/jrad17r[25])
             #fun18=np.copy(1.0/jrad18r[25])
         elif ii==31 or ii==32 or ii==33:
+            # normalize B by sqrt(rho)
             fun1=np.copy(1.0/np.sqrt(jrad1r[25]))
             fun2=np.copy(1.0/np.sqrt(jrad2r[25]))
             fun3=np.copy(1.0/np.sqrt(jrad3r[25]))
@@ -34120,24 +34160,23 @@ def dcpaperplot1():
     xlabels=[r"$\theta$"]
     xscales=['linear']
     #
-    ylabels=["jj"","r"$\theta$","eoutRADvstheta","eoutRADisovstheta","eoutRADperLeddvstheta","eoutEMvstheta","eoutEMisovstheta","eoutEMperLeddvstheta","Tradlabtype3vstheta","fcollabvstheta","varexpfffvstheta","nfcolvstheta"]
+    ylabels=["jj",r"\theta",r"$\hat{T}_\gamma/T_{\rm gas}$",r"$\hat{T}_\gamma[\rm K]$",r"$T_\gamma[\rm K]$",r"$T_{\rm gas}[\rm K]$",r"$f_{\rm col}$",r"$\exp{(-\xi)}$",r"$n_{\rm col}$",r"$\kappa_{\rm tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm tot-Fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm es}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm chianti}/\kappa_{\rm ff}$",r"$\kappa_{\rm ff}$",r"$\kappa_{\rm bf}/\kappa_{\rm ff}$",r"$\kappa_{\rm fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm mol}/\kappa_{\rm ff}$",r"$\kappa_{\rm hmopal}/\kappa_{\rm ff}$",r"\kappa_{\rm chiantiopal}/\kappa_{\rm ff}$",r"\kappa_{\rm ff-ee}/\kappa_{\rm ff}$",r"$\rho$",r"$u_g/rho$",r"$u_\gamma/\rho$",r"$b^2/\rho$",r"$v_r$",r"$v_\phi$",r"$B_r/\sqrt{\rho}$",r"$B_z/\sqrt{\rho}$",r"$B_\phi/\sqrt{\rho}$"  ,r"\theta",r"$\hat{T}_\gamma/T_{\rm gas}$",r"$\hat{T}_\gamma[\rm K]$",r"$T_\gamma[\rm K]$",r"$T_{\rm gas}[\rm K]$",r"$f_{\rm col}$",r"$\exp{(-\xi)}$",r"$n_{\rm col}$",r"$\kappa_{\rm tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm tot-Fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm es}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm chianti}/\kappa_{\rm ff}$",r"$\kappa_{\rm ff}$",r"$\kappa_{\rm bf}/\kappa_{\rm ff}$",r"$\kappa_{\rm fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm mol}/\kappa_{\rm ff}$",r"$\kappa_{\rm hmopal}/\kappa_{\rm ff}$",r"\kappa_{\rm chiantiopal}/\kappa_{\rm ff}$",r"\kappa_{\rm ff-ee}/\kappa_{\rm ff}$",r"$\rho$",r"$u_g/\rho$",r"$u_\gamma/\rho$",r"$b^2/\rho$",r"$v_r$",r"$v_\phi$",r"$B_r/\sqrt{\rho}$",r"$B_z/\sqrt{\rho}$",r"$B_\phi/\sqrt{\rho}$"    ,"eoutRADvstheta","eoutRADisovstheta","eoutRADperLeddvstheta","eoutEMvstheta","eoutEMisovstheta","eoutEMperLeddvstheta"]
     print("ylabels")
     print(np.shape(ylabels))
-    yscales=['linear','linear','log','log','log','log','log','log','log','log','log','log']
+    yscales=['linear'  ,'linear','linear','log','log','log','log','linear','linear','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log'    ,'linear','linear','log','log','log','log','linear','linear','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log'   ,'log','log','log','log','log','log']
     print("yscales")
     print(np.shape(yscales))
     #
-    fignames=['ii.png','r.png','TradoTgasvsr.png','Tradffvsr.png','Tradlabvsr.png','Tgasvsr.png','fcolvsr.png','varexpfvsr.png','nfcolvsr.png','kappadensityvsr.png','kappadensitynofevsr.png','kappasyvsr.png','kappadcvsr.png','kappaesvsr.png','kappandensityvsr.png','kappansyvsr.png','kappandcvsr.png','kappachiantivsr.png','kappaffvsr.png','kappabfvsr.png','kappafevsr.png','kappamolvsr.png','kappahmopalvsr.png','kappachiantiopalvsr.png','kappaffeevsr.png',"rhovsr.png","ugvsr.png","Erfvsr.png","bsqvsr.png","vrvsr.png","vphivsr.png","Brvsr.png","Bzvsr.png","Bphivsr.png"]
+    fignames=['ii.png'  ,'theta.png','TradoTgasvstheta.png','Tradffvstheta.png','Tradlabvstheta.png','Tgasvstheta.png','fcolvstheta.png','varexpfvstheta.png','nfcolvstheta.png','kappadensityvstheta.png','kappadensitynofevstheta.png','kappasyvstheta.png','kappadcvstheta.png','kappaesvstheta.png','kappandensityvstheta.png','kappansyvstheta.png','kappandcvstheta.png','kappachiantivstheta.png','kappaffvstheta.png','kappabfvstheta.png','kappafevstheta.png','kappamolvstheta.png','kappahmopalvstheta.png','kappachiantiopalvstheta.png','kappaffeevstheta.png',"rhovstheta.png","ugvstheta.png","Erfvstheta.png","bsqvstheta.png","vrvstheta.png","vphivstheta.png","Brvstheta.png","Bzvstheta.png","Bphivstheta.png"    ,'theta2.png','TradoTgasvstheta2.png','Tradffvstheta2.png','Tradlabvstheta2.png','Tgasvstheta2.png','fcolvstheta2.png','varexpfvstheta2.png','nfcolvstheta2.png','kappadensityvstheta2.png','kappadensitynofevstheta2.png','kappasyvstheta2.png','kappadcvstheta2.png','kappaesvstheta2.png','kappandensityvstheta2.png','kappansyvstheta2.png','kappandcvstheta2.png','kappachiantivstheta2.png','kappaffvstheta2.png','kappabfvstheta2.png','kappafevstheta2.png','kappamolvstheta2.png','kappahmopalvstheta2.png','kappachiantiopalvstheta2.png','kappaffeevstheta2.png',"rhovstheta2.png","ugvstheta2.png","Erfvstheta2.png","bsqvstheta2.png","vrvstheta2.png","vphivstheta2.png","Brvstheta2.png","Bzvstheta2.png","Bphivstheta2.png"    ,"eoutRADvstheta.png","eoutRADisovstheta.png","eoutRADperLeddvstheta.png","eoutEMvstheta.png","eoutEMisovstheta.png","eoutEMperLeddvstheta.png"]
     print("fignames")
     print(np.shape(fignames))
     #
-    factors=[1,1,1,TEMPBAR,TEMPBAR,TEMPBAR,1,1,1 ,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 ,1,1,1,1,1,1,1,1,1]
+    factors=[1  ,1,1,TEMPBAR,TEMPBAR,TEMPBAR,1,1,1 ,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 ,1,1,1,1,1,1,1,1,1   ,1,1,TEMPBAR,TEMPBAR,TEMPBAR,1,1,1 ,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 ,1,1,1,1,1,1,1,1,1   ,1,1,1,1,1,1] # last 6 already converted to desired units
     print("factors")
     print(np.shape(factors))
     #
-    nxout=70 # about r=50M where models have reached inflow equilibrium
     #
-    for ii in np.arange(0,ncr):
+    for ii in np.arange(0,nch):
         print("ii=%d" % (ii)); sys.stdout.flush()
         fig, (ax1) = plt.subplots(1, 1)
         plt.gcf().subplots_adjust(bottom=0.15)
@@ -34152,86 +34191,114 @@ def dcpaperplot1():
         #ax1.axhline(linewidth=4, color="black")
         #ax1.axvline(linewidth=4, color="black")
         #
-        if ii>=9 and ii<=24 and ii!=18:
-            fun1=np.copy(1.0/jrad1r[18])
-            fun2=np.copy(1.0/jrad2r[18])
-            fun3=np.copy(1.0/jrad3r[18])
-            fun5=np.copy(1.0/jrad5r[18])
-            fun7=np.copy(1.0/jrad7r[18])
-            fun8=np.copy(1.0/jrad8r[18])
-            fun9=np.copy(1.0/jrad9r[18])
-            fun10=np.copy(1.0/jrad10r[18])
-            fun11=np.copy(1.0/jrad11r[18])
-            fun13=np.copy(1.0/jrad13r[18])
-            fun14=np.copy(1.0/jrad14r[18])
-            fun15=np.copy(1.0/jrad15r[18])
-            fun16=np.copy(1.0/jrad16r[18])
-            fun17=np.copy(1.0/jrad17r[18])
-            #fun18=np.copy(1.0/jrad18r[18])
-        elif ii==26 or ii==27 or ii==28:
-            fun1=np.copy(1.0/jrad1r[25])
-            fun2=np.copy(1.0/jrad2r[25])
-            fun3=np.copy(1.0/jrad3r[25])
-            fun5=np.copy(1.0/jrad5r[25])
-            fun7=np.copy(1.0/jrad7r[25])
-            fun8=np.copy(1.0/jrad8r[25])
-            fun9=np.copy(1.0/jrad9r[25])
-            fun10=np.copy(1.0/jrad10r[25])
-            fun11=np.copy(1.0/jrad11r[25])
-            fun13=np.copy(1.0/jrad13r[25])
-            fun14=np.copy(1.0/jrad14r[25])
-            fun15=np.copy(1.0/jrad15r[25])
-            fun16=np.copy(1.0/jrad16r[25])
-            fun17=np.copy(1.0/jrad17r[25])
-            #fun18=np.copy(1.0/jrad18r[25])
-        elif ii==31 or ii==32 or ii==33:
-            fun1=np.copy(1.0/np.sqrt(jrad1r[25]))
-            fun2=np.copy(1.0/np.sqrt(jrad2r[25]))
-            fun3=np.copy(1.0/np.sqrt(jrad3r[25]))
-            fun5=np.copy(1.0/np.sqrt(jrad5r[25]))
-            fun7=np.copy(1.0/np.sqrt(jrad7r[25]))
-            fun8=np.copy(1.0/np.sqrt(jrad8r[25]))
-            fun9=np.copy(1.0/np.sqrt(jrad9r[25]))
-            fun10=np.copy(1.0/np.sqrt(jrad10r[25]))
-            fun11=np.copy(1.0/np.sqrt(jrad11r[25]))
-            fun13=np.copy(1.0/np.sqrt(jrad13r[25]))
-            fun14=np.copy(1.0/np.sqrt(jrad14r[25]))
-            fun15=np.copy(1.0/np.sqrt(jrad15r[25]))
-            fun16=np.copy(1.0/np.sqrt(jrad16r[25]))
-            fun17=np.copy(1.0/np.sqrt(jrad17r[25]))
-            #fun18=np.copy(1.0/np.sqrt(jrad18r[25]))
+        # choose shift for normalization and theta
+        if ii<=34:
+            shift=0
         else:
-            fun1=np.copy(jrad1r[0]*0.0+1.0)
-            fun2=np.copy(jrad2r[0]*0.0+1.0)
-            fun3=np.copy(jrad3r[0]*0.0+1.0)
-            fun5=np.copy(jrad5r[0]*0.0+1.0)
-            fun7=np.copy(jrad7r[0]*0.0+1.0)
-            fun8=np.copy(jrad8r[0]*0.0+1.0)
-            fun9=np.copy(jrad9r[0]*0.0+1.0)
-            fun10=np.copy(jrad10r[0]*0.0+1.0)
-            fun11=np.copy(jrad11r[0]*0.0+1.0)
-            fun13=np.copy(jrad13r[0]*0.0+1.0)
-            fun14=np.copy(jrad14r[0]*0.0+1.0)
-            fun15=np.copy(jrad15r[0]*0.0+1.0)
-            fun16=np.copy(jrad16r[0]*0.0+1.0)
-            fun17=np.copy(jrad17r[0]*0.0+1.0)
-            #fun18=np.copy(jrad18r[0]*0.0+1.0)
+            shift=33
         #
-        ax1.plot(jrad1r[1][0:nxout],factors[ii]*jrad1r[ii][0:nxout]*fun1[0:nxout],color="black",label='M1',linewidth=2.0,linestyle='-')
-        ax1.plot(jrad2r[1][0:nxout],factors[ii]*jrad2r[ii][0:nxout]*fun2[0:nxout],color="black",label='M2',linewidth=2.0,linestyle='--')
-        ax1.plot(jrad3r[1][0:nxout],factors[ii]*jrad3r[ii][0:nxout]*fun3[0:nxout],color="black",label='M3',linewidth=2.0,linestyle='-.')
-        ax1.plot(jrad5r[1][0:nxout],factors[ii]*jrad5r[ii][0:nxout]*fun5[0:nxout],color="gold",label='M5',linewidth=2.0,linestyle='--')
-        #ax1.plot(jrad18r[1][0:nxout],factors[ii]*jrad18r[ii][0:nxout]*fun18[0:nxout],color="green",label='M6',linewidth=2.0,linestyle='--')
-        ax1.plot(jrad7r[1][0:nxout],factors[ii]*jrad7r[ii][0:nxout]*fun7[0:nxout],color="red",label='M7',linewidth=2.0)
-        ax1.plot(jrad8r[1][0:nxout],factors[ii]*jrad8r[ii][0:nxout]*fun8[0:nxout],color="green",label='M8',linewidth=2.0)
-        ax1.plot(jrad9r[1][0:nxout],factors[ii]*jrad9r[ii][0:nxout]*fun9[0:nxout],color="red",label='M9',linewidth=2.0,linestyle='--')
-        ax1.plot(jrad10r[1][0:nxout],factors[ii]*jrad10r[ii][0:nxout]*fun10[0:nxout],color="black",label='M10',linewidth=2.0,linestyle=':')
-        ax1.plot(jrad11r[1][0:nxout],factors[ii]*jrad11r[ii][0:nxout]*fun11[0:nxout],color="blue",label='M11',linewidth=2.0,linestyle='--')
-        ax1.plot(jrad13r[1][0:nxout],factors[ii]*jrad13r[ii][0:nxout]*fun13[0:nxout],color="brown",label='M13',linewidth=2.0)
-        ax1.plot(jrad14r[1][0:nxout],factors[ii]*jrad14r[ii][0:nxout]*fun14[0:nxout],color="orange",label='M14',linewidth=2.0)
-        ax1.plot(jrad17r[1][0:nxout],factors[ii]*jrad17r[ii][0:nxout]*fun17[0:nxout],color="blue",label='M14h',linewidth=2.0)
-        ax1.plot(jrad15r[1][0:nxout],factors[ii]*jrad15r[ii][0:nxout]*fun15[0:nxout],color="purple",label='M15',linewidth=2.0)
-        ax1.plot(jrad16r[1][0:nxout],factors[ii]*jrad16r[ii][0:nxout]*fun16[0:nxout],color="gold",label='M15h',linewidth=2.0)
+        # set correct theta
+        mythetajrad1h=jrad1h[1+shift]
+        mythetajrad2h=jrad2h[1+shift]
+        mythetajrad3h=jrad3h[1+shift]
+        mythetajrad5h=jrad5h[1+shift]
+        mythetajrad7h=jrad7h[1+shift]
+        mythetajrad8h=jrad8h[1+shift]
+        mythetajrad9h=jrad9h[1+shift]
+        mythetajrad10h=jrad10h[1+shift]
+        mythetajrad11h=jrad11h[1+shift]
+        mythetajrad13h=jrad13h[1+shift]
+        mythetajrad14h=jrad14h[1+shift]
+        mythetajrad15h=jrad15h[1+shift]
+        mythetajrad16h=jrad16h[1+shift]
+        mythetajrad17h=jrad17h[1+shift]
+        #mythetajrad18h=jrad18h[1+shift]
+        #
+        # normalize some quantities
+        if (ii>=9+shift and ii<=24+shift and ii!=(18+shift)):
+            # normalize kappa's by kappaff (except kappaff itself)
+            fun1=np.copy(1.0/jrad1h[18+shift])
+            fun2=np.copy(1.0/jrad2h[18+shift])
+            fun3=np.copy(1.0/jrad3h[18+shift])
+            fun5=np.copy(1.0/jrad5h[18+shift])
+            fun7=np.copy(1.0/jrad7h[18+shift])
+            fun8=np.copy(1.0/jrad8h[18+shift])
+            fun9=np.copy(1.0/jrad9h[18+shift])
+            fun10=np.copy(1.0/jrad10h[18+shift])
+            fun11=np.copy(1.0/jrad11h[18+shift])
+            fun13=np.copy(1.0/jrad13h[18+shift])
+            fun14=np.copy(1.0/jrad14h[18+shift])
+            fun15=np.copy(1.0/jrad15h[18+shift])
+            fun16=np.copy(1.0/jrad16h[18+shift])
+            fun17=np.copy(1.0/jrad17h[18+shift])
+            #fun18=np.copy(1.0/jrad18h[18+shift])
+        elif (ii==26+shift or ii==27+shift or ii==28+shift):
+            # normalize densities by rho (25+shift) at equator
+            fun1 =np.copy(jrad1h[0]*0.0+1.0/jrad1h[25+shift][jrad1h[0,-1]/2])
+            fun2 =np.copy(jrad2h[0]*0.0+1.0/jrad2h[25+shift][jrad2h[0,-1]/2])
+            fun3 =np.copy(jrad3h[0]*0.0+1.0/jrad3h[25+shift][jrad3h[0,-1]/2])
+            fun5 =np.copy(jrad5h[0]*0.0+1.0/jrad5h[25+shift][jrad5h[0,-1]/2])
+            fun7 =np.copy(jrad7h[0]*0.0+1.0/jrad7h[25+shift][jrad7h[0,-1]/2])
+            fun8 =np.copy(jrad8h[0]*0.0+1.0/jrad8h[25+shift][jrad8h[0,-1]/2])
+            fun9 =np.copy(jrad9h[0]*0.0+1.0/jrad9h[25+shift][jrad9h[0,-1]/2])
+            fun10=np.copy(jrad10h[0]*0.0+1.0/jrad10h[25+shift][jrad10h[0,-1]/2])
+            fun11=np.copy(jrad11h[0]*0.0+1.0/jrad11h[25+shift][jrad11h[0,-1]/2])
+            fun13=np.copy(jrad13h[0]*0.0+1.0/jrad13h[25+shift][jrad13h[0,-1]/2])
+            fun14=np.copy(jrad14h[0]*0.0+1.0/jrad14h[25+shift][jrad14h[0,-1]/2])
+            fun15=np.copy(jrad15h[0]*0.0+1.0/jrad15h[25+shift][jrad15h[0,-1]/2])
+            fun16=np.copy(jrad16h[0]*0.0+1.0/jrad16h[25+shift][jrad16h[0,-1]/2])
+            fun17=np.copy(jrad17h[0]*0.0+1.0/jrad17h[25+shift][jrad17h[0,-1]/2])
+            #fun18=np.copy(jrad18h[0]*0.0+1.0/jrad18h[25+shift][jrad18h[0,-1]/2])
+        elif (ii==31+shift or ii==32+shift or ii==33+shift):
+            # normalize B by sqrt(rho) at equator
+            fun1 =np.copy(jrad1h[0]*0.0+1.0/np.sqrt(jrad1h[25+shift][jrad1h[0,-1]/2]))
+            fun2 =np.copy(jrad2h[0]*0.0+1.0/np.sqrt(jrad2h[25+shift][jrad2h[0,-1]/2]))
+            fun3 =np.copy(jrad3h[0]*0.0+1.0/np.sqrt(jrad3h[25+shift][jrad3h[0,-1]/2]))
+            fun5 =np.copy(jrad5h[0]*0.0+1.0/np.sqrt(jrad5h[25+shift][jrad5h[0,-1]/2]))
+            fun7 =np.copy(jrad7h[0]*0.0+1.0/np.sqrt(jrad7h[25+shift][jrad7h[0,-1]/2]))
+            fun8 =np.copy(jrad8h[0]*0.0+1.0/np.sqrt(jrad8h[25+shift][jrad8h[0,-1]/2]))
+            fun9 =np.copy(jrad9h[0]*0.0+1.0/np.sqrt(jrad9h[25+shift][jrad9h[0,-1]/2]))
+            fun10=np.copy(jrad10h[0]*0.0+1.0/np.sqrt(jrad10h[25+shift][jrad10h[0,-1]/2]))
+            fun11=np.copy(jrad11h[0]*0.0+1.0/np.sqrt(jrad11h[25+shift][jrad11h[0,-1]/2]))
+            fun13=np.copy(jrad13h[0]*0.0+1.0/np.sqrt(jrad13h[25+shift][jrad13h[0,-1]/2]))
+            fun14=np.copy(jrad14h[0]*0.0+1.0/np.sqrt(jrad14h[25+shift][jrad14h[0,-1]/2]))
+            fun15=np.copy(jrad15h[0]*0.0+1.0/np.sqrt(jrad15h[25+shift][jrad15h[0,-1]/2]))
+            fun16=np.copy(jrad16h[0]*0.0+1.0/np.sqrt(jrad16h[25+shift][jrad16h[0,-1]/2]))
+            fun17=np.copy(jrad17h[0]*0.0+1.0/np.sqrt(jrad17h[25+shift][jrad17h[0,-1]/2]))
+            #fun18=np.copy(jrad18h[0]*0.0+1.0/np.sqrt(jrad18h[25+shift][jrad18h[0,-1]/2]))
+        else:
+            # no normaliation
+            fun1=np.copy(jrad1h[0]*0.0+1.0)
+            fun2=np.copy(jrad2h[0]*0.0+1.0)
+            fun3=np.copy(jrad3h[0]*0.0+1.0)
+            fun5=np.copy(jrad5h[0]*0.0+1.0)
+            fun7=np.copy(jrad7h[0]*0.0+1.0)
+            fun8=np.copy(jrad8h[0]*0.0+1.0)
+            fun9=np.copy(jrad9h[0]*0.0+1.0)
+            fun10=np.copy(jrad10h[0]*0.0+1.0)
+            fun11=np.copy(jrad11h[0]*0.0+1.0)
+            fun13=np.copy(jrad13h[0]*0.0+1.0)
+            fun14=np.copy(jrad14h[0]*0.0+1.0)
+            fun15=np.copy(jrad15h[0]*0.0+1.0)
+            fun16=np.copy(jrad16h[0]*0.0+1.0)
+            fun17=np.copy(jrad17h[0]*0.0+1.0)
+            #fun18=np.copy(jrad18h[0]*0.0+1.0)
+        #
+        ax1.plot(mythetajrad1h,factors[ii]*jrad1h[ii]*fun1,color="black",label='M1',linewidth=2.0,linestyle='-')
+        ax1.plot(mythetajrad2h,factors[ii]*jrad2h[ii]*fun2,color="black",label='M2',linewidth=2.0,linestyle='--')
+        ax1.plot(mythetajrad3h,factors[ii]*jrad3h[ii]*fun3,color="black",label='M3',linewidth=2.0,linestyle='-.')
+        ax1.plot(mythetajrad5h,factors[ii]*jrad5h[ii]*fun5,color="gold",label='M5',linewidth=2.0,linestyle='--')
+        #ax1.plot(mythetajrad18h,factors[ii]*jrad18h[ii]*fun18,color="green",label='M6',linewidth=2.0,linestyle='--')
+        ax1.plot(mythetajrad7h,factors[ii]*jrad7h[ii]*fun7,color="red",label='M7',linewidth=2.0)
+        ax1.plot(mythetajrad8h,factors[ii]*jrad8h[ii]*fun8,color="green",label='M8',linewidth=2.0)
+        ax1.plot(mythetajrad9h,factors[ii]*jrad9h[ii]*fun9,color="red",label='M9',linewidth=2.0,linestyle='--')
+        ax1.plot(mythetajrad10h,factors[ii]*jrad10h[ii]*fun10,color="black",label='M10',linewidth=2.0,linestyle=':')
+        ax1.plot(mythetajrad11h,factors[ii]*jrad11h[ii]*fun11,color="blue",label='M11',linewidth=2.0,linestyle='--')
+        ax1.plot(mythetajrad13h,factors[ii]*jrad13h[ii]*fun13,color="brown",label='M13',linewidth=2.0)
+        ax1.plot(mythetajrad14h,factors[ii]*jrad14h[ii]*fun14,color="orange",label='M14',linewidth=2.0)
+        ax1.plot(mythetajrad17h,factors[ii]*jrad17h[ii]*fun17,color="blue",label='M14h',linewidth=2.0)
+        ax1.plot(mythetajrad15h,factors[ii]*jrad15h[ii]*fun15,color="purple",label='M15',linewidth=2.0)
+        ax1.plot(mythetajrad16h,factors[ii]*jrad16h[ii]*fun16,color="gold",label='M15h',linewidth=2.0)
         ax1.set_xscale(xscales[0])
         ax1.set_yscale(yscales[ii])
         legend = ax1.legend(loc='upper right', shadow=True)
