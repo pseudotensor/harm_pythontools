@@ -594,35 +594,35 @@ avg_mybu2 = lambda : (avg_bu[1]*dxdxp[2,1] + avg_bu[2]*dxdxp[2,2])*np.sqrt(gvks2
 avg_mybu3 = lambda : (avg_bu[3]*dxdxp[3,3])*np.sqrt(gvks33())
         #
 avg_myauu0 = lambda : avg_absuu[0]*dxdxp[0,0]
-avg_myauu1 = lambda : (avg_absuu[1]*dxdxp[1,1] + avg_absuu[2]*dxdxp[1,2])*np.sqrt(gvks11())/avg_myauu0()
-avg_myauu2 = lambda : (avg_absuu[1]*dxdxp[2,1] + avg_absuu[2]*dxdxp[2,2])*np.sqrt(gvks22())/avg_myauu0()
-avg_myauu3 = lambda : (avg_absuu[3]*dxdxp[3,3])*np.sqrt(gvks33())/avg_myauu0()
+avg_myauu1 = lambda : (avg_absuu[1]*np.fabs(dxdxp[1,1]) + avg_absuu[2]*np.fabs(dxdxp[1,2]))*np.sqrt(np.fabs(gvks11()))/avg_myauu0()
+avg_myauu2 = lambda : (avg_absuu[1]*np.fabs(dxdxp[2,1]) + avg_absuu[2]*np.fabs(dxdxp[2,2]))*np.sqrt(np.fabs(gvks22()))/avg_myauu0()
+avg_myauu3 = lambda : (avg_absuu[3]*np.fabs(dxdxp[3,3]))*np.sqrt(np.fabs(gvks33()))/avg_myauu0()
 avg_myauurot = lambda : np.sqrt(avg_myauu2()**2+avg_myauu3()**2)
 avg_myauradu0 = lambda : avg_absuradu[0]*dxdxp[0,0]
-avg_myauradu1 = lambda : (avg_absuradu[1]*dxdxp[1,1] + avg_absuradu[2]*dxdxp[1,2])*np.sqrt(gvks11())/avg_myauradu0()
-avg_myauradu2 = lambda : (avg_absuradu[1]*dxdxp[2,1] + avg_absuradu[2]*dxdxp[2,2])*np.sqrt(gvks22())/avg_myauradu0()
-avg_myauradu3 = lambda : (avg_absuradu[3]*dxdxp[3,3])*np.sqrt(gvks33())/avg_myauradu0()
+avg_myauradu1 = lambda : (avg_absuradu[1]*np.fabs(dxdxp[1,1]) + avg_absuradu[2]*np.fabs(dxdxp[1,2]))*np.sqrt(np.fabs(gvks11()))/avg_myauradu0()
+avg_myauradu2 = lambda : (avg_absuradu[1]*np.fabs(dxdxp[2,1]) + avg_absuradu[2]*np.fabs(dxdxp[2,2]))*np.sqrt(np.fabs(gvks22()))/avg_myauradu0()
+avg_myauradu3 = lambda : (avg_absuradu[3]*np.fabs(dxdxp[3,3]))*np.sqrt(np.fabs(gvks33()))/avg_myauradu0()
 avg_myauradurot = lambda : np.sqrt(avg_myauradu2()**2+avg_myauradu3()**2)
 #avg_myauurot = lambda : np.sqrt(avg_myauu2()**2+avg_myauu3()**2) # GODMARK
-avg_myaB1 = lambda : (avg_absB[1-1]*dxdxp[1,1] + avg_absB[2-1]*dxdxp[1,2])*np.sqrt(gvks11())
-avg_myaB2 = lambda : (avg_absB[1-1]*dxdxp[2,1] + avg_absB[2-1]*dxdxp[2,2])*np.sqrt(gvks22())
-avg_myaB3 = lambda : (avg_absB[3-1]*dxdxp[3,3])*np.sqrt(gvks33())
-avg_myabu1 = lambda : (avg_absbu[1]*dxdxp[1,1] + avg_absbu[2]*dxdxp[1,2])*np.sqrt(gvks11())
-avg_myabu2 = lambda : (avg_absbu[1]*dxdxp[2,1] + avg_absbu[2]*dxdxp[2,2])*np.sqrt(gvks22())
-avg_myabu3 = lambda : (avg_absbu[3]*dxdxp[3,3])*np.sqrt(gvks33())
+avg_myaB1 = lambda : (avg_absB[1-1]*np.fabs(dxdxp[1,1]) + avg_absB[2-1]*np.fabs(dxdxp[1,2]))*np.sqrt(np.fabs(gvks11()))
+avg_myaB2 = lambda : (avg_absB[1-1]*np.fabs(dxdxp[2,1]) + avg_absB[2-1]*np.fabs(dxdxp[2,2]))*np.sqrt(np.fabs(gvks22()))
+avg_myaB3 = lambda : (avg_absB[3-1]*np.fabs(dxdxp[3,3]))*np.sqrt(np.fabs(gvks33()))
+avg_myabu1 = lambda : (avg_absbu[1]*np.fabs(dxdxp[1,1]) + avg_absbu[2]*np.fabs(dxdxp[1,2]))*np.sqrt(np.fabs(gvks11()))
+avg_myabu2 = lambda : (avg_absbu[1]*np.fabs(dxdxp[2,1]) + avg_absbu[2]*np.fabs(dxdxp[2,2]))*np.sqrt(np.fabs(gvks22()))
+avg_myabu3 = lambda : (avg_absbu[3]*np.fabs(dxdxp[3,3]))*np.sqrt(np.fabs(gvks33())
 #
 #############################################
-myauu0 = lambda : (np.abs(myuu0()))
-myauu1 = lambda : (np.abs(myuu1()))
-myauu2 = lambda : (np.abs(myuu2()))
-myauu3 = lambda : (np.abs(myuu3()))
-myauurot = lambda : np.abs(myuurot())
-myaB1 = lambda : np.abs(myB1())
-myaB2 = lambda : np.abs(myB2())
-myaB3 = lambda : np.abs(myB3())
-myabu1 = lambda : np.abs(mybu1())
-myabu2 = lambda : np.abs(mybu2())
-myabu3 = lambda : np.abs(mybu3())
+myauu0 = lambda : (np.fabs(myuu0()))
+myauu1 = lambda : (np.fabs(myuu1()))
+myauu2 = lambda : (np.fabs(myuu2()))
+myauu3 = lambda : (np.fabs(myuu3()))
+myauurot = lambda : np.fabs(myuurot())
+myaB1 = lambda : np.fabs(myB1())
+myaB2 = lambda : np.fabs(myB2())
+myaB3 = lambda : np.fabs(myB3())
+myabu1 = lambda : np.fabs(mybu1())
+myabu2 = lambda : np.fabs(mybu2())
+myabu3 = lambda : np.fabs(mybu3())
 # 0 = 1 + u^t u_t + u^r u_r + u^h u_h + u^p u_p
 # 0 = 1 + u^r u_r / (1+u^t u_t) + u^h u_h / (1+u^t u_t) + u^p u_p / (1+u^t u_t)
 # 1/(-u^t u_t) + 1 =  + u^r u_r / (-u^t u_t) + u^h u_h / (-u^t u_t) + u^p u_p / (-u^t u_t)
@@ -2553,8 +2553,8 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
         avg_gdetB+=gdetB[1:4].sum(-1)[:,:,:,None]*localdt[itert]
         # 6
         n=3
-        avg_absB += np.abs(B[1:4]).sum(-1)[:,:,:,None]*localdt[itert]
-        avg_absgdetB += np.abs(gdetB[1:4]).sum(-1)[:,:,:,None]*localdt[itert]
+        avg_absB += np.fabs(B[1:4]).sum(-1)[:,:,:,None]*localdt[itert]
+        avg_absgdetB += np.fabs(gdetB[1:4]).sum(-1)[:,:,:,None]*localdt[itert]
         #
         # 4
         # omega has to be cleaned because of effects of floor near pole where effect on omegaf alot despite dynamically insignificance, but do it elsewhere
@@ -2803,8 +2803,8 @@ def extractlena():
     Bp = B[3]*dxdxp[3,3]
     #
     Brnorm=Br
-    Bhnorm=Bh*np.abs(r)
-    Bpnorm=Bp*np.abs(r*np.sin(h))
+    Bhnorm=Bh*np.fabs(r)
+    Bpnorm=Bp*np.fabs(r*np.sin(h))
     #
     Bznorm=Brnorm*np.cos(h)-Bhnorm*np.sin(h)
     BRnorm=Brnorm*np.sin(h)+Bhnorm*np.cos(h)
@@ -2819,8 +2819,8 @@ def extractlena():
     uup = uu[3] * dxdxp[3,3]
     #
     uurnorm = uur
-    uuhnorm=uuh*np.abs(r)
-    uupnorm=uup*np.abs(r*np.sin(h))
+    uuhnorm=uuh*np.fabs(r)
+    uupnorm=uup*np.fabs(r*np.sin(h))
     #
     #(cpsi, cr, ch, cR, cz, cBr, cBtheta, cBphi, ceta, crho, cuur, cuutheta, cuuphi, cgamma, comegaf, cmu, csigma, cbsq) = cvals
 
