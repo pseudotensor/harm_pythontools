@@ -28367,10 +28367,12 @@ def mkavgfigs1(whichfig=0):
             avg_ugvstheta=avg_ug[iofr(10),:,0]
             avg_Erfvstheta=avg_Erf[iofr(10),:,0]
             avg_bsqvstheta=avg_bsq[iofr(10),:,0]
-            # 2
+            # 3
             avga_myauu1=np.copy(avg_myauu1())
+            avga_myauu2=np.copy(avg_myauu2())
             avga_myauu3=np.copy(avg_myauu3())
             avg_vrvstheta=avga_myauu1[iofr(10),:,0]
+            avg_vzvstheta=avga_myauu2[iofr(10),:,0]
             avg_vphivstheta=avga_myauu3[iofr(10),:,0]
             # 3
             avga_myaB1=np.copy(avg_myaB1())
@@ -28415,8 +28417,10 @@ def mkavgfigs1(whichfig=0):
             avg2_bsqvstheta=avg_bsq[iofr(100),:,0]
             # 2
             avga_myauu1=np.copy(avg_myauu1())
+            avga_myauu2=np.copy(avg_myauu2())
             avga_myauu3=np.copy(avg_myauu3())
             avg2_vrvstheta=avga_myauu1[iofr(100),:,0]
+            avg2_vzvstheta=avga_myauu2[iofr(100),:,0]
             avg2_vphivstheta=avga_myauu3[iofr(100),:,0]
             # 3
             avga_myaB1=np.copy(avg_myaB1())
@@ -28466,7 +28470,7 @@ def mkavgfigs1(whichfig=0):
             #
             f1 = open('radquantsvsh.%s.txt' % (modelname), 'w')
             for jj in np.arange(0,ny):
-                f1.write("%d  %g  %g %g %g %g  %g %g %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g  %g %g %g %g %g %g %g %g %g     %g  %g %g %g %g  %g %g %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g  %g %g %g %g %g %g %g %g %g   %g %g %g %g %g %g\n" % (jj ,h[iofr(10),jj,0],avg_TradoTgasvstheta[jj],avg_Tradfftype3vstheta[jj],avg_Tradlabtype3vstheta[jj],avg_Tgasvstheta[jj],avg_fcollabvstheta[jj],avg_varexpfffvstheta[jj],avg_nfcolvstheta[jj],avg_kappadensityrealvstheta[jj],avg_kappadensityrealnofevstheta[jj],avg_kappasyrealvstheta[jj],avg_kappadcrealvstheta[jj],avg_kappaesrealvstheta[jj],avg_kappandensityrealvstheta[jj],avg_kappansyrealvstheta[jj],avg_kappandcrealvstheta[jj],avg_kappachiantirealvstheta[jj],avg_kappaffrealvstheta[jj],avg_kappabfrealvstheta[jj],avg_kappaferealvstheta[jj],avg_kappamolrealvstheta[jj],avg_kappahmopalrealvstheta[jj],avg_kappachiantiopalrealvstheta[jj],avg_kappaffeerealvstheta[jj],avg_rhovstheta[jj],avg_ugvstheta[jj],avg_Erfvstheta[jj],avg_bsqvstheta[jj],avg_vrvstheta[jj],avg_vphivstheta[jj],avg_Brvstheta[jj],avg_Bzvstheta[jj],avg_Bphivstheta[jj]   ,h[iofr(100),jj,0],avg2_TradoTgasvstheta[jj],avg2_Tradfftype3vstheta[jj],avg2_Tradlabtype3vstheta[jj],avg2_Tgasvstheta[jj],avg2_fcollabvstheta[jj],avg2_varexpfffvstheta[jj],avg2_nfcolvstheta[jj],avg2_kappadensityrealvstheta[jj],avg2_kappadensityrealnofevstheta[jj],avg2_kappasyrealvstheta[jj],avg2_kappadcrealvstheta[jj],avg2_kappaesrealvstheta[jj],avg2_kappandensityrealvstheta[jj],avg2_kappansyrealvstheta[jj],avg2_kappandcrealvstheta[jj],avg2_kappachiantirealvstheta[jj],avg2_kappaffrealvstheta[jj],avg2_kappabfrealvstheta[jj],avg2_kappaferealvstheta[jj],avg2_kappamolrealvstheta[jj],avg2_kappahmopalrealvstheta[jj],avg2_kappachiantiopalrealvstheta[jj],avg2_kappaffeerealvstheta[jj],avg2_rhovstheta[jj],avg2_ugvstheta[jj],avg2_Erfvstheta[jj],avg2_bsqvstheta[jj],avg2_vrvstheta[jj],avg2_vphivstheta[jj],avg2_Brvstheta[jj],avg2_Bzvstheta[jj],avg2_Bphivstheta[jj]   ,avg2_eoutRADvstheta[jj],avg2_eoutRADisovstheta[jj],avg2_eoutRADperLeddvstheta[jj],avg2_eoutEMvstheta[jj],avg2_eoutEMisovstheta[jj],avg2_eoutEMperLeddvstheta[jj]) )
+                f1.write("%d  %g  %g %g %g %g  %g %g %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g  %g %g %g %g %g %g %g %g %g %g     %g  %g %g %g %g  %g %g %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g  %g %g %g %g %g %g %g %g %g %g   %g %g %g %g %g %g\n" % (jj ,h[iofr(10),jj,0],avg_TradoTgasvstheta[jj],avg_Tradfftype3vstheta[jj],avg_Tradlabtype3vstheta[jj],avg_Tgasvstheta[jj],avg_fcollabvstheta[jj],avg_varexpfffvstheta[jj],avg_nfcolvstheta[jj],avg_kappadensityrealvstheta[jj],avg_kappadensityrealnofevstheta[jj],avg_kappasyrealvstheta[jj],avg_kappadcrealvstheta[jj],avg_kappaesrealvstheta[jj],avg_kappandensityrealvstheta[jj],avg_kappansyrealvstheta[jj],avg_kappandcrealvstheta[jj],avg_kappachiantirealvstheta[jj],avg_kappaffrealvstheta[jj],avg_kappabfrealvstheta[jj],avg_kappaferealvstheta[jj],avg_kappamolrealvstheta[jj],avg_kappahmopalrealvstheta[jj],avg_kappachiantiopalrealvstheta[jj],avg_kappaffeerealvstheta[jj],avg_rhovstheta[jj],avg_ugvstheta[jj],avg_Erfvstheta[jj],avg_bsqvstheta[jj],avg_vrvstheta[jj],avg_vzvstheta[jj],avg_vphivstheta[jj],avg_Brvstheta[jj],avg_Bzvstheta[jj],avg_Bphivstheta[jj]   ,h[iofr(100),jj,0],avg2_TradoTgasvstheta[jj],avg2_Tradfftype3vstheta[jj],avg2_Tradlabtype3vstheta[jj],avg2_Tgasvstheta[jj],avg2_fcollabvstheta[jj],avg2_varexpfffvstheta[jj],avg2_nfcolvstheta[jj],avg2_kappadensityrealvstheta[jj],avg2_kappadensityrealnofevstheta[jj],avg2_kappasyrealvstheta[jj],avg2_kappadcrealvstheta[jj],avg2_kappaesrealvstheta[jj],avg2_kappandensityrealvstheta[jj],avg2_kappansyrealvstheta[jj],avg2_kappandcrealvstheta[jj],avg2_kappachiantirealvstheta[jj],avg2_kappaffrealvstheta[jj],avg2_kappabfrealvstheta[jj],avg2_kappaferealvstheta[jj],avg2_kappamolrealvstheta[jj],avg2_kappahmopalrealvstheta[jj],avg2_kappachiantiopalrealvstheta[jj],avg2_kappaffeerealvstheta[jj],avg2_rhovstheta[jj],avg2_ugvstheta[jj],avg2_Erfvstheta[jj],avg2_bsqvstheta[jj],avg2_vrvstheta[jj],avg2_vzvstheta[jj],avg2_vphivstheta[jj],avg2_Brvstheta[jj],avg2_Bzvstheta[jj],avg2_Bphivstheta[jj]   ,avg2_eoutRADvstheta[jj],avg2_eoutRADisovstheta[jj],avg2_eoutRADperLeddvstheta[jj],avg2_eoutEMvstheta[jj],avg2_eoutEMisovstheta[jj],avg2_eoutEMperLeddvstheta[jj]) )
             f1.close()
         #
         # stuff vs. radius
@@ -28482,8 +28486,10 @@ def mkavgfigs1(whichfig=0):
             avg_bsqvsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**powerw*avg_bsq[:,sjj:ejj,0],axis=1)/bottom
             # 2
             avga_myauu1=np.copy(avg_myauu1())
+            avga_myauu2=np.copy(avg_myauu2())
             avga_myauu3=np.copy(avg_myauu3())
             avg_vrvsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**powerw*avga_myauu1[:,sjj:ejj,0],axis=1)/bottom
+            avg_vzvsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**powerw*avga_myauu2[:,sjj:ejj,0],axis=1)/bottom
             avg_vphivsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**powerw*avga_myauu3[:,sjj:ejj,0],axis=1)/bottom
             # 3
             avga_myaB1=np.copy(avg_myaB1())
@@ -28522,7 +28528,7 @@ def mkavgfigs1(whichfig=0):
             #
             f2 = open('radquantsvsr.%s.txt' % (modelname), 'w')
             for ii in np.arange(0,nx):
-                f2.write("%d %g  %g %g %g %g  %g %g %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g  %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,ny/2,0],avg_TradoTgasvsradius[ii],avg_Tradfftype3vsradius[ii],avg_Tradlabtype3vsradius[ii],avg_Tgasvsradius[ii],avg_fcollabvsradius[ii],avg_varexpfffvsradius[ii],avg_nfcolvsradius[ii],avg_kappadensityrealvsradius[ii],avg_kappadensityrealnofevsradius[ii],avg_kappasyrealvsradius[ii],avg_kappadcrealvsradius[ii],avg_kappaesrealvsradius[ii],avg_kappandensityrealvsradius[ii],avg_kappansyrealvsradius[ii],avg_kappandcrealvsradius[ii],avg_kappachiantirealvsradius[ii],avg_kappaffrealvsradius[ii],avg_kappabfrealvsradius[ii],avg_kappaferealvsradius[ii],avg_kappamolrealvsradius[ii],avg_kappahmopalrealvsradius[ii],avg_kappachiantiopalrealvsradius[ii],avg_kappaffeerealvsradius[ii],avg_rhovsradius[ii],avg_ugvsradius[ii],avg_Erfvsradius[ii],avg_bsqvsradius[ii],avg_vrvsradius[ii],avg_vphivsradius[ii],avg_Brvsradius[ii],avg_Bzvsradius[ii],avg_Bphivsradius[ii]) )
+                f2.write("%d %g  %g %g %g %g  %g %g %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g  %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,ny/2,0],avg_TradoTgasvsradius[ii],avg_Tradfftype3vsradius[ii],avg_Tradlabtype3vsradius[ii],avg_Tgasvsradius[ii],avg_fcollabvsradius[ii],avg_varexpfffvsradius[ii],avg_nfcolvsradius[ii],avg_kappadensityrealvsradius[ii],avg_kappadensityrealnofevsradius[ii],avg_kappasyrealvsradius[ii],avg_kappadcrealvsradius[ii],avg_kappaesrealvsradius[ii],avg_kappandensityrealvsradius[ii],avg_kappansyrealvsradius[ii],avg_kappandcrealvsradius[ii],avg_kappachiantirealvsradius[ii],avg_kappaffrealvsradius[ii],avg_kappabfrealvsradius[ii],avg_kappaferealvsradius[ii],avg_kappamolrealvsradius[ii],avg_kappahmopalrealvsradius[ii],avg_kappachiantiopalrealvsradius[ii],avg_kappaffeerealvsradius[ii],avg_rhovsradius[ii],avg_ugvsradius[ii],avg_Erfvsradius[ii],avg_bsqvsradius[ii],avg_vrvsradius[ii],avg_vzvsradius[ii],avg_vphivsradius[ii],avg_Brvsradius[ii],avg_Bzvsradius[ii],avg_Bphivsradius[ii]) )
             f2.close()
     #########
     # PLOTS
