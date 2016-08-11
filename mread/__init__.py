@@ -20417,7 +20417,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             print( "VLatex6: %s         & %g               & %g                           & %g                             & %g                             & %g                           & %g                & %g                   & %g                             & %g                   & %g                  & %g                   & %g                  & %g                 & %g                 \\\\ %% %s" % (truemodelname, roundto3foreta(etabh_avg), roundto3foreta(etabhEM_avg), roundto3foreta(etabhMAKE_avg), roundto3foreta(etabhPAKE_avg), roundto3foreta(etabhEN_avg), roundto3foreta(etabhRAD_avg), roundto3foreta(etaj_avg), roundto3foreta(etajEM_avg), roundto3foreta(etajMAKE_avg), roundto3foreta(etaoutRAD_avg), roundto3foreta(etathinoutRAD_avg), roundto3foreta(etamwout_avg), roundto3foreta(etawout_avg), roundto3foreta(etant), modelname ) )
         #
             # added PAKE and EN to BH term only:
-            print( "HLatex66: ModelName & $\\eta_{\\rm{}H}$ & $\\eta^{\\rm{}EM}_{\\rm{}H}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}H}$ & $\\eta^{\\rm{}PAKE}_{\\rm{}H}$ & $\\eta^{\\rm{}EN}_{\\rm{}H}$ & $\\eta^{\\rm{}RAD}_{\\rm{}H}$ & $\\eta_{\\rm{}j,in}$ & $\\eta^{\\rm{}EM}_{\rm{}j,in}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}j,in}$ & $\\eta^{\\rm{}RAD}_{\\rm{}o}$ & $\\eta_{\\rm{}mw,o}$ & $\\eta_{\\rm{}w,o}$ & $\\eta_{\\rm{}NT}$ \\\\" )
+            print( "HLatex66: ModelName & $\\eta_{\\rm{}H}$ & $\\eta^{\\rm{}EM}_{\\rm{}H}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}H}$ & $\\eta^{\\rm{}PAKE}_{\\rm{}H}$ & $\\eta^{\\rm{}EN}_{\\rm{}H}$ & $\\eta^{\\rm{}RAD}_{\\rm{}H}$ & $\\eta_{\\rm{}j,in}$ & $\\eta^{\\rm{}EM}_{\\rm{}j,in}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}j,in}$ & $\\eta^{\\rm{}RAD}_{\\rm{}o}$ & $\\eta_{\\rm{}mw,o}$ & $\\eta_{\\rm{}w,o}$ & $\\eta_{\\rm{}NT}$ \\\\" )
             print( "VLatex66: %s         & %g               & %g                           & %g                             & %g                             & %g                           & %g                & %g                   & %g                             & %g                   & %g                  & %g                   & %g                  & %g                 \\\\ %% %s" % (truemodelname, roundto3foreta(etabh_avg), roundto3foreta(etabhEM_avg), roundto3foreta(etabhMAKE_avg), roundto3foreta(etabhPAKE_avg), roundto3foreta(etabhEN_avg), roundto3foreta(etabhRAD_avg), roundto3foreta(etajin_avg), roundto3foreta(etajinEM_avg), roundto3foreta(etajinMAKE_avg), roundto3foreta(etaoutRAD_avg), roundto3foreta(etamwout_avg), roundto3foreta(etawout_avg), roundto3foreta(etant), modelname ) )
         #
         # 12:
@@ -28475,9 +28475,12 @@ def mkavgfigs1(whichfig=0):
             avg2_eoutEMisovstheta=avg_eoutEM[iofr(100),:,0]*(np.pi)*(mdotfinavgvsr[ihor])*(ENBAR/TBAR)
             avg2_eoutEMperLeddvstheta=avg_eoutEM[iofr(100),:,0]*(np.pi)*(mdotfinavgvsr[ihor])/Leddcode
             #
+            avg_dh=(dxdxp[2,2,iofr(10),:,0]*_dx2)
+            avg2_dh=(dxdxp[2,2,iofr(100),:,0]*_dx2)
+            #
             f1 = open('radquantsvsh.%s.txt' % (modelname), 'w')
             for jj in np.arange(0,ny):
-                f1.write("%d  %g  %g %g %g %g  %g %g %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g  %g %g %g %g %g %g %g %g %g %g     %g  %g %g %g %g  %g %g %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g  %g %g %g %g %g %g %g %g %g %g   %g %g %g %g %g %g\n" % (jj ,h[iofr(10),jj,0],avg_TradoTgasvstheta[jj],avg_Tradfftype3vstheta[jj],avg_Tradlabtype3vstheta[jj],avg_Tgasvstheta[jj],avg_fcollabvstheta[jj],avg_varexpfffvstheta[jj],avg_nfcolvstheta[jj],avg_kappadensityrealvstheta[jj],avg_kappadensityrealnofevstheta[jj],avg_kappasyrealvstheta[jj],avg_kappadcrealvstheta[jj],avg_kappaesrealvstheta[jj],avg_kappandensityrealvstheta[jj],avg_kappansyrealvstheta[jj],avg_kappandcrealvstheta[jj],avg_kappachiantirealvstheta[jj],avg_kappaffrealvstheta[jj],avg_kappabfrealvstheta[jj],avg_kappaferealvstheta[jj],avg_kappamolrealvstheta[jj],avg_kappahmopalrealvstheta[jj],avg_kappachiantiopalrealvstheta[jj],avg_kappaffeerealvstheta[jj],avg_rhovstheta[jj],avg_ugvstheta[jj],avg_Erfvstheta[jj],avg_bsqvstheta[jj],avg_vrvstheta[jj],avg_vzvstheta[jj],avg_vphivstheta[jj],avg_Brvstheta[jj],avg_Bzvstheta[jj],avg_Bphivstheta[jj]   ,h[iofr(100),jj,0],avg2_TradoTgasvstheta[jj],avg2_Tradfftype3vstheta[jj],avg2_Tradlabtype3vstheta[jj],avg2_Tgasvstheta[jj],avg2_fcollabvstheta[jj],avg2_varexpfffvstheta[jj],avg2_nfcolvstheta[jj],avg2_kappadensityrealvstheta[jj],avg2_kappadensityrealnofevstheta[jj],avg2_kappasyrealvstheta[jj],avg2_kappadcrealvstheta[jj],avg2_kappaesrealvstheta[jj],avg2_kappandensityrealvstheta[jj],avg2_kappansyrealvstheta[jj],avg2_kappandcrealvstheta[jj],avg2_kappachiantirealvstheta[jj],avg2_kappaffrealvstheta[jj],avg2_kappabfrealvstheta[jj],avg2_kappaferealvstheta[jj],avg2_kappamolrealvstheta[jj],avg2_kappahmopalrealvstheta[jj],avg2_kappachiantiopalrealvstheta[jj],avg2_kappaffeerealvstheta[jj],avg2_rhovstheta[jj],avg2_ugvstheta[jj],avg2_Erfvstheta[jj],avg2_bsqvstheta[jj],avg2_vrvstheta[jj],avg2_vzvstheta[jj],avg2_vphivstheta[jj],avg2_Brvstheta[jj],avg2_Bzvstheta[jj],avg2_Bphivstheta[jj]   ,avg2_eoutRADvstheta[jj],avg2_eoutRADisovstheta[jj],avg2_eoutRADperLeddvstheta[jj],avg2_eoutEMvstheta[jj],avg2_eoutEMisovstheta[jj],avg2_eoutEMperLeddvstheta[jj]) )
+                f1.write("%d  %g %g  %g %g %g %g  %g %g %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g  %g %g %g %g %g %g %g %g %g %g     %g %g  %g %g %g %g  %g %g %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g  %g %g %g %g %g %g %g %g %g %g   %g %g %g %g %g %g\n" % (jj ,h[iofr(10),jj,0],avg_dh[jj],avg_TradoTgasvstheta[jj],avg_Tradfftype3vstheta[jj],avg_Tradlabtype3vstheta[jj],avg_Tgasvstheta[jj],avg_fcollabvstheta[jj],avg_varexpfffvstheta[jj],avg_nfcolvstheta[jj],avg_kappadensityrealvstheta[jj],avg_kappadensityrealnofevstheta[jj],avg_kappasyrealvstheta[jj],avg_kappadcrealvstheta[jj],avg_kappaesrealvstheta[jj],avg_kappandensityrealvstheta[jj],avg_kappansyrealvstheta[jj],avg_kappandcrealvstheta[jj],avg_kappachiantirealvstheta[jj],avg_kappaffrealvstheta[jj],avg_kappabfrealvstheta[jj],avg_kappaferealvstheta[jj],avg_kappamolrealvstheta[jj],avg_kappahmopalrealvstheta[jj],avg_kappachiantiopalrealvstheta[jj],avg_kappaffeerealvstheta[jj],avg_rhovstheta[jj],avg_ugvstheta[jj],avg_Erfvstheta[jj],avg_bsqvstheta[jj],avg_vrvstheta[jj],avg_vzvstheta[jj],avg_vphivstheta[jj],avg_Brvstheta[jj],avg_Bzvstheta[jj],avg_Bphivstheta[jj]   ,h[iofr(100),jj,0],avg2_dh[jj],avg2_TradoTgasvstheta[jj],avg2_Tradfftype3vstheta[jj],avg2_Tradlabtype3vstheta[jj],avg2_Tgasvstheta[jj],avg2_fcollabvstheta[jj],avg2_varexpfffvstheta[jj],avg2_nfcolvstheta[jj],avg2_kappadensityrealvstheta[jj],avg2_kappadensityrealnofevstheta[jj],avg2_kappasyrealvstheta[jj],avg2_kappadcrealvstheta[jj],avg2_kappaesrealvstheta[jj],avg2_kappandensityrealvstheta[jj],avg2_kappansyrealvstheta[jj],avg2_kappandcrealvstheta[jj],avg2_kappachiantirealvstheta[jj],avg2_kappaffrealvstheta[jj],avg2_kappabfrealvstheta[jj],avg2_kappaferealvstheta[jj],avg2_kappamolrealvstheta[jj],avg2_kappahmopalrealvstheta[jj],avg2_kappachiantiopalrealvstheta[jj],avg2_kappaffeerealvstheta[jj],avg2_rhovstheta[jj],avg2_ugvstheta[jj],avg2_Erfvstheta[jj],avg2_bsqvstheta[jj],avg2_vrvstheta[jj],avg2_vzvstheta[jj],avg2_vphivstheta[jj],avg2_Brvstheta[jj],avg2_Bzvstheta[jj],avg2_Bphivstheta[jj]   ,avg2_eoutRADvstheta[jj],avg2_eoutRADisovstheta[jj],avg2_eoutRADperLeddvstheta[jj],avg2_eoutEMvstheta[jj],avg2_eoutEMisovstheta[jj],avg2_eoutEMperLeddvstheta[jj]) )
             f1.close()
         #
         # stuff vs. radius
@@ -34320,7 +34323,100 @@ def dcpaperplot1():
         #plt.show()
         plt.close()
     #
+    #
+    #########
+    # derived plots
+    xlabels=[r"$\theta$"]
+    xscales=['linear']
+    #
+    ylabels=["Beaming factor"]
+    yscales=['linear']
+    #
+    fignames=["beamingfactor.png"]
+    print("fignames")
+    print(np.shape(fignames))
+    #
+    factors=[1]
+    #
+    #
+    if 1==1:
+        fig, (ax1) = plt.subplots(1, 1)
+        plt.gcf().subplots_adjust(bottom=0.15)
+        #plt.clf()
+        plt.ioff()
+        plt.rc('text', usetex=False)
+        #plt.rc('font', family='serif')
+        ax1.set_ylabel(ylabels[0],fontsize=24)
+        ax1.set_xlabel(xlabels[0],fontsize=24)
+        for axis in ['top','bottom','left','right']:
+            ax1.spines[axis].set_linewidth(2)
+        #ax1.axhline(linewidth=4, color="black")
+        #ax1.axvline(linewidth=4, color="black")
+        #
+        # choose shift for normalization and theta
+        shift=34
+        #
+        # set correct theta
+        mythetajrad1h=jrad1h[1+shift]
+        mythetajrad2h=jrad2h[1+shift]
+        mythetajrad3h=jrad3h[1+shift]
+        mythetajrad5h=jrad5h[1+shift]
+        mythetajrad7h=jrad7h[1+shift]
+        mythetajrad8h=jrad8h[1+shift]
+        mythetajrad9h=jrad9h[1+shift]
+        mythetajrad10h=jrad10h[1+shift]
+        mythetajrad11h=jrad11h[1+shift]
+        mythetajrad13h=jrad13h[1+shift]
+        mythetajrad14h=jrad14h[1+shift]
+        mythetajrad15h=jrad15h[1+shift]
+        mythetajrad16h=jrad16h[1+shift]
+        mythetajrad17h=jrad17h[1+shift]
+        #mythetajrad18h=jrad18h[1+shift]
+        #
+        if 1==1:
 
+            sumtotal=np.sum(jrad1h[70]*
+            
+            fun1=np.copy(jrad1h[0]*0.0+)
+            fun2=np.copy(jrad2h[0]*0.0+1.0)
+            fun3=np.copy(jrad3h[0]*0.0+1.0)
+            fun5=np.copy(jrad5h[0]*0.0+1.0)
+            fun7=np.copy(jrad7h[0]*0.0+1.0)
+            fun8=np.copy(jrad8h[0]*0.0+1.0)
+            fun9=np.copy(jrad9h[0]*0.0+1.0)
+            fun10=np.copy(jrad10h[0]*0.0+1.0)
+            fun11=np.copy(jrad11h[0]*0.0+1.0)
+            fun13=np.copy(jrad13h[0]*0.0+1.0)
+            fun14=np.copy(jrad14h[0]*0.0+1.0)
+            fun15=np.copy(jrad15h[0]*0.0+1.0)
+            fun16=np.copy(jrad16h[0]*0.0+1.0)
+            fun17=np.copy(jrad17h[0]*0.0+1.0)
+            #fun18=np.copy(jrad18h[0]*0.0+1.0)
+        #
+        ax1.plot(mythetajrad1h,factors[ii]*jrad1h[ii]*fun1,color="black",label='M1',linewidth=2.0,linestyle='-')
+        ax1.plot(mythetajrad2h,factors[ii]*jrad2h[ii]*fun2,color="black",label='M2',linewidth=2.0,linestyle='--')
+        ax1.plot(mythetajrad3h,factors[ii]*jrad3h[ii]*fun3,color="black",label='M3',linewidth=2.0,linestyle='-.')
+        ax1.plot(mythetajrad5h,factors[ii]*jrad5h[ii]*fun5,color="gold",label='M5',linewidth=2.0,linestyle='--')
+        #ax1.plot(mythetajrad18h,factors[ii]*jrad18h[ii]*fun18,color="green",label='M6',linewidth=2.0,linestyle='--')
+        ax1.plot(mythetajrad7h,factors[ii]*jrad7h[ii]*fun7,color="red",label='M7',linewidth=2.0)
+        ax1.plot(mythetajrad8h,factors[ii]*jrad8h[ii]*fun8,color="green",label='M8',linewidth=2.0)
+        ax1.plot(mythetajrad9h,factors[ii]*jrad9h[ii]*fun9,color="red",label='M9',linewidth=2.0,linestyle='--')
+        ax1.plot(mythetajrad10h,factors[ii]*jrad10h[ii]*fun10,color="black",label='M10',linewidth=2.0,linestyle=':')
+        ax1.plot(mythetajrad11h,factors[ii]*jrad11h[ii]*fun11,color="blue",label='M11',linewidth=2.0,linestyle='--')
+        ax1.plot(mythetajrad13h,factors[ii]*jrad13h[ii]*fun13,color="brown",label='M13',linewidth=2.0)
+        ax1.plot(mythetajrad14h,factors[ii]*jrad14h[ii]*fun14,color="orange",label='M14',linewidth=2.0)
+        ax1.plot(mythetajrad17h,factors[ii]*jrad17h[ii]*fun17,color="blue",label='M14h',linewidth=2.0)
+        ax1.plot(mythetajrad15h,factors[ii]*jrad15h[ii]*fun15,color="purple",label='M15',linewidth=2.0)
+        ax1.plot(mythetajrad16h,factors[ii]*jrad16h[ii]*fun16,color="gold",label='M15h',linewidth=2.0)
+        ax1.set_xscale(xscales[0])
+        ax1.set_yscale(yscales[ii])
+        legend = ax1.legend(loc='upper right', shadow=True)
+        #plt.axis('tight',ax=ax1)
+        plt.savefig(fignames[ii])
+        #plt.show()
+        plt.close()
+    #
+    
 
 
 
