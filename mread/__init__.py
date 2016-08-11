@@ -593,15 +593,15 @@ avg_mybu1 = lambda : (avg_bu[1]*dxdxp[1,1] + avg_bu[2]*dxdxp[1,2])*np.sqrt(gvks1
 avg_mybu2 = lambda : (avg_bu[1]*dxdxp[2,1] + avg_bu[2]*dxdxp[2,2])*np.sqrt(gvks22())
 avg_mybu3 = lambda : (avg_bu[3]*dxdxp[3,3])*np.sqrt(gvks33())
         #
-avg_myauu0 = lambda : avg_absuu[0]*dxdxp[0,0]
+avg_myauu0 = lambda : (avg_absuu[0]*dxdxp[0,0])
 avg_myauu1 = lambda : (avg_absuu[1]*np.fabs(dxdxp[1,1]) + avg_absuu[2]*np.fabs(dxdxp[1,2]))*np.sqrt(np.fabs(gvks11()))/avg_myauu0()
 avg_myauu2 = lambda : (avg_absuu[1]*np.fabs(dxdxp[2,1]) + avg_absuu[2]*np.fabs(dxdxp[2,2]))*np.sqrt(np.fabs(gvks22()))/avg_myauu0()
 avg_myauu3 = lambda : (avg_absuu[3]*np.fabs(dxdxp[3,3]))*np.sqrt(np.fabs(gvks33()))/avg_myauu0()
 avg_myauurot = lambda : np.sqrt(avg_myauu2()**2+avg_myauu3()**2)
-avg_myauradu0 = lambda : avg_absuradu[0]*dxdxp[0,0]
+avg_myauradu0 = lambda : (avg_absuradu[0]*dxdxp[0,0])
 avg_myauradu1 = lambda : (avg_absuradu[1]*np.fabs(dxdxp[1,1]) + avg_absuradu[2]*np.fabs(dxdxp[1,2]))*np.sqrt(np.fabs(gvks11()))/avg_myauradu0()
 avg_myauradu2 = lambda : (avg_absuradu[1]*np.fabs(dxdxp[2,1]) + avg_absuradu[2]*np.fabs(dxdxp[2,2]))*np.sqrt(np.fabs(gvks22()))/avg_myauradu0()
-avg_myauradu3 = lambda : (avg_absuradu[3]*np.fabs(dxdxp[3,3])*np.sqrt(np.fabs(gvks33()))/avg_myauradu0()
+avg_myauradu3 = lambda : (avg_absuradu[3]*np.fabs(dxdxp[3,3]))*np.sqrt(np.fabs(gvks33()))/avg_myauradu0()
 avg_myauradurot = lambda : np.sqrt(avg_myauradu2()**2+avg_myauradu3()**2)
 #avg_myauurot = lambda : np.sqrt(avg_myauu2()**2+avg_myauu3()**2) # GODMARK
 avg_myaB1 = lambda : (avg_absB[1-1]*np.fabs(dxdxp[1,1]) + avg_absB[2-1]*np.fabs(dxdxp[1,2]))*np.sqrt(np.fabs(gvks11()))
@@ -609,7 +609,7 @@ avg_myaB2 = lambda : (avg_absB[1-1]*np.fabs(dxdxp[2,1]) + avg_absB[2-1]*np.fabs(
 avg_myaB3 = lambda : (avg_absB[3-1]*np.fabs(dxdxp[3,3]))*np.sqrt(np.fabs(gvks33()))
 avg_myabu1 = lambda : (avg_absbu[1]*np.fabs(dxdxp[1,1]) + avg_absbu[2]*np.fabs(dxdxp[1,2]))*np.sqrt(np.fabs(gvks11()))
 avg_myabu2 = lambda : (avg_absbu[1]*np.fabs(dxdxp[2,1]) + avg_absbu[2]*np.fabs(dxdxp[2,2]))*np.sqrt(np.fabs(gvks22()))
-avg_myabu3 = lambda : (avg_absbu[3]*np.fabs(dxdxp[3,3]))*np.sqrt(np.fabs(gvks33())
+avg_myabu3 = lambda : (avg_absbu[3]*np.fabs(dxdxp[3,3]))*np.sqrt(np.fabs(gvks33()))
 #
 #############################################
 myauu0 = lambda : (np.fabs(myuu0()))
