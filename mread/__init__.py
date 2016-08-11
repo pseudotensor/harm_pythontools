@@ -18682,7 +18682,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     etajinPAKE = prefactor*pjpake_mu1[:,iofr(rjetin)]/mdotfinavg
     etajinEN = prefactor*pjen_mu1[:,iofr(rjetin)]/mdotfinavg
     etajin = etajinEM + etajinMAKE
-    etaoutRAD=prefactor*edradthin[:,iofr(rradout)]/mdotfinavg # uses thin for out
+    etathinoutRAD=prefactor*edradthin[:,iofr(rradout)]/mdotfinavg # uses thin for out
+    etaoutRAD=prefactor*edrad[:,iofr(rradout)]/mdotfinavg # uses full rad for out
     #etajlocal = etaj*(mdotfinavg/mdotinrdiskoutfinavg)
     etamwinEM = prefactor*pjem_mumax1m[:,iofr(rjetin)]/mdotfinavg
     etamwinMAKE = prefactor*pjmake_mumax1m[:,iofr(rjetin)]/mdotfinavg
@@ -18727,6 +18728,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     etajinEN2 = prefactor*pjen_mu1[:,iofr(rjetin)]/mdotiniavg
     etajin2 = etajinEM2 + etajinMAKE2
     #
+    etathinoutRAD2=etathinoutRAD * (mdotfinavg/mdotiniavg)
     etaoutRAD2=etaoutRAD * (mdotfinavg/mdotiniavg)
     #etaj2local = etaj2*(mdotiniavg/mdotinrdiskoutiniavg)
     etamwinEM2 = prefactor*pjem_mumax1m[:,iofr(rjetin)]/mdotiniavg
@@ -18771,7 +18773,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     letajinPAKE = prefactor*ljpake_mu1[:,iofr(rjetin)]/mdotfinavg
     letajinEN = prefactor*ljen_mu1[:,iofr(rjetin)]/mdotfinavg
     letajin = letajinEM + letajinMAKE
-    letaoutRAD=prefactor*ldradthin[:,iofr(rjetin)]/mdotfinavg # thin
+    letathinoutRAD=prefactor*ldradthin[:,iofr(rjetin)]/mdotfinavg # thin
+    letaoutRAD=prefactor*ldrad[:,iofr(rjetin)]/mdotfinavg # full
     #letajlocal = letaj*(mdotfinavg/mdotinrdiskoutfinavg)
     letamwinEM = prefactor*ljem_mumax1m[:,iofr(rjetin)]/mdotfinavg
     letamwinMAKE = prefactor*ljmake_mumax1m[:,iofr(rjetin)]/mdotfinavg
@@ -18937,6 +18940,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
     if dotavg:
         etaoutRAD_avg=timeavg(etaoutRAD,ts,fti,ftf)
+        etathinoutRAD_avg=timeavg(etathinoutRAD,ts,fti,ftf)
         etabhRAD_avg=timeavg(etabhRAD,ts,fti,ftf)
         #
         etabh_avg = timeavg(etabh,ts,fti,ftf)
@@ -18985,6 +18989,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         letabhRAD_avg=timeavg(letabhRAD,ts,fti,ftf)
         letaoutRAD_avg=timeavg(letaoutRAD,ts,fti,ftf)
+        letathinoutRAD_avg=timeavg(letathinoutRAD,ts,fti,ftf)
         #
         letabh_avg = timeavg(letabh,ts,fti,ftf)
         letabhEM_avg = timeavg(letabhEM,ts,fti,ftf)
@@ -19043,6 +19048,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             etabhRAD2_avg=timeavg(etabhRAD2,ts,iti,itf)
             etaj2_avg = timeavg(etaj2,ts,iti,itf)
             etaoutRAD2_avg=timeavg(etaoutRAD2,ts,iti,itf)
+            etathinoutRAD2_avg=timeavg(etathinoutRAD2,ts,iti,itf)
             #etaj2local_avg = timeavg(etaj2local,ts,iti,itf)
             etajEM2_avg = timeavg(etajEM2,ts,iti,itf)
             etajMAKE2_avg = timeavg(etajMAKE2,ts,iti,itf)
@@ -19151,6 +19157,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     ljinEN_avg=letajinEN_avg/prefactor
     #
     loutRAD_avg=letaoutRAD_avg/prefactor
+    lthinoutRAD_avg=letathinoutRAD_avg/prefactor
     lmwin_avg=letamwin_avg/prefactor
     #lmwinlocal_avg=letamwinlocal_avg/prefactor
     lmwinEM_avg=letamwinEM_avg/prefactor
@@ -20106,7 +20113,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                     if showrad==0: # for now don't show this -- too much on plot
                         ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etamwout2_avg,color=(fc,fc,1))
             if showrad:
-                ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etaoutRAD_avg,color=(fc,1,1))
+                ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etathinoutRAD_avg,color=(fc,1,1))
                 ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+signetaradtoshow*etabhRAD_avg,color='m') #(fc,0.5,.7))
         #
         ax.plot(ts,etabh,clr,label=r'$\eta_{\rm H}$')
@@ -20115,7 +20122,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             if showrad==0: # for now don't show this -- too much on plot
                 ax.plot(ts,etamwout,'b-.',label=r'$\eta_{\rm mw,o}$')
         if showrad:
-            ax.plot(ts,etaoutRAD,'c-.',label=r'$\eta_{\rm rad,o}$')
+            ax.plot(ts,etathinoutRAD,'c-.',label=r'$\eta_{\rm rad,o}$')
             ax.plot(ts,signetaradtoshow*etabhRAD,'m--',label=r'$\eta_{\rm rad,H}$')
 # http://matplotlib.org/examples/pylab_examples/line_styles.html
         if findex != None:
@@ -20126,7 +20133,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                     if showrad==0: # for now don't show this -- too much on plot
                         ax.plot(ts[findex],etamwout[findex],'bv')
                 if showrad:
-                    ax.plot(ts[findex],etaoutRAD[findex],'cs')
+                    ax.plot(ts[findex],etathinoutRAD[findex],'cs')
                     ax.plot(ts[findex],signetaradtoshow*etabhRAD[findex],'mv')
             else:
                 for fi in findex:
@@ -20136,7 +20143,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                         if showrad==0: # for now don't show this -- too much on plot
                             ax.plot(ts[fi],etamwout[fi],'bv')#,label=r'$\dot M$')
                     if showrad:
-                        ax.plot(ts[fi],etaoutRAD[fi],'cs')#,label=r'$\dot M$')
+                        ax.plot(ts[fi],etathinoutRAD[fi],'cs')#,label=r'$\dot M$')
                         ax.plot(ts[fi],signetaradtoshow*etabhRAD[fi],'cv')#,label=r'$\dot M$')
         #
         ax.set_xlabel(r'$t\;[r_g/c]$',fontsize=16)
@@ -20298,7 +20305,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         print( "edradoutaltiniavg=%g " % (edradoutaltiniavg/normfactor)) ; sys.stdout.flush()
         print( "ldradoutiniavg/eradoutiniavg=%g " % (ldradoutiniavg/edradoutiniavg)) ; sys.stdout.flush()
         print( "Eff in percent, so 100% is up to Mdot level." ) ; sys.stdout.flush()
-        print( "etabhRAD_avg=%g etaoutRAD_avg=%g " % (etabhRAD_avg,etaoutRAD_avg)) ; sys.stdout.flush()
+        print( "etabhRAD_avg=%g etaoutRAD_avg=%g  etathinoutRAD_avg=%g " % (etabhRAD_avg,etaoutRAD_avg,etathinoutRAD_avg)) ; sys.stdout.flush()
 
         #
         #
@@ -20406,11 +20413,11 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             print( "VLatex6: %s         & %g               & %g                           & %g                             & %g                & %g                   & %g                             & %g                   & %g                  & %g                 \\\\ %% %s" % (truemodelname, roundto3foreta(etabh_avg), roundto3foreta(etabhEM_avg), roundto3foreta(etabhMAKE_avg), roundto3foreta(etaj_avg), roundto3foreta(etajEM_avg), roundto3foreta(etajMAKE_avg), roundto3foreta(etamwout_avg), roundto3foreta(etawout_avg), roundto3foreta(etant), modelname ) )
         else:
             # added PAKE and EN to BH term only:
-            print( "HLatex6: ModelName & $\\eta_{\\rm{}H}$ & $\\eta^{\\rm{}EM}_{\\rm{}H}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}H}$ & $\\eta^{\\rm{}PAKE}_{\\rm{}H}$ & $\\eta^{\\rm{}EN}_{\\rm{}H}$ & $\\eta^{\\rm{}RAD}_{\\rm{}H}$ & $\\eta_{\\rm{}j}$ & $\\eta^{\\rm{}EM}_j$ & $\\eta^{\\rm{}MAKE}_{\\rm{}j}$ & $\\eta^{\\rm{}RAD}_{\\rm{}o}$ & $\\eta_{\\rm{}mw,o}$ & $\\eta_{\\rm{}w,o}$ & $\\eta_{\\rm{}NT}$ \\\\" )
-            print( "VLatex6: %s         & %g               & %g                           & %g                             & %g                             & %g                           & %g                & %g                   & %g                             & %g                   & %g                  & %g                   & %g                  & %g                 \\\\ %% %s" % (truemodelname, roundto3foreta(etabh_avg), roundto3foreta(etabhEM_avg), roundto3foreta(etabhMAKE_avg), roundto3foreta(etabhPAKE_avg), roundto3foreta(etabhEN_avg), roundto3foreta(etabhRAD_avg), roundto3foreta(etaj_avg), roundto3foreta(etajEM_avg), roundto3foreta(etajMAKE_avg), roundto3foreta(etaoutRAD_avg), roundto3foreta(etamwout_avg), roundto3foreta(etawout_avg), roundto3foreta(etant), modelname ) )
+            print( "HLatex6: ModelName & $\\eta_{\\rm{}H}$ & $\\eta^{\\rm{}EM}_{\\rm{}H}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}H}$ & $\\eta^{\\rm{}PAKE}_{\\rm{}H}$ & $\\eta^{\\rm{}EN}_{\\rm{}H}$ & $\\eta^{\\rm{}RAD}_{\\rm{}H}$ & $\\eta_{\\rm{}j}$ & $\\eta^{\\rm{}EM}_j$ & $\\eta^{\\rm{}MAKE}_{\\rm{}j}$ & $\\eta^{\\rm{}RAD}_{\\rm{},thin,o}$ & $\\eta^{\\rm{}RAD}_{\\rm{}o}$ & $\\eta_{\\rm{}mw,o}$ & $\\eta_{\\rm{}w,o}$ & $\\eta_{\\rm{}NT}$ \\\\" )
+            print( "VLatex6: %s         & %g               & %g                           & %g                             & %g                             & %g                           & %g                & %g                   & %g                             & %g                   & %g                  & %g                   & %g                  & %g                 & %g                 \\\\ %% %s" % (truemodelname, roundto3foreta(etabh_avg), roundto3foreta(etabhEM_avg), roundto3foreta(etabhMAKE_avg), roundto3foreta(etabhPAKE_avg), roundto3foreta(etabhEN_avg), roundto3foreta(etabhRAD_avg), roundto3foreta(etaj_avg), roundto3foreta(etajEM_avg), roundto3foreta(etajMAKE_avg), roundto3foreta(etaoutRAD_avg), roundto3foreta(etathinoutRAD_avg), roundto3foreta(etamwout_avg), roundto3foreta(etawout_avg), roundto3foreta(etant), modelname ) )
         #
             # added PAKE and EN to BH term only:
-            print( "HLatex66: ModelName & $\\eta_{\\rm{}H}$ & $\\eta^{\\rm{}EM}_{\\rm{}H}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}H}$ & $\\eta^{\\rm{}PAKE}_{\\rm{}H}$ & $\\eta^{\\rm{}EN}_{\\rm{}H}$ & $\\eta^{\\rm{}RAD}_{\\rm{}H}$ & $\\eta_{\\rm{}j,in}$ & $\\eta^{\\rm{}EM}_{\rm j,in}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}j,in}$ & $\\eta^{\\rm{}RAD}_{\\rm{}o}$ & $\\eta_{\\rm{}mw,o}$ & $\\eta_{\\rm{}w,o}$ & $\\eta_{\\rm{}NT}$ \\\\" )
+            print( "HLatex66: ModelName & $\\eta_{\\rm{}H}$ & $\\eta^{\\rm{}EM}_{\\rm{}H}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}H}$ & $\\eta^{\\rm{}PAKE}_{\\rm{}H}$ & $\\eta^{\\rm{}EN}_{\\rm{}H}$ & $\\eta^{\\rm{}RAD}_{\\rm{}H}$ & $\\eta_{\\rm{}j,in}$ & $\\eta^{\\rm{}EM}_{\rm{}j,in}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}j,in}$ & $\\eta^{\\rm{}RAD}_{\\rm{}o}$ & $\\eta_{\\rm{}mw,o}$ & $\\eta_{\\rm{}w,o}$ & $\\eta_{\\rm{}NT}$ \\\\" )
             print( "VLatex66: %s         & %g               & %g                           & %g                             & %g                             & %g                           & %g                & %g                   & %g                             & %g                   & %g                  & %g                   & %g                  & %g                 \\\\ %% %s" % (truemodelname, roundto3foreta(etabh_avg), roundto3foreta(etabhEM_avg), roundto3foreta(etabhMAKE_avg), roundto3foreta(etabhPAKE_avg), roundto3foreta(etabhEN_avg), roundto3foreta(etabhRAD_avg), roundto3foreta(etajin_avg), roundto3foreta(etajinEM_avg), roundto3foreta(etajinMAKE_avg), roundto3foreta(etaoutRAD_avg), roundto3foreta(etamwout_avg), roundto3foreta(etawout_avg), roundto3foreta(etant), modelname ) )
         #
         # 12:
@@ -22016,21 +22023,21 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         #columns=21
         favg2 = open('datavst2.txt', 'w')
-        favg2.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("tici","ts"," etabhEM","etabhMAKE","etabhRAD","etabh","etajEM","etajMAKE","etaj","etamwinEM","etamwinMAKE","etamwin","etamwoutEM","etamwoutMAKE","etamwout","etawinEM","etawinMAKE","etawin","etawoutEM","etawoutMAKE","etawout","etaoutRAD"  ) )
+        favg2.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("tici","ts"," etabhEM","etabhMAKE","etabhRAD","etabh","etajEM","etajMAKE","etaj","etamwinEM","etamwinMAKE","etamwin","etamwoutEM","etamwoutMAKE","etamwout","etawinEM","etawinMAKE","etawin","etawoutEM","etawoutMAKE","etawout","etaoutRAD","etathinoutRAD"  ) )
         for tic in ts:
             tici=np.where(ts==tic)[0]
             #
-            favg2.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], etabhEM[tici],etabhMAKE[tici],etabhRAD[tici],etabh[tici],etajEM[tici],etajMAKE[tici],etaj[tici],etamwinEM[tici],etamwinMAKE[tici],etamwin[tici],etamwoutEM[tici],etamwoutMAKE[tici],etamwout[tici],etawinEM[tici],etawinMAKE[tici],etawin[tici],etawoutEM[tici],etawoutMAKE[tici],etawout[tici],etaoutRAD[tici] ) )
+            favg2.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], etabhEM[tici],etabhMAKE[tici],etabhRAD[tici],etabh[tici],etajEM[tici],etajMAKE[tici],etaj[tici],etamwinEM[tici],etamwinMAKE[tici],etamwin[tici],etamwoutEM[tici],etamwoutMAKE[tici],etamwout[tici],etawinEM[tici],etawinMAKE[tici],etawin[tici],etawoutEM[tici],etawoutMAKE[tici],etawout[tici],etaoutRAD[tici],etathinoutRAD[tici] ) )
             #
         favg2.close()
         #
         #columns=21
         favg3 = open('datavst3.txt', 'w')
-        favg3.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("tici","ts"," letabhEM","letabhMAKE","letabhRAD","letabh","letajEM","letajMAKE","letaj","letamwinEM","letamwinMAKE","letamwin","letamwoutEM","letamwoutMAKE","letamwout","letawinEM","letawinMAKE","letawin","letawoutEM","letawoutMAKE","letawout","letaoutRAD"  ) )
+        favg3.write("#%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n" % ("tici","ts"," letabhEM","letabhMAKE","letabhRAD","letabh","letajEM","letajMAKE","letaj","letamwinEM","letamwinMAKE","letamwin","letamwoutEM","letamwoutMAKE","letamwout","letawinEM","letawinMAKE","letawin","letawoutEM","letawoutMAKE","letawout","letaoutRAD","letathinoutRAD"  ) )
         for tic in ts:
             tici=np.where(ts==tic)[0]
             #
-            favg3.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], letabhEM[tici],letabhMAKE[tici],letabhRAD[tici],letabh[tici],letajEM[tici],letajMAKE[tici],letaj[tici],letamwinEM[tici],letamwinMAKE[tici],letamwin[tici],letamwoutEM[tici],letamwoutMAKE[tici],letamwout[tici],letawinEM[tici],letawinMAKE[tici],letawin[tici],letawoutEM[tici],letawoutMAKE[tici],letawout[tici],letaoutRAD[tici]  ) )
+            favg3.write("%d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tici,ts[tici], letabhEM[tici],letabhMAKE[tici],letabhRAD[tici],letabh[tici],letajEM[tici],letajMAKE[tici],letaj[tici],letamwinEM[tici],letamwinMAKE[tici],letamwin[tici],letamwoutEM[tici],letamwoutMAKE[tici],letamwout[tici],letawinEM[tici],letawinMAKE[tici],letawin[tici],letawoutEM[tici],letawoutMAKE[tici],letawout[tici],letaoutRAD[tici],letathinoutRAD[tici]  ) )
             #
         favg3.close()
         #
