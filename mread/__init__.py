@@ -34035,18 +34035,18 @@ def dcpaperplot1():
     xlabels=[r"$r[r_g]$"]
     xscales=['log']
     #
-    ylabels=["ii",r"$r$",r"$\hat{T}_\gamma/T_{\rm gas}$",r"$\hat{T}_\gamma[\rm K]$",r"$T_\gamma[\rm K]$",r"$T_{\rm gas}[\rm K]$",r"$f_{\rm col}$",r"$\exp{(-\xi)}$",r"$n_{\rm col}$",r"$\kappa_{\rm tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm tot-Fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm es}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,sy}$/\kappa_{\rm ff}",r"$\kappa_{\rm n,dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm chianti}/\kappa_{\rm ff}$",r"$\kappa_{\rm ff}$",r"$\kappa_{\rm bf}/\kappa_{\rm ff}$",r"$\kappa_{\rm fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm mol}/\kappa_{\rm ff}$",r"$\kappa_{\rm hmopal}/\kappa_{\rm ff}$",r"\kappa_{\rm chiantiopal}/\kappa_{\rm ff}$",r"\kappa_{\rm ff-ee}/\kappa_{\rm ff}$",r"$\rho$",r"$u_g/rho$",r"$u_\gamma/\rho$",r"$b^2/\rho$",r"$v_r$",r"$v_\phi$",r"$B_r/\sqrt{\rho}$",r"$B_z/\sqrt{\rho}$",r"$B_\phi/\sqrt{\rho}$"]
+    ylabels=["ii",r"$r$",r"$\hat{T}_\gamma/T_{\rm gas}$",r"$\hat{T}_\gamma[\rm K]$",r"$T_\gamma[\rm K]$",r"$T_{\rm gas}[\rm K]$",r"$f_{\rm col}$",r"$\exp{(-\xi)}$",r"$n_{\rm col}$",r"$\kappa_{\rm tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm tot-Fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm es}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,sy}$/\kappa_{\rm ff}",r"$\kappa_{\rm n,dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm chianti}/\kappa_{\rm ff}$",r"$\kappa_{\rm ff}$",r"$\kappa_{\rm bf}/\kappa_{\rm ff}$",r"$\kappa_{\rm fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm mol}/\kappa_{\rm ff}$",r"$\kappa_{\rm hmopal}/\kappa_{\rm ff}$",r"\kappa_{\rm chiantiopal}/\kappa_{\rm ff}$",r"\kappa_{\rm ff-ee}/\kappa_{\rm ff}$",r"$\rho$",r"$u_g/rho$",r"$u_\gamma/\rho$",r"$b^2/\rho$",r"$v_r$",r"$v_z$",r"$v_\phi$",r"$B_r/\sqrt{\rho}$",r"$B_z/\sqrt{\rho}$",r"$B_\phi/\sqrt{\rho}$"]
     print("ylabels")
     print(np.shape(ylabels))
-    yscales=['linear','log','linear','log','log','log','log','linear','linear','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log']
+    yscales=['linear','log','linear','log','log','log','log','linear','linear','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log']
     print("yscales")
     print(np.shape(yscales))
     #
-    fignames=['ii.png','r.png','TradoTgasvsr.png','Tradffvsr.png','Tradlabvsr.png','Tgasvsr.png','fcolvsr.png','varexpfvsr.png','nfcolvsr.png','kappadensityvsr.png','kappadensitynofevsr.png','kappasyvsr.png','kappadcvsr.png','kappaesvsr.png','kappandensityvsr.png','kappansyvsr.png','kappandcvsr.png','kappachiantivsr.png','kappaffvsr.png','kappabfvsr.png','kappafevsr.png','kappamolvsr.png','kappahmopalvsr.png','kappachiantiopalvsr.png','kappaffeevsr.png',"rhovsr.png","ugvsr.png","Erfvsr.png","bsqvsr.png","vrvsr.png","vphivsr.png","Brvsr.png","Bzvsr.png","Bphivsr.png"]
+    fignames=['ii.png','r.png','TradoTgasvsr.png','Tradffvsr.png','Tradlabvsr.png','Tgasvsr.png','fcolvsr.png','varexpfvsr.png','nfcolvsr.png','kappadensityvsr.png','kappadensitynofevsr.png','kappasyvsr.png','kappadcvsr.png','kappaesvsr.png','kappandensityvsr.png','kappansyvsr.png','kappandcvsr.png','kappachiantivsr.png','kappaffvsr.png','kappabfvsr.png','kappafevsr.png','kappamolvsr.png','kappahmopalvsr.png','kappachiantiopalvsr.png','kappaffeevsr.png',"rhovsr.png","ugvsr.png","Erfvsr.png","bsqvsr.png","vrvsr.png","vzvsr.png","vphivsr.png","Brvsr.png","Bzvsr.png","Bphivsr.png"]
     print("fignames")
     print(np.shape(fignames))
     #
-    factors=[1,1,1,TEMPBAR,TEMPBAR,TEMPBAR,1,1,1 ,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 ,1,1,1,1,1,1,1,1,1]
+    factors=[1,1,1,TEMPBAR,TEMPBAR,TEMPBAR,1,1,1 ,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 ,1,1,1,1,1,1,1,1,1,1]
     print("factors")
     print(np.shape(factors))
     #
@@ -34101,7 +34101,7 @@ def dcpaperplot1():
             fun16=np.copy(1.0/jrad16r[25])
             fun17=np.copy(1.0/jrad17r[25])
             #fun18=np.copy(1.0/jrad18r[25])
-        elif ii==31 or ii==32 or ii==33:
+        elif ii==32 or ii==33 or ii==34:
             # normalize B by sqrt(rho)
             fun1=np.copy(1.0/np.sqrt(jrad1r[25]))
             fun2=np.copy(1.0/np.sqrt(jrad2r[25]))
@@ -34166,18 +34166,18 @@ def dcpaperplot1():
     xlabels=[r"$\theta$"]
     xscales=['linear']
     #
-    ylabels=["jj",r"\theta",r"$\hat{T}_\gamma/T_{\rm gas}$",r"$\hat{T}_\gamma[\rm K]$",r"$T_\gamma[\rm K]$",r"$T_{\rm gas}[\rm K]$",r"$f_{\rm col}$",r"$\exp{(-\xi)}$",r"$n_{\rm col}$",r"$\kappa_{\rm tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm tot-Fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm es}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm chianti}/\kappa_{\rm ff}$",r"$\kappa_{\rm ff}$",r"$\kappa_{\rm bf}/\kappa_{\rm ff}$",r"$\kappa_{\rm fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm mol}/\kappa_{\rm ff}$",r"$\kappa_{\rm hmopal}/\kappa_{\rm ff}$",r"\kappa_{\rm chiantiopal}/\kappa_{\rm ff}$",r"\kappa_{\rm ff-ee}/\kappa_{\rm ff}$",r"$\rho$",r"$u_g/rho$",r"$u_\gamma/\rho$",r"$b^2/\rho$",r"$v_r$",r"$v_\phi$",r"$B_r/\sqrt{\rho}$",r"$B_z/\sqrt{\rho}$",r"$B_\phi/\sqrt{\rho}$"  ,r"\theta",r"$\hat{T}_\gamma/T_{\rm gas}$",r"$\hat{T}_\gamma[\rm K]$",r"$T_\gamma[\rm K]$",r"$T_{\rm gas}[\rm K]$",r"$f_{\rm col}$",r"$\exp{(-\xi)}$",r"$n_{\rm col}$",r"$\kappa_{\rm tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm tot-Fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm es}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm chianti}/\kappa_{\rm ff}$",r"$\kappa_{\rm ff}$",r"$\kappa_{\rm bf}/\kappa_{\rm ff}$",r"$\kappa_{\rm fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm mol}/\kappa_{\rm ff}$",r"$\kappa_{\rm hmopal}/\kappa_{\rm ff}$",r"\kappa_{\rm chiantiopal}/\kappa_{\rm ff}$",r"\kappa_{\rm ff-ee}/\kappa_{\rm ff}$",r"$\rho$",r"$u_g/\rho$",r"$u_\gamma/\rho$",r"$b^2/\rho$",r"$v_r$",r"$v_\phi$",r"$B_r/\sqrt{\rho}$",r"$B_z/\sqrt{\rho}$",r"$B_\phi/\sqrt{\rho}$"    ,"eoutRADvstheta","eoutRADisovstheta","eoutRADperLeddvstheta","eoutEMvstheta","eoutEMisovstheta","eoutEMperLeddvstheta"]
+    ylabels=["jj",r"\theta",r"$\hat{T}_\gamma/T_{\rm gas}$",r"$\hat{T}_\gamma[\rm K]$",r"$T_\gamma[\rm K]$",r"$T_{\rm gas}[\rm K]$",r"$f_{\rm col}$",r"$\exp{(-\xi)}$",r"$n_{\rm col}$",r"$\kappa_{\rm tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm tot-Fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm es}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm chianti}/\kappa_{\rm ff}$",r"$\kappa_{\rm ff}$",r"$\kappa_{\rm bf}/\kappa_{\rm ff}$",r"$\kappa_{\rm fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm mol}/\kappa_{\rm ff}$",r"$\kappa_{\rm hmopal}/\kappa_{\rm ff}$",r"\kappa_{\rm chiantiopal}/\kappa_{\rm ff}$",r"\kappa_{\rm ff-ee}/\kappa_{\rm ff}$",r"$\rho$",r"$u_g/rho$",r"$u_\gamma/\rho$",r"$b^2/\rho$",r"$v_r$",r"$v_z$",r"$v_\phi$",r"$B_r/\sqrt{\rho}$",r"$B_z/\sqrt{\rho}$",r"$B_\phi/\sqrt{\rho}$"  ,r"\theta",r"$\hat{T}_\gamma/T_{\rm gas}$",r"$\hat{T}_\gamma[\rm K]$",r"$T_\gamma[\rm K]$",r"$T_{\rm gas}[\rm K]$",r"$f_{\rm col}$",r"$\exp{(-\xi)}$",r"$n_{\rm col}$",r"$\kappa_{\rm tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm tot-Fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm es}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm chianti}/\kappa_{\rm ff}$",r"$\kappa_{\rm ff}$",r"$\kappa_{\rm bf}/\kappa_{\rm ff}$",r"$\kappa_{\rm fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm mol}/\kappa_{\rm ff}$",r"$\kappa_{\rm hmopal}/\kappa_{\rm ff}$",r"\kappa_{\rm chiantiopal}/\kappa_{\rm ff}$",r"\kappa_{\rm ff-ee}/\kappa_{\rm ff}$",r"$\rho$",r"$u_g/\rho$",r"$u_\gamma/\rho$",r"$b^2/\rho$",r"$v_r$",r"$v_z$",r"$v_\phi$",r"$B_r/\sqrt{\rho}$",r"$B_z/\sqrt{\rho}$",r"$B_\phi/\sqrt{\rho}$"    ,"eoutRADvstheta","eoutRADisovstheta","eoutRADperLeddvstheta","eoutEMvstheta","eoutEMisovstheta","eoutEMperLeddvstheta"]
     print("ylabels")
     print(np.shape(ylabels))
-    yscales=['linear'  ,'linear','linear','log','log','log','log','linear','linear','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log'    ,'linear','linear','log','log','log','log','linear','linear','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log'   ,'log','log','log','log','log','log']
+    yscales=['linear'  ,'linear','linear','log','log','log','log','linear','linear','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log'    ,'linear','linear','log','log','log','log','linear','linear','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log'   ,'log','log','log','log','log','log','log']
     print("yscales")
     print(np.shape(yscales))
     #
-    fignames=['ii.png'  ,'theta.png','TradoTgasvstheta.png','Tradffvstheta.png','Tradlabvstheta.png','Tgasvstheta.png','fcolvstheta.png','varexpfvstheta.png','nfcolvstheta.png','kappadensityvstheta.png','kappadensitynofevstheta.png','kappasyvstheta.png','kappadcvstheta.png','kappaesvstheta.png','kappandensityvstheta.png','kappansyvstheta.png','kappandcvstheta.png','kappachiantivstheta.png','kappaffvstheta.png','kappabfvstheta.png','kappafevstheta.png','kappamolvstheta.png','kappahmopalvstheta.png','kappachiantiopalvstheta.png','kappaffeevstheta.png',"rhovstheta.png","ugvstheta.png","Erfvstheta.png","bsqvstheta.png","vrvstheta.png","vphivstheta.png","Brvstheta.png","Bzvstheta.png","Bphivstheta.png"    ,'theta2.png','TradoTgasvstheta2.png','Tradffvstheta2.png','Tradlabvstheta2.png','Tgasvstheta2.png','fcolvstheta2.png','varexpfvstheta2.png','nfcolvstheta2.png','kappadensityvstheta2.png','kappadensitynofevstheta2.png','kappasyvstheta2.png','kappadcvstheta2.png','kappaesvstheta2.png','kappandensityvstheta2.png','kappansyvstheta2.png','kappandcvstheta2.png','kappachiantivstheta2.png','kappaffvstheta2.png','kappabfvstheta2.png','kappafevstheta2.png','kappamolvstheta2.png','kappahmopalvstheta2.png','kappachiantiopalvstheta2.png','kappaffeevstheta2.png',"rhovstheta2.png","ugvstheta2.png","Erfvstheta2.png","bsqvstheta2.png","vrvstheta2.png","vphivstheta2.png","Brvstheta2.png","Bzvstheta2.png","Bphivstheta2.png"    ,"eoutRADvstheta.png","eoutRADisovstheta.png","eoutRADperLeddvstheta.png","eoutEMvstheta.png","eoutEMisovstheta.png","eoutEMperLeddvstheta.png"]
+    fignames=['ii.png'  ,'theta.png','TradoTgasvstheta.png','Tradffvstheta.png','Tradlabvstheta.png','Tgasvstheta.png','fcolvstheta.png','varexpfvstheta.png','nfcolvstheta.png','kappadensityvstheta.png','kappadensitynofevstheta.png','kappasyvstheta.png','kappadcvstheta.png','kappaesvstheta.png','kappandensityvstheta.png','kappansyvstheta.png','kappandcvstheta.png','kappachiantivstheta.png','kappaffvstheta.png','kappabfvstheta.png','kappafevstheta.png','kappamolvstheta.png','kappahmopalvstheta.png','kappachiantiopalvstheta.png','kappaffeevstheta.png',"rhovstheta.png","ugvstheta.png","Erfvstheta.png","bsqvstheta.png","vrvstheta.png","vzvstheta.png","vphivstheta.png","Brvstheta.png","Bzvstheta.png","Bphivstheta.png"    ,'theta2.png','TradoTgasvstheta2.png','Tradffvstheta2.png','Tradlabvstheta2.png','Tgasvstheta2.png','fcolvstheta2.png','varexpfvstheta2.png','nfcolvstheta2.png','kappadensityvstheta2.png','kappadensitynofevstheta2.png','kappasyvstheta2.png','kappadcvstheta2.png','kappaesvstheta2.png','kappandensityvstheta2.png','kappansyvstheta2.png','kappandcvstheta2.png','kappachiantivstheta2.png','kappaffvstheta2.png','kappabfvstheta2.png','kappafevstheta2.png','kappamolvstheta2.png','kappahmopalvstheta2.png','kappachiantiopalvstheta2.png','kappaffeevstheta2.png',"rhovstheta2.png","ugvstheta2.png","Erfvstheta2.png","bsqvstheta2.png","vrvstheta2.png","vzvstheta2.png","vphivstheta2.png","Brvstheta2.png","Bzvstheta2.png","Bphivstheta2.png"    ,"eoutRADvstheta.png","eoutRADisovstheta.png","eoutRADperLeddvstheta.png","eoutEMvstheta.png","eoutEMisovstheta.png","eoutEMperLeddvstheta.png"]
     print("fignames")
     print(np.shape(fignames))
     #
-    factors=[1  ,1,1,TEMPBAR,TEMPBAR,TEMPBAR,1,1,1 ,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 ,1,1,1,1,1,1,1,1,1   ,1,1,TEMPBAR,TEMPBAR,TEMPBAR,1,1,1 ,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 ,1,1,1,1,1,1,1,1,1   ,1,1,1,1,1,1] # last 6 already converted to desired units
+    factors=[1  ,1,1,TEMPBAR,TEMPBAR,TEMPBAR,1,1,1 ,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 ,1,1,1,1,1,1,1,1,1,1   ,1,1,TEMPBAR,TEMPBAR,TEMPBAR,1,1,1 ,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 ,1,1,1,1,1,1,1,1,1,1   ,1,1,1,1,1,1] # last 6 already converted to desired units
     print("factors")
     print(np.shape(factors))
     #
@@ -34201,7 +34201,7 @@ def dcpaperplot1():
         if ii<=34:
             shift=0
         else:
-            shift=33
+            shift=34
         #
         # set correct theta
         mythetajrad1h=jrad1h[1+shift]
@@ -34255,7 +34255,7 @@ def dcpaperplot1():
             fun16=np.copy(jrad16h[0]*0.0+1.0/jrad16h[25+shift][jrad16h[0,-1]/2])
             fun17=np.copy(jrad17h[0]*0.0+1.0/jrad17h[25+shift][jrad17h[0,-1]/2])
             #fun18=np.copy(jrad18h[0]*0.0+1.0/jrad18h[25+shift][jrad18h[0,-1]/2])
-        elif (ii==31+shift or ii==32+shift or ii==33+shift):
+        elif (ii==32+shift or ii==33+shift or ii==34+shift):
             # normalize B by sqrt(rho) at equator
             fun1 =np.copy(jrad1h[0]*0.0+1.0/np.sqrt(jrad1h[25+shift][jrad1h[0,-1]/2]))
             fun2 =np.copy(jrad2h[0]*0.0+1.0/np.sqrt(jrad2h[25+shift][jrad2h[0,-1]/2]))
