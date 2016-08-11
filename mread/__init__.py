@@ -23254,7 +23254,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     #
     #
     #
-    if dolatex>0 or dopowervsmplots==1 or dopowervslplots==1 or dopowervsnplots==1:
+    if dolatex>0:# or dopowervsmplots==1 or dopowervslplots==1 or dopowervsnplots==1:
         ######################################################################################
         # Get full GR vr so can obtain effective alpha (below replaced by 1.0 so can recover)
         # NOTEMARK: sign of v_\phi can be negative for high enough negative a/M and thick disks.
