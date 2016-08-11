@@ -34375,9 +34375,9 @@ def dcpaperplot1():
         #
         if 1==1:
 
-            sumtotal=np.sum(jrad1h[70]*
+#            sumtotal=np.sum(jrad1h[70]*
             
-            fun1=np.copy(jrad1h[0]*0.0+)
+ #           fun1=np.copy(jrad1h[0]*0.0+)
             fun2=np.copy(jrad2h[0]*0.0+1.0)
             fun3=np.copy(jrad3h[0]*0.0+1.0)
             fun5=np.copy(jrad5h[0]*0.0+1.0)
