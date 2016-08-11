@@ -2104,7 +2104,7 @@ def assignavg2dvars(avgmem):
         avg_absEhaturadu=avgmem[i:i+n,:,:,None];i+=n
         avg_Ehatuu=avgmem[i:i+n,:,:,None];i+=n
         avg_absEhatuu=avgmem[i:i+n,:,:,None];i+=n
-        avg_Ehat=avgmem[i:,:,None];i+=1 #i=1
+        avg_Ehat=avgmem[i,:,:,None];i+=1 #i=1
         #
     # number of full 2D quantities
     nqtyavg=i
