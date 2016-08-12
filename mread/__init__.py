@@ -34192,18 +34192,18 @@ def dcpaperplot1():
         xlabels=[r"$\theta$"]
         xscales=['linear']
         #
-        ylabels=["jj",r"\theta",r"d\theta",r"$\hat{T}_\gamma/T_{\rm gas}$",r"$\hat{T}_\gamma[\rm K]$",r"$T_\gamma[\rm K]$",r"$T_{\rm gas}[\rm K]$",r"$f_{\rm col}$",r"$\exp{(-\xi)}$",r"$n_{\rm col}$",r"$\kappa_{\rm tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm tot-Fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm es}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm chianti}/\kappa_{\rm ff}$",r"$\kappa_{\rm ff}$",r"$\kappa_{\rm bf}/\kappa_{\rm ff}$",r"$\kappa_{\rm fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm mol}/\kappa_{\rm ff}$",r"$\kappa_{\rm hmopal}/\kappa_{\rm ff}$",r"\kappa_{\rm chiantiopal}/\kappa_{\rm ff}$",r"\kappa_{\rm ff-ee}/\kappa_{\rm ff}$",r"$\rho$",r"$u_g/rho$",r"$u_\gamma/\rho$",r"$b^2/\rho$",r"$v_r$",r"$v_z$",r"$v_\phi$",r"$B_r/\sqrt{\rho}$",r"$B_z/\sqrt{\rho}$",r"$B_\phi/\sqrt{\rho}$"  ,r"\theta",r"d\theta",r"$\hat{T}_\gamma/T_{\rm gas}$",r"$\hat{T}_\gamma[\rm K]$",r"$T_\gamma[\rm K]$",r"$T_{\rm gas}[\rm K]$",r"$f_{\rm col}$",r"$\exp{(-\xi)}$",r"$n_{\rm col}$",r"$\kappa_{\rm tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm tot-Fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm es}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm chianti}/\kappa_{\rm ff}$",r"$\kappa_{\rm ff}$",r"$\kappa_{\rm bf}/\kappa_{\rm ff}$",r"$\kappa_{\rm fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm mol}/\kappa_{\rm ff}$",r"$\kappa_{\rm hmopal}/\kappa_{\rm ff}$",r"\kappa_{\rm chiantiopal}/\kappa_{\rm ff}$",r"\kappa_{\rm ff-ee}/\kappa_{\rm ff}$",r"$\rho$",r"$u_g/\rho$",r"$u_\gamma/\rho$",r"$b^2/\rho$",r"$v_r$",r"$v_z$",r"$v_\phi$",r"$B_r/\sqrt{\rho}$",r"$B_z/\sqrt{\rho}$",r"$B_\phi/\sqrt{\rho}$"    ,"eoutRADvstheta","eoutRADisovstheta",r"$(\pi/L_{\rm Edd}) d_\theta L_{\rm rad,o}$","eoutEMvstheta","eoutEMisovstheta",r"$(\pi/L_{\rm Edd}) d_\theta L_{\rm EM,o}$"]
+        ylabels=["jj",r"\theta",r"d\theta",r"$\hat{T}_\gamma/T_{\rm gas}$",r"$\hat{T}_\gamma[\rm K]$",r"$T_\gamma[\rm K]$",r"$T_{\rm gas}[\rm K]$",r"$f_{\rm col}$",r"$\exp{(-\xi)}$",r"$n_{\rm col}$",r"$\kappa_{\rm tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm tot-Fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm es}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm chianti}/\kappa_{\rm ff}$",r"$\kappa_{\rm ff}$",r"$\kappa_{\rm bf}/\kappa_{\rm ff}$",r"$\kappa_{\rm fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm mol}/\kappa_{\rm ff}$",r"$\kappa_{\rm hmopal}/\kappa_{\rm ff}$",r"\kappa_{\rm chiantiopal}/\kappa_{\rm ff}$",r"\kappa_{\rm ff-ee}/\kappa_{\rm ff}$",r"$\rho$",r"$u_g/rho$",r"$u_\gamma/\rho$",r"$b^2/\rho$",r"$v_r$",r"$v_z$",r"$v_\phi$",r"$B_r/\sqrt{\rho}$",r"$B_z/\sqrt{\rho}$",r"$B_\phi/\sqrt{\rho}$"  ,r"\theta",r"d\theta",r"$\hat{T}_\gamma/T_{\rm gas}$",r"$\hat{T}_\gamma[\rm K]$",r"$T_\gamma[\rm K]$",r"$T_{\rm gas}[\rm K]$",r"$f_{\rm col}$",r"$\exp{(-\xi)}$",r"$n_{\rm col}$",r"$\kappa_{\rm tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm tot-Fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm es}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm chianti}/\kappa_{\rm ff}$",r"$\kappa_{\rm ff}$",r"$\kappa_{\rm bf}/\kappa_{\rm ff}$",r"$\kappa_{\rm fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm mol}/\kappa_{\rm ff}$",r"$\kappa_{\rm hmopal}/\kappa_{\rm ff}$",r"\kappa_{\rm chiantiopal}/\kappa_{\rm ff}$",r"\kappa_{\rm ff-ee}/\kappa_{\rm ff}$",r"$\rho$",r"$u_g/\rho$",r"$u_\gamma/\rho$",r"$b^2/\rho$",r"$v_r$",r"$v_z$",r"$v_\phi$",r"$B_r/\sqrt{\rho}$",r"$B_z/\sqrt{\rho}$",r"$B_\phi/\sqrt{\rho}$"    ,"eoutRADvstheta","eoutRADisovstheta",r"$(\pi/L_{\rm Edd}) d_\theta L_{\rm rad,o}$","eoutEMvstheta","eoutEMisovstheta",r"$(\pi/L_{\rm Edd}) d_\theta L_{\rm EM,o}$"    ,r"$\theta$",r"$d\theta$","eoutRADvstheta","eoutRADisovstheta",r"$(\pi/L_{\rm Edd}) d_\theta L_{\rm rad,o}$","eoutEMvstheta","eoutEMisovstheta",r"$(\pi/L_{\rm Edd}) d_\theta L_{\rm EM,o}$"]
         print("ylabels")
         print(np.shape(ylabels))
         yscales=['linear'  ,'linear','linear','linear','log','log','log','log','linear','linear','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log'    ,'linear','linear','linear','log','log','log','log','linear','linear','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log'   ,'log','log','log','log','log','log','log']
         print("yscales")
         print(np.shape(yscales))
         #
-        fignames=['ii.png'  ,'theta.png','dtheta.png','TradoTgasvstheta.png','Tradffvstheta.png','Tradlabvstheta.png','Tgasvstheta.png','fcolvstheta.png','varexpfvstheta.png','nfcolvstheta.png','kappadensityvstheta.png','kappadensitynofevstheta.png','kappasyvstheta.png','kappadcvstheta.png','kappaesvstheta.png','kappandensityvstheta.png','kappansyvstheta.png','kappandcvstheta.png','kappachiantivstheta.png','kappaffvstheta.png','kappabfvstheta.png','kappafevstheta.png','kappamolvstheta.png','kappahmopalvstheta.png','kappachiantiopalvstheta.png','kappaffeevstheta.png',"rhovstheta.png","ugvstheta.png","Erfvstheta.png","bsqvstheta.png","vrvstheta.png","vzvstheta.png","vphivstheta.png","Brvstheta.png","Bzvstheta.png","Bphivstheta.png"    ,'theta2.png','dtheta2.png','TradoTgasvstheta2.png','Tradffvstheta2.png','Tradlabvstheta2.png','Tgasvstheta2.png','fcolvstheta2.png','varexpfvstheta2.png','nfcolvstheta2.png','kappadensityvstheta2.png','kappadensitynofevstheta2.png','kappasyvstheta2.png','kappadcvstheta2.png','kappaesvstheta2.png','kappandensityvstheta2.png','kappansyvstheta2.png','kappandcvstheta2.png','kappachiantivstheta2.png','kappaffvstheta2.png','kappabfvstheta2.png','kappafevstheta2.png','kappamolvstheta2.png','kappahmopalvstheta2.png','kappachiantiopalvstheta2.png','kappaffeevstheta2.png',"rhovstheta2.png","ugvstheta2.png","Erfvstheta2.png","bsqvstheta2.png","vrvstheta2.png","vzvstheta2.png","vphivstheta2.png","Brvstheta2.png","Bzvstheta2.png","Bphivstheta2.png"    ,"eoutRADvstheta.png","eoutRADisovstheta.png","eoutRADperLeddvstheta.png","eoutEMvstheta.png","eoutEMisovstheta.png","eoutEMperLeddvstheta.png"]
+        fignames=['ii.png'  ,'theta.png','dtheta.png','TradoTgasvstheta.png','Tradffvstheta.png','Tradlabvstheta.png','Tgasvstheta.png','fcolvstheta.png','varexpfvstheta.png','nfcolvstheta.png','kappadensityvstheta.png','kappadensitynofevstheta.png','kappasyvstheta.png','kappadcvstheta.png','kappaesvstheta.png','kappandensityvstheta.png','kappansyvstheta.png','kappandcvstheta.png','kappachiantivstheta.png','kappaffvstheta.png','kappabfvstheta.png','kappafevstheta.png','kappamolvstheta.png','kappahmopalvstheta.png','kappachiantiopalvstheta.png','kappaffeevstheta.png',"rhovstheta.png","ugvstheta.png","Erfvstheta.png","bsqvstheta.png","vrvstheta.png","vzvstheta.png","vphivstheta.png","Brvstheta.png","Bzvstheta.png","Bphivstheta.png"    ,'theta2.png','dtheta2.png','TradoTgasvstheta2.png','Tradffvstheta2.png','Tradlabvstheta2.png','Tgasvstheta2.png','fcolvstheta2.png','varexpfvstheta2.png','nfcolvstheta2.png','kappadensityvstheta2.png','kappadensitynofevstheta2.png','kappasyvstheta2.png','kappadcvstheta2.png','kappaesvstheta2.png','kappandensityvstheta2.png','kappansyvstheta2.png','kappandcvstheta2.png','kappachiantivstheta2.png','kappaffvstheta2.png','kappabfvstheta2.png','kappafevstheta2.png','kappamolvstheta2.png','kappahmopalvstheta2.png','kappachiantiopalvstheta2.png','kappaffeevstheta2.png',"rhovstheta2.png","ugvstheta2.png","Erfvstheta2.png","bsqvstheta2.png","vrvstheta2.png","vzvstheta2.png","vphivstheta2.png","Brvstheta2.png","Bzvstheta2.png","Bphivstheta2.png"    ,"eoutRADvstheta.png","eoutRADisovstheta.png","eoutRADperLeddvstheta.png","eoutEMvstheta.png","eoutEMisovstheta.png","eoutEMperLeddvstheta.png"    "theta3.png","dtheta3.png","eoutRADvstheta3.png","eoutRADisovstheta3.png","eoutRADperLeddvstheta3.png","eoutEMvstheta3.png","eoutEMisovstheta3.png","eoutEMperLeddvstheta3.png"]
         print("fignames")
         print(np.shape(fignames))
         #
-        factors=[1  ,1,1,1,TEMPBAR,TEMPBAR,TEMPBAR,1,1,1 ,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 ,1,1,1,1,1,1,1,1,1,1   ,1,1,1,TEMPBAR,TEMPBAR,TEMPBAR,1,1,1 ,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 ,1,1,1,1,1,1,1,1,1,1   ,1,1,1,1,1,1] # last 6 already converted to desired units
+        factors=[1  ,1,1,1,TEMPBAR,TEMPBAR,TEMPBAR,1,1,1 ,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 ,1,1,1,1,1,1,1,1,1,1   ,1,1,1,TEMPBAR,TEMPBAR,TEMPBAR,1,1,1 ,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 ,1,1,1,1,1,1,1,1,1,1   ,1,1,1,1,1,1    ,1,1,1,1,1,1,1,1] # last 6 and last 8 already converted to desired units
         print("factors")
         print(np.shape(factors))
         #
@@ -34345,213 +34345,133 @@ def dcpaperplot1():
     #
     #
     if doextraplots==1: # EM
-        xlabels=[r"$\theta$"]
-        xscales=['linear']
-        #
-        ylabels=["EM Beaming factor"]
-        yscales=['linear']
-        #
-        fignames=["embeamingfactor.png"]
-        #
-        factors=[np.pi]
-        #
-        #
-        fig, (ax1) = plt.subplots(1, 1)
-        plt.gcf().subplots_adjust(bottom=0.15)
-        #plt.clf()
-        plt.ioff()
-        plt.rc('text', usetex=False)
-        #plt.rc('font', family='serif')
-        ax1.set_ylabel(ylabels[0],fontsize=24)
-        ax1.set_xlabel(xlabels[0],fontsize=24)
-        for axis in ['top','bottom','left','right']:
-            ax1.spines[axis].set_linewidth(2)
-        #ax1.axhline(linewidth=4, color="black")
-        #ax1.axvline(linewidth=4, color="black")
-        #
-        # choose shift for normalization and theta
-        shift=35
-        #
-        # set correct theta
-        mythetajrad1h=jrad1h[1+shift]
-        mythetajrad2h=jrad2h[1+shift]
-        mythetajrad3h=jrad3h[1+shift]
-        mythetajrad5h=jrad5h[1+shift]
-        mythetajrad7h=jrad7h[1+shift]
-        mythetajrad8h=jrad8h[1+shift]
-        mythetajrad9h=jrad9h[1+shift]
-        mythetajrad10h=jrad10h[1+shift]
-        mythetajrad11h=jrad11h[1+shift]
-        mythetajrad13h=jrad13h[1+shift]
-        mythetajrad14h=jrad14h[1+shift]
-        mythetajrad15h=jrad15h[1+shift]
-        mythetajrad16h=jrad16h[1+shift]
-        mythetajrad17h=jrad17h[1+shift]
-        #mythetajrad18h=jrad18h[1+shift]
-        #
-        if 1==1:
-            tot1=np.sum(np.clip(jrad1h[74]*jrad1h[38],0,1E50))
-            tot2=np.sum(np.clip(jrad2h[74]*jrad2h[38],0,1E50))
-            tot3=np.sum(np.clip(jrad3h[74]*jrad3h[38],0,1E50))
-            tot5=np.sum(np.clip(jrad5h[74]*jrad5h[38],0,1E50))
-            tot7=np.sum(np.clip(jrad7h[74]*jrad7h[38],0,1E50))
-            tot8=np.sum(np.clip(jrad8h[74]*jrad8h[38],0,1E50))
-            tot9=np.sum(np.clip(jrad9h[74]*jrad9h[38],0,1E50))
-            tot10=np.sum(np.clip(jrad10h[74]*jrad10h[38],0,1E50))
-            tot11=np.sum(np.clip(jrad11h[74]*jrad11h[38],0,1E50))
-            tot13=np.sum(np.clip(jrad13h[74]*jrad13h[38],0,1E50))
-            tot14=np.sum(np.clip(jrad14h[74]*jrad14h[38],0,1E50))
-            tot15=np.sum(np.clip(jrad15h[74]*jrad15h[38],0,1E50))
-            tot16=np.sum(np.clip(jrad16h[74]*jrad16h[38],0,1E50))
-            tot17=np.sum(np.clip(jrad17h[74]*jrad17h[38],0,1E50))
-            #tot18=np.sum(np.clip(jrad18h[74]*jrad18h[38],0,1E50))
+        for ii in np.arange(0,4): # 0,1,2,3
+            #  choose which to plot
+            if ii==0: #EM
+                wii=74 # r=100M
+                xii=36
+                dxii=37
+                ylabels=[r"EM Beaming factor at $r=100r_g$"]
+                fignames=["embeamingfactor100.png"]
+            elif ii==1: #EM
+                wii=82  # r=1000M
+                xii=77
+                dxii=78
+                ylabels=[r"EM Beaming factor at $r=1000r_g$"]
+                fignames=["embeamingfactor1000.png"]
+            elif ii==2: #RAD
+                wii=71 # r=100M
+                xii=36
+                dxii=37
+                ylabels=[r"RAD Beaming factor at $r=100r_g$"]
+                fignames=["radbeamingfactor100.png"]
+            else: #RAD
+                wii=79  # r=1000M
+                xii=77
+                dxii=78
+                ylabels=[r"RAD Beaming factor at $r=1000r_g$"]
+                fignames=["radbeamingfactor1000.png"]
             #
-            print("tots: %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tot1,tot2,tot3,tot5,tot7,tot8,tot9,tot10,tot11,tot13,tot14,tot15,tot16,tot17)); sys.stdout.flush()
             #
-            fun1=np.copy(jrad1h[0]*0.0+1.0/tot1)
-            fun2=np.copy(jrad2h[0]*0.0+1.0/tot2)
-            fun3=np.copy(jrad3h[0]*0.0+1.0/tot3)
-            fun5=np.copy(jrad5h[0]*0.0+1.0/tot5)
-            fun7=np.copy(jrad7h[0]*0.0+1.0/tot7)
-            fun8=np.copy(jrad8h[0]*0.0+1.0/tot8)
-            fun9=np.copy(jrad9h[0]*0.0+1.0/tot9)
-            fun10=np.copy(jrad10h[0]*0.0+1.0/tot10)
-            fun11=np.copy(jrad11h[0]*0.0+1.0/tot11)
-            fun13=np.copy(jrad13h[0]*0.0+1.0/tot13)
-            fun14=np.copy(jrad14h[0]*0.0+1.0/tot14)
-            fun15=np.copy(jrad15h[0]*0.0+1.0/tot15)
-            fun16=np.copy(jrad16h[0]*0.0+1.0/tot16)
-            fun17=np.copy(jrad17h[0]*0.0+1.0/tot17)
-            #fun18=np.copy(jrad18h[0]*0.0+1.0/tot18)
-        #
-        ax1.plot(mythetajrad1h,factors[0]*np.clip(jrad1h[74],0,1E30)*fun1,color="black",label='M1',linewidth=2.0,linestyle='-')
-        ax1.plot(mythetajrad2h,factors[0]*np.clip(jrad2h[74],0,1E30)*fun2,color="black",label='M2',linewidth=2.0,linestyle='--')
-        ax1.plot(mythetajrad3h,factors[0]*np.clip(jrad3h[74],0,1E30)*fun3,color="black",label='M3',linewidth=2.0,linestyle='-.')
-        ax1.plot(mythetajrad5h,factors[0]*np.clip(jrad5h[74],0,1E30)*fun5,color="gold",label='M5',linewidth=2.0,linestyle='--')
-        #ax1.plot(mythetajrad18h,factors[0]*np.clip(jrad18h[74],0,1E30)*fun18,color="green",label='M6',linewidth=2.0,linestyle='--')
-        ax1.plot(mythetajrad7h,factors[0]*np.clip(jrad7h[74],0,1E30)*fun7,color="red",label='M7',linewidth=2.0)
-        ax1.plot(mythetajrad8h,factors[0]*np.clip(jrad8h[74],0,1E30)*fun8,color="green",label='M8',linewidth=2.0)
-        ax1.plot(mythetajrad9h,factors[0]*np.clip(jrad9h[74],0,1E30)*fun9,color="red",label='M9',linewidth=2.0,linestyle='--')
-        ax1.plot(mythetajrad10h,factors[0]*np.clip(jrad10h[74],0,1E30)*fun10,color="black",label='M10',linewidth=2.0,linestyle=':')
-        ax1.plot(mythetajrad11h,factors[0]*np.clip(jrad11h[74],0,1E30)*fun11,color="blue",label='M11',linewidth=2.0,linestyle='--')
-        ax1.plot(mythetajrad13h,factors[0]*np.clip(jrad13h[74],0,1E30)*fun13,color="brown",label='M13',linewidth=2.0)
-        ax1.plot(mythetajrad14h,factors[0]*np.clip(jrad14h[74],0,1E30)*fun14,color="orange",label='M14',linewidth=2.0)
-        ax1.plot(mythetajrad17h,factors[0]*np.clip(jrad17h[74],0,1E30)*fun17,color="blue",label='M14h',linewidth=2.0)
-        ax1.plot(mythetajrad15h,factors[0]*np.clip(jrad15h[74],0,1E30)*fun15,color="purple",label='M15',linewidth=2.0)
-        ax1.plot(mythetajrad16h,factors[0]*np.clip(jrad16h[74],0,1E30)*fun16,color="gold",label='M15h',linewidth=2.0)
-        ax1.set_xscale(xscales[0])
-        ax1.set_yscale(yscales[0])
-        legend = ax1.legend(loc='upper right', shadow=True)
-        #plt.axis('tight',ax=ax1)
-        plt.savefig(fignames[0])
-        #plt.show()
-        plt.close()
+            xlabels=[r"$\theta$"]
+            xscales=['linear']
+            #
+            yscales=['linear']
+            #
+            #
+            factors=[np.pi]
+            #
+            #
+            fig, (ax1) = plt.subplots(1, 1)
+            plt.gcf().subplots_adjust(bottom=0.15)
+            #plt.clf()
+            plt.ioff()
+            plt.rc('text', usetex=False)
+            #plt.rc('font', family='serif')
+            ax1.set_ylabel(ylabels[0],fontsize=24)
+            ax1.set_xlabel(xlabels[0],fontsize=24)
+            for axis in ['top','bottom','left','right']:
+                ax1.spines[axis].set_linewidth(2)
+            #ax1.axhline(linewidth=4, color="black")
+            #ax1.axvline(linewidth=4, color="black")
+            #
+            #
+            # set correct theta
+            mythetajrad1h=jrad1h[xii]
+            mythetajrad2h=jrad2h[xii]
+            mythetajrad3h=jrad3h[xii]
+            mythetajrad5h=jrad5h[xii]
+            mythetajrad7h=jrad7h[xii]
+            mythetajrad8h=jrad8h[xii]
+            mythetajrad9h=jrad9h[xii]
+            mythetajrad10h=jrad10h[xii]
+            mythetajrad11h=jrad11h[xii]
+            mythetajrad13h=jrad13h[xii]
+            mythetajrad14h=jrad14h[xii]
+            mythetajrad15h=jrad15h[xii]
+            mythetajrad16h=jrad16h[xii]
+            mythetajrad17h=jrad17h[xii]
+            #mythetajrad18h=jrad18h[xii]
+            #
+            if 1==1:
+                tot1=np.sum(np.clip(jrad1h[wii]*jrad1h[dxii],0,1E50))
+                tot2=np.sum(np.clip(jrad2h[wii]*jrad2h[dxii],0,1E50))
+                tot3=np.sum(np.clip(jrad3h[wii]*jrad3h[dxii],0,1E50))
+                tot5=np.sum(np.clip(jrad5h[wii]*jrad5h[dxii],0,1E50))
+                tot7=np.sum(np.clip(jrad7h[wii]*jrad7h[dxii],0,1E50))
+                tot8=np.sum(np.clip(jrad8h[wii]*jrad8h[dxii],0,1E50))
+                tot9=np.sum(np.clip(jrad9h[wii]*jrad9h[dxii],0,1E50))
+                tot10=np.sum(np.clip(jrad10h[wii]*jrad10h[dxii],0,1E50))
+                tot11=np.sum(np.clip(jrad11h[wii]*jrad11h[dxii],0,1E50))
+                tot13=np.sum(np.clip(jrad13h[wii]*jrad13h[dxii],0,1E50))
+                tot14=np.sum(np.clip(jrad14h[wii]*jrad14h[dxii],0,1E50))
+                tot15=np.sum(np.clip(jrad15h[wii]*jrad15h[dxii],0,1E50))
+                tot16=np.sum(np.clip(jrad16h[wii]*jrad16h[dxii],0,1E50))
+                tot17=np.sum(np.clip(jrad17h[wii]*jrad17h[dxii],0,1E50))
+                #tot18=np.sum(np.clip(jrad18h[wii]*jrad18h[dxii],0,1E50))
+                #
+                print("tots for ii=%d : %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,tot1,tot2,tot3,tot5,tot7,tot8,tot9,tot10,tot11,tot13,tot14,tot15,tot16,tot17)); sys.stdout.flush()
+                #
+                fun1=np.copy(jrad1h[0]*0.0+1.0/tot1)
+                fun2=np.copy(jrad2h[0]*0.0+1.0/tot2)
+                fun3=np.copy(jrad3h[0]*0.0+1.0/tot3)
+                fun5=np.copy(jrad5h[0]*0.0+1.0/tot5)
+                fun7=np.copy(jrad7h[0]*0.0+1.0/tot7)
+                fun8=np.copy(jrad8h[0]*0.0+1.0/tot8)
+                fun9=np.copy(jrad9h[0]*0.0+1.0/tot9)
+                fun10=np.copy(jrad10h[0]*0.0+1.0/tot10)
+                fun11=np.copy(jrad11h[0]*0.0+1.0/tot11)
+                fun13=np.copy(jrad13h[0]*0.0+1.0/tot13)
+                fun14=np.copy(jrad14h[0]*0.0+1.0/tot14)
+                fun15=np.copy(jrad15h[0]*0.0+1.0/tot15)
+                fun16=np.copy(jrad16h[0]*0.0+1.0/tot16)
+                fun17=np.copy(jrad17h[0]*0.0+1.0/tot17)
+                #fun18=np.copy(jrad18h[0]*0.0+1.0/tot18)
+            #
+            ax1.plot(mythetajrad1h,factors[0]*np.clip(jrad1h[wii],0,1E30)*fun1,color="black",label='M1',linewidth=2.0,linestyle='-')
+            ax1.plot(mythetajrad2h,factors[0]*np.clip(jrad2h[wii],0,1E30)*fun2,color="black",label='M2',linewidth=2.0,linestyle='--')
+            ax1.plot(mythetajrad3h,factors[0]*np.clip(jrad3h[wii],0,1E30)*fun3,color="black",label='M3',linewidth=2.0,linestyle='-.')
+            ax1.plot(mythetajrad5h,factors[0]*np.clip(jrad5h[wii],0,1E30)*fun5,color="gold",label='M5',linewidth=2.0,linestyle='--')
+            #ax1.plot(mythetajrad18h,factors[0]*np.clip(jrad18h[wii],0,1E30)*fun18,color="green",label='M6',linewidth=2.0,linestyle='--')
+            ax1.plot(mythetajrad7h,factors[0]*np.clip(jrad7h[wii],0,1E30)*fun7,color="red",label='M7',linewidth=2.0)
+            ax1.plot(mythetajrad8h,factors[0]*np.clip(jrad8h[wii],0,1E30)*fun8,color="green",label='M8',linewidth=2.0)
+            ax1.plot(mythetajrad9h,factors[0]*np.clip(jrad9h[wii],0,1E30)*fun9,color="red",label='M9',linewidth=2.0,linestyle='--')
+            ax1.plot(mythetajrad10h,factors[0]*np.clip(jrad10h[wii],0,1E30)*fun10,color="black",label='M10',linewidth=2.0,linestyle=':')
+            ax1.plot(mythetajrad11h,factors[0]*np.clip(jrad11h[wii],0,1E30)*fun11,color="blue",label='M11',linewidth=2.0,linestyle='--')
+            ax1.plot(mythetajrad13h,factors[0]*np.clip(jrad13h[wii],0,1E30)*fun13,color="brown",label='M13',linewidth=2.0)
+            ax1.plot(mythetajrad14h,factors[0]*np.clip(jrad14h[wii],0,1E30)*fun14,color="orange",label='M14',linewidth=2.0)
+            ax1.plot(mythetajrad17h,factors[0]*np.clip(jrad17h[wii],0,1E30)*fun17,color="blue",label='M14h',linewidth=2.0)
+            ax1.plot(mythetajrad15h,factors[0]*np.clip(jrad15h[wii],0,1E30)*fun15,color="purple",label='M15',linewidth=2.0)
+            ax1.plot(mythetajrad16h,factors[0]*np.clip(jrad16h[wii],0,1E30)*fun16,color="gold",label='M15h',linewidth=2.0)
+            ax1.set_xscale(xscales[0])
+            ax1.set_yscale(yscales[0])
+            legend = ax1.legend(loc='upper right', shadow=True)
+            #plt.axis('tight',ax=ax1)
+            plt.savefig(fignames[0])
+            #plt.show()
+            plt.close()
     #
-    if doextraplots==1: # RAD
-        xlabels=[r"$\theta$"]
-        xscales=['linear']
-        #
-        ylabels=["RAD Beaming factor"]
-        yscales=['linear']
-        #
-        fignames=["radbeamingfactor.png"]
-        #
-        factors=[np.pi]
-        #
-        #
-        fig, (ax1) = plt.subplots(1, 1)
-        plt.gcf().subplots_adjust(bottom=0.15)
-        #plt.clf()
-        plt.ioff()
-        plt.rc('text', usetex=False)
-        #plt.rc('font', family='serif')
-        ax1.set_ylabel(ylabels[0],fontsize=24)
-        ax1.set_xlabel(xlabels[0],fontsize=24)
-        for axis in ['top','bottom','left','right']:
-            ax1.spines[axis].set_linewidth(2)
-        #ax1.axhline(linewidth=4, color="black")
-        #ax1.axvline(linewidth=4, color="black")
-        #
-        # choose shift for normalization and theta
-        shift=35
-        #
-        # set correct theta
-        mythetajrad1h=jrad1h[1+shift]
-        mythetajrad2h=jrad2h[1+shift]
-        mythetajrad3h=jrad3h[1+shift]
-        mythetajrad5h=jrad5h[1+shift]
-        mythetajrad7h=jrad7h[1+shift]
-        mythetajrad8h=jrad8h[1+shift]
-        mythetajrad9h=jrad9h[1+shift]
-        mythetajrad10h=jrad10h[1+shift]
-        mythetajrad11h=jrad11h[1+shift]
-        mythetajrad13h=jrad13h[1+shift]
-        mythetajrad14h=jrad14h[1+shift]
-        mythetajrad15h=jrad15h[1+shift]
-        mythetajrad16h=jrad16h[1+shift]
-        mythetajrad17h=jrad17h[1+shift]
-        #mythetajrad18h=jrad18h[1+shift]
-        #
-        if 1==1:
-            tot1=np.sum(np.clip(jrad1h[71]*jrad1h[38],0,1E50))
-            tot2=np.sum(np.clip(jrad2h[71]*jrad2h[38],0,1E50))
-            tot3=np.sum(np.clip(jrad3h[71]*jrad3h[38],0,1E50))
-            tot5=np.sum(np.clip(jrad5h[71]*jrad5h[38],0,1E50))
-            tot7=np.sum(np.clip(jrad7h[71]*jrad7h[38],0,1E50))
-            tot8=np.sum(np.clip(jrad8h[71]*jrad8h[38],0,1E50))
-            tot9=np.sum(np.clip(jrad9h[71]*jrad9h[38],0,1E50))
-            tot10=np.sum(np.clip(jrad10h[71]*jrad10h[38],0,1E50))
-            tot11=np.sum(np.clip(jrad11h[71]*jrad11h[38],0,1E50))
-            tot13=np.sum(np.clip(jrad13h[71]*jrad13h[38],0,1E50))
-            tot14=np.sum(np.clip(jrad14h[71]*jrad14h[38],0,1E50))
-            tot15=np.sum(np.clip(jrad15h[71]*jrad15h[38],0,1E50))
-            tot16=np.sum(np.clip(jrad16h[71]*jrad16h[38],0,1E50))
-            tot17=np.sum(np.clip(jrad17h[71]*jrad17h[38],0,1E50))
-            #tot18=np.sum(np.clip(jrad18h[71]*jrad18h[38],0,1E50))
-            #
-            print("tots: %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tot1,tot2,tot3,tot5,tot7,tot8,tot9,tot10,tot11,tot13,tot14,tot15,tot16,tot17)); sys.stdout.flush()
-            #
-            fun1=np.copy(jrad1h[0]*0.0+1.0/tot1)
-            fun2=np.copy(jrad2h[0]*0.0+1.0/tot2)
-            fun3=np.copy(jrad3h[0]*0.0+1.0/tot3)
-            fun5=np.copy(jrad5h[0]*0.0+1.0/tot5)
-            fun7=np.copy(jrad7h[0]*0.0+1.0/tot7)
-            fun8=np.copy(jrad8h[0]*0.0+1.0/tot8)
-            fun9=np.copy(jrad9h[0]*0.0+1.0/tot9)
-            fun10=np.copy(jrad10h[0]*0.0+1.0/tot10)
-            fun11=np.copy(jrad11h[0]*0.0+1.0/tot11)
-            fun13=np.copy(jrad13h[0]*0.0+1.0/tot13)
-            fun14=np.copy(jrad14h[0]*0.0+1.0/tot14)
-            fun15=np.copy(jrad15h[0]*0.0+1.0/tot15)
-            fun16=np.copy(jrad16h[0]*0.0+1.0/tot16)
-            fun17=np.copy(jrad17h[0]*0.0+1.0/tot17)
-            #fun18=np.copy(jrad18h[0]*0.0+1.0/tot18)
-        #
-        ax1.plot(mythetajrad1h,factors[0]*np.clip(jrad1h[71],0,1E30)*fun1,color="black",label='M1',linewidth=2.0,linestyle='-')
-        ax1.plot(mythetajrad2h,factors[0]*np.clip(jrad2h[71],0,1E30)*fun2,color="black",label='M2',linewidth=2.0,linestyle='--')
-        ax1.plot(mythetajrad3h,factors[0]*np.clip(jrad3h[71],0,1E30)*fun3,color="black",label='M3',linewidth=2.0,linestyle='-.')
-        ax1.plot(mythetajrad5h,factors[0]*np.clip(jrad5h[71],0,1E30)*fun5,color="gold",label='M5',linewidth=2.0,linestyle='--')
-        #ax1.plot(mythetajrad18h,factors[0]*np.clip(jrad18h[71],0,1E30)*fun18,color="green",label='M6',linewidth=2.0,linestyle='--')
-        ax1.plot(mythetajrad7h,factors[0]*np.clip(jrad7h[71],0,1E30)*fun7,color="red",label='M7',linewidth=2.0)
-        ax1.plot(mythetajrad8h,factors[0]*np.clip(jrad8h[71],0,1E30)*fun8,color="green",label='M8',linewidth=2.0)
-        ax1.plot(mythetajrad9h,factors[0]*np.clip(jrad9h[71],0,1E30)*fun9,color="red",label='M9',linewidth=2.0,linestyle='--')
-        ax1.plot(mythetajrad10h,factors[0]*np.clip(jrad10h[71],0,1E30)*fun10,color="black",label='M10',linewidth=2.0,linestyle=':')
-        ax1.plot(mythetajrad11h,factors[0]*np.clip(jrad11h[71],0,1E30)*fun11,color="blue",label='M11',linewidth=2.0,linestyle='--')
-        ax1.plot(mythetajrad13h,factors[0]*np.clip(jrad13h[71],0,1E30)*fun13,color="brown",label='M13',linewidth=2.0)
-        ax1.plot(mythetajrad14h,factors[0]*np.clip(jrad14h[71],0,1E30)*fun14,color="orange",label='M14',linewidth=2.0)
-        ax1.plot(mythetajrad17h,factors[0]*np.clip(jrad17h[71],0,1E30)*fun17,color="blue",label='M14h',linewidth=2.0)
-        ax1.plot(mythetajrad15h,factors[0]*np.clip(jrad15h[71],0,1E30)*fun15,color="purple",label='M15',linewidth=2.0)
-        ax1.plot(mythetajrad16h,factors[0]*np.clip(jrad16h[71],0,1E30)*fun16,color="gold",label='M15h',linewidth=2.0)
-        ax1.set_xscale(xscales[0])
-        ax1.set_yscale(yscales[0])
-        legend = ax1.legend(loc='upper right', shadow=True)
-        #plt.axis('tight',ax=ax1)
-        plt.savefig(fignames[0])
-        #plt.show()
-        plt.close()
-    #
-    
-
+    #########
 
 
 
