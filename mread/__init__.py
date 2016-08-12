@@ -18683,7 +18683,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     etajinEN = prefactor*pjen_mu1[:,iofr(rjetin)]/mdotfinavg
     etajin = etajinEM + etajinMAKE
     etathinoutRAD=prefactor*edradthin[:,iofr(rradout)]/mdotfinavg # uses thin for out
-    etaoutRAD=prefactor*edrad[:,iofr(rradout)]/mdotfinavg # uses full rad for out
+    etaoutRAD=prefactor*np.chop(edrad[:,iofr(rradout),0,1E50)]/mdotfinavg # uses full rad for out
     #etajlocal = etaj*(mdotfinavg/mdotinrdiskoutfinavg)
     etamwinEM = prefactor*pjem_mumax1m[:,iofr(rjetin)]/mdotfinavg
     etamwinMAKE = prefactor*pjmake_mumax1m[:,iofr(rjetin)]/mdotfinavg
@@ -18774,7 +18774,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     letajinEN = prefactor*ljen_mu1[:,iofr(rjetin)]/mdotfinavg
     letajin = letajinEM + letajinMAKE
     letathinoutRAD=prefactor*ldradthin[:,iofr(rjetin)]/mdotfinavg # thin
-    letaoutRAD=prefactor*ldrad[:,iofr(rjetin)]/mdotfinavg # full
+    letaoutRAD=prefactor*np.chop(ldrad[:,iofr(rjetin)],0,1E50)/mdotfinavg # full
     #letajlocal = letaj*(mdotfinavg/mdotinrdiskoutfinavg)
     letamwinEM = prefactor*ljem_mumax1m[:,iofr(rjetin)]/mdotfinavg
     letamwinMAKE = prefactor*ljmake_mumax1m[:,iofr(rjetin)]/mdotfinavg
@@ -20413,7 +20413,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             print( "VLatex6: %s         & %g               & %g                           & %g                             & %g                & %g                   & %g                             & %g                   & %g                  & %g                 \\\\ %% %s" % (truemodelname, roundto3foreta(etabh_avg), roundto3foreta(etabhEM_avg), roundto3foreta(etabhMAKE_avg), roundto3foreta(etaj_avg), roundto3foreta(etajEM_avg), roundto3foreta(etajMAKE_avg), roundto3foreta(etamwout_avg), roundto3foreta(etawout_avg), roundto3foreta(etant), modelname ) )
         else:
             # added PAKE and EN to BH term only:
-            print( "HLatex6: ModelName & $\\eta_{\\rm{}H}$ & $\\eta^{\\rm{}EM}_{\\rm{}H}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}H}$ & $\\eta^{\\rm{}PAKE}_{\\rm{}H}$ & $\\eta^{\\rm{}EN}_{\\rm{}H}$ & $\\eta^{\\rm{}RAD}_{\\rm{}H}$ & $\\eta_{\\rm{}j}$ & $\\eta^{\\rm{}EM}_j$ & $\\eta^{\\rm{}MAKE}_{\\rm{}j}$ & $\\eta^{\\rm{}RAD}_{\\rm{},thin,o}$ & $\\eta^{\\rm{}RAD}_{\\rm{}o}$ & $\\eta_{\\rm{}mw,o}$ & $\\eta_{\\rm{}w,o}$ & $\\eta_{\\rm{}NT}$ \\\\" )
+            print( "HLatex6: ModelName & $\\eta_{\\rm{}H}$ & $\\eta^{\\rm{}EM}_{\\rm{}H}$ & $\\eta^{\\rm{}MAKE}_{\\rm{}H}$ & $\\eta^{\\rm{}PAKE}_{\\rm{}H}$ & $\\eta^{\\rm{}EN}_{\\rm{}H}$ & $\\eta^{\\rm{}RAD}_{\\rm{}H}$ & $\\eta_{\\rm{}j}$ & $\\eta^{\\rm{}EM}_j$ & $\\eta^{\\rm{}MAKE}_{\\rm{}j}$ & $\\eta^{\\rm{}RAD}_{\\rm{}o}$ & $\\eta^{\\rm{}RAD}_{\\rm{},thin,o}$ & $\\eta_{\\rm{}mw,o}$ & $\\eta_{\\rm{}w,o}$ & $\\eta_{\\rm{}NT}$ \\\\" )
             print( "VLatex6: %s         & %g               & %g                           & %g                             & %g                             & %g                           & %g                & %g                   & %g                             & %g                   & %g                  & %g                   & %g                  & %g                 & %g                 \\\\ %% %s" % (truemodelname, roundto3foreta(etabh_avg), roundto3foreta(etabhEM_avg), roundto3foreta(etabhMAKE_avg), roundto3foreta(etabhPAKE_avg), roundto3foreta(etabhEN_avg), roundto3foreta(etabhRAD_avg), roundto3foreta(etaj_avg), roundto3foreta(etajEM_avg), roundto3foreta(etajMAKE_avg), roundto3foreta(etaoutRAD_avg), roundto3foreta(etathinoutRAD_avg), roundto3foreta(etamwout_avg), roundto3foreta(etawout_avg), roundto3foreta(etant), modelname ) )
         #
             # added PAKE and EN to BH term only:
