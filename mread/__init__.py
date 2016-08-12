@@ -3658,9 +3658,15 @@ def plot2davg(dosq=True,whichplot=-1):
     powwindatr = powwindEMKE[iofr(rprintout)]
     print( "r = %g: Mdot = %g, etajet = %g, Pjet = %g, etawind = %g, Pwind = %g, Ftot = %g, Fsqtot = %g, pjemtot = %g, eoutEMtot = %g" % ( rprintout, md, powjetatr/md, powjetatr, powjetwindatr/md, powjetwindatr, ftot, fsqtot, pjemtot, eoutEMtot ) )
     foutpower = open( "pjet_2davg_%s.txt" %  os.path.basename(os.getcwd()), "w" )
+    #
+    #
     # radius of jet power measurement
+    #
+    # inner radius
     rjetin=10.
     rradin=10.
+    #
+    # outer radius
     if modelname=="blandford3d_new":
         rjetout=30.
     elif modelname=="a0hr07":
@@ -3669,7 +3675,8 @@ def plot2davg(dosq=True,whichplot=-1):
         rjetout=50.
     #
     rjet=rjetout
-    # override
+    #
+    # override outer radii
     rradout=1000.0
     rjet=rradout
     rjetout=rjet
@@ -18683,7 +18690,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     etajinEN = prefactor*pjen_mu1[:,iofr(rjetin)]/mdotfinavg
     etajin = etajinEM + etajinMAKE
     etathinoutRAD=prefactor*edradthin[:,iofr(rradout)]/mdotfinavg # uses thin for out
-    etaoutRAD=prefactor*np.chop(edrad[:,iofr(rradout)],0,1E50)/mdotfinavg # uses full rad for out
+    etaoutRAD=prefactor*np.clip(edrad[:,iofr(rradout)],0,1E50)/mdotfinavg # uses full rad for out
     #etajlocal = etaj*(mdotfinavg/mdotinrdiskoutfinavg)
     etamwinEM = prefactor*pjem_mumax1m[:,iofr(rjetin)]/mdotfinavg
     etamwinMAKE = prefactor*pjmake_mumax1m[:,iofr(rjetin)]/mdotfinavg
@@ -18774,7 +18781,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     letajinEN = prefactor*ljen_mu1[:,iofr(rjetin)]/mdotfinavg
     letajin = letajinEM + letajinMAKE
     letathinoutRAD=prefactor*ldradthin[:,iofr(rjetin)]/mdotfinavg # thin
-    letaoutRAD=prefactor*np.chop(ldrad[:,iofr(rjetin)],0,1E50)/mdotfinavg # full
+    letaoutRAD=prefactor*np.clip(ldrad[:,iofr(rjetin)],0,1E50)/mdotfinavg # full
     #letajlocal = letaj*(mdotfinavg/mdotinrdiskoutfinavg)
     letamwinEM = prefactor*ljem_mumax1m[:,iofr(rjetin)]/mdotfinavg
     letamwinMAKE = prefactor*ljmake_mumax1m[:,iofr(rjetin)]/mdotfinavg
@@ -33605,10 +33612,10 @@ def harmradtest1(path=None,fil=None):
     ifluxacc=ihor
     mdothor=mdtot[ifluxacc]
     #
-    rjetout=100
+    rjetout=1000
     ijet=iofr(rjetout)
     #
-    rradout=400.0
+    rradout=1000.0
     irad=iofr(rradout)
     #
     edrad=intangle(-gdet*fTudRAD(1,0))
