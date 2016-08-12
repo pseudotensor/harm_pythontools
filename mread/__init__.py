@@ -18683,7 +18683,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     etajinEN = prefactor*pjen_mu1[:,iofr(rjetin)]/mdotfinavg
     etajin = etajinEM + etajinMAKE
     etathinoutRAD=prefactor*edradthin[:,iofr(rradout)]/mdotfinavg # uses thin for out
-    etaoutRAD=prefactor*np.chop(edrad[:,iofr(rradout),0,1E50)]/mdotfinavg # uses full rad for out
+    etaoutRAD=prefactor*np.chop(edrad[:,iofr(rradout)],0,1E50)/mdotfinavg # uses full rad for out
     #etajlocal = etaj*(mdotfinavg/mdotinrdiskoutfinavg)
     etamwinEM = prefactor*pjem_mumax1m[:,iofr(rjetin)]/mdotfinavg
     etamwinMAKE = prefactor*pjmake_mumax1m[:,iofr(rjetin)]/mdotfinavg
