@@ -28475,12 +28475,21 @@ def mkavgfigs1(whichfig=0):
             avg2_eoutEMisovstheta=avg_eoutEM[iofr(100),:,0]*(np.pi)*(mdotfinavgvsr[ihor])*(ENBAR/TBAR)
             avg2_eoutEMperLeddvstheta=avg_eoutEM[iofr(100),:,0]*(np.pi)*(mdotfinavgvsr[ihor])/Leddcode
             #
+            avg3_eoutRADvstheta=avg_eoutRAD[iofr(1000),:,0]
+            avg3_eoutRADisovstheta=avg_eoutRAD[iofr(1000),:,0]*(np.pi)*(mdotfinavgvsr[ihor])*(ENBAR/TBAR)
+            avg3_eoutRADperLeddvstheta=avg_eoutRAD[iofr(1000),:,0]*(np.pi)*(mdotfinavgvsr[ihor])/Leddcode
+            #
+            avg3_eoutEMvstheta=avg_eoutEM[iofr(1000),:,0]
+            avg3_eoutEMisovstheta=avg_eoutEM[iofr(1000),:,0]*(np.pi)*(mdotfinavgvsr[ihor])*(ENBAR/TBAR)
+            avg3_eoutEMperLeddvstheta=avg_eoutEM[iofr(1000),:,0]*(np.pi)*(mdotfinavgvsr[ihor])/Leddcode
+            #
             avg_dh=(dxdxp[2,2,iofr(10),:,0]*_dx2)
             avg2_dh=(dxdxp[2,2,iofr(100),:,0]*_dx2)
+            avg3_dh=(dxdxp[2,2,iofr(1000),:,0]*_dx2)
             #
             f1 = open('radquantsvsh.%s.txt' % (modelname), 'w')
             for jj in np.arange(0,ny):
-                f1.write("%d  %g %g  %g %g %g %g  %g %g %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g  %g %g %g %g %g %g %g %g %g %g     %g %g  %g %g %g %g  %g %g %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g  %g %g %g %g %g %g %g %g %g %g   %g %g %g %g %g %g\n" % (jj ,h[iofr(10),jj,0],avg_dh[jj],avg_TradoTgasvstheta[jj],avg_Tradfftype3vstheta[jj],avg_Tradlabtype3vstheta[jj],avg_Tgasvstheta[jj],avg_fcollabvstheta[jj],avg_varexpfffvstheta[jj],avg_nfcolvstheta[jj],avg_kappadensityrealvstheta[jj],avg_kappadensityrealnofevstheta[jj],avg_kappasyrealvstheta[jj],avg_kappadcrealvstheta[jj],avg_kappaesrealvstheta[jj],avg_kappandensityrealvstheta[jj],avg_kappansyrealvstheta[jj],avg_kappandcrealvstheta[jj],avg_kappachiantirealvstheta[jj],avg_kappaffrealvstheta[jj],avg_kappabfrealvstheta[jj],avg_kappaferealvstheta[jj],avg_kappamolrealvstheta[jj],avg_kappahmopalrealvstheta[jj],avg_kappachiantiopalrealvstheta[jj],avg_kappaffeerealvstheta[jj],avg_rhovstheta[jj],avg_ugvstheta[jj],avg_Erfvstheta[jj],avg_bsqvstheta[jj],avg_vrvstheta[jj],avg_vzvstheta[jj],avg_vphivstheta[jj],avg_Brvstheta[jj],avg_Bzvstheta[jj],avg_Bphivstheta[jj]   ,h[iofr(100),jj,0],avg2_dh[jj],avg2_TradoTgasvstheta[jj],avg2_Tradfftype3vstheta[jj],avg2_Tradlabtype3vstheta[jj],avg2_Tgasvstheta[jj],avg2_fcollabvstheta[jj],avg2_varexpfffvstheta[jj],avg2_nfcolvstheta[jj],avg2_kappadensityrealvstheta[jj],avg2_kappadensityrealnofevstheta[jj],avg2_kappasyrealvstheta[jj],avg2_kappadcrealvstheta[jj],avg2_kappaesrealvstheta[jj],avg2_kappandensityrealvstheta[jj],avg2_kappansyrealvstheta[jj],avg2_kappandcrealvstheta[jj],avg2_kappachiantirealvstheta[jj],avg2_kappaffrealvstheta[jj],avg2_kappabfrealvstheta[jj],avg2_kappaferealvstheta[jj],avg2_kappamolrealvstheta[jj],avg2_kappahmopalrealvstheta[jj],avg2_kappachiantiopalrealvstheta[jj],avg2_kappaffeerealvstheta[jj],avg2_rhovstheta[jj],avg2_ugvstheta[jj],avg2_Erfvstheta[jj],avg2_bsqvstheta[jj],avg2_vrvstheta[jj],avg2_vzvstheta[jj],avg2_vphivstheta[jj],avg2_Brvstheta[jj],avg2_Bzvstheta[jj],avg2_Bphivstheta[jj]   ,avg2_eoutRADvstheta[jj],avg2_eoutRADisovstheta[jj],avg2_eoutRADperLeddvstheta[jj],avg2_eoutEMvstheta[jj],avg2_eoutEMisovstheta[jj],avg2_eoutEMperLeddvstheta[jj]) )
+                f1.write("%d  %g %g  %g %g %g %g  %g %g %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g  %g %g %g %g %g %g %g %g %g %g     %g %g  %g %g %g %g  %g %g %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g  %g %g %g %g %g %g %g %g %g %g   %g %g %g %g %g %g   %g %g %g %g %g %g %g %g\n" % (jj ,h[iofr(10),jj,0],avg_dh[jj],avg_TradoTgasvstheta[jj],avg_Tradfftype3vstheta[jj],avg_Tradlabtype3vstheta[jj],avg_Tgasvstheta[jj],avg_fcollabvstheta[jj],avg_varexpfffvstheta[jj],avg_nfcolvstheta[jj],avg_kappadensityrealvstheta[jj],avg_kappadensityrealnofevstheta[jj],avg_kappasyrealvstheta[jj],avg_kappadcrealvstheta[jj],avg_kappaesrealvstheta[jj],avg_kappandensityrealvstheta[jj],avg_kappansyrealvstheta[jj],avg_kappandcrealvstheta[jj],avg_kappachiantirealvstheta[jj],avg_kappaffrealvstheta[jj],avg_kappabfrealvstheta[jj],avg_kappaferealvstheta[jj],avg_kappamolrealvstheta[jj],avg_kappahmopalrealvstheta[jj],avg_kappachiantiopalrealvstheta[jj],avg_kappaffeerealvstheta[jj],avg_rhovstheta[jj],avg_ugvstheta[jj],avg_Erfvstheta[jj],avg_bsqvstheta[jj],avg_vrvstheta[jj],avg_vzvstheta[jj],avg_vphivstheta[jj],avg_Brvstheta[jj],avg_Bzvstheta[jj],avg_Bphivstheta[jj]   ,h[iofr(100),jj,0],avg2_dh[jj],avg2_TradoTgasvstheta[jj],avg2_Tradfftype3vstheta[jj],avg2_Tradlabtype3vstheta[jj],avg2_Tgasvstheta[jj],avg2_fcollabvstheta[jj],avg2_varexpfffvstheta[jj],avg2_nfcolvstheta[jj],avg2_kappadensityrealvstheta[jj],avg2_kappadensityrealnofevstheta[jj],avg2_kappasyrealvstheta[jj],avg2_kappadcrealvstheta[jj],avg2_kappaesrealvstheta[jj],avg2_kappandensityrealvstheta[jj],avg2_kappansyrealvstheta[jj],avg2_kappandcrealvstheta[jj],avg2_kappachiantirealvstheta[jj],avg2_kappaffrealvstheta[jj],avg2_kappabfrealvstheta[jj],avg2_kappaferealvstheta[jj],avg2_kappamolrealvstheta[jj],avg2_kappahmopalrealvstheta[jj],avg2_kappachiantiopalrealvstheta[jj],avg2_kappaffeerealvstheta[jj],avg2_rhovstheta[jj],avg2_ugvstheta[jj],avg2_Erfvstheta[jj],avg2_bsqvstheta[jj],avg2_vrvstheta[jj],avg2_vzvstheta[jj],avg2_vphivstheta[jj],avg2_Brvstheta[jj],avg2_Bzvstheta[jj],avg2_Bphivstheta[jj]   ,avg2_eoutRADvstheta[jj],avg2_eoutRADisovstheta[jj],avg2_eoutRADperLeddvstheta[jj],avg2_eoutEMvstheta[jj],avg2_eoutEMisovstheta[jj],avg2_eoutEMperLeddvstheta[jj]   ,h[iofr(1000),jj,0],avg3_dh[jj],avg3_eoutRADvstheta[jj],avg3_eoutRADisovstheta[jj],avg3_eoutRADperLeddvstheta[jj],avg3_eoutEMvstheta[jj],avg3_eoutEMisovstheta[jj],avg3_eoutEMperLeddvstheta[jj]) )
             f1.close()
         #
         # stuff vs. radius
@@ -34040,306 +34049,313 @@ def dcpaperplot1():
     global a
     a=0.8
     rddims(1)
+    #
+    toradplots=0
+    dothetaplots=0
+    doextraplots=1
+    #
     ###### Stuff vs. radius
     #
-    xlabels=[r"$r[r_g]$"]
-    xscales=['log']
-    #
-    ylabels=["ii",r"$r$",r"$\hat{T}_\gamma/T_{\rm gas}$",r"$\hat{T}_\gamma[\rm K]$",r"$T_\gamma[\rm K]$",r"$T_{\rm gas}[\rm K]$",r"$f_{\rm col}$",r"$\exp{(-\xi)}$",r"$n_{\rm col}$",r"$\kappa_{\rm tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm tot-Fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm es}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,sy}$/\kappa_{\rm ff}",r"$\kappa_{\rm n,dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm chianti}/\kappa_{\rm ff}$",r"$\kappa_{\rm ff}$",r"$\kappa_{\rm bf}/\kappa_{\rm ff}$",r"$\kappa_{\rm fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm mol}/\kappa_{\rm ff}$",r"$\kappa_{\rm hmopal}/\kappa_{\rm ff}$",r"\kappa_{\rm chiantiopal}/\kappa_{\rm ff}$",r"\kappa_{\rm ff-ee}/\kappa_{\rm ff}$",r"$\rho$",r"$u_g/rho$",r"$u_\gamma/\rho$",r"$b^2/\rho$",r"$v_r$",r"$v_z$",r"$v_\phi$",r"$B_r/\sqrt{\rho}$",r"$B_z/\sqrt{\rho}$",r"$B_\phi/\sqrt{\rho}$"]
-    print("ylabels")
-    print(np.shape(ylabels))
-    yscales=['linear','log','linear','log','log','log','log','linear','linear','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log']
-    print("yscales")
-    print(np.shape(yscales))
-    #
-    fignames=['ii.png','r.png','TradoTgasvsr.png','Tradffvsr.png','Tradlabvsr.png','Tgasvsr.png','fcolvsr.png','varexpfvsr.png','nfcolvsr.png','kappadensityvsr.png','kappadensitynofevsr.png','kappasyvsr.png','kappadcvsr.png','kappaesvsr.png','kappandensityvsr.png','kappansyvsr.png','kappandcvsr.png','kappachiantivsr.png','kappaffvsr.png','kappabfvsr.png','kappafevsr.png','kappamolvsr.png','kappahmopalvsr.png','kappachiantiopalvsr.png','kappaffeevsr.png',"rhovsr.png","ugvsr.png","Erfvsr.png","bsqvsr.png","vrvsr.png","vzvsr.png","vphivsr.png","Brvsr.png","Bzvsr.png","Bphivsr.png"]
-    print("fignames")
-    print(np.shape(fignames))
-    #
-    factors=[1,1,1,TEMPBAR,TEMPBAR,TEMPBAR,1,1,1 ,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 ,1,1,1,1,1,1,1,1,1,1]
-    print("factors")
-    print(np.shape(factors))
-    #
-    nxout=70 # about r=50M where models have reached inflow equilibrium
-    #
-    for ii in np.arange(0,ncr):
-        print("ii=%d" % (ii)); sys.stdout.flush()
-        fig, (ax1) = plt.subplots(1, 1)
-        plt.gcf().subplots_adjust(bottom=0.15)
-        #plt.clf()
-        plt.ioff()
-        plt.rc('text', usetex=False)
-        #plt.rc('font', family='serif')
-        ax1.set_ylabel(ylabels[ii],fontsize=24)
-        ax1.set_xlabel(xlabels[0],fontsize=24)
-        for axis in ['top','bottom','left','right']:
-            ax1.spines[axis].set_linewidth(2)
-        #ax1.axhline(linewidth=4, color="black")
-        #ax1.axvline(linewidth=4, color="black")
+    if toradplots==1:
+        xlabels=[r"$r[r_g]$"]
+        xscales=['log']
         #
-        if ii>=9 and ii<=24 and ii!=18:
-            # normalize kappaff except itself
-            fun1=np.copy(1.0/jrad1r[18])
-            fun2=np.copy(1.0/jrad2r[18])
-            fun3=np.copy(1.0/jrad3r[18])
-            fun5=np.copy(1.0/jrad5r[18])
-            fun7=np.copy(1.0/jrad7r[18])
-            fun8=np.copy(1.0/jrad8r[18])
-            fun9=np.copy(1.0/jrad9r[18])
-            fun10=np.copy(1.0/jrad10r[18])
-            fun11=np.copy(1.0/jrad11r[18])
-            fun13=np.copy(1.0/jrad13r[18])
-            fun14=np.copy(1.0/jrad14r[18])
-            fun15=np.copy(1.0/jrad15r[18])
-            fun16=np.copy(1.0/jrad16r[18])
-            fun17=np.copy(1.0/jrad17r[18])
-            #fun18=np.copy(1.0/jrad18r[18])
-        elif ii==26 or ii==27 or ii==28:
-            # normalize densities by rho except itself
-            fun1=np.copy(1.0/jrad1r[25])
-            fun2=np.copy(1.0/jrad2r[25])
-            fun3=np.copy(1.0/jrad3r[25])
-            fun5=np.copy(1.0/jrad5r[25])
-            fun7=np.copy(1.0/jrad7r[25])
-            fun8=np.copy(1.0/jrad8r[25])
-            fun9=np.copy(1.0/jrad9r[25])
-            fun10=np.copy(1.0/jrad10r[25])
-            fun11=np.copy(1.0/jrad11r[25])
-            fun13=np.copy(1.0/jrad13r[25])
-            fun14=np.copy(1.0/jrad14r[25])
-            fun15=np.copy(1.0/jrad15r[25])
-            fun16=np.copy(1.0/jrad16r[25])
-            fun17=np.copy(1.0/jrad17r[25])
-            #fun18=np.copy(1.0/jrad18r[25])
-        elif ii==32 or ii==33 or ii==34:
-            # normalize B by sqrt(rho)
-            fun1=np.copy(1.0/np.sqrt(jrad1r[25]))
-            fun2=np.copy(1.0/np.sqrt(jrad2r[25]))
-            fun3=np.copy(1.0/np.sqrt(jrad3r[25]))
-            fun5=np.copy(1.0/np.sqrt(jrad5r[25]))
-            fun7=np.copy(1.0/np.sqrt(jrad7r[25]))
-            fun8=np.copy(1.0/np.sqrt(jrad8r[25]))
-            fun9=np.copy(1.0/np.sqrt(jrad9r[25]))
-            fun10=np.copy(1.0/np.sqrt(jrad10r[25]))
-            fun11=np.copy(1.0/np.sqrt(jrad11r[25]))
-            fun13=np.copy(1.0/np.sqrt(jrad13r[25]))
-            fun14=np.copy(1.0/np.sqrt(jrad14r[25]))
-            fun15=np.copy(1.0/np.sqrt(jrad15r[25]))
-            fun16=np.copy(1.0/np.sqrt(jrad16r[25]))
-            fun17=np.copy(1.0/np.sqrt(jrad17r[25]))
-            #fun18=np.copy(1.0/np.sqrt(jrad18r[25]))
-        else:
-            fun1=np.copy(jrad1r[0]*0.0+1.0)
-            fun2=np.copy(jrad2r[0]*0.0+1.0)
-            fun3=np.copy(jrad3r[0]*0.0+1.0)
-            fun5=np.copy(jrad5r[0]*0.0+1.0)
-            fun7=np.copy(jrad7r[0]*0.0+1.0)
-            fun8=np.copy(jrad8r[0]*0.0+1.0)
-            fun9=np.copy(jrad9r[0]*0.0+1.0)
-            fun10=np.copy(jrad10r[0]*0.0+1.0)
-            fun11=np.copy(jrad11r[0]*0.0+1.0)
-            fun13=np.copy(jrad13r[0]*0.0+1.0)
-            fun14=np.copy(jrad14r[0]*0.0+1.0)
-            fun15=np.copy(jrad15r[0]*0.0+1.0)
-            fun16=np.copy(jrad16r[0]*0.0+1.0)
-            fun17=np.copy(jrad17r[0]*0.0+1.0)
-            #fun18=np.copy(jrad18r[0]*0.0+1.0)
+        ylabels=["ii",r"$r$",r"$\hat{T}_\gamma/T_{\rm gas}$",r"$\hat{T}_\gamma[\rm K]$",r"$T_\gamma[\rm K]$",r"$T_{\rm gas}[\rm K]$",r"$f_{\rm col}$",r"$\exp{(-\xi)}$",r"$n_{\rm col}$",r"$\kappa_{\rm tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm tot-Fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm es}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,sy}$/\kappa_{\rm ff}",r"$\kappa_{\rm n,dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm chianti}/\kappa_{\rm ff}$",r"$\kappa_{\rm ff}$",r"$\kappa_{\rm bf}/\kappa_{\rm ff}$",r"$\kappa_{\rm fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm mol}/\kappa_{\rm ff}$",r"$\kappa_{\rm hmopal}/\kappa_{\rm ff}$",r"\kappa_{\rm chiantiopal}/\kappa_{\rm ff}$",r"\kappa_{\rm ff-ee}/\kappa_{\rm ff}$",r"$\rho$",r"$u_g/rho$",r"$u_\gamma/\rho$",r"$b^2/\rho$",r"$v_r$",r"$v_z$",r"$v_\phi$",r"$B_r/\sqrt{\rho}$",r"$B_z/\sqrt{\rho}$",r"$B_\phi/\sqrt{\rho}$"]
+        print("ylabels")
+        print(np.shape(ylabels))
+        yscales=['linear','log','linear','log','log','log','log','linear','linear','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log']
+        print("yscales")
+        print(np.shape(yscales))
         #
-        ax1.plot(jrad1r[1][0:nxout],factors[ii]*jrad1r[ii][0:nxout]*fun1[0:nxout],color="black",label='M1',linewidth=2.0,linestyle='-')
-        ax1.plot(jrad2r[1][0:nxout],factors[ii]*jrad2r[ii][0:nxout]*fun2[0:nxout],color="black",label='M2',linewidth=2.0,linestyle='--')
-        ax1.plot(jrad3r[1][0:nxout],factors[ii]*jrad3r[ii][0:nxout]*fun3[0:nxout],color="black",label='M3',linewidth=2.0,linestyle='-.')
-        ax1.plot(jrad5r[1][0:nxout],factors[ii]*jrad5r[ii][0:nxout]*fun5[0:nxout],color="gold",label='M5',linewidth=2.0,linestyle='--')
-        #ax1.plot(jrad18r[1][0:nxout],factors[ii]*jrad18r[ii][0:nxout]*fun18[0:nxout],color="green",label='M6',linewidth=2.0,linestyle='--')
-        ax1.plot(jrad7r[1][0:nxout],factors[ii]*jrad7r[ii][0:nxout]*fun7[0:nxout],color="red",label='M7',linewidth=2.0)
-        ax1.plot(jrad8r[1][0:nxout],factors[ii]*jrad8r[ii][0:nxout]*fun8[0:nxout],color="green",label='M8',linewidth=2.0)
-        ax1.plot(jrad9r[1][0:nxout],factors[ii]*jrad9r[ii][0:nxout]*fun9[0:nxout],color="red",label='M9',linewidth=2.0,linestyle='--')
-        ax1.plot(jrad10r[1][0:nxout],factors[ii]*jrad10r[ii][0:nxout]*fun10[0:nxout],color="black",label='M10',linewidth=2.0,linestyle=':')
-        ax1.plot(jrad11r[1][0:nxout],factors[ii]*jrad11r[ii][0:nxout]*fun11[0:nxout],color="blue",label='M11',linewidth=2.0,linestyle='--')
-        ax1.plot(jrad13r[1][0:nxout],factors[ii]*jrad13r[ii][0:nxout]*fun13[0:nxout],color="brown",label='M13',linewidth=2.0)
-        ax1.plot(jrad14r[1][0:nxout],factors[ii]*jrad14r[ii][0:nxout]*fun14[0:nxout],color="orange",label='M14',linewidth=2.0)
-        ax1.plot(jrad17r[1][0:nxout],factors[ii]*jrad17r[ii][0:nxout]*fun17[0:nxout],color="blue",label='M14h',linewidth=2.0)
-        ax1.plot(jrad15r[1][0:nxout],factors[ii]*jrad15r[ii][0:nxout]*fun15[0:nxout],color="purple",label='M15',linewidth=2.0)
-        ax1.plot(jrad16r[1][0:nxout],factors[ii]*jrad16r[ii][0:nxout]*fun16[0:nxout],color="gold",label='M15h',linewidth=2.0)
-        ax1.set_xscale(xscales[0])
-        ax1.set_yscale(yscales[ii])
-        legend = ax1.legend(loc='upper right', shadow=True)
-        #plt.axis('tight',ax=ax1)
-        plt.savefig(fignames[ii])
-        #plt.show()
-        plt.close()
-    #
-    #
+        fignames=['ii.png','r.png','TradoTgasvsr.png','Tradffvsr.png','Tradlabvsr.png','Tgasvsr.png','fcolvsr.png','varexpfvsr.png','nfcolvsr.png','kappadensityvsr.png','kappadensitynofevsr.png','kappasyvsr.png','kappadcvsr.png','kappaesvsr.png','kappandensityvsr.png','kappansyvsr.png','kappandcvsr.png','kappachiantivsr.png','kappaffvsr.png','kappabfvsr.png','kappafevsr.png','kappamolvsr.png','kappahmopalvsr.png','kappachiantiopalvsr.png','kappaffeevsr.png',"rhovsr.png","ugvsr.png","Erfvsr.png","bsqvsr.png","vrvsr.png","vzvsr.png","vphivsr.png","Brvsr.png","Bzvsr.png","Bphivsr.png"]
+        print("fignames")
+        print(np.shape(fignames))
+        #
+        factors=[1,1,1,TEMPBAR,TEMPBAR,TEMPBAR,1,1,1 ,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 ,1,1,1,1,1,1,1,1,1,1]
+        print("factors")
+        print(np.shape(factors))
+        #
+        nxout=70 # about r=50M where models have reached inflow equilibrium
+        #
+        for ii in np.arange(0,ncr):
+            print("ii=%d" % (ii)); sys.stdout.flush()
+            fig, (ax1) = plt.subplots(1, 1)
+            plt.gcf().subplots_adjust(bottom=0.15)
+            #plt.clf()
+            plt.ioff()
+            plt.rc('text', usetex=False)
+            #plt.rc('font', family='serif')
+            ax1.set_ylabel(ylabels[ii],fontsize=24)
+            ax1.set_xlabel(xlabels[0],fontsize=24)
+            for axis in ['top','bottom','left','right']:
+                ax1.spines[axis].set_linewidth(2)
+            #ax1.axhline(linewidth=4, color="black")
+            #ax1.axvline(linewidth=4, color="black")
+            #
+            if ii>=9 and ii<=24 and ii!=18:
+                # normalize kappaff except itself
+                fun1=np.copy(1.0/jrad1r[18])
+                fun2=np.copy(1.0/jrad2r[18])
+                fun3=np.copy(1.0/jrad3r[18])
+                fun5=np.copy(1.0/jrad5r[18])
+                fun7=np.copy(1.0/jrad7r[18])
+                fun8=np.copy(1.0/jrad8r[18])
+                fun9=np.copy(1.0/jrad9r[18])
+                fun10=np.copy(1.0/jrad10r[18])
+                fun11=np.copy(1.0/jrad11r[18])
+                fun13=np.copy(1.0/jrad13r[18])
+                fun14=np.copy(1.0/jrad14r[18])
+                fun15=np.copy(1.0/jrad15r[18])
+                fun16=np.copy(1.0/jrad16r[18])
+                fun17=np.copy(1.0/jrad17r[18])
+                #fun18=np.copy(1.0/jrad18r[18])
+            elif ii==26 or ii==27 or ii==28:
+                # normalize densities by rho except itself
+                fun1=np.copy(1.0/jrad1r[25])
+                fun2=np.copy(1.0/jrad2r[25])
+                fun3=np.copy(1.0/jrad3r[25])
+                fun5=np.copy(1.0/jrad5r[25])
+                fun7=np.copy(1.0/jrad7r[25])
+                fun8=np.copy(1.0/jrad8r[25])
+                fun9=np.copy(1.0/jrad9r[25])
+                fun10=np.copy(1.0/jrad10r[25])
+                fun11=np.copy(1.0/jrad11r[25])
+                fun13=np.copy(1.0/jrad13r[25])
+                fun14=np.copy(1.0/jrad14r[25])
+                fun15=np.copy(1.0/jrad15r[25])
+                fun16=np.copy(1.0/jrad16r[25])
+                fun17=np.copy(1.0/jrad17r[25])
+                #fun18=np.copy(1.0/jrad18r[25])
+            elif ii==32 or ii==33 or ii==34:
+                # normalize B by sqrt(rho)
+                fun1=np.copy(1.0/np.sqrt(jrad1r[25]))
+                fun2=np.copy(1.0/np.sqrt(jrad2r[25]))
+                fun3=np.copy(1.0/np.sqrt(jrad3r[25]))
+                fun5=np.copy(1.0/np.sqrt(jrad5r[25]))
+                fun7=np.copy(1.0/np.sqrt(jrad7r[25]))
+                fun8=np.copy(1.0/np.sqrt(jrad8r[25]))
+                fun9=np.copy(1.0/np.sqrt(jrad9r[25]))
+                fun10=np.copy(1.0/np.sqrt(jrad10r[25]))
+                fun11=np.copy(1.0/np.sqrt(jrad11r[25]))
+                fun13=np.copy(1.0/np.sqrt(jrad13r[25]))
+                fun14=np.copy(1.0/np.sqrt(jrad14r[25]))
+                fun15=np.copy(1.0/np.sqrt(jrad15r[25]))
+                fun16=np.copy(1.0/np.sqrt(jrad16r[25]))
+                fun17=np.copy(1.0/np.sqrt(jrad17r[25]))
+                #fun18=np.copy(1.0/np.sqrt(jrad18r[25]))
+            else:
+                fun1=np.copy(jrad1r[0]*0.0+1.0)
+                fun2=np.copy(jrad2r[0]*0.0+1.0)
+                fun3=np.copy(jrad3r[0]*0.0+1.0)
+                fun5=np.copy(jrad5r[0]*0.0+1.0)
+                fun7=np.copy(jrad7r[0]*0.0+1.0)
+                fun8=np.copy(jrad8r[0]*0.0+1.0)
+                fun9=np.copy(jrad9r[0]*0.0+1.0)
+                fun10=np.copy(jrad10r[0]*0.0+1.0)
+                fun11=np.copy(jrad11r[0]*0.0+1.0)
+                fun13=np.copy(jrad13r[0]*0.0+1.0)
+                fun14=np.copy(jrad14r[0]*0.0+1.0)
+                fun15=np.copy(jrad15r[0]*0.0+1.0)
+                fun16=np.copy(jrad16r[0]*0.0+1.0)
+                fun17=np.copy(jrad17r[0]*0.0+1.0)
+                #fun18=np.copy(jrad18r[0]*0.0+1.0)
+            #
+            ax1.plot(jrad1r[1][0:nxout],factors[ii]*jrad1r[ii][0:nxout]*fun1[0:nxout],color="black",label='M1',linewidth=2.0,linestyle='-')
+            ax1.plot(jrad2r[1][0:nxout],factors[ii]*jrad2r[ii][0:nxout]*fun2[0:nxout],color="black",label='M2',linewidth=2.0,linestyle='--')
+            ax1.plot(jrad3r[1][0:nxout],factors[ii]*jrad3r[ii][0:nxout]*fun3[0:nxout],color="black",label='M3',linewidth=2.0,linestyle='-.')
+            ax1.plot(jrad5r[1][0:nxout],factors[ii]*jrad5r[ii][0:nxout]*fun5[0:nxout],color="gold",label='M5',linewidth=2.0,linestyle='--')
+            #ax1.plot(jrad18r[1][0:nxout],factors[ii]*jrad18r[ii][0:nxout]*fun18[0:nxout],color="green",label='M6',linewidth=2.0,linestyle='--')
+            ax1.plot(jrad7r[1][0:nxout],factors[ii]*jrad7r[ii][0:nxout]*fun7[0:nxout],color="red",label='M7',linewidth=2.0)
+            ax1.plot(jrad8r[1][0:nxout],factors[ii]*jrad8r[ii][0:nxout]*fun8[0:nxout],color="green",label='M8',linewidth=2.0)
+            ax1.plot(jrad9r[1][0:nxout],factors[ii]*jrad9r[ii][0:nxout]*fun9[0:nxout],color="red",label='M9',linewidth=2.0,linestyle='--')
+            ax1.plot(jrad10r[1][0:nxout],factors[ii]*jrad10r[ii][0:nxout]*fun10[0:nxout],color="black",label='M10',linewidth=2.0,linestyle=':')
+            ax1.plot(jrad11r[1][0:nxout],factors[ii]*jrad11r[ii][0:nxout]*fun11[0:nxout],color="blue",label='M11',linewidth=2.0,linestyle='--')
+            ax1.plot(jrad13r[1][0:nxout],factors[ii]*jrad13r[ii][0:nxout]*fun13[0:nxout],color="brown",label='M13',linewidth=2.0)
+            ax1.plot(jrad14r[1][0:nxout],factors[ii]*jrad14r[ii][0:nxout]*fun14[0:nxout],color="orange",label='M14',linewidth=2.0)
+            ax1.plot(jrad17r[1][0:nxout],factors[ii]*jrad17r[ii][0:nxout]*fun17[0:nxout],color="blue",label='M14h',linewidth=2.0)
+            ax1.plot(jrad15r[1][0:nxout],factors[ii]*jrad15r[ii][0:nxout]*fun15[0:nxout],color="purple",label='M15',linewidth=2.0)
+            ax1.plot(jrad16r[1][0:nxout],factors[ii]*jrad16r[ii][0:nxout]*fun16[0:nxout],color="gold",label='M15h',linewidth=2.0)
+            ax1.set_xscale(xscales[0])
+            ax1.set_yscale(yscales[ii])
+            legend = ax1.legend(loc='upper right', shadow=True)
+            #plt.axis('tight',ax=ax1)
+            plt.savefig(fignames[ii])
+            #plt.show()
+            plt.close()
+        #
+        #
     #
     ###### Stuff vs. theta
-    #f1.write("%d %g  %g %g %g   %g %g %g  %g %g %g %g\n" % (jj,h[iofr(100),jj,0],avg_eoutRADvstheta[jj],avg_eoutRADisovstheta[jj],avg_eoutRADperLeddvstheta[jj],avg_eoutEMvstheta[jj],avg_eoutEMisovstheta[jj],avg_eoutEMperLeddvstheta[jj],avg_Tradlabtype3vstheta[jj],avg_fcollabvstheta[jj],avg_varexpfffvstheta[jj],avg_nfcolvstheta[jj]) )
-    #
-    xlabels=[r"$\theta$"]
-    xscales=['linear']
-    #
-    ylabels=["jj",r"\theta",r"$\hat{T}_\gamma/T_{\rm gas}$",r"$\hat{T}_\gamma[\rm K]$",r"$T_\gamma[\rm K]$",r"$T_{\rm gas}[\rm K]$",r"$f_{\rm col}$",r"$\exp{(-\xi)}$",r"$n_{\rm col}$",r"$\kappa_{\rm tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm tot-Fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm es}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm chianti}/\kappa_{\rm ff}$",r"$\kappa_{\rm ff}$",r"$\kappa_{\rm bf}/\kappa_{\rm ff}$",r"$\kappa_{\rm fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm mol}/\kappa_{\rm ff}$",r"$\kappa_{\rm hmopal}/\kappa_{\rm ff}$",r"\kappa_{\rm chiantiopal}/\kappa_{\rm ff}$",r"\kappa_{\rm ff-ee}/\kappa_{\rm ff}$",r"$\rho$",r"$u_g/rho$",r"$u_\gamma/\rho$",r"$b^2/\rho$",r"$v_r$",r"$v_z$",r"$v_\phi$",r"$B_r/\sqrt{\rho}$",r"$B_z/\sqrt{\rho}$",r"$B_\phi/\sqrt{\rho}$"  ,r"\theta",r"$\hat{T}_\gamma/T_{\rm gas}$",r"$\hat{T}_\gamma[\rm K]$",r"$T_\gamma[\rm K]$",r"$T_{\rm gas}[\rm K]$",r"$f_{\rm col}$",r"$\exp{(-\xi)}$",r"$n_{\rm col}$",r"$\kappa_{\rm tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm tot-Fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm es}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm chianti}/\kappa_{\rm ff}$",r"$\kappa_{\rm ff}$",r"$\kappa_{\rm bf}/\kappa_{\rm ff}$",r"$\kappa_{\rm fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm mol}/\kappa_{\rm ff}$",r"$\kappa_{\rm hmopal}/\kappa_{\rm ff}$",r"\kappa_{\rm chiantiopal}/\kappa_{\rm ff}$",r"\kappa_{\rm ff-ee}/\kappa_{\rm ff}$",r"$\rho$",r"$u_g/\rho$",r"$u_\gamma/\rho$",r"$b^2/\rho$",r"$v_r$",r"$v_z$",r"$v_\phi$",r"$B_r/\sqrt{\rho}$",r"$B_z/\sqrt{\rho}$",r"$B_\phi/\sqrt{\rho}$"    ,"eoutRADvstheta","eoutRADisovstheta",r"$(\pi/L_{\rm Edd}) d_\theta L_{\rm rad,o}$","eoutEMvstheta","eoutEMisovstheta",r"$(\pi/L_{\rm Edd}) d_\theta L_{\rm EM,o}$"]
-    print("ylabels")
-    print(np.shape(ylabels))
-    yscales=['linear'  ,'linear','linear','log','log','log','log','linear','linear','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log'    ,'linear','linear','log','log','log','log','linear','linear','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log'   ,'log','log','log','log','log','log','log']
-    print("yscales")
-    print(np.shape(yscales))
-    #
-    fignames=['ii.png'  ,'theta.png','TradoTgasvstheta.png','Tradffvstheta.png','Tradlabvstheta.png','Tgasvstheta.png','fcolvstheta.png','varexpfvstheta.png','nfcolvstheta.png','kappadensityvstheta.png','kappadensitynofevstheta.png','kappasyvstheta.png','kappadcvstheta.png','kappaesvstheta.png','kappandensityvstheta.png','kappansyvstheta.png','kappandcvstheta.png','kappachiantivstheta.png','kappaffvstheta.png','kappabfvstheta.png','kappafevstheta.png','kappamolvstheta.png','kappahmopalvstheta.png','kappachiantiopalvstheta.png','kappaffeevstheta.png',"rhovstheta.png","ugvstheta.png","Erfvstheta.png","bsqvstheta.png","vrvstheta.png","vzvstheta.png","vphivstheta.png","Brvstheta.png","Bzvstheta.png","Bphivstheta.png"    ,'theta2.png','TradoTgasvstheta2.png','Tradffvstheta2.png','Tradlabvstheta2.png','Tgasvstheta2.png','fcolvstheta2.png','varexpfvstheta2.png','nfcolvstheta2.png','kappadensityvstheta2.png','kappadensitynofevstheta2.png','kappasyvstheta2.png','kappadcvstheta2.png','kappaesvstheta2.png','kappandensityvstheta2.png','kappansyvstheta2.png','kappandcvstheta2.png','kappachiantivstheta2.png','kappaffvstheta2.png','kappabfvstheta2.png','kappafevstheta2.png','kappamolvstheta2.png','kappahmopalvstheta2.png','kappachiantiopalvstheta2.png','kappaffeevstheta2.png',"rhovstheta2.png","ugvstheta2.png","Erfvstheta2.png","bsqvstheta2.png","vrvstheta2.png","vzvstheta2.png","vphivstheta2.png","Brvstheta2.png","Bzvstheta2.png","Bphivstheta2.png"    ,"eoutRADvstheta.png","eoutRADisovstheta.png","eoutRADperLeddvstheta.png","eoutEMvstheta.png","eoutEMisovstheta.png","eoutEMperLeddvstheta.png"]
-    print("fignames")
-    print(np.shape(fignames))
-    #
-    factors=[1  ,1,1,TEMPBAR,TEMPBAR,TEMPBAR,1,1,1 ,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 ,1,1,1,1,1,1,1,1,1,1   ,1,1,TEMPBAR,TEMPBAR,TEMPBAR,1,1,1 ,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 ,1,1,1,1,1,1,1,1,1,1   ,1,1,1,1,1,1] # last 6 already converted to desired units
-    print("factors")
-    print(np.shape(factors))
-    #
-    #
-    for ii in np.arange(0,nch):
-        print("ii=%d" % (ii)); sys.stdout.flush()
-        fig, (ax1) = plt.subplots(1, 1)
-        plt.gcf().subplots_adjust(bottom=0.15)
-        #plt.clf()
-        plt.ioff()
-        plt.rc('text', usetex=False)
-        #plt.rc('font', family='serif')
-        ax1.set_ylabel(ylabels[ii],fontsize=24)
-        ax1.set_xlabel(xlabels[0],fontsize=24)
-        for axis in ['top','bottom','left','right']:
-            ax1.spines[axis].set_linewidth(2)
-        #ax1.axhline(linewidth=4, color="black")
-        #ax1.axvline(linewidth=4, color="black")
+    if dothetaplots==1:
+        #f1.write("%d %g  %g %g %g   %g %g %g  %g %g %g %g\n" % (jj,h[iofr(100),jj,0],avg_eoutRADvstheta[jj],avg_eoutRADisovstheta[jj],avg_eoutRADperLeddvstheta[jj],avg_eoutEMvstheta[jj],avg_eoutEMisovstheta[jj],avg_eoutEMperLeddvstheta[jj],avg_Tradlabtype3vstheta[jj],avg_fcollabvstheta[jj],avg_varexpfffvstheta[jj],avg_nfcolvstheta[jj]) )
         #
-        # choose shift for normalization and theta
-        if ii<=34:
-            shift=0
-        else:
-            shift=34
+        xlabels=[r"$\theta$"]
+        xscales=['linear']
         #
-        # set correct theta
-        mythetajrad1h=jrad1h[1+shift]
-        mythetajrad2h=jrad2h[1+shift]
-        mythetajrad3h=jrad3h[1+shift]
-        mythetajrad5h=jrad5h[1+shift]
-        mythetajrad7h=jrad7h[1+shift]
-        mythetajrad8h=jrad8h[1+shift]
-        mythetajrad9h=jrad9h[1+shift]
-        mythetajrad10h=jrad10h[1+shift]
-        mythetajrad11h=jrad11h[1+shift]
-        mythetajrad13h=jrad13h[1+shift]
-        mythetajrad14h=jrad14h[1+shift]
-        mythetajrad15h=jrad15h[1+shift]
-        mythetajrad16h=jrad16h[1+shift]
-        mythetajrad17h=jrad17h[1+shift]
-        #mythetajrad18h=jrad18h[1+shift]
+        ylabels=["jj",r"\theta",r"d\theta",r"$\hat{T}_\gamma/T_{\rm gas}$",r"$\hat{T}_\gamma[\rm K]$",r"$T_\gamma[\rm K]$",r"$T_{\rm gas}[\rm K]$",r"$f_{\rm col}$",r"$\exp{(-\xi)}$",r"$n_{\rm col}$",r"$\kappa_{\rm tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm tot-Fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm es}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm chianti}/\kappa_{\rm ff}$",r"$\kappa_{\rm ff}$",r"$\kappa_{\rm bf}/\kappa_{\rm ff}$",r"$\kappa_{\rm fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm mol}/\kappa_{\rm ff}$",r"$\kappa_{\rm hmopal}/\kappa_{\rm ff}$",r"\kappa_{\rm chiantiopal}/\kappa_{\rm ff}$",r"\kappa_{\rm ff-ee}/\kappa_{\rm ff}$",r"$\rho$",r"$u_g/rho$",r"$u_\gamma/\rho$",r"$b^2/\rho$",r"$v_r$",r"$v_z$",r"$v_\phi$",r"$B_r/\sqrt{\rho}$",r"$B_z/\sqrt{\rho}$",r"$B_\phi/\sqrt{\rho}$"  ,r"\theta",r"d\theta",r"$\hat{T}_\gamma/T_{\rm gas}$",r"$\hat{T}_\gamma[\rm K]$",r"$T_\gamma[\rm K]$",r"$T_{\rm gas}[\rm K]$",r"$f_{\rm col}$",r"$\exp{(-\xi)}$",r"$n_{\rm col}$",r"$\kappa_{\rm tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm tot-Fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm es}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm chianti}/\kappa_{\rm ff}$",r"$\kappa_{\rm ff}$",r"$\kappa_{\rm bf}/\kappa_{\rm ff}$",r"$\kappa_{\rm fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm mol}/\kappa_{\rm ff}$",r"$\kappa_{\rm hmopal}/\kappa_{\rm ff}$",r"\kappa_{\rm chiantiopal}/\kappa_{\rm ff}$",r"\kappa_{\rm ff-ee}/\kappa_{\rm ff}$",r"$\rho$",r"$u_g/\rho$",r"$u_\gamma/\rho$",r"$b^2/\rho$",r"$v_r$",r"$v_z$",r"$v_\phi$",r"$B_r/\sqrt{\rho}$",r"$B_z/\sqrt{\rho}$",r"$B_\phi/\sqrt{\rho}$"    ,"eoutRADvstheta","eoutRADisovstheta",r"$(\pi/L_{\rm Edd}) d_\theta L_{\rm rad,o}$","eoutEMvstheta","eoutEMisovstheta",r"$(\pi/L_{\rm Edd}) d_\theta L_{\rm EM,o}$"]
+        print("ylabels")
+        print(np.shape(ylabels))
+        yscales=['linear'  ,'linear','linear','linear','log','log','log','log','linear','linear','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log'    ,'linear','linear','linear','log','log','log','log','linear','linear','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log'   ,'log','log','log','log','log','log','log']
+        print("yscales")
+        print(np.shape(yscales))
         #
-        # normalize some quantities
-        if (ii>=9+shift and ii<=24+shift and ii!=(18+shift)):
-            # normalize kappa's by kappaff (except kappaff itself)
-            fun1=np.copy(1.0/jrad1h[18+shift])
-            fun2=np.copy(1.0/jrad2h[18+shift])
-            fun3=np.copy(1.0/jrad3h[18+shift])
-            fun5=np.copy(1.0/jrad5h[18+shift])
-            fun7=np.copy(1.0/jrad7h[18+shift])
-            fun8=np.copy(1.0/jrad8h[18+shift])
-            fun9=np.copy(1.0/jrad9h[18+shift])
-            fun10=np.copy(1.0/jrad10h[18+shift])
-            fun11=np.copy(1.0/jrad11h[18+shift])
-            fun13=np.copy(1.0/jrad13h[18+shift])
-            fun14=np.copy(1.0/jrad14h[18+shift])
-            fun15=np.copy(1.0/jrad15h[18+shift])
-            fun16=np.copy(1.0/jrad16h[18+shift])
-            fun17=np.copy(1.0/jrad17h[18+shift])
-            #fun18=np.copy(1.0/jrad18h[18+shift])
-        elif (ii==26+shift or ii==27+shift or ii==28+shift):
-            # normalize densities by rho (25+shift) at equator
-            fun1 =np.copy(jrad1h[0]*0.0+1.0/jrad1h[25+shift][jrad1h[0,-1]/2])
-            fun2 =np.copy(jrad2h[0]*0.0+1.0/jrad2h[25+shift][jrad2h[0,-1]/2])
-            fun3 =np.copy(jrad3h[0]*0.0+1.0/jrad3h[25+shift][jrad3h[0,-1]/2])
-            fun5 =np.copy(jrad5h[0]*0.0+1.0/jrad5h[25+shift][jrad5h[0,-1]/2])
-            fun7 =np.copy(jrad7h[0]*0.0+1.0/jrad7h[25+shift][jrad7h[0,-1]/2])
-            fun8 =np.copy(jrad8h[0]*0.0+1.0/jrad8h[25+shift][jrad8h[0,-1]/2])
-            fun9 =np.copy(jrad9h[0]*0.0+1.0/jrad9h[25+shift][jrad9h[0,-1]/2])
-            fun10=np.copy(jrad10h[0]*0.0+1.0/jrad10h[25+shift][jrad10h[0,-1]/2])
-            fun11=np.copy(jrad11h[0]*0.0+1.0/jrad11h[25+shift][jrad11h[0,-1]/2])
-            fun13=np.copy(jrad13h[0]*0.0+1.0/jrad13h[25+shift][jrad13h[0,-1]/2])
-            fun14=np.copy(jrad14h[0]*0.0+1.0/jrad14h[25+shift][jrad14h[0,-1]/2])
-            fun15=np.copy(jrad15h[0]*0.0+1.0/jrad15h[25+shift][jrad15h[0,-1]/2])
-            fun16=np.copy(jrad16h[0]*0.0+1.0/jrad16h[25+shift][jrad16h[0,-1]/2])
-            fun17=np.copy(jrad17h[0]*0.0+1.0/jrad17h[25+shift][jrad17h[0,-1]/2])
-            #fun18=np.copy(jrad18h[0]*0.0+1.0/jrad18h[25+shift][jrad18h[0,-1]/2])
-        elif (ii==32+shift or ii==33+shift or ii==34+shift):
-            # normalize B by sqrt(rho) at equator
-            fun1 =np.copy(jrad1h[0]*0.0+1.0/np.sqrt(jrad1h[25+shift][jrad1h[0,-1]/2]))
-            fun2 =np.copy(jrad2h[0]*0.0+1.0/np.sqrt(jrad2h[25+shift][jrad2h[0,-1]/2]))
-            fun3 =np.copy(jrad3h[0]*0.0+1.0/np.sqrt(jrad3h[25+shift][jrad3h[0,-1]/2]))
-            fun5 =np.copy(jrad5h[0]*0.0+1.0/np.sqrt(jrad5h[25+shift][jrad5h[0,-1]/2]))
-            fun7 =np.copy(jrad7h[0]*0.0+1.0/np.sqrt(jrad7h[25+shift][jrad7h[0,-1]/2]))
-            fun8 =np.copy(jrad8h[0]*0.0+1.0/np.sqrt(jrad8h[25+shift][jrad8h[0,-1]/2]))
-            fun9 =np.copy(jrad9h[0]*0.0+1.0/np.sqrt(jrad9h[25+shift][jrad9h[0,-1]/2]))
-            fun10=np.copy(jrad10h[0]*0.0+1.0/np.sqrt(jrad10h[25+shift][jrad10h[0,-1]/2]))
-            fun11=np.copy(jrad11h[0]*0.0+1.0/np.sqrt(jrad11h[25+shift][jrad11h[0,-1]/2]))
-            fun13=np.copy(jrad13h[0]*0.0+1.0/np.sqrt(jrad13h[25+shift][jrad13h[0,-1]/2]))
-            fun14=np.copy(jrad14h[0]*0.0+1.0/np.sqrt(jrad14h[25+shift][jrad14h[0,-1]/2]))
-            fun15=np.copy(jrad15h[0]*0.0+1.0/np.sqrt(jrad15h[25+shift][jrad15h[0,-1]/2]))
-            fun16=np.copy(jrad16h[0]*0.0+1.0/np.sqrt(jrad16h[25+shift][jrad16h[0,-1]/2]))
-            fun17=np.copy(jrad17h[0]*0.0+1.0/np.sqrt(jrad17h[25+shift][jrad17h[0,-1]/2]))
-            #fun18=np.copy(jrad18h[0]*0.0+1.0/np.sqrt(jrad18h[25+shift][jrad18h[0,-1]/2]))
-        else:
-            # no normaliation
-            fun1=np.copy(jrad1h[0]*0.0+1.0)
-            fun2=np.copy(jrad2h[0]*0.0+1.0)
-            fun3=np.copy(jrad3h[0]*0.0+1.0)
-            fun5=np.copy(jrad5h[0]*0.0+1.0)
-            fun7=np.copy(jrad7h[0]*0.0+1.0)
-            fun8=np.copy(jrad8h[0]*0.0+1.0)
-            fun9=np.copy(jrad9h[0]*0.0+1.0)
-            fun10=np.copy(jrad10h[0]*0.0+1.0)
-            fun11=np.copy(jrad11h[0]*0.0+1.0)
-            fun13=np.copy(jrad13h[0]*0.0+1.0)
-            fun14=np.copy(jrad14h[0]*0.0+1.0)
-            fun15=np.copy(jrad15h[0]*0.0+1.0)
-            fun16=np.copy(jrad16h[0]*0.0+1.0)
-            fun17=np.copy(jrad17h[0]*0.0+1.0)
-            #fun18=np.copy(jrad18h[0]*0.0+1.0)
+        fignames=['ii.png'  ,'theta.png','dtheta.png','TradoTgasvstheta.png','Tradffvstheta.png','Tradlabvstheta.png','Tgasvstheta.png','fcolvstheta.png','varexpfvstheta.png','nfcolvstheta.png','kappadensityvstheta.png','kappadensitynofevstheta.png','kappasyvstheta.png','kappadcvstheta.png','kappaesvstheta.png','kappandensityvstheta.png','kappansyvstheta.png','kappandcvstheta.png','kappachiantivstheta.png','kappaffvstheta.png','kappabfvstheta.png','kappafevstheta.png','kappamolvstheta.png','kappahmopalvstheta.png','kappachiantiopalvstheta.png','kappaffeevstheta.png',"rhovstheta.png","ugvstheta.png","Erfvstheta.png","bsqvstheta.png","vrvstheta.png","vzvstheta.png","vphivstheta.png","Brvstheta.png","Bzvstheta.png","Bphivstheta.png"    ,'theta2.png','dtheta2.png','TradoTgasvstheta2.png','Tradffvstheta2.png','Tradlabvstheta2.png','Tgasvstheta2.png','fcolvstheta2.png','varexpfvstheta2.png','nfcolvstheta2.png','kappadensityvstheta2.png','kappadensitynofevstheta2.png','kappasyvstheta2.png','kappadcvstheta2.png','kappaesvstheta2.png','kappandensityvstheta2.png','kappansyvstheta2.png','kappandcvstheta2.png','kappachiantivstheta2.png','kappaffvstheta2.png','kappabfvstheta2.png','kappafevstheta2.png','kappamolvstheta2.png','kappahmopalvstheta2.png','kappachiantiopalvstheta2.png','kappaffeevstheta2.png',"rhovstheta2.png","ugvstheta2.png","Erfvstheta2.png","bsqvstheta2.png","vrvstheta2.png","vzvstheta2.png","vphivstheta2.png","Brvstheta2.png","Bzvstheta2.png","Bphivstheta2.png"    ,"eoutRADvstheta.png","eoutRADisovstheta.png","eoutRADperLeddvstheta.png","eoutEMvstheta.png","eoutEMisovstheta.png","eoutEMperLeddvstheta.png"]
+        print("fignames")
+        print(np.shape(fignames))
         #
-        ax1.plot(mythetajrad1h,factors[ii]*jrad1h[ii]*fun1,color="black",label='M1',linewidth=2.0,linestyle='-')
-        ax1.plot(mythetajrad2h,factors[ii]*jrad2h[ii]*fun2,color="black",label='M2',linewidth=2.0,linestyle='--')
-        ax1.plot(mythetajrad3h,factors[ii]*jrad3h[ii]*fun3,color="black",label='M3',linewidth=2.0,linestyle='-.')
-        ax1.plot(mythetajrad5h,factors[ii]*jrad5h[ii]*fun5,color="gold",label='M5',linewidth=2.0,linestyle='--')
-        #ax1.plot(mythetajrad18h,factors[ii]*jrad18h[ii]*fun18,color="green",label='M6',linewidth=2.0,linestyle='--')
-        ax1.plot(mythetajrad7h,factors[ii]*jrad7h[ii]*fun7,color="red",label='M7',linewidth=2.0)
-        ax1.plot(mythetajrad8h,factors[ii]*jrad8h[ii]*fun8,color="green",label='M8',linewidth=2.0)
-        ax1.plot(mythetajrad9h,factors[ii]*jrad9h[ii]*fun9,color="red",label='M9',linewidth=2.0,linestyle='--')
-        ax1.plot(mythetajrad10h,factors[ii]*jrad10h[ii]*fun10,color="black",label='M10',linewidth=2.0,linestyle=':')
-        ax1.plot(mythetajrad11h,factors[ii]*jrad11h[ii]*fun11,color="blue",label='M11',linewidth=2.0,linestyle='--')
-        ax1.plot(mythetajrad13h,factors[ii]*jrad13h[ii]*fun13,color="brown",label='M13',linewidth=2.0)
-        ax1.plot(mythetajrad14h,factors[ii]*jrad14h[ii]*fun14,color="orange",label='M14',linewidth=2.0)
-        ax1.plot(mythetajrad17h,factors[ii]*jrad17h[ii]*fun17,color="blue",label='M14h',linewidth=2.0)
-        ax1.plot(mythetajrad15h,factors[ii]*jrad15h[ii]*fun15,color="purple",label='M15',linewidth=2.0)
-        ax1.plot(mythetajrad16h,factors[ii]*jrad16h[ii]*fun16,color="gold",label='M15h',linewidth=2.0)
-        ax1.set_xscale(xscales[0])
-        ax1.set_yscale(yscales[ii])
-        legend = ax1.legend(loc='upper right', shadow=True)
-        #plt.axis('tight',ax=ax1)
-        plt.savefig(fignames[ii])
-        #plt.show()
-        plt.close()
-    #
+        factors=[1  ,1,1,1,TEMPBAR,TEMPBAR,TEMPBAR,1,1,1 ,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 ,1,1,1,1,1,1,1,1,1,1   ,1,1,1,TEMPBAR,TEMPBAR,TEMPBAR,1,1,1 ,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 ,1,1,1,1,1,1,1,1,1,1   ,1,1,1,1,1,1] # last 6 already converted to desired units
+        print("factors")
+        print(np.shape(factors))
+        #
+        #
+        for ii in np.arange(0,nch):
+            print("ii=%d" % (ii)); sys.stdout.flush()
+            fig, (ax1) = plt.subplots(1, 1)
+            plt.gcf().subplots_adjust(bottom=0.15)
+            #plt.clf()
+            plt.ioff()
+            plt.rc('text', usetex=False)
+            #plt.rc('font', family='serif')
+            ax1.set_ylabel(ylabels[ii],fontsize=24)
+            ax1.set_xlabel(xlabels[0],fontsize=24)
+            for axis in ['top','bottom','left','right']:
+                ax1.spines[axis].set_linewidth(2)
+            #ax1.axhline(linewidth=4, color="black")
+            #ax1.axvline(linewidth=4, color="black")
+            #
+            # choose shift for normalization and theta
+            if ii<=35:
+                shift=0
+            else:
+                shift=35
+            #
+            # set correct theta
+            mythetajrad1h=jrad1h[1+shift]
+            mythetajrad2h=jrad2h[1+shift]
+            mythetajrad3h=jrad3h[1+shift]
+            mythetajrad5h=jrad5h[1+shift]
+            mythetajrad7h=jrad7h[1+shift]
+            mythetajrad8h=jrad8h[1+shift]
+            mythetajrad9h=jrad9h[1+shift]
+            mythetajrad10h=jrad10h[1+shift]
+            mythetajrad11h=jrad11h[1+shift]
+            mythetajrad13h=jrad13h[1+shift]
+            mythetajrad14h=jrad14h[1+shift]
+            mythetajrad15h=jrad15h[1+shift]
+            mythetajrad16h=jrad16h[1+shift]
+            mythetajrad17h=jrad17h[1+shift]
+            #mythetajrad18h=jrad18h[1+shift]
+            #
+            # normalize some quantities
+            if (ii>=10+shift and ii<=25+shift and ii!=(19+shift)):
+                # normalize kappa's by kappaff (except kappaff itself)
+                fun1=np.copy(1.0/jrad1h[19+shift])
+                fun2=np.copy(1.0/jrad2h[19+shift])
+                fun3=np.copy(1.0/jrad3h[19+shift])
+                fun5=np.copy(1.0/jrad5h[19+shift])
+                fun7=np.copy(1.0/jrad7h[19+shift])
+                fun8=np.copy(1.0/jrad8h[19+shift])
+                fun9=np.copy(1.0/jrad9h[19+shift])
+                fun10=np.copy(1.0/jrad10h[19+shift])
+                fun11=np.copy(1.0/jrad11h[19+shift])
+                fun13=np.copy(1.0/jrad13h[19+shift])
+                fun14=np.copy(1.0/jrad14h[19+shift])
+                fun15=np.copy(1.0/jrad15h[19+shift])
+                fun16=np.copy(1.0/jrad16h[19+shift])
+                fun17=np.copy(1.0/jrad17h[19+shift])
+                #fun18=np.copy(1.0/jrad18h[19+shift])
+            elif (ii==27+shift or ii==28+shift or ii==29+shift):
+                # normalize densities by rho (25+shift) at equator
+                fun1 =np.copy(jrad1h[0]*0.0+1.0/jrad1h[26+shift][jrad1h[0,-1]/2])
+                fun2 =np.copy(jrad2h[0]*0.0+1.0/jrad2h[26+shift][jrad2h[0,-1]/2])
+                fun3 =np.copy(jrad3h[0]*0.0+1.0/jrad3h[26+shift][jrad3h[0,-1]/2])
+                fun5 =np.copy(jrad5h[0]*0.0+1.0/jrad5h[26+shift][jrad5h[0,-1]/2])
+                fun7 =np.copy(jrad7h[0]*0.0+1.0/jrad7h[26+shift][jrad7h[0,-1]/2])
+                fun8 =np.copy(jrad8h[0]*0.0+1.0/jrad8h[26+shift][jrad8h[0,-1]/2])
+                fun9 =np.copy(jrad9h[0]*0.0+1.0/jrad9h[26+shift][jrad9h[0,-1]/2])
+                fun10=np.copy(jrad10h[0]*0.0+1.0/jrad10h[26+shift][jrad10h[0,-1]/2])
+                fun11=np.copy(jrad11h[0]*0.0+1.0/jrad11h[26+shift][jrad11h[0,-1]/2])
+                fun13=np.copy(jrad13h[0]*0.0+1.0/jrad13h[26+shift][jrad13h[0,-1]/2])
+                fun14=np.copy(jrad14h[0]*0.0+1.0/jrad14h[26+shift][jrad14h[0,-1]/2])
+                fun15=np.copy(jrad15h[0]*0.0+1.0/jrad15h[26+shift][jrad15h[0,-1]/2])
+                fun16=np.copy(jrad16h[0]*0.0+1.0/jrad16h[26+shift][jrad16h[0,-1]/2])
+                fun17=np.copy(jrad17h[0]*0.0+1.0/jrad17h[26+shift][jrad17h[0,-1]/2])
+                #fun18=np.copy(jrad18h[0]*0.0+1.0/jrad18h[26+shift][jrad18h[0,-1]/2])
+            elif (ii==33+shift or ii==34+shift or ii==35+shift):
+                # normalize B by sqrt(rho) at equator
+                fun1 =np.copy(jrad1h[0]*0.0+1.0/np.sqrt(jrad1h[26+shift][jrad1h[0,-1]/2]))
+                fun2 =np.copy(jrad2h[0]*0.0+1.0/np.sqrt(jrad2h[26+shift][jrad2h[0,-1]/2]))
+                fun3 =np.copy(jrad3h[0]*0.0+1.0/np.sqrt(jrad3h[26+shift][jrad3h[0,-1]/2]))
+                fun5 =np.copy(jrad5h[0]*0.0+1.0/np.sqrt(jrad5h[26+shift][jrad5h[0,-1]/2]))
+                fun7 =np.copy(jrad7h[0]*0.0+1.0/np.sqrt(jrad7h[26+shift][jrad7h[0,-1]/2]))
+                fun8 =np.copy(jrad8h[0]*0.0+1.0/np.sqrt(jrad8h[26+shift][jrad8h[0,-1]/2]))
+                fun9 =np.copy(jrad9h[0]*0.0+1.0/np.sqrt(jrad9h[26+shift][jrad9h[0,-1]/2]))
+                fun10=np.copy(jrad10h[0]*0.0+1.0/np.sqrt(jrad10h[26+shift][jrad10h[0,-1]/2]))
+                fun11=np.copy(jrad11h[0]*0.0+1.0/np.sqrt(jrad11h[26+shift][jrad11h[0,-1]/2]))
+                fun13=np.copy(jrad13h[0]*0.0+1.0/np.sqrt(jrad13h[26+shift][jrad13h[0,-1]/2]))
+                fun14=np.copy(jrad14h[0]*0.0+1.0/np.sqrt(jrad14h[26+shift][jrad14h[0,-1]/2]))
+                fun15=np.copy(jrad15h[0]*0.0+1.0/np.sqrt(jrad15h[26+shift][jrad15h[0,-1]/2]))
+                fun16=np.copy(jrad16h[0]*0.0+1.0/np.sqrt(jrad16h[26+shift][jrad16h[0,-1]/2]))
+                fun17=np.copy(jrad17h[0]*0.0+1.0/np.sqrt(jrad17h[26+shift][jrad17h[0,-1]/2]))
+                #fun18=np.copy(jrad18h[0]*0.0+1.0/np.sqrt(jrad18h[26+shift][jrad18h[0,-1]/2]))
+            else:
+                # no normaliation
+                fun1=np.copy(jrad1h[0]*0.0+1.0)
+                fun2=np.copy(jrad2h[0]*0.0+1.0)
+                fun3=np.copy(jrad3h[0]*0.0+1.0)
+                fun5=np.copy(jrad5h[0]*0.0+1.0)
+                fun7=np.copy(jrad7h[0]*0.0+1.0)
+                fun8=np.copy(jrad8h[0]*0.0+1.0)
+                fun9=np.copy(jrad9h[0]*0.0+1.0)
+                fun10=np.copy(jrad10h[0]*0.0+1.0)
+                fun11=np.copy(jrad11h[0]*0.0+1.0)
+                fun13=np.copy(jrad13h[0]*0.0+1.0)
+                fun14=np.copy(jrad14h[0]*0.0+1.0)
+                fun15=np.copy(jrad15h[0]*0.0+1.0)
+                fun16=np.copy(jrad16h[0]*0.0+1.0)
+                fun17=np.copy(jrad17h[0]*0.0+1.0)
+                #fun18=np.copy(jrad18h[0]*0.0+1.0)
+            #
+            ax1.plot(mythetajrad1h,factors[ii]*jrad1h[ii]*fun1,color="black",label='M1',linewidth=2.0,linestyle='-')
+            ax1.plot(mythetajrad2h,factors[ii]*jrad2h[ii]*fun2,color="black",label='M2',linewidth=2.0,linestyle='--')
+            ax1.plot(mythetajrad3h,factors[ii]*jrad3h[ii]*fun3,color="black",label='M3',linewidth=2.0,linestyle='-.')
+            ax1.plot(mythetajrad5h,factors[ii]*jrad5h[ii]*fun5,color="gold",label='M5',linewidth=2.0,linestyle='--')
+            #ax1.plot(mythetajrad18h,factors[ii]*jrad18h[ii]*fun18,color="green",label='M6',linewidth=2.0,linestyle='--')
+            ax1.plot(mythetajrad7h,factors[ii]*jrad7h[ii]*fun7,color="red",label='M7',linewidth=2.0)
+            ax1.plot(mythetajrad8h,factors[ii]*jrad8h[ii]*fun8,color="green",label='M8',linewidth=2.0)
+            ax1.plot(mythetajrad9h,factors[ii]*jrad9h[ii]*fun9,color="red",label='M9',linewidth=2.0,linestyle='--')
+            ax1.plot(mythetajrad10h,factors[ii]*jrad10h[ii]*fun10,color="black",label='M10',linewidth=2.0,linestyle=':')
+            ax1.plot(mythetajrad11h,factors[ii]*jrad11h[ii]*fun11,color="blue",label='M11',linewidth=2.0,linestyle='--')
+            ax1.plot(mythetajrad13h,factors[ii]*jrad13h[ii]*fun13,color="brown",label='M13',linewidth=2.0)
+            ax1.plot(mythetajrad14h,factors[ii]*jrad14h[ii]*fun14,color="orange",label='M14',linewidth=2.0)
+            ax1.plot(mythetajrad17h,factors[ii]*jrad17h[ii]*fun17,color="blue",label='M14h',linewidth=2.0)
+            ax1.plot(mythetajrad15h,factors[ii]*jrad15h[ii]*fun15,color="purple",label='M15',linewidth=2.0)
+            ax1.plot(mythetajrad16h,factors[ii]*jrad16h[ii]*fun16,color="gold",label='M15h',linewidth=2.0)
+            ax1.set_xscale(xscales[0])
+            ax1.set_yscale(yscales[ii])
+            legend = ax1.legend(loc='upper right', shadow=True)
+            #plt.axis('tight',ax=ax1)
+            plt.savefig(fignames[ii])
+            #plt.show()
+            plt.close()
+        #
     #
     #########
     # derived plots
-    xlabels=[r"$\theta$"]
-    xscales=['linear']
-    #
-    ylabels=["Beaming factor"]
-    yscales=['linear']
-    #
-    fignames=["beamingfactor.png"]
-    print("fignames")
-    print(np.shape(fignames))
-    #
-    factors=[1]
     #
     #
-    if 1==1:
+    if doextraplots==1: # EM
+        xlabels=[r"$\theta$"]
+        xscales=['linear']
+        #
+        ylabels=["EM Beaming factor"]
+        yscales=['linear']
+        #
+        fignames=["embeamingfactor.png"]
+        #
+        factors=[np.pi]
+        #
+        #
         fig, (ax1) = plt.subplots(1, 1)
         plt.gcf().subplots_adjust(bottom=0.15)
         #plt.clf()
@@ -34354,7 +34370,7 @@ def dcpaperplot1():
         #ax1.axvline(linewidth=4, color="black")
         #
         # choose shift for normalization and theta
-        shift=34
+        shift=35
         #
         # set correct theta
         mythetajrad1h=jrad1h[1+shift]
@@ -34374,45 +34390,163 @@ def dcpaperplot1():
         #mythetajrad18h=jrad18h[1+shift]
         #
         if 1==1:
-
-#            sumtotal=np.sum(jrad1h[70]*
-            
- #           fun1=np.copy(jrad1h[0]*0.0+)
-            fun2=np.copy(jrad2h[0]*0.0+1.0)
-            fun3=np.copy(jrad3h[0]*0.0+1.0)
-            fun5=np.copy(jrad5h[0]*0.0+1.0)
-            fun7=np.copy(jrad7h[0]*0.0+1.0)
-            fun8=np.copy(jrad8h[0]*0.0+1.0)
-            fun9=np.copy(jrad9h[0]*0.0+1.0)
-            fun10=np.copy(jrad10h[0]*0.0+1.0)
-            fun11=np.copy(jrad11h[0]*0.0+1.0)
-            fun13=np.copy(jrad13h[0]*0.0+1.0)
-            fun14=np.copy(jrad14h[0]*0.0+1.0)
-            fun15=np.copy(jrad15h[0]*0.0+1.0)
-            fun16=np.copy(jrad16h[0]*0.0+1.0)
-            fun17=np.copy(jrad17h[0]*0.0+1.0)
-            #fun18=np.copy(jrad18h[0]*0.0+1.0)
+            tot1=np.sum(np.clip(jrad1h[74]*jrad1h[38],0,1E50))
+            tot2=np.sum(np.clip(jrad2h[74]*jrad2h[38],0,1E50))
+            tot3=np.sum(np.clip(jrad3h[74]*jrad3h[38],0,1E50))
+            tot5=np.sum(np.clip(jrad5h[74]*jrad5h[38],0,1E50))
+            tot7=np.sum(np.clip(jrad7h[74]*jrad7h[38],0,1E50))
+            tot8=np.sum(np.clip(jrad8h[74]*jrad8h[38],0,1E50))
+            tot9=np.sum(np.clip(jrad9h[74]*jrad9h[38],0,1E50))
+            tot10=np.sum(np.clip(jrad10h[74]*jrad10h[38],0,1E50))
+            tot11=np.sum(np.clip(jrad11h[74]*jrad11h[38],0,1E50))
+            tot13=np.sum(np.clip(jrad13h[74]*jrad13h[38],0,1E50))
+            tot14=np.sum(np.clip(jrad14h[74]*jrad14h[38],0,1E50))
+            tot15=np.sum(np.clip(jrad15h[74]*jrad15h[38],0,1E50))
+            tot16=np.sum(np.clip(jrad16h[74]*jrad16h[38],0,1E50))
+            tot17=np.sum(np.clip(jrad17h[74]*jrad17h[38],0,1E50))
+            #tot18=np.sum(np.clip(jrad18h[74]*jrad18h[38],0,1E50))
+            #
+            print("tots: %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tot1,tot2,tot3,tot5,tot7,tot8,tot9,tot10,tot11,tot13,tot14,tot15,tot16,tot17)); sys.stdout.flush()
+            #
+            fun1=np.copy(jrad1h[0]*0.0+1.0/tot1)
+            fun2=np.copy(jrad2h[0]*0.0+1.0/tot2)
+            fun3=np.copy(jrad3h[0]*0.0+1.0/tot3)
+            fun5=np.copy(jrad5h[0]*0.0+1.0/tot5)
+            fun7=np.copy(jrad7h[0]*0.0+1.0/tot7)
+            fun8=np.copy(jrad8h[0]*0.0+1.0/tot8)
+            fun9=np.copy(jrad9h[0]*0.0+1.0/tot9)
+            fun10=np.copy(jrad10h[0]*0.0+1.0/tot10)
+            fun11=np.copy(jrad11h[0]*0.0+1.0/tot11)
+            fun13=np.copy(jrad13h[0]*0.0+1.0/tot13)
+            fun14=np.copy(jrad14h[0]*0.0+1.0/tot14)
+            fun15=np.copy(jrad15h[0]*0.0+1.0/tot15)
+            fun16=np.copy(jrad16h[0]*0.0+1.0/tot16)
+            fun17=np.copy(jrad17h[0]*0.0+1.0/tot17)
+            #fun18=np.copy(jrad18h[0]*0.0+1.0/tot18)
         #
-        ax1.plot(mythetajrad1h,factors[ii]*jrad1h[ii]*fun1,color="black",label='M1',linewidth=2.0,linestyle='-')
-        ax1.plot(mythetajrad2h,factors[ii]*jrad2h[ii]*fun2,color="black",label='M2',linewidth=2.0,linestyle='--')
-        ax1.plot(mythetajrad3h,factors[ii]*jrad3h[ii]*fun3,color="black",label='M3',linewidth=2.0,linestyle='-.')
-        ax1.plot(mythetajrad5h,factors[ii]*jrad5h[ii]*fun5,color="gold",label='M5',linewidth=2.0,linestyle='--')
-        #ax1.plot(mythetajrad18h,factors[ii]*jrad18h[ii]*fun18,color="green",label='M6',linewidth=2.0,linestyle='--')
-        ax1.plot(mythetajrad7h,factors[ii]*jrad7h[ii]*fun7,color="red",label='M7',linewidth=2.0)
-        ax1.plot(mythetajrad8h,factors[ii]*jrad8h[ii]*fun8,color="green",label='M8',linewidth=2.0)
-        ax1.plot(mythetajrad9h,factors[ii]*jrad9h[ii]*fun9,color="red",label='M9',linewidth=2.0,linestyle='--')
-        ax1.plot(mythetajrad10h,factors[ii]*jrad10h[ii]*fun10,color="black",label='M10',linewidth=2.0,linestyle=':')
-        ax1.plot(mythetajrad11h,factors[ii]*jrad11h[ii]*fun11,color="blue",label='M11',linewidth=2.0,linestyle='--')
-        ax1.plot(mythetajrad13h,factors[ii]*jrad13h[ii]*fun13,color="brown",label='M13',linewidth=2.0)
-        ax1.plot(mythetajrad14h,factors[ii]*jrad14h[ii]*fun14,color="orange",label='M14',linewidth=2.0)
-        ax1.plot(mythetajrad17h,factors[ii]*jrad17h[ii]*fun17,color="blue",label='M14h',linewidth=2.0)
-        ax1.plot(mythetajrad15h,factors[ii]*jrad15h[ii]*fun15,color="purple",label='M15',linewidth=2.0)
-        ax1.plot(mythetajrad16h,factors[ii]*jrad16h[ii]*fun16,color="gold",label='M15h',linewidth=2.0)
+        ax1.plot(mythetajrad1h,factors[0]*np.clip(jrad1h[74],0,1E30)*fun1,color="black",label='M1',linewidth=2.0,linestyle='-')
+        ax1.plot(mythetajrad2h,factors[0]*np.clip(jrad2h[74],0,1E30)*fun2,color="black",label='M2',linewidth=2.0,linestyle='--')
+        ax1.plot(mythetajrad3h,factors[0]*np.clip(jrad3h[74],0,1E30)*fun3,color="black",label='M3',linewidth=2.0,linestyle='-.')
+        ax1.plot(mythetajrad5h,factors[0]*np.clip(jrad5h[74],0,1E30)*fun5,color="gold",label='M5',linewidth=2.0,linestyle='--')
+        #ax1.plot(mythetajrad18h,factors[0]*np.clip(jrad18h[74],0,1E30)*fun18,color="green",label='M6',linewidth=2.0,linestyle='--')
+        ax1.plot(mythetajrad7h,factors[0]*np.clip(jrad7h[74],0,1E30)*fun7,color="red",label='M7',linewidth=2.0)
+        ax1.plot(mythetajrad8h,factors[0]*np.clip(jrad8h[74],0,1E30)*fun8,color="green",label='M8',linewidth=2.0)
+        ax1.plot(mythetajrad9h,factors[0]*np.clip(jrad9h[74],0,1E30)*fun9,color="red",label='M9',linewidth=2.0,linestyle='--')
+        ax1.plot(mythetajrad10h,factors[0]*np.clip(jrad10h[74],0,1E30)*fun10,color="black",label='M10',linewidth=2.0,linestyle=':')
+        ax1.plot(mythetajrad11h,factors[0]*np.clip(jrad11h[74],0,1E30)*fun11,color="blue",label='M11',linewidth=2.0,linestyle='--')
+        ax1.plot(mythetajrad13h,factors[0]*np.clip(jrad13h[74],0,1E30)*fun13,color="brown",label='M13',linewidth=2.0)
+        ax1.plot(mythetajrad14h,factors[0]*np.clip(jrad14h[74],0,1E30)*fun14,color="orange",label='M14',linewidth=2.0)
+        ax1.plot(mythetajrad17h,factors[0]*np.clip(jrad17h[74],0,1E30)*fun17,color="blue",label='M14h',linewidth=2.0)
+        ax1.plot(mythetajrad15h,factors[0]*np.clip(jrad15h[74],0,1E30)*fun15,color="purple",label='M15',linewidth=2.0)
+        ax1.plot(mythetajrad16h,factors[0]*np.clip(jrad16h[74],0,1E30)*fun16,color="gold",label='M15h',linewidth=2.0)
         ax1.set_xscale(xscales[0])
-        ax1.set_yscale(yscales[ii])
+        ax1.set_yscale(yscales[0])
         legend = ax1.legend(loc='upper right', shadow=True)
         #plt.axis('tight',ax=ax1)
-        plt.savefig(fignames[ii])
+        plt.savefig(fignames[0])
+        #plt.show()
+        plt.close()
+    #
+    if doextraplots==1: # RAD
+        xlabels=[r"$\theta$"]
+        xscales=['linear']
+        #
+        ylabels=["RAD Beaming factor"]
+        yscales=['linear']
+        #
+        fignames=["radbeamingfactor.png"]
+        #
+        factors=[np.pi]
+        #
+        #
+        fig, (ax1) = plt.subplots(1, 1)
+        plt.gcf().subplots_adjust(bottom=0.15)
+        #plt.clf()
+        plt.ioff()
+        plt.rc('text', usetex=False)
+        #plt.rc('font', family='serif')
+        ax1.set_ylabel(ylabels[0],fontsize=24)
+        ax1.set_xlabel(xlabels[0],fontsize=24)
+        for axis in ['top','bottom','left','right']:
+            ax1.spines[axis].set_linewidth(2)
+        #ax1.axhline(linewidth=4, color="black")
+        #ax1.axvline(linewidth=4, color="black")
+        #
+        # choose shift for normalization and theta
+        shift=35
+        #
+        # set correct theta
+        mythetajrad1h=jrad1h[1+shift]
+        mythetajrad2h=jrad2h[1+shift]
+        mythetajrad3h=jrad3h[1+shift]
+        mythetajrad5h=jrad5h[1+shift]
+        mythetajrad7h=jrad7h[1+shift]
+        mythetajrad8h=jrad8h[1+shift]
+        mythetajrad9h=jrad9h[1+shift]
+        mythetajrad10h=jrad10h[1+shift]
+        mythetajrad11h=jrad11h[1+shift]
+        mythetajrad13h=jrad13h[1+shift]
+        mythetajrad14h=jrad14h[1+shift]
+        mythetajrad15h=jrad15h[1+shift]
+        mythetajrad16h=jrad16h[1+shift]
+        mythetajrad17h=jrad17h[1+shift]
+        #mythetajrad18h=jrad18h[1+shift]
+        #
+        if 1==1:
+            tot1=np.sum(np.clip(jrad1h[71]*jrad1h[38],0,1E50))
+            tot2=np.sum(np.clip(jrad2h[71]*jrad2h[38],0,1E50))
+            tot3=np.sum(np.clip(jrad3h[71]*jrad3h[38],0,1E50))
+            tot5=np.sum(np.clip(jrad5h[71]*jrad5h[38],0,1E50))
+            tot7=np.sum(np.clip(jrad7h[71]*jrad7h[38],0,1E50))
+            tot8=np.sum(np.clip(jrad8h[71]*jrad8h[38],0,1E50))
+            tot9=np.sum(np.clip(jrad9h[71]*jrad9h[38],0,1E50))
+            tot10=np.sum(np.clip(jrad10h[71]*jrad10h[38],0,1E50))
+            tot11=np.sum(np.clip(jrad11h[71]*jrad11h[38],0,1E50))
+            tot13=np.sum(np.clip(jrad13h[71]*jrad13h[38],0,1E50))
+            tot14=np.sum(np.clip(jrad14h[71]*jrad14h[38],0,1E50))
+            tot15=np.sum(np.clip(jrad15h[71]*jrad15h[38],0,1E50))
+            tot16=np.sum(np.clip(jrad16h[71]*jrad16h[38],0,1E50))
+            tot17=np.sum(np.clip(jrad17h[71]*jrad17h[38],0,1E50))
+            #tot18=np.sum(np.clip(jrad18h[71]*jrad18h[38],0,1E50))
+            #
+            print("tots: %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (tot1,tot2,tot3,tot5,tot7,tot8,tot9,tot10,tot11,tot13,tot14,tot15,tot16,tot17)); sys.stdout.flush()
+            #
+            fun1=np.copy(jrad1h[0]*0.0+1.0/tot1)
+            fun2=np.copy(jrad2h[0]*0.0+1.0/tot2)
+            fun3=np.copy(jrad3h[0]*0.0+1.0/tot3)
+            fun5=np.copy(jrad5h[0]*0.0+1.0/tot5)
+            fun7=np.copy(jrad7h[0]*0.0+1.0/tot7)
+            fun8=np.copy(jrad8h[0]*0.0+1.0/tot8)
+            fun9=np.copy(jrad9h[0]*0.0+1.0/tot9)
+            fun10=np.copy(jrad10h[0]*0.0+1.0/tot10)
+            fun11=np.copy(jrad11h[0]*0.0+1.0/tot11)
+            fun13=np.copy(jrad13h[0]*0.0+1.0/tot13)
+            fun14=np.copy(jrad14h[0]*0.0+1.0/tot14)
+            fun15=np.copy(jrad15h[0]*0.0+1.0/tot15)
+            fun16=np.copy(jrad16h[0]*0.0+1.0/tot16)
+            fun17=np.copy(jrad17h[0]*0.0+1.0/tot17)
+            #fun18=np.copy(jrad18h[0]*0.0+1.0/tot18)
+        #
+        ax1.plot(mythetajrad1h,factors[0]*np.clip(jrad1h[71],0,1E30)*fun1,color="black",label='M1',linewidth=2.0,linestyle='-')
+        ax1.plot(mythetajrad2h,factors[0]*np.clip(jrad2h[71],0,1E30)*fun2,color="black",label='M2',linewidth=2.0,linestyle='--')
+        ax1.plot(mythetajrad3h,factors[0]*np.clip(jrad3h[71],0,1E30)*fun3,color="black",label='M3',linewidth=2.0,linestyle='-.')
+        ax1.plot(mythetajrad5h,factors[0]*np.clip(jrad5h[71],0,1E30)*fun5,color="gold",label='M5',linewidth=2.0,linestyle='--')
+        #ax1.plot(mythetajrad18h,factors[0]*np.clip(jrad18h[71],0,1E30)*fun18,color="green",label='M6',linewidth=2.0,linestyle='--')
+        ax1.plot(mythetajrad7h,factors[0]*np.clip(jrad7h[71],0,1E30)*fun7,color="red",label='M7',linewidth=2.0)
+        ax1.plot(mythetajrad8h,factors[0]*np.clip(jrad8h[71],0,1E30)*fun8,color="green",label='M8',linewidth=2.0)
+        ax1.plot(mythetajrad9h,factors[0]*np.clip(jrad9h[71],0,1E30)*fun9,color="red",label='M9',linewidth=2.0,linestyle='--')
+        ax1.plot(mythetajrad10h,factors[0]*np.clip(jrad10h[71],0,1E30)*fun10,color="black",label='M10',linewidth=2.0,linestyle=':')
+        ax1.plot(mythetajrad11h,factors[0]*np.clip(jrad11h[71],0,1E30)*fun11,color="blue",label='M11',linewidth=2.0,linestyle='--')
+        ax1.plot(mythetajrad13h,factors[0]*np.clip(jrad13h[71],0,1E30)*fun13,color="brown",label='M13',linewidth=2.0)
+        ax1.plot(mythetajrad14h,factors[0]*np.clip(jrad14h[71],0,1E30)*fun14,color="orange",label='M14',linewidth=2.0)
+        ax1.plot(mythetajrad17h,factors[0]*np.clip(jrad17h[71],0,1E30)*fun17,color="blue",label='M14h',linewidth=2.0)
+        ax1.plot(mythetajrad15h,factors[0]*np.clip(jrad15h[71],0,1E30)*fun15,color="purple",label='M15',linewidth=2.0)
+        ax1.plot(mythetajrad16h,factors[0]*np.clip(jrad16h[71],0,1E30)*fun16,color="gold",label='M15h',linewidth=2.0)
+        ax1.set_xscale(xscales[0])
+        ax1.set_yscale(yscales[0])
+        legend = ax1.legend(loc='upper right', shadow=True)
+        #plt.axis('tight',ax=ax1)
+        plt.savefig(fignames[0])
         #plt.show()
         plt.close()
     #
