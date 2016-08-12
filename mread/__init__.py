@@ -31780,7 +31780,7 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     #
     tauradlocal=(KAPPAUSERnofe+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
     #
-    if 1==0:
+    if 1==1:
         # use time-phi average
         loadavg()
         KAPPAUSER=np.copy(rho)
@@ -32035,6 +32035,44 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
         myfun=np.log10(avg_kappasyreal)
     if(which==204):
         myfun=np.log10(avg_kappaffreal)
+    if which==205:
+       myfun=avg_KAPPAUSER
+    if which==206:
+       myfun=avg_KAPPAESUSER
+    if which==207:
+       myfun=avg_KAPPAUSER+avg_KAPPAESUSER
+    if which==208:
+       myfun=avg_Ehat
+    if(which==300 or which==301 or which==302):
+        gE=np.reshape(np.gradient(avg_Ehat[:,:,0]),(2,nx,ny,1))
+        #
+        idxdxp00=1/dxdxp[0][0]
+        idxdxp11=dxdxp[2][2]/(dxdxp[2][2]*dxdxp[1][1]-dxdxp[2][1]*dxdxp[1][2])
+        idxdxp12=dxdxp[1][2]/(dxdxp[2][1]*dxdxp[1][2]-dxdxp[2][2]*dxdxp[1][1])
+        idxdxp21=dxdxp[2][1]/(dxdxp[2][1]*dxdxp[1][2]-dxdxp[2][2]*dxdxp[1][1])
+        idxdxp22=dxdxp[1][1]/(dxdxp[2][2]*dxdxp[1][1]-dxdxp[2][1]*dxdxp[1][2])
+        idxdxp33=1/dxdxp[3][3]
+        #
+        gE1ks=(gE[1-1]/_dx1)*idxdxp11 + (gE[2-1]/_dx2)*idxdxp21
+        gE2ks=(gE[1-1]/_dx1)*idxdxp12 + (gE[2-1]/_dx2)*idxdxp22
+        #gE3ks=(gE[3]/_dx3)*idxdxp33
+        
+        gEr=gE1ks/np.sqrt(gvks11())
+        gEh=gE2ks/np.sqrt(gvks22())
+        #gEp=gE3ks/np.sqrt(gvks22())
+
+        avg_kappatot=(avg_KAPPAUSER+avg_KAPPAESUSER)
+        Fdiffr=-(1.0/(3.0*avg_kappatot))*gEr
+        Fdiffh=-(1.0/(3.0*avg_kappatot))*gEh
+        #Fdiffp=-(1.0/(3.0*avg_kappatot))*gEp
+
+        if which==300:
+            myfun=Fdiffr
+        if which==301:
+            myfun=Fdiffh
+        #if which==302:
+        #    myfun=Fdiffp
+#    if(which==300 or which==301 or which==302):
     #
     #
     # overrides
@@ -32044,6 +32082,7 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     #
     ##### start actual plotting
     plt.imshow(myfun[:,:,whichaphi])
+    #
     plt.colorbar()
     #
     #ax.contour(myfun[:,:,whichaphi],linewidths=4,colors='yellow', levels=(0,))
