@@ -998,26 +998,41 @@ then
             extrapath=${thedir}/$moviedirname
         fi
 
-        if [ -e ${extrapath}/$pythonlatexfile1 ]
+
+        if [ -e ${extrapath}/$pythonlatexfile1 ] &&
+            [ -e ${extrapath}/$pythonlatexfile2 ]
         then
-            mypythonlatexfile=${extrapath}/$pythonlatexfile1
-        elif [ -e ${extrapath}/$pythonlatexfile2 ]
-        then
-            mypythonlatexfile=${extrapath}/$pythonlatexfile2
+            # pick latest if both exist
+            mypythonlatexfile=`ls -rt ${extrapath}/$pythonlatexfile1 ${extrapath}/$pythonlatexfile2 | head -1`
         else
-            echo "No pythonlatexfile found"
-            exit
+            if [ -e ${extrapath}/$pythonlatexfile1 ]
+            then
+                mypythonlatexfile=${extrapath}/$pythonlatexfile1
+            elif [ -e ${extrapath}/$pythonlatexfile2 ]
+            then
+                mypythonlatexfile=${extrapath}/$pythonlatexfile2
+            else
+                echo "No pythonlatexfile found"
+                exit
+            fi
         fi
 
-        if [ -e ${extrapath}/$pythonlatex67file1 ]
+        if [ -e ${extrapath}/$pythonlatex67file1 ] &&
+            [ -e ${extrapath}/$pythonlatex67file2 ]
         then
-            mypythonlatex67file=${extrapath}/$pythonlatex67file1
-        elif [ -e ${extrapath}/$pythonlatex67file2 ]
-        then
-            mypythonlatex67file=${extrapath}/$pythonlatex67file2
+            # pick latest if both exist
+            mypythonlatexfile=`ls -rt ${extrapath}/$pythonlatex67file1 ${extrapath}/$pythonlatex67file2 | head -1`
         else
-            echo "No pythonlatex67file found"
-            exit
+            if [ -e ${extrapath}/$pythonlatex67file1 ]
+            then
+                mypythonlatex67file=${extrapath}/$pythonlatex67file1
+            elif [ -e ${extrapath}/$pythonlatex67file2 ]
+            then
+                mypythonlatex67file=${extrapath}/$pythonlatex67file2
+            else
+                echo "No pythonlatex67file found"
+                exit
+            fi
         fi
 
 
