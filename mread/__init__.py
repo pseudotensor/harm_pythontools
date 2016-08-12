@@ -28291,75 +28291,76 @@ def mkavgfigs1(whichfig=0):
             # only look at outgoing radiaion (not inggoing in equatorial region)
             avg_eoutRADout=np.copy(avg_eoutRAD)
             avg_eoutRADout[avg_eoutRADout<0]=0
+            powerrad=4
             #
-            radnumer1a=avg_eoutRADout**2*avg_TradoTgas
-            raddenom1a=avg_eoutRADout**2
+            radnumer1a=avg_eoutRADout**powerrad*avg_TradoTgas
+            raddenom1a=avg_eoutRADout**powerrad
             sumradnumer1a=np.sum(radnumer1a[iofr(10),:,:])
             sumraddenom1a=np.sum(raddenom1a[iofr(10),:,:])
             radresult1a=sumradnumer1a/sumraddenom1a
             #
-            radnumer1b=avg_eoutRADout**2*avg_TradoTgas
-            raddenom1b=avg_eoutRADout**2
+            radnumer1b=avg_eoutRADout**powerrad*avg_TradoTgas
+            raddenom1b=avg_eoutRADout**powerrad
             sumradnumer1b=np.sum(radnumer1b[iofr(100),:,:])
             sumraddenom1b=np.sum(raddenom1b[iofr(100),:,:])
             radresult1b=sumradnumer1b/sumraddenom1b
             #
-            radnumer1c=avg_eoutRADout**2*avg_TradoTgas
-            raddenom1c=avg_eoutRADout**2
+            radnumer1c=avg_eoutRADout**powerrad*avg_TradoTgas
+            raddenom1c=avg_eoutRADout**powerrad
             sumradnumer1c=np.sum(radnumer1c[iofr(1000),:,:])
             sumraddenom1c=np.sum(raddenom1c[iofr(1000),:,:])
             radresult1c=sumradnumer1c/sumraddenom1c
             #
-            radnumer2a=avg_eoutRADout**2*avg_fcollab
-            raddenom2a=avg_eoutRADout**2
+            radnumer2a=avg_eoutRADout**powerrad*avg_fcollab
+            raddenom2a=avg_eoutRADout**powerrad
             sumradnumer2a=np.sum(radnumer2a[iofr(10),:,:])
             sumraddenom2a=np.sum(raddenom2a[iofr(10),:,:])
             radresult2a=sumradnumer2a/sumraddenom2a
             #
-            radnumer2b=avg_eoutRADout**2*avg_fcollab
-            raddenom2b=avg_eoutRADout**2
+            radnumer2b=avg_eoutRADout**powerrad*avg_fcollab
+            raddenom2b=avg_eoutRADout**powerrad
             sumradnumer2b=np.sum(radnumer2b[iofr(100),:,:])
             sumraddenom2b=np.sum(raddenom2b[iofr(100),:,:])
             radresult2b=sumradnumer2b/sumraddenom2b
             #
-            radnumer2c=avg_eoutRADout**2*avg_fcollab
-            raddenom2c=avg_eoutRADout**2
+            radnumer2c=avg_eoutRADout**powerrad*avg_fcollab
+            raddenom2c=avg_eoutRADout**powerrad
             sumradnumer2c=np.sum(radnumer2c[iofr(1000),:,:])
             sumraddenom2c=np.sum(raddenom2c[iofr(1000),:,:])
             radresult2c=sumradnumer2c/sumraddenom2c
             #
-            radnumer3a=avg_eoutRADout**2*avg_varexpfff
-            raddenom3a=avg_eoutRADout**2
+            radnumer3a=avg_eoutRADout**powerrad*avg_varexpfff
+            raddenom3a=avg_eoutRADout**powerrad
             sumradnumer3a=np.sum(radnumer3a[iofr(10),:,:])
             sumraddenom3a=np.sum(raddenom3a[iofr(10),:,:])
             radresult3a=sumradnumer3a/sumraddenom3a
             #
-            radnumer3b=avg_eoutRADout**2*avg_varexpfff
-            raddenom3b=avg_eoutRADout**2
+            radnumer3b=avg_eoutRADout**powerrad*avg_varexpfff
+            raddenom3b=avg_eoutRADout**powerrad
             sumradnumer3b=np.sum(radnumer3b[iofr(100),:,:])
             sumraddenom3b=np.sum(raddenom3b[iofr(100),:,:])
             radresult3b=sumradnumer3b/sumraddenom3b
             #
-            radnumer3c=avg_eoutRADout**2*avg_varexpfff
-            raddenom3c=avg_eoutRADout**2
+            radnumer3c=avg_eoutRADout**powerrad*avg_varexpfff
+            raddenom3c=avg_eoutRADout**powerrad
             sumradnumer3c=np.sum(radnumer3c[iofr(1000),:,:])
             sumraddenom3c=np.sum(raddenom3c[iofr(1000),:,:])
             radresult3c=sumradnumer3c/sumraddenom3c
             #
-            radnumer4a=avg_eoutRADout**2*avg_nfcol
-            raddenom4a=avg_eoutRADout**2
+            radnumer4a=avg_eoutRADout**powerrad*avg_nfcol
+            raddenom4a=avg_eoutRADout**powerrad
             sumradnumer4a=np.sum(radnumer4a[iofr(10),:,:])
             sumraddenom4a=np.sum(raddenom4a[iofr(10),:,:])
             radresult4a=sumradnumer4a/sumraddenom4a
             #
-            radnumer4b=avg_eoutRADout**2*avg_nfcol
-            raddenom4b=avg_eoutRADout**2
+            radnumer4b=avg_eoutRADout**powerrad*avg_nfcol
+            raddenom4b=avg_eoutRADout**powerrad
             sumradnumer4b=np.sum(radnumer4b[iofr(100),:,:])
             sumraddenom4b=np.sum(raddenom4b[iofr(100),:,:])
             radresult4b=sumradnumer4b/sumraddenom4b
             #
-            radnumer4c=avg_eoutRADout**2*avg_nfcol
-            raddenom4c=avg_eoutRADout**2
+            radnumer4c=avg_eoutRADout**powerrad*avg_nfcol
+            raddenom4c=avg_eoutRADout**powerrad
             sumradnumer4c=np.sum(radnumer4c[iofr(1000),:,:])
             sumraddenom4c=np.sum(raddenom4c[iofr(1000),:,:])
             radresult4c=sumradnumer4c/sumraddenom4c
