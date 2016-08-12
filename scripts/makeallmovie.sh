@@ -1021,7 +1021,7 @@ then
             [ -e ${extrapath}/$pythonlatex67file2 ]
         then
             # pick latest if both exist
-            mypythonlatexfile=`ls -rt ${extrapath}/$pythonlatex67file1 ${extrapath}/$pythonlatex67file2 | tail -1`
+            mypythonlatex67file=`ls -rt ${extrapath}/$pythonlatex67file1 ${extrapath}/$pythonlatex67file2 | tail -1`
         else
             if [ -e ${extrapath}/$pythonlatex67file1 ]
             then
