@@ -19881,7 +19881,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             if modelname=="jonharmrad3" or modelname=="jonharmrad9" or modelname=="jonharmrad10" or modelname=="jonharmrad11":
                 ymax=min(ymax,30.0*mdotfinavg/normfactor*Mdotplotfactor)
                 ax.set_ylim((0,ymax))
-            else if isradmodelnrad(modelname):
+            elif isradmodelnrad(modelname):
                 ymax=min(ymax,10.0*mdotfinavg/normfactor*Mdotplotfactor)
                 ax.set_ylim((0,ymax))
             else:
@@ -20240,7 +20240,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                     tck=np.arange(ymin/10,ymax/10.,(ymax/10.0-ymin/10.0)/2.0)*10
                     tck=[-150,-100,-50,0,50,100,150]
                     ax.set_yticks(tck)
-                else if isradmodelnrad(modelname):
+                elif isradmodelnrad(modelname):
                     ymax=100
                     ymin=-100
                     ax.set_ylim((ymin,ymax))
