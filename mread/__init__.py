@@ -20172,88 +20172,52 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             tck=np.arange(-ymax,ymax,2.0*ymax/5.0)
             ax.set_yticks(tck)
         else:
-            #ax.set_ylim(0,2)
-            yminbh=np.min(etabh)
-            yminj=np.min(etaj)
-            ymin=min(yminbh,yminj)
-            if showrad==0: # for now don't show this -- too much on plot
-                yminmw=np.min(etamwout)
-                ymin=min(ymin,yminmw)
-            # sasha99 at least drops-out at certain points to eta<<0  -- so force eta=0 as minimum
-            if issashamodel(modelname):
-                ymin=0
-            #
-            if isradmodel(modelname):
-                ymin=0
-            # ssh pseudotensor@cli.globusonline.org scp -D -r -s 1 xsede#kraken:/lustre/scratch/jmckinne/rad1/rad1movie3/ pseudotensor#p179:/data/jon/harm_harmrad/pythonstuff
+            ymax=max(etabh_avg,etaj_avg)
+            ymax=max(ymax,etabhRAD_avg)
 
-            if signetaradtoshow==1:
-                yminetaradbh=np.min(signetaradtoshow*etabhRAD)
-                ymin=min(ymin,yminetaradbh)
-                ymin=max(ymin,-100.0) # no smaller than -1 (-100%)
-                    
-            ymaxbh=np.max(etabh)
-            ymaxj=np.max(etaj)
-            if showrad==0: # for now don't show this -- too much on plot
-                ymaxmw=np.max(etamwout)
-                ymax=max(ymaxbh,ymaxmw)
-            ymax=max(ymaxbh,ymaxj)
-            ymax=min(ymax,3.0*etabh_avg)
+            ymin=min(etabh_avg,etaj_avg)
+            ymin=min(ymax,etabhRAD_avg)
+
+            if ymax>0:
+                ymax=ymax*2.0
+            else:
+                ymax=0
+            if ymin<0:
+                ymin=ymin*2.0
+            else:
+                ymin=0
             #
+            if ymax>1 and ymax<=10:
+                # then round to tens
+                ymax=np.ceil(ymax/1.0)
+                ymax=ymax*1.0
+            if ymax>10 and ymax<=100:
+                # then round to tens
+                ymax=np.ceil(ymax/10.0)
+                ymax=ymax*10.0
+            if ymax>100 and ymax<=1000:
+                # then round to tens
+                ymax=np.ceil(ymax/100.0)
+                ymax=ymax*100.0
+            #
+            #
+            if ymin<=-1 and ymin>-10:
+                # then round to tens
+                ymin=-np.ceil(-ymin/1.0)
+                ymin=ymin*1.0
+            if ymin<=-10 and ymin>-100:
+                # then round to tens
+                ymin=-np.ceil(-ymin/10.0)
+                ymin=ymin*10.0
+            if ymin<=-100 and ymin>-1000:
+                # then round to tens
+                ymin=-np.ceil(-ymin/100.0)
+                ymin=ymin*100.0
+            #
+            #
+            ax.set_yticks(np.arange(ymin,ymax,(ymax-ymin)/4.0))
             ax.set_ylim(ymin,ymax)
             #
-            #ymax=ax.get_ylim()[1]
-            #if 100 < ymax and ymax < 200: 
-            #        #ymax = 2
-            #        tck=(100,)
-            #        ax.set_yticks(tck)
-            #        #ax.set_yticklabels(('','100','200'))
-            #elif ymax < 100: 
-            #        #ymax = 100
-            #        tck=(ymax/10,ymax)
-            #        ax.set_yticks(tck)
-            #        ax.set_yticklabels(('','100'))
-            if ymax>=100:
-                    ymax=min(400,ymax) # don't expect higher than 400% efficiency, so assume anomolous peak
-                    ax.set_ylim((0,ymax))
-                    ymax=np.floor(ymax/100.*0.9999)+1
-                    ymax*=100
-                    ax.set_ylim((0,ymax))
-                    tck=np.arange(1,ymax/100.,(ymax/100.0-1.0)/2.0)*100
-                    ax.set_yticks(tck)
-            elif ymax>=10:
-                    ymax=np.floor(ymax/10.*0.9999)+1
-                    ymax*=10
-                    ax.set_ylim((0,ymax))
-                    tck=np.arange(1,ymax/10.,(ymax/10.0-1.0)/2.0)*10
-                    ax.set_yticks(tck)
-            else:
-                    ax.set_yticks((ymax/2.0,ymax))
-            #
-            # override for rad (currently only applies for rada0.94
-            if 1==0 and showrad>0:
-                if modelname=="jonharmrad3" or modelname=="jonharmrad9" or modelname=="jonharmrad10" or modelname=="jonharmrad11":
-                    # high-eff cases
-                    ymax=200
-                    ymin=-200
-                    ax.set_ylim((ymin,ymax))
-                    tck=np.arange(ymin/10,ymax/10.,(ymax/10.0-ymin/10.0)/2.0)*10
-                    tck=[-150,-100,-50,0,50,100,150]
-                    ax.set_yticks(tck)
-                elif isradmodelnrad(modelname):
-                    ymax=50
-                    ymin=-50
-                    ax.set_ylim((ymin,ymax))
-                    tck=np.arange(ymin/10,ymax/10.,(ymax/10.0-ymin/10.0)/2.0)*10
-                    tck=[-50,-25,0,25,50]
-                    ax.set_yticks(tck)
-                else:
-                    ymax=35
-                    ymin=-35
-                    ax.set_ylim((ymin,ymax))
-                    tck=np.arange(ymin/10,ymax/10.,(ymax/10.0-ymin/10.0)/2.0)*10
-                    tck=[-30,-15,0,15,30]
-                    ax.set_yticks(tck)
             #
         #
         ax.grid(True)
