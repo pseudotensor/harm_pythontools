@@ -19878,7 +19878,14 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         ymax=ax.get_ylim()[1]
         if showrad>0:
-                ymax=min(ymax,3.0*mdotfinavg/normfactor*Mdotplotfactor)
+            if modelname=="jonharmrad3" or modelname=="jonharmrad9" or modelname=="jonharmrad10" or modelname=="jonharmrad11":
+                ymax=min(ymax,30.0*mdotfinavg/normfactor*Mdotplotfactor)
+                ax.set_ylim((0,ymax))
+            else if isradmodelnrad(modelname):
+                ymax=min(ymax,10.0*mdotfinavg/normfactor*Mdotplotfactor)
+                ax.set_ylim((0,ymax))
+            else:
+                ymax=min(ymax,5.0*mdotfinavg/normfactor*Mdotplotfactor)
                 ax.set_ylim((0,ymax))
         #
         #ymax=2*(np.floor(np.floor(ymax+1.5)/2))
@@ -20225,16 +20232,28 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             #
             # override for rad (currently only applies for rada0.94
             if showrad>0:
-                ymax=np.floor(ymax/10.*0.9999)+1
-                ymax*=10
-                ymin=np.floor(ymin/10.*0.9999)+1
-                ymin*=10
-                ymax=35
-                ymin=-35
-                ax.set_ylim((ymin,ymax))
-                tck=np.arange(ymin/10,ymax/10.,(ymax/10.0-ymin/10.0)/2.0)*10
-                tck=[-30,-15,0,15,30]
-                ax.set_yticks(tck)
+                if modelname=="jonharmrad3" or modelname=="jonharmrad9" or modelname=="jonharmrad10" or modelname=="jonharmrad11":
+                    # high-eff cases
+                    ymax=200
+                    ymin=-200
+                    ax.set_ylim((ymin,ymax))
+                    tck=np.arange(ymin/10,ymax/10.,(ymax/10.0-ymin/10.0)/2.0)*10
+                    tck=[-150,-100,-50,0,50,100,150]
+                    ax.set_yticks(tck)
+                else if isradmodelnrad(modelname):
+                    ymax=100
+                    ymin=-100
+                    ax.set_ylim((ymin,ymax))
+                    tck=np.arange(ymin/10,ymax/10.,(ymax/10.0-ymin/10.0)/2.0)*10
+                    tck=[-100,-50,0,50,100]
+                    ax.set_yticks(tck)
+                else:
+                    ymax=35
+                    ymin=-35
+                    ax.set_ylim((ymin,ymax))
+                    tck=np.arange(ymin/10,ymax/10.,(ymax/10.0-ymin/10.0)/2.0)*10
+                    tck=[-30,-15,0,15,30]
+                    ax.set_yticks(tck)
             #
         #
         ax.grid(True)
