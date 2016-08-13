@@ -19811,12 +19811,12 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     if whichplot == 1 and sashaplot1 == 0:
         if dotavg:
             ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+mdotfinavg/normfactor*Mdotplotfactor,color=(ofc,fc,fc))
-            if showextra:
+            if showextra and 1==0:
                 ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+mdotjetfinavg/normfactor*Mdotplotfactor,color=(fc,fc+0.5*(1-fc),fc))
                 ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+mdotmwoutfinavg*windplotfactor/normfactor*Mdotplotfactor,color=(fc,fc,1))
             if(iti>fti):
                 ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+mdotiniavg/normfactor*Mdotplotfactor,color=(ofc,fc,fc))
-                if showextra:
+                if showextra and 1==0:
                     ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+mdotjetiniavg/normfactor*Mdotplotfactor,color=(fc,fc+0.5*(1-fc),fc))
                     ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+mdotmwoutiniavg*windplotfactor/normfactor*Mdotplotfactor,color=(fc,fc,1))
         if showrad:
@@ -19826,7 +19826,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         if(1.0/Mdotplotfactor>1.0):
             ax.plot(ts,np.abs(mdtot[:,iflux]*mdtotfix/normfactor*Mdotplotfactor),clr,label=r'$\dot M_{\rm H}c^2/%d$' % (1.0/Mdotplotfactor))  # can't use ifluxacc
             ts,np.abs(mdtot[:,iflux]*mdtotfix/normfactor*Mdotplotfactor)
-            if showextra:
+            if showextra and 1==0:
                 print("before ax.plot2") ; sys.stdout.flush()
                 ax.plot(ts,np.abs(mdjet[:,iofr(rjetout)]/normfactor*Mdotplotfactor),'g--',label=r'$\dot M_{\rm j}c^2/%d$' % (1.0/Mdotplotfactor))
                 if windplotfactor==1.0:
@@ -19837,7 +19837,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         else:
             ax.plot(ts,np.abs(mdtot[:,iflux]*mdtotfix/normfactor*Mdotplotfactor),clr,label=r'$\dot M_{\rm H}c^2/%2.1g$' % (1.0/Mdotplotfactor))  # can't use ifluxacc
             ts,np.abs(mdtot[:,iflux]*mdtotfix/normfactor*Mdotplotfactor)
-            if showextra:
+            if showextra and 1==0:
                 print("before ax.plot2") ; sys.stdout.flush()
                 if(1.0/Mdotplotfactor>1.0):
                     ax.plot(ts,np.abs(mdjet[:,iofr(rjetout)]/normfactor*Mdotplotfactor),'g--',label=r'$\dot M_{\rm j}c^2/%2.1g$' % (1.0/Mdotplotfactor))
@@ -19856,7 +19856,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         if findex != None:
             if not isinstance(findex,tuple):
                 ax.plot(ts[findex],np.abs(mdtot[:,iflux]*mdtotfix)[findex]/normfactor*Mdotplotfactor,'o',mfc='r')
-                if showextra:
+                if showextra and 1==0:
                     ax.plot(ts[findex],np.abs(mdjet[:,iofr(rjetout)])[findex]/normfactor*Mdotplotfactor,'gs')
                     ax.plot(ts[findex],windplotfactor*np.abs(mdmwind[:,iofr(rjetout)])[findex]/normfactor*Mdotplotfactor,'bv')
                 if showrad:
@@ -19864,7 +19864,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             else:
                 for fi in findex:
                     ax.plot(ts[fi],np.abs(mdtot[:,iflux]*mdtotfix)[fi]/normfactor*Mdotplotfactor,'o',mfc='r')#,label=r'$\dot M$')
-                    if showextra:
+                    if showextra and 1==0:
                         ax.plot(ts[fi],np.abs(mdjet[:,iofr(rjetout)])[fi]/normfactor*Mdotplotfactor,'gs')
                         ax.plot(ts[fi],windplotfactor*np.abs(mdmwind[:,iofr(rjetout)])[fi]/normfactor*Mdotplotfactor,'bv')
                     if showrad:
@@ -20015,18 +20015,20 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         ax.plot(ts,etabh,clr,label=r'$\eta_{\rm H}$')
         if showextra:
             ax.plot(ts,etaj,'g--',label=r'$\eta_{\rm j}$')
+        if showextra and 1==0:
             ax.plot(ts,etawout,'b-.',label=r'$\eta_{\rm w}$')
         if findex != None:
             if not isinstance(findex,tuple):
                 if showextra:
                     ax.plot(ts[findex],etaj[findex],'gs')
                 ax.plot(ts[findex],etabh[findex],'o',mfc='r')
-                if showextra:
+                if showextra and 1==0:
                     ax.plot(ts[findex],etawout[findex],'bv')
             else:
                 for fi in findex:
-                    if showextra:
+                    if showextra and 1==0:
                         ax.plot(ts[fi],etawout[fi],'bv')#,label=r'$\dot M$')
+                    if showextra:
                         ax.plot(ts[fi],etaj[fi],'gs')#,label=r'$\dot M$')
                     ax.plot(ts[fi],etabh[fi],'o',mfc='r')#,label=r'$\dot M$')
         #ax.legend(loc='upper left')
@@ -20108,7 +20110,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+etabh_avg,color=(ofc,fc,fc)) 
             if showextra:
                 ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+etaj_avg,color=(fc,fc+0.5*(1-fc),fc)) 
-                if showrad==0: # for now don't show this -- too much on plot
+                if 1==0 and showrad==0: # for now don't show this -- too much on plot
                     ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+etamwout_avg,color=(fc,fc,1)) 
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
@@ -20117,7 +20119,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                 ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etabh2_avg,color=(ofc,fc,fc))
                 if showextra:
                     ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etaj2_avg,color=(fc,fc+0.5*(1-fc),fc))
-                    if showrad==0: # for now don't show this -- too much on plot
+                    if 1==0 and showrad==0: # for now don't show this -- too much on plot
                         ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etamwout2_avg,color=(fc,fc,1))
             if showrad:
                 ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etathinoutRAD_avg,color=(fc,1,1))
@@ -20126,7 +20128,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         ax.plot(ts,etabh,clr,label=r'$\eta_{\rm H}$')
         if showextra:
             ax.plot(ts,etaj,'g--',label=r'$\eta_{\rm j}$')
-            if showrad==0: # for now don't show this -- too much on plot
+            if 1==0 and showrad==0: # for now don't show this -- too much on plot
                 ax.plot(ts,etamwout,'b-.',label=r'$\eta_{\rm mw,o}$')
         if showrad:
             ax.plot(ts,etathinoutRAD,'c-.',label=r'$\eta_{\rm rad,o}$')
@@ -20137,7 +20139,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                 ax.plot(ts[findex],etabh[findex],'o',mfc='r')
                 if showextra:
                     ax.plot(ts[findex],etaj[findex],'gs')
-                    if showrad==0: # for now don't show this -- too much on plot
+                    if 1==0 and showrad==0: # for now don't show this -- too much on plot
                         ax.plot(ts[findex],etamwout[findex],'bv')
                 if showrad:
                     ax.plot(ts[findex],etathinoutRAD[findex],'cs')
@@ -20147,7 +20149,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                     ax.plot(ts[fi],etabh[fi],'o',mfc='r')#,label=r'$\dot M$')
                     if showextra:
                         ax.plot(ts[fi],etaj[fi],'gs')#,label=r'$\dot M$')
-                        if showrad==0: # for now don't show this -- too much on plot
+                        if 1==0 and showrad==0: # for now don't show this -- too much on plot
                             ax.plot(ts[fi],etamwout[fi],'bv')#,label=r'$\dot M$')
                     if showrad:
                         ax.plot(ts[fi],etathinoutRAD[fi],'cs')#,label=r'$\dot M$')
@@ -20504,6 +20506,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+etabh_avg,color=(ofc,fc,fc)) 
             if showextra:
                 ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+etaj_avg,color=(fc,fc+0.5*(1-fc),fc)) 
+            if showextra and 1==0:
                 ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+etaw_avg,color=(fc,fc+0.5*(1-fc),fc)) 
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
@@ -20517,24 +20520,27 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                 ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etabh2_avg,color=(ofc,fc,fc))
                 if showextra:
                     ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etaj2_avg,color=(fc,fc+0.5*(1-fc),fc))
+                if showextra and 1==0:
                     ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etaw2_avg,color=(fc,fc+0.5*(1-fc),fc))
         #
         ax.plot(ts,etabh,clr,label=r'$\eta_{\rm H}$')
-        if showextra:
-            ax.plot(ts,etaj,'g--',label=r'$\eta_{\rm j}$')
+        ax.plot(ts,etaj,'g--',label=r'$\eta_{\rm j}$')
+        if showextra and 1==0:
             ax.plot(ts,etaw,'b-.',label=r'$\eta_{\rm w,o}$')
         if findex != None:
             if not isinstance(findex,tuple):
                 ax.plot(ts[findex],etabh[findex],'o',mfc='r')
                 if showextra:
                     ax.plot(ts[findex],etaj[findex],'gs')
+                if showextra and 1==0:
                     ax.plot(ts[findex],etaw[findex],'bv')
             else:
                 for fi in findex:
                     ax.plot(ts[fi],etabh[fi],'o',mfc='r')#,label=r'$\dot M$')
                     if showextra:
-                        ax.plot(ts[fi],etaw[fi],'bv')#,label=r'$\dot M$')
                         ax.plot(ts[fi],etaj[fi],'gs')#,label=r'$\dot M$')
+                    if showextra and 1==0:
+                        ax.plot(ts[fi],etaw[fi],'bv')#,label=r'$\dot M$')
         #ax.set_ylim(0,2)
         ax.set_xlabel(r'$t\;[r_g/c]$',fontsize=16)
         ax.set_ylabel(r'$\eta\ [\%]$',fontsize=16,ha='left',labelpad=20)
@@ -20575,7 +20581,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     if whichplot == 5:
         if dotavg:
             if sashaplot5==0:
-                if showextra:
+                if showextra and 1==0:
                     ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+timeavg(phij**2,ts,fti,ftf)**0.5,color=(fc,fc+0.5*(1-fc),fc))
                     ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+timeavg(phimwout**2,ts,fti,ftf)**0.5,color=(fc,fc,1))
                 ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+phibh_avg,color=(ofc,fc,fc))
@@ -20584,7 +20590,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                 #ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+timeavg(phimwout**2,ts,fti,ftf)**0.5,color=(fc,fc,1))
             #
             if(iti>fti):
-                if showextra:
+                if showextra and 1==0:
                     ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+timeavg(phij2**2,ts,iti,itf)**0.5,color=(fc,fc+0.5*(1-fc),fc))
                     ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+timeavg(phimwout2**2,ts,iti,itf)**0.5,color=(fc,fc,1))
                 ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+phibh2_avg,color=(ofc,fc,fc))
@@ -20594,21 +20600,21 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         ax.plot(ts,phibh,clr,label=r'$\Upsilon_{\rm H}$')
         ax.set_xlim(ts[0],ts[-1])
         #
-        if showextra:
+        if showextra and 1==0:
             ax.plot(ts,phij,'g--',label=r'$\Upsilon_{\rm j}$')
             ax.plot(ts,phimwout,'b-.',label=r'$\Upsilon_{\rm mw,o}$')
         if findex != None:
             if not isinstance(findex,tuple):
-                if showextra:
+                if showextra and 1==0:
                     ax.plot(ts[findex],phij[findex],'gs')
+                    ax.plot(ts[findex],phimwout[findex],'bv')
                 ax.plot(ts[findex],phibh[findex],'o',mfc='r')
-                ax.plot(ts[findex],phimwout[findex],'bv')
             else:
                 for fi in findex:
-                    if showextra:
+                    if showextra and 1==0:
                         ax.plot(ts[fi],phij[fi],'gs')
+                        ax.plot(ts[fi],phimwout[fi],'bv')
                     ax.plot(ts[fi],phibh[fi],'o',mfc='r')
-                    ax.plot(ts[fi],phimwout[fi],'bv')
         ax.set_ylabel(r'$\Upsilon$',fontsize=16,ha='left',labelpad=20)
         #
         ymax=ax.get_ylim()[1]
@@ -31815,6 +31821,65 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     #tauradlocal=(KAPPAUSERnofe+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
     #tauradlocal=(KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
     #
+    # Fadv = <Ehat> <v^i>
+    # Fturb = <Ehat v^i> - Fadv
+    # F^i = R^i_t sqrt(gv311)
+    #
+    # |Fturb|/|Fadv|
+    #
+    # |Fturb|/|F|
+    #
+    # |Fadv|/|F|
+    #
+    # qdiff = Fdiff / Fhat
+    #
+    #
+    # qadv = (<Ehat uu> - <Ehat uradu>) / (|<Ehat uu> + <Ehat uradu>|)
+    #
+    # Fdiff^i = -(1/(3<kappa>))*d<Ehat>/dx^i
+    # gE = dEhat/d1
+    gE=np.reshape(np.gradient(avg_Ehat[:,:,0]),(2,nx,ny,1))
+    #
+    idxdxp00=1/dxdxp[0][0]
+    idxdxp11=dxdxp[2][2]/(dxdxp[2][2]*dxdxp[1][1]-dxdxp[2][1]*dxdxp[1][2])
+    idxdxp12=dxdxp[1][2]/(dxdxp[2][1]*dxdxp[1][2]-dxdxp[2][2]*dxdxp[1][1])
+    idxdxp21=dxdxp[2][1]/(dxdxp[2][1]*dxdxp[1][2]-dxdxp[2][2]*dxdxp[1][1])
+    idxdxp22=dxdxp[1][1]/(dxdxp[2][2]*dxdxp[1][1]-dxdxp[2][1]*dxdxp[1][2])
+    idxdxp33=1/dxdxp[3][3]
+    #
+    # d_r f = dmu dr/dmu f
+    gEr= ((gE[1-1]/_dx1)*idxdxp11 + (gE[2-1]/_dx2)*idxdxp21)/np.sqrt(gvks11())
+    gEh= ((gE[1-1]/_dx1)*idxdxp12 + (gE[2-1]/_dx2)*idxdxp22)/np.sqrt(gvks22())
+    #
+    avg_kappatot=(avg_KAPPAUSER+avg_KAPPAESUSER)
+    Fdiffr=-(1.0/(3.0*avg_kappatot))*gEr
+    Fdiffh=-(1.0/(3.0*avg_kappatot))*gEh
+    #
+    #########
+    Fturb1ksp=(avg_Ehatuu[1]-avg_Ehat*avg_uu[1])
+    Fturb2ksp=(avg_Ehatuu[2]-avg_Ehat*avg_uu[2])
+    #
+    # if use avg_abs, then below has to have abs on dxdxp's
+    Fturbr = (Fturb1ksp*dxdxp[1,1] + Fturb2ksp*dxdxp[1,2])*np.sqrt(gvks11())
+    Fturbh= (Fturb1ksp*dxdxp[2,1] + Fturb2ksp*dxdxp[2,2])*np.sqrt(gvks22())
+    #
+    #########
+    #########
+    Fadv1ksp=(avg_Ehat*avg_uu[1])
+    Fadv2ksp=(avg_Ehat*avg_uu[2])
+    #
+    # if use avg_abs, then below has to have abs on dxdxp's
+    Fadvr = (Fadv1ksp*dxdxp[1,1] + Fadv2ksp*dxdxp[1,2])*np.sqrt(gvks11())
+    Fadvh= (Fadv1ksp*dxdxp[2,1] + Fadv2ksp*dxdxp[2,2])*np.sqrt(gvks22())
+    #
+    #########
+    # if use avg_abs, then below has to have abs on dxdxp's
+    Ftotr = (avg_TudRAD[1,0]*dxdxp[1,1] + avg_TudRAD[2,0]*dxdxp[1,2])*np.sqrt(gvks11())
+    Ftoth = (avg_TudRAD[1,0]*dxdxp[2,1] + avg_TudRAD[2,0]*dxdxp[2,2])*np.sqrt(gvks22())
+    #
+    ########
+    qadv = (avg_Ehatuu - avg_Ehaturadu)/(avg_absEhatuu + avg_absEhaturadu+1E-50)
+    #
     # override
     #whichaphi=0
     #
@@ -32044,27 +32109,6 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     if which==208:
        myfun=avg_Ehat
     if(which==300 or which==301 or which==302):
-        gE=np.reshape(np.gradient(avg_Ehat[:,:,0]),(2,nx,ny,1))
-        #
-        idxdxp00=1/dxdxp[0][0]
-        idxdxp11=dxdxp[2][2]/(dxdxp[2][2]*dxdxp[1][1]-dxdxp[2][1]*dxdxp[1][2])
-        idxdxp12=dxdxp[1][2]/(dxdxp[2][1]*dxdxp[1][2]-dxdxp[2][2]*dxdxp[1][1])
-        idxdxp21=dxdxp[2][1]/(dxdxp[2][1]*dxdxp[1][2]-dxdxp[2][2]*dxdxp[1][1])
-        idxdxp22=dxdxp[1][1]/(dxdxp[2][2]*dxdxp[1][1]-dxdxp[2][1]*dxdxp[1][2])
-        idxdxp33=1/dxdxp[3][3]
-        #
-        gE1ks=(gE[1-1]/_dx1)*idxdxp11 + (gE[2-1]/_dx2)*idxdxp21
-        gE2ks=(gE[1-1]/_dx1)*idxdxp12 + (gE[2-1]/_dx2)*idxdxp22
-        #gE3ks=(gE[3]/_dx3)*idxdxp33
-        
-        gEr=gE1ks/np.sqrt(gvks11())
-        gEh=gE2ks/np.sqrt(gvks22())
-        #gEp=gE3ks/np.sqrt(gvks22())
-
-        avg_kappatot=(avg_KAPPAUSER+avg_KAPPAESUSER)
-        Fdiffr=-(1.0/(3.0*avg_kappatot))*gEr
-        Fdiffh=-(1.0/(3.0*avg_kappatot))*gEh
-        #Fdiffp=-(1.0/(3.0*avg_kappatot))*gEp
 
         if which==300:
             myfun=Fdiffr
@@ -32072,7 +32116,71 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
             myfun=Fdiffh
         #if which==302:
         #    myfun=Fdiffp
-#    if(which==300 or which==301 or which==302):
+    if which==303 or which==304 or which==305:
+        if which==303:
+            myfun=Fturbr
+        if which==304:
+            myfun=Fturbh
+    if which==400:
+        myfun=Fturbr/(1E-50+Fdiffr)
+        myfun[myfun>10]=10
+        myfun[myfun<-10]=-10
+    if which==401:
+        myfun=Fturbh/(1E-50+Fdiffh)
+        myfun[myfun>10]=10
+        myfun[myfun<-10]=-10
+    if which==402:
+        myfun=qadv[1]
+        myfun[myfun>10]=10
+        myfun[myfun<-10]=-10
+    if which==403:
+        myfun=qadv[2]
+        myfun[myfun>10]=10
+        myfun[myfun<-10]=-10
+    if which==404:
+        myfun=Fturbr/(1E-50+Fadvr)
+        myfun[myfun>10]=10
+        myfun[myfun<-10]=-10
+    if which==405:
+        myfun=Fturbh/(1E-50+Fadvh)
+        myfun[myfun>10]=10
+        myfun[myfun<-10]=-10
+    if which==406:
+        myfun=Fdiffr/(1E-50+Fadvr)
+        myfun[myfun>10]=10
+        myfun[myfun<-10]=-10
+    if which==407:
+        myfun=Fdiffh/(1E-50+Fadvh)
+        myfun[myfun>10]=10
+        myfun[myfun<-10]=-10
+    if which==408:
+        myfun=Fdiffr/(1E-50+Ftotr)
+        myfun[myfun>10]=10
+        myfun[myfun<-10]=-10
+    if which==409:
+        myfun=Fdiffh/(1E-50+Ftoth)
+        myfun[myfun>10]=10
+        myfun[myfun<-10]=-10
+    if which==410:
+        myfun=Fadvr/(1E-50+Ftotr)
+        myfun[myfun>10]=10
+        myfun[myfun<-10]=-10
+    if which==411:
+        myfun=Fadvh/(1E-50+Ftoth)
+        myfun[myfun>10]=10
+        myfun[myfun<-10]=-10
+    if which==412:
+        myfun=Fturbr/(1E-50+Ftotr)
+        myfun[myfun>10]=10
+        myfun[myfun<-10]=-10
+    if which==413:
+        myfun=Fturbh/(1E-50+Ftoth)
+        myfun[myfun>10]=10
+        myfun[myfun<-10]=-10
+    if which==414:
+        myfun=Ftotr
+    if which==415:
+        myfun=Ftoth
     #
     #
     # overrides
