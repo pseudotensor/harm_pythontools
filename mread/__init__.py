@@ -30245,39 +30245,6 @@ def mkavgfigs5(whichfig=0):
             #print(avg_eflux)
             #np.set_printoptions(threshold=10)
             returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig3gbiggest",veldensity=1,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,doefluxlog=True,alpha=0.2,showuu1eq0=True,dostreamlines=False,showqty1=True)
-        if whichfig==0 or whichfig==7: # This is for comparison of diffusive flux and advective flux and turbulent flux.
-            #
-            # Fdiff = -(1/(3<kappa>))*d<Ehat>/dx^i
-            # Fadv = <Ehat> <v^i>
-            # Fturb = <Ehat v^i> - Fadv
-            # F^i = R^i_t sqrt(gv311)
-            #
-            # |Fturb|/|Fadv|
-            #
-            # |Fturb|/|F|
-            #
-            # |Fadv|/|F|
-            #
-            # qdiff = Fdiff / Fhat
-            #
-            #
-            # qadv = (<Ehat uu> - <Ehat uradu>) / (|<Ehat uu> + <Ehat uradu>|)
-            #
-            mylen = 40.0
-            mylenshowx=(25.0/30.0)*mylen
-            mylenshowy=(15.0/30.0)*mylen
-            #
-            global avg_eflux
-            avg_eflux=np.copy(np.log10(avg_Tgas*TEMPBAR))
-            #
-            numoffset=5
-            vminforframe=np.amin(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:])
-            vmaxforframe=np.amax(avg_eflux[numoffset*iofr(rhor):iofr(mylen),:,:])
-            print("eflux: %g %g" % (vminforframe,vmaxforframe));sys.stdout.flush()
-            #np.set_printoptions(threshold=sys.maxint)
-            #print(avg_eflux)
-            #np.set_printoptions(threshold=10)
-            returnlevs=mkstreamplot1(Btrue=Btrue,gdetB=gdetB,bsq=avg_bsq,rho=avg_rho,uualt=avg_rhouu,len=mylen,mylenshowx=mylenshowx,mylenshowy=mylenshowy,fntsize=fntsize,arrowsize=arrowsize,vminforframe=vminforframe,vmaxforframe=vmaxforframe,forceeqsym=forceeqsym,fname="fig3g",veldensity=1,signaphi=signaphi,numcontours=numcontours,aphipow=aphipow,dojonwindplot=2,dotaurad=True,doaphi=False,doaphiavg=False,dorho=False,doeflux=True,doefluxlog=True,alpha=0.2,showuu1eq0=True,dostreamlines=False,showqty1=True)
         #call
         # fix back
         B=np.copy(avg_uu)
@@ -32201,6 +32168,9 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     print("shapes") ; sys.stdout.flush()
     print(np.shape(tauradintegrated)) ; sys.stdout.flush()
     print(np.shape(tauradeffintegrated)) ; sys.stdout.flush()
+    #
+    (taurad,tauradeffkappasyreal)=compute_taurad1(kappalocal=avg_kappasyreal)
+    ax.contour(tauradeffkappasyreal[:,:,whichaphi],linewidths=4,colors='red', levels=(1,))
     #
     pg = (gam-1)*ug
     Tcode=gam*pg/rho
