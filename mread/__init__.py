@@ -20231,7 +20231,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                     ax.set_yticks((ymax/2.0,ymax))
             #
             # override for rad (currently only applies for rada0.94
-            if showrad>0:
+            if 1==0 and showrad>0:
                 if modelname=="jonharmrad3" or modelname=="jonharmrad9" or modelname=="jonharmrad10" or modelname=="jonharmrad11":
                     # high-eff cases
                     ymax=200
@@ -20241,11 +20241,11 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                     tck=[-150,-100,-50,0,50,100,150]
                     ax.set_yticks(tck)
                 elif isradmodelnrad(modelname):
-                    ymax=100
-                    ymin=-100
+                    ymax=50
+                    ymin=-50
                     ax.set_ylim((ymin,ymax))
                     tck=np.arange(ymin/10,ymax/10.,(ymax/10.0-ymin/10.0)/2.0)*10
-                    tck=[-100,-50,0,50,100]
+                    tck=[-50,-25,0,25,50]
                     ax.set_yticks(tck)
                 else:
                     ymax=35
