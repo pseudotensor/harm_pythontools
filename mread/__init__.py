@@ -28281,6 +28281,7 @@ def mkavgfigs1(whichfig=0):
             sumnumer4c=np.sum(numer4c[iofr(20),:,:])
             sumdenom4c=np.sum(denom4c[iofr(20),:,:])
             result4c=sumnumer4c/sumdenom4c
+            #
         #
         #
         if 1==1: # radiation flux weighted things
@@ -28360,12 +28361,54 @@ def mkavgfigs1(whichfig=0):
             sumradnumer4c=np.sum(radnumer4c[iofr(1000),:,:])
             sumraddenom4c=np.sum(raddenom4c[iofr(1000),:,:])
             radresult4c=sumradnumer4c/sumraddenom4c
+            #
+            radnumer5a=avg_eoutRADout**powerrad*h[iofr(10),:,0]
+            raddenom5a=avg_eoutRADout**powerrad
+            sumradnumer5a=np.sum(radnumer5a[iofr(10),:,:])
+            sumraddenom5a=np.sum(raddenom5a[iofr(10),:,:])
+            radresult5a=sumradnumer5a/sumraddenom5a
+            #
+            radnumer5b=avg_eoutRADout**powerrad*h[iofr(100),:,0]
+            raddenom5b=avg_eoutRADout**powerrad
+            sumradnumer5b=np.sum(radnumer5b[iofr(100),:,:])
+            sumraddenom5b=np.sum(raddenom5b[iofr(100),:,:])
+            radresult5b=sumradnumer5b/sumraddenom5b
+            #
+            radnumer5c=avg_eoutRADout**powerrad*h[iofr(1000),:,0]
+            raddenom5c=avg_eoutRADout**powerrad
+            sumradnumer5c=np.sum(radnumer5c[iofr(1000),:,:])
+            sumraddenom5c=np.sum(raddenom5c[iofr(1000),:,:])
+            radresult5c=sumradnumer5c/sumraddenom5c
+        #
+        if 1==1: # EM flux weighted things
+            # only look at outgoing radiaion (not inggoing in equatorial region)
+            avg_eoutEMout=np.copy(avg_eoutEM)
+            avg_eoutEMout[avg_eoutEMout<0]=0
+            powerrad=4
+            #
+            radnumer1a=avg_eoutEMout**powerrad*h[iofr(10),:,0]
+            raddenom1a=avg_eoutEMout**powerrad
+            sumradnumer1a=np.sum(radnumer1a[iofr(10),:,:])
+            sumraddenom1a=np.sum(raddenom1a[iofr(10),:,:])
+            radresult1a=sumradnumer1a/sumraddenom1a
+            #
+            radnumer1b=avg_eoutEMout**powerrad*h[iofr(100),:,0]
+            raddenom1b=avg_eoutEMout**powerrad
+            sumradnumer1b=np.sum(radnumer1b[iofr(100),:,:])
+            sumraddenom1b=np.sum(raddenom1b[iofr(100),:,:])
+            radresult1b=sumradnumer1b/sumraddenom1b
+            #
+            radnumer1c=avg_eoutEMout**powerrad*h[iofr(1000),:,0]
+            raddenom1c=avg_eoutEMout**powerrad
+            sumradnumer1c=np.sum(radnumer1c[iofr(1000),:,:])
+            sumraddenom1c=np.sum(raddenom1c[iofr(1000),:,:])
+            radresult1c=sumradnumer1c/sumraddenom1c
         #
         # 
         (truemodelname,fieldtype)=gettruemodelname(modelname)
         #
-        print( "HLatex67: Model & $\\left(\\frac{\\hat{T}_\\gamma}{T_{\\rm{}gas}}\\right)_{r=r_{\\rm{}H}}$  & $\\left(\\frac{\\hat{T}_\\gamma}{T_{\\rm{}gas}}\\right)_{r=5r_g}$  & $\\left(\\frac{\\hat{T}_\\gamma}{T_{\\rm{}gas}}\\right)_{r=20r_g}$  & $f_{\\rm{col},r=100r_g,\\rm{rad.beam}}$ & $f_{\\rm{col},r=5r_g,\\rm{disk}}$ & ${\\rm{}e}^{-\\xi}_{r=100r_g,\\rm{rad.beam}}$ & ${\\rm{}e}^{-\\xi}_{r=5r_g,\\rm{disk}}$  \\\\" )
-        print( "VLatex67: %s         & %g & %g & %g    & %g & %g  & %g & %g & \\\\ %% %s" % (truemodelname, roundto2(result1a),roundto2(result1b),roundto2(result1c),roundto2(radresult2b),roundto2(result2b),roundto2(radresult3b),roundto2(result3b),    modelname ) )
+        print( "HLatex67: Model & $\\left(\\frac{\\hat{T}_\\gamma}{T_{\\rm{}gas}}\\right)_{r=r_{\\rm{}H}}$  & $\\left(\\frac{\\hat{T}_\\gamma}{T_{\\rm{}gas}}\\right)_{r=5r_g}$  & $\\left(\\frac{\\hat{T}_\\gamma}{T_{\\rm{}gas}}\\right)_{r=20r_g}$  & $f_{\\rm{col},r=100r_g,\\rm{rad.beam}}$ & $f_{\\rm{col},r=5r_g,\\rm{disk}}$ & ${\\rm{}e}^{-\\xi}_{r=100r_g,\\rm{rad.beam}}$ & ${\\rm{}e}^{-\\xi}_{r=5r_g,\\rm{disk}}$ & $\theta_{r,r=100r_g}$ & $\theta_{j,r=100r_g}$  \\\\" )
+        print( "VLatex67: %s         & %g & %g & %g    & %g & %g  & %g & %g &   %g & %g \\\\ %% %s" % (truemodelname, roundto2(result1a),roundto2(result1b),roundto2(result1c),roundto2(radresult2b),roundto2(result2b),roundto2(radresult3b),roundto2(result3b),roundto2(radresult5c),roundto2(radresult1c),    modelname ) )
         #
         # make data file of isotropic equivalent luminosities with modelname in name of file, so can cumulate these in separate non-parallel plot script for paper
         # same for Trad, Tgas, varexpf, rho, etc. along equator
