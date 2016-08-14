@@ -20215,7 +20215,14 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                 ymin=ymin*100.0
             #
             #
-            ax.set_yticks(np.arange(ymin,ymax,(ymax-ymin)/4.0))
+            if ymin<=0 and ymax>=0:
+                ticklow=np.arange(ymin,0,np.fabs(ymin/2))
+                tickhigh=np.arange(0,ymax,ymax/2)
+                ticks=np.concatenate((ticklow,tickhigh))
+            else:
+                ticks=np.arange(ymin,ymax,(ymax-ymin)/4)
+            #
+            ax.set_yticks(ticks)
             ax.set_ylim(ymin,ymax)
             #
             #
