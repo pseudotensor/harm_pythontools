@@ -890,12 +890,7 @@ fi
 #
 
 # for systems doing remote collection
-if [ $collect -ge 1 ] &&
-    [ $system -ne 3 ] &&
-    [ $system -ne 5 ] &&
-    [ $system -ne 6 ] &&
-    [ $system -ne 7 ] &&
-    [ $system -ne 8 ]
+if [ $collect -eq 3 ] # NOT USING
 then
     echo "Now collect Latex results"
     # then copy over results
@@ -952,16 +947,7 @@ echo "using pythonlatex67file1=$pythonlatex67file1  pythonlatex67file2=$pythonla
 
 
 
-if [ $collect -ge 1 ] &&
-    [ $system -eq 3 ] ||
-    [ $collect -ge 1 ] &&
-    [ $system -eq 6 ] ||
-    [ $collect -ge 1 ] &&
-    [ $system -eq 5 ] ||
-    [ $collect -ge 1 ] &&
-    [ $system -eq 7 ] ||
-    [ $collect -ge 1 ] &&
-    [ $system -eq 8 ]
+if [ $collect -ge 1 ]
 then
     echo "Now collect Latex results"
 
