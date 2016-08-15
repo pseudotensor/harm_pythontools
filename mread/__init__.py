@@ -16175,6 +16175,9 @@ def gettruemodelname(modelname=None):
     elif modelname=="jonharmrad5":
         fieldtype="MAD"
         truemodelname="M5"
+    elif modelname=="jonharmrad18":
+        fieldtype="MAD"
+        truemodelname="M6"
     elif modelname=="jonharmrad7":
         fieldtype="MAD"
         truemodelname="M7"
