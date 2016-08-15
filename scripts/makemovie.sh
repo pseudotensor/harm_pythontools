@@ -563,25 +563,36 @@ then
     #timetot="01:00:00"
     #timetot="04:00:00" # took 4 hours
 
-    if [ $makeframes -ge 1 ] ||
-        [ $make1d -ge 1 ]
+    if [ $make1d -ge 1 ]
+    then
+        # 50 files
+        #timetot="00:20:00"
+        # 500 files
+        # even 1000 files with 512 tasks
+        timetot="00:25:00"
+    elif [ $makeframes -ge 1 ]
     then
         # 50 files
         #timetot="00:20:00"
         # 500 files
         timetot="00:50:00"
+        # 1000 files and 512 tasks, only up to 20 minutes
+        timetot="00:25:00"
     elif [ $makeavg -ge 1 ]
-        then
-        # even with 500 files
+    then
+        # even with 500 files or 1000 files(with 512 cores)
         timetot="00:15:00"
     else
         # shouldn't matter then as not calling expensive routie that uses this timetot
         timetot="00:50:00"
     fi
     #
+    numfieldlinefiles=`ls dumps/fieldline*.bin |wc -l`  # true total number of fieldline files
+    #
     # numtasks set equal to total number of time slices, so each task does only 1 fieldline file
     # CHOOSE below or set numtasks to some number <= number of field lines
     numtasks=`ls dumps/fieldline*.bin |wc -l`  # true total number of tasks
+    numtasks=512
     #
     #numtasks=$(($numtasks/2))
     
@@ -640,8 +651,15 @@ then
     # if stick to parallel==2 mode, then only need about 10-20 minutes depending upon resolution
     #
     #
-    timetotplot="0:20:00"
-    timetotavgplot=$timetotplot
+    if [ $numfieldlinefiles -lt 200 ]
+    then
+        timetotplot="0:20:00"
+        timetotavgplot=$timetotplot
+    else # esp for jonharmrad17
+        timetotplot="0:30:00"
+        timetotavgplot=$timetotplot
+    fi
+
 
 
     #############################################
