@@ -39,7 +39,7 @@ dircollecttilt="thickdiskfull3d7tilt0.35 thickdiskfull3d7tilt0.7 thickdiskfull3d
 #################
 # choose:
 #dircollect="rad1"
-dircollect="jonharmrad1 jonharmrad2 jonharmrad3 jonharmrad5 jonharmrad7 jonharmrad8 jonharmrad9 jonharmrad10 jonharmrad11 jonharmrad13 jonharmrad14 jonharmrad17 jonharmrad15 jonharmrad16"
+dircollect="jonharmrad1 jonharmrad2 jonharmrad3 jonharmrad5 jonharmrad18 jonharmrad7 jonharmrad8 jonharmrad9 jonharmrad10 jonharmrad11 jonharmrad13 jonharmrad14 jonharmrad17 jonharmrad15 jonharmrad16"
 
 
 # note that thickdisk1 is actually bad, so ignore it.
@@ -55,7 +55,7 @@ dirrunstilt="sashaam9full2pit0.15 sashaa9b100t0.15 sashaa99t0.15 sashaam9full2pi
 ###################
 # choose
 #dirruns="rad1"
-dirruns="jonharmrad1 jonharmrad2 jonharmrad3 jonharmrad5 jonharmrad7 jonharmrad8 jonharmrad9 jonharmrad10 jonharmrad11 jonharmrad13 jonharmrad14 jonharmrad15 jonharmrad16 jonharmrad17"
+dirruns="jonharmrad1 jonharmrad2 jonharmrad3 jonharmrad5 jonharmrad7 jonharmrad8 jonharmrad9 jonharmrad10 jonharmrad11 jonharmrad13 jonharmrad14 jonharmrad15 jonharmrad16 jonharmrad17 jonharmrad18"
 
 
 #dirruns='thickdisk17'
