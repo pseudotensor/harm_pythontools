@@ -28429,11 +28429,57 @@ def mkavgfigs1(whichfig=0):
             sumemdenom1c=np.sum(emdenom1c[iofr(1000),:,:])
             emresult1c=sumemnumer1c/sumemdenom1c
         #
+        if 1==1: # MAKE flux weighted things
+            avg_eoutMAKEout=np.float64(np.copy(avg_eoutMAKE))
+            avg_eoutMAKEout[avg_eoutMAKEout<0]=0
+            powermake=np.float64(70.0)
+            #
+            makenumer1a=avg_eoutMAKEout**powermake*avg_h
+            makedenom1a=avg_eoutMAKEout**powermake
+            summakenumer1a=np.sum(makenumer1a[iofr(10),:,:])
+            summakedenom1a=np.sum(makedenom1a[iofr(10),:,:])
+            makeresult1a=summakenumer1a/summakedenom1a
+            #
+            makenumer1b=avg_eoutMAKEout**powermake*avg_h
+            makedenom1b=avg_eoutMAKEout**powermake
+            summakenumer1b=np.sum(makenumer1b[iofr(100),:,:])
+            summakedenom1b=np.sum(makedenom1b[iofr(100),:,:])
+            makeresult1b=summakenumer1b/summakedenom1b
+            #
+            makenumer1c=avg_eoutMAKEout**powermake*avg_h
+            makedenom1c=avg_eoutMAKEout**powermake
+            summakenumer1c=np.sum(makenumer1c[iofr(1000),:,:])
+            summakedenom1c=np.sum(makedenom1c[iofr(1000),:,:])
+            makeresult1c=summakenumer1c/summakedenom1c
+        #
+        if 1==1: # EM+MAKE flux weighted things
+            avg_eoutEMMAKEout=np.float64(np.copy(avg_eoutEM+avg_eoutMAKE))
+            avg_eoutEMMAKEout[avg_eoutEMMAKEout<0]=0
+            poweremmake=np.float64(70.0)
+            #
+            emmakenumer1a=avg_eoutEMMAKEout**poweremmake*avg_h
+            emmakedenom1a=avg_eoutEMMAKEout**poweremmake
+            sumemmakenumer1a=np.sum(emmakenumer1a[iofr(10),:,:])
+            sumemmakedenom1a=np.sum(emmakedenom1a[iofr(10),:,:])
+            emmakeresult1a=sumemmakenumer1a/sumemmakedenom1a
+            #
+            emmakenumer1b=avg_eoutEMMAKEout**poweremmake*avg_h
+            emmakedenom1b=avg_eoutEMMAKEout**poweremmake
+            sumemmakenumer1b=np.sum(emmakenumer1b[iofr(100),:,:])
+            sumemmakedenom1b=np.sum(emmakedenom1b[iofr(100),:,:])
+            emmakeresult1b=sumemmakenumer1b/sumemmakedenom1b
+            #
+            emmakenumer1c=avg_eoutEMMAKEout**poweremmake*avg_h
+            emmakedenom1c=avg_eoutEMMAKEout**poweremmake
+            sumemmakenumer1c=np.sum(emmakenumer1c[iofr(1000),:,:])
+            sumemmakedenom1c=np.sum(emmakedenom1c[iofr(1000),:,:])
+            emmakeresult1c=sumemmakenumer1c/sumemmakedenom1c
+        #
         # 
         (truemodelname,fieldtype)=gettruemodelname(modelname)
         #
-        print( "HLatex67: Model & $\\left(\\frac{\\hat{T}_\\gamma}{T_{\\rm{}gas}}\\right)_{r=r_{\\rm{}H}}$  & $\\left(\\frac{\\hat{T}_\\gamma}{T_{\\rm{}gas}}\\right)_{r=5r_g}$  & $\\left(\\frac{\\hat{T}_\\gamma}{T_{\\rm{}gas}}\\right)_{r=20r_g}$  & $f_{\\rm{col},r=100r_g,\\rm{rad.beam}}$ & $f_{\\rm{col},r=5r_g,\\rm{disk}}$ & ${\\rm{}e}^{-\\xi}_{r=100r_g,\\rm{rad.beam}}$ & ${\\rm{}e}^{-\\xi}_{r=5r_g,\\rm{disk}}$ & $\\theta_{r,r=1000r_g}$ & $\\theta_{j,r=1000r_g}$  \\\\" )
-        print( "VLatex67: %s         & %g & %g & %g    & %g & %g  & %g & %g &   %g & %g \\\\ %% %s" % (truemodelname, roundto2(result1a),roundto2(result1b),roundto2(result1c),roundto2(radresult2b),roundto2(result2b),roundto2(radresult3b),roundto2(result3b),roundto2(radresult5c),roundto2(emresult1c),    modelname ) )
+        print( "HLatex67: Model & $\\left(\\frac{\\hat{T}_\\gamma}{T_{\\rm{}gas}}\\right)_{r=r_{\\rm{}H}}$  & $\\left(\\frac{\\hat{T}_\\gamma}{T_{\\rm{}gas}}\\right)_{r=5r_g}$  & $\\left(\\frac{\\hat{T}_\\gamma}{T_{\\rm{}gas}}\\right)_{r=20r_g}$  & $f_{\\rm{col}}^{r=100r_g,\\rm{rad.beam}}$ & $f_{\\rm{col}}^{r=5r_g,\\rm{disk}}$ & ${\\rm{}e}^{-\\xi}_{r=100r_g,\\rm{rad.beam}}$ & ${\\rm{}e}^{-\\xi}_{r=5r_g,\\rm{disk}}$ & $\\theta_{\\rm{}r}^{r=1000r_g}$ & $\\theta_{\\rm{}em}^{r=1000r_g}$ & $\\theta_{\\rm{}j}^{r=1000r_g}$  \\\\" )
+        print( "VLatex67: %s         & %g & %g & %g    & %g & %g  & %g & %g &   %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(result1a),roundto2(result1b),roundto2(result1c),roundto2(radresult2b),roundto2(result2b),roundto2(radresult3b),roundto2(result3b),roundto2(radresult5c),roundto2(emresult1c),roundto2(emmakeresult1c),    modelname ) )
         #
         # make data file of isotropic equivalent luminosities with modelname in name of file, so can cumulate these in separate non-parallel plot script for paper
         # same for Trad, Tgas, varexpf, rho, etc. along equator
@@ -31750,6 +31796,10 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     else:
         rfd(filename)
     #
+    for ii in np.arange(0,np.shape(r[:,ny/2,0])[0]):
+        print("ii=%d r=%21.15g\n" % (ii,r[ii,ny/2,0]))
+    sys.stdout.flush()
+    #
     pg=(gam-1.0)*ug  #clean # use clean to keep pg low and Tgas will have floor like below  # no, need to use what was in simulation to be consistent with simulation's idea of what optical depth was
     # and of used ugclean above, then in funnel temperature would be very small and kappaff would be huge.
     #
@@ -31811,7 +31861,7 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     #
     tauradlocal=(KAPPAUSERnofe+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
     #
-    if 1==1:
+    if 1==0:
         # use time-phi average
         loadavg()
         KAPPAUSER=np.copy(rho)
@@ -31863,47 +31913,55 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     #
     # Fdiff^i = -(1/(3<kappa>))*d<Ehat>/dx^i
     # gE = dEhat/d1
-    gE=np.reshape(np.gradient(avg_Ehat[:,:,0]),(2,nx,ny,1))
+    Ehatexists=1
+    try:
+        avg_Ehat
+    except NameError:
+        Ehatexists=0
+        print("no Ehat")
     #
-    idxdxp00=1/dxdxp[0][0]
-    idxdxp11=dxdxp[2][2]/(dxdxp[2][2]*dxdxp[1][1]-dxdxp[2][1]*dxdxp[1][2])
-    idxdxp12=dxdxp[1][2]/(dxdxp[2][1]*dxdxp[1][2]-dxdxp[2][2]*dxdxp[1][1])
-    idxdxp21=dxdxp[2][1]/(dxdxp[2][1]*dxdxp[1][2]-dxdxp[2][2]*dxdxp[1][1])
-    idxdxp22=dxdxp[1][1]/(dxdxp[2][2]*dxdxp[1][1]-dxdxp[2][1]*dxdxp[1][2])
-    idxdxp33=1/dxdxp[3][3]
-    #
-    # d_r f = dmu dr/dmu f
-    gEr= ((gE[1-1]/_dx1)*idxdxp11 + (gE[2-1]/_dx2)*idxdxp21)/np.sqrt(gvks11())
-    gEh= ((gE[1-1]/_dx1)*idxdxp12 + (gE[2-1]/_dx2)*idxdxp22)/np.sqrt(gvks22())
-    #
-    avg_kappatot=(avg_KAPPAUSER+avg_KAPPAESUSER)
-    Fdiffr=-(1.0/(3.0*avg_kappatot))*gEr
-    Fdiffh=-(1.0/(3.0*avg_kappatot))*gEh
-    #
-    #########
-    Fturb1ksp=(avg_Ehatuu[1]-avg_Ehat*avg_uu[1])
-    Fturb2ksp=(avg_Ehatuu[2]-avg_Ehat*avg_uu[2])
-    #
-    # if use avg_abs, then below has to have abs on dxdxp's
-    Fturbr = (Fturb1ksp*dxdxp[1,1] + Fturb2ksp*dxdxp[1,2])*np.sqrt(gvks11())
-    Fturbh= (Fturb1ksp*dxdxp[2,1] + Fturb2ksp*dxdxp[2,2])*np.sqrt(gvks22())
-    #
-    #########
-    #########
-    Fadv1ksp=(avg_Ehat*avg_uu[1])
-    Fadv2ksp=(avg_Ehat*avg_uu[2])
-    #
-    # if use avg_abs, then below has to have abs on dxdxp's
-    Fadvr = (Fadv1ksp*dxdxp[1,1] + Fadv2ksp*dxdxp[1,2])*np.sqrt(gvks11())
-    Fadvh= (Fadv1ksp*dxdxp[2,1] + Fadv2ksp*dxdxp[2,2])*np.sqrt(gvks22())
-    #
-    #########
-    # if use avg_abs, then below has to have abs on dxdxp's
-    Ftotr = (avg_TudRAD[1,0]*dxdxp[1,1] + avg_TudRAD[2,0]*dxdxp[1,2])*np.sqrt(gvks11())
-    Ftoth = (avg_TudRAD[1,0]*dxdxp[2,1] + avg_TudRAD[2,0]*dxdxp[2,2])*np.sqrt(gvks22())
-    #
-    ########
-    qadv = (avg_Ehatuu - avg_Ehaturadu)/(avg_absEhatuu + avg_absEhaturadu+1E-50)
+    if Ehatexists==1:
+        gE=np.reshape(np.gradient(avg_Ehat[:,:,0]),(2,nx,ny,1))
+        #
+        idxdxp00=1/dxdxp[0][0]
+        idxdxp11=dxdxp[2][2]/(dxdxp[2][2]*dxdxp[1][1]-dxdxp[2][1]*dxdxp[1][2])
+        idxdxp12=dxdxp[1][2]/(dxdxp[2][1]*dxdxp[1][2]-dxdxp[2][2]*dxdxp[1][1])
+        idxdxp21=dxdxp[2][1]/(dxdxp[2][1]*dxdxp[1][2]-dxdxp[2][2]*dxdxp[1][1])
+        idxdxp22=dxdxp[1][1]/(dxdxp[2][2]*dxdxp[1][1]-dxdxp[2][1]*dxdxp[1][2])
+        idxdxp33=1/dxdxp[3][3]
+        #
+        # d_r f = dmu dr/dmu f
+        gEr= ((gE[1-1]/_dx1)*idxdxp11 + (gE[2-1]/_dx2)*idxdxp21)/np.sqrt(gvks11())
+        gEh= ((gE[1-1]/_dx1)*idxdxp12 + (gE[2-1]/_dx2)*idxdxp22)/np.sqrt(gvks22())
+        #
+        avg_kappatot=(avg_KAPPAUSER+avg_KAPPAESUSER)
+        Fdiffr=-(1.0/(3.0*avg_kappatot))*gEr
+        Fdiffh=-(1.0/(3.0*avg_kappatot))*gEh
+        #
+        #########
+        Fturb1ksp=(avg_Ehatuu[1]-avg_Ehat*avg_uu[1])
+        Fturb2ksp=(avg_Ehatuu[2]-avg_Ehat*avg_uu[2])
+        #
+        # if use avg_abs, then below has to have abs on dxdxp's
+        Fturbr = (Fturb1ksp*dxdxp[1,1] + Fturb2ksp*dxdxp[1,2])*np.sqrt(gvks11())
+        Fturbh= (Fturb1ksp*dxdxp[2,1] + Fturb2ksp*dxdxp[2,2])*np.sqrt(gvks22())
+        #
+        #########
+        #########
+        Fadv1ksp=(avg_Ehat*avg_uu[1])
+        Fadv2ksp=(avg_Ehat*avg_uu[2])
+        #
+        # if use avg_abs, then below has to have abs on dxdxp's
+        Fadvr = (Fadv1ksp*dxdxp[1,1] + Fadv2ksp*dxdxp[1,2])*np.sqrt(gvks11())
+        Fadvh= (Fadv1ksp*dxdxp[2,1] + Fadv2ksp*dxdxp[2,2])*np.sqrt(gvks22())
+        #
+        #########
+        # if use avg_abs, then below has to have abs on dxdxp's
+        Ftotr = (avg_TudRAD[1,0]*dxdxp[1,1] + avg_TudRAD[2,0]*dxdxp[1,2])*np.sqrt(gvks11())
+        Ftoth = (avg_TudRAD[1,0]*dxdxp[2,1] + avg_TudRAD[2,0]*dxdxp[2,2])*np.sqrt(gvks22())
+        #
+        ########
+        qadv = (avg_Ehatuu - avg_Ehaturadu)/(avg_absEhatuu + avg_absEhaturadu+1E-50)
     #
     # override
     #whichaphi=0
@@ -31961,8 +32019,8 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
         myfun=-fTudRAD(0,0)
     if(which==17):
         pg=(gam-1.0)*ug
-        betaplasma=pg/(bsq/2.0)
-        ibetaplasma=(bsq/2.0)/pg
+        betaplasma=(pg+prad)/(bsq/2.0)
+        ibetaplasma=(bsq/2.0)/(pg+prad+1E-30)
         # code Tgas for ideal gas in units of m_p c^2
         GGG0=(6.674e-8)
         CCCTRUE0=(2.99792458e10) #// cgs in cm/s
@@ -31978,7 +32036,7 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
         #
         TgasK=pg/(rho/MUMEAN)*(MB*CCCTRUE0**2)/K_BOLTZ
         #
-        myfun=np.log10(bsq/(1E-30+ug))
+        myfun=np.log10(ibetaplasma)
     if(which==18):
         myfun=np.log10(ug)
     if(which==19):
@@ -32227,8 +32285,9 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     print(np.shape(tauradintegrated)) ; sys.stdout.flush()
     print(np.shape(tauradeffintegrated)) ; sys.stdout.flush()
     #
-    (taurad,tauradeffkappasyreal)=compute_taurad1(kappalocal=avg_kappasyreal)
-    ax.contour(tauradeffkappasyreal[:,:,whichaphi],linewidths=4,colors='red', levels=(1,))
+    if Ehatexists==1:
+        (taurad,tauradeffkappasyreal)=compute_taurad1(kappalocal=avg_kappasyreal)
+        ax.contour(tauradeffkappasyreal[:,:,whichaphi],linewidths=4,colors='red', levels=(1,))
     #
     pg = (gam-1)*ug
     Tcode=gam*pg/rho
