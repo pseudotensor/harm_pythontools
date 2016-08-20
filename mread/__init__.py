@@ -27101,7 +27101,7 @@ def mkmovie(framesize=500, domakeavi=False):
         skip1b=(os.path.isfile("lrhosmall%04d_Rzxym1.png" % (filenum)))
         skip1c=(os.path.isfile("lrhovsmall%04d_Rzxym1.png" % (filenum)))
         #
-        if system!=7: # doesn't exist on stampede, and verify will always fail.
+        if system!=7 and system!=8: # doesn't exist on stampede or pfe, and verify will always fail.
             from PIL import Image
         #
         if skip1a==1:
