@@ -3326,9 +3326,9 @@ def getdefaulttimes1():
     if isradmodelnrad(modelname)==1:
         defaultfti=4000
         defaultftf=1e5
-    #if modelname=="jonharmrad16":
-    #    defaultfti=3000
-    #    defaultftf=1e5
+    if modelname=="jonharmrad19":
+        defaultfti=100
+        defaultftf=1e5
     if ismarkmodel(modelname)==1:
         defaultfti=50000
         defaultftf=1E6
