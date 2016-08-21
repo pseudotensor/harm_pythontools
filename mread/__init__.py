@@ -19893,6 +19893,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         else:
             ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,ha='left',labelpad=20)
         #ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,labelpad=9)
+        ymax=ax.get_ylim()[1]
         if showrad>0:
             if modelname=="jonharmrad3" or modelname=="jonharmrad9" or modelname=="jonharmrad10" or modelname=="jonharmrad11":
                 ymax=min(ymax,30.0*mdotfinavg/normfactor*Mdotplotfactor)
@@ -19904,7 +19905,6 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                 ymax=min(ymax,5.0*mdotfinavg/normfactor*Mdotplotfactor)
                 ax.set_ylim((0,ymax))
         #
-        ymax=ax.get_ylim()[1]
         #
         #ymax=2*(np.floor(np.floor(ymax+1.5)/2))
         ax.set_yticks((ymax/2.0,ymax,ymax/2.0))
