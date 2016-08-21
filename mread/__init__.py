@@ -3329,6 +3329,9 @@ def getdefaulttimes1():
     if modelname=="jonharmrad19":
         defaultfti=100
         defaultftf=1e5
+    if modelname=="subedd":
+        defaultfti=1e4
+        defaultftf=1e5
     if ismarkmodel(modelname)==1:
         defaultfti=50000
         defaultftf=1E6
