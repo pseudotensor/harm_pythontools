@@ -19804,7 +19804,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         Lsim=((1.0/prefactor)*etathinoutRAD_avg*mdotfinavg)
         LoLeddsim=Lsim/Leddcode
         Mdotplotfactor=0.1*LoLeddsim*normfactor/mdotfinavg
-        radplotfactor=0.1
+        radplotfactor=0.11 # so average lines don't sit right on top of eachother
     else:
         print("In showrad False");
         normfactor=1.0
@@ -19812,6 +19812,15 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         Mdotplotfactor=1.0
     #
     print("normfactor=%g Mdotplotfactor=%g mdotfinavg=%g ftf=%g fti=%g" % (normfactor,Mdotplotfactor,mdotfinavg,ftf,fti)) ; sys.stdout.flush()
+    #
+    #
+    padsize=20 # default
+    if modelname=="jonharmrad3" or modelname=="jonharmrad9" or modelname=="jonharmrad10" or modelname=="jonharmrad11":
+        padsize=20
+    elif isradmodelnrad(modelname):
+        padsize=20
+    else:
+        padsize=20
     #
     #
     if whichplot == 1 and sashaplot1 == 0:
@@ -19876,13 +19885,11 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                     if showrad:
                         ax.plot(ts[fi],edradthin[:,iofr(rradout)][fi]*radplotfactor/normfactor,'cv')
         #
-        #ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,labelpad=9)
         if showrad:
-            ax.set_ylabel(r'$\dot E/L_{\rm Edd}$',fontsize=16,ha='left',labelpad=0)
+            ax.set_ylabel(r'$\dot E/L_{\rm Edd}$',fontsize=16,ha='left',labelpad=padsize)
         else:
             ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,ha='left',labelpad=20)
-        #
-        ymax=ax.get_ylim()[1]
+        #ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,labelpad=9)
         if showrad>0:
             if modelname=="jonharmrad3" or modelname=="jonharmrad9" or modelname=="jonharmrad10" or modelname=="jonharmrad11":
                 ymax=min(ymax,30.0*mdotfinavg/normfactor*Mdotplotfactor)
@@ -19893,6 +19900,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             else:
                 ymax=min(ymax,5.0*mdotfinavg/normfactor*Mdotplotfactor)
                 ax.set_ylim((0,ymax))
+        #
+        ymax=ax.get_ylim()[1]
         #
         #ymax=2*(np.floor(np.floor(ymax+1.5)/2))
         ax.set_yticks((ymax/2.0,ymax,ymax/2.0))
@@ -20539,7 +20548,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                         ax.plot(ts[fi],etaw[fi],'bv')#,label=r'$\dot M$')
         #ax.set_ylim(0,2)
         ax.set_xlabel(r'$t\;[r_g/c]$',fontsize=16)
-        ax.set_ylabel(r'$\eta\ [\%]$',fontsize=16,ha='left',labelpad=0)
+        ax.set_ylabel(r'$\eta\ [\%]$',fontsize=16,ha='left',labelpad=padsize)
         ax.set_xlim(ts[0],ts[-1])
         if showextra:
             leg= ax.legend(loc='upper left',bbox_to_anchor=(0.02,0.98),ncol=1,borderpad = 0,borderaxespad=0,frameon=True,labelspacing=0)
@@ -20611,7 +20620,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                         ax.plot(ts[fi],phij[fi],'gs')
                         ax.plot(ts[fi],phimwout[fi],'bv')
                     ax.plot(ts[fi],phibh[fi],'o',mfc='r')
-        ax.set_ylabel(r'$\Upsilon$',fontsize=16,ha='left',labelpad=0)
+        ax.set_ylabel(r'$\Upsilon$',fontsize=16,ha='left',labelpad=padsize)
         #
         ymax=ax.get_ylim()[1]
         ymax=min(ymax,3.0*phibh_avg)
