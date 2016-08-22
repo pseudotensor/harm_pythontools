@@ -31873,9 +31873,18 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     #
     tauradlocal=(KAPPAUSERnofe+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
     #
-    if 1==0:
+    loadedavg=0 # default
+    if 1==1:
+        try:
+            loadavg()
+            loadedavg=1
+            print("loading average file")
+        except:
+            loadedavg=0
+            print("not loading average file")
+            
+    if loadedavg==1:
         # use time-phi average
-        loadavg()
         KAPPAUSER=np.copy(rho)
         KAPPAUSERnofe=np.copy(rho)
         KAPPAESUSER=np.copy(rho)
@@ -32276,6 +32285,8 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
         myfun=Ftotr
     if which==415:
         myfun=Ftoth
+    if which==600:
+        myfun=h
     #
     #
     # overrides
