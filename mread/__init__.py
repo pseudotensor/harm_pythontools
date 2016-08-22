@@ -20181,7 +20181,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                         ax.plot(ts[fi],signetaradtoshow*etabhRAD[fi],'cv')#,label=r'$\dot M$')
         #
         ax.set_xlabel(r'$t\;[r_g/c]$',fontsize=16)
-        ax.set_ylabel(r'$\eta\ [\%]$',fontsize=16,ha='left',labelpad=0)
+        ax.set_ylabel(r'$\eta\ [\%]$',fontsize=16,ha='left',labelpad=padsize)
         ax.set_xlim(ts[0],ts[-1])
         #
         if iswaldmodel(modelname):
