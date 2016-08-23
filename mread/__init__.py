@@ -1714,6 +1714,12 @@ def roundto2(x):
     z=float(y)
     return z
 
+def roundto0(x):
+    y="%.*e" % (0-1, x)
+    #y=y.replace('e+02',00
+    z=float(y)
+    return z
+
 # both only gives 2 significant digits and also only rounded to integer
 def roundto2intfloat(x):
     y="%.*e" % (2-1, x)
@@ -19898,19 +19904,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,labelpad=9)
         ymax=ax.get_ylim()[1]
         print("For Mdot: ymaxa=%21.15g" % (ymax)) ; sys.stdout.flush()
-        #ymax=np.power(np.ceil(np.log10(ymax))) # nearest upper whole decimal
-        ymax=2.0*np.ceil(ymax)
+        ymax=2.0*roundto0(ymax) # round to nearest whole decimal
         print("For Mdot: ymaxa2=%21.15g" % (ymax)) ; sys.stdout.flush()
-        if showrad>0:
-            if modelname=="jonharmrad3" or modelname=="jonharmrad9" or modelname=="jonharmrad10" or modelname=="jonharmrad11":
-                ymax=min(ymax,30.0*mdotfinavg/normfactor*Mdotplotfactor)
-                ax.set_ylim((0,ymax))
-            elif isradmodelnrad(modelname):
-                ymax=min(ymax,10.0*mdotfinavg/normfactor*Mdotplotfactor)
-                ax.set_ylim((0,ymax))
-            else:
-                ymax=min(ymax,5.0*mdotfinavg/normfactor*Mdotplotfactor)
-                ax.set_ylim((0,ymax))
+        ax.set_ylim((0,ymax))
         #
         print("For Mdotb: ymax=%21.15g alt=%21.15g" % (ymax,5.0*mdotfinavg/normfactor*Mdotplotfactor)) ; sys.stdout.flush()
         #
