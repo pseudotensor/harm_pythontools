@@ -19898,7 +19898,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,labelpad=9)
         ymax=ax.get_ylim()[1]
         print("For Mdot: ymaxa=%21.15g" % (ymax)) ; sys.stdout.flush()
-        ymax=np.power(np.ceil(np.log10(ymax))) # nearest upper whole decimal
+        #ymax=np.power(np.ceil(np.log10(ymax))) # nearest upper whole decimal
+        ymax=2.0*np.ceil(ymax)
         print("For Mdot: ymaxa2=%21.15g" % (ymax)) ; sys.stdout.flush()
         if showrad>0:
             if modelname=="jonharmrad3" or modelname=="jonharmrad9" or modelname=="jonharmrad10" or modelname=="jonharmrad11":
