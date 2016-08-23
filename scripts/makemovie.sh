@@ -666,6 +666,7 @@ then
     # setup tasks, cores, and nodes for make2davg
     numtasksavg0=`ls dumps/fieldline*.bin |wc -l`  # true total number of tasks
     numtasksavg=$((($numtasksavg0)/($itemspergroup)))
+    # +1 below for general case when above floors, if no remainder than +1 doesn't hurt -- just not optimal
     numtasksavg=$(($numtasksavg+1))
     numtaskscorravg=$(($numtasksavg))
     numtotalnodesavg=$((($numtaskscorravg+$numtaskspernode-1)/$numtaskspernode))
@@ -841,6 +842,7 @@ fi
 
 
 
+chunklistavg=\"`seq -s " " 1 $numtasksavg`\"
 
 
 
@@ -1063,7 +1065,7 @@ do
         mytimetot=$timetot
         mymemtot=$memtot
         mychunklisttype=$chunklisttype
-        mychunklist=$chunklist
+        mychunklist=$chunklistavg
         myrunnglobal=$runnglobal
     elif [ $makeframes -ge 1 ] &&
         [ $runtypes -eq 2 ]

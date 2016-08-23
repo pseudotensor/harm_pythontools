@@ -516,14 +516,15 @@ static int myargs(int argc, char *argv[])
     print_chunklist(numchunks,chunklist);
 
 
-    if(runtype==2){
-      int itemspergroup=atoi(*(argv+numargs+4+4));
-      fprintf(stderr,"itemspergroup=%d\n",itemspergroup); fflush(stderr);
+    //    if(runtype==2){
+    //      int itemspergroup=atoi(*(argv+numargs+4+4));
+      //      fprintf(stderr,"itemspergroup=%d\n",itemspergroup); fflush(stderr);
 
-      numchunksactual=numchunks/itemspergroup;
-      numchunksactual=numchunksactual+1;
-    }
-    else numchunksactual=numchunks;
+    //      numchunksactual=numchunks/itemspergroup;
+    //      numchunksactual=numchunksactual+1;
+    //    }
+    //    else
+    numchunksactual=numchunks;
 
     if(numchunksactual!=truenumprocs){
       myffprintf(stderr,"Must have numchunksactual=%d equal to truenumprocs=%d\n",numchunksactual,truenumprocs);
