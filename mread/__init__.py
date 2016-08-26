@@ -18620,8 +18620,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     mdotjetfinavg = timeavg(np.abs(mdjet[:,iofr(rjetout)]),ts,fti,ftf)
     #
     edradoutaltiniavg = timeavg(edrad[:,iofr(rradout)],ts,iti,itf)
-    edradoutiniavg = timeavg(edradthin[:,iofr(rradout)],ts,iti,itf)
-    ldradoutiniavg = timeavg(ldradthin[:,iofr(rradout)],ts,iti,itf)
+    edradoutiniavg = timeavg(edrad[:,iofr(rradout)],ts,iti,itf)
+    ldradoutiniavg = timeavg(ldrad[:,iofr(rradout)],ts,iti,itf)
     #
     # handle md10 issue inside computation for mdin (i.e. avoid including bsq/rho>30)
     mdotinrdiskininiavg = timeavg(np.abs(mdin[:,iofr(rdiskin)]),ts,iti,itf)
@@ -19931,7 +19931,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                     ax.plot(ts[findex],np.abs(mdjet[:,iofr(rjetout)])[findex]/normfactor*Mdotplotfactor,'gs')
                     ax.plot(ts[findex],windplotfactor*np.abs(mdmwind[:,iofr(rjetout)])[findex]/normfactor*Mdotplotfactor,'bv')
                 if showrad:
-                    ax.plot(ts[findex],edradthin[:,iofr(rradout)][findex]*radplotfactor/normfactor,'cv')
+                    ax.plot(ts[findex],edrad[:,iofr(rradout)][findex]*radplotfactor/normfactor,'cv')
             else:
                 for fi in findex:
                     ax.plot(ts[fi],np.abs(mdtot[:,iflux]*mdtotfix)[fi]/normfactor*Mdotplotfactor,'o',mfc='r')#,label=r'$\dot M$')
@@ -19939,7 +19939,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                         ax.plot(ts[fi],np.abs(mdjet[:,iofr(rjetout)])[fi]/normfactor*Mdotplotfactor,'gs')
                         ax.plot(ts[fi],windplotfactor*np.abs(mdmwind[:,iofr(rjetout)])[fi]/normfactor*Mdotplotfactor,'bv')
                     if showrad:
-                        ax.plot(ts[fi],edradthin[:,iofr(rradout)][fi]*radplotfactor/normfactor,'cv')
+                        ax.plot(ts[fi],edrad[:,iofr(rradout)][fi]*radplotfactor/normfactor,'cv')
         #
         if showrad:
             ax.set_ylabel(r'$\dot E/L_{\rm Edd}$',fontsize=16,ha='left',labelpad=padsize)
