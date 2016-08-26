@@ -1493,7 +1493,7 @@ def jonpolyfit(x,y,degree,dologx=1,dology=1,doabs=1,badfit=0,num=0):
 
 
 
-def smooth(x,window_len=11,window='hanning'):
+def smooth(x,window_len=11,window='hanning',bc=0):
     """smooth the data using a window with requested size.
     
     This method is based on the convolution of a scaled window with the signal.
@@ -1539,14 +1539,18 @@ def smooth(x,window_len=11,window='hanning'):
         raise ValueError, "Window is on of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'"
 
     s=x
-    spacer=np.zeros(window_len/2,dtype=x.dtype)
-    #leftbc=x[0]
-    #leftbc=leftbc+spacer*0
-    #rightbc=x[-1]
-    #rightbc=rightbc+spacer*0
-    ##s=np.r_[x[window_len/2-1:-1:-1],x,x[-1:-window_len/2:-1]]
-    #s=np.r_[leftbc,x,rightbc]
-    ##s=[spacer,x,spacer]
+    spacerleft=np.zeros(window_len/2,dtype=x.dtype)
+    spacerright=np.zeros(window_len/2,dtype=x.dtype)
+    if bc==1:
+        #leftbc=x[0]
+        #leftbc=leftbc+spacer*0
+        #rightbc=x[-1]
+        #rightbc=rightbc+spacer*0
+        #s=np.r_[x[window_len/2-1:-1:-1],x,x[-1:-window_len/2:-1]]
+        #s=np.r_[leftbc,x,rightbc]
+        spacerleft=spacerleft*0.0+x[0]
+        spacerright=spacerright*0.0+x[-1]
+        s=np.concatenate((spacerleft,x,spacerright))
     if window == 'flat': #moving average
         w=np.ones(window_len,'d')
     else:
@@ -1554,10 +1558,13 @@ def smooth(x,window_len=11,window='hanning'):
 
     #y=np.convolve(w/w.sum(),s,mode='valid')
     #y=np.convolve(w/w.sum(),s,mode='full')
+    print("smooth sizes: lenx=%d spacerleft=%d lens=%d lenw=%d" % (len(x),len(spacerleft),len(s),len(w))) ; sys.stdout.flush()
     y=np.convolve(w/w.sum(),s,mode='same')
-    print("smooth sizes: lenx=%d spacer=%d lens=%d lenw=%d leny=%d" % (len(x),len(spacer),len(s),len(w),len(y))) ; sys.stdout.flush()
-    return y
-
+    print("smooth sizes: lenx=%d spacerleft=%d lens=%d lenw=%d leny=%d" % (len(x),len(spacerleft),len(s),len(w),len(y))) ; sys.stdout.flush()
+    if bc==1:
+        return y[window_len/2:len(s)-window_len/2]
+    else:
+        return y
 
 
 
@@ -20034,6 +20041,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         etajEM = prefactor*pjem_mu1[:,iofr(rjetout)]/mdotfinavg
         etajMAKE = prefactor*pjmake_mu1[:,iofr(rjetout)]/mdotfinavg
         etaj = etajEM + etajMAKE
+        etajinEM = prefactor*pjem_mu1[:,iofr(rjetin)]/mdotfinavg
+        etajinMAKE = prefactor*pjmake_mu1[:,iofr(rjetin)]/mdotfinavg
+        etajin = etajinEM + etajinMAKE
         etawinEM = prefactor*pjem_mumax1[:,iofr(rdiskin)]/mdotfinavg
         etawinMAKE = prefactor*pjmake_mumax1[:,iofr(rdiskin)]/mdotfinavg
         etawin = etawinEM + etawinMAKE
@@ -20044,6 +20054,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         etajEM2 = prefactor*pjem_mu1[:,iofr(rjetout)]/mdotiniavg
         etajMAKE2 = prefactor*pjmake_mu1[:,iofr(rjetout)]/mdotiniavg
         etaj2 = etajEM2 + etajMAKE2
+        etajinEM2 = prefactor*pjem_mu1[:,iofr(rjetin)]/mdotiniavg
+        etajinMAKE2 = prefactor*pjmake_mu1[:,iofr(rjetin)]/mdotiniavg
+        etajin2 = etajinEM2 + etajinMAKE2
         etawinEM2 = prefactor*pjem_mumax1[:,iofr(rdiskin)]/mdotiniavg
         etawinMAKE2 = prefactor*pjmake_mumax1[:,iofr(rdiskin)]/mdotiniavg
         etawin2 = etawinEM2 + etawinMAKE2
@@ -20056,16 +20069,19 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             icond=(ts>=iti)*(ts<=itf)
             etabh[icond]=etabh2[icond]
             etaj[icond]=etaj2[icond]
+            etajin[icond]=etajin2[icond]
             etawin[icond]=etawin2[icond]
             etawout[icond]=etawout2[icond]
         if dotavg:
             etaj_avg = timeavg(etaj,ts,fti,ftf)
+            etajin_avg = timeavg(etajin,ts,fti,ftf)
             etabh_avg = timeavg(etabh,ts,fti,ftf)
             etawin_avg = timeavg(etawin,ts,fti,ftf)
             etawout_avg = timeavg(etawout,ts,fti,ftf)
             ptot_avg = timeavg(pjemtot[:,ihoruse],ts,fti,ftf)
             if(iti>fti):
                 etaj2_avg = timeavg(etaj2,ts,iti,itf)
+                etajin2_avg = timeavg(etajin2,ts,iti,itf)
                 etabh2_avg = timeavg(etabh2,ts,iti,itf)
                 etawin2_avg = timeavg(etawin2,ts,iti,itf)
                 etawout2_avg = timeavg(etawout2,ts,iti,itf)
@@ -20074,7 +20090,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         if dotavg:
             if showextra:
-                ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+etaj_avg,'--',color=(fc,fc+0.5*(1-fc),fc)) 
+                ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+etajin_avg,'--',color=(fc,fc+0.5*(1-fc),fc)) 
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
             ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+etabh_avg,color=(ofc,fc,fc),linestyle=lst) 
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
@@ -20082,18 +20098,18 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
             if(iti>fti):
                 if showextra:
-                    ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etaj2_avg,'--',color=(fc,fc+0.5*(1-fc),fc))
+                    ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etajin2_avg,'--',color=(fc,fc+0.5*(1-fc),fc))
                 ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etabh2_avg,color=(ofc,fc,fc))
                 #ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+etawout2_avg,'-.',color=(fc,fc+0.5*(1-fc),fc)) 
         ax.plot(ts,etabh,clr,label=r'$\eta_{\rm H}$')
         if showextra:
-            ax.plot(ts,etaj,'g--',label=r'$\eta_{\rm j}$')
+            ax.plot(ts,etajin,'g--',label=r'$\eta_{\rm j,in}$')
         if showextra and 1==0:
             ax.plot(ts,etawout,'b-.',label=r'$\eta_{\rm w}$')
         if findex != None:
             if not isinstance(findex,tuple):
                 if showextra:
-                    ax.plot(ts[findex],etaj[findex],'gs')
+                    ax.plot(ts[findex],etajin[findex],'gs')
                 ax.plot(ts[findex],etabh[findex],'o',mfc='r')
                 if showextra and 1==0:
                     ax.plot(ts[findex],etawout[findex],'bv')
@@ -20102,7 +20118,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                     if showextra and 1==0:
                         ax.plot(ts[fi],etawout[fi],'bv')#,label=r'$\dot M$')
                     if showextra:
-                        ax.plot(ts[fi],etaj[fi],'gs')#,label=r'$\dot M$')
+                        ax.plot(ts[fi],etajin[fi],'gs')#,label=r'$\dot M$')
                     ax.plot(ts[fi],etabh[fi],'o',mfc='r')#,label=r'$\dot M$')
         #ax.legend(loc='upper left')
         #ax.set_ylim(0,2)
@@ -20182,7 +20198,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             print("etabh_avg=%g" % (etabh_avg));
             ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+etabh_avg,color=(ofc,fc,fc)) 
             if showextra:
-                ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+etaj_avg,color=(fc,fc+0.5*(1-fc),fc)) 
+                ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+etajin_avg,color=(fc,fc+0.5*(1-fc),fc)) 
                 if 1==0 and showrad==0: # for now don't show this -- too much on plot
                     ax.plot(ts[(ts<=ftf)*(ts>=fti)],0*ts[(ts<=ftf)*(ts>=fti)]+etamwout_avg,color=(fc,fc,1)) 
             #,label=r'$\langle P_j\rangle/\langle\dot M\rangle$')
@@ -20191,7 +20207,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             if(iti>fti):
                 ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etabh2_avg,color=(ofc,fc,fc))
                 if showextra:
-                    ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etaj2_avg,color=(fc,fc+0.5*(1-fc),fc))
+                    ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etajin2_avg,color=(fc,fc+0.5*(1-fc),fc))
                     if 1==0 and showrad==0: # for now don't show this -- too much on plot
                         ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etamwout2_avg,color=(fc,fc,1))
             if showrad:
@@ -20201,7 +20217,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         ax.plot(ts,etabh,clr,label=r'$\eta_{\rm H}$')
         if showextra:
-            ax.plot(ts,etaj,'g--',label=r'$\eta_{\rm j}$')
+            ax.plot(ts,etajin,'g--',label=r'$\eta_{\rm j}$')
             if 1==0 and showrad==0: # for now don't show this -- too much on plot
                 ax.plot(ts,etamwout,'b-.',label=r'$\eta_{\rm mw,o}$')
         if showrad:
@@ -20213,7 +20229,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             if not isinstance(findex,tuple):
                 ax.plot(ts[findex],etabh[findex],'o',mfc='r')
                 if showextra:
-                    ax.plot(ts[findex],etaj[findex],'gs')
+                    ax.plot(ts[findex],etajin[findex],'gs')
                     if 1==0 and showrad==0: # for now don't show this -- too much on plot
                         ax.plot(ts[findex],etamwout[findex],'bv')
                 if showrad:
@@ -20224,7 +20240,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                 for fi in findex:
                     ax.plot(ts[fi],etabh[fi],'o',mfc='r')#,label=r'$\dot M$')
                     if showextra:
-                        ax.plot(ts[fi],etaj[fi],'gs')#,label=r'$\dot M$')
+                        ax.plot(ts[fi],etajin[fi],'gs')#,label=r'$\dot M$')
                         if 1==0 and showrad==0: # for now don't show this -- too much on plot
                             ax.plot(ts[fi],etamwout[fi],'bv')#,label=r'$\dot M$')
                     if showrad:
@@ -20242,10 +20258,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             tck=np.arange(-ymax,ymax,2.0*ymax/5.0)
             ax.set_yticks(tck)
         else:
-            ymax=max(etabh_avg,etaj_avg)
+            ymax=max(etabh_avg,etajin_avg)
             #ymax=max(ymax,etabhRAD_avg)
 
-            ymin=min(etabh_avg,etaj_avg)
+            ymin=min(etabh_avg,etajin_avg)
             #ymin=min(ymax,etabhRAD_avg)
 
             if ymax>0:
@@ -28730,6 +28746,8 @@ def mkavgfigs1(whichfig=0):
         #
         # stuff vs. theta
         if 1==1:
+            lenangle=len(avg_kappadensityreal[iofr(10),:,0])
+            window_len=min(6,lenangle)
             # inner radius
             # 4
             avg_rhovstheta=avg_rho[iofr(10),:,0]
@@ -28752,6 +28770,13 @@ def mkavgfigs1(whichfig=0):
             avg_Bphivstheta=avga_myaB3[iofr(10),:,0]
             # 4
             avg_TradoTgasvstheta=avg_TradoTgas[iofr(10),:,0]
+            avg_TradoTgasvstheta[0]=avg_TradoTgasvstheta[1]
+            avg_TradoTgasvstheta[lenangle-1]=avg_TradoTgasvstheta[lenangle-2]
+            savg_TradoTgasvstheta=smooth(avg_TradoTgasvstheta,window_len=window_len,window='hanning',bc=1)
+            #savg_TradoTgasvstheta[0]=savg_TradoTgasvstheta[1]
+            #savg_TradoTgasvstheta[lenangle-1]=savg_TradoTgasvstheta[lenangle-2]
+            for jj in np.arange(0,len(avg_TradoTgasvstheta)):
+                print("SMOOTHTEST: jj=%d avg=%g savg=%g" % (jj,avg_TradoTgasvstheta[jj],savg_TradoTgasvstheta[jj]))
             avg_Tradfftype3vstheta=avg_Tradfftype3[iofr(10),:,0]
             avg_Tradlabtype3vstheta=avg_Tradlabtype3[iofr(10),:,0]
             avg_Tgasvstheta=avg_Tgas[iofr(10),:,0]
@@ -28764,13 +28789,22 @@ def mkavgfigs1(whichfig=0):
             avg_kappadensityrealvstheta=avg_kappadensityreal[iofr(10),:,0]
             avg_kappadensityrealnofevstheta=avg_kappadensityrealnofe[iofr(10),:,0]
             avg_kappasyrealvstheta=avg_kappasyreal[iofr(10),:,0]
+            avg_kappasyrealvstheta[0]=avg_kappasyrealvstheta[1]
+            avg_kappasyrealvstheta[lenangle-1]=avg_kappasyrealvstheta[lenangle-2]
+            savg_kappasyrealvstheta=smooth(avg_kappasyrealvstheta,window_len=window_len,window='hanning',bc=1)
             avg_kappadcrealvstheta=avg_kappadcreal[iofr(10),:,0]
+            avg_kappadcrealvstheta[0]=avg_kappadcrealvstheta[1]
+            avg_kappadcrealvstheta[lenangle-1]=avg_kappadcrealvstheta[lenangle-2]
+            savg_kappadcrealvstheta=smooth(avg_kappadcrealvstheta,window_len=window_len,window='hanning',bc=1)
             avg_kappaesrealvstheta=avg_kappaesreal[iofr(10),:,0]
             avg_kappandensityrealvstheta=avg_kappandensityreal[iofr(10),:,0]
             avg_kappansyrealvstheta=avg_kappansyreal[iofr(10),:,0]
             avg_kappandcrealvstheta=avg_kappandcreal[iofr(10),:,0]
             avg_kappachiantirealvstheta=avg_kappachiantireal[iofr(10),:,0]
             avg_kappaffrealvstheta=avg_kappaffreal[iofr(10),:,0]
+            avg_kappaffrealvstheta[0]=avg_kappaffrealvstheta[1]
+            avg_kappaffrealvstheta[lenangle-1]=avg_kappaffrealvstheta[lenangle-2]
+            savg_kappaffrealvstheta=smooth(avg_kappaffrealvstheta,window_len=window_len,window='hanning',bc=1)
             avg_kappabfrealvstheta=avg_kappabfreal[iofr(10),:,0]
             avg_kappaferealvstheta=avg_kappafereal[iofr(10),:,0]
             avg_kappamolrealvstheta=avg_kappamolreal[iofr(10),:,0]
@@ -28851,7 +28885,7 @@ def mkavgfigs1(whichfig=0):
             #
             f1 = open('radquantsvsh.%s.txt' % (modelname), 'w')
             for jj in np.arange(0,ny):
-                f1.write("%d  %g %g  %g %g %g %g  %g %g %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g  %g %g %g %g %g %g %g %g %g %g     %g %g  %g %g %g %g  %g %g %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g  %g %g %g %g %g %g %g %g %g %g   %g %g %g %g %g %g   %g %g %g %g %g %g %g %g\n" % (jj ,h[iofr(10),jj,0],avg_dh[jj],avg_TradoTgasvstheta[jj],avg_Tradfftype3vstheta[jj],avg_Tradlabtype3vstheta[jj],avg_Tgasvstheta[jj],avg_fcollabvstheta[jj],avg_varexpfffvstheta[jj],avg_nfcolvstheta[jj],avg_kappadensityrealvstheta[jj],avg_kappadensityrealnofevstheta[jj],avg_kappasyrealvstheta[jj],avg_kappadcrealvstheta[jj],avg_kappaesrealvstheta[jj],avg_kappandensityrealvstheta[jj],avg_kappansyrealvstheta[jj],avg_kappandcrealvstheta[jj],avg_kappachiantirealvstheta[jj],avg_kappaffrealvstheta[jj],avg_kappabfrealvstheta[jj],avg_kappaferealvstheta[jj],avg_kappamolrealvstheta[jj],avg_kappahmopalrealvstheta[jj],avg_kappachiantiopalrealvstheta[jj],avg_kappaffeerealvstheta[jj],avg_rhovstheta[jj],avg_ugvstheta[jj],avg_Erfvstheta[jj],avg_bsqvstheta[jj],avg_vrvstheta[jj],avg_vzvstheta[jj],avg_vphivstheta[jj],avg_Brvstheta[jj],avg_Bzvstheta[jj],avg_Bphivstheta[jj]   ,h[iofr(100),jj,0],avg2_dh[jj],avg2_TradoTgasvstheta[jj],avg2_Tradfftype3vstheta[jj],avg2_Tradlabtype3vstheta[jj],avg2_Tgasvstheta[jj],avg2_fcollabvstheta[jj],avg2_varexpfffvstheta[jj],avg2_nfcolvstheta[jj],avg2_kappadensityrealvstheta[jj],avg2_kappadensityrealnofevstheta[jj],avg2_kappasyrealvstheta[jj],avg2_kappadcrealvstheta[jj],avg2_kappaesrealvstheta[jj],avg2_kappandensityrealvstheta[jj],avg2_kappansyrealvstheta[jj],avg2_kappandcrealvstheta[jj],avg2_kappachiantirealvstheta[jj],avg2_kappaffrealvstheta[jj],avg2_kappabfrealvstheta[jj],avg2_kappaferealvstheta[jj],avg2_kappamolrealvstheta[jj],avg2_kappahmopalrealvstheta[jj],avg2_kappachiantiopalrealvstheta[jj],avg2_kappaffeerealvstheta[jj],avg2_rhovstheta[jj],avg2_ugvstheta[jj],avg2_Erfvstheta[jj],avg2_bsqvstheta[jj],avg2_vrvstheta[jj],avg2_vzvstheta[jj],avg2_vphivstheta[jj],avg2_Brvstheta[jj],avg2_Bzvstheta[jj],avg2_Bphivstheta[jj]   ,avg2_eoutRADvstheta[jj],avg2_eoutRADisovstheta[jj],avg2_eoutRADperLeddvstheta[jj],avg2_eoutEMvstheta[jj],avg2_eoutEMisovstheta[jj],avg2_eoutEMperLeddvstheta[jj]   ,h[iofr(1000),jj,0],avg3_dh[jj],avg3_eoutRADvstheta[jj],avg3_eoutRADisovstheta[jj],avg3_eoutRADperLeddvstheta[jj],avg3_eoutEMvstheta[jj],avg3_eoutEMisovstheta[jj],avg3_eoutEMperLeddvstheta[jj]) )
+                f1.write("%d  %g %g  %g %g %g %g  %g %g %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g  %g %g %g %g %g %g %g %g %g %g     %g %g  %g %g %g %g  %g %g %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g  %g %g %g %g %g %g %g %g %g %g   %g %g %g %g %g %g   %g %g %g %g %g %g %g %g\n" % (jj ,h[iofr(10),jj,0],avg_dh[jj],savg_TradoTgasvstheta[jj],avg_Tradfftype3vstheta[jj],avg_Tradlabtype3vstheta[jj],avg_Tgasvstheta[jj],avg_fcollabvstheta[jj],avg_varexpfffvstheta[jj],avg_nfcolvstheta[jj],avg_kappadensityrealvstheta[jj],avg_kappadensityrealnofevstheta[jj],savg_kappasyrealvstheta[jj],savg_kappadcrealvstheta[jj],avg_kappaesrealvstheta[jj],avg_kappandensityrealvstheta[jj],avg_kappansyrealvstheta[jj],avg_kappandcrealvstheta[jj],avg_kappachiantirealvstheta[jj],savg_kappaffrealvstheta[jj],avg_kappabfrealvstheta[jj],avg_kappaferealvstheta[jj],avg_kappamolrealvstheta[jj],avg_kappahmopalrealvstheta[jj],avg_kappachiantiopalrealvstheta[jj],avg_kappaffeerealvstheta[jj],avg_rhovstheta[jj],avg_ugvstheta[jj],avg_Erfvstheta[jj],avg_bsqvstheta[jj],avg_vrvstheta[jj],avg_vzvstheta[jj],avg_vphivstheta[jj],avg_Brvstheta[jj],avg_Bzvstheta[jj],avg_Bphivstheta[jj]   ,h[iofr(100),jj,0],avg2_dh[jj],avg2_TradoTgasvstheta[jj],avg2_Tradfftype3vstheta[jj],avg2_Tradlabtype3vstheta[jj],avg2_Tgasvstheta[jj],avg2_fcollabvstheta[jj],avg2_varexpfffvstheta[jj],avg2_nfcolvstheta[jj],avg2_kappadensityrealvstheta[jj],avg2_kappadensityrealnofevstheta[jj],avg2_kappasyrealvstheta[jj],avg2_kappadcrealvstheta[jj],avg2_kappaesrealvstheta[jj],avg2_kappandensityrealvstheta[jj],avg2_kappansyrealvstheta[jj],avg2_kappandcrealvstheta[jj],avg2_kappachiantirealvstheta[jj],avg2_kappaffrealvstheta[jj],avg2_kappabfrealvstheta[jj],avg2_kappaferealvstheta[jj],avg2_kappamolrealvstheta[jj],avg2_kappahmopalrealvstheta[jj],avg2_kappachiantiopalrealvstheta[jj],avg2_kappaffeerealvstheta[jj],avg2_rhovstheta[jj],avg2_ugvstheta[jj],avg2_Erfvstheta[jj],avg2_bsqvstheta[jj],avg2_vrvstheta[jj],avg2_vzvstheta[jj],avg2_vphivstheta[jj],avg2_Brvstheta[jj],avg2_Bzvstheta[jj],avg2_Bphivstheta[jj]   ,avg2_eoutRADvstheta[jj],avg2_eoutRADisovstheta[jj],avg2_eoutRADperLeddvstheta[jj],avg2_eoutEMvstheta[jj],avg2_eoutEMisovstheta[jj],avg2_eoutEMperLeddvstheta[jj]   ,h[iofr(1000),jj,0],avg3_dh[jj],avg3_eoutRADvstheta[jj],avg3_eoutRADisovstheta[jj],avg3_eoutRADperLeddvstheta[jj],avg3_eoutEMvstheta[jj],avg3_eoutEMisovstheta[jj],avg3_eoutEMperLeddvstheta[jj]) )
             f1.close()
         #
         # stuff vs. radius
@@ -34743,12 +34777,6 @@ def dcpaperplot1():
             plt.ioff()
             plt.rc('text', usetex=False)
             #plt.rc('font', family='serif')
-            ax1.set_ylabel(ylabels[ii],fontsize=24)
-            ax1.set_xlabel(xlabels[0],fontsize=24)
-            for axis in ['top','bottom','left','right']:
-                ax1.spines[axis].set_linewidth(2)
-            #ax1.axhline(linewidth=4, color="black")
-            #ax1.axvline(linewidth=4, color="black")
             #
             if ii>=9 and ii<=24 and ii!=18:
                 # normalize kappaff except itself
@@ -34825,10 +34853,10 @@ def dcpaperplot1():
             tot5=factors[ii]*jrad5r[ii][0:nxout]*fun5[0:nxout]
             badi=13
             tot5[badi]=0.5*(tot5[badi-1]+tot5[badi+1])
-            ax1.plot(r5,tot5,color="gold",label='M5',linewidth=2.0,linestyle='--')
-            ax1.plot(jrad18r[1][0:nxout],factors[ii]*jrad18r[ii][0:nxout]*fun18[0:nxout],color="green",label='M6',linewidth=2.0,linestyle='--')
-            ax1.plot(jrad7r[1][0:nxout],factors[ii]*jrad7r[ii][0:nxout]*fun7[0:nxout],color="red",label='M7',linewidth=2.0)
-            ax1.plot(jrad8r[1][0:nxout],factors[ii]*jrad8r[ii][0:nxout]*fun8[0:nxout],color="green",label='M8',linewidth=2.0)
+            ax1.plot(r5,tot5,color="black",label='M5',linewidth=2.0,linestyle=':')
+            ax1.plot(jrad18r[1][0:nxout],factors[ii]*jrad18r[ii][0:nxout]*fun18[0:nxout],color="green",label='M6',linewidth=2.0,linestyle='-')
+            ax1.plot(jrad7r[1][0:nxout],factors[ii]*jrad7r[ii][0:nxout]*fun7[0:nxout],color="green",label='M7',linewidth=2.0,linestyle='--')
+            ax1.plot(jrad8r[1][0:nxout],factors[ii]*jrad8r[ii][0:nxout]*fun8[0:nxout],color="green",label='M8',linewidth=2.0,linestyle='-.')
             r9=jrad9r[1][0:nxout]
             tot9=factors[ii]*jrad9r[ii][0:nxout]*fun9[0:nxout]
             badi=5
@@ -34840,19 +34868,35 @@ def dcpaperplot1():
             if ii==11:
                 for iii in np.arange(0,np.shape(r9)[0]):
                     print("iii=%d r9=%g tot9=%g\n" % (iii,r9[iii],tot9[iii]))
-            ax1.plot(r9,tot9,color="red",label='M9',linewidth=2.0,linestyle='--')
-            ax1.plot(jrad10r[1][0:nxout],factors[ii]*jrad10r[ii][0:nxout]*fun10[0:nxout],color="black",label='M10',linewidth=2.0,linestyle=':')
-            ax1.plot(jrad11r[1][0:nxout],factors[ii]*jrad11r[ii][0:nxout]*fun11[0:nxout],color="blue",label='M11',linewidth=2.0,linestyle='--')
-            ax1.plot(jrad13r[1][0:nxout],factors[ii]*jrad13r[ii][0:nxout]*fun13[0:nxout],color="brown",label='M13',linewidth=2.0)
-            ax1.plot(jrad14r[1][0:nxout],factors[ii]*jrad14r[ii][0:nxout]*fun14[0:nxout],color="orange",label='M14',linewidth=2.0)
-            ax1.plot(jrad17r[1][0:nxout],factors[ii]*jrad17r[ii][0:nxout]*fun17[0:nxout],color="blue",label='M14h',linewidth=2.0)
-            ax1.plot(jrad15r[1][0:nxout],factors[ii]*jrad15r[ii][0:nxout]*fun15[0:nxout],color="purple",label='M15',linewidth=2.0)
-            ax1.plot(jrad16r[1][0:nxout],factors[ii]*jrad16r[ii][0:nxout]*fun16[0:nxout],color="gold",label='M15h',linewidth=2.0)
+            ax1.plot(r9,tot9,color="red",label='M9',linewidth=2.0,linestyle='-')
+            ax1.plot(jrad10r[1][0:nxout],factors[ii]*jrad10r[ii][0:nxout]*fun10[0:nxout],color="red",label='M10',linewidth=2.0,linestyle='--')
+            ax1.plot(jrad11r[1][0:nxout],factors[ii]*jrad11r[ii][0:nxout]*fun11[0:nxout],color="red",label='M11',linewidth=2.0,linestyle='-.')
+            ax1.plot(jrad13r[1][0:nxout],factors[ii]*jrad13r[ii][0:nxout]*fun13[0:nxout],color="gold",label='M13',linewidth=2.0)
+            ax1.plot(jrad14r[1][0:nxout],factors[ii]*jrad14r[ii][0:nxout]*fun14[0:nxout],color="blue",label='M14',linewidth=2.0,linestyle='-')
+            ax1.plot(jrad17r[1][0:nxout],factors[ii]*jrad17r[ii][0:nxout]*fun17[0:nxout],color="blue",label='M14h',linewidth=2.0,linestyle='--')
+            ax1.plot(jrad15r[1][0:nxout],factors[ii]*jrad15r[ii][0:nxout]*fun15[0:nxout],color="purple",label='M15',linewidth=2.0,linestyle='-')
+            ax1.plot(jrad16r[1][0:nxout],factors[ii]*jrad16r[ii][0:nxout]*fun16[0:nxout],color="purple",label='M15h',linewidth=2.0,linestyle='--')
             ax1.set_xscale(xscales[0])
             ax1.set_yscale(yscales[ii])
             legend = ax1.legend(loc='upper right', shadow=True)
+            #
+            ax1.set_ylabel(ylabels[ii],fontsize=24)
+            for axis in ['top','bottom','left','right']:
+                ax1.spines[axis].set_linewidth(2)
+            #ax1.axhline(linewidth=4, color="black")
+            #ax1.axvline(linewidth=4, color="black")
+            #
+            # DC paper specific removal of x-axis
+            if fignames[ii]=="TradoTgasvsr.png" or fignames[ii]=="fcolvsr.png" or fignames[ii]=="nfcolvsr.png" or fignames[ii]=="kappasyvsr.png":
+                ax1.xaxis.set_major_formatter(plt.NullFormatter())
+                print("ii=%d avoiding x-axis" % (ii))
+            else:
+                ax1.set_xlabel(xlabels[0],fontsize=24)
+            #
+            #
+            #
             #plt.axis('tight',ax=ax1)
-            plt.savefig("/vsfigs/" + fignames[ii])
+            plt.savefig("vsfigs/" + fignames[ii])
             #plt.show()
             plt.close()
         #
@@ -34919,13 +34963,6 @@ def dcpaperplot1():
             plt.ioff()
             plt.rc('text', usetex=False)
             #plt.rc('font', family='serif')
-            ax1.set_ylabel(ylabels[ii],fontsize=24)
-            ax1.set_xlabel(xlabels[0],fontsize=24)
-            for axis in ['top','bottom','left','right']:
-                ax1.spines[axis].set_linewidth(2)
-            #ax1.axhline(linewidth=4, color="black")
-            #ax1.axvline(linewidth=4, color="black")
-            #
             # choose shift for normalization and theta
             if ii<=35:
                 shift=0
@@ -35023,23 +35060,36 @@ def dcpaperplot1():
             ax1.plot(mythetajrad1h,factors[ii]*jrad1h[ii]*fun1,color="black",label='M1',linewidth=2.0,linestyle='-')
             ax1.plot(mythetajrad2h,factors[ii]*jrad2h[ii]*fun2,color="black",label='M2',linewidth=2.0,linestyle='--')
             ax1.plot(mythetajrad3h,factors[ii]*jrad3h[ii]*fun3,color="black",label='M3',linewidth=2.0,linestyle='-.')
-            ax1.plot(mythetajrad5h,factors[ii]*jrad5h[ii]*fun5,color="gold",label='M5',linewidth=2.0,linestyle='--')
-            ax1.plot(mythetajrad18h,factors[ii]*jrad18h[ii]*fun18,color="green",label='M6',linewidth=2.0,linestyle='--')
-            ax1.plot(mythetajrad7h,factors[ii]*jrad7h[ii]*fun7,color="red",label='M7',linewidth=2.0)
-            ax1.plot(mythetajrad8h,factors[ii]*jrad8h[ii]*fun8,color="green",label='M8',linewidth=2.0)
-            ax1.plot(mythetajrad9h,factors[ii]*jrad9h[ii]*fun9,color="red",label='M9',linewidth=2.0,linestyle='--')
-            ax1.plot(mythetajrad10h,factors[ii]*jrad10h[ii]*fun10,color="black",label='M10',linewidth=2.0,linestyle=':')
-            ax1.plot(mythetajrad11h,factors[ii]*jrad11h[ii]*fun11,color="blue",label='M11',linewidth=2.0,linestyle='--')
-            ax1.plot(mythetajrad13h,factors[ii]*jrad13h[ii]*fun13,color="brown",label='M13',linewidth=2.0)
-            ax1.plot(mythetajrad14h,factors[ii]*jrad14h[ii]*fun14,color="orange",label='M14',linewidth=2.0)
-            ax1.plot(mythetajrad17h,factors[ii]*jrad17h[ii]*fun17,color="blue",label='M14h',linewidth=2.0)
-            ax1.plot(mythetajrad15h,factors[ii]*jrad15h[ii]*fun15,color="purple",label='M15',linewidth=2.0)
-            ax1.plot(mythetajrad16h,factors[ii]*jrad16h[ii]*fun16,color="gold",label='M15h',linewidth=2.0)
+            ax1.plot(mythetajrad5h,factors[ii]*jrad5h[ii]*fun5,color="black",label='M5',linewidth=2.0,linestyle=':')
+            ax1.plot(mythetajrad18h,factors[ii]*jrad18h[ii]*fun18,color="green",label='M6',linewidth=2.0,linestyle='-')
+            ax1.plot(mythetajrad7h,factors[ii]*jrad7h[ii]*fun7,color="green",label='M7',linewidth=2.0,linestyle='--')
+            ax1.plot(mythetajrad8h,factors[ii]*jrad8h[ii]*fun8,color="green",label='M8',linewidth=2.0,linestyle='-.')
+            ax1.plot(mythetajrad9h,factors[ii]*jrad9h[ii]*fun9,color="red",label='M9',linewidth=2.0,linestyle='-')
+            ax1.plot(mythetajrad10h,factors[ii]*jrad10h[ii]*fun10,color="red",label='M10',linewidth=2.0,linestyle='--')
+            ax1.plot(mythetajrad11h,factors[ii]*jrad11h[ii]*fun11,color="red",label='M11',linewidth=2.0,linestyle='-.')
+            ax1.plot(mythetajrad13h,factors[ii]*jrad13h[ii]*fun13,color="gold",label='M13',linewidth=2.0)
+            ax1.plot(mythetajrad14h,factors[ii]*jrad14h[ii]*fun14,color="blue",label='M14',linewidth=2.0,linestyle='-')
+            ax1.plot(mythetajrad17h,factors[ii]*jrad17h[ii]*fun17,color="blue",label='M14h',linewidth=2.0,linestyle='--')
+            ax1.plot(mythetajrad15h,factors[ii]*jrad15h[ii]*fun15,color="purple",label='M15',linewidth=2.0,linestyle='-')
+            ax1.plot(mythetajrad16h,factors[ii]*jrad16h[ii]*fun16,color="purple",label='M15h',linewidth=2.0,linestyle='--')
             ax1.set_xscale(xscales[0])
             ax1.set_yscale(yscales[ii])
+            #
+            ax1.set_ylabel(ylabels[ii],fontsize=24)
+            for axis in ['top','bottom','left','right']:
+                ax1.spines[axis].set_linewidth(2)
+            #ax1.axhline(linewidth=4, color="black")
+            #ax1.axvline(linewidth=4, color="black")
             legend = ax1.legend(loc='upper right', shadow=True)
+            # DC paper specific removal of x-axis
+            if fignames[ii]=="rhovstheta.png" or fignames[ii]=="Tgasvstheta.png" or fignames[ii]=="Tradlabvstheta2.png" or fignames[ii]=="fcolvstheta2.png" or fignames[ii]=="kappasyvstheta.png":
+                ax1.xaxis.set_major_formatter(plt.NullFormatter())
+                print("ii=%d avoiding x-axis" % (ii))
+            else:
+                ax1.set_xlabel(xlabels[0],fontsize=24)
+            #
             #plt.axis('tight',ax=ax1)
-            plt.savefig("/vsfigs/" + fignames[ii])
+            plt.savefig("vsfigs/" + fignames[ii])
             #plt.show()
             plt.close()
         #
@@ -35171,7 +35221,7 @@ def dcpaperplot1():
             ax1.set_yscale(yscales[0])
             legend = ax1.legend(loc='upper right', shadow=True)
             #plt.axis('tight',ax=ax1)
-            plt.savefig("/vsfigs/" + fignames[0])
+            plt.savefig("vsfigs/" + fignames[0])
             #plt.show()
             plt.close()
     #
