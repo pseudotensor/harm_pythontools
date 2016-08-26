@@ -938,7 +938,7 @@ then
     fi
 else
     pythonlatexfile1="python.plot.out"
-    pythonlatexfile2=""
+    pythonlatexfile2="python_u_12_0_1.stdout.out"
     pythonlatex67file1="python_u_21_0_1.stdout.out"
     pythonlatex67file2="python_u_22_0_1.stdout.out"
 fi

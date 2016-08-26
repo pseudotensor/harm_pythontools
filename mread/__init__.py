@@ -3100,7 +3100,7 @@ def isradmodelD2(modelname): # for Mdot\sim 5Ledd/c^2
         return(0)
     #
 def isradmodelnrad(modelname):
-    if modelname=="jonharmrad1" or modelname=="jonharmrad2" or modelname=="jonharmrad3" or modelname=="jonharmrad4" or modelname=="jonharmrad5" or modelname=="jonharmrad6" or modelname=="jonharmrad7" or modelname=="jonharmrad8" or modelname=="jonharmrad9" or modelname=="jonharmrad10" or modelname=="jonharmrad11" or modelname=="jonharmrad12" or modelname=="jonharmrad13" or modelname=="jonharmrad14" or modelname=="jonharmrad15" or modelname=="jonharmrad16" or modelname=="jonharmrad17" or modelname=="jonharmrad18":
+    if modelname=="jonharmrad1" or modelname=="jonharmrad2" or modelname=="jonharmrad3" or modelname=="jonharmrad4" or modelname=="jonharmrad5" or modelname=="jonharmrad6" or modelname=="jonharmrad7" or modelname=="jonharmrad8" or modelname=="jonharmrad9" or modelname=="jonharmrad10" or modelname=="jonharmrad11" or modelname=="jonharmrad12" or modelname=="jonharmrad13" or modelname=="jonharmrad14" or modelname=="jonharmrad15" or modelname=="jonharmrad16" or modelname=="jonharmrad17" or modelname=="jonharmrad18" or modelname=="jonharmrad19" or modelname=="jonharmrad20":
         return(1)
     else:
         return(0)
@@ -3332,9 +3332,6 @@ def getdefaulttimes1():
     if isradmodelnrad(modelname)==1:
         defaultfti=4000
         defaultftf=1e5
-    if modelname=="jonharmrad19":
-        defaultfti=100
-        defaultftf=1e5
     if modelname=="subedd":
         defaultfti=8e3
         defaultftf=1e5
@@ -3478,8 +3475,6 @@ def getbasicqtystuff(whichplot=None):
         hoverr_jet_vsr = plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=whichplot,fti=fti,ftf=ftf)
         return(hoverr_jet_vsr)
     #
-
-
 
 
 def plot2davg(dosq=True,whichplot=-1):
@@ -3672,26 +3667,9 @@ def plot2davg(dosq=True,whichplot=-1):
     foutpower = open( "pjet_2davg_%s.txt" %  os.path.basename(os.getcwd()), "w" )
     #
     #
+    #
     # radius of jet power measurement
-    #
-    # inner radius
-    rjetin=10.
-    rradin=10.
-    #
-    # outer radius
-    if modelname=="blandford3d_new":
-        rjetout=30.
-    elif modelname=="a0hr07":
-        rjetout=30.
-    else:
-        rjetout=50.
-    #
-    rjet=rjetout
-    #
-    # override outer radii
-    rradout=1000.0
-    rjet=rradout
-    rjetout=rjet
+    (rjetin,rradin,rjetout,rradout,rjet)=getrjet()
     #
     printjetwindpower(filehandle = foutpower, r = rjet, stage = 0, powjet = powjet, powwind = powwind, muminjet = muminjet, muminwind = muminwind, md=md, powjetEMKE=powjetEMKE, powjetwindEMKE=powjetwindEMKE, 
                       ftot=ftot, fsqtot=fsqtot, f30=f30, fsq30=fsq30, pjemtot=pjemtot, eoutEMtot=eoutEMtot)
@@ -16229,34 +16207,15 @@ def gettruemodelname(modelname=None):
 
     return(truemodelname,fieldtype)
 
-
-# everything done inside this function only needs a final call to plot, not generating npy files or merging them.
-def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None,formovie=False,dolatex=False):
-    global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
-    #
-    #try:
-    #    gotrad
-    #except NameError:
-    #    # to get "gotrad"
-    rfdheaderfirstfile()
-    #    print("gotrad newly defined as %d" % (gotrad)) ; sys.stdout.flush()
-    #else:
-    #    print("gotrad already defined as %d" % (gotrad)) ; sys.stdout.flush()
-    # controls many things for radiation runs
-    #global gotrad
-    showrad=gotrad # assume if got, then show.
-    
-    #
+def getiflux(showrad=0):
     # need to compute this again
     rhor=1+(1-a**2)**0.5
     ihor = np.floor(iofr(rhor)+0.5)
     #
-    print("showrad=%d rhor=%g ihor=%d" % (showrad,rhor,ihor)) ; sys.stdout.flush()
-    #
     # choose radius where to measure total fluxes.  If ihor!=iflux for horizon quantities, components will be renormalized by totals
     #ifluxacc = iofr(2.0)
     # sasha says r=5 is best so that also his A-0.9N100 model gets agreement between our floor subtractions.  Doesn't work well for highly time variable behavior.
-    ifluxacc = iofr(5.0)
+    ifluxacc = iofr(3.0)
     ifluxacc=ihor
     if showrad>0:
         ifluxacc=ihor
@@ -16281,9 +16240,18 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     # where to measure magnetic flux
     ihorusemag=ihor
     #
+    # fix mass-loaded region near BH where extra radiation driven into BH
+    iradfix=iofr(3.0)
     #
-    #
+    return(ifluxacc,iflux,ihoruse,ihorusemag,iradfix)
+
+# radius of jet power measurement
+def getrjet():
+    # inner radius
     rjetin=10.
+    rradin=rjetin
+    #
+    # outer radius
     if modelname=="blandford3d_new":
         rjetout=30.
     elif modelname=="a0hr07":
@@ -16291,10 +16259,56 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     else:
         rjetout=50.
     #
-    # override
-    rradout=1000.0
-    rjet=rradout
-    rjetout=rjet
+    rjet=rjetout
+    #
+    # override outer radii
+    if isradmodelnrad(modelname)==1:
+        if modelname=="jonharmrad1" or modelname=="jonharmrad2" or modelname=="jonharmrad3" or modelname=="jonharmrad4" or modelname=="jonharmrad5" or modelname=="jonharmrad6":
+            rradout=2000.0 # ok for EM and RAD, but not MAKE or total due to disk when measuring over all angles
+        if modelname=="jonharmrad7" or modelname=="jonharmrad8" or modelname=="jonharmrad15" or modelname=="jonharmrad18":
+            rradout=1000.0 # ok for EM and RAD, but not MAKE or total due to disk when measuring over all angles
+        if modelname=="jonharmrad9" or modelname=="jonharmrad10" or modelname=="jonharmrad11" or modelname=="jonharmrad14" or modelname=="jonharmrad16": # issues at large radii with energy conservation
+            rradout=100.0
+        if modelname=="jonharmrad13" or modelname=="jonharmrad17": # big issues with energy conservation
+            rradout=50.0
+        rjet=rradout
+        rjetout=rjet
+
+    return(rjetin,rradin,rjetout,rradout,rjet)
+
+
+
+
+# everything done inside this function only needs a final call to plot, not generating npy files or merging them.
+def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,fti=None,ftf=None,showextra=False,prefactor=100,epsFm=None,epsFke=None,formovie=False,dolatex=False):
+    global mdotfinavgvsr, mdotfinavgvsr5, mdotfinavgvsr10,mdotfinavgvsr20, mdotfinavgvsr30,mdotfinavgvsr40
+    #
+    #try:
+    #    gotrad
+    #except NameError:
+    #    # to get "gotrad"
+    rfdheaderfirstfile()
+    #    print("gotrad newly defined as %d" % (gotrad)) ; sys.stdout.flush()
+    #else:
+    #    print("gotrad already defined as %d" % (gotrad)) ; sys.stdout.flush()
+    # controls many things for radiation runs
+    #global gotrad
+    showrad=gotrad # assume if got, then show.
+    
+    #
+    # need to compute this again
+    rhor=1+(1-a**2)**0.5
+    ihor = np.floor(iofr(rhor)+0.5)
+    #
+    print("showrad=%d rhor=%g ihor=%d" % (showrad,rhor,ihor)) ; sys.stdout.flush()
+    #
+    # position for flux measurements
+    (ifluxacc,iflux,ihoruse,ihorusemag,iradfix)=getiflux(showrad)
+    #
+    # radius of jet power measurement
+    (rjetin,rradin,rjetout,rradout,rjet)=getrjet()
+    #
+    #
     # jon's Choice below
     showextra=True
     #
@@ -16632,6 +16646,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     edradvsr = timeavg(edrad,ts,fti,ftf)
     edradthinvsr = timeavg(edradthin,ts,fti,ftf)
     #
+    #
     ldtotvsr = timeavg(ldtot,ts,fti,ftf)
     ldemvsr = timeavg(ldem,ts,fti,ftf)
     ldmavsr = timeavg(ldma-ldma30,ts,fti,ftf)
@@ -16640,6 +16655,34 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     ldenvsr = timeavg(lden-lden30,ts,fti,ftf)
     ldradvsr = timeavg(ldrad,ts,fti,ftf)
     ldradthinvsr = timeavg(ldradthin,ts,fti,ftf)
+    radfix=isradmodelnrad(modelname)
+    if radfix==1:
+        etotvsr = edemvsr+edmakevsr+edradvsr
+        newetotvsr = np.copy(etotvsr)
+        newetotvsr[0:iradfix] = newetotvsr[iradfix]
+        #
+        edradvsr[0:iradfix] = edradvsr[0:iradfix] - (etotvsr[0:iradfix] - newetotvsr[0:iradfix])
+        #
+        # use time-average to fix value that will be used for time-dependent things
+        edradfixed=np.copy(edrad)
+        edradfixed[:,ihoruse] = np.minimum(edrad[:,ihoruse] - (etotvsr[ihoruse] - newetotvsr[ihoruse]),0.0)
+        # reset
+        #etotvsr = edemvsr+edmakevsr+edradvsr
+        #
+        ltotvsr = ldemvsr+ldmavsr+ldradvsr
+        newltotvsr = np.copy(ltotvsr)
+        newltotvsr[0:iradfix] = newltotvsr[iradfix]
+        #
+        ldradvsr[0:iradfix] = ldradvsr[0:iradfix] - (ltotvsr[0:iradfix] - newltotvsr[0:iradfix])
+        # use time-average to fix value that will be used for time-dependent things
+        ldradfixed=np.copy(ldrad)
+        ldradfixed[:,ihoruse] = ldrad[:,ihoruse] - (ltotvsr[ihoruse] - newltotvsr[ihoruse])
+        # reset
+        #ltotvsr = ldemvsr+ldmavsr+ldradvsr
+        #
+    else:
+        edradfixed=edrad
+        ldradfixed=ldrad
     #
     phiabsj_mu1vsr = timeavg(phiabsj_mu1[:,:],ts,fti,ftf)
     #
@@ -18691,7 +18734,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     etabhMAKE = prefactor*pjmaketot[:,ihoruse]/mdotfinavg * etatotfix
     etabhPAKE = prefactor*pjpaketot[:,ihoruse]/mdotfinavg * etatotfix
     etabhEN = prefactor*pjentot[:,ihoruse]/mdotfinavg     * etatotfix
-    etabhRAD=prefactor*edrad[:,ihoruse]/mdotfinavg     * etatotfix # uses full edrad, not thin
+    etabhRAD=prefactor*edradfixed[:,ihoruse]/mdotfinavg     * etatotfix # uses full edrad, not thin
     etabh = etabhEM + etabhMAKE + etabhRAD
     etajEM = prefactor*pjem_mu1[:,iofr(rjetout)]/mdotfinavg
     etajMAKE = prefactor*pjmake_mu1[:,iofr(rjetout)]/mdotfinavg
@@ -18783,7 +18826,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
     letabhMAKE = prefactor*ljmaketot[:,ihoruse]/mdotfinavg * letatotfix
     letabhPAKE = prefactor*ljpaketot[:,ihoruse]/mdotfinavg * letatotfix
     letabhEN = prefactor*ljentot[:,ihoruse]/mdotfinavg     * letatotfix
-    letabhRAD=prefactor*ldrad[:,ihoruse]/mdotfinavg     * letatotfix # uses full edrad, not thin
+    letabhRAD=prefactor*ldradfixed[:,ihoruse]/mdotfinavg     * letatotfix # uses full edrad, not thin
     letabh = letabhEM + letabhMAKE + letabhRAD
     letajEM = prefactor*ljem_mu1[:,iofr(rjetout)]/mdotfinavg
     letajMAKE = prefactor*ljmake_mu1[:,iofr(rjetout)]/mdotfinavg
@@ -19813,7 +19856,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         print("In showrad True");
         normfactor=Leddcode
         #Mdotplotfactor=1.0/(mdotfinavg/normfactor) # old way, assumes L\sim Ledd
-        Lsim=((1.0/prefactor)*etathinoutRAD_avg*mdotfinavg)
+        Lsim=((1.0/prefactor)*etaoutRAD_avg*mdotfinavg)
         LoLeddsim=Lsim/Leddcode
         Mdotplotfactor=0.1*LoLeddsim*normfactor/mdotfinavg
         radplotfactor=0.11 # so average lines don't sit right on top of eachother
@@ -19876,7 +19919,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                 elif windplotfactor==0.1:
                     ax.plot(ts,windplotfactor*np.abs(mdmwind[:,iofr(rjetout)]/normfactor*Mdotplotfactor),'b-.',label=r'$0.1\dot M_{\rm mw,o}c^2/%2g$' % (1.0/Mdotplotfactor))
         if showrad:
-            ax.plot(ts,edradthin[:,iofr(rradout)]*radplotfactor/normfactor,'c-.',label=r'$L_{\rm rad,thin,o}/%d$' % (1.0/radplotfactor))
+            #ax.plot(ts,edradthin[:,iofr(rradout)]*radplotfactor/normfactor,'c-.',label=r'$L_{\rm rad,thin,o}/%d$' % (1.0/radplotfactor))
+            ax.plot(ts,edrad[:,iofr(rradout)]*radplotfactor/normfactor,'c-.',label=r'$L_{\rm rad,o}/%d$' % (1.0/radplotfactor))
             print("edradtest") ; sys.stdout.flush()
             print(edradthin[:,iofr(rradout)]*radplotfactor/normfactor) ; sys.stdout.flush()
         #
@@ -19904,7 +19948,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #ax.set_ylabel(r'$\dot Mc^2$',fontsize=16,labelpad=9)
         ymax=ax.get_ylim()[1]
         print("For Mdot: ymaxa=%21.15g" % (ymax)) ; sys.stdout.flush()
-        ymax=2.0*roundto0(ymax) # round to nearest whole decimal
+        ymax=1.0*roundto0(ymax) # round to nearest whole decimal
         print("For Mdot: ymaxa2=%21.15g" % (ymax)) ; sys.stdout.flush()
         ax.set_ylim((0,ymax))
         #
@@ -20151,8 +20195,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                     if 1==0 and showrad==0: # for now don't show this -- too much on plot
                         ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etamwout2_avg,color=(fc,fc,1))
             if showrad:
-                ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etathinoutRAD_avg,color=(fc,1,1))
-                ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+signetaradtoshow*etabhRAD_avg,color='m') #(fc,0.5,.7))
+                #ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etathinoutRAD_avg,color=(fc,1,1))
+                ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+etaoutRAD_avg,color=(fc,1,1))
+                #ax.plot(ts[(ts<=itf)*(ts>=iti)],0*ts[(ts<=itf)*(ts>=iti)]+signetaradtoshow*etabhRAD_avg,color='m') #(fc,0.5,.7))
         #
         ax.plot(ts,etabh,clr,label=r'$\eta_{\rm H}$')
         if showextra:
@@ -20160,8 +20205,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             if 1==0 and showrad==0: # for now don't show this -- too much on plot
                 ax.plot(ts,etamwout,'b-.',label=r'$\eta_{\rm mw,o}$')
         if showrad:
-            ax.plot(ts,etathinoutRAD,'c-.',label=r'$\eta_{\rm rad,thin,o}$')
-            ax.plot(ts,signetaradtoshow*etabhRAD,'m--',label=r'$\eta_{\rm rad,H}$')
+            #ax.plot(ts,etathinoutRAD,'c-.',label=r'$\eta_{\rm rad,thin,o}$')
+            ax.plot(ts,etaoutRAD,'c-.',label=r'$\eta_{\rm rad,o}$')
+            #ax.plot(ts,signetaradtoshow*etabhRAD,'m--',label=r'$\eta_{\rm rad,H}$')
 # http://matplotlib.org/examples/pylab_examples/line_styles.html
         if findex != None:
             if not isinstance(findex,tuple):
@@ -20171,8 +20217,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                     if 1==0 and showrad==0: # for now don't show this -- too much on plot
                         ax.plot(ts[findex],etamwout[findex],'bv')
                 if showrad:
-                    ax.plot(ts[findex],etathinoutRAD[findex],'cs')
-                    ax.plot(ts[findex],signetaradtoshow*etabhRAD[findex],'mv')
+                    #ax.plot(ts[findex],etathinoutRAD[findex],'cs')
+                    ax.plot(ts[findex],etaoutRAD[findex],'cs')
+                    #ax.plot(ts[findex],signetaradtoshow*etabhRAD[findex],'mv')
             else:
                 for fi in findex:
                     ax.plot(ts[fi],etabh[fi],'o',mfc='r')#,label=r'$\dot M$')
@@ -20181,8 +20228,9 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
                         if 1==0 and showrad==0: # for now don't show this -- too much on plot
                             ax.plot(ts[fi],etamwout[fi],'bv')#,label=r'$\dot M$')
                     if showrad:
-                        ax.plot(ts[fi],etathinoutRAD[fi],'cs')#,label=r'$\dot M$')
-                        ax.plot(ts[fi],signetaradtoshow*etabhRAD[fi],'cv')#,label=r'$\dot M$')
+                        #ax.plot(ts[fi],etathinoutRAD[fi],'cs')#,label=r'$\dot M$')
+                        ax.plot(ts[fi],etaoutRAD[fi],'cs')#,label=r'$\dot M$')
+                        #ax.plot(ts[fi],signetaradtoshow*etabhRAD[fi],'cv')#,label=r'$\dot M$')
         #
         ax.set_xlabel(r'$t\;[r_g/c]$',fontsize=16)
         ax.set_ylabel(r'$\eta\ [\%]$',fontsize=16,ha='left',labelpad=padsize)
@@ -20195,10 +20243,10 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             ax.set_yticks(tck)
         else:
             ymax=max(etabh_avg,etaj_avg)
-            ymax=max(ymax,etabhRAD_avg)
+            #ymax=max(ymax,etabhRAD_avg)
 
             ymin=min(etabh_avg,etaj_avg)
-            ymin=min(ymax,etabhRAD_avg)
+            #ymin=min(ymax,etabhRAD_avg)
 
             if ymax>0:
                 ymax=ymax*2.0
@@ -21070,6 +21118,54 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         sqrtgv333_vsr=np.zeros(nx,dtype=r.dtype)
         gv333_vsr=np.sqrt(gvks33[:,ny/2,0])
     #
+    #########
+    if 1==1: # various new plots related to datavs stuff
+        # do plot of energy conservation
+        xlabels=[r"$r[r_g]$"]
+        xscales=['log']
+        #
+        ylabels=["E"]
+        yscales=['linear']
+        #
+        fignames=['evsr.png']
+        #
+        factors=[1.0/mdotfinavgvsr[0]]
+        #
+        nxout=nx-1 #70 # about r=50M where models have reached inflow equilibrium
+        nxoutalt=60
+        #
+        fig, (ax1) = plt.subplots(1, 1)
+        plt.gcf().subplots_adjust(bottom=0.15)
+        #plt.clf()
+        plt.ioff()
+        plt.rc('text', usetex=False)
+        #plt.rc('font', family='serif')
+        ax1.set_ylabel(ylabels[0],fontsize=24)
+        ax1.set_xlabel(xlabels[0],fontsize=24)
+        for axis in ['top','bottom','left','right']:
+            ax1.spines[axis].set_linewidth(2)
+        #ax1.axhline(linewidth=4, color="black")
+        #ax1.axvline(linewidth=4, color="black")
+        #
+        etotvsr = edemvsr+edmakevsr+edradvsr
+        #
+        ax1.plot(r[0:nxout,0,0],factors[0]*etotvsr[0:nxout],color="black",label='E',linewidth=2.0,linestyle='-')
+        ax1.plot(r[0:nxout,0,0],factors[0]*edemvsr[0:nxout],color="blue",label='EM',linewidth=2.0,linestyle='-')
+        ax1.plot(r[0:nxout,0,0],factors[0]*edmakevsr[0:nxout],color="green",label='MAKE',linewidth=2.0,linestyle='-')
+        ax1.plot(r[0:nxout,0,0],factors[0]*edradvsr[0:nxout],color="purple",label='RAD',linewidth=2.0,linestyle='-')
+        ax1.plot(r[0:nxout,0,0],factors[0]*edradthinvsr[0:nxout],color="yellow",label='RADTHIN',linewidth=2.0,linestyle='-')
+        ax1.plot(r[0:nxoutalt,0,0],factors[0]*mdotfinavgvsr[0:nxoutalt],color="red",label='M',linewidth=2.0,linestyle='-')
+        ax1.set_xscale(xscales[0])
+        ax1.set_yscale(yscales[0])
+        legend = ax1.legend(loc='upper right', shadow=True)
+        #plt.axis('tight',ax=ax1)
+        plt.savefig(fignames[0])
+        #plt.show()
+        plt.close()
+    #
+    #
+        
+
     #
     if dodatavsrh==1:
         print("dodatavsrh==1" + " time elapsed: %d" % (datetime.now()-start_time).seconds ) ; sys.stdout.flush()
@@ -21640,6 +21736,8 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
             favg5.write("%d %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,0,0],mdotfinavgvsr[ii],mdotfinavgvsr5[ii],mdotfinavgvsr10[ii],mdotfinavgvsr30[ii],edemvsr[ii],edmakevsr[ii],edmvsr[ii],ldemvsr[ii],ldmavsr[ii],ldmvsr[ii],phiabsj_mu1vsr[ii],pjemfinavgvsr[ii],pjmakefinavgvsr[ii],pjkefinavgvsr[ii],ljemfinavgvsr[ii],ljmakefinavgvsr[ii],ljkefinavgvsr[ii],mdin_vsr[ii],mdjet_vsr[ii],mdmwind_vsr[ii],mdwind_vsr[ii],alphamag1_vsr[ii],alphamag2_vsr[ii],alphamag3_vsr[ii],alphamag4_vsr[ii],alphareynoldsa2_vsr[ii],alphareynoldsb2_vsr[ii],alphareynoldsc2_vsr[ii],alphareynoldsa3_vsr[ii],alphareynoldsb3_vsr[ii],alphareynoldsc3_vsr[ii],fstot_vsr[ii],fsin_vsr[ii],feqtot_vsr[ii],fsmaxtot_vsr[ii],fsuphalf_vsr[ii],upsilon_vsr[ii],etajEM_vsr[ii],etajMAKE_vsr[ii],etamwEM_vsr[ii],etamwMAKE_vsr[ii],etawEM_vsr[ii],etawMAKE_vsr[ii],letajEM_vsr[ii],letajMAKE_vsr[ii],letamwEM_vsr[ii],letamwMAKE_vsr[ii],letawEM_vsr[ii],letawMAKE_vsr[ii],edradvsr[ii],ldradvsr[ii],ldradthinvsr[ii]) )
         #
         favg5.close()
+        #
+        #
         #
         # get fit
         print("mdotfinavgvsr numfit=%d" % (numfit)) ; sys.stdout.flush()
@@ -28037,6 +28135,125 @@ def mkavgfigs(whichmode=0):
             mkavgfigs5(whichfig=7)
 
 
+def rhoe():
+    #outernx=nx-1 # too close to boundary
+    outernx=nx-7 # 6 cells with PPM
+    showdebug=0
+    #
+    myroe=np.float64(np.arange(0,2))
+    myhoe=np.float64(np.arange(0,2))
+    mytioe=np.arange(0,2)
+    mytjoe=np.arange(0,2)
+    starttries=100
+    startk=0
+    for startjtype in np.arange(0,2):
+        donestarti=0
+        if startjtype==0:
+            startj=2 # near pole
+        else:
+            startj=ny-2-2 # near pole
+        for starti in np.arange(0,starttries):
+            #starti=iofr(startr)
+            #
+            startr=r[starti,startj,startk]
+            starth=h[starti,startj,startk]
+            if showdebug==1:
+                print("starti=%d startj=%d startr=%g starth=%g" % (starti,startj,startr,starth))
+            #
+            # dr(r) = dr/dx1 * dx1
+            #dr=dxdxp[1,1]*_dx1
+            #dh=dxdxp[2,2]*_dx2
+            #
+            #
+            # v1 = -T^1_0 = dx1/dt -> dx1 = v1*dt
+            v1=-avg_TudRAD[1,0]
+            # v2 = -T^2_0 = dx2/dt -> dx2 = v2*dt
+            v2=-avg_TudRAD[2,0]
+            #
+            myi=starti
+            myj=startj
+            myk=startk
+            intmyi = int(np.round(myi))
+            intmyj = int(np.round(myj))
+            intmyk = int(np.round(myk))
+            #
+            # x1a = startx1 + $dx1 * ia
+            # x1b = startx1 + $dx1 * ib
+            # x1b-x1a=dx1 = $dx1 * (ib-ia) = $dx1 *di
+            # -> di = dx1/$dx1
+            #
+            # x2 = startx2 + $dx2 * j
+            #
+            checkmyroe=1
+            myt=0
+            ditry=0.1
+            djtry=ditry
+            #
+            iters=max(nx/(1.0*ditry),ny/(1.0*djtry))
+            for ii in np.arange(0,iters):
+                #dx1 = mydt * v1[intmyi,intmyj,intmyk]
+                #dx2 = mydt * v2[intmyi,intmyj,intmyk]
+                #
+                #di = dx1/_dx1
+                #dj = dx2/_dx2
+                mydt1 = np.fabs(ditry * _dx1 / v1[intmyi,intmyj,intmyk])
+                mydt2 = np.fabs(djtry * _dx2 / v2[intmyi,intmyj,intmyk])
+                #
+                mydt=min(mydt1,mydt2)
+                #
+                dx1 = mydt * v1[intmyi,intmyj,intmyk]
+                dx2 = mydt * v2[intmyi,intmyj,intmyk]
+                #
+                di = dx1/_dx1
+                dj = dx2/_dx2
+                #
+                myi = myi + di
+                myj = myj + dj
+                #
+                tintmyi = int(np.round(myi))
+                tintmyj = int(np.round(myj))
+                #
+                #
+                if tintmyi>=outernx:
+                    donestarti=1
+                    break
+                if tintmyi<=0:
+                    donestarti=0
+                    break
+                # if here, then assign
+                intmyi = tintmyi
+                intmyj = tintmyj
+                #
+                roe = r[intmyi,intmyj,intmyk]
+                hoe = h[intmyi,intmyj,intmyk]
+                #
+                if(roe>1000 and checkmyroe==1):
+                    myroe[startjtype]=roe
+                    myhoe[startjtype]=hoe
+                    mytioe[startjtype]=intmyi
+                    mytjoe[startjtype]=intmyj
+                    checkmyroe=0
+                #
+                if(showdebug==1 and np.mod(ii,int(iters/10.0))==0):
+                    print("c: roe = %g hoe = %g : %g %g : %d %d %d : didj=%g %g" % (roe,hoe,dx1,dx2,intmyi,intmyj,intmyk,di,dj))
+               #
+            roe = r[intmyi,intmyj,intmyk]
+            hoe = h[intmyi,intmyj,intmyk]
+            if showdebug==1:
+                print("l: roe = %g hoe = %g : %g %g : %d %d %d : didj=%g %g : donestarti=%d" % (roe,hoe,dx1,dx2,intmyi,intmyj,intmyk,di,dj,donestarti))
+            if(donestarti==1):
+                break
+        roe = r[intmyi,intmyj,intmyk]
+        hoe = h[intmyi,intmyj,intmyk]
+    print("rst = %g hst = %g" % (startr,starth))
+    print("roe = %g hoe = %g" % (roe,hoe))
+    print("myroe0 = %21.15g myhoe0 = %21.15g" % (myroe[0],myhoe[0]))
+    print("myroe1 = %21.15g myhoe1 = %21.15g" % (myroe[1],myhoe[1]))
+    print("mytioe0 = %21.15g mytjoe0 = %21.15g" % (mytioe[0],mytjoe[0]))
+    print("mytioe1 = %21.15g mytjoe1 = %21.15g" % (mytioe[1],mytjoe[1]))
+    #
+    return(mytioe,mytjoe)
+
 def mkavgfigs1(whichfig=0):
     ###########################################
     grid3d("gdump.bin",use2d=use2dglobal)
@@ -28230,6 +28447,17 @@ def mkavgfigs1(whichfig=0):
         print(np.shape(avg_rho))
         print(np.shape(avg_eout))
         #
+    if whichfig==0 or whichfig==1: # compute radiative efficiency emerging from jet that want to remove because includes material injected
+        #
+        (mytioe,mytjoe) = rhoe()
+        badeff0=np.copy(eoutRAD2[mytioe[0],mytjoe[0]])
+        badeff1=np.copy(eoutRAD2[mytioe[1],ny-1]-eoutRAD2[mytioe[1],mytjoe[1]])
+        toteff=np.copy(eoutRAD2[mytioe[1],ny-1])
+        print("badeffs0: %g" % (badeff0))
+        print("badeffs1: %g" % (badeff1))
+        print("badefftot: %g" % (badeff0+badeff1))
+        print("toteffs: %g" % (toteff))
+        print("neweffs: %g" % (toteff-(badeff0+badeff1)))
         #
     # generate latex table for some quantities -- do it when calling case that will output even if parallel==3
     if whichfig==0 or whichfig==1:
@@ -31799,6 +32027,22 @@ def sgrpol1(modelname="blandford3d_new",filename=None,fignum=None,whichplot=1,te
 
 
 
+def energycons():
+    ###########################################
+    grid3d("gdump.bin",use2d=use2dglobal)
+    #
+    # read first file so know what type of data dealing with.
+    # gets gotrad, for example.
+    rfdfirstfile()
+    #
+    # load avg file
+    loadavg()
+    #########################################
+    # needs qty2.npy
+    hoverr_jet_vsr = getbasicqtystuff()
+    #
+    
+
 
 def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     global modelname
@@ -31812,9 +32056,10 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     else:
         rfd(filename)
     #
-    for ii in np.arange(0,np.shape(r[:,ny/2,0])[0]):
-        print("ii=%d r=%21.15g\n" % (ii,r[ii,ny/2,0]))
-    sys.stdout.flush()
+    if 1==0: # show i and r
+        for ii in np.arange(0,np.shape(r[:,ny/2,0])[0]):
+            print("ii=%d r=%21.15g\n" % (ii,r[ii,ny/2,0]))
+        sys.stdout.flush()
     #
     pg=(gam-1.0)*ug  #clean # use clean to keep pg low and Tgas will have floor like below  # no, need to use what was in simulation to be consistent with simulation's idea of what optical depth was
     # and of used ugclean above, then in funnel temperature would be very small and kappaff would be huge.
@@ -32385,7 +32630,8 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
         hoe = h[intmyi,intmyj,intmyk]
         print("rst = %g hst = %g" % (startr,starth))
         print("roe = %g hoe = %g" % (roe,hoe))
-
+    if(which==1002):
+        (mytioe,mytjoe) = rhoe()
     #
     #
     # overrides
@@ -34018,10 +34264,10 @@ def harmradtest1(path=None,fil=None):
     ifluxacc=ihor
     mdothor=mdtot[ifluxacc]
     #
-    rjetout=1000
-    ijet=iofr(rjetout)
+    # radius of jet power measurement
+    (rjetin,rradin,rjetout,rradout,rjet)=getrjet()
     #
-    rradout=1000.0
+    ijet=iofr(rjetout)
     irad=iofr(rradout)
     #
     edrad=intangle(-gdet*fTudRAD(1,0))
