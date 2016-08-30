@@ -9900,32 +9900,33 @@ def getkappasdetails(gotrad, gotkappas):
     phiphieinfit=np.copy(phiphie)
     phiphieinfit[phiphieinfit<1E-2]=1E-2
  
-    varexpf[varexpf>0.99] = 0.99
+    varexpfsy=np.copy(varexpf)
+    varexpfsy[varexpfsy>0.99] = 0.99
     
     # absorption
   
     # XRB Ledd
-    aas=1.2717090231066859 - 8.237581949899209e-9*Power(1. - 1.*varexpf,2.415933175034019) - 2.310668567595542e-8*Power(varexpf,33.99434202709177)
-    bbs=1.060851343360245 - 0.004747123512839568*Power(1. - 1.*varexpf,1.5464083937328197) - 0.026075188907016322*Power(varexpf,738.0958924659135)
-    ccs=0.0005843126554802812 + 0.0000410567490719383*Power(1. - 1.*varexpf,0.37174211933661433) + 0.0001789801048824479*Power(varexpf,432.208942737546)
-    dds=18.267252224714966 - 3.333556659049229*Power(1. - 1.*varexpf,2.7594532239756604) - 17.651647145151042*Power(varexpf,49.40047066070007)
-    ees=2.4851294642136326 + 1.2316705357826585*Power(1. - 1.*varexpf,0.21357152750491384) + 0.42683282553665336*Power(varexpf,0.6543955138816183)
+    aas=1.2717090231066859 - 8.237581949899209e-9*Power(1. - 1.*varexpfsy,2.415933175034019) - 2.310668567595542e-8*Power(varexpfsy,33.99434202709177)
+    bbs=1.060851343360245 - 0.004747123512839568*Power(1. - 1.*varexpfsy,1.5464083937328197) - 0.026075188907016322*Power(varexpfsy,738.0958924659135)
+    ccs=0.0005843126554802812 + 0.0000410567490719383*Power(1. - 1.*varexpfsy,0.37174211933661433) + 0.0001789801048824479*Power(varexpfsy,432.208942737546)
+    dds=18.267252224714966 - 3.333556659049229*Power(1. - 1.*varexpfsy,2.7594532239756604) - 17.651647145151042*Power(varexpfsy,49.40047066070007)
+    ees=2.4851294642136326 + 1.2316705357826585*Power(1. - 1.*varexpfsy,0.21357152750491384) + 0.42683282553665336*Power(varexpfsy,0.6543955138816183)
  
 
     kappasyreal *= 1.0/( 1.0/(aas*np.power(phiphiinfit,-bbs)*np.log(1.0+ccs*phiphiinfit)) + 1.0/(dds*np.power(phiphiinfit,-ees)) )
   
   #if EVOLVENRAD or 1:
     # XRB Ledd
-    aans=0.0020896556908760167 - 0.000552135392124191*Power(1. - 1.*varexpf,0.13484101986913094) - 0.00035919475351279596*Power(varexpf,1.3117367224699348)
-    bbns=0.947936882050393 + 0.04325767539629399*Power(1. - 1.*varexpf,0.15851143273201895) + 0.03500295073258275*Power(varexpf,5.426349783477622)
-    ccns=1.0428616563608024 - 0.06847935580879305*Power(1. - 1.*varexpf,2.804976762985117) - 0.12190075333271566*Power(varexpf,37.127481710076715)
-    ddns=8.710677885264703 - 6.470485714643377*Power(1. - 1.*varexpf,0.43622943950210663) - 8.58797778984234*Power(varexpf,155.08065851132326)
-    eens=2.447135378534403 + 0.5059941053985519*Power(1. - 1.*varexpf,0.1554411719728079) - 0.4466674305010909*Power(varexpf,393.57969904498856)
+    aans=0.0020896556908760167 - 0.000552135392124191*Power(1. - 1.*varexpfsy,0.13484101986913094) - 0.00035919475351279596*Power(varexpfsy,1.3117367224699348)
+    bbns=0.947936882050393 + 0.04325767539629399*Power(1. - 1.*varexpfsy,0.15851143273201895) + 0.03500295073258275*Power(varexpfsy,5.426349783477622)
+    ccns=1.0428616563608024 - 0.06847935580879305*Power(1. - 1.*varexpfsy,2.804976762985117) - 0.12190075333271566*Power(varexpfsy,37.127481710076715)
+    ddns=8.710677885264703 - 6.470485714643377*Power(1. - 1.*varexpfsy,0.43622943950210663) - 8.58797778984234*Power(varexpfsy,155.08065851132326)
+    eens=2.447135378534403 + 0.5059941053985519*Power(1. - 1.*varexpfsy,0.1554411719728079) - 0.4466674305010909*Power(varexpfsy,393.57969904498856)
   
     kappansyreal *= 1.0/( 1.0/(aans*np.power(phiphiinfit,-bbns)*np.log(1.0+ccns*phiphiinfit)) + 1.0/(ddns*np.power(phiphiinfit,-eens)) )
   #endif
   
-    # emission (just Planck varexpf=1 but using actual direct fit instead of fit over many varexpf)
+    # emission (just Planck varexpfsy=1 but using actual direct fit instead of fit over many varexpfsy)
     if 1==0:
        # XRB Ledd
        aaes=1.2717090000000002
@@ -10003,7 +10004,7 @@ def getkappasdetails(gotrad, gotkappas):
     ddndc=2.8625119194776856 - 2.716652341873481*Power(1. - 1.*varexpf,0.1055549863784506) + 1.8741117433895793*Power(varexpf,309.10043138151474)
   
     kappandcreal *= 1.0/( 1.0/aandc + 1.0/(bbndc*np.power(thetarinfit,-ccndc)) + 1.0/(ddndc*np.power(thetarinfit,-ccndc/3.0)) )
-  #endif
+    #endif
   
     # emission
   
@@ -10015,7 +10016,7 @@ def getkappasdetails(gotrad, gotkappas):
    
     kappaemitdcreal *= 1.0/( 1.0/aaedc + 1.0/(bbedc*np.power(thetarinfit,-ccedc)) + 1.0/(ddedc*np.power(thetarinfit,-ccedc/3.0)) )
   
-  #if EVOLVENRAD or 1:
+    #if EVOLVENRAD or 1:
     # XRB Ledd
     aanedc=197.97520843920014 - 94.77219201589888*Power(1. - 1.*varexpf,0.9245008022924389) - 81.66905945089535*Power(varexpf,1.010185534936844)
     bbnedc=4.798508367755025e-11 + 1.0490039263100823*Power(1. - 1.*varexpf,0.24861894212727034) + 1.3060425347854707*Power(varexpf,1.1248777879043648)
@@ -10023,8 +10024,14 @@ def getkappasdetails(gotrad, gotkappas):
     ddnedc=3.375250751641187 - 1.3820659504372945*Power(1. - 1.*varexpf,0.31579132247596853) + 1.3742704814428137*Power(varexpf,31.28257475560334)
   
     kappanemitdcreal *= 1.0/( 1.0/aanedc + 1.0/(bbnedc*np.power(thetarinfit,-ccnedc)) + 1.0/(ddnedc*np.power(thetarinfit,-ccnedc/3.0)) )
-  #endif
-  
+    #endif
+
+    print("aadc=%g bbdc=%g ccdc=%g dddc=%g" % (aadc[20,ny/2,0],bbdc[20,ny/2,0],ccdc[20,ny/2,0],dddc[20,ny/2,0]))  ; sys.stdout.flush() 
+    print("aandc=%g bbndc=%g ccndc=%g ddndc=%g" % (aandc[20,ny/2,0],bbndc[20,ny/2,0],ccndc[20,ny/2,0],ddndc[20,ny/2,0]))  ; sys.stdout.flush() 
+
+    print("aaedc=%g bbedc=%g ccedc=%g ddedc=%g" % (aaedc[20,ny/2,0],bbedc[20,ny/2,0],ccedc[20,ny/2,0],ddedc[20,ny/2,0]))  ; sys.stdout.flush() 
+    print("aanedc=%g bbnedc=%g ccnedc=%g ddnedc=%g" % (aanedc[20,ny/2,0],bbnedc[20,ny/2,0],ccnedc[20,ny/2,0],ddnedc[20,ny/2,0]))  ; sys.stdout.flush() 
+
     # Planck for interpolation to it when expf->1.  dcpl same as edcpl
     aadcpl=6.8308477566235427614037721740062696378080011960029
     bbdcpl=0.03737660642072567319753249796331010429215268940195
@@ -20217,7 +20224,7 @@ def plotqtyvstime(qtymem,fullresultsoutput=0,whichplot=None,ax=None,findex=None,
         #
         ax.plot(ts,etabh,clr,label=r'$\eta_{\rm H}$')
         if showextra:
-            ax.plot(ts,etajin,'g--',label=r'$\eta_{\rm j}$')
+            ax.plot(ts,etajin,'g--',label=r'$\eta_{\rm j,in}$')
             if 1==0 and showrad==0: # for now don't show this -- too much on plot
                 ax.plot(ts,etamwout,'b-.',label=r'$\eta_{\rm mw,o}$')
         if showrad:
@@ -27269,7 +27276,8 @@ def mkmovie(framesize=500, domakeavi=False):
         #
         print("skip1a=%d skip1b=%d skip1c=%d skip1=%d skip2=%d skip3=%d\n" % (skip1a,skip1b,skip1c,skip1,skip2,skip3)) ; sys.stdout.flush()
         #
-        if skip1 and skip2 and skip3:
+        #if (skip1 and skip2 and skip3) or filenum!=1235: # spot remake on pfe or stampede (and disable PIL above if using fake system)
+        if (skip1 and skip2 and skip3): # normal
             print("Fully skipped: %s",fname)
             continue
         ########################################################
@@ -28230,6 +28238,9 @@ def rhoe():
                 tintmyj = int(np.round(myj))
                 #
                 #
+                if tintmyj>=ny-1 or tintmyj<=0:
+                    donestarti=0
+                    break
                 if tintmyi>=outernx:
                     donestarti=1
                     break
@@ -28480,6 +28491,7 @@ def mkavgfigs1(whichfig=0):
         powerw=2
         #
         avg_TradoTgas=np.copy(avg_Tradfftype3/avg_Tgas) # density weighted, at rh,5M,20M
+        avg_fcol=(avg_Tradfftype3/avg_Tradfflte)
         avg_fcollab=(avg_Tradlabtype3/avg_Tradlablte) # rad energy flux weighted at r=100M
         avg_varexpfff=np.copy(avg_varexpf) # as above
         avg_nfcol=np.copy(avg_nradlabrat/avg_nradlabratlte) # as above
@@ -28493,8 +28505,8 @@ def mkavgfigs1(whichfig=0):
             #
             numer1b=gdet*avg_rho**powerw*avg_TradoTgas
             denom1b=gdet*avg_rho**powerw
-            sumnumer1b=np.sum(numer1b[iofr(5),:,:])
-            sumdenom1b=np.sum(denom1b[iofr(5),:,:])
+            sumnumer1b=np.sum(numer1b[iofr(10),:,:])
+            sumdenom1b=np.sum(denom1b[iofr(10),:,:])
             result1b=sumnumer1b/sumdenom1b
             #
             numer1c=gdet*avg_rho**powerw*avg_TradoTgas
@@ -28503,19 +28515,19 @@ def mkavgfigs1(whichfig=0):
             sumdenom1c=np.sum(denom1c[iofr(20),:,:])
             result1c=sumnumer1c/sumdenom1c
             #
-            numer2a=gdet*avg_rho**powerw*avg_fcollab
+            numer2a=gdet*avg_rho**powerw*avg_fcol
             denom2a=gdet*avg_rho**powerw
             sumnumer2a=np.sum(numer2a[iofr(rhor),:,:])
             sumdenom2a=np.sum(denom2a[iofr(rhor),:,:])
             result2a=sumnumer2a/sumdenom2a
             #
-            numer2b=gdet*avg_rho**powerw*avg_fcollab
+            numer2b=gdet*avg_rho**powerw*avg_fcol
             denom2b=gdet*avg_rho**powerw
-            sumnumer2b=np.sum(numer2b[iofr(5),:,:])
-            sumdenom2b=np.sum(denom2b[iofr(5),:,:])
+            sumnumer2b=np.sum(numer2b[iofr(10),:,:])
+            sumdenom2b=np.sum(denom2b[iofr(10),:,:])
             result2b=sumnumer2b/sumdenom2b
             #
-            numer2c=gdet*avg_rho**powerw*avg_fcollab
+            numer2c=gdet*avg_rho**powerw*avg_fcol
             denom2c=gdet*avg_rho**powerw
             sumnumer2c=np.sum(numer2c[iofr(20),:,:])
             sumdenom2c=np.sum(denom2c[iofr(20),:,:])
@@ -28529,8 +28541,8 @@ def mkavgfigs1(whichfig=0):
             #
             numer3b=gdet*avg_rho**powerw*avg_varexpfff
             denom3b=gdet*avg_rho**powerw
-            sumnumer3b=np.sum(numer3b[iofr(5),:,:])
-            sumdenom3b=np.sum(denom3b[iofr(5),:,:])
+            sumnumer3b=np.sum(numer3b[iofr(10),:,:])
+            sumdenom3b=np.sum(denom3b[iofr(10),:,:])
             result3b=sumnumer3b/sumdenom3b
             #
             numer3c=gdet*avg_rho**powerw*avg_varexpfff
@@ -28547,8 +28559,8 @@ def mkavgfigs1(whichfig=0):
             #
             numer4b=gdet*avg_rho**powerw*avg_nfcol
             denom4b=gdet*avg_rho**powerw
-            sumnumer4b=np.sum(numer4b[iofr(5),:,:])
-            sumdenom4b=np.sum(denom4b[iofr(5),:,:])
+            sumnumer4b=np.sum(numer4b[iofr(10),:,:])
+            sumdenom4b=np.sum(denom4b[iofr(10),:,:])
             result4b=sumnumer4b/sumdenom4b
             #
             numer4c=gdet*avg_rho**powerw*avg_nfcol
@@ -28556,6 +28568,24 @@ def mkavgfigs1(whichfig=0):
             sumnumer4c=np.sum(numer4c[iofr(20),:,:])
             sumdenom4c=np.sum(denom4c[iofr(20),:,:])
             result4c=sumnumer4c/sumdenom4c
+            #
+            numer5a=gdet*avg_rho**powerw*avg_Tradfftype3
+            denom5a=gdet*avg_rho**powerw
+            sumnumer5a=np.sum(numer5a[iofr(rhor),:,:])
+            sumdenom5a=np.sum(denom5a[iofr(rhor),:,:])
+            result5a=sumnumer5a/sumdenom5a
+            #
+            numer5b=gdet*avg_rho**powerw*avg_Tradfftype3
+            denom5b=gdet*avg_rho**powerw
+            sumnumer5b=np.sum(numer5b[iofr(10),:,:])
+            sumdenom5b=np.sum(denom5b[iofr(10),:,:])
+            result5b=sumnumer5b/sumdenom5b
+            #
+            numer5c=gdet*avg_rho**powerw*avg_Tradfftype3
+            denom5c=gdet*avg_rho**powerw
+            sumnumer5c=np.sum(numer5c[iofr(20),:,:])
+            sumdenom5c=np.sum(denom5c[iofr(20),:,:])
+            result5c=sumnumer5c/sumdenom5c
             #
         #
         #
@@ -28658,6 +28688,25 @@ def mkavgfigs1(whichfig=0):
             sumradnumer5c=np.sum(radnumer5c[iofr(1000),:,:])
             sumraddenom5c=np.sum(raddenom5c[iofr(1000),:,:])
             radresult5c=sumradnumer5c/sumraddenom5c
+            #
+            radnumer6a=avg_eoutRADout**powerrad*avg_Tradlabtype3
+            raddenom6a=avg_eoutRADout**powerrad
+            sumradnumer6a=np.sum(radnumer6a[iofr(10),:,:])
+            sumraddenom6a=np.sum(raddenom6a[iofr(10),:,:])
+            radresult6a=sumradnumer6a/sumraddenom6a
+            #
+            radnumer6b=avg_eoutRADout**powerrad*avg_Tradlabtype3
+            raddenom6b=avg_eoutRADout**powerrad
+            sumradnumer6b=np.sum(radnumer6b[iofr(100),:,:])
+            sumraddenom6b=np.sum(raddenom6b[iofr(100),:,:])
+            radresult6b=sumradnumer6b/sumraddenom6b
+            #
+            radnumer6c=avg_eoutRADout**powerrad*avg_Tradlabtype3
+            raddenom6c=avg_eoutRADout**powerrad
+            sumradnumer6c=np.sum(radnumer6c[iofr(1000),:,:])
+            sumraddenom6c=np.sum(raddenom6c[iofr(1000),:,:])
+            radresult6c=sumradnumer6c/sumraddenom6c
+            #
         #
         if 1==1: # EM flux weighted things
             # only look at outgoing radiaion (not inggoing in equatorial region)
@@ -28738,8 +28787,10 @@ def mkavgfigs1(whichfig=0):
         # 
         (truemodelname,fieldtype)=gettruemodelname(modelname)
         #
-        print( "HLatex67: Model & $\\left(\\frac{\\hat{T}_\\gamma}{T_{\\rm{}gas}}\\right)_{r=r_{\\rm{}H}}$  & $\\left(\\frac{\\hat{T}_\\gamma}{T_{\\rm{}gas}}\\right)_{r=5r_g}$  & $\\left(\\frac{\\hat{T}_\\gamma}{T_{\\rm{}gas}}\\right)_{r=20r_g}$  & $f_{\\rm{col}}^{r=100r_g,\\rm{rad.beam}}$ & $f_{\\rm{col}}^{r=5r_g,\\rm{disk}}$ & ${\\rm{}e}^{-\\xi}_{r=100r_g,\\rm{rad.beam}}$ & ${\\rm{}e}^{-\\xi}_{r=5r_g,\\rm{disk}}$ & $\\theta_{\\rm{}r}^{r=1000r_g}$ & $\\theta_{\\rm{}em}^{r=1000r_g}$ & $\\theta_{\\rm{}j}^{r=1000r_g}$  \\\\" )
-        print( "VLatex67: %s         & %g & %g & %g    & %g & %g  & %g & %g &   %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(result1a),roundto2(result1b),roundto2(result1c),roundto2(radresult2b),roundto2(result2b),roundto2(radresult3b),roundto2(result3b),roundto2(radresult5c),roundto2(emresult1c),roundto2(emmakeresult1c),    modelname ) )
+        #print( "HLatex67: Model & $\\left(\\frac{\\hat{T}_\\gamma}{T_{\\rm{}gas}}\\right)_{r=10r_g}$  & $\\hat{T}_{\\gamma,r=10r_g}$  & $T_{\\gamma,r=100r_g,\\rm{rad.beam}}$  & $f_{\\rm{col}}^{r=100r_g,\\rm{rad.beam}}$ & $f_{\\rm{col}}^{r=10r_g,\\rm{disk}}$ & ${\\rm{}e}^{-\\xi}_{r=100r_g,\\rm{rad.beam}}$ & ${\\rm{}e}^{-\\xi}_{r=10r_g,\\rm{disk}}$ & $\\theta_{\\rm{}r}^{r=1000r_g}$ & $\\theta_{\\rm{}em}^{r=1000r_g}$ & $\\theta_{\\rm{}j}^{r=1000r_g}$  \\\\" )
+        #print( "VLatex67: %s         & %g & %g & %g    & %g & %g  & %g & %g &   %g & %g & %g \\\\ %% %s" % (truemodelname, roundto2(result1b),roundto2(result5b*TEMPBAR),roundto2(radresult6b*TEMPBAR),roundto2(radresult2b),roundto2(result2b),roundto2(radresult3b),roundto2(result3b),roundto2(radresult5c),roundto2(emresult1c),roundto2(emmakeresult1c),    modelname ) )
+        print( "HLatex67: Model & $\\left(\\frac{\\hat{T}_\\gamma}{T_{\\rm{}gas}}\\right)_{r=10r_g}$  & $\\hat{T}_{\\gamma,r=10r_g}{\\rm{}[K]}$  & $T_{\\gamma,r=100r_g,\\rm{rad.beam}}{\\rm{}[K]}$  & $\\hat{f}_{\\rm{col}}^{r=10r_g,\\rm{disk}}$ & $f_{\\rm{col}}^{r=100r_g,\\rm{rad.beam}}$ & ${\\rm{}e}^{-\\xi}_{r=10r_g,\\rm{disk}}$ & ${\\rm{}e}^{-\\xi}_{r=100r_g,\\rm{rad.beam}}$ & $\\theta_{\\rm{}r}^{r=1000r_g}$ & $\\theta_{\\rm{}j}^{r=1000r_g}$  \\\\" )
+        print( "VLatex67: %s         & %g & %g & %g    & %g & %g  & %g & %g &   %g & %g \\\\ %% %s" % (truemodelname, roundto2(result1b),roundto2(result5b*TEMPBAR),roundto2(radresult6b*TEMPBAR),roundto2(result2b),roundto2(radresult2b),roundto2(result3b),roundto2(radresult3b),roundto2(radresult5c),roundto2(emmakeresult1c),    modelname ) )
         #
         # make data file of isotropic equivalent luminosities with modelname in name of file, so can cumulate these in separate non-parallel plot script for paper
         # same for Trad, Tgas, varexpf, rho, etc. along equator
@@ -28781,7 +28832,7 @@ def mkavgfigs1(whichfig=0):
             avg_Tradlabtype3vstheta=avg_Tradlabtype3[iofr(10),:,0]
             avg_Tgasvstheta=avg_Tgas[iofr(10),:,0]
             # 3
-            avg_fcollabvstheta=avg_fcollab[iofr(10),:,0]
+            avg_fcolvstheta=avg_fcol[iofr(10),:,0]
             avg_varexpfffvstheta=avg_varexpfff[iofr(10),:,0]
             avg_nfcolvstheta=avg_nfcol[iofr(10),:,0]
             # 16
@@ -28885,7 +28936,7 @@ def mkavgfigs1(whichfig=0):
             #
             f1 = open('radquantsvsh.%s.txt' % (modelname), 'w')
             for jj in np.arange(0,ny):
-                f1.write("%d  %g %g  %g %g %g %g  %g %g %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g  %g %g %g %g %g %g %g %g %g %g     %g %g  %g %g %g %g  %g %g %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g  %g %g %g %g %g %g %g %g %g %g   %g %g %g %g %g %g   %g %g %g %g %g %g %g %g\n" % (jj ,h[iofr(10),jj,0],avg_dh[jj],savg_TradoTgasvstheta[jj],avg_Tradfftype3vstheta[jj],avg_Tradlabtype3vstheta[jj],avg_Tgasvstheta[jj],avg_fcollabvstheta[jj],avg_varexpfffvstheta[jj],avg_nfcolvstheta[jj],avg_kappadensityrealvstheta[jj],avg_kappadensityrealnofevstheta[jj],savg_kappasyrealvstheta[jj],savg_kappadcrealvstheta[jj],avg_kappaesrealvstheta[jj],avg_kappandensityrealvstheta[jj],avg_kappansyrealvstheta[jj],avg_kappandcrealvstheta[jj],avg_kappachiantirealvstheta[jj],savg_kappaffrealvstheta[jj],avg_kappabfrealvstheta[jj],avg_kappaferealvstheta[jj],avg_kappamolrealvstheta[jj],avg_kappahmopalrealvstheta[jj],avg_kappachiantiopalrealvstheta[jj],avg_kappaffeerealvstheta[jj],avg_rhovstheta[jj],avg_ugvstheta[jj],avg_Erfvstheta[jj],avg_bsqvstheta[jj],avg_vrvstheta[jj],avg_vzvstheta[jj],avg_vphivstheta[jj],avg_Brvstheta[jj],avg_Bzvstheta[jj],avg_Bphivstheta[jj]   ,h[iofr(100),jj,0],avg2_dh[jj],avg2_TradoTgasvstheta[jj],avg2_Tradfftype3vstheta[jj],avg2_Tradlabtype3vstheta[jj],avg2_Tgasvstheta[jj],avg2_fcollabvstheta[jj],avg2_varexpfffvstheta[jj],avg2_nfcolvstheta[jj],avg2_kappadensityrealvstheta[jj],avg2_kappadensityrealnofevstheta[jj],avg2_kappasyrealvstheta[jj],avg2_kappadcrealvstheta[jj],avg2_kappaesrealvstheta[jj],avg2_kappandensityrealvstheta[jj],avg2_kappansyrealvstheta[jj],avg2_kappandcrealvstheta[jj],avg2_kappachiantirealvstheta[jj],avg2_kappaffrealvstheta[jj],avg2_kappabfrealvstheta[jj],avg2_kappaferealvstheta[jj],avg2_kappamolrealvstheta[jj],avg2_kappahmopalrealvstheta[jj],avg2_kappachiantiopalrealvstheta[jj],avg2_kappaffeerealvstheta[jj],avg2_rhovstheta[jj],avg2_ugvstheta[jj],avg2_Erfvstheta[jj],avg2_bsqvstheta[jj],avg2_vrvstheta[jj],avg2_vzvstheta[jj],avg2_vphivstheta[jj],avg2_Brvstheta[jj],avg2_Bzvstheta[jj],avg2_Bphivstheta[jj]   ,avg2_eoutRADvstheta[jj],avg2_eoutRADisovstheta[jj],avg2_eoutRADperLeddvstheta[jj],avg2_eoutEMvstheta[jj],avg2_eoutEMisovstheta[jj],avg2_eoutEMperLeddvstheta[jj]   ,h[iofr(1000),jj,0],avg3_dh[jj],avg3_eoutRADvstheta[jj],avg3_eoutRADisovstheta[jj],avg3_eoutRADperLeddvstheta[jj],avg3_eoutEMvstheta[jj],avg3_eoutEMisovstheta[jj],avg3_eoutEMperLeddvstheta[jj]) )
+                f1.write("%d  %g %g  %g %g %g %g  %g %g %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g  %g %g %g %g %g %g %g %g %g %g     %g %g  %g %g %g %g  %g %g %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g  %g %g %g %g %g %g %g %g %g %g   %g %g %g %g %g %g   %g %g %g %g %g %g %g %g\n" % (jj ,h[iofr(10),jj,0],avg_dh[jj],savg_TradoTgasvstheta[jj],avg_Tradfftype3vstheta[jj],avg_Tradlabtype3vstheta[jj],avg_Tgasvstheta[jj],avg_fcolvstheta[jj],avg_varexpfffvstheta[jj],avg_nfcolvstheta[jj],avg_kappadensityrealvstheta[jj],avg_kappadensityrealnofevstheta[jj],savg_kappasyrealvstheta[jj],savg_kappadcrealvstheta[jj],avg_kappaesrealvstheta[jj],avg_kappandensityrealvstheta[jj],avg_kappansyrealvstheta[jj],avg_kappandcrealvstheta[jj],avg_kappachiantirealvstheta[jj],savg_kappaffrealvstheta[jj],avg_kappabfrealvstheta[jj],avg_kappaferealvstheta[jj],avg_kappamolrealvstheta[jj],avg_kappahmopalrealvstheta[jj],avg_kappachiantiopalrealvstheta[jj],avg_kappaffeerealvstheta[jj],avg_rhovstheta[jj],avg_ugvstheta[jj],avg_Erfvstheta[jj],avg_bsqvstheta[jj],avg_vrvstheta[jj],avg_vzvstheta[jj],avg_vphivstheta[jj],avg_Brvstheta[jj],avg_Bzvstheta[jj],avg_Bphivstheta[jj]   ,h[iofr(100),jj,0],avg2_dh[jj],avg2_TradoTgasvstheta[jj],avg2_Tradfftype3vstheta[jj],avg2_Tradlabtype3vstheta[jj],avg2_Tgasvstheta[jj],avg2_fcollabvstheta[jj],avg2_varexpfffvstheta[jj],avg2_nfcolvstheta[jj],avg2_kappadensityrealvstheta[jj],avg2_kappadensityrealnofevstheta[jj],avg2_kappasyrealvstheta[jj],avg2_kappadcrealvstheta[jj],avg2_kappaesrealvstheta[jj],avg2_kappandensityrealvstheta[jj],avg2_kappansyrealvstheta[jj],avg2_kappandcrealvstheta[jj],avg2_kappachiantirealvstheta[jj],avg2_kappaffrealvstheta[jj],avg2_kappabfrealvstheta[jj],avg2_kappaferealvstheta[jj],avg2_kappamolrealvstheta[jj],avg2_kappahmopalrealvstheta[jj],avg2_kappachiantiopalrealvstheta[jj],avg2_kappaffeerealvstheta[jj],avg2_rhovstheta[jj],avg2_ugvstheta[jj],avg2_Erfvstheta[jj],avg2_bsqvstheta[jj],avg2_vrvstheta[jj],avg2_vzvstheta[jj],avg2_vphivstheta[jj],avg2_Brvstheta[jj],avg2_Bzvstheta[jj],avg2_Bphivstheta[jj]   ,avg2_eoutRADvstheta[jj],avg2_eoutRADisovstheta[jj],avg2_eoutRADperLeddvstheta[jj],avg2_eoutEMvstheta[jj],avg2_eoutEMisovstheta[jj],avg2_eoutEMperLeddvstheta[jj]   ,h[iofr(1000),jj,0],avg3_dh[jj],avg3_eoutRADvstheta[jj],avg3_eoutRADisovstheta[jj],avg3_eoutRADperLeddvstheta[jj],avg3_eoutEMvstheta[jj],avg3_eoutEMisovstheta[jj],avg3_eoutEMperLeddvstheta[jj]) )
             f1.close()
         #
         # stuff vs. radius
@@ -28919,7 +28970,7 @@ def mkavgfigs1(whichfig=0):
             avg_Tradlabtype3vsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**powerw*avg_Tradlabtype3[:,sjj:ejj,0],axis=1)/bottom
             avg_Tgasvsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**powerw*avg_Tgas[:,sjj:ejj,0],axis=1)/bottom
             # 3
-            avg_fcollabvsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**powerw*avg_fcollab[:,sjj:ejj,0],axis=1)/bottom
+            avg_fcolvsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**powerw*avg_fcol[:,sjj:ejj,0],axis=1)/bottom
             avg_varexpfffvsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**powerw*avg_varexpfff[:,sjj:ejj,0],axis=1)/bottom
             avg_nfcolvsradius=np.average(gdet[:,sjj:ejj,0]*avg_rho[:,sjj:ejj,0]**powerw*avg_nfcol[:,sjj:ejj,0],axis=1)/bottom
             # 16
@@ -28943,7 +28994,7 @@ def mkavgfigs1(whichfig=0):
             #
             f2 = open('radquantsvsr.%s.txt' % (modelname), 'w')
             for ii in np.arange(0,nx):
-                f2.write("%d %g  %g %g %g %g  %g %g %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g  %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,ny/2,0],avg_TradoTgasvsradius[ii],avg_Tradfftype3vsradius[ii],avg_Tradlabtype3vsradius[ii],avg_Tgasvsradius[ii],avg_fcollabvsradius[ii],avg_varexpfffvsradius[ii],avg_nfcolvsradius[ii],avg_kappadensityrealvsradius[ii],avg_kappadensityrealnofevsradius[ii],avg_kappasyrealvsradius[ii],avg_kappadcrealvsradius[ii],avg_kappaesrealvsradius[ii],avg_kappandensityrealvsradius[ii],avg_kappansyrealvsradius[ii],avg_kappandcrealvsradius[ii],avg_kappachiantirealvsradius[ii],avg_kappaffrealvsradius[ii],avg_kappabfrealvsradius[ii],avg_kappaferealvsradius[ii],avg_kappamolrealvsradius[ii],avg_kappahmopalrealvsradius[ii],avg_kappachiantiopalrealvsradius[ii],avg_kappaffeerealvsradius[ii],avg_rhovsradius[ii],avg_ugvsradius[ii],avg_Erfvsradius[ii],avg_bsqvsradius[ii],avg_vrvsradius[ii],avg_vzvsradius[ii],avg_vphivsradius[ii],avg_Brvsradius[ii],avg_Bzvsradius[ii],avg_Bphivsradius[ii]) )
+                f2.write("%d %g  %g %g %g %g  %g %g %g  %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g  %g %g %g %g %g %g %g %g %g %g\n" % (ii,r[ii,ny/2,0],avg_TradoTgasvsradius[ii],avg_Tradfftype3vsradius[ii],avg_Tradlabtype3vsradius[ii],avg_Tgasvsradius[ii],avg_fcolvsradius[ii],avg_varexpfffvsradius[ii],avg_nfcolvsradius[ii],avg_kappadensityrealvsradius[ii],avg_kappadensityrealnofevsradius[ii],avg_kappasyrealvsradius[ii],avg_kappadcrealvsradius[ii],avg_kappaesrealvsradius[ii],avg_kappandensityrealvsradius[ii],avg_kappansyrealvsradius[ii],avg_kappandcrealvsradius[ii],avg_kappachiantirealvsradius[ii],avg_kappaffrealvsradius[ii],avg_kappabfrealvsradius[ii],avg_kappaferealvsradius[ii],avg_kappamolrealvsradius[ii],avg_kappahmopalrealvsradius[ii],avg_kappachiantiopalrealvsradius[ii],avg_kappaffeerealvsradius[ii],avg_rhovsradius[ii],avg_ugvsradius[ii],avg_Erfvsradius[ii],avg_bsqvsradius[ii],avg_vrvsradius[ii],avg_vzvsradius[ii],avg_vphivsradius[ii],avg_Brvsradius[ii],avg_Bzvsradius[ii],avg_Bphivsradius[ii]) )
             f2.close()
     #########
     # PLOTS
@@ -32269,6 +32320,19 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     #
     # override
     #whichaphi=0
+    # code Tgas for ideal gas in units of m_p c^2
+    GGG0=(6.674e-8)
+    CCCTRUE0=(2.99792458e10) #// cgs in cm/s
+    MSUN=(1.989E33) #//cgs in grams
+    ARAD=(7.56593E-15) #// cgs in erg/(K^4 cm^3)
+    K_BOLTZ=(1.3806488e-16) #// cgs in erg/K
+    M_PROTON=(1.67262158e-24) #// proton mass in cgs in grams
+    MB=(1.66054E-24)
+    MPOME=(1836.15)
+    MELE=(M_PROTON/MPOME) #// electron mass in cgs in grams
+    HPLANCK=(6.62607E-27) #// cgs
+    QCHARGE=(4.8029E-10) #// cgs
+    #
     #
     if(which==1):
         myfun=np.log10(rho)
@@ -32325,19 +32389,6 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
         pg=(gam-1.0)*ug
         betaplasma=(pg+prad)/(bsq/2.0)
         ibetaplasma=(bsq/2.0)/(pg+prad+1E-30)
-        # code Tgas for ideal gas in units of m_p c^2
-        GGG0=(6.674e-8)
-        CCCTRUE0=(2.99792458e10) #// cgs in cm/s
-        MSUN=(1.989E33) #//cgs in grams
-        ARAD=(7.56593E-15) #// cgs in erg/(K^4 cm^3)
-        K_BOLTZ=(1.3806488e-16) #// cgs in erg/K
-        M_PROTON=(1.67262158e-24) #// proton mass in cgs in grams
-        MB=(1.66054E-24)
-        MPOME=(1836.15)
-        MELE=(M_PROTON/MPOME) #// electron mass in cgs in grams
-        HPLANCK=(6.62607E-27) #// cgs
-        QCHARGE=(4.8029E-10) #// cgs
-        #
         TgasK=pg/(rho/MUMEAN)*(MB*CCCTRUE0**2)/K_BOLTZ
         #
         myfun=np.log10(ibetaplasma)
@@ -32448,7 +32499,7 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
         Ruurat=np.float64(Ruu/ARAD_CODE)
         myfun=Ruurat**3
     if(which==73):
-        myfun=np.log10(Tradfftype3*TEMPBAR)
+        myfun=np.log10(Tradfftype3*TEMPBAR*K_BOLTZ/(MELE*CCCTRUE*CCCTRUE))
     if(which==74):
         myfun=varexpflab
     if(which==75):
@@ -34752,7 +34803,7 @@ def dcpaperplot1():
         xlabels=[r"$r[r_g]$"]
         xscales=['log']
         #
-        ylabels=["ii",r"$r$",r"$\hat{T}_\gamma/T_{\rm gas}$",r"$\hat{T}_\gamma[\rm K]$",r"$T_\gamma[\rm K]$",r"$T_{\rm gas}[\rm K]$",r"$f_{\rm col}$",r"$\exp{(-\xi)}$",r"$n_{\rm col}$",r"$\kappa_{\rm tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm tot-Fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm es}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,sy}$/\kappa_{\rm ff}",r"$\kappa_{\rm n,dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm chianti}/\kappa_{\rm ff}$",r"$\kappa_{\rm ff}$",r"$\kappa_{\rm bf}/\kappa_{\rm ff}$",r"$\kappa_{\rm fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm mol}/\kappa_{\rm ff}$",r"$\kappa_{\rm hmopal}/\kappa_{\rm ff}$",r"\kappa_{\rm chiantiopal}/\kappa_{\rm ff}$",r"\kappa_{\rm ff-ee}/\kappa_{\rm ff}$",r"$\rho$",r"$u_g/rho$",r"$u_\gamma/\rho$",r"$b^2/\rho$",r"$v_r$",r"$v_z$",r"$v_\phi$",r"$B_r/\sqrt{\rho}$",r"$B_z/\sqrt{\rho}$",r"$B_\phi/\sqrt{\rho}$"]
+        ylabels=["ii",r"$r$",r"$\hat{T}_\gamma/T_{\rm gas}$",r"$\hat{T}_\gamma[\rm K]$",r"$T_\gamma[\rm K]$",r"$T_{\rm gas}[\rm K]$",r"$\hat{f}_{\rm col}$",r"$\exp{(-\xi)}$",r"$n_{\rm col}$",r"$\kappa_{\rm tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm tot-Fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm es}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm chianti}/\kappa_{\rm ff}$",r"$\kappa_{\rm ff}$",r"$\kappa_{\rm bf}/\kappa_{\rm ff}$",r"$\kappa_{\rm fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm mol}/\kappa_{\rm ff}$",r"$\kappa_{\rm hmopal}/\kappa_{\rm ff}$",r"\kappa_{\rm chiantiopal}/\kappa_{\rm ff}$",r"\kappa_{\rm ff-ee}/\kappa_{\rm ff}$",r"$\rho$",r"$u_g/rho$",r"$u_\gamma/\rho$",r"$b^2/\rho$",r"$v_r$",r"$v_z$",r"$v_\phi$",r"$B_r/\sqrt{\rho}$",r"$B_z/\sqrt{\rho}$",r"$B_\phi/\sqrt{\rho}$"]
         print("ylabels")
         print(np.shape(ylabels))
         yscales=['linear','log','linear','log','log','log','log','linear','linear','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log','log']
@@ -34778,7 +34829,7 @@ def dcpaperplot1():
             plt.rc('text', usetex=False)
             #plt.rc('font', family='serif')
             #
-            if ii>=9 and ii<=24 and ii!=18:
+            if ii>=9 and ii<=24 and ii!=18 and (not(ii>=14 and ii<=16)):
                 # normalize kappaff except itself
                 fun1=np.copy(1.0/jrad1r[18])
                 fun2=np.copy(1.0/jrad2r[18])
@@ -34795,6 +34846,23 @@ def dcpaperplot1():
                 fun16=np.copy(1.0/jrad16r[18])
                 fun17=np.copy(1.0/jrad17r[18])
                 fun18=np.copy(1.0/jrad18r[18])
+            elif ii>=14 and ii<=16 and ii!=14:
+                # normalize kappadensity except itself
+                fun1=np.copy(1.0/jrad1r[14])
+                fun2=np.copy(1.0/jrad2r[14])
+                fun3=np.copy(1.0/jrad3r[14])
+                fun5=np.copy(1.0/jrad5r[14])
+                fun7=np.copy(1.0/jrad7r[14])
+                fun8=np.copy(1.0/jrad8r[14])
+                fun9=np.copy(1.0/jrad9r[14])
+                fun10=np.copy(1.0/jrad10r[14])
+                fun11=np.copy(1.0/jrad11r[14])
+                fun13=np.copy(1.0/jrad13r[14])
+                fun14=np.copy(1.0/jrad14r[14])
+                fun15=np.copy(1.0/jrad15r[14])
+                fun16=np.copy(1.0/jrad16r[14])
+                fun17=np.copy(1.0/jrad17r[14])
+                fun14=np.copy(1.0/jrad14r[14])
             elif ii==26 or ii==27 or ii==28:
                 # normalize densities by rho except itself
                 fun1=np.copy(1.0/jrad1r[25])
@@ -34910,7 +34978,7 @@ def dcpaperplot1():
         xscales=['linear']
         #
         ylabels=["jj",r"\theta",r"d\theta", #3
-                 r"$\hat{T}_\gamma/T_{\rm gas}$",r"$\hat{T}_\gamma[\rm K]$",r"$T_\gamma[\rm K]$",r"$T_{\rm gas}[\rm K]$",r"$f_{\rm col}$",r"$\exp{(-\xi)}$",r"$n_{\rm col}$", #7
+                 r"$\hat{T}_\gamma/T_{\rm gas}$",r"$\hat{T}_\gamma[\rm K]$",r"$T_\gamma[\rm K]$",r"$T_{\rm gas}[\rm K]$",r"$\hat{f}_{\rm col}$",r"$\exp{(-\xi)}$",r"$n_{\rm col}$", #7
                  r"$\kappa_{\rm tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm tot-Fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm es}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,tot}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,sy}/\kappa_{\rm ff}$",r"$\kappa_{\rm n,dc}/\kappa_{\rm ff}$",r"$\kappa_{\rm chianti}/\kappa_{\rm ff}$",r"$\kappa_{\rm ff}$",r"$\kappa_{\rm bf}/\kappa_{\rm ff}$",r"$\kappa_{\rm fe}/\kappa_{\rm ff}$",r"$\kappa_{\rm mol}/\kappa_{\rm ff}$",r"$\kappa_{\rm hmopal}/\kappa_{\rm ff}$",r"\kappa_{\rm chiantiopal}/\kappa_{\rm ff}$",r"\kappa_{\rm ff-ee}/\kappa_{\rm ff}$", #16
                  r"$\rho$",r"$u_g/\rho$",r"$u_\gamma/\rho$",r"$b^2/\rho$",r"$v_r$",r"$v_z$",r"$v_\phi$",r"$B_r/\sqrt{\rho}$",r"$B_z/\sqrt{\rho}$",r"$B_\phi/\sqrt{\rho}$", #10
                  r"\theta",r"d\theta", #2
@@ -34987,7 +35055,7 @@ def dcpaperplot1():
             mythetajrad18h=jrad18h[1+shift]
             #
             # normalize some quantities
-            if (ii>=10+shift and ii<=25+shift and ii!=(19+shift)):
+            if (ii>=10+shift and ii<=25+shift and ii!=(19+shift)) and (not((ii>=15+shift and ii<=17+shift and ii!=(15+shift)))):
                 # normalize kappa's by kappaff (except kappaff itself)
                 fun1=np.copy(1.0/jrad1h[19+shift])
                 fun2=np.copy(1.0/jrad2h[19+shift])
@@ -35004,6 +35072,23 @@ def dcpaperplot1():
                 fun16=np.copy(1.0/jrad16h[19+shift])
                 fun17=np.copy(1.0/jrad17h[19+shift])
                 fun18=np.copy(1.0/jrad18h[19+shift])
+            elif (ii>=15+shift and ii<=17+shift and ii!=(15+shift)):
+                # normalize kappa's by kappanreal (except kappanreal itself)
+                fun1=np.copy(1.0/jrad1h[15+shift])
+                fun2=np.copy(1.0/jrad2h[15+shift])
+                fun3=np.copy(1.0/jrad3h[15+shift])
+                fun5=np.copy(1.0/jrad5h[15+shift])
+                fun7=np.copy(1.0/jrad7h[15+shift])
+                fun8=np.copy(1.0/jrad8h[15+shift])
+                fun9=np.copy(1.0/jrad9h[15+shift])
+                fun10=np.copy(1.0/jrad10h[15+shift])
+                fun11=np.copy(1.0/jrad11h[15+shift])
+                fun13=np.copy(1.0/jrad13h[15+shift])
+                fun14=np.copy(1.0/jrad14h[15+shift])
+                fun15=np.copy(1.0/jrad15h[15+shift])
+                fun16=np.copy(1.0/jrad16h[15+shift])
+                fun17=np.copy(1.0/jrad17h[15+shift])
+                fun18=np.copy(1.0/jrad18h[15+shift])
             elif (ii==27+shift or ii==28+shift or ii==29+shift):
                 # normalize densities by rho (25+shift) at equator
                 fun1 =np.copy(jrad1h[0]*0.0+1.0/jrad1h[26+shift][jrad1h[0,-1]/2])

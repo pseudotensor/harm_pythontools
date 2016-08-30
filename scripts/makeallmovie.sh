@@ -1152,7 +1152,7 @@ then
         fi
         if [ $numtbl -eq 19 ]
         then
-            echo "\caption{Non-LTE and non-Planck Radiative/Jet Properties}" >> $fname
+            echo "\caption{Non-LTE and non-Planck Radiative Properties and Radiation/Jet Opening Angles in Radians}" >> $fname
             numtblreal=67
         fi
         #
