@@ -33493,7 +33493,7 @@ def tutorial1other(filename=None,fignum=None,whichplot=1):
     #myy=r[0:nxout,:,0]*np.sin(h[0:nxout,:,0])*np.sin(ph[0:nxout,:,0])
     #myz=r[0:nxout,:,0]*np.cos(h[0:nxout,:,0])
     #plt.pcolormesh(myx,myz,lrho[0:nxout,:,0]) #,vmin=vmintoplot,vmax=vmaxtoplot)
-    len=20
+    len=1E2
     extent=(-len,len,-len,len)
     ncell=800
     Rhor=1+sqrt(1.0-a**2)
@@ -33504,11 +33504,11 @@ def tutorial1other(filename=None,fignum=None,whichplot=1):
     plt.colorbar()
     #
     if 1==1:
-        levs = np.linspace(0,nx,num=30)
+        levs = np.linspace(0,nx,num=nx/6)
         iti = reinterp(ti,extent,ncell,domask=domask,interporder='linear')
         ax.contour(iti,linewidths=2,colors='white', extent=extent,levels=levs,hold='on',origin='lower')
         #
-        levs = np.linspace(0,ny,num=30)
+        levs = np.linspace(0,ny,num=ny/6)
         itj = reinterp(tj,extent,ncell,domask=domask,interporder='linear')
         ax.contour(itj,linewidths=2,colors='white', extent=extent,levels=levs,hold='on',origin='lower')
     #
