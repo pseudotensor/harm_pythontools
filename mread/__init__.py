@@ -33169,7 +33169,7 @@ def tutorial1alt(filename=None,fignum=None):
         myfun[bsq/rho>1]=0
         myfun[rho<1E-5]=0
     #
-    myfun=uu[1]
+    myfun=np.log10(rho)
     #
     myfun2=aphi
     #
@@ -33180,8 +33180,8 @@ def tutorial1alt(filename=None,fignum=None):
     #vmintoplot=-.13
     #vmaxtoplot=0.13
     #
-    vmintoplot=-1.0
-    vmaxtoplot=1.0
+    #vmintoplot=-1.0
+    #vmaxtoplot=1.0
     #
     #vmintoplot=vminmost
     #vmaxtoplot=vmaxmost
@@ -33191,21 +33191,26 @@ def tutorial1alt(filename=None,fignum=None):
     #plt.pcolormesh(myx,myz,myfun[0:nxout,:,0],vmin=vmintoplot,vmax=vmaxtoplot)
     whichphi=0
     #plt.pcolormesh(myx,myz,myfun[0:nxout,:,whichphi],vmin=vmintoplot,vmax=vmaxtoplot)
-    plt.pcolormesh(myx,myz,myfun[0:nxout,:,whichphi])
-    plt.colorbar()
+    #    plt.pcolormesh(myx,myz,myfun[0:nxout,:,whichphi])
+    #plt.colorbar()
     #plt.savefig("testplot_%s.png" % (filename) )
     #plc(myfun[0:nxout,:,0],xcoord=myx,ycoord=myz,ax=ax,cb=True,nc=50)
     #plco(flrho(),cb=True,nc=50)
     #
     #plc(myfun2[0:nxout,:,0],xcoord=myx,ycoord=myz,ax=ax,colors='k',nc=50)
     #
-    #
-    #
     #################################################
     len=15
     ncell=800
     global taurad2integrated,tauradeffintegrated
     extent=(-len,len,-len,len)
+    #
+    lrho=np.log10(rho)
+    ilrho = reinterp(lrho,extent,ncell,domask=1.0)
+    #plc(lrho[0:nxout,:,whichphi],xcoord=myx,ycoord=myz,ax=ax,colors='k',nc=50)
+    plt.pcolormesh(myx,myz,lrho[0:nxout,:,whichphi])
+    #
+    #
     #global rhounclean,ugunclean
     #bsqorho=bsq/rhounclean
     bsqorho=bsq/rho
@@ -33232,19 +33237,20 @@ def tutorial1alt(filename=None,fignum=None):
     #
     tauradintegratedavg=np.average(tauradintegrated,axis=-1)[:,:,None]
     #
-    loadavg()
-    iuu1 = reinterp(avg_uu[1],extent,ncell,domask=1.0,interporder='linear')
-    itauradintegrated = reinterp(tauradintegratedavg,extent,ncell,domask=1.0,interporder='linear')
-    itauradeffintegrated = reinterp(tauradeffintegrated,extent,ncell,domask=1.0,interporder='linear')
-    #
     tauradlocal=(KAPPAUSERnofe+KAPPAESUSER)*(_dx1*sqrt(np.fabs(gv3[1,1]))+_dx2*sqrt(np.fabs(gv3[2,2])))
-    #tauradlocalavg=np.average(tauradlocal,axis=-1)[:,:,None]
-    #itauradlocal = reinterp(tauradlocal,extent,ncell,domask=1.0,interporder='linear')
-    #
-    ax.contour(itauradintegrated,linewidths=4,colors='yellow', extent=extent,hold='on',origin='lower',levels=(1,))
-    ax.contour(itauradeffintegrated,linewidths=4,colors='purple', extent=extent,hold='on',origin='lower',levels=(1,))
-    #ax.contour(itauradlocal,linewidths=4,colors='cyan', extent=extent,hold='on',origin='lower',levels=(1,))
-    ax.contour(iuu1,linewidths=4,colors='green', extent=extent,hold='on',origin='lower',levels=(0,))
+    if 1==0:
+        loadavg()
+        iuu1 = reinterp(avg_uu[1],extent,ncell,domask=1.0,interporder='linear')
+        itauradintegrated = reinterp(tauradintegratedavg,extent,ncell,domask=1.0,interporder='linear')
+        itauradeffintegrated = reinterp(tauradeffintegrated,extent,ncell,domask=1.0,interporder='linear')
+        #
+        #tauradlocalavg=np.average(tauradlocal,axis=-1)[:,:,None]
+        #itauradlocal = reinterp(tauradlocal,extent,ncell,domask=1.0,interporder='linear')
+        #
+        ax.contour(itauradintegrated,linewidths=4,colors='yellow', extent=extent,hold='on',origin='lower',levels=(1,))
+        ax.contour(itauradeffintegrated,linewidths=4,colors='purple', extent=extent,hold='on',origin='lower',levels=(1,))
+        #ax.contour(itauradlocal,linewidths=4,colors='cyan', extent=extent,hold='on',origin='lower',levels=(1,))
+        ax.contour(iuu1,linewidths=4,colors='green', extent=extent,hold='on',origin='lower',levels=(0,))
     #
     #
     #
@@ -33488,7 +33494,7 @@ def tutorial1other(filename=None,fignum=None,whichplot=1):
     #myz=r[0:nxout,:,0]*np.cos(h[0:nxout,:,0])
     #plt.pcolormesh(myx,myz,lrho[0:nxout,:,0]) #,vmin=vmintoplot,vmax=vmaxtoplot)
     len=20
-    extent=(0,len,-len,len)
+    extent=(-len,len,-len,len)
     ncell=800
     Rhor=1+sqrt(1.0-a**2)
     domask=Rin/Rhor
@@ -33496,6 +33502,15 @@ def tutorial1other(filename=None,fignum=None,whichplot=1):
     #
     plt.imshow(ifun,extent=extent)
     plt.colorbar()
+    #
+    if 1==1:
+        levs = np.linspace(0,nx,num=30)
+        iti = reinterp(ti,extent,ncell,domask=domask,interporder='linear')
+        ax.contour(iti,linewidths=2,colors='white', extent=extent,levels=levs,hold='on',origin='lower')
+        #
+        levs = np.linspace(0,ny,num=30)
+        itj = reinterp(tj,extent,ncell,domask=domask,interporder='linear')
+        ax.contour(itj,linewidths=2,colors='white', extent=extent,levels=levs,hold='on',origin='lower')
     #
     #################################################
     if(whichplot==2):
