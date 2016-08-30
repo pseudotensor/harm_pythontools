@@ -32719,6 +32719,17 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     if(which==1002):
         (mytioe,mytjoe) = rhoe()
     #
+    # Mdot check
+    dmflux = gdet*rho*uu[1]*_dx2*_dx3
+    Mdottotal = np.sum(dmflux)
+    dmfluxatm=np.copy(dmflux)
+    dmfluxatm[bsq/rho<15]=0
+    Mdotatm = np.sum(dmfluxatm)
+    dmfluxdisk=np.copy(dmflux)
+    dmfluxdisk[bsq/rho>15]=0
+    Mdotdisk = np.sum(dmfluxdisk)
+    #
+    print("Mdotatm=%g Mdotdisk=%g Mdottotal=%g" % (Mdotatm,Mdotdisk,Mdottotal))
     #
     # overrides
     #myfun=np.log10(KAPPAUSERnofe/avg_KAPPAUSERnofe)
@@ -33189,6 +33200,7 @@ def tutorial1alt(filename=None,fignum=None):
     #plc(myfun2[0:nxout,:,0],xcoord=myx,ycoord=myz,ax=ax,colors='k',nc=50)
     #
     #
+    #
     #################################################
     len=15
     ncell=800
@@ -33202,6 +33214,14 @@ def tutorial1alt(filename=None,fignum=None):
     imybsqorho = reinterp(mybsqorho,extent,ncell,domask=1.0)
     #
     ax.contour(imybsqorho,linewidths=4,colors='red', extent=extent,hold='on',origin='lower',levels=(1,))
+    #
+    levs = np.linspace(0,nx,num=30)
+    iti = reinterp(ti,extent,ncell,domask=1.0,interporder='linear')
+    ax.contour(iti,linewidths=1,colors='black', levels=levs)
+    #
+    levs = np.linspace(0,ny,num=30)
+    itj = reinterp(tj,extent,ncell,domask=1.0,interporder='linear')
+    ax.contour(itj,linewidths=1,colors='black', levels=levs)
     #################################################
     if 1==1:
         # reget tau's
