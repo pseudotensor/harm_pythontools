@@ -31603,7 +31603,8 @@ def main(argv=None):
         mkavgfigs(whichmode=13)
     if runtype==35 or runtype==20 and runnumber==13:
         mkavgfigs(whichmode=14)
-    # no runnumber==14 or 15 yet (out of 16 possible cores on normal system)
+    if runtype==36 or runtype==20 and runnumber==14:
+        mkavgfigs(whichmode=15)
  
     #########
     # other stuff not usually used
