@@ -9063,6 +9063,27 @@ def rfd(fieldlinefilename,**kwargs):
         #
         sii=s00+4
         #
+    elif(numcolumns==11):
+        #rho, u, -hu_t, -T^t_t/U0, u^t, v1,v2,v3,B1,B2,B3
+        #matter density in the fluid frame
+        rho=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
+        rho=d[0,:,:,:]
+        #matter internal energy in the fluid frame
+        ug=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
+        ug=d[1,:,:,:]
+        #d[4] is the time component of 4-velocity, u^t
+        #d[5:8] are 3-velocities, v^i
+        uu=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
+        uu=d[4:8,:,:,:]  #again, note uu[i] are 3-velocities (as read from the fieldline file)
+        #multiply by u^t to get 4-velocities: u^i = u^t v^i
+        uu[1:4]=uu[1:4] * uu[0]
+        #
+        yfl1=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
+        yfl2=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
+        yfl3=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
+        #
+        sii=7
+        #
     else:
         print("python not setup for this fieldline file") ; sys.stdout.flush()
         sys.exit(1)
@@ -33222,11 +33243,11 @@ def tutorial1alt(filename=None,fignum=None):
     #
     levs = np.linspace(0,nx,num=30)
     iti = reinterp(ti,extent,ncell,domask=1.0,interporder='linear')
-    ax.contour(iti,linewidths=1,colors='black', levels=levs)
+    ax.contour(iti,linewidths=1,extent=extent,colors='black', levels=levs)
     #
     levs = np.linspace(0,ny,num=30)
     itj = reinterp(tj,extent,ncell,domask=1.0,interporder='linear')
-    ax.contour(itj,linewidths=1,colors='black', levels=levs)
+    ax.contour(itj,linewidths=1,extent=extent,colors='black', levels=levs)
     #################################################
     if 1==1:
         # reget tau's
@@ -33520,6 +33541,95 @@ def tutorial1other(filename=None,fignum=None,whichplot=1):
     if(whichplot==10):
         ax.contour(ifun,linewidths=2,colors='cyan', extent=extent,hold='on',origin='lower',levels=(0.25,))
         ax.contour(ifun,linewidths=2,colors='green', extent=extent,hold='on',origin='lower',levels=(0.4,))
+    #
+    vminmost=np.amin(lrho)
+    vmaxmost=np.amax(lrho)
+    print("vminmost=%g vmaxmost=%g" % (vminmost,vmaxmost)) ;sys.stdout.flush()
+    yfl1true=yfl1/rho
+    arglist=[yfl1true,np.log10(rho),np.log10(yfl1),uu[0],bsq/rho]
+    argnamelist=["yfl1true","lrho","lrhofl","uu0","bsq/rho"]
+    cid = fig.canvas.mpl_connect('button_press_event', lambda event: onclick(event,arglist,argnamelist,domask=domask))
+
+def tutorial1xyother(filename=None,fignum=None,whichplot=1):
+    # first load grid file
+    grid3d("gdump.bin")
+    if(filename==None):
+        filename="fieldline0007.bin"
+    if(fignum==None):
+        fignum=1
+    # now try loading a single fieldline file
+    rfd(filename)
+    # now plot something you read-in
+    plt.close(fignum)
+    fig=plt.figure(fignum)
+    lrho=np.log10(yfl1/rho)
+    if(whichplot==1):
+        lrho=np.log10(rho)
+        #lrho=np.log10(Erf)
+    if(whichplot==2):
+        lrho=yfl1/rho
+        lrho[lrho<0]=0
+        lrho[lrho>1]=1
+    if(whichplot==3):
+        lrho=np.log10(bsq/rho)
+    if(whichplot==4):
+        lrho=uu[0]
+    if(whichplot==5):
+        lrho=Erf
+    if(whichplot==6):
+        lrho=yfl2
+    if(whichplot==7):
+        lrho=yfl3
+    if(whichplot==8):
+        lrho=yfl4
+    if(whichplot==9):
+        lrho=yfl5
+    if(whichplot==10):
+        rhor=1+(1-a**2)**0.5
+        ihor = np.floor(iofr(rhor)+0.5)
+        omegah=a/(2*rhor)
+        lrho=fomegaf2()*dxdxp[3,3]/omegah
+        lrho[lrho>1]=1
+        lrho[lrho<-1]=-1
+    if(whichplot==11):
+        lrho=yfl1
+    if(whichplot==12):
+        lrho=uradu[0]
+    if(whichplot==13):
+        lrho=np.log10(Erf)
+    if(whichplot==14):
+        #numMag=jabs(-(bu[1]-avg_bu[1])*np.sqrt(gv3[1,1])*(bd[3]-avg_bd[3])*np.sqrt(gn3[3,3]))
+        numMag=jabs(-(bu[1])*np.sqrt(gv3[1,1])*(bd[3])*np.sqrt(gn3[3,3]))
+        denMR=(bsq*0.5+(gam-1.0)*ug)
+        #arey=numRey/denMR
+        amag=numMag/denMR
+        lrho=amag
+        lrho[lrho>2]=2
+    if(whichplot==15):
+        lrho=np.log10(bsq*0.5)
+    if(whichplot==16):
+        lrho=np.log10(ug)
+    #lrho=bsq/rho
+    #plco(lrho,cb=True,nc=50)
+    #plt.imshow(lrho)
+    #aphi = fieldcalc() # keep sign information
+    #plc(aphi,colors='k')
+    #
+    ax = plt.gca()
+    #nxout=iofr(10.0)
+    #myx=r[0:nxout:,:,0]*np.sin(h[0:nxout,:,0])*np.cos(ph[0:nxout,:,0])
+    #myy=r[0:nxout,:,0]*np.sin(h[0:nxout,:,0])*np.sin(ph[0:nxout,:,0])
+    #myz=r[0:nxout,:,0]*np.cos(h[0:nxout,:,0])
+    #plt.pcolormesh(myx,myz,lrho[0:nxout,:,0]) #,vmin=vmintoplot,vmax=vmaxtoplot)
+    len=35
+    extent=(-len,len,-len,len)
+    ncell=800
+    Rhor=1+sqrt(1.0-a**2)
+    domask=Rin/Rhor
+    ifun = reinterpxy(lrho,extent,ncell,domask=domask,interporder='linear')
+    #
+    plt.imshow(ifun,extent=extent)
+    plt.colorbar()
     #
     vminmost=np.amin(lrho)
     vmaxmost=np.amax(lrho)
