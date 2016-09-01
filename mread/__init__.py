@@ -16295,6 +16295,7 @@ def getrjet():
         rjetout=50.
     #
     rjet=rjetout
+    rradout=rjet
     #
     # override outer radii
     if isradmodelnrad(modelname)==1:
@@ -16304,7 +16305,7 @@ def getrjet():
             rradout=1000.0 # ok for EM and RAD, but not MAKE or total due to disk when measuring over all angles
         if modelname=="jonharmrad9" or modelname=="jonharmrad10" or modelname=="jonharmrad11" or modelname=="jonharmrad14" or modelname=="jonharmrad16": # issues at large radii with energy conservation
             rradout=100.0
-        if modelname=="jonharmrad13" or modelname=="jonharmrad17": # big issues with energy conservation
+        if modelname=="jonharmrad13" or modelname=="jonharmrad17" or modelname=="jonharmrad20": # big issues with energy conservation or early times only
             rradout=50.0
         rjet=rradout
         rjetout=rjet
@@ -32295,7 +32296,7 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
         avg_Ehat
     except NameError:
         Ehatexists=0
-        print("no Ehat")
+        print("no avg_Ehat")
     #
     if Ehatexists==1:
         gE=np.reshape(np.gradient(avg_Ehat[:,:,0]),(2,nx,ny,1))
@@ -32372,7 +32373,7 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     if(which==5):
         myfun=uu[0]
     if(which==6):
-        myfun=yfl1
+        myfun=np.log10(yfl1)
     if(which==7):
         myfun=yfl2
     if(which==8):
@@ -32742,15 +32743,20 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     #
     # Mdot check
     dmflux = gdet*rho*uu[1]*_dx2*_dx3
-    Mdottotal = np.sum(dmflux)
+    rhor=1+(1-a**2)**0.5
+    ihor = np.floor(iofr(rhor)+0.5)
+    Mdottotal = np.sum(dmflux[ihor,:,:])
     dmfluxatm=np.copy(dmflux)
     dmfluxatm[bsq/rho<15]=0
-    Mdotatm = np.sum(dmfluxatm)
+    Mdotatm = np.sum(dmfluxatm[ihor,:,:])
     dmfluxdisk=np.copy(dmflux)
     dmfluxdisk[bsq/rho>15]=0
-    Mdotdisk = np.sum(dmfluxdisk)
+    Mdotdisk = np.sum(dmfluxdisk[ihor,:,:])
     #
-    print("Mdotatm=%g Mdotdisk=%g Mdottotal=%g" % (Mdotatm,Mdotdisk,Mdottotal))
+    if gotrad>0:
+        print("Mdotatm=%g Mdotdisk=%g Mdottotal=%g" % (Mdotatm/Mdoteddcode,Mdotdisk/Mdoteddcode,Mdottotal/Mdoteddcode))
+    else:
+        print("Mdotatm=%g Mdotdisk=%g Mdottotal=%g" % (Mdotatm,Mdotdisk,Mdottotal))
     #
     # overrides
     #myfun=np.log10(KAPPAUSERnofe/avg_KAPPAUSERnofe)
@@ -33241,11 +33247,11 @@ def tutorial1alt(filename=None,fignum=None):
     #
     ax.contour(imybsqorho,linewidths=4,colors='red', extent=extent,hold='on',origin='lower',levels=(1,))
     #
-    levs = np.linspace(0,nx,num=30)
+    levs = np.linspace(0,nx,num=nx/6)
     iti = reinterp(ti,extent,ncell,domask=1.0,interporder='linear')
     ax.contour(iti,linewidths=1,extent=extent,colors='black', levels=levs)
     #
-    levs = np.linspace(0,ny,num=30)
+    levs = np.linspace(0,ny,num=ny/6)
     itj = reinterp(tj,extent,ncell,domask=1.0,interporder='linear')
     ax.contour(itj,linewidths=1,extent=extent,colors='black', levels=levs)
     #################################################
