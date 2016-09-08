@@ -2754,6 +2754,7 @@ def getTrads():
 
     #prad=(4.0/3.0-1.0)*Erf
     # code Tgas for ideal gas
+    #pg=(gam-1.0)*ug  
     #Tgas=pg/(rho/MUMEAN)
     #
     #Eradff = R^a_b u_a u^b
@@ -9168,6 +9169,9 @@ def rfd(fieldlinefilename,**kwargs):
         uradu=np.zeros((4,nx,ny,nz),dtype='float32',order='F')
         Erf=d[sii,:,:,:] # radiation frame radiation energy density
         nrad=rho*0+1E-30
+        nradff=rho*0+1E-30
+        Tradff=rho*0+1E-30
+        varexpf=1+rho*0+1E-30
         #
         #
         # approximation, but correct if used in pressure ultimately
@@ -9207,6 +9211,9 @@ def rfd(fieldlinefilename,**kwargs):
     else:
         Erf=rho*0+1E-30
         nrad=rho*0+1E-30
+        nradff=rho*0+1E-30
+        Tradff=rho*0+1E-30
+        varexpf=1+rho*0+1E-30
         #urad=Erf*0+1E-30
         uradd=uu*0+1E-30
         uradu=uu*0+1E-30
@@ -9245,61 +9252,67 @@ def rfd(fieldlinefilename,**kwargs):
         sii=sii+10
 
         #
-#        F1rhotot=d[sii,:,:,:]
-#        F1uutot=d[sii+1,:,:,:]
-#        F1u3tot=d[sii+2,:,:,:]
-#        F1urad0tot=d[sii+3,:,:,:]
-#        F1urad3tot=d[sii+4,:,:,:]
-#        F1yfl1tot=d[sii+5,:,:,:]
-#        F1yfl2tot=d[sii+6,:,:,:]
-#        F1yfl3tot=d[sii+7,:,:,:]
-#        F1yfl4tot=d[sii+8,:,:,:]
-#        F1yfl5tot=d[sii+9,:,:,:]
-#        #
-#        F1rhopake=d[sii+10,:,:,:]
-#        F1uupake=d[sii+11,:,:,:]
-#        F1u3pake=d[sii+12,:,:,:]
-#        F1urad0pake=d[sii+13,:,:,:]
-#        F1urad3pake=d[sii+14,:,:,:]
-#        F1yfl1pake=d[sii+15,:,:,:]
-#        F1yfl2pake=d[sii+16,:,:,:]
-#        F1yfl3pake=d[sii+17,:,:,:]
-#        F1yfl4pake=d[sii+18,:,:,:]
-#        F1yfl5pake=d[sii+19,:,:,:]
-#        #
-#        F1rhoen=d[sii+20,:,:,:]
-#        F1uuen=d[sii+21,:,:,:]
-#        F1u3en=d[sii+22,:,:,:]
-#        F1urad0en=d[sii+23,:,:,:]
-#        F1urad3en=d[sii+24,:,:,:]
-#        F1yfl1en=d[sii+25,:,:,:]
-#        F1yfl2en=d[sii+26,:,:,:]
-#        F1yfl3en=d[sii+27,:,:,:]
-#        F1yfl4en=d[sii+28,:,:,:]
-#        F1yfl5en=d[sii+29,:,:,:]
-#        #
-#        F1rhoem=d[sii+30,:,:,:]
-#        F1uuem=d[sii+31,:,:,:]
-#        F1u3em=d[sii+32,:,:,:]
-#        F1urad0em=d[sii+33,:,:,:]
-#        F1urad3em=d[sii+34,:,:,:]
-#        F1yfl1em=d[sii+35,:,:,:]
-#        F1yfl2em=d[sii+36,:,:,:]
-#        F1yfl3em=d[sii+37,:,:,:]
-#        F1yfl4em=d[sii+38,:,:,:]
-#        F1yfl5em=d[sii+39,:,:,:]
-#        #
-#        F1rhorad=d[sii+40,:,:,:]
-#        F1uurad=d[sii+41,:,:,:]
-#        F1u3rad=d[sii+42,:,:,:]
-#        F1urad0rad=d[sii+43,:,:,:]
-#        F1urad3rad=d[sii+44,:,:,:]
-#        F1yfl1rad=d[sii+45,:,:,:]
-#        F1yfl2rad=d[sii+46,:,:,:]
-#        F1yfl3rad=d[sii+47,:,:,:]
-#        F1yfl4rad=d[sii+48,:,:,:]
-#        F1yfl5rad=d[sii+49,:,:,:]
-#        #
+        #        F1rhotot=d[sii,:,:,:]
+        #        F1uutot=d[sii+1,:,:,:]
+        #        F1u3tot=d[sii+2,:,:,:]
+        #        F1urad0tot=d[sii+3,:,:,:]
+        #        F1urad3tot=d[sii+4,:,:,:]
+        #        F1yfl1tot=d[sii+5,:,:,:]
+        #        F1yfl2tot=d[sii+6,:,:,:]
+        #        F1yfl3tot=d[sii+7,:,:,:]
+        #        F1yfl4tot=d[sii+8,:,:,:]
+        #        F1yfl5tot=d[sii+9,:,:,:]
+        #        #
+        #        F1rhopake=d[sii+10,:,:,:]
+        #        F1uupake=d[sii+11,:,:,:]
+        #        F1u3pake=d[sii+12,:,:,:]
+        #        F1urad0pake=d[sii+13,:,:,:]
+        #        F1urad3pake=d[sii+14,:,:,:]
+        #        F1yfl1pake=d[sii+15,:,:,:]
+        #        F1yfl2pake=d[sii+16,:,:,:]
+        #        F1yfl3pake=d[sii+17,:,:,:]
+        #        F1yfl4pake=d[sii+18,:,:,:]
+        #        F1yfl5pake=d[sii+19,:,:,:]
+        #        #
+        #        F1rhoen=d[sii+20,:,:,:]
+        #        F1uuen=d[sii+21,:,:,:]
+        #        F1u3en=d[sii+22,:,:,:]
+        #        F1urad0en=d[sii+23,:,:,:]
+        #        F1urad3en=d[sii+24,:,:,:]
+        #        F1yfl1en=d[sii+25,:,:,:]
+        #        F1yfl2en=d[sii+26,:,:,:]
+        #        F1yfl3en=d[sii+27,:,:,:]
+        #        F1yfl4en=d[sii+28,:,:,:]
+        #        F1yfl5en=d[sii+29,:,:,:]
+        #        #
+        #        F1rhoem=d[sii+30,:,:,:]
+        #        F1uuem=d[sii+31,:,:,:]
+        #        F1u3em=d[sii+32,:,:,:]
+        #        F1urad0em=d[sii+33,:,:,:]
+        #        F1urad3em=d[sii+34,:,:,:]
+        #        F1yfl1em=d[sii+35,:,:,:]
+        #        F1yfl2em=d[sii+36,:,:,:]
+        #        F1yfl3em=d[sii+37,:,:,:]
+        #        F1yfl4em=d[sii+38,:,:,:]
+        #        F1yfl5em=d[sii+39,:,:,:]
+        #        #
+        #        F1rhorad=d[sii+40,:,:,:]
+        #        F1uurad=d[sii+41,:,:,:]
+        #        F1u3rad=d[sii+42,:,:,:]
+        #        F1urad0rad=d[sii+43,:,:,:]
+        #        F1urad3rad=d[sii+44,:,:,:]
+        #        F1yfl1rad=d[sii+45,:,:,:]
+        #        F1yfl2rad=d[sii+46,:,:,:]
+        #        F1yfl3rad=d[sii+47,:,:,:]
+        #        F1yfl4rad=d[sii+48,:,:,:]
+        #        F1yfl5rad=d[sii+49,:,:,:]
+        #        #
+    # code Tgas for ideal gas
+    try:
+        Tgas
+    except NameError:
+        pg=(gam-1.0)*ug
+        Tgas=pg/(rho/MUMEAN)
     #
     print("final sii=%d" % (sii)) ; sys.stdout.flush()
     if whichpoledeath==2:
@@ -9536,9 +9549,10 @@ def getkappas(gotrad, gotkappas):
         # Below should be as same in global.depmnemonics.rad.h
         #TEMPMINKELVIN=1.0E-10 # Kelvin
         #TEMPMIN=(TEMPMINKELVIN/TEMPBAR)
-        pg=(gam-1.0)*ug # ideal gas
         prad=(4.0/3.0-1.0)*Erf # radiation isotropic in some frame
-        Tgas=pg/rho # gas temperature for ideal gas
+        # code Tgas for ideal gas
+        pg=(gam-1.0)*ug # ideal gas
+        Tgas=pg/(rho/MUMEAN) # gas temperature for ideal gas
         KAPPAUSER=rho*0
         KAPPAUSERnofe=rho*0
         KAPPAESUSER=rho*0
@@ -9560,6 +9574,7 @@ def getkappas(gotrad, gotkappas):
         try:
             Tgas
         except NameError:
+            pg=(gam-1.0)*ug
             Tgas=pg/(rho/MUMEAN)
         #
         #
@@ -32177,6 +32192,13 @@ def tutorial1a(filename=None,which=1,fignum=1,whichaphi=0):
     #
     pg=(gam-1.0)*ug  #clean # use clean to keep pg low and Tgas will have floor like below  # no, need to use what was in simulation to be consistent with simulation's idea of what optical depth was
     # and of used ugclean above, then in funnel temperature would be very small and kappaff would be huge.
+    #
+    # code Tgas for ideal gas
+    try:
+        Tgas
+    except NameError:
+        pg=(gam-1.0)*ug
+        Tgas=pg/(rho/MUMEAN)
     #
     prad=(4.0/3.0-1.0)*Erf
     # code Tgas for ideal gas
