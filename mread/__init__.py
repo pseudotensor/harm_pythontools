@@ -33596,56 +33596,73 @@ def tutorial1xyother(filename=None,fignum=None,whichplot=1):
     # now plot something you read-in
     plt.close(fignum)
     fig=plt.figure(fignum)
-    lrho=np.log10(yfl1/rho)
+    #
+    # default
+    myfun=np.log10(yfl1/rho)
+    #
+    # others can plot
+    numMag=(-(bu[1])*np.sqrt(gv3[1,1])*(bd[3])*np.sqrt(gn3[3,3]))
+    denMR=(bsq*0.5+(gam-1.0)*ug)
+    #arey=numRey/denMR
+    amag=numMag/denMR
+    amag[amag>2]=2
+    #
+    logutot=np.log10(ug+Erf)
+    #
+    rhor=1+(1-a**2)**0.5
+    ihor = np.floor(iofr(rhor)+0.5)
+    #
+    #
     if(whichplot==1):
-        lrho=np.log10(rho)
-        #lrho=np.log10(Erf)
+        myfun=np.log10(rho)
+        #myfun=np.log10(Erf)
     if(whichplot==2):
-        lrho=yfl1/rho
-        lrho[lrho<0]=0
-        lrho[lrho>1]=1
+        myfun=yfl1/rho
+        myfun[myfun<0]=0
+        myfun[myfun>1]=1
     if(whichplot==3):
-        lrho=np.log10(bsq/rho)
+        myfun=np.log10(bsq/rho)
     if(whichplot==4):
-        lrho=uu[0]
+        myfun=uu[0]
     if(whichplot==5):
-        lrho=Erf
+        myfun=Erf
     if(whichplot==6):
-        lrho=yfl2
+        myfun=yfl2
     if(whichplot==7):
-        lrho=yfl3
+        myfun=yfl3
     if(whichplot==8):
-        lrho=yfl4
+        myfun=yfl4
     if(whichplot==9):
-        lrho=yfl5
+        myfun=yfl5
     if(whichplot==10):
-        rhor=1+(1-a**2)**0.5
-        ihor = np.floor(iofr(rhor)+0.5)
         omegah=a/(2*rhor)
-        lrho=fomegaf2()*dxdxp[3,3]/omegah
-        lrho[lrho>1]=1
-        lrho[lrho<-1]=-1
+        myfun=fomegaf2()*dxdxp[3,3]/omegah
+        myfun[myfun>1]=1
+        myfun[myfun<-1]=-1
     if(whichplot==11):
-        lrho=yfl1
+        myfun=yfl1
     if(whichplot==12):
-        lrho=uradu[0]
+        myfun=uradu[0]
     if(whichplot==13):
-        lrho=np.log10(Erf)
+        myfun=np.log10(Erf)
     if(whichplot==14):
         #numMag=jabs(-(bu[1]-avg_bu[1])*np.sqrt(gv3[1,1])*(bd[3]-avg_bd[3])*np.sqrt(gn3[3,3]))
-        numMag=jabs(-(bu[1])*np.sqrt(gv3[1,1])*(bd[3])*np.sqrt(gn3[3,3]))
-        denMR=(bsq*0.5+(gam-1.0)*ug)
         #arey=numRey/denMR
         amag=numMag/denMR
-        lrho=amag
-        lrho[lrho>2]=2
+        myfun=amag
+        myfun[myfun>2]=2
     if(whichplot==15):
-        lrho=np.log10(bsq*0.5)
+        myfun=np.log10(bsq*0.5)
     if(whichplot==16):
-        lrho=np.log10(ug)
-    #lrho=bsq/rho
-    #plco(lrho,cb=True,nc=50)
-    #plt.imshow(lrho)
+        myfun=np.log10(ug+Erf)
+    if(whichplot==17):
+        # to remove natural scaling with radius, although to get true stress have to volume integrate over relevant region
+        myfun=numMag*r**2/np.average(denMR[ihor,ny/2,:])
+        myfun[myfun>3]=3
+        myfun[myfun<-3]=-3
+    #myfun=bsq/rho
+    #plco(myfun,cb=True,nc=50)
+    #plt.imshow(myfun)
     #aphi = fieldcalc() # keep sign information
     #plc(aphi,colors='k')
     #
@@ -33654,24 +33671,24 @@ def tutorial1xyother(filename=None,fignum=None,whichplot=1):
     #myx=r[0:nxout:,:,0]*np.sin(h[0:nxout,:,0])*np.cos(ph[0:nxout,:,0])
     #myy=r[0:nxout,:,0]*np.sin(h[0:nxout,:,0])*np.sin(ph[0:nxout,:,0])
     #myz=r[0:nxout,:,0]*np.cos(h[0:nxout,:,0])
-    #plt.pcolormesh(myx,myz,lrho[0:nxout,:,0]) #,vmin=vmintoplot,vmax=vmaxtoplot)
+    #plt.pcolormesh(myx,myz,myfun[0:nxout,:,0]) #,vmin=vmintoplot,vmax=vmaxtoplot)
     len=35
     extent=(-len,len,-len,len)
     ncell=800
     Rhor=1+sqrt(1.0-a**2)
     domask=Rin/Rhor
-    ifun = reinterpxy(lrho,extent,ncell,domask=domask,interporder='linear')
+    ifun = reinterpxy(myfun,extent,ncell,domask=domask,interporder='linear')
     #
     plt.imshow(ifun,extent=extent)
     plt.colorbar()
+    plt.savefig("plot.png")
     #
-    vminmost=np.amin(lrho)
-    vmaxmost=np.amax(lrho)
+    vminmost=np.amin(myfun)
+    vmaxmost=np.amax(myfun)
     print("vminmost=%g vmaxmost=%g" % (vminmost,vmaxmost)) ;sys.stdout.flush()
-    yfl1true=yfl1/rho
-    arglist=[yfl1true,np.log10(rho),np.log10(yfl1),uu[0],bsq/rho]
-    argnamelist=["yfl1true","lrho","lrhofl","uu0","bsq/rho"]
-    cid = fig.canvas.mpl_connect('button_press_event', lambda event: onclick(event,arglist,argnamelist,domask=domask))
+    arglist=[myfun,np.log10(rho),uu[0],bsq/rho,numMag,denMR,amag,logutot]
+    argnamelist=["myfun","lrho","uu0","bsq/rho","numMag","denMR","amag","log10utot"]
+    cid = fig.canvas.mpl_connect('button_press_event', lambda event: onclickxy(event,arglist,argnamelist,domask=domask))
 
 def tutorial1aother(filename=None,which=1,fignum=1,whichaphi=0,whichtj=-1,outerti=100):
     global modelname
@@ -35535,6 +35552,40 @@ def onclick(event,arglist,argnamelist,domask=None):
     for funi in range(lenarglist):
         funorig=arglist[funi]
         ifun = reinterp(funorig,extent,ncell,domask=domask,interporder='linear')
+        print '%s[arg%d]=%f' %(argnamelist[funi],funi,ifun[0,0]);sys.stdout.flush()
+#, event.ind, zip(xdata[ind],ydata[ind]))
+
+#def onclick(event,funorig1,funorig2):
+def onclickxy(event,arglist,argnamelist,domask=None):
+    if(domask==None):
+        domask=1.0
+    #thisline = event.artist
+    #xdata2 = thisline.get_xdata()
+    #ydata2 = thisline.get_ydata()
+    xdata = event.xdata
+    ydata = event.ydata
+    #ind = event.ind
+  # ind=%f zip=%f'%(
+    print 'button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %(
+        event.button, event.x, event.y, event.xdata, event.ydata);
+    #global poo
+    myx=event.xdata
+    myz=event.ydata
+    #
+    lentest=35
+    extent=(myx*0.95,myx*1.05,myz*0.95,myz*1.05)
+    #extent=(-lentest,lentest,-lentest,lentest)
+    ncell=4
+    lenarglist=len(arglist)
+    print('len(arglist)=%d' % (lenarglist))
+    print(extent)
+    print(Rin)
+    
+    for funi in range(lenarglist):
+        funorig=arglist[funi]
+        #    ifun = reinterpxy(lrho,extent,ncell,domask=domask,interporder='linear')
+
+        ifun = reinterpxy(funorig,extent,ncell,domask=domask,interporder='linear')
         print '%s[arg%d]=%f' %(argnamelist[funi],funi,ifun[0,0]);sys.stdout.flush()
 #, event.ind, zip(xdata[ind],ydata[ind]))
 
