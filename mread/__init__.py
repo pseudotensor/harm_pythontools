@@ -9089,7 +9089,7 @@ def rfd(fieldlinefilename,**kwargs):
         yfl2=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
         yfl3=np.zeros((1,nx,ny,nz),dtype='float32',order='F')
         #
-        sii=7
+        sii=8
         #
     else:
         print("python not setup for this fieldline file") ; sys.stdout.flush()
