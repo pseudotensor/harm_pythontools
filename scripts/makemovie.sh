@@ -300,16 +300,24 @@ fi
 
 
 # defaults
-chunklisttypeplot=0
 numtasksplot=1
-chunklistplot=\"`seq -s " " 1 $numtasksplot`\"
 runnplot=1
 numnodesplot=1
 numcorespernodeplot=1
 
 
 
+
+
+
+
 # runn is number of runs (and in parallel, should be multiple of numcorespernode)
+
+
+
+
+#############################################
+# system dependent settings
 
 
 ##############################################
@@ -505,8 +513,6 @@ then
     numcorespernode=$numtasks
     numnodes=1
     #
-    chunklisttype=0
-    chunklist=\"`seq -s " " 1 $numtasks`\"
     DATADIR=$dirname
     
 
@@ -519,7 +525,6 @@ then
     else
         numtasksplot=1
     fi
-    chunklistplot=\"`seq -s " " 1 $numtasksplot`\"
 
 
 
@@ -539,9 +544,12 @@ then
     # setup tasks, cores, and nodes for make2davg
     numtasksavg0=`ls dumps/fieldline*.bin |wc -l`  # true total number of tasks
     numtasksavg=$((($numtasksavg0)/($itemspergroup)))
+    # +1 below for general case when above floors, if no remainder than +1 doesn't hurt -- just not optimal
     numtasksavg=$(($numtasksavg+1))
     numtaskscorravg=$(($numtasksavg))
     numtotalnodesavg=$((($numtaskscorravg+$numtaskspernode-1)/$numtaskspernode))
+    echo "numtasksavg=$numtasksavg numtotalnodesavg=$numtotalnodesavg"
+    apcmdavg="ibrun "
 
 
 fi
@@ -610,7 +618,6 @@ then
     # stampede with radtma0.8 has resident max of 2GB/task, so can't quite have 16 tasks per node, so go with 14.
     numtaskspernode=16
     numtotalnodes=$((($numtaskscorr+$numtaskspernode-1)/$numtaskspernode))
-    apcmd="mpiexec -np $numtaskscorr "
 
     # -n $numtasks # how many actual MPI processes there are.
     # -N $numtotalnodes # number of nodes requested such that really have access to numnodes*16 total cores even if not using them.
@@ -621,8 +628,6 @@ then
     numcorespernode=$numtasks
     numnodes=1
     #
-    chunklisttype=0
-    chunklist=\"`seq -s " " 1 $numtasks`\"
     DATADIR=$dirname
     
 
@@ -632,11 +637,10 @@ then
     if [ $parallel -ge 2 ]
     then
         numtasksplot=$numtaskspernode
-        chunklistplot=\"`seq -s " " 1 $numtasksplot`\"
     else
         numtasksplot=1
-        chunklistplot=\"`seq -s " " 1 $numtasksplot`\"
     fi
+
 
     numnodesplot=1
     numtotalnodesplot=1
@@ -644,7 +648,7 @@ then
     # this gives 16GB free for plotting (temp vars + qty2.npy file has to be smaller than this or swapping will occur)
     numtotalcoresplot=$numcorespernodeplot
     thequeueplot="normal"  # try using this as "serial" instead of takes too long for makeplot or makeavgplot steps.
-    apcmdplot="mpiexec -np $numtasksplot "
+
     # only took 6 minutes for thickdisk7 doing 458 files inside qty2.npy!  Up to death at point when tried to resample in time.
     #timetotplot="1:00:00" # for normal can go up to 48 hours.  For serial up to 12 hours.
     #timetotplot="0:45:00" # for normal can go up to 48 hours.  For serial up to 12 hours.
@@ -660,8 +664,6 @@ then
         timetotavgplot=$timetotplot
     fi
 
-
-
     #############################################
     # setup tasks, cores, and nodes for make2davg
     numtasksavg0=`ls dumps/fieldline*.bin |wc -l`  # true total number of tasks
@@ -670,9 +672,14 @@ then
     numtasksavg=$(($numtasksavg+1))
     numtaskscorravg=$(($numtasksavg))
     numtotalnodesavg=$((($numtaskscorravg+$numtaskspernode-1)/$numtaskspernode))
+    echo "numtasksavg=$numtasksavg numtotalnodesavg=$numtotalnodesavg"
+
+
+    apcmd="mpiexec -np $numtaskscorr "
+    apcmdplot="mpiexec -np $numtasksplot "
     apcmdavg="mpiexec -np $numtasksavg "
 
-    echo "numtasksavg=$numtasksavg numtotalnodesavg=$numtotalnodesavg"
+
 fi
 
 
@@ -716,7 +723,6 @@ then
     # numtotalcores is currently what is allocated per node because each job is for each node
     numtotalcores=12
 
-    apcmd="aprun -n 1 -d 12 -cc none -a xt"
 
     # setup plotting part
     numnodesplot=1
@@ -724,16 +730,23 @@ then
     # this gives 16GB free for plotting
     numtotalcoresplot=$numnodesplot
     thequeueplot="small"
-    apcmdplot="aprun -n 1 -d 12 -cc none -a xt"
     timetotplot="8:00:00"
     timetotavgplot=$timetotplot
 
     #############################################
     # setup tasks, cores, and nodes for make2davg
-    numtasksavg=$((($numtasks)/($itemspergroup)))
+    numtasksavg0=`ls dumps/fieldline*.bin |wc -l`  # true total number of tasks
+    numtasksavg=$((($numtasksavg0)/($itemspergroup)))
+    # +1 below for general case when above floors, if no remainder than +1 doesn't hurt -- just not optimal
     numtasksavg=$(($numtasksavg+1))
     numtaskscorravg=$(($numtasksavg))
     numtotalnodesavg=$((($numtaskscorravg+$numtaskspernode-1)/$numtaskspernode))
+    echo "numtasksavg=$numtasksavg numtotalnodesavg=$numtotalnodesavg"
+
+    apcmd="aprun -n 1 -d 12 -cc none -a xt"
+    apcmdplot="aprun -n 1 -d 12 -cc none -a xt"
+    apcmdavg="aprun -n 1 -d 12 -cc none -a xt"
+
 
 fi
 
@@ -806,8 +819,6 @@ then
     numcorespernode=$numtasks
     numnodes=1
     #
-    chunklisttype=0
-    chunklist=\"`seq -s " " 1 $numtasks`\"
     DATADIR=$dirname
     
 
@@ -815,7 +826,6 @@ then
 
     # setup plotting part
     numtasksplot=16 # cores in single node
-    chunklistplot=\"`seq -s " " 1 $numtasksplot`\"
 
     numnodesplot=1
     numcorespernodeplot=12
@@ -828,21 +838,50 @@ then
     timetotavgplot=$timetotplot
 
 
-    echo "PART1P: $numcorespernodeplot $numnodesplot $numtotalcoresplot $thequeueplot $timetotplot $timetotavgplot"
-    echo "PART2P: $apcmdplot"
-
     #############################################
     # setup tasks, cores, and nodes for make2davg
-    numtasksavg=$((($numtasks)/($itemspergroup)))
+    numtasksavg0=`ls dumps/fieldline*.bin |wc -l`  # true total number of tasks
+    numtasksavg=$((($numtasksavg0)/($itemspergroup)))
+    # +1 below for general case when above floors, if no remainder than +1 doesn't hurt -- just not optimal
     numtasksavg=$(($numtasksavg+1))
     numtaskscorravg=$(($numtasksavg))
     numtotalnodesavg=$((($numtaskscorravg+$numtaskspernode-1)/$numtaskspernode))
+    echo "numtasksavg=$numtasksavg numtotalnodesavg=$numtotalnodesavg"
+
+    if [ $numcorespernode -eq 2 ] ||
+        [ $numcorespernode -eq 4 ] ||
+        [ $numcorespernode -eq 6 ] ||
+        [ $numcorespernode -eq 8 ] ||
+        [ $numcorespernode -eq 10 ] ||
+        [ $numcorespernode -eq 12 ]
+    then
+        numcorespersocket=$(($numcorespernode/2))
+        apcmdavg="aprun -n $numtasksavg -S $numcorespersocket"
+    else
+        # odd, so can't use socket version
+        apcmdavg="aprun -n $numtasksavg -N $numcorespernode"
+    fi
+
+
+    echo "PART1P: $numcorespernodeplot $numnodesplot $numtotalcoresplot $thequeueplot $timetotplot $timetotavgplot"
+    echo "PART2P: $apcmdplot"
 
 fi
 
 
 
+
+
+
+#### chunk lists
+chunklisttype=0
+chunklist=\"`seq -s " " 1 $numtasks`\"
+
+chunklisttypeplot=0
+chunklistplot=\"`seq -s " " 1 $numtasksplot`\"
+
 chunklistavg=\"`seq -s " " 1 $numtasksavg`\"
+
 
 
 

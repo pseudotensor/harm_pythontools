@@ -11007,7 +11007,7 @@ def grid3d(dumpname,use2d=False,doface=False,usethetarot0=False): #read grid dum
     else:
         # if no gdump, use last fieldline file that is assumed to be consistent with gdump that didn't exist.
         # allows non-creation of gdump if restarting with tilt from non-tilt run.  So then enver have to have gdump.bin with THETAROT tilt.
-        rfdheaderlastfile(typefile=1)
+        rfdheaderlastfile()
     #
     # for rfd() to use to see if different nz size
     global nzgdumptrue
