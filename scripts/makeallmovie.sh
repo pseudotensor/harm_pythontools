@@ -57,7 +57,6 @@ dirrunstilt="sashaam9full2pit0.15 sashaa9b100t0.15 sashaa99t0.15 sashaam9full2pi
 #dirruns="rad1"
 dirruns="jonharmrad1 jonharmrad2 jonharmrad3 jonharmrad5 jonharmrad7 jonharmrad8 jonharmrad9 jonharmrad10 jonharmrad11 jonharmrad13 jonharmrad14 jonharmrad15 jonharmrad16 jonharmrad17 jonharmrad18"
 
-
 #dirruns='thickdisk17'
 
 #dirruns='thickdisk9 thickdiskr3 thickdisk17 thickdisk10 thickdiskr15 thickdisk3'
@@ -915,12 +914,9 @@ then
 fi
 
 
-if [ $collect -ge 1 ] &&
-    [ $system -eq 5 ] ||
-    [ $collect -ge 1 ] &&
-    [ $system -eq 7 ] ||
-    [ $collect -ge 1 ] &&
-    [ $system -eq 8 ]
+if  ( [ $collect -ge 1 ] && [ $system -eq 5 ] ) ||
+    ( [ $collect -ge 1 ] && [ $system -eq 7 ] ) ||
+    ( [ $collect -ge 1 ] && [ $system -eq 8 ] )
 then
     # below follows makemovie.sh and agrees with python script file
     if  [ $parallel -ge 2 ]
