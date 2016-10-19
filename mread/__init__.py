@@ -2654,7 +2654,7 @@ def get2davgone(whichgroup=-1,itemspergroup=20):
             #
             # 5
             avg_KAPPAUSER+=KAPPAUSER.sum(-1)[:,:,None]*localdt[itert]
-            avg_KAPPAUSERnofe+=(KAPPAUSER-kappafereal).sum(-1)[:,:,None]*localdt[itert]
+            avg_KAPPAUSERnofe+=(KAPPAUSERnofe).sum(-1)[:,:,None]*localdt[itert]
             avg_KAPPAESUSER+=KAPPAESUSER.sum(-1)[:,:,None]*localdt[itert]
             avg_tauradintegrated+=tauradintegrated.sum(-1)[:,:,None]*localdt[itert]
             avg_tauradeffintegrated+=tauradeffintegrated.sum(-1)[:,:,None]*localdt[itert]
@@ -6234,6 +6234,12 @@ def mkframe(fname,ax=None,ax2=None,cb=1,tight=False,useblank=True,vmin=None,vmax
         print("tauradeffintegrated") ; sys.stdout.flush()
         print(np.shape(tauradeffintegrated)) ; sys.stdout.flush()
         print(tauradeffintegrated[:,ny/4,0]) ; sys.stdout.flush()
+        print("KAPPAUSERnofe") ; sys.stdout.flush()
+        print(np.shape(KAPPAUSERnofe)) ; sys.stdout.flush()
+        print(KAPPAUSERnofe[:,ny/4,0]) ; sys.stdout.flush()
+        print("KAPPAUSER") ; sys.stdout.flush()
+        print(np.shape(KAPPAUSER)) ; sys.stdout.flush()
+        print(KAPPAUSER[:,ny/4,0]) ; sys.stdout.flush()
         np.set_printoptions(threshold=10)
     ####################
     #
@@ -6706,7 +6712,14 @@ def mkframe(fname,ax=None,ax2=None,cb=1,tight=False,useblank=True,vmin=None,vmax
         #
         #ax2=np.copy(ax)
         #ax2.clf()
-        fstreamplot(xi,yi,iBR,iBz,ua=iBaR,va=iBaz,useblank=useblank,density=density,downsample=downsample,linewidth=lw,alpha=alphavary,ax=ax,ax2=ax2,detectLoops=detectLoops,dodiskfield=dodiskfield,dobhfield=dobhfield,startatmidplane=startatmidplane,domidfield=domidfield,a=a,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,dsval=dsval,color=color,doarrows=doarrows,dorandomcolor=dorandomcolor,skipblankint=skipblankint,minindent=minindent,minlengthdefault=minlengthdefault,arrowsize=arrowsize)
+        # only care about direction, not length, and length too small can cause problems, so normalize to unit length
+        Blengthmax=np.amax(np.sqrt(iBR*iBR+iBz*iBz))
+        Blengthavg=np.average(np.sqrt(iBR*iBR+iBz*iBz))
+        print("Blength: %g %g" % (Blengthmax,Blengthavg)) ; sys.stdout.flush()
+        iBR=iBR/Blengthavg
+        iBz=iBz/Blengthavg
+        #ua=iBaR,va=iBaz
+        fstreamplot(xi,yi,iBR,iBz,ua=None,va=None,useblank=useblank,density=density,downsample=downsample,linewidth=lw,alpha=alphavary,ax=ax,ax2=ax2,detectLoops=detectLoops,dodiskfield=dodiskfield,dobhfield=dobhfield,startatmidplane=startatmidplane,domidfield=domidfield,a=a,minlendiskfield=minlendiskfield,minlenbhfield=minlenbhfield,dsval=dsval,color=color,doarrows=doarrows,dorandomcolor=dorandomcolor,skipblankint=skipblankint,minindent=minindent,minlengthdefault=minlengthdefault,arrowsize=arrowsize)
         #streamplot(yi,xi,iBR,iBz,density=3,linewidth=1,ax=ax2)
     #
     # goes on top:
@@ -9504,10 +9517,10 @@ KAPPA_FORCOMPT_CODE = lambda rhocode,Tcode : (0.2*(1.0+XFACT)*KAPPA_ES_FERMICORR
 
 #EMISSION (Tr=Tg) or ABSORBPTION (Tr different from Tg)
 KAPPA_ZETA = lambda  Tgcode,Trcode : ((TEMPMIN()+Trcode)/(TEMPMIN()+Tgcode))
-KAPPA_FF_CODE = lambda rhocode,Tgcode,Trcode : (4.0E22*(1.0+XFACT)*(1.0-ZFACT)*((rhocode)*RHOBAR)*pow((Tgcode)*TEMPBAR,-0.5)*pow((Trcode)*TEMPBAR,-3.0)*log(1.0+1.6*KAPPA_ZETA(Tgcode,Trcode))*(1.0+4.4E-10*(Tgcode*TEMPBAR))/OPACITYBAR)  # ASSUMPTION: Thermal ele and no pairs.  See Rybicki & Lightman Eq~5.25 and McKinney & Uzdensky (2012) .  For Tr,Tg split, see Ramesh notes.
-KAPPA_BF_CODE = lambda rhocode,Tgcode,Trcode : (3.0E25*(ZFACT)*(1.0+XFACT+0.75*YFACT)*((rhocode)*RHOBAR)*pow((Tgcode)*TEMPBAR,-0.5)*pow((Trcode)*TEMPBAR,-3.0)*log(1.0+1.6*KAPPA_ZETA(Tgcode,Trcode))/OPACITYBAR) # ASSUMPTION: Number of electrons similar to for solar abundances for 1+X+(3/4)Y term.  For Tr,Tg split, see Ramesh notes.
-KAPPA_CHIANTIBF_CODE = lambda rhocode,Tgcode,Trcode : (4.0E34*((rhocode*RHOBAR))*(ZFACT/ZSOLAR())*YELE*pow((Tgcode)*TEMPBAR,-1.7)*pow((Trcode)*TEMPBAR,-3.0)/OPACITYBAR) # *XFACT literally from Fig 34.1 in Draine book, but for solar n_H\sim n_b\sim 1/cm^3 only
-KAPPA_HN_CODE = lambda rhocode,Tgcode,Trcode : (1.1E-25*pow(ZFACT,0.5)*pow((rhocode)*RHOBAR,0.5)*pow((Tgcode)*TEMPBAR,7.7+3.0)*pow((Trcode)*TEMPBAR,-3.0)/OPACITYBAR)
+KAPPA_FF_CODE = lambda rhocode,Tgcode,Trcode : (4.0E22*(1.0+XFACT)*(1.0-ZFACT)*(np.float64(rhocode)*RHOBAR)*pow(np.float64(Tgcode)*TEMPBAR,-0.5)*pow(np.float64(Trcode)*TEMPBAR,-3.0)*log(1.0+1.6*KAPPA_ZETA(Tgcode,Trcode))*(1.0+4.4E-10*(Tgcode*TEMPBAR))/OPACITYBAR)  # ASSUMPTION: Thermal ele and no pairs.  See Rybicki & Lightman Eq~5.25 and McKinney & Uzdensky (2012) .  For Tr,Tg split, see Ramesh notes.
+KAPPA_BF_CODE = lambda rhocode,Tgcode,Trcode : (3.0E25*(ZFACT)*(1.0+XFACT+0.75*YFACT)*(np.float64(rhocode)*RHOBAR)*pow(np.float64(Tgcode)*TEMPBAR,-0.5)*pow(np.float64(Trcode)*TEMPBAR,-3.0)*log(1.0+1.6*KAPPA_ZETA(Tgcode,Trcode))/OPACITYBAR) # ASSUMPTION: Number of electrons similar to for solar abundances for 1+X+(3/4)Y term.  For Tr,Tg split, see Ramesh notes.
+KAPPA_CHIANTIBF_CODE = lambda rhocode,Tgcode,Trcode : (4.0E34*(np.float64(rhocode*RHOBAR))*(ZFACT/ZSOLAR())*YELE*pow(np.float64(Tgcode)*TEMPBAR,-1.7)*pow(np.float64(Trcode)*TEMPBAR,-3.0)/OPACITYBAR) # *XFACT literally from Fig 34.1 in Draine book, but for solar n_H\sim n_b\sim 1/cm^3 only
+KAPPA_HN_CODE = lambda rhocode,Tgcode,Trcode : (1.1E-25*pow(ZFACT,0.5)*pow(np.float64(rhocode)*RHOBAR,0.5)*pow(np.float64(Tgcode)*TEMPBAR,7.7+3.0)*pow(np.float64(Trcode)*TEMPBAR,-3.0)/OPACITYBAR)
 KAPPA_MOL_CODE = lambda rhocode,Tgcode,Trcode : (0.1*ZFACT/OPACITYBAR)
 # see opacities.nb
 KAPPA_GENFF_CODE = lambda rhocode,Tgcode,Trcode : (1.0/(1.0/(KAPPA_MOL_CODE(rhocode,Tgcode,Trcode)+KAPPA_HN_CODE(rhocode,Tgcode,Trcode)) + 1.0/(KAPPA_CHIANTIBF_CODE(rhocode,Tgcode,Trcode)+KAPPA_BF_CODE(rhocode,Tgcode,Trcode)+KAPPA_FF_CODE(rhocode,Tgcode,Trcode)))) # for 1.3E3K \le T \le 1E9K or higher.  Numerically better to have kappa bottom out at low T so no diverent opacity as T->0
@@ -9579,6 +9592,7 @@ def getkappas(gotrad, gotkappas):
         #
         #
         if(gotkappas==0 or gotrad==1):
+            print("Setting KAPPAUSER1: %d %d" % (gotkappas,gotrad));sys.stdout.flush()
             #Eradff = R^a_b u_a u^b
             Ruu=0.0
             uraddlocal = mdot(gv3,uradu)                  #g_mn urad^n
@@ -9597,10 +9611,11 @@ def getkappas(gotrad, gotkappas):
             KAPPAUSERnofe=np.copy(KAPPAUSER)
             KAPPAESUSER=(rho*KAPPAES*KAPPA_ES_CODE_PYTHON(rho,Tgas))
         else:
+            print("Setting KAPPAUSER2: %d %d" % (gotkappas,gotrad));sys.stdout.flush()
             # use read-in accurate versions produced by harmrad
             KAPPAUSER=kappa
             kappafereal = (rho*RHOBAR)*0.3*np.exp(-6.0*np.power(-12.0+np.log(Tgas*TEMPBAR),2.0))
-            KAPPAUSERnofe=kappa-kappafereal # should only be done if had fe, which currently always do
+            KAPPAUSERnofe=np.maximum(0.0,kappa-kappafereal) # should only be done if had fe, which currently always do
             KAPPAESUSER=kappaes
 
 def Power(x,y):
@@ -28345,7 +28360,7 @@ def mkavgfigs1(whichfig=0):
     #
     #
     forceeqsym=0 # forceeqsym=1 makes the streaming take alot longer for some reason.  Also, messes up field geometry so it's not obvious that field threads the disk.
-    mylen = 130.0
+    mylen = 150.0
     mylenshowx=(25.0/30.0)*mylen
     mylenshowy=(25.0/30.0)*mylen
     fntsize=24
@@ -29042,7 +29057,7 @@ def mkavgfigs1(whichfig=0):
     #########
     # PLOTS
     if 1==1:
-        myveldensity=8 # 1 through 8 is reasonable, with 1 for testing and 8 for production
+        myveldensity=2 # 1 through 8 is reasonable, with 1 for testing and 8 for production
         if whichfig==0 or whichfig==2:
             #
             # normal field
