@@ -29057,7 +29057,7 @@ def mkavgfigs1(whichfig=0):
     #########
     # PLOTS
     if 1==1:
-        myveldensity=2 # 1 through 8 is reasonable, with 1 for testing and 8 for production
+        myveldensity=8 # 1 through 8 is reasonable, with 1 for testing and 8 for production
         if whichfig==0 or whichfig==2:
             #
             # normal field
