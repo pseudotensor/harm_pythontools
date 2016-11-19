@@ -34801,7 +34801,7 @@ def supermad1(filename=None,fignum=1):
 # DC paper 1D plots
 def dcpaperplot1():
     #
-    path="/data/jon/pseudotensor@gmail.com/rad_papers/opacity/harm_dc/"
+    path="/data/jon/dcpaperdata/"
     os.chdir(path)
     #
     #
@@ -34990,8 +34990,8 @@ def dcpaperplot1():
     a=0.8
     rddims(1)
     #
-    toradplots=1
-    dothetaplots=1
+    toradplots=0
+    dothetaplots=0
     doextraplots=1
     #
     ###### Stuff vs. radius
@@ -35415,7 +35415,8 @@ def dcpaperplot1():
             yscales=['linear']
             #
             #
-            factors=[np.pi]
+            #factors=[np.pi]
+            factors=[1.0]
             #
             #
             fig, (ax1) = plt.subplots(1, 1)
@@ -35448,8 +35449,43 @@ def dcpaperplot1():
             mythetajrad16h=jrad16h[xii]
             mythetajrad17h=jrad17h[xii]
             mythetajrad18h=jrad18h[xii]
+            # set correct cos(theta)
+            mycthetajrad1h=np.cos(jrad1h[xii])
+            mycthetajrad2h=np.cos(jrad2h[xii])
+            mycthetajrad3h=np.cos(jrad3h[xii])
+            mycthetajrad5h=np.cos(jrad5h[xii])
+            mycthetajrad7h=np.cos(jrad7h[xii])
+            mycthetajrad8h=np.cos(jrad8h[xii])
+            mycthetajrad9h=np.cos(jrad9h[xii])
+            mycthetajrad10h=np.cos(jrad10h[xii])
+            mycthetajrad11h=np.cos(jrad11h[xii])
+            mycthetajrad13h=np.cos(jrad13h[xii])
+            mycthetajrad14h=np.cos(jrad14h[xii])
+            mycthetajrad15h=np.cos(jrad15h[xii])
+            mycthetajrad16h=np.cos(jrad16h[xii])
+            mycthetajrad17h=np.cos(jrad17h[xii])
+            mycthetajrad18h=np.cos(jrad18h[xii])
+            # set correct -dcos(theta)
+            mydcthetajrad1h=-np.gradient(np.cos(jrad1h[xii]))
+            mydcthetajrad2h=-np.gradient(np.cos(jrad2h[xii]))
+            mydcthetajrad3h=-np.gradient(np.cos(jrad3h[xii]))
+            mydcthetajrad5h=-np.gradient(np.cos(jrad5h[xii]))
+            mydcthetajrad7h=-np.gradient(np.cos(jrad7h[xii]))
+            mydcthetajrad8h=-np.gradient(np.cos(jrad8h[xii]))
+            mydcthetajrad9h=-np.gradient(np.cos(jrad9h[xii]))
+            mydcthetajrad10h=-np.gradient(np.cos(jrad10h[xii]))
+            mydcthetajrad11h=-np.gradient(np.cos(jrad11h[xii]))
+            mydcthetajrad13h=-np.gradient(np.cos(jrad13h[xii]))
+            mydcthetajrad14h=-np.gradient(np.cos(jrad14h[xii]))
+            mydcthetajrad15h=-np.gradient(np.cos(jrad15h[xii]))
+            mydcthetajrad16h=-np.gradient(np.cos(jrad16h[xii]))
+            mydcthetajrad17h=-np.gradient(np.cos(jrad17h[xii]))
+            mydcthetajrad18h=-np.gradient(np.cos(jrad18h[xii]))
             #
-            if 1==1:
+            print("mydcthetajrad1h")
+            print(mydcthetajrad1h); sys.stdout.flush()
+            #
+            if 1==1: # Sum dL/dth dth
                 tot1=np.sum(np.clip(jrad1h[wii]*jrad1h[dxii],0,1E50))
                 tot2=np.sum(np.clip(jrad2h[wii]*jrad2h[dxii],0,1E50))
                 tot3=np.sum(np.clip(jrad3h[wii]*jrad3h[dxii],0,1E50))
@@ -35484,21 +35520,38 @@ def dcpaperplot1():
                 fun17=np.copy(jrad17h[0]*0.0+1.0/tot17)
                 fun18=np.copy(jrad18h[0]*0.0+1.0/tot18)
             #
-            ax1.plot(mythetajrad1h,factors[0]*np.clip(jrad1h[wii],0,1E30)*fun1,color="black",label='M1',linewidth=2.0,linestyle='-')
-            ax1.plot(mythetajrad2h,factors[0]*np.clip(jrad2h[wii],0,1E30)*fun2,color="black",label='M2',linewidth=2.0,linestyle='--')
-            ax1.plot(mythetajrad3h,factors[0]*np.clip(jrad3h[wii],0,1E30)*fun3,color="black",label='M3',linewidth=2.0,linestyle='-.')
-            ax1.plot(mythetajrad5h,factors[0]*np.clip(jrad5h[wii],0,1E30)*fun5,color="gold",label='M5',linewidth=2.0,linestyle='--')
-            ax1.plot(mythetajrad18h,factors[0]*np.clip(jrad18h[wii],0,1E30)*fun18,color="green",label='M6',linewidth=2.0,linestyle='--')
-            ax1.plot(mythetajrad7h,factors[0]*np.clip(jrad7h[wii],0,1E30)*fun7,color="red",label='M7',linewidth=2.0)
-            ax1.plot(mythetajrad8h,factors[0]*np.clip(jrad8h[wii],0,1E30)*fun8,color="green",label='M8',linewidth=2.0)
-            ax1.plot(mythetajrad9h,factors[0]*np.clip(jrad9h[wii],0,1E30)*fun9,color="red",label='M9',linewidth=2.0,linestyle='--')
-            ax1.plot(mythetajrad10h,factors[0]*np.clip(jrad10h[wii],0,1E30)*fun10,color="black",label='M10',linewidth=2.0,linestyle=':')
-            ax1.plot(mythetajrad11h,factors[0]*np.clip(jrad11h[wii],0,1E30)*fun11,color="blue",label='M11',linewidth=2.0,linestyle='--')
-            ax1.plot(mythetajrad13h,factors[0]*np.clip(jrad13h[wii],0,1E30)*fun13,color="brown",label='M13',linewidth=2.0)
-            ax1.plot(mythetajrad14h,factors[0]*np.clip(jrad14h[wii],0,1E30)*fun14,color="orange",label='M14',linewidth=2.0)
-            ax1.plot(mythetajrad17h,factors[0]*np.clip(jrad17h[wii],0,1E30)*fun17,color="blue",label='M14h',linewidth=2.0)
-            ax1.plot(mythetajrad15h,factors[0]*np.clip(jrad15h[wii],0,1E30)*fun15,color="purple",label='M15',linewidth=2.0)
-            ax1.plot(mythetajrad16h,factors[0]*np.clip(jrad16h[wii],0,1E30)*fun16,color="gold",label='M15h',linewidth=2.0)
+            if 1==0: # dL/dtheta / L
+                ax1.plot(mythetajrad1h,factors[0]*np.clip(jrad1h[wii],0,1E30)*fun1,color="black",label='M1',linewidth=2.0,linestyle='-')
+                ax1.plot(mythetajrad2h,factors[0]*np.clip(jrad2h[wii],0,1E30)*fun2,color="black",label='M2',linewidth=2.0,linestyle='--')
+                ax1.plot(mythetajrad3h,factors[0]*np.clip(jrad3h[wii],0,1E30)*fun3,color="black",label='M3',linewidth=2.0,linestyle='-.')
+                ax1.plot(mythetajrad5h,factors[0]*np.clip(jrad5h[wii],0,1E30)*fun5,color="gold",label='M5',linewidth=2.0,linestyle='--')
+                ax1.plot(mythetajrad18h,factors[0]*np.clip(jrad18h[wii],0,1E30)*fun18,color="green",label='M6',linewidth=2.0,linestyle='--')
+                ax1.plot(mythetajrad7h,factors[0]*np.clip(jrad7h[wii],0,1E30)*fun7,color="red",label='M7',linewidth=2.0)
+                ax1.plot(mythetajrad8h,factors[0]*np.clip(jrad8h[wii],0,1E30)*fun8,color="green",label='M8',linewidth=2.0)
+                ax1.plot(mythetajrad9h,factors[0]*np.clip(jrad9h[wii],0,1E30)*fun9,color="red",label='M9',linewidth=2.0,linestyle='--')
+                ax1.plot(mythetajrad10h,factors[0]*np.clip(jrad10h[wii],0,1E30)*fun10,color="black",label='M10',linewidth=2.0,linestyle=':')
+                ax1.plot(mythetajrad11h,factors[0]*np.clip(jrad11h[wii],0,1E30)*fun11,color="blue",label='M11',linewidth=2.0,linestyle='--')
+                ax1.plot(mythetajrad13h,factors[0]*np.clip(jrad13h[wii],0,1E30)*fun13,color="brown",label='M13',linewidth=2.0)
+                ax1.plot(mythetajrad14h,factors[0]*np.clip(jrad14h[wii],0,1E30)*fun14,color="orange",label='M14',linewidth=2.0)
+                ax1.plot(mythetajrad17h,factors[0]*np.clip(jrad17h[wii],0,1E30)*fun17,color="blue",label='M14h',linewidth=2.0)
+                ax1.plot(mythetajrad15h,factors[0]*np.clip(jrad15h[wii],0,1E30)*fun15,color="purple",label='M15',linewidth=2.0)
+                ax1.plot(mythetajrad16h,factors[0]*np.clip(jrad16h[wii],0,1E30)*fun16,color="gold",label='M15h',linewidth=2.0)
+            else: # dL/dtheta * dtheta / d(costheta)
+                ax1.plot(mythetajrad1h,factors[0]*np.clip(jrad1h[wii]*jrad1h[dxii]/mydcthetajrad1h,0,1E30)*fun1,color="black",label='M1',linewidth=2.0,linestyle='-')
+                ax1.plot(mythetajrad2h,factors[0]*np.clip(jrad2h[wii]*jrad2h[dxii]/mydcthetajrad2h,0,1E30)*fun2,color="black",label='M2',linewidth=2.0,linestyle='--')
+                ax1.plot(mythetajrad3h,factors[0]*np.clip(jrad3h[wii]*jrad3h[dxii]/mydcthetajrad3h,0,1E30)*fun3,color="black",label='M3',linewidth=2.0,linestyle='-.')
+                ax1.plot(mythetajrad5h,factors[0]*np.clip(jrad5h[wii]*jrad5h[dxii]/mydcthetajrad5h,0,1E30)*fun5,color="gold",label='M5',linewidth=2.0,linestyle='--')
+                ax1.plot(mythetajrad18h,factors[0]*np.clip(jrad18h[wii]*jrad18h[dxii]/mydcthetajrad18h,0,1E30)*fun18,color="green",label='M6',linewidth=2.0,linestyle='--')
+                ax1.plot(mythetajrad7h,factors[0]*np.clip(jrad7h[wii]*jrad7h[dxii]/mydcthetajrad7h,0,1E30)*fun7,color="red",label='M7',linewidth=2.0)
+                ax1.plot(mythetajrad8h,factors[0]*np.clip(jrad8h[wii]*jrad8h[dxii]/mydcthetajrad8h,0,1E30)*fun8,color="green",label='M8',linewidth=2.0)
+                ax1.plot(mythetajrad9h,factors[0]*np.clip(jrad9h[wii]*jrad9h[dxii]/mydcthetajrad9h,0,1E30)*fun9,color="red",label='M9',linewidth=2.0,linestyle='--')
+                ax1.plot(mythetajrad10h,factors[0]*np.clip(jrad10h[wii]*jrad10h[dxii]/mydcthetajrad10h,0,1E30)*fun10,color="black",label='M10',linewidth=2.0,linestyle=':')
+                ax1.plot(mythetajrad11h,factors[0]*np.clip(jrad11h[wii]*jrad11h[dxii]/mydcthetajrad11h,0,1E30)*fun11,color="blue",label='M11',linewidth=2.0,linestyle='--')
+                ax1.plot(mythetajrad13h,factors[0]*np.clip(jrad13h[wii]*jrad13h[dxii]/mydcthetajrad13h,0,1E30)*fun13,color="brown",label='M13',linewidth=2.0)
+                ax1.plot(mythetajrad14h,factors[0]*np.clip(jrad14h[wii]*jrad14h[dxii]/mydcthetajrad14h,0,1E30)*fun14,color="orange",label='M14',linewidth=2.0)
+                ax1.plot(mythetajrad17h,factors[0]*np.clip(jrad17h[wii]*jrad17h[dxii]/mydcthetajrad17h,0,1E30)*fun17,color="blue",label='M14h',linewidth=2.0)
+                ax1.plot(mythetajrad15h,factors[0]*np.clip(jrad15h[wii]*jrad15h[dxii]/mydcthetajrad15h,0,1E30)*fun15,color="purple",label='M15',linewidth=2.0)
+                ax1.plot(mythetajrad16h,factors[0]*np.clip(jrad16h[wii]*jrad16h[dxii]/mydcthetajrad16h,0,1E30)*fun16,color="gold",label='M15h',linewidth=2.0)
             ax1.set_xscale(xscales[0])
             ax1.set_yscale(yscales[0])
             legend = ax1.legend(loc='upper right', shadow=True)
